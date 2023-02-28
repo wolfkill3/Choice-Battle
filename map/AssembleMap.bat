@@ -1,0 +1,2 @@
+call "E:\Games\Jass New Gen Pack Rebuild\jasshelper\pjass.exe" "E:\Games\Jass New Gen Pack Rebuild\jasshelper\common.j" "E:\Games\Jass New Gen Pack Rebuild\jasshelper\Blizzard.j" war3map.j
+"E:\Workshop\w3x2lni_enUS_v2.7.1\w2l.exe" slk "E:\Workshop\Choice_Battle_2_8a_fix3test" "E:\Games\Warcraft 3\Maps\NLTEST\Choice_Battle_2_8a.w3x"
