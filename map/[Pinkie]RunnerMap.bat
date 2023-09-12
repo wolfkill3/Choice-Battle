@@ -1,1 +1,1 @@
-"D:\Program Files (x86)\Warcraft III\war3.exe" -loadfile "maps\download\Choice_Battle_3_0_7_EN.w3x"
+"D:\Program Files (x86)\Warcraft III\war3.exe" -loadfile "maps\download\Choice_Battle_3_0_8_EN.w3x"
