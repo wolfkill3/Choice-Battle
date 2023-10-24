@@ -1,1 +1,1 @@
-"C:\Program Files (x86)\Warcraft 3 Frozen Throne\war3.exe" -loadfile "maps\download\Choice_Battle_3_0_19_EN.w3x"
+"C:\Program Files (x86)\Warcraft 3 Frozen Throne\war3.exe" -loadfile "maps\download\Choice_Battle_3_0_20_EN.w3x"
