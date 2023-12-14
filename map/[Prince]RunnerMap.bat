@@ -1,1 +1,0 @@
-"C:\Games\iCCup Warcraft III\war3.exe" -loadfile "C:\Users\Starheart\Desktop\ChoiceBattleExD.w3x"
