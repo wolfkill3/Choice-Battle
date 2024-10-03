@@ -45,6 +45,7 @@ QuestDialogNormalBorder=war3mapImported\BlackCinematicBorder.blp
 SimpleBuildTimeIndicatorBorder=war3mapImported\BlackCinematicBorder.blp
 TimeOfDayIndicator=UI\HumanUI-TimeIndicator.mdl
 ToolTipBorder=war3mapImported\BlackCinematicBorder.blp
+ToolTipBackground=TooltipLessVisible.blp
 TownAttackSound=.mp3
 UnderAttackSound=.mp2
 [FrameDef]
