@@ -45,6 +45,7 @@ QuestDialogNormalBorder=war3mapImported\BlackCinematicBorder.blp
 SimpleBuildTimeIndicatorBorder=war3mapImported\BlackCinematicBorder.blp
 TimeOfDayIndicator=UI\HumanUI-TimeIndicator.mdl
 ToolTipBorder=war3mapImported\BlackCinematicBorder.blp
+ToolTipBackground=TooltipLessVisible.blp
 TownAttackSound=.mp3
 UnderAttackSound=.mp2
 [FrameDef]
@@ -61,6 +62,6 @@ LUMBER=Victory points
 PERCENT_100=100
 RESOURCE_UBERTIP_GOLD=Gold is earned by winning rounds and by defeating heroes.
 RESOURCE_UBERTIP_LUMBER=Victory points are earned for winning a round, by reaching a certain number of points you win.
-UPKEEP_HIGH=|c0000FF00Choice Battle |r|c0000FFFFv3.3.9 EN|r
-UPKEEP_LOW=|c0000FF00Choice Battle |r|c0000FFFFv3.3.9 EN|r
-UPKEEP_NONE=|c0000FF00Choice Battle |r|c0000FFFFv3.3.9 EN|r
+UPKEEP_HIGH=|c0000FF00Choice Battle |r|c0000FFFFv3.3.10 EN|r
+UPKEEP_LOW=|c0000FF00Choice Battle |r|c0000FFFFv3.3.10 EN|r
+UPKEEP_NONE=|c0000FF00Choice Battle |r|c0000FFFFv3.3.10 EN|r
