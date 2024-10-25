@@ -203,6 +203,7 @@ constant integer MadokaTHHash         = StringHash("MadokaTH")
 constant integer MadokaMHash          = StringHash("MadokaM")
 constant integer VariationQHash       = StringHash("VariationQ")
 constant integer KaiokenHash          = StringHash("Kaioken")
+constant integer ITRangeHash          = StringHash("ITRange")
 constant integer VariationWHash       = StringHash("VariationW")
 constant integer VariationTHash       = StringHash("VariationT")
 constant integer WarpKamehamehaHash   = StringHash("WarpKamehameha")
@@ -5549,6 +5550,41 @@ function RemoveEffect takes effect newRemoveEffect,real newDur,boolean ShowEff,t
     call SaveBoolean(h,GetHandleId(newT),1,ShowEff)
     call TimerStart(newT,newDur,false,function RemoveEffectAct)
 endfunction
+function Push10 takes nothing returns nothing
+local integer id=GetHandleId(GetExpiredTimer())
+local real speed=LoadReal(h,id,1)
+local real a=LoadReal(h,id,2)
+local real dist=LoadReal(h,id,3)
+local real time=LoadReal(h,id,5)-0.03
+call SaveReal(h,id,3,dist-speed)
+call SaveReal(h,id,5,time)
+if time>0 and dist>0 and GetUnitFlyHeight(LoadUnitHandle(h,id,0))>15 and LoadUnitHandle(h,id,0)!=null and GetUnitAbilityLevel(LoadUnitHandle(h,id,0),'A1BL')==0 and udg_B then
+    call SetUnitXY_1(LoadUnitHandle(h,id,0),GetUnitX(LoadUnitHandle(h,id,0))+speed*Cos(a),GetUnitY(LoadUnitHandle(h,id,0))+speed*Sin(a), true)
+    call SetUnitFacing(LoadUnitHandle(h,id,0),a*bj_RADTODEG)
+else
+    set EFF=AddSpecialEffect("chushou_by_wood_effect_earth_sandycrack_fag.mdl",GetUnitX(LoadUnitHandle(h,id,0)),GetUnitY(LoadUnitHandle(h,id,0)))
+    call SetSpecialEffectScale(EFF , 0.8)
+    call RemoveEffect(EFF,1.5,false,CreateTimer())
+    set EFF=AddSpecialEffect("slamEarth.mdl",GetUnitX(LoadUnitHandle(h,id,0)),GetUnitY(LoadUnitHandle(h,id,0)))
+    call SetSpecialEffectScale(EFF , 1.2)
+    call RemoveEffect(EFF,2,false,CreateTimer())
+    call FlushChildHashtable(h,id)
+    call PauseTimer(GetExpiredTimer())
+    call DestroyTimer(GetExpiredTimer())
+endif
+endfunction
+function Push9 takes unit l__d,real speed,real angle,real dist returns nothing
+local integer id=0
+set sysTimer=CreateTimer()
+set id=GetHandleId(sysTimer)
+call SaveUnitHandle(h,id,0,l__d)
+call SaveReal(h,id,1,speed)
+call SaveReal(h,id,2,angle)
+call SaveReal(h,id,3,dist)
+call SaveReal(h, id, 5, 5)
+call TimerStart(sysTimer,0.03,true,function Push10)
+set sysTimer=null
+endfunction
 function Push8 takes nothing returns nothing
 local integer id=GetHandleId(GetExpiredTimer())
 local real speed=LoadReal(h,id,1)
@@ -10014,8 +10050,8 @@ function OnButtonChangeAbilityMode takes nothing returns nothing
         endif
     endif
     if p==GetOwningPlayer(Goku) and but==GetFrameByName( "AbilityVarBarIcon", 7 ) then
-        if LoadReal(HH,pHid,VariationWHash)==0 then
-            call SaveReal(HH,pHid,VariationWHash,1)
+        if LoadReal(HH,pHid,VariationTHash)==0 then
+            call SaveReal(HH,pHid,VariationTHash,1)
             if GetLocalPlayer()==p then
                 call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 7 ), "ReplaceableTextures\\CommandButtons\\BTNDragonFist2.blp", 0, true )
                 call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 7 ), "ReplaceableTextures\\CommandButtons\\BTNDragonFist2.blp", 1, true )
@@ -61627,6 +61663,19 @@ if time==2.3 then
         set a=AU(u,LoadUnitHandle(HH,GetHandleId(p),WarpKamehamehaTargetHash))
         call SaveReal(h,id,8,GetUnitX(u))
         call SaveReal(h,id,9,GetUnitY(u))
+        if LoadBoolean(HH,GetHandleId(u),ITRangeHash) then
+            if GetUnitState(u,UNIT_STATE_MANA)>GetUnitState(u,UNIT_STATE_MAX_MANA)*0.1 then
+                call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-GetUnitState(u,UNIT_STATE_MAX_MANA)*0.1)
+            else
+                call SetUnitState(u,UNIT_STATE_MANA,1)
+            endif
+        else
+            if GetUnitState(u,UNIT_STATE_MANA)>GetUnitState(u,UNIT_STATE_MAX_MANA)*0.2 then
+                call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-GetUnitState(u,UNIT_STATE_MAX_MANA)*0.2)
+            else
+                call SetUnitState(u,UNIT_STATE_MANA,1)
+            endif
+        endif
         if IsUnitEnemy(LoadUnitHandle(HH,GetHandleId(p),WarpKamehamehaTargetHash),p) then
             call SetUnitFacingInstant(u,a*bj_RADTODEG)
             call SetAbilityRemainingCooldown(GetUnitAbility(u,'GKR1'),GetAbilityBaseRealLevelFieldById('GKR1',ABILITY_RLF_COOLDOWN,GetUnitAbilityLevel(u,'GKR1')-1))
@@ -62002,9 +62051,9 @@ if time<0.630 and GetAbilityIntegerLevelField(GetUnitAbility(u,'GKR1'), ABILITY_
             call SetUnitInvulnerable(u,true)
             call PauseUnit(u,true)
             call DestroyEffect(AddSpecialEffect("war3mapImported\\BlackBlink.mdx",x2,y2))
-            call SetUnitXY_1(u,x1,y1, false)
-            call SetControlToUnit(u,c, 0.2, "heavystun")
-            call SetUnitFlyHeight(u,250,0)
+            call SetUnitXY_1(u,x3+300*Cos(a),y3+300*Sin(a), false)
+            call SetControlToUnit(u,c, 0.19, "heavystun")
+            call SetUnitFlyHeight(u,GetUnitFlyHeight(c)+450,0)
             set EFF=AddSpecialEffect("war3mapImported\\BlackBlink.mdx", GetUnitX(u), GetUnitY(u))
             call SetSpecialEffectZ(EFF, GetUnitFlyHeight(u))
             call DestroyEffect(EFF)
@@ -62014,37 +62063,52 @@ if time<0.630 and GetAbilityIntegerLevelField(GetUnitAbility(u,'GKR1'), ABILITY_
             set a=Atan2(GetUnitY(u)-y3,GetUnitX(u)-x3)
             call SaveReal(h,id,4,a)
             call SetUnitFacingInstant(u,a*bj_RADTODEG)
+            call SetUnitTimeScale(u,2)
+            call SetUnitAnimationByIndex(u,120)
+        endif
+        if time>0.36 and time<0.51 then
+            call SetUnitInvulnerable(u,true)
+            call PauseUnit(u,true) 
+            set a=Atan2(GetUnitY(c)-GetUnitY(u),GetUnitX(c)-GetUnitX(u))
+            call SaveReal(h,id,4,a)
+            call SetUnitFacingInstant(u,a*bj_RADTODEG)
+            call SetUnitXY_1(u,x2+(SR(x2,y2,x3,y3)/35)*Cos(a),y2+(SR(x2,y2,x3,y3)/35)*Sin(a), false)
+            call SetUnitFlyHeight(u,GetUnitFlyHeight(u)-25,0)
+        endif
+        if time==0.51 or (time>0.36 and time<0.51 and GetUnitFlyHeight(u)+30<GetUnitFlyHeight(c)) then
+            call SetUnitXY_1(u,GetUnitX(c)-35*Cos(a),GetUnitY(c)-35*Sin(a), false)
+            call SaveReal(h,id,5,0.52)
+            call SetUnitInvulnerable(u,true)
+            call PauseUnit(u,true)
             call SetUnitTimeScale(u,1)
-            call SetUnitAnimationByIndex(u,120)
-        endif
-        if time==0.36 then
-            call SetUnitInvulnerable(u,true)
-            call PauseUnit(u,true)
-            call SetUnitAnimationByIndex(u,120)
-            call SetUnitFlyHeight(u,150,2000)
-        endif
-        if time==0.51 then
-            call SetUnitInvulnerable(u,true)
-            call PauseUnit(u,true)
             call myCustomDamage(u,c,dmg,false,false,null,null,null)
             call SetControlToUnit(u,c, 1, "stun")
             set EFF=AddSpecialEffect("chushou_by_wood_effect_earth_sandycrack_fag.mdl",x3,y3)
             call SetSpecialEffectScale(EFF , 0.6)
+            call SetSpecialEffectZ(EFF, GetUnitFlyHeight(c))
             call RemoveEffect(EFF,1.5,false,CreateTimer())
             set EFF=AddSpecialEffect("war3mapImported\\CF2.mdl", x3,y3)
             call SetSpecialEffectFacing(EFF , a* bj_RADTODEG)
+            call SetSpecialEffectZ(EFF, GetUnitFlyHeight(c))
             call SetSpecialEffectScale(EFF , 1)
             call DestroyEffect(EFF)
             set EFF=AddSpecialEffect("Minato-37.mdx", x3,y3)
             call SetSpecialEffectFacing(EFF , a* bj_RADTODEG)
-            call SetSpecialEffectZ(EFF , 30)
+            call SetSpecialEffectZ(EFF, GetUnitFlyHeight(c)+30)
             call SetSpecialEffectScale(EFF , 3)
             call DestroyEffect(EFF)
-            call Push3(c,40,a,200,"Abilities\\Weapons\\AncientProtectorMissile\\AncientProtectorMissile.mdl")
+            set EFF=AddSpecialEffect("WindVectorPush.mdx", x1, y1)
+            call SetSpecialEffectOrientation(EFF,a*bj_RADTODEG,-45,0)
+            call SetSpecialEffectZ(EFF , 100)
+            call SetSpecialEffectScale(EFF , GetUnitFlyHeight(c)+70)
+            call SetSpecialEffectVertexColour(EFF,255,255,255,120)
+            call RemoveEffect(EFF,1,true,CreateTimer())
+            call SetUnitFlyHeight(c,0,3500)
+            call Push9(c,40,a,200)
         endif
         if time==0.55 then
             call SetUnitAnimationByIndex(u,81)
-            call SetUnitFlyHeight(u,0,1500)
+            call SetUnitFlyHeight(u,0,2500)
         endif
         if time==0.61 then
             call SetUnitInvulnerable(u,false)
@@ -62084,6 +62148,19 @@ if time<0.630 and GetAbilityIntegerLevelField(GetUnitAbility(u,'GKR1'), ABILITY_
 else
     if GetAbilityIntegerLevelField(GetUnitAbility(u,'GKR1'), ABILITY_ILF_TARGET_TYPE,GetUnitAbilityLevel(u,'GKR1')-1)!=1 then
         call SetAbilityRemainingCooldown(GetUnitAbility(u,'GKR1'),GetAbilityBaseRealLevelFieldById('GKR1',ABILITY_RLF_COOLDOWN,GetUnitAbilityLevel(u,'GKR1')-1))
+        if LoadBoolean(HH,GetHandleId(u),ITRangeHash) then
+            if GetUnitState(u,UNIT_STATE_MANA)>GetUnitState(u,UNIT_STATE_MAX_MANA)*0.05 then
+                call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-GetUnitState(u,UNIT_STATE_MAX_MANA)*0.05)
+            else
+                call SetUnitState(u,UNIT_STATE_MANA,1)
+            endif
+        else
+            if GetUnitState(u,UNIT_STATE_MANA)>GetUnitState(u,UNIT_STATE_MAX_MANA)*0.1 then
+                call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-GetUnitState(u,UNIT_STATE_MAX_MANA)*0.1)
+            else
+                call SetUnitState(u,UNIT_STATE_MANA,1)
+            endif
+        endif
     else
         call SetAbilityRemainingCooldown(GetUnitAbility(u,'GKR1'),5)
     endif
@@ -62126,12 +62203,12 @@ if GetAbilityIntegerLevelField(GetUnitAbility(u,'GKR1'), ABILITY_ILF_TARGET_TYPE
     set x1=GetUnitX(c)
     set y1=GetUnitY(c)
     set a=Atan2(y1-y,x1-x)
+    if SquareRootUnit(u,c)<1000 then
+        call SaveBoolean(HH,GetHandleId(u),ITRangeHash,true)
+    else
+        call SaveBoolean(HH,GetHandleId(u),ITRangeHash,false)
+    endif
     if GetUnitAbilityLevel(u,'Pet1')==0 then
-        if GetUnitState(u,UNIT_STATE_MANA)>GetUnitState(u,UNIT_STATE_MAX_MANA)*0.1 then
-            call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-GetUnitState(u,UNIT_STATE_MAX_MANA)*0.1)
-        else
-            call SetUnitState(u,UNIT_STATE_MANA,1)
-        endif
         call SetAbilityIntegerLevelField(GetUnitAbility(u,'GKR1'), ABILITY_ILF_TARGET_TYPE,GetUnitAbilityLevel(u,'GKR1')-1,0)
         call SaveUnitHandle(h,id,0,u)
         call SaveUnitHandle(h,id,11,c)
@@ -62155,11 +62232,6 @@ if GetAbilityIntegerLevelField(GetUnitAbility(u,'GKR1'), ABILITY_ILF_TARGET_TYPE
         endif
         call TimerStart(t,0.01,true,function CastInstantTransmissionGoku2)
     else
-        if GetUnitState(u,UNIT_STATE_MANA)>GetUnitState(u,UNIT_STATE_MAX_MANA)*0.2 then
-            call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-GetUnitState(u,UNIT_STATE_MAX_MANA)*0.2)
-        else
-            call SetUnitState(u,UNIT_STATE_MANA,1)
-        endif
         call DestroyTimer(t)
         call SaveBoolean(HH,GetHandleId(p),WarpKamehamehaHash,true)
         call SaveUnitHandle(HH,GetHandleId(p),WarpKamehamehaTargetHash,c)
