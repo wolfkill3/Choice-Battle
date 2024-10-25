@@ -20756,7 +20756,7 @@ function Trig_Multup_Actions takes nothing returns nothing
         endif
         call MultiboardSetTitleText(mbg,"|cffc3dbffRound|r - "+I2S(round)+", |cffc3dbffTime -|r "+ours1+I2S(ours)+":"+minutes1+I2S(minutes)+":"+seconds1+I2S(seconds))
         if IsUnitSelected(Goku,GetLocalPlayer()) then
-            if IsAbilityVisible(GetUnitAbility(Goku,'GKQ1')) and GetOwningPlayer(Goku)==GetLocalPlayer() then 
+            if IsAbilityVisible(GetUnitAbility(Goku,'GKQ1')) and GetOwningPlayer(Goku)==GetLocalPlayer() and GetFrameTexture(GetOriginFrame(ORIGIN_FRAME_COMMAND_BUTTON,11),1)!="ReplaceableTextures\\CommandButtons\\BTNCancel.blp" then 
                 call ShowFrame(GetFrameByName( "AbilityVarBarIcon", 8 ),true)
                 if GetFrameUnderCursor()!=GetFrameByName( "AbilityVarBarIcon", 8 ) then
                 call ShowFrame(GetFrameByName( "AbilityVarBarTooltip", 8 ),false)
@@ -20809,12 +20809,12 @@ function Trig_Multup_Actions takes nothing returns nothing
             else
                 call ShowFrame(GetFrameByName( "AbilityVarBarIcon", 8 ),false)
             endif
-            if IsAbilityVisible(GetUnitAbility(Goku,'GKW1')) and (GetUnitAbilityLevel(Goku,'GkH6')>0 or and GetUnitAbilityLevel(Goku,'GkH0')>0) and GetOwningPlayer(Goku)==GetLocalPlayer() then
+            if IsAbilityVisible(GetUnitAbility(Goku,'GKW1')) and (GetUnitAbilityLevel(Goku,'GkH6')>0 or GetUnitAbilityLevel(Goku,'GkH0')>0) and GetOwningPlayer(Goku)==GetLocalPlayer() and GetFrameTexture(GetOriginFrame(ORIGIN_FRAME_COMMAND_BUTTON,11),1)!="ReplaceableTextures\\CommandButtons\\BTNCancel.blp" then
                 call ShowFrame(GetFrameByName( "AbilityVarBarIcon", 9 ),true)
                 if GetFrameUnderCursor()!=GetFrameByName( "AbilityVarBarIcon", 9 ) then
                     call ShowFrame(GetFrameByName( "AbilityVarBarTooltip", 9 ),false)
                 endif
-                if LoadReal(HH,pHid,VariationWHash)==1 then
+                if LoadReal(HH,GetHandleId(GetOwningPlayer(Goku)),VariationWHash)==1 then
                     call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 9 ), "ReplaceableTextures\\CommandButtons\\BTNGokuKaioken.blp", 0, true )
                     call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 9 ), "ReplaceableTextures\\CommandButtons\\BTNGokuKaioken.blp", 1, true )
                     call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 9 ), "ReplaceableTextures\\CommandButtons\\BTNGokuKaioken.blp", 2, true )
@@ -20822,7 +20822,7 @@ function Trig_Multup_Actions takes nothing returns nothing
                     call SetFrameSize( GetFrameByName("AbilityVarBarTooltip", 9), .24, GetFrameHeight( GetFrameByName("AbilityVarBarTooltipText", 9))+0.03)
                     call SetFrameTextAlignment( GetFrameByName("AbilityVarBarTooltipText", 9), TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_LEFT )
                     call SetFrameRelativePoint( GetFrameByName("AbilityVarBarTooltip", 9), FRAMEPOINT_CENTER, GetFrameByName("AbilityVarBarIcon", 9), FRAMEPOINT_CENTER,  .02, (0.5*GetFrameHeight( GetFrameByName("AbilityVarBarTooltipText", 9)))+.02  )
-                elseif LoadReal(HH,pHid,VariationWHash)==2 then
+                elseif LoadReal(HH,GetHandleId(GetOwningPlayer(Goku)),VariationWHash)==2 then
                     call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 9 ), "ReplaceableTextures\\CommandButtons\\BTNGokuSSGSSKaioken.blp", 0, true )
                     call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 9 ), "ReplaceableTextures\\CommandButtons\\BTNGokuSSGSSKaioken.blp", 1, true )
                     call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 9 ), "ReplaceableTextures\\CommandButtons\\BTNGokuSSGSSKaioken.blp", 2, true )
@@ -20830,7 +20830,7 @@ function Trig_Multup_Actions takes nothing returns nothing
                     call SetFrameSize( GetFrameByName("AbilityVarBarTooltip", 9), .24, GetFrameHeight( GetFrameByName("AbilityVarBarTooltipText", 9))+0.03)
                     call SetFrameTextAlignment( GetFrameByName("AbilityVarBarTooltipText", 9), TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_LEFT )
                     call SetFrameRelativePoint( GetFrameByName("AbilityVarBarTooltip", 9), FRAMEPOINT_CENTER, GetFrameByName("AbilityVarBarIcon", 9), FRAMEPOINT_CENTER,  .02, (0.5*GetFrameHeight( GetFrameByName("AbilityVarBarTooltipText", 9)))+.02  )
-                elseif LoadReal(HH,pHid,VariationWHash)==0 then
+                elseif LoadReal(HH,GetHandleId(GetOwningPlayer(Goku)),VariationWHash)==0 then
                     call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 9 ), "ReplaceableTextures\\CommandButtons\\BTNGokuFightStance.blp", 0, true )
                     call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 9 ), "ReplaceableTextures\\CommandButtons\\BTNGokuFightStance.blp", 1, true )
                     call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 9 ), "ReplaceableTextures\\CommandButtons\\BTNGokuFightStance.blp", 2, true )
@@ -20842,12 +20842,12 @@ function Trig_Multup_Actions takes nothing returns nothing
             else
                 call ShowFrame(GetFrameByName( "AbilityVarBarIcon", 9 ),false)
             endif
-            if IsAbilityVisible(GetUnitAbility(Goku,'GKT1')) and GetOwningPlayer(Goku)==GetLocalPlayer() then
+            if IsAbilityVisible(GetUnitAbility(Goku,'GKT1')) and GetOwningPlayer(Goku)==GetLocalPlayer() and GetFrameTexture(GetOriginFrame(ORIGIN_FRAME_COMMAND_BUTTON,11),1)!="ReplaceableTextures\\CommandButtons\\BTNCancel.blp" then
                 call ShowFrame(GetFrameByName( "AbilityVarBarIcon", 7 ),true)
                 if GetFrameUnderCursor()!=GetFrameByName( "AbilityVarBarIcon", 7 ) then
                     call ShowFrame(GetFrameByName( "AbilityVarBarTooltip", 7 ),false)
                 endif
-                if LoadReal(HH,pHid,VariationTHash)==1 then
+                if LoadReal(HH,GetHandleId(GetOwningPlayer(Goku)),VariationTHash)==1 then
                     call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 7 ), "ReplaceableTextures\\CommandButtons\\BTNDragonFist2.blp", 0, true )
                     call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 7 ), "ReplaceableTextures\\CommandButtons\\BTNDragonFist2.blp", 1, true )
                     call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 7 ), "ReplaceableTextures\\CommandButtons\\BTNDragonFist2.blp", 2, true )
@@ -20855,7 +20855,7 @@ function Trig_Multup_Actions takes nothing returns nothing
                     call SetFrameSize( GetFrameByName("AbilityVarBarTooltip", 7), .24, GetFrameHeight( GetFrameByName("AbilityVarBarTooltipText", 7))+0.03)
                     call SetFrameTextAlignment( GetFrameByName("AbilityVarBarTooltipText", 7), TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_LEFT )
                     call SetFrameRelativePoint( GetFrameByName("AbilityVarBarTooltip", 7), FRAMEPOINT_CENTER, GetFrameByName("AbilityVarBarIcon", 7), FRAMEPOINT_CENTER,  -.06, (0.5*GetFrameHeight( GetFrameByName("AbilityVarBarTooltipText", 7)))+.02  )
-                elseif LoadReal(HH,pHid,VariationTHash)==0 then
+                elseif LoadReal(HH,GetHandleId(GetOwningPlayer(Goku)),VariationTHash)==0 then
                     call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 7 ), "ReplaceableTextures\\CommandButtons\\BTNDragonFist1.blp", 0, true )
                     call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 7 ), "ReplaceableTextures\\CommandButtons\\BTNDragonFist1.blp", 1, true )
                     call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 7 ), "ReplaceableTextures\\CommandButtons\\BTNDragonFist1.blp", 2, true )
