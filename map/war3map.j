@@ -61897,12 +61897,15 @@ local doodad kamewave=null
 local fogmodifier f
 local integer i
 call SaveReal(h,id,12,time+0.1)
+call SetUnitAnimationOffsetPercent(u,time/3.04)
+if GetUnitCurrentAnimationId(u)!=169 then
+call SetUnitAnimationByIndex(u,169)
+endif
 if time==0.1 then
     call SaveReal(h,id,10,2000)
     call SaveInteger(h,id,11,1)
     call PauseUnit(u,false)
     call RemoveEffect(AddSpecialEffectTarget("KamehamehaChargeBlue.mdx", u, "hand left"), 1, true, CreateTimer())
-    call SetUnitAnimationByIndex(u,169)
     call SetUnitTimeScale(u,1)
     if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
     set soundplay=CreateSound("Sound\\Music\\mp3Music\\Kamehameha.wav",false,false,true,12700,12700,"")
@@ -62046,39 +62049,98 @@ if GetWidgetLife(c)>0 and GetWidgetLife(u)>0 then
     call PauseUnit(u,true)
     call SetUnitInvulnerable(c,true)
     call PauseUnit(c,true)
-    if time<1.95 then
+    if time<2.04 then
         call SaveReal(HH,id,2,time+0.03)
-        if time==0.45 then
-            call SetUnitXY_1(u,x1+155*Cos(a),y1+155*Sin(a), false)
+        if time==0.36 then
+            set EFF=AddSpecialEffect("war3mapImported\\BlackBlink.mdx", GetUnitX(u), GetUnitY(u))
+            call SetSpecialEffectZ(EFF, GetUnitFlyHeight(u))
+            call SetSpecialEffectTimeScale(EFF , 3)
+            call SetSpecialEffectVertexColour(EFF,255,255,255,120)
+            call DestroyEffect(EFF)
+            call SetUnitXY_1(u,x1+245*Cos(a),y1+245*Sin(a), false)
+            set EFF=AddSpecialEffect("war3mapImported\\BlackBlink.mdx", GetUnitX(u), GetUnitY(u))
+            call SetSpecialEffectZ(EFF, GetUnitFlyHeight(u))
+            call SetSpecialEffectTimeScale(EFF , 3)
+            call SetSpecialEffectVertexColour(EFF,255,255,255,120)
+            call DestroyEffect(EFF)
+            set soundplay=CreateSound("Sound\\Music\\mp3Music\\Shunkainido.mp3",false,false,true,12700,12700,"")
+            call StartSound(soundplay)
+            call KillSoundWhenDone(soundplay)
             set a=Atan2(y-y1,x-x1)
             call SetUnitFacingInstant(u,a*bj_RADTODEG)
             call SetUnitAnimationByIndex(u,201)
         endif
         if time==0.57 then
-            call Push3(c,45,a,450,"")
+            call Push3(c,55,a,580,"")
             call SetUnitFlyHeight(c,350,800)
         endif
         if time==0.81 then
-            call SetUnitXY_1(u,x1+155*Cos(a),y1+155*Sin(a), false)
-            set a=Atan2(y-y1,x-x1)
-            call SetUnitFacingInstant(u,a*bj_RADTODEG)
             call SetUnitFlyHeight(u,GetUnitFlyHeight(c),0)
             call SetUnitFlyHeight(c,GetUnitFlyHeight(c),0)
+            set EFF=AddSpecialEffect("war3mapImported\\BlackBlink.mdx", GetUnitX(u), GetUnitY(u))
+            call SetSpecialEffectZ(EFF, GetUnitFlyHeight(u))
+            call SetSpecialEffectTimeScale(EFF , 3)
+            call SetSpecialEffectVertexColour(EFF,255,255,255,120)
+            call DestroyEffect(EFF)
+            call SetUnitXY_1(u,x1+205*Cos(a),y1+205*Sin(a), false)
+            set EFF=AddSpecialEffect("war3mapImported\\BlackBlink.mdx", GetUnitX(u), GetUnitY(u))
+            call SetSpecialEffectZ(EFF, GetUnitFlyHeight(u))
+            call SetSpecialEffectTimeScale(EFF , 3)
+            call SetSpecialEffectVertexColour(EFF,255,255,255,120)
+            call DestroyEffect(EFF)
+            set soundplay=CreateSound("Sound\\Music\\mp3Music\\Shunkainido.mp3",false,false,true,12700,12700,"")
+            call StartSound(soundplay)
+            call KillSoundWhenDone(soundplay)
+            set a=Atan2(y-y1,x-x1)
+            call SetUnitFacingInstant(u,a*bj_RADTODEG)
             call SetUnitAnimationByIndex(u,202)
         endif
         if time==0.90 then
-            call Push3(c,45,a,450,"")
+            call Push3(c,55,a,550,"")
         endif
-        if time==1.2 then
-            call SetUnitXY_1(u,x1+155*Cos(a),y1+155*Sin(a), false)
-            set a=Atan2(y-y1,x-x1)
-            call SetUnitFacingInstant(u,a*bj_RADTODEG)
+        if time==1.14 then
             call SetUnitFlyHeight(u,GetUnitFlyHeight(c),0)
             call SetUnitFlyHeight(c,GetUnitFlyHeight(c),0)
+            set EFF=AddSpecialEffect("war3mapImported\\BlackBlink.mdx", GetUnitX(u), GetUnitY(u))
+            call SetSpecialEffectZ(EFF, GetUnitFlyHeight(u))
+            call SetSpecialEffectTimeScale(EFF , 3)
+            call SetSpecialEffectVertexColour(EFF,255,255,255,120)
+            call DestroyEffect(EFF)
+            call SetUnitXY_1(u,x1+255*Cos(a),y1+255*Sin(a), false)
+            set EFF=AddSpecialEffect("war3mapImported\\BlackBlink.mdx", GetUnitX(u), GetUnitY(u))
+            call SetSpecialEffectZ(EFF, GetUnitFlyHeight(u))
+            call SetSpecialEffectTimeScale(EFF , 3)
+            call SetSpecialEffectVertexColour(EFF,255,255,255,120)
+            call DestroyEffect(EFF)
+            set soundplay=CreateSound("Sound\\Music\\mp3Music\\Shunkainido.mp3",false,false,true,12700,12700,"")
+            call StartSound(soundplay)
+            call KillSoundWhenDone(soundplay)
+            set a=Atan2(y-y1,x-x1)
+            call SetUnitFacingInstant(u,a*bj_RADTODEG)
             call SetUnitAnimationByIndex(u,127)
         endif
+        if time==1.26 or time==1.41 or time==1.56 then
+            call SetUnitXY_1(u,x+5*Cos(a),y+5*Sin(a), false)
+            call SetUnitXY_1(c,x1+20*Cos(a),y1+20*Sin(a), false)
+        endif
         if time==1.59 then
+            set soundplay=CreateSound("Sound\\Music\\mp3Music\\Shunkainido.mp3",false,false,true,12700,12700,"")
+            call StartSound(soundplay)
+            call KillSoundWhenDone(soundplay)
+            set EFF=AddSpecialEffect("war3mapImported\\BlackBlink.mdx", GetUnitX(u), GetUnitY(u))
+            call SetSpecialEffectZ(EFF, GetUnitFlyHeight(u))
+            call SetSpecialEffectTimeScale(EFF , 3)
+            call SetSpecialEffectVertexColour(EFF,255,255,255,120)
+            call DestroyEffect(EFF)
+            call SetUnitXY_1(u,x+250*Cos(a),y+250*Sin(a), false)
+            set EFF=AddSpecialEffect("war3mapImported\\BlackBlink.mdx", GetUnitX(u), GetUnitY(u))
+            call SetSpecialEffectZ(EFF, GetUnitFlyHeight(u))
+            call SetSpecialEffectTimeScale(EFF , 3)
+            call SetSpecialEffectVertexColour(EFF,255,255,255,120)
+            call DestroyEffect(EFF)
             call SetUnitAnimationByIndex(u,131)
+            set a=Atan2(y-y1,x-x1)
+            call SetUnitFacingInstant(u,a*bj_RADTODEG)
         endif
         if time==1.8 then
             call Push9(c,55,a,1100,2700)
@@ -62126,8 +62188,11 @@ else
             call SetUnitState(u,UNIT_STATE_LIFE,1)
         endif
     endif
+    call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,false)
     call SetUnitFlyHeight(u,0,0)
     call DestroyTimer(t)
+    call SetUnitInvulnerable(c,false)
+    call PauseUnit(c,false)
     call SetUnitInvulnerable(u,false)
     call PauseUnit(u,false)
     call SetUnitAnimation(u,"stand")
@@ -62172,7 +62237,7 @@ if GetWidgetLife(c)>0 and GetWidgetLife(u)>0 and time<4 then
             call Push3(u,20,a,150,"")
             call SetUnitAnimationByIndex(u,204)
             call SetUnitFlyHeight(c,100,300)
-            call Push3(c,45,a,570,"")
+            call Push3(c,55,a,810,"")
             call SetUnitInvulnerable(c,true)
             call PauseUnit(c,true)
             call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,true)
@@ -62194,6 +62259,7 @@ else
             call SetUnitState(u,UNIT_STATE_LIFE,1)
         endif
     endif
+    call SetUnitFlyHeight(u,0,0)
     call DestroyTimer(t)
     call SetUnitInvulnerable(u,false)
     call PauseUnit(u,false)
@@ -62407,7 +62473,7 @@ if time<0.630 and GetAbilityIntegerLevelField(GetUnitAbility(u,'GKR1'), ABILITY_
             call SetUnitFlyHeight(u,GetUnitFlyHeight(u)-26,0)
         endif
         if time==0.51 or (time>0.36 and time<0.51 and GetUnitFlyHeight(u)+30<GetUnitFlyHeight(c)) then
-            call SetUnitXY_1(u,GetUnitX(c)-35*Cos(a),GetUnitY(c)-35*Sin(a), false)
+            call SetUnitXY_1(u,GetUnitX(c)-65*Cos(a),GetUnitY(c)-65*Sin(a), false)
             call SaveReal(h,id,5,0.52)
             call SetUnitInvulnerable(u,true)
             call PauseUnit(u,true)
@@ -62554,9 +62620,9 @@ if GetAbilityIntegerLevelField(GetUnitAbility(u,'GKR1'), ABILITY_ILF_TARGET_TYPE
         else
             call SetAbilityStringLevelField(GetUnitAbility(u,'GKR1'),ABILITY_SLF_TOOLTIP_NORMAL,GetUnitAbilityLevel(u,'GKR1')-1,GetAbilityBaseStringLevelFieldById('GKR2',ABILITY_SLF_TOOLTIP_NORMAL,0))
             call SetAbilityStringLevelField(GetUnitAbility(u,'GKR1'),ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED,GetUnitAbilityLevel(u,'GKR1')-1,GetAbilityBaseStringFieldById('GKR2',ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED))
-            if SquareRootUnit(u,c)<7000 then
-                call SaveReal(h,id,5,-0.001*((SquareRootUnit(u,c)-ModuloReal(SquareRootUnit(u,c),10))))
-                call SaveReal(h,id,6,-0.001*((SquareRootUnit(u,c)-ModuloReal(SquareRootUnit(u,c),10))))
+            if SquareRootUnit(u,c)<8000 then
+                call SaveReal(h,id,5,-0.001*((SquareRootUnit(u,c)-1000-ModuloReal(SquareRootUnit(u,c),10))))
+                call SaveReal(h,id,6,-0.001*((SquareRootUnit(u,c)-1000-ModuloReal(SquareRootUnit(u,c),10))))
             else
                 call SaveReal(h,id,5,-7)
                 call SaveReal(h,id,6,-7)
