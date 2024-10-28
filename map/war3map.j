@@ -62415,7 +62415,7 @@ call TriggerAddAction(t,function MeteorSmashCast)
 set t=null
 endfunction
 function KiaiCond takes nothing returns boolean
-return GetSpellAbilityId()=='GKE2' and udg_B==true
+return GetSpellAbilityId()=='GKE3' and udg_B==true
 endfunction
 function KiaiCast2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
@@ -62424,7 +62424,7 @@ local unit u=LoadUnitHandle(HH,id,0)
 local player p=GetOwningPlayer(u)
 local group g=LoadGroupHandle(HH,id,1)
 local real time=LoadReal(HH,id,2)
-local real dmg=(.5+GetUnitAbilityLevel(u,'GKE2')*0.5)*GetHeroStr(u,true)
+local real dmg=(.5+GetUnitAbilityLevel(u,'GKE3')*0.5)*GetHeroStr(u,true)
 local real x=GetUnitX(u)
 local real y=GetUnitY(u)
 local integer i=0
@@ -62509,6 +62509,100 @@ local trigger t=CreateTrigger()
 call TriggerRegisterAnyUnitEventBJ(t,EVENT_PLAYER_UNIT_SPELL_EFFECT)
 call TriggerAddCondition(t,Condition(function KiaiCond))
 call TriggerAddAction(t,function KiaiCast)
+set t=null
+endfunction
+function SolarEnergyCond takes nothing returns boolean
+return GetSpellAbilityId()=='GKE2'
+endfunction
+function SolarEnergyCast takes nothing returns nothing
+local unit u=GetTriggerUnit()
+local player p=GetOwningPlayer(u)
+local real x=GetUnitX(u)
+local real y=GetUnitY(u)
+local real lvl=1+GetUnitAbilityLevel(u,'GKE2')
+call UnitApplyTimedLife(CreateUnit(p,0x6530434A,x,y,GetRandomReal(0,359)),1,1)
+call UnitApplyTimedLife(CreateUnit(p,0x6530434B,x,y,GetRandomReal(0,359)),1,1)
+call UnitApplyTimedLife(CreateUnit(p,0x65304349,x,y,GetRandomReal(0,359)),1,1)
+call UnitApplyTimedLife(CreateUnit(p,0x6530434C,x,y,GetRandomReal(0,359)),1,1)
+call UnitApplyTimedLife(CreateUnit(p,0x6530434C,x,y,GetRandomReal(0,359)),1,1)
+call UnitApplyTimedLife(CreateUnit(p,0x6530434C,x,y,GetRandomReal(0,359)),1,1)
+call UnitApplyTimedLife(CreateUnit(p,0x6530434D,x,y,GetRandomReal(0,359)),1,1)
+call UnitApplyTimedLife(CreateUnit(p,0x6530434D,x,y,GetRandomReal(0,359)),1,1)
+call GroupEnumUnitsInRange(G,x,y,1200,Base)
+if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
+set soundplay=CreateSound("Sound\\Music\\mp3Music\\SolarFlare.mp3",false,false,true,12700,12700,"")
+else
+set soundplay=CreateSound("Sound\\Music\\mp3Music\\Goku\\SolarFlare-jap.mp3",false,false,true,12700,12700,"")
+endif
+call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
+//call CinematicFadeBJCustom(bj_CINEFADETYPE_FADEIN,0.1,"ReplaceableTextures\\CameraMasks\\White_mask.blp",0,0,0,0)
+call DisplayCineFilter(false)
+loop
+set E=FirstOfGroup(G)
+exitwhen E==null
+if Condition_Base(p,E)and IsUnitType(E,UNIT_TYPE_HERO)and GetUnitTypeId(E)!='H02A' then
+call SetControlToUnit(u,E,lvl,"blind")
+call SlowUnit(u,E,0.85,0.85,lvl,2,false)
+// if GetLocalPlayer()==GetOwningPlayer(E)then
+// call DisplayCineFilter(true)
+// endif
+endif
+call GroupRemoveUnit(G,E)
+endloop
+set u=null
+set p=null
+endfunction
+function SolarEnergyInit takes nothing returns nothing
+local trigger t=CreateTrigger()
+local integer i=0
+loop
+call TriggerRegisterPlayerUnitEvent(t,Player(i),EVENT_PLAYER_UNIT_SPELL_EFFECT,null)
+set i=i+1
+exitwhen i>=bj_MAX_PLAYER_SLOTS
+endloop
+call TriggerAddAction(t,function SolarEnergyCast)
+call TriggerAddCondition(t,Condition(function SolarEnergyCond))
+set t=null
+endfunction
+function LearnKiMasteryCond takes nothing returns boolean
+return GetLearnedSkill()=='GKE1'
+endfunction
+function LearnKiMasteryCast takes nothing returns nothing
+local unit u=GetTriggerUnit()
+local player p=GetOwningPlayer(u)
+local integer lvl=GetUnitAbilityLevel(u,'GKE1')
+if lvl==1 and u==Hero[GetPlayerId(p)] then
+call UnitAddAbility(u,'GKE2')
+call UnitMakeAbilityPermanent(u,true,'GKE2')
+call SetPlayerAbilityAvailable(p,'GKE2',true)
+call UnitAddAbility(u,'GKE3')
+call UnitMakeAbilityPermanent(u,true,'GKE3')
+call SetPlayerAbilityAvailable(p,'GKE3',false)
+call UnitAddAbility(u,'GKE4')
+call UnitMakeAbilityPermanent(u,true,'GKE4')
+call SetPlayerAbilityAvailable(p,'GKE4',false)
+call UnitAddAbility(u,'GKE5')
+call UnitMakeAbilityPermanent(u,true,'GKE5')
+call SetPlayerAbilityAvailable(p,'GKE5',false)
+call UnitAddAbility(u,'GKE6')
+call UnitMakeAbilityPermanent(u,true,'GKE6')
+call SetPlayerAbilityAvailable(p,'GKE6',false)
+else
+call SetUnitAbilityLevel(u,'GKE2',lvl)
+call SetUnitAbilityLevel(u,'GKE3',lvl)
+call SetUnitAbilityLevel(u,'GKE4',lvl)
+call SetUnitAbilityLevel(u,'GKE5',lvl)
+call SetUnitAbilityLevel(u,'GKE6',lvl)
+endif
+set p=null
+set u=null
+endfunction
+function LearnKiMasteryInit takes nothing returns nothing
+local trigger t=CreateTrigger()
+call TriggerRegisterAnyUnitEventBJ(t,EVENT_PLAYER_HERO_SKILL)
+call TriggerAddCondition(t,Condition(function LearnKiMasteryCond))
+call TriggerAddAction(t,function LearnKiMasteryCast)
 set t=null
 endfunction
 function CondInstantTransmissionGoku takes nothing returns boolean
@@ -62782,62 +62876,6 @@ exitwhen i>=bj_MAX_PLAYER_SLOTS
 endloop
 call TriggerAddAction(t,function CastInstantTransmissionGoku)
 call TriggerAddCondition(t,Condition(function CondInstantTransmissionGoku))
-set t=null
-endfunction
-function SolarEnergyCond takes nothing returns boolean
-return GetSpellAbilityId()=='GKE1'
-endfunction
-function SolarEnergyCast takes nothing returns nothing
-local unit u=GetTriggerUnit()
-local player p=GetOwningPlayer(u)
-local real x=GetUnitX(u)
-local real y=GetUnitY(u)
-local real dmg=GetHeroStr(u,true)*GetUnitAbilityLevel(u,'GKE1')
-local real lvl=1+GetUnitAbilityLevel(u,'GKE1')
-call UnitApplyTimedLife(CreateUnit(p,0x6530434A,x,y,GetRandomReal(0,359)),1,1)
-call UnitApplyTimedLife(CreateUnit(p,0x6530434B,x,y,GetRandomReal(0,359)),1,1)
-call UnitApplyTimedLife(CreateUnit(p,0x65304349,x,y,GetRandomReal(0,359)),1,1)
-call UnitApplyTimedLife(CreateUnit(p,0x6530434C,x,y,GetRandomReal(0,359)),1,1)
-call UnitApplyTimedLife(CreateUnit(p,0x6530434C,x,y,GetRandomReal(0,359)),1,1)
-call UnitApplyTimedLife(CreateUnit(p,0x6530434C,x,y,GetRandomReal(0,359)),1,1)
-call UnitApplyTimedLife(CreateUnit(p,0x6530434D,x,y,GetRandomReal(0,359)),1,1)
-call UnitApplyTimedLife(CreateUnit(p,0x6530434D,x,y,GetRandomReal(0,359)),1,1)
-call GroupEnumUnitsInRange(G,x,y,1200,Base)
-if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
-set soundplay=CreateSound("Sound\\Music\\mp3Music\\SolarFlare.mp3",false,false,true,12700,12700,"")
-else
-set soundplay=CreateSound("Sound\\Music\\mp3Music\\Goku\\SolarFlare-jap.mp3",false,false,true,12700,12700,"")
-endif
-call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
-//call CinematicFadeBJCustom(bj_CINEFADETYPE_FADEIN,0.1,"ReplaceableTextures\\CameraMasks\\White_mask.blp",0,0,0,0)
-call DisplayCineFilter(false)
-loop
-set E=FirstOfGroup(G)
-exitwhen E==null
-if Condition_Base(p,E)and IsUnitType(E,UNIT_TYPE_HERO)and GetUnitTypeId(E)!='H02A' then
-call myCustomDamage(u,E,dmg,false,false,null,null,null)
-call SetControlToUnit(u,E,lvl,"blind")
-call SlowUnit(u,E,0.85,0.85,lvl,2,false)
-// if GetLocalPlayer()==GetOwningPlayer(E)then
-// call DisplayCineFilter(true)
-// endif
-endif
-call GroupRemoveUnit(G,E)
-endloop
-set u=null
-set p=null
-endfunction
-function SolarEnergyInit takes nothing returns nothing
-local trigger t=CreateTrigger()
-local integer i=0
-loop
-call TriggerRegisterPlayerUnitEvent(t,Player(i),EVENT_PLAYER_UNIT_SPELL_EFFECT,null)
-set i=i+1
-exitwhen i>=bj_MAX_PLAYER_SLOTS
-endloop
-call TriggerAddAction(t,function SolarEnergyCast)
-call TriggerAddCondition(t,Condition(function SolarEnergyCond))
 set t=null
 endfunction
 function CondFusionDance takes nothing returns boolean
