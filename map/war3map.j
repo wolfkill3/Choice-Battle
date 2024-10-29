@@ -209,6 +209,7 @@ constant integer VariationEHash       = StringHash("VariationE")
 constant integer VariationTHash       = StringHash("VariationT")
 constant integer WarpKamehamehaHash   = StringHash("WarpKamehameha")
 constant integer WarpKamehamehaTargetHash   = StringHash("WarpKamehamehaTarget")
+constant integer GokuEDMGHash         = StringHash("GokuEDMG")
 boolean NANAYA_CONDITION          = true // Возможность пика Нанаи
 //== Следующие переменные предназначены ТОЛЬКО для системных функций/методов
 timer sysTimer = null 
@@ -62155,9 +62156,6 @@ if GetWidgetLife(c)>0 and GetWidgetLife(u)>0 then
             call SetSpecialEffectTimeScale(EFF , 3)
             call SetSpecialEffectVertexColour(EFF,255,255,255,120)
             call DestroyEffect(EFF)
-            set soundplay=CreateSound("Sound\\Music\\mp3Music\\Shunkainido.mp3",false,false,true,12700,12700,"")
-            call StartSound(soundplay)
-            call KillSoundWhenDone(soundplay)
             set a=Atan2(y-y1,x-x1)
             call SetUnitFacingInstant(u,a*bj_RADTODEG)
             call SetUnitAnimationByIndex(u,201)
@@ -62196,9 +62194,6 @@ if GetWidgetLife(c)>0 and GetWidgetLife(u)>0 then
             call SetSpecialEffectTimeScale(EFF , 3)
             call SetSpecialEffectVertexColour(EFF,255,255,255,120)
             call DestroyEffect(EFF)
-            set soundplay=CreateSound("Sound\\Music\\mp3Music\\Shunkainido.mp3",false,false,true,12700,12700,"")
-            call StartSound(soundplay)
-            call KillSoundWhenDone(soundplay)
             set a=Atan2(y-y1,x-x1)
             call SetUnitFacingInstant(u,a*bj_RADTODEG)
             call SetUnitAnimationByIndex(u,202)
@@ -62236,9 +62231,6 @@ if GetWidgetLife(c)>0 and GetWidgetLife(u)>0 then
             call SetSpecialEffectTimeScale(EFF , 3)
             call SetSpecialEffectVertexColour(EFF,255,255,255,120)
             call DestroyEffect(EFF)
-            set soundplay=CreateSound("Sound\\Music\\mp3Music\\Shunkainido.mp3",false,false,true,12700,12700,"")
-            call StartSound(soundplay)
-            call KillSoundWhenDone(soundplay)
             set a=Atan2(y-y1,x-x1)
             call SetUnitFacingInstant(u,a*bj_RADTODEG)
             call SetUnitAnimationByIndex(u,127)
@@ -62258,9 +62250,6 @@ if GetWidgetLife(c)>0 and GetWidgetLife(u)>0 then
             call DestroyEffect(EFF)
         endif
         if time==1.59 then
-            set soundplay=CreateSound("Sound\\Music\\mp3Music\\Shunkainido.mp3",false,false,true,12700,12700,"")
-            call StartSound(soundplay)
-            call KillSoundWhenDone(soundplay)
             set EFF=AddSpecialEffect("war3mapImported\\BlackBlink.mdx", GetUnitX(u), GetUnitY(u))
             call SetSpecialEffectZ(EFF, GetUnitFlyHeight(u))
             call SetSpecialEffectTimeScale(EFF , 3)
@@ -62434,6 +62423,13 @@ if GetWidgetLife(c)>0 and GetWidgetLife(u)>0 and time<4 then
             call SetSpecialEffectScale(EFF , GetUnitFlyHeight(c)+40)
             call SetSpecialEffectVertexColour(EFF,255,255,255,120)
             call RemoveEffect(EFF,1,true,CreateTimer())
+            if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
+            set soundplay=CreateSound("Sound\\Music\\mp3Music\\MeteorSmash2.mp3",false,false,true,12700,12700,"")
+            else
+            set soundplay=CreateSound("Sound\\Music\\mp3Music\\Goku\\MeteorSmash2-jap.mp3",false,false,true,12700,12700,"")
+            endif
+            call StartSound(soundplay)
+            call KillSoundWhenDone(soundplay)
             call TimerStart(t,0.03,true,function MeteorSmashCast3)
         endif
     endif
@@ -62502,6 +62498,13 @@ set n=CreateUnit(p,'e0ZH',x,y,a*bj_RADTODEG)
 call SetUnitVertexColor(n,255,255,255,155)
 call UnitApplyTimedLife(n,1,0.4)
 call SetUnitTimeScale(n,3)
+if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
+set soundplay=CreateSound("Sound\\Music\\mp3Music\\MeteorSmash1.mp3",false,false,true,12700,12700,"")
+else
+set soundplay=CreateSound("Sound\\Music\\mp3Music\\Goku\\MeteorSmash1-jap.mp3",false,false,true,12700,12700,"")
+endif
+call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
 call SaveUnitHandle(HH,id,0,u)
 call SaveUnitHandle(HH,id,1,c)
 call TimerStart(t,0.03,true,function MeteorSmashCast2)
@@ -62599,6 +62602,13 @@ call PauseUnit(u,true)
 call SaveUnitHandle(HH,id,0,u)
 call SaveGroupHandle(HH,id,1,CreateGroup())
 call SetUnitTimeScale(u,1.3)
+if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
+set soundplay=CreateSound("Sound\\Music\\mp3Music\\Kiai.mp3",false,false,true,12700,12700,"")
+else
+set soundplay=CreateSound("Sound\\Music\\mp3Music\\Goku\\Kiai-jap.mp3",false,false,true,12700,12700,"")
+endif
+call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
 call TimerStart(t,0.01,true,function KiaiCast2)
 set u=null
 set c=null
@@ -62671,7 +62681,6 @@ if time>1 or not(GetUnitState(u,UNIT_STATE_LIFE)>0.405 and IsUnitPaused(u)==fals
     call SetUnitTimeScale(u,1)
     call SetAbilityRemainingCooldown(GetUnitAbility(u,'GKE4'),GetAbilityBaseRealLevelFieldById('GKE4',ABILITY_RLF_COOLDOWN,GetUnitAbilityLevel(u,'GKE4')-1))
     call DestroyTimer(t)
-    call SetUnitAnimation(u,"stand")
     call SetUnitTargetable(u, true)
     call SetUnitTimeScale(u,1)
     call FlushChildHashtable(HH,id)
@@ -62733,6 +62742,144 @@ local trigger t=CreateTrigger()
 call TriggerRegisterAnyUnitEventBJ(t,EVENT_PLAYER_UNIT_SPELL_EFFECT)
 call TriggerAddCondition(t,Condition(function ZanzokenCond))
 call TriggerAddAction(t,function ZanzokenCast)
+set t=null
+endfunction
+function KiSpamCond takes nothing returns boolean
+return GetSpellAbilityId()=='GKE6' and udg_B==true
+endfunction
+function KiSpamBlast_Act takes nothing returns nothing
+    local timer t=GetExpiredTimer()
+    local integer id=GetHandleId(t)
+    local unit caster=LoadUnitHandle(HH,id,1)
+    local unit l__d=LoadUnitHandle(HH,id,20)
+    local real a=LoadReal(HH,id,3)
+    local real distance=LoadReal(HH,id,8)
+    local real time=LoadReal(HH,id,5)
+    local real x=GetUnitX(l__d)
+    local real y=GetUnitY(l__d)
+    local real dmg=LoadReal(HH,id,15)
+    set time=time+0.02
+    call SaveReal(HH,id,5,time)
+    if distance>=1400 and UnitIsAlive(l__d) then
+        call GroupEnumUnitsInRange(G,x,y,150,Base)
+        loop
+        set E=FirstOfGroup(G)
+        exitwhen E==null
+        if Condition_Base(p,E)then
+        call myCustomDamage(u,E,dmg*Pow(0.75,LoadInteger(h,GetHandleId(E),GokuEDMGHash)),false,false,null,null,null)
+        call BJDebugMsg(R2S(dmg*Pow(0.75,LoadInteger(h,GetHandleId(E),GokuEDMGHash))))
+        call SaveInteger(h,GetHandleId(E),GokuEDMGHash,LoadInteger(HH,GetHandleId(E),GokuEDMGHash)+1)
+        call RemoveSaveHashTimed(3,GetHandleId(E),GokuEDMGHash)
+        endif
+        call GroupRemoveUnit(G,E)
+        endloop
+        call SetUnitAnimationByIndex(l__d,2)
+        call UnitColor(l__d,0,0,0,100)
+        call RemoveUnit(l__d)
+        call PauseTimer(t)
+        call DestroyTimer(t)
+        call FlushChildHashtable(HH,id)
+    else
+        call SetUnitXY_1(l__d,x+70*Cos(a*bj_DEGTORAD),y+70*Sin(a*bj_DEGTORAD), false)
+        set n=CreateUnit(GetOwningPlayer(caster),0x65313334,x,y,a)
+        call GroupEnumUnitsInRange(G,x,y,150,Base)
+        loop
+        set E=FirstOfGroup(G)
+        exitwhen E==null
+        if Condition_Base(p,E)then
+        call DestroyEffect(AddSpecialEffectTarget("war3mapImported\\Slam.mdl",E,"chest"))
+        call SaveReal(HH,id,8,distance+1500)
+        endif
+        call GroupRemoveUnit(G,E)
+        endloop
+        call SetUnitTimeScale(n,2)
+        call UnitApplyTimedLife(n,1,0.3)
+        call SaveReal(HH,id,8,distance+70)
+    endif
+    set caster=null
+    set t=null
+endfunction
+
+
+
+function KiSpamBlast takes unit caster,real damage returns nothing
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+local real a=GetUnitFacing(caster1)+GetRandomReal(-17,17)
+call SaveUnitHandle(HH,id,1,caster)
+call SaveReal(HH,id,3,a)
+call SaveReal(HH,id,15,damage)
+set n0=CreateUnit(GetOwningPlayer(caster),'e142',GetUnitX(caster)+75*Cos(a*bj_DEGTORAD),GetUnitY(caster)+75*Cos(a*bj_DEGTORAD),facing)
+call SaveUnitHandle(HH,id,20,n0)
+set n0=null
+call TimerStart(t,0.02,true,function KiSpamBlast_Act)
+set caster1=null
+set t=null
+endfunction
+function KiSpamCast2 takes nothing returns nothing
+local timer t=GetExpiredTimer()
+local integer id=GetHandleId(t)
+local unit u=LoadUnitHandle(HH,id,0)
+local real dmg=20+GetHeroStr(u,true)*(0.25+GetUnitAbilityLevel(u,'GKE6')*0.25)
+local integer an=LoadInteger(HH,id,5)
+local player p=GetOwningPlayer(u)
+local real time=LoadReal(HH,id,7)
+if time==0 then
+call SetUnitAnimationByIndex(u,159)
+endif
+call SaveReal(HH,id,7,time+0.01)
+if time>0.1 then
+
+if an!=5 then
+call SaveInteger(HH,id,5,an+1)
+call KiSpamBlast(u,dmg)
+call SaveReal(HH,id,7,0.1)
+endif
+
+if an>=5 then
+call SetUnitAnimation(u,"stand")
+call SetUnitTimeScale(u,1)
+call PauseTimer(t)
+call DestroyTimer(t)
+call FlushChildHashtable(HH,id)
+endif
+
+else
+call SaveReal(HH,id,7,0.01)
+
+endif
+
+set u=null
+set p=null
+set t=null
+endfunction
+function KiSpamCast takes nothing returns nothing
+local unit u=GetTriggerUnit()
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+local real x=GetUnitX(u)
+local real y=GetUnitY(u)
+local real x1=GetSpellTargetX()
+local real y1=GetSpellTargetY()
+call SaveUnitHandle(HH,id,0,u)
+call SaveReal(HH,id,1,x)
+call SaveReal(HH,id,2,y)
+if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
+set soundplay=CreateSound("Sound\\Music\\mp3Music\\GokuKiSpam.mp3",false,false,true,12700,12700,"")
+else
+set soundplay=CreateSound("Sound\\Music\\mp3Music\\Goku\\GokuKiSpam-jap.mp3",false,false,true,12700,12700,"")
+endif
+call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
+call TimerStart(t,0.01,true,function KiSpamCast2)
+set u=null
+set t=null
+endfunction
+function GokuKiSpamInit takes nothing returns nothing
+local trigger t=CreateTrigger()
+call TriggerRegisterAnyUnitEventBJ(t,EVENT_PLAYER_UNIT_SPELL_EFFECT)
+call TriggerAddCondition(t,Condition(function KiSpamCond))
+call TriggerAddAction(t,function KiSpamCast)
 set t=null
 endfunction
 function SolarEnergyCond takes nothing returns boolean
