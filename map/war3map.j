@@ -201,11 +201,12 @@ constant integer MadokaTDHash         = StringHash("MadokaTD")
 constant integer MadokaHHash          = StringHash("MadokaH")
 constant integer MadokaTHHash         = StringHash("MadokaTH")
 constant integer MadokaMHash          = StringHash("MadokaM")
-constant integer VariationQHash       = StringHash("VariationQ")
 constant integer KaiokenHash          = StringHash("Kaioken")
 constant integer ITRangeHash          = StringHash("ITRange")
+constant integer VariationQHash       = StringHash("VariationQ")
 constant integer VariationWHash       = StringHash("VariationW")
 constant integer VariationEHash       = StringHash("VariationE")
+constant integer VariationRHash       = StringHash("VariationR")
 constant integer VariationTHash       = StringHash("VariationT")
 constant integer WarpKamehamehaHash   = StringHash("WarpKamehameha")
 constant integer WarpKamehamehaTargetHash   = StringHash("WarpKamehamehaTarget")
@@ -10058,7 +10059,7 @@ function OnButtonChangeAbilityMode takes nothing returns nothing
     if p==GetOwningPlayer(Goku) and but==GetFrameByName( "AbilityVarBarIcon", 10 ) then
         if LoadReal(HH,pHid,VariationEHash)==0 then
             call SaveReal(HH,pHid,VariationEHash,1)
-            call ShowAbility2('GKE4',false)
+            call ShowAbility2('GKE6',false)
             call ShowAbility2('GKE2',true)
             if GetLocalPlayer()==p then
                 call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 10 ), GetAbilityBaseStringFieldById( String2Id( "GKE3" ), ABILITY_SF_ICON_NORMAL ), 0, true )
@@ -10070,7 +10071,7 @@ function OnButtonChangeAbilityMode takes nothing returns nothing
                 call SetFrameRelativePoint( GetFrameByName("AbilityVarBarTooltip", 10), FRAMEPOINT_CENTER, GetFrameByName("AbilityVarBarIcon", 10), FRAMEPOINT_CENTER,  -.06, (0.5*GetFrameHeight( GetFrameByName("AbilityVarBarTooltipText", 10)))+.02  )
             endif
         elseif LoadReal(HH,pHid,VariationEHash)==2 then
-            call SaveReal(HH,pHid,VariationEHash,0)
+            call SaveReal(HH,pHid,VariationEHash,3)
             call ShowAbility2('GKE3',false)
             call ShowAbility2('GKE4',true)
             if GetLocalPlayer()==p then
@@ -10078,6 +10079,32 @@ function OnButtonChangeAbilityMode takes nothing returns nothing
                 call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 10 ), GetAbilityBaseStringFieldById( String2Id( "GKE4" ), ABILITY_SF_ICON_NORMAL ), 1, true )
                 call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 10 ), GetAbilityBaseStringFieldById( String2Id( "GKE4" ), ABILITY_SF_ICON_NORMAL ), 2, true )                
                 call SetFrameText( GetFrameByName("AbilityVarBarTooltipText", 10), GetAbilityBaseStringFieldById( String2Id( "GKE4" ), ABILITY_SF_NAME )+", \n\n"+GetAbilityBaseStringLevelFieldById( String2Id( "GKE4" ), ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED, GetUnitAbilityLevel(Goku,'GKE4')-1 ))
+                call SetFrameSize( GetFrameByName("AbilityVarBarTooltip", 10), .24, GetFrameHeight( GetFrameByName("AbilityVarBarTooltipText", 10))+0.03)
+                call SetFrameTextAlignment( GetFrameByName("AbilityVarBarTooltipText", 10), TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_LEFT )
+                call SetFrameRelativePoint( GetFrameByName("AbilityVarBarTooltip", 10), FRAMEPOINT_CENTER, GetFrameByName("AbilityVarBarIcon", 10), FRAMEPOINT_CENTER,  -.06, (0.5*GetFrameHeight( GetFrameByName("AbilityVarBarTooltipText", 10)))+.02  )
+            endif
+        elseif LoadReal(HH,pHid,VariationEHash)==3 then
+            call SaveReal(HH,pHid,VariationEHash,4)
+            call ShowAbility2('GKE4',false)
+            call ShowAbility2('GKE5',true)
+            if GetLocalPlayer()==p then
+                call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 10 ), GetAbilityBaseStringFieldById( String2Id( "GKE5" ), ABILITY_SF_ICON_NORMAL ), 0, true )
+                call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 10 ), GetAbilityBaseStringFieldById( String2Id( "GKE5" ), ABILITY_SF_ICON_NORMAL ), 1, true )
+                call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 10 ), GetAbilityBaseStringFieldById( String2Id( "GKE5" ), ABILITY_SF_ICON_NORMAL ), 2, true )                
+                call SetFrameText( GetFrameByName("AbilityVarBarTooltipText", 10), GetAbilityBaseStringFieldById( String2Id( "GKE5" ), ABILITY_SF_NAME )+", \n\n"+GetAbilityBaseStringLevelFieldById( String2Id( "GKE5" ), ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED, GetUnitAbilityLevel(Goku,'GKE5')-1 ))
+                call SetFrameSize( GetFrameByName("AbilityVarBarTooltip", 10), .24, GetFrameHeight( GetFrameByName("AbilityVarBarTooltipText", 10))+0.03)
+                call SetFrameTextAlignment( GetFrameByName("AbilityVarBarTooltipText", 10), TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_LEFT )
+                call SetFrameRelativePoint( GetFrameByName("AbilityVarBarTooltip", 10), FRAMEPOINT_CENTER, GetFrameByName("AbilityVarBarIcon", 10), FRAMEPOINT_CENTER,  -.06, (0.5*GetFrameHeight( GetFrameByName("AbilityVarBarTooltipText", 10)))+.02  )
+            endif
+        elseif LoadReal(HH,pHid,VariationEHash)==4 then
+            call SaveReal(HH,pHid,VariationEHash,0)
+            call ShowAbility2('GKE5',false)
+            call ShowAbility2('GKE6',true)
+            if GetLocalPlayer()==p then
+                call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 10 ), GetAbilityBaseStringFieldById( String2Id( "GKE6" ), ABILITY_SF_ICON_NORMAL ), 0, true )
+                call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 10 ), GetAbilityBaseStringFieldById( String2Id( "GKE6" ), ABILITY_SF_ICON_NORMAL ), 1, true )
+                call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 10 ), GetAbilityBaseStringFieldById( String2Id( "GKE6" ), ABILITY_SF_ICON_NORMAL ), 2, true )                
+                call SetFrameText( GetFrameByName("AbilityVarBarTooltipText", 10), GetAbilityBaseStringFieldById( String2Id( "GKE6" ), ABILITY_SF_NAME )+", \n\n"+GetAbilityBaseStringLevelFieldById( String2Id( "GKE6" ), ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED, GetUnitAbilityLevel(Goku,'GKE6')-1 ))
                 call SetFrameSize( GetFrameByName("AbilityVarBarTooltip", 10), .24, GetFrameHeight( GetFrameByName("AbilityVarBarTooltipText", 10))+0.03)
                 call SetFrameTextAlignment( GetFrameByName("AbilityVarBarTooltipText", 10), TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_LEFT )
                 call SetFrameRelativePoint( GetFrameByName("AbilityVarBarTooltip", 10), FRAMEPOINT_CENTER, GetFrameByName("AbilityVarBarIcon", 10), FRAMEPOINT_CENTER,  -.06, (0.5*GetFrameHeight( GetFrameByName("AbilityVarBarTooltipText", 10)))+.02  )
@@ -20840,7 +20867,7 @@ function Trig_Multup_Actions takes nothing returns nothing
         endif
         call MultiboardSetTitleText(mbg,"|cffc3dbffRound|r - "+I2S(round)+", |cffc3dbffTime -|r "+ours1+I2S(ours)+":"+minutes1+I2S(minutes)+":"+seconds1+I2S(seconds))
         if IsUnitSelected(Goku,GetLocalPlayer()) then
-            if IsAbilityVisible(GetUnitAbility(Goku,'GKQ1')) and GetOwningPlayer(Goku)==GetLocalPlayer() and GetFrameTexture(GetOriginFrame(ORIGIN_FRAME_COMMAND_BUTTON,11),1)!="ReplaceableTextures\\CommandButtons\\BTNCancel.blp" then 
+            if IsAbilityVisible(GetUnitAbility(Goku,'GKQ1')) and GetOwningPlayer(Goku)==GetLocalPlayer() and (GetFrameTexture(GetOriginFrame(ORIGIN_FRAME_COMMAND_BUTTON,11),1)!="ReplaceableTextures\\CommandButtons\\BTNCancel.blp" or (GetFrameTexture(GetOriginFrame(ORIGIN_FRAME_COMMAND_BUTTON,0),1)=="war3mapImported\\BTNMove.blp" and IsFrameVisible(GetOriginFrame(ORIGIN_FRAME_COMMAND_BUTTON,0)))) then 
                 call ShowFrame(GetFrameByName( "AbilityVarBarIcon", 8 ),true)
                 if GetFrameUnderCursor()!=GetFrameByName( "AbilityVarBarIcon", 8 ) then
                 call ShowFrame(GetFrameByName( "AbilityVarBarTooltip", 8 ),false)
@@ -20893,7 +20920,7 @@ function Trig_Multup_Actions takes nothing returns nothing
             else
                 call ShowFrame(GetFrameByName( "AbilityVarBarIcon", 8 ),false)
             endif
-            if IsAbilityVisible(GetUnitAbility(Goku,'GKW1')) and (GetUnitAbilityLevel(Goku,'GkH6')>0 or GetUnitAbilityLevel(Goku,'GkH0')>0) and GetOwningPlayer(Goku)==GetLocalPlayer() and GetFrameTexture(GetOriginFrame(ORIGIN_FRAME_COMMAND_BUTTON,11),1)!="ReplaceableTextures\\CommandButtons\\BTNCancel.blp" then
+            if IsAbilityVisible(GetUnitAbility(Goku,'GKW1')) and (GetUnitAbilityLevel(Goku,'GkH6')>0 or GetUnitAbilityLevel(Goku,'GkH0')>0) and GetOwningPlayer(Goku)==GetLocalPlayer() and (GetFrameTexture(GetOriginFrame(ORIGIN_FRAME_COMMAND_BUTTON,11),1)!="ReplaceableTextures\\CommandButtons\\BTNCancel.blp" or (GetFrameTexture(GetOriginFrame(ORIGIN_FRAME_COMMAND_BUTTON,0),1)=="war3mapImported\\BTNMove.blp" and IsFrameVisible(GetOriginFrame(ORIGIN_FRAME_COMMAND_BUTTON,0)))) then
                 call ShowFrame(GetFrameByName( "AbilityVarBarIcon", 9 ),true)
                 if GetFrameUnderCursor()!=GetFrameByName( "AbilityVarBarIcon", 9 ) then
                     call ShowFrame(GetFrameByName( "AbilityVarBarTooltip", 9 ),false)
@@ -20926,7 +20953,7 @@ function Trig_Multup_Actions takes nothing returns nothing
             else
                 call ShowFrame(GetFrameByName( "AbilityVarBarIcon", 9 ),false)
             endif
-            if (IsAbilityVisible(GetUnitAbility(Goku,'GKE2')) or IsAbilityVisible(GetUnitAbility(Goku,'GKE3')) or IsAbilityVisible(GetUnitAbility(Goku,'GKE4')) or IsAbilityVisible(GetUnitAbility(Goku,'GKE5')) or IsAbilityVisible(GetUnitAbility(Goku,'GKE6'))) and GetOwningPlayer(Goku)==GetLocalPlayer() and GetFrameTexture(GetOriginFrame(ORIGIN_FRAME_COMMAND_BUTTON,11),1)!="ReplaceableTextures\\CommandButtons\\BTNCancel.blp" then
+            if (IsAbilityVisible(GetUnitAbility(Goku,'GKE2')) or IsAbilityVisible(GetUnitAbility(Goku,'GKE3')) or IsAbilityVisible(GetUnitAbility(Goku,'GKE4')) or IsAbilityVisible(GetUnitAbility(Goku,'GKE5')) or IsAbilityVisible(GetUnitAbility(Goku,'GKE6'))) and GetOwningPlayer(Goku)==GetLocalPlayer() and (GetFrameTexture(GetOriginFrame(ORIGIN_FRAME_COMMAND_BUTTON,11),1)!="ReplaceableTextures\\CommandButtons\\BTNCancel.blp" or (GetFrameTexture(GetOriginFrame(ORIGIN_FRAME_COMMAND_BUTTON,0),1)=="war3mapImported\\BTNMove.blp" and IsFrameVisible(GetOriginFrame(ORIGIN_FRAME_COMMAND_BUTTON,0)))) then
                 call ShowFrame(GetFrameByName( "AbilityVarBarIcon", 10 ),true)
                 if GetFrameUnderCursor()!=GetFrameByName( "AbilityVarBarIcon", 10 ) then
                     call ShowFrame(GetFrameByName( "AbilityVarBarTooltip", 10 ),false)
@@ -20955,11 +20982,27 @@ function Trig_Multup_Actions takes nothing returns nothing
                     call SetFrameSize( GetFrameByName("AbilityVarBarTooltip", 10), .24, GetFrameHeight( GetFrameByName("AbilityVarBarTooltipText", 10))+0.03)
                     call SetFrameTextAlignment( GetFrameByName("AbilityVarBarTooltipText", 10), TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_LEFT )
                     call SetFrameRelativePoint( GetFrameByName("AbilityVarBarTooltip", 10), FRAMEPOINT_CENTER, GetFrameByName("AbilityVarBarIcon", 10), FRAMEPOINT_CENTER,  -.06, (0.5*GetFrameHeight( GetFrameByName("AbilityVarBarTooltipText", 10)))+.02  )
+                elseif LoadReal(HH,GetHandleId(GetOwningPlayer(Goku)),VariationEHash)==3 then
+                    call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 10 ), GetAbilityBaseStringFieldById( String2Id( "GKE5" ), ABILITY_SF_ICON_NORMAL ), 0, true )
+                    call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 10 ), GetAbilityBaseStringFieldById( String2Id( "GKE5" ), ABILITY_SF_ICON_NORMAL ), 1, true )
+                    call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 10 ), GetAbilityBaseStringFieldById( String2Id( "GKE5" ), ABILITY_SF_ICON_NORMAL ), 2, true )                
+                    call SetFrameText( GetFrameByName("AbilityVarBarTooltipText", 10), GetAbilityBaseStringFieldById( String2Id( "GKE5" ), ABILITY_SF_NAME )+", \n\n"+GetAbilityBaseStringLevelFieldById( String2Id( "GKE5" ), ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED, GetUnitAbilityLevel(Goku,'GKE5')-1 ))
+                    call SetFrameSize( GetFrameByName("AbilityVarBarTooltip", 10), .24, GetFrameHeight( GetFrameByName("AbilityVarBarTooltipText", 10))+0.03)
+                    call SetFrameTextAlignment( GetFrameByName("AbilityVarBarTooltipText", 10), TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_LEFT )
+                    call SetFrameRelativePoint( GetFrameByName("AbilityVarBarTooltip", 10), FRAMEPOINT_CENTER, GetFrameByName("AbilityVarBarIcon", 10), FRAMEPOINT_CENTER,  -.06, (0.5*GetFrameHeight( GetFrameByName("AbilityVarBarTooltipText", 10)))+.02  )
+                elseif LoadReal(HH,GetHandleId(GetOwningPlayer(Goku)),VariationEHash)==4 then
+                    call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 10 ), GetAbilityBaseStringFieldById( String2Id( "GKE6" ), ABILITY_SF_ICON_NORMAL ), 0, true )
+                    call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 10 ), GetAbilityBaseStringFieldById( String2Id( "GKE6" ), ABILITY_SF_ICON_NORMAL ), 1, true )
+                    call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 10 ), GetAbilityBaseStringFieldById( String2Id( "GKE6" ), ABILITY_SF_ICON_NORMAL ), 2, true )                
+                    call SetFrameText( GetFrameByName("AbilityVarBarTooltipText", 10), GetAbilityBaseStringFieldById( String2Id( "GKE6" ), ABILITY_SF_NAME )+", \n\n"+GetAbilityBaseStringLevelFieldById( String2Id( "GKE6" ), ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED, GetUnitAbilityLevel(Goku,'GKE6')-1 ))
+                    call SetFrameSize( GetFrameByName("AbilityVarBarTooltip", 10), .24, GetFrameHeight( GetFrameByName("AbilityVarBarTooltipText", 10))+0.03)
+                    call SetFrameTextAlignment( GetFrameByName("AbilityVarBarTooltipText", 10), TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_LEFT )
+                    call SetFrameRelativePoint( GetFrameByName("AbilityVarBarTooltip", 10), FRAMEPOINT_CENTER, GetFrameByName("AbilityVarBarIcon", 10), FRAMEPOINT_CENTER,  -.06, (0.5*GetFrameHeight( GetFrameByName("AbilityVarBarTooltipText", 10)))+.02  )
                 endif
             else
                 call ShowFrame(GetFrameByName( "AbilityVarBarIcon", 10 ),false)
             endif
-            if IsAbilityVisible(GetUnitAbility(Goku,'GKT1')) and GetOwningPlayer(Goku)==GetLocalPlayer() and GetFrameTexture(GetOriginFrame(ORIGIN_FRAME_COMMAND_BUTTON,11),1)!="ReplaceableTextures\\CommandButtons\\BTNCancel.blp" then
+            if IsAbilityVisible(GetUnitAbility(Goku,'GKT1')) and GetOwningPlayer(Goku)==GetLocalPlayer() and (GetFrameTexture(GetOriginFrame(ORIGIN_FRAME_COMMAND_BUTTON,11),1)!="ReplaceableTextures\\CommandButtons\\BTNCancel.blp" or (GetFrameTexture(GetOriginFrame(ORIGIN_FRAME_COMMAND_BUTTON,0),1)=="war3mapImported\\BTNMove.blp" and IsFrameVisible(GetOriginFrame(ORIGIN_FRAME_COMMAND_BUTTON,0)))) then
                 call ShowFrame(GetFrameByName( "AbilityVarBarIcon", 7 ),true)
                 if GetFrameUnderCursor()!=GetFrameByName( "AbilityVarBarIcon", 7 ) then
                     call ShowFrame(GetFrameByName( "AbilityVarBarTooltip", 7 ),false)
@@ -62758,6 +62801,7 @@ function KiSpamBlast_Act takes nothing returns nothing
     local real x=GetUnitX(l__d)
     local real y=GetUnitY(l__d)
     local real dmg=LoadReal(HH,id,15)
+    local player p=GetOwningPlayer(caster)
     set time=time+0.02
     call SaveReal(HH,id,5,time)
     if distance>=1400 and UnitIsAlive(l__d) then
@@ -62766,22 +62810,24 @@ function KiSpamBlast_Act takes nothing returns nothing
         set E=FirstOfGroup(G)
         exitwhen E==null
         if Condition_Base(p,E)then
-        call myCustomDamage(u,E,dmg*Pow(0.75,LoadInteger(h,GetHandleId(E),GokuEDMGHash)),false,false,null,null,null)
-        call BJDebugMsg(R2S(dmg*Pow(0.75,LoadInteger(h,GetHandleId(E),GokuEDMGHash))))
-        call SaveInteger(h,GetHandleId(E),GokuEDMGHash,LoadInteger(HH,GetHandleId(E),GokuEDMGHash)+1)
+        call myCustomDamage(caster,E,dmg*Pow(0.75,LoadInteger(h,GetHandleId(E),GokuEDMGHash)),false,false,null,null,null)
+        call SaveInteger(h,GetHandleId(E),GokuEDMGHash,LoadInteger(h,GetHandleId(E),GokuEDMGHash)+1)
         call RemoveSaveHashTimed(3,GetHandleId(E),GokuEDMGHash)
         endif
         call GroupRemoveUnit(G,E)
         endloop
         call SetUnitAnimationByIndex(l__d,2)
         call UnitColor(l__d,0,0,0,100)
-        call RemoveUnit(l__d)
+        call MyRemoveUnit(l__d,2)
         call PauseTimer(t)
         call DestroyTimer(t)
         call FlushChildHashtable(HH,id)
     else
         call SetUnitXY_1(l__d,x+70*Cos(a*bj_DEGTORAD),y+70*Sin(a*bj_DEGTORAD), false)
-        set n=CreateUnit(GetOwningPlayer(caster),0x65313334,x,y,a)
+        set n=CreateUnit(p,0x65313334,x,y,a)
+        call SetUnitTimeScale(n,2)
+        call UnitApplyTimedLife(n,1,0.3)
+        call SaveReal(HH,id,8,distance+70)
         call GroupEnumUnitsInRange(G,x,y,150,Base)
         loop
         set E=FirstOfGroup(G)
@@ -62792,11 +62838,9 @@ function KiSpamBlast_Act takes nothing returns nothing
         endif
         call GroupRemoveUnit(G,E)
         endloop
-        call SetUnitTimeScale(n,2)
-        call UnitApplyTimedLife(n,1,0.3)
-        call SaveReal(HH,id,8,distance+70)
     endif
     set caster=null
+    set p=null
     set t=null
 endfunction
 
@@ -62805,15 +62849,15 @@ endfunction
 function KiSpamBlast takes unit caster,real damage returns nothing
 local timer t=CreateTimer()
 local integer id=GetHandleId(t)
-local real a=GetUnitFacing(caster1)+GetRandomReal(-17,17)
+local real a=GetUnitFacing(caster)+GetRandomReal(-17,17)
 call SaveUnitHandle(HH,id,1,caster)
 call SaveReal(HH,id,3,a)
 call SaveReal(HH,id,15,damage)
-set n0=CreateUnit(GetOwningPlayer(caster),'e142',GetUnitX(caster)+75*Cos(a*bj_DEGTORAD),GetUnitY(caster)+75*Cos(a*bj_DEGTORAD),facing)
+set n0=CreateUnit(GetOwningPlayer(caster),'e142',GetUnitX(caster)+95*Cos(a*bj_DEGTORAD),GetUnitY(caster)+95*Sin(a*bj_DEGTORAD),a)
 call SaveUnitHandle(HH,id,20,n0)
 set n0=null
 call TimerStart(t,0.02,true,function KiSpamBlast_Act)
-set caster1=null
+set caster=null
 set t=null
 endfunction
 function KiSpamCast2 takes nothing returns nothing
@@ -62824,28 +62868,25 @@ local real dmg=20+GetHeroStr(u,true)*(0.25+GetUnitAbilityLevel(u,'GKE6')*0.25)
 local integer an=LoadInteger(HH,id,5)
 local player p=GetOwningPlayer(u)
 local real time=LoadReal(HH,id,7)
-if time==0 then
+call SaveReal(HH,id,7,time+0.01)
+if GetUnitCurrentAnimationId(u)!=159 then
 call SetUnitAnimationByIndex(u,159)
 endif
-call SaveReal(HH,id,7,time+0.01)
-if time>0.1 then
-
+if time>0.13 then
+call SaveReal(HH,id,7,0.01)
 if an!=5 then
 call SaveInteger(HH,id,5,an+1)
 call KiSpamBlast(u,dmg)
-call SaveReal(HH,id,7,0.1)
 endif
 
 if an>=5 then
+call PauseUnit(u,false)
 call SetUnitAnimation(u,"stand")
 call SetUnitTimeScale(u,1)
 call PauseTimer(t)
 call DestroyTimer(t)
 call FlushChildHashtable(HH,id)
 endif
-
-else
-call SaveReal(HH,id,7,0.01)
 
 endif
 
@@ -62861,9 +62902,13 @@ local real x=GetUnitX(u)
 local real y=GetUnitY(u)
 local real x1=GetSpellTargetX()
 local real y1=GetSpellTargetY()
+local real a=Atan2(y1-y,x1-x)
 call SaveUnitHandle(HH,id,0,u)
 call SaveReal(HH,id,1,x)
 call SaveReal(HH,id,2,y)
+call SetUnitFacingInstant(u,a*bj_RADTODEG)
+call PauseUnit(u,true)
+call SetUnitTimeScale(u,2)
 if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\GokuKiSpam.mp3",false,false,true,12700,12700,"")
 else
@@ -204125,6 +204170,7 @@ call GokuMeteorSmashInit()
 call SolarEnergyInit()
 call GokuKiaiInit()
 call GokuZanzokenInit()
+call GokuKiSpamInit()
 call LearnKiMasteryInit()
 call InstantTransmissionGokuInit()
 call FusionDanceInit()
