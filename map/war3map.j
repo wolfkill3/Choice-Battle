@@ -62794,6 +62794,7 @@ function KiBlastBlast_Act takes nothing returns nothing
     local timer t=GetExpiredTimer()
     local integer id=GetHandleId(t)
     local unit caster=LoadUnitHandle(HH,id,1)
+    local unit c=LoadUnitHandle(HH,id,2)
     local unit l__d=LoadUnitHandle(HH,id,20)
     local real a=LoadReal(HH,id,3)
     local real distance=LoadReal(HH,id,8)
@@ -62804,15 +62805,13 @@ function KiBlastBlast_Act takes nothing returns nothing
     local player p=GetOwningPlayer(caster)
     set time=time+0.02
     call SaveReal(HH,id,5,time)
-    if distance>=1400 and UnitIsAlive(l__d) then
-        call GroupEnumUnitsInRange(G,x,y,150,Base)
+    if distance>=1600 and UnitIsAlive(l__d) then
+        call GroupEnumUnitsInRange(G,x,y,250,Base)
         loop
         set E=FirstOfGroup(G)
         exitwhen E==null
         if Condition_Base(p,E)then
-        call myCustomDamage(caster,E,dmg*Pow(0.75,LoadInteger(h,GetHandleId(E),GokuEDMGHash)),false,false,null,null,null)
-        call SaveInteger(h,GetHandleId(E),GokuEDMGHash,LoadInteger(h,GetHandleId(E),GokuEDMGHash)+1)
-        call RemoveSaveHashTimed(3,GetHandleId(E),GokuEDMGHash)
+        call myCustomDamage(caster,E,dmg,false,false,null,null,null)
         endif
         call GroupRemoveUnit(G,E)
         endloop
@@ -62823,23 +62822,42 @@ function KiBlastBlast_Act takes nothing returns nothing
         call DestroyTimer(t)
         call FlushChildHashtable(HH,id)
     else
-        call SetUnitXY_1(l__d,x+70*Cos(a*bj_DEGTORAD),y+70*Sin(a*bj_DEGTORAD), false)
+        if c==null then
+            call SetUnitXY_1(l__d,x+70*Cos(a*bj_DEGTORAD),y+70*Sin(a*bj_DEGTORAD), false)
+        else
+            call SetUnitXY_1(l__d,x+70*Cos(a*bj_DEGTORAD+deg90),y+70*Sin(a*bj_DEGTORAD+deg90), false)
+            call SetUnitFacingInstant(l__d,a+90)
+        endif
         set n=CreateUnit(p,0x65313334,x,y,a)
         call SetUnitTimeScale(n,2)
         call UnitApplyTimedLife(n,1,0.3)
         call SaveReal(HH,id,8,distance+70)
+        if c==null then
+            call GroupEnumUnitsInRange(G,x,y,500,Base)
+            loop
+                set E=FirstOfGroup(G)
+                exitwhen E==null
+                if Condition_Base(p,E)then
+                    call SaveUnitHandle(HH,id,2,E)
+                    call SaveReal(HH,id,3,Atan2(GetUnitY(E)-y,GetUnitX(E)-x))
+                endif
+                call GroupRemoveUnit(G,E)
+            endloop
+        endif
         call GroupEnumUnitsInRange(G,x,y,150,Base)
         loop
-        set E=FirstOfGroup(G)
-        exitwhen E==null
-        if Condition_Base(p,E)then
-        call DestroyEffect(AddSpecialEffectTarget("war3mapImported\\Slam.mdl",E,"chest"))
-        call SaveReal(HH,id,8,distance+1500)
-        endif
-        call GroupRemoveUnit(G,E)
+            set E=FirstOfGroup(G)
+            exitwhen E==null
+            if Condition_Base(p,E)then
+                call DestroyEffect(AddSpecialEffectTarget("war3mapImported\\Slam.mdl",E,"chest"))
+                call SaveReal(HH,id,8,distance+1500)
+            endif
+            call GroupRemoveUnit(G,E)
         endloop
     endif
     set caster=null
+    set c=null
+    set l__d=null
     set p=null
     set t=null
 endfunction
@@ -62849,7 +62867,7 @@ endfunction
 function KiBlastBlast takes unit caster,real damage returns nothing
 local timer t=CreateTimer()
 local integer id=GetHandleId(t)
-local real a=GetUnitFacing(caster)+GetRandomReal(-17,17)
+local real a=GetUnitFacing(caster)
 call SaveUnitHandle(HH,id,1,caster)
 call SaveReal(HH,id,3,a)
 call SaveReal(HH,id,15,damage)
@@ -62864,30 +62882,22 @@ function KiBlastCast2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
 local unit u=LoadUnitHandle(HH,id,0)
-local real dmg=20+GetHeroStr(u,true)*(0.25+GetUnitAbilityLevel(u,'GKE5')*0.25)
+local real dmg=GetHeroStr(u,true)*(1.5+GetUnitAbilityLevel(u,'GKE5')*0.5)
 local integer an=LoadInteger(HH,id,5)
 local player p=GetOwningPlayer(u)
 local real time=LoadReal(HH,id,7)
 call SaveReal(HH,id,7,time+0.01)
-if GetUnitCurrentAnimationId(u)!=159 then
-call SetUnitAnimationByIndex(u,159)
+if GetUnitCurrentAnimationId(u)!=160 then
+call SetUnitAnimationByIndex(u,160)
 endif
 if time>0.13 then
 call SaveReal(HH,id,7,0.01)
-if an!=5 then
-call SaveInteger(HH,id,5,an+1)
 call KiBlastBlast(u,dmg)
-endif
-
-if an>=5 then
-call PauseUnit(u,false)
 call SetUnitAnimation(u,"stand")
 call SetUnitTimeScale(u,1)
 call PauseTimer(t)
 call DestroyTimer(t)
 call FlushChildHashtable(HH,id)
-endif
-
 endif
 
 set u=null
@@ -62907,7 +62917,6 @@ call SaveUnitHandle(HH,id,0,u)
 call SaveReal(HH,id,1,x)
 call SaveReal(HH,id,2,y)
 call SetUnitFacingInstant(u,a*bj_RADTODEG)
-call PauseUnit(u,true)
 call SetUnitTimeScale(u,1)
 if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\GokuKiBlast.mp3",false,false,true,12700,12700,"")
@@ -62950,7 +62959,8 @@ function KiSpamBlast_Act takes nothing returns nothing
         set E=FirstOfGroup(G)
         exitwhen E==null
         if Condition_Base(p,E)then
-        call myCustomDamage(caster,E,dmg*Pow(0.75,LoadInteger(h,GetHandleId(E),GokuEDMGHash)),false,false,null,null,null)
+        call myCustomDamage(caster,E,dmg*Pow(0.85,LoadInteger(h,GetHandleId(E),GokuEDMGHash)),false,false,null,null,null)
+        call SetControlToUnit(caster,E, 0.15, "stun")
         call SaveInteger(h,GetHandleId(E),GokuEDMGHash,LoadInteger(h,GetHandleId(E),GokuEDMGHash)+1)
         call RemoveSaveHashTimed(3,GetHandleId(E),GokuEDMGHash)
         endif
@@ -62980,6 +62990,7 @@ function KiSpamBlast_Act takes nothing returns nothing
         endloop
     endif
     set caster=null
+    set l__d=null
     set p=null
     set t=null
 endfunction
