@@ -3553,7 +3553,7 @@ endfunction
 function RemoveSaveHashTimed2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
-if LoadInteger(h,id,2)==StringHash("BrolyQ") then
+if LoadInteger(h,id,2)==StringHash("BrolyQ") or LoadInteger(h,id,2)==GokuEDMGHash then
 call SaveInteger(h,LoadInteger(h,id,1),LoadInteger(h,id,2),0)
 endif
 call RemoveSavedHandle(h,LoadInteger(h,id,1),LoadInteger(h,id,2))
@@ -62824,11 +62824,13 @@ function KiBlastBlast_Act takes nothing returns nothing
     else
         if c==null then
             call SetUnitXY_1(l__d,x+70*Cos(a*bj_DEGTORAD),y+70*Sin(a*bj_DEGTORAD), false)
+            set n=CreateUnit(p,0x65313334,x,y,a)
         else
-            call SetUnitXY_1(l__d,x+70*Cos(a*bj_DEGTORAD+deg90),y+70*Sin(a*bj_DEGTORAD+deg90), false)
-            call SetUnitFacingInstant(l__d,a+90)
+            call SaveReal(HH,id,3,GetUnitFacing(l__d))
+            call SetUnitXY_1(l__d,x+70*Cos(a*bj_DEGTORAD),y+70*Sin(a*bj_DEGTORAD), false)
+            call SetUnitFacing(l__d,AU(l__d,c)*bj_RADTODEG)
+            set n=CreateUnit(p,0x65313334,x,y,a)
         endif
-        set n=CreateUnit(p,0x65313334,x,y,a)
         call SetUnitTimeScale(n,2)
         call UnitApplyTimedLife(n,1,0.3)
         call SaveReal(HH,id,8,distance+70)
@@ -62849,7 +62851,6 @@ function KiBlastBlast_Act takes nothing returns nothing
             set E=FirstOfGroup(G)
             exitwhen E==null
             if Condition_Base(p,E)then
-                call DestroyEffect(AddSpecialEffectTarget("war3mapImported\\Slam.mdl",E,"chest"))
                 call SaveReal(HH,id,8,distance+1500)
             endif
             call GroupRemoveUnit(G,E)
@@ -62983,7 +62984,6 @@ function KiSpamBlast_Act takes nothing returns nothing
         set E=FirstOfGroup(G)
         exitwhen E==null
         if Condition_Base(p,E)then
-        call DestroyEffect(AddSpecialEffectTarget("war3mapImported\\Slam.mdl",E,"chest"))
         call SaveReal(HH,id,8,distance+1500)
         endif
         call GroupRemoveUnit(G,E)
