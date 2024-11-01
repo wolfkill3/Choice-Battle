@@ -62817,6 +62817,7 @@ function KiBlastBlast_Act takes nothing returns nothing
     local real y=GetUnitY(l__d)
     local real dmg=LoadReal(HH,id,15)
     local player p=GetOwningPlayer(caster)
+    local real angle
     set time=time+0.02
     call SaveReal(HH,id,5,time)
     if distance>=1600 and UnitIsAlive(l__d) then
@@ -62835,16 +62836,30 @@ function KiBlastBlast_Act takes nothing returns nothing
         call PauseTimer(t)
         call DestroyTimer(t)
         call FlushChildHashtable(HH,id)
-        call ConsolePrint("\n")
     else
         if c==null then
             call SetUnitXY_1(l__d,x+70*Cos(a*bj_DEGTORAD),y+70*Sin(a*bj_DEGTORAD), false)
             set n=CreateUnit(p,0x65313334,x,y,a)
         else
+            if Rad2Deg(angle)<0 then
+                set angle = Deg2Rad(Rad2Deg(angle)+360)
+            endif
+            if Rad2Deg(angle)<0 then
+                set angle = Deg2Rad(Rad2Deg(angle)+360)
+            endif
+            // call BJDebugMsg(R2S(Rad2Deg(angle)))
+
+            if (Rad2Deg(angle)-GetUnitFacing(u))>180 then
+                if GetUnitFacing(u)<180 then
+                    set angle = Deg2Rad(Rad2Deg(angle)-360)
+                endif
+            elseif (GetUnitFacing(u)-Rad2Deg(angle))>180 then
+                set angle = Deg2Rad(Rad2Deg(angle)+360)
+            endif
             call SetUnitXY_1(l__d,x+70*Cos(a*bj_DEGTORAD),y+70*Sin(a*bj_DEGTORAD), false)
-            if (AU(l__d,c)*bj_RADTODEG-180)-GetUnitFacing(l__d)< -30 then
-            call SetUnitFacingInstant(l__d,GetUnitFacing(l__d)-(AU(l__d,c)*bj_RADTODEG)*0.15)
-            elseif (AU(l__d,c)*bj_RADTODEG-180)-GetUnitFacing(l__d)>30 then
+            if AU(l__d,c)*bj_RADTODEG<-30 then
+            call SetUnitFacingInstant(l__d,GetUnitFacing(l__d)+(AU(l__d,c)*bj_RADTODEG)*0.15)
+            elseif AU(l__d,c)*bj_RADTODEG>30 then
             call SetUnitFacingInstant(l__d,GetUnitFacing(l__d)-(AU(l__d,c)*bj_RADTODEG)*0.15)
             else
             call SetUnitFacingInstant(l__d,AU(l__d,c)*bj_RADTODEG)
