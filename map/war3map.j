@@ -60890,9 +60890,17 @@ function PowerUpGokuCast2 takes nothing returns nothing
                     call SetSpecialEffectAlphaTimed(EFF , 255 , 255 , 255 , 155 , 5)
                 endif
             endif
+            if time==3.5 then
+                set EFF=AddSpecialEffect("iras6.mdx", x, y)
+                call SetSpecialEffectScale(EFF , 3)
+                call SetSpecialEffectTimeScale(EFF , 0.4)
+                call SetSpecialEffectOrientation(EFF , GetRandomReal(0, 359),0,0)
+                call SetSpecialEffectZ(EFF , -15)
+                call SetSpecialEffectAlphaTimed(EFF , 255 , 255 , 255 , 255 , 1)
+            endif
             if time==4 then
-                set EFF=AddSpecialEffect("Space Effect.mdx", x, y)
-                call SetSpecialEffectScale(EFF , 4)
+                set EFF=AddSpecialEffect("iras1.mdx", x, y)
+                call SetSpecialEffectScale(EFF , 3)
                 call SetSpecialEffectTimeScale(EFF , 0.2)
                 call SetSpecialEffectOrientation(EFF , GetRandomReal(0, 359),0,0)
                 call SetSpecialEffectZ(EFF , -15)
@@ -60903,6 +60911,12 @@ function PowerUpGokuCast2 takes nothing returns nothing
                 call SetSpecialEffectOrientation(EFF , GetRandomReal(0, 359),0,0)
                 call SetSpecialEffectZ(EFF , 75)
                 call SetSpecialEffectAlphaTimed(EFF , 255 , 255 , 255 , 255 , 2)
+            endif
+            if time==4.6 then
+                set EFF=AddSpecialEffect("hehehehehe31.MDx", x, y)
+                call SetSpecialEffectScale(EFF , 1.2)
+                call SetSpecialEffectTimeScale(EFF , 0.9)
+                call SetSpecialEffectAlphaTimed(EFF , 255 , 255 , 255 , 255 , 1)
             endif
             if time==5.3 then
                 call SetUnitModel(u,"GokuLow.mdx")
@@ -62821,21 +62835,28 @@ function KiBlastBlast_Act takes nothing returns nothing
         call PauseTimer(t)
         call DestroyTimer(t)
         call FlushChildHashtable(HH,id)
+        call ConsolePrint("\n")
     else
         if c==null then
             call SetUnitXY_1(l__d,x+70*Cos(a*bj_DEGTORAD),y+70*Sin(a*bj_DEGTORAD), false)
             set n=CreateUnit(p,0x65313334,x,y,a)
         else
-            call SaveReal(HH,id,3,GetUnitFacing(l__d))
             call SetUnitXY_1(l__d,x+70*Cos(a*bj_DEGTORAD),y+70*Sin(a*bj_DEGTORAD), false)
-            call SetUnitFacing(l__d,AU(l__d,c)*bj_RADTODEG)
-            set n=CreateUnit(p,0x65313334,x,y,a)
+            if (AU(l__d,c)*bj_RADTODEG-180)-GetUnitFacing(l__d)< -30 then
+            call SetUnitFacingInstant(l__d,GetUnitFacing(l__d)-(AU(l__d,c)*bj_RADTODEG)*0.15)
+            elseif (AU(l__d,c)*bj_RADTODEG-180)-GetUnitFacing(l__d)>30 then
+            call SetUnitFacingInstant(l__d,GetUnitFacing(l__d)-(AU(l__d,c)*bj_RADTODEG)*0.15)
+            else
+            call SetUnitFacingInstant(l__d,AU(l__d,c)*bj_RADTODEG)
+            endif
+            call SaveReal(HH,id,3,GetUnitFacing(l__d))
+            set n=CreateUnit(p,0x65313334,x,y,GetUnitFacing(l__d))
         endif
         call SetUnitTimeScale(n,2)
         call UnitApplyTimedLife(n,1,0.3)
-        call SaveReal(HH,id,8,distance+70)
+        call SaveReal(HH,id,8,distance+20)
         if c==null then
-            call GroupEnumUnitsInRange(G,x,y,500,Base)
+            call GroupEnumUnitsInRange(G,x,y,1500,Base)
             loop
                 set E=FirstOfGroup(G)
                 exitwhen E==null
@@ -62872,7 +62893,7 @@ local real a=GetUnitFacing(caster)
 call SaveUnitHandle(HH,id,1,caster)
 call SaveReal(HH,id,3,a)
 call SaveReal(HH,id,15,damage)
-set n0=CreateUnit(GetOwningPlayer(caster),'e142',GetUnitX(caster)+95*Cos(a*bj_DEGTORAD),GetUnitY(caster)+95*Sin(a*bj_DEGTORAD),a)
+set n0=CreateUnit(GetOwningPlayer(caster),'e242',GetUnitX(caster)+95*Cos(a*bj_DEGTORAD),GetUnitY(caster)+95*Sin(a*bj_DEGTORAD),a)
 call SaveUnitHandle(HH,id,20,n0)
 set n0=null
 call TimerStart(t,0.02,true,function KiBlastBlast_Act)
