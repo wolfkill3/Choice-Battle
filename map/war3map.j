@@ -61666,7 +61666,7 @@ call SetUnitVertexColor(n, 255, 150, 100, 255)
 call SetUnitFlyHeight(n, 100, 0)
 call MyRemoveUnit(n, 2.5)
 else
-call UnitApplyTimedLife(CreateUnit(p,'e0C4',x,y,(a*bj_RADTODEG)),1,3)
+call UnitApplyTimedLife(CreateUnit(p,'e1C4',x,y,(a*bj_RADTODEG)),1,0.1)
 call UnitApplyTimedLife(CreateUnit(p,'e0C5',x,y,(a*bj_RADTODEG)),1,3)
 //call UnitApplyTimedLife(CreateUnit(p,'e0CC',x,y,(a*bj_RADTODEG)),1,3)
 call UnitApplyTimedLife(CreateUnit(p,'e0CD',x,y,(a*bj_RADTODEG)),1,3)
@@ -61977,7 +61977,7 @@ endif
 call GroupRemoveUnit(g,E)
 exitwhen E==null
 endloop
-call UnitApplyTimedLife(CreateUnit(p,'e0C4',x,y,(a*bj_RADTODEG)),1,3)
+call UnitApplyTimedLife(CreateUnit(p,'e1C4',x,y,(a*bj_RADTODEG)),1,0.1)
 call UnitApplyTimedLife(CreateUnit(p,'e0C5',x,y,(a*bj_RADTODEG)),1,3)
 //call UnitApplyTimedLife(CreateUnit(p,'e0CC',x,y,(a*bj_RADTODEG)),1,3)
 call UnitApplyTimedLife(CreateUnit(p,'e0CD',x,y,(a*bj_RADTODEG)),1,3)
@@ -62817,7 +62817,7 @@ function KiBlastBlast_Act takes nothing returns nothing
     local real y=GetUnitY(l__d)
     local real dmg=LoadReal(HH,id,15)
     local player p=GetOwningPlayer(caster)
-    local real angle
+    local real angle=0
     set time=time+0.02
     call SaveReal(HH,id,5,time)
     if distance>=1600 and UnitIsAlive(l__d) then
@@ -62830,48 +62830,51 @@ function KiBlastBlast_Act takes nothing returns nothing
         endif
         call GroupRemoveUnit(G,E)
         endloop
+        call UnitApplyTimedLife(CreateUnit(p,'e1C4',x,y,(a*bj_RADTODEG)),1,0.1)
         call SetUnitAnimationByIndex(l__d,2)
         call UnitColor(l__d,0,0,0,100)
         call MyRemoveUnit(l__d,2)
         call PauseTimer(t)
         call DestroyTimer(t)
         call FlushChildHashtable(HH,id)
+        // call ConsolePrint("\n\n\n\n\n\n\n\n\n")
     else
         if c==null then
             call SetUnitXY_1(l__d,x+70*Cos(a*bj_DEGTORAD),y+70*Sin(a*bj_DEGTORAD), false)
             set n=CreateUnit(p,0x65313334,x,y,a)
         else
-            if Rad2Deg(angle)<0 then
-                set angle = Deg2Rad(Rad2Deg(angle)+360)
-            endif
+            set angle=AU(l__d,c)
             if Rad2Deg(angle)<0 then
                 set angle = Deg2Rad(Rad2Deg(angle)+360)
             endif
             // call BJDebugMsg(R2S(Rad2Deg(angle)))
 
-            if (Rad2Deg(angle)-GetUnitFacing(u))>180 then
-                if GetUnitFacing(u)<180 then
+            if (Rad2Deg(angle)-GetUnitFacing(l__d))>180 then
+                if GetUnitFacing(l__d)<180 then
                     set angle = Deg2Rad(Rad2Deg(angle)-360)
                 endif
-            elseif (GetUnitFacing(u)-Rad2Deg(angle))>180 then
+            elseif (GetUnitFacing(l__d)-Rad2Deg(angle))>180 then
                 set angle = Deg2Rad(Rad2Deg(angle)+360)
             endif
-            call SetUnitXY_1(l__d,x+70*Cos(a*bj_DEGTORAD),y+70*Sin(a*bj_DEGTORAD), false)
-            if AU(l__d,c)*bj_RADTODEG<-30 then
-            call SetUnitFacingInstant(l__d,GetUnitFacing(l__d)+(AU(l__d,c)*bj_RADTODEG)*0.15)
-            elseif AU(l__d,c)*bj_RADTODEG>30 then
-            call SetUnitFacingInstant(l__d,GetUnitFacing(l__d)-(AU(l__d,c)*bj_RADTODEG)*0.15)
+            // call ConsolePrint("Facing "+R2S(GetUnitFacing(l__d))+"\n")
+            // call ConsolePrint("angle "+R2S(angle*bj_RADTODEG)+"\n")
+            // call ConsolePrint("angle - facing "+R2S(angle*bj_RADTODEG-GetUnitFacing(l__d))+"\n\n")
+            call SetUnitXY_1(l__d,x+60*Cos(a*bj_DEGTORAD),y+60*Sin(a*bj_DEGTORAD), false)
+            if GetUnitFacing(l__d)-angle*bj_RADTODEG<-15 then
+            call SetUnitFacingInstant(l__d,GetUnitFacing(l__d)+0.0008*SquareRootUnit(l__d,c)*(angle*bj_RADTODEG-GetUnitFacing(l__d)))
+            elseif GetUnitFacing(l__d)-angle*bj_RADTODEG>15 then
+            call SetUnitFacingInstant(l__d,GetUnitFacing(l__d)-0.0008*SquareRootUnit(l__d,c)*(GetUnitFacing(l__d)-angle*bj_RADTODEG))
             else
-            call SetUnitFacingInstant(l__d,AU(l__d,c)*bj_RADTODEG)
+            call SetUnitFacingInstant(l__d,angle*bj_RADTODEG)
             endif
             call SaveReal(HH,id,3,GetUnitFacing(l__d))
             set n=CreateUnit(p,0x65313334,x,y,GetUnitFacing(l__d))
         endif
         call SetUnitTimeScale(n,2)
         call UnitApplyTimedLife(n,1,0.3)
-        call SaveReal(HH,id,8,distance+20)
+        call SaveReal(HH,id,8,distance+60)
         if c==null then
-            call GroupEnumUnitsInRange(G,x,y,1500,Base)
+            call GroupEnumUnitsInRange(G,x,y,500,Base)
             loop
                 set E=FirstOfGroup(G)
                 exitwhen E==null
@@ -62887,7 +62890,7 @@ function KiBlastBlast_Act takes nothing returns nothing
             set E=FirstOfGroup(G)
             exitwhen E==null
             if Condition_Base(p,E)then
-                call SaveReal(HH,id,8,distance+1500)
+                call SaveReal(HH,id,8,distance+1700)
             endif
             call GroupRemoveUnit(G,E)
         endloop
