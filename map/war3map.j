@@ -60892,7 +60892,7 @@ function PowerUpGokuCast2 takes nothing returns nothing
             endif
             if time==3.5 then
                 set EFF=AddSpecialEffect("iras6.mdx", x, y)
-                call SetSpecialEffectScale(EFF , 3)
+                call SetSpecialEffectScale(EFF , 1)
                 call SetSpecialEffectTimeScale(EFF , 0.4)
                 call SetSpecialEffectOrientation(EFF , GetRandomReal(0, 359),0,0)
                 call SetSpecialEffectZ(EFF , -15)
@@ -60900,7 +60900,7 @@ function PowerUpGokuCast2 takes nothing returns nothing
             endif
             if time==4 then
                 set EFF=AddSpecialEffect("iras1.mdx", x, y)
-                call SetSpecialEffectScale(EFF , 3)
+                call SetSpecialEffectScale(EFF , 1)
                 call SetSpecialEffectTimeScale(EFF , 0.2)
                 call SetSpecialEffectOrientation(EFF , GetRandomReal(0, 359),0,0)
                 call SetSpecialEffectZ(EFF , -15)
