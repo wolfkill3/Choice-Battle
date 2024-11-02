@@ -60892,25 +60892,25 @@ function PowerUpGokuCast2 takes nothing returns nothing
             endif
             if time==3.5 then
                 set EFF=AddSpecialEffect("iras6.mdx", x, y)
-                call SetSpecialEffectScale(EFF , 1)
-                call SetSpecialEffectTimeScale(EFF , 0.4)
+                call SetSpecialEffectScale(EFF , 0.7)
+                call SetSpecialEffectTimeScale(EFF , 0.5)
                 call SetSpecialEffectOrientation(EFF , GetRandomReal(0, 359),0,0)
-                call SetSpecialEffectZ(EFF , -15)
-                call SetSpecialEffectAlphaTimed(EFF , 255 , 255 , 255 , 255 , 1)
-            endif
-            if time==4 then
-                set EFF=AddSpecialEffect("iras1.mdx", x, y)
-                call SetSpecialEffectScale(EFF , 1)
-                call SetSpecialEffectTimeScale(EFF , 0.2)
-                call SetSpecialEffectOrientation(EFF , GetRandomReal(0, 359),0,0)
-                call SetSpecialEffectZ(EFF , -15)
+                call SetSpecialEffectZ(EFF , 15)
                 call SetSpecialEffectAlphaTimed(EFF , 255 , 255 , 255 , 255 , 1)
                 set EFF=AddSpecialEffect("BY_Wood_Effect_Order_DanGe_Stf_XuLi_1_1222.mdx", x, y)
                 call SetSpecialEffectScale(EFF , 4)
                 call SetSpecialEffectTimeScale(EFF , 0.6)
                 call SetSpecialEffectOrientation(EFF , GetRandomReal(0, 359),0,0)
                 call SetSpecialEffectZ(EFF , 75)
-                call SetSpecialEffectAlphaTimed(EFF , 255 , 255 , 255 , 255 , 2)
+                call SetSpecialEffectAlphaTimed(EFF , 255 , 255 , 255 , 255 , 1)
+            endif
+            if time==4 then
+                set EFF=AddSpecialEffect("iras1.mdx", x, y)
+                call SetSpecialEffectScale(EFF , 1.5)
+                call SetSpecialEffectTimeScale(EFF , 0.2)
+                call SetSpecialEffectOrientation(EFF , GetRandomReal(0, 359),0,0)
+                call SetSpecialEffectZ(EFF , 15)
+                call SetSpecialEffectAlphaTimed(EFF , 255 , 255 , 255 , 255 , 1)
             endif
             if time==4.6 then
                 set EFF=AddSpecialEffect("hehehehehe31.MDx", x, y)
@@ -61069,6 +61069,7 @@ function PowerUpGokuCast2 takes nothing returns nothing
             call SetUnitInvulnerable(u,false)
             call ShowAbility2('GKF1',false)
             call ShowAbility2('GKBB',true)
+            call CreateModeIndicatorWithPauseFormDispellable(u, "ReplaceableTextures\\Commandbuttons\\BTNGokuMUI.blp", 15,'GkH8')
         endif
         if LoadInteger(h,id,3)==0 and GetUnitAbilityLevel(u,'GkH0')==0 then
             set soundplay=CreateSound("Sound\\Music\\mp3Music\\PowerDown.mp3",false,false,true,12700,12700,"")
@@ -61111,9 +61112,9 @@ function PowerUpGokuCast takes nothing returns nothing
     elseif GetSpellAbilityId()=='GKBS' or GetSpellAbilityId()=='GKBB' then
         call SaveReal(h,id,1,6.975)
         call SaveInteger(h,id,3,0)
-    elseif GetSpellAbilityId()=='GKUI' or GetSpellAbilityId()=='GKMI' or GetSpellAbilityId()=='GKM2' then
-        if GetSpellAbilityId()=='GKM2' and GetUnitAbilityLevel(u,'GkH7')>0 then
-            call SaveReal(h,id,1,4.975)
+    elseif GetSpellAbilityId()=='GKUI' or GetSpellAbilityId()=='GKMI' then
+        if GetSpellAbilityId()=='GKMI' and GetUnitAbilityLevel(u,'GkH7')>0 then
+            call SaveReal(h,id,1,3.475)
         endif
         call ShowAbility2('GKF1',false)
         if GetSpellAbilityId()=='GKUI' then
