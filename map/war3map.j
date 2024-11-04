@@ -10127,6 +10127,8 @@ function OnButtonChangeAbilityMode takes nothing returns nothing
     if p==GetOwningPlayer(Goku) and but==GetFrameByName( "AbilityVarBarIcon", 7 ) then
         if LoadReal(HH,pHid,VariationTHash)==0 then
             call SaveReal(HH,pHid,VariationTHash,1)
+            call SetAbilityIntegerLevelField(GetUnitAbility(Goku,'GKT1'), ABILITY_ILF_TARGET_TYPE,0,1)
+            call SetAbilityRealLevelField(GetUnitAbility(Goku,'GKT1'), ABILITY_RLF_CAST_RANGE,0,900)
             if GetLocalPlayer()==p then
                 call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 7 ), "ReplaceableTextures\\CommandButtons\\BTNDragonFist2.blp", 0, true )
                 call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 7 ), "ReplaceableTextures\\CommandButtons\\BTNDragonFist2.blp", 1, true )
@@ -10138,6 +10140,8 @@ function OnButtonChangeAbilityMode takes nothing returns nothing
             endif
         else
             call SaveReal(HH,pHid,VariationTHash,0)
+            call SetAbilityIntegerLevelField(GetUnitAbility(Goku,'GKT1'), ABILITY_ILF_TARGET_TYPE,0,2)
+            call SetAbilityRealLevelField(GetUnitAbility(Goku,'GKT1'), ABILITY_RLF_CAST_RANGE,0,99999)
             if GetLocalPlayer()==p then
                 call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 7 ), "ReplaceableTextures\\CommandButtons\\BTNDragonFist1.blp", 0, true )
                 call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 7 ), "ReplaceableTextures\\CommandButtons\\BTNDragonFist1.blp", 1, true )
@@ -54315,7 +54319,7 @@ call GroupRemoveUnit(G,E)
 exitwhen E==null
 endloop
 else
-call UnitRemoveAbility(u,0x41304439)
+call UnitRemoveAbility(u,'A0D9')
 call FlushChildHashtable(h,id)
 call FlushChildHashtable(h,l__idg)
 call DestroyTimer(t)
@@ -54337,7 +54341,7 @@ call SaveReal(h,id,5,GetUnitY(u))
 call SaveReal(h,id,1,Atan2(GetSpellTargetY()-GetUnitY(u),GetSpellTargetX()-GetUnitX(u)))
 call SaveGroupHandle(h,id,3,CreateGroup())
 call SetUnitInvulnerable(u,true)
-call UnitAddAbility(u,0x41304439)
+call UnitAddAbility(u,'A0D9')
 call SaveReal(h,id,100,0)
 call SetUnitTimeScale(u,1)
 call SetUnitAnimationByIndex(u,12)
@@ -61150,25 +61154,107 @@ call TriggerRegisterAnyUnitEventBJ(gg_trg_PowerUpGoku,EVENT_PLAYER_UNIT_SPELL_EF
 call TriggerAddCondition(gg_trg_PowerUpGoku,Condition(function PowerUpGokuCond))
 call TriggerAddAction(gg_trg_PowerUpGoku,function PowerUpGokuCast)
 endfunction
-function CondDragonFirst takes nothing returns boolean
-return GetSpellAbilityId()==0x41304943 and udg_B==true
+function CondDragonFist takes nothing returns boolean
+return GetSpellAbilityId()=='GKT1' and udg_B==true
 endfunction
-function CastDragonFirst2 takes nothing returns nothing
+function CastDragonFist3 takes nothing returns nothing
 local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
-local unit u=LoadUnitHandle(h,id,0)
-local unit l__d=LoadUnitHandle(h,id,6)
+local unit u=LoadUnitHandle(HH,id,0)
+local unit c=LoadUnitHandle(HH,id,10)
+local player p=GetOwningPlayer(u)
+local real time=LoadReal(HH,id,12)
+local real time2=LoadReal(HH,id,13)
+local real dmg=11*GetHeroStr(u,true)
+local real x=GetUnitX(u)
+local real y=GetUnitY(u)
+local real x1=GetUnitX(c)
+local real y1=GetUnitY(c)
+local real a=Atan2(y1-y,x1-x)
+local real dist=SR(x,y,x1,y1)
+if GetWidgetLife(c)>0 and GetWidgetLife(u)>0 and time<4 then
+    call SetUnitInvulnerable(u,true)
+    call PauseUnit(u,true)
+    call SetUnitFacingInstant(u,a*bj_RADTODEG)
+    call SaveReal(HH,id,12,time+0.03)
+    if time<0.3 then
+        if time==0.03 then
+            call SetUnitAnimationByIndex(u,199)
+        endif
+        if time==0.27 then
+            set EFF=AddSpecialEffect("GokuDash.mdx",x,y)
+            call SetSpecialEffectFacing(EFF , a* bj_RADTODEG-180)
+            call SaveEffectHandle(HH,id,3,EFF)
+            call SetSpecialEffectScale(EFF , 0.8)
+            call SetSpecialEffectTimeScale(EFF , 0.7)
+        endif
+    else
+        call SetUnitAnimationByIndex(u,64)
+        if dist>50 then
+            call SetUnitXY_1(u,x+75*Cos(a),y+75*Sin(a), false)
+            call SetSpecialEffectX(LoadEffectHandle(HH,id,3),x+75*Cos(a))
+            call SetSpecialEffectY(LoadEffectHandle(HH,id,3),y+75*Sin(a))
+            call SetSpecialEffectFacing(LoadEffectHandle(HH,id,3) , a* bj_RADTODEG-180)
+            set n=CreateUnit(p,'e117',x,y,a*bj_RADTODEG)
+            call SetUnitVertexColor(n,255,255,255,75)
+            call SetUnitScale(n,GetRandomReal(0.55,1.25),GetRandomReal(0.55,1.25),GetRandomReal(0.55,1.25))
+            call UnitApplyTimedLife(n,1,0.4)
+            call SetUnitTimeScale(n,3)
+        else
+            call RemoveEffect(LoadEffectHandle(HH,id,3),0.1,false,CreateTimer())
+            call PauseTimer(t)
+            call SaveReal(HH,id,2,0)
+            call SetUnitAnimationByIndex(u,92)
+            call SetUnitInvulnerable(c,true)
+            call PauseUnit(c,true)
+            call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,true)
+            set EFF=AddSpecialEffect("war3mapImported\\CF2.mdl", x1,y1)
+            call SetSpecialEffectOrientation(EFF,a*bj_RADTODEG,0,0)
+            call SetSpecialEffectZ(EFF, GetUnitFlyHeight(c))
+            call SetSpecialEffectScale(EFF , 1)
+            call DestroyEffect(EFF)
+            set EFF=AddSpecialEffect("Minato-37.mdx", x1,y1)
+            call SetSpecialEffectFacing(EFF , a* bj_RADTODEG)
+            call SetSpecialEffectZ(EFF, GetUnitFlyHeight(c)+30)
+            call SetSpecialEffectScale(EFF , 3)
+            call DestroyEffect(EFF)
+            set EFF=AddSpecialEffect("WindVectorPush.mdx", x1, y1)
+            call SetSpecialEffectOrientation(EFF,a*bj_RADTODEG,0,0)
+            call SetSpecialEffectZ(EFF , 100)
+            call SetSpecialEffectScale(EFF , GetUnitFlyHeight(c)+40)
+            call SetSpecialEffectVertexColour(EFF,255,255,255,120)
+            call RemoveEffect(EFF,1,true,CreateTimer())
+        endif
+    endif
+else
+    call DestroyTimer(t)
+    call SetUnitInvulnerable(u,false)
+    call PauseUnit(u,false)
+    call SetUnitAnimation(u,"stand")
+    call SetUnitTimeScale(u,1)
+    call FlushChildHashtable(HH,id)
+endif
+set u=null
+set c=null
+set p=null
+set t=null
+endfunction
+function CastDragonFist2 takes nothing returns nothing
+local timer t=GetExpiredTimer()
+local integer id=GetHandleId(t)
+local unit u=LoadUnitHandle(HH,id,0)
+local unit l__d=LoadUnitHandle(HH,id,6)
 local real x1=GetUnitX(u)
 local real y1=GetUnitY(u)
-local real x2=LoadReal(h,id,4)
-local real y2=LoadReal(h,id,5)
-local real a=LoadReal(h,id,1)
-local group g=LoadGroupHandle(h,id,3)
+local real x2=LoadReal(HH,id,4)
+local real y2=LoadReal(HH,id,5)
+local real a=LoadReal(HH,id,1)
+local group g=LoadGroupHandle(HH,id,3)
 local integer l__idg=GetHandleId(g)
 local integer lvl=GetUnitAbilityLevel(u,0x41304943)
 local real dmg=GetHeroStr(u,true)*10
 local player p=GetOwningPlayer(u)
-local real speed=LoadReal(h,id,7)
+local real speed=LoadReal(HH,id,7)
 local integer l__ide
 if SR1(x2,y2,x1,y1)<2000 and IsTerrainPathable(GetUnitX(l__d),GetUnitY(l__d),PATHING_TYPE_FLYABILITY)==false then
 set x1=x1+speed*Cos(a)
@@ -61177,13 +61263,13 @@ call SetUnitXY_1(u,x1,y1, false)
 call SetUnitXY_1(l__d,x1,y1, false)
 call SetUnitInvulnerable(u,true)
 call PauseUnit(u,true)
-call SaveReal(h,id,7,speed*1.023)
+call SaveReal(HH,id,7,speed*1.023)
 call SetUnitFacing(u,a*bj_RADTODEG)
 call SetUnitAnimation(u,"attack")
 set n=CreateUnit(p,0x6530434E,x1+GetRandomReal(-150,150),y1+GetRandomReal(-150,150),a*bj_RADTODEG)
 call UnitApplyTimedLife(n,'B000',0.25)
 call SetUnitVertexColor(n,255,255,255,75)
-call UnitAddAbility(n,0x41304439)
+call UnitAddAbility(n,'A0D9')
 if GetUnitAbilityLevel(u,'GkH0')>0 then
 call UnitAddAbility(n,'GkH0')
 elseif GetUnitAbilityLevel(u,'A0NH')>0 then
@@ -61203,19 +61289,19 @@ loop
 set E=FirstOfGroup(G)
 set l__ide=GetHandleId(E)
 if Condition_Base(p,E)then
-if LoadUnitHandle(h,l__idg,l__ide)!=E then
+if LoadUnitHandle(HH,l__idg,l__ide)!=E then
 call myCustomDamage(u,E,dmg,false,false,null,null,null)
-call SaveUnitHandle(h,l__idg,l__ide,E)
+call SaveUnitHandle(HH,l__idg,l__ide,E)
 endif
 endif
 call GroupRemoveUnit(G,E)
 exitwhen E==null
 endloop
 else
-call UnitRemoveAbility(u,0x41304439)
+call UnitRemoveAbility(u,'A0D9')
 call PauseUnit(u,false)
-call FlushChildHashtable(h,id)
-call FlushChildHashtable(h,l__idg)
+call FlushChildHashtable(HH,id)
+call FlushChildHashtable(HH,l__idg)
 call RemoveUnit(l__d)
 call DestroyTimer(t)
 call DestroyGroup(g)
@@ -61227,26 +61313,30 @@ set p=null
 set t=null
 set g=null
 endfunction
-function CastDragonFirst takes nothing returns nothing
+function CastDragonFist takes nothing returns nothing
 local unit u=GetTriggerUnit()
+local unit c=GetSpellTargetUnit()
 local timer t=CreateTimer()
 local real x=GetUnitX(u)
 local real y=GetUnitY(u)
-local real a=Atan2(GetSpellTargetY()-y,GetSpellTargetX()-x)
+local real x1=GetSpellTargetX()
+local real y1=GetSpellTargetY()
+local real a=Atan2(y1-y,x1-x)
 local integer id=GetHandleId(t)
-call SaveUnitHandle(h,id,0,u)
-set n=CreateUnit(GetOwningPlayer(u),0x6530434F,x,y,a*bj_RADTODEG)
-call SaveUnitHandle(h,id,6,n)
+call SaveUnitHandle(HH,id,0,u)
+if LoadReal(HH,GetHandleId(GetOwningPlayer(Goku)),VariationTHash)==0 then
+set n=CreateUnit(GetOwningPlayer(u),'e0CO',x,y,a*bj_RADTODEG)
+call SaveUnitHandle(HH,id,6,n)
 call SetUnitTimeScale(n,3)
-call SaveReal(h,id,4,GetUnitX(u))
-call SaveReal(h,id,5,GetUnitY(u))
-call SaveReal(h,id,1,a)
-call SaveReal(h,id,7,17)
-call SaveGroupHandle(h,id,3,CreateGroup())
+call SaveReal(HH,id,4,GetUnitX(u))
+call SaveReal(HH,id,5,GetUnitY(u))
+call SaveReal(HH,id,1,a)
+call SaveReal(HH,id,7,17)
+call SaveGroupHandle(HH,id,3,CreateGroup())
 call SetUnitInvulnerable(u,true)
 call PauseUnit(u,true)
 call UnitRemoveAbility(u,'A2VJ')
-call UnitAddAbility(u,0x41304439)
+call UnitAddAbility(u,'A0D9')
 call UnitApplyTimedLife(CreateUnit(GetOwningPlayer(u),'e06G',x,y,a*bj_RADTODEG),'B000',4)
 if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\Dragonfist.wav",false,false,true,12700,12700,"")
@@ -61255,11 +61345,17 @@ set soundplay=CreateSound("Sound\\Music\\mp3Music\\Goku\\Dragonfist-jap.wav",fal
 endif
 call StartSound(soundplay)
 call KillSoundWhenDone(soundplay)
-call TimerStart(t,0.04,true,function CastDragonFirst2)
+call TimerStart(t,0.04,true,function CastDragonFist2)
+else
+call SaveUnitHandle(HH,id,10,c)
+call SetUnitFacingInstant(n,a*bj_RADTODEG)
+call TimerStart(t,0.04,true,function CastDragonFist3)
+endif
 set u=null
+set c=null
 set t=null
 endfunction
-function DragonFirstInit takes nothing returns nothing
+function DragonFistInit takes nothing returns nothing
 local trigger t=CreateTrigger()
 local integer i=0
 loop
@@ -61267,8 +61363,8 @@ call TriggerRegisterPlayerUnitEvent(t,Player(i),EVENT_PLAYER_UNIT_SPELL_EFFECT,n
 set i=i+1
 exitwhen i>=bj_MAX_PLAYER_SLOTS
 endloop
-call TriggerAddAction(t,function CastDragonFirst)
-call TriggerAddCondition(t,Condition(function CondDragonFirst))
+call TriggerAddAction(t,function CastDragonFist)
+call TriggerAddCondition(t,Condition(function CondDragonFist))
 set t=null
 endfunction
 function SpiritPowerOff takes nothing returns nothing
@@ -63012,6 +63108,11 @@ function KiSpamBlast_Act takes nothing returns nothing
         call MyRemoveUnit(l__d,2)
         call PauseTimer(t)
         call DestroyTimer(t)
+        set EFF=AddSpecialEffect("AZ_Uta_R2.mdx", x,y)
+        call SetSpecialEffectOrientation(EFF,a*bj_RADTODEG,0,0)
+        call SetSpecialEffectZ(EFF, GetUnitFlyHeight(c))
+        call SetSpecialEffectScale(EFF , 1)
+        call DestroyEffect(EFF)
         call FlushChildHashtable(HH,id)
     else
         call SetUnitXY_1(l__d,x+70*Cos(a*bj_DEGTORAD),y+70*Sin(a*bj_DEGTORAD), false)
@@ -107768,7 +107869,7 @@ call GroupRemoveUnit(G,E)
 exitwhen E==null
 endloop
 else
-call UnitRemoveAbility(u,0x41304439)
+call UnitRemoveAbility(u,'A0D9')
 call FlushChildHashtable(h,id)
 call FlushChildHashtable(h,l__idg)
 call DestroyTimer(t)
@@ -107793,7 +107894,7 @@ call SaveReal(h,id,5,y)
 call SaveReal(h,id,1,Atan2(GetSpellTargetY()-GetUnitY(u),GetSpellTargetX()-GetUnitX(u)))
 call SaveGroupHandle(h,id,3,CreateGroup())
 call SetUnitInvulnerable(u,true)
-call UnitAddAbility(u,0x41304439)
+call UnitAddAbility(u,'A0D9')
 call SaveReal(h,id,100,0)
 call UnitApplyTimedLife(CreateUnit(p,'e0G4',x,y,GetRandomReal(0,359)),'BHwe',0.001)
 set n=CreateUnit(p,0x65305536,x,y,GetRandomReal(0,359))
@@ -204354,7 +204455,7 @@ call MeteorFuncInit()
 call MeteorInit()
 call GrandChariotInit()
 call PowerUpGoku()
-call DragonFirstInit()
+call DragonFistInit()
 call InitSpiritBomb()
 call Kamehameha2Init()
 call GokuMeteorSmashInit()
