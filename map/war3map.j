@@ -61172,7 +61172,7 @@ local real x1=GetUnitX(c)
 local real y1=GetUnitY(c)
 local real a=Atan2(y1-y,x1-x)
 local real dist=SR(x,y,x1,y1)
-if GetWidgetLife(c)>0 and GetWidgetLife(u)>0 and time<4 then
+if GetWidgetLife(c)>0 and GetWidgetLife(u)>0 and (time<4 or time2>0) then
     call SetUnitInvulnerable(u,true)
     call PauseUnit(u,true)
     call SetUnitFacingInstant(u,a*bj_RADTODEG)
@@ -61204,7 +61204,6 @@ if GetWidgetLife(c)>0 and GetWidgetLife(u)>0 and time<4 then
             call SaveReal(HH,id,13,time2+0.03)
             if time2==0 then
                 call RemoveEffect(LoadEffectHandle(HH,id,3),0.1,false,CreateTimer())
-                call PauseTimer(t)
                 call SaveReal(HH,id,2,0)
                 call SetUnitAnimationByIndex(u,92)
                 call SetUnitInvulnerable(c,true)
@@ -61227,7 +61226,7 @@ if GetWidgetLife(c)>0 and GetWidgetLife(u)>0 and time<4 then
                 call SetSpecialEffectVertexColour(EFF,255,255,255,120)
                 call RemoveEffect(EFF,1,true,CreateTimer())
             endif
-            if time2==0.2 then
+            if time2==0.3 then
                 set n=CreateUnit(GetOwningPlayer(u),'e0CO',x,y,a*bj_RADTODEG)
                 if GetUnitAbilityLevel(u,'GkH0')>0 or GetUnitAbilityLevel(u,'GkH1')>0 or GetUnitAbilityLevel(u,'GkH2')>0 or GetUnitAbilityLevel(u,'GkH3')>0 or GetUnitAbilityLevel(u,'GkH4')>0 then
                 call SetUnitVertexColor(n,255,255,125,255)
@@ -61239,9 +61238,9 @@ if GetWidgetLife(c)>0 and GetWidgetLife(u)>0 and time<4 then
                 call SetUnitVertexColor(n,255,255,255,255)
                 endif
                 call SetUnitAnimation(n,"Spell three")
-                call UnitApplyTimedLife(n,1,1)
+                call MyRemoveUnit(n, 2.2)
             endif
-            if time2==1.2 then
+            if time2==2.4 then
                 call SetUnitFlyHeight(u,0,0)
                 call SetUnitInvulnerable(c,false)
                 call PauseUnit(c,false)
