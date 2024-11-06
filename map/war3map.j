@@ -1628,6 +1628,12 @@ function myCustomDamage takes unit whichUnit, unit target, real amount, boolean 
 		if GetUnitAbilityLevel(whichUnit,'A176') > 0 then
             set currentDmg = currentDmg * 1.05
         endif  
+        if GetUnitAbilityLevel(whichUnit,'GkH5') > 0 then
+            set currentDmg = currentDmg * 1.05
+        endif
+        if GetUnitAbilityLevel(whichUnit,'GkH6') > 0 then
+            set currentDmg = currentDmg * 1.1
+        endif
         //T Waver   
         if GetUnitAbilityLevel(target,'WaT1') > 0 then
             set currentDmg = currentDmg * 1.20
@@ -60798,6 +60804,9 @@ function PowerUpGokuCast2 takes nothing returns nothing
     if time<7 then
         call PauseUnit(u,true)
         call SaveReal(h,id,1,time+0.025)
+        if GetUnitCurrentAnimationId(u)!=187 or GetUnitCurrentAnimationId(u)!=189 then
+            call SetUnitAnimationByIndex(u,187)
+        endif
         if LoadInteger(h,id,3)==7 then
             call SetUnitInvulnerable(u,true)
             if time<6 then
@@ -60863,6 +60872,7 @@ function PowerUpGokuCast2 takes nothing returns nothing
                 call UnitMakeAbilityPermanent(u,true,'GkH7')
                 call UnitAddAbility(u,'A4AU')
                 call UnitMakeAbilityPermanent(u,true,'A4AU')
+                call SetUnitAnimationByIndex(u,189)
             endif
         elseif LoadInteger(h,id,3)==8 then
             call SetUnitInvulnerable(u,true)
@@ -60940,10 +60950,12 @@ function PowerUpGokuCast2 takes nothing returns nothing
                 call UnitMakeAbilityPermanent(u,true,'GkH8')
                 call UnitAddAbility(u,'A4AU')
                 call UnitMakeAbilityPermanent(u,true,'A4AU')
+                call SetUnitAnimationByIndex(u,189)
             endif
         endif 
     else
         call PauseUnit(u,false)
+        call SetUnitAnimation(u,"stand")
         call SetUnitTimeScale(u,1)
         call SetUnitAbilityLevel(u,'A0NM',LoadInteger(h,id,3)+1)
         if LoadInteger(h,id,3)==1 and GetUnitAbilityLevel(u,'GkH1')==0 then //ss
@@ -61238,7 +61250,8 @@ if GetWidgetLife(c)>0 and GetWidgetLife(u)>0 and (time<4 or time2>0) then
                 call SetUnitVertexColor(n,255,255,255,255)
                 endif
                 call SetUnitAnimation(n,"Spell three")
-                call MyRemoveUnit(n, 2.2)
+                call SetUnitTimeScale(n,1.4)
+                call MyRemoveUnit(n, 2.6)
             endif
             if time2==2.4 then
                 call SetUnitFlyHeight(u,0,0)
@@ -61801,15 +61814,15 @@ call GroupRemoveUnit(g,E)
 exitwhen E==null
 endloop
 if LoadReal(HH,GetHandleId(p),VariationQHash)==4 then
-set n=CreateUnit(p, 'd113', x,y, a*bj_RADTODEG)
-call SetUnitScale(n, 2, 2, 2)
-call SetUnitFlyHeight(n, 0, 0)
-call MyRemoveUnit(n, 2.5)
-set n=CreateUnit(p, 'd115', x,y, GetRandomInt(0, 360))
-call SetUnitScale(n, 2.75, 2.75, 2.75)
-call SetUnitVertexColor(n, 255, 0, 0, 255)
-call SetUnitFlyHeight(n, 0, 0)
-call MyRemoveUnit(n, 2.5)
+// set n=CreateUnit(p, 'd113', x,y, a*bj_RADTODEG)
+// call SetUnitScale(n, 2, 2, 2)
+// call SetUnitFlyHeight(n, 0, 0)
+// call MyRemoveUnit(n, 2.5)
+// set n=CreateUnit(p, 'd115', x,y, GetRandomInt(0, 360))
+// call SetUnitScale(n, 2.75, 2.75, 2.75)
+// call SetUnitVertexColor(n, 255, 0, 0, 255)
+// call SetUnitFlyHeight(n, 0, 0)
+// call MyRemoveUnit(n, 2.5)
 set n=CreateUnit(p, 'd032', x, y, a*bj_RADTODEG+120)
 call SetUnitScale(n, 2, 2, 2)
 call SetUnitVertexColor(n, 255, 150, 100, 255)
