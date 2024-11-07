@@ -33482,7 +33482,7 @@ endif
 //if LoadBoolean(HH,uid,StringHash("DanzoFBool"))==true and nb>0 and not(GetUnitAbilityLevel(c,'A1WT')==0 and GetUnitAbilityLevel(c,'A3WR')==0 and  (GetUnitAbilityLevel(c,'CB01')==0 or (GetUnitAbilityLevel(c,'CB01')>0 and CurrentEventAttack==true)) and GetUnitAbilityLevel(c,'B059')==0 and GetUnitAbilityLevel(u,'Bwul')==0 and(LoadInteger(HH,cid,StringHash("AlbedoEPassive"))<4 and (GetUnitAbilityLevel(u,'B017')==0 or GetUnitAbilityLevel(u,'B019')==0))) then
 //    call SaveReal(HH,uid,StringHash("DanzoFHP"), LoadReal(HH,uid,StringHash("DanzoFHP"))-nb  )
 //endif
-if GetUnitAbilityLevel(u,0x4130304A)>0 then
+if GetUnitAbilityLevel(u,'A00J')>0 then
     set cjlocgn_00000000=CreateTimer()
     call SetUnitInvulnerable(u,true)
     call SaveUnitHandle(h,GetHandleId(cjlocgn_00000000),0,u)
@@ -40576,7 +40576,8 @@ call SetHeroAgi(u,GetHeroAgi(u,false)+R2I(st),true)
 call SetHeroStr(u,GetHeroStr(u,false)+R2I(st),true)
 call SetHeroInt(u,GetHeroInt(u,false)+R2I(st),true)
 call PauseTimer(t)
-call UnitRemoveAbility(u,0x4130304A)
+call UnitRemoveAbility(u,'A00J')
+call StartAbilityCooldown(GetUnitAbility(u,'A00W'),GetAbilityBaseRealLevelFieldById('A00W',ABILITY_RLF_COOLDOWN,GetUnitAbilityLevel(u,'A00W')-1))
 call TimerStart(t,15,false,function ZeroPointAct3)
 endif
 set p=null
@@ -40586,7 +40587,7 @@ endfunction
 function Trig_ZeroPoint_Revised_Actions takes nothing returns nothing
 local unit u=GetTriggerUnit()
 local timer t=CreateTimer()
-call UnitAddAbility(u,0x4130304A)
+call UnitAddAbility(u,'A00J')
 call SaveUnitHandle(h,GetHandleId(t),0,u)
 call SaveReal(h,GetHandleId(u),StringHash("zero"),0)
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\ZeroPointbreakthoughrevise.mp3",false,false,true,12700,12700,"")
@@ -124234,23 +124235,20 @@ local integer id=GetHandleId(t)
 local unit u=LoadUnitHandle(h,id,0)
 local real dmg=GetHeroStr(u,true)*(GetUnitAbilityLevel(u,'A1DM')+2)
 local group g=LoadGroupHandle(h,id,2)
-local group g2
 local real time=LoadReal(h,id,3)
 if time<1.75+0.25*GetUnitAbilityLevel(u,'A1DM')and UnitIsAlive(u)then
 call SaveReal(h,id,3,time+0.01)
 else
-set g2=CopyGroup(g)
 loop
-set E=FirstOfGroup(g2)
+set E=FirstOfGroup(g)
 exitwhen E==null
 call UnitRemoveAbility(E,'A1DH')
-call UnitRemoveAbility(E,0x42303651)
+call UnitRemoveAbility(E,'B06Q')
 call SetUnitStunCounter(E,GetUnitStunCounter(E)-1)
 call IssueImmediateOrder(E,"stop")
 call myCustomDamage(u,E,dmg,false,false,null,null,null)
-call GroupRemoveUnit(g2,E)
+call GroupRemoveUnit(g,E)
 endloop
-call DestroyGroupTimed(g2,3)
 call GroupClear(g)
 call DestroyGroup(g)
 call PauseTimer(t)
@@ -124259,7 +124257,6 @@ call FlushChildHashtable(h,id)
 endif
 set t=null
 set g=null
-set g2=null
 set u=null
 endfunction
 function ShielderRCast takes nothing returns nothing
@@ -145197,7 +145194,7 @@ local timer t=CreateTimer()
 local integer id=GetHandleId(t)
 local unit u=GetTriggerUnit()
 call SaveUnitHandle(h,id,0,u)
-call SaveReal(h,id,2,10)
+call SaveReal(h,id,2,8)
 //call UnitAddAbility(u,'Ao7O')
 call UnitAddAbility(u,'Ao8S')
 call TimerStart(t,0.05,true,function GKazumaCast2)
