@@ -1695,7 +1695,7 @@ function myCustomDamage takes unit whichUnit, unit target, real amount, boolean 
         //if GetUnitAbilityLevel(target,'RiSV') == 0 and GetUnitAbilityLevel(target,'GDSV') == 0 then
                 
             if GetUnitAbilityLevel(target,'A15H') > 0 then
-                set currentDmg = currentDmg * 0.7
+                set currentDmg = currentDmg * 0.8
             endif                         
             // Калейдожезл Сапфир
             if GetUnitAbilityLevel(target,'B073') > 0 then
@@ -1804,7 +1804,7 @@ function myCustomDamage2 takes unit target, real amount returns real
                 set currentDmg = currentDmg*(1.00+(0.05*passedTime))
             endif
             if GetUnitAbilityLevel(target,'A15H') > 0 then
-                set currentDmg = currentDmg * 0.7
+                set currentDmg = currentDmg * 0.8
             endif 
             // Калейдожезл Сапфир
             if GetUnitAbilityLevel(target,'B073') > 0 then
@@ -4750,6 +4750,118 @@ function CreateModeIndicatorWithPauseFormDispellable takes unit newCaster, strin
     set NewFrameText=null
 endfunction
 
+
+function CreateModeIndicatorWithPauseFormDispellableHash_Periodic takes nothing returns nothing
+    local timer t               =GetExpiredTimer()
+    local integer id            =GetHandleId(t)
+    local unit caster           =LoadUnitHandle(HH, id, c_CASTER)
+    local player p              =LoadPlayerHandle(HH, id, c_PLAYER)
+    local integer idp           =GetHandleId(p)
+    local integer HashId        =LoadInteger(HH, id, c_BUFF)
+    local string mode_name      =LoadStr(HH, id, c_NAME)
+    local framehandle NewFrame  =LoadFrameHandle(HH, idp,StringHash(mode_name))
+    local real duration         =LoadReal(HH, GetHandleId(NewFrame), c_DURATION)-0.05
+    local integer position         =LoadInteger(HH, id, c_POSITION)
+
+    if position>0 then
+        if LoadBoolean(HH,idp,position-1)==false then
+        call SaveBoolean(HH,idp,position-1,true)
+        call SaveBoolean(HH,idp,position,false)
+        call SaveInteger(HH, id, c_POSITION,position-1)
+        set position=position-1
+        endif
+    endif
+
+    if IsUnitPaused(caster)==false and IsUnitHidden(caster)==false and GetUnitAbilityLevel(caster,'Pet1')==0 then
+        call SaveReal           (HH, GetHandleId(NewFrame), c_DURATION, duration)
+        call SetFrameText( LoadFrameHandle(HH, idp,StringHash(mode_name+"2")), R2SW(duration,2, 1) )
+    endif
+
+    call SetFrameRelativePoint( NewFrame, FRAMEPOINT_CENTER, StatusBarFrame, FRAMEPOINT_LEFT, 0.017+position*0.025, 0.005 )
+    if duration<=0 or udg_B==false or DU2==false or UnitIsAlive(caster)==false or LoadReal(h,GetHandleId(caster),HashId)==0 then
+        call ShowFrame( NewFrame, false )
+        call SaveReal(HH, GetHandleId(NewFrame), c_DURATION, 0)
+        call SaveReal(HH, GetHandleId(LoadFrameHandle(HH, idp,StringHash(mode_name+"2"))), c_DURATION, 0)
+        call SaveBoolean(HH,idp,position,false)
+        call FlushChildHashtable(HH, id)
+        call DestroyTimer(t)
+    endif
+    set t=null
+    set caster=null
+    set NewFrame=null
+    set p=null
+endfunction
+
+function CreateModeIndicatorWithPauseFormDispellableHash takes unit newCaster, string newString, real newDur, integer HashString returns nothing
+    local timer newTimer        = CreateTimer()
+    local integer id            = GetHandleId(newTimer)
+    local framehandle NewFrame  = null
+    local framehandle NewFrameText  = null
+    local player p              =GetOwningPlayer(newCaster)
+    local integer idp           =GetHandleId(p)
+    local integer i=9
+    local integer j=0
+    if LoadFrameHandle(HH, idp,StringHash(newString))==null then    
+        set NewFrame = CreateFrameByType( "SIMPLEBUTTON", newString, StatusBarFrame, "", 0 )
+        call ClearFrameAllPoints( NewFrame )
+        call SetFrameTexture( NewFrame, newString, 0, true )
+        call SetFrameTexture( NewFrame, newString, 1, true )
+        call SetFrameTexture( NewFrame, newString, 2, true )
+        call SetFrameSize( NewFrame, .0237, .0237 )
+        call SetFramePriority( NewFrame, 7 )
+        call HandleListAddHandle(StatusBarFrameList[GetPlayerId(p)],NewFrame)
+        call SetFrameParent(NewFrame,StatusBarFrame)
+        call ShowFrame( NewFrame, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
+        call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
+        call SaveFrameHandle(HH,idp,StringHash(newString),NewFrame)
+        //call SaveReal               (HH, GetHandleId(NewFrame), c_DURATION, 2)
+        
+        set NewFrameText=CreateFrameByType( "SIMPLETEXT", newString+"1", NewFrame, "", 0 )
+        call ClearFrameAllPoints( NewFrameText )
+        call SetFrameBlendMode( NewFrameText, 0, BLEND_MODE_BLEND )
+        call SetFrameFont( NewFrameText, "Fonts\\FRIZQT__.TTF", .008, 0 )
+        call SetFrameTextAlignment( NewFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_LEFT )
+        call SetFrameText( NewFrameText, R2SW(newDur,2, 1) )
+        call SetFrameTextColour( NewFrameText, 0xFFFFA500 )
+        call HandleListAddHandle(StatusBarFrameList[GetPlayerId(p)],NewFrameText)
+        call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
+        call SaveFrameHandle(HH,idp,StringHash(newString+"2"),NewFrameText)
+    else
+        set NewFrame=LoadFrameHandle(HH, idp,StringHash(newString))
+        set NewFrameText=LoadFrameHandle(HH, idp,StringHash(newString+"2"))
+        call SetFrameText( NewFrameText, R2SW(newDur,2, 1) )
+        call ShowFrame( NewFrame, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
+        call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
+    endif
+    if LoadReal(HH, GetHandleId(NewFrame), c_DURATION)<=0 then
+        loop
+            exitwhen i==0
+            if LoadBoolean(HH,idp,i)==false then
+            call SaveBoolean(HH,idp,i,true)
+            call SaveBoolean(HH,idp,i+1,false)
+            set j=i
+            endif
+            set i=i-1
+        endloop
+        call SetFrameRelativePoint( NewFrame, FRAMEPOINT_CENTER, StatusBarFrame, FRAMEPOINT_LEFT, 0.017+j*0.025, 0.005 )
+        call SetFrameRelativePoint( NewFrameText, FRAMEPOINT_BOTTOM, NewFrame, FRAMEPOINT_BOTTOM, .0, -.01 )
+        call SaveUnitHandle         (HH, id, c_CASTER, newCaster)
+        call SavePlayerHandle       (HH, id, c_PLAYER, GetOwningPlayer(newCaster))
+        call SaveReal               (HH, GetHandleId(NewFrame), c_DURATION, newDur)
+        call SaveReal               (HH, GetHandleId(NewFrameText), c_DURATION, newDur)
+        call SaveInteger            (HH, id, c_POSITION, j)
+        call SaveStr                (HH, id, c_NAME, newString)
+        call SaveInteger            (HH, id, c_BUFF, HashString)
+        call TimerStart             (newTimer, 0.05, true, function CreateModeIndicatorWithPauseFormDispellableHash_Periodic)
+    else
+        call SaveReal           (HH, GetHandleId(NewFrame), c_DURATION, newDur)
+        call SaveReal           (HH, GetHandleId(NewFrameText), c_DURATION, newDur)
+    endif
+    set newTimer=null
+    set p=null
+    set NewFrame=null
+    set NewFrameText=null
+endfunction
 
 
 
@@ -9245,7 +9357,7 @@ set acode[2]='A018'
 set abilcode[3]="absorb"
 set acode[3]='A00P'
 set abilcode[4]="hex"
-set acode[4]=0x41305A4A
+set acode[4]='A0ZJ'
 set abilcode[5]="ambush"
 set acode[5]='A08M'
 set abilcode[6]="acolyteharvest"
@@ -18005,7 +18117,7 @@ if GetUnitTypeId(u)=='H02L' then
 call UnitMakeAbilityPermanent(u,true,'A1A5')
 endif
 if GetUnitTypeId(u)=='H03L' then
-call UnitMakeAbilityPermanent(u,true,0x4131394C)
+call UnitMakeAbilityPermanent(u,true,'A19L')
 endif
 if GetUnitTypeId(u)=='H03B' then
 call UnitMakeAbilityPermanent(u,true,0x41313947)
@@ -32144,7 +32256,7 @@ function AlbedoEPass_Periodic takes nothing returns nothing
 endfunction
 
 function AlbedoBreakCond takes unit u,integer i returns boolean
-    if GetItemTypeId(UnitItemInSlot(u,i)) != 'Ibrk' and GetItemTypeId(UnitItemInSlot(u,i)) != 'Ibrk' and GetItemTypeId(UnitItemInSlot(u,i)) != 'I13R' and GetItemTypeId(UnitItemInSlot(u,i)) != 'I13V' and GetItemTypeId(UnitItemInSlot(u,i)) != 'I04V' and GetItemTypeId(UnitItemInSlot(u,i)) != 'I03R' and GetItemTypeId(UnitItemInSlot(u,i)) != 'I03S' and GetItemTypeId(UnitItemInSlot(u,i)) != 'I02K'and GetItemTypeId(UnitItemInSlot(u,i)) != 'I13S' and GetItemTypeId(UnitItemInSlot(u,i)) != 'IMDi' and GetItemTypeId(UnitItemInSlot(u,i)) != 'I01R' and GetItemTypeId(UnitItemInSlot(u,i)) != 'I01T' and GetItemTypeId(UnitItemInSlot(u,i)) != 'I02Z' and GetItemTypeId(UnitItemInSlot(u,i)) != 'IPar' and GetItemTypeId(UnitItemInSlot(u,i)) != 'I03M' and GetItemTypeId(UnitItemInSlot(u,i)) != 'I045' and GetItemTypeId(UnitItemInSlot(u,i)) != 'I047' and GetItemTypeId(UnitItemInSlot(u,i)) != 'I04U' and GetItemTypeId(UnitItemInSlot(u,i)) != 'I055' and GetItemTypeId(UnitItemInSlot(u,i)) != 'ISHs' and GetItemTypeId(UnitItemInSlot(u,i)) != 'I02W' and GetItemTypeId(UnitItemInSlot(u,i)) != 'I046' and GetItemTypeId(UnitItemInSlot(u,i)) != 'I054' and GetItemTypeId(UnitItemInSlot(u,i)) != 'I01F' and GetItemTypeId(UnitItemInSlot(u,i)) != 'I039' then
+    if GetItemTypeId(UnitItemInSlot(u,i)) != 'Ibrk' and GetItemTypeId(UnitItemInSlot(u,i)) != 'Ibrk' and GetItemTypeId(UnitItemInSlot(u,i)) != 'I13R' and GetItemTypeId(UnitItemInSlot(u,i)) != 'I02Q' and GetItemTypeId(UnitItemInSlot(u,i)) != 'I13V' and GetItemTypeId(UnitItemInSlot(u,i)) != 'I04V' and GetItemTypeId(UnitItemInSlot(u,i)) != 'I03R' and GetItemTypeId(UnitItemInSlot(u,i)) != 'I03S' and GetItemTypeId(UnitItemInSlot(u,i)) != 'I02K'and GetItemTypeId(UnitItemInSlot(u,i)) != 'I13S' and GetItemTypeId(UnitItemInSlot(u,i)) != 'IMDi' and GetItemTypeId(UnitItemInSlot(u,i)) != 'I01R' and GetItemTypeId(UnitItemInSlot(u,i)) != 'I01T' and GetItemTypeId(UnitItemInSlot(u,i)) != 'I02Z' and GetItemTypeId(UnitItemInSlot(u,i)) != 'IPar' and GetItemTypeId(UnitItemInSlot(u,i)) != 'I03M' and GetItemTypeId(UnitItemInSlot(u,i)) != 'I045' and GetItemTypeId(UnitItemInSlot(u,i)) != 'I047' and GetItemTypeId(UnitItemInSlot(u,i)) != 'I04U' and GetItemTypeId(UnitItemInSlot(u,i)) != 'I055' and GetItemTypeId(UnitItemInSlot(u,i)) != 'ISHs' and GetItemTypeId(UnitItemInSlot(u,i)) != 'I02W' and GetItemTypeId(UnitItemInSlot(u,i)) != 'I046' and GetItemTypeId(UnitItemInSlot(u,i)) != 'I054' and GetItemTypeId(UnitItemInSlot(u,i)) != 'I01F' and GetItemTypeId(UnitItemInSlot(u,i)) != 'I039' then
         return true
     else
         return false
@@ -34226,7 +34338,7 @@ endif
 //if LoadBoolean(HH,uid,StringHash("DanzoFBool"))==true and nb>0 and not(GetUnitAbilityLevel(c,'A1WT')==0 and GetUnitAbilityLevel(c,'A3WR')==0 and  (GetUnitAbilityLevel(c,'CB01')==0 or (GetUnitAbilityLevel(c,'CB01')>0 and CurrentEventAttack==true)) and GetUnitAbilityLevel(c,'B059')==0 and GetUnitAbilityLevel(u,'Bwul')==0 and(LoadInteger(HH,cid,StringHash("AlbedoEPassive"))<4 and (GetUnitAbilityLevel(u,'B017')==0 or GetUnitAbilityLevel(u,'B019')==0))) then
 //    call SaveReal(HH,uid,StringHash("DanzoFHP"), LoadReal(HH,uid,StringHash("DanzoFHP"))-nb  )
 //endif
-if GetUnitAbilityLevel(u,0x4130304A)>0 then
+if GetUnitAbilityLevel(u,'A00J')>0 then
     set cjlocgn_00000000=CreateTimer()
     call SetUnitInvulnerable(u,true)
     call SaveUnitHandle(h,GetHandleId(cjlocgn_00000000),0,u)
@@ -34239,7 +34351,7 @@ if GetUnitAbilityLevel(u,0x4130304A)>0 then
     set cjlocgn_00000000=null
     set nb=0
 endif 
-if GetUnitAbilityLevel(u,0x41305043)>0 then
+if GetUnitAbilityLevel(u,'A0PC')>0 then
     set cjlocgn_00000000=CreateTimer()
     call SetUnitInvulnerable(u,true)
     call SaveBoolean(h,uid,pb,true)
@@ -34759,7 +34871,7 @@ if cond==0 then
             set nb=0
         endif
         set r=LoadReal(h,uid,StringHash("mantello"))
-        if nb>0 and GetUnitAbilityLevel(u,0x42303043)>0 and r>0 then
+        if nb>0 and GetUnitAbilityLevel(u,'B00C')>0 and r>0 then
             call SaveReal(h,uid,StringHash("mantello"),r-b)
             call newBlockDamage(u)
             set nb=0
@@ -35594,14 +35706,14 @@ if cond==0 then
 
             set nb=nb*0.7
         endif
-        if(GetUnitAbilityLevel(u,'A0RO')>0 or GetUnitAbilityLevel(u,0x4131394C)>0 or GetUnitAbilityLevel(u,'A00G')>0)and nb>0 and GetHeroLevel(u)>=6 then
+        if(GetUnitAbilityLevel(u,'A0RO')>0 or GetUnitAbilityLevel(u,'A19L')>0 or GetUnitAbilityLevel(u,'A00G')>0)and nb>0 and GetHeroLevel(u)>=6 then
 
             call SetUnitState(u,UNIT_STATE_LIFE,GetWidgetLife(u)+nb*0.25)
 
             set nb=nb*0.75
         endif
                 
-                if GetUnitAbilityLevel(u,'Gi01')>0 and nb>0 then        // GilW1 buff
+        if GetUnitAbilityLevel(u,'Gi01')>0 and nb>0 then        // GilW1 buff
 
             call SetUnitState(u,UNIT_STATE_LIFE,GetWidgetLife(u)+nb*0.5)
 
@@ -38023,13 +38135,6 @@ function Trig_BKB_Actions takes nothing returns nothing
 local integer i=GetPlayerId(GetTriggerPlayer())
 local integer ind=0
 local integer lp=0
-if GetTriggerPlayerKey()==OSKEY_OEM_3 then
-    if GetTriggerPlayer()==GetLocalPlayer()then
-        call ClearSelection()
-        call SelectUnit(Hero[i],true)
-        call PanCameraToTimed(GetUnitX(Hero[i]),GetUnitY(Hero[i]),0)
-    endif
-endif
 if UnitHasItemOfTypeBJ(Hero[GetPlayerId(GetTriggerPlayer())],'I04V') and IsUnitPaused(Hero[GetPlayerId(GetTriggerPlayer())])==false and (RectContainsUnit(gg_rct_AntiMh,Hero[GetPlayerId(GetTriggerPlayer())])==false and RectContainsUnit(gg_rct_HibariFight,Hero[GetPlayerId(GetTriggerPlayer())])==false) and GetUnitState(Hero[GetPlayerId(GetTriggerPlayer())],UNIT_STATE_MANA)>=25 and GetUnitAbilityLevel(Hero[GetPlayerId(GetTriggerPlayer())],'Pet1')==0 and GetUnitAbilityLevel(Hero[GetPlayerId(GetTriggerPlayer())],'cbc8')==0 then
 loop
 exitwhen lp==6
@@ -38038,7 +38143,7 @@ set ind=lp
 endif
 set lp=lp+1
 endloop
-if IsAbilityOnCooldown(GetUnitAbility(Hero[i],'A12B'))==false and IsUnitPaused(Hero[i])==false and (GetUnitAbilityLevel(Hero[i],'A3BJ')>0 or GetTriggerPlayerKey()==OSKEY_OEM_3 ) then
+if IsAbilityOnCooldown(GetUnitAbility(Hero[i],'A12B'))==false and IsUnitPaused(Hero[i])==false and (GetFrameTexture(GetOriginFrame(ORIGIN_FRAME_COMMAND_BUTTON,11),1)!="ReplaceableTextures\\CommandButtons\\BTNCancel.blp" or (GetFrameTexture(GetOriginFrame(ORIGIN_FRAME_COMMAND_BUTTON,0),1)=="war3mapImported\\BTNMove.blp" and IsFrameVisible(GetOriginFrame(ORIGIN_FRAME_COMMAND_BUTTON,0)))) then
 call UnitAddAbility(Hero[i],'A151')
 call UnitRemoveAbilityTimedPause(Hero[i],'A151',7)
 call UnitAddAbility(Hero[i],'A22B')
@@ -38060,9 +38165,6 @@ call UnitRemoveAbility(Hero[i], 'AoSV')
 call UnitRemoveAbility(Hero[i], 'A1SV')
 call SetUnitMoveSpeed(Hero[i], GetUnitDefaultMoveSpeed(Hero[i]))
 call UnitUseItem(Hero[i],UnitItemInSlot(Hero[i],ind))
-elseif IsAbilityOnCooldown(GetUnitAbility(Hero[i],'A12B'))==false and IsUnitPaused(Hero[i])==false and GetUnitAbilityLevel(Hero[i],'A3BJ')==0 then
-call UnitAddAbility(Hero[i],'A3BJ')
-call UnitRemoveAbilityTimed(Hero[i],'A3BJ',0.4)
 endif
 endif
 endfunction
@@ -38071,7 +38173,6 @@ local integer i=0
 set gg_trg_BKB=CreateTrigger()
 loop
 exitwhen i>=10
-call TriggerRegisterPlayerKeyEvent( gg_trg_BKB, Player(i), OSKEY_OEM_3, 0 ,true )
 call TriggerRegisterPlayerKeyEvent( gg_trg_BKB, Player(i), OSKEY_ESCAPE, 0 ,true )
 set i=i+1
 endloop
@@ -38468,9 +38569,13 @@ function AkatsukiSetCast takes nothing returns nothing
 local timer t=CreateTimer()
 local unit u=GetTriggerUnit()
 local integer id=GetHandleId(t)
+if GetSpellAbilityId()=='MaE1' and GetUnitAbilityLevel(GetSpellTargetUnit(), 'Wome')>0 and ((IsUnitAlly(GetSpellTargetUnit(), GetOwningPlayer(u))==false and GetWidgetLife(GetSpellTargetUnit()) > GetWidgetMaxLife(GetSpellTargetUnit()) * 0.3) or GetUnitAbilityLevel(GetSpellTargetUnit(), 'MaE3')>0) then
+call DestroyTimer(t)
+else
 call SaveUnitHandle(h,id,0,u)
 call SetHeroInt(u,GetHeroInt(u,false)+8,true)
 call TimerStart(t,10,false,function AkatsukiSetCast2)
+endif
 set u=null
 set t=null
 endfunction
@@ -39125,10 +39230,21 @@ local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
 local unit u=LoadUnitHandle(HH,id,0)
 local real time=LoadReal(HH,id,1)
-call SaveReal(HH,id,1,time+0.2)
-if time==6 or DU2==false or udg_B==false then
+local integer i=6
+if IsUnitPaused(u)==false and GetUnitAbilityLevel(u,'Pet1')==0 then
+call SaveReal(HH,id,1,time+0.05)
+endif
+if time==5 or DU2==false or udg_B==false then
 call UnitMakeAbilityPermanent(u,false,'A14R')
 call UnitRemoveAbility(u,'A14R')
+loop
+    call StartAbilityCooldown(GetUnitAbility(u,'A0YJ'),15)
+    if GetItemTypeId(UnitItemInSlot(u,i)) == 'I02Q' then
+        call StartItemCooldown(u,UnitItemInSlot(u, i),15)
+    endif
+exitwhen i == 0
+set i=i - 1
+endloop
 call FlushChildHashtable(HH,id)
 call DestroyTimer(t)
 endif
@@ -39140,8 +39256,9 @@ local integer id=GetHandleId(t)
 local unit u=GetTriggerUnit()
 call UnitAddAbility(u,'A14R')
 call UnitMakeAbilityPermanent(u,true,'A14R')
+call CreateModeIndicatorWithPauseFormDispellable(u, "war3mapImported\\BTNEvilEye's.blp", 5,'A14R')
 call SaveUnitHandle(HH,id,0,u)
-call TimerStart(t,0.2,true,function HellRingCast2)
+call TimerStart(t,0.05,true,function HellRingCast2)
 set u=null
 endfunction
 function InitTrig_HellRing takes nothing returns nothing
@@ -41278,8 +41395,12 @@ function ZeroPointAct3 takes nothing returns nothing
 local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
 local unit u=LoadUnitHandle(h,id,0)
-local real st=0
-set st=LoadReal(h,GetHandleId(u),StringHash("zero"))/35
+local real time=LoadReal(h,id,1)
+local real st=LoadReal(h,id,2)
+if IsUnitPaused(u)==false and GetUnitAbilityLevel(u,'Pet1')==0 then
+call SaveReal(h,id,1,time+0.05)
+endif
+if time>10 or GetUnitAbilityLevel(u,'A00J')>0 then
 call SetHeroAgi(u,GetHeroAgi(u,false)-R2I(st),true)
 call SetHeroStr(u,GetHeroStr(u,false)-R2I(st),true)
 call SetHeroInt(u,GetHeroInt(u,false)-R2I(st),true)
@@ -41287,6 +41408,7 @@ call PauseTimer(t)
 call SaveReal(h,GetHandleId(u),StringHash("zero"),0)
 call DestroyTimer(t)
 call FlushChildHashtable(h,id)
+endif
 set u=null
 set t=null
 endfunction
@@ -41331,9 +41453,11 @@ set st=LoadReal(h,GetHandleId(u),StringHash("zero"))/35
 call SetHeroAgi(u,GetHeroAgi(u,false)+R2I(st),true)
 call SetHeroStr(u,GetHeroStr(u,false)+R2I(st),true)
 call SetHeroInt(u,GetHeroInt(u,false)+R2I(st),true)
+call SaveReal(h,id,2,st)
 call PauseTimer(t)
-call UnitRemoveAbility(u,0x4130304A)
-call TimerStart(t,15,false,function ZeroPointAct3)
+call UnitRemoveAbility(u,'A00J')
+call CreateModeIndicatorWithPauseFormDispellableHash(u, "war3mapImported\\BTNZeropointRevised.blp", 10, StringHash("zero"))
+call TimerStart(t,0.05,true,function ZeroPointAct3)
 endif
 set p=null
 set u=null
@@ -41342,9 +41466,9 @@ endfunction
 function Trig_ZeroPoint_Revised_Actions takes nothing returns nothing
 local unit u=GetTriggerUnit()
 local timer t=CreateTimer()
-call UnitAddAbility(u,0x4130304A)
-call SaveUnitHandle(h,GetHandleId(t),0,u)
 call SaveReal(h,GetHandleId(u),StringHash("zero"),0)
+call UnitAddAbility(u,'A00J')
+call SaveUnitHandle(h,GetHandleId(t),0,u)
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\ZeroPointbreakthoughrevise.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
 call KillSoundWhenDone(soundplay)
@@ -41365,12 +41489,12 @@ local real x1=GetUnitX(u)
 local real y1=GetUnitY(u)
 local player p=GetOwningPlayer(u)
 local real st=LoadReal(h,GetHandleId(u),StringHash("mantello"))
-if GetUnitAbilityLevel(u,0x42303043)==0 then
+if GetUnitAbilityLevel(u,'B00C')==0 then
         call FlushChildHashtable(h,id)
         call DestroyTimer(t)
         call SaveReal(h,GetHandleId(u),StringHash("mantello"),0)
-elseif GetUnitAbilityLevel(u,0x42303043)>0 and st<0 then
-        call UnitRemoveAbility(u,0x42303043)
+elseif GetUnitAbilityLevel(u,'B00C')>0 and st<0 then
+        call UnitRemoveAbility(u,'B00C')
 endif
 set p=null
 set u=null
@@ -41381,6 +41505,7 @@ local unit u=GetTriggerUnit()
 local timer t=CreateTimer()
 call SaveUnitHandle(h,GetHandleId(t),0,u)
 call SaveReal(h,GetHandleId(u),StringHash("mantello"),650+GetWidgetMaxLife(u)*0.15)
+call CreateModeIndicatorWithPauseFormDispellable(u, "war3mapImported\\BTNPrimomantle.blp", 5,'B00C')
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\Mantello di Vongola Primo.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
 call KillSoundWhenDone(soundplay)
@@ -43060,7 +43185,7 @@ set u=null
 set t=null
 endfunction
 function RedHawkCond takes nothing returns boolean
-return GetSpellAbilityId()==0x41305A4A and udg_B==true
+return GetSpellAbilityId()=='A0ZJ' and udg_B==true
 endfunction
 function LuffyRedStopOrders2 takes nothing returns nothing
     local timer t=GetExpiredTimer()
@@ -43322,7 +43447,7 @@ call SetUnitAcquireRange(u,51)
 call SaveGroupHandle(h,id,12,CreateGroup())
 if GetUnitAbilityLevel(u,'LuG3')==0 then
 call SaveReal(h,id,2,1000)
-call SaveReal(h,id,4,(GetUnitAbilityLevel(u,0x41305A4A)+3)*GetHeroAgi(u,true)+100)
+call SaveReal(h,id,4,(GetUnitAbilityLevel(u,'A0ZJ')+3)*GetHeroAgi(u,true)+100)
 call SetUnitTimeScale(u,0.1)
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\RedHawk.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
@@ -43330,7 +43455,7 @@ call KillSoundWhenDone(soundplay)
 call UnitAddAbility(u,0x41305A49)
 else
 call SaveReal(h,id,2,1500)
-call SaveReal(h,id,4,(((GetUnitAbilityLevel(u,0x41305A4A)+3)*GetHeroAgi(u,true))+100)*1.25)
+call SaveReal(h,id,4,(((GetUnitAbilityLevel(u,'A0ZJ')+3)*GetHeroAgi(u,true))+100)*1.25)
 call SetUnitAnimation(u,"Spell One Two")
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\One Piece Luffy Thor Elephant Gun.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
@@ -43338,7 +43463,7 @@ call KillSoundWhenDone(soundplay)
 endif
 call UnitAddAbility(u,'A1FU') //Slow
 call UnitAddAbility(u,'Pet1')
-call StartAbilityCooldown(GetUnitAbility(u,0x41305A4A),GetAbilityRemainingCooldown(GetUnitAbility(u,0x41305A4A)))
+call StartAbilityCooldown(GetUnitAbility(u,'A0ZJ'),GetAbilityRemainingCooldown(GetUnitAbility(u,'A0ZJ')))
 call TriggerRegisterUnitEvent(tt,u,EVENT_UNIT_ISSUED_TARGET_ORDER)
 call TriggerRegisterUnitEvent(tt,u,EVENT_UNIT_ISSUED_POINT_ORDER)
 call TriggerAddAction(tt,function LuffyRedStopOrders)
@@ -44333,7 +44458,7 @@ call SaveGroupHandle(h,id,4,CreateGroup())
 call SaveReal(h,id,2,x)
 call SaveReal(h,id,3,y)
 call SaveReal(h,id,5,a)
-set soundplay=CreateSound("Sound\\Music\\mp3Music\\DaiFunka.mp3",false,false,true,12700,12700,"")
+set soundplay=CreateSound("Sound\\Music\\mp3Music\\InugamiGuren.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
 call KillSoundWhenDone(soundplay)
 if GetUnitAbilityLevel(u,'A155')==0 and GetHeroLevel(u)>5 then
@@ -44348,7 +44473,7 @@ set u=null
 set t=null
 endfunction
 function Trig_Inugami_Guren_Conditions takes nothing returns boolean
-return GetSpellAbilityId()==0x41303657
+return GetSpellAbilityId()=='A06W'
 endfunction
 function Trig_Inugami_Guren_Actions2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
@@ -44373,7 +44498,7 @@ call UnitApplyTimedLife(CreateUnit(p,0x65303247,x,y,a*bj_RADTODEG),1,2)
 else
 call DestroyEffect(AddSpecialEffect("war3mapImported\\Abyssal_Impact_Base.mdx",x1,y1))
 call DestroyEffect(AddSpecialEffectTarget("war3mapImported\\Flameshock.mdx",c,"chest"))
-call myCustomDamage(u,c,(2+GetUnitAbilityLevel(u,0x41303657))*GetHeroStr(u,true),false,false,null,null,null)
+call myCustomDamage(u,c,(2+GetUnitAbilityLevel(u,'A06W'))*GetHeroStr(u,true),false,false,null,null,null)
 call RemoveUnit(l__d)
 call FlushChildHashtable(h,id)
 call DestroyTimer(t)
@@ -44392,7 +44517,7 @@ local real f=GetUnitFacing(u)
 call SaveUnitHandle(h,id,0,u)
 call SaveUnitHandle(h,id,1,CreateUnit(GetOwningPlayer(u),0x65303245,GetUnitX(u)+50.*Cos(f*bj_DEGTORAD),GetUnitY(u)+50.*Cos(f*bj_DEGTORAD),f))
 call SaveUnitHandle(h,id,2,GetSpellTargetUnit())
-set soundplay=CreateSound("Sound\\Music\\mp3Music\\InugamiGuren.mp3",false,false,true,12700,12700,"")
+set soundplay=CreateSound("Sound\\Music\\mp3Music\\DaiFunka.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
 call KillSoundWhenDone(soundplay)
 if GetUnitAbilityLevel(u,'A155')==0 and GetHeroLevel(u)>5 then
@@ -81801,8 +81926,10 @@ local integer id=GetHandleId(t)
 local unit u=LoadUnitHandle(h,id,0)
 local integer idu=GetHandleId(u)
 local real time=LoadReal(h,idu,StringHash("nell"))
-if time>0 then
+if time>0 and GetUnitAbilityLevel(u,'A0PC')==0 then
+if IsUnitPaused(u)==false and GetUnitAbilityLevel(u,'Pet1')==0 then
 call SaveReal(h,GetHandleId(u),StringHash("nell"),time-0.05)
+endif
 else
 call SaveReal(h,idu,StringHash("nell"),0)
 call SaveReal(h,idu,StringHash("nelld"),0)
@@ -81826,16 +81953,20 @@ if LoadBoolean(HH,GetHandleId(u),TARGET_ABILITY)==false then
 call SaveReal(h,id,4,time+0.05)
 endif
 else
-call UnitMakeAbilityPermanent(u,false,0x41305043)
-call UnitRemoveAbility(u,0x41305043)
+call UnitMakeAbilityPermanent(u,false,'A0PC')
+call UnitRemoveAbility(u,'A0PC')
 call PauseUnit(u,false)
 call SetUnitTimeScale(u,1)
-call SaveReal(h,idu,StringHash("nell"),15.0)
+call SaveReal(h,idu,StringHash("nell"),10.0)
 if LoadTimerHandle(h,idu,StringHash("nell1"))==null then
 call SaveTimerHandle(h,idu,StringHash("nell1"),t)
 endif
+if GetHeroLevel(u)==35 and LoadReal(h,idu,StringHash("nelld"))>0 and GetAbilityRemainingCooldown(GetUnitAbility(u, 'A0PA'))>1.0 then
+    call StartAbilityCooldown(GetUnitAbility(u, 'A0PA'), 0.1)
+endif
 call UnitRemoveBuffs(u,false,true)
 call TextTagFull(I2S(R2I(LoadReal(h,idu,StringHash("nelld"))))+"!",u,50,125,255,1,GetOwningPlayer(u),0.24)
+call CreateModeIndicatorWithPauseFormDispellableHash(u, "war3mapImported\\BTNNell 2.blp", 10,StringHash("nelld"))
 call PauseTimer(t)
 call TimerStart(t,0.05,true,function AbsorbCast3)
 endif
@@ -81850,8 +81981,8 @@ call SaveUnitHandle(h,id,0,u)
 call SetUnitTimeScale(u,0)
 call SaveReal(h,id,4,0)
 call PauseUnit(u,true)
-call UnitAddAbility(u,0x41305043)
-call UnitMakeAbilityPermanent(u,true,0x41305043)
+call UnitAddAbility(u,'A0PC')
+call UnitMakeAbilityPermanent(u,true,'A0PC')
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\NelielW.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
 call KillSoundWhenDone(soundplay)
@@ -106138,6 +106269,21 @@ function InitTrig_UBWSword takes nothing returns nothing
     call TriggerAddAction(t,function UBWSwordCast)
     set t=null
 endfunction
+function CancelOrderCond takes nothing returns boolean
+return GetIssuedOrderId()==851975 or GetIssuedOrderId()==851979 or GetIssuedOrderId()==852000 or GetIssuedOrderId()==851976 or GetIssuedOrderId()==851977 or GetIssuedOrderId()==851978
+endfunction
+function CancelOrderCast takes nothing returns nothing
+call BJDebugMsg(I2S(GetIssuedOrderId()))
+endfunction
+function InitTrig_CancelOrder takes nothing returns nothing
+    local trigger t=CreateTrigger()
+    call TriggerRegisterAnyUnitEventBJ(t,EVENT_PLAYER_UNIT_ISSUED_ORDER)
+    call TriggerRegisterAnyUnitEventBJ(t,EVENT_PLAYER_UNIT_ISSUED_POINT_ORDER)
+    call TriggerRegisterAnyUnitEventBJ(t,EVENT_PLAYER_UNIT_ISSUED_TARGET_ORDER)
+    //call TriggerAddCondition(t,Condition(function CancelOrderCond))
+    call TriggerAddAction(t,function CancelOrderCast)
+    set t=null
+endfunction
 function UBWCond takes nothing returns boolean
 return GetSpellAbilityId()=='A13B' or GetSpellAbilityId()=='A237'
 endfunction
@@ -128146,7 +128292,7 @@ call TriggerAddCondition(gg_trg_QAtalanta3,Condition(function QAtalanta3Cond))
 call TriggerAddAction(gg_trg_QAtalanta3,function QAtalanta3Cast)
 endfunction
 function WAtalantaCond takes nothing returns boolean
-return GetSpellAbilityId()==0x41314457 and GetUnitTypeId(GetTriggerUnit())=='H06G'
+return GetSpellAbilityId()=='A1DW' and GetUnitTypeId(GetTriggerUnit())=='H06G'
 endfunction
 function WAtalantaCast2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
@@ -128232,14 +128378,14 @@ call TriggerAddCondition(gg_trg_WAtalanta,Condition(function WAtalantaCond))
 call TriggerAddAction(gg_trg_WAtalanta,function WAtalantaCast1)
 endfunction
 function AlterAtalantaWCond takes nothing returns boolean
-return GetSpellAbilityId()==0x41314457 and GetUnitTypeId(GetTriggerUnit())=='H06L'
+return GetSpellAbilityId()=='A1DW' and GetUnitTypeId(GetTriggerUnit())=='H06L'
 endfunction
 function AlterAtalantaWCast2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
 local unit u=LoadUnitHandle(h,id,0)
 local unit l__d=LoadUnitHandle(h,id,1)
-local real dmg=GetHeroAgi(u,true)*(1+GetUnitAbilityLevel(u,0x41314457))
+local real dmg=GetHeroAgi(u,true)*(1+GetUnitAbilityLevel(u,'A1DW'))
 local real x=GetUnitX(l__d)
 local real y=GetUnitY(l__d)
 local real x1=GetUnitX(u)
@@ -147664,10 +147810,13 @@ local unit u=LoadUnitHandle(h,id,0)
 local real time=LoadReal(h,id,2)-0.05
 local player p=GetOwningPlayer(u)
 if time>0 then
+if IsUnitPaused(u)==false and GetUnitAbilityLevel(u,'Pet1')==0 then
 call SaveReal(h,id,2,time)
+endif
 else
 //call UnitRemoveAbility(u,'Ao7O')
 call UnitRemoveAbility(u,'Ao8S')
+call StartAbilityCooldown(GetUnitAbility(u,'Ao8N'),25)
 call DestroyTimer(t)
 call FlushChildHashtable(h,id)
 endif
@@ -147680,9 +147829,10 @@ local timer t=CreateTimer()
 local integer id=GetHandleId(t)
 local unit u=GetTriggerUnit()
 call SaveUnitHandle(h,id,0,u)
-call SaveReal(h,id,2,10)
+call SaveReal(h,id,2,7)
 //call UnitAddAbility(u,'Ao7O')
 call UnitAddAbility(u,'Ao8S')
+call CreateModeIndicatorWithPauseFormDispellable(u, "ReplaceableTextures\\CommandButtons\\BTNKazumaG.blp", 7,'Ao8S')
 call TimerStart(t,0.05,true,function GKazumaCast2)
 set u=null
 set t=null
@@ -148603,12 +148753,12 @@ function FKazumaList takes unit u, integer id returns nothing
         call UnitAddAbility(u,'KIF5')
         call UnitRemoveAbilityTimed(u,'KIF5',10)
     endif
-    if id=='I02Q' then //Демонический глаз
-        call UnitAddAbility(u,'KIF6')
-        call UnitRemoveAbilityTimed(u,'KIF6',10)
-        call UnitAddAbility(u,'KIF7')
-        call UnitRemoveAbilityTimed(u,'KIF7',10)
-    endif
+    // if id=='I02Q' then //Демонический глаз
+    //     call UnitAddAbility(u,'KIF6')
+    //     call UnitRemoveAbilityTimed(u,'KIF6',10)
+    //     call UnitAddAbility(u,'KIF7')
+    //     call UnitRemoveAbilityTimed(u,'KIF7',10)
+    // endif
     if id=='I02R' then //Сфера Огня
         call UnitAddAbility(u,'KIF8')
         call UnitRemoveAbilityTimed(u,'KIF8',10)
@@ -159137,13 +159287,6 @@ function DrStoneESC takes nothing returns nothing
 local integer i=GetPlayerId(GetTriggerPlayer())
 local integer ind=0
 local integer lp=0
-if GetTriggerPlayerKey()==OSKEY_OEM_3 then
-    if GetTriggerPlayer()==GetLocalPlayer()then
-        call ClearSelection()
-        call SelectUnit(Hero[i],true)
-        call PanCameraToTimed(GetUnitX(Hero[i]),GetUnitY(Hero[i]),0)
-    endif
-endif
 if UnitHasItemOfTypeBJ(Hero[GetPlayerId(GetTriggerPlayer())],'IMDi') and IsUnitPaused(Hero[GetPlayerId(GetTriggerPlayer())])==false and RectContainsUnit(gg_rct_AntiMh,Hero[GetPlayerId(GetTriggerPlayer())])==false and GetUnitAbilityLevel(Hero[GetPlayerId(GetTriggerPlayer())],'Pet1')==0 and GetUnitAbilityLevel(Hero[GetPlayerId(GetTriggerPlayer())],'cbc8')==0 then
 loop
 exitwhen lp==6
@@ -159152,7 +159295,7 @@ set ind=lp
 endif
 set lp=lp+1
 endloop
-if IsAbilityOnCooldown(GetUnitAbility(Hero[i],'IMDs'))==false and IsUnitPaused(Hero[i])==false and (GetUnitAbilityLevel(Hero[i],'A3BJ')>0 or GetTriggerPlayerKey()==OSKEY_OEM_3 )then
+if IsAbilityOnCooldown(GetUnitAbility(Hero[i],'IMDs'))==false and IsUnitPaused(Hero[i])==false and (GetFrameTexture(GetOriginFrame(ORIGIN_FRAME_COMMAND_BUTTON,11),1)!="ReplaceableTextures\\CommandButtons\\BTNCancel.blp" or (GetFrameTexture(GetOriginFrame(ORIGIN_FRAME_COMMAND_BUTTON,0),1)=="war3mapImported\\BTNMove.blp" and IsFrameVisible(GetOriginFrame(ORIGIN_FRAME_COMMAND_BUTTON,0)))) then
 	call UnitRemoveBuffs(Hero[i],false,true)
 	call UnitRemoveAbility(Hero[i], 'cbc3')
     call UnitRemoveAbility(Hero[i], 'cbc7')
@@ -159165,11 +159308,8 @@ if IsAbilityOnCooldown(GetUnitAbility(Hero[i],'IMDs'))==false and IsUnitPaused(H
 	call UnitRemoveAbility(Hero[i], 'Ao2Z')
 	call UnitRemoveAbility(Hero[i], 'A1VJ')
     call UnitRemoveAbility(Hero[i], 'A3BJ')
-        call SetUnitMoveSpeed(Hero[i], GetUnitDefaultMoveSpeed(Hero[i]))
-        call UnitUseItem(Hero[i],UnitItemInSlot(Hero[i],ind))
-    elseif IsAbilityOnCooldown(GetUnitAbility(Hero[i],'A12B'))==false and IsUnitPaused(Hero[i])==false and GetUnitAbilityLevel(Hero[i],'A3BJ')==0 then
-    call UnitAddAbility(Hero[i],'A3BJ')
-    call UnitRemoveAbilityTimed(Hero[i],'A3BJ',0.4)
+    call SetUnitMoveSpeed(Hero[i], GetUnitDefaultMoveSpeed(Hero[i]))
+    call UnitUseItem(Hero[i],UnitItemInSlot(Hero[i],ind))
 endif
 endif
 endfunction
@@ -159189,7 +159329,6 @@ function InitTrig_DrStoneInt takes nothing returns nothing
         set index=0
         loop
         exitwhen index==10
-            call TriggerRegisterPlayerKeyEvent( trig, Player(index), OSKEY_OEM_3, 0 ,true )
             call TriggerRegisterPlayerKeyEvent( trig, Player(index), OSKEY_ESCAPE, 0 ,true )
             set index=index+1
         endloop
@@ -164437,16 +164576,18 @@ function MadokaE1_Periodic takes nothing returns nothing
     local real time=LoadReal(h, id, TIME_HASH)
     local unit target=LoadUnitHandle(h, id, TargetHash)
     local real damage=GetWidgetMaxLife(target) * 0.0015
-    if time < 20 and UnitIsAlive(target) then
-        if GetWidgetLife(target) > GetWidgetMaxLife(target)*0.055 then
-            call SetWidgetLife(target, GetWidgetLife(target) - damage)
-        else
-            call UnitAddAbility(target, 'A0WR')
-            call DamageIndicatorFunction(LoadUnitHandle(h, id, CasterHash), target, GetWidgetMaxLife(target)*0.055)
-            call myCustomDamage(LoadUnitHandle(h, id, CasterHash) , target , 99999 , false , false , null , null , null)
-            call UnitRemoveAbility(target, 'A0WR')
+    if time < 15 and UnitIsAlive(target) then
+        if IsUnitPaused(target)==false and GetUnitAbilityLevel(target,'Pet1')==0 then
+            if GetWidgetLife(target) > GetWidgetMaxLife(target)*0.055 then
+                call SetWidgetLife(target, GetWidgetLife(target) - damage)
+            else
+                call UnitAddAbility(target, 'A0WR')
+                call DamageIndicatorFunction(LoadUnitHandle(h, id, CasterHash), target, GetWidgetMaxLife(target)*0.055)
+                call myCustomDamage(LoadUnitHandle(h, id, CasterHash) , target , 99999 , false , false , null , null , null)
+                call UnitRemoveAbility(target, 'A0WR')
+            endif
+            call SaveReal(h, id, TIME_HASH, time + 0.1)
         endif
-        call SaveReal(h, id, TIME_HASH, time + 0.1)
     else
         call SetHeroStr(target, GetHeroStr(target, false) - LoadInteger(h, id, StringHash("Bonus_Stat")), false)
         call SetHeroAgi(target, GetHeroAgi(target, false) - LoadInteger(h, id, StringHash("Bonus_Stat")), false)
@@ -164489,11 +164630,13 @@ endfunction
 
 function MadokaE_Switcher takes unit newCaster,unit newTarget returns nothing
     if GetUnitAbilityLevel(newTarget, 'Wome')>0 then // Проверка на отсутствие письки (на женский пол)
-        if IsUnitAlly(newTarget, GetOwningPlayer(newCaster)) or GetWidgetLife(newTarget) <= GetWidgetMaxLife(newTarget) * 0.3 then
+        if (IsUnitAlly(newTarget, GetOwningPlayer(newCaster)) or GetWidgetLife(newTarget) <= GetWidgetMaxLife(newTarget) * 0.3) and GetUnitAbilityLevel(newTarget, 'MaE3')==0 then
             call MadokaE1_Cast(newCaster , newTarget , CreateTimer())
         else
             call IssueImmediateOrder(newCaster, "stop")
-            call StartAbilityCooldown(GetUnitAbility(newCaster , 'MaE1' ), 5)
+            call SetWidgetMana(newCaster, GetWidgetMana(newCaster)+GetAbilityIntegerLevelField(GetUnitAbility(newCaster,'MaE1'),ABILITY_ILF_MANA_COST,GetUnitAbilityLevel(newCaster,'MaE1')-1))
+            call StartAbilityCooldown(GetUnitAbility(newCaster , 'MaE1' ), 0.5)
+            call DisplayTimedWarningMessage(GetOwningPlayer(newCaster),10,"Неподходящая цель для Kyubey.")
         endif
     else
         set soundplay=CreateSound("Sound\\war3mapImported\\MadokaE_Man.mp3", false, false, true, 12700, 12700, "")
@@ -203959,6 +204102,7 @@ call InitTrig_VoicePreload()
 call InitTrig_Init()
 call InitTrig_Init2()
 call InitTrig_Table()
+//call InitTrig_CancelOrder()
 call InitTrig_Dialog3()
 call InitTrig_Dialog2()
 call InitTrig_RemovePerDie()
