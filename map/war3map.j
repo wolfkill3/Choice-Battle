@@ -32,6 +32,7 @@ integer array TeamCountFountain
 integer array TeamCountTower
 integer array Streak
 integer array Streak_Counter
+boolean array notcmb
 string TestString="0"
 timer udg_Timer=null
 timer udg_Timer2=null
@@ -1939,6 +1940,7 @@ set udg_SwapId[i]=0
 set udg_Repick[i]=2
 set bonus_repick[i]=0
 set Streak[i]=0
+set notcmb[i]=true
 set Streak_Counter[i]=0
 set GoldLimit[i]=500
 set GoldTotalLimit[i]=500
@@ -20510,6 +20512,12 @@ function Trig_Multup_Actions takes nothing returns nothing
             if IsUnitPaused(Hero[x])==false and UnitHasItemOfTypeBJ(Hero[x],'I02K')==true and GetWidgetLife(Hero[x])>0.01*GetWidgetMaxLife(Hero[x]) then
                 call SetUnitState(Hero[x],UNIT_STATE_LIFE,GetWidgetLife(Hero[x])-(0.001*GetWidgetMaxLife(Hero[x])+1))
             endif
+            if GetFrameTexture(GetOriginFrame(ORIGIN_FRAME_COMMAND_BUTTON,11),1)!="ReplaceableTextures\\CommandButtons\\BTNCancel.blp" or (GetFrameTexture(GetOriginFrame(ORIGIN_FRAME_COMMAND_BUTTON,0),1)=="war3mapImported\\BTNMove.blp" and IsFrameVisible(GetOriginFrame(ORIGIN_FRAME_COMMAND_BUTTON,0))) then
+                set notcmb[x]=true
+            else
+                set notcmb[x]=false
+            endif
+            call BJDebugMsg(B2S(notcmb[x]))
             if udg_DM[x+1]!=null then
                 if (GetWidgetMana(Hero[x])>=100 and GetWidgetMana(udg_DM[x+1])>=100) and manaMoria[x]!=1 then
                     set udg_DMM[x]=CreateUnit(GetOwningPlayer(udg_DM[x+1]),'h13J',RX,RY,0)
@@ -37387,7 +37395,8 @@ set ind=lp
 endif
 set lp=lp+1
 endloop
-if IsAbilityOnCooldown(GetUnitAbility(Hero[i],'A12B'))==false and IsUnitPaused(Hero[i])==false and (GetFrameTexture(GetOriginFrame(ORIGIN_FRAME_COMMAND_BUTTON,11),1)!="ReplaceableTextures\\CommandButtons\\BTNCancel.blp" or (GetFrameTexture(GetOriginFrame(ORIGIN_FRAME_COMMAND_BUTTON,0),1)=="war3mapImported\\BTNMove.blp" and IsFrameVisible(GetOriginFrame(ORIGIN_FRAME_COMMAND_BUTTON,0)))) then
+call BJDebugMsg(I2S(i)+"   "+B2S(notcmb[i]))
+if IsAbilityOnCooldown(GetUnitAbility(Hero[i],'A12B'))==false and IsUnitPaused(Hero[i])==false and notcmb[i]==true then
 call UnitAddAbility(Hero[i],'A151')
 call UnitRemoveAbilityTimedPause(Hero[i],'A151',7)
 call UnitAddAbility(Hero[i],'A22B')
