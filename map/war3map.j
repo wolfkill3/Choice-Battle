@@ -9292,7 +9292,7 @@ set acode[6]=0x4130385A
 set abilcode[7]="blizzard"
 set acode[7]='A0B9'
 set abilcode[8]="absorb"
-set acode[8]=0x41303259
+set acode[8]='A02Y'
 set abilcode[9]="absorb"
 set acode[9]=0x41303250
 set abilcode[10]="absorb"
@@ -17842,7 +17842,7 @@ if GetUnitTypeId(u)=='H055' then
 call UnitMakeAbilityPermanent(u,true,'A11C')
 endif
 if GetUnitTypeId(u)=='H00M' then
-call UnitMakeAbilityPermanent(u,true,0x41305847)
+call UnitMakeAbilityPermanent(u,true,'A0XG')
 endif
 if GetUnitTypeId(u)=='H05A' or GetUnitTypeId(u)=='H05B' then
 call UnitMakeAbilityPermanent(u,true,'A901')
@@ -70959,7 +70959,7 @@ set u=null
 set p=null
 endfunction
 function AsuraMakyusenCond takes nothing returns boolean
-return GetSpellAbilityId()==0x41305847
+return GetSpellAbilityId()=='A0XG'
 endfunction
 function AsuraMakyusenCast2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
@@ -71193,7 +71193,7 @@ call TriggerAddCondition(gg_trg_AsuraMakyusen,Condition(function AsuraMakyusenCo
 call TriggerAddAction(gg_trg_AsuraMakyusen,function AsuraMakyusenCast)
 endfunction
 function HachPoundHoCond takes nothing returns boolean
-return GetSpellAbilityId()==0x41303259
+return GetSpellAbilityId()=='A02Y'
 endfunction
 function HachPoundHoCast2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
@@ -71205,7 +71205,7 @@ local real a=Atan2(LoadReal(h,id,4)-y,LoadReal(h,id,3)-x)
 local real l__d=LoadReal(h,id,5)
 local group g=LoadGroupHandle(h,id,6)
 local player p=GetOwningPlayer(u)
-local real dmg=GetHeroStr(u,true)*(1+GetUnitAbilityLevel(u,0x41303259))+50*GetUnitAbilityLevel(u,0x41303259)+25
+local real dmg=GetHeroStr(u,true)*(1+GetUnitAbilityLevel(u,'A02Y'))+50*GetUnitAbilityLevel(u,'A02Y')
 if l__d<2500 then
 set x=x+l__d*Cos(a)
 set y=y+l__d*Sin(a)
@@ -71718,7 +71718,7 @@ call TriggerAddCondition(t,Condition(function KokujoOTatsumakiCond))
 set t=null
 endfunction
 function OniGiriCond takes nothing returns boolean
-return GetSpellAbilityId()==0x4130325A and udg_B==true
+return GetSpellAbilityId()=='A02Z' and udg_B==true
 endfunction
 function OniGiriCast2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
@@ -71758,7 +71758,7 @@ set E=FirstOfGroup(g)
 set ide=GetHandleId(E)
 exitwhen E==null
 if Condition_Base(p,E)and LoadUnitHandle(h,l__idg,ide)!=E then
-call myCustomDamage(u,E,dmg+GetUnitState(E,UNIT_STATE_MAX_LIFE)*(0.03*GetUnitAbilityLevel(u,0x4130325A)),false,false,null,null,null)
+call myCustomDamage(u,E,dmg+GetUnitState(E,UNIT_STATE_MAX_LIFE)*(0.03*GetUnitAbilityLevel(u,'A02Z')),false,false,null,null,null)
 call DestroyEffect(AddSpecialEffectTarget("Abilities\\Spells\\Other\\Stampede\\StampedeMissileDeath.mdl",E,"chest"))
 call SaveUnitHandle(h,l__idg,ide,E)
 endif
@@ -79511,7 +79511,7 @@ call TriggerAddCondition(t,Condition(function JSCond))
 set t=null
 endfunction
 function LanzadorVerdeCond takes nothing returns boolean
-return GetSpellAbilityId()==0x41305046
+return GetSpellAbilityId()=='A0PF'
 endfunction
 function LanzadorVerdeCast2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
@@ -109970,7 +109970,7 @@ call TriggerAddAction(t,function KaishinCast)
 set t=null
 endfunction
 function GuraGuraCond takes nothing returns boolean
-return((GetSpellAbilityId()=='A18V' or GetSpellAbilityId()=='A18T' or GetSpellAbilityId()==0x41313853)or GetSpellAbilityId()==0x41313859 or GetSpellAbilityId()==0x41313858)and GetHeroLevel(GetTriggerUnit())>5
+return((GetSpellAbilityId()=='A18V' or GetSpellAbilityId()=='A18T' or GetSpellAbilityId()=='A18S')or GetSpellAbilityId()==0x41313859 or GetSpellAbilityId()==0x41313858)and GetHeroLevel(GetTriggerUnit())>5
 endfunction
 function GuraGuraCast takes nothing returns nothing
 local unit u=GetTriggerUnit()
@@ -110315,7 +110315,7 @@ call TriggerAddAction(t,function NaginataRasetsuCast)
 set t=null
 endfunction
 function GekishinCond takes nothing returns boolean
-return GetSpellAbilityId()==0x41313853
+return GetSpellAbilityId()=='A18S'
 endfunction
 function CastGekishin2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
@@ -110328,7 +110328,7 @@ local real a=LoadReal(h,id,4)
 local real dist=LoadReal(h,id,10)
 local real x=GetUnitX(l__d)+50*Cos(a)
 local real y=GetUnitY(l__d)+50*Sin(a)
-local real dmg=(1+GetUnitAbilityLevel(u,0x41313853))*GetHeroStr(u,true)+75
+local real dmg=(1+GetUnitAbilityLevel(u,'A18S'))*GetHeroStr(u,true)+75
 local player p=GetOwningPlayer(u)
 local group g=LoadGroupHandle(h,id,3)
 local real time=LoadReal(h,id,6)
@@ -121860,13 +121860,13 @@ call TriggerAddCondition(gg_trg_LearnQLi,Condition(function LearnQLiCond))
 call TriggerAddAction(gg_trg_LearnQLi,function LearnQLiCast)
 endfunction
 function ELiCond takes nothing returns boolean
-return GetSpellAbilityId()==0x41314356
+return GetSpellAbilityId()=='A1CV'
 endfunction
 function ELiCast5 takes nothing returns nothing
 local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
 local unit u=LoadUnitHandle(h,id,0)
-local real dmg=GetHeroAgi(u,true)*(3+GetUnitAbilityLevel(u,0x41314356))
+local real dmg=GetHeroAgi(u,true)*(3+GetUnitAbilityLevel(u,'A1CV'))
 local real x=LoadReal(h,id,6)
 local real y=LoadReal(h,id,7)
 local real a=LoadReal(h,id,3)
