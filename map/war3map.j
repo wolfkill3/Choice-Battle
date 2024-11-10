@@ -5515,7 +5515,7 @@ function Condition_Base takes player p,unit e returns boolean
 return IsUnitEnemy(e,p) and IsUnitType(e,UNIT_TYPE_STRUCTURE)==false and 'dumm'!=GetUnitTypeId(e) and 'cdm1'!=GetUnitTypeId(e) and 'e16T'!=GetUnitTypeId(e) and UltimateDamage!=e and GetUnitAbilityLevel(e, 'IMDc')==0 and GetUnitTypeId(e)!='dM02'
 endfunction
 function Condition_BaseUBW takes player p,unit e returns boolean
-return IsUnitEnemy(e,p) and IsUnitType(e,UNIT_TYPE_STRUCTURE)==false and 'dumm'!=GetUnitTypeId(e) and 'cdm1'!=GetUnitTypeId(e) and 'e16T'!=GetUnitTypeId(e) and 'h071'!=GetUnitTypeId(e) and UltimateDamage!=e and GetUnitTypeId(e)!='dM02'
+return IsUnitEnemy(e,p) and IsUnitType(e,UNIT_TYPE_DEAD)==false and IsUnitType(e,UNIT_TYPE_STRUCTURE)==false and 'dumm'!=GetUnitTypeId(e) and 'cdm1'!=GetUnitTypeId(e) and 'e16T'!=GetUnitTypeId(e) and 'h071'!=GetUnitTypeId(e) and UltimateDamage!=e and GetUnitTypeId(e)!='dM02'
 endfunction
 function WeakenBool takes nothing returns boolean
 return GetBuffTypeId(GetFilterBuff())=='Bwk1'
