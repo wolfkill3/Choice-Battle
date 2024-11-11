@@ -988,6 +988,7 @@ string array music
 sound array soundStr
 boolean PresentOff
 boolean DamageOff
+boolean array itemsc
 integer array luffypunch
 boolean randcond
 integer array score
@@ -1976,6 +1977,7 @@ set Streak[i]=0
 set Streak_Counter[i]=0
 set GoldLimit[i]=500
 set GoldTotalLimit[i]=500
+set itemsc[i]=true
 set i=i+1
 endloop
 set TavernPlayerPickAllow[10]=false
@@ -3566,7 +3568,7 @@ endfunction
 function RemoveSaveHashTimed2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
-if LoadInteger(h,id,2)==StringHash("BrolyQ") or LoadInteger(h,id,2)==GokuEDMGHash then
+if LoadInteger(h,id,2)==StringHash("BrolyQ") or LoadInteger(h,id,2)==StringHash("Grail") or LoadInteger(h,id,2)==GokuEDMGHash then
 call SaveInteger(h,LoadInteger(h,id,1),LoadInteger(h,id,2),0)
 endif
 call RemoveSavedHandle(h,LoadInteger(h,id,1),LoadInteger(h,id,2))
@@ -5557,7 +5559,7 @@ function Condition_Base takes player p,unit e returns boolean
 return IsUnitEnemy(e,p) and IsUnitType(e,UNIT_TYPE_STRUCTURE)==false and 'dumm'!=GetUnitTypeId(e) and 'cdm1'!=GetUnitTypeId(e) and 'e16T'!=GetUnitTypeId(e) and UltimateDamage!=e and GetUnitAbilityLevel(e, 'IMDc')==0 and GetUnitTypeId(e)!='dM02'
 endfunction
 function Condition_BaseUBW takes player p,unit e returns boolean
-return IsUnitEnemy(e,p) and IsUnitType(e,UNIT_TYPE_STRUCTURE)==false and 'dumm'!=GetUnitTypeId(e) and 'cdm1'!=GetUnitTypeId(e) and 'e16T'!=GetUnitTypeId(e) and 'h071'!=GetUnitTypeId(e) and UltimateDamage!=e and GetUnitTypeId(e)!='dM02'
+return IsUnitEnemy(e,p) and IsUnitType(e,UNIT_TYPE_DEAD)==false and IsUnitType(e,UNIT_TYPE_STRUCTURE)==false and 'dumm'!=GetUnitTypeId(e) and 'cdm1'!=GetUnitTypeId(e) and 'e16T'!=GetUnitTypeId(e) and 'h071'!=GetUnitTypeId(e) and UltimateDamage!=e and GetUnitTypeId(e)!='dM02'
 endfunction
 function WeakenBool takes nothing returns boolean
 return GetBuffTypeId(GetFilterBuff())=='Bwk1'
@@ -7207,17 +7209,19 @@ call TimerStart(t,time,false,function UnitAddAbilityTimed4)
 set t=null
 endfunction
 function Trig_Quests_Actions takes nothing returns nothing
-call CreateQuestBJ(bj_QUESTTYPE_REQ_DISCOVERED,"Information","|cFFFFC850Автор|r: |cFFFF0000Vadik29|r\n|cFFFFC850Связь с автором|r: \nDiscord: Starheart#8889, DB-fag#8183\nhttps://vk.com/opchoice \n\n|cFFFFC850Помощь в создании карты|r: \"Wolkern\",\"MarkSpartak\",\"Hirako321\",\"Amir\",\"Андреич\",\"Infernal\",\"Winter\", \"Diano256\",\"NeikyL\", \"Uchiha.sasuke01\",\"Motorka3\",\"Kurohitsugi\",\"OJIEHb\",\"terin000\",\"kakaroto228\",\"bkmz\",\"madaras0\",\"null\",\"Famouzy\",\"No_Dust\",\"Doubleutf01\",\"Dessar383\",\"Chevalier\",\"AnimeRandom\",\"10th_Crusade\",\"Starheart\"","war3mapImported\\BTNdevil_may_cry3.blp")
+call CreateQuestBJ(bj_QUESTTYPE_REQ_DISCOVERED,"Information","|cFFFFC850Оригинальный Автор|r: |cFFFF0000Vadik29|r\n|cFFFFC850Текущий Автор|r: |cCCCC0000PinkieNecro/DBFag|r\n|cFFFFC850Связь с автором|r: \nDiscord: DB-fag#8183\nhttps://vk.com/opchoice \n\n|cFFFFC850Помощь в создании карты|r: \"Wolkern\",\"MarkSpartak\",\"Hirako321\",\"Amir\",\"Андреич\",\"Infernal\",\"Winter\", \"Diano256\",\"NeikyL\", \"Uchiha.sasuke01\",\"Motorka3\",\"Kurohitsugi\",\"OJIEHb\",\"terin000\",\"kakaroto228\",\"bkmz\",\"madaras0\",\"null\",\"Famouzy\",\"No_Dust\",\"Doubleutf01\",\"Dessar383\",\"Chevalier\",\"AnimeRandom\",\"10th_Crusade\",\"Starheart\",\"Black_XeSHTeG\",\"Beluga\",\"Zanka\", а так же все остальные, кто играет и отправляет мне в личку информацию.\nБольшое вам спасибо!","war3mapImported\\BTNdevil_may_cry3.blp")
 
-call CreateQuestBJ(bj_QUESTTYPE_REQ_DISCOVERED,"Игровые термины","|cFFFFC850Подробное описание статусов и игровых терминов|r\n\n"+"• |cFFFFC850Недосягаемость|r - статус при котором юнита/героя невозможно выделить таргетными способностями.\n\n"+"• |cFFFFC850Страх|r - тип контроля запрещающий игроку управлять юнитом, сам юнит - разбегается от источника страха. Страх снимается нанесением урона или по окончанию действия.","war3mapImported\\BTNdevil_may_cry3.blp")
+//call CreateQuestBJ(bj_QUESTTYPE_REQ_DISCOVERED,"Игровые термины","|cFFFFC850Подробное описание статусов и игровых терминов|r\n\n"+"• |cFFFFC850Недосягаемость|r - статус при котором юнита/героя невозможно выделить таргетными способностями.\n\n"+"• |cFFFFC850Страх|r - тип контроля запрещающий игроку управлять юнитом, сам юнит - разбегается от источника страха. Страх снимается нанесением урона или по окончанию действия.","war3mapImported\\BTNdevil_may_cry3.blp")
 
-call CreateQuestBJ(bj_QUESTTYPE_OPT_DISCOVERED,"Commands","|cFFFFC850Игровые команды|r:\n\"-debug\" - снимает все эффекты, неуязвимости и паузы, если вы 15 секунд не двигалась. Телепортирует в случайную точку не далее 120 ед.\n\"-rfh\" - пересоздает героя, в случае бага, возможно только вне раунда.\n\"-rounds xx\" - устанавливает кол-во раундов от 2 до 50\n\"-re\" - воскрешает героя, применимо только на базе.\n\"killme\" - убивает героя через 10 сек.\n\"-swap x\" - поменяться персанажем с союзником\n\"-boxoff\" - убирает предмет \"Коробочка Удачи\" из магазина.","ReplaceableTextures\\CommandButtons\\BTNOrochimaru.blp")
-call CreateQuestBJ(bj_QUESTTYPE_OPT_DISCOVERED,"Commands p.2","|cFFFFC850Игровые команды|r:\n\"-cam\" - установить высоту камеры на значение от 100 до 6000.\n\"-setduels xx\" - устанавливает разницу между дуэлями, указать можно от 2 до 50. Написать можно лишь в первом раунде.\n\"-noduels\" - включает/выключает дуэли. Так же, после раунда, когда дуэль должна произойти, выдается компенсация. Написать можно лишь в первом раунде.\n\"-hero x yyy\" - Создается герой c id yyy для игрока x. Узнать id можно с помощью команды \"-id 1..4 \".\n\"-cd\" - сбрасывает перезарядку у всех героев.","ReplaceableTextures\\CommandButtons\\BTNWendy.blp")
-call CreateQuestBJ(bj_QUESTTYPE_OPT_DISCOVERED,"Commands p.3","|cFFFFC850Игровые команды|r:\n\"-mr\" - показывает текущее количество магических резистов у вашего персонажа.\n\"-cr\" - показывает текущее количество резистов к контролю у вашего персонажа.\n\"-setmr\" - позволяет установить текуший маг резист.\n\"-damage\" - показывает игроку весь урон, который он нанес за всё время в игре, также количество уменьшенного урона общими резистами (не маг) и также количество урона, которое он заблокировал щитами или другими источниками.\n\"-tdamage\" - показывает всю эту информацию также и про других игроков.","ReplaceableTextures\\CommandButtons\\BTNLaxusExD_Port.blp")
-call CreateQuestBJ(bj_QUESTTYPE_OPT_DISCOVERED,"Sounds and Music!","|cFFFFC850Информация об озвучке в карте:|r:\n\nЧтобы в карте появилась озвучка, вам необходимо:\n\n1)Скачать архив, из паблика Вконтакте, на ХГМ или Нарутоваре.\n2)Выполнить инструкцию написанную в \"ридми\".\n3)Играть :)","ReplaceableTextures\\CommandButtons\\BTNDrum.blp")
+call CreateQuestBJ(bj_QUESTTYPE_OPT_DISCOVERED,"Commands p.1","|cFFFFC850Игровые команды|r:\n\"-test\" - команда вводится красным игроком до начала первого раунда. Активирует тест режим, давая доступ к дополнительным командам.\n\"-debt\" - показывает сколько золота вы должны союзнику и сколько должны вам.\n\"-itemsr\" - включает/выключает использование предметов на себя.\n\"-setmr\" - позволяет установить текуший маг резист.\n\"-cam\" - установить высоту камеры на значение от 100 до 6000.","ReplaceableTextures\\CommandButtons\\BTNVegetaUE.blp")
+call CreateQuestBJ(bj_QUESTTYPE_OPT_DISCOVERED,"Commands p.2","|cFFFFC850Игровые команды|r:\n\"-debug\" - снимает все эффекты, неуязвимости и паузы, если вы 15 секунд не двигалась. Телепортирует в случайную точку не далее 120 ед.\n\"-rfh\" - пересоздает героя, в случае бага, возможно только вне раунда.\n\"-re\" - воскрешает героя, применимо только на базе.\n\"killme\" - убивает героя через 10 сек.\n\"-swap x\" - поменяться персанажем с союзником.","ReplaceableTextures\\CommandButtons\\BTNOrochimaru.blp")
+call CreateQuestBJ(bj_QUESTTYPE_OPT_DISCOVERED,"Commands p.3","|cFFFFC850Игровые команды|r:\n\"-mr\" - показывает текущее количество магических резистов у вашего персонажа.\n\"-cr\" - показывает текущее количество резистов к контролю у вашего персонажа.\n\"-damage\" - показывает игроку весь урон, который он нанес за всё время в игре, также количество уменьшенного урона общими резистами (не маг) и также количество урона, которое он заблокировал щитами или другими источниками.\n\"-tdamage\" - показывает всю эту информацию также и про других игроков.\n\"-theal\" - показывает всю информацию по восстановленному себе или союзным героям HP и MP у всех игроков.","ReplaceableTextures\\CommandButtons\\BTNLaxusExD_Port.blp")
+call CreateQuestBJ(bj_QUESTTYPE_OPT_DISCOVERED,"Commands p.4","|cFFFFC850Игровые команды|r:\n\"-rounds xx\" - устанавливает кол-во раундов от 2 до 50.\n\"-setduels xx\" - устанавливает разницу между дуэлями, указать можно от 2 до 50. Написать можно лишь в первом раунде.\n\"-noduels\" - включает/выключает дуэли. Так же, после раунда, когда дуэль должна произойти, выдается компенсация. Написать можно лишь в первом раунде.","ReplaceableTextures\\CommandButtons\\BTNWendy.blp")
+call CreateQuestBJ(bj_QUESTTYPE_OPT_DISCOVERED,"Commands for Test Mode","|cFFFFC850Игровые команды|r:\n\"-hero x yyy\" - Создается герой c id yyy для игрока x. Узнать id можно с помощью команды \"-id 1..4 \".\n\"-cd\" - сбрасывает перезарядку у всех героев.\n\"-setmr\" - позволяет установить текуший маг резист.\n\"-heal\" и \"-unheal\" - Восстанавливает/Уменьшает до 1 здоровье и ману всех героев.\n\"-start\" - Начинает раунд спустя 3 сек.\n\"-pause\" - Останавливает любой таймер на экране.\"-amir\" - Дает каждому игроку 99999999 золота.\n\"-lvlamir\" - Дает максимальный уровень всем героям.\n\"-lvl x\" - устанавливает всем игрокам X уровень.","ReplaceableTextures\\CommandButtons\\BTNHourglass_Yukirin.blp")
+//call CreateQuestBJ(bj_QUESTTYPE_OPT_DISCOVERED,"Sounds and Music!","|cFFFFC850Информация об озвучке в карте:|r:\n\nЧтобы в карте появилась озвучка, вам необходимо:\n\n1)Скачать архив, из паблика Вконтакте, на ХГМ или Нарутоваре.\n2)Выполнить инструкцию написанную в \"ридми\".\n3)Играть :)","ReplaceableTextures\\CommandButtons\\BTNDrum.blp")
 call CreateQuestBJ(bj_QUESTTYPE_OPT_DISCOVERED,"Help!","|cFFFFC850Что собирать в начале|r:\n1)Сапоги скорости\n2)Медаль храбрости\n3)Медаль храбрости или шинель квинси\nДальше по вашему усмотрению.","ReplaceableTextures\\CommandButtons\\BTNSelectHeroOff.blp")
-call CreateQuestBJ(bj_QUESTTYPE_OPT_DISCOVERED,"Important Information!","|cFFFFC850Для некоторых героев запрещено использовать.","war3mapImported\\BTNVegili.blp")
-call CreateQuestBJ(bj_QUESTTYPE_OPT_DISCOVERED,"Authors of Models","|cFFFFC850 hnZiNai |r\nNanaya Shiki, Kirito\n\n|cFFFFC850 EbonyStalioni |r\nDragonball, One Piece\n\n|cFFFFC850 Neilc |r\nNaruto\n\n|cFFFFC850 Toma |r\nIndex, Dragonball\n\n|cFFFFC850 Golden Egg |r\nReborn","ReplaceableTextures\\CommandButtons\\BTNDivineIntervention.blp")
+//call CreateQuestBJ(bj_QUESTTYPE_OPT_DISCOVERED,"Important Information!","|cFFFFC850Для некоторых героев запрещено использовать.","war3mapImported\\BTNVegili.blp")
+//call CreateQuestBJ(bj_QUESTTYPE_OPT_DISCOVERED,"Authors of Models","|cFFFFC850 hnZiNai |r\nNanaya Shiki, Kirito\n\n|cFFFFC850 EbonyStalioni |r\nDragonball, One Piece\n\n|cFFFFC850 Neilc |r\nNaruto\n\n|cFFFFC850 Toma |r\nIndex, Dragonball\n\n|cFFFFC850 Golden Egg |r\nReborn","ReplaceableTextures\\CommandButtons\\BTNDivineIntervention.blp")
 endfunction
 function InitTrig_Quests takes nothing returns nothing
 set gg_trg_Quests=CreateTrigger()
@@ -9372,7 +9376,7 @@ set acode[6]=0x4130385A
 set abilcode[7]="blizzard"
 set acode[7]='A0B9'
 set abilcode[8]="absorb"
-set acode[8]=0x41303259
+set acode[8]='A02Y'
 set abilcode[9]="absorb"
 set acode[9]=0x41303250
 set abilcode[10]="absorb"
@@ -18194,7 +18198,7 @@ if GetUnitTypeId(u)=='H055' then
 call UnitMakeAbilityPermanent(u,true,'A11C')
 endif
 if GetUnitTypeId(u)=='H00M' then
-call UnitMakeAbilityPermanent(u,true,0x41305847)
+call UnitMakeAbilityPermanent(u,true,'A0XG')
 endif
 if GetUnitTypeId(u)=='H05A' or GetUnitTypeId(u)=='H05B' then
 call UnitMakeAbilityPermanent(u,true,'A901')
@@ -19900,6 +19904,33 @@ local item f=null
 if GetItemPlayer(it)==Player(15) or GetItemPlayer(it)==p or udg_test==true then
     call SetItemPlayer(it,p,false)
     call SetItemStringField(it,ITEM_SF_NAME,GetBaseItemStringFieldById(GetItemTypeId(it),ITEM_SF_NAME)+" ("+Color[GetPlayerId(p)]+GetPlayerName(p)+"|r)")
+    if itemsc[GetPlayerId(p)]==true then
+        if GetItemTypeId(it) ==  'I04R' then
+            call SetAbilityIntegerLevelField(GetUnitAbility(u,'A10Q'), ABILITY_ILF_TARGET_TYPE,0,1)
+        endif
+        if GetItemTypeId(it) ==  'I00D' then
+            call SetAbilityIntegerLevelField(GetUnitAbility(u,'A048'), ABILITY_ILF_TARGET_TYPE,0,1)
+        endif
+        if GetItemTypeId(it) ==  'I02S' then
+            call SetAbilityIntegerLevelField(GetUnitAbility(u,'A0HL'), ABILITY_ILF_TARGET_TYPE,0,1)
+        endif
+        if GetItemTypeId(it) ==  'I054' then
+            call SetAbilityIntegerLevelField(GetUnitAbility(u,'A15E'), ABILITY_ILF_TARGET_TYPE,0,1)
+        endif
+    else
+        if GetItemTypeId(it) ==  'I04R' then
+            call SetAbilityIntegerLevelField(GetUnitAbility(u,'A10Q'), ABILITY_ILF_TARGET_TYPE,0,0)
+        endif
+        if GetItemTypeId(it) ==  'I00D' then
+            call SetAbilityIntegerLevelField(GetUnitAbility(u,'A048'), ABILITY_ILF_TARGET_TYPE,0,0)
+        endif
+        if GetItemTypeId(it) ==  'I02S' then
+            call SetAbilityIntegerLevelField(GetUnitAbility(u,'A0HL'), ABILITY_ILF_TARGET_TYPE,0,0)
+        endif
+        if GetItemTypeId(it) ==  'I054' then
+            call SetAbilityIntegerLevelField(GetUnitAbility(u,'A15E'), ABILITY_ILF_TARGET_TYPE,0,0)
+        endif
+    endif
     set id=UIS_Check(u)
     if not(id>-1) and u!=Chest[GetPlayerId(p)] and GetItemTypeId(it)!='I00E' then
     set id=UIS_Check(Chest[GetPlayerId(p)])
@@ -19914,6 +19945,33 @@ if GetItemPlayer(it)==Player(15) or GetItemPlayer(it)==p or udg_test==true then
         set f=CreateItem(id,GetUnitX(u),GetUnitY(u))
         call SetItemPlayer(f,p,false)
         call UnitAddItem(u,f)
+        if itemsc[GetPlayerId(GetItemPlayer(it))]==true then
+            if GetItemTypeId(f) ==  'I04R' then
+                call SetAbilityIntegerLevelField(GetUnitAbility(Hero[GetPlayerId(GetItemPlayer(it))],'A10Q'), ABILITY_ILF_TARGET_TYPE,0,1)
+            endif
+            if GetItemTypeId(f) ==  'I00D' then
+                call SetAbilityIntegerLevelField(GetUnitAbility(Hero[GetPlayerId(GetItemPlayer(it))],'A048'), ABILITY_ILF_TARGET_TYPE,0,1)
+            endif
+            if GetItemTypeId(f) ==  'I02S' then
+                call SetAbilityIntegerLevelField(GetUnitAbility(Hero[GetPlayerId(GetItemPlayer(it))],'A0HL'), ABILITY_ILF_TARGET_TYPE,0,1)
+            endif
+            if GetItemTypeId(f) ==  'I054' then
+                call SetAbilityIntegerLevelField(GetUnitAbility(Hero[GetPlayerId(GetItemPlayer(it))],'A15E'), ABILITY_ILF_TARGET_TYPE,0,1)
+            endif
+        else
+            if GetItemTypeId(f) ==  'I04R' then
+                call SetAbilityIntegerLevelField(GetUnitAbility(Hero[GetPlayerId(GetItemPlayer(it))],'A10Q'), ABILITY_ILF_TARGET_TYPE,0,0)
+            endif
+            if GetItemTypeId(f) ==  'I00D' then
+                call SetAbilityIntegerLevelField(GetUnitAbility(Hero[GetPlayerId(GetItemPlayer(it))],'A048'), ABILITY_ILF_TARGET_TYPE,0,0)
+            endif
+            if GetItemTypeId(f) ==  'I02S' then
+                call SetAbilityIntegerLevelField(GetUnitAbility(Hero[GetPlayerId(GetItemPlayer(it))],'A0HL'), ABILITY_ILF_TARGET_TYPE,0,0)
+            endif
+            if GetItemTypeId(f) ==  'I054' then
+                call SetAbilityIntegerLevelField(GetUnitAbility(Hero[GetPlayerId(GetItemPlayer(it))],'A15E'), ABILITY_ILF_TARGET_TYPE,0,0)
+            endif
+        endif
         endif
         set f=null
         call DestroyEffect(AddSpecialEffectTarget("Abilities\\Spells\\Items\\AIsm\\AIsmTarget.mdl",u,"origin"))
@@ -19925,6 +19983,33 @@ else
     call SetItemPlayer(f,GetItemPlayer(it),false)
     call SetItemStringField(f,ITEM_SF_NAME,GetBaseItemStringFieldById(GetItemTypeId(f),ITEM_SF_NAME)+" ("+Color[GetPlayerId(GetItemPlayer(it))]+GetPlayerName(GetItemPlayer(it))+"|r)")
     call UnitAddItem(Hero[GetPlayerId(GetItemPlayer(it))],f)
+    if itemsc[GetPlayerId(GetItemPlayer(it))]==true then
+        if GetItemTypeId(f) ==  'I04R' then
+            call SetAbilityIntegerLevelField(GetUnitAbility(Hero[GetPlayerId(GetItemPlayer(it))],'A10Q'), ABILITY_ILF_TARGET_TYPE,0,1)
+        endif
+        if GetItemTypeId(f) ==  'I00D' then
+            call SetAbilityIntegerLevelField(GetUnitAbility(Hero[GetPlayerId(GetItemPlayer(it))],'A048'), ABILITY_ILF_TARGET_TYPE,0,1)
+        endif
+        if GetItemTypeId(f) ==  'I02S' then
+            call SetAbilityIntegerLevelField(GetUnitAbility(Hero[GetPlayerId(GetItemPlayer(it))],'A0HL'), ABILITY_ILF_TARGET_TYPE,0,1)
+        endif
+        if GetItemTypeId(f) ==  'I054' then
+            call SetAbilityIntegerLevelField(GetUnitAbility(Hero[GetPlayerId(GetItemPlayer(it))],'A15E'), ABILITY_ILF_TARGET_TYPE,0,1)
+        endif
+    else
+        if GetItemTypeId(f) ==  'I04R' then
+            call SetAbilityIntegerLevelField(GetUnitAbility(Hero[GetPlayerId(GetItemPlayer(it))],'A10Q'), ABILITY_ILF_TARGET_TYPE,0,0)
+        endif
+        if GetItemTypeId(f) ==  'I00D' then
+            call SetAbilityIntegerLevelField(GetUnitAbility(Hero[GetPlayerId(GetItemPlayer(it))],'A048'), ABILITY_ILF_TARGET_TYPE,0,0)
+        endif
+        if GetItemTypeId(f) ==  'I02S' then
+            call SetAbilityIntegerLevelField(GetUnitAbility(Hero[GetPlayerId(GetItemPlayer(it))],'A0HL'), ABILITY_ILF_TARGET_TYPE,0,0)
+        endif
+        if GetItemTypeId(f) ==  'I054' then
+            call SetAbilityIntegerLevelField(GetUnitAbility(Hero[GetPlayerId(GetItemPlayer(it))],'A15E'), ABILITY_ILF_TARGET_TYPE,0,0)
+        endif
+    endif
     set f=null
     if IsAbilityEnabled(GetUnitAbility(u,'AInv'))==true then
         call UnitRemoveItem(u,it)
@@ -27367,6 +27452,53 @@ function Trig_debt_Actions takes nothing returns nothing
     set i=i+1
     endloop
 endfunction
+function Trig_itemsc_Actions takes nothing returns nothing
+    local integer id=GetPlayerId(GetTriggerPlayer())
+    local integer i=6
+    if itemsc[id]==false then
+        if(GetLocalPlayer()==GetTriggerPlayer() ) then
+            call DisplayChatMessageEx(null,CHAT_RECIPIENT_UNKNOWN,10,true,"Солнце Вонголы/Солнце Маре/Сфера Льда/Сапоги льда на союзников: ON")
+        endif
+        loop
+            if GetItemTypeId(UnitItemInSlot(Hero[id], i)) ==  'I04R' then
+                call SetAbilityIntegerLevelField(GetUnitAbility(Hero[id],'A10Q'), ABILITY_ILF_TARGET_TYPE,0,1)
+            endif
+            if GetItemTypeId(UnitItemInSlot(Hero[id], i)) ==  'I00D' then
+                call SetAbilityIntegerLevelField(GetUnitAbility(Hero[id],'A048'), ABILITY_ILF_TARGET_TYPE,0,1)
+            endif
+            if GetItemTypeId(UnitItemInSlot(Hero[id], i)) ==  'I02S' then
+                call SetAbilityIntegerLevelField(GetUnitAbility(Hero[id],'A0HL'), ABILITY_ILF_TARGET_TYPE,0,1)
+            endif
+            if GetItemTypeId(UnitItemInSlot(Hero[id], i)) ==  'I054' then
+                call SetAbilityIntegerLevelField(GetUnitAbility(Hero[id],'A15E'), ABILITY_ILF_TARGET_TYPE,0,1)
+            endif
+        exitwhen i == 0
+        set i=i - 1
+        endloop
+        set itemsc[id]=true
+    else
+        if(GetLocalPlayer()==GetTriggerPlayer() ) then
+            call DisplayChatMessageEx(null,CHAT_RECIPIENT_UNKNOWN,10,true,"Солнце Вонголы/Солнце Маре/Сфера Льда/Сапоги льда на союзников: OFF")
+        endif
+        loop
+            if GetItemTypeId(UnitItemInSlot(Hero[id], i)) ==  'I04R' then
+                call SetAbilityIntegerLevelField(GetUnitAbility(Hero[id],'A10Q'), ABILITY_ILF_TARGET_TYPE,0,0)
+            endif
+            if GetItemTypeId(UnitItemInSlot(Hero[id], i)) ==  'I00D' then
+                call SetAbilityIntegerLevelField(GetUnitAbility(Hero[id],'A048'), ABILITY_ILF_TARGET_TYPE,0,0)
+            endif
+            if GetItemTypeId(UnitItemInSlot(Hero[id], i)) ==  'I02S' then
+                call SetAbilityIntegerLevelField(GetUnitAbility(Hero[id],'A0HL'), ABILITY_ILF_TARGET_TYPE,0,0)
+            endif
+            if GetItemTypeId(UnitItemInSlot(Hero[id], i)) ==  'I054' then
+                call SetAbilityIntegerLevelField(GetUnitAbility(Hero[id],'A15E'), ABILITY_ILF_TARGET_TYPE,0,0)
+            endif
+        exitwhen i == 0
+        set i=i - 1
+        endloop
+        set itemsc[id]=false
+    endif
+endfunction
 function Trig_idNew_Actions takes nothing returns nothing
     local integer LvlS=S2I(SubString(GetEventPlayerChatString(),4,6))
     if LvlS==1 then
@@ -27629,6 +27761,20 @@ function InitTrig_mr takes nothing returns nothing
     //call TriggerRegisterPlayerChatEvent(t,Player(10),"-debt",true)
     //call TriggerRegisterPlayerChatEvent(t,Player(11),"-debt",true)
     call TriggerAddAction(t,function Trig_debt_Actions)
+    set t=CreateTrigger()
+	call TriggerRegisterPlayerChatEvent(t,Player(0),"-itemsc",true)
+    call TriggerRegisterPlayerChatEvent(t,Player(1),"-itemsc",true)
+    call TriggerRegisterPlayerChatEvent(t,Player(2),"-itemsc",true)
+    call TriggerRegisterPlayerChatEvent(t,Player(3),"-itemsc",true)
+    call TriggerRegisterPlayerChatEvent(t,Player(4),"-itemsc",true)
+    call TriggerRegisterPlayerChatEvent(t,Player(5),"-itemsc",true)
+    call TriggerRegisterPlayerChatEvent(t,Player(6),"-itemsc",true)
+    call TriggerRegisterPlayerChatEvent(t,Player(7),"-itemsc",true)
+    call TriggerRegisterPlayerChatEvent(t,Player(8),"-itemsc",true)
+    call TriggerRegisterPlayerChatEvent(t,Player(9),"-itemsc",true)
+    //call TriggerRegisterPlayerChatEvent(t,Player(10),"-itemsc",true)
+    //call TriggerRegisterPlayerChatEvent(t,Player(11),"-itemsc",true)
+    call TriggerAddAction(t,function Trig_itemsc_Actions)
 	set t=null
 endfunction
 function InitTrig_IndicatorDamage takes nothing returns nothing
@@ -35232,9 +35378,9 @@ if cond==0 then
             call UnitRemoveItem(u,bj_lastCreatedItem)
             call RemoveItem(bj_lastCreatedItem)
             call UnitAddAbility(u,'A0VV')
-            call UnitRemoveAbilityTimedPause(u,'A0VV',4)
+            call UnitRemoveAbilityTimedPause(u,'A0VV',6)
             call UnitAddAbility(u,'A28W')
-            call UnitRemoveAbilityTimedPause(u,'A28W',4)
+            call UnitRemoveAbilityTimedPause(u,'A28W',6)
             call UnitRemoveBuffs(u,false,true)
             call UnitRemoveAbility(u,'A0J4')
             set bj_lastCreatedItem=UnitAddItemById(u,'I13S')
@@ -35245,7 +35391,7 @@ if cond==0 then
             call SaveInteger(h,GetHandleId(cjlocgn_00000000),3,idu)
             call DestroyEffect(AddSpecialEffectTarget("war3mapImported\\EMPBubble2.mdx",u,"chest"))
             call DestroyEffect(AddSpecialEffectTarget("GhostLighthin3.mdl",u,"chest"))
-            call CreateModeIndicatorWithPauseFormDispellable(u, "ReplaceableTextures\\CommandButtons\\BTNBorosArmorBroken.blp", 4,'A28W')
+            call CreateModeIndicatorWithPauseFormDispellable(u, "ReplaceableTextures\\CommandButtons\\BTNBorosArmorBroken.blp", 6,'A28W')
             call CreateModeIndicatorForm(u, "war3mapImported\\BTNBorosArmor.blp", 30)
             call SetUnitInvulnerable(u,true)
             call UnitRemoveAbility(u,'B14S')
@@ -38274,6 +38420,7 @@ else
 call PauseTimer(t)
 call DestroyTimer(t)
 call DestroyEffect(LoadEffectHandle(h,id,0))
+call RemoveSaveHashTimed(15,GetHandleId(c),StringHash("Grail"))
 call FlushChildHashtable(h,id)
 endif
 set u=null
@@ -38292,6 +38439,9 @@ if time==10 then
 call SaveEffectHandle(h,id,0,AddSpecialEffectTarget("war3mapImported\\NatsuAura2(Black).mdx",c,"origin"))
 else
 call SaveEffectHandle(h,id,0,AddSpecialEffectTarget("Abilities\\Spells\\Human\\Resurrect\\ResurrectCaster.mdl",c,"origin"))
+call SaveInteger(h,GetHandleId(c),StringHash("Grail"),1)
+set EFF=AddSpecialEffectTarget("Abilities\\Spells\\Orc\\SpiritLink\\SpiritLinkZapTarget.mdl",c,"origin")
+call RemoveEffect(EFF,21,false,CreateTimer())
 endif
 call TimerStart(t,1,true,function HealGrailCast2)
 set t=null
@@ -38316,7 +38466,7 @@ call DestroyEffect(AddSpecialEffectTarget("Abilities\\Weapons\\IllidanMissile\\I
 loop
 set E=FirstOfGroup(G)
 exitwhen E==null
-if IsUnitAlly(E,p)then
+if IsUnitAlly(E,p) and LoadInteger(h,GetHandleId(E),StringHash("Grail"))!=1 then
 call HealGrailCast(u,E,heal,6)
 endif
 call GroupRemoveUnit(G,E)
@@ -38329,7 +38479,7 @@ call DestroyEffect(AddSpecialEffectTarget("war3mapImported\\NatsuAura2(Black).md
 loop
 set E=FirstOfGroup(G)
 exitwhen E==null
-if IsUnitAlly(E,p)then
+if IsUnitAlly(E,p) then
 call HealGrailCast(u,E,heal,10)
 endif
 call GroupRemoveUnit(G,E)
@@ -41463,6 +41613,7 @@ call SetHeroInt(u,GetHeroInt(u,false)+R2I(st),true)
 call SaveReal(h,id,2,st)
 call PauseTimer(t)
 call UnitRemoveAbility(u,'A00J')
+call StartAbilityCooldown(GetUnitAbility(u,'A00W'),GetAbilityBaseRealLevelFieldById('A00W',ABILITY_RLF_COOLDOWN,GetUnitAbilityLevel(u,'A00W')-1))
 call CreateModeIndicatorWithPauseFormDispellableHash(u, "war3mapImported\\BTNZeropointRevised.blp", 10, StringHash("zero"))
 call TimerStart(t,0.05,true,function ZeroPointAct3)
 endif
@@ -73292,7 +73443,7 @@ set u=null
 set p=null
 endfunction
 function AsuraMakyusenCond takes nothing returns boolean
-return GetSpellAbilityId()==0x41305847
+return GetSpellAbilityId()=='A0XG'
 endfunction
 function AsuraMakyusenCast2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
@@ -73526,7 +73677,7 @@ call TriggerAddCondition(gg_trg_AsuraMakyusen,Condition(function AsuraMakyusenCo
 call TriggerAddAction(gg_trg_AsuraMakyusen,function AsuraMakyusenCast)
 endfunction
 function HachPoundHoCond takes nothing returns boolean
-return GetSpellAbilityId()==0x41303259
+return GetSpellAbilityId()=='A02Y'
 endfunction
 function HachPoundHoCast2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
@@ -73538,7 +73689,7 @@ local real a=Atan2(LoadReal(h,id,4)-y,LoadReal(h,id,3)-x)
 local real l__d=LoadReal(h,id,5)
 local group g=LoadGroupHandle(h,id,6)
 local player p=GetOwningPlayer(u)
-local real dmg=GetHeroStr(u,true)*(1+GetUnitAbilityLevel(u,0x41303259))+50*GetUnitAbilityLevel(u,0x41303259)+25
+local real dmg=GetHeroStr(u,true)*(1+GetUnitAbilityLevel(u,'A02Y'))+50*GetUnitAbilityLevel(u,'A02Y')
 if l__d<2500 then
 set x=x+l__d*Cos(a)
 set y=y+l__d*Sin(a)
@@ -74051,7 +74202,7 @@ call TriggerAddCondition(t,Condition(function KokujoOTatsumakiCond))
 set t=null
 endfunction
 function OniGiriCond takes nothing returns boolean
-return GetSpellAbilityId()==0x4130325A and udg_B==true
+return GetSpellAbilityId()=='A02Z' and udg_B==true
 endfunction
 function OniGiriCast2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
@@ -74091,7 +74242,7 @@ set E=FirstOfGroup(g)
 set ide=GetHandleId(E)
 exitwhen E==null
 if Condition_Base(p,E)and LoadUnitHandle(h,l__idg,ide)!=E then
-call myCustomDamage(u,E,dmg+GetUnitState(E,UNIT_STATE_MAX_LIFE)*(0.03*GetUnitAbilityLevel(u,0x4130325A)),false,false,null,null,null)
+call myCustomDamage(u,E,dmg+GetUnitState(E,UNIT_STATE_MAX_LIFE)*(0.03*GetUnitAbilityLevel(u,'A02Z')),false,false,null,null,null)
 call DestroyEffect(AddSpecialEffectTarget("Abilities\\Spells\\Other\\Stampede\\StampedeMissileDeath.mdl",E,"chest"))
 call SaveUnitHandle(h,l__idg,ide,E)
 endif
@@ -81844,7 +81995,7 @@ call TriggerAddCondition(t,Condition(function JSCond))
 set t=null
 endfunction
 function LanzadorVerdeCond takes nothing returns boolean
-return GetSpellAbilityId()==0x41305046
+return GetSpellAbilityId()=='A0PF'
 endfunction
 function LanzadorVerdeCast2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
@@ -112303,7 +112454,7 @@ call TriggerAddAction(t,function KaishinCast)
 set t=null
 endfunction
 function GuraGuraCond takes nothing returns boolean
-return((GetSpellAbilityId()=='A18V' or GetSpellAbilityId()=='A18T' or GetSpellAbilityId()==0x41313853)or GetSpellAbilityId()==0x41313859 or GetSpellAbilityId()==0x41313858)and GetHeroLevel(GetTriggerUnit())>5
+return((GetSpellAbilityId()=='A18V' or GetSpellAbilityId()=='A18T' or GetSpellAbilityId()=='A18S')or GetSpellAbilityId()==0x41313859 or GetSpellAbilityId()==0x41313858)and GetHeroLevel(GetTriggerUnit())>5
 endfunction
 function GuraGuraCast takes nothing returns nothing
 local unit u=GetTriggerUnit()
@@ -112648,7 +112799,7 @@ call TriggerAddAction(t,function NaginataRasetsuCast)
 set t=null
 endfunction
 function GekishinCond takes nothing returns boolean
-return GetSpellAbilityId()==0x41313853
+return GetSpellAbilityId()=='A18S'
 endfunction
 function CastGekishin2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
@@ -112661,7 +112812,7 @@ local real a=LoadReal(h,id,4)
 local real dist=LoadReal(h,id,10)
 local real x=GetUnitX(l__d)+50*Cos(a)
 local real y=GetUnitY(l__d)+50*Sin(a)
-local real dmg=(1+GetUnitAbilityLevel(u,0x41313853))*GetHeroStr(u,true)+75
+local real dmg=(1+GetUnitAbilityLevel(u,'A18S'))*GetHeroStr(u,true)+75
 local player p=GetOwningPlayer(u)
 local group g=LoadGroupHandle(h,id,3)
 local real time=LoadReal(h,id,6)
@@ -124193,13 +124344,13 @@ call TriggerAddCondition(gg_trg_LearnQLi,Condition(function LearnQLiCond))
 call TriggerAddAction(gg_trg_LearnQLi,function LearnQLiCast)
 endfunction
 function ELiCond takes nothing returns boolean
-return GetSpellAbilityId()==0x41314356
+return GetSpellAbilityId()=='A1CV'
 endfunction
 function ELiCast5 takes nothing returns nothing
 local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
 local unit u=LoadUnitHandle(h,id,0)
-local real dmg=GetHeroAgi(u,true)*(3+GetUnitAbilityLevel(u,0x41314356))
+local real dmg=GetHeroAgi(u,true)*(3+GetUnitAbilityLevel(u,'A1CV'))
 local real x=LoadReal(h,id,6)
 local real y=LoadReal(h,id,7)
 local real a=LoadReal(h,id,3)
@@ -126875,23 +127026,20 @@ local integer id=GetHandleId(t)
 local unit u=LoadUnitHandle(h,id,0)
 local real dmg=GetHeroStr(u,true)*(GetUnitAbilityLevel(u,'A1DM')+2)
 local group g=LoadGroupHandle(h,id,2)
-local group g2
 local real time=LoadReal(h,id,3)
 if time<1.75+0.25*GetUnitAbilityLevel(u,'A1DM')and UnitIsAlive(u)then
 call SaveReal(h,id,3,time+0.01)
 else
-set g2=CopyGroup(g)
 loop
-set E=FirstOfGroup(g2)
+set E=FirstOfGroup(g)
 exitwhen E==null
 call UnitRemoveAbility(E,'A1DH')
-call UnitRemoveAbility(E,0x42303651)
+call UnitRemoveAbility(E,'B06Q')
 call SetUnitStunCounter(E,GetUnitStunCounter(E)-1)
 call IssueImmediateOrder(E,"stop")
 call myCustomDamage(u,E,dmg,false,false,null,null,null)
-call GroupRemoveUnit(g2,E)
+call GroupRemoveUnit(g,E)
 endloop
-call DestroyGroupTimed(g2,3)
 call GroupClear(g)
 call DestroyGroup(g)
 call PauseTimer(t)
@@ -126900,7 +127048,6 @@ call FlushChildHashtable(h,id)
 endif
 set t=null
 set g=null
-set g2=null
 set u=null
 endfunction
 function ShielderRCast takes nothing returns nothing
@@ -159300,29 +159447,32 @@ local integer i=GetPlayerId(GetTriggerPlayer())
 local integer ind=0
 local integer lp=0
 if UnitHasItemOfTypeBJ(Hero[GetPlayerId(GetTriggerPlayer())],'IMDi') and IsUnitPaused(Hero[GetPlayerId(GetTriggerPlayer())])==false and RectContainsUnit(gg_rct_AntiMh,Hero[GetPlayerId(GetTriggerPlayer())])==false and GetUnitAbilityLevel(Hero[GetPlayerId(GetTriggerPlayer())],'Pet1')==0 and GetUnitAbilityLevel(Hero[GetPlayerId(GetTriggerPlayer())],'cbc8')==0 then
-loop
-exitwhen lp==6
-if GetItemTypeId(UnitItemInSlot(Hero[i],lp))=='IMDi' then
-set ind=lp
-endif
-set lp=lp+1
-endloop
-if IsAbilityOnCooldown(GetUnitAbility(Hero[i],'IMDs'))==false and IsUnitPaused(Hero[i])==false and (GetFrameTexture(GetOriginFrame(ORIGIN_FRAME_COMMAND_BUTTON,11),1)!="ReplaceableTextures\\CommandButtons\\BTNCancel.blp" or (GetFrameTexture(GetOriginFrame(ORIGIN_FRAME_COMMAND_BUTTON,0),1)=="war3mapImported\\BTNMove.blp" and IsFrameVisible(GetOriginFrame(ORIGIN_FRAME_COMMAND_BUTTON,0)))) then
-	call UnitRemoveBuffs(Hero[i],false,true)
-	call UnitRemoveAbility(Hero[i], 'cbc3')
-    call UnitRemoveAbility(Hero[i], 'cbc7')
-	call UnitRemoveAbility(Hero[i], 'CBC2')
-	call UnitRemoveAbility(Hero[i], 'Bslo')
-    call UnitRemoveAbility(Hero[i], 'Bsl1')
-	call UnitRemoveAbility(Hero[i], 'WAE1')
-	call UnitRemoveAbility(Hero[i], 'Ao53')
-	call UnitRemoveAbility(Hero[i], 'A00D')
-	call UnitRemoveAbility(Hero[i], 'Ao2Z')
-	call UnitRemoveAbility(Hero[i], 'A1VJ')
-    call UnitRemoveAbility(Hero[i], 'A3BJ')
-    call SetUnitMoveSpeed(Hero[i], GetUnitDefaultMoveSpeed(Hero[i]))
-    call UnitUseItem(Hero[i],UnitItemInSlot(Hero[i],ind))
-endif
+    loop
+    exitwhen lp==6
+        if GetItemTypeId(UnitItemInSlot(Hero[i],lp))=='IMDi' then
+            set ind=lp
+        endif
+        set lp=lp+1
+    endloop
+    if IsAbilityOnCooldown(GetUnitAbility(Hero[i],'IMDs'))==false and IsUnitPaused(Hero[i])==false and (GetUnitAbilityLevel(Hero[i],'A3BJ')>0 or GetTriggerPlayerKey()==OSKEY_OEM_3 )then
+        call UnitRemoveBuffs(Hero[i],false,true)
+        call UnitRemoveAbility(Hero[i], 'cbc3')
+        call UnitRemoveAbility(Hero[i], 'cbc7')
+        call UnitRemoveAbility(Hero[i], 'CBC2')
+        call UnitRemoveAbility(Hero[i], 'Bslo')
+        call UnitRemoveAbility(Hero[i], 'Bsl1')
+        call UnitRemoveAbility(Hero[i], 'WAE1')
+        call UnitRemoveAbility(Hero[i], 'Ao53')
+        call UnitRemoveAbility(Hero[i], 'A00D')
+        call UnitRemoveAbility(Hero[i], 'Ao2Z')
+        call UnitRemoveAbility(Hero[i], 'A1VJ')
+        call UnitRemoveAbility(Hero[i], 'A3BJ')
+        call SetUnitMoveSpeed(Hero[i], GetUnitDefaultMoveSpeed(Hero[i]))
+        call UnitUseItem(Hero[i],UnitItemInSlot(Hero[i],ind))
+    elseif IsAbilityOnCooldown(GetUnitAbility(Hero[i],'A12B'))==false and IsUnitPaused(Hero[i])==false and GetUnitAbilityLevel(Hero[i],'A3BJ')==0 then
+        call UnitAddAbility(Hero[i],'A3BJ')
+        call UnitRemoveAbilityTimed(Hero[i],'A3BJ',0.4)
+    endif
 endif
 endfunction
 
