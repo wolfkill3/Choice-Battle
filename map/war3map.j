@@ -17587,7 +17587,17 @@ local integer ip=LoadInteger(HH,id,0)
 local unit u=Hero[ip]
 if GetUnitTypeId(u)=='H02H' then
     if IsUnitSelected(u,GetLocalPlayer()) and IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(u)) then
-        call SetFrameText(GetFrameByName("CustomLeaderboardText",0),"|c00FF0000Kaioken|r: "+I2S(R2I(LoadInteger(HH,GetHandleId(u), KaiokenHash))))
+        if GetHeroLevel(u)<26 then
+            call SetFrameText(GetFrameByName("CustomLeaderboardText",0),"|c00FF0000Kaioken|r: "+I2S(R2I(LoadInteger(HH,GetHandleId(u), KaiokenHash))))
+        elseif GetHeroLevel(u)>=26 and LoadBoolean(HH,GetHandleId(GetOwningPlayer(u)),UIAvailable)==false then
+            call SetFrameText(GetFrameByName("CustomLeaderboardText",0),"|c00FF0000Kaioken|r: "+I2S(R2I(LoadInteger(HH,GetHandleId(u), KaiokenHash))))
+        elseif GetHeroLevel(u)>=26 and GetHeroLevel(u)<35 and LoadBoolean(HH,GetHandleId(GetOwningPlayer(u)),UIAvailable)==true then
+            call SetFrameText(GetFrameByName("CustomLeaderboardText",0),"|c00FF0000Kaioken|r: "+I2S(R2I(LoadInteger(HH,GetHandleId(u), KaiokenHash))))
+        elseif GetHeroLevel(u)>=35 and LoadBoolean(HH,GetHandleId(GetOwningPlayer(u)),UIAvailable)==true and LoadBoolean(HH,GetHandleId(GetOwningPlayer(u)),MUIAvailable)==false then
+            call SetFrameText(GetFrameByName("CustomLeaderboardText",0),"|c00FF0000Kaioken|r: "+I2S(R2I(LoadInteger(HH,GetHandleId(u), KaiokenHash))))
+        elseif GetHeroLevel(u)>=35 and LoadBoolean(HH,GetHandleId(GetOwningPlayer(u)),UIAvailable)==true and LoadBoolean(HH,GetHandleId(GetOwningPlayer(u)),MUIAvailable)==true then
+            call SetFrameText(GetFrameByName("CustomLeaderboardText",0),"|c00FF0000Kaioken|r: "+I2S(R2I(LoadInteger(HH,GetHandleId(u), KaiokenHash))))
+        endif
         call ShowFrame(GetFrameByName("CustomLeaderboard",0), true)
         call SetFrameSize( GetFrameByName("CustomLeaderboard",0), .1775, GetFrameHeight( GetFrameByName("CustomLeaderboardText",0))+0.016)
         call SetFrameTextAlignment( GetFrameByName("CustomLeaderboardText",0), TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_LEFT )
