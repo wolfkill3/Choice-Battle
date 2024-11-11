@@ -203,6 +203,13 @@ constant integer MadokaTHHash         = StringHash("MadokaTH")
 constant integer MadokaMHash          = StringHash("MadokaM")
 constant integer KaiokenHash          = StringHash("Kaioken")
 constant integer ITRangeHash          = StringHash("ITRange")
+constant integer UIAvailableHash      = StringHash("UIAvailable")
+constant integer UIDMGHash            = StringHash("UIDMG")
+constant integer UILimitDMGHash       = StringHash("UILimitDMG")
+constant integer MUIAvailableHash     = StringHash("MUIAvailable")
+constant integer MUIDMGHash           = StringHash("MUIDodgeCount")
+constant integer MUILimitDMGHash      = StringHash("MUILimitDodgeCount")
+constant integer UIDodgeHash          = StringHash("UIDodges")
 constant integer VariationQHash       = StringHash("VariationQ")
 constant integer VariationWHash       = StringHash("VariationW")
 constant integer VariationEHash       = StringHash("VariationE")
@@ -60926,7 +60933,7 @@ function PowerUpGokuCast2 takes nothing returns nothing
     local player p=GetOwningPlayer(u)
     local real time=LoadReal(h,id,1)
     local integer i=0
-    if time<7 then
+    if time<6 then
         call PauseUnit(u,true)
         call SaveReal(h,id,1,time+0.025)
         if GetUnitCurrentAnimationId(u)!=187 or GetUnitCurrentAnimationId(u)!=189 then
@@ -61206,10 +61213,15 @@ function PowerUpGokuCast2 takes nothing returns nothing
             call ShowAbility2('GKSR',false)
             call ShowAbility2('GKSB',false)
             call ShowAbility2('GKUI',false)
+            if IsAbilityEnabled(u,'GKMI')==false then
+                call UnitRemoveAbilityTimedPause(u,'GkH7',15)
+                call CreateModeIndicatorWithPauseFormDispellable(u, "ReplaceableTextures\\Commandbuttons\\BTNGokuUI.blp", 15,'GkH7')
+            endif
         elseif LoadInteger(h,id,3)==8 then //MUI
             call SetUnitInvulnerable(u,false)
             call ShowAbility2('GKF1',false)
             call ShowAbility2('GKBB',true)
+            call UnitRemoveAbilityTimedPause(u,'GkH8',15)
             call CreateModeIndicatorWithPauseFormDispellable(u, "ReplaceableTextures\\Commandbuttons\\BTNGokuMUI.blp", 15,'GkH8')
         endif
         if LoadInteger(h,id,3)==0 and GetUnitAbilityLevel(u,'GkH0')==0 then
@@ -61254,14 +61266,14 @@ function PowerUpGokuCast takes nothing returns nothing
         call SaveReal(h,id,1,6.975)
         call SaveInteger(h,id,3,0)
     elseif GetSpellAbilityId()=='GKUI' or GetSpellAbilityId()=='GKMI' then
-        if GetSpellAbilityId()=='GKMI' and GetUnitAbilityLevel(u,'GkH7')>0 then
-            call SaveReal(h,id,1,3.475)
-        endif
         call ShowAbility2('GKF1',false)
         if GetSpellAbilityId()=='GKUI' then
             call ShowAbility2Timed('GKF1',true,0.025)
         endif
-        call SaveReal(h,id,1,3)
+        call SaveReal(h,id,1,1)
+        if GetSpellAbilityId()=='GKMI' and GetUnitAbilityLevel(u,'GkH7')>0 then
+            call SaveReal(h,id,1,3.475)
+        endif
     endif
     if GetSpellAbilityId()=='GKSS' then
         call SaveInteger(h,id,3,1)
