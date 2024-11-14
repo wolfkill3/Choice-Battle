@@ -7154,7 +7154,6 @@ if IsUnitPaused(LoadUnitHandle(HH,id,0))==false and GetUnitAbilityLevel(LoadUnit
 call SaveReal(HH,id,3,LoadReal(HH,id,3)+0.05)
 endif
 else
-call UnitRemoveAbility(LoadUnitHandle(HH,id,0),LoadInteger(HH,id,1))
 call SaveBoolean(HH,GetHandleId(LoadUnitHandle(HH,id,0)),SST,true)
 call FlushChildHashtable(HH,id)
 call PauseTimer(t)
@@ -29519,7 +29518,7 @@ function EndOfChoiceAct takes nothing returns nothing
         if GetUnitTypeId(Hero[i])=='H02H' then
             call SaveInteger(HH,GetHandleId( GetOwningPlayer(Hero[i]) ),KaiokenHash,0)
             call SetUnitModel(Hero[i],"GokuFull.mdx")
-            call SaveReal(HH,GetHandleId( GetOwningPlayer(Hero[i]) ),MUIDodgeCountHash,0)
+            call SaveInteger(HH,GetHandleId( GetOwningPlayer(Hero[i]) ),MUIDodgeCountHash,0)
             if GetHeroLevel(Hero[i])>=26 then
                 if LoadBoolean(HH,GetHandleId( GetOwningPlayer(Hero[i]) ),UIAvailableHash)==false then
                     call SaveReal(HH,GetHandleId( GetOwningPlayer(Hero[i]) ),UIDMGHash,0)
@@ -30744,7 +30743,7 @@ call GroupEnumUnitsOfPlayer(G,Player(i),BuggedBool) //lvlbool
         if GetUnitTypeId(Hero[i])=='H02H' then
             call SaveInteger(HH,GetHandleId( GetOwningPlayer(Hero[i]) ),KaiokenHash,0)
             call SetUnitModel(Hero[i],"GokuFull.mdx")
-            call SaveReal(HH,GetHandleId( GetOwningPlayer(Hero[i]) ),MUIDodgeCountHash,0)
+            call SaveInteger(HH,GetHandleId( GetOwningPlayer(Hero[i]) ),MUIDodgeCountHash,0)
             if GetHeroLevel(Hero[i])>=26 then
                 if LoadBoolean(HH,GetHandleId( GetOwningPlayer(Hero[i]) ),UIAvailableHash)==false then
                     call SaveReal(HH,GetHandleId( GetOwningPlayer(Hero[i]) ),UIDMGHash,0)
@@ -34438,13 +34437,13 @@ if CurrentEventAttack and GetUnitAbilityLevel(c,'A1F5')>0 then        // Гил�
     call newBlockDamage(u)
     set nb=0
 endif
-if LoadReal(HH,GetHandleId( GetOwningPlayer(u) ),UIDodgeHash)>0 then
-    call SaveReal(HH,GetHandleId( GetOwningPlayer(u) ),UIDodgeHash,LoadReal(HH,GetHandleId( GetOwningPlayer(u) ),UIDodgeHash)-1)
+if LoadInteger(HH,GetHandleId( GetOwningPlayer(u) ),UIDodgeHash)>0 then
+    call SaveInteger(HH,GetHandleId( GetOwningPlayer(u) ),UIDodgeHash,LoadInteger(HH,GetHandleId( GetOwningPlayer(u) ),UIDodgeHash)-1)
     call newBlockDamage(u)
     set nb=0
     if GetHeroLevel(u)>=35 and LoadBoolean(HH,GetHandleId( GetOwningPlayer(u) ),MUIAvailableHash)==false then
-        call SaveReal(HH,GetHandleId( GetOwningPlayer(u) ),MUIDodgeCountHash,LoadReal(HH,GetHandleId( GetOwningPlayer(u) ),MUIDodgeCountHash)+1)
-        if LoadReal(HH,GetHandleId( GetOwningPlayer(u) ),MUIDodgeCountHash)>=20 then
+        call SaveInteger(HH,GetHandleId( GetOwningPlayer(u) ),MUIDodgeCountHash,LoadInteger(HH,GetHandleId( GetOwningPlayer(u) ),MUIDodgeCountHash)+1)
+        if LoadInteger(HH,GetHandleId( GetOwningPlayer(u) ),MUIDodgeCountHash)>=20 then
             call SaveBoolean(HH,GetHandleId( GetOwningPlayer(u) ),MUIAvailableHash,true)
             set MUIUnlock[GetPlayerId(GetOwningPlayer(u))]=CreateUnit(GetOwningPlayer(u),'h111',RX,RY,0)
         endif
@@ -61074,13 +61073,13 @@ function PowerDownGoku takes nothing returns nothing
     local real time=LoadReal(h,id,1)
     call SaveReal(h,id,1,time+0.1)
     if GetUnitAbilityLevel(u,'GkH7')>0 then
-        if ModuloReal(time,5)<0.1 and LoadReal(HH,idp,UIDodgeHash)<LoadReal(HH,idp,UIMaxDodgeHash) then
-        call SaveReal(HH,idp,UIDodgeHash,LoadReal(HH,idp,UIDodgeHash)+1)
+        if ModuloReal(time,5)<0.1 and LoadInteger(HH,idp,UIDodgeHash)<LoadInteger(HH,idp,UIMaxDodgeHash) then
+        call SaveInteger(HH,idp,UIDodgeHash,LoadInteger(HH,idp,UIDodgeHash)+1)
         endif
     endif
     if GetUnitAbilityLevel(u,'GkH8')>0 then
-        if ModuloReal(time,1)<0.1 and LoadReal(HH,idp,UIDodgeHash)<LoadReal(HH,idp,UIMaxDodgeHash) then
-        call SaveReal(HH,idp,UIDodgeHash,LoadReal(HH,idp,UIDodgeHash)+1)
+        if ModuloReal(time,1)<0.1 and LoadInteger(HH,idp,UIDodgeHash)<LoadInteger(HH,idp,UIMaxDodgeHash) then
+        call SaveInteger(HH,idp,UIDodgeHash,LoadInteger(HH,idp,UIDodgeHash)+1)
         endif
     endif
     if IsUnitPaused(u)==false and GetUnitAbilityLevel(u,'Pet1')==0 then
@@ -61129,8 +61128,8 @@ function PowerDownGoku takes nothing returns nothing
                 call DestroyEffect(AddSpecialEffect("war3mapImported\\BloodEX.mdx",GetUnitX(u),GetUnitY(u)))
             endif
         endif
-        call SaveReal(HH,idp,UIDodgeHash,0)
-        call SaveReal(HH,idp,UIMaxDodgeHash,0)
+        call SaveInteger(HH,idp,UIDodgeHash,0)
+        call SaveInteger(HH,idp,UIMaxDodgeHash,0)
         call UnitRemoveAbility(u,'GkH1')
         call UnitRemoveAbility(u,'GkH2')
         call UnitRemoveAbility(u,'GkH3')
@@ -61225,7 +61224,7 @@ function PowerUpGokuCast2 takes nothing returns nothing
                 call SetSpecialEffectTimeScale(EFF , 0.6)
                 call SetSpecialEffectAlphaTimed(EFF , 255 , 255 , 255 , 255 , 2)
             endif
-            if time==5.3 then
+            if time==4.5 then
                 if GetUnitModel(u)=="GokuFull.mdx" and GetUnitModel(u)!="GokuLow.mdx" then 
                     call SetUnitModel(u,"GokuHalf.mdx")
                 endif
@@ -61250,8 +61249,8 @@ function PowerUpGokuCast2 takes nothing returns nothing
                 call UnitMakeAbilityPermanent(u,true,'GkH7')
                 call UnitAddAbility(u,'A4AU')
                 call UnitMakeAbilityPermanent(u,true,'A4AU')
-                call SaveReal(HH,idp,UIDodgeHash,10)
-                call SaveReal(HH,idp,UIMaxDodgeHash,10)
+                call SaveInteger(HH,idp,UIDodgeHash,10)
+                call SaveInteger(HH,idp,UIMaxDodgeHash,10)
                 call SetUnitAnimationByIndex(u,189)
             endif
         elseif LoadInteger(h,id,3)==8 then
@@ -61329,7 +61328,7 @@ function PowerUpGokuCast2 takes nothing returns nothing
                 call UnitAddAbility(u,'GkH8')
                 call UnitMakeAbilityPermanent(u,true,'GkH8')
                 call UnitAddAbility(u,'A4AU')
-                call SaveReal(HH,idp,UIMaxDodgeHash,15)
+                call SaveInteger(HH,idp,UIMaxDodgeHash,15)
                 call UnitMakeAbilityPermanent(u,true,'A4AU')
                 call SetUnitAnimationByIndex(u,189)
             endif
@@ -61525,8 +61524,10 @@ function PowerUpGokuCast takes nothing returns nothing
         if GetSpellAbilityId()=='GKMI' and GetUnitAbilityLevel(u,'GkH7')>0 then
             call SaveReal(h,id,1,3.475)
         else
-            call SaveReal(HH,idp,UIDodgeHash,15)
-            call SaveReal(HH,idp,UIMaxDodgeHash,15)
+            if GetSpellAbilityId()=='GKMI' then
+                call SaveInteger(HH,idp,UIDodgeHash,15)
+                call SaveInteger(HH,idp,UIMaxDodgeHash,15)
+            endif
         endif
     endif
     if GetSpellAbilityId()=='GKSS' then
