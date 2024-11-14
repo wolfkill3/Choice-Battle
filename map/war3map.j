@@ -34400,14 +34400,6 @@ local integer ragecount=0
 set nb=b
 set critcoef=1
 call UnitRemoveAbility(u,'cbc7')
-if LoadReal(HH,GetHandleId( GetOwningPlayer(u) ),UIDodgeHash)>0 then
-    call SaveReal(HH,GetHandleId( GetOwningPlayer(u) ),UIDodgeHash,LoadReal(HH,GetHandleId( GetOwningPlayer(u) ),UIDodgeHash)-1)
-    call newBlockDamage(u)
-    set nb=0
-    if GetHeroLevel(u)>=35 and LoadBoolean(HH,GetHandleId( GetOwningPlayer(u) ),MUIAvailableHash)==false then
-        call SaveReal(HH,GetHandleId( GetOwningPlayer(u) ),MUIDodgeCountHash,LoadReal(HH,GetHandleId( GetOwningPlayer(u) ),MUIDodgeCountHash)+1)
-    endif
-endif
 if GetUnitAbilityLevel(c,'Bwk1')>0 and nb>0 then
     call SaveReal(HH,GetHandleId(bufh),0,b)
     call HandleListEnumUnitBuffs(bufh,c,Condition(function WeakenBool))
@@ -34445,6 +34437,18 @@ endif
 if CurrentEventAttack and GetUnitAbilityLevel(c,'A1F5')>0 then        // Гильгамеш блок обычных автух
     call newBlockDamage(u)
     set nb=0
+endif
+if LoadReal(HH,GetHandleId( GetOwningPlayer(u) ),UIDodgeHash)>0 then
+    call SaveReal(HH,GetHandleId( GetOwningPlayer(u) ),UIDodgeHash,LoadReal(HH,GetHandleId( GetOwningPlayer(u) ),UIDodgeHash)-1)
+    call newBlockDamage(u)
+    set nb=0
+    if GetHeroLevel(u)>=35 and LoadBoolean(HH,GetHandleId( GetOwningPlayer(u) ),MUIAvailableHash)==false then
+        call SaveReal(HH,GetHandleId( GetOwningPlayer(u) ),MUIDodgeCountHash,LoadReal(HH,GetHandleId( GetOwningPlayer(u) ),MUIDodgeCountHash)+1)
+        if LoadReal(HH,GetHandleId( GetOwningPlayer(u) ),MUIDodgeCountHash)>=20 then
+            call SaveBoolean(HH,GetHandleId( GetOwningPlayer(u) ),MUIAvailableHash,true)
+            set MUIUnlock[GetPlayerId(GetOwningPlayer(u))]=CreateUnit(GetOwningPlayer(u),'h111',RX,RY,0)
+        endif
+    endif
 endif
 if (LoadReal(HH,GetHandleId(c),StringHash("yamato"))==1 or GetRandomInt(0,100)<15) and (UnitHasItemOfTypeBJ(c,'I02V') or GetUnitAbilityLevel(c,'KIG4')>0) and CurrentEventAttack and IsUnitType(c, UNIT_TYPE_HERO) and IsUnitIllusion(c)==false and GetUnitAbilityLevel(c,'A3WR')==0 then
     call DestroyEffect(AddSpecialEffectTarget("war3mapImported\\BloodEX.mdx",u,"chest"))
@@ -61246,6 +61250,8 @@ function PowerUpGokuCast2 takes nothing returns nothing
                 call UnitMakeAbilityPermanent(u,true,'GkH7')
                 call UnitAddAbility(u,'A4AU')
                 call UnitMakeAbilityPermanent(u,true,'A4AU')
+                call SaveReal(HH,idp,UIDodgeHash,10)
+                call SaveReal(HH,idp,UIMaxDodgeHash,10)
                 call SetUnitAnimationByIndex(u,189)
             endif
         elseif LoadInteger(h,id,3)==8 then
@@ -61460,8 +61466,6 @@ function PowerUpGokuCast2 takes nothing returns nothing
                 call UnitRemoveTransformTimedPause(u,'GkH7',20)
                 call CreateModeIndicatorWithPauseFormDispellable(u, "ReplaceableTextures\\Commandbuttons\\BTNGokuUI.blp", 20,'GkH7')
             endif
-            call SaveReal(HH,idp,UIDodgeHash,10)
-            call SaveReal(HH,idp,UIMaxDodgeHash,10)
         elseif LoadInteger(h,id,3)==8 then //MUI
             call SetUnitInvulnerable(u,false)
             call ShowAbility2('GKF1',false)
