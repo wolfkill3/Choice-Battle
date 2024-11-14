@@ -207,9 +207,9 @@ constant integer UIAvailableHash      = StringHash("UIAvailable")
 constant integer UIDMGHash            = StringHash("UIDMG")
 constant integer UILimitDMGHash       = StringHash("UILimitDMG")
 constant integer MUIAvailableHash     = StringHash("MUIAvailable")
-constant integer MUIDMGHash           = StringHash("MUIDodgeCount")
-constant integer MUILimitDMGHash      = StringHash("MUILimitDodgeCount")
+constant integer MUIDodgeCountHash    = StringHash("MUIDodgeCount")
 constant integer UIDodgeHash          = StringHash("UIDodges")
+constant integer UIMaxDodgeHash       = StringHash("UIMaxDodges")
 constant integer VariationQHash       = StringHash("VariationQ")
 constant integer VariationWHash       = StringHash("VariationW")
 constant integer VariationEHash       = StringHash("VariationE")
@@ -939,6 +939,8 @@ integer array lvl32
 integer array lvl35
 integer array manaMoria
 integer array rfhr
+unit array UIUnlock
+unit array MUIUnlock
 group strm
 group clv
 unit strmu
@@ -7143,6 +7145,32 @@ call SetTextTagFadepoint(sysTextTag,.75)
 call SetTextTagLifespan(sysTextTag,3)
 call SetTextTagPermanent(sysTextTag,false)
 set sysTextTag=null
+endfunction
+function UnitRemoveTransformTimedPause2 takes nothing returns nothing
+local timer t=GetExpiredTimer()
+local integer id=GetHandleId(t)
+if LoadReal(HH,id,3)<LoadReal(HH,id,2) and GetUnitAbilityLevel(LoadUnitHandle(HH,id,0),LoadInteger(HH,id,1))>0 and udg_B then
+if IsUnitPaused(LoadUnitHandle(HH,id,0))==false and GetUnitAbilityLevel(LoadUnitHandle(HH,id,0),'Pet1')==0 then
+call SaveReal(HH,id,3,LoadReal(HH,id,3)+0.05)
+endif
+else
+call UnitRemoveAbility(LoadUnitHandle(HH,id,0),LoadInteger(HH,id,1))
+call SaveBoolean(HH,GetHandleId(LoadUnitHandle(HH,id,0)),SST,true)
+call FlushChildHashtable(HH,id)
+call PauseTimer(t)
+call DestroyTimer(t)
+endif
+set t=null
+endfunction
+function UnitRemoveTransformTimedPause takes unit u,integer id,real time returns nothing
+local timer t=CreateTimer()
+local integer idt=GetHandleId(t)
+call SaveInteger(HH,idt,1,id)
+call SaveReal(HH,idt,2,time)
+call SaveReal(HH,idt,3,0)
+call SaveUnitHandle(HH,idt,0,u)
+call TimerStart(t,0.05,true,function UnitRemoveTransformTimedPause2)
+set t=null
 endfunction
 function RemoveAbilityTimedPause2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
@@ -17585,18 +17613,20 @@ local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
 local integer ip=LoadInteger(HH,id,0)
 local unit u=Hero[ip]
+local player p=GetOwningPlayer(u)
+local integer idp=GetHandleId(p)
 if GetUnitTypeId(u)=='H02H' then
     if IsUnitSelected(u,GetLocalPlayer()) and IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(u)) then
         if GetHeroLevel(u)<26 then
-            call SetFrameText(GetFrameByName("CustomLeaderboardText",0),"|c00FF0000Kaioken|r: "+I2S(R2I(LoadInteger(HH,GetHandleId(u), KaiokenHash))))
-        elseif GetHeroLevel(u)>=26 and LoadBoolean(HH,GetHandleId(GetOwningPlayer(u)),UIAvailable)==false then
-            call SetFrameText(GetFrameByName("CustomLeaderboardText",0),"|c00FF0000Kaioken|r: "+I2S(R2I(LoadInteger(HH,GetHandleId(u), KaiokenHash))))
-        elseif GetHeroLevel(u)>=26 and GetHeroLevel(u)<35 and LoadBoolean(HH,GetHandleId(GetOwningPlayer(u)),UIAvailable)==true then
-            call SetFrameText(GetFrameByName("CustomLeaderboardText",0),"|c00FF0000Kaioken|r: "+I2S(R2I(LoadInteger(HH,GetHandleId(u), KaiokenHash))))
-        elseif GetHeroLevel(u)>=35 and LoadBoolean(HH,GetHandleId(GetOwningPlayer(u)),UIAvailable)==true and LoadBoolean(HH,GetHandleId(GetOwningPlayer(u)),MUIAvailable)==false then
-            call SetFrameText(GetFrameByName("CustomLeaderboardText",0),"|c00FF0000Kaioken|r: "+I2S(R2I(LoadInteger(HH,GetHandleId(u), KaiokenHash))))
-        elseif GetHeroLevel(u)>=35 and LoadBoolean(HH,GetHandleId(GetOwningPlayer(u)),UIAvailable)==true and LoadBoolean(HH,GetHandleId(GetOwningPlayer(u)),MUIAvailable)==true then
-            call SetFrameText(GetFrameByName("CustomLeaderboardText",0),"|c00FF0000Kaioken|r: "+I2S(R2I(LoadInteger(HH,GetHandleId(u), KaiokenHash))))
+            call SetFrameText(GetFrameByName("CustomLeaderboardText",0),"|c00FF0000Kaioken|r: "+I2S(R2I(LoadInteger(HH,idp, KaiokenHash))))
+        elseif GetHeroLevel(u)>=26 and LoadBoolean(HH,idp,UIAvailableHash)==false then
+            call SetFrameText(GetFrameByName("CustomLeaderboardText",0),"|c00FF0000Kaioken|r: "+I2S(R2I(LoadInteger(HH,idp, KaiokenHash)))+"  |c00C7C7D6UI Unlock|r: "+I2S(R2I(LoadReal(HH,idp, UIDMGHash)))+ "/"+I2S(R2I(LoadReal(HH,idp,UILimitDMGHash))))
+        elseif GetHeroLevel(u)>=26 and GetHeroLevel(u)<35 and LoadBoolean(HH,idp,UIAvailableHash)==true then
+            call SetFrameText(GetFrameByName("CustomLeaderboardText",0),"|c00FF0000Kaioken|r: "+I2S(R2I(LoadInteger(HH,idp, KaiokenHash)))+"  |c00C7C7D6Dodges|r: "+I2S(LoadInteger(HH,idp, UIDodgeHash))+ "/"+I2S(LoadInteger(HH,idp,UIMaxDodgeHash)))
+        elseif GetHeroLevel(u)>=35 and LoadBoolean(HH,idp,UIAvailableHash)==true and LoadBoolean(HH,idp,MUIAvailableHash)==false then
+            call SetFrameText(GetFrameByName("CustomLeaderboardText",0),"|c00FF0000Kaioken|r: "+I2S(R2I(LoadInteger(HH,idp, KaiokenHash)))+"  |c00C7C7D6Dodges|r: "+I2S(LoadInteger(HH,idp, UIDodgeHash))+ "/"+I2S(LoadInteger(HH,idp,UIMaxDodgeHash))+"|n|c00F1F1F5MUI Unlock|r: "+I2S(LoadInteger(HH,idp, MUIDodgeCountHash))+ "/20")
+        elseif GetHeroLevel(u)>=35 and LoadBoolean(HH,idp,UIAvailableHash)==true and LoadBoolean(HH,idp,MUIAvailableHash)==true then
+            call SetFrameText(GetFrameByName("CustomLeaderboardText",0),"|c00FF0000Kaioken|r: "+I2S(R2I(LoadInteger(HH,idp, KaiokenHash)))+"  |c00C7C7D6Dodges|r: "+I2S(LoadInteger(HH,idp, UIDodgeHash))+ "/"+I2S(LoadInteger(HH,idp,UIMaxDodgeHash)))
         endif
         call ShowFrame(GetFrameByName("CustomLeaderboard",0), true)
         call SetFrameSize( GetFrameByName("CustomLeaderboard",0), .1775, GetFrameHeight( GetFrameByName("CustomLeaderboardText",0))+0.016)
@@ -17614,6 +17644,7 @@ else
     call FlushChildHashtable(HH,id)
 endif
 set u=null
+set p=null
 set t=null
 endfunction
 
@@ -29401,6 +29432,7 @@ function EndOfChoiceAct takes nothing returns nothing
             call SaveReal(HH,GetHandleId( Hero[i] ),MadokaTHHash,2500+round*50)
             call SaveInteger(HH,GetHandleId( Hero[i] ),MadokaMHash,0)
         endif
+
         //блекгоку конец раунда
         if GetUnitTypeId(Hero[i]) == 'H35Z' then
             call UnitRemoveAbility(Hero[i], 'YoF1')
@@ -29485,8 +29517,15 @@ function EndOfChoiceAct takes nothing returns nothing
             call SelectUnit(Hero[i],true)
         endif
         if GetUnitTypeId(Hero[i])=='H02H' then
-            call SaveInteger(HH,GetHandleId( Hero[i] ),KaiokenHash,0)
+            call SaveInteger(HH,GetHandleId( GetOwningPlayer(Hero[i]) ),KaiokenHash,0)
             call SetUnitModel(Hero[i],"GokuFull.mdx")
+            call SaveReal(HH,GetHandleId( GetOwningPlayer(Hero[i]) ),MUIDodgeCountHash,0)
+            if GetHeroLevel(Hero[i])>=26 then
+                if LoadBoolean(HH,GetHandleId( GetOwningPlayer(Hero[i]) ),UIAvailableHash)==false then
+                    call SaveReal(HH,GetHandleId( GetOwningPlayer(Hero[i]) ),UIDMGHash,0)
+                    call SaveReal(HH,GetHandleId( GetOwningPlayer(Hero[i]) ),UILimitDMGHash,GetUnitMaxLife(Hero[i])*2)
+                endif
+            endif
         endif
         call SetUnitTimeScale(Hero[i],1)
         call UnitAddType(Hero[i],UNIT_TYPE_ETHEREAL)
@@ -30703,8 +30742,15 @@ call GroupEnumUnitsOfPlayer(G,Player(i),BuggedBool) //lvlbool
             set Broly=Hero[i]
         endif
         if GetUnitTypeId(Hero[i])=='H02H' then
-            call SaveInteger(HH,GetHandleId( Hero[i] ),KaiokenHash,0)
+            call SaveInteger(HH,GetHandleId( GetOwningPlayer(Hero[i]) ),KaiokenHash,0)
             call SetUnitModel(Hero[i],"GokuFull.mdx")
+            call SaveReal(HH,GetHandleId( GetOwningPlayer(Hero[i]) ),MUIDodgeCountHash,0)
+            if GetHeroLevel(Hero[i])>=26 then
+                if LoadBoolean(HH,GetHandleId( GetOwningPlayer(Hero[i]) ),UIAvailableHash)==false then
+                    call SaveReal(HH,GetHandleId( GetOwningPlayer(Hero[i]) ),UIDMGHash,0)
+                    call SaveReal(HH,GetHandleId( GetOwningPlayer(Hero[i]) ),UILimitDMGHash,GetUnitMaxLife(Hero[i])*2)
+                endif
+            endif
         endif
         //Danzo 1 time Izanagi for every rounds
         call SaveBoolean(HH,GetHandleId( Hero[i] ),StringHash("SabracKillme"),false)
@@ -34354,6 +34400,14 @@ local integer ragecount=0
 set nb=b
 set critcoef=1
 call UnitRemoveAbility(u,'cbc7')
+if LoadReal(HH,GetHandleId( GetOwningPlayer(u) ),UIDodgeHash)>0 then
+    call SaveReal(HH,GetHandleId( GetOwningPlayer(u) ),UIDodgeHash,LoadReal(HH,GetHandleId( GetOwningPlayer(u) ),UIDodgeHash)-1)
+    call newBlockDamage(u)
+    set nb=0
+    if GetHeroLevel(u)>=35 and LoadBoolean(HH,GetHandleId( GetOwningPlayer(u) ),MUIAvailableHash)==false then
+        call SaveReal(HH,GetHandleId( GetOwningPlayer(u) ),MUIDodgeCountHash,LoadReal(HH,GetHandleId( GetOwningPlayer(u) ),MUIDodgeCountHash)+1)
+    endif
+endif
 if GetUnitAbilityLevel(c,'Bwk1')>0 and nb>0 then
     call SaveReal(HH,GetHandleId(bufh),0,b)
     call HandleListEnumUnitBuffs(bufh,c,Condition(function WeakenBool))
@@ -37542,6 +37596,25 @@ set n0=null
             call UnitRemoveAbility(u,'A1WR')
         endif
     endif
+    if GetUnitTypeId(u)=='H02H' then
+        if GetUnitModel(u)=="GokuFull.mdx" and GetUnitState(u,UNIT_STATE_LIFE)<0.6*ll then 
+            if GetUnitState(u,UNIT_STATE_LIFE)>0.3*ll then
+                call SetUnitModel(u,"GokuHalf.mdx")
+            else
+                call SetUnitModel(u,"GokuLow.mdx")
+            endif
+        endif
+        if GetUnitModel(u)=="GokuHalf.mdx" and GetUnitState(u,UNIT_STATE_LIFE)<0.3*ll then 
+            call SetUnitModel(u,"GokuLow.mdx")
+        endif
+        if GetHeroLevel(u)>=26 and LoadBoolean(HH,GetHandleId( GetOwningPlayer(u) ),UIAvailableHash)==false then
+            call SaveReal(HH,GetHandleId( GetOwningPlayer(u) ),UIDMGHash,LoadReal(HH,GetHandleId( GetOwningPlayer(u) ),UIDMGHash)+nb)
+            if LoadReal(HH,GetHandleId( GetOwningPlayer(u) ),UIDMGHash)>=LoadReal(HH,GetHandleId( GetOwningPlayer(u) ),UILimitDMGHash)then
+                call SaveBoolean(HH,GetHandleId( GetOwningPlayer(u) ),UIAvailableHash,true)
+                set UIUnlock[GetPlayerId(GetOwningPlayer(u))]=CreateUnit(GetOwningPlayer(u),'h110',RX,RY,0)
+            endif
+        endif
+    endif
     if (UnitHasItemOfTypeBJ(u,'I04T') or GetUnitAbilityLevel(u,'B02E')>0 or GetUnitAbilityLevel(u,'KIP8')>0) and c!=UltimateDamage and GetUnitAbilityLevel(c,'A1WR')==0 and GetUnitAbilityLevel(c,'A0WR')==0 and nb>0 and GetUnitAbilityLevel(u,'YatB')>0 then
         if IsUnitInvulnerable(c)==true then
             call UnitAddAbility(u,'A1WR')
@@ -37557,18 +37630,6 @@ set n0=null
     endif
     if GetUnitAbilityLevel(c,'B15A')>0 then
         call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-nb*0.25)
-    endif
-    if GetUnitTypeId(u)=='H02H' then
-        if GetUnitModel(u)=="GokuFull.mdx" and GetUnitState(u,UNIT_STATE_LIFE)<0.6*ll then 
-            if GetUnitState(u,UNIT_STATE_LIFE)>0.3*ll then
-                call SetUnitModel(u,"GokuHalf.mdx")
-            else
-                call SetUnitModel(u,"GokuLow.mdx")
-            endif
-        endif
-        if GetUnitModel(u)=="GokuHalf.mdx" and GetUnitState(u,UNIT_STATE_LIFE)<0.3*ll then 
-            call SetUnitModel(u,"GokuLow.mdx")
-        endif
     endif
     if critcoef>1 then
         call AllTextTag("|c00FF3737CRIT x"+R2SW(critcoef,2,2)+"|r" , c)
@@ -61004,82 +61065,99 @@ function PowerDownGoku takes nothing returns nothing
     local timer t=GetExpiredTimer()
     local integer id=GetHandleId(t)
     local unit u=LoadUnitHandle(h,id,0)
-        if IsUnitPaused(u)==false and GetUnitAbilityLevel(u,'Pet1')==0 then
-            if GetUnitAbilityLevel(u,'GkH1')>0 then
-                call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-GetUnitState(u,UNIT_STATE_MAX_MANA)*0.0003)
-            endif
-            if GetUnitAbilityLevel(u,'GkH2')>0 then
-                call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-GetUnitState(u,UNIT_STATE_MAX_MANA)*0.0005)
-            endif
-            if GetUnitAbilityLevel(u,'GkH3')>0 then
-                call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-GetUnitState(u,UNIT_STATE_MAX_MANA)*0.0008)
-            endif
-            if GetUnitAbilityLevel(u,'GkH4')>0 then
-                call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-GetUnitState(u,UNIT_STATE_MAX_MANA)*0.0011)
-            endif
-            if GetUnitAbilityLevel(u,'GkH5')>0 then
-                call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-GetUnitState(u,UNIT_STATE_MAX_MANA)*0.001)
-            endif
-            if GetUnitAbilityLevel(u,'GkH6')>0 then
-                call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-GetUnitState(u,UNIT_STATE_MAX_MANA)*0.0012)
-            endif
-            if GetUnitAbilityLevel(u,'GkH7')>0 then
-                call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-GetUnitState(u,UNIT_STATE_MAX_MANA)*0.002)
-            endif
-            if GetUnitAbilityLevel(u,'GkH8')>0 then
-                call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-GetUnitState(u,UNIT_STATE_MAX_MANA)*0.004)
+    local player p=GetOwningPlayer(u)
+    local integer idp=GetHandleId(p)
+    local real time=LoadReal(h,id,1)
+    call SaveReal(h,id,1,time+0.1)
+    if GetUnitAbilityLevel(u,'GkH7')>0 then
+        if ModuloReal(time,5)<0.1 and LoadReal(HH,idp,UIDodgeHash)<LoadReal(HH,idp,UIMaxDodgeHash) then
+        call SaveReal(HH,idp,UIDodgeHash,LoadReal(HH,idp,UIDodgeHash)+1)
+        endif
+    endif
+    if GetUnitAbilityLevel(u,'GkH8')>0 then
+        if ModuloReal(time,1)<0.1 and LoadReal(HH,idp,UIDodgeHash)<LoadReal(HH,idp,UIMaxDodgeHash) then
+        call SaveReal(HH,idp,UIDodgeHash,LoadReal(HH,idp,UIDodgeHash)+1)
+        endif
+    endif
+    if IsUnitPaused(u)==false and GetUnitAbilityLevel(u,'Pet1')==0 then
+        if GetUnitAbilityLevel(u,'GkH1')>0 then
+            call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-GetUnitState(u,UNIT_STATE_MAX_MANA)*0.0003)
+        endif
+        if GetUnitAbilityLevel(u,'GkH2')>0 then
+            call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-GetUnitState(u,UNIT_STATE_MAX_MANA)*0.0005)
+        endif
+        if GetUnitAbilityLevel(u,'GkH3')>0 then
+            call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-GetUnitState(u,UNIT_STATE_MAX_MANA)*0.0008)
+        endif
+        if GetUnitAbilityLevel(u,'GkH4')>0 then
+            call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-GetUnitState(u,UNIT_STATE_MAX_MANA)*0.0011)
+        endif
+        if GetUnitAbilityLevel(u,'GkH5')>0 then
+            call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-GetUnitState(u,UNIT_STATE_MAX_MANA)*0.001)
+        endif
+        if GetUnitAbilityLevel(u,'GkH6')>0 then
+            call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-GetUnitState(u,UNIT_STATE_MAX_MANA)*0.0012)
+        endif
+        if GetUnitAbilityLevel(u,'GkH7')>0 then
+            call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-GetUnitState(u,UNIT_STATE_MAX_MANA)*0.002)
+        endif
+        if GetUnitAbilityLevel(u,'GkH8')>0 then
+            call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-GetUnitState(u,UNIT_STATE_MAX_MANA)*0.004)
+        endif
+    endif
+    if GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.1>GetUnitState(u,UNIT_STATE_LIFE) or GetUnitState(u,UNIT_STATE_MAX_MANA)*0.04>GetUnitState(u,UNIT_STATE_MANA) or LoadBoolean(HH,GetHandleId(u),SST)==true then
+        call SaveBoolean(HH,GetHandleId(u),SS,false)
+        call SaveBoolean(HH,GetHandleId(u),SST,false)
+        if GetUnitModel(u)=="GokuSS4.mdx" then 
+            call SetUnitModel(u,"GokuLow.mdx")
+        endif
+        if GetUnitAbilityLevel(u,'GkH7')>0 then
+            call StartAbilityCooldown(GetUnitAbility(u,'GKUI'),60)
+            call StartAbilityCooldown(GetUnitAbility(u,'GKMI'),60)
+        endif
+        if GetUnitAbilityLevel(u,'GkH8')>0 then
+            call StartAbilityCooldown(GetUnitAbility(u,'GKUI'),90)
+            call StartAbilityCooldown(GetUnitAbility(u,'GKMI'),90)
+            if GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.1>GetUnitState(u,UNIT_STATE_LIFE) or GetUnitState(u,UNIT_STATE_MAX_MANA)*0.04>GetUnitState(u,UNIT_STATE_MANA) then
+                call SetControlToUnit(u,u,1,"heavystun")
+                call SetControlToUnit(u,u,4,"SilenceTE")
+                call SlowUnit(u,u,0.5,0.5,7,2,false)
+                call DestroyEffect(AddSpecialEffect("war3mapImported\\BloodEX.mdx",GetUnitX(u),GetUnitY(u)))
             endif
         endif
-        if GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.1>GetUnitState(u,UNIT_STATE_LIFE) or GetUnitState(u,UNIT_STATE_MAX_MANA)*0.04>GetUnitState(u,UNIT_STATE_MANA) or LoadBoolean(HH,GetHandleId(u),SST)==true then
-            call SaveBoolean(HH,GetHandleId(u),SS,false)
-            call SaveBoolean(HH,GetHandleId(u),SST,false)
-            if GetUnitModel(u)=="GokuSS4.mdx" then 
-                call SetUnitModel(u,"GokuLow.mdx")
-            endif
-            if GetUnitAbilityLevel(u,'GkH7')>0 then
-                call StartAbilityCooldown(GetUnitAbility(u,'GKUI'),60)
-                call StartAbilityCooldown(GetUnitAbility(u,'GKMI'),60)
-            endif
-            if GetUnitAbilityLevel(u,'GkH8')>0 then
-                call StartAbilityCooldown(GetUnitAbility(u,'GKUI'),90)
-                call StartAbilityCooldown(GetUnitAbility(u,'GKMI'),90)
-                if GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.1>GetUnitState(u,UNIT_STATE_LIFE) or GetUnitState(u,UNIT_STATE_MAX_MANA)*0.04>GetUnitState(u,UNIT_STATE_MANA) then
-                    call SetControlToUnit(u,u,1,"heavystun")
-                    call SetControlToUnit(u,u,4,"SilenceTE")
-                    call SlowUnit(u,u,0.5,0.5,7,2,false)
-                    call DestroyEffect(AddSpecialEffect("war3mapImported\\BloodEX.mdx",GetUnitX(u),GetUnitY(u)))
-                endif
-            endif
-            call UnitRemoveAbility(u,'GkH1')
-            call UnitRemoveAbility(u,'GkH2')
-            call UnitRemoveAbility(u,'GkH3')
-            call UnitRemoveAbility(u,'GkH4')
-            call UnitRemoveAbility(u,'GkH5')
-            call UnitRemoveAbility(u,'GkH6')
-            call UnitRemoveAbility(u,'GkH7')
-            call UnitRemoveAbility(u,'GkH8')
-            call UnitRemoveAbility(u,'A4AU')
-            call ShowAbility2('GKSS',true)
-            call ShowAbility2('GKS2',true)
-            call ShowAbility2('GKS3',true)
-            call ShowAbility2('GKS4',true)
-            call ShowAbility2('GKSR',true)
-            call ShowAbility2('GKSB',true)
-            call ShowAbility2('GKUI',true)
-            call ShowAbility2('GKBB',false)
-            call ShowAbility2('GKF1',true)
-            call UnitAddAbility(u,'GkH0')
-            call SetUnitAbilityLevel(u,'A0NM',1)
-            call UnitMakeAbilityPermanent(u,true,'GkH0')
-            if LoadReal(HH,GetHandleId(GetOwningPlayer(Goku)),VariationQHash)==2 or LoadReal(HH,GetHandleId(GetOwningPlayer(Goku)),VariationQHash)==3 or LoadReal(HH,GetHandleId(GetOwningPlayer(Goku)),VariationQHash)==4 then
-                call SaveReal(HH,GetHandleId(GetOwningPlayer(Goku)),VariationQHash,0)
-            endif
-            call PauseTimer(t)
-            call DestroyTimer(t)
-            call FlushChildHashtable(h,id)
+        call SaveReal(HH,idp,UIDodgeHash,0)
+        call SaveReal(HH,idp,UIMaxDodgeHash,0)
+        call UnitRemoveAbility(u,'GkH1')
+        call UnitRemoveAbility(u,'GkH2')
+        call UnitRemoveAbility(u,'GkH3')
+        call UnitRemoveAbility(u,'GkH4')
+        call UnitRemoveAbility(u,'GkH5')
+        call UnitRemoveAbility(u,'GkH6')
+        call UnitRemoveAbility(u,'GkH7')
+        call UnitRemoveAbility(u,'GkH8')
+        call UnitRemoveAbility(u,'A4AU')
+        call ShowAbility2('GKSS',true)
+        call ShowAbility2('GKS2',true)
+        call ShowAbility2('GKS3',true)
+        call ShowAbility2('GKS4',true)
+        call ShowAbility2('GKSR',true)
+        call ShowAbility2('GKSB',true)
+        call ShowAbility2('GKUI',true)
+        call ShowAbility2('GKBB',false)
+        call ShowAbility2('GKF1',true)
+        call UnitAddAbility(u,'GkH0')
+        call SetUnitAbilityLevel(u,'A0NM',1)
+        call UnitMakeAbilityPermanent(u,true,'GkH0')
+        if LoadReal(HH,GetHandleId(GetOwningPlayer(Goku)),VariationQHash)==2 or LoadReal(HH,GetHandleId(GetOwningPlayer(Goku)),VariationQHash)==3 or LoadReal(HH,GetHandleId(GetOwningPlayer(Goku)),VariationQHash)==4 then
+            call SaveReal(HH,GetHandleId(GetOwningPlayer(Goku)),VariationQHash,0)
         endif
+        call PauseTimer(t)
+        call DestroyTimer(t)
+        call FlushChildHashtable(h,id)
+    endif
     set t=null
     set u=null
+    set p=null
 endfunction
 function PowerUpGokuCond takes nothing returns boolean
 return (GetSpellAbilityId()=='GKBS' or GetSpellAbilityId()=='GKBB' or GetSpellAbilityId()=='GKSS' or GetSpellAbilityId()=='GKS2' or GetSpellAbilityId()=='GKS3' or GetSpellAbilityId()=='GKS4' or GetSpellAbilityId()=='GKSR' or GetSpellAbilityId()=='GKSB' or GetSpellAbilityId()=='GKUI' or GetSpellAbilityId()=='GKMI') and udg_B==true
@@ -61092,13 +61170,16 @@ function PowerUpGokuCast2 takes nothing returns nothing
     local real x=GetUnitX(u)
     local real y=GetUnitY(u)
     local player p=GetOwningPlayer(u)
+    local integer idp=GetHandleId(p)
     local real time=LoadReal(h,id,1)
     local integer i=0
     if time<6 then
         call PauseUnit(u,true)
         call SaveReal(h,id,1,time+0.025)
-        if GetUnitCurrentAnimationId(u)!=187 or GetUnitCurrentAnimationId(u)!=189 then
-            call SetUnitAnimationByIndex(u,187)
+        if GetUnitCurrentAnimationId(u)!=187 then
+            if GetUnitCurrentAnimationId(u)!=189 then
+                call SetUnitAnimationByIndex(u,187)
+            endif
         endif
         if LoadInteger(h,id,3)==7 then
             call SetUnitInvulnerable(u,true)
@@ -61242,6 +61323,7 @@ function PowerUpGokuCast2 takes nothing returns nothing
                 call UnitAddAbility(u,'GkH8')
                 call UnitMakeAbilityPermanent(u,true,'GkH8')
                 call UnitAddAbility(u,'A4AU')
+                call SaveReal(HH,idp,UIMaxDodgeHash,15)
                 call UnitMakeAbilityPermanent(u,true,'A4AU')
                 call SetUnitAnimationByIndex(u,189)
             endif
@@ -61374,16 +61456,18 @@ function PowerUpGokuCast2 takes nothing returns nothing
             call ShowAbility2('GKSR',false)
             call ShowAbility2('GKSB',false)
             call ShowAbility2('GKUI',false)
-            if IsAbilityEnabled(u,'GKMI')==false then
-                call UnitRemoveAbilityTimedPause(u,'GkH7',15)
-                call CreateModeIndicatorWithPauseFormDispellable(u, "ReplaceableTextures\\Commandbuttons\\BTNGokuUI.blp", 15,'GkH7')
+            if LoadBoolean(HH,idp,MUIAvailableHash)==false then
+                call UnitRemoveTransformTimedPause(u,'GkH7',20)
+                call CreateModeIndicatorWithPauseFormDispellable(u, "ReplaceableTextures\\Commandbuttons\\BTNGokuUI.blp", 20,'GkH7')
             endif
+            call SaveReal(HH,idp,UIDodgeHash,10)
+            call SaveReal(HH,idp,UIMaxDodgeHash,10)
         elseif LoadInteger(h,id,3)==8 then //MUI
             call SetUnitInvulnerable(u,false)
             call ShowAbility2('GKF1',false)
             call ShowAbility2('GKBB',true)
-            call UnitRemoveAbilityTimedPause(u,'GkH8',15)
-            call CreateModeIndicatorWithPauseFormDispellable(u, "ReplaceableTextures\\Commandbuttons\\BTNGokuMUI.blp", 15,'GkH8')
+            call UnitRemoveTransformTimedPause(u,'GkH8',20)
+            call CreateModeIndicatorWithPauseFormDispellable(u, "ReplaceableTextures\\Commandbuttons\\BTNGokuMUI.blp", 20,'GkH8')
         endif
         if LoadInteger(h,id,3)==0 and GetUnitAbilityLevel(u,'GkH0')==0 then
             set soundplay=CreateSound("Sound\\Music\\mp3Music\\PowerDown.mp3",false,false,true,12700,12700,"")
@@ -61393,6 +61477,7 @@ function PowerUpGokuCast2 takes nothing returns nothing
         if LoadBoolean(HH,GetHandleId(u),SS)==false then
             call SaveUnitHandle(h,GetHandleId(tt),0,u)
             call SaveBoolean(HH,GetHandleId(u),SS,true)
+            call SaveReal(h,id,1,0)
             call TimerStart(tt,0.1,true,function PowerDownGoku)
         endif
         if LoadInteger(h,id,3)==0 then
@@ -61412,6 +61497,7 @@ function PowerUpGokuCast takes nothing returns nothing
     local timer t=CreateTimer()
     local integer id=GetHandleId(t)
     local player p=GetOwningPlayer(u)
+    local integer idp=GetHandleId(p)
     local real x=GetUnitX(u)
     local real y=GetUnitY(u)
     call SaveUnitHandle(h,id,0,u)
@@ -61434,6 +61520,9 @@ function PowerUpGokuCast takes nothing returns nothing
         call SaveReal(h,id,1,1)
         if GetSpellAbilityId()=='GKMI' and GetUnitAbilityLevel(u,'GkH7')>0 then
             call SaveReal(h,id,1,3.475)
+        else
+            call SaveReal(HH,idp,UIDodgeHash,15)
+            call SaveReal(HH,idp,UIMaxDodgeHash,15)
         endif
     endif
     if GetSpellAbilityId()=='GKSS' then
@@ -62051,6 +62140,7 @@ local real x1=LoadReal(h,id,8)
 local real y1=LoadReal(h,id,9)
 local real dmg=(2+GetUnitAbilityLevel(u,'GKQ1'))*GetHeroStr(u,true)+75
 local player p=GetOwningPlayer(u)
+local integer idp=GetHandleId(p)
 local group g=LoadGroupHandle(h,id,3)
 local group g2=CreateGroup()
 local integer ef=LoadInteger(h,id,11)
@@ -62165,14 +62255,14 @@ call EnableUnitAbility2(u,'GKG1',false,true)
 call UnitEnableInventory(u,true,false )
 call SetAbilityStringField(GetUnitAbility(u,'GKR1'),ABILITY_SF_ICON_NORMAL,"ReplaceableTextures\\CommandButtons\\BTNInstant_transmission.blp")
 if LoadReal(HH,GetHandleId(GetOwningPlayer(u)),VariationQHash)==2 then
-if GetUnitState(u,UNIT_STATE_LIFE)>GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.02*LoadInteger(HH,GetHandleId(u),KaiokenHash) then
-call SetUnitState(u,UNIT_STATE_LIFE,GetUnitState(u,UNIT_STATE_LIFE)-GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.02*LoadInteger(HH,GetHandleId(u),KaiokenHash))
+if GetUnitState(u,UNIT_STATE_LIFE)>GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.02*LoadInteger(HH,idp,KaiokenHash) then
+call SetUnitState(u,UNIT_STATE_LIFE,GetUnitState(u,UNIT_STATE_LIFE)-GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.02*LoadInteger(HH,idp,KaiokenHash))
 else
 call SetUnitState(u,UNIT_STATE_LIFE,1)
 endif
 elseif LoadReal(HH,GetHandleId(GetOwningPlayer(u)),VariationQHash)==3 then
-if GetUnitState(u,UNIT_STATE_LIFE)>GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.04*LoadInteger(HH,GetHandleId(u),KaiokenHash) then
-call SetUnitState(u,UNIT_STATE_LIFE,GetUnitState(u,UNIT_STATE_LIFE)-GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.04*LoadInteger(HH,GetHandleId(u),KaiokenHash))
+if GetUnitState(u,UNIT_STATE_LIFE)>GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.04*LoadInteger(HH,idp,KaiokenHash) then
+call SetUnitState(u,UNIT_STATE_LIFE,GetUnitState(u,UNIT_STATE_LIFE)-GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.04*LoadInteger(HH,idp,KaiokenHash))
 else
 call SetUnitState(u,UNIT_STATE_LIFE,1)
 endif
@@ -62207,6 +62297,7 @@ local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
 local unit u=LoadUnitHandle(h,id,0)
 local player p=GetOwningPlayer(u)
+local integer idp=GetHandleId(p)
 local real a=LoadReal(h,id,4)
 local real x=GetUnitX(u)
 local real y=GetUnitY(u)
@@ -62367,6 +62458,7 @@ if time==2.4 then
 endif
 set u=null
 set kamewave=null
+set p=null
 set f=null
 set p=null
 set t=null
@@ -62578,6 +62670,8 @@ local real x=GetUnitX(u)
 local real y=GetUnitY(u)
 local real x1=GetSpellTargetX()
 local real y1=GetSpellTargetY()
+local player p=GetOwningPlayer(u)
+local integer idp=GetHandleId(p)
 local real a=Atan2(y1-y,x1-x)
 local trigger tt=CreateTrigger()
 call SaveUnitHandle(h,id,0,u)
@@ -62600,12 +62694,12 @@ call UnitEnableInventory(u,false,false )
 if GetLocalPlayer()==GetOwningPlayer(u) then
 call SetFrameEnabled(GetFrameByName( "AbilityVarBarIcon", 8 ),false)
 endif
-if LoadReal(HH,GetHandleId(GetOwningPlayer(u)),VariationQHash)==2 then
+if LoadReal(HH,idp,VariationQHash)==2 then
 call SetUnitVertexColor(u,255,100,100,255)
-call SaveInteger(HH,GetHandleId( u ),KaiokenHash,LoadInteger(HH,GetHandleId( u ),KaiokenHash)+1)
-elseif LoadReal(HH,GetHandleId(GetOwningPlayer(u)),VariationQHash)==3 then
+call SaveInteger(HH,idp,KaiokenHash,LoadInteger(HH,idp,KaiokenHash)+1)
+elseif LoadReal(HH,idp,VariationQHash)==3 then
 call SetUnitVertexColor(u,255,100,100,255)
-call SaveInteger(HH,GetHandleId( u ),KaiokenHash,LoadInteger(HH,GetHandleId( u ),KaiokenHash)+1)
+call SaveInteger(HH,idp,KaiokenHash,LoadInteger(HH,idp,KaiokenHash)+1)
 else
 call SetUnitVertexColor(u,255,255,255,255)
 endif
@@ -62615,7 +62709,7 @@ call UnitAddAbility(u,'Pet1')
 call TriggerRegisterUnitEvent(tt,u,EVENT_UNIT_ISSUED_POINT_ORDER)
 call TriggerAddAction(tt,function GokuKamehamehaStopOrders)
 call SaveTriggerHandle(h,id,5,tt)
-if LoadReal(HH,GetHandleId(GetOwningPlayer(u)),VariationQHash)==0 then
+if LoadReal(HH,idp,VariationQHash)==0 then
 call DisableUnitAbility2(u,'GKR1',false,true)
 call TimerStart(t,0.1,true,function CastKamehameha21)
 else
@@ -62623,6 +62717,7 @@ call SetAbilityStringField(GetUnitAbility(u,'GKR1'),ABILITY_SF_ICON_NORMAL,"Repl
 call TimerStart(t,0.1,true,function CastSuperKamehameha)
 endif
 set u=null
+set p=null
 set t=null
 set tt=null
 endfunction
@@ -62647,6 +62742,7 @@ local integer id=GetHandleId(t)
 local unit u=LoadUnitHandle(HH,id,0)
 local unit c=LoadUnitHandle(HH,id,1)
 local player p=GetOwningPlayer(u)
+local integer idp=GetHandleId(p)
 local real time=LoadReal(HH,id,2)
 local real dmg=GetUnitAbilityLevel(u,'GKW1')*GetHeroStr(u,true)+150
 local real x=GetUnitX(u)
@@ -62819,14 +62915,14 @@ if GetWidgetLife(c)>0 and GetWidgetLife(u)>0 then
         call SetControlToUnit(u,c, 1, "stun")
         call SetUnitVertexColor(u,255,255,255,255)
         if LoadReal(HH,GetHandleId(GetOwningPlayer(u)),VariationWHash)==1 then
-            if GetUnitState(u,UNIT_STATE_LIFE)>GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.02*LoadInteger(HH,GetHandleId(u),KaiokenHash) then
-                call SetUnitState(u,UNIT_STATE_LIFE,GetUnitState(u,UNIT_STATE_LIFE)-GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.02*LoadInteger(HH,GetHandleId(u),KaiokenHash))
+            if GetUnitState(u,UNIT_STATE_LIFE)>GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.02*LoadInteger(HH,idp,KaiokenHash) then
+                call SetUnitState(u,UNIT_STATE_LIFE,GetUnitState(u,UNIT_STATE_LIFE)-GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.02*LoadInteger(HH,idp,KaiokenHash))
             else
                 call SetUnitState(u,UNIT_STATE_LIFE,1)
             endif
         elseif LoadReal(HH,GetHandleId(GetOwningPlayer(u)),VariationWHash)==2 then
-            if GetUnitState(u,UNIT_STATE_LIFE)>GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.04*LoadInteger(HH,GetHandleId(u),KaiokenHash) then
-                call SetUnitState(u,UNIT_STATE_LIFE,GetUnitState(u,UNIT_STATE_LIFE)-GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.04*LoadInteger(HH,GetHandleId(u),KaiokenHash))
+            if GetUnitState(u,UNIT_STATE_LIFE)>GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.04*LoadInteger(HH,idp,KaiokenHash) then
+                call SetUnitState(u,UNIT_STATE_LIFE,GetUnitState(u,UNIT_STATE_LIFE)-GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.04*LoadInteger(HH,idp,KaiokenHash))
             else
                 call SetUnitState(u,UNIT_STATE_LIFE,1)
             endif
@@ -62844,14 +62940,14 @@ else
     endif
     call SetUnitVertexColor(u,255,255,255,255)
     if LoadReal(HH,GetHandleId(GetOwningPlayer(u)),VariationWHash)==1 then
-        if GetUnitState(u,UNIT_STATE_LIFE)>GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.02*LoadInteger(HH,GetHandleId(u),KaiokenHash) then
-            call SetUnitState(u,UNIT_STATE_LIFE,GetUnitState(u,UNIT_STATE_LIFE)-GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.02*LoadInteger(HH,GetHandleId(u),KaiokenHash))
+        if GetUnitState(u,UNIT_STATE_LIFE)>GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.02*LoadInteger(HH,idp,KaiokenHash) then
+            call SetUnitState(u,UNIT_STATE_LIFE,GetUnitState(u,UNIT_STATE_LIFE)-GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.02*LoadInteger(HH,idp,KaiokenHash))
         else
             call SetUnitState(u,UNIT_STATE_LIFE,1)
         endif
     elseif LoadReal(HH,GetHandleId(GetOwningPlayer(u)),VariationWHash)==2 then
-        if GetUnitState(u,UNIT_STATE_LIFE)>GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.04*LoadInteger(HH,GetHandleId(u),KaiokenHash) then
-            call SetUnitState(u,UNIT_STATE_LIFE,GetUnitState(u,UNIT_STATE_LIFE)-GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.04*LoadInteger(HH,GetHandleId(u),KaiokenHash))
+        if GetUnitState(u,UNIT_STATE_LIFE)>GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.04*LoadInteger(HH,idp,KaiokenHash) then
+            call SetUnitState(u,UNIT_STATE_LIFE,GetUnitState(u,UNIT_STATE_LIFE)-GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.04*LoadInteger(HH,idp,KaiokenHash))
         else
             call SetUnitState(u,UNIT_STATE_LIFE,1)
         endif
@@ -62878,6 +62974,7 @@ local integer id=GetHandleId(t)
 local unit u=LoadUnitHandle(HH,id,0)
 local unit c=LoadUnitHandle(HH,id,1)
 local player p=GetOwningPlayer(u)
+local integer idp=GetHandleId(p)
 local real time=LoadReal(HH,id,2)
 local real dmg=(1+GetUnitAbilityLevel(u,'GKW1'))*GetHeroStr(u,true)+150
 local real x=GetUnitX(u)
@@ -62957,14 +63054,14 @@ else
     endif
     call SetUnitVertexColor(u,255,255,255,255)
     if LoadReal(HH,GetHandleId(GetOwningPlayer(u)),VariationWHash)==1 then
-        if GetUnitState(u,UNIT_STATE_LIFE)>GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.02*LoadInteger(HH,GetHandleId(u),KaiokenHash) then
-            call SetUnitState(u,UNIT_STATE_LIFE,GetUnitState(u,UNIT_STATE_LIFE)-GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.02*LoadInteger(HH,GetHandleId(u),KaiokenHash))
+        if GetUnitState(u,UNIT_STATE_LIFE)>GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.02*LoadInteger(HH,idp,KaiokenHash) then
+            call SetUnitState(u,UNIT_STATE_LIFE,GetUnitState(u,UNIT_STATE_LIFE)-GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.02*LoadInteger(HH,idp,KaiokenHash))
         else
             call SetUnitState(u,UNIT_STATE_LIFE,1)
         endif
     elseif LoadReal(HH,GetHandleId(GetOwningPlayer(u)),VariationWHash)==2 then
-        if GetUnitState(u,UNIT_STATE_LIFE)>GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.04*LoadInteger(HH,GetHandleId(u),KaiokenHash) then
-            call SetUnitState(u,UNIT_STATE_LIFE,GetUnitState(u,UNIT_STATE_LIFE)-GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.04*LoadInteger(HH,GetHandleId(u),KaiokenHash))
+        if GetUnitState(u,UNIT_STATE_LIFE)>GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.04*LoadInteger(HH,idp,KaiokenHash) then
+            call SetUnitState(u,UNIT_STATE_LIFE,GetUnitState(u,UNIT_STATE_LIFE)-GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.04*LoadInteger(HH,idp,KaiokenHash))
         else
             call SetUnitState(u,UNIT_STATE_LIFE,1)
         endif
@@ -62993,14 +63090,15 @@ local real x1=GetUnitX(c)
 local real y1=GetUnitY(c)
 local real a=Atan2(y1-y,x1-x)
 local player p=GetOwningPlayer(u)
+local integer idp=GetHandleId(p)
 call SetUnitInvulnerable(u,true)
 call PauseUnit(u,true)
-if LoadReal(HH,GetHandleId(GetOwningPlayer(u)),VariationWHash)==1 then
+if LoadReal(HH,idp,VariationWHash)==1 then
 call SetUnitVertexColor(u,255,100,100,255)
-call SaveInteger(HH,GetHandleId( u ),KaiokenHash,LoadInteger(HH,GetHandleId( u ),KaiokenHash)+1)
-elseif LoadReal(HH,GetHandleId(GetOwningPlayer(u)),VariationWHash)==2 then
+call SaveInteger(HH,idp,KaiokenHash,LoadInteger(HH,idp,KaiokenHash)+1)
+elseif LoadReal(HH,idp,VariationWHash)==2 then
 call SetUnitVertexColor(u,255,100,100,255)
-call SaveInteger(HH,GetHandleId( u ),KaiokenHash,LoadInteger(HH,GetHandleId( u ),KaiokenHash)+1)
+call SaveInteger(HH,idp,KaiokenHash,LoadInteger(HH,idp,KaiokenHash)+1)
 else
 call SetUnitVertexColor(u,255,255,255,255)
 endif
