@@ -52136,8 +52136,8 @@ call SetUnitScale(n,sc,sc,sc)
 call UnitApplyTimedLife(n,'B000',0.01)
 call SetUnitAnimation(u,"attack")
 else
-call UnitRemoveAbility(u,0x41304F31)
-call UnitMakeAbilityPermanent(u,false,0x41304F31)
+call UnitRemoveAbility(u,'A0O1')
+call UnitMakeAbilityPermanent(u,false,'A0O1')
 set n=CreateUnit(p,'e0MY',x,y,GetRandomReal(0,359))
 call HellSpiritMissleFly(c,n,25,a,x1+1000*Cos(a),y1+1000*Sin(a),700,0)
 set n=CreateUnit(p,'e0ME',x,y,GetRandomReal(0,359))
@@ -74145,7 +74145,7 @@ call SetUnitInvulnerable(u,false)
 call myCustomDamage(u,c,dmg,false,false,null,null,null)
 call SetControlToUnit(u,c,2, "stun")
 else
-call SaveUnitHandle(HH,GetHandleId(u),REVERSE_TARGET,u)
+call SaveUnitHandle(HH,GetHandleId(c),REVERSE_TARGET,u)
 call UnitRemoveAbility(u,'A0LR')
 call PauseUnit(u,false)
 call SetUnitTimeScale(u,1)
@@ -74643,7 +74643,11 @@ set E=FirstOfGroup(G)
 exitwhen E==null
 if Condition_Base(p,E)then
 call Push(E,30,Atan2(GetUnitY(E)-y2,GetUnitX(E)-x2),300)
+if LoadBoolean(HH,GetHandleId(E),ANTITARGET_ABILITY)==false then
 call myCustomDamage(u,E,dmg,false,false,null,null,null)
+else
+call SaveUnitHandle(HH,GetHandleId(E),REVERSE_TARGET,u)
+endif
 endif
 call GroupRemoveUnit(G,E)
 endloop
@@ -74836,8 +74840,12 @@ set i=i+1
 exitwhen i>=GetUnitAbilityLevel(u,'A0LS')
 endloop
 if IsUnitEnemy(c,p)then
+if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
 call myCustomDamage(u,c,GetHeroInt(u,true)*(GetUnitAbilityLevel(u,'A0LS')+1),false,false,null,null,null)
 call SetControlToUnit(u,c,2, "stun")
+else
+call SaveUnitHandle(HH,GetHandleId(c),REVERSE_TARGET,u)
+endif
 endif
 call PauseUnit(u,false)
 call SetUnitInvulnerable(u,false)
@@ -77327,14 +77335,14 @@ function MissleMoveParabola2 takes nothing returns nothing
     call IssueImmediateOrder(l__d, "stop")
     call SetControlToUnit(l__d, l__d, 0.11, "doom")
     //call PauseUnit(l__d,true)
-call SaveBoolean(HH,GetHandleId(l__d),TARGET_ABILITY,true)
+    call SaveBoolean(HH,GetHandleId(l__d),TARGET_ABILITY,true)
     else
     if GetUnitAbilityLevel(l__d,'A1BL')==0 then
     call SetUnitFlyHeight(l__d,0,0)
     endif
     call SetUnitPathing(l__d,true)
     //call PauseUnit(l__d,false)
-call SaveBoolean(HH,GetHandleId(l__d),TARGET_ABILITY,false)
+    call SaveBoolean(HH,GetHandleId(l__d),TARGET_ABILITY,false)
     call PauseTimer(t)
     call DestroyTimer(t)
     call FlushChildHashtable(h,id)
@@ -78458,6 +78466,7 @@ set n=CreateUnit(p,0x65304D32,x,y,GetRandomReal(0,359))
 call SetUnitVertexColor(n,255,255,255,125)
 call UnitApplyTimedLife(n,1,0.5)
 else
+call myCustomDamage(u,c,GetHeroAgi(u,true)*2,false,false,null,null,null)
 call SetControlToUnit(u,c,1, "stun")
 call CC_UnitEx( u,c, 0., 4, "root", false, "war3mapImported\\gotenksring.mdx", "chest", 0,0 )
 call FlushChildHashtable(h,id)
@@ -78816,6 +78825,8 @@ else
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\SuperBuuvVolleyball2.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
 call KillSoundWhenDone(soundplay)
+call RemoveUnit(l__d)
+if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
 set n=CreateUnit(p,'h019',x,y,0)
 call UnitAddAbility(n,0x41304E57)
 call UnitApplyTimedLife(n,1,1)
@@ -78834,9 +78845,20 @@ call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,true)
 call SetUnitInvulnerable(c,true)
 call SaveReal(h,id,11,x2)
 call SaveReal(h,id,12,y2)
-call RemoveUnit(l__d)
 call PauseTimer(t)
 call TimerStart(t,0.025,true,function MissleMoveValleyball)
+else
+call SetUnitTimeScale(u,1)
+call SetUnitInvulnerable(u,false)
+call PauseUnit(u,false)
+call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,false)
+call SaveUnitHandle(HH,GetHandleId(c),REVERSE_TARGET,u)
+call SetUnitFlyHeight(u,0,0)
+call SetUnitFlyHeight(c,0,0)
+call PauseTimer(t)
+call DestroyTimer(t)
+call FlushChildHashtable(h,id)
+endif
 endif
 endif
 set l__d=null
@@ -79092,14 +79114,26 @@ call UnitApplyTimedLife(CreateUnit(p,'e0AZ',x2,y2,GetRandomReal(0,359)),1,1)
 call UnitApplyTimedLife(CreateUnit(p,'e0B3',x2,y2,GetRandomReal(0,359)),1,1)
 call SetUnitFlyHeight(u,0,0)
 call SetUnitTimeScale(u,1)
+call RemoveUnit(l__d)
+if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
 call PauseUnit(c,true)
 call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,true)
 call RemoveUnit(LoadUnitHandle(h,id,10))
 call RemoveUnit(LoadUnitHandle(h,id,11))
 call RemoveUnit(LoadUnitHandle(h,id,12))
-call RemoveUnit(l__d)
 call PauseTimer(t)
 call TimerStart(t,0.01,true,function MissleMoveSplittingHeadache)
+else
+call SetUnitInvulnerable(u,false)
+call PauseUnit(u,false)
+call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,false)
+call SaveUnitHandle(HH,GetHandleId(c),REVERSE_TARGET,u)
+call PauseTimer(t)
+call DestroyTimer(t)
+call SetUnitVertexColor(u,255,255,255,255)
+call FlushChildHashtable(h,id)
+call SetUnitTimeScale(u,1)
+endif
 endif
 endif
 set l__d=null
@@ -79541,12 +79575,12 @@ call FlushChildHashtable(h,id)
 call FlushChildHashtable(h,GetHandleId(g))
 call PauseTimer(t)
 if UnitIsAlive(u)==true then
-    if GetUnitAbilityLevel(u,0x41304F31)==2 then
-        call SetUnitAbilityLevel(u,0x41304F31,1)
-        call UnitMakeAbilityPermanent(u,true,0x41304F31)
-        elseif GetUnitAbilityLevel(u,0x41304F31)==1 then
-        call UnitRemoveAbility(u,0x41304F31)
-        call UnitMakeAbilityPermanent(u,false,0x41304F31)
+    if GetUnitAbilityLevel(u,'A0O1')==2 then
+        call SetUnitAbilityLevel(u,'A0O1',1)
+        call UnitMakeAbilityPermanent(u,true,'A0O1')
+        elseif GetUnitAbilityLevel(u,'A0O1')==1 then
+        call UnitRemoveAbility(u,'A0O1')
+        call UnitMakeAbilityPermanent(u,false,'A0O1')
 endif
 endif
 call DestroyTimer(t)
@@ -79608,7 +79642,7 @@ call UnitApplyTimedLife(n,'B000',0.70)
 call SetUnitFlyHeight(n,he,0)
 else
 call PauseUnit(u,false)
-if GetUnitAbilityLevel(u,0x41304F31)>0 then
+if GetUnitAbilityLevel(u,'A0O1')>0 then
 set dmg=dmg+GetHeroAgi(u,true)+GetHeroStr(u,true)
 endif
 set g=CreateGroup()
@@ -79623,12 +79657,12 @@ endif
 call GroupRemoveUnit(g2,E)
 endloop
 call DestroyGroupTimed(g2,3)
-if GetUnitAbilityLevel(u,0x41304F31)==2 then
-    call SetUnitAbilityLevel(u,0x41304F31,1)
-    call UnitMakeAbilityPermanent(u,true,0x41304F31)
-    elseif GetUnitAbilityLevel(u,0x41304F31)==1 then
-    call UnitRemoveAbility(u,0x41304F31)
-    call UnitMakeAbilityPermanent(u,false,0x41304F31)
+if GetUnitAbilityLevel(u,'A0O1')==2 then
+    call SetUnitAbilityLevel(u,'A0O1',1)
+    call UnitMakeAbilityPermanent(u,true,'A0O1')
+    elseif GetUnitAbilityLevel(u,'A0O1')==1 then
+    call UnitRemoveAbility(u,'A0O1')
+    call UnitMakeAbilityPermanent(u,false,'A0O1')
 endif
 call SetUnitInvulnerable(u,false)
 call SetUnitFlyHeight(u,0,0)
@@ -79717,7 +79751,7 @@ call PauseUnit(c,false)
 call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,false)
 call PauseUnit(u,false)
 call Push(c,50,a,500)
-if GetUnitAbilityLevel(u,0x41304F31)>0 then
+if GetUnitAbilityLevel(u,'A0O1')>0 then
 call myCustomDamage(u,c,75+((3.5+GetUnitAbilityLevel(u,0x41305235))*GetHeroAgi(u,true)),false,false,null,null,null)
 call UnitApplyTimedLife(CreateUnit(p,0x65304D46,x1,y1,GetRandomReal(0,359)),1,1)
 call UnitApplyTimedLife(CreateUnit(p,'e0ME',x1,y1,GetRandomReal(0,359)),1,1)
@@ -79725,12 +79759,12 @@ call UnitApplyTimedLife(CreateUnit(p,0x65304D47,x1,y1,GetRandomReal(0,359)),1,1)
 else
 call myCustomDamage(u,c,75+((2+GetUnitAbilityLevel(u,0x41305235))*GetHeroAgi(u,true)),false,false,null,null,null)
 endif
-if GetUnitAbilityLevel(u,0x41304F31)==2 then
-    call SetUnitAbilityLevel(u,0x41304F31,1)
-    call UnitMakeAbilityPermanent(u,true,0x41304F31)
-    elseif GetUnitAbilityLevel(u,0x41304F31)==1 then
-    call UnitRemoveAbility(u,0x41304F31)
-    call UnitMakeAbilityPermanent(u,false,0x41304F31)
+if GetUnitAbilityLevel(u,'A0O1')==2 then
+    call SetUnitAbilityLevel(u,'A0O1',1)
+    call UnitMakeAbilityPermanent(u,true,'A0O1')
+    elseif GetUnitAbilityLevel(u,'A0O1')==1 then
+    call UnitRemoveAbility(u,'A0O1')
+    call UnitMakeAbilityPermanent(u,false,'A0O1')
 endif
 call SetControlToUnit(u,c,2, "stun")
 call SetUnitTimeScale(u,2)
@@ -79751,6 +79785,7 @@ local real y=GetUnitY(u)
 local real x1=GetSpellTargetX()
 local real y1=GetSpellTargetY()
 local real f=GetUnitFacing(u)
+if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
 call PauseUnit(c,true)
 call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,true)
 call SaveUnitHandle(h,id,0,u)
@@ -79767,6 +79802,16 @@ set soundplay=CreateSound("Sound\\Music\\mp3Music\\SanjiR.mp3",false,false,true,
 call StartSound(soundplay)
 call KillSoundWhenDone(soundplay)
 call TimerStart(t,0.020,true,function SanjiComboCast2)
+else
+call SetUnitX(u,GetUnitX(c))
+call SetUnitY(u,GetUnitY(c))
+call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,false)
+call SaveUnitHandle(HH,GetHandleId(c),REVERSE_TARGET,u)
+call PauseTimer(t)
+call DestroyTimer(t)
+call SetUnitVertexColor(u,255,255,255,255)
+call FlushChildHashtable(h,id)
+endif
 set t=null
 set u=null
 set p=null
@@ -79777,15 +79822,15 @@ local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
 local unit u=LoadUnitHandle(h,id,0)
 local real time=LoadReal(h,GetHandleId(u),StringHash("SSR"))
-if GetUnitAbilityLevel(u,0x41304F31)>0 then
+if GetUnitAbilityLevel(u,'A0O1')>0 then
 call SaveReal(h,GetHandleId(u),StringHash("SSR"),time-0.1)
 endif
 if udg_B == false then
 call SaveReal(h,GetHandleId(u),StringHash("SSR"),time-15)
 endif
-if time<=0 or GetUnitAbilityLevel(u,0x41304F31)==0 then
+if time<=0 or GetUnitAbilityLevel(u,'A0O1')==0 then
 call SaveBoolean(HH,GetHandleId(u),SS,false)
-call UnitRemoveAbility(u,0x41304F31)
+call UnitRemoveAbility(u,'A0O1')
 call RemoveUnit(LoadUnitHandle(h,id,25))
 call PauseTimer(t)
 call DestroyTimer(t)
@@ -79818,10 +79863,10 @@ call SetUnitTimeScale(u,speed)
 call UnitApplyTimedLife(CreateUnit(p,'e0MB',x,y,GetRandomReal(0,359)),1,0.8)
 else
 if time>1.4-0.03*GetHeroLevel(u)and GetHeroLevel(u)>=5 then
-if GetUnitAbilityLevel(u,0x41304F31)==0 then
-call UnitAddAbility(u,0x41304F31)
-call SetUnitAbilityLevel(u,0x41304F31,2)
-call UnitMakeAbilityPermanent(u,true,0x41304F31)
+if GetUnitAbilityLevel(u,'A0O1')==0 then
+call UnitAddAbility(u,'A0O1')
+call SetUnitAbilityLevel(u,'A0O1',2)
+call UnitMakeAbilityPermanent(u,true,'A0O1')
 call UnitApplyTimedLife(CreateUnit(p,0x65304D44,x,y,GetRandomReal(0,359)),1,2)
 call UnitApplyTimedLife(CreateUnit(p,0x65304D43,x,y,GetRandomReal(0,359)),1,2)
 endif
@@ -79893,8 +79938,8 @@ call SetUnitFacing(u,a*bj_RADTODEG)
 set n=CreateUnit(p,0x65304D48,x,y,a*bj_RADTODEG)
 call UnitApplyTimedLife(n,'B000',0.25)
 call SetUnitVertexColor(n,255,255,255,100)
-if GetUnitAbilityLevel(u,0x41304F31)>0 then
-call UnitAddAbility(n,0x41304F31)
+if GetUnitAbilityLevel(u,'A0O1')>0 then
+call UnitAddAbility(n,'A0O1')
 endif
 call SetUnitTimeScale(n,2)
 call SetUnitAnimation(n,"attack two")
@@ -79902,6 +79947,7 @@ else
 call UnitApplyTimedLife(CreateUnit(p,0x65304D49,x1,y1,GetRandomReal(0,359)),1,1)
 call UnitApplyTimedLife(CreateUnit(p,'e03W',x1,y1,GetRandomReal(0,359)),1,5)
 call UnitApplyTimedLife(CreateUnit(p,'e03Y',x1,y1,GetRandomReal(0,359)),1,5)
+if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\CoulerStrikePart2.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
 call KillSoundWhenDone(soundplay)
@@ -79914,7 +79960,7 @@ call PauseUnit(u,false)
 call FlushChildHashtable(h,id)
 call SetUnitInvulnerable(u,false)
 call Push(c,50,a,350)
-if GetUnitAbilityLevel(u,0x41304F31)>0 then
+if GetUnitAbilityLevel(u,'A0O1')>0 then
 call myCustomDamage(u,c,75+((2.5+GetUnitAbilityLevel(u,0x41304F34))*GetHeroAgi(u,true)),false,false,null,null,null)
 call UnitApplyTimedLife(CreateUnit(p,0x65304D46,x1,y1,GetRandomReal(0,359)),1,1)
 call UnitApplyTimedLife(CreateUnit(p,'e0ME',x1,y1,GetRandomReal(0,359)),1,1)
@@ -79922,14 +79968,33 @@ call UnitApplyTimedLife(CreateUnit(p,0x65304D47,x1,y1,GetRandomReal(0,359)),1,1)
 else
 call myCustomDamage(u,c,75+((1+GetUnitAbilityLevel(u,0x41304F34))*GetHeroAgi(u,true)),false,false,null,null,null)
 endif
-if GetUnitAbilityLevel(u,0x41304F31)==2 then
-call SetUnitAbilityLevel(u,0x41304F31,1)
-call UnitMakeAbilityPermanent(u,true,0x41304F31)
-elseif GetUnitAbilityLevel(u,0x41304F31)==1 then
-call UnitRemoveAbility(u,0x41304F31)
-call UnitMakeAbilityPermanent(u,false,0x41304F31)
+if GetUnitAbilityLevel(u,'A0O1')==2 then
+call SetUnitAbilityLevel(u,'A0O1',1)
+call UnitMakeAbilityPermanent(u,true,'A0O1')
+elseif GetUnitAbilityLevel(u,'A0O1')==1 then
+call UnitRemoveAbility(u,'A0O1')
+call UnitMakeAbilityPermanent(u,false,'A0O1')
 endif
 call SetControlToUnit(u,c,1, "stun")
+else
+call PauseTimer(t)
+call DestroyTimer(t)
+call SetUnitTimeScale(u,1)
+call SetUnitInvulnerable(u,false)
+call SetUnitPathing(u,true)
+call PauseUnit(u,false)
+call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,false)
+call SaveUnitHandle(HH,GetHandleId(c),REVERSE_TARGET,u)
+call FlushChildHashtable(h,id)
+call SetUnitInvulnerable(u,false)
+if GetUnitAbilityLevel(u,'A0O1')==2 then
+call SetUnitAbilityLevel(u,'A0O1',1)
+call UnitMakeAbilityPermanent(u,true,'A0O1')
+elseif GetUnitAbilityLevel(u,'A0O1')==1 then
+call UnitRemoveAbility(u,'A0O1')
+call UnitMakeAbilityPermanent(u,false,'A0O1')
+endif
+endif
 endif
 set p=null
 set u=null
@@ -80027,12 +80092,12 @@ call DestroyTimer(t)
 call FlushChildHashtable(h,id)
 call PauseUnit(u,false)
 call SetUnitInvulnerable(u,false)
-if GetUnitAbilityLevel(u,0x41304F31)==2 then
-    call SetUnitAbilityLevel(u,0x41304F31,1)
-    call UnitMakeAbilityPermanent(u,true,0x41304F31)
-    elseif GetUnitAbilityLevel(u,0x41304F31)==1 then
-    call UnitRemoveAbility(u,0x41304F31)
-    call UnitMakeAbilityPermanent(u,false,0x41304F31)
+if GetUnitAbilityLevel(u,'A0O1')==2 then
+    call SetUnitAbilityLevel(u,'A0O1',1)
+    call UnitMakeAbilityPermanent(u,true,'A0O1')
+    elseif GetUnitAbilityLevel(u,'A0O1')==1 then
+    call UnitRemoveAbility(u,'A0O1')
+    call UnitMakeAbilityPermanent(u,false,'A0O1')
 endif
 endif
 set u=null
@@ -80064,7 +80129,7 @@ call UnitApplyTimedLife(n,1,0.01)
 set n=CreateUnit(p,0x6530464D,x,y,GetRandomReal(0,359))
 call SetUnitTimeScale(n,GetRandomReal(0.50,1))
 call UnitApplyTimedLife(n,1,0.01)
-if GetUnitAbilityLevel(u,0x41304F31)>0 then
+if GetUnitAbilityLevel(u,'A0O1')>0 then
 set dmg=dmg+1.5*GetHeroAgi(u,true)
 call UnitApplyTimedLife(CreateUnit(p,'e0ME',x,y,GetRandomReal(0,359)),1,1)
 endif
@@ -80145,7 +80210,7 @@ if (range >= 475 and range < 500) or UnitIsAlive(l__d)==false then
     call PauseUnit(Hero[idu],false)
 endif
 else
-if GetUnitAbilityLevel(Hero[idu],0x41304F31)>0 then
+if GetUnitAbilityLevel(Hero[idu],'A0O1')>0 then
 set dmg=dmg+1.5*GetHeroAgi(Hero[idu],true)
 endif
 if UnitIsAlive(l__d)==false then
@@ -80219,12 +80284,12 @@ call PauseUnit(c,true)
 call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,true)
 else
 call UnitRemoveAbility(c,'A0QL')
-if GetUnitAbilityLevel(u,0x41304F31)==2 then
-    call SetUnitAbilityLevel(u,0x41304F31,1)
-    call UnitMakeAbilityPermanent(u,true,0x41304F31)
-    elseif GetUnitAbilityLevel(u,0x41304F31)==1 then
-    call UnitRemoveAbility(u,0x41304F31)
-    call UnitMakeAbilityPermanent(u,false,0x41304F31)
+if GetUnitAbilityLevel(u,'A0O1')==2 then
+    call SetUnitAbilityLevel(u,'A0O1',1)
+    call UnitMakeAbilityPermanent(u,true,'A0O1')
+    elseif GetUnitAbilityLevel(u,'A0O1')==1 then
+    call UnitRemoveAbility(u,'A0O1')
+    call UnitMakeAbilityPermanent(u,false,'A0O1')
 endif
 if UnitIsAlive(c)==false then
     call PauseUnit(u,false)
@@ -80259,6 +80324,7 @@ local real x1=GetUnitX(c)
 local real y1=GetUnitY(c)
 local real a=Atan2(y1-y,x1-x)
 local player p=GetOwningPlayer(u)
+if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
 call SaveUnitHandle(h,id,0,u)
 call SaveUnitHandle(h,id,1,c)
 call PauseUnit(u,true)
@@ -80283,6 +80349,27 @@ set soundplay=CreateSound("Sound\\Music\\mp3Music\\FlambageShot.mp3",false,false
 call StartSound(soundplay)
 call KillSoundWhenDone(soundplay)
 call TimerStart(t,0.15,true,function FlamebageShotCast3)
+else
+call PauseTimer(t)
+call DestroyTimer(t)
+call SetUnitTimeScale(u,1)
+call SetUnitInvulnerable(u,false)
+call SetUnitPathing(u,true)
+call PauseUnit(u,false)
+call FlushChildHashtable(h,id)
+call SetUnitInvulnerable(u,false)
+call SetUnitX(u,x1-75*Cos(a))
+call SetUnitY(u,y1-75*Sin(a))
+call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,false)
+call SaveUnitHandle(HH,GetHandleId(c),REVERSE_TARGET,u)
+if GetUnitAbilityLevel(u,'A0O1')==2 then
+call SetUnitAbilityLevel(u,'A0O1',1)
+call UnitMakeAbilityPermanent(u,true,'A0O1')
+elseif GetUnitAbilityLevel(u,'A0O1')==1 then
+call UnitRemoveAbility(u,'A0O1')
+call UnitMakeAbilityPermanent(u,false,'A0O1')
+endif
+endif
 set u=null
 set t=null
 set p=null
