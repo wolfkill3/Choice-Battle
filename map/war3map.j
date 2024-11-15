@@ -156,6 +156,8 @@ constant integer TIMER_MAX_COUNT_HASH = StringHash( "TimerMaximumCount" )
 constant integer TIMER_STARTED_HASH   = StringHash( "TimerStarted" )
 constant integer TARGET_ABILITY       = StringHash( "TARGET_ABILITY" )
 constant integer ANTITARGET_ABILITY   = StringHash( "ANTITARGET_ABILITY" )
+constant integer DASH_USER            = StringHash( "DASH_USER" )
+constant integer REVERSE_TARGET       = StringHash( "REVERSE_TARGET" )
 constant integer SOUND_LANGUAGE       = StringHash("SOUND_LANGUAGE")
 constant integer SusanoCnst           = StringHash("susano")
 constant integer SS                   = StringHash("SS")
@@ -215,6 +217,8 @@ constant integer VariationWHash       = StringHash("VariationW")
 constant integer VariationEHash       = StringHash("VariationE")
 constant integer VariationRHash       = StringHash("VariationR")
 constant integer VariationTHash       = StringHash("VariationT")
+constant integer VariationFHash       = StringHash("VariationF")
+constant integer VariationGHash       = StringHash("VariationG")
 constant integer WarpKamehamehaHash   = StringHash("WarpKamehameha")
 constant integer WarpKamehamehaTargetHash   = StringHash("WarpKamehamehaTarget")
 constant integer GokuEDMGHash         = StringHash("GokuEDMG")
@@ -34437,7 +34441,7 @@ if CurrentEventAttack and GetUnitAbilityLevel(c,'A1F5')>0 then        // Гил�
     call newBlockDamage(u)
     set nb=0
 endif
-if LoadInteger(HH,GetHandleId( GetOwningPlayer(u) ),UIDodgeHash)>0 then
+if LoadInteger(HH,GetHandleId( GetOwningPlayer(u) ),UIDodgeHash)>0 and (nb<GetHeroStr(u,true) or CurrentEventAttack) then
     call SaveInteger(HH,GetHandleId( GetOwningPlayer(u) ),UIDodgeHash,LoadInteger(HH,GetHandleId( GetOwningPlayer(u) ),UIDodgeHash)-1)
     call newBlockDamage(u)
     set nb=0
@@ -61774,7 +61778,7 @@ local integer id=GetHandleId(t)
 call SaveUnitHandle(HH,id,0,u)
 if LoadReal(HH,GetHandleId(GetOwningPlayer(Goku)),VariationTHash)==0 then
 call SetUnitAnimationByIndex(u,190)
-set n=CreateUnit(GetOwningPlayer(u),'e0CO',x,y,a*bj_RADTODEG)
+set n=CreateUnit(GetOwningPlayer(u),'e1CO',x,y,a*bj_RADTODEG)
 if GetUnitAbilityLevel(u,'GkH0')>0 or GetUnitAbilityLevel(u,'GkH1')>0 or GetUnitAbilityLevel(u,'GkH2')>0 or GetUnitAbilityLevel(u,'GkH3')>0 or GetUnitAbilityLevel(u,'GkH4')>0 then
 call SetUnitVertexColor(n,255,255,125,0)
 elseif GetUnitAbilityLevel(u,'GkH5')>0 then
@@ -72435,7 +72439,7 @@ call UnitApplyTimedLife(CreateUnit(p,'e04D',x1,y1,GetRandomReal(0,359)),1,2)
 call UnitApplyTimedLife(CreateUnit(p,0x6530484D,x1,y1,GetRandomReal(0,359)),1,1.4)
 call PauseUnit(u,false)
 call SetUnitAnimation(u,"Spell Throw")
-call UnitRemoveAbility(u,0x41304F32)
+call UnitRemoveAbility(u,'A0O2')
 call SetUnitInvulnerable(u,false)
 call PauseUnit(c,false)
 call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,false)
@@ -73879,7 +73883,6 @@ local unit u=Hero[GetPlayerId(p)]
 local real speed=LoadReal(h,id,1)
 local real x=LoadReal(h,id,3)
 local real y=LoadReal(h,id,4)
-local group g=LoadGroupHandle(h,id,5)
 local real x1=GetUnitX(l__d)
 local real y1=GetUnitY(l__d)
 local real f=GetUnitFacing(l__d)
@@ -73891,30 +73894,15 @@ call SetUnitXY_1(l__d,x1+speed*Cos(a),y1+speed*Sin(a), false)
 call DestroyEffect(AddSpecialEffect("war3mapImported\\BloodEX.mdx",x1,y1))
 call SaveReal(h,id,9,Range-speed)
 call SetUnitFacing(l__d,a*bj_RADTODEG)
-call GroupEnumUnitsInRange(g,x1,y1,LoadReal(h,id,10),Base)
-set idg=GetHandleId(g)
-loop
-set E=FirstOfGroup(g)
-set ide=GetHandleId(E)
-exitwhen E==null
-if Condition_Base(p,E)and E!=LoadUnitHandle(h,idg,ide)then
-call myCustomDamage(u,E,dmg,false,false,null,null,null)
-call SaveUnitHandle(h,idg,ide,E)
-endif
-call GroupRemoveUnit(g,E)
-endloop
 else
 call RemoveUnit(l__d)
 call FlushChildHashtable(h,id)
-call FlushChildHashtable(h,GetHandleId(g))
 call PauseTimer(t)
 call DestroyTimer(t)
-call DestroyGroup(g)
 endif
 set u=null
 set p=null
 set t=null
-set g=null
 set l__d=null
 endfunction
 function SlashShishiSonson takes unit l__d,real speed,real dmg,real angle,real range,real mas returns nothing
@@ -73923,7 +73911,6 @@ local integer id=GetHandleId(t)
 call SaveUnitHandle(h,id,0,l__d)
 call SaveReal(h,id,1,speed)
 call SaveReal(h,id,2,angle)
-call SaveGroupHandle(h,id,5,CreateGroup())
 call SaveReal(h,id,3,GetUnitX(l__d))
 call SaveReal(h,id,4,GetUnitY(l__d))
 call SaveReal(h,id,6,dmg)
@@ -73933,7 +73920,7 @@ call TimerStart(t,0.03,true,function SlashShishiSonson2)
 set t=null
 endfunction
 function ShishiSonsonCond takes nothing returns boolean
-return GetSpellAbilityId()==0x41303333 and udg_B
+return GetSpellAbilityId()=='A033' and udg_B
 endfunction
 function ShishiSonsonCast3 takes nothing returns nothing
 local timer t=GetExpiredTimer()
@@ -73988,7 +73975,7 @@ if GetLocalPlayer()==p then
 call SelectUnit(u,true)
 endif
 call RemoveUnit(LoadUnitHandle(h,id,16))
-call UnitRemoveAbility(u,0x41304F32)
+call UnitRemoveAbility(u,'A0O2')
 call SetUnitInvulnerable(u,false)
 call PauseUnit(c,false)
 call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,false)
@@ -74026,6 +74013,7 @@ call StartSound(soundplay)
 call KillSoundWhenDone(soundplay)
 endif
 else
+if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
 if dist<1000 then
 call PauseUnit(c,true)
 call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,true)
@@ -74034,7 +74022,7 @@ call SetUnitX(l__d,x+60*Cos(a))
 call SetUnitY(l__d,y+60*Sin(a))
 set n=CreateUnit(p,0x65303153,x,y,a*bj_RADTODEG)
 call UnitApplyTimedLife(n,1,0.25)
-call UnitAddAbility(n,0x41304F32)
+call UnitAddAbility(n,'A0O2')
 call SetUnitTimeScale(n,2)
 call SetUnitVertexColor(n,255,255,255,125)
 call SetUnitAnimation(n,"attack")
@@ -74047,6 +74035,24 @@ call SetUnitAnimation(l__d,"Spell Slam Two")
 call SetUnitTimeScale(l__d,0.1)
 call PauseTimer(t)
 call TimerStart(t,2.9,false,function ShishiSonsonCast3)
+endif
+else
+call ShowUnit(u,true)
+call PauseUnit(u,false)
+call Push3(u,60,a,400,"")
+if GetLocalPlayer()==p then
+call SelectUnit(u,true)
+endif
+call RemoveUnit(LoadUnitHandle(h,id,16))
+call UnitRemoveAbility(u,'A0O2')
+call SetUnitInvulnerable(u,false)
+call PauseUnit(c,false)
+call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,false)
+call SaveUnitHandle(HH,GetHandleId(c),REVERSE_TARGET,u)
+call SetUnitInvulnerable(c,false)
+call PauseTimer(t)
+call DestroyTimer(t)
+call FlushChildHashtable(h,id)
 endif
 endif
 set l__d=null
@@ -74082,7 +74088,7 @@ call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,true)
 call SetUnitInvulnerable(c,true)
 call ShowUnit(u,false)
 set n=CreateUnit(p,0x6530584F,x,y,a*bj_RADTODEG)
-call UnitAddAbility(n,0x41304F32)
+call UnitAddAbility(n,'A0O2')
 call SaveUnitHandle(h,id,16,n)
 call SetUnitAnimation(n,"Spell Slam One")
 call SetUnitTimeScale(n,0.4)
@@ -74129,14 +74135,22 @@ set soundplay=CreateSound("Sound\\Music\\mp3Music\\NigoriZake.mp3",false,false,t
 call StartSound(soundplay)
 call KillSoundWhenDone(soundplay)
 call ShakeCamera(0.5,20)
+if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
 call Push3(c,35,a,800,"Abilities\\Weapons\\AncientProtectorMissile\\AncientProtectorMissile.mdl")
 call DestroyEffect(AddSpecialEffectTarget("war3mapImported\\BloodEX.mdx",c,"chest"))
-call UnitRemoveAbility(u,0x41304C52)
+call UnitRemoveAbility(u,'A0LR')
 call PauseUnit(u,false)
 call SetUnitTimeScale(u,1)
 call SetUnitInvulnerable(u,false)
 call myCustomDamage(u,c,dmg,false,false,null,null,null)
 call SetControlToUnit(u,c,2, "stun")
+else
+call SaveUnitHandle(HH,GetHandleId(u),REVERSE_TARGET,u)
+call UnitRemoveAbility(u,'A0LR')
+call PauseUnit(u,false)
+call SetUnitTimeScale(u,1)
+call SetUnitInvulnerable(u,false)
+endif
 call DestroyTimer(t)
 call FlushChildHashtable(h,id)
 set u=null
@@ -74166,7 +74180,7 @@ set n=CreateUnit(p,0x6530484B,x,y,GetRandomReal(0,359))
 call UnitApplyTimedLife(n,1,2)
 call SetUnitTimeScale(n,0.4)
 call SetUnitTimeScale(u,0.20)
-call UnitAddAbility(u,0x41304C52)
+call UnitAddAbility(u,'A0LR')
 call SetUnitAnimation(u,"Spell Four")
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\IchiGorillaNiGorilla.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
@@ -74331,7 +74345,7 @@ local integer l__idg=GetHandleId(g)
 local player p=GetOwningPlayer(u)
 local real dist=LoadReal(h,id,100)
 local real dmg=50+GetHeroStr(u,true)*2
-if dist<1250 then
+if dist<1250 and LoadBoolean(HH,GetHandleId(u),DASH_USER)==true then
 if IsTerrainPathable(x1,y1,PATHING_TYPE_FLYABILITY)==false then
 set x1=x1+40*Cos(a)
 set y1=y1+40*Sin(a)
@@ -74343,7 +74357,7 @@ call SetUnitXY_1(u,x1,y1, false)
 call SaveReal(h,id,100,dist+40)
 set n=CreateUnit(p,0x65303153,x1,y1,a*bj_RADTODEG)
 call UnitApplyTimedLife(n,1,0.25)
-call UnitAddAbility(n,0x41304C52)
+call UnitAddAbility(n,'A0LR')
 call SetUnitTimeScale(n,2)
 call SetUnitVertexColor(n,255,255,255,125)
 call SetUnitAnimation(n,"attack")
@@ -74355,8 +74369,13 @@ set E=FirstOfGroup(g)
 set ide=GetHandleId(E)
 exitwhen E==null
 if Condition_Base(p,E)and LoadUnitHandle(h,l__idg,ide)!=E then
+if LoadBoolean(HH,ide,ANTITARGET_ABILITY)==false then
 call myCustomDamage(u,E,dmg+GetUnitState(E,UNIT_STATE_MAX_LIFE)*(0.03*GetUnitAbilityLevel(u,'A02Z')),false,false,null,null,null)
 call DestroyEffect(AddSpecialEffectTarget("Abilities\\Spells\\Other\\Stampede\\StampedeMissileDeath.mdl",E,"chest"))
+else
+call SaveBoolean(HH,GetHandleId(u),DASH_USER,false)
+call SaveUnitHandle(HH,GetHandleId(E),REVERSE_TARGET,u)
+endif
 call SaveUnitHandle(h,l__idg,ide,E)
 endif
 call GroupRemoveUnit(g,E)
@@ -74365,7 +74384,8 @@ else
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\SwordStrike.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
 call KillSoundWhenDone(soundplay)
-call UnitRemoveAbility(u,0x41304C52)
+call SaveBoolean(HH,GetHandleId(u),DASH_USER,false)
+call UnitRemoveAbility(u,'A0LR')
 call FlushChildHashtable(h,id)
 call FlushChildHashtable(h,l__idg)
 call PauseTimer(t)
@@ -74394,9 +74414,10 @@ call SaveReal(h,id,1,Atan2(GetSpellTargetY()-y,GetSpellTargetX()-x))
 call SaveGroupHandle(h,id,3,CreateGroup())
 call PauseUnit(u,true)
 call SaveReal(h,id,100,0)
-call UnitAddAbility(u,0x41304C52)
+call UnitAddAbility(u,'A0LR')
 call UnitRemoveAbility(u,'A2VJ')
 call SetUnitInvulnerable(u,true)
+call SaveBoolean(HH,GetHandleId(u),DASH_USER,true)
 call SetUnitTimeScale(u,3)
 call SetUnitAnimation(u,"attack")
 call SetUnitVertexColor(u,255,255,255,125)
@@ -84487,7 +84508,7 @@ function RapidStrikeCast4 takes nothing returns nothing
                 //call SetUnitY(u,y1)
                 call SetUnitAnimation(u,"Spell Second")
                 call PauseUnit(u,false)
-                call UnitRemoveAbility(u,0x41304F32)
+                call UnitRemoveAbility(u,'A0O2')
                 call SetUnitInvulnerable(u,false)
                 call SetUnitInvulnerable(c,false)
                 call PauseUnit(c,false)
@@ -84586,7 +84607,7 @@ function RapidStrikeCast2 takes nothing returns nothing
                         set n=CreateUnit(p,0x65313042,x,y,a*bj_RADTODEG)
                 endif
                 call UnitApplyTimedLife(n,1,0.25)
-                call UnitAddAbility(n,0x41304F32)
+                call UnitAddAbility(n,'A0O2')
                 call SetUnitTimeScale(n,2)
                 call SetUnitVertexColor(n,255,255,255,125)
                 call SetUnitAnimation(n,"attack")
@@ -84636,7 +84657,7 @@ set soundplay=CreateSound("Sound\\Music\\mp3Music\\YomuR.mp3",false,false,true,1
 call StartSound(soundplay)
 call KillSoundWhenDone(soundplay)
 endif
-call UnitAddAbility(u,0x41304F32)
+call UnitAddAbility(u,'A0O2')
 call SaveReal(h,id,3,Atan2(GetUnitY(c)-y,GetUnitX(c)-x))
 call TimerStart(t,0.01,true,function RapidStrikeCast2)
 set u=null
@@ -94714,7 +94735,7 @@ call UnitApplyTimedLife(CreateUnit(p,0x6530484D,x1,y1,GetRandomReal(0,359)),1,1.
 call UnitApplyTimedLife(CreateUnit(p,0x65305851,x,y,(a*bj_RADTODEG)),1,4)
 call PauseUnit(u,false)
 call RemoveUnit(l__d)
-call UnitRemoveAbility(u,0x41304F32)
+call UnitRemoveAbility(u,'A0O2')
 call SetUnitInvulnerable(u,false)
 call PauseUnit(c,false)
 call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,false)
