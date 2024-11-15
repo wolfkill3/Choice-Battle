@@ -41361,7 +41361,7 @@ local player p=GetOwningPlayer(u)
 if GetUnitAbilityLevel(u,'B05Y')>0 then
 set dmg=dmg*1.45
 endif
-if SR(x,y,x1,y1)>50 and udg_B==true and dist<2 then
+if SR(x,y,x1,y1)>50 and udg_B==true and dist<2 and LoadBoolean(HH,GetHandleId(u),DASH_USER)==true then
 call SaveReal(h,id,12,dist)
 call SetUnitX(u,x1+42*Cos(a))
 call SetUnitY(u,y1+42*Sin(a))
@@ -41373,14 +41373,16 @@ set E=FirstOfGroup(g)
 set l__ide=GetHandleId(E)
 exitwhen E==null
 if Condition_Base(p,E)and E!=LoadUnitHandle(h,l__idg,l__ide)then
-
+if LoadBoolean(HH,l__ide,ANTITARGET_ABILITY)==false then
 if GetUnitAbilityLevel(u,'B05Y')>0 then
 call myCustomDamage(u,E,1.45*GetUnitState(E,UNIT_STATE_MAX_LIFE)*0.05*GetUnitAbilityLevel(u,'A00P')+dmg,false,false,null,null,null)
 else
 call myCustomDamage(u,E,GetUnitState(E,UNIT_STATE_MAX_LIFE)*0.05*GetUnitAbilityLevel(u,'A00P')+dmg,false,false,null,null,null)
 endif
-
-
+else
+call SaveBoolean(HH,GetHandleId(u),DASH_USER,false)
+call SaveUnitHandle(HH,GetHandleId(E),REVERSE_TARGET,u)
+endif
 call SaveUnitHandle(h,l__idg,l__ide,E)
 endif
 call GroupRemoveUnit(g,E)
@@ -41392,6 +41394,7 @@ call FlushChildHashtable(h,id)
 call FlushChildHashtable(h,l__idg)
 call DestroyTimer(t)
 call DestroyGroup(g)
+call SaveBoolean(HH,GetHandleId(u),DASH_USER,false)
 call PauseUnit(u,false)
 call SetUnitInvulnerable(u,false)
 call SetUnitTimeScale(u,1)
@@ -41418,6 +41421,7 @@ call SaveReal(h,id,12,0)
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\LaboElectorikoKornata.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
 call KillSoundWhenDone(soundplay)
+call SaveBoolean(HH,GetHandleId(u),DASH_USER,true)
 call TimerStart(t,0.015,true,function Trig_Elettrico_Cornata_Actions2)
 set u=null
 set t=null
@@ -42034,6 +42038,7 @@ call SetUnitPathing(u,true)
 call SetUnitFacing(u,a*bj_RADTODEG)
 call UnitApplyTimedLife(CreateUnit(p,0x6530304E,x,y,a*bj_RADTODEG),1,1)
 else
+if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
 if LoadEffectHandle(h,id,10)==null then
 call SaveEffectHandle(h,id,10,AddSpecialEffectTarget("war3mapImported\\FireTornado.mdx",c,"origin"))
 endif
@@ -42058,6 +42063,20 @@ call PauseUnit(u,false)
 call UnitRemoveAbility(u,'A2IH')
 call FlushChildHashtable(h,id)
 call SetUnitInvulnerable(u,false)
+endif
+else
+call SetUnitTimeScale(u,1)
+call SetUnitTurnSpeed(u,3)
+call SetUnitInvulnerable(u,false)
+call PauseUnit(u,false)
+call UnitRemoveAbility(u,'A2IH')
+call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,false)
+call SaveUnitHandle(HH,GetHandleId(c),REVERSE_TARGET,u)
+call SetUnitFlyHeight(u,0,0)
+call SetUnitFlyHeight(c,0,0)
+call PauseTimer(t)
+call DestroyTimer(t)
+call FlushChildHashtable(h,id)
 endif
 endif
 set p=null
