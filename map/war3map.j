@@ -47188,7 +47188,7 @@ set E=FirstOfGroup(g)
 exitwhen E==null
 set l__ide=GetHandleId(E)
 if Condition_Base(p,E)and LoadUnitHandle(h,l__idg,l__ide)!=E then
-if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
+if LoadBoolean(HH,GetHandleId(E),ANTITARGET_ABILITY)==false then
 call myCustomDamage(u,E,dmg,false,false,null,null,null)
 call SaveUnitHandle(h,l__idg,l__ide,E)
 call DestroyEffect(AddSpecialEffectTarget("war3mapImported\\IceSparks.mdx",E,"origin"))
