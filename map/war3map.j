@@ -73256,6 +73256,7 @@ call SaveReal(h,id,7,2.02)
 call SaveReal(h,id,9,99)
 endif
 endif
+endif
 if count<=63 and time>1.5 and UnitIsAlive(u)==true and UnitIsAlive(c)==true then
 call PauseUnit(c,true)
 call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,true)
@@ -82258,6 +82259,7 @@ else
 call SaveReal(h,id,7,35)
 endif
 elseif i==0 then
+if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
 call SetUnitTimeScale(u,0.35)
 call SaveReal(h,id,7,-25)
 call SaveInteger(h,id,2,1)
@@ -82272,6 +82274,9 @@ call StartSound(soundplay)
 call KillSoundWhenDone(soundplay)
 call ShakeCamera(0.1,15)
 call Push3(c,100,Atan2(y1-y,x1-x),200,"Abilities\\Weapons\\AncientProtectorMissile\\AncientProtectorMissile.mdl")
+else
+call SaveInteger(h,id,2,6)
+endif
 endif
 if accel<=0 and i==1 then
 set x2=x+(10+accel)*Cos(a)
@@ -82370,6 +82375,7 @@ call PauseUnit(c,false)
 call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,false)
 call SetUnitInvulnerable(u,false)
 call SetUnitInvulnerable(c,false)
+if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
 call myCustomDamage(u,c,dmg,false,false,null,null,null)
 call SetControlToUnit(u,c, 2, "stun")
 if GetUnitAbilityLevel(u,'A16X')==0 and UnitIsAlive(c)==true then
@@ -82379,9 +82385,13 @@ call ShowAbility2('A1P6',true)
 call SetUnitAbilityLevel(u,'A1P6',GetUnitAbilityLevel(u,'A0P6'))
 call RemoveSaveHashTimedGogeta(1,idu,StringHash("GGQ"),u)
 endif
+call SetUnitFlyHeight(u,0,400)
+else
+call SetUnitFlyHeight(u,0,800)
+call SaveUnitHandle(HH,GetHandleId(c),REVERSE_TARGET,u)
+endif
 call SetUnitTurnSpeed(u,1.00)
 call SetUnitTimeScale(u,1)
-call SetUnitFlyHeight(u,0,400)
 //call Push_UltimateImpact(c,40,a,600,"Abilities\\Weapons\\AncientProtectorMissile\\AncientProtectorMissile.mdl",u)
 call DestroyTimer(t)
 call FlushChildHashtable(h,id)
@@ -82612,6 +82622,7 @@ local real x=GetUnitX(u)
 local real y=GetUnitY(u)
 local player p=GetOwningPlayer(u)
 local real a=Atan2(GetUnitY(c)-y,GetUnitX(c)-x)
+if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
 call SaveUnitHandle(h,id,0,u)
 call SetUnitPathing(u,false)
 call SetUnitAnimation(u,"walk")
@@ -82626,6 +82637,16 @@ set soundplay=CreateSound("Sound\\Music\\mp3Music\\NelielR.mp3",false,false,true
 call StartSound(soundplay)
 call KillSoundWhenDone(soundplay)
 call TimerStart(t,0.01,true,function JSCast2)
+else
+call SetUnitX(u,GetUnitX(c))
+call SetUnitY(u,GetUnitY(c))
+call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,false)
+call SaveUnitHandle(HH,GetHandleId(c),REVERSE_TARGET,u)
+call PauseTimer(t)
+call DestroyTimer(t)
+call SetUnitVertexColor(u,255,255,255,255)
+call FlushChildHashtable(h,id)
+endif
 set c=null
 set p=null
 set u=null
@@ -85097,48 +85118,81 @@ function RapidStrikeCast3 takes nothing returns nothing
         set t=null
 endfunction
 function RapidStrikeCast2 takes nothing returns nothing
-        local timer t=GetExpiredTimer()
-        local integer id=GetHandleId(t)
-        local unit u=LoadUnitHandle(h,id,0)
-        local unit c=LoadUnitHandle(h,id,1)
-        local real x=GetUnitX(u)
-        local real y=GetUnitY(u)
-        local real x1=GetUnitX(c)
-        local real y1=GetUnitY(c)
-        local real a=LoadReal(h,id,3)
-        local real dmg=2*GetHeroStr(u,true)
-        local player p=GetOwningPlayer(u)
-        local real dist=LoadReal(h,id,7)
+    local timer t=GetExpiredTimer()
+    local integer id=GetHandleId(t)
+    local unit u=LoadUnitHandle(h,id,0)
+    local unit c=LoadUnitHandle(h,id,1)
+    local real x=GetUnitX(u)
+    local real y=GetUnitY(u)
+    local real x1=GetUnitX(c)
+    local real y1=GetUnitY(c)
+    local real a=LoadReal(h,id,3)
+    local real dmg=2*GetHeroStr(u,true)
+    local player p=GetOwningPlayer(u)
+    local real dist=LoadReal(h,id,7)
+    if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then 
         if dist<LoadReal(h,id,9)then
-                call PauseUnit(u,true)
-        call PauseUnit(c,true)
-        call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,true)
-        call SetUnitInvulnerable(u,true)
-        call SetUnitInvulnerable(c,true)
-                call SetUnitXY_1(u,x+60*Cos(a),y+60*Sin(a), false)
-                if GetUnitTypeId(u)=='H03R' then
-                        set n=CreateUnit(p,0x65304F43,x,y,a*bj_RADTODEG)
-                else
-                        set n=CreateUnit(p,0x65313042,x,y,a*bj_RADTODEG)
-                endif
-                call UnitApplyTimedLife(n,1,0.25)
-                call UnitAddAbility(n,'A0O2')
-                call SetUnitTimeScale(n,2)
-                call SetUnitVertexColor(n,255,255,255,125)
-                call SetUnitAnimation(n,"attack")
-                call SaveReal(h,id,7,dist+60)
+            call PauseUnit(u,true)
+            call PauseUnit(c,true)
+            call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,true)
+            call SetUnitInvulnerable(u,true)
+            call SetUnitInvulnerable(c,true)
+            call SetUnitXY_1(u,x+60*Cos(a),y+60*Sin(a), false)
+            if GetUnitTypeId(u)=='H03R' then
+                set n=CreateUnit(p,0x65304F43,x,y,a*bj_RADTODEG)
+            else
+                set n=CreateUnit(p,0x65313042,x,y,a*bj_RADTODEG)
+            endif
+            call UnitApplyTimedLife(n,1,0.25)
+            call UnitAddAbility(n,'A0O2')
+            call SetUnitTimeScale(n,2)
+            call SetUnitVertexColor(n,255,255,255,125)
+            call SetUnitAnimation(n,"attack")
+            call SaveReal(h,id,7,dist+60)
         else
-                call PauseTimer(t)
-                call SetUnitInvulnerable(c,false)
-                call UnitAddAbility(c,'Arav')
-                call UnitRemoveAbility(c,'Arav')
-                call SaveReal(h,id,7,0)
-                call TimerStart(t,0.1,true,function RapidStrikeCast3)
+            call PauseTimer(t)
+            call SetUnitInvulnerable(c,false)
+            call UnitAddAbility(c,'Arav')
+            call UnitRemoveAbility(c,'Arav')
+            call SaveReal(h,id,7,0)
+            call TimerStart(t,0.1,true,function RapidStrikeCast3)
         endif
-        set p=null
-        set c=null
-        set u=null
-        set t=null
+    else
+        if dist<LoadReal(h,id,9)-840 then
+            call PauseUnit(u,true)
+            call PauseUnit(c,true)
+            call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,true)
+            call SetUnitInvulnerable(u,true)
+            call SetUnitInvulnerable(c,true)
+            call SetUnitXY_1(u,x+60*Cos(a),y+60*Sin(a), false)
+            if GetUnitTypeId(u)=='H03R' then
+                set n=CreateUnit(p,0x65304F43,x,y,a*bj_RADTODEG)
+            else
+                set n=CreateUnit(p,0x65313042,x,y,a*bj_RADTODEG)
+            endif
+            call UnitApplyTimedLife(n,1,0.25)
+            call UnitAddAbility(n,'A0O2')
+            call SetUnitTimeScale(n,2)
+            call SetUnitVertexColor(n,255,255,255,125)
+            call SetUnitAnimation(n,"attack")
+            call SaveReal(h,id,7,dist+60)
+        else
+            call SaveUnitHandle(HH,GetHandleId(c),REVERSE_TARGET,u)
+            call PauseUnit(u,false)
+            call UnitRemoveAbility(u,'A0O2')
+            call SetUnitInvulnerable(u,false)
+            call SetUnitInvulnerable(c,false)
+            call PauseUnit(c,false)
+            call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,false)
+            call PauseTimer(t)
+            call DestroyTimer(t)
+            call FlushChildHashtable(h,id)
+        endif
+    endif
+    set p=null
+    set c=null
+    set u=null
+    set t=null
 endfunction
 function RapidStrikeCast takes nothing returns nothing
 local unit u=GetTriggerUnit()
@@ -85248,7 +85302,11 @@ loop
 set E=FirstOfGroup(G)
 exitwhen E==null
 if Condition_Base(p,E)then
+if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
 call SetControlToUnit(E,E, 1, "stun")
+else
+call SaveReal(h,id,5,time+6)
+endif
 endif
 call GroupRemoveUnit(G,E)
 endloop
@@ -85270,6 +85328,7 @@ set E=FirstOfGroup(G)
 set ml=GetUnitState(E,UNIT_STATE_MAX_LIFE)
 exitwhen E==null
 if Condition_Base(p,E)then
+if LoadBoolean(HH,GetHandleId(E),ANTITARGET_ABILITY)==false then
 if GetUnitAbilityLevel(E,0x4131334F)==3 then
 call myCustomDamage(u,E,dmg+ml*(0.03+0.001*GetHeroLevel(u)),false,false,null,null,null)
 call UnitRemoveAbility(E,0x4131334F)
@@ -85298,6 +85357,9 @@ endif
 endif
 endif
 call SetControlToUnit(E,E, 2, "stun")
+else
+call SaveUnitHandle(HH,GetHandleId(E),REVERSE_TARGET,u)
+endif
 endif
 call GroupRemoveUnit(G,E)
 endloop
@@ -85387,7 +85449,7 @@ local real x3
 local real y3
 local real ml=0
 local real dist2=LoadReal(h,id,100)
-if dist2<1250 then
+if dist2<1250 and LoadBoolean(HH,GetHandleId(u),DASH_USER)==true then
 call SaveReal(h,id,100,dist2+65)
 call SetUnitXY_1(u,x1+65*Cos(a),y1+65*Sin(a), false)
 call SetUnitFacing(u,a*bj_RADTODEG)
@@ -85416,6 +85478,7 @@ set E=FirstOfGroup(G)
 set ml=GetUnitState(E,UNIT_STATE_MAX_LIFE)
 set l__ide=GetHandleId(E)
 if Condition_Base(p,E)and LoadUnitHandle(h,l__idg,l__ide)!=E then
+if LoadBoolean(HH,GetHandleId(E),ANTITARGET_ABILITY)==false then
 if GetUnitAbilityLevel(E,0x4131334F)==3 then
 call myCustomDamage(u,E,dmg+ml*(0.03+0.001*GetHeroLevel(u)),false,false,null,null,null)
 call UnitRemoveAbility(E,0x4131334F)
@@ -85447,11 +85510,15 @@ call SaveUnitHandle(h,l__idg,l__ide,E)
 call DestroyEffect(AddSpecialEffectTarget("war3mapImported\\BloodEX.mdx",E,"chest"))
 call DestroyEffect(AddSpecialEffectTarget("YoumuSlash.mdx",E,"chest"))
 call DestroyEffect(AddSpecialEffectTarget("Objects\\Spawnmodels\\Human\\HumanBlood\\BloodElfSpellThiefBlood.mdl",E,"chest"))
+else
+call SaveBoolean(HH,GetHandleId(u),DASH_USER,false)
+call SaveUnitHandle(HH,GetHandleId(E),REVERSE_TARGET,u)
 endif
 call GroupRemoveUnit(G,E)
 exitwhen E==null
 endloop
 else
+call SaveBoolean(HH,GetHandleId(u),DASH_USER,false)
 call UnitRemoveAbility(u,'A0GN')
 call FlushChildHashtable(h,id)
 call FlushChildHashtable(h,l__idg)
@@ -85474,6 +85541,7 @@ call SaveReal(h,id,5,GetUnitY(u))
 call SaveReal(h,id,1,Atan2(GetSpellTargetY()-GetUnitY(u),GetSpellTargetX()-GetUnitX(u)))
 call SaveGroupHandle(h,id,3,CreateGroup())
 call SetUnitInvulnerable(u,true)
+call SaveBoolean(HH,GetHandleId(u),DASH_USER,true)
 call UnitAddAbility(u,'A0GN')
 call SaveReal(h,id,100,0)
 if GetUnitTypeId(u)!='H03R' then
