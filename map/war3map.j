@@ -72767,6 +72767,7 @@ local player p=GetOwningPlayer(u)
 local real l__d=0
 local real r=0
 local real dist=LoadReal(h,id,2)
+if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
 if dist<1000 then
 if IsTerrainPathable(x,y,PATHING_TYPE_FLYABILITY)==false then
 set x=x+60*Cos(a)
@@ -72790,9 +72791,6 @@ call UnitApplyTimedLife(n,1,0.01)
 call SetUnitVertexColor(n,255,230,100,50)
 call SaveReal(h,id,2,dist+60)
 else
-set soundplay=CreateSound("Sound\\Music\\mp3Music\\KillerBeeLariat.mp3",false,false,true,12700,12700,"")
-call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
 set n=CreateUnit(p,0x65305543,x1,y1,GetRandomReal(0,359))
 set l__d=GetRandomReal(100,400)
 set r=GetRandomReal(0,7)
@@ -72812,6 +72810,20 @@ call PauseUnit(c,false)
 call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,false)
 call SetUnitInvulnerable(c,false)
 call myCustomDamage(u,c,dmg,false,false,null,null,null)
+call PauseTimer(t)
+call DestroyTimer(t)
+call FlushChildHashtable(h,id)
+endif
+else
+call PauseUnit(u,false)
+call Push3(u,60,a,400,"")
+call RemoveUnit(LoadUnitHandle(h,id,16))
+call UnitRemoveAbility(u,'A0O2')
+call SetUnitInvulnerable(u,false)
+call PauseUnit(c,false)
+call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,false)
+call SaveUnitHandle(HH,GetHandleId(c),REVERSE_TARGET,u)
+call SetUnitInvulnerable(c,false)
 call PauseTimer(t)
 call DestroyTimer(t)
 call FlushChildHashtable(h,id)
@@ -72839,6 +72851,9 @@ local real time=LoadReal(h,id,17)
 if time>0 then
 call SaveReal(h,id,17,time-0.1)
 else
+set soundplay=CreateSound("Sound\\Music\\mp3Music\\KillerBeeLariat.mp3",false,false,true,12700,12700,"")
+call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
 call SaveReal(h,id,11,Atan2(GetUnitY(c)-y,GetUnitX(c)-x))
 call PauseUnit(u,false)
 call SetUnitInvulnerable(u,false)
@@ -72993,105 +73008,113 @@ if NumberOfEnemiesInEachGroupHeroes(g,p)<1 and time>0.05 and count<128 then
     set time=LoadReal(h,id,7)
 endif
 if count<=127 and time>2 and UnitIsAlive(u)==true then
-    call PauseUnit(c,true)
-    call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,true)
-    call SetUnitTimeScale(c,0.05)
-    call PauseUnit(u,true)
-    call SetUnitInvulnerable(u,true)
-    if ModuloReal((time-2),speed)<0.02 then
-        set x1=x1-60*Cos(GetRandomReal(-65,65)*bj_DEGTORAD)
-        set y1=y1-60*Sin(GetRandomReal(-65,65)*bj_DEGTORAD)
-        call SetUnitXY_1(u,x1,y1, false)
-        call SetUnitAnimation(u,"attack")
-        call SetUnitAnimation(c,"death")
-        call Push5(c,2,a,3,"")
-        call SetUnitTimeScale(u,R2I(time)-1)
-        set EFF=AddSpecialEffect("Minato-37.mdx", x1+GetRandomReal(25,65)*Cos(a+GetRandomReal(-20,20)*bj_DEGTORAD),y1+GetRandomReal(25,65)*Sin(a+GetRandomReal(-20,20)*bj_DEGTORAD))
-        call SetSpecialEffectScale(EFF , GetRandomReal(0.75,1.75))
-        call SetSpecialEffectZ(EFF , GetRandomReal(30,90))
-        call SetSpecialEffectRoll(EFF , 90)
-        call DestroyEffect(EFF)
-        if GetRandomInt(1,2)==1 then
-            set EFF=AddSpecialEffect("war3mapImported\\SlashBlueKojiro.mdl", x1+GetRandomReal(25,65)*Cos(a+GetRandomReal(-20,20)*bj_DEGTORAD),y1+GetRandomReal(25,65)*Sin(a+GetRandomReal(-20,20)*bj_DEGTORAD))
-            call SetSpecialEffectScale(EFF , GetRandomReal(0.3,0.7))
+    if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
+        call PauseUnit(c,true)
+        call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,true)
+        call SetUnitTimeScale(c,0.05)
+        call PauseUnit(u,true)
+        call SetUnitInvulnerable(u,true)
+        if ModuloReal((time-2),speed)<0.02 then
+            set x1=x1-60*Cos(GetRandomReal(-65,65)*bj_DEGTORAD)
+            set y1=y1-60*Sin(GetRandomReal(-65,65)*bj_DEGTORAD)
+            call SetUnitXY_1(u,x1,y1, false)
+            call SetUnitAnimation(u,"attack")
+            call SetUnitAnimation(c,"death")
+            call Push5(c,2,a,3,"")
+            call SetUnitTimeScale(u,R2I(time)-1)
+            set EFF=AddSpecialEffect("Minato-37.mdx", x1+GetRandomReal(25,65)*Cos(a+GetRandomReal(-20,20)*bj_DEGTORAD),y1+GetRandomReal(25,65)*Sin(a+GetRandomReal(-20,20)*bj_DEGTORAD))
+            call SetSpecialEffectScale(EFF , GetRandomReal(0.75,1.75))
             call SetSpecialEffectZ(EFF , GetRandomReal(30,90))
             call SetSpecialEffectRoll(EFF , 90)
             call DestroyEffect(EFF)
-        else
-            set EFF=AddSpecialEffect("FawEffects_7.mdx", x1+GetRandomReal(25,65)*Cos(a+GetRandomReal(-20,20)*bj_DEGTORAD),y1+GetRandomReal(25,65)*Sin(a+GetRandomReal(-20,20)*bj_DEGTORAD))
-            call SetSpecialEffectScale(EFF , GetRandomReal(0.55,0.95))
-            call SetSpecialEffectZ(EFF , GetRandomReal(30,90))
-            call SetSpecialEffectRoll(EFF , 90)
-            call DestroyEffect(EFF)
-        endif
-        if GetRandomInt(1,3)==1 then
-            if GroupGetCount(g)>0 then
-                set c1=GroupGetUnitByIndex(g,GetRandomInt(0,CountUnitsInGroup(g)-1))
-                call SaveUnitHandle(h,id,15,c1)
-                set n=CreateUnit(p,'e1GZ',x2+GetRandomReal(-85,85)*bj_DEGTORAD,y2+GetRandomReal(-85,85)*bj_DEGTORAD,GetRandomReal(0,359))
+            if GetRandomInt(1,2)==1 then
+                set EFF=AddSpecialEffect("war3mapImported\\SlashBlueKojiro.mdl", x1+GetRandomReal(25,65)*Cos(a+GetRandomReal(-20,20)*bj_DEGTORAD),y1+GetRandomReal(25,65)*Sin(a+GetRandomReal(-20,20)*bj_DEGTORAD))
+                call SetSpecialEffectScale(EFF , GetRandomReal(0.3,0.7))
+                call SetSpecialEffectZ(EFF , GetRandomReal(30,90))
+                call SetSpecialEffectRoll(EFF , 90)
+                call DestroyEffect(EFF)
             else
-                set n=CreateUnit(p,'e1GZ',x1+GetRandomReal(-85,85)*bj_DEGTORAD,y1+GetRandomReal(-85,85)*bj_DEGTORAD,GetRandomReal(0,359))
+                set EFF=AddSpecialEffect("FawEffects_7.mdx", x1+GetRandomReal(25,65)*Cos(a+GetRandomReal(-20,20)*bj_DEGTORAD),y1+GetRandomReal(25,65)*Sin(a+GetRandomReal(-20,20)*bj_DEGTORAD))
+                call SetSpecialEffectScale(EFF , GetRandomReal(0.55,0.95))
+                call SetSpecialEffectZ(EFF , GetRandomReal(30,90))
+                call SetSpecialEffectRoll(EFF , 90)
+                call DestroyEffect(EFF)
             endif
-            call UnitApplyTimedLife(n,1,0.15)
-            call SetUnitTimeScale(n,2)
-            call SetUnitVertexColor(n,190,255,255,120)
-            call SetUnitAnimation(n,"attack")
-        endif
-        call SaveReal(h,id,9,count+1)
-        if count==4 or count==8 or count==16 or count==32 or count==64 then
-            call GroupEnumUnitsInRange(g4,x0,y0,900,Base)
-            if FirstOfGroup(g4)!=null then
-                loop
-                    set E=FirstOfGroup(g4)
-                    exitwhen E==null
-                    if Condition_Base(p,E) and IsUnitInvulnerable(E)==false and IsUnitIllusion(E)==false and IsUnitType(E,UNIT_TYPE_HERO)==true and IsUnitInGroup(E,g)==false then
-                        call GroupAddUnit(g2,E)
+            if GetRandomInt(1,3)==1 then
+                if GroupGetCount(g)>0 then
+                    set c1=GroupGetUnitByIndex(g,GetRandomInt(0,CountUnitsInGroup(g)-1))
+                    call SaveUnitHandle(h,id,15,c1)
+                    set n=CreateUnit(p,'e1GZ',x2+GetRandomReal(-85,85)*bj_DEGTORAD,y2+GetRandomReal(-85,85)*bj_DEGTORAD,GetRandomReal(0,359))
+                else
+                    set n=CreateUnit(p,'e1GZ',x1+GetRandomReal(-85,85)*bj_DEGTORAD,y1+GetRandomReal(-85,85)*bj_DEGTORAD,GetRandomReal(0,359))
+                endif
+                call UnitApplyTimedLife(n,1,0.15)
+                call SetUnitTimeScale(n,2)
+                call SetUnitVertexColor(n,190,255,255,120)
+                call SetUnitAnimation(n,"attack")
+            endif
+            call SaveReal(h,id,9,count+1)
+            if count==4 or count==8 or count==16 or count==32 or count==64 then
+                call GroupEnumUnitsInRange(g4,x0,y0,900,Base)
+                if FirstOfGroup(g4)!=null then
+                    loop
+                        set E=FirstOfGroup(g4)
+                        exitwhen E==null
+                        if Condition_Base(p,E) and IsUnitInvulnerable(E)==false and IsUnitIllusion(E)==false and IsUnitType(E,UNIT_TYPE_HERO)==true and IsUnitInGroup(E,g)==false then
+                            call GroupAddUnit(g2,E)
+                        endif
+                        call GroupRemoveUnit(g4,E)
+                    endloop
+                    if FirstOfGroup(g2)!=null and GroupGetCount(g2)>0 then
+                        set c2=GroupGetUnitByIndex(g2,GetRandomInt(0,GroupGetCount(g2)-1))
+                        //call BJDebugMsg("g "+I2S(GroupGetCount(g2)))
+                        //call BJDebugMsg("g2var, g = "+I2S(NumberOfEnemiesInEachGroupHeroes(g,p))+" g2 = "+I2S(NumberOfEnemiesInEachGroupHeroes(g2,p)))
+                    elseif FirstOfGroup(g2)==null and FirstOfGroup(g)!=null and GroupGetCount(g)>0 then
+                        set c2=GroupGetUnitByIndex(g,GetRandomInt(0,GroupGetCount(g)-1))
+                        //call BJDebugMsg("g2 "+I2S(GroupGetCount(g2)))
+                        //call BJDebugMsg("g1var, g = "+I2S(NumberOfEnemiesInEachGroupHeroes(g,p))+" g2 = "+I2S(NumberOfEnemiesInEachGroupHeroes(g2,p)))
+                    elseif GroupGetCount(g)==0 then
+                        call SaveReal(h,id,9,count+128)
+                        call SaveReal(h,id,7,time+2)
                     endif
-                    call GroupRemoveUnit(g4,E)
-                endloop
-                if FirstOfGroup(g2)!=null and GroupGetCount(g2)>0 then
-                    set c2=GroupGetUnitByIndex(g2,GetRandomInt(0,GroupGetCount(g2)-1))
-                    //call BJDebugMsg("g "+I2S(GroupGetCount(g2)))
-                    //call BJDebugMsg("g2var, g = "+I2S(NumberOfEnemiesInEachGroupHeroes(g,p))+" g2 = "+I2S(NumberOfEnemiesInEachGroupHeroes(g2,p)))
-                elseif FirstOfGroup(g2)==null and FirstOfGroup(g)!=null and GroupGetCount(g)>0 then
-                    set c2=GroupGetUnitByIndex(g,GetRandomInt(0,GroupGetCount(g)-1))
-                    //call BJDebugMsg("g2 "+I2S(GroupGetCount(g2)))
-                    //call BJDebugMsg("g1var, g = "+I2S(NumberOfEnemiesInEachGroupHeroes(g,p))+" g2 = "+I2S(NumberOfEnemiesInEachGroupHeroes(g2,p)))
+                    //call BJDebugMsg("Name = "+GetUnitName(c2))
                 elseif GroupGetCount(g)==0 then
                     call SaveReal(h,id,9,count+128)
                     call SaveReal(h,id,7,time+2)
                 endif
-                //call BJDebugMsg("Name = "+GetUnitName(c2))
-            elseif GroupGetCount(g)==0 then
-                call SaveReal(h,id,9,count+128)
-                call SaveReal(h,id,7,time+2)
+                set ide=GetHandleId(c2)
+                if IsUnitInGroup(c2,g)==false then
+                call GroupAddUnit(g,c2)
+                call GroupRemoveUnit(g2,c2)
+                endif
+                call Push3(c,2,a,12,"")
+                call SetUnitTimeScale(c2,0.05)
+                call SaveUnitHandle(h,id,1,c2)
+                call SaveUnitHandle(h,idg,ide,c2)
+                if c2!=c then
+                call MissleMoveNeji(CreateUnit(p,'e1GZ',x,y,GetRandomReal(0,359)),90,Atan2(GetUnitY(c2)-y,GetUnitX(c2)-x),c2)
+                endif
+                call SaveReal(h,ide,StringHash("NejiAngle"),Atan2(GetUnitY(c2)-y,GetUnitX(c2)-x))
+                call SaveInteger(h,ide,StringHash("NejiDMG"),LoadInteger(h,ide,StringHash("NejiDMG"))+R2I( dmg / (96 / count)))
+                call SaveReal(h,id,5,Atan2(GetUnitY(c2)-y,GetUnitX(c2)-x))
+                loop
+                    set E=GroupForEachUnit(g)
+                    exitwhen E==null
+                    call PauseUnit(E,true)
+                    call SaveBoolean(HH,GetHandleId(E),TARGET_ABILITY,true)
+                endloop
+                call GroupClear(g2)
             endif
-            set ide=GetHandleId(c2)
-            if IsUnitInGroup(c2,g)==false then
-            call GroupAddUnit(g,c2)
-            call GroupRemoveUnit(g2,c2)
-            endif
-            call Push3(c,2,a,12,"")
-            call SetUnitTimeScale(c2,0.05)
-            call SaveUnitHandle(h,id,1,c2)
-            call SaveUnitHandle(h,idg,ide,c2)
-            if c2!=c then
-            call MissleMoveNeji(CreateUnit(p,'e1GZ',x,y,GetRandomReal(0,359)),90,Atan2(GetUnitY(c2)-y,GetUnitX(c2)-x),c2)
-            endif
-            call SaveReal(h,ide,StringHash("NejiAngle"),Atan2(GetUnitY(c2)-y,GetUnitX(c2)-x))
-            call SaveInteger(h,ide,StringHash("NejiDMG"),LoadInteger(h,ide,StringHash("NejiDMG"))+R2I( dmg / (96 / count)))
-            call SaveReal(h,id,5,Atan2(GetUnitY(c2)-y,GetUnitX(c2)-x))
-            loop
-                set E=GroupForEachUnit(g)
-                exitwhen E==null
-                call PauseUnit(E,true)
-                call SaveBoolean(HH,GetHandleId(E),TARGET_ABILITY,true)
-            endloop
-            call GroupClear(g2)
         endif
+        call SetUnitTimeScale(u,4)
+        call SetUnitFacing(u,a*bj_RADTODEG)
+    else
+        call SaveReal(h,id,9,count+128)
+        call SaveReal(h,id,7,time+2)
+        set count=LoadReal(h,id,9)
+        set time=LoadReal(h,id,7)
+        call SaveUnitHandle(HH,GetHandleId(c),REVERSE_TARGET,u)
     endif
-    call SetUnitTimeScale(u,4)
-    call SetUnitFacing(u,a*bj_RADTODEG)
 elseif time>2 then
 call SetUnitInvulnerable(u,false)
 loop
@@ -73222,11 +73245,15 @@ call SetUnitAnimation(u,"walk")
 call SetUnitXY_1(u,x+45*Cos(a),y+45*Sin(a), false)
 call SetUnitFacingInstant(u,a)
 if SR(x,y,x1,y1)<100 or time==1.5 then
+if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
 call SaveReal(h,id,7,2.02)
 call Push5(c,5,a,10,"")
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\NejiR2_1.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
 call KillSoundWhenDone(soundplay)
+else
+call SaveReal(h,id,7,2.02)
+call SaveReal(h,id,9,99)
 endif
 endif
 if count<=63 and time>1.5 and UnitIsAlive(u)==true and UnitIsAlive(c)==true then
@@ -73267,15 +73294,19 @@ call SetSpecialEffectZ(EFF , 40)
 call SetSpecialEffectScale(EFF , 0.6)
 call SetSpecialEffectVertexColour(EFF,255,255,255,220)
 call RemoveEffect(EFF,1,true,CreateTimer())
-call Push3(c,45,a,700,"Abilities\\Weapons\\AncientProtectorMissile\\AncientProtectorMissile.mdl")
 call SetUnitInvulnerable(c,false)
 call SetUnitInvulnerable(u,false)
 call PauseUnit(c,false)
 call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,false)
 call PauseUnit(u,false)
-call SetControlToUnit(u,c,2, "stun")
-call FrozenMinusManaCast(c,5)
+if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
 call myCustomDamage(u,c,dmg,false,false,null,null,null)
+call FrozenMinusManaCast(c,5)
+call SetControlToUnit(u,c,2, "stun")
+call Push3(c,45,a,700,"Abilities\\Weapons\\AncientProtectorMissile\\AncientProtectorMissile.mdl")
+else
+call SaveUnitHandle(HH,GetHandleId(c),REVERSE_TARGET,u)
+endif
 call PauseTimer(t)
 call DestroyTimer(t)
 call SetUnitVertexColor(u,255,255,255,255)
@@ -73393,24 +73424,38 @@ local real x=GetUnitX(u)
 local real y=GetUnitY(u)
 local real x1=GetSpellTargetX()
 local real y1=GetSpellTargetY()
-call PauseUnit(c,true)
-call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,true)
-call PauseUnit(u,true)
-call SetUnitInvulnerable(c,true)
-call SetUnitInvulnerable(u,true)
-call SaveUnitHandle(h,id,0,u)
-call SaveUnitHandle(h,id,1,c)
-call SaveReal(h,id,7,10)
-call SaveReal(h,id,8,10)
-call SaveReal(h,id,5,Atan2(y1-y,x1-x))
-call SetUnitXY_1(u,x1,y1, false)
-call SetUnitVertexColor(u,255,255,255,125)
-call SetUnitTimeScale(u,3)
-call SetUnitAnimation(u,"attack")
-set soundplay=CreateSound("Sound\\Music\\mp3Music\\HachibiAttacking.mp3",false,false,true,12700,12700,"")
-call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
-call TimerStart(t,0.04,true,function BeeStrikeCast2)
+if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
+    call PauseUnit(c,true)
+    call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,true)
+    call PauseUnit(u,true)
+    call SetUnitInvulnerable(c,true)
+    call SetUnitInvulnerable(u,true)
+    call SaveUnitHandle(h,id,0,u)
+    call SaveUnitHandle(h,id,1,c)
+    call SaveReal(h,id,7,10)
+    call SaveReal(h,id,8,10)
+    call SaveReal(h,id,5,Atan2(y1-y,x1-x))
+    call SetUnitXY_1(u,x1,y1, false)
+    call SetUnitVertexColor(u,255,255,255,125)
+    call SetUnitTimeScale(u,3)
+    call SetUnitAnimation(u,"attack")
+    set soundplay=CreateSound("Sound\\Music\\mp3Music\\HachibiAttacking.mp3",false,false,true,12700,12700,"")
+    call StartSound(soundplay)
+    call KillSoundWhenDone(soundplay)
+    call TimerStart(t,0.04,true,function BeeStrikeCast2)
+else
+    call SetUnitXY_1(u,x1,y1, false)
+    call SetUnitTimeScale(u,1)
+    call SetUnitInvulnerable(u,false)
+    call PauseUnit(u,false)
+    call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,false)
+    call SaveUnitHandle(HH,GetHandleId(c),REVERSE_TARGET,u)
+    call SetUnitFlyHeight(u,0,0)
+    call SetUnitFlyHeight(c,0,0)
+    call PauseTimer(t)
+    call DestroyTimer(t)
+    call FlushChildHashtable(h,id)
+endif
 set t=null
 set u=null
 set p=null
@@ -73557,32 +73602,48 @@ local timer t=CreateTimer()
 local integer id=GetHandleId(t)
 local real x=GetUnitX(u)
 local real y=GetUnitY(u)
+local real x1=GetSpellTargetX()
+local real y1=GetSpellTargetY()
 local real f=GetUnitFacing(u)
 local player p=GetOwningPlayer(u)
-call UnitAddAbility(u,'A0GJ')
-call SetUnitVertexColor(u,255,255,255,100)
-call SaveUnitHandle(h,id,0,u)
-call SaveUnitHandle(h,id,1,c)
-set n=CreateUnit(p,0x6530475A,x,y,f)
-call UnitAddAbility(n,'A0GJ')
-call SetUnitVertexColor(n,255,255,255,100)
-call SaveUnitHandle(h,id,5,n)
-set n=CreateUnit(p,0x6530475A,x,y,f)
-call UnitAddAbility(n,'A0GJ')
-call SetUnitVertexColor(n,255,255,255,100)
-call SaveUnitHandle(h,id,6,n)
-call PauseUnit(u,true)
-call SetUnitInvulnerable(u,true)
-call SetUnitInvulnerable(c,true)
-call UnitAddAbility(u,'Arav')
-call UnitRemoveAbility(u,'Arav')
-call PauseUnit(c,true)
-call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,true)
-set soundplay=CreateSound("Sound\\Music\\mp3Music\\HachibiStrike.mp3",false,false,true,12700,12700,"")
-call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
-call TimerStart(t,0.1,true,function HachibiStrikeAct2)
-call SetUnitTurnSpeed(u,3.00)
+if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
+    call UnitAddAbility(u,'A0GJ')
+    call SetUnitVertexColor(u,255,255,255,100)
+    call SaveUnitHandle(h,id,0,u)
+    call SaveUnitHandle(h,id,1,c)
+    set n=CreateUnit(p,0x6530475A,x,y,f)
+    call UnitAddAbility(n,'A0GJ')
+    call SetUnitVertexColor(n,255,255,255,100)
+    call SaveUnitHandle(h,id,5,n)
+    set n=CreateUnit(p,0x6530475A,x,y,f)
+    call UnitAddAbility(n,'A0GJ')
+    call SetUnitVertexColor(n,255,255,255,100)
+    call SaveUnitHandle(h,id,6,n)
+    call PauseUnit(u,true)
+    call SetUnitInvulnerable(u,true)
+    call SetUnitInvulnerable(c,true)
+    call UnitAddAbility(u,'Arav')
+    call UnitRemoveAbility(u,'Arav')
+    call PauseUnit(c,true)
+    call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,true)
+    set soundplay=CreateSound("Sound\\Music\\mp3Music\\HachibiStrike.mp3",false,false,true,12700,12700,"")
+    call StartSound(soundplay)
+    call KillSoundWhenDone(soundplay)
+    call TimerStart(t,0.1,true,function HachibiStrikeAct2)
+    call SetUnitTurnSpeed(u,3.00)
+else
+    call SetUnitXY_1(u,x1,y1, false)
+    call SetUnitTimeScale(u,1)
+    call SetUnitInvulnerable(u,false)
+    call PauseUnit(u,false)
+    call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,false)
+    call SaveUnitHandle(HH,GetHandleId(c),REVERSE_TARGET,u)
+    call SetUnitFlyHeight(u,0,0)
+    call SetUnitFlyHeight(c,0,0)
+    call PauseTimer(t)
+    call DestroyTimer(t)
+    call FlushChildHashtable(h,id)
+endif
 set u=null
 set p=null
 set t=null
