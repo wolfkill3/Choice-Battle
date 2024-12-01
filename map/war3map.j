@@ -154835,280 +154835,280 @@ call TimerStart(bjLCT,0.01,true,function BelfW_Push_Periodic)
 set bjLCT=null
 endfunction
 function BelfW_Periodic takes nothing returns nothing
-        local integer id=GetHandleId(GetExpiredTimer())
-        local real a=LoadReal(h,id,AngleHash)
-        local real speed=18.75
-        local integer act=LoadInteger(h,id,StringHash("Act"))
-        local integer time=LoadInteger(h,id,TIME_HASH)
-        local real newX=0
-        local real newY=0
-        local real dmg=0
-        local integer effect_period=LoadInteger(h,id,EffectPeriodHash)
-        local boolean stormvaria=LoadBoolean(h,id,StringHash("StormVaria"))
-        if time<120 then
-            if time<=40 then
-                if time==40 then
-                    set bjLCU=LoadUnitHandle(h,id,DummyHash)
-                    set newX=GetUnitX(bjLCU)+50*Cos(a)
-                    set newY=GetUnitY(bjLCU)+50*Sin(a)
-                    set bjLCE=AddSpecialEffect("cf2.mdl",newX,newY)
-                    call SetSpecialEffectFacing(bjLCE,a*bj_RADTODEG)
-                    call SetSpecialEffectZ(bjLCE,75)
-                    call SetSpecialEffectScale(bjLCE,0.7)
-                    call DestroyEffect(bjLCE)
-                endif
-            else
-                set bjLCG=CreateGroup()
+    local integer id=GetHandleId(GetExpiredTimer())
+    local real a=LoadReal(h,id,AngleHash)
+    local real speed=18.75
+    local integer act=LoadInteger(h,id,StringHash("Act"))
+    local integer time=LoadInteger(h,id,TIME_HASH)
+    local real newX=0
+    local real newY=0
+    local real dmg=0
+    local integer effect_period=LoadInteger(h,id,EffectPeriodHash)
+    local boolean stormvaria=LoadBoolean(h,id,StringHash("StormVaria"))
+    if time<120 then
+        if time<=40 then
+            if time==40 then
                 set bjLCU=LoadUnitHandle(h,id,DummyHash)
-                set newX=GetUnitX(bjLCU)+speed*Cos(a)
-                set newY=GetUnitY(bjLCU)+speed*Sin(a)
-                if(IsTerrainPathable(newX,newY,PATHING_TYPE_FLYABILITY)==false)then
-                    call SetUnitX(bjLCU,newX)
-                    call SetUnitY(bjLCU,newY)
-                endif
-                call GroupEnumUnitsInRange(bjLCG,newX,newY,200,Base)
-                loop
-                set bjLCU=FirstOfGroup(bjLCG)
-                exitwhen bjLCU==null
-                if Condition_Base(GetOwningPlayer(LoadUnitHandle(h,id,CasterHash)),bjLCU)==true and IsUnitInGroup(bjLCU,LoadGroupHandle(h,id,StringHash("GroupDummy")))==false then
-                    set dmg=GetHeroInt(LoadUnitHandle(h,id,CasterHash), true)*I2R(GetUnitAbilityLevel(LoadUnitHandle(h,id,CasterHash),'BelW')+2)
-                    call myCustomDamage(LoadUnitHandle(h,id,CasterHash),bjLCU,dmg,false,false,null,null,null)
-                    call UnitAddBelfegorMark(LoadUnitHandle(h,id,CasterHash),bjLCU)
-                    if stormvaria then
-                        set dmg=GetHeroInt(LoadUnitHandle(h,id,CasterHash), true)*2
-                        call BelfegorStormDamage(LoadUnitHandle(h,id,CasterHash),bjLCU,dmg)
-                    endif
-                    call DestroyEffect(AddSpecialEffectTarget("Abilities\\Spells\\Other\\Stampede\\StampedeMissileDeath.mdl",bjLCU,"chest"))
-                    call DestroyEffect(AddSpecialEffectTarget("Abilities\\Spells\\Other\\Stampede\\StampedeMissileDeath.mdl",bjLCU,"head"))
-                    set bjLCE=AddSpecialEffect("akiha_claw_red.mdl",GetUnitX(bjLCU),GetUnitY(bjLCU))
-                    call SetSpecialEffectZ(bjLCE,GetUnitFlyHeight(bjLCU)+50)
-                    call SetSpecialEffectTimeScale(bjLCE,1.1)
-                    call SetSpecialEffectScale(bjLCE,0.6)
-                    call SetSpecialEffectFacing(bjLCE,a*bj_RADTODEG+GetRandomInt(65,135))
-                    call DestroyEffect(bjLCE)
-                    set bjLCE=AddSpecialEffect("blood-4.mdl",GetUnitX(bjLCU),GetUnitY(bjLCU))
-                    call SetSpecialEffectZ(bjLCE,GetUnitFlyHeight(bjLCU)+50)
-                    call SetSpecialEffectScale(bjLCE,1.4)
-                    call SetSpecialEffectFacing(bjLCE,a*bj_RADTODEG+GetRandomInt(65,135))
-                    call DestroyEffect(bjLCE)
-                    call GroupAddUnit(LoadGroupHandle(h,id,StringHash("GroupDummy")),bjLCU)
-                endif
-                call GroupRemoveUnit(bjLCG,bjLCU)
-                endloop
-                call DestroyGroup(bjLCG)
-                set bjLCG=null
-                        if effect_period==0 then
-                                set bjLCU=CreateUnit(GetOwningPlayer(LoadUnitHandle(h,id,CasterHash)),'dB04',newX,newY,a*bj_RADTODEG)
-                                call SetUnitAnimation(bjLCU,"birth")
-                                call SetUnitVertexColor(bjLCU,255,255,255,135)
-                                call SetUnitScale(bjLCU,1.75,1.75,1)
-                                call SetUnitFlyHeight(bjLCU, 1, 0)
-                                call UnitApplyTimedLife(bjLCU,0,1.2)
-                                call SaveInteger(h,id,EffectPeriodHash,10)
-                        else
-                                call SaveInteger(h,id,EffectPeriodHash,effect_period-1)
-                        endif
-        endif
-        call SaveInteger(h,id,TIME_HASH,time+1)
-        else
-                if GetUnitCurrentOrder(LoadUnitHandle(h,id,CasterHash))==OrderId("charm")then
-                        set bjLCU=LoadUnitHandle(h,id,DummyHash)
-                        call BelfW_Push(LoadUnitHandle(h,id,CasterHash),GetUnitX(bjLCU),GetUnitY(bjLCU))
-                        call IssueImmediateOrder(LoadUnitHandle(h,id,CasterHash),"stop")
-                        call SetUnitAnimationByIndex(LoadUnitHandle(h,id,CasterHash),14)
-                else
-                        call UnitAddAbilityTimed(LoadUnitHandle(h,id,CasterHash),1.5,'A27K')
-                endif
-                set newX=GetUnitX(LoadUnitHandle(h,id,DummyHash))
-                set newY=GetUnitY(LoadUnitHandle(h,id,DummyHash))
-                set bjLCE=AddSpecialEffect("blinkcaster.mdl",newX,newY)
-                call SetSpecialEffectZ(bjLCE,60)
-                call SetSpecialEffectFacing(bjLCE,90)
+                set newX=GetUnitX(bjLCU)+50*Cos(a)
+                set newY=GetUnitY(bjLCU)+50*Sin(a)
+                set bjLCE=AddSpecialEffect("cf2.mdl",newX,newY)
+                call SetSpecialEffectFacing(bjLCE,a*bj_RADTODEG)
+                call SetSpecialEffectZ(bjLCE,75)
                 call SetSpecialEffectScale(bjLCE,0.7)
                 call DestroyEffect(bjLCE)
-                set bjLCE=AddSpecialEffect("blinkcaster.mdl",newX,newY)
-                call SetSpecialEffectZ(bjLCE,60)
-                call SetSpecialEffectFacing(bjLCE,45)
-                call SetSpecialEffectScale(bjLCE,1.2)
+            endif
+        else
+            set bjLCG=CreateGroup()
+            set bjLCU=LoadUnitHandle(h,id,DummyHash)
+            set newX=GetUnitX(bjLCU)+speed*Cos(a)
+            set newY=GetUnitY(bjLCU)+speed*Sin(a)
+            if(IsTerrainPathable(newX,newY,PATHING_TYPE_FLYABILITY)==false)then
+                call SetUnitX(bjLCU,newX)
+                call SetUnitY(bjLCU,newY)
+            endif
+            call GroupEnumUnitsInRange(bjLCG,newX,newY,200,Base)
+            loop
+            set bjLCU=FirstOfGroup(bjLCG)
+            exitwhen bjLCU==null
+            if Condition_Base(GetOwningPlayer(LoadUnitHandle(h,id,CasterHash)),bjLCU)==true and IsUnitInGroup(bjLCU,LoadGroupHandle(h,id,StringHash("GroupDummy")))==false then
+                set dmg=GetHeroInt(LoadUnitHandle(h,id,CasterHash), true)*I2R(GetUnitAbilityLevel(LoadUnitHandle(h,id,CasterHash),'BelW')+2)
+                call myCustomDamage(LoadUnitHandle(h,id,CasterHash),bjLCU,dmg,false,false,null,null,null)
+                call UnitAddBelfegorMark(LoadUnitHandle(h,id,CasterHash),bjLCU)
+                if stormvaria then
+                    set dmg=GetHeroInt(LoadUnitHandle(h,id,CasterHash), true)*2
+                    call BelfegorStormDamage(LoadUnitHandle(h,id,CasterHash),bjLCU,dmg)
+                endif
+                call DestroyEffect(AddSpecialEffectTarget("Abilities\\Spells\\Other\\Stampede\\StampedeMissileDeath.mdl",bjLCU,"chest"))
+                call DestroyEffect(AddSpecialEffectTarget("Abilities\\Spells\\Other\\Stampede\\StampedeMissileDeath.mdl",bjLCU,"head"))
+                set bjLCE=AddSpecialEffect("akiha_claw_red.mdl",GetUnitX(bjLCU),GetUnitY(bjLCU))
+                call SetSpecialEffectZ(bjLCE,GetUnitFlyHeight(bjLCU)+50)
+                call SetSpecialEffectTimeScale(bjLCE,1.1)
+                call SetSpecialEffectScale(bjLCE,0.6)
+                call SetSpecialEffectFacing(bjLCE,a*bj_RADTODEG+GetRandomInt(65,135))
                 call DestroyEffect(bjLCE)
-                set bjLCE=AddSpecialEffect("BY_Wood_Eff_Ord_DanGe_Wav_Kuosan_1_4_1s.mdl",newX,newY)
-                call SetSpecialEffectScale(bjLCE,0.3)
-                call SetSpecialEffectAlpha(bjLCE,155)
+                set bjLCE=AddSpecialEffect("blood-4.mdl",GetUnitX(bjLCU),GetUnitY(bjLCU))
+                call SetSpecialEffectZ(bjLCE,GetUnitFlyHeight(bjLCU)+50)
+                call SetSpecialEffectScale(bjLCE,1.4)
+                call SetSpecialEffectFacing(bjLCE,a*bj_RADTODEG+GetRandomInt(65,135))
                 call DestroyEffect(bjLCE)
-                set soundplay=CreateSound("Sound\\war3mapImported\\Belf_W1.mp3",false,false,true,12700,12700,"")
-                call StartSound(soundplay)
-                call KillSoundWhenDone(soundplay)
-                set soundplay=CreateSound("Sound\\war3mapImported\\Belf_W2.mp3",false,false,true,12700,12700,"")
-                call StartSound(soundplay)
-                call KillSoundWhenDone(soundplay)
-                call RemoveUnit(LoadUnitHandle(h,id,DummyHash))
-                call FlushChildHashtable(h,id)
-                call DestroyTimer(GetExpiredTimer())
+                call GroupAddUnit(LoadGroupHandle(h,id,StringHash("GroupDummy")),bjLCU)
+            endif
+            call GroupRemoveUnit(bjLCG,bjLCU)
+            endloop
+            call DestroyGroup(bjLCG)
+            set bjLCG=null
+            if effect_period==0 then
+                set bjLCU=CreateUnit(GetOwningPlayer(LoadUnitHandle(h,id,CasterHash)),'dB04',newX,newY,a*bj_RADTODEG)
+                call SetUnitAnimation(bjLCU,"birth")
+                call SetUnitVertexColor(bjLCU,255,255,255,135)
+                call SetUnitScale(bjLCU,1.75,1.75,1)
+                call SetUnitFlyHeight(bjLCU, 1, 0)
+                call UnitApplyTimedLife(bjLCU,0,1.2)
+                call SaveInteger(h,id,EffectPeriodHash,10)
+            else
+                call SaveInteger(h,id,EffectPeriodHash,effect_period-1)
+            endif
         endif
-endfunction
-function BelfW_Cast takes unit newCaster,real newAngle returns nothing
-        local integer id=0
-        local real x=GetUnitX(newCaster)
-        local real y=GetUnitY(newCaster)
-        local real a=newAngle
-        set bjLCT=CreateTimer()
-        set id=GetHandleId(bjLCT)
-        set soundplay=CreateSound("Sound\\war3mapImported\\Belf_W.mp3",false,false,true,12700,12700,"")
+        call SaveInteger(h,id,TIME_HASH,time+1)
+    else
+        if GetUnitCurrentOrder(LoadUnitHandle(h,id,CasterHash))==OrderId("charm")then
+            set bjLCU=LoadUnitHandle(h,id,DummyHash)
+            call BelfW_Push(LoadUnitHandle(h,id,CasterHash),GetUnitX(bjLCU),GetUnitY(bjLCU))
+            call IssueImmediateOrder(LoadUnitHandle(h,id,CasterHash),"stop")
+            call SetUnitAnimationByIndex(LoadUnitHandle(h,id,CasterHash),14)
+        else
+            call UnitAddAbilityTimed(LoadUnitHandle(h,id,CasterHash),1.5,'A27K')
+        endif
+        set newX=GetUnitX(LoadUnitHandle(h,id,DummyHash))
+        set newY=GetUnitY(LoadUnitHandle(h,id,DummyHash))
+        set bjLCE=AddSpecialEffect("blinkcaster.mdl",newX,newY)
+        call SetSpecialEffectZ(bjLCE,60)
+        call SetSpecialEffectFacing(bjLCE,90)
+        call SetSpecialEffectScale(bjLCE,0.7)
+        call DestroyEffect(bjLCE)
+        set bjLCE=AddSpecialEffect("blinkcaster.mdl",newX,newY)
+        call SetSpecialEffectZ(bjLCE,60)
+        call SetSpecialEffectFacing(bjLCE,45)
+        call SetSpecialEffectScale(bjLCE,1.2)
+        call DestroyEffect(bjLCE)
+        set bjLCE=AddSpecialEffect("BY_Wood_Eff_Ord_DanGe_Wav_Kuosan_1_4_1s.mdl",newX,newY)
+        call SetSpecialEffectScale(bjLCE,0.3)
+        call SetSpecialEffectAlpha(bjLCE,155)
+        call DestroyEffect(bjLCE)
+        set soundplay=CreateSound("Sound\\war3mapImported\\Belf_W1.mp3",false,false,true,12700,12700,"")
         call StartSound(soundplay)
         call KillSoundWhenDone(soundplay)
-        set bjLCU=CreateUnit(GetOwningPlayer(newCaster),'dBel',x,y,GetRandomReal(0,359))
-        call UnitAddAbility(bjLCU,'BelI')
-        call UnitApplyTimedLife(bjLCU,1,2)
-        call IssueTargetOrder(bjLCU,"invisibility",newCaster)
-        if LoadBoolean(h,GetHandleId(newCaster),StringHash("BelfStormVaria"))==true then
-                call SaveBoolean(h,id,StringHash("StormVaria"),true)
-        endif
-        set bjLCE=AddSpecialEffect("az_pa_b1.mdl",x+100*Cos(a),y+100*Sin(a))
-        call DestroyEffect(bjLCE)
-        set bjLCU=CreateUnit(GetOwningPlayer(newCaster),'cBel',x+100*Cos(a),y+100*Sin(a),a*bj_RADTODEG)
-        call SetUnitFlyHeight(bjLCU,0,0)
-        call SetUnitScale(bjLCU,1.2,1.2,1.2)
-        call SetUnitAnimationByIndex(bjLCU,4)
-        call SetUnitVertexColor(bjLCU,GetRandomInt(50,150),GetRandomInt(50,150),GetRandomInt(100,250),200)
-        call SaveUnitHandle(h,id,DummyHash,bjLCU)
-        call SaveUnitHandle(h,id,CasterHash,newCaster)
-        call SaveReal(h,id,AngleHash,a)
-        call SaveInteger(h,id,StringHash("Act"),1)
-        call SaveInteger(h,id,TIME_HASH,0)
-        call SaveInteger(h,id,EffectPeriodHash,10)
-        call SaveGroupHandle(h,id,StringHash("GroupDummy"),CreateGroup())
-        call TimerStart(bjLCT,0.007,true,function BelfW_Periodic)
-        set bjLCT=null
+        set soundplay=CreateSound("Sound\\war3mapImported\\Belf_W2.mp3",false,false,true,12700,12700,"")
+        call StartSound(soundplay)
+        call KillSoundWhenDone(soundplay)
+        call RemoveUnit(LoadUnitHandle(h,id,DummyHash))
+        call FlushChildHashtable(h,id)
+        call DestroyTimer(GetExpiredTimer())
+    endif
+endfunction
+function BelfW_Cast takes unit newCaster,real newAngle returns nothing
+    local integer id=0
+    local real x=GetUnitX(newCaster)
+    local real y=GetUnitY(newCaster)
+    local real a=newAngle
+    set bjLCT=CreateTimer()
+    set id=GetHandleId(bjLCT)
+    set soundplay=CreateSound("Sound\\war3mapImported\\Belf_W.mp3",false,false,true,12700,12700,"")
+    call StartSound(soundplay)
+    call KillSoundWhenDone(soundplay)
+    set bjLCU=CreateUnit(GetOwningPlayer(newCaster),'dBel',x,y,GetRandomReal(0,359))
+    call UnitAddAbility(bjLCU,'BelI')
+    call UnitApplyTimedLife(bjLCU,1,2)
+    call IssueTargetOrder(bjLCU,"invisibility",newCaster)
+    if LoadBoolean(h,GetHandleId(newCaster),StringHash("BelfStormVaria"))==true then
+        call SaveBoolean(h,id,StringHash("StormVaria"),true)
+    endif
+    set bjLCE=AddSpecialEffect("az_pa_b1.mdl",x+100*Cos(a),y+100*Sin(a))
+    call DestroyEffect(bjLCE)
+    set bjLCU=CreateUnit(GetOwningPlayer(newCaster),'cBel',x+100*Cos(a),y+100*Sin(a),a*bj_RADTODEG)
+    call SetUnitFlyHeight(bjLCU,0,0)
+    call SetUnitScale(bjLCU,1.2,1.2,1.2)
+    call SetUnitAnimationByIndex(bjLCU,4)
+    call SetUnitVertexColor(bjLCU,GetRandomInt(50,150),GetRandomInt(50,150),GetRandomInt(100,250),200)
+    call SaveUnitHandle(h,id,DummyHash,bjLCU)
+    call SaveUnitHandle(h,id,CasterHash,newCaster)
+    call SaveReal(h,id,AngleHash,a)
+    call SaveInteger(h,id,StringHash("Act"),1)
+    call SaveInteger(h,id,TIME_HASH,0)
+    call SaveInteger(h,id,EffectPeriodHash,10)
+    call SaveGroupHandle(h,id,StringHash("GroupDummy"),CreateGroup())
+    call TimerStart(bjLCT,0.007,true,function BelfW_Periodic)
+    set bjLCT=null
 endfunction
 function BelfE_Act2_Periodic takes nothing returns nothing
-        local integer id=GetHandleId(GetExpiredTimer())
-        local integer act=LoadInteger(h,id,StringHash("Act"))
-        local real x=GetUnitX(LoadUnitHandle(h,id,CasterHash))
-        local real y=GetUnitY(LoadUnitHandle(h,id,CasterHash))
-        local real TargetX=GetUnitX(LoadUnitHandle(h,id,TargetHash))
-        local real TargetY=GetUnitY(LoadUnitHandle(h,id,TargetHash))
-        local real a=AtanPoint(x,y,TargetX,TargetY)
-        local integer time=LoadInteger(h,id,TIME_HASH)
-        local integer effect_period=LoadInteger(h,id,StringHash("Effect_Period"))
-        local real dmg=GetHeroInt(LoadUnitHandle(h,id,CasterHash),true)*(3+GetUnitAbilityLevel(LoadUnitHandle(h,id,CasterHash),'BelE'))
-        local boolean stormvaria=LoadBoolean(h,id,StringHash("StormVaria"))
-        call SaveInteger(h,id,TIME_HASH,time+1)
-        if act==1 then
-                if time==50 then
-                        set bjLCE=AddSpecialEffect("cf2.mdl",GetUnitX(LoadUnitHandle(h,id,CasterHash)),GetUnitY(LoadUnitHandle(h,id,CasterHash)))
-                        call SetSpecialEffectFacing(bjLCE,a*bj_RADTODEG)
-                        call SetSpecialEffectZ(bjLCE,50)
-                        call SetSpecialEffectAlpha(bjLCE,150)
-                        call SetSpecialEffectScale(bjLCE,0.55)
-                        call DestroyEffect(bjLCE)
-                        call SetUnitAnimationByIndex(LoadUnitHandle(h,id,CasterHash),4)
-                endif
-                if time>70 then
-                        if SquareRoot((TargetX-x)*(TargetX-x)+(TargetY-y)*(TargetY-y))>60 and GetWidgetLife(LoadUnitHandle(h,id,TargetHash))>0.1 then
-                                set x=x+30*Cos(a)
-                                set y=y+30*Sin(a)
-                                call PauseUnit(LoadUnitHandle(h,id,CasterHash),true)
-                                call PauseUnit(LoadUnitHandle(h,id,TargetHash),true)
-                                call SetUnitInvulnerable(LoadUnitHandle(h,id,TargetHash),true)
-                                call SetUnitInvulnerable(LoadUnitHandle(h,id,CasterHash),true)
-                                call SetUnitX(LoadUnitHandle(h,id,CasterHash),x)
-                                call SetUnitY(LoadUnitHandle(h,id,CasterHash),y)
-                                call SetUnitFacingInstant(LoadUnitHandle(h,id,CasterHash),a*bj_RADTODEG)
-                        else
-                                set soundplay=CreateSound("Sound\\war3mapImported\\Belf_E1.mp3",false,false,true,12700,12700,"")
-                                call StartSound(soundplay)
-                                call KillSoundWhenDone(soundplay)
-                                call SetUnitTimeScale(LoadUnitHandle(h,id,CasterHash),2)
-                                call SaveInteger(h,id,TIME_HASH,0)
-                                call SaveInteger(h,id,StringHash("Act"),2)
-                        endif
-                endif
-        elseif act==2 then
-                if time<180 then
-                        set TargetX=GetUnitX(LoadUnitHandle(h,id,TargetHash))
-                        set TargetY=GetUnitY(LoadUnitHandle(h,id,TargetHash))
-                        set a=AtanPoint(x,y,TargetX,TargetY)
-                        set TargetX=TargetX+4*Cos(a)
-                        set TargetY=TargetY+4*Sin(a)
-                        call PauseUnit(LoadUnitHandle(h,id,CasterHash),true)
-                        call PauseUnit(LoadUnitHandle(h,id,TargetHash),true)
-                        call SetUnitInvulnerable(LoadUnitHandle(h,id,TargetHash),true)
-                        call SetUnitInvulnerable(LoadUnitHandle(h,id,CasterHash),true)
-                        call SetUnitX(LoadUnitHandle(h,id,CasterHash),TargetX-60*Cos(a))
-                        call SetUnitY(LoadUnitHandle(h,id,CasterHash),TargetY-60*Sin(a))
-                        call SetUnitX(LoadUnitHandle(h,id,TargetHash),TargetX)
-                        call SetUnitY(LoadUnitHandle(h,id,TargetHash),TargetY)
-                        call SetUnitFacingInstant(LoadUnitHandle(h,id,CasterHash),a*bj_RADTODEG)
-                        call SaveInteger(h,id,TIME_HASH,time+1)
-                        if effect_period<=0 then
-                                call SetUnitAnimation(LoadUnitHandle(h,id,CasterHash),"attack")
-                                if GetRandomInt(0,3)==0 then
-                                        call DestroyEffect(AddSpecialEffectTarget("Abilities\\Spells\\Other\\Stampede\\StampedeMissileDeath.mdl",LoadUnitHandle(h,id,TargetHash),"chest"))
-                                        if GetRandomInt(0,1)==0 then
-                                                call DestroyEffect(AddSpecialEffectTarget("Abilities\\Spells\\Other\\Stampede\\StampedeMissileDeath.mdl",LoadUnitHandle(h,id,TargetHash),"head"))
-                                        else
-                                                call DestroyEffect(AddSpecialEffectTarget("Abilities\\Spells\\Other\\Stampede\\StampedeMissileDeath.mdl",LoadUnitHandle(h,id,TargetHash),"hand left"))
-                                                call DestroyEffect(AddSpecialEffectTarget("Abilities\\Spells\\Other\\Stampede\\StampedeMissileDeath.mdl",LoadUnitHandle(h,id,TargetHash),"hand right"))
-                                        endif
-                                endif
-                                set bjLCE=AddSpecialEffect("az_dz20190202_a.mdl",x+60*Cos(a),y+60*Sin(a))
-                                call SetSpecialEffectScale(bjLCE,GetRandomReal(0.45,0.75))
-                                call SetSpecialEffectAlpha(bjLCE,160)
-                                call SetSpecialEffectFacing(bjLCE,a*bj_RADTODEG+GetRandomInt(-60,60))
-                                call RemoveEffect(bjLCE,0.40,true,CreateTimer())
-                                if stormvaria then
-                                        call SetSpecialEffectVertexColour(bjLCE,255,55,55,255)
-                                endif
-                                call SaveInteger(h,id,StringHash("Effect_Period"),5)
-                        else
-                                call SaveInteger(h,id,StringHash("Effect_Period"),effect_period-1)
-                        endif
-                else
-                        set TargetX=GetUnitX(LoadUnitHandle(h,id,TargetHash))+25*Cos(a)
-                        set TargetY=GetUnitY(LoadUnitHandle(h,id,TargetHash))+25*Sin(a)
-                        set a=AtanPoint(x,y,TargetX,TargetY)
-                        set bjLCE=AddSpecialEffect("by_wood_effect_order_dange_liangyishi_zhisizhimoyanzhanji.mdl",TargetX,TargetY)
-                        call SetSpecialEffectZ(bjLCE,120)
-                        call SetSpecialEffectFacing(bjLCE,a*bj_RADTODEG)
-                        call SetSpecialEffectScale(bjLCE,1.75)
-                        call DestroyEffect(bjLCE)
-                        set bjLCE=AddSpecialEffect("blood-4.mdl",TargetX,TargetY)
-                        call SetSpecialEffectZ(bjLCE,50)
-                        call SetSpecialEffectScale(bjLCE, 2)
-                        call SetSpecialEffectFacing(bjLCE,a*bj_RADTODEG+GetRandomInt(65,135))
-                        call DestroyEffect(bjLCE)
-                        set bjLCE=AddSpecialEffect("blood-boom.mdl",TargetX,TargetY)
-                        call SetSpecialEffectZ(bjLCE,50)
-                        call SetSpecialEffectScale(bjLCE, 2)
-                        call SetSpecialEffectFacing(bjLCE,a*bj_RADTODEG+GetRandomInt(65,135))
-                        call DestroyEffect(bjLCE)
-                        set bjLCE=AddSpecialEffect("az_hitheavy.mdl",TargetX,TargetY)
-                        call SetSpecialEffectZ(bjLCE,55)
-                        call SetSpecialEffectScale(bjLCE,1.7)
-                        call SetSpecialEffectFacing(bjLCE,a*bj_RADTODEG)
-                        call DestroyEffect(bjLCE)
-                        call SetUnitTimeScale(LoadUnitHandle(h,id,CasterHash),2)
-                        call Push(LoadUnitHandle(h,id,TargetHash),50,a,600)
-                        if GetWidgetLife(LoadUnitHandle(h,id,CasterHash))<=GetWidgetMaxLife(LoadUnitHandle(h,id,CasterHash))*0.35 and GetUnitAbilityLevel(LoadUnitHandle(h,id,CasterHash),'BelE')!=0 then
-                                set dmg=dmg+(GetWidgetMaxLife(LoadUnitHandle(h,id,CasterHash))-GetWidgetLife(LoadUnitHandle(h,id,CasterHash)))*0.1
-                        endif
-                        call PauseUnit(LoadUnitHandle(h,id,TargetHash),false)
-                        call SaveBoolean(HH,GetHandleId(LoadUnitHandle(h,id,TargetHash)),TARGET_ABILITY,false)
-                        call SetUnitInvulnerable(LoadUnitHandle(h,id,TargetHash),false)
-                        call myCustomDamage(LoadUnitHandle(h,id,CasterHash),LoadUnitHandle(h,id,TargetHash),dmg/2,false,false,null,null,null)
-                        call SetControlToUnit(LoadUnitHandle(h,id,CasterHash),LoadUnitHandle(h,id,TargetHash),2,"stun")
-                        if stormvaria then
-                                call BelfegorStormDamage(LoadUnitHandle(h,id,CasterHash),LoadUnitHandle(h,id,TargetHash),dmg*0.1)
-                        endif
-                        call SaveInteger(h,id,StringHash("Act"),3)
-                endif
-        elseif act==3 then
-                call SetUnitTimeScale(LoadUnitHandle(h,id,CasterHash),1)
-                call PauseUnit(LoadUnitHandle(h,id,CasterHash),false)
-                call SetUnitInvulnerable(LoadUnitHandle(h,id,CasterHash),false)
-                call FlushChildHashtable(h,id)
-                call DestroyTimer(GetExpiredTimer())
+    local integer id=GetHandleId(GetExpiredTimer())
+    local integer act=LoadInteger(h,id,StringHash("Act"))
+    local real x=GetUnitX(LoadUnitHandle(h,id,CasterHash))
+    local real y=GetUnitY(LoadUnitHandle(h,id,CasterHash))
+    local real TargetX=GetUnitX(LoadUnitHandle(h,id,TargetHash))
+    local real TargetY=GetUnitY(LoadUnitHandle(h,id,TargetHash))
+    local real a=AtanPoint(x,y,TargetX,TargetY)
+    local integer time=LoadInteger(h,id,TIME_HASH)
+    local integer effect_period=LoadInteger(h,id,StringHash("Effect_Period"))
+    local real dmg=GetHeroInt(LoadUnitHandle(h,id,CasterHash),true)*(3+GetUnitAbilityLevel(LoadUnitHandle(h,id,CasterHash),'BelE'))
+    local boolean stormvaria=LoadBoolean(h,id,StringHash("StormVaria"))
+    call SaveInteger(h,id,TIME_HASH,time+1)
+    if act==1 then
+        if time==50 then
+            set bjLCE=AddSpecialEffect("cf2.mdl",GetUnitX(LoadUnitHandle(h,id,CasterHash)),GetUnitY(LoadUnitHandle(h,id,CasterHash)))
+            call SetSpecialEffectFacing(bjLCE,a*bj_RADTODEG)
+            call SetSpecialEffectZ(bjLCE,50)
+            call SetSpecialEffectAlpha(bjLCE,150)
+            call SetSpecialEffectScale(bjLCE,0.55)
+            call DestroyEffect(bjLCE)
+            call SetUnitAnimationByIndex(LoadUnitHandle(h,id,CasterHash),4)
         endif
+        if time>70 then
+            if SquareRoot((TargetX-x)*(TargetX-x)+(TargetY-y)*(TargetY-y))>60 and GetWidgetLife(LoadUnitHandle(h,id,TargetHash))>0.1 then
+                set x=x+30*Cos(a)
+                set y=y+30*Sin(a)
+                call PauseUnit(LoadUnitHandle(h,id,CasterHash),true)
+                call PauseUnit(LoadUnitHandle(h,id,TargetHash),true)
+                call SetUnitInvulnerable(LoadUnitHandle(h,id,TargetHash),true)
+                call SetUnitInvulnerable(LoadUnitHandle(h,id,CasterHash),true)
+                call SetUnitX(LoadUnitHandle(h,id,CasterHash),x)
+                call SetUnitY(LoadUnitHandle(h,id,CasterHash),y)
+                call SetUnitFacingInstant(LoadUnitHandle(h,id,CasterHash),a*bj_RADTODEG)
+            else
+                set soundplay=CreateSound("Sound\\war3mapImported\\Belf_E1.mp3",false,false,true,12700,12700,"")
+                call StartSound(soundplay)
+                call KillSoundWhenDone(soundplay)
+                call SetUnitTimeScale(LoadUnitHandle(h,id,CasterHash),2)
+                call SaveInteger(h,id,TIME_HASH,0)
+                call SaveInteger(h,id,StringHash("Act"),2)
+            endif
+        endif
+    elseif act==2 then
+        if time<180 then
+            set TargetX=GetUnitX(LoadUnitHandle(h,id,TargetHash))
+            set TargetY=GetUnitY(LoadUnitHandle(h,id,TargetHash))
+            set a=AtanPoint(x,y,TargetX,TargetY)
+            set TargetX=TargetX+4*Cos(a)
+            set TargetY=TargetY+4*Sin(a)
+            call PauseUnit(LoadUnitHandle(h,id,CasterHash),true)
+            call PauseUnit(LoadUnitHandle(h,id,TargetHash),true)
+            call SetUnitInvulnerable(LoadUnitHandle(h,id,TargetHash),true)
+            call SetUnitInvulnerable(LoadUnitHandle(h,id,CasterHash),true)
+            call SetUnitX(LoadUnitHandle(h,id,CasterHash),TargetX-60*Cos(a))
+            call SetUnitY(LoadUnitHandle(h,id,CasterHash),TargetY-60*Sin(a))
+            call SetUnitX(LoadUnitHandle(h,id,TargetHash),TargetX)
+            call SetUnitY(LoadUnitHandle(h,id,TargetHash),TargetY)
+            call SetUnitFacingInstant(LoadUnitHandle(h,id,CasterHash),a*bj_RADTODEG)
+            call SaveInteger(h,id,TIME_HASH,time+1)
+            if effect_period<=0 then
+                call SetUnitAnimation(LoadUnitHandle(h,id,CasterHash),"attack")
+                if GetRandomInt(0,3)==0 then
+                    call DestroyEffect(AddSpecialEffectTarget("Abilities\\Spells\\Other\\Stampede\\StampedeMissileDeath.mdl",LoadUnitHandle(h,id,TargetHash),"chest"))
+                    if GetRandomInt(0,1)==0 then
+                        call DestroyEffect(AddSpecialEffectTarget("Abilities\\Spells\\Other\\Stampede\\StampedeMissileDeath.mdl",LoadUnitHandle(h,id,TargetHash),"head"))
+                    else
+                        call DestroyEffect(AddSpecialEffectTarget("Abilities\\Spells\\Other\\Stampede\\StampedeMissileDeath.mdl",LoadUnitHandle(h,id,TargetHash),"hand left"))
+                        call DestroyEffect(AddSpecialEffectTarget("Abilities\\Spells\\Other\\Stampede\\StampedeMissileDeath.mdl",LoadUnitHandle(h,id,TargetHash),"hand right"))
+                    endif
+                endif
+                set bjLCE=AddSpecialEffect("az_dz20190202_a.mdl",x+60*Cos(a),y+60*Sin(a))
+                call SetSpecialEffectScale(bjLCE,GetRandomReal(0.45,0.75))
+                call SetSpecialEffectAlpha(bjLCE,160)
+                call SetSpecialEffectFacing(bjLCE,a*bj_RADTODEG+GetRandomInt(-60,60))
+                call RemoveEffect(bjLCE,0.40,true,CreateTimer())
+                if stormvaria then
+                    call SetSpecialEffectVertexColour(bjLCE,255,55,55,255)
+                endif
+                call SaveInteger(h,id,StringHash("Effect_Period"),5)
+            else
+                call SaveInteger(h,id,StringHash("Effect_Period"),effect_period-1)
+            endif
+        else
+            set TargetX=GetUnitX(LoadUnitHandle(h,id,TargetHash))+25*Cos(a)
+            set TargetY=GetUnitY(LoadUnitHandle(h,id,TargetHash))+25*Sin(a)
+            set a=AtanPoint(x,y,TargetX,TargetY)
+            set bjLCE=AddSpecialEffect("by_wood_effect_order_dange_liangyishi_zhisizhimoyanzhanji.mdl",TargetX,TargetY)
+            call SetSpecialEffectZ(bjLCE,120)
+            call SetSpecialEffectFacing(bjLCE,a*bj_RADTODEG)
+            call SetSpecialEffectScale(bjLCE,1.75)
+            call DestroyEffect(bjLCE)
+            set bjLCE=AddSpecialEffect("blood-4.mdl",TargetX,TargetY)
+            call SetSpecialEffectZ(bjLCE,50)
+            call SetSpecialEffectScale(bjLCE, 2)
+            call SetSpecialEffectFacing(bjLCE,a*bj_RADTODEG+GetRandomInt(65,135))
+            call DestroyEffect(bjLCE)
+            set bjLCE=AddSpecialEffect("blood-boom.mdl",TargetX,TargetY)
+            call SetSpecialEffectZ(bjLCE,50)
+            call SetSpecialEffectScale(bjLCE, 2)
+            call SetSpecialEffectFacing(bjLCE,a*bj_RADTODEG+GetRandomInt(65,135))
+            call DestroyEffect(bjLCE)
+            set bjLCE=AddSpecialEffect("az_hitheavy.mdl",TargetX,TargetY)
+            call SetSpecialEffectZ(bjLCE,55)
+            call SetSpecialEffectScale(bjLCE,1.7)
+            call SetSpecialEffectFacing(bjLCE,a*bj_RADTODEG)
+            call DestroyEffect(bjLCE)
+            call SetUnitTimeScale(LoadUnitHandle(h,id,CasterHash),2)
+            call Push(LoadUnitHandle(h,id,TargetHash),50,a,600)
+            if GetWidgetLife(LoadUnitHandle(h,id,CasterHash))<=GetWidgetMaxLife(LoadUnitHandle(h,id,CasterHash))*0.35 and GetUnitAbilityLevel(LoadUnitHandle(h,id,CasterHash),'BelE')!=0 then
+                set dmg=dmg+(GetWidgetMaxLife(LoadUnitHandle(h,id,CasterHash))-GetWidgetLife(LoadUnitHandle(h,id,CasterHash)))*0.1
+            endif
+            call PauseUnit(LoadUnitHandle(h,id,TargetHash),false)
+            call SaveBoolean(HH,GetHandleId(LoadUnitHandle(h,id,TargetHash)),TARGET_ABILITY,false)
+            call SetUnitInvulnerable(LoadUnitHandle(h,id,TargetHash),false)
+            call myCustomDamage(LoadUnitHandle(h,id,CasterHash),LoadUnitHandle(h,id,TargetHash),dmg/2,false,false,null,null,null)
+            call SetControlToUnit(LoadUnitHandle(h,id,CasterHash),LoadUnitHandle(h,id,TargetHash),2,"stun")
+            if stormvaria then
+                call BelfegorStormDamage(LoadUnitHandle(h,id,CasterHash),LoadUnitHandle(h,id,TargetHash),dmg*0.1)
+            endif
+            call SaveInteger(h,id,StringHash("Act"),3)
+        endif
+    elseif act==3 then
+        call SetUnitTimeScale(LoadUnitHandle(h,id,CasterHash),1)
+        call PauseUnit(LoadUnitHandle(h,id,CasterHash),false)
+        call SetUnitInvulnerable(LoadUnitHandle(h,id,CasterHash),false)
+        call FlushChildHashtable(h,id)
+        call DestroyTimer(GetExpiredTimer())
+    endif
 endfunction
 function BelfE_Act2 takes unit newCaster,unit newTarget,real newDMG,timer newT returns nothing
 local integer id=GetHandleId(newT)
@@ -155146,65 +155146,71 @@ local real TargetY=0
 local real dmg=GetHeroInt(LoadUnitHandle(h,id,CasterHash),true)*(3+GetUnitAbilityLevel(LoadUnitHandle(h,id,CasterHash),'BelE'))
 local boolean stormvaria=LoadBoolean(h,id,StringHash("StormVaria"))
 if GetWidgetLife(LoadUnitHandle(h,id,CasterHash))<=GetWidgetMaxLife(LoadUnitHandle(h,id,CasterHash))*0.35 and GetUnitAbilityLevel(LoadUnitHandle(h,id,CasterHash),'BelE')!=0 then
-        set dmg=dmg+(GetWidgetMaxLife(LoadUnitHandle(h,id,CasterHash))-GetWidgetLife(LoadUnitHandle(h,id,CasterHash)))*0.1
+    set dmg=dmg+(GetWidgetMaxLife(LoadUnitHandle(h,id,CasterHash))-GetWidgetLife(LoadUnitHandle(h,id,CasterHash)))*0.1
 endif
 if act==0 then
-        if dist<1000 then
-                set x=x+30*Cos(a)
-                set y=y+30*Sin(a)
-                call PauseUnit(LoadUnitHandle(h,id,CasterHash),true)
-                call SetUnitX(LoadUnitHandle(h,id,CasterHash),x)
-                call SetUnitY(LoadUnitHandle(h,id,CasterHash),y)
-                call SaveReal(h,id,StringHash("Distance"),dist+30)
-                if effect_period<=0 then
-                        set bjLCU=CreateUnit(GetOwningPlayer(LoadUnitHandle(h,id,CasterHash)),'dR45',x,y,a*bj_RADTODEG)
-                        // call SetUnitModel(bjLCU,"sand.mdl")
-                        call SetUnitScale(bjLCU,0.85,0.85,0.85)
-                        call UnitApplyTimedLife(bjLCU,1,2)
-                        call SaveInteger(h,id,StringHash("Effect_Period"),3)
-                else
-                        call SaveInteger(h,id,StringHash("Effect_Period"),effect_period-1)
-                endif
-                set bjLCG=CreateGroup()
-                call GroupEnumUnitsInRange(bjLCG,x,y,125,Base)
-                loop
-                set bjLCU=FirstOfGroup(bjLCG)
-                exitwhen bjLCU==null or act!=0
-                if Condition_Base(GetOwningPlayer(LoadUnitHandle(h,id,CasterHash)),bjLCU)==true and IsUnitInGroup(bjLCU,LoadGroupHandle(h,id,StringHash("GroupDummy")))==false and IsUnitInvulnerable(bjLCU)==false then
-                        call IssueImmediateOrder(bjLCU,"stop")
-                        call myCustomDamage(LoadUnitHandle(h,id,CasterHash),bjLCU,dmg/2,false,false,null,null,null)
-                        set bjLCE = AddSpecialEffect("blood-4.mdl", GetUnitX(bjLCU), GetUnitY(bjLCU))
-                        call SetSpecialEffectZ(bjLCE, 50)
-                        call SetSpecialEffectScale(bjLCE, 1.4)
-                        call SetSpecialEffectFacing(bjLCE, a*bj_RADTODEG+GetRandomInt(65, 135))
-                        call DestroyEffect(bjLCE)
-                        set n=CreateUnit(GetOwningPlayer(LoadUnitHandle(h,id,CasterHash)),'dH01',GetUnitX(bjLCU),GetUnitY(bjLCU),a*bj_RADTODEG)
-                        call SetUnitScale(n,1.4,1.4,1.4)
-                        call SetUnitFlyHeight(n,55,0)
-                        call UnitApplyTimedLife(n,1,2)
-                        call Push(bjLCU,50,a,500)
-                        call BelfE_Act2(LoadUnitHandle(h,id,CasterHash),bjLCU,dmg/2,CreateTimer())
-                        call SaveInteger(h,id,StringHash("Act"),1)
-                        call GroupClear(bjLCG)
-                endif
-                call GroupRemoveUnit(bjLCG,bjLCU)
-                endloop
-                call DestroyGroup(bjLCG)
-                set bjLCG=null
+    if dist<1000 and LoadBoolean(HH,GetHandleId(LoadUnitHandle(h,id,CasterHash)),DASH_USER)==true then
+        set x=x+30*Cos(a)
+        set y=y+30*Sin(a)
+        call PauseUnit(LoadUnitHandle(h,id,CasterHash),true)
+        call SetUnitX(LoadUnitHandle(h,id,CasterHash),x)
+        call SetUnitY(LoadUnitHandle(h,id,CasterHash),y)
+        call SaveReal(h,id,StringHash("Distance"),dist+30)
+        if effect_period<=0 then
+            set bjLCU=CreateUnit(GetOwningPlayer(LoadUnitHandle(h,id,CasterHash)),'dR45',x,y,a*bj_RADTODEG)
+            // call SetUnitModel(bjLCU,"sand.mdl")
+            call SetUnitScale(bjLCU,0.85,0.85,0.85)
+            call UnitApplyTimedLife(bjLCU,1,2)
+            call SaveInteger(h,id,StringHash("Effect_Period"),3)
         else
-                call SaveInteger(h,id,StringHash("Act"),3)
-                call PauseUnit(LoadUnitHandle(h,id,CasterHash),false)
-                call IssueImmediateOrder(LoadUnitHandle(h,id,CasterHash), "stop")
-                call StartAbilityCooldown(GetUnitAbility(LoadUnitHandle(h,id,CasterHash),'BelE'), 12.5)
+            call SaveInteger(h,id,StringHash("Effect_Period"),effect_period-1)
         endif
+        set bjLCG=CreateGroup()
+        call GroupEnumUnitsInRange(bjLCG,x,y,125,Base)
+        loop
+        set bjLCU=FirstOfGroup(bjLCG)
+        exitwhen bjLCU==null or act!=0
+        if Condition_Base(GetOwningPlayer(LoadUnitHandle(h,id,CasterHash)),bjLCU)==true and IsUnitInGroup(bjLCU,LoadGroupHandle(h,id,StringHash("GroupDummy")))==false and IsUnitInvulnerable(bjLCU)==false then
+            if LoadBoolean(HH,GetHandleId(bjLCU),ANTITARGET_ABILITY)==false then    
+                call IssueImmediateOrder(bjLCU,"stop")
+                call myCustomDamage(LoadUnitHandle(h,id,CasterHash),bjLCU,dmg/2,false,false,null,null,null)
+                set bjLCE = AddSpecialEffect("blood-4.mdl", GetUnitX(bjLCU), GetUnitY(bjLCU))
+                call SetSpecialEffectZ(bjLCE, 50)
+                call SetSpecialEffectScale(bjLCE, 1.4)
+                call SetSpecialEffectFacing(bjLCE, a*bj_RADTODEG+GetRandomInt(65, 135))
+                call DestroyEffect(bjLCE)
+                set n=CreateUnit(GetOwningPlayer(LoadUnitHandle(h,id,CasterHash)),'dH01',GetUnitX(bjLCU),GetUnitY(bjLCU),a*bj_RADTODEG)
+                call SetUnitScale(n,1.4,1.4,1.4)
+                call SetUnitFlyHeight(n,55,0)
+                call UnitApplyTimedLife(n,1,2)
+                call Push(bjLCU,50,a,500)
+                call BelfE_Act2(LoadUnitHandle(h,id,CasterHash),bjLCU,dmg/2,CreateTimer())
+                call SaveInteger(h,id,StringHash("Act"),1)
+                call GroupClear(bjLCG)
+            else
+                call SaveBoolean(HH,GetHandleId(LoadUnitHandle(h,id,CasterHash)),DASH_USER,false)
+                call SaveUnitHandle(HH,GetHandleId(bjLCU),REVERSE_TARGET,LoadUnitHandle(h,id,CasterHash))
+            endif
+        endif
+        call GroupRemoveUnit(bjLCG,bjLCU)
+        endloop
+        call DestroyGroup(bjLCG)
+        set bjLCG=null
+    else
+        call SaveBoolean(HH,GetHandleId(LoadUnitHandle(h,id,CasterHash)),DASH_USER,false)
+        call SaveInteger(h,id,StringHash("Act"),3)
+        call PauseUnit(LoadUnitHandle(h,id,CasterHash),false)
+        call IssueImmediateOrder(LoadUnitHandle(h,id,CasterHash), "stop")
+        call StartAbilityCooldown(GetUnitAbility(LoadUnitHandle(h,id,CasterHash),'BelE'), 12.5)
+    endif
 else
-        if act==3 then
-                call PauseUnit(LoadUnitHandle(h,id,CasterHash),false)
-                call SetUnitInvulnerable(LoadUnitHandle(h,id,CasterHash),false)
-        endif
-                call FlushChildHashtable(h,id)
-                call DestroyTimer(GetExpiredTimer())
-        endif
+    if act==3 then
+        call PauseUnit(LoadUnitHandle(h,id,CasterHash),false)
+        call SetUnitInvulnerable(LoadUnitHandle(h,id,CasterHash),false)
+    endif
+        call FlushChildHashtable(h,id)
+        call DestroyTimer(GetExpiredTimer())
+    endif
 endfunction
 function BelfE_Cast takes unit newCaster,real TargetX,real TargetY returns nothing
 local integer id=0
@@ -155217,6 +155223,7 @@ set soundplay=CreateSound("Sound\\war3mapImported\\Belf_E.mp3",false,false,true,
 call StartSound(soundplay)
 call KillSoundWhenDone(soundplay)
 call IssueImmediateOrder(newCaster,"stop")
+call SaveBoolean(HH,GetHandleId(newCaster),DASH_USER,true)
 call PauseUnit(newCaster,true)
 call SetUnitInvulnerable(newCaster,true)
 call SetUnitAnimationByIndex(newCaster,9)
@@ -155325,11 +155332,11 @@ function BelfR_Cast takes unit newCaster returns nothing
         set bjLCT=null
 endfunction
 function BelfTClone_Periodic takes nothing returns nothing
-        local integer id=GetHandleId(GetExpiredTimer())
-        local real a=LoadReal(h,id,AngleHash)
-        local integer time=LoadInteger(h,id,StringHash("Time"))
-        local real newX=0
-        local real newY=0
+    local integer id=GetHandleId(GetExpiredTimer())
+    local real a=LoadReal(h,id,AngleHash)
+    local integer time=LoadInteger(h,id,StringHash("Time"))
+    local real newX=0
+    local real newY=0
     local unit EBel
 	local integer effect_period=LoadInteger(h,id,EffectPeriodHash)
     //local group g2=CreateGroup()
@@ -156036,54 +156043,54 @@ call SaveReal(h,id,StringHash("StunDur"),stun_dur)
 call TimerStart(newTimer,0.01,true,function AlbedoQ_Act1)
 endfunction
 function AlbedoW_LastHit_periodic takes nothing returns nothing
-        local integer id=GetHandleId(GetExpiredTimer())
-        local real angle=LoadReal(h,id,AngleHash)
-        local real dist=LoadReal(h,id,StringHash("Dist"))
-        local real speed=10
-        local real target_x=GetUnitX(LoadUnitHandle(h,id,TargetHash))
-        local real target_y=GetUnitY(LoadUnitHandle(h,id,TargetHash))
-        local real target_z=GetUnitFlyHeight(LoadUnitHandle(h,id,TargetHash))
-        local boolean eff_bool=LoadBoolean(h,id,StringHash("EffectBool"))
-        if dist>0 then
-                call SetUnitX(LoadUnitHandle(h,id,TargetHash),target_x+speed*Cos(angle))
-                call SetUnitY(LoadUnitHandle(h,id,TargetHash),target_y+speed*Sin(angle))
-                if target_z>20 then
-                        call SetUnitFlyHeight(LoadUnitHandle(h,id,TargetHash),target_z-LoadReal(h,id,StringHash("Fall")),2000)
-                elseif eff_bool==false then
-                        call ShakeCamera(0.5,20)
-                        call SetUnitFlyHeight(LoadUnitHandle(h,id,TargetHash),0,0)
-                        call SaveBoolean(h,id,StringHash("EffectBool"),true)
-                        set bjLCE=AddSpecialEffect("newdirtex.mdl",target_x,target_y)
-                        call SetSpecialEffectScale(bjLCE,2)
-                        call DestroyEffect(bjLCE)
-                        set bjLCE=AddSpecialEffect("blood-boom.mdl",target_x,target_y)
-                        call SetSpecialEffectScale(bjLCE,2)
-                        call DestroyEffect(bjLCE)
-                        set bjLCE=AddSpecialEffect("warstompcaster1234.mdl",target_x,target_y)
-                        call SetSpecialEffectScale(bjLCE,2)
-                        call SetSpecialEffectTimeScale(bjLCE,0.7)
-                        call DestroyEffect(bjLCE)
-                endif
-                call SaveReal(h,id,StringHash("Dist"),dist-speed)
-        else
-                if eff_bool==false then
-                        call ShakeCamera(0.5,20)
-                        call SetUnitFlyHeight(LoadUnitHandle(h,id,TargetHash),0,0)
-                        call SaveBoolean(h,id,StringHash("EffectBool"),true)
-                        set bjLCE=AddSpecialEffect("newdirtex.mdl",target_x,target_y)
-                        call SetSpecialEffectScale(bjLCE,2)
-                        call DestroyEffect(bjLCE)
-                        set bjLCE=AddSpecialEffect("blood-boom.mdl",target_x,target_y)
-                        call SetSpecialEffectScale(bjLCE,2)
-                        call DestroyEffect(bjLCE)
-                        set bjLCE=AddSpecialEffect("warstompcaster1234.mdl",target_x,target_y)
-                        call SetSpecialEffectScale(bjLCE,2)
-                        call SetSpecialEffectTimeScale(bjLCE,0.7)
-                        call DestroyEffect(bjLCE)
-                endif
-                call FlushChildHashtable(h,id)
-                call DestroyTimer(GetExpiredTimer())
+    local integer id=GetHandleId(GetExpiredTimer())
+    local real angle=LoadReal(h,id,AngleHash)
+    local real dist=LoadReal(h,id,StringHash("Dist"))
+    local real speed=10
+    local real target_x=GetUnitX(LoadUnitHandle(h,id,TargetHash))
+    local real target_y=GetUnitY(LoadUnitHandle(h,id,TargetHash))
+    local real target_z=GetUnitFlyHeight(LoadUnitHandle(h,id,TargetHash))
+    local boolean eff_bool=LoadBoolean(h,id,StringHash("EffectBool"))
+    if dist>0 then
+        call SetUnitX(LoadUnitHandle(h,id,TargetHash),target_x+speed*Cos(angle))
+        call SetUnitY(LoadUnitHandle(h,id,TargetHash),target_y+speed*Sin(angle))
+        if target_z>20 then
+            call SetUnitFlyHeight(LoadUnitHandle(h,id,TargetHash),target_z-LoadReal(h,id,StringHash("Fall")),2000)
+        elseif eff_bool==false then
+            call ShakeCamera(0.5,20)
+            call SetUnitFlyHeight(LoadUnitHandle(h,id,TargetHash),0,0)
+            call SaveBoolean(h,id,StringHash("EffectBool"),true)
+            set bjLCE=AddSpecialEffect("newdirtex.mdl",target_x,target_y)
+            call SetSpecialEffectScale(bjLCE,2)
+            call DestroyEffect(bjLCE)
+            set bjLCE=AddSpecialEffect("blood-boom.mdl",target_x,target_y)
+            call SetSpecialEffectScale(bjLCE,2)
+            call DestroyEffect(bjLCE)
+            set bjLCE=AddSpecialEffect("warstompcaster1234.mdl",target_x,target_y)
+            call SetSpecialEffectScale(bjLCE,2)
+            call SetSpecialEffectTimeScale(bjLCE,0.7)
+            call DestroyEffect(bjLCE)
         endif
+        call SaveReal(h,id,StringHash("Dist"),dist-speed)
+    else
+        if eff_bool==false then
+            call ShakeCamera(0.5,20)
+            call SetUnitFlyHeight(LoadUnitHandle(h,id,TargetHash),0,0)
+            call SaveBoolean(h,id,StringHash("EffectBool"),true)
+            set bjLCE=AddSpecialEffect("newdirtex.mdl",target_x,target_y)
+            call SetSpecialEffectScale(bjLCE,2)
+            call DestroyEffect(bjLCE)
+            set bjLCE=AddSpecialEffect("blood-boom.mdl",target_x,target_y)
+            call SetSpecialEffectScale(bjLCE,2)
+            call DestroyEffect(bjLCE)
+            set bjLCE=AddSpecialEffect("warstompcaster1234.mdl",target_x,target_y)
+            call SetSpecialEffectScale(bjLCE,2)
+            call SetSpecialEffectTimeScale(bjLCE,0.7)
+            call DestroyEffect(bjLCE)
+        endif
+        call FlushChildHashtable(h,id)
+        call DestroyTimer(GetExpiredTimer())
+    endif
 endfunction
 function AlbedoW_LastHit takes unit newCaster,unit newTarget,real newAngle,timer newTimer returns nothing
 local integer id=GetHandleId(newTimer)
@@ -156275,10 +156282,17 @@ else
 call SaveInteger(h,id,EffectPeriodHash,eff_period-1)
 endif
 else
+if LoadBoolean(HH,GetHandleId(LoadUnitHandle(h,id,TargetHash)),ANTITARGET_ABILITY)==false then
 call SetUnitVertexColor(LoadUnitHandle(h,id,CasterHash),255,255,255,255)
 call AlbedoW_SecondAct(LoadUnitHandle(h,id,CasterHash),LoadUnitHandle(h,id,TargetHash),CreateTimer())
 call FlushChildHashtable(h,id)
 call DestroyTimer(GetExpiredTimer())
+else
+call SetUnitVertexColor(LoadUnitHandle(h,id,CasterHash),255,255,255,255)
+call SaveUnitHandle(HH,GetHandleId(LoadUnitHandle(h,id,TargetHash)),REVERSE_TARGET,LoadUnitHandle(h,id,CasterHash))
+call FlushChildHashtable(h,id)
+call DestroyTimer(GetExpiredTimer())
+endif
 endif
 endfunction
 function AlbedoW_Cast takes unit newCaster,unit newTarget,timer newTimer returns nothing
@@ -156387,22 +156401,22 @@ call SaveGroupHandle(h,id,GroupHash,CreateGroup())
 call TimerStart(newTimer,0.02,true,function AlbedoE_Periodic)
 endfunction
 function AlbedoR_SideAct_Periodic takes nothing returns nothing
-        local integer id=GetHandleId(GetExpiredTimer())
-        if LoadInteger(h,id,StringHash("Iteration"))>0 then
-                call SetUnitX(LoadUnitHandle(h,id,TargetHash),GetUnitX(LoadUnitHandle(h,id,TargetHash))+(15+LoadInteger(h,id,StringHash("Iteration"))/3)*Cos(LoadReal(h,id,AngleHash)))
-                call SetUnitY(LoadUnitHandle(h,id,TargetHash),GetUnitY(LoadUnitHandle(h,id,TargetHash))+(15+LoadInteger(h,id,StringHash("Iteration"))/3)*Sin(LoadReal(h,id,AngleHash)))
-                if LoadInteger(h,id,EffectPeriodHash)==0 then
-                        call DestroyEffect(AddSpecialEffect("sand.mdl",GetUnitX(LoadUnitHandle(h,id,TargetHash)),GetUnitY(LoadUnitHandle(h,id,TargetHash))))
-                        call SaveInteger(h,id,EffectPeriodHash,7)
-                else
-                        call SaveInteger(h,id,EffectPeriodHash,LoadInteger(h,id,EffectPeriodHash)-1)
-                endif
-                call SaveInteger(h,id,StringHash("Iteration"),LoadInteger(h,id,StringHash("Iteration"))-1)
+    local integer id=GetHandleId(GetExpiredTimer())
+    if LoadInteger(h,id,StringHash("Iteration"))>0 then
+        call SetUnitX(LoadUnitHandle(h,id,TargetHash),GetUnitX(LoadUnitHandle(h,id,TargetHash))+(15+LoadInteger(h,id,StringHash("Iteration"))/3)*Cos(LoadReal(h,id,AngleHash)))
+        call SetUnitY(LoadUnitHandle(h,id,TargetHash),GetUnitY(LoadUnitHandle(h,id,TargetHash))+(15+LoadInteger(h,id,StringHash("Iteration"))/3)*Sin(LoadReal(h,id,AngleHash)))
+        if LoadInteger(h,id,EffectPeriodHash)==0 then
+            call DestroyEffect(AddSpecialEffect("sand.mdl",GetUnitX(LoadUnitHandle(h,id,TargetHash)),GetUnitY(LoadUnitHandle(h,id,TargetHash))))
+            call SaveInteger(h,id,EffectPeriodHash,7)
         else
-                call MyRemoveUnit(CreateUnit(GetOwningPlayer(LoadUnitHandle(h,id,CasterHash)),'dAlb',GetUnitX(LoadUnitHandle(h,id,TargetHash)),GetUnitY(LoadUnitHandle(h,id,TargetHash)),0), 2)
-                call FlushChildHashtable(h,id)
-                call DestroyTimer(GetExpiredTimer())
+            call SaveInteger(h,id,EffectPeriodHash,LoadInteger(h,id,EffectPeriodHash)-1)
         endif
+        call SaveInteger(h,id,StringHash("Iteration"),LoadInteger(h,id,StringHash("Iteration"))-1)
+    else
+        call MyRemoveUnit(CreateUnit(GetOwningPlayer(LoadUnitHandle(h,id,CasterHash)),'dAlb',GetUnitX(LoadUnitHandle(h,id,TargetHash)),GetUnitY(LoadUnitHandle(h,id,TargetHash)),0), 2)
+        call FlushChildHashtable(h,id)
+        call DestroyTimer(GetExpiredTimer())
+    endif
 endfunction
 function AlbedoR_SideAct takes unit newCaster,unit newTarget,unit newDummy,timer newTimer returns nothing
 local integer id=GetHandleId(newTimer)
@@ -156472,47 +156486,57 @@ local real caster_x=GetUnitX(LoadUnitHandle(h,id,CasterHash))
 local real caster_y=GetUnitY(LoadUnitHandle(h,id,CasterHash))
 local real angle=0
 if LoadReal(h,id,StringHash("PrepareTime"))<=0 then
-if LoadUnitHandle(h,id,TargetHash)==null then
-set bjLCG=LoadGroupHandle(h,id,GroupHash)
-set bjLCU=FirstOfGroup(bjLCG)
-if bjLCU==null then
-if SquareRootUnit(LoadUnitHandle(h,id,CasterHash),LoadUnitHandle(h,id,StringHash("MainTarget")))>=125 then
-set angle=AU(LoadUnitHandle(h,id,CasterHash),LoadUnitHandle(h,id,StringHash("MainTarget")))
-call SetUnitX(LoadUnitHandle(h,id,CasterHash),caster_x+60*Cos(angle))
-call SetUnitY(LoadUnitHandle(h,id,CasterHash),caster_y+60*Sin(angle))
-call SetUnitFacingInstant(LoadUnitHandle(h,id,CasterHash),angle*bj_RADTODEG)
-call SetSpecialEffectX(LoadEffectHandle(h,id,Effect1Hash),caster_x)
-call SetSpecialEffectY(LoadEffectHandle(h,id,Effect1Hash),caster_y)
-call SetSpecialEffectZ(LoadEffectHandle(h,id,Effect1Hash),GetUnitFlyHeight(LoadUnitHandle(h,id,CasterHash))+50)
+    if LoadUnitHandle(h,id,TargetHash)==null then
+        set bjLCG=LoadGroupHandle(h,id,GroupHash)
+        set bjLCU=FirstOfGroup(bjLCG)
+        if bjLCU==null then
+            if SquareRootUnit(LoadUnitHandle(h,id,CasterHash),LoadUnitHandle(h,id,StringHash("MainTarget")))>=125 then
+                set angle=AU(LoadUnitHandle(h,id,CasterHash),LoadUnitHandle(h,id,StringHash("MainTarget")))
+                call SetUnitX(LoadUnitHandle(h,id,CasterHash),caster_x+60*Cos(angle))
+                call SetUnitY(LoadUnitHandle(h,id,CasterHash),caster_y+60*Sin(angle))
+                call SetUnitFacingInstant(LoadUnitHandle(h,id,CasterHash),angle*bj_RADTODEG)
+                call SetSpecialEffectX(LoadEffectHandle(h,id,Effect1Hash),caster_x)
+                call SetSpecialEffectY(LoadEffectHandle(h,id,Effect1Hash),caster_y)
+                call SetSpecialEffectZ(LoadEffectHandle(h,id,Effect1Hash),GetUnitFlyHeight(LoadUnitHandle(h,id,CasterHash))+50)
+            else
+                call RemoveEffect(LoadEffectHandle(h,id,Effect1Hash),1,true,CreateTimer())
+                call PauseUnit(LoadUnitHandle(h,id,CasterHash),false)
+                call SetUnitInvulnerable(LoadUnitHandle(h,id,CasterHash),false)
+                call AlbedoR_SideAct(LoadUnitHandle(h,id,CasterHash),LoadUnitHandle(h,id,StringHash("MainTarget")),null,CreateTimer())
+                call DestroyGroup(bjLCG)
+                call FlushChildHashtable(h,id)
+                call DestroyTimer(GetExpiredTimer())
+            endif
+        else
+            call SaveUnitHandle(h,id,TargetHash,bjLCU)
+        endif
+    else
+        if SquareRootUnit(LoadUnitHandle(h,id,CasterHash),LoadUnitHandle(h,id,TargetHash))>=60 then
+            set angle=AU(LoadUnitHandle(h,id,CasterHash),LoadUnitHandle(h,id,TargetHash))
+            call SetUnitX(LoadUnitHandle(h,id,CasterHash),caster_x+50*Cos(angle))
+            call SetUnitY(LoadUnitHandle(h,id,CasterHash),caster_y+50*Sin(angle))
+            call SetUnitFacingInstant(LoadUnitHandle(h,id,CasterHash),angle*bj_RADTODEG)
+            call SetSpecialEffectX(LoadEffectHandle(h,id,Effect1Hash),caster_x)
+            call SetSpecialEffectY(LoadEffectHandle(h,id,Effect1Hash),caster_y)
+            call SetSpecialEffectZ(LoadEffectHandle(h,id,Effect1Hash),GetUnitFlyHeight(LoadUnitHandle(h,id,CasterHash))+50)
+        else
+            if LoadBoolean(HH,GetHandleId(LoadUnitHandle(h,id,TargetHash)),ANTITARGET_ABILITY)==false then
+                call GroupRemoveUnit(LoadGroupHandle(h,id,GroupHash),LoadUnitHandle(h,id,TargetHash))
+                call AlbedoR_SideAct(LoadUnitHandle(h,id,CasterHash),LoadUnitHandle(h,id,TargetHash),null,CreateTimer())
+                call RemoveSavedHandle(h,id,TargetHash)
+            else
+                call RemoveEffect(LoadEffectHandle(h,id,Effect1Hash),1,true,CreateTimer())
+                call PauseUnit(LoadUnitHandle(h,id,CasterHash),false)
+                call SaveUnitHandle(HH,GetHandleId(LoadUnitHandle(h,id,TargetHash)),REVERSE_TARGET,LoadUnitHandle(h,id,CasterHash))
+                call SetUnitInvulnerable(LoadUnitHandle(h,id,CasterHash),false)
+                call DestroyGroup(bjLCG)
+                call FlushChildHashtable(h,id)
+                call DestroyTimer(GetExpiredTimer())
+            endif
+        endif
+    endif
 else
-call RemoveEffect(LoadEffectHandle(h,id,Effect1Hash),1,true,CreateTimer())
-call PauseUnit(LoadUnitHandle(h,id,CasterHash),false)
-call SetUnitInvulnerable(LoadUnitHandle(h,id,CasterHash),false)
-call AlbedoR_SideAct(LoadUnitHandle(h,id,CasterHash),LoadUnitHandle(h,id,StringHash("MainTarget")),null,CreateTimer())
-call DestroyGroup(bjLCG)
-call FlushChildHashtable(h,id)
-call DestroyTimer(GetExpiredTimer())
-endif
-else
-call SaveUnitHandle(h,id,TargetHash,bjLCU)
-endif
-else
-if SquareRootUnit(LoadUnitHandle(h,id,CasterHash),LoadUnitHandle(h,id,TargetHash))>=60 then
-set angle=AU(LoadUnitHandle(h,id,CasterHash),LoadUnitHandle(h,id,TargetHash))
-call SetUnitX(LoadUnitHandle(h,id,CasterHash),caster_x+50*Cos(angle))
-call SetUnitY(LoadUnitHandle(h,id,CasterHash),caster_y+50*Sin(angle))
-call SetUnitFacingInstant(LoadUnitHandle(h,id,CasterHash),angle*bj_RADTODEG)
-call SetSpecialEffectX(LoadEffectHandle(h,id,Effect1Hash),caster_x)
-call SetSpecialEffectY(LoadEffectHandle(h,id,Effect1Hash),caster_y)
-call SetSpecialEffectZ(LoadEffectHandle(h,id,Effect1Hash),GetUnitFlyHeight(LoadUnitHandle(h,id,CasterHash))+50)
-else
-call GroupRemoveUnit(LoadGroupHandle(h,id,GroupHash),LoadUnitHandle(h,id,TargetHash))
-call AlbedoR_SideAct(LoadUnitHandle(h,id,CasterHash),LoadUnitHandle(h,id,TargetHash),null,CreateTimer())
-call RemoveSavedHandle(h,id,TargetHash)
-endif
-endif
-else
-call SaveReal(h,id,StringHash("PrepareTime"),LoadReal(h,id,StringHash("PrepareTime"))-0.01)
+    call SaveReal(h,id,StringHash("PrepareTime"),LoadReal(h,id,StringHash("PrepareTime"))-0.01)
 endif
 endfunction
 function AlbedoR_SecondAct takes unit newCaster,group newGroup,timer newTimer,unit closest_unit returns nothing
@@ -156655,24 +156679,24 @@ call SaveGroupHandle(h,id,StringHash("SecondActGroup"),CreateGroup())
 call TimerStart(newTimer,0.01,true,function AlbedoR_FirstAct_Periodic)
 endfunction
 function AlbedoT_Attraction_periodic takes nothing returns nothing
-        local integer id=GetHandleId(GetExpiredTimer())
-        if LoadInteger(h,id,StringHash("Iteration"))>0 then
+    local integer id=GetHandleId(GetExpiredTimer())
+    if LoadInteger(h,id,StringHash("Iteration"))>0 then
         if SquareRootUnit(LoadUnitHandle(h,id,CasterHash),LoadUnitHandle(h,id,TargetHash))>160 and SquareRootUnit(LoadUnitHandle(h,id,CasterHash),LoadUnitHandle(h,id,TargetHash))<1000 then
             call SetUnitX(LoadUnitHandle(h,id,TargetHash),GetUnitX(LoadUnitHandle(h,id,TargetHash))+(SquareRootUnit(LoadUnitHandle(h,id,CasterHash),LoadUnitHandle(h,id,TargetHash))/25)*Cos(AU(LoadUnitHandle(h,id,TargetHash),LoadUnitHandle(h,id,CasterHash))))
             call SetUnitY(LoadUnitHandle(h,id,TargetHash),GetUnitY(LoadUnitHandle(h,id,TargetHash))+(SquareRootUnit(LoadUnitHandle(h,id,CasterHash),LoadUnitHandle(h,id,TargetHash))/25)*Sin(AU(LoadUnitHandle(h,id,TargetHash),LoadUnitHandle(h,id,CasterHash))))
         endif
-                if LoadInteger(h,id,EffectPeriodHash)==0 then
-                        call DestroyEffect(AddSpecialEffect("sand.mdl",GetUnitX(LoadUnitHandle(h,id,TargetHash)),GetUnitY(LoadUnitHandle(h,id,TargetHash))))
-                        call SaveInteger(h,id,EffectPeriodHash,10)
-                else
-                        call SaveInteger(h,id,EffectPeriodHash,LoadInteger(h,id,EffectPeriodHash)-1)
-                endif
-                call SaveInteger(h,id,StringHash("Iteration"),LoadInteger(h,id,StringHash("Iteration"))-1)
+        if LoadInteger(h,id,EffectPeriodHash)==0 then
+            call DestroyEffect(AddSpecialEffect("sand.mdl",GetUnitX(LoadUnitHandle(h,id,TargetHash)),GetUnitY(LoadUnitHandle(h,id,TargetHash))))
+            call SaveInteger(h,id,EffectPeriodHash,10)
         else
-                call MyRemoveUnit(CreateUnit(GetOwningPlayer(LoadUnitHandle(h,id,CasterHash)),'dAlb',GetUnitX(LoadUnitHandle(h,id,TargetHash)),GetUnitY(LoadUnitHandle(h,id,TargetHash)),0), 2)
-                call FlushChildHashtable(h,id)
-                call DestroyTimer(GetExpiredTimer())
+            call SaveInteger(h,id,EffectPeriodHash,LoadInteger(h,id,EffectPeriodHash)-1)
         endif
+        call SaveInteger(h,id,StringHash("Iteration"),LoadInteger(h,id,StringHash("Iteration"))-1)
+    else
+        call MyRemoveUnit(CreateUnit(GetOwningPlayer(LoadUnitHandle(h,id,CasterHash)),'dAlb',GetUnitX(LoadUnitHandle(h,id,TargetHash)),GetUnitY(LoadUnitHandle(h,id,TargetHash)),0), 2)
+        call FlushChildHashtable(h,id)
+        call DestroyTimer(GetExpiredTimer())
+    endif
 endfunction
 
 function AlbedoT_Attraction takes unit newCaster,unit newTarget,unit newDummy,timer newTimer returns nothing
