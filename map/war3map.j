@@ -156971,61 +156971,61 @@ endfunction
 
 function RengokuD_Periodic takes nothing returns nothing
     local integer id= GetHandleId(GetExpiredTimer())
-        local unit        caster=LoadUnitHandle(HH, id, c_CASTER)
+    local unit        caster=LoadUnitHandle(HH, id, c_CASTER)
     local integer id_caster= GetHandleId(caster)
     local real    time= LoadReal(HH, id_caster, RengokuD_Time)
     if time > 0.0 and UnitIsAlive(caster) then
-                call SaveReal(HH, id_caster, RengokuD_Time, time - 0.5)
+        call SaveReal(HH, id_caster, RengokuD_Time, time - 0.5)
     else
-                if UnitIsAlive(caster) then
-                        if GetRandomInt(0, 1) == 0 then
-                                set soundplay=CreateSound("Sound\\war3mapImported\\RengokuD.mp3", false, false, true, 12700, 12700, "")
-                                call StartSound(soundplay)
-                                call KillSoundWhenDone(soundplay)
-                        else
-                                set soundplay=CreateSound("Sound\\war3mapImported\\RengokuD2.mp3", false, false, true, 12700, 12700, "")
-                                call StartSound(soundplay)
-                                call KillSoundWhenDone(soundplay)
-                        endif
-                        call DestroyEffect(AddSpecialEffectTarget("AZ_BNPF_V_yellow.mdl", caster, "origin"))
-                        call DestroyEffect(AddSpecialEffectTarget("az_goods_lvlup.mdl", caster, "origin"))
-                        call DestroyEffect(AddSpecialEffectTarget("WindCirclefaster.mdl", caster, "origin"))
-                        call RemoveEffect(AddSpecialEffectTarget("123 (1081).mdl", caster, "origin") , 1.35 , true , CreateTimer())
-                        if GetUnitAbilityLevel(caster, 'ReD2')==0 then
-                                call UnitAddAbility(caster, 'ReD2')
-                        endif
-                        call SaveReal(HH, id_caster, RengokuD_Time, 0.0)
-                        call RemoveSavedReal(HH, id_caster, RengokuD_Time)
-                        call FlushChildHashtable(h, id)
-                        call PauseTimer(GetExpiredTimer())
-                        call DestroyTimer(GetExpiredTimer())
-                endif
+        if UnitIsAlive(caster) then
+            if GetRandomInt(0, 1) == 0 then
+                set soundplay=CreateSound("Sound\\war3mapImported\\RengokuD.mp3", false, false, true, 12700, 12700, "")
+                call StartSound(soundplay)
+                call KillSoundWhenDone(soundplay)
+            else
+                set soundplay=CreateSound("Sound\\war3mapImported\\RengokuD2.mp3", false, false, true, 12700, 12700, "")
+                call StartSound(soundplay)
+                call KillSoundWhenDone(soundplay)
+            endif
+            call DestroyEffect(AddSpecialEffectTarget("AZ_BNPF_V_yellow.mdl", caster, "origin"))
+            call DestroyEffect(AddSpecialEffectTarget("az_goods_lvlup.mdl", caster, "origin"))
+            call DestroyEffect(AddSpecialEffectTarget("WindCirclefaster.mdl", caster, "origin"))
+            call RemoveEffect(AddSpecialEffectTarget("123 (1081).mdl", caster, "origin") , 1.35 , true , CreateTimer())
+            if GetUnitAbilityLevel(caster, 'ReD2')==0 then
+                call UnitAddAbility(caster, 'ReD2')
+            endif
+            call SaveReal(HH, id_caster, RengokuD_Time, 0.0)
+            call RemoveSavedReal(HH, id_caster, RengokuD_Time)
+            call FlushChildHashtable(h, id)
+            call PauseTimer(GetExpiredTimer())
+            call DestroyTimer(GetExpiredTimer())
+        endif
     endif
-        set caster=null
+    set caster=null
 endfunction
 
 function RengokuD_Cast takes unit newCaster returns boolean
     local integer id_caster= GetHandleId(newCaster)
     local real    time= LoadReal(HH, id_caster, RengokuD_Time)
-        local boolean local_bool=false
+    local boolean local_bool=false
     local timer   local_timer=null
-        if GetHeroLevel(newCaster)>=6 then
-                if time == 0.0 then
-                        set local_bool=true
-                        set local_timer=CreateTimer()
-                        call HealTextTag(newCaster,newCaster,GetWidgetMaxLife(newCaster) * 0.06*myCustomHeal2(newCaster,1),"HealthRes")
-                        call SetUnitState(newCaster, UNIT_STATE_LIFE, GetWidgetLife(newCaster) + GetWidgetMaxLife(newCaster) * 0.06)
-                        call SaveUnitHandle(HH, GetHandleId(local_timer), c_CASTER, newCaster)
-                        call TimerStart(local_timer, 0.5, true, function RengokuD_Periodic)
-                        if GetUnitAbilityLevel(newCaster, 'ReD2')>0 then
-                                call UnitRemoveAbility(newCaster, 'ReD2')
-                                call UnitRemoveAbility(newCaster, 'ReD3')
-                        endif
-                endif
-                call SaveReal(HH, id_caster, RengokuD_Time, 15.0)
+    if GetHeroLevel(newCaster)>=6 then
+        if time == 0.0 then
+            set local_bool=true
+            set local_timer=CreateTimer()
+            call HealTextTag(newCaster,newCaster,GetWidgetMaxLife(newCaster) * 0.06*myCustomHeal2(newCaster,1),"HealthRes")
+            call SetUnitState(newCaster, UNIT_STATE_LIFE, GetWidgetLife(newCaster) + GetWidgetMaxLife(newCaster) * 0.06)
+            call SaveUnitHandle(HH, GetHandleId(local_timer), c_CASTER, newCaster)
+            call TimerStart(local_timer, 0.5, true, function RengokuD_Periodic)
+            if GetUnitAbilityLevel(newCaster, 'ReD2')>0 then
+                call UnitRemoveAbility(newCaster, 'ReD2')
+                call UnitRemoveAbility(newCaster, 'ReD3')
+            endif
         endif
-        set local_timer=null
-        return local_bool
+        call SaveReal(HH, id_caster, RengokuD_Time, 15.0)
+    endif
+    set local_timer=null
+    return local_bool
 endfunction
 
 function RengokuF_Periodic takes nothing returns nothing
@@ -157130,28 +157130,28 @@ endfunction
 
 function RengokuQWE_CD takes nothing returns nothing
     local integer id= GetHandleId(GetExpiredTimer())
-        local unit caster=LoadUnitHandle(h, id, c_CASTER)
+    local unit caster=LoadUnitHandle(h, id, c_CASTER)
     local integer id_caster= GetHandleId(caster)
     if LoadReal(HH, id_caster, RengokuQWE_Time)>0.0 and UnitIsAlive(caster) then
         call SaveReal(HH, id_caster, RengokuQWE_Time, LoadReal(HH, id_caster, RengokuQWE_Time) - 0.5)
     else
-                if UnitIsAlive(caster) then
-                        call DestroyEffect(AddSpecialEffectTarget("WindCirclefaster.mdl", caster, "origin"))
-                        set bjLCU=CreateUnit(GetOwningPlayer(caster), 'dR94', GetUnitX(caster), GetUnitY(caster), GetRandomInt(0, 360))
-                        call SetUnitScale(bjLCU, 1.2, 1.2, 1.2)
-                        call MyRemoveUnit(bjLCU, 1.5)
-                        set bjLCU=CreateUnit(GetOwningPlayer(caster), 'dR94', GetUnitX(caster), GetUnitY(caster), GetRandomInt(0, 360))
-                        call SetUnitScale(bjLCU, 0.8, 0.8, 0.8)
-                        call MyRemoveUnit(bjLCU, 1.5)
-                        call SaveReal(HH, id_caster, RengokuQWE_Time, 0.0)
-                        call RemoveSavedReal(HH, id_caster, RengokuQWE_Time)
-                        call SetUnitAbilityLevel(caster, 'ReD1', 1)
-                        call FlushChildHashtable(h, id)
-                        call PauseTimer(GetExpiredTimer())
-                        call DestroyTimer(GetExpiredTimer())
-                endif
+        if UnitIsAlive(caster) then
+            call DestroyEffect(AddSpecialEffectTarget("WindCirclefaster.mdl", caster, "origin"))
+            set bjLCU=CreateUnit(GetOwningPlayer(caster), 'dR94', GetUnitX(caster), GetUnitY(caster), GetRandomInt(0, 360))
+            call SetUnitScale(bjLCU, 1.2, 1.2, 1.2)
+            call MyRemoveUnit(bjLCU, 1.5)
+            set bjLCU=CreateUnit(GetOwningPlayer(caster), 'dR94', GetUnitX(caster), GetUnitY(caster), GetRandomInt(0, 360))
+            call SetUnitScale(bjLCU, 0.8, 0.8, 0.8)
+            call MyRemoveUnit(bjLCU, 1.5)
+            call SaveReal(HH, id_caster, RengokuQWE_Time, 0.0)
+            call RemoveSavedReal(HH, id_caster, RengokuQWE_Time)
+            call SetUnitAbilityLevel(caster, 'ReD1', 1)
+            call FlushChildHashtable(h, id)
+            call PauseTimer(GetExpiredTimer())
+            call DestroyTimer(GetExpiredTimer())
+        endif
     endif
-        set caster=null
+    set caster=null
 endfunction
 
 function RengokuQWE_Combination takes unit newCaster,string nextComb returns string
@@ -157160,28 +157160,28 @@ function RengokuQWE_Combination takes unit newCaster,string nextComb returns str
         local real QWE_Comb= LoadReal(HH, id_caster, RengokuQWE_Time)
         local timer local_timer=null
         if GetHeroLevel(newCaster)>=6 and GetUnitAbilityLevel(newCaster, 'ReD1')>0 then
-                if GetUnitAbilityLevel(newCaster, 'ReD1')==1 then
-                        set get_comb=""
-                elseif GetUnitAbilityLevel(newCaster, 'ReD1')==2 then
-                        set get_comb="Q"
-                elseif GetUnitAbilityLevel(newCaster, 'ReD1')==3 then
-                        set get_comb="W"
-                elseif GetUnitAbilityLevel(newCaster, 'ReD1')==4 then
-                        set get_comb="E"
-                endif
-                if nextComb=="Q" then
-                        call SetUnitAbilityLevel(newCaster, 'ReD1', 2)
-                elseif nextComb=="W" then
-                        call SetUnitAbilityLevel(newCaster, 'ReD1', 3)
-                elseif nextComb=="E" then
-                        call SetUnitAbilityLevel(newCaster, 'ReD1', 4)
-                endif
-                if QWE_Comb==0.0 then
-                        set local_timer=CreateTimer()
-                        call SaveUnitHandle(h, GetHandleId(local_timer), c_CASTER, newCaster)
-                        call TimerStart(local_timer, 0.5, true, function RengokuQWE_CD)
-                endif
-                call SaveReal(HH, id_caster, RengokuQWE_Time, 10)
+            if GetUnitAbilityLevel(newCaster, 'ReD1')==1 then
+                set get_comb=""
+            elseif GetUnitAbilityLevel(newCaster, 'ReD1')==2 then
+                set get_comb="Q"
+            elseif GetUnitAbilityLevel(newCaster, 'ReD1')==3 then
+                set get_comb="W"
+            elseif GetUnitAbilityLevel(newCaster, 'ReD1')==4 then
+                set get_comb="E"
+            endif
+            if nextComb=="Q" then
+                call SetUnitAbilityLevel(newCaster, 'ReD1', 2)
+            elseif nextComb=="W" then
+                call SetUnitAbilityLevel(newCaster, 'ReD1', 3)
+            elseif nextComb=="E" then
+                call SetUnitAbilityLevel(newCaster, 'ReD1', 4)
+            endif
+            if QWE_Comb==0.0 then
+                set local_timer=CreateTimer()
+                call SaveUnitHandle(h, GetHandleId(local_timer), c_CASTER, newCaster)
+                call TimerStart(local_timer, 0.5, true, function RengokuQWE_CD)
+            endif
+            call SaveReal(HH, id_caster, RengokuQWE_Time, 10)
         endif
         set local_timer=null
         return get_comb
@@ -157200,7 +157200,7 @@ function RengokuE_Shifting_Periodic takes nothing returns nothing
         call SetUnitY(LoadUnitHandle(h, id, c_TARGET), target_y + power * Sin(angle))
         if eff_period == 0 then
             set n=CreateUnit(GetOwningPlayer(LoadUnitHandle(h, id, c_CASTER)), 'dR45', target_x, target_y, GetRandomInt(0, 360))
-                        call SetUnitVertexColor(n, 255, 255, 255, 120)
+            call SetUnitVertexColor(n, 255, 255, 255, 120)
             call MyRemoveUnit(n, 1)
             call SaveInteger(h, id, c_EFFPERIOD, 10)
         else
@@ -157230,7 +157230,7 @@ endfunction
 function RengokuQ_Tossing_Periodic takes nothing returns nothing
     local integer id    = GetHandleId(GetExpiredTimer())
     local real time             = LoadReal(h, id, c_TIME)
-        local unit target       = LoadUnitHandle(h, id, c_TARGET)
+    local unit target       = LoadUnitHandle(h, id, c_TARGET)
     local real target_x = GetUnitX(target)
     local real target_y = GetUnitY(target)
     local boolean eff_bool= LoadBoolean(h, id, 15)
@@ -157249,16 +157249,16 @@ function RengokuQ_Tossing_Periodic takes nothing returns nothing
             call SetUnitScale(n, 1.65, 1.65, 1.65)
             call MyRemoveUnit(n , 1.2)
             set n=CreateUnit(GetOwningPlayer(LoadUnitHandle(h, id, c_CASTER)), 'dR25', target_x, target_y, GetRandomInt(0, 360))
-                        call SetUnitTimeScale(n , 0.65)
-                        call MyRemoveUnit(n , 1.2)
-                        // set n=CreateUnit(GetOwningPlayer(LoadUnitHandle(h, id, c_CASTER)), 'dR25', target_x, target_y, GetRandomInt(0, 360))
-                        // call SetUnitTimeScale(n , 0.65)
-                        // call MyRemoveUnit(n , 1.2)
-                        
-                        set n=CreateUnit(GetOwningPlayer(LoadUnitHandle(h, id, c_CASTER)), 'dR97', target_x, target_y, GetRandomInt(0, 360))
-                        call SetUnitTimeScale(n , 0.85)
-                        call SetUnitScale(n, 0.85, 0.85, 0.85)
-                        call MyRemoveUnit(n , 1.5)
+            call SetUnitTimeScale(n , 0.65)
+            call MyRemoveUnit(n , 1.2)
+            // set n=CreateUnit(GetOwningPlayer(LoadUnitHandle(h, id, c_CASTER)), 'dR25', target_x, target_y, GetRandomInt(0, 360))
+            // call SetUnitTimeScale(n , 0.65)
+            // call MyRemoveUnit(n , 1.2)
+            
+            set n=CreateUnit(GetOwningPlayer(LoadUnitHandle(h, id, c_CASTER)), 'dR97', target_x, target_y, GetRandomInt(0, 360))
+            call SetUnitTimeScale(n , 0.85)
+            call SetUnitScale(n, 0.85, 0.85, 0.85)
+            call MyRemoveUnit(n , 1.5)
                         
             call SaveBoolean(h, id, 15, true)
         endif
@@ -157290,7 +157290,7 @@ endfunction
 
 function RengokuQ_Base_Periodic takes nothing returns nothing
     local integer id    =       GetHandleId(GetExpiredTimer())
-        local unit caster       =       LoadUnitHandle(h, id, c_CASTER)
+    local unit caster       =       LoadUnitHandle(h, id, c_CASTER)
     local real caster_x =       GetUnitX(caster)
     local real caster_y =       GetUnitY(caster)
     local real distance =       LoadReal(h, id, c_DISTANCE)
@@ -157298,7 +157298,7 @@ function RengokuQ_Base_Periodic takes nothing returns nothing
     local real angle    =       LoadReal(h, id, c_ANGLE)
     local real time             =       LoadReal(h, id, c_TIME)
     local boolean target_detected= LoadBoolean(h, id, 16)
-    if distance > 0 then
+    if distance > 0 and LoadBoolean(HH,GetHandleId(caster),DASH_USER)==true then
         call SetUnitX(caster, caster_x + speed * Cos(angle))
         call SetUnitY(caster, caster_y + speed * Sin(angle))
         call SetUnitFacing(caster, angle * bj_RADTODEG)
@@ -157312,55 +157312,62 @@ function RengokuQ_Base_Periodic takes nothing returns nothing
         set bjLCU=FirstOfGroup(bjLCG)
         exitwhen bjLCU == null
             if Condition_Base(GetOwningPlayer(caster) , bjLCU) and IsUnitInvulnerable(bjLCU)==false then
-                call SetUnitX(caster, GetUnitX(bjLCU) + 250 * Cos(angle))
-                call SetUnitY(caster, GetUnitY(bjLCU) + 250 * Sin(angle))
-                call SetUnitFacingInstant(caster , angle * bj_RADTODEG + 180)
-                call SetUnitAnimationByIndex(caster, 8)
-                call SetUnitTimeScale(caster, 4)
-                set n=LoadUnitHandle(h, id, c_DUMMY1)
-                call SetUnitX(n , GetUnitX(caster))
-                call SetUnitY(n , GetUnitY(caster))
-                call GroupClear(bjLCG)
-                call SaveReal(h, id, c_DISTANCE, 0)
-                call SaveBoolean(h, id, 16, true)
-                call RengokuQ_Tossing(caster , bjLCU , LoadReal(h, id, c_DAMAGE) , angle , 0 , CreateTimer())
-                call SetControlToUnit(caster , bjLCU , 1 , "stun")
-                                set caster_x= GetUnitX(caster)
-                                set caster_y= GetUnitY(caster)
-                set n=CreateUnit(GetOwningPlayer(caster), 'dR60', caster_x, caster_y, angle * bj_RADTODEG + 180)
-                call SetUnitScale(n, 1.85, 1.85, 1.85)
-                call SetUnitTimeScale(n, 0.4)
-                call SetUnitFlyHeight(n, 160, 0)
-                call KillUnit(n)
-                call MyRemoveUnit(n , 2.6)
-                set n=CreateUnit(GetOwningPlayer(caster), 'dR60', caster_x, caster_y, angle * bj_RADTODEG + 180)
-                call SetUnitScale(n, 1.65, 1.65, 1.65)
-                call SetUnitTimeScale(n, 0.4)
-                call SetUnitFlyHeight(n, 160, 0)
-                call KillUnit(n)
-                call MyRemoveUnit(n , 2.6)
-                set n=CreateUnit(GetOwningPlayer(caster), 'dR60', caster_x, caster_y, angle * bj_RADTODEG + 180)
-                call SetUnitScale(n, 1.3, 1.3, 1.3)
-                call SetUnitTimeScale(n, 0.4)
-                call SetUnitFlyHeight(n, 160, 0)
-                call KillUnit(n)
-                call MyRemoveUnit(n , 2.6)
+                if LoadBoolean(HH,GetHandleId(bjLCU),ANTITARGET_ABILITY)==false then    
+                    call SetUnitX(caster, GetUnitX(bjLCU) + 250 * Cos(angle))
+                    call SetUnitY(caster, GetUnitY(bjLCU) + 250 * Sin(angle))
+                    call SetUnitFacingInstant(caster , angle * bj_RADTODEG + 180)
+                    call SetUnitAnimationByIndex(caster, 8)
+                    call SetUnitTimeScale(caster, 4)
+                    set n=LoadUnitHandle(h, id, c_DUMMY1)
+                    call SetUnitX(n , GetUnitX(caster))
+                    call SetUnitY(n , GetUnitY(caster))
+                    call GroupClear(bjLCG)
+                    call SaveReal(h, id, c_DISTANCE, 0)
+                    call SaveBoolean(h, id, 16, true)
+                    call RengokuQ_Tossing(caster , bjLCU , LoadReal(h, id, c_DAMAGE) , angle , 0 , CreateTimer())
+                    call SetControlToUnit(caster , bjLCU , 1 , "stun")
+                    set caster_x= GetUnitX(caster)
+                    set caster_y= GetUnitY(caster)
+                    set n=CreateUnit(GetOwningPlayer(caster), 'dR60', caster_x, caster_y, angle * bj_RADTODEG + 180)
+                    call SetUnitScale(n, 1.85, 1.85, 1.85)
+                    call SetUnitTimeScale(n, 0.4)
+                    call SetUnitFlyHeight(n, 160, 0)
+                    call KillUnit(n)
+                    call MyRemoveUnit(n , 2.6)
+                    set n=CreateUnit(GetOwningPlayer(caster), 'dR60', caster_x, caster_y, angle * bj_RADTODEG + 180)
+                    call SetUnitScale(n, 1.65, 1.65, 1.65)
+                    call SetUnitTimeScale(n, 0.4)
+                    call SetUnitFlyHeight(n, 160, 0)
+                    call KillUnit(n)
+                    call MyRemoveUnit(n , 2.6)
+                    set n=CreateUnit(GetOwningPlayer(caster), 'dR60', caster_x, caster_y, angle * bj_RADTODEG + 180)
+                    call SetUnitScale(n, 1.3, 1.3, 1.3)
+                    call SetUnitTimeScale(n, 0.4)
+                    call SetUnitFlyHeight(n, 160, 0)
+                    call KillUnit(n)
+                    call MyRemoveUnit(n , 2.6)
+                else
+                    call SaveBoolean(HH,GetHandleId(caster),DASH_USER,false)
+                    call SaveUnitHandle(HH,GetHandleId(bjLCU),REVERSE_TARGET,u)
+                    call SaveReal(h, id, c_TIME, 12)
+                endif
             endif
             call GroupRemoveUnit(bjLCG, bjLCU)
         endloop
     else
+        call SaveBoolean(HH,GetHandleId(caster),DASH_USER,false)
         if time < 12 and target_detected == true then
             call SetUnitFacingInstant(caster , angle * bj_RADTODEG + 180)
             call SaveReal(h, id, c_TIME, time + 1)
         else
             if target_detected == false then
-                                set bjLCU=CreateUnit(GetOwningPlayer(caster), 'dR94', caster_x, caster_y, GetRandomInt(0, 360))
-                                call SetUnitScale(bjLCU, 0.75, 0.75, 0.75)
-                                call SetUnitVertexColor(bjLCU, 255, 255, 255, 185)
-                                call MyRemoveUnit(bjLCU, 1.2)
+                set bjLCU=CreateUnit(GetOwningPlayer(caster), 'dR94', caster_x, caster_y, GetRandomInt(0, 360))
+                call SetUnitScale(bjLCU, 0.75, 0.75, 0.75)
+                call SetUnitVertexColor(bjLCU, 255, 255, 255, 185)
+                call MyRemoveUnit(bjLCU, 1.2)
             endif
             call KillUnit(LoadUnitHandle(h, id, c_DUMMY1))
-                        call MyRemoveUnit(LoadUnitHandle(h, id, c_DUMMY1), 1.5)
+            call MyRemoveUnit(LoadUnitHandle(h, id, c_DUMMY1), 1.5)
             call SetUnitTimeScale(caster, 1)
             call PauseUnit(caster, false)
             call SetUnitInvulnerable(caster, false)
@@ -157369,7 +157376,7 @@ function RengokuQ_Base_Periodic takes nothing returns nothing
             call DestroyTimer(GetExpiredTimer())
         endif
     endif
-        set caster=null
+    set caster=null
 endfunction
 
 function RengokuQ_Base takes unit newCaster,real newDmg,real newAngle,real newDistance,timer newTimer returns nothing
@@ -157377,22 +157384,22 @@ function RengokuQ_Base takes unit newCaster,real newDmg,real newAngle,real newDi
     local real caster_x= GetUnitX(newCaster)
     local real caster_y= GetUnitY(newCaster)
     
-        set bjLCU=CreateUnit(GetOwningPlayer(newCaster), 'dR42', caster_x, caster_y, newAngle*bj_RADTODEG)
-        call SetUnitFlyHeight(bjLCU, 60, 0)
-        call SetUnitTimeScale(bjLCU, 0.7)
-        call MyRemoveUnit(bjLCU, 1.5)
-        set bjLCU=CreateUnit(GetOwningPlayer(newCaster), 'dR39', caster_x, caster_y, newAngle*bj_RADTODEG+90)
-        call SetUnitFlyHeight(bjLCU, 50, 0)
-        call SetUnitTimeScale(bjLCU, 0.7)
-        call SetUnitScale(bjLCU, 2, 2, 2)
-        call MyRemoveUnit(bjLCU, 1.5)
+    set bjLCU=CreateUnit(GetOwningPlayer(newCaster), 'dR42', caster_x, caster_y, newAngle*bj_RADTODEG)
+    call SetUnitFlyHeight(bjLCU, 60, 0)
+    call SetUnitTimeScale(bjLCU, 0.7)
+    call MyRemoveUnit(bjLCU, 1.5)
+    set bjLCU=CreateUnit(GetOwningPlayer(newCaster), 'dR39', caster_x, caster_y, newAngle*bj_RADTODEG+90)
+    call SetUnitFlyHeight(bjLCU, 50, 0)
+    call SetUnitTimeScale(bjLCU, 0.7)
+    call SetUnitScale(bjLCU, 2, 2, 2)
+    call MyRemoveUnit(bjLCU, 1.5)
         
     set bjLCU=CreateUnit(GetOwningPlayer(newCaster), 'dR64', caster_x + 50 * Cos(newAngle), caster_y + 50 * Sin(newAngle), newAngle * bj_RADTODEG)
     call SetUnitFlyHeight(bjLCU, 160, 0)
     call SetUnitScale(bjLCU, 1.2, 1.2, 1.2)
     call MyRemoveUnit(bjLCU , 1.5)
         
-        set bjLCU=CreateUnit(GetOwningPlayer(newCaster), 'dRe8', caster_x, caster_y, newAngle * bj_RADTODEG)
+    set bjLCU=CreateUnit(GetOwningPlayer(newCaster), 'dRe8', caster_x, caster_y, newAngle * bj_RADTODEG)
         //set bjLCU=CreateUnit(GetOwningPlayer(newCaster), 'dAlb', caster_x, caster_y, newAngle * bj_RADTODEG)
     call SetUnitFlyHeight(bjLCU, 125, 0)
     call SetUnitScale(bjLCU, 2, 2, 2)
@@ -157414,7 +157421,7 @@ endfunction
 
 function RengokuQ_WQ_Periodic takes nothing returns nothing
     local integer id    = GetHandleId(GetExpiredTimer())
-        local unit caster       = LoadUnitHandle(h, id, c_CASTER)
+    local unit caster       = LoadUnitHandle(h, id, c_CASTER)
     local real caster_x = GetUnitX(caster)
     local real caster_y = GetUnitY(caster)
     local real distance = LoadReal(h, id, c_DISTANCE)
@@ -157424,7 +157431,7 @@ function RengokuQ_WQ_Periodic takes nothing returns nothing
     local boolean target_detected= LoadBoolean(h, id, 16)
     local integer eff_period= LoadInteger(h, id, c_EFFPERIOD)
     local real rand_facing= 0
-    if distance > 0 then
+    if distance > 0 and LoadBoolean(HH,GetHandleId(caster),DASH_USER)==true then
         call SetUnitX(caster, caster_x + speed * Cos(angle))
         call SetUnitY(caster, caster_y + speed * Sin(angle))
         call SetUnitFacing(caster, angle * bj_RADTODEG)
@@ -157462,23 +157469,31 @@ function RengokuQ_WQ_Periodic takes nothing returns nothing
         set bjLCU=FirstOfGroup(bjLCG)
         exitwhen bjLCU == null
             if Condition_Base(GetOwningPlayer(caster) , bjLCU) and IsUnitInGroup(bjLCU, LoadGroupHandle(h, id, c_GROUP2)) == false and IsUnitInvulnerable(bjLCU)==false then
-                call RengokuQ_Tossing(caster , bjLCU , LoadReal(h, id, c_DAMAGE) , angle , 0.75 + distance * 0.0001 , CreateTimer())
-                call SetControlToUnit(caster , bjLCU , 1 , "stun")
-                call GroupAddUnit(LoadGroupHandle(h, id, c_GROUP2), bjLCU)
-                call SaveBoolean(h, id, 16, true)
-                
+                if LoadBoolean(HH,GetHandleId(bjLCU),ANTITARGET_ABILITY)==false then  
+                    call RengokuQ_Tossing(caster , bjLCU , LoadReal(h, id, c_DAMAGE) , angle , 0.75 + distance * 0.0001 , CreateTimer())
+                    call SetControlToUnit(caster , bjLCU , 1 , "stun")
+                    call GroupAddUnit(LoadGroupHandle(h, id, c_GROUP2), bjLCU)
+                    call SaveBoolean(h, id, 16, true)
+                else
+                    call PauseUnit(caster, false)
+                    call SetUnitInvulnerable(caster, false)
+                    call SaveBoolean(HH,GetHandleId(caster),DASH_USER,false)
+                    call SaveUnitHandle(HH,GetHandleId(bjLCU),REVERSE_TARGET,u)
+                    call SaveReal(h, id, c_TIME, 38)
+                endif
             endif
             call GroupRemoveUnit(bjLCG, bjLCU)
         endloop
     else
+        call SaveBoolean(HH,GetHandleId(caster),DASH_USER,false)
         if time < 38 then
             if time == 1 then
                 call PauseUnit(caster, false)
                 call SetUnitInvulnerable(caster, false)
                 call KillUnit(LoadUnitHandle(h, id, c_DUMMY1))
                 // call KillUnit(LoadUnitHandle(h, id, StringHash("Effect3")))
-                                call MyRemoveUnit(LoadUnitHandle(h, id, c_DUMMY1), 1)
-                                // call MyRemoveUnit(LoadUnitHandle(h, id, StringHash("Effect3")), 1)
+                call MyRemoveUnit(LoadUnitHandle(h, id, c_DUMMY1), 1)
+                // call MyRemoveUnit(LoadUnitHandle(h, id, StringHash("Effect3")), 1)
             endif
             call SaveReal(h, id, c_TIME, time + 1)
         else
@@ -157486,31 +157501,31 @@ function RengokuQ_WQ_Periodic takes nothing returns nothing
                 call ShakeCamera(0.3 , 30)
                 set bjLCU=CreateUnit(GetOwningPlayer(caster), 'dAlb', caster_x, caster_y, 0)
                 call MyRemoveUnit(bjLCU , 3)
-                                set n=CreateUnit(GetOwningPlayer(caster), 'dR46', GetUnitX(LoadUnitHandle(h, id, c_DUMMY2)), GetUnitY(LoadUnitHandle(h, id, c_DUMMY2)), 0)
-                                call SetUnitScale(n, 5, 5, 5)
-                                call SetUnitFlyHeight(n, 150, 0)
+                set n=CreateUnit(GetOwningPlayer(caster), 'dR46', GetUnitX(LoadUnitHandle(h, id, c_DUMMY2)), GetUnitY(LoadUnitHandle(h, id, c_DUMMY2)), 0)
+                call SetUnitScale(n, 5, 5, 5)
+                call SetUnitFlyHeight(n, 150, 0)
                 call MyRemoveUnit(n , 1.5)
             
                 set rand_facing=angle * bj_RADTODEG + 90
-                                set n=CreateUnit(GetOwningPlayer(caster), 'dR47', GetUnitX(LoadUnitHandle(h, id, c_DUMMY2)), GetUnitY(LoadUnitHandle(h, id, c_DUMMY2)), rand_facing)
-                                call SetUnitScale(n, 5, 5, 5)
-                                call SetUnitTimeScale(n, 0.5)
+                set n=CreateUnit(GetOwningPlayer(caster), 'dR47', GetUnitX(LoadUnitHandle(h, id, c_DUMMY2)), GetUnitY(LoadUnitHandle(h, id, c_DUMMY2)), rand_facing)
+                call SetUnitScale(n, 5, 5, 5)
+                call SetUnitTimeScale(n, 0.5)
                 call MyRemoveUnit(n , 1.5)
                 set n=CreateUnit(GetOwningPlayer(caster), 'dR47', GetUnitX(LoadUnitHandle(h, id, c_DUMMY2)), GetUnitY(LoadUnitHandle(h, id, c_DUMMY2)), rand_facing)
-                                call SetUnitScale(n, 5, 5, 5)
-                                call SetUnitTimeScale(n, 0.5)
+                call SetUnitScale(n, 5, 5, 5)
+                call SetUnitTimeScale(n, 0.5)
                 call MyRemoveUnit(n , 1.5)
-                                set n=CreateUnit(GetOwningPlayer(caster), 'dR47', GetUnitX(LoadUnitHandle(h, id, c_DUMMY2)), GetUnitY(LoadUnitHandle(h, id, c_DUMMY2)), rand_facing)
-                                call SetUnitScale(n, 5, 5, 5)
-                                call SetUnitTimeScale(n, 0.5)
+                set n=CreateUnit(GetOwningPlayer(caster), 'dR47', GetUnitX(LoadUnitHandle(h, id, c_DUMMY2)), GetUnitY(LoadUnitHandle(h, id, c_DUMMY2)), rand_facing)
+                call SetUnitScale(n, 5, 5, 5)
+                call SetUnitTimeScale(n, 0.5)
                 call MyRemoveUnit(n , 1.5)
-                                set n=CreateUnit(GetOwningPlayer(caster), 'dR47', GetUnitX(LoadUnitHandle(h, id, c_DUMMY2)), GetUnitY(LoadUnitHandle(h, id, c_DUMMY2)), rand_facing)
-                                call SetUnitScale(n, 5, 5, 5)
-                                call SetUnitTimeScale(n, 0.5)
+                set n=CreateUnit(GetOwningPlayer(caster), 'dR47', GetUnitX(LoadUnitHandle(h, id, c_DUMMY2)), GetUnitY(LoadUnitHandle(h, id, c_DUMMY2)), rand_facing)
+                call SetUnitScale(n, 5, 5, 5)
+                call SetUnitTimeScale(n, 0.5)
                 call MyRemoveUnit(n, 1.5)
             endif
             call KillUnit(LoadUnitHandle(h, id, c_DUMMY2))
-                        call MyRemoveUnit(LoadUnitHandle(h, id, c_DUMMY2), 1.5)
+            call MyRemoveUnit(LoadUnitHandle(h, id, c_DUMMY2), 1.5)
             call SetUnitTimeScale(caster, 1)
             call DestroyGroup(LoadGroupHandle(h, id, c_GROUP1))
             call DestroyGroup(LoadGroupHandle(h, id, c_GROUP2))
@@ -157518,7 +157533,7 @@ function RengokuQ_WQ_Periodic takes nothing returns nothing
             call DestroyTimer(GetExpiredTimer())
         endif
     endif
-        set caster=null
+    set caster=null
 endfunction
 
 function RengokuQ_WQ takes unit newCaster,real newDmg,real newAngle,real newDistance,timer newTimer returns nothing
@@ -157533,34 +157548,34 @@ function RengokuQ_WQ takes unit newCaster,real newDmg,real newAngle,real newDist
     call StartSound(soundplay)
     call KillSoundWhenDone(soundplay)
     set bjLCU=CreateUnit(GetOwningPlayer(newCaster), 'dR42', caster_x, caster_y, newAngle*bj_RADTODEG)
-        call SetUnitFlyHeight(bjLCU, 60, 0)
-        call SetUnitTimeScale(bjLCU, 0.7)
-        call MyRemoveUnit(bjLCU, 1.5)
-        set bjLCU=CreateUnit(GetOwningPlayer(newCaster), 'dR39', caster_x, caster_y, newAngle*bj_RADTODEG+90)
-        call SetUnitFlyHeight(bjLCU, 50, 0)
-        call SetUnitTimeScale(bjLCU, 0.7)
-        call SetUnitScale(bjLCU, 2, 2, 2)
-        call MyRemoveUnit(bjLCU, 1.5)
-        
-        set bjLCU=CreateUnit(GetOwningPlayer(newCaster), 'dH10', caster_x, caster_y, newAngle*bj_RADTODEG)
-        call SetUnitFlyHeight(bjLCU, 60, 0)
-        call SetUnitScale(bjLCU, 1.6, 1.6, 1.6)
-        call MyRemoveUnit(bjLCU, 1.5)
-        set bjLCU=CreateUnit(GetOwningPlayer(newCaster), 'dH11', caster_x, caster_y, newAngle*bj_RADTODEG)
-        call SetUnitFlyHeight(bjLCU, 10, 0)
-        call SetUnitScale(bjLCU, 0.55, 0.55, 0.55)
-        call MyRemoveUnit(bjLCU, 1.5)
+    call SetUnitFlyHeight(bjLCU, 60, 0)
+    call SetUnitTimeScale(bjLCU, 0.7)
+    call MyRemoveUnit(bjLCU, 1.5)
+    set bjLCU=CreateUnit(GetOwningPlayer(newCaster), 'dR39', caster_x, caster_y, newAngle*bj_RADTODEG+90)
+    call SetUnitFlyHeight(bjLCU, 50, 0)
+    call SetUnitTimeScale(bjLCU, 0.7)
+    call SetUnitScale(bjLCU, 2, 2, 2)
+    call MyRemoveUnit(bjLCU, 1.5)
+    
+    set bjLCU=CreateUnit(GetOwningPlayer(newCaster), 'dH10', caster_x, caster_y, newAngle*bj_RADTODEG)
+    call SetUnitFlyHeight(bjLCU, 60, 0)
+    call SetUnitScale(bjLCU, 1.6, 1.6, 1.6)
+    call MyRemoveUnit(bjLCU, 1.5)
+    set bjLCU=CreateUnit(GetOwningPlayer(newCaster), 'dH11', caster_x, caster_y, newAngle*bj_RADTODEG)
+    call SetUnitFlyHeight(bjLCU, 10, 0)
+    call SetUnitScale(bjLCU, 0.55, 0.55, 0.55)
+    call MyRemoveUnit(bjLCU, 1.5)
         
     set bjLCU=CreateUnit(GetOwningPlayer(newCaster), 'dRe8', caster_x, caster_y, newAngle * bj_RADTODEG)
         //set bjLCU=CreateUnit(GetOwningPlayer(newCaster), 'dAlb', caster_x, caster_y, newAngle * bj_RADTODEG)
     call SetUnitFlyHeight(bjLCU, 125, 0)
     call SetUnitScale(bjLCU, 2, 2, 2)
     call SaveUnitHandle(h, id, c_DUMMY1, bjLCU)
-        set bjLCU=CreateUnit(GetOwningPlayer(newCaster), 'dR20', caster_x, caster_y, newAngle * bj_RADTODEG)
-        //set bjLCU=CreateUnit(GetOwningPlayer(newCaster), 'dAlb', caster_x, caster_y, newAngle * bj_RADTODEG)
+    set bjLCU=CreateUnit(GetOwningPlayer(newCaster), 'dR20', caster_x, caster_y, newAngle * bj_RADTODEG)
+    //set bjLCU=CreateUnit(GetOwningPlayer(newCaster), 'dAlb', caster_x, caster_y, newAngle * bj_RADTODEG)
     call SetUnitScale(bjLCU, 3.5, 3.5, 3.5)
-        call SetUnitVertexColor(bjLCU, 255, 255, 255, 180)
-        call SetUnitTimeScale(bjLCU, 0.85)
+    call SetUnitVertexColor(bjLCU, 255, 255, 255, 180)
+    call SetUnitTimeScale(bjLCU, 0.85)
     call SaveUnitHandle(h, id, c_DUMMY2, bjLCU)
         // set bjLCU=CreateUnit(GetOwningPlayer(newCaster), 'dR25', caster_x, caster_y, newAngle * bj_RADTODEG)
     // call SetUnitScale(bjLCU, 0.6, 0.6, 0.6)
@@ -157586,8 +157601,8 @@ endfunction
 
 function RengokuQ_EQ_Periodic takes nothing returns nothing
     local integer id    = GetHandleId(GetExpiredTimer())
-        local unit caster       = LoadUnitHandle(h, id, c_CASTER)
-        local unit target       = null
+    local unit caster       = LoadUnitHandle(h, id, c_CASTER)
+    local unit target       = null
     local real caster_x = GetUnitX(caster)
     local real caster_y = GetUnitY(caster)
     local real distance = LoadReal(h, id, c_DISTANCE)
@@ -157599,7 +157614,7 @@ function RengokuQ_EQ_Periodic takes nothing returns nothing
     local real target_y= 0
     local real anglespell= 0
     local real distancespell= 0
-    if distance > 0 then
+    if distance > 0 and LoadBoolean(HH,GetHandleId(caster),DASH_USER)==true then
         call SetUnitX(caster, caster_x + speed * Cos(angle))
         call SetUnitY(caster, caster_y + speed * Sin(angle))
         call SetUnitFacing(caster, angle * bj_RADTODEG)
@@ -157613,55 +157628,64 @@ function RengokuQ_EQ_Periodic takes nothing returns nothing
         set bjLCU=FirstOfGroup(bjLCG)
         exitwhen bjLCU == null
             if Condition_Base(GetOwningPlayer(caster) , bjLCU) and IsUnitInvulnerable(bjLCU)==false then
-                call SetUnitX(caster, GetUnitX(bjLCU) - 170 * Cos(angle))
-                call SetUnitY(caster, GetUnitY(bjLCU) - 170 * Sin(angle))
-                call SetUnitFacingInstant(caster , angle * bj_RADTODEG)
-                call SetUnitAnimationByIndex(caster, 8)
-                call SetUnitTimeScale(caster, 4)
-                set n=LoadUnitHandle(h, id, c_DUMMY1)
-                call SetUnitX(n , GetUnitX(caster))
-                call SetUnitY(n , GetUnitY(caster))
-                call GroupClear(bjLCG)
-                call SaveReal(h, id, c_DISTANCE, 0)
-                call SaveBoolean(h, id, 16, true)
-                call SaveUnitHandle(h, id, c_TARGET, bjLCU)
-                call RengokuQ_Tossing(caster , bjLCU , LoadReal(h, id, c_DAMAGE) , angle , 0 , CreateTimer())
-                                set caster_x= GetUnitX(caster)
-                                set caster_y= GetUnitY(caster)
-                set n=CreateUnit(GetOwningPlayer(caster), 'dR60', caster_x, caster_y, angle * bj_RADTODEG)
-                call SetUnitScale(n, 1.85, 1.85, 1.85)
-                call SetUnitTimeScale(n, 0.4)
-                call SetUnitFlyHeight(n, 160, 0)
-                call KillUnit(n)
-                call MyRemoveUnit(n , 2.6)
-                set n=CreateUnit(GetOwningPlayer(caster), 'dR60', caster_x, caster_y, angle * bj_RADTODEG)
-                call SetUnitScale(n, 1.65, 1.65, 1.65)
-                call SetUnitTimeScale(n, 0.4)
-                call SetUnitFlyHeight(n, 160, 0)
-                call KillUnit(n)
-                call MyRemoveUnit(n , 2.6)
-                set n=CreateUnit(GetOwningPlayer(caster), 'dR60', caster_x, caster_y, angle * bj_RADTODEG)
-                call SetUnitScale(n, 1.3, 1.3, 1.3)
-                call SetUnitTimeScale(n, 0.4)
-                call SetUnitFlyHeight(n, 160, 0)
-                call KillUnit(n)
-                call MyRemoveUnit(n , 2.6)
+                if LoadBoolean(HH,GetHandleId(bjLCU),ANTITARGET_ABILITY)==false then      
+                    call SetUnitX(caster, GetUnitX(bjLCU) - 170 * Cos(angle))
+                    call SetUnitY(caster, GetUnitY(bjLCU) - 170 * Sin(angle))
+                    call SetUnitFacingInstant(caster , angle * bj_RADTODEG)
+                    call SetUnitAnimationByIndex(caster, 8)
+                    call SetUnitTimeScale(caster, 4)
+                    set n=LoadUnitHandle(h, id, c_DUMMY1)
+                    call SetUnitX(n , GetUnitX(caster))
+                    call SetUnitY(n , GetUnitY(caster))
+                    call GroupClear(bjLCG)
+                    call SaveReal(h, id, c_DISTANCE, 0)
+                    call SaveBoolean(h, id, 16, true)
+                    call SaveUnitHandle(h, id, c_TARGET, bjLCU)
+                    call RengokuQ_Tossing(caster , bjLCU , LoadReal(h, id, c_DAMAGE) , angle , 0 , CreateTimer())
+                    set caster_x= GetUnitX(caster)
+                    set caster_y= GetUnitY(caster)
+                    set n=CreateUnit(GetOwningPlayer(caster), 'dR60', caster_x, caster_y, angle * bj_RADTODEG)
+                    call SetUnitScale(n, 1.85, 1.85, 1.85)
+                    call SetUnitTimeScale(n, 0.4)
+                    call SetUnitFlyHeight(n, 160, 0)
+                    call KillUnit(n)
+                    call MyRemoveUnit(n , 2.6)
+                    set n=CreateUnit(GetOwningPlayer(caster), 'dR60', caster_x, caster_y, angle * bj_RADTODEG)
+                    call SetUnitScale(n, 1.65, 1.65, 1.65)
+                    call SetUnitTimeScale(n, 0.4)
+                    call SetUnitFlyHeight(n, 160, 0)
+                    call KillUnit(n)
+                    call MyRemoveUnit(n , 2.6)
+                    set n=CreateUnit(GetOwningPlayer(caster), 'dR60', caster_x, caster_y, angle * bj_RADTODEG)
+                    call SetUnitScale(n, 1.3, 1.3, 1.3)
+                    call SetUnitTimeScale(n, 0.4)
+                    call SetUnitFlyHeight(n, 160, 0)
+                    call KillUnit(n)
+                    call MyRemoveUnit(n , 2.6)
+                else
+                    call PauseUnit(caster, false)
+                    call SetUnitInvulnerable(caster, false)
+                    call SaveBoolean(HH,GetHandleId(caster),DASH_USER,false)
+                    call SaveUnitHandle(HH,GetHandleId(bjLCU),REVERSE_TARGET,u)
+                    call SaveReal(h, id, c_TIME, 0.85)
+                endif
             endif
             call GroupRemoveUnit(bjLCG, bjLCU)
         endloop
     else
+        call SaveBoolean(HH,GetHandleId(caster),DASH_USER,false)
         if time < 0.85 and target_detected == true then
             call SaveReal(h, id, c_TIME, time + 0.02)
             set target=LoadUnitHandle(h, id, c_TARGET)
             if time == 0.44 then
-                                set n=CreateUnit(GetOwningPlayer(caster), 'dR88', caster_x, caster_y, GetRandomInt(0, 360))
-                                call SetUnitScale(n, 0.85, 0.85, 0.85)
-                                call SetUnitFlyHeight(n, 5, 0)
-                                call MyRemoveUnit(n, 1.5)
-                                set n=CreateUnit(GetOwningPlayer(caster), 'dR88', GetUnitX(bjLCU) + 170 * Cos(angle), GetUnitY(bjLCU) + 170 * Sin(angle), GetRandomInt(0, 360))
-                                call SetUnitScale(n, 0.85, 0.85, 0.85)
-                                call SetUnitFlyHeight(n, 450, 0)
-                                call MyRemoveUnit(n, 1.5)
+                set n=CreateUnit(GetOwningPlayer(caster), 'dR88', caster_x, caster_y, GetRandomInt(0, 360))
+                call SetUnitScale(n, 0.85, 0.85, 0.85)
+                call SetUnitFlyHeight(n, 5, 0)
+                call MyRemoveUnit(n, 1.5)
+                set n=CreateUnit(GetOwningPlayer(caster), 'dR88', GetUnitX(bjLCU) + 170 * Cos(angle), GetUnitY(bjLCU) + 170 * Sin(angle), GetRandomInt(0, 360))
+                call SetUnitScale(n, 0.85, 0.85, 0.85)
+                call SetUnitFlyHeight(n, 450, 0)
+                call MyRemoveUnit(n, 1.5)
                                 
                 call SetUnitX(caster, GetUnitX(target) + 170 * Cos(angle))
                 call SetUnitY(caster, GetUnitY(target) + 170 * Sin(angle))
@@ -157699,7 +157723,7 @@ function RengokuQ_EQ_Periodic takes nothing returns nothing
                 call SetUnitScale(bjLCU, 1.7, 1.7, 1.7)
                 call SetUnitFlyHeight(bjLCU, 600, 0)
                 call MyRemoveUnit(bjLCU , 1.2)
-                                set bjLCU=CreateUnit(GetOwningPlayer(caster), 'dH09', target_x, target_y, angle * bj_RADTODEG + 180)
+                set bjLCU=CreateUnit(GetOwningPlayer(caster), 'dH09', target_x, target_y, angle * bj_RADTODEG + 180)
                 call SetUnitScale(bjLCU, 2, 2, 2)
                 call SetUnitFlyHeight(bjLCU, 600, 0)
                 call MyRemoveUnit(bjLCU , 1.2)
@@ -157720,13 +157744,13 @@ function RengokuQ_EQ_Periodic takes nothing returns nothing
             endif
         else
             if target_detected == false then
-                                // set bjLCU=CreateUnit(GetOwningPlayer(caster), 'dR94', caster_x, caster_y, GetRandomInt(0, 360))
-                                // call SetUnitScale(bjLCU, 0.75, 0.75, 0.75)
-                                // call SetUnitVertexColor(bjLCU, 255, 255, 255, 185)
-                                // call MyRemoveUnit(bjLCU, 1.5)
+                // set bjLCU=CreateUnit(GetOwningPlayer(caster), 'dR94', caster_x, caster_y, GetRandomInt(0, 360))
+                // call SetUnitScale(bjLCU, 0.75, 0.75, 0.75)
+                // call SetUnitVertexColor(bjLCU, 255, 255, 255, 185)
+                // call MyRemoveUnit(bjLCU, 1.5)
             endif
             call KillUnit(LoadUnitHandle(h, id, c_DUMMY1))
-                        call MyRemoveUnit(LoadUnitHandle(h, id, c_DUMMY1), 1)
+            call MyRemoveUnit(LoadUnitHandle(h, id, c_DUMMY1), 1)
             call SetUnitTimeScale(caster, 1)
             call PauseUnit(caster, false)
             call SetUnitInvulnerable(caster, false)
@@ -157735,8 +157759,8 @@ function RengokuQ_EQ_Periodic takes nothing returns nothing
             call DestroyTimer(GetExpiredTimer())
         endif
     endif
-        set caster=null
-        set target=null
+    set caster=null
+    set target=null
 endfunction
 
 function RengokuQ_EQ takes unit newCaster,real newDmg,real newAngle,real newDistance,timer newTimer returns nothing
@@ -157744,22 +157768,22 @@ function RengokuQ_EQ takes unit newCaster,real newDmg,real newAngle,real newDist
     local real caster_x= GetUnitX(newCaster)
     local real caster_y= GetUnitY(newCaster)
     
-        set bjLCU=CreateUnit(GetOwningPlayer(newCaster), 'dR42', caster_x, caster_y, newAngle*bj_RADTODEG)
-        call SetUnitFlyHeight(bjLCU, 60, 0)
-        call SetUnitTimeScale(bjLCU, 0.7)
-        call MyRemoveUnit(bjLCU, 1.5)
-        set bjLCU=CreateUnit(GetOwningPlayer(newCaster), 'dR39', caster_x, caster_y, newAngle*bj_RADTODEG+90)
-        call SetUnitFlyHeight(bjLCU, 50, 0)
-        call SetUnitTimeScale(bjLCU, 0.7)
-        call SetUnitScale(bjLCU, 2, 2, 2)
-        call MyRemoveUnit(bjLCU, 1.5)
+    set bjLCU=CreateUnit(GetOwningPlayer(newCaster), 'dR42', caster_x, caster_y, newAngle*bj_RADTODEG)
+    call SetUnitFlyHeight(bjLCU, 60, 0)
+    call SetUnitTimeScale(bjLCU, 0.7)
+    call MyRemoveUnit(bjLCU, 1.5)
+    set bjLCU=CreateUnit(GetOwningPlayer(newCaster), 'dR39', caster_x, caster_y, newAngle*bj_RADTODEG+90)
+    call SetUnitFlyHeight(bjLCU, 50, 0)
+    call SetUnitTimeScale(bjLCU, 0.7)
+    call SetUnitScale(bjLCU, 2, 2, 2)
+    call MyRemoveUnit(bjLCU, 1.5)
         
     set bjLCU=CreateUnit(GetOwningPlayer(newCaster), 'dR64', caster_x + 50 * Cos(newAngle), caster_y + 50 * Sin(newAngle), newAngle * bj_RADTODEG)
     call SetUnitFlyHeight(bjLCU, 160, 0)
     call SetUnitScale(bjLCU, 1.2, 1.2, 1.2)
     call MyRemoveUnit(bjLCU , 1.5)
-        //currect set bjLCU=CreateUnit(GetOwningPlayer(newCaster), 'dRe8', caster_x, caster_y, newAngle * bj_RADTODEG)
-        set bjLCU=CreateUnit(GetOwningPlayer(newCaster), 'dAlb', caster_x, caster_y, newAngle * bj_RADTODEG)
+    //currect set bjLCU=CreateUnit(GetOwningPlayer(newCaster), 'dRe8', caster_x, caster_y, newAngle * bj_RADTODEG)
+    set bjLCU=CreateUnit(GetOwningPlayer(newCaster), 'dAlb', caster_x, caster_y, newAngle * bj_RADTODEG)
     call SetUnitFlyHeight(bjLCU, 125, 0)
     call SetUnitScale(bjLCU, 2, 2, 2)
     call SaveUnitHandle(h, id, c_DUMMY1, bjLCU)
@@ -157808,12 +157832,12 @@ function RengokuQ_Periodic takes nothing returns nothing
     if GetUnitCurrentOrder(LoadUnitHandle(h, id, c_CASTER)) == OrderId("channel") then
         call SaveReal(h, id, c_TIME, time + 0.05)
         if eff_period == 0 then
-                        set bjLCU=CreateUnit(GetOwningPlayer(LoadUnitHandle(h, id, c_CASTER)), 'dR50', caster_x, caster_y, GetRandomInt(0, 360))
-                        call SetUnitScale(bjLCU, 0.45, 0.45, 0.45)
-                        call SetUnitVertexColor(bjLCU, 255, 255, 255, 125)
-                        call SetUnitTimeScale(bjLCU, 0.7)
-                        call SetUnitFlyHeight(bjLCU, 10, 0)
-                        call MyRemoveUnit(bjLCU, 1.5)
+            set bjLCU=CreateUnit(GetOwningPlayer(LoadUnitHandle(h, id, c_CASTER)), 'dR50', caster_x, caster_y, GetRandomInt(0, 360))
+            call SetUnitScale(bjLCU, 0.45, 0.45, 0.45)
+            call SetUnitVertexColor(bjLCU, 255, 255, 255, 125)
+            call SetUnitTimeScale(bjLCU, 0.7)
+            call SetUnitFlyHeight(bjLCU, 10, 0)
+            call MyRemoveUnit(bjLCU, 1.5)
                         
             call SaveInteger(h, id, c_EFFPERIOD, 4)
         else
@@ -157821,6 +157845,7 @@ function RengokuQ_Periodic takes nothing returns nothing
         endif
     else
         call SetUnitTimeScale(LoadUnitHandle(h, id, c_CASTER), 1)
+        call SaveBoolean(HH,GetHandleId(LoadUnitHandle(h, id, c_CASTER)),DASH_USER,true)
         if RengokuQ_X != 0 and RengokuQ_Y != 0 then
             if combination == "W" then
                 call RengokuQ_WQ(LoadUnitHandle(h, id, c_CASTER) , LoadReal(h, id, c_DAMAGE) , AP(caster_x, caster_y, RengokuQ_X, RengokuQ_Y), 1250 , CreateTimer())
@@ -157842,11 +157867,11 @@ function RengokuQ_Periodic takes nothing returns nothing
                 call RengokuQ_Base(LoadUnitHandle(h, id, c_CASTER) , LoadReal(h, id, c_DAMAGE) , AP(caster_x, caster_y, RengokuQ_X, RengokuQ_Y), 1250+250*time , CreateTimer())
             endif
         endif
-                call RemoveSavedReal(h, id_caster, 21)
-                call RemoveSavedReal(h, id_caster, 25)
-                call FlushChildHashtable(h, GetHandleId(LoadTriggerHandle(h, id, 16)))
-                call TriggerClearActions(LoadTriggerHandle(h, id, 16))
-                call DestroyTrigger(LoadTriggerHandle(h, id, 16))
+        call RemoveSavedReal(h, id_caster, 21)
+        call RemoveSavedReal(h, id_caster, 25)
+        call FlushChildHashtable(h, GetHandleId(LoadTriggerHandle(h, id, 16)))
+        call TriggerClearActions(LoadTriggerHandle(h, id, 16))
+        call DestroyTrigger(LoadTriggerHandle(h, id, 16))
         call FlushChildHashtable(h, id)
         call DestroyTimer(GetExpiredTimer())
     endif
@@ -157878,12 +157903,12 @@ function RengokuQ_Cast takes unit newCaster,timer newTimer returns nothing
     call TriggerAddAction(newTrigger, function RengokuQ_Point)
     call SaveReal(h, id_caster, 21, 0)  //RengokuQ_X
     call SaveReal(h, id_caster, 22, 0)  //RengokuQ_Y
-        call SaveTriggerHandle(h, id, 16, newTrigger)
+    call SaveTriggerHandle(h, id, 16, newTrigger)
     call SaveUnitHandle(h, id, c_CASTER, newCaster)
     call SaveStr(h, id, 15, RengokuQWE_Comb)    //Combination
     call SaveReal(h, id, c_DAMAGE, full_damage)
     call TimerStart(newTimer, 0.05, true, function RengokuQ_Periodic)
-        set newTrigger=null 
+    set newTrigger=null 
 endfunction
 
 
