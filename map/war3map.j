@@ -157348,7 +157348,7 @@ function RengokuQ_Base_Periodic takes nothing returns nothing
                     call MyRemoveUnit(n , 2.6)
                 else
                     call SaveBoolean(HH,GetHandleId(caster),DASH_USER,false)
-                    call SaveUnitHandle(HH,GetHandleId(bjLCU),REVERSE_TARGET,u)
+                    call SaveUnitHandle(HH,GetHandleId(bjLCU),REVERSE_TARGET,caster)
                     call SaveReal(h, id, c_TIME, 12)
                 endif
             endif
@@ -157478,7 +157478,7 @@ function RengokuQ_WQ_Periodic takes nothing returns nothing
                     call PauseUnit(caster, false)
                     call SetUnitInvulnerable(caster, false)
                     call SaveBoolean(HH,GetHandleId(caster),DASH_USER,false)
-                    call SaveUnitHandle(HH,GetHandleId(bjLCU),REVERSE_TARGET,u)
+                    call SaveUnitHandle(HH,GetHandleId(bjLCU),REVERSE_TARGET,caster)
                     call SaveReal(h, id, c_TIME, 38)
                 endif
             endif
@@ -157666,7 +157666,7 @@ function RengokuQ_EQ_Periodic takes nothing returns nothing
                     call PauseUnit(caster, false)
                     call SetUnitInvulnerable(caster, false)
                     call SaveBoolean(HH,GetHandleId(caster),DASH_USER,false)
-                    call SaveUnitHandle(HH,GetHandleId(bjLCU),REVERSE_TARGET,u)
+                    call SaveUnitHandle(HH,GetHandleId(bjLCU),REVERSE_TARGET,caster)
                     call SaveReal(h, id, c_TIME, 0.85)
                 endif
             endif
