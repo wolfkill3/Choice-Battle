@@ -158667,8 +158667,8 @@ endfunction
 
 function RengokuE_Periodic takes nothing returns nothing
     local integer id= GetHandleId(GetExpiredTimer())
-        local unit caster  = LoadUnitHandle(h, id, c_CASTER)
-        local unit target  = LoadUnitHandle(h, id, c_TARGET)
+    local unit caster  = LoadUnitHandle(h, id, c_CASTER)
+    local unit target  = LoadUnitHandle(h, id, c_TARGET)
     local real caster_x= GetUnitX(caster)
     local real caster_y= GetUnitY(caster)
     local real target_x= GetUnitX(target)
@@ -158691,39 +158691,47 @@ function RengokuE_Periodic takes nothing returns nothing
                     // call SetSpecialEffectAlpha(bjLCE , 60)
                     // call SetSpecialEffectFacing(bjLCE , angle * bj_RADTODEG)
                     // call RemoveEffect(bjLCE , 0.15 , false , CreateTimer())
-                                        set bjLCU = CreateUnit(GetOwningPlayer(caster), 'dR10', caster_x, caster_y, angle * bj_RADTODEG)
-                                        call SetUnitVertexColor(bjLCU, 255, 255, 255, 60)
-                                        call SetUnitTimeScale(bjLCU, 1.5)
-                                        call SetUnitAnimationByIndex(bjLCU, 7)
-                                        call MyRemoveUnit(bjLCU, 0.15)
+                    set bjLCU = CreateUnit(GetOwningPlayer(caster), 'dR10', caster_x, caster_y, angle * bj_RADTODEG)
+                    call SetUnitVertexColor(bjLCU, 255, 255, 255, 60)
+                    call SetUnitTimeScale(bjLCU, 1.5)
+                    call SetUnitAnimationByIndex(bjLCU, 7)
+                    call MyRemoveUnit(bjLCU, 0.15)
                     call SaveInteger(h, id, c_EFFPERIOD, 1)
                 else
                     call SaveInteger(h, id, c_EFFPERIOD, eff_period - 1)
                 endif
             else
-                call PauseUnit(target,true)
-                call SaveBoolean(HH,GetHandleId(target),TARGET_ABILITY,true)
-                call SetUnitInvulnerable(target, true)
-                call SaveInteger(h, id, c_ACT, 2)
-                set bjLCU=CreateUnit(GetOwningPlayer(caster), 'dR62', caster_x, caster_y, angle * bj_RADTODEG)
-                call SetUnitScale(bjLCU, 2.3, 2.3, 2.3)
-                call SetUnitFlyHeight(bjLCU, 180, 0)
-                call SetUnitTimeScale(bjLCU, 0.7)
-                call MyRemoveUnit(bjLCU , 2)
-                set bjLCU=CreateUnit(GetOwningPlayer(caster), 'dR62', caster_x, caster_y, angle * bj_RADTODEG)
-                call SetUnitScale(bjLCU, 1.8, 1.8, 1.8)
-                call SetUnitFlyHeight(bjLCU, 180, 0)
-                call SetUnitTimeScale(bjLCU, 0.7)
-                call MyRemoveUnit(bjLCU , 2)
-                                set bjLCU=CreateUnit(GetOwningPlayer(caster), 'dH01', target_x, target_y, angle * bj_RADTODEG)
-                call SetUnitFlyHeight(bjLCU, 100, 0)
-                call MyRemoveUnit(bjLCU , 1.5)
-                                set bjLCU=CreateUnit(GetOwningPlayer(caster), 'dR13', target_x, target_y, angle * bj_RADTODEG)
-                call SetUnitFlyHeight(bjLCU, 50, 0)
-                                call SetUnitScale(bjLCU, 0.7, 0.7, 0.7)
-                call MyRemoveUnit(bjLCU, 1.5)
-                                
-                call RengokuE_Shifting(caster , target , angle , 350 , CreateTimer())
+                if LoadBoolean(HH,GetHandleId(target),ANTITARGET_ABILITY)==false then
+                    call PauseUnit(target,true)
+                    call SaveBoolean(HH,GetHandleId(target),TARGET_ABILITY,true)
+                    call SetUnitInvulnerable(target, true)
+                    call SaveInteger(h, id, c_ACT, 2)
+                    set bjLCU=CreateUnit(GetOwningPlayer(caster), 'dR62', caster_x, caster_y, angle * bj_RADTODEG)
+                    call SetUnitScale(bjLCU, 2.3, 2.3, 2.3)
+                    call SetUnitFlyHeight(bjLCU, 180, 0)
+                    call SetUnitTimeScale(bjLCU, 0.7)
+                    call MyRemoveUnit(bjLCU , 2)
+                    set bjLCU=CreateUnit(GetOwningPlayer(caster), 'dR62', caster_x, caster_y, angle * bj_RADTODEG)
+                    call SetUnitScale(bjLCU, 1.8, 1.8, 1.8)
+                    call SetUnitFlyHeight(bjLCU, 180, 0)
+                    call SetUnitTimeScale(bjLCU, 0.7)
+                    call MyRemoveUnit(bjLCU , 2)
+                    set bjLCU=CreateUnit(GetOwningPlayer(caster), 'dH01', target_x, target_y, angle * bj_RADTODEG)
+                    call SetUnitFlyHeight(bjLCU, 100, 0)
+                    call MyRemoveUnit(bjLCU , 1.5)
+                    set bjLCU=CreateUnit(GetOwningPlayer(caster), 'dR13', target_x, target_y, angle * bj_RADTODEG)
+                    call SetUnitFlyHeight(bjLCU, 50, 0)
+                    call SetUnitScale(bjLCU, 0.7, 0.7, 0.7)
+                    call MyRemoveUnit(bjLCU, 1.5)
+                                    
+                    call RengokuE_Shifting(caster , target , angle , 350 , CreateTimer())
+                else
+                    call PauseUnit(caster,false)
+                    call SaveUnitHandle(HH,GetHandleId(target),REVERSE_TARGET,caster)
+                    call SetUnitInvulnerable(caster,false)
+                    call FlushChildHashtable(h,id)
+                    call DestroyTimer(GetExpiredTimer())
+                endif
             endif
         else // act 2
             if time <= 1.3 then
@@ -158755,19 +158763,19 @@ function RengokuE_Periodic takes nothing returns nothing
                     call SetUnitFlyHeight(bjLCU, 150, 0)
                     call MyRemoveUnit(bjLCU , 2)
                     
-                                        set bjLCU = CreateUnit(GetOwningPlayer(caster), 'dR10', caster_x, caster_y, angle * bj_RADTODEG)
-                                        call SetUnitVertexColor(bjLCU, 255, 255, 255, 60)
-                                        call SetUnitAnimationByIndex(bjLCU, 8)
-                                        call MyRemoveUnit(bjLCU, 0.15)
+                    set bjLCU = CreateUnit(GetOwningPlayer(caster), 'dR10', caster_x, caster_y, angle * bj_RADTODEG)
+                    call SetUnitVertexColor(bjLCU, 255, 255, 255, 60)
+                    call SetUnitAnimationByIndex(bjLCU, 8)
+                    call MyRemoveUnit(bjLCU, 0.15)
                     call RengokuE_Shifting(caster , target , angle , 110 , CreateTimer())
                 endif
                 if time == 1.3 then
                     call SetUnitAnimationByIndex(caster, 7)
                     call SetUnitTimeScale(caster, 2)
-                                        set bjLCU = CreateUnit(GetOwningPlayer(caster), 'dR42', caster_x, caster_y, angle * bj_RADTODEG)
-                                        call SetUnitFlyHeight(bjLCU, 60, 0)
-                                        call SetUnitTimeScale(bjLCU, 0.7)
-                                        call MyRemoveUnit(bjLCU, 1.5)
+                    set bjLCU = CreateUnit(GetOwningPlayer(caster), 'dR42', caster_x, caster_y, angle * bj_RADTODEG)
+                    call SetUnitFlyHeight(bjLCU, 60, 0)
+                    call SetUnitTimeScale(bjLCU, 0.7)
+                    call MyRemoveUnit(bjLCU, 1.5)
                     set bjLCU=CreateUnit(GetOwningPlayer(caster), 'dR64', caster_x + 50 * Cos(angle), caster_y + 50 * Sin(angle), angle * bj_RADTODEG)
                     call SetUnitFlyHeight(bjLCU, 160, 0)
                     call SetUnitScale(bjLCU, 1.2, 1.2, 1.2)
@@ -158820,16 +158828,16 @@ function RengokuE_Periodic takes nothing returns nothing
                                 call SetUnitTimeScale(bjLCU, 1.3)
                                 call SetUnitFlyHeight(bjLCU, 150, 0)
                                 call MyRemoveUnit(bjLCU , 2)
-                                                                set bjLCU=CreateUnit(GetOwningPlayer(caster), 'dH32', target_x, target_y, angle * bj_RADTODEG + GetRandomInt(- 15, 15))
+                                set bjLCU=CreateUnit(GetOwningPlayer(caster), 'dH32', target_x, target_y, angle * bj_RADTODEG + GetRandomInt(- 15, 15))
                                 call SetUnitScale(bjLCU, 2.5, 2.5, 2.5)
                                 call SetUnitFlyHeight(bjLCU, GetRandomInt(80, 100), 0)
                                 call MyRemoveUnit(bjLCU , 2)
                                                                 
-                                                                set bjLCU = CreateUnit(GetOwningPlayer(caster), 'dR10', caster_x, caster_y, angle * bj_RADTODEG)
-                                                                call SetUnitVertexColor(bjLCU, 255, 255, 255, 60)
-                                                                call SetUnitTimeScale(bjLCU, 2)
-                                                                call SetUnitAnimationByIndex(bjLCU, 3)
-                                                                call MyRemoveUnit(bjLCU, 0.18)
+                                set bjLCU = CreateUnit(GetOwningPlayer(caster), 'dR10', caster_x, caster_y, angle * bj_RADTODEG)
+                                call SetUnitVertexColor(bjLCU, 255, 255, 255, 60)
+                                call SetUnitTimeScale(bjLCU, 2)
+                                call SetUnitAnimationByIndex(bjLCU, 3)
+                                call MyRemoveUnit(bjLCU, 0.18)
                                 call SaveBoolean(h, id, 27, true)
                             else
                                 call SetUnitAnimationByIndex(caster, 9)
@@ -158842,11 +158850,11 @@ function RengokuE_Periodic takes nothing returns nothing
                                 call SetUnitScale(bjLCU, 2.5, 2.5, 2.5)
                                 call SetUnitFlyHeight(bjLCU, GetRandomInt(80, 100), 0)
                                 call MyRemoveUnit(bjLCU , 2)
-                                                                set bjLCU = CreateUnit(GetOwningPlayer(caster), 'dR10', caster_x, caster_y, angle * bj_RADTODEG)
-                                                                call SetUnitVertexColor(bjLCU, 255, 255, 255, 60)
-                                                                call SetUnitTimeScale(bjLCU, 2)
-                                                                call SetUnitAnimationByIndex(bjLCU, 9)
-                                                                call MyRemoveUnit(bjLCU, 0.18)
+                                set bjLCU = CreateUnit(GetOwningPlayer(caster), 'dR10', caster_x, caster_y, angle * bj_RADTODEG)
+                                call SetUnitVertexColor(bjLCU, 255, 255, 255, 60)
+                                call SetUnitTimeScale(bjLCU, 2)
+                                call SetUnitAnimationByIndex(bjLCU, 9)
+                                call MyRemoveUnit(bjLCU, 0.18)
                                 call SaveBoolean(h, id, 27, false)
                             endif
                             call SaveInteger(h, id, c_EFFPERIOD, 4)
@@ -158883,10 +158891,10 @@ function RengokuE_Periodic takes nothing returns nothing
                         call SetUnitInvulnerable(caster, false)
                         call SaveInteger(h, id, c_ACT, 3)
                                                 
-                                                set bjLCU = CreateUnit(GetOwningPlayer(caster), 'dR42', caster_x, caster_y, angle * bj_RADTODEG)
-                                                call SetUnitFlyHeight(bjLCU, 60, 0)
-                                                call SetUnitTimeScale(bjLCU, 0.7)
-                                                call MyRemoveUnit(bjLCU, 1.5)
+                        set bjLCU = CreateUnit(GetOwningPlayer(caster), 'dR42', caster_x, caster_y, angle * bj_RADTODEG)
+                        call SetUnitFlyHeight(bjLCU, 60, 0)
+                        call SetUnitTimeScale(bjLCU, 0.7)
+                        call MyRemoveUnit(bjLCU, 1.5)
                                         
                         set bjLCU=CreateUnit(GetOwningPlayer(caster), 'dR64', caster_x + 50 * Cos(angle), caster_y + 50 * Sin(angle), angle * bj_RADTODEG)
                         call SetUnitFlyHeight(bjLCU, 160, 0)
@@ -158898,11 +158906,11 @@ function RengokuE_Periodic takes nothing returns nothing
                         call MyRemoveUnit(bjLCU , 1.5)
                                                 
                                                 
-                                                set bjLCU=CreateUnit(GetOwningPlayer(caster), 'dR13', target_x, target_y, angle * bj_RADTODEG)
+                        set bjLCU=CreateUnit(GetOwningPlayer(caster), 'dR13', target_x, target_y, angle * bj_RADTODEG)
                         call SetUnitFlyHeight(bjLCU, 50, 0)
                         call SetUnitScale(bjLCU, 0.85, 0.85, 0.85)
                         call MyRemoveUnit(bjLCU , 1.5)
-                                                set bjLCU=CreateUnit(GetOwningPlayer(caster), 'dR11', target_x, target_y, angle * bj_RADTODEG)
+                        set bjLCU=CreateUnit(GetOwningPlayer(caster), 'dR11', target_x, target_y, angle * bj_RADTODEG)
                         call SetUnitFlyHeight(bjLCU, 50, 0)
                         call SetUnitScale(bjLCU, 0.85, 0.85, 0.85)
                         call MyRemoveUnit(bjLCU , 1.5)
@@ -158919,8 +158927,8 @@ function RengokuE_Periodic takes nothing returns nothing
         call FlushChildHashtable(h, id)
         call DestroyTimer(GetExpiredTimer())
     endif
-        set caster=null
-        set target=null
+    set caster=null
+    set target=null
 endfunction
 
 function RengokuE_Cast takes unit newCaster,unit newTarget,timer newTimer returns nothing
@@ -158955,25 +158963,25 @@ function RengokuE_Cast takes unit newCaster,unit newTarget,timer newTimer return
     set soundplay=CreateSound("Sound\\war3mapImported\\Rengoku_Dash1.mp3", false, false, true, 12700, 12700, "")
     call StartSound(soundplay)
     call KillSoundWhenDone(soundplay)
-        set bjLCU=CreateUnit(GetOwningPlayer(newCaster), 'dR42', caster_x, caster_y, angle * bj_RADTODEG)
-        call SetUnitTimeScale(bjLCU, 0.7)
-        call SetUnitFlyHeight(bjLCU, 60, 0)
-        call MyRemoveUnit(bjLCU, 1.5)
-        set bjLCU=CreateUnit(GetOwningPlayer(newCaster), 'dR88', caster_x, caster_y, angle * bj_RADTODEG + 90)
-        call SetUnitTimeScale(bjLCU, 0.65)
-        call SetUnitScale(bjLCU, 0.8, 0.8, 0.8)
-        call MyRemoveUnit(bjLCU, 1.5)
-        set bjLCU=CreateUnit(GetOwningPlayer(newCaster), 'dR27', caster_x, caster_y, angle * bj_RADTODEG + 90)
-        call SetUnitVertexColor(bjLCU, 255, 255, 255, 110)
-        call SetUnitScale(bjLCU, 0.35, 0.35, 0.35)
-        call MyRemoveUnit(bjLCU, 1.5)
+    set bjLCU=CreateUnit(GetOwningPlayer(newCaster), 'dR42', caster_x, caster_y, angle * bj_RADTODEG)
+    call SetUnitTimeScale(bjLCU, 0.7)
+    call SetUnitFlyHeight(bjLCU, 60, 0)
+    call MyRemoveUnit(bjLCU, 1.5)
+    set bjLCU=CreateUnit(GetOwningPlayer(newCaster), 'dR88', caster_x, caster_y, angle * bj_RADTODEG + 90)
+    call SetUnitTimeScale(bjLCU, 0.65)
+    call SetUnitScale(bjLCU, 0.8, 0.8, 0.8)
+    call MyRemoveUnit(bjLCU, 1.5)
+    set bjLCU=CreateUnit(GetOwningPlayer(newCaster), 'dR27', caster_x, caster_y, angle * bj_RADTODEG + 90)
+    call SetUnitVertexColor(bjLCU, 255, 255, 255, 110)
+    call SetUnitScale(bjLCU, 0.35, 0.35, 0.35)
+    call MyRemoveUnit(bjLCU, 1.5)
         
     set bjLCU=CreateUnit(GetOwningPlayer(newCaster), 'dR64', caster_x + 50 * Cos(angle), caster_y + 50 * Sin(angle), angle * bj_RADTODEG)
     call SetUnitFlyHeight(bjLCU, 160, 0)
     call SetUnitScale(bjLCU, 1.2, 1.2, 1.2)
     call MyRemoveUnit(bjLCU , 1.5)
     call PauseUnit(newCaster, true)
-        call SetUnitInvulnerable(newCaster, true)
+    call SetUnitInvulnerable(newCaster, true)
     call SetUnitAnimationByIndex(newCaster, 7)
     call SetUnitTimeScale(newCaster, 1.2)
     call SaveUnitHandle(h, id, c_CASTER, newCaster)
@@ -158997,153 +159005,153 @@ function RengokuE_Shield_Periodic takes nothing returns nothing
         local real target_y= GetUnitY(target)
         local real angle= AU(caster, target)
         local real time= LoadReal(h, id, c_TIME)
-    local integer eff_period= LoadInteger(h, id, c_EFFPERIOD)
+        local integer eff_period= LoadInteger(h, id, c_EFFPERIOD)
         if act <= 2 then
-                if act == 1 then
-                        if SquareRootUnit(caster , target) > 60 then
-                                call SetUnitX(caster, caster_x + 70 * Cos(angle))
-                                call SetUnitY(caster, caster_y + 70 * Sin(angle))
-                call SetUnitFacingInstant(caster , angle * bj_RADTODEG)
-                if eff_period == 0 then
-                    if LoadInteger(h, id, 17) == 0 then
-                        set n=CreateUnit(GetOwningPlayer(caster), 'dR64', caster_x + 50 * Cos(angle), caster_y + 50 * Sin(angle), angle * bj_RADTODEG)
-                        call SetUnitFlyHeight(n, 160, 0)
-                        call SetUnitScale(n, 0.6, 0.6, 0.6)
-                        call SetUnitVertexColor(n, 255, 255, 255, 140)
-                        call MyRemoveUnit(n , 1.5)
-                        call SaveInteger(h, id, 17, 3)
-                    else
-                        call SaveInteger(h, id, 17, LoadInteger(h, id, 17) - 1)
-                    endif
-                                        set bjLCU = CreateUnit(GetOwningPlayer(caster), 'dR10', caster_x + 35 * Cos(angle), caster_y + 35 * Sin(angle), angle * bj_RADTODEG)
-                                        call SetUnitVertexColor(bjLCU, 255, 255, 255, 80)
-                                        call SetUnitAnimationByIndex(bjLCU, 7)
-                                        call MyRemoveUnit(bjLCU, 0.1)
-                    call SaveInteger(h, id, c_EFFPERIOD, 2)
-                else
-                    call SaveInteger(h, id, c_EFFPERIOD, eff_period - 1)
-                endif
+            if act == 1 then
+                if SquareRootUnit(caster , target) > 60 then
+                    call SetUnitX(caster, caster_x + 70 * Cos(angle))
+                    call SetUnitY(caster, caster_y + 70 * Sin(angle))
+                    call SetUnitFacingInstant(caster , angle * bj_RADTODEG)
+                    if eff_period == 0 then
+                        if LoadInteger(h, id, 17) == 0 then
+                            set n=CreateUnit(GetOwningPlayer(caster), 'dR64', caster_x + 50 * Cos(angle), caster_y + 50 * Sin(angle), angle * bj_RADTODEG)
+                            call SetUnitFlyHeight(n, 160, 0)
+                            call SetUnitScale(n, 0.6, 0.6, 0.6)
+                            call SetUnitVertexColor(n, 255, 255, 255, 140)
+                            call MyRemoveUnit(n , 1.5)
+                            call SaveInteger(h, id, 17, 3)
                         else
-                                call SaveInteger(h, id, c_ACT, 2)
-                                call SetUnitAnimationByIndex(caster, 6)
-                                set bjLCU=CreateUnit(GetOwningPlayer(caster), 'dR21', target_x, target_y, GetRandomInt(0, 360))
-                                call SetUnitScale(bjLCU, 2, 2, 2)
-                                call SaveUnitHandle(h, id, c_DUMMY1, bjLCU)
-                set bjLCU=CreateUnit(GetOwningPlayer(caster), 'dR21', target_x, target_y, GetRandomInt(0, 360))
-                                call SetUnitScale(bjLCU, 1.8, 1.8, 1.8)
-                                call SaveUnitHandle(h, id, c_DUMMY2, bjLCU)
-                                set bjLCU=CreateUnit(GetOwningPlayer(caster), 'dR15', caster_x, caster_y, GetRandomInt(0, 360))
-                                call SetUnitScale(bjLCU, 1.55, 1.55, 1.55)
-                                call SetUnitFlyHeight(bjLCU, 15, 0)
-                                call SaveUnitHandle(h, id, c_DUMMY3, bjLCU)
-                                set bjLCU=CreateUnit(GetOwningPlayer(caster), 'dR15', caster_x, caster_y, GetRandomInt(0, 360))
-                                call SetUnitScale(bjLCU, 0.85, 0.85, 0.85)
-                                call SetUnitFlyHeight(bjLCU, 15, 0)
-                                call SaveUnitHandle(h, id, c_DUMMY4, bjLCU)
-                                set bjLCU=CreateUnit(GetOwningPlayer(caster), 'dR20', caster_x, caster_y, GetRandomInt(0, 360))
-                                call SetUnitScale(bjLCU, 1.5, 1.5, 1.5)
-                                call SetUnitVertexColor(bjLCU, 255, 255, 255, 100)
-                                call SetUnitTimeScale(bjLCU, 0.9)
-                call SaveUnitHandle(h, id, c_DUMMY5, bjLCU)
+                            call SaveInteger(h, id, 17, LoadInteger(h, id, 17) - 1)
                         endif
+                        set bjLCU = CreateUnit(GetOwningPlayer(caster), 'dR10', caster_x + 35 * Cos(angle), caster_y + 35 * Sin(angle), angle * bj_RADTODEG)
+                        call SetUnitVertexColor(bjLCU, 255, 255, 255, 80)
+                        call SetUnitAnimationByIndex(bjLCU, 7)
+                        call MyRemoveUnit(bjLCU, 0.1)
+                        call SaveInteger(h, id, c_EFFPERIOD, 2)
+                    else
+                        call SaveInteger(h, id, c_EFFPERIOD, eff_period - 1)
+                    endif
                 else
-                        if time < 2 then
-                                set bjLCU=LoadUnitHandle(h, id, c_DUMMY1)
-                                call SetUnitX(bjLCU, caster_x)
-                                call SetUnitY(bjLCU, caster_y)
-                set bjLCU=LoadUnitHandle(h, id, c_DUMMY2)
-                                call SetUnitX(bjLCU, caster_x)
-                                call SetUnitY(bjLCU, caster_y)
-                                set bjLCU=LoadUnitHandle(h, id, c_DUMMY3)
-                                call SetUnitX(bjLCU, caster_x)
-                                call SetUnitY(bjLCU, caster_y)
-                                set bjLCU=LoadUnitHandle(h, id, c_DUMMY4)
-                                call SetUnitX(bjLCU, caster_x)
-                                call SetUnitY(bjLCU, caster_y)
-                                set bjLCU=LoadUnitHandle(h, id, c_DUMMY5)
-                                call SetUnitX(bjLCU, caster_x)
-                                call SetUnitY(bjLCU, caster_y)
-                call SetUnitFacing(bjLCU , angle * bj_RADTODEG + time * 180)
-                set bjLCG=LoadGroupHandle(h, id, c_GROUP1)
-                call GroupEnumUnitsInRange(bjLCG, caster_x, caster_y, 30000, Base)
-                loop
-                set bjLCU=FirstOfGroup(bjLCG)
-                exitwhen bjLCU == null
-                    if FilterA(bjLCU , caster) then
-                        if SquareRootUnit(bjLCU , caster) <= 400 then
-                            if LoadBoolean(h, GetHandleId(bjLCU), Shield_RengokuE) == false then
-                                call SaveEffectHandle(h, GetHandleId(bjLCU), StringHash("ShieldEff_RengokuE"), AddSpecialEffectTarget("Soundwaveshield.mdx", bjLCU, "origin"))
-                                call GroupAddUnit(LoadGroupHandle(h, id, c_GROUP2), bjLCU)
-                                call SaveBoolean(h, GetHandleId(bjLCU), Shield_RengokuE, true)
+                    call SaveInteger(h, id, c_ACT, 2)
+                    call SetUnitAnimationByIndex(caster, 6)
+                    set bjLCU=CreateUnit(GetOwningPlayer(caster), 'dR21', target_x, target_y, GetRandomInt(0, 360))
+                    call SetUnitScale(bjLCU, 2, 2, 2)
+                    call SaveUnitHandle(h, id, c_DUMMY1, bjLCU)
+                    set bjLCU=CreateUnit(GetOwningPlayer(caster), 'dR21', target_x, target_y, GetRandomInt(0, 360))
+                    call SetUnitScale(bjLCU, 1.8, 1.8, 1.8)
+                    call SaveUnitHandle(h, id, c_DUMMY2, bjLCU)
+                    set bjLCU=CreateUnit(GetOwningPlayer(caster), 'dR15', caster_x, caster_y, GetRandomInt(0, 360))
+                    call SetUnitScale(bjLCU, 1.55, 1.55, 1.55)
+                    call SetUnitFlyHeight(bjLCU, 15, 0)
+                    call SaveUnitHandle(h, id, c_DUMMY3, bjLCU)
+                    set bjLCU=CreateUnit(GetOwningPlayer(caster), 'dR15', caster_x, caster_y, GetRandomInt(0, 360))
+                    call SetUnitScale(bjLCU, 0.85, 0.85, 0.85)
+                    call SetUnitFlyHeight(bjLCU, 15, 0)
+                    call SaveUnitHandle(h, id, c_DUMMY4, bjLCU)
+                    set bjLCU=CreateUnit(GetOwningPlayer(caster), 'dR20', caster_x, caster_y, GetRandomInt(0, 360))
+                    call SetUnitScale(bjLCU, 1.5, 1.5, 1.5)
+                    call SetUnitVertexColor(bjLCU, 255, 255, 255, 100)
+                    call SetUnitTimeScale(bjLCU, 0.9)
+                    call SaveUnitHandle(h, id, c_DUMMY5, bjLCU)
+                endif
+            else
+                if time < 2 then
+                    set bjLCU=LoadUnitHandle(h, id, c_DUMMY1)
+                    call SetUnitX(bjLCU, caster_x)
+                    call SetUnitY(bjLCU, caster_y)
+                    set bjLCU=LoadUnitHandle(h, id, c_DUMMY2)
+                    call SetUnitX(bjLCU, caster_x)
+                    call SetUnitY(bjLCU, caster_y)
+                    set bjLCU=LoadUnitHandle(h, id, c_DUMMY3)
+                    call SetUnitX(bjLCU, caster_x)
+                    call SetUnitY(bjLCU, caster_y)
+                    set bjLCU=LoadUnitHandle(h, id, c_DUMMY4)
+                    call SetUnitX(bjLCU, caster_x)
+                    call SetUnitY(bjLCU, caster_y)
+                    set bjLCU=LoadUnitHandle(h, id, c_DUMMY5)
+                    call SetUnitX(bjLCU, caster_x)
+                    call SetUnitY(bjLCU, caster_y)
+                    call SetUnitFacing(bjLCU , angle * bj_RADTODEG + time * 180)
+                    set bjLCG=LoadGroupHandle(h, id, c_GROUP1)
+                    call GroupEnumUnitsInRange(bjLCG, caster_x, caster_y, 30000, Base)
+                    loop
+                    set bjLCU=FirstOfGroup(bjLCG)
+                    exitwhen bjLCU == null
+                        if FilterA(bjLCU , caster) then
+                            if SquareRootUnit(bjLCU , caster) <= 400 then
+                                if LoadBoolean(h, GetHandleId(bjLCU), Shield_RengokuE) == false then
+                                    call SaveEffectHandle(h, GetHandleId(bjLCU), StringHash("ShieldEff_RengokuE"), AddSpecialEffectTarget("Soundwaveshield.mdx", bjLCU, "origin"))
+                                    call GroupAddUnit(LoadGroupHandle(h, id, c_GROUP2), bjLCU)
+                                    call SaveBoolean(h, GetHandleId(bjLCU), Shield_RengokuE, true)
+                                endif
+                            else
+                                if LoadBoolean(h, GetHandleId(bjLCU), Shield_RengokuE) == true then
+                                    call DestroyEffect(LoadEffectHandle(h, GetHandleId(bjLCU), StringHash("ShieldEff_RengokuE")))
+                                    call RemoveSavedHandle(h, GetHandleId(bjLCU), StringHash("ShieldEff_RengokuE"))
+                                    call GroupRemoveUnit(LoadGroupHandle(h, id, c_GROUP2), bjLCU)
+                                    call SaveBoolean(h, GetHandleId(bjLCU), Shield_RengokuE, false)
+                                    call RemoveSavedBoolean(h, GetHandleId(bjLCU), Shield_RengokuE)
+                                endif
                             endif
                         else
-                            if LoadBoolean(h, GetHandleId(bjLCU), Shield_RengokuE) == true then
-                                call DestroyEffect(LoadEffectHandle(h, GetHandleId(bjLCU), StringHash("ShieldEff_RengokuE")))
-                                                                call RemoveSavedHandle(h, GetHandleId(bjLCU), StringHash("ShieldEff_RengokuE"))
-                                call GroupRemoveUnit(LoadGroupHandle(h, id, c_GROUP2), bjLCU)
-                                call SaveBoolean(h, GetHandleId(bjLCU), Shield_RengokuE, false)
-                                                                call RemoveSavedBoolean(h, GetHandleId(bjLCU), Shield_RengokuE)
+                            if SquareRootUnit(bjLCU , caster) <= 400 then
+                                set angle=AU(caster , bjLCU)
+                                call SetUnitX(bjLCU, GetUnitX(caster) + 420 * Cos(angle))
+                                call SetUnitY(bjLCU, GetUnitY(caster) + 420 * Sin(angle))
                             endif
                         endif
+                        call GroupRemoveUnit(bjLCG, bjLCU)
+                    endloop
+                    if eff_period == 0 then
+                        set n=CreateUnit(GetOwningPlayer(caster), 'dH16', caster_x, caster_y, GetRandomInt(0, 360))
+                        call SetUnitScale(n, 3.15, 3.15, 3.15)
+                        call SetUnitVertexColor(n, 255, 255, 255, 110)
+                        call MyRemoveUnit(n, 1.5)
+                        call SaveInteger(h, id, c_EFFPERIOD, 17)
                     else
-                        if SquareRootUnit(bjLCU , caster) <= 400 then
-                            set angle=AU(caster , bjLCU)
-                            call SetUnitX(bjLCU, GetUnitX(caster) + 420 * Cos(angle))
-                            call SetUnitY(bjLCU, GetUnitY(caster) + 420 * Sin(angle))
-                        endif
+                        call SaveInteger(h, id, c_EFFPERIOD, eff_period - 1)
                     endif
-                    call GroupRemoveUnit(bjLCG, bjLCU)
-                endloop
-                if eff_period == 0 then
-                                        set n=CreateUnit(GetOwningPlayer(caster), 'dH16', caster_x, caster_y, GetRandomInt(0, 360))
-                                        call SetUnitScale(n, 3.15, 3.15, 3.15)
-                                        call SetUnitVertexColor(n, 255, 255, 255, 110)
-                                        call MyRemoveUnit(n, 1.5)
-                    call SaveInteger(h, id, c_EFFPERIOD, 17)
+                    call SaveReal(h, id, c_TIME, time + 0.02)
                 else
-                    call SaveInteger(h, id, c_EFFPERIOD, eff_period - 1)
-                endif
-                                call SaveReal(h, id, c_TIME, time + 0.02)
-                        else
-                                call SaveInteger(h, id, c_ACT, 3)
-                set bjLCG=LoadGroupHandle(h, id, c_GROUP2)
-                loop
-                set bjLCU=FirstOfGroup(bjLCG)
-                exitwhen bjLCU == null
-                    if LoadBoolean(h, GetHandleId(bjLCU), Shield_RengokuE) == true then
-                        call DestroyEffect(LoadEffectHandle(h, GetHandleId(bjLCU), StringHash("ShieldEff_RengokuE")))
-                        call SaveBoolean(h, GetHandleId(bjLCU), Shield_RengokuE, false)
-                                                call RemoveSavedHandle(h, GetHandleId(bjLCU), StringHash("ShieldEff_RengokuE"))
-                                                call RemoveSavedBoolean(h, GetHandleId(bjLCU), Shield_RengokuE)
-                    endif
-                    call GroupRemoveUnit(bjLCG, bjLCU)
-                endloop
+                    call SaveInteger(h, id, c_ACT, 3)
+                    set bjLCG=LoadGroupHandle(h, id, c_GROUP2)
+                    loop
+                    set bjLCU=FirstOfGroup(bjLCG)
+                    exitwhen bjLCU == null
+                        if LoadBoolean(h, GetHandleId(bjLCU), Shield_RengokuE) == true then
+                            call DestroyEffect(LoadEffectHandle(h, GetHandleId(bjLCU), StringHash("ShieldEff_RengokuE")))
+                            call SaveBoolean(h, GetHandleId(bjLCU), Shield_RengokuE, false)
+                            call RemoveSavedHandle(h, GetHandleId(bjLCU), StringHash("ShieldEff_RengokuE"))
+                            call RemoveSavedBoolean(h, GetHandleId(bjLCU), Shield_RengokuE)
                         endif
+                        call GroupRemoveUnit(bjLCG, bjLCU)
+                    endloop
                 endif
+            endif
         else
-                call PauseUnit(caster, false)
-                call SetUnitInvulnerable(caster, false)
-        call KillUnit(LoadUnitHandle(h, id, c_DUMMY1))
-        call KillUnit(LoadUnitHandle(h, id, c_DUMMY2))
-        call KillUnit(LoadUnitHandle(h, id, c_DUMMY3))
-                call KillUnit(LoadUnitHandle(h, id, c_DUMMY4))
-        call KillUnit(LoadUnitHandle(h, id, c_DUMMY5))
-                call MyRemoveUnit(LoadUnitHandle(h, id, c_DUMMY1) , 1.5)
-                call MyRemoveUnit(LoadUnitHandle(h, id, c_DUMMY2) , 1.5)
-                call MyRemoveUnit(LoadUnitHandle(h, id, c_DUMMY3) , 1.5)
-                call MyRemoveUnit(LoadUnitHandle(h, id, c_DUMMY4) , 1.5)
-        call MyRemoveUnit(LoadUnitHandle(h, id, c_DUMMY5) , 1.5)
-        call DestroyGroup(LoadGroupHandle(h, id, c_GROUP1))
-        call DestroyGroup(LoadGroupHandle(h, id, c_GROUP2))
-                call FlushChildHashtable(h, id)
-                call DestroyTimer(GetExpiredTimer())
+            call PauseUnit(caster, false)
+            call SetUnitInvulnerable(caster, false)
+            call KillUnit(LoadUnitHandle(h, id, c_DUMMY1))
+            call KillUnit(LoadUnitHandle(h, id, c_DUMMY2))
+            call KillUnit(LoadUnitHandle(h, id, c_DUMMY3))
+            call KillUnit(LoadUnitHandle(h, id, c_DUMMY4))
+            call KillUnit(LoadUnitHandle(h, id, c_DUMMY5))
+            call MyRemoveUnit(LoadUnitHandle(h, id, c_DUMMY1) , 1.5)
+            call MyRemoveUnit(LoadUnitHandle(h, id, c_DUMMY2) , 1.5)
+            call MyRemoveUnit(LoadUnitHandle(h, id, c_DUMMY3) , 1.5)
+            call MyRemoveUnit(LoadUnitHandle(h, id, c_DUMMY4) , 1.5)
+            call MyRemoveUnit(LoadUnitHandle(h, id, c_DUMMY5) , 1.5)
+            call DestroyGroup(LoadGroupHandle(h, id, c_GROUP1))
+            call DestroyGroup(LoadGroupHandle(h, id, c_GROUP2))
+            call FlushChildHashtable(h, id)
+            call DestroyTimer(GetExpiredTimer())
         endif
         set caster=null
         set target=null
 endfunction
 
 function RengokuE_Shield takes unit newCaster,unit newTarget,timer newTimer returns nothing
-        local integer id= GetHandleId(newTimer)
+    local integer id= GetHandleId(newTimer)
     local real caster_x= GetUnitX(newCaster)
     local real caster_y= GetUnitY(newCaster)
     local real angle= AU(newCaster , newTarget)
@@ -159519,185 +159527,185 @@ endfunction
 
 
 function RengokuT_Act3 takes nothing returns nothing
-        local integer id= GetHandleId(GetExpiredTimer())
-        local unit caster       = LoadUnitHandle(h, id, c_CASTER)
-        local unit target       = LoadUnitHandle(h, id, c_TARGET)
+    local integer id= GetHandleId(GetExpiredTimer())
+    local unit caster       = LoadUnitHandle(h, id, c_CASTER)
+    local unit target       = LoadUnitHandle(h, id, c_TARGET)
     local real time= LoadReal(h, id, c_TIME)
     local integer act= LoadInteger(h, id, c_ACT)
     local boolean b_SecondDamage_Chaos= LoadBoolean(h, id, 21)
     local real angle= AU(caster , target)
-        if act == 2 then
-            call SaveReal(h, id, c_TIME, time + 0.02)
-            call SetUnitX(caster, GetUnitX(target) - 170 * Cos(angle))
-            call SetUnitY(caster, GetUnitY(target) - 170 * Sin(angle))
-            call SetUnitFacing(caster, angle * bj_RADTODEG)
+    if act == 2 then
+        call SaveReal(h, id, c_TIME, time + 0.02)
+        call SetUnitX(caster, GetUnitX(target) - 170 * Cos(angle))
+        call SetUnitY(caster, GetUnitY(target) - 170 * Sin(angle))
+        call SetUnitFacing(caster, angle * bj_RADTODEG)
+        call SetUnitInvulnerable(caster, true)
+        call PauseUnit(target,true)
+        call SaveBoolean(HH,GetHandleId(target),TARGET_ABILITY,true)
+        call SetUnitInvulnerable(target, true)
+        call UnitRemoveAbility(caster,'A2VJ')
+        if time < 2 then
+            call PauseUnit(caster, true)
             call SetUnitInvulnerable(caster, true)
             call PauseUnit(target,true)
             call SaveBoolean(HH,GetHandleId(target),TARGET_ABILITY,true)
             call SetUnitInvulnerable(target, true)
-            call UnitRemoveAbility(caster,'A2VJ')
-            if time < 2 then
-                call PauseUnit(caster, true)
-                call SetUnitInvulnerable(caster, true)
-                call PauseUnit(target,true)
-                call SaveBoolean(HH,GetHandleId(target),TARGET_ABILITY,true)
-                call SetUnitInvulnerable(target, true)
-                set bjLCU=LoadUnitHandle(h, id, 26)
-                call SetUnitX(bjLCU , GetUnitX(target))
-                call SetUnitY(bjLCU , GetUnitY(target))
-                // set bjLCU=LoadUnitHandle(h, id, StringHash("EffectAct2_2"))
-                // call SetUnitX(bjLCU , GetUnitX(target))
-                // call SetUnitY(bjLCU , GetUnitY(target))
-            endif
-                if time == 2 then
+            set bjLCU=LoadUnitHandle(h, id, 26)
+            call SetUnitX(bjLCU , GetUnitX(target))
+            call SetUnitY(bjLCU , GetUnitY(target))
+            // set bjLCU=LoadUnitHandle(h, id, StringHash("EffectAct2_2"))
+            // call SetUnitX(bjLCU , GetUnitX(target))
+            // call SetUnitY(bjLCU , GetUnitY(target))
+        endif
+        if time == 2 then
 
-                        set bjLCU=CreateUnit(GetOwningPlayer(caster), 'dR33', GetUnitX(target), GetUnitY(target), GetRandomInt(0, 360))
-                        call SetUnitScale(bjLCU, 2, 2, 2)
-                        call MyRemoveUnit(bjLCU, 2.5)
-                        set bjLCU=CreateUnit(GetOwningPlayer(caster), 'dR34', GetUnitX(target), GetUnitY(target), GetRandomInt(0, 360))
-                        call SetUnitScale(bjLCU, 1.5, 1.5, 1.5)
-                        call MyRemoveUnit(bjLCU, 2.5)
-                        
-                        
-                        set bjLCU=CreateUnit(GetOwningPlayer(caster), 'dR35', GetUnitX(target), GetUnitY(target), angle * bj_RADTODEG)
-                        call SetUnitScale(bjLCU, 1.5, 1.5, 1.5)
-                        call MyRemoveUnit(bjLCU, 2.5)
-                        set bjLCU=CreateUnit(GetOwningPlayer(caster), 'dR36', GetUnitX(target), GetUnitY(target), angle * bj_RADTODEG)
-                        call SetUnitScale(bjLCU, 3.5, 3.5, 3.5)
-                        call MyRemoveUnit(bjLCU, 2.5)
-                        set bjLCU=CreateUnit(GetOwningPlayer(caster), 'dR37', GetUnitX(target), GetUnitY(target), angle * bj_RADTODEG)
-                        call SetUnitScale(bjLCU, 2.5, 2.5, 2.5)
-                        call SetUnitFlyHeight(bjLCU, 50, 0)
-                        call MyRemoveUnit(bjLCU, 2.5)
-                        set bjLCU=CreateUnit(GetOwningPlayer(caster), 'dR38', GetUnitX(target), GetUnitY(target), angle * bj_RADTODEG)
-                        call SetUnitScale(bjLCU, 1.75, 1.75, 1.75)
-                        call MyRemoveUnit(bjLCU, 2.5)
-                        set bjLCU=CreateUnit(GetOwningPlayer(caster), 'dR39', GetUnitX(target), GetUnitY(target), angle * bj_RADTODEG+90)
-                        call SetUnitScale(bjLCU, 1.75, 1.75, 1.75)
-                        call MyRemoveUnit(bjLCU, 2.5)
-                        set bjLCU=CreateUnit(GetOwningPlayer(caster), 'dR40', GetUnitX(target), GetUnitY(target), angle * bj_RADTODEG)
-                        call SetUnitScale(bjLCU, 5, 5, 5)
-                        call MyRemoveUnit(bjLCU, 2.5)
-                        
-                        call SetUnitTimeScale(caster, 0.35)
-                        call SetUnitAnimationByIndex(caster, 8)
-                        call PauseUnit(target,false)
-                        call SaveBoolean(HH,GetHandleId(target),TARGET_ABILITY,false)
-                        call SetUnitInvulnerable(target, false)
-                        if UnitIsAlive(target) then
-                            call myCustomDamage(caster , target , GetHeroAgi(caster, true)*5 , false , false , null , null , null)
-                        endif
-                        call PauseUnit(target,true)
-                        call SaveBoolean(HH,GetHandleId(target),TARGET_ABILITY,true)
-                        call SetUnitInvulnerable(target, true)
-                        call SetUnitTimeScale(target, 0.3)
-                        call SetUnitAnimation(target, "death")
-                        set bjLCG=CreateGroup()
-                        set bj_lastCreatedGroup=CreateGroup()
-                        set bj_forLoopAIndex=0
-                        loop
-                        exitwhen bj_forLoopAIndex >= 10
-                        set bj_forLoopAIndex=bj_forLoopAIndex + 1
-                                call GroupEnumUnitsInRange(bjLCG, GetUnitX(caster) + ( bj_forLoopAIndex * 130 ) * Cos(angle), GetUnitY(caster) + ( bj_forLoopAIndex * 130 ) * Sin(angle), 50 + bj_forLoopAIndex * 40, Base)
-                                loop
-                                set bjLCU=FirstOfGroup(bjLCG)
-                                exitwhen bjLCU == null
-                                        if Condition_Base(GetOwningPlayer(caster) , bjLCU) then
-                                                call GroupAddUnit(bj_lastCreatedGroup, bjLCU)
-                                        endif
-                                        call GroupRemoveUnit(bjLCG, bjLCU)
-                                endloop
-                        endloop
-                        set bj_forLoopAIndex=0
-                        call DestroyGroup(bjLCG)
-                        set bjLCG=bj_lastCreatedGroup
-                        loop
-                        set bjLCU=FirstOfGroup(bjLCG)
-                        exitwhen bjLCU == null
-                                if Condition_Base(GetOwningPlayer(caster) , bjLCU) then
-                                        call myCustomDamage(caster , bjLCU , GetHeroAgi(caster, true)*5 , false , false , null , null , null)
-                                endif
-                                call GroupRemoveUnit(bjLCG, bjLCU)
-                        endloop
-                        call DestroyGroup(bjLCG)
-                elseif time == 4 then
-                        call PauseUnit(target,false)
-                        call SaveBoolean(HH,GetHandleId(target),TARGET_ABILITY,false)
-                        call SetUnitInvulnerable(target, false)
-                        set bjLCG=CreateGroup()
-                        call GroupEnumUnitsInRange(bjLCG, GetUnitX(caster), GetUnitY(caster), 700, Base)
-                        loop
-                        set bjLCU=FirstOfGroup(bjLCG)
-                        exitwhen bjLCU == null
-                                if Condition_Base(GetOwningPlayer(caster) , bjLCU) then
-                                        call SetControlToUnit(caster , bjLCU , 1 , "stun")
-                                        if b_SecondDamage_Chaos == true then
-                                                if GetWidgetLife(bjLCU) > ( GetHeroAgi(caster, true) * 6 ) then
-                                                    call SetWidgetLife(bjLCU, GetWidgetLife(bjLCU) - ( GetHeroAgi(caster, true)*6 ))
-                                                else
-                                                    call SetUnitInvulnerable(bjLCU, false)
-                                                    call UnitAddAbility(bjLCU, 'A0WR')
-                                                    call DamageIndicatorFunction(caster , bjLCU, GetHeroAgi(caster, true) * 6)
-                                                    call myCustomDamage(caster , bjLCU , 999999999 , false , false , null , DAMAGE_TYPE_UNKNOWN , null)
-                                                    call UnitRemoveAbility(bjLCU, 'A0WR')
-                                                endif
-                                        else
-                                                call myCustomDamage(caster , bjLCU , GetHeroAgi(caster, true)*6 , false , false , null , null , null)
-                                        endif
-                                endif
-                        call GroupRemoveUnit(bjLCG, bjLCU)
-                        endloop
-                        call DestroyGroup(bjLCG)
-                        call SetUnitTimeScale(target, 1)
-                        call SetUnitAnimation(target, "death")
-                        call SaveInteger(h, id, c_ACT, 3)
-                        call SaveReal(h, id, c_TIME, 0)
-                        set soundplay=CreateSound("Sound\\war3mapImported\\RengokuT4.mp3", false, false, true, 12700, 12700, "")
-                        call StartSound(soundplay)
-                        call KillSoundWhenDone(soundplay)
-                        set bjLCU=CreateUnit(GetOwningPlayer(caster), 'dR32', GetUnitX(target), GetUnitY(target), GetRandomInt(0, 360))
-                        call SetUnitScale(bjLCU, 2.75, 2.75, 2.75)
-                        call SetUnitVertexColor(bjLCU, 255, 255, 255, 100)
-                        call MyRemoveUnit(bjLCU, 2.5)
-                        set bjLCU=CreateUnit(GetOwningPlayer(caster), 'dR31', GetUnitX(target), GetUnitY(target), GetRandomInt(0, 360))
-                        call SetUnitScale(bjLCU, 3, 3, 3)
-                        call SetUnitVertexColor(bjLCU, 255, 150, 0, 255)
-                        call MyRemoveUnit(bjLCU, 2.5)
-                        set bjLCU=CreateUnit(GetOwningPlayer(caster), 'dR31', GetUnitX(target), GetUnitY(target), GetRandomInt(0, 360))
-                        call SetUnitScale(bjLCU, 5, 5, 5)
-                        call SetUnitVertexColor(bjLCU, 255, 150, 0, 255)
-                        call MyRemoveUnit(bjLCU, 2.5)
-                        
-                        set bjLCU=CreateUnit(GetOwningPlayer(caster), 'dR30', GetUnitX(target), GetUnitY(target), GetRandomInt(0, 360))
-                        call SetUnitScale(bjLCU, 0.65, 0.65, 0.65)
-                        call MyRemoveUnit(bjLCU , 2.5)
-                        // set bjLCE=AddSpecialEffect("az_coco_t2_2.mdl", GetUnitX(target), GetUnitY(target))
-                        // call SetSpecialEffectZ(bjLCE , 15)
-                        // call SetSpecialEffectScale(bjLCE , 3)
-                        // call SetSpecialEffectFacing(bjLCE , GetRandomInt(0, 360))
-                        // call RemoveEffect(bjLCE , 3.2 , true , CreateTimer())
-                        
-                        set bjLCU=CreateUnit(GetOwningPlayer(caster), 'dRe7', GetUnitX(target), GetUnitY(target), GetRandomInt(0, 360))
-                        call SetUnitScale(bjLCU, 5, 5, 1)
-                        call SetUnitTimeScale(bjLCU, 0.4)
-                        call MyRemoveUnit(bjLCU , 2.5)
-                        //call RengokuT_SpecialEffectControl(bjLCU)
-                        set bjLCU=CreateUnit(GetOwningPlayer(caster), 'dR14',  GetUnitX(target), GetUnitY(target), GetRandomInt(0, 360))
-                        call SetUnitFlyHeight(bjLCU, 10, 0)
-                        call SetUnitScale(bjLCU, 1.2, 1.2, 1.2)
-                        call SetUnitVertexColor(bjLCU, 255, 255, 255, 180)
-                        call UnitApplyTimedLife(bjLCU, 1, 1.5)
-                        call MyRemoveUnit(bjLCU , 2.5)
-                        set bjLCU=CreateUnit(GetOwningPlayer(caster), 'dR15',  GetUnitX(target), GetUnitY(target), GetRandomInt(0, 360))
-                        call SetUnitFlyHeight(bjLCU, 10, 0)
-                        call SetUnitScale(bjLCU, 2.3, 2.3, 2.3)
-                        call MyRemoveUnit(bjLCU , 2.5)
+            set bjLCU=CreateUnit(GetOwningPlayer(caster), 'dR33', GetUnitX(target), GetUnitY(target), GetRandomInt(0, 360))
+            call SetUnitScale(bjLCU, 2, 2, 2)
+            call MyRemoveUnit(bjLCU, 2.5)
+            set bjLCU=CreateUnit(GetOwningPlayer(caster), 'dR34', GetUnitX(target), GetUnitY(target), GetRandomInt(0, 360))
+            call SetUnitScale(bjLCU, 1.5, 1.5, 1.5)
+            call MyRemoveUnit(bjLCU, 2.5)
+            
+            
+            set bjLCU=CreateUnit(GetOwningPlayer(caster), 'dR35', GetUnitX(target), GetUnitY(target), angle * bj_RADTODEG)
+            call SetUnitScale(bjLCU, 1.5, 1.5, 1.5)
+            call MyRemoveUnit(bjLCU, 2.5)
+            set bjLCU=CreateUnit(GetOwningPlayer(caster), 'dR36', GetUnitX(target), GetUnitY(target), angle * bj_RADTODEG)
+            call SetUnitScale(bjLCU, 3.5, 3.5, 3.5)
+            call MyRemoveUnit(bjLCU, 2.5)
+            set bjLCU=CreateUnit(GetOwningPlayer(caster), 'dR37', GetUnitX(target), GetUnitY(target), angle * bj_RADTODEG)
+            call SetUnitScale(bjLCU, 2.5, 2.5, 2.5)
+            call SetUnitFlyHeight(bjLCU, 50, 0)
+            call MyRemoveUnit(bjLCU, 2.5)
+            set bjLCU=CreateUnit(GetOwningPlayer(caster), 'dR38', GetUnitX(target), GetUnitY(target), angle * bj_RADTODEG)
+            call SetUnitScale(bjLCU, 1.75, 1.75, 1.75)
+            call MyRemoveUnit(bjLCU, 2.5)
+            set bjLCU=CreateUnit(GetOwningPlayer(caster), 'dR39', GetUnitX(target), GetUnitY(target), angle * bj_RADTODEG+90)
+            call SetUnitScale(bjLCU, 1.75, 1.75, 1.75)
+            call MyRemoveUnit(bjLCU, 2.5)
+            set bjLCU=CreateUnit(GetOwningPlayer(caster), 'dR40', GetUnitX(target), GetUnitY(target), angle * bj_RADTODEG)
+            call SetUnitScale(bjLCU, 5, 5, 5)
+            call MyRemoveUnit(bjLCU, 2.5)
+            
+            call SetUnitTimeScale(caster, 0.35)
+            call SetUnitAnimationByIndex(caster, 8)
+            call PauseUnit(target,false)
+            call SaveBoolean(HH,GetHandleId(target),TARGET_ABILITY,false)
+            call SetUnitInvulnerable(target, false)
+            if UnitIsAlive(target) then
+                call myCustomDamage(caster , target , GetHeroAgi(caster, true)*5 , false , false , null , null , null)
+            endif
+            call PauseUnit(target,true)
+            call SaveBoolean(HH,GetHandleId(target),TARGET_ABILITY,true)
+            call SetUnitInvulnerable(target, true)
+            call SetUnitTimeScale(target, 0.3)
+            call SetUnitAnimation(target, "death")
+            set bjLCG=CreateGroup()
+            set bj_lastCreatedGroup=CreateGroup()
+            set bj_forLoopAIndex=0
+            loop
+            exitwhen bj_forLoopAIndex >= 10
+                set bj_forLoopAIndex=bj_forLoopAIndex + 1
+                call GroupEnumUnitsInRange(bjLCG, GetUnitX(caster) + ( bj_forLoopAIndex * 130 ) * Cos(angle), GetUnitY(caster) + ( bj_forLoopAIndex * 130 ) * Sin(angle), 50 + bj_forLoopAIndex * 40, Base)
+                loop
+                set bjLCU=FirstOfGroup(bjLCG)
+                exitwhen bjLCU == null
+                    if Condition_Base(GetOwningPlayer(caster) , bjLCU) then
+                        call GroupAddUnit(bj_lastCreatedGroup, bjLCU)
+                    endif
+                    call GroupRemoveUnit(bjLCG, bjLCU)
+                endloop
+            endloop
+            set bj_forLoopAIndex=0
+            call DestroyGroup(bjLCG)
+            set bjLCG=bj_lastCreatedGroup
+            loop
+            set bjLCU=FirstOfGroup(bjLCG)
+            exitwhen bjLCU == null
+                if Condition_Base(GetOwningPlayer(caster) , bjLCU) then
+                    call myCustomDamage(caster , bjLCU , GetHeroAgi(caster, true)*5 , false , false , null , null , null)
                 endif
+                call GroupRemoveUnit(bjLCG, bjLCU)
+            endloop
+            call DestroyGroup(bjLCG)
+        elseif time == 4 then
+            call PauseUnit(target,false)
+            call SaveBoolean(HH,GetHandleId(target),TARGET_ABILITY,false)
+            call SetUnitInvulnerable(target, false)
+            set bjLCG=CreateGroup()
+            call GroupEnumUnitsInRange(bjLCG, GetUnitX(caster), GetUnitY(caster), 700, Base)
+            loop
+            set bjLCU=FirstOfGroup(bjLCG)
+            exitwhen bjLCU == null
+                if Condition_Base(GetOwningPlayer(caster) , bjLCU) then
+                    call SetControlToUnit(caster , bjLCU , 1 , "stun")
+                    if b_SecondDamage_Chaos == true then
+                        if GetWidgetLife(bjLCU) > ( GetHeroAgi(caster, true) * 6 ) then
+                            call SetWidgetLife(bjLCU, GetWidgetLife(bjLCU) - ( GetHeroAgi(caster, true)*6 ))
+                        else
+                            call SetUnitInvulnerable(bjLCU, false)
+                            call UnitAddAbility(bjLCU, 'A0WR')
+                            call DamageIndicatorFunction(caster , bjLCU, GetHeroAgi(caster, true) * 6)
+                            call myCustomDamage(caster , bjLCU , 999999999 , false , false , null , DAMAGE_TYPE_UNKNOWN , null)
+                            call UnitRemoveAbility(bjLCU, 'A0WR')
+                        endif
+                    else
+                        call myCustomDamage(caster , bjLCU , GetHeroAgi(caster, true)*6 , false , false , null , null , null)
+                    endif
+                endif
+                call GroupRemoveUnit(bjLCG, bjLCU)
+            endloop
+            call DestroyGroup(bjLCG)
+            call SetUnitTimeScale(target, 1)
+            call SetUnitAnimation(target, "death")
+            call SaveInteger(h, id, c_ACT, 3)
+            call SaveReal(h, id, c_TIME, 0)
+            set soundplay=CreateSound("Sound\\war3mapImported\\RengokuT4.mp3", false, false, true, 12700, 12700, "")
+            call StartSound(soundplay)
+            call KillSoundWhenDone(soundplay)
+            set bjLCU=CreateUnit(GetOwningPlayer(caster), 'dR32', GetUnitX(target), GetUnitY(target), GetRandomInt(0, 360))
+            call SetUnitScale(bjLCU, 2.75, 2.75, 2.75)
+            call SetUnitVertexColor(bjLCU, 255, 255, 255, 100)
+            call MyRemoveUnit(bjLCU, 2.5)
+            set bjLCU=CreateUnit(GetOwningPlayer(caster), 'dR31', GetUnitX(target), GetUnitY(target), GetRandomInt(0, 360))
+            call SetUnitScale(bjLCU, 3, 3, 3)
+            call SetUnitVertexColor(bjLCU, 255, 150, 0, 255)
+            call MyRemoveUnit(bjLCU, 2.5)
+            set bjLCU=CreateUnit(GetOwningPlayer(caster), 'dR31', GetUnitX(target), GetUnitY(target), GetRandomInt(0, 360))
+            call SetUnitScale(bjLCU, 5, 5, 5)
+            call SetUnitVertexColor(bjLCU, 255, 150, 0, 255)
+            call MyRemoveUnit(bjLCU, 2.5)
+            
+            set bjLCU=CreateUnit(GetOwningPlayer(caster), 'dR30', GetUnitX(target), GetUnitY(target), GetRandomInt(0, 360))
+            call SetUnitScale(bjLCU, 0.65, 0.65, 0.65)
+            call MyRemoveUnit(bjLCU , 2.5)
+            // set bjLCE=AddSpecialEffect("az_coco_t2_2.mdl", GetUnitX(target), GetUnitY(target))
+            // call SetSpecialEffectZ(bjLCE , 15)
+            // call SetSpecialEffectScale(bjLCE , 3)
+            // call SetSpecialEffectFacing(bjLCE , GetRandomInt(0, 360))
+            // call RemoveEffect(bjLCE , 3.2 , true , CreateTimer())
+            
+            set bjLCU=CreateUnit(GetOwningPlayer(caster), 'dRe7', GetUnitX(target), GetUnitY(target), GetRandomInt(0, 360))
+            call SetUnitScale(bjLCU, 5, 5, 1)
+            call SetUnitTimeScale(bjLCU, 0.4)
+            call MyRemoveUnit(bjLCU , 2.5)
+            //call RengokuT_SpecialEffectControl(bjLCU)
+            set bjLCU=CreateUnit(GetOwningPlayer(caster), 'dR14',  GetUnitX(target), GetUnitY(target), GetRandomInt(0, 360))
+            call SetUnitFlyHeight(bjLCU, 10, 0)
+            call SetUnitScale(bjLCU, 1.2, 1.2, 1.2)
+            call SetUnitVertexColor(bjLCU, 255, 255, 255, 180)
+            call UnitApplyTimedLife(bjLCU, 1, 1.5)
+            call MyRemoveUnit(bjLCU , 2.5)
+            set bjLCU=CreateUnit(GetOwningPlayer(caster), 'dR15',  GetUnitX(target), GetUnitY(target), GetRandomInt(0, 360))
+            call SetUnitFlyHeight(bjLCU, 10, 0)
+            call SetUnitScale(bjLCU, 2.3, 2.3, 2.3)
+            call MyRemoveUnit(bjLCU , 2.5)
+        endif
     else
-                call KillUnit(LoadUnitHandle(h, id, 26))
-                //call KillUnit(LoadUnitHandle(h, id, StringHash("EffectAct2_2")))
-                call MyRemoveUnit(LoadUnitHandle(h, id, 26), 1.5)
-                //call MyRemoveUnit(LoadUnitHandle(h, id, StringHash("EffectAct2_2")), 1.5)
+        call KillUnit(LoadUnitHandle(h, id, 26))
+        //call KillUnit(LoadUnitHandle(h, id, StringHash("EffectAct2_2")))
+        call MyRemoveUnit(LoadUnitHandle(h, id, 26), 1.5)
+        //call MyRemoveUnit(LoadUnitHandle(h, id, StringHash("EffectAct2_2")), 1.5)
         // call DestroyEffect(LoadEffectHandle(h, id, Effect1Hash))
         // call DestroyEffect(LoadEffectHandle(h, id, Effect2Hash))
         // call DestroyEffect(LoadEffectHandle(h, id, StringHash("Effect3")))
@@ -159713,190 +159721,196 @@ function RengokuT_Act3 takes nothing returns nothing
         call SetUnitTimeScale(target, 1)
         call FlushChildHashtable(h, id)
         call DestroyTimer(GetExpiredTimer())
-        endif
-        set caster=null
-        set target=null
+    endif
+    set caster=null
+    set target=null
 endfunction
 
 function RengokuT_Act2 takes nothing returns nothing
-        local integer id        = GetHandleId(GetExpiredTimer())
-        local unit caster       = LoadUnitHandle(h, id, c_CASTER)
-        local unit target       = LoadUnitHandle(h, id, c_TARGET)
+    local integer id        = GetHandleId(GetExpiredTimer())
+    local unit caster       = LoadUnitHandle(h, id, c_CASTER)
+    local unit target       = LoadUnitHandle(h, id, c_TARGET)
     local real time             = LoadReal(h, id, c_TIME)
     local integer act   = LoadInteger(h, id, c_ACT)
     local boolean b_SecondDamage_Chaos= LoadBoolean(h, id, 21)
     local real angle= AU(caster , target)
-        if act==1 then
-                if SquareRootUnit(caster , target) > 60 then
+    if act==1 then
+        if SquareRootUnit(caster , target) > 60 then
             call UnitRemoveAbility(caster,'A2VJ')
-                        call SetUnitX(caster, GetUnitX(caster) + 40 * Cos(angle))
-                        call SetUnitY(caster, GetUnitY(caster) + 40 * Sin(angle))
-                        set bjLCU=LoadUnitHandle(h, id, 24)
-                        call SetUnitX(bjLCU , GetUnitX(caster))
-                        call SetUnitY(bjLCU , GetUnitY(caster))
-                        call SetUnitFacing(bjLCU , angle * bj_RADTODEG)
-                        set bjLCU=LoadUnitHandle(h, id, 25)
-                        call SetUnitX(bjLCU, GetUnitX(caster))
-                        call SetUnitY(bjLCU, GetUnitY(caster))
-                        call SetUnitFacing(bjLCU , angle * bj_RADTODEG)
-                        if LoadInteger(h, id, c_EFFPERIOD) == 0 then
-                                
-                                set bjLCU = CreateUnit(GetOwningPlayer(caster), 'dR10', GetUnitX(caster), GetUnitY(caster), angle * bj_RADTODEG)
-                                call SetUnitVertexColor(bjLCU, 255, 255, 255, 80)
-                                call SetUnitTimeScale(bjLCU, 1.5)
-                                call SetUnitAnimationByIndex(bjLCU, 7)
-                                call MyRemoveUnit(bjLCU, 0.15)
-                                
-                                call SaveInteger(h, id, c_EFFPERIOD, 1)
-                        else
-                                call SaveInteger(h, id, c_EFFPERIOD, c_EFFPERIOD - 1)
-                        endif
-                else
-                        if time == 0 then
-                                call RengokuE_Shifting(caster , target , angle , 500 , CreateTimer())
-                call PauseUnit(caster, true)
-                call SetUnitInvulnerable(caster, true)
-                call PauseUnit(target,true)
-                call SaveBoolean(HH,GetHandleId(target),TARGET_ABILITY,true)
-                call SetUnitInvulnerable(target, true)
-                                set bjLCU=CreateUnit(GetOwningPlayer(caster), 'dR13', GetUnitX(target), GetUnitY(target), GetRandomInt(0, 360))
-                                call SetUnitScale(bjLCU, 2, 2, 2)
-                                call SetUnitTimeScale(bjLCU, 0.6)
-                                call MyRemoveUnit(bjLCU , 2.5)
-                                set bjLCU=CreateUnit(GetOwningPlayer(caster), 'dR11', GetUnitX(target), GetUnitY(target), GetRandomInt(0, 360))
-                                call SetUnitScale(bjLCU, 1.3, 1.3, 1.3)
-                                call SetUnitFlyHeight(bjLCU, 75, 0)
-                                call MyRemoveUnit(bjLCU , 2.5)
-                                set bjLCU=CreateUnit(GetOwningPlayer(caster), 'dR25', GetUnitX(target), GetUnitY(target), GetRandomInt(0, 360))
-                                call SetUnitScale(bjLCU, 1.5, 1.5, 1.5)
-                                call SetUnitFlyHeight(bjLCU, 100, 0)
-                                call SetUnitTimeScale(bjLCU, 0.8)
-                                call MyRemoveUnit(bjLCU , 2.5)
-                        endif
-                        if time == 0.14 then
-                                set bjLCU=CreateUnit(GetOwningPlayer(caster), 'dR13', GetUnitX(target), GetUnitY(target), GetRandomInt(0, 360))
-                                call SetUnitScale(bjLCU, 5, 5, 5)
-                                call SetUnitTimeScale(bjLCU, 0.6)
-                                call MyRemoveUnit(bjLCU , 2.5)
-                                // set bjLCE=AddSpecialEffect("war3mapImported\\FireEffectOrange.mdl", GetUnitX(target), GetUnitY(target))
-                                // call SetSpecialEffectZ(bjLCE , 75)
-                                // call SetSpecialEffectScale(bjLCE , 1.3)
-                                // call SetSpecialEffectFacing(bjLCE , GetRandomInt(0, 360))
-                                // call DestroyEffect(bjLCE)
-                                set bjLCU=CreateUnit(GetOwningPlayer(caster), 'dR11', GetUnitX(target), GetUnitY(target), GetRandomInt(0, 360))
-                                call SetUnitScale(bjLCU, 1.7, 1.7, 1.7)
-                                call SetUnitFlyHeight(bjLCU, 75, 0)
-                                call MyRemoveUnit(bjLCU , 2.5)
-                                set bjLCU=CreateUnit(GetOwningPlayer(caster), 'dR41', GetUnitX(target), GetUnitY(target), angle * bj_RADTODEG)
-                                call MyRemoveUnit(bjLCU , 2.5)
-                                set bjLCU=CreateUnit(GetOwningPlayer(LoadUnitHandle(h,id,c_CASTER)),'dR24', GetUnitX(target), GetUnitY(target), GetRandomInt(0,360))
-                                call SetUnitFlyHeight(bjLCU, 100, 0)
-                                call SetUnitScale(bjLCU, 2.7, 2.7, 2.7)
-                                call SetUnitTimeScale(bjLCU, 0.6)
-                                call SaveUnitHandle(h, id, 26, bjLCU)
-                                // set bjLCU=CreateUnit(GetOwningPlayer(LoadUnitHandle(h,id,c_CASTER)),'dR25', GetUnitX(target), GetUnitY(target), GetRandomInt(0,360))
-                                // call SetUnitFlyHeight(bjLCU, 100, 0)
-                                // call SetUnitScale(bjLCU, 1.7, 1.7, 1.7)
-                                // call SetUnitTimeScale(bjLCU, 0.4)
-                                // call SaveUnitHandle(h, id, StringHash("EffectAct2_1"), bjLCU)
-                                // set bjLCE=AddSpecialEffect("az_doomdragon_t.mdl", GetUnitX(target), GetUnitY(target))
-                                // call SetSpecialEffectZ(bjLCE , 5)
-                                // call SetSpecialEffectFacing(bjLCE , GetRandomInt(0, 360))
-                                // call SetSpecialEffectScale(bjLCE , 5)
-                                // call RemoveEffect(bjLCE , 5 , true , CreateTimer())
-                                set bjLCU=CreateUnit(GetOwningPlayer(caster), 'dR12', GetUnitX(target), GetUnitY(target), GetRandomInt(0, 360))
-                                call SetUnitScale(bjLCU, 1.8, 1.8, 1.8)
-                                call SetUnitFlyHeight(bjLCU, 75, 0)
-                                call MyRemoveUnit(bjLCU , 5)
-                                
-                                set soundplay=CreateSound("Sound\\war3mapImported\\RengokuT3.mp3", false, false, true, 12700, 12700, "")
-                                call StartSound(soundplay)
-                                call KillSoundWhenDone(soundplay)
-                                call RemoveUnit(LoadUnitHandle(h, id, 24))
-                                call RemoveUnit(LoadUnitHandle(h, id, 25))
-                                call SetUnitTimeScale(caster, 0.2)
-                                call SetUnitAnimationByIndex(caster, 9)
-                call PauseUnit(caster, true)
-                call SetUnitInvulnerable(caster, true)
-                call PauseUnit(target,true)
-                call SaveBoolean(HH,GetHandleId(target),TARGET_ABILITY,true)
-                call SetUnitInvulnerable(target, true)
-                                call SaveInteger(h, id, c_ACT, 2)
-                                call SaveReal(h, id, c_TIME, 0)
-                        else
-                                call SaveReal(h, id, c_TIME, time + 0.02)
-                        endif
-                endif
+            call SetUnitX(caster, GetUnitX(caster) + 40 * Cos(angle))
+            call SetUnitY(caster, GetUnitY(caster) + 40 * Sin(angle))
+            set bjLCU=LoadUnitHandle(h, id, 24)
+            call SetUnitX(bjLCU , GetUnitX(caster))
+            call SetUnitY(bjLCU , GetUnitY(caster))
+            call SetUnitFacing(bjLCU , angle * bj_RADTODEG)
+            set bjLCU=LoadUnitHandle(h, id, 25)
+            call SetUnitX(bjLCU, GetUnitX(caster))
+            call SetUnitY(bjLCU, GetUnitY(caster))
+            call SetUnitFacing(bjLCU , angle * bj_RADTODEG)
+            if LoadInteger(h, id, c_EFFPERIOD) == 0 then     
+                set bjLCU = CreateUnit(GetOwningPlayer(caster), 'dR10', GetUnitX(caster), GetUnitY(caster), angle * bj_RADTODEG)
+                call SetUnitVertexColor(bjLCU, 255, 255, 255, 80)
+                call SetUnitTimeScale(bjLCU, 1.5)
+                call SetUnitAnimationByIndex(bjLCU, 7)
+                call MyRemoveUnit(bjLCU, 0.15)
+                call SaveInteger(h, id, c_EFFPERIOD, 1)
+            else
+                call SaveInteger(h, id, c_EFFPERIOD, c_EFFPERIOD - 1)
+            endif
         else
-                call PauseTimer(GetExpiredTimer())
-                call TimerStart(GetExpiredTimer(), 0.02, true, function RengokuT_Act3)
+            if LoadBoolean(HH,GetHandleId(target),ANTITARGET_ABILITY)==false then
+                if time == 0 then
+                    call RengokuE_Shifting(caster , target , angle , 500 , CreateTimer())
+                    call PauseUnit(caster, true)
+                    call SetUnitInvulnerable(caster, true)
+                    call PauseUnit(target,true)
+                    call SaveBoolean(HH,GetHandleId(target),TARGET_ABILITY,true)
+                    call SetUnitInvulnerable(target, true)
+                    set bjLCU=CreateUnit(GetOwningPlayer(caster), 'dR13', GetUnitX(target), GetUnitY(target), GetRandomInt(0, 360))
+                    call SetUnitScale(bjLCU, 2, 2, 2)
+                    call SetUnitTimeScale(bjLCU, 0.6)
+                    call MyRemoveUnit(bjLCU , 2.5)
+                    set bjLCU=CreateUnit(GetOwningPlayer(caster), 'dR11', GetUnitX(target), GetUnitY(target), GetRandomInt(0, 360))
+                    call SetUnitScale(bjLCU, 1.3, 1.3, 1.3)
+                    call SetUnitFlyHeight(bjLCU, 75, 0)
+                    call MyRemoveUnit(bjLCU , 2.5)
+                    set bjLCU=CreateUnit(GetOwningPlayer(caster), 'dR25', GetUnitX(target), GetUnitY(target), GetRandomInt(0, 360))
+                    call SetUnitScale(bjLCU, 1.5, 1.5, 1.5)
+                    call SetUnitFlyHeight(bjLCU, 100, 0)
+                    call SetUnitTimeScale(bjLCU, 0.8)
+                    call MyRemoveUnit(bjLCU , 2.5)
+                endif
+                if time == 0.14 then
+                    set bjLCU=CreateUnit(GetOwningPlayer(caster), 'dR13', GetUnitX(target), GetUnitY(target), GetRandomInt(0, 360))
+                    call SetUnitScale(bjLCU, 5, 5, 5)
+                    call SetUnitTimeScale(bjLCU, 0.6)
+                    call MyRemoveUnit(bjLCU , 2.5)
+                    // set bjLCE=AddSpecialEffect("war3mapImported\\FireEffectOrange.mdl", GetUnitX(target), GetUnitY(target))
+                    // call SetSpecialEffectZ(bjLCE , 75)
+                    // call SetSpecialEffectScale(bjLCE , 1.3)
+                    // call SetSpecialEffectFacing(bjLCE , GetRandomInt(0, 360))
+                    // call DestroyEffect(bjLCE)
+                    set bjLCU=CreateUnit(GetOwningPlayer(caster), 'dR11', GetUnitX(target), GetUnitY(target), GetRandomInt(0, 360))
+                    call SetUnitScale(bjLCU, 1.7, 1.7, 1.7)
+                    call SetUnitFlyHeight(bjLCU, 75, 0)
+                    call MyRemoveUnit(bjLCU , 2.5)
+                    set bjLCU=CreateUnit(GetOwningPlayer(caster), 'dR41', GetUnitX(target), GetUnitY(target), angle * bj_RADTODEG)
+                    call MyRemoveUnit(bjLCU , 2.5)
+                    set bjLCU=CreateUnit(GetOwningPlayer(LoadUnitHandle(h,id,c_CASTER)),'dR24', GetUnitX(target), GetUnitY(target), GetRandomInt(0,360))
+                    call SetUnitFlyHeight(bjLCU, 100, 0)
+                    call SetUnitScale(bjLCU, 2.7, 2.7, 2.7)
+                    call SetUnitTimeScale(bjLCU, 0.6)
+                    call SaveUnitHandle(h, id, 26, bjLCU)
+                    // set bjLCU=CreateUnit(GetOwningPlayer(LoadUnitHandle(h,id,c_CASTER)),'dR25', GetUnitX(target), GetUnitY(target), GetRandomInt(0,360))
+                    // call SetUnitFlyHeight(bjLCU, 100, 0)
+                    // call SetUnitScale(bjLCU, 1.7, 1.7, 1.7)
+                    // call SetUnitTimeScale(bjLCU, 0.4)
+                    // call SaveUnitHandle(h, id, StringHash("EffectAct2_1"), bjLCU)
+                    // set bjLCE=AddSpecialEffect("az_doomdragon_t.mdl", GetUnitX(target), GetUnitY(target))
+                    // call SetSpecialEffectZ(bjLCE , 5)
+                    // call SetSpecialEffectFacing(bjLCE , GetRandomInt(0, 360))
+                    // call SetSpecialEffectScale(bjLCE , 5)
+                    // call RemoveEffect(bjLCE , 5 , true , CreateTimer())
+                    set bjLCU=CreateUnit(GetOwningPlayer(caster), 'dR12', GetUnitX(target), GetUnitY(target), GetRandomInt(0, 360))
+                    call SetUnitScale(bjLCU, 1.8, 1.8, 1.8)
+                    call SetUnitFlyHeight(bjLCU, 75, 0)
+                    call MyRemoveUnit(bjLCU , 5)
+                    
+                    set soundplay=CreateSound("Sound\\war3mapImported\\RengokuT3.mp3", false, false, true, 12700, 12700, "")
+                    call StartSound(soundplay)
+                    call KillSoundWhenDone(soundplay)
+                    call RemoveUnit(LoadUnitHandle(h, id, 24))
+                    call RemoveUnit(LoadUnitHandle(h, id, 25))
+                    call SetUnitTimeScale(caster, 0.2)
+                    call SetUnitAnimationByIndex(caster, 9)
+                    call PauseUnit(caster, true)
+                    call SetUnitInvulnerable(caster, true)
+                    call PauseUnit(target,true)
+                    call SaveBoolean(HH,GetHandleId(target),TARGET_ABILITY,true)
+                    call SetUnitInvulnerable(target, true)
+                    call SaveInteger(h, id, c_ACT, 2)
+                    call SaveReal(h, id, c_TIME, 0)
+                else
+                    call SaveReal(h, id, c_TIME, time + 0.02)
+                endif
+            else
+                call PauseUnit(caster,false)
+                call SaveUnitHandle(HH,GetHandleId(target),REVERSE_TARGET,caster)
+                call SetUnitInvulnerable(caster,false)
+                call FlushChildHashtable(h,id)
+                call DestroyTimer(GetExpiredTimer())
+            endif
         endif
-        set caster=null
-        set target=null
+    else
+        call PauseTimer(GetExpiredTimer())
+        call TimerStart(GetExpiredTimer(), 0.02, true, function RengokuT_Act3)
+    endif
+    set caster=null
+    set target=null
 endfunction
 
 
 
 function RengokuT_Act1 takes nothing returns nothing
-        local integer id                = GetHandleId(GetExpiredTimer())
-        local unit caster               = LoadUnitHandle(h, id, c_CASTER)
+    local integer id                = GetHandleId(GetExpiredTimer())
+    local unit caster               = LoadUnitHandle(h, id, c_CASTER)
     local real time                     = LoadReal(h, id, c_TIME)
     local integer act           = LoadInteger(h, id, c_ACT)
     local boolean b_SecondDamage_Chaos= LoadBoolean(h, id, 21)
     local real angle            = AU(caster , LoadUnitHandle(h, id, c_TARGET))
-        if act==0 then
-                call SaveReal(h, id, c_TIME, time + 0.05)
-                call SetUnitFacing(caster, angle * bj_RADTODEG)
+    if act==0 then
+        call SaveReal(h, id, c_TIME, time + 0.05)
+        call SetUnitFacing(caster, angle * bj_RADTODEG)
         call PauseUnit(caster, true)
         call SetUnitInvulnerable(caster, true)
-                //call SetUnitX(LoadUnitHandle(h, id, Effect1Hash), GetUnitX(caster))
-                //call SetUnitY(LoadUnitHandle(h, id, Effect1Hash), GetUnitY(caster))
-                call SetUnitXY(LoadUnitHandle(h, id, c_DUMMY2), GetUnitX(caster), GetUnitY(caster))
-                call SetUnitXY(LoadUnitHandle(h, id, c_DUMMY3), GetUnitX(caster), GetUnitY(caster))
-                if time == 3 then
-                        set soundplay=CreateSound("Sound\\war3mapImported\\RengokuT1.mp3", false, false, true, 12700, 12700, "")
-                        call StartSound(soundplay)
-                        call KillSoundWhenDone(soundplay)
-                elseif time == 4 then
-                        call SetUnitAnimationByIndex(caster, 7)
-                        call SaveEffectHandle(h, id, 22, AddSpecialEffectTarget("OPm (897).mdx", caster, "hand right"))
-                        call SaveEffectHandle(h, id, 23, AddSpecialEffectTarget("OPm (897).mdx", caster, "hand left"))
-                        set bjLCU=CreateUnit(GetOwningPlayer(caster), 'dR39', GetUnitX(caster), GetUnitY(caster), angle * bj_RADTODEG + 90)
-                        call SetUnitFlyHeight(bjLCU, 100, 0)
-                        call SetUnitScale(bjLCU, 2.5, 2.5, 2.5)
-                        call MyRemoveUnit(bjLCU, 2.5)
-                        set bjLCU=CreateUnit(GetOwningPlayer(caster), 'dR42', GetUnitX(caster), GetUnitY(caster), angle * bj_RADTODEG)
-                        call SetUnitFlyHeight(bjLCU, 60, 0)
-                        call SetUnitScale(bjLCU, 2, 2, 2)
-                        call SetUnitTimeScale(bjLCU, 0.7)
-                        call MyRemoveUnit(bjLCU, 2.5)
-                        set bjLCU=CreateUnit(GetOwningPlayer(caster), 'dR27', GetUnitX(caster), GetUnitY(caster), angle * bj_RADTODEG)
-                        call SetUnitScale(bjLCU, 0.75, 0.75, 0.75)
-                        call SetUnitVertexColor(bjLCU, 255, 255, 255, 90)
-                        call MyRemoveUnit(bjLCU, 2.5)
-                        set bjLCU=CreateUnit(GetOwningPlayer(caster), 'dRe8', GetUnitX(caster), GetUnitY(caster), angle * bj_RADTODEG)
-                        call SetUnitFlyHeight(bjLCU, 125, 0)
-                        call SetUnitScale(bjLCU, 3, 3, 3)
-                        call SaveUnitHandle(h, id, 24, bjLCU)
-                        set bjLCU=CreateUnit(GetOwningPlayer(caster), 'dRe8', GetUnitX(caster), GetUnitY(caster), angle * bj_RADTODEG)
-                        call SetUnitFlyHeight(bjLCU, 100, 0)
-                        call SetUnitVertexColor(bjLCU, 255, 255, 255, 150)
-                        call SetUnitScale(bjLCU, 3, 3, 3)
-                        call SaveUnitHandle(h, id, 25, bjLCU)
-                        // call KillUnit(LoadUnitHandle(h, id, Effect1Hash))
-                        call KillUnit(LoadUnitHandle(h, id, c_DUMMY2))
-                        call KillUnit(LoadUnitHandle(h, id, c_DUMMY3))
-                        // call MyRemoveUnit(LoadUnitHandle(h, id, Effect1Hash), 1.5)
-                        call MyRemoveUnit(LoadUnitHandle(h, id, c_DUMMY2), 1.5)
-                        call MyRemoveUnit(LoadUnitHandle(h, id, c_DUMMY3), 1.5)
-                        call SaveInteger(h, id, c_ACT, 1)
-                        call SaveReal(h, id, c_TIME, 0)
-                endif
-    else
-                call PauseTimer(GetExpiredTimer())
-                call TimerStart(GetExpiredTimer(), 0.02, true, function RengokuT_Act2)
+        //call SetUnitX(LoadUnitHandle(h, id, Effect1Hash), GetUnitX(caster))
+        //call SetUnitY(LoadUnitHandle(h, id, Effect1Hash), GetUnitY(caster))
+        call SetUnitXY(LoadUnitHandle(h, id, c_DUMMY2), GetUnitX(caster), GetUnitY(caster))
+        call SetUnitXY(LoadUnitHandle(h, id, c_DUMMY3), GetUnitX(caster), GetUnitY(caster))
+        if time == 3 then
+            set soundplay=CreateSound("Sound\\war3mapImported\\RengokuT1.mp3", false, false, true, 12700, 12700, "")
+            call StartSound(soundplay)
+            call KillSoundWhenDone(soundplay)
+        elseif time == 4 then
+            call SetUnitAnimationByIndex(caster, 7)
+            call SaveEffectHandle(h, id, 22, AddSpecialEffectTarget("OPm (897).mdx", caster, "hand right"))
+            call SaveEffectHandle(h, id, 23, AddSpecialEffectTarget("OPm (897).mdx", caster, "hand left"))
+            set bjLCU=CreateUnit(GetOwningPlayer(caster), 'dR39', GetUnitX(caster), GetUnitY(caster), angle * bj_RADTODEG + 90)
+            call SetUnitFlyHeight(bjLCU, 100, 0)
+            call SetUnitScale(bjLCU, 2.5, 2.5, 2.5)
+            call MyRemoveUnit(bjLCU, 2.5)
+            set bjLCU=CreateUnit(GetOwningPlayer(caster), 'dR42', GetUnitX(caster), GetUnitY(caster), angle * bj_RADTODEG)
+            call SetUnitFlyHeight(bjLCU, 60, 0)
+            call SetUnitScale(bjLCU, 2, 2, 2)
+            call SetUnitTimeScale(bjLCU, 0.7)
+            call MyRemoveUnit(bjLCU, 2.5)
+            set bjLCU=CreateUnit(GetOwningPlayer(caster), 'dR27', GetUnitX(caster), GetUnitY(caster), angle * bj_RADTODEG)
+            call SetUnitScale(bjLCU, 0.75, 0.75, 0.75)
+            call SetUnitVertexColor(bjLCU, 255, 255, 255, 90)
+            call MyRemoveUnit(bjLCU, 2.5)
+            set bjLCU=CreateUnit(GetOwningPlayer(caster), 'dRe8', GetUnitX(caster), GetUnitY(caster), angle * bj_RADTODEG)
+            call SetUnitFlyHeight(bjLCU, 125, 0)
+            call SetUnitScale(bjLCU, 3, 3, 3)
+            call SaveUnitHandle(h, id, 24, bjLCU)
+            set bjLCU=CreateUnit(GetOwningPlayer(caster), 'dRe8', GetUnitX(caster), GetUnitY(caster), angle * bj_RADTODEG)
+            call SetUnitFlyHeight(bjLCU, 100, 0)
+            call SetUnitVertexColor(bjLCU, 255, 255, 255, 150)
+            call SetUnitScale(bjLCU, 3, 3, 3)
+            call SaveUnitHandle(h, id, 25, bjLCU)
+            // call KillUnit(LoadUnitHandle(h, id, Effect1Hash))
+            call KillUnit(LoadUnitHandle(h, id, c_DUMMY2))
+            call KillUnit(LoadUnitHandle(h, id, c_DUMMY3))
+            // call MyRemoveUnit(LoadUnitHandle(h, id, Effect1Hash), 1.5)
+            call MyRemoveUnit(LoadUnitHandle(h, id, c_DUMMY2), 1.5)
+            call MyRemoveUnit(LoadUnitHandle(h, id, c_DUMMY3), 1.5)
+            call SaveInteger(h, id, c_ACT, 1)
+            call SaveReal(h, id, c_TIME, 0)
         endif
-        set caster=null
+    else
+        call PauseTimer(GetExpiredTimer())
+        call TimerStart(GetExpiredTimer(), 0.02, true, function RengokuT_Act2)
+    endif
+    set caster=null
 endfunction
 
 
@@ -159910,40 +159924,40 @@ function RengokuT_Cast takes unit newCaster,unit newTarget,timer newTimer return
     set soundplay=CreateSound("Sound\\war3mapImported\\RengokuT2.mp3", false, false, true, 12700, 12700, "")
     call StartSound(soundplay)
     call KillSoundWhenDone(soundplay)
-        set bjLCU=CreateUnit(GetOwningPlayer(newCaster), 'dR12', caster_x, caster_y, GetRandomInt(0, 360))
-        call SetUnitFlyHeight(bjLCU, 5, 0)
-        call SetUnitScale(bjLCU, 5, 5, 5)
-        call MyRemoveUnit(bjLCU, 5)
-        set bjLCU=CreateUnit(GetOwningPlayer(newCaster), 'dR13', caster_x, caster_y, GetRandomInt(0, 360))
-        call SetUnitFlyHeight(bjLCU, 5, 0)
-        call SetUnitScale(bjLCU, 1.6, 1.6, 1.6)
-        call SetUnitTimeScale(bjLCU, 0.6)
-        call MyRemoveUnit(bjLCU, 2)
-        set bjLCU=CreateUnit(GetOwningPlayer(newCaster), 'dR13', caster_x, caster_y, GetRandomInt(0, 360))
-        call SetUnitFlyHeight(bjLCU, 5, 0)
-        call SetUnitScale(bjLCU, 5.0, 5.0, 5.0)
-        call SetUnitTimeScale(bjLCU, 0.6)
-        call MyRemoveUnit(bjLCU, 2)
-        set bjLCU=CreateUnit(GetOwningPlayer(newCaster), 'dR11', caster_x, caster_y, GetRandomInt(0, 360))
-        call SetUnitFlyHeight(bjLCU, 75, 0)
-        call SetUnitScale(bjLCU, 1.3, 1.3, 1.3)
-        call MyRemoveUnit(bjLCU, 2)
-        set bjLCU=CreateUnit(GetOwningPlayer(newCaster), 'dR11', caster_x, caster_y, GetRandomInt(0, 360))
-        call SetUnitFlyHeight(bjLCU, 75, 0)
-        call SetUnitScale(bjLCU, 2.1, 2.1, 2.1)
-        call MyRemoveUnit(bjLCU, 2)
-        // set bjLCU=CreateUnit(GetOwningPlayer(newCaster), 'dR12', caster_x, caster_y, GetRandomInt(0, 360))
-        // call SetUnitFlyHeight(bjLCU, 10, 0)
-        // call SetUnitScale(bjLCU, 1.8, 1.8, 1.8)
-    // call SaveUnitHandle(h, id, Effect1Hash, bjLCU)
-        set bjLCU=CreateUnit(GetOwningPlayer(newCaster), 'dR14', caster_x, caster_y, GetRandomInt(0, 360))
-        call SetUnitFlyHeight(bjLCU, 10, 0)
-        call SetUnitScale(bjLCU, 0.85, 0.85, 0.85)
-        call SetUnitVertexColor(bjLCU, 255, 255, 255, 150)
+    set bjLCU=CreateUnit(GetOwningPlayer(newCaster), 'dR12', caster_x, caster_y, GetRandomInt(0, 360))
+    call SetUnitFlyHeight(bjLCU, 5, 0)
+    call SetUnitScale(bjLCU, 5, 5, 5)
+    call MyRemoveUnit(bjLCU, 5)
+    set bjLCU=CreateUnit(GetOwningPlayer(newCaster), 'dR13', caster_x, caster_y, GetRandomInt(0, 360))
+    call SetUnitFlyHeight(bjLCU, 5, 0)
+    call SetUnitScale(bjLCU, 1.6, 1.6, 1.6)
+    call SetUnitTimeScale(bjLCU, 0.6)
+    call MyRemoveUnit(bjLCU, 2)
+    set bjLCU=CreateUnit(GetOwningPlayer(newCaster), 'dR13', caster_x, caster_y, GetRandomInt(0, 360))
+    call SetUnitFlyHeight(bjLCU, 5, 0)
+    call SetUnitScale(bjLCU, 5.0, 5.0, 5.0)
+    call SetUnitTimeScale(bjLCU, 0.6)
+    call MyRemoveUnit(bjLCU, 2)
+    set bjLCU=CreateUnit(GetOwningPlayer(newCaster), 'dR11', caster_x, caster_y, GetRandomInt(0, 360))
+    call SetUnitFlyHeight(bjLCU, 75, 0)
+    call SetUnitScale(bjLCU, 1.3, 1.3, 1.3)
+    call MyRemoveUnit(bjLCU, 2)
+    set bjLCU=CreateUnit(GetOwningPlayer(newCaster), 'dR11', caster_x, caster_y, GetRandomInt(0, 360))
+    call SetUnitFlyHeight(bjLCU, 75, 0)
+    call SetUnitScale(bjLCU, 2.1, 2.1, 2.1)
+    call MyRemoveUnit(bjLCU, 2)
+    // set bjLCU=CreateUnit(GetOwningPlayer(newCaster), 'dR12', caster_x, caster_y, GetRandomInt(0, 360))
+    // call SetUnitFlyHeight(bjLCU, 10, 0)
+    // call SetUnitScale(bjLCU, 1.8, 1.8, 1.8)
+// call SaveUnitHandle(h, id, Effect1Hash, bjLCU)
+    set bjLCU=CreateUnit(GetOwningPlayer(newCaster), 'dR14', caster_x, caster_y, GetRandomInt(0, 360))
+    call SetUnitFlyHeight(bjLCU, 10, 0)
+    call SetUnitScale(bjLCU, 0.85, 0.85, 0.85)
+    call SetUnitVertexColor(bjLCU, 255, 255, 255, 150)
     call SaveUnitHandle(h, id, c_DUMMY2, bjLCU)
-        set bjLCU=CreateUnit(GetOwningPlayer(newCaster), 'dR15', caster_x, caster_y, GetRandomInt(0, 360))
-        call SetUnitFlyHeight(bjLCU, 10, 0)
-        call SetUnitScale(bjLCU, 2, 2, 2)
+    set bjLCU=CreateUnit(GetOwningPlayer(newCaster), 'dR15', caster_x, caster_y, GetRandomInt(0, 360))
+    call SetUnitFlyHeight(bjLCU, 10, 0)
+    call SetUnitScale(bjLCU, 2, 2, 2)
     call SaveUnitHandle(h, id, c_DUMMY3, bjLCU)
     if b_RengokuF_Pass == true then
         call SaveBoolean(h, id, 21, true)
@@ -159974,20 +159988,20 @@ function Trig_RengokuInt_Actions takes nothing returns nothing
     endif
         
     if GetSpellAbilityId() == 'RenE' then
-                if IsUnitEnemy(GetSpellTargetUnit(), GetOwningPlayer(GetSpellAbilityUnit())) == false then
-                        call RengokuE_Shield(GetSpellAbilityUnit() , GetSpellTargetUnit() , CreateTimer())
-                else
-                        call RengokuE_Cast(GetSpellAbilityUnit() , GetSpellTargetUnit() , CreateTimer())
-                endif
+        if IsUnitEnemy(GetSpellTargetUnit(), GetOwningPlayer(GetSpellAbilityUnit())) == false then
+            call RengokuE_Shield(GetSpellAbilityUnit() , GetSpellTargetUnit() , CreateTimer())
+        else
+            call RengokuE_Cast(GetSpellAbilityUnit() , GetSpellTargetUnit() , CreateTimer())
         endif
+    endif
         
-        if GetSpellAbilityId() == 'RenR' then
-                call RengokuR_Cast(GetSpellAbilityUnit() , GetSpellTargetX() , GetSpellTargetY() , CreateTimer())
-        endif
-        
-        if GetSpellAbilityId() == 'RenT' then
-                call RengokuT_Cast(GetSpellAbilityUnit() , GetSpellTargetUnit() , CreateTimer())
-        endif
+    if GetSpellAbilityId() == 'RenR' then
+        call RengokuR_Cast(GetSpellAbilityUnit() , GetSpellTargetX() , GetSpellTargetY() , CreateTimer())
+    endif
+    
+    if GetSpellAbilityId() == 'RenT' then
+        call RengokuT_Cast(GetSpellAbilityUnit() , GetSpellTargetUnit() , CreateTimer())
+    endif
 endfunction
 
 
