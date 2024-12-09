@@ -175744,335 +175744,315 @@ local real cjlocgn_00000000
 set time=time+0.02
 call SaveReal(HH,id,5,time)
 if time==24 then
-call ShowUnit(caster,true)
-call ShowUnit(target,true)
-call UnitSpeed(caster,1)
-call SetUnitPathing(caster,true)
-call PauseUnit(caster,false)
-call SetUnitInvulnerable(caster,false)
-call UnitSpeed(target,1)
-call SetUnitPathing(target,true)
-call PauseUnit(target,false)
-call SaveBoolean(HH,GetHandleId(target),TARGET_ABILITY,false)
-call SetUnitInvulnerable(target,false)
+    call ShowUnit(caster,true)
+    call ShowUnit(target,true)
+    call UnitSpeed(caster,1)
+    call SetUnitPathing(caster,true)
+    call PauseUnit(caster,false)
+    call SetUnitInvulnerable(caster,false)
+    call UnitSpeed(target,1)
+    call SetUnitPathing(target,true)
+    call PauseUnit(target,false)
+    call SaveBoolean(HH,GetHandleId(target),TARGET_ABILITY,false)
+    call SetUnitInvulnerable(target,false)
 
 
-call myCustomDamage(caster,target,damage,false,false,null,null,null)
+    call myCustomDamage(caster,target,damage,false,false,null,null,null)
 
 
-//call SetPlayerAbilityAvailable(GetOwningPlayer(caster),'BGG1',false)
-//call SetPlayerAbilityAvailable(GetOwningPlayer(caster),'BGG2',true)
-//call SetPlayerAbilityAvailable(GetOwningPlayer(caster),'BGG2',true)
-//call UnitAddAbility(caster,'BGG1')
-//call UnitAddAbility(caster,'BGG2')
+    //call SetPlayerAbilityAvailable(GetOwningPlayer(caster),'BGG1',false)
+    //call SetPlayerAbilityAvailable(GetOwningPlayer(caster),'BGG2',true)
+    //call SetPlayerAbilityAvailable(GetOwningPlayer(caster),'BGG2',true)
+    //call UnitAddAbility(caster,'BGG1')
+    //call UnitAddAbility(caster,'BGG2')
 
 
 
-call MoveUnit(LoadUnitHandle(HH,id,21),caster,0,facing)
-call MoveUnit(LoadUnitHandle(HH,id,22),target,0,facing)
-call RemoveUnit(LoadUnitHandle(HH,id,21))
-call RemoveUnit(LoadUnitHandle(HH,id,22))
-if GetLocalPlayer()==GetOwningPlayer(caster)then
-call ClearSelection()
-call SelectUnit(caster,true)
-endif
-if GetLocalPlayer()==GetOwningPlayer(target)then
-call ClearSelection()
-call SelectUnit(target,true)
-endif
-call PauseTimer(GetExpiredTimer())
-call FlushChildHashtable(HH,id)
-call DestroyTimer(GetExpiredTimer())
+    call MoveUnit(LoadUnitHandle(HH,id,21),caster,0,facing)
+    call MoveUnit(LoadUnitHandle(HH,id,22),target,0,facing)
+    call RemoveUnit(LoadUnitHandle(HH,id,21))
+    call RemoveUnit(LoadUnitHandle(HH,id,22))
+    if GetLocalPlayer()==GetOwningPlayer(caster)then
+        call ClearSelection()
+        call SelectUnit(caster,true)
+    endif
+    if GetLocalPlayer()==GetOwningPlayer(target)then
+        call ClearSelection()
+        call SelectUnit(target,true)
+    endif
+    call PauseTimer(GetExpiredTimer())
+    call FlushChildHashtable(HH,id)
+    call DestroyTimer(GetExpiredTimer())
 else
 
-
-
-
-if time>2 then
-set facing=Angle2(GetUnitX(caster),GetUnitY(caster),GetUnitX(target),GetUnitY(target))
-call SaveReal(HH,id,3,facing)
-endif
-call SetUnitFacing(caster,facing)
-call SetUnitPathing(caster,false)
-call PauseUnit(caster,true)
-call SetUnitInvulnerable(caster,true)
-
-if time>20 then
-call PauseUnit(target,true)
-call SaveBoolean(HH,GetHandleId(target),TARGET_ABILITY,true)
-call SetUnitInvulnerable(target,true)
-endif
-
-if time==1.02 then
-call RemoveUnit(LoadUnitHandle(HH,id,20))
-call RemoveUnit(LoadUnitHandle(HH,id,21))
-call ShowUnit(caster,true)
-call UnitSpeed(caster,1)
-call SetUnitPathing(caster,true)
-call PauseUnit(caster,false)
-call SetUnitInvulnerable(caster,false)
-
-if GetLocalPlayer()==GetOwningPlayer(caster) then
-call ClearSelection()
-call SelectUnit(caster,true)
-endif
-
-call PauseTimer(GetExpiredTimer())
-call FlushChildHashtable(HH,id)
-call DestroyTimer(GetExpiredTimer())
-endif
-
-
-
-
-if time==0.02 then
-
-
-call EffectCreateAndMove(true,"BlackGoku\\WindCircleFaster.mdl",facing,1,1,1,100,100,100,40,0,caster,0,facing)
-call EffectCreateAndMove(true,"BlackGoku\\WindNewFaw4.mdl",facing,1,1,0.5,100,100,100,0,0,caster,0,facing)
-call EffectCreateAndMove(true,"BlackGoku\\HakenSaber22.mdl",facing,1,1,0.5,100,100,100,0,0,caster,0,facing)
-call EffectCreateAndMove(true,"BlackGoku\\HakkeStart2.mdl",facing,1,0.5,0.5,100,100,100,60,0,caster,0,facing)
-if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
-set soundplay=CreateSound("Sound\\Music\\mp3Music\\SoundEng\\BlackGokuT1-1eng.mp3",false,false,true,12700,12700,"")
-call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
-else
-set soundplay=CreateSound("Sound\\Music\\mp3Music\\SoundJap\\BlackGokuT1-1.mp3",false,false,true,12700,12700,"")
-call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
-endif
-
-set n0=CreateUnit(Player(12),GetUnitTypeId(caster),GetUnitX(caster),GetUnitY(caster),LoadReal(HH,id,3))
-
-if LoadBoolean(HH,GetHandleId(caster),StringHash("BGRose"))==true then
-call UnitAddAbility(n0,'ABG1')
-else
-call UnitAddAbility(n0,'ABG0')
-endif
-
-if GetRandomInt(1,2)==1 then
-call SetUnitAnimationByIndex(n0,31)
-else
-call SetUnitAnimationByIndex(n0,30)
-endif
-
-call UnitAddAbility(n0,'Aloc')
-call UnitAddAbility(n0,'Amrf')
-call UnitRemoveAbility(n0,'Amrf')
-call UnitSpeed(n0,1.5)
-call PauseUnit(n0,true)
-call SaveUnitHandle(HH,id,21,n0)
-call SetUnitFlyHeight(n0,0,0)
-set n0=null
-call ShowUnit(caster,false)
-
-endif
-
-
-
-
-if time==0.2 then
-
-
-set soundplay=CreateSound("Sound\\Music\\mp3Music\\SoundJap\\BlackGokuT1.mp3",false,false,true,12700,12700,"")
-call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
-
-call EffectCreateAndMoveAn(true,"BlackGoku\\AFB_hudieCarol.mdl",facing,0.5,1,2,100,100,100,0,0,caster,100,facing,1)
-set n0=CreateUnit(GetOwningPlayer(caster),'e200',GetUnitX(caster),GetUnitY(caster),facing)
-call SetUnitModel(n0,"BlackGoku\\TZjQ2.mdl")
-call UnitSize(n0,1.5,1,1)
-call MoveUnit(n0,n0,100,facing)
-call UnitAddAbility(n0,'Amrf')
-call UnitRemoveAbility(n0,'Amrf')
-call SetUnitFlyHeight(n0,250,0)
-call SaveUnitHandle(HH,id,20,n0)
-set n0=null
-endif
-
-
-
-if time>0.2 and time<1 then
-call MoveUnit(LoadUnitHandle(HH,id,20),LoadUnitHandle(HH,id,20),40,facing)
-call GroupClear(G)
-call GroupEnumUnitsInRange(G,GetUnitX(LoadUnitHandle(HH,id,20)),GetUnitY(LoadUnitHandle(HH,id,20)),200,Base)
-loop
-set n0=FirstOfGroup(G)
-exitwhen n0==null
-if Condition_Base(GetOwningPlayer(caster),n0) and GetUnitAbilityLevel(n0,'Avul')==0 then
-call SaveUnitHandle(HH,id,2,n0)
-call RemoveUnit(LoadUnitHandle(HH,id,20))
-set time=20
-call ShowUnit(n0,false)
-call SaveReal(HH,id,5,time)
-call GroupClear(G)
-endif
-call GroupRemoveUnit(G,n0)
-endloop
-call GroupClear(G)
-endif
-
-
-if time==20.02 then
-set n0=CreateUnit(GetOwningPlayer(target),'270e',GetUnitX(target),GetUnitY(target),facing)
-call SetUnitModel(n0,"BlackGoku\\DimensionCutHD.mdl")
-call UnitSize(n0,2,1,1)
-call UnitSpeed(n0,3)
-call MyRemoveUnit(n0,3.5)
-call SetUnitFlyHeight(n0,100,0)
-call UnitColor(n0,100,100,100,0)
-set n0=null
-call EffectCreateAndMove(true,"BlackGoku\\afb (1896).mdl",facing,3.5,0.25,0.75,100,100,100,0,0,target,0,facing)
-call SetUnitAnimationByIndex(casterDummy,100)
-call EffectCreateAndMove(true,"BlackGoku\\HakkeStart2.mdl",facing,4,2,0.2,100,100,100,70,0,target,0,facing)
-if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
-set soundplay=CreateSound("Sound\\Music\\mp3Music\\SoundEng\\BlackGokuT2-1eng.mp3",false,false,true,12700,12700,"")
-call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
-
-
-else
-set soundplay=CreateSound("Sound\\Music\\mp3Music\\SoundJap\\BlackGokuT2-1.mp3",false,false,true,12700,12700,"")
-call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
-
-endif
-
-set soundplay=CreateSound("Sound\\Music\\mp3Music\\SoundJap\\BlackGokuT2.mp3",false,false,true,12700,12700,"")
-call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
-
-//call EffectCreateAndMove(true,"BlackGoku\\t_az_pafeathermoon_b_zi.mdl",facing,1,2,0.5,100,100,100,0,0,caster,0,facing)
-set n0=CreateUnit(Player(12),GetUnitTypeId(target),GetUnitX(target),GetUnitY(target),GetUnitFacing(target))
-call UnitAddAbility(n0,0x416C6F63)
-call UnitAddAbility(n0,'Amrf')
-call UnitRemoveAbility(n0,'Amrf')
-call UnitSpeed(n0,3)
-call PauseUnit(n0,true)
-call SaveUnitHandle(HH,id,22,n0)
-call SetUnitFlyHeight(n0,0,0)
-set n0=null
-
-set n0=CreateUnit(GetOwningPlayer(caster),'e200',GetUnitX(target),GetUnitY(target),GetUnitFacing(target))
-call MyRemoveUnit(n0,4)
-
-set n0=CreateUnit(GetOwningPlayer(target),'e200',GetUnitX(target),GetUnitY(target),GetUnitFacing(target))
-call MyRemoveUnit(n0,4)
-
-set n0=CreateUnit(GetOwningPlayer(caster),'e200',GetUnitX(caster),GetUnitY(caster),GetUnitFacing(target))
-call MyRemoveUnit(n0,4)
-
-set n0=CreateUnit(GetOwningPlayer(target),'e200',GetUnitX(caster),GetUnitY(caster),GetUnitFacing(target))
-call MyRemoveUnit(n0,4)
-set n0=null
-
-
-
-
-endif
-
-
-
-if time==20.8 then
-call UnitSpeed(casterDummy,0)
-endif
-if time>20 and time<23 then
-if time>20.3 and time<22.8 then
-call SetUnitFlyHeight(targetDummy,GetUnitFlyHeight(targetDummy)+8,0)
-endif
-set cjlocgn_00000000=GetRandomInt(0,360)
-if time==20.4 or time==20.6 or time==20.8 or time==21.2 or time==21.6 or time==22 or time==22.8 then
-call UnitSpeed(targetDummy,0.3)
-call SetUnitAnimation(targetDummy,"death")
-if time==22.8 then
-call UnitSpeed(target,0.3)
-call SetUnitAnimation(target,"death")
-endif
-endif
-if time==20.1 or time==20.8 or time==22 then
-call BlackGokuClones(caster,targetDummy,cjlocgn_00000000,true,1)
-call BlackGokuClones(caster,targetDummy,cjlocgn_00000000+180,true,1)
-endif
-if time==20.6 or time==21.4 or time==22.3 then
-call BlackGokuClones(caster,targetDummy,cjlocgn_00000000,false,2)
-call BlackGokuClones(caster,targetDummy,cjlocgn_00000000+180,false,2)
-endif
-if time==22.8 then
-call BlackGokuClones(caster,targetDummy,cjlocgn_00000000,false,3)
-call BlackGokuClones(caster,targetDummy,cjlocgn_00000000+180,false,3)
-endif
-endif
-if time>23 and time<23.5 then
-call SetUnitFlyHeight(targetDummy,GetUnitFlyHeight(targetDummy)-40,0)
-endif
-if time==23 then
-call EffectCreateAndMove(true,"BlackGoku\\t_az_pafeathermoon_b_zi.mdl",facing,1,2,0.5,100,100,100,0,0,caster,0,facing)
-call SetUnitAnimationByIndex(casterDummy,39)
-call UnitSpeed(casterDummy,0.75)
-call SetUnitAnimationByIndex(caster,39)
-call UnitSpeed(caster,0.75)
-
-
-set soundplay=CreateSound("Sound\\Music\\mp3Music\\SoundJap\\BlackGokuT3.mp3",false,false,true,12700,12700,"")
-call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
-
-
-
-
-
-if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
-
-
-set soundplay=CreateSound("Sound\\Music\\mp3Music\\SoundEng\\BlackGokuT3-3eng.mp3",false,false,true,12700,12700,"")
-call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
-
-else
-
-
-set soundplay=CreateSound("Sound\\Music\\mp3Music\\SoundJap\\BlackGokuT3-3.mp3",false,false,true,12700,12700,"")
-call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
-
-
-
-endif
-endif
-
-if time==23.5 then
-set soundplay=CreateSound("Sound\\Music\\mp3Music\\SoundJap\\BlackGokuW1.mp3",false,false,true,12700,12700,"")
-call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
-
-
-
-call EffectCreateAndMove(true,"BlackGoku\\fadespearpurple.mdl",facing,1,2,0.5,100,100,100,0,0,target,0,facing)
-call EffectCreateAndMove(true,"BlackGoku\\[doft]purpleaz-hit.mdl",facing,1,2,0.5,100,100,100,0,0,target,0,facing)
-call EffectCreateAndMove(true,"BlackGoku\\aZ_siwen_Pink.mdl",facing,1,1.5,0.5,100,100,100,0,0,target,0,facing)
-call EffectCreateAndMove(true,"BlackGoku\\WindCircleFaster.mdl",facing,1,2,1,100,100,100,40,0,target,0,facing)
-call EffectCreateAndMove90(true,"BlackGoku\\WindCircleFaster.mdl",facing,1,1.5,1,100,100,100,40,0,target,0,facing)
-call EffectCreateAndMove(true,"BlackGoku\\BY_Wood_GongChengSiPai_1.mdl",facing+180,1,3,1,100,100,100,40,0,target,0,facing)
-call EffectCreateAndMove(true,"BlackGoku\\BY_Wood_GongChengSiPai_1.mdl",facing,1,2,1,100,100,100,40,0,target,0,facing)
-call EffectCreateAndMove90(true,"BlackGoku\\DimensionCutGB.mdl",facing,1,1,0.5,20,20,20,80,100,target,100,facing)
-call EffectCreateAndMove(true,"BlackGoku\\nitu.mdl",facing,1,1,1,100,100,100,40,0,target,-250,facing)
-call EffectCreateAndMove(true,"BlackGoku\\nitu.mdl",facing-45,1,1,1,100,100,100,40,0,target,-250,facing-45)
-call EffectCreateAndMove(true,"BlackGoku\\nitu.mdl",facing+45,1,1,1,100,100,100,40,0,target,-250,facing+45)
-call EffectCreateAndMove(true,"BlackGoku\\nitu.mdl",facing,1,1,1,100,100,100,40,0,target,-400,facing)
-call EffectCreateAndMove(true,"BlackGoku\\nitu.mdl",facing-30,1,1,1,100,100,100,40,0,target,-400,facing-30)
-call EffectCreateAndMove(true,"BlackGoku\\nitu.mdl",facing+30,1,1,1,100,100,100,40,0,target,-400,facing+30)
-call EffectCreateAndMove(true,"BlackGoku\\nitu.mdl",facing-45,1,1,1,100,100,100,40,0,target,-400,facing-45)
-call EffectCreateAndMove(true,"BlackGoku\\nitu.mdl",facing+45,1,1,1,100,100,100,40,0,target,-400,facing+45)
-call EffectCreateAndMove(true,"BlackGoku\\BlackBlink1.mdl",facing,1,1,1,100,100,100,0,0,caster,0,facing)
-call EffectCreateAndMove(true,"BlackGoku\\WindCircleFaster.mdl",facing,1,1,1,100,100,100,40,0,caster,0,facing)
-call MoveUnit(targetDummy,casterDummy,-250,facing-45)
-call EffectCreateAndMove(true,"BlackGoku\\HakenSaber2.mdl",facing,1,0.75,0.5,100,100,100,0,0,caster,0,facing)
-call EffectCreateAndMove(true,"BlackGoku\\az_fireringblue.mdl",facing,1,1.5,0.8,100,100,100,0,0,caster,0,facing)
-call EffectCreateAndMove(true,"BlackGoku\\kaizokusfxbyvalk4.mdl",facing,1,1,1.5,100,100,100,30,0,caster,0,facing)
-endif
-if time>23.5 and time<24 then
-call MoveUnit(targetDummy,targetDummy,30,facing)
-endif
+    if time>2 then
+        set facing=Angle2(GetUnitX(caster),GetUnitY(caster),GetUnitX(target),GetUnitY(target))
+        call SaveReal(HH,id,3,facing)
+    endif
+    call SetUnitFacing(caster,facing)
+    call SetUnitPathing(caster,false)
+    call PauseUnit(caster,true)
+    call SetUnitInvulnerable(caster,true)
+
+    if time>20 then
+        call PauseUnit(target,true)
+        call SaveBoolean(HH,GetHandleId(target),TARGET_ABILITY,true)
+        call SetUnitInvulnerable(target,true)
+    endif
+
+    if time==1.02 then
+        call RemoveUnit(LoadUnitHandle(HH,id,20))
+        call RemoveUnit(LoadUnitHandle(HH,id,21))
+        call ShowUnit(caster,true)
+        call UnitSpeed(caster,1)
+        call SetUnitPathing(caster,true)
+        call PauseUnit(caster,false)
+        call SetUnitInvulnerable(caster,false)
+
+        if GetLocalPlayer()==GetOwningPlayer(caster) then
+            call ClearSelection()
+            call SelectUnit(caster,true)
+        endif
+
+        call PauseTimer(GetExpiredTimer())
+        call FlushChildHashtable(HH,id)
+        call DestroyTimer(GetExpiredTimer())
+    endif
+
+
+
+
+    if time==0.02 then
+
+
+        call EffectCreateAndMove(true,"BlackGoku\\WindCircleFaster.mdl",facing,1,1,1,100,100,100,40,0,caster,0,facing)
+        call EffectCreateAndMove(true,"BlackGoku\\WindNewFaw4.mdl",facing,1,1,0.5,100,100,100,0,0,caster,0,facing)
+        call EffectCreateAndMove(true,"BlackGoku\\HakenSaber22.mdl",facing,1,1,0.5,100,100,100,0,0,caster,0,facing)
+        call EffectCreateAndMove(true,"BlackGoku\\HakkeStart2.mdl",facing,1,0.5,0.5,100,100,100,60,0,caster,0,facing)
+        if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
+            set soundplay=CreateSound("Sound\\Music\\mp3Music\\SoundEng\\BlackGokuT1-1eng.mp3",false,false,true,12700,12700,"")
+            call StartSound(soundplay)
+            call KillSoundWhenDone(soundplay)
+        else
+            set soundplay=CreateSound("Sound\\Music\\mp3Music\\SoundJap\\BlackGokuT1-1.mp3",false,false,true,12700,12700,"")
+            call StartSound(soundplay)
+            call KillSoundWhenDone(soundplay)
+        endif
+
+        set n0=CreateUnit(Player(12),GetUnitTypeId(caster),GetUnitX(caster),GetUnitY(caster),LoadReal(HH,id,3))
+
+        if LoadBoolean(HH,GetHandleId(caster),StringHash("BGRose"))==true then
+            call UnitAddAbility(n0,'ABG1')
+        else
+            call UnitAddAbility(n0,'ABG0')
+        endif
+
+        if GetRandomInt(1,2)==1 then
+            call SetUnitAnimationByIndex(n0,31)
+        else
+            call SetUnitAnimationByIndex(n0,30)
+        endif
+
+        call UnitAddAbility(n0,'Aloc')
+        call UnitAddAbility(n0,'Amrf')
+        call UnitRemoveAbility(n0,'Amrf')
+        call UnitSpeed(n0,1.5)
+        call PauseUnit(n0,true)
+        call SaveUnitHandle(HH,id,21,n0)
+        call SetUnitFlyHeight(n0,0,0)
+        set n0=null
+        call ShowUnit(caster,false)
+
+    endif
+
+    if time==0.2 then
+
+        set soundplay=CreateSound("Sound\\Music\\mp3Music\\SoundJap\\BlackGokuT1.mp3",false,false,true,12700,12700,"")
+        call StartSound(soundplay)
+        call KillSoundWhenDone(soundplay)
+
+        call EffectCreateAndMoveAn(true,"BlackGoku\\AFB_hudieCarol.mdl",facing,0.5,1,2,100,100,100,0,0,caster,100,facing,1)
+        set n0=CreateUnit(GetOwningPlayer(caster),'e200',GetUnitX(caster),GetUnitY(caster),facing)
+        call SetUnitModel(n0,"BlackGoku\\TZjQ2.mdl")
+        call UnitSize(n0,1.5,1,1)
+        call MoveUnit(n0,n0,100,facing)
+        call UnitAddAbility(n0,'Amrf')
+        call UnitRemoveAbility(n0,'Amrf')
+        call SetUnitFlyHeight(n0,250,0)
+        call SaveUnitHandle(HH,id,20,n0)
+        set n0=null
+    endif
+
+    if time>0.2 and time<1 then
+        call MoveUnit(LoadUnitHandle(HH,id,20),LoadUnitHandle(HH,id,20),40,facing)
+        call GroupClear(G)
+        call GroupEnumUnitsInRange(G,GetUnitX(LoadUnitHandle(HH,id,20)),GetUnitY(LoadUnitHandle(HH,id,20)),200,Base)
+        loop
+            set n0=FirstOfGroup(G)
+            exitwhen n0==null
+            if Condition_Base(GetOwningPlayer(caster),n0) and GetUnitAbilityLevel(n0,'Avul')==0 then
+                if LoadBoolean(HH,GetHandleId(n0),ANTITARGET_ABILITY)==false then
+                    call SaveUnitHandle(HH,id,2,n0)
+                    call RemoveUnit(LoadUnitHandle(HH,id,20))
+                    set time=20
+                    call ShowUnit(n0,false)
+                    call SaveReal(HH,id,5,time)
+                    call GroupClear(G)
+                else
+                    call SaveUnitHandle(HH,GetHandleId(n0),REVERSE_TARGET,caster)
+                    call ShowUnit(caster,true)
+                    call SetUnitPathing(caster,true)
+                    call PauseUnit(caster,false)
+                    call SetUnitInvulnerable(caster,false)
+                    call UnitSpeed(caster,1)
+                    call PauseUnit(n0,false)
+                    call SaveBoolean(HH,GetHandleId(n0),TARGET_ABILITY,false)
+                    call PauseTimer(GetExpiredTimer())
+                    call DestroyTimer(GetExpiredTimer())
+                    call FlushChildHashtable(HH,id)
+                endif
+            endif
+            call GroupRemoveUnit(G,n0)
+        endloop
+        call GroupClear(G)
+    endif
+
+    if time==20.02 then
+        set n0=CreateUnit(GetOwningPlayer(target),'270e',GetUnitX(target),GetUnitY(target),facing)
+        call SetUnitModel(n0,"BlackGoku\\DimensionCutHD.mdl")
+        call UnitSize(n0,2,1,1)
+        call UnitSpeed(n0,3)
+        call MyRemoveUnit(n0,3.5)
+        call SetUnitFlyHeight(n0,100,0)
+        call UnitColor(n0,100,100,100,0)
+        set n0=null
+        call EffectCreateAndMove(true,"BlackGoku\\afb (1896).mdl",facing,3.5,0.25,0.75,100,100,100,0,0,target,0,facing)
+        call SetUnitAnimationByIndex(casterDummy,100)
+        call EffectCreateAndMove(true,"BlackGoku\\HakkeStart2.mdl",facing,4,2,0.2,100,100,100,70,0,target,0,facing)
+        if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
+            set soundplay=CreateSound("Sound\\Music\\mp3Music\\SoundEng\\BlackGokuT2-1eng.mp3",false,false,true,12700,12700,"")
+            call StartSound(soundplay)
+            call KillSoundWhenDone(soundplay)
+        else
+            set soundplay=CreateSound("Sound\\Music\\mp3Music\\SoundJap\\BlackGokuT2-1.mp3",false,false,true,12700,12700,"")
+            call StartSound(soundplay)
+            call KillSoundWhenDone(soundplay)
+        endif
+
+        set soundplay=CreateSound("Sound\\Music\\mp3Music\\SoundJap\\BlackGokuT2.mp3",false,false,true,12700,12700,"")
+        call StartSound(soundplay)
+        call KillSoundWhenDone(soundplay)
+
+        //call EffectCreateAndMove(true,"BlackGoku\\t_az_pafeathermoon_b_zi.mdl",facing,1,2,0.5,100,100,100,0,0,caster,0,facing)
+        set n0=CreateUnit(Player(12),GetUnitTypeId(target),GetUnitX(target),GetUnitY(target),GetUnitFacing(target))
+        call UnitAddAbility(n0,0x416C6F63)
+        call UnitAddAbility(n0,'Amrf')
+        call UnitRemoveAbility(n0,'Amrf')
+        call UnitSpeed(n0,3)
+        call PauseUnit(n0,true)
+        call SaveUnitHandle(HH,id,22,n0)
+        call SetUnitFlyHeight(n0,0,0)
+        set n0=null
+
+        set n0=CreateUnit(GetOwningPlayer(caster),'e200',GetUnitX(target),GetUnitY(target),GetUnitFacing(target))
+        call MyRemoveUnit(n0,4)
+
+        set n0=CreateUnit(GetOwningPlayer(target),'e200',GetUnitX(target),GetUnitY(target),GetUnitFacing(target))
+        call MyRemoveUnit(n0,4)
+
+        set n0=CreateUnit(GetOwningPlayer(caster),'e200',GetUnitX(caster),GetUnitY(caster),GetUnitFacing(target))
+        call MyRemoveUnit(n0,4)
+
+        set n0=CreateUnit(GetOwningPlayer(target),'e200',GetUnitX(caster),GetUnitY(caster),GetUnitFacing(target))
+        call MyRemoveUnit(n0,4)
+        set n0=null
+    endif
+
+
+
+    if time==20.8 then
+        call UnitSpeed(casterDummy,0)
+    endif
+    if time>20 and time<23 then
+        if time>20.3 and time<22.8 then
+            call SetUnitFlyHeight(targetDummy,GetUnitFlyHeight(targetDummy)+8,0)
+        endif
+        set cjlocgn_00000000=GetRandomInt(0,360)
+        if time==20.4 or time==20.6 or time==20.8 or time==21.2 or time==21.6 or time==22 or time==22.8 then
+            call UnitSpeed(targetDummy,0.3)
+            call SetUnitAnimation(targetDummy,"death")
+            if time==22.8 then
+                call UnitSpeed(target,0.3)
+                call SetUnitAnimation(target,"death")
+            endif
+        endif
+        if time==20.1 or time==20.8 or time==22 then
+            call BlackGokuClones(caster,targetDummy,cjlocgn_00000000,true,1)
+            call BlackGokuClones(caster,targetDummy,cjlocgn_00000000+180,true,1)
+        endif
+        if time==20.6 or time==21.4 or time==22.3 then
+            call BlackGokuClones(caster,targetDummy,cjlocgn_00000000,false,2)
+            call BlackGokuClones(caster,targetDummy,cjlocgn_00000000+180,false,2)
+        endif
+        if time==22.8 then
+            call BlackGokuClones(caster,targetDummy,cjlocgn_00000000,false,3)
+            call BlackGokuClones(caster,targetDummy,cjlocgn_00000000+180,false,3)
+        endif
+    endif
+    if time>23 and time<23.5 then
+        call SetUnitFlyHeight(targetDummy,GetUnitFlyHeight(targetDummy)-40,0)
+    endif
+    if time==23 then
+        call EffectCreateAndMove(true,"BlackGoku\\t_az_pafeathermoon_b_zi.mdl",facing,1,2,0.5,100,100,100,0,0,caster,0,facing)
+        call SetUnitAnimationByIndex(casterDummy,39)
+        call UnitSpeed(casterDummy,0.75)
+        call SetUnitAnimationByIndex(caster,39)
+        call UnitSpeed(caster,0.75)
+        set soundplay=CreateSound("Sound\\Music\\mp3Music\\SoundJap\\BlackGokuT3.mp3",false,false,true,12700,12700,"")
+        call StartSound(soundplay)
+        call KillSoundWhenDone(soundplay)
+        if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
+            set soundplay=CreateSound("Sound\\Music\\mp3Music\\SoundEng\\BlackGokuT3-3eng.mp3",false,false,true,12700,12700,"")
+            call StartSound(soundplay)
+            call KillSoundWhenDone(soundplay)
+        else
+            set soundplay=CreateSound("Sound\\Music\\mp3Music\\SoundJap\\BlackGokuT3-3.mp3",false,false,true,12700,12700,"")
+            call StartSound(soundplay)
+            call KillSoundWhenDone(soundplay)
+        endif
+    endif
+
+    if time==23.5 then
+        set soundplay=CreateSound("Sound\\Music\\mp3Music\\SoundJap\\BlackGokuW1.mp3",false,false,true,12700,12700,"")
+        call StartSound(soundplay)
+        call KillSoundWhenDone(soundplay)
+
+        call EffectCreateAndMove(true,"BlackGoku\\fadespearpurple.mdl",facing,1,2,0.5,100,100,100,0,0,target,0,facing)
+        call EffectCreateAndMove(true,"BlackGoku\\[doft]purpleaz-hit.mdl",facing,1,2,0.5,100,100,100,0,0,target,0,facing)
+        call EffectCreateAndMove(true,"BlackGoku\\aZ_siwen_Pink.mdl",facing,1,1.5,0.5,100,100,100,0,0,target,0,facing)
+        call EffectCreateAndMove(true,"BlackGoku\\WindCircleFaster.mdl",facing,1,2,1,100,100,100,40,0,target,0,facing)
+        call EffectCreateAndMove90(true,"BlackGoku\\WindCircleFaster.mdl",facing,1,1.5,1,100,100,100,40,0,target,0,facing)
+        call EffectCreateAndMove(true,"BlackGoku\\BY_Wood_GongChengSiPai_1.mdl",facing+180,1,3,1,100,100,100,40,0,target,0,facing)
+        call EffectCreateAndMove(true,"BlackGoku\\BY_Wood_GongChengSiPai_1.mdl",facing,1,2,1,100,100,100,40,0,target,0,facing)
+        call EffectCreateAndMove90(true,"BlackGoku\\DimensionCutGB.mdl",facing,1,1,0.5,20,20,20,80,100,target,100,facing)
+        call EffectCreateAndMove(true,"BlackGoku\\nitu.mdl",facing,1,1,1,100,100,100,40,0,target,-250,facing)
+        call EffectCreateAndMove(true,"BlackGoku\\nitu.mdl",facing-45,1,1,1,100,100,100,40,0,target,-250,facing-45)
+        call EffectCreateAndMove(true,"BlackGoku\\nitu.mdl",facing+45,1,1,1,100,100,100,40,0,target,-250,facing+45)
+        call EffectCreateAndMove(true,"BlackGoku\\nitu.mdl",facing,1,1,1,100,100,100,40,0,target,-400,facing)
+        call EffectCreateAndMove(true,"BlackGoku\\nitu.mdl",facing-30,1,1,1,100,100,100,40,0,target,-400,facing-30)
+        call EffectCreateAndMove(true,"BlackGoku\\nitu.mdl",facing+30,1,1,1,100,100,100,40,0,target,-400,facing+30)
+        call EffectCreateAndMove(true,"BlackGoku\\nitu.mdl",facing-45,1,1,1,100,100,100,40,0,target,-400,facing-45)
+        call EffectCreateAndMove(true,"BlackGoku\\nitu.mdl",facing+45,1,1,1,100,100,100,40,0,target,-400,facing+45)
+        call EffectCreateAndMove(true,"BlackGoku\\BlackBlink1.mdl",facing,1,1,1,100,100,100,0,0,caster,0,facing)
+        call EffectCreateAndMove(true,"BlackGoku\\WindCircleFaster.mdl",facing,1,1,1,100,100,100,40,0,caster,0,facing)
+        call MoveUnit(targetDummy,casterDummy,-250,facing-45)
+        call EffectCreateAndMove(true,"BlackGoku\\HakenSaber2.mdl",facing,1,0.75,0.5,100,100,100,0,0,caster,0,facing)
+        call EffectCreateAndMove(true,"BlackGoku\\az_fireringblue.mdl",facing,1,1.5,0.8,100,100,100,0,0,caster,0,facing)
+        call EffectCreateAndMove(true,"BlackGoku\\kaizokusfxbyvalk4.mdl",facing,1,1,1.5,100,100,100,30,0,caster,0,facing)
+    endif
+    if time>23.5 and time<24 then
+        call MoveUnit(targetDummy,targetDummy,30,facing)
+    endif
 
 endif
 set casterDummy=null
@@ -176769,33 +176749,42 @@ endif
 
 
 if time>0.2 and time<20 then
-set facing=Angle2(GetUnitX(caster),GetUnitY(caster),GetUnitX(target),GetUnitY(target))
-call SaveReal(HH,id,3,facing)
-if SR(x,y,x2,y2)<=400 and LoadBoolean(HH,id,19)==false then
-if GetRandomInt(1,2)==1 then
-call SetUnitAnimationByIndex(caster,50)
-else
-call SetUnitAnimationByIndex(caster,51)
+    set facing=Angle2(GetUnitX(caster),GetUnitY(caster),GetUnitX(target),GetUnitY(target))
+    call SaveReal(HH,id,3,facing)
+    if SR(x,y,x2,y2)<=400 and LoadBoolean(HH,id,19)==false then
+        if GetRandomInt(1,2)==1 then
+            call SetUnitAnimationByIndex(caster,50)
+        else
+            call SetUnitAnimationByIndex(caster,51)
+        endif
+        call UnitSpeed(caster,0.75)
+        call SaveBoolean(HH,id,19,true)
+    endif
+    if SR(x,y,x2,y2)>100 then
+        call MoveUnit(caster,caster,45,facing)
+    else
+        call UnitSpeed(caster,2)
+        set time=20
+        call SaveReal(HH,id,5,time)
+    endif
 endif
-call UnitSpeed(caster,0.75)
-call SaveBoolean(HH,id,19,true)
-endif
-if SR(x,y,x2,y2)>100 then
-call MoveUnit(caster,caster,45,facing)
-else
-call UnitSpeed(caster,2)
-call PauseUnit(target,true)
-call SaveBoolean(HH,GetHandleId(target),TARGET_ABILITY,true)
-call SetUnitInvulnerable(target,true)
-set time=20
-call SaveReal(HH,id,5,time)
-endif
+if time==20 and LoadBoolean(HH,GetHandleId(target),ANTITARGET_ABILITY)==true then
+    call SaveUnitHandle(HH,GetHandleId(target),REVERSE_TARGET,caster)
+    call SetUnitPathing(caster,true)
+    call PauseUnit(caster,false)
+    call SetUnitInvulnerable(caster,false)
+    call UnitSpeed(caster,1)
+    call PauseUnit(target,false)
+    call SaveBoolean(HH,GetHandleId(target),TARGET_ABILITY,false)
+    call PauseTimer(GetExpiredTimer())
+    call DestroyTimer(GetExpiredTimer())
+    call FlushChildHashtable(HH,id)
 endif
 if time>20 and time<23 then
-call SetUnitFacing(target,facing+180)
-call PauseUnit(target,true)
-call SaveBoolean(HH,GetHandleId(target),TARGET_ABILITY,true)
-call SetUnitInvulnerable(target,true)
+    call SetUnitFacing(target,facing+180)
+    call PauseUnit(target,true)
+    call SaveBoolean(HH,GetHandleId(target),TARGET_ABILITY,true)
+    call SetUnitInvulnerable(target,true)
 endif
 
 
@@ -178593,10 +178582,6 @@ call SaveReal(HH,id,3,facing)
 
 if GetSpellTargetUnit()!=null then
 call SaveUnitHandle(HH,id,2,GetSpellTargetUnit())
-endif
-
-if GetSpellTargetUnit()==caster then
-set self=true
 endif
 
 if GetSpellTargetUnit()==caster then
