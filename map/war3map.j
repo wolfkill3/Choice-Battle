@@ -43187,7 +43187,7 @@ else
             call SlowUnit(u,c,0.3,0.3,3,2,false)
             call SetUnitPathing(c,true)
             call UnitApplyTimedLife(CreateUnit(GetOwningPlayer(u),'e0NJ',x1,y1,GetRandomReal(0,359)),1,3)
-            call UnitApplyTimedLife(CreateUnit(GetOwningPlayer(u),0x65304E4B,x1,y1,GetRandomReal(0,359)),1,6)
+            call UnitApplyTimedLife(CreateUnit(GetOwningPlayer(u),'e0NK',x1,y1,GetRandomReal(0,359)),1,6)
             call UnitApplyTimedLife(CreateUnit(GetOwningPlayer(u),'e0NI',x1,y1,GetRandomReal(0,359)),1,3)
             call UnitApplyTimedLife(CreateUnit(GetOwningPlayer(u),'e0NL',x1,y1,GetRandomReal(0,359)),1,3)
             call UnitApplyTimedLife(CreateUnit(GetOwningPlayer(u),'e0NM',x1,y1,GetRandomReal(0,359)),1,3)
@@ -80136,7 +80136,7 @@ call UnitApplyTimedLife(CreateUnit(p,'e0NJ',x,y,GetRandomReal(0,359)),1,3)
 call UnitApplyTimedLife(CreateUnit(p,'e0NI',x,y,GetRandomReal(0,359)),1,3)
 call UnitApplyTimedLife(CreateUnit(p,'e0NL',x,y,GetRandomReal(0,359)),1,3)
 call UnitApplyTimedLife(CreateUnit(p,'e0NM',x,y,GetRandomReal(0,359)),1,3)
-call UnitApplyTimedLife(CreateUnit(p,0x65304D49,x,y,GetRandomReal(0,359)),1,1)
+call UnitApplyTimedLife(CreateUnit(p,'e0MI',x,y,GetRandomReal(0,359)),1,1)
 call UnitApplyTimedLife(CreateUnit(p,0x6530504C,x,y,GetRandomReal(0,359)),1,4)
 call UnitApplyTimedLife(CreateUnit(p,0x6530504D,x,y,GetRandomReal(0,359)),1,4)
 call FlushChildHashtable(h,id)
@@ -80403,7 +80403,7 @@ endif
 call SetUnitTimeScale(n,2)
 call SetUnitAnimation(n,"attack two")
 else
-call UnitApplyTimedLife(CreateUnit(p,0x65304D49,x1,y1,GetRandomReal(0,359)),1,1)
+call UnitApplyTimedLife(CreateUnit(p,'e0MI',x1,y1,GetRandomReal(0,359)),1,1)
 call UnitApplyTimedLife(CreateUnit(p,'e03W',x1,y1,GetRandomReal(0,359)),1,5)
 call UnitApplyTimedLife(CreateUnit(p,'e03Y',x1,y1,GetRandomReal(0,359)),1,5)
 if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
@@ -80688,7 +80688,7 @@ call UnitApplyTimedLife(CreateUnit(p,'e0NJ',x,y,GetRandomReal(0,359)),1,3)
 call UnitApplyTimedLife(CreateUnit(p,'e0NI',x,y,GetRandomReal(0,359)),1,3)
 call UnitApplyTimedLife(CreateUnit(p,'e0NL',x,y,GetRandomReal(0,359)),1,3)
 call UnitApplyTimedLife(CreateUnit(p,'e0NM',x,y,GetRandomReal(0,359)),1,3)
-call UnitApplyTimedLife(CreateUnit(p,0x65304D49,x,y,GetRandomReal(0,359)),1,1)
+call UnitApplyTimedLife(CreateUnit(p,'e0MI',x,y,GetRandomReal(0,359)),1,1)
 call SetUnitFlyHeight(l__d,0,0)
 call RemoveUnit(d1)
 call PauseTimer(t)
@@ -90423,7 +90423,7 @@ call UnitApplyTimedLife(CreateUnit(p,'e0NJ',x,y,GetRandomReal(0,359)),1,3)
 call UnitApplyTimedLife(CreateUnit(p,'e0NI',x,y,GetRandomReal(0,359)),1,3)
 call UnitApplyTimedLife(CreateUnit(p,'e0NL',x,y,GetRandomReal(0,359)),1,3)
 call UnitApplyTimedLife(CreateUnit(p,'e0NM',x,y,GetRandomReal(0,359)),1,3)
-call UnitApplyTimedLife(CreateUnit(p,0x65304D49,x,y,GetRandomReal(0,359)),1,0.75)
+call UnitApplyTimedLife(CreateUnit(p,'e0MI',x,y,GetRandomReal(0,359)),1,0.75)
 set idg=GetHandleId(g)
 call PauseTimer(t)
 call DestroyTimer(t)
@@ -192214,7 +192214,7 @@ function Trig_IchigoInt_Actions takes nothing returns nothing
     endif
         
     if GetSpellAbilityId()=='IcD4' then
-        soundplay=CreateSound("Sound\\war3mapImported\\Sonido.mp3", false, false, true, 12700, 12700, "")
+        set soundplay=CreateSound("Sound\\war3mapImported\\Sonido.mp3", false, false, true, 12700, 12700, "")
         call StartSound(soundplay)
         call KillSoundWhenDone(soundplay)
     endif
@@ -194473,7 +194473,7 @@ function KarnaE_Periodic1 takes nothing returns nothing
     local unit    caster   = LoadUnitHandle(h, id, CasterHash)
     local trigger newTrigger = null
 
-    if distance < 1200 then
+    if distance < 1200 and LoadBoolean(HH,GetHandleId(caster),DASH_USER)==true then
         call SetUnitX(caster, GetUnitX(caster) + 45 * Cos(angle))
         call SetUnitY(caster, GetUnitY(caster) + 45 * Sin(angle))
         call SetUnitX(LoadUnitHandle(h, id, StringHash("EffectUnit")), GetUnitX(caster)-100*Cos(angle))
@@ -194503,9 +194503,22 @@ function KarnaE_Periodic1 takes nothing returns nothing
         set E=FirstOfGroup(bjLCG)
         exitwhen E==null
             if Condition_Base(GetOwningPlayer(caster), E) and IsUnitInGroup(E, LoadGroupHandle(h, id,  GroupHash ))==false then
-                if IsUnitInvulnerable(E)==false then
-                    call GroupAddUnit(LoadGroupHandle(h, id,  GroupHash ), E)
-                    call SaveReal(HH, GetHandleId(E), KarnaE_Index, AU(caster, E))
+                if LoadBoolean(HH,GetHandleId(E),ANTITARGET_ABILITY)==false then
+                    if IsUnitInvulnerable(E)==false then
+                        call GroupAddUnit(LoadGroupHandle(h, id,  GroupHash ), E)
+                        call SaveReal(HH, GetHandleId(E), KarnaE_Index, AU(caster, E))
+                    endif
+                else
+                    call SaveBoolean(HH,GetHandleId(caster),DASH_USER,false)
+                    call SaveUnitHandle(HH,GetHandleId(E),REVERSE_TARGET,caster)
+                    call MyRemoveUnit(LoadUnitHandle(h, id, StringHash("EffectUnit")), 1.5)
+                    call DestroyEffect(LoadEffectHandle(h, id, StringHash("Effect0")))
+                    call DestroyGroup(LoadGroupHandle(h, id,  GroupHash ))
+                    call PauseUnit(caster, false)
+                    call SetUnitInvulnerable(caster, false)
+                    call SetUnitVertexColor(caster, 255, 255, 255, 255)
+                    call FlushChildHashtable(h, id)
+                    call DestroyTimer(GetExpiredTimer())
                 endif
             endif
         call GroupRemoveUnit(bjLCG, E)
@@ -194533,12 +194546,14 @@ function KarnaE_Periodic1 takes nothing returns nothing
             call MyRemoveUnit(LoadUnitHandle(h, id, StringHash("EffectUnit")), 1.5)
             call DestroyEffect(LoadEffectHandle(h, id, StringHash("Effect0")))
             call DestroyGroup(LoadGroupHandle(h, id,  GroupHash ))
+            call SaveBoolean(HH,GetHandleId(caster),DASH_USER,false)
             call PauseUnit(caster, false)
             call SetUnitInvulnerable(caster, false)
             call SetUnitVertexColor(caster, 255, 255, 255, 255)
             call FlushChildHashtable(h, id)
             call DestroyTimer(GetExpiredTimer())
         else
+            call SaveBoolean(HH,GetHandleId(caster),DASH_USER,false)
             call RemoveUnit(LoadUnitHandle(h, id, StringHash("EffectUnit")))
             set n = CreateUnit(GetOwningPlayer(caster), 'dR26', GetUnitX(caster)+150*Cos(angle), GetUnitY(caster)+150*Sin(angle), angle * bj_RADTODEG)
             call SetUnitFlyHeight(n, 75, 0)
@@ -194633,6 +194648,7 @@ function KarnaE_WaitTime takes nothing returns nothing
         call SetUnitVertexColor(bjLCU, 255, 255, 255, 200)
         call MyRemoveUnit(bjLCU , 1.5)
         call SetUnitVertexColor(caster, 255, 255, 255, 110)
+        call SaveBoolean(HH,GetHandleId(caster),DASH_USER,true)
         call PauseTimer(newTimer)
         call TimerStart(newTimer, 0.01, true, function KarnaE_Periodic1)
     endif
@@ -196096,11 +196112,11 @@ function ShiendoCast2 takes nothing returns nothing // SinonE
                 call GroupRemoveUnit(DG,E)
             endloop
             call UnitApplyTimedLife(CreateUnit(p,'e0NJ',x2,y2,GetRandomReal(0,359)),1,3)
-            call UnitApplyTimedLife(CreateUnit(p,0x65304E4B,x2,y2,GetRandomReal(0,359)),1,6)
+            call UnitApplyTimedLife(CreateUnit(p,'e0NK',x2,y2,GetRandomReal(0,359)),1,6)
             call UnitApplyTimedLife(CreateUnit(p,'e0NI',x2,y2,GetRandomReal(0,359)),1,3)
             call UnitApplyTimedLife(CreateUnit(p,'e0NL',x2,y2,GetRandomReal(0,359)),1,3)
             call UnitApplyTimedLife(CreateUnit(p,'e0NM',x2,y2,GetRandomReal(0,359)),1,3)
-            call UnitApplyTimedLife(CreateUnit(p,0x65304D49,x2,y2,GetRandomReal(0,359)),1,1)
+            call UnitApplyTimedLife(CreateUnit(p,'e0MI',x2,y2,GetRandomReal(0,359)),1,1)
         endif
     else
         call PauseUnit(u,false)
@@ -197005,13 +197021,21 @@ endfunction
                 exitwhen SysUnit == null
                 if GetWidgetLife(SysUnit) > 0.405 and SysUnit!= LoadUnitHandle(HH,MUIHandle(),CasterHash) then
                     if Condition_Base(GetOwningPlayer(LoadUnitHandle(HH,MUIHandle(),CasterHash)),SysUnit) and LoadUnit("Target") == null and IsUnitInvulnerable(SysUnit) == false then
-                        call SaveAgentHandle(HH, id, TargetHash, SysUnit)
-                        set soundplay=CreateSound("Sound\\Music\\mp3Music\\WendyE3.mp3", false, false, true, 12700, 12700, "")
-                        call StartSound(soundplay)
-                        call KillSoundWhenDone(soundplay)
-                        call SaveBoolean(HH, id, StringHash("checker"), true)
-                        call SaveBoolean(HH, id, StringHash("checker2"), true)
-                        call SetUnitTimeScale(LoadUnitHandle(HH,MUIHandle(),CasterHash), 0.5)
+                        if LoadBoolean(HH,GetHandleId(SysUnit),ANTITARGET_ABILITY)==false then
+                            call SaveAgentHandle(HH, id, TargetHash, SysUnit)
+                            set soundplay=CreateSound("Sound\\Music\\mp3Music\\WendyE3.mp3", false, false, true, 12700, 12700, "")
+                            call StartSound(soundplay)
+                            call KillSoundWhenDone(soundplay)
+                            call SaveBoolean(HH, id, StringHash("checker"), true)
+                            call SaveBoolean(HH, id, StringHash("checker2"), true)
+                            call SetUnitTimeScale(LoadUnitHandle(HH,MUIHandle(),CasterHash), 0.5)
+                        else
+                            call SaveUnitHandle(HH,GetHandleId(SysUnit),REVERSE_TARGET,LoadUnitHandle(HH,MUIHandle(),CasterHash))
+                            call SetUnitTimeScale(LoadUnitHandle(HH,MUIHandle(),CasterHash), 1)
+                            call PauseUnit(LoadUnitHandle(HH,MUIHandle(),CasterHash), false)
+                            call SetUnitInvulnerable(LoadUnitHandle(HH,MUIHandle(),CasterHash), false)
+                            call Clear(id)
+                        endif
                     endif
                 endif
                 call GroupRemoveUnit(bj_lastCreatedGroup, SysUnit)
@@ -198291,8 +198315,34 @@ endfunction
                 exitwhen SysUnit == null
                     if SysUnit!=LoadUnitHandle(HH,MUIHandle(),CasterHash) then
                         if Condition_Base(GetOwningPlayer(LoadUnitHandle(HH,MUIHandle(),CasterHash)),SysUnit) then
-                            call myCustomDamage(LoadUnitHandle(HH,MUIHandle(),CasterHash), SysUnit, dmg, false, false, null, null, null)
-                            call Push3(SysUnit,20,Atan2(GetUnitY(SysUnit)-y,GetUnitX(SysUnit)-x),60,"Abilities\\Weapons\\AncientProtectorMissile\\AncientProtectorMissile.mdl")
+                            if LoadBoolean(HH,GetHandleId(SysUnit),ANTITARGET_ABILITY)==false then    
+                                call myCustomDamage(LoadUnitHandle(HH,MUIHandle(),CasterHash), SysUnit, dmg, false, false, null, null, null)
+                                call Push3(SysUnit,20,Atan2(GetUnitY(SysUnit)-y,GetUnitX(SysUnit)-x),60,"Abilities\\Weapons\\AncientProtectorMissile\\AncientProtectorMissile.mdl")
+                            else
+                                call SaveUnitHandle(HH,GetHandleId(SysUnit),REVERSE_TARGET,LoadUnitHandle(HH,MUIHandle(),CasterHash))
+                                call SetAbilityCastPoint(GetUnitAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'GIQ0'), 0.1)
+                                call SetAbilityCastPoint(GetUnitAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'GIT0'), 0.15)
+                                call SetAbilityCastPoint(GetUnitAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'A0UZ'), 0.01)
+                                call SetUnitAcquireRange(LoadUnitHandle(HH,MUIHandle(),CasterHash),600)
+                                call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'A1FU')
+                                call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'Pet1')
+                                call PauseUnit(LoadUnitHandle(HH,MUIHandle(),CasterHash), false)
+                                call SetUnitInvulnerable(LoadUnitHandle(HH,MUIHandle(),CasterHash), false)
+                                if BikeData!=0 then
+                                    call SetUnitAnimation(LoadUnitHandle(HH,MUIHandle(),CasterHash),"Spell Throw Three")
+                                    call SetControlToUnit(LoadUnitHandle(HH,MUIHandle(),CasterHash),LoadUnitHandle(HH,MUIHandle(),CasterHash),1,"stun")
+                                endif
+                                call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'B00A')
+                                call SetPlayerAbilityAvailable(GetOwningPlayer(LoadUnitHandle(HH,MUIHandle(),CasterHash)), 'GIE0', true)
+                                call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'GIE1')
+                                call SetUnitPathing(LoadUnitHandle(HH,MUIHandle(),CasterHash),true)
+                                call UnitRemoveType(LoadUnitHandle(HH,MUIHandle(),CasterHash),UNIT_TYPE_FLYING)
+                                call TriggerClearActions(t)
+                                call DestroyTrigger(t)
+                                call Clear(id)
+                                call Clear(ic)
+                                set BikeData=0
+                            endif
                         endif
                     endif
                     call GroupRemoveUnit(G, SysUnit)
@@ -198542,7 +198592,7 @@ endfunction
         local real dmg2= 6*GetHeroAgi(LoadUnitHandle(HH,MUIHandle(),CasterHash),true)
         local integer i= 0
         call SetUnitInvulnerable(LoadUnitHandle(HH,MUIHandle(),CasterHash), true)
-                call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'A2VJ')
+        call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'A2VJ')
         if time == 0. then
             call SetUnitTimeScale(LoadUnitHandle(HH,MUIHandle(),CasterHash), 1)
             call SaveReal(HH, id, StringHash("ti"), 1.)
@@ -198587,14 +198637,29 @@ endfunction
                 exitwhen SysUnit == null
                     if SysUnit!=LoadUnitHandle(HH,MUIHandle(),CasterHash) then
                         if Condition_Base(GetOwningPlayer(LoadUnitHandle(HH,MUIHandle(),CasterHash)),SysUnit) then
-                            if SR(GetUnitX(SysUnit),GetUnitY(SysUnit),x1+110*Cos(ang),y1+110*Sin(ang))<240 then
-                            call Push3(SysUnit,30,ang,45,"")
+                            if LoadBoolean(HH,GetHandleId(SysUnit),ANTITARGET_ABILITY)==false then        
+                                if SR(GetUnitX(SysUnit),GetUnitY(SysUnit),x1+110*Cos(ang),y1+110*Sin(ang))<240 then
+                                    call Push3(SysUnit,30,ang,45,"")
+                                else
+                                    call Push3(SysUnit,15,ang,25,"")
+                                endif
+                                call myCustomDamage(LoadUnitHandle(HH,MUIHandle(),CasterHash), SysUnit, dmg, false, false, null, null, null)
+                                call SetControlToUnit(SysUnit,SysUnit,0.32,"heavystun")
+                                call EffectToRandomBone("Abilities\\Spells\\Other\\Stampede\\StampedeMissileDeath.mdl",SysUnit)
                             else
-                            call Push3(SysUnit,15,ang,25,"")
+                                call SaveUnitHandle(HH,GetHandleId(SysUnit),REVERSE_TARGET,LoadUnitHandle(HH,MUIHandle(),CasterHash))
+                                call PauseUnit(LoadUnitHandle(HH,MUIHandle(),CasterHash), false)
+                                call SetUnitInvulnerable(LoadUnitHandle(HH,MUIHandle(),CasterHash), false)
+                                call SetUnitTimeScale(LoadUnitHandle(HH,MUIHandle(),CasterHash), 1)
+                                call GroupClear(LoadGroup("group"))
+                                call DestroyGroup(LoadGroup("group"))
+                                call RemoveSavedHandle(HH, id, GroupHash)
+                                call GroupClear(LoadGroup("group1"))
+                                call DestroyGroup(LoadGroup("group1"))
+                                call RemoveSavedHandle(HH, id, StringHash("group1"))
+                                set GinTData=0
+                                call Clear(id)
                             endif
-                            call myCustomDamage(LoadUnitHandle(HH,MUIHandle(),CasterHash), SysUnit, dmg, false, false, null, null, null)
-                            call SetControlToUnit(SysUnit,SysUnit,0.32,"heavystun")
-                            call EffectToRandomBone("Abilities\\Spells\\Other\\Stampede\\StampedeMissileDeath.mdl",SysUnit)
                         endif
                     endif
                     call GroupRemoveUnit(LoadGroup("group1"), SysUnit)
