@@ -34562,11 +34562,11 @@ if b>l and GetUnitTypeId(u)=='H03T' or GetUnitTypeId(u)=='H03W' or GetUnitTypeId
     call SetUnitInvulnerable(u,true)
     call SetUnitState(u,UNIT_STATE_LIFE,1)
     call UnitAddAbility(u,'A0QL')
-    call UnitAddAbility(u,0x41657468)
+    call UnitAddAbility(u,'Aeth')
     call PauseUnit(u,true)
     call SetUnitAnimation(u,"Death")
     set n=CreateUnit(Player(PLAYER_NEUTRAL_AGGRESSIVE),'h019',x,y,GetRandomReal(0,359))
-    call UnitAddAbility(n,0x4130565A)
+    call UnitAddAbility(n,'A0VZ')
     call IssueTargetOrder(n,"magicleash",u)
     set nb=0
 else
@@ -34580,13 +34580,11 @@ if GetUnitAbilityLevel(u,'A14J')>0  and nb>200 then
     else
         call SaveUnitHandle(HH,uid,REVERSE_TARGET,Hero[idc])
     endif
-    call SaveReal(HH, uid, StringHash("AvalonDamage"), b/2)
     call newBlockDamage(u)
     set nb=0
 endif
 if nb>100 and LoadBoolean(HH,GetHandleId(u),StringHash("MadaraG"))==true then
     call SaveBoolean(HH,GetHandleId(u),StringHash("MadaraG"),false)
-    call SaveReal(HH,GetHandleId(u),StringHash("MadaraGdmg"),nb)
     call SaveReal(HH,GetHandleId(u),StringHash("MadaraGfacing"),a2*bj_RADTODEG)
     call SetUnitFacingInstant(u,a2*bj_RADTODEG)
     call newBlockDamage(u)
@@ -34605,6 +34603,16 @@ if GetUnitAbilityLevel( u ,'BASF')>0 and nb>100 then
     set nb=0
     call SaveBoolean(HH,GetHandleId( u ),StringHash("AizenFB"),true)
     call SaveReal(HH,GetHandleId( u ),StringHash("AizenFR"),Angle2(GetUnitX( u ),GetUnitY( u ),GetUnitX( c ),GetUnitY( c )))
+endif
+        ///KurapikaE
+if GetUnitAbilityLevel(u,'B054')>0 and m>mm*0.06 and b>(GetHeroAgi(u,true)+GetHeroStr(u,true)+GetHeroStr(u,true))*0.5 then
+    if c!=UltimateDamage then
+        call SaveUnitHandle(HH,uid,REVERSE_TARGET,c)
+    else
+        call SaveUnitHandle(HH,uid,REVERSE_TARGET,Hero[idc])
+    endif
+    call newBlockDamage(u)
+    set nb=0
 endif
 if GetUnitTypeId(u)=='H34X' and nb>0 then
     call KillUnit(u)
@@ -34656,7 +34664,7 @@ endif
 
 
 
-if GetUnitAbilityLevel(u,0x41303949)>0 then        // Tekkai Lucci old
+if GetUnitAbilityLevel(u,'A09I')>0 then        // Tekkai Lucci old
     call newBlockDamage(u)
     set nb=0
     call SetUnitOwner(UltimateDamage,Player(idu),false)
@@ -35338,66 +35346,7 @@ if cond==0 then
 				//call SetWidgetLife(c, GetWidgetLife(c) + GetWidgetMaxLife(c) * 0.06)
 			//endif
 		endif
-                ///KurapikaE
-        if GetUnitAbilityLevel(u,'B054')>0 and m>mm*0.06 and b>(GetHeroAgi(u,true)+GetHeroStr(u,true)+GetHeroStr(u,true))*0.5 then
-            set cjlocgn_00000000=CreateTimer()
-            call UnitRemoveAbility(u,'B054')
-            call SetUnitInvulnerable(u,true)
-            call SaveUnitHandle(h,GetHandleId(cjlocgn_00000000),0,u)
-            call TimerStart(cjlocgn_00000000,0.001,false,function Block_Damage)
-            call DestroyEffect(AddSpecialEffect("war3mapImported\\BlackBlink.mdx",x,y))
-            call SetUnitX(u,GetUnitX(Hero[idc]))
-            call SetUnitY(u,GetUnitY(Hero[idc]))
-            call DestroyEffect(AddSpecialEffect("war3mapImported\\BlackBlink.mdx",x1,y1))
-            set A=Atan2(GetUnitY(Hero[idc])-y,GetUnitX(Hero[idc])-x)-bj_PI
-            call Push(c,50,A,300)
-            set n=CreateUnit(GetOwningPlayer(u),'e09P',x,y,A*bj_RADTODEG)
-            call UnitApplyTimedLife(n,1,0.4)
-            call SetUnitTimeScale(n,2)
-            if IsUnitInvulnerable(Hero[idc])==true then
-                call SetUnitInvulnerable(Hero[idc],false)
-                call UnitAddAbility(Hero[idc],'A0WR')
-                if GetUnitAbilityLevel(u,'A1A6')>0 or GetUnitAbilityLevel(u,'A1AD')>0 then
-                    call myCustomDamage(u,c,b+GetUnitAbilityLevel(u,0x41305952)*GetHeroAgi(u,true),false,false,null,null,null)
-                elseif GetUnitAbilityLevel(u,'A1A7')>0 or GetUnitAbilityLevel(u,'A1AF')>0 then
-                    call myCustomDamage(u,c,b+GetUnitAbilityLevel(u,0x41305952)*GetHeroInt(u,true),false,false,null,null,null)
-                elseif GetUnitAbilityLevel(u,'A1A8')>0 or GetUnitAbilityLevel(u,'A1AE')>0 then
-                    call myCustomDamage(u,c,b+GetUnitAbilityLevel(u,0x41305952)*GetHeroStr(u,true),false,false,null,null,null)
-                endif
-                call UnitRemoveAbility(Hero[idc],'A0WR')
-                call SetControlToUnit(Hero[idc],c, 1, "stun")
-                call SetUnitInvulnerable(Hero[idc],true)
-            else
-                call UnitAddAbility(Hero[idc],'A0WR')
-                if GetUnitAbilityLevel(u,'A1A6')>0 or GetUnitAbilityLevel(u,'A1AD')>0 then
-                    call myCustomDamage(u,c,b+GetUnitAbilityLevel(u,0x41305952)*GetHeroAgi(u,true),false,false,null,null,null)
-                elseif GetUnitAbilityLevel(u,'A1A7')>0 or GetUnitAbilityLevel(u,'A1AF')>0 then
-                    call myCustomDamage(u,c,b+GetUnitAbilityLevel(u,0x41305952)*GetHeroInt(u,true),false,false,null,null,null)
-                elseif GetUnitAbilityLevel(u,'A1A8')>0 or GetUnitAbilityLevel(u,'A1AE')>0 then
-                    call myCustomDamage(u,c,b+GetUnitAbilityLevel(u,0x41305952)*GetHeroStr(u,true),false,false,null,null,null)
-                endif
-            endif
-            call UnitRemoveAbility(Hero[idc],'A0WR')
-            ///KurapikaE Buff
-            if GetUnitAbilityLevel( u ,'A1A6')>0 or GetUnitAbilityLevel( u ,'A1AD')>0 then//ловкость
 
-
-                call UnitAddAbility( u ,'AKKE')
-                call UnitRemoveAbility( u ,'AKKE')
-
-            elseif GetUnitAbilityLevel( u ,'A1A7')>0 or GetUnitAbilityLevel( u ,'A1AF')>0 then//инта
-
-                call SetControlToUnit( u ,Hero[idc],2, "silence")
-
-
-            elseif GetUnitAbilityLevel( u ,'A1A8')>0 or GetUnitAbilityLevel( u ,'A1AE')>0 then//сила
-                call SetUnitState( Hero[idc] ,UNIT_STATE_MANA,GetUnitState(Hero[idc],UNIT_STATE_MANA)- GetUnitState(Hero[idc],UNIT_STATE_MAX_MANA)*0.2 )
-
-            endif
-            ///KurapikaE Buff end
-            set cjlocgn_00000000=null
-            set nb=0
-        endif
         if nb>GetWidgetLife(u)and (UnitHasItemOfTypeBJ(u,'I03F') or GetUnitAbilityLevel(u,'KIJ4')>0)and GetUnitAbilityLevel(u,0x4230314F)==0 and GetHeroPrimaryAttribute(u)==HERO_ATTRIBUTE_AGI and GetUnitAbilityLevel(u,'A0WR')==0 and nb>0 then
 			if LoadInteger(h, uid, StringHash("AnbuSet_CD"))==0 and GetWidgetMana(u)>=GetWidgetMaxMana(u)*0.25 and GetUnitAbilityLevel(u,'A1CE')==0 then
 				set n=CreateUnit(GetOwningPlayer(u),'e0RA',x,y,0)
@@ -48786,8 +48735,8 @@ if time<=2.1 then
 call PauseUnit(u,true)
 call SaveReal(h,id,4,time+0.05)
 else
-call UnitMakeAbilityPermanent(u,false,0x41303949)
-call UnitRemoveAbility(u,0x41303949)
+call UnitMakeAbilityPermanent(u,false,'A09I')
+call UnitRemoveAbility(u,'A09I')
 call UnitRemoveBuffs(u,false,true)
 call PauseUnit(u,false)
 call SetUnitVertexColor(u,255,255,255,255)
@@ -48807,8 +48756,8 @@ call SaveUnitHandle(h,id,0,u)
 call SetUnitVertexColor(u,125,125,125,255)
 call SetUnitTimeScale(u,0)
 call SaveReal(h,id,4,0)
-call UnitAddAbility(u,0x41303949)
-call UnitMakeAbilityPermanent(u,true,0x41303949)
+call UnitAddAbility(u,'A09I')
+call UnitMakeAbilityPermanent(u,true,'A09I')
 call PauseUnit(u,true)
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\Tekkai.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
@@ -86316,7 +86265,7 @@ call TriggerAddCondition(gg_trg_RinneTensei,Condition(function RinneTenseiCond))
 call TriggerAddAction(gg_trg_RinneTensei,function RinneTenseiCast)
 endfunction
 function CagePainCond takes nothing returns boolean
-return GetSpellAbilityId()==0x4130565A
+return GetSpellAbilityId()=='A0VZ'
 endfunction
 function CagePainCast2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
@@ -87352,7 +87301,7 @@ call UnitApplyTimedLife(CreateUnit(p,'e0HQ',x,y,GetRandomReal(0,359)),1,2)
 call UnitApplyTimedLife(CreateUnit(p,0x6530484F,x,y,GetRandomReal(0,359)),1,2)
 call UnitApplyTimedLife(CreateUnit(p,0x65304850,x,y,GetRandomReal(0,359)),1,2)
 call UnitApplyTimedLife(CreateUnit(p,0x65304852,x,y,GetRandomReal(0,359)),1,2)
-call UnitRemoveAbility(u,0x41657468)
+call UnitRemoveAbility(u,'Aeth')
 call PauseUnit(c,false)
 call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,false)
 call SetUnitInvulnerable(c,false)
@@ -108923,12 +108872,10 @@ call SetUnitVertexColor(n,255,255,255,255)
 set i=i+1
 endloop
 if IsUnitInvulnerable(c)==false then
-call myCustomDamage(u,c,((3+GetUnitAbilityLevel(u,'A14G'))*GetHeroStr(u,true))+LoadReal(HH,GetHandleId(u),StringHash("AvalonDamage")),false,false,null,null,null)
-call SaveReal(HH, GetHandleId(u), StringHash("AvalonDamage"), 0.0)
+call myCustomDamage(u,c,(5+GetUnitAbilityLevel(u,'A14G'))*GetHeroStr(u,true),false,false,null,null,null)
 else
 call SetUnitInvulnerable(c,false)
-call myCustomDamage(u,c,((3+GetUnitAbilityLevel(u,'A14G'))*GetHeroStr(u,true))+LoadReal(HH,GetHandleId(u),StringHash("AvalonDamage")),false,false,null,null,null)
-call SaveReal(HH, GetHandleId(u), StringHash("AvalonDamage"), 0.0)
+call myCustomDamage(u,c,(5+GetUnitAbilityLevel(u,'A14G'))*GetHeroStr(u,true),false,false,null,null,null)
 call SetUnitInvulnerable(c,true)
 endif
 call PauseTimer(t)
@@ -169496,7 +169443,7 @@ local unit b1=null
 local real facing=LoadReal(HH,id,3)
 local real distance=LoadReal(HH,id,8)
 local real time=LoadReal(HH,id,5)
-local real damage=LoadReal(HH,GetHandleId(caster),StringHash("MadaraGdmg"))*0.5+GetHeroInt(caster,true)*2
+local real damage=GetHeroInt(caster,true)*3
 local real time1
 local group gr
 if LoadBoolean(HH,GetHandleId(caster),TARGET_ABILITY)==false or time==0.02 or time==0.2 or time==0.4 or time==0.6 or time==0.8 or time==1 or time==1.2 or time==1.4 or time==1.6 then
@@ -169508,7 +169455,6 @@ if time==2 then
 call PauseUnit(caster,false)
 endif
 call SaveBoolean(HH,GetHandleId(caster),StringHash("MadaraG"),false)
-call SaveReal(HH,GetHandleId(caster),StringHash("MadaraGdmg"),0)
 call UnitSpeed(caster,1)
 call RemoveUnit(LoadUnitHandle(HH,id,22))
 if LoadUnitHandle(HH,id,20)!=null then
@@ -186466,6 +186412,101 @@ set target=null
 set caster=null
 endfunction
 
+function KurapikaEAct2 takes nothing returns nothing
+local timer t=GetExpiredTimer()
+local integer id=GetHandleId(t)
+local unit u=LoadUnitHandle(HH,id,1)
+local unit c=LoadUnitHandle(HH,id,2)
+local real x=GetUnitX(u)
+local real y=GetUnitY(u)
+local real x1=GetUnitX(c)
+local real y1=GetUnitY(c)
+local real a=Atan2(y1-y,x1-x)-bj_PI
+local player p=GetOwningPlayer(u)
+local integer i=1
+call SetUnitInvulnerable(u,true)
+call DestroyEffect(AddSpecialEffect("war3mapImported\\BlackBlink.mdx",x,y))
+call SetUnitX(u,x1)
+call SetUnitY(u,y1)
+call DestroyEffect(AddSpecialEffect("war3mapImported\\BlackBlink.mdx",x1,y1))
+call Push(c,50,a,300)
+set n=CreateUnit(GetOwningPlayer(u),'e09P',x,y,a*bj_RADTODEG)
+call UnitApplyTimedLife(n,1,0.4)
+call SetUnitTimeScale(n,2)
+if IsUnitInvulnerable(c)==true then
+    call SetUnitInvulnerable(c,false)
+    if GetUnitAbilityLevel(u,'A1A6')>0 or GetUnitAbilityLevel(u,'A1AD')>0 then
+        call myCustomDamage(u,c,(2+GetUnitAbilityLevel(u,'A0YR'))*GetHeroAgi(u,true),false,false,null,null,null)
+    elseif GetUnitAbilityLevel(u,'A1A7')>0 or GetUnitAbilityLevel(u,'A1AF')>0 then
+        call myCustomDamage(u,c,(2+GetUnitAbilityLevel(u,'A0YR'))*GetHeroInt(u,true),false,false,null,null,null)
+    elseif GetUnitAbilityLevel(u,'A1A8')>0 or GetUnitAbilityLevel(u,'A1AE')>0 then
+        call myCustomDamage(u,c,(2+GetUnitAbilityLevel(u,'A0YR'))*GetHeroStr(u,true),false,false,null,null,null)
+    endif
+    call SetUnitInvulnerable(c,true)
+else
+    if GetUnitAbilityLevel(u,'A1A6')>0 or GetUnitAbilityLevel(u,'A1AD')>0 then
+        call myCustomDamage(u,c,(2+GetUnitAbilityLevel(u,'A0YR'))*GetHeroAgi(u,true),false,false,null,null,null)
+    elseif GetUnitAbilityLevel(u,'A1A7')>0 or GetUnitAbilityLevel(u,'A1AF')>0 then
+        call myCustomDamage(u,c,(2+GetUnitAbilityLevel(u,'A0YR'))*GetHeroInt(u,true),false,false,null,null,null)
+    elseif GetUnitAbilityLevel(u,'A1A8')>0 or GetUnitAbilityLevel(u,'A1AE')>0 then
+        call myCustomDamage(u,c,(2+GetUnitAbilityLevel(u,'A0YR'))*GetHeroStr(u,true),false,false,null,null,null)
+    endif
+endif
+///KurapikaE Buff
+if GetUnitAbilityLevel( u ,'A1A6')>0 or GetUnitAbilityLevel( u ,'A1AD')>0 then//ловкость
+
+
+    call UnitAddAbility( u ,'AKKE')
+    call UnitRemoveAbility( u ,'AKKE')
+
+elseif GetUnitAbilityLevel( u ,'A1A7')>0 or GetUnitAbilityLevel( u ,'A1AF')>0 then//инта
+
+    call SetControlToUnit( u ,c,2, "silence")
+
+
+elseif GetUnitAbilityLevel( u ,'A1A8')>0 or GetUnitAbilityLevel( u ,'A1AE')>0 then//сила
+    call SetUnitState( c ,UNIT_STATE_MANA,GetUnitState(c,UNIT_STATE_MANA)- GetUnitState(c,UNIT_STATE_MAX_MANA)*0.2 )
+
+endif
+call PauseTimer(t)
+call DestroyTimer(t)
+call SetUnitTimeScale(u,1)
+call SetUnitPathing(u,true)
+call PauseUnit(u,false)
+call FlushChildHashtable(HH,id)
+call SetUnitInvulnerable(u,false)
+set p=null
+set u=null
+set c=null
+set t=null
+endfunction
+function KurapikaEAct takes nothing returns nothing
+local timer t=GetExpiredTimer()
+local integer id=GetHandleId(t)
+local unit u=LoadUnitHandle(HH,id,1)
+local integer idu=GetHandleId(u)
+local unit c=LoadUnitHandle(HH,idu,REVERSE_TARGET)
+if GetUnitAbilityLevel(u,'B054')==0 or c!=null then
+call UnitMakeAbilityPermanent(u,false,'B054')
+call UnitRemoveAbility(u,'B054')
+call UnitRemoveBuffs(u,false,true)
+call SetUnitTimeScale(u,1)
+call SaveBoolean(HH,idu,ANTITARGET_ABILITY,false)
+if c!=null then
+call SaveUnitHandle(HH,id,2,c)
+call RemoveSavedHandle(HH,idu,REVERSE_TARGET)
+call PauseTimer(t)
+call TimerStart(t,0.02,true,function KurapikaEAct2)
+else
+call PauseTimer(t)
+call DestroyTimer(t)
+call FlushChildHashtable(HH,id)
+endif
+endif
+set c=null
+set u=null
+set t=null
+endfunction
 
 function KurapikaChoice_Act takes nothing returns nothing
 local timer t=CreateTimer()
@@ -186481,85 +186522,78 @@ call SaveUnitHandle(HH,id,1,caster)
 call SaveReal(HH,id,11,x1)
 call SaveReal(HH,id,12,y1)
 call SaveReal(HH,id,3,facing)
-if GetSpellAbilityId()=='KkR2' then
 
+if GetSpellAbilityId()=='A0YR' then
+call UnitMakeAbilityPermanent(caster,true,'B054')
 
+set soundplay=CreateSound("Sound\\Music\\mp3Music\\KurapikaE.mp3",false,false,true,12700,12700,"")
+call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
 
-if GetUnitAbilityLevel(caster,'A1A6')>0 or GetUnitAbilityLevel(caster,'A1AD')>0 then//ловкость
-
-call SaveReal(HH,id,15,5*GetHeroAgi(caster,true))
-call SaveReal(HH,id,24,4)
-
-elseif GetUnitAbilityLevel(caster,'A1A7')>0 or GetUnitAbilityLevel(caster,'A1AF')>0 then//инта
-
-call SaveReal(HH,id,15,5*GetHeroInt(caster,true))
-call SaveBoolean(HH,id,21,true)
-
-elseif GetUnitAbilityLevel(caster,'A1A8')>0 or GetUnitAbilityLevel(caster,'A1AE')>0 then//сила
-
-call SaveReal(HH,id,15,5*GetHeroStr(caster,true))
-call SaveReal(HH,id,22,1200)
-call SaveReal(HH,id,23,45)
-
+call SaveBoolean(HH,GetHandleId(caster),ANTITARGET_ABILITY,true)
+call TimerStart(t,0.02,true,function KurapikaEAct)
 endif
 
+if GetSpellAbilityId()=='KkR2' then
+
+    if GetUnitAbilityLevel(caster,'A1A6')>0 or GetUnitAbilityLevel(caster,'A1AD')>0 then//ловкость
+        call SaveReal(HH,id,15,5*GetHeroAgi(caster,true))
+        call SaveReal(HH,id,24,4)
+    elseif GetUnitAbilityLevel(caster,'A1A7')>0 or GetUnitAbilityLevel(caster,'A1AF')>0 then//инта
+        call SaveReal(HH,id,15,5*GetHeroInt(caster,true))
+        call SaveBoolean(HH,id,21,true)
+    elseif GetUnitAbilityLevel(caster,'A1A8')>0 or GetUnitAbilityLevel(caster,'A1AE')>0 then//сила
+        call SaveReal(HH,id,15,5*GetHeroStr(caster,true))
+        call SaveReal(HH,id,22,1200)
+        call SaveReal(HH,id,23,45)
+    endif
+
+    call SaveBoolean(HH,GetHandleId(caster),StringHash("KurapRcheck"),false)
+    call SaveUnitHandle(HH,id,2,LoadUnitHandle(HH,GetHandleId(caster),StringHash("KurapRTarg")))
+    call PauseUnit(caster,true)
+    call SetUnitInvulnerable(caster,true)
 
 
-
-
-
-call SaveBoolean(HH,GetHandleId(caster),StringHash("KurapRcheck"),false)
-call SaveUnitHandle(HH,id,2,LoadUnitHandle(HH,GetHandleId(caster),StringHash("KurapRTarg")))
-call PauseUnit(caster,true)
-call SetUnitInvulnerable(caster,true)
-
-
-call TimerStart(t,0.02,true,function KurapikaR2Act)
+    call TimerStart(t,0.02,true,function KurapikaR2Act)
 endif
 
 if GetSpellAbilityId()=='KkR1' then
 
-call SaveBoolean(HH,GetHandleId(caster),StringHash("KurapRcheck"),true)
-call SaveUnitHandle(HH,id,2,GetSpellTargetUnit())
-call PauseUnit(caster,true)
-call SetUnitInvulnerable(caster,true)
+    call SaveBoolean(HH,GetHandleId(caster),StringHash("KurapRcheck"),true)
+    call SaveUnitHandle(HH,id,2,GetSpellTargetUnit())
+    call PauseUnit(caster,true)
+    call SetUnitInvulnerable(caster,true)
 
 
-if GetUnitAbilityLevel(caster,'A1A6')>0 or GetUnitAbilityLevel(caster,'A1AD')>0 then//ловкость
+    if GetUnitAbilityLevel(caster,'A1A6')>0 or GetUnitAbilityLevel(caster,'A1AD')>0 then//ловкость
 
-call SaveReal(HH,id,15,GetUnitAbilityLevel(caster,'KkR1')*GetHeroAgi(caster,true))
-call SaveReal(HH,id,22,10000)
-call SaveReal(HH,id,24,4)
-call SaveBoolean(HH,id,25,true)
+        call SaveReal(HH,id,15,GetUnitAbilityLevel(caster,'KkR1')*GetHeroAgi(caster,true))
+        call SaveReal(HH,id,22,10000)
+        call SaveReal(HH,id,24,4)
+        call SaveBoolean(HH,id,25,true)
 
-elseif GetUnitAbilityLevel(caster,'A1A7')>0 or GetUnitAbilityLevel(caster,'A1AF')>0 then//инта
+    elseif GetUnitAbilityLevel(caster,'A1A7')>0 or GetUnitAbilityLevel(caster,'A1AF')>0 then//инта
 
-call SaveReal(HH,id,15,GetUnitAbilityLevel(caster,'KkR1')*GetHeroInt(caster,true))
-call SaveBoolean(HH,id,21,true)
+        call SaveReal(HH,id,15,GetUnitAbilityLevel(caster,'KkR1')*GetHeroInt(caster,true))
+        call SaveBoolean(HH,id,21,true)
 
-elseif GetUnitAbilityLevel(caster,'A1A8')>0 or GetUnitAbilityLevel(caster,'A1AE')>0 then//сила
+    elseif GetUnitAbilityLevel(caster,'A1A8')>0 or GetUnitAbilityLevel(caster,'A1AE')>0 then//сила
 
-call SaveReal(HH,id,15,GetUnitAbilityLevel(caster,'KkR1')*GetHeroStr(caster,true))
-call SaveReal(HH,id,22,1200)
-call SaveReal(HH,id,23,45)
+        call SaveReal(HH,id,15,GetUnitAbilityLevel(caster,'KkR1')*GetHeroStr(caster,true))
+        call SaveReal(HH,id,22,1200)
+        call SaveReal(HH,id,23,45)
 
-endif
+    endif
 
-
-
-
-
-
-
-
-call TimerStart(t,0.02,true,function KurapikaR1Act)
+    call TimerStart(t,0.02,true,function KurapikaR1Act)
 endif
 
 set t=null
 set caster=null
 endfunction
+
 function KurapikaChoice_Cond takes nothing returns boolean
-if GetSpellAbilityId()=='KkR1' or GetSpellAbilityId()=='KkR2' then
+if GetSpellAbilityId()=='KkR1' or GetSpellAbilityId()=='KkR2' or GetSpellAbilityId()=='A0YR' then
 return true
 else
 return false
@@ -204656,11 +204690,6 @@ call KillSoundWhenDone(soundplay)
 endif
 if GetSpellAbilityId()=='A0X7' then
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\ShanaF.mp3",false,false,true,12700,12700,"")
-call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
-endif
-if GetSpellAbilityId()=='A0YR' then
-set soundplay=CreateSound("Sound\\Music\\mp3Music\\KurapikaE.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
 call KillSoundWhenDone(soundplay)
 endif
