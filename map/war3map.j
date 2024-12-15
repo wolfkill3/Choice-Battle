@@ -197210,7 +197210,7 @@ endfunction
                         if LoadBoolean(HH,GetHandleId(SysUnit),DoflaTHash)==false then
                             call SetUnitXY_1(SysUnit , GetUnitX(SysUnit) - 25 * Cos(Atan2(GetUnitY(SysUnit) - ( y - 250 * Sin(ang) ), GetUnitX(SysUnit) - ( x - 250 * Cos(ang) ))) , GetUnitY(SysUnit) - 25 * Sin(Atan2(GetUnitY(SysUnit) - ( y - 250 * Sin(ang) ), GetUnitX(SysUnit) - ( x - 250 * Cos(ang) ))) , false)
                         endif
-                        call myCustomDamage(LoadUnitHandle(HH,MUIHandle(),CasterHash), SysUnit, dmg * 0.08, false, false, null, null, null)
+                        call myCustomDamage(LoadUnitHandle(HH,MUIHandle(),CasterHash), SysUnit, dmg * 0.092, false, false, null, null, null)
                         if IsUnitInvulnerable(SysUnit)==false then
                             call IssueImmediateOrder(SysUnit,"stop")
                             call SetControlToUnit(SysUnit,SysUnit,0.06,"stunbkb")
