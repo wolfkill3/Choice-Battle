@@ -61839,7 +61839,7 @@ if GetWidgetLife(c)>0 and GetWidgetLife(u)>0 and (time<4 or time2>0) then
                     call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,true)
                     set EFF=AddSpecialEffect("war3mapImported\\CF2.mdl", x1,y1)
                     call SetSpecialEffectOrientation(EFF,a*bj_RADTODEG,0,0)
-                    call SetSpecialEffectZ(EFF, GetUnitFlyHeight(c))
+                    call SetSpecialEffectZ(EFF, GetUnitFlyHeight(c)+30)
                     call SetSpecialEffectScale(EFF , 1)
                     call DestroyEffect(EFF)
                     set EFF=AddSpecialEffect("Minato-37.mdx", x1,y1)
@@ -61855,7 +61855,19 @@ if GetWidgetLife(c)>0 and GetWidgetLife(u)>0 and (time<4 or time2>0) then
                     call RemoveEffect(EFF,1,true,CreateTimer())
                 endif
                 if time2==0.3 then
-                    set n=CreateUnit(GetOwningPlayer(u),'e0CO',x,y,a*bj_RADTODEG)
+                    set n = CreateUnit(p, 'd125', x1, y1, a*bj_RADTODEG)
+                    call SetUnitScale(n, 4, 4, 4)
+                    call MyRemoveUnit(n, 5.0)
+                    set n = CreateUnit(p, 'dR13', x1, y1, a*bj_RADTODEG)
+                    call SetUnitScale(n, 6, 6, 6)
+                    call MyRemoveUnit(n, 5.0)
+                    set n=CreateUnit(p,'e3E6',x1,y1,0)
+                    call SetUnitFlyHeight(n,0,0)
+                    call SetUnitScale(n,3,3,3)
+                    call UnitApplyTimedLife(n,1,2.5)
+                endif
+                if time2==0.72 then
+                    set n=CreateUnit(p,'e0CO',x,y,a*bj_RADTODEG)
                     if GetUnitAbilityLevel(u,'GkH0')>0 or GetUnitAbilityLevel(u,'GkH1')>0 or GetUnitAbilityLevel(u,'GkH2')>0 or GetUnitAbilityLevel(u,'GkH3')>0 or GetUnitAbilityLevel(u,'GkH4')>0 then
                     call SetUnitVertexColor(n,255,255,125,255)
                     elseif GetUnitAbilityLevel(u,'GkH5')>0 then
@@ -61866,11 +61878,36 @@ if GetWidgetLife(c)>0 and GetWidgetLife(u)>0 and (time<4 or time2>0) then
                     call SetUnitVertexColor(n,255,255,255,255)
                     endif
                     call SetUnitAnimation(n,"Spell three")
-                    call SetUnitTimeScale(n,1.4)
+                    call SetUnitTimeScale(n,1.31)
                     call MyRemoveUnit(n, 2.6)
+                    set n = CreateUnit(p, 'd125', x1, y1, a*bj_RADTODEG)
+                    call SetUnitScale(n, 4, 4, 4)
+                    call MyRemoveUnit(n, 5.0)
+                    set n = CreateUnit(p, 'dR13', x1, y1, a*bj_RADTODEG)
+                    call SetUnitScale(n, 6, 6, 6)
+                    call MyRemoveUnit(n, 5.0)
+                    set n = CreateUnit(p, 'd128', x1, y1, a*bj_RADTODEG)
+                    call SetUnitScale(n, 2.5, 2.5, 2.5)
+                    call UnitApplyTimedLife(n, 1, 3.5)
+                    call MyRemoveUnit(n, 6.0)
                 endif
-                if time2==2.4 then
+                if time2==2.82 then
                     call SetUnitFlyHeight(u,0,0)
+                    set n = CreateUnit(p, 'dR41', x1, y1, a*bj_RADTODEG)
+                    call SetUnitScale(n, 1.5, 1.5, 1.5)
+                    call SetUnitTimeScale(n, 0.7)
+                    call MyRemoveUnit(n, 5.0)
+                    set n = CreateUnit(p, 'd108', x1, y1, a*bj_RADTODEG)
+                    call SetUnitScale(n, 2.2, 2.2, 2.2)
+                    call MyRemoveUnit(n, 2.0)
+                    set n = CreateUnit(p, 'd129', x1, y1, a*bj_RADTODEG)
+                    call SetUnitScale(n, 2.2, 2.2, 2.2)
+                    call MyRemoveUnit(n, 4.0)
+                    call UnitApplyTimedLife(CreateUnit(p,'e0CJ',x1,y1,GetRandomReal(0,359)),1,1)
+                    call UnitApplyTimedLife(CreateUnit(p,'e0CK',x1,y1,GetRandomReal(0,359)),1,1)
+                    call UnitApplyTimedLife(CreateUnit(p,'e0CI',x1,y1,GetRandomReal(0,359)),1,1)
+                    call UnitApplyTimedLife(CreateUnit(p,'e0CM',x1,y1,GetRandomReal(0,359)),1,1)
+                    call UnitApplyTimedLife(CreateUnit(p,'e0CM',x1,y1,GetRandomReal(0,359)),1,1)
                     call SetUnitInvulnerable(c,false)
                     call PauseUnit(c,false)
                     call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,false)
@@ -61927,73 +61964,109 @@ local player p=GetOwningPlayer(u)
 local real speed=LoadReal(HH,id,7)
 local integer alpha=LoadInteger(HH,id,8)
 local real dist=LoadReal(HH,id,9)
+local real time=LoadReal(HH,id,12)
 local integer l__ide
-if dist<2000 and LoadBoolean(HH,GetHandleId(u),DASH_USER)==true then
-    set x1=x1+speed*Cos(a)
-    set y1=y1+speed*Sin(a)
-    call SetUnitXY_1(u,x1,y1, false)
-    call SetUnitXY_1(l__d,x1,y1, false)
-    call SetUnitAnimationOffsetPercent(u,0.2)
-    call SaveReal(HH,id,9,dist+speed)
-    if GetUnitCurrentAnimationId(u)!=190 then
-        call SetUnitAnimationByIndex(u,190)
+if time<0.7 then
+    call SaveReal(HH,id,12,time+0.03)
+    if ModuloReal(time,0.09)<0.03 then
+        call UnitApplyTimedLife(CreateUnit(p,'e0CJ',x1,y1,GetRandomReal(0,359)),1,1)
+        set n=CreateUnit(p,'e0VT',x1+900*time*Cos(a),y1+900*time*Sin(a),a*bj_RADTODEG)
+        call UnitApplyTimedLife(n,1,2.5)
+        set n=CreateUnit(p,'e0VR',x1+900*time*Cos(a),y1+900*time*Sin(a),a*bj_RADTODEG)
+        call UnitApplyTimedLife(n,1,2.5)
+        set n=CreateUnit(p,'e0VS',x1+900*time*Cos(a),y1+900*time*Sin(a),GetRandomReal(0,359))
+        call UnitApplyTimedLife(n,1,2.5)
     endif
-    if alpha<255 then
-        set alpha=LoadInteger(HH,id,8)+15
-        call SaveInteger(HH,id,8,alpha)
-        if GetUnitAbilityLevel(u,'GkH0')>0 or GetUnitAbilityLevel(u,'GkH1')>0 or GetUnitAbilityLevel(u,'GkH2')>0 or GetUnitAbilityLevel(u,'GkH3')>0 or GetUnitAbilityLevel(u,'GkH4')>0 then
-            call SetUnitVertexColor(l__d,255,255,125,alpha)
-        elseif GetUnitAbilityLevel(u,'GkH5')>0 then
-            call SetUnitVertexColor(l__d,255,125,125,alpha)
-        elseif GetUnitAbilityLevel(u,'GkH6')>0 then
-            call SetUnitVertexColor(l__d,125,125,255,alpha)
-        else
-            call SetUnitVertexColor(l__d,255,255,255,alpha)
-        endif
-    endif
-    call SetUnitInvulnerable(u,true)
-    call PauseUnit(u,true)
-    call SaveReal(HH,id,7,speed*1.023)
-    call SetUnitFacing(u,a*bj_RADTODEG)
-    loop
-        set E=FirstOfGroup(G)
-        set l__ide=GetHandleId(E)
-        if Condition_Base(p,E)then
-            if LoadUnitHandle(HH,l__idg,l__ide)!=E then
-                if LoadBoolean(HH,GetHandleId(E),ANTITARGET_ABILITY)==false then
-                    call myCustomDamage(u,E,dmg,false,false,null,null,null)
-                    call SaveUnitHandle(HH,l__idg,l__ide,E)
-                else
-                    call SaveBoolean(HH,GetHandleId(u),DASH_USER,false)
-                    call SaveUnitHandle(HH,GetHandleId(E),REVERSE_TARGET,u)
-                endif
-            endif
-        endif
-        call GroupRemoveUnit(G,E)
-        exitwhen E==null
-    endloop
-elseif speed>10 and LoadBoolean(HH,GetHandleId(u),DASH_USER)==true then
-    if dist<2500 then
-        call RemoveUnit(l__d)
-        call SaveReal(HH,id,9,2550)
-    else
-        call SaveReal(HH,id,7,speed*0.9)
+else
+    if dist<2500 and LoadBoolean(HH,GetHandleId(u),DASH_USER)==true then
         set x1=x1+speed*Cos(a)
         set y1=y1+speed*Sin(a)
         call SetUnitXY_1(u,x1,y1, false)
-        call SetUnitXY_1(l__d,x1,y1, false)
+        call SetUnitXY_1(l__d,x1-350*Cos(a),y1-350*Sin(a), false)
+        call SetUnitAnimationOffsetPercent(u,0.2)
+        call SaveReal(HH,id,9,dist+speed)
+        if GetUnitCurrentAnimationId(u)!=190 then
+            call SetUnitAnimationByIndex(u,190)
+        endif
+        if alpha<255 then
+            set alpha=LoadInteger(HH,id,8)+12
+            call SaveInteger(HH,id,8,alpha)
+            if GetUnitAbilityLevel(u,'GkH0')>0 or GetUnitAbilityLevel(u,'GkH1')>0 or GetUnitAbilityLevel(u,'GkH2')>0 or GetUnitAbilityLevel(u,'GkH3')>0 or GetUnitAbilityLevel(u,'GkH4')>0 then
+                call SetUnitVertexColor(l__d,255,255,125,alpha)
+            elseif GetUnitAbilityLevel(u,'GkH5')>0 then
+                call SetUnitVertexColor(l__d,255,125,125,alpha)
+            elseif GetUnitAbilityLevel(u,'GkH6')>0 then
+                call SetUnitVertexColor(l__d,125,125,255,alpha)
+            else
+                call SetUnitVertexColor(l__d,255,255,255,alpha)
+            endif
+        endif
+        call SetUnitInvulnerable(u,true)
+        call PauseUnit(u,true)
+        call SaveReal(HH,id,7,speed*1.023)
+        call SetUnitFacing(u,a*bj_RADTODEG)
+        call GroupEnumUnitsInRange(G,x1,y1,350,Base)
+        loop
+            set E=FirstOfGroup(G)
+            set l__ide=GetHandleId(E)
+            if Condition_Base(p,E)then
+                if LoadUnitHandle(HH,l__idg,l__ide)!=E then
+                    if LoadBoolean(HH,GetHandleId(E),ANTITARGET_ABILITY)==false then
+                        call myCustomDamage(u,E,dmg,false,false,null,null,null)
+                        call SaveUnitHandle(HH,l__idg,l__ide,E)
+                    else
+                        call SaveBoolean(HH,GetHandleId(u),DASH_USER,false)
+                        call SaveUnitHandle(HH,GetHandleId(E),REVERSE_TARGET,u)
+                    endif
+                endif
+            endif
+            call GroupRemoveUnit(G,E)
+            exitwhen E==null
+        endloop
+    elseif speed>10 and LoadBoolean(HH,GetHandleId(u),DASH_USER)==true then
+        if dist<3000 then
+            call RemoveUnit(l__d)
+            call UnitApplyTimedLife(CreateUnit(p,'e0CJ',x1,y1,GetRandomReal(0,359)),1,1)
+            call UnitApplyTimedLife(CreateUnit(p,'e0CK',x1,y1,GetRandomReal(0,359)),1,1)
+            call UnitApplyTimedLife(CreateUnit(p,'e0CI',x1,y1,GetRandomReal(0,359)),1,1)
+            call UnitApplyTimedLife(CreateUnit(p,'e0CJ',x1-300*Cos(a),y1-300*Sin(a),GetRandomReal(0,359)),1,1)
+            call UnitApplyTimedLife(CreateUnit(p,'e0CK',x1-300*Cos(a),y1-300*Sin(a),GetRandomReal(0,359)),1,1)
+            call UnitApplyTimedLife(CreateUnit(p,'e0CI',x1-300*Cos(a),y1-300*Sin(a),GetRandomReal(0,359)),1,1)
+            call UnitApplyTimedLife(CreateUnit(p,'e0CJ',x1-600*Cos(a),y1-600*Sin(a),GetRandomReal(0,359)),1,1)
+            call UnitApplyTimedLife(CreateUnit(p,'e0CK',x1-600*Cos(a),y1-600*Sin(a),GetRandomReal(0,359)),1,1)
+            call UnitApplyTimedLife(CreateUnit(p,'e0CI',x1-600*Cos(a),y1-600*Sin(a),GetRandomReal(0,359)),1,1)
+            call UnitApplyTimedLife(CreateUnit(p,'e0CJ',x1-900*Cos(a),y1-900*Sin(a),GetRandomReal(0,359)),1,1)
+            call UnitApplyTimedLife(CreateUnit(p,'e0CK',x1-900*Cos(a),y1-900*Sin(a),GetRandomReal(0,359)),1,1)
+            call UnitApplyTimedLife(CreateUnit(p,'e0CI',x1-900*Cos(a),y1-900*Sin(a),GetRandomReal(0,359)),1,1)
+            call UnitApplyTimedLife(CreateUnit(p,'e0CJ',x1-1200*Cos(a),y1-1200*Sin(a),GetRandomReal(0,359)),1,1)
+            call UnitApplyTimedLife(CreateUnit(p,'e0CK',x1-1200*Cos(a),y1-1200*Sin(a),GetRandomReal(0,359)),1,1)
+            call UnitApplyTimedLife(CreateUnit(p,'e0CI',x1-1200*Cos(a),y1-1200*Sin(a),GetRandomReal(0,359)),1,1)
+            call UnitApplyTimedLife(CreateUnit(p,'e0CJ',x1-1500*Cos(a),y1-1500*Sin(a),GetRandomReal(0,359)),1,1)
+            call UnitApplyTimedLife(CreateUnit(p,'e0CK',x1-1500*Cos(a),y1-1500*Sin(a),GetRandomReal(0,359)),1,1)
+            call UnitApplyTimedLife(CreateUnit(p,'e0CI',x1-1500*Cos(a),y1-1500*Sin(a),GetRandomReal(0,359)),1,1)
+            call UnitApplyTimedLife(CreateUnit(p,'e0CJ',x1-1800*Cos(a),y1-1800*Sin(a),GetRandomReal(0,359)),1,1)
+            call UnitApplyTimedLife(CreateUnit(p,'e0CK',x1-1800*Cos(a),y1-1800*Sin(a),GetRandomReal(0,359)),1,1)
+            call UnitApplyTimedLife(CreateUnit(p,'e0CI',x1-1800*Cos(a),y1-1800*Sin(a),GetRandomReal(0,359)),1,1)
+            call SaveReal(HH,id,9,3050)
+        else
+            call SaveReal(HH,id,7,speed*0.9)
+            set x1=x1+speed*Cos(a)
+            set y1=y1+speed*Sin(a)
+            call SetUnitXY_1(u,x1,y1, false)
+            call SetUnitXY_1(l__d,x1,y1, false)
+        endif
+    else
+        call SaveBoolean(HH,GetHandleId(u),DASH_USER,false)
+        call SetUnitAnimation(u,"stand")
+        //call UnitRemoveAbility(u,'A0D9')
+        call SetUnitInvulnerable(u,false)
+        call PauseUnit(u,false)
+        call FlushChildHashtable(HH,id)
+        call FlushChildHashtable(HH,l__idg)
+        call RemoveUnit(l__d)
+        call DestroyTimer(t)
+        call DestroyGroup(g)
     endif
-else
-    call SaveBoolean(HH,GetHandleId(u),DASH_USER,false)
-    call SetUnitAnimation(u,"stand")
-    //call UnitRemoveAbility(u,'A0D9')
-    call SetUnitInvulnerable(u,false)
-    call PauseUnit(u,false)
-    call FlushChildHashtable(HH,id)
-    call FlushChildHashtable(HH,l__idg)
-    call RemoveUnit(l__d)
-    call DestroyTimer(t)
-    call DestroyGroup(g)
 endif
 set l__d=null
 set u=null
@@ -62009,12 +62082,13 @@ local real x=GetUnitX(u)
 local real y=GetUnitY(u)
 local real x1=GetSpellTargetX()
 local real y1=GetSpellTargetY()
+local player p=GetOwningPlayer(u)
 local real a=Atan2(y1-y,x1-x)
 local integer id=GetHandleId(t)
 call SaveUnitHandle(HH,id,0,u)
 if LoadReal(HH,GetHandleId(GetOwningPlayer(Goku)),VariationTHash)==0 then
 call SetUnitAnimationByIndex(u,190)
-set n=CreateUnit(GetOwningPlayer(u),'e1CO',x,y,a*bj_RADTODEG)
+set n=CreateUnit(p,'e1CO',x,y,a*bj_RADTODEG)
 if GetUnitAbilityLevel(u,'GkH0')>0 or GetUnitAbilityLevel(u,'GkH1')>0 or GetUnitAbilityLevel(u,'GkH2')>0 or GetUnitAbilityLevel(u,'GkH3')>0 or GetUnitAbilityLevel(u,'GkH4')>0 then
 call SetUnitVertexColor(n,255,255,125,0)
 elseif GetUnitAbilityLevel(u,'GkH5')>0 then
@@ -62024,8 +62098,9 @@ call SetUnitVertexColor(n,125,125,255,0)
 else
 call SetUnitVertexColor(n,255,255,255,0)
 endif
+call SetUnitAnimation(n,"Birth")
 call SaveUnitHandle(HH,id,6,n)
-call SetUnitTimeScale(n,1.25)
+call SetUnitTimeScale(n,0.68)
 call SaveReal(HH,id,4,GetUnitX(u))
 call SaveReal(HH,id,5,GetUnitY(u))
 call SaveReal(HH,id,1,a)
@@ -62036,7 +62111,22 @@ call PauseUnit(u,true)
 call SaveBoolean(HH,GetHandleId(u),DASH_USER,true)
 call UnitRemoveAbility(u,'A2VJ')
 //call UnitAddAbility(u,'A0D9')
-call UnitApplyTimedLife(CreateUnit(GetOwningPlayer(u),'e06G',x,y,a*bj_RADTODEG),'B000',4)
+call UnitApplyTimedLife(CreateUnit(p,'e06G',x,y,a*bj_RADTODEG),'B000',4)
+call UnitApplyTimedLife(CreateUnit(p,'e0CJ',x,y,GetRandomReal(0,359)),1,3)
+call UnitApplyTimedLife(CreateUnit(p,'e0CK',x,y,GetRandomReal(0,359)),1,3)
+call UnitApplyTimedLife(CreateUnit(p,'e0CI',x,y,GetRandomReal(0,359)),1,3)
+call UnitApplyTimedLife(CreateUnit(p,'e0CM',x,y,GetRandomReal(0,359)),1,3)
+call UnitApplyTimedLife(CreateUnit(p,'e0CM',x,y,GetRandomReal(0,359)),1,3)
+set n=CreateUnit(p,'e3E6',x,y,0)
+call SetUnitFlyHeight(n,0,0)
+call SetUnitScale(n,3,3,3)
+call UnitApplyTimedLife(n,1,2.5)
+set n=CreateUnit(p,'e0VT',x,y,a*bj_RADTODEG)
+call UnitApplyTimedLife(n,1,2.5)
+set n=CreateUnit(p,'e0VR',x,y,a*bj_RADTODEG)
+call UnitApplyTimedLife(n,1,2.5)
+set n=CreateUnit(p,'e0VS',x,y,GetRandomReal(0,359))
+call UnitApplyTimedLife(n,1,2.5)
 if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\Dragonfist.wav",false,false,true,12700,12700,"")
 else
@@ -62051,6 +62141,7 @@ call SetUnitFacingInstant(n,a*bj_RADTODEG)
 call TimerStart(t,0.03,true,function CastDragonFist3)
 endif
 set u=null
+set p=null
 set c=null
 set t=null
 endfunction
