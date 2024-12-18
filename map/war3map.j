@@ -61970,18 +61970,19 @@ if time<0.7 then
     call SaveReal(HH,id,12,time+0.03)
     if ModuloReal(time,0.06)<0.03 then
         call UnitApplyTimedLife(CreateUnit(p,'e0CJ',x1,y1,GetRandomReal(0,359)),1,1)
-        set bjLCU=CreateUnit(p, 'dR62', x1+1200*time*Cos(a), y1+1200*time*Sin(a), a*bj_RADTODEG)
+        set bjLCU=CreateUnit(p, 'e0VS', x1+1700*time*Cos(a), y1+1700*time*Sin(a), a*bj_RADTODEG)
         call SetUnitScale(bjLCU, 1.2, 1.2, 1.2)
-        call SetUnitFlyHeight(bjLCU, 250, 0)
-        call SetUnitTimeScale(bjLCU,0.85)
-        call UnitApplyTimedLife(bjLCU,1,2.5)
-        set bjLCU=CreateUnit(p, 'dR95', x1+1400*time*Cos(a), y1+1400*time*Sin(a), a*bj_RADTODEG)
-        call SetUnitScale(bjLCU, 0.8, 0.8, 0.8)
-        call SetUnitTimeScale(bjLCU,0.4)
-        call UnitApplyTimedLife(bjLCU,1,2.5)
+        call SetUnitFlyHeight(bjLCU, 150, 0)
+        call SetUnitTimeScale(bjLCU,0.65)
+        call UnitApplyTimedLife(bjLCU,1,1.5)
+        set bjLCU=CreateUnit(p, 'e0VT', x1+1700*time*Cos(a), y1+1700*time*Sin(a), a*bj_RADTODEG)
+        call SetUnitScale(bjLCU, 1.2, 1.2, 1.2)
+        call SetUnitFlyHeight(bjLCU, 150, 0)
+        call SetUnitTimeScale(bjLCU,0.65)
+        call UnitApplyTimedLife(bjLCU,1,1.5)
     endif
 else
-    if dist<3000 and LoadBoolean(HH,GetHandleId(u),DASH_USER)==true then
+    if dist<3000 and LoadBoolean(HH,GetHandleId(u),DASH_USER)==true and IsTerrainPathable(x1+speed*Cos(a),y1+speed*Sin(a),PATHING_TYPE_FLYABILITY)==false then
         set x1=x1+speed*Cos(a)
         set y1=y1+speed*Sin(a)
         call SetUnitXY_1(u,x1,y1, false)
@@ -62032,30 +62033,46 @@ else
             call UnitApplyTimedLife(CreateUnit(p,'e0CJ',x1,y1,GetRandomReal(0,359)),1,1)
             call UnitApplyTimedLife(CreateUnit(p,'e0CK',x1,y1,GetRandomReal(0,359)),1,1)
             call UnitApplyTimedLife(CreateUnit(p,'e0CI',x1,y1,GetRandomReal(0,359)),1,1)
-            call UnitApplyTimedLife(CreateUnit(p,'e0CJ',x1-300*Cos(a),y1-300*Sin(a),GetRandomReal(0,359)),1,1)
-            call UnitApplyTimedLife(CreateUnit(p,'e0CK',x1-300*Cos(a),y1-300*Sin(a),GetRandomReal(0,359)),1,1)
-            call UnitApplyTimedLife(CreateUnit(p,'e0CI',x1-300*Cos(a),y1-300*Sin(a),GetRandomReal(0,359)),1,1)
-            call UnitApplyTimedLife(CreateUnit(p,'e0CJ',x1-600*Cos(a),y1-600*Sin(a),GetRandomReal(0,359)),1,1)
-            call UnitApplyTimedLife(CreateUnit(p,'e0CK',x1-600*Cos(a),y1-600*Sin(a),GetRandomReal(0,359)),1,1)
-            call UnitApplyTimedLife(CreateUnit(p,'e0CI',x1-600*Cos(a),y1-600*Sin(a),GetRandomReal(0,359)),1,1)
-            call UnitApplyTimedLife(CreateUnit(p,'e0CJ',x1-900*Cos(a),y1-900*Sin(a),GetRandomReal(0,359)),1,1)
-            call UnitApplyTimedLife(CreateUnit(p,'e0CK',x1-900*Cos(a),y1-900*Sin(a),GetRandomReal(0,359)),1,1)
-            call UnitApplyTimedLife(CreateUnit(p,'e0CI',x1-900*Cos(a),y1-900*Sin(a),GetRandomReal(0,359)),1,1)
-            call UnitApplyTimedLife(CreateUnit(p,'e0CJ',x1-1200*Cos(a),y1-1200*Sin(a),GetRandomReal(0,359)),1,1)
-            call UnitApplyTimedLife(CreateUnit(p,'e0CK',x1-1200*Cos(a),y1-1200*Sin(a),GetRandomReal(0,359)),1,1)
-            call UnitApplyTimedLife(CreateUnit(p,'e0CI',x1-1200*Cos(a),y1-1200*Sin(a),GetRandomReal(0,359)),1,1)
-            call UnitApplyTimedLife(CreateUnit(p,'e0CJ',x1-1500*Cos(a),y1-1500*Sin(a),GetRandomReal(0,359)),1,1)
-            call UnitApplyTimedLife(CreateUnit(p,'e0CK',x1-1500*Cos(a),y1-1500*Sin(a),GetRandomReal(0,359)),1,1)
-            call UnitApplyTimedLife(CreateUnit(p,'e0CI',x1-1500*Cos(a),y1-1500*Sin(a),GetRandomReal(0,359)),1,1)
-            call UnitApplyTimedLife(CreateUnit(p,'e0CJ',x1-1800*Cos(a),y1-1800*Sin(a),GetRandomReal(0,359)),1,1)
-            call UnitApplyTimedLife(CreateUnit(p,'e0CK',x1-1800*Cos(a),y1-1800*Sin(a),GetRandomReal(0,359)),1,1)
-            call UnitApplyTimedLife(CreateUnit(p,'e0CI',x1-1800*Cos(a),y1-1800*Sin(a),GetRandomReal(0,359)),1,1)
-            call UnitApplyTimedLife(CreateUnit(p,'e0CJ',x1-2100*Cos(a),y1-2100*Sin(a),GetRandomReal(0,359)),1,1)
-            call UnitApplyTimedLife(CreateUnit(p,'e0CK',x1-2100*Cos(a),y1-2100*Sin(a),GetRandomReal(0,359)),1,1)
-            call UnitApplyTimedLife(CreateUnit(p,'e0CI',x1-2100*Cos(a),y1-2100*Sin(a),GetRandomReal(0,359)),1,1)
-            call UnitApplyTimedLife(CreateUnit(p,'e0CJ',x1-2400*Cos(a),y1-2400*Sin(a),GetRandomReal(0,359)),1,1)
-            call UnitApplyTimedLife(CreateUnit(p,'e0CK',x1-2400*Cos(a),y1-2400*Sin(a),GetRandomReal(0,359)),1,1)
-            call UnitApplyTimedLife(CreateUnit(p,'e0CI',x1-2400*Cos(a),y1-2400*Sin(a),GetRandomReal(0,359)),1,1)
+            if dist>300 then
+                call UnitApplyTimedLife(CreateUnit(p,'e0CJ',x1-300*Cos(a),y1-300*Sin(a),GetRandomReal(0,359)),1,1)
+                call UnitApplyTimedLife(CreateUnit(p,'e0CK',x1-300*Cos(a),y1-300*Sin(a),GetRandomReal(0,359)),1,1)
+                call UnitApplyTimedLife(CreateUnit(p,'e0CI',x1-300*Cos(a),y1-300*Sin(a),GetRandomReal(0,359)),1,1)
+            endif
+            if dist>600 then
+                call UnitApplyTimedLife(CreateUnit(p,'e0CJ',x1-600*Cos(a),y1-600*Sin(a),GetRandomReal(0,359)),1,1)
+                call UnitApplyTimedLife(CreateUnit(p,'e0CK',x1-600*Cos(a),y1-600*Sin(a),GetRandomReal(0,359)),1,1)
+                call UnitApplyTimedLife(CreateUnit(p,'e0CI',x1-600*Cos(a),y1-600*Sin(a),GetRandomReal(0,359)),1,1)
+            endif
+            if dist>900 then
+                call UnitApplyTimedLife(CreateUnit(p,'e0CJ',x1-900*Cos(a),y1-900*Sin(a),GetRandomReal(0,359)),1,1)
+                call UnitApplyTimedLife(CreateUnit(p,'e0CK',x1-900*Cos(a),y1-900*Sin(a),GetRandomReal(0,359)),1,1)
+                call UnitApplyTimedLife(CreateUnit(p,'e0CI',x1-900*Cos(a),y1-900*Sin(a),GetRandomReal(0,359)),1,1)
+            endif
+            if dist>1200 then
+                call UnitApplyTimedLife(CreateUnit(p,'e0CJ',x1-1200*Cos(a),y1-1200*Sin(a),GetRandomReal(0,359)),1,1)
+                call UnitApplyTimedLife(CreateUnit(p,'e0CK',x1-1200*Cos(a),y1-1200*Sin(a),GetRandomReal(0,359)),1,1)
+                call UnitApplyTimedLife(CreateUnit(p,'e0CI',x1-1200*Cos(a),y1-1200*Sin(a),GetRandomReal(0,359)),1,1)
+            endif
+            if dist>1500 then
+                call UnitApplyTimedLife(CreateUnit(p,'e0CJ',x1-1500*Cos(a),y1-1500*Sin(a),GetRandomReal(0,359)),1,1)
+                call UnitApplyTimedLife(CreateUnit(p,'e0CK',x1-1500*Cos(a),y1-1500*Sin(a),GetRandomReal(0,359)),1,1)
+                call UnitApplyTimedLife(CreateUnit(p,'e0CI',x1-1500*Cos(a),y1-1500*Sin(a),GetRandomReal(0,359)),1,1)
+            endif
+            if dist>1800 then
+                call UnitApplyTimedLife(CreateUnit(p,'e0CJ',x1-1800*Cos(a),y1-1800*Sin(a),GetRandomReal(0,359)),1,1)
+                call UnitApplyTimedLife(CreateUnit(p,'e0CK',x1-1800*Cos(a),y1-1800*Sin(a),GetRandomReal(0,359)),1,1)
+                call UnitApplyTimedLife(CreateUnit(p,'e0CI',x1-1800*Cos(a),y1-1800*Sin(a),GetRandomReal(0,359)),1,1)
+            endif
+            if dist>2100 then
+                call UnitApplyTimedLife(CreateUnit(p,'e0CJ',x1-2100*Cos(a),y1-2100*Sin(a),GetRandomReal(0,359)),1,1)
+                call UnitApplyTimedLife(CreateUnit(p,'e0CK',x1-2100*Cos(a),y1-2100*Sin(a),GetRandomReal(0,359)),1,1)
+                call UnitApplyTimedLife(CreateUnit(p,'e0CI',x1-2100*Cos(a),y1-2100*Sin(a),GetRandomReal(0,359)),1,1)
+            endif
+            if dist>2400 then
+                call UnitApplyTimedLife(CreateUnit(p,'e0CJ',x1-2400*Cos(a),y1-2400*Sin(a),GetRandomReal(0,359)),1,1)
+                call UnitApplyTimedLife(CreateUnit(p,'e0CK',x1-2400*Cos(a),y1-2400*Sin(a),GetRandomReal(0,359)),1,1)
+                call UnitApplyTimedLife(CreateUnit(p,'e0CI',x1-2400*Cos(a),y1-2400*Sin(a),GetRandomReal(0,359)),1,1)
+            endif
             call SaveReal(HH,id,9,3550)
         else
             call SaveReal(HH,id,7,speed*0.93)
@@ -62130,7 +62147,11 @@ set n=CreateUnit(p,'e3E6',x,y,0)
 call SetUnitFlyHeight(n,0,0)
 call SetUnitScale(n,3,3,3)
 call UnitApplyTimedLife(n,1,2.9)
-set bjLCU=CreateUnit(p, 'dR11', x1, y1, a*bj_RADTODEG)
+set bjLCU=CreateUnit(p, 'dR95', x, y, a*bj_RADTODEG)
+call SetUnitScale(bjLCU, 1.2, 1.2, 1.2)
+call SetUnitTimeScale(bjLCU,0.25)
+call UnitApplyTimedLife(bjLCU,1,2.2)
+set bjLCU=CreateUnit(p, 'dR11', x, y, a*bj_RADTODEG)
 call SetUnitTimeScale(bjLCU,0.25)
 call SetUnitScale(bjLCU, 1.2, 1.2, 1.2)
 call SetUnitFlyHeight(bjLCU, 15, 0)
