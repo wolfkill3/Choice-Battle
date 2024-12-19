@@ -160862,7 +160862,7 @@ function KizaruEPeriodic takes nothing returns nothing
     elseif success == 2 then
         set bjLCU = LoadUnitHandle(HH, i, StringHash("Laser"))
         call UnitApplyTimedLife(bjLCU, 1, 3)
-        call FlushChildHashtable(h, i)
+        call FlushChildHashtable(HH, i)
         call DestroyTimer(GetExpiredTimer())
     endif
 endfunction
