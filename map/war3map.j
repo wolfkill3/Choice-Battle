@@ -972,6 +972,7 @@ real AX
 real AY
 unit oreha
 unit Goku
+unit GenkiDama
 //sabrac1
 unit sabrac
 //sabrac1
@@ -62308,27 +62309,55 @@ local real rd=SR(x,y,x1,y1)
 local real cof=rd/dist
 local real hei=0
 local integer i=0
-if SR(x,y,x1,y1)>speed+20 then
-set hei=mh*(1-cof)+50
-call SetUnitFlyHeight(l__d,hei,0)
-set x=x+speed*Cos(a)
-set y=y+speed*Sin(a)
-call SetUnitXY_1(l__d,x,y, false)
-call SetUnitFacing(l__d,a*bj_RADTODEG)
+if SR(x,y,x1,y1)>speed+20 and IsUnitAlive(GenkiDama)==true then
+    set hei=mh*(1-cof)+50
+    call SetUnitFlyHeight(l__d,hei,0)
+    set x=x+speed*Cos(a)
+    set y=y+speed*Sin(a)
+    call SetUnitXY_1(l__d,x,y, false)
+    call SetUnitFacing(l__d,a*bj_RADTODEG)
 else
-if GetUnitScale(u)==0.01 then
-call SetUnitVertexColor(u, 255, 255, 255, 255)
-endif
-if GetUnitScale(u)+Genk<0.6+GetHeroLevel(Hero[GetPlayerId(p)])*0.04 then
-call SetUnitFlyHeight(u,GetUnitFlyHeight(u)+1,0)
-call SetUnitScale(u,GetUnitScale(u)+Genk,GetUnitScale(u)+Genk,GetUnitScale(u)+Genk)
-else
-call SetUnitScale(u,0.6+GetHeroLevel(Hero[GetPlayerId(p)])*0.04,0.6+GetHeroLevel(Hero[GetPlayerId(p)])*0.04,0.6+GetHeroLevel(Hero[GetPlayerId(p)])*0.04)
-endif
-call FlushChildHashtable(h,id)
-call PauseTimer(t)
-call DestroyTimer(t)
-call KillUnit(l__d)
+    if IsUnitAlive(GenkiDama)==true then
+        if GetUnitScale(u)==0.01 then
+            call SetUnitVertexColor(u, 255, 255, 255, 255)
+            set n=CreateUnit(p,'e096',x1,y1,0)
+            call SetUnitFlyHeight(n,GetUnitFlyHeight(GenkiDama),0)
+            call UnitApplyTimedLife(n,1,1)
+        endif
+    endif
+    if Genk==0.005 then
+        call UnitApplyTimedLife(l__d,1,GetRandomReal(0.1,2))
+        if GetUnitScale(u)+Genk<0.6+GetHeroLevel(Goku)*0.04 then
+            call SetUnitFlyHeight(u,GetUnitFlyHeight(u)+1,0)
+            call SetUnitScale(u,GetUnitScale(u)+Genk,GetUnitScale(u)+Genk,GetUnitScale(u)+Genk)
+        else
+            call SetUnitScale(u,0.6+GetHeroLevel(Goku)*0.04,0.6+GetHeroLevel(Goku)*0.04,0.6+GetHeroLevel(Goku)*0.04)
+        endif
+        call FlushChildHashtable(h,id)
+        call PauseTimer(t)
+        call DestroyTimer(t)
+    else
+        if GetUnitScale(l__d)>1.2 then
+            if GetUnitScale(u)+0.025<0.6+GetHeroLevel(Goku)*0.04 then
+                call SetUnitFlyHeight(u,GetUnitFlyHeight(u)+0.5,0)
+                call SetUnitScale(u,GetUnitScale(u)+0.025,GetUnitScale(u)+0.025,GetUnitScale(u)+0.025)
+            else
+                call SetUnitScale(u,0.6+GetHeroLevel(Goku)*0.04,0.6+GetHeroLevel(Goku)*0.04,0.6+GetHeroLevel(Goku)*0.04)
+            endif
+            call SetUnitScale(l__d,GetUnitScale(l__d)-0.025,GetUnitScale(l__d)-0.025,GetUnitScale(l__d)-0.025)
+        else
+            if GetUnitScale(u)+0.05<0.6+GetHeroLevel(Goku)*0.04 then
+                call SetUnitFlyHeight(u,GetUnitFlyHeight(u)+1,0)
+                call SetUnitScale(u,GetUnitScale(u)+0.05,GetUnitScale(u)+0.05,GetUnitScale(u)+0.05)
+            else
+                call SetUnitScale(u,0.6+GetHeroLevel(Goku)*0.04,0.6+GetHeroLevel(Goku)*0.04,0.6+GetHeroLevel(Goku)*0.04)
+            endif
+            call UnitApplyTimedLife(l__d,1,0.1)
+            call FlushChildHashtable(h,id)
+            call PauseTimer(t)
+            call DestroyTimer(t)
+        endif
+    endif
 endif
 set p=null
 set l__d=null
@@ -62355,7 +62384,6 @@ local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
 local unit u=LoadUnitHandle(h,id,0)
 local integer idu=GetHandleId(u)
-local unit l__d=LoadUnitHandle(h,id,3)
 local real x=GetUnitX(u)
 local real y=GetUnitY(u)
 local real x1=LoadReal(h,id,8)
@@ -62365,27 +62393,45 @@ local real time=LoadReal(h,id,7)+0.05
 local player p=GetOwningPlayer(u)
 local real dmg=LoadReal(h,id,10)
 local integer power=0
-if time<100 then
+if time<100 and GetUnitState(u,UNIT_STATE_LIFE)>0.405 and IsUnitPaused(u)==false and GetUnitAbilityLevel(u,'Pet1')==0 and GetUnitAbilityLevel(u,'CBC2')==0 and GetUnitAbilityLevel(u,'cbc3')==0  and GetUnitAbilityLevel(u,'cbc5')==0  and GetUnitAbilityLevel(u, 'cbc7')==0 and GetUnitAbilityLevel(u, 'cbc8')==0 and GetUnitAbilityLevel(u, 'cbc9')==0 and UnitIsAlive(u) and udg_B and DU2 then
 if time==0 then
 call SetUnitAnimationByIndex(u,165)
 endif
 call SaveReal(h,id,7,time)
 call PauseUnit(u,true)
-call SetUnitXY_1(l__d,x,y, false)
-if GetUnitScale(l__d)<(0.54+GetHeroLevel(u)*0.036) and time>1 then
+call SetUnitXY_1(GenkiDama,x,y, false)
+if GetUnitScale(GenkiDama)<(0.54+GetHeroLevel(u)*0.036) and time>1 then
 set n=CreateUnit(p,'e0CF',x+GetRandomReal(-3500,3500),y+GetRandomReal(-3500,3500),GetRandomReal(0,359))
 call SetUnitPathing(n,false)
-call GenkiMoveSpiritBomb(l__d,x,y,n,SR(GetUnitX(n),GetUnitY(n),x,y)*0.01,0,GetUnitFlyHeight(l__d),0.006)
+call GenkiMoveSpiritBomb(GenkiDama,x,y,n,SR(GetUnitX(n),GetUnitY(n),x,y)*0.01,0,GetUnitFlyHeight(GenkiDama),0.005)
 endif
 else
 call PauseUnit(u,false)
-call MissleMoveSpiritBomb(u,x1,y1,l__d,55,0,GetUnitFlyHeight(l__d),dmg)
+set n=CreateUnit(p,'e04B',x,y,0)
+call SetUnitFlyHeight(n,GetUnitFlyHeight(GenkiDama),0)
+call UnitApplyTimedLife(n,1,1)
+set n=CreateUnit(p,'e095',x,y,0)
+call SetUnitFlyHeight(n,GetUnitFlyHeight(GenkiDama),0)
+call UnitApplyTimedLife(n,1,1)
+set n=CreateUnit(p,'e096',x,y,0)
+call SetUnitFlyHeight(n,GetUnitFlyHeight(GenkiDama),0)
+call UnitApplyTimedLife(n,1,1)
+set n=CreateUnit(p,'e097',x,y,0)
+call SetUnitFlyHeight(n,GetUnitFlyHeight(GenkiDama),0)
+call UnitApplyTimedLife(n,1,1)
+set n=CreateUnit(p,'e098',x,y,0)
+call SetUnitFlyHeight(n,GetUnitFlyHeight(GenkiDama),0)
+call UnitApplyTimedLife(n,1,1)
+set n=CreateUnit(p,'e099',x,y,0)
+call SetUnitFlyHeight(n,GetUnitFlyHeight(GenkiDama),0)
+call UnitApplyTimedLife(n,1,1)
+call KillUnit(l__d)
+call FlushChildHashtable(h,id)
 call PauseTimer(t)
 call DestroyTimer(t)
-call FlushChildHashtable(h,id)
+//call MissleMoveSpiritBomb(u,x1,y1,GenkiDama,55,0,GetUnitFlyHeight(GenkiDama),dmg)
 endif
 set p=null
-set l__d=null
 set u=null
 set t=null
 endfunction
@@ -62402,10 +62448,9 @@ call SaveUnitHandle(h,id,0,u)
 set n=CreateUnit(GetOwningPlayer(u),'e06G',x,y,GetRandomReal(0,359))
 call SetUnitTimeScale(n,1)
 call UnitApplyTimedLife(n,1,5)
-set n=CreateUnit(GetOwningPlayer(u),'e0CE',x,y,a*bj_RADTODEG)
-call SetUnitVertexColor(n, 255, 255, 255, 0)
-call SetUnitFlyHeight(n,570,0)
-call SaveUnitHandle(h,id,3,n)
+set GenkiDama=CreateUnit(GetOwningPlayer(u),'e0CE',x,y,a*bj_RADTODEG)
+call SetUnitVertexColor(GenkiDama, 255, 255, 255, 0)
+call SetUnitFlyHeight(GenkiDama,570,0)
 call SaveReal(h,id,7,0)
 call SaveReal(h,id,6,150)
 call SaveReal(h,id,8,x1)
