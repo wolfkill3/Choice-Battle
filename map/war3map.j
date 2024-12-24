@@ -973,6 +973,7 @@ real AY
 unit oreha
 unit Goku
 unit GenkiDama
+boolean array GenkiUsed
 //sabrac1
 unit sabrac
 //sabrac1
@@ -7245,7 +7246,7 @@ call CreateQuestBJ(bj_QUESTTYPE_REQ_DISCOVERED,"Information","|cFFFFC850Ориг
 
 //call CreateQuestBJ(bj_QUESTTYPE_REQ_DISCOVERED,"Игровые термины","|cFFFFC850Подробное описание статусов и игровых терминов|r\n\n"+"• |cFFFFC850Недосягаемость|r - статус при котором юнита/героя невозможно выделить таргетными способностями.\n\n"+"• |cFFFFC850Страх|r - тип контроля запрещающий игроку управлять юнитом, сам юнит - разбегается от источника страха. Страх снимается нанесением урона или по окончанию действия.","war3mapImported\\BTNdevil_may_cry3.blp")
 
-call CreateQuestBJ(bj_QUESTTYPE_OPT_DISCOVERED,"Commands p.1","|cFFFFC850Игровые команды|r:\n\"-test\" - команда вводится красным игроком до начала первого раунда. Активирует тест режим, давая доступ к дополнительным командам.\n\"-debt\" - показывает сколько золота вы должны союзнику и сколько должны вам.\n\"-itemsr\" - включает/выключает использование предметов на себя.\n\"-setmr\" - позволяет установить текуший маг резист.\n\"-cam\" - установить высоту камеры на значение от 100 до 6000.","ReplaceableTextures\\CommandButtons\\BTNVegetaUE.blp")
+call CreateQuestBJ(bj_QUESTTYPE_OPT_DISCOVERED,"Commands p.1","|cFFFFC850Игровые команды|r:\n\"-test\" - команда вводится красным игроком до начала первого раунда. Активирует тест режим, давая доступ к дополнительным командам.\n\"-debt\" - показывает сколько золота вы должны союзнику и сколько должны вам.\n\"-itemsc\" - включает/выключает использование предметов на себя.\n\"-setmr\" - позволяет установить текуший маг резист.\n\"-cam\" - установить высоту камеры на значение от 100 до 6000.","ReplaceableTextures\\CommandButtons\\BTNVegetaUE.blp")
 call CreateQuestBJ(bj_QUESTTYPE_OPT_DISCOVERED,"Commands p.2","|cFFFFC850Игровые команды|r:\n\"-debug\" - снимает все эффекты, неуязвимости и паузы, если вы 15 секунд не двигалась. Телепортирует в случайную точку не далее 120 ед.\n\"-rfh\" - пересоздает героя, в случае бага, возможно только вне раунда.\n\"-re\" - воскрешает героя, применимо только на базе.\n\"killme\" - убивает героя через 10 сек.\n\"-swap x\" - поменяться персанажем с союзником.","ReplaceableTextures\\CommandButtons\\BTNOrochimaru.blp")
 call CreateQuestBJ(bj_QUESTTYPE_OPT_DISCOVERED,"Commands p.3","|cFFFFC850Игровые команды|r:\n\"-mr\" - показывает текущее количество магических резистов у вашего персонажа.\n\"-cr\" - показывает текущее количество резистов к контролю у вашего персонажа.\n\"-damage\" - показывает игроку весь урон, который он нанес за всё время в игре, также количество уменьшенного урона общими резистами (не маг) и также количество урона, которое он заблокировал щитами или другими источниками.\n\"-tdamage\" - показывает всю эту информацию также и про других игроков.\n\"-theal\" - показывает всю информацию по восстановленному себе или союзным героям HP и MP у всех игроков.","ReplaceableTextures\\CommandButtons\\BTNLaxusExD_Port.blp")
 call CreateQuestBJ(bj_QUESTTYPE_OPT_DISCOVERED,"Commands p.4","|cFFFFC850Игровые команды|r:\n\"-rounds xx\" - устанавливает кол-во раундов от 2 до 50.\n\"-setduels xx\" - устанавливает разницу между дуэлями, указать можно от 2 до 50. Написать можно лишь в первом раунде.\n\"-noduels\" - включает/выключает дуэли. Так же, после раунда, когда дуэль должна произойти, выдается компенсация. Написать можно лишь в первом раунде.","ReplaceableTextures\\CommandButtons\\BTNWendy.blp")
@@ -10105,6 +10106,136 @@ function OnButtonChangeTeam1 takes nothing returns nothing
         call SetPlayerAlliance(Player(8),p, ALLIANCE_SHARED_VISION, true )
         call SetPlayerAlliance(Player(9),p, ALLIANCE_SHARED_VISION, true )
         call SetFrameText(SpectacleTeamSelect1Text,"Current team: All")
+    endif
+    set p = null
+    set but = null
+endfunction
+
+function GenkiMoveSpiritBomb2 takes nothing returns nothing
+local timer t=GetExpiredTimer()
+local integer id=GetHandleId(t)
+local unit u=LoadUnitHandle(h,id,0)
+local unit l__d=LoadUnitHandle(h,id,2)
+local real speed=LoadReal(h,id,4)
+local real x=GetUnitX(l__d)
+local real y=GetUnitY(l__d)
+local real x1=LoadReal(h,id,6)
+local real y1=LoadReal(h,id,7)
+local real a=Atan2(y1-y,x1-x)+LoadReal(h,id,3)
+local player p=GetOwningPlayer(u)
+local real Genk=LoadReal(h,id,5)
+local real mh=LoadReal(h,id,9)
+local real dist=LoadReal(h,id,10)
+local real rd=SR(x,y,x1,y1)
+local real cof=rd/dist
+local real hei=0
+local integer i=0
+if SR(x,y,x1,y1)>speed+20 and IsUnitAlive(GenkiDama)==true then
+    set hei=mh*(1-cof)+50
+    call SetUnitFlyHeight(l__d,hei,0)
+    set x=x+speed*Cos(a)
+    set y=y+speed*Sin(a)
+    call SetUnitXY_1(l__d,x,y, false)
+    call SetUnitFacing(l__d,a*bj_RADTODEG)
+else
+    if IsUnitAlive(GenkiDama)==true then
+        if GetUnitScale(u)==0.01 then
+            call SetUnitVertexColor(u, 255, 255, 255, 255)
+            set n=CreateUnit(p,'e0PB',x1,y1,0)
+            call SetUnitScale(n,2.5,2.5,2.5)
+            call SetUnitFlyHeight(n,GetUnitFlyHeight(GenkiDama),0)
+            call UnitApplyTimedLife(n,1,0.5)
+        endif
+    endif
+    if Genk==0.005 then
+        call UnitApplyTimedLife(l__d,1,GetRandomReal(0.1,2))
+        if GetUnitScale(u)+Genk<0.6+GetHeroLevel(Goku)*0.04 then
+            call SetUnitFlyHeight(u,GetUnitFlyHeight(u)+1,0)
+            call SetUnitScale(u,GetUnitScale(u)+Genk,GetUnitScale(u)+Genk,GetUnitScale(u)+Genk)
+        else
+            call SetUnitScale(u,0.6+GetHeroLevel(Goku)*0.04,0.6+GetHeroLevel(Goku)*0.04,0.6+GetHeroLevel(Goku)*0.04)
+        endif
+        call FlushChildHashtable(h,id)
+        call PauseTimer(t)
+        call DestroyTimer(t)
+    else
+        if GetUnitScale(l__d)>1.2 then
+            if GetUnitScale(u)+0.02<0.6+GetHeroLevel(Goku)*0.04 then
+                call SetUnitFlyHeight(u,GetUnitFlyHeight(u)+4,0)
+                call SetUnitScale(u,GetUnitScale(u)+0.02,GetUnitScale(u)+0.02,GetUnitScale(u)+0.02)
+            else
+                call SetUnitScale(u,0.6+GetHeroLevel(Goku)*0.04,0.6+GetHeroLevel(Goku)*0.04,0.6+GetHeroLevel(Goku)*0.04)
+            endif
+            call SetUnitScale(l__d,GetUnitScale(l__d)-0.02,GetUnitScale(l__d)-0.02,GetUnitScale(l__d)-0.02)
+        else
+            set n=CreateUnit(p,'e0PB',x,y,0)
+            call SetUnitFlyHeight(n,GetUnitFlyHeight(GenkiDama),0)
+            call UnitApplyTimedLife(n,1,0.5)
+            call UnitApplyTimedLife(l__d,1,0.1)
+            call FlushChildHashtable(h,id)
+            call PauseTimer(t)
+            call DestroyTimer(t)
+        endif
+    endif
+endif
+set p=null
+set l__d=null
+set t=null
+set u=null
+endfunction
+function GenkiMoveSpiritBomb takes unit u,real x,real y, unit l__d, real speed, real angle, real Hei, real Genk returns nothing
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+call SaveUnitHandle(h,id,0,u)
+call SaveUnitHandle(h,id,2,l__d)
+call SaveReal(h,id,3,angle)
+call SaveReal(h,id,4,speed)
+call SaveReal(h,id,5,Genk)
+call SaveReal(h,id,6,x)
+call SaveReal(h,id,7,y)
+call SaveReal(h,id,9,Hei)
+call SaveReal(h,id,10,SR(GetUnitX(l__d),GetUnitY(l__d),x,y))
+call TimerStart(t,0.03,true,function GenkiMoveSpiritBomb2)
+set t=null
+endfunction
+
+function SendEnergy takes player p returns nothing
+local integer ip=GetPlayerId(p)
+local real x=GetUnitX(Hero[ip])
+local real y=GetUnitY(Hero[ip])
+local real x1=GetUnitX(GenkiDama)
+local real y1=GetUnitY(GenkiDama)
+if IsUnitAlive(Hero[ip]) then
+set n=CreateUnit(p,'e0CF',x,y,GetRandomReal(0,359))
+call SetUnitPathing(n,false)
+if GetUnitState(Hero[ip],UNIT_STATE_MANA)>GetUnitState(Hero[ip],UNIT_STATE_MAX_MANA)*0.1 then
+call GenkiMoveSpiritBomb(GenkiDama,x1,y1,n,SR(GetUnitX(n),GetUnitY(n),x1,y1)*0.01,0,GetUnitFlyHeight(GenkiDama),(GetUnitState(Hero[ip],UNIT_STATE_MAX_MANA)*0.1)*0.03*0.02)
+call SetUnitScale(n,1.2+(GetUnitState(Hero[ip],UNIT_STATE_MAX_MANA)*0.1)*0.03*0.02,1.2+(GetUnitState(Hero[ip],UNIT_STATE_MAX_MANA)*0.1)*0.03*0.02,1.2+(GetUnitState(Hero[ip],UNIT_STATE_MAX_MANA)*0.1)*0.03*0.02)
+call SetUnitState(Hero[ip],UNIT_STATE_MANA,GetUnitState(Hero[ip],UNIT_STATE_MANA)-GetUnitState(Hero[ip],UNIT_STATE_MAX_MANA)*0.1)
+else
+call SetUnitScale(n,1.2+GetUnitState(Hero[ip],UNIT_STATE_MANA)*0.03*0.02,1.2+GetUnitState(Hero[ip],UNIT_STATE_MANA)*0.03*0.02,1.2+GetUnitState(Hero[ip],UNIT_STATE_MANA)*0.03*0.02)
+call GenkiMoveSpiritBomb(GenkiDama,x1,y1,n,SR(GetUnitX(n),GetUnitY(n),x1,y1)*0.01,0,GetUnitFlyHeight(GenkiDama),GetUnitState(Hero[ip],UNIT_STATE_MANA)*0.03*0.02)
+call SetUnitState(Hero[ip],UNIT_STATE_MANA,0)
+endif
+set GenkiUsed[ip]=false
+endif
+endfunction
+
+function OnButtonGlobalAbility takes nothing returns nothing
+    local player p = GetTriggerPlayer( )
+    local integer pHid = GetHandleId( p )
+    local integer buttonId = LoadInteger( HH, pHid, '+bId' )
+    local framehandle but = GetTriggerFrame( )
+    local integer butHid = 0
+    local integer itemTypeId = 0
+    local integer freeSlotId = 0
+    local item it = null
+
+    if buttonId == -1 then
+        return
+    endif
+    if GetFrameTexture(but,0)=="ReplaceableTextures\\CommandButtons\\BTNGiveEnergy.blp" then
+        call SendEnergy(p)
     endif
     set p = null
     set but = null
@@ -20446,6 +20577,9 @@ function Trig_StatusBar_Actions takes nothing returns nothing
     local framehandle CustomAbilityFrame
     local framehandle CustomAbilityTooltip
     local framehandle CustomAbilityTooltipText
+    local framehandle CustomGlobalAbilityFrame
+    local framehandle CustomGlobalAbilityTooltip
+    local framehandle CustomGlobalAbilityTooltipText
     local framehandle CustomLeaderboard
     local framehandle CustomLeaderboardText
     local trigger tOnPress = null
@@ -20633,6 +20767,10 @@ function Trig_StatusBar_Actions takes nothing returns nothing
     call SetFrameRelativePoint( CustomAbilityFrame, FRAMEPOINT_CENTER, GetOriginFrame(ORIGIN_FRAME_COMMAND_BUTTON,x), FRAMEPOINT_CENTER, 0, .01 )
     call SetFramePriority( CustomAbilityFrame, 6 )
 
+    call TriggerRegisterFrameEvent( tOnPress, CustomAbilityFrame, FRAMEEVENT_MOUSE_DOWN )
+    call TriggerRegisterFrameEvent( tOnUnPress, CustomAbilityFrame, FRAMEEVENT_MOUSE_UP )
+    call TriggerRegisterFrameEvent( tOnClick, CustomAbilityFrame, FRAMEEVENT_CONTROL_CLICK )
+
     set CustomAbilityTooltip=CreateFrameByType("SIMPLEFRAME", "AbilityBarTooltip", CustomAbilityFrame, "", x)
     call ClearFrameAllPoints( CustomAbilityTooltip )
     call SetFrameRelativePoint( CustomAbilityTooltip, FRAMEPOINT_CENTER, CustomAbilityFrame, FRAMEPOINT_CENTER,  3.13, -.1  )
@@ -20675,6 +20813,55 @@ function Trig_StatusBar_Actions takes nothing returns nothing
         call TriggerAddAction( AbilityModeHotkey, function AbilityModeClick )
         set x=x+1
     endloop
+
+
+    set tOnPress = CreateTrigger( )
+    set tOnUnPress = CreateTrigger( )
+    set tOnClick = CreateTrigger( )
+    set x=0
+    loop 
+
+    set CustomGlobalAbilityFrame=CreateFrameByType( "SIMPLEBUTTON", "GlobalAbilityBarIcon", null, "", x )
+    call ClearFrameAllPoints( CustomGlobalAbilityFrame )
+    call SetFrameTexture( CustomGlobalAbilityFrame, "UI\\Widgets\\Console\\Human\\human-inventory-slotfiller.blp", 0, true )
+    call SetFrameTexture( CustomGlobalAbilityFrame, "UI\\Widgets\\Console\\Human\\human-inventory-slotfiller.blp", 1, true )
+    call SetFrameTexture( CustomGlobalAbilityFrame, "UI\\Widgets\\Console\\Human\\human-inventory-slotfiller.blp", 2, true )
+    call SetFrameSize( CustomGlobalAbilityFrame, .039, .039 )
+    call ShowFrame( CustomGlobalAbilityFrame, false )
+    call SetFrameRelativePoint( CustomGlobalAbilityFrame, FRAMEPOINT_LEFT, consoleUI, FRAMEPOINT_BOTTOMLEFT,  .0214, .17 )
+    call SetFramePriority( CustomGlobalAbilityFrame, 7 )
+
+    call TriggerRegisterFrameEvent( tOnPress, CustomGlobalAbilityFrame, FRAMEEVENT_MOUSE_DOWN )
+    call TriggerRegisterFrameEvent( tOnUnPress, CustomGlobalAbilityFrame, FRAMEEVENT_MOUSE_UP )
+    call TriggerRegisterFrameEvent( tOnClick, CustomGlobalAbilityFrame, FRAMEEVENT_CONTROL_CLICK )
+
+    set CustomGlobalAbilityTooltip=CreateFrameByType("SIMPLEFRAME", "GlobalAbilityBarTooltip", CustomGlobalAbilityFrame, "", x)
+    call ClearFrameAllPoints( CustomGlobalAbilityTooltip )
+    call SetFrameRelativePoint( CustomGlobalAbilityTooltip, FRAMEPOINT_CENTER, CustomGlobalAbilityFrame, FRAMEPOINT_CENTER,  3.13, -.1  )
+    call ShowFrame( CustomGlobalAbilityTooltip, false )
+    call SetFrameParent( CustomGlobalAbilityTooltip, CustomGlobalAbilityFrame )
+    call SetFrameTextureEx(CustomGlobalAbilityTooltip, 0, "UI\\widgets\\BattleNet\\bnet-tooltip-background.blp", false, "Choice-tooltip-border.blp", 0)
+    call SetFramePriority( CustomGlobalAbilityTooltip, 6 )
+    call SetFrameTooltip(CustomGlobalAbilityFrame,CustomGlobalAbilityTooltip)
+
+    set CustomGlobalAbilityTooltipText=CreateFrameByType( "SIMPLETEXT", "GlobalAbilityBarTooltipText", CustomGlobalAbilityTooltip, "", x )
+    call ClearFrameAllPoints( CustomGlobalAbilityTooltipText )
+    call SetFrameTextColour( CustomGlobalAbilityTooltipText, ConvertColour(255,255,255,255) )
+    call SetFrameParent( CustomGlobalAbilityTooltipText, CustomGlobalAbilityTooltip )
+    call SetFrameText( CustomGlobalAbilityTooltipText, "Описание способностей")
+    call SetFrameFont( CustomGlobalAbilityTooltipText, "Fonts\\FRIZQT__.TTF", .01, 0 )
+    call SetFrameTextAlignment( CustomGlobalAbilityTooltipText, TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_LEFT )
+    call SetFrameWidth( CustomGlobalAbilityTooltipText, .14)
+    call SetFrameSize( CustomGlobalAbilityTooltip, .26, GetFrameHeight(CustomGlobalAbilityTooltipText)+0.01)
+    call ShowFrame( CustomGlobalAbilityTooltipText, true )
+    call SetFrameRelativePoint( CustomGlobalAbilityTooltipText, FRAMEPOINT_CENTER, CustomGlobalAbilityTooltip, FRAMEPOINT_CENTER, 0, .0 )
+    set x=x+1
+    exitwhen x>0 
+    endloop
+
+    call TriggerAddAction( tOnPress, function OnButtonPress )
+    call TriggerAddAction( tOnUnPress, function OnButtonUnpress )
+    call TriggerAddAction( tOnClick, function OnButtonGlobalAbility )
 
     set CustomLeaderboard=CreateFrameByType("SIMPLEFRAME", "CustomLeaderboard", null, "", 0)
     call ClearFrameAllPoints( CustomLeaderboard )
@@ -20863,6 +21050,9 @@ set CustomAbilityVarTooltipText=null
 set CustomAbilityFrame=null
 set CustomAbilityTooltip=null
 set CustomAbilityTooltipText=null
+set CustomGlobalAbilityFrame=null
+set CustomGlobalAbilityTooltip=null
+set CustomGlobalAbilityTooltipText=null
 set CustomLeaderboard=null
 set CustomLeaderboardText=null
 set gameUI=null
@@ -21286,6 +21476,21 @@ function Trig_Multup_Actions takes nothing returns nothing
             else
                 call ShowFrame(GetFrameByName( "AbilityVarBarIcon", 7 ),false)
             endif
+        endif
+        if GenkiUsed[GetPlayerId(GetLocalPlayer())]==true and GetOwningPlayer(Goku)!=GetLocalPlayer() then
+            call ShowFrame(GetFrameByName( "GlobalAbilityBarIcon", 0 ),true)
+            if GetFrameUnderCursor()!=GetFrameByName( "GlobalAbilityBarIcon", 0 ) then
+                call ShowFrame(GetFrameByName( "GlobalAbilityBarTooltip", 0 ),false)
+            endif
+            call SetFrameTexture( GetFrameByName( "GlobalAbilityBarIcon", 0 ), "ReplaceableTextures\\CommandButtons\\BTNGiveEnergy.blp", 0, true )
+            call SetFrameTexture( GetFrameByName( "GlobalAbilityBarIcon", 0 ), "ReplaceableTextures\\CommandButtons\\BTNGiveEnergy.blp", 1, true )
+            call SetFrameTexture( GetFrameByName( "GlobalAbilityBarIcon", 0 ), "ReplaceableTextures\\CommandButtons\\BTNGiveEnergy.blp", 2, true )
+            call SetFrameText( GetFrameByName("GlobalAbilityBarTooltipText", 0), GetAbilityBaseStringFieldById( String2Id( "GKG2" ), ABILITY_SF_NAME )+", \n\n"+GetAbilityBaseStringFieldById( String2Id( "GKG2" ), ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED ))
+            call SetFrameSize( GetFrameByName("GlobalAbilityBarTooltip", 0), .24, GetFrameHeight( GetFrameByName("GlobalAbilityBarTooltipText", 0))+0.03)
+            call SetFrameTextAlignment( GetFrameByName("GlobalAbilityBarTooltipText", 0), TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_LEFT )
+            call SetFrameRelativePoint( GetFrameByName("GlobalAbilityBarTooltip", 0), FRAMEPOINT_CENTER, GetFrameByName("GlobalAbilityBarIcon", 0), FRAMEPOINT_CENTER,  -.1, (0.5*GetFrameHeight( GetFrameByName("GlobalAbilityBarTooltipText", 0)))+.02  )
+        else
+            call ShowFrame(GetFrameByName( "GlobalAbilityBarIcon", 0 ),false)
         endif
         set x=0
         loop
@@ -62290,95 +62495,6 @@ endfunction
 function SpiritBombCond takes nothing returns boolean
 return GetSpellAbilityId()=='GKG1' and udg_B==true
 endfunction
-function GenkiMoveSpiritBomb2 takes nothing returns nothing
-local timer t=GetExpiredTimer()
-local integer id=GetHandleId(t)
-local unit u=LoadUnitHandle(h,id,0)
-local unit l__d=LoadUnitHandle(h,id,2)
-local real speed=LoadReal(h,id,4)
-local real x=GetUnitX(l__d)
-local real y=GetUnitY(l__d)
-local real x1=LoadReal(h,id,6)
-local real y1=LoadReal(h,id,7)
-local real a=Atan2(y1-y,x1-x)+LoadReal(h,id,3)
-local player p=GetOwningPlayer(u)
-local real Genk=LoadReal(h,id,5)
-local real mh=LoadReal(h,id,9)
-local real dist=LoadReal(h,id,10)
-local real rd=SR(x,y,x1,y1)
-local real cof=rd/dist
-local real hei=0
-local integer i=0
-if SR(x,y,x1,y1)>speed+20 and IsUnitAlive(GenkiDama)==true then
-    set hei=mh*(1-cof)+50
-    call SetUnitFlyHeight(l__d,hei,0)
-    set x=x+speed*Cos(a)
-    set y=y+speed*Sin(a)
-    call SetUnitXY_1(l__d,x,y, false)
-    call SetUnitFacing(l__d,a*bj_RADTODEG)
-else
-    if IsUnitAlive(GenkiDama)==true then
-        if GetUnitScale(u)==0.01 then
-            call SetUnitVertexColor(u, 255, 255, 255, 255)
-            set n=CreateUnit(p,'e096',x1,y1,0)
-            call SetUnitFlyHeight(n,GetUnitFlyHeight(GenkiDama),0)
-            call UnitApplyTimedLife(n,1,1)
-        endif
-    endif
-    if Genk==0.005 then
-        call UnitApplyTimedLife(l__d,1,GetRandomReal(0.1,2))
-        if GetUnitScale(u)+Genk<0.6+GetHeroLevel(Goku)*0.04 then
-            call SetUnitFlyHeight(u,GetUnitFlyHeight(u)+1,0)
-            call SetUnitScale(u,GetUnitScale(u)+Genk,GetUnitScale(u)+Genk,GetUnitScale(u)+Genk)
-        else
-            call SetUnitScale(u,0.6+GetHeroLevel(Goku)*0.04,0.6+GetHeroLevel(Goku)*0.04,0.6+GetHeroLevel(Goku)*0.04)
-        endif
-        call FlushChildHashtable(h,id)
-        call PauseTimer(t)
-        call DestroyTimer(t)
-    else
-        if GetUnitScale(l__d)>1.2 then
-            if GetUnitScale(u)+0.025<0.6+GetHeroLevel(Goku)*0.04 then
-                call SetUnitFlyHeight(u,GetUnitFlyHeight(u)+0.5,0)
-                call SetUnitScale(u,GetUnitScale(u)+0.025,GetUnitScale(u)+0.025,GetUnitScale(u)+0.025)
-            else
-                call SetUnitScale(u,0.6+GetHeroLevel(Goku)*0.04,0.6+GetHeroLevel(Goku)*0.04,0.6+GetHeroLevel(Goku)*0.04)
-            endif
-            call SetUnitScale(l__d,GetUnitScale(l__d)-0.025,GetUnitScale(l__d)-0.025,GetUnitScale(l__d)-0.025)
-        else
-            if GetUnitScale(u)+0.05<0.6+GetHeroLevel(Goku)*0.04 then
-                call SetUnitFlyHeight(u,GetUnitFlyHeight(u)+1,0)
-                call SetUnitScale(u,GetUnitScale(u)+0.05,GetUnitScale(u)+0.05,GetUnitScale(u)+0.05)
-            else
-                call SetUnitScale(u,0.6+GetHeroLevel(Goku)*0.04,0.6+GetHeroLevel(Goku)*0.04,0.6+GetHeroLevel(Goku)*0.04)
-            endif
-            call UnitApplyTimedLife(l__d,1,0.1)
-            call FlushChildHashtable(h,id)
-            call PauseTimer(t)
-            call DestroyTimer(t)
-        endif
-    endif
-endif
-set p=null
-set l__d=null
-set t=null
-set u=null
-endfunction
-function GenkiMoveSpiritBomb takes unit u,real x,real y, unit l__d, real speed, real angle, real Hei, real Genk returns nothing
-local timer t=CreateTimer()
-local integer id=GetHandleId(t)
-call SaveUnitHandle(h,id,0,u)
-call SaveUnitHandle(h,id,2,l__d)
-call SaveReal(h,id,3,angle)
-call SaveReal(h,id,4,speed)
-call SaveReal(h,id,5,Genk)
-call SaveReal(h,id,6,x)
-call SaveReal(h,id,7,y)
-call SaveReal(h,id,9,Hei)
-call SaveReal(h,id,10,SR(GetUnitX(l__d),GetUnitY(l__d),x,y))
-call TimerStart(t,0.03,true,function GenkiMoveSpiritBomb2)
-set t=null
-endfunction
 function SpiritBombCast2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
@@ -62393,17 +62509,22 @@ local real time=LoadReal(h,id,7)+0.05
 local player p=GetOwningPlayer(u)
 local real dmg=LoadReal(h,id,10)
 local integer power=0
-if time<100 and GetUnitState(u,UNIT_STATE_LIFE)>0.405 and IsUnitPaused(u)==false and GetUnitAbilityLevel(u,'Pet1')==0 and GetUnitAbilityLevel(u,'CBC2')==0 and GetUnitAbilityLevel(u,'cbc3')==0  and GetUnitAbilityLevel(u,'cbc5')==0  and GetUnitAbilityLevel(u, 'cbc7')==0 and GetUnitAbilityLevel(u, 'cbc8')==0 and GetUnitAbilityLevel(u, 'cbc9')==0 and UnitIsAlive(u) and udg_B and DU2 then
+local integer i=0
+if time<100 and GetUnitState(u,UNIT_STATE_LIFE)>0.405 and IsUnitPaused(u)==false and GetUnitAbilityLevel(u,'CBC2')==0 and GetUnitAbilityLevel(u,'cbc3')==0  and GetUnitAbilityLevel(u,'cbc5')==0  and GetUnitAbilityLevel(u, 'cbc7')==0 and GetUnitAbilityLevel(u, 'cbc8')==0 and GetUnitAbilityLevel(u, 'cbc9')==0 and UnitIsAlive(u) and udg_B and DU2 then
 if time==0 then
 call SetUnitAnimationByIndex(u,165)
 endif
 call SaveReal(h,id,7,time)
-call PauseUnit(u,true)
 call SetUnitXY_1(GenkiDama,x,y, false)
 if GetUnitScale(GenkiDama)<(0.54+GetHeroLevel(u)*0.036) and time>1 then
 set n=CreateUnit(p,'e0CF',x+GetRandomReal(-3500,3500),y+GetRandomReal(-3500,3500),GetRandomReal(0,359))
 call SetUnitPathing(n,false)
 call GenkiMoveSpiritBomb(GenkiDama,x,y,n,SR(GetUnitX(n),GetUnitY(n),x,y)*0.01,0,GetUnitFlyHeight(GenkiDama),0.005)
+elseif GetUnitScale(GenkiDama)>0.54+GetHeroLevel(u)*0.036 and GetUnitScale(GenkiDama)<0.6+GetHeroLevel(Goku)*0.04 then
+set n=CreateUnit(p,'e0PB',x,y,0)
+call SetUnitScale(n,GetUnitScale(GenkiDama)*0.5,GetUnitScale(GenkiDama)*0.5,GetUnitScale(GenkiDama)*0.5)
+call SetUnitFlyHeight(n,GetUnitFlyHeight(GenkiDama),0)
+call UnitApplyTimedLife(n,1,0.3)
 endif
 else
 call PauseUnit(u,false)
@@ -62425,7 +62546,16 @@ call UnitApplyTimedLife(n,1,1)
 set n=CreateUnit(p,'e099',x,y,0)
 call SetUnitFlyHeight(n,GetUnitFlyHeight(GenkiDama),0)
 call UnitApplyTimedLife(n,1,1)
-call KillUnit(l__d)
+loop
+set GenkiUsed[i]=false
+set i=i+1
+exitwhen i>=bj_MAX_PLAYER_SLOTS
+endloop
+call UnitRemoveAbility(u,'B00A')
+call SetUnitAcquireRange(u,600)
+call UnitRemoveAbility(u,'A1FU')
+call UnitRemoveAbility(u,'Pet1')
+call KillUnit(GenkiDama)
 call FlushChildHashtable(h,id)
 call PauseTimer(t)
 call DestroyTimer(t)
@@ -62444,18 +62574,29 @@ local real y=GetUnitY(u)
 local real x1=GetSpellTargetX()
 local real y1=GetSpellTargetY()
 local real a=Atan2(y1-y,x1-x)
+local player p=GetOwningPlayer(u)
+local integer i=0
 call SaveUnitHandle(h,id,0,u)
-set n=CreateUnit(GetOwningPlayer(u),'e06G',x,y,GetRandomReal(0,359))
+call UnitAddAbility(u,'A1FU') //Slow
+call UnitAddAbility(u,'Pet1')
+call SetUnitAcquireRange(u,51)
+set n=CreateUnit(p,'e06G',x,y,GetRandomReal(0,359))
 call SetUnitTimeScale(n,1)
 call UnitApplyTimedLife(n,1,5)
-set GenkiDama=CreateUnit(GetOwningPlayer(u),'e0CE',x,y,a*bj_RADTODEG)
+set GenkiDama=CreateUnit(p,'e0CE',x,y,a*bj_RADTODEG)
 call SetUnitVertexColor(GenkiDama, 255, 255, 255, 0)
 call SetUnitFlyHeight(GenkiDama,570,0)
+loop
+if IsPlayerAlly(Player(i),p) then
+set GenkiUsed[i]=true
+endif
+set i=i+1
+exitwhen i>=bj_MAX_PLAYER_SLOTS
+endloop
 call SaveReal(h,id,7,0)
 call SaveReal(h,id,6,150)
 call SaveReal(h,id,8,x1)
 call SaveReal(h,id,9,y1)
-call PauseUnit(u,true)
 call SaveReal(h,id,10,(8+GetUnitAbilityLevel(u,'GKG1'))*GetHeroStr(u,true))
 if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\SpiritBomb2.mp3",false,false,true,12700,12700,"")
@@ -62466,6 +62607,7 @@ call StartSound(soundplay)
 call KillSoundWhenDone(soundplay)
 call TimerStart(t,0.05,true,function SpiritBombCast2)
 set u=null
+set p=null
 set t=null
 endfunction
 function InitSpiritBomb takes nothing returns nothing
@@ -86587,7 +86729,7 @@ call SaveReal(h,id,13,dmg)
 set sc=GetRandomReal(0.5,1.2)
 set x1=x+GetRandomReal(-300,300)
 set y1=y+GetRandomReal(-300,300)
-call UnitApplyTimedLife(CreateUnit(p,0x65305030,x1,y1,GetRandomReal(0,359)),1,0.75)
+call UnitApplyTimedLife(CreateUnit(p,'e0P0',x1,y1,GetRandomReal(0,359)),1,0.75)
 set n=CreateUnit(p,'e0OZ',x1,y1,GetRandomReal(0,359))
 call SetUnitFlyHeight(n,GetRandomReal(400,600),1000)
 call UnitApplyTimedLife(n,1,2)
@@ -86596,7 +86738,7 @@ call SetUnitScale(n,sc,sc,sc)
 set sc=GetRandomReal(0.5,1.2)
 set x1=x+GetRandomReal(-300,300)
 set y1=y+GetRandomReal(-300,300)
-call UnitApplyTimedLife(CreateUnit(p,0x65305030,x1,y1,GetRandomReal(0,359)),1,0.75)
+call UnitApplyTimedLife(CreateUnit(p,'e0P0',x1,y1,GetRandomReal(0,359)),1,0.75)
 set n=CreateUnit(p,'e0OZ',x1,y1,GetRandomReal(0,359))
 call SetUnitFlyHeight(n,GetRandomReal(400,600),1000)
 call UnitApplyTimedLife(n,1,2)
@@ -86605,7 +86747,7 @@ call SetUnitScale(n,sc,sc,sc)
 set sc=GetRandomReal(0.5,1.2)
 set x1=x+GetRandomReal(-300,300)
 set y1=y+GetRandomReal(-300,300)
-call UnitApplyTimedLife(CreateUnit(p,0x65305030,x1,y1,GetRandomReal(0,359)),1,0.75)
+call UnitApplyTimedLife(CreateUnit(p,'e0P0',x1,y1,GetRandomReal(0,359)),1,0.75)
 set n=CreateUnit(p,'e0OZ',x1,y1,GetRandomReal(0,359))
 call SetUnitFlyHeight(n,GetRandomReal(400,600),1000)
 call UnitApplyTimedLife(n,1,2)
@@ -86614,7 +86756,7 @@ call SetUnitScale(n,sc,sc,sc)
 set sc=GetRandomReal(0.5,1.2)
 set x1=x+GetRandomReal(-300,300)
 set y1=y+GetRandomReal(-300,300)
-call UnitApplyTimedLife(CreateUnit(p,0x65305030,x1,y1,GetRandomReal(0,359)),1,0.75)
+call UnitApplyTimedLife(CreateUnit(p,'e0P0',x1,y1,GetRandomReal(0,359)),1,0.75)
 set n=CreateUnit(p,'e0OZ',x1,y1,GetRandomReal(0,359))
 call SetUnitFlyHeight(n,GetRandomReal(400,600),1000)
 call UnitApplyTimedLife(n,1,2)
@@ -86623,7 +86765,7 @@ call SetUnitScale(n,sc,sc,sc)
 set sc=GetRandomReal(0.5,1.2)
 set x1=x+GetRandomReal(-300,300)
 set y1=y+GetRandomReal(-300,300)
-call UnitApplyTimedLife(CreateUnit(p,0x65305030,x1,y1,GetRandomReal(0,359)),1,0.75)
+call UnitApplyTimedLife(CreateUnit(p,'e0P0',x1,y1,GetRandomReal(0,359)),1,0.75)
 set n=CreateUnit(p,'e0OZ',x1,y1,GetRandomReal(0,359))
 call SetUnitFlyHeight(n,GetRandomReal(400,600),1000)
 call UnitApplyTimedLife(n,1,2)
@@ -86632,7 +86774,7 @@ call SetUnitScale(n,sc,sc,sc)
 set sc=GetRandomReal(0.5,1.2)
 set x1=x+GetRandomReal(-300,300)
 set y1=y+GetRandomReal(-300,300)
-call UnitApplyTimedLife(CreateUnit(p,0x65305030,x1,y1,GetRandomReal(0,359)),1,0.75)
+call UnitApplyTimedLife(CreateUnit(p,'e0P0',x1,y1,GetRandomReal(0,359)),1,0.75)
 set n=CreateUnit(p,'e0OZ',x1,y1,GetRandomReal(0,359))
 call SetUnitFlyHeight(n,GetRandomReal(400,600),1000)
 call UnitApplyTimedLife(n,1,1)
@@ -86641,7 +86783,7 @@ call SetUnitScale(n,sc,sc,sc)
 set sc=GetRandomReal(0.5,1.2)
 set x1=x+GetRandomReal(-300,300)
 set y1=y+GetRandomReal(-300,300)
-call UnitApplyTimedLife(CreateUnit(p,0x65305030,x1,y1,GetRandomReal(0,359)),1,0.75)
+call UnitApplyTimedLife(CreateUnit(p,'e0P0',x1,y1,GetRandomReal(0,359)),1,0.75)
 set n=CreateUnit(p,'e0OZ',x1,y1,GetRandomReal(0,359))
 call SetUnitFlyHeight(n,GetRandomReal(400,600),1000)
 call UnitApplyTimedLife(n,1,1)
@@ -86858,7 +87000,7 @@ endloop
 set sc=GetRandomReal(1,1.8)
 set x2=x1+GetRandomReal(-400,400)
 set y2=y1+GetRandomReal(-400,400)
-call UnitApplyTimedLife(CreateUnit(p,0x65305030,x2,y2,GetRandomReal(0,359)),1,0.75)
+call UnitApplyTimedLife(CreateUnit(p,'e0P0',x2,y2,GetRandomReal(0,359)),1,0.75)
 set n=CreateUnit(p,'e0OZ',x2,y2,GetRandomReal(0,359))
 call SetUnitFlyHeight(n,GetRandomReal(800,1100),1000)
 call SetUnitPathing(n,false)
@@ -86868,7 +87010,7 @@ call IssuePointOrder(n,"move",x1+GetRandomReal(-200,200),y1+GetRandomReal(-250,2
 set sc=GetRandomReal(1,3)
 set x2=x1+GetRandomReal(-350,350)
 set y2=y1+GetRandomReal(-350,350)
-call UnitApplyTimedLife(CreateUnit(p,0x65305030,x2,y2,GetRandomReal(0,359)),1,0.75)
+call UnitApplyTimedLife(CreateUnit(p,'e0P0',x2,y2,GetRandomReal(0,359)),1,0.75)
 set n=CreateUnit(p,'e0OZ',x2,y2,GetRandomReal(0,359))
 call SetUnitFlyHeight(n,GetRandomReal(800,1100),1000)
 call SetUnitPathing(n,false)
@@ -86876,13 +87018,13 @@ call SetUnitScale(n,sc,sc,sc)
 call GroupAddUnit(g,n)
 call IssuePointOrder(n,"move",x1+GetRandomReal(-125,125),y1+GetRandomReal(-250,250))
 else
-call UnitApplyTimedLife(CreateUnit(p,0x65305032,x1,y1,GetRandomReal(0,359)),1,0.75)
+call UnitApplyTimedLife(CreateUnit(p,'e0P2',x1,y1,GetRandomReal(0,359)),1,0.75)
 endif
 else
 call SaveBoolean(h,GetHandleId(u),StringHash("Chibaku"),false)
-call UnitApplyTimedLife(CreateUnit(p,0x65305042,x1,y1,GetRandomReal(0,359)),1,0.5)
-call UnitApplyTimedLife(CreateUnit(p,0x65305042,x1,y1,GetRandomReal(0,359)),1,0.5)
-call UnitApplyTimedLife(CreateUnit(p,0x65305042,x1,y1,GetRandomReal(0,359)),1,0.5)
+call UnitApplyTimedLife(CreateUnit(p,'e0PB',x1,y1,GetRandomReal(0,359)),1,0.5)
+call UnitApplyTimedLife(CreateUnit(p,'e0PB',x1,y1,GetRandomReal(0,359)),1,0.5)
+call UnitApplyTimedLife(CreateUnit(p,'e0PB',x1,y1,GetRandomReal(0,359)),1,0.5)
 call ForGroup(g,function KillGroup)
 call PauseTimer(t)
 call SaveReal(h,id,7,0)
@@ -86916,7 +87058,7 @@ call SetUnitFacing(l__d,a*bj_RADTODEG)
 call SetUnitFlyHeight(l__d,mh*cof,0)
 else
 call UnitApplyTimedLife(CreateUnit(p,0x65304F59,x1,y1,GetRandomReal(0,359)),1,7)
-call UnitApplyTimedLife(CreateUnit(p,0x65305042,x1,y1,GetRandomReal(0,359)),1,8)
+call UnitApplyTimedLife(CreateUnit(p,'e0PB',x1,y1,GetRandomReal(0,359)),1,8)
 set n=CreateUnit(p,0x65305041,x1,y1,GetRandomReal(0,359))
 call UnitApplyTimedLife(n,1,12)
 call UnitScale(n,0.01,3.5,8)
