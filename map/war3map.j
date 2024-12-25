@@ -10119,8 +10119,8 @@ local unit l__d=LoadUnitHandle(h,id,2)
 local real speed=LoadReal(h,id,4)
 local real x=GetUnitX(l__d)
 local real y=GetUnitY(l__d)
-local real x1=LoadReal(h,id,6)
-local real y1=LoadReal(h,id,7)
+local real x1=GetUnitX(GenkiDama)
+local real y1=GetUnitX(GenkiDama)
 local real a=Atan2(y1-y,x1-x)+LoadReal(h,id,3)
 local player p=GetOwningPlayer(u)
 local real Genk=LoadReal(h,id,5)
@@ -10139,9 +10139,9 @@ if SR(x,y,x1,y1)>speed+20 and IsUnitAlive(GenkiDama)==true then
     call SetUnitFacing(l__d,a*bj_RADTODEG)
 else
     if IsUnitAlive(GenkiDama)==true then
-        if GetUnitScale(u)==0.01 then
+        if GetUnitScale(u)<0.1 then
             call SetUnitVertexColor(u, 255, 255, 255, 255)
-            set n=CreateUnit(p,'e0PB',x1,y1,0)
+            set n=CreateUnit(p,'e0P2',x1,y1,0)
             call SetUnitScale(n,2.5,2.5,2.5)
             call SetUnitFlyHeight(n,GetUnitFlyHeight(GenkiDama),0)
             call UnitApplyTimedLife(n,1,0.5)
@@ -10168,9 +10168,6 @@ else
             endif
             call SetUnitScale(l__d,GetUnitScale(l__d)-0.02,GetUnitScale(l__d)-0.02,GetUnitScale(l__d)-0.02)
         else
-            set n=CreateUnit(p,'e0PB',x,y,0)
-            call SetUnitFlyHeight(n,GetUnitFlyHeight(GenkiDama),0)
-            call UnitApplyTimedLife(n,1,0.5)
             call UnitApplyTimedLife(l__d,1,0.1)
             call FlushChildHashtable(h,id)
             call PauseTimer(t)
@@ -10191,8 +10188,6 @@ call SaveUnitHandle(h,id,2,l__d)
 call SaveReal(h,id,3,angle)
 call SaveReal(h,id,4,speed)
 call SaveReal(h,id,5,Genk)
-call SaveReal(h,id,6,x)
-call SaveReal(h,id,7,y)
 call SaveReal(h,id,9,Hei)
 call SaveReal(h,id,10,SR(GetUnitX(l__d),GetUnitY(l__d),x,y))
 call TimerStart(t,0.03,true,function GenkiMoveSpiritBomb2)
@@ -10222,6 +10217,26 @@ endif
 endfunction
 
 function OnButtonGlobalAbility takes nothing returns nothing
+    local player p = GetTriggerPlayer( )
+    local integer pHid = GetHandleId( p )
+    local integer buttonId = LoadInteger( HH, pHid, '+bId' )
+    local framehandle but = GetTriggerFrame( )
+    local integer butHid = 0
+    local integer itemTypeId = 0
+    local integer freeSlotId = 0
+    local item it = null
+
+    if buttonId == -1 then
+        return
+    endif
+    if GetFrameTexture(but,0)=="ReplaceableTextures\\CommandButtons\\BTNGiveEnergy.blp" then
+        call SendEnergy(p)
+    endif
+    set p = null
+    set but = null
+endfunction
+
+function OnButtonCustomAbility takes nothing returns nothing
     local player p = GetTriggerPlayer( )
     local integer pHid = GetHandleId( p )
     local integer buttonId = LoadInteger( HH, pHid, '+bId' )
@@ -20757,40 +20772,6 @@ function Trig_StatusBar_Actions takes nothing returns nothing
     call ShowFrame( CustomAbilityVarTooltipText, true )
     call SetFrameRelativePoint( CustomAbilityVarTooltipText, FRAMEPOINT_CENTER, CustomAbilityVarTooltip, FRAMEPOINT_CENTER, 0, .0 )
 
-    set CustomAbilityFrame=CreateFrameByType( "SIMPLEBUTTON", "AbilityBarIcon", null, "", x )
-    call ClearFrameAllPoints( CustomAbilityFrame )
-    call SetFrameTexture( CustomAbilityFrame, "UI\\Widgets\\Console\\Human\\human-inventory-slotfiller.blp", 0, true )
-    call SetFrameTexture( CustomAbilityFrame, "UI\\Widgets\\Console\\Human\\human-inventory-slotfiller.blp", 1, true )
-    call SetFrameTexture( CustomAbilityFrame, "UI\\Widgets\\Console\\Human\\human-inventory-slotfiller.blp", 2, true )
-    call SetFrameSize( CustomAbilityFrame, .039, .039 )
-    call ShowFrame( CustomAbilityFrame, false )
-    call SetFrameRelativePoint( CustomAbilityFrame, FRAMEPOINT_CENTER, GetOriginFrame(ORIGIN_FRAME_COMMAND_BUTTON,x), FRAMEPOINT_CENTER, 0, .01 )
-    call SetFramePriority( CustomAbilityFrame, 6 )
-
-    call TriggerRegisterFrameEvent( tOnPress, CustomAbilityFrame, FRAMEEVENT_MOUSE_DOWN )
-    call TriggerRegisterFrameEvent( tOnUnPress, CustomAbilityFrame, FRAMEEVENT_MOUSE_UP )
-    call TriggerRegisterFrameEvent( tOnClick, CustomAbilityFrame, FRAMEEVENT_CONTROL_CLICK )
-
-    set CustomAbilityTooltip=CreateFrameByType("SIMPLEFRAME", "AbilityBarTooltip", CustomAbilityFrame, "", x)
-    call ClearFrameAllPoints( CustomAbilityTooltip )
-    call SetFrameRelativePoint( CustomAbilityTooltip, FRAMEPOINT_CENTER, CustomAbilityFrame, FRAMEPOINT_CENTER,  3.13, -.1  )
-    call ShowFrame( CustomAbilityTooltip, false )
-    call SetFrameParent( CustomAbilityTooltip, CustomAbilityFrame )
-    call SetFrameTextureEx(CustomAbilityTooltip, 0, "UI\\widgets\\BattleNet\\bnet-tooltip-background.blp", false, "Choice-tooltip-border.blp", 0)
-    call SetFramePriority( CustomAbilityTooltip, 6 )
-    call SetFrameTooltip(CustomAbilityFrame,CustomAbilityTooltip)
-
-    set CustomAbilityTooltipText=CreateFrameByType( "SIMPLETEXT", "AbilityBarTooltipText", CustomAbilityTooltip, "", x )
-    call ClearFrameAllPoints( CustomAbilityTooltipText )
-    call SetFrameTextColour( CustomAbilityTooltipText, ConvertColour(255,255,255,255) )
-    call SetFrameParent( CustomAbilityTooltipText, CustomAbilityTooltip )
-    call SetFrameText( CustomAbilityTooltipText, "Описание способностей")
-    call SetFrameFont( CustomAbilityTooltipText, "Fonts\\FRIZQT__.TTF", .01, 0 )
-    call SetFrameTextAlignment( CustomAbilityTooltipText, TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_LEFT )
-    call SetFrameWidth( CustomAbilityTooltipText, .14)
-    call SetFrameSize( CustomAbilityTooltip, .26, GetFrameHeight(CustomAbilityTooltipText)+0.01)
-    call ShowFrame( CustomAbilityTooltipText, true )
-    call SetFrameRelativePoint( CustomAbilityTooltipText, FRAMEPOINT_CENTER, CustomAbilityTooltip, FRAMEPOINT_CENTER, 0, .0 )
     set x=x+1
     exitwhen x>12 
     endloop
@@ -20814,6 +20795,68 @@ function Trig_StatusBar_Actions takes nothing returns nothing
         set x=x+1
     endloop
 
+    // set tOnPress = CreateTrigger( )
+    // set tOnUnPress = CreateTrigger( )
+    // set tOnClick = CreateTrigger( )
+    // set x=0
+    // loop 
+
+    // set CustomAbilityFrame=CreateFrameByType( "SIMPLEBUTTON", "AbilityBarIcon", null, "", x )
+    // call ClearFrameAllPoints( CustomAbilityFrame )
+    // call SetFrameTexture( CustomAbilityFrame, "UI\\Widgets\\Console\\Human\\human-inventory-slotfiller.blp", 0, true )
+    // call SetFrameTexture( CustomAbilityFrame, "UI\\Widgets\\Console\\Human\\human-inventory-slotfiller.blp", 1, true )
+    // call SetFrameTexture( CustomAbilityFrame, "UI\\Widgets\\Console\\Human\\human-inventory-slotfiller.blp", 2, true )
+    // call SetFrameSize( CustomAbilityFrame, .039, .039 )
+    // call ShowFrame( CustomAbilityFrame, false )
+    // call SetFrameRelativePoint( CustomAbilityFrame, FRAMEPOINT_CENTER, GetOriginFrame(ORIGIN_FRAME_COMMAND_BUTTON,x), FRAMEPOINT_CENTER, 0, .00 )
+    // call SetFramePriority( CustomAbilityFrame, 6 )
+
+    // call TriggerRegisterFrameEvent( tOnPress, CustomAbilityFrame, FRAMEEVENT_MOUSE_DOWN )
+    // call TriggerRegisterFrameEvent( tOnUnPress, CustomAbilityFrame, FRAMEEVENT_MOUSE_UP )
+    // call TriggerRegisterFrameEvent( tOnClick, CustomAbilityFrame, FRAMEEVENT_CONTROL_CLICK )
+
+    // set CustomAbilityTooltip=CreateFrameByType("SIMPLEFRAME", "AbilityBarTooltip", CustomAbilityFrame, "", x)
+    // call ClearFrameAllPoints( CustomAbilityTooltip )
+    // call SetFrameRelativePoint( CustomAbilityTooltip, FRAMEPOINT_CENTER, CustomAbilityFrame, FRAMEPOINT_CENTER,  3.13, -.1  )
+    // call ShowFrame( CustomAbilityTooltip, false )
+    // call SetFrameParent( CustomAbilityTooltip, CustomAbilityFrame )
+    // call SetFrameTextureEx(CustomAbilityTooltip, 0, "UI\\widgets\\BattleNet\\bnet-tooltip-background.blp", false, "Choice-tooltip-border.blp", 0)
+    // call SetFramePriority( CustomAbilityTooltip, 6 )
+    // call SetFrameTooltip(CustomAbilityFrame,CustomAbilityTooltip)
+
+    // set CustomAbilityTooltipText=CreateFrameByType( "SIMPLETEXT", "AbilityBarTooltipText", CustomAbilityTooltip, "", x )
+    // call ClearFrameAllPoints( CustomAbilityTooltipText )
+    // call SetFrameTextColour( CustomAbilityTooltipText, ConvertColour(255,255,255,255) )
+    // call SetFrameParent( CustomAbilityTooltipText, CustomAbilityTooltip )
+    // call SetFrameText( CustomAbilityTooltipText, "Описание способностей")
+    // call SetFrameFont( CustomAbilityTooltipText, "Fonts\\FRIZQT__.TTF", .01, 0 )
+    // call SetFrameTextAlignment( CustomAbilityTooltipText, TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_LEFT )
+    // call SetFrameWidth( CustomAbilityTooltipText, .14)
+    // call SetFrameSize( CustomAbilityTooltip, .26, GetFrameHeight(CustomAbilityTooltipText)+0.01)
+    // call ShowFrame( CustomAbilityTooltipText, true )
+    // call SetFrameRelativePoint( CustomAbilityTooltipText, FRAMEPOINT_CENTER, CustomAbilityTooltip, FRAMEPOINT_CENTER, 0, .0 )
+    // set x=x+1
+    // exitwhen x>12 
+    // endloop
+
+    // call TriggerAddAction( tOnPress, function OnButtonPress )
+    // call TriggerAddAction( tOnUnPress, function OnButtonUnpress )
+    // call TriggerAddAction( tOnClick, function OnButtonCustomAbility )
+
+    // set x=0
+    // loop
+    //     exitwhen x>=12
+    //     set AbilityModeHotkey = CreateTrigger( )  
+    //     call TriggerRegisterPlayerKeyEvent( AbilityModeHotkey, Player(x), OSKEY_Q, 0 ,true )
+    //     call TriggerRegisterPlayerKeyEvent( AbilityModeHotkey, Player(x), OSKEY_W, 0 ,true )
+    //     call TriggerRegisterPlayerKeyEvent( AbilityModeHotkey, Player(x), OSKEY_E, 0 ,true )
+    //     call TriggerRegisterPlayerKeyEvent( AbilityModeHotkey, Player(x), OSKEY_R, 0 ,true )
+    //     call TriggerRegisterPlayerKeyEvent( AbilityModeHotkey, Player(x), OSKEY_T, 0 ,true )
+    //     call TriggerRegisterPlayerKeyEvent( AbilityModeHotkey, Player(x), OSKEY_F, 0 ,true )
+    //     call TriggerRegisterPlayerKeyEvent( AbilityModeHotkey, Player(x), OSKEY_G, 0 ,true )
+    //     call TriggerAddAction( AbilityModeHotkey, function AbilityModeClick )
+    //     set x=x+1
+    // endloop
 
     set tOnPress = CreateTrigger( )
     set tOnUnPress = CreateTrigger( )
@@ -20826,9 +20869,9 @@ function Trig_StatusBar_Actions takes nothing returns nothing
     call SetFrameTexture( CustomGlobalAbilityFrame, "UI\\Widgets\\Console\\Human\\human-inventory-slotfiller.blp", 0, true )
     call SetFrameTexture( CustomGlobalAbilityFrame, "UI\\Widgets\\Console\\Human\\human-inventory-slotfiller.blp", 1, true )
     call SetFrameTexture( CustomGlobalAbilityFrame, "UI\\Widgets\\Console\\Human\\human-inventory-slotfiller.blp", 2, true )
-    call SetFrameSize( CustomGlobalAbilityFrame, .039, .039 )
+    call SetFrameSize( CustomGlobalAbilityFrame, .0385, .0385 )
     call ShowFrame( CustomGlobalAbilityFrame, false )
-    call SetFrameRelativePoint( CustomGlobalAbilityFrame, FRAMEPOINT_LEFT, consoleUI, FRAMEPOINT_BOTTOMLEFT,  .0214, .17 )
+    call SetFrameRelativePoint( CustomGlobalAbilityFrame, FRAMEPOINT_BOTTOMLEFT, consoleUI, FRAMEPOINT_BOTTOMLEFT,  .0514, .17 )
     call SetFramePriority( CustomGlobalAbilityFrame, 7 )
 
     call TriggerRegisterFrameEvent( tOnPress, CustomGlobalAbilityFrame, FRAMEEVENT_MOUSE_DOWN )
@@ -20837,7 +20880,7 @@ function Trig_StatusBar_Actions takes nothing returns nothing
 
     set CustomGlobalAbilityTooltip=CreateFrameByType("SIMPLEFRAME", "GlobalAbilityBarTooltip", CustomGlobalAbilityFrame, "", x)
     call ClearFrameAllPoints( CustomGlobalAbilityTooltip )
-    call SetFrameRelativePoint( CustomGlobalAbilityTooltip, FRAMEPOINT_CENTER, CustomGlobalAbilityFrame, FRAMEPOINT_CENTER,  3.13, -.1  )
+    call SetFrameRelativePoint( CustomGlobalAbilityTooltip, FRAMEPOINT_CENTER, CustomGlobalAbilityFrame, FRAMEPOINT_TOPRIGHT,  3.13, -.1  )
     call ShowFrame( CustomGlobalAbilityTooltip, false )
     call SetFrameParent( CustomGlobalAbilityTooltip, CustomGlobalAbilityFrame )
     call SetFrameTextureEx(CustomGlobalAbilityTooltip, 0, "UI\\widgets\\BattleNet\\bnet-tooltip-background.blp", false, "Choice-tooltip-border.blp", 0)
@@ -62499,6 +62542,7 @@ function SpiritBombCast2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
 local unit u=LoadUnitHandle(h,id,0)
+local unit dummy=LoadUnitHandle(h,id,11)
 local integer idu=GetHandleId(u)
 local real x=GetUnitX(u)
 local real y=GetUnitY(u)
@@ -62510,24 +62554,29 @@ local player p=GetOwningPlayer(u)
 local real dmg=LoadReal(h,id,10)
 local integer power=0
 local integer i=0
-if time<100 and GetUnitState(u,UNIT_STATE_LIFE)>0.405 and IsUnitPaused(u)==false and GetUnitAbilityLevel(u,'CBC2')==0 and GetUnitAbilityLevel(u,'cbc3')==0  and GetUnitAbilityLevel(u,'cbc5')==0  and GetUnitAbilityLevel(u, 'cbc7')==0 and GetUnitAbilityLevel(u, 'cbc8')==0 and GetUnitAbilityLevel(u, 'cbc9')==0 and UnitIsAlive(u) and udg_B and DU2 then
+if time<100 and GetUnitState(u,UNIT_STATE_LIFE)>0.405 and LoadBoolean(HH,GetHandleId(u),ANTITARGET_ABILITY)==false and GetUnitAbilityLevel(u,'CBC2')==0 and GetUnitAbilityLevel(u,'cbc3')==0  and GetUnitAbilityLevel(u,'cbc5')==0  and GetUnitAbilityLevel(u, 'cbc7')==0 and GetUnitAbilityLevel(u, 'cbc8')==0 and GetUnitAbilityLevel(u, 'cbc9')==0 and UnitIsAlive(u) and udg_B and DU2 then
 if time==0 then
 call SetUnitAnimationByIndex(u,165)
 endif
+call PauseUnit(u,true)
 call SaveReal(h,id,7,time)
 call SetUnitXY_1(GenkiDama,x,y, false)
+call SetUnitXY_1(dummy,x,y, false)
 if GetUnitScale(GenkiDama)<(0.54+GetHeroLevel(u)*0.036) and time>1 then
 set n=CreateUnit(p,'e0CF',x+GetRandomReal(-3500,3500),y+GetRandomReal(-3500,3500),GetRandomReal(0,359))
 call SetUnitPathing(n,false)
 call GenkiMoveSpiritBomb(GenkiDama,x,y,n,SR(GetUnitX(n),GetUnitY(n),x,y)*0.01,0,GetUnitFlyHeight(GenkiDama),0.005)
-elseif GetUnitScale(GenkiDama)>0.54+GetHeroLevel(u)*0.036 and GetUnitScale(GenkiDama)<0.6+GetHeroLevel(Goku)*0.04 then
+else
+if GetUnitScale(GenkiDama)>0.54+GetHeroLevel(u)*0.036 and GetUnitScale(GenkiDama)<0.6+GetHeroLevel(u)*0.04 then
 set n=CreateUnit(p,'e0PB',x,y,0)
 call SetUnitScale(n,GetUnitScale(GenkiDama)*0.5,GetUnitScale(GenkiDama)*0.5,GetUnitScale(GenkiDama)*0.5)
 call SetUnitFlyHeight(n,GetUnitFlyHeight(GenkiDama),0)
 call UnitApplyTimedLife(n,1,0.3)
 endif
+endif
 else
 call PauseUnit(u,false)
+if GetUnitScale(GenkiDama)>0.1 then
 set n=CreateUnit(p,'e04B',x,y,0)
 call SetUnitFlyHeight(n,GetUnitFlyHeight(GenkiDama),0)
 call UnitApplyTimedLife(n,1,1)
@@ -62546,16 +62595,14 @@ call UnitApplyTimedLife(n,1,1)
 set n=CreateUnit(p,'e099',x,y,0)
 call SetUnitFlyHeight(n,GetUnitFlyHeight(GenkiDama),0)
 call UnitApplyTimedLife(n,1,1)
+endif
 loop
 set GenkiUsed[i]=false
 set i=i+1
 exitwhen i>=bj_MAX_PLAYER_SLOTS
 endloop
-call UnitRemoveAbility(u,'B00A')
-call SetUnitAcquireRange(u,600)
-call UnitRemoveAbility(u,'A1FU')
-call UnitRemoveAbility(u,'Pet1')
 call KillUnit(GenkiDama)
+call KillUnit(dummy)
 call FlushChildHashtable(h,id)
 call PauseTimer(t)
 call DestroyTimer(t)
@@ -62563,6 +62610,7 @@ call DestroyTimer(t)
 endif
 set p=null
 set u=null
+set dummy=null
 set t=null
 endfunction
 function SpiritBombCast takes nothing returns nothing
@@ -62577,12 +62625,6 @@ local real a=Atan2(y1-y,x1-x)
 local player p=GetOwningPlayer(u)
 local integer i=0
 call SaveUnitHandle(h,id,0,u)
-call UnitAddAbility(u,'A1FU') //Slow
-call UnitAddAbility(u,'Pet1')
-call SetUnitAcquireRange(u,51)
-set n=CreateUnit(p,'e06G',x,y,GetRandomReal(0,359))
-call SetUnitTimeScale(n,1)
-call UnitApplyTimedLife(n,1,5)
 set GenkiDama=CreateUnit(p,'e0CE',x,y,a*bj_RADTODEG)
 call SetUnitVertexColor(GenkiDama, 255, 255, 255, 0)
 call SetUnitFlyHeight(GenkiDama,570,0)
@@ -62593,6 +62635,13 @@ endif
 set i=i+1
 exitwhen i>=bj_MAX_PLAYER_SLOTS
 endloop
+
+set n=CreateUnit(p,'eggd',x,y,a*bj_RADTODEG) //'gbRd'
+call SetUnitScale(n,1,1,1)
+call MoveUnit(n,n,50,a*bj_RADTODEG-90)
+call SetUnitFlyHeight(n,100,0)
+call SaveUnitHandle(h,id,11,n)
+
 call SaveReal(h,id,7,0)
 call SaveReal(h,id,6,150)
 call SaveReal(h,id,8,x1)
@@ -62684,7 +62733,7 @@ if IsTerrainPathable(GetUnitX(l__d),GetUnitY(l__d),PATHING_TYPE_FLYABILITY)==fal
 call SetUnitXY_1(l__d,x,y, false)
 endif
 if ef==1 then
-set n=CreateUnit(p,0x65304332,x,y,GetRandomReal(0,359))
+set n=CreateUnit(p,'e0C2',x,y,GetRandomReal(0,359))
 call UnitApplyTimedLife(n,1,0.9)
 call SetUnitTimeScale(n,2)
 endif
@@ -63013,7 +63062,7 @@ if IsTerrainPathable(GetUnitX(l__d),GetUnitY(l__d),PATHING_TYPE_FLYABILITY)==fal
 call SetUnitXY_1(l__d,x,y, false)
 endif
 if ef==1 then
-set n=CreateUnit(p,0x65304332,x,y,GetRandomReal(0,359))
+set n=CreateUnit(p,'e0C2',x,y,GetRandomReal(0,359))
 call UnitApplyTimedLife(n,1,0.9)
 call SetUnitTimeScale(n,2)
 endif
@@ -90223,7 +90272,7 @@ call SaveReal(h,id,5,speed+0.8)
 call SetUnitFacing(l__d,a*bj_RADTODEG)
 set n=CreateUnit(p,'e0C0',x,y,a*bj_RADTODEG)
 call UnitApplyTimedLife(n,1,1)
-call UnitApplyTimedLife(CreateUnit(p,0x65304332,x,y,GetRandomReal(0,359)),1,1)
+call UnitApplyTimedLife(CreateUnit(p,'e0C2',x,y,GetRandomReal(0,359)),1,1)
 else
 call UnitApplyTimedLife(CreateUnit(p,'e0C4',x,y,(a*bj_RADTODEG)),1,3)
 call UnitApplyTimedLife(CreateUnit(p,'e0C5',x,y,(a*bj_RADTODEG)),1,3)
@@ -177530,7 +177579,7 @@ call SaveReal(HH,id,3,GetUnitFacing(Dummy1))
 endif
 
 if time==0.4 then
-call UnitAddAbility(Dummy1,0x42475232)
+call UnitAddAbility(Dummy1,'BGR2')
 call UnitSpeed(LoadUnitHandle(HH,id,23),0)
 
 if LoadBoolean(HH,GetHandleId(caster),StringHash("BGRose"))==true then
