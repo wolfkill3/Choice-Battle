@@ -10130,7 +10130,7 @@ local real rd=SR(x,y,x1,y1)
 local real cof=rd/dist
 local real hei=0
 local integer i=0
-if SR(x,y,x1,y1)>speed+20 and IsUnitAlive(GenkiDama)==true then
+if SR(x,y,x1,y1)>speed+20 and IsUnitAlive(GenkiDama)==true and GetUnitAbilityLevel(GenkiDama,'GKG4')==0  then
     set hei=mh*(1-cof)+50
     call SetUnitFlyHeight(l__d,hei,0)
     set x=x+speed*Cos(a)
@@ -10138,41 +10138,48 @@ if SR(x,y,x1,y1)>speed+20 and IsUnitAlive(GenkiDama)==true then
     call SetUnitXY_1(l__d,x,y, false)
     call SetUnitFacing(l__d,a*bj_RADTODEG)
 else
-    if IsUnitAlive(GenkiDama)==true then
-        if GetUnitScale(u)<0.1 then
-            call SetUnitVertexColor(u, 255, 255, 255, 255)
-            set n=CreateUnit(p,'e0P2',x1,y1,0)
-            call SetUnitScale(n,2.5,2.5,2.5)
-            call SetUnitFlyHeight(n,GetUnitFlyHeight(GenkiDama),0)
-            call UnitApplyTimedLife(n,1,0.5)
+    if SR(x,y,x1,y1)<=speed+20 then
+        if IsUnitAlive(GenkiDama)==true then
+            if GetUnitScale(u)<0.1 then
+                call SetUnitVertexColor(u, 255, 255, 255, 255)
+                set n=CreateUnit(p,'e0P2',x1,y1,0)
+                call SetUnitScale(n,2.5,2.5,2.5)
+                call SetUnitFlyHeight(n,GetUnitFlyHeight(GenkiDama),0)
+                call UnitApplyTimedLife(n,1,0.5)
+            endif
         endif
-    endif
-    if Genk==0.005 then
-        call UnitApplyTimedLife(l__d,1,GetRandomReal(0.1,2))
-        if GetUnitScale(u)+Genk<0.6+GetHeroLevel(Goku)*0.04 then
-            call SetUnitFlyHeight(u,GetUnitFlyHeight(u)+1,0)
-            call SetUnitScale(u,GetUnitScale(u)+Genk,GetUnitScale(u)+Genk,GetUnitScale(u)+Genk)
-        else
-            call SetUnitScale(u,0.6+GetHeroLevel(Goku)*0.04,0.6+GetHeroLevel(Goku)*0.04,0.6+GetHeroLevel(Goku)*0.04)
-        endif
-        call FlushChildHashtable(h,id)
-        call PauseTimer(t)
-        call DestroyTimer(t)
-    else
-        if GetUnitScale(l__d)>1.2 then
-            if GetUnitScale(u)+0.02<0.6+GetHeroLevel(Goku)*0.04 then
-                call SetUnitFlyHeight(u,GetUnitFlyHeight(u)+4,0)
-                call SetUnitScale(u,GetUnitScale(u)+0.02,GetUnitScale(u)+0.02,GetUnitScale(u)+0.02)
+        if Genk==0.005 then
+            call UnitApplyTimedLife(l__d,1,GetRandomReal(0.1,2))
+            if GetUnitScale(u)+Genk<0.6+GetHeroLevel(Goku)*0.04 then
+                call SetUnitFlyHeight(u,GetUnitFlyHeight(u)+1,0)
+                call SetUnitScale(u,GetUnitScale(u)+Genk,GetUnitScale(u)+Genk,GetUnitScale(u)+Genk)
             else
                 call SetUnitScale(u,0.6+GetHeroLevel(Goku)*0.04,0.6+GetHeroLevel(Goku)*0.04,0.6+GetHeroLevel(Goku)*0.04)
             endif
-            call SetUnitScale(l__d,GetUnitScale(l__d)-0.02,GetUnitScale(l__d)-0.02,GetUnitScale(l__d)-0.02)
-        else
-            call UnitApplyTimedLife(l__d,1,0.1)
             call FlushChildHashtable(h,id)
             call PauseTimer(t)
             call DestroyTimer(t)
+        else
+            if GetUnitScale(l__d)>1.2 then
+                if GetUnitScale(u)+0.02<0.6+GetHeroLevel(Goku)*0.04 then
+                    call SetUnitFlyHeight(u,GetUnitFlyHeight(u)+4,0)
+                    call SetUnitScale(u,GetUnitScale(u)+0.02,GetUnitScale(u)+0.02,GetUnitScale(u)+0.02)
+                else
+                    call SetUnitScale(u,0.6+GetHeroLevel(Goku)*0.04,0.6+GetHeroLevel(Goku)*0.04,0.6+GetHeroLevel(Goku)*0.04)
+                endif
+                call SetUnitScale(l__d,GetUnitScale(l__d)-0.02,GetUnitScale(l__d)-0.02,GetUnitScale(l__d)-0.02)
+            else
+                call UnitApplyTimedLife(l__d,1,0.1)
+                call FlushChildHashtable(h,id)
+                call PauseTimer(t)
+                call DestroyTimer(t)
+            endif
         endif
+    else
+        call UnitApplyTimedLife(l__d,1,0.1)
+        call FlushChildHashtable(h,id)
+        call PauseTimer(t)
+        call DestroyTimer(t)
     endif
 endif
 set p=null
@@ -62435,6 +62442,9 @@ call TriggerAddAction(t,function CastDragonFist)
 call TriggerAddCondition(t,Condition(function CondDragonFist))
 set t=null
 endfunction
+function GenkiDummyAbilsCond takes nothing returns boolean
+return GetSpellAbilityId()=='GKG3' or GetSpellAbilityId()=='GKG4'
+endfunction
 function SpiritPowerOff takes nothing returns nothing
 local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
@@ -62535,6 +62545,36 @@ call SaveReal(h,id,10,SR(GetUnitX(l__d),GetUnitY(l__d),x,y))
 call TimerStart(t,0.03,true,function MissleMoveSpiritBomb2)
 set t=null
 endfunction
+function GenkiDummyAbilsCast takes nothing returns nothing
+local unit u=GetTriggerUnit()
+local real x=GetUnitX(u)
+local real y=GetUnitY(u)
+local real x1=GetSpellTargetX()
+local real y1=GetSpellTargetY()
+local real a=Atan2(y1-y,x1-x)
+if GetSpellAbilityId()=='GKG3' then // Отмена Бомбы Гоку
+    call KillUnit(u)
+    call IssueImmediateOrder(Hero[GetPlayerId(GetOwningPlayer(u))], "stop")
+endif 
+if GetSpellAbilityId()=='GKG4' then
+    call KillUnit(u)
+    call UnitAddAbility(GenkiDama,'GKG4')
+    call MissleMoveSpiritBomb(Goku,x1,y1,GenkiDama,55,0,GetUnitFlyHeight(GenkiDama),50*0.2*GetUnitScale(GenkiDama)*GetHeroStr(u,true))
+endif
+set u=null
+endfunction
+function GenkiDummyAbilsInit takes nothing returns nothing
+local trigger t=CreateTrigger()
+local integer i=0
+loop
+call TriggerRegisterPlayerUnitEvent(t,Player(i),EVENT_PLAYER_UNIT_SPELL_EFFECT,null)
+set i=i+1
+exitwhen i>=bj_MAX_PLAYER_SLOTS
+endloop
+call TriggerAddAction(t,function GenkiDummyAbilsCast)
+call TriggerAddCondition(t,Condition(function GenkiDummyAbilsCond))
+set t=null
+endfunction
 function SpiritBombCond takes nothing returns boolean
 return GetSpellAbilityId()=='GKG1' and udg_B==true
 endfunction
@@ -62554,9 +62594,12 @@ local player p=GetOwningPlayer(u)
 local real dmg=LoadReal(h,id,10)
 local integer power=0
 local integer i=0
-if time<100 and GetUnitState(u,UNIT_STATE_LIFE)>0.405 and LoadBoolean(HH,GetHandleId(u),ANTITARGET_ABILITY)==false and GetUnitAbilityLevel(u,'CBC2')==0 and GetUnitAbilityLevel(u,'cbc3')==0  and GetUnitAbilityLevel(u,'cbc5')==0  and GetUnitAbilityLevel(u, 'cbc7')==0 and GetUnitAbilityLevel(u, 'cbc8')==0 and GetUnitAbilityLevel(u, 'cbc9')==0 and UnitIsAlive(u) and udg_B and DU2 then
+if time<100 and GetUnitState(u,UNIT_STATE_LIFE)>0.405 and LoadBoolean(HH,GetHandleId(u),ANTITARGET_ABILITY)==false and GetUnitAbilityLevel(u,'CBC2')==0 and GetUnitAbilityLevel(u,'cbc3')==0  and GetUnitAbilityLevel(u,'cbc5')==0  and GetUnitAbilityLevel(u, 'cbc7')==0 and GetUnitAbilityLevel(u, 'cbc8')==0 and GetUnitAbilityLevel(u, 'cbc9')==0 and UnitIsAlive(u) and UnitIsAlive(dummy) and udg_B and DU2 then
 if time==0 then
 call SetUnitAnimationByIndex(u,165)
+endif
+if time==0.3 then
+call UnitAddAbility(dummy,'GKG3')
 endif
 call PauseUnit(u,true)
 call SaveReal(h,id,7,time)
@@ -62574,7 +62617,15 @@ call SetUnitFlyHeight(n,GetUnitFlyHeight(GenkiDama),0)
 call UnitApplyTimedLife(n,1,0.3)
 endif
 endif
+if time>0.3 and GetUnitScale(GenkiDama)>0.3 and  GetUnitAbilityLevel(dummy,'GKG4')==0 then
+call UnitAddAbility(dummy,'GKG4')
+endif
 else
+loop
+set GenkiUsed[i]=false
+set i=i+1
+exitwhen i>=bj_MAX_PLAYER_SLOTS
+endloop
 call PauseUnit(u,false)
 if GetUnitScale(GenkiDama)>0.1 then
 set n=CreateUnit(p,'e04B',x,y,0)
@@ -62596,13 +62647,10 @@ set n=CreateUnit(p,'e099',x,y,0)
 call SetUnitFlyHeight(n,GetUnitFlyHeight(GenkiDama),0)
 call UnitApplyTimedLife(n,1,1)
 endif
-loop
-set GenkiUsed[i]=false
-set i=i+1
-exitwhen i>=bj_MAX_PLAYER_SLOTS
-endloop
+call RemoveUnit(dummy)
+if GetUnitAbilityLevel(GenkiDama,'GKG4')==0 then
 call KillUnit(GenkiDama)
-call KillUnit(dummy)
+endif
 call FlushChildHashtable(h,id)
 call PauseTimer(t)
 call DestroyTimer(t)
@@ -207632,6 +207680,7 @@ call GrandChariotInit()
 call PowerUpGoku()
 call DragonFistInit()
 call InitSpiritBomb()
+call GenkiDummyAbilsInit()
 call Kamehameha2Init()
 call GokuMeteorSmashInit()
 call SolarFlareInit()
