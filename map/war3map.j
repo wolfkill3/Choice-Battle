@@ -62464,7 +62464,7 @@ endif
 set u=null
 set t=null
 endfunction
-function MissleMoveSpiritBomb2 takes nothing returns nothing
+function MissleMoveSuperSpiritBomb2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
 local unit u=LoadUnitHandle(h,id,0)
@@ -62530,7 +62530,7 @@ set l__d=null
 set t=null
 set u=null
 endfunction
-function MissleMoveSpiritBomb takes unit u, real x, real y, unit l__d, real speed, real angle, real Hei, real dmg returns nothing
+function MissleMoveSuperSpiritBomb takes unit u, real x, real y, unit l__d, real speed, real angle, real Hei, real dmg returns nothing
 local timer t=CreateTimer()
 local integer id=GetHandleId(t)
 call SaveUnitHandle(h,id,0,u)
@@ -62542,6 +62542,107 @@ call SaveReal(h,id,6,x)
 call SaveReal(h,id,7,y)
 call SaveReal(h,id,9,Hei)
 call SaveReal(h,id,10,SR(GetUnitX(l__d),GetUnitY(l__d),x,y))
+call TimerStart(t,0.03,true,function MissleMoveSuperSpiritBomb2)
+set t=null
+endfunction
+function MissleMoveSpiritBomb2 takes nothing returns nothing
+local timer t=GetExpiredTimer()
+local integer id=GetHandleId(t)
+local unit u=LoadUnitHandle(h,id,0)
+local unit l__d=LoadUnitHandle(h,id,2)
+local real speed=LoadReal(h,id,4)
+local real x=GetUnitX(l__d)
+local real y=GetUnitY(l__d)
+local real x1=LoadReal(h,id,6)
+local real y1=LoadReal(h,id,7)
+local real a=Atan2(y1-y,x1-x)+LoadReal(h,id,3)
+local player p=GetOwningPlayer(u)
+local real dmg=LoadReal(h,id,5)
+local real fly=LoadReal(h,id,9)
+local real dist=LoadReal(h,id,10)
+local real rd=SR(x,y,x1,y1)
+local integer i=0
+local real time=LoadReal(h,id,11)
+local integer act=LoadInteger(h,id,12)
+if time<1.1 then
+    if time==0 then
+
+    endif
+    if time<0.5 then
+        call SetUnitFlyHeight(l__d,GetUnitFlyHeight(l__d)-fly,0)
+
+    endif
+    call SetUnitInvulnerable(u,true)
+    call PauseUnit(u,true)
+    call SaveReal(h,id,11,time+0.03)
+else
+    if act==0 then
+        call SaveInteger(h,id,12,1)
+        call SetUnitInvulnerable(u,false)
+        call PauseUnit(u,false)
+    else
+        if SR(x,y,x1,y1)>speed+20 then
+            set x=x+speed*Cos(a)
+            set y=y+speed*Sin(a)
+            if IsTerrainPathable(GetUnitX(l__d),GetUnitY(l__d),PATHING_TYPE_FLYABILITY)==false then
+                call SetUnitXY_1(l__d,x,y, false)
+            else
+                call SaveReal(h,id,6,x)
+                call SaveReal(h,id,7,y)
+            endif
+            call SetUnitFacing(l__d,a*bj_RADTODEG)
+        else
+            call GroupEnumUnitsInRange(DG,x,y,650,Base)
+            loop
+                set E=FirstOfGroup(DG)
+                exitwhen E==null
+                if Condition_Base(p,E)then
+                    call myCustomDamage(u,E,dmg,false,false,null,null,null)
+                endif
+                call GroupRemoveUnit(DG,E)
+            endloop
+            call ShakeCamera(0.5,20)
+            set soundplay=CreateSound("Sound\\Music\\mp3Music\\SpiritBomb.mp3",false,false,true,12700,12700,"")
+            call StartSound(soundplay)
+            call KillSoundWhenDone(soundplay)
+            loop
+                exitwhen i>=9
+                call UnitRemoveAbility(Hero[i],'B036')
+                set i=i+1
+            endloop
+            call UnitApplyTimedLife(CreateUnit(p,'e04B',x,y,0),1,1)
+            call UnitApplyTimedLife(CreateUnit(p,'e095',x,y,0),1,1)
+            call UnitApplyTimedLife(CreateUnit(p,'e096',x,y,0),1,1)
+            call UnitApplyTimedLife(CreateUnit(p,'e097',x,y,0),1,1)
+            call UnitApplyTimedLife(CreateUnit(p,'e098',x,y,0),1,1)
+            call UnitApplyTimedLife(CreateUnit(p,'e099',x,y,0),1,1)
+            call FlushChildHashtable(h,id)
+            call PauseTimer(t)
+            call DestroyTimer(t)
+            call KillUnit(l__d)
+        endif
+    endif
+endif
+set p=null
+set l__d=null
+set t=null
+set u=null
+endfunction
+function MissleMoveSpiritBomb takes unit u, real x, real y, unit l__d, real speed, real angle, real dmg returns nothing
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+call SaveUnitHandle(h,id,0,u)
+call SaveUnitHandle(h,id,2,l__d)
+call SaveReal(h,id,3,angle)
+call SaveReal(h,id,4,speed)
+call SaveReal(h,id,5,dmg)
+call SaveReal(h,id,6,x)
+call SaveReal(h,id,7,y)
+call SaveReal(h,id,8,GetUnitScale(l__d)*0.05)
+call SaveReal(h,id,9,GetUnitFlyHeight(l__d)*0.05)
+call SaveReal(h,id,10,SR(GetUnitX(l__d),GetUnitY(l__d),x,y))
+call SetUnitInvulnerable(u,true)
+call PauseUnit(u,true)
 call TimerStart(t,0.03,true,function MissleMoveSpiritBomb2)
 set t=null
 endfunction
