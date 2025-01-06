@@ -36415,7 +36415,7 @@ if cond==0 then
     endif
     if(CurrentEventAttack)and nb>0 and GetUnitAbilityLevel(c,'A17K')>0 and GetUnitAbilityLevel(c,'A3WR')==0 then
         call UnitAddAbility(c,'A3WR')
-        call myCustomDamage(c,u,GetHeroAgi(c,true)*3 + GetUnitTotalDamage(c)*0.6,false,false,null,null,null)
+        call myCustomDamage(c,u,GetHeroAgi(c,true)*2 + GetUnitTotalDamage(c)*0.6,false,false,null,null,null)
         call UnitRemoveAbility(c,'A17K')
         call SetControlToUnit(u,u, 1, "stun")
         call DestroyEffect(AddSpecialEffectTarget("war3mapImported\\jiejinmao.mdx",c,"Right Hand"))
@@ -53704,9 +53704,11 @@ elseif SR(x,y,x1,y1)<32 and b==false and LoadBoolean(HH,GetHandleId(c),ANTITARGE
     set time=0
     call SaveBoolean(h,id,7,true)
     call SaveBoolean(h,id,14,true)
-elseif SR(x,y,x1,y1)<32 and b==false and LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==true then
+elseif SR(x,y,x1,y1)<32 and b==false and (LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==true or IsUnitHidden(c)==true ) then
     call SaveBoolean(h,id,7,true)
-    call SaveUnitHandle(HH,GetHandleId(c),REVERSE_TARGET,u)
+    if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==true then
+        call SaveUnitHandle(HH,GetHandleId(c),REVERSE_TARGET,u)
+    endif
 endif
 if count>min-1 and b==true then
     set n10=LoadUnitHandle(h,id,l__s+count-1)
@@ -79921,11 +79923,11 @@ call SetUnitFacing(l__d,a*bj_RADTODEG)
 set n=CreateUnit(p,0x65304D33,x,y,a*bj_RADTODEG)
 call UnitApplyTimedLife(n,'B000',0.15)
 else
+if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false and IsUnitHidden(c)==false then
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\SuperBuuvVolleyball2.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
 call KillSoundWhenDone(soundplay)
 call RemoveUnit(l__d)
-if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
 set n=CreateUnit(p,'h019',x,y,0)
 call UnitAddAbility(n,0x41304E57)
 call UnitApplyTimedLife(n,1,1)
@@ -79950,10 +79952,12 @@ else
 call SetUnitTimeScale(u,1)
 call SetUnitInvulnerable(u,false)
 call PauseUnit(u,false)
+if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==true then
 call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,false)
 call SaveUnitHandle(HH,GetHandleId(c),REVERSE_TARGET,u)
 call SetUnitFlyHeight(u,0,0)
 call SetUnitFlyHeight(c,0,0)
+endif
 call PauseTimer(t)
 call DestroyTimer(t)
 call FlushChildHashtable(h,id)
@@ -112799,7 +112803,7 @@ set u=null
 set t=null
 endfunction
 function VolteretaCond takes nothing returns boolean
-return GetSpellAbilityId()==0x41313747 and udg_B
+return GetSpellAbilityId()=='A17G' and udg_B
 endfunction
 function SinonQBonusRange takes nothing returns nothing
         local integer id = GetHandleId(GetExpiredTimer())
@@ -112820,30 +112824,21 @@ local real dist=LoadReal(h,id,100)
 local player p=GetOwningPlayer(u)
 local timer tt
 if dist>0 and udg_B==true and DU2==true then
-call SaveReal(h,id,100,dist-50)
-call SetUnitX(u,x1+50*Cos(a))
-call SetUnitY(u,y1+50*Sin(a))
+    call SaveReal(h,id,100,dist-50)
+    call SetUnitX(u,x1+50*Cos(a))
+    call SetUnitY(u,y1+50*Sin(a))
 else
-call FlushChildHashtable(h,id)
-call DestroyTimer(t)
-call PauseUnit(u,false)
-call SetUnitInvulnerable(u,false)
-call SetUnitTimeScale(u,1)
-call UnitAddAbilityTimed(u,2,'A17K')
-call SetUnitAttackRangeByIndex(u,0, 1200)
-set tt = CreateTimer()
-call SaveUnitHandle(h, GetHandleId(tt), CasterHash, u)
-call TimerStart(tt, 2.1, false, function SinonQBonusRange)
-set tt = null
-if GetUnitAbilityLevel(u, 'A17O')>0 then
-        if GetAbilityRemainingCooldown(GetUnitAbility(u, 'A17O'))>3 then
-                call StartAbilityCooldown(GetUnitAbility(u, 'A17O'), GetAbilityRemainingCooldown(GetUnitAbility(u, 'A17O'))-3)
-        else
-                if GetAbilityRemainingCooldown(GetUnitAbility(u, 'A17O'))>0.0 then
-                        call StartAbilityCooldown(GetUnitAbility(u, 'A17O'), 0.1)
-                endif
-        endif
-endif
+    call FlushChildHashtable(h,id)
+    call DestroyTimer(t)
+    call PauseUnit(u,false)
+    call SetUnitInvulnerable(u,false)
+    call SetUnitTimeScale(u,1)
+    call UnitAddAbilityTimed(u,2,'A17K')
+    call SetUnitAttackRangeByIndex(u,0, 1200)
+    set tt = CreateTimer()
+    call SaveUnitHandle(h, GetHandleId(tt), CasterHash, u)
+    call TimerStart(tt, 2.1, false, function SinonQBonusRange)
+    set tt = null
 endif
 set u=null
 set p=null
@@ -128768,7 +128763,7 @@ local integer id=GetHandleId(t)
 local unit u=LoadUnitHandle(h,id,0)
 local real x=GetUnitX(u)
 local real y=GetUnitY(u)
-local real dmg=0.5*LoadReal(h,GetHandleId(u),StringHash("shie1"))
+local real dmg=LoadReal(h,id,1)
 local player p=GetOwningPlayer(u)
 call GroupClear(G)
 call GroupEnumUnitsInRange(G,x,y,450,Base)
@@ -128789,6 +128784,8 @@ call SetSpecialEffectScale(EFF , 1.7)
 call SetSpecialEffectTimeScale(EFF , 1)
 call SetSpecialEffectAlphaTimed(EFF , 155 , 255 , 55 , 255 , 2)
 call GroupClear(G)
+call SaveReal(h,GetHandleId(u),StringHash("shie1"),0)
+call SaveReal(h,GetHandleId(u),StringHash("shie2"),0)
 call SaveReal(h,GetHandleId(u),StringHash("BroEtime"),9)
 call SetUnitInvulnerable(u,false)
 call PauseUnit(u,false)
@@ -128797,6 +128794,7 @@ call DestroyTimer(t)
 call FlushChildHashtable(h,id)
 set t=null
 set u=null
+set p=null
 endfunction
 function BrolyE2Cast takes nothing returns nothing
 local timer t=CreateTimer()
@@ -128804,9 +128802,11 @@ local integer id=GetHandleId(t)
 local unit u=GetTriggerUnit()
 local real x=GetUnitX(u)
 local real y=GetUnitY(u)
+local real dmg=0.5*LoadReal(h,GetHandleId(u),StringHash("shie1"))
 call SaveUnitHandle(h,id,0,u)
 call SetUnitInvulnerable(u,true)
 call PauseUnit(u,true)
+call SaveReal(h,id,1,dmg)
 call TimerStart(t,0.4,false,function BrolyE2Cast2)
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\BrolyE.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
@@ -128823,6 +128823,32 @@ endfunction
 function BrolyE1Cond takes nothing returns boolean
 return GetSpellAbilityId()=='A2DJ'
 endfunction
+function BrolyE2FastCast takes unit u, real dmg returns nothing
+local real x=GetUnitX(u)
+local real y=GetUnitY(u)
+local player p=GetOwningPlayer(u)
+call GroupClear(G)
+call GroupEnumUnitsInRange(G,x,y,450,Base)
+loop
+set E=FirstOfGroup(G)
+exitwhen E==null
+if Condition_Base(p,E)then
+call SetUnitAnimation(E,"death")
+call myCustomDamage(u,E,dmg,false,false,null,null,null)
+call SetControlToUnit(E,E,0.1*GetUnitAbilityLevel(u,'A3DJ'),"stun")
+call Push3(E,50,Atan2(GetUnitY(E)-y,GetUnitX(E)-x),500,"Abilities\\Weapons\\AncientProtectorMissile\\AncientProtectorMissile.mdl")
+endif
+call GroupRemoveUnit(G,E)
+endloop
+call GroupClear(G)
+set EFF=AddSpecialEffect("war3mapImported\\Rasengan1.mdx", x, y)
+call SetSpecialEffectZ(EFF , -130)
+call SetSpecialEffectScale(EFF , 1.7)
+call SetSpecialEffectTimeScale(EFF , 1)
+call SetSpecialEffectAlphaTimed(EFF , 155 , 255 , 55 , 255 , 2)
+set u=null
+set p=null
+endfunction
 function BrolyE1Cast2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
@@ -128833,6 +128859,9 @@ call SaveReal(h,GetHandleId(u),StringHash("BroEtime"),LoadReal(h,GetHandleId(u),
 endif
 else
 call UnitRemoveAbility(u,'A2DF')
+if LoadReal(h,GetHandleId(u),StringHash("shie1"))>0 then
+call BrolyE2FastCast(u,0.5*LoadReal(h,GetHandleId(u),StringHash("shie1")))
+endif
 call SaveReal(h,GetHandleId(u),StringHash("shie1"),0)
 call SaveReal(h,GetHandleId(u),StringHash("shie2"),0)
 call ShowAbility2('A3DJ',false)
@@ -200947,7 +200976,7 @@ function TobiramaQCast3 takes nothing returns nothing
         call SaveReal(HH,id,3,a2-0.095)
         if time<=0.075 then
             call SaveReal(HH,id,1,dist+350)
-            call TobiramaQMissles(CreateUnit(p,'e19C',x+35*Cos(a),y+35*Sin(a),a*bj_RADTODEG),75,a,dist,1.1,0.05,u,false,false)
+            call TobiramaQMissles(CreateUnit(p,'e19C',x+35*Cos(a),y+35*Sin(a),a*bj_RADTODEG),75,a,dist,1.1,0.05,u,false,true)
         elseif time>0.075 and time<=0.225 then
             call SaveReal(HH,id,1,dist+70)
             call TobiramaQMissles(CreateUnit(p,'e19C',x+35*Cos(a),y+35*Sin(a),a*bj_RADTODEG),75,a,dist,1.1,0.05,u,false,false)
@@ -201330,7 +201359,7 @@ function TobiramaECast3 takes nothing returns nothing
         call SetSpecialEffectScale(EFF , 1.8)
         call DestroyEffect(EFF)
         call RemoveEffect(effh,0.03,false,CreateTimer())
-        call SetControlToUnit(u,c,1,"stun")
+        call SetControlToUnit(u,c,1.5,"stun")
         call SetUnitTimeScale(u,1)
         call PauseTimer(t)
         call DestroyTimer(t)
