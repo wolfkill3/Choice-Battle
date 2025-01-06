@@ -31053,12 +31053,13 @@ call GroupEnumUnitsOfPlayer(G,Player(i),BuggedBool) //lvlbool
         call SaveInteger(HH,GetHandleId(Hero[i]),StringHash("VegetaDeath"),1)
         call SaveBoolean(HH,GetHandleId(Hero[i]),DoflaTHash,false)
         call SaveInteger(HH, GetHandleId(Hero[i]), StringHash("GaeDeargP_CD"), 1)
-                call StartAbilityCooldown(GetUnitAbility(Hero[i],'A1FP'),25)
-                call StartAbilityCooldown(GetUnitAbility(Hero[i],'BRLS'),40)
-                call StartAbilityCooldown(GetUnitAbility(Hero[i],'Ao60'),10)
-                call StartAbilityCooldown(GetUnitAbility(Hero[i],'A1HD'),7)
-                call UnitRemoveAbility(Hero[i],'ore3')
-                call UnitRemoveAbility(Hero[i],'OM17')
+        call StartAbilityCooldown(GetUnitAbility(Hero[i],'A1FP'),25)
+        call StartAbilityCooldown(GetUnitAbility(Hero[i],'BRLS'),40)
+        call StartAbilityCooldown(GetUnitAbility(Hero[i],'GKG1'),40)
+        call StartAbilityCooldown(GetUnitAbility(Hero[i],'Ao60'),10)
+        call StartAbilityCooldown(GetUnitAbility(Hero[i],'A1HD'),7)
+        call UnitRemoveAbility(Hero[i],'ore3')
+        call UnitRemoveAbility(Hero[i],'OM17')
         call SetUnitInvulnerableTimed(Hero[i],true,0.01)
         if FFAMode==false then
         call SetUnitInvulnerableTimed(Hero[i],false,1)
@@ -62467,43 +62468,56 @@ endfunction
 function MissleMoveSuperSpiritBomb3 takes nothing returns nothing
     local timer t=GetExpiredTimer()
     local integer id=GetHandleId(t)
-    local unit u=LoadUnitHandle(h,id,0)   
-    local real x=GetUnitX(c)
-    local real y=GetUnitY(c)
+    local unit u=LoadUnitHandle(h,id,0)
+    local unit l__d=LoadUnitHandle(h,id,2)
+    local real x=GetUnitX(l__d)
+    local real y=GetUnitY(l__d)
     local real a=LoadReal(h,id,3)
     local player p=GetOwningPlayer(u)
     local real time=LoadReal(h,id,11)
     local real dmg=LoadReal(h,id,5)
+    local real AoE=LoadReal(h,id,8)
     if time<1 then
-        if time==0.4 then
-            call SetUnitFlyHeight(c,1400,2000) 
-            set EFF=AddSpecialEffect("war3mapImported\\blue-guagnzhu-special.mdl",x,y)
-            call SetSpecialEffectScale(EFF , 1.3)
-            call SetSpecialEffectTimeScale(EFF, 2)
-            call RemoveEffect(EFF,0.5,true,CreateTimer())
-        endif
         call SaveReal(h,id,11,time+0.2)
-        set n=CreateUnit(p, 'd032', x, y, GetRandomInt(0, 360))
-        call SetUnitScale(n, 1.5, 2, 2)
-        call SetUnitVertexColor(n, 150, 150, 255, 255)
-        call SetUnitFlyHeight(n, GetUnitZ(c)+150, 0)
-        call MyRemoveUnit(n, 2.5)
-        set n=CreateUnit(p, 'd003', x, y, GetRandomInt(0, 360))
-        call SetUnitScale(n, 1, 2, 2)
-        call SetUnitVertexColor(n, 150, 150, 255, 255)
-        call SetUnitFlyHeight(n, GetUnitZ(c)+150, 0)
-        call MyRemoveUnit(n, 2.5)
-        call myCustomDamage(u,c,dmg*0.2,false,false,null,null,null) 
+        call SetUnitFlyHeight(l__d,GetUnitFlyHeight(l__d)-10,0)
+        call GroupEnumUnitsInRange(DG,x,y,AoE,Base)
+        loop
+            set E=FirstOfGroup(DG)
+            exitwhen E==null
+            if Condition_Base(p,E)then
+                call myCustomDamage(u,E,dmg*0.2,false,false,null,null,null)
+                call SetControlToUnit(u,E, .21, "heavystun")
+            endif
+            call GroupRemoveUnit(DG,E)
+        endloop
     else
-        call SetUnitFlyHeight(c,0,2200) 
-        call Push3(c,20,a,300,"0")
+        call GroupEnumUnitsInRange(DG,x,y,AoE,Base)
+        loop
+            set E=FirstOfGroup(DG)
+            exitwhen E==null
+            if Condition_Base(p,E)then
+                call myCustomDamage(u,E,dmg,false,false,null,null,null)
+                call SetControlToUnit(u,E, .21, "heavystun")
+            endif
+            call GroupRemoveUnit(DG,E)
+        endloop
+        set n=CreateUnit(p, 'e0C5', x, y, GetRandomInt(0, 360))
+        call SetUnitScale(n,2+GetUnitScale(GenkiDama),2+GetUnitScale(GenkiDama),2+GetUnitScale(GenkiDama))
+        call SetUnitFlyHeight(n, 0, 0)
+        call MyRemoveUnit(n, 2.5)
+        set n=CreateUnit(p, 'dH50', x, y, GetRandomInt(0, 360))
+		call SetUnitScale(n, 5+GetUnitScale(GenkiDama), 5+GetUnitScale(GenkiDama), 5+GetUnitScale(GenkiDama))
+		call SetUnitFlyHeight(n, 40, 0)
+		call MyRemoveUnit(n, 1.5)
+        call FlushChildHashtable(HH,GetHandleId(GenkiDama))
+        call RemoveUnit(l__d)
         call FlushChildHashtable(h,id)
         call PauseTimer(t)
         call DestroyTimer(t)
     endif
     set t=null
     set u=null
-    set c=null
+    set l__d=null
     set p=null
 endfunction
 function MissleMoveSuperSpiritBomb2 takes nothing returns nothing
@@ -62531,7 +62545,7 @@ local real time=LoadReal(h,id,11)
 local integer act=LoadInteger(h,id,12)
 if time<0.6 then
     if time==0.03 then
-        call SetUnitAnimationOffsetPercent(u,0.55)
+        call SetUnitAnimationOffsetPercent(u,0.61)
         call SetUnitTimeScale(u,2)
     endif
     call SetUnitInvulnerable(u,true)
@@ -62548,15 +62562,7 @@ else
             if speed<MaxSpeed then
                 call SaveReal(h,id,4,speed+1)
             endif
-            set hei=mh*cof+50
-            if hei<250 then
-                set n=CreateUnit(p,'e0T1',x,y,GetRandomReal(0,359))
-                call UnitApplyTimedLife(n,1,1)
-                call SetUnitScale(n,2+GetUnitScale(GenkiDama),2+GetUnitScale(GenkiDama),2+GetUnitScale(GenkiDama))
-                set n=CreateUnit(p,'e0MF',x,y,GetRandomReal(0,359))
-                call UnitApplyTimedLife(n,1,1)
-                call SetUnitScale(n,2+GetUnitScale(GenkiDama),2+GetUnitScale(GenkiDama),2+GetUnitScale(GenkiDama))
-            endif
+            set hei=mh*cof+100
             call SetUnitFlyHeight(l__d,hei,0)
             set x=x+speed*Cos(a)
             set y=y+speed*Sin(a)
@@ -62568,31 +62574,21 @@ else
             endif
             call SetUnitFacing(l__d,a*bj_RADTODEG)
         else
-            call GroupEnumUnitsInRange(DG,x,y,AoE,Base)
-            loop
-                set E=FirstOfGroup(DG)
-                exitwhen E==null
-                if Condition_Base(p,E)then
-                    call myCustomDamage(u,E,dmg,false,false,null,null,null)
-                    call SetControlToUnit(u,c, .21, "heavystun")
-                endif
-                call GroupRemoveUnit(DG,E)
-            endloop
             call ShakeCamera(0.5,20)
             // set soundplay=CreateSound("Sound\\Music\\mp3Music\\SpiritBomb.mp3",false,false,true,12700,12700,"")
             // call StartSound(soundplay)
             // call KillSoundWhenDone(soundplay)
-            call UnitApplyTimedLife(CreateUnit(p,'e04B',x,y,0),1,1)
-            call UnitApplyTimedLife(CreateUnit(p,'e095',x,y,0),1,1)
-            call UnitApplyTimedLife(CreateUnit(p,'e096',x,y,0),1,1)
-            call UnitApplyTimedLife(CreateUnit(p,'e097',x,y,0),1,1)
-            call UnitApplyTimedLife(CreateUnit(p,'e098',x,y,0),1,1)
-            call UnitApplyTimedLife(CreateUnit(p,'e099',x,y,0),1,1)
-            call FlushChildHashtable(h,id)
+            set n=CreateUnit(p,'e0MF',x,y,GetRandomReal(0,359))
+            call UnitApplyTimedLife(n,1,2)
+            call SetUnitScale(n,2+GetUnitScale(GenkiDama),2+GetUnitScale(GenkiDama),2+GetUnitScale(GenkiDama))
+            set n=CreateUnit(p,'e0VF',x,y,GetRandomReal(0,359))
+            call UnitApplyTimedLife(n,1,2)
+            call SetUnitTimeScale(n,0.3)
+            call SetUnitScale(n,1+GetUnitScale(GenkiDama),1+GetUnitScale(GenkiDama),1+GetUnitScale(GenkiDama))
+            call SetUnitFlyHeight(n,400,0)
             call PauseTimer(t)
-            call DestroyTimer(t)
-            call FlushChildHashtable(HH,GetHandleId(GenkiDama))
-            call RemoveUnit(l__d)
+            call SaveReal(h,id,11,0)
+            call TimerStart(t,0.2,true,function MissleMoveSuperSpiritBomb3)
         endif
     endif
 endif
@@ -62650,6 +62646,11 @@ function MissleMoveSpiritBomb3 takes nothing returns nothing
         call MyRemoveUnit(n, 2.5)
         call myCustomDamage(u,c,dmg*0.2,false,false,null,null,null) 
     else
+        call myCustomDamage(u,c,dmg,false,false,null,null,null) 
+        set n=CreateUnit(p, 'e0C5', x, y, GetRandomInt(0, 360))
+        call SetUnitScale(n, 2, 2, 2)
+        call SetUnitFlyHeight(n, GetUnitZ(c), 0)
+        call MyRemoveUnit(n, 2.5)
         call SetUnitFlyHeight(c,0,2200) 
         call Push3(c,20,a,300,"0")
         call FlushChildHashtable(h,id)
@@ -62737,33 +62738,52 @@ else
             call UnitApplyTimedLife(n,1,0.6)
             call SetUnitTimeScale(n,2)
         else
-            call myCustomDamage(u,c,dmg,false,false,null,null,null) 
-            call SetControlToUnit(u,c, 1.2, "heavystun")
-            call SaveReal(h,id,3,Atan2(y1-y2,x1-x2))
-            set n=CreateUnit(p,'e168',x,y,GetRandomReal(0,359))
-            call SetUnitModel(n,"DantesExplosion1R.mdx")
-            call UnitApplyTimedLife(n,1,0.03)
-            call SetUnitScale(n,0.7,0.7,0.7)
-            call SetUnitVertexColor(n,255,255,255,125)
-            call SetUnitTimeScale(n,1.3)
-            call RemoveEffect(AddSpecialEffectTarget("BlueChaos.mdx",c,"chest"), 0.9, true, CreateTimer())
-            
-            call ShakeCamera(0.5,10)
-            // set soundplay=CreateSound("Sound\\Music\\mp3Music\\SpiritBomb.mp3",false,false,true,12700,12700,"")
-            // call StartSound(soundplay)
-            // call KillSoundWhenDone(soundplay)
-            // call UnitApplyTimedLife(CreateUnit(p,'e04B',x,y,0),1,1)
-            // call UnitApplyTimedLife(CreateUnit(p,'e095',x,y,0),1,1)
-            // call UnitApplyTimedLife(CreateUnit(p,'e096',x,y,0),1,1)
-            // call UnitApplyTimedLife(CreateUnit(p,'e097',x,y,0),1,1)
-            // call UnitApplyTimedLife(CreateUnit(p,'e098',x,y,0),1,1)
-            // call UnitApplyTimedLife(CreateUnit(p,'e099',x,y,0),1,1)
-            call FlushChildHashtable(HH,GetHandleId(GenkiDama))
-            call RemoveUnit(l__d)
-            call PauseTimer(t)
-            call SaveReal(h,id,11,0)
-            call TimerStart(t,0.2,true,function MissleMoveSpiritBomb3)
-            // call BJDebugMsg("lol2")
+            if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
+                call SetControlToUnit(u,c, 1.2, "heavystun")
+                call SaveReal(h,id,3,Atan2(y1-y2,x1-x2))
+                set n=CreateUnit(p,'e168',x,y,GetRandomReal(0,359))
+                call SetUnitModel(n,"DantesExplosion1R.mdx")
+                call UnitApplyTimedLife(n,1,0.03)
+                call SetUnitScale(n,0.7,0.7,0.7)
+                call SetUnitVertexColor(n,255,255,255,125)
+                call SetUnitTimeScale(n,1.3)
+                call RemoveEffect(AddSpecialEffectTarget("BlueChaos.mdx",c,"chest"), 0.9, true, CreateTimer())
+                
+                call ShakeCamera(0.5,10)
+                // set soundplay=CreateSound("Sound\\Music\\mp3Music\\SpiritBomb.mp3",false,false,true,12700,12700,"")
+                // call StartSound(soundplay)
+                // call KillSoundWhenDone(soundplay)
+                // call UnitApplyTimedLife(CreateUnit(p,'e04B',x,y,0),1,1)
+                // call UnitApplyTimedLife(CreateUnit(p,'e095',x,y,0),1,1)
+                // call UnitApplyTimedLife(CreateUnit(p,'e096',x,y,0),1,1)
+                // call UnitApplyTimedLife(CreateUnit(p,'e097',x,y,0),1,1)
+                // call UnitApplyTimedLife(CreateUnit(p,'e098',x,y,0),1,1)
+                // call UnitApplyTimedLife(CreateUnit(p,'e099',x,y,0),1,1)
+                call FlushChildHashtable(HH,GetHandleId(GenkiDama))
+                call RemoveUnit(l__d)
+                call PauseTimer(t)
+                call SaveReal(h,id,11,0)
+                call TimerStart(t,0.2,true,function MissleMoveSpiritBomb3)
+                // call BJDebugMsg("lol2")
+            else
+                call FlushChildHashtable(HH,GetHandleId(GenkiDama))
+                call RemoveUnit(l__d)
+                set n=CreateUnit(p,'e168',x,y,GetRandomReal(0,359))
+                call SetUnitModel(n,"DantesExplosion1R.mdx")
+                call UnitApplyTimedLife(n,1,0.03)
+                call SetUnitScale(n,0.7,0.7,0.7)
+                call SetUnitVertexColor(n,255,255,255,125)
+                call SetUnitTimeScale(n,1.3)
+                call SetUnitFlyHeight(u,0,0)
+                call PauseTimer(t)
+                call DestroyTimer(t)
+                call SetUnitVertexColor(u,255,255,255,255)
+                call FlushChildHashtable(HH,id)
+                call PauseUnit(u,false)
+                call SetUnitInvulnerable(u,false)
+                call SaveUnitHandle(HH,GetHandleId(c),REVERSE_TARGET,u)
+                call SetUnitTimeScale(u,1)
+            endif
         endif
     endif
 endif
@@ -62810,7 +62830,7 @@ endif
 if GetSpellAbilityId()=='GKG4' then
     call SaveInteger(HH,GetHandleId(GenkiDama),0,1)
     call SetUnitFacing(Goku,AU(Goku,c)*bj_RADTODEG)
-    call MissleMoveSpiritBomb(Goku,c,GenkiDama,40,GetUnitFlyHeight(GenkiDama),50*0.1*GetUnitScale(GenkiDama)*GetHeroStr(Goku,true))
+    call MissleMoveSpiritBomb(Goku,c,GenkiDama,45,GetUnitFlyHeight(GenkiDama),50*0.1*GetUnitScale(GenkiDama)*GetHeroStr(Goku,true))
     if (GetLocalPlayer()==p or GetPlayerAlliance(p,GetLocalPlayer(),ALLIANCE_SHARED_CONTROL)) and GetUnitSelected(p)==u then
         call ClearSelection()
         call SelectUnit(Goku,true)
@@ -62917,6 +62937,7 @@ else
     call SetUnitTimeScale(u,1)
     if LoadInteger(HH,GetHandleId(GenkiDama),0)==0 then 
         call SetUnitAnimation(u,"stand")
+        call StartAbilityCooldown(GetUnitAbility(u,'GKG1'),30)
         call FlushChildHashtable(HH,GetHandleId(GenkiDama))
         if GetUnitScale(GenkiDama)>0.1 then
             // set n=CreateUnit(p,'e04B',x,y,0)
@@ -62937,12 +62958,14 @@ else
             // set n=CreateUnit(p,'e099',x,y,0)
             // call SetUnitFlyHeight(n,GetUnitFlyHeight(GenkiDama),0)
             // call UnitApplyTimedLife(n,1,1)
-            call MyRemoveUnit(GenkiDama,1)
+            call KillUnit(GenkiDama)
+            call MyRemoveUnit(GenkiDama,2.5)
         else
             call RemoveUnit(GenkiDama)
         endif
+    else
+        call StartAbilityCooldown(GetUnitAbility(u,'GKG1'),60)
     endif
-    call StartAbilityCooldown(GetUnitAbility(u,'GKG1'),40)
     call RemoveUnit(dummy)
     call FlushChildHashtable(h,id)
     call PauseTimer(t)
@@ -101842,19 +101865,19 @@ call SetUnitTimeScale(u,0.3)
 call PauseUnit(u,true)
 call SetUnitInvulnerable(u,true)
 call SetUnitAnimation(u,"Spell Channel One")
-set n=CreateUnit(p,0x65305647,x,y,GetRandomReal(0,359))
+set n=CreateUnit(p,'e0VG',x,y,GetRandomReal(0,359))
 call UnitApplyTimedLife(n,1,3)
 call SetUnitTimeScale(n,2)
 call UnitScale(n,0.1,8,2)
-set n=CreateUnit(p,0x65305646,x,y,GetRandomReal(0,359))
+set n=CreateUnit(p,'e0VF',x,y,GetRandomReal(0,359))
 call UnitApplyTimedLife(n,1,3)
 call SetUnitTimeScale(n,0.15)
 call SetUnitFlyHeight(n,400,0)
-set n=CreateUnit(p,0x65305646,x,y,GetRandomReal(0,359))
+set n=CreateUnit(p,'e0VF',x,y,GetRandomReal(0,359))
 call UnitApplyTimedLife(n,1,3)
 call SetUnitTimeScale(n,0.15)
 call SetUnitFlyHeight(n,800,0)
-set n=CreateUnit(p,0x65305646,x,y,GetRandomReal(0,359))
+set n=CreateUnit(p,'e0VF',x,y,GetRandomReal(0,359))
 call UnitApplyTimedLife(n,1,3)
 call SetUnitTimeScale(n,0.15)
 call SetUnitFlyHeight(n,1200,0)
