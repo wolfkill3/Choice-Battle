@@ -62943,7 +62943,7 @@ if time<100 and GetUnitState(u,UNIT_STATE_LIFE)>0.405 and LoadBoolean(HH,GetHand
             set n=CreateUnit(p,'e0PB',x,y,0)
             call SetUnitScale(n,GetUnitScale(GenkiDama)*1.2,GetUnitScale(GenkiDama)*1.2,GetUnitScale(GenkiDama)*1.2)
             call SetUnitFlyHeight(n,GetUnitFlyHeight(GenkiDama),0)
-            call UnitApplyTimedLife(n,1,0.1)
+            call MyRemoveUnit(n,0.1)
         endif
     endif
     if time>0.3 and GetUnitScale(GenkiDama)>0.2 and GetUnitScale(GenkiDama)<0.5 and GetUnitAbilityLevel(dummy,'GKG4')==0 then
