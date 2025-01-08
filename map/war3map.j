@@ -34845,6 +34845,15 @@ if GetUnitAbilityLevel(u,'A14J')>0  and nb>200 then
     call newBlockDamage(u)
     set nb=0
 endif
+if GetUnitAbilityLevel(u,'A24J')>0  and nb>200 then
+    if c!=UltimateDamage then
+        call SaveUnitHandle(HH,uid,REVERSE_TARGET,c)
+    else
+        call SaveUnitHandle(HH,uid,REVERSE_TARGET,Hero[idc])
+    endif
+    call newBlockDamage(u)
+    set nb=0
+endif
 if nb>100 and LoadBoolean(HH,GetHandleId(u),StringHash("MadaraG"))==true then
     call SaveBoolean(HH,GetHandleId(u),StringHash("MadaraG"),false)
     call SaveReal(HH,GetHandleId(u),StringHash("MadaraGfacing"),a2*bj_RADTODEG)
@@ -63064,6 +63073,185 @@ call TriggerAddAction(t,function SpiritBombCast)
 call TriggerAddCondition(t,Condition(function SpiritBombCond))
 set t=null
 endfunction
+function BreakerEnergyWaveCond takes nothing returns boolean
+return GetSpellAbilityId()=='GKG6' and udg_B==true
+endfunction
+function BreakerEnergyWaveCast3 takes nothing returns nothing
+local timer t=GetExpiredTimer()
+local integer id=GetHandleId(t)
+local unit u=LoadUnitHandle(HH,id,0)
+local unit c=LoadUnitHandle(HH,id,1)
+local real time=LoadReal(HH,id,2)
+local real dist=LoadReal(HH,id,3)
+local unit l__d=LoadUnitHandle(HH,id,4)
+local real x=GetUnitX(u)
+local real y=GetUnitY(u)
+local real x1=GetUnitX(c)
+local real y1=GetUnitY(c)
+local real x2=GetUnitX(l__d)
+local real y2=GetUnitY(l__d)
+local real a=Atan2(y1-y,x1-x)
+local real a2=LoadReal(HH,id,5)
+local player p=GetOwningPlayer(u)
+local group g=LoadGroupHandle(HH,id,6)
+local real dmg=3*GetHeroStr(u,true)+(GetUnitState(u,UNIT_STATE_MAX_LIFE)-GetUnitState(u,UNIT_STATE_LIFE))*0.01*(20+GetHeroLevel(u))
+local integer i=1
+call SaveReal(HH,id,2,time+0.02)
+if time<1 then
+    call SetUnitFacingInstant(u,a*bj_RADTODEG)
+    call PauseUnit(u,true)
+    call SetUnitInvulnerable(u,true)
+    if time==9.98 then
+        call SaveReal(HH,id,5,a)
+        call SetUnitXY_1(l__d,x+40*Cos(a),y+40*Sin(a), false)
+        call SetUnitFacingInstant(l__d,a*bj_RADTODEG)
+        call SetUnitVertexColor(l__d,255,255,255,255)
+    endif
+else
+    if dist<2000 then
+        call SaveReal(HH,id,3,dist+40)
+        set x2=x2+40*Cos(a2)
+        set y2=y2+40*Sin(a2)
+        set n=CreateUnit(p,'e0PT',x2,y2,a2*bj_RADTODEG)
+        call UnitApplyTimedLife(n,1,1+dist/2250)
+        call SetUnitScale(n,0.6,0.6,0.6)
+        call SetUnitVertexColor(n,255,220,40,50)
+        call SetUnitTimeScale(n,7)
+        if IsTerrainPathable(GetUnitX(l__d),GetUnitY(l__d),PATHING_TYPE_FLYABILITY)==false then
+            call SetUnitXY_1(l__d,x2,y2, false)
+        endif
+        call GroupEnumUnitsInRange(g,x2,y2,250,Base)
+        set idg=GetHandleId(g)
+        loop
+        set E=FirstOfGroup(g)
+        set ide=GetHandleId(E)
+        if Condition_Base(p,E)and E!=LoadUnitHandle(HH,idg,ide)then
+        call myCustomDamage(u,E,dmg,false,false,null,null,null)
+        call SaveUnitHandle(HH,idg,ide,E)
+        endif
+        call GroupRemoveUnit(g,E)
+        exitwhen E==null
+        endloop
+        call PauseUnit(u,true)
+        call SetUnitInvulnerable(u,true)
+    else
+        call RemoveUnit(l__d)
+        call SetUnitAnimation(u,"stand")
+        call PauseTimer(t)
+        call DestroyTimer(t)
+        call UnitRemoveAbility(u,'A0BX')
+        call SetUnitTimeScale(u,1)
+        call FlushChildHashtable(HH,GetHandleId(g))
+        call DestroyGroup(g)
+        call SetUnitPathing(u,true)
+        call PauseUnit(u,false)
+        call FlushChildHashtable(HH,id)
+        call SetUnitInvulnerable(u,false)
+    endif
+endif
+set p=null
+set u=null
+set c=null
+set l__d=null
+set g=null
+set t=null
+endfunction
+function BreakerEnergyWaveCast2 takes nothing returns nothing
+local timer t=GetExpiredTimer()
+local integer id=GetHandleId(t)
+local unit u=LoadUnitHandle(HH,id,0)
+local real time=LoadReal(HH,id,2)
+local real x=GetUnitX(u)
+local real y=GetUnitY(u)
+local integer idu=GetHandleId(u)
+local unit c=LoadUnitHandle(HH,idu,REVERSE_TARGET)
+local player p=GetOwningPlayer(u)
+if time<2 and c==null then
+call PauseUnit(u,true)
+if LoadBoolean(HH,GetHandleId(u),TARGET_ABILITY)==false then
+call SaveReal(HH,id,2,time+0.04)
+endif
+else
+call UnitMakeAbilityPermanent(u,false,'A24J')
+call UnitRemoveAbility(u,'A24J')
+call UnitRemoveBuffs(u,false,true)
+call SetUnitTimeScale(u,1)
+call SaveBoolean(HH,idu,ANTITARGET_ABILITY,false)
+if c!=null then
+call SaveUnitHandle(HH,id,1,c)
+call RemoveSavedHandle(HH,idu,REVERSE_TARGET)
+call PauseTimer(t)
+call SaveReal(HH,id,2,0)
+set soundplay=CreateSound("Sound\\Music\\mp3Music\\GokuYouFool2.mp3",false,false,true,12700,12700,"")
+call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
+call SetUnitAnimationByIndex(u,179)
+call PauseUnit(u,true)
+call SetUnitInvulnerable(u,true)
+call SaveGroupHandle(HH,id,6,CreateGroup())
+set n=CreateUnit(p,'e0PS',x,y,0)
+call SetUnitVertexColor(n,0,0,0,0)
+call SaveUnitHandle(HH,id,4,n)
+call TimerStart(t,0.02,true,function BreakerEnergyWaveCast3)
+else
+call SetUnitAnimation(u,"stand")
+call PauseUnit(u,false)
+call PauseTimer(t)
+call DestroyTimer(t)
+call FlushChildHashtable(HH,id)
+endif
+endif
+set c=null
+set u=null
+set p=null
+set t=null
+endfunction
+function BreakerEnergyWaveCast takes nothing returns nothing
+local unit u=GetTriggerUnit()
+local timer t=CreateTimer()
+local real x=GetUnitX(u)
+local real y=GetUnitY(u)
+local integer id=GetHandleId(t)
+local player p=GetOwningPlayer(u)
+call SaveUnitHandle(HH,id,0,u)
+call SaveReal(HH,id,2,0)
+call UnitAddAbility(u,'A24J')
+call UnitMakeAbilityPermanent(u,true,'A24J')
+call PauseUnit(u,true)
+call SetUnitAnimationByIndex(u,185)
+set EFF=AddSpecialEffect("Yellow--zhendi.mdl", x, y)
+call SetSpecialEffectTimeScale(EFF , 0.5)
+call SetSpecialEffectScale(EFF , 3)
+call DestroyEffect(EFF)
+set EFF=AddSpecialEffect("AuraExplYellow.mdl", x, y)
+call SetSpecialEffectTimeScale(EFF , 0.5)
+call SetSpecialEffectScale(EFF , 3)
+call DestroyEffect(EFF)
+set EFF = AddSpecialEffect("Hashirama\\SmokeFuzzy.mdl",x, y)
+call SetSpecialEffectScale(EFF, 1.6)
+call SetSpecialEffectTimeScale(EFF , 1.6)
+call DestroyEffect(EFF)
+set soundplay=CreateSound("Sound\\Music\\mp3Music\\GokuYouFool1.mp3",false,false,true,12700,12700,"")
+call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
+call SaveBoolean(HH,GetHandleId(u),ANTITARGET_ABILITY,true)
+call TimerStart(t,0.04,true,function BreakerEnergyWaveCast2)
+set u=null
+set p=null
+set t=null
+endfunction
+function InitBreakerEnergyWave takes nothing returns nothing
+local trigger t=CreateTrigger()
+local integer i=0
+loop
+call TriggerRegisterPlayerUnitEvent(t,Player(i),EVENT_PLAYER_UNIT_SPELL_EFFECT,null)
+set i=i+1
+exitwhen i>=bj_MAX_PLAYER_SLOTS
+endloop
+call TriggerAddAction(t,function BreakerEnergyWaveCast)
+call TriggerAddCondition(t,Condition(function BreakerEnergyWaveCond))
+set t=null
+endfunction
 function CondKamehameha2 takes nothing returns boolean
 return GetSpellAbilityId()=='GKQ1' and udg_B==true
 endfunction
@@ -90501,7 +90689,7 @@ call SaveGroupHandle(h,id,12,CreateGroup())
 call SaveReal(h,id,13,550)
 call CameraSetTargetNoiseEx(3*2.,3*Pow(10,2),true)
 call CameraSetSourceNoiseEx(3*2.,3*Pow(10,2),true)
-call SaveUnitHandle(h,id,7,CreateUnit(p,0x65305053,x+40*Cos(a),y+40*Sin(a),a*bj_RADTODEG))
+call SaveUnitHandle(h,id,7,CreateUnit(p,'e0PS',x+40*Cos(a),y+40*Sin(a),a*bj_RADTODEG))
 if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\FinalKamehamehaCharges.mp3",false,false,true,12700,12700,"")
 else
@@ -208058,6 +208246,7 @@ call GrandChariotInit()
 call PowerUpGoku()
 call DragonFistInit()
 call InitSpiritBomb()
+call InitBreakerEnergyWave()
 call GenkiDummyAbilsInit()
 call Kamehameha2Init()
 call GokuMeteorSmashInit()
