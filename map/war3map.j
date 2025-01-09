@@ -2295,33 +2295,33 @@ local unit u
 local integer unitID
 local trigger t
 local real life
-set u=CreateUnit(p,0x48303046,13777.5,-5323.3,246.145)
+set u=CreateUnit(p,'H00F',13777.5,-5323.3,246.145)
 call SetUnitState(u,UNIT_STATE_MANA,0)
-set u=CreateUnit(p,0x68303450,13950.1,-5548.0,150.620)
+set u=CreateUnit(p,'h04P',13950.1,-5548.0,150.620)
 call SetUnitState(u,UNIT_STATE_MANA,0)
-set u=CreateUnit(p,0x48303046,13775.5,-5470.8,97.111)
+set u=CreateUnit(p,'H00F',13775.5,-5470.8,97.111)
 call SetUnitState(u,UNIT_STATE_MANA,0)
-set u=CreateUnit(p,0x48303046,13792.7,-5580.6,140.432)
+set u=CreateUnit(p,'H00F',13792.7,-5580.6,140.432)
 call SetUnitState(u,UNIT_STATE_MANA,0)
-set u=CreateUnit(p,0x48303046,13928.9,-5581.9,354.210)
+set u=CreateUnit(p,'H00F',13928.9,-5581.9,354.210)
 call SetUnitState(u,UNIT_STATE_MANA,0)
-set u=CreateUnit(p,0x48303046,14028.9,-5563.3,46.276)
+set u=CreateUnit(p,'H00F',14028.9,-5563.3,46.276)
 call SetUnitState(u,UNIT_STATE_MANA,0)
-set u=CreateUnit(p,0x48303046,13988.7,-5369.4,16.139)
+set u=CreateUnit(p,'H00F',13988.7,-5369.4,16.139)
 call SetUnitState(u,UNIT_STATE_MANA,0)
-set u=CreateUnit(p,0x48303046,13891.4,-5306.0,129.610)
+set u=CreateUnit(p,'H00F',13891.4,-5306.0,129.610)
 call SetUnitState(u,UNIT_STATE_MANA,0)
-set u=CreateUnit(p,0x48303046,13955.9,-5447.9,136.081)
+set u=CreateUnit(p,'H00F',13955.9,-5447.9,136.081)
 call SetUnitState(u,UNIT_STATE_MANA,0)
-set u=CreateUnit(p,0x48303046,13844.9,-5470.8,167.876)
+set u=CreateUnit(p,'H00F',13844.9,-5470.8,167.876)
 call SetUnitState(u,UNIT_STATE_MANA,0)
-set u=CreateUnit(p,0x48303046,13846.8,-5367.3,246.145)
+set u=CreateUnit(p,'H00F',13846.8,-5367.3,246.145)
 call SetUnitState(u,UNIT_STATE_MANA,0)
-set u=CreateUnit(p,0x48303046,13909.7,-5499.4,246.145)
+set u=CreateUnit(p,'H00F',13909.7,-5499.4,246.145)
 call SetUnitState(u,UNIT_STATE_MANA,0)
-set u=CreateUnit(p,0x48303046,13845.3,-5601.5,246.145)
+set u=CreateUnit(p,'H00F',13845.3,-5601.5,246.145)
 call SetUnitState(u,UNIT_STATE_MANA,0)
-set u=CreateUnit(p,0x48303046,13736.6,-5533.6,246.145)
+set u=CreateUnit(p,'H00F',13736.6,-5533.6,246.145)
 call SetUnitState(u,UNIT_STATE_MANA,0)
 set u=null
 set p=null
@@ -5609,7 +5609,7 @@ function Trig_test2_Condition takes nothing returns boolean
 return ((udg_test==false and GetPlayerId(GetTriggerPlayer())==0 and round==1 and udg_B==false) or (GetPlayerId(GetTriggerPlayer())==10 and udg_test==false) or (GetPlayerId(GetTriggerPlayer())==11 and udg_test==false)) and ValidHLC()==false
 endfunction
 function BoolMH takes nothing returns boolean
-return GetUnitTypeId(GetFilterUnit())!=0x68746F77
+return GetUnitTypeId(GetFilterUnit())!='htow'
 endfunction
 
 function DamageAoeOneTime takes unit damager,real x0,real y0,real range,real damage,group gr1 returns nothing
@@ -9119,17 +9119,17 @@ set score[65]='I01D'
 set gear[65]=5000
 set score[66]='I01E'
 set gear[66]=10000
-set score[67]=0x4930304C
+set score[67]='I00L'
 set gear[67]=900
-set score[68]=0x4930304D
+set score[68]='I00M'
 set gear[68]=1800
-set score[69]=0x4930304E
+set score[69]='I00N'
 set gear[69]=2700
-set score[70]=0x4930304F
+set score[70]='I00O'
 set gear[70]=3600
-set score[71]=0x49303050
+set score[71]='I00P'
 set gear[71]=5000
-set score[72]=0x49303051
+set score[72]='I00Q'
 set gear[72]=10000
 set score[73]='I007'
 set gear[73]=900
@@ -9143,29 +9143,29 @@ set score[77]='I00C'
 set gear[77]=5000
 set score[78]='I00D'
 set gear[78]=10000
-set score[79]=0x49303046
+set score[79]='I00F'
 set gear[79]=900
-set score[80]=0x49303047
+set score[80]='I00G'
 set gear[80]=1800
-set score[81]=0x49303048
+set score[81]='I00H'
 set gear[81]=2700
-set score[82]=0x49303049
+set score[82]='I00I'
 set gear[82]=3600
-set score[83]=0x4930304A
+set score[83]='I00J'
 set gear[83]=5000
 set score[84]='I00D'
 set gear[84]=10000
-set score[85]=0x49303052
+set score[85]='I00R'
 set gear[85]=900
-set score[86]=0x49303053
+set score[86]='I00S'
 set gear[86]=1800
-set score[87]=0x49303054
+set score[87]='I00T'
 set gear[87]=2700
-set score[88]=0x49303055
+set score[88]='I00U'
 set gear[88]=3600
-set score[89]=0x49303056
+set score[89]='I00V'
 set gear[89]=5000
-set score[90]=0x49303057
+set score[90]='I00W'
 set gear[90]=10000
 set score[91]='I032'
 set gear[91]=1000
@@ -9245,23 +9245,23 @@ set score[127]='I03O'
 set gear[127]=10800
 set score[128]='I042'
 set gear[128]=8800
-set score[128]=0x49303433
+set score[128]='I043'
 set gear[128]=10800
-set score[129]=0x49303434
+set score[129]='I044'
 set gear[129]=10800
 set score[1300]='I045'
 set gear[1300]=0
-set score[131]=0x49303438
+set score[131]='I048'
 set gear[131]=12000
-set score[132]=0x49303439
+set score[132]='I049'
 set gear[132]=1500
-set score[133]=0x49303441
+set score[133]='I04A'
 set gear[133]=2500
-set score[134]=0x49303442
+set score[134]='I04B'
 set gear[134]=3500
-set score[135]=0x49303443
+set score[135]='I04C'
 set gear[135]=4500
-set score[136]=0x49303444
+set score[136]='I04D'
 set gear[136]=5500
 set score[137]='I04E'
 set gear[137]=6500
@@ -9271,17 +9271,17 @@ set score[139]='I04H'
 set gear[139]=1500
 set score[140]='I04I'
 set gear[140]=3000
-set score[141]=0x4930344D
+set score[141]='I04M'
 set gear[141]=1200
-set score[142]=0x4930344E
+set score[142]='I04N'
 set gear[142]=2200
-set score[143]=0x4930344F
+set score[143]='I04O'
 set gear[143]=3200
-set score[144]=0x49303450
+set score[144]='I04P'
 set gear[144]=4200
-set score[145]=0x49303451
+set score[145]='I04Q'
 set gear[145]=5200
-set score[146]=0x49303452
+set score[146]='I04R'
 set gear[146]=9200
 set score[147]='I05O'
 set gear[147]=1000
@@ -14653,7 +14653,7 @@ call GroupEnumUnitsInRange(G,0,0,99999999,null)
 loop
 set E=FirstOfGroup(G)
 exitwhen E==null
-if GetUnitTypeId(E)==0x68746F77 then
+if GetUnitTypeId(E)=='htow' then
 call SetUnitVertexColor(E,255,255,255,0)
 endif
 call GroupRemoveUnit(G,E)
@@ -18698,7 +18698,7 @@ call TriggerAddCondition(gg_trg_Set_Ability,Condition(function Trig_Set_Ability_
 call TriggerAddAction(gg_trg_Set_Ability,function Trig_Set_Ability_Actions)
 endfunction
 function Trig_UltimateItems_Conditions takes nothing returns boolean
-return (GetItemPlayer(GetManipulatedItem())==Player(15) or GetItemPlayer(GetManipulatedItem())==GetOwningPlayer(GetTriggerUnit())) and (UnitHasItemOfTypeBJ(GetTriggerUnit(),0x49303658)or UnitHasItemOfTypeBJ(GetTriggerUnit(),'I06W')or UnitHasItemOfTypeBJ(GetTriggerUnit(),0x4930365a)or UnitHasItemOfTypeBJ(GetTriggerUnit(),'I01F')or UnitHasItemOfTypeBJ(GetTriggerUnit(),'I02V')or UnitHasItemOfTypeBJ(GetTriggerUnit(),'I03Y')or UnitHasItemOfTypeBJ(GetTriggerUnit(),'I05H') or UnitHasItemOfTypeBJ(GetTriggerUnit(),'I04V')or UnitHasItemOfTypeBJ(GetTriggerUnit(),0x49303433)or UnitHasItemOfTypeBJ(GetTriggerUnit(),0x49303439)or UnitHasItemOfTypeBJ(GetTriggerUnit(),'I04E')or UnitHasItemOfTypeBJ(GetTriggerUnit(),'I02V')or UnitHasItemOfTypeBJ(GetTriggerUnit(),'I03A')or UnitHasItemOfTypeBJ(GetTriggerUnit(),'I01F')or UnitHasItemOfTypeBJ(GetTriggerUnit(),'I04T')or UnitHasItemOfTypeBJ(GetTriggerUnit(),'I00D')or UnitHasItemOfTypeBJ(GetTriggerUnit(),'I06M') or UnitHasItemOfTypeBJ(GetTriggerUnit(),'I066') or UnitHasItemOfTypeBJ(GetTriggerUnit(),'I01M') or UnitHasItemOfTypeBJ(GetTriggerUnit(),'I04F')or UnitHasItemOfTypeBJ(GetTriggerUnit(),'I02T')or UnitHasItemOfTypeBJ(GetTriggerUnit(),'I02S')or UnitHasItemOfTypeBJ(GetTriggerUnit(),'I02R')or UnitHasItemOfTypeBJ(GetTriggerUnit(),0x49303436)or UnitHasItemOfTypeBJ(GetTriggerUnit(),'I042')or UnitHasItemOfTypeBJ(GetTriggerUnit(),'I040')or UnitHasItemOfTypeBJ(GetTriggerUnit(),'I03Q')or UnitHasItemOfTypeBJ(GetTriggerUnit(),0x49303350)or UnitHasItemOfTypeBJ(GetTriggerUnit(),'I03R')or UnitHasItemOfTypeBJ(GetTriggerUnit(),'I13R')or UnitHasItemOfTypeBJ(GetTriggerUnit(),'I03L') or UnitHasItemOfTypeBJ(GetTriggerUnit(),'I02K')or UnitHasItemOfTypeBJ(GetTriggerUnit(),'I02J')or UnitHasItemOfTypeBJ(GetTriggerUnit(),'I018')or UnitHasItemOfTypeBJ(GetTriggerUnit(),'I03A')or UnitHasItemOfTypeBJ(GetTriggerUnit(),'I037')or UnitHasItemOfTypeBJ(GetTriggerUnit(),'ISDi')or UnitHasItemOfTypeBJ(GetTriggerUnit(),'I02W')or UnitHasItemOfTypeBJ(GetTriggerUnit(),'I031')or UnitHasItemOfTypeBJ(GetTriggerUnit(),'I036')or UnitHasItemOfTypeBJ(GetTriggerUnit(),'I050')or UnitHasItemOfTypeBJ(GetTriggerUnit(),'IGDi')or UnitHasItemOfTypeBJ(GetTriggerUnit(),'I01S')or UnitHasItemOfTypeBJ(GetTriggerUnit(),'I03F')or UnitHasItemOfTypeBJ(GetTriggerUnit(),'IMDi')or UnitHasItemOfTypeBJ(GetTriggerUnit(),'ISTi') or UnitHasItemOfTypeBJ(GetTriggerUnit(),'I1S4') or UnitHasItemOfTypeBJ(GetTriggerUnit(),'IHYi') or UnitHasItemOfTypeBJ(GetTriggerUnit(),'IHnR'))
+return (GetItemPlayer(GetManipulatedItem())==Player(15) or GetItemPlayer(GetManipulatedItem())==GetOwningPlayer(GetTriggerUnit())) and (UnitHasItemOfTypeBJ(GetTriggerUnit(),'I06X')or UnitHasItemOfTypeBJ(GetTriggerUnit(),'I06W')or UnitHasItemOfTypeBJ(GetTriggerUnit(),'I06Z')or UnitHasItemOfTypeBJ(GetTriggerUnit(),'I01F')or UnitHasItemOfTypeBJ(GetTriggerUnit(),'I02V')or UnitHasItemOfTypeBJ(GetTriggerUnit(),'I03Y')or UnitHasItemOfTypeBJ(GetTriggerUnit(),'I05H') or UnitHasItemOfTypeBJ(GetTriggerUnit(),'I04V')or UnitHasItemOfTypeBJ(GetTriggerUnit(),'I043')or UnitHasItemOfTypeBJ(GetTriggerUnit(),'I049')or UnitHasItemOfTypeBJ(GetTriggerUnit(),'I04E')or UnitHasItemOfTypeBJ(GetTriggerUnit(),'I02V')or UnitHasItemOfTypeBJ(GetTriggerUnit(),'I03A')or UnitHasItemOfTypeBJ(GetTriggerUnit(),'I01F')or UnitHasItemOfTypeBJ(GetTriggerUnit(),'I04T')or UnitHasItemOfTypeBJ(GetTriggerUnit(),'I00D')or UnitHasItemOfTypeBJ(GetTriggerUnit(),'I06M') or UnitHasItemOfTypeBJ(GetTriggerUnit(),'I066') or UnitHasItemOfTypeBJ(GetTriggerUnit(),'I01M') or UnitHasItemOfTypeBJ(GetTriggerUnit(),'I04F')or UnitHasItemOfTypeBJ(GetTriggerUnit(),'I02T')or UnitHasItemOfTypeBJ(GetTriggerUnit(),'I02S')or UnitHasItemOfTypeBJ(GetTriggerUnit(),'I02R')or UnitHasItemOfTypeBJ(GetTriggerUnit(),'I046')or UnitHasItemOfTypeBJ(GetTriggerUnit(),'I042')or UnitHasItemOfTypeBJ(GetTriggerUnit(),'I040')or UnitHasItemOfTypeBJ(GetTriggerUnit(),'I03Q')or UnitHasItemOfTypeBJ(GetTriggerUnit(),'I03P')or UnitHasItemOfTypeBJ(GetTriggerUnit(),'I03R')or UnitHasItemOfTypeBJ(GetTriggerUnit(),'I13R')or UnitHasItemOfTypeBJ(GetTriggerUnit(),'I03L') or UnitHasItemOfTypeBJ(GetTriggerUnit(),'I02K')or UnitHasItemOfTypeBJ(GetTriggerUnit(),'I02J')or UnitHasItemOfTypeBJ(GetTriggerUnit(),'I018')or UnitHasItemOfTypeBJ(GetTriggerUnit(),'I03A')or UnitHasItemOfTypeBJ(GetTriggerUnit(),'I037')or UnitHasItemOfTypeBJ(GetTriggerUnit(),'ISDi')or UnitHasItemOfTypeBJ(GetTriggerUnit(),'I02W')or UnitHasItemOfTypeBJ(GetTriggerUnit(),'I031')or UnitHasItemOfTypeBJ(GetTriggerUnit(),'I036')or UnitHasItemOfTypeBJ(GetTriggerUnit(),'I050')or UnitHasItemOfTypeBJ(GetTriggerUnit(),'IGDi')or UnitHasItemOfTypeBJ(GetTriggerUnit(),'I01S')or UnitHasItemOfTypeBJ(GetTriggerUnit(),'I03F')or UnitHasItemOfTypeBJ(GetTriggerUnit(),'IMDi')or UnitHasItemOfTypeBJ(GetTriggerUnit(),'ISTi') or UnitHasItemOfTypeBJ(GetTriggerUnit(),'I1S4') or UnitHasItemOfTypeBJ(GetTriggerUnit(),'IHYi') or UnitHasItemOfTypeBJ(GetTriggerUnit(),'IHnR'))
 endfunction
 function Trig_UltimateItems_Actions takes nothing returns nothing
 local unit u=GetTriggerUnit()
@@ -18760,7 +18760,7 @@ endif
 if idu=='H04B' then
 loop
 exitwhen i>=6
-if (GetItemPlayer(UnitItemInSlot(u,i))==Player(15) or GetItemPlayer(UnitItemInSlot(u,i))==GetOwningPlayer(GetTriggerUnit())) and (GetItemTypeId(UnitItemInSlot(u,i))=='I06W' or GetItemTypeId(UnitItemInSlot(u,i))==0x49303658 or GetItemTypeId(UnitItemInSlot(u,i))==0x49303659) then
+if (GetItemPlayer(UnitItemInSlot(u,i))==Player(15) or GetItemPlayer(UnitItemInSlot(u,i))==GetOwningPlayer(GetTriggerUnit())) and (GetItemTypeId(UnitItemInSlot(u,i))=='I06W' or GetItemTypeId(UnitItemInSlot(u,i))=='I06X' or GetItemTypeId(UnitItemInSlot(u,i))=='I06Y') then
 set count=count+1
 endif
 set i=i+1
@@ -18792,7 +18792,7 @@ endif
 if idu==0x48303447 then
 loop
 exitwhen i>=6
-if (GetItemPlayer(UnitItemInSlot(u,i))==Player(15) or GetItemPlayer(UnitItemInSlot(u,i))==GetOwningPlayer(GetTriggerUnit())) and GetItemTypeId(UnitItemInSlot(u,i))==0x49303658 then
+if (GetItemPlayer(UnitItemInSlot(u,i))==Player(15) or GetItemPlayer(UnitItemInSlot(u,i))==GetOwningPlayer(GetTriggerUnit())) and GetItemTypeId(UnitItemInSlot(u,i))=='I06X' then
 set count=count+1
 endif
 set i=i+1
@@ -18808,7 +18808,7 @@ endif
 if idu==0x48303447 then
 loop
 exitwhen i>=6
-if (GetItemPlayer(UnitItemInSlot(u,i))==Player(15) or GetItemPlayer(UnitItemInSlot(u,i))==GetOwningPlayer(GetTriggerUnit())) and GetItemTypeId(UnitItemInSlot(u,i))==0x49303659 then
+if (GetItemPlayer(UnitItemInSlot(u,i))==Player(15) or GetItemPlayer(UnitItemInSlot(u,i))==GetOwningPlayer(GetTriggerUnit())) and GetItemTypeId(UnitItemInSlot(u,i))=='I06Y' then
 set count=count+1
 endif
 set i=i+1
@@ -18840,7 +18840,7 @@ endif
 if idu=='H04B' then
 loop
 exitwhen i>=6
-if (GetItemPlayer(UnitItemInSlot(u,i))==Player(15) or GetItemPlayer(UnitItemInSlot(u,i))==GetOwningPlayer(GetTriggerUnit())) and GetItemTypeId(UnitItemInSlot(u,i))==0x49303658 then
+if (GetItemPlayer(UnitItemInSlot(u,i))==Player(15) or GetItemPlayer(UnitItemInSlot(u,i))==GetOwningPlayer(GetTriggerUnit())) and GetItemTypeId(UnitItemInSlot(u,i))=='I06X' then
 set count=count+1
 endif
 set i=i+1
@@ -18856,7 +18856,7 @@ endif
 if idu=='H04B' then
 loop
 exitwhen i>=6
-if (GetItemPlayer(UnitItemInSlot(u,i))==Player(15) or GetItemPlayer(UnitItemInSlot(u,i))==GetOwningPlayer(GetTriggerUnit())) and GetItemTypeId(UnitItemInSlot(u,i))==0x49303659 then
+if (GetItemPlayer(UnitItemInSlot(u,i))==Player(15) or GetItemPlayer(UnitItemInSlot(u,i))==GetOwningPlayer(GetTriggerUnit())) and GetItemTypeId(UnitItemInSlot(u,i))=='I06Y' then
 set count=count+1
 endif
 set i=i+1
@@ -18872,7 +18872,7 @@ endif
 if idu=='H00N' then
 loop
 exitwhen i>=6
-if (GetItemPlayer(UnitItemInSlot(u,i))==Player(15) or GetItemPlayer(UnitItemInSlot(u,i))==GetOwningPlayer(GetTriggerUnit())) and GetItemTypeId(UnitItemInSlot(u,i))==0x49303439 then
+if (GetItemPlayer(UnitItemInSlot(u,i))==Player(15) or GetItemPlayer(UnitItemInSlot(u,i))==GetOwningPlayer(GetTriggerUnit())) and GetItemTypeId(UnitItemInSlot(u,i))=='I049' then
 set count=count+1
 endif
 set i=i+1
@@ -18890,7 +18890,7 @@ set count=0
 if idu=='H00N' then
 loop
 exitwhen i>=6
-if (GetItemPlayer(UnitItemInSlot(u,i))==Player(15) or GetItemPlayer(UnitItemInSlot(u,i))==GetOwningPlayer(GetTriggerUnit())) and GetItemTypeId(UnitItemInSlot(u,i))==0x49303439 then
+if (GetItemPlayer(UnitItemInSlot(u,i))==Player(15) or GetItemPlayer(UnitItemInSlot(u,i))==GetOwningPlayer(GetTriggerUnit())) and GetItemTypeId(UnitItemInSlot(u,i))=='I049' then
 set count=count+1
 endif
 set i=i+1
@@ -18963,7 +18963,7 @@ set i=0
 set count=0
 loop
 exitwhen i>=6
-if (GetItemPlayer(UnitItemInSlot(u,i))==Player(15) or GetItemPlayer(UnitItemInSlot(u,i))==GetOwningPlayer(GetTriggerUnit())) and GetItemTypeId(UnitItemInSlot(u,i))==0x49303658 then
+if (GetItemPlayer(UnitItemInSlot(u,i))==Player(15) or GetItemPlayer(UnitItemInSlot(u,i))==GetOwningPlayer(GetTriggerUnit())) and GetItemTypeId(UnitItemInSlot(u,i))=='I06X' then
 set count=count+1
 endif
 set i=i+1
@@ -19051,7 +19051,7 @@ set i=0
 set count=0
 loop
 exitwhen i>=6
-if (GetItemPlayer(UnitItemInSlot(u,i))==Player(15) or GetItemPlayer(UnitItemInSlot(u,i))==GetOwningPlayer(GetTriggerUnit())) and GetItemTypeId(UnitItemInSlot(u,i))==0x49303436 then //'I046' ураганки
+if (GetItemPlayer(UnitItemInSlot(u,i))==Player(15) or GetItemPlayer(UnitItemInSlot(u,i))==GetOwningPlayer(GetTriggerUnit())) and GetItemTypeId(UnitItemInSlot(u,i))=='I046' then //'I046' ураганки
 set count=count+1
 endif
 set i=i+1
@@ -19391,7 +19391,7 @@ set i=0
 set count=0
 loop
 exitwhen i>=6
-if (GetItemPlayer(UnitItemInSlot(u,i))==Player(15) or GetItemPlayer(UnitItemInSlot(u,i))==GetOwningPlayer(GetTriggerUnit())) and GetItemTypeId(UnitItemInSlot(u,i))==0x49303350 then
+if (GetItemPlayer(UnitItemInSlot(u,i))==Player(15) or GetItemPlayer(UnitItemInSlot(u,i))==GetOwningPlayer(GetTriggerUnit())) and GetItemTypeId(UnitItemInSlot(u,i))=='I03P' then
 set count=count+1
 endif
 set i=i+1
@@ -19489,7 +19489,7 @@ set i=0
 set count=0
 loop
 exitwhen i>=6
-if (GetItemPlayer(UnitItemInSlot(u,i))==Player(15) or GetItemPlayer(UnitItemInSlot(u,i))==GetOwningPlayer(GetTriggerUnit())) and GetItemTypeId(UnitItemInSlot(u,i))==0x49303433 then
+if (GetItemPlayer(UnitItemInSlot(u,i))==Player(15) or GetItemPlayer(UnitItemInSlot(u,i))==GetOwningPlayer(GetTriggerUnit())) and GetItemTypeId(UnitItemInSlot(u,i))=='I043' then
 set count=count+1
 endif
 set i=i+1
@@ -26457,8 +26457,8 @@ call SaveReal(h,id,1,time2+0.01)
 endif
 else
 call UnitRemoveBuffsEx(u,false,true,true,true,true,true,true)
-call UnitAddItemById(u,0x49303354)
-call UnitAddItemById(u,0x49303355)
+call UnitAddItemById(u,'I03T')
+call UnitAddItemById(u,'I03U')
 call PauseTimer(t)
 call TimerStart(t,0.02,false,function MadnessTranformationCast3)
 endif
@@ -31697,10 +31697,10 @@ local integer git=GetItemTypeId(it)
 local player p=GetOwningPlayer(u)
 if git=='I024' then
 call TextTagFull("-100",u,255,255,0,255,GetOwningPlayer(u),.025)
-elseif git==0x49303242 then
+elseif git=='I02B' then
 set n=CreateUnit(p,'h019',GetRectCenterX(gg_rct_GameZone),GetRectCenterY(gg_rct_GameZone),0)
-call UnitAddAbility(n,0x4131334D)
-call SetUnitAbilityLevel(n,0x4131334D,1)
+call UnitAddAbility(n,'A13M')
+call SetUnitAbilityLevel(n,'A13M',1)
 call UnitApplyTimedLife(n,'BHwe',1)
 call IssuePointOrder(n,"flare",GetRectCenterX(gg_rct_GameZone),GetRectCenterY(gg_rct_GameZone))
 endif
@@ -31720,7 +31720,7 @@ call TriggerAddAction(t,function CastMoney100)
 set t=null
 endfunction
 function CondMoney250 takes nothing returns boolean
-return GetItemTypeId(GetManipulatedItem())==0x49303235
+return GetItemTypeId(GetManipulatedItem())=='I025'
 endfunction
 function CastMoney250 takes nothing returns nothing
 local unit u=GetTriggerUnit()
@@ -39496,7 +39496,7 @@ call TriggerAddCondition(t,Condition(function BashosenCond))
 set t=null
 endfunction
 function PatriotCond takes nothing returns boolean
-return GetSpellAbilityId()==0x41304E46 and GetHeroLevel(GetTriggerUnit())>=6 and udg_B==true and GetUnitTypeId(GetTriggerUnit())!='H007'  and GetUnitAbilityLevel(GetTriggerUnit(),'GIE1')==0
+return GetSpellAbilityId()=='A0NF' and GetHeroLevel(GetTriggerUnit())>=6 and udg_B==true and GetUnitTypeId(GetTriggerUnit())!='H007'  and GetUnitAbilityLevel(GetTriggerUnit(),'GIE1')==0
 endfunction
 function PatriotCast2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
@@ -39563,8 +39563,8 @@ loop
 set E=FirstOfGroup(G)
 if Condition_Base(p,E)then
 set n=CreateUnit(p,'h019',x,y,0)
-call UnitAddAbility(n,0x41304C4F)
-call SetUnitAbilityLevel(n,0x41304C4F,1)
+call UnitAddAbility(n,'A0LO')
+call SetUnitAbilityLevel(n,'A0LO',1)
 call UnitApplyTimedLife(n,'BHwe',1)
 call IssueTargetOrder(n,"thunderbolt",E)
 if IsUnitInGroup(E,g)==false then
@@ -39627,7 +39627,7 @@ call TriggerAddCondition(t,Condition(function FallenAngelCond))
 set t=null
 endfunction
 function Trig_AngelWings_Conditions takes nothing returns boolean
-return UnitHasItemOfTypeBJ(GetTriggerUnit(),0x49303330)and GetUnitTypeId(GetTriggerUnit())!='H007'  and GetUnitAbilityLevel(GetTriggerUnit(),'GIE1')==0
+return UnitHasItemOfTypeBJ(GetTriggerUnit(),'I030')and GetUnitTypeId(GetTriggerUnit())!='H007'  and GetUnitAbilityLevel(GetTriggerUnit(),'GIE1')==0
 endfunction
 function Trig_AngelWings_Actions takes nothing returns nothing
 local unit u=GetTriggerUnit()
@@ -39645,7 +39645,7 @@ call KillSoundWhenDone(soundplay)
 else
 loop
 exitwhen i>=6
-if GetItemTypeId(UnitItemInSlot(u,i))==0x49303330 then
+if GetItemTypeId(UnitItemInSlot(u,i))=='I030' then
 set count=count+1
 endif
 set i=i+1
@@ -39782,7 +39782,7 @@ call TriggerAddCondition(gg_trg_HellRing,Condition(function HellRingCond))
 call TriggerAddAction(gg_trg_HellRing,function HellRingCast)
 endfunction
 function GrimorePrelatyCond takes nothing returns boolean
-return GetItemTypeId(GetManipulatedItem())=='I06W' or GetItemTypeId(GetManipulatedItem())==0x49303658 or GetItemTypeId(GetManipulatedItem())=='I06Z' and GetUnitTypeId(GetTriggerUnit())!='H007'
+return GetItemTypeId(GetManipulatedItem())=='I06W' or GetItemTypeId(GetManipulatedItem())=='I06X' or GetItemTypeId(GetManipulatedItem())=='I06Z' and GetUnitTypeId(GetTriggerUnit())!='H007'
 endfunction
 
         function GetInventoryIndexOfItem takes unit whichUnit, integer itemId returns integer
@@ -71336,7 +71336,7 @@ call RemoveSavedHandle(h,id,StringHash("room"))
 set n=CreateUnit(p,0x65303832,x,y,GetRandomReal(0,359))
 call UnitApplyTimedLife(n,1,2+GetUnitAbilityLevel(u,0x4130444E))
 call UnitApplyTimedLife(CreateUnit(p,0x65303833,x,y,GetRandomReal(0,359)),1,2+GetUnitAbilityLevel(u,0x4130444E))
-call UnitApplyTimedLife(CreateUnit(p,0x65303834,x,y,GetRandomReal(0,359)),1,2+GetUnitAbilityLevel(u,0x4130444E))
+call UnitApplyTimedLife(CreateUnit(p,'e084',x,y,GetRandomReal(0,359)),1,2+GetUnitAbilityLevel(u,0x4130444E))
 call SaveReal(h,id,StringHash("x"),x)
 call SaveReal(h,id,StringHash("y"),y)
 call SaveUnitHandle(h,id,StringHash("room"),n)
@@ -73704,7 +73704,7 @@ set x=x-10*Cos(a)
 set y=y-10*Sin(a)
 endif
 call SetUnitXY_1(u,x,y, false)
-set n=CreateUnit(p,0x6530475A,x,y,a*bj_RADTODEG)
+set n=CreateUnit(p,'e0GZ',x,y,a*bj_RADTODEG)
 call UnitApplyTimedLife(n,1,0.25)
 call SetUnitTimeScale(n,2)
 call SetUnitVertexColor(n,255,255,255,125)
@@ -74308,7 +74308,7 @@ call UnitApplyTimedLife(CreateUnit(p,'e0HE',x,y,a*bj_RADTODEG),1,0.3)
 call UnitApplyTimedLife(CreateUnit(p,'e0HC',x1,y1,a*bj_RADTODEG),1,0.5)
 call UnitApplyTimedLife(CreateUnit(p,'e0HB',x1,y1,GetRandomReal(0,359)),1,0.5)
 call UnitApplyTimedLife(CreateUnit(p,'e0HA',x1,y1,GetRandomReal(0,359)),1,0.5)
-set n=CreateUnit(p,0x6530475A,x,y,GetRandomReal(0,359))
+set n=CreateUnit(p,'e0GZ',x,y,GetRandomReal(0,359))
 call UnitApplyTimedLife(n,1,0.2)
 call SetUnitVertexColor(n,190,255,255,50)
 call SetUnitAnimation(n,"attack")
@@ -74539,11 +74539,11 @@ if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
     call SetUnitVertexColor(u,255,255,255,100)
     call SaveUnitHandle(h,id,0,u)
     call SaveUnitHandle(h,id,1,c)
-    set n=CreateUnit(p,0x6530475A,x,y,f)
+    set n=CreateUnit(p,'e0GZ',x,y,f)
     call UnitAddAbility(n,'A0GJ')
     call SetUnitVertexColor(n,255,255,255,100)
     call SaveUnitHandle(h,id,5,n)
-    set n=CreateUnit(p,0x6530475A,x,y,f)
+    set n=CreateUnit(p,'e0GZ',x,y,f)
     call UnitAddAbility(n,'A0GJ')
     call SetUnitVertexColor(n,255,255,255,100)
     call SaveUnitHandle(h,id,6,n)
@@ -74607,7 +74607,7 @@ call UnitApplyTimedLife(CreateUnit(p,0x65304832,x,y,GetRandomReal(0,359)),1,0.2)
 call UnitApplyTimedLife(CreateUnit(p,0x65304833,x,y,GetRandomReal(0,359)),1,0.2)
 call UnitApplyTimedLife(CreateUnit(p,0x65304834,x,y,GetRandomReal(0,359)),1,0.2)
 call UnitApplyTimedLife(CreateUnit(p,0x65304835,x,y,GetRandomReal(0,359)),1,0.2)
-set n=CreateUnit(p,0x6530475A,x,y,GetRandomReal(0,359))
+set n=CreateUnit(p,'e0GZ',x,y,GetRandomReal(0,359))
 call UnitApplyTimedLife(n,'B000',0.15)
 call SetUnitVertexColor(n,255,255,255,125)
 call SetUnitTimeScale(n,5)
@@ -81375,17 +81375,17 @@ call SetUnitTimeScale(u,0.1)
 call PauseUnit(u,true)
 call SetUnitInvulnerable(u,true)
 call SaveReal(h,id,9,a)
-set n=CreateUnit(p,0x65303834,x,y,GetRandomReal(0,359))
+set n=CreateUnit(p,'e084',x,y,GetRandomReal(0,359))
 call UnitApplyTimedLife(n,1,0.01)
 call SetUnitTimeScale(n,0.9)
 call SetUnitVertexColor(n,255,255,255,125)
 call SetUnitScale(n,1,1,1)
-set n=CreateUnit(p,0x65303834,x,y,GetRandomReal(0,359))
+set n=CreateUnit(p,'e084',x,y,GetRandomReal(0,359))
 call UnitApplyTimedLife(n,1,0.01)
 call SetUnitTimeScale(n,0.7)
 call SetUnitVertexColor(n,255,255,255,125)
 call SetUnitScale(n,1.4,1.4,1.4)
-set n=CreateUnit(p,0x65303834,x,y,GetRandomReal(0,359))
+set n=CreateUnit(p,'e084',x,y,GetRandomReal(0,359))
 call UnitApplyTimedLife(n,1,0.01)
 call SetUnitTimeScale(n,0.5)
 call SetUnitVertexColor(n,255,255,255,125)
@@ -89022,17 +89022,17 @@ call SaveUnitHandle(h,id,0,u)
 call PauseUnit(u,true)
 call SetUnitInvulnerable(u,true)
 call SaveReal(h,id,9,a)
-set n=CreateUnit(p,0x65303834,x1,y1,GetRandomReal(0,359))
+set n=CreateUnit(p,'e084',x1,y1,GetRandomReal(0,359))
 call UnitApplyTimedLife(n,1,0.01)
 call SetUnitTimeScale(n,0.9)
 call SetUnitVertexColor(n,255,255,255,125)
 call SetUnitScale(n,1,1,1)
-set n=CreateUnit(p,0x65303834,x1,y1,GetRandomReal(0,359))
+set n=CreateUnit(p,'e084',x1,y1,GetRandomReal(0,359))
 call UnitApplyTimedLife(n,1,0.01)
 call SetUnitTimeScale(n,0.7)
 call SetUnitVertexColor(n,255,255,255,125)
 call SetUnitScale(n,1.4,1.4,1.4)
-set n=CreateUnit(p,0x65303834,x1,y1,GetRandomReal(0,359))
+set n=CreateUnit(p,'e084',x1,y1,GetRandomReal(0,359))
 call UnitApplyTimedLife(n,1,0.01)
 call SetUnitTimeScale(n,0.5)
 call SetUnitVertexColor(n,255,255,255,125)
@@ -172204,7 +172204,7 @@ set cjlocgn_00000003=GetRandomReal(-250-distance*0.6,250+distance*0.6)
 set cjlocgn_00000004=GetRandomReal(0,360)
 set cjlocgn_00000005=PolX(LoadReal(HH,id,11),cjlocgn_00000003,cjlocgn_00000004)
 set cjlocgn_00000006=PolY(LoadReal(HH,id,12),cjlocgn_00000003,cjlocgn_00000004)
-set cjlocgn_00000001=CreateUnit(GetOwningPlayer(caster),0x68733235,cjlocgn_00000005,cjlocgn_00000006,GetRandomReal(0,360))
+set cjlocgn_00000001=CreateUnit(GetOwningPlayer(caster),'hs25',cjlocgn_00000005,cjlocgn_00000006,GetRandomReal(0,360))
 call UnitSize(cjlocgn_00000001,GetRandomReal(2.5,3.5),3,3)
 call SetUnitFlyHeight(cjlocgn_00000001,-100,0)
 call UnitSpeed(cjlocgn_00000001,1.25)
@@ -172215,7 +172215,7 @@ set cjlocgn_00000003=GetRandomReal(-250-distance*0.6,250+distance*0.6)
 set cjlocgn_00000004=GetRandomReal(0,360)
 set cjlocgn_00000005=PolX(LoadReal(HH,id,11),cjlocgn_00000003,cjlocgn_00000004)
 set cjlocgn_00000006=PolY(LoadReal(HH,id,12),cjlocgn_00000003,cjlocgn_00000004)
-set cjlocgn_00000001=CreateUnit(GetOwningPlayer(caster),0x68733236,cjlocgn_00000005,cjlocgn_00000006,GetRandomReal(0,360))
+set cjlocgn_00000001=CreateUnit(GetOwningPlayer(caster),'hs26',cjlocgn_00000005,cjlocgn_00000006,GetRandomReal(0,360))
 call UnitSize(cjlocgn_00000001,GetRandomReal(0.5,1),3,3)
 call SetUnitAnimationByIndex(cjlocgn_00000001,1)
 call GroupAddUnit(cjlocgn_00000000,cjlocgn_00000001)
@@ -172421,7 +172421,7 @@ set cjlocgn_00000003=GetRandomReal(0,360)
 set cjlocgn_00000004=PolX(LoadReal(HH,id,16),cjlocgn_00000002,cjlocgn_00000003)
 set cjlocgn_00000005=PolY(LoadReal(HH,id,17),cjlocgn_00000002,cjlocgn_00000003)
 endif
-set cjlocgn_00000007=CreateUnit(GetOwningPlayer(caster),0x68733235,cjlocgn_00000004,cjlocgn_00000005,GetRandomReal(0,360))
+set cjlocgn_00000007=CreateUnit(GetOwningPlayer(caster),'hs25',cjlocgn_00000004,cjlocgn_00000005,GetRandomReal(0,360))
 call UnitSize(cjlocgn_00000007,GetRandomReal(3,4),3,3)
 call UnitSpeed(cjlocgn_00000007,1.25)
 call GroupAddUnit(cjlocgn_00000000,cjlocgn_00000007)
@@ -172450,7 +172450,7 @@ set cjlocgn_00000003=GetRandomReal(0,360)
 set cjlocgn_00000004=PolX(LoadReal(HH,id,16),cjlocgn_00000002,cjlocgn_00000003)
 set cjlocgn_00000005=PolY(LoadReal(HH,id,17),cjlocgn_00000002,cjlocgn_00000003)
 endif
-set cjlocgn_00000007=CreateUnit(GetOwningPlayer(caster),0x68733236,cjlocgn_00000004,cjlocgn_00000005,GetRandomReal(0,360))
+set cjlocgn_00000007=CreateUnit(GetOwningPlayer(caster),'hs26',cjlocgn_00000004,cjlocgn_00000005,GetRandomReal(0,360))
 call UnitSize(cjlocgn_00000007,GetRandomReal(0.75,1),3,3)
 call SetUnitAnimationByIndex(cjlocgn_00000007,1)
 call UnitSpeed(cjlocgn_00000007,0.8)
@@ -172493,61 +172493,61 @@ call MoveUnit(Dummy,Dummy,20,facing-30)
 set cjlocgn_00000001=cjlocgn_00000001+0.02
 if cjlocgn_00000001==0.3 or time==0.1 then
 set cjlocgn_00000001=0
-set cjlocgn_00000007=CreateUnit(GetOwningPlayer(caster),0x68733235,GetUnitX(LoadUnitHandle(HH,id,20)),GetUnitY(LoadUnitHandle(HH,id,20)),facing+GetRandomInt(-30,30))
+set cjlocgn_00000007=CreateUnit(GetOwningPlayer(caster),'hs25',GetUnitX(LoadUnitHandle(HH,id,20)),GetUnitY(LoadUnitHandle(HH,id,20)),facing+GetRandomInt(-30,30))
 call UnitSize(cjlocgn_00000007,GetRandomReal(3,4.5),3,3)
 call SetUnitFlyHeight(cjlocgn_00000007,-50,0)
 call MoveUnit(cjlocgn_00000007,cjlocgn_00000007,-100,facing)
 call UnitSpeed(cjlocgn_00000007,1.5)
 call GroupAddUnit(cjlocgn_00000000,cjlocgn_00000007)
-set cjlocgn_00000007=CreateUnit(GetOwningPlayer(caster),0x68733235,GetUnitX(LoadUnitHandle(HH,id,21)),GetUnitY(LoadUnitHandle(HH,id,21)),facing+GetRandomInt(-15,15))
+set cjlocgn_00000007=CreateUnit(GetOwningPlayer(caster),'hs25',GetUnitX(LoadUnitHandle(HH,id,21)),GetUnitY(LoadUnitHandle(HH,id,21)),facing+GetRandomInt(-15,15))
 call UnitSize(cjlocgn_00000007,GetRandomReal(3,4.5),3,3)
 call SetUnitFlyHeight(cjlocgn_00000007,-50,0)
 call MoveUnit(cjlocgn_00000007,cjlocgn_00000007,-100,facing)
 call UnitSpeed(cjlocgn_00000007,1.5)
 call GroupAddUnit(cjlocgn_00000000,cjlocgn_00000007)
-set cjlocgn_00000007=CreateUnit(GetOwningPlayer(caster),0x68733235,GetUnitX(LoadUnitHandle(HH,id,22)),GetUnitY(LoadUnitHandle(HH,id,22)),facing+GetRandomInt(-15,15))
+set cjlocgn_00000007=CreateUnit(GetOwningPlayer(caster),'hs25',GetUnitX(LoadUnitHandle(HH,id,22)),GetUnitY(LoadUnitHandle(HH,id,22)),facing+GetRandomInt(-15,15))
 call UnitSize(cjlocgn_00000007,GetRandomReal(3,4.5),3,3)
 call SetUnitFlyHeight(cjlocgn_00000007,-50,0)
 call MoveUnit(cjlocgn_00000007,cjlocgn_00000007,-100,facing)
 call UnitSpeed(cjlocgn_00000007,1.5)
 call GroupAddUnit(cjlocgn_00000000,cjlocgn_00000007)
-set cjlocgn_00000007=CreateUnit(GetOwningPlayer(caster),0x68733235,GetUnitX(LoadUnitHandle(HH,id,23)),GetUnitY(LoadUnitHandle(HH,id,23)),facing+GetRandomInt(-15,15))
+set cjlocgn_00000007=CreateUnit(GetOwningPlayer(caster),'hs25',GetUnitX(LoadUnitHandle(HH,id,23)),GetUnitY(LoadUnitHandle(HH,id,23)),facing+GetRandomInt(-15,15))
 call UnitSize(cjlocgn_00000007,GetRandomReal(3,4.5),3,3)
 call SetUnitFlyHeight(cjlocgn_00000007,-50,0)
 call MoveUnit(cjlocgn_00000007,cjlocgn_00000007,-100,facing)
 call UnitSpeed(cjlocgn_00000007,1.5)
 call GroupAddUnit(cjlocgn_00000000,cjlocgn_00000007)
-set cjlocgn_00000007=CreateUnit(GetOwningPlayer(caster),0x68733235,GetUnitX(LoadUnitHandle(HH,id,24)),GetUnitY(LoadUnitHandle(HH,id,24)),facing+GetRandomInt(-15,15))
+set cjlocgn_00000007=CreateUnit(GetOwningPlayer(caster),'hs25',GetUnitX(LoadUnitHandle(HH,id,24)),GetUnitY(LoadUnitHandle(HH,id,24)),facing+GetRandomInt(-15,15))
 call UnitSize(cjlocgn_00000007,GetRandomReal(3,4.5),3,3)
 call SetUnitFlyHeight(cjlocgn_00000007,-50,0)
 call MoveUnit(cjlocgn_00000007,cjlocgn_00000007,-100,facing)
 call UnitSpeed(cjlocgn_00000007,1.5)
 call GroupAddUnit(cjlocgn_00000000,cjlocgn_00000007)
-set cjlocgn_00000007=CreateUnit(GetOwningPlayer(caster),0x68733236,GetUnitX(LoadUnitHandle(HH,id,20)),GetUnitY(LoadUnitHandle(HH,id,20)),facing+GetRandomInt(-30,30))
+set cjlocgn_00000007=CreateUnit(GetOwningPlayer(caster),'hs26',GetUnitX(LoadUnitHandle(HH,id,20)),GetUnitY(LoadUnitHandle(HH,id,20)),facing+GetRandomInt(-30,30))
 call UnitSize(cjlocgn_00000007,GetRandomReal(0.5,1),3,3)
 call SetUnitFlyHeight(cjlocgn_00000007,-50,0)
 call SetUnitAnimationByIndex(cjlocgn_00000007,1)
 call UnitSpeed(cjlocgn_00000007,0.8)
 call GroupAddUnit(cjlocgn_00000000,cjlocgn_00000007)
-set cjlocgn_00000007=CreateUnit(GetOwningPlayer(caster),0x68733236,GetUnitX(LoadUnitHandle(HH,id,21)),GetUnitY(LoadUnitHandle(HH,id,21)),facing+GetRandomInt(-15,15))
+set cjlocgn_00000007=CreateUnit(GetOwningPlayer(caster),'hs26',GetUnitX(LoadUnitHandle(HH,id,21)),GetUnitY(LoadUnitHandle(HH,id,21)),facing+GetRandomInt(-15,15))
 call UnitSize(cjlocgn_00000007,GetRandomReal(0.5,1),3,3)
 call SetUnitFlyHeight(cjlocgn_00000007,-50,0)
 call SetUnitAnimationByIndex(cjlocgn_00000007,1)
 call UnitSpeed(cjlocgn_00000007,0.8)
 call GroupAddUnit(cjlocgn_00000000,cjlocgn_00000007)
-set cjlocgn_00000007=CreateUnit(GetOwningPlayer(caster),0x68733236,GetUnitX(LoadUnitHandle(HH,id,22)),GetUnitY(LoadUnitHandle(HH,id,22)),facing+GetRandomInt(-15,15))
+set cjlocgn_00000007=CreateUnit(GetOwningPlayer(caster),'hs26',GetUnitX(LoadUnitHandle(HH,id,22)),GetUnitY(LoadUnitHandle(HH,id,22)),facing+GetRandomInt(-15,15))
 call UnitSize(cjlocgn_00000007,GetRandomReal(0.5,1),3,3)
 call SetUnitFlyHeight(cjlocgn_00000007,-50,0)
 call SetUnitAnimationByIndex(cjlocgn_00000007,1)
 call UnitSpeed(cjlocgn_00000007,0.8)
 call GroupAddUnit(cjlocgn_00000000,cjlocgn_00000007)
-set cjlocgn_00000007=CreateUnit(GetOwningPlayer(caster),0x68733236,GetUnitX(LoadUnitHandle(HH,id,23)),GetUnitY(LoadUnitHandle(HH,id,23)),facing+GetRandomInt(-15,15))
+set cjlocgn_00000007=CreateUnit(GetOwningPlayer(caster),'hs26',GetUnitX(LoadUnitHandle(HH,id,23)),GetUnitY(LoadUnitHandle(HH,id,23)),facing+GetRandomInt(-15,15))
 call UnitSize(cjlocgn_00000007,GetRandomReal(0.5,1),3,3)
 call SetUnitFlyHeight(cjlocgn_00000007,-50,0)
 call SetUnitAnimationByIndex(cjlocgn_00000007,1)
 call UnitSpeed(cjlocgn_00000007,0.8)
 call GroupAddUnit(cjlocgn_00000000,cjlocgn_00000007)
-set cjlocgn_00000007=CreateUnit(GetOwningPlayer(caster),0x68733236,GetUnitX(LoadUnitHandle(HH,id,24)),GetUnitY(LoadUnitHandle(HH,id,24)),facing+GetRandomInt(-15,15))
+set cjlocgn_00000007=CreateUnit(GetOwningPlayer(caster),'hs26',GetUnitX(LoadUnitHandle(HH,id,24)),GetUnitY(LoadUnitHandle(HH,id,24)),facing+GetRandomInt(-15,15))
 call UnitSize(cjlocgn_00000007,GetRandomReal(0.5,1),3,3)
 call SetUnitAnimationByIndex(cjlocgn_00000007,1)
 call MoveUnit(cjlocgn_00000007,cjlocgn_00000007,-50,facing)
@@ -172609,7 +172609,7 @@ else
 if time==0.02 then
 call UnitCreateAndMove(caster,'hs12',caster,GetRandomReal(0,360),1,1.5,0.5,100,100,100,20,0,LoadUnitHandle(HH,id,1),0,facing)
 call UnitCreateAndMove(caster,'hs18',caster,GetRandomReal(0,360),1,1.5,0.5,100,100,100,20,0,LoadUnitHandle(HH,id,1),0,facing)
-set n0=CreateUnit(GetOwningPlayer(caster),0x68733237,GetUnitX(caster),GetUnitY(caster),facing)
+set n0=CreateUnit(GetOwningPlayer(caster),'hs27',GetUnitX(caster),GetUnitY(caster),facing)
 call UnitSize(n0,1.2,1,1)
 call UnitSpeed(n0,1.5)
 call SetUnitAnimationByIndex(n0,1)
@@ -206230,21 +206230,21 @@ call UIS_RegisterItem('I009',0,0,0,0,0,'I00E','I00A')
 call UIS_RegisterItem('I00A',0,0,0,0,0,'I00E','I00B')
 call UIS_RegisterItem('I00B',0,0,0,0,0,'I00E','I00C')
 call UIS_RegisterItem('I00C',0,0,0,0,0,'I00E','I00D')
-call UIS_RegisterItem(0x49303046,0,0,0,0,0,'I00E',0x49303047)
-call UIS_RegisterItem(0x49303047,0,0,0,0,0,'I00E',0x49303048)
-call UIS_RegisterItem(0x49303048,0,0,0,0,0,'I00E',0x49303049)
-call UIS_RegisterItem(0x49303049,0,0,0,0,0,'I00E',0x4930304A)
-call UIS_RegisterItem(0x4930304A,0,0,0,0,0,'I00E',0x4930304B)
-call UIS_RegisterItem(0x4930304C,0,0,0,0,0,'I00E',0x4930304D)
-call UIS_RegisterItem(0x4930304D,0,0,0,0,0,'I00E',0x4930304E)
-call UIS_RegisterItem(0x4930304E,0,0,0,0,0,'I00E',0x4930304F)
-call UIS_RegisterItem(0x4930304F,0,0,0,0,0,'I00E',0x49303050)
-call UIS_RegisterItem(0x49303050,0,0,0,0,0,'I00E',0x49303051)
-call UIS_RegisterItem(0x49303052,0,0,0,0,0,'I00E',0x49303053)
-call UIS_RegisterItem(0x49303053,0,0,0,0,0,'I00E',0x49303054)
-call UIS_RegisterItem(0x49303054,0,0,0,0,0,'I00E',0x49303055)
-call UIS_RegisterItem(0x49303055,0,0,0,0,0,'I00E',0x49303056)
-call UIS_RegisterItem(0x49303056,0,0,0,0,0,'I00E',0x49303057)
+call UIS_RegisterItem('I00F',0,0,0,0,0,'I00E','I00G')
+call UIS_RegisterItem('I00G',0,0,0,0,0,'I00E','I00H')
+call UIS_RegisterItem('I00H',0,0,0,0,0,'I00E','I00I')
+call UIS_RegisterItem('I00I',0,0,0,0,0,'I00E','I00J')
+call UIS_RegisterItem('I00J',0,0,0,0,0,'I00E','I00K')
+call UIS_RegisterItem('I00L',0,0,0,0,0,'I00E','I00M')
+call UIS_RegisterItem('I00M',0,0,0,0,0,'I00E','I00N')
+call UIS_RegisterItem('I00N',0,0,0,0,0,'I00E','I00O')
+call UIS_RegisterItem('I00O',0,0,0,0,0,'I00E','I00P')
+call UIS_RegisterItem('I00P',0,0,0,0,0,'I00E','I00Q')
+call UIS_RegisterItem('I00R',0,0,0,0,0,'I00E','I00S')
+call UIS_RegisterItem('I00S',0,0,0,0,0,'I00E','I00T')
+call UIS_RegisterItem('I00T',0,0,0,0,0,'I00E','I00U')
+call UIS_RegisterItem('I00U',0,0,0,0,0,'I00E','I00V')
+call UIS_RegisterItem('I00V',0,0,0,0,0,'I00E','I00W')
 call UIS_RegisterItem('I00X',0,0,0,0,0,'I00E','I00Y')
 call UIS_RegisterItem('I00Y',0,0,0,0,0,'I00E','I00Z')
 call UIS_RegisterItem('I00Z',0,0,0,0,0,'I00E','I010')
@@ -206295,19 +206295,19 @@ call UIS_RegisterItem('I03I',0,0,0,0,0,'I00E','I03J')
 call UIS_RegisterItem('I03J',0,0,0,0,0,'I00E','I03K')
 call UIS_RegisterItem('I03K',0,0,0,0,0,'I00E','I03L')
 call UIS_RegisterItem('I03Z','I03X','I03Y','I03W',0,0,0,'I040')
-call UIS_RegisterItem('I02S','I02R','I02T',0,0,0,'I045',0x49303434)
-call UIS_RegisterItem('I01F','I01M','I02T',0,0,0,'I047',0x49303436)
-call UIS_RegisterItem(0x49303439,0,0,0,0,0,'I00E',0x49303441)
-call UIS_RegisterItem(0x49303441,0,0,0,0,0,'I00E',0x49303442)
-call UIS_RegisterItem(0x49303442,0,0,0,0,0,'I00E',0x49303443)
-call UIS_RegisterItem(0x49303443,0,0,0,0,0,'I00E',0x49303444)
-call UIS_RegisterItem(0x49303444,0,0,0,0,0,'I00E','I04E')
+call UIS_RegisterItem('I02S','I02R','I02T',0,0,0,'I045','I044')
+call UIS_RegisterItem('I01F','I01M','I02T',0,0,0,'I047','I046')
+call UIS_RegisterItem('I049',0,0,0,0,0,'I00E','I04A')
+call UIS_RegisterItem('I04A',0,0,0,0,0,'I00E','I04B')
+call UIS_RegisterItem('I04B',0,0,0,0,0,'I00E','I04C')
+call UIS_RegisterItem('I04C',0,0,0,0,0,'I00E','I04D')
+call UIS_RegisterItem('I04D',0,0,0,0,0,'I00E','I04E')
 call UIS_RegisterItem('I04H','I04H',0,0,0,0,'I00E','I04I')
-call UIS_RegisterItem(0x4930344D,0,0,0,0,0,'I00E',0x4930344E)
-call UIS_RegisterItem(0x4930344E,0,0,0,0,0,'I00E',0x4930344F)
-call UIS_RegisterItem(0x4930344F,0,0,0,0,0,'I00E',0x49303450)
-call UIS_RegisterItem(0x49303450,0,0,0,0,0,'I00E',0x49303451)
-call UIS_RegisterItem(0x49303451,0,0,0,0,0,'I00E',0x49303452)
+call UIS_RegisterItem('I04M',0,0,0,0,0,'I00E','I04N')
+call UIS_RegisterItem('I04N',0,0,0,0,0,'I00E','I04O')
+call UIS_RegisterItem('I04O',0,0,0,0,0,'I00E','I04P')
+call UIS_RegisterItem('I04P',0,0,0,0,0,'I00E','I04Q')
+call UIS_RegisterItem('I04Q',0,0,0,0,0,'I00E','I04R')
 call UIS_RegisterItem('I02S','I01M','I02S',0,0,0,0,'I04L')
 call UIS_RegisterItem('I02S','I02R','I02T',0,0,0,'I04Y','I03A')
 call UIS_RegisterItem('I02T','I01K',0,0,0,0,'I04U','I042')
@@ -206326,7 +206326,7 @@ call UIS_RegisterItem('I02Y','ISHk',0,0,0,0,0,'IHnK')                           
 call UIS_RegisterItem('I01L','I12R',0,0,0,0,'IBSR','IBSI')                                 // Buster Sword
 call UIS_RegisterItem('IOS3','IOS4','IOS2','IOS1',0,0,0,'I1S4')
 call UIS_RegisterItem('I01Z','I02T',0,0,0,0,'I052','I04G')
-// call UIS_RegisterItem('I03B','I01I',0,'I053',0,0,0x49303338) //old Kosa
+// call UIS_RegisterItem('I03B','I01I',0,'I053',0,0,'I038') //old Kosa
 call UIS_RegisterItem('I03B','I01I',0,0,0,0,'I053','ISDi')
 call UIS_RegisterItem('I01F','I02S','I01M',0,0,0,'I055','I054')
 call UIS_RegisterItem('I056',0,0,0,0,0,'I00E','I057')
@@ -206360,8 +206360,8 @@ call UIS_RegisterItem('I062',0,0,0,0,0,'I00E','I063')
 call UIS_RegisterItem('I063',0,0,0,0,0,'I00E','I064')
 call UIS_RegisterItem('I064',0,0,0,0,0,'I00E','I065')
 call UIS_RegisterItem('I033','I04I',0,0,0,0,0,'I066')
-call UIS_RegisterItem(0x49303649,0x49303646,0x49303647,0x49303648,0,0,0,'I06E')
-call UIS_RegisterItem(0x4930364B,0x4930364C,0x4930364D,0x4930364E,0,0,0,'I06J')
+call UIS_RegisterItem('I06I','I06F','I06G','I06H',0,0,0,'I06E')
+call UIS_RegisterItem('I06K','I06L','I06M','I06N',0,0,0,'I06J')
 call UIS_RegisterItem('I068',0,0,0,0,0,'I06P','I06O')
 call UIS_RegisterItem('I02R','I035','I06N',0,0,0,0,'I068') //grail
 call UIS_RegisterItem('I06C',0,0,0,0,0,'I06S','I06Q')
