@@ -24760,7 +24760,7 @@ set p=null
 endfunction
 function GrayRFHCond takes nothing returns boolean
 set P=GetTriggerPlayer()
-return udg_B==false and(GetPlayerName(P)=="Sylphiette" or GetPlayerName(P)=="chu" or GetPlayerName(P)=="Slaikee" or GetPlayerName(P)=="Antitilt" or GetPlayerName(P)=="Annieh" or GetPlayerName(P)=="zld6334" or GetPlayerName(P)=="Magistor" or GetPlayerName(P)=="Hermaeus" or GetPlayerName(P)=="No_Dust"  or GetPlayerName(P)=="TheDunwich525" or GetPlayerName(P)=="pro100master999" or GetPlayerName(P)=="UJustDeadWeight" or GetPlayerName(P)=="PinkieNecro" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="NecromanseR_RuS" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="Saske981" or GetPlayerName(P)=="Wolfkill" or GetPlayerName(P)=="Famouzy" or GetPlayerName(P)=="Uriska" or GetPlayerName(P)=="ROC4IK" or GetPlayerName(P)=="Provokatop935" or GetPlayerName(P)=="xxNu-13xx" or GetPlayerName(P)=="DeekeR_ANTEC" or GetPlayerName(P)=="Sasaki..Haise" or GetPlayerName(P)=="f.a.r.a.o.n." or GetPlayerName(P)=="neketEXE" or GetPlayerName(P)=="KickSuckem" or GetPlayerName(P)=="Denamesh" or GetPlayerName(P)=="Black_XeSHTeG" or GetPlayerName(P)=="I_Arioh" or GetPlayerName(P)=="KamaBr" or GetPlayerName(P)=="[OSV] Kama" or  BaseSkinCond(P))
+return udg_B==false and(GetPlayerName(P)=="Sylphiette" or GetPlayerName(P)=="2thedevile2" or GetPlayerName(P)=="chu" or GetPlayerName(P)=="Slaikee" or GetPlayerName(P)=="Antitilt" or GetPlayerName(P)=="Annieh" or GetPlayerName(P)=="zld6334" or GetPlayerName(P)=="Magistor" or GetPlayerName(P)=="Hermaeus" or GetPlayerName(P)=="No_Dust"  or GetPlayerName(P)=="TheDunwich525" or GetPlayerName(P)=="pro100master999" or GetPlayerName(P)=="UJustDeadWeight" or GetPlayerName(P)=="PinkieNecro" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="NecromanseR_RuS" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="Saske981" or GetPlayerName(P)=="Wolfkill" or GetPlayerName(P)=="Famouzy" or GetPlayerName(P)=="Uriska" or GetPlayerName(P)=="ROC4IK" or GetPlayerName(P)=="Provokatop935" or GetPlayerName(P)=="xxNu-13xx" or GetPlayerName(P)=="DeekeR_ANTEC" or GetPlayerName(P)=="Sasaki..Haise" or GetPlayerName(P)=="f.a.r.a.o.n." or GetPlayerName(P)=="neketEXE" or GetPlayerName(P)=="KickSuckem" or GetPlayerName(P)=="Denamesh" or GetPlayerName(P)=="Black_XeSHTeG" or GetPlayerName(P)=="I_Arioh" or GetPlayerName(P)=="KamaBr" or GetPlayerName(P)=="[OSV] Kama" or  BaseSkinCond(P))
 endfunction
 function GrayRFHCast takes nothing returns nothing
 local integer ip=GetPlayerId(GetTriggerPlayer())
@@ -25675,7 +25675,7 @@ set u=null
 set p=null
 endfunction
 function ARFHCond2 takes player l__P returns boolean
-return GetPlayerName(l__P)=="Sasaki..Haise" or GetPlayerName(l__P)=="renex" or GetPlayerName(l__P)=="N1rvana_Flame" or GetPlayerName(l__P)=="vashtwaa" or GetPlayerName(l__P)=="belugaa" or GetPlayerName(l__P)=="IIIafep" or GetPlayerName(l__P)=="Annieh" or GetPlayerName(l__P)=="Scorpion_not_de" or GetPlayerName(l__P)=="zld6334" or GetPlayerName(l__P)=="3Deviant" or GetPlayerName(l__P)=="Sokanish" or GetPlayerName(l__P)=="Sekaiyo" or GetPlayerName(l__P)=="PinkieNecro" or GetPlayerName(l__P)=="DBFag" or GetPlayerName(l__P)=="NecromanseR_RuS" or GetPlayerName(l__P)=="Wolfkill" or GetPlayerName(l__P)=="DDXKiritoKunxDD" or GetPlayerName(l__P)=="Famouzy" or GetPlayerName(P)=="Famousy" or GetPlayerName(l__P)=="Semko157" or GetPlayerName(l__P)=="King-Gilgamesh" or GetPlayerName(l__P)=="NN_DragonForce" or GetPlayerName(l__P)=="Provokatop935" or GetPlayerName(l__P)=="Sasaki..Haise" or GetPlayerName(l__P)=="xxNu-13xx" or GetPlayerName(l__P)=="pro100master999" or GetPlayerName(l__P)=="SAOkirito1121" or GetPlayerName(l__P)=="f.a.r.a.o.n." or GetPlayerName(l__P)=="Denamesh" or GetPlayerName(l__P)=="Fenix98" or GetPlayerName(l__P)=="Neo_Hirai" or GetPlayerName(l__P)=="54Dzangetsu75" or GetPlayerName(l__P)=="Fantastic_Gear" or GetPlayerName(l__P)=="Alastart" or GetPlayerName(l__P)=="Beerus_Sama" or GetPlayerName(l__P)=="Hikigaeru" or GetPlayerName(l__P)=="Artagonist" or GetPlayerName(l__P)=="AngraMainyu" or GetPlayerName(l__P)=="Kanato" or GetPlayerName(l__P)=="Sylphiette" or GetPlayerName(l__P)=="Magistor" or GetPlayerName(l__P)=="Kiyoma" or GetPlayerName(l__P)=="Jaunty_D-Mai" or GetPlayerName(l__P)=="Doubleutf01" or GetPlayerName(l__P)=="DarkAvenger" or GetPlayerName(l__P)=="Soulnomade" or GetPlayerName(l__P)=="KamaBr" or GetPlayerName(l__P)=="[OSV] Kama"
+return GetPlayerName(l__P)=="Sasaki..Haise" or GetPlayerName(l__P)=="2thedevile2" or GetPlayerName(l__P)=="renex" or GetPlayerName(l__P)=="N1rvana_Flame" or GetPlayerName(l__P)=="vashtwaa" or GetPlayerName(l__P)=="belugaa" or GetPlayerName(l__P)=="IIIafep" or GetPlayerName(l__P)=="Annieh" or GetPlayerName(l__P)=="Scorpion_not_de" or GetPlayerName(l__P)=="zld6334" or GetPlayerName(l__P)=="3Deviant" or GetPlayerName(l__P)=="Sokanish" or GetPlayerName(l__P)=="Sekaiyo" or GetPlayerName(l__P)=="PinkieNecro" or GetPlayerName(l__P)=="DBFag" or GetPlayerName(l__P)=="NecromanseR_RuS" or GetPlayerName(l__P)=="Wolfkill" or GetPlayerName(l__P)=="DDXKiritoKunxDD" or GetPlayerName(l__P)=="Famouzy" or GetPlayerName(P)=="Famousy" or GetPlayerName(l__P)=="Semko157" or GetPlayerName(l__P)=="King-Gilgamesh" or GetPlayerName(l__P)=="NN_DragonForce" or GetPlayerName(l__P)=="Provokatop935" or GetPlayerName(l__P)=="Sasaki..Haise" or GetPlayerName(l__P)=="xxNu-13xx" or GetPlayerName(l__P)=="pro100master999" or GetPlayerName(l__P)=="SAOkirito1121" or GetPlayerName(l__P)=="f.a.r.a.o.n." or GetPlayerName(l__P)=="Denamesh" or GetPlayerName(l__P)=="Fenix98" or GetPlayerName(l__P)=="Neo_Hirai" or GetPlayerName(l__P)=="54Dzangetsu75" or GetPlayerName(l__P)=="Fantastic_Gear" or GetPlayerName(l__P)=="Alastart" or GetPlayerName(l__P)=="Beerus_Sama" or GetPlayerName(l__P)=="Hikigaeru" or GetPlayerName(l__P)=="Artagonist" or GetPlayerName(l__P)=="AngraMainyu" or GetPlayerName(l__P)=="Kanato" or GetPlayerName(l__P)=="Sylphiette" or GetPlayerName(l__P)=="Magistor" or GetPlayerName(l__P)=="Kiyoma" or GetPlayerName(l__P)=="Jaunty_D-Mai" or GetPlayerName(l__P)=="Doubleutf01" or GetPlayerName(l__P)=="DarkAvenger" or GetPlayerName(l__P)=="Soulnomade" or GetPlayerName(l__P)=="KamaBr" or GetPlayerName(l__P)=="[OSV] Kama"
 endfunction
 function ARFHCond takes nothing returns boolean
 set P=GetTriggerPlayer()
@@ -25888,7 +25888,7 @@ set p=null
 endfunction
 function MeloiRFHCond takes nothing returns boolean
 set P=GetTriggerPlayer()
-return udg_B==false and (GetPlayerName(P)=="Hermaeus" or GetPlayerName(P)=="renex" or GetPlayerName(P)=="Magistor" or GetPlayerName(P)=="Annieh" or GetPlayerName(P)=="KamaBr" or GetPlayerName(P)=="[OSV] Kama" or GetPlayerName(P)=="No_Dust" or GetPlayerName(P)=="zld6334" or  GetPlayerName(P)=="TheDunwich525"  or GetPlayerName(P)=="Chevalier" or GetPlayerName(P)=="AnimeRandom" or BaseSkinCond(P))
+return udg_B==false and (GetPlayerName(P)=="Hermaeus" or GetPlayerName(P)=="2thedevile2" or GetPlayerName(P)=="renex" or GetPlayerName(P)=="Magistor" or GetPlayerName(P)=="Annieh" or GetPlayerName(P)=="KamaBr" or GetPlayerName(P)=="[OSV] Kama" or GetPlayerName(P)=="No_Dust" or GetPlayerName(P)=="zld6334" or  GetPlayerName(P)=="TheDunwich525"  or GetPlayerName(P)=="Chevalier" or GetPlayerName(P)=="AnimeRandom" or BaseSkinCond(P))
 endfunction
 function MeloiRFHCast takes nothing returns nothing
 local integer ip=GetPlayerId(GetTriggerPlayer())
@@ -34101,6 +34101,40 @@ function IchigoBankaiW_Counter takes unit newCaster, unit newTarget returns noth
         set newTimer=null
 endfunction
 //function AnimeRandom
+function CheckAngleDummyCond takes nothing returns boolean
+return GetUnitAbilityLevel(GetTriggerUnit(),'Pet2')>0 and GetIssuedOrderId()==OrderId("smart") 
+endfunction
+
+function CheckAngleDummyCast takes nothing returns nothing
+local unit u=GetTriggerUnit()
+local real x=GetOrderPointX()
+local real y=GetOrderPointY()
+local real x1=GetUnitX(u)
+local real y1=GetUnitY(u)
+local integer idu=GetHandleId( (GetOwningPlayer( u )) )
+local real facing=Angle2(x1,y1,x,y)
+
+call SaveReal(HH,idu,StringHash("DummyFacing"),facing)
+//call DisplayTextToPlayer(GetLocalPlayer(),0,0,"facing:"+R2S( facing ))
+
+set u=null
+
+endfunction
+
+
+function CheckAngleDummyInit takes nothing returns nothing
+local trigger t=CreateTrigger()
+local integer i=0
+loop
+call TriggerRegisterPlayerUnitEvent(t,Player(i),EVENT_PLAYER_UNIT_ISSUED_POINT_ORDER,null)
+set i=i+1
+exitwhen i==bj_MAX_PLAYER_SLOTS
+endloop
+call TriggerAddAction(t,function CheckAngleDummyCast)
+call TriggerAddCondition(t,Condition(function CheckAngleDummyCond))
+set t=null
+endfunction
+
 function PolX takes real px,real distance,real l__a returns real
 return px+distance*Cos(l__a*bj_DEGTORAD)
 endfunction
@@ -178093,6 +178127,7 @@ local real y0=GetUnitY(Dummy)
 local real x1=0
 local real y1=0
 local real distance
+local real facing_new=LoadReal(HH, GetHandleId( (GetOwningPlayer( caster )) ), StringHash("DummyFacing") )
 set time=time+0.02
 set time1=time1+0.02
 set distance=LoadReal(HH,id,8)
@@ -178112,7 +178147,7 @@ endif
 
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\SoundJap\\BlackGokuR3.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+////call KillSoundWhenDone(soundplay)
 
 call UnitSpeed(caster,1)
 call DamageAoeOneTime0(caster,x0,y0,500,(LoadReal(HH,id,15)+0.01)*GetHeroAgi(caster,true))
@@ -178125,7 +178160,9 @@ else
 
 if time==0.02 then
 
-if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
+call SaveReal(HH, GetHandleId( (GetOwningPlayer( caster )) ), StringHash("DummyFacing"), facing )
+
+if LoadBoolean(HH,GetHandleId(GetLocalPlayer()), DBSoundEngHash )==true then
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\SoundEng\\BlackGokuR1-1eng.mp3",false,false,true,12000,12000,"Default")
 else
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\SoundJap\\BlackGokuR1-1.mp3",false,false,true,12000,12000,"Default")
@@ -178141,6 +178178,7 @@ call SaveSoundHandle(HH,id,25,soundplay)
 call UnitSpeed(caster,2)
 call SetUnitAnimationByIndex(caster,63)
 set n0=CreateUnit(GetOwningPlayer(caster),'gbRd',GetUnitX(caster),GetUnitY(caster),facing)
+call UnitAddAbility(n0,'Pet2')
 call UnitSize(n0,1,1,1)
 call MoveUnit(n0,n0,50,facing-90)
 call SetUnitFlyHeight(n0,100,0)
@@ -178189,11 +178227,13 @@ endif
 if time<3 then
 call SaveReal(HH,id,15,damage+0.04)
 call MoveUnit(caster,Dummy1,100,facing)
-call SaveReal(HH,id,3,GetUnitFacing(Dummy1))
+
+call SaveReal(HH,id,3,GetUnitFacing(caster))
+//call SaveReal(HH,id,3,GetUnitFacing(Dummy1))
 endif
 
 if time==0.4 then
-call UnitAddAbility(Dummy1,'BGR2')
+call UnitAddAbility(Dummy1,0x42475232)
 call UnitSpeed(LoadUnitHandle(HH,id,23),0)
 
 if LoadBoolean(HH,GetHandleId(caster),StringHash("BGRose"))==true then
@@ -178212,6 +178252,8 @@ call MoveUnit(caster,LoadUnitHandle(HH,id,21),50,facing+45)
 endif
 
 if time==3 then
+
+call SaveReal(HH,id,3,facing_new)
 call SaveReal(HH,id,22,time)
 set time=20
 call SaveReal(HH,id,5,time)
@@ -178231,7 +178273,10 @@ endif
 endif
 
 call SaveReal(HH,id,6,time1)
-call SetUnitFacing(caster,facing)
+
+
+call SetUnitFacing(caster,facing_new)
+//call SetUnitFacing(caster,facing)
 call PauseUnit(caster,true)
 call SetUnitInvulnerable(caster,true)
 endif
@@ -178254,22 +178299,22 @@ call RemoveUnit(LoadUnitHandle(HH,id,23))
 call PauseUnit(Dummy1,true)
 call StopSound(LoadSoundHandle(HH,id,24),true,false)
 call StopSound(LoadSoundHandle(HH,id,25),true,false)
-call KillSoundWhenDone(LoadSoundHandle(HH,id,24))
-call KillSoundWhenDone(LoadSoundHandle(HH,id,25))
+////call KillSoundWhenDone(LoadSoundHandle(HH,id,24))
+////call KillSoundWhenDone(LoadSoundHandle(HH,id,25))
 
-if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
+if LoadBoolean(HH,GetHandleId(GetLocalPlayer()), DBSoundEngHash )==true then
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\SoundEng\\BlackGokuR2-1eng.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+////call KillSoundWhenDone(soundplay)
 else
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\SoundJap\\BlackGokuR2-1.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+////call KillSoundWhenDone(soundplay)
 endif
 
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\SoundJap\\BlackGokuR2.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+////call KillSoundWhenDone(soundplay)
 
 call UnitSpeed(caster,3)
 set n0=CreateUnit(GetOwningPlayer(caster),'e200',GetUnitX(caster),GetUnitY(caster),facing)
@@ -178342,6 +178387,7 @@ set Dummy=null
 set Dummy1=null
 set caster=null
 endfunction
+
 
 function BlackGokuEBalls1 takes nothing returns nothing
 local integer id=GetHandleId(GetExpiredTimer())
