@@ -34761,18 +34761,6 @@ if CurrentEventAttack and GetUnitAbilityLevel(c,'A1F5')>0 then        // Гил�
     call newBlockDamage(u)
     set nb=0
 endif
-if LoadInteger(HH,GetHandleId( GetOwningPlayer(u) ),UIDodgeHash)>0 and (nb<GetHeroStr(u,true) or CurrentEventAttack) then
-    call SaveInteger(HH,GetHandleId( GetOwningPlayer(u) ),UIDodgeHash,LoadInteger(HH,GetHandleId( GetOwningPlayer(u) ),UIDodgeHash)-1)
-    call newBlockDamage(u)
-    set nb=0
-    if GetHeroLevel(u)>=35 and LoadBoolean(HH,GetHandleId( GetOwningPlayer(u) ),MUIAvailableHash)==false then
-        call SaveInteger(HH,GetHandleId( GetOwningPlayer(u) ),MUIDodgeCountHash,LoadInteger(HH,GetHandleId( GetOwningPlayer(u) ),MUIDodgeCountHash)+1)
-        if LoadInteger(HH,GetHandleId( GetOwningPlayer(u) ),MUIDodgeCountHash)>=20 then
-            call SaveBoolean(HH,GetHandleId( GetOwningPlayer(u) ),MUIAvailableHash,true)
-            set MUIUnlock[GetPlayerId(GetOwningPlayer(u))]=CreateUnit(GetOwningPlayer(u),'h111',RX,RY,0)
-        endif
-    endif
-endif
 if (LoadReal(HH,GetHandleId(c),StringHash("yamato"))==1 or GetRandomInt(0,100)<15) and (UnitHasItemOfTypeBJ(c,'I02V') or GetUnitAbilityLevel(c,'KIG4')>0) and CurrentEventAttack and IsUnitType(c, UNIT_TYPE_HERO) and IsUnitIllusion(c)==false and GetUnitAbilityLevel(c,'A3WR')==0 then
     call DestroyEffect(AddSpecialEffectTarget("war3mapImported\\BloodEX.mdx",u,"chest"))
     call SaveReal(HH,GetHandleId(c),StringHash("yamato"),0)
@@ -35057,9 +35045,23 @@ if cond==0 then
             endif
             set i=0
         endif
-        if b>0 and (GetUnitAbilityLevel(u,'Avul')>0 or GetUnitAbilityLevel(u,'A16H')>0 or GetUnitAbilityLevel(u,'A1E2')>0 or GetUnitAbilityLevel(u,'B06V')>0 or GetUnitAbilityLevel(u,'A1I2')>0 or GetUnitAbilityLevel(u,'A1HV')>0 or GetUnitAbilityLevel(u,'A1DO')>0 or GetUnitAbilityLevel(u,'B06P')>0 or GetUnitAbilityLevel(u,'B06I')>0 or GetUnitAbilityLevel(u,'B02E')>0 or GetUnitAbilityLevel(u,'B05J')>0 or GetUnitAbilityLevel(u,'A16D')>0 or GetUnitAbilityLevel(u,'A12P')>0 or GetUnitAbilityLevel(u,'A0VJ')>0 or udg_B==false or GetUnitAbilityLevel(u,'B04H')>0 or GetUnitAbilityLevel(u,'B04E')>0 or GetUnitAbilityLevel(u,'B049')>0 or GetUnitAbilityLevel(u,'B01G')>0 or GetUnitAbilityLevel(u,'ItV1')>0 or GetUnitAbilityLevel(u,'B00Y')>0 or GetUnitAbilityLevel(u,'B02U')>0 or GetUnitAbilityLevel(u,'AP08')>0 or GetUnitTypeId(u)=='H01E' or GetUnitTypeId(u)=='H01G' or GetUnitTypeId(u)=='H01I' or GetUnitTypeId(u)=='H03Q' or GetUnitTypeId(u)=='H06O')  then //
+        if b>0 and (GetUnitAbilityLevel(u,'Avul')>0 or GetUnitAbilityLevel(u,'A16H')>0 or GetUnitAbilityLevel(u,'A1E2')>0 or GetUnitAbilityLevel(u,'B06V')>0 or GetUnitAbilityLevel(u,'A1I2')>0 or GetUnitAbilityLevel(u,'A1HV')>0 or GetUnitAbilityLevel(u,'A1DO')>0 or GetUnitAbilityLevel(u,'B06P')>0 or GetUnitAbilityLevel(u,'B06I')>0 or GetUnitAbilityLevel(u,'B02E')>0 or GetUnitAbilityLevel(u,'B05J')>0 or GetUnitAbilityLevel(u,'A16D')>0 or GetUnitAbilityLevel(u,'A12P')>0 or GetUnitAbilityLevel(u,'A0VJ')>0 or udg_B==false or GetUnitAbilityLevel(u,'A7IH')>0 or GetUnitAbilityLevel(u,'B04H')>0 or GetUnitAbilityLevel(u,'B04E')>0 or GetUnitAbilityLevel(u,'B049')>0 or GetUnitAbilityLevel(u,'B01G')>0 or GetUnitAbilityLevel(u,'ItV1')>0 or GetUnitAbilityLevel(u,'B00Y')>0 or GetUnitAbilityLevel(u,'B02U')>0 or GetUnitAbilityLevel(u,'AP08')>0 or GetUnitTypeId(u)=='H01E' or GetUnitTypeId(u)=='H01G' or GetUnitTypeId(u)=='H01I' or GetUnitTypeId(u)=='H03Q' or GetUnitTypeId(u)=='H06O')  then //
             call newBlockDamage(u)
             set nb=0
+        endif
+        if LoadInteger(HH,GetHandleId( GetOwningPlayer(u) ),UIDodgeHash)>0 and (nb<(GetUnitState(u,UNIT_STATE_MAX_LIFE)-GetUnitState(u,UNIT_STATE_LIFE))*0.5)) and GetUnitAbilityLevel(u,'A7IH')==0 then
+            call SaveInteger(HH,GetHandleId( GetOwningPlayer(u) ),UIDodgeHash,LoadInteger(HH,GetHandleId( GetOwningPlayer(u) ),UIDodgeHash)-1)
+            call newBlockDamage(u)
+            call UnitAddAbility(u,'A7IH')
+            call UnitRemoveAbilityTimedPause(u,'A7IH',0.2)
+            set nb=0
+            if GetHeroLevel(u)>=35 and LoadBoolean(HH,GetHandleId( GetOwningPlayer(u) ),MUIAvailableHash)==false then
+                call SaveInteger(HH,GetHandleId( GetOwningPlayer(u) ),MUIDodgeCountHash,LoadInteger(HH,GetHandleId( GetOwningPlayer(u) ),MUIDodgeCountHash)+1)
+                if LoadInteger(HH,GetHandleId( GetOwningPlayer(u) ),MUIDodgeCountHash)>=20 then
+                    call SaveBoolean(HH,GetHandleId( GetOwningPlayer(u) ),MUIAvailableHash,true)
+                    set MUIUnlock[GetPlayerId(GetOwningPlayer(u))]=CreateUnit(GetOwningPlayer(u),'h111',RX,RY,0)
+                endif
+            endif
         endif
         if nb>0 and (LoadBoolean(h, uid, Shield_RengokuE)==true or LoadBoolean(h, uid, Shield_YujiE)==true or LoadBoolean(h, uid, StringHash("MeiT_Shield"))==true) then
             call newBlockDamage(u)
@@ -61679,6 +61681,7 @@ function PowerDownGoku takes nothing returns nothing
         call ShowAbility2('GKBB',false)
         call ShowAbility2('GKF1',true)
         call ShowAbility2('GKG6',false)
+        call ShowAbility2('GKG7',false)
         call ShowAbility2('GKG1',true)
         call UnitAddAbility(u,'GkH0')
         call SetUnitAbilityLevel(u,'A0NM',1)
@@ -61885,6 +61888,7 @@ function PowerUpGokuCast2 takes nothing returns nothing
             call UnitAddAbility(u,'GkH1')
             call UnitMakeAbilityPermanent(u,true,'GkH1')
             call ShowAbility2('GKG1',false)
+            call ShowAbility2('GKG7',false)
             call ShowAbility2('GKG6',true)
             set soundplay=CreateSound("Sound\\Music\\mp3Music\\PowerUp2.mp3",false,false,true,12700,12700,"")
             call StartSound(soundplay)
@@ -61904,6 +61908,7 @@ function PowerUpGokuCast2 takes nothing returns nothing
             call UnitAddAbility(u,'GkH2')
             call UnitMakeAbilityPermanent(u,true,'GkH2')
             call ShowAbility2('GKG1',false)
+            call ShowAbility2('GKG7',false)
             call ShowAbility2('GKG6',true)
             set soundplay=CreateSound("Sound\\Music\\mp3Music\\PowerUp2.mp3",false,false,true,12700,12700,"")
             call StartSound(soundplay)
@@ -61924,6 +61929,7 @@ function PowerUpGokuCast2 takes nothing returns nothing
             call UnitAddAbility(u,'GkH3')
             call UnitMakeAbilityPermanent(u,true,'GkH3')
             call ShowAbility2('GKG1',false)
+            call ShowAbility2('GKG7',false)
             call ShowAbility2('GKG6',true)
             set soundplay=CreateSound("Sound\\Music\\mp3Music\\PowerUp2.mp3",false,false,true,12700,12700,"")
             call StartSound(soundplay)
@@ -61943,6 +61949,7 @@ function PowerUpGokuCast2 takes nothing returns nothing
             call UnitAddAbility(u,'GkH4')
             call UnitMakeAbilityPermanent(u,true,'GkH4')
             call ShowAbility2('GKG1',false)
+            call ShowAbility2('GKG7',false)
             call ShowAbility2('GKG6',true)
             call SetUnitModel(u,"GokuSS4.mdx")
             call ShowAbility2('GKF1',false)
@@ -61965,6 +61972,7 @@ function PowerUpGokuCast2 takes nothing returns nothing
             call UnitAddAbility(u,'GkH5')
             call UnitMakeAbilityPermanent(u,true,'GkH5')
             call ShowAbility2('GKG1',false)
+            call ShowAbility2('GKG7',false)
             call ShowAbility2('GKG6',true)
             call ShowAbility2('GKSS',false)
             call ShowAbility2('GKS2',false)
@@ -61988,6 +61996,7 @@ function PowerUpGokuCast2 takes nothing returns nothing
             call UnitAddAbility(u,'GkH6')
             call UnitMakeAbilityPermanent(u,true,'GkH6')
             call ShowAbility2('GKG1',false)
+            call ShowAbility2('GKG7',false)
             call ShowAbility2('GKG6',true)
             call ShowAbility2('GKSS',false)
             call ShowAbility2('GKS2',false)
@@ -62006,7 +62015,8 @@ function PowerUpGokuCast2 takes nothing returns nothing
             call ShowAbility2('GKSB',false)
             call ShowAbility2('GKUI',false)
             call ShowAbility2('GKG1',false)
-            call ShowAbility2('GKG6',true)
+            call ShowAbility2('GKG6',false)
+            call ShowAbility2('GKG7',true)
             if LoadBoolean(HH,idp,MUIAvailableHash)==false then
                 call UnitRemoveTransformTimedPause(u,'GkH7',20)
                 call CreateModeIndicatorWithPauseFormDispellable(u, "ReplaceableTextures\\Commandbuttons\\BTNGokuUI.blp", 20,'GkH7')
@@ -62016,7 +62026,8 @@ function PowerUpGokuCast2 takes nothing returns nothing
             call ShowAbility2('GKF1',false)
             call ShowAbility2('GKBB',true)
             call ShowAbility2('GKG1',false)
-            call ShowAbility2('GKG6',true)
+            call ShowAbility2('GKG6',false)
+            call ShowAbility2('GKG7',true)
             call UnitRemoveTransformTimedPause(u,'GkH8',20)
             call CreateModeIndicatorWithPauseFormDispellable(u, "ReplaceableTextures\\Commandbuttons\\BTNGokuMUI.blp", 20,'GkH8')
         endif
