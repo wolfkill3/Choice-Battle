@@ -34858,16 +34858,7 @@ if (not((GetUnitAbilityLevel(u,'A0IH')==0 and GetUnitAbilityLevel(c,'A0IH')==0) 
 call newBlockDamage(u)
 set nb=0
 endif
-if GetUnitAbilityLevel(u,'A14J')>0  and nb>200 then
-    if c!=UltimateDamage then
-        call SaveUnitHandle(HH,uid,REVERSE_TARGET,c)
-    else
-        call SaveUnitHandle(HH,uid,REVERSE_TARGET,Hero[idc])
-    endif
-    call newBlockDamage(u)
-    set nb=0
-endif
-if GetUnitAbilityLevel(u,'A24J')>0  and nb>200 then
+if (GetUnitAbilityLevel(u,'A14J')>0  and nb>200) or (GetUnitAbilityLevel(u,'A24J')>0 and nb>200) or GetUnitAbilityLevel(u,'A34J')>0 then
     if c!=UltimateDamage then
         call SaveUnitHandle(HH,uid,REVERSE_TARGET,c)
     else
@@ -63410,8 +63401,8 @@ if LoadBoolean(HH,GetHandleId(u),TARGET_ABILITY)==false then
 call SaveReal(HH,id,2,time+0.04)
 endif
 else
-call UnitMakeAbilityPermanent(u,false,'A24J')
-call UnitRemoveAbility(u,'A24J')
+call UnitMakeAbilityPermanent(u,false,'A34J')
+call UnitRemoveAbility(u,'A34J')
 call UnitRemoveBuffs(u,false,true)
 call SetUnitTimeScale(u,1)
 call SaveBoolean(HH,idu,ANTITARGET_ABILITY,false)
@@ -63453,8 +63444,8 @@ local integer id=GetHandleId(t)
 local player p=GetOwningPlayer(u)
 call SaveUnitHandle(HH,id,0,u)
 call SaveReal(HH,id,2,0)
-call UnitAddAbility(u,'A24J')
-call UnitMakeAbilityPermanent(u,true,'A24J')
+call UnitAddAbility(u,'A34J')
+call UnitMakeAbilityPermanent(u,true,'A34J')
 call PauseUnit(u,true)
 call SetUnitAnimationByIndex(u,185)
 set EFF=AddSpecialEffect("Yellow--zhendi.mdl", x, y)
