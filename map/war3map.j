@@ -35010,14 +35010,18 @@ if cond==0 then
             set i=0
         endif
         if b>0 and (GetUnitAbilityLevel(u,'Avul')>0 or GetUnitAbilityLevel(u,'A16H')>0 or GetUnitAbilityLevel(u,'A1E2')>0 or GetUnitAbilityLevel(u,'B06V')>0 or GetUnitAbilityLevel(u,'A1I2')>0 or GetUnitAbilityLevel(u,'A1HV')>0 or GetUnitAbilityLevel(u,'A1DO')>0 or GetUnitAbilityLevel(u,'B06P')>0 or GetUnitAbilityLevel(u,'B06I')>0 or GetUnitAbilityLevel(u,'B02E')>0 or GetUnitAbilityLevel(u,'B05J')>0 or GetUnitAbilityLevel(u,'A16D')>0 or GetUnitAbilityLevel(u,'A12P')>0 or GetUnitAbilityLevel(u,'A0VJ')>0 or udg_B==false or GetUnitAbilityLevel(u,'A7IH')>0 or GetUnitAbilityLevel(u,'B04H')>0 or GetUnitAbilityLevel(u,'B04E')>0 or GetUnitAbilityLevel(u,'B049')>0 or GetUnitAbilityLevel(u,'B01G')>0 or GetUnitAbilityLevel(u,'ItV1')>0 or GetUnitAbilityLevel(u,'B00Y')>0 or GetUnitAbilityLevel(u,'B02U')>0 or GetUnitAbilityLevel(u,'AP08')>0 or GetUnitTypeId(u)=='H01E' or GetUnitTypeId(u)=='H01G' or GetUnitTypeId(u)=='H01I' or GetUnitTypeId(u)=='H03Q' or GetUnitTypeId(u)=='H06O')  then //
+            if GetUnitAbilityLevel(u,'A7IH')>0 then
+                call SetUnitAnimationByIndex(u,GetRandomInt(222,230))
+            endif
             call newBlockDamage(u)
             set nb=0
         endif
-        if LoadInteger(HH,GetHandleId( GetOwningPlayer(u) ),UIDodgeHash)>0 and (nb<(GetUnitState(u,UNIT_STATE_MAX_LIFE)-GetUnitState(u,UNIT_STATE_LIFE))*0.5)) and GetUnitAbilityLevel(u,'A7IH')==0 then
+        if LoadInteger(HH,GetHandleId( GetOwningPlayer(u) ),UIDodgeHash)>0 and (nb<(GetUnitState(u,UNIT_STATE_MAX_LIFE)-GetUnitState(u,UNIT_STATE_LIFE))*0.5) and GetUnitAbilityLevel(u,'A7IH')==0 then
             call SaveInteger(HH,GetHandleId( GetOwningPlayer(u) ),UIDodgeHash,LoadInteger(HH,GetHandleId( GetOwningPlayer(u) ),UIDodgeHash)-1)
             call newBlockDamage(u)
             call UnitAddAbility(u,'A7IH')
             call UnitRemoveAbilityTimedPause(u,'A7IH',0.2)
+            call SetUnitAnimationByIndex(u,GetRandomInt(222,230))
             set nb=0
             if GetHeroLevel(u)>=35 and LoadBoolean(HH,GetHandleId( GetOwningPlayer(u) ),MUIAvailableHash)==false then
                 call SaveInteger(HH,GetHandleId( GetOwningPlayer(u) ),MUIDodgeCountHash,LoadInteger(HH,GetHandleId( GetOwningPlayer(u) ),MUIDodgeCountHash)+1)
@@ -61678,9 +61682,9 @@ function PowerUpGokuCast2 takes nothing returns nothing
     if time<6 then
         call PauseUnit(u,true)
         call SaveReal(h,id,1,time+0.025)
-        if GetUnitCurrentAnimationId(u)!=187 then
-            if GetUnitCurrentAnimationId(u)!=189 then
-                call SetUnitAnimationByIndex(u,187)
+        if GetUnitCurrentAnimationId(u)!=169 then
+            if GetUnitCurrentAnimationId(u)!=171 then
+                call SetUnitAnimationByIndex(u,169)
             endif
         endif
         if LoadInteger(h,id,3)==7 then
@@ -61750,7 +61754,7 @@ function PowerUpGokuCast2 takes nothing returns nothing
                 call UnitMakeAbilityPermanent(u,true,'A4AU')
                 call SaveInteger(HH,idp,UIDodgeHash,10)
                 call SaveInteger(HH,idp,UIMaxDodgeHash,10)
-                call SetUnitAnimationByIndex(u,189)
+                call SetUnitAnimationByIndex(u,171)
             endif
         elseif LoadInteger(h,id,3)==8 then
             call SetUnitInvulnerable(u,true)
@@ -61829,7 +61833,7 @@ function PowerUpGokuCast2 takes nothing returns nothing
                 call UnitAddAbility(u,'A4AU')
                 call SaveInteger(HH,idp,UIMaxDodgeHash,15)
                 call UnitMakeAbilityPermanent(u,true,'A4AU')
-                call SetUnitAnimationByIndex(u,189)
+                call SetUnitAnimationByIndex(u,171)
             endif
         endif 
     else
@@ -62106,7 +62110,7 @@ if GetWidgetLife(c)>0 and GetWidgetLife(u)>0 and (time<4 or time2>0) then
     call SaveReal(HH,id,12,time+0.03)
     if time<0.3 then
         if time==0.03 then
-            call SetUnitAnimationByIndex(u,199)
+            call SetUnitAnimationByIndex(u,181)
         endif
         if time==0.27 then
             set EFF=AddSpecialEffect("GokuDash.mdx",x,y)
@@ -62116,7 +62120,7 @@ if GetWidgetLife(c)>0 and GetWidgetLife(u)>0 and (time<4 or time2>0) then
             call SetSpecialEffectTimeScale(EFF , 0.7)
         endif
     else
-        call SetUnitAnimationByIndex(u,64)
+        call SetUnitAnimationByIndex(u,51)
         if dist>50 then
             call SetUnitXY_1(u,x+75*Cos(a),y+75*Sin(a), false)
             call SetSpecialEffectX(LoadEffectHandle(HH,id,3),x+75*Cos(a))
@@ -62133,7 +62137,7 @@ if GetWidgetLife(c)>0 and GetWidgetLife(u)>0 and (time<4 or time2>0) then
                 if time2==0 then
                     call RemoveEffect(LoadEffectHandle(HH,id,3),0.1,false,CreateTimer())
                     call SaveReal(HH,id,2,0)
-                    call SetUnitAnimationByIndex(u,92)
+                    call SetUnitAnimationByIndex(u,79)
                     call SetUnitInvulnerable(c,true)
                     call PauseUnit(c,true)
                     call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,true)
@@ -62289,8 +62293,8 @@ else
         call SetUnitXY_1(l__d,x1-350*Cos(a),y1-350*Sin(a), false)
         call SetUnitAnimationOffsetPercent(u,0.2)
         call SaveReal(HH,id,9,dist+speed)
-        if GetUnitCurrentAnimationId(u)!=190 then
-            call SetUnitAnimationByIndex(u,190)
+        if GetUnitCurrentAnimationId(u)!=172 then
+            call SetUnitAnimationByIndex(u,172)
         endif
         if alpha<255 then
             set alpha=LoadInteger(HH,id,8)+12
@@ -62413,7 +62417,7 @@ local real a=Atan2(y1-y,x1-x)
 local integer id=GetHandleId(t)
 call SaveUnitHandle(HH,id,0,u)
 if LoadReal(HH,GetHandleId(GetOwningPlayer(Goku)),VariationTHash)==0 then
-call SetUnitAnimationByIndex(u,190)
+call SetUnitAnimationByIndex(u,172)
 set n=CreateUnit(p,'e1CO',x,y,a*bj_RADTODEG)
 if GetUnitAbilityLevel(u,'GkH0')>0 or GetUnitAbilityLevel(u,'GkH1')>0 or GetUnitAbilityLevel(u,'GkH2')>0 or GetUnitAbilityLevel(u,'GkH3')>0 or GetUnitAbilityLevel(u,'GkH4')>0 then
 call SetUnitVertexColor(n,255,255,125,0)
@@ -62736,7 +62740,7 @@ if time<1.2 then
     if time==0 then
         call UnitAddAbility(u,'A5AU') 
         call UnitRemoveAbilityTimed(u,'A5AU',1.4)
-        call SetUnitAnimationByIndex(u,166)
+        call SetUnitAnimationByIndex(u,153)
     endif
     if time==0.03 then
         call SetUnitAnimationOffsetPercent(u,0.25)
@@ -62933,7 +62937,7 @@ local integer power=0
 local integer i=0
 if time<100 and GetUnitState(u,UNIT_STATE_LIFE)>0.405 and LoadBoolean(HH,GetHandleId(u),ANTITARGET_ABILITY)==false and LoadInteger(HH,GetHandleId(GenkiDama),0)==0 and GetUnitAbilityLevel(u,'CBC2')==0 and GetUnitAbilityLevel(u,'cbc3')==0  and GetUnitAbilityLevel(u,'cbc5')==0  and GetUnitAbilityLevel(u, 'cbc7')==0 and GetUnitAbilityLevel(u, 'cbc8')==0 and GetUnitAbilityLevel(u, 'cbc9')==0 and UnitIsAlive(u) and UnitIsAlive(dummy) and udg_B and DU2 then
     if time==0.05 then
-        call SetUnitAnimationByIndex(u,165)
+        call SetUnitAnimationByIndex(u,152)
     endif
     if time==0.1 then
         call SetUnitAnimationOffsetPercent(u,0.4)
@@ -63201,7 +63205,7 @@ call SaveReal(HH,id,2,0)
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\GokuYouFool2.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
 call KillSoundWhenDone(soundplay)
-call SetUnitAnimationByIndex(u,179)
+call SetUnitAnimationByIndex(u,166)
 call PauseUnit(u,true)
 call SetUnitInvulnerable(u,true)
 call SaveGroupHandle(HH,id,6,CreateGroup())
@@ -63234,7 +63238,7 @@ call SaveReal(HH,id,2,0)
 call UnitAddAbility(u,'A24J')
 call UnitMakeAbilityPermanent(u,true,'A24J')
 call PauseUnit(u,true)
-call SetUnitAnimationByIndex(u,185)
+call SetUnitAnimationByIndex(u,169)
 set EFF=AddSpecialEffect("Yellow--zhendi.mdl", x, y)
 call SetSpecialEffectTimeScale(EFF , 0.5)
 call SetSpecialEffectScale(EFF , 3)
@@ -63368,40 +63372,71 @@ local real y=GetUnitY(u)
 local integer idu=GetHandleId(u)
 local unit c=LoadUnitHandle(HH,idu,REVERSE_TARGET)
 local player p=GetOwningPlayer(u)
+local real a
 if time<2 and c==null then
-call PauseUnit(u,true)
-if LoadBoolean(HH,GetHandleId(u),TARGET_ABILITY)==false then
-call SaveReal(HH,id,2,time+0.04)
-endif
+    call PauseUnit(u,true)
+    if LoadBoolean(HH,GetHandleId(u),TARGET_ABILITY)==false then
+        call SaveReal(HH,id,2,time+0.04)
+    endif
 else
-call UnitMakeAbilityPermanent(u,false,'A34J')
-call UnitRemoveAbility(u,'A34J')
-call UnitRemoveBuffs(u,false,true)
-call SetUnitTimeScale(u,1)
-call SaveBoolean(HH,idu,ANTITARGET_ABILITY,false)
-if c!=null then
-call SaveUnitHandle(HH,id,1,c)
-call RemoveSavedHandle(HH,idu,REVERSE_TARGET)
-call PauseTimer(t)
-call SaveReal(HH,id,2,0)
-set soundplay=CreateSound("Sound\\Music\\mp3Music\\AUI2.mp3",false,false,true,12700,12700,"")
-call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
-call SetUnitAnimationByIndex(u,179)
-call PauseUnit(u,true)
-call SetUnitInvulnerable(u,true)
-call SaveGroupHandle(HH,id,6,CreateGroup())
-set n=CreateUnit(p,'e0PS',x,y,0)
-call SetUnitVertexColor(n,0,0,0,0)
-call SaveUnitHandle(HH,id,4,n)
-call TimerStart(t,0.02,true,function AutonomousUICast3)
-else
-call SetUnitAnimation(u,"stand")
-call PauseUnit(u,false)
-call PauseTimer(t)
-call DestroyTimer(t)
-call FlushChildHashtable(HH,id)
-endif
+    call UnitMakeAbilityPermanent(u,false,'A34J')
+    call UnitRemoveAbility(u,'A34J')
+    call UnitRemoveBuffs(u,false,true)
+    call SetUnitTimeScale(u,1)
+    call SaveBoolean(HH,idu,ANTITARGET_ABILITY,false)
+    if c!=null then
+        call RemoveSavedHandle(HH,idu,REVERSE_TARGET)
+        set a=Atan2(GetUnitY(c)-y,GetUnitX(c)-x)
+        if SR(x,y,GetUnitX(c),GetUnitY(c))<300 then
+            call SaveUnitHandle(HH,id,1,c)
+            call PauseTimer(t)
+            call SaveReal(HH,id,2,0)
+            set soundplay=CreateSound("Sound\\Music\\mp3Music\\AUI2.mp3",false,false,true,12700,12700,"")
+            call StartSound(soundplay)
+            call KillSoundWhenDone(soundplay)
+            call PauseUnit(u,true)
+            call SetUnitInvulnerable(u,true)
+            call PauseUnit(c,true)
+            call SetUnitInvulnerable(c,true)
+            set EFF=AddSpecialEffect("war3mapImported\\BlackBlink.mdx", GetUnitX(u), GetUnitY(u))
+            call SetSpecialEffectZ(EFF, GetUnitFlyHeight(u))
+            call SetSpecialEffectTimeScale(EFF , 3)
+            call SetSpecialEffectVertexColour(EFF,255,255,255,120)
+            call DestroyEffect(EFF)
+            call SetUnitXY_1(u,x-245*Cos(a),y-245*Sin(a), false)
+            call SetUnitFlyHeight(u,300,0)
+            set EFF=AddSpecialEffect("war3mapImported\\BlackBlink.mdx", GetUnitX(u), GetUnitY(u))
+            call SetSpecialEffectZ(EFF, GetUnitFlyHeight(u))
+            call SetSpecialEffectTimeScale(EFF , 3)
+            call SetSpecialEffectVertexColour(EFF,255,255,255,120)
+            call DestroyEffect(EFF)
+            call SetUnitAnimationByIndex(u,247)
+            call TimerStart(t,0.02,true,function AutonomousUICast3)
+        else
+            call SetUnitFacingInstant(u,a*bj_RADTODEG)
+            call SetUnitAnimationByIndex(u,GetRandomInt(248,251))
+            if GetRandomInt(1,2)==1 then
+                call Push5(u,30,a+90*bj_DEGTORAD,300,"")
+            else
+                call Push5(u,30,a-90*bj_DEGTORAD,300,"")
+            endif
+            call UnitAddAbility(u,'A7IH')
+            call UnitRemoveAbilityTimedPause(u,'A7IH',0.2)
+            call PauseTimer(t)
+            call DestroyTimer(t)
+            call SetUnitTimeScale(u,1)
+            call SetUnitPathing(u,true)
+            call PauseUnit(u,false)
+            call FlushChildHashtable(HH,id)
+            call SetUnitInvulnerable(u,false)
+        endif
+    else
+        call SetUnitAnimation(u,"stand")
+        call PauseUnit(u,false)
+        call PauseTimer(t)
+        call DestroyTimer(t)
+        call FlushChildHashtable(HH,id)
+    endif
 endif
 set c=null
 set u=null
@@ -63420,19 +63455,7 @@ call SaveReal(HH,id,2,0)
 call UnitAddAbility(u,'A34J')
 call UnitMakeAbilityPermanent(u,true,'A34J')
 call PauseUnit(u,true)
-call SetUnitAnimationByIndex(u,185)
-set EFF=AddSpecialEffect("Yellow--zhendi.mdl", x, y)
-call SetSpecialEffectTimeScale(EFF , 0.5)
-call SetSpecialEffectScale(EFF , 3)
-call DestroyEffect(EFF)
-set EFF=AddSpecialEffect("AuraExplYellow.mdl", x, y)
-call SetSpecialEffectTimeScale(EFF , 0.5)
-call SetSpecialEffectScale(EFF , 3)
-call DestroyEffect(EFF)
-set EFF = AddSpecialEffect("Hashirama\\SmokeFuzzy.mdl",x, y)
-call SetSpecialEffectScale(EFF, 1.6)
-call SetSpecialEffectTimeScale(EFF , 1.6)
-call DestroyEffect(EFF)
+call SetUnitAnimationByIndex(u,242)
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\AUI1.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
 call KillSoundWhenDone(soundplay)
@@ -63665,8 +63688,8 @@ local real time2=LoadReal(h,id,13)
 local doodad kamewave=null
 local fogmodifier f
 local integer i
-if GetUnitCurrentAnimationId(u)!=169 then
-call SetUnitAnimationByIndex(u,169)
+if GetUnitCurrentAnimationId(u)!=156 then
+call SetUnitAnimationByIndex(u,156)
 endif
 if time==0.1 then
     call SaveReal(h,id,10,3500)
@@ -63956,8 +63979,8 @@ local fogmodifier f
 local integer i
 call SaveReal(h,id,12,time+0.1)
 call SetUnitAnimationOffsetPercent(u,time/3.04)
-if GetUnitCurrentAnimationId(u)!=169 then
-call SetUnitAnimationByIndex(u,169)
+if GetUnitCurrentAnimationId(u)!=156 then
+call SetUnitAnimationByIndex(u,156)
 endif
 if time==0.1 then
     call SaveReal(h,id,10,2000)
@@ -64132,7 +64155,7 @@ if GetWidgetLife(c)>0 and GetWidgetLife(u)>0 then
             call DestroyEffect(EFF)
             set a=Atan2(y-y1,x-x1)
             call SetUnitFacingInstant(u,a*bj_RADTODEG)
-            call SetUnitAnimationByIndex(u,201)
+            call SetUnitAnimationByIndex(u,183)
         endif
         if time==0.57 then
             set EFF=AddSpecialEffect("war3mapImported\\CF2.mdl", x1,y1)
@@ -64170,7 +64193,7 @@ if GetWidgetLife(c)>0 and GetWidgetLife(u)>0 then
             call DestroyEffect(EFF)
             set a=Atan2(y-y1,x-x1)
             call SetUnitFacingInstant(u,a*bj_RADTODEG)
-            call SetUnitAnimationByIndex(u,202)
+            call SetUnitAnimationByIndex(u,184)
         endif
         if time==0.90 then
             call Push3(c,55,a,550,"")
@@ -64207,7 +64230,7 @@ if GetWidgetLife(c)>0 and GetWidgetLife(u)>0 then
             call DestroyEffect(EFF)
             set a=Atan2(y-y1,x-x1)
             call SetUnitFacingInstant(u,a*bj_RADTODEG)
-            call SetUnitAnimationByIndex(u,127)
+            call SetUnitAnimationByIndex(u,114)
         endif
         if time==1.26 or time==1.41 or time==1.56 then
             call SetUnitXY_1(u,x+5*Cos(a),y+5*Sin(a), false)
@@ -64235,7 +64258,7 @@ if GetWidgetLife(c)>0 and GetWidgetLife(u)>0 then
             call SetSpecialEffectTimeScale(EFF , 3)
             call SetSpecialEffectVertexColour(EFF,255,255,255,120)
             call DestroyEffect(EFF)
-            call SetUnitAnimationByIndex(u,131)
+            call SetUnitAnimationByIndex(u,118)
             set a=Atan2(y-y1,x-x1)
             call SetUnitFacingInstant(u,a*bj_RADTODEG)
         endif
@@ -64350,7 +64373,7 @@ if GetWidgetLife(c)>0 and GetWidgetLife(u)>0 and time<4 then
     call SaveReal(HH,id,2,time+0.03)
     if time<0.3 then
         if time==0.03 then
-            call SetUnitAnimationByIndex(u,199)
+            call SetUnitAnimationByIndex(u,181)
         endif
         if time==0.27 then
             set EFF=AddSpecialEffect("GokuDash.mdx",x,y)
@@ -64360,7 +64383,7 @@ if GetWidgetLife(c)>0 and GetWidgetLife(u)>0 and time<4 then
             call SetSpecialEffectTimeScale(EFF , 0.7)
         endif
     else
-        call SetUnitAnimationByIndex(u,64)
+        call SetUnitAnimationByIndex(u,51)
         if dist>150 then
             call SetUnitXY_1(u,x+75*Cos(a),y+75*Sin(a), false)
             call SetSpecialEffectX(LoadEffectHandle(HH,id,3),x+75*Cos(a))
@@ -64377,7 +64400,7 @@ if GetWidgetLife(c)>0 and GetWidgetLife(u)>0 and time<4 then
                 call PauseTimer(t)
                 call SaveReal(HH,id,2,0)
                 call Push3(u,20,a,150,"")
-                call SetUnitAnimationByIndex(u,204)
+                call SetUnitAnimationByIndex(u,186)
                 call SetUnitFlyHeight(c,100,300)
                 call Push3(c,55,a,810,"")
                 call SetUnitInvulnerable(c,true)
@@ -64528,7 +64551,7 @@ if time<0.3 then
     call SetUnitInvulnerable(u,true)
     call PauseUnit(u,true)
     if time==0.01 then
-        call SetUnitAnimationByIndex(u,168)
+        call SetUnitAnimationByIndex(u,155)
     endif
     if time==0.2 then
         call GroupEnumUnitsInRange(g,x,y,450,Base)
@@ -64648,7 +64671,7 @@ call UnitAddAbility(n,'GkH7')
 elseif GetUnitAbilityLevel(u,'GkH8')>0 then
 call UnitAddAbility(n,'GkH8')
 endif
-call SetUnitAnimationByIndex(n,GetRandomInt(85,88))
+call SetUnitAnimationByIndex(n,GetRandomInt(222,230))
 set EFF=AddSpecialEffect("war3mapImported\\BlackBlink.mdx", GetUnitX(n), GetUnitY(n))
 call SetSpecialEffectZ(EFF, GetUnitFlyHeight(u))
 call SetSpecialEffectTimeScale(EFF , 3)
@@ -64695,7 +64718,7 @@ call UnitApplyTimedLife(n,1,0.25)
 call SetUnitVertexColor(n,255,255,255,60)
 call ShikiCloneEffect(n,1.5,1.05,1.25,150)
 call SetUnitModel(n,GetUnitModel(u))
-call SetUnitAnimationByIndex(n,GetRandomInt(85,88))
+call SetUnitAnimationByIndex(n,GetRandomInt(222,230))
 if GetUnitAbilityLevel(u,'GkH0')>0 then
 call UnitAddAbility(n,'GkH0')
 elseif GetUnitAbilityLevel(u,'GkH1')>0 then
@@ -64858,8 +64881,8 @@ local integer an=LoadInteger(HH,id,5)
 local player p=GetOwningPlayer(u)
 local real time=LoadReal(HH,id,7)
 call SaveReal(HH,id,7,time+0.01)
-if GetUnitCurrentAnimationId(u)!=160 then
-call SetUnitAnimationByIndex(u,160)
+if GetUnitCurrentAnimationId(u)!=147 then
+call SetUnitAnimationByIndex(u,147)
 endif
 if time>0.13 then
 call SaveReal(HH,id,7,0.01)
@@ -64995,8 +65018,8 @@ local integer an=LoadInteger(HH,id,5)
 local player p=GetOwningPlayer(u)
 local real time=LoadReal(HH,id,7)
 call SaveReal(HH,id,7,time+0.01)
-if GetUnitCurrentAnimationId(u)!=159 then
-call SetUnitAnimationByIndex(u,159)
+if GetUnitCurrentAnimationId(u)!=146 then
+call SetUnitAnimationByIndex(u,146)
 endif
 if time>0.13 then
 call SaveReal(HH,id,7,0.01)
@@ -65070,6 +65093,7 @@ call UnitApplyTimedLife(CreateUnit(p,'e0CI',x,y,GetRandomReal(0,359)),1,1)
 //call UnitApplyTimedLife(CreateUnit(p,'e0CL',x,y,GetRandomReal(0,359)),1,1)
 call UnitApplyTimedLife(CreateUnit(p,'e0CM',x,y,GetRandomReal(0,359)),1,1)
 call UnitApplyTimedLife(CreateUnit(p,'e0CM',x,y,GetRandomReal(0,359)),1,1)
+call SetUnitAnimationByIndex(u,59)
 if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\SolarFlare.mp3",false,false,true,12700,12700,"")
 else
@@ -65171,7 +65195,7 @@ local real starttime=LoadReal(h,id,6)
 if time<0.630 and GetAbilityIntegerLevelField(GetUnitAbility(u,'GKR1'), ABILITY_ILF_TARGET_TYPE,GetUnitAbilityLevel(u,'GKR1')-1)!=1 then
     call SaveReal(h,id,5,time+0.01)
     if time==starttime+0.02 then
-        call SetUnitAnimationByIndex(u,217)
+        call SetUnitAnimationByIndex(u,199)
         call DisableUnitAbility2(u,'GKQ1',false,true)
         call DisableUnitAbility2(u,'GKW1',false,true)
         call DisableUnitAbility2(u,'GKE2',false,true)
@@ -65224,7 +65248,7 @@ if time<0.630 and GetAbilityIntegerLevelField(GetUnitAbility(u,'GKR1'), ABILITY_
             call SaveReal(h,id,4,a)
             call SetUnitFacingInstant(u,a*bj_RADTODEG)
             call SetUnitTimeScale(u,2)
-            call SetUnitAnimationByIndex(u,120)
+            call SetUnitAnimationByIndex(u,107)
         endif
         if time>0.36 and time<0.51 then
             call SetUnitInvulnerable(u,true)
@@ -65268,7 +65292,7 @@ if time<0.630 and GetAbilityIntegerLevelField(GetUnitAbility(u,'GKR1'), ABILITY_
             call RemoveEffect(EFF,1,true,CreateTimer())
         endif
         if time==0.55 then
-            call SetUnitAnimationByIndex(u,81)
+            call SetUnitAnimationByIndex(u,68)
             call SetUnitFlyHeight(u,0,3000)
         endif
         if time==0.61 then
@@ -178330,7 +178354,7 @@ if time==0.02 then
 
 call SaveReal(HH, GetHandleId( (GetOwningPlayer( caster )) ), StringHash("DummyFacing"), facing )
 
-if LoadBoolean(HH,GetHandleId(GetLocalPlayer()), DBSoundEngHash )==true then
+if LoadBoolean(HH,GetHandleId(GetLocalPlayer()), SOUND_LANGUAGE )==true then
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\SoundEng\\BlackGokuR1-1eng.mp3",false,false,true,12000,12000,"Default")
 else
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\SoundJap\\BlackGokuR1-1.mp3",false,false,true,12000,12000,"Default")
@@ -178470,7 +178494,7 @@ call StopSound(LoadSoundHandle(HH,id,25),true,false)
 ////call KillSoundWhenDone(LoadSoundHandle(HH,id,24))
 ////call KillSoundWhenDone(LoadSoundHandle(HH,id,25))
 
-if LoadBoolean(HH,GetHandleId(GetLocalPlayer()), DBSoundEngHash )==true then
+if LoadBoolean(HH,GetHandleId(GetLocalPlayer()), SOUND_LANGUAGE )==true then
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\SoundEng\\BlackGokuR2-1eng.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
 ////call KillSoundWhenDone(soundplay)
