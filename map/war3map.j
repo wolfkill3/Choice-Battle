@@ -63282,13 +63282,10 @@ local unit u=LoadUnitHandle(HH,id,0)
 local unit c=LoadUnitHandle(HH,id,1)
 local real time=LoadReal(HH,id,2)
 local real dist=LoadReal(HH,id,3)
-local unit l__d=LoadUnitHandle(HH,id,4)
 local real x=GetUnitX(u)
 local real y=GetUnitY(u)
 local real x1=GetUnitX(c)
 local real y1=GetUnitY(c)
-local real x2=GetUnitX(l__d)
-local real y2=GetUnitY(l__d)
 local real a=Atan2(y1-y,x1-x)
 local real a2=LoadReal(HH,id,5)
 local player p=GetOwningPlayer(u)
@@ -63300,65 +63297,40 @@ if time<1 then
     call SetUnitFacingInstant(u,a*bj_RADTODEG)
     call PauseUnit(u,true)
     call SetUnitInvulnerable(u,true)
-    if time==9.98 then
-        call SaveReal(HH,id,5,a)
-        call SetUnitXY_1(l__d,x+40*Cos(a),y+40*Sin(a), false)
-        call SetUnitFacingInstant(l__d,a*bj_RADTODEG)
-        call SetUnitVertexColor(l__d,255,255,255,255)
-        set n=CreateUnit(p,'e1CK',x+95*Cos(a),y+95*Sin(a),a*bj_RADTODEG)
-        call UnitApplyTimedLife(n,1,1)
-        call SetUnitScale(n,1.1,1.1,1.1)
-        set n=CreateUnit(p,'e0LN',x,y,a*bj_RADTODEG)
-        call SetUnitFlyHeight(n,10,0)
-        call UnitApplyTimedLife(n,1,2)
-        call SetUnitScale(n,1.5,1.5,1.5)
+    if time>0.5 and ModuloReal(time,0.1)<0.02 then
+        call SetUnitXY_1(c,x1+20*Cos(a),y1+20*Sin(a), false)
+        set EFF=AddSpecialEffect("Minato-37.mdx", x1+GetRandomReal(-15,15),y1+GetRandomReal(-15,15))
+        call SetSpecialEffectFacing(EFF , a* bj_RADTODEG)
+        call SetSpecialEffectZ(EFF, GetUnitFlyHeight(c)+GetRandomReal(15,35))
+        call SetSpecialEffectScale(EFF , 1)
+        call DestroyEffect(EFF)
+        set EFF=AddSpecialEffect("coarse slash blue.mdl", x+40*Cos(a)+GetRandomReal(-10,10),y+40*Sin(a)+GetRandomReal(-10,10))
+        call SetSpecialEffectOrientation(EFF,a*bj_RADTODEG+GetRandomReal(-25,25),GetRandomReal(-45,-15),0)
+        call SetSpecialEffectZ(EFF, GetUnitFlyHeight(c)+GetRandomReal(15,35))
+        call SetSpecialEffectScale(EFF , 0.35)
+        call DestroyEffect(EFF)
     endif
 else
-    if dist<2000 then
-        call SaveReal(HH,id,3,dist+40)
-        set x2=x2+40*Cos(a2)
-        set y2=y2+40*Sin(a2)
-        set n=CreateUnit(p,'e0PT',x2,y2,a2*bj_RADTODEG)
-        call UnitApplyTimedLife(n,1,1+dist/2250)
-        call SetUnitScale(n,0.6,0.6,0.6)
-        call SetUnitVertexColor(n,255,220,40,50)
-        call SetUnitTimeScale(n,7)
-        if IsTerrainPathable(GetUnitX(l__d),GetUnitY(l__d),PATHING_TYPE_FLYABILITY)==false then
-            call SetUnitXY_1(l__d,x2,y2, false)
-        endif
-        call GroupEnumUnitsInRange(g,x2,y2,250,Base)
-        set idg=GetHandleId(g)
-        loop
-        set E=FirstOfGroup(g)
-        set ide=GetHandleId(E)
-        if Condition_Base(p,E)and E!=LoadUnitHandle(HH,idg,ide)then
-        call myCustomDamage(u,E,dmg,false,false,null,null,null)
-        call SaveUnitHandle(HH,idg,ide,E)
-        endif
-        call GroupRemoveUnit(g,E)
-        exitwhen E==null
-        endloop
-        call PauseUnit(u,true)
-        call SetUnitInvulnerable(u,true)
-    else
-        call RemoveUnit(l__d)
-        call SetUnitAnimation(u,"stand")
-        call PauseTimer(t)
-        call DestroyTimer(t)
-        call UnitRemoveAbility(u,'A0BX')
-        call SetUnitTimeScale(u,1)
-        call FlushChildHashtable(HH,GetHandleId(g))
-        call DestroyGroup(g)
-        call SetUnitPathing(u,true)
-        call PauseUnit(u,false)
-        call FlushChildHashtable(HH,id)
-        call SetUnitInvulnerable(u,false)
-    endif
+    call PauseUnit(u,false)
+    call SetUnitInvulnerable(u,false)
+    call PauseUnit(c,false)
+    call myCustomDamage(u,c,dmg,false,false,null,null,null)
+    call SetControlToUnit(u,c, 1, "stun")
+    call Push5(c,40,a+180*bj_DEGTORAD,400,"")
+    call SetUnitFlyHeight(u,0,600)
+    call SetUnitAnimation(u,"stand")
+    call PauseTimer(t)
+    call DestroyTimer(t)
+    call UnitRemoveAbility(u,'A0BX')
+    call SetUnitTimeScale(u,1)
+    call FlushChildHashtable(HH,GetHandleId(g))
+    call DestroyGroup(g)
+    call SetUnitPathing(u,true)
+    call FlushChildHashtable(HH,id)
 endif
 set p=null
 set u=null
 set c=null
-set l__d=null
 set g=null
 set t=null
 endfunction
@@ -63387,6 +63359,7 @@ else
     if c!=null then
         call RemoveSavedHandle(HH,idu,REVERSE_TARGET)
         set a=Atan2(GetUnitY(c)-y,GetUnitX(c)-x)
+        call SetUnitFacingInstant(u,a*bj_RADTODEG)
         if SR(x,y,GetUnitX(c),GetUnitY(c))<300 then
             call SaveUnitHandle(HH,id,1,c)
             call PauseTimer(t)
@@ -63397,7 +63370,6 @@ else
             call PauseUnit(u,true)
             call SetUnitInvulnerable(u,true)
             call PauseUnit(c,true)
-            call SetUnitInvulnerable(c,true)
             set EFF=AddSpecialEffect("war3mapImported\\BlackBlink.mdx", GetUnitX(u), GetUnitY(u))
             call SetSpecialEffectZ(EFF, GetUnitFlyHeight(u))
             call SetSpecialEffectTimeScale(EFF , 3)
@@ -63411,9 +63383,9 @@ else
             call SetSpecialEffectVertexColour(EFF,255,255,255,120)
             call DestroyEffect(EFF)
             call SetUnitAnimationByIndex(u,247)
+            call Push5(u,10,a+180*bj_DEGTORAD,200,"")
             call TimerStart(t,0.02,true,function AutonomousUICast3)
         else
-            call SetUnitFacingInstant(u,a*bj_RADTODEG)
             call SetUnitAnimationByIndex(u,GetRandomInt(248,251))
             if GetRandomInt(1,2)==1 then
                 call Push5(u,30,a+90*bj_DEGTORAD,300,"")
