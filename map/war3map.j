@@ -178339,7 +178339,7 @@ endif
 
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\SoundJap\\BlackGokuR3.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
-////call KillSoundWhenDone(soundplay)
+call KillSoundWhenDone(soundplay)
 
 call UnitSpeed(caster,1)
 call DamageAoeOneTime0(caster,x0,y0,500,(LoadReal(HH,id,15)+0.01)*GetHeroAgi(caster,true))
@@ -178491,22 +178491,22 @@ call RemoveUnit(LoadUnitHandle(HH,id,23))
 call PauseUnit(Dummy1,true)
 call StopSound(LoadSoundHandle(HH,id,24),true,false)
 call StopSound(LoadSoundHandle(HH,id,25),true,false)
-////call KillSoundWhenDone(LoadSoundHandle(HH,id,24))
-////call KillSoundWhenDone(LoadSoundHandle(HH,id,25))
+call KillSoundWhenDone(LoadSoundHandle(HH,id,24))
+call KillSoundWhenDone(LoadSoundHandle(HH,id,25))
 
 if LoadBoolean(HH,GetHandleId(GetLocalPlayer()), SOUND_LANGUAGE )==true then
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\SoundEng\\BlackGokuR2-1eng.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
-////call KillSoundWhenDone(soundplay)
+call KillSoundWhenDone(soundplay)
 else
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\SoundJap\\BlackGokuR2-1.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
-////call KillSoundWhenDone(soundplay)
+call KillSoundWhenDone(soundplay)
 endif
 
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\SoundJap\\BlackGokuR2.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
-////call KillSoundWhenDone(soundplay)
+call KillSoundWhenDone(soundplay)
 
 call UnitSpeed(caster,3)
 set n0=CreateUnit(GetOwningPlayer(caster),'e200',GetUnitX(caster),GetUnitY(caster),facing)
