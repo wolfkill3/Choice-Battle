@@ -63737,8 +63737,32 @@ local real time2=LoadReal(h,id,13)
 local doodad kamewave=null
 local fogmodifier f
 local integer i
-if GetUnitCurrentAnimationId(u)!=156 then
-call SetUnitAnimationByIndex(u,156)
+if time==-0.5 then
+    call SetUnitAnimationByIndex(u,169)
+endif
+if time==0 then
+    if LoadReal(HH,idp,VariationQHash)==2 then
+        call SetUnitVertexColor(u,255,100,100,255)
+    elseif LoadReal(HH,idp,VariationQHash)==3 then
+        call SetUnitVertexColor(u,255,100,100,255)
+    else
+        call SetUnitVertexColor(u,255,255,255,255)
+    endif
+    set n=CreateUnit(p,'e0ZH',x,y,a*bj_RADTODEG+45)
+    call SetUnitVertexColor(n,255,255,255,155)
+    call UnitApplyTimedLife(n,1,0.4)
+    call SetUnitTimeScale(n,3)
+    set n=CreateUnit(p,'e0ZH',x,y,a*bj_RADTODEG-45)
+    call SetUnitVertexColor(n,255,255,255,155)
+    call UnitApplyTimedLife(n,1,0.4)
+    call SetUnitTimeScale(n,3)
+    set n=CreateUnit(p,'e0ZH',x,y,a*bj_RADTODEG)
+    call SetUnitVertexColor(n,255,255,255,155)
+    call UnitApplyTimedLife(n,1,0.4)
+    call SetUnitTimeScale(n,3)
+endif
+if time>0 and GetUnitCurrentAnimationId(u)!=156 then
+    call SetUnitAnimationByIndex(u,156)
 endif
 if time==0.1 then
     call SaveReal(h,id,10,3500)
@@ -64131,13 +64155,23 @@ if GetLocalPlayer()==GetOwningPlayer(u) then
 call SetFrameEnabled(GetFrameByName( "AbilityVarBarIcon", 8 ),false)
 endif
 if LoadReal(HH,idp,VariationQHash)==2 then
-call SetUnitVertexColor(u,255,100,100,255)
-call SaveInteger(HH,idp,KaiokenHash,LoadInteger(HH,idp,KaiokenHash)+1)
+    call SaveInteger(HH,idp,KaiokenHash,LoadInteger(HH,idp,KaiokenHash)+1)
+    call SaveReal(h,id,12,-0.6)
+    if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
+        set soundplay=CreateSound("Sound\\Music\\mp3Music\\Kaioken.mp3",false,false,true,12700,12700,"")
+    else
+        set soundplay=CreateSound("Sound\\Music\\mp3Music\\Goku\\Kaioken-jap.mp3",false,false,true,12700,12700,"")
+    endif
 elseif LoadReal(HH,idp,VariationQHash)==3 then
-call SetUnitVertexColor(u,255,100,100,255)
-call SaveInteger(HH,idp,KaiokenHash,LoadInteger(HH,idp,KaiokenHash)+1)
+    call SaveInteger(HH,idp,KaiokenHash,LoadInteger(HH,idp,KaiokenHash)+1)
+    call SaveReal(h,id,12,-0.6)
+    if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
+        set soundplay=CreateSound("Sound\\Music\\mp3Music\\Kaiokenx10.mp3",false,false,true,12700,12700,"")
+    else
+        set soundplay=CreateSound("Sound\\Music\\mp3Music\\Goku\\Kaiokenx10-jap.mp3",false,false,true,12700,12700,"")
+    endif
 else
-call SetUnitVertexColor(u,255,255,255,255)
+    call SetUnitVertexColor(u,255,255,255,255)
 endif
 call UnitAddAbility(u,'A1FU') //Slow
 call UnitAddAbility(u,'Pet1')
@@ -64424,6 +64458,35 @@ if GetWidgetLife(c)>0 and GetWidgetLife(u)>0 and time<4 then
     call PauseUnit(u,true)
     call SetUnitFacingInstant(u,a*bj_RADTODEG)
     call SaveReal(HH,id,2,time+0.03)
+    if time==-0.57 then
+        call SetUnitAnimationByIndex(u,169)
+    endif
+    if time==0 then
+        if LoadReal(HH,idp,VariationWHash)==1 then
+            call SetUnitVertexColor(u,255,100,100,255)
+        elseif LoadReal(HH,idp,VariationWHash)==2 then
+            call SetUnitVertexColor(u,255,100,100,255)
+        else
+            call SetUnitVertexColor(u,255,255,255,255)
+        endif
+        set n=CreateUnit(p,'e0ZH',x,y,a*bj_RADTODEG+45)
+        call SetUnitVertexColor(n,255,255,255,155)
+        call UnitApplyTimedLife(n,1,0.4)
+        call SetUnitTimeScale(n,3)
+        set n=CreateUnit(p,'e0ZH',x,y,a*bj_RADTODEG-45)
+        call SetUnitVertexColor(n,255,255,255,155)
+        call UnitApplyTimedLife(n,1,0.4)
+        call SetUnitTimeScale(n,3)
+        set n=CreateUnit(p,'e0ZH',x,y,a*bj_RADTODEG)
+        call SetUnitVertexColor(n,255,255,255,155)
+        call UnitApplyTimedLife(n,1,0.4)
+        call SetUnitTimeScale(n,3)
+        if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
+            set soundplay=CreateSound("Sound\\Music\\mp3Music\\MeteorSmash1.mp3",false,false,true,12700,12700,"")
+        else
+            set soundplay=CreateSound("Sound\\Music\\mp3Music\\Goku\\MeteorSmash1-jap.mp3",false,false,true,12700,12700,"")
+        endif
+    endif
     if time<0.3 then
         if time==0.03 then
             call SetUnitAnimationByIndex(u,181)
@@ -64542,11 +64605,21 @@ local integer idp=GetHandleId(p)
 call SetUnitInvulnerable(u,true)
 call PauseUnit(u,true)
 if LoadReal(HH,idp,VariationWHash)==1 then
-    call SetUnitVertexColor(u,255,100,100,255)
     call SaveInteger(HH,idp,KaiokenHash,LoadInteger(HH,idp,KaiokenHash)+1)
+    call SaveReal(HH,id,2,-0.6)
+    if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
+        set soundplay=CreateSound("Sound\\Music\\mp3Music\\Kaioken.mp3",false,false,true,12700,12700,"")
+    else
+        set soundplay=CreateSound("Sound\\Music\\mp3Music\\Goku\\Kaioken-jap.mp3",false,false,true,12700,12700,"")
+    endif
 elseif LoadReal(HH,idp,VariationWHash)==2 then
-    call SetUnitVertexColor(u,255,100,100,255)
     call SaveInteger(HH,idp,KaiokenHash,LoadInteger(HH,idp,KaiokenHash)+1)
+    call SaveReal(HH,id,2,-0.6)
+    if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
+        set soundplay=CreateSound("Sound\\Music\\mp3Music\\Kaiokenx10.mp3",false,false,true,12700,12700,"")
+    else
+        set soundplay=CreateSound("Sound\\Music\\mp3Music\\Goku\\Kaiokenx10-jap.mp3",false,false,true,12700,12700,"")
+    endif
 else
     call SetUnitVertexColor(u,255,255,255,255)
 endif
@@ -64562,11 +64635,6 @@ set n=CreateUnit(p,'e0ZH',x,y,a*bj_RADTODEG)
 call SetUnitVertexColor(n,255,255,255,155)
 call UnitApplyTimedLife(n,1,0.4)
 call SetUnitTimeScale(n,3)
-if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
-set soundplay=CreateSound("Sound\\Music\\mp3Music\\MeteorSmash1.mp3",false,false,true,12700,12700,"")
-else
-set soundplay=CreateSound("Sound\\Music\\mp3Music\\Goku\\MeteorSmash1-jap.mp3",false,false,true,12700,12700,"")
-endif
 call StartSound(soundplay)
 call KillSoundWhenDone(soundplay)
 call SaveUnitHandle(HH,id,0,u)
@@ -64956,15 +65024,6 @@ local player p=GetOwningPlayer(u)
 local integer idp=GetHandleId(p)
 call SetUnitInvulnerable(u,true)
 call PauseUnit(u,true)
-if LoadReal(HH,idp,VariationWHash)==1 then
-    call SetUnitVertexColor(u,255,100,100,255)
-    call SaveInteger(HH,idp,KaiokenHash,LoadInteger(HH,idp,KaiokenHash)+1)
-elseif LoadReal(HH,idp,VariationWHash)==2 then
-    call SetUnitVertexColor(u,255,100,100,255)
-    call SaveInteger(HH,idp,KaiokenHash,LoadInteger(HH,idp,KaiokenHash)+1)
-else
-    call SetUnitVertexColor(u,255,255,255,255)
-endif
 set n=CreateUnit(p,'e0ZH',x,y,a*bj_RADTODEG+45)
 call SetUnitVertexColor(n,255,255,255,155)
 call UnitApplyTimedLife(n,1,0.4)
