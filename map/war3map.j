@@ -63819,17 +63819,17 @@ if time==2.1 then
         set i=i+1
     endloop
 endif
-if time<2.1 then
-call SaveReal(h,id,12,time+0.1)
-call SetUnitAnimationOffsetPercent(u,time/8.5)
+if time>0 and time<2.1 then
+    call SaveReal(h,id,12,time+0.1)
+    call SetUnitAnimationOffsetPercent(u,time/8.5)
 elseif LoadBoolean(HH,GetHandleId(p),WarpKamehamehaHash) then
-call SetUnitAnimationOffsetPercent(u,time/8.5)
-call SaveReal(h,id,13,time2+0.1)
-if time2==0.3 then
-call SaveReal(h,id,12,2.4)
-endif
+    call SetUnitAnimationOffsetPercent(u,time/8.5)
+    call SaveReal(h,id,13,time2+0.1)
+    if time2==0.3 then
+        call SaveReal(h,id,12,2.4)
+    endif
 else
-call SaveReal(h,id,12,2.4)
+    call SaveReal(h,id,12,2.4)
 endif
 if time==2.4 then
     if LoadBoolean(HH,GetHandleId(p),WarpKamehamehaHash) then
