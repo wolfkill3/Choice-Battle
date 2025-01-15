@@ -63193,7 +63193,7 @@ else
         set y2=y2+40*Sin(a2)
         set EFF=AddSpecialEffect("Aizen\\white-shandian-qiquan-yellow.mdl", x2, y2)
         call SetSpecialEffectScale(EFF , 1.2)
-        call SetSpecialEffectTimeScale(EFF , 4)
+        call SetSpecialEffectTimeScale(EFF , 1.2)
         call SetSpecialEffectOrientation(EFF , a2 * bj_RADTODEG,0,0)
         call DestroyEffect(EFF)
         if IsTerrainPathable(GetUnitX(l__d),GetUnitY(l__d),PATHING_TYPE_FLYABILITY)==false then
@@ -63357,17 +63357,17 @@ if time<1 then
     call SetUnitFacingInstant(u,a*bj_RADTODEG)
     call PauseUnit(u,true)
     call SetUnitInvulnerable(u,true)
-    if time>0.5 and ModuloReal(time,0.1)<0.02 then
+    if time>0.5 and ModuloReal(time,0.06)<0.02 then
         call SetUnitXY_1(c,x1+20*Cos(a),y1+20*Sin(a), false)
         set EFF=AddSpecialEffect("Minato-37.mdx", x1+GetRandomReal(-15,15),y1+GetRandomReal(-15,15))
         call SetSpecialEffectFacing(EFF , a* bj_RADTODEG)
-        call SetSpecialEffectZ(EFF, GetUnitFlyHeight(c)+GetRandomReal(15,35))
-        call SetSpecialEffectScale(EFF , 1)
+        call SetSpecialEffectZ(EFF, GetUnitFlyHeight(c)+GetRandomReal(35,55))
+        call SetSpecialEffectScale(EFF , 1.5)
         call DestroyEffect(EFF)
         set EFF=AddSpecialEffect("coarse slash blue.mdl", x+40*Cos(a)+GetRandomReal(-10,10),y+40*Sin(a)+GetRandomReal(-10,10))
         call SetSpecialEffectOrientation(EFF,a*bj_RADTODEG+GetRandomReal(-25,25),GetRandomReal(-45,-15),0)
-        call SetSpecialEffectZ(EFF, GetUnitFlyHeight(c)+GetRandomReal(15,35))
-        call SetSpecialEffectScale(EFF , 0.35)
+        call SetSpecialEffectZ(EFF, GetUnitFlyHeight(c)+GetRandomReal(35,55))
+        call SetSpecialEffectScale(EFF , 0.75)
         call DestroyEffect(EFF)
     endif
 else
@@ -63376,7 +63376,7 @@ else
     call PauseUnit(c,false)
     call myCustomDamage(u,c,dmg,false,false,null,null,null)
     call SetControlToUnit(u,c, 1, "stun")
-    call Push5(c,40,a+180*bj_DEGTORAD,400,"")
+    call Push5(c,40,a,400,"")
     call SetUnitFlyHeight(u,0,600)
     call SetUnitAnimation(u,"stand")
     call PauseTimer(t)
@@ -63417,7 +63417,6 @@ else
     call SetUnitTimeScale(u,1)
     call SaveBoolean(HH,idu,ANTITARGET_ABILITY,false)
     if c!=null then
-        call RemoveSavedHandle(HH,idu,REVERSE_TARGET)
         set a=Atan2(GetUnitY(c)-y,GetUnitX(c)-x)
         call SetUnitFacingInstant(u,a*bj_RADTODEG)
         if SR(x,y,GetUnitX(c),GetUnitY(c))<300 then
@@ -63435,15 +63434,15 @@ else
             call SetSpecialEffectTimeScale(EFF , 3)
             call SetSpecialEffectVertexColour(EFF,255,255,255,120)
             call DestroyEffect(EFF)
-            call SetUnitXY_1(u,x-245*Cos(a),y-245*Sin(a), false)
-            call SetUnitFlyHeight(u,300,0)
+            call SetUnitXY_1(u,x-145*Cos(a),y-145*Sin(a), false)
+            call SetUnitFlyHeight(u,250,0)
             set EFF=AddSpecialEffect("war3mapImported\\BlackBlink.mdx", GetUnitX(u), GetUnitY(u))
             call SetSpecialEffectZ(EFF, GetUnitFlyHeight(u))
             call SetSpecialEffectTimeScale(EFF , 3)
             call SetSpecialEffectVertexColour(EFF,255,255,255,120)
             call DestroyEffect(EFF)
             call SetUnitAnimationByIndex(u,247)
-            call Push5(u,10,a+180*bj_DEGTORAD,200,"")
+            call Push5(u,5,a+180*bj_DEGTORAD,100,"")
             call TimerStart(t,0.02,true,function AutonomousUICast3)
         else
             call SetUnitAnimationByIndex(u,GetRandomInt(248,251))
@@ -63462,6 +63461,7 @@ else
             call FlushChildHashtable(HH,id)
             call SetUnitInvulnerable(u,false)
         endif
+        call RemoveSavedHandle(HH,idu,REVERSE_TARGET)
     else
         call SetUnitAnimation(u,"stand")
         call PauseUnit(u,false)
