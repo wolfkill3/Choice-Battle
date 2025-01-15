@@ -10333,7 +10333,7 @@ function OnButtonChangeAbilityMode takes nothing returns nothing
                 call SetFrameTextAlignment( GetFrameByName("AbilityVarBarTooltipText", 9), TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_LEFT )
                 call SetFrameRelativePoint( GetFrameByName("AbilityVarBarTooltip", 9), FRAMEPOINT_CENTER, GetFrameByName("AbilityVarBarIcon", 9), FRAMEPOINT_CENTER,  -.02, (0.5*GetFrameHeight( GetFrameByName("AbilityVarBarTooltipText", 9)))+.02  )
             endif
-        else
+        elseif LoadReal(HH,pHid,VariationWHash)==2 or LoadReal(HH,pHid,VariationWHash)==1 then
             call SaveReal(HH,pHid,VariationWHash,0)
             if GetLocalPlayer()==p then
                 call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 9 ), "ReplaceableTextures\\CommandButtons\\BTNGokuFightStance.blp", 0, true )
@@ -10356,7 +10356,7 @@ function OnButtonChangeAbilityMode takes nothing returns nothing
                 call SetFrameTextAlignment( GetFrameByName("AbilityVarBarTooltipText", 9), TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_LEFT )
                 call SetFrameRelativePoint( GetFrameByName("AbilityVarBarTooltip", 9), FRAMEPOINT_CENTER, GetFrameByName("AbilityVarBarIcon", 9), FRAMEPOINT_CENTER,  -.02, (0.5*GetFrameHeight( GetFrameByName("AbilityVarBarTooltipText", 9)))+.02  )
             endif
-        else
+        elseif LoadReal(HH,pHid,VariationWHash)==4 then
             call SaveReal(HH,pHid,VariationWHash,3)
             if GetLocalPlayer()==p then
                 call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 9 ), "ReplaceableTextures\\CommandButtons\\BTNAcceleratingBattleSpirit2.blp", 0, true )
@@ -34873,7 +34873,16 @@ if (not((GetUnitAbilityLevel(u,'A0IH')==0 and GetUnitAbilityLevel(c,'A0IH')==0) 
 call newBlockDamage(u)
 set nb=0
 endif
-if (GetUnitAbilityLevel(u,'A14J')>0  and nb>200) or (GetUnitAbilityLevel(u,'A24J')>0 and nb>200) or GetUnitAbilityLevel(u,'A34J')>0 then
+if (GetUnitAbilityLevel(u,'A14J')>0  and nb>200) or (GetUnitAbilityLevel(u,'A24J')>0 and nb>200) or (GetUnitAbilityLevel(u,'A34J')>0 and nb>200) then
+    if GetUnitAbilityLevel(u,'A34J')>0 then
+        if GetHeroLevel(u)>=35 and LoadBoolean(HH,GetHandleId( GetOwningPlayer(u) ),MUIAvailableHash)==false then
+            call SaveInteger(HH,GetHandleId( GetOwningPlayer(u) ),MUIDodgeCountHash,LoadInteger(HH,GetHandleId( GetOwningPlayer(u) ),MUIDodgeCountHash)+1)
+            if LoadInteger(HH,GetHandleId( GetOwningPlayer(u) ),MUIDodgeCountHash)>=20 then
+                call SaveBoolean(HH,GetHandleId( GetOwningPlayer(u) ),MUIAvailableHash,true)
+                set MUIUnlock[GetPlayerId(GetOwningPlayer(u))]=CreateUnit(GetOwningPlayer(u),'h111',RX,RY,0)
+            endif
+        endif
+    endif
     if c!=UltimateDamage then
         call SaveUnitHandle(HH,uid,REVERSE_TARGET,c)
     else
@@ -63173,7 +63182,7 @@ if time<1 then
     call SetUnitFacingInstant(u,a*bj_RADTODEG)
     call PauseUnit(u,true)
     call SetUnitInvulnerable(u,true)
-    if time==9.98 then
+    if time==9.96 then
         call SaveReal(HH,id,5,a)
         call SetUnitXY_1(l__d,x+40*Cos(a),y+40*Sin(a), false)
         call SetUnitFacingInstant(l__d,a*bj_RADTODEG)
@@ -63185,6 +63194,7 @@ if time<1 then
         call SetUnitFlyHeight(n,10,0)
         call UnitApplyTimedLife(n,1,2)
         call SetUnitScale(n,1.5,1.5,1.5)
+        call BJDebugMsg(GetUnitName(c))
     endif
 else
     if dist<2000 then
@@ -63196,6 +63206,11 @@ else
         call SetSpecialEffectTimeScale(EFF , 1.2)
         call SetSpecialEffectOrientation(EFF , a2 * bj_RADTODEG,0,0)
         call DestroyEffect(EFF)
+        set n=CreateUnit(p,'e2PT',x2,y2,a2*bj_RADTODEG)
+        call UnitApplyTimedLife(n,1,1+dist/2150)
+        call SetUnitScale(n,1.2,1.2,1.2)
+        call SetUnitFlyHeight(n,30,0)
+        call SetUnitTimeScale(n,1)
         if IsTerrainPathable(GetUnitX(l__d),GetUnitY(l__d),PATHING_TYPE_FLYABILITY)==false then
             call SetUnitXY_1(l__d,x2,y2, false)
         endif
@@ -63271,7 +63286,7 @@ call SaveGroupHandle(HH,id,6,CreateGroup())
 set n=CreateUnit(p,'e0PS',x,y,0)
 call SetUnitVertexColor(n,0,0,0,0)
 call SaveUnitHandle(HH,id,4,n)
-call SaveReal(HH,id,5,0)
+call SaveReal(HH,id,5,1)
 call TimerStart(t,0.02,true,function BreakerEnergyWaveCast3)
 else
 call SetUnitAnimation(u,"stand")
@@ -63405,6 +63420,7 @@ local integer idu=GetHandleId(u)
 local unit c=LoadUnitHandle(HH,idu,REVERSE_TARGET)
 local player p=GetOwningPlayer(u)
 local real a
+local integer ran=GetRandomInt(1,3)
 if time<2 and c==null then
     call PauseUnit(u,true)
     if LoadBoolean(HH,GetHandleId(u),TARGET_ABILITY)==false then
@@ -63446,9 +63462,9 @@ else
             call TimerStart(t,0.02,true,function AutonomousUICast3)
         else
             call SetUnitAnimationByIndex(u,GetRandomInt(248,251))
-            if GetRandomInt(1,2)==1 then
+            if ran==1 then
                 call Push5(u,30,a+90*bj_DEGTORAD,300,"")
-            else
+            elseif ran==2 then
                 call Push5(u,30,a-90*bj_DEGTORAD,300,"")
             endif
             call UnitAddAbility(u,'A7IH')
