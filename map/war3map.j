@@ -63195,18 +63195,18 @@ if time<1 then
         call SetUnitScale(n,1.5,1.5,1.5)
     endif
 else
-    if dist<2000 then
-        call SaveReal(HH,id,3,dist+40)
+    if dist>0 then
+        call SaveReal(HH,id,3,dist-40)
         set x2=x2+40*Cos(a2)
         set y2=y2+40*Sin(a2)
         set EFF=AddSpecialEffect("Aizen\\white-shandian-qiquan-yellow.mdl", x2, y2)
-        call SetSpecialEffectScale(EFF , 1.2)
+        call SetSpecialEffectScale(EFF , 1.5)
         call SetSpecialEffectTimeScale(EFF , 1.2)
         call SetSpecialEffectOrientation(EFF , a2 * bj_RADTODEG,0,0)
         call DestroyEffect(EFF)
-        set n=CreateUnit(p,'e0PT',x2,y2,a2*bj_RADTODEG)
-        call UnitApplyTimedLife(n,1,1+dist/2150)
-        call SetUnitScale(n,1.2,1.2,1.2)
+        set n=CreateUnit(p,'e1PT',x2,y2,a2*bj_RADTODEG)
+        call UnitApplyTimedLife(n,1,0.2+dist/2150)
+        call SetUnitScale(n,1.9,1.9,1.9)
         call SetUnitFlyHeight(n,30,0)
         call SetUnitTimeScale(n,1)
         if IsTerrainPathable(GetUnitX(l__d),GetUnitY(l__d),PATHING_TYPE_FLYABILITY)==false then
@@ -63285,6 +63285,7 @@ set n=CreateUnit(p,'e0PS',x,y,0)
 call SetUnitVertexColor(n,0,0,0,0)
 call SaveUnitHandle(HH,id,4,n)
 call SaveReal(HH,id,5,1)
+call SaveReal(HH,id,3,2000)
 call TimerStart(t,0.02,true,function BreakerEnergyWaveCast3)
 else
 call SetUnitAnimation(u,"stand")
