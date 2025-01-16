@@ -63737,7 +63737,7 @@ local real time2=LoadReal(h,id,13)
 local doodad kamewave=null
 local fogmodifier f
 local integer i
-if time==-0.5 then
+if time==-0.3 then
     call SetUnitAnimationByIndex(u,169)
 endif
 if time==0 then
@@ -64156,7 +64156,7 @@ call SetFrameEnabled(GetFrameByName( "AbilityVarBarIcon", 8 ),false)
 endif
 if LoadReal(HH,idp,VariationQHash)==2 then
     call SaveInteger(HH,idp,KaiokenHash,LoadInteger(HH,idp,KaiokenHash)+1)
-    call SaveReal(h,id,12,-0.6)
+    call SaveReal(h,id,12,-0.3)
     if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
         set soundplay=CreateSound("Sound\\Music\\mp3Music\\Kaioken.mp3",false,false,true,12700,12700,"")
     else
@@ -64164,7 +64164,7 @@ if LoadReal(HH,idp,VariationQHash)==2 then
     endif
 elseif LoadReal(HH,idp,VariationQHash)==3 then
     call SaveInteger(HH,idp,KaiokenHash,LoadInteger(HH,idp,KaiokenHash)+1)
-    call SaveReal(h,id,12,-0.6)
+    call SaveReal(h,id,12,-0.3)
     if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
         set soundplay=CreateSound("Sound\\Music\\mp3Music\\Kaiokenx10.mp3",false,false,true,12700,12700,"")
     else
@@ -64458,7 +64458,7 @@ if GetWidgetLife(c)>0 and GetWidgetLife(u)>0 and time<4 then
     call PauseUnit(u,true)
     call SetUnitFacingInstant(u,a*bj_RADTODEG)
     call SaveReal(HH,id,2,time+0.03)
-    if time==-0.57 then
+    if time==-0.27 then
         call SetUnitAnimationByIndex(u,169)
     endif
     if time==0 then
@@ -64606,7 +64606,7 @@ call SetUnitInvulnerable(u,true)
 call PauseUnit(u,true)
 if LoadReal(HH,idp,VariationWHash)==1 then
     call SaveInteger(HH,idp,KaiokenHash,LoadInteger(HH,idp,KaiokenHash)+1)
-    call SaveReal(HH,id,2,-0.6)
+    call SaveReal(HH,id,2,-0.3)
     if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
         set soundplay=CreateSound("Sound\\Music\\mp3Music\\Kaioken.mp3",false,false,true,12700,12700,"")
     else
@@ -64614,7 +64614,7 @@ if LoadReal(HH,idp,VariationWHash)==1 then
     endif
 elseif LoadReal(HH,idp,VariationWHash)==2 then
     call SaveInteger(HH,idp,KaiokenHash,LoadInteger(HH,idp,KaiokenHash)+1)
-    call SaveReal(HH,id,2,-0.6)
+    call SaveReal(HH,id,2,-0.3)
     if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
         set soundplay=CreateSound("Sound\\Music\\mp3Music\\Kaiokenx10.mp3",false,false,true,12700,12700,"")
     else
@@ -64663,7 +64663,7 @@ local unit c=LoadUnitHandle(HH,id,1)
 local player p=GetOwningPlayer(u)
 local integer idp=GetHandleId(p)
 local real time=LoadReal(HH,id,2)
-local real dmg=5*GetHeroStr(u,true)+150
+local real dmg=6*GetHeroStr(u,true)+150
 local real x=GetUnitX(u)
 local real y=GetUnitY(u)
 local real x1=GetUnitX(c)
@@ -64895,7 +64895,7 @@ local unit c=LoadUnitHandle(HH,id,1)
 local player p=GetOwningPlayer(u)
 local integer idp=GetHandleId(p)
 local real time=LoadReal(HH,id,2)
-local real dmg=(1+GetUnitAbilityLevel(u,'GKW5'))*GetHeroStr(u,true)+150
+local real dmg=6*GetHeroStr(u,true)+150
 local real x=GetUnitX(u)
 local real y=GetUnitY(u)
 local real x1=GetUnitX(c)
