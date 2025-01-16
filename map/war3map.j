@@ -64655,6 +64655,62 @@ endfunction
 function AcceleratingBattleSpiritCond takes nothing returns boolean
 return GetSpellAbilityId()=='GKW5' and udg_B==true
 endfunction
+function MissleMoveAcceleratingBattleSpirit_NonPause2 takes nothing returns nothing
+local timer t=GetExpiredTimer()
+local integer id=GetHandleId(t)
+local unit l__d=LoadUnitHandle(h,id,0)
+local real speed=LoadReal(h,id,1)
+local real angle=LoadReal(h,id,2)
+local real x=GetUnitX(l__d)
+local real y=GetUnitY(l__d)
+local real x1=LoadReal(h,id,3)
+local real y1=LoadReal(h,id,4)
+local real a=Atan2(y1-y,x1-x)+angle
+local real dist=LoadReal(h,id,6)
+local real time=LoadReal(h,id,8)
+local real mh=LoadReal(h,id,5)
+local real rd=SR(x,y,x1,y1)
+local player p=GetOwningPlayer(u)
+local integer idu=GetPlayerId(p)
+if rd>30+speed and udg_B==true and rd<900 and GetUnitAbilityLevel(l__d,'A1BL')==0 and time<2 then
+call SetUnitXY_1(l__d,x+speed*Cos(a),y+speed*Sin(a), false)
+call SetUnitFacing(l__d,a*bj_RADTODEG)
+call SetUnitFlyHeight(l__d,ParabolaZ(mh,dist,rd),0)
+call SaveReal(h,id,8,time+0.03)
+//call PauseUnit(l__d,true)
+//call SaveBoolean(HH,GetHandleId(l__d),TARGET_ABILITY,true)
+else
+if GetUnitAbilityLevel(l__d,'A1BL')==0 then
+call SetUnitFlyHeight(l__d,0,0)
+endif
+call SetUnitPathing(l__d,true)
+//call PauseUnit(l__d,false)
+//call SaveBoolean(HH,GetHandleId(l__d),TARGET_ABILITY,false)
+call PauseTimer(t)
+call DestroyTimer(t)
+call FlushChildHashtable(h,id)
+endif
+set p=null
+set l__d=null
+set t=null
+endfunction
+function MissleMoveAcceleratingBattleSpirit_NonPause takes unit l__d,real speed,real angle,real x,real y,real mh returns nothing
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+call SaveUnitHandle(h,id,0,l__d)
+call SetUnitPathing(l__d,false)
+//call PauseUnit(l__d,true)
+//call SaveBoolean(HH,GetHandleId(l__d),TARGET_ABILITY,true)
+call SaveReal(h,id,1,speed)
+call SaveReal(h,id,2,angle*bj_DEGTORAD)
+call SaveReal(h,id,3,x)
+call SaveReal(h,id,4,y)
+call SaveReal(h,id,5,mh)
+call SaveReal(h,id,6,SR(x,y,GetUnitX(l__d),GetUnitY(l__d)))
+call SaveReal(h,id,8,0)
+call TimerStart(t,0.03,true,function MissleMoveAcceleratingBattleSpirit_NonPause2)
+set t=null
+endfunction
 function AcceleratingBattleSpiritCast3 takes nothing returns nothing
 local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
@@ -64663,7 +64719,7 @@ local unit c=LoadUnitHandle(HH,id,1)
 local player p=GetOwningPlayer(u)
 local integer idp=GetHandleId(p)
 local real time=LoadReal(HH,id,2)
-local real dmg=6*GetHeroStr(u,true)+150
+local real dmg=2*GetHeroStr(u,true)+150
 local real x=GetUnitX(u)
 local real y=GetUnitY(u)
 local real x1=GetUnitX(c)
@@ -64673,8 +64729,6 @@ local real dist=SR(x,y,x1,y1)
 if GetWidgetLife(c)>0 and GetWidgetLife(u)>0 then
     call SetUnitInvulnerable(u,true)
     call PauseUnit(u,true)
-    call SetUnitInvulnerable(c,true)
-    call PauseUnit(c,true)
     if time<2.04 then
         call SaveReal(HH,id,2,time+0.03)
         if time==0.36 then
@@ -64826,10 +64880,6 @@ if GetWidgetLife(c)>0 and GetWidgetLife(u)>0 then
         if GetLocalPlayer()==GetOwningPlayer(u) then
             call SetFrameEnabled(GetFrameByName( "AbilityVarBarIcon", 9 ),true)
         endif
-        call SetUnitFlyHeight(u,0,2500)
-        call SetUnitInvulnerable(c,false)
-        call PauseUnit(c,false)
-        call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,false)
         call myCustomDamage(u,c,dmg,false,false,null,null,null)
         call SetControlToUnit(u,c, 1, "stun")
         call SetUnitVertexColor(u,255,255,255,255)
@@ -64907,98 +64957,70 @@ if GetWidgetLife(c)>0 and GetWidgetLife(u)>0 and time<4 then
     call PauseUnit(u,true)
     call SetUnitFacingInstant(u,a*bj_RADTODEG)
     call SaveReal(HH,id,2,time+0.03)
-    if time<0.3 then
-        if time==0.03 then
-            call SetUnitAnimationByIndex(u,181)
-        endif
-        if time==0.27 then
-            set EFF=AddSpecialEffect("GokuDash.mdx",x,y)
-            call SetSpecialEffectFacing(EFF , a* bj_RADTODEG-180)
-            call SaveEffectHandle(HH,id,3,EFF)
-            call SetSpecialEffectScale(EFF , 0.8)
-            call SetSpecialEffectTimeScale(EFF , 0.7)
-        endif
-    else
-        call SetUnitAnimationByIndex(u,51)
-        if dist>150 then
-            call SetUnitXY_1(u,x+75*Cos(a),y+75*Sin(a), false)
-            call SetSpecialEffectX(LoadEffectHandle(HH,id,3),x+75*Cos(a))
-            call SetSpecialEffectY(LoadEffectHandle(HH,id,3),y+75*Sin(a))
-            call SetSpecialEffectFacing(LoadEffectHandle(HH,id,3) , a* bj_RADTODEG-180)
-            set n=CreateUnit(p,'e117',x,y,a*bj_RADTODEG)
-            call SetUnitVertexColor(n,255,255,255,75)
-            call SetUnitScale(n,GetRandomReal(0.55,1.25),GetRandomReal(0.55,1.25),GetRandomReal(0.55,1.25))
-            call UnitApplyTimedLife(n,1,0.4)
-            call SetUnitTimeScale(n,3)
+    if time<0.6 then       
+        call PauseUnit(c,true)
+    endif
+    if time==0.03 then
+        call SetUnitAnimationByIndex(u,238)
+    endif
+    if time==0.3 then
+        call PauseUnit(c,false)
+        call myCustomDamage(u,c,dmg,false,false,null,null,null)
+        call SetControlToUnit(u,c, 1, "stun")
+        call PauseUnit(c,true)
+        call Push3(c,50,a,400,"")
+        set EFF=AddSpecialEffect("war3mapImported\\CF2.mdl", x1,y1)
+        call SetSpecialEffectOrientation(EFF,a*bj_RADTODEG,0,0)
+        call SetSpecialEffectZ(EFF, GetUnitFlyHeight(c))
+        call SetSpecialEffectScale(EFF , 1)
+        call DestroyEffect(EFF)
+        set EFF=AddSpecialEffect("Minato-37.mdx", x1,y1)
+        call SetSpecialEffectFacing(EFF , a* bj_RADTODEG)
+        call SetSpecialEffectZ(EFF, GetUnitFlyHeight(c)+30)
+        call SetSpecialEffectScale(EFF , 3)
+        call DestroyEffect(EFF)
+        set EFF=AddSpecialEffect("WindVectorPush.mdx", x1, y1)
+        call SetSpecialEffectOrientation(EFF,a*bj_RADTODEG,0,0)
+        call SetSpecialEffectZ(EFF , 100)
+        call SetSpecialEffectScale(EFF , GetUnitFlyHeight(c)+40)
+        call SetSpecialEffectVertexColour(EFF,255,255,255,120)
+        call RemoveEffect(EFF,1,true,CreateTimer())
+        if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
+            set soundplay=CreateSound("Sound\\Music\\mp3Music\\AcceleratingBattleSpirit2.mp3",false,false,true,12700,12700,"")
         else
-            if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
-                call RemoveEffect(LoadEffectHandle(HH,id,3),0.1,false,CreateTimer())
-                call PauseTimer(t)
-                call SaveReal(HH,id,2,0)
-                call Push3(u,20,a,150,"")
-                call SetUnitAnimationByIndex(u,186)
-                call SetUnitFlyHeight(c,100,300)
-                call Push3(c,55,a,810,"")
-                call SetUnitInvulnerable(c,true)
-                call PauseUnit(c,true)
-                call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,true)
-                set EFF=AddSpecialEffect("war3mapImported\\CF2.mdl", x1,y1)
-                call SetSpecialEffectOrientation(EFF,a*bj_RADTODEG,0,0)
-                call SetSpecialEffectZ(EFF, GetUnitFlyHeight(c))
-                call SetSpecialEffectScale(EFF , 1)
-                call DestroyEffect(EFF)
-                set EFF=AddSpecialEffect("Minato-37.mdx", x1,y1)
-                call SetSpecialEffectFacing(EFF , a* bj_RADTODEG)
-                call SetSpecialEffectZ(EFF, GetUnitFlyHeight(c)+30)
-                call SetSpecialEffectScale(EFF , 3)
-                call DestroyEffect(EFF)
-                set EFF=AddSpecialEffect("WindVectorPush.mdx", x1, y1)
-                call SetSpecialEffectOrientation(EFF,a*bj_RADTODEG,0,0)
-                call SetSpecialEffectZ(EFF , 100)
-                call SetSpecialEffectScale(EFF , GetUnitFlyHeight(c)+40)
-                call SetSpecialEffectVertexColour(EFF,255,255,255,120)
-                call RemoveEffect(EFF,1,true,CreateTimer())
-                if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
-                    set soundplay=CreateSound("Sound\\Music\\mp3Music\\AcceleratingBattleSpirit2.mp3",false,false,true,12700,12700,"")
-                else
-                    set soundplay=CreateSound("Sound\\Music\\mp3Music\\Goku\\AcceleratingBattleSpirit2-jap.mp3",false,false,true,12700,12700,"")
-                endif
-                call StartSound(soundplay)
-                call KillSoundWhenDone(soundplay)
-                call TimerStart(t,0.03,true,function AcceleratingBattleSpiritCast3)
-            else
-                call SetUnitFlyHeight(u,0,0)
-                call PauseTimer(t)
-                call DestroyTimer(t)
-                call SetUnitVertexColor(u,255,255,255,255)
-                call FlushChildHashtable(HH,id)
-                call PauseUnit(u,false)
-                call SetUnitInvulnerable(u,false)
-                call SaveUnitHandle(HH,GetHandleId(c),REVERSE_TARGET,u)
-                call SetUnitTimeScale(u,1)
+            set soundplay=CreateSound("Sound\\Music\\mp3Music\\Goku\\AcceleratingBattleSpirit2-jap.mp3",false,false,true,12700,12700,"")
+        endif
+        call StartSound(soundplay)
+        call KillSoundWhenDone(soundplay)
+    endif
+    if time==0.6 then
+        call MissleMoveAcceleratingBattleSpirit_NonPause(u,40,0,x-600*Cos(a),y-600*Sin(a),200)
+        call SaveReal(HH,id,2,0)
+        if LoadReal(HH,GetHandleId(GetOwningPlayer(u)),VariationWHash)==4 then
+            call PauseTimer(t)
+            call TimerStart(t,0.03,true,function AcceleratingBattleSpiritCast3)
+        else
+            if GetLocalPlayer()==GetOwningPlayer(u) then
+                call SetFrameEnabled(GetFrameByName( "AbilityVarBarIcon", 9 ),true)
             endif
+            call PauseUnit(c,false)
+            call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,false)
+            call SetUnitFlyHeight(u,0,0)
+            call DestroyTimer(t)
+            call SetUnitInvulnerable(u,false)
+            call PauseUnit(u,false)
+            call SetUnitAnimation(u,"stand")
+            call SetUnitTimeScale(u,1)
+            call FlushChildHashtable(HH,id)
         endif
     endif
 else
     if GetLocalPlayer()==GetOwningPlayer(u) then
         call SetFrameEnabled(GetFrameByName( "AbilityVarBarIcon", 9 ),true)
     endif
-    call SetUnitVertexColor(u,255,255,255,255)
-    if LoadReal(HH,GetHandleId(GetOwningPlayer(u)),VariationWHash)==1 then
-        if GetUnitState(u,UNIT_STATE_LIFE)>GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.02*LoadInteger(HH,idp,KaiokenHash) then
-            call SetUnitState(u,UNIT_STATE_LIFE,GetUnitState(u,UNIT_STATE_LIFE)-GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.02*LoadInteger(HH,idp,KaiokenHash))
-        else
-            call SetUnitState(u,UNIT_STATE_LIFE,1)
-        endif
-    elseif LoadReal(HH,GetHandleId(GetOwningPlayer(u)),VariationWHash)==2 then
-        if GetUnitState(u,UNIT_STATE_LIFE)>GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.04*LoadInteger(HH,idp,KaiokenHash) then
-            call SetUnitState(u,UNIT_STATE_LIFE,GetUnitState(u,UNIT_STATE_LIFE)-GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.04*LoadInteger(HH,idp,KaiokenHash))
-        else
-            call SetUnitState(u,UNIT_STATE_LIFE,1)
-        endif
-    endif
     call SetUnitFlyHeight(u,0,0)
     call DestroyTimer(t)
+    call PauseUnit(c,false)
     call SetUnitInvulnerable(u,false)
     call PauseUnit(u,false)
     call SetUnitAnimation(u,"stand")
@@ -65022,30 +65044,67 @@ local real y1=GetUnitY(c)
 local real a=Atan2(y1-y,x1-x)
 local player p=GetOwningPlayer(u)
 local integer idp=GetHandleId(p)
-call SetUnitInvulnerable(u,true)
-call PauseUnit(u,true)
-set n=CreateUnit(p,'e0ZH',x,y,a*bj_RADTODEG+45)
-call SetUnitVertexColor(n,255,255,255,155)
-call UnitApplyTimedLife(n,1,0.4)
-call SetUnitTimeScale(n,3)
-set n=CreateUnit(p,'e0ZH',x,y,a*bj_RADTODEG-45)
-call SetUnitVertexColor(n,255,255,255,155)
-call UnitApplyTimedLife(n,1,0.4)
-call SetUnitTimeScale(n,3)
-set n=CreateUnit(p,'e0ZH',x,y,a*bj_RADTODEG)
-call SetUnitVertexColor(n,255,255,255,155)
-call UnitApplyTimedLife(n,1,0.4)
-call SetUnitTimeScale(n,3)
-if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
-set soundplay=CreateSound("Sound\\Music\\mp3Music\\AcceleratingBattleSpirit1.mp3",false,false,true,12700,12700,"")
+if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
+    call SetUnitInvulnerable(u,true)
+    call PauseUnit(u,true)
+    set EFF=AddSpecialEffect("war3mapImported\\BlackBlink.mdx", GetUnitX(u), GetUnitY(u))
+    call SetSpecialEffectZ(EFF, GetUnitFlyHeight(u))
+    call SetSpecialEffectTimeScale(EFF , 3)
+    call SetSpecialEffectVertexColour(EFF,255,255,255,120)
+    call DestroyEffect(EFF)
+    call SetUnitXY_1(u,x1-145*Cos(a),y1-145*Sin(a), false)
+    call SetUnitFlyHeight(u,0,0)
+    set EFF=AddSpecialEffect("war3mapImported\\BlackBlink.mdx", GetUnitX(u), GetUnitY(u))
+    call SetSpecialEffectZ(EFF, GetUnitFlyHeight(u))
+    call SetSpecialEffectTimeScale(EFF , 3)
+    call SetSpecialEffectVertexColour(EFF,255,255,255,120)
+    call DestroyEffect(EFF)
+    set a=Atan2(y-y1,x-x1)
+    call SetUnitFacingInstant(u,a*bj_RADTODEG)
+    call SetUnitAnimationByIndex(u,237)
+    if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
+    set soundplay=CreateSound("Sound\\Music\\mp3Music\\AcceleratingBattleSpirit1.mp3",false,false,true,12700,12700,"")
+    else
+    set soundplay=CreateSound("Sound\\Music\\mp3Music\\Goku\\AcceleratingBattleSpirit1-jap.mp3",false,false,true,12700,12700,"")
+    endif
+    call StartSound(soundplay)
+    call KillSoundWhenDone(soundplay)
+    call SaveUnitHandle(HH,id,0,u)
+    call SaveUnitHandle(HH,id,1,c)
+    call PauseTimer(t)
+    call SaveReal(HH,id,2,0)
+    call SetUnitFlyHeight(c,100,300)
+    call Push3(c,55,a,110,"")
+    call PauseUnit(c,true)
+    call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,true)
+    set EFF=AddSpecialEffect("war3mapImported\\CF2.mdl", x1,y1)
+    call SetSpecialEffectOrientation(EFF,a*bj_RADTODEG,0,0)
+    call SetSpecialEffectZ(EFF, GetUnitFlyHeight(c))
+    call SetSpecialEffectScale(EFF , 1)
+    call DestroyEffect(EFF)
+    set EFF=AddSpecialEffect("Minato-37.mdx", x1,y1)
+    call SetSpecialEffectFacing(EFF , a* bj_RADTODEG)
+    call SetSpecialEffectZ(EFF, GetUnitFlyHeight(c)+30)
+    call SetSpecialEffectScale(EFF , 3)
+    call DestroyEffect(EFF)
+    set EFF=AddSpecialEffect("WindVectorPush.mdx", x1, y1)
+    call SetSpecialEffectOrientation(EFF,a*bj_RADTODEG,0,0)
+    call SetSpecialEffectZ(EFF , 100)
+    call SetSpecialEffectScale(EFF , GetUnitFlyHeight(c)+40)
+    call SetSpecialEffectVertexColour(EFF,255,255,255,120)
+    call RemoveEffect(EFF,1,true,CreateTimer())
+    call TimerStart(t,0.03,true,function AcceleratingBattleSpiritCast2)
 else
-set soundplay=CreateSound("Sound\\Music\\mp3Music\\Goku\\AcceleratingBattleSpirit1-jap.mp3",false,false,true,12700,12700,"")
+    call SetUnitFlyHeight(u,0,0)
+    call PauseTimer(t)
+    call DestroyTimer(t)
+    call SetUnitVertexColor(u,255,255,255,255)
+    call FlushChildHashtable(HH,id)
+    call PauseUnit(u,false)
+    call SetUnitInvulnerable(u,false)
+    call SaveUnitHandle(HH,GetHandleId(c),REVERSE_TARGET,u)
+    call SetUnitTimeScale(u,1)
 endif
-call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
-call SaveUnitHandle(HH,id,0,u)
-call SaveUnitHandle(HH,id,1,c)
-call TimerStart(t,0.03,true,function AcceleratingBattleSpiritCast2)
 set u=null
 set c=null
 set p=null
@@ -78841,7 +78900,7 @@ call TriggerAddCondition(gg_trg_Getsuga,Condition(function Trig_Getsuga_Conditio
 call TriggerAddAction(gg_trg_Getsuga,function Trig_Getsuga_Actions)
 endfunction
 function YotonYumesuCond takes nothing returns boolean
-return GetSpellAbilityId()==0x41313442
+return GetSpellAbilityId()=='A14B'
 endfunction
 function YotonYumesuCast2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
@@ -78856,7 +78915,7 @@ local real x1=GetUnitX(l__d)
 local real y1=GetUnitY(l__d)
 local real f=GetUnitFacing(l__d)
 local real a=LoadReal(h,id,8)
-local real dmg=GetHeroInt(u,true)*(3+GetUnitAbilityLevel(u,0x41313442))
+local real dmg=GetHeroInt(u,true)*(3+GetUnitAbilityLevel(u,'A14B'))
 local real Range=LoadReal(h,id,9)
 if Range<2500 and UnitIsAlive(l__d)then
 set x1=x1+55*Cos(a)
@@ -79123,7 +79182,7 @@ call TriggerAddCondition(t,Condition(function CondYotonYokaiNoJutsu))
 set t=null
 endfunction
 function FuttonKomoNoJutsuCond takes nothing returns boolean
-return GetSpellAbilityId()==0x41304D4F
+return GetSpellAbilityId()=='A0MO'
 endfunction
 function FuttonKomoNoJutsuCast2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
@@ -79179,7 +79238,7 @@ local real a=0
 local player p=GetOwningPlayer(u)
 local integer i=1
 local real f=(360/15)*bj_DEGTORAD
-local integer lvl=GetUnitAbilityLevel(u,0x41304D4F)
+local integer lvl=GetUnitAbilityLevel(u,'A0MO')
 local real dist=470
 call SaveReal(h,id,2,x)
 call SaveReal(h,id,3,y)
@@ -79194,7 +79253,7 @@ exitwhen i>=16
 set x1=x+dist*Cos(i*f)
 set y1=y+dist*Sin(i*f)
 set a=Atan2(y-y1,x-x1)
-call UnitApplyTimedLife(CreateUnit(p,0x65304A55,x1,y1,GetRandomReal(0,359)),1,10)
+call UnitApplyTimedLife(CreateUnit(p,'e0JU',x1,y1,GetRandomReal(0,359)),1,10)
 set i=i+1
 endloop
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\FuttonKoumunoJutsu.mp3",false,false,true,12700,12700,"")
@@ -79219,7 +79278,7 @@ call TriggerAddCondition(t,Condition(function FuttonKomoNoJutsuCond))
 set t=null
 endfunction
 function NinpoKirigakureNoJutsuCond takes nothing returns boolean
-return GetSpellAbilityId()==0x41304D4C
+return GetSpellAbilityId()=='A0ML'
 endfunction
 function NinpoKirigakureNoJutsuCast2 takes nothing returns nothing
         local timer t=GetExpiredTimer()
@@ -79234,7 +79293,7 @@ function NinpoKirigakureNoJutsuCast2 takes nothing returns nothing
         local player p=GetOwningPlayer(u)
         local real dist=LoadReal(h,id,100)
         local real distan=1000
-        if dist<7+GetUnitAbilityLevel(u,0x41304D4C)then
+        if dist<7+GetUnitAbilityLevel(u,'A0ML')then
                 call SaveReal(h,id,100,dist+0.1)
                 call UnitApplyTimedLife(CreateUnit(p,0x65304A54,x+GetRandomReal(-1*distan,distan),y+GetRandomReal(-1*distan,distan),0),1,4)
                 call UnitApplyTimedLife(CreateUnit(p,0x65304A54,x+GetRandomReal(-1*distan,distan),y+GetRandomReal(-1*distan,distan),0),1,4)
@@ -79477,14 +79536,14 @@ call SetUnitFacing(l__d,a*bj_RADTODEG)
 call SetUnitFlyHeight(l__d,ParabolaZ(mh,dist,rd),0)
 call SaveReal(h,id,8,time+0.03)
 //call PauseUnit(l__d,true)
-call SaveBoolean(HH,GetHandleId(l__d),TARGET_ABILITY,true)
+//call SaveBoolean(HH,GetHandleId(l__d),TARGET_ABILITY,true)
 else
 if GetUnitAbilityLevel(l__d,'A1BL')==0 then
 call SetUnitFlyHeight(l__d,0,0)
 endif
 call SetUnitPathing(l__d,true)
 //call PauseUnit(l__d,false)
-call SaveBoolean(HH,GetHandleId(l__d),TARGET_ABILITY,false)
+//call SaveBoolean(HH,GetHandleId(l__d),TARGET_ABILITY,false)
 call PauseTimer(t)
 call DestroyTimer(t)
 call FlushChildHashtable(h,id)
@@ -79500,7 +79559,7 @@ local integer id=GetHandleId(t)
 call SaveUnitHandle(h,id,0,l__d)
 call SetUnitPathing(l__d,false)
 //call PauseUnit(l__d,true)
-call SaveBoolean(HH,GetHandleId(l__d),TARGET_ABILITY,true)
+//call SaveBoolean(HH,GetHandleId(l__d),TARGET_ABILITY,true)
 call SaveReal(h,id,1,speed)
 call SaveReal(h,id,2,angle*bj_DEGTORAD)
 call SaveReal(h,id,3,x)
