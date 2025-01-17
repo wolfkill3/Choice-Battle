@@ -63188,11 +63188,11 @@ if time<1 then
         call SetUnitVertexColor(l__d,255,255,255,255)
         set n=CreateUnit(p,'e1CK',x+95*Cos(a),y+95*Sin(a),a*bj_RADTODEG)
         call UnitApplyTimedLife(n,1,1)
-        call SetUnitScale(n,1.1,1.1,1.1)
-        set n=CreateUnit(p,'e0LN',x,y,a*bj_RADTODEG)
-        call SetUnitFlyHeight(n,10,0)
-        call UnitApplyTimedLife(n,1,2)
-        call SetUnitScale(n,1.5,1.5,1.5)
+        call SetUnitScale(n,2,2,2)
+        set n=CreateUnit(p,'e0LN',x+95*Cos(a),y+95*Sin(a),a*bj_RADTODEG)
+        call SetUnitFlyHeight(n,40,0)
+        call UnitApplyTimedLife(n,1,1.2)
+        call SetUnitScale(n,1.2,1.5,1.5)
     endif
 else
     if dist>0 then
@@ -63434,7 +63434,7 @@ else
     if c!=null then
         set a=Atan2(GetUnitY(c)-y,GetUnitX(c)-x)
         call SetUnitFacingInstant(u,a*bj_RADTODEG)
-        if SR(x,y,GetUnitX(c),GetUnitY(c))<300 then
+        if SR(x,y,GetUnitX(c),GetUnitY(c))<500 then
             call SaveUnitHandle(HH,id,1,c)
             call PauseTimer(t)
             call SaveReal(HH,id,2,0)
@@ -64723,7 +64723,7 @@ local real x1=GetUnitX(c)
 local real y1=GetUnitY(c)
 local real a=Atan2(y1-y,x1-x)
 local real dist=SR(x,y,x1,y1)
-if GetWidgetLife(c)>0 and GetWidgetLife(u)>0 and time>5 then
+if GetWidgetLife(c)>0 and GetWidgetLife(u)>0 and time<5 then
     call SetUnitInvulnerable(u,true)
     call PauseUnit(u,true)
     call SaveReal(HH,id,2,time+0.03)
@@ -64849,13 +64849,13 @@ if GetWidgetLife(c)>0 and GetWidgetLife(u)>0 and time<4 then
     call PauseUnit(u,true)
     call SetUnitFacingInstant(u,a*bj_RADTODEG)
     call SaveReal(HH,id,2,time+0.03)
-    if time<0.6 then       
+    if time<0.9 then       
         call PauseUnit(c,true)
     endif
     if time==0.03 then
         call SetUnitAnimationByIndex(u,238)
     endif
-    if time==0.3 then
+    if time==0.6 then
         call PauseUnit(c,false)
         call myCustomDamage(u,c,dmg,false,false,null,null,null)
         call SetControlToUnit(u,c, 1, "stun")
@@ -64885,7 +64885,7 @@ if GetWidgetLife(c)>0 and GetWidgetLife(u)>0 and time<4 then
         call StartSound(soundplay)
         call KillSoundWhenDone(soundplay)
     endif
-    if time==0.6 then
+    if time==0.9 then
         call MissleMoveAcceleratingBattleSpirit_NonPause(u,40,0,x-600*Cos(a),y-600*Sin(a),200)
         call SaveReal(HH,id,2,0)
         if LoadReal(HH,GetHandleId(GetOwningPlayer(u)),VariationWHash)==4 then
@@ -64949,7 +64949,7 @@ if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
     call SetSpecialEffectTimeScale(EFF , 3)
     call SetSpecialEffectVertexColour(EFF,255,255,255,120)
     call DestroyEffect(EFF)
-    call SetUnitXY_1(u,x1-145*Cos(a),y1-145*Sin(a), false)
+    call SetUnitXY_1(u,x1-165*Cos(a),y1-165*Sin(a), false)
     call SetUnitFlyHeight(u,0,0)
     set EFF=AddSpecialEffect("war3mapImported\\BlackBlink.mdx", GetUnitX(u), GetUnitY(u))
     call SetSpecialEffectZ(EFF, GetUnitFlyHeight(u))
@@ -64970,7 +64970,6 @@ if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
     call SaveUnitHandle(HH,id,1,c)
     call PauseTimer(t)
     call SaveReal(HH,id,2,0)
-    call SetUnitFlyHeight(c,100,300)
     call Push3(c,55,a,110,"")
     call PauseUnit(c,true)
     call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,true)
