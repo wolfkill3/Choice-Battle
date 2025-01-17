@@ -31077,7 +31077,7 @@ call GroupEnumUnitsOfPlayer(G,Player(i),BuggedBool) //lvlbool
         call SaveInteger(HH, GetHandleId(Hero[i]), StringHash("GaeDeargP_CD"), 1)
         call StartAbilityCooldown(GetUnitAbility(Hero[i],'A1FP'),25)
         call StartAbilityCooldown(GetUnitAbility(Hero[i],'BRLS'),40)
-        call StartAbilityCooldown(GetUnitAbility(Hero[i],'GKG1'),40)
+        call StartAbilityCooldown(GetUnitAbility(Hero[i],'GKG1'),20)
         call StartAbilityCooldown(GetUnitAbility(Hero[i],'Ao60'),10)
         call StartAbilityCooldown(GetUnitAbility(Hero[i],'A1HD'),7)
         call UnitRemoveAbility(Hero[i],'ore3')
@@ -37850,8 +37850,8 @@ set n0=null
         call SetWidgetLife(c, GetWidgetLife(c)+ nb*0.2)
     endif
     if (CurrentEventAttack or GetUnitAbilityLevel(c,'A3WR')>0) and GetUnitAbilityLevel(c,'A06R')>0 and nb>0 then
-        call HealTextTag(c,c,nb*0.5*myCustomHeal2(c,1),"HealthRes")
-        call SetWidgetLife(c, GetWidgetLife(c)+ nb*0.5)
+        call HealTextTag(c,c,nb*0.35*myCustomHeal2(c,1),"HealthRes")
+        call SetWidgetLife(c, GetWidgetLife(c)+ nb*0.35)
     endif
     if (CurrentEventAttack or GetUnitAbilityLevel(c,'A3WR')>0) and GetUnitAbilityLevel(c,'B06N')>0 and nb>0 and GetUnitAttackRangeByIndex(c,0)<250 then
         call HealTextTag(c,c,nb*0.3*myCustomHeal2(c,1),"HealthRes")
@@ -62618,7 +62618,7 @@ function MissleMoveSuperSpiritBomb3 takes nothing returns nothing
             set E=FirstOfGroup(DG)
             exitwhen E==null
             if Condition_Base(p,E)then
-                call myCustomDamage(u,E,dmg,false,false,null,null,null)
+                call myCustomDamage(u,E,2*GetHeroStr(u,true)+dmg,false,false,null,null,null)
                 call SetControlToUnit(u,E, .21, "heavystun")
             endif
             call GroupRemoveUnit(DG,E)
@@ -62764,7 +62764,7 @@ function MissleMoveSpiritBomb3 takes nothing returns nothing
         call MyRemoveUnit(n, 2.5)
         call myCustomDamage(u,c,dmg*0.2,false,false,null,null,null) 
     else
-        call myCustomDamage(u,c,dmg,false,false,null,null,null) 
+        call myCustomDamage(u,c,2*GetHeroStr(u,true)+dmg,false,false,null,null,null) 
         set n=CreateUnit(p, 'e0C5', x, y, GetRandomInt(0, 360))
         call SetUnitScale(n, 2, 2, 2)
         call SetUnitFlyHeight(n, GetUnitZ(c), 0)
