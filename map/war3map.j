@@ -64731,9 +64731,16 @@ if GetWidgetLife(c)>0 and GetWidgetLife(u)>0 and time>5 then
         if time==0.3 then
             call SetUnitAnimationByIndex(u,239)
         endif
+        if time==0.57 then
+            set EFF=AddSpecialEffect("GokuDash.mdx",x,y)
+            call SetSpecialEffectFacing(EFF , a* bj_RADTODEG-180)
+            call SaveEffectHandle(HH,id,3,EFF)
+            call SetSpecialEffectScale(EFF , 0.8)
+            call SetSpecialEffectTimeScale(EFF , 0.7)
+        endif
     else
         if dist>150 then
-            call SetUnitAnimationOffsetPercent(u,0.5)
+            call SetUnitAnimationOffsetPercent(u,0.4)
             call SetUnitTimeScale(u,0)
             call SetUnitXY_1(u,x+75*Cos(a),y+75*Sin(a), false)
             call SetSpecialEffectX(LoadEffectHandle(HH,id,3),x+75*Cos(a))
