@@ -36879,19 +36879,19 @@ if cond==0 then
         set cjlocgn_00000000=null
     endif
     if (UnitHasItemOfTypeBJ(c,'I03O') or GetUnitAbilityLevel(c,'KIJ8')>0) and GetUnitTypeId(c)!='H04E' and(c==Hero[idc]or GetUnitAbilityLevel(c,'A14Y')>0)and nb>0 and CurrentEventAttack and udg_B==true and DU2==true then
-        call DamageIndicatorFunction(c, u, GetUnitTotalDamage(c)*0.25+150)
-        if (GetUnitTotalDamage(c)*0.25+150)>GetWidgetLife(u)then
+        call DamageIndicatorFunction(c, u, GetUnitTotalDamage(c)*0.20+150)
+        if (GetUnitTotalDamage(c)*0.20+150)>GetWidgetLife(u)then
             call SetUnitInvulnerable(u,false)
             call UnitRemoveBuffs(u,true,true)
             call UnitAddAbility(u,'A0WR')
             call myCustomDamage(c,u,GetUnitState(u,UNIT_STATE_MAX_LIFE),false,false,null,null,null)
             call UnitRemoveAbility(u,'A0WR')
             else
-            call SetUnitState(u,UNIT_STATE_LIFE, GetUnitState(u,UNIT_STATE_LIFE)-(GetUnitTotalDamage(c)*0.25+150))
+            call SetUnitState(u,UNIT_STATE_LIFE, GetUnitState(u,UNIT_STATE_LIFE)-(GetUnitTotalDamage(c)*0.20+150))
         endif
         call DestroyEffect(AddSpecialEffectTarget("war3mapImported\\jiejinmao.mdx",c,"Right Hand"))
         call DestroyEffect(AddSpecialEffectTarget("war3mapImported\\BloodEX.mdx",u,"origin"))
-        set nb=nb+(GetUnitTotalDamage(c)*0.25+150)
+        set nb=nb+(GetUnitTotalDamage(c)*0.20+150)
     endif
     if nb>0 and GetUnitAbilityLevel(c,'YuQ1')>0 and CurrentEventAttack and udg_B==true and c==Hero[idc] then // old Yuji W
         //call SetUnitOwner(UltimateDamage,Player(idc),false)
