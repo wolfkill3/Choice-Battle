@@ -27187,6 +27187,27 @@ function Trig_Goddess_Actions takes nothing returns nothing
     set bj_forLoopAIndex=bj_forLoopAIndex+1
     endloop
 endfunction
+function Trig_UIunlock_Actions takes nothing returns nothing
+    set bj_forLoopAIndex=0
+    set bj_forLoopAIndexEnd=10
+    loop
+    exitwhen bj_forLoopAIndex>bj_forLoopAIndexEnd
+        if LoadBoolean(HH,GetHandleId( GetOwningPlayer(Hero[GetForLoopIndexA()]) ),UIAvailableHash)==false then
+            call SaveBoolean(HH,GetHandleId( GetOwningPlayer(Hero[GetForLoopIndexA()])) ,MUIAvailableHash,true)
+            set MUIUnlock[GetPlayerId(GetOwningPlayer(Hero[GetForLoopIndexA()]))]=CreateUnit(GetOwningPlayer(Hero[GetForLoopIndexA()]),'h111',RX,RY,0)
+            call SaveBoolean(HH,GetHandleId( GetOwningPlayer(Hero[GetForLoopIndexA()])) ,UIAvailableHash,true)
+            set UIUnlock[GetPlayerId(GetOwningPlayer(Hero[GetForLoopIndexA()]))]=CreateUnit(GetOwningPlayer(Hero[GetForLoopIndexA()]),'h110',RX,RY,0)
+        else
+            call SaveBoolean(HH,GetHandleId( GetOwningPlayer(Hero[GetForLoopIndexA()])) ,MUIAvailableHash,false)
+            call RemoveUnit(MUIUnlock[GetPlayerId(GetOwningPlayer(Hero[GetForLoopIndexA()]))])
+            call SaveBoolean(HH,GetHandleId( GetOwningPlayer(Hero[GetForLoopIndexA()])) ,UIAvailableHash,false)
+            call RemoveUnit(UIUnlock[GetPlayerId(GetOwningPlayer(Hero[GetForLoopIndexA()]))])
+            call SaveReal(HH,GetHandleId( GetOwningPlayer(Hero[GetForLoopIndexA()]) ),UIDMGHash,0)
+            call SaveReal(HH,GetHandleId( GetOwningPlayer(Hero[GetForLoopIndexA()]) ),UILimitDMGHash,GetUnitMaxLife(Hero[GetForLoopIndexA()])*2)
+        endif
+    set bj_forLoopAIndex=bj_forLoopAIndex+1
+    endloop
+endfunction
 function Trig_cd_Actions takes nothing returns nothing
     set bj_forLoopAIndex=1
     set bj_forLoopAIndexEnd=12
@@ -27982,6 +28003,24 @@ function InitTrig_Goddess takes nothing returns nothing
     //call TriggerRegisterPlayerChatEvent(gg_trg_cd,Player(11),"-cd",true)
     call TriggerAddCondition(t,Condition(function Trig_test_Condition))
     call TriggerAddAction(t,function Trig_Goddess_Actions)
+    set t=null
+endfunction
+function InitTrig_UIunlock takes nothing returns nothing
+    local trigger t=CreateTrigger()
+    call TriggerRegisterPlayerChatEvent(t,Player(0),"-UIunlock",true)
+    call TriggerRegisterPlayerChatEvent(t,Player(1),"-UIunlock",true)
+    call TriggerRegisterPlayerChatEvent(t,Player(2),"-UIunlock",true)
+    call TriggerRegisterPlayerChatEvent(t,Player(3),"-UIunlock",true)
+    call TriggerRegisterPlayerChatEvent(t,Player(4),"-UIunlock",true)
+    call TriggerRegisterPlayerChatEvent(t,Player(5),"-UIunlock",true)
+    call TriggerRegisterPlayerChatEvent(t,Player(6),"-UIunlock",true)
+    call TriggerRegisterPlayerChatEvent(t,Player(7),"-UIunlock",true)
+    call TriggerRegisterPlayerChatEvent(t,Player(8),"-UIunlock",true)
+    call TriggerRegisterPlayerChatEvent(t,Player(9),"-UIunlock",true)
+    //call TriggerRegisterPlayerChatEvent(gg_trg_cd,Player(10),"-cd",true)
+    //call TriggerRegisterPlayerChatEvent(gg_trg_cd,Player(11),"-cd",true)
+    call TriggerAddCondition(t,Condition(function Trig_test_Condition))
+    call TriggerAddAction(t,function Trig_UIunlock_Actions)
     set t=null
 endfunction
 function InitTrig_id takes nothing returns nothing
@@ -59185,6 +59224,7 @@ call UnitRemoveAbility(u,0x41304845)
 call UnitRemoveAbility(u,0x41304846)
 call UnitRemoveAbility(u,0x41304847)
 call SetTextTagVisibility(txt,false)
+call DestroyTextTag(txt)
 endif
 if hs<10 then
 loop
@@ -62994,14 +63034,12 @@ local unit dummy=LoadUnitHandle(h,id,11)
 local integer idu=GetHandleId(u)
 local real x=GetUnitX(u)
 local real y=GetUnitY(u)
-local real x1=LoadReal(h,id,8)
-local real y1=LoadReal(h,id,9)
-local real a=Atan2(y1-y,x1-x)
 local real time=LoadReal(h,id,7)+0.05
 local player p=GetOwningPlayer(u)
 local real dmg=LoadReal(h,id,10)
 local integer power=0
 local integer i=0
+local texttag l__txt=LoadTextTagHandle(HH,id,12)
 if time<100 and GetUnitState(u,UNIT_STATE_LIFE)>0.405 and LoadBoolean(HH,GetHandleId(u),ANTITARGET_ABILITY)==false and LoadInteger(HH,GetHandleId(GenkiDama),0)==0 and GetUnitAbilityLevel(u,'CBC2')==0 and GetUnitAbilityLevel(u,'cbc3')==0  and GetUnitAbilityLevel(u,'cbc5')==0  and GetUnitAbilityLevel(u, 'cbc7')==0 and GetUnitAbilityLevel(u, 'cbc8')==0 and GetUnitAbilityLevel(u, 'cbc9')==0 and UnitIsAlive(u) and UnitIsAlive(dummy) and udg_B and DU2 then
     if time==0.05 then
         call SetUnitAnimationByIndex(u,152)
@@ -63023,6 +63061,14 @@ if time<100 and GetUnitState(u,UNIT_STATE_LIFE)>0.405 and LoadBoolean(HH,GetHand
     call SaveReal(h,id,7,time)
     call SetUnitXY_1(GenkiDama,x,y, false)
     call SetUnitXY_1(dummy,x,y, false)
+    call SetTextTagPos(l__txt,x,y,900)
+    call SetTextTagText(l__txt,R2SW(GetUnitScale(GenkiDama)*50,1,1)+" / "+R2SW((0.6+GetHeroLevel(u)*0.04)*50,1,1),900)
+    call SetTextTagVisibility(l__txt,false)
+    if GetLocalPlayer()==p then
+    call SetTextTagVisibility(l__txt,true)
+    endif
+    call SetTextTagPosUnit(l__txt,u,900)
+    call SetTextTagColor(l__txt,180,180,255,255)
     if GetUnitScale(GenkiDama)<(0.58+GetHeroLevel(u)*0.04) and time>1 then
         set n=CreateUnit(p,'e0CF',x+GetRandomReal(-3500,3500),y+GetRandomReal(-3500,3500),GetRandomReal(0,359))
         call SetUnitPathing(n,false)
@@ -63046,6 +63092,7 @@ if time<100 and GetUnitState(u,UNIT_STATE_LIFE)>0.405 and LoadBoolean(HH,GetHand
         call SetAbilityRealLevelField(GetUnitAbility(dummy,'GKG5'),ABILITY_RLF_AREA_OF_EFFECT,0,400+333.3333*(GetUnitScale(GenkiDama)-0.5)) 
     endif 
 else
+    call DestroyTextTag(l__txt)
     loop
         set GenkiUsed[i]=false
         set i=i+1
@@ -63092,6 +63139,7 @@ else
 endif
 set p=null
 set u=null
+set l__txt=null
 set dummy=null
 set t=null
 endfunction
@@ -63106,6 +63154,7 @@ local real y1=GetSpellTargetY()
 local real a=Atan2(y1-y,x1-x)
 local player p=GetOwningPlayer(u)
 local integer i=0
+local texttag l__txt=CreateTextTag()
 call SaveUnitHandle(h,id,0,u)
 set GenkiDama=CreateUnit(p,'e0CE',x,y,a*bj_RADTODEG)
 call SetUnitVertexColor(GenkiDama, 255, 255, 255, 0)
@@ -63126,8 +63175,6 @@ call SaveUnitHandle(h,id,11,n)
 
 call SaveReal(h,id,7,0)
 call SaveReal(h,id,6,150)
-call SaveReal(h,id,8,x1)
-call SaveReal(h,id,9,y1)
 call SaveReal(h,id,10,(8+GetUnitAbilityLevel(u,'GKG1'))*GetHeroStr(u,true))
 if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\SpiritBomb2.mp3",false,false,true,12700,12700,"")
@@ -63136,8 +63183,18 @@ set soundplay=CreateSound("Sound\\Music\\mp3Music\\Goku\\SpiritBomb2-jap.mp3",fa
 endif
 call StartSound(soundplay)
 call KillSoundWhenDone(soundplay)
+call SetTextTagText(l__txt,"0 / "+R2SW((0.6+GetHeroLevel(u)*0.04)*50,1,1),900)
+call SetTextTagVisibility(l__txt,false)
+if GetLocalPlayer()==p then
+call SetTextTagVisibility(l__txt,true)
+endif
+call SetTextTagPosUnit(l__txt,u,900)
+call SetTextTagColor(l__txt,180,180,255,255)
+call SaveTextTagHandle(HH,id,12,l__txt)
+call SaveUnitHandle(HH,id,0,u)
 call TimerStart(t,0.05,true,function SpiritBombCast2)
 set u=null
+set l__txt=null
 set p=null
 set t=null
 endfunction
@@ -63819,7 +63876,7 @@ if time==2.1 then
         set i=i+1
     endloop
 endif
-if time>0 and time<2.1 then
+if time>-0.7 and time<2.1 then
     call SaveReal(h,id,12,time+0.1)
     call SetUnitAnimationOffsetPercent(u,time/8.5)
 elseif LoadBoolean(HH,GetHandleId(p),WarpKamehamehaHash) then
@@ -208439,6 +208496,7 @@ call InitTrig_SwapOk()
 call InitTrig_Repick()
 call InitTrig_cd()
 call InitTrig_Goddess()
+call InitTrig_UIunlock()
 call InitTrig_heal()
 call InitTrig_unheal()
 call InitTrig_mr()
