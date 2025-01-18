@@ -10347,7 +10347,7 @@ function OnButtonChangeAbilityMode takes nothing returns nothing
         endif
         if LoadReal(HH,pHid,VariationWHash)==3 then
             call SaveReal(HH,pHid,VariationWHash,4)
-            call SetAbilityIntegerLevelField(GetUnitAbility(Goku,'GKW5'),ABILITY_ILF_MANA_COST,0,210)
+            call SetAbilityIntegerLevelField(GetUnitAbility(Goku,'GKW5'),ABILITY_ILF_MANA_COST,0,310)
             if GetLocalPlayer()==p then
                 call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 9 ), "ReplaceableTextures\\CommandButtons\\BTNAcceleratingBattleSpirit3.blp", 0, true )
                 call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 9 ), "ReplaceableTextures\\CommandButtons\\BTNAcceleratingBattleSpirit3.blp", 1, true )
@@ -63039,7 +63039,7 @@ local player p=GetOwningPlayer(u)
 local real dmg=LoadReal(h,id,10)
 local integer power=0
 local integer i=0
-local texttag l__txt=LoadTextTagHandle(HH,id,12)
+local texttag l__txt=LoadTextTagHandle(h,id,12)
 if time<100 and GetUnitState(u,UNIT_STATE_LIFE)>0.405 and LoadBoolean(HH,GetHandleId(u),ANTITARGET_ABILITY)==false and LoadInteger(HH,GetHandleId(GenkiDama),0)==0 and GetUnitAbilityLevel(u,'CBC2')==0 and GetUnitAbilityLevel(u,'cbc3')==0  and GetUnitAbilityLevel(u,'cbc5')==0  and GetUnitAbilityLevel(u, 'cbc7')==0 and GetUnitAbilityLevel(u, 'cbc8')==0 and GetUnitAbilityLevel(u, 'cbc9')==0 and UnitIsAlive(u) and UnitIsAlive(dummy) and udg_B and DU2 then
     if time==0.05 then
         call SetUnitAnimationByIndex(u,152)
@@ -63061,13 +63061,13 @@ if time<100 and GetUnitState(u,UNIT_STATE_LIFE)>0.405 and LoadBoolean(HH,GetHand
     call SaveReal(h,id,7,time)
     call SetUnitXY_1(GenkiDama,x,y, false)
     call SetUnitXY_1(dummy,x,y, false)
-    call SetTextTagPos(l__txt,x,y,600)
-    call SetTextTagText(l__txt,R2SW(GetUnitScale(GenkiDama)*50,1,1)+" / "+R2SW((0.6+GetHeroLevel(u)*0.04)*50,1,1),600)
+    call SetTextTagPos(l__txt,x,y,700)
+    call SetTextTagText(l__txt,R2SW(GetUnitScale(GenkiDama)*50,1,1)+" / "+R2SW((0.6+GetHeroLevel(u)*0.04)*50,1,1),0.023)
     call SetTextTagVisibility(l__txt,false)
     if GetLocalPlayer()==p then
     call SetTextTagVisibility(l__txt,true)
     endif
-    call SetTextTagPosUnit(l__txt,u,900)
+    call SetTextTagPosUnit(l__txt,u,700)
     call SetTextTagColor(l__txt,180,180,255,255)
     if GetUnitScale(GenkiDama)<(0.58+GetHeroLevel(u)*0.04) and time>1 then
         set n=CreateUnit(p,'e0CF',x+GetRandomReal(-3500,3500),y+GetRandomReal(-3500,3500),GetRandomReal(0,359))
@@ -63183,15 +63183,15 @@ set soundplay=CreateSound("Sound\\Music\\mp3Music\\Goku\\SpiritBomb2-jap.mp3",fa
 endif
 call StartSound(soundplay)
 call KillSoundWhenDone(soundplay)
-call SetTextTagText(l__txt,"0 / "+R2SW((0.6+GetHeroLevel(u)*0.04)*50,1,1),600)
+call SetTextTagText(l__txt,"0 / "+R2SW((0.6+GetHeroLevel(u)*0.04)*50,1,1),0.023)
 call SetTextTagVisibility(l__txt,false)
 if GetLocalPlayer()==p then
 call SetTextTagVisibility(l__txt,true)
 endif
-call SetTextTagPosUnit(l__txt,u,900)
+call SetTextTagPosUnit(l__txt,u,700)
 call SetTextTagColor(l__txt,180,180,255,255)
-call SaveTextTagHandle(HH,id,12,l__txt)
-call SaveUnitHandle(HH,id,0,u)
+call SetTextTagPermanent(l__txt,true)
+call SaveTextTagHandle(h,id,12,l__txt)
 call TimerStart(t,0.05,true,function SpiritBombCast2)
 set u=null
 set l__txt=null
@@ -64819,7 +64819,7 @@ local unit c=LoadUnitHandle(HH,id,1)
 local player p=GetOwningPlayer(u)
 local integer idp=GetHandleId(p)
 local real time=LoadReal(HH,id,2)
-local real dmg=2*GetHeroStr(u,true)+150
+local real dmg=3*GetHeroStr(u,true)+150
 local real x=GetUnitX(u)
 local real y=GetUnitY(u)
 local real x1=GetUnitX(c)
@@ -64830,11 +64830,11 @@ if GetWidgetLife(c)>0 and GetWidgetLife(u)>0 and time<5 then
     call SetUnitInvulnerable(u,true)
     call PauseUnit(u,true)
     call SaveReal(HH,id,2,time+0.03)
-    if time<0.6 then
-        if time==0.3 then
+    if time<0.48 then
+        if time==0.33 then
             call SetUnitAnimationByIndex(u,239)
         endif
-        if time==0.57 then
+        if time==0.45 then
             set EFF=AddSpecialEffect("GokuDash.mdx",x,y)
             call SetSpecialEffectFacing(EFF , a* bj_RADTODEG-180)
             call SaveEffectHandle(HH,id,3,EFF)
@@ -64845,9 +64845,9 @@ if GetWidgetLife(c)>0 and GetWidgetLife(u)>0 and time<5 then
         if dist>150 then
             call SetUnitAnimationOffsetPercent(u,0.4)
             call SetUnitTimeScale(u,0)
-            call SetUnitXY_1(u,x+85*Cos(a),y+85*Sin(a), false)
-            call SetSpecialEffectX(LoadEffectHandle(HH,id,3),x+85*Cos(a))
-            call SetSpecialEffectY(LoadEffectHandle(HH,id,3),y+85*Sin(a))
+            call SetUnitXY_1(u,x+100*Cos(a),y+100*Sin(a), false)
+            call SetSpecialEffectX(LoadEffectHandle(HH,id,3),x+100*Cos(a))
+            call SetSpecialEffectY(LoadEffectHandle(HH,id,3),y+100*Sin(a))
             call SetSpecialEffectFacing(LoadEffectHandle(HH,id,3) , a* bj_RADTODEG-180)
             set n=CreateUnit(p,'e117',x,y,a*bj_RADTODEG)
             call SetUnitVertexColor(n,255,255,255,75)
@@ -64887,7 +64887,7 @@ if GetWidgetLife(c)>0 and GetWidgetLife(u)>0 and time<5 then
                     call SetFrameEnabled(GetFrameByName( "AbilityVarBarIcon", 9 ),true)
                 endif
                 call myCustomDamage(u,c,dmg,false,false,null,null,null)
-                call SetControlToUnit(u,c, 1, "stun")
+                call SetControlToUnit(u,c, 2, "stun")
                 call Push3(u,20,a,150,"")
                 call Push3(c,55,a,810,"")
                 call DestroyTimer(t)
@@ -64940,7 +64940,7 @@ local unit c=LoadUnitHandle(HH,id,1)
 local player p=GetOwningPlayer(u)
 local integer idp=GetHandleId(p)
 local real time=LoadReal(HH,id,2)
-local real dmg=6*GetHeroStr(u,true)+150
+local real dmg=5*GetHeroStr(u,true)+150
 local real x=GetUnitX(u)
 local real y=GetUnitY(u)
 local real x1=GetUnitX(c)
@@ -64957,13 +64957,13 @@ if GetWidgetLife(c)>0 and GetWidgetLife(u)>0 and time<4 then
     endif
     if time==0.03 then
         call SetUnitAnimationByIndex(u,238)
-        call SetUnitTimeScale(u,0.7)
+        call SetUnitTimeScale(u,0.6)
     endif
     if time==0.75 then
         call SetUnitTimeScale(u,1)
         call PauseUnit(c,false)
         call myCustomDamage(u,c,dmg,false,false,null,null,null)
-        call SetControlToUnit(u,c, 2, "stun")
+        call SetControlToUnit(u,c, 1, "stun")
         call PauseUnit(c,true)
         call Push3(c,50,a,450,"")
         set EFF=AddSpecialEffect("war3mapImported\\CF2.mdl", x1,y1)
@@ -64991,7 +64991,7 @@ if GetWidgetLife(c)>0 and GetWidgetLife(u)>0 and time<4 then
         call KillSoundWhenDone(soundplay)
     endif
     if time==1.05 then
-        call MissleMoveAcceleratingBattleSpirit_NonPause(u,40,0,x-600*Cos(a),y-600*Sin(a),200)
+        call MissleMoveAcceleratingBattleSpirit_NonPause(u,45,0,x-700*Cos(a),y-700*Sin(a),300)
         call SaveReal(HH,id,2,0)
         call PauseUnit(c,false)
         call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,false)
@@ -65054,6 +65054,8 @@ if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
     call SetSpecialEffectTimeScale(EFF , 3)
     call SetSpecialEffectVertexColour(EFF,255,255,255,120)
     call DestroyEffect(EFF)
+    call Push3(u,20,a,80,"")
+    call Push3(c,50,a,100,"")
     call SetUnitXY_1(u,x1-195*Cos(a),y1-195*Sin(a), false)
     call SetUnitFlyHeight(u,0,0)
     set EFF=AddSpecialEffect("war3mapImported\\BlackBlink.mdx", GetUnitX(u), GetUnitY(u))
@@ -65075,8 +65077,6 @@ if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
     call SaveUnitHandle(HH,id,1,c)
     call PauseTimer(t)
     call SaveReal(HH,id,2,0)
-    call Push3(u,20,a,80,"")
-    call Push3(c,50,a,100,"")
     call PauseUnit(c,true)
     call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,true)
     set EFF=AddSpecialEffect("war3mapImported\\CF2.mdl", x1,y1)
