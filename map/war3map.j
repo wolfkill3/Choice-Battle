@@ -63061,8 +63061,8 @@ if time<100 and GetUnitState(u,UNIT_STATE_LIFE)>0.405 and LoadBoolean(HH,GetHand
     call SaveReal(h,id,7,time)
     call SetUnitXY_1(GenkiDama,x,y, false)
     call SetUnitXY_1(dummy,x,y, false)
-    call SetTextTagPos(l__txt,x,y,900)
-    call SetTextTagText(l__txt,R2SW(GetUnitScale(GenkiDama)*50,1,1)+" / "+R2SW((0.6+GetHeroLevel(u)*0.04)*50,1,1),900)
+    call SetTextTagPos(l__txt,x,y,600)
+    call SetTextTagText(l__txt,R2SW(GetUnitScale(GenkiDama)*50,1,1)+" / "+R2SW((0.6+GetHeroLevel(u)*0.04)*50,1,1),600)
     call SetTextTagVisibility(l__txt,false)
     if GetLocalPlayer()==p then
     call SetTextTagVisibility(l__txt,true)
@@ -63183,7 +63183,7 @@ set soundplay=CreateSound("Sound\\Music\\mp3Music\\Goku\\SpiritBomb2-jap.mp3",fa
 endif
 call StartSound(soundplay)
 call KillSoundWhenDone(soundplay)
-call SetTextTagText(l__txt,"0 / "+R2SW((0.6+GetHeroLevel(u)*0.04)*50,1,1),900)
+call SetTextTagText(l__txt,"0 / "+R2SW((0.6+GetHeroLevel(u)*0.04)*50,1,1),600)
 call SetTextTagVisibility(l__txt,false)
 if GetLocalPlayer()==p then
 call SetTextTagVisibility(l__txt,true)
@@ -63331,7 +63331,11 @@ call SaveUnitHandle(HH,id,1,c)
 call RemoveSavedHandle(HH,idu,REVERSE_TARGET)
 call PauseTimer(t)
 call SaveReal(HH,id,2,0)
+if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\GokuYouFool2.mp3",false,false,true,12700,12700,"")
+else
+set soundplay=CreateSound("Sound\\Music\\mp3Music\\Goku\\GokuYouFool2-jap.mp3",false,false,true,12700,12700,"")
+endif
 call StartSound(soundplay)
 call KillSoundWhenDone(soundplay)
 call SetUnitAnimationByIndex(u,166)
@@ -63382,7 +63386,11 @@ set EFF = AddSpecialEffect("Hashirama\\SmokeFuzzy.mdl",x, y)
 call SetSpecialEffectScale(EFF, 1.6)
 call SetSpecialEffectTimeScale(EFF , 1.6)
 call DestroyEffect(EFF)
+if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\GokuYouFool1.mp3",false,false,true,12700,12700,"")
+else
+set soundplay=CreateSound("Sound\\Music\\mp3Music\\Goku\\GokuYouFool1-jap.mp3",false,false,true,12700,12700,"")
+endif
 call StartSound(soundplay)
 call KillSoundWhenDone(soundplay)
 call SaveBoolean(HH,GetHandleId(u),ANTITARGET_ABILITY,true)
@@ -63794,16 +63802,14 @@ local real time2=LoadReal(h,id,13)
 local doodad kamewave=null
 local fogmodifier f
 local integer i
-if time==-0.3 then
+if time==-0.9 then
     call SetUnitAnimationByIndex(u,169)
 endif
-if time==0 then
+if time==-0.6 then
     if LoadReal(HH,idp,VariationQHash)==2 then
         call SetUnitVertexColor(u,255,100,100,255)
     elseif LoadReal(HH,idp,VariationQHash)==3 then
         call SetUnitVertexColor(u,255,100,100,255)
-    else
-        call SetUnitVertexColor(u,255,255,255,255)
     endif
     set n=CreateUnit(p,'e0ZH',x,y,a*bj_RADTODEG+45)
     call SetUnitVertexColor(n,255,255,255,155)
@@ -63817,6 +63823,22 @@ if time==0 then
     call SetUnitVertexColor(n,255,255,255,155)
     call UnitApplyTimedLife(n,1,0.4)
     call SetUnitTimeScale(n,3)
+endif
+if time==0 then
+    if LoadReal(HH,idp,VariationQHash)==1 then
+        set n=CreateUnit(p,'e0ZH',x,y,a*bj_RADTODEG+45)
+        call SetUnitVertexColor(n,255,255,255,155)
+        call UnitApplyTimedLife(n,1,0.4)
+        call SetUnitTimeScale(n,3)
+        set n=CreateUnit(p,'e0ZH',x,y,a*bj_RADTODEG-45)
+        call SetUnitVertexColor(n,255,255,255,155)
+        call UnitApplyTimedLife(n,1,0.4)
+        call SetUnitTimeScale(n,3)
+        set n=CreateUnit(p,'e0ZH',x,y,a*bj_RADTODEG)
+        call SetUnitVertexColor(n,255,255,255,155)
+        call UnitApplyTimedLife(n,1,0.4)
+        call SetUnitTimeScale(n,3)
+    endif
 endif
 if time>0 and GetUnitCurrentAnimationId(u)!=156 then
     call SetUnitAnimationByIndex(u,156)
@@ -63876,9 +63898,11 @@ if time==2.1 then
         set i=i+1
     endloop
 endif
-if time>-0.7 and time<2.1 then
+if time>-1 and time<2.1 then
     call SaveReal(h,id,12,time+0.1)
-    call SetUnitAnimationOffsetPercent(u,time/8.5)
+    if time>0 then
+        call SetUnitAnimationOffsetPercent(u,time/8.5)
+    endif
 elseif LoadBoolean(HH,GetHandleId(p),WarpKamehamehaHash) then
     call SetUnitAnimationOffsetPercent(u,time/8.5)
     call SaveReal(h,id,13,time2+0.1)
@@ -64213,20 +64237,24 @@ call SetFrameEnabled(GetFrameByName( "AbilityVarBarIcon", 8 ),false)
 endif
 if LoadReal(HH,idp,VariationQHash)==2 then
     call SaveInteger(HH,idp,KaiokenHash,LoadInteger(HH,idp,KaiokenHash)+1)
-    call SaveReal(h,id,12,-0.3)
+    call SaveReal(h,id,12,-0.9)
     if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
         set soundplay=CreateSound("Sound\\Music\\mp3Music\\Kaioken.mp3",false,false,true,12700,12700,"")
     else
         set soundplay=CreateSound("Sound\\Music\\mp3Music\\Goku\\Kaioken-jap.mp3",false,false,true,12700,12700,"")
     endif
+    call StartSound(soundplay)
+    call KillSoundWhenDone(soundplay)
 elseif LoadReal(HH,idp,VariationQHash)==3 then
     call SaveInteger(HH,idp,KaiokenHash,LoadInteger(HH,idp,KaiokenHash)+1)
-    call SaveReal(h,id,12,-0.3)
+    call SaveReal(h,id,12,-0.9)
     if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
         set soundplay=CreateSound("Sound\\Music\\mp3Music\\Kaiokenx10.mp3",false,false,true,12700,12700,"")
     else
         set soundplay=CreateSound("Sound\\Music\\mp3Music\\Goku\\Kaiokenx10-jap.mp3",false,false,true,12700,12700,"")
     endif
+    call StartSound(soundplay)
+    call KillSoundWhenDone(soundplay)
 else
     call SetUnitVertexColor(u,255,255,255,255)
 endif
@@ -64515,16 +64543,14 @@ if GetWidgetLife(c)>0 and GetWidgetLife(u)>0 and time<4 then
     call PauseUnit(u,true)
     call SetUnitFacingInstant(u,a*bj_RADTODEG)
     call SaveReal(HH,id,2,time+0.03)
-    if time==-0.27 then
+    if time==-0.87 then
         call SetUnitAnimationByIndex(u,169)
     endif
-    if time==0 then
+    if time==-0.6 then
         if LoadReal(HH,idp,VariationWHash)==1 then
             call SetUnitVertexColor(u,255,100,100,255)
         elseif LoadReal(HH,idp,VariationWHash)==2 then
             call SetUnitVertexColor(u,255,100,100,255)
-        else
-            call SetUnitVertexColor(u,255,255,255,255)
         endif
         set n=CreateUnit(p,'e0ZH',x,y,a*bj_RADTODEG+45)
         call SetUnitVertexColor(n,255,255,255,155)
@@ -64538,6 +64564,22 @@ if GetWidgetLife(c)>0 and GetWidgetLife(u)>0 and time<4 then
         call SetUnitVertexColor(n,255,255,255,155)
         call UnitApplyTimedLife(n,1,0.4)
         call SetUnitTimeScale(n,3)
+    endif
+    if time==0 then
+        if LoadReal(HH,idp,VariationWHash)==0 then
+            set n=CreateUnit(p,'e0ZH',x,y,a*bj_RADTODEG+45)
+            call SetUnitVertexColor(n,255,255,255,155)
+            call UnitApplyTimedLife(n,1,0.4)
+            call SetUnitTimeScale(n,3)
+            set n=CreateUnit(p,'e0ZH',x,y,a*bj_RADTODEG-45)
+            call SetUnitVertexColor(n,255,255,255,155)
+            call UnitApplyTimedLife(n,1,0.4)
+            call SetUnitTimeScale(n,3)
+            set n=CreateUnit(p,'e0ZH',x,y,a*bj_RADTODEG)
+            call SetUnitVertexColor(n,255,255,255,155)
+            call UnitApplyTimedLife(n,1,0.4)
+            call SetUnitTimeScale(n,3)
+        endif
         if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
             set soundplay=CreateSound("Sound\\Music\\mp3Music\\MeteorSmash1.mp3",false,false,true,12700,12700,"")
         else
@@ -64663,20 +64705,24 @@ call SetUnitInvulnerable(u,true)
 call PauseUnit(u,true)
 if LoadReal(HH,idp,VariationWHash)==1 then
     call SaveInteger(HH,idp,KaiokenHash,LoadInteger(HH,idp,KaiokenHash)+1)
-    call SaveReal(HH,id,2,-0.3)
+    call SaveReal(HH,id,2,-0.9)
     if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
         set soundplay=CreateSound("Sound\\Music\\mp3Music\\Kaioken.mp3",false,false,true,12700,12700,"")
     else
         set soundplay=CreateSound("Sound\\Music\\mp3Music\\Goku\\Kaioken-jap.mp3",false,false,true,12700,12700,"")
     endif
+    call StartSound(soundplay)
+    call KillSoundWhenDone(soundplay)
 elseif LoadReal(HH,idp,VariationWHash)==2 then
     call SaveInteger(HH,idp,KaiokenHash,LoadInteger(HH,idp,KaiokenHash)+1)
-    call SaveReal(HH,id,2,-0.3)
+    call SaveReal(HH,id,2,-0.9)
     if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
         set soundplay=CreateSound("Sound\\Music\\mp3Music\\Kaiokenx10.mp3",false,false,true,12700,12700,"")
     else
         set soundplay=CreateSound("Sound\\Music\\mp3Music\\Goku\\Kaiokenx10-jap.mp3",false,false,true,12700,12700,"")
     endif
+    call StartSound(soundplay)
+    call KillSoundWhenDone(soundplay)
 else
     call SetUnitVertexColor(u,255,255,255,255)
 endif
@@ -64799,9 +64845,9 @@ if GetWidgetLife(c)>0 and GetWidgetLife(u)>0 and time<5 then
         if dist>150 then
             call SetUnitAnimationOffsetPercent(u,0.4)
             call SetUnitTimeScale(u,0)
-            call SetUnitXY_1(u,x+75*Cos(a),y+75*Sin(a), false)
-            call SetSpecialEffectX(LoadEffectHandle(HH,id,3),x+75*Cos(a))
-            call SetSpecialEffectY(LoadEffectHandle(HH,id,3),y+75*Sin(a))
+            call SetUnitXY_1(u,x+85*Cos(a),y+85*Sin(a), false)
+            call SetSpecialEffectX(LoadEffectHandle(HH,id,3),x+85*Cos(a))
+            call SetSpecialEffectY(LoadEffectHandle(HH,id,3),y+85*Sin(a))
             call SetSpecialEffectFacing(LoadEffectHandle(HH,id,3) , a* bj_RADTODEG-180)
             set n=CreateUnit(p,'e117',x,y,a*bj_RADTODEG)
             call SetUnitVertexColor(n,255,255,255,75)
@@ -64906,18 +64952,20 @@ if GetWidgetLife(c)>0 and GetWidgetLife(u)>0 and time<4 then
     call PauseUnit(u,true)
     call SetUnitFacingInstant(u,a*bj_RADTODEG)
     call SaveReal(HH,id,2,time+0.03)
-    if time<0.9 then       
+    if time<1.2 then       
         call PauseUnit(c,true)
     endif
     if time==0.03 then
         call SetUnitAnimationByIndex(u,238)
+        call SetUnitTimeScale(u,0.7)
     endif
-    if time==0.6 then
+    if time==0.75 then
+        call SetUnitTimeScale(u,1)
         call PauseUnit(c,false)
         call myCustomDamage(u,c,dmg,false,false,null,null,null)
-        call SetControlToUnit(u,c, 1, "stun")
+        call SetControlToUnit(u,c, 2, "stun")
         call PauseUnit(c,true)
-        call Push3(c,50,a,400,"")
+        call Push3(c,50,a,450,"")
         set EFF=AddSpecialEffect("war3mapImported\\CF2.mdl", x1,y1)
         call SetSpecialEffectOrientation(EFF,a*bj_RADTODEG,0,0)
         call SetSpecialEffectZ(EFF, GetUnitFlyHeight(c))
@@ -64942,9 +64990,11 @@ if GetWidgetLife(c)>0 and GetWidgetLife(u)>0 and time<4 then
         call StartSound(soundplay)
         call KillSoundWhenDone(soundplay)
     endif
-    if time==0.9 then
+    if time==1.05 then
         call MissleMoveAcceleratingBattleSpirit_NonPause(u,40,0,x-600*Cos(a),y-600*Sin(a),200)
         call SaveReal(HH,id,2,0)
+        call PauseUnit(c,false)
+        call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,false)
         if LoadReal(HH,GetHandleId(GetOwningPlayer(u)),VariationWHash)==4 then
             call PauseTimer(t)
             if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
@@ -64957,8 +65007,6 @@ if GetWidgetLife(c)>0 and GetWidgetLife(u)>0 and time<4 then
             if GetLocalPlayer()==GetOwningPlayer(u) then
                 call SetFrameEnabled(GetFrameByName( "AbilityVarBarIcon", 9 ),true)
             endif
-            call PauseUnit(c,false)
-            call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,false)
             call SetUnitFlyHeight(u,0,0)
             call DestroyTimer(t)
             call SetUnitInvulnerable(u,false)
@@ -65006,7 +65054,7 @@ if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
     call SetSpecialEffectTimeScale(EFF , 3)
     call SetSpecialEffectVertexColour(EFF,255,255,255,120)
     call DestroyEffect(EFF)
-    call SetUnitXY_1(u,x1-165*Cos(a),y1-165*Sin(a), false)
+    call SetUnitXY_1(u,x1-195*Cos(a),y1-195*Sin(a), false)
     call SetUnitFlyHeight(u,0,0)
     set EFF=AddSpecialEffect("war3mapImported\\BlackBlink.mdx", GetUnitX(u), GetUnitY(u))
     call SetSpecialEffectZ(EFF, GetUnitFlyHeight(u))
@@ -65027,7 +65075,8 @@ if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
     call SaveUnitHandle(HH,id,1,c)
     call PauseTimer(t)
     call SaveReal(HH,id,2,0)
-    call Push3(c,55,a,110,"")
+    call Push3(u,20,a,80,"")
+    call Push3(c,50,a,100,"")
     call PauseUnit(c,true)
     call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,true)
     set EFF=AddSpecialEffect("war3mapImported\\CF2.mdl", x1,y1)
