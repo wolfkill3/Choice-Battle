@@ -64966,6 +64966,9 @@ if GetWidgetLife(c)>0 and GetWidgetLife(u)>0 and time<4 then
         call SetControlToUnit(u,c, 1, "stun")
         call PauseUnit(c,true)
         call Push3(c,50,a,450,"")
+        set n=CreateUnit(p,'goFM',x+100*Cos(a),y1+100*Sin(a),a*bj_RADTODEG)
+        call SetUnitFlyHeight(n,30,0)
+        call UnitApplyTimedLife(n,1,1.2)
         set EFF=AddSpecialEffect("war3mapImported\\CF2.mdl", x1,y1)
         call SetSpecialEffectOrientation(EFF,a*bj_RADTODEG,0,0)
         call SetSpecialEffectZ(EFF, GetUnitFlyHeight(c))
@@ -156120,8 +156123,10 @@ call SaveInteger(h,id,StringHash("Act"),1)
 call SaveReal(h,id,TIME_HASH,3)
 endif
 elseif act==1 then
-if time>0 and TShield>0 and IsUnitPaused(LoadUnitHandle(h,id,TargetHash))==false then
-call SaveReal(h,id,TIME_HASH,time-0.015)
+if time>0 and TShield>0 then
+    if IsUnitPaused(LoadUnitHandle(h,id,TargetHash))==false and IsUnitHidden(LoadUnitHandle(h,id,TargetHash))==false and GetUnitAbilityLevel(LoadUnitHandle(h, id, TargetHash),'Pet1')==0 then
+        call SaveReal(h,id,TIME_HASH,time-0.015)
+    endif
 else
 set bjLCG=CreateGroup()
 call GroupEnumUnitsInRange(bjLCG,tX,tY,350,Base)
