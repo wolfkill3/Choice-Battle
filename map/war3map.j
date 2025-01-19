@@ -63854,13 +63854,23 @@ if time==0.1 then
     call RemoveEffect(AddSpecialEffectTarget("KamehamehaChargeBlue.mdx", u, "hand left"), 2.3, true, CreateTimer())
     endif
     call SetUnitTimeScale(u,0.27)
-    if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
-    set soundplay=CreateSound("Sound\\Music\\mp3Music\\SuperKamehamehaCharge.mp3",false,false,true,12700,12700,"")
+    if LoadReal(HH,idp,VariationQHash)==4 then
+        if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
+            set soundplay=CreateSound("Sound\\Music\\mp3Music\\10xKamehameha.mp3",false,false,true,12700,12700,"")
+        else
+            set soundplay=CreateSound("Sound\\Music\\mp3Music\\Goku\\10xKamehameha-jap.mp3",false,false,true,12700,12700,"")
+        endif
+        call StartSound(soundplay)
+        call KillSoundWhenDone(soundplay)
     else
-    set soundplay=CreateSound("Sound\\Music\\mp3Music\\Goku\\SuperKamehamehaCharge-jap.mp3",false,false,true,12700,12700,"")
+        if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
+            set soundplay=CreateSound("Sound\\Music\\mp3Music\\SuperKamehamehaCharge.mp3",false,false,true,12700,12700,"")
+        else
+            set soundplay=CreateSound("Sound\\Music\\mp3Music\\Goku\\SuperKamehamehaCharge-jap.mp3",false,false,true,12700,12700,"")
+        endif
+        call StartSound(soundplay)
+        call KillSoundWhenDone(soundplay)
     endif
-    call StartSound(soundplay)
-    call KillSoundWhenDone(soundplay)
 endif
 if time==2.1 then
     if LoadBoolean(HH,GetHandleId(p),WarpKamehamehaHash) then
@@ -64145,9 +64155,9 @@ if time==0.1 then
     call RemoveEffect(AddSpecialEffectTarget("KamehamehaChargeBlue.mdx", u, "hand left"), 1, true, CreateTimer())
     call SetUnitTimeScale(u,1)
     if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
-    set soundplay=CreateSound("Sound\\Music\\mp3Music\\Kamehameha.wav",false,false,true,12700,12700,"")
+    set soundplay=CreateSound("Sound\\Music\\mp3Music\\Kamehameha.mp3",false,false,true,12700,12700,"")
     else
-    set soundplay=CreateSound("Sound\\Music\\mp3Music\\Goku\\Kamehameha-jap.wav",false,false,true,12700,12700,"")
+    set soundplay=CreateSound("Sound\\Music\\mp3Music\\Goku\\Kamehameha-jap.mp3",false,false,true,12700,12700,"")
     endif
     call StartSound(soundplay)
     call KillSoundWhenDone(soundplay)
