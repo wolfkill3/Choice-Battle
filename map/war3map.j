@@ -31116,7 +31116,7 @@ call GroupEnumUnitsOfPlayer(G,Player(i),BuggedBool) //lvlbool
         call SaveInteger(HH, GetHandleId(Hero[i]), StringHash("GaeDeargP_CD"), 1)
         call StartAbilityCooldown(GetUnitAbility(Hero[i],'A1FP'),25)
         call StartAbilityCooldown(GetUnitAbility(Hero[i],'BRLS'),40)
-        call StartAbilityCooldown(GetUnitAbility(Hero[i],'GKG1'),20)
+        call StartAbilityCooldown(GetUnitAbility(Hero[i],'GKG1'),60-GetHeroLevel(Hero[i]))
         call StartAbilityCooldown(GetUnitAbility(Hero[i],'Ao60'),10)
         call StartAbilityCooldown(GetUnitAbility(Hero[i],'A1HD'),7)
         call UnitRemoveAbility(Hero[i],'ore3')
@@ -62658,7 +62658,7 @@ function MissleMoveSuperSpiritBomb3 takes nothing returns nothing
             set E=FirstOfGroup(DG)
             exitwhen E==null
             if Condition_Base(p,E)then
-                call myCustomDamage(u,E,2*GetHeroStr(u,true)+dmg,false,false,null,null,null)
+                call myCustomDamage(u,E,GetHeroLevel(u)*0.1*GetHeroStr(u,true)+dmg,false,false,null,null,null)
                 call SetControlToUnit(u,E, .21, "heavystun")
             endif
             call GroupRemoveUnit(DG,E)
@@ -62804,7 +62804,7 @@ function MissleMoveSpiritBomb3 takes nothing returns nothing
         call MyRemoveUnit(n, 2.5)
         call myCustomDamage(u,c,dmg*0.2,false,false,null,null,null) 
     else
-        call myCustomDamage(u,c,2*GetHeroStr(u,true)+dmg,false,false,null,null,null) 
+        call myCustomDamage(u,c,GetHeroLevel(u)*0.1*GetHeroStr(u,true)+dmg,false,false,null,null,null) 
         set n=CreateUnit(p, 'e0C5', x, y, GetRandomInt(0, 360))
         call SetUnitScale(n, 2, 2, 2)
         call SetUnitFlyHeight(n, GetUnitZ(c), 0)
@@ -64615,18 +64615,6 @@ if GetWidgetLife(c)>0 and GetWidgetLife(u)>0 and time<4 then
             call SetSpecialEffectTimeScale(EFF , 1.6)
             call DestroyEffect(EFF)
         endif
-        set n=CreateUnit(p,'e0ZH',x,y,a*bj_RADTODEG+45)
-        call SetUnitVertexColor(n,255,255,255,155)
-        call UnitApplyTimedLife(n,1,0.4)
-        call SetUnitTimeScale(n,3)
-        set n=CreateUnit(p,'e0ZH',x,y,a*bj_RADTODEG-45)
-        call SetUnitVertexColor(n,255,255,255,155)
-        call UnitApplyTimedLife(n,1,0.4)
-        call SetUnitTimeScale(n,3)
-        set n=CreateUnit(p,'e0ZH',x,y,a*bj_RADTODEG)
-        call SetUnitVertexColor(n,255,255,255,155)
-        call UnitApplyTimedLife(n,1,0.4)
-        call SetUnitTimeScale(n,3)
     endif
     if time==0 then
         if LoadReal(HH,idp,VariationWHash)==0 then
@@ -64648,6 +64636,8 @@ if GetWidgetLife(c)>0 and GetWidgetLife(u)>0 and time<4 then
         else
             set soundplay=CreateSound("Sound\\Music\\mp3Music\\Goku\\MeteorSmash1-jap.mp3",false,false,true,12700,12700,"")
         endif
+        call StartSound(soundplay)
+        call KillSoundWhenDone(soundplay)
     endif
     if time<0.3 then
         if time==0.03 then
@@ -64785,18 +64775,6 @@ elseif LoadReal(HH,idp,VariationWHash)==2 then
 else
     call SetUnitVertexColor(u,255,255,255,255)
 endif
-set n=CreateUnit(p,'e0ZH',x,y,a*bj_RADTODEG+45)
-call SetUnitVertexColor(n,255,255,255,155)
-call UnitApplyTimedLife(n,1,0.4)
-call SetUnitTimeScale(n,3)
-set n=CreateUnit(p,'e0ZH',x,y,a*bj_RADTODEG-45)
-call SetUnitVertexColor(n,255,255,255,155)
-call UnitApplyTimedLife(n,1,0.4)
-call SetUnitTimeScale(n,3)
-set n=CreateUnit(p,'e0ZH',x,y,a*bj_RADTODEG)
-call SetUnitVertexColor(n,255,255,255,155)
-call UnitApplyTimedLife(n,1,0.4)
-call SetUnitTimeScale(n,3)
 call SaveUnitHandle(HH,id,0,u)
 call SaveUnitHandle(HH,id,1,c)
 call TimerStart(t,0.03,true,function MeteorSmashCast2)
