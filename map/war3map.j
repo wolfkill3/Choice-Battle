@@ -63452,9 +63452,9 @@ if time<1 then
     if time==0.8 then
         set EFF=AddSpecialEffect("File00000572.mdx", x1,y1)
         call SetSpecialEffectFacing(EFF , a* bj_RADTODEG)
-        call SetSpecialEffectZ(EFF, 0)
+        call SetSpecialEffectZ(EFF, 10)
         call SetSpecialEffectScale(EFF , 1.5)
-        call DestroyEffect(EFF)
+        call RemoveEffect(EFF,0.5,true,CreateTimer())
     endif
 else
     call PauseUnit(u,false)
@@ -65025,7 +65025,7 @@ if GetWidgetLife(c)>0 and GetWidgetLife(u)>0 and time<4 then
         call SetSpecialEffectOrientation(EFF,a*bj_RADTODEG,-45,0)
         call SetSpecialEffectZ(EFF, 30)
         call SetSpecialEffectScale(EFF , 0.8)
-        call DestroyEffect(EFF)
+        call RemoveEffect(EFF,1,true,CreateTimer())
         set EFF=AddSpecialEffect("rasengan_eff4.mdx", x1, y1)
         //call SetSpecialEffectZ(EFF , -130)
         call SetSpecialEffectScale(EFF , 2.6)
