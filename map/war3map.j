@@ -63815,8 +63815,18 @@ endif
 if time==-0.6 then
     if LoadReal(HH,idp,VariationQHash)==2 then
         call SetUnitVertexColor(u,255,100,100,255)
+        call DestroyEffect(AddSpecialEffect("KaiokenBurstRed.mdx",x,y))
+        set EFF = AddSpecialEffect("Hashirama\\SmokeFuzzy.mdl",x, y)
+        call SetSpecialEffectScale(EFF, 1.3)
+        call SetSpecialEffectTimeScale(EFF , 1.6)
+        call DestroyEffect(EFF)
     elseif LoadReal(HH,idp,VariationQHash)==3 then
         call SetUnitVertexColor(u,255,100,100,255)
+        call DestroyEffect(AddSpecialEffect("KaiokenBurstBlue.mdx",x,y))
+        set EFF = AddSpecialEffect("Hashirama\\SmokeFuzzy.mdl",x, y)
+        call SetSpecialEffectScale(EFF, 1.3)
+        call SetSpecialEffectTimeScale(EFF , 1.6)
+        call DestroyEffect(EFF)
     endif
     set n=CreateUnit(p,'e0ZH',x,y,a*bj_RADTODEG+45)
     call SetUnitVertexColor(n,255,255,255,155)
@@ -64365,6 +64375,13 @@ if GetWidgetLife(c)>0 and GetWidgetLife(u)>0 then
             call RemoveEffect(EFF,1,true,CreateTimer())
             call Push3(c,55,a,580,"")
             call SetUnitFlyHeight(c,350,800)
+            if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
+                set soundplay=CreateSound("Sound\\Music\\mp3Music\\MeteorSmash3.mp3",false,false,true,12700,12700,"")
+            else
+                set soundplay=CreateSound("Sound\\Music\\mp3Music\\Goku\\MeteorSmash3-jap.mp3",false,false,true,12700,12700,"")
+            endif
+            call StartSound(soundplay)
+            call KillSoundWhenDone(soundplay)
         endif
         if time==0.81 then
             call SetUnitFlyHeight(u,GetUnitFlyHeight(c),0)
@@ -64402,6 +64419,9 @@ if GetWidgetLife(c)>0 and GetWidgetLife(u)>0 then
             call SetSpecialEffectScale(EFF , GetUnitFlyHeight(c)+40)
             call SetSpecialEffectVertexColour(EFF,255,255,255,120)
             call RemoveEffect(EFF,1,true,CreateTimer())
+            set soundplay=CreateSound("Sound\\Music\\mp3Music\\MeteorSmash4.mp3",false,false,true,12700,12700,"")
+            call StartSound(soundplay)
+            call KillSoundWhenDone(soundplay)
         endif
         if time==1.14 then
             call SetUnitFlyHeight(u,GetUnitFlyHeight(c),0)
@@ -64422,6 +64442,15 @@ if GetWidgetLife(c)>0 and GetWidgetLife(u)>0 then
             call SetUnitAnimationByIndex(u,114)
         endif
         if time==1.26 or time==1.41 or time==1.56 then
+            if time==1.26 then
+                if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
+                    set soundplay=CreateSound("Sound\\Music\\mp3Music\\MeteorSmash5.mp3",false,false,true,12700,12700,"")
+                else
+                    set soundplay=CreateSound("Sound\\Music\\mp3Music\\Goku\\MeteorSmash5-jap.mp3",false,false,true,12700,12700,"")
+                endif
+                call StartSound(soundplay)
+                call KillSoundWhenDone(soundplay)
+            endif
             call SetUnitXY_1(u,x+5*Cos(a),y+5*Sin(a), false)
             call SetUnitXY_1(c,x1+20*Cos(a),y1+20*Sin(a), false)
             set EFF=AddSpecialEffect("Minato-37.mdx", x1+GetRandomReal(-15,15),y1+GetRandomReal(-15,15))
@@ -64453,6 +64482,13 @@ if GetWidgetLife(c)>0 and GetWidgetLife(u)>0 then
         endif
         if time==1.8 then
             call Push9(c,55,a,1100,2700)
+            if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
+                set soundplay=CreateSound("Sound\\Music\\mp3Music\\MeteorSmash6.mp3",false,false,true,12700,12700,"")
+            else
+                set soundplay=CreateSound("Sound\\Music\\mp3Music\\Goku\\MeteorSmash6-jap.mp3",false,false,true,12700,12700,"")
+            endif
+            call StartSound(soundplay)
+            call KillSoundWhenDone(soundplay)
             set EFF=AddSpecialEffect("war3mapImported\\CF2.mdl", x1,y1)
             call SetSpecialEffectOrientation(EFF,a*bj_RADTODEG,-45,0)
             call SetSpecialEffectZ(EFF, GetUnitFlyHeight(c))
@@ -64566,8 +64602,18 @@ if GetWidgetLife(c)>0 and GetWidgetLife(u)>0 and time<4 then
     if time==-0.6 then
         if LoadReal(HH,idp,VariationWHash)==1 then
             call SetUnitVertexColor(u,255,100,100,255)
+            call DestroyEffect(AddSpecialEffect("KaiokenBurstRed.mdx",x,y))
+            set EFF = AddSpecialEffect("Hashirama\\SmokeFuzzy.mdl",x, y)
+            call SetSpecialEffectScale(EFF, 1.3)
+            call SetSpecialEffectTimeScale(EFF , 1.6)
+            call DestroyEffect(EFF)
         elseif LoadReal(HH,idp,VariationWHash)==2 then
             call SetUnitVertexColor(u,255,100,100,255)
+            call DestroyEffect(AddSpecialEffect("KaiokenBurstBlue.mdx",x,y))
+            set EFF = AddSpecialEffect("Hashirama\\SmokeFuzzy.mdl",x, y)
+            call SetSpecialEffectScale(EFF, 1.3)
+            call SetSpecialEffectTimeScale(EFF , 1.6)
+            call DestroyEffect(EFF)
         endif
         set n=CreateUnit(p,'e0ZH',x,y,a*bj_RADTODEG+45)
         call SetUnitVertexColor(n,255,255,255,155)
@@ -64654,11 +64700,7 @@ if GetWidgetLife(c)>0 and GetWidgetLife(u)>0 and time<4 then
                 call SetSpecialEffectScale(EFF , GetUnitFlyHeight(c)+40)
                 call SetSpecialEffectVertexColour(EFF,255,255,255,120)
                 call RemoveEffect(EFF,1,true,CreateTimer())
-                if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
-                    set soundplay=CreateSound("Sound\\Music\\mp3Music\\MeteorSmash2.mp3",false,false,true,12700,12700,"")
-                else
-                    set soundplay=CreateSound("Sound\\Music\\mp3Music\\Goku\\MeteorSmash2-jap.mp3",false,false,true,12700,12700,"")
-                endif
+                set soundplay=CreateSound("Sound\\Music\\mp3Music\\MeteorSmash2.mp3",false,false,true,12700,12700,"")
                 call StartSound(soundplay)
                 call KillSoundWhenDone(soundplay)
                 call TimerStart(t,0.03,true,function MeteorSmashCast3)
@@ -65243,9 +65285,9 @@ call SaveUnitHandle(HH,id,0,u)
 call SaveGroupHandle(HH,id,1,CreateGroup())
 call SetUnitTimeScale(u,1.3)
 if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
-set soundplay=CreateSound("Sound\\Music\\mp3Music\\Kiai.mp3",false,false,true,12700,12700,"")
+set soundplay=CreateSound("Sound\\Music\\mp3Music\\kiai.mp3",false,false,true,12700,12700,"")
 else
-set soundplay=CreateSound("Sound\\Music\\mp3Music\\Goku\\Kiai-jap.mp3",false,false,true,12700,12700,"")
+set soundplay=CreateSound("Sound\\Music\\mp3Music\\Goku\\kiai-jap.mp3",false,false,true,12700,12700,"")
 endif
 call StartSound(soundplay)
 call KillSoundWhenDone(soundplay)
