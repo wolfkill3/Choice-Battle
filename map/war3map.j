@@ -63443,10 +63443,17 @@ if time<1 then
         call SetSpecialEffectZ(EFF, GetUnitFlyHeight(c)+GetRandomReal(45,65))
         call SetSpecialEffectScale(EFF , 1.5)
         call DestroyEffect(EFF)
-        set EFF=AddSpecialEffect("coarse slash blue.mdl", x1+40*Cos(a)+GetRandomReal(-10,10),y1+40*Sin(a)+GetRandomReal(-10,10))
+        set EFF=AddSpecialEffect("coarse slash blue.mdl", x1+70*Cos(a)+GetRandomReal(-10,10),y1+70*Sin(a)+GetRandomReal(-10,10))
         call SetSpecialEffectOrientation(EFF,a*bj_RADTODEG+GetRandomReal(-25,25),GetRandomReal(-45,-15),0)
         call SetSpecialEffectZ(EFF, GetUnitFlyHeight(c)+GetRandomReal(45,65))
         call SetSpecialEffectScale(EFF , 0.75)
+        call DestroyEffect(EFF)
+    endif
+    if time==0.8 then
+        set EFF=AddSpecialEffect("File00000572.mdx", x1,y1)
+        call SetSpecialEffectFacing(EFF , a* bj_RADTODEG)
+        call SetSpecialEffectZ(EFF, 0)
+        call SetSpecialEffectScale(EFF , 1.5)
         call DestroyEffect(EFF)
     endif
 else
