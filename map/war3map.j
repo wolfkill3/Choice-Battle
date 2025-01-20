@@ -64631,10 +64631,14 @@ if GetWidgetLife(c)>0 and GetWidgetLife(u)>0 and time<4 then
             call UnitApplyTimedLife(n,1,0.4)
             call SetUnitTimeScale(n,3)
         endif
-        if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
-            set soundplay=CreateSound("Sound\\Music\\mp3Music\\MeteorSmash1.mp3",false,false,true,12700,12700,"")
+        if LoadReal(HH,idp,VariationWHash)!=2 then
+            if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
+                set soundplay=CreateSound("Sound\\Music\\mp3Music\\MeteorSmash1.mp3",false,false,true,12700,12700,"")
+            else
+                set soundplay=CreateSound("Sound\\Music\\mp3Music\\Goku\\MeteorSmash1-jap.mp3",false,false,true,12700,12700,"")
+            endif
         else
-            set soundplay=CreateSound("Sound\\Music\\mp3Music\\Goku\\MeteorSmash1-jap.mp3",false,false,true,12700,12700,"")
+            set soundplay=CreateSound("Sound\\Music\\mp3Music\\MeteorSmash1Blue.mp3",false,false,true,12700,12700,"")
         endif
         call StartSound(soundplay)
         call KillSoundWhenDone(soundplay)
@@ -64914,7 +64918,7 @@ if GetWidgetLife(c)>0 and GetWidgetLife(u)>0 and time<5 then
                 set EFF=AddSpecialEffect("war3mapImported\\CF2.mdl", x1,y1)
                 call SetSpecialEffectOrientation(EFF,a*bj_RADTODEG,0,0)
                 call SetSpecialEffectZ(EFF, GetUnitFlyHeight(c))
-                call SetSpecialEffectScale(EFF , 1)
+                call SetSpecialEffectScale(EFF , 1.3)
                 call DestroyEffect(EFF)
                 set EFF=AddSpecialEffect("Minato-37.mdx", x1,y1)
                 call SetSpecialEffectFacing(EFF , a* bj_RADTODEG)
@@ -65017,13 +65021,13 @@ if GetWidgetLife(c)>0 and GetWidgetLife(u)>0 and time<4 then
         call SetControlToUnit(u,c, 1, "stun")
         call PauseUnit(c,true)
         call Push3(c,50,a,450,"")
-        set EFF=AddSpecialEffect("war3mapImported\\KamehaBlue2.mdl", x+60*Cos(a),y+60*Sin(a))
+        set EFF=AddSpecialEffect("war3mapImported\\Ball2.mdl", x+60*Cos(a),y+60*Sin(a))
         call SetSpecialEffectOrientation(EFF,a*bj_RADTODEG,-45,0)
         call SetSpecialEffectZ(EFF, 30)
         call SetSpecialEffectScale(EFF , 0.8)
         call DestroyEffect(EFF)
-        set EFF=AddSpecialEffect("war3mapImported\\Rasengan1.mdx", x1, y1)
-        call SetSpecialEffectZ(EFF , -130)
+        set EFF=AddSpecialEffect("rasengan_eff4.mdx", x1, y1)
+        //call SetSpecialEffectZ(EFF , -130)
         call SetSpecialEffectScale(EFF , 2.6)
         call SetSpecialEffectTimeScale(EFF , 0.6)
         call SetSpecialEffectAlphaTimed(EFF , 255 , 255 , 255 , 255 , 2)
@@ -65117,7 +65121,7 @@ if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
     call DestroyEffect(EFF)
     call Push3(u,20,a,80,"")
     call Push3(c,50,a,100,"")
-    call SetUnitXY_1(u,x1-195*Cos(a),y1-195*Sin(a), false)
+    call SetUnitXY_1(u,x1-165*Cos(a),y1-165*Sin(a), false)
     call SetUnitFlyHeight(u,0,0)
     set EFF=AddSpecialEffect("war3mapImported\\BlackBlink.mdx", GetUnitX(u), GetUnitY(u))
     call SetSpecialEffectZ(EFF, GetUnitFlyHeight(u))
