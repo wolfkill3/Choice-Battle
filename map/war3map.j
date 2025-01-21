@@ -63502,6 +63502,7 @@ else
     call UnitRemoveAbility(u,'A34J')
     call UnitRemoveBuffs(u,false,true)
     call SetUnitTimeScale(u,1)
+    call StopSound(LoadSoundHandle(HH,id,3),true,true)
     call SaveBoolean(HH,idu,ANTITARGET_ABILITY,false)
     if c!=null then
         set a=Atan2(GetUnitY(c)-y,GetUnitX(c)-x)
@@ -63575,9 +63576,14 @@ call UnitAddAbility(u,'A34J')
 call UnitMakeAbilityPermanent(u,true,'A34J')
 call PauseUnit(u,true)
 call SetUnitAnimationByIndex(u,242)
-set soundplay=CreateSound("Sound\\Music\\mp3Music\\AUI1.mp3",false,false,true,12700,12700,"")
+if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
+    set soundplay=CreateSound("Sound\\Music\\mp3Music\\AUI1.mp3",false,false,true,12700,12700,"")
+else
+    set soundplay=CreateSound("Sound\\Music\\mp3Music\\Goku\\AUI1-jap.mp3",false,false,true,12700,12700,"")
+endif
 call StartSound(soundplay)
 call KillSoundWhenDone(soundplay)
+call SaveSoundHandle(HH,id,3,soundplay)
 call SaveBoolean(HH,GetHandleId(u),ANTITARGET_ABILITY,true)
 call TimerStart(t,0.04,true,function AutonomousUICast2)
 set u=null
@@ -64814,7 +64820,6 @@ local real mh=LoadReal(h,id,5)
 local real rd=SR(x,y,x1,y1)
 if rd>30+speed and udg_B==true and rd<900 and GetUnitAbilityLevel(l__d,'A1BL')==0 and time<2 then
 call SetUnitXY_1(l__d,x+speed*Cos(a),y+speed*Sin(a), false)
-call SetUnitFacing(l__d,a*bj_RADTODEG)
 call SetUnitFlyHeight(l__d,ParabolaZ(mh,dist,rd),0)
 call SaveReal(h,id,8,time+0.03)
 //call PauseUnit(l__d,true)
@@ -65034,7 +65039,7 @@ if GetWidgetLife(c)>0 and GetWidgetLife(u)>0 and time<4 then
         call SetUnitTimeScale(u,1)
     endif
     if time==0.9 then
-        call SetUnitTimeScale(u,1.25)
+        call SetUnitTimeScale(u,1.1)
         call PauseUnit(c,false)
         call myCustomDamage(u,c,dmg,false,false,null,null,null)
         call SetControlToUnit(u,c, 1, "stun")
@@ -65075,7 +65080,7 @@ if GetWidgetLife(c)>0 and GetWidgetLife(u)>0 and time<4 then
         call KillSoundWhenDone(soundplay)
     endif
     if time==1.35 then
-        call SetUnitTimeScale(u,1)
+        call SetUnitTimeScale(u,0.8)
         call MissleMoveAcceleratingBattleSpirit_NonPause(u,45,0,x-700*Cos(a),y-700*Sin(a),300)
         call SaveReal(HH,id,2,0)
         call PauseUnit(c,false)
@@ -65096,7 +65101,6 @@ if GetWidgetLife(c)>0 and GetWidgetLife(u)>0 and time<4 then
             call DestroyTimer(t)
             call SetUnitInvulnerable(u,false)
             call PauseUnit(u,false)
-            call SetUnitAnimation(u,"stand")
             call SetUnitTimeScale(u,1)
             call FlushChildHashtable(HH,id)
         endif
