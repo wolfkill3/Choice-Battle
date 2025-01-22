@@ -5558,7 +5558,7 @@ function Condition_RecipeString takes integer id returns boolean
 return id=='I00E' or id=='I01P' or id=='I01R' or id=='I01T' or id=='I01V' or id=='I02U' or id=='I02X' or id=='I02Z' or id=='I045' or id=='I047' or id=='I04Y' or id=='I04U' or id=='I04X' or id=='I04Z' or id=='I051' or id=='I14R' or id=='IGDr' or id=='IPar' or id=='IHYr' or id=='ISTr' or id=='IBSR' or id=='I052' or id=='I053' or id=='I055' or id=='I06P' or id=='I06S' or id=='I06T'
 endfunction
 function Condition_AbilityString2 takes integer id returns boolean
-return id=='A0YX' or id=='A0Z0' or id=='KkR1' or id=='KkR2' or id=='BRRS' or id=='BRSS' or id=='IcF2' or id=='IcF5'
+return id=='A0YX' or id=='A0Z0' or id=='KkR1' or id=='KkR2' or id=='BRRS' or id=='BRSS' or id=='IcF2' or id=='IcF5' or id=='GKF1' or id=='GKG1' or id=='GKBS' or id=='GKSS' or id=='GKS2' or id=='GKS3' or id=='GKS4' or id=='GKSR' or id=='GKSB' or id=='GKUI' or id=='GKMI' or id=='GKQ1' or id=='GKW1' or id=='GKE1' or id=='GKT1'
 endfunction
 function Condition_AbilityString takes integer id returns boolean
 return Condition_AbilityString2(id) or id=='SaW1' or id=='SaE1' or id=='SaR1' or id=='SaT1' or id=='TMW0' or id=='A0P6' or id=='A1D7' or id=='HSW1' or id=='HST1' or id=='KHG1' or id=='A2DJ' or id=='IcQ1' or id=='IcT1' or id=='MadF' or id=='A0N1' or id=='A2CZ' or id=='A0CZ' or id=='DSW1' or id=='Ad02' or id=='BGW1' or id=='KaA6' or id=='KaAF' or id=='BGG1' or id=='ASQ1' or id=='ASW1' or id=='ASE1' or id=='AST1' or id=='A1BO' or id=='A1BT' or id=='A1BW' or id=='A085' or id=='A08J' or id=='MiQ1' or id=='MiE1' or id=='MiR1' or id=='A0FN' or id=='WE03' or id=='WE06' or id=='A1AJ' or id=='A1ER' or id=='A0QK' or id=='A1HO' or id=='AlFS' or id=='OM13' or id=='A17D' or id=='A177' or id=='A172' or id=='A16U' or id=='A0TN'
@@ -9717,8 +9717,15 @@ endfunction
 function OnButtonHover takes nothing returns nothing
     local framehandle cursor = GetOriginFrame( ORIGIN_FRAME_CURSOR_FRAME, 0 )
     local player p = GetTriggerPlayer( )
+    local integer i=0
     if p == GetLocalPlayer( ) then
         call SetFrameSpriteColour( cursor, 0xFF00FF00 )
+        call SetFrameSpriteModel( GetCFrameByName( "HeroPickSelector", 0 ), " " )
+        loop
+        exitwhen i>=35
+            call SetFrameSpriteModel( GetCFrameByName( "TavernAdditionalAbilityBorderOpenable", i ), " " )
+            set i=i+1
+        endloop
     endif
     set p = null
     set cursor=null
@@ -9727,8 +9734,15 @@ endfunction
 function OnButtonUnHover takes nothing returns nothing
     local player p = GetTriggerPlayer( )
     local framehandle cursor = GetOriginFrame( ORIGIN_FRAME_CURSOR_FRAME, 0 )
+    local integer i=0
     if p == GetLocalPlayer( ) then
         call SetFrameSpriteColour( cursor, 0xFFFFFFFF )
+        call SetFrameSpriteModel( GetCFrameByName( "HeroPickSelector", 0 ), "UI\\Feedback\\Autocast\\UI-ModalButtonOn.mdl" )
+        loop
+        exitwhen i>=35
+            call SetFrameSpriteModel( GetCFrameByName( "TavernAdditionalAbilityBorderOpenable", i ), "lastprismrainbow.mdl" )
+            set i=i+1
+        endloop
     endif
     set p = null
     set cursor=null
@@ -11142,7 +11156,7 @@ function OnButtonAddonAbility takes nothing returns nothing
     endif
     if p==GetLocalPlayer() then
         loop
-        exitwhen i>=7
+        exitwhen i>=35
         
             if GetFrameTexture(but,0)==GetAbilityBaseStringFieldById('A1HO',ABILITY_SF_ICON_NORMAL) and IsFrameVisible(GetFrameByName("TavernBarAdditionalAbilityList",0))==false and i==GetFrameContext(but) then
                 call ShowFrame( InfoTavernText, false )
@@ -11901,7 +11915,268 @@ function OnButtonAddonAbility takes nothing returns nothing
                 set j=j+1
                 exitwhen j>35
                 endloop
+            endif
 
+            if GetFrameTexture(but,0)==GetAbilityBaseStringFieldById('GKG1',ABILITY_SF_ICON_NORMAL) and IsFrameVisible(GetFrameByName("TavernBarAdditionalAbilityList",0))==false and i==GetFrameContext(but) then
+                call ShowFrame( InfoTavernText, false )
+                call ShowFrame( GetFrameByName("TavernBarAdditionalAbilityList",0), true )
+                set j=0
+                loop
+                call ShowFrame( GetFrameByName("TavernAdditionalAbilityTooltip",j), false )
+                call ShowFrame( GetFrameByName("TavernAdditionalAbilityBorderOpenable",j), false )
+                if (j>1 and j<8) or j>8 then
+                call ShowFrame(GetFrameByName("TavernAdditionalAbility",j),false)
+                else
+                call SetFrameText( GetFrameByName("TavernAdditionalAbilityTooltipText",j), "     " )
+                endif
+                set j=j+1
+                exitwhen j>35
+                endloop
+                set j=0
+                loop
+                    call AddFrameText( GetFrameByName("TavernAdditionalAbilityTooltipText",0), "|cffffcc00"+I2S(GetAbilityBaseIntegerLevelFieldById( String2Id( "GKG3" ), ABILITY_ILF_MANA_COST, j ))+"|r")
+                    exitwhen j==GetAbilityBaseIntegerFieldById(String2Id( "GKG3" ), ABILITY_IF_LEVELS)-1
+                    call AddFrameText( GetFrameByName("TavernAdditionalAbilityTooltipText",0), "/")
+                    set j=j+1
+                endloop
+                set j=0
+                loop
+                    call AddFrameText( GetFrameByName("TavernAdditionalAbilityTooltipText",1), "|cffffcc00"+I2S(GetAbilityBaseIntegerLevelFieldById( String2Id( "GKG4" ), ABILITY_ILF_MANA_COST, j ))+"|r")
+                    exitwhen j==GetAbilityBaseIntegerFieldById(String2Id( "GKG4" ), ABILITY_IF_LEVELS)-1
+                    call AddFrameText( GetFrameByName("TavernAdditionalAbilityTooltipText",1), "/")
+                    set j=j+1
+                endloop
+                set j=0
+                loop
+                    call AddFrameText( GetFrameByName("TavernAdditionalAbilityTooltipText",8), "|cffffcc00"+I2S(GetAbilityBaseIntegerLevelFieldById( String2Id( "GKG5" ), ABILITY_ILF_MANA_COST, j ))+"|r")
+                    exitwhen j==GetAbilityBaseIntegerFieldById(String2Id( "GKG5" ), ABILITY_IF_LEVELS)-1
+                    call AddFrameText( GetFrameByName("TavernAdditionalAbilityTooltipText",8), "/")
+                    set j=j+1
+                endloop
+                call SetFrameTexture( GetFrameByName("TavernAdditionalAbility",0), GetAbilityBaseStringFieldById( String2Id( "GKG3" ), ABILITY_SF_ICON_NORMAL ), 0, true )
+                call SetFrameTexture( GetFrameByName("TavernAdditionalAbility",0), GetAbilityBaseStringFieldById( String2Id( "GKG3" ), ABILITY_SF_ICON_NORMAL ), 1, true )
+                call SetFrameTexture( GetFrameByName("TavernAdditionalAbility",0), GetAbilityBaseStringFieldById( String2Id( "GKG3" ), ABILITY_SF_ICON_NORMAL ), 2, true )
+                call SetFrameTexture( GetFrameByName("TavernAdditionalAbility",1), GetAbilityBaseStringFieldById( String2Id( "GKG4" ), ABILITY_SF_ICON_NORMAL ), 0, true )
+                call SetFrameTexture( GetFrameByName("TavernAdditionalAbility",1), GetAbilityBaseStringFieldById( String2Id( "GKG4" ), ABILITY_SF_ICON_NORMAL ), 1, true )
+                call SetFrameTexture( GetFrameByName("TavernAdditionalAbility",1), GetAbilityBaseStringFieldById( String2Id( "GKG4" ), ABILITY_SF_ICON_NORMAL ), 2, true )
+                call SetFrameTexture( GetFrameByName("TavernAdditionalAbility",8), GetAbilityBaseStringFieldById( String2Id( "GKG5" ), ABILITY_SF_ICON_NORMAL ), 0, true )
+                call SetFrameTexture( GetFrameByName("TavernAdditionalAbility",8), GetAbilityBaseStringFieldById( String2Id( "GKG5" ), ABILITY_SF_ICON_NORMAL ), 1, true )
+                call SetFrameTexture( GetFrameByName("TavernAdditionalAbility",8), GetAbilityBaseStringFieldById( String2Id( "GKG5" ), ABILITY_SF_ICON_NORMAL ), 2, true )
+                call AddFrameText( GetFrameByName("TavernAdditionalAbilityTooltipText",0), "\n\n"+GetAbilityBaseStringFieldById( String2Id( "GKG3" ), ABILITY_SF_NAME )+", (|cffffcc00Q|r)\n\n"+GetAbilityBaseStringFieldById( String2Id( "GKG3" ), ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED ))
+                call AddFrameText( GetFrameByName("TavernAdditionalAbilityTooltipText",1), "\n\n"+GetAbilityBaseStringFieldById( String2Id( "GKG4" ), ABILITY_SF_NAME )+", (|cffffcc00W|r)\n\n"+GetAbilityBaseStringFieldById( String2Id( "GKG4" ), ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED ))
+                call AddFrameText( GetFrameByName("TavernAdditionalAbilityTooltipText",8), "\n\n"+GetAbilityBaseStringFieldById( String2Id( "GKG5" ), ABILITY_SF_NAME )+", (|cffffcc00W|r)\n\n"+GetAbilityBaseStringFieldById( String2Id( "GKG5" ), ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED ))
+                call SetFrameSize( GetFrameByName("TavernAdditionalAbilityTooltip",0), .26, GetFrameHeight( GetFrameByName("TavernAdditionalAbilityTooltipText",0))+0.03)
+                call SetFrameSize( GetFrameByName("TavernAdditionalAbilityTooltip",1), .26, GetFrameHeight( GetFrameByName("TavernAdditionalAbilityTooltipText",1))+0.03)
+                call SetFrameSize( GetFrameByName("TavernAdditionalAbilityTooltip",8), .26, GetFrameHeight( GetFrameByName("TavernAdditionalAbilityTooltipText",8))+0.03)
+                set j=0
+                loop
+                    call SetFrameTextAlignment( GetFrameByName("TavernAdditionalAbilityTooltipText",j), TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_LEFT )
+                    call SetFrameRelativePoint( GetFrameByName("TavernAdditionalAbilityTooltip",j), FRAMEPOINT_CENTER, GetFrameByName("TavernAdditionalAbility",j), FRAMEPOINT_CENTER,  .13, (-0.5*GetFrameHeight( GetFrameByName("TavernAdditionalAbilityTooltipText",j)))-.02  )
+                    exitwhen j>35
+                    set j=j+1
+                endloop
+            elseif GetFrameTexture(but,0)==GetAbilityBaseStringFieldById('GKG1',ABILITY_SF_ICON_NORMAL) and IsFrameVisible(GetFrameByName("TavernBarAdditionalAbilityList",0))==true and i==GetFrameContext(but) then
+                call ShowFrame( GetFrameByName("TavernBarAdditionalAbilityList",0), false )
+                call ShowFrame( InfoTavernText, true )
+                set j=0
+                loop
+                call ShowFrame( GetFrameByName("TavernAdditionalAbilityBorderOpenable",j), false )
+                if j>=7 then
+                call ShowFrame(GetFrameByName("TavernAdditionalAbility",j),false)
+                endif
+                set j=j+1
+                exitwhen j>35
+                endloop
+            
+            elseif GetFrameTexture(but,0)==GetAbilityBaseStringFieldById('GKF1',ABILITY_SF_ICON_NORMAL) and IsFrameVisible(GetFrameByName("TavernBarAdditionalAbilityList",0))==false and i==GetFrameContext(but) then
+                call ShowFrame( InfoTavernText, false )
+                call ShowFrame( GetFrameByName("TavernBarAdditionalAbilityList",0), true )
+                set j=0
+                loop
+                call ShowFrame( GetFrameByName("TavernAdditionalAbilityTooltip",j), false )
+                call ShowFrame( GetFrameByName("TavernAdditionalAbilityBorderOpenable",j), false )
+                if (j>3 and j<7) or (j>9 and j<14) or j>15 then
+                call ShowFrame(GetFrameByName("TavernAdditionalAbility",j),false)
+                else
+                call ShowFrame( GetFrameByName("TavernAdditionalAbilityBorderOpenable",j), true )
+                call SetFrameText( GetFrameByName("TavernAdditionalAbilityTooltipText",j), "     " )
+                endif
+                set j=j+1
+                exitwhen j>35
+                endloop
+                set j=0
+                loop
+                    call AddFrameText( GetFrameByName("TavernAdditionalAbilityTooltipText",0), "|cffffcc00"+I2S(GetAbilityBaseIntegerLevelFieldById( String2Id( "GKBS" ), ABILITY_ILF_MANA_COST, j ))+"|r")
+                    exitwhen j==GetAbilityBaseIntegerFieldById(String2Id( "GKBS" ), ABILITY_IF_LEVELS)-1
+                    call AddFrameText( GetFrameByName("TavernAdditionalAbilityTooltipText",0), "/")
+                    set j=j+1
+                endloop
+                set j=0
+                loop
+                    call AddFrameText( GetFrameByName("TavernAdditionalAbilityTooltipText",1), "|cffffcc00"+I2S(GetAbilityBaseIntegerLevelFieldById( String2Id( "GKSS" ), ABILITY_ILF_MANA_COST, j ))+"|r")
+                    exitwhen j==GetAbilityBaseIntegerFieldById(String2Id( "GKSS" ), ABILITY_IF_LEVELS)-1
+                    call AddFrameText( GetFrameByName("TavernAdditionalAbilityTooltipText",1), "/")
+                    set j=j+1
+                endloop
+                set j=0
+                loop
+                    call AddFrameText( GetFrameByName("TavernAdditionalAbilityTooltipText",2), "|cffffcc00"+I2S(GetAbilityBaseIntegerLevelFieldById( String2Id( "GKS2" ), ABILITY_ILF_MANA_COST, j ))+"|r")
+                    exitwhen j==GetAbilityBaseIntegerFieldById(String2Id( "GKS2" ), ABILITY_IF_LEVELS)-1
+                    call AddFrameText( GetFrameByName("TavernAdditionalAbilityTooltipText",2), "/")
+                    set j=j+1
+                endloop
+                set j=0
+                loop
+                    call AddFrameText( GetFrameByName("TavernAdditionalAbilityTooltipText",3), "|cffffcc00"+I2S(GetAbilityBaseIntegerLevelFieldById( String2Id( "GKS3" ), ABILITY_ILF_MANA_COST, j ))+"|r")
+                    exitwhen j==GetAbilityBaseIntegerFieldById(String2Id( "GKS3" ), ABILITY_IF_LEVELS)-1
+                    call AddFrameText( GetFrameByName("TavernAdditionalAbilityTooltipText",3), "/")
+                    set j=j+1
+                endloop
+                set j=0
+                loop
+                    call AddFrameText( GetFrameByName("TavernAdditionalAbilityTooltipText",7), "|cffffcc00"+I2S(GetAbilityBaseIntegerLevelFieldById( String2Id( "GKS4" ), ABILITY_ILF_MANA_COST, j ))+"|r")
+                    exitwhen j==GetAbilityBaseIntegerFieldById(String2Id( "GKS4" ), ABILITY_IF_LEVELS)-1
+                    call AddFrameText( GetFrameByName("TavernAdditionalAbilityTooltipText",7), "/")
+                    set j=j+1
+                endloop
+                set j=0
+                loop
+                    call AddFrameText( GetFrameByName("TavernAdditionalAbilityTooltipText",8), "|cffffcc00"+I2S(GetAbilityBaseIntegerLevelFieldById( String2Id( "GKSR" ), ABILITY_ILF_MANA_COST, j ))+"|r")
+                    exitwhen j==GetAbilityBaseIntegerFieldById(String2Id( "GKSR" ), ABILITY_IF_LEVELS)-1
+                    call AddFrameText( GetFrameByName("TavernAdditionalAbilityTooltipText",8), "/")
+                    set j=j+1
+                endloop
+                set j=0
+                loop
+                    call AddFrameText( GetFrameByName("TavernAdditionalAbilityTooltipText",9), "|cffffcc00"+I2S(GetAbilityBaseIntegerLevelFieldById( String2Id( "GKSB" ), ABILITY_ILF_MANA_COST, j ))+"|r")
+                    exitwhen j==GetAbilityBaseIntegerFieldById(String2Id( "GKSB" ), ABILITY_IF_LEVELS)-1
+                    call AddFrameText( GetFrameByName("TavernAdditionalAbilityTooltipText",9), "/")
+                    set j=j+1
+                endloop
+                set j=0
+                loop
+                    call AddFrameText( GetFrameByName("TavernAdditionalAbilityTooltipText",14), "|cffffcc00"+I2S(GetAbilityBaseIntegerLevelFieldById( String2Id( "GKUI" ), ABILITY_ILF_MANA_COST, j ))+"|r")
+                    exitwhen j==GetAbilityBaseIntegerFieldById(String2Id( "GKUI" ), ABILITY_IF_LEVELS)-1
+                    call AddFrameText( GetFrameByName("TavernAdditionalAbilityTooltipText",14), "/")
+                    set j=j+1
+                endloop
+                set j=0
+                loop
+                    call AddFrameText( GetFrameByName("TavernAdditionalAbilityTooltipText",15), "|cffffcc00"+I2S(GetAbilityBaseIntegerLevelFieldById( String2Id( "GKMI" ), ABILITY_ILF_MANA_COST, j ))+"|r")
+                    exitwhen j==GetAbilityBaseIntegerFieldById(String2Id( "GKMI" ), ABILITY_IF_LEVELS)-1
+                    call AddFrameText( GetFrameByName("TavernAdditionalAbilityTooltipText",15), "/")
+                    set j=j+1
+                endloop
+                call SetFrameTexture( GetFrameByName("TavernAdditionalAbility",0), GetAbilityBaseStringFieldById( String2Id( "GKBS" ), ABILITY_SF_ICON_NORMAL ), 0, true )
+                call SetFrameTexture( GetFrameByName("TavernAdditionalAbility",0), GetAbilityBaseStringFieldById( String2Id( "GKBS" ), ABILITY_SF_ICON_NORMAL ), 1, true )
+                call SetFrameTexture( GetFrameByName("TavernAdditionalAbility",0), GetAbilityBaseStringFieldById( String2Id( "GKBS" ), ABILITY_SF_ICON_NORMAL ), 2, true )
+                call SetFrameTexture( GetFrameByName("TavernAdditionalAbility",1), GetAbilityBaseStringFieldById( String2Id( "GKSS" ), ABILITY_SF_ICON_NORMAL ), 0, true )
+                call SetFrameTexture( GetFrameByName("TavernAdditionalAbility",1), GetAbilityBaseStringFieldById( String2Id( "GKSS" ), ABILITY_SF_ICON_NORMAL ), 1, true )
+                call SetFrameTexture( GetFrameByName("TavernAdditionalAbility",1), GetAbilityBaseStringFieldById( String2Id( "GKSS" ), ABILITY_SF_ICON_NORMAL ), 2, true )
+                call SetFrameTexture( GetFrameByName("TavernAdditionalAbility",2), GetAbilityBaseStringFieldById( String2Id( "GKS2" ), ABILITY_SF_ICON_NORMAL ), 0, true )
+                call SetFrameTexture( GetFrameByName("TavernAdditionalAbility",2), GetAbilityBaseStringFieldById( String2Id( "GKS2" ), ABILITY_SF_ICON_NORMAL ), 1, true )
+                call SetFrameTexture( GetFrameByName("TavernAdditionalAbility",2), GetAbilityBaseStringFieldById( String2Id( "GKS2" ), ABILITY_SF_ICON_NORMAL ), 2, true )
+                call SetFrameTexture( GetFrameByName("TavernAdditionalAbility",3), GetAbilityBaseStringFieldById( String2Id( "GKS3" ), ABILITY_SF_ICON_NORMAL ), 0, true )
+                call SetFrameTexture( GetFrameByName("TavernAdditionalAbility",3), GetAbilityBaseStringFieldById( String2Id( "GKS3" ), ABILITY_SF_ICON_NORMAL ), 1, true )
+                call SetFrameTexture( GetFrameByName("TavernAdditionalAbility",3), GetAbilityBaseStringFieldById( String2Id( "GKS3" ), ABILITY_SF_ICON_NORMAL ), 2, true )
+                call SetFrameTexture( GetFrameByName("TavernAdditionalAbility",7), GetAbilityBaseStringFieldById( String2Id( "GKS4" ), ABILITY_SF_ICON_NORMAL ), 0, true )
+                call SetFrameTexture( GetFrameByName("TavernAdditionalAbility",7), GetAbilityBaseStringFieldById( String2Id( "GKS4" ), ABILITY_SF_ICON_NORMAL ), 1, true )
+                call SetFrameTexture( GetFrameByName("TavernAdditionalAbility",7), GetAbilityBaseStringFieldById( String2Id( "GKS4" ), ABILITY_SF_ICON_NORMAL ), 2, true )
+                call SetFrameTexture( GetFrameByName("TavernAdditionalAbility",8), GetAbilityBaseStringFieldById( String2Id( "GKSR" ), ABILITY_SF_ICON_NORMAL ), 0, true )
+                call SetFrameTexture( GetFrameByName("TavernAdditionalAbility",8), GetAbilityBaseStringFieldById( String2Id( "GKSR" ), ABILITY_SF_ICON_NORMAL ), 1, true )
+                call SetFrameTexture( GetFrameByName("TavernAdditionalAbility",8), GetAbilityBaseStringFieldById( String2Id( "GKSR" ), ABILITY_SF_ICON_NORMAL ), 2, true )
+                call SetFrameTexture( GetFrameByName("TavernAdditionalAbility",9), GetAbilityBaseStringFieldById( String2Id( "GKSB" ), ABILITY_SF_ICON_NORMAL ), 0, true )
+                call SetFrameTexture( GetFrameByName("TavernAdditionalAbility",9), GetAbilityBaseStringFieldById( String2Id( "GKSB" ), ABILITY_SF_ICON_NORMAL ), 1, true )
+                call SetFrameTexture( GetFrameByName("TavernAdditionalAbility",9), GetAbilityBaseStringFieldById( String2Id( "GKSB" ), ABILITY_SF_ICON_NORMAL ), 2, true )
+                call SetFrameTexture( GetFrameByName("TavernAdditionalAbility",14), GetAbilityBaseStringFieldById( String2Id( "GKUI" ), ABILITY_SF_ICON_NORMAL ), 0, true )
+                call SetFrameTexture( GetFrameByName("TavernAdditionalAbility",14), GetAbilityBaseStringFieldById( String2Id( "GKUI" ), ABILITY_SF_ICON_NORMAL ), 1, true )
+                call SetFrameTexture( GetFrameByName("TavernAdditionalAbility",14), GetAbilityBaseStringFieldById( String2Id( "GKUI" ), ABILITY_SF_ICON_NORMAL ), 2, true )
+                call SetFrameTexture( GetFrameByName("TavernAdditionalAbility",15), GetAbilityBaseStringFieldById( String2Id( "GKMI" ), ABILITY_SF_ICON_NORMAL ), 0, true )
+                call SetFrameTexture( GetFrameByName("TavernAdditionalAbility",15), GetAbilityBaseStringFieldById( String2Id( "GKMI" ), ABILITY_SF_ICON_NORMAL ), 1, true )
+                call SetFrameTexture( GetFrameByName("TavernAdditionalAbility",15), GetAbilityBaseStringFieldById( String2Id( "GKMI" ), ABILITY_SF_ICON_NORMAL ), 2, true )
+                call AddFrameText( GetFrameByName("TavernAdditionalAbilityTooltipText",0), "\n\n"+GetAbilityBaseStringFieldById( String2Id( "GKBS" ), ABILITY_SF_NAME )+", (|cffffcc00Q|r)\n\n"+GetAbilityBaseStringFieldById( String2Id( "GKBS" ), ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED ))
+                call AddFrameText( GetFrameByName("TavernAdditionalAbilityTooltipText",1), "\n\n"+GetAbilityBaseStringFieldById( String2Id( "GKSS" ), ABILITY_SF_NAME )+", (|cffffcc00W|r)\n\n"+GetAbilityBaseStringFieldById( String2Id( "GKSS" ), ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED ))
+                call AddFrameText( GetFrameByName("TavernAdditionalAbilityTooltipText",2), "\n\n"+GetAbilityBaseStringFieldById( String2Id( "GKS2" ), ABILITY_SF_NAME )+", (|cffffcc00E|r)\n\n"+GetAbilityBaseStringFieldById( String2Id( "GKS2" ), ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED ))
+                call AddFrameText( GetFrameByName("TavernAdditionalAbilityTooltipText",3), "\n\n"+GetAbilityBaseStringFieldById( String2Id( "GKS3" ), ABILITY_SF_NAME )+", (|cffffcc00R|r)\n\n"+GetAbilityBaseStringFieldById( String2Id( "GKS3" ), ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED ))
+                call AddFrameText( GetFrameByName("TavernAdditionalAbilityTooltipText",7), "\n\n"+GetAbilityBaseStringFieldById( String2Id( "GKS4" ), ABILITY_SF_NAME )+", (|cffffcc00A|r)\n\n"+GetAbilityBaseStringFieldById( String2Id( "GKS4" ), ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED ))
+                call AddFrameText( GetFrameByName("TavernAdditionalAbilityTooltipText",8), "\n\n"+GetAbilityBaseStringFieldById( String2Id( "GKSR" ), ABILITY_SF_NAME )+", (|cffffcc00S|r)\n\n"+GetAbilityBaseStringFieldById( String2Id( "GKSR" ), ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED ))
+                call AddFrameText( GetFrameByName("TavernAdditionalAbilityTooltipText",9), "\n\n"+GetAbilityBaseStringFieldById( String2Id( "GKSB" ), ABILITY_SF_NAME )+", (|cffffcc00D|r)\n\n"+GetAbilityBaseStringFieldById( String2Id( "GKSB" ), ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED ))
+                call AddFrameText( GetFrameByName("TavernAdditionalAbilityTooltipText",14), "\n\n"+GetAbilityBaseStringFieldById( String2Id( "GKUI" ), ABILITY_SF_NAME )+", (|cffffcc00Z|r)\n\n"+GetAbilityBaseStringFieldById( String2Id( "GKUI" ), ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED ))
+                call AddFrameText( GetFrameByName("TavernAdditionalAbilityTooltipText",15), "\n\n"+GetAbilityBaseStringFieldById( String2Id( "GKMI" ), ABILITY_SF_NAME )+", (|cffffcc00X|r)\n\n"+GetAbilityBaseStringFieldById( String2Id( "GKMI" ), ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED ))
+                call SetFrameSize( GetFrameByName("TavernAdditionalAbilityTooltip",0), .26, GetFrameHeight( GetFrameByName("TavernAdditionalAbilityTooltipText",0))+0.03)
+                call SetFrameSize( GetFrameByName("TavernAdditionalAbilityTooltip",1), .26, GetFrameHeight( GetFrameByName("TavernAdditionalAbilityTooltipText",1))+0.03)
+                call SetFrameSize( GetFrameByName("TavernAdditionalAbilityTooltip",2), .26, GetFrameHeight( GetFrameByName("TavernAdditionalAbilityTooltipText",2))+0.03)
+                call SetFrameSize( GetFrameByName("TavernAdditionalAbilityTooltip",3), .26, GetFrameHeight( GetFrameByName("TavernAdditionalAbilityTooltipText",3))+0.03)
+                call SetFrameSize( GetFrameByName("TavernAdditionalAbilityTooltip",7), .26, GetFrameHeight( GetFrameByName("TavernAdditionalAbilityTooltipText",7))+0.03)
+                call SetFrameSize( GetFrameByName("TavernAdditionalAbilityTooltip",8), .26, GetFrameHeight( GetFrameByName("TavernAdditionalAbilityTooltipText",8))+0.03)
+                call SetFrameSize( GetFrameByName("TavernAdditionalAbilityTooltip",9), .26, GetFrameHeight( GetFrameByName("TavernAdditionalAbilityTooltipText",9))+0.03)
+                call SetFrameSize( GetFrameByName("TavernAdditionalAbilityTooltip",14), .26, GetFrameHeight( GetFrameByName("TavernAdditionalAbilityTooltipText",14))+0.03)
+                call SetFrameSize( GetFrameByName("TavernAdditionalAbilityTooltip",15), .26, GetFrameHeight( GetFrameByName("TavernAdditionalAbilityTooltipText",15))+0.03)
+                set j=0
+                loop
+                    call SetFrameTextAlignment( GetFrameByName("TavernAdditionalAbilityTooltipText",j), TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_LEFT )
+                    call SetFrameRelativePoint( GetFrameByName("TavernAdditionalAbilityTooltip",j), FRAMEPOINT_CENTER, GetFrameByName("TavernAdditionalAbility",j), FRAMEPOINT_CENTER,  .13, (-0.5*GetFrameHeight( GetFrameByName("TavernAdditionalAbilityTooltipText",j)))-.02  )
+                    exitwhen j>35
+                    set j=j+1
+                endloop
+            elseif (GetFrameTexture(but,0)==GetAbilityBaseStringFieldById('GKF1',ABILITY_SF_ICON_NORMAL) or GetFrameTexture(but,0)==GetAbilityBaseStringFieldById('GKBS',ABILITY_SF_ICON_NORMAL) or GetFrameTexture(but,0)==GetAbilityBaseStringFieldById('GKSS',ABILITY_SF_ICON_NORMAL) or GetFrameTexture(but,0)==GetAbilityBaseStringFieldById('GKS2',ABILITY_SF_ICON_NORMAL) or GetFrameTexture(but,0)==GetAbilityBaseStringFieldById('GKS3',ABILITY_SF_ICON_NORMAL) or GetFrameTexture(but,0)==GetAbilityBaseStringFieldById('GKS4',ABILITY_SF_ICON_NORMAL) or GetFrameTexture(but,0)==GetAbilityBaseStringFieldById('GKSR',ABILITY_SF_ICON_NORMAL) or GetFrameTexture(but,0)==GetAbilityBaseStringFieldById('GKSB',ABILITY_SF_ICON_NORMAL) or GetFrameTexture(but,0)==GetAbilityBaseStringFieldById('GKUI',ABILITY_SF_ICON_NORMAL) or GetFrameTexture(but,0)==GetAbilityBaseStringFieldById('GKMI',ABILITY_SF_ICON_NORMAL)) and IsFrameVisible(GetFrameByName("TavernBarAdditionalAbilityList",0))==true and i==GetFrameContext(but) then
+                call ShowFrame( GetFrameByName("TavernBarAdditionalAbilityList",0), false )
+                call ShowFrame( InfoTavernText, true )
+                if GetFrameTexture(but,0)==GetAbilityBaseStringFieldById('GKBS',ABILITY_SF_ICON_NORMAL) then
+                    call SetFrameText( GetFrameByName("TavernAbilityTooltipText",6), "     " )
+                    call ShowFrame( GetFrameByName("TavernAbilityBorderOpenable",6), true )
+                    call SetFrameTexture( GetFrameByName("TavernAbility",6), GetAbilityBaseStringFieldById( 'GKG1', ABILITY_SF_ICON_NORMAL ), 0, true )
+                    call SetFrameTexture( GetFrameByName("TavernAbility",6), GetAbilityBaseStringFieldById( 'GKG1', ABILITY_SF_ICON_NORMAL ), 1, true )
+                    call SetFrameTexture( GetFrameByName("TavernAbility",6), GetAbilityBaseStringFieldById( 'GKG1', ABILITY_SF_ICON_NORMAL ), 2, true )
+                    set j=0
+                    loop
+                        call AddFrameText( GetFrameByName("TavernAbilityTooltipText",6), "|cffffcc00"+I2S(GetAbilityBaseIntegerLevelFieldById( 'GKG1', ABILITY_ILF_MANA_COST, j ))+"|r")
+                        exitwhen j==GetAbilityBaseIntegerFieldById('GKG1', ABILITY_IF_LEVELS)-1
+                        call AddFrameText( GetFrameByName("TavernAbilityTooltipText",6), "/")
+                        set j=j+1
+                    endloop                        
+                    call AddFrameText( GetFrameByName("TavernAbilityTooltipText",6), "\n\n"+GetAbilityBaseStringFieldById( 'GKG1', ABILITY_SF_NAME )+", (|cffffcc00W|r)\n\n"+GetAbilityBaseStringFieldById( 'GKG1', ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED ))
+                    call SetFrameSize( GetFrameByName("TavernAbilityTooltip",6), .26, GetFrameHeight( GetFrameByName("TavernAbilityTooltipText",6))+0.03)
+                elseif GetFrameTexture(but,0)==GetAbilityBaseStringFieldById('GKSS',ABILITY_SF_ICON_NORMAL) or GetFrameTexture(but,0)==GetAbilityBaseStringFieldById('GKS2',ABILITY_SF_ICON_NORMAL) or GetFrameTexture(but,0)==GetAbilityBaseStringFieldById('GKS3',ABILITY_SF_ICON_NORMAL) or GetFrameTexture(but,0)==GetAbilityBaseStringFieldById('GKS4',ABILITY_SF_ICON_NORMAL) or GetFrameTexture(but,0)==GetAbilityBaseStringFieldById('GKSR',ABILITY_SF_ICON_NORMAL) or GetFrameTexture(but,0)==GetAbilityBaseStringFieldById('GKSB',ABILITY_SF_ICON_NORMAL) then
+                    call SetFrameText( GetFrameByName("TavernAbilityTooltipText",6), "     " )
+                    call ShowFrame( GetFrameByName("TavernAbilityBorderOpenable",6), false )
+                    call SetFrameTexture( GetFrameByName("TavernAbility",6), GetAbilityBaseStringFieldById( 'GKG6', ABILITY_SF_ICON_NORMAL ), 0, true )
+                    call SetFrameTexture( GetFrameByName("TavernAbility",6), GetAbilityBaseStringFieldById( 'GKG6', ABILITY_SF_ICON_NORMAL ), 1, true )
+                    call SetFrameTexture( GetFrameByName("TavernAbility",6), GetAbilityBaseStringFieldById( 'GKG6', ABILITY_SF_ICON_NORMAL ), 2, true )
+                    set j=0
+                    loop
+                        call AddFrameText( GetFrameByName("TavernAbilityTooltipText",6), "|cffffcc00"+I2S(GetAbilityBaseIntegerLevelFieldById( 'GKG6', ABILITY_ILF_MANA_COST, j ))+"|r")
+                        exitwhen j==GetAbilityBaseIntegerFieldById('GKG6', ABILITY_IF_LEVELS)-1
+                        call AddFrameText( GetFrameByName("TavernAbilityTooltipText",6), "/")
+                        set j=j+1
+                    endloop                        
+                    call AddFrameText( GetFrameByName("TavernAbilityTooltipText",6), "\n\n"+GetAbilityBaseStringFieldById( 'GKG6', ABILITY_SF_NAME )+", (|cffffcc00W|r)\n\n"+GetAbilityBaseStringFieldById( 'GKG6', ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED ))
+                    call SetFrameSize( GetFrameByName("TavernAbilityTooltip",6), .26, GetFrameHeight( GetFrameByName("TavernAbilityTooltipText",6))+0.03)
+                elseif GetFrameTexture(but,0)==GetAbilityBaseStringFieldById('GKUI',ABILITY_SF_ICON_NORMAL) or GetFrameTexture(but,0)==GetAbilityBaseStringFieldById('GKMI',ABILITY_SF_ICON_NORMAL) then
+                    call SetFrameText( GetFrameByName("TavernAbilityTooltipText",6), "     " )
+                    call ShowFrame( GetFrameByName("TavernAbilityBorderOpenable",6), false )
+                    call SetFrameTexture( GetFrameByName("TavernAbility",6), GetAbilityBaseStringFieldById( 'GKG7', ABILITY_SF_ICON_NORMAL ), 0, true )
+                    call SetFrameTexture( GetFrameByName("TavernAbility",6), GetAbilityBaseStringFieldById( 'GKG7', ABILITY_SF_ICON_NORMAL ), 1, true )
+                    call SetFrameTexture( GetFrameByName("TavernAbility",6), GetAbilityBaseStringFieldById( 'GKG7', ABILITY_SF_ICON_NORMAL ), 2, true )
+                    set j=0
+                    loop
+                        call AddFrameText( GetFrameByName("TavernAbilityTooltipText",6), "|cffffcc00"+I2S(GetAbilityBaseIntegerLevelFieldById( 'GKG7', ABILITY_ILF_MANA_COST, j ))+"|r")
+                        exitwhen j==GetAbilityBaseIntegerFieldById('GKG7', ABILITY_IF_LEVELS)-1
+                        call AddFrameText( GetFrameByName("TavernAbilityTooltipText",6), "/")
+                        set j=j+1
+                    endloop                        
+                    call AddFrameText( GetFrameByName("TavernAbilityTooltipText",6), "\n\n"+GetAbilityBaseStringFieldById( 'GKG7', ABILITY_SF_NAME )+", (|cffffcc00W|r)\n\n"+GetAbilityBaseStringFieldById( 'GKG7', ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED ))
+                    call SetFrameSize( GetFrameByName("TavernAbilityTooltip",6), .26, GetFrameHeight( GetFrameByName("TavernAbilityTooltipText",6))+0.03)
+                endif
+                set j=0
+                loop
+                call ShowFrame( GetFrameByName("TavernAdditionalAbilityBorderOpenable",j), false )
+                if j>=7 then
+                call ShowFrame(GetFrameByName("TavernAdditionalAbility",j),false)
+                endif
+                set j=j+1
+                exitwhen j>35
+                endloop
 
             elseif GetFrameTexture(but,0)==GetAbilityBaseStringFieldById('A1ER',ABILITY_SF_ICON_NORMAL) and IsFrameVisible(GetFrameByName("TavernBarAdditionalAbilityList",0))==false and i==GetFrameContext(but) then
                 call ShowFrame( InfoTavernText, false )
@@ -13833,7 +14108,7 @@ function OnButtonAddonAbility takes nothing returns nothing
             call AddFrameText( GetFrameByName("TavernAbilityTooltipText",1), "\n\n"+GetAbilityBaseStringFieldById( String2Id( "BGW3" ), ABILITY_SF_NAME )+", (|cffffcc00R|r)\n\n"+GetAbilityBaseStringFieldById( String2Id( "BGW3" ), ABILITY_SLF_TOOLTIP_LEARN_EXTENDED ))
             call AddFrameText( GetFrameByName("TavernAbilityTooltipText",2), "\n\n"+GetAbilityBaseStringFieldById( String2Id( "BGE2" ), ABILITY_SF_NAME )+", (|cffffcc00T|r)\n\n"+GetAbilityBaseStringFieldById( String2Id( "BGE2" ), ABILITY_SLF_TOOLTIP_LEARN_EXTENDED ))
             call AddFrameText( GetFrameByName("TavernAbilityTooltipText",6), "\n\n"+GetAbilityBaseStringFieldById( String2Id( "BGG2" ), ABILITY_SF_NAME )+", (|cffffcc00G|r)\n\n"+GetAbilityBaseStringFieldById( String2Id( "BGG2" ), ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED ))
-        elseif GetFrameTexture(but,0)==GetAbilityBaseStringFieldById('BGG2',ABILITY_SF_ICON_NORMAL) then
+        elseif GetFrameTexture(but,0)==GetAbilityBaseStringFieldById('BGG2',ABILITY_SF_ICON_NORMAL) and GetFrameSpriteModel(TavernHeroPortrait)==GetUnitBaseStringFieldById(RH_Force[133],UNIT_SF_PORTRAIT) then
             call SetFrameText( GetFrameByName("TavernAbilityTooltipText",0), "     " )
             call SetFrameText( GetFrameByName("TavernAbilityTooltipText",1), "     " )
             call SetFrameText( GetFrameByName("TavernAbilityTooltipText",2), "     " )
@@ -63436,6 +63711,13 @@ if time<1 then
     call SetUnitFacingInstant(u,a*bj_RADTODEG)
     call PauseUnit(u,true)
     call SetUnitInvulnerable(u,true)
+    if time<0.4 and ModuloReal(time,0.06)<0.02 then
+        set EFF=AddSpecialEffect("blinknew4.mdl", x1+GetRandomReal(-15,15),y1+GetRandomReal(-15,15))
+        call SetSpecialEffectFacing(EFF , a* bj_RADTODEG)
+        call SetSpecialEffectZ(EFF, GetUnitFlyHeight(c)+GetRandomReal(35,65))
+        call SetSpecialEffectScale(EFF , 0.3)
+        call DestroyEffect(EFF)
+    endif
     if time>0.4 and ModuloReal(time,0.06)<0.02 then
         call SetUnitXY_1(c,x1+5*Cos(a),y1+5*Sin(a), false)
         set EFF=AddSpecialEffect("Minato-37.mdx", x1+GetRandomReal(-15,15),y1+GetRandomReal(-15,15))
@@ -63491,7 +63773,7 @@ local integer idu=GetHandleId(u)
 local unit c=LoadUnitHandle(HH,idu,REVERSE_TARGET)
 local player p=GetOwningPlayer(u)
 local real a
-local integer ran=GetRandomInt(1,3)
+local integer ran=GetRandomInt(1,2)
 if time<2 and c==null then
     call PauseUnit(u,true)
     if LoadBoolean(HH,GetHandleId(u),TARGET_ABILITY)==false then
@@ -63505,6 +63787,11 @@ else
     call StopSound(LoadSoundHandle(HH,id,3),true,true)
     call SaveBoolean(HH,idu,ANTITARGET_ABILITY,false)
     if c!=null then
+        if time<0.2 then
+            set soundplay=CreateSound("Sound\\Music\\mp3Music\\UIDing1.mp3",false,false,true,12700,12700,"")
+            call StartSound(soundplay)
+            call KillSoundWhenDone(soundplay)
+        endif
         set a=Atan2(GetUnitY(c)-y,GetUnitX(c)-x)
         call SetUnitFacingInstant(u,a*bj_RADTODEG)
         if SR(x,y,GetUnitX(c),GetUnitY(c))<500 then
@@ -63523,12 +63810,13 @@ else
             call SetSpecialEffectVertexColour(EFF,255,255,255,120)
             call DestroyEffect(EFF)
             call SetUnitXY_1(u,x-145*Cos(a),y-145*Sin(a), false)
-            call SetUnitFlyHeight(u,250,0)
+            call SetUnitFlyHeight(u,100,0)
             set EFF=AddSpecialEffect("war3mapImported\\BlackBlink.mdx", GetUnitX(u), GetUnitY(u))
             call SetSpecialEffectZ(EFF, GetUnitFlyHeight(u))
             call SetSpecialEffectTimeScale(EFF , 3)
             call SetSpecialEffectVertexColour(EFF,255,255,255,120)
             call DestroyEffect(EFF)
+            call SetUnitFlyHeight(u,250,400)
             call SetUnitAnimationByIndex(u,247)
             call Push5(u,5,a+180*bj_DEGTORAD,100,"")
             call TimerStart(t,0.02,true,function AutonomousUICast3)
@@ -63541,6 +63829,9 @@ else
             endif
             call UnitAddAbility(u,'A7IH')
             call UnitRemoveAbilityTimedPause(u,'A7IH',0.2)
+            set soundplay=CreateSound("Sound\\Music\\mp3Music\\AUI3.mp3",false,false,true,12700,12700,"")
+            call StartSound(soundplay)
+            call KillSoundWhenDone(soundplay)
             call PauseTimer(t)
             call DestroyTimer(t)
             call SetUnitTimeScale(u,1)
@@ -65012,7 +65303,7 @@ if GetWidgetLife(c)>0 and GetWidgetLife(u)>0 and time<4 then
     call PauseUnit(u,true)
     call SetUnitFacingInstant(u,a*bj_RADTODEG)
     call SaveReal(HH,id,2,time+0.03)
-    if time<1.35 then       
+    if time<1.65 then       
         call PauseUnit(c,true)
     endif
     if time==0.3 then
@@ -65033,13 +65324,17 @@ if GetWidgetLife(c)>0 and GetWidgetLife(u)>0 and time<4 then
         call SetSpecialEffectVertexColour(EFF,255,255,255,120)
         call RemoveEffect(EFF,1,true,CreateTimer())
         call Push3(c,50,a,100,"")
+        call SetUnitTimeScale(u,0)
     endif
     if time==0.6 then
-        call SetUnitAnimationByIndex(u,238)
         call SetUnitTimeScale(u,1)
     endif
     if time==0.9 then
-        call SetUnitTimeScale(u,1.1)
+        call SetUnitAnimationByIndex(u,238)
+        call SetUnitTimeScale(u,1)
+    endif
+    if time==1.2 then
+        call SetUnitTimeScale(u,1.05)
         call PauseUnit(c,false)
         call myCustomDamage(u,c,dmg,false,false,null,null,null)
         call SetControlToUnit(u,c, 1, "stun")
@@ -65079,7 +65374,7 @@ if GetWidgetLife(c)>0 and GetWidgetLife(u)>0 and time<4 then
         call StartSound(soundplay)
         call KillSoundWhenDone(soundplay)
     endif
-    if time==1.35 then
+    if time==1.65 then
         call SetUnitTimeScale(u,0.8)
         call MissleMoveAcceleratingBattleSpirit_NonPause(u,45,0,x-700*Cos(a),y-700*Sin(a),300)
         call SaveReal(HH,id,2,0)
