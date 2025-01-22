@@ -63712,11 +63712,11 @@ if time<1 then
     call PauseUnit(u,true)
     call SetUnitInvulnerable(u,true)
     if time<0.4 and ModuloReal(time,0.06)<0.02 then
-        set EFF=AddSpecialEffect("blinknew4.mdl", x1+GetRandomReal(-15,15),y1+GetRandomReal(-15,15))
+        set EFF=AddSpecialEffect("blinknew4.mdl", x1+GetRandomReal(-25,25),y1+GetRandomReal(-25,25))
         call SetSpecialEffectFacing(EFF , a* bj_RADTODEG)
         call SetSpecialEffectZ(EFF, GetUnitFlyHeight(c)+GetRandomReal(35,65))
         call SetSpecialEffectScale(EFF , 0.3)
-        call DestroyEffect(EFF)
+        call RemoveEffect(EFF,0.2,false,CreateTimer())
     endif
     if time>0.4 and ModuloReal(time,0.06)<0.02 then
         call SetUnitXY_1(c,x1+5*Cos(a),y1+5*Sin(a), false)
@@ -65168,6 +65168,9 @@ if GetWidgetLife(c)>0 and GetWidgetLife(u)>0 and time<5 then
     if time<0.48 then
         if time==0.33 then
             call SetUnitAnimationByIndex(u,239)
+            set soundplay=CreateSound("Sound\\Music\\mp3Music\\AcceleratingBattleSpirit3.mp3",false,false,true,12700,12700,"")
+            call StartSound(soundplay)
+            call KillSoundWhenDone(soundplay)
         endif
         if time==0.45 then
             set EFF=AddSpecialEffect("GokuDash.mdx",x,y)
@@ -65240,7 +65243,7 @@ if GetWidgetLife(c)>0 and GetWidgetLife(u)>0 and time<5 then
                 call myCustomDamage(u,c,dmg,false,false,null,null,null)
                 call SetControlToUnit(u,c, 2, "stun")
                 call Push3(u,20,a,150,"")
-                call Push3(c,55,a,810,"")
+                call Push3(c,55,a,810,"Abilities\\Weapons\\AncientProtectorMissile\\AncientProtectorMissile.mdl")
                 call DestroyTimer(t)
                 call SetUnitInvulnerable(u,false)
                 call PauseUnit(u,false)
@@ -65306,7 +65309,9 @@ if GetWidgetLife(c)>0 and GetWidgetLife(u)>0 and time<4 then
     if time<1.65 then       
         call PauseUnit(c,true)
     endif
-    if time==0.3 then
+    if time==0.45 then
+        call SetUnitFlyHeight(c,50,0)
+        call SetUnitFlyHeight(c,150,50)
         set EFF=AddSpecialEffect("war3mapImported\\CF2.mdl", x1,y1)
         call SetSpecialEffectOrientation(EFF,a*bj_RADTODEG,0,0)
         call SetSpecialEffectZ(EFF, GetUnitFlyHeight(c))
@@ -65324,22 +65329,20 @@ if GetWidgetLife(c)>0 and GetWidgetLife(u)>0 and time<4 then
         call SetSpecialEffectVertexColour(EFF,255,255,255,120)
         call RemoveEffect(EFF,1,true,CreateTimer())
         call Push3(c,50,a,100,"")
-        call SetUnitTimeScale(u,0)
-    endif
-    if time==0.6 then
-        call SetUnitTimeScale(u,1)
+        call SetUnitTimeScale(u,0.15)
     endif
     if time==0.9 then
         call SetUnitAnimationByIndex(u,238)
         call SetUnitTimeScale(u,1)
     endif
     if time==1.2 then
+        call SetUnitFlyHeight(c,0,0)
         call SetUnitTimeScale(u,1.05)
         call PauseUnit(c,false)
         call myCustomDamage(u,c,dmg,false,false,null,null,null)
         call SetControlToUnit(u,c, 1, "stun")
         call PauseUnit(c,true)
-        call Push3(c,50,a,450,"")
+        call Push3(c,50,a,450,"Abilities\\Weapons\\AncientProtectorMissile\\AncientProtectorMissile.mdl")
         set EFF=AddSpecialEffect("war3mapImported\\Ball2.mdl", x+80*Cos(a),y+80*Sin(a))
         call SetSpecialEffectOrientation(EFF,a*bj_RADTODEG,-45,0)
         call SetSpecialEffectZ(EFF, 80)
@@ -65382,11 +65385,6 @@ if GetWidgetLife(c)>0 and GetWidgetLife(u)>0 and time<4 then
         call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,false)
         if LoadReal(HH,GetHandleId(GetOwningPlayer(u)),VariationWHash)==4 then
             call PauseTimer(t)
-            if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
-                set soundplay=CreateSound("Sound\\Music\\mp3Music\\AcceleratingBattleSpirit3.mp3",false,false,true,12700,12700,"")
-            else
-                set soundplay=CreateSound("Sound\\Music\\mp3Music\\Goku\\AcceleratingBattleSpirit3-jap.mp3",false,false,true,12700,12700,"")
-            endif
             call TimerStart(t,0.03,true,function AcceleratingBattleSpiritCast3)
         else
             if GetLocalPlayer()==GetOwningPlayer(u) then
@@ -65450,11 +65448,7 @@ if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
     set a=Atan2(y-y1,x-x1)
     call SetUnitFacingInstant(u,a*bj_RADTODEG)
     call SetUnitAnimationByIndex(u,237)
-    if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
     set soundplay=CreateSound("Sound\\Music\\mp3Music\\AcceleratingBattleSpirit1.mp3",false,false,true,12700,12700,"")
-    else
-    set soundplay=CreateSound("Sound\\Music\\mp3Music\\Goku\\AcceleratingBattleSpirit1-jap.mp3",false,false,true,12700,12700,"")
-    endif
     call StartSound(soundplay)
     call KillSoundWhenDone(soundplay)
     call SaveUnitHandle(HH,id,0,u)
@@ -65468,7 +65462,7 @@ if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
     call SetSpecialEffectZ(EFF, GetUnitFlyHeight(c)+30)
     call SetSpecialEffectScale(EFF , 3)
     call DestroyEffect(EFF)
-    call SetUnitTimeScale(u,1.4)
+    call SetUnitTimeScale(u,0.9)
     call TimerStart(t,0.03,true,function AcceleratingBattleSpiritCast2)
 else
     call SetUnitFlyHeight(u,0,0)
