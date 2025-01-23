@@ -62935,6 +62935,13 @@ if GetWidgetLife(c)>0 and GetWidgetLife(u)>0 and (time<4 or time2>0) then
             if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
                 call SaveReal(HH,id,13,time2+0.03)
                 if time2==0 then
+                    if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
+                    set soundplay=CreateSound("Sound\\Music\\mp3Music\\DragonfistExp2.mp3",false,false,true,12700,12700,"")
+                    else
+                    set soundplay=CreateSound("Sound\\Music\\mp3Music\\Goku\\DragonfistExp2-jap.mp3",false,false,true,12700,12700,"")
+                    endif
+                    call StartSound(soundplay)
+                    call KillSoundWhenDone(soundplay)
                     call RemoveEffect(LoadEffectHandle(HH,id,3),0.1,false,CreateTimer())
                     call SaveReal(HH,id,2,0)
                     call SetUnitAnimationByIndex(u,79)
@@ -63017,6 +63024,9 @@ if GetWidgetLife(c)>0 and GetWidgetLife(u)>0 and (time<4 or time2>0) then
                     call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,false)
                     call myCustomDamage(u, c,dmg,false,false,null,null,null)
                     call SetControlToUnit(u,c, 3, "stun")
+                    set soundplay=CreateSound("Sound\\Music\\mp3Music\\DragonfistExp3.mp3",false,false,true,12700,12700,"")
+                    call StartSound(soundplay)
+                    call KillSoundWhenDone(soundplay)
                     call SetUnitVertexColor(u,255,255,255,255)
                     call DestroyTimer(t)
                     call SetUnitInvulnerable(u,false)
@@ -63261,9 +63271,9 @@ call SetUnitScale(bjLCU, 1.2, 1.2, 1.2)
 call SetUnitFlyHeight(bjLCU, 15, 0)
 call UnitApplyTimedLife(bjLCU,1,2.5)
 if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
-set soundplay=CreateSound("Sound\\Music\\mp3Music\\Dragonfist.wav",false,false,true,12700,12700,"")
+set soundplay=CreateSound("Sound\\Music\\mp3Music\\Dragonfist.mp3",false,false,true,12700,12700,"")
 else
-set soundplay=CreateSound("Sound\\Music\\mp3Music\\Goku\\Dragonfist-jap.wav",false,false,true,12700,12700,"")
+set soundplay=CreateSound("Sound\\Music\\mp3Music\\Goku\\Dragonfist-jap.mp3",false,false,true,12700,12700,"")
 endif
 call StartSound(soundplay)
 call KillSoundWhenDone(soundplay)
@@ -63271,6 +63281,13 @@ call TimerStart(t,0.03,true,function CastDragonFist2)
 else
 call SaveUnitHandle(HH,id,10,c)
 call SetUnitFacingInstant(n,a*bj_RADTODEG)
+if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
+set soundplay=CreateSound("Sound\\Music\\mp3Music\\DragonfistExp.mp3",false,false,true,12700,12700,"")
+else
+set soundplay=CreateSound("Sound\\Music\\mp3Music\\Goku\\DragonfistExp-jap.mp3",false,false,true,12700,12700,"")
+endif
+call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
 call TimerStart(t,0.03,true,function CastDragonFist3)
 endif
 set u=null
