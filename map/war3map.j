@@ -30436,7 +30436,7 @@ function EndOfChoiceAct takes nothing returns nothing
             call UnitAddAbility( Hero[i],'ABG0')
             call SetPlayerAbilityAvailable(GetOwningPlayer( Hero[i] ),'BGG2',false)
             call SetPlayerAbilityAvailable(GetOwningPlayer( Hero[i] ),'BGG1',true)
-            call SetUnitAbilityLevel( Hero[i],0x42474331,1)
+            call SetUnitAbilityLevel( Hero[i],'BGC1',1)
         endif
         if GetUnitTypeId(Hero[i])=='HMad' then
             call SaveReal(HH,GetHandleId( Hero[i] ),MadokaDHash,0)
@@ -30543,8 +30543,8 @@ function EndOfChoiceAct takes nothing returns nothing
         call SetUnitTimeScale(Hero[i],1)
         call UnitAddType(Hero[i],UNIT_TYPE_ETHEREAL)
         call UnitRemoveType(Hero[i],UNIT_TYPE_ETHEREAL)
-        call UnitAddAbility(Hero[i],0x4167686F)
-        call UnitRemoveAbility(Hero[i],0x4167686F)
+        call UnitAddAbility(Hero[i],'Agho')
+        call UnitRemoveAbility(Hero[i],'Agho')
         call UnitAddAbility(Hero[i],'A00D')
         call UnitRemoveAbility(Hero[i],'A00D')
         call IssueImmediateOrder(Hero[i],"unimmolation")
@@ -31079,8 +31079,8 @@ call ShowUnit(Hero[i],true)
 call SetUnitTimeScale(Hero[i],1)
 call UnitAddType(Hero[i],UNIT_TYPE_ETHEREAL)
 call UnitRemoveType(Hero[i],UNIT_TYPE_ETHEREAL)
-call UnitAddAbility(Hero[i],0x4167686F)
-call UnitRemoveAbility(Hero[i],0x4167686F)
+call UnitAddAbility(Hero[i],'Agho')
+call UnitRemoveAbility(Hero[i],'Agho')
 call UnitAddAbility(Hero[i],'A00D')
 call UnitRemoveAbility(Hero[i],'A00D')
 call IssueImmediateOrder(Hero[i],"unimmolation")
@@ -31782,7 +31782,7 @@ call GroupEnumUnitsOfPlayer(G,Player(i),BuggedBool) //lvlbool
             call UnitAddAbility( Hero[i],'ABG0')
             call SetPlayerAbilityAvailable(GetOwningPlayer( Hero[i] ),'BGG2',false)
             call SetPlayerAbilityAvailable(GetOwningPlayer( Hero[i] ),'BGG1',true)
-            call SetUnitAbilityLevel( Hero[i],0x42474331,1)
+            call SetUnitAbilityLevel( Hero[i],'BGC1',1)
         endif
         if GetUnitTypeId(Hero[i])=='HMad' then
             call SaveReal(HH,GetHandleId( Hero[i] ),MadokaDHash,0)
@@ -37557,7 +37557,7 @@ if cond==0 then
         call myCustomDamage(c,u,GetHeroAgi(Hero[idc],true)*(GetUnitAbilityLevel(c,'A17X')+1),false,false,null,null,null)
         call SetControlToUnit(c,u,1.5,"stun")
         call UnitRemoveAbility(c,'A181')
-        call UnitRemoveAbility(c,0x41313830)
+        call UnitRemoveAbility(c,'A180')
         call UnitRemoveAbility(c,'ACm2')
         call SabrackE_RemoveAbil(c,'A182')
         call DestroyEffect(AddSpecialEffectTarget("war3mapImported\\jiejinmao.mdx",c,"Right Hand"))
@@ -38186,9 +38186,9 @@ if cond==0 then
     endif
     if(GetUnitTypeId(c)==0x68303051 or GetUnitTypeId(c)==0x68303052 or GetUnitTypeId(c)==0x68303053 or GetUnitTypeId(c)==0x68303054 or GetUnitTypeId(c)==0x68303055)and nb>0 then
         call UnitAddAbility(c,'A1C7')
-        call myCustomDamage(Hero[idc],u,0.5*GetHeroInt(Hero[idc],true)+0.25*GetHeroInt(Hero[idc],true)*GetUnitAbilityLevel(Hero[idc],0x41303632),false,false,null,null,null)
+        call myCustomDamage(Hero[idc],u,0.5*GetHeroInt(Hero[idc],true)+0.25*GetHeroInt(Hero[idc],true)*GetUnitAbilityLevel(Hero[idc],'A062'),false,false,null,null,null)
         call UnitRemoveAbility(c,'A1C7')
-        //set nb=nb+0.5*GetHeroInt(Hero[idc],true)+0.25*GetHeroInt(Hero[idc],true)*GetUnitAbilityLevel(Hero[idc],0x41303632)*myCustomDamage2(u,1)
+        //set nb=nb+0.5*GetHeroInt(Hero[idc],true)+0.25*GetHeroInt(Hero[idc],true)*GetUnitAbilityLevel(Hero[idc],'A062')*myCustomDamage2(u,1)
     endif
     if GetUnitAbilityLevel(c,'AlbE')>=1 and nb>0 and nb<GetWidgetLife(u) and CurrentEventAttack  then
         //call SetUnitOwner(UltimateDamage,Player(idc),false)
@@ -39156,7 +39156,7 @@ call TriggerAddCondition(gg_trg_QuincySet,Condition(function QuincySetCond))
 call TriggerAddAction(gg_trg_QuincySet,function QuincySetCast)
 endfunction
 function QuincySet2Cond takes nothing returns boolean
-return GetSpellAbilityId()==0x41314739 and GetUnitTypeId(GetTriggerUnit())!='H007'  and GetUnitAbilityLevel(GetTriggerUnit(),'GIE1')==0 and GetUnitTypeId(GetTriggerUnit())!='H04U'
+return GetSpellAbilityId()=='A1G9' and GetUnitTypeId(GetTriggerUnit())!='H007'  and GetUnitAbilityLevel(GetTriggerUnit(),'GIE1')==0 and GetUnitTypeId(GetTriggerUnit())!='H04U'
 endfunction
 function QuincySet2Cast takes nothing returns nothing
 local unit u=GetSpellTargetUnit()
@@ -39171,7 +39171,7 @@ call TriggerAddCondition(gg_trg_QuincySet2,Condition(function QuincySet2Cond))
 call TriggerAddAction(gg_trg_QuincySet2,function QuincySet2Cast)
 endfunction
 function SaphireCond takes nothing returns boolean
-return GetSpellAbilityId()==0x4131474B and GetUnitTypeId(GetTriggerUnit())!='H007'  and GetUnitAbilityLevel(GetTriggerUnit(),'GIE1')==0 and GetUnitTypeId(GetTriggerUnit())!='H04U'
+return GetSpellAbilityId()=='A1GK' and GetUnitTypeId(GetTriggerUnit())!='H007'  and GetUnitAbilityLevel(GetTriggerUnit(),'GIE1')==0 and GetUnitTypeId(GetTriggerUnit())!='H04U'
 endfunction
 function NewSaphireCast4 takes nothing returns nothing
 local timer t=GetExpiredTimer()
@@ -39515,7 +39515,7 @@ set t=null
 set p=null
 endfunction
 function GrailCond takes nothing returns boolean
-return GetSpellAbilityId()==0x4131395A or GetSpellAbilityId()=='A127' or GetSpellAbilityId()==0x41314742 and udg_B==true and GetUnitTypeId(GetTriggerUnit())!='H007'  and GetUnitAbilityLevel(GetTriggerUnit(),'GIE1')==0 and GetUnitTypeId(GetTriggerUnit())!='H04U'
+return GetSpellAbilityId()=='A19Z' or GetSpellAbilityId()=='A127' or GetSpellAbilityId()=='A1GB' and udg_B==true and GetUnitTypeId(GetTriggerUnit())!='H007'  and GetUnitAbilityLevel(GetTriggerUnit(),'GIE1')==0 and GetUnitTypeId(GetTriggerUnit())!='H04U'
 endfunction
 function HealGrailCast2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
@@ -39565,9 +39565,9 @@ local real y=GetUnitY(u)
 local player p=GetOwningPlayer(u)
 local integer id=GetSpellAbilityId()
 local real heal=0
-if id==0x4131395A then
+if id=='A19Z' then
 set heal=83.333+GetHeroLevel(u)*1.666
-elseif id==0x41314742 then
+elseif id=='A1GB' then
 set heal=166.666+GetHeroLevel(u)*3.333
 else
 set heal=10+GetHeroLevel(u)*0.5
@@ -45356,7 +45356,7 @@ call TriggerAddCondition(gg_trg_Pistol,Condition(function Trig_Pistol_Conditions
 call TriggerAddAction(gg_trg_Pistol,function Trig_Pistol_Actions)
 endfunction
 function Trig_Doppleman_Conditions takes nothing returns boolean
-return GetSpellAbilityId()==0x41303632 and udg_B
+return GetSpellAbilityId()=='A062' and udg_B
 endfunction
 function Trig_Doppleman_Actions2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
@@ -45378,7 +45378,7 @@ local real y=GetUnitY(u)
 local player p=GetOwningPlayer(u)
 local timer t=CreateTimer()
 local integer uid=GetHandleId(t)
-local integer lvl=GetUnitAbilityLevel(u,0x41303632)
+local integer lvl=GetUnitAbilityLevel(u,'A062')
 local integer id=GetPlayerId(p)+1
 if udg_DM[id]!=null then
 call RemoveUnit(udg_DM[id])
@@ -131202,7 +131202,7 @@ endif
 set i=i+1
 endloop
 set n=CreateUnit(p,'h019',x,y,0)
-call UnitAddAbility(n,0x41314451)
+call UnitAddAbility(n,'A1DQ')
 call UnitApplyTimedLife(n,'BHwe',1)
 call IssueTargetOrder(n,"innerfire",u)
 call PauseUnit(u,false)
@@ -131212,7 +131212,7 @@ set E=FirstOfGroup(G)
 exitwhen E==null
 if IsUnitAlly(E,p)and E!=u then
 set n=CreateUnit(p,'h019',x,y,0)
-call UnitAddAbility(n,0x41314449)
+call UnitAddAbility(n,'A1DI')
 call UnitApplyTimedLife(n,'BHwe',1)
 call IssueTargetOrder(n,"innerfire",E)
 endif
@@ -133999,13 +133999,13 @@ call TriggerAddCondition(gg_trg_StarBast,Condition(function StarBastCond))
 call TriggerAddAction(gg_trg_StarBast,function StarBastCast)
 endfunction
 function LearnEHeroXCond takes nothing returns boolean
-return GetLearnedSkill()==0x41314537
+return GetLearnedSkill()=='A1E7'
 endfunction
 function LearnEHeroXCast takes nothing returns nothing
 local unit u=GetTriggerUnit()
 local timer t=CreateTimer()
 local integer id=GetHandleId(t)
-local integer lvl=GetUnitAbilityLevel(u,0x41314537)
+local integer lvl=GetUnitAbilityLevel(u,'A1E7')
 local player p=GetOwningPlayer(u)
 if lvl==1 then
 call UnitAddAbility(u,'A1EC')
@@ -137904,7 +137904,7 @@ call TriggerAddCondition(gg_trg_EGil,Condition(function EGilCond))
 call TriggerAddAction(gg_trg_EGil,function EGilCast)
 endfunction
 function Trig_ToNP_Conditions takes nothing returns boolean
-return GetSpellAbilityId()==0x41314635
+return GetSpellAbilityId()=='A1F5'
 endfunction
 function Trig_ToNP_Actions takes nothing returns nothing
 local unit u=GetTriggerUnit()
@@ -143795,7 +143795,7 @@ call TriggerAddCondition(gg_trg_EKingHassan,Condition(function EKingHassanCond))
 call TriggerAddAction(gg_trg_EKingHassan,function EKingHassanCast)
 endfunction
 function RKingHassanCond takes nothing returns boolean
-return GetSpellAbilityId()==0x41314754 and udg_B
+return GetSpellAbilityId()=='A1GT' and udg_B
 endfunction
 function RKingHassanCast5 takes nothing returns nothing
 local timer t=GetExpiredTimer()
@@ -143859,7 +143859,7 @@ local real y1=GetUnitY(c)
 local real he=LoadReal(h,id,3)-0.08
 local real x=GetUnitX(u)
 local real y=GetUnitY(u)
-local real dmg=GetHeroStr(u,true)*(GetUnitAbilityLevel(u,0x41314754)+3)
+local real dmg=GetHeroStr(u,true)*(GetUnitAbilityLevel(u,'A1GT')+3)
 local player p=GetOwningPlayer(u)
 if he>0 then
 call SaveReal(h,id,3,he)
@@ -174148,8 +174148,8 @@ local integer id=GetHandleId(t)
 local group gr=LoadGroupHandle(HH,id,4)
 if SR(GetUnitX(LoadUnitHandle(HH,id,1)),GetUnitY(LoadUnitHandle(HH,id,1)),GetUnitX(GetEnumUnit()),GetUnitY(GetEnumUnit()))>450 then
 call GroupRemoveUnit(gr,GetEnumUnit())
-call UnitRemoveAbility(GetEnumUnit(),0x41485346)
-call UnitRemoveAbility(GetEnumUnit(),0x42485346)
+call UnitRemoveAbility(GetEnumUnit(),'AHSF')
+call UnitRemoveAbility(GetEnumUnit(),'BHSF')
 call SaveGroupHandle(HH,id,4,gr)
 endif
 set t=null
@@ -174169,8 +174169,8 @@ if(OrderId2String(GetUnitCurrentOrder(caster))!="drain")then
 loop
 set n0=FirstOfGroup(gr)
 exitwhen n0==null
-call UnitRemoveAbility(n0,0x41485346)
-call UnitRemoveAbility(n0,0x42485346)
+call UnitRemoveAbility(n0,'AHSF')
+call UnitRemoveAbility(n0,'BHSF')
 call GroupRemoveUnit(gr,n0)
 endloop
 call DestroyGroup(LoadGroupHandle(HH,id,4))
@@ -174202,7 +174202,7 @@ loop
 set n0=FirstOfGroup(G)
 exitwhen n0==null
 if IsUnitAlly(n0,GetOwningPlayer(caster))==true and IsUnitInGroup(n0,gr)==false and IsUnitType(n0,UNIT_TYPE_STRUCTURE)==false then
-call UnitAddAbility(n0,0x41485346)
+call UnitAddAbility(n0,'AHSF')
 call GroupAddUnit(gr,n0)
 endif
 call GroupRemoveUnit(G,n0)
@@ -178624,7 +178624,7 @@ if time>0.02 and (LoadBoolean(HH,GetHandleId(caster),StringHash("BGRose"))==fals
 call SetHeroStr(caster,GetHeroStr(caster,false)-8-8*LoadInteger(HH,id,30),true)
 call SetHeroAgi(caster,GetHeroAgi(caster,false)-8-8*LoadInteger(HH,id,30),true)
 call SetHeroInt(caster,GetHeroInt(caster,false)-8-8*LoadInteger(HH,id,30),true)
-call SetUnitAbilityLevel(caster,0x42474331,1)
+call SetUnitAbilityLevel(caster,'BGC1',1)
 call UnitRemoveAbility(caster,'ABG1')
 call UnitAddAbility(caster,'ABG0')
 call PauseTimer(GetExpiredTimer())
@@ -178645,8 +178645,8 @@ if time==1.76 then
 call EffectCreateAndMove(true,"BlackGoku\\chushout_huozhu_2_Pink.mdl",GetRandomReal(0,360),1,1,0.8,100,100,100,40,0,caster,0,facing)
 endif
 if time==2 then
-call SetPlayerAbilityAvailable(GetOwningPlayer(caster),0x42474731,false)
-call SetPlayerAbilityAvailable(GetOwningPlayer(caster),0x42474732,true)
+call SetPlayerAbilityAvailable(GetOwningPlayer(caster),'BGG1',false)
+call SetPlayerAbilityAvailable(GetOwningPlayer(caster),'BGG2',true)
 
 call SetPlayerAbilityAvailable(GetOwningPlayer(caster),'BGG1',false)
 call SetPlayerAbilityAvailable(GetOwningPlayer(caster),'BGG2',true)
@@ -178663,7 +178663,7 @@ call SetHeroAgi(caster,GetHeroAgi(caster,false)+8+8*cjlocgn_00000000,true)
 call SetHeroInt(caster,GetHeroInt(caster,false)+8+8*cjlocgn_00000000,true)
 call SaveInteger(HH,id,30,cjlocgn_00000000)
 call UnitStop(caster)
-call SetUnitAbilityLevel(caster,0x42474331,2)
+call SetUnitAbilityLevel(caster,'BGC1',2)
 call SetUnitAnimationByIndex(caster,87)
 call PauseUnit(caster,false)
 call SetUnitInvulnerable(caster,false)
@@ -178695,7 +178695,7 @@ if time>2 and (LoadBoolean(HH,GetHandleId(caster),StringHash("BGRose"))==false o
 call SetHeroStr(caster,GetHeroStr(caster,false)-8-8*LoadInteger(HH,id,30),true)
 call SetHeroAgi(caster,GetHeroAgi(caster,false)-8-8*LoadInteger(HH,id,30),true)
 call SetHeroInt(caster,GetHeroInt(caster,false)-8-8*LoadInteger(HH,id,30),true)
-call SetUnitAbilityLevel(caster,0x42474331,1)
+call SetUnitAbilityLevel(caster,'BGC1',1)
 call UnitRemoveAbility(caster,'ABG1')
 call UnitAddAbility(caster,'ABG0')
 call PauseTimer(GetExpiredTimer())
@@ -179807,7 +179807,7 @@ call SaveReal(HH,id,3,GetUnitFacing(caster))
 endif
 
 if time==0.4 then
-call UnitAddAbility(Dummy1,0x42475232)
+call UnitAddAbility(Dummy1,'BGR2')
 call UnitSpeed(LoadUnitHandle(HH,id,23),0)
 
 if LoadBoolean(HH,GetHandleId(caster),StringHash("BGRose"))==true then
