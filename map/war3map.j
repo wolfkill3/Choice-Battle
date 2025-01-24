@@ -222,6 +222,8 @@ constant integer VariationGHash       = StringHash("VariationG")
 constant integer WarpKamehamehaHash   = StringHash("WarpKamehameha")
 constant integer WarpKamehamehaTargetHash   = StringHash("WarpKamehamehaTarget")
 constant integer GokuEDMGHash         = StringHash("GokuEDMG")
+constant integer GokuUIDingHash       = StringHash("GokuUIDing")
+constant integer GokuUIMusicHash      = StringHash("GokuUIMusic")
 boolean NANAYA_CONDITION          = true // Возможность пика Нанаи
 //== Следующие переменные предназначены ТОЛЬКО для системных функций/методов
 timer sysTimer = null 
@@ -3576,8 +3578,11 @@ endfunction
 function RemoveSaveHashTimed2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
-if LoadInteger(h,id,2)==StringHash("BrolyQ") or LoadInteger(h,id,2)==StringHash("Grail") or LoadInteger(h,id,2)==GokuEDMGHash then
-call SaveInteger(h,LoadInteger(h,id,1),LoadInteger(h,id,2),0)
+if LoadInteger(h,id,2)==StringHash("BrolyQ") or LoadInteger(h,id,2)==StringHash("Grail") or LoadInteger(h,id,2)==GokuEDMGHash or LoadInteger(h,id,2)==GokuUIMusicHash then
+    call SaveInteger(h,LoadInteger(h,id,1),LoadInteger(h,id,2),0)
+    if LoadInteger(h,id,2)==GokuUIMusicHash then
+        call SetMusicVolume(127)
+    endif
 endif
 call RemoveSavedHandle(h,LoadInteger(h,id,1),LoadInteger(h,id,2))
 call FlushChildHashtable(h,id)
@@ -3829,11 +3834,13 @@ function CreateModeIndicatorWithPauseFormMadara takes unit newCaster, string new
         call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
         call SaveFrameHandle(HH,idp,StringHash(newString+"2"),NewFrameText)
     else
-        set NewFrame=LoadFrameHandle(HH, idp,StringHash(newString))
-        set NewFrameText=LoadFrameHandle(HH, idp,StringHash(newString+"2"))
-        call SetFrameText( NewFrameText, R2SW(newDur,2, 1) )
-        call ShowFrame( NewFrame, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
-        call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
+        if LoadReal(HH, GetHandleId(NewFrame), c_DURATION)<=0 then
+            set NewFrame=LoadFrameHandle(HH, idp,StringHash(newString))
+            set NewFrameText=LoadFrameHandle(HH, idp,StringHash(newString+"2"))
+            call SetFrameText( NewFrameText, R2SW(newDur,2, 1) )
+            call ShowFrame( NewFrame, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
+            call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
+        endif
     endif
     loop
         if LoadBoolean(HH,idp,i)==false then
@@ -3931,11 +3938,13 @@ function CreateModeIndicatorFormLaxus takes unit newCaster, string newString, re
         call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
         call SaveFrameHandle(HH,idp,StringHash(newString+"2"),NewFrameText)
     else
-        set NewFrame=LoadFrameHandle(HH, idp,StringHash(newString))
-        set NewFrameText=LoadFrameHandle(HH, idp,StringHash(newString+"2"))
-        call SetFrameText( NewFrameText, R2SW(newDur,2, 1) )
-        call ShowFrame( NewFrame, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
-        call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
+        if LoadReal(HH, GetHandleId(NewFrame), c_DURATION)<=0 then
+            set NewFrame=LoadFrameHandle(HH, idp,StringHash(newString))
+            set NewFrameText=LoadFrameHandle(HH, idp,StringHash(newString+"2"))
+            call SetFrameText( NewFrameText, R2SW(newDur,2, 1) )
+            call ShowFrame( NewFrame, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
+            call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
+        endif
     endif
     if LoadReal(HH, GetHandleId(NewFrame), c_DURATION)<=0 then
         loop
@@ -4038,11 +4047,13 @@ function CreateModeIndicatorKarnaQ takes unit newCaster, string newString, real 
         call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
         call SaveFrameHandle(HH,idp,StringHash(newString+"2"),NewFrameText)
     else
-        set NewFrame=LoadFrameHandle(HH, idp,StringHash(newString))
-        set NewFrameText=LoadFrameHandle(HH, idp,StringHash(newString+"2"))
-        call SetFrameText( NewFrameText, R2SW(newDur,2, 1) )
-        call ShowFrame( NewFrame, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
-        call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
+        if LoadReal(HH, GetHandleId(NewFrame), c_DURATION)<=0 then
+            set NewFrame=LoadFrameHandle(HH, idp,StringHash(newString))
+            set NewFrameText=LoadFrameHandle(HH, idp,StringHash(newString+"2"))
+            call SetFrameText( NewFrameText, R2SW(newDur,2, 1) )
+            call ShowFrame( NewFrame, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
+            call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
+        endif
     endif
     if LoadReal(HH, GetHandleId(NewFrame), c_DURATION)<=0 then
         loop
@@ -4145,11 +4156,13 @@ function CreateModeIndicatorKarnaW takes unit newCaster, string newString, real 
         call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
         call SaveFrameHandle(HH,idp,StringHash(newString+"2"),NewFrameText)
     else
-        set NewFrame=LoadFrameHandle(HH, idp,StringHash(newString))
-        set NewFrameText=LoadFrameHandle(HH, idp,StringHash(newString+"2"))
-        call SetFrameText( NewFrameText, R2SW(newDur,2, 1) )
-        call ShowFrame( NewFrame, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
-        call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
+        if LoadReal(HH, GetHandleId(NewFrame), c_DURATION)<=0 then
+            set NewFrame=LoadFrameHandle(HH, idp,StringHash(newString))
+            set NewFrameText=LoadFrameHandle(HH, idp,StringHash(newString+"2"))
+            call SetFrameText( NewFrameText, R2SW(newDur,2, 1) )
+            call ShowFrame( NewFrame, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
+            call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
+        endif
     endif
     if LoadReal(HH, GetHandleId(NewFrame), c_DURATION)<=0 then
         loop
@@ -4291,13 +4304,15 @@ function CreateModeIndicatorFormYujiD takes unit newCaster, string newString, re
         endif
         call SaveFrameHandle(HH,idp,StringHash(newString+"2"),NewFrameText)
     else
-        set NewFrame=LoadFrameHandle(HH, idp,StringHash(newString))
-        set NewFrameText=LoadFrameHandle(HH, idp,StringHash(newString+"2"))
-        call SetFrameText( NewFrameText, R2SW(newDur,2, 1) )
-        if p!=GetLocalPlayer()then
-            call ShowFrame( NewFrame, false)
-        else
-            call ShowFrame( NewFrame, true)
+        if LoadReal(HH, GetHandleId(NewFrame), c_DURATION)<=0 then
+            set NewFrame=LoadFrameHandle(HH, idp,StringHash(newString))
+            set NewFrameText=LoadFrameHandle(HH, idp,StringHash(newString+"2"))
+            call SetFrameText( NewFrameText, R2SW(newDur,2, 1) )
+            if p!=GetLocalPlayer()then
+                call ShowFrame( NewFrame, false)
+            else
+                call ShowFrame( NewFrame, true)
+            endif
         endif
     endif
     if LoadReal(HH, GetHandleId(NewFrame), c_DURATION)<=0 then
@@ -4355,6 +4370,7 @@ function CreateModeIndicatorFormGoku_Periodic takes nothing returns nothing
     if duration<=0 or udg_B==false or DU2==false or UnitIsAlive(caster)==false then
         call SaveReal(HH, GetHandleId(NewFrame), c_DURATION, 0)
         call SaveReal(HH, GetHandleId(LoadFrameHandle(HH, idp,StringHash(mode_name+"2"))), c_DURATION, 0)
+        call SaveInteger(HH,GetHandleId(caster),GokuUIDingHash,0)
         call ShowFrame( NewFrame, false )
         call SaveBoolean(HH,idp,position,false)
         call FlushChildHashtable(HH, id)
@@ -4401,11 +4417,13 @@ function CreateModeIndicatorFormGoku takes unit newCaster, string newString, rea
         call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
         call SaveFrameHandle(HH,idp,StringHash(newString+"2"),NewFrameText)
     else
-        set NewFrame=LoadFrameHandle(HH, idp,StringHash(newString))
-        set NewFrameText=LoadFrameHandle(HH, idp,StringHash(newString+"2"))
-        call SetFrameText( NewFrameText, R2SW(newDur,2, 1) )
-        call ShowFrame( NewFrame, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
-        call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
+        if LoadReal(HH, GetHandleId(NewFrame), c_DURATION)<=0 then
+            set NewFrame=LoadFrameHandle(HH, idp,StringHash(newString))
+            set NewFrameText=LoadFrameHandle(HH, idp,StringHash(newString+"2"))
+            call SetFrameText( NewFrameText, R2SW(newDur,2, 1) )
+            call ShowFrame( NewFrame, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
+            call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
+        endif
     endif
     if LoadReal(HH, GetHandleId(NewFrame), c_DURATION)<=0 then
         loop
@@ -4429,6 +4447,7 @@ function CreateModeIndicatorFormGoku takes unit newCaster, string newString, rea
     else
         call SaveReal           (HH, GetHandleId(NewFrame), c_DURATION, newDur)
         call SaveReal           (HH, GetHandleId(NewFrameText), c_DURATION, newDur)
+        call DestroyTimer(newTimer)
     endif
     set newTimer=null
     set p=null
@@ -4508,11 +4527,13 @@ function CreateModeIndicatorForm takes unit newCaster, string newString, real ne
         call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
         call SaveFrameHandle(HH,idp,StringHash(newString+"2"),NewFrameText)
     else
-        set NewFrame=LoadFrameHandle(HH, idp,StringHash(newString))
-        set NewFrameText=LoadFrameHandle(HH, idp,StringHash(newString+"2"))
-        call SetFrameText( NewFrameText, R2SW(newDur,2, 1) )
-        call ShowFrame( NewFrame, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
-        call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
+        if LoadReal(HH, GetHandleId(NewFrame), c_DURATION)<=0 then
+            set NewFrame=LoadFrameHandle(HH, idp,StringHash(newString))
+            set NewFrameText=LoadFrameHandle(HH, idp,StringHash(newString+"2"))
+            call SetFrameText( NewFrameText, R2SW(newDur,2, 1) )
+            call ShowFrame( NewFrame, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
+            call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
+        endif
     endif
     if LoadReal(HH, GetHandleId(NewFrame), c_DURATION)<=0 then
         loop
@@ -4536,6 +4557,7 @@ function CreateModeIndicatorForm takes unit newCaster, string newString, real ne
     else
         call SaveReal           (HH, GetHandleId(NewFrame), c_DURATION, newDur)
         call SaveReal           (HH, GetHandleId(NewFrameText), c_DURATION, newDur)
+        call DestroyTimer(newTimer)
     endif
     set newTimer=null
     set p=null
@@ -4618,11 +4640,13 @@ function CreateModeIndicatorWithPauseForm takes unit newCaster, string newString
         call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
         call SaveFrameHandle(HH,idp,StringHash(newString+"2"),NewFrameText)
     else
-        set NewFrame=LoadFrameHandle(HH, idp,StringHash(newString))
-        set NewFrameText=LoadFrameHandle(HH, idp,StringHash(newString+"2"))
-        call SetFrameText( NewFrameText, R2SW(newDur,2, 1) )
-        call ShowFrame( NewFrame, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
-        call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
+        if LoadReal(HH, GetHandleId(NewFrame), c_DURATION)<=0 then
+            set NewFrame=LoadFrameHandle(HH, idp,StringHash(newString))
+            set NewFrameText=LoadFrameHandle(HH, idp,StringHash(newString+"2"))
+            call SetFrameText( NewFrameText, R2SW(newDur,2, 1) )
+            call ShowFrame( NewFrame, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
+            call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
+        endif
     endif
     if LoadReal(HH, GetHandleId(NewFrame), c_DURATION)<=0 then
         loop
@@ -4727,11 +4751,13 @@ function CreateModeIndicatorFormDispellable takes unit newCaster, string newStri
         call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
         call SaveFrameHandle(HH,idp,StringHash(newString+"2"),NewFrameText)
     else
-        set NewFrame=LoadFrameHandle(HH, idp,StringHash(newString))
-        set NewFrameText=LoadFrameHandle(HH, idp,StringHash(newString+"2"))
-        call SetFrameText( NewFrameText, R2SW(newDur,2, 1) )
-        call ShowFrame( NewFrame, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
-        call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
+        if LoadReal(HH, GetHandleId(NewFrame), c_DURATION)<=0 then
+            set NewFrame=LoadFrameHandle(HH, idp,StringHash(newString))
+            set NewFrameText=LoadFrameHandle(HH, idp,StringHash(newString+"2"))
+            call SetFrameText( NewFrameText, R2SW(newDur,2, 1) )
+            call ShowFrame( NewFrame, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
+            call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
+        endif
     endif
     if LoadReal(HH, GetHandleId(NewFrame), c_DURATION)<=0 then
         loop
@@ -4838,11 +4864,13 @@ function CreateModeIndicatorWithPauseFormDispellable takes unit newCaster, strin
         call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
         call SaveFrameHandle(HH,idp,StringHash(newString+"2"),NewFrameText)
     else
-        set NewFrame=LoadFrameHandle(HH, idp,StringHash(newString))
-        set NewFrameText=LoadFrameHandle(HH, idp,StringHash(newString+"2"))
-        call SetFrameText( NewFrameText, R2SW(newDur,2, 1) )
-        call ShowFrame( NewFrame, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
-        call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
+        if LoadReal(HH, GetHandleId(NewFrame), c_DURATION)<=0 then
+            set NewFrame=LoadFrameHandle(HH, idp,StringHash(newString))
+            set NewFrameText=LoadFrameHandle(HH, idp,StringHash(newString+"2"))
+            call SetFrameText( NewFrameText, R2SW(newDur,2, 1) )
+            call ShowFrame( NewFrame, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
+            call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
+        endif
     endif
     if LoadReal(HH, GetHandleId(NewFrame), c_DURATION)<=0 then
         loop
@@ -4951,11 +4979,13 @@ function CreateModeIndicatorWithPauseFormDispellableHash takes unit newCaster, s
         call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
         call SaveFrameHandle(HH,idp,StringHash(newString+"2"),NewFrameText)
     else
-        set NewFrame=LoadFrameHandle(HH, idp,StringHash(newString))
-        set NewFrameText=LoadFrameHandle(HH, idp,StringHash(newString+"2"))
-        call SetFrameText( NewFrameText, R2SW(newDur,2, 1) )
-        call ShowFrame( NewFrame, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
-        call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
+        if LoadReal(HH, GetHandleId(NewFrame), c_DURATION)<=0 then
+            set NewFrame=LoadFrameHandle(HH, idp,StringHash(newString))
+            set NewFrameText=LoadFrameHandle(HH, idp,StringHash(newString+"2"))
+            call SetFrameText( NewFrameText, R2SW(newDur,2, 1) )
+            call ShowFrame( NewFrame, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
+            call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
+        endif
     endif
     if LoadReal(HH, GetHandleId(NewFrame), c_DURATION)<=0 then
         loop
@@ -7625,17 +7655,40 @@ set soundStr[13]=CreateSound("Sound\\war3mapImported\\BrolyStrUp4.mp3",false,fal
 set soundStr[14]=CreateSound("Sound\\Music\\mp3Music\\Broly\\BrolyStrUp4-jap.mp3",false,false,true,12700,12700,"")
 set soundStr[15]=CreateSound("Sound\\Music\\mp3Music\\BrolyLSSpassive.mp3",false,false,true,12700,12700,"")
 set soundStr[16]=CreateSound("Sound\\Music\\mp3Music\\Broly\\BrolyLSSpassive-jap.mp3",false,false,true,12700,12700,"")
+set soundStr[17]=CreateSound("Sound\\Music\\mp3Music\\UIDing1.mp3",false,false,true,12700,12700,"")
+set soundStr[18]=CreateSound("Sound\\Music\\mp3Music\\UIDing2.mp3",false,false,true,12700,12700,"")
+set soundStr[19]=CreateSound("Sound\\Music\\mp3Music\\UIDing3.mp3",false,false,true,12700,12700,"")
+set soundStr[20]=CreateSound("Sound\\Music\\mp3Music\\AUI1.mp3",false,false,true,12700,12700,"")
+set soundStr[21]=CreateSound("Sound\\Music\\mp3Music\\Goku\\AUI1-jap.mp3",false,false,true,12700,12700,"")
+set soundStr[22]=CreateSound("Sound\\Music\\mp3Music\\AUI2.mp3",false,false,true,12700,12700,"")
+set soundStr[23]=CreateSound("Sound\\Music\\mp3Music\\Goku\\AUI2-jap.mp3",false,false,true,12700,12700,"")
+set soundStr[24]=CreateSound("Sound\\Music\\mp3Music\\AUI3.mp3",false,false,true,12700,12700,"")
+set soundStr[25]=CreateSound("Sound\\Music\\mp3Music\\GokuYouFool1.mp3",false,false,true,12700,12700,"")
+set soundStr[26]=CreateSound("Sound\\Music\\mp3Music\\Goku\\GokuYouFool1-jap.mp3",false,false,true,12700,12700,"")
+set soundStr[27]=CreateSound("Sound\\Music\\mp3Music\\GokuYouFool2.mp3",false,false,true,12700,12700,"")
+set soundStr[28]=CreateSound("Sound\\Music\\mp3Music\\Goku\\GokuYouFool2-jap.mp3",false,false,true,12700,12700,"")
+set soundStr[29]=CreateSound("Sound\\Music\\mp3Music\\SpiritBombCast.mp3",false,false,true,12700,12700,"")
+set soundStr[30]=CreateSound("Sound\\Music\\mp3Music\\Goku\\SpiritBombCast-jap.mp3",false,false,true,12700,12700,"")
+set soundStr[31]=CreateSound("Sound\\Music\\mp3Music\\SpiritBombBorn.mp3",false,false,true,12700,12700,"")
+set soundStr[32]=CreateSound("Sound\\Music\\mp3Music\\SpiritBomb.mp3",false,false,true,12700,12700,"")
+set soundStr[33]=CreateSound("Sound\\Music\\mp3Music\\Goku\\SpiritBomb-jap.mp3",false,false,true,12700,12700,"")
+set soundStr[34]=CreateSound("Sound\\Music\\mp3Music\\SuperSpiritBomb.mp3",false,false,true,12700,12700,"")
+set soundStr[35]=CreateSound("Sound\\Music\\mp3Music\\Goku\\SuperSpiritBomb-jap.mp3",false,false,true,12700,12700,"")
+set soundStr[36]=CreateSound("Sound\\Music\\mp3Music\\SpiritBombHit.mp3",false,false,true,12700,12700,"")
+set soundStr[37]=CreateSound("Sound\\Music\\mp3Music\\SpiritBombExplode.mp3",false,false,true,12700,12700,"")
+set soundStr[38]=CreateSound("Sound\\Music\\mp3Music\\SuperSpiritBombHit.mp3",false,false,true,12700,12700,"")
+set soundStr[39]=CreateSound("Sound\\Music\\mp3Music\\SuperSpiritBombExplode.mp3",false,false,true,12700,12700,"")
 loop
 set i=i+1
 call StartSound(soundStr[i])
-exitwhen i>16 
+exitwhen i>39
 endloop
 call TriggerSleepAction(0)
 set i=0
 loop
 set i=i+1
 call StopSound(soundStr[i],false,false)
-exitwhen i>16 
+exitwhen i>39
 endloop
 endfunction
 function InitTrig_VoicePreload takes nothing returns nothing
@@ -10238,10 +10291,13 @@ else
     if SR(x,y,x1,y1)<=speed+20+100*GetUnitScale(u) then
         if IsUnitAlive(GenkiDama)==true then
             if GetUnitScale(u)<0.1 then
+                if GetUnitScale(u)==0.01 then
+                    call StartSound(soundStr[31])
+                endif
                 call SetUnitVertexColor(u, 255, 255, 255, 255)
                 set n=CreateUnit(p,'e0P2',x1,y1,0)
                 call SetUnitScale(n,2.5,2.5,2.5)
-                call SetUnitFlyHeight(n,GetUnitFlyHeight(GenkiDama)-95,0)
+                call SetUnitFlyHeight(n,GetUnitFlyHeight(GenkiDama)-125,0)
                 call UnitApplyTimedLife(n,1,0.5)
             endif
         endif
@@ -18895,11 +18951,13 @@ function ShadowCoverIndicator takes unit newCaster, string newString, real newDu
         call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
         call SaveFrameHandle(HH,idp,StringHash(newString+"2"),NewFrameText)
     else
-        set NewFrame=LoadFrameHandle(HH, idp,StringHash(newString))
-        set NewFrameText=LoadFrameHandle(HH, idp,StringHash(newString+"2"))
-        call SetFrameText( NewFrameText, R2SW(newDur,2, 1) )
-        call ShowFrame( NewFrame, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
-        call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
+        if LoadReal(HH, GetHandleId(NewFrame), c_DURATION)<=0 then
+            set NewFrame=LoadFrameHandle(HH, idp,StringHash(newString))
+            set NewFrameText=LoadFrameHandle(HH, idp,StringHash(newString+"2"))
+            call SetFrameText( NewFrameText, R2SW(newDur,2, 1) )
+            call ShowFrame( NewFrame, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
+            call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
+        endif
     endif
     if LoadReal(HH, GetHandleId(NewFrame), c_DURATION)<=0 then
         loop
@@ -63507,6 +63565,7 @@ function MissleMoveSuperSpiritBomb3 takes nothing returns nothing
             call SetUnitFlyHeight(n,100,0)
         endif
     else
+        call StartSound(soundStr[39])
         call GroupEnumUnitsInRange(DG,x,y,AoE,Base)
         loop
             set E=FirstOfGroup(DG)
@@ -63591,6 +63650,7 @@ else
             call SetUnitFacing(l__d,a*bj_RADTODEG)
         else
             call ShakeCamera(1.5,30)
+            call StartSound(soundStr[38])
             // set soundplay=CreateSound("Sound\\Music\\mp3Music\\SpiritBomb.mp3",false,false,true,12700,12700,"")
             // call StartSound(soundplay)
             // call KillSoundWhenDone(soundplay)
@@ -63658,6 +63718,7 @@ function MissleMoveSpiritBomb3 takes nothing returns nothing
         call MyRemoveUnit(n, 2.5)
         call myCustomDamage(u,c,dmg*0.2,false,false,null,null,null) 
     else
+        call StartSound(soundStr[37])
         call myCustomDamage(u,c,GetHeroLevel(u)*0.1*GetHeroStr(u,true)+dmg,false,false,null,null,null) 
         set n=CreateUnit(p, 'e0C5', x, y, GetRandomInt(0, 360))
         call SetUnitScale(n, 2, 2, 2)
@@ -63751,6 +63812,7 @@ else
             call SetUnitTimeScale(n,2)
         else
             if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
+                call StartSound(soundStr[36])
                 call SetControlToUnit(u,c, 1.2, "heavystun")
                 call SaveReal(h,id,3,Atan2(y1-y2,x1-x2))
                 set n=CreateUnit(p,'e168',x,y,GetRandomReal(0,359))
@@ -63778,6 +63840,7 @@ else
                 call TimerStart(t,0.2,true,function MissleMoveSpiritBomb3)
                 // call BJDebugMsg("lol2")
             else
+                call StartSound(soundStr[37])
                 call FlushChildHashtable(HH,GetHandleId(GenkiDama))
                 call RemoveUnit(l__d)
                 set n=CreateUnit(p,'e168',x,y,GetRandomReal(0,359))
@@ -63843,6 +63906,11 @@ if GetSpellAbilityId()=='GKG4' then
     call SaveInteger(HH,GetHandleId(GenkiDama),0,1)
     call SetUnitFacing(Goku,AU(Goku,c)*bj_RADTODEG)
     call MissleMoveSpiritBomb(Goku,c,GenkiDama,45,GetUnitFlyHeight(GenkiDama),50*0.1*GetUnitScale(GenkiDama)*GetHeroStr(Goku,true))
+    if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
+        call StartSound(soundStr[32])
+    else
+        call StartSound(soundStr[33])
+    endif
     if (GetLocalPlayer()==p or GetPlayerAlliance(p,GetLocalPlayer(),ALLIANCE_SHARED_CONTROL)) and GetUnitSelected(p)==u then
         call ClearSelection()
         call SelectUnit(Goku,true)
@@ -63853,6 +63921,11 @@ if GetSpellAbilityId()=='GKG5' then
     call SaveInteger(HH,GetHandleId(GenkiDama),0,1)
     call SetUnitFacing(Goku,a*bj_RADTODEG)
     call MissleMoveSuperSpiritBomb(Goku,x1,y1,GenkiDama,30,AU(Goku,c),GetUnitFlyHeight(GenkiDama),GetAbilityRealLevelField(GetUnitAbility(u,'GKG5'),ABILITY_RLF_AREA_OF_EFFECT,0) ,50*0.1*GetUnitScale(GenkiDama)*GetHeroStr(Goku,true))
+    if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
+        call StartSound(soundStr[34])
+    else
+        call StartSound(soundStr[35])
+    endif
     //call BJDebugMsg(R2S(GetAbilityRealLevelField(GetUnitAbility(u,'GKG5'),ABILITY_RLF_AREA_OF_EFFECT,0)))
     //call BJDebugMsg(R2S(GetUnitScale(GenkiDama)))
     if (GetLocalPlayer()==p or GetPlayerAlliance(p,GetLocalPlayer(),ALLIANCE_SHARED_CONTROL)) and GetUnitSelected(p)==u then
@@ -63946,6 +64019,8 @@ if time<100 and GetUnitState(u,UNIT_STATE_LIFE)>0.405 and LoadBoolean(HH,GetHand
         call SetAbilityRealLevelField(GetUnitAbility(dummy,'GKG5'),ABILITY_RLF_AREA_OF_EFFECT,0,400+333.3333*(GetUnitScale(GenkiDama)-0.5)) 
     endif 
 else
+    call StopSound(soundStr[29],false,true)
+    call StopSound(soundStr[30],false,true)
     call DestroyTextTag(l__txt)
     loop
         set GenkiUsed[i]=false
@@ -63979,6 +64054,11 @@ else
             // call UnitApplyTimedLife(n,1,1)
             call KillUnit(GenkiDama)
             call MyRemoveUnit(GenkiDama,2.5)
+            if GetUnitScale(GenkiDama)>=0.5 then
+                call StartSound(soundStr[39])
+            else
+                call StartSound(soundStr[37])
+            endif
         else
             call RemoveUnit(GenkiDama)
         endif
@@ -64031,12 +64111,10 @@ call SaveReal(h,id,7,0)
 call SaveReal(h,id,6,150)
 call SaveReal(h,id,10,(8+GetUnitAbilityLevel(u,'GKG1'))*GetHeroStr(u,true))
 if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
-set soundplay=CreateSound("Sound\\Music\\mp3Music\\SpiritBomb2.mp3",false,false,true,12700,12700,"")
+call StartSound(soundStr[29])
 else
-set soundplay=CreateSound("Sound\\Music\\mp3Music\\Goku\\SpiritBomb2-jap.mp3",false,false,true,12700,12700,"")
+call StartSound(soundStr[30])
 endif
-call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
 call SetTextTagText(l__txt,"0 / "+R2SW((0.6+GetHeroLevel(u)*0.04)*50,1,1),0.023)
 call SetTextTagVisibility(l__txt,false)
 if GetLocalPlayer()==p then
@@ -64092,6 +64170,10 @@ if time<1 then
     call SetUnitFacingInstant(u,a*bj_RADTODEG)
     call PauseUnit(u,true)
     call SetUnitInvulnerable(u,true)
+    if time==0.2 then
+        call UnitAddAbility(u,'A6AU') 
+        call UnitRemoveAbilityTimed(u,'A6AU',1.4)
+    endif
     if time==0.98 then
         call SaveReal(HH,id,5,a)
         call SetUnitXY_1(l__d,x+40*Cos(a),y+40*Sin(a), false)
@@ -64104,6 +64186,7 @@ if time<1 then
         call SetUnitFlyHeight(n,40,0)
         call UnitApplyTimedLife(n,1,1.2)
         call SetUnitScale(n,1.2,1.5,1.5)
+        call SetUnitTimeScale(u,0.3)
     endif
 else
     if dist>0 then
@@ -64175,20 +64258,21 @@ if LoadBoolean(HH,GetHandleId(u),TARGET_ABILITY)==false then
 call SaveReal(HH,id,2,time+0.04)
 endif
 else
+call DestroyEffect(LoadEffectHandle(HH,id,6))
 call UnitMakeAbilityPermanent(u,false,'A24J')
 call UnitRemoveAbility(u,'A24J')
 call UnitRemoveBuffs(u,false,true)
-call SetUnitTimeScale(u,1)
 call SaveBoolean(HH,idu,ANTITARGET_ABILITY,false)
 if c!=null then
+call SetUnitTimeScale(u,1.4)
 call SaveUnitHandle(HH,id,1,c)
 call RemoveSavedHandle(HH,idu,REVERSE_TARGET)
 call PauseTimer(t)
 call SaveReal(HH,id,2,0)
 if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
-set soundplay=CreateSound("Sound\\Music\\mp3Music\\GokuYouFool2.mp3",false,false,true,12700,12700,"")
+call StartSound(soundStr[27])
 else
-set soundplay=CreateSound("Sound\\Music\\mp3Music\\Goku\\GokuYouFool2-jap.mp3",false,false,true,12700,12700,"")
+call StartSound(soundStr[28])
 endif
 call StartSound(soundplay)
 call KillSoundWhenDone(soundplay)
@@ -64204,6 +64288,10 @@ call SaveReal(HH,id,3,2000)
 call TimerStart(t,0.02,true,function BreakerEnergyWaveCast3)
 else
 call SetUnitAnimation(u,"stand")
+call HealTextTag(u,u,GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.05*myCustomHeal2(u,1),"HealthRes")
+call HealTextTag(u,u,GetUnitState(u,UNIT_STATE_MAX_MANA)*0.05*myCustomMana2(u,1),"ManaRes")
+call SetUnitState(u,UNIT_STATE_LIFE,GetWidgetLife(u)+GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.05)
+call SetUnitState(u,UNIT_STATE_MANA,GetWidgetLife(u)+GetUnitState(u,UNIT_STATE_MAX_MANA)*0.05)
 call PauseUnit(u,false)
 call PauseTimer(t)
 call DestroyTimer(t)
@@ -64228,25 +64316,33 @@ call UnitAddAbility(u,'A24J')
 call UnitMakeAbilityPermanent(u,true,'A24J')
 call PauseUnit(u,true)
 call SetUnitAnimationByIndex(u,169)
-set EFF=AddSpecialEffect("Yellow--zhendi.mdl", x, y)
+if GetUnitAbilityLevel(u,'GkH1')>0 or GetUnitAbilityLevel(u,'GkH2')>0 or GetUnitAbilityLevel(u,'GkH3')>0 then
+set EFF=AddSpecialEffect("GokuAuraBurstYellow.mdl", x, y)
 call SetSpecialEffectTimeScale(EFF , 0.5)
-call SetSpecialEffectScale(EFF , 3)
-call DestroyEffect(EFF)
-set EFF=AddSpecialEffect("AuraExplYellow.mdl", x, y)
+call SetSpecialEffectScale(EFF , 0.7)
+elseif GetUnitAbilityLevel(u,'GkH4')>0 then
+set EFF=AddSpecialEffect("GokuAuraBurstOrange.mdl", x, y)
 call SetSpecialEffectTimeScale(EFF , 0.5)
-call SetSpecialEffectScale(EFF , 3)
-call DestroyEffect(EFF)
+call SetSpecialEffectScale(EFF , 0.7)
+elseif GetUnitAbilityLevel(u,'GkH5')>0 then
+set EFF=AddSpecialEffect("GokuAuraBurstRed.mdl", x, y)
+call SetSpecialEffectTimeScale(EFF , 0.5)
+call SetSpecialEffectScale(EFF , 0.7)
+elseif GetUnitAbilityLevel(u,'GkH6')>0 then
+set EFF=AddSpecialEffect("GokuAuraBurstBlue.mdl", x, y)
+call SetSpecialEffectTimeScale(EFF , 0.5)
+call SetSpecialEffectScale(EFF , 0.7)
+endif
+call SaveEffectHandle(HH,id,6,EFF)
 set EFF = AddSpecialEffect("Hashirama\\SmokeFuzzy.mdl",x, y)
 call SetSpecialEffectScale(EFF, 1.6)
 call SetSpecialEffectTimeScale(EFF , 1.6)
 call DestroyEffect(EFF)
 if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
-set soundplay=CreateSound("Sound\\Music\\mp3Music\\GokuYouFool1.mp3",false,false,true,12700,12700,"")
+call StartSound(soundStr[25])
 else
-set soundplay=CreateSound("Sound\\Music\\mp3Music\\Goku\\GokuYouFool1-jap.mp3",false,false,true,12700,12700,"")
+call StartSound(soundStr[26])
 endif
-call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
 call SaveBoolean(HH,GetHandleId(u),ANTITARGET_ABILITY,true)
 call TimerStart(t,0.04,true,function BreakerEnergyWaveCast2)
 set u=null
@@ -64331,7 +64427,7 @@ else
     call UnitRemoveAbility(u,'A0BX')
     if LoadBoolean(HH,id,3) then
         call StartAbilityCooldown(GetUnitAbility(u, 'GKG7'), 1)
-        call CreateModeIndicatorFormGoku(newCaster, "ReplaceableTextures\\CommandButtons\\BTNUIReverse.blp", 10)
+        call CreateModeIndicatorFormGoku(u, "ReplaceableTextures\\CommandButtons\\BTNUIReverse.blp", 10)
     endif
     call SetUnitTimeScale(u,1)
     call FlushChildHashtable(HH,GetHandleId(g))
@@ -64367,14 +64463,27 @@ else
     call UnitRemoveAbility(u,'A34J')
     call UnitRemoveBuffs(u,false,true)
     call SetUnitTimeScale(u,1)
-    call StopSound(LoadSoundHandle(HH,id,3),true,true)
+    call StopSound(soundStr[20],false,true)
+    call StopSound(soundStr[21],false,true)
     call SaveBoolean(HH,idu,ANTITARGET_ABILITY,false)
     if c!=null then
-        if time<0.2 then
-            call SaveBoolean(HH,id,3,true)
-            set soundplay=CreateSound("Sound\\Music\\mp3Music\\UIDing1.mp3",false,false,true,12700,12700,"")
-            call StartSound(soundplay)
-            call KillSoundWhenDone(soundplay)
+        if time<0.2 and LoadInteger(HH,GetHandleId(u),GokuUIDingHash)<3 then
+            if LoadInteger(HH,GetHandleId(u),GokuUIDingHash)<2 then
+                call SaveBoolean(HH,id,3,true)
+            endif
+            call SaveInteger(HH,GetHandleId(u),GokuUIDingHash,LoadInteger(HH,GetHandleId(u),GokuUIDingHash)+1)
+            if LoadInteger(h,GetHandleId(u),GokuUIMusicHash)==0 then
+                if LoadInteger(HH,GetHandleId(u),GokuUIDingHash)==1 then
+                    call StartSound(soundStr[17])
+                elseif LoadInteger(HH,GetHandleId(u),GokuUIDingHash)==2 then
+                    call StartSound(soundStr[18])
+                elseif LoadInteger(HH,GetHandleId(u),GokuUIDingHash)==3 then
+                    call StartSound(soundStr[19])
+                    call SetMusicVolume(0)
+                    call SaveInteger(h,GetHandleId(u),GokuUIMusicHash,1)
+                    call RemoveSaveHashTimed(45,GetHandleId(u),GokuUIMusicHash)
+                endif
+            endif
         endif
         set a=Atan2(GetUnitY(c)-y,GetUnitX(c)-x)
         call SetUnitFacingInstant(u,a*bj_RADTODEG)
@@ -64382,9 +64491,11 @@ else
             call SaveUnitHandle(HH,id,1,c)
             call PauseTimer(t)
             call SaveReal(HH,id,2,0)
-            set soundplay=CreateSound("Sound\\Music\\mp3Music\\AUI2.mp3",false,false,true,12700,12700,"")
-            call StartSound(soundplay)
-            call KillSoundWhenDone(soundplay)
+            if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
+                call StartSound(soundStr[22])
+            else
+                call StartSound(soundStr[23])
+            endif
             call PauseUnit(u,true)
             call SetUnitInvulnerable(u,true)
             call PauseUnit(c,true)
@@ -64408,7 +64519,7 @@ else
             call SetUnitAnimationByIndex(u,GetRandomInt(248,251))
             if LoadBoolean(HH,id,3) then
                 call StartAbilityCooldown(GetUnitAbility(u, 'GKG7'), 1)
-                call CreateModeIndicatorFormGoku(newCaster, "ReplaceableTextures\\CommandButtons\\BTNUIReverse.blp", 10)
+                call CreateModeIndicatorFormGoku(u, "ReplaceableTextures\\CommandButtons\\BTNUIReverse.blp", 10)
             endif
             if ran==1 then
                 call Push5(u,30,a+90*bj_DEGTORAD,300,"")
@@ -64417,9 +64528,7 @@ else
             endif
             call UnitAddAbility(u,'A7IH')
             call UnitRemoveAbilityTimedPause(u,'A7IH',0.2)
-            set soundplay=CreateSound("Sound\\Music\\mp3Music\\AUI3.mp3",false,false,true,12700,12700,"")
-            call StartSound(soundplay)
-            call KillSoundWhenDone(soundplay)
+            call StartSound(soundStr[24])
             call PauseTimer(t)
             call DestroyTimer(t)
             call SetUnitTimeScale(u,1)
@@ -64456,13 +64565,10 @@ call UnitMakeAbilityPermanent(u,true,'A34J')
 call PauseUnit(u,true)
 call SetUnitAnimationByIndex(u,242)
 if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
-    set soundplay=CreateSound("Sound\\Music\\mp3Music\\AUI1.mp3",false,false,true,12700,12700,"")
+    call StartSound(soundStr[20])
 else
-    set soundplay=CreateSound("Sound\\Music\\mp3Music\\Goku\\AUI1-jap.mp3",false,false,true,12700,12700,"")
+    call StartSound(soundStr[21])
 endif
-call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
-call SaveSoundHandle(HH,id,3,soundplay)
 call SaveBoolean(HH,GetHandleId(u),ANTITARGET_ABILITY,true)
 call TimerStart(t,0.04,true,function AutonomousUICast2)
 set u=null
@@ -94190,11 +94296,13 @@ function IchigoVaster_OvertimeForm takes unit newCaster, string newString, real 
         call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
         call SaveFrameHandle(HH,idp,StringHash(newString+"2"),NewFrameText)
     else
-        set NewFrame=LoadFrameHandle(HH, idp,StringHash(newString))
-        set NewFrameText=LoadFrameHandle(HH, idp,StringHash(newString+"2"))
-        call SetFrameText( NewFrameText, R2SW(newDur,2, 1) )
-        call ShowFrame( NewFrame, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
-        call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
+        if LoadReal(HH, GetHandleId(NewFrame), c_DURATION)<=0 then
+            set NewFrame=LoadFrameHandle(HH, idp,StringHash(newString))
+            set NewFrameText=LoadFrameHandle(HH, idp,StringHash(newString+"2"))
+            call SetFrameText( NewFrameText, R2SW(newDur,2, 1) )
+            call ShowFrame( NewFrame, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
+            call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
+        endif
     endif
     if LoadReal(HH, GetHandleId(NewFrame), c_DURATION)<=0 then
         loop
@@ -182259,11 +182367,13 @@ function CreateModeIndicatorWithPauseSabrac takes unit newCasterOwner,unit newCa
         call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
         call SaveFrameHandle(HH,idp,StringHash(newString+"2"),NewFrameText)
     else
-        set NewFrame=LoadFrameHandle(HH, idp,StringHash(newString))
-        set NewFrameText=LoadFrameHandle(HH, idp,StringHash(newString+"2"))
-        call SetFrameText( NewFrameText, R2SW(newDur,2, 1) )
-        call ShowFrame( NewFrame, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
-        call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
+        if LoadReal(HH, GetHandleId(NewFrame), c_DURATION)<=0 then
+            set NewFrame=LoadFrameHandle(HH, idp,StringHash(newString))
+            set NewFrameText=LoadFrameHandle(HH, idp,StringHash(newString+"2"))
+            call SetFrameText( NewFrameText, R2SW(newDur,2, 1) )
+            call ShowFrame( NewFrame, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
+            call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
+        endif
     endif
     if LoadReal(HH, GetHandleId(NewFrame), c_DURATION)<=0 then
         loop
@@ -187171,11 +187281,13 @@ function CreateModeIndicatorWithPauseAizen takes unit newCasterOwner,unit newCas
         call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
         call SaveFrameHandle(HH,idp,StringHash(newString+"2"),NewFrameText)
     else
-        set NewFrame=LoadFrameHandle(HH, idp,StringHash(newString))
-        set NewFrameText=LoadFrameHandle(HH, idp,StringHash(newString+"2"))
-        call SetFrameText( NewFrameText, R2SW(newDur,2, 1) )
-        call ShowFrame( NewFrame, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
-        call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
+        if LoadReal(HH, GetHandleId(NewFrame), c_DURATION)<=0 then
+            set NewFrame=LoadFrameHandle(HH, idp,StringHash(newString))
+            set NewFrameText=LoadFrameHandle(HH, idp,StringHash(newString+"2"))
+            call SetFrameText( NewFrameText, R2SW(newDur,2, 1) )
+            call ShowFrame( NewFrame, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
+            call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
+        endif
     endif
     if LoadReal(HH, GetHandleId(NewFrame), c_DURATION)<=0 then
         loop
