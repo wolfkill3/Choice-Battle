@@ -3796,8 +3796,8 @@ function CreateModeIndicatorWithPauseFormMadara_Periodic takes nothing returns n
 endfunction
 
 function CreateModeIndicatorWithPauseFormMadara takes unit newCaster, string newString, real newDur returns nothing
-        local timer newTimer        = CreateTimer()
-        local integer id            = GetHandleId(newTimer)
+    local timer newTimer        = CreateTimer()
+    local integer id            = GetHandleId(newTimer)
     local framehandle NewFrame  = null
     local framehandle NewFrameText  = null
     local player p              =GetOwningPlayer(newCaster)
@@ -4250,8 +4250,8 @@ function CreateModeIndicatorFormYujiD_Periodic takes nothing returns nothing
 endfunction
 
 function CreateModeIndicatorFormYujiD takes unit newCaster, string newString, real newDur returns nothing
-        local timer newTimer        = CreateTimer()
-        local integer id            = GetHandleId(newTimer)
+    local timer newTimer        = CreateTimer()
+    local integer id            = GetHandleId(newTimer)
     local framehandle NewFrame  = null
     local framehandle NewFrameText  = null
     local player p              =GetOwningPlayer(newCaster)
@@ -4329,6 +4329,113 @@ function CreateModeIndicatorFormYujiD takes unit newCaster, string newString, re
     set NewFrameText=null
 endfunction
 
+function CreateModeIndicatorFormGoku_Periodic takes nothing returns nothing
+    local timer t               =GetExpiredTimer()
+    local integer id            =GetHandleId(t)
+    local unit caster           =LoadUnitHandle(HH, id, c_CASTER)
+    local player p              =LoadPlayerHandle(HH, id, c_PLAYER)
+    local integer idp           =GetHandleId(p)
+    local string mode_name      =LoadStr(HH, id, c_NAME)
+    local framehandle NewFrame  =LoadFrameHandle(HH, idp,StringHash(mode_name))
+    local real duration         =LoadReal(HH, GetHandleId(NewFrame), c_DURATION)-0.05
+    local integer position         =LoadInteger(HH, id, c_POSITION)
+    if position>0 then
+        if LoadBoolean(HH,idp,position-1)==false then
+        call SaveBoolean(HH,idp,position-1,true)
+        call SaveBoolean(HH,idp,position,false)
+        call SaveInteger(HH, id, c_POSITION,position-1)
+        set position=position-1
+        endif
+    endif
+    //if IsUnitPaused(caster)==false and IsUnitHidden(caster)==false and GetUnitAbilityLevel(caster,'Pet1')==0 then
+    call SaveReal           (HH, GetHandleId(NewFrame), c_DURATION, duration)
+    call SetFrameText( LoadFrameHandle(HH, idp,StringHash(mode_name+"2")), R2SW(duration,2, 1) )
+    //endif
+    call SetFrameRelativePoint( NewFrame, FRAMEPOINT_CENTER, StatusBarFrame, FRAMEPOINT_LEFT, 0.017+position*0.025, 0.005 )
+    if duration<=0 or udg_B==false or DU2==false or UnitIsAlive(caster)==false then
+        call SaveReal(HH, GetHandleId(NewFrame), c_DURATION, 0)
+        call SaveReal(HH, GetHandleId(LoadFrameHandle(HH, idp,StringHash(mode_name+"2"))), c_DURATION, 0)
+        call ShowFrame( NewFrame, false )
+        call SaveBoolean(HH,idp,position,false)
+        call FlushChildHashtable(HH, id)
+        call DestroyTimer(t)
+    endif
+    set t=null
+    set caster=null
+    set p=null
+    set NewFrame=null
+endfunction
+
+function CreateModeIndicatorFormGoku takes unit newCaster, string newString, real newDur returns nothing //wrin
+    local timer newTimer        = CreateTimer()
+    local integer id            = GetHandleId(newTimer)
+    local framehandle NewFrame  = null
+    local framehandle NewFrameText  = null
+    local player p=GetOwningPlayer(newCaster)
+    local integer idp=GetHandleId(p)
+    local integer i=9
+    local integer j=0
+    if LoadFrameHandle(HH, idp,StringHash(newString))==null then    
+        set NewFrame = CreateFrameByType( "SIMPLEBUTTON", newString, StatusBarFrame, "", 0 )
+        call ClearFrameAllPoints( NewFrame )
+        call SetFrameTexture( NewFrame, newString, 0, true )
+        call SetFrameTexture( NewFrame, newString, 1, true )
+        call SetFrameTexture( NewFrame, newString, 2, true )
+        call SetFrameSize( NewFrame, .0237, .0237 )
+        call SetFramePriority( NewFrame, 7 )
+        call HandleListAddHandle(StatusBarFrameList[GetPlayerId(p)],NewFrame)
+        call SetFrameParent(NewFrame,StatusBarFrame)
+        call ShowFrame( NewFrame, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
+        call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
+        call SaveFrameHandle(HH,idp,StringHash(newString),NewFrame)
+        //call SaveReal               (HH, GetHandleId(NewFrame), c_DURATION, 2)
+        
+        set NewFrameText=CreateFrameByType( "SIMPLETEXT", newString+"1", NewFrame, "", 0 )
+        call ClearFrameAllPoints( NewFrameText )
+        call SetFrameBlendMode( NewFrameText, 0, BLEND_MODE_BLEND )
+        call SetFrameFont( NewFrameText, "Fonts\\FRIZQT__.TTF", .008, 0 )
+        call SetFrameTextAlignment( NewFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_LEFT )
+        call SetFrameText( NewFrameText, R2SW(newDur,2, 1) )
+        call SetFrameTextColour( NewFrameText, ConvertColour(255,255,30,30) )
+        call HandleListAddHandle(StatusBarFrameList[GetPlayerId(p)],NewFrameText)
+        call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
+        call SaveFrameHandle(HH,idp,StringHash(newString+"2"),NewFrameText)
+    else
+        set NewFrame=LoadFrameHandle(HH, idp,StringHash(newString))
+        set NewFrameText=LoadFrameHandle(HH, idp,StringHash(newString+"2"))
+        call SetFrameText( NewFrameText, R2SW(newDur,2, 1) )
+        call ShowFrame( NewFrame, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
+        call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
+    endif
+    if LoadReal(HH, GetHandleId(NewFrame), c_DURATION)<=0 then
+        loop
+            exitwhen i==0
+            if LoadBoolean(HH,idp,i)==false then
+            call SaveBoolean(HH,idp,i,true)
+            call SaveBoolean(HH,idp,i+1,false)
+            set j=i
+            endif
+            set i=i-1
+        endloop
+        call SetFrameRelativePoint( NewFrame, FRAMEPOINT_CENTER, StatusBarFrame, FRAMEPOINT_LEFT, 0.017+j*0.025, 0.005 )
+        call SetFrameRelativePoint( NewFrameText, FRAMEPOINT_BOTTOM, NewFrame, FRAMEPOINT_BOTTOM, .0, -.01 )
+        call SaveUnitHandle         (HH, id, c_CASTER, newCaster)
+        call SavePlayerHandle       (HH, id, c_PLAYER, GetOwningPlayer(newCaster))
+        call SaveReal               (HH, GetHandleId(NewFrame), c_DURATION, newDur)
+        call SaveReal               (HH, GetHandleId(NewFrameText), c_DURATION, newDur)
+        call SaveInteger            (HH, id, c_POSITION, j)
+        call SaveStr                (HH, id, c_NAME, newString)
+        call TimerStart             (newTimer, 0.05, true, function CreateModeIndicatorFormGoku_Periodic)
+    else
+        call SaveReal           (HH, GetHandleId(NewFrame), c_DURATION, newDur)
+        call SaveReal           (HH, GetHandleId(NewFrameText), c_DURATION, newDur)
+    endif
+    set newTimer=null
+    set p=null
+    set NewFrame=null
+    set NewFrameText=null
+endfunction
+
 function CreateModeIndicatorForm_Periodic takes nothing returns nothing
     local timer t               =GetExpiredTimer()
     local integer id            =GetHandleId(t)
@@ -4367,8 +4474,8 @@ function CreateModeIndicatorForm_Periodic takes nothing returns nothing
 endfunction
 
 function CreateModeIndicatorForm takes unit newCaster, string newString, real newDur returns nothing //wrin
-        local timer newTimer        = CreateTimer()
-        local integer id            = GetHandleId(newTimer)
+    local timer newTimer        = CreateTimer()
+    local integer id            = GetHandleId(newTimer)
     local framehandle NewFrame  = null
     local framehandle NewFrameText  = null
     local player p=GetOwningPlayer(newCaster)
@@ -4477,8 +4584,8 @@ function CreateModeIndicatorWithPauseForm_Periodic takes nothing returns nothing
 endfunction
 
 function CreateModeIndicatorWithPauseForm takes unit newCaster, string newString, real newDur returns nothing
-        local timer newTimer        = CreateTimer()
-        local integer id            = GetHandleId(newTimer)
+    local timer newTimer        = CreateTimer()
+    local integer id            = GetHandleId(newTimer)
     local framehandle NewFrame  = null
     local framehandle NewFrameText  = null
     local player p              =GetOwningPlayer(newCaster)
@@ -4586,8 +4693,8 @@ function CreateModeIndicatorFormDispellable_Periodic takes nothing returns nothi
 endfunction
 
 function CreateModeIndicatorFormDispellable takes unit newCaster, string newString, real newDur, integer buffId returns nothing //wrin
-        local timer newTimer        = CreateTimer()
-        local integer id            = GetHandleId(newTimer)
+    local timer newTimer        = CreateTimer()
+    local integer id            = GetHandleId(newTimer)
     local framehandle NewFrame  = null
     local framehandle NewFrameText  = null
     local player p=GetOwningPlayer(newCaster)
@@ -35644,7 +35751,7 @@ if (not((GetUnitAbilityLevel(u,'A0IH')==0 and GetUnitAbilityLevel(c,'A0IH')==0) 
 call newBlockDamage(u)
 set nb=0
 endif
-if (GetUnitAbilityLevel(u,'A14J')>0  and nb>200) or (GetUnitAbilityLevel(u,'A24J')>0 and nb>200) or (GetUnitAbilityLevel(u,'A34J')>0 and nb>200) then
+if (GetUnitAbilityLevel(u,'A14J')>0  and (nb>200 or CurrentEventAttack)) or (GetUnitAbilityLevel(u,'A24J')>0 and (nb>200 or CurrentEventAttack)) or (GetUnitAbilityLevel(u,'A34J')>0 and (nb>200 or CurrentEventAttack)) then
     if GetUnitAbilityLevel(u,'A34J')>0 then
         if GetHeroLevel(u)>=35 and LoadBoolean(HH,GetHandleId( GetOwningPlayer(u) ),MUIAvailableHash)==false then
             call SaveInteger(HH,GetHandleId( GetOwningPlayer(u) ),MUIDodgeCountHash,LoadInteger(HH,GetHandleId( GetOwningPlayer(u) ),MUIDodgeCountHash)+1)
@@ -64260,6 +64367,7 @@ else
     call SaveBoolean(HH,idu,ANTITARGET_ABILITY,false)
     if c!=null then
         if time<0.2 then
+            call StartAbilityCooldown(GetUnitAbility(u, 'GKG7'), 1)
             set soundplay=CreateSound("Sound\\Music\\mp3Music\\UIDing1.mp3",false,false,true,12700,12700,"")
             call StartSound(soundplay)
             call KillSoundWhenDone(soundplay)
