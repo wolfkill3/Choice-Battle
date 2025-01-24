@@ -64329,6 +64329,10 @@ else
     call PauseTimer(t)
     call DestroyTimer(t)
     call UnitRemoveAbility(u,'A0BX')
+    if LoadBoolean(HH,id,3) then
+        call StartAbilityCooldown(GetUnitAbility(u, 'GKG7'), 1)
+        call CreateModeIndicatorFormGoku(newCaster, "ReplaceableTextures\\CommandButtons\\BTNUIReverse.blp", 10)
+    endif
     call SetUnitTimeScale(u,1)
     call FlushChildHashtable(HH,GetHandleId(g))
     call DestroyGroup(g)
@@ -64367,7 +64371,7 @@ else
     call SaveBoolean(HH,idu,ANTITARGET_ABILITY,false)
     if c!=null then
         if time<0.2 then
-            call StartAbilityCooldown(GetUnitAbility(u, 'GKG7'), 1)
+            call SaveBoolean(HH,id,3,true)
             set soundplay=CreateSound("Sound\\Music\\mp3Music\\UIDing1.mp3",false,false,true,12700,12700,"")
             call StartSound(soundplay)
             call KillSoundWhenDone(soundplay)
@@ -64402,6 +64406,10 @@ else
             call TimerStart(t,0.02,true,function AutonomousUICast3)
         else
             call SetUnitAnimationByIndex(u,GetRandomInt(248,251))
+            if LoadBoolean(HH,id,3) then
+                call StartAbilityCooldown(GetUnitAbility(u, 'GKG7'), 1)
+                call CreateModeIndicatorFormGoku(newCaster, "ReplaceableTextures\\CommandButtons\\BTNUIReverse.blp", 10)
+            endif
             if ran==1 then
                 call Push5(u,30,a+90*bj_DEGTORAD,300,"")
             elseif ran==2 then
