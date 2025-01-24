@@ -7678,17 +7678,45 @@ set soundStr[36]=CreateSound("Sound\\Music\\mp3Music\\SpiritBombHit.mp3",false,f
 set soundStr[37]=CreateSound("Sound\\Music\\mp3Music\\SpiritBombExplode.mp3",false,false,true,12700,12700,"")
 set soundStr[38]=CreateSound("Sound\\Music\\mp3Music\\SuperSpiritBombHit.mp3",false,false,true,12700,12700,"")
 set soundStr[39]=CreateSound("Sound\\Music\\mp3Music\\SuperSpiritBombExplode.mp3",false,false,true,12700,12700,"")
+set soundStr[40]=CreateSound("Sound\\Music\\mp3Music\\Kaioken.mp3",false,false,true,12700,12700,"")
+set soundStr[41]=CreateSound("Sound\\Music\\mp3Music\\Goku\\Kaioken-jap.mp3",false,false,true,12700,12700,"")
+set soundStr[42]=CreateSound("Sound\\Music\\mp3Music\\Kaiokenx10.mp3",false,false,true,12700,12700,"")
+set soundStr[43]=CreateSound("Sound\\Music\\mp3Music\\Goku\\Kaiokenx10-jap.mp3",false,false,true,12700,12700,"")
+set soundStr[44]=CreateSound("Sound\\Music\\mp3Music\\kamehameha.mp3",false,false,true,12700,12700,"")
+set soundStr[45]=CreateSound("Sound\\Music\\mp3Music\\Goku\\kamehameha-jap.mp3",false,false,true,12700,12700,"")
+set soundStr[46]=CreateSound("Sound\\Music\\mp3Music\\kamehameha_fire2.wav",false,false,true,12700,12700,"")
+set soundStr[47]=CreateSound("Sound\\Music\\mp3Music\\Hit.wav",false,false,true,12700,12700,"")
+set soundStr[48]=CreateSound("Sound\\Music\\mp3Music\\10xKamehameha.mp3",false,false,true,12700,12700,"")
+set soundStr[49]=CreateSound("Sound\\Music\\mp3Music\\Goku\\10xKamehameha-jap.mp3",false,false,true,12700,12700,"")
+set soundStr[50]=CreateSound("Sound\\Music\\mp3Music\\SuperKamehamehaCharge.mp3",false,false,true,12700,12700,"")
+set soundStr[51]=CreateSound("Sound\\Music\\mp3Music\\Goku\\SuperKamehamehaCharge-jap.mp3",false,false,true,12700,12700,"")
+set soundStr[52]=CreateSound("Sound\\Music\\mp3Music\\GokuOverHere.mp3",false,false,true,12700,12700,"")
+set soundStr[53]=CreateSound("Sound\\Music\\mp3Music\\Goku\\GokuOverHere-jap.mp3",false,false,true,12700,12700,"")
+set soundStr[54]=CreateSound("Sound\\Music\\mp3Music\\Shunkainido.mp3",false,false,true,12700,12700,"")
+set soundStr[55]=CreateSound("Sound\\Music\\mp3Music\\SuperKamehamehaFire.mp3",false,false,true,12700,12700,"")
+set soundStr[56]=CreateSound("Sound\\Music\\mp3Music\\Goku\\SuperKamehamehaFire-jap.mp3",false,false,true,12700,12700,"")
+set soundStr[57]=CreateSound("Sound\\Music\\mp3Music\\MeteorSmash1.mp3",false,false,true,12700,12700,"")
+set soundStr[58]=CreateSound("Sound\\Music\\mp3Music\\Goku\\MeteorSmash1-jap.mp3",false,false,true,12700,12700,"")
+set soundStr[59]=CreateSound("Sound\\Music\\mp3Music\\MeteorSmash1Blue.mp3",false,false,true,12700,12700,"")
+set soundStr[60]=CreateSound("Sound\\Music\\mp3Music\\MeteorSmash2.mp3",false,false,true,12700,12700,"")
+set soundStr[61]=CreateSound("Sound\\Music\\mp3Music\\MeteorSmash3.mp3",false,false,true,12700,12700,"")
+set soundStr[62]=CreateSound("Sound\\Music\\mp3Music\\Goku\\MeteorSmash3-jap.mp3",false,false,true,12700,12700,"")
+set soundStr[63]=CreateSound("Sound\\Music\\mp3Music\\MeteorSmash4.mp3",false,false,true,12700,12700,"")
+set soundStr[64]=CreateSound("Sound\\Music\\mp3Music\\MeteorSmash5.mp3",false,false,true,12700,12700,"")
+set soundStr[65]=CreateSound("Sound\\Music\\mp3Music\\Goku\\MeteorSmash5-jap.mp3",false,false,true,12700,12700,"")
+set soundStr[66]=CreateSound("Sound\\Music\\mp3Music\\MeteorSmash6.mp3",false,false,true,12700,12700,"")
+set soundStr[67]=CreateSound("Sound\\Music\\mp3Music\\Goku\\MeteorSmash6-jap.mp3",false,false,true,12700,12700,"")
 loop
 set i=i+1
 call StartSound(soundStr[i])
-exitwhen i>39
+exitwhen i>67
 endloop
 call TriggerSleepAction(0)
 set i=0
 loop
 set i=i+1
 call StopSound(soundStr[i],false,false)
-exitwhen i>39
+exitwhen i>67
 endloop
 endfunction
 function InitTrig_VoicePreload takes nothing returns nothing
@@ -46278,9 +46306,7 @@ call UnitApplyTimedLife(CreateUnit(p,'e0C6',x,y,(a*bj_RADTODEG)),1,4)
 call UnitApplyTimedLife(CreateUnit(p,'e0C7',x,y,(a*bj_RADTODEG)),1,6)
 call ShakeCamera(0.5,20)
 call SetUnitTimeScale(u,1)
-set soundplay=CreateSound("Sound\\Music\\mp3Music\\Hit.wav",false,false,true,12700,12700,"")
-call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+call StartSound(soundStr[47])
 call SetUnitInvulnerable(u,false)
 call PauseUnit(u,false)
 call RemoveUnit(l__d)
@@ -56991,9 +57017,7 @@ call UnitApplyTimedLife(CreateUnit(p,'e096',x1,y1,0),1,3)
 call UnitApplyTimedLife(CreateUnit(p,'e097',x1,y1,0),1,3)
 call UnitApplyTimedLife(CreateUnit(p,'e098',x1,y1,0),1,3)
 call UnitApplyTimedLife(CreateUnit(p,'e099',x1,y1,0),1,3)
-set soundplay=CreateSound("Sound\\Music\\mp3Music\\Hit.wav",false,false,true,12700,12700,"")
-call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+call StartSound(soundStr[47])
 call FlushChildHashtable(h,id)
 call PauseTimer(t)
 call DestroyTimer(t)
@@ -58113,9 +58137,7 @@ call UnitApplyTimedLife(CreateUnit(p,'e096',x1,y1,0),1,3)
 call UnitApplyTimedLife(CreateUnit(p,'e097',x1,y1,0),1,3)
 call UnitApplyTimedLife(CreateUnit(p,'e098',x1,y1,0),1,3)
 call UnitApplyTimedLife(CreateUnit(p,'e099',x1,y1,0),1,3)
-set soundplay=CreateSound("Sound\\Music\\mp3Music\\Hit.wav",false,false,true,12700,12700,"")
-call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+call StartSound(soundStr[47])
 call FlushChildHashtable(h,id)
 call PauseTimer(t)
 call DestroyTimer(t)
@@ -64274,8 +64296,6 @@ call StartSound(soundStr[27])
 else
 call StartSound(soundStr[28])
 endif
-call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
 call SetUnitAnimationByIndex(u,166)
 call PauseUnit(u,true)
 call SetUnitInvulnerable(u,true)
@@ -64715,9 +64735,7 @@ call UnitApplyTimedLife(CreateUnit(p,'e0CD',x,y,(a*bj_RADTODEG)),1,3)
 // call UnitApplyTimedLife(CreateUnit(p,'e0C7',x,y,(a*bj_RADTODEG)),1,6)
 endif
 endif
-set soundplay=CreateSound("Sound\\Music\\mp3Music\\Hit.wav",false,false,true,12700,12700,"")
-call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+call StartSound(soundStr[47])
 call UnitApplyTimedLife(l__d,1,0.5)
 call SetUnitAnimationByIndex(l__d,1)
 call SetDoodadTimeScale(LoadDoodadHandle(h,id,13),1)
@@ -64864,20 +64882,16 @@ if time==0.1 then
     call SetUnitTimeScale(u,0.27)
     if LoadReal(HH,idp,VariationQHash)==4 then
         if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
-            set soundplay=CreateSound("Sound\\Music\\mp3Music\\10xKamehameha.mp3",false,false,true,12700,12700,"")
+            call StartSound(soundStr[48])
         else
-            set soundplay=CreateSound("Sound\\Music\\mp3Music\\Goku\\10xKamehameha-jap.mp3",false,false,true,12700,12700,"")
+            call StartSound(soundStr[49])
         endif
-        call StartSound(soundplay)
-        call KillSoundWhenDone(soundplay)
     else
         if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
-            set soundplay=CreateSound("Sound\\Music\\mp3Music\\SuperKamehamehaCharge.mp3",false,false,true,12700,12700,"")
+            call StartSound(soundStr[50])
         else
-            set soundplay=CreateSound("Sound\\Music\\mp3Music\\Goku\\SuperKamehamehaCharge-jap.mp3",false,false,true,12700,12700,"")
+            call StartSound(soundStr[51])
         endif
-        call StartSound(soundplay)
-        call KillSoundWhenDone(soundplay)
     endif
 endif
 if time==2.1 then
@@ -64896,16 +64910,12 @@ if time==2.1 then
         call SetUnitXY_1(u,GetUnitX(LoadUnitHandle(HH,GetHandleId(p),WarpKamehamehaTargetHash))+160*Cos(a),GetUnitY(LoadUnitHandle(HH,GetHandleId(p),WarpKamehamehaTargetHash))+160*Sin(a), false)
         call DestroyEffect(AddSpecialEffect("war3mapImported\\BlackBlink.mdx",GetUnitX(LoadUnitHandle(HH,GetHandleId(p),WarpKamehamehaTargetHash))+160*Cos(a),GetUnitY(LoadUnitHandle(HH,GetHandleId(p),WarpKamehamehaTargetHash))+160*Sin(a)))
         endif
-        set soundplay=CreateSound("Sound\\Music\\mp3Music\\Shunkainido.mp3",false,false,true,12700,12700,"")
-        call StartSound(soundplay)
-        call KillSoundWhenDone(soundplay)
+        call StartSound(soundStr[54])
         if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
-        set soundplay=CreateSound("Sound\\Music\\mp3Music\\GokuOverHere.mp3",false,false,true,12700,12700,"")
+        call StartSound(soundStr[52])
         else
-        set soundplay=CreateSound("Sound\\Music\\mp3Music\\Goku\\GokuOverHere-jap.mp3",false,false,true,12700,12700,"")
+        call StartSound(soundStr[53])
         endif
-        call StartSound(soundplay)
-        call KillSoundWhenDone(soundplay)
     endif
     set i=0
     loop
@@ -64960,15 +64970,11 @@ if time==2.4 then
     call PauseUnit(u, true)
     call SetUnitTimeScale(u,0)
     if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
-    set soundplay=CreateSound("Sound\\Music\\mp3Music\\SuperKamehamehaFire.mp3",false,false,true,12700,12700,"")
+    call StartSound(soundStr[55])
     else
-    set soundplay=CreateSound("Sound\\Music\\mp3Music\\Goku\\SuperKamehamehaFire-jap.mp3",false,false,true,12700,12700,"")
+    call StartSound(soundStr[56])
     endif
-    call StartSound(soundplay)
-    call KillSoundWhenDone(soundplay)
-    set soundplay=CreateSound("Sound\\Music\\mp3Music\\kamehameha_fire2.wav",false,false,true,12700,12700,"")
-    call StartSound(soundplay)
-    call KillSoundWhenDone(soundplay)
+    call StartSound(soundStr[46])
     set kamewave=CreateDoodad('D12R',x+80*Cos(a),y+80*Sin(a),a*bj_RADTODEG-180,1.3,1)
     call SetDoodadZ(kamewave,75)
     if LoadReal(HH,GetHandleId(GetOwningPlayer(u)),VariationQHash)==4 then
@@ -65090,9 +65096,7 @@ call UnitApplyTimedLife(CreateUnit(p,'e0CD',x,y,(a*bj_RADTODEG)),1,3)
 // call UnitApplyTimedLife(CreateUnit(p,'e0C6',x,y,(a*bj_RADTODEG)),1,4)
 // call UnitApplyTimedLife(CreateUnit(p,'e0C7',x,y,(a*bj_RADTODEG)),1,6)
 endif
-set soundplay=CreateSound("Sound\\Music\\mp3Music\\Hit.wav",false,false,true,12700,12700,"")
-call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+call StartSound(soundStr[47])
 call UnitApplyTimedLife(l__d,1,0.5)
 call SetUnitAnimationByIndex(l__d,1)
 call SetDoodadTimeScale(LoadDoodadHandle(h,id,13),1)
@@ -65163,12 +65167,10 @@ if time==0.1 then
     call RemoveEffect(AddSpecialEffectTarget("KamehamehaChargeBlue.mdx", u, "hand left"), 1, true, CreateTimer())
     call SetUnitTimeScale(u,1)
     if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
-    set soundplay=CreateSound("Sound\\Music\\mp3Music\\Kamehameha.mp3",false,false,true,12700,12700,"")
+    call StartSound(soundStr[44])
     else
-    set soundplay=CreateSound("Sound\\Music\\mp3Music\\Goku\\Kamehameha-jap.mp3",false,false,true,12700,12700,"")
+    call StartSound(soundStr[45])
     endif
-    call StartSound(soundplay)
-    call KillSoundWhenDone(soundplay)
 endif
 if time==0.7 then
     set i=0
@@ -65185,9 +65187,7 @@ if time==0.8 then
     call SaveReal(h,id,4,GetUnitFacing(u)*bj_DEGTORAD)
     call PauseUnit(u, true)
     call SetUnitTimeScale(u,0)
-    set soundplay=CreateSound("Sound\\Music\\mp3Music\\kamehameha_fire2.wav",false,false,true,12700,12700,"")
-    call StartSound(soundplay)
-    call KillSoundWhenDone(soundplay)
+    call StartSound(soundStr[46])
     set kamewave=CreateDoodad('D12R',x+80*Cos(a),y+80*Sin(a),a*bj_RADTODEG-180,0.8,1)
     call SetDoodadZ(kamewave,75)
     call SetDoodadAnimationByIndex(kamewave,2)
@@ -65257,22 +65257,18 @@ if LoadReal(HH,idp,VariationQHash)==2 then
     call SaveInteger(HH,idp,KaiokenHash,LoadInteger(HH,idp,KaiokenHash)+1)
     call SaveReal(h,id,12,-0.9)
     if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
-        set soundplay=CreateSound("Sound\\Music\\mp3Music\\Kaioken.mp3",false,false,true,12700,12700,"")
+        call StartSound(soundStr[40])
     else
-        set soundplay=CreateSound("Sound\\Music\\mp3Music\\Goku\\Kaioken-jap.mp3",false,false,true,12700,12700,"")
+        call StartSound(soundStr[41])
     endif
-    call StartSound(soundplay)
-    call KillSoundWhenDone(soundplay)
 elseif LoadReal(HH,idp,VariationQHash)==3 then
     call SaveInteger(HH,idp,KaiokenHash,LoadInteger(HH,idp,KaiokenHash)+1)
     call SaveReal(h,id,12,-0.9)
     if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
-        set soundplay=CreateSound("Sound\\Music\\mp3Music\\Kaiokenx10.mp3",false,false,true,12700,12700,"")
+        call StartSound(soundStr[42])
     else
-        set soundplay=CreateSound("Sound\\Music\\mp3Music\\Goku\\Kaiokenx10-jap.mp3",false,false,true,12700,12700,"")
+        call StartSound(soundStr[43])
     endif
-    call StartSound(soundplay)
-    call KillSoundWhenDone(soundplay)
 else
     call SetUnitVertexColor(u,255,255,255,255)
 endif
@@ -65367,12 +65363,10 @@ if GetWidgetLife(c)>0 and GetWidgetLife(u)>0 then
             call Push3(c,55,a,580,"")
             call SetUnitFlyHeight(c,350,800)
             if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
-                set soundplay=CreateSound("Sound\\Music\\mp3Music\\MeteorSmash3.mp3",false,false,true,12700,12700,"")
+                call StartSound(soundStr[61])
             else
-                set soundplay=CreateSound("Sound\\Music\\mp3Music\\Goku\\MeteorSmash3-jap.mp3",false,false,true,12700,12700,"")
+                call StartSound(soundStr[62])
             endif
-            call StartSound(soundplay)
-            call KillSoundWhenDone(soundplay)
         endif
         if time==0.81 then
             call SetUnitFlyHeight(u,GetUnitFlyHeight(c),0)
@@ -65410,9 +65404,7 @@ if GetWidgetLife(c)>0 and GetWidgetLife(u)>0 then
             call SetSpecialEffectScale(EFF , GetUnitFlyHeight(c)+40)
             call SetSpecialEffectVertexColour(EFF,255,255,255,120)
             call RemoveEffect(EFF,1,true,CreateTimer())
-            set soundplay=CreateSound("Sound\\Music\\mp3Music\\MeteorSmash4.mp3",false,false,true,12700,12700,"")
-            call StartSound(soundplay)
-            call KillSoundWhenDone(soundplay)
+            call StartSound(soundStr[63])
         endif
         if time==1.14 then
             call SetUnitFlyHeight(u,GetUnitFlyHeight(c),0)
@@ -65435,12 +65427,10 @@ if GetWidgetLife(c)>0 and GetWidgetLife(u)>0 then
         if time==1.26 or time==1.41 or time==1.56 then
             if time==1.26 then
                 if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
-                    set soundplay=CreateSound("Sound\\Music\\mp3Music\\MeteorSmash5.mp3",false,false,true,12700,12700,"")
+                    call StartSound(soundStr[64])
                 else
-                    set soundplay=CreateSound("Sound\\Music\\mp3Music\\Goku\\MeteorSmash5-jap.mp3",false,false,true,12700,12700,"")
+                    call StartSound(soundStr[65])
                 endif
-                call StartSound(soundplay)
-                call KillSoundWhenDone(soundplay)
             endif
             call SetUnitXY_1(u,x+5*Cos(a),y+5*Sin(a), false)
             call SetUnitXY_1(c,x1+20*Cos(a),y1+20*Sin(a), false)
@@ -65474,12 +65464,10 @@ if GetWidgetLife(c)>0 and GetWidgetLife(u)>0 then
         if time==1.8 then
             call Push9(c,55,a,1100,2700)
             if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
-                set soundplay=CreateSound("Sound\\Music\\mp3Music\\MeteorSmash6.mp3",false,false,true,12700,12700,"")
+                call StartSound(soundStr[66])
             else
-                set soundplay=CreateSound("Sound\\Music\\mp3Music\\Goku\\MeteorSmash6-jap.mp3",false,false,true,12700,12700,"")
+                call StartSound(soundStr[67])
             endif
-            call StartSound(soundplay)
-            call KillSoundWhenDone(soundplay)
             set EFF=AddSpecialEffect("war3mapImported\\CF2.mdl", x1,y1)
             call SetSpecialEffectOrientation(EFF,a*bj_RADTODEG,-45,0)
             call SetSpecialEffectZ(EFF, GetUnitFlyHeight(c))
@@ -65624,15 +65612,13 @@ if GetWidgetLife(c)>0 and GetWidgetLife(u)>0 and time<4 then
         endif
         if LoadReal(HH,idp,VariationWHash)!=2 then
             if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
-                set soundplay=CreateSound("Sound\\Music\\mp3Music\\MeteorSmash1.mp3",false,false,true,12700,12700,"")
+                call StartSound(soundStr[57])
             else
-                set soundplay=CreateSound("Sound\\Music\\mp3Music\\Goku\\MeteorSmash1-jap.mp3",false,false,true,12700,12700,"")
+                call StartSound(soundStr[58])
             endif
         else
-            set soundplay=CreateSound("Sound\\Music\\mp3Music\\MeteorSmash1Blue.mp3",false,false,true,12700,12700,"")
+            call StartSound(soundStr[59])
         endif
-        call StartSound(soundplay)
-        call KillSoundWhenDone(soundplay)
     endif
     if time<0.3 then
         if time==0.03 then
@@ -65685,9 +65671,7 @@ if GetWidgetLife(c)>0 and GetWidgetLife(u)>0 and time<4 then
                 call SetSpecialEffectScale(EFF , GetUnitFlyHeight(c)+40)
                 call SetSpecialEffectVertexColour(EFF,255,255,255,120)
                 call RemoveEffect(EFF,1,true,CreateTimer())
-                set soundplay=CreateSound("Sound\\Music\\mp3Music\\MeteorSmash2.mp3",false,false,true,12700,12700,"")
-                call StartSound(soundplay)
-                call KillSoundWhenDone(soundplay)
+                call StartSound(soundStr[60])
                 call TimerStart(t,0.03,true,function MeteorSmashCast3)
             else
                 call SetUnitFlyHeight(u,0,0)
@@ -65751,22 +65735,18 @@ if LoadReal(HH,idp,VariationWHash)==1 then
     call SaveInteger(HH,idp,KaiokenHash,LoadInteger(HH,idp,KaiokenHash)+1)
     call SaveReal(HH,id,2,-0.9)
     if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
-        set soundplay=CreateSound("Sound\\Music\\mp3Music\\Kaioken.mp3",false,false,true,12700,12700,"")
+        call StartSound(soundStr[41])
     else
-        set soundplay=CreateSound("Sound\\Music\\mp3Music\\Goku\\Kaioken-jap.mp3",false,false,true,12700,12700,"")
+        call StartSound(soundStr[42])
     endif
-    call StartSound(soundplay)
-    call KillSoundWhenDone(soundplay)
 elseif LoadReal(HH,idp,VariationWHash)==2 then
     call SaveInteger(HH,idp,KaiokenHash,LoadInteger(HH,idp,KaiokenHash)+1)
     call SaveReal(HH,id,2,-0.9)
     if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
-        set soundplay=CreateSound("Sound\\Music\\mp3Music\\Kaiokenx10.mp3",false,false,true,12700,12700,"")
+        call StartSound(soundStr[43])
     else
-        set soundplay=CreateSound("Sound\\Music\\mp3Music\\Goku\\Kaiokenx10-jap.mp3",false,false,true,12700,12700,"")
+        call StartSound(soundStr[44])
     endif
-    call StartSound(soundplay)
-    call KillSoundWhenDone(soundplay)
 else
     call SetUnitVertexColor(u,255,255,255,255)
 endif
@@ -66893,9 +66873,7 @@ if time<0.630 and GetAbilityIntegerLevelField(GetUnitAbility(u,'GKR1'), ABILITY_
             set EFF=AddSpecialEffect("war3mapImported\\BlackBlink.mdx", GetUnitX(u), GetUnitY(u))
             call SetSpecialEffectZ(EFF, GetUnitFlyHeight(u))
             call DestroyEffect(EFF)
-            set soundplay=CreateSound("Sound\\Music\\mp3Music\\Shunkainido.mp3",false,false,true,12700,12700,"")
-            call StartSound(soundplay)
-            call KillSoundWhenDone(soundplay)
+            call StartSound(soundStr[54])
             set a=Atan2(GetUnitY(u)-y3,GetUnitX(u)-x3)
             call SaveReal(h,id,4,a)
             call SetUnitFacingInstant(u,a*bj_RADTODEG)
@@ -66969,9 +66947,7 @@ if time<0.630 and GetAbilityIntegerLevelField(GetUnitAbility(u,'GKR1'), ABILITY_
             set EFF=AddSpecialEffect("war3mapImported\\BlackBlink.mdx", GetUnitX(u), GetUnitY(u))
             call SetSpecialEffectZ(EFF, GetUnitFlyHeight(u))
             call DestroyEffect(EFF)
-            set soundplay=CreateSound("Sound\\Music\\mp3Music\\Shunkainido.mp3",false,false,true,12700,12700,"")
-            call StartSound(soundplay)
-            call KillSoundWhenDone(soundplay)
+            call StartSound(soundStr[54])
             set a=Atan2(GetUnitY(u)-y3,GetUnitX(u)-x3)
             call SaveReal(h,id,4,a)
             call SetUnitFacingInstant(u,a*bj_RADTODEG)
@@ -67879,9 +67855,7 @@ call UnitApplyTimedLife(CreateUnit(p,'e0DF',x,y,(a*bj_RADTODEG)),1,3)
 call UnitApplyTimedLife(CreateUnit(p,'e0DE',x,y,(a*bj_RADTODEG)),1,3)
 call UnitApplyTimedLife(CreateUnit(p,'e0DD',x,y,(a*bj_RADTODEG)),1,3)
 call UnitApplyTimedLife(CreateUnit(p,'e0C7',x,y,(a*bj_RADTODEG)),1,6)
-set soundplay=CreateSound("Sound\\Music\\mp3Music\\Hit.wav",false,false,true,12700,12700,"")
-call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+call StartSound(soundStr[47])
 call RemoveUnit(l__d)
 call FlushChildHashtable(h,GetHandleId(g))
 call DestroyGroup(g)
@@ -67997,9 +67971,7 @@ call UnitApplyTimedLife(CreateUnit(p,'e06O',x1,y1,0),1,3)
 call UnitApplyTimedLife(CreateUnit(p,'e06N',x1,y1,0),1,3)
 call DestroyEffect(AddSpecialEffect("war3mapImported\\explode.mdx",x1,y1))
 call DestroyEffect(AddSpecialEffect("war3mapImported\\SuperBigExplosion.mdx",x1,y1))
-set soundplay=CreateSound("Sound\\Music\\mp3Music\\Hit.wav",false,false,true,12700,12700,"")
-call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+call StartSound(soundStr[47])
 call GroupEnumUnitsInRange(DG,x1,y1,400,Base)
 loop
 set E=FirstOfGroup(DG)
@@ -70746,9 +70718,7 @@ call SetUnitInvulnerable(LoadUnitHandle(h,id,10),false)
 call SetUnitFlyHeight(LoadUnitHandle(h,id,10),0,300)
 call UnitApplyTimedLife(CreateUnit(p,'e0EB',x1,y1,GetRandomReal(0,359)),'BHwe',3)
 call UnitApplyTimedLife(CreateUnit(p,'e0EN',x1,y1,GetRandomReal(0,359)),'BHwe',3)
-set soundplay=CreateSound("Sound\\Music\\mp3Music\\Hit.wav",false,false,true,12700,12700,"")
-call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+call StartSound(soundStr[47])
 set EFF=AddSpecialEffect("[doft]az_tormentedsoul_t1.mdl", x1,y1)
 call SetSpecialEffectScale(EFF , 2)
 call DestroyEffect(EFF)
@@ -70839,9 +70809,7 @@ call SetUnitInvulnerable(LoadUnitHandle(h,id,10),false)
 call SetUnitFlyHeight(LoadUnitHandle(h,id,10),0,300)
 call UnitApplyTimedLife(CreateUnit(p,'e0EB',x1,y1,GetRandomReal(0,359)),'BHwe',3)
 call UnitApplyTimedLife(CreateUnit(p,'e0EN',x1,y1,GetRandomReal(0,359)),'BHwe',3)
-set soundplay=CreateSound("Sound\\Music\\mp3Music\\Hit.wav",false,false,true,12700,12700,"")
-call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+call StartSound(soundStr[47])
 call RemoveUnit(l__d)
 set EFF=AddSpecialEffect("[doft]az_tormentedsoul_t1.mdl", x1,y1)
 call SetSpecialEffectScale(EFF , 2)
@@ -71991,9 +71959,7 @@ else
 call ShakeCamera(3,50)
 call SetUnitFlyHeight(l__d,0,0)
 call StopSound(LoadSoundHandle(h,id,16),true,true)
-set soundplay=CreateSound("Sound\\Music\\mp3Music\\Hit.wav",false,false,true,12700,12700,"")
-call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+call StartSound(soundStr[47])
 call GroupEnumUnitsInRange(DG,x1,y1,1200,Base)
 loop
 set E=FirstOfGroup(DG)
@@ -72535,9 +72501,7 @@ call UnitApplyTimedLife(CreateUnit(p,'e0DF',x,y,(a*bj_RADTODEG)),1,3)
 call UnitApplyTimedLife(CreateUnit(p,'e0DE',x,y,(a*bj_RADTODEG)),1,3)
 call UnitApplyTimedLife(CreateUnit(p,'e0DD',x,y,(a*bj_RADTODEG)),1,3)
 call UnitApplyTimedLife(CreateUnit(p,'e0C7',x,y,(a*bj_RADTODEG)),1,6)
-set soundplay=CreateSound("Sound\\Music\\mp3Music\\Hit.wav",false,false,true,12700,12700,"")
-call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+call StartSound(soundStr[47])
 call RemoveUnit(l__d)
 call FlushChildHashtable(h,GetHandleId(g))
 call DestroyGroup(g)
@@ -72626,9 +72590,7 @@ call UnitApplyTimedLife(CreateUnit(p,'e096',x1,y1,0),1,3)
 call UnitApplyTimedLife(CreateUnit(p,'e097',x1,y1,0),1,3)
 call UnitApplyTimedLife(CreateUnit(p,'e098',x1,y1,0),1,3)
 call UnitApplyTimedLife(CreateUnit(p,'e099',x1,y1,0),1,3)
-set soundplay=CreateSound("Sound\\Music\\mp3Music\\Hit.wav",false,false,true,12700,12700,"")
-call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+call StartSound(soundStr[47])
 call FlushChildHashtable(h,id)
 call PauseTimer(t)
 call DestroyTimer(t)
@@ -79478,9 +79440,7 @@ call SetUnitXY_1(l__d,x,y, false)
 call UnitApplyTimedLife(CreateUnit(p,0x65304A32,x,y,GetRandomReal(0,359)),1,3)
 call UnitApplyTimedLife(CreateUnit(p,0x65304A35,x,y,GetRandomReal(0,359)),1,4)
 if GetUnitTypeId(u)=='H013' then
-set soundplay=CreateSound("Sound\\Music\\mp3Music\\Hit.wav",false,false,true,12700,12700,"")
-call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+call StartSound(soundStr[47])
 call UnitApplyTimedLife(CreateUnit(p,0x65304A34,x,y,GetRandomReal(0,359)),1,4)
 call UnitApplyTimedLife(CreateUnit(p,0x65304A33,x,y,GetRandomReal(0,359)),1,4)
 else
@@ -82697,9 +82657,7 @@ call UnitApplyTimedLife(CreateUnit(p,'e0LA',x,y,(a*bj_RADTODEG)),1,3)
 call UnitApplyTimedLife(CreateUnit(p,'e0L8',x,y,(a*bj_RADTODEG)),1,3)
 call UnitApplyTimedLife(CreateUnit(p,'e0L9',x,y,(a*bj_RADTODEG)),1,3)
 call UnitApplyTimedLife(CreateUnit(p,'e0C7',x,y,(a*bj_RADTODEG)),1,6)
-set soundplay=CreateSound("Sound\\Music\\mp3Music\\Hit.wav",false,false,true,12700,12700,"")
-call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+call StartSound(soundStr[47])
 call RemoveUnit(l__d)
 call FlushChildHashtable(h,GetHandleId(g))
 call DestroyGroup(g)
@@ -83427,9 +83385,7 @@ call SaveBoolean(HH,GetHandleId(l__d),TARGET_ABILITY,false)
 call myCustomDamage(Hero[idu],l__d,dmg,false,false,null,null,null)
 call SetControlToUnit(Hero[idu],l__d,1,"stun")
 call ShakeCamera(0.5,20)
-set soundplay=CreateSound("Sound\\Music\\mp3Music\\Hit.wav",false,false,true,12700,12700,"")
-call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+call StartSound(soundStr[47])
 call UnitApplyTimedLife(CreateUnit(p,'e0NJ',x,y,GetRandomReal(0,359)),1,3)
 //call UnitApplyTimedLife(CreateUnit(p,'e0NK',x,y,GetRandomReal(0,359)),1,6)
 call UnitApplyTimedLife(CreateUnit(p,'e0NI',x,y,GetRandomReal(0,359)),1,3)
@@ -84358,9 +84314,7 @@ call UnitApplyTimedLife(CreateUnit(p,'e0DL',x,y,GetRandomReal(0,359)),1,3)
 call UnitApplyTimedLife(CreateUnit(p,'e0DK',x,y,GetRandomReal(0,359)),1,3)
 call UnitApplyTimedLife(CreateUnit(p,'e0DJ',x,y,GetRandomReal(0,359)),1,3)
 call UnitApplyTimedLife(CreateUnit(p,'e0KO',x,y,GetRandomReal(0,359)),1,4)
-set soundplay=CreateSound("Sound\\Music\\mp3Music\\Hit.wav",false,false,true,12700,12700,"")
-call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+call StartSound(soundStr[47])
 call RemoveUnit(l__d)
 call FlushChildHashtable(h,GetHandleId(g))
 call DestroyGroup(g)
@@ -85268,9 +85222,7 @@ call SaveUnitHandle(h,l__idg,ide,E)
 endif
 call GroupRemoveUnit(g,E)
 endloop
-set soundplay=CreateSound("Sound\\Music\\mp3Music\\Hit.wav",false,false,true,12700,12700,"")
-call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+call StartSound(soundStr[47])
 call UnitApplyTimedLife(CreateUnit(p,'e0C4',x1,y1,(a*bj_RADTODEG)),1,3)
 call UnitApplyTimedLife(CreateUnit(p,'e0C6',x1,y1,(a*bj_RADTODEG)),1,3)
 set n=CreateUnit(p,'e0NB',x1,y1,a*bj_RADTODEG)
@@ -92302,9 +92254,7 @@ else
                 call SetWidgetMana(u, GetWidgetMana(u)-GetWidgetMaxMana(u)*0.20)
                 call DestroyEffect(AddSpecialEffect("war3mapImported\\BlackBlink.mdx",x,y))
                 call SetUnitXY_1(u,x1,y1, false)
-                set soundplay=CreateSound("Sound\\Music\\mp3Music\\Shunkainido.mp3",false,false,true,12700,12700,"")
-                call StartSound(soundplay)
-                call KillSoundWhenDone(soundplay)
+                call StartSound(soundStr[54])
                 if p==GetLocalPlayer()then
                         call SetCameraPosition(x1,y1)
                 endif
@@ -92751,9 +92701,7 @@ call UnitApplyTimedLife(CreateUnit(p,'e0CC',x,y,(a*bj_RADTODEG)),1,3)
 call UnitApplyTimedLife(CreateUnit(p,'e0CD',x,y,(a*bj_RADTODEG)),1,3)
 call UnitApplyTimedLife(CreateUnit(p,'e0C6',x,y,(a*bj_RADTODEG)),1,4)
 call UnitApplyTimedLife(CreateUnit(p,'e0C7',x,y,(a*bj_RADTODEG)),1,6)
-set soundplay=CreateSound("Sound\\Music\\mp3Music\\Hit.wav",false,false,true,12700,12700,"")
-call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+call StartSound(soundStr[47])
 call myCustomDamage(u,c,(GetUnitAbilityLevel(u,'A0RE')+1)*GetHeroAgi(u,true)+50,false,false,null,null,null)
 call SetControlToUnit(u,c,2, "stun")
 call RemoveUnit(l__d)
@@ -93162,9 +93110,7 @@ endloop
 else
 set x=x+l__d*Cos(a)
 set y=y+l__d*Sin(a)
-set soundplay=CreateSound("Sound\\Music\\mp3Music\\Hit.wav",false,false,true,12700,12700,"")
-call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+call StartSound(soundStr[47])
 call UnitApplyTimedLife(CreateUnit(p,'e0NJ',x,y,GetRandomReal(0,359)),1,3)
 //call UnitApplyTimedLife(CreateUnit(p,'e0NK',x,y,GetRandomReal(0,359)),1,5)
 call UnitApplyTimedLife(CreateUnit(p,'e0NI',x,y,GetRandomReal(0,359)),1,3)
@@ -96055,9 +96001,7 @@ call UnitApplyTimedLife(CreateUnit(p,'e0KO',x1,y1,GetRandomReal(0,359)),1,4)
 set n=CreateUnit(p,'e0F1',x,y,GetRandomReal(0,359))
 call UnitApplyTimedLife(n,1,4)
 call SetUnitTimeScale(n,2)
-set soundplay=CreateSound("Sound\\Music\\mp3Music\\Hit.wav",false,false,true,12700,12700,"")
-call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+call StartSound(soundStr[47])
 call FlushChildHashtable(h,id)
 call PauseTimer(t)
 call DestroyTimer(t)
@@ -96797,9 +96741,7 @@ call UnitApplyTimedLife(CreateUnit(p,0x65305153,x,y,(a*bj_RADTODEG)),1,3)
 call UnitApplyTimedLife(CreateUnit(p,0x65305154,x,y,(a*bj_RADTODEG)),1,3)
 call UnitApplyTimedLife(CreateUnit(p,'e0C7',x,y,(a*bj_RADTODEG)),1,6)
 call ShakeCamera(0.5,20)
-set soundplay=CreateSound("Sound\\Music\\mp3Music\\Hit.wav",false,false,true,12700,12700,"")
-call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+call StartSound(soundStr[47])
 call RemoveUnit(l__d)
 call PauseUnit(u,false)
 call SetUnitInvulnerable(u,false)
@@ -103503,9 +103445,7 @@ call SetUnitScale(n,1.5,1.5,1.5)
 set n=CreateUnit(p,'e0C7',x,y,(a*bj_RADTODEG))
 call UnitApplyTimedLife(n,1,6)
 call SetUnitScale(n,0.375,0.375,0.375)
-set soundplay=CreateSound("Sound\\Music\\mp3Music\\Hit.wav",false,false,true,12700,12700,"")
-call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+call StartSound(soundStr[47])
 call RemoveUnit(l__d)
 //call UnitRemoveAbility(u,'A0NP')
 call PauseTimer(t)
@@ -103763,9 +103703,7 @@ call UnitApplyTimedLife(CreateUnit(p,'e0NJ',x,y,GetRandomReal(0,359)),1,3)
 call UnitApplyTimedLife(CreateUnit(p,'e0NI',x,y,GetRandomReal(0,359)),1,3)
 call UnitApplyTimedLife(CreateUnit(p,'e0NL',x,y,GetRandomReal(0,359)),1,3)
 call UnitApplyTimedLife(CreateUnit(p,'e0NM',x,y,GetRandomReal(0,359)),1,3)
-set soundplay=CreateSound("Sound\\Music\\mp3Music\\Hit.wav",false,false,true,12700,12700,"")
-call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+call StartSound(soundStr[47])
 call RemoveUnit(l__d)
 call FlushChildHashtable(h,GetHandleId(g))
 call DestroyGroup(g)
