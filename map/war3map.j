@@ -24138,6 +24138,21 @@ set EFF=AddSpecialEffectTarget("MonawkaBanner.mdx",Hero[ip],"origin")
 call SaveEffectHandle(HH,id,StringHash("orig"),EFF)
 endif
 endfunction
+function durkaCond takes nothing returns boolean
+set P=GetTriggerPlayer()
+return GetPlayerName(P)=="PinkieNecro" or GetPlayerName(P)=="knowyourplace" or GetPlayerName(P)=="NecromanseR_RuS" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="Huemasa" or GetPlayerName(P)=="monawka" or GetPlayerName(P)=="GodOfChoice" or GetPlayerName(P)=="kyoka" or GetPlayerName(P)=="Offstay" or GetPlayerName(P)=="tenros" or GetPlayerName(P)=="Antitilt" or GetPlayerName(P)=="Sbt" or GetPlayerName(P)=="reset" or GetPlayerName(P)==AdminNickname
+endfunction
+function durka takes nothing returns nothing
+local integer ip=GetPlayerId(GetTriggerPlayer())
+local integer id=GetHandleId(Hero[ip])
+if GetSpecialEffectModel(LoadEffectHandle(HH,id,StringHash("orig")))=="DurkaBanner.mdx" then
+call DestroyEffect(LoadEffectHandle(HH,id,StringHash("orig")))
+else
+call DestroyEffect(LoadEffectHandle(HH,id,StringHash("orig")))
+set EFF=AddSpecialEffectTarget("DurkaBanner.mdx",Hero[ip],"origin")
+call SaveEffectHandle(HH,id,StringHash("orig"),EFF)
+endif
+endfunction
 function MagistorCond takes nothing returns boolean
 set P=GetTriggerPlayer()
 return GetPlayerName(P)=="PinkieNecro" or GetPlayerName(GetTriggerPlayer())=="knowyourplace"  or GetPlayerName(P)=="NecromanseR_RuS" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="Magistor" or GetPlayerName(P)==AdminNickname
@@ -24168,18 +24183,40 @@ set EFF=AddSpecialEffectTarget("KomelkoBanner.mdx",Hero[ip],"origin")
 call SaveEffectHandle(HH,id,StringHash("orig"),EFF)
 endif
 endfunction
-function AnniehCond takes nothing returns boolean
+function siskiCond takes nothing returns boolean
 set P=GetTriggerPlayer()
 return GetPlayerName(P)=="PinkieNecro" or GetPlayerName(GetTriggerPlayer())=="knowyourplace"  or GetPlayerName(P)=="NecromanseR_RuS" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="Annieh" or GetPlayerName(P)==AdminNickname
 endfunction
-function Annieh takes nothing returns nothing
+function siski1 takes nothing returns nothing
 local integer ip=GetPlayerId(GetTriggerPlayer())
 local integer id=GetHandleId(Hero[ip])
-if GetSpecialEffectModel(LoadEffectHandle(HH,id,StringHash("orig")))=="AnniehBanner.mdx" then
+if GetSpecialEffectModel(LoadEffectHandle(HH,id,StringHash("orig")))=="siski1Banner.mdx" then
 call DestroyEffect(LoadEffectHandle(HH,id,StringHash("orig")))
 else
 call DestroyEffect(LoadEffectHandle(HH,id,StringHash("orig")))
-set EFF=AddSpecialEffectTarget("AnniehBanner.mdx",Hero[ip],"origin")
+set EFF=AddSpecialEffectTarget("siski1Banner.mdx",Hero[ip],"origin")
+call SaveEffectHandle(HH,id,StringHash("orig"),EFF)
+endif
+endfunction
+function siski2 takes nothing returns nothing
+local integer ip=GetPlayerId(GetTriggerPlayer())
+local integer id=GetHandleId(Hero[ip])
+if GetSpecialEffectModel(LoadEffectHandle(HH,id,StringHash("orig")))=="siski2Banner.mdx" then
+call DestroyEffect(LoadEffectHandle(HH,id,StringHash("orig")))
+else
+call DestroyEffect(LoadEffectHandle(HH,id,StringHash("orig")))
+set EFF=AddSpecialEffectTarget("siski2Banner.mdx",Hero[ip],"origin")
+call SaveEffectHandle(HH,id,StringHash("orig"),EFF)
+endif
+endfunction
+function siski3 takes nothing returns nothing
+local integer ip=GetPlayerId(GetTriggerPlayer())
+local integer id=GetHandleId(Hero[ip])
+if GetSpecialEffectModel(LoadEffectHandle(HH,id,StringHash("orig")))=="siski3Banner.mdx" then
+call DestroyEffect(LoadEffectHandle(HH,id,StringHash("orig")))
+else
+call DestroyEffect(LoadEffectHandle(HH,id,StringHash("orig")))
+set EFF=AddSpecialEffectTarget("siski3Banner.mdx",Hero[ip],"origin")
 call SaveEffectHandle(HH,id,StringHash("orig"),EFF)
 endif
 endfunction
@@ -208259,20 +208296,47 @@ set i=0
 set t=CreateTrigger()
 loop
 exitwhen i>=11
+call TriggerRegisterPlayerChatEvent(t,Player(i),"-durka",true)
+set i=i+1
+endloop
+call TriggerAddCondition(t,Condition(function durkaCond))
+call TriggerAddAction(t,function durka)
+set i=0
+set t=CreateTrigger()
+loop
+exitwhen i>=11
+call TriggerRegisterPlayerChatEvent(t,Player(i),"-siski1",true)
+set i=i+1
+endloop
+call TriggerAddCondition(t,Condition(function siskiCond))
+call TriggerAddAction(t,function siski1)
+set i=0
+set t=CreateTrigger()
+loop
+exitwhen i>=11
+call TriggerRegisterPlayerChatEvent(t,Player(i),"-siski2",true)
+set i=i+1
+endloop
+call TriggerAddCondition(t,Condition(function siskiCond))
+call TriggerAddAction(t,function siski2)
+set i=0
+set t=CreateTrigger()
+loop
+exitwhen i>=11
+call TriggerRegisterPlayerChatEvent(t,Player(i),"-siski3",true)
+set i=i+1
+endloop
+call TriggerAddCondition(t,Condition(function siskiCond))
+call TriggerAddAction(t,function siski3)
+set i=0
+set t=CreateTrigger()
+loop
+exitwhen i>=11
 call TriggerRegisterPlayerChatEvent(t,Player(i),"-Magistor",true)
 set i=i+1
 endloop
 call TriggerAddCondition(t,Condition(function MagistorCond))
 call TriggerAddAction(t,function Magistor)
-set i=0
-set t=CreateTrigger()
-loop
-exitwhen i>=11
-call TriggerRegisterPlayerChatEvent(t,Player(i),"-qwerty",true)
-set i=i+1
-endloop
-call TriggerAddCondition(t,Condition(function AnniehCond))
-call TriggerAddAction(t,function Annieh)
 set i=0
 set t=CreateTrigger()
 loop
