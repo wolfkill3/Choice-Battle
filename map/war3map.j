@@ -32060,6 +32060,8 @@ call GroupEnumUnitsOfPlayer(G,Player(i),BuggedBool) //lvlbool
         if Hero[i]!=null then
         call SaveReal(HH,GetHandleId(Darkness[i]),StringHash("darkHP"),LoadReal(HH,GetHandleId(Darkness[i]),StringHash("darkMaxHP")))
 		call SaveInteger(HH,GetHandleId(Hero[i]),StringHash("cold3"),1)
+        call SaveBoolean(HH,GetHandleId(Hero[i]),SS,false)
+        call SaveBoolean(HH,GetHandleId(Hero[i]),SST,false)
 		call UnitRemoveAbility(Hero[i],'A26F')
 		call UnitRemoveAbility(Hero[i],'A25F')
 		call SetUnitState(Hero[i],UNIT_STATE_MANA,GetUnitState(Hero[i],UNIT_STATE_MAX_MANA))
@@ -62310,6 +62312,8 @@ call UnitRemoveAbility(u,'A0HW')
 call SetUnitPathing(u,true)
 call UnitRemoveAbility(u,'A0IX')
 call UnitRemoveAbility(u,'B03A')
+call UnitRemoveAbility(u,'B005')
+call UnitRemoveAbility(u,'B035')
 call SetUnitFlyHeight(u,0,0)
 call ShowAbility2('A2HX',false)
 call ShowAbility2('A0HX',true)
@@ -62340,14 +62344,15 @@ call UnitAddAbility(u,'A0HW')
 call SetUnitFlyHeight(u,GetRandomReal(50,200),0)
 call UnitAddAbility(u,'A0IX')
 call SetUnitTimeScale(u,2)
-call UnitApplyTimedLife(CreateUnit(p,0x65304246,x,y,GetRandomReal(0,359)),1,1)
-call UnitApplyTimedLife(CreateUnit(p,0x65304244,x,y,GetRandomReal(0,359)),1,1)
-call UnitApplyTimedLife(CreateUnit(p,0x65304252,x,y,GetRandomReal(0,359)),1,0.4)
+call UnitApplyTimedLife(CreateUnit(p,'e0BF',x,y,GetRandomReal(0,359)),1,1)
+call UnitApplyTimedLife(CreateUnit(p,'e0BD',x,y,GetRandomReal(0,359)),1,1)
+call UnitApplyTimedLife(CreateUnit(p,'e0BR',x,y,GetRandomReal(0,359)),1,0.4)
 set n=CreateUnit(p,'e0BC',x,y,GetRandomReal(0,359))
 call UnitApplyTimedLife(n,1,0.45)
 call SetUnitTimeScale(n,3)
-call ShowAbility2Timed('A0HX',false,0.3)
-call ShowAbility2Timed('A2HX',true,0.32)
+call ShowAbility2Timed('A0HX',false,0.01)
+call ShowAbility2Timed('A2HX',true,0.03)
+call StartAbilityCooldown(GetUnitAbility(u,'A2HX'),1)
 call UnitAddAbility(u,'JlF1')
 call SaveBoolean(HH,GetHandleId(u),SST,true)
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\Meteor.mp3",false,false,true,12700,12700,"")
@@ -62355,8 +62360,8 @@ call StartSound(soundplay)
 call KillSoundWhenDone(soundplay)
 else
 call SaveBoolean(HH,GetHandleId(u),SST,false)
-call ShowAbility2('A2HX',false)
-call ShowAbility2('A0HX',true)
+call ShowAbility2Timed('A2HX',false,0.01)
+call ShowAbility2Timed('A0HX',true,0.03)
 call UnitRemoveAbility(u,'JlF1')
 endif
 if LoadBoolean(HH,GetHandleId(u),SS)==false then
@@ -131353,6 +131358,7 @@ local timer t=CreateTimer()
 local integer id=GetHandleId(t)
 local unit u=GetTriggerUnit()
 local group g=CreateGroup()
+local group g2=CreateGroup()
 local player p=GetOwningPlayer(u)
 local real x=GetUnitX(u)
 local real y=GetUnitY(u)
@@ -131362,9 +131368,9 @@ local real ig=30*bj_DEGTORAD
 call SaveUnitHandle(h,id,0,u)
 call SaveGroupHandle(h,id,2,g)
 call SaveReal(h,id,3,0)
-call GroupEnumUnitsInRange(G,x,y,400,Base)
+call GroupEnumUnitsInRange(g2,x,y,400,Base)
 loop
-set E=FirstOfGroup(G)
+set E=FirstOfGroup(g2)
 exitwhen E==null
 if Condition_Base(p,E)and IsUnitPaused(E)==false and IsUnitInvulnerable(E)==false then
 call GroupAddUnit(g,E)
@@ -131372,8 +131378,10 @@ call UnitAddAbility(E,'A1DH')
 call IssueTargetOrder(E,"attack",u)
 call SetUnitStunCounter(E,GetUnitStunCounter(E)+1)
 endif
-call GroupRemoveUnit(G,E)
+call GroupRemoveUnit(g2,E)
 endloop
+call GroupClear(g2)
+call DestroyGroup(g2)
 call DestroyEffect(AddSpecialEffect("Abilities\\Spells\\NightElf\\Taunt\\TauntCaster.mdl",x,y))
 loop
 exitwhen is>=13
@@ -131390,6 +131398,7 @@ call KillSoundWhenDone(soundplay)
 set u=null
 set p=null
 set g=null
+set g2=null
 set t=null
 endfunction
 function InitTrig_ShielderR takes nothing returns nothing
