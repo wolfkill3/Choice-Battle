@@ -22296,7 +22296,7 @@ function Trig_Multup_Actions takes nothing returns nothing
             if IsAbilityVisible(GetUnitAbility(Goku,'GKQ1')) and GetOwningPlayer(Goku)==GetLocalPlayer() and (GetFrameTexture(GetOriginFrame(ORIGIN_FRAME_COMMAND_BUTTON,11),1)!="ReplaceableTextures\\CommandButtons\\BTNCancel.blp" or (GetFrameTexture(GetOriginFrame(ORIGIN_FRAME_COMMAND_BUTTON,0),1)=="war3mapImported\\BTNMove.blp" and IsFrameVisible(GetOriginFrame(ORIGIN_FRAME_COMMAND_BUTTON,0)))) then 
                 call ShowFrame(GetFrameByName( "AbilityVarBarIcon", 8 ),true)
                 if GetFrameUnderCursor()!=GetFrameByName( "AbilityVarBarIcon", 8 ) then
-                call ShowFrame(GetFrameByName( "AbilityVarBarTooltip", 8 ),false)
+                    call ShowFrame(GetFrameByName( "AbilityVarBarTooltip", 8 ),false)
                 endif
                 if LoadReal(HH,GetHandleId(GetOwningPlayer(Goku)),VariationQHash)==0 then
                     call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 8 ), "ReplaceableTextures\\CommandButtons\\BTNKamehamehaNormal.blp", 0, true )
