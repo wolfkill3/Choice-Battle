@@ -39738,6 +39738,13 @@ function Trig_BKB_Actions takes nothing returns nothing
 local integer i=GetPlayerId(GetTriggerPlayer())
 local integer ind=0
 local integer lp=0
+if GetTriggerPlayerKey()==OSKEY_OEM_3 then
+    if GetTriggerPlayer()==GetLocalPlayer()then
+        call ClearSelection()
+        call SelectUnit(Hero[i],true)
+        call PanCameraToTimed(GetUnitX(Hero[i]),GetUnitY(Hero[i]),0)
+    endif
+endif
 if UnitHasItemOfTypeBJ(Hero[GetPlayerId(GetTriggerPlayer())],'I04V') and IsUnitPaused(Hero[GetPlayerId(GetTriggerPlayer())])==false and (RectContainsUnit(gg_rct_AntiMh,Hero[GetPlayerId(GetTriggerPlayer())])==false and RectContainsUnit(gg_rct_HibariFight,Hero[GetPlayerId(GetTriggerPlayer())])==false) and GetUnitState(Hero[GetPlayerId(GetTriggerPlayer())],UNIT_STATE_MANA)>=25 and GetUnitAbilityLevel(Hero[GetPlayerId(GetTriggerPlayer())],'Pet1')==0 and GetUnitAbilityLevel(Hero[GetPlayerId(GetTriggerPlayer())],'cbc8')==0 then
 loop
 exitwhen lp==6
@@ -39746,7 +39753,7 @@ set ind=lp
 endif
 set lp=lp+1
 endloop
-if IsAbilityOnCooldown(GetUnitAbility(Hero[i],'A12B'))==false and IsUnitPaused(Hero[i])==false and (GetFrameTexture(GetOriginFrame(ORIGIN_FRAME_COMMAND_BUTTON,11),1)!="ReplaceableTextures\\CommandButtons\\BTNCancel.blp" or (GetFrameTexture(GetOriginFrame(ORIGIN_FRAME_COMMAND_BUTTON,0),1)=="war3mapImported\\BTNMove.blp" and IsFrameVisible(GetOriginFrame(ORIGIN_FRAME_COMMAND_BUTTON,0)))) then
+if IsAbilityOnCooldown(GetUnitAbility(Hero[i],'A12B'))==false and IsUnitPaused(Hero[i])==false and (GetUnitAbilityLevel(Hero[i],'A3BJ')>0 or GetTriggerPlayerKey()==OSKEY_OEM_3 ) then
 call UnitAddAbility(Hero[i],'A151')
 call UnitRemoveAbilityTimedPause(Hero[i],'A151',7)
 call UnitAddAbility(Hero[i],'A22B')
@@ -39768,6 +39775,9 @@ call UnitRemoveAbility(Hero[i], 'AoSV')
 call UnitRemoveAbility(Hero[i], 'A1SV')
 call SetUnitMoveSpeed(Hero[i], GetUnitDefaultMoveSpeed(Hero[i]))
 call UnitUseItem(Hero[i],UnitItemInSlot(Hero[i],ind))
+elseif IsAbilityOnCooldown(GetUnitAbility(Hero[i],'A12B'))==false and IsUnitPaused(Hero[i])==false and GetUnitAbilityLevel(Hero[i],'A3BJ')==0 then
+call UnitAddAbility(Hero[i],'A3BJ')
+call UnitRemoveAbilityTimed(Hero[i],'A3BJ',0.4)
 endif
 endif
 endfunction
@@ -39776,6 +39786,7 @@ local integer i=0
 set gg_trg_BKB=CreateTrigger()
 loop
 exitwhen i>=10
+call TriggerRegisterPlayerKeyEvent( gg_trg_BKB, Player(i), OSKEY_OEM_3, 0 ,true )
 call TriggerRegisterPlayerKeyEvent( gg_trg_BKB, Player(i), OSKEY_ESCAPE, 0 ,true )
 set i=i+1
 endloop
@@ -164142,6 +164153,13 @@ function DrStoneESC takes nothing returns nothing
 local integer i=GetPlayerId(GetTriggerPlayer())
 local integer ind=0
 local integer lp=0
+if GetTriggerPlayerKey()==OSKEY_OEM_3 then
+    if GetTriggerPlayer()==GetLocalPlayer()then
+        call ClearSelection()
+        call SelectUnit(Hero[i],true)
+        call PanCameraToTimed(GetUnitX(Hero[i]),GetUnitY(Hero[i]),0)
+    endif
+endif
 if UnitHasItemOfTypeBJ(Hero[GetPlayerId(GetTriggerPlayer())],'IMDi') and IsUnitPaused(Hero[GetPlayerId(GetTriggerPlayer())])==false and RectContainsUnit(gg_rct_AntiMh,Hero[GetPlayerId(GetTriggerPlayer())])==false and GetUnitAbilityLevel(Hero[GetPlayerId(GetTriggerPlayer())],'Pet1')==0 and GetUnitAbilityLevel(Hero[GetPlayerId(GetTriggerPlayer())],'cbc8')==0 then
     loop
     exitwhen lp==6
@@ -164187,6 +164205,7 @@ function InitTrig_DrStoneInt takes nothing returns nothing
         set index=0
         loop
         exitwhen index==10
+            call TriggerRegisterPlayerKeyEvent( trig, Player(index), OSKEY_OEM_3, 0 ,true )
             call TriggerRegisterPlayerKeyEvent( trig, Player(index), OSKEY_ESCAPE, 0 ,true )
             set index=index+1
         endloop
