@@ -26513,7 +26513,7 @@ set p=null
 endfunction
 function MomoRFHCond takes nothing returns boolean
 set P=GetTriggerPlayer()
-return udg_B==false and(GetPlayerName(P)=="Sylphiette" or GetPlayerName(P)=="Nezoke" or GetPlayerName(P)=="KamaBr" or GetPlayerName(P)=="[OSV] Kama" or GetPlayerName(P)=="Luna000" or GetPlayerName(P)=="Uriska" or GetPlayerName(P)=="Jaunty_D-Mai" or GetPlayerName(P)=="Yin-Ying" or GetPlayerName(P)=="Annieh" or GetPlayerName(P)=="zld6334" or GetPlayerName(P)=="pro100master999" or GetPlayerName(P)=="Falaminator" or GetPlayerName(P)=="PinkieNecro" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="NecromanseR_RuS" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="Blaze_drago_x" or GetPlayerName(P)=="xXLarsikXx" or GetPlayerName(P)=="Wolfkill" or GetPlayerName(P)=="Famouzy" or GetPlayerName(P)=="falaminator" or GetPlayerName(P)=="xxNu-13xx" or GetPlayerName(P)=="Denamesh" or GetPlayerName(P)=="Rey_Calabaza" or GetPlayerName(P)=="akama001" or GetPlayerName(P)=="AkazaThree" or GetPlayerName(P)=="ZOIBERG_SVS" or GetPlayerName(P)=="neketEXE" or GetPlayerName(P)=="KickSuckem" or GetPlayerName(P)=="Renex" or GetPlayerName(P)=="knowyourplace" or BaseSkinCond(P))
+return udg_B==false and(GetPlayerName(P)=="Sylphiette" or GetPlayerName(P)=="IIIafep" or GetPlayerName(P)=="Nezoke" or GetPlayerName(P)=="KamaBr" or GetPlayerName(P)=="[OSV] Kama" or GetPlayerName(P)=="Luna000" or GetPlayerName(P)=="Uriska" or GetPlayerName(P)=="Jaunty_D-Mai" or GetPlayerName(P)=="Yin-Ying" or GetPlayerName(P)=="Annieh" or GetPlayerName(P)=="zld6334" or GetPlayerName(P)=="pro100master999" or GetPlayerName(P)=="Falaminator" or GetPlayerName(P)=="PinkieNecro" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="NecromanseR_RuS" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="Blaze_drago_x" or GetPlayerName(P)=="xXLarsikXx" or GetPlayerName(P)=="Wolfkill" or GetPlayerName(P)=="Famouzy" or GetPlayerName(P)=="falaminator" or GetPlayerName(P)=="xxNu-13xx" or GetPlayerName(P)=="Denamesh" or GetPlayerName(P)=="Rey_Calabaza" or GetPlayerName(P)=="akama001" or GetPlayerName(P)=="AkazaThree" or GetPlayerName(P)=="ZOIBERG_SVS" or GetPlayerName(P)=="neketEXE" or GetPlayerName(P)=="KickSuckem" or GetPlayerName(P)=="Renex" or GetPlayerName(P)=="knowyourplace" or BaseSkinCond(P))
 endfunction
 function MomoRFHCast takes nothing returns nothing
 local integer ip=GetPlayerId(GetTriggerPlayer())
@@ -26582,7 +26582,7 @@ set p=null
 endfunction
 function MystoganRFHCond takes nothing returns boolean
 set P=GetTriggerPlayer()
-return udg_B==false and(GetPlayerName(P)=="Black_XeSHTeG" or GetPlayerName(P)=="Ratti" or GetPlayerName(P)=="PinkieNecro" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="NecromanseR_RuS" or GetPlayerName(P)=="knowyourplace" or BaseSkinCond(P))
+return udg_B==false and(GetPlayerName(P)=="Black_XeSHTeG" or GetPlayerName(P)=="IIIafep" or GetPlayerName(P)=="Ratti" or GetPlayerName(P)=="PinkieNecro" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="NecromanseR_RuS" or GetPlayerName(P)=="knowyourplace" or BaseSkinCond(P))
 endfunction
 function MystoganRFHCast takes nothing returns nothing
 local integer ip=GetPlayerId(GetTriggerPlayer())
@@ -26932,7 +26932,7 @@ set p=null
 endfunction
 function MeloiRFHCond takes nothing returns boolean
 set P=GetTriggerPlayer()
-return udg_B==false and (GetPlayerName(P)=="Hermaeus" or GetPlayerName(P)=="2thedevile2" or GetPlayerName(P)=="renex" or GetPlayerName(P)=="Magistor" or GetPlayerName(P)=="Annieh" or GetPlayerName(P)=="KamaBr" or GetPlayerName(P)=="[OSV] Kama" or GetPlayerName(P)=="No_Dust" or GetPlayerName(P)=="zld6334" or  GetPlayerName(P)=="TheDunwich525"  or GetPlayerName(P)=="Chevalier" or GetPlayerName(P)=="AnimeRandom" or BaseSkinCond(P))
+return udg_B==false and (GetPlayerName(P)=="Hermaeus" or GetPlayerName(P)=="IIIafep" or GetPlayerName(P)=="2thedevile2" or GetPlayerName(P)=="renex" or GetPlayerName(P)=="Magistor" or GetPlayerName(P)=="Annieh" or GetPlayerName(P)=="KamaBr" or GetPlayerName(P)=="[OSV] Kama" or GetPlayerName(P)=="No_Dust" or GetPlayerName(P)=="zld6334" or  GetPlayerName(P)=="TheDunwich525"  or GetPlayerName(P)=="Chevalier" or GetPlayerName(P)=="AnimeRandom" or BaseSkinCond(P))
 endfunction
 function MeloiRFHCast takes nothing returns nothing
 local integer ip=GetPlayerId(GetTriggerPlayer())
@@ -39736,6 +39736,13 @@ function Trig_BKB_Actions takes nothing returns nothing
 local integer i=GetPlayerId(GetTriggerPlayer())
 local integer ind=0
 local integer lp=0
+if GetTriggerPlayerKey()==OSKEY_OEM_3 then
+    if GetTriggerPlayer()==GetLocalPlayer()then
+        call ClearSelection()
+        call SelectUnit(Hero[i],true)
+        call PanCameraToTimed(GetUnitX(Hero[i]),GetUnitY(Hero[i]),0)
+    endif
+endif
 if UnitHasItemOfTypeBJ(Hero[GetPlayerId(GetTriggerPlayer())],'I04V') and IsUnitPaused(Hero[GetPlayerId(GetTriggerPlayer())])==false and (RectContainsUnit(gg_rct_AntiMh,Hero[GetPlayerId(GetTriggerPlayer())])==false and RectContainsUnit(gg_rct_HibariFight,Hero[GetPlayerId(GetTriggerPlayer())])==false) and GetUnitState(Hero[GetPlayerId(GetTriggerPlayer())],UNIT_STATE_MANA)>=25 and GetUnitAbilityLevel(Hero[GetPlayerId(GetTriggerPlayer())],'Pet1')==0 and GetUnitAbilityLevel(Hero[GetPlayerId(GetTriggerPlayer())],'cbc8')==0 then
 loop
 exitwhen lp==6
@@ -39744,7 +39751,7 @@ set ind=lp
 endif
 set lp=lp+1
 endloop
-if IsAbilityOnCooldown(GetUnitAbility(Hero[i],'A12B'))==false and IsUnitPaused(Hero[i])==false and (GetFrameTexture(GetOriginFrame(ORIGIN_FRAME_COMMAND_BUTTON,11),1)!="ReplaceableTextures\\CommandButtons\\BTNCancel.blp" or (GetFrameTexture(GetOriginFrame(ORIGIN_FRAME_COMMAND_BUTTON,0),1)=="war3mapImported\\BTNMove.blp" and IsFrameVisible(GetOriginFrame(ORIGIN_FRAME_COMMAND_BUTTON,0)))) then
+if IsAbilityOnCooldown(GetUnitAbility(Hero[i],'A12B'))==false and IsUnitPaused(Hero[i])==false and (GetUnitAbilityLevel(Hero[i],'A3BJ')>0 or GetTriggerPlayerKey()==OSKEY_OEM_3 ) then
 call UnitAddAbility(Hero[i],'A151')
 call UnitRemoveAbilityTimedPause(Hero[i],'A151',7)
 call UnitAddAbility(Hero[i],'A22B')
@@ -39766,6 +39773,9 @@ call UnitRemoveAbility(Hero[i], 'AoSV')
 call UnitRemoveAbility(Hero[i], 'A1SV')
 call SetUnitMoveSpeed(Hero[i], GetUnitDefaultMoveSpeed(Hero[i]))
 call UnitUseItem(Hero[i],UnitItemInSlot(Hero[i],ind))
+elseif IsAbilityOnCooldown(GetUnitAbility(Hero[i],'A12B'))==false and IsUnitPaused(Hero[i])==false and GetUnitAbilityLevel(Hero[i],'A3BJ')==0 then
+call UnitAddAbility(Hero[i],'A3BJ')
+call UnitRemoveAbilityTimed(Hero[i],'A3BJ',0.4)
 endif
 endif
 endfunction
@@ -39774,6 +39784,7 @@ local integer i=0
 set gg_trg_BKB=CreateTrigger()
 loop
 exitwhen i>=10
+call TriggerRegisterPlayerKeyEvent( gg_trg_BKB, Player(i), OSKEY_OEM_3, 0 ,true )
 call TriggerRegisterPlayerKeyEvent( gg_trg_BKB, Player(i), OSKEY_ESCAPE, 0 ,true )
 set i=i+1
 endloop
@@ -65864,17 +65875,17 @@ if LoadReal(HH,idp,VariationWHash)==1 then
     call SaveInteger(HH,idp,KaiokenHash,LoadInteger(HH,idp,KaiokenHash)+1)
     call SaveReal(HH,id,2,-0.9)
     if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
-        call StartSound(soundStr[41])
+        call StartSound(soundStr[40])
     else
-        call StartSound(soundStr[42])
+        call StartSound(soundStr[41])
     endif
 elseif LoadReal(HH,idp,VariationWHash)==2 then
     call SaveInteger(HH,idp,KaiokenHash,LoadInteger(HH,idp,KaiokenHash)+1)
     call SaveReal(HH,id,2,-0.9)
     if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
-        call StartSound(soundStr[43])
+        call StartSound(soundStr[42])
     else
-        call StartSound(soundStr[44])
+        call StartSound(soundStr[43])
     endif
 else
     call SetUnitVertexColor(u,255,255,255,255)
@@ -82032,7 +82043,11 @@ call SetUnitX(c,x+20*Cos(a))
 call SetUnitY(c,y+20*Sin(a))
 call SaveReal(h,id,15,5)
 endif
+if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\SuperBuuvVolleyball3.mp3",false,false,true,12700,12700,"")
+else
+set soundplay=CreateSound("Sound\\Music\\mp3Music\\Gotenks\\SuperBuuvVolleyball3-jap.mp3",false,false,true,12700,12700,"")
+endif
 call StartSound(soundplay)
 call KillSoundWhenDone(soundplay)
 call SetUnitAnimationByIndex(l__d,32)
@@ -82166,7 +82181,7 @@ else
 if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\SuperBuuvVolleyball11.mp3",false,false,true,12700,12700,"")
 else
-set soundplay=CreateSound("Sound\\Music\\mp3Music\\Gotenks\\SuperBuuvVolleyball11-jap.mp3",false,false,true,12700,12700,"")
+set soundplay=CreateSound("Sound\\Music\\mp3Music\\Gotenks\\SuperBuuvVolleyball1-jap.mp3",false,false,true,12700,12700,"")
 endif
 endif
 call StartSound(soundplay)
@@ -163316,7 +163331,7 @@ function ShuwenD_Periodic takes nothing returns nothing
         local boolean d_off=LoadBoolean(h, id, StringHash("Bool"))
         if udg_B and GetWidgetMana(caster)>10 and d_off==false then
                 call SetUnitVertexColor(caster,255,255,255,R2I(he*255))
-                call SetUnitOverheadOffset(caster,7000)
+                call SetUnitStatbarHeight(caster,7000)
                 if IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(caster))then
                         call SetUnitVertexColor(caster,255,255,255,255)
                 endif
@@ -163330,7 +163345,7 @@ function ShuwenD_Periodic takes nothing returns nothing
                 if GetUnitTypeId(caster)=='H16C' then
                         call IssueImmediateOrder(caster, "unbearform")
                 else
-                        call SetUnitOverheadOffset(caster,LoadReal(h,id,1))
+                        call SetUnitStatbarHeight(caster,LoadReal(h,id,1))
                         call FlushChildHashtable(h, id)
                         call DestroyTimer(GetExpiredTimer())
                 endif
@@ -163341,7 +163356,7 @@ endfunction
 function ShuwenD_Cast takes unit newCaster, timer newTimer returns nothing 
         local integer id=GetHandleId(newTimer)
         call SaveUnitHandle(h, id, CasterHash, newCaster)
-        call SaveReal(h, id, 1, GetUnitOverheadOffset(newCaster))
+        call SaveReal(h, id, 1, GetUnitStatbarHeight(newCaster))
         call SaveBoolean(h, id, StringHash("Bool"), false)
         call TimerStart(newTimer, 0.1, true, function ShuwenD_Periodic)
 endfunction
@@ -164136,6 +164151,13 @@ function DrStoneESC takes nothing returns nothing
 local integer i=GetPlayerId(GetTriggerPlayer())
 local integer ind=0
 local integer lp=0
+if GetTriggerPlayerKey()==OSKEY_OEM_3 then
+    if GetTriggerPlayer()==GetLocalPlayer()then
+        call ClearSelection()
+        call SelectUnit(Hero[i],true)
+        call PanCameraToTimed(GetUnitX(Hero[i]),GetUnitY(Hero[i]),0)
+    endif
+endif
 if UnitHasItemOfTypeBJ(Hero[GetPlayerId(GetTriggerPlayer())],'IMDi') and IsUnitPaused(Hero[GetPlayerId(GetTriggerPlayer())])==false and RectContainsUnit(gg_rct_AntiMh,Hero[GetPlayerId(GetTriggerPlayer())])==false and GetUnitAbilityLevel(Hero[GetPlayerId(GetTriggerPlayer())],'Pet1')==0 and GetUnitAbilityLevel(Hero[GetPlayerId(GetTriggerPlayer())],'cbc8')==0 then
     loop
     exitwhen lp==6
@@ -164181,6 +164203,7 @@ function InitTrig_DrStoneInt takes nothing returns nothing
         set index=0
         loop
         exitwhen index==10
+            call TriggerRegisterPlayerKeyEvent( trig, Player(index), OSKEY_OEM_3, 0 ,true )
             call TriggerRegisterPlayerKeyEvent( trig, Player(index), OSKEY_ESCAPE, 0 ,true )
             set index=index+1
         endloop
