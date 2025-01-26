@@ -163318,7 +163318,7 @@ function ShuwenD_Periodic takes nothing returns nothing
         local boolean d_off=LoadBoolean(h, id, StringHash("Bool"))
         if udg_B and GetWidgetMana(caster)>10 and d_off==false then
                 call SetUnitVertexColor(caster,255,255,255,R2I(he*255))
-                call SetUnitStatbarHeight(caster,7000)
+                call SetUnitOverheadOffset(caster,7000)
                 if IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(caster))then
                         call SetUnitVertexColor(caster,255,255,255,255)
                 endif
@@ -163332,7 +163332,7 @@ function ShuwenD_Periodic takes nothing returns nothing
                 if GetUnitTypeId(caster)=='H16C' then
                         call IssueImmediateOrder(caster, "unbearform")
                 else
-                        call SetUnitStatbarHeight(caster,LoadReal(h,id,1))
+                        call SetUnitOverheadOffset(caster,LoadReal(h,id,1))
                         call FlushChildHashtable(h, id)
                         call DestroyTimer(GetExpiredTimer())
                 endif
@@ -163343,7 +163343,7 @@ endfunction
 function ShuwenD_Cast takes unit newCaster, timer newTimer returns nothing 
         local integer id=GetHandleId(newTimer)
         call SaveUnitHandle(h, id, CasterHash, newCaster)
-        call SaveReal(h, id, 1, GetUnitStatbarHeight(newCaster))
+        call SaveReal(h, id, 1, GetUnitOverheadOffset(newCaster))
         call SaveBoolean(h, id, StringHash("Bool"), false)
         call TimerStart(newTimer, 0.1, true, function ShuwenD_Periodic)
 endfunction
