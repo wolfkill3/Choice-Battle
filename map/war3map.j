@@ -26515,7 +26515,7 @@ set p=null
 endfunction
 function MomoRFHCond takes nothing returns boolean
 set P=GetTriggerPlayer()
-return udg_B==false and(GetPlayerName(P)=="Sylphiette" or GetPlayerName(P)=="Nezoke" or GetPlayerName(P)=="KamaBr" or GetPlayerName(P)=="[OSV] Kama" or GetPlayerName(P)=="Luna000" or GetPlayerName(P)=="Uriska" or GetPlayerName(P)=="Jaunty_D-Mai" or GetPlayerName(P)=="Yin-Ying" or GetPlayerName(P)=="Annieh" or GetPlayerName(P)=="zld6334" or GetPlayerName(P)=="pro100master999" or GetPlayerName(P)=="Falaminator" or GetPlayerName(P)=="PinkieNecro" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="NecromanseR_RuS" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="Blaze_drago_x" or GetPlayerName(P)=="xXLarsikXx" or GetPlayerName(P)=="Wolfkill" or GetPlayerName(P)=="Famouzy" or GetPlayerName(P)=="falaminator" or GetPlayerName(P)=="xxNu-13xx" or GetPlayerName(P)=="Denamesh" or GetPlayerName(P)=="Rey_Calabaza" or GetPlayerName(P)=="akama001" or GetPlayerName(P)=="AkazaThree" or GetPlayerName(P)=="ZOIBERG_SVS" or GetPlayerName(P)=="neketEXE" or GetPlayerName(P)=="KickSuckem" or GetPlayerName(P)=="Renex" or GetPlayerName(P)=="knowyourplace" or BaseSkinCond(P))
+return udg_B==false and(GetPlayerName(P)=="Sylphiette" or GetPlayerName(P)=="IIIafep" or GetPlayerName(P)=="Nezoke" or GetPlayerName(P)=="KamaBr" or GetPlayerName(P)=="[OSV] Kama" or GetPlayerName(P)=="Luna000" or GetPlayerName(P)=="Uriska" or GetPlayerName(P)=="Jaunty_D-Mai" or GetPlayerName(P)=="Yin-Ying" or GetPlayerName(P)=="Annieh" or GetPlayerName(P)=="zld6334" or GetPlayerName(P)=="pro100master999" or GetPlayerName(P)=="Falaminator" or GetPlayerName(P)=="PinkieNecro" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="NecromanseR_RuS" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="Blaze_drago_x" or GetPlayerName(P)=="xXLarsikXx" or GetPlayerName(P)=="Wolfkill" or GetPlayerName(P)=="Famouzy" or GetPlayerName(P)=="falaminator" or GetPlayerName(P)=="xxNu-13xx" or GetPlayerName(P)=="Denamesh" or GetPlayerName(P)=="Rey_Calabaza" or GetPlayerName(P)=="akama001" or GetPlayerName(P)=="AkazaThree" or GetPlayerName(P)=="ZOIBERG_SVS" or GetPlayerName(P)=="neketEXE" or GetPlayerName(P)=="KickSuckem" or GetPlayerName(P)=="Renex" or GetPlayerName(P)=="knowyourplace" or BaseSkinCond(P))
 endfunction
 function MomoRFHCast takes nothing returns nothing
 local integer ip=GetPlayerId(GetTriggerPlayer())
@@ -26584,7 +26584,7 @@ set p=null
 endfunction
 function MystoganRFHCond takes nothing returns boolean
 set P=GetTriggerPlayer()
-return udg_B==false and(GetPlayerName(P)=="Black_XeSHTeG" or GetPlayerName(P)=="Ratti" or GetPlayerName(P)=="PinkieNecro" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="NecromanseR_RuS" or GetPlayerName(P)=="knowyourplace" or BaseSkinCond(P))
+return udg_B==false and(GetPlayerName(P)=="Black_XeSHTeG" or GetPlayerName(P)=="IIIafep" or GetPlayerName(P)=="Ratti" or GetPlayerName(P)=="PinkieNecro" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="NecromanseR_RuS" or GetPlayerName(P)=="knowyourplace" or BaseSkinCond(P))
 endfunction
 function MystoganRFHCast takes nothing returns nothing
 local integer ip=GetPlayerId(GetTriggerPlayer())
@@ -26934,7 +26934,7 @@ set p=null
 endfunction
 function MeloiRFHCond takes nothing returns boolean
 set P=GetTriggerPlayer()
-return udg_B==false and (GetPlayerName(P)=="Hermaeus" or GetPlayerName(P)=="2thedevile2" or GetPlayerName(P)=="renex" or GetPlayerName(P)=="Magistor" or GetPlayerName(P)=="Annieh" or GetPlayerName(P)=="KamaBr" or GetPlayerName(P)=="[OSV] Kama" or GetPlayerName(P)=="No_Dust" or GetPlayerName(P)=="zld6334" or  GetPlayerName(P)=="TheDunwich525"  or GetPlayerName(P)=="Chevalier" or GetPlayerName(P)=="AnimeRandom" or BaseSkinCond(P))
+return udg_B==false and (GetPlayerName(P)=="Hermaeus" or GetPlayerName(P)=="IIIafep" or GetPlayerName(P)=="2thedevile2" or GetPlayerName(P)=="renex" or GetPlayerName(P)=="Magistor" or GetPlayerName(P)=="Annieh" or GetPlayerName(P)=="KamaBr" or GetPlayerName(P)=="[OSV] Kama" or GetPlayerName(P)=="No_Dust" or GetPlayerName(P)=="zld6334" or  GetPlayerName(P)=="TheDunwich525"  or GetPlayerName(P)=="Chevalier" or GetPlayerName(P)=="AnimeRandom" or BaseSkinCond(P))
 endfunction
 function MeloiRFHCast takes nothing returns nothing
 local integer ip=GetPlayerId(GetTriggerPlayer())
@@ -65866,17 +65866,17 @@ if LoadReal(HH,idp,VariationWHash)==1 then
     call SaveInteger(HH,idp,KaiokenHash,LoadInteger(HH,idp,KaiokenHash)+1)
     call SaveReal(HH,id,2,-0.9)
     if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
-        call StartSound(soundStr[41])
+        call StartSound(soundStr[40])
     else
-        call StartSound(soundStr[42])
+        call StartSound(soundStr[41])
     endif
 elseif LoadReal(HH,idp,VariationWHash)==2 then
     call SaveInteger(HH,idp,KaiokenHash,LoadInteger(HH,idp,KaiokenHash)+1)
     call SaveReal(HH,id,2,-0.9)
     if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
-        call StartSound(soundStr[43])
+        call StartSound(soundStr[42])
     else
-        call StartSound(soundStr[44])
+        call StartSound(soundStr[43])
     endif
 else
     call SetUnitVertexColor(u,255,255,255,255)
@@ -82034,7 +82034,11 @@ call SetUnitX(c,x+20*Cos(a))
 call SetUnitY(c,y+20*Sin(a))
 call SaveReal(h,id,15,5)
 endif
+if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\SuperBuuvVolleyball3.mp3",false,false,true,12700,12700,"")
+else
+set soundplay=CreateSound("Sound\\Music\\mp3Music\\Gotenks\\SuperBuuvVolleyball3-jap.mp3",false,false,true,12700,12700,"")
+endif
 call StartSound(soundplay)
 call KillSoundWhenDone(soundplay)
 call SetUnitAnimationByIndex(l__d,32)
@@ -82168,7 +82172,7 @@ else
 if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\SuperBuuvVolleyball11.mp3",false,false,true,12700,12700,"")
 else
-set soundplay=CreateSound("Sound\\Music\\mp3Music\\Gotenks\\SuperBuuvVolleyball11-jap.mp3",false,false,true,12700,12700,"")
+set soundplay=CreateSound("Sound\\Music\\mp3Music\\Gotenks\\SuperBuuvVolleyball1-jap.mp3",false,false,true,12700,12700,"")
 endif
 endif
 call StartSound(soundplay)
