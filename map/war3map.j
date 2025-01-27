@@ -159,6 +159,7 @@ constant integer ANTITARGET_ABILITY   = StringHash( "ANTITARGET_ABILITY" )
 constant integer DASH_USER            = StringHash( "DASH_USER" )
 constant integer REVERSE_TARGET       = StringHash( "REVERSE_TARGET" )
 constant integer SOUND_LANGUAGE       = StringHash("SOUND_LANGUAGE")
+constant integer BUTTONHOVER          = StringHash("BUTTONHOVER")
 constant integer SusanoCnst           = StringHash("susano")
 constant integer SS                   = StringHash("SS")
 constant integer SST                  = StringHash("SST")
@@ -9936,6 +9937,34 @@ function OnButtonUnHover2 takes nothing returns nothing
     set p = null
     set but = null
     set but2 = null
+endfunction
+
+function OnAddButtonHover takes nothing returns nothing
+    local player p = GetTriggerPlayer( )
+    local framehandle cursor = GetOriginFrame( ORIGIN_FRAME_CURSOR_FRAME, 0 )
+    local framehandle but = GetTriggerFrame( ) //GetFrameContext(but)
+    local integer i=0
+    call SaveBoolean(HH,GetHandleId(but),BUTTONHOVER,true)
+    if p == GetLocalPlayer( ) then
+        call SetFrameSpriteColour( cursor, 0xFF00FF00 )
+    endif
+    set p = null
+    set but = null
+    set cursor=null
+endfunction
+
+function OnAddButtonUnHover takes nothing returns nothing
+    local player p = GetTriggerPlayer( )
+    local framehandle cursor = GetOriginFrame( ORIGIN_FRAME_CURSOR_FRAME, 0 )
+    local framehandle but = GetTriggerFrame( ) //GetFrameContext(but)
+    local integer i=0
+    call SaveBoolean(HH,GetHandleId(but),BUTTONHOVER,false)
+    if p == GetLocalPlayer( ) then
+        call SetFrameSpriteColour( cursor, 0xFFFFFFFF )
+    endif
+    set p = null
+    set but = null
+    set cursor=null
 endfunction
 
 function OnButtonHover takes nothing returns nothing
@@ -21534,6 +21563,8 @@ function Trig_StatusBar_Actions takes nothing returns nothing
     local trigger tOnPress = null
     local trigger tOnUnPress = null
     local trigger tOnClick = null
+    local trigger tOnHover = null
+    local trigger tOnUnHover = null 
     local trigger toggleStatus = null
     local trigger AbilityModeHotkey = null
     local integer x=0
@@ -21668,6 +21699,8 @@ function Trig_StatusBar_Actions takes nothing returns nothing
     set tOnPress = CreateTrigger( )
     set tOnUnPress = CreateTrigger( )
     set tOnClick = CreateTrigger( )
+    set tOnHover = CreateTrigger( )
+    set tOnUnHover = CreateTrigger( )
     set x=0
     loop 
 
@@ -21684,6 +21717,8 @@ function Trig_StatusBar_Actions takes nothing returns nothing
     call TriggerRegisterFrameEvent( tOnPress, CustomAbilityVarFrame, FRAMEEVENT_MOUSE_DOWN )
     call TriggerRegisterFrameEvent( tOnUnPress, CustomAbilityVarFrame, FRAMEEVENT_MOUSE_UP )
     call TriggerRegisterFrameEvent( tOnClick, CustomAbilityVarFrame, FRAMEEVENT_CONTROL_CLICK )
+    call TriggerRegisterFrameEvent( tOnHover, CustomAbilityVarFrame, FRAMEEVENT_MOUSE_ENTER )
+    call TriggerRegisterFrameEvent( tOnUnHover, CustomAbilityVarFrame, FRAMEEVENT_MOUSE_LEAVE )
 
     set CustomAbilityVarTooltip=CreateFrameByType("SIMPLEFRAME", "AbilityVarBarTooltip", CustomAbilityVarFrame, "", x)
     call ClearFrameAllPoints( CustomAbilityVarTooltip )
@@ -21713,6 +21748,8 @@ function Trig_StatusBar_Actions takes nothing returns nothing
     call TriggerAddAction( tOnPress, function OnButtonPress )
     call TriggerAddAction( tOnUnPress, function OnButtonUnpress )
     call TriggerAddAction( tOnClick, function OnButtonChangeAbilityMode )
+    call TriggerAddAction( tOnHover, function OnAddButtonHover )
+    call TriggerAddAction( tOnUnHover, function OnAddButtonUnHover )
 
     set x=0
     loop
@@ -22016,6 +22053,8 @@ function Trig_StatusBar_Actions takes nothing returns nothing
 set tOnPress = null
 set tOnUnPress = null
 set tOnClick = null
+set tOnHover = null
+set tOnUnHover = null
 set toggleStatus = null
 set consoleUI=null
 set CustomClassFrame=null
@@ -22292,10 +22331,10 @@ function Trig_Multup_Actions takes nothing returns nothing
                 set seconds1=""
         endif
         call MultiboardSetTitleText(mbg,"|cffc3dbffRound|r - "+I2S(round)+", |cffc3dbffTime -|r "+ours1+I2S(ours)+":"+minutes1+I2S(minutes)+":"+seconds1+I2S(seconds))
-        if IsUnitSelected(Goku,GetLocalPlayer()) then
+        if (GetLocalPlayer()==GetOwningPlayer(Goku) or GetPlayerAlliance(GetOwningPlayer(Goku),GetLocalPlayer(),ALLIANCE_SHARED_CONTROL)) and GetUnitSelected(GetLocalPlayer())==Goku then
             if IsAbilityVisible(GetUnitAbility(Goku,'GKQ1')) and GetOwningPlayer(Goku)==GetLocalPlayer() and (GetFrameTexture(GetOriginFrame(ORIGIN_FRAME_COMMAND_BUTTON,11),1)!="ReplaceableTextures\\CommandButtons\\BTNCancel.blp" or (GetFrameTexture(GetOriginFrame(ORIGIN_FRAME_COMMAND_BUTTON,0),1)=="war3mapImported\\BTNMove.blp" and IsFrameVisible(GetOriginFrame(ORIGIN_FRAME_COMMAND_BUTTON,0)))) then 
                 call ShowFrame(GetFrameByName( "AbilityVarBarIcon", 8 ),true)
-                if GetFrameUnderCursor()!=GetFrameByName( "AbilityVarBarIcon", 8 ) then
+                if LoadBoolean(HH,GetHandleId(GetFrameByName( "AbilityVarBarIcon", 8 )),BUTTONHOVER)==false then
                     call ShowFrame(GetFrameByName( "AbilityVarBarTooltip", 8 ),false)
                 endif
                 if LoadReal(HH,GetHandleId(GetOwningPlayer(Goku)),VariationQHash)==0 then
@@ -22348,7 +22387,7 @@ function Trig_Multup_Actions takes nothing returns nothing
             endif
             if ((IsAbilityVisible(GetUnitAbility(Goku,'GKW1')) and (GetUnitAbilityLevel(Goku,'GkH6')>0 or GetUnitAbilityLevel(Goku,'GkH0')>0)) or (IsAbilityVisible(GetUnitAbility(Goku,'GKW5'))and (GetUnitAbilityLevel(Goku,'GkH7')>0 or GetUnitAbilityLevel(Goku,'GkH8')>0))) and GetOwningPlayer(Goku)==GetLocalPlayer() and (GetFrameTexture(GetOriginFrame(ORIGIN_FRAME_COMMAND_BUTTON,11),1)!="ReplaceableTextures\\CommandButtons\\BTNCancel.blp" or (GetFrameTexture(GetOriginFrame(ORIGIN_FRAME_COMMAND_BUTTON,0),1)=="war3mapImported\\BTNMove.blp" and IsFrameVisible(GetOriginFrame(ORIGIN_FRAME_COMMAND_BUTTON,0)))) then
                 call ShowFrame(GetFrameByName( "AbilityVarBarIcon", 9 ),true)
-                if GetFrameUnderCursor()!=GetFrameByName( "AbilityVarBarIcon", 9 ) then
+                if LoadBoolean(HH,GetHandleId(GetFrameByName( "AbilityVarBarIcon", 9 )),BUTTONHOVER)==false then
                     call ShowFrame(GetFrameByName( "AbilityVarBarTooltip", 9 ),false)
                 endif
                 if LoadReal(HH,GetHandleId(GetOwningPlayer(Goku)),VariationWHash)==1 then
@@ -22398,7 +22437,7 @@ function Trig_Multup_Actions takes nothing returns nothing
             endif
             if (IsAbilityVisible(GetUnitAbility(Goku,'GKE2')) or IsAbilityVisible(GetUnitAbility(Goku,'GKE3')) or IsAbilityVisible(GetUnitAbility(Goku,'GKE4')) or IsAbilityVisible(GetUnitAbility(Goku,'GKE5')) or IsAbilityVisible(GetUnitAbility(Goku,'GKE6'))) and GetOwningPlayer(Goku)==GetLocalPlayer() and (GetFrameTexture(GetOriginFrame(ORIGIN_FRAME_COMMAND_BUTTON,11),1)!="ReplaceableTextures\\CommandButtons\\BTNCancel.blp" or (GetFrameTexture(GetOriginFrame(ORIGIN_FRAME_COMMAND_BUTTON,0),1)=="war3mapImported\\BTNMove.blp" and IsFrameVisible(GetOriginFrame(ORIGIN_FRAME_COMMAND_BUTTON,0)))) then
                 call ShowFrame(GetFrameByName( "AbilityVarBarIcon", 10 ),true)
-                if GetFrameUnderCursor()!=GetFrameByName( "AbilityVarBarIcon", 10 ) then
+                if LoadBoolean(HH,GetHandleId(GetFrameByName( "AbilityVarBarIcon", 10 )),BUTTONHOVER)==false then
                     call ShowFrame(GetFrameByName( "AbilityVarBarTooltip", 10 ),false)
                 endif
                 if LoadReal(HH,GetHandleId(GetOwningPlayer(Goku)),VariationEHash)==1 then
@@ -22447,7 +22486,7 @@ function Trig_Multup_Actions takes nothing returns nothing
             endif
             if IsAbilityVisible(GetUnitAbility(Goku,'GKT1')) and GetOwningPlayer(Goku)==GetLocalPlayer() and (GetFrameTexture(GetOriginFrame(ORIGIN_FRAME_COMMAND_BUTTON,11),1)!="ReplaceableTextures\\CommandButtons\\BTNCancel.blp" or (GetFrameTexture(GetOriginFrame(ORIGIN_FRAME_COMMAND_BUTTON,0),1)=="war3mapImported\\BTNMove.blp" and IsFrameVisible(GetOriginFrame(ORIGIN_FRAME_COMMAND_BUTTON,0)))) then
                 call ShowFrame(GetFrameByName( "AbilityVarBarIcon", 7 ),true)
-                if GetFrameUnderCursor()!=GetFrameByName( "AbilityVarBarIcon", 7 ) then
+                if LoadBoolean(HH,GetHandleId(GetFrameByName( "AbilityVarBarIcon", 7 )),BUTTONHOVER)==false then
                     call ShowFrame(GetFrameByName( "AbilityVarBarTooltip", 7 ),false)
                 endif
                 if LoadReal(HH,GetHandleId(GetOwningPlayer(Goku)),VariationTHash)==1 then
@@ -22473,9 +22512,6 @@ function Trig_Multup_Actions takes nothing returns nothing
         endif
         if GenkiUsed[GetPlayerId(GetLocalPlayer())]==true and GetOwningPlayer(Goku)!=GetLocalPlayer() then
             call ShowFrame(GetFrameByName( "GlobalAbilityBarIcon", 0 ),true)
-            if GetFrameUnderCursor()!=GetFrameByName( "GlobalAbilityBarIcon", 0 ) then
-                call ShowFrame(GetFrameByName( "GlobalAbilityBarTooltip", 0 ),false)
-            endif
             call SetFrameTexture( GetFrameByName( "GlobalAbilityBarIcon", 0 ), "ReplaceableTextures\\CommandButtons\\BTNGiveEnergy.blp", 0, true )
             call SetFrameTexture( GetFrameByName( "GlobalAbilityBarIcon", 0 ), "ReplaceableTextures\\CommandButtons\\BTNGiveEnergy.blp", 1, true )
             call SetFrameTexture( GetFrameByName( "GlobalAbilityBarIcon", 0 ), "ReplaceableTextures\\CommandButtons\\BTNGiveEnergy.blp", 2, true )
@@ -156150,7 +156186,7 @@ call SetPlayerAbilityAvailable(GetOwningPlayer(a), 'AFUP', false)
 if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
 set soundplay=CreateSound("Sound\\war3mapImported\\GoldenFrieza.mp3",false,false,true,12700,12700,"")
 else
-set soundplay=CreateSound("Sound\\Music\\mp3Music\\Frieza\\GoldenFrieza-jap.mp3",false,false,true,12700,12700,"")
+set soundplay=CreateSound("Sound\\Music\\mp3Music\\GoldenFrieza-jap.mp3",false,false,true,12700,12700,"")
 endif
 call StartSound(soundplay)
 call KillSoundWhenDone(soundplay)
