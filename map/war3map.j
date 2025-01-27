@@ -9944,8 +9944,8 @@ function OnAddButtonHover takes nothing returns nothing
     local framehandle cursor = GetOriginFrame( ORIGIN_FRAME_CURSOR_FRAME, 0 )
     local framehandle but = GetTriggerFrame( ) //GetFrameContext(but)
     local integer i=0
-    call SaveBoolean(HH,GetHandleId(but),BUTTONHOVER,true)
     if p == GetLocalPlayer( ) then
+        call SaveBoolean(HH,GetHandleId(but),BUTTONHOVER,true)
         call SetFrameSpriteColour( cursor, 0xFF00FF00 )
     endif
     set p = null
@@ -9958,8 +9958,8 @@ function OnAddButtonUnHover takes nothing returns nothing
     local framehandle cursor = GetOriginFrame( ORIGIN_FRAME_CURSOR_FRAME, 0 )
     local framehandle but = GetTriggerFrame( ) //GetFrameContext(but)
     local integer i=0
-    call SaveBoolean(HH,GetHandleId(but),BUTTONHOVER,false)
     if p == GetLocalPlayer( ) then
+        call SaveBoolean(HH,GetHandleId(but),BUTTONHOVER,false)
         call SetFrameSpriteColour( cursor, 0xFFFFFFFF )
     endif
     set p = null
@@ -10522,7 +10522,8 @@ function OnButtonChangeAbilityMode takes nothing returns nothing
     if buttonId == -1 then
         return
     endif
-    if p==GetOwningPlayer(Goku) and but==GetFrameByName( "AbilityVarBarIcon", 8 ) then
+    if (p==GetOwningPlayer(Goku) or GetPlayerAlliance(GetOwningPlayer(Goku),p,ALLIANCE_SHARED_CONTROL)) and but==GetFrameByName( "AbilityVarBarIcon", 8 ) then
+        set pHid=GetHandleId(GetOwningPlayer(Goku))
         if LoadReal(HH,pHid,VariationQHash)==0 then
             call SaveReal(HH,pHid,VariationQHash,1)
             if GetLocalPlayer()==p then
@@ -10580,7 +10581,8 @@ function OnButtonChangeAbilityMode takes nothing returns nothing
             endif
         endif
     endif
-    if p==GetOwningPlayer(Goku) and but==GetFrameByName( "AbilityVarBarIcon", 9 ) then
+    if (p==GetOwningPlayer(Goku) or GetPlayerAlliance(GetOwningPlayer(Goku),p,ALLIANCE_SHARED_CONTROL)) and but==GetFrameByName( "AbilityVarBarIcon", 9 ) then
+        set pHid=GetHandleId(GetOwningPlayer(Goku))
         if LoadReal(HH,pHid,VariationWHash)==0 and GetUnitAbilityLevel(Goku,'GkH0')>0 then
             call SaveReal(HH,pHid,VariationWHash,1)
             if GetLocalPlayer()==p then
@@ -10641,7 +10643,8 @@ function OnButtonChangeAbilityMode takes nothing returns nothing
             endif
         endif
     endif
-    if p==GetOwningPlayer(Goku) and but==GetFrameByName( "AbilityVarBarIcon", 10 ) then
+    if (p==GetOwningPlayer(Goku) or GetPlayerAlliance(GetOwningPlayer(Goku),p,ALLIANCE_SHARED_CONTROL)) and but==GetFrameByName( "AbilityVarBarIcon", 10 ) then
+        set pHid=GetHandleId(GetOwningPlayer(Goku))
         if LoadReal(HH,pHid,VariationEHash)==0 then
             call SaveReal(HH,pHid,VariationEHash,1)
             call ShowAbility2('GKE6',false)
@@ -10709,7 +10712,8 @@ function OnButtonChangeAbilityMode takes nothing returns nothing
             endif
         endif
     endif
-    if p==GetOwningPlayer(Goku) and but==GetFrameByName( "AbilityVarBarIcon", 7 ) then
+    if (p==GetOwningPlayer(Goku) or GetPlayerAlliance(GetOwningPlayer(Goku),p,ALLIANCE_SHARED_CONTROL)) and but==GetFrameByName( "AbilityVarBarIcon", 7 ) then
+        set pHid=GetHandleId(GetOwningPlayer(Goku))
         if LoadReal(HH,pHid,VariationTHash)==0 then
             call SaveReal(HH,pHid,VariationTHash,1)
             call SetAbilityIntegerLevelField(GetUnitAbility(Goku,'GKT1'), ABILITY_ILF_TARGET_TYPE,0,1)
@@ -22332,10 +22336,12 @@ function Trig_Multup_Actions takes nothing returns nothing
         endif
         call MultiboardSetTitleText(mbg,"|cffc3dbffRound|r - "+I2S(round)+", |cffc3dbffTime -|r "+ours1+I2S(ours)+":"+minutes1+I2S(minutes)+":"+seconds1+I2S(seconds))
         if (GetLocalPlayer()==GetOwningPlayer(Goku) or GetPlayerAlliance(GetOwningPlayer(Goku),GetLocalPlayer(),ALLIANCE_SHARED_CONTROL)) and GetUnitSelected(GetLocalPlayer())==Goku then
-            if IsAbilityVisible(GetUnitAbility(Goku,'GKQ1')) and GetOwningPlayer(Goku)==GetLocalPlayer() and (GetFrameTexture(GetOriginFrame(ORIGIN_FRAME_COMMAND_BUTTON,11),1)!="ReplaceableTextures\\CommandButtons\\BTNCancel.blp" or (GetFrameTexture(GetOriginFrame(ORIGIN_FRAME_COMMAND_BUTTON,0),1)=="war3mapImported\\BTNMove.blp" and IsFrameVisible(GetOriginFrame(ORIGIN_FRAME_COMMAND_BUTTON,0)))) then 
+            if IsAbilityVisible(GetUnitAbility(Goku,'GKQ1')) and (GetLocalPlayer()==GetOwningPlayer(Goku) or GetPlayerAlliance(GetOwningPlayer(Goku),GetLocalPlayer(),ALLIANCE_SHARED_CONTROL)) and (GetFrameTexture(GetOriginFrame(ORIGIN_FRAME_COMMAND_BUTTON,11),1)!="ReplaceableTextures\\CommandButtons\\BTNCancel.blp" or (GetFrameTexture(GetOriginFrame(ORIGIN_FRAME_COMMAND_BUTTON,0),1)=="war3mapImported\\BTNMove.blp" and IsFrameVisible(GetOriginFrame(ORIGIN_FRAME_COMMAND_BUTTON,0)))) then 
                 call ShowFrame(GetFrameByName( "AbilityVarBarIcon", 8 ),true)
                 if LoadBoolean(HH,GetHandleId(GetFrameByName( "AbilityVarBarIcon", 8 )),BUTTONHOVER)==false then
                     call ShowFrame(GetFrameByName( "AbilityVarBarTooltip", 8 ),false)
+                else
+                    call ShowFrame(GetFrameByName( "AbilityVarBarTooltip", 8 ),true)
                 endif
                 if LoadReal(HH,GetHandleId(GetOwningPlayer(Goku)),VariationQHash)==0 then
                     call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 8 ), "ReplaceableTextures\\CommandButtons\\BTNKamehamehaNormal.blp", 0, true )
@@ -22385,10 +22391,12 @@ function Trig_Multup_Actions takes nothing returns nothing
             else
                 call ShowFrame(GetFrameByName( "AbilityVarBarIcon", 8 ),false)
             endif
-            if ((IsAbilityVisible(GetUnitAbility(Goku,'GKW1')) and (GetUnitAbilityLevel(Goku,'GkH6')>0 or GetUnitAbilityLevel(Goku,'GkH0')>0)) or (IsAbilityVisible(GetUnitAbility(Goku,'GKW5'))and (GetUnitAbilityLevel(Goku,'GkH7')>0 or GetUnitAbilityLevel(Goku,'GkH8')>0))) and GetOwningPlayer(Goku)==GetLocalPlayer() and (GetFrameTexture(GetOriginFrame(ORIGIN_FRAME_COMMAND_BUTTON,11),1)!="ReplaceableTextures\\CommandButtons\\BTNCancel.blp" or (GetFrameTexture(GetOriginFrame(ORIGIN_FRAME_COMMAND_BUTTON,0),1)=="war3mapImported\\BTNMove.blp" and IsFrameVisible(GetOriginFrame(ORIGIN_FRAME_COMMAND_BUTTON,0)))) then
+            if ((IsAbilityVisible(GetUnitAbility(Goku,'GKW1')) and (GetUnitAbilityLevel(Goku,'GkH6')>0 or GetUnitAbilityLevel(Goku,'GkH0')>0)) or (IsAbilityVisible(GetUnitAbility(Goku,'GKW5'))and (GetUnitAbilityLevel(Goku,'GkH7')>0 or GetUnitAbilityLevel(Goku,'GkH8')>0))) and (GetLocalPlayer()==GetOwningPlayer(Goku) or GetPlayerAlliance(GetOwningPlayer(Goku),GetLocalPlayer(),ALLIANCE_SHARED_CONTROL)) and (GetFrameTexture(GetOriginFrame(ORIGIN_FRAME_COMMAND_BUTTON,11),1)!="ReplaceableTextures\\CommandButtons\\BTNCancel.blp" or (GetFrameTexture(GetOriginFrame(ORIGIN_FRAME_COMMAND_BUTTON,0),1)=="war3mapImported\\BTNMove.blp" and IsFrameVisible(GetOriginFrame(ORIGIN_FRAME_COMMAND_BUTTON,0)))) then
                 call ShowFrame(GetFrameByName( "AbilityVarBarIcon", 9 ),true)
                 if LoadBoolean(HH,GetHandleId(GetFrameByName( "AbilityVarBarIcon", 9 )),BUTTONHOVER)==false then
                     call ShowFrame(GetFrameByName( "AbilityVarBarTooltip", 9 ),false)
+                else
+                    call ShowFrame(GetFrameByName( "AbilityVarBarTooltip", 9 ),true)
                 endif
                 if LoadReal(HH,GetHandleId(GetOwningPlayer(Goku)),VariationWHash)==1 then
                     call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 9 ), "ReplaceableTextures\\CommandButtons\\BTNGokuKaioken.blp", 0, true )
@@ -22435,10 +22443,12 @@ function Trig_Multup_Actions takes nothing returns nothing
             else
                 call ShowFrame(GetFrameByName( "AbilityVarBarIcon", 9 ),false)
             endif
-            if (IsAbilityVisible(GetUnitAbility(Goku,'GKE2')) or IsAbilityVisible(GetUnitAbility(Goku,'GKE3')) or IsAbilityVisible(GetUnitAbility(Goku,'GKE4')) or IsAbilityVisible(GetUnitAbility(Goku,'GKE5')) or IsAbilityVisible(GetUnitAbility(Goku,'GKE6'))) and GetOwningPlayer(Goku)==GetLocalPlayer() and (GetFrameTexture(GetOriginFrame(ORIGIN_FRAME_COMMAND_BUTTON,11),1)!="ReplaceableTextures\\CommandButtons\\BTNCancel.blp" or (GetFrameTexture(GetOriginFrame(ORIGIN_FRAME_COMMAND_BUTTON,0),1)=="war3mapImported\\BTNMove.blp" and IsFrameVisible(GetOriginFrame(ORIGIN_FRAME_COMMAND_BUTTON,0)))) then
+            if (IsAbilityVisible(GetUnitAbility(Goku,'GKE2')) or IsAbilityVisible(GetUnitAbility(Goku,'GKE3')) or IsAbilityVisible(GetUnitAbility(Goku,'GKE4')) or IsAbilityVisible(GetUnitAbility(Goku,'GKE5')) or IsAbilityVisible(GetUnitAbility(Goku,'GKE6'))) and (GetLocalPlayer()==GetOwningPlayer(Goku) or GetPlayerAlliance(GetOwningPlayer(Goku),GetLocalPlayer(),ALLIANCE_SHARED_CONTROL)) and (GetFrameTexture(GetOriginFrame(ORIGIN_FRAME_COMMAND_BUTTON,11),1)!="ReplaceableTextures\\CommandButtons\\BTNCancel.blp" or (GetFrameTexture(GetOriginFrame(ORIGIN_FRAME_COMMAND_BUTTON,0),1)=="war3mapImported\\BTNMove.blp" and IsFrameVisible(GetOriginFrame(ORIGIN_FRAME_COMMAND_BUTTON,0)))) then
                 call ShowFrame(GetFrameByName( "AbilityVarBarIcon", 10 ),true)
                 if LoadBoolean(HH,GetHandleId(GetFrameByName( "AbilityVarBarIcon", 10 )),BUTTONHOVER)==false then
                     call ShowFrame(GetFrameByName( "AbilityVarBarTooltip", 10 ),false)
+                else
+                    call ShowFrame(GetFrameByName( "AbilityVarBarTooltip", 10 ),true)
                 endif
                 if LoadReal(HH,GetHandleId(GetOwningPlayer(Goku)),VariationEHash)==1 then
                     call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 10 ), GetAbilityBaseStringFieldById( String2Id( "GKE3" ), ABILITY_SF_ICON_NORMAL ), 0, true )
@@ -22484,10 +22494,12 @@ function Trig_Multup_Actions takes nothing returns nothing
             else
                 call ShowFrame(GetFrameByName( "AbilityVarBarIcon", 10 ),false)
             endif
-            if IsAbilityVisible(GetUnitAbility(Goku,'GKT1')) and GetOwningPlayer(Goku)==GetLocalPlayer() and (GetFrameTexture(GetOriginFrame(ORIGIN_FRAME_COMMAND_BUTTON,11),1)!="ReplaceableTextures\\CommandButtons\\BTNCancel.blp" or (GetFrameTexture(GetOriginFrame(ORIGIN_FRAME_COMMAND_BUTTON,0),1)=="war3mapImported\\BTNMove.blp" and IsFrameVisible(GetOriginFrame(ORIGIN_FRAME_COMMAND_BUTTON,0)))) then
+            if IsAbilityVisible(GetUnitAbility(Goku,'GKT1')) and (GetLocalPlayer()==GetOwningPlayer(Goku) or GetPlayerAlliance(GetOwningPlayer(Goku),GetLocalPlayer(),ALLIANCE_SHARED_CONTROL)) and (GetFrameTexture(GetOriginFrame(ORIGIN_FRAME_COMMAND_BUTTON,11),1)!="ReplaceableTextures\\CommandButtons\\BTNCancel.blp" or (GetFrameTexture(GetOriginFrame(ORIGIN_FRAME_COMMAND_BUTTON,0),1)=="war3mapImported\\BTNMove.blp" and IsFrameVisible(GetOriginFrame(ORIGIN_FRAME_COMMAND_BUTTON,0)))) then
                 call ShowFrame(GetFrameByName( "AbilityVarBarIcon", 7 ),true)
                 if LoadBoolean(HH,GetHandleId(GetFrameByName( "AbilityVarBarIcon", 7 )),BUTTONHOVER)==false then
                     call ShowFrame(GetFrameByName( "AbilityVarBarTooltip", 7 ),false)
+                else
+                    call ShowFrame(GetFrameByName( "AbilityVarBarTooltip", 7 ),true)
                 endif
                 if LoadReal(HH,GetHandleId(GetOwningPlayer(Goku)),VariationTHash)==1 then
                     call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 7 ), "ReplaceableTextures\\CommandButtons\\BTNDragonFist2.blp", 0, true )
