@@ -63348,6 +63348,10 @@ if GetWidgetLife(c)>0 and GetWidgetLife(u)>0 and (time<4 or time2>0) then
         else
             if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
                 call SaveReal(HH,id,13,time2+0.03)
+                if time2<2.82 then
+                    call SetUnitInvulnerable(c,true)
+                    call PauseUnit(c,true)
+                endif
                 if time2==0 then
                     if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
                     call StartSound(soundStr[78])
@@ -64171,7 +64175,7 @@ local real dmg=LoadReal(h,id,10)
 local integer power=0
 local integer i=0
 local texttag l__txt=LoadTextTagHandle(h,id,12)
-if time<100 and GetUnitState(u,UNIT_STATE_LIFE)>0.405 and LoadBoolean(HH,GetHandleId(u),ANTITARGET_ABILITY)==false and LoadInteger(HH,GetHandleId(GenkiDama),0)==0 and GetUnitAbilityLevel(u,'CBC2')==0 and GetUnitAbilityLevel(u,'cbc3')==0  and GetUnitAbilityLevel(u,'cbc5')==0  and GetUnitAbilityLevel(u, 'cbc7')==0 and GetUnitAbilityLevel(u, 'cbc8')==0 and GetUnitAbilityLevel(u, 'cbc9')==0 and UnitIsAlive(u) and UnitIsAlive(dummy) and udg_B and DU2 then
+if time<100 and GetUnitState(u,UNIT_STATE_LIFE)>0.405 and LoadBoolean(HH,GetHandleId(u),TARGET_ABILITY)==false and LoadInteger(HH,GetHandleId(GenkiDama),0)==0 and GetUnitAbilityLevel(u,'CBC2')==0 and GetUnitAbilityLevel(u,'cbc3')==0  and GetUnitAbilityLevel(u,'cbc5')==0  and GetUnitAbilityLevel(u, 'cbc7')==0 and GetUnitAbilityLevel(u, 'cbc8')==0 and GetUnitAbilityLevel(u, 'cbc9')==0 and UnitIsAlive(u) and UnitIsAlive(dummy) and udg_B and DU2 then
     if time==0.05 then
         call SetUnitAnimationByIndex(u,152)
     endif
