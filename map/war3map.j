@@ -744,7 +744,6 @@ trigger gg_trg_ELi=null
 trigger gg_trg_WLi=null
 trigger gg_trg_QLi=null
 trigger gg_trg_TLi=null
-trigger gg_trg_QJeanne=null
 trigger gg_trg_EJeanne=null
 trigger gg_trg_TJeanne=null
 trigger gg_trg_WJeanne=null
@@ -1608,7 +1607,7 @@ endfunction
 
 function myCustomDamage takes unit whichUnit, unit target, real amount, boolean attack, boolean ranged, attacktype attackType, damagetype damageType, weapontype weaponType returns nothing
     local real currentDmg = amount
-        local real classic_res = 0.0
+    local real classic_res = 0.0
     local real minusres
     local integer idTar=GetHandleId(target)
     if GetUnitAbilityLevel(target,'GDSV') == 1 then
@@ -1624,6 +1623,9 @@ function myCustomDamage takes unit whichUnit, unit target, real amount, boolean 
         set minusres = minusres - 0.15
     endif
     //~ конец модификации увеличения урона
+    if GetUnitState(target,UNIT_STATE_LIFE)==GetUnitState(target,UNIT_STATE_MAX_LIFE) and IsUnitType(target,UNIT_TYPE_HERO) then
+        call SetUnitState(target,UNIT_STATE_LIFE,GetUnitState(target,UNIT_STATE_LIFE)-1)
+    endif
     if attackType != ATTACK_TYPE_HERO and damageType!=DAMAGE_TYPE_UNIVERSAL then
     //~ Увеличение НЕ хаос урона
         if passedTime < 0 then
@@ -1714,77 +1716,77 @@ function myCustomDamage takes unit whichUnit, unit target, real amount, boolean 
         // Шторм Вонголы и Гае Дирг
         //if GetUnitAbilityLevel(target,'RiSV') == 0 and GetUnitAbilityLevel(target,'GDSV') == 0 then
                 
-            if GetUnitAbilityLevel(target,'A15H') > 0 then
-                set currentDmg = currentDmg * 0.8
-            endif                         
-            // Калейдожезл Сапфир
-            if GetUnitAbilityLevel(target,'B073') > 0 then
-                set currentDmg = currentDmg * (1-0.15*minusres)
+        if GetUnitAbilityLevel(target,'A15H') > 0 then
+            set currentDmg = currentDmg * 0.8
+        endif                         
+        // Калейдожезл Сапфир
+        if GetUnitAbilityLevel(target,'B073') > 0 then
+            set currentDmg = currentDmg * (1-0.15*minusres)
+        endif
+                    
+        // F Wendy
+        if GetUnitAbilityLevel(target,'BW01') > 0 then
+            set currentDmg = currentDmg * (1-0.15*minusres)
+        endif
+        if GetUnitAbilityLevel(target,'A1EO') > 0 then
+            set currentDmg = currentDmg * (1-0.25*minusres)
+        endif                        
+        // Аокиджи R (Ice Ball)
+        if GetUnitAbilityLevel(target,'aokb') > 0 then
+            set currentDmg = currentDmg * (1-0.6*minusres)
+        endif
+                    
+        // Албедо F
+        if LoadInteger(HH,idTar,StringHash("AlbedoF_Mod")) == 2 then
+            set currentDmg = currentDmg * (1-0.2*minusres)
+        elseif GetUnitTypeId(target)!='HAlb' then
+            call RemoveSavedInteger(HH,idTar,StringHash("AlbedoF_Mod"))
+        endif
+                    
+        // Комплект акацки
+        if IsItemInInventory(target, 'I040') > 0 or GetUnitAbilityLevel(target,'KIL4') > 0 then
+            set currentDmg = currentDmg * (1-0.15*minusres)
+        endif
+                    
+        // Хломида акацки
+        if IsItemInInventory(target, 'I03X') > 0 or GetUnitAbilityLevel(target,'KIK8') > 0 then
+            set currentDmg = currentDmg * (1-0.1*minusres)
+        endif
+                    
+        //Гримуар прелати
+                    
+        if IsItemInInventory(target, 'I06Z') > 0 or IsItemInInventory(target, 'I06X') > 0 or IsItemInInventory(target, 'I06W') > 0 or GetUnitAbilityLevel(target,'KI0E') > 0 then
+            set currentDmg = currentDmg * (1-0.15*minusres)
+        endif
+                    
+        //======= Ичиго Блют Вене
+        if GetUnitAbilityLevel(target, 'IcF4') > 0 then
+            if currentDmg <= GetHeroInt(target, true)*1.5 then
+                set currentDmg=currentDmg*(1-0.4*minusres)
+            else
+                set currentDmg=currentDmg - GetHeroInt(target, true) * 1.5*minusres
             endif
-                        
-            // F Wendy
-            if GetUnitAbilityLevel(target,'BW01') > 0 then
-                set currentDmg = currentDmg * (1-0.15*minusres)
-            endif
-            if GetUnitAbilityLevel(target,'A1EO') > 0 then
-                set currentDmg = currentDmg * (1-0.25*minusres)
-            endif                        
-            // Аокиджи R (Ice Ball)
-            if GetUnitAbilityLevel(target,'aokb') > 0 then
-                set currentDmg = currentDmg * (1-0.6*minusres)
-            endif
-                        
-            // Албедо F
-            if LoadInteger(HH,idTar,StringHash("AlbedoF_Mod")) == 2 then
-                set currentDmg = currentDmg * (1-0.2*minusres)
-                        elseif GetUnitTypeId(target)!='HAlb' then
-                                call RemoveSavedInteger(HH,idTar,StringHash("AlbedoF_Mod"))
-            endif
-                        
-            // Комплект акацки
-            if IsItemInInventory(target, 'I040') > 0 or GetUnitAbilityLevel(target,'KIL4') > 0 then
-                set currentDmg = currentDmg * (1-0.15*minusres)
-            endif
-                        
-            // Хломида акацки
-            if IsItemInInventory(target, 'I03X') > 0 or GetUnitAbilityLevel(target,'KIK8') > 0 then
-                set currentDmg = currentDmg * (1-0.1*minusres)
-            endif
-                        
-            //Гримуар прелати
-                        
-            if IsItemInInventory(target, 'I06Z') > 0 or IsItemInInventory(target, 'I06X') > 0 or IsItemInInventory(target, 'I06W') > 0 or GetUnitAbilityLevel(target,'KI0E') > 0 then
-                set currentDmg = currentDmg * (1-0.15*minusres)
-            endif
-                        
-                        //======= Ичиго Блют Вене
-                        if GetUnitAbilityLevel(target, 'IcF4') > 0 then
-                                if currentDmg <= GetHeroInt(target, true)*1.5 then
-                                        set currentDmg=currentDmg*(1-0.4*minusres)
-                                else
-                                        set currentDmg=currentDmg - GetHeroInt(target, true) * 1.5*minusres
-                                endif
-                                
-                        endif
-                        if GetUnitAbilityLevel(whichUnit, 'IcF4') > 0 then
-                                set currentDmg=currentDmg * (1-0.4*minusres)
-                        endif
-                        //=======
+                
+        endif
+        if GetUnitAbilityLevel(whichUnit, 'IcF4') > 0 then
+            set currentDmg=currentDmg * (1-0.4*minusres)
+        endif
+            //=======
         //endif
                 
     //~ конец модификации уменьшения урона
     endif
-        call UnitDamageTarget(whichUnit,target,currentDmg,attack,ranged,attackType,damageType,weaponType)
-        //if GetUnitAbilityLevel(target, 'IMDc')==0 and currentDmg > 0 then
-        //      if Check_GaeDearg(target) and IsUnitInvulnerable(target) then
-        //              call SetUnitInvulnerable(target, false)
-        //              set currentDmg = currentDmg * 0.50
-        //              call UnitDamageTarget(whichUnit,target,currentDmg,attack,ranged,attackType,damageType,weaponType)
-        //              call SetUnitInvulnerable(target, true)
-        //      else
-        //              call UnitDamageTarget(whichUnit,target,currentDmg,attack,ranged,attackType,damageType,weaponType)
-        //      endif
-        //endif
+    call UnitDamageTarget(whichUnit,target,currentDmg,attack,ranged,attackType,damageType,weaponType)
+    //if GetUnitAbilityLevel(target, 'IMDc')==0 and currentDmg > 0 then
+    //      if Check_GaeDearg(target) and IsUnitInvulnerable(target) then
+    //              call SetUnitInvulnerable(target, false)
+    //              set currentDmg = currentDmg * 0.50
+    //              call UnitDamageTarget(whichUnit,target,currentDmg,attack,ranged,attackType,damageType,weaponType)
+    //              call SetUnitInvulnerable(target, true)
+    //      else
+    //              call UnitDamageTarget(whichUnit,target,currentDmg,attack,ranged,attackType,damageType,weaponType)
+    //      endif
+    //endif
 endfunction
 function myCustomDamage2 takes unit target, real amount returns real
     local real currentDmg = amount
@@ -5828,41 +5830,43 @@ function RemoveEffect takes effect newRemoveEffect,real newDur,boolean ShowEff,t
     call TimerStart(newT,newDur,false,function RemoveEffectAct)
 endfunction
 function Push10 takes nothing returns nothing
-local integer id=GetHandleId(GetExpiredTimer())
+local timer t=GetExpiredTimer()
+local integer id=GetHandleId(t)
+local unit c=LoadUnitHandle(h,id,0)
 local real speed=LoadReal(h,id,1)
 local real a=LoadReal(h,id,2)
 local real dist=LoadReal(h,id,3)
 local real time=LoadReal(h,id,5)-0.03
 call SaveReal(h,id,3,dist-speed)
 call SaveReal(h,id,5,time)
-if time>0 and dist>0 and GetUnitZ(LoadUnitHandle(h,id,0))>15 and LoadUnitHandle(h,id,0)!=null and GetUnitAbilityLevel(LoadUnitHandle(h,id,0),'A1BL')==0 and udg_B then
-    call SetUnitXY_1(LoadUnitHandle(h,id,0),GetUnitX(LoadUnitHandle(h,id,0))+speed*Cos(a),GetUnitY(LoadUnitHandle(h,id,0))+speed*Sin(a), true)
-    call SetUnitFacing(LoadUnitHandle(h,id,0),a*bj_RADTODEG)
-    call SetUnitFlyHeight(LoadUnitHandle(h,id,0),0,LoadReal(h, id, 6))
+if time>0 and dist>0 and GetUnitFlyHeight(c)>15 and c!=null and GetUnitAbilityLevel(c,'A1BL')==0 and udg_B then
+    call SetUnitXY_1(c,GetUnitX(c)+speed*Cos(a),GetUnitY(c)+speed*Sin(a), true)
+    call SetUnitFacing(c,a*bj_RADTODEG)
+    call SetUnitFlyHeight(c,GetUnitFlyHeight(c)-75,0)
 else
-    set EFF=AddSpecialEffect("chushou_by_wood_effect_earth_sandycrack_fag.mdl",GetUnitX(LoadUnitHandle(h,id,0)),GetUnitY(LoadUnitHandle(h,id,0)))
-    call SetSpecialEffectScale(EFF , 0.9)
+    call SetUnitFlyHeight(c,0,0)
+    set EFF=AddSpecialEffect("chushou_by_wood_effect_earth_sandycrack_fag.mdl",GetUnitX(c),GetUnitY(c))
+    call SetSpecialEffectScale(EFF ,     0.9)
     call RemoveEffect(EFF,1.5,false,CreateTimer())
-    set EFF=AddSpecialEffect("war3mapImported\\WindCircleFaster.mdl",GetUnitX(LoadUnitHandle(h,id,0)),GetUnitY(LoadUnitHandle(h,id,0)))
+    set EFF=AddSpecialEffect("war3mapImported\\WindCircleFaster.mdl",GetUnitX(c),GetUnitY(c))
     call SetSpecialEffectScale(EFF , 1.2)
     call RemoveEffect(EFF,2,false,CreateTimer())
     call FlushChildHashtable(h,id)
-    call PauseTimer(GetExpiredTimer())
-    call DestroyTimer(GetExpiredTimer())
+    call PauseTimer(t)
+    call DestroyTimer(t)
 endif
+set c=null
+set t=null
 endfunction
-function Push9 takes unit l__d,real speed,real angle,real dist, real fheight returns nothing
-local integer id=0
-set sysTimer=CreateTimer()
-set id=GetHandleId(sysTimer)
+function Push9 takes unit l__d,real speed,real angle,real dist returns nothing
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
 call SaveUnitHandle(h,id,0,l__d)
 call SaveReal(h,id,1,speed)
 call SaveReal(h,id,2,angle)
 call SaveReal(h,id,3,dist)
 call SaveReal(h, id, 5, 5)
-call SaveReal(h, id, 6, fheight)
-call TimerStart(sysTimer,0.03,true,function Push10)
-set sysTimer=null
+call TimerStart(t,0.03,true,function Push10)
 endfunction
 function Push8 takes nothing returns nothing
 local integer id=GetHandleId(GetExpiredTimer())
@@ -10453,7 +10457,7 @@ local real x=GetUnitX(Hero[ip])
 local real y=GetUnitY(Hero[ip])
 local real x1=GetUnitX(GenkiDama)
 local real y1=GetUnitY(GenkiDama)
-if IsUnitAlive(Hero[ip]) then
+if IsUnitAlive(Hero[ip]) and IsUnitPaused(Hero[ip])==false and GetUnitAbilityLevel(Hero[ip],'Pet1')==0 and GetUnitAbilityLevel(Hero[ip],'CBC2')==0 and GetUnitAbilityLevel(Hero[ip],'cbc3')==0  and GetUnitAbilityLevel(Hero[ip],'cbc5')==0  and GetUnitAbilityLevel(Hero[ip], 'cbc7')==0 and GetUnitAbilityLevel(Hero[ip], 'cbc8')==0 and GetUnitAbilityLevel(Hero[ip], 'cbc9')==0 then
 set n=CreateUnit(p,'e0CF',x,y,GetRandomReal(0,359))
 call SetUnitPathing(n,false)
 if GetUnitState(Hero[ip],UNIT_STATE_MANA)>GetUnitState(Hero[ip],UNIT_STATE_MAX_MANA)*0.1 then
@@ -10522,7 +10526,7 @@ function OnButtonChangeAbilityMode takes nothing returns nothing
     if buttonId == -1 then
         return
     endif
-    if (p==GetOwningPlayer(Goku) or GetPlayerAlliance(GetOwningPlayer(Goku),p,ALLIANCE_SHARED_CONTROL)) and but==GetFrameByName( "AbilityVarBarIcon", 8 ) then
+    if (p==GetOwningPlayer(Goku) or GetPlayerAlliance(GetOwningPlayer(Goku),p,ALLIANCE_SHARED_CONTROL)) and but==GetFrameByName( "AbilityVarBarIcon", 8 ) and IsUnitPaused(Goku)==false and GetUnitAbilityLevel(Goku,'Pet1')==0 then
         set pHid=GetHandleId(GetOwningPlayer(Goku))
         if LoadReal(HH,pHid,VariationQHash)==0 then
             call SaveReal(HH,pHid,VariationQHash,1)
@@ -10581,7 +10585,7 @@ function OnButtonChangeAbilityMode takes nothing returns nothing
             endif
         endif
     endif
-    if (p==GetOwningPlayer(Goku) or GetPlayerAlliance(GetOwningPlayer(Goku),p,ALLIANCE_SHARED_CONTROL)) and but==GetFrameByName( "AbilityVarBarIcon", 9 ) then
+    if (p==GetOwningPlayer(Goku) or GetPlayerAlliance(GetOwningPlayer(Goku),p,ALLIANCE_SHARED_CONTROL)) and but==GetFrameByName( "AbilityVarBarIcon", 9 ) and IsUnitPaused(Goku)==false and GetUnitAbilityLevel(Goku,'Pet1')==0 then
         set pHid=GetHandleId(GetOwningPlayer(Goku))
         if LoadReal(HH,pHid,VariationWHash)==0 and GetUnitAbilityLevel(Goku,'GkH0')>0 then
             call SaveReal(HH,pHid,VariationWHash,1)
@@ -10712,7 +10716,7 @@ function OnButtonChangeAbilityMode takes nothing returns nothing
             endif
         endif
     endif
-    if (p==GetOwningPlayer(Goku) or GetPlayerAlliance(GetOwningPlayer(Goku),p,ALLIANCE_SHARED_CONTROL)) and but==GetFrameByName( "AbilityVarBarIcon", 7 ) then
+    if (p==GetOwningPlayer(Goku) or GetPlayerAlliance(GetOwningPlayer(Goku),p,ALLIANCE_SHARED_CONTROL)) and but==GetFrameByName( "AbilityVarBarIcon", 7 ) and IsUnitPaused(Goku)==false and GetUnitAbilityLevel(Goku,'Pet1')==0 then
         set pHid=GetHandleId(GetOwningPlayer(Goku))
         if LoadReal(HH,pHid,VariationTHash)==0 then
             call SaveReal(HH,pHid,VariationTHash,1)
@@ -10751,31 +10755,31 @@ function AbilityModeClick takes nothing returns nothing
     local integer pHid = GetHandleId( p )
     local integer i=0
     if GetTriggerPlayerKey()==OSKEY_Q then
-        if p==GetLocalPlayer() and IsFrameVisible(GetFrameByName( "AbilityVarBarIcon", 8 )) and IsFrameEnabled(GetFrameByName( "AbilityVarBarIcon", 8 )) then
+        if p==GetLocalPlayer() and IsFrameVisible(GetFrameByName( "AbilityVarBarIcon", 8 )) then
             call ClickFrame(GetFrameByName( "AbilityVarBarIcon", 8 ))
         endif
     elseif GetTriggerPlayerKey()==OSKEY_W then
-        if p==GetLocalPlayer() and IsFrameVisible(GetFrameByName( "AbilityVarBarIcon", 9 )) and IsFrameEnabled(GetFrameByName( "AbilityVarBarIcon", 9 )) then
+        if p==GetLocalPlayer() and IsFrameVisible(GetFrameByName( "AbilityVarBarIcon", 9 )) then
             call ClickFrame(GetFrameByName( "AbilityVarBarIcon", 9 ))
         endif
     elseif GetTriggerPlayerKey()==OSKEY_E then
-        if p==GetLocalPlayer() and IsFrameVisible(GetFrameByName( "AbilityVarBarIcon", 10 )) and IsFrameEnabled(GetFrameByName( "AbilityVarBarIcon", 10 )) then
+        if p==GetLocalPlayer() and IsFrameVisible(GetFrameByName( "AbilityVarBarIcon", 10 )) then
             call ClickFrame(GetFrameByName( "AbilityVarBarIcon", 10 ))
         endif
     elseif GetTriggerPlayerKey()==OSKEY_R then
-        if p==GetLocalPlayer() and IsFrameVisible(GetFrameByName( "AbilityVarBarIcon", 11 )) and IsFrameEnabled(GetFrameByName( "AbilityVarBarIcon", 11 )) then
+        if p==GetLocalPlayer() and IsFrameVisible(GetFrameByName( "AbilityVarBarIcon", 11 )) then
             call ClickFrame(GetFrameByName( "AbilityVarBarIcon", 11 ))
         endif
     elseif GetTriggerPlayerKey()==OSKEY_T then
-        if p==GetLocalPlayer() and IsFrameVisible(GetFrameByName( "AbilityVarBarIcon", 7 )) and IsFrameEnabled(GetFrameByName( "AbilityVarBarIcon", 7 )) then
+        if p==GetLocalPlayer() and IsFrameVisible(GetFrameByName( "AbilityVarBarIcon", 7 )) then
             call ClickFrame(GetFrameByName( "AbilityVarBarIcon", 7 ))
         endif
     elseif GetTriggerPlayerKey()==OSKEY_F then
-        if p==GetLocalPlayer() and IsFrameVisible(GetFrameByName( "AbilityVarBarIcon", 5 )) and IsFrameEnabled(GetFrameByName( "AbilityVarBarIcon", 5 )) then
+        if p==GetLocalPlayer() and IsFrameVisible(GetFrameByName( "AbilityVarBarIcon", 5 )) then
             call ClickFrame(GetFrameByName( "AbilityVarBarIcon", 5 ))
         endif
     elseif GetTriggerPlayerKey()==OSKEY_G then
-        if p==GetLocalPlayer() and IsFrameVisible(GetFrameByName( "AbilityVarBarIcon", 6 )) and IsFrameEnabled(GetFrameByName( "AbilityVarBarIcon", 6 )) then
+        if p==GetLocalPlayer() and IsFrameVisible(GetFrameByName( "AbilityVarBarIcon", 6 )) then
             call ClickFrame(GetFrameByName( "AbilityVarBarIcon", 6 ))
         endif
     endif
@@ -21836,6 +21840,8 @@ function Trig_StatusBar_Actions takes nothing returns nothing
     set tOnPress = CreateTrigger( )
     set tOnUnPress = CreateTrigger( )
     set tOnClick = CreateTrigger( )
+    set tOnHover = CreateTrigger( )
+    set tOnUnHover = CreateTrigger( )
     set x=0
     loop 
 
@@ -21852,6 +21858,8 @@ function Trig_StatusBar_Actions takes nothing returns nothing
     call TriggerRegisterFrameEvent( tOnPress, CustomGlobalAbilityFrame, FRAMEEVENT_MOUSE_DOWN )
     call TriggerRegisterFrameEvent( tOnUnPress, CustomGlobalAbilityFrame, FRAMEEVENT_MOUSE_UP )
     call TriggerRegisterFrameEvent( tOnClick, CustomGlobalAbilityFrame, FRAMEEVENT_CONTROL_CLICK )
+    call TriggerRegisterFrameEvent( tOnHover, CustomGlobalAbilityFrame, FRAMEEVENT_MOUSE_ENTER )
+    call TriggerRegisterFrameEvent( tOnUnHover, CustomGlobalAbilityFrame, FRAMEEVENT_MOUSE_LEAVE )
 
     set CustomGlobalAbilityTooltip=CreateFrameByType("SIMPLEFRAME", "GlobalAbilityBarTooltip", CustomGlobalAbilityFrame, "", x)
     call ClearFrameAllPoints( CustomGlobalAbilityTooltip )
@@ -21880,6 +21888,8 @@ function Trig_StatusBar_Actions takes nothing returns nothing
     call TriggerAddAction( tOnPress, function OnButtonPress )
     call TriggerAddAction( tOnUnPress, function OnButtonUnpress )
     call TriggerAddAction( tOnClick, function OnButtonGlobalAbility )
+    call TriggerAddAction( tOnHover, function OnAddButtonHover )
+    call TriggerAddAction( tOnUnHover, function OnAddButtonUnHover )
 
     set CustomLeaderboard=CreateFrameByType("SIMPLEFRAME", "CustomLeaderboard", null, "", 0)
     call ClearFrameAllPoints( CustomLeaderboard )
@@ -22524,9 +22534,11 @@ function Trig_Multup_Actions takes nothing returns nothing
         endif
         if GenkiUsed[GetPlayerId(GetLocalPlayer())]==true and GetOwningPlayer(Goku)!=GetLocalPlayer() then
             call ShowFrame(GetFrameByName( "GlobalAbilityBarIcon", 0 ),true)
-            call SetFrameTexture( GetFrameByName( "GlobalAbilityBarIcon", 0 ), "ReplaceableTextures\\CommandButtons\\BTNGiveEnergy.blp", 0, true )
-            call SetFrameTexture( GetFrameByName( "GlobalAbilityBarIcon", 0 ), "ReplaceableTextures\\CommandButtons\\BTNGiveEnergy.blp", 1, true )
-            call SetFrameTexture( GetFrameByName( "GlobalAbilityBarIcon", 0 ), "ReplaceableTextures\\CommandButtons\\BTNGiveEnergy.blp", 2, true )
+            if LoadBoolean(HH,GetHandleId(GetFrameByName( "GlobalAbilityBarIcon", 0 )),BUTTONHOVER)==false then
+                call ShowFrame(GetFrameByName( "GlobalAbilityBarTooltip", 0 ),false)
+            else
+                call ShowFrame(GetFrameByName( "GlobalAbilityBarTooltip", 0 ),true)
+            endif
             call SetFrameText( GetFrameByName("GlobalAbilityBarTooltipText", 0), GetAbilityBaseStringFieldById( String2Id( "GKG2" ), ABILITY_SF_NAME )+", \n\n"+GetAbilityBaseStringFieldById( String2Id( "GKG2" ), ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED ))
             call SetFrameSize( GetFrameByName("GlobalAbilityBarTooltip", 0), .24, GetFrameHeight( GetFrameByName("GlobalAbilityBarTooltipText", 0))+0.03)
             call SetFrameTextAlignment( GetFrameByName("GlobalAbilityBarTooltipText", 0), TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_LEFT )
@@ -64303,9 +64315,12 @@ call SaveUnitHandle(h,id,0,u)
 set GenkiDama=CreateUnit(p,'e0CE',x,y,a*bj_RADTODEG)
 call SetUnitVertexColor(GenkiDama, 255, 255, 255, 0)
 call SetUnitFlyHeight(GenkiDama,570,0)
+call SetFrameTexture( GetFrameByName( "GlobalAbilityBarIcon", 0 ), "ReplaceableTextures\\CommandButtons\\BTNGiveEnergy.blp", 0, true )
+call SetFrameTexture( GetFrameByName( "GlobalAbilityBarIcon", 0 ), "ReplaceableTextures\\CommandButtons\\BTNGiveEnergy.blp", 1, true )
+call SetFrameTexture( GetFrameByName( "GlobalAbilityBarIcon", 0 ), "ReplaceableTextures\\CommandButtons\\BTNGiveEnergy.blp", 2, true )
 loop
 if IsPlayerAlly(Player(i),p) then
-set GenkiUsed[i]=true
+    set GenkiUsed[i]=true
 endif
 set i=i+1
 exitwhen i>=bj_MAX_PLAYER_SLOTS
@@ -64981,9 +64996,6 @@ endif
 call RemoveSavedHandle(HH,GetHandleId(p),WarpKamehamehaTargetHash)
 call SaveBoolean(HH,GetHandleId(p),WarpKamehamehaHash,false)
 call SetUnitVertexColor(u,255,255,255,255)
-if GetLocalPlayer()==GetOwningPlayer(u) then
-call SetFrameEnabled(GetFrameByName( "AbilityVarBarIcon", 8 ),true)
-endif
 call FlushChildHashtable(h,GetHandleId(g))
 call DestroyGroup(g)
 call PauseTimer(t)
@@ -65320,9 +65332,6 @@ call EnableUnitAbility2(u,'GKG6',false,true)
 call EnableUnitAbility2(u,'GKG7',false,true)
 call UnitEnableInventory(u,true,false )
 call SetUnitVertexColor(u,255,255,255,255)
-if GetLocalPlayer()==GetOwningPlayer(u) then
-call SetFrameEnabled(GetFrameByName( "AbilityVarBarIcon", 8 ),true)
-endif
 call FlushChildHashtable(h,GetHandleId(g))
 call DestroyGroup(g)
 call PauseTimer(t)
@@ -65444,9 +65453,6 @@ call DisableUnitAbility2(u,'GKG1',false,true)
 call DisableUnitAbility2(u,'GKG6',false,true)
 call DisableUnitAbility2(u,'GKG7',false,true)
 call UnitEnableInventory(u,false,false )
-if GetLocalPlayer()==GetOwningPlayer(u) then
-call SetFrameEnabled(GetFrameByName( "AbilityVarBarIcon", 8 ),false)
-endif
 if LoadReal(HH,idp,VariationQHash)==2 then
     call SaveInteger(HH,idp,KaiokenHash,LoadInteger(HH,idp,KaiokenHash)+1)
     call SaveReal(h,id,12,-0.9)
@@ -65656,7 +65662,7 @@ if GetWidgetLife(c)>0 and GetWidgetLife(u)>0 then
             call SetUnitFacingInstant(u,a*bj_RADTODEG)
         endif
         if time==1.8 then
-            call Push9(c,55,a,1100,2700)
+            call Push9(c,55,a,1100)
             if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
                 call StartSound(soundStr[66])
             else
@@ -65680,13 +65686,10 @@ if GetWidgetLife(c)>0 and GetWidgetLife(u)>0 then
             call RemoveEffect(EFF,1,true,CreateTimer())
         endif
     else
-        if LoadReal(HH,GetHandleId(p),VariationWHash)==2 then
+        if LoadReal(HH,idp,VariationWHash)==2 then
             set dmg=dmg+2*GetHeroStr(u,true)
-        elseif LoadReal(HH,GetHandleId(p),VariationWHash)==1 then
+        elseif LoadReal(HH,idp,VariationWHash)==1 then
             set dmg=dmg+1*GetHeroStr(u,true)
-        endif
-        if GetLocalPlayer()==GetOwningPlayer(u) then
-            call SetFrameEnabled(GetFrameByName( "AbilityVarBarIcon", 9 ),true)
         endif
         call SetUnitFlyHeight(u,0,2500)
         call SetUnitInvulnerable(c,false)
@@ -65695,13 +65698,13 @@ if GetWidgetLife(c)>0 and GetWidgetLife(u)>0 then
         call myCustomDamage(u,c,dmg,false,false,null,null,null)
         call SetControlToUnit(u,c, 1, "stun")
         call SetUnitVertexColor(u,255,255,255,255)
-        if LoadReal(HH,GetHandleId(GetOwningPlayer(u)),VariationWHash)==1 then
+        if LoadReal(HH,idp,VariationWHash)==1 then
             if GetUnitState(u,UNIT_STATE_LIFE)>GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.02*LoadInteger(HH,idp,KaiokenHash) then
                 call SetUnitState(u,UNIT_STATE_LIFE,GetUnitState(u,UNIT_STATE_LIFE)-GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.02*LoadInteger(HH,idp,KaiokenHash))
             else
                 call SetUnitState(u,UNIT_STATE_LIFE,1)
             endif
-        elseif LoadReal(HH,GetHandleId(GetOwningPlayer(u)),VariationWHash)==2 then
+        elseif LoadReal(HH,idp,VariationWHash)==2 then
             if GetUnitState(u,UNIT_STATE_LIFE)>GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.04*LoadInteger(HH,idp,KaiokenHash) then
                 call SetUnitState(u,UNIT_STATE_LIFE,GetUnitState(u,UNIT_STATE_LIFE)-GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.04*LoadInteger(HH,idp,KaiokenHash))
             else
@@ -65716,17 +65719,14 @@ if GetWidgetLife(c)>0 and GetWidgetLife(u)>0 then
         call FlushChildHashtable(HH,id)
     endif
 else
-    if GetLocalPlayer()==GetOwningPlayer(u) then
-        call SetFrameEnabled(GetFrameByName( "AbilityVarBarIcon", 9 ),true)
-    endif
     call SetUnitVertexColor(u,255,255,255,255)
-    if LoadReal(HH,GetHandleId(GetOwningPlayer(u)),VariationWHash)==1 then
+    if LoadReal(HH,idp,VariationWHash)==1 then
         if GetUnitState(u,UNIT_STATE_LIFE)>GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.02*LoadInteger(HH,idp,KaiokenHash) then
             call SetUnitState(u,UNIT_STATE_LIFE,GetUnitState(u,UNIT_STATE_LIFE)-GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.02*LoadInteger(HH,idp,KaiokenHash))
         else
             call SetUnitState(u,UNIT_STATE_LIFE,1)
         endif
-    elseif LoadReal(HH,GetHandleId(GetOwningPlayer(u)),VariationWHash)==2 then
+    elseif LoadReal(HH,idp,VariationWHash)==2 then
         if GetUnitState(u,UNIT_STATE_LIFE)>GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.04*LoadInteger(HH,idp,KaiokenHash) then
             call SetUnitState(u,UNIT_STATE_LIFE,GetUnitState(u,UNIT_STATE_LIFE)-GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.04*LoadInteger(HH,idp,KaiokenHash))
         else
@@ -65881,9 +65881,6 @@ if GetWidgetLife(c)>0 and GetWidgetLife(u)>0 and time<4 then
         endif
     endif
 else
-    if GetLocalPlayer()==GetOwningPlayer(u) then
-        call SetFrameEnabled(GetFrameByName( "AbilityVarBarIcon", 9 ),true)
-    endif
     call SetUnitVertexColor(u,255,255,255,255)
     if LoadReal(HH,GetHandleId(GetOwningPlayer(u)),VariationWHash)==1 then
         if GetUnitState(u,UNIT_STATE_LIFE)>GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.02*LoadInteger(HH,idp,KaiokenHash) then
@@ -66101,9 +66098,6 @@ if GetWidgetLife(c)>0 and GetWidgetLife(u)>0 and time<5 then
                 else
                     call StartSound(soundStr[73])
                 endif
-                if GetLocalPlayer()==GetOwningPlayer(u) then
-                    call SetFrameEnabled(GetFrameByName( "AbilityVarBarIcon", 9 ),true)
-                endif
                 call myCustomDamage(u,c,dmg,false,false,null,null,null)
                 call SetControlToUnit(u,c, 2, "stun")
                 call Push3(u,20,a,150,"")
@@ -66114,9 +66108,6 @@ if GetWidgetLife(c)>0 and GetWidgetLife(u)>0 and time<5 then
                 call SetUnitTimeScale(u,1)
                 call FlushChildHashtable(HH,id)
             else
-                if GetLocalPlayer()==GetOwningPlayer(u) then
-                    call SetFrameEnabled(GetFrameByName( "AbilityVarBarIcon", 9 ),true)
-                endif
                 call SetUnitFlyHeight(u,0,0)
                 call PauseTimer(t)
                 call DestroyTimer(t)
@@ -66131,9 +66122,6 @@ if GetWidgetLife(c)>0 and GetWidgetLife(u)>0 and time<5 then
     endif
 else
     call SetUnitTimeScale(u,1)
-    if GetLocalPlayer()==GetOwningPlayer(u) then
-        call SetFrameEnabled(GetFrameByName( "AbilityVarBarIcon", 9 ),true)
-    endif
     call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,false)
     call SetUnitFlyHeight(u,0,0)
     call DestroyTimer(t)
@@ -66249,9 +66237,6 @@ if GetWidgetLife(c)>0 and GetWidgetLife(u)>0 and time<4 then
             call PauseTimer(t)
             call TimerStart(t,0.03,true,function AcceleratingBattleSpiritCast3)
         else
-            if GetLocalPlayer()==GetOwningPlayer(u) then
-                call SetFrameEnabled(GetFrameByName( "AbilityVarBarIcon", 9 ),true)
-            endif
             call SetUnitFlyHeight(u,0,0)
             call DestroyTimer(t)
             call SetUnitInvulnerable(u,false)
@@ -66261,9 +66246,6 @@ if GetWidgetLife(c)>0 and GetWidgetLife(u)>0 and time<4 then
         endif
     endif
 else
-    if GetLocalPlayer()==GetOwningPlayer(u) then
-        call SetFrameEnabled(GetFrameByName( "AbilityVarBarIcon", 9 ),true)
-    endif
     call SetUnitFlyHeight(u,0,0)
     call DestroyTimer(t)
     call PauseUnit(c,false)
@@ -67076,7 +67058,7 @@ if time<0.630 and GetAbilityIntegerLevelField(GetUnitAbility(u,'GKR1'), ABILITY_
             if IsUnitInvulnerable(c)==false then
                 call myCustomDamage(u,c,dmg,false,false,null,null,null)
                 call SetControlToUnit(u,c, 1, "stun")
-                call Push9(c,55,a,1100,2700)
+                call Push9(c,55,a,1100)
             endif
             set EFF=AddSpecialEffect("chushou_by_wood_effect_earth_sandycrack_fag.mdl",x3,y3)
             call SetSpecialEffectScale(EFF , 0.6)
@@ -69608,10 +69590,14 @@ local integer l__s=StringHash("block")
 local real dist=LoadReal(h,id,100)
 local real time=LoadReal(h,id,4)
 local real f=360/60*bj_DEGTORAD
-if time<0.55 then
+if time<1.05 then
 call SaveReal(h,id,4,time+0.05)
-if time==0.5 then
-set n=CreateUnit(p,0x65304534,x,y,0)
+if time<1 then
+call PauseUnit(u,true)
+call SetUnitInvulnerable(u,true)
+endif
+if time==1 then
+set n=CreateUnit(p,'e0E4',x,y,0)
 call UnitApplyTimedLife(n,1,5)
 call SetUnitVertexColor(n,255,255,255,25)
 loop
@@ -69624,6 +69610,7 @@ set i=i+1
 endloop
 set i=1
 call SetUnitTimeScale(u,1)
+call PauseUnit(u,false)
 call SetUnitInvulnerable(u,false)
 endif
 else
@@ -69652,7 +69639,6 @@ call SetUnitFlyHeight(u,0,0)
 call SetUnitTimeScale(u,1)
 call DestroyGroup(g)
 call DestroyTimer(t)
-call SetUnitInvulnerable(u,false)
 call FlushChildHashtable(h,id)
 endif
 endif
@@ -69672,7 +69658,8 @@ local group g=CreateGroup()
 call SaveReal(h,id,2,x)
 call SaveReal(h,id,3,y)
 set n=CreateUnit(p,'e06G',x,y,0)
-call UnitApplyTimedLife(n,1,6)
+call UnitApplyTimedLife(n,1,6.5)
+call PauseUnit(u,true)
 call SetUnitInvulnerable(u,true)
 call SetUnitTimeScale(n,.1)
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\TousenBankai.mp3",false,false,true,12700,12700,"")
@@ -120652,7 +120639,7 @@ call PauseUnit(u,true)
 call SetUnitInvulnerable(u,true)
 call DestroyEffect(AddSpecialEffectTarget("Abilities\\Spells\\Undead\\DevourMagic\\DevourMagicBirthMissile.mdl",u,"right hand"))
 call DestroyEffect(AddSpecialEffectTarget("Abilities\\Spells\\Undead\\DevourMagic\\DevourMagicBirthMissile.mdl",u,"left hand"))
-set n=CreateUnit(p,0x6531305A,x,y,GetRandomReal(0,359))
+set n=CreateUnit(p,'e10Z',x,y,GetRandomReal(0,359))
 call SetUnitFlyHeight(n,0,0)
 call UnitApplyTimedLife(n,1,1)
 set n=CreateUnit(p,'e10Y',x,y,GetRandomReal(0,359))
@@ -120731,7 +120718,11 @@ call UnitRemoveAbility(u,'A0QL')
 call UnitAddAbility(l__d,'A0A1')
 call CreateModeIndicatorForm(u, "ReplaceableTextures\\CommandButtons\\BTNTama4.blp", 20)
 if GetUnitAbilityLevel(u,'A1B6')>0 then
-call StartAbilityCooldown(GetUnitAbility(u, 'A1B6'), 3)
+    if GetUnitAbilityLevel(u,'A0IH')>0 then
+        call StartAbilityCooldown(GetUnitAbility(u, 'A1B6'), 30)
+    else
+        call StartAbilityCooldown(GetUnitAbility(u, 'A1B6'), 3)
+    endif
 endif
 call TimerStart(t,0.1,true,function HramCast7)
 endif
@@ -120911,6 +120902,8 @@ call UnitAddAbility(u,'Arav')
 call UnitAddAbility(u,'A0QL')
 call UnitMakeAbilityPermanent(u,true,'A0QL')
 call UnitRemoveAbility(u,'Arav')
+call PauseUnit(u,true)
+call SetUnitInvulnerable(u,true)
 set n=LoadUnitHandle(HH,GetHandleId(u),StringHash("tama"))
 call UnitAddAbility(n,'A1AV')
 call UnitRemoveAbility(n,'A0A1')
@@ -120944,11 +120937,9 @@ call SetUnitScale(n,3.5,3.5,3.5)
 call UnitApplyTimedLife(n,1,3)
 set n=CreateUnit(p,'e10S',x,y,GetRandomReal(0,359))
 call UnitApplyTimedLife(n,1,3)
-set n=CreateUnit(p,0x65313054,x,y,GetRandomReal(0,359))
+set n=CreateUnit(p,'e10T',x,y,GetRandomReal(0,359))
 call SetUnitTimeScale(n,0.25)
 call UnitApplyTimedLife(n,1,26.5)
-call PauseUnit(u,true)
-call SetUnitInvulnerable(u,true)
 call SaveUnitHandle(h,idu,StringHash("hramd"),n)
 call SaveGroupHandle(h,id,6,CreateGroup())
 call SaveGroupHandle(h,id,12,CreateGroup())
@@ -121887,7 +121878,7 @@ call TriggerAddCondition(gg_trg_Gyokutenhou,Condition(function GyokutenhouCond))
 call TriggerAddAction(gg_trg_Gyokutenhou,function GyokutenhouCast)
 endfunction
 function TamamoCatCond takes nothing returns boolean
-return GetSpellAbilityId()==0x41314236 and udg_B
+return GetSpellAbilityId()=='A1B6' and udg_B
 endfunction
 function TamamoCatCast3 takes nothing returns nothing
 local timer t=GetExpiredTimer()
@@ -129875,128 +129866,6 @@ set gg_trg_TLi=CreateTrigger()
 call TriggerRegisterAnyUnitEventBJ(gg_trg_TLi,EVENT_PLAYER_UNIT_SPELL_EFFECT)
 call TriggerAddCondition(gg_trg_TLi,Condition(function TLiCond))
 call TriggerAddAction(gg_trg_TLi,function TLiCast)
-endfunction
-function QJeanneCond takes nothing returns boolean
-return GetSpellAbilityId()=='A1D3'
-endfunction
-function QJeanneCast3 takes nothing returns nothing
-local timer t=GetExpiredTimer()
-local integer id=GetHandleId(t)
-local unit u=LoadUnitHandle(h,id,0)
-local unit l__d=LoadUnitHandle(h,id,1)
-local real dmg=GetHeroInt(u,true)*(2+GetUnitAbilityLevel(u,'A1D3'))
-local real x=GetUnitX(l__d)
-local real y=GetUnitY(l__d)
-local real x1=GetUnitX(u)
-local real y1=GetUnitY(u)
-local real a=LoadReal(h,id,3)
-local real dist=LoadReal(h,id,2)
-local real slow=LoadReal(h,id,4)
-local real time=LoadReal(h,id,5)
-local player p=GetOwningPlayer(u)
-local group g=LoadGroupHandle(h,id,8)
-local integer l__idg=GetHandleId(g)
-if dist<2500 and GetWidgetLife(l__d)>0 then
-set x=x+(50-slow)*Cos(a)
-set y=y+(50-slow)*Sin(a)
-call SetUnitXY_1(l__d,x,y, false)
-call SaveReal(h,id,2,dist+50-slow)
-call SaveReal(h,id,4,slow+0.4)
-call SaveReal(h,id,5,time+0.02)
-if time>0.16 then
-set n=CreateUnit(p,'e12H',x,y,a*bj_RADTODEG)
-call UnitApplyTimedLife(n,1,0.3)
-set n=CreateUnit(p,'e12I',x,y,GetRandomReal(0,359))
-call UnitApplyTimedLife(n,1,0.3)
-call SaveReal(h,id,5,0)
-endif
-call GroupEnumUnitsInRange(g,x,y,225,Base)
-loop
-set E=FirstOfGroup(g)
-set ide=GetHandleId(E)
-exitwhen E==null
-if Condition_Base(p,E)and E!=LoadUnitHandle(h,l__idg,ide)then
-call DestroyEffect(AddSpecialEffectTarget("war3mapImported\\Fire Bolt.mdx",E,"chest"))
-call myCustomDamage(u,E,dmg,false,false,null,null,null)
-call SaveUnitHandle(h,l__idg,ide,E)
-endif
-call GroupRemoveUnit(g,E)
-endloop
-else
-call SetUnitTimeScale(u,1)
-call KillUnit(l__d)
-call PauseTimer(t)
-call DestroyTimer(t)
-call DestroyGroup(g)
-call FlushChildHashtable(h,l__idg)
-call FlushChildHashtable(h,id)
-endif
-set g=null
-set l__d=null
-set u=null
-set p=null
-set t=null
-endfunction
-function QJeanneCast2 takes nothing returns nothing
-local timer t=GetExpiredTimer()
-local integer id=GetHandleId(t)
-local unit u=LoadUnitHandle(h,id,0)
-local real x=GetUnitX(u)
-local real y=GetUnitY(u)
-local player p=GetOwningPlayer(u)
-local real a=LoadReal(h,id,3)
-call PauseTimer(t)
-call SetUnitInvulnerable(u,false)
-call PauseUnit(u,false)
-call TimerStart(t,0.02,true,function QJeanneCast3)
-set u=null
-set p=null
-set t=null
-endfunction
-function QJeanneCast takes nothing returns nothing
-local timer t=CreateTimer()
-local integer id=GetHandleId(t)
-local unit u=GetTriggerUnit()
-local player p=GetOwningPlayer(u)
-local real x=GetUnitX(u)
-local real y=GetUnitY(u)
-local real x1=GetSpellTargetX()
-local real y1=GetSpellTargetY()
-local real a=Atan2(y1-y,x1-x)
-call SaveUnitHandle(h,id,0,u)
-set n=CreateUnit(p,'e12G',x+45*Cos(a),y+45*Sin(a),a*bj_RADTODEG)
-call SaveUnitHandle(h,id,1,n)
-call SetUnitTimeScale(n,1.5)
-call SaveReal(h,id,2,0)
-call SaveReal(h,id,4,0)
-call SaveReal(h,id,5,0)
-call SaveReal(h,id,3,a)
-call SaveGroupHandle(h,id,8,CreateGroup())
-call SetUnitTimeScale(u,1)
-call PauseUnit(u,true)
-call SetUnitInvulnerable(u,true)
-set n=CreateUnit(p,'e12Q',x,y,a*bj_RADTODEG)
-call SetUnitTimeScale(n,0.5)
-call UnitApplyTimedLife(n,1,0.5)
-set n=CreateUnit(p,'e0RV',x,y,a*bj_RADTODEG)
-call SetUnitTimeScale(n,0.5)
-call UnitApplyTimedLife(n,1,1)
-call SetUnitScale(n,0.75,0.75,0.75)
-call SetUnitVertexColor(n,255,255,255,175)
-call DestroyEffect(AddSpecialEffect("war3mapImported\\LW10.mdl",x,y))
-call TimerStart(t,0.3,false,function QJeanneCast2)
-set soundplay=CreateSound("Sound\\Music\\mp3Music\\AlterJeanneSkill2.mp3",false,false,true,12700,12700,"")
-call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
-set u=null
-set p=null
-set t=null
-endfunction
-function InitTrig_QJeanne takes nothing returns nothing
-set gg_trg_QJeanne=CreateTrigger()
-call TriggerRegisterAnyUnitEventBJ(gg_trg_QJeanne,EVENT_PLAYER_UNIT_SPELL_EFFECT)
-call TriggerAddCondition(gg_trg_QJeanne,Condition(function QJeanneCond))
-call TriggerAddAction(gg_trg_QJeanne,function QJeanneCast)
 endfunction
 function CloudMareCond takes nothing returns boolean
 return GetSpellAbilityId()=='A04H' and udg_B==true and GetUnitTypeId(GetTriggerUnit())!='H007'
@@ -168898,7 +168767,8 @@ function MadokaQ1_Periodic takes nothing returns nothing
     local boolean bool_heal=LoadBoolean(h, id, StringHash("HealBoolean"))
     if act < 3 then
         if act == 0 then
-            if time < 0.8 then
+            if time < 0.5 then
+                call PauseUnit(caster, true)
                 call SetUnitInvulnerable(caster, true)
                 call SetUnitX(arrow, GetUnitX(caster))
                 call SetUnitY(arrow, GetUnitY(caster))
@@ -169188,7 +169058,8 @@ function MadokaQ2_Periodic takes nothing returns nothing
     local real angle=LoadReal(h, id, AngleHash)
     local real dinam_angle=angle
     local boolean bool_heal=LoadBoolean(h, id, StringHash("HealBoolean"))
-    if time < 0.8 then
+    if time < 0.5 then
+        call PauseUnit(caster, true)
         call SetUnitInvulnerable(caster, true)
         set n=LoadUnitHandle(h, id, Dummy1Hash)
         call SetUnitX(n, GetUnitX(caster) + 35 * Cos(dinam_angle))
@@ -169342,16 +169213,17 @@ function MadokaQ3_Periodic takes nothing returns nothing
     local boolean bool_heal=LoadBoolean(h, id, StringHash("HealBoolean"))
     if act < 3 then
         if act == 0 then
-            if time < 0.8 then
-                call SetUnitFlyHeight(caster, time * 700, 0)
+            if time < 0.5 then
+                call SetUnitFlyHeight(caster, time * 1120, 0)
                 if GetUnitTypeId(caster) == 'HMaG' then
                     call SetUnitFlyHeight(arrow, GetUnitFlyHeight(caster) + 100, 0)
                 else
                     call SetUnitFlyHeight(arrow, GetUnitFlyHeight(caster) + 50, 0)
                 endif
+                call PauseUnit(caster, true)
                 call SetUnitInvulnerable(caster, true)
-                call SetUnitX(caster, GetUnitX(caster) - 3 * Cos(angle))
-                call SetUnitY(caster, GetUnitY(caster) - 3 * Sin(angle))
+                call SetUnitX(caster, GetUnitX(caster) - 4 * Cos(angle))
+                call SetUnitY(caster, GetUnitY(caster) - 4 * Sin(angle))
                 call SetUnitX(arrow, GetUnitX(caster))
                 call SetUnitY(arrow, GetUnitY(caster))
                 call SaveReal(h, id, TIME_HASH, time + 0.01)
@@ -190523,6 +190395,157 @@ call DestroyTimer(GetExpiredTimer())
 endfunction
 
 
+function Jeanne_Alter_Q_Act takes nothing returns nothing
+local integer id=GetHandleId(GetExpiredTimer())
+local unit caster=LoadUnitHandle(HH,id,1)
+local unit Dummy=LoadUnitHandle(HH,id,20)
+local real facing=LoadReal(HH,id,3)
+local group gr=LoadGroupHandle(HH,id,4)
+local real time=LoadReal(HH,id,5)
+local real time1=LoadReal(HH,id,6)
+local real x0=GetUnitX(caster)
+local real y0=GetUnitY(caster)
+local real x1=GetUnitX(Dummy)
+local real y1=GetUnitY(Dummy)
+local real damage=LoadReal(HH,id,15)
+local real dist=LoadReal(HH,id,8)
+local real slow=LoadReal(HH,id,9)
+
+
+
+call SaveReal(HH,id,9,slow+0.42)
+
+
+set time=time+0.02
+call SaveReal(HH,id,5,time)
+if dist>2500 then
+call GroupClear(gr)
+call DestroyGroup(gr)
+call RemoveUnit(Dummy)
+call PauseTimer(GetExpiredTimer())
+call FlushChildHashtable(HH,id)
+call DestroyTimer(GetExpiredTimer())
+else
+
+if time<0.3 then
+call PauseUnit(caster,true)
+call SetUnitInvulnerable(caster,true)
+endif
+
+if time==0.02 then
+call UnitSpeed(caster,1)
+set soundplay=CreateSound("Sound\\Music\\mp3Music\\AlterJeanneSkill2.mp3",false,false,true,12700,12700,"")
+call StartSound(soundplay)
+////call KillSoundWhenDone(soundplay)
+
+//call EffectCreateAndMove(true,"Izayoi\\wind4.mdl",facing,1,1,0.5,100,100,100,50,0,caster,0,facing)
+call EffectCreateAndMove(true,"Izayoi\\[A]az_axe_ef1.mdl",facing,1,1.5,0.5,100,100,100,50,0,caster,0,facing)
+
+
+
+//set n=CreateUnit(GetOwningPlayer(caster),'e12Q',x0,y0,facing)
+//call SetUnitTimeScale(n,0.5)
+//call UnitApplyTimedLife(n,1,0.5)
+//set n=CreateUnit(GetOwningPlayer(caster),'e0RV',x0,y0,facing)
+//call SetUnitTimeScale(n,0.5)
+//call UnitApplyTimedLife(n,1,1)
+//call SetUnitScale(n,0.75,0.75,0.75)
+//call SetUnitVertexColor(n,255,255,255,175)
+//call DestroyEffect(AddSpecialEffect("war3mapImported\\LW10.mdl",x0,y0))
+
+endif
+if time==0.3 then
+call UnitSpeed(caster,1)
+call PauseUnit(caster,false)
+call SetUnitInvulnerable(caster,false)
+set n0=CreateUnit(GetOwningPlayer(caster),'090e',GetUnitX(caster),GetUnitY(caster),facing)
+
+//call SetUnitModel(n0,"war3mapImported\\JeanneFireQ2.mdl")
+//call UnitSize(n0,2,1,1)
+//call UnitSpeed(n0,0.5)
+call SetUnitFlyHeight(n0,100,0)
+call SaveUnitHandle(HH,id,20,n0)
+set n0=null
+endif
+
+
+
+
+
+
+
+
+
+if time>0.3 then
+
+call MoveUnit(Dummy,Dummy,60-slow,facing)
+
+
+
+
+
+
+set time1=time1+0.02
+
+if time1==0.04 or time==0.08 or time==0.12 or time1==0.16 then
+call EffectCreateAndMove(true,"Signum\\FSAeff (132).mdl",facing,1.5,2.75,0.75,100,100,100,40,0,Dummy,0,facing)
+endif
+
+
+if time1>=0.16  then
+//call EffectCreateAndMove90(true,"war3mapImported\\magmaburst.mdl",facing,1,1.55,0.75,100,100,100,0,75,Dummy,0,facing)
+
+//set n=CreateUnit(GetOwningPlayer(caster),'e0RK',x1,y1,facing)
+//call UnitApplyTimedLife(n,1,0.3)
+//call UnitSize(n,1,1,1)
+
+
+
+//call EffectCreateAndMove(true,"war3mapImported\\Earth Crack.mdl",facing,1.5,1,1,100,100,100,0,0,Dummy,0,facing)
+
+
+
+set time1=0
+endif
+call SaveReal(HH,id,6,time1)
+call SaveReal(HH,id,8,dist+60-slow)
+
+
+
+call DamageAoeOneTime(caster,x1,y1,225,damage,gr)
+
+
+endif
+endif
+set caster=null
+set Dummy=null
+set gr=null
+endfunction
+
+
+
+
+function Jeanne_Alter_Q takes unit caster,real x1,real y1 returns nothing
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+local real x0=GetUnitX(caster)
+local real y0=GetUnitY(caster)
+local real facing=Angle2(x0,y0,x1,y1)
+local real damage=GetHeroInt(caster,true)*(2+GetUnitAbilityLevel(caster,'A1D3'))+75
+call SaveUnitHandle(HH,id,1,caster)
+call SaveReal(HH,id,3,facing)
+call SaveReal(HH,id,11,x1)
+call SaveReal(HH,id,12,y1)
+call SaveReal(HH,id,15,damage)
+call SaveGroupHandle(HH,id,4,CreateGroup())
+call PauseUnit(caster,true)
+call SetUnitInvulnerable(caster,true)
+call TimerStart(t,0.02,true,function Jeanne_Alter_Q_Act)
+
+
+set t=null
+endfunction
+
 function JeanneAlterGChoice_Act takes nothing returns nothing
 local timer t=CreateTimer()
 local integer id=GetHandleId(t)
@@ -190534,11 +190557,6 @@ local real y1=GetSpellTargetY()
 local real HpMax=GetUnitState(caster,UNIT_STATE_MAX_LIFE)
 local real HpCur=GetUnitState(caster,UNIT_STATE_LIFE)
 local real facing
-if HpCur>HpMax*0.15 then
-call SetUnitState(caster,UNIT_STATE_LIFE,HpCur-HpMax*0.05)
-endif
-set HpCur=GetUnitState(caster,UNIT_STATE_LIFE)
-call SaveReal(HH,id,15,HpMax*0.05+(HpMax-HpCur)*0.4)
 set facing=Angle2(x0,y0,x1,y1)
 call SaveUnitHandle(HH,id,1,caster)
 
@@ -190553,7 +190571,11 @@ call SaveReal(HH,id,12,y1)
 
 call SaveReal(HH,id,3,facing)
 if GetSpellAbilityId()=='JAG1' then
-
+if HpCur>HpMax*0.15 then
+call SetUnitState(caster,UNIT_STATE_LIFE,HpCur-HpMax*0.05)
+endif
+set HpCur=GetUnitState(caster,UNIT_STATE_LIFE)
+call SaveReal(HH,id,15,HpMax*0.05+(HpMax-HpCur)*0.4)
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\JeanneAlterG1.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
 call KillSoundWhenDone(soundplay)
@@ -190563,7 +190585,12 @@ call SetUnitAnimationByIndex(caster,8)
 call UnitSpeed(caster,0.5)
 call TimerStart(t,0.02,true,function JeanneAlterGW2Act)
 endif
+if GetSpellAbilityId()=='A1D3' then
 
+
+call Jeanne_Alter_Q(caster,x1,y1)
+
+endif
 if GetSpellAbilityId()=='JAE2' then
 
 call SaveBoolean(h,GetHandleId(caster),StringHash("JeanneAlterEact"),true)
@@ -190581,7 +190608,7 @@ set t=null
 set caster=null
 endfunction
 function JeanneAlterGChoice_Cond takes nothing returns boolean
-if GetSpellAbilityId()=='JAG1' or GetSpellAbilityId()=='JAE2' then
+if GetSpellAbilityId()=='JAG1' or GetSpellAbilityId()=='JAE2' or GetSpellAbilityId()=='A1D3' then
 return true
 else
 return false
@@ -207974,7 +208001,6 @@ call InitTrig_WLi()
 call InitTrig_QLi()
 call InitTrig_TLi()
 call InitTrig_666()
-call InitTrig_QJeanne()
 call InitTrig_EJeanne()
 call InitTrig_TJeanne()
 call InitTrig_WJeanne()
