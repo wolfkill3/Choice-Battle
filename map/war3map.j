@@ -1650,7 +1650,7 @@ function myCustomDamage takes unit whichUnit, unit target, real amount, boolean 
 		if GetUnitAbilityLevel(whichUnit,'A176') > 0 then
             set currentDmg = currentDmg * 1.05
         endif  
-        if GetUnitAbilityLevel(whichUnit,'GkH5') > 0 then
+        if GetUnitAbilityLevel(whichUnit,'GkH5') > 0 or GetUnitAbilityLevel(whichUnit,'GkH8') > 0 then
             set currentDmg = currentDmg * 1.05
         endif
         if GetUnitAbilityLevel(whichUnit,'GkH6') > 0 then
@@ -38978,8 +38978,8 @@ set n0=null
         call SetWidgetLife(c, GetWidgetLife(c)+ nb*0.2)
     endif
     if (CurrentEventAttack or GetUnitAbilityLevel(c,'A3WR')>0) and GetUnitAbilityLevel(c,'A06R')>0 and nb>0 then
-        call HealTextTag(c,c,nb*0.35*myCustomHeal2(c,1),"HealthRes")
-        call SetWidgetLife(c, GetWidgetLife(c)+ nb*0.35)
+        call HealTextTag(c,c,nb*0.45*myCustomHeal2(c,1),"HealthRes")
+        call SetWidgetLife(c, GetWidgetLife(c)+ nb*0.45)
     endif
     if (CurrentEventAttack or GetUnitAbilityLevel(c,'A3WR')>0) and GetUnitAbilityLevel(c,'B06N')>0 and nb>0 and GetUnitAttackRangeByIndex(c,0)<250 then
         call HealTextTag(c,c,nb*0.3*myCustomHeal2(c,1),"HealthRes")
@@ -39136,7 +39136,7 @@ local real y=LoadReal(h,id,51)
 local unit u
 local real dist
 local real modif_factor=LoadReal(h, id, 100)
-local real dmg=GetHeroAgi(c,true)*3 *modif_factor
+local real dmg=GetHeroAgi(c,true)*2 *modif_factor
 local integer l__idg=GetHandleId(ng)
 loop
 exitwhen i>10
@@ -39274,7 +39274,7 @@ function FengPassive_Actions takes nothing returns nothing
 	local unit u=GetAttacker()
 	local integer id_caster = GetHandleId(u)
 	if Condition_Base(GetOwningPlayer(u), GetTriggerUnit()) then
-		call PoisonDamage5(u,GetTriggerUnit(),3*GetHeroInt(u,true),6,"Abilities\\Weapons\\PoisonSting\\PoisonStingTarget.mdl","chest")
+		call PoisonDamage5(u,GetTriggerUnit(),2.5*GetHeroInt(u,true),6,"Abilities\\Weapons\\PoisonSting\\PoisonStingTarget.mdl","chest")
 		call SlowUnit(u,GetTriggerUnit(),0.5,0.5,1,1,false)
     endif
 	set u=null
@@ -39429,7 +39429,7 @@ if Condition_Base(p,E) then
             call Shusui_Cast(u, 1)
         endif
         if UnitHasItemOfTypeBJ(u, 'I01U') and GetRandomInt(1, 100)<=45 then 		// Feng
-            call PoisonDamage5(u,E,3*GetHeroInt(u,true),6,"Abilities\\Weapons\\PoisonSting\\PoisonStingTarget.mdl","chest")
+            call PoisonDamage5(u,E,2.5*GetHeroInt(u,true),6,"Abilities\\Weapons\\PoisonSting\\PoisonStingTarget.mdl","chest")
             call SlowUnit(u,E,0.5,0.,1,1,false)
         endif
         if (UnitHasItemOfTypeBJ(u,'I04E')==true or GetUnitAbilityLevel(u,'KIN4') > 0) then  //666
@@ -64866,7 +64866,7 @@ call SetUnitFacing(u, a*bj_RADTODEG)
 if LoadReal(HH,GetHandleId(p),VariationQHash)==4 then
 set dmg=dmg+1*GetHeroStr(u,true)
 elseif LoadReal(HH,GetHandleId(p),VariationQHash)==3 then
-set dmg=dmg+2*GetHeroStr(u,true)
+set dmg=dmg+3*GetHeroStr(u,true)
 elseif LoadReal(HH,GetHandleId(p),VariationQHash)==2 then
 set dmg=dmg+1*GetHeroStr(u,true)
 endif
@@ -64973,23 +64973,39 @@ call EnableUnitAbility2(u,'GKG7',false,true)
 call UnitEnableInventory(u,true,false )
 call SetAbilityStringField(GetUnitAbility(u,'GKR1'),ABILITY_SF_ICON_NORMAL,"ReplaceableTextures\\CommandButtons\\BTNInstant_transmission.blp")
 if LoadReal(HH,GetHandleId(GetOwningPlayer(u)),VariationQHash)==2 then
-if GetUnitState(u,UNIT_STATE_LIFE)>GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.02*LoadInteger(HH,idp,KaiokenHash) then
-call SetUnitState(u,UNIT_STATE_LIFE,GetUnitState(u,UNIT_STATE_LIFE)-GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.02*LoadInteger(HH,idp,KaiokenHash))
-else
-call SetUnitState(u,UNIT_STATE_LIFE,1)
-endif
+    if LoadInteger(HH,idp,KaiokenHash)<5 then
+        if GetUnitState(u,UNIT_STATE_LIFE)>GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.02*LoadInteger(HH,idp,KaiokenHash) then
+            call SetUnitState(u,UNIT_STATE_LIFE,GetUnitState(u,UNIT_STATE_LIFE)-GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.02*LoadInteger(HH,idp,KaiokenHash))
+        else
+            call SetUnitState(u,UNIT_STATE_LIFE,1)
+        endif
+    else
+        if GetUnitState(u,UNIT_STATE_LIFE)>GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.1 then
+            call SetUnitState(u,UNIT_STATE_LIFE,GetUnitState(u,UNIT_STATE_LIFE)-GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.1)
+        else
+            call SetUnitState(u,UNIT_STATE_LIFE,1)
+        endif
+    endif
 elseif LoadReal(HH,GetHandleId(GetOwningPlayer(u)),VariationQHash)==3 then
-if GetUnitState(u,UNIT_STATE_LIFE)>GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.04*LoadInteger(HH,idp,KaiokenHash) then
-call SetUnitState(u,UNIT_STATE_LIFE,GetUnitState(u,UNIT_STATE_LIFE)-GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.04*LoadInteger(HH,idp,KaiokenHash))
-else
-call SetUnitState(u,UNIT_STATE_LIFE,1)
-endif
+    if LoadInteger(HH,idp,KaiokenHash)<5 then
+        if GetUnitState(u,UNIT_STATE_LIFE)>GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.04*LoadInteger(HH,idp,KaiokenHash) then
+            call SetUnitState(u,UNIT_STATE_LIFE,GetUnitState(u,UNIT_STATE_LIFE)-GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.04*LoadInteger(HH,idp,KaiokenHash))
+        else
+            call SetUnitState(u,UNIT_STATE_LIFE,1)
+        endif
+    else
+        if GetUnitState(u,UNIT_STATE_LIFE)>GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.2 then
+            call SetUnitState(u,UNIT_STATE_LIFE,GetUnitState(u,UNIT_STATE_LIFE)-GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.2)
+        else
+            call SetUnitState(u,UNIT_STATE_LIFE,1)
+        endif
+    endif
 elseif LoadReal(HH,GetHandleId(GetOwningPlayer(u)),VariationQHash)==4 then
-if GetUnitState(u,UNIT_STATE_MANA)>GetUnitState(u,UNIT_STATE_MAX_MANA)*0.1 then
-call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-GetUnitState(u,UNIT_STATE_MAX_MANA)*0.1)
-else
-call SetUnitState(u,UNIT_STATE_MANA,1)
-endif
+    if GetUnitState(u,UNIT_STATE_MANA)>GetUnitState(u,UNIT_STATE_MAX_MANA)*0.1 then
+        call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-GetUnitState(u,UNIT_STATE_MAX_MANA)*0.1)
+    else
+        call SetUnitState(u,UNIT_STATE_MANA,1)
+    endif
 endif
 call RemoveSavedHandle(HH,GetHandleId(p),WarpKamehamehaTargetHash)
 call SaveBoolean(HH,GetHandleId(p),WarpKamehamehaHash,false)
@@ -65511,7 +65527,7 @@ local unit c=LoadUnitHandle(HH,id,1)
 local player p=GetOwningPlayer(u)
 local integer idp=GetHandleId(p)
 local real time=LoadReal(HH,id,2)
-local real dmg=GetUnitAbilityLevel(u,'GKW1')*GetHeroStr(u,true)+150
+local real dmg=(1+GetUnitAbilityLevel(u,'GKW1'))*GetHeroStr(u,true)+150
 local real x=GetUnitX(u)
 local real y=GetUnitY(u)
 local real x1=GetUnitX(c)
@@ -65685,7 +65701,7 @@ if GetWidgetLife(c)>0 and GetWidgetLife(u)>0 then
         endif
     else
         if LoadReal(HH,idp,VariationWHash)==2 then
-            set dmg=dmg+2*GetHeroStr(u,true)
+            set dmg=dmg+3*GetHeroStr(u,true)
         elseif LoadReal(HH,idp,VariationWHash)==1 then
             set dmg=dmg+1*GetHeroStr(u,true)
         endif
@@ -65696,17 +65712,33 @@ if GetWidgetLife(c)>0 and GetWidgetLife(u)>0 then
         call myCustomDamage(u,c,dmg,false,false,null,null,null)
         call SetControlToUnit(u,c, 1, "stun")
         call SetUnitVertexColor(u,255,255,255,255)
-        if LoadReal(HH,idp,VariationWHash)==1 then
-            if GetUnitState(u,UNIT_STATE_LIFE)>GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.02*LoadInteger(HH,idp,KaiokenHash) then
-                call SetUnitState(u,UNIT_STATE_LIFE,GetUnitState(u,UNIT_STATE_LIFE)-GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.02*LoadInteger(HH,idp,KaiokenHash))
-            else
-                call SetUnitState(u,UNIT_STATE_LIFE,1)
+        if LoadInteger(HH,idp,KaiokenHash)<5 then
+            if LoadReal(HH,GetHandleId(GetOwningPlayer(u)),VariationWHash)==1 then
+                if GetUnitState(u,UNIT_STATE_LIFE)>GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.02*LoadInteger(HH,idp,KaiokenHash) then
+                    call SetUnitState(u,UNIT_STATE_LIFE,GetUnitState(u,UNIT_STATE_LIFE)-GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.02*LoadInteger(HH,idp,KaiokenHash))
+                else
+                    call SetUnitState(u,UNIT_STATE_LIFE,1)
+                endif
+            elseif LoadReal(HH,GetHandleId(GetOwningPlayer(u)),VariationWHash)==2 then
+                if GetUnitState(u,UNIT_STATE_LIFE)>GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.04*LoadInteger(HH,idp,KaiokenHash) then
+                    call SetUnitState(u,UNIT_STATE_LIFE,GetUnitState(u,UNIT_STATE_LIFE)-GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.04*LoadInteger(HH,idp,KaiokenHash))
+                else
+                    call SetUnitState(u,UNIT_STATE_LIFE,1)
+                endif
             endif
-        elseif LoadReal(HH,idp,VariationWHash)==2 then
-            if GetUnitState(u,UNIT_STATE_LIFE)>GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.04*LoadInteger(HH,idp,KaiokenHash) then
-                call SetUnitState(u,UNIT_STATE_LIFE,GetUnitState(u,UNIT_STATE_LIFE)-GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.04*LoadInteger(HH,idp,KaiokenHash))
-            else
-                call SetUnitState(u,UNIT_STATE_LIFE,1)
+        else
+            if LoadReal(HH,GetHandleId(GetOwningPlayer(u)),VariationWHash)==1 then
+                if GetUnitState(u,UNIT_STATE_LIFE)>GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.1 then
+                    call SetUnitState(u,UNIT_STATE_LIFE,GetUnitState(u,UNIT_STATE_LIFE)-GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.1)
+                else
+                    call SetUnitState(u,UNIT_STATE_LIFE,1)
+                endif
+            elseif LoadReal(HH,GetHandleId(GetOwningPlayer(u)),VariationWHash)==2 then
+                if GetUnitState(u,UNIT_STATE_LIFE)>GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.2 then
+                    call SetUnitState(u,UNIT_STATE_LIFE,GetUnitState(u,UNIT_STATE_LIFE)-GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.2)
+                else
+                    call SetUnitState(u,UNIT_STATE_LIFE,1)
+                endif
             endif
         endif
         call DestroyTimer(t)
@@ -65718,17 +65750,33 @@ if GetWidgetLife(c)>0 and GetWidgetLife(u)>0 then
     endif
 else
     call SetUnitVertexColor(u,255,255,255,255)
-    if LoadReal(HH,idp,VariationWHash)==1 then
-        if GetUnitState(u,UNIT_STATE_LIFE)>GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.02*LoadInteger(HH,idp,KaiokenHash) then
-            call SetUnitState(u,UNIT_STATE_LIFE,GetUnitState(u,UNIT_STATE_LIFE)-GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.02*LoadInteger(HH,idp,KaiokenHash))
-        else
-            call SetUnitState(u,UNIT_STATE_LIFE,1)
+    if LoadInteger(HH,idp,KaiokenHash)<5 then
+        if LoadReal(HH,GetHandleId(GetOwningPlayer(u)),VariationWHash)==1 then
+            if GetUnitState(u,UNIT_STATE_LIFE)>GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.02*LoadInteger(HH,idp,KaiokenHash) then
+                call SetUnitState(u,UNIT_STATE_LIFE,GetUnitState(u,UNIT_STATE_LIFE)-GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.02*LoadInteger(HH,idp,KaiokenHash))
+            else
+                call SetUnitState(u,UNIT_STATE_LIFE,1)
+            endif
+        elseif LoadReal(HH,GetHandleId(GetOwningPlayer(u)),VariationWHash)==2 then
+            if GetUnitState(u,UNIT_STATE_LIFE)>GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.04*LoadInteger(HH,idp,KaiokenHash) then
+                call SetUnitState(u,UNIT_STATE_LIFE,GetUnitState(u,UNIT_STATE_LIFE)-GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.04*LoadInteger(HH,idp,KaiokenHash))
+            else
+                call SetUnitState(u,UNIT_STATE_LIFE,1)
+            endif
         endif
-    elseif LoadReal(HH,idp,VariationWHash)==2 then
-        if GetUnitState(u,UNIT_STATE_LIFE)>GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.04*LoadInteger(HH,idp,KaiokenHash) then
-            call SetUnitState(u,UNIT_STATE_LIFE,GetUnitState(u,UNIT_STATE_LIFE)-GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.04*LoadInteger(HH,idp,KaiokenHash))
-        else
-            call SetUnitState(u,UNIT_STATE_LIFE,1)
+    else
+        if LoadReal(HH,GetHandleId(GetOwningPlayer(u)),VariationWHash)==1 then
+            if GetUnitState(u,UNIT_STATE_LIFE)>GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.1 then
+                call SetUnitState(u,UNIT_STATE_LIFE,GetUnitState(u,UNIT_STATE_LIFE)-GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.1)
+            else
+                call SetUnitState(u,UNIT_STATE_LIFE,1)
+            endif
+        elseif LoadReal(HH,GetHandleId(GetOwningPlayer(u)),VariationWHash)==2 then
+            if GetUnitState(u,UNIT_STATE_LIFE)>GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.2 then
+                call SetUnitState(u,UNIT_STATE_LIFE,GetUnitState(u,UNIT_STATE_LIFE)-GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.2)
+            else
+                call SetUnitState(u,UNIT_STATE_LIFE,1)
+            endif
         endif
     endif
     call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,false)
@@ -65880,17 +65928,33 @@ if GetWidgetLife(c)>0 and GetWidgetLife(u)>0 and time<4 then
     endif
 else
     call SetUnitVertexColor(u,255,255,255,255)
-    if LoadReal(HH,GetHandleId(GetOwningPlayer(u)),VariationWHash)==1 then
-        if GetUnitState(u,UNIT_STATE_LIFE)>GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.02*LoadInteger(HH,idp,KaiokenHash) then
-            call SetUnitState(u,UNIT_STATE_LIFE,GetUnitState(u,UNIT_STATE_LIFE)-GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.02*LoadInteger(HH,idp,KaiokenHash))
-        else
-            call SetUnitState(u,UNIT_STATE_LIFE,1)
+    if LoadInteger(HH,idp,KaiokenHash)<5 then
+        if LoadReal(HH,GetHandleId(GetOwningPlayer(u)),VariationWHash)==1 then
+            if GetUnitState(u,UNIT_STATE_LIFE)>GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.02*LoadInteger(HH,idp,KaiokenHash) then
+                call SetUnitState(u,UNIT_STATE_LIFE,GetUnitState(u,UNIT_STATE_LIFE)-GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.02*LoadInteger(HH,idp,KaiokenHash))
+            else
+                call SetUnitState(u,UNIT_STATE_LIFE,1)
+            endif
+        elseif LoadReal(HH,GetHandleId(GetOwningPlayer(u)),VariationWHash)==2 then
+            if GetUnitState(u,UNIT_STATE_LIFE)>GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.04*LoadInteger(HH,idp,KaiokenHash) then
+                call SetUnitState(u,UNIT_STATE_LIFE,GetUnitState(u,UNIT_STATE_LIFE)-GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.04*LoadInteger(HH,idp,KaiokenHash))
+            else
+                call SetUnitState(u,UNIT_STATE_LIFE,1)
+            endif
         endif
-    elseif LoadReal(HH,GetHandleId(GetOwningPlayer(u)),VariationWHash)==2 then
-        if GetUnitState(u,UNIT_STATE_LIFE)>GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.04*LoadInteger(HH,idp,KaiokenHash) then
-            call SetUnitState(u,UNIT_STATE_LIFE,GetUnitState(u,UNIT_STATE_LIFE)-GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.04*LoadInteger(HH,idp,KaiokenHash))
-        else
-            call SetUnitState(u,UNIT_STATE_LIFE,1)
+    else
+        if LoadReal(HH,GetHandleId(GetOwningPlayer(u)),VariationWHash)==1 then
+            if GetUnitState(u,UNIT_STATE_LIFE)>GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.1 then
+                call SetUnitState(u,UNIT_STATE_LIFE,GetUnitState(u,UNIT_STATE_LIFE)-GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.1)
+            else
+                call SetUnitState(u,UNIT_STATE_LIFE,1)
+            endif
+        elseif LoadReal(HH,GetHandleId(GetOwningPlayer(u)),VariationWHash)==2 then
+            if GetUnitState(u,UNIT_STATE_LIFE)>GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.2 then
+                call SetUnitState(u,UNIT_STATE_LIFE,GetUnitState(u,UNIT_STATE_LIFE)-GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.2)
+            else
+                call SetUnitState(u,UNIT_STATE_LIFE,1)
+            endif
         endif
     endif
     call SetUnitFlyHeight(u,0,0)
@@ -86883,7 +86947,7 @@ function VergilQ_ModifAttack takes unit newCaster, unit newTarget, boolean b_clo
 	endif
 	
 	if UnitHasItemOfTypeBJ(newCaster, 'I01U') and GetRandomInt(1, 100)<=45 then 		// Feng
-		call PoisonDamage5(newCaster,newTarget,3*GetHeroInt(newCaster,true),6,"Abilities\\Weapons\\PoisonSting\\PoisonStingTarget.mdl","chest")
+		call PoisonDamage5(newCaster,newTarget,2.5*GetHeroInt(newCaster,true),6,"Abilities\\Weapons\\PoisonSting\\PoisonStingTarget.mdl","chest")
         call SlowUnit(newCaster,newTarget,0.5,0.,1,1,false)
     endif
 	if UnitHasItemOfTypeBJ(newCaster, 'I01Q') and (GetRandomInt(1, 100)<=20 or GetUnitAbilityLevel(newCaster,'A06K')>0) then 		// Сюсуй
@@ -195719,7 +195783,7 @@ function Karna_ModifAttack takes unit newCaster, unit newTarget, real attack_fac
 	endif
 	
 	if UnitHasItemOfTypeBJ(newCaster, 'I01U') and GetRandomInt(1, 100)<=45 then 		// Feng
-		call PoisonDamage5(newCaster,newTarget, 3*GetHeroInt(newCaster,true)*modif_factor, 6, "Abilities\\Weapons\\PoisonSting\\PoisonStingTarget.mdl", "chest")
+		call PoisonDamage5(newCaster,newTarget, 2.5*GetHeroInt(newCaster,true)*modif_factor, 6, "Abilities\\Weapons\\PoisonSting\\PoisonStingTarget.mdl", "chest")
         set n=CreateUnit(GetOwningPlayer(newCaster),'h019',GetUnitX(newTarget),GetUnitY(newTarget),0)
         call UnitAddAbility(n,'A2CW')
         call SetUnitAbilityLevel(n,'A2CW',1)
@@ -196038,7 +196102,7 @@ function Sinon_ModifAttack takes unit newCaster, unit newTarget, real attack_fac
 		endif
 		
 		if UnitHasItemOfTypeBJ(newCaster, 'I01U') and GetRandomInt(1, 100)<=45 then 		// Feng
-			call PoisonDamage5(newCaster,newTarget, 3*GetHeroInt(newCaster,true)*modif_factor, 3, "Abilities\\Weapons\\PoisonSting\\PoisonStingTarget.mdl", "chest")
+			call PoisonDamage5(newCaster,newTarget, 2.5*GetHeroInt(newCaster,true)*modif_factor, 3, "Abilities\\Weapons\\PoisonSting\\PoisonStingTarget.mdl", "chest")
 			set n=CreateUnit(GetOwningPlayer(newCaster),'h019',GetUnitX(newTarget),GetUnitY(newTarget),0)
 			call UnitAddAbility(n,'A2CW')
 			call SetUnitAbilityLevel(n,'A2CW',1)
@@ -210136,7 +210200,7 @@ call SetMapMusic("Music",true,0)
 call ExecuteFunc("HLCinit")
 call ExecuteFunc("InitForfeit")
 call GetFrameByName( "TimeOfDayIndicator", 0 )
-call SetOperationLimit(1200000)
+call SetOperationLimit(1500000)
 call TrageGoldInit()
 call AntiHackEnable(false)
 call AntiHackEnableAddressCheck(true)
