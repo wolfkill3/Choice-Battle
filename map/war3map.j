@@ -64515,7 +64515,7 @@ call SetUnitAnimation(u,"stand")
 call HealTextTag(u,u,GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.05*myCustomHeal2(u,1),"HealthRes")
 call HealTextTag(u,u,GetUnitState(u,UNIT_STATE_MAX_MANA)*0.05*myCustomMana2(u,1),"ManaRes")
 call SetUnitState(u,UNIT_STATE_LIFE,GetWidgetLife(u)+GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.05)
-call SetUnitState(u,UNIT_STATE_MANA,GetWidgetLife(u)+GetUnitState(u,UNIT_STATE_MAX_MANA)*0.05)
+call SetUnitState(u,UNIT_STATE_MANA,GetWidgetMana(u)+GetUnitState(u,UNIT_STATE_MAX_MANA)*0.05)
 call PauseUnit(u,false)
 call PauseTimer(t)
 call DestroyTimer(t)
@@ -71359,6 +71359,8 @@ if time<time2 then
                     call RemoveUnit(l__d)
                     call SaveUnitHandle(HH,GetHandleId(E),REVERSE_TARGET,u)
                     call SaveReal(h,id,10,10)
+                    call PauseUnit(u,false)
+                    call SetUnitInvulnerable(u,false)
                 endif
                 call GroupClear(G)
             endif
@@ -132132,7 +132134,7 @@ endloop
 call HealTextTag(u,E,GetUnitState(E,UNIT_STATE_MAX_LIFE)*0.5*myCustomHeal2(E,1),"HealthRes")
 call HealTextTag(u,E,GetUnitState(E,UNIT_STATE_MAX_MANA)*0.5*myCustomMana2(E,1),"ManaRes")
 call SetUnitState(u,UNIT_STATE_LIFE,GetWidgetLife(u)+GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.5)
-call SetUnitState(u,UNIT_STATE_MANA,GetWidgetLife(u)+GetUnitState(u,UNIT_STATE_MAX_MANA)*0.5)
+call SetUnitState(u,UNIT_STATE_MANA,GetWidgetMana(u)+GetUnitState(u,UNIT_STATE_MAX_MANA)*0.5)
 call DestroyEffect(AddSpecialEffectTarget("Abilities\\Spells\\Human\\Resurrect\\ResurrectTarget.mdl",u,"origin"))
 call KillUnit(l__d)
 endif
