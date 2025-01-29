@@ -67152,6 +67152,7 @@ else
     call EnableUnitAbility2(u,'GKG1',false,true)
     call EnableUnitAbility2(u,'GKG6',false,true)
     call EnableUnitAbility2(u,'GKG7',false,true)
+    call UnitEnableInventory(u,true,false )
     call UnitRemoveAbility(u,'A1FU')
     call UnitRemoveAbility(u,'B00A')
     call SetAbilityStringField(GetUnitAbility(u,'GKR1'),ABILITY_SF_ICON_NORMAL,"ReplaceableTextures\\CommandButtons\\BTNInstant_transmission.blp")
@@ -91498,33 +91499,33 @@ local real dist=LoadReal(h,id,7)
 local real time=LoadReal(h,id,8)
 local real a2
 if time<0.61 then
-call SaveReal(h,id,8,time+0.01)
-if time==0.6 then
-    if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
-        call SetUnitTimeScale(u,1)
-        if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
-        set soundplay=CreateSound("Sound\\Music\\mp3Music\\Trunks R.mp3",false,false,true,12700,12700,"")
+    call SaveReal(h,id,8,time+0.01)
+    if time==0.6 then
+        if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
+            call SetUnitTimeScale(u,1)
+            if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
+                set soundplay=CreateSound("Sound\\Music\\mp3Music\\Trunks R.mp3",false,false,true,12700,12700,"")
+            else
+                set soundplay=CreateSound("Sound\\Music\\mp3Music\\Trunks\\Trunks R-jap.mp3",false,false,true,12700,12700,"")
+            endif
+            call StartSound(soundplay)
+            call KillSoundWhenDone(soundplay)
+            call SetUnitXY_1(u,x1,y1, false)
+            call SaveReal(h,id,3,Atan2(y1-y,x1-x))
         else
-        set soundplay=CreateSound("Sound\\Music\\mp3Music\\Trunks\\Trunks R-jap.mp3",false,false,true,12700,12700,"")
+            call SetUnitTimeScale(u,1)
+            call SetUnitX(u,x1)
+            call SetUnitY(u,y1)
+            call PauseUnit(u,false)
+            call SetUnitInvulnerable(u,false)
+            call PauseUnit(c,false)
+            call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,false)
+            call SaveUnitHandle(HH,GetHandleId(c),REVERSE_TARGET,u)
+            call PauseTimer(t)
+            call DestroyTimer(t)
+            call SetUnitVertexColor(u,255,255,255,255)
+            call FlushChildHashtable(h,id)
         endif
-        call StartSound(soundplay)
-        call KillSoundWhenDone(soundplay)
-        call SetUnitXY_1(u,x1,y1, false)
-        call SaveReal(h,id,3,Atan2(y1-y,x1-x))
-        endif
-    else
-        call SetUnitTimeScale(u,1)
-        call SetUnitX(u,x1)
-        call SetUnitY(u,y1)
-        call PauseUnit(u,false)
-        call SetUnitInvulnerable(u,false)
-        call PauseUnit(c,false)
-        call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,false)
-        call SaveUnitHandle(HH,GetHandleId(c),REVERSE_TARGET,u)
-        call PauseTimer(t)
-        call DestroyTimer(t)
-        call SetUnitVertexColor(u,255,255,255,255)
-        call FlushChildHashtable(h,id)
     endif
 else
 if dist<650 then
@@ -95453,7 +95454,7 @@ function SecretRoaringThunderCast2 takes nothing returns nothing //Laxus T new
 				call SetUnitScale(n, 2, 2, 2)
 				call UnitApplyTimedLife(n, 1, 1.5)
 				call MyRemoveUnit(n, 2)
-                if SR(x,y,x1,y1)<100 and LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
+                if SR(x,y,x1,y1)<100 and LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==true then
                     call PauseUnit(u,false)
                     call SetUnitInvulnerable(u,false)
                     call PauseUnit(c,false)
