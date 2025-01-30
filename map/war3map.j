@@ -62792,13 +62792,13 @@ function PowerDownGoku takes nothing returns nothing
             call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-GetUnitState(u,UNIT_STATE_MAX_MANA)*0.0008)
         endif
         if GetUnitAbilityLevel(u,'GkH4')>0 then
-            call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-GetUnitState(u,UNIT_STATE_MAX_MANA)*0.0011)
-        endif
-        if GetUnitAbilityLevel(u,'GkH5')>0 then
             call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-GetUnitState(u,UNIT_STATE_MAX_MANA)*0.001)
         endif
+        if GetUnitAbilityLevel(u,'GkH5')>0 then
+            call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-GetUnitState(u,UNIT_STATE_MAX_MANA)*0.0009)
+        endif
         if GetUnitAbilityLevel(u,'GkH6')>0 then
-            call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-GetUnitState(u,UNIT_STATE_MAX_MANA)*0.0012)
+            call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-GetUnitState(u,UNIT_STATE_MAX_MANA)*0.00135)
         endif
         if GetUnitAbilityLevel(u,'GkH7')>0 then
             call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-GetUnitState(u,UNIT_STATE_MAX_MANA)*0.002)
@@ -62814,12 +62814,12 @@ function PowerDownGoku takes nothing returns nothing
             call SetUnitModel(u,"GokuLow.mdx")
         endif
         if GetUnitAbilityLevel(u,'GkH7')>0 then
-            call StartAbilityCooldown(GetUnitAbility(u,'GKUI'),60)
-            call StartAbilityCooldown(GetUnitAbility(u,'GKMI'),60)
+            call StartAbilityCooldown(GetUnitAbility(u,'GKUI'),50)
+            call StartAbilityCooldown(GetUnitAbility(u,'GKMI'),50)
         endif
         if GetUnitAbilityLevel(u,'GkH8')>0 then
-            call StartAbilityCooldown(GetUnitAbility(u,'GKUI'),90)
-            call StartAbilityCooldown(GetUnitAbility(u,'GKMI'),90)
+            call StartAbilityCooldown(GetUnitAbility(u,'GKUI'),75)
+            call StartAbilityCooldown(GetUnitAbility(u,'GKMI'),75)
             if GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.1>GetUnitState(u,UNIT_STATE_LIFE) or GetUnitState(u,UNIT_STATE_MAX_MANA)*0.04>GetUnitState(u,UNIT_STATE_MANA) then
                 call SetControlToUnit(u,u,1,"heavystun")
                 call SetControlToUnit(u,u,4,"SilenceTE")
@@ -63703,6 +63703,8 @@ call StartSound(soundStr[75])
 endif
 call TimerStart(t,0.03,true,function CastDragonFist2)
 else
+call SetUnitInvulnerable(u,true)
+call PauseUnit(u,true)
 call SaveUnitHandle(HH,id,10,c)
 call SetUnitFacingInstant(n,a*bj_RADTODEG)
 if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
@@ -65527,7 +65529,7 @@ local unit c=LoadUnitHandle(HH,id,1)
 local player p=GetOwningPlayer(u)
 local integer idp=GetHandleId(p)
 local real time=LoadReal(HH,id,2)
-local real dmg=(1+GetUnitAbilityLevel(u,'GKW1'))*GetHeroStr(u,true)+150
+local real dmg=(1+GetUnitAbilityLevel(u,'GKW1'))*GetHeroStr(u,true)+50
 local real x=GetUnitX(u)
 local real y=GetUnitY(u)
 local real x1=GetUnitX(c)
@@ -65803,7 +65805,7 @@ local unit c=LoadUnitHandle(HH,id,1)
 local player p=GetOwningPlayer(u)
 local integer idp=GetHandleId(p)
 local real time=LoadReal(HH,id,2)
-local real dmg=(1+GetUnitAbilityLevel(u,'GKW1'))*GetHeroStr(u,true)+150
+local real dmg=(1+GetUnitAbilityLevel(u,'GKW1'))*GetHeroStr(u,true)+50
 local real x=GetUnitX(u)
 local real y=GetUnitY(u)
 local real x1=GetUnitX(c)
@@ -66081,7 +66083,7 @@ local unit c=LoadUnitHandle(HH,id,1)
 local player p=GetOwningPlayer(u)
 local integer idp=GetHandleId(p)
 local real time=LoadReal(HH,id,2)
-local real dmg=3*GetHeroStr(u,true)+150
+local real dmg=3*GetHeroStr(u,true)
 local real x=GetUnitX(u)
 local real y=GetUnitY(u)
 local real x1=GetUnitX(c)
