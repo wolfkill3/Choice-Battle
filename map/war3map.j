@@ -98439,6 +98439,7 @@ call DestroyTimer(t)
 call FlushChildHashtable(h,id)
 endif
 else
+call RemoveUnit(l__d)
 call PauseUnit(u,false)
 call Push3(u,60,a,400,"")
 call UnitRemoveAbility(u,'A0O2')
@@ -164791,14 +164792,14 @@ endfunction
 
 function YujiF_Periodic takes nothing returns nothing
     local integer id            = GetHandleId(GetExpiredTimer())
-        local unit        caster        = LoadUnitHandle(h, id, c_CASTER)
+    local unit        caster        = LoadUnitHandle(h, id, c_CASTER)
     local integer id_caster     = GetHandleId(caster)
     local integer act           = LoadInteger(h, id, c_ACT)
     local integer index_integer= LoadInteger(h, id, StringHash("IndexEffect"))
     local real angle            = 0
     local real time                     = LoadReal(h, id, c_TIME)
-        local real point_x              = LoadReal(h, id, c_POINT_X)
-        local real point_y              = LoadReal(h, id, c_POINT_Y)
+    local real point_x              = LoadReal(h, id, c_POINT_X)
+    local real point_y              = LoadReal(h, id, c_POINT_Y)
     if act < 3 and time<10 then
         if act == 1 then
             // call PauseUnit(caster, true)
@@ -164807,18 +164808,18 @@ function YujiF_Periodic takes nothing returns nothing
                 call SaveReal(h, id, c_TIME, time + 0.05)
                 // if LoadInteger(h, id, StringHash("PeriodIndexEffect")) == 0 then
                     // call SaveInteger(h, id, StringHash("PeriodIndexEffect"), 1)
-                    if index_integer < 30 then
-                        set n=CreateUnit(GetOwningPlayer(caster), 'eYG0', point_x+2050*Cos(12*index_integer*bj_DEGTORAD), point_y+2050*Sin(12*index_integer*bj_DEGTORAD), 12*index_integer)
-                        call SetUnitScale(n, 1.8, 1.8, 1.8)
-                        call SetUnitFlyHeight(n, 100, 0)
-                        call SetUnitTimeScale(n, 0.4)
-                        call GroupAddUnit(LoadGroupHandle(h, id, StringHash("GroupEffect")), n)
-                        call SaveInteger(h, id, StringHash("IndexEffect"), index_integer + 1)
-                    endif
+                if index_integer < 30 then
+                    set n=CreateUnit(GetOwningPlayer(caster), 'eYG0', point_x+2050*Cos(12*index_integer*bj_DEGTORAD), point_y+2050*Sin(12*index_integer*bj_DEGTORAD), 12*index_integer)
+                    call SetUnitScale(n, 1.8, 1.8, 1.8)
+                    call SetUnitFlyHeight(n, 100, 0)
+                    call SetUnitTimeScale(n, 0.4)
+                    call GroupAddUnit(LoadGroupHandle(h, id, StringHash("GroupEffect")), n)
+                    call SaveInteger(h, id, StringHash("IndexEffect"), index_integer + 1)
+                endif
                 // else
                     // call SaveInteger(h, id, StringHash("PeriodIndexEffect"), LoadInteger(h, id, StringHash("PeriodIndexEffect")) - 1)
                 // endif
-                if LoadBoolean(HH,GetHandleId(caster),TARGET_ABILITY)==true or GetUnitAbilityLevel(caster,'CBC2')>0 or GetUnitAbilityLevel(caster,'cbc3')>0 or GetUnitAbilityLevel(caster,'cbc5')>0 or GetUnitAbilityLevel(caster,'cbc6')>0 or GetUnitAbilityLevel(caster, 'cbc7')>0 or GetUnitAbilityLevel(caster, 'cbc8')>0 or GetUnitAbilityLevel(caster, 'cbc9')==0 then
+                if LoadBoolean(HH,GetHandleId(caster),TARGET_ABILITY)==true or GetUnitAbilityLevel(caster,'CBC2')>0 or GetUnitAbilityLevel(caster,'cbc3')>0 or GetUnitAbilityLevel(caster,'cbc5')>0 or GetUnitAbilityLevel(caster,'cbc6')>0 or GetUnitAbilityLevel(caster, 'cbc7')>0 or GetUnitAbilityLevel(caster, 'cbc8')>0 or GetUnitAbilityLevel(caster, 'cbc9')>0 then
                     call SaveInteger(h, id, c_ACT, 3)
                 endif
             else
@@ -164832,7 +164833,7 @@ function YujiF_Periodic takes nothing returns nothing
             if GetWidgetMana(caster) > 50 and UnitIsAlive(caster) and udg_B then
                 call SetWidgetMana(caster , GetWidgetMana(caster) - GetWidgetMaxMana(caster) * 0.004)
                 if IsUnitPaused(caster) == false then
-                                        call SaveReal(h, id, c_TIME, time + 0.05)
+                    call SaveReal(h, id, c_TIME, time + 0.05)
                 endif
                 if LoadBoolean(h, id_caster, StringHash("YujiF_ForcedCancel")) or SquareRootPoint(point_x, point_y, GetUnitX(caster), GetUnitY(caster))>2300 then
                     call SaveInteger(h, id, c_ACT, 3)
@@ -164863,14 +164864,14 @@ function YujiF_Periodic takes nothing returns nothing
             endif
         endif
     else
-                set bjLCG=LoadGroupHandle(h, id, StringHash("GroupEffect"))
-                loop
-                set E=FirstOfGroup(bjLCG)
-                exitwhen E==null
-                        call KillUnit(E)
-                        call MyRemoveUnit(E, 1.5)
-                        call GroupRemoveUnit(bjLCG, E)
-                endloop
+        set bjLCG=LoadGroupHandle(h, id, StringHash("GroupEffect"))
+        loop
+            set E=FirstOfGroup(bjLCG)
+            exitwhen E==null
+            call KillUnit(E)
+            call MyRemoveUnit(E, 1.5)
+            call GroupRemoveUnit(bjLCG, E)
+        endloop
                 
         set bjLCG=LoadGroupHandle(h, id, c_GROUP1)
         call GroupEnumUnitsInRange(bjLCG, point_x, point_y, 10000, Base)
@@ -164887,17 +164888,17 @@ function YujiF_Periodic takes nothing returns nothing
         call MyRemoveUnit(LoadUnitHandle(h, id, c_DUMMY1) , 1)
         if LoadBoolean(h, id_caster, StringHash("YujiF_ForcedCancel")) then
             call SaveBoolean(h, id_caster, StringHash("YujiF_ForcedCancel"), false)
-                        call RemoveSavedBoolean(h, id_caster, StringHash("YujiF_ForcedCancel"))
+            call RemoveSavedBoolean(h, id_caster, StringHash("YujiF_ForcedCancel"))
         endif
         call UnitRemoveAbility(caster, 'YuF2')
         call ShowAbility2( 'YujF' , true)
         call DestroyGroup(LoadGroupHandle(h, id, c_GROUP1))
         call DestroyGroup(LoadGroupHandle(h, id, c_GROUP2))
-                call DestroyGroup(LoadGroupHandle(h, id, StringHash("GroupEffect")))
+        call DestroyGroup(LoadGroupHandle(h, id, StringHash("GroupEffect")))
         call FlushChildHashtable(h, id)
         call DestroyTimer(GetExpiredTimer())
     endif
-        set caster=null
+    set caster=null
 endfunction
 
 function YujiF_Cast takes unit newCaster,timer newTimer returns nothing
@@ -164920,7 +164921,7 @@ function YujiF_Cast takes unit newCaster,timer newTimer returns nothing
     call SaveReal(h, id, c_POINT_Y, caster_y)
     call SaveGroupHandle(h, id, c_GROUP1, CreateGroup())
     call SaveGroupHandle(h, id, c_GROUP2, CreateGroup())
-        call SaveGroupHandle(h, id, StringHash("GroupEffect"), CreateGroup())
+    call SaveGroupHandle(h, id, StringHash("GroupEffect"), CreateGroup())
     call SaveInteger(h, id, c_ACT, 1)
     call TimerStart(newTimer, 0.05, true, function YujiF_Periodic)
 endfunction
