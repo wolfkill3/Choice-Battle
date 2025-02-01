@@ -37648,7 +37648,7 @@ if cond==0 then
         call DestroyEffect(AddSpecialEffectTarget("Abilities\\Spells\\Human\\Feedback\\ArcaneTowerAttack.mdl",u,"origin"))
         call DestroyEffect(AddSpecialEffectTarget("Abilities\\Spells\\Undead\\AbsorbMana\\AbsorbManaBirthMissile.mdl",u,"chest"))
         if GetUnitState(u,UNIT_STATE_MANA)>0 then
-            call HealTextTag(c,c,GetUnitState(c,UNIT_STATE_LIFE)+GetUnitState(u,UNIT_STATE_MANA)*.12*myCustomHeal2(c,1),"HealthRes")
+            call HealTextTag(c,c,GetUnitState(u,UNIT_STATE_MANA)*.12*myCustomHeal2(c,1),"HealthRes")
             call SetUnitState(c,UNIT_STATE_LIFE,GetUnitState(c,UNIT_STATE_LIFE)+GetUnitState(u,UNIT_STATE_MANA)*.12)
         endif
         call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-GetUnitState(u,UNIT_STATE_MANA)*0.08)
@@ -39355,16 +39355,16 @@ local real x=GetUnitX(u)
 local real y=GetUnitY(u)
 local real a=Atan2(GetSpellTargetY()-y,GetSpellTargetX()-x)
 local boolean miss=false
-local real x1=GetUnitX(u)+80*Cos(a)
-local real y1=GetUnitY(u)+80*Sin(a)
+local real x1=GetUnitX(u)+125*Cos(a)
+local real y1=GetUnitY(u)+125*Sin(a)
 local group g=CreateGroup()
 local player p=GetOwningPlayer(u)
 local real dmg=GetUnitTotalDamage(u)*1.75
 call SetUnitAnimation(u,"attack")
 set EFF=AddSpecialEffect("BrolyKickSlash.mdl", x1,y1)
 call SetSpecialEffectFacing(EFF , a* bj_RADTODEG)
-call SetSpecialEffectTimeScale(EFF , 0.65)
-call SetSpecialEffectScale(EFF , 2.75)
+call SetSpecialEffectTimeScale(EFF , 0.75)
+call SetSpecialEffectScale(EFF , 3)
 call DestroyEffect(EFF)
 call GroupEnumUnitsInRange(g,x1,y1,500,Base)
 loop
@@ -87013,11 +87013,11 @@ function VergilQ_ModifAttack takes unit newCaster, unit newTarget, boolean b_clo
                 set damage = damage * 1.5
     endif
         
-        if UnitHasItemOfTypeBJ(newCaster, 'I03N') then                          // Самехада: Манажор
-                call DestroyEffect(AddSpecialEffectTarget("Abilities\\Spells\\Human\\Feedback\\ArcaneTowerAttack.mdl", newTarget,"origin"))
+    if UnitHasItemOfTypeBJ(newCaster, 'I03N') then                          // Самехада: Манажор
+        call DestroyEffect(AddSpecialEffectTarget("Abilities\\Spells\\Human\\Feedback\\ArcaneTowerAttack.mdl", newTarget,"origin"))
         call DestroyEffect(AddSpecialEffectTarget("Abilities\\Spells\\Undead\\AbsorbMana\\AbsorbManaBirthMissile.mdl", newTarget,"chest"))
-                if GetWidgetMana(newTarget)>0 then
-                        call SetWidgetLife(newCaster, GetWidgetLife(newCaster)+GetWidgetMana(newTarget)*0.16)
+        if GetWidgetMana(newTarget)>0 then
+            call SetWidgetLife(newCaster, GetWidgetLife(newCaster)+GetWidgetMana(newTarget)*0.16)
         endif
 		set heal = heal + GetWidgetMana(newTarget)*0.16
 		call SetWidgetMana(newTarget, GetWidgetMana(newTarget)-GetWidgetMana(newTarget)*0.08)
@@ -99187,7 +99187,7 @@ call DestroyTimer(t)
 call FlushChildHashtable(h,id)
 call StopSound(l__s,true,true)
 call SetUnitTimeScale(u,1)
-call UnitRemoveAbility(u,0x4130554C)
+call UnitRemoveAbility(u,'A0UL')
 elseif(OrderId2String(GetUnitCurrentOrder(u))=="channel")and GetUnitState(u,UNIT_STATE_MANA)>25 then
 call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-GetUnitState(u,UNIT_STATE_MAX_MANA)*0.002)
 if cof<1 then
@@ -99222,7 +99222,7 @@ local unit u=GetTriggerUnit()
 local timer t=CreateTimer()
 local integer id=GetHandleId(t)
 call SaveUnitHandle(h,id,0,u)
-call UnitAddAbility(u,0x4130554C)
+call UnitAddAbility(u,'A0UL')
 if GetRandomInt(0,100) < 6 then
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\InoriPrettySong1.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
@@ -99290,85 +99290,96 @@ local player p=GetOwningPlayer(u)
 local group g=LoadGroupHandle(h,id,6)
 local integer st=0
 local real time = LoadReal(h,id,10)
-if(OrderId2String(GetUnitCurrentOrder(u))!="doom")then
-call SetUnitInvulnerable(u,false)
-call SetUnitFlyHeight(u,0,600)
-call StopSound(l__s,true,true)
-loop
-set E=FirstOfGroup(g)
-set ip=GetPlayerId(GetOwningPlayer(E))
-exitwhen E==null
-if E!=u then
-call SetHeroAgi(E,GetHeroAgi(E,false)-inoristat[ip],true)
-call SetHeroStr(E,GetHeroStr(E,false)-inoristat[ip],true)
-call SetHeroInt(E,GetHeroInt(E,false)-inoristat[ip],true)
-set inoristat[ip]=0
-endif
-call GroupRemoveUnit(g,E)
-endloop
-if time > 0 then
-call SaveReal(h,id,10, time - 0.125)
+if(OrderId2String(GetUnitCurrentOrder(u))!="doom") or time==0 then
+    if LoadBoolean(h,id,11)==false then
+        call SetUnitInvulnerable(u,false)
+        call SetUnitFlyHeight(u,0,800)
+        call StopSound(l__s,true,true)
+        loop
+            set E=FirstOfGroup(g)
+            set ip=GetPlayerId(GetOwningPlayer(E))
+            exitwhen E==null
+            if E!=u then
+                call SetHeroAgi(E,GetHeroAgi(E,false)-inoristat[ip],true)
+                call SetHeroStr(E,GetHeroStr(E,false)-inoristat[ip],true)
+                call SetHeroInt(E,GetHeroInt(E,false)-inoristat[ip],true)
+                set inoristat[ip]=0
+            endif
+            call GroupRemoveUnit(g,E)
+        endloop
+        call CreateModeIndicatorWithPauseForm(u, "war3mapImported\\BTNDepartures.blp", 6)
+        call SaveBoolean(h,id,11,true)
+    endif
+    if time > 0 then
+        if IsUnitPaused(u)==false and IsUnitHidden(u)==false and GetUnitAbilityLevel(u,'Pet1')==0 then
+            call SaveReal(h,id,10, time - 0.2)
+        endif
+    else
+        set ip=GetPlayerId(GetOwningPlayer(u))
+        call SetHeroAgi(u,GetHeroAgi(u,false)-inoristat[ip],true)
+        call SetHeroStr(u,GetHeroStr(u,false)-inoristat[ip],true)
+        call SetHeroInt(u,GetHeroInt(u,false)-inoristat[ip],true)
+        set inoristat[ip]=0
+        call PauseTimer(t)
+        call DestroyTimer(t)
+        call FlushChildHashtable(h,id)
+        call SetUnitTimeScale(u,1)
+        call DestroyGroup(g)
+        if (OrderId2String(GetUnitCurrentOrder(u))!="doom") then
+            call UnitRemoveAbility(u,'A0UL')
+        endif
+    endif
 else
-set ip=GetPlayerId(GetOwningPlayer(u))
-call SetHeroAgi(u,GetHeroAgi(u,false)-inoristat[ip],true)
-call SetHeroStr(u,GetHeroStr(u,false)-inoristat[ip],true)
-call SetHeroInt(u,GetHeroInt(u,false)-inoristat[ip],true)
-set inoristat[ip]=0
-call PauseTimer(t)
-call DestroyTimer(t)
-call FlushChildHashtable(h,id)
-call SetUnitTimeScale(u,1)
-call DestroyGroup(g)
-call UnitRemoveAbility(u,0x4130554C)
-endif
-else
-call GroupEnumUnitsInRange(G,x,y,2500,Base)
-call SetUnitInvulnerable(u,true)
-loop
-set E=FirstOfGroup(G)
-set ip=GetPlayerId(GetOwningPlayer(E))
-exitwhen E==null
-if IsUnitAlly(E,p)and IsUnitType(E,UNIT_TYPE_HERO)and E==Hero[ip]and GetUnitTypeId(E)!='H007' and GetUnitTypeId(E)!='H035' then
-call SetHeroAgi(E,GetHeroAgi(E,false)+1,true)
-call SetHeroStr(E,GetHeroStr(E,false)+1,true)
-call SetHeroInt(E,GetHeroInt(E,false)+1,true)
-set inoristat[ip]=inoristat[ip]+1
-if IsUnitInGroup(E,g)==false then
-call GroupAddUnit(g,E)
-endif
-endif
-call GroupRemoveUnit(G,E)
-endloop
-set n=CreateUnit(p,'e0K9',x,y,GetRandomReal(0,359))
-call UnitApplyTimedLife(n,1,0.01)
-call SetUnitScale(n,0.65,0.65,0.65)
-call SetUnitVertexColor(n,75,75,255,50)
-set n=CreateUnit(p,'e0K9',x,y,GetRandomReal(0,359))
-call UnitApplyTimedLife(n,1,0.01)
-call SetUnitScale(n,1,1,1)
-call SetUnitVertexColor(n,75,25,255,30)
-set n=CreateUnit(p,'e0K9',x,y,GetRandomReal(0,359))
-call UnitApplyTimedLife(n,1,0.01)
-call SetUnitScale(n,1.35,1.35,1.35)
-call SetUnitVertexColor(n,75,25,255,10)
-set n=CreateUnit(p,0x65305254,x,y,GetRandomReal(0,359))
-//ForSkins
-call SetUnitModel(n,"Others\\InoriT1.mdl")
-//ForSkins
-call UnitApplyTimedLife(n,1,0.01)
-call SetUnitScale(n,1,1,1)
-set n=CreateUnit(p,0x65305254,x,y,GetRandomReal(0,359))
-//ForSkins
-call SetUnitModel(n,"Others\\InoriT1.mdl")
-//ForSkins
-call UnitApplyTimedLife(n,1,0.01)
-call SetUnitScale(n,2,2,2)
-set n=CreateUnit(p,0x65305254,x,y,GetRandomReal(0,359))
-//ForSkins
-call SetUnitModel(n,"Others\\InoriT1.mdl")
-//ForSkins
-call UnitApplyTimedLife(n,1,0.01)
-call SetUnitScale(n,3,3,3)
+    if LoadBoolean(h,id,11)==true then
+        call SaveReal(h,id,10, 0)
+    endif
+    call GroupEnumUnitsInRange(G,x,y,2500,Base)
+    call SetUnitInvulnerable(u,true)
+    loop
+        set E=FirstOfGroup(G)
+        set ip=GetPlayerId(GetOwningPlayer(E))
+        exitwhen E==null
+        if IsUnitAlly(E,p)and IsUnitType(E,UNIT_TYPE_HERO)and E==Hero[ip]and GetUnitTypeId(E)!='H007' and GetUnitTypeId(E)!='H035' then
+            call SetHeroAgi(E,GetHeroAgi(E,false)+1,true)
+            call SetHeroStr(E,GetHeroStr(E,false)+1,true)
+            call SetHeroInt(E,GetHeroInt(E,false)+1,true)
+            set inoristat[ip]=inoristat[ip]+1
+            if IsUnitInGroup(E,g)==false then
+                call GroupAddUnit(g,E)
+            endif
+        endif
+        call GroupRemoveUnit(G,E)
+    endloop
+    set n=CreateUnit(p,'e0K9',x,y,GetRandomReal(0,359))
+    call UnitApplyTimedLife(n,1,0.01)
+    call SetUnitScale(n,0.65,0.65,0.65)
+    call SetUnitVertexColor(n,75,75,255,50)
+    set n=CreateUnit(p,'e0K9',x,y,GetRandomReal(0,359))
+    call UnitApplyTimedLife(n,1,0.01)
+    call SetUnitScale(n,1,1,1)
+    call SetUnitVertexColor(n,75,25,255,30)
+    set n=CreateUnit(p,'e0K9',x,y,GetRandomReal(0,359))
+    call UnitApplyTimedLife(n,1,0.01)
+    call SetUnitScale(n,1.35,1.35,1.35)
+    call SetUnitVertexColor(n,75,25,255,10)
+    set n=CreateUnit(p,'e0RT',x,y,GetRandomReal(0,359))
+    //ForSkins
+    call SetUnitModel(n,"Others\\InoriT1.mdl")
+    //ForSkins
+    call UnitApplyTimedLife(n,1,0.01)
+    call SetUnitScale(n,1,1,1)
+    set n=CreateUnit(p,'e0RT',x,y,GetRandomReal(0,359))
+    //ForSkins
+    call SetUnitModel(n,"Others\\InoriT1.mdl")
+    //ForSkins
+    call UnitApplyTimedLife(n,1,0.01)
+    call SetUnitScale(n,2,2,2)
+    set n=CreateUnit(p,'e0RT',x,y,GetRandomReal(0,359))
+    //ForSkins
+    call SetUnitModel(n,"Others\\InoriT1.mdl")
+    //ForSkins
+    call UnitApplyTimedLife(n,1,0.01)
+    call SetUnitScale(n,3,3,3)
 endif
 set l__s=null
 set g=null
@@ -99380,10 +99391,19 @@ function UltimateSongCast takes nothing returns nothing
 local unit u=GetTriggerUnit()
 local timer t=CreateTimer()
 local integer id=GetHandleId(t)
+local integer ip=0
 call SaveGroupHandle(h,id,6,CreateGroup())
 call SaveUnitHandle(h,id,0,u)
 call SetUnitInvulnerable(u,true)
-call UnitAddAbility(u,0x4130554C)
+if GetUnitAbilityLevel(u,'A0UL')>0 then
+set ip=GetPlayerId(GetOwningPlayer(u))
+call SetHeroAgi(u,GetHeroAgi(u,false)-inoristat[ip],true)
+call SetHeroStr(u,GetHeroStr(u,false)-inoristat[ip],true)
+call SetHeroInt(u,GetHeroInt(u,false)-inoristat[ip],true)
+set inoristat[ip]=0
+else
+call UnitAddAbility(u,'A0UL')
+endif
 call SetUnitFlyHeight(u,700,0)
 if GetRandomInt(0,100) < 6 then
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\UltimateSong1.mp3",false,false,true,12700,12700,"")
