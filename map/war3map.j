@@ -36032,6 +36032,7 @@ local integer FI
 local real mm=GetUnitState(u,UNIT_STATE_MAX_MANA)
 local real ll=GetUnitState(u,UNIT_STATE_MAX_LIFE)
 local real nb
+local real nb2
 local integer cond=0
 local integer i=0
 local integer numb=0
@@ -36356,6 +36357,10 @@ if cond==0 then
             call SetUnitState(u,UNIT_STATE_LIFE,GetWidgetLife(u)+nb*0.5)
             set nb=nb*0.5
         endif
+    endif
+    if GetUnitAbilityLevel(c,'SHD1')>0 then
+        set nb2=nb
+        set nb=nb*1.5
     endif
     if GetUnitAbilityLevel(c,'A1WT')==0 and GetUnitAbilityLevel(c,'A3WR')==0 and  (GetUnitAbilityLevel(c,'CB01')==0 or (GetUnitAbilityLevel(c,'CB01')>0 and CurrentEventAttack==true)) and GetUnitAbilityLevel(c,'B059')==0 and GetUnitAbilityLevel(u,'Bwul')==0 and LoadInteger(HH,cid,BlockPenetrate)==0 then
         set cond=1
@@ -37755,6 +37760,11 @@ if cond==0 then
             set doffyh[idu]=0
         endif
         if(CurrentEventAttack)and GetUnitAbilityLevel(c,'A1CY')>0 and GetUnitAbilityLevel(c,'A00D')==0 and GetUnitAbilityLevel(c,'A1D1')==0 then
+        endif
+    endif
+    if GetUnitAbilityLevel(c,'SHD1')>0 then
+        if nb>nb2 then
+            set nb=nb2
         endif
     endif
     if(UnitHasItemOfTypeBJ(u,'I13R')and nb>500) and CurrentEventAttack==false and GetUnitAbilityLevel(u,'BorB')>0 and IsUnitType(u,UNIT_TYPE_SUMMONED)==false and u==Hero[idu] then
