@@ -491,6 +491,7 @@ trigger gg_trg_TimeLeap=null
 trigger gg_trg_BurningAxelVerX=null
 trigger gg_trg_FallenAngel=null
 trigger gg_trg_AngelWings=null
+trigger gg_trg_Active666=null
 trigger gg_trg_HellRing=null
 trigger gg_trg_NellW=null
 trigger gg_trg_ChangeSamehadaMod=null
@@ -3137,7 +3138,6 @@ function MUIHandle takes nothing returns integer
             set c_type = "ensnare"
         endif
         set c_type = StringCase( c_type, false )
-        set data = GetUnitData( target, c_type )
         if flag then // set time = time / CCMitigation | IsRecuded
         endif
     
@@ -3270,7 +3270,7 @@ function MUIHandle takes nothing returns integer
             call UnitMakeAbilityPermanent(target,true ,'A1SV')
             endif
         endif
-
+        set data = GetUnitData( target, c_type )
         if (c_type=="stun" or c_type == "silence" or c_type == "doom" or c_type == "root" or c_type == "ensnare" or c_type == "slow" or c_type == "sleep" or c_type == "blind" or c_type == "shortsight" or c_type == "weakness" or c_type == "miss") and checker2==false then
             
             set time=CalculateControlResist(target, time)
@@ -6341,7 +6341,7 @@ function HY_ReduceHeal_Periodic takes nothing returns nothing
         local real time=LoadReal(HH, GetHandleId(target), HYUKIRIN_CONDITION)
         local real antiheal=0.0
         
-        if IsUnitPaused(target)==false then
+        if IsUnitPaused(target)==false and GetUnitAbilityLevel(target,'Pet1')==0 then
                 call SaveReal(HH, GetHandleId(target), HYUKIRIN_CONDITION, time-0.01)
         endif
         
@@ -6420,7 +6420,7 @@ function OS_ReduceHeal_Periodic takes nothing returns nothing
         local real time=LoadReal(HH, GetHandleId(target), ONIZUKASET_CONDITION)
         local real antiheal=0.0
         
-        if IsUnitPaused(target)==false then
+        if IsUnitPaused(target)==false and GetUnitAbilityLevel(target,'Pet1')==0 then
                 call SaveReal(HH, GetHandleId(target), ONIZUKASET_CONDITION, time-0.01)
         endif
         
@@ -6471,7 +6471,7 @@ function SodeNoReduceCR2 takes nothing returns nothing
         local real time=LoadReal(HH, GetHandleId(target), SODENOSHIRAYUKI_CONDITION)
         local real antiheal=0.0
         
-        if IsUnitPaused(target)==false then
+        if IsUnitPaused(target)==false and GetUnitAbilityLevel(target,'Pet1')==0 then
                 call SaveReal(HH, GetHandleId(target), SODENOSHIRAYUKI_CONDITION, time-0.01)
         endif
         
@@ -28145,15 +28145,15 @@ call SetFrameTexture( GetFrameByName("SelectedHeroPlayer",udg_SwapId[i]-1), GetU
 call SetFrameTexture( GetFrameByName("SelectedHeroPlayer",udg_SwapId[i]-1), GetUnitStringField(udg_Hero[udg_SwapId[i]],UNIT_SF_ICON_NORMAL), 2, true )
 if GetUnitTypeId(Hero[i-1])=='H02L' then
     set Broly=udg_Hero[i]
-    call RemoveUnit(BrolySTRCond[i])
-    call SetAbilityBaseStringFieldById('BRRS',ABILITY_SF_ICON_NORMAL,GetAbilityBaseStringFieldById('BRR2',ABILITY_SF_ICON_NORMAL))
-    call SetAbilityBaseStringFieldById('BRRS',ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED,GetAbilityBaseStringFieldById('BRR2',ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED))
+    // call RemoveUnit(BrolySTRCond[i])
+    // call SetAbilityBaseStringFieldById('BRRS',ABILITY_SF_ICON_NORMAL,GetAbilityBaseStringFieldById('BRR2',ABILITY_SF_ICON_NORMAL))
+    // call SetAbilityBaseStringFieldById('BRRS',ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED,GetAbilityBaseStringFieldById('BRR2',ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED))
 endif
 if GetUnitTypeId(Hero[udg_SwapId[i]-1])=='H02L' then
     set Broly=udg_Hero[udg_SwapId[i]]
-    call RemoveUnit(BrolySTRCond[udg_SwapId[i]])
-    call SetAbilityBaseStringFieldById('BRRS',ABILITY_SF_ICON_NORMAL,GetAbilityBaseStringFieldById('BRR2',ABILITY_SF_ICON_NORMAL))
-    call SetAbilityBaseStringFieldById('BRRS',ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED,GetAbilityBaseStringFieldById('BRR2',ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED))
+    // call RemoveUnit(BrolySTRCond[udg_SwapId[i]])
+    // call SetAbilityBaseStringFieldById('BRRS',ABILITY_SF_ICON_NORMAL,GetAbilityBaseStringFieldById('BRR2',ABILITY_SF_ICON_NORMAL))
+    // call SetAbilityBaseStringFieldById('BRRS',ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED,GetAbilityBaseStringFieldById('BRR2',ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED))
 endif
 call CastRFH2(i-1)
 call CastRFH2(udg_SwapId[i]-1)
@@ -35557,7 +35557,7 @@ local integer id=GetHandleId(GetExpiredTimer())
 local unit target=LoadUnitHandle(HH,id,1)
 local real time=LoadReal(HH,id,5)
 
-if IsUnitPaused(target)==false then
+if IsUnitPaused(target)==false and GetUnitAbilityLevel(target,'Pet1')==0 then
 set time=time+0.1
 call SaveReal(HH,id,5,time)
 endif
@@ -36358,9 +36358,14 @@ if cond==0 then
             set nb=nb*0.5
         endif
     endif
-    if GetUnitAbilityLevel(c,'SHD1')>0 then
+    if GetUnitAbilityLevel(c,'SHD1')>0 or GetUnitAbilityLevel(u,'SHD2')>0 then
         set nb2=nb
-        set nb=nb*1.5
+        if GetUnitAbilityLevel(c,'SHD1')>0 then
+            set nb=nb*1.25
+        endif
+        if GetUnitAbilityLevel(u,'SHD2')>0 then
+            set nb=nb*1.25
+        endif
     endif
     if GetUnitAbilityLevel(c,'A1WT')==0 and GetUnitAbilityLevel(c,'A3WR')==0 and  (GetUnitAbilityLevel(c,'CB01')==0 or (GetUnitAbilityLevel(c,'CB01')>0 and CurrentEventAttack==true)) and GetUnitAbilityLevel(c,'B059')==0 and GetUnitAbilityLevel(u,'Bwul')==0 and LoadInteger(HH,cid,BlockPenetrate)==0 then
         set cond=1
@@ -37762,7 +37767,7 @@ if cond==0 then
         if(CurrentEventAttack)and GetUnitAbilityLevel(c,'A1CY')>0 and GetUnitAbilityLevel(c,'A00D')==0 and GetUnitAbilityLevel(c,'A1D1')==0 then
         endif
     endif
-    if GetUnitAbilityLevel(c,'SHD1')>0 then
+    if GetUnitAbilityLevel(c,'SHD1')>0 or GetUnitAbilityLevel(u,'SHD2')>0 then
         if nb>nb2 then
             set nb=nb2
         endif
@@ -39227,6 +39232,22 @@ set n0=null
             call UnitRemoveAbility(u,'A1WR')
         endif
     endif
+    if (UnitHasItemOfTypeBJ(u,'I04T') or GetUnitAbilityLevel(u,'B02E')>0 or GetUnitAbilityLevel(u,'KIP8')>0) and c!=UltimateDamage and GetUnitAbilityLevel(c,'A1WR')==0 and GetUnitAbilityLevel(c,'A0WR')==0 and nb>0 and GetUnitAbilityLevel(u,'YatB')>0 then
+        if IsUnitInvulnerable(c)==true then
+            call UnitAddAbility(u,'A1WR')
+            call SetUnitInvulnerable(c,false)
+            call myCustomDamage(u,c,nb*0.6,false,false,null,DAMAGE_TYPE_UNIVERSAL,null)
+            call SetUnitInvulnerable(c,true)
+            call UnitRemoveAbility(u,'A1WR')
+        else
+            call UnitAddAbility(u,'A1WR')
+            call myCustomDamage(u,c,nb*0.6,false,false,null,DAMAGE_TYPE_UNIVERSAL,null)
+            call UnitRemoveAbility(u,'A1WR')
+        endif
+    endif
+    if GetUnitAbilityLevel(c,'B15A')>0 then
+        call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-nb*0.25)
+    endif
     if GetUnitTypeId(u)=='H02H' then
         if GetUnitModel(u)=="GokuFull.mdx" and GetUnitState(u,UNIT_STATE_LIFE)<0.6*ll then 
             if GetUnitState(u,UNIT_STATE_LIFE)>0.3*ll then
@@ -39245,22 +39266,6 @@ set n0=null
                 set UIUnlock[GetPlayerId(GetOwningPlayer(u))]=CreateUnit(GetOwningPlayer(u),'h110',RX,RY,0)
             endif
         endif
-    endif
-    if (UnitHasItemOfTypeBJ(u,'I04T') or GetUnitAbilityLevel(u,'B02E')>0 or GetUnitAbilityLevel(u,'KIP8')>0) and c!=UltimateDamage and GetUnitAbilityLevel(c,'A1WR')==0 and GetUnitAbilityLevel(c,'A0WR')==0 and nb>0 and GetUnitAbilityLevel(u,'YatB')>0 then
-        if IsUnitInvulnerable(c)==true then
-            call UnitAddAbility(u,'A1WR')
-            call SetUnitInvulnerable(c,false)
-            call myCustomDamage(u,c,nb*0.6,false,false,null,DAMAGE_TYPE_UNIVERSAL,null)
-            call SetUnitInvulnerable(c,true)
-            call UnitRemoveAbility(u,'A1WR')
-        else
-            call UnitAddAbility(u,'A1WR')
-            call myCustomDamage(u,c,nb*0.6,false,false,null,DAMAGE_TYPE_UNIVERSAL,null)
-            call UnitRemoveAbility(u,'A1WR')
-        endif
-    endif
-    if GetUnitAbilityLevel(c,'B15A')>0 then
-        call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-nb*0.25)
     endif
     if critcoef>1 then
         call AllTextTag("|c00FF3737CRIT x"+R2SW(critcoef,2,2)+"|r" , c)
@@ -39523,8 +39528,13 @@ endfunction
 function Trig_666_Actions takes nothing returns nothing
 local unit u=GetAttacker()
 local unit c=GetTriggerUnit()
-    if GetRandomIntMem(0,100)<=40 then
-        call ComboChecker(u,2,0.45, false )
+    if GetRandomIntMem(0,100)<=35 or GetUnitAbilityLevel(GetAttacker(),'A6HR') > 0 then
+        if GetUnitAbilityLevel(u, 'A3IG')==0 then
+        call ComboChecker(u,2,0.2, false )
+        call UnitAttackRestart(u)
+        else
+        call ComboChecker(u,2,0.2, false )
+        endif
         call SetControlToUnit(u,c, 0.06,"stunbkb") //"stunbkb"
     endif
 //else
@@ -39538,7 +39548,7 @@ call TriggerRegisterAnyUnitEventBJ(gg_trg_666,EVENT_PLAYER_UNIT_ATTACKED)
 call TriggerAddCondition(gg_trg_666,Condition(function Trig_666_Conditions))
 call TriggerAddAction(gg_trg_666,function Trig_666_Actions)
 endfunction
-function ExcSlashCond takes nothing returns boolean
+function ExcSlashCond takes nothing returns boolean 
 return GetSpellAbilityId()=='A14T' and GetUnitTypeId(GetTriggerUnit())!='H007'  and GetUnitAbilityLevel(GetTriggerUnit(),'GIE1')==0 and GetUnitTypeId(GetTriggerUnit())!='H04U'
 endfunction
 function ExcSlashCast takes nothing returns nothing
@@ -39567,7 +39577,13 @@ if Condition_Base(p,E) then
     if IsUnitInvulnerable(E) then
         set dmg=0
     endif
-	if GetUnitAbilityLevel(u, 'A3IG')==0 then	// Патриот анти-миссы и миссы в целом
+    if (UnitHasItemOfTypeBJ(u,'I04E')==true or GetUnitAbilityLevel(u,'KIN4') > 0) then  //666
+        if GetRandomIntMem(0,100)<=35 or GetUnitAbilityLevel(GetAttacker(),'A6HR') > 0 then
+            call ComboChecker(u,2,0.1, false )
+            call SetControlToUnit(u,E, 0.06,"stunbkb") //"stunbkb"
+        endif
+    endif
+	if GetUnitAbilityLevel(u, 'A3IG')==0 and GetUnitAbilityLevel(u, 'A6HR')==0 then	// Патриот анти-миссы и миссы в целом
 	
 		if (UnitHasItemOfTypeBJ(E, 'I03E') or UnitHasItemOfTypeBJ(E, 'I03F') or GetUnitAbilityLevel(E, 'KIJ2')>0 or GetUnitAbilityLevel(E, 'KIJ4')>0) and GetRandomInt(0, 99)<=34 then	// Туфли или Комплект Анбу - уклонение
 			set dmg=0
@@ -39625,12 +39641,6 @@ if Condition_Base(p,E) then
         if UnitHasItemOfTypeBJ(u, 'I01U') and GetRandomInt(1, 100)<=45 then 		// Feng
             call PoisonDamage5(u,E,2.5*GetHeroInt(u,true),6,"Abilities\\Weapons\\PoisonSting\\PoisonStingTarget.mdl","chest")
             call SlowUnit(u,E,0.5,0.,1,1,false)
-        endif
-        if (UnitHasItemOfTypeBJ(u,'I04E')==true or GetUnitAbilityLevel(u,'KIN4') > 0) then  //666
-            if GetRandomIntMem(0,100)<=40 then
-                call ComboChecker(u,2,0.45, false )
-                call SetControlToUnit(u,E, 0.06,"stunbkb") //"stunbkb"
-            endif
         endif
     elseif dmg>0 and miss==true then
 		call AllTextTag("|c00C0C0C0Miss!|r" , E)
@@ -40860,12 +40870,21 @@ local integer id=GetHandleId(t)
 local unit u=LoadUnitHandle(h,id,0)
 local integer idu=GetHandleId(u)
 local unit c=LoadUnitHandle(h,id,1)
-call UnitRemoveAbility(c,'A0NE')
-call UnitRemoveAbility(c,'A0NG')
-call UnitRemoveAbility(u,'A13L')
+local real time=LoadReal(h,id,5)
+if IsUnitPaused(c)==false and GetUnitAbilityLevel(c,'Pet1')==0 then
+set time=time+0.1
+call SaveReal(h,id,5,time)
+endif
+if time>10 then
+call RemoveAbility(LoadAbilityHandle(h,id,6))
+call RemoveAbility(LoadAbilityHandle(h,id,7))
+call RemoveAbility(LoadAbilityHandle(h,id,8))
+call RemoveAbility(LoadAbilityHandle(h,id,9))
+call SaveReal(h,id,5,0)
 call PauseTimer(t)
 call DestroyTimer(t)
 call FlushChildHashtable(h,id)
+endif
 set u=null
 set t=null
 endfunction
@@ -40876,14 +40895,15 @@ local timer t=CreateTimer()
 local integer id=GetHandleId(t)
 call SaveUnitHandle(h,id,0,u)
 call SaveUnitHandle(h,id,1,c)
-call UnitAddAbility(c,'A0NE')
-call UnitAddAbility(c,'A0NG')
-call UnitAddAbility(u,'A13L')
-call ComboChecker(u,2,4, false )
-call UnitMakeAbilityPermanent(u,true,'A13L')
-call UnitMakeAbilityPermanent(c,true,'A0NE')
-call UnitMakeAbilityPermanent(c,true,'A0NG')
-call TimerStart(t,15,false,function PatriotCast2)
+call SaveAbilityHandle(h,id,6,CreateAbility( 'A0NE' ))
+call SetAbilityOwner(LoadAbilityHandle(h,id,6),c)
+call SaveAbilityHandle(h,id,7,CreateAbility( 'A0NG' ))
+call SetAbilityOwner(LoadAbilityHandle(h,id,7),c)
+call SaveAbilityHandle(h,id,8,CreateAbility( 'SHD2' ))
+call SetAbilityOwner(LoadAbilityHandle(h,id,8),c)
+call SaveAbilityHandle(h,id,9,CreateAbility( 'A13L' ))
+call SetAbilityOwner(LoadAbilityHandle(h,id,9),u)
+call TimerStart(t,0.1,true,function PatriotCast2)
 set u=null
 set c=null
 set t=null
@@ -41091,6 +41111,52 @@ endloop
 call TriggerAddAction(t,function CastHakkaNoTogame)
 call TriggerAddCondition(t,Condition(function CondHakkaNoTogame))
 set t=null
+endfunction
+function Active666Cond takes nothing returns boolean
+return GetSpellAbilityId()=='A24T' and GetUnitTypeId(GetTriggerUnit())!='H007'  and GetUnitAbilityLevel(GetTriggerUnit(),'GIE1')==0
+endfunction
+function Active666Cast2 takes nothing returns nothing
+local timer t=GetExpiredTimer()
+local integer id=GetHandleId(t)
+local unit u=LoadUnitHandle(HH,id,0)
+local real time=LoadReal(HH,id,1)
+local integer i=6
+if IsUnitPaused(u)==false and GetUnitAbilityLevel(u,'Pet1')==0 then
+call SaveReal(HH,id,1,time+0.05)
+endif
+if time==4 or DU2==false or udg_B==false then
+call UnitMakeAbilityPermanent(u,false,'A6HR')
+call UnitRemoveAbility(u,'A6HR')
+loop
+    call StartAbilityCooldown(GetUnitAbility(u,'A24T'),25)
+    if GetItemTypeId(UnitItemInSlot(u,i)) == 'I04E' then
+        call StartItemCooldown(u,UnitItemInSlot(u, i),25)
+    endif
+exitwhen i == 0
+set i=i - 1
+endloop
+call FlushChildHashtable(HH,id)
+call DestroyTimer(t)
+endif
+set u=null
+endfunction
+function Active666Cast takes nothing returns nothing
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+local unit u=GetTriggerUnit()
+call UnitAddAbility(u,'A6HR')
+call UnitMakeAbilityPermanent(u,true,'A6HR')
+call ComboChecker(u,2,4, false )
+call CreateModeIndicatorWithPauseFormDispellable(u, "war3mapImported\\BTN666HellRing.blp", 4,'A6HR')
+call SaveUnitHandle(HH,id,0,u)
+call TimerStart(t,0.05,true,function Active666Cast2)
+set u=null
+endfunction
+function InitTrig_Active666 takes nothing returns nothing
+set gg_trg_Active666=CreateTrigger()
+call TriggerRegisterAnyUnitEventBJ(gg_trg_Active666,EVENT_PLAYER_UNIT_SPELL_EFFECT)
+call TriggerAddCondition(gg_trg_Active666,Condition(function Active666Cond))
+call TriggerAddAction(gg_trg_Active666,function Active666Cast)
 endfunction
 function HellRingCond takes nothing returns boolean
 return GetSpellAbilityId()=='A0YJ' and GetUnitTypeId(GetTriggerUnit())!='H007'  and GetUnitAbilityLevel(GetTriggerUnit(),'GIE1')==0
@@ -137986,7 +138052,7 @@ function GilgameshModifiedAttack takes unit newCaster, unit newTarget returns bo
     local timer tt
     
     set critcoef=1
-	if GetUnitAbilityLevel(newCaster, 'A3IG')==0 then	// Патриот анти-миссы и миссы в целом
+	if GetUnitAbilityLevel(newCaster, 'A3IG')==0 and GetUnitAbilityLevel(newCaster, 'A6HR')==0 then	// Патриот анти-миссы и миссы в целом
 	
 		if (UnitHasItemOfTypeBJ(newTarget, 'I03E') or UnitHasItemOfTypeBJ(newTarget, 'I03F') or GetUnitAbilityLevel(newTarget, 'KIJ2')>0 or GetUnitAbilityLevel(newTarget, 'KIJ4')>0) and GetRandomInt(0, 99)<=34 then	// Туфли или Комплект Анбу - уклонение
 			set damage=0
@@ -195932,7 +195998,7 @@ function Karna_ModifAttack takes unit newCaster, unit newTarget, real attack_fac
     endif
 	if canMiss then	// Миссы в целом
 	
-        if GetUnitAbilityLevel(newCaster, 'A3IG')==0 then // Патриот анти-миссы 
+        if GetUnitAbilityLevel(newCaster, 'A3IG')==0 and GetUnitAbilityLevel(newCaster, 'A6HR')==0 then // Патриот анти-миссы 
             if (UnitHasItemOfTypeBJ(newTarget, 'I03E') or UnitHasItemOfTypeBJ(newTarget, 'I03F') or GetUnitAbilityLevel(newTarget, 'KIJ2')>0 or GetUnitAbilityLevel(newTarget, 'KIJ4')>0) and GetRandomInt(0, 99)<35 then	// Туфли или Комплект Анбу - уклонение
                 set damage=0
                 set miss=true
@@ -210294,6 +210360,7 @@ call InitTrig_TimeLapse2()
 call InitTrig_TimeLeap()
 call InitTrig_BurningAxelVerX()
 call InitTrig_AngelWings()
+call InitTrig_Active666()
 call InitTrig_HellRing()
 call InitTrig_SoundsHeroes()
 call InitTrig_GrimorePrelaty()
