@@ -28476,6 +28476,15 @@ function Trig_unhealcmd_Actions takes nothing returns nothing
     set bj_forLoopAIndex=bj_forLoopAIndex+1
     endloop
 endfunction
+function Trig_shd1_Actions takes nothing returns nothing
+    if GetUnitAbilityLevel(udg_Hero[1],'SHD1')==0 then
+        call UnitAddAbility(udg_Hero[1],'SHD1')
+        call BJDebugMsg("test1")
+    else
+        call UnitRemoveAbility(udg_Hero[1],'SHD1')
+        call BJDebugMsg("test2")
+    endif
+endfunction
 function Trig_Goddess_Actions takes nothing returns nothing
     set bj_forLoopAIndex=0
     set bj_forLoopAIndexEnd=10
@@ -29314,6 +29323,15 @@ function InitTrig_unheal takes nothing returns nothing
     //call TriggerRegisterPlayerChatEvent(gg_trg_unheal,Player(11),"-unheal",true)
     call TriggerAddCondition(gg_trg_unheal,Condition(function Trig_test_Condition))
     call TriggerAddAction(gg_trg_unheal,function Trig_unhealcmd_Actions)
+endfunction
+function InitTrig_shd1_test takes nothing returns nothing
+    local trigger t=CreateTrigger()
+    call TriggerRegisterPlayerChatEvent(t,Player(0),"-shd1",true)
+    //call TriggerRegisterPlayerChatEvent(gg_trg_unheal,Player(10),"-unheal",true)
+    //call TriggerRegisterPlayerChatEvent(gg_trg_unheal,Player(11),"-unheal",true)
+    call TriggerAddCondition(t,Condition(function Trig_test_Condition))
+    call TriggerAddAction(t,function Trig_shd1_Actions)
+    set t=null
 endfunction
 function InitTrig_Goddess takes nothing returns nothing
     local trigger t=CreateTrigger()
@@ -36051,6 +36069,7 @@ local integer ragecount=0
 //local boolean fullrage=false
 //
 set nb=b
+set nb2=nb
 set critcoef=1
 call UnitRemoveAbility(u,'cbc7')
 if GetUnitAbilityLevel(c,'Bwk1')>0 and nb>0 then
@@ -36311,18 +36330,20 @@ if GetUnitAbilityLevel(u,'LCF1')>0 and GetUnitAbilityLevel(c,'A1WR')==0 then    
     if LoadBoolean(HH, uid, StringHash("LucciTekkai")) then
         call newBlockDamage(u)
         set nb=0
-        if IsUnitInvulnerable(c)==true then
-            call SetUnitInvulnerable(c,false)
-            call UnitAddAbility(u,'A1WR')
-            call myCustomDamage(u,c,b*(I2R(GetUnitAbilityLevel(u, 'LCW1'))*0.07+0.35),false,false,null,DAMAGE_TYPE_UNIVERSAL,null)
-            call UnitRemoveAbility(u,'A1WR')
-            call SetUnitInvulnerable(c,true)
-        else
-            call UnitAddAbility(u,'A1WR')
-            call myCustomDamage(u,c,b*(I2R(GetUnitAbilityLevel(u, 'LCW1'))*0.07+0.35),false,false,null,DAMAGE_TYPE_UNIVERSAL,null)
-            call UnitRemoveAbility(u,'A1WR')
+        if UnitHasItemOfTypeBJ(c,'I13R')==false then
+            if IsUnitInvulnerable(c)==true then
+                call SetUnitInvulnerable(c,false)
+                call UnitAddAbility(u,'A1WR')
+                call myCustomDamage(u,c,b*(I2R(GetUnitAbilityLevel(u, 'LCW1'))*0.07+0.35),false,false,null,DAMAGE_TYPE_UNIVERSAL,null)
+                call UnitRemoveAbility(u,'A1WR')
+                call SetUnitInvulnerable(c,true)
+            else
+                call UnitAddAbility(u,'A1WR')
+                call myCustomDamage(u,c,b*(I2R(GetUnitAbilityLevel(u, 'LCW1'))*0.07+0.35),false,false,null,DAMAGE_TYPE_UNIVERSAL,null)
+                call UnitRemoveAbility(u,'A1WR')
+            endif
+            call DestroyEffect(AddSpecialEffectTarget(" ",c,"origin"))
         endif
-        call DestroyEffect(AddSpecialEffectTarget(" ",c,"origin"))
     else
         call RemoveSavedBoolean(HH, uid, StringHash("LucciTekkai"))
     endif
@@ -36358,7 +36379,7 @@ if cond==0 then
             set nb=nb*0.5
         endif
     endif
-    if GetUnitAbilityLevel(c,'SHD1')>0 or GetUnitAbilityLevel(u,'SHD2')>0 then
+    if GetUnitAbilityLevel(c,'SHD1')>0 or GetUnitAbilityLevel(u,'SHD2')>0 and nb>0 then
         set nb2=nb
         if GetUnitAbilityLevel(c,'SHD1')>0 then
             set nb=nb*1.25
@@ -36974,16 +36995,26 @@ if cond==0 then
             set n=CreateUnit(GetOwningPlayer(u),'e09P',x,y,A*bj_RADTODEG)
             call UnitApplyTimedLife(n,1,0.4)
             call SetUnitTimeScale(n,2)
-            if IsUnitInvulnerable(c)==true then
-                call SetUnitInvulnerable(c,false)
-                call UnitAddAbility(u,'A1WR')
-                call myCustomDamage(u,c,nb*0.5,false,false,null,DAMAGE_TYPE_UNIVERSAL,null)
-                call UnitRemoveAbility(u,'A1WR')
-                call SetUnitInvulnerable(c,true)
-            else
-                call UnitAddAbility(u,'A1WR')
-                call myCustomDamage(u,c,nb*0.5,false,false,null,DAMAGE_TYPE_UNIVERSAL,null)
-                call UnitRemoveAbility(u,'A1WR')
+            if UnitHasItemOfTypeBJ(c,'I13R')==false then
+                if IsUnitInvulnerable(c)==true then
+                    call SetUnitInvulnerable(c,false)
+                    call UnitAddAbility(u,'A1WR')
+                    if GetUnitAbilityLevel(c,'SHD1')>0 or GetUnitAbilityLevel(u,'SHD2')>0 then
+                        call myCustomDamage(u,c,nb2*0.5,false,false,null,DAMAGE_TYPE_UNIVERSAL,null)
+                    else
+                        call myCustomDamage(u,c,nb*0.5,false,false,null,DAMAGE_TYPE_UNIVERSAL,null)
+                    endif
+                    call UnitRemoveAbility(u,'A1WR')
+                    call SetUnitInvulnerable(c,true)
+                else
+                    call UnitAddAbility(u,'A1WR')
+                    if GetUnitAbilityLevel(c,'SHD1')>0 or GetUnitAbilityLevel(u,'SHD2')>0 then
+                        call myCustomDamage(u,c,nb2*0.5,false,false,null,DAMAGE_TYPE_UNIVERSAL,null)
+                    else
+                        call myCustomDamage(u,c,nb*0.5,false,false,null,DAMAGE_TYPE_UNIVERSAL,null)
+                    endif
+                    call UnitRemoveAbility(u,'A1WR')
+                endif
             endif
             set cjlocgn_00000000=null
             set nb=0
@@ -37132,8 +37163,8 @@ if cond==0 then
         if nb>0 then
             set tres=CreateTimer()
             call SaveUnitHandle(h,GetHandleId(tres),11,u)
-            call SaveReal(h,GetHandleId(tres),12,b*2)
-            call SetUnitMaxLife(u,GetUnitMaxLife(u)+b*2)
+            call SaveReal(h,GetHandleId(tres),12,nb2*2)
+            call SetUnitMaxLife(u,GetUnitMaxLife(u)+nb2*2)
             call TimerStart(tres,0,false,function Resist_Damage)
             set tres=null
         endif
@@ -37144,16 +37175,18 @@ if cond==0 then
                 if GetUnitAbilityLevel(u,'B05Y')>0 then
                     set dmg=1.45*dmg
                 endif
-                if IsUnitInvulnerable(c)==true then
-                    call SetUnitInvulnerable(c,false)
-                    call UnitAddAbility(u,'A1WR')
-                    call myCustomDamage(u,c,dmg,false,false,null,DAMAGE_TYPE_UNIVERSAL,null)
-                    call UnitRemoveAbility(u,'A1WR')
-                    call SetUnitInvulnerable(c,true)
-                else
-                    call UnitAddAbility(u,'A1WR')
-                    call myCustomDamage(u,c,dmg,false,false,null,DAMAGE_TYPE_UNIVERSAL,null)
-                    call UnitRemoveAbility(u,'A1WR')
+                if UnitHasItemOfTypeBJ(c,'I13R')==false then
+                    if IsUnitInvulnerable(c)==true then
+                        call SetUnitInvulnerable(c,false)
+                        call UnitAddAbility(u,'A1WR')
+                        call myCustomDamage(u,c,dmg,false,false,null,DAMAGE_TYPE_UNIVERSAL,null)
+                        call UnitRemoveAbility(u,'A1WR')
+                        call SetUnitInvulnerable(c,true)
+                    else
+                        call UnitAddAbility(u,'A1WR')
+                        call myCustomDamage(u,c,dmg,false,false,null,DAMAGE_TYPE_UNIVERSAL,null)
+                        call UnitRemoveAbility(u,'A1WR')
+                    endif
                 endif
                 if nb*0.8>150 then
                     set tlambo=CreateTimer()
@@ -37735,17 +37768,17 @@ if cond==0 then
                         call RemoveSavedInteger(HH,uid,StringHash("AlbedoF_Mod"))
         endif
                 
-                if (UnitHasItemOfTypeBJ(u,'ISTi') or GetUnitAbilityLevel(u, 'KI0S')>0 ) and nb>0 then // Stigmata Resist
-            call SetUnitState(u,UNIT_STATE_LIFE,GetWidgetLife(u)+nb*0.1)
+        if (UnitHasItemOfTypeBJ(u,'ISTi') or GetUnitAbilityLevel(u, 'KI0S')>0 ) and nb>0 then // Stigmata Resist
+            call SetUnitState(u,UNIT_STATE_LIFE,GetWidgetLife(u)+nb*0.15)
 
-            set nb=nb*0.9
+            set nb=nb*0.85
         endif
                 
-                if nb>0 and GetUnitAbilityLevel(c, 'AP06')>0 and GetUnitAbilityLevel(u, 'A1HW')>0 then          // Enkidu Q Resist
+        if nb>0 and GetUnitAbilityLevel(c, 'AP06')>0 and GetUnitAbilityLevel(u, 'A1HW')>0 then          // Enkidu Q Resist
             call SetUnitState(u,UNIT_STATE_LIFE,GetWidgetLife(u)+nb*0.35)
             set nb=nb*0.65
         endif
-                if GetUnitAbilityLevel(u,'A2A1')>0 and nb>0 then 
+        if GetUnitAbilityLevel(u,'A2A1')>0 and nb>0 then 
             call SetUnitState(u,UNIT_STATE_LIFE,GetWidgetLife(u)+nb*0.3)
             set nb=nb*0.7
         endif
@@ -37769,7 +37802,13 @@ if cond==0 then
     endif
     if GetUnitAbilityLevel(c,'SHD1')>0 or GetUnitAbilityLevel(u,'SHD2')>0 then
         if nb>nb2 then
+            call SetUnitState(u,UNIT_STATE_LIFE,GetWidgetLife(u)-(nb2*(1+(.25*GetUnitAbilityLevel(c,'SHD1'))+(.25*GetUnitAbilityLevel(u,'SHD2')))-nb))
             set nb=nb2
+        else
+            call BJDebugMsg(R2S(GetWidgetLife(u)))
+            call SetUnitState(u,UNIT_STATE_LIFE,GetWidgetLife(u)-(nb2*(1+(.25*GetUnitAbilityLevel(c,'SHD1'))+(.25*GetUnitAbilityLevel(u,'SHD2')))-nb))
+            call BJDebugMsg(R2S(GetWidgetLife(u)))
+            call BJDebugMsg("nb "+R2S(nb)+"  nb2 "+R2S(nb2))
         endif
     endif
     if(UnitHasItemOfTypeBJ(u,'I13R')and nb>500) and CurrentEventAttack==false and GetUnitAbilityLevel(u,'BorB')>0 and IsUnitType(u,UNIT_TYPE_SUMMONED)==false and u==Hero[idu] then
@@ -39204,7 +39243,7 @@ set n0=null
 			endif
 		endif
 	endif
-    if GetUnitAbilityLevel(u,'B06T')>0 and c!=UltimateDamage and GetUnitAbilityLevel(c,'A1WR')==0 and nb>0 and u==Hero[idu]and b>60 and GetUnitAbilityLevel(c,'A0WR')==0 then
+    if GetUnitAbilityLevel(u,'B06T')>0 and c!=UltimateDamage and GetUnitAbilityLevel(c,'A1WR')==0 and nb>0 and u==Hero[idu]and b>60 and GetUnitAbilityLevel(c,'A0WR')==0 and UnitHasItemOfTypeBJ(c,'I13R')==false then
         if IsUnitInvulnerable(c)==true then
             call SetUnitInvulnerable(c,false)
             call UnitAddAbility(u,'A1WR')
@@ -39219,7 +39258,7 @@ set n0=null
             call SetControlToUnit(u,c, 1, "stun")
         endif
     endif
-    if (UnitHasItemOfTypeBJ(u,'I04T') or GetUnitAbilityLevel(u,'B02E')>0 or GetUnitAbilityLevel(u,'KIP8')>0) and c!=UltimateDamage and GetUnitAbilityLevel(c,'A1WR')==0 and GetUnitAbilityLevel(c,'A0WR')==0 and nb>0 and GetUnitAbilityLevel(u,'YatB')==0 then
+    if (UnitHasItemOfTypeBJ(u,'I04T') or GetUnitAbilityLevel(u,'KIP8')>0) and c!=UltimateDamage and GetUnitAbilityLevel(c,'A1WR')==0 and GetUnitAbilityLevel(c,'A0WR')==0 and nb>0 and GetUnitAbilityLevel(u,'YatB')==0 and UnitHasItemOfTypeBJ(c,'I13R')==false then
         if IsUnitInvulnerable(c)==true then
             call UnitAddAbility(u,'A1WR')
             call SetUnitInvulnerable(c,false)
@@ -39232,7 +39271,7 @@ set n0=null
             call UnitRemoveAbility(u,'A1WR')
         endif
     endif
-    if (UnitHasItemOfTypeBJ(u,'I04T') or GetUnitAbilityLevel(u,'B02E')>0 or GetUnitAbilityLevel(u,'KIP8')>0) and c!=UltimateDamage and GetUnitAbilityLevel(c,'A1WR')==0 and GetUnitAbilityLevel(c,'A0WR')==0 and nb>0 and GetUnitAbilityLevel(u,'YatB')>0 then
+    if (UnitHasItemOfTypeBJ(u,'I04T') or GetUnitAbilityLevel(u,'KIP8')>0) and c!=UltimateDamage and GetUnitAbilityLevel(c,'A1WR')==0 and GetUnitAbilityLevel(c,'A0WR')==0 and nb>0 and GetUnitAbilityLevel(u,'YatB')>0 and UnitHasItemOfTypeBJ(c,'I13R')==false then
         if IsUnitInvulnerable(c)==true then
             call UnitAddAbility(u,'A1WR')
             call SetUnitInvulnerable(c,false)
@@ -39311,7 +39350,7 @@ endif
 set i=0
 set n3=null
 set c=null
-
+set u=null
 endfunction
 function InitTrig_Text_Damage takes nothing returns nothing
 set gg_trg_Text_Damage=CreateTrigger()
@@ -164464,8 +164503,8 @@ if time==2 then
     call UnitRemoveBuffs(u,false,true)
     call SetUnitVertexColor(u, 255, 255, 255, 255)
     call SetUnitTimeScale(u, 1)
-    call HealTextTag(u,u,GetWidgetMaxLife(u)*0.15*myCustomHeal2(u,1),"HealthRes")
-    call SetWidgetLife(u, LoadReal(HH,id,StringHash("HP"))+GetWidgetMaxLife(u)*0.15)
+    call HealTextTag(u,u,GetWidgetMaxLife(u)*0.2*myCustomHeal2(u,1),"HealthRes")
+    call SetWidgetLife(u, LoadReal(HH,id,StringHash("HP"))+GetWidgetMaxLife(u)*0.2)
 endif
 if time>2 then
     if GetUnitAbilityLevel(u, 'B05G')>0 and u!=null then
@@ -210300,6 +210339,7 @@ call InitTrig_SwapOk()
 call InitTrig_Repick()
 call InitTrig_cd()
 call InitTrig_Goddess()
+call InitTrig_shd1_test()
 call InitTrig_UIunlock()
 call InitTrig_heal()
 call InitTrig_unheal()
