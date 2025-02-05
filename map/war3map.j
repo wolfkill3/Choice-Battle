@@ -183612,7 +183612,7 @@ endif
 
 
 
-if LoadBoolean(HH,GetHandleId(caster),StringHash("SabracEReverse"))==true then
+if LoadBoolean(HH,GetHandleId(caster),StringHash("SabracEReverse"))==true or LoadUnitHandle(HH,GetHandleId(caster),REVERSE_TARGET)!=null then
 if LoadUnitHandle(HH,GetHandleId(LoadUnitHandle(HH,id,30)),StringHash("SabracZoneU"))!=null and SR(GetUnitX(caster),GetUnitY(caster),GetUnitX(LoadUnitHandle(HH,GetHandleId(LoadUnitHandle(HH,id,30)),StringHash("SabracZoneU"))),GetUnitY(LoadUnitHandle(HH,GetHandleId(LoadUnitHandle(HH,id,30)),StringHash("SabracZoneU"))))<1500 then
 set damage=damage*2
 endif
@@ -183627,6 +183627,7 @@ set soundplay=CreateSound("Sound\\Music\\mp3Music\\SabracEW.mp3",false,false,tru
 call StartSound(soundplay)
 call KillSoundWhenDone(soundplay)
 call UnitRemoveAbility(caster,'BSaR')
+call RemoveSavedHandle(HH,GetHandleId(caster),REVERSE_TARGET)
 call SaveBoolean(HH,GetHandleId(caster),StringHash("SabracEReverse"),false)
 endif
 if GetUnitAbilityLevel(caster,'BSaR')==0 or (time>0.02 and  udg_B==false) or UnitIsAlive(caster)==false then
