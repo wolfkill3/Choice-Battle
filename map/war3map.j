@@ -24075,6 +24075,46 @@ endfunction
 // Проверка на щиты
 function UnitHaveShield takes unit caster, unit target, real damage returns boolean
 local boolean haveShield=false
+//Нел W
+if GetUnitAbilityLevel(target,'A0PC')>0  then
+set haveShield=true
+endif
+//Лучи W
+if LoadBoolean(HH, GetHandleId(target), StringHash("LucciTekkai"))==true  then
+set haveShield=true
+endif
+//Danzo W
+if LoadBoolean(HH, GetHandleId(target), StringHash("DanzoWBool"))==true  then
+set haveShield=true
+endif
+//Aizen G
+if damage>100 and GetUnitAbilityLevel( target ,'BASF')>0 then
+set haveShield=true
+endif
+//Реги Т
+if GetUnitAbilityLevel(target,'A19B')>0  then
+set haveShield=true
+endif
+//Сейбер Р
+if GetUnitAbilityLevel(target,'A14J')>0  then
+set haveShield=true
+endif
+//Гоку G
+if GetUnitAbilityLevel(target,'A24J')>0 or GetUnitAbilityLevel(target,'A34J')>0 then
+set haveShield=true
+endif
+//Madara G
+if damage>100 and LoadBoolean(HH,GetHandleId(target),StringHash("MadaraG"))==true  then
+set haveShield=true
+endif
+//Сабрак WE
+if damage>500 and GetUnitAbilityLevel(target,'BSaR')>0  then
+set haveShield=true
+endif
+//Курапика E
+if damage>(GetHeroAgi(target,true)+GetHeroStr(target,true)+GetHeroStr(target,true))*0.5 and GetUnitAbilityLevel(target,'B054')>0  then
+set haveShield=true
+endif
 if GetUnitAbilityLevel(caster,'A1WT')==0 and GetUnitAbilityLevel(caster,'A3WR')==0 and GetUnitAbilityLevel(caster,'CB01')==0 and GetUnitAbilityLevel(caster,'B059')==0 and GetUnitAbilityLevel(target,'Bwul')==0 and LoadInteger(HH,GetHandleId(caster),BlockPenetrate)==0 then
     //Гаара TG
     if LoadBoolean(h,  GetHandleId(target), StringHash("GaaraTshield"))==true then
@@ -24099,8 +24139,8 @@ if GetUnitAbilityLevel(caster,'A1WT')==0 and GetUnitAbilityLevel(caster,'A3WR')=
     if LoadBoolean(h, GetHandleId(target), Shield_RengokuE)==true then
     set haveShield=true
     endif
-    //Мадара G R T FT 
-    if LoadBoolean(HH,GetHandleId(target),StringHash("MadaraG"))==true or LoadBoolean(HH,GetHandleId(target),StringHash("MadaraSusR"))==true or LoadBoolean(HH,GetHandleId(target),StringHash("MadaraSusT"))==true or LoadBoolean(HH,GetHandleId(target),StringHash("MadaraSusT2"))==true     then
+    //Мадара R T FT 
+    if LoadBoolean(HH,GetHandleId(target),StringHash("MadaraSusR"))==true or LoadBoolean(HH,GetHandleId(target),StringHash("MadaraSusT"))==true or LoadBoolean(HH,GetHandleId(target),StringHash("MadaraSusT2"))==true     then
     set haveShield=true
     endif
     //Рин Q
@@ -24121,18 +24161,6 @@ if GetUnitAbilityLevel(caster,'A1WT')==0 and GetUnitAbilityLevel(caster,'A3WR')=
     endif
     //Урахара E
     if GetUnitAbilityLevel(target,'B022')>0  then
-    set haveShield=true
-    endif
-    //Нел W
-    if GetUnitAbilityLevel(target,'A0PC')>0  then
-    set haveShield=true
-    endif
-    //Лучи W
-    if LoadBoolean(HH, GetHandleId(target), StringHash("LucciTekkai"))==true  then
-    set haveShield=true
-    endif
-    //Реги Т
-    if GetUnitAbilityLevel(target,'A19B')>0  then
     set haveShield=true
     endif
     //Гокудера E
