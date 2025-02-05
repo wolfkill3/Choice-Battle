@@ -24075,179 +24075,181 @@ endfunction
 // Проверка на щиты
 function UnitHaveShield takes unit caster, unit target, real damage returns boolean
 local boolean haveShield=false
+if GetUnitAbilityLevel(caster,'A1WT')==0 and GetUnitAbilityLevel(caster,'A3WR')==0 and GetUnitAbilityLevel(caster,'CB01')==0 and GetUnitAbilityLevel(caster,'B059')==0 and GetUnitAbilityLevel(target,'Bwul')==0 and LoadInteger(HH,GetHandleId(caster),BlockPenetrate)==0 then
+    //Гаара TG
+    if LoadBoolean(h,  GetHandleId(target), StringHash("GaaraTshield"))==true then
+    set haveShield=true
+    endif
 
-//Гаара TG
-if LoadBoolean(h,  GetHandleId(target), StringHash("GaaraTshield"))==true then
-set haveShield=true
-endif
+    //Гамма и Магнус T
+    if  (GetUnitAbilityLevel(target,'MgT1')>0 or GetUnitAbilityLevel(target,'GaT1')>0) and GetRandomIntMem(0,100)<=30 then
+    set haveShield=true
+    endif
 
-//Гамма и Магнус T
-if  (GetUnitAbilityLevel(target,'MgT1')>0 or GetUnitAbilityLevel(target,'GaT1')>0) and GetRandomIntMem(0,100)<=30 then
-set haveShield=true
-endif
+    //Акселератор G пассива
+    if GetUnitAbilityLevel(target,'A0G9')>0 and GetRandomInt(0,100)<20 then// and GetHeroLevel(u)>5
+    set haveShield=true
+    endif
 
-//Акселератор G пассива
-if GetUnitAbilityLevel(target,'A0G9')>0 and GetRandomInt(0,100)<20 then// and GetHeroLevel(u)>5
-set haveShield=true
-endif
+    //Карна F  
+    if LoadReal(h,  GetHandleId(target), Shield_KarnaD)>0 and LoadBoolean(h,  GetHandleId(target), KarnaF_Reload)==false then
+    set haveShield=true
+    endif
+    //Ренгоку E          
+    if LoadBoolean(h, GetHandleId(target), Shield_RengokuE)==true then
+    set haveShield=true
+    endif
+    //Мадара G R T FT 
+    if LoadBoolean(HH,GetHandleId(target),StringHash("MadaraG"))==true or LoadBoolean(HH,GetHandleId(target),StringHash("MadaraSusR"))==true or LoadBoolean(HH,GetHandleId(target),StringHash("MadaraSusT"))==true or LoadBoolean(HH,GetHandleId(target),StringHash("MadaraSusT2"))==true     then
+    set haveShield=true
+    endif
+    //Рин Q
+    if GetUnitAbilityLevel(target,'A1G0')>0  then
+    set haveShield=true
+    endif
+    //Мей Т
+    if LoadBoolean(h, GetHandleId(target), StringHash("MeiT_Shield"))==true   then
+    set haveShield=true
+    endif
+    //Хаширама F
+    if GetUnitAbilityLevel(target,'AHSF')>0  then
+    set haveShield=true
+    endif
+    //Сабрак Е
+    if GetUnitAbilityLevel(target,'BSaE')>0  then
+    set haveShield=true
+    endif
+    //Урахара E
+    if GetUnitAbilityLevel(target,'B022')>0  then
+    set haveShield=true
+    endif
+    //Нел W
+    if GetUnitAbilityLevel(target,'A0PC')>0  then
+    set haveShield=true
+    endif
+    //Лучи W
+    if LoadBoolean(HH, GetHandleId(target), StringHash("LucciTekkai"))==true  then
+    set haveShield=true
+    endif
+    //Реги Т
+    if GetUnitAbilityLevel(target,'A19B')>0  then
+    set haveShield=true
+    endif
+    //Гокудера E
+    if GetUnitAbilityLevel(target,'B01G')>0  then
+    set haveShield=true
+    endif
+    //Веджитто E
+    if GetUnitAbilityLevel(target,'B04E')>0  then
+    set haveShield=true
+    endif
+    //Катсура E
+    if GetUnitAbilityLevel(target,'B049')>0 or GetUnitTypeId(target)=='H03Q'  then
+    set haveShield=true
+    endif
+    //Ома Q
+    if GetUnitAbilityLevel(target,'B04H')>0  then
+    set haveShield=true
+    endif
+    //Альбедо Т
+    if GetUnitAbilityLevel(target,'AP08')>0  then
+    set haveShield=true
+    endif
+    //Гамма Е
+    if GetUnitAbilityLevel(target,'B02U')>0  then
+    set haveShield=true
+    endif
+    // Щит Бельфегора
+    if LoadReal(h, GetHandleId(target), StringHash("ShieldBelfF"))>0  then
+    set haveShield=true
+    endif
+    //Юджи E
+    if LoadReal(h, GetHandleId(target), StringHash("YujiE_Shield"))>0  then
+    set haveShield=true
+    endif
+    //Луиза W
+    if GetUnitAbilityLevel(target,'A10G')>0  then
+    set haveShield=true
+    endif
+    //Броли G
+    if GetUnitAbilityLevel(target,'A2DF')>0  then
+    set haveShield=true
+    endif
+    // Гроза Вонголы
+    if GetUnitAbilityLevel(target,'A0VJ')>0  then
+    set haveShield=true
+    endif
+    //Орехиме E
+    if GetUnitAbilityLevel(target,'A1HG')>0  then
+    set haveShield=true
+    endif
+    //GokuF Activate Passive
+    if LoadInteger(HH,GetHandleId( GetOwningPlayer(caster) ),UIDodgeHash)>0 and (damage<(GetUnitState(caster,UNIT_STATE_MAX_LIFE)-GetUnitState(caster,UNIT_STATE_LIFE))*0.4) and GetUnitAbilityLevel(caster,'A7IH')==0 then
+    set haveShield=true
+    endif
+    //GokuF Passive
+    if GetUnitAbilityLevel(target,'A7IH')>0  then
+    set haveShield=true
+    endif
+    //G itachi
+    if GetUnitAbilityLevel(target,'ItV1')>0  then
+    set haveShield=true
+    endif
+    // Щит P Сигнум Tank Spirit
+    // if GetUnitAbilityLevel(target,'SiTS')>0  then
+    // set haveShield=true
+    // endif
+    // щит вивера
+    if GetUnitAbilityLevel(target,'A3DF')>0 and damage<GetUnitState(target,UNIT_STATE_MAX_LIFE)*(0.02*GetUnitAbilityLevel(target,'A3DF')+0.05) then
+    set haveShield=true
+    endif
+    // Саске FR
+    if GetUnitAbilityLevel(target,'A16D')>0  then
+    set haveShield=true
+    endif
+    // Широ Е
+    if GetUnitAbilityLevel(target,'B05J')>0  then
+    set haveShield=true
+    endif
+    // Джирая и хибари F 
+    if GetUnitAbilityLevel(target,'B02E')>0 or GetUnitAbilityLevel(target,'B011')>0  then
+    set haveShield=true
+    endif
+    // Шилда Т E Q
+    if GetUnitAbilityLevel(target,'A1DO')>0 or GetUnitAbilityLevel(target,'A1DG')>0 or GetUnitAbilityLevel(target,'A1DF')>0   then
+    set haveShield=true
+    endif
+    // Жальтер F
+    if GetUnitAbilityLevel(target,'B06P')>0  then
+    set haveShield=true
+    endif
+    // Энкиду F и Е
+    if GetUnitAbilityLevel(target,'A1I2')>0 or GetUnitAbilityLevel(target,'A1HV')>0  then
+    set haveShield=true
+    endif
+    // тома F(берс) и W и F(пассива блок)  A16D
+    if GetUnitAbilityLevel(target,'A16H')>0 or GetUnitAbilityLevel(target,'B06I')>0 or GetUnitAbilityLevel(target,'A16D')>0 then
+    set haveShield=true
+    endif
+    //Тома Пассива на блок
+    if GetUnitAbilityLevel(target,'B05Z')>0 and GetUnitTypeId(target)!='H05R' and GetRandomInt(0,100)<15   then
+    set haveShield=true
+    endif
+    //солитеры Е бафф Мака Блекстар Кид и дрейк
+    if GetUnitAbilityLevel(target,'B06V')>0 or GetUnitTypeId(target)=='H01E' or GetUnitTypeId(target)=='H01G' or GetUnitTypeId(target)=='H01I' or GetUnitTypeId(target)=='H06O'   then
+    set haveShield=true
+    endif
 
-//Карна F  
-if LoadReal(h,  GetHandleId(target), Shield_KarnaD)>0 and LoadBoolean(h,  GetHandleId(target), KarnaF_Reload)==false then
-set haveShield=true
-endif
-//Ренгоку E          
-if LoadBoolean(h, GetHandleId(target), Shield_RengokuE)==true then
-set haveShield=true
-endif
-//Мадара G R T FT 
-if LoadBoolean(HH,GetHandleId(target),StringHash("MadaraG"))==true or LoadBoolean(HH,GetHandleId(target),StringHash("MadaraSusR"))==true or LoadBoolean(HH,GetHandleId(target),StringHash("MadaraSusT"))==true or LoadBoolean(HH,GetHandleId(target),StringHash("MadaraSusT2"))==true     then
-set haveShield=true
-endif
-//Рин Q
-if GetUnitAbilityLevel(target,'A1G0')>0  then
-set haveShield=true
-endif
-//Мей Т
-if LoadBoolean(h, GetHandleId(target), StringHash("MeiT_Shield"))==true   then
-set haveShield=true
-endif
-//Хаширама F
-if GetUnitAbilityLevel(target,'AHSF')>0  then
-set haveShield=true
-endif
-//Сабрак Е
-if GetUnitAbilityLevel(target,'BSaE')>0  then
-set haveShield=true
-endif
-//Урахара E
-if GetUnitAbilityLevel(target,'B022')>0  then
-set haveShield=true
-endif
-//Нел W
-if GetUnitAbilityLevel(target,'A0PC')>0  then
-set haveShield=true
-endif
-//Лучи W
-if LoadBoolean(HH, GetHandleId(target), StringHash("LucciTekkai"))==true  then
-set haveShield=true
-endif
-//Реги Т
-if GetUnitAbilityLevel(target,'A19B')>0  then
-set haveShield=true
-endif
-//Гокудера E
-if GetUnitAbilityLevel(target,'B01G')>0  then
-set haveShield=true
-endif
-//Веджитто E
-if GetUnitAbilityLevel(target,'B04E')>0  then
-set haveShield=true
-endif
-//Катсура E
-if GetUnitAbilityLevel(target,'B049')>0 or GetUnitTypeId(target)=='H03Q'  then
-set haveShield=true
-endif
-//Ома Q
-if GetUnitAbilityLevel(target,'B04H')>0  then
-set haveShield=true
-endif
-//Альбедо Т
-if GetUnitAbilityLevel(target,'AP08')>0  then
-set haveShield=true
-endif
-//Гамма Е
-if GetUnitAbilityLevel(target,'B02U')>0  then
-set haveShield=true
-endif
-// Щит Бельфегора
-if LoadReal(h, GetHandleId(target), StringHash("ShieldBelfF"))>0  then
-set haveShield=true
-endif
-//Юджи E
-if LoadReal(h, GetHandleId(target), StringHash("YujiE_Shield"))>0  then
-set haveShield=true
-endif
-//Луиза W
-if GetUnitAbilityLevel(target,'A10G')>0  then
-set haveShield=true
-endif
-//Броли G
-if GetUnitAbilityLevel(target,'A2DF')>0  then
-set haveShield=true
-endif
-// Гроза Вонголы
-if GetUnitAbilityLevel(target,'A0VJ')>0  then
-set haveShield=true
-endif
-//Орехиме E
-if GetUnitAbilityLevel(target,'A1HG')>0  then
-set haveShield=true
-endif
-//GokuF Activate Passive
-if LoadInteger(HH,GetHandleId( GetOwningPlayer(caster) ),UIDodgeHash)>0 and (damage<(GetUnitState(caster,UNIT_STATE_MAX_LIFE)-GetUnitState(caster,UNIT_STATE_LIFE))*0.4) and GetUnitAbilityLevel(caster,'A7IH')==0 then
-set haveShield=true
-endif
-//GokuF Passive
-if GetUnitAbilityLevel(target,'A7IH')>0  then
-set haveShield=true
-endif
- //G itachi
-if GetUnitAbilityLevel(target,'ItV1')>0  then
-set haveShield=true
-endif
-// Щит P Сигнум Tank Spirit
-// if GetUnitAbilityLevel(target,'SiTS')>0  then
-// set haveShield=true
-// endif
-// щит вивера
-if GetUnitAbilityLevel(target,'A3DF')>0 and damage<GetUnitState(target,UNIT_STATE_MAX_LIFE)*(0.02*GetUnitAbilityLevel(target,'A3DF')+0.05) then
-set haveShield=true
-endif
-// Саске FR
-if GetUnitAbilityLevel(target,'A16D')>0  then
-set haveShield=true
-endif
-// Широ Е
-if GetUnitAbilityLevel(target,'B05J')>0  then
-set haveShield=true
-endif
-// Джирая и хибари F 
-if GetUnitAbilityLevel(target,'B02E')>0 or GetUnitAbilityLevel(target,'B011')>0  then
-set haveShield=true
-endif
-// Шилда Т E Q
-if GetUnitAbilityLevel(target,'A1DO')>0 or GetUnitAbilityLevel(target,'A1DG')>0 or GetUnitAbilityLevel(target,'A1DF')>0   then
-set haveShield=true
-endif
-// Жальтер F
-if GetUnitAbilityLevel(target,'B06P')>0  then
-set haveShield=true
-endif
-// Энкиду F и Е
-if GetUnitAbilityLevel(target,'A1I2')>0 or GetUnitAbilityLevel(target,'A1HV')>0  then
-set haveShield=true
-endif
-// тома F(берс) и W и F(пассива блок)  A16D
-if GetUnitAbilityLevel(target,'A16H')>0 or GetUnitAbilityLevel(target,'B06I')>0 or GetUnitAbilityLevel(target,'A16D')>0 then
-set haveShield=true
-endif
-//Тома Пассива на блок
-if GetUnitAbilityLevel(target,'B05Z')>0 and GetUnitTypeId(target)!='H05R' and GetRandomInt(0,100)<15   then
-set haveShield=true
-endif
-//солитеры Е бафф Мака Блекстар Кид и дрейк
-if GetUnitAbilityLevel(target,'B06V')>0 or GetUnitTypeId(target)=='H01E' or GetUnitTypeId(target)=='H01G' or GetUnitTypeId(target)=='H01I' or GetUnitTypeId(target)=='H06O'   then
-set haveShield=true
-endif
+    //бьякуран R
+            if GetUnitAbilityLevel(target,'BGaR')>0 and GetRandomIntMem(0,100)<=R2I((0.05+0.005*GetUnitAbilityLevel(target,'BGaR'))*GetHeroInt(target,true)) then
+            set haveShield=true
+            endif
+            // call DestroyEffect(AddSpecialEffectTarget("Abilities\\Spells\\Items\\TomeOfRetraining\\TomeOfRetrainingCaster.mdl",target,"origin"))
+    //тсуна F и E
+    if GetUnitAbilityLevel(target,'B00C')>0 or GetUnitAbilityLevel(target,'A00J')>0    then
+    set haveShield=true
+    endif
 
-//бьякуран R
-        if GetUnitAbilityLevel(target,'BGaR')>0 and GetRandomIntMem(0,100)<=R2I((0.05+0.005*GetUnitAbilityLevel(target,'BGaR'))*GetHeroInt(target,true)) then
-        set haveShield=true
-        endif
-           // call DestroyEffect(AddSpecialEffectTarget("Abilities\\Spells\\Items\\TomeOfRetraining\\TomeOfRetrainingCaster.mdl",target,"origin"))
-//тсуна F и E
-if GetUnitAbilityLevel(target,'B00C')>0 or GetUnitAbilityLevel(target,'A00J')>0    then
-set haveShield=true
 endif
 
 return haveShield
@@ -36256,6 +36258,12 @@ if GetUnitAbilityLevel(u,'B054')>0 and m>mm*0.06 and b>(GetHeroAgi(u,true)+GetHe
     call newBlockDamage(u)
     set nb=0
 endif
+
+if nb>500 and GetUnitAbilityLevel( u ,'BSaR')>0 then
+    call newBlockDamage(u)
+    set nb=0
+    call SaveBoolean(HH,GetHandleId(u),StringHash("SabracEReverse"),true)
+endif
 if GetUnitTypeId(u)=='H34X' and nb>0 then
     call KillUnit(u)
 endif
@@ -36488,12 +36496,6 @@ if cond==0 then
               set nb=0
             endif
 
- 
-            if nb>500 and GetUnitAbilityLevel( u ,'BSaR')>0 then
-              call newBlockDamage(u)
-              set nb=0
-              call SaveBoolean(HH,GetHandleId(u),StringHash("SabracEReverse"),true)
-            endif
 
 
             if GetUnitAbilityLevel(u,'BSaE')>0 and nb>0 then
@@ -36812,52 +36814,52 @@ if cond==0 then
         if GetUnitTypeId(u)=='H04B' then
             call UnitRemoveBuffsEx(u,false,true,true,true,true,false,true)
         endif
-        if nb>0 and GetUnitAbilityLevel(u,'A0T5')>0 then
-            set newdmg=LoadReal(h,uid,StringHash("ysp1"))
-            set basedmg=LoadReal(h,uid,StringHash("ysp3"))
-            set n=LoadUnitHandle(h,uid,StringHash("ysp2"))
-            if IsUnitEnemy(u,GetOwningPlayer(n))then
-                call SaveReal(h,uid,StringHash("ysp1"),newdmg-b*2)
-                else
-                call SaveReal(h,uid,StringHash("ysp1"),newdmg-b)
-            endif
-            if newdmg-b<=0 then
-                call UnitRemoveAbility(u,'A0T5')
-                call GroupEnumUnitsInRange(G,x,y,500,Base)
-                loop
-                    set E=FirstOfGroup(G)
-                    exitwhen E==null
-                    if Condition_Base(GetOwningPlayer(n),E)then
-                        call PoisonDamage3(n,E,basedmg,12,"war3mapImported\\amaterasu2.mdx","origin")
-                    endif
-                    call GroupRemoveUnit(G,E)
-                endloop
-                call DestroyEffect(AddSpecialEffect("war3mapImported\\NetherStrike.mdx",x,y))
-                call DestroyEffect(AddSpecialEffect("war3mapImported\\DarkNova.mdx",x,y))
-                call DestroyEffect(AddSpecialEffect("war3mapImported\\Death Release.mdx",x,y))
-                call newBlockDamage(u)
-                call UnitApplyTimedLife(CreateUnit(GetOwningPlayer(n),'e029',x,y,GetRandomReal(0,359)),1,2)
-                call UnitApplyTimedLife(CreateUnit(GetOwningPlayer(n),'e029',x,y,GetRandomReal(0,359)),1,2)
-                if l+newdmg>b then
-                    call SetUnitState(u,UNIT_STATE_LIFE,l+(newdmg-b))
-                    else
-                    call SetUnitState(u,UNIT_STATE_LIFE,1)
-                endif
-                else
-                call newBlockDamage(u)
-            endif
-            set nb=0
-        endif
+        // if nb>0 and GetUnitAbilityLevel(u,'A0T5')>0 then
+        //     set newdmg=LoadReal(h,uid,StringHash("ysp1"))
+        //     set basedmg=LoadReal(h,uid,StringHash("ysp3"))
+        //     set n=LoadUnitHandle(h,uid,StringHash("ysp2"))
+        //     if IsUnitEnemy(u,GetOwningPlayer(n))then
+        //         call SaveReal(h,uid,StringHash("ysp1"),newdmg-nb*2)
+        //         else
+        //         call SaveReal(h,uid,StringHash("ysp1"),newdmg-nb)
+        //     endif
+        //     if newdmg-nb<=0 then
+        //         call UnitRemoveAbility(u,'A0T5')
+        //         call GroupEnumUnitsInRange(G,x,y,500,Base)
+        //         loop
+        //             set E=FirstOfGroup(G)
+        //             exitwhen E==null
+        //             if Condition_Base(GetOwningPlayer(n),E)then
+        //                 call PoisonDamage3(n,E,basedmg,12,"war3mapImported\\amaterasu2.mdx","origin")
+        //             endif
+        //             call GroupRemoveUnit(G,E)
+        //         endloop
+        //         call DestroyEffect(AddSpecialEffect("war3mapImported\\NetherStrike.mdx",x,y))
+        //         call DestroyEffect(AddSpecialEffect("war3mapImported\\DarkNova.mdx",x,y))
+        //         call DestroyEffect(AddSpecialEffect("war3mapImported\\Death Release.mdx",x,y))
+        //         call newBlockDamage(u)
+        //         call UnitApplyTimedLife(CreateUnit(GetOwningPlayer(n),'e029',x,y,GetRandomReal(0,359)),1,2)
+        //         call UnitApplyTimedLife(CreateUnit(GetOwningPlayer(n),'e029',x,y,GetRandomReal(0,359)),1,2)
+        //         if l+newdmg>nb then
+        //             call SetUnitState(u,UNIT_STATE_LIFE,l+(newdmg-nb))
+        //             else
+        //             call SetUnitState(u,UNIT_STATE_LIFE,1)
+        //         endif
+        //         else
+        //         call newBlockDamage(u)
+        //     endif
+        //     set nb=0
+        // endif
         if nb>0 and GetUnitAbilityLevel(u,'A1DF')>0 then
             set newdmg=LoadReal(h,uid,StringHash("shi1"))
             set basedmg=LoadReal(h,uid,StringHash("shi2"))
-            call SaveReal(h,uid,StringHash("shi1"),newdmg-b)
-            if newdmg-b<=0 then
+            call SaveReal(h,uid,StringHash("shi1"),newdmg-nb)
+            if newdmg-nb<=0 then
                 set n=LoadUnitHandle(h,uid,StringHash("shi2"))
                 call UnitRemoveAbility(u,'A1DF')
                 call newBlockDamage(u)
-                if l+newdmg>b then
-                    call SetUnitState(u,UNIT_STATE_LIFE,l+(newdmg-b))
+                if l+newdmg>nb then
+                    call SetUnitState(u,UNIT_STATE_LIFE,l+(newdmg-nb))
                     else
                     call SetUnitState(u,UNIT_STATE_LIFE,1)
                 endif
@@ -36869,13 +36871,13 @@ if cond==0 then
         if nb>0 and GetUnitAbilityLevel(u,'A2DF')>0 then //brolyE1
             set newdmg=LoadReal(h,uid,StringHash("shie1"))
             set basedmg=LoadReal(h,uid,StringHash("shie2"))
-            call SaveReal(h,uid,StringHash("shie1"),newdmg-b)
-            if newdmg-b<=0 then
+            call SaveReal(h,uid,StringHash("shie1"),newdmg-nb)
+            if newdmg-nb<=0 then
                 call UnitRemoveAbility(u,'A2DF')
                 call newBlockDamage(u)
                 call SaveReal(h,uid,StringHash("BroEtime"),LoadReal(h,uid,StringHash("BroEtime"))+10)
                 if l+newdmg>b then
-                    call SetUnitState(u,UNIT_STATE_LIFE,l+(newdmg-b))
+                    call SetUnitState(u,UNIT_STATE_LIFE,l+(newdmg-nb))
                     else
                     call SetUnitState(u,UNIT_STATE_LIFE,1)
                 endif
@@ -36887,13 +36889,13 @@ if cond==0 then
         if nb>0 and GetUnitAbilityLevel(u,'A10G')>0 then
             set newdmg=LoadReal(h,uid,StringHash("lnf1"))
             set basedmg=LoadReal(h,uid,StringHash("lnf3"))
-            call SaveReal(h,uid,StringHash("lnf1"),newdmg-b)
-            if newdmg-b<=0 then
+            call SaveReal(h,uid,StringHash("lnf1"),newdmg-nb)
+            if newdmg-nb<=0 then
                 set n=LoadUnitHandle(h,uid,StringHash("lnf2"))
                 call UnitRemoveAbility(u,'A10G')
                 call newBlockDamage(u)
-                if l+newdmg>b then
-                    call SetUnitState(u,UNIT_STATE_LIFE,l+(newdmg-b))
+                if l+newdmg>nb then
+                    call SetUnitState(u,UNIT_STATE_LIFE,l+(newdmg-nb))
                     else
                     call SetUnitState(u,UNIT_STATE_LIFE,1)
                 endif
@@ -36905,13 +36907,13 @@ if cond==0 then
         if nb>0 and GetUnitAbilityLevel(u,'A1HG')>0 then
             set newdmg=LoadReal(h,uid,StringHash("ore1"))
             set basedmg=LoadReal(h,uid,StringHash("ore3"))
-            call SaveReal(h,uid,StringHash("ore1"),newdmg-b)
-            if newdmg-b<=0 then
+            call SaveReal(h,uid,StringHash("ore1"),newdmg-nb)
+            if newdmg-nb<=0 then
                 set n=LoadUnitHandle(h,uid,StringHash("ore2"))
                 call UnitRemoveAbility(u,'A1HG')
                 call newBlockDamage(u)
-                if l+newdmg>b then
-                    call SetUnitState(u,UNIT_STATE_LIFE,l+(newdmg-b))
+                if l+newdmg>nb then
+                    call SetUnitState(u,UNIT_STATE_LIFE,l+(newdmg-nb))
                     else
                     call SetUnitState(u,UNIT_STATE_LIFE,1)
                 endif
@@ -36923,13 +36925,13 @@ if cond==0 then
         if nb>0 and GetUnitAbilityLevel(u,'A1G0')>0 then
             set newdmg=LoadReal(h,uid,StringHash("QR1"))
             set basedmg=LoadReal(h,uid,StringHash("QR3"))
-            call SaveReal(h,uid,StringHash("QR1"),newdmg-b)
-            if newdmg-b<=0 then
+            call SaveReal(h,uid,StringHash("QR1"),newdmg-nb)
+            if newdmg-nb<=0 then
                 set n=LoadUnitHandle(h,uid,StringHash("QR2"))
                 call UnitRemoveAbility(u,'A1G0')
                 call newBlockDamage(u)
-                if l+newdmg>b then
-                    call SetUnitState(u,UNIT_STATE_LIFE,l+(newdmg-b))
+                if l+newdmg>nb then
+                    call SetUnitState(u,UNIT_STATE_LIFE,l+(newdmg-nb))
                     else
                     call SetUnitState(u,UNIT_STATE_LIFE,1)
                 endif
@@ -163815,74 +163817,74 @@ endfunction
 
 
 function UlquiorraR_New takes nothing returns nothing
-        local timer newTimer = GetExpiredTimer()
-        local integer id     = GetHandleId(newTimer)
-        local unit caster    = LoadUnitHandle(h, id, 0)
-        local real caster_x  = GetUnitX(caster)
-        local real caster_y  = GetUnitY(caster)
-        local real time          = LoadReal(h, id, 1)
-        if udg_B==false then
-    call SaveReal(h, id, 1, 33)
-    call PauseUnit(caster, false)
+    local timer newTimer = GetExpiredTimer()
+    local integer id     = GetHandleId(newTimer)
+    local unit caster    = LoadUnitHandle(h, id, 0)
+    local real caster_x  = GetUnitX(caster)
+    local real caster_y  = GetUnitY(caster)
+    local real time          = LoadReal(h, id, 1)
+    if udg_B==false then
+        call SaveReal(h, id, 1, 33)
+        call PauseUnit(caster, false)
     endif
-        if time==0.0 then
+    if time==0.0 then
         set soundplay=CreateSound("Sound\\Music\\mp3Music\\Ressurection Segunda Etapa.mp3",false,false,true,12700,12700,"")
-                call StartSound(soundplay)
-                call KillSoundWhenDone(soundplay)
-                call PauseUnit(caster, true)
-                call SetUnitInvulnerable(caster, true)
-                call RemoveEffect(AddSpecialEffectTarget("buff-txgreen.mdl", caster, "origin"), 1.5, true, CreateTimer())
-                set n=CreateUnit(GetOwningPlayer(caster), 'd078', caster_x, caster_y, GetRandomInt(0, 360))
-                call UnitScale(n, 0.5, 1.2, 1.0)
-                call SaveUnitHandle(h, id, 2, n)
-                set n=CreateUnit(GetOwningPlayer(caster), 'dR20', caster_x, caster_y, GetRandomInt(0, 360))
-                call UnitScale(n, 1.0, 4.0, 1.5)
-                call SetUnitVertexColor(n, 255, 255, 255, 150)
-                call UnitApplyTimedLife(n, 1, 2.0)
-                call MyRemoveUnit(n, 3.0)
-        endif
-        
-        if time<2.0 then
+        call StartSound(soundplay)
+        call KillSoundWhenDone(soundplay)
+        call PauseUnit(caster, true)
+        call SetUnitInvulnerable(caster, true)
+        call RemoveEffect(AddSpecialEffectTarget("buff-txgreen.mdl", caster, "origin"), 1.5, true, CreateTimer())
+        set n=CreateUnit(GetOwningPlayer(caster), 'd078', caster_x, caster_y, GetRandomInt(0, 360))
+        call UnitScale(n, 0.5, 1.2, 1.0)
+        call SaveUnitHandle(h, id, 2, n)
+        set n=CreateUnit(GetOwningPlayer(caster), 'dR20', caster_x, caster_y, GetRandomInt(0, 360))
+        call UnitScale(n, 1.0, 4.0, 1.5)
+        call SetUnitVertexColor(n, 255, 255, 255, 150)
+        call UnitApplyTimedLife(n, 1, 2.0)
+        call MyRemoveUnit(n, 3.0)
+    endif
+    
+    if time<2.0 then
         call SaveReal(h, id, 1, time+0.2)
-                call SetUnitX(LoadUnitHandle(h, id, 2), caster_x)
-                call SetUnitY(LoadUnitHandle(h, id, 2), caster_y)
-                set n=CreateUnit(GetOwningPlayer(caster), 'dM42', caster_x, caster_y, GetRandomInt(0, 360))
-                call SetUnitVertexColor(n, 0, 255, 175, 255)
-                call SetUnitScale(n, 1.8, 1.8, 1.8)
-                call MyRemoveUnit(n, 1.5)
+        call SetUnitX(LoadUnitHandle(h, id, 2), caster_x)
+        call SetUnitY(LoadUnitHandle(h, id, 2), caster_y)
+        set n=CreateUnit(GetOwningPlayer(caster), 'dM42', caster_x, caster_y, GetRandomInt(0, 360))
+        call SetUnitVertexColor(n, 0, 255, 175, 255)
+        call SetUnitScale(n, 1.8, 1.8, 1.8)
+        call MyRemoveUnit(n, 1.5)
         set n=CreateUnit(GetOwningPlayer(caster), 'dR43', caster_x, caster_y, GetRandomInt(0, 360))
         call SetUnitVertexColor(n, 0, 255, 175, 155)
         call SetUnitScale(n, 1.2, 1.2, 1.2)
         call UnitApplyTimedLife(n, 1, 0.4)
-        endif
-        
-        if time==2.0 then
+    endif
+    
+    if time==2.0 then
         call UnitAddAbility(caster, 'SU12')
         call IssueImmediateOrder(caster, "bearform")
         call UnitRemoveAbility(caster, 'SU12')
         call SetUnitAbilityLevel(caster,'A0RS', GetUnitAbilityLevel(caster,'A0WV')+1)
         call CreateModeIndicatorWithPauseForm(caster, "war3mapImported\\BTNUlquiorra.blp", 30)
-                set n=CreateUnit(GetOwningPlayer(caster), 'e0TL', caster_x, caster_y, GetRandomInt(0, 360))
-                call UnitApplyTimedLife(n, 1, 3.0)
-                call MyRemoveUnit(n, 3.5)
-                set n=CreateUnit(GetOwningPlayer(caster), 'e0TK', caster_x, caster_y, GetRandomInt(0, 360))
-                call UnitApplyTimedLife(n, 1, 3.0)
-                call MyRemoveUnit(n, 3.5)
-                set n=CreateUnit(GetOwningPlayer(caster), 'e0TO', caster_x, caster_y, GetRandomInt(0, 360))
-                call UnitApplyTimedLife(n, 1, 3.0)
-                call MyRemoveUnit(n, 3.5)
-                if GetAbilityRemainingCooldown(GetUnitAbility(caster, 'A0RU'))>0 then
-                        call StartAbilityCooldown(GetUnitAbility(caster, 'A0RU'), 0.1)
-                endif
-                call KillUnit(LoadUnitHandle(h, id, 2))
-                call MyRemoveUnit(LoadUnitHandle(h, id, 2), 1.5)
-                call PauseUnit(caster, false)
-                call SetUnitInvulnerable(caster, false)
-        call SaveReal(h, id, 1, time+0.2)
+        set n=CreateUnit(GetOwningPlayer(caster), 'e0TL', caster_x, caster_y, GetRandomInt(0, 360))
+        call UnitApplyTimedLife(n, 1, 3.0)
+        call MyRemoveUnit(n, 3.5)
+        set n=CreateUnit(GetOwningPlayer(caster), 'e0TK', caster_x, caster_y, GetRandomInt(0, 360))
+        call UnitApplyTimedLife(n, 1, 3.0)
+        call MyRemoveUnit(n, 3.5)
+        set n=CreateUnit(GetOwningPlayer(caster), 'e0TO', caster_x, caster_y, GetRandomInt(0, 360))
+        call UnitApplyTimedLife(n, 1, 3.0)
+        call MyRemoveUnit(n, 3.5)
+        if GetAbilityRemainingCooldown(GetUnitAbility(caster, 'A0RU'))>0 then
+            call StartAbilityCooldown(GetUnitAbility(caster, 'A0RU'), 0.1)
         endif
+        call KillUnit(LoadUnitHandle(h, id, 2))
+        call MyRemoveUnit(LoadUnitHandle(h, id, 2), 1.5)
+        call PauseUnit(caster, false)
+        call SetUnitInvulnerable(caster, false)
+        call SaveReal(h, id, 1, time+0.2)
+    endif
     if time>2 and IsUnitPaused(caster)==false then
         call SaveReal(h, id, 1, time+0.2)
-        if time>=32 then
+        if time>=32 or GetUnitAbilityLevel(caster,'A0RS')==1 then
             call UnitAddAbility(caster, 'SU11')
             call IssueImmediateOrder(caster, "bearform")
             call UnitRemoveAbility(caster, 'SU11')
@@ -163891,9 +163893,9 @@ function UlquiorraR_New takes nothing returns nothing
             call DestroyTimer(newTimer)
         endif
     endif
-        
-        set newTimer=null
-        set caster  =null
+    
+    set newTimer=null
+    set caster  =null
 endfunction
 
 
@@ -183614,6 +183616,7 @@ if LoadBoolean(HH,GetHandleId(caster),StringHash("SabracEReverse"))==true then
 if LoadUnitHandle(HH,GetHandleId(LoadUnitHandle(HH,id,30)),StringHash("SabracZoneU"))!=null and SR(GetUnitX(caster),GetUnitY(caster),GetUnitX(LoadUnitHandle(HH,GetHandleId(LoadUnitHandle(HH,id,30)),StringHash("SabracZoneU"))),GetUnitY(LoadUnitHandle(HH,GetHandleId(LoadUnitHandle(HH,id,30)),StringHash("SabracZoneU"))))<1500 then
 set damage=damage*2
 endif
+call SaveBoolean(HH,GetHandleId(caster),ANTITARGET_ABILITY,false)
 call SabracStackOneTime(caster,GetUnitX(caster),GetUnitY(caster),500)
 call DamageAoeOneTime0(LoadUnitHandle(HH,id,30),GetUnitX(caster),GetUnitY(caster),500,damage)
 call EffectCreateAndMove(true,"Sabrac\\kurumi-15.mdl",GetRandomReal(0,360),1,2,0.6,100,100,100,0,-50,caster,0,facing)
@@ -183630,6 +183633,7 @@ if GetUnitAbilityLevel(caster,'BSaR')==0 or (time>0.02 and  udg_B==false) or Uni
 //if(GetLocalPlayer()==GetOwningPlayer(caster))then
 //call DisplayTextToPlayer(GetLocalPlayer(),0,0,"Reverse end")
 //endif
+call SaveBoolean(HH,GetHandleId(caster),ANTITARGET_ABILITY,false)
 call RemoveUnit(LoadUnitHandle(HH,id,20))
 call PauseTimer(GetExpiredTimer())
 call FlushChildHashtable(HH,id)
@@ -184836,6 +184840,7 @@ else
 call StartAbilityCooldown(GetUnitAbility(casterOriginal,'SaE2'), 12)
 endif
 call SetUnitAnimationByIndex(caster,5)
+call SaveBoolean(HH,GetHandleId(caster),ANTITARGET_ABILITY,true)
 call TimerStart(t,0.02,true,function SabracEWAct)
 endif
 
