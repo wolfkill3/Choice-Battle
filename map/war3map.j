@@ -138364,7 +138364,7 @@ function GilgameshModifiedAttack takes unit newCaster, unit newTarget returns bo
     if GetRandomInt(0,100)<30 and GetUnitAbilityLevel(newCaster,'WAE1')>0 and IsUnitType(newCaster, UNIT_TYPE_HERO) and IsUnitIllusion(newCaster)==false then
         set critcoef=critcoef+0.5
     endif
-    if UnitHaveShield(newCaster,newTarget,damage) then
+    if UnitHaveShield(newCaster,newTarget,damage)==false then
         if UnitHasItemOfTypeBJ(newCaster, 'I031') and IsUnitType(newTarget,UNIT_TYPE_HERO) and IsUnitIllusion(newTarget)==false then 	// Патриот
             set tt=CreateTimer()
             call SetHeroAgi(newCaster,GetHeroAgi(newCaster,false)+1,true)
@@ -196373,7 +196373,7 @@ function Karna_ModifAttack takes unit newCaster, unit newTarget, real attack_fac
         endif
         //
 	
-        if UnitHaveShield(newCaster,newTarget,damage) then
+        if UnitHaveShield(newCaster,newTarget,damage)==false then
             if UnitHasItemOfTypeBJ(newCaster, 'I031') and IsUnitType(newTarget,UNIT_TYPE_HERO) and IsUnitIllusion(newTarget)==false then 	// Патриот
                 set bjLCT=CreateTimer()
                     call SetHeroAgi(newCaster,GetHeroAgi(newCaster,false)+3,true)
@@ -196693,7 +196693,7 @@ function Sinon_ModifAttack takes unit newCaster, unit newTarget, real attack_fac
     set damage = damage + (current_damage * crit_damage)
     //
 	
-	if modif_factor>0.0 and UnitHaveShield(newCaster,newTarget,damage) then
+	if modif_factor>0.0 and UnitHaveShield(newCaster,newTarget,damage)==false then
 	
 		if UnitHasItemOfTypeBJ(newCaster, 'I031') and IsUnitType(newTarget,UNIT_TYPE_HERO) and IsUnitIllusion(newTarget)==false then 	// Патриот
 			set bjLCT=CreateTimer()
