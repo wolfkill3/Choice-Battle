@@ -1651,10 +1651,10 @@ function myCustomDamage takes unit whichUnit, unit target, real amount, boolean 
 		if GetUnitAbilityLevel(whichUnit,'A176') > 0 then
             set currentDmg = currentDmg * 1.05
         endif  
-        if GetUnitAbilityLevel(whichUnit,'GkH5') > 0 or GetUnitAbilityLevel(whichUnit,'GkH8') > 0 then
+        if GetUnitAbilityLevel(whichUnit,'GkH5') > 0 or GetUnitAbilityLevel(whichUnit,'VGH5') > 0 or GetUnitAbilityLevel(whichUnit,'GkH8') > 0 then
             set currentDmg = currentDmg * 1.05
         endif
-        if GetUnitAbilityLevel(whichUnit,'GkH6') > 0 then
+        if GetUnitAbilityLevel(whichUnit,'GkH6') > 0 or GetUnitAbilityLevel(whichUnit,'VGH6') > 0 then
             set currentDmg = currentDmg * 1.1
         endif
         //T Waver   
@@ -9165,6 +9165,7 @@ call SetPlayerAbilityAvailable(Player(i),'TRBB',false)
 call SetPlayerAbilityAvailable(Player(i),'GTBB',false)
 call SetPlayerAbilityAvailable(Player(i),'GGBB',false)
 call SetPlayerAbilityAvailable(Player(i),'GKBB',false)
+call SetPlayerAbilityAvailable(Player(i),'VGBB',false)
 call SetPlayerAbilityAvailable(Player(i),'GKSF',false)
 call SetPlayerAbilityAvailable(Player(i),'GKG6',false)
 call SetPlayerAbilityAvailable(Player(i),'GKG7',false)
@@ -39122,7 +39123,7 @@ if cond==0 then
             call PauseUnit(u,true)
             call SetUnitState(u,UNIT_STATE_LIFE,GetUnitState(u,UNIT_STATE_MAX_LIFE))
             call SetUnitInvulnerable(u,true)
-            if GetUnitAbilityLevel(u,'A0P1')==0 then
+            if GetUnitAbilityLevel(u,'VGH4')==0 then
             call SetUnitAnimation(u,"Spell Channel")
             else
             call SetUnitAnimation(u,"Spell Channel Alternate")
@@ -40545,7 +40546,7 @@ call TriggerAddCondition(gg_trg_AkatsukiSet,Condition(function AkatsukiSetCond))
 call TriggerAddAction(gg_trg_AkatsukiSet,function AkatsukiSetCast)
 endfunction
 function SaiyanSetCond takes nothing returns boolean
-return GetHeroPrimaryAttribute(GetTriggerUnit())==HERO_ATTRIBUTE_STR and GetSpellAbilityId()!='A11G' and GetSpellAbilityId()!='A16E' and GetSpellAbilityId()!='A1AA' and GetSpellAbilityId()!='A1AB' and GetSpellAbilityId()!='A11E' and GetSpellAbilityId()!='A11D' and GetSpellAbilityId()!='A11F' and UnitHasItemOfTypeBJ(GetTriggerUnit(),'I06E')and GetSpellAbilityId()!='A0N1' and GetSpellAbilityId()!='A0N2' and GetSpellAbilityId()!='A0A2' and GetSpellAbilityId()!='A0EH' and GetSpellAbilityId()!='A0UG' and GetSpellAbilityId()!='A06J' and GetSpellAbilityId()!='A0VQ' and GetSpellAbilityId()!='A1I3'  and GetSpellAbilityId()!='A0X6'  and GetSpellAbilityId()!='A0B3' and GetSpellAbilityId()!='IcF2' and GetSpellAbilityId()!='IcFS' and GetSpellAbilityId()!='IcD3' and GetSpellAbilityId()!='A14T' and GetSpellAbilityId()!='GKBS' and GetSpellAbilityId()!='GKBB' and GetSpellAbilityId()!='GKSS' and GetSpellAbilityId()!='GKS2' and GetSpellAbilityId()!='GKS3' and GetSpellAbilityId()!='GKS4' and GetSpellAbilityId()!='GKSR' and GetSpellAbilityId()!='GKSB' and GetSpellAbilityId()!='GKUI' and GetSpellAbilityId()!='GKMI' and RectContainsUnit(gg_rct_HibariFight,GetTriggerUnit())==false
+return GetHeroPrimaryAttribute(GetTriggerUnit())==HERO_ATTRIBUTE_STR and GetSpellAbilityId()!='A11G' and GetSpellAbilityId()!='A16E' and GetSpellAbilityId()!='A1AA' and GetSpellAbilityId()!='A1AB' and GetSpellAbilityId()!='A11E' and GetSpellAbilityId()!='A11D' and GetSpellAbilityId()!='A11F' and UnitHasItemOfTypeBJ(GetTriggerUnit(),'I06E')and GetSpellAbilityId()!='A0N1' and GetSpellAbilityId()!='A0N2' and GetSpellAbilityId()!='A0A2' and GetSpellAbilityId()!='A0EH' and GetSpellAbilityId()!='A0UG' and GetSpellAbilityId()!='A06J' and GetSpellAbilityId()!='A0VQ' and GetSpellAbilityId()!='A1I3'  and GetSpellAbilityId()!='A0X6'  and GetSpellAbilityId()!='A0B3' and GetSpellAbilityId()!='IcF2' and GetSpellAbilityId()!='IcFS' and GetSpellAbilityId()!='IcD3' and GetSpellAbilityId()!='A14T' and GetSpellAbilityId()!='GKBS' and GetSpellAbilityId()!='GKBB' and GetSpellAbilityId()!='GKSS' and GetSpellAbilityId()!='GKS2' and GetSpellAbilityId()!='GKS3' and GetSpellAbilityId()!='GKS4' and GetSpellAbilityId()!='GKSR' and GetSpellAbilityId()!='GKSB' and GetSpellAbilityId()!='GKUI' and GetSpellAbilityId()!='GKMI' and GetSpellAbilityId()!='VGBS' and GetSpellAbilityId()!='VGBB' and GetSpellAbilityId()!='VGSS' and GetSpellAbilityId()!='VGS2' and GetSpellAbilityId()!='VGS3' and GetSpellAbilityId()!='VGS4' and GetSpellAbilityId()!='VGSR' and GetSpellAbilityId()!='VGSB' and RectContainsUnit(gg_rct_HibariFight,GetTriggerUnit())==false
 endfunction
 function SaiyanSetCast takes nothing returns nothing
 local unit u=GetTriggerUnit()
@@ -43534,7 +43535,7 @@ set u=null
 set t=null
 endfunction
 function Trig_X_Banner_Conditions takes nothing returns boolean
-return GetSpellAbilityId()==0x41303059 and udg_B==true
+return GetSpellAbilityId()=='A00Y' and udg_B==true
 endfunction
 function Trig_X_Banner_Actions2 takes nothing returns nothing
     local timer t=GetExpiredTimer()
@@ -43557,7 +43558,7 @@ function Trig_X_Banner_Actions2 takes nothing returns nothing
     local group g=LoadGroupHandle(h,id,7)
     local integer l__idg=GetHandleId(g)
     local player p=GetOwningPlayer(u)
-    local real dmg=GetHeroAgi(u,true)*(3+GetUnitAbilityLevel(u,0x41303059))*0.15
+    local real dmg=GetHeroAgi(u,true)*(3+GetUnitAbilityLevel(u,'A00Y'))*0.15
     local trigger newTrigger=LoadTriggerHandle(h, id, 100)
     local unit dummy = LoadUnitHandle(HH, GetHandleId(u), TsunaR_Circle)
     local boolean visual_fix = LoadBoolean(h, id, 102)
@@ -67658,7 +67659,7 @@ call TriggerAddCondition(t,Condition(function CondInstantTransmissionGoku))
 set t=null
 endfunction
 function CondFusionDance takes nothing returns boolean
-return GetSpellAbilityId()==0x41305033 and udg_B==true and GetUnitTypeId(GetSpellTargetUnit())=='H02H' or GetUnitTypeId(GetSpellTargetUnit())=='H02I' and(GetUnitAbilityLevel(GetTriggerUnit(),'A0P1')>0 and GetUnitAbilityLevel(GetSpellTargetUnit(),'A0NJ')>0) or (GetUnitAbilityLevel(GetTriggerUnit(),'A0NJ')>0 or GetUnitAbilityLevel(GetSpellTargetUnit(),'A0P1')>0)
+return GetSpellAbilityId()==0x41305033 and udg_B==true and GetUnitTypeId(GetSpellTargetUnit())=='H02H' or GetUnitTypeId(GetSpellTargetUnit())=='H02I' and(GetUnitAbilityLevel(GetTriggerUnit(),'VGH4')>0 and GetUnitAbilityLevel(GetSpellTargetUnit(),'A0NJ')>0) or (GetUnitAbilityLevel(GetTriggerUnit(),'A0NJ')>0 or GetUnitAbilityLevel(GetSpellTargetUnit(),'VGH4')>0)
 endfunction
 function FusionDanceYes2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
@@ -67826,136 +67827,172 @@ endfunction
 function PowerDownVegeta takes nothing returns nothing
 local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
-local unit u=LoadUnitHandle(HH,id,0)
-local real time=LoadReal(HH,GetHandleId(u),StringHash("SSR"))
-if IsUnitPaused(u)==false and IsUnitHidden(u)==false and GetUnitAbilityLevel(u,'Pet1')==0 then
-call SaveReal(HH,GetHandleId(u),StringHash("SSR"),time-0.1)
+local unit u=LoadUnitHandle(h,id,0)
+if IsUnitPaused(u)==false and GetUnitAbilityLevel(u,'Pet1')==0 then
+    if GetUnitAbilityLevel(u,'VGH1')>0 then
+        call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-GetUnitState(u,UNIT_STATE_MAX_MANA)*0.0003)
+    endif
+    if GetUnitAbilityLevel(u,'VGH2')>0 then
+        call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-GetUnitState(u,UNIT_STATE_MAX_MANA)*0.0005)
+    endif
+    if GetUnitAbilityLevel(u,'VGH3')>0 then
+        call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-GetUnitState(u,UNIT_STATE_MAX_MANA)*0.0008)
+    endif
+    if GetUnitAbilityLevel(u,'VGH4')>0 then
+        call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-GetUnitState(u,UNIT_STATE_MAX_MANA)*0.001)
+    endif
+    if GetUnitAbilityLevel(u,'VGH5')>0 then
+        call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-GetUnitState(u,UNIT_STATE_MAX_MANA)*0.0009)
+    endif
+    if GetUnitAbilityLevel(u,'VGH6')>0 then
+        call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-GetUnitState(u,UNIT_STATE_MAX_MANA)*0.00135)
+    endif
 endif
-if udg_B == false then
-call SaveReal(HH,GetHandleId(u),StringHash("SSR"),time-15)
+if GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.1>GetUnitState(u,UNIT_STATE_LIFE) or GetUnitState(u,UNIT_STATE_MAX_MANA)*0.04>GetUnitState(u,UNIT_STATE_MANA) or LoadBoolean(HH,GetHandleId(u),SST)==true then
+if GetUnitAbilityLevel(u,'VGH6')>0 or GetUnitAbilityLevel(u,'VGH4')>0 then
+call ShowAbility2Timed('VGBB',false,4.95)
+call ShowAbility2Timed('VGF1',true,4.97)
 endif
-if time<=0 then
 call SaveBoolean(HH,GetHandleId(u),SS,false)
-call SaveReal(HH,GetHandleId(u),StringHash("SSR"),15)
-call UnitRemoveAbility(u,'A0P0')
-call UnitRemoveAbility(u,'A0OZ')
-call UnitRemoveAbility(u,'A0P1')
-call UnitRemoveAbility(u,'A0TE')
-call UnitRemoveAbility(u,'A16J')
-call UnitRemoveAbility(u,'A16W')
-call UnitAddAbility(u,'A0OY')
-call SetUnitAbilityLevel(u,'A0NM',1)
-call UnitMakeAbilityPermanent(u,true,'A0OY')
+call SaveBoolean(HH,GetHandleId(u),SST,false)
+call UnitRemoveAbility(u,'VGH4')
+call UnitRemoveAbility(u,'VGH1')
+call UnitRemoveAbility(u,'VGH6')
+call UnitAddAbility(u,'VGH0')
 call AddUnitAnimationProperties(u,"alternate",false)
+call SetUnitAbilityLevel(u,'A3NM',1)
+call UnitMakeAbilityPermanent(u,true,'VGH0')
 call PauseTimer(t)
 call DestroyTimer(t)
-call FlushChildHashtable(HH,id)
+call FlushChildHashtable(h,id)
 endif
 set t=null
 set u=null
 endfunction
 function PowerUpVegetaCond takes nothing returns boolean
-return GetSpellAbilityId()=='A0P2' and udg_B==true
+return (GetSpellAbilityId()=='VGBS' or GetSpellAbilityId()=='VGBB' or GetSpellAbilityId()=='VGSS' or GetSpellAbilityId()=='VGS2' or GetSpellAbilityId()=='VGS3' or GetSpellAbilityId()=='VGSR' or GetSpellAbilityId()=='VGSB' or GetSpellAbilityId()=='VGS4') and udg_B==true
 endfunction
 function PowerUpVegetaCast2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
 local timer tt=CreateTimer()
 local integer id=GetHandleId(t)
-local unit u=LoadUnitHandle(HH,id,0)
+local unit u=LoadUnitHandle(h,id,0)
 local real x=GetUnitX(u)
 local real y=GetUnitY(u)
 local player p=GetOwningPlayer(u)
-local real time=LoadReal(HH,id,1)
-if GetUnitCurrentOrder(u)==OrderId("dispel")then
-call SaveReal(HH,id,1,time+0.025)
-set n=CreateUnit(p,'e0U6',x,y,GetRandomReal(0,359))
-call UnitApplyTimedLife(n,1,0.4)
-call SetUnitAnimation(n,"death")
-call SetUnitFlyHeight(n,50,0)
-call SetUnitVertexColor(n,255,255,255,50)
+local real time=LoadReal(h,id,1)
+if time<0.1 then
+call PauseUnit(u,true)
+call SaveReal(h,id,1,time+0.025)
 else
-call RemoveUnit(LoadUnitHandle(HH,id,10))
-call RemoveUnit(LoadUnitHandle(HH,id,11))
-call RemoveUnit(LoadUnitHandle(HH,id,12))
+call PauseUnit(u,false)
 call SetUnitTimeScale(u,1)
-if time>1.45 and GetHeroLevel(u)>=5*GetUnitAbilityLevel(u,'A0NM')then
-if GetUnitAbilityLevel(u,'A16W')==0 then
-call SaveReal(HH,GetHandleId(u),StringHash("SSR"),15+GetHeroLevel(u))
-call SetUnitAbilityLevel(u,'A0NM',GetUnitAbilityLevel(u,'A0NM')+1)
+call SetUnitAbilityLevel(u,'A3NM',LoadInteger(h,id,3)+1)
+if LoadInteger(h,id,3)==1 and GetUnitAbilityLevel(u,'VGH1')==0 then //ss
+    set EFF=AddSpecialEffect("Yellow--zhendi.mdl", x, y)
+    call DestroyEffect(EFF)
+    call UnitRemoveAbility(u,'VGH0')
+    call UnitRemoveAbility(u,'VGH1')
+    call UnitRemoveAbility(u,'VGH2')
+    call UnitRemoveAbility(u,'VGH3')
+    call UnitRemoveAbility(u,'VGH4')
+    call UnitRemoveAbility(u,'VGH5')
+    call UnitRemoveAbility(u,'VGH6')
+    call UnitAddAbility(u,'VGH1')
+    call UnitMakeAbilityPermanent(u,true,'VGH1')
+    call StartSound(soundStr[90])
+elseif LoadInteger(h,id,3)==2 and GetUnitAbilityLevel(u,'VGH2')==0 then //ss2
+    set EFF=AddSpecialEffect("Yellow--zhendi.mdl", x, y)
+    call DestroyEffect(EFF)
+    call UnitRemoveAbility(u,'VGH0')
+    call UnitRemoveAbility(u,'VGH1')
+    call UnitRemoveAbility(u,'VGH2')
+    call UnitRemoveAbility(u,'VGH3')
+    call UnitRemoveAbility(u,'VGH4')
+    call UnitRemoveAbility(u,'VGH5')
+    call UnitRemoveAbility(u,'VGH6')
+    call UnitAddAbility(u,'VGH2')
+    call UnitMakeAbilityPermanent(u,true,'VGH2')
+    call StartSound(soundStr[90])
+elseif LoadInteger(h,id,3)==3 and GetUnitAbilityLevel(u,'VGH3')==0 then //ss3
+    call FrozenMinusManaSS3Cast(u)
+    set EFF=AddSpecialEffect("Yellow--zhendi.mdl", x, y)
+    call DestroyEffect(EFF)
+    call UnitRemoveAbility(u,'VGH0')
+    call UnitRemoveAbility(u,'VGH1')
+    call UnitRemoveAbility(u,'VGH2')
+    call UnitRemoveAbility(u,'VGH3')
+    call UnitRemoveAbility(u,'VGH4')
+    call UnitRemoveAbility(u,'VGH5')
+    call UnitRemoveAbility(u,'VGH6')
+    call UnitAddAbility(u,'VGH3')
+    call UnitMakeAbilityPermanent(u,true,'VGH3')
+    call StartSound(soundStr[90])
+elseif LoadInteger(h,id,3)==4 and GetUnitAbilityLevel(u,'VGH4')==0 then //ss4
+    set EFF=AddSpecialEffect("Orange--zhendi.mdl", x, y)
+    call DestroyEffect(EFF)
+    call UnitRemoveAbility(u,'VGH0')
+    call UnitRemoveAbility(u,'VGH1')
+    call UnitRemoveAbility(u,'VGH2')
+    call UnitRemoveAbility(u,'VGH3')
+    call UnitRemoveAbility(u,'VGH4')
+    call UnitRemoveAbility(u,'VGH5')
+    call UnitRemoveAbility(u,'VGH6')
+    call UnitAddAbility(u,'VGH4')
+    call UnitMakeAbilityPermanent(u,true,'VGH4')
+    call AddUnitAnimationProperties(u,"alternate",true)
+    call ShowAbility2('VGF1',false)
+    call ShowAbility2('VGBB',true)
+    call StartSound(soundStr[90])
+elseif LoadInteger(h,id,3)==5 and GetUnitAbilityLevel(u,'VGH5')==0 then //ssg
+    set EFF=AddSpecialEffect("red-zhendi.mdx", x, y)
+    call DestroyEffect(EFF)
+    call UnitRemoveAbility(u,'VGH0')
+    call UnitRemoveAbility(u,'VGH1')
+    call UnitRemoveAbility(u,'VGH2')
+    call UnitRemoveAbility(u,'VGH3')
+    call UnitRemoveAbility(u,'VGH4')
+    call UnitRemoveAbility(u,'VGH5')
+    call UnitRemoveAbility(u,'VGH6')
+    call UnitAddAbility(u,'VGH5')
+    call UnitMakeAbilityPermanent(u,true,'VGH5')
+    call ShowAbility2('VGSS',false)
+    call ShowAbility2('VGS2',false)
+    call ShowAbility2('VGS3',false)
+    call ShowAbility2('VGS4',false)
+    call StartSound(soundStr[90])
+elseif LoadInteger(h,id,3)==6 and GetUnitAbilityLevel(u,'VGH6')==0 then //ssgss
+    set EFF=AddSpecialEffect("Blue--zhendi.mdx", x, y)
+    call DestroyEffect(EFF)
+    call UnitRemoveAbility(u,'VGH0')
+    call UnitRemoveAbility(u,'VGH1')
+    call UnitRemoveAbility(u,'VGH2')
+    call UnitRemoveAbility(u,'VGH3')
+    call UnitRemoveAbility(u,'VGH4')
+    call UnitRemoveAbility(u,'VGH5')
+    call UnitRemoveAbility(u,'VGH6')
+    call UnitAddAbility(u,'VGH6')
+    call UnitMakeAbilityPermanent(u,true,'VGH6')
+    call ShowAbility2('VGSS',false)
+    call ShowAbility2('VGS2',false)
+    call ShowAbility2('VGS3',false)
+    call ShowAbility2('VGS4',false)
+    call StartSound(soundStr[90])
 endif
-if GetUnitAbilityLevel(u,'A0OY')>0 then
-call UnitRemoveAbility(u,'A0OY')
-call UnitAddAbility(u,'A0TE')
-call UnitMakeAbilityPermanent(u,true,'A0TE')
-call CreateModeIndicatorWithPauseFormDispellable(u, "ReplaceableTextures\\Commandbuttons\\BTNVegetaSSJ.blp", 15+GetHeroLevel(u),'A0TE')
-if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
-    set soundplay=CreateSound("Sound\\Music\\mp3Music\\Vigeta ss1.mp3",false,false,true,12700,12700,"")
-else
-    set soundplay=CreateSound("Sound\\Music\\mp3Music\\Vegeta\\Vigeta ss1-jap.mp3",false,false,true,12700,12700,"")
-endif
-call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
-elseif GetUnitAbilityLevel(u,'A0TE')>0 then
-call UnitRemoveAbility(u,'A0TE')
-call UnitAddAbility(u,'A0OZ')
-call UnitMakeAbilityPermanent(u,true,'A0OZ')
-call CreateModeIndicatorWithPauseFormDispellable(u, "ReplaceableTextures\\Commandbuttons\\BTNVegetaSSJ2.blp", 15+GetHeroLevel(u),'A0OZ')
-if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
-    set soundplay=CreateSound("Sound\\Music\\mp3Music\\Vigeta ss2.mp3",false,false,true,12700,12700,"")
-else
-    set soundplay=CreateSound("Sound\\Music\\mp3Music\\Vegeta\\Vigeta ss2-jap.mp3",false,false,true,12700,12700,"")
-endif
-call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
-elseif GetUnitAbilityLevel(u,'A0OZ')>0 then
-call UnitRemoveAbility(u,'A0OZ')
-call UnitAddAbility(u,'A0P0')
-call UnitMakeAbilityPermanent(u,true,'A0P0')
-call CreateModeIndicatorWithPauseFormDispellable(u, "ReplaceableTextures\\Commandbuttons\\BTNVegetaSSJ3.blp", 15+GetHeroLevel(u),'A0P0')
-if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
-    set soundplay=CreateSound("Sound\\Music\\mp3Music\\Vigeta ss3.mp3",false,false,true,12700,12700,"")
-else
-    set soundplay=CreateSound("Sound\\Music\\mp3Music\\Vegeta\\Vigeta ss3-jap.mp3",false,false,true,12700,12700,"")
-endif
-call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
-elseif GetUnitAbilityLevel(u,'A0P0')>0 then
-call UnitRemoveAbility(u,'A0P0')
-call UnitAddAbility(u,'A0P1')
-call UnitMakeAbilityPermanent(u,true,'A0P1')
-call CreateModeIndicatorWithPauseFormDispellable(u, "ReplaceableTextures\\Commandbuttons\\BTNVegetaSSJ4.blp", 15+GetHeroLevel(u),'A0P1')
-call AddUnitAnimationProperties(u,"alternate",true)
-if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
-    set soundplay=CreateSound("Sound\\Music\\mp3Music\\Vigeta ss4.mp3",false,false,true,12700,12700,"")
-else
-    set soundplay=CreateSound("Sound\\Music\\mp3Music\\Vegeta\\Vigeta ss4-jap.mp3",false,false,true,12700,12700,"")
-endif
-call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
-elseif GetUnitAbilityLevel(u,'A0P1')>0 then
-call UnitRemoveAbility(u,'A0P1')
-call UnitAddAbility(u,'A16J')
-call UnitMakeAbilityPermanent(u,true,'A16J')
-call CreateModeIndicatorWithPauseFormDispellable(u, "ReplaceableTextures\\Commandbuttons\\BTNVegetaSSG.blp", 15+GetHeroLevel(u),'A16J')
-call AddUnitAnimationProperties(u,"alternate",false)
-call StartSound(soundStr[90])
-elseif GetUnitAbilityLevel(u,'A16J')>0 then
-call UnitRemoveAbility(u,'A16J')
-call UnitAddAbility(u,'A16W')
-call UnitMakeAbilityPermanent(u,true,'A16W')
-call CreateModeIndicatorWithPauseFormDispellable(u, "ReplaceableTextures\\Commandbuttons\\BTNVegetaSSGSS.blp", 15+GetHeroLevel(u),'A16W')
-call AddUnitAnimationProperties(u,"alternate",false)
-call StartSound(soundStr[90])
+if LoadInteger(h,id,3)==0 and GetUnitAbilityLevel(u,'VGH0')==0 then
+call StartSound(soundStr[89]) 
 endif
 if LoadBoolean(HH,GetHandleId(u),SS)==false then
-call SaveUnitHandle(HH,GetHandleId(tt),0,u)
+call SaveUnitHandle(h,GetHandleId(tt),0,u)
 call SaveBoolean(HH,GetHandleId(u),SS,true)
 call TimerStart(tt,0.1,true,function PowerDownVegeta)
 endif
+if LoadInteger(h,id,3)==0 then
+call SaveBoolean(HH,GetHandleId(u),SST,true)
 endif
 call PauseTimer(t)
 call DestroyTimer(t)
-call FlushChildHashtable(HH,id)
+call FlushChildHashtable(h,id)
 endif
 set p=null
 set tt=null
@@ -67969,15 +68006,35 @@ local integer id=GetHandleId(t)
 local player p=GetOwningPlayer(u)
 local real x=GetUnitX(u)
 local real y=GetUnitY(u)
-call SaveUnitHandle(HH,id,0,u)
-call SaveReal(HH,id,1,0)
-call SaveUnitHandle(HH,id,10,CreateUnit(p,'e0LL',x,y,0))
-call SaveUnitHandle(HH,id,11,CreateUnit(p,'e0LK',x,y,0))
-call SaveUnitHandle(HH,id,12,CreateUnit(p,'e0LM',x,y,0))
+call SaveUnitHandle(h,id,0,u)
+if (GetSpellAbilityId()=='VGSS' and GetUnitAbilityLevel(u,'VGH1')==0) or (GetSpellAbilityId()=='VGS2' and GetUnitAbilityLevel(u,'VGH2')==0) or (GetSpellAbilityId()=='VGS3' and GetUnitAbilityLevel(u,'VGH3')==0) or GetSpellAbilityId()=='VGS4' or (GetSpellAbilityId()=='VGSR' and GetUnitAbilityLevel(u,'VGH5')==0) or (GetSpellAbilityId()=='VGSB' and GetUnitAbilityLevel(u,'VGH6')==0) then
+    call SaveReal(h,id,1,0)
+    call ShowAbility2('VGF1',false)
+    call ShowAbility2Timed('VGF1',true,0.025)
+    //call UnitApplyTimedLife(CreateUnit(p,'e0LK',x,y,0),1,0.3)
+    call UnitApplyTimedLife(CreateUnit(p,'e0LM',x,y,0),1,0.35)
+elseif GetSpellAbilityId()=='VGBS' or GetSpellAbilityId()=='VGBB' then
+    call SaveReal(h,id,1,0.075)
+    call SaveInteger(h,id,3,0)
+else
+    call ShowAbility2('VGF1',false)
+    call ShowAbility2Timed('VGF1',true,0.02)
+    call SaveReal(h,id,1,0.1)
+endif
+if GetSpellAbilityId()=='VGSS' then
+    call SaveInteger(h,id,3,1)
+elseif GetSpellAbilityId()=='VGS2' then
+    call SaveInteger(h,id,3,2)
+elseif GetSpellAbilityId()=='VGS3' then
+    call SaveInteger(h,id,3,3)
+elseif GetSpellAbilityId()=='VGS4' then
+    call SaveInteger(h,id,3,4)
+elseif GetSpellAbilityId()=='VGSR' then
+    call SaveInteger(h,id,3,5)
+elseif GetSpellAbilityId()=='VGSB' then
+    call SaveInteger(h,id,3,6)
+endif
 call SetUnitTimeScale(u,0.5)
-set soundplay=CreateSound("Sound\\Music\\mp3Music\\PowerUp.mp3",false,false,true,12700,12700,"")
-call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
 call TimerStart(t,0.025,true,function PowerUpVegetaCast2)
 set u=null
 set p=null
@@ -68189,6 +68246,9 @@ local effect ef = null
 local real x1=GetUnitX(u)
 local real y1=GetUnitY(u)
 local real dmg=((GetUnitState(u,UNIT_STATE_MAX_LIFE)-GetWidgetLife(u))*(GetUnitAbilityLevel(u,'A0IQ')*0.1+0.25))+3*GetHeroStr(u,true)
+if GetUnitAbilityLevel(u,'VGH6')>0 then
+    set dmg=dmg+2*GetHeroStr(u,true)
+endif
 set ef=AddSpecialEffect("war3mapImported\\[DoFT]Natsu_Fire_Ball_n.mdl",x1,y1)
 call SetSpecialEffectScale(ef , 1.6)
 call SetSpecialEffectTimeScale(ef , 1.7)
@@ -68253,7 +68313,7 @@ call SaveUnitHandle(h,id,0,u)
 call SetUnitTimeScale(u,0.3)
 call PauseUnit(u,true)
 call SetUnitInvulnerable(u,true)
-if GetUnitAbilityLevel(u,'A0P1')==0 then
+if GetUnitAbilityLevel(u,'VGH4')==0 then
 call SetUnitAnimation(u,"Spell Channel")
 else
 call SetUnitAnimation(u,"Spell Channel Alternate")
@@ -68316,7 +68376,7 @@ local real time=LoadReal(h,id,5)
 if time<0.8 then
 call SaveReal(h,id,5,time+0.017)
 if time==0.799 then
-if GetUnitAbilityLevel(u,'A0P1')==0 then
+if GetUnitAbilityLevel(u,'VGH4')==0 then
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\GalickGun.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
 call KillSoundWhenDone(soundplay)
@@ -68343,43 +68403,42 @@ endif
 else
 if dist>0 and IsTerrainPathable(GetUnitX(l__d),GetUnitY(l__d),PATHING_TYPE_FLYABILITY)==false then
 call SetUnitXY_1(l__d,x,y, false)
-if GetUnitAbilityLevel(u,'A0OY')>0 then
+if GetUnitAbilityLevel(u,'VGH0')>0 then
+set n=CreateUnit(p,'e0HN',x,y,a*bj_RADTODEG)
+call SetUnitTimeScale(n,0)
+call SetUnitColor(n,PLAYER_COLOR_PINK)
+call UnitApplyTimedLife(n,1,1)
+call UnitApplyTimedLife(CreateUnit(p,'e0D8',x,y,GetRandomReal(0,359)),1,1)
+elseif GetUnitAbilityLevel(u,'VGH1')>0 then
 set dmg=dmg+GetHeroStr(u,true)
 set n=CreateUnit(p,'e0HN',x,y,a*bj_RADTODEG)
 call SetUnitTimeScale(n,0)
 call SetUnitColor(n,PLAYER_COLOR_PINK)
 call UnitApplyTimedLife(n,1,1)
 call UnitApplyTimedLife(CreateUnit(p,'e0D8',x,y,GetRandomReal(0,359)),1,1)
-elseif GetUnitAbilityLevel(u,'A0TE')>0 then
-set dmg=dmg+GetHeroStr(u,true)
+elseif GetUnitAbilityLevel(u,'VGH2')>0 then
+set dmg=dmg+1*GetHeroStr(u,true)
 set n=CreateUnit(p,'e0HN',x,y,a*bj_RADTODEG)
 call SetUnitTimeScale(n,0)
 call SetUnitColor(n,PLAYER_COLOR_PINK)
 call UnitApplyTimedLife(n,1,1)
 call UnitApplyTimedLife(CreateUnit(p,'e0D8',x,y,GetRandomReal(0,359)),1,1)
-elseif GetUnitAbilityLevel(u,'A0OZ')>0 then
+elseif GetUnitAbilityLevel(u,'VGH3')>0 then
 set dmg=dmg+2*GetHeroStr(u,true)
 set n=CreateUnit(p,'e0HN',x,y,a*bj_RADTODEG)
 call SetUnitTimeScale(n,0)
 call SetUnitColor(n,PLAYER_COLOR_PINK)
 call UnitApplyTimedLife(n,1,1)
 call UnitApplyTimedLife(CreateUnit(p,'e0D8',x,y,GetRandomReal(0,359)),1,1)
-elseif GetUnitAbilityLevel(u,'A0P0')>0 then
-set dmg=dmg+3*GetHeroStr(u,true)
-set n=CreateUnit(p,'e0HN',x,y,a*bj_RADTODEG)
-call SetUnitTimeScale(n,0)
-call SetUnitColor(n,PLAYER_COLOR_PINK)
-call UnitApplyTimedLife(n,1,1)
-call UnitApplyTimedLife(CreateUnit(p,'e0D8',x,y,GetRandomReal(0,359)),1,1)
-elseif GetUnitAbilityLevel(u,'A0P1')>0 then
+elseif GetUnitAbilityLevel(u,'VGH4')>0 then
 set dmg=dmg+4*GetHeroStr(u,true)
 set n=CreateUnit(p,'e0R8',x,y,a*bj_RADTODEG)
 call SetUnitTimeScale(n,0)
 call SetUnitColor(n,PLAYER_COLOR_GREEN)
 call UnitApplyTimedLife(n,1,1.2)
 call UnitApplyTimedLife(CreateUnit(p,'e0R9',x,y,GetRandomReal(0,359)),1,1.2)
-elseif GetUnitAbilityLevel(u,'A16J')==0 or GetUnitAbilityLevel(u,'A16W')==0 then
-set dmg=dmg+4*GetHeroStr(u,true)
+elseif GetUnitAbilityLevel(u,'VGH5')==0 or GetUnitAbilityLevel(u,'VGH6')==0 then
+set dmg=dmg+2*GetHeroStr(u,true)
 set n=CreateUnit(p,'e0HN',x,y,a*bj_RADTODEG)
 call SetUnitTimeScale(n,0)
 call SetUnitColor(n,PLAYER_COLOR_PINK)
@@ -68448,8 +68507,8 @@ call SaveGroupHandle(h,id,3,CreateGroup())
 call SaveReal(h,id,4,a)
 call PauseUnit(u,true)
 call SetUnitInvulnerable(u,true)
-if GetUnitAbilityLevel(u,'A0P1')==0 then
-if GetUnitAbilityLevel(u,'A16J')==0 and GetUnitAbilityLevel(u,'A16W')==0 then
+if GetUnitAbilityLevel(u,'VGH4')==0 then
+if GetUnitAbilityLevel(u,'VGH5')==0 and GetUnitAbilityLevel(u,'VGH6')==0 then
 call SaveReal(h,id,10,3500)
 else
 call SaveReal(h,id,10,5500)
@@ -68480,7 +68539,7 @@ set soundplay=CreateSound("Sound\\Music\\mp3Music\\Vegeta\\FinalShineAttack-jap.
 endif
 call StartSound(soundplay)
 call KillSoundWhenDone(soundplay)
-if GetUnitAbilityLevel(u,'A0P1')>0 then
+if GetUnitAbilityLevel(u,'VGH4')>0 then
 call SetUnitAnimation(u,"Spell One Alternate")
 else
 call SetUnitAnimation(u,"Spell One")
@@ -68563,7 +68622,7 @@ local real x1=GetSpellTargetX()
 local real y1=GetSpellTargetY()
 local real a=Atan2(y1-y,x1-x)
 local player p=GetOwningPlayer(u)
-if GetUnitAbilityLevel(u,'A0P1')==0 then
+if GetUnitAbilityLevel(u,'VGH4')==0 then
 call SetUnitAnimation(u,"Spell One")
 else
 call SetUnitAnimation(u,"Spell One Alternate")
@@ -93108,7 +93167,7 @@ call KillSoundWhenDone(soundplay)
 endif
 call SetUnitInvulnerable(u,true)
 call SetUnitTimeScale(u,1)
-if GetUnitAbilityLevel(u,'A0P1')==0 then
+if GetUnitAbilityLevel(u,'VGH4')==0 then
 call SetUnitAnimation(u,"Spell Throw")
 else
 call SetUnitAnimation(u,"Spell Throw Alternate")
@@ -93139,7 +93198,7 @@ local real x1=GetSpellTargetX()
 local real y1=GetSpellTargetY()
 local real a=Atan2(y1-y,x1-x)
 call SaveUnitHandle(h,id,0,u)
-if GetUnitAbilityLevel(u,'A0P1')==0 then
+if GetUnitAbilityLevel(u,'VGH4')==0 then
 call SetUnitAnimation(u,"Spell Channel")
 else
 call SetUnitAnimation(u,"Spell Channel Alternate")
