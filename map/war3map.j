@@ -32875,7 +32875,7 @@ local unit u=LoadUnitHandle(h,id,1)
 local real life=LoadReal(h,id,0)
 local real life2=GetWidgetMana(u)
 local real dmg=0
-if (GetUnitAbilityLevel(u,'A17C')>0 or GetUnitAbilityLevel(u,'GkH3')>0) or GetUnitAbilityLevel(u,'VGH3')>0) and GetWidgetLife(u)>0 and udg_B==true and DU2==true then
+if (GetUnitAbilityLevel(u,'A17C')>0 or GetUnitAbilityLevel(u,'GkH3')>0 or GetUnitAbilityLevel(u,'VGH3')>0) and GetWidgetLife(u)>0 and udg_B==true and DU2==true then
 if life2>life then
 set dmg=GetWidgetMana(u)-LoadReal(h,id,0)
 call SetWidgetMana(u, GetWidgetMana(u)-dmg*0.15)
