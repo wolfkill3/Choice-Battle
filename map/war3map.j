@@ -67849,14 +67849,18 @@ if IsUnitPaused(u)==false and GetUnitAbilityLevel(u,'Pet1')==0 then
     endif
 endif
 if GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.1>GetUnitState(u,UNIT_STATE_LIFE) or GetUnitState(u,UNIT_STATE_MAX_MANA)*0.04>GetUnitState(u,UNIT_STATE_MANA) or LoadBoolean(HH,GetHandleId(u),SST)==true then
-if GetUnitAbilityLevel(u,'VGH6')>0 or GetUnitAbilityLevel(u,'VGH4')>0 then
+if GetUnitAbilityLevel(u,'VGH4')>0 then
 call ShowAbility2Timed('VGBB',false,4.95)
 call ShowAbility2Timed('VGF1',true,4.97)
 endif
 call SaveBoolean(HH,GetHandleId(u),SS,false)
 call SaveBoolean(HH,GetHandleId(u),SST,false)
-call UnitRemoveAbility(u,'VGH4')
+call UnitRemoveAbility(u,'VGH0')
 call UnitRemoveAbility(u,'VGH1')
+call UnitRemoveAbility(u,'VGH2')
+call UnitRemoveAbility(u,'VGH3')
+call UnitRemoveAbility(u,'VGH4')
+call UnitRemoveAbility(u,'VGH5')
 call UnitRemoveAbility(u,'VGH6')
 call UnitAddAbility(u,'VGH0')
 call AddUnitAnimationProperties(u,"alternate",false)
