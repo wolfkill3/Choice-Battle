@@ -38219,8 +38219,7 @@ if cond==0 then
     if CurrentEventAttack and nb>0 and GetUnitTypeId(c) == 'H02L' and GetHeroLevel(c)>=6 then
         set dmg=GetHeroStr(c,true) * 0.45
         call myCustomDamage(c,u,dmg,false,false,null,null,null)
-        call Push(u,40,a,75)
-        set nb=nb+dmg*myCustomDamage2(u,1)
+        call Push(u,40,a,75))
     endif
     if nb>0 and ((GetUnitTypeId(c) == 'H02L' and c == Hero[GetPlayerId(GetOwningPlayer(c))]) or (c==UltimateDamage and GetOwningPlayer(UltimateDamage)==GetOwningPlayer(Broly))) and IsUnitType(c, UNIT_TYPE_SUMMONED) == false and IsUnitIllusion(c) == false and DU==true then
         set bDamage = bDamage + nb
@@ -38477,11 +38476,12 @@ if cond==0 then
         call SetUnitVertexColor(n, 255, 150, 100, 0)
         call SetUnitFlyHeight(n, 100, 0)
         call MyRemoveUnit(n, 2.5)
-        call SetEventDamage(nb+GetHeroAgi(c,true)*2*myCustomDamage2(u,1))
-        set nb=nb+GetHeroAgi(c,true)*2*myCustomDamage2(u,1)
+        call UnitAddAbility(c,'A3WR')
+        call myCustomDamage(c,u,GetHeroAgi(c,true)*2,false,false,null,null,null)
         call DestroyEffect(AddSpecialEffectTarget("war3mapImported\\jiejinmao.mdx",c,"Right Hand"))
         call DestroyEffect(AddSpecialEffectTarget("war3mapImported\\BloodEX.mdx",u,"origin"))
         call DestroyEffect(AddSpecialEffectTarget("war3mapImported\\OPm (828).mdl",u,"origin"))
+        call UnitRemoveAbility(c,'A3WR')
     endif
     if GetUnitTypeId(c)=='H035' then
         call UnitAddAbility(c,'A3WR')
