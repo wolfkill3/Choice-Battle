@@ -38219,7 +38219,7 @@ if cond==0 then
     if CurrentEventAttack and nb>0 and GetUnitTypeId(c) == 'H02L' and GetHeroLevel(c)>=6 then
         set dmg=GetHeroStr(c,true) * 0.45
         call myCustomDamage(c,u,dmg,false,false,null,null,null)
-        call Push(u,40,a,75))
+        call Push(u,40,a,75)
     endif
     if nb>0 and ((GetUnitTypeId(c) == 'H02L' and c == Hero[GetPlayerId(GetOwningPlayer(c))]) or (c==UltimateDamage and GetOwningPlayer(UltimateDamage)==GetOwningPlayer(Broly))) and IsUnitType(c, UNIT_TYPE_SUMMONED) == false and IsUnitIllusion(c) == false and DU==true then
         set bDamage = bDamage + nb
