@@ -9833,6 +9833,17 @@ set retUnitId='H02G'
 endif
 return retUnitId
 endfunction
+function BuffUnpausePet1 takes nothing returns nothing
+local buff buf=HandleListGetEnumBuff()
+call PauseBuff(buf,false)
+set buf=null
+endfunction
+function BuffPausePet1 takes nothing returns nothing
+local buff buf=HandleListGetEnumBuff()
+local real b=GetBuffRemainingDuration(buf)
+call PauseBuff(buf,true)
+set buf=null
+endfunction
 
 function PlayerAssistGold takes nothing returns nothing
 local player p=GetEnumPlayer()
@@ -130781,6 +130792,52 @@ endfunction
 // call TriggerAddCondition(gg_trg_CycloneEnd,Condition(function CycloneEndCond))
 // call TriggerAddAction(gg_trg_CycloneEnd,function CycloneEndCast)
 // endfunction
+function Pet1StartCond takes nothing returns boolean
+return GetAbilityTypeId(GetTriggerAbility())=='Pet1'
+endfunction
+function Pet1StartCast2 takes nothing returns nothing
+local timer t=GetExpiredTimer()
+local integer id=GetHandleId(t)
+local unit u=LoadUnitHandle(HH,id,0)
+local real x=GetUnitX(u)
+local real y=GetUnitY(u)
+local effect EffT=LoadEffectHandle(HH,id,1)
+if GetUnitAbilityLevel(u,'Pet1')>0 or IsUnitPaused(u)==true then
+call HandleListEnumUnitBuffs(bufh,u,null)
+call HandleListForEach(bufh,function BuffPausePet1)
+call FlushChildHashtable(HH,GetHandleId(bufh))
+call HandleListClear(bufh)
+else
+call HandleListEnumUnitBuffs(bufh,u,null)
+call HandleListForEach(bufh,function BuffUnpausePet1)
+call FlushChildHashtable(HH,GetHandleId(bufh))
+call HandleListClear(bufh)
+endif
+set t=null
+set u=null
+set EffT=null
+endfunction
+function Pet1StartCast takes nothing returns nothing
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+local unit u=GetTriggerUnit()
+local real x=GetUnitX(u)
+local real y=GetUnitX(u)
+call HandleListEnumUnitBuffs(bufh,u,null)
+call HandleListForEach(bufh,function BuffPausePet1)
+call FlushChildHashtable(HH,GetHandleId(bufh))
+call HandleListClear(bufh)
+call TimerStart(t,.05,true,function Pet1StartCast2)
+set t=null
+set u=null
+endfunction
+function Pet1StartInit takes nothing returns nothing
+local trigger t=CreateTrigger()
+call TriggerRegisterAnyUnitEventBJ(t,EVENT_PLAYER_UNIT_ABILITY_ADDED)
+call TriggerAddCondition(t,Condition(function Pet1StartCond))
+call TriggerAddAction(t,function Pet1StartCast)
+set t=null
+endfunction
 function CycloneStartCond takes nothing returns boolean
 return GetBuffTypeId(GetTriggerBuff())=='cbc9'
 endfunction
@@ -211215,6 +211272,7 @@ call WeakenEndInit()
 // call PauseAbilInit()
 //call SlowAuraStartInit()
 call CycloneStartInit()
+// call Pet1StartInit()
 //call CycloneEndInit()
 call RunInitializationTriggers()
 //call MusicONInit()
