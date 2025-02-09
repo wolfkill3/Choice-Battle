@@ -38003,13 +38003,14 @@ if cond==0 then
         call UnitRemoveAbility(c,'A3WR')
     endif
     if(CurrentEventAttack)and nb>0 and GetUnitAbilityLevel(c,'A17K')>0 and GetUnitAbilityLevel(c,'A3WR')==0 then
-        call SetEventDamage(nb+(GetHeroAgi(c,true)*2 + GetUnitTotalDamage(c)*0.6)*myCustomDamage2(u,1))
-        set nb=nb+(GetHeroAgi(c,true)*2 + GetUnitTotalDamage(c)*0.6)*myCustomDamage2(u,1)
+        call UnitAddAbility(c,'A3WR')
+        call myCustomDamage(c,u,GetHeroAgi(c,true)*2 + GetUnitTotalDamage(c)*0.6,false,false,null,null,null)
         call UnitRemoveAbility(c,'A17K')
         call SetControlToUnit(u,u, 1, "stun")
         call DestroyEffect(AddSpecialEffectTarget("war3mapImported\\jiejinmao.mdx",c,"Right Hand"))
         call DestroyEffect(AddSpecialEffectTarget("war3mapImported\\BloodEX.mdx",u,"origin"))
         call SetUnitAttackRangeByIndex(c,0, 600)
+        call UnitRemoveAbility(c,'A3WR')
     endif
     if CurrentEventAttack and nb>0 and GetUnitAbilityLevel(c,'A160')>0 and c!=UltimateDamage and GetHeroLevel(c)>=6 and GetRandomReal(0,100)<30 then
         set n=CreateUnit(GetOwningPlayer(c),'e0F0',x1,y1,a*bj_RADTODEG)
@@ -38069,7 +38070,7 @@ if cond==0 then
     endif
     if CurrentEventAttack and nb>0 and GetUnitAbilityLevel(c,'A0UT')>0 and GetRandomIntMem(0,100)<=17 and GetHeroLevel(c)>5 then
         
-        call SetEventDamage(nb+2*GetHeroAgi(c,true)*myCustomDamage2(u,1))
+        call myCustomDamage(c,u,GetHeroAgi(c,true)*2,false,false,null,null,null)
         call SetControlToUnit(c,u, 0.2, "stun")
         set i=0
         loop
@@ -38080,7 +38081,6 @@ if cond==0 then
         call UnitApplyTimedLife(n,1,0.1)
         set i=i+1
         endloop
-        set nb=nb+2*GetHeroAgi(c,true)*myCustomDamage2(u,1)
     endif
     if CurrentEventAttack and nb>0 and GetUnitAbilityLevel(c,'A0VB')>0 and GetRandomIntMem(0,100)<=15+GetUnitAbilityLevel(c,'A0VB')then
         set dmg=GetHeroAgi(c,true)+GetHeroStr(c,true)
@@ -38095,7 +38095,7 @@ if cond==0 then
         set y3=GetUnitY(E)
         exitwhen E==null
         if Condition_Base(GetOwningPlayer(c),E)then
-            call SetEventDamage(nb+(GetHeroAgi(c,true)+GetHeroStr(c,true))*myCustomDamage2(E,1))
+           call myCustomDamage(c,E,dmg,false,false,null,null,null)
             call Push(E,20,a,200)
             set n=CreateUnit(GetOwningPlayer(u),'e0SD',x3,y3,a*bj_RADTODEG)
             call SetUnitTimeScale(n,3)
@@ -38106,7 +38106,7 @@ if cond==0 then
             call UnitApplyTimedLife(n,'BHwe',0.25)
         endif
         call GroupRemoveUnit(G,E)
-        set nb=nb+(GetHeroAgi(c,true)+GetHeroStr(c,true))*myCustomDamage2(E,1)
+        //set nb=nb+(GetHeroAgi(c,true)+GetHeroStr(c,true))*myCustomDamage2(E,1)
         endloop
     endif
 //==============================================================================
@@ -38191,7 +38191,11 @@ if cond==0 then
 
     if GetUnitAbilityLevel(u,'BKKQ')>0 and nb>0 then 
     //call SetUnitState(GetTriggerUnit(),UNIT_STATE_LIFE,GetWidgetLife(GetTriggerUnit())+nb*0.3)
-        call SetEventDamage(nb*1.2)
+        if GetUnitState(u,UNIT_STATE_LIFE)>nb*1.2 then
+            call SetUnitState(u,UNIT_STATE_LIFE,GetWidgetLife(u)-nb*0.2) 
+        else
+            call SetUnitState(u,UNIT_STATE_LIFE,1) 
+        endif
         set nb=nb*1.2                     
     endif
 
@@ -38214,7 +38218,7 @@ if cond==0 then
 
     if CurrentEventAttack and nb>0 and GetUnitTypeId(c) == 'H02L' and GetHeroLevel(c)>=6 then
         set dmg=GetHeroStr(c,true) * 0.45
-        call SetEventDamage(nb+dmg*myCustomDamage2(u,1))
+        call myCustomDamage(c,u,dmg,false,false,null,null,null)
         call Push(u,40,a,75)
         set nb=nb+dmg*myCustomDamage2(u,1)
     endif
@@ -38286,13 +38290,13 @@ if cond==0 then
         endif
     endif
     if CurrentEventAttack and nb>0 and GetUnitAbilityLevel(c,'B03J')>0 and GetUnitAbilityLevel(c,'A3WR')==0 then
+        call UnitAddAbility(c,'A3WR')
         if GetUnitAbilityLevel(u,'B03I')==0 then
-            call SetEventDamage(nb+GetHeroInt(c,true)*2*myCustomDamage2(u,1))
-            set nb=nb+GetHeroInt(c,true)*2*myCustomDamage2(u,1)
+            call myCustomDamage(c,u,GetHeroInt(c,true)*2,false,false,null,null,null)
             else
-            call SetEventDamage(nb+GetHeroInt(c,true)*2.4*myCustomDamage2(u,1))
-            set nb=nb+GetHeroInt(c,true)*2.4*myCustomDamage2(u,1)
+            call myCustomDamage(c,u,GetHeroInt(c,true)*2.4,false,false,null,null,null)
         endif
+        call UnitRemoveAbility(c,'A3WR')
         call DestroyEffect(AddSpecialEffect("Abilities\\Spells\\Other\\Doom\\DoomDeath.mdl",x,y))
     endif
     if GetUnitTypeId(c)=='u001' and nb>0 then
@@ -38306,28 +38310,31 @@ if cond==0 then
     endif
     if CurrentEventAttack and nb>0 and GetUnitAbilityLevel(c,'XanF')>0 and GetUnitAbilityLevel(c,'A3WR')==0 and GetHeroLevel(u)>=6 then
         if xun[idc]>3 then //xanxus F
-            call SetEventDamage(nb+1.5*GetHeroAgi(c,true)*myCustomDamage2(u,1))
-            set nb=nb+1.5*GetHeroAgi(c,true)*myCustomDamage2(u,1)
+            call UnitAddAbility(c,'A3WR')
+            call myCustomDamage(c,u,1.5*GetHeroAgi(c,true),false,false,null,null,null)
             call SetControlToUnit(c,u, 0.5, "stun")
             call UnitApplyTimedLife(CreateUnit(GetOwningPlayer(u),'e0G1',x,y,GetRandomReal(0,359)),0,1)
             call UnitApplyTimedLife(CreateUnit(GetOwningPlayer(u),'e0G2',x,y,GetRandomReal(0,359)),0,1)
             call UnitApplyTimedLife(CreateUnit(GetOwningPlayer(u),'e0G3',x,y,GetRandomReal(0,359)),0,1)
             set xun[idc]=0
+            call UnitRemoveAbility(c,'A3WR')
             else
             set xun[idc]=xun[idc]+1
         endif
     endif
     if CurrentEventAttack and nb>0 and GetUnitTypeId(c)=='H04D' and GetUnitAbilityLevel(c,'A3WR')==0 then
-        call SetEventDamage(nb+GetHeroInt(c,true)*myCustomDamage2(u,1))
-        set nb=nb+GetHeroInt(c,true)*myCustomDamage2(u,1)
+        call UnitAddAbility(c,'A3WR')
+        call myCustomDamage(c,u,GetHeroInt(c,true),false,false,null,null,null)
         call DestroyEffect(AddSpecialEffectTarget("war3mapImported\\jiejinmao.mdx",c,"Right Hand"))
         call DestroyEffect(AddSpecialEffectTarget("war3mapImported\\BloodEX.mdx",u,"origin"))
+        call UnitRemoveAbility(c,'A3WR')
     endif
     if CurrentEventAttack and nb>0 and GetUnitAbilityLevel(c,'A1FY')>0 and GetUnitAbilityLevel(c,'A3WR')==0 then
-        call SetEventDamage(nb+GetHeroInt(c,true)*0.5*myCustomDamage2(u,1))
-        set nb=nb+GetHeroInt(c,true)*0.5*myCustomDamage2(u,1)
+        call UnitAddAbility(c,'A3WR')
+        call myCustomDamage(c,u,GetHeroInt(c,true)*0.5,false,false,null,null,null)
         call DestroyEffect(AddSpecialEffectTarget("war3mapImported\\jiejinmao.mdx",c,"Right Hand"))
         call DestroyEffect(AddSpecialEffectTarget("war3mapImported\\BloodEX.mdx",u,"origin"))
+        call UnitRemoveAbility(c,'A3WR')
     endif
     if(CurrentEventAttack)and nb>0 and GetUnitAbilityLevel(c,'A182')>0 and GetUnitAbilityLevel(c,'A3WR')==0 then
         call UnitAddAbility(c,'A3WR')
@@ -38342,27 +38349,30 @@ if cond==0 then
         call UnitRemoveAbility(c,'A3WR')
     endif
     if CurrentEventAttack and nb>0 and GetUnitTypeId(u)=='H04U' and GetUnitAbilityLevel(c,'A3WR')==0 then
-        call SetEventDamage(nb+GetHeroAgi(c,true)*myCustomDamage2(u,1))
-        set nb=nb+GetHeroAgi(c,true)*myCustomDamage2(u,1)
+        call UnitAddAbility(c,'A3WR')
+        call myCustomDamage(c,u,GetHeroAgi(c,true),false,false,null,null,null)
+        call UnitRemoveAbility(c,'A3WR')
     endif
     if CurrentEventAttack and nb>0 and GetUnitAbilityLevel(c,'A155')>0 and GetUnitAbilityLevel(c,'A3WR')==0 then
+        call UnitAddAbility(c,'A3WR')
         set soundplay=CreateSound("Sound\\Music\\mp3Music\\Meigo.mp3",false,false,true,12700,12700,"")
         call StartSound(soundplay)
         call KillSoundWhenDone(soundplay)
         if GetUnitAbilityLevel(c,'A155')==3 then
         call Essence(c,u,2)
         endif
-        call SetEventDamage(nb+GetHeroStr(c,true)*GetUnitAbilityLevel(c,'A155')*myCustomDamage2(u,1))
-        set nb=nb+GetHeroStr(c,true)*GetUnitAbilityLevel(c,'A155')*myCustomDamage2(u,1)
+        call myCustomDamage(c,u,GetHeroStr(c,true)*GetUnitAbilityLevel(c,'A155'),false,false,null,null,null)
         call SetControlToUnit(c,u, 0.5*GetUnitAbilityLevel(c,'A155'), "stun")
         call UnitRemoveAbility(c,'A155')
+        call UnitRemoveAbility(c,'A3WR')
     endif
     if GetUnitAbilityLevel(c,'WAE4')==0 and GetUnitAbilityLevel(c,'WAE1')>0 and GetUnitAbilityLevel(c,'A3WR')==0 and GetUnitAbilityLevel(c,'A1WR')==0 then
+        call UnitAddAbility(c,'A1WR')
         call UnitAddAbility(c,'WAE4')
         call UnitRemoveAbilityTimed(c,'WAE4',0.7)
+        call myCustomDamage(c,u,GetHeroInt(c,true),false,false,null,null,null)
         call SetControlToUnit(c,u, 0.3, "stun")
-        call SetEventDamage(nb+GetHeroInt(c,true)*myCustomDamage2(u,1))
-        set nb=nb+GetHeroInt(c,true)*myCustomDamage2(u,1)
+        call UnitRemoveAbility(c,'A1WR')
     endif
     if (UnitHasItemOfTypeBJ(c,'I031') or GetUnitAbilityLevel(c,'KIG8')>0) and CurrentEventAttack and nb>0 and IsUnitType(c,UNIT_TYPE_SUMMONED)==false and c==Hero[idc] and GetUnitAbilityLevel(c,'A3WR')==0 then
         set cjlocgn_00000000=CreateTimer() //patriot
@@ -38386,7 +38396,15 @@ if cond==0 then
     endif
     if (UnitHasItemOfTypeBJ(c,'I03O') or GetUnitAbilityLevel(c,'KIJ8')>0) and GetUnitTypeId(c)!='H04E' and(c==Hero[idc]or GetUnitAbilityLevel(c,'A14Y')>0)and nb>0 and CurrentEventAttack and udg_B==true and DU2==true then
         call DamageIndicatorFunction(c, u, GetUnitTotalDamage(c)*0.20+150)
-        call SetEventDamage(nb+(GetUnitTotalDamage(c)*0.20+150))
+        if (GetUnitTotalDamage(c)*0.20+150)>GetWidgetLife(u)then
+            call SetUnitInvulnerable(u,false)
+            call UnitRemoveBuffs(u,true,true)
+            call UnitAddAbility(u,'A0WR')
+            call myCustomDamage(c,u,GetUnitState(u,UNIT_STATE_MAX_LIFE),false,false,null,null,null)
+            call UnitRemoveAbility(u,'A0WR')
+            else
+            call SetUnitState(u,UNIT_STATE_LIFE, GetUnitState(u,UNIT_STATE_LIFE)-(GetUnitTotalDamage(c)*0.20+150))
+        endif
         call DestroyEffect(AddSpecialEffectTarget("war3mapImported\\jiejinmao.mdx",c,"Right Hand"))
         call DestroyEffect(AddSpecialEffectTarget("war3mapImported\\BloodEX.mdx",u,"origin"))
         set nb=nb+(GetUnitTotalDamage(c)*0.20+150)
@@ -38395,17 +38413,18 @@ if cond==0 then
         //call SetUnitOwner(UltimateDamage,Player(idc),false)
         //set lkp=idc
         
+        call UnitAddAbility(c,'A1C7')
         set n=CreateUnit(GetOwningPlayer(c), 'dH65', GetUnitX(u), GetUnitY(u), GetRandomInt(0, 360))
         call SetUnitFlyHeight(n, 30, 0)
         call SetUnitScale(n, 1.7, 1.7, 1.7)
         call MyRemoveUnit(n, 1.0)
-        call SetEventDamage(nb+b*0.75)
-        set nb=nb+b*0.75
         // if LoadBoolean(h, GetHandleId(c), StringHash("YujiT_Morf")) then
             // call myCustomDamage(c,u,GetWidgetMaxLife(c)*0.02+GetWidgetMaxMana(c)*0.05,false,false,null,DAMAGE_TYPE_UNIVERSAL,null)
             // call DestroyEffect(AddSpecialEffectTarget("war3mapImported\\mihawkslashhit.mdx",u,"chest"))
             // set nb=nb+(GetWidgetMaxLife(c)*0.02+GetWidgetMaxMana(c)*0.05)
         // else
+            call myCustomDamage(c,u,b*0.75,false,false,null,DAMAGE_TYPE_UNIVERSAL,null)
+            call UnitRemoveAbility(c,'A1C7')
             //set nb=nb+b*0.75
         // endif
     endif
@@ -38413,7 +38432,9 @@ if cond==0 then
         //call SetUnitOwner(UltimateDamage,Player(idc),false)
         //set lkp=idc
         
-        call SetEventDamage(nb+(GetUnitState(c,UNIT_STATE_MAX_LIFE)-GetWidgetLife(c))*.05)
+        call UnitAddAbility(c,'A1C7')
+        call myCustomDamage(c,u,(GetUnitState(c,UNIT_STATE_MAX_LIFE)-GetWidgetLife(c))*.05,false,false,null,DAMAGE_TYPE_UNIVERSAL,null)
+        call UnitRemoveAbility(c,'A1C7')
         //call SetUnitOwner(UltimateDamage,Player(PLAYER_NEUTRAL_PASSIVE),false)
         set nb=nb+(GetUnitState(c,UNIT_STATE_MAX_LIFE)-GetWidgetLife(c))*.05
     endif
@@ -38463,11 +38484,12 @@ if cond==0 then
         call DestroyEffect(AddSpecialEffectTarget("war3mapImported\\OPm (828).mdl",u,"origin"))
     endif
     if GetUnitTypeId(c)=='H035' then
-        call myCustomDamage(Hero[idc],u,GetHeroAgi(Hero[idc],true)+100,false,false,null,null,null)
-        call RemoveUnit(c)
-        call UnitApplyTimedLife(CreateUnit(GetOwningPlayer(u),'e0LI',x1,y1,0),1,1)
-        call UnitApplyTimedLife(CreateUnit(GetOwningPlayer(u),'e0LH',x1,y1,0),1,1)
-        call UnitApplyTimedLife(CreateUnit(GetOwningPlayer(u),'e0LJ',x1,y1,0),1,1)
+        call UnitAddAbility(c,'A3WR')
+        call myCustomDamage(c,u,GetHeroAgi(c,true)*2,false,false,null,null,null)
+        call DestroyEffect(AddSpecialEffectTarget("war3mapImported\\jiejinmao.mdx",c,"Right Hand"))
+        call DestroyEffect(AddSpecialEffectTarget("war3mapImported\\BloodEX.mdx",u,"origin"))
+        call DestroyEffect(AddSpecialEffectTarget("war3mapImported\\OPm (828).mdl",u,"origin"))
+        call UnitRemoveAbility(c,'A3WR')
     endif
     if GetUnitTypeId(c)=='h02W' and nb>0 and CurrentEventAttack then
         call UnitApplyTimedLife(CreateUnit(GetOwningPlayer(u),0x65304750,x,y,GetRandomReal(0,359)),1,0.5)
@@ -38609,8 +38631,7 @@ if cond==0 then
     if GetUnitAbilityLevel(c,'A1GR')>0 and GetUnitAbilityLevel(c,'A1C7')==0 and GetRandomInt(0,99)<10 and nb>50 and CurrentEventAttack==false and c!=UltimateDamage and GetUnitAbilityLevel(c,'A1WR')==0 and GetUnitAbilityLevel(c,'A2WR')==0 and GetUnitAbilityLevel(c,'A4WR')==0 then // King Hasan E Crit
         call UnitAddAbility(c,'A0WR')
         call UnitAddAbility(c,'A4WR')
-        call SetEventDamage(nb+GetWidgetMaxLife(u)*0.1)
-        set nb=nb+GetWidgetMaxLife(u)*0.1
+        call myCustomDamage(c,u, GetWidgetMaxLife(u)*0.1, false, false, null, DAMAGE_TYPE_UNIVERSAL, null)
         call UnitRemoveAbility(c,'A4WR')
         call UnitRemoveAbility(c,'A0WR')
         call ReduceHeal(c, u, 0.8, 5)
@@ -38696,8 +38717,7 @@ if cond==0 then
         call UnitRemoveAbilityTimed(c, 'YECD', 0.2)
         set tyam=CreateTimer()
         set A=Atan2(y-y1,x-x1)
-        call SetEventDamage(nb+(GetUnitAbilityLevel(c,'A08L')*0.25+1)*GetHeroAgi(c,true)*myCustomDamage2(u,1))
-        set nb=nb+(GetUnitAbilityLevel(c,'A08L')*0.25+1)*GetHeroAgi(c,true)*myCustomDamage2(u,1)
+        call myCustomDamage(c,u,(GetUnitAbilityLevel(c,'A08L')*0.25+1)*GetHeroAgi(c,true),false,false,null,null,null)
         call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-GetUnitState(u,UNIT_STATE_MAX_MANA)*0.04)
         call UnitApplyTimedLife(CreateUnit(Player(idc),0x65303342,x1,y1,a*bj_RADTODEG),1,1)
         call UnitApplyTimedLife(CreateUnit(Player(idc),0x65303341,x1,y1,a*bj_RADTODEG),1,1)
@@ -38711,8 +38731,9 @@ if cond==0 then
         set tyam=null
     endif
     if CurrentEventAttack and GetUnitAbilityLevel(c,'A3WR')==0 and GetUnitAbilityLevel(c,'ItV1')>0 and nb>0 and c!=UltimateDamage and nb>0 then
-        call SetEventDamage(nb+2*GetHeroInt(c,true)*myCustomDamage2(u,1))
-        set nb=nb+2*GetHeroInt(c,true)*myCustomDamage2(u,1)
+        call UnitAddAbility(c,'A3WR')        
+        call myCustomDamage(c,u,2*GetHeroInt(c,true),false,false,null,null,null)
+        call UnitRemoveAbility(c,'A3WR')
         call DestroyEffect(AddSpecialEffect("Abilities\\Spells\\Other\\Doom\\DoomDeath.mdl",x,y))
         call SetUnitAnimation(LoadUnitHandle(h,GetHandleId(c),StringHash("immolation")),"attack")
     endif
@@ -38723,13 +38744,12 @@ if cond==0 then
         
         
         if LoadUnitHandle(HH,GetHandleId(c),StringHash("MadaraSusano"))!=null or LoadBoolean(HH,GetHandleId(c),StringHash("MadaraSusT2"))!=null then
+            call UnitAddAbility(c,'A3WR')
             if LoadBoolean(HH,GetHandleId(c),StringHash("MadaraSusT2"))  then
-                call SetEventDamage(nb+2*GetHeroInt(c,true)*myCustomDamage2(u,1))
-                set nb=nb+2*GetHeroInt(c,true)*myCustomDamage2(u,1)
+                call myCustomDamage(c,u,2*GetHeroInt(c,true),false,false,null,null,null)
             endif  
             if LoadBoolean(HH,GetHandleId(c),StringHash("MadaraSusT"))  then
-                call SetEventDamage(nb+1.5*GetHeroInt(c,true)*myCustomDamage2(u,1))
-                set nb=nb+1.5*GetHeroInt(c,true)*myCustomDamage2(u,1)
+                call myCustomDamage(c,u,1.5*GetHeroInt(c,true),false,false,null,null,null)
                 set randomint0=GetRandomInt(1,3)
         
                 if randomint0==1 then
@@ -38744,8 +38764,7 @@ if cond==0 then
         
             endif
             if LoadBoolean(HH,GetHandleId(c),StringHash("MadaraSusR")) then
-                call SetEventDamage(nb+1*GetHeroInt(c,true)*myCustomDamage2(u,1))
-                set nb=nb+1*GetHeroInt(c,true)*myCustomDamage2(u,1)
+                call myCustomDamage(c,u,1*GetHeroInt(c,true),false,false,null,null,null)
                 set randomint0=GetRandomInt(1,3)
                 if randomint0==1 then
                     call SetUnitAnimationByIndex(LoadUnitHandle(HH,GetHandleId(c),StringHash("MadaraSusano")),1)
@@ -38757,9 +38776,10 @@ if cond==0 then
                     endif
                 endif
             endif
+                call UnitRemoveAbility(c,'A3WR') 
         elseif LoadUnitHandle(HH,GetHandleId(c),StringHash("MadaraBone"))!=null and GetHeroLevel(c)>=6 then
-            call SetEventDamage(nb+0.25*GetHeroInt(c,true)*myCustomDamage2(u,1))
-            set nb=nb+0.25*GetHeroInt(c,true)*myCustomDamage2(u,1)
+            call UnitAddAbility(c,'A3WR')
+            call myCustomDamage(c,u,0.25*GetHeroInt(c,true),false,false,null,null,null)
             set randomint0=GetRandomInt(1,2)
     
             if randomint0==1 then
@@ -38767,6 +38787,7 @@ if cond==0 then
             else
             call SetUnitAnimationByIndex(LoadUnitHandle(HH,GetHandleId(c),StringHash("MadaraBone")),2)
             endif 
+            call UnitRemoveAbility(c,'A3WR') 
             endif
                 
         //call myCustomDamage(UltimateDamage,u,2*GetHeroInt(c,true),false,false,null,null,null)
@@ -38781,8 +38802,9 @@ if cond==0 then
 //========= Hashirama Choice Attack 
 //==============================================================================
             if GetUnitTypeId(c)=='HHSG' and (CurrentEventAttack and GetUnitAbilityLevel(c,'A3WR')==0  and c!=UltimateDamage and nb>0) then
-                call SetEventDamage(nb+2*GetHeroStr(c,true)*myCustomDamage2(u,1))
-                set nb=nb+2*GetHeroStr(c,true)*myCustomDamage2(u,1)
+                call UnitAddAbility(c,'A3WR')
+                call myCustomDamage(c,u,2*GetHeroStr(c,true),false,false,null,null,null)
+                call UnitRemoveAbility(c,'A3WR') 
             endif
 //===========
 //==============================================================================
@@ -38862,20 +38884,23 @@ if cond==0 then
             endif
         endif
     endif
-    if CurrentEventAttack and(GetUnitAbilityLevel(c,'A12P')>0 or GetUnitAbilityLevel(c,'A12O')>0) and c!=UltimateDamage and GetUnitAbilityLevel(c,'A3WR')==0 and nb>0 then
-        call SetEventDamage(nb+GetHeroAgi(c,true)*0.8*myCustomDamage2(u,1))
-        set nb=nb+GetHeroAgi(c,true)*0.8*myCustomDamage2(u,1)
+if CurrentEventAttack and(GetUnitAbilityLevel(c,'A12P')>0 or GetUnitAbilityLevel(c,'A12O')>0) and c!=UltimateDamage and GetUnitAbilityLevel(c,'A3WR')==0 and nb>0 then
+        call UnitAddAbility(c,'A3WR')    
+        call myCustomDamage(c,u,GetHeroAgi(c,true)*0.8,false,false,null,null,null)
         call DestroyEffect(AddSpecialEffect("Abilities\\Spells\\Other\\Doom\\DoomDeath.mdl",x,y))
+        call UnitRemoveAbility(c,'A3WR')
         call SetUnitAnimation(LoadUnitHandle(h,GetHandleId(c),SusanoCnst),"attack")
     endif
     if CurrentEventAttack and (UnitHasItemOfTypeBJ(c,'I03B') or GetUnitAbilityLevel(c,'KII6')>0) and GetUnitAbilityLevel(c,'A3WR')==0 and c==Hero[idc] and c!=UltimateDamage then
+        call UnitAddAbility(c,'A3WR')  
         call DestroyEffect(AddSpecialEffect("war3mapImported\\Cleave.mdx",GetUnitX(u),GetUnitY(u)))      
-        call SetEventDamage(nb+55)
-        set nb=nb+55
+        call myCustomDamage(c,u,55,false,false,null,DAMAGE_TYPE_UNIVERSAL,null)
+        call UnitRemoveAbility(c,'A3WR')
     endif
     if CurrentEventAttack and (UnitHasItemOfTypeBJ(c,'I050')==true or GetUnitAbilityLevel(c,'KIQ0')>0) and c==Hero[idc]and nb>0 and c!=UltimateDamage and GetUnitAbilityLevel(c,'A3WR')==0 then
-        call SetEventDamage(nb+80)
-        set nb=nb+80
+        call UnitAddAbility(c,'A3WR')
+        call myCustomDamage(c,u,80,false,false,null,DAMAGE_TYPE_UNIVERSAL,null)
+        call UnitRemoveAbility(c,'A3WR')
     endif
     if CurrentEventAttack and GetUnitAbilityLevel(c,'A26K')>0 and nb>0 then
         if GetHeroPrimaryAttribute(c)==HERO_ATTRIBUTE_INT then
@@ -38886,8 +38911,7 @@ if cond==0 then
                 call DestroyEffect(AddSpecialEffectTarget("Abilities\\Spells\\Items\\AIma\\AImaTarget.mdl", c, "origin"))
             endif
         elseif GetHeroPrimaryAttribute(c)==HERO_ATTRIBUTE_STR then
-            call SetEventDamage(nb+GetHeroStr(c,true)*0.75*myCustomDamage2(u,1))
-            set nb=nb+GetHeroStr(c,true)*0.75*myCustomDamage2(u,1)
+            call myCustomDamage(c,u,GetHeroStr(c,true)*0.75,false,false,null,null,null)
             call DestroyEffect(AddSpecialEffectTarget("war3mapImported\\OPm (828).mdl",u,"origin"))
         elseif GetHeroPrimaryAttribute(c)==HERO_ATTRIBUTE_AGI then
             call HealTextTag(c,c,(GetWidgetMaxLife(c)*0.02+50)*myCustomHeal2(c,1),"HealthRes")
@@ -38903,9 +38927,9 @@ if cond==0 then
         call SetUnitY(c,y1)
         call SetUnitFacingInstant(c,Atan2(y-y1,x-x1)*bj_RADTODEG)
         call UnitRemoveAbility(c,'B018')
+        call myCustomDamage(c,u,(0.2+0.1*GetUnitAbilityLevel(c,'A0B3'))*GetHeroInt(c,true),false,false,null,null,null)
         call DestroyEffect(AddSpecialEffect("war3mapImported\\BlackBlink.mdx",x1,y1))
-        call SetEventDamage(nb+(0.2+0.1*GetUnitAbilityLevel(c,'A0B3'))*GetHeroInt(c,true)*myCustomDamage2(u,1))
-        set nb=nb+(0.2+0.1*GetUnitAbilityLevel(c,'A0B3'))*GetHeroInt(c,true)*myCustomDamage2(u,1)
+        //set nb=nb+(0.2+0.1*GetUnitAbilityLevel(c,'A0B3'))*GetHeroInt(c,true)*myCustomDamage2(u,1)
     endif
     if CurrentEventAttack and(GetUnitTypeId(c)=='H01E' or GetUnitTypeId(c)=='H01G')then
         set r=GetRandomReal(0,7)
@@ -38957,15 +38981,17 @@ if cond==0 then
         //call SetUnitOwner(UltimateDamage,Player(PLAYER_NEUTRAL_PASSIVE),false)
     endif
     if GetUnitAbilityLevel(c, 'HiW2')>0 and nb>0 and nb<GetWidgetLife(u) and CurrentEventAttack  then
-        call HibariW_Attack(c, u, b)
+        if GetUnitAbilityLevel(c,'KHW4')>0 then
+            call HibariW_Attack(c, u, b+GetHeroAgi(c,true)*(1.5+GetUnitAbilityLevel(c,'HiW1')*0.5 ))
+        else
+            call HibariW_Attack(c, u, b)
+        endif
     endif
 
 
 //Hibari Buffs start
     if GetUnitAbilityLevel(c,'KHW4')>0 and nb>0 and CurrentEventAttack  then
         call SetControlToUnit( c , u ,1, "silence")
-        call SetEventDamage(nb+GetHeroAgi(c,true)*(1.5+GetUnitAbilityLevel(c,'HiW1')*0.5 )*myCustomDamage2(u,1))
-        set nb=nb+GetHeroAgi(c,true)*(1.5+GetUnitAbilityLevel(c,'HiW1')*0.5 )*myCustomDamage2(u,1)
         call UnitRemoveAbility(c,'KHW4')
         call UnitRemoveAbility(c,'BKH4')
         set n0=CreateUnit(GetOwningPlayer(c),'e200',GetUnitX(u),GetUnitY(u),GetUnitFacing(c))
@@ -39076,9 +39102,8 @@ if cond==0 then
         call SetUnitX(c,x1)
         call SetUnitY(c,y1)
         call SetUnitFacingInstant(c,Atan2(y-y1,x-x1)*bj_RADTODEG)
+        call myCustomDamage(c,u,GetHeroInt(c,true)*0.5,false,false,null,null,null)
         call DestroyEffect(AddSpecialEffect("war3mapImported\\BlackBlink.mdx",x1,y1))
-        call SetEventDamage(nb+GetHeroInt(c,true)*0.5*myCustomDamage2(u,1))
-        set nb=nb+GetHeroInt(c,true)*0.5*myCustomDamage2(u,1)
     endif       
     if GetUnitAbilityLevel(c,'A0J3')>0 and GetUnitAbilityLevel(u,'A15G')>0 and nb>0 then
         call PoisonDamageIchimaru(c,u,GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.17)
@@ -39108,8 +39133,9 @@ if cond==0 then
         call UnitAddAbility(c, 'MuCD')
         call UnitMakeAbilityPermanent(c, true, 'MuCD')
         call UnitRemoveAbilityTimed(c, 'MuCD', 1.0)
-        call SetEventDamage(nb+30)
-        set nb=nb+30
+        call UnitAddAbility(c,'A1C7')
+        call myCustomDamage(c, u , 30 , false , false , null , DAMAGE_TYPE_UNIVERSAL , null)
+        call UnitRemoveAbility(c,'A1C7')
         //set nb=nb+30
     endif
     if nb>30 and (UnitHasItemOfTypeBJ(c, 'I1S4') or GetUnitAbilityLevel(c, 'KI0Q')>0) and GetUnitAbilityLevel(c, 'M1CD')==0 then
@@ -39125,13 +39151,13 @@ if cond==0 then
         call HealTextTag(c,c,GetWidgetMaxMana(c)*0.005*myCustomMana2(c,1),"ManaRes")
         call SetWidgetLife(c, GetWidgetLife(c)+ GetWidgetMaxLife(c)*0.005)
         call SetWidgetMana(c, GetWidgetMana(c)+ GetWidgetMaxMana(c)*0.005)
+        call UnitAddAbility(c,'A1C7')
         if GetUnitAbilityLevel(c,'A1WR')>0 then
-        call SetEventDamage(nb+(GetHeroStr(c, true)+GetHeroAgi(c, true)+GetHeroInt(c, true))*0.1)
-        set nb=nb+(GetHeroStr(c, true)+GetHeroAgi(c, true)+GetHeroInt(c, true))*0.1
+        call myCustomDamage(c, u , (GetHeroStr(c, true)+GetHeroAgi(c, true)+GetHeroInt(c, true))*0.1 , false , false , null , DAMAGE_TYPE_UNIVERSAL , null)
         else
-        call SetEventDamage(nb+(GetHeroStr(c, true)+GetHeroAgi(c, true)+GetHeroInt(c, true))*0.2)
-        set nb=nb+(GetHeroStr(c, true)+GetHeroAgi(c, true)+GetHeroInt(c, true))*0.2
+        call myCustomDamage(c, u , (GetHeroStr(c, true)+GetHeroAgi(c, true)+GetHeroInt(c, true))*0.2 , false , false , null , DAMAGE_TYPE_UNIVERSAL , null)
         endif
+        call UnitRemoveAbility(c,'A1C7')
         //set nb=nb+(GetHeroStr(c, true)+GetHeroAgi(c, true)+GetHeroInt(c, true))*0.2
     endif
     if nb>35 and (UnitHasItemOfTypeBJ(u, 'IOS2') or GetUnitAbilityLevel(u, 'KI0K')>0) and GetUnitAbilityLevel(u, 'IOb2')==0 then
@@ -39164,11 +39190,9 @@ if cond==0 then
         call UnitRemoveAbilityTimed(c, 'ISTp', 3.0)
         call UnitAddAbility(c,'A1C7')
         if GetUnitAbilityLevel(c,'A1WR')>0 then
-        call SetEventDamage(nb+GetWidgetMaxLife(u)*0.015)
-        set nb=nb+GetWidgetMaxLife(u)*0.015
+        call myCustomDamage(c, u , GetWidgetMaxLife(u)*0.015 , false , false , null , DAMAGE_TYPE_UNIVERSAL , null)
         else
-        call SetEventDamage(nb+GetWidgetMaxLife(u)*0.03)
-        set nb=nb+GetWidgetMaxLife(u)*0.03
+        call myCustomDamage(c, u , GetWidgetMaxLife(u)*0.03 , false , false , null , DAMAGE_TYPE_UNIVERSAL , null)
         endif
         call UnitRemoveAbility(c,'A1C7')
         //set nb=nb+GetWidgetMaxLife(u)*0.05
@@ -39336,7 +39360,9 @@ if cond==0 then
         endif
     endif
     if nb>0 and GetUnitAbilityLevel(c, 'PV01')>0 and GetUnitAbilityLevel(c,'A2WR')==0 and GetUnitAbilityLevel(c,'A3WR')==0 then     // дополнительный урон от Перчатки Вонголы
-        call SetEventDamage(nb*1.1)
+        call UnitAddAbility(c,'A2WR')
+        call myCustomDamage(c, u , b*0.1 , false , false , null , DAMAGE_TYPE_UNIVERSAL , null)
+        call UnitRemoveAbility(c,'A2WR')
         set nb=nb*1.1
     endif
     if (CurrentEventAttack or GetUnitAbilityLevel(c,'A3WR')>0) and (UnitHasItemOfTypeBJ(c,'I04F') or GetUnitAbilityLevel(c,'KIN6')>0) and GetUnitAttackRangeByIndex(c,0)<250 and nb>0 then
