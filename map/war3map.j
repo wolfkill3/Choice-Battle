@@ -38455,12 +38455,11 @@ if cond==0 then
         call SetUnitVertexColor(n, 255, 150, 100, 0)
         call SetUnitFlyHeight(n, 100, 0)
         call MyRemoveUnit(n, 2.5)
-        call UnitAddAbility(c,'A3WR')
-        call myCustomDamage(c,u,GetHeroAgi(c,true)*2,false,false,null,null,null)
+        call SetEventDamage(nb+GetHeroAgi(c,true)*2*myCustomDamage2(u,1))
+        set nb=nb+GetHeroAgi(c,true)*2*myCustomDamage2(u,1)
         call DestroyEffect(AddSpecialEffectTarget("war3mapImported\\jiejinmao.mdx",c,"Right Hand"))
         call DestroyEffect(AddSpecialEffectTarget("war3mapImported\\BloodEX.mdx",u,"origin"))
         call DestroyEffect(AddSpecialEffectTarget("war3mapImported\\OPm (828).mdl",u,"origin"))
-        call UnitRemoveAbility(c,'A3WR')
     endif
     if GetUnitTypeId(c)=='H035' then
         call myCustomDamage(Hero[idc],u,GetHeroAgi(Hero[idc],true)+100,false,false,null,null,null)
