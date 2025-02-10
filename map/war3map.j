@@ -8453,6 +8453,7 @@ call SetPlayerAbilityAvailableBJ(false,'KI0T',ConvertedPlayer(GetForLoopIndexA()
 call SetPlayerAbilityAvailableBJ(false,'KI0V',ConvertedPlayer(GetForLoopIndexA()))
 call SetPlayerAbilityAvailableBJ(false,'KI0X',ConvertedPlayer(GetForLoopIndexA()))
 call SetPlayerAbilityAvailableBJ(false,'KI0Z',ConvertedPlayer(GetForLoopIndexA()))
+call SetPlayerAbilityAvailableBJ(false,'KI1B',ConvertedPlayer(GetForLoopIndexA()))
 call SaveBoolean(HH,GetHandleId(ConvertedPlayer(GetForLoopIndexA())),SOUND_LANGUAGE,true)
 set bj_forLoopAIndex=bj_forLoopAIndex+1
 endloop
@@ -36385,6 +36386,13 @@ endif
 if GetRandomInt(0,100)<30 and GetUnitAbilityLevel(c,'WAE1')>0 and CurrentEventAttack and IsUnitType(c, UNIT_TYPE_HERO) and IsUnitIllusion(c)==false and GetUnitAbilityLevel(c,'A3WR')==0 then
     set critcoef=critcoef+0.5
 endif
+if (UnitHasItemOfTypeBJ(u,'IAoF') or GetUnitAbilityLevel(u,'KI1A')>0) and IsUnitType(c, UNIT_TYPE_HERO) and IsUnitIllusion(c)==false then
+    if critcoef>2 then
+        set critcoef=critcoef-1
+    else
+        set critcoef=1
+    endif
+endif
 if nb>l and GetUnitTypeId(u)=='H03T' or GetUnitTypeId(u)=='H03W' or GetUnitTypeId(u)=='H03S' or GetUnitTypeId(u)=='H03V' or GetUnitTypeId(u)=='H03U' and LoadBoolean(h,GetHandleId(Hero[idu]),StringHash("alive"))==true then
     call SetUnitInvulnerable(u,true)
     call SetUnitState(u,UNIT_STATE_LIFE,1)
@@ -37697,13 +37705,69 @@ if cond==0 then
             //call SetEventDamage(nb*0.75)
             set nb=nb*0.75
         endif
+        if nb>0 and (UnitHasItemOfTypeBJ(u,'I03Z')or GetUnitAbilityLevel(u,'KIL2')>0)and CurrentEventAttack then
+            if nb>40 then
+                //call SetEventDamage(nb-35)
+                set nb=nb-40
+            else
+                //call SetEventDamage(0.05)
+                set nb=0
+            endif
+        endif
+        if nb>0 and (UnitHasItemOfTypeBJ(u,'I060')or GetUnitAbilityLevel(u,'KIW2')>0)and CurrentEventAttack then
+            if nb>30 then
+                set nb=nb-30
+            else
+                set nb=0
+            endif
+        endif
+        if nb>0 and (UnitHasItemOfTypeBJ(u,'I061')or GetUnitAbilityLevel(u,'KIW4')>0)and CurrentEventAttack then
+            if nb>50 then
+                set nb=nb-50
+            else
+                set nb=0
+            endif
+        endif
+        if nb>0 and (UnitHasItemOfTypeBJ(u,'I062')or GetUnitAbilityLevel(u,'KIW6')>0)and CurrentEventAttack then
+            if nb>70 then
+                set nb=nb-70
+            else
+                set nb=0
+            endif
+        endif
+        if nb>0 and (UnitHasItemOfTypeBJ(u,'I063')or GetUnitAbilityLevel(u,'KIW8')>0)and CurrentEventAttack then
+            if nb>90 then
+                set nb=nb-90
+            else
+                set nb=0
+            endif
+        endif
+        if nb>0 and (UnitHasItemOfTypeBJ(u,'I064')or GetUnitAbilityLevel(u,'KIX0')>0)and CurrentEventAttack then
+            if nb>110 then
+                set nb=nb-110
+            else
+                set nb=0
+            endif
+        endif
+        if nb>0 and (UnitHasItemOfTypeBJ(u,'I065')or GetUnitAbilityLevel(u,'KIX2')>0)and CurrentEventAttack then
+            if nb>130 then
+                set nb=nb-130
+            else
+                set nb=0
+            endif
+        endif
+        if nb>0 and (UnitHasItemOfTypeBJ(u,'IAoF')or GetUnitAbilityLevel(u,'KI1A')>0)and CurrentEventAttack then
+            if nb>150 then
+                set nb=nb-150
+            else
+                set nb=0
+            endif
+        endif
         if nb>0 and (UnitHasItemOfTypeBJ(u,'I03C')or GetUnitAbilityLevel(u,'KII8')>0)and CurrentEventAttack then
             call DestroyEffect(AddSpecialEffectTarget("Abilities\\Spells\\Human\\Heal\\HealTarget.mdl",u,"origin"))
             if nb>35 then
-                //call SetEventDamage(nb-35)
                 set nb=nb-35
             else
-                //call SetEventDamage(0.05)
                 set nb=0
             endif
         endif
@@ -87564,15 +87628,19 @@ function VergilQ_ModifAttack takes unit newCaster, unit newTarget, boolean b_clo
 	endif
 	
 	if UnitHasItemOfTypeBJ(newTarget, 'I03C') and UnitHasItemOfTypeBJ(newTarget, 'I03F')==false then	// Жилет Анбу у таргета
-		call SetWidgetLife(newTarget, GetWidgetLife(newTarget)+35)
+		set damage=damage-35
 		call DestroyEffect(AddSpecialEffectTarget("Abilities\\Spells\\Human\\Heal\\HealTarget.mdl", newTarget,"origin"))
 	endif
 	
 	if UnitHasItemOfTypeBJ(newTarget, 'I03F') then														// Комплект Анбу у таргета
-		call SetWidgetLife(newTarget, GetWidgetLife(newTarget)+50)
+		set damage=damage-50
 		call DestroyEffect(AddSpecialEffectTarget("Abilities\\Spells\\Human\\Heal\\HealTarget.mdl", newTarget,"origin"))
 	endif
 	
+    if (UnitHasItemOfTypeBJ(newTarget,'IAoF') or GetUnitAbilityLevel(newTarget,'KI1A')>0) then                                                                                                          // Комплект Анбу у таргета
+        set damage=damage-150
+    endif
+
 	if UnitHasItemOfTypeBJ(newTarget, 'I060') then														// Облако Маре D ранг
 		set damage=damage-30
 	endif
@@ -138446,6 +138514,13 @@ function GilgameshModifiedAttack takes unit newCaster, unit newTarget returns bo
     if GetRandomInt(0,100)<30 and GetUnitAbilityLevel(newCaster,'WAE1')>0 and IsUnitType(newCaster, UNIT_TYPE_HERO) and IsUnitIllusion(newCaster)==false then
         set critcoef=critcoef+0.5
     endif
+    if (UnitHasItemOfTypeBJ(newTarget,'IAoF') or GetUnitAbilityLevel(newTarget,'KI1A')>0) and IsUnitType(newCaster, UNIT_TYPE_HERO) and IsUnitIllusion(newCaster)==false then
+        if critcoef>2 then
+            set critcoef=critcoef-1
+        else
+            set critcoef=1
+        endif
+    endif
     if UnitHaveShield(newCaster,newTarget,damage)==false then
         if UnitHasItemOfTypeBJ(newCaster, 'I031') and IsUnitType(newTarget,UNIT_TYPE_HERO) and IsUnitIllusion(newTarget)==false then 	// Патриот
             set tt=CreateTimer()
@@ -138544,13 +138619,17 @@ function GilgameshModifiedAttack takes unit newCaster, unit newTarget returns bo
             
             
             if UnitHasItemOfTypeBJ(newTarget, 'I03C') and UnitHasItemOfTypeBJ(newTarget, 'I03F')==false then        // Жилет Анбу у таргета
-                    call SetWidgetLife(newTarget, GetWidgetLife(newTarget)+35)
+                    set damage=damage-35
                     call DestroyEffect(AddSpecialEffectTarget("Abilities\\Spells\\Human\\Heal\\HealTarget.mdl", newTarget,"origin"))
             endif
             
             if UnitHasItemOfTypeBJ(newTarget, 'I03F') then                                                                                                          // Комплект Анбу у таргета
-                    call SetWidgetLife(newTarget, GetWidgetLife(newTarget)+50)
+                    set damage=damage-50
                     call DestroyEffect(AddSpecialEffectTarget("Abilities\\Spells\\Human\\Heal\\HealTarget.mdl", newTarget,"origin"))
+            endif
+
+            if (UnitHasItemOfTypeBJ(newTarget,'IAoF') or GetUnitAbilityLevel(newTarget,'KI1A')>0) then                                                                                                          // Комплект Анбу у таргета
+                    set damage=damage-150
             endif
             
             if UnitHasItemOfTypeBJ(newTarget, 'I060') then                                                                                                          // Облако Маре D ранг
@@ -154948,6 +155027,12 @@ function FKazumaList takes unit u, integer id returns nothing
         call UnitRemoveAbilityTimed(u,'KI0Y',10)
         call UnitAddAbility(u,'KI0Z')
         call UnitRemoveAbilityTimed(u,'KI0Z',10)
+    endif
+    if id=='IAoF' then //Броня Фафнира
+        call UnitAddAbility(u,'KI1A')
+        call UnitRemoveAbilityTimed(u,'KI1A',10)
+        call UnitAddAbility(u,'KI1B')
+        call UnitRemoveAbilityTimed(u,'KI1B',10)
     endif
 endfunction
 function FKazumaCond takes nothing returns boolean
@@ -196572,17 +196657,19 @@ function Karna_ModifAttack takes unit newCaster, unit newTarget, real attack_fac
                 call RainMare_Actions(newCaster,newTarget)
             endif
             if UnitHasItemOfTypeBJ(newTarget, 'I03C') and UnitHasItemOfTypeBJ(newTarget, 'I03F')==false then	// Жилет Анбу у таргета
-                call HealTextTag(newTarget,newTarget,35*myCustomHeal2(newTarget,1),"HealthRes")
-                call SetWidgetLife(newTarget, GetWidgetLife(newTarget)+35)
+                set damage=damage-35
                 call DestroyEffect(AddSpecialEffectTarget("Abilities\\Spells\\Human\\Heal\\HealTarget.mdl", newTarget,"origin"))
             endif
             
             if UnitHasItemOfTypeBJ(newTarget, 'I03F') then														// Комплект Анбу у таргета
-                call HealTextTag(newTarget,newTarget,50*myCustomHeal2(newTarget,1),"HealthRes")
-                call SetWidgetLife(newTarget, GetWidgetLife(newTarget)+50)
+                set damage=damage-50
                 call DestroyEffect(AddSpecialEffectTarget("Abilities\\Spells\\Human\\Heal\\HealTarget.mdl", newTarget,"origin"))
             endif
-            
+
+            if (UnitHasItemOfTypeBJ(newTarget,'IAoF') or GetUnitAbilityLevel(newTarget,'KI1A')>0) then                                                                                                          // Комплект Анбу у таргета
+                set damage=damage-150
+            endif
+
             if UnitHasItemOfTypeBJ(newTarget, 'I060') then														// Облако Маре D ранг
                 set damage=damage-30
             endif
@@ -196767,6 +196854,13 @@ function Sinon_ModifAttack takes unit newCaster, unit newTarget, real attack_fac
         set first_crit = false
 		set crit_count = crit_count + 1
 	endif
+	if (UnitHasItemOfTypeBJ(newTarget,'IAoF') or GetUnitAbilityLevel(newTarget,'KI1A')>0) and GetRandomIntMem(0,100)<30*(1+B2R_ExD(first_crit)) and max_crit_count>crit_count then	// Waver F
+		if crit_damage>(1*crit_factor) then
+            set crit_damage=crit_damage-(1*crit_factor)
+        else
+            set crit_damage=0
+        endif
+	endif
 	//call BJDebugMsg(R2S(crit_damage))
     // критический урон
     if attack_factor<1.0 then
@@ -196892,12 +196986,12 @@ function Sinon_ModifAttack takes unit newCaster, unit newTarget, real attack_fac
             call RainMare_Actions(newCaster,newTarget)
         endif
 		// if UnitHasItemOfTypeBJ(newTarget, 'I03C') and UnitHasItemOfTypeBJ(newTarget, 'I03F')==false then	// Жилет Анбу у таргета
-			// call SetWidgetLife(newTarget, GetWidgetLife(newTarget)+35)
+			// set damage=damage-35
 			// call DestroyEffect(AddSpecialEffectTarget("Abilities\\Spells\\Human\\Heal\\HealTarget.mdl", newTarget,"origin"))
 		// endif
 		
 		// if UnitHasItemOfTypeBJ(newTarget, 'I03F') then														// Комплект Анбу у таргета
-			// call SetWidgetLife(newTarget, GetWidgetLife(newTarget)+50)
+			// set damage=damage-50
 			// call DestroyEffect(AddSpecialEffectTarget("Abilities\\Spells\\Human\\Heal\\HealTarget.mdl", newTarget,"origin"))
 		// endif
 		
@@ -209161,6 +209255,7 @@ call UIS_RegisterItem('I03Y','IOS1','I02S',0,0,0,'ISTr','ISTi')                 
 call UIS_RegisterItem('I01H','IOS3','I12R',0,0,0,0,'ISHk')                            // Sode no Shirayuki
 call UIS_RegisterItem('I02Y','ISHk',0,0,0,0,0,'IHnK')                                 // Hakka No Togame
 call UIS_RegisterItem('I01L','I12R',0,0,0,0,'IBSR','IBSI')                                 // Buster Sword
+call UIS_RegisterItem('I03Z','I03C','I060',0,0,0,0,'IAoF')                                 // Fafnir
 call UIS_RegisterItem('IOS3','IOS4','IOS2','IOS1',0,0,0,'I1S4')
 call UIS_RegisterItem('I01Z','I02T',0,0,0,0,'I052','I04G')
 // call UIS_RegisterItem('I03B','I01I',0,'I053',0,0,'I038') //old Kosa
