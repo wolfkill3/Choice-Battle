@@ -155028,7 +155028,7 @@ function FKazumaList takes unit u, integer id returns nothing
         call UnitAddAbility(u,'KI0Z')
         call UnitRemoveAbilityTimed(u,'KI0Z',10)
     endif
-    if id=='IAoF' then //Броня Фафнира
+    if id=='IAoF' then //Сердце Фафнира
         call UnitAddAbility(u,'KI1A')
         call UnitRemoveAbilityTimed(u,'KI1A',10)
         call UnitAddAbility(u,'KI1B')
