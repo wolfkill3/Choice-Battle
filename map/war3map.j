@@ -38922,26 +38922,6 @@ if cond==0 then
         call IssueTargetOrder(c,"attack",u)
         call UnitRemoveAbilityTimed(c,'A2WT',1)
     endif
-    if CurrentEventAttack and GetUnitAbilityLevel(c,'A13N')>0 and nb>0 and c!=UltimateDamage then
-        if GetUnitAbilityLevel(u,'A13O')==0 then
-            call UnitAddAbility(u,'A13O')
-            call UnitMakeAbilityPermanent(u,true,'A13O')
-            call UnitAddAbility(u,'A13S')
-            call UnitMakeAbilityPermanent(u,true,'A13S')
-            elseif GetUnitAbilityLevel(u,'A13O')<3 then
-            if GetUnitAbilityLevel(u,'A13O')==1 then
-                call UnitRemoveAbility(u,'A13S')
-                call UnitAddAbility(u,'A13T')
-                call UnitMakeAbilityPermanent(u,true,'A13T')
-                elseif GetUnitAbilityLevel(u,'A13O')==2 then
-                call UnitRemoveAbility(u,'A13T')
-                call UnitAddAbility(u,'A13U')
-                call UnitMakeAbilityPermanent(u,true,'A13U')
-            endif
-            call SetUnitAbilityLevel(u,'A13O',GetUnitAbilityLevel(u,'A13O')+1)
-            endif
-        endif
-    endif
     if CurrentEventAttack and(GetUnitAbilityLevel(c,'A12P')>0 or GetUnitAbilityLevel(c,'A12O')>0) and c!=UltimateDamage and GetUnitAbilityLevel(c,'A3WR')==0 and nb>0 then
         //call SetEventDamage(nb+GetHeroAgi(c,true)*0.8*myCustomDamage2(u,1))
         set nb=nb+GetHeroAgi(c,true)*0.8*myCustomDamage2(u,1)
@@ -39561,6 +39541,26 @@ if udg_B and nb>50 and c!=null and (UnitHasItemOfTypeBJ(c, 'IOS3') or GetUnitAbi
 endif
 if udg_B and nb>50 and c!=null and (UnitHasItemOfTypeBJ(c, 'ISHk') or UnitHasItemOfTypeBJ(c, 'IHnK') or GetUnitAbilityLevel(c, 'KI0U')>0 or GetUnitAbilityLevel(c, 'KI0W')>0) and IsUnitIllusion(u)==false and IsUnitType(u, UNIT_TYPE_HERO)==true      then    //Sode no Shirayuki
     call SodeNoReduceCR(c, u)
+endif
+if CurrentEventAttack and GetUnitAbilityLevel(c,'A13N')>0 and nb>0 and c!=UltimateDamage then
+    if GetUnitAbilityLevel(u,'A13O')==0 then
+        call UnitAddAbility(u,'A13O')
+        call UnitMakeAbilityPermanent(u,true,'A13O')
+        call UnitAddAbility(u,'A13S')
+        call UnitMakeAbilityPermanent(u,true,'A13S')
+        elseif GetUnitAbilityLevel(u,'A13O')<3 then
+        if GetUnitAbilityLevel(u,'A13O')==1 then
+            call UnitRemoveAbility(u,'A13S')
+            call UnitAddAbility(u,'A13T')
+            call UnitMakeAbilityPermanent(u,true,'A13T')
+            elseif GetUnitAbilityLevel(u,'A13O')==2 then
+            call UnitRemoveAbility(u,'A13T')
+            call UnitAddAbility(u,'A13U')
+            call UnitMakeAbilityPermanent(u,true,'A13U')
+        endif
+        call SetUnitAbilityLevel(u,'A13O',GetUnitAbilityLevel(u,'A13O')+1)
+        endif
+    endif
 endif
 set i=0
 set n3=null
