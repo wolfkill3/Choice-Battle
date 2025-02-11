@@ -32465,8 +32465,13 @@ local real y1=GetRectMinY(gg_rct_Weiw)
 call FlushParentHashtable(h)
 set h=InitHashtable()
 call DestroyTimerDialog(udg_TB)
+if udg_test then
+call SetAbilityBaseRealLevelFieldById('Aneu',ABILITY_RLF_CAST_RANGE,0,90000)
+call SetAbilityBaseRealLevelFieldById('Aneu',ABILITY_RLF_ACTIVATION_RADIUS,0,90000)
+else
 call SetAbilityBaseRealLevelFieldById('Aneu',ABILITY_RLF_CAST_RANGE,0,100)
 call SetAbilityBaseRealLevelFieldById('Aneu',ABILITY_RLF_ACTIVATION_RADIUS,0,100)
+endif
 set udg_TB=null
 call DisableTrigger(gg_trg_KingOfHill_Enter)
 call DisableTrigger(gg_trg_Tower_Enter)
