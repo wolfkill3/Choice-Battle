@@ -8487,7 +8487,7 @@ set udg_RH[9]='H00H'
 set udg_RH[10]='H00C'
 set udg_RH[11]='H006'
 set udg_RH[12]='H017'
-set udg_RH[203]='H00P' //Moria
+set udg_RH[13]='H00P' //Moria
 set udg_RH[14]='H00D'
 set udg_RH[15]='H00K'
 set udg_RH[16]='H00X'
@@ -8536,7 +8536,7 @@ set udg_RH[57]='H03L'
 set udg_RH[58]='H03N'
 set udg_RH[59]='H03P'
 set udg_RH[60]='H03R'
-set udg_RH[202]='H03S'
+set udg_RH[61]='H03S'
 //set udg_RH[62]='H03Z' // old Minato
 set udg_RH[63]='H031'
 set udg_RH[64]='H042'
@@ -8548,7 +8548,7 @@ set udg_RH[69]='H048'
 set udg_RH[70]='HYuj'  //old 'H049'
 set udg_RH[71]='H04A' //Fucking_Gon
 set udg_RH[72]='H04C'
-set udg_RH[204]='H04E' //Killua
+set udg_RH[73]='H04E' //Killua
 set udg_RH[74]='H04F'
 set udg_RH[75]='H04H'
 set udg_RH[76]='H04L'
@@ -8571,7 +8571,7 @@ set udg_RH[92]='H061'
 set udg_RH[93]='H063'
 set udg_RH[94]='H066'
 set udg_RH[95]='H067'
-set udg_RH[206]='H069'
+set udg_RH[96]='H069'
 set udg_RH[97]='H06B'
 set udg_RH[98]='H06F'
 set udg_RH[99]='H051'
@@ -8590,7 +8590,7 @@ set udg_RH[111]='Ho0Z'
 set udg_RH[112]='H078'
 set udg_RH[113]='H073'
 set udg_RH[114]='ORH1'  
-set udg_RH[207]='H06T' //lucy
+set udg_RH[115]='H06T' //lucy
 set udg_RH[116]='WEND'
 set udg_RH[117]='Hbel'
 set udg_RH[118]='Ho11'
@@ -8632,8 +8632,7 @@ set udg_RH2[9]="Sasagawa Ryohei"
 set udg_RH2[10]="Sawada Tsunayoshi"
 set udg_RH2[11]="Itachi Uchiha"
 set udg_RH2[12]="Shakugan no Shana"
-set udg_RH2[13]=""
-set udg_RH2[203]="Gekko Moria" //Moria
+set udg_RH2[13]="Gekko Moria"
 set udg_RH2[14]="Portgas D. Ace"
 set udg_RH2[15]="Enel"
 set udg_RH2[16]="Hibari Kyoya"
@@ -8683,8 +8682,8 @@ set udg_RH2[57]="Nelliel"
 set udg_RH2[58]="Vergil"
 set udg_RH2[59]="Katsura"
 set udg_RH2[60]="Yomu"
-set udg_RH2[61]=""
-set udg_RH2[202]="Pain"
+set udg_RH2[61]="Pain"
+set udg_RH2[62]=""
 //set udg_RH2[62]="Minato"
 set udg_RH2[63]="Sanji"
 set udg_RH2[64]="Trunks"
@@ -8696,8 +8695,7 @@ set udg_RH2[69]="Lord Frieza"
 set udg_RH2[70]="Sakai Yuji"
 set udg_RH2[71]="Gon Freecss" //Fucking_Gon
 set udg_RH2[72]="Yuzuriha Inori"
-set udg_RH2[73]=""
-set udg_RH2[204]="Killua Zoldyck" //Killua
+set udg_RH2[73]="Killua Zoldyck"
 set udg_RH2[74]="Naruto Uzumaki"
 set udg_RH2[75]="Sogiita Gunha"
 set udg_RH2[76]="Gray Fullbuster"
@@ -8721,8 +8719,7 @@ set udg_RH2[93]="Frenda"
 set udg_RH2[205]=""
 set udg_RH2[94]="Doflamingo"
 set udg_RH2[95]="Tamamo no Mae"
-set udg_RH2[96]=""
-set udg_RH2[206]="Nanaya Shiki"
+set udg_RH2[96]="Nanaya Shiki"
 set udg_RH2[97]="Nero"
 set udg_RH2[98]="Alter Jeanne"
 set udg_RH2[99]="Shielder"
@@ -8741,8 +8738,7 @@ set udg_RH2[111]="Edmond Dantes"
 set udg_RH2[112]="Kotomine Kirei"
 set udg_RH2[113]="Tohsaka Rin"
 set udg_RH2[114]="Orochimaru"  
-set udg_RH2[115]=""
-set udg_RH2[207]="Lucy"
+set udg_RH2[115]="Lucy"
 set udg_RH2[116]="Wendy"
 set udg_RH2[117]="Belfegor"
 set udg_RH2[118]="Kiyohime"
@@ -31298,9 +31294,9 @@ function EndOfChoiceAct takes nothing returns nothing
         endif
         if GetUnitTypeId(Hero[i])=='HMad' then
             call SaveReal(HH,GetHandleId( Hero[i] ),MadokaDHash,0)
-            call SaveReal(HH,GetHandleId( Hero[i] ),MadokaTDHash,5000+round*100)
+            call SaveReal(HH,GetHandleId( Hero[i] ),MadokaTDHash,4000+round*100)
             call SaveReal(HH,GetHandleId( Hero[i] ),MadokaHHash,0)
-            call SaveReal(HH,GetHandleId( Hero[i] ),MadokaTHHash,2500+round*50)
+            call SaveReal(HH,GetHandleId( Hero[i] ),MadokaTHHash,2000+round*50)
             call SaveInteger(HH,GetHandleId( Hero[i] ),MadokaMHash,0)
         endif
 
@@ -32653,9 +32649,9 @@ call GroupEnumUnitsOfPlayer(G,Player(i),BuggedBool) //lvlbool
         endif
         if GetUnitTypeId(Hero[i])=='HMad' then
             call SaveReal(HH,GetHandleId( Hero[i] ),MadokaDHash,0)
-            call SaveReal(HH,GetHandleId( Hero[i] ),MadokaTDHash,5000+round*100)
+            call SaveReal(HH,GetHandleId( Hero[i] ),MadokaTDHash,4000+round*100)
             call SaveReal(HH,GetHandleId( Hero[i] ),MadokaHHash,0)
-            call SaveReal(HH,GetHandleId( Hero[i] ),MadokaTHHash,2500+round*50)
+            call SaveReal(HH,GetHandleId( Hero[i] ),MadokaTHHash,2000+round*50)
             call SaveInteger(HH,GetHandleId( Hero[i] ),MadokaMHash,0)
         endif
             //sabrac7start
@@ -34772,10 +34768,10 @@ function MadokaF3_Periodic takes nothing returns nothing
         call SetUnitInvulnerable(caster, false)
         call SetUnitState(caster,UNIT_STATE_LIFE,1)
         call SetUnitState(caster,UNIT_STATE_MANA,1)
-        call HealTextTag(caster,caster,GetWidgetMaxLife(caster) * 0.35*myCustomHeal2(caster,1),"HealthRes")
-        call HealTextTag(caster,caster,GetWidgetMaxLife(caster) * 0.35*myCustomMana2(caster,1),"ManaRes")
-		call SetWidgetLife(caster, GetWidgetMaxLife(caster)*0.35)
-		call SetWidgetMana(caster, GetWidgetMaxMana(caster)*0.35)
+        call HealTextTag(caster,caster,GetWidgetMaxLife(caster) * 0.65*myCustomHeal2(caster,1),"HealthRes")
+        call HealTextTag(caster,caster,GetWidgetMaxLife(caster) * 0.65*myCustomMana2(caster,1),"ManaRes")
+		call SetWidgetLife(caster, GetWidgetMaxLife(caster)*0.65)
+		call SetWidgetMana(caster, GetWidgetMaxMana(caster)*0.65)
 		call UnitRemoveBuffs(caster, false, true)
 		if udg_B then
 			call UnitAddAbility(caster, 'MaF3')
@@ -170333,7 +170329,7 @@ function MadokaW_Periodic takes nothing returns nothing
     local real time=LoadReal(h, id, TIME_HASH)
     local real full_heal=LoadReal(h, id, StringHash("Heal"))
     local unit target=LoadUnitHandle(h, id, TargetHash)
-    if time < 10 then
+    if time < 10 and IsUnitAlive(target)==true then
         call HealTextTag(LoadUnitHandle(h, id, CasterHash),target,  full_heal * 0.01*myCustomHeal2(target,1),"HealthRes")
         call SetWidgetLife(target, GetWidgetLife(target) + full_heal * 0.01)
         call SaveReal(h, id, TIME_HASH, time + 0.1)
