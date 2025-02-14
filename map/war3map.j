@@ -22511,6 +22511,43 @@ function Trig_Multup_Actions takes nothing returns nothing
                 set seconds1=""
         endif
         call MultiboardSetTitleText(mbg,"|cffc3dbffRound|r - "+I2S(round)+", |cffc3dbffTime -|r "+ours1+I2S(ours)+":"+minutes1+I2S(minutes)+":"+seconds1+I2S(seconds))
+        
+        set x=0
+        loop
+        exitwhen x>=10
+        if ingame[x]==true then
+            if udg_B==false then
+                call SetUnitInvulnerable(Hero[x],true)
+            endif
+            if (UnitHasItemOfTypeBJ(Hero[x],'I00D') or GetUnitAbilityLevel(Hero[x],'KI58')>0) and LoadInteger(HH,GetHandleId(Hero[x]),StringHash("SunVongola"))!=1 then
+                call SunVongolaRegenCast(Hero[x])
+            endif
+            if GetUnitAbilityLevel(Hero[x],'B074')>0 and LoadInteger(HH,GetHandleId(Hero[x]),StringHash("OrihimeF"))!=1 then
+                call OrihimeFCast(Hero[x])
+            endif
+            if GetUnitAbilityLevel(Hero[x],'A18B')>0 then
+                    call HealTextTag(Hero[x],Hero[x],0.045*SunRing(Hero[x])*I2R(GetHeroInt(Hero[x],true))*myCustomHeal2(Hero[x],1),"HealthRes")
+                    call SetUnitState(Hero[x],UNIT_STATE_LIFE,GetWidgetLife(Hero[x])+0.045*SunRing(Hero[x])*I2R(GetHeroInt(Hero[x],true)))
+            else
+                    call HealTextTag(Hero[x],Hero[x],0.015*SunRing(Hero[x])*I2R(GetHeroInt(Hero[x],true))*myCustomHeal2(Hero[x],1),"HealthRes")
+                    call SetUnitState(Hero[x],UNIT_STATE_LIFE,GetWidgetLife(Hero[x])+0.015*SunRing(Hero[x])*I2R(GetHeroInt(Hero[x],true)))
+            endif
+            if IsUnitPaused(Hero[x])==false and UnitHasItemOfTypeBJ(Hero[x],'I02K')==true and GetWidgetLife(Hero[x])>0.01*GetWidgetMaxLife(Hero[x]) then
+                call SetUnitState(Hero[x],UNIT_STATE_LIFE,GetWidgetLife(Hero[x])-(0.001*GetWidgetMaxLife(Hero[x])+1))
+            endif
+            if udg_DM[x+1]!=null then
+                if (GetWidgetMana(Hero[x])>=100 and GetWidgetMana(udg_DM[x+1])>=100) and manaMoria[x]!=1 then
+                    set udg_DMM[x]=CreateUnit(GetOwningPlayer(udg_DM[x+1]),'h13J',RX,RY,0)
+                    set manaMoria[x]=1
+                elseif (GetWidgetMana(Hero[x])<100 or GetWidgetMana(udg_DM[x+1])<100) and manaMoria[x]==1 then
+                    call RemoveUnit(udg_DMM[x])
+                    set manaMoria[x]=0
+                endif
+            endif
+        endif
+        set x=x+1
+        endloop
+        set x=0
         if (GetLocalPlayer()==GetOwningPlayer(Goku) or GetPlayerAlliance(GetOwningPlayer(Goku),GetLocalPlayer(),ALLIANCE_SHARED_CONTROL)) and GetUnitSelected(GetLocalPlayer())==Goku then
             if IsAbilityVisible(GetUnitAbility(Goku,'GKQ1')) and (GetLocalPlayer()==GetOwningPlayer(Goku) or GetPlayerAlliance(GetOwningPlayer(Goku),GetLocalPlayer(),ALLIANCE_SHARED_CONTROL)) and (GetFrameTexture(GetOriginFrame(ORIGIN_FRAME_COMMAND_BUTTON,11),1)!="ReplaceableTextures\\CommandButtons\\BTNCancel.blp" or (GetFrameTexture(GetOriginFrame(ORIGIN_FRAME_COMMAND_BUTTON,0),1)=="war3mapImported\\BTNMove.blp" and IsFrameVisible(GetOriginFrame(ORIGIN_FRAME_COMMAND_BUTTON,0)))) then 
                 call ShowFrame(GetFrameByName( "AbilityVarBarIcon", 8 ),true)
@@ -22712,42 +22749,6 @@ function Trig_Multup_Actions takes nothing returns nothing
         else
             call ShowFrame(GetFrameByName( "GlobalAbilityBarIcon", 0 ),false)
         endif
-        set x=0
-        loop
-        exitwhen x>=10
-        if ingame[x]==true then
-            if udg_B==false then
-                call SetUnitInvulnerable(Hero[x],true)
-            endif
-            if (UnitHasItemOfTypeBJ(Hero[x],'I00D') or GetUnitAbilityLevel(Hero[x],'KI58')>0) and LoadInteger(HH,GetHandleId(Hero[x]),StringHash("SunVongola"))!=1 then
-                call SunVongolaRegenCast(Hero[x])
-            endif
-            if GetUnitAbilityLevel(Hero[x],'B074')>0 and LoadInteger(HH,GetHandleId(Hero[x]),StringHash("OrihimeF"))!=1 then
-                call OrihimeFCast(Hero[x])
-            endif
-            if GetUnitAbilityLevel(Hero[x],'A18B')>0 then
-                    call HealTextTag(Hero[x],Hero[x],0.045*SunRing(Hero[x])*I2R(GetHeroInt(Hero[x],true))*myCustomHeal2(Hero[x],1),"HealthRes")
-                    call SetUnitState(Hero[x],UNIT_STATE_LIFE,GetWidgetLife(Hero[x])+0.045*SunRing(Hero[x])*I2R(GetHeroInt(Hero[x],true)))
-            else
-                    call HealTextTag(Hero[x],Hero[x],0.015*SunRing(Hero[x])*I2R(GetHeroInt(Hero[x],true))*myCustomHeal2(Hero[x],1),"HealthRes")
-                    call SetUnitState(Hero[x],UNIT_STATE_LIFE,GetWidgetLife(Hero[x])+0.015*SunRing(Hero[x])*I2R(GetHeroInt(Hero[x],true)))
-            endif
-            if IsUnitPaused(Hero[x])==false and UnitHasItemOfTypeBJ(Hero[x],'I02K')==true and GetWidgetLife(Hero[x])>0.01*GetWidgetMaxLife(Hero[x]) then
-                call SetUnitState(Hero[x],UNIT_STATE_LIFE,GetWidgetLife(Hero[x])-(0.001*GetWidgetMaxLife(Hero[x])+1))
-            endif
-            if udg_DM[x+1]!=null then
-                if (GetWidgetMana(Hero[x])>=100 and GetWidgetMana(udg_DM[x+1])>=100) and manaMoria[x]!=1 then
-                    set udg_DMM[x]=CreateUnit(GetOwningPlayer(udg_DM[x+1]),'h13J',RX,RY,0)
-                    set manaMoria[x]=1
-                elseif (GetWidgetMana(Hero[x])<100 or GetWidgetMana(udg_DM[x+1])<100) and manaMoria[x]==1 then
-                    call RemoveUnit(udg_DMM[x])
-                    set manaMoria[x]=0
-                endif
-            endif
-        endif
-        set x=x+1
-        endloop
-        set x=0
         // set x=0
         // loop
         // exitwhen x>=10
@@ -32462,8 +32463,13 @@ local real y1=GetRectMinY(gg_rct_Weiw)
 call FlushParentHashtable(h)
 set h=InitHashtable()
 call DestroyTimerDialog(udg_TB)
+if udg_test then
+call SetAbilityBaseRealLevelFieldById('Aneu',ABILITY_RLF_CAST_RANGE,0,90000)
+call SetAbilityBaseRealLevelFieldById('Aneu',ABILITY_RLF_ACTIVATION_RADIUS,0,90000)
+else
 call SetAbilityBaseRealLevelFieldById('Aneu',ABILITY_RLF_CAST_RANGE,0,100)
 call SetAbilityBaseRealLevelFieldById('Aneu',ABILITY_RLF_ACTIVATION_RADIUS,0,100)
+endif
 set udg_TB=null
 call DisableTrigger(gg_trg_KingOfHill_Enter)
 call DisableTrigger(gg_trg_Tower_Enter)
@@ -164169,7 +164175,7 @@ function ShuwenD_Periodic takes nothing returns nothing
         local boolean d_off=LoadBoolean(h, id, StringHash("Bool"))
         if udg_B and GetWidgetMana(caster)>10 and d_off==false then
                 call SetUnitVertexColor(caster,255,255,255,R2I(he*255))
-                call SetUnitStatbarHeight(caster,7000)
+                call SetUnitOverheadOffset(caster,7000)
                 if IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(caster))then
                         call SetUnitVertexColor(caster,255,255,255,255)
                 endif
@@ -164183,7 +164189,7 @@ function ShuwenD_Periodic takes nothing returns nothing
                 if GetUnitTypeId(caster)=='H16C' then
                         call IssueImmediateOrder(caster, "unbearform")
                 else
-                        call SetUnitStatbarHeight(caster,LoadReal(h,id,1))
+                        call SetUnitOverheadOffset(caster,LoadReal(h,id,1))
                         call FlushChildHashtable(h, id)
                         call DestroyTimer(GetExpiredTimer())
                 endif
@@ -164194,7 +164200,7 @@ endfunction
 function ShuwenD_Cast takes unit newCaster, timer newTimer returns nothing 
         local integer id=GetHandleId(newTimer)
         call SaveUnitHandle(h, id, CasterHash, newCaster)
-        call SaveReal(h, id, 1, GetUnitStatbarHeight(newCaster))
+        call SaveReal(h, id, 1, GetUnitOverheadOffset(newCaster))
         call SaveBoolean(h, id, StringHash("Bool"), false)
         call TimerStart(newTimer, 0.1, true, function ShuwenD_Periodic)
 endfunction
@@ -211071,7 +211077,7 @@ call SetMapMusic("Music",true,0)
 call ExecuteFunc("HLCinit")
 call ExecuteFunc("InitForfeit")
 call GetFrameByName( "TimeOfDayIndicator", 0 )
-call SetOperationLimit(1500000)
+call SetOperationLimit(1800000)
 call TrageGoldInit()
 call AntiHackEnable(false)
 call AntiHackEnableAddressCheck(true)
