@@ -2586,7 +2586,7 @@ function FilterA takes unit b,unit a returns boolean
     return IsUnitAlly(b, GetOwningPlayer(a)) and GetWidgetLife(b) > .405
 endfunction
 
-function B2S takes boolean booli returns string
+function B2S_EXD takes boolean booli returns string
 if booli==true then
     return "true"
 else
@@ -11376,7 +11376,7 @@ function OnButtonSelectType takes nothing returns nothing
         else
             call BJDebugMsg(GetFrameTexture(TavernChangeStats,1))
             call BJDebugMsg("TitleTavernIcon.blp")
-            call BJDebugMsg(B2S(GetFrameTexture(TavernChangeStats,1)=="TitleTavernIcon.blp"))
+            call BJDebugMsg(B2S_EXD(GetFrameTexture(TavernChangeStats,1)=="TitleTavernIcon.blp"))
         endif
     endif
     set P=p
@@ -22145,7 +22145,7 @@ function Trig_StatusBar_Actions takes nothing returns nothing
     call TriggerAddAction( tOnPress, function OnButtonPress )
     call TriggerAddAction( tOnUnPress, function OnButtonUnpress )
     call TriggerAddAction( tOnClick, function OnButtonOpenStatusBar )
-    //call BJDebugMsg(B2S(IsOperationLimitEnabled())
+    //call BJDebugMsg(B2S_EXD(IsOperationLimitEnabled())
     loop
         exitwhen x>=12
         set toggleStatus = CreateTrigger( )  
@@ -28930,7 +28930,7 @@ function Trig_test_Actions takes nothing returns nothing
     call TriggerAddAction( tOnPress, function OnButtonPress )
     call TriggerAddAction( tOnUnPress, function OnButtonUnpress )
     call TriggerAddAction( tOnClick, function OnButtonOpenId )
-    //call BJDebugMsg(B2S(IsOperationLimitEnabled())
+    //call BJDebugMsg(B2S_EXD(IsOperationLimitEnabled())
     loop
         exitwhen x>=12
         set toggleStatus = CreateTrigger( )  
