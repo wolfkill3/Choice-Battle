@@ -7975,6 +7975,12 @@ set l__s="VegitoSummon.mp3"
 else
 set l__s="VegitoSummon-jap.mp3"
 endif
+elseif id=='HJi1' then
+if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE) then
+set l__s="JirenSummon.mp3"
+else
+set l__s="JirenSummon-jap.mp3"
+endif
 elseif id=='H05Z' then
 set l__s="AkameSummon.mp3"
 elseif id=='HYuj' then //old 'H049'
@@ -23145,6 +23151,7 @@ if cmb!=true then
         call IH('H35Z',u,"ReplaceableTextures\\CommandButtons\\BTNYoruichiP.blp")
         call IH('H34Z',u,"ReplaceableTextures\\CommandButtons\\BTNTobiramaP.blp")
         call IH('HKar',u,"ReplaceableTextures\\CommandButtons\\BTNKarnaP.blp")
+        call IH('HJi1',u,"ReplaceableTextures\\CommandButtons\\BTNJiren.blp")
         set hero[id]=u
         if GetUnitTypeId(u)=='H074' then
             set oreha=u
@@ -165477,18 +165484,16 @@ function VergilW_Cast takes unit newCaster, unit newTarget returns nothing
 	call MyRemoveUnit(n, 3)
 endfunction
 
+function Vergil_Cond takes nothing returns boolean
+        local boolean cond1=GetSpellAbilityId()=='VerW'
+        if cond1 then
+                return true
+        else
+                return false
+        endif
+endfunction
 
 function Vergil_Cast takes nothing returns nothing
-	// if GetSpellAbilityId() == 'AP03' then
-	// 	set soundplay=CreateSound("Sound\\war3mapImported\\VergilD1.wav", false, false, true, 12700, 12700, "")
-	// 	call StartSound(soundplay)
-	// 	call KillSoundWhenDone(soundplay)
-    //     call UnitAddAbility(GetSpellAbilityUnit(), 'AP04')
-	// 	call UnitMakeAbilityPermanent(GetSpellAbilityUnit(), true, 'AP04')
-	// 	call UnitRemoveAbilityTimed_ExD(GetSpellAbilityUnit(), 'AP04', 2)
-	// 	set n=LoadUnitHandle(HH, GetHandleId(GetSpellAbilityUnit()), StringHash("VergilD"))
-	// 	call RemoveUnit(n)
-    // endif
 	if GetSpellAbilityId() == 'VerW' then
 		call VergilW_Cast(GetSpellAbilityUnit() , GetSpellTargetUnit())
     endif
@@ -165503,7 +165508,36 @@ function InitTrig_VergilInt takes nothing returns nothing
         exitwhen index == bj_MAX_PLAYER_SLOTS
     endloop
     call TriggerAddAction(trig, function Vergil_Cast)
-        set trig=null
+    call TriggerAddCondition(trig, Condition(function Vergil_Cond))
+    set trig=null
+endfunction
+
+function Jiren_Cond takes nothing returns boolean
+        local boolean cond1=GetSpellAbilityId()=='JNQ1'
+        if cond1 then
+                return true
+        else
+                return false
+        endif
+endfunction
+
+function Jiren_Cast takes nothing returns nothing
+	if GetSpellAbilityId() == 'JNQ1' then
+		// call JirenQ_Cast(GetSpellAbilityUnit() , GetSpellTargetUnit())
+    endif
+endfunction
+
+function InitTrig_JirenInt takes nothing returns nothing
+    local trigger trig= CreateTrigger()
+    local integer index= 0
+    loop
+        call TriggerRegisterPlayerUnitEvent(trig, Player(index), EVENT_PLAYER_UNIT_SPELL_EFFECT, null)
+        set index=index + 1
+        exitwhen index == bj_MAX_PLAYER_SLOTS
+    endloop
+    call TriggerAddAction(trig, function Jiren_Cast)
+    call TriggerAddCondition(trig, Condition(function Jiren_Cond))
+    set trig=null
 endfunction
 
 //===========================================SAKAI YUJI INT 
@@ -211481,6 +211515,7 @@ call InitTrig_YoruichiInt()
 call InitTrig_TobiramaInt()
 call InitTrig_StigmataInt()
 call InitTrig_VergilInt()
+call InitTrig_JirenInt()
 //call InitTrig_NanayaPick()
 call InitTrig_Text_Damage()
 // call InitTrig_Text_PreDamage()
