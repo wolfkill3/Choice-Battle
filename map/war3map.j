@@ -8610,6 +8610,7 @@ set udg_RH[131]='HDSN'
 set udg_RH[132]='HKar'
 set udg_RH[133]='HBGN'//Black Goku надо 133
 set udg_RH[134]='HSab'//sabrac
+set udg_RH[135]='HJi1'//Jiren
 
 
 //set udg_RH[127]='HIc3'
@@ -8758,6 +8759,7 @@ set udg_RH2[131]="Danzo Shimura"
 set udg_RH2[132]="Karna"
 set udg_RH2[133]="Goku Black"
 set udg_RH2[134]="Sabrac"
+set udg_RH2[135]="Jiren"
 call DestroyTrigger(GetTriggeringTrigger())
 endfunction
 function InitTrig_Init takes nothing returns nothing
@@ -16437,7 +16439,7 @@ if udg_test==false then
     set GrY=0
     set GrX=0
     loop 
-    exitwhen x>=300
+    exitwhen x>=220
     if RH_Force[x]!=0 and GetUnitBaseIntegerFieldById(RH_Force[x],UNIT_IF_PRIMARY_ATTRIBUTE)==1 and x!=200 and x!=208 then
     set HeroTavernIcon=CreateFrameByType( "SIMPLEBUTTON", "TavernBarHero", TavernHeroGrid, "", x )
     call ClearFrameAllPoints( HeroTavernIcon )
@@ -16521,7 +16523,7 @@ if udg_test==false then
     set GrY=0
     set GrX=0
     loop 
-    exitwhen x>=300
+    exitwhen x>=220
     if RH_Force[x]!=0 and GetUnitBaseIntegerFieldById(RH_Force[x],UNIT_IF_PRIMARY_ATTRIBUTE)==3 and x!=200 and x!=208 then
     set HeroTavernIcon=CreateFrameByType( "SIMPLEBUTTON", "TavernBarHero", TavernHeroGrid, "", x )
     call ClearFrameAllPoints( HeroTavernIcon )
@@ -16605,7 +16607,7 @@ if udg_test==false then
     set GrY=0
     set GrX=0
     loop 
-    exitwhen x>=300
+    exitwhen x>=220
     if RH_Force[x]!=0 and GetUnitBaseIntegerFieldById(RH_Force[x],UNIT_IF_PRIMARY_ATTRIBUTE)==2 and x!=200 and x!=208 then
     set HeroTavernIcon=CreateFrameByType( "SIMPLEBUTTON", "TavernBarHero", TavernHeroGrid, "", x )
     call ClearFrameAllPoints( HeroTavernIcon )
@@ -16699,7 +16701,7 @@ if udg_test==false then
     set GrY=0
     set GrX=0
     loop 
-    exitwhen x>=300
+    exitwhen x>=220
     if RH_Force[x]!=0 and StringContains(GetUnitBaseStringFieldById(RH_Force[x],UNIT_SF_ABILITY_LIST),"AT01",false)==true and x!=200 and x!=208 then
     set HeroTavernIcon=CreateFrameByType( "SIMPLEBUTTON", "TavernBarHeroTitle", TavernHeroGrid, "", x )
     call ClearFrameAllPoints( HeroTavernIcon )
@@ -16807,7 +16809,7 @@ if udg_test==false then
     set GrY=0
     set GrX=0
     loop 
-    exitwhen x>=300
+    exitwhen x>=220
     if RH_Force[x]!=0 and StringContains(GetUnitBaseStringFieldById(RH_Force[x],UNIT_SF_ABILITY_LIST),"AT02",false)==true and x!=200 and x!=208 then
     set HeroTavernIcon=CreateFrameByType( "SIMPLEBUTTON", "TavernBarHeroTitle", TavernHeroGrid, "", x )
     call ClearFrameAllPoints( HeroTavernIcon )
@@ -16915,7 +16917,7 @@ if udg_test==false then
     set GrY=0
     set GrX=0
     loop 
-    exitwhen x>=300
+    exitwhen x>=220
     if RH_Force[x]!=0 and StringContains(GetUnitBaseStringFieldById(RH_Force[x],UNIT_SF_ABILITY_LIST),"AT03",false)==true and x!=200 and x!=208 then  //Nami and x!=200
     set HeroTavernIcon=CreateFrameByType( "SIMPLEBUTTON", "TavernBarHeroTitle", TavernHeroGrid, "", x )
     call ClearFrameAllPoints( HeroTavernIcon )
@@ -17022,7 +17024,7 @@ if udg_test==false then
     set GrY=0
     set GrX=0
     loop 
-    exitwhen x>=300
+    exitwhen x>=220
     if RH_Force[x]!=0 and StringContains(GetUnitBaseStringFieldById(RH_Force[x],UNIT_SF_ABILITY_LIST),"AT04",false)==true and x!=200 and x!=208 then  //Nami and x!=200
     set HeroTavernIcon=CreateFrameByType( "SIMPLEBUTTON", "TavernBarHeroTitle", TavernHeroGrid, "", x )
     call ClearFrameAllPoints( HeroTavernIcon )
@@ -17129,7 +17131,7 @@ if udg_test==false then
     set GrY=0
     set GrX=0
     loop 
-    exitwhen x>=300
+    exitwhen x>=220
     if RH_Force[x]!=0 and StringContains(GetUnitBaseStringFieldById(RH_Force[x],UNIT_SF_ABILITY_LIST),"AT05",false)==true and x!=200 and x!=208 then
     set HeroTavernIcon=CreateFrameByType( "SIMPLEBUTTON", "TavernBarHeroTitle", TavernHeroGrid, "", x )
     call ClearFrameAllPoints( HeroTavernIcon )
@@ -17237,7 +17239,7 @@ if udg_test==false then
     set GrY=0
     set GrX=0
     loop 
-    exitwhen x>=300
+    exitwhen x>=220
     if RH_Force[x]!=0 and StringContains(GetUnitBaseStringFieldById(RH_Force[x],UNIT_SF_ABILITY_LIST),"AT06",false)==true and x!=200 and x!=208 then
     set HeroTavernIcon=CreateFrameByType( "SIMPLEBUTTON", "TavernBarHeroTitle", TavernHeroGrid, "", x )
     call ClearFrameAllPoints( HeroTavernIcon )
@@ -17345,7 +17347,7 @@ if udg_test==false then
     set GrY=0
     set GrX=0
     loop 
-    exitwhen x>=300
+    exitwhen x>=220
     if RH_Force[x]!=0 and StringContains(GetUnitBaseStringFieldById(RH_Force[x],UNIT_SF_ABILITY_LIST),"AT07",false)==true and x!=200 and x!=208 then  //Nami and x!=200
     set HeroTavernIcon=CreateFrameByType( "SIMPLEBUTTON", "TavernBarHeroTitle", TavernHeroGrid, "", x )
     call ClearFrameAllPoints( HeroTavernIcon )
@@ -17452,7 +17454,7 @@ if udg_test==false then
     set GrY=0
     set GrX=0
     loop 
-    exitwhen x>=300
+    exitwhen x>=220
     if RH_Force[x]!=0 and StringContains(GetUnitBaseStringFieldById(RH_Force[x],UNIT_SF_ABILITY_LIST),"AT08",false)==true and x!=200 and x!=208 then  //Nami and x!=200
     set HeroTavernIcon=CreateFrameByType( "SIMPLEBUTTON", "TavernBarHeroTitle", TavernHeroGrid, "", x )
     call ClearFrameAllPoints( HeroTavernIcon )
@@ -17559,7 +17561,7 @@ if udg_test==false then
     set GrY=0
     set GrX=0
     loop 
-    exitwhen x>=300
+    exitwhen x>=220
     if RH_Force[x]!=0 and StringContains(GetUnitBaseStringFieldById(RH_Force[x],UNIT_SF_ABILITY_LIST),"AT12",false)==true and x!=200 and x!=208 then  //Nami and x!=200
     set HeroTavernIcon=CreateFrameByType( "SIMPLEBUTTON", "TavernBarHeroTitle", TavernHeroGrid, "", x )
     call ClearFrameAllPoints( HeroTavernIcon )
@@ -29053,7 +29055,7 @@ function Trig_test_Actions takes nothing returns nothing
 
     set x=0
     loop 
-    exitwhen x>=300
+    exitwhen x>=220
     if RH_Force[x]!=0 and GetUnitBaseIntegerFieldById(RH_Force[x],UNIT_IF_PRIMARY_ATTRIBUTE)==1 then
     set HeroIdIcon=CreateFrameByType( "SIMPLEBUTTON", "TestBarHero", IdHeroGrid, "", x )
     call ClearFrameAllPoints( HeroIdIcon )
@@ -29137,7 +29139,7 @@ function Trig_test_Actions takes nothing returns nothing
     set GrY=0
     set GrX=0
     loop 
-    exitwhen x>=300
+    exitwhen x>=220
     if RH_Force[x]!=0 and GetUnitBaseIntegerFieldById(RH_Force[x],UNIT_IF_PRIMARY_ATTRIBUTE)==3 then
     set HeroIdIcon=CreateFrameByType( "SIMPLEBUTTON", "TestBarHero", IdHeroGrid, "", x )
     call ClearFrameAllPoints( HeroIdIcon )
@@ -29220,7 +29222,7 @@ function Trig_test_Actions takes nothing returns nothing
     set GrY=0
     set GrX=0
     loop 
-    exitwhen x>=300
+    exitwhen x>=220
     if RH_Force[x]!=0 and GetUnitBaseIntegerFieldById(RH_Force[x],UNIT_IF_PRIMARY_ATTRIBUTE)==2 then
     set HeroIdIcon=CreateFrameByType( "SIMPLEBUTTON", "TestBarHero", IdHeroGrid, "", x )
     call ClearFrameAllPoints( HeroIdIcon )
