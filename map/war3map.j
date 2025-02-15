@@ -167130,8 +167130,8 @@ function MinatoD1_Cast takes unit newCaster,unit newTarget,timer newTimer return
             call UnitEnableInventory(bjLCU,false,false )
             call UnitEnableMovement(bjLCU,false,false )
             call UnitEnableAttack(bjLCU,false,false )
-            call DestroyTimer(newTimer)
         endif
+        call DestroyTimer(newTimer)
     else
         set soundplay=CreateSound("Sound\\war3mapImported\\Minato_D.mp3", false, false, true, 12700, 12700, "")
         call StartSound(soundplay)
@@ -167431,8 +167431,8 @@ function MinatoD2_Cast takes unit newCaster,unit newTarget,real point_x,real poi
             call UnitEnableInventory(bjLCU,false,false )
             call UnitEnableMovement(bjLCU,false,false )
             call UnitEnableAttack(bjLCU,false,false )
-            call DestroyTimer(newTimer)
         endif
+        call DestroyTimer(newTimer)
     else
         if GetUnitAbilityLevel(newCaster, 'MiW1') > 0 then
             set soundplay=CreateSound("Sound\\war3mapImported\\Minato_R_WD1.mp3", false, false, true, 12700, 12700, "")
