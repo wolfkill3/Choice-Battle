@@ -207595,6 +207595,7 @@ local integer id=0
 local integer ty=GetUnitTypeId(u)
 local boolean b=true
 local boolean fe=true
+// call UnitInventorySetSize(u,8)
 loop
 set id=LoadInteger(h2,ip,i)
 exitwhen i>=100
@@ -211292,7 +211293,11 @@ call AntiHackEnable(false)
 call AntiHackEnableAddressCheck(true)
 call AntiHackEnableBreakpointCheck(true)
 call SetBuffBarRenderDuplicates(true)
-//call SetFrameGridSize( GetOriginFrame( ORIGIN_FRAME_BUFF_BAR, 0 ), 3, 5 )
+// call SetFrameGridSize( GetOriginFrame( ORIGIN_FRAME_INVENTORY_BAR, 0 ), 3, 3 )
+// call ClearFrameAllPoints(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 6))
+// call SetFrameRelativePoint(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 6), FRAMEPOINT_CENTER, GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 0),FRAMEPOINT_CENTER,.0, .05)
+// call ClearFrameAllPoints(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 7))
+// call SetFrameRelativePoint(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 7), FRAMEPOINT_CENTER, GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 1),FRAMEPOINT_CENTER,.0, .05)
 //call SetFrameGridSize( GetOriginFrame( ORIGIN_FRAME_COMMAND_BAR, 0),3,5)
 call SetMoveSpeedMaxAllowed(550)
 call SetFrameFont( GetOriginFrame( ORIGIN_FRAME_UNIT_MSG, 0 ), "Fonts\\FRIZQT__.TTF", .0115, 0 )
