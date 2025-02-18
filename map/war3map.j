@@ -2114,8 +2114,8 @@ set i=0
 loop
 exitwhen(i>9)
 call SetFrameSize( GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, i), .0235, .0235)
-call SetFrameSpriteScale( GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON_COOLDOWN_INDICATOR, i), .0235)
-call SetFrameSpriteScale( GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON_AUTOCAST_FRAME, i), .0235)
+call SetFrameSpriteScale( GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON_COOLDOWN_INDICATOR, i), 0.65)
+call SetFrameSpriteScale( GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON_AUTOCAST_FRAME, i), 0.65)
 set i=i+1
 endloop
 set udg_LR=CreateGroup()
