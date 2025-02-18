@@ -21334,6 +21334,25 @@ if GetItemPlayer(it)==Player(15) or GetItemPlayer(it)==p or udg_test==true then
             call SetAbilityIntegerLevelField(GetUnitAbility(u,'A15E'), ABILITY_ILF_TARGET_TYPE,0,0)
         endif
     endif
+    if GetItemTypeId(it) ==  'I04V' or GetItemTypeId(it) ==  'I13R' or GetItemTypeId(it) ==  'I13S' or GetItemTypeId(it) ==  'IMDi' then
+        if UnitItemInSlot(u,0)==it or UnitItemInSlot(u,1)==it or UnitItemInSlot(u,2)==it or UnitItemInSlot(u,3)==it or UnitItemInSlot(u,4)==it or UnitItemInSlot(u,5)==it or UnitItemInSlot(u,6)==it or UnitItemInSlot(u,7)==it or UnitItemInSlot(u,8)==it then
+            set f=CreateItem(GetItemTypeId(it),GetUnitX(u),GetUnitY(u))
+            call SetItemStringField(f,ITEM_SF_NAME,GetBaseItemStringFieldById(GetItemTypeId(f),ITEM_SF_NAME)+" ("+Color[GetPlayerId(p)]+GetPlayerName(p)+"|r)")
+            call SetItemPlayer(f,p,false)
+            call UnitRemoveItem(u,it)
+            call RemoveItem(it)
+            call UnitAddItemToSlot(u,f,9)
+        endif
+    else
+        if UnitItemInSlot(u,9)==it then
+            set f=CreateItem(GetItemTypeId(it),GetUnitX(u),GetUnitY(u))
+            call SetItemStringField(f,ITEM_SF_NAME,GetBaseItemStringFieldById(GetItemTypeId(f),ITEM_SF_NAME)+" ("+Color[GetPlayerId(p)]+GetPlayerName(p)+"|r)")
+            call SetItemPlayer(f,p,false)
+            call UnitRemoveItem(u,it)
+            call RemoveItem(it)
+            call UnitAddItemToSlot(u,f,0)
+        endif
+    endif
     set id=UIS_Check(u)
     if not(id>-1) and u!=Chest[GetPlayerId(p)] and GetItemTypeId(it)!='I00E' then
     set id=UIS_Check(Chest[GetPlayerId(p)])
