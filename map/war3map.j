@@ -1125,7 +1125,60 @@ endfunction
 function ValidHLC takes nothing returns boolean
 return GetCommandString()=="a" or GetCommandString()=="b" or GetCommandString()=="c" or GetCommandString()=="d" or GetCommandString()=="e" or GetCommandString()=="f" or GetCommandString()=="g" or GetCommandString()=="h" or GetCommandString()=="i" or GetCommandString()=="j" or GetCommandString()=="k" or GetCommandString()=="l" or GetCommandString()=="m" or GetCommandString()=="n"
 endfunction
+function GetInventoryIndexOfItemTypeBJCustom takes unit whichUnit, integer itemId returns integer
 
+    local integer index
+
+    local item    indexItem
+
+
+
+    set index = 0
+
+    loop
+
+        set indexItem = UnitItemInSlot(whichUnit, index)
+
+        if (indexItem != null) and (GetItemTypeId(indexItem) == itemId) then
+
+            return index + 1
+
+        endif
+
+
+
+        set index = index + 1
+
+        exitwhen index >= 10
+
+    endloop
+
+    return 0
+
+endfunction
+
+function GetItemOfTypeFromUnitBJCustom takes unit whichUnit, integer itemId returns item
+
+    local integer index = GetInventoryIndexOfItemTypeBJCustom(whichUnit, itemId)
+
+
+
+    if (index == 0) then
+
+        return null
+
+    else
+
+        return UnitItemInSlot(whichUnit, index - 1)
+
+    endif
+
+endfunction
+function UnitHasItemOfTypeBJCustom takes unit whichUnit, integer itemId returns boolean
+
+    return GetItemOfTypeFromUnitBJCustom(whichUnit, itemId) != null
+
+endfunction
 function CinematicFadeCommonBJCustom takes real red, real green, real blue, real duration, string tex, real startTrans, real endTrans returns nothing
     if (duration == 0) then
         // If the fade is instant, use the same starting and ending values,
@@ -1684,7 +1737,7 @@ function myCustomDamage takes unit whichUnit, unit target, real amount, boolean 
 		endif
 		
 		// Увеличение урона на 10% от наличия шторма маре
-		//if (UnitHasItemOfTypeBJ(whichUnit, 'I05N') or GetUnitAbilityLevel(whichUnit,'KIT6') > 0) and SquareRootUnit(whichUnit, target)<=1500 then
+		//if (UnitHasItemOfTypeBJCustom(whichUnit, 'I05N') or GetUnitAbilityLevel(whichUnit,'KIT6') > 0) and SquareRootUnit(whichUnit, target)<=1500 then
 		//	set currentDmg = currentDmg * 1.10
 		//endif
 		
@@ -1936,7 +1989,7 @@ function myCustomMana2 takes unit target, real amount returns real
     // if GetUnitAbilityLevel(target,'B074') > 0 then // Пассива Орехи
     //     set currentHeal = currentHeal * 1.15
     // endif
-    // if UnitHasItemOfTypeBJ(target,'I00D') or GetUnitAbilityLevel(target,'KI58')>0 then // Солнце вонголы
+    // if UnitHasItemOfTypeBJCustom(target,'I00D') or GetUnitAbilityLevel(target,'KI58')>0 then // Солнце вонголы
     //     set currentHeal = currentHeal * 1.15
     // endif
     if GetUnitAbilityLevel(target,'A26F') > 0 then // эссенс
@@ -2055,6 +2108,14 @@ exitwhen(i>1)
 set udg_kill[i]=0
 set udg_death[i]=0
 set udg_assist[i]=0
+set i=i+1
+endloop
+set i=0
+loop
+exitwhen(i>9)
+call SetFrameSize( GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, i), .0235, .0235)
+call SetFrameSpriteScale( GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON_COOLDOWN_INDICATOR, i), .0235)
+call SetFrameSpriteScale( GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON_AUTOCAST_FRAME, i), .0235)
 set i=i+1
 endloop
 set udg_LR=CreateGroup()
@@ -3002,7 +3063,7 @@ function MUIHandle takes nothing returns integer
         if GetUnitAbilityLevel(target,'A2b6')>0 then //Gajeel
             set time=time*1.20
         endif            
-        if UnitHasItemOfTypeBJ(target,'I13S') or UnitHasItemOfTypeBJ(target,'I13R') then //boros
+        if UnitHasItemOfTypeBJCustom(target,'I13S') or UnitHasItemOfTypeBJCustom(target,'I13R') then //boros
             if GetUnitAbilityLevel(target,'A0VV')>0 then
                 set time=time*0.25
             else
@@ -3286,10 +3347,10 @@ function MUIHandle takes nothing returns integer
             if checker==true and c_type == "silence" and time<0.25 then
                 set time=0.25
             endif
-            if (UnitHasItemOfTypeBJ(target,'I13S') or UnitHasItemOfTypeBJ(target,'I13R')) and (c_type == "weakness" or c_type == "miss") then //boros
+            if (UnitHasItemOfTypeBJCustom(target,'I13S') or UnitHasItemOfTypeBJCustom(target,'I13R')) and (c_type == "weakness" or c_type == "miss") then //boros
                 set percent=percent*0.65
             endif
-            if (UnitHasItemOfTypeBJ(target,'I13S') or UnitHasItemOfTypeBJ(target,'I13R')) and c_type == "slow" then //boros
+            if (UnitHasItemOfTypeBJCustom(target,'I13S') or UnitHasItemOfTypeBJCustom(target,'I13R')) and c_type == "slow" then //boros
                 set slowMS=slowMS*0.65
                 set slowAS=slowAS*0.65
             endif
@@ -3598,6 +3659,15 @@ function CalculateCritChance takes unit newCaster returns real
     endif
     if UnitHasItemOfTypeBJ(newCaster, 'I02V') then      // Ямато
         set critchance_dmg = critchance_dmg + 0.15
+    endif
+    if UnitHasItemOfTypeBJ(newCaster, 'I02V') then      // Ямато
+        set critchance_dmg = critchance_dmg + 0.15
+    endif
+    if UnitHasItemOfTypeBJ(newCaster, 'IBSI') then      // Бастер
+        set critchance_dmg = critchance_dmg + 0.15
+    endif
+    if GetUnitAbilityLevel(newCaster,'WAE1')>0 then      // Waver F
+        set critchance_dmg = critchance_dmg + 0.3
     endif
     return critchance_dmg
 endfunction
@@ -19828,7 +19898,7 @@ call TriggerAddCondition(gg_trg_Set_Ability,Condition(function Trig_Set_Ability_
 call TriggerAddAction(gg_trg_Set_Ability,function Trig_Set_Ability_Actions)
 endfunction
 function Trig_UltimateItems_Conditions takes nothing returns boolean
-return (GetItemPlayer(GetManipulatedItem())==Player(15) or GetItemPlayer(GetManipulatedItem())==GetOwningPlayer(GetTriggerUnit())) and (UnitHasItemOfTypeBJ(GetTriggerUnit(),'I06X')or UnitHasItemOfTypeBJ(GetTriggerUnit(),'I06W')or UnitHasItemOfTypeBJ(GetTriggerUnit(),'I06Z')or UnitHasItemOfTypeBJ(GetTriggerUnit(),'I01F')or UnitHasItemOfTypeBJ(GetTriggerUnit(),'I02V')or UnitHasItemOfTypeBJ(GetTriggerUnit(),'I03Y')or UnitHasItemOfTypeBJ(GetTriggerUnit(),'I05H') or UnitHasItemOfTypeBJ(GetTriggerUnit(),'I04V')or UnitHasItemOfTypeBJ(GetTriggerUnit(),'I043')or UnitHasItemOfTypeBJ(GetTriggerUnit(),'I049')or UnitHasItemOfTypeBJ(GetTriggerUnit(),'I04E')or UnitHasItemOfTypeBJ(GetTriggerUnit(),'I02V')or UnitHasItemOfTypeBJ(GetTriggerUnit(),'I03A')or UnitHasItemOfTypeBJ(GetTriggerUnit(),'I01F')or UnitHasItemOfTypeBJ(GetTriggerUnit(),'I04T')or UnitHasItemOfTypeBJ(GetTriggerUnit(),'I00D')or UnitHasItemOfTypeBJ(GetTriggerUnit(),'I06M') or UnitHasItemOfTypeBJ(GetTriggerUnit(),'I066') or UnitHasItemOfTypeBJ(GetTriggerUnit(),'I01M') or UnitHasItemOfTypeBJ(GetTriggerUnit(),'I04F')or UnitHasItemOfTypeBJ(GetTriggerUnit(),'I02T')or UnitHasItemOfTypeBJ(GetTriggerUnit(),'I02S')or UnitHasItemOfTypeBJ(GetTriggerUnit(),'I02R')or UnitHasItemOfTypeBJ(GetTriggerUnit(),'I046')or UnitHasItemOfTypeBJ(GetTriggerUnit(),'I042')or UnitHasItemOfTypeBJ(GetTriggerUnit(),'I040')or UnitHasItemOfTypeBJ(GetTriggerUnit(),'I03Q')or UnitHasItemOfTypeBJ(GetTriggerUnit(),'I03P')or UnitHasItemOfTypeBJ(GetTriggerUnit(),'I03R')or UnitHasItemOfTypeBJ(GetTriggerUnit(),'I13R')or UnitHasItemOfTypeBJ(GetTriggerUnit(),'I03L') or UnitHasItemOfTypeBJ(GetTriggerUnit(),'I02K')or UnitHasItemOfTypeBJ(GetTriggerUnit(),'I02J')or UnitHasItemOfTypeBJ(GetTriggerUnit(),'I018')or UnitHasItemOfTypeBJ(GetTriggerUnit(),'I03A')or UnitHasItemOfTypeBJ(GetTriggerUnit(),'I037')or UnitHasItemOfTypeBJ(GetTriggerUnit(),'ISDi')or UnitHasItemOfTypeBJ(GetTriggerUnit(),'I02W')or UnitHasItemOfTypeBJ(GetTriggerUnit(),'I031')or UnitHasItemOfTypeBJ(GetTriggerUnit(),'I036')or UnitHasItemOfTypeBJ(GetTriggerUnit(),'I050')or UnitHasItemOfTypeBJ(GetTriggerUnit(),'IGDi')or UnitHasItemOfTypeBJ(GetTriggerUnit(),'I01S')or UnitHasItemOfTypeBJ(GetTriggerUnit(),'I03F')or UnitHasItemOfTypeBJ(GetTriggerUnit(),'IMDi')or UnitHasItemOfTypeBJ(GetTriggerUnit(),'ISTi') or UnitHasItemOfTypeBJ(GetTriggerUnit(),'I1S4') or UnitHasItemOfTypeBJ(GetTriggerUnit(),'IHYi') or UnitHasItemOfTypeBJ(GetTriggerUnit(),'IHnR'))
+return (GetItemPlayer(GetManipulatedItem())==Player(15) or GetItemPlayer(GetManipulatedItem())==GetOwningPlayer(GetTriggerUnit())) and (UnitHasItemOfTypeBJCustom(GetTriggerUnit(),'I06X')or UnitHasItemOfTypeBJCustom(GetTriggerUnit(),'I06W')or UnitHasItemOfTypeBJCustom(GetTriggerUnit(),'I06Z')or UnitHasItemOfTypeBJCustom(GetTriggerUnit(),'I01F')or UnitHasItemOfTypeBJCustom(GetTriggerUnit(),'I02V')or UnitHasItemOfTypeBJCustom(GetTriggerUnit(),'I03Y')or UnitHasItemOfTypeBJCustom(GetTriggerUnit(),'I05H') or UnitHasItemOfTypeBJCustom(GetTriggerUnit(),'I04V')or UnitHasItemOfTypeBJCustom(GetTriggerUnit(),'I043')or UnitHasItemOfTypeBJCustom(GetTriggerUnit(),'I049')or UnitHasItemOfTypeBJCustom(GetTriggerUnit(),'I04E')or UnitHasItemOfTypeBJCustom(GetTriggerUnit(),'I02V')or UnitHasItemOfTypeBJCustom(GetTriggerUnit(),'I03A')or UnitHasItemOfTypeBJCustom(GetTriggerUnit(),'I01F')or UnitHasItemOfTypeBJCustom(GetTriggerUnit(),'I04T')or UnitHasItemOfTypeBJCustom(GetTriggerUnit(),'I00D')or UnitHasItemOfTypeBJCustom(GetTriggerUnit(),'I06M') or UnitHasItemOfTypeBJCustom(GetTriggerUnit(),'I066') or UnitHasItemOfTypeBJCustom(GetTriggerUnit(),'I01M') or UnitHasItemOfTypeBJCustom(GetTriggerUnit(),'I04F')or UnitHasItemOfTypeBJCustom(GetTriggerUnit(),'I02T')or UnitHasItemOfTypeBJCustom(GetTriggerUnit(),'I02S')or UnitHasItemOfTypeBJCustom(GetTriggerUnit(),'I02R')or UnitHasItemOfTypeBJCustom(GetTriggerUnit(),'I046')or UnitHasItemOfTypeBJCustom(GetTriggerUnit(),'I042')or UnitHasItemOfTypeBJCustom(GetTriggerUnit(),'I040')or UnitHasItemOfTypeBJCustom(GetTriggerUnit(),'I03Q')or UnitHasItemOfTypeBJCustom(GetTriggerUnit(),'I03P')or UnitHasItemOfTypeBJCustom(GetTriggerUnit(),'I03R')or UnitHasItemOfTypeBJCustom(GetTriggerUnit(),'I13R')or UnitHasItemOfTypeBJCustom(GetTriggerUnit(),'I03L') or UnitHasItemOfTypeBJCustom(GetTriggerUnit(),'I02K')or UnitHasItemOfTypeBJCustom(GetTriggerUnit(),'I02J')or UnitHasItemOfTypeBJCustom(GetTriggerUnit(),'I018')or UnitHasItemOfTypeBJCustom(GetTriggerUnit(),'I03A')or UnitHasItemOfTypeBJCustom(GetTriggerUnit(),'I037')or UnitHasItemOfTypeBJCustom(GetTriggerUnit(),'ISDi')or UnitHasItemOfTypeBJCustom(GetTriggerUnit(),'I02W')or UnitHasItemOfTypeBJCustom(GetTriggerUnit(),'I031')or UnitHasItemOfTypeBJCustom(GetTriggerUnit(),'I036')or UnitHasItemOfTypeBJCustom(GetTriggerUnit(),'I050')or UnitHasItemOfTypeBJCustom(GetTriggerUnit(),'IGDi')or UnitHasItemOfTypeBJCustom(GetTriggerUnit(),'I01S')or UnitHasItemOfTypeBJCustom(GetTriggerUnit(),'I03F')or UnitHasItemOfTypeBJCustom(GetTriggerUnit(),'IMDi')or UnitHasItemOfTypeBJCustom(GetTriggerUnit(),'ISTi') or UnitHasItemOfTypeBJCustom(GetTriggerUnit(),'I1S4') or UnitHasItemOfTypeBJCustom(GetTriggerUnit(),'IHYi') or UnitHasItemOfTypeBJCustom(GetTriggerUnit(),'IHnR'))
 endfunction
 function Trig_UltimateItems_Actions takes nothing returns nothing
 local unit u=GetTriggerUnit()
@@ -19839,7 +19909,7 @@ local integer i=0
 local integer count=0
 if idu=='H03Z' then
 loop
-exitwhen i>=6
+exitwhen i>=10
 if (GetItemPlayer(UnitItemInSlot(u,i))==Player(15) or GetItemPlayer(UnitItemInSlot(u,i))==GetOwningPlayer(GetTriggerUnit())) and GetItemTypeId(UnitItemInSlot(u,i))=='I02V' then
 set count=count+1
 endif
@@ -19855,7 +19925,7 @@ endif
 endif
 if idu=='H05Z' then
 loop
-exitwhen i>=6
+exitwhen i>=10
 if (GetItemPlayer(UnitItemInSlot(u,i))==Player(15) or GetItemPlayer(UnitItemInSlot(u,i))==GetOwningPlayer(GetTriggerUnit())) and GetItemTypeId(UnitItemInSlot(u,i))=='I02V' then
 set count=count+1
 endif
@@ -19873,7 +19943,7 @@ set i=0
 set count=0
 if idu=='H00N' then
 loop
-exitwhen i>=6
+exitwhen i>=10
 if (GetItemPlayer(UnitItemInSlot(u,i))==Player(15) or GetItemPlayer(UnitItemInSlot(u,i))==GetOwningPlayer(GetTriggerUnit())) and GetItemTypeId(UnitItemInSlot(u,i))=='I04E' then
 set count=count+1
 endif
@@ -19889,7 +19959,7 @@ endif
 endif
 if idu=='H04B' then
 loop
-exitwhen i>=6
+exitwhen i>=10
 if (GetItemPlayer(UnitItemInSlot(u,i))==Player(15) or GetItemPlayer(UnitItemInSlot(u,i))==GetOwningPlayer(GetTriggerUnit())) and (GetItemTypeId(UnitItemInSlot(u,i))=='I06W' or GetItemTypeId(UnitItemInSlot(u,i))=='I06X' or GetItemTypeId(UnitItemInSlot(u,i))=='I06Y') then
 set count=count+1
 endif
@@ -19905,7 +19975,7 @@ endif
 endif
 if idu=='H04G' then
 loop
-exitwhen i>=6
+exitwhen i>=10
 if (GetItemPlayer(UnitItemInSlot(u,i))==Player(15) or GetItemPlayer(UnitItemInSlot(u,i))==GetOwningPlayer(GetTriggerUnit())) and GetItemTypeId(UnitItemInSlot(u,i))=='I06W' then
 set count=count+1
 endif
@@ -19921,7 +19991,7 @@ endif
 endif
 if idu=='H04G' then
 loop
-exitwhen i>=6
+exitwhen i>=10
 if (GetItemPlayer(UnitItemInSlot(u,i))==Player(15) or GetItemPlayer(UnitItemInSlot(u,i))==GetOwningPlayer(GetTriggerUnit())) and GetItemTypeId(UnitItemInSlot(u,i))=='I06X' then
 set count=count+1
 endif
@@ -19937,7 +20007,7 @@ endif
 endif
 if idu=='H04G' then
 loop
-exitwhen i>=6
+exitwhen i>=10
 if (GetItemPlayer(UnitItemInSlot(u,i))==Player(15) or GetItemPlayer(UnitItemInSlot(u,i))==GetOwningPlayer(GetTriggerUnit())) and GetItemTypeId(UnitItemInSlot(u,i))=='I06Y' then
 set count=count+1
 endif
@@ -19953,7 +20023,7 @@ endif
 endif
 if idu=='H04B' then
 loop
-exitwhen i>=6
+exitwhen i>=10
 if (GetItemPlayer(UnitItemInSlot(u,i))==Player(15) or GetItemPlayer(UnitItemInSlot(u,i))==GetOwningPlayer(GetTriggerUnit())) and GetItemTypeId(UnitItemInSlot(u,i))=='I06W' then
 set count=count+1
 endif
@@ -19969,7 +20039,7 @@ endif
 endif
 if idu=='H04B' then
 loop
-exitwhen i>=6
+exitwhen i>=10
 if (GetItemPlayer(UnitItemInSlot(u,i))==Player(15) or GetItemPlayer(UnitItemInSlot(u,i))==GetOwningPlayer(GetTriggerUnit())) and GetItemTypeId(UnitItemInSlot(u,i))=='I06X' then
 set count=count+1
 endif
@@ -19985,7 +20055,7 @@ endif
 endif
 if idu=='H04B' then
 loop
-exitwhen i>=6
+exitwhen i>=10
 if (GetItemPlayer(UnitItemInSlot(u,i))==Player(15) or GetItemPlayer(UnitItemInSlot(u,i))==GetOwningPlayer(GetTriggerUnit())) and GetItemTypeId(UnitItemInSlot(u,i))=='I06Y' then
 set count=count+1
 endif
@@ -20001,7 +20071,7 @@ endif
 endif
 if idu=='H00N' then
 loop
-exitwhen i>=6
+exitwhen i>=10
 if (GetItemPlayer(UnitItemInSlot(u,i))==Player(15) or GetItemPlayer(UnitItemInSlot(u,i))==GetOwningPlayer(GetTriggerUnit())) and GetItemTypeId(UnitItemInSlot(u,i))=='I049' then
 set count=count+1
 endif
@@ -20019,7 +20089,7 @@ set i=0
 set count=0
 if idu=='H00N' then
 loop
-exitwhen i>=6
+exitwhen i>=10
 if (GetItemPlayer(UnitItemInSlot(u,i))==Player(15) or GetItemPlayer(UnitItemInSlot(u,i))==GetOwningPlayer(GetTriggerUnit())) and GetItemTypeId(UnitItemInSlot(u,i))=='I049' then
 set count=count+1
 endif
@@ -20036,7 +20106,7 @@ endif
 set i=0
 set count=0
 loop
-exitwhen i>=6
+exitwhen i>=10
 if (GetItemPlayer(UnitItemInSlot(u,i))==Player(15) or GetItemPlayer(UnitItemInSlot(u,i))==GetOwningPlayer(GetTriggerUnit())) and GetItemTypeId(UnitItemInSlot(u,i))=='I04T' then
 set count=count+1
 endif
@@ -20050,7 +20120,7 @@ endif
 set i=0
 set count=0
 loop
-exitwhen i>=6
+exitwhen i>=10
 if (GetItemPlayer(UnitItemInSlot(u,i))==Player(15) or GetItemPlayer(UnitItemInSlot(u,i))==GetOwningPlayer(GetTriggerUnit())) and GetItemTypeId(UnitItemInSlot(u,i))=='IHnK' then
 set count=count+1
 endif
@@ -20064,7 +20134,7 @@ endif
 set i=0
 set count=0
 loop
-exitwhen i>=6
+exitwhen i>=10
 if (GetItemPlayer(UnitItemInSlot(u,i))==Player(15) or GetItemPlayer(UnitItemInSlot(u,i))==GetOwningPlayer(GetTriggerUnit())) and GetItemTypeId(UnitItemInSlot(u,i))=='I06W' then
 set count=count+1
 endif
@@ -20078,7 +20148,7 @@ endif
 set i=0
 set count=0
 loop
-exitwhen i>=6
+exitwhen i>=10
 if (GetItemPlayer(UnitItemInSlot(u,i))==Player(15) or GetItemPlayer(UnitItemInSlot(u,i))==GetOwningPlayer(GetTriggerUnit())) and GetItemTypeId(UnitItemInSlot(u,i))=='I02Q' then
 set count=count+1
 endif
@@ -20092,7 +20162,7 @@ endif
 set i=0
 set count=0
 loop
-exitwhen i>=6
+exitwhen i>=10
 if (GetItemPlayer(UnitItemInSlot(u,i))==Player(15) or GetItemPlayer(UnitItemInSlot(u,i))==GetOwningPlayer(GetTriggerUnit())) and GetItemTypeId(UnitItemInSlot(u,i))=='I06X' then
 set count=count+1
 endif
@@ -20106,7 +20176,7 @@ endif
 set i=0
 set count=0
 loop
-exitwhen i>=6
+exitwhen i>=10
 if (GetItemPlayer(UnitItemInSlot(u,i))==Player(15) or GetItemPlayer(UnitItemInSlot(u,i))==GetOwningPlayer(GetTriggerUnit())) and GetItemTypeId(UnitItemInSlot(u,i))=='I01F' then
 set count=count+1
 endif
@@ -20120,7 +20190,7 @@ endif
 set i=0
 set count=0
 loop
-exitwhen i>=6
+exitwhen i>=10
 if (GetItemPlayer(UnitItemInSlot(u,i))==Player(15) or GetItemPlayer(UnitItemInSlot(u,i))==GetOwningPlayer(GetTriggerUnit())) and GetItemTypeId(UnitItemInSlot(u,i))=='I02V' then
 set count=count+1
 endif
@@ -20134,7 +20204,7 @@ endif
 set i=0
 set count=0
 loop
-exitwhen i>=6
+exitwhen i>=10
 if (GetItemPlayer(UnitItemInSlot(u,i))==Player(15) or GetItemPlayer(UnitItemInSlot(u,i))==GetOwningPlayer(GetTriggerUnit())) and GetItemTypeId(UnitItemInSlot(u,i))=='I00D' then
 set count=count+1
 endif
@@ -20148,7 +20218,7 @@ endif
 set i=0
 set count=0
 loop
-exitwhen i>=6
+exitwhen i>=10
 if (GetItemPlayer(UnitItemInSlot(u,i))==Player(15) or GetItemPlayer(UnitItemInSlot(u,i))==GetOwningPlayer(GetTriggerUnit())) and GetItemTypeId(UnitItemInSlot(u,i))=='I066' then
 set count=count+1
 endif
@@ -20162,7 +20232,7 @@ endif
 set i=0
 set count=0
 loop
-exitwhen i>=6
+exitwhen i>=10
 if (GetItemPlayer(UnitItemInSlot(u,i))==Player(15) or GetItemPlayer(UnitItemInSlot(u,i))==GetOwningPlayer(GetTriggerUnit())) and GetItemTypeId(UnitItemInSlot(u,i))=='I03A' then
 set count=count+1
 endif
@@ -20180,7 +20250,7 @@ endif
 set i=0
 set count=0
 loop
-exitwhen i>=6
+exitwhen i>=10
 if (GetItemPlayer(UnitItemInSlot(u,i))==Player(15) or GetItemPlayer(UnitItemInSlot(u,i))==GetOwningPlayer(GetTriggerUnit())) and GetItemTypeId(UnitItemInSlot(u,i))=='I046' then //'I046' ураганки
 set count=count+1
 endif
@@ -20194,7 +20264,7 @@ endif
 set i=0
 set count=0
 loop
-exitwhen i>=6
+exitwhen i>=10
 if (GetItemPlayer(UnitItemInSlot(u,i))==Player(15) or GetItemPlayer(UnitItemInSlot(u,i))==GetOwningPlayer(GetTriggerUnit())) and GetItemTypeId(UnitItemInSlot(u,i))=='I01M' then
 set count=count+1
 endif
@@ -20208,7 +20278,7 @@ endif
 set i=0
 set count=0
 loop
-exitwhen i>=6
+exitwhen i>=10
 if (GetItemPlayer(UnitItemInSlot(u,i))==Player(15) or GetItemPlayer(UnitItemInSlot(u,i))==GetOwningPlayer(GetTriggerUnit())) and GetItemTypeId(UnitItemInSlot(u,i))=='I06M' then
 set count=count+1
 endif
@@ -20222,7 +20292,7 @@ endif
 set i=0
 set count=0
 loop
-exitwhen i>=6
+exitwhen i>=10
 if (GetItemPlayer(UnitItemInSlot(u,i))==Player(15) or GetItemPlayer(UnitItemInSlot(u,i))==GetOwningPlayer(GetTriggerUnit())) and GetItemTypeId(UnitItemInSlot(u,i))=='I02T' then
 set count=count+1
 endif
@@ -20236,7 +20306,7 @@ endif
 set i=0
 set count=0
 loop
-exitwhen i>=6
+exitwhen i>=10
 if (GetItemPlayer(UnitItemInSlot(u,i))==Player(15) or GetItemPlayer(UnitItemInSlot(u,i))==GetOwningPlayer(GetTriggerUnit())) and GetItemTypeId(UnitItemInSlot(u,i))=='I02W' then
 set count=count+1
 endif
@@ -20250,7 +20320,7 @@ endif
 set i=0
 set count=0
 loop
-exitwhen i>=6
+exitwhen i>=10
 if (GetItemPlayer(UnitItemInSlot(u,i))==Player(15) or GetItemPlayer(UnitItemInSlot(u,i))==GetOwningPlayer(GetTriggerUnit())) and GetItemTypeId(UnitItemInSlot(u,i))=='I031' then
 set count=count+1
 endif
@@ -20264,7 +20334,7 @@ endif
 set i=0
 set count=0
 loop
-exitwhen i>=6
+exitwhen i>=10
 if (GetItemPlayer(UnitItemInSlot(u,i))==Player(15) or GetItemPlayer(UnitItemInSlot(u,i))==GetOwningPlayer(GetTriggerUnit())) and GetItemTypeId(UnitItemInSlot(u,i))=='I036' then
 set count=count+1
 endif
@@ -20278,7 +20348,7 @@ endif
 set i=0
 set count=0
 loop
-exitwhen i>=6
+exitwhen i>=10
 if (GetItemPlayer(UnitItemInSlot(u,i))==Player(15) or GetItemPlayer(UnitItemInSlot(u,i))==GetOwningPlayer(GetTriggerUnit())) and GetItemTypeId(UnitItemInSlot(u,i))=='ISDi' then
 set count=count+1
 endif
@@ -20292,7 +20362,7 @@ endif
 set i=0
 set count=0
 loop
-exitwhen i>=6
+exitwhen i>=10
 if (GetItemPlayer(UnitItemInSlot(u,i))==Player(15) or GetItemPlayer(UnitItemInSlot(u,i))==GetOwningPlayer(GetTriggerUnit())) and GetItemTypeId(UnitItemInSlot(u,i))=='I1S4' then
 set count=count+1
 endif
@@ -20306,7 +20376,7 @@ endif
 set i=0
 set count=0
 loop
-exitwhen i>=6
+exitwhen i>=10
 if (GetItemPlayer(UnitItemInSlot(u,i))==Player(15) or GetItemPlayer(UnitItemInSlot(u,i))==GetOwningPlayer(GetTriggerUnit())) and GetItemTypeId(UnitItemInSlot(u,i))=='I037' then
 set count=count+1
 endif
@@ -20320,7 +20390,7 @@ endif
 set i=0
 set count=0
 loop
-exitwhen i>=6
+exitwhen i>=10
 if (GetItemPlayer(UnitItemInSlot(u,i))==Player(15) or GetItemPlayer(UnitItemInSlot(u,i))==GetOwningPlayer(GetTriggerUnit())) and GetItemTypeId(UnitItemInSlot(u,i))=='I018' then
 set count=count+1
 endif
@@ -20334,7 +20404,7 @@ endif
 set i=0
 set count=0
 loop
-exitwhen i>=6
+exitwhen i>=10
 if (GetItemPlayer(UnitItemInSlot(u,i))==Player(15) or GetItemPlayer(UnitItemInSlot(u,i))==GetOwningPlayer(GetTriggerUnit())) and GetItemTypeId(UnitItemInSlot(u,i))=='I02J' then
 set count=count+1
 endif
@@ -20348,7 +20418,7 @@ endif
 set i=0
 set count=0
 loop
-exitwhen i>=6
+exitwhen i>=10
 if (GetItemPlayer(UnitItemInSlot(u,i))==Player(15) or GetItemPlayer(UnitItemInSlot(u,i))==GetOwningPlayer(GetTriggerUnit())) and GetItemTypeId(UnitItemInSlot(u,i))=='I02K' then
 set count=count+1
 endif
@@ -20362,7 +20432,7 @@ endif
 set i=0
 set count=0
 loop
-exitwhen i>=6
+exitwhen i>=10
 if (GetItemPlayer(UnitItemInSlot(u,i))==Player(15) or GetItemPlayer(UnitItemInSlot(u,i))==GetOwningPlayer(GetTriggerUnit())) and GetItemTypeId(UnitItemInSlot(u,i))=='I03F' then
 set count=count+1
 endif
@@ -20376,7 +20446,7 @@ endif
 set i=0
 set count=0
 loop
-exitwhen i>=6
+exitwhen i>=10
 if (GetItemPlayer(UnitItemInSlot(u,i))==Player(15) or GetItemPlayer(UnitItemInSlot(u,i))==GetOwningPlayer(GetTriggerUnit())) and GetItemTypeId(UnitItemInSlot(u,i))=='I03L' then
 set count=count+1
 endif
@@ -20390,7 +20460,7 @@ endif
 set i=0
 set count=0
 loop
-exitwhen i>=6
+exitwhen i>=10
 if (GetItemPlayer(UnitItemInSlot(u,i))==Player(15) or GetItemPlayer(UnitItemInSlot(u,i))==GetOwningPlayer(GetTriggerUnit())) and GetItemTypeId(UnitItemInSlot(u,i))=='I13R' then
 set count=count+1
 endif
@@ -20404,7 +20474,7 @@ endif
 set i=0
 set count=0
 loop
-exitwhen i>=6
+exitwhen i>=10
 if (GetItemPlayer(UnitItemInSlot(u,i))==Player(15) or GetItemPlayer(UnitItemInSlot(u,i))==GetOwningPlayer(GetTriggerUnit())) and GetItemTypeId(UnitItemInSlot(u,i))=='IGDi' then
 set count=count+1
 endif
@@ -20419,7 +20489,7 @@ endif
 set i=0
 set count=0
 loop
-exitwhen i>=6
+exitwhen i>=10
 if (GetItemPlayer(UnitItemInSlot(u,i))==Player(15) or GetItemPlayer(UnitItemInSlot(u,i))==GetOwningPlayer(GetTriggerUnit())) and GetItemTypeId(UnitItemInSlot(u,i))=='IMDi' then
         set count=count+1
 endif
@@ -20434,7 +20504,7 @@ endif
 set i=0
 set count=0
 loop
-exitwhen i>=6
+exitwhen i>=10
 if (GetItemPlayer(UnitItemInSlot(u,i))==Player(15) or GetItemPlayer(UnitItemInSlot(u,i))==GetOwningPlayer(GetTriggerUnit())) and GetItemTypeId(UnitItemInSlot(u,i))=='ISTi' then
         set count=count+1
 endif
@@ -20449,7 +20519,7 @@ endif
 set i=0
 set count=0
 loop
-exitwhen i>=6
+exitwhen i>=10
 if (GetItemPlayer(UnitItemInSlot(u,i))==Player(15) or GetItemPlayer(UnitItemInSlot(u,i))==GetOwningPlayer(GetTriggerUnit())) and GetItemTypeId(UnitItemInSlot(u,i))=='IHYi' then
         set count=count+1
 endif
@@ -20464,7 +20534,7 @@ endif
 set i=0
 set count=0
 loop
-exitwhen i>=6
+exitwhen i>=10
 if (GetItemPlayer(UnitItemInSlot(u,i))==Player(15) or GetItemPlayer(UnitItemInSlot(u,i))==GetOwningPlayer(GetTriggerUnit())) and GetItemTypeId(UnitItemInSlot(u,i))=='I01S' then
 set count=count+1
 endif
@@ -20478,7 +20548,7 @@ endif
 set i=0
 set count=0
 loop
-exitwhen i>=6
+exitwhen i>=10
 if (GetItemPlayer(UnitItemInSlot(u,i))==Player(15) or GetItemPlayer(UnitItemInSlot(u,i))==GetOwningPlayer(GetTriggerUnit())) and GetItemTypeId(UnitItemInSlot(u,i))=='I04V' then
 set count=count+1
 endif
@@ -20492,7 +20562,7 @@ endif
 set i=0
 set count=0
 loop
-exitwhen i>=6
+exitwhen i>=10
 if (GetItemPlayer(UnitItemInSlot(u,i))==Player(15) or GetItemPlayer(UnitItemInSlot(u,i))==GetOwningPlayer(GetTriggerUnit())) and GetItemTypeId(UnitItemInSlot(u,i))=='I03R' then
 set count=count+1
 endif
@@ -20506,7 +20576,7 @@ endif
 set i=0
 set count=0
 loop
-exitwhen i>=6
+exitwhen i>=10
 if (GetItemPlayer(UnitItemInSlot(u,i))==Player(15) or GetItemPlayer(UnitItemInSlot(u,i))==GetOwningPlayer(GetTriggerUnit())) and GetItemTypeId(UnitItemInSlot(u,i))=='I03Q' then
 set count=count+1
 endif
@@ -20520,7 +20590,7 @@ endif
 set i=0
 set count=0
 loop
-exitwhen i>=6
+exitwhen i>=10
 if (GetItemPlayer(UnitItemInSlot(u,i))==Player(15) or GetItemPlayer(UnitItemInSlot(u,i))==GetOwningPlayer(GetTriggerUnit())) and GetItemTypeId(UnitItemInSlot(u,i))=='I03P' then
 set count=count+1
 endif
@@ -20534,7 +20604,7 @@ endif
 set i=0
 set count=0
 loop
-exitwhen i>=6
+exitwhen i>=10
 if (GetItemPlayer(UnitItemInSlot(u,i))==Player(15) or GetItemPlayer(UnitItemInSlot(u,i))==GetOwningPlayer(GetTriggerUnit())) and GetItemTypeId(UnitItemInSlot(u,i))=='I040' then
 set count=count+1
 endif
@@ -20548,7 +20618,7 @@ endif
 set i=0
 set count=0
 loop
-exitwhen i>=6
+exitwhen i>=10
 if (GetItemPlayer(UnitItemInSlot(u,i))==Player(15) or GetItemPlayer(UnitItemInSlot(u,i))==GetOwningPlayer(GetTriggerUnit())) and GetItemTypeId(UnitItemInSlot(u,i))=='I05H' then
 set count=count+1
 endif
@@ -20562,7 +20632,7 @@ endif
 set i=0
 set count=0
 loop
-exitwhen i>=6
+exitwhen i>=10
 if (GetItemPlayer(UnitItemInSlot(u,i))==Player(15) or GetItemPlayer(UnitItemInSlot(u,i))==GetOwningPlayer(GetTriggerUnit())) and GetItemTypeId(UnitItemInSlot(u,i))=='I05C' then
 set count=count+1
 endif
@@ -20576,7 +20646,7 @@ endif
 set i=0
 set count=0
 loop
-exitwhen i>=6
+exitwhen i>=10
 if (GetItemPlayer(UnitItemInSlot(u,i))==Player(15) or GetItemPlayer(UnitItemInSlot(u,i))==GetOwningPlayer(GetTriggerUnit())) and GetItemTypeId(UnitItemInSlot(u,i))=='I05D' then
 set count=count+1
 endif
@@ -20590,7 +20660,7 @@ endif
 set i=0
 set count=0
 loop
-exitwhen i>=6
+exitwhen i>=10
 if (GetItemPlayer(UnitItemInSlot(u,i))==Player(15) or GetItemPlayer(UnitItemInSlot(u,i))==GetOwningPlayer(GetTriggerUnit())) and GetItemTypeId(UnitItemInSlot(u,i))=='I042' then
 set count=count+1
 endif
@@ -20604,7 +20674,7 @@ endif
 set i=0
 set count=0
 loop
-exitwhen i>=6
+exitwhen i>=10
 if (GetItemPlayer(UnitItemInSlot(u,i))==Player(15) or GetItemPlayer(UnitItemInSlot(u,i))==GetOwningPlayer(GetTriggerUnit())) and GetItemTypeId(UnitItemInSlot(u,i))=='I03Y' then
 set count=count+1
 endif
@@ -20618,7 +20688,7 @@ endif
 set i=0
 set count=0
 loop
-exitwhen i>=6
+exitwhen i>=10
 if (GetItemPlayer(UnitItemInSlot(u,i))==Player(15) or GetItemPlayer(UnitItemInSlot(u,i))==GetOwningPlayer(GetTriggerUnit())) and GetItemTypeId(UnitItemInSlot(u,i))=='I043' then
 set count=count+1
 endif
@@ -20632,7 +20702,7 @@ endif
 set i=0
 set count=0
 loop
-exitwhen i>=6
+exitwhen i>=10
 if (GetItemPlayer(UnitItemInSlot(u,i))==Player(15) or GetItemPlayer(UnitItemInSlot(u,i))==GetOwningPlayer(GetTriggerUnit())) and (GetItemTypeId(UnitItemInSlot(u,i))=='I06W' or GetItemTypeId(UnitItemInSlot(u,i))=='I06X' or GetItemTypeId(UnitItemInSlot(u,i))=='I06Z') then
 set count=count+1
 endif
@@ -20646,7 +20716,7 @@ endif
 set i=0
 set count=0
 loop
-exitwhen i>=6
+exitwhen i>=10
 if (GetItemPlayer(UnitItemInSlot(u,i))==Player(15) or GetItemPlayer(UnitItemInSlot(u,i))==GetOwningPlayer(GetTriggerUnit())) and (GetItemTypeId(UnitItemInSlot(u,i))=='I03N' or GetItemTypeId(UnitItemInSlot(u,i))=='I03O') then
 set count=count+1
 endif
@@ -20660,7 +20730,7 @@ endif
 set i=0
 set count=0
 loop
-exitwhen i>=6
+exitwhen i>=10
 if (GetItemPlayer(UnitItemInSlot(u,i))==Player(15) or GetItemPlayer(UnitItemInSlot(u,i))==GetOwningPlayer(GetTriggerUnit())) and GetItemTypeId(UnitItemInSlot(u,i))=='I050' then
 set count=count+1
 endif
@@ -20671,38 +20741,38 @@ call RemoveItem(it)
 call SetPlayerState(Player(id),PLAYER_STATE_RESOURCE_GOLD,GetPlayerState(Player(id),PLAYER_STATE_RESOURCE_GOLD)+5000)
 call DisplayTextToPlayer(Player(id),0,0,"Нельзя иметь больше одного такого предмета!")
 endif
-if GetItemTypeId(it)=='I04V' and (UnitHasItemOfTypeBJ(u,'I13R') or UnitHasItemOfTypeBJ(GetTriggerUnit(),'I13S')) then
+if GetItemTypeId(it)=='I04V' and (UnitHasItemOfTypeBJCustom(u,'I13R') or UnitHasItemOfTypeBJCustom(GetTriggerUnit(),'I13S')) then
 call DisplayTextToPlayer(Player(id),0,0,"Нельзя покупать этот предмет с Броней Бороса!")
 call RemoveItem(it)
 call SetPlayerState(Player(id),PLAYER_STATE_RESOURCE_GOLD,GetPlayerState(Player(id),PLAYER_STATE_RESOURCE_GOLD)+6300)
 endif
-if GetItemTypeId(it)=='I03R' and (UnitHasItemOfTypeBJ(u,'I13R') or UnitHasItemOfTypeBJ(GetTriggerUnit(),'I13S')) then
+if GetItemTypeId(it)=='I03R' and (UnitHasItemOfTypeBJCustom(u,'I13R') or UnitHasItemOfTypeBJCustom(GetTriggerUnit(),'I13S')) then
 call DisplayTextToPlayer(Player(id),0,0,"Нельзя покупать этот предмет с Броней Бороса!")
 call RemoveItem(it)
 call SetPlayerState(Player(id),PLAYER_STATE_RESOURCE_GOLD,GetPlayerState(Player(id),PLAYER_STATE_RESOURCE_GOLD)+3800)
 endif
-if GetItemTypeId(it)=='I13R' and UnitHasItemOfTypeBJ(u,'I04V') then
+if GetItemTypeId(it)=='I13R' and UnitHasItemOfTypeBJCustom(u,'I04V') then
 call DisplayTextToPlayer(Player(id),0,0,"Нельзя покупать этот предмет с Imagine Breaker!")
 call RemoveItem(it)
 call SetPlayerState(Player(id),PLAYER_STATE_RESOURCE_GOLD,GetPlayerState(Player(id),PLAYER_STATE_RESOURCE_GOLD)+5700)
 endif
 //===== Medusa запрет Брейкера или Бороса
-if GetItemTypeId(it)=='IMDi' and (UnitHasItemOfTypeBJ(u,'I13R') or UnitHasItemOfTypeBJ(GetTriggerUnit(),'I13S')) then
+if GetItemTypeId(it)=='IMDi' and (UnitHasItemOfTypeBJCustom(u,'I13R') or UnitHasItemOfTypeBJCustom(GetTriggerUnit(),'I13S')) then
 call DisplayTextToPlayer(Player(id),0,0,"Нельзя покупать этот предмет с Броней Бороса!")
 call RemoveItem(it)
 call SetPlayerState(Player(id),PLAYER_STATE_RESOURCE_GOLD,GetPlayerState(Player(id),PLAYER_STATE_RESOURCE_GOLD)+5400)
 endif
-if GetItemTypeId(it)=='IMDi' and UnitHasItemOfTypeBJ(u,'I04V') then
+if GetItemTypeId(it)=='IMDi' and UnitHasItemOfTypeBJCustom(u,'I04V') then
 call DisplayTextToPlayer(Player(id),0,0,"Нельзя покупать этот предмет с Imagine Breaker!")
 call RemoveItem(it)
 call SetPlayerState(Player(id),PLAYER_STATE_RESOURCE_GOLD,GetPlayerState(Player(id),PLAYER_STATE_RESOURCE_GOLD)+5400)
 endif
-if GetItemTypeId(it)=='I04V' and UnitHasItemOfTypeBJ(u,'IMDi') then
+if GetItemTypeId(it)=='I04V' and UnitHasItemOfTypeBJCustom(u,'IMDi') then
 call DisplayTextToPlayer(Player(id),0,0,"Нельзя покупать этот предмет с Medusa!")
 call RemoveItem(it)
 call SetPlayerState(Player(id),PLAYER_STATE_RESOURCE_GOLD,GetPlayerState(Player(id),PLAYER_STATE_RESOURCE_GOLD)+6300)
 endif
-if GetItemTypeId(it)=='I13R' and UnitHasItemOfTypeBJ(u,'IMDi') then
+if GetItemTypeId(it)=='I13R' and UnitHasItemOfTypeBJCustom(u,'IMDi') then
 call DisplayTextToPlayer(Player(id),0,0,"Нельзя покупать этот предмет с Medusa!")
 call RemoveItem(it)
 call SetPlayerState(Player(id),PLAYER_STATE_RESOURCE_GOLD,GetPlayerState(Player(id),PLAYER_STATE_RESOURCE_GOLD)+5700)
@@ -20714,12 +20784,12 @@ if GetItemTypeId(it)=='I05Z' then
 endif
 
 //===== Комплект Анбу - 'I03F'
-if GetItemTypeId(it)=='I03F' and UnitHasItemOfTypeBJ(u,'I05Z') then 
+if GetItemTypeId(it)=='I03F' and UnitHasItemOfTypeBJCustom(u,'I05Z') then 
         call DisplayTextToPlayer(Player(id),0,0,"Нельзя покупать этот предмет с Туманом Маре!")
         call RemoveItem(it)
         call SetPlayerState(Player(id),PLAYER_STATE_RESOURCE_GOLD,GetPlayerState(Player(id),PLAYER_STATE_RESOURCE_GOLD)+4900)
 endif
-if GetItemTypeId(it)=='I05Z' and UnitHasItemOfTypeBJ(u,'I03F') then 
+if GetItemTypeId(it)=='I05Z' and UnitHasItemOfTypeBJCustom(u,'I03F') then 
         call DisplayTextToPlayer(Player(id),0,0,"Нельзя покупать этот предмет с Комплектом Анбу!")
         call RemoveItem(it)
         call SetPlayerState(Player(id),PLAYER_STATE_RESOURCE_GOLD,GetPlayerState(Player(id),PLAYER_STATE_RESOURCE_GOLD)+4750)
@@ -21135,24 +21205,24 @@ local integer l__d
 local integer g=-1
 //call BJDebugMsg(GetBaseItemStringFieldById(GetItemTypeId(GetManipulatedItem()),ITEM_SF_NAME))
 loop
-exitwhen x>6
-if x<=5 then
+exitwhen x>10
+if x<=9 then
 set items[x]=GetItemTypeId(UnitItemInSlot(u,x))
-elseif Condition_RecipeString(GetItemTypeId(GetManipulatedItem())) and x==6 then
+elseif Condition_RecipeString(GetItemTypeId(GetManipulatedItem())) and x==10 then
 set items[x]=GetItemTypeId(GetManipulatedItem())
-elseif x==6 then
+elseif x==10 then
 set items[x]=0
 endif
 set x=x+1
 endloop
 set x=i
 loop
-exitwhen x>i+6
+exitwhen x>i+10
 if udg_UIS_ItemId[x]>0 then
 set l__v=0
 set l__d=0
 loop
-exitwhen l__d>6
+exitwhen l__d>10
 if l__v<udg_UIS_ItemCount[x] then
 if items[l__d]==udg_UIS_ItemId[x] then
 set l__v=l__v+1
@@ -21173,7 +21243,7 @@ endloop
 set x=0
 loop
 exitwhen x>g
-if drop[x]!=6 then
+if drop[x]!=10 then
 call RemoveItem(UnitItemInSlot(u,drop[x]))
 endif
 set x=x+1
@@ -21185,9 +21255,9 @@ local integer i=0
 loop
 exitwhen i>=udg_UIS_Index
 if UIS_CheckAction(u,i)then
-return udg_UIS_ItemId[i+7]
+return udg_UIS_ItemId[i+11]
 endif
-set i=i+8
+set i=i+12
 endloop
 return-1
 endfunction
@@ -21269,7 +21339,7 @@ if GetItemPlayer(it)==Player(15) or GetItemPlayer(it)==p or udg_test==true then
     set id=UIS_Check(Chest[GetPlayerId(p)])
     endif
     if id>-1 then
-        if UnitItemInSlot(u,1)!=null and UnitItemInSlot(u,2)!=null and UnitItemInSlot(u,3)!=null and UnitItemInSlot(u,4)!=null and UnitItemInSlot(u,5)!=null and UnitItemInSlot(u,0)!=null then
+        if UnitItemInSlot(u,1)!=null and UnitItemInSlot(u,2)!=null and UnitItemInSlot(u,3)!=null and UnitItemInSlot(u,4)!=null and UnitItemInSlot(u,5)!=null and UnitItemInSlot(u,6)!=null and UnitItemInSlot(u,7)!=null and UnitItemInSlot(u,8)!=null and UnitItemInSlot(u,9)!=null and UnitItemInSlot(u,10)!=null and UnitItemInSlot(u,0)!=null then
         set f=CreateItem(id,GetUnitX(Chest[GetPlayerId(p)]),GetUnitY(Chest[GetPlayerId(p)]))
         call SetItemStringField(f,ITEM_SF_NAME,GetBaseItemStringFieldById(GetItemTypeId(f),ITEM_SF_NAME)+" ("+Color[GetPlayerId(p)]+GetPlayerName(p)+"|r)")
         call SetItemPlayer(f,p,false)
@@ -21358,7 +21428,7 @@ set it=null
 set u=null
 set p=null
 endfunction
-function UIS_RegisterItem takes integer a1,integer a2,integer a3,integer a4,integer a5,integer a6,integer a7,integer l__n returns nothing
+function UIS_RegisterItem takes integer a1,integer a2,integer a3,integer a4,integer a5,integer a6,integer a7,integer a8,integer a9,integer a10,integer a11,integer l__n returns nothing
 local integer x=udg_UIS_Index
 local integer l__v
 set udg_UIS_ItemId[udg_UIS_Index]=a1
@@ -21368,14 +21438,18 @@ set udg_UIS_ItemId[udg_UIS_Index+3]=a4
 set udg_UIS_ItemId[udg_UIS_Index+4]=a5
 set udg_UIS_ItemId[udg_UIS_Index+5]=a6
 set udg_UIS_ItemId[udg_UIS_Index+6]=a7
-set udg_UIS_ItemId[udg_UIS_Index+7]=l__n
+set udg_UIS_ItemId[udg_UIS_Index+7]=a8
+set udg_UIS_ItemId[udg_UIS_Index+8]=a9
+set udg_UIS_ItemId[udg_UIS_Index+9]=a10
+set udg_UIS_ItemId[udg_UIS_Index+10]=a11
+set udg_UIS_ItemId[udg_UIS_Index+11]=l__n
 loop
-exitwhen x>udg_UIS_Index+6
+exitwhen x>udg_UIS_Index+10
 if udg_UIS_ItemId[x]>0 then
 set udg_UIS_ItemCount[x]=1
 set l__v=udg_UIS_Index
 loop
-exitwhen l__v>udg_UIS_Index+6
+exitwhen l__v>udg_UIS_Index+10
 if l__v!=x then
 if udg_UIS_ItemId[l__v]==udg_UIS_ItemId[x] then
 set udg_UIS_ItemId[l__v]=0
@@ -21387,7 +21461,7 @@ endloop
 endif
 set x=x+1
 endloop
-set udg_UIS_Index=udg_UIS_Index+8
+set udg_UIS_Index=udg_UIS_Index+12
 endfunction
 function Trig_Pick_Heroes_Conditions takes nothing returns boolean
 return udg_B==true
@@ -26202,7 +26276,7 @@ call StartSound(soundplay)
 endif
 call KillSoundWhenDone(soundplay)
 loop
-exitwhen i>=6
+exitwhen i>=10
 set it[i]=UnitItemInSlot(u,i)
 set i=i+1
 endloop
@@ -26271,7 +26345,7 @@ call StartSound(soundplay)
 endif
 call KillSoundWhenDone(soundplay)
 loop
-exitwhen i>=6
+exitwhen i>=10
 set it[i]=UnitItemInSlot(u,i)
 set i=i+1
 endloop
@@ -26340,7 +26414,7 @@ call StartSound(soundplay)
 endif
 call KillSoundWhenDone(soundplay)
 loop
-exitwhen i>=6
+exitwhen i>=10
 set it[i]=UnitItemInSlot(u,i)
 set i=i+1
 endloop
@@ -26409,7 +26483,7 @@ call StartSound(soundplay)
 endif
 call KillSoundWhenDone(soundplay)
 loop
-exitwhen i>=6
+exitwhen i>=10
 set it[i]=UnitItemInSlot(u,i)
 set i=i+1
 endloop
@@ -26478,7 +26552,7 @@ call StartSound(soundplay)
 endif
 call KillSoundWhenDone(soundplay)
 loop
-exitwhen i>=6
+exitwhen i>=10
 set it[i]=UnitItemInSlot(u,i)
 set i=i+1
 endloop
@@ -26547,7 +26621,7 @@ call StartSound(soundplay)
 endif
 call KillSoundWhenDone(soundplay)
 loop
-exitwhen i>=6
+exitwhen i>=10
 set it[i]=UnitItemInSlot(u,i)
 set i=i+1
 endloop
@@ -26635,7 +26709,7 @@ call StartSound(soundplay)
 endif
 call KillSoundWhenDone(soundplay)
 loop
-exitwhen i>=6
+exitwhen i>=10
 set it[i]=UnitItemInSlot(u,i)
 set i=i+1
 endloop
@@ -26704,7 +26778,7 @@ call StartSound(soundplay)
 endif
 call KillSoundWhenDone(soundplay)
 loop
-exitwhen i>=6
+exitwhen i>=10
 set it[i]=UnitItemInSlot(u,i)
 set i=i+1
 endloop
@@ -26773,7 +26847,7 @@ call StartSound(soundplay)
 endif
 call KillSoundWhenDone(soundplay)
 loop
-exitwhen i>=6
+exitwhen i>=10
 set it[i]=UnitItemInSlot(u,i)
 set i=i+1
 endloop
@@ -26842,7 +26916,7 @@ call StartSound(soundplay)
 endif
 call KillSoundWhenDone(soundplay)
 loop
-exitwhen i>=6
+exitwhen i>=10
 set it[i]=UnitItemInSlot(u,i)
 set i=i+1
 endloop
@@ -26911,7 +26985,7 @@ call StartSound(soundplay)
 endif
 call KillSoundWhenDone(soundplay)
 loop
-exitwhen i>=6
+exitwhen i>=10
 set it[i]=UnitItemInSlot(u,i)
 set i=i+1
 endloop
@@ -26980,7 +27054,7 @@ call StartSound(soundplay)
 endif
 call KillSoundWhenDone(soundplay)
 loop
-exitwhen i>=6
+exitwhen i>=10
 set it[i]=UnitItemInSlot(u,i)
 set i=i+1
 endloop
@@ -27049,7 +27123,7 @@ call StartSound(soundplay)
 endif
 call KillSoundWhenDone(soundplay)
 loop
-exitwhen i>=6
+exitwhen i>=10
 set it[i]=UnitItemInSlot(u,i)
 set i=i+1
 endloop
@@ -27118,7 +27192,7 @@ call StartSound(soundplay)
 endif
 call KillSoundWhenDone(soundplay)
 loop
-exitwhen i>=6
+exitwhen i>=10
 set it[i]=UnitItemInSlot(u,i)
 set i=i+1
 endloop
@@ -27187,7 +27261,7 @@ call StartSound(soundplay)
 endif
 call KillSoundWhenDone(soundplay)
 loop
-exitwhen i>=6
+exitwhen i>=10
 set it[i]=UnitItemInSlot(u,i)
 set i=i+1
 endloop
@@ -27260,7 +27334,7 @@ call StartSound(soundplay)
 endif
 call KillSoundWhenDone(soundplay)
 loop
-exitwhen i>=6
+exitwhen i>=10
 set it[i]=UnitItemInSlot(u,i)
 set i=i+1
 endloop
@@ -27330,7 +27404,7 @@ call StartSound(soundplay)
 endif
 call KillSoundWhenDone(soundplay)
 loop
-exitwhen i>=6
+exitwhen i>=10
 set it[i]=UnitItemInSlot(u,i)
 set i=i+1
 endloop
@@ -27399,7 +27473,7 @@ call StartSound(soundplay)
 endif
 call KillSoundWhenDone(soundplay)
 loop
-exitwhen i>=6
+exitwhen i>=10
 set it[i]=UnitItemInSlot(u,i)
 set i=i+1
 endloop
@@ -27468,7 +27542,7 @@ call StartSound(soundplay)
 endif
 call KillSoundWhenDone(soundplay)
 loop
-exitwhen i>=6
+exitwhen i>=10
 set it[i]=UnitItemInSlot(u,i)
 set i=i+1
 endloop
@@ -27537,7 +27611,7 @@ call StartSound(soundplay)
 endif
 call KillSoundWhenDone(soundplay)
 loop
-exitwhen i>=6
+exitwhen i>=10
 set it[i]=UnitItemInSlot(u,i)
 set i=i+1
 endloop
@@ -27606,7 +27680,7 @@ call StartSound(soundplay)
 endif
 call KillSoundWhenDone(soundplay)
 loop
-exitwhen i>=6
+exitwhen i>=10
 set it[i]=UnitItemInSlot(u,i)
 set i=i+1
 endloop
@@ -27675,7 +27749,7 @@ call StartSound(soundplay)
 endif
 call KillSoundWhenDone(soundplay)
 loop
-exitwhen i>=6
+exitwhen i>=10
 set it[i]=UnitItemInSlot(u,i)
 set i=i+1
 endloop
@@ -27739,7 +27813,7 @@ if GetHeroLevel(u)>1 then
 call SetHeroLevel(n,GetHeroLevel(u),false)
 endif
 loop
-exitwhen i>=6
+exitwhen i>=10
 set it[i]=UnitItemInSlot(u,i)
 set i=i+1
 endloop
@@ -27803,7 +27877,7 @@ if GetHeroLevel(u)>1 then
 call SetHeroLevel(n,GetHeroLevel(u),false)
 endif
 loop
-exitwhen i>=6
+exitwhen i>=10
 set it[i]=UnitItemInSlot(u,i)
 set i=i+1
 endloop
@@ -27902,7 +27976,7 @@ if GetUnitTypeId(Hero[ip])=='Ho0Z' then
     set cDantesRegen = 0
 endif
 loop
-exitwhen i>=6
+exitwhen i>=10
 set it[i]=UnitItemInSlot(u,i)
 set i=i+1
 endloop
@@ -29345,7 +29419,7 @@ function Trig_debt_Actions takes nothing returns nothing
 endfunction
 function Trig_itemsc_Actions takes nothing returns nothing
     local integer id=GetPlayerId(GetTriggerPlayer())
-    local integer i=6
+    local integer i=10
     if itemsc[id]==false then
         if(GetLocalPlayer()==GetTriggerPlayer() ) then
             call DisplayChatMessageEx(null,CHAT_RECIPIENT_UNKNOWN,10,true,"Солнце Вонголы/Солнце Маре/Сфера Льда/Сапоги льда на союзников: ON")
@@ -30150,20 +30224,20 @@ local integer itpos
 if udg_B==true and x==x1 and y==y1 then
 call SetUnitInvulnerable(Hero[i],false)
 call UnitRemoveBuffs(Hero[i],true,true)
-if UnitHasItemOfTypeBJ(Hero[i], 'I03A') and GetWidgetLife(Hero[i])>0 and IsUnitIllusion(Hero[i])==false then
+if UnitHasItemOfTypeBJCustom(Hero[i], 'I03A') and GetWidgetLife(Hero[i])>0 and IsUnitIllusion(Hero[i])==false then
     set AlastorPos=0
     loop
-    exitwhen AlastorPos==6 or GetItemTypeId(UnitItemInSlot(Hero[i],AlastorPos)) == 'I03A'
+    exitwhen AlastorPos==10 or GetItemTypeId(UnitItemInSlot(Hero[i],AlastorPos)) == 'I03A'
     set AlastorPos=AlastorPos+1
     endloop
     if IsAbilityEnabled(GetUnitAbility(Hero[i],'AInv'))==true then
-        set Alastor=GetItemOfTypeFromUnitBJ(Hero[i],'I03A')
+        set Alastor=GetItemOfTypeFromUnitBJCustom(Hero[i],'I03A')
         call UnitRemoveItem(Hero[i],Alastor)
         call RemoveItem(Alastor)
         call UnitAddItemToSlotById(Hero[i], 'I03A',AlastorPos)
     else
         call EnableUnitAbility2(Hero[i],'AInv',false,true)
-        set Alastor=GetItemOfTypeFromUnitBJ(Hero[i],'I03A')
+        set Alastor=GetItemOfTypeFromUnitBJCustom(Hero[i],'I03A')
         call UnitRemoveItem(Hero[i],Alastor)
         call RemoveItem(Alastor)
         call UnitAddItemToSlotById(Hero[i], 'I03A',AlastorPos)    
@@ -30326,7 +30400,7 @@ if GetUnitTypeId(Hero[ip])=='Ho0Z' then
     set cDantesRegen = 0
 endif
 loop
-exitwhen i>=6
+exitwhen i>=10
         if GetItemTypeId(UnitItemInSlot(u,i))!='Ibrk' then
                 set it[i]=UnitItemInSlot(u,i)
         endif
@@ -31875,40 +31949,40 @@ set DU2=true
 call DisplayTextToPlayer(GetLocalPlayer(),256,128,"Fight!")
 call SetUnitInvulnerable(fi[1],false)
 call SetUnitInvulnerable(fi[2],false)
-if UnitHasItemOfTypeBJ(fi[1], 'I03A') and GetWidgetLife(fi[1])>0 and IsUnitIllusion(fi[1])==false then
+if UnitHasItemOfTypeBJCustom(fi[1], 'I03A') and GetWidgetLife(fi[1])>0 and IsUnitIllusion(fi[1])==false then
     set AlastorPos=0
     loop
-    exitwhen AlastorPos==6 or GetItemTypeId(UnitItemInSlot(fi[1],AlastorPos)) == 'I03A'
+    exitwhen AlastorPos==10 or GetItemTypeId(UnitItemInSlot(fi[1],AlastorPos)) == 'I03A'
     set AlastorPos=AlastorPos+1
     endloop
     if IsAbilityEnabled(GetUnitAbility(fi[1],'AInv'))==true then
-        set Alastor=GetItemOfTypeFromUnitBJ(fi[1],'I03A')
+        set Alastor=GetItemOfTypeFromUnitBJCustom(fi[1],'I03A')
         call UnitRemoveItem(fi[1],Alastor)
         call RemoveItem(Alastor)
         call UnitAddItemToSlotById(fi[1], 'I03A',AlastorPos)
     else
         call EnableUnitAbility2(fi[1],'AInv',false,true)
-        set Alastor=GetItemOfTypeFromUnitBJ(fi[1],'I03A')
+        set Alastor=GetItemOfTypeFromUnitBJCustom(fi[1],'I03A')
         call UnitRemoveItem(fi[1],Alastor)
         call RemoveItem(Alastor)
         call UnitAddItemToSlotById(fi[1], 'I03A',AlastorPos)    
         call DisableUnitAbility2(fi[1],'AInv',false,true)
     endif
 endif
-if UnitHasItemOfTypeBJ(fi[2], 'I03A') and GetWidgetLife(fi[2])>0 and IsUnitIllusion(fi[2])==false then
+if UnitHasItemOfTypeBJCustom(fi[2], 'I03A') and GetWidgetLife(fi[2])>0 and IsUnitIllusion(fi[2])==false then
     set AlastorPos=0
     loop
-    exitwhen AlastorPos==6 or GetItemTypeId(UnitItemInSlot(fi[2],AlastorPos)) == 'I03A'
+    exitwhen AlastorPos==10 or GetItemTypeId(UnitItemInSlot(fi[2],AlastorPos)) == 'I03A'
     set AlastorPos=AlastorPos+1
     endloop
     if IsAbilityEnabled(GetUnitAbility(fi[2],'AInv'))==true then
-        set Alastor=GetItemOfTypeFromUnitBJ(fi[2],'I03A')
+        set Alastor=GetItemOfTypeFromUnitBJCustom(fi[2],'I03A')
         call UnitRemoveItem(fi[2],Alastor)
         call RemoveItem(Alastor)
         call UnitAddItemToSlotById(fi[2], 'I03A',AlastorPos)
     else
         call EnableUnitAbility2(fi[2],'AInv',false,true)
-        set Alastor=GetItemOfTypeFromUnitBJ(fi[2],'I03A')
+        set Alastor=GetItemOfTypeFromUnitBJCustom(fi[2],'I03A')
         call UnitRemoveItem(fi[2],Alastor)
         call RemoveItem(Alastor)
         call UnitAddItemToSlotById(fi[2], 'I03A',AlastorPos)    
@@ -32600,20 +32674,20 @@ call GroupEnumUnitsOfPlayer(G,Player(i),BuggedBool) //lvlbool
 		call UnitRemoveAbility(Hero[i],'A25F')
 		call SetUnitState(Hero[i],UNIT_STATE_MANA,GetUnitState(Hero[i],UNIT_STATE_MAX_MANA))
 		call UnitResetCooldown(Hero[i])
-        if UnitHasItemOfTypeBJ(Hero[i], 'I03A') and GetWidgetLife(Hero[i])>0 and IsUnitIllusion(Hero[i])==false then
+        if UnitHasItemOfTypeBJCustom(Hero[i], 'I03A') and GetWidgetLife(Hero[i])>0 and IsUnitIllusion(Hero[i])==false then
             set AlastorPos=0
             loop
-            exitwhen AlastorPos==6 or GetItemTypeId(UnitItemInSlot(Hero[i],AlastorPos)) == 'I03A'
+            exitwhen AlastorPos==10 or GetItemTypeId(UnitItemInSlot(Hero[i],AlastorPos)) == 'I03A'
             set AlastorPos=AlastorPos+1
             endloop
             if IsAbilityEnabled(GetUnitAbility(Hero[i],'AInv'))==true then
-                set Alastor=GetItemOfTypeFromUnitBJ(Hero[i],'I03A')
+                set Alastor=GetItemOfTypeFromUnitBJCustom(Hero[i],'I03A')
                 call UnitRemoveItem(Hero[i],Alastor)
                 call RemoveItem(Alastor)
                 call UnitAddItemToSlotById(Hero[i], 'I03A',AlastorPos)
             else
                 call EnableUnitAbility2(Hero[i],'AInv',false,true)
-                set Alastor=GetItemOfTypeFromUnitBJ(Hero[i],'I03A')
+                set Alastor=GetItemOfTypeFromUnitBJCustom(Hero[i],'I03A')
                 call UnitRemoveItem(Hero[i],Alastor)
                 call RemoveItem(Alastor)
                 call UnitAddItemToSlotById(Hero[i], 'I03A',AlastorPos)    
@@ -32839,40 +32913,40 @@ call PauseUnit(fi[2],false)
 call DisplayTextToPlayer(GetLocalPlayer(),0,0,"Fight!")
 call SetUnitInvulnerable(fi[1],false)
 call SetUnitInvulnerable(fi[2],false)
-if UnitHasItemOfTypeBJ(fi[1], 'I03A') and GetWidgetLife(fi[1])>0 and IsUnitIllusion(fi[1])==false then
+if UnitHasItemOfTypeBJCustom(fi[1], 'I03A') and GetWidgetLife(fi[1])>0 and IsUnitIllusion(fi[1])==false then
     set AlastorPos=0
     loop
-    exitwhen AlastorPos==6 or GetItemTypeId(UnitItemInSlot(fi[1],AlastorPos)) == 'I03A'
+    exitwhen AlastorPos==10 or GetItemTypeId(UnitItemInSlot(fi[1],AlastorPos)) == 'I03A'
     set AlastorPos=AlastorPos+1
     endloop
     if IsAbilityEnabled(GetUnitAbility(fi[1],'AInv'))==true then
-        set Alastor=GetItemOfTypeFromUnitBJ(fi[1],'I03A')
+        set Alastor=GetItemOfTypeFromUnitBJCustom(fi[1],'I03A')
         call UnitRemoveItem(fi[1],Alastor)
         call RemoveItem(Alastor)
         call UnitAddItemToSlotById(fi[1], 'I03A',AlastorPos)
     else
         call EnableUnitAbility2(fi[1],'AInv',false,true)
-        set Alastor=GetItemOfTypeFromUnitBJ(fi[1],'I03A')
+        set Alastor=GetItemOfTypeFromUnitBJCustom(fi[1],'I03A')
         call UnitRemoveItem(fi[1],Alastor)
         call RemoveItem(Alastor)
         call UnitAddItemToSlotById(fi[1], 'I03A',AlastorPos)    
         call DisableUnitAbility2(fi[1],'AInv',false,true)
     endif
 endif
-if UnitHasItemOfTypeBJ(fi[2], 'I03A') and GetWidgetLife(fi[2])>0 and IsUnitIllusion(fi[2])==false then
+if UnitHasItemOfTypeBJCustom(fi[2], 'I03A') and GetWidgetLife(fi[2])>0 and IsUnitIllusion(fi[2])==false then
     set AlastorPos=0
     loop
-    exitwhen AlastorPos==6 or GetItemTypeId(UnitItemInSlot(fi[2],AlastorPos)) == 'I03A'
+    exitwhen AlastorPos==10 or GetItemTypeId(UnitItemInSlot(fi[2],AlastorPos)) == 'I03A'
     set AlastorPos=AlastorPos+1
     endloop
     if IsAbilityEnabled(GetUnitAbility(fi[2],'AInv'))==true then
-        set Alastor=GetItemOfTypeFromUnitBJ(fi[2],'I03A')
+        set Alastor=GetItemOfTypeFromUnitBJCustom(fi[2],'I03A')
         call UnitRemoveItem(fi[2],Alastor)
         call RemoveItem(Alastor)
         call UnitAddItemToSlotById(fi[2], 'I03A',AlastorPos)
     else
         call EnableUnitAbility2(fi[2],'AInv',false,true)
-        set Alastor=GetItemOfTypeFromUnitBJ(fi[2],'I03A')
+        set Alastor=GetItemOfTypeFromUnitBJCustom(fi[2],'I03A')
         call UnitRemoveItem(fi[2],Alastor)
         call RemoveItem(Alastor)
         call UnitAddItemToSlotById(fi[2], 'I03A',AlastorPos)    
@@ -32968,7 +33042,7 @@ call SetHeroInt(CU,GetHeroInt(u,false),false)
 call SetUnitTurnSpeed(CU,1000)
 call SetUnitVertexColor(CU,0,0,0,0)
 loop
-exitwhen i>=6
+exitwhen i>=10
 call UnitAddItemById(CU,GetItemTypeId(UnitItemInSlot(u,i)))
 set i=i+1
 endloop
@@ -32991,7 +33065,7 @@ call SetHeroStr(CU,GetHeroStr(u,false),false)
 call SetHeroInt(CU,GetHeroInt(u,false),false)
 call SetUnitTurnSpeed(CU,1000)
 loop
-exitwhen i>=6
+exitwhen i>=10
 call UnitAddItemById(CU,GetItemTypeId(UnitItemInSlot(u,i)))
 set i=i+1
 endloop
@@ -36539,7 +36613,7 @@ if nb>0 and GetUnitAbilityLevel(u,'LCF1')>0 and GetUnitAbilityLevel(c,'A1WR')==0
     if LoadBoolean(HH, uid, StringHash("LucciTekkai")) then
         //call SetEventDamage(0.05)
         set nb=0
-        if UnitHasItemOfTypeBJ(c,'I13R')==false then
+        if UnitHasItemOfTypeBJCustom(c,'I13R')==false then
             if IsUnitInvulnerable(c)==true then
                 call SetUnitInvulnerable(c,false)
                 call UnitAddAbility(u,'A1WR')
@@ -37185,7 +37259,7 @@ if cond==0 then
             set n=CreateUnit(GetOwningPlayer(u),'e09P',x,y,A*bj_RADTODEG)
             call UnitApplyTimedLife(n,1,0.4)
             call SetUnitTimeScale(n,2)
-            if UnitHasItemOfTypeBJ(c,'I13R')==false then
+            if UnitHasItemOfTypeBJCustom(c,'I13R')==false then
                 if IsUnitInvulnerable(c)==true then
                     call SetUnitInvulnerable(c,false)
                     call UnitAddAbility(u,'A1WR')
@@ -37262,7 +37336,7 @@ if cond==0 then
             set cjlocgn_00000000=CreateTimer()
             set t=CreateTimer()
             call SaveUnitHandle(h,GetHandleId(cjlocgn_00000000),0,u)
-            set bj_lastCreatedItem=GetItemOfTypeFromUnitBJ(u,'I03R')
+            set bj_lastCreatedItem=GetItemOfTypeFromUnitBJCustom(u,'I03R')
             call UnitRemoveItem(u,bj_lastCreatedItem)
             call RemoveItem(bj_lastCreatedItem)
             call UnitAddAbility(u,'A0VV')
@@ -37286,11 +37360,11 @@ if cond==0 then
             set t=null
             set cjlocgn_00000000=null
         endif
-        if(UnitHasItemOfTypeBJ(u,'I13R')and nb>500) and CurrentEventAttack==false and GetUnitAbilityLevel(u,'BorB')==0 and IsUnitType(u,UNIT_TYPE_SUMMONED)==false and u==Hero[idu] then
+        if(UnitHasItemOfTypeBJCustom(u,'I13R')and nb>500) and CurrentEventAttack==false and GetUnitAbilityLevel(u,'BorB')==0 and IsUnitType(u,UNIT_TYPE_SUMMONED)==false and u==Hero[idu] then
             set cjlocgn_00000000=CreateTimer()
             set t=CreateTimer()
             call SaveUnitHandle(h,GetHandleId(cjlocgn_00000000),0,u)
-            set bj_lastCreatedItem=GetItemOfTypeFromUnitBJ(u,'I13R')
+            set bj_lastCreatedItem=GetItemOfTypeFromUnitBJCustom(u,'I13R')
             call UnitRemoveItem(u,bj_lastCreatedItem)
             call RemoveItem(bj_lastCreatedItem)
             call UnitAddAbility(u,'A0VV')
@@ -37365,7 +37439,7 @@ if cond==0 then
                 if GetUnitAbilityLevel(u,'B05Y')>0 then
                     set dmg=1.45*dmg
                 endif
-                if UnitHasItemOfTypeBJ(c,'I13R')==false then
+                if UnitHasItemOfTypeBJCustom(c,'I13R')==false then
                     if IsUnitInvulnerable(c)==true then
                         call SetUnitInvulnerable(c,false)
                         call UnitAddAbility(u,'A1WR')
@@ -38069,11 +38143,11 @@ if cond==0 then
         //     call BJDebugMsg("nb "+R2S(nb)+"  nb2 "+R2S(nb2))
         endif
     endif
-    if(UnitHasItemOfTypeBJ(u,'I13R')and nb>500) and CurrentEventAttack==false and GetUnitAbilityLevel(u,'BorB')>0 and IsUnitType(u,UNIT_TYPE_SUMMONED)==false and u==Hero[idu] then
+    if(UnitHasItemOfTypeBJCustom(u,'I13R')and nb>500) and CurrentEventAttack==false and GetUnitAbilityLevel(u,'BorB')>0 and IsUnitType(u,UNIT_TYPE_SUMMONED)==false and u==Hero[idu] then
         set cjlocgn_00000000=CreateTimer()
         set t=CreateTimer()
         call SaveUnitHandle(h,GetHandleId(cjlocgn_00000000),0,u)
-        set bj_lastCreatedItem=GetItemOfTypeFromUnitBJ(u,'I13R')
+        set bj_lastCreatedItem=GetItemOfTypeFromUnitBJCustom(u,'I13R')
         call UnitRemoveItem(u,bj_lastCreatedItem)
         call RemoveItem(bj_lastCreatedItem)
         call UnitAddAbility(u,'A0VV')
@@ -39355,20 +39429,20 @@ if cond==0 then
                 call SetUnitState(u,UNIT_STATE_LIFE,LoadReal(HH,ide,StringHash("hp")))
                 call SetUnitInvulnerable(c,false)
                 call UnitRemoveBuffs(c,true,false)
-                if UnitHasItemOfTypeBJ(c, 'I03A') and GetWidgetLife(c)>0 and IsUnitIllusion(c)==false then
+                if UnitHasItemOfTypeBJCustom(c, 'I03A') and GetWidgetLife(c)>0 and IsUnitIllusion(c)==false then
                     set AlastorPos=0
                     loop
-                    exitwhen AlastorPos==6 or GetItemTypeId(UnitItemInSlot(c,AlastorPos)) == 'I03A'
+                    exitwhen AlastorPos==10 or GetItemTypeId(UnitItemInSlot(c,AlastorPos)) == 'I03A'
                     set AlastorPos=AlastorPos+1
                     endloop
                     if IsAbilityEnabled(GetUnitAbility(c,'AInv'))==true then
-                        set Alastor=GetItemOfTypeFromUnitBJ(c,'I03A')
+                        set Alastor=GetItemOfTypeFromUnitBJCustom(c,'I03A')
                         call UnitRemoveItem(c,Alastor)
                         call RemoveItem(Alastor)
                         call UnitAddItemToSlotById(c, 'I03A',AlastorPos)
                     else
                         call EnableUnitAbility2(c,'AInv',false,true)
-                        set Alastor=GetItemOfTypeFromUnitBJ(c,'I03A')
+                        set Alastor=GetItemOfTypeFromUnitBJCustom(c,'I03A')
                         call UnitRemoveItem(c,Alastor)
                         call RemoveItem(Alastor)
                         call UnitAddItemToSlotById(c, 'I03A',AlastorPos)    
@@ -39431,7 +39505,7 @@ if cond==0 then
 			endif
 		endif
 	endif
-    if GetUnitAbilityLevel(u,'B06T')>0 and c!=UltimateDamage and GetUnitAbilityLevel(c,'A1WR')==0 and nb>0 and u==Hero[idu]and b>60 and GetUnitAbilityLevel(c,'A0WR')==0 and UnitHasItemOfTypeBJ(c,'I13R')==false then
+    if GetUnitAbilityLevel(u,'B06T')>0 and c!=UltimateDamage and GetUnitAbilityLevel(c,'A1WR')==0 and nb>0 and u==Hero[idu]and b>60 and GetUnitAbilityLevel(c,'A0WR')==0 and UnitHasItemOfTypeBJCustom(c,'I13R')==false then
         if IsUnitInvulnerable(c)==true then
             call SetUnitInvulnerable(c,false)
             call UnitAddAbility(u,'A1WR')
@@ -39446,7 +39520,7 @@ if cond==0 then
             call SetControlToUnit(u,c, 1, "stun")
         endif
     endif
-    if (UnitHasItemOfTypeBJ(u,'I04T') or GetUnitAbilityLevel(u,'KIP8')>0) and c!=UltimateDamage and GetUnitAbilityLevel(c,'A1WR')==0 and GetUnitAbilityLevel(c,'A0WR')==0 and nb>0 and GetUnitAbilityLevel(u,'YatB')==0 and UnitHasItemOfTypeBJ(c,'I13R')==false then
+    if (UnitHasItemOfTypeBJ(u,'I04T') or GetUnitAbilityLevel(u,'KIP8')>0) and c!=UltimateDamage and GetUnitAbilityLevel(c,'A1WR')==0 and GetUnitAbilityLevel(c,'A0WR')==0 and nb>0 and GetUnitAbilityLevel(u,'YatB')==0 and UnitHasItemOfTypeBJCustom(c,'I13R')==false then
         if IsUnitInvulnerable(c)==true then
             call UnitAddAbility(u,'A1WR')
             call SetUnitInvulnerable(c,false)
@@ -39459,7 +39533,7 @@ if cond==0 then
             call UnitRemoveAbility(u,'A1WR')
         endif
     endif
-    if (UnitHasItemOfTypeBJ(u,'I04T') or GetUnitAbilityLevel(u,'KIP8')>0) and c!=UltimateDamage and GetUnitAbilityLevel(c,'A1WR')==0 and GetUnitAbilityLevel(c,'A0WR')==0 and nb>0 and GetUnitAbilityLevel(u,'YatB')>0 and UnitHasItemOfTypeBJ(c,'I13R')==false then
+    if (UnitHasItemOfTypeBJ(u,'I04T') or GetUnitAbilityLevel(u,'KIP8')>0) and c!=UltimateDamage and GetUnitAbilityLevel(c,'A1WR')==0 and GetUnitAbilityLevel(c,'A0WR')==0 and nb>0 and GetUnitAbilityLevel(u,'YatB')>0 and UnitHasItemOfTypeBJCustom(c,'I13R')==false then
         if IsUnitInvulnerable(c)==true then
             call UnitAddAbility(u,'A1WR')
             call SetUnitInvulnerable(c,false)
@@ -40072,20 +40146,20 @@ call UnitRemoveAbility(u,'A1GL')
 call UnitRemoveAbility(u,'WAE1')
 call UnitRemoveAbility(u,'A1WT')
 call UnitRemoveBuffs(u,true,false)
-if UnitHasItemOfTypeBJ(u, 'I03A') and GetWidgetLife(u)>0 and IsUnitIllusion(u)==false then
+if UnitHasItemOfTypeBJCustom(u, 'I03A') and GetWidgetLife(u)>0 and IsUnitIllusion(u)==false then
     set AlastorPos=0
     loop
-    exitwhen AlastorPos==6 or GetItemTypeId(UnitItemInSlot(u,AlastorPos)) == 'I03A'
+    exitwhen AlastorPos==10 or GetItemTypeId(UnitItemInSlot(u,AlastorPos)) == 'I03A'
     set AlastorPos=AlastorPos+1
     endloop
     if IsAbilityEnabled(GetUnitAbility(u,'AInv'))==true then
-        set Alastor=GetItemOfTypeFromUnitBJ(u,'I03A')
+        set Alastor=GetItemOfTypeFromUnitBJCustom(u,'I03A')
         call UnitRemoveItem(u,Alastor)
         call RemoveItem(Alastor)
         call UnitAddItemToSlotById(u, 'I03A',AlastorPos)
     else
         call EnableUnitAbility2(u,'AInv',false,true)
-        set Alastor=GetItemOfTypeFromUnitBJ(u,'I03A')
+        set Alastor=GetItemOfTypeFromUnitBJCustom(u,'I03A')
         call UnitRemoveItem(u,Alastor)
         call RemoveItem(Alastor)
         call UnitAddItemToSlotById(u, 'I03A',AlastorPos)    
@@ -40264,7 +40338,7 @@ call TriggerAddAction(gg_trg_Saphire,function NewSaphireCast)
 endfunction
 function Trig_StunStop_Conditions takes nothing returns boolean
 set n=GetOrderedUnit()
-return GetIssuedOrderId()==OrderId("thunderbolt")and (UnitHasItemOfTypeBJ(n,'I13R') or UnitHasItemOfTypeBJ(n,'I03R') or GetUnitAbilityLevel(n,'Gi01')>0 )
+return GetIssuedOrderId()==OrderId("thunderbolt")and (UnitHasItemOfTypeBJCustom(n,'I13R') or UnitHasItemOfTypeBJCustom(n,'I03R') or GetUnitAbilityLevel(n,'Gi01')>0 )
 endfunction
 function Trig_StunStop_Actions takes nothing returns nothing
 call IssueImmediateOrder(GetTriggerUnit(),"stop")
@@ -40289,9 +40363,9 @@ if GetTriggerPlayerKey()==OSKEY_OEM_3 then
         call PanCameraToTimed(GetUnitX(Hero[i]),GetUnitY(Hero[i]),0)
     endif
 endif
-if UnitHasItemOfTypeBJ(Hero[GetPlayerId(GetTriggerPlayer())],'I04V') and IsUnitPaused(Hero[GetPlayerId(GetTriggerPlayer())])==false and (RectContainsUnit(gg_rct_AntiMh,Hero[GetPlayerId(GetTriggerPlayer())])==false and RectContainsUnit(gg_rct_HibariFight,Hero[GetPlayerId(GetTriggerPlayer())])==false) and GetUnitState(Hero[GetPlayerId(GetTriggerPlayer())],UNIT_STATE_MANA)>=25 and GetUnitAbilityLevel(Hero[GetPlayerId(GetTriggerPlayer())],'Pet1')==0 and GetUnitAbilityLevel(Hero[GetPlayerId(GetTriggerPlayer())],'cbc8')==0 then
+if UnitHasItemOfTypeBJCustom(Hero[GetPlayerId(GetTriggerPlayer())],'I04V') and IsUnitPaused(Hero[GetPlayerId(GetTriggerPlayer())])==false and (RectContainsUnit(gg_rct_AntiMh,Hero[GetPlayerId(GetTriggerPlayer())])==false and RectContainsUnit(gg_rct_HibariFight,Hero[GetPlayerId(GetTriggerPlayer())])==false) and GetUnitState(Hero[GetPlayerId(GetTriggerPlayer())],UNIT_STATE_MANA)>=25 and GetUnitAbilityLevel(Hero[GetPlayerId(GetTriggerPlayer())],'Pet1')==0 and GetUnitAbilityLevel(Hero[GetPlayerId(GetTriggerPlayer())],'cbc8')==0 then
 loop
-exitwhen lp==6
+exitwhen lp==10
 if GetItemTypeId(UnitItemInSlot(Hero[i],lp))=='I04V' then
 set ind=lp
 endif
@@ -40643,7 +40717,7 @@ local real y=LoadReal(h,id,4)
 local real dmg=4*(GetHeroStr(u,true)+GetHeroAgi(u,true)+GetHeroInt(u,true))
 local player p=GetOwningPlayer(u)
 local boolean fast_cd = true
-local integer i=6
+local integer i=10
 call GroupEnumUnitsInRange(G,x,y,300,Base)
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\SunStrikeImpact0.wav",false,false,true,12700,12700,"")
 call StartSound(soundplay)
@@ -41302,7 +41376,7 @@ call StartSound(soundplay)
 call KillSoundWhenDone(soundplay)
 else
 loop
-exitwhen i>=6
+exitwhen i>=10
 if GetItemTypeId(UnitItemInSlot(u,i))=='I030' then
 set count=count+1
 endif
@@ -41402,7 +41476,7 @@ local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
 local unit u=LoadUnitHandle(HH,id,0)
 local real time=LoadReal(HH,id,1)
-local integer i=6
+local integer i=10
 if IsUnitPaused(u)==false and GetUnitAbilityLevel(u,'Pet1')==0 then
 call SaveReal(HH,id,1,time+0.05)
 endif
@@ -41448,7 +41522,7 @@ local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
 local unit u=LoadUnitHandle(HH,id,0)
 local real time=LoadReal(HH,id,1)
-local integer i=6
+local integer i=10
 if IsUnitPaused(u)==false and GetUnitAbilityLevel(u,'Pet1')==0 then
 call SaveReal(HH,id,1,time+0.05)
 endif
@@ -41499,7 +41573,7 @@ endfunction
                         endif
 
                         set index = index + 1
-                        exitwhen index >= bj_MAX_INVENTORY
+                        exitwhen index >= 10
                 endloop
 
                 return 0
@@ -42433,10 +42507,10 @@ call UnitRemoveAbility(LoadUnitHandle(h,id,l__s),'A0YO')
 call UnitAddAbility(c,'A0YO')
 call UnitMakeAbilityPermanent(c,true,'A0YO')
 call UnitMakeAbilityPermanent(c,true,'A0YN')
-call SetItemDroppable(GetItemOfTypeFromUnitBJ(u,'I04F'),false)
+call SetItemDroppable(GetItemOfTypeFromUnitBJCustom(u,'I04F'),false)
 else
 call UnitRemoveAbility(LoadUnitHandle(h,id,l__s),'A0YO')
-call SetItemDroppable(GetItemOfTypeFromUnitBJ(u,'I04F'),true)
+call SetItemDroppable(GetItemOfTypeFromUnitBJCustom(u,'I04F'),true)
 endif
 call SaveUnitHandle(h,id,l__s,c)
 set c=null
@@ -42801,20 +42875,20 @@ set dmg=5*GetHeroStr(u,true)
 if dmg>GetWidgetLife(c)then
 call SetUnitInvulnerable(c,false)
 call UnitRemoveBuffs(c,true,true)
-if UnitHasItemOfTypeBJ(c, 'I03A') and GetWidgetLife(c)>0 and IsUnitIllusion(c)==false then
+if UnitHasItemOfTypeBJCustom(c, 'I03A') and GetWidgetLife(c)>0 and IsUnitIllusion(c)==false then
     set AlastorPos=0
     loop
-    exitwhen AlastorPos==6 or GetItemTypeId(UnitItemInSlot(c,AlastorPos)) == 'I03A'
+    exitwhen AlastorPos==10 or GetItemTypeId(UnitItemInSlot(c,AlastorPos)) == 'I03A'
     set AlastorPos=AlastorPos+1
     endloop
     if IsAbilityEnabled(GetUnitAbility(c,'AInv'))==true then
-        set Alastor=GetItemOfTypeFromUnitBJ(c,'I03A')
+        set Alastor=GetItemOfTypeFromUnitBJCustom(c,'I03A')
         call UnitRemoveItem(c,Alastor)
         call RemoveItem(Alastor)
         call UnitAddItemToSlotById(c, 'I03A',AlastorPos)
     else
         call EnableUnitAbility2(c,'AInv',false,true)
-        set Alastor=GetItemOfTypeFromUnitBJ(c,'I03A')
+        set Alastor=GetItemOfTypeFromUnitBJCustom(c,'I03A')
         call UnitRemoveItem(c,Alastor)
         call RemoveItem(Alastor)
         call UnitAddItemToSlotById(c, 'I03A',AlastorPos)    
@@ -45767,7 +45841,7 @@ local real time=LoadReal(h,id,33)
 local real x1=GetUnitX(Neji)
 local real y1=GetUnitY(Neji)
 local real a=Atan2(y-y1,x-x1)
-local integer i=6
+local integer i=10
 local real dmg=GetUnitTotalDamage(Neji)+(1+GetUnitAbilityLevel(Neji,'A34E'))*GetHeroAgi(Neji,true)
 call SaveReal(h,id,33,time+0.02)
 if time<0.5 then
@@ -50203,20 +50277,20 @@ exitwhen E==null
 if Condition_Base(p,E)then
 call SetUnitInvulnerable(E,false)
 call UnitRemoveBuffs(E,true,true)
-if UnitHasItemOfTypeBJ(E, 'I03A') and GetWidgetLife(E)>0 and IsUnitIllusion(E)==false then
+if UnitHasItemOfTypeBJCustom(E, 'I03A') and GetWidgetLife(E)>0 and IsUnitIllusion(E)==false then
     set AlastorPos=0
     loop
-    exitwhen AlastorPos==6 or GetItemTypeId(UnitItemInSlot(E,AlastorPos)) == 'I03A'
+    exitwhen AlastorPos==10 or GetItemTypeId(UnitItemInSlot(E,AlastorPos)) == 'I03A'
     set AlastorPos=AlastorPos+1
     endloop
     if IsAbilityEnabled(GetUnitAbility(E,'AInv'))==true then
-        set Alastor=GetItemOfTypeFromUnitBJ(E,'I03A')
+        set Alastor=GetItemOfTypeFromUnitBJCustom(E,'I03A')
         call UnitRemoveItem(E,Alastor)
         call RemoveItem(Alastor)
         call UnitAddItemToSlotById(E, 'I03A',AlastorPos)
     else
         call EnableUnitAbility2(E,'AInv',false,true)
-        set Alastor=GetItemOfTypeFromUnitBJ(E,'I03A')
+        set Alastor=GetItemOfTypeFromUnitBJCustom(E,'I03A')
         call UnitRemoveItem(E,Alastor)
         call RemoveItem(Alastor)
         call UnitAddItemToSlotById(E, 'I03A',AlastorPos)    
@@ -52445,7 +52519,7 @@ call SetUnitOwner(E,LoadPlayerHandle(h,GetHandleId(E),StringHash("CS")),true)
 call GroupRemoveUnit(g,E)
 set i=0
 loop
-exitwhen i>=6
+exitwhen i>=10
 set it=UnitItemInSlot(E,i)
 call SetItemDroppable(it,true)
 set i=i+1
@@ -52483,7 +52557,7 @@ call SetUnitOwner(E,p,true)
 call UnitAddAbility(E,'A0YT')
 set i=0
 loop
-exitwhen i>=6
+exitwhen i>=10
 set it=UnitItemInSlot(E,i)
 call SetItemDroppable(it,false)
 set i=i+1
@@ -72404,20 +72478,20 @@ call DestroyEffect(AddSpecialEffect("war3mapImported\\BloodEX.mdx",x,y))
 call DestroyEffect(AddSpecialEffect("war3mapImported\\BloodEX.mdx",x,y))
 call SetUnitInvulnerable(c,false)
 call UnitRemoveBuffs(c,true,false)
-if UnitHasItemOfTypeBJ(c, 'I03A') and GetWidgetLife(c)>0 and IsUnitIllusion(c)==false then
+if UnitHasItemOfTypeBJCustom(c, 'I03A') and GetWidgetLife(c)>0 and IsUnitIllusion(c)==false then
     set AlastorPos=0
     loop
-    exitwhen AlastorPos==6 or GetItemTypeId(UnitItemInSlot(c,AlastorPos)) == 'I03A'
+    exitwhen AlastorPos==10 or GetItemTypeId(UnitItemInSlot(c,AlastorPos)) == 'I03A'
     set AlastorPos=AlastorPos+1
     endloop
     if IsAbilityEnabled(GetUnitAbility(c,'AInv'))==true then
-        set Alastor=GetItemOfTypeFromUnitBJ(c,'I03A')
+        set Alastor=GetItemOfTypeFromUnitBJCustom(c,'I03A')
         call UnitRemoveItem(c,Alastor)
         call RemoveItem(Alastor)
         call UnitAddItemToSlotById(c, 'I03A',AlastorPos)
     else
         call EnableUnitAbility2(c,'AInv',false,true)
-        set Alastor=GetItemOfTypeFromUnitBJ(c,'I03A')
+        set Alastor=GetItemOfTypeFromUnitBJCustom(c,'I03A')
         call UnitRemoveItem(c,Alastor)
         call RemoveItem(Alastor)
         call UnitAddItemToSlotById(c, 'I03A',AlastorPos)    
@@ -73523,20 +73597,20 @@ if u!=null then
 	call SaveBoolean(h,GetHandleId(c),StringHash("cond"),true)
 	call SetUnitInvulnerable(Hero[idc],false)
 	call UnitRemoveBuffs(Hero[idc],true,false)
-    if UnitHasItemOfTypeBJ(Hero[idc], 'I03A') and GetWidgetLife(Hero[idc])>0 and IsUnitIllusion(Hero[idc])==false then
+    if UnitHasItemOfTypeBJCustom(Hero[idc], 'I03A') and GetWidgetLife(Hero[idc])>0 and IsUnitIllusion(Hero[idc])==false then
         set AlastorPos=0
         loop
-        exitwhen AlastorPos==6 or GetItemTypeId(UnitItemInSlot(Hero[idc],AlastorPos)) == 'I03A'
+        exitwhen AlastorPos==10 or GetItemTypeId(UnitItemInSlot(Hero[idc],AlastorPos)) == 'I03A'
         set AlastorPos=AlastorPos+1
         endloop
         if IsAbilityEnabled(GetUnitAbility(Hero[idc],'AInv'))==true then
-            set Alastor=GetItemOfTypeFromUnitBJ(Hero[idc],'I03A')
+            set Alastor=GetItemOfTypeFromUnitBJCustom(Hero[idc],'I03A')
             call UnitRemoveItem(Hero[idc],Alastor)
             call RemoveItem(Alastor)
             call UnitAddItemToSlotById(Hero[idc], 'I03A',AlastorPos)
         else
             call EnableUnitAbility2(Hero[idc],'AInv',false,true)
-            set Alastor=GetItemOfTypeFromUnitBJ(Hero[idc],'I03A')
+            set Alastor=GetItemOfTypeFromUnitBJCustom(Hero[idc],'I03A')
             call UnitRemoveItem(Hero[idc],Alastor)
             call RemoveItem(Alastor)
             call UnitAddItemToSlotById(Hero[idc], 'I03A',AlastorPos)    
@@ -84539,13 +84613,13 @@ if b==true then
 if IsUnitInvulnerable(c)==true then
     call SetUnitInvulnerable(c,false)
     call UnitRemoveBuffs(c,true,true)
-    if UnitHasItemOfTypeBJ(c, 'I03A') and GetWidgetLife(c)>0 and IsUnitIllusion(c)==false then
+    if UnitHasItemOfTypeBJCustom(c, 'I03A') and GetWidgetLife(c)>0 and IsUnitIllusion(c)==false then
         set AlastorPos=0
         loop
-        exitwhen AlastorPos==6 or GetItemTypeId(UnitItemInSlot(c,AlastorPos)) == 'I03A'
+        exitwhen AlastorPos==10 or GetItemTypeId(UnitItemInSlot(c,AlastorPos)) == 'I03A'
         set AlastorPos=AlastorPos+1
         endloop
-        set Alastor=GetItemOfTypeFromUnitBJ(c,'I03A')
+        set Alastor=GetItemOfTypeFromUnitBJCustom(c,'I03A')
         call UnitRemoveItem(c,Alastor)
         call RemoveItem(Alastor)
         call UnitAddItemToSlotById(c, 'I03A',AlastorPos)
@@ -84558,13 +84632,13 @@ if IsUnitInvulnerable(c)==true then
     call SetUnitInvulnerable(c,true)
 else
     call UnitRemoveBuffs(c,true,true)
-    if UnitHasItemOfTypeBJ(c, 'I03A') and GetWidgetLife(c)>0 and IsUnitIllusion(c)==false then
+    if UnitHasItemOfTypeBJCustom(c, 'I03A') and GetWidgetLife(c)>0 and IsUnitIllusion(c)==false then
         set AlastorPos=0
         loop
-        exitwhen AlastorPos==6 or GetItemTypeId(UnitItemInSlot(c,AlastorPos)) == 'I03A'
+        exitwhen AlastorPos==10 or GetItemTypeId(UnitItemInSlot(c,AlastorPos)) == 'I03A'
         set AlastorPos=AlastorPos+1
         endloop
-        set Alastor=GetItemOfTypeFromUnitBJ(c,'I03A')
+        set Alastor=GetItemOfTypeFromUnitBJCustom(c,'I03A')
         call UnitRemoveItem(c,Alastor)
         call RemoveItem(Alastor)
         call UnitAddItemToSlotById(c, 'I03A',AlastorPos)
@@ -103338,13 +103412,13 @@ function Trig_DamageUltKurapika_Actions takes nothing returns nothing
 	local real y1=GetUnitY(u)
 	call SetUnitInvulnerable(u,false)
 	call UnitRemoveBuffs(u,true,true)
-    if UnitHasItemOfTypeBJ(u, 'I03A') and GetWidgetLife(u)>0 and IsUnitIllusion(u)==false then
+    if UnitHasItemOfTypeBJCustom(u, 'I03A') and GetWidgetLife(u)>0 and IsUnitIllusion(u)==false then
         set AlastorPos=0
         loop
-        exitwhen AlastorPos==6 or GetItemTypeId(UnitItemInSlot(u,AlastorPos)) == 'I03A'
+        exitwhen AlastorPos==10 or GetItemTypeId(UnitItemInSlot(u,AlastorPos)) == 'I03A'
         set AlastorPos=AlastorPos+1
         endloop
-        set Alastor=GetItemOfTypeFromUnitBJ(u,'I03A')
+        set Alastor=GetItemOfTypeFromUnitBJCustom(u,'I03A')
         call UnitRemoveItem(u,Alastor)
         call RemoveItem(Alastor)
         call UnitAddItemToSlotById(u, 'I03A',AlastorPos)
@@ -108844,7 +108918,7 @@ set Healtext=""
 call IssuePointOrder(l__d,"move",x+200*Cos(f*bj_DEGTORAD),y+200*Sin(f*bj_DEGTORAD))
 set i=0
 loop
-exitwhen i>=6
+exitwhen i>=10
 if GetItemTypeId(UnitItemInSlot(u,i))!='I039' then
 set bj_lastCreatedItem=UnitAddItemById(l__d,GetItemTypeId(UnitItemInSlot(u,i)))
 call SetItemDroppable(bj_lastCreatedItem,false)
@@ -115016,20 +115090,20 @@ call UnitRemoveAbility(c,'A1GL')
 call UnitRemoveAbility(c,'WAE1')
 call UnitRemoveAbility(c,'A1WT')
 call UnitRemoveBuffs(c,true,false)
-if UnitHasItemOfTypeBJ(c, 'I03A') and GetWidgetLife(c)>0 and IsUnitIllusion(c)==false then
+if UnitHasItemOfTypeBJCustom(c, 'I03A') and GetWidgetLife(c)>0 and IsUnitIllusion(c)==false then
     set AlastorPos=0
     loop
-    exitwhen AlastorPos==6 or GetItemTypeId(UnitItemInSlot(c,AlastorPos)) == 'I03A'
+    exitwhen AlastorPos==10 or GetItemTypeId(UnitItemInSlot(c,AlastorPos)) == 'I03A'
     set AlastorPos=AlastorPos+1
     endloop
     if IsAbilityEnabled(GetUnitAbility(c,'AInv'))==true then
-        set Alastor=GetItemOfTypeFromUnitBJ(c,'I03A')
+        set Alastor=GetItemOfTypeFromUnitBJCustom(c,'I03A')
         call UnitRemoveItem(c,Alastor)
         call RemoveItem(Alastor)
         call UnitAddItemToSlotById(c, 'I03A',AlastorPos)
     else
         call EnableUnitAbility2(c,'AInv',false,true)
-        set Alastor=GetItemOfTypeFromUnitBJ(c,'I03A')
+        set Alastor=GetItemOfTypeFromUnitBJCustom(c,'I03A')
         call UnitRemoveItem(c,Alastor)
         call RemoveItem(Alastor)
         call UnitAddItemToSlotById(c, 'I03A',AlastorPos)    
@@ -115170,20 +115244,20 @@ call UnitRemoveAbility(c,'A1GL')
 call UnitRemoveAbility(c,'WAE1')
 call UnitRemoveAbility(c,'A1WT')
 call UnitRemoveBuffs(c,true,false)
-if UnitHasItemOfTypeBJ(c, 'I03A') and GetWidgetLife(c)>0 and IsUnitIllusion(c)==false then
+if UnitHasItemOfTypeBJCustom(c, 'I03A') and GetWidgetLife(c)>0 and IsUnitIllusion(c)==false then
     set AlastorPos=0
     loop
-    exitwhen AlastorPos==6 or GetItemTypeId(UnitItemInSlot(c,AlastorPos)) == 'I03A'
+    exitwhen AlastorPos==10 or GetItemTypeId(UnitItemInSlot(c,AlastorPos)) == 'I03A'
     set AlastorPos=AlastorPos+1
     endloop
     if IsAbilityEnabled(GetUnitAbility(c,'AInv'))==true then
-        set Alastor=GetItemOfTypeFromUnitBJ(c,'I03A')
+        set Alastor=GetItemOfTypeFromUnitBJCustom(c,'I03A')
         call UnitRemoveItem(c,Alastor)
         call RemoveItem(Alastor)
         call UnitAddItemToSlotById(c, 'I03A',AlastorPos)
     else
         call EnableUnitAbility2(c,'AInv',false,true)
-        set Alastor=GetItemOfTypeFromUnitBJ(c,'I03A')
+        set Alastor=GetItemOfTypeFromUnitBJCustom(c,'I03A')
         call UnitRemoveItem(c,Alastor)
         call RemoveItem(Alastor)
         call UnitAddItemToSlotById(c, 'I03A',AlastorPos)    
@@ -131065,7 +131139,7 @@ endfunction
 function SlowAuraStartCast takes nothing returns nothing
 local buff buf=GetTriggerBuff()
 local unit u=GetTriggerUnit()
-if UnitHasItemOfTypeBJ(u,'I13S') or UnitHasItemOfTypeBJ(u,'I13R') then
+if UnitHasItemOfTypeBJCustom(u,'I13S') or UnitHasItemOfTypeBJCustom(u,'I13R') then
     call DisableTrigger(GetTriggeringTrigger())
     if GetBuffBaseTypeId(buf)=='Basl' then
         call BJDebugMsg(R2S(GetBuffRealField(buf,ABILITY_RLF_MOVEMENT_SPEED_FACTOR_SLO1)))
@@ -132925,7 +132999,7 @@ local unit l__d=LoadUnitHandle(HH,id,2)
 local real x=GetUnitX(l__d)
 local real y=GetUnitY(l__d)
 local player p=GetOwningPlayer(u)
-local integer i=6
+local integer i=10
 if UnitIsAlive(l__d)then
 call SetUnitX(LoadUnitHandle(HH,id,1), GetUnitX(l__d))
 call SetUnitY(LoadUnitHandle(HH,id,1), GetUnitY(l__d))
@@ -135763,20 +135837,20 @@ call UnitRemoveAbility(E,'A1GL')
 call UnitRemoveAbility(E,'WAE1')
 call UnitRemoveAbility(E,'A1WT')
 call UnitRemoveBuffs(E,true,false)
-if UnitHasItemOfTypeBJ(E, 'I03A') and GetWidgetLife(E)>0 and IsUnitIllusion(E)==false then
+if UnitHasItemOfTypeBJCustom(E, 'I03A') and GetWidgetLife(E)>0 and IsUnitIllusion(E)==false then
     set AlastorPos=0
     loop
-    exitwhen AlastorPos==6 or GetItemTypeId(UnitItemInSlot(E,AlastorPos)) == 'I03A'
+    exitwhen AlastorPos==10 or GetItemTypeId(UnitItemInSlot(E,AlastorPos)) == 'I03A'
     set AlastorPos=AlastorPos+1
     endloop
     if IsAbilityEnabled(GetUnitAbility(E,'AInv'))==true then
-        set Alastor=GetItemOfTypeFromUnitBJ(E,'I03A')
+        set Alastor=GetItemOfTypeFromUnitBJCustom(E,'I03A')
         call UnitRemoveItem(E,Alastor)
         call RemoveItem(Alastor)
         call UnitAddItemToSlotById(E, 'I03A',AlastorPos)
     else
         call EnableUnitAbility2(E,'AInv',false,true)
-        set Alastor=GetItemOfTypeFromUnitBJ(E,'I03A')
+        set Alastor=GetItemOfTypeFromUnitBJCustom(E,'I03A')
         call UnitRemoveItem(E,Alastor)
         call RemoveItem(Alastor)
         call UnitAddItemToSlotById(E, 'I03A',AlastorPos)    
@@ -146771,20 +146845,20 @@ call UnitRemoveAbility(c,'A1GL')
 call UnitRemoveAbility(c,'WAE1')
 call UnitRemoveAbility(c,'A1WT')
 call UnitRemoveBuffs(c,true,false)
-if UnitHasItemOfTypeBJ(c, 'I03A') and GetWidgetLife(c)>0 and IsUnitIllusion(c)==false then
+if UnitHasItemOfTypeBJCustom(c, 'I03A') and GetWidgetLife(c)>0 and IsUnitIllusion(c)==false then
     set AlastorPos=0
     loop
-    exitwhen AlastorPos==6 or GetItemTypeId(UnitItemInSlot(c,AlastorPos)) == 'I03A'
+    exitwhen AlastorPos==10 or GetItemTypeId(UnitItemInSlot(c,AlastorPos)) == 'I03A'
     set AlastorPos=AlastorPos+1
     endloop
     if IsAbilityEnabled(GetUnitAbility(c,'AInv'))==true then
-        set Alastor=GetItemOfTypeFromUnitBJ(c,'I03A')
+        set Alastor=GetItemOfTypeFromUnitBJCustom(c,'I03A')
         call UnitRemoveItem(c,Alastor)
         call RemoveItem(Alastor)
         call UnitAddItemToSlotById(c, 'I03A',AlastorPos)
     else
         call EnableUnitAbility2(c,'AInv',false,true)
-        set Alastor=GetItemOfTypeFromUnitBJ(c,'I03A')
+        set Alastor=GetItemOfTypeFromUnitBJCustom(c,'I03A')
         call UnitRemoveItem(c,Alastor)
         call RemoveItem(Alastor)
         call UnitAddItemToSlotById(c, 'I03A',AlastorPos)    
@@ -149416,7 +149490,7 @@ if SquareRootUnit(u,Hero[GetPlayerId(p)])>750 then
 call SetUnitXY_1(Hero[GetPlayerId(p)],GetUnitX(u),GetUnitY(u), false)
 endif
 loop
-exitwhen i>=6
+exitwhen i>=10
 call UnitDropItemTarget(u,UnitItemInSlot(u,i),Hero[GetPlayerId(p)])
 set i=i+1
 endloop
@@ -149807,7 +149881,7 @@ call SetHeroAgi(l__d,GetHeroAgi(u,false),true)
 call SetHeroStr(l__d,GetHeroStr(u,false),true)
 call SetHeroInt(l__d,GetHeroInt(u,false),true)
 loop
-exitwhen i>=6
+exitwhen i>=10
 if GetItemTypeId(UnitItemInSlot(u,i))!='Io39' then
 set bj_lastCreatedItem=UnitAddItemById(l__d,GetItemTypeId(UnitItemInSlot(u,i)))
 call SetItemDroppable(bj_lastCreatedItem,false)
@@ -164689,7 +164763,7 @@ function GaeDearg_Active takes unit newCaster, unit newTarget, real newAngle, ti
                 call SetUnitInvulnerable(newTarget, false)
                 call myCustomDamage(newCaster, newTarget, 220 , false , false , null , DAMAGE_TYPE_UNKNOWN , null) 
         endif
-        if UnitHasItemOfTypeBJ(newTarget,'I03R') or UnitHasItemOfTypeBJ(newTarget,'I13R') then      // Сфера Пустоты или Броня Бороса
+        if UnitHasItemOfTypeBJCustom(newTarget,'I03R') or UnitHasItemOfTypeBJCustom(newTarget,'I13R') then      // Сфера Пустоты или Броня Бороса
                 call SetUnitInvulnerable(newTarget, false)
                 call myCustomDamage(newCaster, newTarget, 600 , false , false , null , DAMAGE_TYPE_UNKNOWN , null) 
         endif
@@ -165009,9 +165083,9 @@ if GetTriggerPlayerKey()==OSKEY_OEM_3 then
         call PanCameraToTimed(GetUnitX(Hero[i]),GetUnitY(Hero[i]),0)
     endif
 endif
-if UnitHasItemOfTypeBJ(Hero[GetPlayerId(GetTriggerPlayer())],'IMDi') and IsUnitPaused(Hero[GetPlayerId(GetTriggerPlayer())])==false and RectContainsUnit(gg_rct_AntiMh,Hero[GetPlayerId(GetTriggerPlayer())])==false and GetUnitAbilityLevel(Hero[GetPlayerId(GetTriggerPlayer())],'Pet1')==0 and GetUnitAbilityLevel(Hero[GetPlayerId(GetTriggerPlayer())],'cbc8')==0 then
+if UnitHasItemOfTypeBJCustom(Hero[GetPlayerId(GetTriggerPlayer())],'IMDi') and IsUnitPaused(Hero[GetPlayerId(GetTriggerPlayer())])==false and RectContainsUnit(gg_rct_AntiMh,Hero[GetPlayerId(GetTriggerPlayer())])==false and GetUnitAbilityLevel(Hero[GetPlayerId(GetTriggerPlayer())],'Pet1')==0 and GetUnitAbilityLevel(Hero[GetPlayerId(GetTriggerPlayer())],'cbc8')==0 then
     loop
-    exitwhen lp==6
+    exitwhen lp==10
         if GetItemTypeId(UnitItemInSlot(Hero[i],lp))=='IMDi' then
             set ind=lp
         endif
@@ -184954,7 +185028,7 @@ call SetHeroStr(n000,GetHeroStr(caster,false),true)
 call SetHeroInt(n000,GetHeroInt(caster,false),true)
 set i=0
 loop
-exitwhen i>=6
+exitwhen i>=10
 
 //and GetItemTypeId(UnitItemInSlot(caster,i))!='I02R'  and GetItemTypeId(UnitItemInSlot(caster,i))!='I02S'  and GetItemTypeId(UnitItemInSlot(caster,i))!='I02T'
 
@@ -188220,7 +188294,7 @@ call SetHeroAgi(n000,GetHeroAgi(caster,false),true)
 call SetHeroStr(n000,GetHeroStr(caster,false),true)
 call SetHeroInt(n000,GetHeroInt(caster,false),true)
 loop
-exitwhen i>=6
+exitwhen i>=10
 if GetItemTypeId(UnitItemInSlot(caster,i))!='Io39' then
 
 
@@ -196977,7 +197051,7 @@ function Sinon_ModifAttack takes unit newCaster, unit newTarget, real attack_fac
 
 	// if GetUnitAbilityLevel(newCaster, 'A3IG')==0 then	// Патриот анти-миссы и миссы в целом
 	
-		// if (UnitHasItemOfTypeBJ(newTarget, 'I03E') or UnitHasItemOfTypeBJ(newTarget, 'I03F') or GetUnitAbilityLevel(newTarget, 'KIJ2')>0 or GetUnitAbilityLevel(newTarget, 'KIJ4')>0) and GetRandomInt(0, 99)<=49 then	// Туфли или Комплект Анбу - уклонение
+		// if (UnitHasItemOfTypeBJCustom(newTarget, 'I03E') or UnitHasItemOfTypeBJCustom(newTarget, 'I03F') or GetUnitAbilityLevel(newTarget, 'KIJ2')>0 or GetUnitAbilityLevel(newTarget, 'KIJ4')>0) and GetRandomInt(0, 99)<=49 then	// Туфли или Комплект Анбу - уклонение
 			// set damage=0
 			// set miss=true
 		// endif
@@ -207354,13 +207428,13 @@ function OrochimaruVCast4 takes nothing returns nothing
     local group g=LoadGroupHandle(h,id,3)
     call PauseUnit(u,false)
     call UnitRemoveBuffs(u,true,true)
-    if UnitHasItemOfTypeBJ(u, 'I03A') and GetWidgetLife(u)>0 and IsUnitIllusion(u)==false then
+    if UnitHasItemOfTypeBJCustom(u, 'I03A') and GetWidgetLife(u)>0 and IsUnitIllusion(u)==false then
         set AlastorPos=0
         loop
-        exitwhen AlastorPos==6 or GetItemTypeId(UnitItemInSlot(u,AlastorPos)) == 'I03A'
+        exitwhen AlastorPos==10 or GetItemTypeId(UnitItemInSlot(u,AlastorPos)) == 'I03A'
         set AlastorPos=AlastorPos+1
         endloop
-        set Alastor=GetItemOfTypeFromUnitBJ(u,'I03A')
+        set Alastor=GetItemOfTypeFromUnitBJCustom(u,'I03A')
         call UnitRemoveItem(u,Alastor)
         call RemoveItem(Alastor)
         call UnitAddItemToSlotById(u, 'I03A',AlastorPos)
@@ -207595,7 +207669,7 @@ local integer id=0
 local integer ty=GetUnitTypeId(u)
 local boolean b=true
 local boolean fe=true
-// call UnitInventorySetSize(u,8)
+call UnitInventorySetSize(u,10)
 loop
 set id=LoadInteger(h2,ip,i)
 exitwhen i>=100
@@ -209370,148 +209444,148 @@ set t=CreateTrigger()
 call TriggerRegisterAnyUnitEventBJ(t,EVENT_PLAYER_UNIT_SPELL_EFFECT)
 call TriggerAddCondition(t,Condition(function SendItemsCond))
 call TriggerAddAction(t,function SendItemsCast)
-call UIS_RegisterItem('I007',0,0,0,0,0,'I00E','I009')
-call UIS_RegisterItem('I009',0,0,0,0,0,'I00E','I00A')
-call UIS_RegisterItem('I00A',0,0,0,0,0,'I00E','I00B')
-call UIS_RegisterItem('I00B',0,0,0,0,0,'I00E','I00C')
-call UIS_RegisterItem('I00C',0,0,0,0,0,'I00E','I00D')
-call UIS_RegisterItem('I00F',0,0,0,0,0,'I00E','I00G')
-call UIS_RegisterItem('I00G',0,0,0,0,0,'I00E','I00H')
-call UIS_RegisterItem('I00H',0,0,0,0,0,'I00E','I00I')
-call UIS_RegisterItem('I00I',0,0,0,0,0,'I00E','I00J')
-call UIS_RegisterItem('I00J',0,0,0,0,0,'I00E','I00K')
-call UIS_RegisterItem('I00L',0,0,0,0,0,'I00E','I00M')
-call UIS_RegisterItem('I00M',0,0,0,0,0,'I00E','I00N')
-call UIS_RegisterItem('I00N',0,0,0,0,0,'I00E','I00O')
-call UIS_RegisterItem('I00O',0,0,0,0,0,'I00E','I00P')
-call UIS_RegisterItem('I00P',0,0,0,0,0,'I00E','I00Q')
-call UIS_RegisterItem('I00R',0,0,0,0,0,'I00E','I00S')
-call UIS_RegisterItem('I00S',0,0,0,0,0,'I00E','I00T')
-call UIS_RegisterItem('I00T',0,0,0,0,0,'I00E','I00U')
-call UIS_RegisterItem('I00U',0,0,0,0,0,'I00E','I00V')
-call UIS_RegisterItem('I00V',0,0,0,0,0,'I00E','I00W')
-call UIS_RegisterItem('I00X',0,0,0,0,0,'I00E','I00Y')
-call UIS_RegisterItem('I00Y',0,0,0,0,0,'I00E','I00Z')
-call UIS_RegisterItem('I00Z',0,0,0,0,0,'I00E','I010')
-call UIS_RegisterItem('I010',0,0,0,0,0,'I00E','I011')
-call UIS_RegisterItem('I011',0,0,0,0,0,'I00E','I012')
-call UIS_RegisterItem('I013',0,0,0,0,0,'I00E','I014')
-call UIS_RegisterItem('I014',0,0,0,0,0,'I00E','I015')
-call UIS_RegisterItem('I015',0,0,0,0,0,'I00E','I016')
-call UIS_RegisterItem('I016',0,0,0,0,0,'I00E','I017')
-call UIS_RegisterItem('I017',0,0,0,0,0,'I00E','I018')
-call UIS_RegisterItem('I019',0,0,0,0,0,'I00E','I01A')
-call UIS_RegisterItem('I01A',0,0,0,0,0,'I00E','I01B')
-call UIS_RegisterItem('I01B',0,0,0,0,0,'I00E','I01C')
-call UIS_RegisterItem('I01C',0,0,0,0,0,'I00E','I01D')
-call UIS_RegisterItem('I01D',0,0,0,0,0,'I00E','I01E')
-call UIS_RegisterItem('I01H',0,0,0,0,0,'I00E','I01J')
-call UIS_RegisterItem('I01J',0,0,0,0,0,'I00E','I01I')
-call UIS_RegisterItem('I01I',0,0,0,0,0,'I00E','I01K')
-call UIS_RegisterItem('I01L',0,0,0,0,0,'I01P','I01O')
-call UIS_RegisterItem('I01O',0,0,0,0,0,'I01R','I01Q')
-call UIS_RegisterItem('I01O',0,0,0,0,0,'I01T','I01S')
-call UIS_RegisterItem('I01O',0,0,0,0,0,'I01V','I01U')
-call UIS_RegisterItem('I01W',0,0,0,0,0,'I00E','I01X')
-call UIS_RegisterItem('I01X',0,0,0,0,0,'I00E','I01Y')
-call UIS_RegisterItem('I01Y',0,0,0,0,0,'I00E','I01Z')
-call UIS_RegisterItem('I01Z',0,0,0,0,0,'I00E','I06C')
-call UIS_RegisterItem('I06C',0,0,0,0,0,'I00E','I020')
-call UIS_RegisterItem('I02E',0,0,0,0,0,'I00E','I02F')
-call UIS_RegisterItem('I02F',0,0,0,0,0,'I00E','I02G')
-call UIS_RegisterItem('I02G',0,0,0,0,0,'I00E','I02H')
-call UIS_RegisterItem('I02H',0,0,0,0,0,'I00E','I02I')
-call UIS_RegisterItem('I02I',0,0,0,0,0,'I00E','I02J')
-call UIS_RegisterItem('I02L',0,0,0,0,0,'I00E','I02M')
-call UIS_RegisterItem('I02M',0,0,0,0,0,'I00E','I02N')
-call UIS_RegisterItem('I02N',0,0,0,0,0,'I00E','I02O')
-call UIS_RegisterItem('I02O',0,0,0,0,0,'I00E','I02P')
-call UIS_RegisterItem('I02P',0,0,0,0,0,'I00E','I02Q')
-call UIS_RegisterItem('I01L','I02T',0,0,0,0,'I02U','I02V')
-call UIS_RegisterItem('I01F','I01M','I02R',0,0,0,'I02X','I02W')
-call UIS_RegisterItem('IOS2','I02S',0,0,0,0,'I02Z','I02Y')							// Перчатки Льда
-call UIS_RegisterItem('I033','I032','I034','I035',0,0,0,'I036')
-call UIS_RegisterItem('I03D','I03E','I03B','I03C',0,0,0,'I03F')
-call UIS_RegisterItem('I008',0,0,0,0,0,'I00E','I03G')
-call UIS_RegisterItem('I03G',0,0,0,0,0,'I00E','I03H')
-call UIS_RegisterItem('I03H',0,0,0,0,0,'I00E','I03I')
-call UIS_RegisterItem('I01K',0,0,0,0,0,'I00E','I01L')
-call UIS_RegisterItem('I03I',0,0,0,0,0,'I00E','I03J')
-call UIS_RegisterItem('I03J',0,0,0,0,0,'I00E','I03K')
-call UIS_RegisterItem('I03K',0,0,0,0,0,'I00E','I03L')
-call UIS_RegisterItem('I03Z','I03X','I03Y','I03W',0,0,0,'I040')
-call UIS_RegisterItem('I02S','I02R','I02T',0,0,0,'I045','I044')
-call UIS_RegisterItem('I01F','I01M','I02T',0,0,0,'I047','I046')
-call UIS_RegisterItem('I049',0,0,0,0,0,'I00E','I04A')
-call UIS_RegisterItem('I04A',0,0,0,0,0,'I00E','I04B')
-call UIS_RegisterItem('I04B',0,0,0,0,0,'I00E','I04C')
-call UIS_RegisterItem('I04C',0,0,0,0,0,'I00E','I04D')
-call UIS_RegisterItem('I04D',0,0,0,0,0,'I00E','I04E')
-call UIS_RegisterItem('I04H','I04H',0,0,0,0,'I00E','I04I')
-call UIS_RegisterItem('I04M',0,0,0,0,0,'I00E','I04N')
-call UIS_RegisterItem('I04N',0,0,0,0,0,'I00E','I04O')
-call UIS_RegisterItem('I04O',0,0,0,0,0,'I00E','I04P')
-call UIS_RegisterItem('I04P',0,0,0,0,0,'I00E','I04Q')
-call UIS_RegisterItem('I04Q',0,0,0,0,0,'I00E','I04R')
-call UIS_RegisterItem('I02S','I01M','I02S',0,0,0,0,'I04L')
-call UIS_RegisterItem('I02S','I02R','I02T',0,0,0,'I04Y','I03A')
-call UIS_RegisterItem('I02T','I01K',0,0,0,0,'I04U','I042')
-call UIS_RegisterItem('I01O',0,0,0,0,0,'I04X','I04F')
-call UIS_RegisterItem('I01O',0,0,0,0,0,'I04Z','I03O')
-call UIS_RegisterItem('I033','I03B','I01M',0,0,0,'I051','I050')
-call UIS_RegisterItem('I03I','I01K','I01M',0,0,0,0,'I04V')
-call UIS_RegisterItem('I12R','I03R',0,0,0,0,'I14R','I13R')
-call UIS_RegisterItem('I00W',0,0,0,0,0,'IGDr','IGDi')                                             // Gae Dearg Сборка
-call UIS_RegisterItem('I01L','I01M',0,0,0,0,'IPar','I031')                                // Patriot сборка
-call UIS_RegisterItem('I03D','I05W','I02T',0,0,0,0,'IMDi')                                // Medusa-Dr.Stone Сборка
-call UIS_RegisterItem('IOS3','I05E',0,0,0,0,'IHYr','IHYi')                                // Yukirin Hourglass Сборка
-call UIS_RegisterItem('I03Y','IOS1','I02S',0,0,0,'ISTr','ISTi')                   // Stigmata Tesseract Сборка
-call UIS_RegisterItem('I01H','IOS3','I12R',0,0,0,0,'ISHk')                            // Sode no Shirayuki
-call UIS_RegisterItem('I02Y','ISHk',0,0,0,0,0,'IHnK')                                 // Hakka No Togame
-call UIS_RegisterItem('I01L','I12R',0,0,0,0,'IBSR','IBSI')                                 // Buster Sword
-call UIS_RegisterItem('I03Z','I03C','I060',0,0,0,0,'IAoF')                                 // Fafnir
-call UIS_RegisterItem('IOS3','IOS4','IOS2','IOS1',0,0,0,'I1S4')
-call UIS_RegisterItem('I01Z','I02T',0,0,0,0,'I052','I04G')
+call UIS_RegisterItem('I007',0,0,0,0,0,0,0,0,0,'I00E','I009')
+call UIS_RegisterItem('I009',0,0,0,0,0,0,0,0,0,'I00E','I00A')
+call UIS_RegisterItem('I00A',0,0,0,0,0,0,0,0,0,'I00E','I00B')
+call UIS_RegisterItem('I00B',0,0,0,0,0,0,0,0,0,'I00E','I00C')
+call UIS_RegisterItem('I00C',0,0,0,0,0,0,0,0,0,'I00E','I00D')
+call UIS_RegisterItem('I00F',0,0,0,0,0,0,0,0,0,'I00E','I00G')
+call UIS_RegisterItem('I00G',0,0,0,0,0,0,0,0,0,'I00E','I00H')
+call UIS_RegisterItem('I00H',0,0,0,0,0,0,0,0,0,'I00E','I00I')
+call UIS_RegisterItem('I00I',0,0,0,0,0,0,0,0,0,'I00E','I00J')
+call UIS_RegisterItem('I00J',0,0,0,0,0,0,0,0,0,'I00E','I00K')
+call UIS_RegisterItem('I00L',0,0,0,0,0,0,0,0,0,'I00E','I00M')
+call UIS_RegisterItem('I00M',0,0,0,0,0,0,0,0,0,'I00E','I00N')
+call UIS_RegisterItem('I00N',0,0,0,0,0,0,0,0,0,'I00E','I00O')
+call UIS_RegisterItem('I00O',0,0,0,0,0,0,0,0,0,'I00E','I00P')
+call UIS_RegisterItem('I00P',0,0,0,0,0,0,0,0,0,'I00E','I00Q')
+call UIS_RegisterItem('I00R',0,0,0,0,0,0,0,0,0,'I00E','I00S')
+call UIS_RegisterItem('I00S',0,0,0,0,0,0,0,0,0,'I00E','I00T')
+call UIS_RegisterItem('I00T',0,0,0,0,0,0,0,0,0,'I00E','I00U')
+call UIS_RegisterItem('I00U',0,0,0,0,0,0,0,0,0,'I00E','I00V')
+call UIS_RegisterItem('I00V',0,0,0,0,0,0,0,0,0,'I00E','I00W')
+call UIS_RegisterItem('I00X',0,0,0,0,0,0,0,0,0,'I00E','I00Y')
+call UIS_RegisterItem('I00Y',0,0,0,0,0,0,0,0,0,'I00E','I00Z')
+call UIS_RegisterItem('I00Z',0,0,0,0,0,0,0,0,0,'I00E','I010')
+call UIS_RegisterItem('I010',0,0,0,0,0,0,0,0,0,'I00E','I011')
+call UIS_RegisterItem('I011',0,0,0,0,0,0,0,0,0,'I00E','I012')
+call UIS_RegisterItem('I013',0,0,0,0,0,0,0,0,0,'I00E','I014')
+call UIS_RegisterItem('I014',0,0,0,0,0,0,0,0,0,'I00E','I015')
+call UIS_RegisterItem('I015',0,0,0,0,0,0,0,0,0,'I00E','I016')
+call UIS_RegisterItem('I016',0,0,0,0,0,0,0,0,0,'I00E','I017')
+call UIS_RegisterItem('I017',0,0,0,0,0,0,0,0,0,'I00E','I018')
+call UIS_RegisterItem('I019',0,0,0,0,0,0,0,0,0,'I00E','I01A')
+call UIS_RegisterItem('I01A',0,0,0,0,0,0,0,0,0,'I00E','I01B')
+call UIS_RegisterItem('I01B',0,0,0,0,0,0,0,0,0,'I00E','I01C')
+call UIS_RegisterItem('I01C',0,0,0,0,0,0,0,0,0,'I00E','I01D')
+call UIS_RegisterItem('I01D',0,0,0,0,0,0,0,0,0,'I00E','I01E')
+call UIS_RegisterItem('I01H',0,0,0,0,0,0,0,0,0,'I00E','I01J')
+call UIS_RegisterItem('I01J',0,0,0,0,0,0,0,0,0,'I00E','I01I')
+call UIS_RegisterItem('I01I',0,0,0,0,0,0,0,0,0,'I00E','I01K')
+call UIS_RegisterItem('I01L',0,0,0,0,0,0,0,0,0,'I01P','I01O')
+call UIS_RegisterItem('I01O',0,0,0,0,0,0,0,0,0,'I01R','I01Q')
+call UIS_RegisterItem('I01O',0,0,0,0,0,0,0,0,0,'I01T','I01S')
+call UIS_RegisterItem('I01O',0,0,0,0,0,0,0,0,0,'I01V','I01U')
+call UIS_RegisterItem('I01W',0,0,0,0,0,0,0,0,0,'I00E','I01X')
+call UIS_RegisterItem('I01X',0,0,0,0,0,0,0,0,0,'I00E','I01Y')
+call UIS_RegisterItem('I01Y',0,0,0,0,0,0,0,0,0,'I00E','I01Z')
+call UIS_RegisterItem('I01Z',0,0,0,0,0,0,0,0,0,'I00E','I06C')
+call UIS_RegisterItem('I06C',0,0,0,0,0,0,0,0,0,'I00E','I020')
+call UIS_RegisterItem('I02E',0,0,0,0,0,0,0,0,0,'I00E','I02F')
+call UIS_RegisterItem('I02F',0,0,0,0,0,0,0,0,0,'I00E','I02G')
+call UIS_RegisterItem('I02G',0,0,0,0,0,0,0,0,0,'I00E','I02H')
+call UIS_RegisterItem('I02H',0,0,0,0,0,0,0,0,0,'I00E','I02I')
+call UIS_RegisterItem('I02I',0,0,0,0,0,0,0,0,0,'I00E','I02J')
+call UIS_RegisterItem('I02L',0,0,0,0,0,0,0,0,0,'I00E','I02M')
+call UIS_RegisterItem('I02M',0,0,0,0,0,0,0,0,0,'I00E','I02N')
+call UIS_RegisterItem('I02N',0,0,0,0,0,0,0,0,0,'I00E','I02O')
+call UIS_RegisterItem('I02O',0,0,0,0,0,0,0,0,0,'I00E','I02P')
+call UIS_RegisterItem('I02P',0,0,0,0,0,0,0,0,0,'I00E','I02Q')
+call UIS_RegisterItem('I01L','I02T',0,0,0,0,0,0,0,0,'I02U','I02V')
+call UIS_RegisterItem('I01F','I01M','I02R',0,0,0,0,0,0,0,'I02X','I02W')
+call UIS_RegisterItem('IOS2','I02S',0,0,0,0,0,0,0,0,'I02Z','I02Y')							// Перчатки Льда
+call UIS_RegisterItem('I033','I032','I034','I035',0,0,0,0,0,0,0,'I036')
+call UIS_RegisterItem('I03D','I03E','I03B','I03C',0,0,0,0,0,0,0,'I03F')
+call UIS_RegisterItem('I008',0,0,0,0,0,0,0,0,0,'I00E','I03G')
+call UIS_RegisterItem('I03G',0,0,0,0,0,0,0,0,0,'I00E','I03H')
+call UIS_RegisterItem('I03H',0,0,0,0,0,0,0,0,0,'I00E','I03I')
+call UIS_RegisterItem('I01K',0,0,0,0,0,0,0,0,0,'I00E','I01L')
+call UIS_RegisterItem('I03I',0,0,0,0,0,0,0,0,0,'I00E','I03J')
+call UIS_RegisterItem('I03J',0,0,0,0,0,0,0,0,0,'I00E','I03K')
+call UIS_RegisterItem('I03K',0,0,0,0,0,0,0,0,0,'I00E','I03L')
+call UIS_RegisterItem('I03Z','I03X','I03Y','I03W',0,0,0,0,0,0,0,'I040')
+call UIS_RegisterItem('I02S','I02R','I02T',0,0,0,0,0,0,0,'I045','I044')
+call UIS_RegisterItem('I01F','I01M','I02T',0,0,0,0,0,0,0,'I047','I046')
+call UIS_RegisterItem('I049',0,0,0,0,0,0,0,0,0,'I00E','I04A')
+call UIS_RegisterItem('I04A',0,0,0,0,0,0,0,0,0,'I00E','I04B')
+call UIS_RegisterItem('I04B',0,0,0,0,0,0,0,0,0,'I00E','I04C')
+call UIS_RegisterItem('I04C',0,0,0,0,0,0,0,0,0,'I00E','I04D')
+call UIS_RegisterItem('I04D',0,0,0,0,0,0,0,0,0,'I00E','I04E')
+call UIS_RegisterItem('I04H','I04H',0,0,0,0,0,0,0,0,'I00E','I04I')
+call UIS_RegisterItem('I04M',0,0,0,0,0,0,0,0,0,'I00E','I04N')
+call UIS_RegisterItem('I04N',0,0,0,0,0,0,0,0,0,'I00E','I04O')
+call UIS_RegisterItem('I04O',0,0,0,0,0,0,0,0,0,'I00E','I04P')
+call UIS_RegisterItem('I04P',0,0,0,0,0,0,0,0,0,'I00E','I04Q')
+call UIS_RegisterItem('I04Q',0,0,0,0,0,0,0,0,0,'I00E','I04R')
+call UIS_RegisterItem('I02S','I01M','I02S',0,0,0,0,0,0,0,0,'I04L')
+call UIS_RegisterItem('I02S','I02R','I02T',0,0,0,0,0,0,0,'I04Y','I03A')
+call UIS_RegisterItem('I02T','I01K',0,0,0,0,0,0,0,0,'I04U','I042')
+call UIS_RegisterItem('I01O',0,0,0,0,0,0,0,0,0,'I04X','I04F')
+call UIS_RegisterItem('I01O',0,0,0,0,0,0,0,0,0,'I04Z','I03O')
+call UIS_RegisterItem('I033','I03B','I01M',0,0,0,0,0,0,0,'I051','I050')
+call UIS_RegisterItem('I03I','I01K','I01M',0,0,0,0,0,0,0,0,'I04V')
+call UIS_RegisterItem('I12R','I03R',0,0,0,0,0,0,0,0,'I14R','I13R')
+call UIS_RegisterItem('I00W',0,0,0,0,0,0,0,0,0,'IGDr','IGDi')                                             // Gae Dearg Сборка
+call UIS_RegisterItem('I01L','I01M',0,0,0,0,0,0,0,0,'IPar','I031')                                // Patriot сборка
+call UIS_RegisterItem('I03D','I05W','I02T',0,0,0,0,0,0,0,0,'IMDi')                                // Medusa-Dr.Stone Сборка
+call UIS_RegisterItem('IOS3','I05E',0,0,0,0,0,0,0,0,'IHYr','IHYi')                                // Yukirin Hourglass Сборка
+call UIS_RegisterItem('I03Y','IOS1','I02S',0,0,0,0,0,0,0,'ISTr','ISTi')                   // Stigmata Tesseract Сборка
+call UIS_RegisterItem('I01H','IOS3','I12R',0,0,0,0,0,0,0,0,'ISHk')                            // Sode no Shirayuki
+call UIS_RegisterItem('I02Y','ISHk',0,0,0,0,0,0,0,0,0,'IHnK')                                 // Hakka No Togame
+call UIS_RegisterItem('I01L','I12R',0,0,0,0,0,0,0,0,'IBSR','IBSI')                                 // Buster Sword
+call UIS_RegisterItem('I03Z','I03C','I060',0,0,0,0,0,0,0,0,'IAoF')                                 // Fafnir
+call UIS_RegisterItem('IOS3','IOS4','IOS2','IOS1',0,0,0,0,0,0,0,'I1S4')
+call UIS_RegisterItem('I01Z','I02T',0,0,0,0,0,0,0,0,'I052','I04G')
 // call UIS_RegisterItem('I03B','I01I',0,'I053',0,0,'I038') //old Kosa
-call UIS_RegisterItem('I03B','I01I',0,0,0,0,'I053','ISDi')
-call UIS_RegisterItem('I01F','I02S','I01M',0,0,0,'I055','I054')
-call UIS_RegisterItem('I056',0,0,0,0,0,'I00E','I057')
-call UIS_RegisterItem('I057',0,0,0,0,0,'I00E','I058')
-call UIS_RegisterItem('I058',0,0,0,0,0,'I00E','I059')
-call UIS_RegisterItem('I059',0,0,0,0,0,'I00E','I05A')
-call UIS_RegisterItem('I05A',0,0,0,0,0,'I00E','I05B')
-call UIS_RegisterItem('I05C',0,0,0,0,0,'I00E','I05D')
-call UIS_RegisterItem('I05D',0,0,0,0,0,'I00E','I05E')
-call UIS_RegisterItem('I05E',0,0,0,0,0,'I00E','I05F')
-call UIS_RegisterItem('I05F',0,0,0,0,0,'I00E','I05G')
-call UIS_RegisterItem('I05G',0,0,0,0,0,'I00E','I05H')
-call UIS_RegisterItem('I05I',0,0,0,0,0,'I00E','I05J')
-call UIS_RegisterItem('I05J',0,0,0,0,0,'I00E','I05K')
-call UIS_RegisterItem('I05K',0,0,0,0,0,'I00E','I05L')
-call UIS_RegisterItem('I05L',0,0,0,0,0,'I00E','I05M')
-call UIS_RegisterItem('I05M',0,0,0,0,0,'I00E','I05N')
-call UIS_RegisterItem('I05O',0,0,0,0,0,'I00E','I05P')
-call UIS_RegisterItem('I05P',0,0,0,0,0,'I00E','I05Q')
-call UIS_RegisterItem('I05Q',0,0,0,0,0,'I00E','I05R')
-call UIS_RegisterItem('I05R',0,0,0,0,0,'I00E','I05S')
-call UIS_RegisterItem('I05S',0,0,0,0,0,'I00E','I05T')
-call UIS_RegisterItem('I05U',0,0,0,0,0,'I00E','I05V')
-call UIS_RegisterItem('I05V',0,0,0,0,0,'I00E','I05W')
-call UIS_RegisterItem('I05W',0,0,0,0,0,'I00E','I05X')
-call UIS_RegisterItem('I05X',0,0,0,0,0,'I00E','I05Y')
-call UIS_RegisterItem('I05Y',0,0,0,0,0,'I00E','I05Z')
-call UIS_RegisterItem('I060',0,0,0,0,0,'I00E','I061')
-call UIS_RegisterItem('I061',0,0,0,0,0,'I00E','I062')
-call UIS_RegisterItem('I062',0,0,0,0,0,'I00E','I063')
-call UIS_RegisterItem('I063',0,0,0,0,0,'I00E','I064')
-call UIS_RegisterItem('I064',0,0,0,0,0,'I00E','I065')
-call UIS_RegisterItem('I033','I04I',0,0,0,0,0,'I066')
-call UIS_RegisterItem('I06I','I06F','I06G','I06H',0,0,0,'I06E')
-call UIS_RegisterItem('I06K','I06L','I06M','I06N',0,0,0,'I06J')
-call UIS_RegisterItem('I068',0,0,0,0,0,'I06P','I06O')
-call UIS_RegisterItem('I02R','I035','I06N',0,0,0,0,'I068') //grail
-call UIS_RegisterItem('I06C',0,0,0,0,0,'I06S','I06Q')
-call UIS_RegisterItem('I06C',0,0,0,0,0,'I06T','I06R')
+call UIS_RegisterItem('I03B','I01I',0,0,0,0,0,0,0,0,'I053','ISDi')
+call UIS_RegisterItem('I01F','I02S','I01M',0,0,0,0,0,0,0,'I055','I054')
+call UIS_RegisterItem('I056',0,0,0,0,0,0,0,0,0,'I00E','I057')
+call UIS_RegisterItem('I057',0,0,0,0,0,0,0,0,0,'I00E','I058')
+call UIS_RegisterItem('I058',0,0,0,0,0,0,0,0,0,'I00E','I059')
+call UIS_RegisterItem('I059',0,0,0,0,0,0,0,0,0,'I00E','I05A')
+call UIS_RegisterItem('I05A',0,0,0,0,0,0,0,0,0,'I00E','I05B')
+call UIS_RegisterItem('I05C',0,0,0,0,0,0,0,0,0,'I00E','I05D')
+call UIS_RegisterItem('I05D',0,0,0,0,0,0,0,0,0,'I00E','I05E')
+call UIS_RegisterItem('I05E',0,0,0,0,0,0,0,0,0,'I00E','I05F')
+call UIS_RegisterItem('I05F',0,0,0,0,0,0,0,0,0,'I00E','I05G')
+call UIS_RegisterItem('I05G',0,0,0,0,0,0,0,0,0,'I00E','I05H')
+call UIS_RegisterItem('I05I',0,0,0,0,0,0,0,0,0,'I00E','I05J')
+call UIS_RegisterItem('I05J',0,0,0,0,0,0,0,0,0,'I00E','I05K')
+call UIS_RegisterItem('I05K',0,0,0,0,0,0,0,0,0,'I00E','I05L')
+call UIS_RegisterItem('I05L',0,0,0,0,0,0,0,0,0,'I00E','I05M')
+call UIS_RegisterItem('I05M',0,0,0,0,0,0,0,0,0,'I00E','I05N')
+call UIS_RegisterItem('I05O',0,0,0,0,0,0,0,0,0,'I00E','I05P')
+call UIS_RegisterItem('I05P',0,0,0,0,0,0,0,0,0,'I00E','I05Q')
+call UIS_RegisterItem('I05Q',0,0,0,0,0,0,0,0,0,'I00E','I05R')
+call UIS_RegisterItem('I05R',0,0,0,0,0,0,0,0,0,'I00E','I05S')
+call UIS_RegisterItem('I05S',0,0,0,0,0,0,0,0,0,'I00E','I05T')
+call UIS_RegisterItem('I05U',0,0,0,0,0,0,0,0,0,'I00E','I05V')
+call UIS_RegisterItem('I05V',0,0,0,0,0,0,0,0,0,'I00E','I05W')
+call UIS_RegisterItem('I05W',0,0,0,0,0,0,0,0,0,'I00E','I05X')
+call UIS_RegisterItem('I05X',0,0,0,0,0,0,0,0,0,'I00E','I05Y')
+call UIS_RegisterItem('I05Y',0,0,0,0,0,0,0,0,0,'I00E','I05Z')
+call UIS_RegisterItem('I060',0,0,0,0,0,0,0,0,0,'I00E','I061')
+call UIS_RegisterItem('I061',0,0,0,0,0,0,0,0,0,'I00E','I062')
+call UIS_RegisterItem('I062',0,0,0,0,0,0,0,0,0,'I00E','I063')
+call UIS_RegisterItem('I063',0,0,0,0,0,0,0,0,0,'I00E','I064')
+call UIS_RegisterItem('I064',0,0,0,0,0,0,0,0,0,'I00E','I065')
+call UIS_RegisterItem('I033','I04I',0,0,0,0,0,0,0,0,0,'I066')
+call UIS_RegisterItem('I06I','I06F','I06G','I06H',0,0,0,0,0,0,0,'I06E')
+call UIS_RegisterItem('I06K','I06L','I06M','I06N',0,0,0,0,0,0,0,'I06J')
+call UIS_RegisterItem('I068',0,0,0,0,0,0,0,0,0,'I06P','I06O')
+call UIS_RegisterItem('I02R','I035','I06N',0,0,0,0,0,0,0,0,'I068') //grail
+call UIS_RegisterItem('I06C',0,0,0,0,0,0,0,0,0,'I06S','I06Q')
+call UIS_RegisterItem('I06C',0,0,0,0,0,0,0,0,0,'I06T','I06R')
 set t=CreateTrigger()
 loop
 exitwhen i>=11
@@ -211293,11 +211367,43 @@ call AntiHackEnable(false)
 call AntiHackEnableAddressCheck(true)
 call AntiHackEnableBreakpointCheck(true)
 call SetBuffBarRenderDuplicates(true)
-// call SetFrameGridSize( GetOriginFrame( ORIGIN_FRAME_INVENTORY_BAR, 0 ), 3, 3 )
-// call ClearFrameAllPoints(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 6))
-// call SetFrameRelativePoint(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 6), FRAMEPOINT_CENTER, GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 0),FRAMEPOINT_CENTER,.0, .05)
-// call ClearFrameAllPoints(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 7))
-// call SetFrameRelativePoint(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 7), FRAMEPOINT_CENTER, GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 1),FRAMEPOINT_CENTER,.0, .05)
+call SetFrameGridSize( GetOriginFrame( ORIGIN_FRAME_INVENTORY_BAR, 0 ), 3, 4 )
+// call ConsolePrint("FRAMEPOINT_TOPLEFT: "+GetFramePointName(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 0),FRAMEPOINT_TOPLEFT)+"   Parent: "+GetFrameName(GetFrameRelativePointParent(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 0),FRAMEPOINT_TOPRIGHT))+"\n")
+// call ConsolePrint("FRAMEPOINT_TOP: "+GetFramePointName(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 0),FRAMEPOINT_TOP)+"   Parent: "+GetFrameName(GetFrameRelativePointParent(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 0),FRAMEPOINT_TOPLEFT))+"\n")
+// call ConsolePrint("FRAMEPOINT_TOPRIGHT: "+GetFramePointName(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 0),FRAMEPOINT_TOPRIGHT)+"   Parent: "+GetFrameName(GetFrameRelativePointParent(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 0),FRAMEPOINT_TOPLEFT))+"\n")
+// call ConsolePrint("FRAMEPOINT_LEFT: "+GetFramePointName(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 0),FRAMEPOINT_LEFT)+"   Parent: "+GetFrameName(GetFrameRelativePointParent(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 0),FRAMEPOINT_TOPLEFT))+"\n")
+// call ConsolePrint("FRAMEPOINT_CENTER: "+GetFramePointName(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 0),FRAMEPOINT_CENTER)+"   Parent: "+GetFrameName(GetFrameRelativePointParent(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 0),FRAMEPOINT_TOPLEFT))+"\n")
+// call ConsolePrint("FRAMEPOINT_RIGHT: "+GetFramePointName(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 0),FRAMEPOINT_RIGHT)+"   Parent: "+GetFrameName(GetFrameRelativePointParent(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 0),FRAMEPOINT_TOPLEFT))+"\n")
+// call ConsolePrint("FRAMEPOINT_BOTTOMLEFT: "+GetFramePointName(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 0),FRAMEPOINT_BOTTOMLEFT)+"   Parent: "+GetFrameName(GetFrameRelativePointParent(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 0),FRAMEPOINT_TOPLEFT))+"\n")
+// call ConsolePrint("FRAMEPOINT_BOTTOM: "+GetFramePointName(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 0),FRAMEPOINT_BOTTOM)+"   Parent: "+GetFrameName(GetFrameRelativePointParent(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 0),FRAMEPOINT_TOPLEFT))+"\n")
+// call ConsolePrint("FRAMEPOINT_BOTTOMRIGHT: "+GetFramePointName(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 0),FRAMEPOINT_BOTTOMRIGHT)+"   Parent: "+GetFrameName(GetFrameRelativePointParent(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 0),FRAMEPOINT_TOPLEFT))+"\n")
+call SetFrameRelativePoint(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 0), FRAMEPOINT_TOPLEFT, GetFrameRelativePointParent(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 0),FRAMEPOINT_TOPLEFT),FRAMEPOINT_TOPRIGHT,.0175, -.029)
+call SetFrameRelativePoint(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 0), FRAMEPOINT_TOP, GetFrameRelativePointParent(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 0),FRAMEPOINT_TOP),FRAMEPOINT_TOPLEFT,.00, -.029)
+call SetFrameRelativePoint(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 0), FRAMEPOINT_TOPRIGHT, GetFrameRelativePointParent(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 0),FRAMEPOINT_TOPRIGHT),FRAMEPOINT_TOPLEFT,.00, -.029)
+call SetFrameRelativePoint(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 0), FRAMEPOINT_LEFT, GetFrameRelativePointParent(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 0),FRAMEPOINT_LEFT),FRAMEPOINT_TOPLEFT,.00, -.029)
+call SetFrameRelativePoint(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 0), FRAMEPOINT_CENTER, GetFrameRelativePointParent(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 0),FRAMEPOINT_CENTER),FRAMEPOINT_TOPLEFT,.00, -.029)
+call SetFrameRelativePoint(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 0), FRAMEPOINT_RIGHT, GetFrameRelativePointParent(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 0),FRAMEPOINT_RIGHT),FRAMEPOINT_TOPLEFT,.00, -.026)
+call SetFrameRelativePoint(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 0), FRAMEPOINT_BOTTOMLEFT, GetFrameRelativePointParent(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 0),FRAMEPOINT_BOTTOMLEFT),FRAMEPOINT_TOPLEFT,.00, -.029)
+call SetFrameRelativePoint(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 0), FRAMEPOINT_BOTTOM, GetFrameRelativePointParent(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 0),FRAMEPOINT_BOTTOM),FRAMEPOINT_TOPLEFT,.00, -.029)
+call SetFrameRelativePoint(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 0), FRAMEPOINT_BOTTOMRIGHT, GetFrameRelativePointParent(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 0),FRAMEPOINT_BOTTOMRIGHT),FRAMEPOINT_TOPLEFT,.00, -.029)
+call ClearFrameAllPoints(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 2))
+call SetFrameRelativePoint(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 2), FRAMEPOINT_CENTER, GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 0),FRAMEPOINT_CENTER,.00, -.027)
+call ClearFrameAllPoints(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 4))
+call SetFrameRelativePoint(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 4), FRAMEPOINT_CENTER, GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 2),FRAMEPOINT_CENTER,.00, -.027)
+call ClearFrameAllPoints(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 1))
+call SetFrameRelativePoint(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 1), FRAMEPOINT_CENTER, GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 0),FRAMEPOINT_CENTER,.025, .0)
+call ClearFrameAllPoints(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 3))
+call SetFrameRelativePoint(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 3), FRAMEPOINT_CENTER, GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 2),FRAMEPOINT_CENTER,.025, .0)
+call ClearFrameAllPoints(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 5))
+call SetFrameRelativePoint(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 5), FRAMEPOINT_CENTER, GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 4),FRAMEPOINT_CENTER,.025, .0)
+call ClearFrameAllPoints(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 6))
+call SetFrameRelativePoint(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 6), FRAMEPOINT_CENTER, GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 1),FRAMEPOINT_CENTER,.025, .0)
+call ClearFrameAllPoints(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 7))
+call SetFrameRelativePoint(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 7), FRAMEPOINT_CENTER, GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 3),FRAMEPOINT_CENTER,.025, .0)
+call ClearFrameAllPoints(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 8))
+call SetFrameRelativePoint(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 8), FRAMEPOINT_CENTER, GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 5),FRAMEPOINT_CENTER,.025, .0)
+call ClearFrameAllPoints(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 9))
+call SetFrameRelativePoint(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 9), FRAMEPOINT_CENTER, GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 0),FRAMEPOINT_CENTER,.025, .027)
 //call SetFrameGridSize( GetOriginFrame( ORIGIN_FRAME_COMMAND_BAR, 0),3,5)
 call SetMoveSpeedMaxAllowed(550)
 call SetFrameFont( GetOriginFrame( ORIGIN_FRAME_UNIT_MSG, 0 ), "Fonts\\FRIZQT__.TTF", .0115, 0 )
