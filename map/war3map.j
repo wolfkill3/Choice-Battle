@@ -21351,6 +21351,12 @@ if GetItemPlayer(it)==Player(15) or GetItemPlayer(it)==p or udg_test==true then
             call UnitRemoveItem(u,it)
             call RemoveItem(it)
             call UnitAddItemToSlot(u,f,0)
+        elseif UnitItemInSlot(u,6)==it or UnitItemInSlot(u,7)==it or UnitItemInSlot(u,8)==it then
+            call DisableItem(f,true,true,1)
+            call DisableItem(f,true,true,4)
+        else
+            call EnableItem(f,true,true,1)
+            call EnableItem(f,true,true,4)
         endif
     endif
     set id=UIS_Check(u)
@@ -21359,41 +21365,41 @@ if GetItemPlayer(it)==Player(15) or GetItemPlayer(it)==p or udg_test==true then
     endif
     if id>-1 then
         if UnitItemInSlot(u,1)!=null and UnitItemInSlot(u,2)!=null and UnitItemInSlot(u,3)!=null and UnitItemInSlot(u,4)!=null and UnitItemInSlot(u,5)!=null and UnitItemInSlot(u,6)!=null and UnitItemInSlot(u,7)!=null and UnitItemInSlot(u,8)!=null and UnitItemInSlot(u,9)!=null and UnitItemInSlot(u,10)!=null and UnitItemInSlot(u,0)!=null then
-        set f=CreateItem(id,GetUnitX(Chest[GetPlayerId(p)]),GetUnitY(Chest[GetPlayerId(p)]))
-        call SetItemStringField(f,ITEM_SF_NAME,GetBaseItemStringFieldById(GetItemTypeId(f),ITEM_SF_NAME)+" ("+Color[GetPlayerId(p)]+GetPlayerName(p)+"|r)")
-        call SetItemPlayer(f,p,false)
-        call UnitAddItem(Chest[GetPlayerId(p)],f)
+            set f=CreateItem(id,GetUnitX(Chest[GetPlayerId(p)]),GetUnitY(Chest[GetPlayerId(p)]))
+            call SetItemStringField(f,ITEM_SF_NAME,GetBaseItemStringFieldById(GetItemTypeId(f),ITEM_SF_NAME)+" ("+Color[GetPlayerId(p)]+GetPlayerName(p)+"|r)")
+            call SetItemPlayer(f,p,false)
+            call UnitAddItem(Chest[GetPlayerId(p)],f)
         else
-        set f=CreateItem(id,GetUnitX(u),GetUnitY(u))
-        call SetItemPlayer(f,p,false)
-        call UnitAddItem(u,f)
-        if itemsc[GetPlayerId(GetItemPlayer(it))]==true then
-            if GetItemTypeId(f) ==  'I04R' then
-                call SetAbilityIntegerLevelField(GetUnitAbility(Hero[GetPlayerId(GetItemPlayer(it))],'A10Q'), ABILITY_ILF_TARGET_TYPE,0,1)
+            set f=CreateItem(id,GetUnitX(u),GetUnitY(u))
+            call SetItemPlayer(f,p,false)
+            call UnitAddItem(u,f)
+            if itemsc[GetPlayerId(GetItemPlayer(it))]==true then
+                if GetItemTypeId(f) ==  'I04R' then
+                    call SetAbilityIntegerLevelField(GetUnitAbility(Hero[GetPlayerId(GetItemPlayer(it))],'A10Q'), ABILITY_ILF_TARGET_TYPE,0,1)
+                endif
+                if GetItemTypeId(f) ==  'I00D' then
+                    call SetAbilityIntegerLevelField(GetUnitAbility(Hero[GetPlayerId(GetItemPlayer(it))],'A048'), ABILITY_ILF_TARGET_TYPE,0,1)
+                endif
+                if GetItemTypeId(f) ==  'I02S' then
+                    call SetAbilityIntegerLevelField(GetUnitAbility(Hero[GetPlayerId(GetItemPlayer(it))],'A0HL'), ABILITY_ILF_TARGET_TYPE,0,1)
+                endif
+                if GetItemTypeId(f) ==  'I054' then
+                    call SetAbilityIntegerLevelField(GetUnitAbility(Hero[GetPlayerId(GetItemPlayer(it))],'A15E'), ABILITY_ILF_TARGET_TYPE,0,1)
+                endif
+            else
+                if GetItemTypeId(f) ==  'I04R' then
+                    call SetAbilityIntegerLevelField(GetUnitAbility(Hero[GetPlayerId(GetItemPlayer(it))],'A10Q'), ABILITY_ILF_TARGET_TYPE,0,0)
+                endif
+                if GetItemTypeId(f) ==  'I00D' then
+                    call SetAbilityIntegerLevelField(GetUnitAbility(Hero[GetPlayerId(GetItemPlayer(it))],'A048'), ABILITY_ILF_TARGET_TYPE,0,0)
+                endif
+                if GetItemTypeId(f) ==  'I02S' then
+                    call SetAbilityIntegerLevelField(GetUnitAbility(Hero[GetPlayerId(GetItemPlayer(it))],'A0HL'), ABILITY_ILF_TARGET_TYPE,0,0)
+                endif
+                if GetItemTypeId(f) ==  'I054' then
+                    call SetAbilityIntegerLevelField(GetUnitAbility(Hero[GetPlayerId(GetItemPlayer(it))],'A15E'), ABILITY_ILF_TARGET_TYPE,0,0)
+                endif
             endif
-            if GetItemTypeId(f) ==  'I00D' then
-                call SetAbilityIntegerLevelField(GetUnitAbility(Hero[GetPlayerId(GetItemPlayer(it))],'A048'), ABILITY_ILF_TARGET_TYPE,0,1)
-            endif
-            if GetItemTypeId(f) ==  'I02S' then
-                call SetAbilityIntegerLevelField(GetUnitAbility(Hero[GetPlayerId(GetItemPlayer(it))],'A0HL'), ABILITY_ILF_TARGET_TYPE,0,1)
-            endif
-            if GetItemTypeId(f) ==  'I054' then
-                call SetAbilityIntegerLevelField(GetUnitAbility(Hero[GetPlayerId(GetItemPlayer(it))],'A15E'), ABILITY_ILF_TARGET_TYPE,0,1)
-            endif
-        else
-            if GetItemTypeId(f) ==  'I04R' then
-                call SetAbilityIntegerLevelField(GetUnitAbility(Hero[GetPlayerId(GetItemPlayer(it))],'A10Q'), ABILITY_ILF_TARGET_TYPE,0,0)
-            endif
-            if GetItemTypeId(f) ==  'I00D' then
-                call SetAbilityIntegerLevelField(GetUnitAbility(Hero[GetPlayerId(GetItemPlayer(it))],'A048'), ABILITY_ILF_TARGET_TYPE,0,0)
-            endif
-            if GetItemTypeId(f) ==  'I02S' then
-                call SetAbilityIntegerLevelField(GetUnitAbility(Hero[GetPlayerId(GetItemPlayer(it))],'A0HL'), ABILITY_ILF_TARGET_TYPE,0,0)
-            endif
-            if GetItemTypeId(f) ==  'I054' then
-                call SetAbilityIntegerLevelField(GetUnitAbility(Hero[GetPlayerId(GetItemPlayer(it))],'A15E'), ABILITY_ILF_TARGET_TYPE,0,0)
-            endif
-        endif
         endif
         set f=null
         call DestroyEffect(AddSpecialEffectTarget("Abilities\\Spells\\Items\\AIsm\\AIsmTarget.mdl",u,"origin"))
@@ -21446,6 +21452,23 @@ endif
 set it=null
 set u=null
 set p=null
+endfunction
+function Trig_MoveItem_Actions takes nothing returns nothing
+local unit u=GetTriggerUnit()
+local item it=GetManipulatedItem()
+if GetTriggerItemTargetSlot()==6 or GetTriggerItemTargetSlot()==7 or GetTriggerItemTargetSlot()==8 then 
+    call DisableItem(it,true,true,1)
+    call DisableItem(it,true,true,4)
+else
+    call EnableItem(it,true,true,1)
+    call EnableItem(it,true,true,4)
+endif
+if GetItemTypeId(it) ==  'I04V' or GetItemTypeId(it) ==  'I13R' or GetItemTypeId(it) ==  'I13S' or GetItemTypeId(it) ==  'IMDi' or GetTriggerItemTargetSlot()==9 then
+call EnableItem(it,true,true,4)
+call SetTriggerItemAllowMoveSlot(false)
+endif
+set it=null
+set u=null
 endfunction
 function UIS_RegisterItem takes integer a1,integer a2,integer a3,integer a4,integer a5,integer a6,integer a7,integer a8,integer a9,integer a10,integer a11,integer l__n returns nothing
 local integer x=udg_UIS_Index
@@ -209456,6 +209479,9 @@ local integer i=0
 set t=CreateTrigger()
 call TriggerRegisterAnyUnitEventBJ(t,EVENT_PLAYER_UNIT_PICKUP_ITEM)
 call TriggerAddAction(t,function Trig_PickItem_Actions)
+set t=CreateTrigger()
+call TriggerRegisterAnyUnitEventBJ(t,EVENT_PLAYER_UNIT_MOVE_ITEM_SLOT)
+call TriggerAddAction(t,function Trig_MoveItem_Actions)
 set t=CreateTrigger()
 call TriggerRegisterAnyUnitEventBJ(t,EVENT_PLAYER_UNIT_DROP_ITEM)
 call TriggerAddAction(t,function Trig_DropItem_Actions)
