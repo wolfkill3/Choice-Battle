@@ -21470,7 +21470,7 @@ local unit u=GetTriggerUnit()
 local item it=GetManipulatedItem()
 local integer slotTarget=GetTriggerItemTargetSlot()
 local integer itemId=GetItemTypeId(it)
-if slotTarget==6 or slotTarget==7 or slotTarget==8 then 
+if (slotTarget==6 or slotTarget==7 or slotTarget==8) and GetTriggerItemSourceSlot()!=9 then 
     call DisableItem(it,true,true,7)
 else
     call EnableItem(it,true,true,7)
@@ -45963,14 +45963,14 @@ if SR(x1,y1,x,y)<80 and time>=0.5 then
     call SetUnitInvulnerable(u,false)
     if LoadAbilityHandle(h,id,45)!=null then
         call StartAbilityCooldown(LoadAbilityHandle(h,id,45),10)
-        loop
-            //call BJDebugMsg(I2S(GetHandleId(UnitItemInSlot(u, i))) + " " + I2S(GetHandleId(GetAbilityOwningItem(LoadAbilityHandle(h,id,45)))) )
-            if UnitItemInSlot(u, i) == GetAbilityOwningItem(LoadAbilityHandle(h,id,45)) then
-                call StartItemCooldown(u,UnitItemInSlot(u, i),10)
-            endif
-        exitwhen i == 0
-        set i=i - 1
-        endloop
+        //loop
+        //    call BJDebugMsg(I2S(GetHandleId(UnitItemInSlot(u, i))) + " " + I2S(GetHandleId(GetAbilityOwningItem(LoadAbilityHandle(h,id,45)))) )
+        //    if UnitItemInSlot(u, i) == GetAbilityOwningItem(LoadAbilityHandle(h,id,45)) then
+        //        call StartItemCooldown(u,UnitItemInSlot(u, i),10)
+        //    endif
+        //exitwhen i == 0
+        //set i=i - 1
+        //endloop
     endif
     call myCustomDamage(Neji,u,dmg,false,false,null,null,null)
     call SetControlToUnit(Neji,u, 0.5+GetUnitAbilityLevel(Neji,'A34E')*0.5, "silenceTE")
@@ -165926,6 +165926,7 @@ function JirenQ_Cast2 takes nothing returns nothing
     local real dist=LoadReal(HH,id,2)
     local integer i=0
     local boolean b=LoadBoolean(HH,id,1)
+    local real time=LoadReal(HH,id,2)
     local real sc
     local player p=GetOwningPlayer(u)
     call SaveReal(HH,id,2,time+0.01)
