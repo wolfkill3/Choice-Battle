@@ -165852,8 +165852,187 @@ function JirenW_Cast takes unit u,real x1,real y1 returns nothing
     set u=null
 endfunction
 
+function JirenQ_Cast3 takes nothing returns nothing
+    local timer t=GetExpiredTimer()
+    local integer id=GetHandleId(t)
+    local unit u=LoadUnitHandle(HH,id,0)
+    local unit c=LoadUnitHandle(HH,id,4)
+    local real x=GetUnitX(u)
+    local real y=GetUnitY(u)
+    local real dmg=GetHeroStr(u,true)*(1+GetUnitAbilityLevel(u,'JNQ1'))+50*(1+GetUnitAbilityLevel(u,'JNQ1'))
+    local real x1=GetUnitX(c)
+    local real y1=GetUnitY(c)
+    local real a=LoadReal(HH,id,3)
+    local real time=LoadReal(HH,id,2)
+    local player p=GetOwningPlayer(u)
+    call SaveReal(HH,id,2,time+0.03)
+    if time==0.03 then
+        set EFF=AddSpecialEffect("LightningExplodeBlackBall.mdx", x1, y1)
+        call SetSpecialEffectFacing(EFF , a* bj_RADTODEG)
+        call SetSpecialEffectZ(EFF , 40)
+        call SetSpecialEffectScale(EFF , 1.3)
+        call RemoveEffect(EFF,0.5,true,CreateTimer())
+    endif
+    if time<0.15 then
+        call SetUnitXY_1(u,x+6*Cos(a),y+6*Sin(a), false)
+        call SetUnitXY_1(c,x1+4*Cos(a),y1+4*Sin(a), false)
+        call SetUnitInvulnerable(u,true)
+        call PauseUnit(u,true)
+        call SetUnitInvulnerable(c,true)
+        call PauseUnit(c,true)
+        call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,true)
+    else
+        set EFF=AddSpecialEffect("HitEnergy.mdx", x1, y1)
+        call SetSpecialEffectFacing(EFF , a* bj_RADTODEG)
+        //call SetSpecialEffectZ(EFF , 10)
+        call SetSpecialEffectScale(EFF , 0.8)
+        call RemoveEffect(EFF,0.5,false,CreateTimer())
+        call SetUnitInvulnerable(u,false)
+        call PauseUnit(u,false)
+        call SetUnitInvulnerable(c,false)
+        call PauseUnit(c,false)
+        call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,false)
+        call GroupEnumUnitsInRange(G,x,y,300,Base)
+        loop
+            set E=FirstOfGroup(G)
+            exitwhen E==null
+            if Condition_Base(p,E)and IsUnitInvulnerable(E)==false then
+                call myCustomDamage(u,E,dmg,false,false,null,null,null)
+                call SetControlToUnit(u,E,1, "stun")
+                call Push7(E,120,a,600,"NituHD.mdx")
+            endif
+            call GroupRemoveUnit(G,E)
+        endloop
+        call SetUnitTimeScale(u,1)
+        call PauseTimer(t)
+        call SetUnitTimeScale(u,1)
+        call DestroyTimer(t)
+        call FlushChildHashtable(HH,id)
+    endif
+    set c=null
+    set u=null
+    set p=null
+    set t=null
+endfunction
+
+function JirenQ_Cast2 takes nothing returns nothing
+    local timer t=GetExpiredTimer()
+    local integer id=GetHandleId(t)
+    local unit u=LoadUnitHandle(HH,id,0)
+    local real dmg=GetHeroAgi(u,true)*(2+GetUnitAbilityLevel(u,'YoQ0'))
+    local real x=GetUnitX(u)
+    local real y=GetUnitY(u)
+    local real a=LoadReal(HH,id,3)
+    local real dist=LoadReal(HH,id,2)
+    local integer i=0
+    local boolean b=LoadBoolean(HH,id,1)
+    local real sc
+    local player p=GetOwningPlayer(u)
+    call SaveReal(HH,id,2,time+0.01)
+    call PauseUnit(u,true)
+    call SetUnitInvulnerable(u,true)
+    if time==0.01 then
+    endif
+    if dist<850 and b==false then
+        if time>0.4 then
+            set x=x+25*Cos(a)
+            set y=y+25*Sin(a)
+            call SetUnitXY_1(u,x,y, false)
+            call SetUnitFacingInstant(u,a*bj_RADTODEG)
+            call SaveReal(HH,id,2,dist+25)
+            set n=CreateUnit(p,'e11T',x,y,a*bj_RADTODEG)
+            call SetUnitVertexColor(n,255,255,255,75)
+            call UnitApplyTimedLife(n,1,0.15)
+            set n=CreateUnit(p,'e117',x,y,a*bj_RADTODEG)
+            call SetUnitVertexColor(n,255,255,255,GetRandomInt(10,45))
+            set sc=GetRandomReal(0.55,1.25)
+            call SetUnitScale(n,sc,sc,sc)
+            call UnitApplyTimedLife(n,1,0.4)
+            call SetUnitTimeScale(n,3)
+            call GroupEnumUnitsInRange(G,x,y,300,Base)
+            loop
+                set E=FirstOfGroup(G)
+                exitwhen E==null
+                if Condition_Base(p,E)and IsUnitInvulnerable(E)==false then
+                    if GetWidgetLife(E)>0 then
+                        if LoadBoolean(HH,GetHandleId(E),ANTITARGET_ABILITY)==false then
+                            call SaveUnitHandle(HH,id,4,E)
+                            call SaveBoolean(HH,id,1,true)
+                            call SaveReal(HH,id,2,0)
+                            call SetUnitInvulnerable(u,true)
+                            call PauseUnit(u,true)
+                            call PauseTimer(t)
+                            set soundplay=CreateSound("Sound\\Music\\mp3Music\\JirenQG2.mp3",false,false,true,12700,12700,"")
+                            call StartSound(soundplay)
+                            call KillSoundWhenDone(soundplay)
+                            call SetUnitAnimationByIndex(u,22)
+                            call SetUnitXY_1(u,GetUnitX(E)-120*Cos(a),GetUnitY(E)-120*Sin(a), false)
+                            call TimerStart(t,0.03,true,function JirenQ_Cast3)
+                        else
+                            call SetUnitTimeScale(u,1)
+                            call SaveBoolean(HH,GetHandleId(u),DASH_USER,false)
+                            call SaveUnitHandle(HH,GetHandleId(E),REVERSE_TARGET,u)
+                            call SetUnitInvulnerable(u, false)
+                            call PauseUnit(u, false)
+                            call PauseTimer(t)
+                            call DestroyTimer(t)
+                            call FlushChildHashtable(HH,id)
+                        endif
+                    endif
+                    call GroupClear(G)
+                endif
+                call GroupRemoveUnit(G,E)
+            endloop
+        endif
+    else
+        call SetUnitTimeScale(u,1)
+        call PauseUnit(u,false)
+        call PauseTimer(t)
+        call DestroyTimer(t)
+        call FlushChildHashtable(HH,id)
+    endif
+    set u=null
+    set p=null
+    set t=null
+endfunction
+
+function JirenQ_Cast takes unit u, real x1, real y1 returns nothing
+    local timer t=CreateTimer()
+    local integer id=GetHandleId(t)
+    local player p=GetOwningPlayer(u)
+    local real x=GetUnitX(u)
+    local real y=GetUnitY(u)
+    local real a=Atan2(y1-y,x1-x)
+    local integer i=1
+    call SaveUnitHandle(HH,id,0,u)
+    call SaveReal(HH,id,2,0)
+    call SaveReal(HH,id,3,a)
+    call SaveBoolean(HH,id,1,false)
+    call PauseUnit(u,true)
+    call SetUnitInvulnerable(u,true)
+    call SetUnitTimeScale(u,1)
+    set n=CreateUnit(p,'e0ZH',x,y,a*bj_RADTODEG+45)
+    call SetUnitVertexColor(n,255,255,255,155)
+    call UnitApplyTimedLife(n,1,0.4)
+    call SetUnitTimeScale(n,3)
+    set n=CreateUnit(p,'e0ZH',x,y,a*bj_RADTODEG-45)
+    call SetUnitVertexColor(n,255,255,255,155)
+    call UnitApplyTimedLife(n,1,0.4)
+    call SetUnitTimeScale(n,3)
+    set n=CreateUnit(p,'e0ZH',x,y,a*bj_RADTODEG)
+    call SetUnitVertexColor(n,255,255,255,155)
+    call UnitApplyTimedLife(n,1,0.4)
+    call SetUnitTimeScale(n,3)
+    set soundplay=CreateSound("Sound\\Music\\mp3Music\\JirenQG1.mp3",false,false,true,12700,12700,"")
+    call StartSound(soundplay)
+    call KillSoundWhenDone(soundplay)
+    call TimerStart(t,0.01,true,function JirenQ_Cast2)
+    set p=null
+    set t=null
+endfunction
+
 function Jiren_Cond takes nothing returns boolean
-        local boolean cond1=GetSpellAbilityId()=='JNW1'
+        local boolean cond1=GetSpellAbilityId()=='JNQ1' or GetSpellAbilityId()=='JNW1' 
         if cond1 then
                 return true
         else
@@ -165862,6 +166041,9 @@ function Jiren_Cond takes nothing returns boolean
 endfunction
 
 function Jiren_Cast takes nothing returns nothing
+    if GetSpellAbilityId() == 'JNQ1' then
+		call JirenQ_Cast(GetSpellAbilityUnit() , GetSpellTargetX(), GetSpellTargetY())
+    endif
 	if GetSpellAbilityId() == 'JNW1' then
 		call JirenW_Cast(GetSpellAbilityUnit() , GetSpellTargetX(), GetSpellTargetY())
     endif
