@@ -2261,6 +2261,7 @@ local trigger t
 local real life
 set Chest[0]=CreateUnit(p,'n008',2624.0, 7040.0, 270.000)
 call SetUnitColor(Chest[0],ConvertPlayerColor(0))
+call UnitInventorySetSize(Chest[0],10)
 set u=CreateUnit(p,'orai',3776.0, 7424.0, 270.000)
 set uMusicPlayer=u
 set u=null
@@ -2273,6 +2274,7 @@ local integer unitID
 local trigger t
 local real life
 set Chest[1]=CreateUnit(p,'n008',2624.0, 6912.0, 270.000)
+call UnitInventorySetSize(Chest[1],10)
 call SetUnitColor(Chest[1],ConvertPlayerColor(0))
 set p=null
 set t=null
@@ -2283,6 +2285,7 @@ local integer unitID
 local trigger t
 local real life
 set Chest[2]=CreateUnit(p,'n008',2624.0, 6784.0, 270.000)
+call UnitInventorySetSize(Chest[2],10)
 call SetUnitColor(Chest[2],ConvertPlayerColor(0))
 set p=null
 set t=null
@@ -2293,6 +2296,7 @@ local integer unitID
 local trigger t
 local real life
 set Chest[3]=CreateUnit(p,'n008',2624.0, 6656.0, 270.000)
+call UnitInventorySetSize(Chest[3],10)
 call SetUnitColor(Chest[3],ConvertPlayerColor(0))
 set p=null
 set t=null
@@ -2303,6 +2307,7 @@ local integer unitID
 local trigger t
 local real life
 set Chest[4]=CreateUnit(p,'n008',2624.0, 6528.0, 270.000)
+call UnitInventorySetSize(Chest[4],10)
 call SetUnitColor(Chest[4],ConvertPlayerColor(0))
 set p=null
 set t=null
@@ -2313,6 +2318,7 @@ local integer unitID
 local trigger t
 local real life
 set Chest[5]=CreateUnit(p,'n008',4416.0, 7040.0, 270.000)
+call UnitInventorySetSize(Chest[5],10)
 call SetUnitColor(Chest[5],ConvertPlayerColor(0))
 set p=null
 set t=null
@@ -2323,6 +2329,7 @@ local integer unitID
 local trigger t
 local real life
 set Chest[6]=CreateUnit(p,'n008',4416.0, 6912.0, 270.000)
+call UnitInventorySetSize(Chest[6],10)
 call SetUnitColor(Chest[6],ConvertPlayerColor(0))
 set p=null
 set t=null
@@ -2333,6 +2340,7 @@ local integer unitID
 local trigger t
 local real life
 set Chest[7]=CreateUnit(p,'n008',4416.0, 6784.0, 270.000)
+call UnitInventorySetSize(Chest[7],10)
 call SetUnitColor(Chest[7],ConvertPlayerColor(0))
 set p=null
 set t=null
@@ -2343,6 +2351,7 @@ local integer unitID
 local trigger t
 local real life
 set Chest[8]=CreateUnit(p,'n008',4416.0, 6656.0, 270.000)
+call UnitInventorySetSize(Chest[8],10)
 call SetUnitColor(Chest[8],ConvertPlayerColor(0))
 set p=null
 set t=null
@@ -2353,6 +2362,7 @@ local integer unitID
 local trigger t
 local real life
 set Chest[9]=CreateUnit(p,'n008',4416.0, 6528.0, 270.000)
+call UnitInventorySetSize(Chest[9],10)
 call SetUnitColor(Chest[9],ConvertPlayerColor(0))
 set p=null
 set t=null
@@ -11220,6 +11230,7 @@ function OnButtonPickHeroId takes nothing returns nothing
             //call SetPlayerAlliance(Player(TestModePlayerId[GetPlayerId(p)]),Player(9), ALLIANCE_SHARED_VISION, true )
             //call SetPlayerAlliance(Player(TestModePlayerId[GetPlayerId(p)]),Player(9), ALLIANCE_SHARED_CONTROL, true )
             set Hero[TestModePlayerId[GetPlayerId(p)]]=CreateUnit(Player(TestModePlayerId[GetPlayerId(p)]),RH_Force[TestModeHeroId[GetPlayerId(p)]],GetRectCenterX(gg_rct_Rect1),GetRectCenterY(gg_rct_Rect1),0)
+call UnitInventorySetSize(n,10)
             set udg_Hero[TestModePlayerId[GetPlayerId(p)]+1]=Hero[TestModePlayerId[GetPlayerId(p)]]
             call W3MMD_Lite_Set_Integer(p,"Picked_hero",HeroSkin(udg_Hero[TestModePlayerId[GetPlayerId(p)]+1]))
             call SetHeroLevelBJ(Hero[TestModePlayerId[GetPlayerId(p)]],35,false)
@@ -11276,6 +11287,7 @@ function OnButtonPickHeroId takes nothing returns nothing
                 call DisplayChatMessageEx(null,CHAT_RECIPIENT_UNKNOWN,10,true,GetUnitBaseStringFieldById(RH_Force[TavernHeroId[GetPlayerId(p)]],UNIT_SF_NAME)+" был забанен "+GetPlayerName(p)+"!")
                 else
                 call CreateUnit(Player(GetPlayerId(p)),udg_RH[TavernHeroId[GetPlayerId(p)]],GetRectCenterX(gg_rct_Rect1),GetRectCenterY(gg_rct_Rect1),0)
+call UnitInventorySetSize(n,10)
                 endif
                 set bonus_repick[GetPlayerId(p)]=0
                 set udg_RH[TavernHeroId[GetPlayerId(p)]]=0
@@ -11299,6 +11311,7 @@ function OnButtonPickHeroId takes nothing returns nothing
                 call SetFrameColourEx( TavernPickedHeroFrame2[GetPlayerId(p)],1, 0xFF505050 )
                 call SetFrameColourEx( TavernPickedHeroFrame2[GetPlayerId(p)],2, 0xFF505050 )
                 set Hero[GetPlayerId(p)]=CreateUnit(Player(GetPlayerId(p)),udg_RH[TavernHeroId[GetPlayerId(p)]],GetRectCenterX(gg_rct_Rect1),GetRectCenterY(gg_rct_Rect1),0)
+call UnitInventorySetSize(n,10)
                 set udg_Hero[GetPlayerId(p)+1]=Hero[GetPlayerId(p)]
                 call W3MMD_Lite_Set_Integer(p,"Picked_hero",HeroSkin(udg_Hero[GetPlayerId(p)+1]))
             endif
@@ -11348,6 +11361,7 @@ function OnButtonRandom takes nothing returns nothing
         set id=GetRandomInt(0,134)
         if udg_RH[id]!=0 then
         set u[i+1]=CreateUnit(Player(i),udg_RH[id],GetRectCenterX(gg_rct_Rect1),GetRectCenterY(gg_rct_Rect1),0)
+call UnitInventorySetSize(n,10)
         set udg_RH[id]=0
         call DisplayChatMessageEx(null,CHAT_RECIPIENT_UNKNOWN,10,true,"Игроку "+udg_Color[i+1]+GetPlayerName(Player(i))+"|r выпал "+GetUnitName(u[i+1]))
         // call AddFrameText(TavernChat,"Игроку "+udg_Color[i+1]+GetPlayerName(Player(i))+"|r выпал "+GetUnitName(u[i+1]))
@@ -21352,11 +21366,9 @@ if GetItemPlayer(it)==Player(15) or GetItemPlayer(it)==p or udg_test==true then
             call RemoveItem(it)
             call UnitAddItemToSlot(u,f,0)
         elseif UnitItemInSlot(u,6)==it or UnitItemInSlot(u,7)==it or UnitItemInSlot(u,8)==it then
-            call DisableItem(f,true,true,1)
-            call DisableItem(f,true,true,4)
+            call DisableItem(it,true,true,7)
         else
-            call EnableItem(f,true,true,1)
-            call EnableItem(f,true,true,4)
+            call EnableItem(it,true,true,7)
         endif
     endif
     set id=UIS_Check(u)
@@ -21456,15 +21468,15 @@ endfunction
 function Trig_MoveItem_Actions takes nothing returns nothing
 local unit u=GetTriggerUnit()
 local item it=GetManipulatedItem()
-if GetTriggerItemTargetSlot()==6 or GetTriggerItemTargetSlot()==7 or GetTriggerItemTargetSlot()==8 then 
-    call DisableItem(it,true,true,1)
-    call DisableItem(it,true,true,4)
+local integer slotTarget=GetTriggerItemTargetSlot()
+local integer itemId=GetItemTypeId(it)
+if slotTarget==6 or slotTarget==7 or slotTarget==8 then 
+    call DisableItem(it,true,true,7)
 else
-    call EnableItem(it,true,true,1)
-    call EnableItem(it,true,true,4)
+    call EnableItem(it,true,true,7)
 endif
-if GetItemTypeId(it) ==  'I04V' or GetItemTypeId(it) ==  'I13R' or GetItemTypeId(it) ==  'I13S' or GetItemTypeId(it) ==  'IMDi' or GetTriggerItemTargetSlot()==9 then
-call EnableItem(it,true,true,4)
+if itemId ==  'I04V' or itemId ==  'I13R' or itemId ==  'I13S' or itemId ==  'IMDi' or GetTriggerItemTargetSlot()==9 then
+call EnableItem(it,true,true,7)
 call SetTriggerItemAllowMoveSlot(false)
 endif
 set it=null
@@ -26306,6 +26318,7 @@ local integer id=GetUnitTypeId(u)
 if id=='H05D' then
 set rfhpick=false
 set n=CreateUnit(p,'H06X',GetRectCenterX(gg_rct_Rect1),GetRectCenterY(gg_rct_Rect1),0)
+call UnitInventorySetSize(n,10)
 set rfhpick=true
 set Hero[ip]=n
 set udg_Hero[ip+1]=n
@@ -26375,6 +26388,7 @@ local integer id=GetUnitTypeId(u)
 if id=='H04L' then
 set rfhpick=false
 set n=CreateUnit(p,'H06V',GetRectCenterX(gg_rct_Rect1),GetRectCenterY(gg_rct_Rect1),0)
+call UnitInventorySetSize(n,10)
 set rfhpick=true
 set Hero[ip]=n
 set udg_Hero[ip+1]=n
@@ -26444,6 +26458,7 @@ local integer id=GetUnitTypeId(u)
 if id=='H06Y' then
 set rfhpick=false
 set n=CreateUnit(p,'H06Z',GetRectCenterX(gg_rct_Rect1),GetRectCenterY(gg_rct_Rect1),0)
+call UnitInventorySetSize(n,10)
 set rfhpick=true
 set Hero[ip]=n
 set udg_Hero[ip+1]=n
@@ -26513,6 +26528,7 @@ local integer id=GetUnitTypeId(u)
 if id=='H017' then
 set rfhpick=false
 set n=CreateUnit(p,'H06W',GetRectCenterX(gg_rct_Rect1),GetRectCenterY(gg_rct_Rect1),0)
+call UnitInventorySetSize(n,10)
 set rfhpick=true
 set Hero[ip]=n
 set udg_Hero[ip+1]=n
@@ -26582,6 +26598,7 @@ local integer id=GetUnitTypeId(u)
 if id=='H05C' or id=='H05E' or id=='H15C' then
 set rfhpick=false
 set n=CreateUnit(p,'H06P',GetRectCenterX(gg_rct_Rect1),GetRectCenterY(gg_rct_Rect1),0)
+call UnitInventorySetSize(n,10)
 set rfhpick=true
 set Hero[ip]=n
 set udg_Hero[ip+1]=n
@@ -26651,6 +26668,7 @@ local integer id=GetUnitTypeId(u)
 if id=='H044' then
 set rfhpick=false
 set n=CreateUnit(p,'H06R',GetRectCenterX(gg_rct_Rect1),GetRectCenterY(gg_rct_Rect1),0)
+call UnitInventorySetSize(n,10)
 set rfhpick=true
 set Hero[ip]=n
 set udg_Hero[ip+1]=n
@@ -26720,6 +26738,7 @@ local integer id=GetUnitTypeId(u)
 if id=='H06B' then
 set rfhpick=false
 set n=CreateUnit(p,'H26B',GetRectCenterX(gg_rct_Rect1),GetRectCenterY(gg_rct_Rect1),0)
+call UnitInventorySetSize(n,10)
 call SetAbilityBaseStringFieldById('A1C9',ABILITY_SF_ICON_NORMAL,"ReplaceableTextures\\CommandButtons\\BTNNeroBrideQ.blp")
 call SetAbilityBaseStringFieldById('A1C9',ABILITY_SF_ICON_ACTIVATED,"ReplaceableTextures\\CommandButtons\\BTNNeroBrideQ.blp")
 call SetAbilityBaseStringFieldById('A1C9',ABILITY_SF_ICON_RESEARCH,"ReplaceableTextures\\CommandButtons\\BTNNeroBrideQ.blp")
@@ -26808,6 +26827,7 @@ local integer id=GetUnitTypeId(u)
 if id=='H06B' then
 set rfhpick=false
 set n=CreateUnit(p,'H16B',GetRectCenterX(gg_rct_Rect1),GetRectCenterY(gg_rct_Rect1),0)
+call UnitInventorySetSize(n,10)
 set rfhpick=true
 set Hero[ip]=n
 set udg_Hero[ip+1]=n
@@ -26877,6 +26897,7 @@ local integer id=GetUnitTypeId(u)
 if id=='H02M' then
 set rfhpick=false
 set n=CreateUnit(p,'H12M',GetRectCenterX(gg_rct_Rect1),GetRectCenterY(gg_rct_Rect1),0)
+call UnitInventorySetSize(n,10)
 set rfhpick=true
 set Hero[ip]=n
 set udg_Hero[ip+1]=n
@@ -26946,6 +26967,7 @@ local integer id=GetUnitTypeId(u)
 if id=='H04H' then
 set rfhpick=false
 set n=CreateUnit(p,'H14H',GetRectCenterX(gg_rct_Rect1),GetRectCenterY(gg_rct_Rect1),0)
+call UnitInventorySetSize(n,10)
 set rfhpick=true
 set Hero[ip]=n
 set udg_Hero[ip+1]=n
@@ -27015,6 +27037,7 @@ local integer id=GetUnitTypeId(u)
 if id=='H059' or id=='H070' then
 set rfhpick=false
 set n=CreateUnit(p,'H06S',GetRectCenterX(gg_rct_Rect1),GetRectCenterY(gg_rct_Rect1),0)
+call UnitInventorySetSize(n,10)
 set rfhpick=true
 set Hero[ip]=n
 set udg_Hero[ip+1]=n
@@ -27084,6 +27107,7 @@ local integer id=GetUnitTypeId(u)
 if id=='H059' or id=='H06S' then
 set rfhpick=false
 set n=CreateUnit(p,'H070',GetRectCenterX(gg_rct_Rect1),GetRectCenterY(gg_rct_Rect1),0)
+call UnitInventorySetSize(n,10)
 set rfhpick=true
 set Hero[ip]=n
 set udg_Hero[ip+1]=n
@@ -27153,6 +27177,7 @@ local integer id=GetUnitTypeId(u)
 if id=='H053' then
 set rfhpick=false
 set n=CreateUnit(p,'H06Q',GetRectCenterX(gg_rct_Rect1),GetRectCenterY(gg_rct_Rect1),0)
+call UnitInventorySetSize(n,10)
 set rfhpick=true
 set Hero[ip]=n
 set udg_Hero[ip+1]=n
@@ -27222,6 +27247,7 @@ local integer id=GetUnitTypeId(u)
 if id=='H02G' then
 set rfhpick=false
 set n=CreateUnit(p,'H12G',GetRectCenterX(gg_rct_Rect1),GetRectCenterY(gg_rct_Rect1),0)
+call UnitInventorySetSize(n,10)
 set rfhpick=true
 set Hero[ip]=n
 set udg_Hero[ip+1]=n
@@ -27291,6 +27317,7 @@ local integer id=GetUnitTypeId(u)
 if id=='H01H' then
 set rfhpick=false
 set n=CreateUnit(p,'H06N',GetRectCenterX(gg_rct_Rect1),GetRectCenterY(gg_rct_Rect1),0)
+call UnitInventorySetSize(n,10)
 set rfhpick=true
 set Hero[ip]=n
 set udg_Hero[ip+1]=n
@@ -27364,6 +27391,7 @@ if id=='H05A' then
 call SetDoodadZ(CreateDoodadZ('D01R',GetRectCenterX(gg_rct_UBW1),GetRectCenterY(gg_rct_UBW1),2600,90,2.4,1),1600)
 set rfhpick=false
 set n=CreateUnit(p,'H05B',GetRectCenterX(gg_rct_Rect1),GetRectCenterY(gg_rct_Rect1),0)
+call UnitInventorySetSize(n,10)
 set rfhpick=true
 set Hero[ip]=n
 set udg_Hero[ip+1]=n
@@ -27434,6 +27462,7 @@ local integer id=GetUnitTypeId(u)
 if id=='H012' then
 set rfhpick=false
 set n=CreateUnit(p,'H06D',GetRectCenterX(gg_rct_Rect1),GetRectCenterY(gg_rct_Rect1),0)
+call UnitInventorySetSize(n,10)
 set rfhpick=true
 set Hero[ip]=n
 set udg_Hero[ip+1]=n
@@ -27503,6 +27532,7 @@ local integer id=GetUnitTypeId(u)
 if id=='H03R' then
 set rfhpick=false
 set n=CreateUnit(p,'H064',GetRectCenterX(gg_rct_Rect1),GetRectCenterY(gg_rct_Rect1),0)
+call UnitInventorySetSize(n,10)
 set rfhpick=true
 set Hero[ip]=n
 set udg_Hero[ip+1]=n
@@ -27572,6 +27602,7 @@ local integer id=GetUnitTypeId(u)
 if id=='Ho0O' then
 set rfhpick=false
 set n=CreateUnit(p,'Ho1O',GetRectCenterX(gg_rct_Rect1),GetRectCenterY(gg_rct_Rect1),0)
+call UnitInventorySetSize(n,10)
 set rfhpick=true
 set Hero[ip]=n
 set udg_Hero[ip+1]=n
@@ -27641,6 +27672,7 @@ local integer id=GetUnitTypeId(u)
 if id=='H04O' then
 set rfhpick=false
 set n=CreateUnit(p,'H065',GetRectCenterX(gg_rct_Rect1),GetRectCenterY(gg_rct_Rect1),0)
+call UnitInventorySetSize(n,10)
 set rfhpick=true
 set Hero[ip]=n
 set udg_Hero[ip+1]=n
@@ -27710,6 +27742,7 @@ local integer id=GetUnitTypeId(u)
 if id=='H05C' or id=='H06P' or id=='H15C' then
 set rfhpick=false
 set n=CreateUnit(p,'H05E',GetRectCenterX(gg_rct_Rect1),GetRectCenterY(gg_rct_Rect1),0)
+call UnitInventorySetSize(n,10)
 set rfhpick=true
 set Hero[ip]=n
 set udg_Hero[ip+1]=n
@@ -27779,6 +27812,7 @@ local integer id=GetUnitTypeId(u)
 if id=='H05C' or id=='H06P' or id=='H05E' then
 set rfhpick=false
 set n=CreateUnit(p,'H15C',GetRectCenterX(gg_rct_Rect1),GetRectCenterY(gg_rct_Rect1),0)
+call UnitInventorySetSize(n,10)
 set rfhpick=true
 set Hero[ip]=n
 set udg_Hero[ip+1]=n
@@ -27848,6 +27882,7 @@ local integer id=GetUnitTypeId(u)
 if id=='H02U' then
 set rfhpick=false
 set n=CreateUnit(p,'H05X',GetRectCenterX(gg_rct_Rect1),GetRectCenterY(gg_rct_Rect1),0)
+call UnitInventorySetSize(n,10)
 set rfhpick=true
 set Hero[ip]=n
 set udg_Hero[ip+1]=n
@@ -27912,6 +27947,7 @@ local integer id=GetUnitTypeId(u)
 if id=='H02F' then
 set rfhpick=false
 set n=CreateUnit(p,'H05Y',GetRectCenterX(gg_rct_Rect1),GetRectCenterY(gg_rct_Rect1),0)
+call UnitInventorySetSize(n,10)
 set rfhpick=true
 set Hero[ip]=n
 set udg_Hero[ip+1]=n
@@ -27996,6 +28032,7 @@ set n=CreateUnit(p,'H01M',GetRectCenterX(gg_rct_Resp7),GetRectCenterY(gg_rct_Res
 else
 set n=CreateUnit(p,GetUnitTypeId(u),GetRectCenterX(gg_rct_Resp7),GetRectCenterY(gg_rct_Resp7),0)
 endif
+call UnitInventorySetSize(n,10)
 set rfhpick=true
 set Hero[ip]=n
 set udg_Hero[ip+1]=n
@@ -28033,7 +28070,7 @@ call GroupAddUnit(udg_CG[4],n)
 endif
 set i=0
 loop
-    exitwhen i>=6
+    exitwhen i>=10
     call UnitAddItemById(n,GetItemTypeId(it[i]))
     set i=i+1
 endloop
@@ -28335,6 +28372,7 @@ loop
 set id=GetRandomInt(0,134)
 if udg_RH[id]!=0 then
 set u[i+1]=CreateUnit(Player(i),udg_RH[id],GetRectCenterX(gg_rct_Rect1),GetRectCenterY(gg_rct_Rect1),0)
+call UnitInventorySetSize(u[i+1],10)
 set udg_RH[id]=0
 call DisplayChatMessageEx(null,CHAT_RECIPIENT_UNKNOWN,10,true,"Игроку "+udg_Color[i+1]+GetPlayerName(Player(i))+"|r выпал "+GetUnitName(u[i+1]))
 call SetFrameTexture( GetFrameByName("SelectedHeroPlayer",i), GetFrameTexture(GetFrameByName("TavernBarHero",id),0), 0, true ) 
@@ -28600,6 +28638,7 @@ loop
 set id=GetRandomInt(0,134)
 if udg_RH[id]!=0 then
 set udg_Hero[i]=CreateUnit(p,udg_RH[id],GetRectCenterX(gg_rct_Rect1),GetRectCenterY(gg_rct_Rect1),0)
+call UnitInventorySetSize(udg_Hero[i],10)
 call SetFrameTexture( GetFrameByName("SelectedHeroPlayer",i-1), GetFrameTexture(GetFrameByName("TavernBarHero",id),0), 0, true ) 
 call SetFrameTexture( GetFrameByName("SelectedHeroPlayer",i-1), GetFrameTexture(GetFrameByName("TavernBarHero",id),1), 1, true )
 call SetFrameTexture( GetFrameByName("SelectedHeroPlayer",i-1), GetFrameTexture(GetFrameByName("TavernBarHero",id),2), 2, true )
@@ -28626,7 +28665,7 @@ call SetHeroLevel(udg_Hero[i],lvl,false)
 set j=0
 loop
 call UnitAddItem(udg_Hero[i],t1[j])
-exitwhen j==5
+exitwhen j==9
 set j=j+1
 endloop
 call DisplayChatMessageEx(null,CHAT_RECIPIENT_UNKNOWN,10,true,"Игроку "+udg_Color[i]+GetPlayerName(p)+"|r выпал "+GetUnitName(udg_Hero[i]))
@@ -29970,14 +30009,17 @@ call SetPlayerAlliance(Player(LvlS),Player(8), ALLIANCE_SHARED_CONTROL, true )
 call SetPlayerAlliance(Player(LvlS),Player(9), ALLIANCE_SHARED_VISION, true )
 call SetPlayerAlliance(Player(LvlS),Player(9), ALLIANCE_SHARED_CONTROL, true )
 set Hero[LvlS]=CreateUnit(Player(LvlS),udg_RH[LvlS2],GetRectCenterX(gg_rct_Rect1),GetRectCenterY(gg_rct_Rect1),0)
+call UnitInventorySetSize(Hero[LvlS],10)
 set udg_Hero[LvlS+1]=Hero[LvlS]
 call SetHeroLevelBJ(Hero[LvlS],35,false)
-call UnitAddItemById(Hero[LvlS],'I03R')
+call UnitAddItemById(Hero[LvlS],'I13R')
 call UnitAddItemById(Hero[LvlS],'I02W')
 call UnitAddItemById(Hero[LvlS],'I01E')
-call UnitAddItemById(Hero[LvlS],'I01D')
+call UnitAddItemById(Hero[LvlS],'I04E')
 call UnitAddItemById(Hero[LvlS],'I043')
 call UnitAddItemById(Hero[LvlS],'I04T')
+call UnitAddItemById(Hero[LvlS],'I00D')
+call UnitAddItemById(Hero[LvlS],'I00Q')
 if FFAMode==false then
 if Player(LvlS)==Player(0)or Player(LvlS)==Player(1)or Player(LvlS)==Player(2)or Player(LvlS)==Player(3)or Player(LvlS)==Player(4)then
     call GroupAddUnit(udg_CG[1],Hero[LvlS])
@@ -30014,6 +30056,7 @@ function ForcedHeroAction takes nothing returns nothing
         local integer LvlS2=S2I(SubString(GetEventPlayerChatString(),6,12))
         call RemoveUnit(Hero[LvlS])
         set Hero[LvlS]=CreateUnit(Player(LvlS),RH_Force[LvlS2],GetRectCenterX(gg_rct_Rect1),GetRectCenterY(gg_rct_Rect1),0)
+        call UnitInventorySetSize(Hero[LvlS],10)
         set udg_Hero[LvlS+1]=Hero[LvlS]
 endfunction
 function InitForcedHero takes nothing returns nothing
@@ -30414,6 +30457,7 @@ set n=CreateUnit(p,'H01M',GetRectCenterX(gg_rct_Resp7),GetRectCenterY(gg_rct_Res
 else
 set n=CreateUnit(p,GetUnitTypeId(u),GetRectCenterX(gg_rct_Resp7),GetRectCenterY(gg_rct_Resp7),0)
 endif
+call UnitInventorySetSize(n,10)
 set rfhpick=true
 set Hero[ip]=n
 set udg_Hero[ip+1]=n
@@ -30443,23 +30487,23 @@ if GetUnitTypeId(Hero[ip])=='Ho0Z' then
 endif
 loop
 exitwhen i>=10
-        if GetItemTypeId(UnitItemInSlot(u,i))!='Ibrk' then
-                set it[i]=UnitItemInSlot(u,i)
-        endif
-        set i=i+1
+    if GetItemTypeId(UnitItemInSlot(u,i))!='Ibrk' then
+            set it[i]=UnitItemInSlot(u,i)
+    endif
+    set i=i+1
 endloop
 if FFAMode==false then
 if ip<5 then
-        call GroupAddUnit(udg_CG[1],n)
+    call GroupAddUnit(udg_CG[1],n)
 elseif ip>=5 and ip<10 then
-        call GroupAddUnit(udg_CG[2],n)
+    call GroupAddUnit(udg_CG[2],n)
 endif
 else
 call GroupAddUnit(udg_CG[4],n)
 endif
 set i=0
 loop
-exitwhen i>=6
+exitwhen i>=10
         call UnitAddItemById(n,GetItemTypeId(it[i]))
         set i=i+1
 endloop
@@ -32436,6 +32480,7 @@ loop
 set id=GetRandomInt(0,134)
 if udg_RH[id]!=0 then
     set u[i+1]=CreateUnit(Player(i),udg_RH[id],GetRectCenterX(gg_rct_Rect1),GetRectCenterY(gg_rct_Rect1),0)
+    call UnitInventorySetSize(u[i+1],10)
     set udg_RH[id]=0
     call DisplayChatMessageEx(null,CHAT_RECIPIENT_UNKNOWN,10,true,"Игроку "+udg_Color[i+1]+GetPlayerName(Player(i))+"|r выпал "+GetUnitName(u[i+1]))
     call SetFrameTexture( GetFrameByName("SelectedHeroPlayer",i), GetFrameTexture(GetFrameByName("TavernBarHero",id),0), 0, true ) 
@@ -32531,6 +32576,7 @@ loop
 set id=GetRandomInt(0,134)
 if udg_RH[id]!=0 then
 set u=CreateUnit(Player(i),udg_RH[id],GetRectCenterX(gg_rct_Rect1),GetRectCenterY(gg_rct_Rect1),0)
+call UnitInventorySetSize(u,10)
 //call DisplayChatMessageEx(null,CHAT_RECIPIENT_UNKNOWN,10,true,"pick="+I2S(pick))
 call DisplayChatMessageEx(null,CHAT_RECIPIENT_UNKNOWN,10,true,"Выпал "+GetUnitName(u))
 if pick==1 or pick==2 then
@@ -32698,121 +32744,121 @@ set udg_B=true
 call ShowFrame( KingOfHillIcon, false)
 loop
 exitwhen i>=10
-call GroupEnumUnitsOfPlayer(G,Player(i),BuggedBool) //lvlbool
-        set TeamPoints[i]=0
-        call SetFrameSpriteAnimationOffsetPercent(TeamBar[i],0.00)
+    call GroupEnumUnitsOfPlayer(G,Player(i),BuggedBool) //lvlbool
+    set TeamPoints[i]=0
+    call SetFrameSpriteAnimationOffsetPercent(TeamBar[i],0.00)
+    loop
+    set E=FirstOfGroup(G)
+    exitwhen E==null
+            call RemoveUnit(E)
+            call GroupRemoveUnit(G,E)
+    endloop
+    if Hero[i]!=null then
+    call SaveReal(HH,GetHandleId(Darkness[i]),StringHash("darkHP"),LoadReal(HH,GetHandleId(Darkness[i]),StringHash("darkMaxHP")))
+    call SaveInteger(HH,GetHandleId(Hero[i]),StringHash("cold3"),1)
+    call SaveBoolean(HH,GetHandleId(Hero[i]),SS,false)
+    call SaveBoolean(HH,GetHandleId(Hero[i]),SST,false)
+    call UnitRemoveAbility(Hero[i],'A26F')
+    call UnitRemoveAbility(Hero[i],'A25F')
+    call SetUnitState(Hero[i],UNIT_STATE_MANA,GetUnitState(Hero[i],UNIT_STATE_MAX_MANA))
+    call UnitResetCooldown(Hero[i])
+    if UnitHasItemOfTypeBJCustom(Hero[i], 'I03A') and GetWidgetLife(Hero[i])>0 and IsUnitIllusion(Hero[i])==false then
+        set AlastorPos=0
         loop
-        set E=FirstOfGroup(G)
-        exitwhen E==null
-                call RemoveUnit(E)
-                call GroupRemoveUnit(G,E)
+        exitwhen AlastorPos==10 or GetItemTypeId(UnitItemInSlot(Hero[i],AlastorPos)) == 'I03A'
+        set AlastorPos=AlastorPos+1
         endloop
-        if Hero[i]!=null then
-        call SaveReal(HH,GetHandleId(Darkness[i]),StringHash("darkHP"),LoadReal(HH,GetHandleId(Darkness[i]),StringHash("darkMaxHP")))
-		call SaveInteger(HH,GetHandleId(Hero[i]),StringHash("cold3"),1)
-        call SaveBoolean(HH,GetHandleId(Hero[i]),SS,false)
-        call SaveBoolean(HH,GetHandleId(Hero[i]),SST,false)
-		call UnitRemoveAbility(Hero[i],'A26F')
-		call UnitRemoveAbility(Hero[i],'A25F')
-		call SetUnitState(Hero[i],UNIT_STATE_MANA,GetUnitState(Hero[i],UNIT_STATE_MAX_MANA))
-		call UnitResetCooldown(Hero[i])
-        if UnitHasItemOfTypeBJCustom(Hero[i], 'I03A') and GetWidgetLife(Hero[i])>0 and IsUnitIllusion(Hero[i])==false then
-            set AlastorPos=0
-            loop
-            exitwhen AlastorPos==10 or GetItemTypeId(UnitItemInSlot(Hero[i],AlastorPos)) == 'I03A'
-            set AlastorPos=AlastorPos+1
-            endloop
-            if IsAbilityEnabled(GetUnitAbility(Hero[i],'AInv'))==true then
-                set Alastor=GetItemOfTypeFromUnitBJCustom(Hero[i],'I03A')
-                call UnitRemoveItem(Hero[i],Alastor)
-                call RemoveItem(Alastor)
-                call UnitAddItemToSlotById(Hero[i], 'I03A',AlastorPos)
-            else
-                call EnableUnitAbility2(Hero[i],'AInv',false,true)
-                set Alastor=GetItemOfTypeFromUnitBJCustom(Hero[i],'I03A')
-                call UnitRemoveItem(Hero[i],Alastor)
-                call RemoveItem(Alastor)
-                call UnitAddItemToSlotById(Hero[i], 'I03A',AlastorPos)    
-                call DisableUnitAbility2(Hero[i],'AInv',false,true)
+        if IsAbilityEnabled(GetUnitAbility(Hero[i],'AInv'))==true then
+            set Alastor=GetItemOfTypeFromUnitBJCustom(Hero[i],'I03A')
+            call UnitRemoveItem(Hero[i],Alastor)
+            call RemoveItem(Alastor)
+            call UnitAddItemToSlotById(Hero[i], 'I03A',AlastorPos)
+        else
+            call EnableUnitAbility2(Hero[i],'AInv',false,true)
+            set Alastor=GetItemOfTypeFromUnitBJCustom(Hero[i],'I03A')
+            call UnitRemoveItem(Hero[i],Alastor)
+            call RemoveItem(Alastor)
+            call UnitAddItemToSlotById(Hero[i], 'I03A',AlastorPos)    
+            call DisableUnitAbility2(Hero[i],'AInv',false,true)
+        endif
+    endif
+    if GetUnitTypeId(Hero[i])=='H04A' then
+        set Gon=Hero[i]
+    endif
+    if GetUnitTypeId(Hero[i])=='H02L' then
+        set Broly=Hero[i]
+    endif
+    if GetUnitTypeId(Hero[i])=='H02H' then
+        call SaveInteger(HH,GetHandleId( GetOwningPlayer(Hero[i]) ),KaiokenHash,0)
+        call SetUnitModel(Hero[i],"GokuFull.mdx")
+        call SaveInteger(HH,GetHandleId( GetOwningPlayer(Hero[i]) ),MUIDodgeCountHash,0)
+        if GetHeroLevel(Hero[i])>=26 then
+            if LoadBoolean(HH,GetHandleId( GetOwningPlayer(Hero[i]) ),UIAvailableHash)==false then
+                call SaveReal(HH,GetHandleId( GetOwningPlayer(Hero[i]) ),UIDMGHash,0)
+                call SaveReal(HH,GetHandleId( GetOwningPlayer(Hero[i]) ),UILimitDMGHash,GetUnitMaxLife(Hero[i])*2)
             endif
         endif
-		if GetUnitTypeId(Hero[i])=='H04A' then
-			set Gon=Hero[i]
-		endif
-        if GetUnitTypeId(Hero[i])=='H02L' then
-            set Broly=Hero[i]
-        endif
-        if GetUnitTypeId(Hero[i])=='H02H' then
-            call SaveInteger(HH,GetHandleId( GetOwningPlayer(Hero[i]) ),KaiokenHash,0)
-            call SetUnitModel(Hero[i],"GokuFull.mdx")
-            call SaveInteger(HH,GetHandleId( GetOwningPlayer(Hero[i]) ),MUIDodgeCountHash,0)
-            if GetHeroLevel(Hero[i])>=26 then
-                if LoadBoolean(HH,GetHandleId( GetOwningPlayer(Hero[i]) ),UIAvailableHash)==false then
-                    call SaveReal(HH,GetHandleId( GetOwningPlayer(Hero[i]) ),UIDMGHash,0)
-                    call SaveReal(HH,GetHandleId( GetOwningPlayer(Hero[i]) ),UILimitDMGHash,GetUnitMaxLife(Hero[i])*2)
-                endif
+    endif
+    //Danzo 1 time Izanagi for every rounds
+    call SaveBoolean(HH,GetHandleId( Hero[i] ),StringHash("SabracKillme"),false)
+    if GetUnitTypeId(Hero[i])=='HDSN' then
+        call SaveReal(HH,GetHandleId( Hero[i] ),StringHash("DanzoF"),40)
+    endif
+        ///Black Goku Rage reset very round
+    if GetUnitTypeId(Hero[i])=='HBGN' then
+        call SaveReal(HH,GetHandleId( Hero[i] ),BGRageHash,GetHeroStr(Hero[i],true)*12)
+        call SaveReal(HH,GetHandleId( Hero[i] ),BGRageBHash,GetHeroStr(Hero[i],true)*12)
+        call SaveBoolean(HH,GetHandleId( Hero[i] ),StringHash("BGRageBool"),false)
+        call SaveInteger(HH,GetHandleId( Hero[i] ),BGRageIHash,0)
+        call SaveBoolean(HH,GetHandleId( Hero[i] ),StringHash("BGG"),false)
+        call SaveBoolean(HH,GetHandleId( Hero[i] ),StringHash("BGRose"),false)
+        call UnitRemoveAbility( Hero[i],'ABG1')
+        call UnitAddAbility( Hero[i],'ABG0')
+        call SetPlayerAbilityAvailable(GetOwningPlayer( Hero[i] ),'BGG2',false)
+        call SetPlayerAbilityAvailable(GetOwningPlayer( Hero[i] ),'BGG1',true)
+        call SetUnitAbilityLevel( Hero[i],'BGC1',1)
+    endif
+    if GetUnitTypeId(Hero[i])=='HMad' then
+        call SaveReal(HH,GetHandleId( Hero[i] ),MadokaDHash,0)
+        call SaveReal(HH,GetHandleId( Hero[i] ),MadokaTDHash,4000+round*100)
+        call SaveReal(HH,GetHandleId( Hero[i] ),MadokaHHash,0)
+        call SaveReal(HH,GetHandleId( Hero[i] ),MadokaTHHash,2000+round*50)
+        call SaveInteger(HH,GetHandleId( Hero[i] ),MadokaMHash,0)
+    endif
+        //sabrac7start
+    if GetUnitTypeId( Hero[i] )=='HSab' then //'H05Z' old sabrac
+        call SetUnitBaseDamageByIndex( Hero[i] ,0,GetHeroStr( Hero[i] ,false)+LoadInteger(HH,GetHandleId( (GetOwningPlayer( Hero[i] )) ),SabracSwordsHash)*3)
+    endif
+    //sabrac7end
+
+    //aizen4start
+    if GetUnitTypeId( Hero[i] )=='H02M' and GetHeroLevel( Hero[i] )>=12 then //aizenPassiveStates
+        call AizenGPassive( Hero[i] )
+    endif
+    //aizen4end
+
+    set DantesData=0
+    call SaveInteger(HH,GetHandleId(Hero[i]),StringHash("VegetaDeath"),1)
+    call SaveBoolean(HH,GetHandleId(Hero[i]),DoflaTHash,false)
+    call SaveInteger(HH, GetHandleId(Hero[i]), StringHash("GaeDeargP_CD"), 1)
+    call StartAbilityCooldown(GetUnitAbility(Hero[i],'A1FP'),25)
+    call StartAbilityCooldown(GetUnitAbility(Hero[i],'BRLS'),40)
+    call StartAbilityCooldown(GetUnitAbility(Hero[i],'GKG1'),60-GetHeroLevel(Hero[i]))
+    call StartAbilityCooldown(GetUnitAbility(Hero[i],'Ao60'),10)
+    call StartAbilityCooldown(GetUnitAbility(Hero[i],'A1HD'),7)
+    call UnitRemoveAbility(Hero[i],'ore3')
+    call UnitRemoveAbility(Hero[i],'OM17')
+    call SetUnitInvulnerableTimed(Hero[i],true,0.01)
+    if FFAMode==false then
+    call SetUnitInvulnerableTimed(Hero[i],false,1)
+    endif
+            if UnitIsAlive(Lucy[i])then
+                    call UnitRemoveAbility(Lucy[i],'ore3')
+                    call RemoveUnit(Lucy[i])
+                    set lucy[i]=false
             endif
-        endif
-        //Danzo 1 time Izanagi for every rounds
-        call SaveBoolean(HH,GetHandleId( Hero[i] ),StringHash("SabracKillme"),false)
-        if GetUnitTypeId(Hero[i])=='HDSN' then
-            call SaveReal(HH,GetHandleId( Hero[i] ),StringHash("DanzoF"),40)
-        endif
-            ///Black Goku Rage reset very round
-        if GetUnitTypeId(Hero[i])=='HBGN' then
-            call SaveReal(HH,GetHandleId( Hero[i] ),BGRageHash,GetHeroStr(Hero[i],true)*12)
-            call SaveReal(HH,GetHandleId( Hero[i] ),BGRageBHash,GetHeroStr(Hero[i],true)*12)
-            call SaveBoolean(HH,GetHandleId( Hero[i] ),StringHash("BGRageBool"),false)
-            call SaveInteger(HH,GetHandleId( Hero[i] ),BGRageIHash,0)
-            call SaveBoolean(HH,GetHandleId( Hero[i] ),StringHash("BGG"),false)
-            call SaveBoolean(HH,GetHandleId( Hero[i] ),StringHash("BGRose"),false)
-            call UnitRemoveAbility( Hero[i],'ABG1')
-            call UnitAddAbility( Hero[i],'ABG0')
-            call SetPlayerAbilityAvailable(GetOwningPlayer( Hero[i] ),'BGG2',false)
-            call SetPlayerAbilityAvailable(GetOwningPlayer( Hero[i] ),'BGG1',true)
-            call SetUnitAbilityLevel( Hero[i],'BGC1',1)
-        endif
-        if GetUnitTypeId(Hero[i])=='HMad' then
-            call SaveReal(HH,GetHandleId( Hero[i] ),MadokaDHash,0)
-            call SaveReal(HH,GetHandleId( Hero[i] ),MadokaTDHash,4000+round*100)
-            call SaveReal(HH,GetHandleId( Hero[i] ),MadokaHHash,0)
-            call SaveReal(HH,GetHandleId( Hero[i] ),MadokaTHHash,2000+round*50)
-            call SaveInteger(HH,GetHandleId( Hero[i] ),MadokaMHash,0)
-        endif
-            //sabrac7start
-        if GetUnitTypeId( Hero[i] )=='HSab' then //'H05Z' old sabrac
-          call SetUnitBaseDamageByIndex( Hero[i] ,0,GetHeroStr( Hero[i] ,false)+LoadInteger(HH,GetHandleId( (GetOwningPlayer( Hero[i] )) ),SabracSwordsHash)*3)
-        endif
-        //sabrac7end
-
-        //aizen4start
-        if GetUnitTypeId( Hero[i] )=='H02M' and GetHeroLevel( Hero[i] )>=12 then //aizenPassiveStates
-          call AizenGPassive( Hero[i] )
-        endif
-        //aizen4end
-
-        set DantesData=0
-        call SaveInteger(HH,GetHandleId(Hero[i]),StringHash("VegetaDeath"),1)
-        call SaveBoolean(HH,GetHandleId(Hero[i]),DoflaTHash,false)
-        call SaveInteger(HH, GetHandleId(Hero[i]), StringHash("GaeDeargP_CD"), 1)
-        call StartAbilityCooldown(GetUnitAbility(Hero[i],'A1FP'),25)
-        call StartAbilityCooldown(GetUnitAbility(Hero[i],'BRLS'),40)
-        call StartAbilityCooldown(GetUnitAbility(Hero[i],'GKG1'),60-GetHeroLevel(Hero[i]))
-        call StartAbilityCooldown(GetUnitAbility(Hero[i],'Ao60'),10)
-        call StartAbilityCooldown(GetUnitAbility(Hero[i],'A1HD'),7)
-        call UnitRemoveAbility(Hero[i],'ore3')
-        call UnitRemoveAbility(Hero[i],'OM17')
-        call SetUnitInvulnerableTimed(Hero[i],true,0.01)
-        if FFAMode==false then
-        call SetUnitInvulnerableTimed(Hero[i],false,1)
-        endif
-                if UnitIsAlive(Lucy[i])then
-                        call UnitRemoveAbility(Lucy[i],'ore3')
-                        call RemoveUnit(Lucy[i])
-                        set lucy[i]=false
-                endif
-        endif
-set i=i+1
+    endif
+    set i=i+1
 endloop
 call GlobalReduceHeal()
 set i=0
@@ -33083,6 +33129,7 @@ call SetHeroStr(CU,GetHeroStr(u,false),false)
 call SetHeroInt(CU,GetHeroInt(u,false),false)
 call SetUnitTurnSpeed(CU,1000)
 call SetUnitVertexColor(CU,0,0,0,0)
+call UnitInventorySetSize(CU,10)
 loop
 exitwhen i>=10
 call UnitAddItemById(CU,GetItemTypeId(UnitItemInSlot(u,i)))
@@ -33106,6 +33153,7 @@ call SetHeroAgi(CU,GetHeroAgi(u,false),false)
 call SetHeroStr(CU,GetHeroStr(u,false),false)
 call SetHeroInt(CU,GetHeroInt(u,false),false)
 call SetUnitTurnSpeed(CU,1000)
+call UnitInventorySetSize(CU,10)
 loop
 exitwhen i>=10
 call UnitAddItemById(CU,GetItemTypeId(UnitItemInSlot(u,i)))
@@ -131232,6 +131280,7 @@ call UnitRemoveAbility(u, 'A1SV')
 call SetUnitXY_1(u,x1+250*Cos((a+rand2*90)*bj_DEGTORAD),y1+250*Sin((a+rand2*90)*bj_DEGTORAD),false)
 call DestroyEffect(AddSpecialEffect("Abilities\\Weapons\\SteamTank\\SteamTankImpact.mdl",GetUnitX(u),GetUnitY(u)))
 set n=CreateIllusionFromUnit(u)
+call UnitInventorySetSize(n,10)
 call SetUnitFacingInstant(n,a)
 call SetIllusionDamageReceived(n,2)
 call UnitAddAbility(n,'A2X2')
@@ -185484,7 +185533,7 @@ call UnitAddAbility(n0,'Amrf')
 call UnitRemoveAbility(n0,'Amrf')
 call SaveUnitHandle(HH,id,20,n0)
 call SaveUnitHandle(HH,GetHandleId(caster),StringHash("SabracTU"),n0)
-
+call UnitInventorySetSize(n0,10)
 
 
 call SaveUnitHandle(HH,id,21,CreateUnit(GetOwningPlayer(caster),'e203',GetUnitX(caster),GetUnitY(caster),facing))
@@ -189097,6 +189146,7 @@ call UnitAddAbility(n0,'Amrf')
 call UnitRemoveAbility(n0,'Amrf')
 call SaveUnitHandle(HH,id,20,n0)
 //call SetUnitState(n0,UNIT_STATE_LIFE,1)
+call UnitInventorySetSize(n0,10)
 call SaveUnitHandle(HH,GetHandleId(caster),StringHash("AizenTU"),n0)
 call SaveBoolean(HH,GetHandleId(caster),StringHash("AizenTAct"),true)
 call IssuePointOrder(n0,"attack",x1,y1)
@@ -207711,7 +207761,6 @@ local integer id=0
 local integer ty=GetUnitTypeId(u)
 local boolean b=true
 local boolean fe=true
-call UnitInventorySetSize(u,10)
 loop
 set id=LoadInteger(h2,ip,i)
 exitwhen i>=100
