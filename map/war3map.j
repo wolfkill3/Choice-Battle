@@ -21380,7 +21380,13 @@ if GetItemPlayer(it)==Player(15) or GetItemPlayer(it)==p or udg_test==true then
                 call SetItemPlayer(f,p,false)
                 call UnitRemoveItem(u,it)
                 call RemoveItem(it)
-                call UnitAddItemToSlot(u,f,6)
+                if UnitItemInSlot(u,6)==null then
+                    call UnitAddItemToSlot(u,f,6)
+                elseif UnitItemInSlot(u,7)==null then
+                    call UnitAddItemToSlot(u,f,7)
+                else
+                    call UnitAddItemToSlot(u,f,8)
+                endif
             endif
         endif
     endif
@@ -21498,17 +21504,22 @@ else
                 call SetItemRemainingCooldown(it,cd)
             endif
         else
-            call EnableItem(it,true,true,25)
+            if slotSource==6 or slotSource==7 or slotSource==8 then 
+                call EnableItem(it,true,true,25)
+                call SetItemRemainingCooldown(it,5)
+            endif
         endif
         if ittarg!=null then
             if slotSource==6 or slotSource==7 or slotSource==8 then 
                 if not(slotTarget==6 or slotTarget==7 or slotTarget==8) then 
                     call DisableItem(ittarg,true,true,25)
-                    call SetItemRemainingCooldown(it,cdtar)
+                    call SetItemRemainingCooldown(ittarg,cdtar)
+                    call SetItemRemainingCooldown(it,5)
                 endif
             else
                 if (slotTarget==6 or slotTarget==7 or slotTarget==8) then
                     call EnableItem(ittarg,true,true,25)
+                    call SetItemRemainingCooldown(ittarg,5)
                 endif
             endif
         endif
