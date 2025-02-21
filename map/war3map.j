@@ -21371,8 +21371,17 @@ if GetItemPlayer(it)==Player(15) or GetItemPlayer(it)==p or udg_test==true then
             call DisableItem(it,true,true,25)
             call SetItemRemainingCooldown(it,cd)
         else
-            call EnableItem(it,true,true,25)
-            call SetItemRemainingCooldown(it,cd)
+            if cd<0.1 then
+                call EnableItem(it,true,true,25)
+                call SetItemRemainingCooldown(it,cd)
+            else
+                set f=CreateItem(GetItemTypeId(it),GetUnitX(u),GetUnitY(u))
+                call SetItemStringField(f,ITEM_SF_NAME,GetBaseItemStringFieldById(GetItemTypeId(f),ITEM_SF_NAME)+" ("+Color[GetPlayerId(p)]+GetPlayerName(p)+"|r)")
+                call SetItemPlayer(f,p,false)
+                call UnitRemoveItem(u,it)
+                call RemoveItem(it)
+                call UnitAddItemToSlot(u,f,6)
+            endif
         endif
     endif
     set id=UIS_Check(u)
