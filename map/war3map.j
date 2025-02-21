@@ -8696,7 +8696,7 @@ set udg_RH[131]='HDSN'
 set udg_RH[132]='HKar'
 set udg_RH[133]='HBGN'//Black Goku надо 133
 set udg_RH[134]='HSab'//sabrac
-//set udg_RH[135]='HJi1'//Jiren
+set udg_RH[135]='HJi1'//Jiren
 
 
 //set udg_RH[127]='HIc3'
@@ -11358,7 +11358,7 @@ function OnButtonRandom takes nothing returns nothing
                 set udg_Repick[i+1]=-2
         endif
         loop
-        set id=GetRandomInt(0,134)
+        set id=GetRandomInt(0,135)
         if udg_RH[id]!=0 then
         set u[i+1]=CreateUnit(Player(i),udg_RH[id],GetRectCenterX(gg_rct_Rect1),GetRectCenterY(gg_rct_Rect1),0)
 call UnitInventorySetSize(n,10)
@@ -18046,7 +18046,7 @@ set rand[i]=true
 set udg_Repick[i+1]=0
 if GetPlayerSlotState(Player(i))==PLAYER_SLOT_STATE_PLAYING and u[i+1]==null then
 loop
-set id=GetRandomInt(0,134)
+set id=GetRandomInt(0,135)
 if udg_RH[id]!=0 then
 set u[i+1]=CreateUnit(Player(i),udg_RH[id],x1,y1,0)
 set udg_RH[id]=0
@@ -23109,7 +23109,7 @@ if cmb!=true then
                 set udg_RH[i]=0
             endif
             set i=i+1
-            exitwhen i>=134
+            exitwhen i>=135
             endloop
             call RemoveUnit(u)
             call SetPlayerStateBJ(GetOwningPlayer(u),PLAYER_STATE_FOOD_CAP_CEILING,0)
@@ -23325,7 +23325,7 @@ if cmb!=true then
                     set udg_RH[i]=0
                 endif
                 set i=i+1
-                exitwhen i>=134
+                exitwhen i>=135
             endloop
         endif
         call SaveInteger(h,GetHandleId(u),'A1GS',0)
@@ -23348,7 +23348,7 @@ if IsUnitType(u,UNIT_TYPE_HERO) and CPTModeON and cmb==true then
         call RemoveUnit(u)
         set i=0
         loop
-        exitwhen i>=134
+        exitwhen i>=135
             if GetUnitTypeId(u)==udg_RH[i] then
                 set udg_RH[i]=0
             endif
@@ -28379,7 +28379,7 @@ if bonus_repick[i]==2 then
         set udg_Repick[i+1]=-2
 endif
 loop
-set id=GetRandomInt(0,134)
+set id=GetRandomInt(0,135)
 if udg_RH[id]!=0 then
 set u[i+1]=CreateUnit(Player(i),udg_RH[id],GetRectCenterX(gg_rct_Rect1),GetRectCenterY(gg_rct_Rect1),0)
 call UnitInventorySetSize(u[i+1],10)
@@ -28645,7 +28645,7 @@ if udg_Repick[i]<2 then
         set udg_Repick[i]=udg_Repick[i]+1
 endif
 loop
-set id=GetRandomInt(0,134)
+set id=GetRandomInt(0,135)
 if udg_RH[id]!=0 then
 set udg_Hero[i]=CreateUnit(p,udg_RH[id],GetRectCenterX(gg_rct_Rect1),GetRectCenterY(gg_rct_Rect1),0)
 call UnitInventorySetSize(udg_Hero[i],10)
@@ -32487,7 +32487,7 @@ if bonus_repick[i]==2 then
 	set udg_Repick[i+1]=-2
 endif
 loop
-set id=GetRandomInt(0,134)
+set id=GetRandomInt(0,135)
 if udg_RH[id]!=0 then
     set u[i+1]=CreateUnit(Player(i),udg_RH[id],GetRectCenterX(gg_rct_Rect1),GetRectCenterY(gg_rct_Rect1),0)
     call UnitInventorySetSize(u[i+1],10)
@@ -32583,7 +32583,7 @@ else
     set i=pick1
 endif
 loop
-set id=GetRandomInt(0,134)
+set id=GetRandomInt(0,135)
 if udg_RH[id]!=0 then
 set u=CreateUnit(Player(i),udg_RH[id],GetRectCenterX(gg_rct_Rect1),GetRectCenterY(gg_rct_Rect1),0)
 call UnitInventorySetSize(u,10)
@@ -208651,7 +208651,7 @@ if cmb!=true and u!=null then
             set udg_RH[i2]=0
         endif
         set i2=i2+1
-        exitwhen i2==134
+        exitwhen i2==135
         endloop
         call SetUnitPosition(u,GetRectCenterX(gg_rct_Resp7),GetRectCenterY(gg_rct_Resp7))
         set p=GetOwningPlayer(u)
