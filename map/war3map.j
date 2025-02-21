@@ -8696,7 +8696,7 @@ set udg_RH[131]='HDSN'
 set udg_RH[132]='HKar'
 set udg_RH[133]='HBGN'//Black Goku надо 133
 set udg_RH[134]='HSab'//sabrac
-set udg_RH[135]='HJi1'//Jiren
+//set udg_RH[135]='HJi1'//Jiren
 
 
 //set udg_RH[127]='HIc3'
@@ -11230,7 +11230,7 @@ function OnButtonPickHeroId takes nothing returns nothing
             //call SetPlayerAlliance(Player(TestModePlayerId[GetPlayerId(p)]),Player(9), ALLIANCE_SHARED_VISION, true )
             //call SetPlayerAlliance(Player(TestModePlayerId[GetPlayerId(p)]),Player(9), ALLIANCE_SHARED_CONTROL, true )
             set Hero[TestModePlayerId[GetPlayerId(p)]]=CreateUnit(Player(TestModePlayerId[GetPlayerId(p)]),RH_Force[TestModeHeroId[GetPlayerId(p)]],GetRectCenterX(gg_rct_Rect1),GetRectCenterY(gg_rct_Rect1),0)
-call UnitInventorySetSize(n,10)
+            call UnitInventorySetSize(Hero[TestModePlayerId[GetPlayerId(p)]],10)
             set udg_Hero[TestModePlayerId[GetPlayerId(p)]+1]=Hero[TestModePlayerId[GetPlayerId(p)]]
             call W3MMD_Lite_Set_Integer(p,"Picked_hero",HeroSkin(udg_Hero[TestModePlayerId[GetPlayerId(p)]+1]))
             call SetHeroLevelBJ(Hero[TestModePlayerId[GetPlayerId(p)]],35,false)
@@ -21366,9 +21366,9 @@ if GetItemPlayer(it)==Player(15) or GetItemPlayer(it)==p or udg_test==true then
             call RemoveItem(it)
             call UnitAddItemToSlot(u,f,0)
         elseif UnitItemInSlot(u,6)==it or UnitItemInSlot(u,7)==it or UnitItemInSlot(u,8)==it then
-            call DisableItem(it,true,true,7)
+            call DisableItem(it,true,true,25)
         else
-            call EnableItem(it,true,true,7)
+            call EnableItem(it,true,true,25)
         endif
     endif
     set id=UIS_Check(u)
@@ -21468,18 +21468,28 @@ endfunction
 function Trig_MoveItem_Actions takes nothing returns nothing
 local unit u=GetTriggerUnit()
 local item it=GetManipulatedItem()
+local item ittarg=GetTriggerItemTargetItem()
 local integer slotTarget=GetTriggerItemTargetSlot()
+local integer slotSource=GetTriggerItemSourceSlot()
 local integer itemId=GetItemTypeId(it)
 if (slotTarget==6 or slotTarget==7 or slotTarget==8) and GetTriggerItemSourceSlot()!=9 then 
-    call DisableItem(it,true,true,7)
+    call DisableItem(it,true,true,25)
 else
-    call EnableItem(it,true,true,7)
+    call EnableItem(it,true,true,25)
+endif
+if ittarg!=null then
+    if slotSource==6 or slotSource==7 or slotSource==8 then 
+        call DisableItem(ittarg,true,true,25)
+    else
+        call EnableItem(ittarg,true,true,25)
+    endif
 endif
 if itemId ==  'I04V' or itemId ==  'I13R' or itemId ==  'I13S' or itemId ==  'IMDi' or GetTriggerItemTargetSlot()==9 then
-call EnableItem(it,true,true,7)
+call EnableItem(it,true,true,25)
 call SetTriggerItemAllowMoveSlot(false)
 endif
 set it=null
+set ittarg=null
 set u=null
 endfunction
 function UIS_RegisterItem takes integer a1,integer a2,integer a3,integer a4,integer a5,integer a6,integer a7,integer a8,integer a9,integer a10,integer a11,integer l__n returns nothing
@@ -23099,7 +23109,7 @@ if cmb!=true then
                 set udg_RH[i]=0
             endif
             set i=i+1
-            exitwhen i>=135
+            exitwhen i>=134
             endloop
             call RemoveUnit(u)
             call SetPlayerStateBJ(GetOwningPlayer(u),PLAYER_STATE_FOOD_CAP_CEILING,0)
@@ -23315,7 +23325,7 @@ if cmb!=true then
                     set udg_RH[i]=0
                 endif
                 set i=i+1
-                exitwhen i>=135
+                exitwhen i>=134
             endloop
         endif
         call SaveInteger(h,GetHandleId(u),'A1GS',0)
@@ -23338,7 +23348,7 @@ if IsUnitType(u,UNIT_TYPE_HERO) and CPTModeON and cmb==true then
         call RemoveUnit(u)
         set i=0
         loop
-        exitwhen i>=135
+        exitwhen i>=134
             if GetUnitTypeId(u)==udg_RH[i] then
                 set udg_RH[i]=0
             endif
@@ -34288,18 +34298,22 @@ local integer id=GetHandleId(t)
 local unit u=LoadUnitHandle(h,id,0)
 local real time=LoadReal(h,id,2)
 local integer ip=LoadInteger(h,id,3)
+local item it=LoadItemHandle(h,id,1)
+local item f
 call SaveReal(h,id,2,time-0.1)
 if(time<=0 and UnitIsAlive(Hero[ip]))or udg_B==false or DU2==false then
-set bj_lastCreatedItem=LoadItemHandle(h,id,1)
-call UnitRemoveItem(u,bj_lastCreatedItem)
-call RemoveItem(bj_lastCreatedItem)
-call UnitAddItemById(Hero[ip],'I13R')
-call UnitAddItemById(Hero[ip],'I13V')
+call SetItemDroppable(it,true)
+call UnitRemoveItem(u,it)
+call RemoveItem(it)
+set f=CreateItem('I13R',GetUnitX(u),GetUnitY(u))
+call UnitAddItemToSlot(u,f,9)
 call PauseTimer(t)
 call DestroyTimer(t)
 call FlushChildHashtable(h,id)
 endif
 set u=null
+set it=null
+set f=null
 set t=null
 endfunction
 function LinkenSphere takes nothing returns nothing
@@ -93505,7 +93519,7 @@ local real dmg=LoadReal(h,id,4)
 local real dist=LoadReal(h,id,2)
 local real scale=LoadReal(h,id,10)
 local real lvl=LoadReal(h,id,13)
-if GetUnitCurrentOrder(u)==OrderId("hex") then
+if GetUnitCurrentOrder(u)==OrderId("curse") then
 set n=CreateUnit(p,'e0B2',x,y,GetRandomReal(0,359))
 call UnitApplyTimedLife(n,1,.01)
 call SetUnitVertexColor(n,255,220,40,50)
@@ -203749,7 +203763,7 @@ function YoruichiQCast2 takes nothing returns nothing
         set y=y+50*Sin(a)
         call SetUnitXY_1(u,x,y, false)
         call SetUnitFacingInstant(u,a*bj_RADTODEG)
-        call SaveReal(HH,id,2,dist+40)
+        call SaveReal(HH,id,2,dist+50)
         set n=CreateUnit(p,'e11T',x,y,a*bj_RADTODEG)
         call SetUnitVertexColor(n,255,255,255,75)
         call UnitApplyTimedLife(n,1,0.15)
@@ -208637,7 +208651,7 @@ if cmb!=true and u!=null then
             set udg_RH[i2]=0
         endif
         set i2=i2+1
-        exitwhen i2==135
+        exitwhen i2==134
         endloop
         call SetUnitPosition(u,GetRectCenterX(gg_rct_Resp7),GetRectCenterY(gg_rct_Resp7))
         set p=GetOwningPlayer(u)
