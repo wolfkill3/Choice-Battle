@@ -131382,6 +131382,7 @@ call SetUnitXY_1(u,x1+250*Cos((a+rand2*90)*bj_DEGTORAD),y1+250*Sin((a+rand2*90)*
 call DestroyEffect(AddSpecialEffect("Abilities\\Weapons\\SteamTank\\SteamTankImpact.mdl",GetUnitX(u),GetUnitY(u)))
 set n=CreateIllusionFromUnit(u)
 call SetUnitFacingInstant(n,a)
+call SetIllusionDamageDealt(n,1)
 call SetIllusionDamageReceived(n,2)
 call UnitAddAbility(n,'A2X2')
 call UnitApplyTimedLife(n,'B04X',15)
