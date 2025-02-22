@@ -166210,6 +166210,31 @@ function InitTrig_JirenInt takes nothing returns nothing
     set trig=null
 endfunction
 
+
+function InitTrig_KiritoInt takes nothing returns nothing
+local trigger t
+set t=CreateTrigger()
+call TriggerRegisterAnyUnitEventBJ(t,EVENT_PLAYER_UNIT_SPELL_EFFECT)
+call TriggerAddAction(t,function DubleCirculirCast)
+call TriggerAddCondition(t,Condition(function DubleCirculirCond))
+set t=CreateTrigger()
+call TriggerRegisterAnyUnitEventBJ(t,EVENT_PLAYER_UNIT_SPELL_EFFECT)
+call TriggerAddAction(t,function Reaver2Cast)
+call TriggerAddCondition(t,Condition(function Reaver2Cond))
+set t=CreateTrigger()
+call TriggerRegisterAnyUnitEventBJ(t,EVENT_PLAYER_UNIT_SPELL_EFFECT)
+call TriggerAddAction(t,function HorizontalSquareCast)
+call TriggerAddCondition(t,Condition(function HorizontalSquareCond))
+set t=CreateTrigger()
+call TriggerRegisterAnyUnitEventBJ(t,EVENT_PLAYER_UNIT_SPELL_EFFECT)
+call TriggerAddAction(t,function EclipsCast)
+call TriggerAddCondition(t,Condition(function EclipsCond))
+set t=CreateTrigger()
+call TriggerRegisterAnyUnitEventBJ(t,EVENT_PLAYER_UNIT_SPELL_EFFECT)
+call TriggerAddAction(t,function VStrikeCast)
+call TriggerAddCondition(t,Condition(function VStrikeCond))
+set t=null
+endfunction
 //===========================================SAKAI YUJI INT 
 
 
@@ -181681,11 +181706,11 @@ endif
 
 
 
-if time==0.04 or time==2 then
+if time<3 then
 
-if GetLocalPlayer()==GetOwningPlayer(caster)then
-call ClearSelection()
-call SelectUnit(Dummy1,true)
+if (GetLocalPlayer()==GetOwningPlayer(caster) or GetPlayerAlliance(GetOwningPlayer(caster),GetLocalPlayer(),ALLIANCE_SHARED_CONTROL)) and GetUnitSelected(GetLocalPlayer())==caster then
+    call ClearSelection()
+    call SelectUnit(Dummy1,true)
 endif
 
 endif
@@ -208311,27 +208336,6 @@ set t=CreateTrigger()
 call TriggerRegisterPlayerUnitEvent(t,p,EVENT_PLAYER_UNIT_SPELL_EFFECT,null)
 call TriggerAddAction(t,function CambioRyoheiCast)
 call TriggerAddCondition(t,Condition(function CambioRyoheiCond))
-elseif ty=='H02F' then
-set t=CreateTrigger()
-call TriggerRegisterAnyUnitEventBJ(t,EVENT_PLAYER_UNIT_SPELL_EFFECT)
-call TriggerAddAction(t,function DubleCirculirCast)
-call TriggerAddCondition(t,Condition(function DubleCirculirCond))
-set t=CreateTrigger()
-call TriggerRegisterAnyUnitEventBJ(t,EVENT_PLAYER_UNIT_SPELL_EFFECT)
-call TriggerAddAction(t,function Reaver2Cast)
-call TriggerAddCondition(t,Condition(function Reaver2Cond))
-set t=CreateTrigger()
-call TriggerRegisterAnyUnitEventBJ(t,EVENT_PLAYER_UNIT_SPELL_EFFECT)
-call TriggerAddAction(t,function HorizontalSquareCast)
-call TriggerAddCondition(t,Condition(function HorizontalSquareCond))
-set t=CreateTrigger()
-call TriggerRegisterAnyUnitEventBJ(t,EVENT_PLAYER_UNIT_SPELL_EFFECT)
-call TriggerAddAction(t,function EclipsCast)
-call TriggerAddCondition(t,Condition(function EclipsCond))
-set t=CreateTrigger()
-call TriggerRegisterAnyUnitEventBJ(t,EVENT_PLAYER_UNIT_SPELL_EFFECT)
-call TriggerAddAction(t,function VStrikeCast)
-call TriggerAddCondition(t,Condition(function VStrikeCond))
 elseif ty=='H01B' then
 set t=CreateTrigger()
 call TriggerRegisterPlayerUnitEvent(t,p,EVENT_PLAYER_UNIT_SPELL_EFFECT,null)
@@ -212228,6 +212232,7 @@ call InitTrig_TobiramaInt()
 call InitTrig_StigmataInt()
 call InitTrig_VergilInt()
 call InitTrig_JirenInt()
+call InitTrig_KiritoInt()
 //call InitTrig_NanayaPick()
 call InitTrig_Text_Damage()
 // call InitTrig_Text_PreDamage()
