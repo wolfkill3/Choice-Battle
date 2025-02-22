@@ -18067,6 +18067,7 @@ loop
 set id=GetRandomInt(0,134)
 if udg_RH[id]!=0 then
 set u[i+1]=CreateUnit(Player(i),udg_RH[id],x1,y1,0)
+call UnitInventorySetSize(u[i+1],10)
 set udg_RH[id]=0
 set kakineid[i]=id
 call DisplayChatMessageEx(null,CHAT_RECIPIENT_UNKNOWN,10,true,"Игроку "+udg_Color[i+1]+GetPlayerName(Player(i))+"|r выпал "+GetUnitName(u[i+1]))
@@ -30974,20 +30975,20 @@ call ShowUnit(udg_Hero[i],true)
 call SetUnitInvulnerable(udg_Hero[i],false)
 call DestroyTimer(t)
 call FlushChildHashtable(h,id)
-call DisplayTextToPlayer(Player(0),0,0,"2")
+//call DisplayTextToPlayer(Player(0),0,0,"2")
 set t=null
 endfunction
 function Trig_Resp_Actions takes nothing returns nothing
 local integer i=GetPlayerId(GetTriggerPlayer())+1
 local timer t=CreateTimer()
-call DisplayTextToPlayer(Player(0),0,0,"0")
+//call DisplayTextToPlayer(Player(0),0,0,"0")
 if udg_B==false then
 call ReviveHero(udg_Hero[i],GetRectCenterX(gg_rct_Resp7),GetRectCenterY(gg_rct_Resp7),true)
 call SaveInteger(h,GetHandleId(t),0,i)
 call SetUnitInvulnerable(udg_Hero[i],true)
 call ShowUnit(udg_Hero[i],false)
 call TimerStart(t,0,false,function Trig_Resp_Actions2)
-call DisplayTextToPlayer(Player(0),0,0,"1")
+//call DisplayTextToPlayer(Player(0),0,0,"1")
 endif
 set t=null
 endfunction
@@ -42870,7 +42871,7 @@ call TriggerAddCondition(gg_trg_Storm_Ring,Condition(function Trig_Storm_Ring_Co
 call TriggerAddAction(gg_trg_Storm_Ring,function Trig_Storm_Ring_Actions)
 endfunction
 function Trig_Thunder_Ring2_Conditions takes nothing returns boolean
-return GetSpellAbilityId()==0x41305755 and GetUnitTypeId(GetTriggerUnit())!='H007'
+return GetSpellAbilityId()=='A0WU' and GetUnitTypeId(GetTriggerUnit())!='H007'
 endfunction
 function Trig_Thunder_Ring2_Actions2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
@@ -42890,7 +42891,7 @@ if time2<time and GetUnitAbilityLevel(u, 'A0VJ')>=1 then
         if IsUnitPaused(u)==false and GetUnitAbilityLevel(u,'Pet1')==0 then
                 call SaveReal(h,id,2,time2+0.03)
         endif
-        set n=CreateUnit(p,0x65303045,x,y,GetRandomReal(0,359))
+        set n=CreateUnit(p,'e00E',x,y,GetRandomReal(0,359))
         call UnitApplyTimedLife(n,'B000',0.5)
         call SetUnitTimeScale(n,5)
         set n=CreateUnit(p,'e023',x,y,GetRandomReal(0,359))
@@ -43660,7 +43661,7 @@ call SaveReal(h,id,12,dist)
 call SetUnitX(u,x1+42*Cos(a))
 call SetUnitY(u,y1+42*Sin(a))
 call GroupEnumUnitsInRange(g,x1,y1,190,Base)
-call UnitApplyTimedLife(CreateUnit(p,0x65303045,x1,y1,GetRandomReal(0,359)),'B000',1)
+call UnitApplyTimedLife(CreateUnit(p,'e00E',x1,y1,GetRandomReal(0,359)),'B000',1)
 call UnitApplyTimedLife(CreateUnit(p,'e00F',x1,y1,GetRandomReal(0,359)),'B000',1)
 loop
 set E=FirstOfGroup(g)
