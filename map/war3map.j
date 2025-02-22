@@ -21368,11 +21368,8 @@ if GetItemPlayer(it)==Player(15) or GetItemPlayer(it)==p or udg_test==true then
             call RemoveItem(it)
             call UnitAddItemToSlot(u,f,0)
         elseif (UnitItemInSlot(u,6)==it or UnitItemInSlot(u,7)==it or UnitItemInSlot(u,8)==it) then
-            call DisableItem(it,true,true,25)
-            call SetItemRemainingCooldown(it,cd)
-        else
             if cd<0.1 then
-                call EnableItem(it,true,true,25)
+                call DisableItem(it,true,true,25)
                 call SetItemRemainingCooldown(it,cd)
             else
                 set f=CreateItem(GetItemTypeId(it),GetUnitX(u),GetUnitY(u))
@@ -21380,14 +21377,23 @@ if GetItemPlayer(it)==Player(15) or GetItemPlayer(it)==p or udg_test==true then
                 call SetItemPlayer(f,p,false)
                 call UnitRemoveItem(u,it)
                 call RemoveItem(it)
-                if UnitItemInSlot(u,6)==null then
-                    call UnitAddItemToSlot(u,f,6)
-                elseif UnitItemInSlot(u,7)==null then
-                    call UnitAddItemToSlot(u,f,7)
+                if UnitItemInSlot(u,0)==null then
+                    call UnitAddItemToSlot(u,f,0)
+                elseif UnitItemInSlot(u,1)==null then
+                    call UnitAddItemToSlot(u,f,1)
+                elseif UnitItemInSlot(u,2)==null then
+                    call UnitAddItemToSlot(u,f,2)
+                elseif UnitItemInSlot(u,3)==null then
+                    call UnitAddItemToSlot(u,f,3)
+                elseif UnitItemInSlot(u,4)==null then
+                    call UnitAddItemToSlot(u,f,4)
                 else
-                    call UnitAddItemToSlot(u,f,8)
+                    call UnitAddItemToSlot(u,f,5)
                 endif
             endif
+        else
+            call EnableItem(it,true,true,25)
+            call SetItemRemainingCooldown(it,cd)
         endif
     endif
     set id=UIS_Check(u)
@@ -36817,7 +36823,7 @@ if cond==0 then
     endif
     if GetUnitAbilityLevel(c,'A1WT')==0 and GetUnitAbilityLevel(c,'A3WR')==0 and  (GetUnitAbilityLevel(c,'CB01')==0 or (GetUnitAbilityLevel(c,'CB01')>0 and CurrentEventAttack==true)) and GetUnitAbilityLevel(c,'B059')==0 and GetUnitAbilityLevel(u,'Bwul')==0 and LoadInteger(HH,cid,BlockPenetrate)==0 then
         set cond=1
-        if GetUnitAbilityLevel(u,'A1DP')>0 then
+        if GetUnitAbilityLevel(u,'A1DP')>0 and nb>0 then
             loop
             exitwhen i>=10
             if IsUnitAlly(Hero[i],GetOwningPlayer(u))and SR(x,y,GetUnitX(Hero[i]),GetUnitY(Hero[i]))<1700 and Hero[i]!=u then
@@ -99840,7 +99846,7 @@ local real y=GetUnitY(u)
 local player p=GetOwningPlayer(u)
 set n=CreateUnit(p,'e0RS',x,y,GetUnitFacing(u))
 call SetUnitAnimation(n,"spell channel")
-call UnitAddAbility(n,0x4131354B)
+call UnitAddAbility(n,'A15K')
 call SetUnitVertexColor(n,255,255,255,125)
 call SaveUnitHandle(h,id,0,u)
 call SaveUnitHandle(h,id,1,n)
@@ -100047,7 +100053,7 @@ call TriggerAddCondition(gg_trg_CrystalSlash,Condition(function CrystalSlashCond
 call TriggerAddAction(gg_trg_CrystalSlash,function CrystalSlashCast)
 endfunction
 function PrettySongCond takes nothing returns boolean
-return GetSpellAbilityId()==0x4130554B
+return GetSpellAbilityId()=='A0UK'
 endfunction
 function PrettySongCast2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
@@ -132452,7 +132458,9 @@ exitwhen E==null
 call UnitRemoveAbility(E,'A1DH')
 call UnitRemoveAbility(E,'B06Q')
 call SetUnitStunCounter(E,GetUnitStunCounter(E)-1)
+if IsUnitAlive(E)==true then
 call IssueImmediateOrder(E,"stop")
+endif
 call myCustomDamage(u,E,dmg,false,false,null,null,null)
 call GroupRemoveUnit(g,E)
 endloop
@@ -132485,7 +132493,7 @@ call GroupEnumUnitsInRange(g2,x,y,400,Base)
 loop
 set E=FirstOfGroup(g2)
 exitwhen E==null
-if Condition_Base(p,E)and IsUnitPaused(E)==false and IsUnitInvulnerable(E)==false then
+if Condition_Base(p,E)and IsUnitPaused(E)==false and IsUnitInvulnerable(E)==false and IsUnitAlive(E) and IsUnitHidden(E)==false then
 call GroupAddUnit(g,E)
 call UnitAddAbility(E,'A1DH')
 call IssueTargetOrder(E,"attack",u)
@@ -132521,7 +132529,7 @@ call TriggerAddCondition(gg_trg_ShielderR,Condition(function ShielderRCond))
 call TriggerAddAction(gg_trg_ShielderR,function ShielderRCast)
 endfunction
 function ShieldaECond takes nothing returns boolean
-return GetSpellAbilityId()==0x4131444C
+return GetSpellAbilityId()=='A1DL'
 endfunction
 function ShieldaECast2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
@@ -132559,7 +132567,7 @@ call UnitMakeAbilityPermanent(u,true,'A1DG')
 call SaveUnitHandle(h,id,0,u)
 call SaveReal(h,id,1,0)
 call SetUnitAnimation(u,"Spell Three")
-call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)+GetUnitState(u,UNIT_STATE_MAX_MANA)*(0.025+(0.025*GetUnitAbilityLevel(c,0x4131444C))))
+call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)+GetUnitState(u,UNIT_STATE_MAX_MANA)*(0.025+(0.025*GetUnitAbilityLevel(c,'A1DL'))))
 call TimerStart(t,0.1,true,function ShieldaECast2)
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\ShielderE.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
