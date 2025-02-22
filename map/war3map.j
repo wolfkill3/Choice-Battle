@@ -1125,6 +1125,23 @@ endfunction
 function ValidHLC takes nothing returns boolean
 return GetCommandString()=="a" or GetCommandString()=="b" or GetCommandString()=="c" or GetCommandString()=="d" or GetCommandString()=="e" or GetCommandString()=="f" or GetCommandString()=="g" or GetCommandString()=="h" or GetCommandString()=="i" or GetCommandString()=="j" or GetCommandString()=="k" or GetCommandString()=="l" or GetCommandString()=="m" or GetCommandString()=="n"
 endfunction
+function UnitEnableInventoryCustom takes unit whichUnit, boolean enable, boolean ignoreErrorMessages returns nothing
+local integer i=0
+//call UnitEnableInventory(whichUnit,enable,ignoreErrorMessages)
+loop
+exitwhen i==10
+if i<6 or i==9 then
+    if enable then
+        call EnableItem(UnitItemInSlot(whichUnit, i),true,true,9)
+        call SetItemRemainingCooldown(UnitItemInSlot(whichUnit, i),GetItemRemainingCooldown(UnitItemInSlot(whichUnit, i)))
+    else
+        call DisableItem(UnitItemInSlot(whichUnit, i),true,true,9)
+        call SetItemRemainingCooldown(UnitItemInSlot(whichUnit, i),GetItemRemainingCooldown(UnitItemInSlot(whichUnit, i)))
+    endif
+endif
+set i=i+1
+endloop
+endfunction
 function GetInventoryIndexOfItemTypeBJCustom takes unit whichUnit, integer itemId returns integer
 
     local integer index
@@ -41384,10 +41401,14 @@ set time=time+0.1
 call SaveReal(h,id,5,time)
 endif
 if time>10 then
-call RemoveAbility(LoadAbilityHandle(h,id,6))
 call RemoveAbility(LoadAbilityHandle(h,id,7))
 call RemoveAbility(LoadAbilityHandle(h,id,8))
-call RemoveAbility(LoadAbilityHandle(h,id,9))
+call SetHeroAgi(c,GetHeroAgi(c,false)+30,true)
+call SetHeroStr(c,GetHeroStr(c,false)+30,true)
+call SetHeroInt(c,GetHeroInt(c,false)+30,true)
+call SetHeroAgi(u,GetHeroAgi(u,false)-30,true)
+call SetHeroStr(u,GetHeroStr(u,false)-30,true)
+call SetHeroInt(u,GetHeroInt(u,false)-30,true)
 call SaveReal(h,id,5,0)
 call PauseTimer(t)
 call DestroyTimer(t)
@@ -41403,14 +41424,16 @@ local timer t=CreateTimer()
 local integer id=GetHandleId(t)
 call SaveUnitHandle(h,id,0,u)
 call SaveUnitHandle(h,id,1,c)
-call SaveAbilityHandle(h,id,6,CreateAbility( 'A0NE' ))
-call SetAbilityOwner(LoadAbilityHandle(h,id,6),c)
 call SaveAbilityHandle(h,id,7,CreateAbility( 'A0NG' ))
 call SetAbilityOwner(LoadAbilityHandle(h,id,7),c)
 call SaveAbilityHandle(h,id,8,CreateAbility( 'SHD2' ))
 call SetAbilityOwner(LoadAbilityHandle(h,id,8),c)
-call SaveAbilityHandle(h,id,9,CreateAbility( 'A13L' ))
-call SetAbilityOwner(LoadAbilityHandle(h,id,9),u)
+call SetHeroAgi(c,GetHeroAgi(c,false)-30,true)
+call SetHeroStr(c,GetHeroStr(c,false)-30,true)
+call SetHeroInt(c,GetHeroInt(c,false)-30,true)
+call SetHeroAgi(u,GetHeroAgi(u,false)+30,true)
+call SetHeroStr(u,GetHeroStr(u,false)+30,true)
+call SetHeroInt(u,GetHeroInt(u,false)+30,true)
 call TimerStart(t,0.1,true,function PatriotCast2)
 set u=null
 set c=null
@@ -65788,7 +65811,7 @@ call EnableUnitAbility2(u,'GKF1',false,true)
 call EnableUnitAbility2(u,'GKG1',false,true)
 call EnableUnitAbility2(u,'GKG6',false,true)
 call EnableUnitAbility2(u,'GKG7',false,true)
-call UnitEnableInventory(u,true,false )
+call UnitEnableInventoryCustom(u,true,false )
 call SetAbilityStringField(GetUnitAbility(u,'GKR1'),ABILITY_SF_ICON_NORMAL,"ReplaceableTextures\\CommandButtons\\BTNInstant_transmission.blp")
 if LoadReal(HH,GetHandleId(GetOwningPlayer(u)),VariationQHash)==2 then
     if LoadInteger(HH,idp,KaiokenHash)<5 then
@@ -66162,7 +66185,7 @@ call EnableUnitAbility2(u,'GKF1',false,true)
 call EnableUnitAbility2(u,'GKG1',false,true)
 call EnableUnitAbility2(u,'GKG6',false,true)
 call EnableUnitAbility2(u,'GKG7',false,true)
-call UnitEnableInventory(u,true,false )
+call UnitEnableInventoryCustom(u,true,false )
 call SetUnitVertexColor(u,255,255,255,255)
 call FlushChildHashtable(h,GetHandleId(g))
 call DestroyGroup(g)
@@ -66284,7 +66307,7 @@ call DisableUnitAbility2(u,'GKF1',false,true)
 call DisableUnitAbility2(u,'GKG1',false,true)
 call DisableUnitAbility2(u,'GKG6',false,true)
 call DisableUnitAbility2(u,'GKG7',false,true)
-call UnitEnableInventory(u,false,false )
+call UnitEnableInventoryCustom(u,false,false )
 if LoadReal(HH,idp,VariationQHash)==2 then
     call SaveInteger(HH,idp,KaiokenHash,LoadInteger(HH,idp,KaiokenHash)+1)
     call SaveReal(h,id,12,-0.9)
@@ -67879,7 +67902,7 @@ if time<0.630 and GetAbilityIntegerLevelField(GetUnitAbility(u,'GKR1'), ABILITY_
         call DisableUnitAbility2(u,'GKG1',false,true)
         call DisableUnitAbility2(u,'GKG6',false,true)
         call DisableUnitAbility2(u,'GKG7',false,true)
-        call UnitEnableInventory(u,false,false )
+        call UnitEnableInventoryCustom(u,false,false )
     endif
     if time==starttime+0.2 and starttime<-0.7 then
         call SetAbilityStringField(GetUnitAbility(u,'GKR1'),ABILITY_SF_ICON_NORMAL,"ReplaceableTextures\\CommandButtons\\BTNCancel1.blp")
@@ -67968,7 +67991,7 @@ if time<0.630 and GetAbilityIntegerLevelField(GetUnitAbility(u,'GKR1'), ABILITY_
         if time==0.61 then
             call SetUnitInvulnerable(u,false)
             call PauseUnit(u,false)
-            call UnitEnableInventory(u,true,false )
+            call UnitEnableInventoryCustom(u,true,false )
             set a=Atan2(y3-y2,x3-x2)
             call SaveReal(h,id,4,a)
             call SetUnitFacingInstant(u,a*bj_RADTODEG)
@@ -67994,7 +68017,7 @@ if time<0.630 and GetAbilityIntegerLevelField(GetUnitAbility(u,'GKR1'), ABILITY_
             call SetUnitTimeScale(u,1)
             call SetUnitInvulnerable(u,false)
             call PauseUnit(u,false)
-            call UnitEnableInventory(u,true,false )
+            call UnitEnableInventoryCustom(u,true,false )
             call SaveReal(h,id,5,20)
         endif
     endif
@@ -68032,7 +68055,7 @@ else
     call EnableUnitAbility2(u,'GKG1',false,true)
     call EnableUnitAbility2(u,'GKG6',false,true)
     call EnableUnitAbility2(u,'GKG7',false,true)
-    call UnitEnableInventory(u,true,false )
+    call UnitEnableInventoryCustom(u,true,false )
     call UnitRemoveAbility(u,'A1FU')
     call UnitRemoveAbility(u,'B00A')
     call SetAbilityStringField(GetUnitAbility(u,'GKR1'),ABILITY_SF_ICON_NORMAL,"ReplaceableTextures\\CommandButtons\\BTNInstant_transmission.blp")
@@ -109128,7 +109151,7 @@ call SaveReal(HH,GetHandleId(u),TextTagTimeHash,-0.03)
 call SaveReal(HH,GetHandleId(u),TextTagHealTimeHash,-0.03)
 call SetUnitState(l__d,UNIT_STATE_LIFE,GetWidgetLife(u))
 call SetUnitState(l__d,UNIT_STATE_MANA,GetWidgetMana(u))
-call UnitEnableInventory(l__d,false,false)
+call UnitEnableInventoryCustom(l__d,false,false)
 call SaveUnitHandle(h,id,0,u)
 call SaveUnitHandle(h,id,1,l__d)
 call TimerStart(t,3,false,function Trig_Bunshin_Actions2)
@@ -150128,7 +150151,7 @@ call SaveUnitHandle(h,id,0,u)
 call SaveUnitHandle(h,id,1,l__d)
 call SetUnitState(l__d,UNIT_STATE_LIFE,GetWidgetLife(u))
 call SetUnitState(l__d,UNIT_STATE_MANA,GetWidgetMana(u))
-call UnitEnableInventory(l__d,false,false)
+call UnitEnableInventoryCustom(l__d,false,false)
 call SaveUnitHandle(HH,GetHandleId(u),StringHash("DeiW"),l__d)
 call TimerStart(t,2.5,false,function WDeidaraCast2)
 set u=null
@@ -167799,7 +167822,7 @@ function MinatoD1_Cast takes unit newCaster,unit newTarget,timer newTimer return
         else
             set bjLCU=CreateUnit(GetOwningPlayer(newCaster), 'dM02', GetUnitX(newCaster), GetUnitY(newCaster), GetRandomInt(0, 360))
             call UnitApplyTimedLife(bjLCU, 1, 15)
-            call UnitEnableInventory(bjLCU,false,false )
+            call UnitEnableInventoryCustom(bjLCU,false,false )
             call UnitEnableMovement(bjLCU,false,false )
             call UnitEnableAttack(bjLCU,false,false )
         endif
@@ -168100,7 +168123,7 @@ function MinatoD2_Cast takes unit newCaster,unit newTarget,real point_x,real poi
         else
             set bjLCU=CreateUnit(GetOwningPlayer(newCaster), 'dM02', GetUnitX(newCaster), GetUnitY(newCaster), GetRandomInt(0, 360))
             call UnitApplyTimedLife(bjLCU, 1, 15)
-            call UnitEnableInventory(bjLCU,false,false )
+            call UnitEnableInventoryCustom(bjLCU,false,false )
             call UnitEnableMovement(bjLCU,false,false )
             call UnitEnableAttack(bjLCU,false,false )
         endif
@@ -169545,7 +169568,7 @@ function MinatoE_Cast takes unit newCaster,unit newTarget,timer newTimer returns
                     call ShakeCamera(0.1 , 10)
                     set bjLCU=CreateUnit(GetOwningPlayer(newCaster), 'dM02', GetUnitX(newCaster), GetUnitY(newCaster), GetRandomInt(0, 360))
                     call UnitApplyTimedLife(bjLCU, 1, 15)
-                    call UnitEnableInventory(bjLCU,false,false )
+                    call UnitEnableInventoryCustom(bjLCU,false,false )
                     call UnitEnableMovement(bjLCU,false,false )
                     call UnitEnableAttack(bjLCU,false,false )
                     call SaveInteger(h, id, StringHash("PeriodicAngle"), 1)
@@ -205829,7 +205852,7 @@ function TobiramaFCast takes unit u, real x1, real y1 returns nothing
         endif
         set i=i+1
         endloop
-        call UnitEnableInventory(n,false,false)
+        call UnitEnableInventoryCustom(n,false,false)
         call SetUnitState(n,UNIT_STATE_LIFE,GetWidgetLife(u))
         call SetUnitState(n,UNIT_STATE_MANA,GetWidgetMana(u))
         call UnitApplyTimedLife(n,1,30)
@@ -208277,23 +208300,23 @@ call TriggerAddAction(t,function CambioRyoheiCast)
 call TriggerAddCondition(t,Condition(function CambioRyoheiCond))
 elseif ty=='H02F' then
 set t=CreateTrigger()
-call TriggerRegisterPlayerUnitEvent(t,p,EVENT_PLAYER_UNIT_SPELL_EFFECT,null)
+call TriggerRegisterAnyUnitEventBJ(t,EVENT_PLAYER_UNIT_SPELL_EFFECT)
 call TriggerAddAction(t,function DubleCirculirCast)
 call TriggerAddCondition(t,Condition(function DubleCirculirCond))
 set t=CreateTrigger()
-call TriggerRegisterPlayerUnitEvent(t,p,EVENT_PLAYER_UNIT_SPELL_EFFECT,null)
+call TriggerRegisterAnyUnitEventBJ(t,EVENT_PLAYER_UNIT_SPELL_EFFECT)
 call TriggerAddAction(t,function Reaver2Cast)
 call TriggerAddCondition(t,Condition(function Reaver2Cond))
 set t=CreateTrigger()
-call TriggerRegisterPlayerUnitEvent(t,p,EVENT_PLAYER_UNIT_SPELL_EFFECT,null)
+call TriggerRegisterAnyUnitEventBJ(t,EVENT_PLAYER_UNIT_SPELL_EFFECT)
 call TriggerAddAction(t,function HorizontalSquareCast)
 call TriggerAddCondition(t,Condition(function HorizontalSquareCond))
 set t=CreateTrigger()
-call TriggerRegisterPlayerUnitEvent(t,p,EVENT_PLAYER_UNIT_SPELL_EFFECT,null)
+call TriggerRegisterAnyUnitEventBJ(t,EVENT_PLAYER_UNIT_SPELL_EFFECT)
 call TriggerAddAction(t,function EclipsCast)
 call TriggerAddCondition(t,Condition(function EclipsCond))
 set t=CreateTrigger()
-call TriggerRegisterPlayerUnitEvent(t,p,EVENT_PLAYER_UNIT_SPELL_EFFECT,null)
+call TriggerRegisterAnyUnitEventBJ(t,EVENT_PLAYER_UNIT_SPELL_EFFECT)
 call TriggerAddAction(t,function VStrikeCast)
 call TriggerAddCondition(t,Condition(function VStrikeCond))
 elseif ty=='H01B' then
