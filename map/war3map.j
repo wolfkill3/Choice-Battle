@@ -1125,6 +1125,23 @@ endfunction
 function ValidHLC takes nothing returns boolean
 return GetCommandString()=="a" or GetCommandString()=="b" or GetCommandString()=="c" or GetCommandString()=="d" or GetCommandString()=="e" or GetCommandString()=="f" or GetCommandString()=="g" or GetCommandString()=="h" or GetCommandString()=="i" or GetCommandString()=="j" or GetCommandString()=="k" or GetCommandString()=="l" or GetCommandString()=="m" or GetCommandString()=="n"
 endfunction
+function UnitEnableInventoryCustom takes unit whichUnit, boolean enable, boolean ignoreErrorMessages returns nothing
+local integer i=0
+//call UnitEnableInventory(whichUnit,enable,ignoreErrorMessages)
+loop
+exitwhen i==10
+if i<6 or i==9 then
+    if enable then
+        call EnableItem(UnitItemInSlot(whichUnit, i),true,true,9)
+        call SetItemRemainingCooldown(UnitItemInSlot(whichUnit, i),GetItemRemainingCooldown(UnitItemInSlot(whichUnit, i)))
+    else
+        call DisableItem(UnitItemInSlot(whichUnit, i),true,true,9)
+        call SetItemRemainingCooldown(UnitItemInSlot(whichUnit, i),GetItemRemainingCooldown(UnitItemInSlot(whichUnit, i)))
+    endif
+endif
+set i=i+1
+endloop
+endfunction
 function GetInventoryIndexOfItemTypeBJCustom takes unit whichUnit, integer itemId returns integer
 
     local integer index
@@ -11234,12 +11251,14 @@ function OnButtonPickHeroId takes nothing returns nothing
             set udg_Hero[TestModePlayerId[GetPlayerId(p)]+1]=Hero[TestModePlayerId[GetPlayerId(p)]]
             call W3MMD_Lite_Set_Integer(p,"Picked_hero",HeroSkin(udg_Hero[TestModePlayerId[GetPlayerId(p)]+1]))
             call SetHeroLevelBJ(Hero[TestModePlayerId[GetPlayerId(p)]],35,false)
-            call UnitAddItemById(Hero[TestModePlayerId[GetPlayerId(p)]],'I03R')
+            call UnitAddItemById(Hero[TestModePlayerId[GetPlayerId(p)]],'I13R')
             call UnitAddItemById(Hero[TestModePlayerId[GetPlayerId(p)]],'I02W')
             call UnitAddItemById(Hero[TestModePlayerId[GetPlayerId(p)]],'I01E')
-            call UnitAddItemById(Hero[TestModePlayerId[GetPlayerId(p)]],'I01D')
+            call UnitAddItemById(Hero[TestModePlayerId[GetPlayerId(p)]],'I04E')
             call UnitAddItemById(Hero[TestModePlayerId[GetPlayerId(p)]],'I043')
             call UnitAddItemById(Hero[TestModePlayerId[GetPlayerId(p)]],'I04T')
+            call UnitAddItemById(Hero[TestModePlayerId[GetPlayerId(p)]],'I00D')
+            call UnitAddItemById(Hero[TestModePlayerId[GetPlayerId(p)]],'I00Q')
             if FFAMode==false then
                 if Player(TestModePlayerId[GetPlayerId(p)])==Player(0)or Player(TestModePlayerId[GetPlayerId(p)])==Player(1)or Player(TestModePlayerId[GetPlayerId(p)])==Player(2)or Player(TestModePlayerId[GetPlayerId(p)])==Player(3)or Player(TestModePlayerId[GetPlayerId(p)])==Player(4)then
                     call GroupAddUnit(udg_CG[1],Hero[TestModePlayerId[GetPlayerId(p)]])
@@ -11287,7 +11306,6 @@ function OnButtonPickHeroId takes nothing returns nothing
                 call DisplayChatMessageEx(null,CHAT_RECIPIENT_UNKNOWN,10,true,GetUnitBaseStringFieldById(RH_Force[TavernHeroId[GetPlayerId(p)]],UNIT_SF_NAME)+" был забанен "+GetPlayerName(p)+"!")
                 else
                 call CreateUnit(Player(GetPlayerId(p)),udg_RH[TavernHeroId[GetPlayerId(p)]],GetRectCenterX(gg_rct_Rect1),GetRectCenterY(gg_rct_Rect1),0)
-call UnitInventorySetSize(n,10)
                 endif
                 set bonus_repick[GetPlayerId(p)]=0
                 set udg_RH[TavernHeroId[GetPlayerId(p)]]=0
@@ -11311,7 +11329,7 @@ call UnitInventorySetSize(n,10)
                 call SetFrameColourEx( TavernPickedHeroFrame2[GetPlayerId(p)],1, 0xFF505050 )
                 call SetFrameColourEx( TavernPickedHeroFrame2[GetPlayerId(p)],2, 0xFF505050 )
                 set Hero[GetPlayerId(p)]=CreateUnit(Player(GetPlayerId(p)),udg_RH[TavernHeroId[GetPlayerId(p)]],GetRectCenterX(gg_rct_Rect1),GetRectCenterY(gg_rct_Rect1),0)
-call UnitInventorySetSize(n,10)
+                call UnitInventorySetSize(Hero[GetPlayerId(p)],10)
                 set udg_Hero[GetPlayerId(p)+1]=Hero[GetPlayerId(p)]
                 call W3MMD_Lite_Set_Integer(p,"Picked_hero",HeroSkin(udg_Hero[GetPlayerId(p)+1]))
             endif
@@ -11361,7 +11379,7 @@ function OnButtonRandom takes nothing returns nothing
         set id=GetRandomInt(0,135)
         if udg_RH[id]!=0 then
         set u[i+1]=CreateUnit(Player(i),udg_RH[id],GetRectCenterX(gg_rct_Rect1),GetRectCenterY(gg_rct_Rect1),0)
-call UnitInventorySetSize(n,10)
+        call UnitInventorySetSize(u[i+1],10)
         set udg_RH[id]=0
         call DisplayChatMessageEx(null,CHAT_RECIPIENT_UNKNOWN,10,true,"Игроку "+udg_Color[i+1]+GetPlayerName(Player(i))+"|r выпал "+GetUnitName(u[i+1]))
         // call AddFrameText(TavernChat,"Игроку "+udg_Color[i+1]+GetPlayerName(Player(i))+"|r выпал "+GetUnitName(u[i+1]))
@@ -21317,6 +21335,7 @@ local unit u=GetTriggerUnit()
 local item it=GetManipulatedItem()
 local player p=GetOwningPlayer(u)
 local integer id
+local real cd=GetItemRemainingCooldown(it)
 local item f=null
 if GetItemPlayer(it)==Player(15) or GetItemPlayer(it)==p or udg_test==true then
     call SetItemPlayer(it,p,false)
@@ -21365,10 +21384,33 @@ if GetItemPlayer(it)==Player(15) or GetItemPlayer(it)==p or udg_test==true then
             call UnitRemoveItem(u,it)
             call RemoveItem(it)
             call UnitAddItemToSlot(u,f,0)
-        elseif UnitItemInSlot(u,6)==it or UnitItemInSlot(u,7)==it or UnitItemInSlot(u,8)==it then
-            call DisableItem(it,true,true,25)
+        elseif (UnitItemInSlot(u,6)==it or UnitItemInSlot(u,7)==it or UnitItemInSlot(u,8)==it) then
+            if cd<0.1 then
+                call DisableItem(it,true,true,25)
+                call SetItemRemainingCooldown(it,cd)
+            else
+                set f=CreateItem(GetItemTypeId(it),GetUnitX(u),GetUnitY(u))
+                call SetItemStringField(f,ITEM_SF_NAME,GetBaseItemStringFieldById(GetItemTypeId(f),ITEM_SF_NAME)+" ("+Color[GetPlayerId(p)]+GetPlayerName(p)+"|r)")
+                call SetItemPlayer(f,p,false)
+                call UnitRemoveItem(u,it)
+                call RemoveItem(it)
+                if UnitItemInSlot(u,0)==null then
+                    call UnitAddItemToSlot(u,f,0)
+                elseif UnitItemInSlot(u,1)==null then
+                    call UnitAddItemToSlot(u,f,1)
+                elseif UnitItemInSlot(u,2)==null then
+                    call UnitAddItemToSlot(u,f,2)
+                elseif UnitItemInSlot(u,3)==null then
+                    call UnitAddItemToSlot(u,f,3)
+                elseif UnitItemInSlot(u,4)==null then
+                    call UnitAddItemToSlot(u,f,4)
+                else
+                    call UnitAddItemToSlot(u,f,5)
+                endif
+            endif
         else
             call EnableItem(it,true,true,25)
+            call SetItemRemainingCooldown(it,cd)
         endif
     endif
     set id=UIS_Check(u)
@@ -21472,21 +21514,42 @@ local item ittarg=GetTriggerItemTargetItem()
 local integer slotTarget=GetTriggerItemTargetSlot()
 local integer slotSource=GetTriggerItemSourceSlot()
 local integer itemId=GetItemTypeId(it)
-if (slotTarget==6 or slotTarget==7 or slotTarget==8) and GetTriggerItemSourceSlot()!=9 then 
-    call DisableItem(it,true,true,25)
+local integer ittargId=GetItemTypeId(it)
+local real cd=GetItemRemainingCooldown(it)
+local real cdtar=GetItemRemainingCooldown(ittarg)
+if (GetItemRemainingCooldown(it)>0 or GetItemRemainingCooldown(ittarg)>0) and (slotSource==6 or slotSource==7 or slotSource==8 or slotTarget==6 or slotTarget==7 or slotTarget==8 or slotTarget==9) then
+    call SetTriggerItemAllowMoveSlot(false)
 else
-    call EnableItem(it,true,true,25)
-endif
-if ittarg!=null then
-    if slotSource==6 or slotSource==7 or slotSource==8 then 
-        call DisableItem(ittarg,true,true,25)
-    else
-        call EnableItem(ittarg,true,true,25)
+    if slotSource!=9 and slotTarget!=9 then
+        if (slotTarget==6 or slotTarget==7 or slotTarget==8) then 
+            if not(slotSource==6 or slotSource==7 or slotSource==8) then 
+                call DisableItem(it,true,true,25)
+                call SetItemRemainingCooldown(it,cd)
+            endif
+        else
+            if slotSource==6 or slotSource==7 or slotSource==8 then 
+                call EnableItem(it,true,true,25)
+                call SetItemRemainingCooldown(it,5)
+            endif
+        endif
+        if ittarg!=null then
+            if slotSource==6 or slotSource==7 or slotSource==8 then 
+                if not(slotTarget==6 or slotTarget==7 or slotTarget==8) then 
+                    call DisableItem(ittarg,true,true,25)
+                    call SetItemRemainingCooldown(ittarg,cdtar)
+                    call SetItemRemainingCooldown(it,5)
+                endif
+            else
+                if (slotTarget==6 or slotTarget==7 or slotTarget==8) then
+                    call EnableItem(ittarg,true,true,25)
+                    call SetItemRemainingCooldown(ittarg,5)
+                endif
+            endif
+        endif
     endif
-endif
-if itemId ==  'I04V' or itemId ==  'I13R' or itemId ==  'I13S' or itemId ==  'IMDi' or GetTriggerItemTargetSlot()==9 then
-call EnableItem(it,true,true,25)
-call SetTriggerItemAllowMoveSlot(false)
+    if itemId ==  'I04V' or itemId ==  'I13R' or itemId ==  'I13S' or itemId ==  'IMDi' or ittargId ==  'I04V' or ittargId ==  'I13R' or ittargId ==  'I13S' or ittargId ==  'IMDi' or slotTarget==9 then
+        call SetTriggerItemAllowMoveSlot(false)
+    endif
 endif
 set it=null
 set ittarg=null
@@ -28478,16 +28541,21 @@ if GetEventPlayerChatString()=="-ok"and udg_B==false and udg_Swap[i]==true and u
 loop
 set t1[j]=UnitRemoveItemFromSlot(udg_Hero[i],j)
 set t2[j]=UnitRemoveItemFromSlot(udg_Hero[udg_SwapId[i]],j)
-exitwhen j==5
+exitwhen j==9
 set j=j+1
 endloop
+if LoadUnitHandle(HH,GetHandleId(udg_Hero[i]),StringHash("Zamasu"))!=null then
+    call SetUnitOwner(LoadUnitHandle(HH,GetHandleId(udg_Hero[i]),StringHash("Zamasu")),Player(udg_SwapId[i]-1),true)
+elseif LoadUnitHandle(HH,GetHandleId(udg_Hero[udg_SwapId[i]]),StringHash("Zamasu"))!=null then
+    call SetUnitOwner(LoadUnitHandle(HH,GetHandleId(udg_Hero[udg_SwapId[i]]),StringHash("Zamasu")),Player(i-1),true)
+endif
 call SetUnitOwner(udg_Hero[i],Player(udg_SwapId[i]-1),true)
 call SetUnitOwner(udg_Hero[udg_SwapId[i]],Player(i-1),true)
 set j=0
 loop
 call UnitAddItem(udg_Hero[i],t2[j])
 call UnitAddItem(udg_Hero[udg_SwapId[i]],t1[j])
-exitwhen j==5
+exitwhen j==9
 set j=j+1
 endloop
 set u1=udg_Hero[i]
@@ -34302,14 +34370,24 @@ local item it=LoadItemHandle(h,id,1)
 local item f
 call SaveReal(h,id,2,time-0.1)
 if(time<=0 and UnitIsAlive(Hero[ip]))or udg_B==false or DU2==false then
-call SetItemDroppable(it,true)
-call UnitRemoveItem(u,it)
-call RemoveItem(it)
-set f=CreateItem('I13R',GetUnitX(u),GetUnitY(u))
-call UnitAddItemToSlot(u,f,9)
-call PauseTimer(t)
-call DestroyTimer(t)
-call FlushChildHashtable(h,id)
+    if IsAbilityEnabled(GetUnitAbility(u,'AInv'))==true then
+        call SetItemDroppable(it,true)
+        call UnitRemoveItem(u,it)
+        call RemoveItem(it)
+        set f=CreateItem('I13R',GetUnitX(u),GetUnitY(u))
+        call UnitAddItemToSlot(u,f,9)
+    else
+        call EnableUnitAbility2(u,'AInv',false,true)
+        call SetItemDroppable(it,true)
+        call UnitRemoveItem(u,it)
+        call RemoveItem(it)
+        set f=CreateItem('I13R',GetUnitX(u),GetUnitY(u))
+        call UnitAddItemToSlot(u,f,9) 
+        call DisableUnitAbility2(u,'AInv',false,true)
+    endif
+    call PauseTimer(t)
+    call DestroyTimer(t)
+    call FlushChildHashtable(h,id)
 endif
 set u=null
 set it=null
@@ -35833,7 +35911,7 @@ function IchigoBankaiW_Counter takes unit newCaster, unit newTarget returns noth
 endfunction
 //function AnimeRandom
 function CheckAngleDummyCond takes nothing returns boolean
-return GetUnitAbilityLevel(GetTriggerUnit(),'Pet2')>0 and GetIssuedOrderId()==OrderId("smart") 
+return GetUnitAbilityLevel(GetTriggerUnit(),'Pet2')>0 and GetIssuedOrderId()==OrderId("smart")
 endfunction
 
 function CheckAngleDummyCast takes nothing returns nothing
@@ -36777,7 +36855,7 @@ if cond==0 then
     endif
     if GetUnitAbilityLevel(c,'A1WT')==0 and GetUnitAbilityLevel(c,'A3WR')==0 and  (GetUnitAbilityLevel(c,'CB01')==0 or (GetUnitAbilityLevel(c,'CB01')>0 and CurrentEventAttack==true)) and GetUnitAbilityLevel(c,'B059')==0 and GetUnitAbilityLevel(u,'Bwul')==0 and LoadInteger(HH,cid,BlockPenetrate)==0 then
         set cond=1
-        if GetUnitAbilityLevel(u,'A1DP')>0 then
+        if GetUnitAbilityLevel(u,'A1DP')>0 and nb>0 then
             loop
             exitwhen i>=10
             if IsUnitAlly(Hero[i],GetOwningPlayer(u))and SR(x,y,GetUnitX(Hero[i]),GetUnitY(Hero[i]))<1700 and Hero[i]!=u then
@@ -37477,7 +37555,8 @@ if cond==0 then
             call UnitRemoveAbilityTimedPause(u,'A28W',6)
             call UnitRemoveBuffs(u,false,true)
             call UnitRemoveAbility(u,'A0J4')
-            set bj_lastCreatedItem=UnitAddItemById(u,'I13S')
+            set bj_lastCreatedItem=CreateItem('I13S',GetUnitX(u),GetUnitY(u))
+            call UnitAddItemToSlot(u,bj_lastCreatedItem,9)
             call SetItemDroppable(bj_lastCreatedItem,false)
             call SaveItemHandle(h,GetHandleId(cjlocgn_00000000),1,bj_lastCreatedItem)
             call TimerStart(cjlocgn_00000000,0.1,true,function LinkenSphere2)
@@ -38260,7 +38339,8 @@ if cond==0 then
         call UnitRemoveAbilityTimedPause(u,'A28W',4)
         call UnitRemoveBuffs(u,false,true)
         call UnitRemoveAbility(u,'A0J4')
-        set bj_lastCreatedItem=UnitAddItemById(u,'I13S')
+        set bj_lastCreatedItem=CreateItem('I13S',GetUnitX(u),GetUnitY(u))
+        call UnitAddItemToSlot(u,bj_lastCreatedItem,9)
         call SetItemDroppable(bj_lastCreatedItem,false)
         call SaveItemHandle(h,GetHandleId(cjlocgn_00000000),1,bj_lastCreatedItem)
         call TimerStart(cjlocgn_00000000,0.1,true,function LinkenSphere2)
@@ -41336,10 +41416,14 @@ set time=time+0.1
 call SaveReal(h,id,5,time)
 endif
 if time>10 then
-call RemoveAbility(LoadAbilityHandle(h,id,6))
 call RemoveAbility(LoadAbilityHandle(h,id,7))
 call RemoveAbility(LoadAbilityHandle(h,id,8))
-call RemoveAbility(LoadAbilityHandle(h,id,9))
+call SetHeroAgi(c,GetHeroAgi(c,false)+30,true)
+call SetHeroStr(c,GetHeroStr(c,false)+30,true)
+call SetHeroInt(c,GetHeroInt(c,false)+30,true)
+call SetHeroAgi(u,GetHeroAgi(u,false)-30,true)
+call SetHeroStr(u,GetHeroStr(u,false)-30,true)
+call SetHeroInt(u,GetHeroInt(u,false)-30,true)
 call SaveReal(h,id,5,0)
 call PauseTimer(t)
 call DestroyTimer(t)
@@ -41355,14 +41439,16 @@ local timer t=CreateTimer()
 local integer id=GetHandleId(t)
 call SaveUnitHandle(h,id,0,u)
 call SaveUnitHandle(h,id,1,c)
-call SaveAbilityHandle(h,id,6,CreateAbility( 'A0NE' ))
-call SetAbilityOwner(LoadAbilityHandle(h,id,6),c)
 call SaveAbilityHandle(h,id,7,CreateAbility( 'A0NG' ))
 call SetAbilityOwner(LoadAbilityHandle(h,id,7),c)
 call SaveAbilityHandle(h,id,8,CreateAbility( 'SHD2' ))
 call SetAbilityOwner(LoadAbilityHandle(h,id,8),c)
-call SaveAbilityHandle(h,id,9,CreateAbility( 'A13L' ))
-call SetAbilityOwner(LoadAbilityHandle(h,id,9),u)
+call SetHeroAgi(c,GetHeroAgi(c,false)-30,true)
+call SetHeroStr(c,GetHeroStr(c,false)-30,true)
+call SetHeroInt(c,GetHeroInt(c,false)-30,true)
+call SetHeroAgi(u,GetHeroAgi(u,false)+30,true)
+call SetHeroStr(u,GetHeroStr(u,false)+30,true)
+call SetHeroInt(u,GetHeroInt(u,false)+30,true)
 call TimerStart(t,0.1,true,function PatriotCast2)
 set u=null
 set c=null
@@ -42542,10 +42628,57 @@ call UnitMakeAbilityPermanent(GetTriggerUnit(),true,'BorB')
 call UnitRemoveAbilityTimedPause(GetTriggerUnit(),'BorB',5)
 endfunction
 function InitTrig_BorosArmor takes nothing returns nothing
+local integer i=0
 set gg_trg_BorosArmor=CreateTrigger()
 call TriggerRegisterAnyUnitEventBJ(gg_trg_BorosArmor,EVENT_PLAYER_UNIT_SPELL_EFFECT)
 call TriggerAddCondition(gg_trg_BorosArmor,Condition(function Trig_BorosArmor_Conditions))
 call TriggerAddAction(gg_trg_BorosArmor,function Trig_BorosArmor_Actions)
+endfunction
+function Trig_EscBoros_Conditions takes nothing returns boolean
+return udg_B
+endfunction
+function Trig_EscBoros_Actions takes nothing returns nothing
+local integer i=GetPlayerId(GetTriggerPlayer())
+local integer ind=0
+local integer lp=0
+if GetTriggerPlayerKey()==OSKEY_OEM_3 then
+    if GetTriggerPlayer()==GetLocalPlayer()then
+        call ClearSelection()
+        call SelectUnit(Hero[i],true)
+        call PanCameraToTimed(GetUnitX(Hero[i]),GetUnitY(Hero[i]),0)
+    endif
+endif
+if UnitHasItemOfTypeBJCustom(Hero[GetPlayerId(GetTriggerPlayer())],'I13R') and IsUnitPaused(Hero[GetPlayerId(GetTriggerPlayer())])==false and (RectContainsUnit(gg_rct_AntiMh,Hero[GetPlayerId(GetTriggerPlayer())])==false and RectContainsUnit(gg_rct_HibariFight,Hero[GetPlayerId(GetTriggerPlayer())])==false) and GetUnitState(Hero[GetPlayerId(GetTriggerPlayer())],UNIT_STATE_MANA)>=25 and GetUnitAbilityLevel(Hero[GetPlayerId(GetTriggerPlayer())],'Pet1')==0 and GetUnitAbilityLevel(Hero[GetPlayerId(GetTriggerPlayer())],'cbc8')==0 then
+loop
+exitwhen lp==10
+if GetItemTypeId(UnitItemInSlot(Hero[i],lp))=='I13R' then
+set ind=lp
+endif
+set lp=lp+1
+endloop
+if IsAbilityOnCooldown(GetUnitAbility(Hero[i],'BorA'))==false and IsUnitPaused(Hero[i])==false and (GetUnitAbilityLevel(Hero[i],'A3BJ')>0 or GetTriggerPlayerKey()==OSKEY_OEM_3 ) then
+call UnitAddAbility(Hero[i],'BorB')
+call UnitMakeAbilityPermanent(Hero[i],true,'BorB')
+call UnitRemoveAbilityTimedPause(Hero[i],'BorB',5)
+call StartItemCooldown(Hero[i],UnitItemInSlot(Hero[i],ind),GetAbilityBaseRealLevelFieldById('BorA',ABILITY_RLF_COOLDOWN,0))
+elseif IsAbilityOnCooldown(GetUnitAbility(Hero[i],'BorA'))==false and IsUnitPaused(Hero[i])==false and GetUnitAbilityLevel(Hero[i],'A3BJ')==0 then
+call UnitAddAbility(Hero[i],'A3BJ')
+call UnitRemoveAbilityTimed(Hero[i],'A3BJ',0.4)
+endif
+endif
+endfunction
+function InitTrig_EscBoros takes nothing returns nothing
+local integer i=0
+local trigger t=CreateTrigger()
+loop
+exitwhen i>=10
+call TriggerRegisterPlayerKeyEvent( t, Player(i), OSKEY_OEM_3, 0 ,true )
+call TriggerRegisterPlayerKeyEvent( t, Player(i), OSKEY_ESCAPE, 0 ,true )
+set i=i+1
+endloop
+call TriggerAddCondition(t,Condition(function Trig_EscBoros_Conditions))
+call TriggerAddAction(t,function Trig_EscBoros_Actions)
+set t=null
 endfunction
 function Trig_YataMirror_Conditions takes nothing returns boolean
 return GetSpellAbilityId()=='YatA' and GetUnitTypeId(GetTriggerUnit())!='H007'
@@ -65693,7 +65826,7 @@ call EnableUnitAbility2(u,'GKF1',false,true)
 call EnableUnitAbility2(u,'GKG1',false,true)
 call EnableUnitAbility2(u,'GKG6',false,true)
 call EnableUnitAbility2(u,'GKG7',false,true)
-call UnitEnableInventory(u,true,false )
+call UnitEnableInventoryCustom(u,true,false )
 call SetAbilityStringField(GetUnitAbility(u,'GKR1'),ABILITY_SF_ICON_NORMAL,"ReplaceableTextures\\CommandButtons\\BTNInstant_transmission.blp")
 if LoadReal(HH,GetHandleId(GetOwningPlayer(u)),VariationQHash)==2 then
     if LoadInteger(HH,idp,KaiokenHash)<5 then
@@ -66067,7 +66200,7 @@ call EnableUnitAbility2(u,'GKF1',false,true)
 call EnableUnitAbility2(u,'GKG1',false,true)
 call EnableUnitAbility2(u,'GKG6',false,true)
 call EnableUnitAbility2(u,'GKG7',false,true)
-call UnitEnableInventory(u,true,false )
+call UnitEnableInventoryCustom(u,true,false )
 call SetUnitVertexColor(u,255,255,255,255)
 call FlushChildHashtable(h,GetHandleId(g))
 call DestroyGroup(g)
@@ -66189,7 +66322,7 @@ call DisableUnitAbility2(u,'GKF1',false,true)
 call DisableUnitAbility2(u,'GKG1',false,true)
 call DisableUnitAbility2(u,'GKG6',false,true)
 call DisableUnitAbility2(u,'GKG7',false,true)
-call UnitEnableInventory(u,false,false )
+call UnitEnableInventoryCustom(u,false,false )
 if LoadReal(HH,idp,VariationQHash)==2 then
     call SaveInteger(HH,idp,KaiokenHash,LoadInteger(HH,idp,KaiokenHash)+1)
     call SaveReal(h,id,12,-0.9)
@@ -67784,7 +67917,7 @@ if time<0.630 and GetAbilityIntegerLevelField(GetUnitAbility(u,'GKR1'), ABILITY_
         call DisableUnitAbility2(u,'GKG1',false,true)
         call DisableUnitAbility2(u,'GKG6',false,true)
         call DisableUnitAbility2(u,'GKG7',false,true)
-        call UnitEnableInventory(u,false,false )
+        call UnitEnableInventoryCustom(u,false,false )
     endif
     if time==starttime+0.2 and starttime<-0.7 then
         call SetAbilityStringField(GetUnitAbility(u,'GKR1'),ABILITY_SF_ICON_NORMAL,"ReplaceableTextures\\CommandButtons\\BTNCancel1.blp")
@@ -67873,7 +68006,7 @@ if time<0.630 and GetAbilityIntegerLevelField(GetUnitAbility(u,'GKR1'), ABILITY_
         if time==0.61 then
             call SetUnitInvulnerable(u,false)
             call PauseUnit(u,false)
-            call UnitEnableInventory(u,true,false )
+            call UnitEnableInventoryCustom(u,true,false )
             set a=Atan2(y3-y2,x3-x2)
             call SaveReal(h,id,4,a)
             call SetUnitFacingInstant(u,a*bj_RADTODEG)
@@ -67899,7 +68032,7 @@ if time<0.630 and GetAbilityIntegerLevelField(GetUnitAbility(u,'GKR1'), ABILITY_
             call SetUnitTimeScale(u,1)
             call SetUnitInvulnerable(u,false)
             call PauseUnit(u,false)
-            call UnitEnableInventory(u,true,false )
+            call UnitEnableInventoryCustom(u,true,false )
             call SaveReal(h,id,5,20)
         endif
     endif
@@ -67937,7 +68070,7 @@ else
     call EnableUnitAbility2(u,'GKG1',false,true)
     call EnableUnitAbility2(u,'GKG6',false,true)
     call EnableUnitAbility2(u,'GKG7',false,true)
-    call UnitEnableInventory(u,true,false )
+    call UnitEnableInventoryCustom(u,true,false )
     call UnitRemoveAbility(u,'A1FU')
     call UnitRemoveAbility(u,'B00A')
     call SetAbilityStringField(GetUnitAbility(u,'GKR1'),ABILITY_SF_ICON_NORMAL,"ReplaceableTextures\\CommandButtons\\BTNInstant_transmission.blp")
@@ -99751,7 +99884,7 @@ local real y=GetUnitY(u)
 local player p=GetOwningPlayer(u)
 set n=CreateUnit(p,'e0RS',x,y,GetUnitFacing(u))
 call SetUnitAnimation(n,"spell channel")
-call UnitAddAbility(n,0x4131354B)
+call UnitAddAbility(n,'A15K')
 call SetUnitVertexColor(n,255,255,255,125)
 call SaveUnitHandle(h,id,0,u)
 call SaveUnitHandle(h,id,1,n)
@@ -99958,7 +100091,7 @@ call TriggerAddCondition(gg_trg_CrystalSlash,Condition(function CrystalSlashCond
 call TriggerAddAction(gg_trg_CrystalSlash,function CrystalSlashCast)
 endfunction
 function PrettySongCond takes nothing returns boolean
-return GetSpellAbilityId()==0x4130554B
+return GetSpellAbilityId()=='A0UK'
 endfunction
 function PrettySongCast2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
@@ -109033,7 +109166,7 @@ call SaveReal(HH,GetHandleId(u),TextTagTimeHash,-0.03)
 call SaveReal(HH,GetHandleId(u),TextTagHealTimeHash,-0.03)
 call SetUnitState(l__d,UNIT_STATE_LIFE,GetWidgetLife(u))
 call SetUnitState(l__d,UNIT_STATE_MANA,GetWidgetMana(u))
-call UnitEnableInventory(l__d,false,false)
+call UnitEnableInventoryCustom(l__d,false,false)
 call SaveUnitHandle(h,id,0,u)
 call SaveUnitHandle(h,id,1,l__d)
 call TimerStart(t,3,false,function Trig_Bunshin_Actions2)
@@ -131294,8 +131427,8 @@ call UnitRemoveAbility(u, 'A1SV')
 call SetUnitXY_1(u,x1+250*Cos((a+rand2*90)*bj_DEGTORAD),y1+250*Sin((a+rand2*90)*bj_DEGTORAD),false)
 call DestroyEffect(AddSpecialEffect("Abilities\\Weapons\\SteamTank\\SteamTankImpact.mdl",GetUnitX(u),GetUnitY(u)))
 set n=CreateIllusionFromUnit(u)
-call UnitInventorySetSize(n,10)
 call SetUnitFacingInstant(n,a)
+call SetIllusionDamageDealt(n,1)
 call SetIllusionDamageReceived(n,2)
 call UnitAddAbility(n,'A2X2')
 call UnitApplyTimedLife(n,'B04X',15)
@@ -132363,7 +132496,9 @@ exitwhen E==null
 call UnitRemoveAbility(E,'A1DH')
 call UnitRemoveAbility(E,'B06Q')
 call SetUnitStunCounter(E,GetUnitStunCounter(E)-1)
+if IsUnitAlive(E)==true then
 call IssueImmediateOrder(E,"stop")
+endif
 call myCustomDamage(u,E,dmg,false,false,null,null,null)
 call GroupRemoveUnit(g,E)
 endloop
@@ -132396,7 +132531,7 @@ call GroupEnumUnitsInRange(g2,x,y,400,Base)
 loop
 set E=FirstOfGroup(g2)
 exitwhen E==null
-if Condition_Base(p,E)and IsUnitPaused(E)==false and IsUnitInvulnerable(E)==false then
+if Condition_Base(p,E)and IsUnitPaused(E)==false and IsUnitInvulnerable(E)==false and IsUnitAlive(E) and IsUnitHidden(E)==false then
 call GroupAddUnit(g,E)
 call UnitAddAbility(E,'A1DH')
 call IssueTargetOrder(E,"attack",u)
@@ -132432,7 +132567,7 @@ call TriggerAddCondition(gg_trg_ShielderR,Condition(function ShielderRCond))
 call TriggerAddAction(gg_trg_ShielderR,function ShielderRCast)
 endfunction
 function ShieldaECond takes nothing returns boolean
-return GetSpellAbilityId()==0x4131444C
+return GetSpellAbilityId()=='A1DL'
 endfunction
 function ShieldaECast2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
@@ -132470,7 +132605,7 @@ call UnitMakeAbilityPermanent(u,true,'A1DG')
 call SaveUnitHandle(h,id,0,u)
 call SaveReal(h,id,1,0)
 call SetUnitAnimation(u,"Spell Three")
-call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)+GetUnitState(u,UNIT_STATE_MAX_MANA)*(0.025+(0.025*GetUnitAbilityLevel(c,0x4131444C))))
+call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)+GetUnitState(u,UNIT_STATE_MAX_MANA)*(0.025+(0.025*GetUnitAbilityLevel(c,'A1DL'))))
 call TimerStart(t,0.1,true,function ShieldaECast2)
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\ShielderE.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
@@ -150031,7 +150166,7 @@ call SaveUnitHandle(h,id,0,u)
 call SaveUnitHandle(h,id,1,l__d)
 call SetUnitState(l__d,UNIT_STATE_LIFE,GetWidgetLife(u))
 call SetUnitState(l__d,UNIT_STATE_MANA,GetWidgetMana(u))
-call UnitEnableInventory(l__d,false,false)
+call UnitEnableInventoryCustom(l__d,false,false)
 call SaveUnitHandle(HH,GetHandleId(u),StringHash("DeiW"),l__d)
 call TimerStart(t,2.5,false,function WDeidaraCast2)
 set u=null
@@ -166077,6 +166212,31 @@ function InitTrig_JirenInt takes nothing returns nothing
     set trig=null
 endfunction
 
+
+function InitTrig_KiritoInt takes nothing returns nothing
+local trigger t
+set t=CreateTrigger()
+call TriggerRegisterAnyUnitEventBJ(t,EVENT_PLAYER_UNIT_SPELL_EFFECT)
+call TriggerAddAction(t,function DubleCirculirCast)
+call TriggerAddCondition(t,Condition(function DubleCirculirCond))
+set t=CreateTrigger()
+call TriggerRegisterAnyUnitEventBJ(t,EVENT_PLAYER_UNIT_SPELL_EFFECT)
+call TriggerAddAction(t,function Reaver2Cast)
+call TriggerAddCondition(t,Condition(function Reaver2Cond))
+set t=CreateTrigger()
+call TriggerRegisterAnyUnitEventBJ(t,EVENT_PLAYER_UNIT_SPELL_EFFECT)
+call TriggerAddAction(t,function HorizontalSquareCast)
+call TriggerAddCondition(t,Condition(function HorizontalSquareCond))
+set t=CreateTrigger()
+call TriggerRegisterAnyUnitEventBJ(t,EVENT_PLAYER_UNIT_SPELL_EFFECT)
+call TriggerAddAction(t,function EclipsCast)
+call TriggerAddCondition(t,Condition(function EclipsCond))
+set t=CreateTrigger()
+call TriggerRegisterAnyUnitEventBJ(t,EVENT_PLAYER_UNIT_SPELL_EFFECT)
+call TriggerAddAction(t,function VStrikeCast)
+call TriggerAddCondition(t,Condition(function VStrikeCond))
+set t=null
+endfunction
 //===========================================SAKAI YUJI INT 
 
 
@@ -167702,7 +167862,7 @@ function MinatoD1_Cast takes unit newCaster,unit newTarget,timer newTimer return
         else
             set bjLCU=CreateUnit(GetOwningPlayer(newCaster), 'dM02', GetUnitX(newCaster), GetUnitY(newCaster), GetRandomInt(0, 360))
             call UnitApplyTimedLife(bjLCU, 1, 15)
-            call UnitEnableInventory(bjLCU,false,false )
+            call UnitEnableInventoryCustom(bjLCU,false,false )
             call UnitEnableMovement(bjLCU,false,false )
             call UnitEnableAttack(bjLCU,false,false )
         endif
@@ -168003,7 +168163,7 @@ function MinatoD2_Cast takes unit newCaster,unit newTarget,real point_x,real poi
         else
             set bjLCU=CreateUnit(GetOwningPlayer(newCaster), 'dM02', GetUnitX(newCaster), GetUnitY(newCaster), GetRandomInt(0, 360))
             call UnitApplyTimedLife(bjLCU, 1, 15)
-            call UnitEnableInventory(bjLCU,false,false )
+            call UnitEnableInventoryCustom(bjLCU,false,false )
             call UnitEnableMovement(bjLCU,false,false )
             call UnitEnableAttack(bjLCU,false,false )
         endif
@@ -169448,7 +169608,7 @@ function MinatoE_Cast takes unit newCaster,unit newTarget,timer newTimer returns
                     call ShakeCamera(0.1 , 10)
                     set bjLCU=CreateUnit(GetOwningPlayer(newCaster), 'dM02', GetUnitX(newCaster), GetUnitY(newCaster), GetRandomInt(0, 360))
                     call UnitApplyTimedLife(bjLCU, 1, 15)
-                    call UnitEnableInventory(bjLCU,false,false )
+                    call UnitEnableInventoryCustom(bjLCU,false,false )
                     call UnitEnableMovement(bjLCU,false,false )
                     call UnitEnableAttack(bjLCU,false,false )
                     call SaveInteger(h, id, StringHash("PeriodicAngle"), 1)
@@ -181548,11 +181708,11 @@ endif
 
 
 
-if time==0.04 or time==2 then
+if time<3 then
 
-if GetLocalPlayer()==GetOwningPlayer(caster)then
-call ClearSelection()
-call SelectUnit(Dummy1,true)
+if (GetLocalPlayer()==GetOwningPlayer(caster) or GetPlayerAlliance(GetOwningPlayer(caster),GetLocalPlayer(),ALLIANCE_SHARED_CONTROL)) and GetUnitSelected(GetLocalPlayer())==caster then
+    call ClearSelection()
+    call SelectUnit(Dummy1,true)
 endif
 
 endif
@@ -205732,7 +205892,7 @@ function TobiramaFCast takes unit u, real x1, real y1 returns nothing
         endif
         set i=i+1
         endloop
-        call UnitEnableInventory(n,false,false)
+        call UnitEnableInventoryCustom(n,false,false)
         call SetUnitState(n,UNIT_STATE_LIFE,GetWidgetLife(u))
         call SetUnitState(n,UNIT_STATE_MANA,GetWidgetMana(u))
         call UnitApplyTimedLife(n,1,30)
@@ -208178,27 +208338,6 @@ set t=CreateTrigger()
 call TriggerRegisterPlayerUnitEvent(t,p,EVENT_PLAYER_UNIT_SPELL_EFFECT,null)
 call TriggerAddAction(t,function CambioRyoheiCast)
 call TriggerAddCondition(t,Condition(function CambioRyoheiCond))
-elseif ty=='H02F' then
-set t=CreateTrigger()
-call TriggerRegisterPlayerUnitEvent(t,p,EVENT_PLAYER_UNIT_SPELL_EFFECT,null)
-call TriggerAddAction(t,function DubleCirculirCast)
-call TriggerAddCondition(t,Condition(function DubleCirculirCond))
-set t=CreateTrigger()
-call TriggerRegisterPlayerUnitEvent(t,p,EVENT_PLAYER_UNIT_SPELL_EFFECT,null)
-call TriggerAddAction(t,function Reaver2Cast)
-call TriggerAddCondition(t,Condition(function Reaver2Cond))
-set t=CreateTrigger()
-call TriggerRegisterPlayerUnitEvent(t,p,EVENT_PLAYER_UNIT_SPELL_EFFECT,null)
-call TriggerAddAction(t,function HorizontalSquareCast)
-call TriggerAddCondition(t,Condition(function HorizontalSquareCond))
-set t=CreateTrigger()
-call TriggerRegisterPlayerUnitEvent(t,p,EVENT_PLAYER_UNIT_SPELL_EFFECT,null)
-call TriggerAddAction(t,function EclipsCast)
-call TriggerAddCondition(t,Condition(function EclipsCond))
-set t=CreateTrigger()
-call TriggerRegisterPlayerUnitEvent(t,p,EVENT_PLAYER_UNIT_SPELL_EFFECT,null)
-call TriggerAddAction(t,function VStrikeCast)
-call TriggerAddCondition(t,Condition(function VStrikeCond))
 elseif ty=='H01B' then
 set t=CreateTrigger()
 call TriggerRegisterPlayerUnitEvent(t,p,EVENT_PLAYER_UNIT_SPELL_EFFECT,null)
@@ -209707,6 +209846,7 @@ call InitTrig_GogetaT()
 call InitTrig_NejiW()
 call HashiramaQCasttimeInit()
 call ItemDoubleClickInit()
+call CheckAngleDummyInit()
 call W3MMD_Lite_Register_Integer("Picked_hero")
 call W3MMD_Lite_Register_Integer("Rounds_to_win")
 call W3MMD_Lite_Register_Integer("Won_rounds")
@@ -211357,6 +211497,7 @@ call InitTrig_Saphire()
 call InitTrig_RainMare()
 call InitTrig_StunStop()
 call InitTrig_BKB()
+call InitTrig_EscBoros()
 call InitTrig_Grail()
 call InitTrig_Killself2()
 call InitTrig_ForceStaff()
@@ -212093,6 +212234,7 @@ call InitTrig_TobiramaInt()
 call InitTrig_StigmataInt()
 call InitTrig_VergilInt()
 call InitTrig_JirenInt()
+call InitTrig_KiritoInt()
 //call InitTrig_NanayaPick()
 call InitTrig_Text_Damage()
 // call InitTrig_Text_PreDamage()
