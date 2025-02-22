@@ -34365,14 +34365,24 @@ local item it=LoadItemHandle(h,id,1)
 local item f
 call SaveReal(h,id,2,time-0.1)
 if(time<=0 and UnitIsAlive(Hero[ip]))or udg_B==false or DU2==false then
-call SetItemDroppable(it,true)
-call UnitRemoveItem(u,it)
-call RemoveItem(it)
-set f=CreateItem('I13R',GetUnitX(u),GetUnitY(u))
-call UnitAddItemToSlot(u,f,9)
-call PauseTimer(t)
-call DestroyTimer(t)
-call FlushChildHashtable(h,id)
+    if IsAbilityEnabled(GetUnitAbility(u,'AInv'))==true then
+        call SetItemDroppable(it,true)
+        call UnitRemoveItem(u,it)
+        call RemoveItem(it)
+        set f=CreateItem('I13R',GetUnitX(u),GetUnitY(u))
+        call UnitAddItemToSlot(u,f,9)
+    else
+        call EnableUnitAbility2(u,'AInv',false,true)
+        call SetItemDroppable(it,true)
+        call UnitRemoveItem(u,it)
+        call RemoveItem(it)
+        set f=CreateItem('I13R',GetUnitX(u),GetUnitY(u))
+        call UnitAddItemToSlot(u,f,9) 
+        call DisableUnitAbility2(u,'AInv',false,true)
+    endif
+    call PauseTimer(t)
+    call DestroyTimer(t)
+    call FlushChildHashtable(h,id)
 endif
 set u=null
 set it=null
