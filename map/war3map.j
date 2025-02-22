@@ -28539,16 +28539,21 @@ if GetEventPlayerChatString()=="-ok"and udg_B==false and udg_Swap[i]==true and u
 loop
 set t1[j]=UnitRemoveItemFromSlot(udg_Hero[i],j)
 set t2[j]=UnitRemoveItemFromSlot(udg_Hero[udg_SwapId[i]],j)
-exitwhen j==5
+exitwhen j==9
 set j=j+1
 endloop
+if LoadUnitHandle(HH,GetHandleId(udg_Hero[i]),StringHash("Zamasu"))!=null then
+    call SetUnitOwner(LoadUnitHandle(HH,GetHandleId(udg_Hero[i]),StringHash("Zamasu")),Player(udg_SwapId[i]-1),true)
+elseif LoadUnitHandle(HH,GetHandleId(udg_Hero[udg_SwapId[i]]),StringHash("Zamasu"))!=null then
+    call SetUnitOwner(LoadUnitHandle(HH,GetHandleId(udg_Hero[udg_SwapId[i]]),StringHash("Zamasu")),Player(i-1),true)
+endif
 call SetUnitOwner(udg_Hero[i],Player(udg_SwapId[i]-1),true)
 call SetUnitOwner(udg_Hero[udg_SwapId[i]],Player(i-1),true)
 set j=0
 loop
 call UnitAddItem(udg_Hero[i],t2[j])
 call UnitAddItem(udg_Hero[udg_SwapId[i]],t1[j])
-exitwhen j==5
+exitwhen j==9
 set j=j+1
 endloop
 set u1=udg_Hero[i]
@@ -35904,7 +35909,7 @@ function IchigoBankaiW_Counter takes unit newCaster, unit newTarget returns noth
 endfunction
 //function AnimeRandom
 function CheckAngleDummyCond takes nothing returns boolean
-return GetUnitAbilityLevel(GetTriggerUnit(),'Pet2')>0 and GetIssuedOrderId()==OrderId("smart") 
+return GetUnitAbilityLevel(GetTriggerUnit(),'Pet2')>0 and GetIssuedOrderId()==OrderId("smart")
 endfunction
 
 function CheckAngleDummyCast takes nothing returns nothing
@@ -209835,6 +209840,7 @@ call InitTrig_GogetaT()
 call InitTrig_NejiW()
 call HashiramaQCasttimeInit()
 call ItemDoubleClickInit()
+call CheckAngleDummyInit()
 call W3MMD_Lite_Register_Integer("Picked_hero")
 call W3MMD_Lite_Register_Integer("Rounds_to_win")
 call W3MMD_Lite_Register_Integer("Won_rounds")
