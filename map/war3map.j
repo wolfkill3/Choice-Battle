@@ -26420,7 +26420,7 @@ call GroupAddUnit(udg_CG[4],n)
 endif
 set i=0
 loop
-exitwhen i>=6
+exitwhen i>=10
 call UnitAddItemById(n,GetItemTypeId(it[i]))
 set i=i+1
 endloop
@@ -26490,7 +26490,7 @@ call GroupAddUnit(udg_CG[4],n)
 endif
 set i=0
 loop
-exitwhen i>=6
+exitwhen i>=10
 call UnitAddItemById(n,GetItemTypeId(it[i]))
 set i=i+1
 endloop
@@ -26560,7 +26560,7 @@ call GroupAddUnit(udg_CG[4],n)
 endif
 set i=0
 loop
-exitwhen i>=6
+exitwhen i>=10
 call UnitAddItemById(n,GetItemTypeId(it[i]))
 set i=i+1
 endloop
@@ -26630,7 +26630,7 @@ call GroupAddUnit(udg_CG[4],n)
 endif
 set i=0
 loop
-exitwhen i>=6
+exitwhen i>=10
 call UnitAddItemById(n,GetItemTypeId(it[i]))
 set i=i+1
 endloop
@@ -26700,7 +26700,7 @@ call GroupAddUnit(udg_CG[4],n)
 endif
 set i=0
 loop
-exitwhen i>=6
+exitwhen i>=10
 call UnitAddItemById(n,GetItemTypeId(it[i]))
 set i=i+1
 endloop
@@ -26770,7 +26770,7 @@ call GroupAddUnit(udg_CG[4],n)
 endif
 set i=0
 loop
-exitwhen i>=6
+exitwhen i>=10
 call UnitAddItemById(n,GetItemTypeId(it[i]))
 set i=i+1
 endloop
@@ -26859,7 +26859,7 @@ call GroupAddUnit(udg_CG[4],n)
 endif
 set i=0
 loop
-exitwhen i>=6
+exitwhen i>=10
 call UnitAddItemById(n,GetItemTypeId(it[i]))
 set i=i+1
 endloop
@@ -26929,7 +26929,7 @@ call GroupAddUnit(udg_CG[4],n)
 endif
 set i=0
 loop
-exitwhen i>=6
+exitwhen i>=10
 call UnitAddItemById(n,GetItemTypeId(it[i]))
 set i=i+1
 endloop
@@ -26999,7 +26999,7 @@ call GroupAddUnit(udg_CG[4],n)
 endif
 set i=0
 loop
-exitwhen i>=6
+exitwhen i>=10
 call UnitAddItemById(n,GetItemTypeId(it[i]))
 set i=i+1
 endloop
@@ -27069,7 +27069,7 @@ call GroupAddUnit(udg_CG[4],n)
 endif
 set i=0
 loop
-exitwhen i>=6
+exitwhen i>=10
 call UnitAddItemById(n,GetItemTypeId(it[i]))
 set i=i+1
 endloop
@@ -27139,7 +27139,7 @@ call GroupAddUnit(udg_CG[4],n)
 endif
 set i=0
 loop
-exitwhen i>=6
+exitwhen i>=10
 call UnitAddItemById(n,GetItemTypeId(it[i]))
 set i=i+1
 endloop
@@ -27209,7 +27209,7 @@ call GroupAddUnit(udg_CG[4],n)
 endif
 set i=0
 loop
-exitwhen i>=6
+exitwhen i>=10
 call UnitAddItemById(n,GetItemTypeId(it[i]))
 set i=i+1
 endloop
@@ -27279,7 +27279,7 @@ call GroupAddUnit(udg_CG[4],n)
 endif
 set i=0
 loop
-exitwhen i>=6
+exitwhen i>=10
 call UnitAddItemById(n,GetItemTypeId(it[i]))
 set i=i+1
 endloop
@@ -27349,7 +27349,7 @@ call GroupAddUnit(udg_CG[4],n)
 endif
 set i=0
 loop
-exitwhen i>=6
+exitwhen i>=10
 call UnitAddItemById(n,GetItemTypeId(it[i]))
 set i=i+1
 endloop
@@ -27419,7 +27419,7 @@ call GroupAddUnit(udg_CG[4],n)
 endif
 set i=0
 loop
-exitwhen i>=6
+exitwhen i>=10
 call UnitAddItemById(n,GetItemTypeId(it[i]))
 set i=i+1
 endloop
@@ -27494,7 +27494,7 @@ call GroupAddUnit(udg_CG[4],n)
 endif
 set i=0
 loop
-exitwhen i>=6
+exitwhen i>=10
 call UnitAddItemById(n,GetItemTypeId(it[i]))
 set i=i+1
 endloop
@@ -27564,7 +27564,7 @@ call GroupAddUnit(udg_CG[4],n)
 endif
 set i=0
 loop
-exitwhen i>=6
+exitwhen i>=10
 call UnitAddItemById(n,GetItemTypeId(it[i]))
 set i=i+1
 endloop
@@ -27634,7 +27634,7 @@ call GroupAddUnit(udg_CG[4],n)
 endif
 set i=0
 loop
-exitwhen i>=6
+exitwhen i>=10
 call UnitAddItemById(n,GetItemTypeId(it[i]))
 set i=i+1
 endloop
@@ -27704,7 +27704,7 @@ call GroupAddUnit(udg_CG[4],n)
 endif
 set i=0
 loop
-exitwhen i>=6
+exitwhen i>=10
 call UnitAddItemById(n,GetItemTypeId(it[i]))
 set i=i+1
 endloop
@@ -27774,7 +27774,7 @@ call GroupAddUnit(udg_CG[4],n)
 endif
 set i=0
 loop
-exitwhen i>=6
+exitwhen i>=10
 call UnitAddItemById(n,GetItemTypeId(it[i]))
 set i=i+1
 endloop
@@ -27844,7 +27844,7 @@ call GroupAddUnit(udg_CG[4],n)
 endif
 set i=0
 loop
-exitwhen i>=6
+exitwhen i>=10
 call UnitAddItemById(n,GetItemTypeId(it[i]))
 set i=i+1
 endloop
@@ -27914,7 +27914,7 @@ call GroupAddUnit(udg_CG[4],n)
 endif
 set i=0
 loop
-exitwhen i>=6
+exitwhen i>=10
 call UnitAddItemById(n,GetItemTypeId(it[i]))
 set i=i+1
 endloop
@@ -27979,7 +27979,7 @@ call GroupAddUnit(udg_CG[4],n)
 endif
 set i=0
 loop
-exitwhen i>=6
+exitwhen i>=10
 call UnitAddItemById(n,GetItemTypeId(it[i]))
 set i=i+1
 endloop
@@ -28044,7 +28044,7 @@ call GroupAddUnit(udg_CG[4],n)
 endif
 set i=0
 loop
-exitwhen i>=6
+exitwhen i>=10
 call UnitAddItemById(n,GetItemTypeId(it[i]))
 set i=i+1
 endloop
@@ -28554,8 +28554,8 @@ call SetUnitOwner(udg_Hero[i],Player(udg_SwapId[i]-1),true)
 call SetUnitOwner(udg_Hero[udg_SwapId[i]],Player(i-1),true)
 set j=0
 loop
-call UnitAddItem(udg_Hero[i],t2[j])
-call UnitAddItem(udg_Hero[udg_SwapId[i]],t1[j])
+call UnitAddItemToSlot(udg_Hero[i],t2[j],j)
+call UnitAddItemToSlot(udg_Hero[udg_SwapId[i]],t1[j],j)
 exitwhen j==9
 set j=j+1
 endloop
@@ -28565,6 +28565,12 @@ set udg_Hero[i]=u2
 set udg_Hero[udg_SwapId[i]]=u1
 set udg_Swap[udg_SwapId[i]]=false
 set udg_Swap[i]=false
+call ShowUnitAbilityTimed(u1,'A10B',true,0.13)
+call ShowUnitAbilityTimed(u1,'A20B',false,0.12)
+call ShowUnitAbilityTimed(u1,'A30B',false,0.12)
+call ShowUnitAbilityTimed(u2,'A10B',true,0.13)
+call ShowUnitAbilityTimed(u2,'A20B',false,0.12)
+call ShowUnitAbilityTimed(u2,'A30B',false,0.12)
 call SetUnitPosition(u1,GetRectCenterX(gg_rct_Rect1),GetRectCenterY(gg_rct_Rect1))
 if GetUnitTypeId(udg_Hero[i])=='H06G' or GetUnitTypeId(udg_Hero[udg_SwapId[i]])=='H06G' then
 call SetPlayerAbilityAvailable(Player(udg_SwapId[i]-1),'A1DT',false)
@@ -37546,21 +37552,41 @@ if cond==0 then
         if(UnitHasItemOfTypeBJCustom(u,'I13R')and nb>500) and CurrentEventAttack==false and GetUnitAbilityLevel(u,'BorB')==0 and IsUnitType(u,UNIT_TYPE_SUMMONED)==false and u==Hero[idu] then
             set cjlocgn_00000000=CreateTimer()
             set t=CreateTimer()
-            call SaveUnitHandle(h,GetHandleId(cjlocgn_00000000),0,u)
-            set bj_lastCreatedItem=GetItemOfTypeFromUnitBJCustom(u,'I13R')
-            call UnitRemoveItem(u,bj_lastCreatedItem)
-            call RemoveItem(bj_lastCreatedItem)
-            call UnitAddAbility(u,'A0VV')
-            call UnitRemoveAbilityTimedPause(u,'A0VV',6)
-            call UnitAddAbility(u,'A28W')
-            call UnitRemoveAbilityTimedPause(u,'A28W',6)
-            call UnitRemoveBuffs(u,false,true)
-            call UnitRemoveAbility(u,'A0J4')
-            set bj_lastCreatedItem=CreateItem('I13S',GetUnitX(u),GetUnitY(u))
-            call UnitAddItemToSlot(u,bj_lastCreatedItem,9)
-            call SetItemDroppable(bj_lastCreatedItem,false)
-            call SaveItemHandle(h,GetHandleId(cjlocgn_00000000),1,bj_lastCreatedItem)
-            call TimerStart(cjlocgn_00000000,0.1,true,function LinkenSphere2)
+            if IsAbilityEnabled(GetUnitAbility(u,'AInv'))==true then
+                call SaveUnitHandle(h,GetHandleId(cjlocgn_00000000),0,u)
+                set bj_lastCreatedItem=GetItemOfTypeFromUnitBJCustom(u,'I13R')
+                call UnitRemoveItem(u,bj_lastCreatedItem)
+                call RemoveItem(bj_lastCreatedItem)
+                call UnitAddAbility(u,'A0VV')
+                call UnitRemoveAbilityTimedPause(u,'A0VV',6)
+                call UnitAddAbility(u,'A28W')
+                call UnitRemoveAbilityTimedPause(u,'A28W',6)
+                call UnitRemoveBuffs(u,false,true)
+                call UnitRemoveAbility(u,'A0J4')
+                set bj_lastCreatedItem=CreateItem('I13S',GetUnitX(u),GetUnitY(u))
+                call UnitAddItemToSlot(u,bj_lastCreatedItem,9)
+                call SetItemDroppable(bj_lastCreatedItem,false)
+                call SaveItemHandle(h,GetHandleId(cjlocgn_00000000),1,bj_lastCreatedItem)
+                call TimerStart(cjlocgn_00000000,0.1,true,function LinkenSphere2)
+            else
+                call EnableUnitAbility2(u,'AInv',false,true)
+                call SaveUnitHandle(h,GetHandleId(cjlocgn_00000000),0,u)
+                set bj_lastCreatedItem=GetItemOfTypeFromUnitBJCustom(u,'I13R')
+                call UnitRemoveItem(u,bj_lastCreatedItem)
+                call RemoveItem(bj_lastCreatedItem)
+                call UnitAddAbility(u,'A0VV')
+                call UnitRemoveAbilityTimedPause(u,'A0VV',6)
+                call UnitAddAbility(u,'A28W')
+                call UnitRemoveAbilityTimedPause(u,'A28W',6)
+                call UnitRemoveBuffs(u,false,true)
+                call UnitRemoveAbility(u,'A0J4')
+                set bj_lastCreatedItem=CreateItem('I13S',GetUnitX(u),GetUnitY(u))
+                call UnitAddItemToSlot(u,bj_lastCreatedItem,9)
+                call SetItemDroppable(bj_lastCreatedItem,false)
+                call SaveItemHandle(h,GetHandleId(cjlocgn_00000000),1,bj_lastCreatedItem)
+                call TimerStart(cjlocgn_00000000,0.1,true,function LinkenSphere2)
+                call DisableUnitAbility2(u,'AInv',false,true)
+            endif
             call SaveReal(h,GetHandleId(cjlocgn_00000000),2,30)
             call SaveInteger(h,GetHandleId(cjlocgn_00000000),3,idu)
             call DestroyEffect(AddSpecialEffectTarget("war3mapImported\\EMPBubble2.mdx",u,"chest"))
@@ -38330,25 +38356,47 @@ if cond==0 then
     if(UnitHasItemOfTypeBJCustom(u,'I13R')and nb>500) and CurrentEventAttack==false and GetUnitAbilityLevel(u,'BorB')>0 and IsUnitType(u,UNIT_TYPE_SUMMONED)==false and u==Hero[idu] then
         set cjlocgn_00000000=CreateTimer()
         set t=CreateTimer()
-        call SaveUnitHandle(h,GetHandleId(cjlocgn_00000000),0,u)
-        set bj_lastCreatedItem=GetItemOfTypeFromUnitBJCustom(u,'I13R')
-        call UnitRemoveItem(u,bj_lastCreatedItem)
-        call RemoveItem(bj_lastCreatedItem)
-        call UnitAddAbility(u,'A0VV')
-        call UnitRemoveAbilityTimedPause(u,'A0VV',4)
-        call UnitAddAbility(u,'A28W')
-        call UnitRemoveAbilityTimedPause(u,'A28W',4)
-        call UnitRemoveBuffs(u,false,true)
-        call UnitRemoveAbility(u,'A0J4')
-        set bj_lastCreatedItem=CreateItem('I13S',GetUnitX(u),GetUnitY(u))
-        call UnitAddItemToSlot(u,bj_lastCreatedItem,9)
-        call SetItemDroppable(bj_lastCreatedItem,false)
-        call SaveItemHandle(h,GetHandleId(cjlocgn_00000000),1,bj_lastCreatedItem)
-        call TimerStart(cjlocgn_00000000,0.1,true,function LinkenSphere2)
+        if IsAbilityEnabled(GetUnitAbility(u,'AInv'))==true then
+            call SaveUnitHandle(h,GetHandleId(cjlocgn_00000000),0,u)
+            set bj_lastCreatedItem=GetItemOfTypeFromUnitBJCustom(u,'I13R')
+            call UnitRemoveItem(u,bj_lastCreatedItem)
+            call RemoveItem(bj_lastCreatedItem)
+            call UnitAddAbility(u,'A0VV')
+            call UnitRemoveAbilityTimedPause(u,'A0VV',6)
+            call UnitAddAbility(u,'A28W')
+            call UnitRemoveAbilityTimedPause(u,'A28W',6)
+            call UnitRemoveBuffs(u,false,true)
+            call UnitRemoveAbility(u,'A0J4')
+            set bj_lastCreatedItem=CreateItem('I13S',GetUnitX(u),GetUnitY(u))
+            call UnitAddItemToSlot(u,bj_lastCreatedItem,9)
+            call SetItemDroppable(bj_lastCreatedItem,false)
+            call SaveItemHandle(h,GetHandleId(cjlocgn_00000000),1,bj_lastCreatedItem)
+            call TimerStart(cjlocgn_00000000,0.1,true,function LinkenSphere2)
+        else
+            call EnableUnitAbility2(u,'AInv',false,true)
+            call SaveUnitHandle(h,GetHandleId(cjlocgn_00000000),0,u)
+            set bj_lastCreatedItem=GetItemOfTypeFromUnitBJCustom(u,'I13R')
+            call UnitRemoveItem(u,bj_lastCreatedItem)
+            call RemoveItem(bj_lastCreatedItem)
+            call UnitAddAbility(u,'A0VV')
+            call UnitRemoveAbilityTimedPause(u,'A0VV',6)
+            call UnitAddAbility(u,'A28W')
+            call UnitRemoveAbilityTimedPause(u,'A28W',6)
+            call UnitRemoveBuffs(u,false,true)
+            call UnitRemoveAbility(u,'A0J4')
+            set bj_lastCreatedItem=CreateItem('I13S',GetUnitX(u),GetUnitY(u))
+            call UnitAddItemToSlot(u,bj_lastCreatedItem,9)
+            call SetItemDroppable(bj_lastCreatedItem,false)
+            call SaveItemHandle(h,GetHandleId(cjlocgn_00000000),1,bj_lastCreatedItem)
+            call TimerStart(cjlocgn_00000000,0.1,true,function LinkenSphere2)
+            call DisableUnitAbility2(u,'AInv',false,true)
+        endif
         call SaveReal(h,GetHandleId(cjlocgn_00000000),2,30)
         call SaveInteger(h,GetHandleId(cjlocgn_00000000),3,idu)
         call DestroyEffect(AddSpecialEffectTarget("war3mapImported\\EMPBubble2.mdx",u,"chest"))
         call DestroyEffect(AddSpecialEffectTarget("GhostLighthin3.mdl",u,"chest"))
+        call CreateModeIndicatorWithPauseFormDispellable(u, "ReplaceableTextures\\CommandButtons\\BTNBorosArmorBroken.blp", 6,'A28W')
+        call CreateModeIndicatorForm(u, "war3mapImported\\BTNBorosArmor.blp", 30)
         call SetUnitInvulnerable(u,true)
         call UnitRemoveAbility(u,'B14S')
         call UnitRemoveAbility(u,'B14R')
@@ -68376,6 +68424,10 @@ call UnitRemoveAbility(u,'VGH3')
 call UnitRemoveAbility(u,'VGH4')
 call UnitRemoveAbility(u,'VGH5')
 call UnitRemoveAbility(u,'VGH6')
+call ShowAbility2('VGSS',true)
+call ShowAbility2('VGS2',true)
+call ShowAbility2('VGS3',true)
+call ShowAbility2('VGS4',true)
 call UnitAddAbility(u,'VGH0')
 call AddUnitAnimationProperties(u,"alternate",false)
 call SetUnitAbilityLevel(u,'A3NM',1)
@@ -97420,8 +97472,8 @@ local player p=GetOwningPlayer(u)
 local real f=GetUnitFacing(u)
 call SaveUnitHandle(h,id,0,u)
 call SaveGroupHandle(h,id,1,CreateGroup())
-call SaveUnitHandle(h,id,3,CreateUnit(p,0x65305157,x+100*Cos((a+deg90)),y+100*Sin((a+deg90)),a*bj_RADTODEG))
-call SaveUnitHandle(h,id,4,CreateUnit(p,0x65305157,x+100*Cos((a-deg90)),y+100*Sin((a-deg90)),a*bj_RADTODEG))
+call SaveUnitHandle(h,id,3,CreateUnit(p,'e0QW',x+100*Cos((a+deg90)),y+100*Sin((a+deg90)),a*bj_RADTODEG))
+call SaveUnitHandle(h,id,4,CreateUnit(p,'e0QW',x+100*Cos((a-deg90)),y+100*Sin((a-deg90)),a*bj_RADTODEG))
 if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\FriezaDeathSaucer.mp3",false,false,true,12700,12700,"")
 else
@@ -104393,7 +104445,7 @@ local player p=GetOwningPlayer(u)
 local real a=Atan2(GetSpellTargetY()-y,GetSpellTargetX()-x)
 local real dmg=GetHeroInt(u,true)*(1.25+GetUnitAbilityLevel(u,'A10A')*0.75)+50
 call SaveUnitHandle(h,id,0,u)
-call SaveUnitHandle(h,id,1,CreateUnit(p,0x65305157,x+80*Cos(a),y+80*Sin(a),f))
+call SaveUnitHandle(h,id,1,CreateUnit(p,'e0QW',x+80*Cos(a),y+80*Sin(a),f))
 call SaveGroupHandle(h,id,4,CreateGroup())
 call SaveReal(h,id,2,x)
 call SaveReal(h,id,3,y)
