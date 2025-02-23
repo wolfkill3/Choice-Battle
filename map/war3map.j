@@ -165878,6 +165878,8 @@ function JirenW_Action takes nothing returns nothing
                 endif
                 call GroupRemoveUnit(bjLCG,E)
             endloop
+            call SetUnitTimeScale(u,1)
+            call SetUnitAnimationByIndex(u,27)
             call SetUnitInvulnerable(u,false)
             call PauseUnit(u,false)
             call DestroyGroup(bjLCG)
@@ -165951,8 +165953,9 @@ function JirenW_Periodic takes nothing returns nothing
 	else
         call SetUnitInvulnerable(u,true)
         call PauseUnit(u,true)
+        call SetUnitAnimationByIndex(u,41)
 		call ShakeCamera(0.1,10)
-		call SetUnitTimeScale(u,1.0)
+		call SetUnitTimeScale(u,0.4)
 		//call SetUnitInvulnerable(u,false)
 		call JirenW_Cut(u,GetUnitX(dummy),GetUnitY(dummy),LoadGroupHandle(h,id,4))
         set soundplay=CreateSound("Sound\\war3mapImported\\JirenW_Sound1.mp3",false,false,true,12700,12700,"")
@@ -165988,7 +165991,10 @@ function JirenW_Cast takes unit u,real x1,real y1 returns nothing
 	set soundplay=CreateSound("Sound\\Music\\mp3Music\\JirenW1.mp3",false,false,true,12700,12700,"")
 	call StartSound(soundplay)
 	call KillSoundWhenDone(soundplay)
-	call SetUnitTimeScale(u,2.0)
+	call SetUnitTimeScale(u,1.0)
+    set n=CreateUnit(GetOwningPlayer(u), 'dAlb', x+100*Cos(a), y+100*Sin(a), a*bj_RADTODEG)
+	call SetUnitFlyHeight(n, 50, 0)
+	call SaveUnitHandle(h, id, 5, n)
 	//call SetUnitInvulnerable(u,true)
 	call SaveUnitHandle(h,id,0,u)
 	call SaveReal(h,id,1,angle)
@@ -166055,6 +166061,7 @@ function JirenQ_Cast3 takes nothing returns nothing
         call SetUnitTimeScale(u,1)
         call PauseTimer(t)
         call SetUnitTimeScale(u,1)
+        call SetUnitAnimationByIndex(u,27)
         call DestroyTimer(t)
         call FlushChildHashtable(HH,id)
     endif
@@ -166082,9 +166089,11 @@ function JirenQ_Cast2 takes nothing returns nothing
     call PauseUnit(u,true)
     call SetUnitInvulnerable(u,true)
     if time==0.01 then
+    call SetUnitAnimationByIndex(u,22)
     endif
     if dist<850 and b==false then
-        if time>0.4 then
+        if time>0.3 then
+            call SetUnitAnimationByIndex(u,28)
             set x=x+25*Cos(a)
             set y=y+25*Sin(a)
             call SetUnitXY_1(u,x,y, false)
@@ -166115,7 +166124,7 @@ function JirenQ_Cast2 takes nothing returns nothing
                             set soundplay=CreateSound("Sound\\Music\\mp3Music\\JirenQG2.mp3",false,false,true,12700,12700,"")
                             call StartSound(soundplay)
                             call KillSoundWhenDone(soundplay)
-                            call SetUnitAnimationByIndex(u,22)
+                            call SetUnitAnimationByIndex(u,17)
                             call SetUnitXY_1(u,GetUnitX(E)-120*Cos(a),GetUnitY(E)-120*Sin(a), false)
                             call TimerStart(t,0.03,true,function JirenQ_Cast3)
                         else
