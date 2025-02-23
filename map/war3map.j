@@ -2616,13 +2616,13 @@ set dist=SquareRoot((l__h2-h1)*(l__h2-h1)+dist*dist)
 return dist
 endfunction
 function BaseSkinBuffCond takes player l__P returns boolean
-return GetPlayerName(l__P)=="Lnexa" or GetPlayerName(l__P)=="wns1217" or GetPlayerName(l__P)=="Chevalier" or GetPlayerName(l__P)=="odaniel" or GetPlayerName(l__P)=="kurou03" or GetPlayerName(l__P)=="Suzu"  or GetPlayerName(l__P)=="Komoshuai" or GetPlayerName(l__P)=="Starheart" or GetPlayerName(l__P)=="f.a.r.a.o.n." or GetPlayerName(l__P)=="Famouzy" or GetPlayerName(l__P)=="TraskiusLT" or GetPlayerName(l__P)=="dessar383" or GetPlayerName(l__P)=="Famousy" or GetPlayerName(l__P)=="PinkieNecro" or GetPlayerName(l__P)=="DBFag" or GetPlayerName(l__P)=="NecromanseR_RuS" or GetPlayerName(l__P)=="Wolfkill" or GetPlayerName(l__P)=="tenevo" or GetPlayerName(l__P)=="Ferret" or GetPlayerName(l__P)=="Kakaroto228" or GetPlayerName(l__P)=="madaras0" or GetPlayerName(l__P)=="Thunder.Gear" or GetPlayerName(l__P)=="Gin_-_Ichimaru" or GetPlayerName(l__P)=="terin000" or GetPlayerName(l__P)=="kisame-h" or GetPlayerName(l__P)=="Motorka3" or  GetPlayerName(l__P)=="Faimon" or GetPlayerName(l__P)=="xFyntuk" or GetPlayerName(l__P)=="Uchiha.sasuke01" or GetPlayerName(l__P)=="Vadik29" or GetPlayerName(l__P)=="Wolfkill" or GetPlayerName(l__P)=="Wasteriomind" or GetPlayerName(l__P)=="Anwa_Abdul" or GetPlayerName(l__P)=="antonpoganui" or GetPlayerName(l__P)=="bkmz008" or GetPlayerName(l__P)=="ttashhanov1" or GetPlayerName(l__P)=="Wolkern" or GetPlayerName(l__P)=="WorldEdit" or GetPlayerName(l__P)=="Hirako321" or GetPlayerName(l__P)=="knowyourplace" or GetPlayerName(l__P)=="UJustDeadWeight" or GetPlayerName(l__P)==AdminNickname
+return udg_test or GetPlayerName(l__P)=="Lnexa" or GetPlayerName(l__P)=="wns1217" or GetPlayerName(l__P)=="Chevalier" or GetPlayerName(l__P)=="odaniel" or GetPlayerName(l__P)=="kurou03" or GetPlayerName(l__P)=="Suzu"  or GetPlayerName(l__P)=="Komoshuai" or GetPlayerName(l__P)=="Starheart" or GetPlayerName(l__P)=="f.a.r.a.o.n." or GetPlayerName(l__P)=="Famouzy" or GetPlayerName(l__P)=="TraskiusLT" or GetPlayerName(l__P)=="dessar383" or GetPlayerName(l__P)=="Famousy" or GetPlayerName(l__P)=="PinkieNecro" or GetPlayerName(l__P)=="DBFag" or GetPlayerName(l__P)=="NecromanseR_RuS" or GetPlayerName(l__P)=="Wolfkill" or GetPlayerName(l__P)=="tenevo" or GetPlayerName(l__P)=="Ferret" or GetPlayerName(l__P)=="Kakaroto228" or GetPlayerName(l__P)=="madaras0" or GetPlayerName(l__P)=="Thunder.Gear" or GetPlayerName(l__P)=="Gin_-_Ichimaru" or GetPlayerName(l__P)=="terin000" or GetPlayerName(l__P)=="kisame-h" or GetPlayerName(l__P)=="Motorka3" or  GetPlayerName(l__P)=="Faimon" or GetPlayerName(l__P)=="xFyntuk" or GetPlayerName(l__P)=="Uchiha.sasuke01" or GetPlayerName(l__P)=="Vadik29" or GetPlayerName(l__P)=="Wolfkill" or GetPlayerName(l__P)=="Wasteriomind" or GetPlayerName(l__P)=="Anwa_Abdul" or GetPlayerName(l__P)=="antonpoganui" or GetPlayerName(l__P)=="bkmz008" or GetPlayerName(l__P)=="ttashhanov1" or GetPlayerName(l__P)=="Wolkern" or GetPlayerName(l__P)=="WorldEdit" or GetPlayerName(l__P)=="Hirako321" or GetPlayerName(l__P)=="knowyourplace" or GetPlayerName(l__P)=="UJustDeadWeight" or GetPlayerName(l__P)==AdminNickname
 endfunction
 function BaseSkinPetCond takes player l__P returns boolean
-return GetPlayerName(l__P)=="Lnexa" or GetPlayerName(l__P)=="wns1217" or GetPlayerName(l__P)=="Chevalier" or GetPlayerName(l__P)=="odaniel" or GetPlayerName(l__P)=="kurou03" or GetPlayerName(l__P)=="Suzu"  or GetPlayerName(l__P)=="Komoshuai" or GetPlayerName(l__P)=="Starheart" or GetPlayerName(l__P)=="f.a.r.a.o.n." or GetPlayerName(l__P)=="Famouzy" or GetPlayerName(l__P)=="TraskiusLT" or GetPlayerName(l__P)=="dessar383" or GetPlayerName(l__P)=="Famousy" or GetPlayerName(l__P)=="PinkieNecro" or GetPlayerName(l__P)=="DBFag" or GetPlayerName(l__P)=="NecromanseR_RuS" or GetPlayerName(l__P)=="Wolfkill" or GetPlayerName(l__P)=="tenevo" or GetPlayerName(l__P)=="Ferret" or GetPlayerName(l__P)=="Kakaroto228" or GetPlayerName(l__P)=="madaras0" or GetPlayerName(l__P)=="Thunder.Gear" or GetPlayerName(l__P)=="Gin_-_Ichimaru" or GetPlayerName(l__P)=="terin000" or GetPlayerName(l__P)=="kisame-h" or GetPlayerName(l__P)=="Motorka3" or  GetPlayerName(l__P)=="Faimon" or GetPlayerName(l__P)=="xFyntuk" or GetPlayerName(l__P)=="Uchiha.sasuke01" or GetPlayerName(l__P)=="Vadik29" or GetPlayerName(l__P)=="Wolfkill" or GetPlayerName(l__P)=="Wasteriomind" or GetPlayerName(l__P)=="Anwa_Abdul" or GetPlayerName(l__P)=="antonpoganui" or GetPlayerName(l__P)=="bkmz008" or GetPlayerName(l__P)=="ttashhanov1" or GetPlayerName(l__P)=="Wolkern" or GetPlayerName(l__P)=="WorldEdit" or GetPlayerName(l__P)=="Hirako321" or GetPlayerName(l__P)=="knowyourplace" or GetPlayerName(l__P)=="UJustDeadWeight" or GetPlayerName(l__P)==AdminNickname
+return udg_test or GetPlayerName(l__P)=="Lnexa" or GetPlayerName(l__P)=="wns1217" or GetPlayerName(l__P)=="Chevalier" or GetPlayerName(l__P)=="odaniel" or GetPlayerName(l__P)=="kurou03" or GetPlayerName(l__P)=="Suzu"  or GetPlayerName(l__P)=="Komoshuai" or GetPlayerName(l__P)=="Starheart" or GetPlayerName(l__P)=="f.a.r.a.o.n." or GetPlayerName(l__P)=="Famouzy" or GetPlayerName(l__P)=="TraskiusLT" or GetPlayerName(l__P)=="dessar383" or GetPlayerName(l__P)=="Famousy" or GetPlayerName(l__P)=="PinkieNecro" or GetPlayerName(l__P)=="DBFag" or GetPlayerName(l__P)=="NecromanseR_RuS" or GetPlayerName(l__P)=="Wolfkill" or GetPlayerName(l__P)=="tenevo" or GetPlayerName(l__P)=="Ferret" or GetPlayerName(l__P)=="Kakaroto228" or GetPlayerName(l__P)=="madaras0" or GetPlayerName(l__P)=="Thunder.Gear" or GetPlayerName(l__P)=="Gin_-_Ichimaru" or GetPlayerName(l__P)=="terin000" or GetPlayerName(l__P)=="kisame-h" or GetPlayerName(l__P)=="Motorka3" or  GetPlayerName(l__P)=="Faimon" or GetPlayerName(l__P)=="xFyntuk" or GetPlayerName(l__P)=="Uchiha.sasuke01" or GetPlayerName(l__P)=="Vadik29" or GetPlayerName(l__P)=="Wolfkill" or GetPlayerName(l__P)=="Wasteriomind" or GetPlayerName(l__P)=="Anwa_Abdul" or GetPlayerName(l__P)=="antonpoganui" or GetPlayerName(l__P)=="bkmz008" or GetPlayerName(l__P)=="ttashhanov1" or GetPlayerName(l__P)=="Wolkern" or GetPlayerName(l__P)=="WorldEdit" or GetPlayerName(l__P)=="Hirako321" or GetPlayerName(l__P)=="knowyourplace" or GetPlayerName(l__P)=="UJustDeadWeight" or GetPlayerName(l__P)==AdminNickname
 endfunction
 function BaseSkinCond takes player l__P returns boolean
-return GetPlayerName(l__P)=="Lnexa" or GetPlayerName(l__P)=="wns1217" or GetPlayerName(l__P)=="Chevalier" or GetPlayerName(l__P)=="odaniel" or GetPlayerName(l__P)=="kurou03" or GetPlayerName(l__P)=="Suzu"  or GetPlayerName(l__P)=="Komoshuai" or GetPlayerName(l__P)=="Starheart" or GetPlayerName(l__P)=="AkazaThree" or GetPlayerName(l__P)=="f.a.r.a.o.n." or GetPlayerName(l__P)=="Famouzy" or GetPlayerName(l__P)=="TraskiusLT" or GetPlayerName(l__P)=="dessar383" or GetPlayerName(l__P)=="Famousy" or GetPlayerName(l__P)=="Anwa_Abdul" or GetPlayerName(l__P)=="PinkieNecro" or GetPlayerName(l__P)=="DBFag" or GetPlayerName(l__P)=="NecromanseR_RuS" or GetPlayerName(l__P)=="Wolfkill" or GetPlayerName(l__P)=="tenevo" or GetPlayerName(l__P)=="Ferret" or GetPlayerName(l__P)=="KZReyesTH" or GetPlayerName(l__P)=="I_Arioh" or GetPlayerName(l__P)=="Kakaroto228" or GetPlayerName(l__P)=="madaras0" or GetPlayerName(l__P)=="Thunder.Gear" or GetPlayerName(l__P)=="Gin_-_Ichimaru" or GetPlayerName(l__P)=="terin000" or  GetPlayerName(l__P)=="kisame-h" or GetPlayerName(l__P)=="Motorka3" or GetPlayerName(l__P)=="Faimon" or GetPlayerName(l__P)=="xFyntuk" or GetPlayerName(l__P)=="Uchiha.sasuke01" or GetPlayerName(l__P)=="Vadik29" or GetPlayerName(l__P)=="Wolfkill" or GetPlayerName(l__P)=="Wasteriomind" or GetPlayerName(l__P)=="antonpoganui" or GetPlayerName(l__P)=="bkmz008" or GetPlayerName(l__P)=="ttashhanov1" or GetPlayerName(l__P)=="Wolkern" or GetPlayerName(l__P)=="WorldEdit" or GetPlayerName(l__P)=="knowyourplace" or GetPlayerName(l__P)=="UJustDeadWeight" or GetPlayerName(l__P)=="Hirako321"and GetUnitTypeId(Hero[GetPlayerId(l__P)])!='H02H' or GetPlayerName(l__P)==AdminNickname
+return udg_test or GetPlayerName(l__P)=="Lnexa" or GetPlayerName(l__P)=="wns1217" or GetPlayerName(l__P)=="Chevalier" or GetPlayerName(l__P)=="odaniel" or GetPlayerName(l__P)=="kurou03" or GetPlayerName(l__P)=="Suzu"  or GetPlayerName(l__P)=="Komoshuai" or GetPlayerName(l__P)=="Starheart" or GetPlayerName(l__P)=="AkazaThree" or GetPlayerName(l__P)=="f.a.r.a.o.n." or GetPlayerName(l__P)=="Famouzy" or GetPlayerName(l__P)=="TraskiusLT" or GetPlayerName(l__P)=="dessar383" or GetPlayerName(l__P)=="Famousy" or GetPlayerName(l__P)=="Anwa_Abdul" or GetPlayerName(l__P)=="PinkieNecro" or GetPlayerName(l__P)=="DBFag" or GetPlayerName(l__P)=="NecromanseR_RuS" or GetPlayerName(l__P)=="Wolfkill" or GetPlayerName(l__P)=="tenevo" or GetPlayerName(l__P)=="Ferret" or GetPlayerName(l__P)=="KZReyesTH" or GetPlayerName(l__P)=="I_Arioh" or GetPlayerName(l__P)=="Kakaroto228" or GetPlayerName(l__P)=="madaras0" or GetPlayerName(l__P)=="Thunder.Gear" or GetPlayerName(l__P)=="Gin_-_Ichimaru" or GetPlayerName(l__P)=="terin000" or  GetPlayerName(l__P)=="kisame-h" or GetPlayerName(l__P)=="Motorka3" or GetPlayerName(l__P)=="Faimon" or GetPlayerName(l__P)=="xFyntuk" or GetPlayerName(l__P)=="Uchiha.sasuke01" or GetPlayerName(l__P)=="Vadik29" or GetPlayerName(l__P)=="Wolfkill" or GetPlayerName(l__P)=="Wasteriomind" or GetPlayerName(l__P)=="antonpoganui" or GetPlayerName(l__P)=="bkmz008" or GetPlayerName(l__P)=="ttashhanov1" or GetPlayerName(l__P)=="Wolkern" or GetPlayerName(l__P)=="WorldEdit" or GetPlayerName(l__P)=="knowyourplace" or GetPlayerName(l__P)=="UJustDeadWeight" or GetPlayerName(l__P)=="Hirako321"and GetUnitTypeId(Hero[GetPlayerId(l__P)])!='H02H' or GetPlayerName(l__P)==AdminNickname
 endfunction
 function ParabolaZ2 takes real y0,real y1,real l__h,real l__d,real x returns real
 return(2*(y0+y1-2*l__h)*(x/l__d-1)+(y1-y0))*(x/l__d)+y0
@@ -38050,8 +38050,8 @@ if cond==0 then
             endif
         endif
         if nb>0 and (UnitHasItemOfTypeBJ(u,'IAoF')or GetUnitAbilityLevel(u,'KI1A')>0)and CurrentEventAttack then
-            if nb>150 then
-                set nb=nb-150
+            if nb>90+10*round then
+                set nb=nb-(90+10*round)
             else
                 set nb=0
             endif
@@ -63717,10 +63717,12 @@ function PowerDownGoku takes nothing returns nothing
         if GetUnitAbilityLevel(u,'GkH7')>0 then
             call StartAbilityCooldown(GetUnitAbility(u,'GKUI'),50)
             call StartAbilityCooldown(GetUnitAbility(u,'GKMI'),50)
+            call StartAbilityCooldown(GetUnitAbility(u,'GKW1'),GetAbilityRemainingCooldown(GetUnitAbility(u,'GKW5')))
         endif
         if GetUnitAbilityLevel(u,'GkH8')>0 then
             call StartAbilityCooldown(GetUnitAbility(u,'GKUI'),75)
             call StartAbilityCooldown(GetUnitAbility(u,'GKMI'),75)
+            call StartAbilityCooldown(GetUnitAbility(u,'GKW1'),GetAbilityRemainingCooldown(GetUnitAbility(u,'GKW5')))
             if GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.1>GetUnitState(u,UNIT_STATE_LIFE) or GetUnitState(u,UNIT_STATE_MAX_MANA)*0.04>GetUnitState(u,UNIT_STATE_MANA) then
                 call SetControlToUnit(u,u,1,"heavystun")
                 call SetControlToUnit(u,u,4,"SilenceTE")
@@ -63753,7 +63755,6 @@ function PowerDownGoku takes nothing returns nothing
         call ShowAbility2('GKG1',true)
         call ShowAbility2('GKW5',false)
         call ShowAbility2('GKW1',true)
-        call StartAbilityCooldown(GetUnitAbility(u,'GKW1'),GetAbilityRemainingCooldown(GetUnitAbility(u,'GKW5')))
         call UnitAddAbility(u,'GkH0')
         call SetUnitAbilityLevel(u,'A0NM',1)
         call UnitMakeAbilityPermanent(u,true,'GkH0')
@@ -88011,7 +88012,7 @@ function VergilQ_ModifAttack takes unit newCaster, unit newTarget, boolean b_clo
 	endif
 	
     if (UnitHasItemOfTypeBJ(newTarget,'IAoF') or GetUnitAbilityLevel(newTarget,'KI1A')>0) then                                                                                                          // Комплект Анбу у таргета
-        set damage=damage-150
+        set damage=damage-(90+10*round)
     endif
 
 	if UnitHasItemOfTypeBJ(newTarget, 'I060') then														// Облако Маре D ранг
@@ -139005,7 +139006,7 @@ function GilgameshModifiedAttack takes unit newCaster, unit newTarget returns bo
             endif
 
             if (UnitHasItemOfTypeBJ(newTarget,'IAoF') or GetUnitAbilityLevel(newTarget,'KI1A')>0) then                                                                                                          // Комплект Анбу у таргета
-                    set damage=damage-150
+                    set damage=damage-(90+10*round)
             endif
             
             if UnitHasItemOfTypeBJ(newTarget, 'I060') then                                                                                                          // Облако Маре D ранг
@@ -197454,7 +197455,7 @@ function Karna_ModifAttack takes unit newCaster, unit newTarget, real attack_fac
             endif
 
             if (UnitHasItemOfTypeBJ(newTarget,'IAoF') or GetUnitAbilityLevel(newTarget,'KI1A')>0) then                                                                                                          // Комплект Анбу у таргета
-                set damage=damage-150
+                set damage=damage-(90+10*round)
             endif
 
             if UnitHasItemOfTypeBJ(newTarget, 'I060') then														// Облако Маре D ранг
