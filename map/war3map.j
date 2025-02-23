@@ -64070,7 +64070,6 @@ function PowerUpGokuCast2 takes nothing returns nothing
             call ShowAbility2('GKG7',true)
             call ShowAbility2('GKW1',false)
             call ShowAbility2('GKW5',true)
-            call StartAbilityCooldown(GetUnitAbility(u,'GKW5'),GetAbilityRemainingCooldown(GetUnitAbility(u,'GKW1')))
             if LoadBoolean(HH,idp,MUIAvailableHash)==false then
                 call UnitRemoveTransformTimedPause(u,'GkH7',20)
                 call CreateModeIndicatorWithPauseFormDispellable(u, "ReplaceableTextures\\Commandbuttons\\BTNGokuUI.blp", 20,'GkH7')
@@ -64096,7 +64095,6 @@ function PowerUpGokuCast2 takes nothing returns nothing
             call ShowAbility2('GKG7',true)
             call ShowAbility2('GKW1',false)
             call ShowAbility2('GKW5',true)
-            call StartAbilityCooldown(GetUnitAbility(u,'GKW5'),GetAbilityRemainingCooldown(GetUnitAbility(u,'GKW1')))
             call UnitRemoveTransformTimedPause(u,'GkH8',20)
             call CreateModeIndicatorWithPauseFormDispellable(u, "ReplaceableTextures\\Commandbuttons\\BTNGokuMUI.blp", 20,'GkH8')
             call SaveReal(HH,GetHandleId(GetOwningPlayer(Goku)),VariationWHash,3)
@@ -64131,6 +64129,7 @@ function PowerUpGokuCast takes nothing returns nothing
     local real x=GetUnitX(u)
     local real y=GetUnitY(u)
     call SaveUnitHandle(h,id,0,u)
+    call StartAbilityCooldown(GetUnitAbility(u,'GKW5'),GetAbilityRemainingCooldown(GetUnitAbility(u,'GKW1')))
     if LoadReal(HH,GetHandleId(GetOwningPlayer(Goku)),VariationQHash)==2 or LoadReal(HH,GetHandleId(GetOwningPlayer(Goku)),VariationQHash)==3 or LoadReal(HH,GetHandleId(GetOwningPlayer(Goku)),VariationQHash)==4 then
         call SaveReal(HH,GetHandleId(GetOwningPlayer(Goku)),VariationQHash,0)
     endif
