@@ -38052,8 +38052,8 @@ if cond==0 then
             endif
         endif
         if nb>0 and (UnitHasItemOfTypeBJ(u,'IAoF')or GetUnitAbilityLevel(u,'KI1A')>0)and CurrentEventAttack then
-            if nb>150 then
-                set nb=nb-150
+            if nb>90+10*round then
+                set nb=nb-(90+10*round)
             else
                 set nb=0
             endif
@@ -88014,7 +88014,7 @@ function VergilQ_ModifAttack takes unit newCaster, unit newTarget, boolean b_clo
 	endif
 	
     if (UnitHasItemOfTypeBJ(newTarget,'IAoF') or GetUnitAbilityLevel(newTarget,'KI1A')>0) then                                                                                                          // Комплект Анбу у таргета
-        set damage=damage-150
+        set damage=damage-(90+10*round)
     endif
 
 	if UnitHasItemOfTypeBJ(newTarget, 'I060') then														// Облако Маре D ранг
@@ -139008,7 +139008,7 @@ function GilgameshModifiedAttack takes unit newCaster, unit newTarget returns bo
             endif
 
             if (UnitHasItemOfTypeBJ(newTarget,'IAoF') or GetUnitAbilityLevel(newTarget,'KI1A')>0) then                                                                                                          // Комплект Анбу у таргета
-                    set damage=damage-150
+                    set damage=damage-(90+10*round)
             endif
             
             if UnitHasItemOfTypeBJ(newTarget, 'I060') then                                                                                                          // Облако Маре D ранг
@@ -197457,7 +197457,7 @@ function Karna_ModifAttack takes unit newCaster, unit newTarget, real attack_fac
             endif
 
             if (UnitHasItemOfTypeBJ(newTarget,'IAoF') or GetUnitAbilityLevel(newTarget,'KI1A')>0) then                                                                                                          // Комплект Анбу у таргета
-                set damage=damage-150
+                set damage=damage-(90+10*round)
             endif
 
             if UnitHasItemOfTypeBJ(newTarget, 'I060') then														// Облако Маре D ранг
