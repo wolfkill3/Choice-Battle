@@ -34374,14 +34374,14 @@ if(time<=0 and UnitIsAlive(Hero[ip]))or udg_B==false or DU2==false then
         call SetItemDroppable(it,true)
         call UnitRemoveItem(u,it)
         call RemoveItem(it)
-        set f=CreateItem('I13R',GetUnitX(u),GetUnitY(u))
+        set f=CreateItem('I13R',MathRealFloor(GetUnitX(u)),MathRealFloor(GetUnitY(u)))
         call UnitAddItemToSlot(u,f,9)
     else
         call EnableUnitAbility2(u,'AInv',false,true)
         call SetItemDroppable(it,true)
         call UnitRemoveItem(u,it)
         call RemoveItem(it)
-        set f=CreateItem('I13R',GetUnitX(u),GetUnitY(u))
+        set f=CreateItem('I13R',MathRealFloor(GetUnitX(u)),MathRealFloor(GetUnitY(u)))
         call UnitAddItemToSlot(u,f,9) 
         call DisableUnitAbility2(u,'AInv',false,true)
     endif
@@ -36794,8 +36794,7 @@ if GetUnitAbilityLevel(u,'A09I')>0 then        // Tekkai Lucci old
 endif
 if nb>0 and GetUnitAbilityLevel(u,'LCF1')>0 and GetUnitAbilityLevel(c,'A1WR')==0 then       // Tekkai Lucci new
     if LoadBoolean(HH, uid, StringHash("LucciTekkai")) then
-        //call SetEventDamage(0.05)
-        set nb=0
+        call SetEventDamage(0)
         if UnitHasItemOfTypeBJCustom(c,'I13R')==false then
             if IsUnitInvulnerable(c)==true then
                 call SetUnitInvulnerable(c,false)
@@ -36810,6 +36809,8 @@ if nb>0 and GetUnitAbilityLevel(u,'LCF1')>0 and GetUnitAbilityLevel(c,'A1WR')==0
             endif
             call DestroyEffect(AddSpecialEffectTarget(" ",c,"origin"))
         endif
+        set nb=0
+        set b=0
     else
         call RemoveSavedBoolean(HH, uid, StringHash("LucciTekkai"))
     endif
@@ -37557,7 +37558,7 @@ if cond==0 then
                 call UnitRemoveAbilityTimedPause(u,'A28W',6)
                 call UnitRemoveBuffs(u,false,true)
                 call UnitRemoveAbility(u,'A0J4')
-                set it=CreateItem('I13S',GetUnitX(u),GetUnitY(u))
+                set it=CreateItem('I13S',MathRealFloor(GetUnitX(u)),MathRealFloor(GetUnitY(u)))
                 call UnitAddItemToSlot(u,it,9)
                 call SetItemDroppable(it,false)
                 call SaveItemHandle(h,GetHandleId(cjlocgn_00000000),1,it)
@@ -37574,7 +37575,7 @@ if cond==0 then
                 call UnitRemoveAbilityTimedPause(u,'A28W',6)
                 call UnitRemoveBuffs(u,false,true)
                 call UnitRemoveAbility(u,'A0J4')
-                set it=CreateItem('I13S',GetUnitX(u),GetUnitY(u))
+                set it=CreateItem('I13S',MathRealFloor(GetUnitX(u)),MathRealFloor(GetUnitY(u)))
                 call UnitAddItemToSlot(u,it,9)
                 call SetItemDroppable(it,false)
                 call SaveItemHandle(h,GetHandleId(cjlocgn_00000000),1,it)
@@ -59083,7 +59084,7 @@ local integer idg2=GetHandleId(g)
 local real time=LoadReal(h,id,6)
 if time<0.5 then
 call SaveReal(h,id,6,time+0.03)
-call SetUnitZ(l__d,GetUnitZCustom(l__d)+17)
+call SetUnitZ(l__d,MathRealFloor(GetUnitZCustom(l__d)+17))
 if time==0.48 then
 call SetUnitAnimation(u,"spell one")
 call DestroyEffect(AddSpecialEffect("war3mapImported\\NewDirtEXNofire.mdx",x2,y2))
@@ -59152,7 +59153,7 @@ call SaveReal(h,id,5,45)
 set x2=x+200*Cos(a)
 set y2=y+200*Sin(a)
 set n=CreateUnit(p,'e0AA',x2,y2,a*bj_RADTODEG)
-call SetUnitZ(n,-300)
+call SetUnitZ(n,MathRealFloor(-300))
 call UnitApplyTimedLife(CreateUnit(p,'e03X',x2,y2,GetRandomReal(0,359)),1,1)
 call UnitApplyTimedLife(CreateUnit(p,'e03W',x2,y2,GetRandomReal(0,359)),1,1)
 call UnitApplyTimedLife(CreateUnit(p,'e08R',x2,y2,GetRandomReal(0,359)),1,1)
@@ -131293,10 +131294,10 @@ if GetUnitAbilityLevel(u,'cbc9')>0 then
     call SetSpecialEffectScale(EffT,0.6)
     call SetSpecialEffectX(EffT,x)
     call SetSpecialEffectY(EffT,y)
-    call SetSpecialEffectZ(EffT,GetUnitFlyHeight(u)-200)
+    call SetSpecialEffectZ(EffT,MathRealFloor(GetUnitFlyHeight(u)-200))
 else
     call UnitRemoveAbility(u,'Avul')
-    call SetUnitPositionEx(u,false,false,GetUnitX(u),GetUnitY(u),GetUnitFlyHeight(u)-200)
+    call SetUnitPositionEx(u,false,false,GetUnitX(u),GetUnitY(u),MathRealFloor(GetUnitFlyHeight(u)-200))
     call ResetUnitZ(u)
     call RemoveEffect(EffT,0,false,CreateTimer())
     call PauseTimer(t)
@@ -131318,7 +131319,7 @@ call SaveUnitHandle(HH,id,0,u)
 call SaveEffectHandle(HH,id,1,AddSpecialEffect("Abilities\\Spells\\NightElf\\Cyclone\\CycloneTarget.mdl",x,y))
 // call SetSpriteModel(spr,)
 //call SetUnitFlyHeight(u,GetUnitFlyHeight(u)+150,0)
-call SetUnitPositionEx(u,false,false,GetUnitX(u),GetUnitY(u),GetUnitFlyHeight(u)+200)
+call SetUnitPositionEx(u,false,false,GetUnitX(u),GetUnitY(u),MathRealFloor(GetUnitFlyHeight(u)+200))
 call TimerStart(t,.05,true,function CycloneStartCast2)
 set t=null
 set u=null
@@ -141573,7 +141574,7 @@ call SetCameraPosition(GetUnitX(c),GetUnitY(c))
 endif
 set archR=false
 endif
-call SetUnitZ(c,0)
+call SetUnitZ(c,MathRealFloor(0))
 call ResetUnitZ(c)
 call RemoveUnit(l__d)
 if(IsPlayerInForce(GetLocalPlayer(),f))then
