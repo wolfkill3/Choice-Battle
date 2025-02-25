@@ -3657,6 +3657,10 @@ call RemoveLocation(loc)
 set loc=null
 return r
 endfunction
+function GetUnitZCustom takes unit u returns real
+call BJDebugMsg(R2S(MathRealFloor(GetUnitZ(u))))
+return MathRealFloor(GetUnitZ(u))
+endfunction
 function CalculateCritChance takes unit newCaster returns real
     local real critchance_dmg = 0.0
     // Усиление урона от автоатаки крит шансом
@@ -10223,7 +10227,6 @@ function OnButtonCloseStatusBar takes nothing returns nothing
     local integer butHid = 0
     local integer itemTypeId = 0
     local integer freeSlotId = 0
-    local item it = null
 
     if buttonId == -1 then
         return
@@ -10244,7 +10247,6 @@ function OnButtonOpenStatusBar takes nothing returns nothing
     local integer butHid = 0
     local integer itemTypeId = 0
     local integer freeSlotId = 0
-    local item it = null
     local integer i=0
 
     if buttonId == -1 then
@@ -10304,7 +10306,6 @@ function OnButtonCloseId takes nothing returns nothing
     local integer butHid = 0
     local integer itemTypeId = 0
     local integer freeSlotId = 0
-    local item it = null
 
     if buttonId == -1 then
         return
@@ -10329,7 +10330,6 @@ function OnButtonOpenId takes nothing returns nothing
     local integer butHid = 0
     local integer itemTypeId = 0
     local integer freeSlotId = 0
-    local item it = null
     local integer i=0
 
     if buttonId == -1 then
@@ -10385,7 +10385,6 @@ function OnButtonChangeTeam takes nothing returns nothing
     local integer butHid = 0
     local integer itemTypeId = 0
     local integer freeSlotId = 0
-    local item it = null
 
     if buttonId == -1 then
         return
@@ -10451,7 +10450,6 @@ function OnButtonChangeTeam1 takes nothing returns nothing
     local integer butHid = 0
     local integer itemTypeId = 0
     local integer freeSlotId = 0
-    local item it = null
 
     if buttonId == -1 then
         return
@@ -10632,7 +10630,6 @@ function OnButtonGlobalAbility takes nothing returns nothing
     local integer butHid = 0
     local integer itemTypeId = 0
     local integer freeSlotId = 0
-    local item it = null
 
     if buttonId == -1 then
         return
@@ -10652,7 +10649,6 @@ function OnButtonCustomAbility takes nothing returns nothing
     local integer butHid = 0
     local integer itemTypeId = 0
     local integer freeSlotId = 0
-    local item it = null
 
     if buttonId == -1 then
         return
@@ -10672,7 +10668,6 @@ function OnButtonChangeAbilityMode takes nothing returns nothing
     local integer butHid = 0
     local integer itemTypeId = 0
     local integer freeSlotId = 0
-    local item it = null
 
     if buttonId == -1 then
         return
@@ -10946,7 +10941,6 @@ function OnButtonCloseTavern takes nothing returns nothing
     local integer itemTypeId = 0
     local integer freeSlotId = 0
     local integer j=0
-    local item it = null
 
     if buttonId == -1 then
         return
@@ -11001,7 +10995,6 @@ function OnButtonOpenTavern takes nothing returns nothing
     local integer butHid = 0
     local integer itemTypeId = 0
     local integer freeSlotId = 0
-    local item it = null
     local integer i=0
 
     if buttonId == -1 then
@@ -34495,7 +34488,7 @@ local real y1=GetUnitY(u)
 local unit d1=LoadUnitHandle(h,id,4)
 local unit d2=LoadUnitHandle(h,id,5)
 if r>0 then
-call MoveLightningEx(l,false,x1,y1,GetUnitZ(u)+75,x,y,GetUnitZ(c)+75)
+call MoveLightningEx(l,false,x1,y1,GetUnitZCustom(u)+75,x,y,GetUnitZCustom(c)+75)
 call SaveReal(h,id,3,r-6)
 call SetLightningColor(l,0,100,0,r)
 call SetUnitX(d1,x)
@@ -36535,6 +36528,7 @@ local real bgreal=0
 local real tdamage=0
 local real ragebase=0
 local integer ragecount=0
+local item it
 //local boolean fullrage=false
 //
 set nb=b
@@ -37525,16 +37519,16 @@ if cond==0 then
             set cjlocgn_00000000=CreateTimer()
             set t=CreateTimer()
             call SaveUnitHandle(h,GetHandleId(cjlocgn_00000000),0,u)
-            set bj_lastCreatedItem=GetItemOfTypeFromUnitBJCustom(u,'I03R')
-            call UnitRemoveItem(u,bj_lastCreatedItem)
-            call RemoveItem(bj_lastCreatedItem)
+            set it=GetItemOfTypeFromUnitBJCustom(u,'I03R')
+            call UnitRemoveItem(u,it)
+            call RemoveItem(it)
             call UnitAddAbility(u,'A0VV')
             call UnitRemoveAbility(u,'A0VV')
             call UnitRemoveBuffs(u,false,true)
             call UnitRemoveAbility(u,'A0J4')
-            set bj_lastCreatedItem=UnitAddItemById(u,'I03S')
-            call SetItemDroppable(bj_lastCreatedItem,false)
-            call SaveItemHandle(h,GetHandleId(cjlocgn_00000000),1,bj_lastCreatedItem)
+            set it=UnitAddItemById(u,'I03S')
+            call SetItemDroppable(it,false)
+            call SaveItemHandle(h,GetHandleId(cjlocgn_00000000),1,it)
             call TimerStart(cjlocgn_00000000,0.1,true,function LinkenSphere)
             call SaveReal(h,GetHandleId(cjlocgn_00000000),2,30)
             call SaveInteger(h,GetHandleId(cjlocgn_00000000),3,idu)
@@ -37554,36 +37548,36 @@ if cond==0 then
             set t=CreateTimer()
             if IsAbilityEnabled(GetUnitAbility(u,'AInv'))==true then
                 call SaveUnitHandle(h,GetHandleId(cjlocgn_00000000),0,u)
-                set bj_lastCreatedItem=GetItemOfTypeFromUnitBJCustom(u,'I13R')
-                call UnitRemoveItem(u,bj_lastCreatedItem)
-                call RemoveItem(bj_lastCreatedItem)
+                set it=GetItemOfTypeFromUnitBJCustom(u,'I13R')
+                call UnitRemoveItem(u,it)
+                call RemoveItem(it)
                 call UnitAddAbility(u,'A0VV')
                 call UnitRemoveAbilityTimedPause(u,'A0VV',6)
                 call UnitAddAbility(u,'A28W')
                 call UnitRemoveAbilityTimedPause(u,'A28W',6)
                 call UnitRemoveBuffs(u,false,true)
                 call UnitRemoveAbility(u,'A0J4')
-                set bj_lastCreatedItem=CreateItem('I13S',GetUnitX(u),GetUnitY(u))
-                call UnitAddItemToSlot(u,bj_lastCreatedItem,9)
-                call SetItemDroppable(bj_lastCreatedItem,false)
-                call SaveItemHandle(h,GetHandleId(cjlocgn_00000000),1,bj_lastCreatedItem)
+                set it=CreateItem('I13S',GetUnitX(u),GetUnitY(u))
+                call UnitAddItemToSlot(u,it,9)
+                call SetItemDroppable(it,false)
+                call SaveItemHandle(h,GetHandleId(cjlocgn_00000000),1,it)
                 call TimerStart(cjlocgn_00000000,0.1,true,function LinkenSphere2)
             else
                 call EnableUnitAbility2(u,'AInv',false,true)
                 call SaveUnitHandle(h,GetHandleId(cjlocgn_00000000),0,u)
-                set bj_lastCreatedItem=GetItemOfTypeFromUnitBJCustom(u,'I13R')
-                call UnitRemoveItem(u,bj_lastCreatedItem)
-                call RemoveItem(bj_lastCreatedItem)
+                set it=GetItemOfTypeFromUnitBJCustom(u,'I13R')
+                call UnitRemoveItem(u,it)
+                call RemoveItem(it)
                 call UnitAddAbility(u,'A0VV')
                 call UnitRemoveAbilityTimedPause(u,'A0VV',6)
                 call UnitAddAbility(u,'A28W')
                 call UnitRemoveAbilityTimedPause(u,'A28W',6)
                 call UnitRemoveBuffs(u,false,true)
                 call UnitRemoveAbility(u,'A0J4')
-                set bj_lastCreatedItem=CreateItem('I13S',GetUnitX(u),GetUnitY(u))
-                call UnitAddItemToSlot(u,bj_lastCreatedItem,9)
-                call SetItemDroppable(bj_lastCreatedItem,false)
-                call SaveItemHandle(h,GetHandleId(cjlocgn_00000000),1,bj_lastCreatedItem)
+                set it=CreateItem('I13S',GetUnitX(u),GetUnitY(u))
+                call UnitAddItemToSlot(u,it,9)
+                call SetItemDroppable(it,false)
+                call SaveItemHandle(h,GetHandleId(cjlocgn_00000000),1,it)
                 call TimerStart(cjlocgn_00000000,0.1,true,function LinkenSphere2)
                 call DisableUnitAbility2(u,'AInv',false,true)
             endif
@@ -38358,36 +38352,36 @@ if cond==0 then
         set t=CreateTimer()
         if IsAbilityEnabled(GetUnitAbility(u,'AInv'))==true then
             call SaveUnitHandle(h,GetHandleId(cjlocgn_00000000),0,u)
-            set bj_lastCreatedItem=GetItemOfTypeFromUnitBJCustom(u,'I13R')
-            call UnitRemoveItem(u,bj_lastCreatedItem)
-            call RemoveItem(bj_lastCreatedItem)
+            set it=GetItemOfTypeFromUnitBJCustom(u,'I13R')
+            call UnitRemoveItem(u,it)
+            call RemoveItem(it)
             call UnitAddAbility(u,'A0VV')
             call UnitRemoveAbilityTimedPause(u,'A0VV',6)
             call UnitAddAbility(u,'A28W')
             call UnitRemoveAbilityTimedPause(u,'A28W',6)
             call UnitRemoveBuffs(u,false,true)
             call UnitRemoveAbility(u,'A0J4')
-            set bj_lastCreatedItem=CreateItem('I13S',GetUnitX(u),GetUnitY(u))
-            call UnitAddItemToSlot(u,bj_lastCreatedItem,9)
-            call SetItemDroppable(bj_lastCreatedItem,false)
-            call SaveItemHandle(h,GetHandleId(cjlocgn_00000000),1,bj_lastCreatedItem)
+            set it=CreateItem('I13S',GetUnitX(u),GetUnitY(u))
+            call UnitAddItemToSlot(u,it,9)
+            call SetItemDroppable(it,false)
+            call SaveItemHandle(h,GetHandleId(cjlocgn_00000000),1,it)
             call TimerStart(cjlocgn_00000000,0.1,true,function LinkenSphere2)
         else
             call EnableUnitAbility2(u,'AInv',false,true)
             call SaveUnitHandle(h,GetHandleId(cjlocgn_00000000),0,u)
-            set bj_lastCreatedItem=GetItemOfTypeFromUnitBJCustom(u,'I13R')
-            call UnitRemoveItem(u,bj_lastCreatedItem)
-            call RemoveItem(bj_lastCreatedItem)
+            set it=GetItemOfTypeFromUnitBJCustom(u,'I13R')
+            call UnitRemoveItem(u,it)
+            call RemoveItem(it)
             call UnitAddAbility(u,'A0VV')
             call UnitRemoveAbilityTimedPause(u,'A0VV',6)
             call UnitAddAbility(u,'A28W')
             call UnitRemoveAbilityTimedPause(u,'A28W',6)
             call UnitRemoveBuffs(u,false,true)
             call UnitRemoveAbility(u,'A0J4')
-            set bj_lastCreatedItem=CreateItem('I13S',GetUnitX(u),GetUnitY(u))
-            call UnitAddItemToSlot(u,bj_lastCreatedItem,9)
-            call SetItemDroppable(bj_lastCreatedItem,false)
-            call SaveItemHandle(h,GetHandleId(cjlocgn_00000000),1,bj_lastCreatedItem)
+            set it=CreateItem('I13S',GetUnitX(u),GetUnitY(u))
+            call UnitAddItemToSlot(u,it,9)
+            call SetItemDroppable(it,false)
+            call SaveItemHandle(h,GetHandleId(cjlocgn_00000000),1,it)
             call TimerStart(cjlocgn_00000000,0.1,true,function LinkenSphere2)
             call DisableUnitAbility2(u,'AInv',false,true)
         endif
@@ -39884,6 +39878,7 @@ set i=0
 set n3=null
 set c=null
 set u=null
+set it=null
 endfunction
 function InitTrig_Text_Damage takes nothing returns nothing
 set gg_trg_Text_Damage=CreateTrigger()
@@ -59088,7 +59083,7 @@ local integer idg2=GetHandleId(g)
 local real time=LoadReal(h,id,6)
 if time<0.5 then
 call SaveReal(h,id,6,time+0.03)
-call SetUnitZ(l__d,GetUnitZ(l__d)+17)
+call SetUnitZ(l__d,GetUnitZCustom(l__d)+17)
 if time==0.48 then
 call SetUnitAnimation(u,"spell one")
 call DestroyEffect(AddSpecialEffect("war3mapImported\\NewDirtEXNofire.mdx",x2,y2))
@@ -64835,12 +64830,12 @@ function MissleMoveSpiritBomb3 takes nothing returns nothing
         set n=CreateUnit(p, 'd032', x, y, GetRandomInt(0, 360))
         call SetUnitScale(n, 1.5, 2, 2)
         call SetUnitVertexColor(n, 150, 150, 255, 255)
-        call SetUnitFlyHeight(n, GetUnitZ(c)+150, 0)
+        call SetUnitFlyHeight(n, GetUnitZCustom(c)+150, 0)
         call MyRemoveUnit(n, 2.5)
         set n=CreateUnit(p, 'd003', x, y, GetRandomInt(0, 360))
         call SetUnitScale(n, 1, 2, 2)
         call SetUnitVertexColor(n, 150, 150, 255, 255)
-        call SetUnitFlyHeight(n, GetUnitZ(c)+150, 0)
+        call SetUnitFlyHeight(n, GetUnitZCustom(c)+150, 0)
         call MyRemoveUnit(n, 2.5)
         call myCustomDamage(u,c,dmg*0.2,false,false,null,null,null) 
     else
@@ -64848,7 +64843,7 @@ function MissleMoveSpiritBomb3 takes nothing returns nothing
         call myCustomDamage(u,c,GetHeroLevel(u)*0.1*GetHeroStr(u,true)+dmg,false,false,null,null,null) 
         set n=CreateUnit(p, 'e0C5', x, y, GetRandomInt(0, 360))
         call SetUnitScale(n, 2, 2, 2)
-        call SetUnitFlyHeight(n, GetUnitZ(c), 0)
+        call SetUnitFlyHeight(n, GetUnitZCustom(c), 0)
         call MyRemoveUnit(n, 2.5)
         call SetUnitFlyHeight(c,0,2200) 
         call Push3(c,20,a,300,"0")
@@ -68648,7 +68643,7 @@ local unit u=LoadUnitHandle(h,id,0)
 local player p=GetOwningPlayer(u)
 local real x=GetUnitX(u)
 local real y=GetUnitY(u)
-local real z=GetUnitZ(u)
+local real z=GetUnitZCustom(u)
 local real x1=LoadReal(h,id,1)
 local real y1=LoadReal(h,id,2)
 local real dist=SR3D(x,y,z,x1,y1,0)
@@ -68752,7 +68747,7 @@ local integer id=GetHandleId(t)
 local player p=GetOwningPlayer(u)
 local real x=GetUnitX(u)
 local real y=GetUnitY(u)
-local real z=GetUnitZ(u)
+local real z=GetUnitZCustom(u)
 local real x1=GetSpellTargetX()
 local real y1=GetSpellTargetY()
 local real dist=SR(x,y,x1,y1)
@@ -70792,7 +70787,7 @@ if dist<1780 and GetWidgetLife(l__d)>0 then
                 set EFF=AddSpecialEffect("BrolyShock.mdx", x1,y1)
                 call SetUnitModel(c,"[doft]az_chongci-green2.mdx")
                 call UnitEnableAutoOrientation(c,false)
-                call SetSpecialEffectZ(EFF,GetUnitZ(l__d))
+                call SetSpecialEffectZ(EFF,GetUnitZCustom(l__d))
                 call SetSpecialEffectOrientation(EFF , GetUnitFacing(u)-180,60,0)
                 call SetSpecialEffectScale(EFF , 2.5)
                 call DestroyEffect(EFF)
@@ -71883,7 +71878,7 @@ if LoadBoolean(h,id,11)==false then
 call SaveBoolean(h,id,11,true)
 set EFF=AddSpecialEffect("BrolyShock2.mdl", x,y)
 call SetSpecialEffectScale(EFF , 3)
-call SetSpecialEffectZ(EFF,GetUnitZ(l__d))
+call SetSpecialEffectZ(EFF,GetUnitZCustom(l__d))
 call DestroyEffect(EFF)
 endif
 endif
@@ -71975,7 +71970,7 @@ if LoadBoolean(h,id,11)==false then
 call SaveBoolean(h,id,11,true)
 set EFF=AddSpecialEffect("BrolyShock2.mdl", x,y)
 call SetSpecialEffectScale(EFF , 3)
-call SetSpecialEffectZ(EFF,GetUnitZ(l__d))
+call SetSpecialEffectZ(EFF,GetUnitZCustom(l__d))
 call DestroyEffect(EFF)
 endif
 endif
@@ -73035,7 +73030,7 @@ if SR(x1,y1,x2,y2)>26.00 then
 set x1=x1+47*Cos(a)
 set y1=y1+47*Sin(a)
 call SetUnitXY_1(l__d,x1,y1, false)
-call MoveLightningEx(l,true,GetUnitX(u),GetUnitY(u),GetUnitZ(u)+75,x1,y1,GetUnitZ(l__d))
+call MoveLightningEx(l,true,GetUnitX(u),GetUnitY(u),GetUnitZCustom(u)+75,x1,y1,GetUnitZCustom(l__d))
 else
 call UnitApplyTimedLife(CreateUnit(p,0x65304554,x1,y1,0),1,3)
 call UnitApplyTimedLife(CreateUnit(p,0x65304553,x1,y1,0),1,3)
@@ -73077,7 +73072,7 @@ call SaveReal(h,id,3,GetSpellTargetY())
 call UnitApplyTimedLife(CreateUnit(p,'e0EU',x,y,0),1,3)
 set n=CreateUnit(p,'e0EO',x,y,GetUnitFacing(u))
 call SaveUnitHandle(h,id,1,n)
-call SaveLightningHandle(h,id,4,AddLightningEx("AFOD",true,x,y,GetUnitZ(u)+75,GetUnitX(n),GetUnitY(n),GetUnitZ(n)))
+call SaveLightningHandle(h,id,4,AddLightningEx("AFOD",true,x,y,GetUnitZCustom(u)+75,GetUnitX(n),GetUnitY(n),GetUnitZCustom(n)))
 call TimerStart(t,0.03,true,function RaikohoCast2)
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\AizenRaikouhou.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
@@ -80429,7 +80424,7 @@ call SetUnitScale(l__d,r,r,r)
 call UnitApplyTimedLife(n,'BHwe',0.5)
 call SaveReal(h,id,11,f+0.125)
 call SaveReal(h,id,10,r+0.1)
-call MoveLightningEx(l,false,GetUnitX(u),GetUnitY(u),GetUnitZ(u)+75,x,y,200)
+call MoveLightningEx(l,false,GetUnitX(u),GetUnitY(u),GetUnitZCustom(u)+75,x,y,200)
 else
 call GroupEnumUnitsInRange(G,x,y,1000,Base)
 call SetUnitInvulnerable(u,false)
@@ -80477,7 +80472,7 @@ local real y1=GetSpellTargetY()
 call SaveUnitHandle(h,id,0,u)
 call SaveUnitHandle(h,id,1,CreateUnit(GetOwningPlayer(u),'e018',x1,y1,0))
 call SetUnitInvulnerable(u,true)
-call SaveLightningHandle(h,id,2,AddLightningEx("CLPB",false,x,y,GetUnitZ(u)+75,x1,y1,300))
+call SaveLightningHandle(h,id,2,AddLightningEx("CLPB",false,x,y,GetUnitZCustom(u)+75,x1,y1,300))
 call TimerStart(t,0.05,true,function Trig_Raiga_Actions2)
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\Raigo.wav",false,false,true,12700,12700,"")
 call StartSound(soundplay)
@@ -97067,9 +97062,9 @@ function RagingBoltCast2 takes nothing returns nothing
         local real time=LoadReal(h,id,8)
         local integer l__idg=GetHandleId(g)
         local integer act=LoadInteger(h, id, StringHash("Act"))
-        call MoveLightningEx(LoadLightningHandle(h,id,2),false,x,y,GetUnitZ(u)+75,x1,y1,GetUnitZ(l__d))
-        call MoveLightningEx(LoadLightningHandle(h,id,3),false,x,y,GetUnitZ(u)+75,x1,y1,GetUnitZ(l__d))
-        call MoveLightningEx(LoadLightningHandle(h,id,4),false,x,y,GetUnitZ(u)+75,x1,y1,GetUnitZ(l__d))
+        call MoveLightningEx(LoadLightningHandle(h,id,2),false,x,y,GetUnitZCustom(u)+75,x1,y1,GetUnitZCustom(l__d))
+        call MoveLightningEx(LoadLightningHandle(h,id,3),false,x,y,GetUnitZCustom(u)+75,x1,y1,GetUnitZCustom(l__d))
+        call MoveLightningEx(LoadLightningHandle(h,id,4),false,x,y,GetUnitZCustom(u)+75,x1,y1,GetUnitZCustom(l__d))
         if act==0 then
                 if time<1 then
                         call SaveReal(h,id,8,time+0.05)
@@ -97144,9 +97139,9 @@ call SaveUnitHandle(h,id,0,u)
 call SaveUnitHandle(h,id,1,CreateUnit(GetOwningPlayer(u),0x65305146,x1,y1,0))
 set n=CreateUnit(GetOwningPlayer(u), 'd055',x1,y1,0)
 call SaveUnitHandle(h, id, 10, n)
-call SaveLightningHandle(h,id,2,AddLightningEx("AFOD",false,x,y,GetUnitZ(u)+75,x1,y1,500))
-call SaveLightningHandle(h,id,3,AddLightningEx("AFOD",false,x,y,GetUnitZ(u)+75,x1,y1,500))
-call SaveLightningHandle(h,id,4,AddLightningEx("AFOD",false,x,y,GetUnitZ(u)+75,x1,y1,500))
+call SaveLightningHandle(h,id,2,AddLightningEx("AFOD",false,x,y,GetUnitZCustom(u)+75,x1,y1,500))
+call SaveLightningHandle(h,id,3,AddLightningEx("AFOD",false,x,y,GetUnitZCustom(u)+75,x1,y1,500))
+call SaveLightningHandle(h,id,4,AddLightningEx("AFOD",false,x,y,GetUnitZCustom(u)+75,x1,y1,500))
 call SaveReal(h,id,5,x1)
 call SaveReal(h,id,6,y1)
 call SaveGroupHandle(h,id,7,CreateGroup())
@@ -103914,7 +103909,7 @@ set y1=y1+speed*Sin(a)
 call SetUnitXY_1(l__d,x1,y1, false)
 call SaveReal(h,id,3,x1)
 call SaveReal(h,id,4,y1)
-call MoveLightningEx(l,true,GetUnitX(u),GetUnitY(u),GetUnitZ(u)+75,x1,y1,GetUnitZ(l__d))
+call MoveLightningEx(l,true,GetUnitX(u),GetUnitY(u),GetUnitZCustom(u)+75,x1,y1,GetUnitZCustom(l__d))
 call SetUnitFacing(l__d,a*bj_RADTODEG)
 call SaveReal(h,id,9,Range+90)
 call GroupEnumUnitsInRange(G,x1,y1,120,Base)
@@ -103951,7 +103946,7 @@ set n=LoadUnitHandle(h,GetHandleId(u),TargetHash)
 
 call MoveUnit(n,LoadUnitHandle(h,id,20),0,0)
 
-call MoveLightningEx(l,true,GetUnitX(u),GetUnitY(u),GetUnitZ(u)+75,GetUnitX(n),GetUnitY(n),GetUnitZ(n)+75)
+call MoveLightningEx(l,true,GetUnitX(u),GetUnitY(u),GetUnitZCustom(u)+75,GetUnitX(n),GetUnitY(n),GetUnitZCustom(n)+75)
 call SaveReal(h,id,12,time+0.05)
 if GetUnitAbilityLevel(u,'A1A6')>0 or GetUnitAbilityLevel(u,'A1AD')>0 then
 set dmg=(GetHeroAgi(u,true)*5) / 3
@@ -104014,9 +104009,9 @@ set n=CreateUnit(GetOwningPlayer(u),0x6530555A,x,y,a*bj_RADTODEG)
 call SetUnitScale(n,3,3,3)
 call SaveUnitHandle(h,id,1,n)
 if GetUnitTypeId(u)=='H04O' then
-call SaveLightningHandle(h,id,4,AddLightningEx("DRAL",true,x,y,GetUnitZ(u)+75,GetUnitX(n),GetUnitY(n),GetUnitZ(n)))
+call SaveLightningHandle(h,id,4,AddLightningEx("DRAL",true,x,y,GetUnitZCustom(u)+75,GetUnitX(n),GetUnitY(n),GetUnitZCustom(n)))
 else
-call SaveLightningHandle(h,id,4,AddLightningEx("DRAA",true,x,y,GetUnitZ(u)+75,GetUnitX(n),GetUnitY(n),GetUnitZ(n)))
+call SaveLightningHandle(h,id,4,AddLightningEx("DRAA",true,x,y,GetUnitZCustom(u)+75,GetUnitX(n),GetUnitY(n),GetUnitZCustom(n)))
 endif
 if GetUnitTypeId(u)=='H04O' then
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\ChainJail.mp3",false,false,true,12700,12700,"")
@@ -131224,7 +131219,7 @@ endfunction
 // function CycloneEndCast takes nothing returns nothing
 // local unit u=GetTriggerUnit()
 // call UnitRemoveAbility(u,'Avul')
-// call SetUnitZ(u,GetUnitZ(u)-200)
+// call SetUnitZ(u,GetUnitZCustom(u)-200)
 // call ResetUnitZ(u)
 // // call RemoveSprite(LoadSpriteHandle(HH,GetHandleId(u),1666))
 // //call SetUnitFlyHeight(u,GetUnitFlyHeight(u)-150,0)
@@ -131298,10 +131293,10 @@ if GetUnitAbilityLevel(u,'cbc9')>0 then
     call SetSpecialEffectScale(EffT,0.6)
     call SetSpecialEffectX(EffT,x)
     call SetSpecialEffectY(EffT,y)
-    call SetSpecialEffectZ(EffT,GetUnitZ(u)-200)
+    call SetSpecialEffectZ(EffT,GetUnitFlyHeight(u)-200)
 else
     call UnitRemoveAbility(u,'Avul')
-    call SetUnitZ(u,GetUnitZ(u)-200)
+    call SetUnitZ(u,GetUnitFlyHeight(u)-200)
     call ResetUnitZ(u)
     call RemoveEffect(EffT,0,false,CreateTimer())
     call PauseTimer(t)
@@ -131323,7 +131318,7 @@ call SaveUnitHandle(HH,id,0,u)
 call SaveEffectHandle(HH,id,1,AddSpecialEffect("Abilities\\Spells\\NightElf\\Cyclone\\CycloneTarget.mdl",x,y))
 // call SetSpriteModel(spr,)
 //call SetUnitFlyHeight(u,GetUnitFlyHeight(u)+150,0)
-call SetUnitZ(u,GetUnitZ(u)+200)
+call SetUnitZ(u,GetUnitFlyHeight(u)+200)
 call TimerStart(t,.05,true,function CycloneStartCast2)
 set t=null
 set u=null
@@ -146664,7 +146659,7 @@ call SetUnitFlyHeight(E,0,0)
 endif
 endif
 set L=LoadLightningHandle(h,id,i)
-call MoveLightningEx(L,false,x-75*Cos(a),y-75*Sin(a),GetUnitZ(u)+100,x1,y1,GetUnitZ(E)+100)
+call MoveLightningEx(L,false,x-75*Cos(a),y-75*Sin(a),GetUnitZCustom(u)+100,x1,y1,GetUnitZCustom(E)+100)
 endif
 set i=i+1
 set l__s=l__s+1
@@ -146735,7 +146730,7 @@ if LoadLightningHandle(h,id,i)!= null and LoadUnitHandle(h,id,l__s)!=null and Lo
         set y1=GetUnitY(E)
         set a=Atan2(y1-y,x1-x)
         set d=LoadUnitHandle(h,id,e)
-        call MoveLightningEx(L,false,x+75*Cos(a),y+75*Sin(a),GetUnitZ(u)+100,GetUnitX(E),GetUnitY(E),GetUnitZ(E)+100)
+        call MoveLightningEx(L,false,x+75*Cos(a),y+75*Sin(a),GetUnitZCustom(u)+100,GetUnitX(E),GetUnitY(E),GetUnitZCustom(E)+100)
         call SetUnitX(d,x+75*Cos(a))
         call SetUnitY(d,y+75*Sin(a))
         call SetUnitFlyHeight(d,GetUnitFlyHeight(u)+100,0)
@@ -146780,7 +146775,7 @@ if Condition_Base(p,E) and GetUnitTypeId(E) != 'Ho13' then
 set x1=GetUnitX(E)
 set y1=GetUnitY(E)
 set a=Atan2(y1-y,x1-x)
-call SaveLightningHandle(h,id,i,AddLightningEx("ZRLI",false,x+75*Cos(a),y+75*Cos(a),GetUnitZ(u)+100,GetUnitX(E),GetUnitY(E),GetUnitZ(E)+100))
+call SaveLightningHandle(h,id,i,AddLightningEx("ZRLI",false,x+75*Cos(a),y+75*Cos(a),GetUnitZCustom(u)+100,GetUnitX(E),GetUnitY(E),GetUnitZCustom(E)+100))
 call SaveUnitHandle(h,id,l__s,E)
 call SaveUnitHandle(h,id,e,CreateUnit(p,'e174',x+75*Cos(a),y+75*Cos(a),a*bj_RADTODEG))
 call UnitAddAbility(E,'Arav')
@@ -177913,16 +177908,16 @@ call MoveUnit(caster,LoadUnitHandle(HH,GetHandleId(caster),StringHash("Iz7")),10
 call MoveUnit(caster,LoadUnitHandle(HH,GetHandleId(caster),StringHash("Iz8")),150,0)
 call MoveUnit(caster,LoadUnitHandle(HH,GetHandleId(caster),StringHash("Iz9")),200,0)
 call MoveUnit(caster,LoadUnitHandle(HH,GetHandleId(caster),StringHash("Iz10")),250,0)
-call SetUnitZ(LoadUnitHandle(HH,GetHandleId(caster),StringHash("Iz1")),GetUnitZ(caster)+250)
-call SetUnitZ(LoadUnitHandle(HH,GetHandleId(caster),StringHash("Iz2")),GetUnitZ(caster)+250)
-call SetUnitZ(LoadUnitHandle(HH,GetHandleId(caster),StringHash("Iz3")),GetUnitZ(caster)+250)
-call SetUnitZ(LoadUnitHandle(HH,GetHandleId(caster),StringHash("Iz4")),GetUnitZ(caster)+250)
-call SetUnitZ(LoadUnitHandle(HH,GetHandleId(caster),StringHash("Iz5")),GetUnitZ(caster)+250)
-call SetUnitZ(LoadUnitHandle(HH,GetHandleId(caster),StringHash("Iz6")),GetUnitZ(caster)+250)
-call SetUnitZ(LoadUnitHandle(HH,GetHandleId(caster),StringHash("Iz7")),GetUnitZ(caster)+250)
-call SetUnitZ(LoadUnitHandle(HH,GetHandleId(caster),StringHash("Iz8")),GetUnitZ(caster)+250)
-call SetUnitZ(LoadUnitHandle(HH,GetHandleId(caster),StringHash("Iz9")),GetUnitZ(caster)+250)
-call SetUnitZ(LoadUnitHandle(HH,GetHandleId(caster),StringHash("Iz10")),GetUnitZ(caster)+250)
+call SetUnitZ(LoadUnitHandle(HH,GetHandleId(caster),StringHash("Iz1")),GetUnitZCustom(caster)+250)
+call SetUnitZ(LoadUnitHandle(HH,GetHandleId(caster),StringHash("Iz2")),GetUnitZCustom(caster)+250)
+call SetUnitZ(LoadUnitHandle(HH,GetHandleId(caster),StringHash("Iz3")),GetUnitZCustom(caster)+250)
+call SetUnitZ(LoadUnitHandle(HH,GetHandleId(caster),StringHash("Iz4")),GetUnitZCustom(caster)+250)
+call SetUnitZ(LoadUnitHandle(HH,GetHandleId(caster),StringHash("Iz5")),GetUnitZCustom(caster)+250)
+call SetUnitZ(LoadUnitHandle(HH,GetHandleId(caster),StringHash("Iz6")),GetUnitZCustom(caster)+250)
+call SetUnitZ(LoadUnitHandle(HH,GetHandleId(caster),StringHash("Iz7")),GetUnitZCustom(caster)+250)
+call SetUnitZ(LoadUnitHandle(HH,GetHandleId(caster),StringHash("Iz8")),GetUnitZCustom(caster)+250)
+call SetUnitZ(LoadUnitHandle(HH,GetHandleId(caster),StringHash("Iz9")),GetUnitZCustom(caster)+250)
+call SetUnitZ(LoadUnitHandle(HH,GetHandleId(caster),StringHash("Iz10")),GetUnitZCustom(caster)+250)
 
 
 
@@ -178647,7 +178642,7 @@ call SaveGroupHandle(HH,id,4,CreateGroup())
 call SaveReal(HH,id,15,damage0)
 set n0=CreateUnit(GetOwningPlayer(caster1),0x64733037,GetUnitX(caster1),GetUnitY(caster1),facing0)
 call UnitSize(n0,0.35,1,1)
-call SetUnitZ(n0,GetUnitZ(caster1)+100)
+call SetUnitZ(n0,GetUnitZCustom(caster1)+100)
 call MoveUnit(n0,n0,100,facing0)
 call UnitSpeed(n0,0.5+randomspeed*0.0125)
 call SaveReal(HH,id,9,randomspeed)
@@ -179154,60 +179149,60 @@ call SaveUnitHandle(HH,GetHandleId(caster),StringHash("Iz1"),n0)
 call UnitSize(n0,0.3,1,1)
 call SetUnitAnimationByIndex(n0,0)
 call MoveUnit(n0,n0,400,facing+90)
-call SetUnitZ(n0,GetUnitZ(caster)+400)
+call SetUnitZ(n0,GetUnitZCustom(caster)+400)
 set n0=CreateUnit(GetOwningPlayer(caster),'ds16',GetUnitX(caster),GetUnitY(caster),facing)
 call SaveUnitHandle(HH,GetHandleId(caster),StringHash("Iz2"),n0)
 call UnitSize(n0,0.3,1,1)
 call SetUnitAnimationByIndex(n0,0)
 call MoveUnit(n0,n0,300,facing+90)
-call SetUnitZ(n0,GetUnitZ(caster)+400)
+call SetUnitZ(n0,GetUnitZCustom(caster)+400)
 set n0=CreateUnit(GetOwningPlayer(caster),'ds16',GetUnitX(caster),GetUnitY(caster),facing)
 call SaveUnitHandle(HH,GetHandleId(caster),StringHash("Iz3"),n0)
 call UnitSize(n0,0.3,1,1)
 call SetUnitAnimationByIndex(n0,0)
 call MoveUnit(n0,n0,200,facing+90)
-call SetUnitZ(n0,GetUnitZ(caster)+400)
+call SetUnitZ(n0,GetUnitZCustom(caster)+400)
 set n0=CreateUnit(GetOwningPlayer(caster),'ds16',GetUnitX(caster),GetUnitY(caster),facing)
 call SaveUnitHandle(HH,GetHandleId(caster),StringHash("Iz4"),n0)
 call UnitSize(n0,0.3,1,1)
 call SetUnitAnimationByIndex(n0,0)
 call MoveUnit(n0,n0,100,facing+90)
-call SetUnitZ(n0,GetUnitZ(caster)+400)
+call SetUnitZ(n0,GetUnitZCustom(caster)+400)
 set n0=CreateUnit(GetOwningPlayer(caster),'ds16',GetUnitX(caster),GetUnitY(caster),facing)
 call SaveUnitHandle(HH,GetHandleId(caster),StringHash("Iz5"),n0)
 call UnitSize(n0,0.3,1,1)
 call SetUnitAnimationByIndex(n0,0)
-call SetUnitZ(n0,GetUnitZ(caster)+400)
+call SetUnitZ(n0,GetUnitZCustom(caster)+400)
 set n0=CreateUnit(GetOwningPlayer(caster),'ds16',GetUnitX(caster),GetUnitY(caster),facing)
 call SaveUnitHandle(HH,GetHandleId(caster),StringHash("Iz6"),n0)
 call UnitSize(n0,0.3,1,1)
 call SetUnitAnimationByIndex(n0,0)
 call MoveUnit(n0,n0,100,facing-90)
-call SetUnitZ(n0,GetUnitZ(caster)+400)
+call SetUnitZ(n0,GetUnitZCustom(caster)+400)
 set n0=CreateUnit(GetOwningPlayer(caster),'ds16',GetUnitX(caster),GetUnitY(caster),facing)
 call SaveUnitHandle(HH,GetHandleId(caster),StringHash("Iz7"),n0)
 call UnitSize(n0,0.3,1,1)
 call SetUnitAnimationByIndex(n0,0)
 call MoveUnit(n0,n0,200,facing-90)
-call SetUnitZ(n0,GetUnitZ(caster)+400)
+call SetUnitZ(n0,GetUnitZCustom(caster)+400)
 set n0=CreateUnit(GetOwningPlayer(caster),'ds16',GetUnitX(caster),GetUnitY(caster),facing)
 call SaveUnitHandle(HH,GetHandleId(caster),StringHash("Iz8"),n0)
 call UnitSize(n0,0.3,1,1)
 call SetUnitAnimationByIndex(n0,0)
 call MoveUnit(n0,n0,300,facing-90)
-call SetUnitZ(n0,GetUnitZ(caster)+400)
+call SetUnitZ(n0,GetUnitZCustom(caster)+400)
 set n0=CreateUnit(GetOwningPlayer(caster),'ds16',GetUnitX(caster),GetUnitY(caster),facing)
 call SaveUnitHandle(HH,GetHandleId(caster),StringHash("Iz9"),n0)
 call UnitSize(n0,0.3,1,1)
 call SetUnitAnimationByIndex(n0,0)
 call MoveUnit(n0,n0,400,facing-90)
-call SetUnitZ(n0,GetUnitZ(caster)+400)
+call SetUnitZ(n0,GetUnitZCustom(caster)+400)
 set n0=CreateUnit(GetOwningPlayer(caster),'ds16',GetUnitX(caster),GetUnitY(caster),facing)
 call SaveUnitHandle(HH,GetHandleId(caster),StringHash("Iz10"),n0)
 call UnitSize(n0,0.3,1,1)
 call SetUnitAnimationByIndex(n0,0)
 call MoveUnit(n0,n0,500,facing-90)
-call SetUnitZ(n0,GetUnitZ(caster)+400)
+call SetUnitZ(n0,GetUnitZCustom(caster)+400)
 set n0=null
 endif
 
