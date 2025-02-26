@@ -39260,11 +39260,11 @@ if cond==0 then
             endif
         elseif GetHeroPrimaryAttribute(c)==HERO_ATTRIBUTE_STR then
             //call SetEventDamage(nb+GetHeroStr(c,true)*0.75*myCustomDamage2(u,1))
-            set nb=nb+GetHeroStr(c,true)*0.75*myCustomDamage2(u,1)
+            set nb=nb+GetHeroStr(c,true)*1*myCustomDamage2(u,1)
             call DestroyEffect(AddSpecialEffectTarget("war3mapImported\\OPm (828).mdl",u,"origin"))
         elseif GetHeroPrimaryAttribute(c)==HERO_ATTRIBUTE_AGI then
-            call HealTextTag(c,c,(GetWidgetMaxLife(c)*0.02+50)*myCustomHeal2(c,1),"HealthRes")
-            call SetWidgetLife(c, GetWidgetLife(c)+ GetWidgetMaxLife(c)*0.02+50)
+            call HealTextTag(c,c,(GetWidgetMaxLife(c)*0.03+25)*myCustomHeal2(c,1),"HealthRes")
+            call SetWidgetLife(c, GetWidgetLife(c)+ GetWidgetMaxLife(c)*0.03+25)
             call DestroyEffect(AddSpecialEffectTarget("Abilities\\Spells\\Human\\Heal\\HealTarget.mdl", c, "origin"))
         endif
     endif
@@ -42591,6 +42591,7 @@ call SaveInteger(h,id,2,i+1)
 call DestroyEffect(AddSpecialEffectTarget("Abilities\\Spells\\Other\\Stampede\\StampedeMissileDeath.mdl",c,"chest"))
 call DestroyEffect(AddSpecialEffect("war3mapImported\\Slam.mdl",x,y))
 else
+call RemoveAbility(LoadAbilityHandle(h,id,3))
 call UnitRemoveAbilityTimed(u,'A26K',0.3)
 if GetUnitTypeId(u)!='H04B' then
 call SetUnitVertexColor(u,255,255,255,255)
@@ -42608,6 +42609,10 @@ local unit c=GetSpellTargetUnit()
 local timer t=CreateTimer()
 local integer id=GetHandleId(t)
 call UnitAddAbility(u,'A26K')
+if GetHeroPrimaryAttribute(u)==HERO_ATTRIBUTE_INT then
+call SaveAbilityHandle(h,id,3,CreateAbility( 'SHD1' ))
+call SetAbilityOwner(LoadAbilityHandle(h,id,3),u)
+endif
 if GetUnitTypeId(u)!='H04B' then
 call SetUnitVertexColor(u,255,255,255,100)
 endif
