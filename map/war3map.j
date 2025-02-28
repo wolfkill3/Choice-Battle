@@ -21294,7 +21294,7 @@ local unit u=LoadUnitHandle(HH,id,0)
 local item it=LoadItemHandle(HH,id,1)
 local player p=GetOwningPlayer(u)
 if GetItemOwner(it)==null and it!=null then
-if Condition_RecipeString(GetItemTypeId(it))==false then
+if Condition_RecipeString(GetItemTypeId(it))==false and GetItemTypeId(it)!='I03V' and GetItemTypeId(it)!='I13V' then
 call UnitAddItem(Chest[GetPlayerId(p)],it)
 call DestroyEffect(AddSpecialEffect("Abilities\\Spells\\Other\\Transmute\\GoldBottleMissile.mdl",GetUnitX(Chest[GetPlayerId(p)]),GetUnitY(Chest[GetPlayerId(p)])))
 endif
@@ -28285,7 +28285,7 @@ call TriggerAddAction(t,function MadnessTranformationCast)
 set t=null
 endfunction
 function Trig_TimeLapse31_Conditions takes nothing returns boolean
-return GetItemTypeId(GetManipulatedItem())=='I13R'
+return GetItemTypeId(GetManipulatedItem())=='I13R' and IsUnitType(GetTriggerUnit(),UNIT_TYPE_HERO)
 endfunction
 function Trig_TimeLapse31_Actions takes nothing returns nothing
 call UnitRemoveAbility(GetTriggerUnit(),'B14R')
@@ -28298,7 +28298,7 @@ call TriggerAddCondition(gg_trg_TimeLapse31,Condition(function Trig_TimeLapse31_
 call TriggerAddAction(gg_trg_TimeLapse31,function Trig_TimeLapse31_Actions)
 endfunction
 function Trig_TimeLapse41_Conditions takes nothing returns boolean
-return GetItemTypeId(GetManipulatedItem())=='I13R'
+return GetItemTypeId(GetManipulatedItem())=='I13R' and IsUnitType(GetTriggerUnit(),UNIT_TYPE_HERO)
 endfunction
 function Trig_TimeLapse41_Actions takes nothing returns nothing
 call UnitAddItemById(GetTriggerUnit(),'I13V')
@@ -28310,7 +28310,7 @@ call TriggerAddCondition(gg_trg_TimeLapse41,Condition(function Trig_TimeLapse41_
 call TriggerAddAction(gg_trg_TimeLapse41,function Trig_TimeLapse41_Actions)
 endfunction
 function Trig_TimeLapse3_Conditions takes nothing returns boolean
-return GetItemTypeId(GetManipulatedItem())=='I03R'
+return GetItemTypeId(GetManipulatedItem())=='I03R' and IsUnitType(GetTriggerUnit(),UNIT_TYPE_HERO)
 endfunction
 function Trig_TimeLapse3_Actions takes nothing returns nothing
 call UnitRemoveAbility(GetTriggerUnit(),'B04R')
@@ -28323,7 +28323,7 @@ call TriggerAddCondition(gg_trg_TimeLapse3,Condition(function Trig_TimeLapse3_Co
 call TriggerAddAction(gg_trg_TimeLapse3,function Trig_TimeLapse3_Actions)
 endfunction
 function Trig_TimeLapse4_Conditions takes nothing returns boolean
-return GetItemTypeId(GetManipulatedItem())=='I03R'
+return GetItemTypeId(GetManipulatedItem())=='I03R' and IsUnitType(GetTriggerUnit(),UNIT_TYPE_HERO)
 endfunction
 function Trig_TimeLapse4_Actions takes nothing returns nothing
 call UnitAddItemById(GetTriggerUnit(),'I03V')
