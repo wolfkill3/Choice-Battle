@@ -21293,9 +21293,7 @@ local unit u=LoadUnitHandle(HH,id,0)
 local item it=LoadItemHandle(HH,id,1)
 local player p=GetOwningPlayer(u)
 if GetItemOwner(it)==null and it!=null then
-call SetItemX(it,GetUnitX(Chest[GetPlayerId(p)]))
-call SetItemY(it,GetUnitY(Chest[GetPlayerId(p)]))
-call IssueTargetOrder(Chest[GetPlayerId(p)],"smart",it)
+call UnitAddItem(Chest[GetPlayerId(p)],it)
 call DestroyEffect(AddSpecialEffect("Abilities\\Spells\\Other\\Transmute\\GoldBottleMissile.mdl",GetUnitX(Chest[GetPlayerId(p)]),GetUnitY(Chest[GetPlayerId(p)])))
 endif
 call PauseTimer(t)
@@ -21380,7 +21378,7 @@ if GetItemPlayer(it)==Player(15) or GetItemPlayer(it)==p or udg_test==true then
         elseif (UnitItemInSlot(u,6)==it or UnitItemInSlot(u,7)==it or UnitItemInSlot(u,8)==it) then
             if cd<0.1 then
                 call DisableItem(it,true,true,25)
-                call SetItemRemainingCooldown(it,cd)
+                call SetItemRemainingCooldown(it,0.1)
             else
                 set f=CreateItem(GetItemTypeId(it),GetUnitX(u),GetUnitY(u))
                 call SetItemStringField(f,ITEM_SF_NAME,GetBaseItemStringFieldById(GetItemTypeId(f),ITEM_SF_NAME)+" ("+Color[GetPlayerId(p)]+GetPlayerName(p)+"|r)")
@@ -28102,9 +28100,9 @@ set rfhpick=true
 set Hero[ip]=n
 set udg_Hero[ip+1]=n
 call W3MMD_Lite_Set_Integer(p,"Picked_hero",HeroSkin(udg_Hero[ip+1]))
-call ShowUnitAbilityTimed(n,'A10B',true,0.13)
-call ShowUnitAbilityTimed(n,'A20B',false,0.12)
-call ShowUnitAbilityTimed(n,'A30B',false,0.12)
+call ShowAbility2Timed('A10B',true,0.13)
+call ShowAbility2Timed('A20B',false,0.12)
+call ShowAbility2Timed('A30B',false,0.12)
 call ShowUnitAbility(n,'TMW0',true)
 call ShowUnitAbility(n,'A0J5',true)
 if GetHeroLevel(u)>1 then
@@ -28556,12 +28554,12 @@ set udg_Hero[i]=u2
 set udg_Hero[udg_SwapId[i]]=u1
 set udg_Swap[udg_SwapId[i]]=false
 set udg_Swap[i]=false
-call ShowUnitAbilityTimed(u1,'A10B',true,0.13)
-call ShowUnitAbilityTimed(u1,'A20B',false,0.12)
-call ShowUnitAbilityTimed(u1,'A30B',false,0.12)
-call ShowUnitAbilityTimed(u2,'A10B',true,0.13)
-call ShowUnitAbilityTimed(u2,'A20B',false,0.12)
-call ShowUnitAbilityTimed(u2,'A30B',false,0.12)
+call ShowAbility2Timed('A10B',true,0.13)
+call ShowAbility2Timed('A20B',false,0.12)
+call ShowAbility2Timed('A30B',false,0.12)
+call ShowAbility2Timed('A10B',true,0.13)
+call ShowAbility2Timed('A20B',false,0.12)
+call ShowAbility2Timed('A30B',false,0.12)
 call SetUnitPosition(u1,GetRectCenterX(gg_rct_Rect1),GetRectCenterY(gg_rct_Rect1))
 if GetUnitTypeId(udg_Hero[i])=='H06G' or GetUnitTypeId(udg_Hero[udg_SwapId[i]])=='H06G' then
 call SetPlayerAbilityAvailable(Player(udg_SwapId[i]-1),'A1DT',false)
@@ -28697,7 +28695,7 @@ if (rand[i-1]==true and udg_Repick[i]!=2) and udg_B==false then
 set sssb[i-1]=false
 loop
 set t1[j]=UnitRemoveItemFromSlot(udg_Hero[i],j)
-exitwhen j==5
+exitwhen j==9
 set j=j+1
 endloop
 if GetUnitTypeId(udg_Hero[i])=='H069' then
@@ -30538,9 +30536,9 @@ set rfhpick=true
 set Hero[ip]=n
 set udg_Hero[ip+1]=n
 call W3MMD_Lite_Set_Integer(p,"Picked_hero",HeroSkin(udg_Hero[ip+1]))
-call ShowUnitAbilityTimed(n,'A10B',true,0.13)
-call ShowUnitAbilityTimed(n,'A20B',false,0.12)
-call ShowUnitAbilityTimed(n,'A30B',false,0.12)
+call ShowAbility2Timed('A10B',true,0.13)
+call ShowAbility2Timed('A20B',false,0.12)
+call ShowAbility2Timed('A30B',false,0.12)
 call ShowUnitAbility(n,'TMW0',true)
 call ShowAbility2('A0J5',true)
 call ShowAbility2('A177',true)
@@ -31472,9 +31470,9 @@ function EndOfChoiceAct takes nothing returns nothing
             call SetUnitAbilityLevel(Hero[i], 'MaDs', 1)
         endif
         call IssueImmediateOrder(Hero[i], "stop")
-        call ShowUnitAbilityTimed(Hero[i],'A10B',true,1.33)
-        call ShowUnitAbilityTimed(Hero[i],'A20B',false,1.32)
-        call ShowUnitAbilityTimed(Hero[i],'A30B',false,1.32)
+        call ShowAbility2Timed('A10B',true,1.33)
+        call ShowAbility2Timed('A20B',false,1.32)
+        call ShowAbility2Timed('A30B',false,1.32)
         call SetBuffDispellable(GetUnitBuff( Hero[i], 'B06L' ),false)
         call SetBuffDispellable(GetUnitBuff( Hero[i], 'B16L' ),false)
         call ShowAbility2('TMW0',true)
@@ -37994,11 +37992,16 @@ if cond==0 then
             set nb=nb*0.75
         endif
         if nb>0 and (UnitHasItemOfTypeBJ(u,'I03Z')or GetUnitAbilityLevel(u,'KIL2')>0)and CurrentEventAttack then
-            if nb>40 then
-                //call SetEventDamage(nb-35)
-                set nb=nb-40
+            if nb>15 then
+                set nb=nb-15
             else
-                //call SetEventDamage(0.05)
+                set nb=0
+            endif
+        endif
+        if nb>0 and (UnitHasItemOfTypeBJ(u,'I040')or GetUnitAbilityLevel(u,'KIL4')>0)and CurrentEventAttack then
+            if nb>20 then
+                set nb=nb-20
+            else
                 set nb=0
             endif
         endif
@@ -38046,7 +38049,7 @@ if cond==0 then
         endif
         if nb>0 and (UnitHasItemOfTypeBJ(u,'IAoF')or GetUnitAbilityLevel(u,'KI1A')>0)and CurrentEventAttack then
             if nb>90+10*round then
-                set nb=nb-(90+10*round)
+                set nb=nb-(80+5*round)
             else
                 set nb=0
             endif
@@ -40190,29 +40193,7 @@ if Condition_Base(p,E) then
             call HandleListClear(bufh)	
 		endif
 	endif
-	if UnitHasItemOfTypeBJ(E, 'I060') then														// Облако Маре D ранг
-		set dmg=dmg-30
-	endif
-	
-	if UnitHasItemOfTypeBJ(E, 'I061') then														// Облако Маре C ранг
-		set dmg=dmg-50
-	endif
-	
-	if UnitHasItemOfTypeBJ(E, 'I062') then														// Облако Маре B ранг
-		set dmg=dmg-70
-	endif
-	
-	if UnitHasItemOfTypeBJ(E, 'I063') then														// Облако Маре A ранг
-		set dmg=dmg-90
-	endif
-		
-	if UnitHasItemOfTypeBJ(E, 'I064') then														// Облако Маре Фальшивое
-		set dmg=dmg-110
-	endif
-	
-	if UnitHasItemOfTypeBJ(E, 'I065') then														// Облако Маре Истинное
-		set dmg=dmg-130
-	endif
+
     if dmg>0 and miss==false then
         call myCustomDamage(u,E,dmg,true,false,ATTACK_TYPE_HERO,DAMAGE_TYPE_NORMAL,null)
         if UnitHasItemOfTypeBJ(E,'I05O')or UnitHasItemOfTypeBJ(E,'I05P')or UnitHasItemOfTypeBJ(E,'I05Q')or UnitHasItemOfTypeBJ(E,'I05R')or UnitHasItemOfTypeBJ(E,'I05S')or UnitHasItemOfTypeBJ(E,'I05T') or GetUnitAbilityLevel(E, 'KIT8')>0 or GetUnitAbilityLevel(E, 'KIU0')>0 or GetUnitAbilityLevel(E, 'KIU2')>0 or GetUnitAbilityLevel(E, 'KIU4')>0 or GetUnitAbilityLevel(E, 'KIU6')>0 or GetUnitAbilityLevel(E, 'KIU8')>0 then
@@ -88013,7 +87994,15 @@ function VergilQ_ModifAttack takes unit newCaster, unit newTarget, boolean b_clo
 	endif
 	
     if (UnitHasItemOfTypeBJ(newTarget,'IAoF') or GetUnitAbilityLevel(newTarget,'KI1A')>0) then                                                                                                          // Комплект Анбу у таргета
-        set damage=damage-(90+10*round)
+        set damage=damage-(80+5*round)
+    endif
+
+    if (UnitHasItemOfTypeBJ(newTarget,'I03Z')or GetUnitAbilityLevel(newTarget,'KIL2')>0) then
+        set damage=damage-15
+    endif
+
+    if (UnitHasItemOfTypeBJ(newTarget,'I040')or GetUnitAbilityLevel(newTarget,'KIL4')>0) then
+        set damage=damage-20
     endif
 
 	if UnitHasItemOfTypeBJ(newTarget, 'I060') then														// Облако Маре D ранг
@@ -104460,14 +104449,14 @@ call StartSound(soundplay)
 call KillSoundWhenDone(soundplay)
 call SaveReal(h,id,10,dmg)
 if GetSpellAbilityId()=='A10B' then
-call ShowUnitAbilityTimed(u,'A10B',false,0.76)
-call ShowUnitAbilityTimed(u,'A20B',true,0.77)
+call ShowAbility2Timed('A10B',false,0.76)
+call ShowAbility2Timed('A20B',true,0.77)
 elseif GetSpellAbilityId()=='A20B' then
-call ShowUnitAbilityTimed(u,'A20B',false,0.76)
-call ShowUnitAbilityTimed(u,'A30B',true,0.77)
+call ShowAbility2Timed('A20B',false,0.76)
+call ShowAbility2Timed('A30B',true,0.77)
 elseif GetSpellAbilityId()=='A30B' then
-call ShowUnitAbilityTimed(u,'A30B',false,0.76)
-call ShowUnitAbilityTimed(u,'A10B',true,0.77)
+call ShowAbility2Timed('A30B',false,0.76)
+call ShowAbility2Timed('A10B',true,0.77)
 endif
 call SetUnitFacing(LoadUnitHandle(h,id,1),a*bj_RADTODEG)
 call TimerStart(t,0.03,true,function DestructoDiskCast2)
@@ -104488,10 +104477,10 @@ call UnitAddAbility(u,'A10B')
 call UnitMakeAbilityPermanent(u,true,'A10B')
 call UnitAddAbility(u,'A20B')
 call UnitMakeAbilityPermanent(u,true,'A20B')
-call ShowUnitAbility(u,'A20B',false)
+call ShowAbility2('A20B',false)
 call UnitAddAbility(u,'A30B')
 call UnitMakeAbilityPermanent(u,true,'A30B')
-call ShowUnitAbility(u,'A30B',false)
+call ShowAbility2('A30B',false)
 endif
 call SetUnitAbilityLevel(u,'A10B',lvl)
 call SetUnitAbilityLevel(u,'A20B',lvl)
@@ -139007,9 +138996,17 @@ function GilgameshModifiedAttack takes unit newCaster, unit newTarget returns bo
             endif
 
             if (UnitHasItemOfTypeBJ(newTarget,'IAoF') or GetUnitAbilityLevel(newTarget,'KI1A')>0) then                                                                                                          // Комплект Анбу у таргета
-                    set damage=damage-(90+10*round)
+                    set damage=damage-(80+5*round)
             endif
-            
+
+            if (UnitHasItemOfTypeBJ(newTarget,'I03Z')or GetUnitAbilityLevel(newTarget,'KIL2')>0) then
+                    set damage=damage-15
+            endif
+
+            if (UnitHasItemOfTypeBJ(newTarget,'I040')or GetUnitAbilityLevel(newTarget,'KIL4')>0) then
+                    set damage=damage-20
+            endif
+
             if UnitHasItemOfTypeBJ(newTarget, 'I060') then                                                                                                          // Облако Маре D ранг
                     set damage=damage-30*2
             endif
@@ -197446,9 +197443,17 @@ function Karna_ModifAttack takes unit newCaster, unit newTarget, real attack_fac
             endif
 
             if (UnitHasItemOfTypeBJ(newTarget,'IAoF') or GetUnitAbilityLevel(newTarget,'KI1A')>0) then                                                                                                          // Комплект Анбу у таргета
-                set damage=damage-(90+10*round)
+                set damage=damage-(80+5*round)
             endif
 
+            if (UnitHasItemOfTypeBJ(newTarget,'I03Z')or GetUnitAbilityLevel(newTarget,'KIL2')>0) then
+                set damage=damage-15
+            endif
+
+            if (UnitHasItemOfTypeBJ(newTarget,'I040')or GetUnitAbilityLevel(newTarget,'KIL4')>0) then
+                set damage=damage-20
+            endif
+            
             if UnitHasItemOfTypeBJ(newTarget, 'I060') then														// Облако Маре D ранг
                 set damage=damage-30
             endif
@@ -211852,15 +211857,15 @@ call SetFrameGridSize( GetOriginFrame( ORIGIN_FRAME_INVENTORY_BAR, 0 ), 3, 4 )
 // call ConsolePrint("FRAMEPOINT_BOTTOMLEFT: "+GetFramePointName(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 0),FRAMEPOINT_BOTTOMLEFT)+"   Parent: "+GetFrameName(GetFrameRelativePointParent(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 0),FRAMEPOINT_TOPLEFT))+"\n")
 // call ConsolePrint("FRAMEPOINT_BOTTOM: "+GetFramePointName(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 0),FRAMEPOINT_BOTTOM)+"   Parent: "+GetFrameName(GetFrameRelativePointParent(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 0),FRAMEPOINT_TOPLEFT))+"\n")
 // call ConsolePrint("FRAMEPOINT_BOTTOMRIGHT: "+GetFramePointName(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 0),FRAMEPOINT_BOTTOMRIGHT)+"   Parent: "+GetFrameName(GetFrameRelativePointParent(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 0),FRAMEPOINT_TOPLEFT))+"\n")
-call SetFrameRelativePoint(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 0), FRAMEPOINT_TOPLEFT, GetFrameRelativePointParent(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 0),FRAMEPOINT_TOPLEFT),FRAMEPOINT_TOPRIGHT,.0175, -.029)
-call SetFrameRelativePoint(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 0), FRAMEPOINT_TOP, GetFrameRelativePointParent(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 0),FRAMEPOINT_TOP),FRAMEPOINT_TOPLEFT,.00, -.029)
-call SetFrameRelativePoint(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 0), FRAMEPOINT_TOPRIGHT, GetFrameRelativePointParent(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 0),FRAMEPOINT_TOPRIGHT),FRAMEPOINT_TOPLEFT,.00, -.029)
-call SetFrameRelativePoint(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 0), FRAMEPOINT_LEFT, GetFrameRelativePointParent(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 0),FRAMEPOINT_LEFT),FRAMEPOINT_TOPLEFT,.00, -.029)
-call SetFrameRelativePoint(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 0), FRAMEPOINT_CENTER, GetFrameRelativePointParent(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 0),FRAMEPOINT_CENTER),FRAMEPOINT_TOPLEFT,.00, -.029)
-call SetFrameRelativePoint(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 0), FRAMEPOINT_RIGHT, GetFrameRelativePointParent(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 0),FRAMEPOINT_RIGHT),FRAMEPOINT_TOPLEFT,.00, -.026)
-call SetFrameRelativePoint(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 0), FRAMEPOINT_BOTTOMLEFT, GetFrameRelativePointParent(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 0),FRAMEPOINT_BOTTOMLEFT),FRAMEPOINT_TOPLEFT,.00, -.029)
-call SetFrameRelativePoint(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 0), FRAMEPOINT_BOTTOM, GetFrameRelativePointParent(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 0),FRAMEPOINT_BOTTOM),FRAMEPOINT_TOPLEFT,.00, -.029)
-call SetFrameRelativePoint(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 0), FRAMEPOINT_BOTTOMRIGHT, GetFrameRelativePointParent(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 0),FRAMEPOINT_BOTTOMRIGHT),FRAMEPOINT_TOPLEFT,.00, -.029)
+call SetFrameRelativePoint(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 0), FRAMEPOINT_TOPLEFT, GetFrameRelativePointParent(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 0),FRAMEPOINT_TOPLEFT),FRAMEPOINT_TOPRIGHT,.0175, -.0292)
+call SetFrameRelativePoint(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 0), FRAMEPOINT_TOP, GetFrameRelativePointParent(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 0),FRAMEPOINT_TOP),FRAMEPOINT_TOPLEFT,.00, -.0292)
+call SetFrameRelativePoint(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 0), FRAMEPOINT_TOPRIGHT, GetFrameRelativePointParent(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 0),FRAMEPOINT_TOPRIGHT),FRAMEPOINT_TOPLEFT,.00, -.0292)
+call SetFrameRelativePoint(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 0), FRAMEPOINT_LEFT, GetFrameRelativePointParent(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 0),FRAMEPOINT_LEFT),FRAMEPOINT_TOPLEFT,.00, -.0292)
+call SetFrameRelativePoint(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 0), FRAMEPOINT_CENTER, GetFrameRelativePointParent(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 0),FRAMEPOINT_CENTER),FRAMEPOINT_TOPLEFT,.00, -.0292)
+call SetFrameRelativePoint(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 0), FRAMEPOINT_RIGHT, GetFrameRelativePointParent(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 0),FRAMEPOINT_RIGHT),FRAMEPOINT_TOPLEFT,.00, -.0292)
+call SetFrameRelativePoint(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 0), FRAMEPOINT_BOTTOMLEFT, GetFrameRelativePointParent(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 0),FRAMEPOINT_BOTTOMLEFT),FRAMEPOINT_TOPLEFT,.00, -.0292)
+call SetFrameRelativePoint(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 0), FRAMEPOINT_BOTTOM, GetFrameRelativePointParent(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 0),FRAMEPOINT_BOTTOM),FRAMEPOINT_TOPLEFT,.00, -.0292)
+call SetFrameRelativePoint(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 0), FRAMEPOINT_BOTTOMRIGHT, GetFrameRelativePointParent(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 0),FRAMEPOINT_BOTTOMRIGHT),FRAMEPOINT_TOPLEFT,.00, -.0292)
 call ClearFrameAllPoints(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 2))
 call SetFrameRelativePoint(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 2), FRAMEPOINT_CENTER, GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 0),FRAMEPOINT_CENTER,.00, -.027)
 call ClearFrameAllPoints(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 4))
@@ -211878,7 +211883,7 @@ call SetFrameRelativePoint(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 7), FRAMEPOI
 call ClearFrameAllPoints(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 8))
 call SetFrameRelativePoint(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 8), FRAMEPOINT_CENTER, GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 5),FRAMEPOINT_CENTER,.025, .0)
 call ClearFrameAllPoints(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 9))
-call SetFrameRelativePoint(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 9), FRAMEPOINT_CENTER, GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 0),FRAMEPOINT_CENTER,.025, .027)
+call SetFrameRelativePoint(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 9), FRAMEPOINT_CENTER, GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 0),FRAMEPOINT_CENTER,.025, .0272)
 //call SetFrameGridSize( GetOriginFrame( ORIGIN_FRAME_COMMAND_BAR, 0),3,5)
 call SetMoveSpeedMaxAllowed(550)
 call SetFrameFont( GetOriginFrame( ORIGIN_FRAME_UNIT_MSG, 0 ), "Fonts\\FRIZQT__.TTF", .0115, 0 )
