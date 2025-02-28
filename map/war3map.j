@@ -21294,8 +21294,10 @@ local unit u=LoadUnitHandle(HH,id,0)
 local item it=LoadItemHandle(HH,id,1)
 local player p=GetOwningPlayer(u)
 if GetItemOwner(it)==null and it!=null then
+if Condition_RecipeString(GetItemTypeId(it))==false then
 call UnitAddItem(Chest[GetPlayerId(p)],it)
 call DestroyEffect(AddSpecialEffect("Abilities\\Spells\\Other\\Transmute\\GoldBottleMissile.mdl",GetUnitX(Chest[GetPlayerId(p)]),GetUnitY(Chest[GetPlayerId(p)])))
+endif
 endif
 call PauseTimer(t)
 call DestroyTimer(t)
