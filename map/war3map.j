@@ -109162,6 +109162,7 @@ local unit l__d=CreateUnit(GetOwningPlayer(u),'H007',x,y,f)
 local string dmgtext=""
 local string Healtext=""
 local integer i=0
+call UnitInventorySetSize(l__d,10)
 call SetUnitPathing(l__d,false)
 call SetUnitXY_1(l__d,x,y, false)
 call SetUnitFacing(l__d,f)
@@ -150165,6 +150166,7 @@ local unit l__d
 local integer i=0
 call SetUnitPathing(u,false)
 set l__d=CreateUnit(GetOwningPlayer(u),'Ho13',x,y,f)
+call UnitInventorySetSize(l__d,10)
 call SetUnitPathing(l__d,false)
 call SetUnitXY_1(l__d,x,y, false)
 call SetUnitFacing(l__d,f)
@@ -163598,6 +163600,10 @@ function RengokuT_Act3 takes nothing returns nothing
             // call SetUnitX(bjLCU , GetUnitX(target))
             // call SetUnitY(bjLCU , GetUnitY(target))
         endif
+        if time==0.9 then
+            call SetUnitTimeScale(caster, 0.3)
+            call SetUnitAnimationByIndex(caster, 33)
+        endif
         if time == 2 then
 
             set bjLCU=CreateUnit(GetOwningPlayer(caster), 'dR33', GetUnitX(target), GetUnitY(target), GetRandomInt(0, 360))
@@ -163628,8 +163634,6 @@ function RengokuT_Act3 takes nothing returns nothing
             call SetUnitScale(bjLCU, 5, 5, 5)
             call MyRemoveUnit(bjLCU, 2.5)
             
-            call SetUnitTimeScale(caster, 0.35)
-            call SetUnitAnimationByIndex(caster, 8)
             call PauseUnit(target,false)
             call SaveBoolean(HH,GetHandleId(target),TARGET_ABILITY,false)
             call SetUnitInvulnerable(target, false)
@@ -163669,7 +163673,7 @@ function RengokuT_Act3 takes nothing returns nothing
                 call GroupRemoveUnit(bjLCG, bjLCU)
             endloop
             call DestroyGroup(bjLCG)
-        elseif time == 4 then
+        elseif time == 3.8 then
             call PauseUnit(target,false)
             call SaveBoolean(HH,GetHandleId(target),TARGET_ABILITY,false)
             call SetUnitInvulnerable(target, false)
@@ -170708,8 +170712,8 @@ function MadokaQ1_Periodic takes nothing returns nothing
                         call SetUnitFlyHeight(n, 150, 0)
                         call MyRemoveUnit(n , 3)
                     elseif IsUnitInGroup(E, LoadGroupHandle(h, id, StringHash("Group2"))) == false and E != caster and bool_heal then
-                        call HealTextTag(caster,E,  0.5*Calculate_MadokaWHeal(caster , E)*myCustomHeal2(E,1),"HealthRes")
-                        call SetWidgetLife(E, GetWidgetLife(E) + Calculate_MadokaWHeal(caster , E) * 0.5)
+                        call HealTextTag(caster,E,  0.7*Calculate_MadokaWHeal(caster , E)*myCustomHeal2(E,1),"HealthRes")
+                        call SetWidgetLife(E, GetWidgetLife(E) + Calculate_MadokaWHeal(caster , E) * 0.7)
                         call GroupAddUnit(LoadGroupHandle(h, id, StringHash("Group2")), E)
                     endif
                     call GroupRemoveUnit(bjLCG, E)
@@ -171195,8 +171199,8 @@ function MadokaQ3_Periodic takes nothing returns nothing
                         call SetUnitFlyHeight(n, 150, 0)
                         call MyRemoveUnit(n , 3)
                     elseif E != caster and bool_heal then
-                        call HealTextTag(caster,E,  0.50*Calculate_MadokaWHeal(caster , E)*myCustomHeal2(E,1),"HealthRes")
-                        call SetWidgetLife(E, GetWidgetLife(E) + Calculate_MadokaWHeal(caster , E) * 0.5)
+                        call HealTextTag(caster,E,  0.7*Calculate_MadokaWHeal(caster , E)*myCustomHeal2(E,1),"HealthRes")
+                        call SetWidgetLife(E, GetWidgetLife(E) + Calculate_MadokaWHeal(caster , E) * 0.7)
                     endif
                     call GroupRemoveUnit(bjLCG, E)
                 endloop
