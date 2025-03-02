@@ -31630,6 +31630,9 @@ function EndOfChoiceAct takes nothing returns nothing
             call ClearSelection()
             call SelectUnit(Hero[i],true)
         endif
+        if GetUnitTypeId(Hero[i])=='HJi1' then
+            call SetUnitModel(Hero[i],"[By XeSHTeG]JirenBase.mdx")
+        endif
         if GetUnitTypeId(Hero[i])=='H02H' then
             call SaveInteger(HH,GetHandleId( GetOwningPlayer(Hero[i]) ),KaiokenHash,0)
             call SetUnitModel(Hero[i],"GokuFull.mdx")
@@ -32865,6 +32868,9 @@ exitwhen i>=10
     endif
     if GetUnitTypeId(Hero[i])=='H02L' then
         set Broly=Hero[i]
+    endif
+    if GetUnitTypeId(Hero[i])=='HJi1' then
+        call SetUnitModel(Hero[i],"[By XeSHTeG]JirenBase.mdx")
     endif
     if GetUnitTypeId(Hero[i])=='H02H' then
         call SaveInteger(HH,GetHandleId( GetOwningPlayer(Hero[i]) ),KaiokenHash,0)
@@ -39799,6 +39805,11 @@ if cond==0 then
                 call SaveBoolean(HH,GetHandleId( GetOwningPlayer(u) ),UIAvailableHash,true)
                 set UIUnlock[GetPlayerId(GetOwningPlayer(u))]=CreateUnit(GetOwningPlayer(u),'h110',RX,RY,0)
             endif
+        endif
+    endif
+    if GetUnitTypeId(u)=='HJi1' then
+        if GetUnitModel(u)=="[By XeSHTeG]JirenBase.mdx" and GetUnitState(u,UNIT_STATE_LIFE)<0.25*ll and GetHeroLevel(u)>=26 then 
+            call SetUnitModel(u,"[By XeSHTeG]JirenFullPower.mdx")
         endif
     endif
     if critcoef>1 then
@@ -165884,6 +165895,34 @@ function InitTrig_VergilInt takes nothing returns nothing
     set trig=null
 endfunction
 
+function JirenF1_Periodic takes nothing returns nothing
+	local timer t=GetExpiredTimer()
+	local integer id=GetHandleId(t)
+	local unit u=LoadUnitHandle(h,id,0)
+	local real x=GetUnitX(u)
+	local real y=GetUnitY(u)
+	if GetUnitCurrentOrder(u)==OrderId("charm")then
+		call SetUnitAnimationByIndex(u,37)
+        call HealTextTag(u,u,GetUnitState(u,UNIT_STATE_MAX_MANA)*0.004*myCustomMana2(u,1),"ManaRes")
+        call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)+GetUnitState(u,UNIT_STATE_MAX_MANA)*0.004)
+	else
+        call SetUnitAnimationByIndex(u,27)
+		call PauseTimer(t)
+		call DestroyTimer(t)
+		call FlushChildHashtable(h,id)
+	endif
+	set u=null
+	set t=null
+endfunction
+function JirenF1_Cast takes unit u returns nothing
+        local timer t=CreateTimer()
+        local integer id=GetHandleId(t)
+        call SaveUnitHandle(h,id,0,u)
+        call TimerStart(t,0.2,true,function JirenF1_Periodic)
+        set u=null
+        set t=null
+endfunction
+
 function JirenE1_Cast2 takes nothing returns nothing //broly w
 local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
@@ -165928,6 +165967,7 @@ if time<time2 then
     call SaveReal(h,id,10,LoadReal(h,id,10)+0.03)
     if time>=time2-0.03 then
         call SetUnitTimeScale(u,1)
+        call SetUnitAnimationByIndex(u,27)
         call PauseUnit(u,false)
         call SetUnitInvulnerable(u,false)
         set n=CreateUnit(GetOwningPlayer(u),'e342',x+90*Cos(a),y+90*Sin(a),a*bj_RADTODEG)
@@ -165969,6 +166009,15 @@ else
         endif
         call GroupRemoveUnit(g,E)
     endloop
+    set n=CreateUnit(p,'eo9K',x1,y1,GetRandomReal(0,359))
+    call SetUnitScale(n,1,1,1)
+    call UnitApplyTimedLife(n,1,3)
+    set n=CreateUnit(p,'eo9L',x1,y1,GetRandomReal(0,359))
+    call SetUnitScale(n,3,3,3)
+    call UnitApplyTimedLife(n,1,3)
+    call UnitApplyTimedLife(CreateUnit(p,'e0S4',x1,y1,GetRandomReal(0,359)),1,4)
+    call UnitApplyTimedLife(CreateUnit(p,'e1S5',x1,y1,GetRandomReal(0,359)),1,6)
+    call UnitApplyTimedLife(CreateUnit(p,'e0S3',x1,y1,GetRandomReal(0,359)),1,4)
     call GroupClear(g)
     call RemoveUnit(l__d)
     call FlushChildHashtable(h,id)
@@ -166199,7 +166248,7 @@ function JirenW_Cast takes unit u,real x1,real y1 returns nothing
 	call StartSound(soundplay)
 	call KillSoundWhenDone(soundplay)
 	call SetUnitTimeScale(u,1.0)
-    call RemoveEffect(AddSpecialEffectTarget("Abilities\\Weapons\\PhoenixMissile\\Phoenix_Missile_mini.mdl", u, "head"), 1., false, CreateTimer())
+    call RemoveEffect(AddSpecialEffectTarget("war3mapImported\\RedGlow.mdl", u, "head"), 1., false, CreateTimer())
     set n=CreateUnit(GetOwningPlayer(u), 'dAlb', x+50*Cos(a), y+50*Sin(a), a*bj_RADTODEG)
 	call SetUnitFlyHeight(n, 50, 0)
 	call SaveUnitHandle(h, id, 5, n)
@@ -166401,23 +166450,32 @@ function JirenQ_Cast takes unit u, real x1, real y1 returns nothing
 endfunction
 
 function Jiren_Cond takes nothing returns boolean
-        local boolean cond1=GetSpellAbilityId()=='JNQ1' or GetSpellAbilityId()=='JNW1' or GetSpellAbilityId()=='JNE1' 
+        local boolean cond1=GetSpellAbilityId()=='JNQ1' or GetSpellAbilityId()=='JNW1' or GetSpellAbilityId()=='JNE1' or GetSpellAbilityId()=='JNF1' 
         if cond1 then
-                return true
+            return true
         else
-                return false
+            return false
         endif
 endfunction
 
 function Jiren_Cast takes nothing returns nothing
+    if GetSpellAbilityId() == 'JNF1' then
+		call JirenF1_Cast(GetSpellAbilityUnit())
+    endif
     if GetSpellAbilityId() == 'JNQ1' then
-		call JirenQ_Cast(GetSpellAbilityUnit() , GetSpellTargetX(), GetSpellTargetY())
+        if GetSpellTargetUnit()==GetSpellAbilityUnit() then
+        else
+		    call JirenQ_Cast(GetSpellAbilityUnit() , GetSpellTargetX(), GetSpellTargetY())
+        endif
     endif
 	if GetSpellAbilityId() == 'JNW1' then
 		call JirenW_Cast(GetSpellAbilityUnit() , GetSpellTargetX(), GetSpellTargetY())
     endif
 	if GetSpellAbilityId() == 'JNE1' then
-		call JirenE1_Cast(GetSpellAbilityUnit() , GetSpellTargetX(), GetSpellTargetY())
+        if GetSpellTargetUnit()==GetSpellAbilityUnit() then
+        else
+		    call JirenE1_Cast(GetSpellAbilityUnit() , GetSpellTargetX(), GetSpellTargetY())
+        endif
     endif
 endfunction
 
