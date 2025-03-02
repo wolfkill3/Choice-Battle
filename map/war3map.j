@@ -165880,24 +165880,174 @@ function InitTrig_VergilInt takes nothing returns nothing
     set trig=null
 endfunction
 
+function JirenE1_Cast2 takes nothing returns nothing //broly w
+local timer t=GetExpiredTimer()
+local integer id=GetHandleId(t)
+local unit u=LoadUnitHandle(h,id,0)
+local unit l__d=LoadUnitHandle(h,id,1)
+local player p=GetOwningPlayer(u)
+local integer idu=GetPlayerId(p)
+local real x=GetUnitX(u)
+local real y=GetUnitY(u)
+local real x1=GetUnitX(l__d)
+local real y1=GetUnitY(l__d)
+local group g=LoadGroupHandle(h,id,6)
+local real f=GetUnitFacing(l__d)
+local real a=LoadReal(h,id,8)
+local real time=LoadReal(h,id,10)
+local real dmg=GetHeroStr(u,true)*(GetUnitAbilityLevel(u,'JNE1')+2)+100*(GetUnitAbilityLevel(u,'JNE1')+1)
+local real Range=LoadReal(h,id,9)
+local real time2=LoadReal(h,id,12)
+if time==0 then
+    call SetUnitAnimationByIndex(u,40)
+endif
+if time==0.12 then
+    call RemoveEffect(AddSpecialEffectTarget("JirenBall.mdx", u, "right hand"), .5, false, CreateTimer())
+endif
+if time<time2 then
+    if time<time2-0.03 then
+        if time==0 then
+            set n=CreateUnit(p,'e0ZH',x,y,a*bj_RADTODEG+45)
+            call SetUnitVertexColor(n,255,255,255,155)
+            call UnitApplyTimedLife(n,1,0.4)
+            call SetUnitTimeScale(n,3)
+            set n=CreateUnit(p,'e0ZH',x,y,a*bj_RADTODEG-45)
+            call SetUnitVertexColor(n,255,255,255,155)
+            call UnitApplyTimedLife(n,1,0.4)
+            call SetUnitTimeScale(n,3)
+            set n=CreateUnit(p,'e0ZH',x,y,a*bj_RADTODEG)
+            call SetUnitVertexColor(n,255,255,255,155)
+            call UnitApplyTimedLife(n,1,0.4)
+            call SetUnitTimeScale(n,3)
+        endif
+    endif
+    call SaveReal(h,id,10,LoadReal(h,id,10)+0.03)
+    if time>=time2-0.03 then
+        call SetUnitTimeScale(u,1)
+        call PauseUnit(u,false)
+        call SetUnitInvulnerable(u,false)
+        set n=CreateUnit(GetOwningPlayer(u),'e342',x+90*Cos(a),y+90*Sin(a),a*bj_RADTODEG)
+        call SetUnitScale(n,1.1,1.1,1.1)
+        call SaveUnitHandle(h,id,1,n)
+    endif
+elseif Range<2500 and UnitIsAlive(l__d) and IsTerrainPathable(x1,y1,PATHING_TYPE_FLYABILITY)==false then
+    set x1=x1+75*Cos(a)
+    set y1=y1+75*Sin(a)
+    call SetUnitXY_1(l__d,x1,y1, false)
+    call SaveReal(h,id,3,x1)
+    call SaveReal(h,id,4,y1)
+    call SetUnitFacing(l__d,a*bj_RADTODEG)
+    call SaveReal(h,id,9,Range+75)
+    call GroupEnumUnitsInRange(g,x1,y1,180,Base)
+    set idg=GetHandleId(g)
+    loop
+        set E=FirstOfGroup(g)
+        exitwhen E==null
+        set ide=GetHandleId(E)
+        if Condition_Base(p,E) then
+            if E!=LoadUnitHandle(h,idg,ide) then
+                call myCustomDamage(u,E,dmg,false,false,null,null,null)
+                call SaveUnitHandle(h,idg,ide,E)
+            endif
+        endif
+        call GroupRemoveUnit(g,E)
+    endloop
+    call GroupClear(g)
+else
+    call GroupEnumUnitsInRange(g,x1,y1,350,Base)
+    set idg=GetHandleId(g)
+    loop
+        set E=FirstOfGroup(g)
+        exitwhen E==null
+        set ide=GetHandleId(E)
+        if Condition_Base(p,E) and E!=LoadUnitHandle(h,idg,ide) then
+            call myCustomDamage(u,E,dmg,false,false,null,null,null)
+        endif
+        call GroupRemoveUnit(g,E)
+    endloop
+    call GroupClear(g)
+    call RemoveUnit(l__d)
+    call FlushChildHashtable(h,id)
+    call FlushChildHashtable(h,idg)
+    call PauseTimer(t)
+    call DestroyTimer(t)
+endif
+set u=null
+set p=null
+set g=null
+set t=null
+set l__d=null
+endfunction
+function JirenE1_Cast takes unit u,real x1,real y1 returns nothing
+    local timer t=CreateTimer()
+    local integer id=GetHandleId(t)
+    local real x=GetUnitX(u)
+    local real y=GetUnitY(u)
+    local real a=Atan2(y1-y,x1-x)
+    call SaveUnitHandle(h,id,0,u)
+    call SaveGroupHandle(h,id,6,CreateGroup())
+    call SaveReal(h,id,8,a)
+    call SaveReal(h,id,10,0)
+    call SaveReal(h,id,12,0.6)
+    call PauseUnit(u,true)
+    call SetUnitInvulnerable(u,true)
+    call SaveInteger(h,id,2,0)
+    call SetUnitTimeScale(u,2)
+    call TimerStart(t,0.03,true,function JirenE1_Cast2)
+    set u=null
+    set t=null
+endfunction
+
 function JirenW_Action takes nothing returns nothing
     local integer id    = GetHandleId(GetExpiredTimer())
         local real time    = LoadReal(h,id,4)
         local unit u       = LoadUnitHandle(h,id,0)
         local real x = LoadReal(h,id,2)
         local real y = LoadReal(h,id,3)
+        local real x1 = GetUnitX(u)
+        local real y1 = GetUnitY(u)
         local real a = LoadReal(h,id,5)
+        local real is=0
+        local real ig=30*bj_DEGTORAD
         local real damage    = GetHeroStr(u,true)*(2 + GetUnitAbilityLevel(u,'JNW1'))
         call SaveReal(h,id,4,time+0.1)
         if time<1.0 then
+            loop
+            exitwhen is>=13 //nitu
+            set EFF=AddSpecialEffect("nitu.mdx",x1+200*Cos(ig*is),y1+200*Sin(ig*is))
+            call SetSpecialEffectScale(EFF , 0.8)
+            call SetSpecialEffectFacing(EFF , 180+is*30)
+            call SetSpecialEffectTimeScale(EFF , 1)
+            call SetSpecialEffectAlphaTimed(EFF , 255 , 255 , 255 , 95 , 2)
+            call RemoveEffect(EFF,2,true,CreateTimer())
+            set is=is+1
+            endloop
             call SetUnitInvulnerable(u,true)
             call PauseUnit(u,true)
-            set EFF=AddSpecialEffect("AZ_PA_C.mdx", x+GetRandomReal(-40,40)*Cos(a), y+GetRandomReal(-40,40)*Sin(a))
-            call SetSpecialEffectScale(EFF , 1)
-            call SetSpecialEffectOrientation(EFF , a* bj_RADTODEG,0,0)
+            set EFF=AddSpecialEffect("WindVectorPush.mdx", x1+GetRandomReal(-100,100)*Cos(a+90*bj_DEGTORAD)+GetRandomReal(80,180)*Cos(a), y1+GetRandomReal(-100,100)*Sin(a+90*bj_DEGTORAD)+GetRandomReal(80,180)*Sin(a))
+            call SetSpecialEffectScale(EFF , 0.2)
+            call SetSpecialEffectFacing(EFF , a* bj_RADTODEG)
+            call SetSpecialEffectTimeScale(EFF , 0.7) 
+            call SetSpecialEffectVertexColour(EFF,255,255,255,120)
+            call SetSpecialEffectZ(EFF , GetRandomReal(20,150))
+            call RemoveEffect(EFF, 0.3, false, CreateTimer())
+            set EFF=AddSpecialEffect("AZ_Jugg_E1.mdx", x+GetRandomReal(-200,200)*Cos(a+90*bj_DEGTORAD)+GetRandomReal(80,180)*Cos(a), y+GetRandomReal(-200,200)*Sin(a+90*bj_DEGTORAD)+GetRandomReal(80,180)*Sin(a))
+            call SetSpecialEffectScale(EFF , 0.7)
+            call SetSpecialEffectFacing(EFF , a* bj_RADTODEG)
             call SetSpecialEffectTimeScale(EFF , 0.5) 
-            call SetSpecialEffectZ(EFF , GetRandomReal(20,130))
-            call SetSpecialEffectVertexColour(EFF , 250 , 160 , 160 , 250)
+            call SetSpecialEffectZ(EFF , GetRandomReal(20,150))
+            call RemoveEffect(EFF, 0.3, false, CreateTimer())
+            set EFF=AddSpecialEffect("AZ_Jugg_E1.mdx", x+GetRandomReal(-200,200)*Cos(a+90*bj_DEGTORAD)+GetRandomReal(80,180)*Cos(a), y+GetRandomReal(-200,200)*Sin(a+90*bj_DEGTORAD)+GetRandomReal(80,180)*Sin(a))
+            call SetSpecialEffectScale(EFF , 0.7)
+            call SetSpecialEffectFacing(EFF , a* bj_RADTODEG)
+            call SetSpecialEffectTimeScale(EFF , 0.5) 
+            call SetSpecialEffectZ(EFF , GetRandomReal(20,150))
+            call RemoveEffect(EFF, 0.3, false, CreateTimer())
+            set EFF=AddSpecialEffect("AZ_Jugg_E1.mdx", x+GetRandomReal(-200,200)*Cos(a+90*bj_DEGTORAD)+GetRandomReal(80,180)*Cos(a), y+GetRandomReal(-200,200)*Sin(a+90*bj_DEGTORAD)+GetRandomReal(80,180)*Sin(a))
+            call SetSpecialEffectScale(EFF , 0.7)
+            call SetSpecialEffectFacing(EFF , a* bj_RADTODEG)
+            call SetSpecialEffectTimeScale(EFF , 0.5) 
+            call SetSpecialEffectZ(EFF , GetRandomReal(20,150))
             call RemoveEffect(EFF, 0.3, false, CreateTimer())
             set bjLCG=CreateGroup()
             call GroupEnumUnitsInRange(bjLCG,x,y,300,Base)
@@ -165908,8 +166058,8 @@ function JirenW_Action takes nothing returns nothing
                     call myCustomDamage(u,E,damage*0.1,false,false,null,null,null)
                     //call JirenW_ModifAttack(u,E,b_clone)
                     call SetControlToUnit(E,E,0.15,"stun")
-                    call Push3(E,2.5,a,5,"null")
-                    set EFF=AddSpecialEffect("Minato-37.mdx", GetUnitX(E)+GetRandomReal(-35,35)*Cos(a+GetRandomReal(-40,40)*bj_DEGTORAD), GetUnitY(E)+GetRandomReal(-35,35)*Sin(a+GetRandomReal(-40,40)*bj_DEGTORAD))
+                    call Push3(E,5,a,5,"null")
+                    set EFF=AddSpecialEffect("OPm (828).mdx", GetUnitX(E)+GetRandomReal(-55,55)*Cos(a+GetRandomReal(-50,50)*bj_DEGTORAD), GetUnitY(E)+GetRandomReal(-35,35)*Sin(a+GetRandomReal(-40,40)*bj_DEGTORAD))
                     call SetSpecialEffectScale(EFF , GetRandomReal(0.75,1.35))
                     call SetSpecialEffectZ(EFF , GetRandomReal(30,90))
                     call SetSpecialEffectRoll(EFF , 90)
@@ -165917,12 +166067,12 @@ function JirenW_Action takes nothing returns nothing
                 endif
                 call GroupRemoveUnit(bjLCG,E)
             endloop
-            call SaveReal(h,id,2,x+5*Cos(a))
-            call SaveReal(h,id,3,y+5*Sin(a))
+            call SaveReal(h,id,2,x+10*Cos(a))
+            call SaveReal(h,id,3,y+10*Sin(a))
             call DestroyGroup(bjLCG)
         else
             set bjLCG=CreateGroup()
-            call GroupEnumUnitsInRange(bjLCG,x,y,300,Base)
+            call GroupEnumUnitsInRange(bjLCG,x,y,320,Base)
             loop
             set E=FirstOfGroup(bjLCG)
             exitwhen E==null
@@ -165932,18 +166082,18 @@ function JirenW_Action takes nothing returns nothing
                 endif
                 call GroupRemoveUnit(bjLCG,E)
             endloop
+            call DestroyGroup(bjLCG)
             call SetUnitTimeScale(u,1)
             call SetUnitAnimationByIndex(u,27)
             call SetUnitInvulnerable(u,false)
             call PauseUnit(u,false)
-            call DestroyGroup(bjLCG)
             call FlushChildHashtable(h,id)
             call DestroyTimer(GetExpiredTimer())
         endif
         set u=null
 endfunction
 
-function JirenW_Cut takes unit u,real x,real y,group newGroup returns nothing
+function JirenW_Cut takes unit u,real x,real y returns nothing
         local timer newTimer = CreateTimer()
         local integer id     = GetHandleId(newTimer)
         local real damage    = GetHeroStr(u,true)*(2 + GetUnitAbilityLevel(u,'JNW1'))
@@ -165959,7 +166109,7 @@ function JirenW_Cut takes unit u,real x,real y,group newGroup returns nothing
                 call myCustomDamage(u,E,damage*0.1,false,false,null,null,null)
                 //call JirenW_ModifAttack(u,E,b_clone)
                 call SetControlToUnit(E,E,0.15,"stun")
-                set EFF=AddSpecialEffect("Minato-37.mdx", GetUnitX(E)+GetRandomReal(-35,35)*Cos(a+GetRandomReal(-40,40)*bj_DEGTORAD), GetUnitY(E)+GetRandomReal(-35,35)*Sin(a+GetRandomReal(-40,40)*bj_DEGTORAD))
+                set EFF=AddSpecialEffect("OPm (828).mdl", GetUnitX(E)+GetRandomReal(-55,55)*Cos(a+GetRandomReal(-40,40)*bj_DEGTORAD), GetUnitY(E)+GetRandomReal(-55,55)*Sin(a+GetRandomReal(-40,40)*bj_DEGTORAD))
                 call SetSpecialEffectScale(EFF , GetRandomReal(0.75,1.35))
                 call SetSpecialEffectZ(EFF , GetRandomReal(30,90))
                 call SetSpecialEffectRoll(EFF , 90)
@@ -165993,25 +166143,25 @@ function JirenW_Periodic takes nothing returns nothing
 	if distance>0 then
 		call SetUnitXY(dummy,GetUnitX(dummy)+50*Cos(angle),GetUnitY(dummy)+50*Sin(angle))
 		call SaveReal(h,id,3,distance-50)
-		// call GroupEnumUnitsInRange(newGroup,GetUnitX(dummy),GetUnitY(dummy),300,Base)
-		// loop
-		// set E=FirstOfGroup(newGroup)
-		// exitwhen E==null
-		// 	if Condition_Base(GetOwningPlayer(dummy),E) then
-		// 		call SaveReal(h,id,3,0)
-		// 		call SetUnitXY(dummy,GetUnitX(dummy)+200*Cos(angle),GetUnitY(dummy)+200*Sin(angle))
-		// 		call GroupClear(newGroup)
-		// 	endif
-		// 	call GroupRemoveUnit(newGroup,E)
-		// endloop
+		call GroupEnumUnitsInRange(newGroup,GetUnitX(dummy),GetUnitY(dummy),300,Base)
+		loop
+		set E=FirstOfGroup(newGroup)
+		exitwhen E==null
+		    if Condition_Base(GetOwningPlayer(dummy),E) then
+		 		call SaveReal(h,id,3,0)
+		 		//call SetUnitXY(dummy,GetUnitX(dummy)-50*Cos(angle),GetUnitY(dummy)-50*Sin(angle))
+		 		call GroupClear(newGroup)
+		 	endif
+		 	call GroupRemoveUnit(newGroup,E)
+		endloop
 	else
         call SetUnitInvulnerable(u,true)
         call PauseUnit(u,true)
         call SetUnitAnimationByIndex(u,41)
-		call ShakeCamera(0.1,10)
-		call SetUnitTimeScale(u,0.4)
+		//call ShakeCamera(0.1,10)
+		call SetUnitTimeScale(u,0.7)
 		//call SetUnitInvulnerable(u,false)
-		call JirenW_Cut(u,GetUnitX(dummy),GetUnitY(dummy),LoadGroupHandle(h,id,4))
+		call JirenW_Cut(u,GetUnitX(dummy),GetUnitY(dummy))
         set soundplay=CreateSound("Sound\\war3mapImported\\JirenW_Sound1.mp3",false,false,true,12700,12700,"")
 		call StartSound(soundplay)
 		call KillSoundWhenDone(soundplay)
@@ -166033,8 +166183,7 @@ function JirenW_Cast takes unit u,real x1,real y1 returns nothing
     local integer id     = GetHandleId(newTimer)
     local real x = GetUnitX(u)
     local real y = GetUnitY(u)
-    local real angle  = AtanPoint(x,y,x1,y1)
-    local real a      = 0.0
+    local real a  = AtanPoint(x,y,x1,y1)
     local real distance = SquareRootPoint(x,y,x1,y1)
     //local real damage = GetHeroAgi(u,true)*3
         
@@ -166046,12 +166195,13 @@ function JirenW_Cast takes unit u,real x1,real y1 returns nothing
 	call StartSound(soundplay)
 	call KillSoundWhenDone(soundplay)
 	call SetUnitTimeScale(u,1.0)
-    set n=CreateUnit(GetOwningPlayer(u), 'dAlb', x+100*Cos(a), y+100*Sin(a), a*bj_RADTODEG)
+    call RemoveEffect(AddSpecialEffectTarget("Abilities\\Weapons\\PhoenixMissile\\Phoenix_Missile_mini.mdl", u, "head"), 1., false, CreateTimer())
+    set n=CreateUnit(GetOwningPlayer(u), 'dAlb', x+50*Cos(a), y+50*Sin(a), a*bj_RADTODEG)
 	call SetUnitFlyHeight(n, 50, 0)
 	call SaveUnitHandle(h, id, 5, n)
 	//call SetUnitInvulnerable(u,true)
 	call SaveUnitHandle(h,id,0,u)
-	call SaveReal(h,id,1,angle)
+	call SaveReal(h,id,1,a)
 	//call SaveReal(h,id,2,damage)
 	call SaveReal(h,id,3,distance)
 	call SaveGroupHandle(h,id,4,CreateGroup())
@@ -166183,6 +166333,7 @@ function JirenQ_Cast2 takes nothing returns nothing
                             call TimerStart(t,0.03,true,function JirenQ_Cast3)
                         else
                             call SetUnitTimeScale(u,1)
+                            call SetUnitAnimationByIndex(u,27)
                             call SaveBoolean(HH,GetHandleId(u),DASH_USER,false)
                             call SaveUnitHandle(HH,GetHandleId(E),REVERSE_TARGET,u)
                             call SetUnitInvulnerable(u, false)
@@ -166198,6 +166349,7 @@ function JirenQ_Cast2 takes nothing returns nothing
             endloop
         endif
     else
+        call SetUnitAnimationByIndex(u,27)
         call SetUnitTimeScale(u,1)
         call PauseUnit(u,false)
         call PauseTimer(t)
@@ -166245,7 +166397,7 @@ function JirenQ_Cast takes unit u, real x1, real y1 returns nothing
 endfunction
 
 function Jiren_Cond takes nothing returns boolean
-        local boolean cond1=GetSpellAbilityId()=='JNQ1' or GetSpellAbilityId()=='JNW1' 
+        local boolean cond1=GetSpellAbilityId()=='JNQ1' or GetSpellAbilityId()=='JNW1' or GetSpellAbilityId()=='JNE1' 
         if cond1 then
                 return true
         else
@@ -166259,6 +166411,9 @@ function Jiren_Cast takes nothing returns nothing
     endif
 	if GetSpellAbilityId() == 'JNW1' then
 		call JirenW_Cast(GetSpellAbilityUnit() , GetSpellTargetX(), GetSpellTargetY())
+    endif
+	if GetSpellAbilityId() == 'JNE1' then
+		call JirenE1_Cast(GetSpellAbilityUnit() , GetSpellTargetX(), GetSpellTargetY())
     endif
 endfunction
 
