@@ -24576,6 +24576,9 @@ if GetUnitAbilityLevel(caster,'A1WT')==0 and GetUnitAbilityLevel(caster,'A3WR')=
     if GetUnitAbilityLevel(target,'A2DF')>0  then
     set haveShield=true
     endif
+    if GetUnitAbilityLevel(target,'A4DF')>0  then
+    set haveShield=true
+    endif
     // Гроза Вонголы
     if GetUnitAbilityLevel(target,'A0VJ')>0  then
     set haveShield=true
@@ -36878,7 +36881,7 @@ if cond==0 then
             endif
             set i=0
         endif
-        if b>0 and nb>0 and (GetUnitAbilityLevel(u,'Avul')>0 or GetUnitAbilityLevel(u,'A16H')>0 or GetUnitAbilityLevel(u,'A1E2')>0 or GetUnitAbilityLevel(u,'B06V')>0 or GetUnitAbilityLevel(u,'A1I2')>0 or GetUnitAbilityLevel(u,'A1HV')>0 or GetUnitAbilityLevel(u,'A1DO')>0 or GetUnitAbilityLevel(u,'B06P')>0 or GetUnitAbilityLevel(u,'B06I')>0 or GetUnitAbilityLevel(u,'B02E')>0 or GetUnitAbilityLevel(u,'B05J')>0 or GetUnitAbilityLevel(u,'A16D')>0 or GetUnitAbilityLevel(u,'A12P')>0 or GetUnitAbilityLevel(u,'A0VJ')>0 or udg_B==false or GetUnitAbilityLevel(u,'A7IH')>0 or GetUnitAbilityLevel(u,'B04H')>0 or GetUnitAbilityLevel(u,'B04E')>0 or GetUnitAbilityLevel(u,'B049')>0 or GetUnitAbilityLevel(u,'B01G')>0 or GetUnitAbilityLevel(u,'ItV1')>0 or GetUnitAbilityLevel(u,'B00Y')>0 or GetUnitAbilityLevel(u,'B02U')>0 or GetUnitAbilityLevel(u,'AP08')>0 or GetUnitTypeId(u)=='H01E' or GetUnitTypeId(u)=='H01G' or GetUnitTypeId(u)=='H01I' or GetUnitTypeId(u)=='H03Q' or GetUnitTypeId(u)=='H06O')  then //
+        if b>0 and nb>0 and (GetUnitAbilityLevel(u,'Avul')>0 or GetUnitAbilityLevel(u,'A16H')>0 or GetUnitAbilityLevel(u,'A4DF')>0 or GetUnitAbilityLevel(u,'A1E2')>0 or GetUnitAbilityLevel(u,'B06V')>0 or GetUnitAbilityLevel(u,'A1I2')>0 or GetUnitAbilityLevel(u,'A1HV')>0 or GetUnitAbilityLevel(u,'A1DO')>0 or GetUnitAbilityLevel(u,'B06P')>0 or GetUnitAbilityLevel(u,'B06I')>0 or GetUnitAbilityLevel(u,'B02E')>0 or GetUnitAbilityLevel(u,'B05J')>0 or GetUnitAbilityLevel(u,'A16D')>0 or GetUnitAbilityLevel(u,'A12P')>0 or GetUnitAbilityLevel(u,'A0VJ')>0 or udg_B==false or GetUnitAbilityLevel(u,'A7IH')>0 or GetUnitAbilityLevel(u,'B04H')>0 or GetUnitAbilityLevel(u,'B04E')>0 or GetUnitAbilityLevel(u,'B049')>0 or GetUnitAbilityLevel(u,'B01G')>0 or GetUnitAbilityLevel(u,'ItV1')>0 or GetUnitAbilityLevel(u,'B00Y')>0 or GetUnitAbilityLevel(u,'B02U')>0 or GetUnitAbilityLevel(u,'AP08')>0 or GetUnitTypeId(u)=='H01E' or GetUnitTypeId(u)=='H01G' or GetUnitTypeId(u)=='H01I' or GetUnitTypeId(u)=='H03Q' or GetUnitTypeId(u)=='H06O')  then //
             if GetUnitAbilityLevel(u,'A7IH')>0 then
                 call SetUnitAnimationByIndex(u,GetRandomInt(222,230))
             endif
@@ -39859,6 +39862,9 @@ if cond==0 then
 endif
 if nb>0 then
     call SetEventDamage(nb)
+    if GetUnitAbilityLevel(u,'A4DF')>0 then
+        call IssueImmediateOrder(u,"stop")
+    endif
 else
     call SetEventDamage(0)
 endif
@@ -165906,7 +165912,9 @@ function JirenF1_Periodic takes nothing returns nothing
         call HealTextTag(u,u,GetUnitState(u,UNIT_STATE_MAX_MANA)*0.004*myCustomMana2(u,1),"ManaRes")
         call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)+GetUnitState(u,UNIT_STATE_MAX_MANA)*0.004)
 	else
+        call UnitRemoveAbility(u,'A4DF')
         call SetUnitAnimationByIndex(u,27)
+        call StartAbilityCooldown(GetUnitAbility(u, 'JNF1'), 25)
 		call PauseTimer(t)
 		call DestroyTimer(t)
 		call FlushChildHashtable(h,id)
@@ -165918,6 +165926,8 @@ function JirenF1_Cast takes unit u returns nothing
         local timer t=CreateTimer()
         local integer id=GetHandleId(t)
         call SaveUnitHandle(h,id,0,u)
+        call UnitAddAbility(u,'A4DF')
+        call UnitMakeAbilityPermanent(u,true,'A4DF')
         call TimerStart(t,0.2,true,function JirenF1_Periodic)
         set u=null
         set t=null
@@ -166290,9 +166300,7 @@ function JirenQ_Cast3 takes nothing returns nothing
         call SetUnitXY_1(c,x1+4*Cos(a),y1+4*Sin(a), false)
         call SetUnitInvulnerable(u,true)
         call PauseUnit(u,true)
-        call SetUnitInvulnerable(c,true)
-        call PauseUnit(c,true)
-        call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,true)
+        call SetControlToUnit(u,c,0.15, "stunbkb")
     else
         set EFF=AddSpecialEffect("HitEnergy.mdx", x1, y1)
         call SetSpecialEffectFacing(EFF , a* bj_RADTODEG)
@@ -166301,9 +166309,6 @@ function JirenQ_Cast3 takes nothing returns nothing
         call RemoveEffect(EFF,0.5,false,CreateTimer())
         call SetUnitInvulnerable(u,false)
         call PauseUnit(u,false)
-        call SetUnitInvulnerable(c,false)
-        call PauseUnit(c,false)
-        call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,false)
         call GroupEnumUnitsInRange(G,x,y,300,Base)
         loop
             set E=FirstOfGroup(G)
@@ -166382,7 +166387,6 @@ function JirenQ_Cast2 takes nothing returns nothing
                             call StartSound(soundplay)
                             call KillSoundWhenDone(soundplay)
                             call SetUnitAnimationByIndex(u,17)
-                            call SetUnitXY_1(u,GetUnitX(E)-120*Cos(a),GetUnitY(E)-120*Sin(a), false)
                             call TimerStart(t,0.03,true,function JirenQ_Cast3)
                         else
                             call SetUnitTimeScale(u,1)
