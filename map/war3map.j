@@ -163855,7 +163855,7 @@ function RengokuT_Act2 takes nothing returns nothing
                     call SetUnitTimeScale(bjLCU, 0.8)
                     call MyRemoveUnit(bjLCU , 2.5)
                 endif
-                if time == 0.14 then
+                if time == 0.6 then
                     set bjLCU=CreateUnit(GetOwningPlayer(caster), 'dR13', GetUnitX(target), GetUnitY(target), GetRandomInt(0, 360))
                     call SetUnitScale(bjLCU, 5, 5, 5)
                     call SetUnitTimeScale(bjLCU, 0.6)
@@ -163946,6 +163946,11 @@ function RengokuT_Act1 takes nothing returns nothing
         //call SetUnitY(LoadUnitHandle(h, id, Effect1Hash), GetUnitY(caster))
         call SetUnitXY(LoadUnitHandle(h, id, c_DUMMY2), GetUnitX(caster), GetUnitY(caster))
         call SetUnitXY(LoadUnitHandle(h, id, c_DUMMY3), GetUnitX(caster), GetUnitY(caster))
+        if time == 2 then
+            set soundplay=CreateSound("Sound\\war3mapImported\\RengokuT2.mp3", false, false, true, 12700, 12700, "")
+            call StartSound(soundplay)
+            call KillSoundWhenDone(soundplay)
+        endif
         if time == 3 then
             set soundplay=CreateSound("Sound\\war3mapImported\\RengokuT1.mp3", false, false, true, 12700, 12700, "")
             call StartSound(soundplay)
@@ -164000,7 +164005,7 @@ function RengokuT_Cast takes unit newCaster,unit newTarget,timer newTimer return
     local real caster_x= GetUnitX(newCaster)
     local real caster_y= GetUnitY(newCaster)
     local boolean b_RengokuF_Pass= LoadBoolean(HH, id_caster, RengokuF_Pass)
-    set soundplay=CreateSound("Sound\\war3mapImported\\RengokuT2.mp3", false, false, true, 12700, 12700, "")
+    set soundplay=CreateSound("Sound\\war3mapImported\\RengokuT0.mp3", false, false, true, 12700, 12700, "")
     call StartSound(soundplay)
     call KillSoundWhenDone(soundplay)
     set bjLCU=CreateUnit(GetOwningPlayer(newCaster), 'dR12', caster_x, caster_y, GetRandomInt(0, 360))
