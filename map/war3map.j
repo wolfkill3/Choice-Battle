@@ -166524,7 +166524,7 @@ function JirenQ_Cast2 takes nothing returns nothing
             set n = CreateUnit(p, 'dR45', x, y, a*bj_RADTODEG)
             call SetUnitScale(n, 0.7, 0.7, 0.7)
             call MyRemoveUnit(n, 1.5)
-            call GroupEnumUnitsInRange(G,x,y,300,Base)
+            call GroupEnumUnitsInRange(G,x,y,200,Base)
             loop
                 set E=FirstOfGroup(G)
                 exitwhen E==null
@@ -166751,6 +166751,12 @@ function JirenQSelf_Cast takes unit u returns nothing
     call SaveReal(HH,id,2,0)
     call UnitAddAbility(u,'JNQ2')
     call UnitMakeAbilityPermanent(u,true,'JNQ2')
+    set EFF=AddSpecialEffect("war3mapImported\\wind4.mdl",x,y)
+    call SetSpecialEffectScale(EFF,1.3)
+    call SetSpecialEffectVertexColour(EFF,235,225,235,190)
+    call SetSpecialEffectTimeScale(EFF,0.6)
+    call SetSpecialEffectFacing(EFF,GetRandomReal(0,359))
+    call DestroyEffect(EFF)
     call PauseUnit(u,true)
     call SaveBoolean(HH,GetHandleId(u),ANTITARGET_ABILITY,true)
     call TimerStart(t,0.04,true,function JirenQSelf_Cast2)
