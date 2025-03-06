@@ -165957,353 +165957,88 @@ function JirenF1_Cast takes unit u returns nothing
         set t=null
 endfunction
 
-function JirenR1_Cast6 takes nothing returns nothing
-local timer t=GetExpiredTimer()
-local integer id=GetHandleId(t)
-local unit u=LoadUnitHandle(h,id,0)
-local unit l__d=LoadUnitHandle(h,id,1)
-local unit c=LoadUnitHandle(h,id,18)
-local real x=GetUnitX(c)
-local real y=GetUnitY(c)
-local real dmg=GetHeroStr(u,true)*(4+GetUnitAbilityLevel(u,'A1A4'))
-local real x1=LoadReal(h,id,14)
-local real y1=LoadReal(h,id,15)
-local real x2=LoadReal(h,id,12)
-local real y2=LoadReal(h,id,13)
-local real a=LoadReal(h,id,3)
-local real dist=LoadReal(h,id,2)
-local real pitchr=LoadReal(h,id,10)
-local real pitchr1=LoadReal(h,id,16)
-local player p=GetOwningPlayer(u)
-if dist<1780 and GetWidgetLife(l__d)>0 then
-    call PauseUnit(l__d,true)
-    call SaveBoolean(HH,GetHandleId(l__d),TARGET_ABILITY,true)
-//call SetUnitXY_1(c,x,y, false)
-    if dist==770 then
-        call SaveUnitHandle(h,id,18,CreateUnit(p,'e1EC',x2+20*Cos(a),y2+20*Sin(a),a*bj_RADTODEG))
-        call SetUnitTimeScale(u,2.6)
-        set EFF=AddSpecialEffect("[doft]green-shoot.mdx", x2+20*Cos(a),y2+20*Sin(a))
-        call SetSpecialEffectZ(EFF,110)
-        call SetSpecialEffectOrientation(EFF , GetUnitFacing(u),60,0)
-        call SetSpecialEffectScale(EFF , 1.1)
-        call DestroyEffect(EFF)
-    endif
-    if dist==910 then
-        call PauseUnit(u,false)
-        call SetUnitInvulnerable(u,false)
-        call SetUnitTimeScale(u,1)
-    endif
-    if dist<210 then
-        if IsTerrainPathable(x2,y2,PATHING_TYPE_FLYABILITY)==false then
-            set x2=x2+(40-dist*0.17)*Cos(a)
-            set y2=y2+(40-dist*0.17)*Sin(a)
-            call SaveReal(h,id,12,x2)
-            call SaveReal(h,id,13,y2)
-            call SetUnitXY_1(u,x2,y2, false)
-        else
-            call SaveReal(h,id,2,dist+2000)
-        endif
-    elseif dist<910 then
-        call SetUnitXY_1(u,x2,y2, false)
-    endif
-    if dist>770 then
-        if IsTerrainPathable(x,y,PATHING_TYPE_FLYABILITY)==false then
-            set x=x+39*Cos(a)
-            set y=y+39*Sin(a)
-            call SetUnitXY_1(c,x,y, false)
-        endif
-    endif
-    if IsTerrainPathable(x1,y1,PATHING_TYPE_FLYABILITY)==false then
-        if SquareRootUnit(l__d,c)>120 or c==null then
-            set x1=x1+16*Cos(a)
-            set y1=y1+16*Sin(a)
-            call SaveReal(h,id,14,x1)
-            call SaveReal(h,id,15,y1)
-            call SetUnitFacing(u,a*bj_RADTODEG)
-        else
-            if LoadBoolean(h,id,11)==false then
-                call SaveBoolean(h,id,11,true)
-                set EFF=AddSpecialEffect("BrolyShock.mdx", x1,y1)
-                call SetUnitModel(c,"[doft]az_chongci-green2.mdx")
-                call UnitEnableAutoOrientation(c,false)
-                call SetSpecialEffectZ(EFF,GetUnitZCustom(l__d))
-                call SetSpecialEffectOrientation(EFF , GetUnitFacing(u)-180,60,0)
-                call SetSpecialEffectScale(EFF , 2.5)
-                call DestroyEffect(EFF)
-            endif
-            call SaveReal(h,id,10,pitchr+5)
-            call SaveReal(h,id,16,pitchr1-5)
-            set x1=x+30*Cos(a)
-            set y1=y+30*Sin(a)
-            call SaveReal(h,id,14,x1)
-            call SaveReal(h,id,15,y1)
-            call SetUnitFacing(u,a*bj_RADTODEG)
-        endif
-        call SetUnitOrientation(l__d,a*bj_RADTODEG-180,pitchr,0)
-        if c!=null then
-            call SetUnitOrientation(c,a*bj_RADTODEG,pitchr1,0)
-        endif
-        if UnitIsAlive(l__d)then
-            call SetUnitXY_1(l__d,x1,y1, false)
-            call PauseUnit(l__d,true)
-            call SaveBoolean(HH,GetHandleId(l__d),TARGET_ABILITY,true)
-        endif
-    endif
-    call SaveReal(h,id,2,dist+35)
-    if c!=null then
-        call SetUnitFlyHeight(c,40+ParabolaZ(550,1010,1010-(dist-770)),0)
-    endif
-    if SquareRootUnit(l__d,c)>160 or c==null then
-        call SetUnitFlyHeight(l__d,ParabolaZ(700,850,850-dist*0.65),0)
-    else
-        call SetUnitFlyHeight(l__d,GetUnitFlyHeight(c)+15,0)
-    endif
-else
-    if GetWidgetLife(l__d)<0 then
-        call PauseUnit(u,false)
-        call SetUnitInvulnerable(u,false)
-        call SetUnitTimeScale(u,1)
-    endif
-    call UnitEnableAutoOrientation(l__d,true)
-    call UnitEnableAutoOrientation(c,true)
-    call SaveReal(h,id,2,0)
-    call KillUnit(c)
-    call SetUnitFlyHeight(l__d,0,770)
-    call PauseTimer(t)
-    call PauseUnit(l__d,false)
-    call SaveBoolean(HH,GetHandleId(l__d),TARGET_ABILITY,false)
-    call SetUnitInvulnerable(l__d,false)
-    call myCustomDamage(u,l__d,dmg,false,false,null,null,null)
-    call UnitApplyTimedLife(CreateUnit(p,'e0EB',x1,y1,GetRandomReal(0,359)),'BHwe',3)
-    call UnitApplyTimedLife(CreateUnit(p,'e0E9',x1,y1,GetRandomReal(0,359)),'BHwe',3)
-    call UnitApplyTimedLife(CreateUnit(p,'e0EN',x1,y1,GetRandomReal(0,359)),'BHwe',3)
-    set soundplay=CreateSound("Sound\\Music\\mp3Music\\JirenR5.mp3",false,false,true,12700,12700,"")
-    call StartSound(soundplay)
-    call KillSoundWhenDone(soundplay)
-    set EFF=AddSpecialEffect("BrolyExplosion1.mdl", x1,y1)
-    call SetSpecialEffectScale(EFF , 1)
-    call DestroyEffect(EFF)
-    set EFF=AddSpecialEffect("war3mapImported\\GreenSlam.mdl", x1,y1)
-    call SetSpecialEffectScale(EFF , 1)
-    call DestroyEffect(EFF)
-    call SetControlToUnit(u,l__d,2,"stun")
-    call DestroyEffect(AddSpecialEffect("war3mapImported\\Cherry Blossom Impact.mdx",x1,y1))
-    call DestroyEffect(AddSpecialEffect("war3mapImported\\WarStompCaster.mdx",x1,y1))
-    call DestroyTimer(t)
-    call FlushChildHashtable(h,id)
-endif
-set l__d=null
-set u=null
-set p=null
-set t=null
-set c=null
-endfunction
-function JirenR1_Cast5 takes nothing returns nothing
-local timer t=GetExpiredTimer()
-local integer id=GetHandleId(t)
-local unit u=LoadUnitHandle(h,id,0)
-local unit l__d=LoadUnitHandle(h,id,1)
-local real x=GetUnitX(u)
-local real y=GetUnitY(u)
-local real x2
-local real y2
-local real dmg=GetHeroAgi(u,true)*10
-local real x1=GetUnitX(l__d)
-local real y1=GetUnitY(l__d)
-local real a=Atan2(y1-y,x1-x)
-local real a2=a-30*bj_DEGTORAD
-local real dist=LoadReal(h,id,2)
-local player p=GetOwningPlayer(u)
-if GetWidgetLife(l__d)>0 then
-call SetUnitOrientation(l__d,GetUnitFacing(u)-180,-90,0)
-call PauseUnit(l__d,true)
-call SaveBoolean(HH,GetHandleId(l__d),TARGET_ABILITY,true)
-call SetUnitInvulnerable(l__d,true)
-if SR(x,y,x1,y1)<160 and LoadBoolean(h,id,11)==false then
-    call SaveBoolean(h,id,11,true)
-    call SetUnitAnimationByIndex(u,38)
-    set soundplay=CreateSound("Sound\\Music\\mp3Music\\JirenR4.mp3",false,false,true,12700,12700,"")
-    call StartSound(soundplay)
-    call KillSoundWhenDone(soundplay)
-endif
-if SR(x,y,x1,y1)>110 and GetWidgetLife(l__d)>0 and dist<150 then
-if SR(x,y,x1,y1)<400 then
-set x=x+40*Cos(a)
-set y=y+40*Sin(a)
-else
-set x=x+25*Cos(a)
-set y=y+25*Sin(a)
-endif
-call SetUnitFacing(u,a*bj_RADTODEG)
-call SetUnitXY_1(u,x,y, false)
-call SaveReal(h,id,2,dist+1)
-if ModuloReal(dist,6)==1 then
-set EFF=AddSpecialEffect("BrolyREarth.mdx", x,y)
-call SetSpecialEffectFacing(EFF , a* bj_RADTODEG)
-call SetSpecialEffectScale(EFF , 0.3)
-call DestroyEffect(EFF)
-endif
-else
-call SetUnitFacing(u,a*bj_RADTODEG)
-if dist<150 then
-call SetUnitXY_1(u,x,y, false)
-else
-call SetUnitXY_1(u,x1,y1, false)
-endif
-call PauseTimer(t)
-set n=CreateUnit(p,'e0ZH',x,y,a*bj_RADTODEG-30)
-call SetUnitVertexColor(n,255,255,255,155)
-call UnitApplyTimedLife(n,1,0.4)
-call SetUnitTimeScale(n,3)
-set n=CreateUnit(p,'e0ZH',x,y,a*bj_RADTODEG+30)
-call SetUnitVertexColor(n,255,255,255,155)
-call UnitApplyTimedLife(n,1,0.4)
-call SetUnitTimeScale(n,3)
-set n=CreateUnit(p,'e0ZH',x,y,a*bj_RADTODEG)
-call SetUnitVertexColor(n,255,255,255,155)
-call UnitApplyTimedLife(n,1,0.4)
-call SetUnitTimeScale(n,3)
-call SaveReal(h,id,2,0)
-call UnitAddAbility(l__d,'Arav')
-call UnitRemoveAbility(l__d,'Arav')
-call SaveReal(h,id,10,-60)
-call SaveReal(h,id,16,30)
-set EFF=AddSpecialEffect("war3mapImported\\CF2.mdl", x1,y1)
-call SetSpecialEffectFacing(EFF , a* bj_RADTODEG)
-call SetSpecialEffectScale(EFF , 1)
-call DestroyEffect(EFF)
-set EFF=AddSpecialEffect("Minato-37.mdx", x1,y1)
-call SetSpecialEffectFacing(EFF , a* bj_RADTODEG)
-call SetSpecialEffectZ(EFF , 30)
-call SetSpecialEffectScale(EFF , 3)
-call DestroyEffect(EFF)
-call RemoveEffect(AddSpecialEffectTarget("war3mapImported\\BrolyCompression.mdx",u,"left hand"),0.2,false,CreateTimer())
-call SaveBoolean(h,id,11,false)
-call SaveReal(h,id,12,x)
-call SaveReal(h,id,13,y)
-call SaveReal(h,id,14,x1)
-call SaveReal(h,id,15,y1)
-call SaveReal(h,id,3,Atan2(y1-y,x1-x))
-call TimerStart(t,0.02,true,function JirenR1_Cast6)
-endif
-else
-call PauseUnit(u,false)
-call SetUnitInvulnerable(u,false)
-call PauseTimer(t)
-call SetUnitFlyHeight(u,0,0)
-call DestroyTimer(t)
-call FlushChildHashtable(h,id)
-endif
-set l__d=null
-set u=null
-set p=null
-set t=null
-endfunction
-function JirenR1_Cast41 takes nothing returns nothing
-local timer t=GetExpiredTimer()
-local integer id=GetHandleId(t)
-local unit u=LoadUnitHandle(h,id,0)
-local unit l__d=LoadUnitHandle(h,id,1)
-local real x=GetUnitX(l__d)
-local real y=GetUnitY(l__d)
-local real x1=GetUnitX(u)
-local real y1=GetUnitY(u)
-local real dmg=GetHeroAgi(u,true)*10
-local real a=Atan2(y-y1,x-x1)
-local real a2=a-30*bj_DEGTORAD
-local real dist=LoadReal(h,id,2)
-local real rollp=LoadReal(h,id,10)
-local player p=GetOwningPlayer(u)
-if dist<780 and GetWidgetLife(l__d)>0 and IsTerrainPathable(x,y,PATHING_TYPE_FLYABILITY)==false then
-call SaveReal(h,id,10,rollp+27)
-call SetUnitOrientation(l__d,GetUnitFacing(u)-270,rollp,-90)
-if dist<300 then
-call SetUnitFlyHeight(l__d,ParabolaZ(160,300,300-dist),0)
-else
-call SetUnitFlyHeight(l__d,ParabolaZ(120,350,650-dist),0)
-endif
-if dist==420 then
-call SetUnitTimeScale(u,0.9)
-call SetUnitAnimationByIndex(u,37)
-set soundplay=CreateSound("Sound\\Music\\mp3Music\\JirenR3.mp3",false,false,true,12700,12700,"")
-call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
-set EFF=AddSpecialEffect("BrolyREarth.mdx", x1,y1)
-call SetSpecialEffectFacing(EFF , a* bj_RADTODEG)
-call SetSpecialEffectScale(EFF , 0.3)
-call DestroyEffect(EFF)
-endif
-if dist>420 then
-set x1=x1+25*Cos(a)
-set y1=y1+25*Sin(a)
-call SetUnitFacing(u,a*bj_RADTODEG)
-call SetUnitXY_1(u,x1,y1, false)
-if dist==540 or dist==660 or dist==780 then
-set EFF=AddSpecialEffect("BrolyREarth.mdx", x1,y1)
-call SetSpecialEffectFacing(EFF , a* bj_RADTODEG)
-call SetSpecialEffectScale(EFF , 0.3)
-call DestroyEffect(EFF)
-endif
-endif
-set x=x+70*(110/dist)*Cos(a)
-set y=y+70*(110/dist)*Sin(a)
-call SetUnitFacing(u,a*bj_RADTODEG)
-call SetUnitXY_1(l__d,x,y, false)
-if GetUnitFlyHeight(l__d)<10 then
-call DestroyEffect(AddSpecialEffect("war3mapImported\\WarStompCaster.mdx",x,y))
-endif
-call SaveReal(h,id,2,dist+30)
-else
-call PauseUnit(l__d,true)
-call SaveBoolean(HH,GetHandleId(l__d),TARGET_ABILITY,true)
-call SetUnitInvulnerable(l__d,true)
-set EFF=AddSpecialEffect("BrolyRDash.mdl", x1+85*Cos(a),y1+85*Sin(a))
-call SetSpecialEffectFacing(EFF , a* bj_RADTODEG)
-call SetSpecialEffectScale(EFF , 1)
-call DestroyEffect(EFF)
-call SetUnitFacing(u,a*bj_RADTODEG)
-call PauseTimer(t)
-call SaveReal(h,id,2,0)
-if GetWidgetLife(l__d)>0 then
-call TimerStart(t,0.02,true,function JirenR1_Cast5)
-else
-call PauseUnit(u,false)
-call SetUnitInvulnerable(u,false)
-call PauseTimer(t)
-call SetUnitFlyHeight(u,0,0)
-call DestroyTimer(t)
-call FlushChildHashtable(h,id)
-endif
-endif
-set l__d=null
-set u=null
-set p=null
-set t=null
-endfunction
 function JirenR1_Cast4 takes nothing returns nothing
 local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
 local unit u=LoadUnitHandle(h,id,0)
-local unit l__d=LoadUnitHandle(h,id,1)
+local unit c=LoadUnitHandle(h,id,1)
+local unit l__d=LoadUnitHandle(h,id,11)
+local player p=GetOwningPlayer(u)
+local integer idu=GetPlayerId(p)
 local real x=GetUnitX(u)
 local real y=GetUnitY(u)
-local real dmg=GetHeroAgi(u,true)*10
 local real x1=GetUnitX(l__d)
 local real y1=GetUnitY(l__d)
-local real a=Atan2(y1-y,x1-x)
-local real dist=LoadReal(h,id,2)
-local player p=GetOwningPlayer(u)
-call PauseTimer(t)
-call TimerStart(t,0.02,true,function JirenR1_Cast41)
-set EFF=AddSpecialEffect("war3mapImported\\CF2.mdl", x,y)
-call SetSpecialEffectFacing(EFF , a* bj_RADTODEG)
-call SetSpecialEffectScale(EFF , 1)
-call DestroyEffect(EFF)
-set l__d=null
+local real x2=GetUnitX(c)
+local real y2=GetUnitY(c)
+local real f=GetUnitFacing(l__d)
+local real a=LoadReal(h,id,8)
+local real a2=Atan2(y2-y1,x2-x1)
+local real time=LoadReal(h,id,20)
+local real dmg=GetHeroStr(u,true)*(GetUnitAbilityLevel(u,'JNR1')+3)+125+75*GetUnitAbilityLevel(u,'JNR1')
+local real Range=LoadReal(h,id,9)
+local real time2=LoadReal(h,id,21)
+if time<time2 and SquareRootUnit(c,l__d)>150 then
+    call SaveReal(h,id,10,LoadReal(h,id,10)+0.03)
+    if time==0.6 then
+        set EFF=AddSpecialEffect("war3mapImported\\CF2.mdl", x+90*Cos(a),y+90*Sin(a))
+        call SetSpecialEffectOrientation(EFF,a*bj_RADTODEG,0,0)
+        call SetSpecialEffectZ(EFF, 80)
+        call SetSpecialEffectVertexColour(EFF,255,125,75,255)
+        call SetSpecialEffectScale(EFF , 0.5)
+        call DestroyEffect(EFF)
+        set n=CreateUnit(p,'e342',x+90*Cos(a),y+90*Sin(a),a*bj_RADTODEG)
+        call SetUnitScale(n,1.1,1.1,1.1)
+        call SaveUnitHandle(h,id,11,n)
+    endif
+    if time>1 then
+        set x1=x1+75*Cos(a2)
+        set y1=y1+75*Sin(a2)
+        call SetUnitXY_1(l__d,x1,y1, false)
+    endif
+elseif Range<1500 and UnitIsAlive(l__d) and IsTerrainPathable(x1,y1,PATHING_TYPE_FLYABILITY)==false then
+    call SaveReal(h,id,21,0)
+    set x1=x1+75*Cos(a)
+    set y1=y1+75*Sin(a)
+    call SetUnitXY_1(l__d,x1,y1, false)
+    call SetUnitXY_1(c,x1,y1, false)
+    if ModuloReal(Range,300)==75 then
+        set n=CreateUnit(p,'e134',x1,y1,a*bj_RADTODEG)
+        call SetUnitScale(n,0.5,0.5,0.5)
+        call SetUnitTimeScale(n,1.6)
+        call UnitApplyTimedLife(n,1,0.3)
+    endif
+    call SaveReal(h,id,3,x1)
+    call SaveReal(h,id,4,y1)
+    call SetUnitFacing(l__d,a*bj_RADTODEG)
+    call SaveReal(h,id,9,Range+75)
+else
+    call PauseUnit(u,false)
+    call SetUnitInvulnerable(u,false)
+    call PauseUnit(c,false)
+    call SetUnitInvulnerable(c,false)
+    call myCustomDamage(u,c,dmg,false,false,null,null,null)
+    set n=CreateUnit(p,'eo9K',x1,y1,GetRandomReal(0,359))
+    call SetUnitScale(n,0.7,0.7,0.7)
+    call UnitApplyTimedLife(n,1,3)
+    set n=CreateUnit(p,'eo9L',x1,y1,GetRandomReal(0,359))
+    call SetUnitScale(n,2,2,2)
+    call UnitApplyTimedLife(n,1,3)
+    call UnitApplyTimedLife(CreateUnit(p,'e0S4',x1,y1,GetRandomReal(0,359)),1,4)
+    call UnitApplyTimedLife(CreateUnit(p,'e1S5',x1,y1,GetRandomReal(0,359)),1,6)
+    call UnitApplyTimedLife(CreateUnit(p,'e0S3',x1,y1,GetRandomReal(0,359)),1,4)
+    call RemoveUnit(l__d)
+    call FlushChildHashtable(h,id)
+    call PauseTimer(t)
+    call DestroyTimer(t)
+endif
 set u=null
+set c=null
 set p=null
 set t=null
+set l__d=null
 endfunction
+
 function JirenR1_Cast3 takes nothing returns nothing
 local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
@@ -166318,15 +166053,14 @@ local real a=Atan2(y1-y,x1-x)
 local real dist=LoadReal(h,id,2)
 local player p=GetOwningPlayer(u)
 if dist<25 and GetWidgetLife(l__d)>0 then
-set x1=x1+3*Cos(a)
-set y1=y1+3*Sin(a)
-call SetUnitFlyHeight(l__d,ParabolaZ(220,85,75-dist*3),0)
+set x1=x1+6*Cos(a)
+set y1=y1+6*Sin(a)
+call SetUnitFlyHeight(l__d,ParabolaZ(440,85,75-dist*3),0)
 call PauseUnit(l__d,true)
 call SaveBoolean(HH,GetHandleId(l__d),TARGET_ABILITY,true)
 call SetUnitInvulnerable(l__d,true)
-if dist==7 then
-call SetUnitTimeScale(u,1.55)
-call SetUnitAnimationByIndex(u,39)
+if dist==10 then
+call SetUnitAnimationByIndex(u,20)
 endif
 call SetUnitFacing(u,a*bj_RADTODEG)
 call SetUnitXY_1(l__d,x1,y1, false)
@@ -166334,18 +166068,9 @@ call SaveReal(h,id,2,dist+1)
 else
 call SaveReal(h,id,2,60)
 call SaveReal(h,id,10,0)
+call SaveReal(h,id,20,0)
+call SaveReal(h,id,21,5)
 call PauseTimer(t)
-set EFF=AddSpecialEffect("BrolyKickSlash.mdl", x,y)
-call SetSpecialEffectFacing(EFF , a* bj_RADTODEG)
-call SetSpecialEffectTimeScale(EFF , 0.8)
-call SetSpecialEffectScale(EFF , 2)
-call DestroyEffect(EFF)
-set EFF=AddSpecialEffect("Minato-37.mdx", x1,y1)
-call SetSpecialEffectFacing(EFF , a* bj_RADTODEG)
-call SetSpecialEffectZ(EFF , 30)
-call SetSpecialEffectScale(EFF , 3)
-call DestroyEffect(EFF)
-call SetUnitTimeScale(u,2.3)
 if GetWidgetLife(l__d)>0 then
 call TimerStart(t,0.05,false,function JirenR1_Cast4)
 else
@@ -166375,79 +166100,83 @@ local real y1=GetUnitY(l__d)
 local real a=Atan2(y1-y,x1-x)
 local real dist=LoadReal(h,id,2)
 local player p=GetOwningPlayer(u)
-if SR(x,y,x1,y1)>150 and GetWidgetLife(l__d)>0 then
-    set x=x+100*Cos(a)
-    set y=y+100*Sin(a)
-    call SetUnitFacing(u,a*bj_RADTODEG)
-    call SetUnitXY_1(u,x,y, false)
-    call SaveReal(h,id,2,dist+1)
-    set EFF=AddSpecialEffect("BrolyREarth.mdx", x,y)
-    call SetSpecialEffectFacing(EFF , a* bj_RADTODEG)
-    call SetSpecialEffectScale(EFF , 0.3)
-    call DestroyEffect(EFF)
-    if dist==1 then
-        call SetUnitAnimationByIndex(u,15)
+local real time=LoadReal(h,id,20)
+if time<1 and GetWidgetLife(l__d)>0 then
+    call SaveReal(h,id,20,time+0.04)
+    if time==0 then
+        call SetUnitAnimationByIndex(u,22)
     endif
 else
-    if LoadBoolean(HH,GetHandleId(l__d),ANTITARGET_ABILITY)==false then
-        set soundplay=CreateSound("Sound\\Music\\mp3Music\\JirenR2.mp3",false,false,true,12700,12700,"")
-        call StartSound(soundplay)
-        call KillSoundWhenDone(soundplay)
-        call SaveReal(h,id,2,0)
-        set n=CreateUnit(p,'e0ZH',x,y,a*bj_RADTODEG-30)
-        call SetUnitVertexColor(n,255,255,255,155)
-        call UnitApplyTimedLife(n,1,0.4)
-        call SetUnitTimeScale(n,3)
-        set n=CreateUnit(p,'e0ZH',x,y,a*bj_RADTODEG+30)
-        call SetUnitVertexColor(n,255,255,255,155)
-        call UnitApplyTimedLife(n,1,0.4)
-        call SetUnitTimeScale(n,3)
-        set n=CreateUnit(p,'e0ZH',x,y,a*bj_RADTODEG)
-        call SetUnitVertexColor(n,255,255,255,155)
-        call UnitApplyTimedLife(n,1,0.4)
-        call SetUnitTimeScale(n,3)
-        call PauseTimer(t)
-        call PauseUnit(l__d,true)
-        call SaveBoolean(HH,GetHandleId(l__d),TARGET_ABILITY,true)
-        call SetUnitInvulnerable(l__d,true)
-        call SetUnitTimeScale(u,1.5)
-        call SaveReal(h,id,3,a)
-        //call SetUnitAnimation(l__d,"death")
-        call UnitEnableAutoOrientation(l__d,false)
-        call SetUnitOrientation(l__d,GetUnitFacing(u)-180,-45,0)
-        //call SetUnitAnimationByIndex(u,39)
-        set EFF=AddSpecialEffect("war3mapImported\\CF2.mdl", x1,y1)
+    if SR(x,y,x1,y1)>250 and GetWidgetLife(l__d)>0 then
+        set x=x+180*Cos(a)
+        set y=y+180*Sin(a)
+        call SetUnitFacing(u,a*bj_RADTODEG)
+        call SetUnitXY_1(u,x,y, false)
+        set EFF=AddSpecialEffect("BrolyREarth.mdx", x,y)
         call SetSpecialEffectFacing(EFF , a* bj_RADTODEG)
-        call SetSpecialEffectScale(EFF , 1)
+        call SetSpecialEffectScale(EFF , 0.3)
         call DestroyEffect(EFF)
-        set EFF=AddSpecialEffect("Minato-37.mdx", x1,y1)
-        call SetSpecialEffectFacing(EFF , a* bj_RADTODEG)
-        call SetSpecialEffectZ(EFF , 30)
-        call SetSpecialEffectScale(EFF , 3)
-        call DestroyEffect(EFF)
-        set n=CreateUnit(p,'e0RV',x1,y1,a*bj_RADTODEG)
-        call UnitApplyTimedLife(n,1,1)
-        if GetWidgetLife(l__d)>0 then
-            call TimerStart(t,0.03,true,function JirenR1_Cast3)
+    else
+        if LoadBoolean(HH,GetHandleId(l__d),ANTITARGET_ABILITY)==false then
+            set soundplay=CreateSound("Sound\\Music\\mp3Music\\JirenR2.mp3",false,false,true,12700,12700,"")
+            call StartSound(soundplay)
+            call KillSoundWhenDone(soundplay)
+            call SaveReal(h,id,2,0)
+            set n=CreateUnit(p,'e0ZH',x,y,a*bj_RADTODEG-30)
+            call SetUnitVertexColor(n,255,255,255,155)
+            call UnitApplyTimedLife(n,1,0.4)
+            call SetUnitTimeScale(n,3)
+            set n=CreateUnit(p,'e0ZH',x,y,a*bj_RADTODEG+30)
+            call SetUnitVertexColor(n,255,255,255,155)
+            call UnitApplyTimedLife(n,1,0.4)
+            call SetUnitTimeScale(n,3)
+            set n=CreateUnit(p,'e0ZH',x,y,a*bj_RADTODEG)
+            call SetUnitVertexColor(n,255,255,255,155)
+            call UnitApplyTimedLife(n,1,0.4)
+            call SetUnitTimeScale(n,3)
+            call PauseTimer(t)
+            call PauseUnit(l__d,true)
+            call SaveBoolean(HH,GetHandleId(l__d),TARGET_ABILITY,true)
+            call SetUnitInvulnerable(l__d,true)
+            call SetUnitTimeScale(u,1.5)
+            call SaveReal(h,id,3,a)
+            //call SetUnitAnimation(l__d,"death")
+            call UnitEnableAutoOrientation(l__d,false)
+            call SetUnitOrientation(l__d,GetUnitFacing(u)-180,-45,0)
+            //call SetUnitAnimationByIndex(u,39)
+            set EFF=AddSpecialEffect("war3mapImported\\CF2.mdl", x1,y1)
+            call SetSpecialEffectFacing(EFF , a* bj_RADTODEG)
+            call SetSpecialEffectScale(EFF , 1)
+            call DestroyEffect(EFF)
+            set EFF=AddSpecialEffect("Minato-37.mdx", x1,y1)
+            call SetSpecialEffectFacing(EFF , a* bj_RADTODEG)
+            call SetSpecialEffectZ(EFF , 30)
+            call SetSpecialEffectScale(EFF , 3)
+            call DestroyEffect(EFF)
+            set n=CreateUnit(p,'e0RV',x1,y1,a*bj_RADTODEG)
+            call UnitApplyTimedLife(n,1,1)
+            if GetWidgetLife(l__d)>0 then
+                call TimerStart(t,0.03,true,function JirenR1_Cast3)
+            else
+                call PauseUnit(u,false)
+                call SetUnitInvulnerable(u,false)
+                call PauseTimer(t)
+                call SetUnitFlyHeight(u,0,0)
+                call SetUnitTimeScale(u,1)
+                call DestroyTimer(t)
+                call FlushChildHashtable(h,id)
+            endif
         else
             call PauseUnit(u,false)
             call SetUnitInvulnerable(u,false)
-            call PauseTimer(t)
-            call SetUnitFlyHeight(u,0,0)
             call SetUnitTimeScale(u,1)
+            call SetUnitFlyHeight(u,0,0)
+            call SaveBoolean(HH,GetHandleId(l__d),TARGET_ABILITY,false)
+            call SaveUnitHandle(HH,GetHandleId(l__d),REVERSE_TARGET,u)
+            call PauseTimer(t)
             call DestroyTimer(t)
             call FlushChildHashtable(h,id)
         endif
-    else
-        call PauseUnit(u,false)
-        call SetUnitInvulnerable(u,false)
-        call SetUnitTimeScale(u,1)
-        call SetUnitFlyHeight(u,0,0)
-        call SaveBoolean(HH,GetHandleId(l__d),TARGET_ABILITY,false)
-        call SaveUnitHandle(HH,GetHandleId(l__d),REVERSE_TARGET,u)
-        call PauseTimer(t)
-        call DestroyTimer(t)
-        call FlushChildHashtable(h,id)
     endif
 endif
 set l__d=null
@@ -166470,19 +166199,6 @@ call SaveReal(h,id,2,0)
 call SaveReal(h,id,3,a)
 call PauseUnit(u,true)
 call SetUnitInvulnerable(u,true)
-set n=CreateUnit(p,'e0ZH',x,y,a*bj_RADTODEG-30)
-call SetUnitVertexColor(n,255,255,255,155)
-call UnitApplyTimedLife(n,1,0.4)
-call SetUnitTimeScale(n,3)
-set n=CreateUnit(p,'e0ZH',x,y,a*bj_RADTODEG+30)
-call SetUnitVertexColor(n,255,255,255,155)
-call UnitApplyTimedLife(n,1,0.4)
-call SetUnitTimeScale(n,3)
-set n=CreateUnit(p,'e0ZH',x,y,a*bj_RADTODEG)
-call SetUnitVertexColor(n,255,255,255,155)
-call UnitApplyTimedLife(n,1,0.4)
-call SetUnitTimeScale(n,3)
-call SetUnitAnimationByIndex(u,15)
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\JirenR1.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
 call KillSoundWhenDone(soundplay)
@@ -166653,14 +166369,19 @@ function JirenESelf_Cast3 takes nothing returns nothing
             call DestroyEffect(EFF)
         endif
         if time==0.4 then
-            set x=x1-50*Cos(a)
-            set y=y1-50*Sin(a)
+            set x=x1-90*Cos(a)
+            set y=y1-90*Sin(a)
             call SetUnitXY_1(u,x,y, false)
             call SetUnitVertexColor(u,255,255,255,255)
             set EFF=AddSpecialEffect("war3mapImported\\BlackBlink.mdx", x, y)
             call DestroyEffect(EFF)
             call SetUnitFacingInstant(u,a*bj_RADTODEG)
             call SetUnitAnimationByIndex(u,15)
+        endif
+        if time>0.4 and time<0.7 then
+            set x=x+2*Cos(a)
+            set y=y+2*Sin(a)
+            call SetUnitXY_1(u,x,y, false)
         endif
         if time==0.76 then
             set EFF=AddSpecialEffect("Minato-37.mdl",x1,y1)
@@ -166724,6 +166445,9 @@ function JirenESelf_Cast3 takes nothing returns nothing
         call RemoveEffect(EFF,0.5,false,CreateTimer())
         call SetUnitFlyHeight(c, 0, 0)
         call Push(c,40,a2,800)
+        call SetUnitPathing(u,true)
+        call PauseUnit(u,false)
+        call SetUnitInvulnerable(u,false)
         call PauseUnit(c,false)
         call SetUnitInvulnerable(c,false)
         call myCustomDamage(u,c,dmg,false,false,null,null,null)
@@ -166732,10 +166456,7 @@ function JirenESelf_Cast3 takes nothing returns nothing
         call DestroyTimer(t)
         call UnitRemoveAbility(u,'A0BX')
         call SetUnitTimeScale(u,1)
-        call SetUnitPathing(u,true)
-        call PauseUnit(u,false)
         call FlushChildHashtable(HH,id)
-        call SetUnitInvulnerable(u,false)
     endif
     set p=null
     set u=null
@@ -167293,6 +167014,9 @@ function JirenQSelf_Cast3 takes nothing returns nothing
         call RemoveEffect(EFF,0.5,false,CreateTimer())
         call SetUnitFlyHeight(c, 0, 0)
         call Push(c,50,a2,900)
+        call SetUnitPathing(u,true)
+        call PauseUnit(u,false)
+        call SetUnitInvulnerable(u,false)
         call PauseUnit(c,false)
         call SetUnitInvulnerable(c,false)
         call myCustomDamage(u,c,dmg,false,false,null,null,null)
@@ -167302,10 +167026,7 @@ function JirenQSelf_Cast3 takes nothing returns nothing
         call UnitRemoveAbility(u,'A0BX')
         call UnitEnableAutoOrientation(c,true)
         call SetUnitTimeScale(u,1)
-        call SetUnitPathing(u,true)
-        call PauseUnit(u,false)
         call FlushChildHashtable(HH,id)
-        call SetUnitInvulnerable(u,false)
     endif
     set p=null
     set u=null
