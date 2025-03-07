@@ -166013,7 +166013,7 @@ elseif Range<1500 and UnitIsAlive(l__d) and IsTerrainPathable(x1,y1,PATHING_TYPE
     call SetUnitFlyHeight(l__d,120+((Range/45)*(Range/45)),0)
     call SetUnitFlyHeight(c,120+((Range/44)*(Range/44)),0)
     call SetUnitXY_1(l__d,x1,y1, false)
-    call SetUnitXY_1(c,x1-Range*0.05*Cos(a)+60*Cos(a),y1-Range*0.05*Sin(a)+60*Sin(a), false)
+    call SetUnitXY_1(c,x1-Range*0.04*Cos(a)+60*Cos(a),y1-Range*0.04*Sin(a)+60*Sin(a), false)
     call SaveReal(HH,id,10,rollp-2)
     call SetUnitOrientation(c,GetUnitFacing(u)-180,rollp,0)
     if ModuloReal(Range,240)==40 then
@@ -166033,13 +166033,17 @@ else
     call UnitEnableAutoOrientation(c,true)
     call SetUnitTimeScale(u,1)
     set n=CreateUnit(p,'eo9K',x1,y1,GetRandomReal(0,359))
-    call SetUnitScale(n,1.2,1.2,1.2)
+    call SetUnitTimeScale(n,0.6)
+    call SetUnitScale(n,6,6,6)
     call SetUnitFlyHeight(n,GetUnitFlyHeight(c),0)
-    call UnitApplyTimedLife(n,1,3)
+    call SetUnitModel(n,"war3mapImported\\tx_haohuoqiu.mdl")
+    call UnitApplyTimedLife(n,1,1.5)
     set n=CreateUnit(p,'eo9L',x1,y1,GetRandomReal(0,359))
     call SetUnitFlyHeight(n,GetUnitFlyHeight(c),0)
-    call SetUnitScale(n,4,4,4)
-    call UnitApplyTimedLife(n,1,3)
+    call SetUnitTimeScale(n,1.5)
+    call SetUnitScale(n,1.2,1.2,1.2)
+    call SetUnitModel(n,"war3mapImported\\[DoFT]Natsu_Fire_Ball_n.mdl")
+    call UnitApplyTimedLife(n,1,2)
     call PauseUnit(u,false)
     call SetUnitInvulnerable(u,false)
     call PauseUnit(c,false)
@@ -166403,8 +166407,8 @@ function JirenESelf_Cast3 takes nothing returns nothing
             call DestroyEffect(EFF)
         endif
         if time==0.4 then
-            set x=x1-90*Cos(a)
-            set y=y1-90*Sin(a)
+            set x=x1-120*Cos(a)
+            set y=y1-120*Sin(a)
             call SetUnitXY_1(u,x,y, false)
             call SetUnitVertexColor(u,255,255,255,255)
             set EFF=AddSpecialEffect("war3mapImported\\BlackBlink.mdx", x, y)
@@ -166413,8 +166417,8 @@ function JirenESelf_Cast3 takes nothing returns nothing
             call SetUnitAnimationByIndex(u,15)
         endif
         if time>0.4 and time<0.7 then
-            set x=x+2*Cos(a)
-            set y=y+2*Sin(a)
+            set x=x+3*Cos(a)
+            set y=y+3*Sin(a)
             call SetUnitXY_1(u,x,y, false)
         endif
         if time==0.76 then
@@ -166435,7 +166439,7 @@ function JirenESelf_Cast3 takes nothing returns nothing
             set EFF=AddSpecialEffect("WindVectorPush.mdx", x1, y1)
             call SetSpecialEffectOrientation(EFF,a*bj_RADTODEG,0,0)
             call SetSpecialEffectZ(EFF , 100)
-            call SetSpecialEffectScale(EFF ,2)
+            call SetSpecialEffectScale(EFF ,0.7)
             call SetSpecialEffectVertexColour(EFF,255,255,255,120)
             call RemoveEffect(EFF,1,true,CreateTimer())
         endif
@@ -166445,12 +166449,10 @@ function JirenESelf_Cast3 takes nothing returns nothing
             call SetSpecialEffectZ(EFF,110)
             call SetSpecialEffectVertexColour(EFF,255,255,255,50)
             call SaveEffectHandle(HH,id,10,EFF)
-        endif
-        if time==1.9 then
-            set EFF=AddSpecialEffect("war3mapImported\\wind3.mdl",x1,y1)
-            call SetSpecialEffectScale(EFF,1)
-            call SetSpecialEffectOrientation(EFF , a* bj_RADTODEG,-90,0)
+            set EFF=AddSpecialEffect("war3mapImported\\wind4.mdl",x1,y1)
+            call SetSpecialEffectScale(EFF,1.3)
             call SetSpecialEffectVertexColour(EFF,235,225,235,190)
+            call SetSpecialEffectTimeScale(EFF,0.6)
             call DestroyEffect(EFF)
         endif
         if time>1.8 and time<2.2 then
@@ -166462,14 +166464,42 @@ function JirenESelf_Cast3 takes nothing returns nothing
             call SetSpecialEffectX(LoadEffectHandle(HH,id,10),x1)
             call SetSpecialEffectY(LoadEffectHandle(HH,id,10),y1)
         endif
+        if time>1.8 then
+            if ModuloReal(time,0.1)==0.02 then
+                set EFF = AddSpecialEffect("Hashirama\\SmokeFuzzy.mdl",x1,y1)
+                call SetSpecialEffectScale(EFF, 1.3)
+                call SetSpecialEffectTimeScale(EFF , 1.6)
+                call DestroyEffect(EFF)
+                set EFF=AddSpecialEffect("war3mapImported\\wind3.mdl",x1,y1)
+                call SetSpecialEffectScale(EFF,1)
+                call SetSpecialEffectZ(EFF,110)
+                call SetSpecialEffectVertexColour(EFF,235,235,125,255)
+                call SetSpecialEffectOrientation(EFF,GetRandomReal(0,359),GetRandomReal(-90,90),GetRandomReal(-90,90))
+                call DestroyEffect(EFF)
+                set EFF=AddSpecialEffect("AH (1358).mdl",x1,y1)
+                call SetSpecialEffectZ(EFF,110)
+                call SetSpecialEffectScale(EFF,0.3)
+                call SetSpecialEffectVertexColour(EFF,255,235,125,255)
+                call SetSpecialEffectOrientation(EFF,GetRandomReal(0,359),GetRandomReal(-90,90),GetRandomReal(-90,90))
+                call DestroyEffect(EFF)
+                set EFF=AddSpecialEffect("AH (1358).mdl",x1,y1)
+                call SetSpecialEffectZ(EFF,110)
+                call SetSpecialEffectScale(EFF,0.3)
+                call SetSpecialEffectVertexColour(EFF,255,235,125,255)
+                call SetSpecialEffectOrientation(EFF,GetRandomReal(0,359),GetRandomReal(-90,90),GetRandomReal(-90,90))
+                call DestroyEffect(EFF)
+            endif
+        endif
     else
         call RemoveEffect(LoadEffectHandle(HH,id,10),0.1,true,CreateTimer())
         set n=CreateUnit(p,'eo9K',x1,y1,GetRandomReal(0,359))
         call SetUnitScale(n,0.3,0.3,0.3)
         call SetUnitFlyHeight(n, 110, 0)
+        call SetUnitTimeScale(n,3)
         call UnitApplyTimedLife(n,1,3)
         set n=CreateUnit(p,'eo9L',x1,y1,GetRandomReal(0,359))
         call SetUnitScale(n,1,1,1)
+        call SetUnitTimeScale(n,1)
         call SetUnitFlyHeight(n, 110, 0)
         call UnitApplyTimedLife(n,1,3)
         set EFF=AddSpecialEffect("HitEnergy.mdx", x1, y1)
