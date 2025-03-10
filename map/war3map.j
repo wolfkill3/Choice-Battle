@@ -166351,7 +166351,7 @@ call SetUnitFacing(l__d,a*bj_RADTODEG)
 call SetUnitScale(l__d,sc,sc,sc)
 call SetUnitFlyHeight(l__d,hei,0)
 if GetUnitFlyHeight(l__d)>100 and GetUnitFlyHeight(l__d)<280 and sc<4 then
-call SaveReal(h,id,9,sc+0.5)
+call SaveReal(h,id,9,sc+0.15)
 if LoadBoolean(h,id,11)==false then
 call SaveBoolean(h,id,11,true)
 set EFF=AddSpecialEffect("JirenShock2.mdl", x,y)
@@ -166409,8 +166409,8 @@ call SaveReal(h,id,4,y)
 call SaveReal(h,id,5,mh)
 call SaveReal(h,id,6,SR(x,y,GetUnitX(l__d),GetUnitY(l__d)))
 call SaveReal(h,id,8,dmg)
-call SaveReal(h,id,9,0.3)
-call SetUnitScale(l__d,0.3,0.3,0.3)
+call SaveReal(h,id,9,0.2)
+call SetUnitScale(l__d,0.2,0.2,0.2)
 call TimerStart(t,0.03,true,function JirenT_Fly4)
 set t=null
 endfunction
@@ -166443,7 +166443,7 @@ set hei=mh*cof+50
 call SetUnitScale(l__d,sc,sc,sc)
 call SetUnitFlyHeight(l__d,hei,0)
 if GetUnitFlyHeight(l__d)>100 and GetUnitFlyHeight(l__d)<280 and sc<4 then
-call SaveReal(h,id,9,sc+0.5)
+call SaveReal(h,id,9,sc+0.15)
 if LoadBoolean(h,id,11)==false then
 call SaveBoolean(h,id,11,true)
 set EFF=AddSpecialEffect("JirenShock2.mdl", x,y)
@@ -166500,8 +166500,8 @@ call SaveReal(h,id,4,y)
 call SaveReal(h,id,5,mh)
 call SaveReal(h,id,6,SR(x,y,GetUnitX(l__d),GetUnitY(l__d)))
 call SaveReal(h,id,8,dmg)
-call SaveReal(h,id,9,0.3)
-call SetUnitScale(l__d,0.3,0.3,0.3)
+call SaveReal(h,id,9,0.2)
+call SetUnitScale(l__d,0.2,0.2,0.2)
 call TimerStart(t,0.03,true,function JirenT_Fly2)
 set t=null
 endfunction
@@ -166534,7 +166534,7 @@ local real PitchA=Atan2(dist,z)
 if time==0.02 then
     call SetUnitAnimationByIndex(u,46)
 endif
-if time==0.04 then
+if time==0.06 then
     call SetUnitAnimationOffsetPercent(u,0.215)
     call SetUnitTimeScale(u,2.6)
 endif
@@ -166546,7 +166546,7 @@ if time==0.1 then
     call SaveUnitHandle(h,id,9,n)
 endif
 if time>0.1 and time<0.5 then
-    call SaveReal(h,id,8,sc+0.35)
+    call SaveReal(h,id,8,sc+0.05)
     call SetUnitScale(l__d,sc,sc,sc)
     call SetUnitFlyHeight(l__d,hei2+13,0)
 endif
@@ -166556,18 +166556,19 @@ call SetUnitOrientation(u,a*bj_RADTODEG,(PitchA*bj_RADTODEG)-15,0)
 endif
 if time>0.7 and time<1 then
     call SetUnitTimeScale(u,0)
-    call SetUnitXY_1(l__d,x2+5*Cos(a),y2+5*Sin(a), false)
-    call SetUnitFlyHeight(l__d,hei2-16,0)
+    call SetUnitXY_1(l__d,x2+7*Cos(a),y2+7*Sin(a), false)
+    call SetUnitFlyHeight(l__d,hei2-17,0)
 endif
-if time==1.2 or time==1.3 or time==1.4 then
-    call SaveReal(h,id,8,sc-1)
+if time==1.24 or time==1.36 then
+    call SaveReal(h,id,8,sc-0.5)
     call SetUnitScale(l__d,sc,sc,sc)
 endif
-if time>1.2 and time<1.5 then
-    call SaveReal(h,id,8,sc-0.1)
+if time>1.3 and time<1.6 then
+    call SetUnitXY_1(l__d,x2-6*Cos(a),y2-6*Sin(a), false)
+    call SaveReal(h,id,8,sc-0.017)
     call SetUnitScale(l__d,sc,sc,sc)
 endif
-if time==1.5 then
+if time==1.7 then
     set x=x+50*Cos(a)
     set y=y+50*Sin(a)
     if SR(x,y,x1,y1)>400 then
@@ -166576,7 +166577,7 @@ if time==1.5 then
         call JirenT_Fly3(u,l__d,SR(x,y,x1,y1)/30,0,x1,y1,hei+30,dmg)
     endif
 endif
-if time==1.6 then
+if time==1.8 then
     call SetUnitTimeScale(u,1)
     call DestroyTimer(t)
     call FlushChildHashtable(h,id)
@@ -166602,7 +166603,7 @@ call SaveReal(h,id,2,y1)
 call SaveReal(h,id,5,x)
 call SaveReal(h,id,6,y)
 call SaveReal(h,id,7,0)
-call SaveReal(h,id,9,0.5)
+call SaveReal(h,id,9,0.1)
 call PauseUnit(u,true)
 call SetUnitInvulnerable(u,true)
 if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
