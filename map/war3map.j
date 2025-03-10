@@ -606,7 +606,7 @@ trigger gg_trg_DubleBuster=null
 trigger gg_trg_BurningSlash=null
 trigger gg_trg_BurningAttack=null
 trigger gg_trg_Shukainido=null
-trigger gg_trg_FinalKamehameha=null
+trigger gg_trg_FinalFlash=null
 trigger gg_trg_SpiritSwordVegito=null
 trigger gg_trg_BigBangBeam=null
 trigger gg_trg_BansheeBlast=null
@@ -68646,10 +68646,10 @@ call TriggerAddAction(t,function PowerUpVegetaCast)
 call TriggerAddCondition(t,Condition(function PowerUpVegetaCond))
 set t=null
 endfunction
-function FinalFleshCond takes nothing returns boolean
+function FinalKamehamehaCond takes nothing returns boolean
 return GetSpellAbilityId()=='A0IV'
 endfunction
-function FinalFleshCast3 takes nothing returns nothing
+function FinalKamehamehaCast3 takes nothing returns nothing
 local timer t2=GetExpiredTimer()
 local integer id1=GetHandleId(t2)
 local unit u=LoadUnitHandle(h,id1,0)
@@ -68662,7 +68662,7 @@ call DestroyTimer(t2)
 call FlushChildHashtable(h,id1)
 set u=null
 endfunction
-function FinalFleshCast2 takes nothing returns nothing
+function FinalKamehamehaCast2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
 local timer t2=CreateTimer()
 local integer id=GetHandleId(t)
@@ -68760,7 +68760,7 @@ call myCustomDamage(u,E,dmg,false,false,null,null,null)
 endif
 endloop
 call SaveUnitHandle(h,id1,0,u)
-call TimerStart(t2,0.7,false,function FinalFleshCast3)
+call TimerStart(t2,0.7,false,function FinalKamehamehaCast3)
 call DestroyTimer(t)
 call FlushChildHashtable(h,id)
 endif
@@ -68768,7 +68768,7 @@ set u=null
 set p=null
 set t=null
 endfunction
-function FinalFleshCast takes nothing returns nothing
+function FinalKamehamehaCast takes nothing returns nothing
 local unit u=GetTriggerUnit()
 local timer t=CreateTimer()
 local integer id=GetHandleId(t)
@@ -68810,12 +68810,12 @@ else
 endif
 call StartSound(soundplay)
 call KillSoundWhenDone(soundplay)
-call TimerStart(t,0.05,true,function FinalFleshCast2)
+call TimerStart(t,0.05,true,function FinalKamehamehaCast2)
 set u=null
 set t=null
 set p=null
 endfunction
-function FinalFleshInit takes nothing returns nothing
+function FinalKamehamehaInit takes nothing returns nothing
 local trigger t=CreateTrigger()
 local integer i=0
 loop
@@ -68823,8 +68823,8 @@ call TriggerRegisterPlayerUnitEvent(t,Player(i),EVENT_PLAYER_UNIT_SPELL_EFFECT,n
 set i=i+1
 exitwhen i>=bj_MAX_PLAYER_SLOTS
 endloop
-call TriggerAddAction(t,function FinalFleshCast)
-call TriggerAddCondition(t,Condition(function FinalFleshCond))
+call TriggerAddAction(t,function FinalKamehamehaCast)
+call TriggerAddCondition(t,Condition(function FinalKamehamehaCond))
 set t=null
 endfunction
 function FinalExplosionCond takes nothing returns boolean
@@ -93594,10 +93594,10 @@ call TriggerRegisterAnyUnitEventBJ(gg_trg_Shukainido,EVENT_PLAYER_UNIT_SPELL_EFF
 call TriggerAddCondition(gg_trg_Shukainido,Condition(function ShukainidoCond))
 call TriggerAddAction(gg_trg_Shukainido,function ShukainidoCast)
 endfunction
-function FinalKamehamehaCond takes nothing returns boolean
+function FinalFlashCond takes nothing returns boolean
 return GetSpellAbilityId()=='A0RJ' and udg_B==true
 endfunction
-function FinalKamehamehaCast4 takes nothing returns nothing
+function FinalFlashCast4 takes nothing returns nothing
 local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
 local unit u=LoadUnitHandle(h,id,0)
@@ -93685,7 +93685,7 @@ set u=null
 set l__d=null
 set p=null
 endfunction
-function FinalKamehamehaCast3 takes nothing returns nothing
+function FinalFlashCast3 takes nothing returns nothing
 local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
 local unit u=LoadUnitHandle(h,id,0)
@@ -93720,10 +93720,10 @@ call UnitAddAbility(l__d,'A0NN')
 call SetUnitX(u,x-55*Cos(a))
 call SetUnitY(u,y-55*Sin(a))
 call PauseTimer(t)
-call TimerStart(t,.015,true,function FinalKamehamehaCast4)
+call TimerStart(t,.015,true,function FinalFlashCast4)
 endif
 endfunction
-function FinalKamehamehaCast2 takes nothing returns nothing
+function FinalFlashCast2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
 local unit u=LoadUnitHandle(h,id,0)
@@ -93787,14 +93787,14 @@ endif
 call SaveReal(h,id,17,scale)
 call SetUnitScale(l__d,scale+0.3,scale+0.3,scale+0.3)
 call PauseTimer(t)
-call TimerStart(t,0.05,true,function FinalKamehamehaCast3)
+call TimerStart(t,0.05,true,function FinalFlashCast3)
 endif
 set l__d=null
 set p=null
 set u=null
 set t=null
 endfunction
-function FinalKamehamehaCast takes nothing returns nothing
+function FinalFlashCast takes nothing returns nothing
 local unit u=GetTriggerUnit()
 local timer t=CreateTimer()
 local integer id=GetHandleId(t)
@@ -93830,16 +93830,16 @@ set soundplay=CreateSound("Sound\\Music\\mp3Music\\Vegeta\\FinalKamehamehaCharge
 endif
 call StartSound(soundplay)
 call SaveSoundHandle(h,id,16,soundplay)
-call TimerStart(t,0.1,true,function FinalKamehamehaCast2)
+call TimerStart(t,0.1,true,function FinalFlashCast2)
 set u=null
 set p=null
 set t=null
 endfunction
-function InitTrig_FinalKamehameha takes nothing returns nothing
-set gg_trg_FinalKamehameha=CreateTrigger()
-call TriggerRegisterAnyUnitEventBJ(gg_trg_FinalKamehameha,EVENT_PLAYER_UNIT_SPELL_EFFECT)
-call TriggerAddCondition(gg_trg_FinalKamehameha,Condition(function FinalKamehamehaCond))
-call TriggerAddAction(gg_trg_FinalKamehameha,function FinalKamehamehaCast)
+function InitTrig_FinalFlash takes nothing returns nothing
+set gg_trg_FinalFlash=CreateTrigger()
+call TriggerRegisterAnyUnitEventBJ(gg_trg_FinalFlash,EVENT_PLAYER_UNIT_SPELL_EFFECT)
+call TriggerAddCondition(gg_trg_FinalFlash,Condition(function FinalFlashCond))
+call TriggerAddAction(gg_trg_FinalFlash,function FinalFlashCast)
 endfunction
 function SpiritSwordVegitoCond takes nothing returns boolean
 return GetSpellAbilityId()=='A0RH' and udg_B==true
@@ -166362,7 +166362,7 @@ endif
 endif
 call SaveReal(h,id,5,mh-15)
 else
-call GroupEnumUnitsInRange(DG,x1,y1,750,Base)
+call GroupEnumUnitsInRange(DG,x1,y1,650,Base)
 loop
 set E=FirstOfGroup(DG)
 exitwhen E==null
@@ -166373,16 +166373,19 @@ call GroupRemoveUnit(DG,E)
 endloop
 call PauseUnit(LoadUnitHandle(h,id,10),false)
 call SetUnitInvulnerable(LoadUnitHandle(h,id,10),false)
-call SetUnitFlyHeight(LoadUnitHandle(h,id,10),0,300)
+call SetUnitTimeScale(LoadUnitHandle(h,id,10),1)
+call SetUnitAnimation(LoadUnitHandle(h,id,10),"stand")
+call UnitEnableAutoOrientation(LoadUnitHandle(h,id,10),true)
+call SetUnitFlyHeight(LoadUnitHandle(h,id,10),0,400)
 call StartSound(soundStr[47])
 set EFF=AddSpecialEffect("[choice]JirenEarthBlast.mdl", x1,y1)
-call SetSpecialEffectScale(EFF , 2)
+call SetSpecialEffectScale(EFF , 1.8)
 call DestroyEffect(EFF)
 set EFF=AddSpecialEffect("JirenExplosion2.mdl", x1,y1)
-call SetSpecialEffectScale(EFF , 1.3)
+call SetSpecialEffectScale(EFF , 1.15)
 call DestroyEffect(EFF)
 set EFF=AddSpecialEffect("JirenTExplosion.mdl", x1,y1)
-call SetSpecialEffectScale(EFF , 0.8)
+call SetSpecialEffectScale(EFF , 0.7)
 call SetSpecialEffectTimeScale(EFF , 1.7)
 call DestroyEffect(EFF)
 call RemoveUnit(l__d)
@@ -166450,7 +166453,7 @@ call DestroyEffect(EFF)
 endif
 endif
 else
-call GroupEnumUnitsInRange(DG,x1,y1,750,Base)
+call GroupEnumUnitsInRange(DG,x1,y1,650,Base)
 loop
 set E=FirstOfGroup(DG)
 exitwhen E==null
@@ -166461,17 +166464,20 @@ call GroupRemoveUnit(DG,E)
 endloop
 call PauseUnit(LoadUnitHandle(h,id,10),false)
 call SetUnitInvulnerable(LoadUnitHandle(h,id,10),false)
-call SetUnitFlyHeight(LoadUnitHandle(h,id,10),0,300)
+call SetUnitTimeScale(LoadUnitHandle(h,id,10),1)
+call SetUnitAnimation(LoadUnitHandle(h,id,10),"stand")
+call UnitEnableAutoOrientation(LoadUnitHandle(h,id,10),true)
+call SetUnitFlyHeight(LoadUnitHandle(h,id,10),0,400)
 call StartSound(soundStr[47])
 call RemoveUnit(l__d)
 set EFF=AddSpecialEffect("[choice]JirenEarthBlast.mdl", x1,y1)
-call SetSpecialEffectScale(EFF , 2)
+call SetSpecialEffectScale(EFF , 1.8)
 call DestroyEffect(EFF)
 set EFF=AddSpecialEffect("JirenExplosion2.mdl", x1,y1)
-call SetSpecialEffectScale(EFF , 1.3)
+call SetSpecialEffectScale(EFF , 1.15)
 call DestroyEffect(EFF)
 set EFF=AddSpecialEffect("JirenTExplosion.mdl", x1,y1)
-call SetSpecialEffectScale(EFF , 0.8)
+call SetSpecialEffectScale(EFF , 0.7)
 call SetSpecialEffectTimeScale(EFF , 1.7)
 call DestroyEffect(EFF)
 call PauseTimer(t)
@@ -166506,37 +166512,68 @@ function JirenT_Cast2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
 local unit u=LoadUnitHandle(h,id,0)
+local unit l__d=LoadUnitHandle(h,id,9)
 local integer i=1
 local player p=GetOwningPlayer(u)
 local real x=LoadReal(h,id,5)
 local real y=LoadReal(h,id,6)
 local real x1=LoadReal(h,id,1)
 local real y1=LoadReal(h,id,2)
+local real x2=GetUnitX(l__d)
+local real y2=GetUnitY(l__d)
 local real a=Atan2(y1-y,x1-x)
 local real dmg=GetHeroStr(u,true)*10
 local real hei=GetUnitFlyHeight(u)
+local real hei2=GetUnitFlyHeight(l__d)
 local real time=LoadReal(h,id,7)
-if time==0 then
+local real sc=LoadReal(h,id,8)
+local real z=GetUnitZCustom(u)
+local real dist=SR3D(x,y,z,x1,y1,0)
+local real dist2=SR(x,y,x1,y1)
+local real PitchA=Atan2(dist,z)
+if time==0.02 then
     call SetUnitAnimationByIndex(u,46)
 endif
-if time==0.02 then
+if time==0.04 then
     call SetUnitAnimationOffsetPercent(u,0.215)
-    call SetUnitTimeScale(u,1.5)
+    call SetUnitTimeScale(u,2.6)
 endif
 call SaveReal(h,id,7,time+0.02)
 if time==0.1 then
-
-endif
-if time==1.4 then
-    set x=x+50*Cos(a)
-    set y=y+50*Sin(a)
     set n=CreateUnit(p,'eJN0',x,y,a)
     call SetUnitFlyHeight(n,hei+30,0)
-    call SetUnitScale(n,2.5,2.5,2.5)
+    call SetUnitScale(n,sc,sc,sc)
+    call SaveUnitHandle(h,id,9,n)
+endif
+if time>0.1 and time<0.5 then
+    call SaveReal(h,id,8,sc+0.35)
+    call SetUnitScale(l__d,sc,sc,sc)
+    call SetUnitFlyHeight(l__d,hei2+13,0)
+endif
+if time==0.6 then
+call UnitEnableAutoOrientation(u,false)
+call SetUnitOrientation(u,a*bj_RADTODEG,(PitchA*bj_RADTODEG)-15,0)
+endif
+if time>0.7 and time<1 then
+    call SetUnitTimeScale(u,0)
+    call SetUnitXY_1(l__d,x2+5*Cos(a),y2+5*Sin(a), false)
+    call SetUnitFlyHeight(l__d,hei2-16,0)
+endif
+if time==1.2 or time==1.3 or time==1.4 then
+    call SaveReal(h,id,8,sc-1)
+    call SetUnitScale(l__d,sc,sc,sc)
+endif
+if time>1.2 and time<1.5 then
+    call SaveReal(h,id,8,sc-0.1)
+    call SetUnitScale(l__d,sc,sc,sc)
+endif
+if time==1.5 then
+    set x=x+50*Cos(a)
+    set y=y+50*Sin(a)
     if SR(x,y,x1,y1)>400 then
-        call JirenT_Fly(u,n,SR(x,y,x1,y1)/20,0,x1,y1,hei+30,dmg)
+        call JirenT_Fly(u,l__d,SR(x,y,x1,y1)/20,0,x1,y1,hei+30,dmg)
     else
-        call JirenT_Fly3(u,n,SR(x,y,x1,y1)/30,0,x1,y1,hei+30,dmg)
+        call JirenT_Fly3(u,l__d,SR(x,y,x1,y1)/30,0,x1,y1,hei+30,dmg)
     endif
 endif
 if time==1.6 then
@@ -166545,6 +166582,7 @@ if time==1.6 then
     call FlushChildHashtable(h,id)
 endif
 set u=null
+set l__d=null
 set p=null
 set t=null
 endfunction
@@ -166564,6 +166602,7 @@ call SaveReal(h,id,2,y1)
 call SaveReal(h,id,5,x)
 call SaveReal(h,id,6,y)
 call SaveReal(h,id,7,0)
+call SaveReal(h,id,9,0.5)
 call PauseUnit(u,true)
 call SetUnitInvulnerable(u,true)
 if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
@@ -211160,7 +211199,7 @@ call InitTrig_DubleBuster()
 call InitTrig_BurningSlash()
 call InitTrig_BurningAttack()
 call InitTrig_Shukainido()
-call InitTrig_FinalKamehameha()
+call InitTrig_FinalFlash()
 call InitTrig_SpiritSwordVegito()
 call InitTrig_BigBangBeam()
 call InitTrig_BansheeBlast()
@@ -213692,7 +213731,7 @@ call LearnKiMasteryInit()
 call InstantTransmissionGokuInit()
 call FusionDanceInit()
 call PowerUpVegetaInit()
-call FinalFleshInit()
+call FinalKamehamehaInit()
 call FinalExplosionInit()
 call GalickGunInit()
 call InitBigBangAttack()
