@@ -166072,7 +166072,7 @@ if GetWidgetLife(c)>0 and GetWidgetLife(u)>0 and time<4 then
         call SetUnitScale(n,0.1,0.1,0.1)
         call SaveUnitHandle(HH,id,5,n)
         set EFF=AddSpecialEffect("GokuAuraBurstRed.mdl", x1, y1)
-        call SetSpecialEffectScale(EFF , 0.5)
+        call SetSpecialEffectScale(EFF , 0.6)
         call SetSpecialEffectVertexColour(EFF,195,195,195,125)
         call RemoveEffect(EFF,0.5,true,CreateTimer())
     endif
@@ -166348,7 +166348,7 @@ local integer idu=GetPlayerId(p)
 local real sc=LoadReal(h,id,9)
 local real hei=0
 set hei=mh
-if mh>20 and udg_B==true and DU2==true then
+if mh>40 and udg_B==true and DU2==true then
 call SetUnitXY_1(l__d,x+speed*Cos(a),y+speed*Sin(a), false)
 call SaveReal(h,id,1,speed*1.02)
 call SetUnitFacing(l__d,a*bj_RADTODEG)
@@ -166364,7 +166364,7 @@ call SetSpecialEffectZ(EFF,GetUnitZCustom(l__d))
 call DestroyEffect(EFF)
 endif
 endif
-call SaveReal(h,id,5,mh-15)
+call SaveReal(h,id,5,mh-35)
 else
 call GroupEnumUnitsInRange(DG,x1,y1,700,Base)
 loop
@@ -166382,6 +166382,7 @@ call SetUnitAnimation(LoadUnitHandle(h,id,10),"stand")
 call UnitEnableAutoOrientation(LoadUnitHandle(h,id,10),true)
 call SetUnitFlyHeight(LoadUnitHandle(h,id,10),0,1000)
 call StartSound(soundStr[47])
+call UnitApplyTimedLife(CreateUnit(p,'e0KO',x1,y1,GetRandomReal(0,359)),'BHwe',3)
 set EFF=AddSpecialEffect("[choice]JirenEarthBlast.mdl", x1,y1)
 call SetSpecialEffectScale(EFF , 2.0)
 call DestroyEffect(EFF)
@@ -166395,9 +166396,9 @@ call DestroyEffect(EFF)
 set EFF=AddSpecialEffect("GokuAuraBurstRed.mdl", x1, y1)
 call SetSpecialEffectScale(EFF , 1.5)
 call SetSpecialEffectVertexColour(EFF,195,195,195,125)
-call RemoveEffect(EFF,0.5,true,CreateTimer())
+call RemoveEffect(EFF,0.8,true,CreateTimer())
 call RemoveUnit(l__d)
-call PauseTimer(t)
+call PauseTimer(t) 
 call DestroyTimer(t)
 call FlushChildHashtable(h,id)
 endif
@@ -166478,6 +166479,7 @@ call UnitEnableAutoOrientation(LoadUnitHandle(h,id,10),true)
 call SetUnitFlyHeight(LoadUnitHandle(h,id,10),0,1000)
 call StartSound(soundStr[47])
 call RemoveUnit(l__d)
+call UnitApplyTimedLife(CreateUnit(p,'e0KO',x1,y1,GetRandomReal(0,359)),'BHwe',3)
 set EFF=AddSpecialEffect("[choice]JirenEarthBlast.mdl", x1,y1)
 call SetSpecialEffectScale(EFF , 2.0)
 call DestroyEffect(EFF)
@@ -166491,7 +166493,7 @@ call DestroyEffect(EFF)
 set EFF=AddSpecialEffect("GokuAuraBurstRed.mdl", x1, y1)
 call SetSpecialEffectScale(EFF , 1.5)
 call SetSpecialEffectVertexColour(EFF,195,195,195,125)
-call RemoveEffect(EFF,0.5,true,CreateTimer())
+call RemoveEffect(EFF,0.8,true,CreateTimer())
 call PauseTimer(t)
 call DestroyTimer(t)
 call FlushChildHashtable(h,id)
@@ -166585,7 +166587,7 @@ endif
 if time>0.7 and time<0.9 then
     call SetUnitTimeScale(u,0)
     call SetUnitXY_1(l__d,x2+10*Cos(a),y2+10*Sin(a), false)
-    call SetUnitFlyHeight(l__d,hei2-45,0)
+    call SetUnitFlyHeight(l__d,hei2-48,0)
 endif
 if time>0.9 and time<1.8 then
     call SaveInteger(h,id,11,efftA+5)
@@ -166597,8 +166599,8 @@ if time==1.14 then
     call SetSpecialEffectZ(EFF,GetUnitZCustom(l__d))
     call DestroyEffect(EFF)
 endif
-if time==1.14 or time==1.26 then
-    call SaveReal(h,id,8,sc-0.5)
+if time==1.12 or time==1.38 then
+    call SaveReal(h,id,8,sc-0.7)
     call SetUnitScale(l__d,sc,sc,sc)
     set EFF=AddSpecialEffectTarget("war3mapImported\\JirenShock2.mdl",u,"right hand")
     call SetSpecialEffectScale(EFF , 0.65)
@@ -166616,7 +166618,7 @@ if time==1.64 then
     set EFF=AddSpecialEffect("war3mapImported\\CF2.mdl", x,y)
     call SetSpecialEffectOrientation(EFF,a*bj_RADTODEG,(PitchA*bj_RADTODEG)-90,0)
     call SetSpecialEffectZ(EFF, z)
-    call SetSpecialEffectScale(EFF , 0.8)
+    call SetSpecialEffectScale(EFF , 1.8)
     call DestroyEffect(EFF)
     if SR(x,y,x1,y1)>400 then
         call JirenT_Fly(u,l__d,SR(x,y,x1,y1)/20,0,x1,y1,hei+30,dmg)
