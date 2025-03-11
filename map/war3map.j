@@ -166351,7 +166351,7 @@ call SetUnitFacing(l__d,a*bj_RADTODEG)
 call SetUnitScale(l__d,sc,sc,sc)
 call SetUnitFlyHeight(l__d,hei,0)
 if GetUnitFlyHeight(l__d)>100 and GetUnitFlyHeight(l__d)<280 and sc<4 then
-call SaveReal(h,id,9,sc+0.15)
+call SaveReal(h,id,9,sc+0.1)
 if LoadBoolean(h,id,11)==false then
 call SaveBoolean(h,id,11,true)
 set EFF=AddSpecialEffect("JirenShock2.mdl", x,y)
@@ -166443,7 +166443,7 @@ set hei=mh*cof+50
 call SetUnitScale(l__d,sc,sc,sc)
 call SetUnitFlyHeight(l__d,hei,0)
 if GetUnitFlyHeight(l__d)>100 and GetUnitFlyHeight(l__d)<280 and sc<4 then
-call SaveReal(h,id,9,sc+0.15)
+call SaveReal(h,id,9,sc+0.1)
 if LoadBoolean(h,id,11)==false then
 call SaveBoolean(h,id,11,true)
 set EFF=AddSpecialEffect("JirenShock2.mdl", x,y)
@@ -166531,11 +166531,11 @@ local real z=GetUnitZCustom(u)
 local real dist=SR3D(x,y,z,x1,y1,0)
 local real dist2=SR(x,y,x1,y1)
 local real PitchA=Atan2(dist,z)
-if time==0.02 then
+if time==0.02 or time==0.04 then
     call SetUnitAnimationByIndex(u,46)
 endif
-if time==0.06 then
-    call SetUnitAnimationOffsetPercent(u,0.215)
+if time==0.08 then
+    call SetUnitAnimationOffsetPercent(u,0.214)
     call SetUnitTimeScale(u,2.6)
 endif
 call SaveReal(h,id,7,time+0.02)
@@ -166553,15 +166553,29 @@ endif
 if time==0.6 then
 call UnitEnableAutoOrientation(u,false)
 call SetUnitOrientation(u,a*bj_RADTODEG,(PitchA*bj_RADTODEG)-15,0)
+set EFF=AddSpecialEffectTarget("war3mapImported\\RedGlow.mdl",u,"right hand")
+call SetSpecialEffectScale(EFF , 0.65)
+call SetSpecialEffectTimeScale(EFF , 2)
+call RemoveEffect(EFF,1,true,CreateTimer())
 endif
 if time>0.7 and time<1 then
     call SetUnitTimeScale(u,0)
     call SetUnitXY_1(l__d,x2+7*Cos(a),y2+7*Sin(a), false)
     call SetUnitFlyHeight(l__d,hei2-17,0)
 endif
+if time==1.24 then
+    set EFF=AddSpecialEffect("JirenShock2.mdl", x2,y2)
+    call SetSpecialEffectScale(EFF , 1)
+    call SetSpecialEffectZ(EFF,GetUnitZCustom(l__d))
+    call DestroyEffect(EFF)
+endif
 if time==1.24 or time==1.36 then
     call SaveReal(h,id,8,sc-0.5)
     call SetUnitScale(l__d,sc,sc,sc)
+    set EFF=AddSpecialEffectTarget("war3mapImported\\JirenShock2.mdl",u,"right hand")
+    call SetSpecialEffectScale(EFF , 0.45)
+    call SetSpecialEffectTimeScale(EFF , 2)
+    call RemoveEffect(EFF,0.6,true,CreateTimer())
 endif
 if time>1.3 and time<1.6 then
     call SetUnitXY_1(l__d,x2-6*Cos(a),y2-6*Sin(a), false)
@@ -166571,6 +166585,11 @@ endif
 if time==1.7 then
     set x=x+50*Cos(a)
     set y=y+50*Sin(a)
+    set EFF=AddSpecialEffect("war3mapImported\\CF2.mdl", x,y)
+    call SetSpecialEffectOrientation(EFF,a*bj_RADTODEG,(PitchA*bj_RADTODEG)-90,0)
+    call SetSpecialEffectZ(EFF, z)
+    call SetSpecialEffectScale(EFF , 0.8)
+    call DestroyEffect(EFF)
     if SR(x,y,x1,y1)>400 then
         call JirenT_Fly(u,l__d,SR(x,y,x1,y1)/20,0,x1,y1,hei+30,dmg)
     else
