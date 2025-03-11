@@ -166522,7 +166522,7 @@ local real y1=LoadReal(h,id,2)
 local real x2=GetUnitX(l__d)
 local real y2=GetUnitY(l__d)
 local real a=Atan2(y1-y,x1-x)
-local real dmg=GetHeroStr(u,true)*10
+local real dmg=GetHeroStr(u,true)*9+300
 local real hei=GetUnitFlyHeight(u)
 local real hei2=GetUnitFlyHeight(l__d)
 local real time=LoadReal(h,id,7)
@@ -166533,8 +166533,12 @@ local real dist2=SR(x,y,x1,y1)
 local real PitchA=Atan2(dist,z)
 if time==0.02 or time==0.04 then
     call SetUnitAnimationByIndex(u,46)
+    set EFF=AddSpecialEffect("JirenShock2.mdl", x,y)
+    call SetSpecialEffectScale(EFF , 1.6)
+    call SetSpecialEffectZ(EFF,640)
+    call DestroyEffect(EFF)
 endif
-if time==0.08 then
+if time==0.06 or time==0.08 then
     call SetUnitAnimationOffsetPercent(u,0.214)
     call SetUnitTimeScale(u,2.6)
 endif
@@ -166548,7 +166552,7 @@ endif
 if time>0.1 and time<0.5 then
     call SaveReal(h,id,8,sc+0.05)
     call SetUnitScale(l__d,sc,sc,sc)
-    call SetUnitFlyHeight(l__d,hei2+13,0)
+    call SetUnitFlyHeight(l__d,hei2+23,0)
 endif
 if time==0.6 then
 call UnitEnableAutoOrientation(u,false)
@@ -166558,31 +166562,31 @@ call SetSpecialEffectScale(EFF , 0.65)
 call SetSpecialEffectTimeScale(EFF , 2)
 call RemoveEffect(EFF,1,true,CreateTimer())
 endif
-if time>0.7 and time<1 then
+if time>0.7 and time<0.9 then
     call SetUnitTimeScale(u,0)
-    call SetUnitXY_1(l__d,x2+7*Cos(a),y2+7*Sin(a), false)
-    call SetUnitFlyHeight(l__d,hei2-17,0)
+    call SetUnitXY_1(l__d,x2+10*Cos(a),y2+10*Sin(a), false)
+    call SetUnitFlyHeight(l__d,hei2-37,0)
 endif
-if time==1.24 then
+if time==1.14 then
     set EFF=AddSpecialEffect("JirenShock2.mdl", x2,y2)
-    call SetSpecialEffectScale(EFF , 1)
+    call SetSpecialEffectScale(EFF , 1.6)
     call SetSpecialEffectZ(EFF,GetUnitZCustom(l__d))
     call DestroyEffect(EFF)
 endif
-if time==1.24 or time==1.36 then
+if time==1.14 or time==1.26 then
     call SaveReal(h,id,8,sc-0.5)
     call SetUnitScale(l__d,sc,sc,sc)
     set EFF=AddSpecialEffectTarget("war3mapImported\\JirenShock2.mdl",u,"right hand")
-    call SetSpecialEffectScale(EFF , 0.45)
+    call SetSpecialEffectScale(EFF , 0.65)
     call SetSpecialEffectTimeScale(EFF , 2)
     call RemoveEffect(EFF,0.6,true,CreateTimer())
 endif
-if time>1.3 and time<1.6 then
+if time>1.2 and time<1.5 then
     call SetUnitXY_1(l__d,x2-6*Cos(a),y2-6*Sin(a), false)
     call SaveReal(h,id,8,sc-0.017)
     call SetUnitScale(l__d,sc,sc,sc)
 endif
-if time==1.7 then
+if time==1.64 then
     set x=x+50*Cos(a)
     set y=y+50*Sin(a)
     set EFF=AddSpecialEffect("war3mapImported\\CF2.mdl", x,y)
@@ -166596,7 +166600,7 @@ if time==1.7 then
         call JirenT_Fly3(u,l__d,SR(x,y,x1,y1)/30,0,x1,y1,hei+30,dmg)
     endif
 endif
-if time==1.8 then
+if time==1.7 then
     call SetUnitTimeScale(u,1)
     call DestroyTimer(t)
     call FlushChildHashtable(h,id)
@@ -166625,6 +166629,7 @@ call SaveReal(h,id,7,0)
 call SaveReal(h,id,9,0.1)
 call PauseUnit(u,true)
 call SetUnitInvulnerable(u,true)
+call SetUnitAnimationByIndex(u,46)
 if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\JirenT1.mp3",false,false,true,12700,12700,"")
 else
@@ -166953,7 +166958,7 @@ local group g=LoadGroupHandle(h,id,6)
 local real f=GetUnitFacing(l__d)
 local real a=LoadReal(h,id,8)
 local real time=LoadReal(h,id,10)
-local real dmg=GetHeroStr(u,true)*(GetUnitAbilityLevel(u,'JNE1')+2)+75*(GetUnitAbilityLevel(u,'JNE1')+1)
+local real dmg=GetHeroStr(u,true)*(GetUnitAbilityLevel(u,'JNE1')+2)+(75*(GetUnitAbilityLevel(u,'JNE1')+1)-100)
 local real Range=LoadReal(h,id,9)
 local real time2=LoadReal(h,id,12)
 if time==0 then
@@ -167086,7 +167091,7 @@ function JirenESelf_Cast3 takes nothing returns nothing
     local player p=GetOwningPlayer(u)
     local real time=LoadReal(HH,id,2)
     local integer i=1
-    local real dmg=GetHeroStr(u,true)*(2+GetUnitAbilityLevel(u,'JNE1'))+75*(1+GetUnitAbilityLevel(u,'JNE1'))
+    local real dmg=GetHeroStr(u,true)*(2+GetUnitAbilityLevel(u,'JNE1'))+(75*(GetUnitAbilityLevel(u,'JNE1')+1)-100)
     if time<3 then
         call SaveReal(HH,id,2,time+0.02)
         call PauseUnit(u,true)
@@ -167507,7 +167512,7 @@ function JirenQ_Cast3 takes nothing returns nothing
     local unit c=LoadUnitHandle(HH,id,4)
     local real x=GetUnitX(u)
     local real y=GetUnitY(u)
-    local real dmg=GetHeroStr(u,true)*(1+GetUnitAbilityLevel(u,'JNQ1'))+50*(1+GetUnitAbilityLevel(u,'JNQ1'))
+    local real dmg=GetHeroStr(u,true)*(1+GetUnitAbilityLevel(u,'JNQ1'))+50*GetUnitAbilityLevel(u,'JNQ1')
     local real x1=GetUnitX(c)
     local real y1=GetUnitY(c)
     local real a=LoadReal(HH,id,3)
@@ -167709,7 +167714,7 @@ function JirenQSelf_Cast3 takes nothing returns nothing
     local real time=LoadReal(HH,id,2)
     local real rollp=LoadReal(HH,id,10)
     local integer i=1
-    local real dmg=GetHeroStr(u,true)*(1+GetUnitAbilityLevel(u,'JNQ1'))+50*(1+GetUnitAbilityLevel(u,'JNQ1'))
+    local real dmg=GetHeroStr(u,true)*(1+GetUnitAbilityLevel(u,'JNQ1'))+50*GetUnitAbilityLevel(u,'JNQ1')
     if time<2 then
         call SaveReal(HH,id,2,time+0.02)
         call PauseUnit(u,true)
