@@ -166071,6 +166071,10 @@ if GetWidgetLife(c)>0 and GetWidgetLife(u)>0 and time<4 then
         call SetUnitTimeScale(n,4.4)
         call SetUnitScale(n,0.1,0.1,0.1)
         call SaveUnitHandle(HH,id,5,n)
+        set EFF=AddSpecialEffect("GokuAuraBurstRed.mdl", x1, y1)
+        call SetSpecialEffectScale(EFF , 0.5)
+        call SetSpecialEffectVertexColour(EFF,195,195,195,125)
+        call RemoveEffect(EFF,0.5,true,CreateTimer())
     endif
     if time>2.1 and time<3.1 then
         call SetUnitVertexColor(dummy,255,255,255,190-R2I(GetUnitScale(dummy)*90))
@@ -166362,7 +166366,7 @@ endif
 endif
 call SaveReal(h,id,5,mh-15)
 else
-call GroupEnumUnitsInRange(DG,x1,y1,650,Base)
+call GroupEnumUnitsInRange(DG,x1,y1,700,Base)
 loop
 set E=FirstOfGroup(DG)
 exitwhen E==null
@@ -166376,18 +166380,22 @@ call SetUnitInvulnerable(LoadUnitHandle(h,id,10),false)
 call SetUnitTimeScale(LoadUnitHandle(h,id,10),1)
 call SetUnitAnimation(LoadUnitHandle(h,id,10),"stand")
 call UnitEnableAutoOrientation(LoadUnitHandle(h,id,10),true)
-call SetUnitFlyHeight(LoadUnitHandle(h,id,10),0,400)
+call SetUnitFlyHeight(LoadUnitHandle(h,id,10),0,1000)
 call StartSound(soundStr[47])
 set EFF=AddSpecialEffect("[choice]JirenEarthBlast.mdl", x1,y1)
-call SetSpecialEffectScale(EFF , 1.8)
+call SetSpecialEffectScale(EFF , 2.0)
 call DestroyEffect(EFF)
 set EFF=AddSpecialEffect("JirenExplosion2.mdl", x1,y1)
-call SetSpecialEffectScale(EFF , 1.15)
+call SetSpecialEffectScale(EFF , 1.3)
 call DestroyEffect(EFF)
 set EFF=AddSpecialEffect("JirenTExplosion.mdl", x1,y1)
-call SetSpecialEffectScale(EFF , 0.7)
+call SetSpecialEffectScale(EFF , 0.9)
 call SetSpecialEffectTimeScale(EFF , 1.7)
 call DestroyEffect(EFF)
+set EFF=AddSpecialEffect("GokuAuraBurstRed.mdl", x1, y1)
+call SetSpecialEffectScale(EFF , 1.5)
+call SetSpecialEffectVertexColour(EFF,195,195,195,125)
+call RemoveEffect(EFF,0.5,true,CreateTimer())
 call RemoveUnit(l__d)
 call PauseTimer(t)
 call DestroyTimer(t)
@@ -166453,7 +166461,7 @@ call DestroyEffect(EFF)
 endif
 endif
 else
-call GroupEnumUnitsInRange(DG,x1,y1,650,Base)
+call GroupEnumUnitsInRange(DG,x1,y1,700,Base)
 loop
 set E=FirstOfGroup(DG)
 exitwhen E==null
@@ -166467,19 +166475,23 @@ call SetUnitInvulnerable(LoadUnitHandle(h,id,10),false)
 call SetUnitTimeScale(LoadUnitHandle(h,id,10),1)
 call SetUnitAnimation(LoadUnitHandle(h,id,10),"stand")
 call UnitEnableAutoOrientation(LoadUnitHandle(h,id,10),true)
-call SetUnitFlyHeight(LoadUnitHandle(h,id,10),0,400)
+call SetUnitFlyHeight(LoadUnitHandle(h,id,10),0,1000)
 call StartSound(soundStr[47])
 call RemoveUnit(l__d)
 set EFF=AddSpecialEffect("[choice]JirenEarthBlast.mdl", x1,y1)
-call SetSpecialEffectScale(EFF , 1.8)
+call SetSpecialEffectScale(EFF , 2.0)
 call DestroyEffect(EFF)
 set EFF=AddSpecialEffect("JirenExplosion2.mdl", x1,y1)
-call SetSpecialEffectScale(EFF , 1.15)
+call SetSpecialEffectScale(EFF , 1.3)
 call DestroyEffect(EFF)
 set EFF=AddSpecialEffect("JirenTExplosion.mdl", x1,y1)
-call SetSpecialEffectScale(EFF , 0.7)
+call SetSpecialEffectScale(EFF , 0.9)
 call SetSpecialEffectTimeScale(EFF , 1.7)
 call DestroyEffect(EFF)
+set EFF=AddSpecialEffect("GokuAuraBurstRed.mdl", x1, y1)
+call SetSpecialEffectScale(EFF , 1.5)
+call SetSpecialEffectVertexColour(EFF,195,195,195,125)
+call RemoveEffect(EFF,0.5,true,CreateTimer())
 call PauseTimer(t)
 call DestroyTimer(t)
 call FlushChildHashtable(h,id)
@@ -166531,11 +166543,13 @@ local real z=GetUnitZCustom(u)
 local real dist=SR3D(x,y,z,x1,y1,0)
 local real dist2=SR(x,y,x1,y1)
 local real PitchA=Atan2(dist,z)
+local effect efft=LoadEffectHandle(h,id,10)
+local integer efftA=LoadInteger(h,id,11)
 if time==0.02 or time==0.04 then
     call SetUnitAnimationByIndex(u,46)
     set EFF=AddSpecialEffect("JirenShock2.mdl", x,y)
-    call SetSpecialEffectScale(EFF , 1.6)
-    call SetSpecialEffectZ(EFF,640)
+    call SetSpecialEffectScale(EFF , 1.8)
+    call SetSpecialEffectZ(EFF,740)
     call DestroyEffect(EFF)
 endif
 if time==0.06 or time==0.08 then
@@ -166550,22 +166564,32 @@ if time==0.1 then
     call SaveUnitHandle(h,id,9,n)
 endif
 if time>0.1 and time<0.5 then
-    call SaveReal(h,id,8,sc+0.05)
+    call SaveReal(h,id,8,sc+0.06)
     call SetUnitScale(l__d,sc,sc,sc)
-    call SetUnitFlyHeight(l__d,hei2+23,0)
+    call SetUnitFlyHeight(l__d,hei2+29,0)
 endif
 if time==0.6 then
-call UnitEnableAutoOrientation(u,false)
-call SetUnitOrientation(u,a*bj_RADTODEG,(PitchA*bj_RADTODEG)-15,0)
-set EFF=AddSpecialEffectTarget("war3mapImported\\RedGlow.mdl",u,"right hand")
-call SetSpecialEffectScale(EFF , 0.65)
-call SetSpecialEffectTimeScale(EFF , 2)
-call RemoveEffect(EFF,1,true,CreateTimer())
+    call UnitEnableAutoOrientation(u,false)
+    call SetUnitOrientation(u,a*bj_RADTODEG,(PitchA*bj_RADTODEG)-15,0)
+    set EFF=AddSpecialEffectTarget("war3mapImported\\RedGlow.mdl",u,"right hand")
+    call SetSpecialEffectScale(EFF , 0.8)
+    call SetSpecialEffectTimeScale(EFF , 2)
+    call RemoveEffect(EFF,1,true,CreateTimer())
+    set efft=AddSpecialEffect("GokuAuraBurstRed.mdl", x, y)
+    call SetSpecialEffectScale(efft , 3.5)
+    call SetSpecialEffectZ(efft,300)
+    call SetSpecialEffectVertexColour(efft,25,25,25,25)
+    call RemoveEffect(efft,1.5,true,CreateTimer())
+    call SaveEffectHandle(h,id,10,efft)
 endif
 if time>0.7 and time<0.9 then
     call SetUnitTimeScale(u,0)
     call SetUnitXY_1(l__d,x2+10*Cos(a),y2+10*Sin(a), false)
-    call SetUnitFlyHeight(l__d,hei2-37,0)
+    call SetUnitFlyHeight(l__d,hei2-45,0)
+endif
+if time>0.9 and time<1.8 then
+    call SaveInteger(h,id,11,efftA+5)
+    call SetSpecialEffectVertexColour(efft,25+efftA,25+efftA,25+efftA,25+efftA)
 endif
 if time==1.14 then
     set EFF=AddSpecialEffect("JirenShock2.mdl", x2,y2)
@@ -166583,7 +166607,7 @@ if time==1.14 or time==1.26 then
 endif
 if time>1.2 and time<1.5 then
     call SetUnitXY_1(l__d,x2-6*Cos(a),y2-6*Sin(a), false)
-    call SaveReal(h,id,8,sc-0.017)
+    call SaveReal(h,id,8,sc-0.023)
     call SetUnitScale(l__d,sc,sc,sc)
 endif
 if time==1.64 then
@@ -166607,6 +166631,7 @@ if time==1.7 then
 endif
 set u=null
 set l__d=null
+set efft=null
 set p=null
 set t=null
 endfunction
@@ -166619,7 +166644,7 @@ local real y=GetUnitY(u)
 local real a=Atan2(y1-y,x1-x)
 call UnitAddAbility(u,'Arav')
 call UnitRemoveAbility(u,'Arav')
-call SetUnitFlyHeight(u,350,450)
+call SetUnitFlyHeight(u,650,750)
 call SaveUnitHandle(h,id,0,u)
 call SaveReal(h,id,1,x1)
 call SaveReal(h,id,2,y1)
@@ -166627,6 +166652,7 @@ call SaveReal(h,id,5,x)
 call SaveReal(h,id,6,y)
 call SaveReal(h,id,7,0)
 call SaveReal(h,id,9,0.1)
+call SaveReal(h,id,10,0)
 call PauseUnit(u,true)
 call SetUnitInvulnerable(u,true)
 call SetUnitAnimationByIndex(u,46)
