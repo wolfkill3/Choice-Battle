@@ -93555,7 +93555,7 @@ local player p=GetOwningPlayer(u)
 local real time=LoadReal(h,id,5)
 local real starttime=LoadReal(h,id,6)
 local real timeEnd=LoadReal(h,id,15)
-if time<0.930 and GetAbilityIntegerLevelField(GetUnitAbility(u,'A0RI'), ABILITY_ILF_TARGET_TYPE,GetUnitAbilityLevel(u,'A0RI')-1)!=1 then
+if time<1.330 and GetAbilityIntegerLevelField(GetUnitAbility(u,'A0RI'), ABILITY_ILF_TARGET_TYPE,GetUnitAbilityLevel(u,'A0RI')-1)!=1 then
     call SaveReal(h,id,5,time+0.01)
     if time==starttime+0.02 then
         call SetUnitAnimationByIndex(u,23)
@@ -93572,7 +93572,7 @@ if time<0.930 and GetAbilityIntegerLevelField(GetUnitAbility(u,'A0RI'), ABILITY_
         call SetAbilityRemainingCooldown(GetUnitAbility(u,'A0RI'),0.01)
     endif
     if time==starttime+0.5 and starttime<-0.7 then
-        call SetUnitTimeScale(u,0)
+        call SetUnitTimeScale(u,0.05)
     endif
     if time<0 then
         call SetUnitFacingInstant(u,a*bj_RADTODEG)
@@ -93598,8 +93598,7 @@ if time<0.930 and GetAbilityIntegerLevelField(GetUnitAbility(u,'A0RI'), ABILITY_
             call SetUnitInvulnerable(u,true)
             call PauseUnit(u,true)
             call DestroyEffect(AddSpecialEffect("war3mapImported\\BlackBlink.mdx",x2,y2))
-            call SetUnitXY_1(u,x3+100*Cos(a),y3+100*Sin(a), false)
-            call SetControlToUnit(u,c, 0.19, "heavystun")
+            call SetUnitXY_1(u,x3,y3, false)
             call SetUnitFlyHeight(u,GetUnitFlyHeight(c)+350,0)
             set EFF=AddSpecialEffect("war3mapImported\\BlackBlink.mdx", GetUnitX(u), GetUnitY(u))
             call SetSpecialEffectZ(EFF, GetUnitFlyHeight(u))
@@ -93608,21 +93607,44 @@ if time<0.930 and GetAbilityIntegerLevelField(GetUnitAbility(u,'A0RI'), ABILITY_
             set a=Atan2(GetUnitY(u)-y3,GetUnitX(u)-x3)
             call SaveReal(h,id,4,a)
             call SetUnitFacingInstant(u,a*bj_RADTODEG)
-            call SetUnitTimeScale(u,1)
+            call SetUnitTimeScale(u,1.5)
             call SetUnitAnimationByIndex(u,25)
+            call RemoveEffect(AddSpecialEffectTarget("KamehamehaChargeBlue.mdx",u,"Left Hand"),1.5,false,CreateTimer())
         endif
         if time>0.36 and time<0.61 then
             call SetUnitInvulnerable(u,true)
             call PauseUnit(u,true) 
-            call SetUnitXY_1(u,x3+100*Cos(a),y3+100*Sin(a), false)
-            call SetUnitFlyHeight(u,GetUnitFlyHeight(u)+(40-R2I(time*94)),0)
+            call SetUnitXY_1(u,x3,y3, false)
+            call SetUnitFlyHeight(u,GetUnitFlyHeight(u)+(36-R2I(time*94)),0)
         endif
-        if time==0.61 or (time>0.36 and time<0.61 and GetUnitFlyHeight(u)+30<GetUnitFlyHeight(c)) then
-            call SetUnitAnimationByIndex(u,26)
-            call SaveReal(h,id,5,0.52)
+        if time==0.61 or (time>0.36 and time<0.61 and GetUnitFlyHeight(u)+20<GetUnitFlyHeight(c)) then
+            call SaveReal(h,id,5,0.72)
+            call SetControlToUnit(u,c, 0.6, "heavystun")
             call SetUnitInvulnerable(u,true)
             call PauseUnit(u,true)
-            call SetUnitTimeScale(u,1)
+            call SetUnitTimeScale(u,0.00)
+            set EFF=AddSpecialEffect("chushou_by_wood_effect_earth_sandycrack_fag.mdl",x3,y3)
+            call SetSpecialEffectScale(EFF , 0.6)
+            call SetSpecialEffectZ(EFF, GetUnitFlyHeight(c))
+            call RemoveEffect(EFF,1.5,false,CreateTimer())
+            set EFF=AddSpecialEffect("Minato-37.mdx", x3,y3)
+            call SetSpecialEffectFacing(EFF , a* bj_RADTODEG)
+            call SetSpecialEffectZ(EFF, GetUnitFlyHeight(c)+30)
+            call SetSpecialEffectScale(EFF , 3)
+            call DestroyEffect(EFF)
+            set EFF=AddSpecialEffect("WindVectorPush.mdx", x1, y1)
+            call SetSpecialEffectOrientation(EFF,a*bj_RADTODEG,-90,0)
+            call SetSpecialEffectZ(EFF , GetUnitFlyHeight(c)+50)
+            call SetSpecialEffectVertexColour(EFF,255,255,255,120)
+            call RemoveEffect(EFF,1,true,CreateTimer())
+            set EFF=AddSpecialEffect("GokuAuraBurstBlue.mdl", x3, y3)
+            call SetSpecialEffectTimeScale(EFF , 0.5)
+            call SetSpecialEffectScale(EFF , 0.45)
+            call SetSpecialEffectZ(EFF , GetUnitFlyHeight(c))
+            call RemoveEffect(EFF,1,true,CreateTimer())
+        endif
+        if time==1.25 then
+            call SetUnitAnimationByIndex(u,26)
             if IsUnitInvulnerable(c)==false then
                 if GetUnitAbilityLevel(u,'A176')>0 then
                     set dmg=dmg+1*GetHeroStr(u,true)
@@ -93631,30 +93653,15 @@ if time<0.930 and GetAbilityIntegerLevelField(GetUnitAbility(u,'A0RI'), ABILITY_
                 call SetControlToUnit(u,c, 1, "stun")
                 call Push9(c,10,a,50)
             endif
-            set EFF=AddSpecialEffect("chushou_by_wood_effect_earth_sandycrack_fag.mdl",x3,y3)
-            call SetSpecialEffectScale(EFF , 0.6)
-            call SetSpecialEffectZ(EFF, GetUnitFlyHeight(c))
-            call RemoveEffect(EFF,1.5,false,CreateTimer())
+            call SetUnitTimeScale(u,1)
             set EFF=AddSpecialEffect("war3mapImported\\CF2.mdl", x3,y3)
             call SetSpecialEffectOrientation(EFF,a*bj_RADTODEG,-90,0)
-            call SetSpecialEffectZ(EFF, GetUnitFlyHeight(c))
+            call SetSpecialEffectZ(EFF, GetUnitFlyHeight(c)+50)
             call SetSpecialEffectScale(EFF , 1)
             call DestroyEffect(EFF)
-            set EFF=AddSpecialEffect("Minato-37.mdx", x3,y3)
-            call SetSpecialEffectFacing(EFF , a* bj_RADTODEG)
-            call SetSpecialEffectZ(EFF, GetUnitFlyHeight(c)+30)
-            call SetSpecialEffectScale(EFF , 3)
-            call DestroyEffect(EFF)
-            set EFF=AddSpecialEffect("WindVectorPush.mdx", x1, y1)
-            call SetSpecialEffectOrientation(EFF,a*bj_RADTODEG,-90,0)
-            call SetSpecialEffectZ(EFF , GetUnitFlyHeight(c)+40)
-            call SetSpecialEffectVertexColour(EFF,255,255,255,120)
-            call RemoveEffect(EFF,1,true,CreateTimer())
-        endif
-        if time==0.85 then
             call SetUnitFlyHeight(u,0,3000)
         endif
-        if time==0.91 then
+        if time==1.31 then
             call SetUnitInvulnerable(u,false)
             call PauseUnit(u,false)
             call UnitEnableInventoryCustom(u,true,false )
