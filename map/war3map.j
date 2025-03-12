@@ -605,7 +605,7 @@ trigger gg_trg_ShiningSwordAttack=null
 trigger gg_trg_DubleBuster=null
 trigger gg_trg_BurningSlash=null
 trigger gg_trg_BurningAttack=null
-trigger gg_trg_Shukainido=null
+trigger gg_trg_InstantTransmissionVegito=null
 trigger gg_trg_FinalFlash=null
 trigger gg_trg_SpiritSwordVegito=null
 trigger gg_trg_BigBangBeam=null
@@ -7884,17 +7884,19 @@ set soundStr[93]=CreateSound("Sound\\Music\\mp3Music\\MasteredUltraInstinct.mp3"
 set soundStr[94]=CreateSound("Sound\\Music\\mp3Music\\Goku\\MasteredUltraInstinct-jap.mp3",false,false,true,12700,12700,"")
 set soundStr[95]=CreateSound("Sound\\Music\\mp3Music\\MasteredUltraInstinctShort.mp3",false,false,true,12700,12700,"")
 set soundStr[96]=CreateSound("Sound\\Music\\mp3Music\\Goku\\MasteredUltraInstinctShort-jap.mp3",false,false,true,12700,12700,"")
+set soundStr[97]=CreateSound("Sound\\Music\\mp3Music\\VegitoG1.mp3",false,false,true,12700,12700,"")
+set soundStr[98]=CreateSound("Sound\\Music\\mp3Music\\Vegitto\\VegitoG1-jap.mp3",false,false,true,12700,12700,"")
 loop
 set i=i+1
 call StartSound(soundStr[i])
-exitwhen i>96
+exitwhen i>98
 endloop
 call TriggerSleepAction(0)
 set i=0
 loop
 set i=i+1
 call StopSound(soundStr[i],false,false)
-exitwhen i>96
+exitwhen i>98
 endloop
 endfunction
 function InitTrig_VoicePreload takes nothing returns nothing
@@ -93534,10 +93536,10 @@ function PowerUpVegitoCast takes nothing returns nothing
 	set p=null
 	set t=null
 endfunction
-function ShukainidoCond takes nothing returns boolean
+function InstantTransmissionVegitoCond takes nothing returns boolean
 return GetSpellAbilityId()=='A0RI' and udg_B==true
 endfunction
-function ShukainidoCast2 takes nothing returns nothing
+function InstantTransmissionVegitoCast2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
 local unit u=LoadUnitHandle(h,id,0)
@@ -93555,7 +93557,7 @@ local player p=GetOwningPlayer(u)
 local real time=LoadReal(h,id,5)
 local real starttime=LoadReal(h,id,6)
 local real timeEnd=LoadReal(h,id,15)
-if time<1.330 and GetAbilityIntegerLevelField(GetUnitAbility(u,'A0RI'), ABILITY_ILF_TARGET_TYPE,GetUnitAbilityLevel(u,'A0RI')-1)!=1 then
+if time<1.93 and GetAbilityIntegerLevelField(GetUnitAbility(u,'A0RI'), ABILITY_ILF_TARGET_TYPE,GetUnitAbilityLevel(u,'A0RI')-1)!=1 then
     call SaveReal(h,id,5,time+0.01)
     if time==starttime+0.02 then
         call SetUnitAnimationByIndex(u,23)
@@ -93572,7 +93574,7 @@ if time<1.330 and GetAbilityIntegerLevelField(GetUnitAbility(u,'A0RI'), ABILITY_
         call SetAbilityRemainingCooldown(GetUnitAbility(u,'A0RI'),0.01)
     endif
     if time==starttime+0.5 and starttime<-0.7 then
-        call SetUnitTimeScale(u,0.05)
+        call SetUnitTimeScale(u,0.01)
     endif
     if time<0 then
         call SetUnitFacingInstant(u,a*bj_RADTODEG)
@@ -93598,7 +93600,7 @@ if time<1.330 and GetAbilityIntegerLevelField(GetUnitAbility(u,'A0RI'), ABILITY_
             call SetUnitInvulnerable(u,true)
             call PauseUnit(u,true)
             call DestroyEffect(AddSpecialEffect("war3mapImported\\BlackBlink.mdx",x2,y2))
-            call SetUnitXY_1(u,x3,y3, false)
+            call SetUnitXY_1(u,x3-30*Cos(a),y3-30*Sin(a), false)
             call SetUnitFlyHeight(u,GetUnitFlyHeight(c)+350,0)
             set EFF=AddSpecialEffect("war3mapImported\\BlackBlink.mdx", GetUnitX(u), GetUnitY(u))
             call SetSpecialEffectZ(EFF, GetUnitFlyHeight(u))
@@ -93607,19 +93609,24 @@ if time<1.330 and GetAbilityIntegerLevelField(GetUnitAbility(u,'A0RI'), ABILITY_
             set a=Atan2(GetUnitY(u)-y3,GetUnitX(u)-x3)
             call SaveReal(h,id,4,a)
             call SetUnitFacingInstant(u,a*bj_RADTODEG)
-            call SetUnitTimeScale(u,1.5)
+            call SetUnitTimeScale(u,1.7)
             call SetUnitAnimationByIndex(u,25)
-            call RemoveEffect(AddSpecialEffectTarget("KamehamehaChargeBlue.mdx",u,"Left Hand"),1.5,false,CreateTimer())
+            call RemoveEffect(AddSpecialEffectTarget("KamehamehaChargeBlue.mdx",u,"left hand"),1.5,false,CreateTimer())
         endif
         if time>0.36 and time<0.61 then
             call SetUnitInvulnerable(u,true)
             call PauseUnit(u,true) 
-            call SetUnitXY_1(u,x3,y3, false)
+            call SetUnitXY_1(u,x3-30*Cos(a),y3-30*Sin(a), false)
             call SetUnitFlyHeight(u,GetUnitFlyHeight(u)+(36-R2I(time*94)),0)
         endif
         if time==0.61 or (time>0.36 and time<0.61 and GetUnitFlyHeight(u)+20<GetUnitFlyHeight(c)) then
-            call SaveReal(h,id,5,0.72)
-            call SetControlToUnit(u,c, 0.6, "heavystun")
+            if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
+                call StartSound(soundStr[97])
+            else
+                call StartSound(soundStr[98])
+            endif
+            call SaveReal(h,id,5,0.62)
+            call SetControlToUnit(u,c, 1, "heavystun")
             call SetUnitInvulnerable(u,true)
             call PauseUnit(u,true)
             call SetUnitTimeScale(u,0.00)
@@ -93639,11 +93646,11 @@ if time<1.330 and GetAbilityIntegerLevelField(GetUnitAbility(u,'A0RI'), ABILITY_
             call RemoveEffect(EFF,1,true,CreateTimer())
             set EFF=AddSpecialEffect("GokuAuraBurstBlue.mdl", x3, y3)
             call SetSpecialEffectTimeScale(EFF , 0.5)
-            call SetSpecialEffectScale(EFF , 0.45)
-            call SetSpecialEffectZ(EFF , GetUnitFlyHeight(c))
-            call RemoveEffect(EFF,1,true,CreateTimer())
+            call SetSpecialEffectScale(EFF , 0.4)
+            call SetSpecialEffectZ(EFF , GetUnitFlyHeight(c)+50)
+            call RemoveEffect(EFF,1.1,true,CreateTimer())
         endif
-        if time==1.25 then
+        if time==1.85 then
             call SetUnitAnimationByIndex(u,26)
             if IsUnitInvulnerable(c)==false then
                 if GetUnitAbilityLevel(u,'A176')>0 then
@@ -93655,13 +93662,13 @@ if time<1.330 and GetAbilityIntegerLevelField(GetUnitAbility(u,'A0RI'), ABILITY_
             endif
             call SetUnitTimeScale(u,1)
             set EFF=AddSpecialEffect("war3mapImported\\CF2.mdl", x3,y3)
-            call SetSpecialEffectOrientation(EFF,a*bj_RADTODEG,-90,0)
+            call SetSpecialEffectOrientation(EFF,a*bj_RADTODEG,90,0)
             call SetSpecialEffectZ(EFF, GetUnitFlyHeight(c)+50)
             call SetSpecialEffectScale(EFF , 1)
             call DestroyEffect(EFF)
             call SetUnitFlyHeight(u,0,3000)
         endif
-        if time==1.31 then
+        if time==1.91 then
             call SetUnitInvulnerable(u,false)
             call PauseUnit(u,false)
             call UnitEnableInventoryCustom(u,true,false )
@@ -93730,7 +93737,7 @@ set c=null
 set t=null
 set p=null
 endfunction
-function ShukainidoCast takes nothing returns nothing
+function InstantTransmissionVegitoCast takes nothing returns nothing
 local unit u=GetTriggerUnit()
 local unit c
 local timer t=CreateTimer()
@@ -93773,7 +93780,7 @@ if GetAbilityIntegerLevelField(GetUnitAbility(u,'A0RI'), ABILITY_ILF_TARGET_TYPE
                 call SaveReal(h,id,6,-7)
             endif
         endif
-        call TimerStart(t,0.01,true,function ShukainidoCast2)
+        call TimerStart(t,0.01,true,function InstantTransmissionVegitoCast2)
     endif
 else
     call DestroyTimer(t)
@@ -93792,11 +93799,11 @@ set c=null
 set p=null
 set t=null
 endfunction
-function InitTrig_Shukainido takes nothing returns nothing
-set gg_trg_Shukainido=CreateTrigger()
-call TriggerRegisterAnyUnitEventBJ(gg_trg_Shukainido,EVENT_PLAYER_UNIT_SPELL_EFFECT)
-call TriggerAddCondition(gg_trg_Shukainido,Condition(function ShukainidoCond))
-call TriggerAddAction(gg_trg_Shukainido,function ShukainidoCast)
+function InitTrig_InstantTransmissionVegito takes nothing returns nothing
+set gg_trg_InstantTransmissionVegito=CreateTrigger()
+call TriggerRegisterAnyUnitEventBJ(gg_trg_InstantTransmissionVegito,EVENT_PLAYER_UNIT_SPELL_EFFECT)
+call TriggerAddCondition(gg_trg_InstantTransmissionVegito,Condition(function InstantTransmissionVegitoCond))
+call TriggerAddAction(gg_trg_InstantTransmissionVegito,function InstantTransmissionVegitoCast)
 endfunction
 function FinalFlashCond takes nothing returns boolean
 return GetSpellAbilityId()=='A0RJ' and udg_B==true
@@ -211454,7 +211461,7 @@ call InitTrig_ShiningSwordAttack()
 call InitTrig_DubleBuster()
 call InitTrig_BurningSlash()
 call InitTrig_BurningAttack()
-call InitTrig_Shukainido()
+call InitTrig_InstantTransmissionVegito()
 call InitTrig_FinalFlash()
 call InitTrig_SpiritSwordVegito()
 call InitTrig_BigBangBeam()
