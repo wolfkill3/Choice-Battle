@@ -93600,23 +93600,23 @@ if time<1.93 and GetAbilityIntegerLevelField(GetUnitAbility(u,'A0RI'), ABILITY_I
             call SetUnitInvulnerable(u,true)
             call PauseUnit(u,true)
             call DestroyEffect(AddSpecialEffect("war3mapImported\\BlackBlink.mdx",x2,y2))
-            call SetUnitXY_1(u,x3-30*Cos(a),y3-30*Sin(a), false)
+            call SetUnitXY_1(u,x3-60*Cos(a),y3-60*Sin(a), false)
             call SetUnitFlyHeight(u,GetUnitFlyHeight(c)+350,0)
+            call SetUnitFacingInstant(u,a*bj_RADTODEG)
             set EFF=AddSpecialEffect("war3mapImported\\BlackBlink.mdx", GetUnitX(u), GetUnitY(u))
             call SetSpecialEffectZ(EFF, GetUnitFlyHeight(u))
             call DestroyEffect(EFF)
             call StartSound(soundStr[54])
-            set a=Atan2(GetUnitY(u)-y3,GetUnitX(u)-x3)
-            call SaveReal(h,id,4,a)
-            call SetUnitFacingInstant(u,a*bj_RADTODEG)
-            call SetUnitTimeScale(u,1.7)
+            call SetUnitTimeScale(u,1.75)
             call SetUnitAnimationByIndex(u,25)
-            call RemoveEffect(AddSpecialEffectTarget("KamehamehaChargeBlue.mdx",u,"left hand"),1.5,false,CreateTimer())
+            set EFF=AddSpecialEffectTarget("war3mapImported\\Rasengan6.mdx",u,"left hand")
+            call SetSpecialEffectScale(EFF , 0.6)
+            call RemoveEffect(EFF,0.6,false,CreateTimer())
         endif
         if time>0.36 and time<0.61 then
             call SetUnitInvulnerable(u,true)
             call PauseUnit(u,true) 
-            call SetUnitXY_1(u,x3-30*Cos(a),y3-30*Sin(a), false)
+            call SetUnitXY_1(u,x3-60*Cos(a),y3-60*Sin(a), false)
             call SetUnitFlyHeight(u,GetUnitFlyHeight(u)+(36-R2I(time*94)),0)
         endif
         if time==0.61 or (time>0.36 and time<0.61 and GetUnitFlyHeight(u)+20<GetUnitFlyHeight(c)) then
@@ -93626,7 +93626,7 @@ if time<1.93 and GetAbilityIntegerLevelField(GetUnitAbility(u,'A0RI'), ABILITY_I
                 call StartSound(soundStr[98])
             endif
             call SaveReal(h,id,5,0.62)
-            call SetControlToUnit(u,c, 1, "heavystun")
+            call SetControlToUnit(u,c, 1.2, "heavystun")
             call SetUnitInvulnerable(u,true)
             call PauseUnit(u,true)
             call SetUnitTimeScale(u,0.00)
@@ -93646,8 +93646,13 @@ if time<1.93 and GetAbilityIntegerLevelField(GetUnitAbility(u,'A0RI'), ABILITY_I
             call RemoveEffect(EFF,1,true,CreateTimer())
             set EFF=AddSpecialEffect("GokuAuraBurstBlue.mdl", x3, y3)
             call SetSpecialEffectTimeScale(EFF , 0.5)
-            call SetSpecialEffectScale(EFF , 0.4)
+            call SetSpecialEffectScale(EFF , 0.32)
             call SetSpecialEffectZ(EFF , GetUnitFlyHeight(c)+50)
+            call RemoveEffect(EFF,1.1,true,CreateTimer())
+            set EFF=AddSpecialEffect("war3mapImported\\Energy_Release.mdl", x3, y3)
+            call SetSpecialEffectTimeScale(EFF , 0.5)
+            call SetSpecialEffectScale(EFF , 1.42)
+            call SetSpecialEffectZ(EFF , GetUnitFlyHeight(c))
             call RemoveEffect(EFF,1.1,true,CreateTimer())
         endif
         if time==1.85 then
@@ -166800,7 +166805,7 @@ if time>0.7 and time<0.9 then
     call SetUnitFlyHeight(l__d,hei2-48,0)
 endif
 if time>0.9 and time<1.8 then
-    call SaveInteger(h,id,11,efftA+5)
+    call SaveInteger(h,id,11,efftA+3)
     call SetSpecialEffectVertexColour(efft,25+efftA,25+efftA,25+efftA,25+efftA)
 endif
 if time==1.14 then
