@@ -93555,7 +93555,7 @@ local player p=GetOwningPlayer(u)
 local real time=LoadReal(h,id,5)
 local real starttime=LoadReal(h,id,6)
 local real timeEnd=LoadReal(h,id,15)
-if time<0.630 and GetAbilityIntegerLevelField(GetUnitAbility(u,'A0RI'), ABILITY_ILF_TARGET_TYPE,GetUnitAbilityLevel(u,'A0RI')-1)!=1 then
+if time<0.930 and GetAbilityIntegerLevelField(GetUnitAbility(u,'A0RI'), ABILITY_ILF_TARGET_TYPE,GetUnitAbilityLevel(u,'A0RI')-1)!=1 then
     call SaveReal(h,id,5,time+0.01)
     if time==starttime+0.02 then
         call SetUnitAnimationByIndex(u,23)
