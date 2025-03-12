@@ -93537,7 +93537,7 @@ endfunction
 function ShukainidoCond takes nothing returns boolean
 return GetSpellAbilityId()=='A0RI' and udg_B==true
 endfunction
-function Shukainido2 takes nothing returns nothing
+function ShukainidoCast2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
 local unit u=LoadUnitHandle(h,id,0)
@@ -93571,7 +93571,7 @@ if time<0.630 and GetAbilityIntegerLevelField(GetUnitAbility(u,'A0RI'), ABILITY_
         call SetAbilityStringField(GetUnitAbility(u,'A0RI'),ABILITY_SF_ICON_NORMAL,"ReplaceableTextures\\CommandButtons\\BTNCancel1.blp")
         call SetAbilityRemainingCooldown(GetUnitAbility(u,'A0RI'),0.01)
     endif
-    if time==starttime+1 and starttime<-0.7 then
+    if time==starttime+0.5 and starttime<-0.7 then
         call SetUnitTimeScale(u,0)
     endif
     if time<0 then
@@ -93600,7 +93600,7 @@ if time<0.630 and GetAbilityIntegerLevelField(GetUnitAbility(u,'A0RI'), ABILITY_
             call DestroyEffect(AddSpecialEffect("war3mapImported\\BlackBlink.mdx",x2,y2))
             call SetUnitXY_1(u,x3+100*Cos(a),y3+100*Sin(a), false)
             call SetControlToUnit(u,c, 0.19, "heavystun")
-            call SetUnitFlyHeight(u,GetUnitFlyHeight(c)+450,0)
+            call SetUnitFlyHeight(u,GetUnitFlyHeight(c)+350,0)
             set EFF=AddSpecialEffect("war3mapImported\\BlackBlink.mdx", GetUnitX(u), GetUnitY(u))
             call SetSpecialEffectZ(EFF, GetUnitFlyHeight(u))
             call DestroyEffect(EFF)
@@ -93608,18 +93608,16 @@ if time<0.630 and GetAbilityIntegerLevelField(GetUnitAbility(u,'A0RI'), ABILITY_
             set a=Atan2(GetUnitY(u)-y3,GetUnitX(u)-x3)
             call SaveReal(h,id,4,a)
             call SetUnitFacingInstant(u,a*bj_RADTODEG)
-            call SetUnitTimeScale(u,2)
+            call SetUnitTimeScale(u,1)
             call SetUnitAnimationByIndex(u,25)
         endif
-        if time>0.36 and time<0.51 then
+        if time>0.36 and time<0.61 then
             call SetUnitInvulnerable(u,true)
             call PauseUnit(u,true) 
-            set a=Atan2(GetUnitY(c)-GetUnitY(u),GetUnitX(c)-GetUnitX(u))
-            call SaveReal(h,id,4,a)
-            call SetUnitFacingInstant(u,a*bj_RADTODEG)
-            call SetUnitFlyHeight(u,GetUnitFlyHeight(u)-24,0)
+            call SetUnitXY_1(u,x3+100*Cos(a),y3+100*Sin(a), false)
+            call SetUnitFlyHeight(u,GetUnitFlyHeight(u)+(40-R2I(time*94)),0)
         endif
-        if time==0.51 or (time>0.36 and time<0.51 and GetUnitFlyHeight(u)+30<GetUnitFlyHeight(c)) then
+        if time==0.61 or (time>0.36 and time<0.61 and GetUnitFlyHeight(u)+30<GetUnitFlyHeight(c)) then
             call SetUnitAnimationByIndex(u,26)
             call SaveReal(h,id,5,0.52)
             call SetUnitInvulnerable(u,true)
@@ -93653,10 +93651,10 @@ if time<0.630 and GetAbilityIntegerLevelField(GetUnitAbility(u,'A0RI'), ABILITY_
             call SetSpecialEffectVertexColour(EFF,255,255,255,120)
             call RemoveEffect(EFF,1,true,CreateTimer())
         endif
-        if time==0.55 then
+        if time==0.85 then
             call SetUnitFlyHeight(u,0,3000)
         endif
-        if time==0.61 then
+        if time==0.91 then
             call SetUnitInvulnerable(u,false)
             call PauseUnit(u,false)
             call UnitEnableInventoryCustom(u,true,false )
@@ -93725,7 +93723,7 @@ set c=null
 set t=null
 set p=null
 endfunction
-function Shukainido takes nothing returns nothing
+function ShukainidoCast takes nothing returns nothing
 local unit u=GetTriggerUnit()
 local unit c
 local timer t=CreateTimer()
@@ -93768,11 +93766,7 @@ if GetAbilityIntegerLevelField(GetUnitAbility(u,'A0RI'), ABILITY_ILF_TARGET_TYPE
                 call SaveReal(h,id,6,-7)
             endif
         endif
-        call TimerStart(t,0.01,true,function Shukainido2)
-    else
-        call DestroyTimer(t)
-        call SaveBoolean(HH,GetHandleId(p),WarpKamehamehaHash,true)
-        call SaveUnitHandle(HH,GetHandleId(p),WarpKamehamehaTargetHash,c)
+        call TimerStart(t,0.01,true,function ShukainidoCast2)
     endif
 else
     call DestroyTimer(t)
