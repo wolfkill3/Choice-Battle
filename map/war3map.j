@@ -225,6 +225,7 @@ constant integer WarpKamehamehaTargetHash   = StringHash("WarpKamehamehaTarget")
 constant integer GokuEDMGHash         = StringHash("GokuEDMG")
 constant integer GokuUIDingHash       = StringHash("GokuUIDing")
 constant integer GokuUIMusicHash      = StringHash("GokuUIMusic")
+constant integer SpecUIHash           = StringHash("SpecUI")
 boolean NANAYA_CONDITION          = true // Возможность пика Нанаи
 //== Следующие переменные предназначены ТОЛЬКО для системных функций/методов
 timer sysTimer = null 
@@ -7886,17 +7887,18 @@ set soundStr[95]=CreateSound("Sound\\Music\\mp3Music\\MasteredUltraInstinctShort
 set soundStr[96]=CreateSound("Sound\\Music\\mp3Music\\Goku\\MasteredUltraInstinctShort-jap.mp3",false,false,true,12700,12700,"")
 set soundStr[97]=CreateSound("Sound\\Music\\mp3Music\\VegitoG1.mp3",false,false,true,12700,12700,"")
 set soundStr[98]=CreateSound("Sound\\Music\\mp3Music\\Vegitto\\VegitoG1-jap.mp3",false,false,true,12700,12700,"")
+set soundStr[99]=CreateSound("Sound\\Music\\mp3Music\\AUIRoar.mp3",false,false,true,12700,12700,"")
 loop
 set i=i+1
 call StartSound(soundStr[i])
-exitwhen i>98
+exitwhen i>99
 endloop
 call TriggerSleepAction(0)
 set i=0
 loop
 set i=i+1
 call StopSound(soundStr[i],false,false)
-exitwhen i>98
+exitwhen i>99
 endloop
 endfunction
 function InitTrig_VoicePreload takes nothing returns nothing
@@ -25255,6 +25257,17 @@ call UnitRemoveAbility(Hero[ip],'A3AU')
 call UnitRemoveAbility(Hero[ip],'A1AU')
 call UnitAddAbility(Hero[ip],'A2AU')
 call UnitMakeAbilityPermanent(Hero[ip],true,'A2AU')
+endfunction
+function AUICond takes nothing returns boolean
+return GetPlayerName(GetTriggerPlayer())=="PinkieNecro" or GetPlayerName(GetTriggerPlayer())=="NecromanseR_RuS" or GetPlayerName(GetTriggerPlayer())=="Black_XeSHTeG" or GetPlayerName(GetTriggerPlayer())=="XeSHTeG" or GetPlayerName(GetTriggerPlayer())==AdminNickname
+endfunction
+function AUI takes nothing returns nothing
+local integer ip=GetHandleId(GetTriggerPlayer())
+if LoadBoolean(HH,ip,SpecUIHash)==true then
+call SaveBoolean(HH,ip,SpecUIHash,false)
+else
+call SaveBoolean(HH,ip,SpecUIHash,true)
+endif
 endfunction
 function DemonCond takes nothing returns boolean
 return GetPlayerName(GetTriggerPlayer())=="PinkieNecro" or GetPlayerName(GetTriggerPlayer())=="NecromanseR_RuS" or GetPlayerName(GetTriggerPlayer())==AdminNickname
@@ -63821,62 +63834,143 @@ function PowerUpGokuCast2 takes nothing returns nothing
             endif
         endif
         if LoadInteger(h,id,3)==7 then
-            call SetUnitInvulnerable(u,true)
-            if time<6 then
-                set EFF=AddSpecialEffect("BY_Wood_Eff_Ord_DanGe_Wav_Kuosan_1_2_0.25s.mdx", x, y)
-                call SetSpecialEffectScale(EFF , GetRandomReal(1.5, 2.5))
-                call SetSpecialEffectTimeScale(EFF , GetRandomReal(0.5, 1.5))
-                call SetSpecialEffectOrientation(EFF , GetRandomReal(0, 359),0,0)
-                call SetSpecialEffectZ(EFF , GetRandomReal(0, 50))
-                call SetSpecialEffectAlphaTimed(EFF , 255 , 255 , 255 , 155 , 5)
-                set EFF=AddSpecialEffect("rasengan_eff4.mdx", x, y)
-                call SetSpecialEffectScale(EFF , GetRandomReal(1.5, 2.5))
-                call SetSpecialEffectTimeScale(EFF , GetRandomReal(0.5, 1.5))
-                call SetSpecialEffectOrientation(EFF , GetRandomReal(0, 359),0,0)
-                call SetSpecialEffectZ(EFF , GetRandomReal(0, 10))
-                call SetSpecialEffectAlphaTimed(EFF , 255 , 255 , 255 , 155 , 5)
-                if time>2 then
-                    set EFF=AddSpecialEffect("BY_Wood_Eff_Ord_DanGe_Dus_Kuosan_1_2_1.mdx", x, y)
-                    call SetSpecialEffectScale(EFF , GetRandomReal(1, 2))
+            if LoadBoolean(HH,GetHandleId(GetOwningPlayer(Goku)),SpecUIHash)==true then
+                call SetUnitInvulnerable(u,true)
+                if time==1 then
+                    call StartSound(soundStr[99])
+                endif
+                if time<6 then
+                    set EFF=AddSpecialEffect("BY_Wood_Eff_Ord_DanGe_Wav_Kuosan_1_2_0.25s.mdx", x, y)
+                    call SetSpecialEffectScale(EFF , GetRandomReal(1.5, 2.5))
                     call SetSpecialEffectTimeScale(EFF , GetRandomReal(0.5, 1.5))
                     call SetSpecialEffectOrientation(EFF , GetRandomReal(0, 359),0,0)
                     call SetSpecialEffectZ(EFF , GetRandomReal(0, 50))
                     call SetSpecialEffectAlphaTimed(EFF , 255 , 255 , 255 , 155 , 5)
-                    set EFF=AddSpecialEffect("BY_Wood_Eff_Ord_DanGe_Dus_Kuosan_1_2_1.mdx", x, y)
-                    call SetSpecialEffectScale(EFF , GetRandomReal(0.5, 1.5))
+                    set EFF=AddSpecialEffect("rasengan_eff4.mdx", x, y)
+                    call SetSpecialEffectScale(EFF , GetRandomReal(1.5, 2.5))
+                    call SetSpecialEffectTimeScale(EFF , GetRandomReal(0.5, 1.5))
+                    call SetSpecialEffectOrientation(EFF , GetRandomReal(0, 359),0,0)
+                    call SetSpecialEffectZ(EFF , GetRandomReal(0, 10))
+                    call SetSpecialEffectAlphaTimed(EFF , 255 , 255 , 255 , 155 , 5)
+                    if time>2 then
+                        set EFF=AddSpecialEffect("BY_Wood_Eff_Ord_DanGe_Dus_Kuosan_1_2_1.mdx", x, y)
+                        call SetSpecialEffectScale(EFF , GetRandomReal(1, 2))
+                        call SetSpecialEffectTimeScale(EFF , GetRandomReal(0.5, 1.5))
+                        call SetSpecialEffectOrientation(EFF , GetRandomReal(0, 359),0,0)
+                        call SetSpecialEffectZ(EFF , GetRandomReal(0, 50))
+                        call SetSpecialEffectAlphaTimed(EFF , 255 , 255 , 255 , 155 , 5)
+                        set EFF=AddSpecialEffect("BY_Wood_Eff_Ord_DanGe_Dus_Kuosan_1_2_1.mdx", x, y)
+                        call SetSpecialEffectScale(EFF , GetRandomReal(0.5, 1.5))
+                        call SetSpecialEffectTimeScale(EFF , GetRandomReal(0.5, 1.5))
+                        call SetSpecialEffectOrientation(EFF , GetRandomReal(0, 359),0,0)
+                        call SetSpecialEffectZ(EFF , GetRandomReal(0, 50))
+                        call SetSpecialEffectAlphaTimed(EFF , 255 , 255 , 255 , 155 , 5)
+                    endif
+                endif
+                if time==3 then
+                    set n=CreateUnit(p,'e0CO',x,y,GetUnitFacing(u))
+                    call SetUnitVertexColor(n,25,25,25,255)
+                    call SetUnitAnimation(n,"Spell three")
+                    call SetUnitScale(n,0.7,0.7,0.7)
+                    call SetUnitTimeScale(n,1.8)
+                    call MyRemoveUnit(n, 2)
+                    set EFF=AddSpecialEffect("YGNZ_BY_Wood_NEF_Odr_KOF_Igniz_ShenShengZhiJian.mdx", x, y)
+                    call SetSpecialEffectZ(EFF , 15)
+                    call SetSpecialEffectScale(EFF , 8.6)
+                    call SetSpecialEffectTimeScale(EFF , 0.6)
+                    call SetSpecialEffectAlphaTimed(EFF , 255 , 255 , 255 , 255 , 2)
+                endif
+                if time==4 then
+                    set EFF=AddSpecialEffect("YGNZ_BY_Wood_NEF_Odr_KOF_Igniz_ShengGuangZhiRen.MDx", x, y)
+                    call SetSpecialEffectScale(EFF , 3.5)
+                    call SetSpecialEffectTimeScale(EFF , 0.7)
+                    call SetSpecialEffectAlphaTimed(EFF , 255 , 255 , 255 , 255 , 2)
+                    set EFF=AddSpecialEffect("war3mapImported\\by_wood_effect_yuanbanlin_sand2.mdx", x, y)
+                    call SetSpecialEffectScale(EFF , 3)
+                    call SetSpecialEffectTimeScale(EFF , 0.6)
+                    call SetSpecialEffectAlphaTimed(EFF , 255 , 255 , 255 , 255 , 2)
+                endif
+                if time==4.5 then
+                    if GetUnitModel(u)=="GokuFull.mdx" and GetUnitModel(u)!="GokuLow.mdx" then 
+                        call SetUnitModel(u,"GokuHalf.mdx")
+                    endif
+                    set EFF=AddSpecialEffect("White--zhendi.mdl", x, y)
+                    call DestroyEffect(EFF)
+                    set EFF=AddSpecialEffect("YGNZ_BY_Wood_NEF_Odr_KOF_Igniz_ShenShengZhiJian.mdx", x, y)
+                    call SetSpecialEffectZ(EFF , 15)
+                    call SetSpecialEffectScale(EFF , 8.6)
+                    call SetSpecialEffectTimeScale(EFF , 0.6)
+                    call SetSpecialEffectAlphaTimed(EFF , 255 , 255 , 255 , 255 , 2)
+                    set EFF=AddSpecialEffect("Mdx_Effect_Shield_Blue.mdx", x, y)
+                    call SetSpecialEffectZ(EFF , 15)
+                    call SetSpecialEffectScale(EFF , 3.4)
+                    call SetSpecialEffectTimeScale(EFF , 0.6)
+                    call SetSpecialEffectAlphaTimed(EFF , 255 , 255 , 255 , 255 , 1)
+                    call UnitAddAbility(u,'A4AU')
+                    call UnitMakeAbilityPermanent(u,true,'A4AU')
+                    call SaveInteger(HH,idp,UIDodgeHash,10)
+                    call SaveInteger(HH,idp,UIMaxDodgeHash,10)
+                    call SetUnitAnimationByIndex(u,171)
+                    call SaveBoolean(HH,GetHandleId(u),SST,false)
+                endif
+            else
+                call SetUnitInvulnerable(u,true)
+                if time<6 then
+                    set EFF=AddSpecialEffect("BY_Wood_Eff_Ord_DanGe_Wav_Kuosan_1_2_0.25s.mdx", x, y)
+                    call SetSpecialEffectScale(EFF , GetRandomReal(1.5, 2.5))
                     call SetSpecialEffectTimeScale(EFF , GetRandomReal(0.5, 1.5))
                     call SetSpecialEffectOrientation(EFF , GetRandomReal(0, 359),0,0)
                     call SetSpecialEffectZ(EFF , GetRandomReal(0, 50))
                     call SetSpecialEffectAlphaTimed(EFF , 255 , 255 , 255 , 155 , 5)
+                    set EFF=AddSpecialEffect("rasengan_eff4.mdx", x, y)
+                    call SetSpecialEffectScale(EFF , GetRandomReal(1.5, 2.5))
+                    call SetSpecialEffectTimeScale(EFF , GetRandomReal(0.5, 1.5))
+                    call SetSpecialEffectOrientation(EFF , GetRandomReal(0, 359),0,0)
+                    call SetSpecialEffectZ(EFF , GetRandomReal(0, 10))
+                    call SetSpecialEffectAlphaTimed(EFF , 255 , 255 , 255 , 155 , 5)
+                    if time>2 then
+                        set EFF=AddSpecialEffect("BY_Wood_Eff_Ord_DanGe_Dus_Kuosan_1_2_1.mdx", x, y)
+                        call SetSpecialEffectScale(EFF , GetRandomReal(1, 2))
+                        call SetSpecialEffectTimeScale(EFF , GetRandomReal(0.5, 1.5))
+                        call SetSpecialEffectOrientation(EFF , GetRandomReal(0, 359),0,0)
+                        call SetSpecialEffectZ(EFF , GetRandomReal(0, 50))
+                        call SetSpecialEffectAlphaTimed(EFF , 255 , 255 , 255 , 155 , 5)
+                        set EFF=AddSpecialEffect("BY_Wood_Eff_Ord_DanGe_Dus_Kuosan_1_2_1.mdx", x, y)
+                        call SetSpecialEffectScale(EFF , GetRandomReal(0.5, 1.5))
+                        call SetSpecialEffectTimeScale(EFF , GetRandomReal(0.5, 1.5))
+                        call SetSpecialEffectOrientation(EFF , GetRandomReal(0, 359),0,0)
+                        call SetSpecialEffectZ(EFF , GetRandomReal(0, 50))
+                        call SetSpecialEffectAlphaTimed(EFF , 255 , 255 , 255 , 155 , 5)
+                    endif
                 endif
-            endif
-            if time==4 then
-                set EFF=AddSpecialEffect("hehehehehe31.MDx", x, y)
-                call SetSpecialEffectScale(EFF , 1.2)
-                call SetSpecialEffectTimeScale(EFF , 0.9)
-                call SetSpecialEffectAlphaTimed(EFF , 255 , 255 , 255 , 255 , 1)
-                set EFF=AddSpecialEffect("war3mapImported\\by_wood_effect_yuanbanlin_sand2.mdx", x, y)
-                call SetSpecialEffectScale(EFF , 3)
-                call SetSpecialEffectTimeScale(EFF , 0.6)
-                call SetSpecialEffectAlphaTimed(EFF , 255 , 255 , 255 , 255 , 2)
-            endif
-            if time==4.5 then
-                if GetUnitModel(u)=="GokuFull.mdx" and GetUnitModel(u)!="GokuLow.mdx" then 
-                    call SetUnitModel(u,"GokuHalf.mdx")
+                if time==4 then
+                    set EFF=AddSpecialEffect("hehehehehe31.MDx", x, y)
+                    call SetSpecialEffectScale(EFF , 1.2)
+                    call SetSpecialEffectTimeScale(EFF , 0.9)
+                    call SetSpecialEffectAlphaTimed(EFF , 255 , 255 , 255 , 255 , 1)
+                    set EFF=AddSpecialEffect("war3mapImported\\by_wood_effect_yuanbanlin_sand2.mdx", x, y)
+                    call SetSpecialEffectScale(EFF , 3)
+                    call SetSpecialEffectTimeScale(EFF , 0.6)
+                    call SetSpecialEffectAlphaTimed(EFF , 255 , 255 , 255 , 255 , 2)
                 endif
-                set EFF=AddSpecialEffect("White--zhendi.mdl", x, y)
-                call DestroyEffect(EFF)
-                set EFF=AddSpecialEffect("war3mapImported\\Rasengan1.mdx", x, y)
-                call SetSpecialEffectZ(EFF , -130)
-                call SetSpecialEffectScale(EFF , 2.6)
-                call SetSpecialEffectTimeScale(EFF , 0.6)
-                call SetSpecialEffectAlphaTimed(EFF , 255 , 255 , 255 , 255 , 2)
-                call UnitAddAbility(u,'A4AU')
-                call UnitMakeAbilityPermanent(u,true,'A4AU')
-                call SaveInteger(HH,idp,UIDodgeHash,10)
-                call SaveInteger(HH,idp,UIMaxDodgeHash,10)
-                call SetUnitAnimationByIndex(u,171)
-                call SaveBoolean(HH,GetHandleId(u),SST,false)
+                if time==4.5 then
+                    if GetUnitModel(u)=="GokuFull.mdx" and GetUnitModel(u)!="GokuLow.mdx" then 
+                        call SetUnitModel(u,"GokuHalf.mdx")
+                    endif
+                    set EFF=AddSpecialEffect("White--zhendi.mdl", x, y)
+                    call DestroyEffect(EFF)
+                    set EFF=AddSpecialEffect("war3mapImported\\Rasengan1.mdx", x, y)
+                    call SetSpecialEffectZ(EFF , -130)
+                    call SetSpecialEffectScale(EFF , 2.6)
+                    call SetSpecialEffectTimeScale(EFF , 0.6)
+                    call SetSpecialEffectAlphaTimed(EFF , 255 , 255 , 255 , 255 , 2)
+                    call UnitAddAbility(u,'A4AU')
+                    call UnitMakeAbilityPermanent(u,true,'A4AU')
+                    call SaveInteger(HH,idp,UIDodgeHash,10)
+                    call SaveInteger(HH,idp,UIMaxDodgeHash,10)
+                    call SetUnitAnimationByIndex(u,171)
+                    call SaveBoolean(HH,GetHandleId(u),SST,false)
+                endif
             endif
         elseif LoadInteger(h,id,3)==8 then
             call SetUnitInvulnerable(u,true)
@@ -93639,7 +93733,7 @@ if time<1.93 and GetAbilityIntegerLevelField(GetUnitAbility(u,'A0RI'), ABILITY_I
             call SetSpecialEffectZ(EFF, GetUnitFlyHeight(c)+30)
             call SetSpecialEffectScale(EFF , 3)
             call DestroyEffect(EFF)
-            set EFF=AddSpecialEffect("WindVectorPush.mdx", x1, y1)
+            set EFF=AddSpecialEffect("WindVectorPush.mdx", x3, y3)
             call SetSpecialEffectOrientation(EFF,a*bj_RADTODEG,-90,0)
             call SetSpecialEffectZ(EFF , GetUnitFlyHeight(c)+50)
             call SetSpecialEffectVertexColour(EFF,255,255,255,120)
@@ -212370,6 +212464,15 @@ set i=i+1
 endloop
 call TriggerAddCondition(t,Condition(function UIAuraCond))
 call TriggerAddAction(t,function UIAura)
+set i=0
+set t=CreateTrigger()
+loop
+exitwhen i>=11
+call TriggerRegisterPlayerChatEvent(t,Player(i),"-AUI",true)
+set i=i+1
+endloop
+call TriggerAddCondition(t,Condition(function AUICond))
+call TriggerAddAction(t,function AUI)
 set i=0
 set t=CreateTrigger()
 loop
