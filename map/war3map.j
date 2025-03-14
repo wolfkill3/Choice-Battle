@@ -7789,6 +7789,8 @@ call PreloadSound("Voice\\YoruichiSummon.mp3")
 call PreloadSound("Voice\\TobiramaSummon.mp3")
 call PreloadSound("Voice\\HashiramaSummon.mp3")
 call PreloadSound("Voice\\KarnaSummon.mp3")
+call PreloadSound("Voice\\JirenSummon.mp3")
+call PreloadSound("Voice\\JirenSummon-jap.mp3")
 set soundStr[1]=CreateSound("Sound\\Music\\mp3Music\\BrolyFirstLSSTransform.mp3",false,false,true,12700,12700,"")
 set soundStr[2]=CreateSound("Sound\\Music\\mp3Music\\BrolyFirstLSSTransformGoku.mp3",false,false,true,12700,12700,"")
 set soundStr[3]=CreateSound("Sound\\Music\\mp3Music\\BrolyLSSTransform.mp3",false,false,true,12700,12700,"")
@@ -7888,22 +7890,65 @@ set soundStr[96]=CreateSound("Sound\\Music\\mp3Music\\Goku\\MasteredUltraInstinc
 set soundStr[97]=CreateSound("Sound\\Music\\mp3Music\\VegitoG1.mp3",false,false,true,12700,12700,"")
 set soundStr[98]=CreateSound("Sound\\Music\\mp3Music\\Vegitto\\VegitoG1-jap.mp3",false,false,true,12700,12700,"")
 set soundStr[99]=CreateSound("Sound\\Music\\mp3Music\\AUIRoar.mp3",false,false,true,12700,12700,"")
+set soundStr[100]=CreateSound("Sound\\Music\\mp3Music\\JirenQ1.mp3",false,false,true,12700,12700,"")
+set soundStr[101]=CreateSound("Sound\\Music\\mp3Music\\Jiren\\JirenQ1-jap.mp3",false,false,true,12700,12700,"")
+set soundStr[102]=CreateSound("Sound\\Music\\mp3Music\\JirenQ2.mp3",false,false,true,12700,12700,"")
+set soundStr[103]=CreateSound("Sound\\Music\\mp3Music\\JirenQ3.mp3",false,false,true,12700,12700,"")
+set soundStr[104]=CreateSound("Sound\\Music\\mp3Music\\JirenQ1Self.mp3",false,false,true,12700,12700,"")
+set soundStr[105]=CreateSound("Sound\\Music\\mp3Music\\Jiren\\JirenQ1Self-jap.mp3",false,false,true,12700,12700,"")
+set soundStr[106]=CreateSound("Sound\\Music\\mp3Music\\JirenQ2Self.mp3",false,false,true,12700,12700,"")
+set soundStr[107]=CreateSound("Sound\\Music\\mp3Music\\JirenQ3Self.mp3",false,false,true,12700,12700,"")
+set soundStr[108]=CreateSound("Sound\\Music\\mp3Music\\Jiren\\JirenQ3Self-jap.mp3",false,false,true,12700,12700,"")
+set soundStr[109]=CreateSound("Sound\\Music\\mp3Music\\JirenW1.mp3",false,false,true,12700,12700,"")
+set soundStr[110]=CreateSound("Sound\\Music\\mp3Music\\Jiren\\JirenW1-jap.mp3",false,false,true,12700,12700,"")
+set soundStr[111]=CreateSound("Sound\\Music\\mp3Music\\JirenE1.mp3",false,false,true,12700,12700,"")
+set soundStr[112]=CreateSound("Sound\\Music\\mp3Music\\Jiren\\JirenE1-jap.mp3",false,false,true,12700,12700,"")
+set soundStr[113]=CreateSound("Sound\\Music\\mp3Music\\JirenE1Self.mp3",false,false,true,12700,12700,"")
+set soundStr[114]=CreateSound("Sound\\Music\\mp3Music\\Jiren\\JirenE1Self-jap.mp3",false,false,true,12700,12700,"")
+set soundStr[115]=CreateSound("Sound\\Music\\mp3Music\\JirenE2Self.mp3",false,false,true,12700,12700,"")
+set soundStr[116]=CreateSound("Sound\\Music\\mp3Music\\JirenE3Self.mp3",false,false,true,12700,12700,"")
+set soundStr[117]=CreateSound("Sound\\Music\\mp3Music\\Jiren\\JirenE3Self-jap.mp3",false,false,true,12700,12700,"")
+set soundStr[118]=CreateSound("Sound\\Music\\mp3Music\\JirenR1.mp3",false,false,true,12700,12700,"")
+set soundStr[119]=CreateSound("Sound\\Music\\mp3Music\\Jiren\\JirenR1-jap.mp3",false,false,true,12700,12700,"")
+set soundStr[120]=CreateSound("Sound\\Music\\mp3Music\\JirenR2.mp3",false,false,true,12700,12700,"")
+set soundStr[121]=CreateSound("Sound\\Music\\mp3Music\\JirenR3.mp3",false,false,true,12700,12700,"")
+set soundStr[122]=CreateSound("Sound\\Music\\mp3Music\\Jiren\\JirenR3-jap.mp3",false,false,true,12700,12700,"")
+set soundStr[123]=CreateSound("Sound\\Music\\mp3Music\\JirenR4.mp3",false,false,true,12700,12700,"")
+set soundStr[124]=CreateSound("Sound\\Music\\mp3Music\\JirenT1.mp3",false,false,true,12700,12700,"")
+set soundStr[125]=CreateSound("Sound\\Music\\mp3Music\\Jiren\\JirenT1-jap.mp3",false,false,true,12700,12700,"")
+set soundStr[126]=CreateSound("Sound\\Music\\mp3Music\\JirenT2.mp3",false,false,true,12700,12700,"")
+set soundStr[127]=CreateSound("Sound\\Music\\mp3Music\\JirenT3.mp3",false,false,true,12700,12700,"")
+set soundStr[128]=CreateSound("Sound\\Music\\mp3Music\\Jiren\\JirenT3-jap.mp3",false,false,true,12700,12700,"")
+set soundStr[129]=CreateSound("Sound\\Music\\mp3Music\\JirenG1.mp3",false,false,true,12700,12700,"")
+set soundStr[130]=CreateSound("Sound\\Music\\mp3Music\\Jiren\\JirenG1-jap.mp3",false,false,true,12700,12700,"")
+set soundStr[131]=CreateSound("Sound\\Music\\mp3Music\\JirenG2.mp3",false,false,true,12700,12700,"")
+set soundStr[132]=CreateSound("Sound\\Music\\mp3Music\\JirenG3.mp3",false,false,true,12700,12700,"")
+set soundStr[133]=CreateSound("Sound\\Music\\mp3Music\\Jiren\\JirenG3-jap.mp3",false,false,true,12700,12700,"")
+set soundStr[134]=CreateSound("Sound\\Music\\mp3Music\\JirenG4.mp3",false,false,true,12700,12700,"")
+set soundStr[135]=CreateSound("Sound\\Music\\mp3Music\\JirenG5.mp3",false,false,true,12700,12700,"")
+set soundStr[136]=CreateSound("Sound\\Music\\mp3Music\\Jiren\\JirenG5-jap.mp3",false,false,true,12700,12700,"")
+set soundStr[137]=CreateSound("Sound\\Music\\mp3Music\\JirenF1.mp3",false,false,true,12700,12700,"")
+set soundStr[138]=CreateSound("Sound\\Music\\mp3Music\\Jiren\\JirenF1-jap.mp3",false,false,true,12700,12700,"")
+set soundStr[139]=CreateSound("Sound\\Music\\mp3Music\\JirenTransformation.mp3",false,false,true,12700,12700,"")
+set soundStr[140]=CreateSound("Sound\\Music\\mp3Music\\Jiren\\JirenTransformation-jap.mp3",false,false,true,12700,12700,"")
+set soundStr[141]=CreateSound("Sound\\Music\\mp3Music\\JirenF1.mp3",false,false,true,12700,12700,"")
+set soundStr[142]=CreateSound("Sound\\Music\\mp3Music\\Jiren\\JirenF1-jap.mp3",false,false,true,12700,12700,"")
 loop
 set i=i+1
 call StartSound(soundStr[i])
-exitwhen i>99
+exitwhen i>142
 endloop
 call TriggerSleepAction(0)
 set i=0
 loop
 set i=i+1
 call StopSound(soundStr[i],false,false)
-exitwhen i>99
+exitwhen i>142
 endloop
 endfunction
 function InitTrig_VoicePreload takes nothing returns nothing
 set gg_trg_VoicePreload=CreateTrigger()
-call TriggerRegisterTimerEventSingle(gg_trg_VoicePreload,1.1)
+call TriggerRegisterTimerEventSingle(gg_trg_VoicePreload,8)
 call TriggerAddAction(gg_trg_VoicePreload,function Trig_VoicePreload_Actions)
 endfunction
 function InitVoice takes integer id returns string
