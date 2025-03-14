@@ -7916,34 +7916,25 @@ set soundStr[122]=CreateSound("Sound\\Music\\mp3Music\\Jiren\\JirenR3-jap.mp3",f
 set soundStr[123]=CreateSound("Sound\\Music\\mp3Music\\JirenR4.mp3",false,false,true,12700,12700,"")
 set soundStr[124]=CreateSound("Sound\\Music\\mp3Music\\JirenT1.mp3",false,false,true,12700,12700,"")
 set soundStr[125]=CreateSound("Sound\\Music\\mp3Music\\Jiren\\JirenT1-jap.mp3",false,false,true,12700,12700,"")
-set soundStr[126]=CreateSound("Sound\\Music\\mp3Music\\JirenT2.mp3",false,false,true,12700,12700,"")
-set soundStr[127]=CreateSound("Sound\\Music\\mp3Music\\JirenT3.mp3",false,false,true,12700,12700,"")
-set soundStr[128]=CreateSound("Sound\\Music\\mp3Music\\Jiren\\JirenT3-jap.mp3",false,false,true,12700,12700,"")
-set soundStr[129]=CreateSound("Sound\\Music\\mp3Music\\JirenG1.mp3",false,false,true,12700,12700,"")
-set soundStr[130]=CreateSound("Sound\\Music\\mp3Music\\Jiren\\JirenG1-jap.mp3",false,false,true,12700,12700,"")
-set soundStr[131]=CreateSound("Sound\\Music\\mp3Music\\JirenG2.mp3",false,false,true,12700,12700,"")
-set soundStr[132]=CreateSound("Sound\\Music\\mp3Music\\JirenG3.mp3",false,false,true,12700,12700,"")
-set soundStr[133]=CreateSound("Sound\\Music\\mp3Music\\Jiren\\JirenG3-jap.mp3",false,false,true,12700,12700,"")
-set soundStr[134]=CreateSound("Sound\\Music\\mp3Music\\JirenG4.mp3",false,false,true,12700,12700,"")
-set soundStr[135]=CreateSound("Sound\\Music\\mp3Music\\JirenG5.mp3",false,false,true,12700,12700,"")
-set soundStr[136]=CreateSound("Sound\\Music\\mp3Music\\Jiren\\JirenG5-jap.mp3",false,false,true,12700,12700,"")
-set soundStr[137]=CreateSound("Sound\\Music\\mp3Music\\JirenF1.mp3",false,false,true,12700,12700,"")
-set soundStr[138]=CreateSound("Sound\\Music\\mp3Music\\Jiren\\JirenF1-jap.mp3",false,false,true,12700,12700,"")
-set soundStr[139]=CreateSound("Sound\\Music\\mp3Music\\JirenTransformation.mp3",false,false,true,12700,12700,"")
-set soundStr[140]=CreateSound("Sound\\Music\\mp3Music\\Jiren\\JirenTransformation-jap.mp3",false,false,true,12700,12700,"")
-set soundStr[141]=CreateSound("Sound\\Music\\mp3Music\\JirenF1.mp3",false,false,true,12700,12700,"")
-set soundStr[142]=CreateSound("Sound\\Music\\mp3Music\\Jiren\\JirenF1-jap.mp3",false,false,true,12700,12700,"")
+set soundStr[126]=CreateSound("Sound\\Music\\mp3Music\\JirenG1.mp3",false,false,true,12700,12700,"")
+set soundStr[127]=CreateSound("Sound\\Music\\mp3Music\\Jiren\\JirenG1-jap.mp3",false,false,true,12700,12700,"")
+set soundStr[128]=CreateSound("Sound\\Music\\mp3Music\\JirenF1.mp3",false,false,true,12700,12700,"")
+set soundStr[129]=CreateSound("Sound\\Music\\mp3Music\\Jiren\\JirenF1-jap.mp3",false,false,true,12700,12700,"")
+set soundStr[130]=CreateSound("Sound\\Music\\mp3Music\\JirenTransformation.mp3",false,false,true,12700,12700,"")
+set soundStr[131]=CreateSound("Sound\\Music\\mp3Music\\Jiren\\JirenTransformation-jap.mp3",false,false,true,12700,12700,"")
+set soundStr[132]=CreateSound("Sound\\Music\\mp3Music\\JirenF2.mp3",false,false,true,12700,12700,"")
+set soundStr[133]=CreateSound("Sound\\Music\\mp3Music\\Jiren\\JirenF2-jap.mp3",false,false,true,12700,12700,"")
 loop
 set i=i+1
 call StartSound(soundStr[i])
-exitwhen i>142
+exitwhen i>133
 endloop
 call TriggerSleepAction(0)
 set i=0
 loop
 set i=i+1
 call StopSound(soundStr[i],false,false)
-exitwhen i>142
+exitwhen i>133
 endloop
 endfunction
 function InitTrig_VoicePreload takes nothing returns nothing
@@ -39968,6 +39959,11 @@ if CurrentEventAttack and GetUnitAbilityLevel(c,'A13N')>0 and nb>0 and c!=Ultima
 endif
 if GetUnitTypeId(u)=='HJi1' then
     if GetUnitModel(u)=="[By XeSHTeG]JirenBase.mdx" and GetUnitState(u,UNIT_STATE_LIFE)-nb<0.25*ll and GetHeroLevel(u)>=26 then 
+        if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
+            call StartSound(soundStr[130])
+        else
+            call StartSound(soundStr[131])
+        endif
         call SetUnitModel(u,"[By XeSHTeG]JirenFullPower.mdx")
         call ShowAbility2('JNF1',false)
         call ShowAbility2('JNF4',true)
@@ -146284,6 +146280,7 @@ else
         call SetUnitInvulnerable(u,false)
         call SetUnitVertexColor(u,255,255,255,255)
         call SetUnitTimeScale(u,1)
+        call RemoveUnit(l__d)
         call PauseTimer(t)
         call SetUnitFlyHeight(u,0,0)
         call DestroyTimer(t)
@@ -166536,7 +166533,11 @@ if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
     call SetSpecialEffectVertexColour(EFF,255,255,255,120)
     call DestroyEffect(EFF)
     call SetUnitAnimationByIndex(u,10)
-    //call StartSound(soundStr[68])
+    if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
+        call StartSound(soundStr[126])
+    else
+        call StartSound(soundStr[127])
+    endif
     call SaveUnitHandle(HH,id,0,u)
     call SaveUnitHandle(HH,id,1,c)
     call PauseTimer(t)
@@ -166637,6 +166638,11 @@ function JirenF2_Cast takes unit u returns nothing
     call RemoveEffect(EFF,2,true,CreateTimer())
     call PauseUnit(u,true)
     call SetUnitInvulnerable(u,true)
+    if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
+        call StartSound(soundStr[132])
+    else
+        call StartSound(soundStr[133])
+    endif
     call TimerStart(t,0.2,true,function JirenF2_Periodic)
     set u=null
     set t=null
@@ -166658,6 +166664,8 @@ function JirenF1_Periodic takes nothing returns nothing
         call HealTextTag(u,u,GetUnitState(u,UNIT_STATE_MAX_MANA)*0.004*myCustomMana2(u,1),"ManaRes")
         call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)+GetUnitState(u,UNIT_STATE_MAX_MANA)*0.004)
 	else
+        call StopSound(soundStr[128])
+        call StopSound(soundStr[129])
         call UnitRemoveAbility(u,'A4DF')
         if GetUnitCurrentAnimationId(u)==37 then
             call SetUnitAnimationByIndex(u,27)
@@ -166676,6 +166684,11 @@ function JirenF1_Cast takes unit u returns nothing
     call SaveUnitHandle(h,id,0,u)
     call UnitAddAbility(u,'A4DF')
     call UnitMakeAbilityPermanent(u,true,'A4DF')
+    if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
+        call StartSound(soundStr[128])
+    else
+        call StartSound(soundStr[129])
+    endif
     call TimerStart(t,0.2,true,function JirenF1_Periodic)
     set u=null
     set t=null
@@ -167013,12 +167026,10 @@ call PauseUnit(u,true)
 call SetUnitInvulnerable(u,true)
 call SetUnitAnimationByIndex(u,46)
 if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
-set soundplay=CreateSound("Sound\\Music\\mp3Music\\JirenT1.mp3",false,false,true,12700,12700,"")
+    call StartSound(soundStr[124])
 else
-set soundplay=CreateSound("Sound\\Music\\mp3Music\\Jiren\\JirenT1-jap.mp3",false,false,true,12700,12700,"")
+    call StartSound(soundStr[125])
 endif
-call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
 call TimerStart(t,0.02,true,function JirenT_Cast2)
 set u=null
 set t=null
@@ -167108,6 +167119,7 @@ elseif Range<1500 and UnitIsAlive(l__d) and IsTerrainPathable(x1,y1,PATHING_TYPE
     call SetUnitFacing(l__d,a*bj_RADTODEG)
     call SaveReal(h,id,9,Range+40)
 else
+    call StartSound(soundStr[123])
     call UnitEnableAutoOrientation(c,true)
     call SetUnitTimeScale(u,1)
     set n=CreateUnit(p,'eo9L',x1,y1,GetRandomReal(0,359))
@@ -167188,6 +167200,11 @@ call SetUnitScale(n,1.1,1.1,1.1)
 call SetUnitVertexColor(n,0,0,0,0)
 call SaveUnitHandle(h,id,11,n)
 call SetUnitTimeScale(u,2)
+if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
+    call StartSound(soundStr[121])
+else
+    call StartSound(soundStr[122])
+endif
 call TimerStart(t,0.03,true,function JirenR1_Cast4)
 else
 call PauseUnit(u,false)
@@ -167233,6 +167250,7 @@ else
         call SetSpecialEffectScale(EFF , 0.3)
         call DestroyEffect(EFF)
     else
+        call StartSound(soundStr[120])
         if LoadBoolean(HH,GetHandleId(l__d),ANTITARGET_ABILITY)==false then
             set soundplay=CreateSound("Sound\\Music\\mp3Music\\JirenR2.mp3",false,false,true,12700,12700,"")
             call StartSound(soundplay)
@@ -167315,9 +167333,11 @@ call SaveReal(h,id,2,0)
 call SaveReal(h,id,3,a)
 call PauseUnit(u,true)
 call SetUnitInvulnerable(u,true)
-set soundplay=CreateSound("Sound\\Music\\mp3Music\\JirenR1.mp3",false,false,true,12700,12700,"")
-call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
+    call StartSound(soundStr[118])
+else
+    call StartSound(soundStr[119])
+endif
 call TimerStart(t,0.04,true,function JirenR1_Cast2)
 set u=null
 set c=null
@@ -167454,6 +167474,11 @@ function JirenE1_Cast takes unit u,real x1,real y1 returns nothing
     call SetUnitInvulnerable(u,true)
     call SaveInteger(h,id,2,0)
     call SetUnitTimeScale(u,2)
+    if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
+        call StartSound(soundStr[111])
+    else
+        call StartSound(soundStr[112])
+    endif
     call TimerStart(t,0.03,true,function JirenE1_Cast2)
     set u=null
     set t=null
@@ -167484,6 +167509,11 @@ function JirenESelf_Cast3 takes nothing returns nothing
             call SetUnitVertexColor(u,255,255,255,0)
             set EFF=AddSpecialEffect("war3mapImported\\BlackBlink.mdx", x, y)
             call DestroyEffect(EFF)
+            if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
+                call StartSound(soundStr[116])
+            else
+                call StartSound(soundStr[117])
+            endif
         endif
         if time==0.4 then
             set x=x1-120*Cos(a)
@@ -167617,6 +167647,7 @@ function JirenESelf_Cast2 takes nothing returns nothing
     if time==0 then
         call SetAbilityRemainingCooldown(GetUnitAbility(u, 'JNE1'), 10)
         call SetUnitAnimationByIndex(u,42)
+        call StartSound(soundStr[115])
     endif
     if time<2 and c==null then
         call PauseUnit(u,true)
@@ -167666,6 +167697,11 @@ function JirenESelf_Cast takes unit u returns nothing
     call UnitAddAbility(u,'JNE2')
     call UnitMakeAbilityPermanent(u,true,'JNE2')
     call PauseUnit(u,true)
+    if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
+        call StartSound(soundStr[113])
+    else
+        call StartSound(soundStr[114])
+    endif
     call SaveBoolean(HH,GetHandleId(u),ANTITARGET_ABILITY,true)
     call TimerStart(t,0.04,true,function JirenESelf_Cast2)
     set u=null
@@ -167838,9 +167874,6 @@ function JirenW_Periodic takes nothing returns nothing
 		call SetUnitTimeScale(u,0.7)
 		//call SetUnitInvulnerable(u,false)
 		call JirenW_Cut(u,GetUnitX(dummy),GetUnitY(dummy))
-        set soundplay=CreateSound("Sound\\war3mapImported\\JirenW_Sound1.mp3",false,false,true,12700,12700,"")
-		call StartSound(soundplay)
-		call KillSoundWhenDone(soundplay)
 		call KillUnit(dummy)
 		call MyRemoveUnit(dummy,2.0)
 		call DestroyGroup(newGroup)
@@ -167867,9 +167900,11 @@ function JirenW_Cast takes unit u,real x1,real y1 returns nothing
         set distance=700
     endif
 		
-	set soundplay=CreateSound("Sound\\Music\\mp3Music\\JirenW1.mp3",false,false,true,12700,12700,"")
-	call StartSound(soundplay)
-	call KillSoundWhenDone(soundplay)
+    if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
+        call StartSound(soundStr[109])
+    else
+        call StartSound(soundStr[110])
+    endif
 	call SetUnitTimeScale(u,1.0)
     call RemoveEffect(AddSpecialEffectTarget("war3mapImported\\RedGlow.mdl", u, "head"), 1., false, CreateTimer())
     set n=CreateUnit(GetOwningPlayer(u), 'dAlb', x+50*Cos(a), y+50*Sin(a), a*bj_RADTODEG)
@@ -167964,6 +167999,7 @@ function JirenQ_Cast2 takes nothing returns nothing
         call SetSpecialEffectOrientation(EFF , a* bj_RADTODEG,-65,0)
         call SetSpecialEffectVertexColour(EFF,255,35,255,250)
         call SaveEffectHandle(HH,id,5,EFF) 
+        call StartSound(soundStr[102])
     endif
     if time==0.2 then
         call UnitEnableAutoOrientation(u,false)
@@ -168007,9 +168043,7 @@ function JirenQ_Cast2 takes nothing returns nothing
                             call SetUnitInvulnerable(u,true)
                             call PauseUnit(u,true)
                             call PauseTimer(t)
-                            set soundplay=CreateSound("Sound\\Music\\mp3Music\\JirenQ2.mp3",false,false,true,12700,12700,"")
-                            call StartSound(soundplay)
-                            call KillSoundWhenDone(soundplay)
+                            call StartSound(soundStr[103])
                             call SetUnitAnimationByIndex(u,17)
                             call TimerStart(t,0.03,true,function JirenQ_Cast3)
                         else
@@ -168073,9 +168107,11 @@ function JirenQ_Cast takes unit u, real x1, real y1 returns nothing
     call SetUnitVertexColor(n,255,255,255,155)
     call UnitApplyTimedLife(n,1,0.4)
     call SetUnitTimeScale(n,3)
-    set soundplay=CreateSound("Sound\\Music\\mp3Music\\JirenQ1.mp3",false,false,true,12700,12700,"")
-    call StartSound(soundplay)
-    call KillSoundWhenDone(soundplay)
+    if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
+        call StartSound(soundStr[100])
+    else
+        call StartSound(soundStr[101])
+    endif
     call TimerStart(t,0.01,true,function JirenQ_Cast2)
     set p=null
     set t=null
@@ -168117,6 +168153,11 @@ function JirenQSelf_Cast3 takes nothing returns nothing
             call SetSpecialEffectZ(EFF,60)
             call SetSpecialEffectVertexColour(EFF,235,225,235,190)
             call DestroyEffect(EFF)
+            if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
+                call StartSound(soundStr[107])
+            else
+                call StartSound(soundStr[108])
+            endif
         endif
         if time==0.55 then
             set EFF=AddSpecialEffect("Minato-37.mdl",x+30*Cos(a),y+30*Sin(a))
@@ -168208,6 +168249,7 @@ function JirenQSelf_Cast2 takes nothing returns nothing
             call RemoveSavedHandle(HH,idu,REVERSE_TARGET)
             call PauseTimer(t)
             call SaveReal(HH,id,2,0)
+            call StartSound(soundStr[106])
             call SetAbilityRemainingCooldown(GetUnitAbility(u, 'JNQ1'), GetAbilityRemainingCooldown(GetUnitAbility(u, 'JNQ1'))+7)
             call TimerStart(t,0.02,true,function JirenQSelf_Cast3)
         else
@@ -168233,6 +168275,11 @@ function JirenQSelf_Cast takes unit u returns nothing
     call UnitMakeAbilityPermanent(u,true,'JNQ2')
     call PauseUnit(u,true)
     call SaveBoolean(HH,GetHandleId(u),ANTITARGET_ABILITY,true)
+    if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
+        call StartSound(soundStr[104])
+    else
+        call StartSound(soundStr[105])
+    endif
     call TimerStart(t,0.04,true,function JirenQSelf_Cast2)
     set u=null
     set p=null
