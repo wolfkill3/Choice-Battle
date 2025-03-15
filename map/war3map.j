@@ -166664,8 +166664,6 @@ function JirenF1_Periodic takes nothing returns nothing
         call HealTextTag(u,u,GetUnitState(u,UNIT_STATE_MAX_MANA)*0.004*myCustomMana2(u,1),"ManaRes")
         call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)+GetUnitState(u,UNIT_STATE_MAX_MANA)*0.004)
 	else
-        call StopSound(soundStr[128],true,false)
-        call StopSound(soundStr[129],true,false)
         call UnitRemoveAbility(u,'A4DF')
         if GetUnitCurrentAnimationId(u)==37 then
             call SetUnitAnimationByIndex(u,27)
