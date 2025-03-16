@@ -5843,7 +5843,7 @@ function Condition_RecipeString takes integer id returns boolean
 return id=='I00E' or id=='I01P' or id=='I01R' or id=='I01T' or id=='I01V' or id=='I02U' or id=='I02X' or id=='I02Z' or id=='I045' or id=='I047' or id=='I04Y' or id=='I04U' or id=='I04X' or id=='I04Z' or id=='I051' or id=='I14R' or id=='IGDr' or id=='IPar' or id=='IHYr' or id=='ISTr' or id=='IBSR' or id=='I052' or id=='I053' or id=='I055' or id=='I06P' or id=='I06S' or id=='I06T'
 endfunction
 function Condition_AbilityString2 takes integer id returns boolean
-return id=='A0YX' or id=='A0Z0' or id=='KkR1' or id=='KkR2' or id=='BRRS' or id=='BRSS' or id=='IcF2' or id=='IcF5' or id=='GKF1' or id=='VGF1' or id=='GKG1' or id=='GKBS' or id=='GKSS' or id=='GKS2' or id=='GKS3' or id=='GKS4' or id=='GKSR' or id=='GKSB' or id=='GKUI' or id=='GKMI' or id=='GKQ1' or id=='GKW1' or id=='GKE1' or id=='GKT1'
+return id=='A0YX' or id=='A0Z0' or id=='KkR1' or id=='KkR2' or id=='BRRS' or id=='BRSS' or id=='IcF2' or id=='IcF5' or id=='GKF1' or id=='VGF1' or id=='GKG1' or id=='GKBS' or id=='GKSS' or id=='GKS2' or id=='GKS3' or id=='GKS4' or id=='GKSR' or id=='GKSB' or id=='GKUI' or id=='GKMI' or id=='GKQ1' or id=='GKW1' or id=='GKE1' or id=='GKT1' or id=='JNF1' or id=='JNF4'
 endfunction
 function Condition_AbilityString takes integer id returns boolean
 return Condition_AbilityString2(id) or id=='SaW1' or id=='SaE1' or id=='SaR1' or id=='SaT1' or id=='TMW0' or id=='A0P6' or id=='A1D7' or id=='HSW1' or id=='HST1' or id=='KHG1' or id=='A2DJ' or id=='IcQ1' or id=='IcT1' or id=='MadF' or id=='A0N1' or id=='A2CZ' or id=='A0CZ' or id=='DSW1' or id=='Ad02' or id=='BGW1' or id=='KaA6' or id=='KaAF' or id=='BGG1' or id=='ASQ1' or id=='ASW1' or id=='ASE1' or id=='AST1' or id=='A1BO' or id=='A1BT' or id=='A1BW' or id=='A085' or id=='A08J' or id=='MiQ1' or id=='MiE1' or id=='MiR1' or id=='A0FN' or id=='WE03' or id=='WE06' or id=='A1AJ' or id=='A1ER' or id=='A0QK' or id=='A1HO' or id=='AlFS' or id=='OM13' or id=='A17D' or id=='A177' or id=='A172' or id=='A16U' or id=='A0TN'
@@ -9318,6 +9318,7 @@ call SetPlayerAbilityAvailable(Player(i),'A1A3',false)
 call SetPlayerAbilityAvailable(Player(i),'A1B8',false)
 call SetPlayerAbilityAvailable(Player(i),'A1CF',false)
 call SetPlayerAbilityAvailable(Player(i),'A1E1',false)
+call SetPlayerAbilityAvailable(Player(i),'A2E2',false)
 call SetPlayerAbilityAvailable(Player(i),'A1E2',false)
 call SetPlayerAbilityAvailable(Player(i),'A1EC',false)
 call SetPlayerHandicapXPBJ(Player(i),0.01)
@@ -14613,6 +14614,35 @@ function OnButtonAddonAbility takes nothing returns nothing
                 call AddFrameText( GetFrameByName("TavernAbilityTooltipText",i), "\n\n"+GetAbilityBaseStringFieldById( 'KkR1', ABILITY_SF_NAME )+", (|cffffcc00"+IntToChar(GetAbilityBaseIntegerFieldById( 'KkR1', ABILITY_IF_BUTTON_HOTKEY_RESEARCH ))+"|r)\n\n"+GetAbilityBaseStringFieldById( 'KkR1', ABILITY_SLF_TOOLTIP_LEARN_EXTENDED ))
                 call SetFrameSize( GetFrameByName("TavernAbilityTooltip",i), .26, GetFrameHeight( GetFrameByName("TavernAbilityTooltipText",i))+0.03)
 
+            elseif GetFrameTexture(but,0)==GetAbilityBaseStringFieldById('JNF1',ABILITY_SF_ICON_NORMAL) and i==GetFrameContext(but) then
+                call SetFrameText( GetFrameByName("TavernAbilityTooltipText",i), "     " )
+                call SetFrameTexture( GetFrameByName("TavernAbility",i), GetAbilityBaseStringFieldById( 'JNF4', ABILITY_SF_ICON_NORMAL ), 0, true )
+                call SetFrameTexture( GetFrameByName("TavernAbility",i), GetAbilityBaseStringFieldById( 'JNF4', ABILITY_SF_ICON_NORMAL ), 1, true )
+                call SetFrameTexture( GetFrameByName("TavernAbility",i), GetAbilityBaseStringFieldById( 'JNF4', ABILITY_SF_ICON_NORMAL ), 2, true )
+                set j=0
+                loop
+                    call AddFrameText( GetFrameByName("TavernAbilityTooltipText",i), "|cffffcc00"+I2S(GetAbilityBaseIntegerLevelFieldById( 'JNF4', ABILITY_ILF_MANA_COST, j ))+"|r")
+                    exitwhen j==GetAbilityBaseIntegerFieldById('JNF4', ABILITY_IF_LEVELS)-1
+                    call AddFrameText( GetFrameByName("TavernAbilityTooltipText",i), "/")
+                    set j=j+1
+                endloop                        
+                call AddFrameText( GetFrameByName("TavernAbilityTooltipText",i), "\n\n"+GetAbilityBaseStringFieldById( 'JNF4', ABILITY_SF_NAME )+", (|cffffcc00"+IntToChar(GetAbilityBaseIntegerFieldById( 'JNF4', ABILITY_IF_BUTTON_HOTKEY_RESEARCH ))+"|r)\n\n"+GetAbilityBaseStringFieldById( 'JNF4', ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED ))
+                call SetFrameSize( GetFrameByName("TavernAbilityTooltip",i), .26, GetFrameHeight( GetFrameByName("TavernAbilityTooltipText",i))+0.03)
+            elseif GetFrameTexture(but,0)==GetAbilityBaseStringFieldById('JNF4',ABILITY_SF_ICON_NORMAL) and i==GetFrameContext(but) then
+                call SetFrameText( GetFrameByName("TavernAbilityTooltipText",i), "     " )
+                call SetFrameTexture( GetFrameByName("TavernAbility",i), GetAbilityBaseStringFieldById( 'JNF1', ABILITY_SF_ICON_NORMAL ), 0, true )
+                call SetFrameTexture( GetFrameByName("TavernAbility",i), GetAbilityBaseStringFieldById( 'JNF1', ABILITY_SF_ICON_NORMAL ), 1, true )
+                call SetFrameTexture( GetFrameByName("TavernAbility",i), GetAbilityBaseStringFieldById( 'JNF1', ABILITY_SF_ICON_NORMAL ), 2, true )
+                set j=0
+                loop
+                    call AddFrameText( GetFrameByName("TavernAbilityTooltipText",i), "|cffffcc00"+I2S(GetAbilityBaseIntegerLevelFieldById( 'JNF1', ABILITY_ILF_MANA_COST, j ))+"|r")
+                    exitwhen j==GetAbilityBaseIntegerFieldById('JNF1', ABILITY_IF_LEVELS)-1
+                    call AddFrameText( GetFrameByName("TavernAbilityTooltipText",i), "/")
+                    set j=j+1
+                endloop                        
+                call AddFrameText( GetFrameByName("TavernAbilityTooltipText",i), "\n\n"+GetAbilityBaseStringFieldById( 'JNF1', ABILITY_SF_NAME )+", (|cffffcc00"+IntToChar(GetAbilityBaseIntegerFieldById( 'JNF1', ABILITY_IF_BUTTON_HOTKEY_RESEARCH ))+"|r)\n\n"+GetAbilityBaseStringFieldById( 'JNF1', ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED ))
+                call SetFrameSize( GetFrameByName("TavernAbilityTooltip",i), .26, GetFrameHeight( GetFrameByName("TavernAbilityTooltipText",i))+0.03)
+
 
             elseif GetFrameTexture(but,0)==GetAbilityBaseStringFieldById('A0YX',ABILITY_SF_ICON_NORMAL) and i==GetFrameContext(but) then
                 call SetFrameText( GetFrameByName("TavernAbilityTooltipText",i), "     " )
@@ -19132,6 +19162,33 @@ set u=null
 set t=null
 endfunction
 
+function HeroineDBoard2 takes nothing returns nothing
+local timer t=GetExpiredTimer()
+local integer id=GetHandleId(t)
+local integer ip=LoadInteger(HH,id,0)
+local unit u=Hero[ip]
+if GetUnitTypeId(u)=='H06M' then
+    if IsUnitSelected(u,GetLocalPlayer()) and IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(u)) then
+        call SetFrameText(GetFrameByName("CustomLeaderboardText",0),"|c00C9C9E4Swordsman killed|r: "+ I2S( LoadInteger(HH,GetHandleId( GetOwningPlayer(u) ),StringHash("HerKill")) ))
+        call ShowFrame(GetFrameByName("CustomLeaderboard",0), true)
+        call SetFrameSize( GetFrameByName("CustomLeaderboard",0), .1775, GetFrameHeight( GetFrameByName("CustomLeaderboardText",0))+0.016)
+        call SetFrameTextAlignment( GetFrameByName("CustomLeaderboardText",0), TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_LEFT )
+    endif
+else
+    if IsUnitSelected(u,GetLocalPlayer()) and IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(u)) then
+        call SetFrameText(GetFrameByName("CustomLeaderboardText",0)," ")
+        call ShowFrame(GetFrameByName("CustomLeaderboard",0),false)
+    endif
+    call SaveInteger(HH,ip,StringHash("HeroineDBoard"),0)
+    call RemoveSavedInteger(HH,ip,StringHash("HeroineDBoard"))
+    call PauseTimer(t)
+    call DestroyTimer(t)
+    call FlushChildHashtable(HH,id)
+endif
+set u=null
+set t=null
+endfunction
+
 function SabracDBoard2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
@@ -19909,6 +19966,15 @@ if GetUnitTypeId(u)=='H02H' then
         call SaveInteger(HH,GetHandleId(cjlocgn_00000000),0,ip)
         call SaveInteger(HH,ip,StringHash("GokuDBoard"),1)
         call TimerStart(cjlocgn_00000000,0.2,true,function GokuDBoard2)
+        set cjlocgn_00000000=null
+    endif
+endif
+if GetUnitTypeId(u)=='H06M' then
+    if LoadInteger(HH,ip,StringHash("HeroineDBoard"))!=1 then
+        set cjlocgn_00000000=CreateTimer()
+        call SaveInteger(HH,GetHandleId(cjlocgn_00000000),0,ip)
+        call SaveInteger(HH,ip,StringHash("HeroineDBoard"),1)
+        call TimerStart(cjlocgn_00000000,0.2,true,function HeroineDBoard2)
         set cjlocgn_00000000=null
     endif
 endif
@@ -21002,6 +21068,32 @@ function Trig_Killer_Actions takes nothing returns nothing
 
           set i=0
 
+        endif
+        set i=0
+        if UnitIsAlive(Hero[iu])==true and GetUnitTypeId(Hero[iu])=='H06M' and (GetUnitAbilityLevel(Hero[ic],'A1EA')>0 or GetUnitAbilityLevel(Hero[ic],'A1EB')>0) then
+        set i=1
+
+        if GetUnitAbilityLevel(Hero[ic],'A1EB')>0 then
+        set i=2
+        endif
+
+
+                set i=i+LoadInteger(HH,GetHandleId( GetOwningPlayer( Hero[iu] ) ),StringHash("HerKill"))//+swordstake
+
+
+
+
+
+                call SaveInteger(HH,GetHandleId( GetOwningPlayer( Hero[iu] ) ) , StringHash("HerKill") ,i)
+
+
+        if (GetLocalPlayer()==GetOwningPlayer(u)) then
+        call DisplayTextToPlayer(GetLocalPlayer(),0,0,"Heroine X убила мечника. Количество убийств мечников: "+I2S(i)  )
+        endif
+
+
+
+        set i=0
         endif
         //sabrac5end
         if GetUnitTypeId(Hero[iu])=='HYuj' then //old 'H049'
@@ -32940,6 +33032,9 @@ exitwhen i>=10
         call UnitRemoveAbility(Hero[i],'JNF2')
         call UnitRemoveAbility(Hero[i],'JNF3')
     endif
+    if GetUnitTypeId( Hero[i] )=='H06M' then
+        call SaveUnitHandle(HH,GetHandleId( Hero[i] ),StringHash("HerFU"), Hero[i] )
+    endif
     if GetUnitTypeId(Hero[i])=='H02H' then
         call SaveInteger(HH,GetHandleId( GetOwningPlayer(Hero[i]) ),KaiokenHash,0)
         call SetUnitModel(Hero[i],"GokuFull.mdx")
@@ -36630,7 +36725,16 @@ if GetUnitAbilityLevel(c,'BAr1')>0 and nb>0 then
     set b=GetEventDamage()
     set nb=b                    
 endif
-
+if GetUnitAbilityLevel(c,'BHXW')>0 and nb>0 then 
+    call SetEventDamage(nb*1.15) 
+    set b=GetEventDamage()
+    set nb=b                      
+endif
+if GetUnitAbilityLevel(u,'BHXR')>0 and nb>0 then 
+    call SetEventDamage(nb*1.15) 
+    set b=GetEventDamage()
+    set nb=b                       
+endif
 if GetUnitAbilityLevel(c,'KkR3')>0 and nb>0 then //курапика цепи уменьшение наносимого урона цели
 //call SetUnitState(GetTriggerUnit(),UNIT_STATE_LIFE,GetWidgetLife(GetTriggerUnit())+nb*0.4)
     call SetEventDamage(nb*0.6) 
@@ -36946,7 +37050,7 @@ if cond==0 then
             endif
             set i=0
         endif
-        if b>0 and nb>0 and (GetUnitAbilityLevel(u,'Avul')>0 or GetUnitAbilityLevel(u,'A16H')>0 or GetUnitAbilityLevel(u,'A4DF')>0 or GetUnitAbilityLevel(u,'A1E2')>0 or GetUnitAbilityLevel(u,'B06V')>0 or GetUnitAbilityLevel(u,'A1I2')>0 or GetUnitAbilityLevel(u,'A1HV')>0 or GetUnitAbilityLevel(u,'A1DO')>0 or GetUnitAbilityLevel(u,'B06P')>0 or GetUnitAbilityLevel(u,'B06I')>0 or GetUnitAbilityLevel(u,'B02E')>0 or GetUnitAbilityLevel(u,'B05J')>0 or GetUnitAbilityLevel(u,'A16D')>0 or GetUnitAbilityLevel(u,'A12P')>0 or GetUnitAbilityLevel(u,'A0VJ')>0 or udg_B==false or GetUnitAbilityLevel(u,'A7IH')>0 or GetUnitAbilityLevel(u,'B04H')>0 or GetUnitAbilityLevel(u,'B04E')>0 or GetUnitAbilityLevel(u,'B049')>0 or GetUnitAbilityLevel(u,'B01G')>0 or GetUnitAbilityLevel(u,'ItV1')>0 or GetUnitAbilityLevel(u,'B00Y')>0 or GetUnitAbilityLevel(u,'B02U')>0 or GetUnitAbilityLevel(u,'AP08')>0 or GetUnitTypeId(u)=='H01E' or GetUnitTypeId(u)=='H01G' or GetUnitTypeId(u)=='H01I' or GetUnitTypeId(u)=='H03Q' or GetUnitTypeId(u)=='H06O')  then //
+        if b>0 and nb>0 and (GetUnitAbilityLevel(u,'Avul')>0 or GetUnitAbilityLevel(u,'A16H')>0 or GetUnitAbilityLevel(u,'A4DF')>0 or GetUnitAbilityLevel(u,'A2E2')>0 or GetUnitAbilityLevel(u,'B06V')>0 or GetUnitAbilityLevel(u,'A1I2')>0 or GetUnitAbilityLevel(u,'A1HV')>0 or GetUnitAbilityLevel(u,'A1DO')>0 or GetUnitAbilityLevel(u,'B06P')>0 or GetUnitAbilityLevel(u,'B06I')>0 or GetUnitAbilityLevel(u,'B02E')>0 or GetUnitAbilityLevel(u,'B05J')>0 or GetUnitAbilityLevel(u,'A16D')>0 or GetUnitAbilityLevel(u,'A12P')>0 or GetUnitAbilityLevel(u,'A0VJ')>0 or udg_B==false or GetUnitAbilityLevel(u,'A7IH')>0 or GetUnitAbilityLevel(u,'B04H')>0 or GetUnitAbilityLevel(u,'B04E')>0 or GetUnitAbilityLevel(u,'B049')>0 or GetUnitAbilityLevel(u,'B01G')>0 or GetUnitAbilityLevel(u,'ItV1')>0 or GetUnitAbilityLevel(u,'B00Y')>0 or GetUnitAbilityLevel(u,'B02U')>0 or GetUnitAbilityLevel(u,'AP08')>0 or GetUnitTypeId(u)=='H01E' or GetUnitTypeId(u)=='H01G' or GetUnitTypeId(u)=='H01I' or GetUnitTypeId(u)=='H03Q' or GetUnitTypeId(u)=='H06O')  then //
             if GetUnitAbilityLevel(u,'A7IH')>0 then
                 call SetUnitAnimationByIndex(u,GetRandomInt(222,230))
             endif
@@ -38191,6 +38295,9 @@ if cond==0 then
         if GetUnitAbilityLevel(u,'B00V')>0 and nb>0 then
             //call SetEventDamage(nb*0.6)
             set nb=nb*0.6
+        endif
+        if GetUnitAbilityLevel(u,'BHXE')>0 and nb>0 then 
+            set nb=nb*0.6              
         endif
         if GetUnitAbilityLevel(u,'A1F0')>0 and nb>0 then
 
@@ -67608,7 +67715,7 @@ if time<1 then
 endif
 if time>1 or not(GetUnitState(u,UNIT_STATE_LIFE)>0.405 and IsUnitPaused(u)==false and GetUnitAbilityLevel(u,'Pet1')==0 and GetUnitAbilityLevel(u,'CBC2')==0 and GetUnitAbilityLevel(u,'cbc3')==0  and GetUnitAbilityLevel(u,'cbc5')==0  and GetUnitAbilityLevel(u, 'cbc7')==0 and GetUnitAbilityLevel(u, 'cbc8')==0 and GetUnitAbilityLevel(u, 'cbc9')==0 and UnitIsAlive(u) and udg_B and DU2) then
     set EFF=AddSpecialEffect("war3mapImported\\BlackBlink.mdx", GetUnitX(u), GetUnitY(u))
-    call UnitRemoveAbility(u,'A1E2')
+    call UnitRemoveAbility(u,'A2E2')
     call SetSpecialEffectZ(EFF, GetUnitFlyHeight(u))
     call SetSpecialEffectTimeScale(EFF , 3)
     call SetSpecialEffectVertexColour(EFF,255,255,255,120)
@@ -67663,7 +67770,7 @@ call UnitAddAbility(n,'GkH7')
 elseif GetUnitAbilityLevel(u,'GkH8')>0 then
 call UnitAddAbility(n,'GkH8')
 endif
-call UnitAddAbility(u,'A1E2')
+call UnitAddAbility(u,'A2E2')
 set EFF=AddSpecialEffect("war3mapImported\\BlackBlink.mdx", GetUnitX(n), GetUnitY(n))
 call SetSpecialEffectZ(EFF, GetUnitFlyHeight(u))
 call SetSpecialEffectTimeScale(EFF , 3)
@@ -135405,6 +135512,14 @@ call TriggerRegisterAnyUnitEventBJ(gg_trg_RAtalanta,EVENT_PLAYER_UNIT_SPELL_EFFE
 call TriggerAddCondition(gg_trg_RAtalanta,Condition(function RAtalantaCond))
 call TriggerAddAction(gg_trg_RAtalanta,function RAtalantaCast)
 endfunction
+
+function SabracGnull takes nothing returns nothing
+local integer id=GetHandleId(GetExpiredTimer())
+call PauseTimer(GetExpiredTimer())
+call FlushChildHashtable(HH,id)
+call DestroyTimer(GetExpiredTimer())
+endfunction
+
 function StarBastCond takes nothing returns boolean
 return GetSpellAbilityId()=='A1E9'
 endfunction
@@ -135950,11 +136065,18 @@ local real as=LoadReal(h,id,3)
 local integer lvl=GetUnitAbilityLevel(u,'A1E5')
 local real dmg=GetHeroAgi(u,true)*(2+lvl)
 local player p=GetOwningPlayer(u)
-local integer ri=GetRandomInt(0,100)
+
 local group g=LoadGroupHandle(h,id,6)
 local integer l__ide
 local integer l__idg=GetHandleId(g)
-local integer lvl3=GetUnitAbilityLevel(u,'A1EC')
+
+
+
+
+//damage*0.25*GetUnitAbilityLevel(target,'A1EA')
+//damage*0.25*GetUnitAbilityLevel(target,'A1EB')
+
+
 if dist<900+100*lvl and LoadBoolean(HH,GetHandleId(u),DASH_USER)==true then
 set x=x+70*Cos(a)
 set y=y+70*Sin(a)
@@ -135976,15 +136098,16 @@ set E=FirstOfGroup(g)
 set l__ide=GetHandleId(E)
 exitwhen E==null
 if Condition_Base(p,E)and E!=LoadUnitHandle(h,l__idg,l__ide)then
+    call SaveUnitHandle(h,l__idg,l__ide,E)
     if LoadBoolean(HH,GetHandleId(E),ANTITARGET_ABILITY)==false then
-        if lvl3==0 then
-        call myCustomDamage(u,E,dmg+0.25*(2+lvl)*GetUnitAbilityLevel(E,'A1EA')*GetHeroAgi(u,true),false,false,null,null,null)
-        elseif lvl3>0 and ri<15 then
-        call myCustomDamage(u,E,(dmg+0.25*(2+lvl)*GetUnitAbilityLevel(E,'A1EA')*GetHeroAgi(u,true))*1.25,false,false,null,null,null)
-        elseif lvl3>0 and ri>15 then
-        call myCustomDamage(u,E,dmg+0.25*(2+lvl)*GetUnitAbilityLevel(E,'A1EA')*GetHeroAgi(u,true),false,false,null,null,null)
+        if LoadBoolean(h,id,16)==true then
+            call myCustomDamage(u,E,( dmg+0.15*(2+lvl)*GetUnitAbilityLevel(E,'A1EA')*GetHeroAgi(u,true)+0.15*(2+lvl)*GetUnitAbilityLevel(E,'A1EB')*GetHeroAgi(u,true) )*1.25,false,false,null,null,null)
+        else
+            call myCustomDamage(u,E,dmg+0.15*(2+lvl)*GetUnitAbilityLevel(E,'A1EA')*GetHeroAgi(u,true)+0.15*(2+lvl)*GetUnitAbilityLevel(E,'A1EB')*GetHeroAgi(u,true),false,false,null,null,null)              
         endif
-        call SaveUnitHandle(h,l__idg,l__ide,E)
+        if GetUnitAbilityLevel(E,'A1EA')>0 then
+            call SaveUnitHandle(HH,GetHandleId( u ),StringHash("HerFU"),E)
+        endif
     else
         call SaveBoolean(HH,GetHandleId(u),DASH_USER,false)
         call SaveUnitHandle(HH,GetHandleId(E),REVERSE_TARGET,u)
@@ -136061,6 +136184,9 @@ local real y=GetUnitY(u)
 local real x1=GetSpellTargetX()
 local real y1=GetSpellTargetY()
 local real a=Atan2(y1-y,x1-x)
+local integer lvl3=GetUnitAbilityLevel(u,'A1EC')
+local integer ri=GetRandomInt(0,100)
+
 call SaveUnitHandle(h,id,0,u)
 call SaveReal(h,id,1,a)
 call SaveReal(h,id,2,0)
@@ -136069,6 +136195,27 @@ call SaveGroupHandle(h,id,6,CreateGroup())
 call PauseUnit(u,true)
 call SetUnitInvulnerable(u,true)
 call SetUnitAnimation(u,"spell five")
+
+
+
+if lvl3>0 and ri<=15 then
+
+if (GetLocalPlayer()==GetOwningPlayer(u)) then
+call DisplayTextToPlayer(GetLocalPlayer(),0,0,"Crit")
+endif
+
+call SaveBoolean(h,id,16,true)
+else
+call SaveBoolean(h,id,16,false)
+endif
+
+
+
+if LoadInteger(HH,GetHandleId( GetOwningPlayer( u ) ) ,StringHash("HerKill"))>=2 then
+call SaveReal(h,id,2,0.65)
+endif
+
+
 call TimerStart(t,0.05,true,function SwitchCast2)
 set t=null
 set u=null
@@ -136089,7 +136236,9 @@ local unit u=LoadUnitHandle(h,id,0)
 local unit l__d=LoadUnitHandle(h,id,1)
 local real x=GetUnitX(u)
 local real y=GetUnitY(u)
-local real dmg=GetHeroAgi(u,true)*(1+GetUnitAbilityLevel(u,'A1E6'))+100+0.25*(1+GetUnitAbilityLevel(u,'A1E6'))*GetUnitAbilityLevel(l__d,'A1EA')*GetHeroAgi(u,true)+0.25*100*GetUnitAbilityLevel(l__d,'A1EA')
+local real dmg=12.5+GetHeroAgi(u,true)*(2+GetUnitAbilityLevel(u,'A1E6'))+0.15*(2+GetUnitAbilityLevel(u,'A1E6'))*GetUnitAbilityLevel(l__d,'A1EA')*GetHeroAgi(u,true)+0.15*(2+GetUnitAbilityLevel(u,'A1E6'))*GetUnitAbilityLevel(l__d,'A1EB')*GetHeroAgi(u,true)
+
+
 local real x1=GetUnitX(l__d)
 local real y1=GetUnitY(l__d)
 local real a=Atan2(y1-y,x1-x)
@@ -136097,8 +136246,7 @@ local real dist=LoadReal(h,id,2)
 local player p=GetOwningPlayer(u)
 local real pi=90*bj_DEGTORAD
 local real sc
-local integer ri=GetRandomInt(0,100)
-local integer lvl=GetUnitAbilityLevel(u,'A1EC')
+
 if dist<4 then
 call SaveReal(h,id,2,dist+1)
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\Heroine_X_attack1.mp3",false,false,true,12700,12700,"")
@@ -136120,18 +136268,27 @@ call SetUnitVertexColor(n,255,255,255,75)
 call UnitApplyTimedLife(n,1,0.4)
 call SetUnitScale(n,sc,sc,sc)
 call SetUnitTimeScale(n,3)
+//Проверка на паузу
+
 call PauseUnit(l__d,false)
-call SaveBoolean(HH,GetHandleId(l__d),TARGET_ABILITY,false)
-if lvl==0 then
-call myCustomDamage(u,l__d,dmg/4,false,false,null,null,null)
-elseif lvl>0 and ri<15 then
+call SaveBoolean(HH,GetHandleId( l__d ),TARGET_ABILITY,false)
+
+//Проверка на паузу
+
+if LoadBoolean(h,id,16)==true then
 call myCustomDamage(u,l__d,dmg*1.25/4,false,false,null,null,null)
-elseif lvl>0 and ri>15 then
+else
 call myCustomDamage(u,l__d,dmg/4,false,false,null,null,null)
 endif
-call SetControlToUnit(u,l__d,2,"stun")
+
+call SetControlToUnit(u,l__d,1.5,"stun")
+
+//Проверка на паузу
+
 call PauseUnit(l__d,true)
-call SaveBoolean(HH,GetHandleId(l__d),TARGET_ABILITY,true)
+call SaveBoolean(HH,GetHandleId( l__d ),TARGET_ABILITY,true)
+
+//Проверка на паузу
 set n=CreateUnit(p,'e11M',x1,y1,GetRandomReal(0,359))
 call SetUnitVertexColor(n,75,75,255,255)
 call SetUnitFlyHeight(n,75,0)
@@ -136193,8 +136350,12 @@ set x1=x1-155*Cos(a)
 set y1=y1-155*Sin(a)
 call SetUnitFacing(u,a*bj_RADTODEG)
 call SetUnitXY_1(u,x1,y1, false)
+//Проверка на паузу
+
 call PauseUnit(l__d,true)
-call SaveBoolean(HH,GetHandleId(l__d),TARGET_ABILITY,true)
+call SaveBoolean(HH,GetHandleId( l__d ),TARGET_ABILITY,true)
+
+//Проверка на паузу
 call SetUnitAnimation(u,"attack")
 if GetRandomInt(0,4)==0 then
 set n=CreateUnit(p,'e11Y',x1+100*Cos(a+pi),y1+100*Sin(a+pi),a*bj_RADTODEG)
@@ -136249,12 +136410,32 @@ call SetUnitTimeScale(n,2)
 call UnitApplyTimedLife(n,1,0.4)
 endif
 else
+
 call UnitRemoveAbility(u,'A1E2')
 call PauseTimer(t)
 call SetUnitTimeScale(u,1)
 call PauseUnit(u,false)
+//Проверка на паузу
+
 call PauseUnit(l__d,false)
-call SaveBoolean(HH,GetHandleId(l__d),TARGET_ABILITY,false)
+call SaveBoolean(HH,GetHandleId( l__d ),TARGET_ABILITY,false)
+
+//Проверка на паузу
+
+
+if LoadInteger(HH, GetHandleId( GetOwningPlayer( u ) ) ,StringHash("HerKill"))>=4 then
+call UnitAddAbility(u,'HerW')
+call UnitRemoveAbility(u,'HerW')
+endif
+
+if GetUnitAbilityLevel(l__d,'A1EA')>0 then
+  call SaveUnitHandle(HH,GetHandleId( u ),StringHash("HerFU"),l__d)
+endif
+
+
+
+
+
 call IssueImmediateOrder(u,"stop")
 call SetUnitInvulnerable(u,false)
 call DestroyTimer(t)
@@ -136276,9 +136457,32 @@ local real x2=GetUnitX(c)
 local real y2=GetUnitY(c)
 local player p=GetOwningPlayer(u)
 local real a=Atan2(y2-y,x2-x)
+
+local integer lvl3=GetUnitAbilityLevel(u,'A1EC')
+local integer ri=GetRandomInt(0,100)
+if lvl3>0 and ri<=15 then
+
+if (GetLocalPlayer()==GetOwningPlayer(u)) then
+call DisplayTextToPlayer(GetLocalPlayer(),0,0,"Crit")
+endif
+
+call SaveBoolean(h,id,16,true)
+else
+call SaveBoolean(h,id,16,false)
+endif
+
+
+
+
+
+
+
+
+
+
 call SaveReal(h,id,2,0)
 call PauseTimer(t)
-call TimerStart(t,0.3,true,function BusterAttackCast4)
+call TimerStart(t,0.4,true,function BusterAttackCast4)
 set u=null
 set t=null
 set p=null
@@ -136305,29 +136509,29 @@ local real sc=0
 local real is=0
 local real ig=30*bj_DEGTORAD
 if dist>150.00 then
-    call SetUnitX(u,x+(65-he2*0.05)*Cos(a))
-    call SetUnitY(u,y+(65-he2*0.05)*Sin(a))
-    call SetUnitFacing(u,a*bj_RADTODEG)
-    set he=ParabolaZ(600,SR(x1,y1,x2,y2),dist)
-    call SetUnitFlyHeight(u,he,0)
-    set n=CreateUnit(p,'e10G',x,y,a*bj_RADTODEG+90)
-    call UnitApplyTimedLife(n,'B000',0.10)
-    call SetUnitVertexColor(n,75,155,255,255)
-    call SetUnitScale(n,1,1,1)
-    call SetUnitFlyHeight(n,he,0)
-    call SetUnitTimeScale(n,3)
-    set n=CreateUnit(p,'e10G',x,y,a*bj_RADTODEG+90)
-    call UnitApplyTimedLife(n,'B000',0.10)
-    call SetUnitVertexColor(n,75,155,255,255)
-    call SetUnitScale(n,0.75,0.75,0.75)
-    call SetUnitFlyHeight(n,he,0)
-    call SetUnitTimeScale(n,3)
-    set n=CreateUnit(p,'e10G',x,y,a*bj_RADTODEG+90)
-    call UnitApplyTimedLife(n,'B000',0.10)
-    call SetUnitVertexColor(n,75,155,255,255)
-    call SetUnitScale(n,0.5,0.5,0.5)
-    call SetUnitFlyHeight(n,he,0)
-    call SetUnitTimeScale(n,3)
+call SetUnitX(u,x+(55-he2*0.05)*Cos(a))
+call SetUnitY(u,y+(55-he2*0.05)*Sin(a))
+call SetUnitFacing(u,a*bj_RADTODEG)
+set he=ParabolaZ(600,SR(x1,y1,x2,y2),dist)
+call SetUnitFlyHeight(u,he,0)
+set n=CreateUnit(p,'e10G',x,y,a*bj_RADTODEG+90)
+call UnitApplyTimedLife(n,'B000',0.10)
+call SetUnitVertexColor(n,75,155,255,255)
+call SetUnitScale(n,1,1,1)
+call SetUnitFlyHeight(n,he,0)
+call SetUnitTimeScale(n,3)
+set n=CreateUnit(p,'e10G',x,y,a*bj_RADTODEG+90)
+call UnitApplyTimedLife(n,'B000',0.10)
+call SetUnitVertexColor(n,75,155,255,255)
+call SetUnitScale(n,0.75,0.75,0.75)
+call SetUnitFlyHeight(n,he,0)
+call SetUnitTimeScale(n,3)
+set n=CreateUnit(p,'e10G',x,y,a*bj_RADTODEG+90)
+call UnitApplyTimedLife(n,'B000',0.10)
+call SetUnitVertexColor(n,75,155,255,255)
+call SetUnitScale(n,0.5,0.5,0.5)
+call SetUnitFlyHeight(n,he,0)
+call SetUnitTimeScale(n,3)
 else
     if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
         set n=CreateUnit(p,'e11S',x,y,a*bj_RADTODEG)
@@ -136360,7 +136564,7 @@ else
         call PauseTimer(t)
         call SaveReal(h,id,5,0.1)
         call SetUnitAnimation(u,"Spell One")
-        call TimerStart(t,0.15,false,function BusterAttackCast3)
+        call TimerStart(t,0.2,false,function BusterAttackCast3)
     else
         call UnitRemoveAbility(u,'A1E2')
         call PauseTimer(t)
@@ -136462,13 +136666,13 @@ set x1=x+700*Cos(a)
 set y1=y+700*Sin(a)
 set x2=x+500*Cos(a)
 set y2=y+500*Sin(a)
-set n=CreateUnit(p,'e11Q',x1,y1,GetRandomReal(0,359))
+set n=CreateUnit(p,0x65313151,x1,y1,GetRandomReal(0,359))
 call SetUnitScale(n,6,6,6)
 call SetUnitVertexColor(n,75,105,255,255)
 call UnitApplyTimedLife(n,1,1.5)
 call SetUnitTimeScale(n,1.5)
 loop
-exitwhen is>=13
+exitwhen is==13
 set x3=x1+650*Cos(a-240*bj_DEGTORAD-ig*is)
 set y3=y1+650*Sin(a-240*bj_DEGTORAD-ig*is)
 set a2=Atan2(y3-y,x3-x)
@@ -136500,11 +136704,11 @@ loop
 set E=FirstOfGroup(G)
 set ide=GetHandleId(E)
 exitwhen E==null
-if Condition_Base(p,E)then
+if Condition_Base(p,E) and GetUnitTypeId( E )!='or01'  and GetUnitTypeId( E )!='or02'     then
 set bPaused=false
 if IsUnitPaused(E) then
     set bPaused=true
-    call PauseUnit(E,false)
+    call PauseUnit(E, false)
 endif
 call IssueImmediateOrder(E,"manashieldoff")
 call IssueImmediateOrder(E,"unimmolation")
@@ -136583,35 +136787,60 @@ if GetUnitAbilityLevel(E, 'AcF1')>=1 then                 // F Эйса
     call UnitRemoveAbility(E,'AcF1')
 endif
 if GetUnitAbilityLevel(E, 'ItV1')>=1 then                 // G itachi
-    call SaveBoolean(HH,ide,SST,false)
+    call SaveBoolean(HH,ide, SST ,false)
     call ShowAbility2('A30C',false)
     call ShowAbility2('A00C',true)
     call UnitRemoveAbility(E,'ItV1')
 endif
 if GetUnitAbilityLevel(E, 'GaT1')>=1 then                 // T Gamma
-    call SaveBoolean(HH,ide,SST,false)
+    call SaveBoolean(HH,ide, SST ,false)
     call ShowAbility2('A41C',false)
     call ShowAbility2('A0GV',true)
     call UnitRemoveAbility(E,'GaT1')
 endif
 if GetUnitAbilityLevel(E, 'MgT1')>=1 then                 // T Magnus
-    call SaveBoolean(HH,ide,SST,false)
+    call SaveBoolean(HH,ide, SST ,false)
     call ShowAbility2('A42C',false)
     call ShowAbility2('A15C',true)
     call UnitRemoveAbility(E,'MgT1')
 endif
+
+
+
+
 if bPaused then
-    call PauseUnit(E,true)
+    call PauseUnit(E, true)
 endif
 call UnitRemoveAbility(E, 'YatB')
 call UnitRemoveAbility(E, 'OniC')
-if lvl==0 then
-call myCustomDamage(u,E,dmg+0.25*(4+GetUnitAbilityLevel(u,'A1E8'))*GetUnitAbilityLevel(E,'A1EA')*GetHeroAgi(u,true),false,false,null,null,null)
-elseif lvl>0 and ri<15 then
-call myCustomDamage(u,E,(dmg+0.25*(4+GetUnitAbilityLevel(u,'A1E8'))*GetUnitAbilityLevel(E,'A1EA')*GetHeroAgi(u,true))*1.25,false,false,null,null,null)
-elseif lvl>0 and ri>15 then
-call myCustomDamage(u,E,dmg+0.25*(4+GetUnitAbilityLevel(u,'A1E8'))*GetUnitAbilityLevel(E,'A1EA')*GetHeroAgi(u,true),false,false,null,null,null)
+
+
+
+
+
+if LoadBoolean(h,id,16)==true then
+
+call myCustomDamage(u,E,(dmg+0.15*(4+GetUnitAbilityLevel(u,'A1E8'))*GetUnitAbilityLevel(E,'A1EA')*GetHeroAgi(u,true)+0.15*(4+GetUnitAbilityLevel(u,'A1E8'))*GetUnitAbilityLevel(E,'A1EB')*GetHeroAgi(u,true))*1.25,false,false,null,null,null)
+
+else
+
+call myCustomDamage(u,E,dmg+0.15*(4+GetUnitAbilityLevel(u,'A1E8'))*GetUnitAbilityLevel(E,'A1EA')*GetHeroAgi(u,true)+0.15*(4+GetUnitAbilityLevel(u,'A1E8'))*GetUnitAbilityLevel(E,'A1EB')*GetHeroAgi(u,true),false,false,null,null,null)
+       
+
 endif
+
+if LoadInteger(HH, GetHandleId( GetOwningPlayer( u ) ) ,StringHash("HerKill"))>=10 then
+call UnitAddAbility(E,'HerR')
+call UnitRemoveAbility(E,'HerR')
+endif
+
+
+if GetUnitAbilityLevel(E,'A1EA')>0 then
+  call SaveUnitHandle(HH,GetHandleId( u ),StringHash("HerFU"),E)
+endif
+
+
+
 set n=CreateUnit(p,'e11M',GetUnitX(E),GetUnitY(E),GetRandomReal(0,359))
 call SetUnitVertexColor(n,255,255,255,255)
 call SetUnitScale(n,1,1,1)
@@ -136630,9 +136859,29 @@ function HyperExaliburCast2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
 local unit u=LoadUnitHandle(h,id,0)
+local integer lvl3=GetUnitAbilityLevel(u,'A1EC')
+local integer ri=GetRandomInt(0,100)
 call SaveBoolean(h,id,5,true)
+
+
+
+if lvl3>0 and ri<=15 then
+
+if (GetLocalPlayer()==GetOwningPlayer(u)) then
+call DisplayTextToPlayer(GetLocalPlayer(),0,0,"Crit")
+endif
+
+call SaveBoolean(h,id,16,true)
+else
+call SaveBoolean(h,id,16,false)
+endif
+
+
 call SetUnitTimeScale(u,1)
 call PauseTimer(t)
+
+
+
 call TimerStart(t,0.15,false,function HyperExaliburCast3)
 set t=null
 set u=null
@@ -136656,19 +136905,19 @@ call SaveReal(h,id,2,y1)
 call PauseUnit(u,true)
 call SetUnitAnimation(u,"Spell Channel Three")
 call SetUnitTimeScale(u,0.25)
-set n=CreateUnit(p,'e13M',x,y,GetRandomReal(0,359))
+set n=CreateUnit(p,0x6531334D,x,y,GetRandomReal(0,359))
 call SetUnitVertexColor(n,255,255,255,255)
 call SetUnitTimeScale(n,0.5)
 call UnitApplyTimedLife(n,1,4)
 loop
-exitwhen is>=13
+exitwhen is==13
 set n=CreateUnit(p,'e0ZH',x+350*Cos(ig*is),y+350*Sin(ig*is),180+is*30)
 call SetUnitVertexColor(n,255,255,255,55)
 call UnitApplyTimedLife(n,1,3)
 call SetUnitTimeScale(n,0.5)
 set is=is+1
 endloop
-set n=CreateUnit(p,'e11Q',x,y,GetRandomReal(0,359))
+set n=CreateUnit(p,0x65313151,x,y,GetRandomReal(0,359))
 call SetUnitScale(n,4,4,4)
 call SetUnitVertexColor(n,75,105,255,255)
 call UnitApplyTimedLife(n,1,1.5)
@@ -136681,7 +136930,7 @@ call SetUnitVertexColor(n,255,255,255,180)
 call UnitAddAbility(u,'A1E3')
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\Heroine_X_EX_Atack.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+////call KillSoundWhenDone(soundplay)
 call TimerStart(t,0.8,false,function HyperExaliburCast2)
 set t=null
 set p=null
@@ -136693,6 +136942,724 @@ call TriggerRegisterAnyUnitEventBJ(gg_trg_HyperExalibur,EVENT_PLAYER_UNIT_SPELL_
 call TriggerAddCondition(gg_trg_HyperExalibur,Condition(function HyperExaliburCond))
 call TriggerAddAction(gg_trg_HyperExalibur,function HyperExaliburCast)
 endfunction
+//heroinex2start
+
+function EffectCreateAndMove225 takes boolean SetSpecialEffectVisibilitybool,string name01,real d101,real life01,real size01,real speed01,integer red01,integer green01,integer blue01,real visible01,real high01,unit a201,real distance01,real d201 returns nothing
+set n=CreateUnit(GetOwningPlayer(a201),'225e',GetUnitX(a201),GetUnitY(a201),d101)
+call SetUnitModel(n,name01)
+call UnitAddAbility(n,'Amrf')
+call UnitRemoveAbility(n,'Amrf')
+call SetUnitFlyHeight(n,GetUnitFlyHeight(a201)+high01,0)
+call MoveUnit(a201,n,distance01,d201)
+call UnitSize(n,size01,size01,size01)
+call UnitSpeed(n,speed01)
+call UnitColor(n,red01,green01,blue01,visible01)
+call MyRemoveUnit(n,life01)
+set a201=null
+endfunction
+function EffectCreateAndMove45 takes boolean SetSpecialEffectVisibilitybool,string name01,real d101,real life01,real size01,real speed01,integer red01,integer green01,integer blue01,real visible01,real high01,unit a201,real distance01,real d201 returns nothing
+set n=CreateUnit(GetOwningPlayer(a201),'045e',GetUnitX(a201),GetUnitY(a201),d101)
+call SetUnitModel(n,name01)
+call UnitAddAbility(n,'Amrf')
+call UnitRemoveAbility(n,'Amrf')
+call SetUnitFlyHeight(n,GetUnitFlyHeight(a201)+high01,0)
+call MoveUnit(a201,n,distance01,d201)
+call UnitSize(n,size01,size01,size01)
+call UnitSpeed(n,speed01)
+call UnitColor(n,red01,green01,blue01,visible01)
+call MyRemoveUnit(n,life01)
+set a201=null
+endfunction
+function EffectCreateAndMove90 takes boolean SetSpecialEffectVisibilitybool,string name01,real d101,real life01,real size01,real speed01,integer red01,integer green01,integer blue01,real visible01,real high01,unit a201,real distance01,real d201 returns nothing
+set n=CreateUnit(GetOwningPlayer(a201),'090e',GetUnitX(a201),GetUnitY(a201),d101)
+call SetUnitModel(n,name01)
+call UnitAddAbility(n,'Amrf')
+call UnitRemoveAbility(n,'Amrf')
+call SetUnitFlyHeight(n,GetUnitFlyHeight(a201)+high01,0)
+call MoveUnit(a201,n,distance01,d201)
+call UnitSize(n,size01,size01,size01)
+call UnitSpeed(n,speed01)
+call UnitColor(n,red01,green01,blue01,visible01)
+call MyRemoveUnit(n,life01)
+set a201=null
+endfunction
+function EffectCreateAndMoveAn takes boolean SetSpecialEffectVisibilitybool,string name01,real d101,real life01,real size01,real speed01,integer red01,integer green01,integer blue01,real visible01,real high01,unit a201,real distance01,real d201,integer animId returns nothing
+set n=CreateUnit(GetOwningPlayer(a201),'e000',GetUnitX(a201),GetUnitY(a201),d101)
+call SetUnitModel(n,name01)
+call UnitAddAbility(n,'Amrf')
+call UnitRemoveAbility(n,'Amrf')
+call SetUnitFlyHeight(n,GetUnitFlyHeight(a201)+high01,0)
+call MoveUnit(a201,n,distance01,d201)
+call UnitSize(n,size01,size01,size01)
+call UnitSpeed(n,speed01)
+call SetUnitAnimationByIndex(n,animId)
+call UnitColor(n,red01,green01,blue01,visible01)
+call MyRemoveUnit(n,life01)
+set a201=null
+endfunction
+
+function EffectLifeTime1 takes nothing returns nothing
+local timer t=GetExpiredTimer()
+local integer id=GetHandleId(t)
+call DestroyEffect(LoadEffectHandle(HH,id,10))
+call FlushChildHashtable(HH,id)
+call PauseTimer(t)
+call DestroyTimer(t)
+set t=null
+endfunction
+function EffectLifeTime takes effect effectforcreal,real timebeforeclear returns nothing
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+call SaveEffectHandle(HH,id,10,effectforcreal)
+call TimerStart(t,timebeforeclear,false,function EffectLifeTime1)
+set t=null
+endfunction
+
+function MoveEffect takes unit uniteffect,effect effectunit,real distanceUnit,real degreesUnit returns nothing
+local real x01=PolX(GetUnitX(uniteffect),distanceUnit,degreesUnit)
+local real y01=PolY(GetUnitY(uniteffect),distanceUnit,degreesUnit)
+if IsTerrainPathable(x01,y01,PATHING_TYPE_FLYABILITY)==false then
+call SetSpecialEffectX(effectunit,x01)
+call SetSpecialEffectY(effectunit,y01)
+endif
+set uniteffect=null
+set effectunit=null
+endfunction
+
+function EffectCreateAndMove1 takes boolean SetSpecialEffectVisibilitybool,string name01,real d101,real life01,real size01,real speed01,integer red01,integer green01,integer blue01,integer visible01,real high01,real pitch01,unit a201,real distance01,real d201 returns nothing
+local real x01=PolX(GetUnitX(a201),distance01,d201)
+local real y01=PolY(GetUnitY(a201),distance01,d201)
+set EFF=AddSpecialEffect(name01,x01,y01)
+call SetSpecialEffectVisible(EFF,true)
+call SetSpecialEffectOrientation(EFF,d101,pitch01,0)
+call RemoveEffect(EFF,life01,SetSpecialEffectVisibilitybool,CreateTimer())
+call SetSpecialEffectScale(EFF,size01)
+call SetSpecialEffectTimeScale(EFF,speed01)
+call SetSpecialEffectVertexColour(EFF,ColorPercentT(red01,255),ColorPercentT(green01,255),ColorPercentT(blue01,255),ColorPercentT((100-visible01),255))
+call SetSpecialEffectZ(EFF,GetUnitFlyHeight(a201)+high01)
+set name01=null
+set a201=null
+endfunction
+
+
+function EffectCreateAndMove takes boolean SetSpecialEffectVisibilitybool,string name01,real d101,real life01,real size01,real speed01,integer red01,integer green01,integer blue01,real visible01,real high01,unit a201,real distance01,real d201 returns nothing
+set n=CreateUnit(GetOwningPlayer(a201),'e200',GetUnitX(a201),GetUnitY(a201),d101)
+call SetUnitModel(n,name01)
+call UnitAddAbility(n,'Amrf')
+call UnitRemoveAbility(n,'Amrf')
+call SetUnitFlyHeight(n,GetUnitFlyHeight(a201)+high01,0)
+call MoveUnit(a201,n,distance01,d201)
+call UnitSize(n,size01,size01,size01)
+call UnitSpeed(n,speed01)
+call UnitColor(n,red01,green01,blue01,visible01)
+call MyRemoveUnit(n,life01)
+set a201=null
+endfunction
+
+
+function EffectCreateAndMove21 takes boolean SetSpecialEffectVisibilitybool,string name01,real d101,real life01,real size01,real speed01,integer red01,integer green01,integer blue01,real visible01,real high01,unit a201,real distance01,real d201 returns nothing
+set n=CreateUnit(GetOwningPlayer(a201),'e290',GetUnitX(a201),GetUnitY(a201),d101)
+call SetUnitModel(n,name01)
+call UnitAddAbility(n,'Amrf')
+call UnitRemoveAbility(n,'Amrf')
+call SetUnitFlyHeight(n,GetUnitFlyHeight(a201)+high01,0)
+call MoveUnit(a201,n,distance01,d201)
+call UnitSize(n,size01,size01,size01)
+call UnitSpeed(n,speed01)
+call UnitColor(n,red01,green01,blue01,visible01)
+call MyRemoveUnit(n,life01)
+set a201=null
+endfunction
+
+
+function DamageAoeOneTimeHeroine takes unit damager,real x0,real y0,real range,real damage,group gr1 returns nothing
+local integer id=GetHandleId(GetExpiredTimer())
+local real damage_saber=0
+local real damage_plus=0
+local real damage0=damage
+local boolean CritProc=LoadBoolean(HH,id,16)
+call GroupClear(G)
+call GroupEnumUnitsInRange(G,x0,y0,range,Base)
+
+loop
+set n0=FirstOfGroup(G)
+exitwhen n0==null
+if Condition_Base(GetOwningPlayer(damager),n0) and IsUnitInGroup(n0,gr1)==false and GetUnitAbilityLevel(n0,'Avul')==0 then
+call UnitStop(n0)
+set damage_plus=damage0*0.15*GetUnitAbilityLevel(n0,'A1EA')
+set damage_saber=damage0*0.15*GetUnitAbilityLevel(n0,'A1EB')
+set damage=damage0+damage_plus+damage_saber
+if damage_plus>0 then
+call SaveUnitHandle(HH,GetHandleId(damager),StringHash("HerFU"),n0)
+endif
+
+if CritProc==true then
+
+call myCustomDamage(damager,n0,damage*1.25,false,false,null,null,null)
+
+else
+call myCustomDamage(damager,n0,damage,false,false,null,null,null)
+endif
+
+call GroupAddUnit(gr1,n0)
+endif
+call GroupRemoveUnit(G,n0)
+endloop
+
+
+
+
+call GroupClear(G)
+call SaveGroupHandle(HH,id,4,gr1)
+set damager=null
+set gr1=null
+
+endfunction
+
+
+
+
+
+
+function HeroineGAct takes nothing returns nothing
+local integer id=GetHandleId(GetExpiredTimer())
+local unit caster=LoadUnitHandle(HH,id,1)
+local real facing=LoadReal(HH,id,3)
+local real time=LoadReal(HH,id,5)
+local real dist=LoadReal(HH,id,8)
+local real damage=LoadReal(HH,id,15)
+local integer ri=0
+local integer lvl=GetUnitAbilityLevel(caster,'A1EC')
+local real x1=GetUnitX(LoadUnitHandle(HH,id,20))
+local real y1=GetUnitY(LoadUnitHandle(HH,id,20))
+set time=time+0.02
+call SaveReal(HH,id,5,time)
+if time==0.02 or time==0.3 then
+call EffectCreateAndMove(true,"Others\\HakkeStart2.mdl",facing,1.5,1,1.5,100,100,100,80,0,caster,0,facing)
+call EffectCreateAndMove(true,"Others\\[A]az_axe_ef1.mdl",facing,1.5,1,0.65,60,60,100,0,0,caster,0,facing)
+call EffectCreateAndMove(true,"Others\\[DoFT]az_pafeathermoon_b.mdl",facing,1.5,2.5,0.65,60,60,100,0,0,caster,0,facing)
+endif
+if time<0.5 then
+call PauseUnit(caster,true)
+call SetUnitInvulnerable(caster,true)
+endif
+if time==0.2 then
+set ri=GetRandomInt(0,100)
+if lvl>0 and ri<=15 then
+if(GetLocalPlayer()==GetOwningPlayer(caster))then
+call DisplayTextToPlayer(GetLocalPlayer(),0,0,"Crit")
+endif
+call SaveBoolean(HH,id,16,true)
+else
+call SaveBoolean(HH,id,16,false)
+endif
+set n0=CreateUnit(GetOwningPlayer(caster),'e200',GetUnitX(caster),GetUnitY(caster),LoadReal(HH,id,3))
+call SetUnitModel(n0,"Others\\XeXSlash45-1.mdl")
+call UnitSize(n0,1.5,1,1)
+call UnitSpeed(n0,1)
+call UnitColor(n0,100,100,100,0)
+call SetUnitFlyHeight(n0,200,0)
+call SaveUnitHandle(HH,id,20,n0)
+call MoveUnit(caster,n0,100,facing)
+set n0=null
+endif
+if time==0.4 then
+set n0=CreateUnit(GetOwningPlayer(caster),'e200',GetUnitX(caster),GetUnitY(caster),LoadReal(HH,id,3))
+call SetUnitModel(n0,"Others\\XeXSlash45-2.mdl")
+call UnitSize(n0,1.5,1,1)
+call UnitSpeed(n0,1)
+call UnitColor(n0,100,100,100,0)
+call SetUnitFlyHeight(n0,200,0)
+call SaveUnitHandle(HH,id,21,n0)
+call MoveUnit(caster,n0,100,facing)
+set n0=null
+endif
+if time==0.5 then
+set soundplay=CreateSound("Sound\\Music\\mp3Music\\HeroineXGsfx.mp3",false,false,true,12700,12700,"")
+call StartSound(soundplay)
+////call KillSoundWhenDone(soundplay)
+call SaveGroupHandle(HH,id,4,CreateGroup())
+call UnitSpeed(caster,1)
+call PauseUnit(caster,false)
+call SetUnitInvulnerable(caster,false)
+endif
+if time>0.5 then
+call MoveUnit(LoadUnitHandle(HH,id,20),LoadUnitHandle(HH,id,20),40+40*0.0005*LoadReal(HH,id,17),facing)
+call MoveUnit(LoadUnitHandle(HH,id,20),LoadUnitHandle(HH,id,21),0,facing)
+call SaveReal(HH,id,8,dist+40)
+call DamageAoeOneTimeHeroine(caster,x1,y1,250,damage,LoadGroupHandle(HH,id,4))
+endif
+if dist>=2500+LoadReal(HH,id,17)then
+call DestroyGroup(LoadGroupHandle(HH,id,4))
+call RemoveUnit(LoadUnitHandle(HH,id,20))
+call RemoveUnit(LoadUnitHandle(HH,id,21))
+call PauseTimer(GetExpiredTimer())
+call FlushChildHashtable(HH,id)
+call DestroyTimer(GetExpiredTimer())
+endif
+set caster=null
+endfunction
+
+
+
+
+function HeroineFAct takes nothing returns nothing
+local integer id=GetHandleId(GetExpiredTimer())
+local unit caster=LoadUnitHandle(HH,id,1)
+local unit target=LoadUnitHandle(HH,id,2)
+local real facing=LoadReal(HH,id,3)
+local real time=LoadReal(HH,id,5)
+local real x0=GetUnitX(caster)
+local real y0=GetUnitY(caster)
+local real x1=GetUnitX(target)
+local real y1=GetUnitY(target)
+local real dist=SR(x0,y0,x1,y1)
+local real damage=LoadReal(HH,id,15)
+local real damage_saber=damage*0.15*GetUnitAbilityLevel(target,'A1EB')
+local real damage_plus=damage*0.15*GetUnitAbilityLevel(target,'A1EA')
+local integer ri=GetRandomInt(0,100)
+local integer lvl=GetUnitAbilityLevel(caster,'A1EC')
+set time=time+0.02
+call SaveReal(HH,id,5,time)
+if time>=0.2 then
+call EffectCreateAndMove(true,"Others\\daoguang-blue-hengsao.mdl",facing,1.5,0.75,1,100,100,100,0,0,target,-200,facing)
+call EffectCreateAndMove(true,"Others\\[A]n3s_o_target.mdl",90,1,1.5,1,100,100,100,0,100,target,0,facing)
+call EffectCreateAndMove(true,"Others\\[A]n3s_o_target.mdl",0,1,1.5,1,100,100,100,0,100,target,0,facing)
+call EffectCreateAndMove(true,"Others\\[DoFT]az_hit-blue-blade.mdl",facing,1.5,1.5,0.5,100,100,100,0,100,target,0,facing)
+call SetUnitFlyHeight(caster,0,0)
+call DestroyEffect(LoadEffectHandle(HH,id,22))
+call SetUnitAnimation(target,"stand")
+call UnitSpeed(caster,1)
+call UnitSpeed(target,1)
+call SetUnitPathing(caster,true)
+call PauseUnit(caster,false)
+call SetUnitInvulnerable(caster,false)
+//Проверка на паузу
+
+call PauseUnit(target,false)
+call SaveBoolean(HH,GetHandleId( target ),TARGET_ABILITY,false)
+
+//Проверка на паузу
+set damage=damage+damage_plus+damage_saber
+if lvl>0 and ri<15 then
+if(GetLocalPlayer()==GetOwningPlayer(caster))then
+call DisplayTextToPlayer(GetLocalPlayer(),0,0,"Crit")
+endif
+set damage=damage*1.25
+endif
+if LoadBoolean(HH,id,17)==true then
+
+
+ call SetControlToUnit(caster,target, 1, "stun")
+
+
+endif
+
+
+call myCustomDamage(caster,target,damage,false,false,null,null,null)
+
+
+call PauseTimer(GetExpiredTimer())
+call FlushChildHashtable(HH,id)
+call DestroyTimer(GetExpiredTimer())
+else
+call SetUnitInvulnerable(caster,true)
+call PauseUnit(caster,true)
+//Проверка на паузу
+
+call PauseUnit(target,true)
+call SaveBoolean(HH,GetHandleId( target ),TARGET_ABILITY,true)
+
+//Проверка на паузу
+if time==0.02 then
+call SaveEffectHandle(HH,id,22,AddSpecialEffectTarget(("Others\\CloudEfBlue.mdl"),caster,"origin"))
+call EffectCreateAndMove(true,"Others\\HakkeStart2.mdl",facing,1.5,1,1.5,100,100,100,80,0,caster,0,facing)
+call EffectCreateAndMove(true,"Others\\[A]az_axe_ef1.mdl",facing,1.5,1,0.65,60,60,100,0,0,caster,0,facing)
+call MoveUnit(target,caster,-120,facing)
+call EffectCreateAndMove(true,"Others\\HakkeStart2.mdl",facing,1.5,1,1.5,100,100,100,80,0,caster,0,facing)
+call EffectCreateAndMove(true,"Others\\[A]az_axe_ef1.mdl",facing,1.5,1,0.65,60,60,100,0,0,caster,0,facing)
+set soundplay=CreateSound("Sound\\Music\\mp3Music\\HeroineXGhit.mp3",false,false,true,12700,12700,"")
+call StartSound(soundplay)
+////call KillSoundWhenDone(soundplay)
+call SetUnitAnimationByIndex(caster,4)
+call UnitSpeed(caster,1.5)
+endif
+endif
+set caster=null
+set target=null
+endfunction
+
+
+
+function HeroineTAct takes nothing returns nothing
+local integer id=GetHandleId(GetExpiredTimer())
+local unit caster=LoadUnitHandle(HH,id,1)
+local unit target=LoadUnitHandle(HH,id,2)
+local real facing=LoadReal(HH,id,3)
+local real time=LoadReal(HH,id,5)
+local real time1=LoadReal(HH,id,6)
+local real x0=GetUnitX(caster)
+local real y0=GetUnitY(caster)
+local real x1=GetUnitX(target)
+local real y1=GetUnitY(target)
+local real dist=SR(x0,y0,x1,y1)
+local real damage=LoadReal(HH,id,15)
+local real damage_saber=damage*0.15*GetUnitAbilityLevel(target,'A1EB')
+local real damage_plus=damage*0.15*GetUnitAbilityLevel(target,'A1EA')
+local integer ri=GetRandomInt(0,100)
+local integer lvl=GetUnitAbilityLevel(caster,'A1EC')
+set time=time+0.02
+call SaveReal(HH,id,5,time)
+if time>=24.5 then
+if damage_plus>0 then
+call SaveUnitHandle(HH,GetHandleId(caster),StringHash("HerFU"),target)
+endif
+call SetUnitFlyHeight(caster,0,0)
+call DestroyEffect(LoadEffectHandle(HH,id,22))
+call SetUnitAnimation(target,"stand")
+call UnitSpeed(caster,1)
+call UnitSpeed(target,1)
+call SetUnitPathing(caster,true)
+call PauseUnit(caster,false)
+call SetUnitInvulnerable(caster,false)
+call SetUnitPathing(target,true)
+//Проверка на паузу
+
+call PauseUnit(target,false)
+call SaveBoolean(HH,GetHandleId( target ),TARGET_ABILITY,false)
+
+//Проверка на паузу
+call SetUnitInvulnerable(target,false)
+set damage=damage+damage_plus+damage_saber
+if lvl>0 and ri<15 then
+if(GetLocalPlayer()==GetOwningPlayer(caster))then
+call DisplayTextToPlayer(GetLocalPlayer(),0,0,"Crit")
+endif
+set damage=damage*1.25
+endif
+
+
+call myCustomDamage(caster,target,damage,false,false,null,null,null)
+
+call RemoveUnit(LoadUnitHandle(HH,id,20))
+call PauseTimer(GetExpiredTimer())
+call FlushChildHashtable(HH,id)
+call DestroyTimer(GetExpiredTimer())
+else
+if time==0.02 then
+if damage_plus>0 and LoadBoolean(HH,id,16)==true then
+
+
+call StartAbilityCooldown(GetUnitAbility(caster, 'HerT'),30)
+
+
+
+endif
+call SaveEffectHandle(HH,id,22,AddSpecialEffectTarget(("Others\\CloudEfBlue.mdl"),caster,"origin"))
+call EffectCreateAndMove(true,"Others\\az-blue-lizi-shangsheng.mdl",facing,1.5,1.5,1,100,100,100,0,0,caster,0,facing)
+set n0=CreateUnit(GetOwningPlayer(caster),'e200',GetUnitX(caster),GetUnitY(caster),facing+180)
+call SetUnitModel(n0,"Others\\HakkeStart2.mdl")
+call UnitSize(n0,1.5,1,1)
+call UnitSpeed(n0,1)
+call UnitColor(n0,100,100,100,60)
+call MyRemoveUnit(n0,30)
+call SetUnitFlyHeight(n0,100,0)
+call SaveUnitHandle(HH,id,20,n0)
+set n0=null
+if damage_plus>0 then
+set soundplay=CreateSound("Sound\\Music\\mp3Music\\HeroineXT1_Seiba.mp3",false,false,true,12700,12700,"")
+else
+set soundplay=CreateSound("Sound\\Music\\mp3Music\\HeroineXT1.mp3",false,false,true,12700,12700,"")
+endif
+call StartSound(soundplay)
+////call KillSoundWhenDone(soundplay)
+call SetUnitAnimationByIndex(caster,7)
+call UnitSpeed(caster,0.5)
+endif
+if time==0.5 then
+call UnitSpeed(LoadUnitHandle(HH,id,20),0)
+endif
+if time==0.02 or time==0.4 or time==0.8 then
+call EffectCreateAndMove(true,"Others\\[A]az_axe_ef1.mdl",GetRandomReal(0,360),1.5,1,0.65,60,60,100,0,0,caster,0,facing)
+call EffectCreateAndMove(true,"Others\\az_siwen.mdl",GetRandomReal(0,360),1.5,1,0.5,100,100,100,40,100,caster,0,facing)
+call EffectCreateAndMove(true,"Others\\[A]ShivasWrathTransparent.mdl",facing,1.5,1.5,1.5,100,100,100,40,0,caster,0,facing)
+endif
+if time==1 then
+set soundplay=CreateSound("Sound\\Music\\mp3Music\\HeroineXT2.mp3",false,false,true,12700,12700,"")
+call StartSound(soundplay)
+////call KillSoundWhenDone(soundplay)
+call UnitSpeed(caster,0)
+set n0=CreateUnit(GetOwningPlayer(caster),'e200',GetUnitX(caster),GetUnitY(caster),facing+180)
+call SetUnitModel(n0,"Others\\ZoroRashoumon.mdl")
+call UnitSize(n0,2.5,1,1)
+call UnitSpeed(n0,2)
+call MyRemoveUnit(n0,30)
+call UnitColor(n0,100,100,100,0)
+call SetUnitFlyHeight(n0,100,0)
+call SaveUnitHandle(HH,id,21,n0)
+set n0=null
+endif
+if time<24.5 then
+call SetUnitPathing(caster,false)
+call PauseUnit(caster,true)
+call SetUnitInvulnerable(caster,true)
+call SetUnitFacing(caster,facing)
+if time>1 and time<20 then
+call MoveUnit(caster,LoadUnitHandle(HH,id,20),0,facing)
+call MoveUnit(caster,LoadUnitHandle(HH,id,21),0,facing)
+call SetUnitFacing(LoadUnitHandle(HH,id,21),facing+180)
+set facing=Angle2(x0,y0,x1,y1)
+call SaveReal(HH,id,3,facing)
+call MoveUnit(caster,caster,50,facing)
+call MoveUnit(caster,LoadUnitHandle(HH,id,20),0,facing)
+if dist<120 then
+    if LoadBoolean(HH,GetHandleId(target),ANTITARGET_ABILITY)==false then
+        call SaveReal(HH,id,8,dist)
+        set soundplay=CreateSound("Sound\\Music\\mp3Music\\HeroineXT3.mp3",false,false,true,12700,12700,"")
+        call StartSound(soundplay)
+        ////call KillSoundWhenDone(soundplay)
+        call UnitSpeed(caster,1)
+        call SetUnitAnimationByIndex(caster,10)
+        set time=20
+        call SaveReal(HH,id,5,20)
+    else
+        call SaveUnitHandle(HH,GetHandleId(target),REVERSE_TARGET,caster)
+        call SetUnitPathing(caster,true)
+        call PauseUnit(caster,false)
+        call SetUnitInvulnerable(caster,false)
+        call PauseUnit(target,false)
+        call SetUnitPathing(target,true)
+        call SaveBoolean(HH,GetHandleId(target),TARGET_ABILITY,false)
+        call SetUnitFlyHeight(caster,0,0)
+        call DestroyEffect(LoadEffectHandle(HH,id,22))
+        call SetUnitAnimation(target,"stand")
+        call UnitSpeed(caster,1)
+        call UnitSpeed(target,1)
+        call RemoveUnit(LoadUnitHandle(HH,id,20))
+        call RemoveUnit(LoadUnitHandle(HH,id,21))
+        call PauseTimer(GetExpiredTimer())
+        call FlushChildHashtable(HH,id)
+        call DestroyTimer(GetExpiredTimer())
+    endif
+endif
+call EffectCreateAndMove(true,"war3mapImported\\kamehameha2.mdl",facing,1.5,1,1,100,100,100,0,50,caster,0,facing)
+call SaveInteger(HH,id,16,GetRandomInt(1,2))
+endif
+if time>20 then
+call SetUnitFacing(caster,facing)
+call SetUnitFacing(target,facing+180)
+//Проверка на паузу
+
+call PauseUnit(target,true)
+call SaveBoolean(HH,GetHandleId( target ),TARGET_ABILITY,true)
+
+//Проверка на паузу
+call SetUnitInvulnerable(target,true)
+call SetUnitPathing(target,false)
+call MoveUnit(target,LoadUnitHandle(HH,id,20),0,facing)
+if time<23 then
+if time==20.1 or time==20.6 or time==21.1 or time==21.6 or time==21.9 or time==22.1 or time==22.4 or time==22.7 then
+call EffectCreateAndMove(true,"Others\\[A]Zoro-blue-daoguang.mdl",GetRandomReal(0,360),1.5,1.25,0.5,100,100,100,60,50,target,50,facing)
+endif
+set time1=time1+0.02
+if time>22 then
+set time1=time1+0.02
+endif
+if time1==0.2 then
+call EffectCreateAndMove(true,"Others\\[A]az_axe_ef1.mdl",GetRandomReal(0,360),1.5,1.75,0.65,60,60,100,0,0,target,0,facing)
+if LoadInteger(HH,id,16)==1 then
+call SaveInteger(HH,id,16,2)
+call EffectCreateAndMove225(true,"Others\\tg_animeslashfinal_1.mdl",facing+180,1.5,2.25,0.5,40,40,100,0,150,target,0,facing)
+call EffectCreateAndMove45(true,"Others\\tg_animeslashfinal_1.mdl",facing,1.5,1.75,0.5,40,40,100,0,150,target,0,facing)
+call EffectCreateAndMove45(true,"Others\\tg_animeslashfinal_1.mdl",facing,1.5,1.5,0.5,40,40,100,0,150,target,0,facing)
+call EffectCreateAndMove(true,"Others\\CloudSpark.mdl",facing+45,1.5,3,2,100,100,100,0,100,target,100,facing)
+else
+call SaveInteger(HH,id,16,1)
+call EffectCreateAndMove45(true,"Others\\tg_animeslashfinal_2.mdl",facing,1.5,1.75,0.5,40,40,100,0,150,target,0,facing)
+call EffectCreateAndMove225(true,"Others\\tg_animeslashfinal_2.mdl",facing+180,1.5,2.25,0.5,40,40,100,0,150,target,0,facing)
+call EffectCreateAndMove45(true,"Others\\tg_animeslashfinal_2.mdl",facing,1.5,1.5,0.5,40,40,100,0,150,target,0,facing)
+call EffectCreateAndMove(true,"Others\\CloudSpark.mdl",facing-45,1.5,3,2,100,100,100,0,100,target,100,facing)
+endif
+endif
+if time1>=0.3 then
+if LoadInteger(HH,id,16)==1 then
+call EffectCreateAndMove225(true,"Others\\tg_animeslashfinal_1.mdl",facing+180,1.5,4,0.5,40,40,100,0,150,target,0,facing)
+call EffectCreateAndMove225(true,"Others\\tg_animeslashfinal_1.mdl",facing,1.5,4,0.5,40,40,100,0,150,target,0,facing)
+else
+call EffectCreateAndMove225(true,"Others\\tg_animeslashfinal_2.mdl",facing+180,1.5,4,0.5,40,40,100,0,150,target,0,facing)
+call EffectCreateAndMove225(true,"Others\\tg_animeslashfinal_2.mdl",facing,1.5,4,0.5,40,40,100,0,150,target,0,facing)
+endif
+call EffectCreateAndMove(true,"Others\\[A]n3s_o_target.mdl",90,3.5,0.5,1,100,100,100,0,100,target,50,facing)
+call EffectCreateAndMove(true,"Others\\[A]n3s_o_target.mdl",0,3.5,0.5,1,100,100,100,0,100,target,50,facing)
+set time1=0
+endif
+call SaveReal(HH,id,6,time1)
+if time>22 then
+call MoveUnit(target,target,5,facing)
+endif
+call MoveUnit(target,target,3,facing)
+call MoveUnit(target,caster,-120,facing)
+endif
+if time==21 then
+call RemoveUnit(LoadUnitHandle(HH,id,21))
+call UnitSpeed(caster,2)
+endif
+if time==20.3 or time==20.6 or time==20.9 or time==21.3 or time==21.6 or time==21.9 or time==22.3 or time==22.6 or time==22.9 then
+call SetUnitAnimation(target,"death")
+call UnitSpeed(target,0.5)
+endif
+if time==23 then
+call SetUnitAnimation(target,"stand")
+endif
+if time==22.6 then
+call SetUnitAnimationByIndex(caster,12)
+call UnitSpeed(caster,2)
+endif
+if time>23 and time<23.5 then
+call MoveUnit(target,target,30,facing)
+endif
+if time==23.5 then
+call SetUnitAnimationByIndex(caster,11)
+endif
+if time==24 then
+call UnitAddAbility(caster,'Amrf')
+call UnitRemoveAbility(caster,'Amrf')
+call UnitSpeed(caster,2)
+call SetUnitAnimationByIndex(caster,2)
+endif
+if time==24.26 then
+call SetUnitAnimation(target,"death")
+call EffectCreateAndMove(true,"Others\\WindCirclefaster.mdl",facing,1.5,2.5,1.5,100,100,100,40,0,target,0,facing)
+call EffectCreateAndMove45(true,"war3mapImported\\SlashBlueKojiro.mdl",facing+45,1.5,3.5,0.5,100,100,100,0,200,target,0,facing)
+call EffectCreateAndMove45(true,"war3mapImported\\SlashBlueKojiro.mdl",facing-45,1.5,3.5,0.5,100,100,100,0,200,target,0,facing)
+call EffectCreateAndMove90(true,"Others\\FSAeff (188).mdl",facing,1.5,4,1,100,100,100,0,150,target,0,facing)
+call EffectCreateAndMove(true,"Others\\CloudSpark.mdl",facing,1.5,3,2,100,100,100,0,100,target,0,facing)
+call EffectCreateAndMove(true,"Others\\CloudSpark.mdl",facing+180,1.5,3,2,100,100,100,0,100,target,0,facing)
+call EffectCreateAndMove(true,"Others\\CloudSpark.mdl",facing+45,1.5,3,2,100,100,100,0,100,target,0,facing)
+call EffectCreateAndMove(true,"Others\\CloudSpark.mdl",facing+90,1.5,3,2,100,100,100,0,100,target,0,facing)
+call EffectCreateAndMove(true,"Others\\CloudSpark.mdl",facing+135,1.5,3,2,100,100,100,0,100,target,0,facing)
+call EffectCreateAndMove(true,"Others\\CloudSpark.mdl",facing-45,1.5,3,2,100,100,100,0,100,target,0,facing)
+call EffectCreateAndMove(true,"Others\\CloudSpark.mdl",facing-90,1.5,3,2,100,100,100,0,100,target,0,facing)
+call EffectCreateAndMove(true,"Others\\CloudSpark.mdl",facing-135,1.5,3,2,100,100,100,0,100,target,0,facing)
+call EffectCreateAndMove(true,"Others\\[A]n3s_o_target.mdl",90,1.5,2.5,1,100,100,100,0,100,target,0,facing)
+call EffectCreateAndMove(true,"Others\\[A]n3s_o_target.mdl",0,1.5,2.5,1,100,100,100,0,100,target,0,facing)
+endif
+if time>24 and time<24.5 then
+if time>24 and time<24.18 then
+call SetUnitFlyHeight(caster,GetUnitFlyHeight(caster)+40,0)
+endif
+if time>=24.18 and time<24.28 then
+call SetUnitFlyHeight(caster,GetUnitFlyHeight(caster)-72,0)
+endif
+call MoveUnit(caster,caster,60,facing)
+endif
+endif
+endif
+endif
+set caster=null
+set target=null
+endfunction
+
+
+
+
+function HeroineChoice_Act takes nothing returns nothing
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+local unit caster=GetTriggerUnit()
+local unit target=GetSpellTargetUnit()
+local real x0=GetUnitX(caster)
+local real y0=GetUnitY(caster)
+local real x1=GetSpellTargetX()
+local real y1=GetSpellTargetY()
+local real facing=Angle2(x0,y0,x1,y1)
+local integer HeroineCountKills=LoadInteger(HH,GetHandleId(  GetOwningPlayer( caster ) ) ,StringHash("HerKill"))
+//call SaveInteger(HH,GetHandleId(caster),StringHash("HerKill"),16)
+call SaveUnitHandle(HH,id,1,caster)
+call SaveReal(HH,id,11,x1)
+call SaveReal(HH,id,12,y1)
+call SaveReal(HH,id,3,facing)
+if GetSpellAbilityId()=='HerT' then
+call PauseUnit(caster,true)
+call SetUnitInvulnerable(caster,true)
+if HeroineCountKills>=12 then
+call SaveBoolean(HH,id,16,true)
+else
+call SaveBoolean(HH,id,16,false)
+endif
+call SaveReal(HH,id,15,10*GetHeroAgi(caster,true))
+call SaveUnitHandle(HH,id,2,target)
+call TimerStart(t,0.02,true,function HeroineTAct)
+endif
+if GetSpellAbilityId()=='HerF' then
+set target=LoadUnitHandle(HH,GetHandleId(caster),StringHash("HerFU"))
+
+
+set x1=GetUnitX( target )
+set y1=GetUnitY( target )
+if SR(x0,y0,x1,y1)>1500 then
+set target=caster
+call SaveUnitHandle(HH,GetHandleId(caster),StringHash("HerFU"),caster)
+endif
+
+
+if target!=caster and target!=null and UnitIsAlive(target)==true then
+if HeroineCountKills>=8 then
+call SaveBoolean(HH,id,17,true)
+else
+call SaveBoolean(HH,id,17,false)
+endif
+call SaveReal(HH,id,15,3*GetHeroAgi(caster,true))
+call SaveReal(HH,id,3,Angle2(x0,y0,GetUnitX(target),GetUnitY(target)))
+call SaveUnitHandle(HH,id,2,target)
+call SaveUnitHandle(HH,GetHandleId(caster),StringHash("HerFU"),caster)
+call TimerStart(t,0.02,true,function HeroineFAct)
+else
+call TimerStart(t,0.02,true,function SabracGnull)
+endif
+endif
+if GetSpellAbilityId()=='HerG' then
+call SaveReal(HH,id,15,5*GetHeroAgi(caster,true))
+if HeroineCountKills>=9 then
+call SaveReal(HH,id,17,1000)
+call SaveReal(HH,id,15,6*GetHeroAgi(caster,true))
+endif
+set soundplay=CreateSound("Sound\\Music\\mp3Music\\HeroineXG.mp3",false,false,true,12700,12700,"")
+call StartSound(soundplay)
+////call KillSoundWhenDone(soundplay)
+call PauseUnit(caster,true)
+call SetUnitInvulnerable(caster,true)
+call UnitSpeed(caster,1.5)
+call SetUnitAnimationByIndex(caster,9)
+call TimerStart(t,0.02,true,function HeroineGAct)
+endif
+set t=null
+set caster=null
+set target=null
+endfunction
+function HeroineChoice_Cond takes nothing returns boolean
+if GetSpellAbilityId()=='HerF' or GetSpellAbilityId()=='HerG' or GetSpellAbilityId()=='HerT' then
+return true
+else
+return false
+endif
+endfunction
+function InitTrig_HeroineXChoice takes nothing returns nothing
+local trigger t=CreateTrigger()
+local integer index
+set index=0
+loop
+call TriggerRegisterPlayerUnitEvent(t,Player(index),EVENT_PLAYER_UNIT_SPELL_EFFECT,null)
+set index=index+1
+exitwhen index==bj_MAX_PLAYER_SLOTS
+endloop
+call TriggerAddCondition(t,Condition(function HeroineChoice_Cond))
+call TriggerAddAction(t,function HeroineChoice_Act)
+set t=null
+set index=0
+endfunction
+
+//heroinex2end
 function UranoMetriaCond takes nothing returns boolean
 return GetSpellAbilityId()=='A1EX'
 endfunction
@@ -168047,7 +169014,6 @@ function JirenQ_Cast2 takes nothing returns nothing
                         else
                             call SetUnitTimeScale(u,1)
                             call SetUnitAnimationByIndex(u,27)
-                            call SaveBoolean(HH,GetHandleId(u),DASH_USER,false)
                             call SaveUnitHandle(HH,GetHandleId(E),REVERSE_TARGET,u)
                             call SetUnitInvulnerable(u, false)
                             call PauseUnit(u, false)
@@ -173943,79 +174909,6 @@ endfunction
 //===========================================================================
 //========== Lucci INT
 //===========================================================================
-
-function EffectLifeTime1 takes nothing returns nothing
-local timer t=GetExpiredTimer()
-local integer id=GetHandleId(t)
-call DestroyEffect(LoadEffectHandle(HH,id,10))
-call FlushChildHashtable(HH,id)
-call PauseTimer(t)
-call DestroyTimer(t)
-set t=null
-endfunction
-function EffectLifeTime takes effect effectforcreal,real timebeforeclear returns nothing
-local timer t=CreateTimer()
-local integer id=GetHandleId(t)
-call SaveEffectHandle(HH,id,10,effectforcreal)
-call TimerStart(t,timebeforeclear,false,function EffectLifeTime1)
-set t=null
-endfunction
-
-function MoveEffect takes unit uniteffect,effect effectunit,real distanceUnit,real degreesUnit returns nothing
-local real x01=PolX(GetUnitX(uniteffect),distanceUnit,degreesUnit)
-local real y01=PolY(GetUnitY(uniteffect),distanceUnit,degreesUnit)
-if IsTerrainPathable(x01,y01,PATHING_TYPE_FLYABILITY)==false then
-call SetSpecialEffectX(effectunit,x01)
-call SetSpecialEffectY(effectunit,y01)
-endif
-set uniteffect=null
-set effectunit=null
-endfunction
-
-function EffectCreateAndMove1 takes boolean SetSpecialEffectVisibilitybool,string name01,real d101,real life01,real size01,real speed01,integer red01,integer green01,integer blue01,integer visible01,real high01,real pitch01,unit a201,real distance01,real d201 returns nothing
-local real x01=PolX(GetUnitX(a201),distance01,d201)
-local real y01=PolY(GetUnitY(a201),distance01,d201)
-set EFF=AddSpecialEffect(name01,x01,y01)
-call SetSpecialEffectVisible(EFF,true)
-call SetSpecialEffectOrientation(EFF,d101,pitch01,0)
-call RemoveEffect(EFF,life01,SetSpecialEffectVisibilitybool,CreateTimer())
-call SetSpecialEffectScale(EFF,size01)
-call SetSpecialEffectTimeScale(EFF,speed01)
-call SetSpecialEffectVertexColour(EFF,ColorPercentT(red01,255),ColorPercentT(green01,255),ColorPercentT(blue01,255),ColorPercentT((100-visible01),255))
-call SetSpecialEffectZ(EFF,GetUnitFlyHeight(a201)+high01)
-set name01=null
-set a201=null
-endfunction
-
-
-function EffectCreateAndMove takes boolean SetSpecialEffectVisibilitybool,string name01,real d101,real life01,real size01,real speed01,integer red01,integer green01,integer blue01,real visible01,real high01,unit a201,real distance01,real d201 returns nothing
-set n=CreateUnit(GetOwningPlayer(a201),'e200',GetUnitX(a201),GetUnitY(a201),d101)
-call SetUnitModel(n,name01)
-call UnitAddAbility(n,'Amrf')
-call UnitRemoveAbility(n,'Amrf')
-call SetUnitFlyHeight(n,GetUnitFlyHeight(a201)+high01,0)
-call MoveUnit(a201,n,distance01,d201)
-call UnitSize(n,size01,size01,size01)
-call UnitSpeed(n,speed01)
-call UnitColor(n,red01,green01,blue01,visible01)
-call MyRemoveUnit(n,life01)
-set a201=null
-endfunction
-
-
-function EffectCreateAndMove21 takes boolean SetSpecialEffectVisibilitybool,string name01,real d101,real life01,real size01,real speed01,integer red01,integer green01,integer blue01,real visible01,real high01,unit a201,real distance01,real d201 returns nothing
-set n=CreateUnit(GetOwningPlayer(a201),'e290',GetUnitX(a201),GetUnitY(a201),d101)
-call SetUnitModel(n,name01)
-call UnitAddAbility(n,'Amrf')
-call UnitRemoveAbility(n,'Amrf')
-call SetUnitFlyHeight(n,GetUnitFlyHeight(a201)+high01,0)
-call MoveUnit(a201,n,distance01,d201)
-call UnitSize(n,size01,size01,size01)
-call UnitSpeed(n,speed01)
-call UnitColor(n,red01,green01,blue01,visible01)
-call MyRemoveUnit(n,life01)
-set a201=null
-endfunction
 
 //function EffectCreateAndMove takes boolean SetSpecialEffectVisibilitybool,string name01,real d101,real life01,real size01,real speed01,integer red01,integer green01,integer blue01,real visible01,real high01,unit a201,real distance01,real d201 returns nothing
 //local real x01=PolX(GetUnitX(a201),distance01,d201)
@@ -181344,46 +182237,7 @@ endfunction
 //BlackGoku Start code
 
 ///Black Goku new Function
-function EffectCreateAndMove45 takes boolean SetSpecialEffectVisibilitybool,string name01,real d101,real life01,real size01,real speed01,integer red01,integer green01,integer blue01,real visible01,real high01,unit a201,real distance01,real d201 returns nothing
-set n=CreateUnit(GetOwningPlayer(a201),'045e',GetUnitX(a201),GetUnitY(a201),d101)
-call SetUnitModel(n,name01)
-call UnitAddAbility(n,'Amrf')
-call UnitRemoveAbility(n,'Amrf')
-call SetUnitFlyHeight(n,GetUnitFlyHeight(a201)+high01,0)
-call MoveUnit(a201,n,distance01,d201)
-call UnitSize(n,size01,size01,size01)
-call UnitSpeed(n,speed01)
-call UnitColor(n,red01,green01,blue01,visible01)
-call MyRemoveUnit(n,life01)
-set a201=null
-endfunction
-function EffectCreateAndMove90 takes boolean SetSpecialEffectVisibilitybool,string name01,real d101,real life01,real size01,real speed01,integer red01,integer green01,integer blue01,real visible01,real high01,unit a201,real distance01,real d201 returns nothing
-set n=CreateUnit(GetOwningPlayer(a201),'090e',GetUnitX(a201),GetUnitY(a201),d101)
-call SetUnitModel(n,name01)
-call UnitAddAbility(n,'Amrf')
-call UnitRemoveAbility(n,'Amrf')
-call SetUnitFlyHeight(n,GetUnitFlyHeight(a201)+high01,0)
-call MoveUnit(a201,n,distance01,d201)
-call UnitSize(n,size01,size01,size01)
-call UnitSpeed(n,speed01)
-call UnitColor(n,red01,green01,blue01,visible01)
-call MyRemoveUnit(n,life01)
-set a201=null
-endfunction
-function EffectCreateAndMoveAn takes boolean SetSpecialEffectVisibilitybool,string name01,real d101,real life01,real size01,real speed01,integer red01,integer green01,integer blue01,real visible01,real high01,unit a201,real distance01,real d201,integer animId returns nothing
-set n=CreateUnit(GetOwningPlayer(a201),'e000',GetUnitX(a201),GetUnitY(a201),d101)
-call SetUnitModel(n,name01)
-call UnitAddAbility(n,'Amrf')
-call UnitRemoveAbility(n,'Amrf')
-call SetUnitFlyHeight(n,GetUnitFlyHeight(a201)+high01,0)
-call MoveUnit(a201,n,distance01,d201)
-call UnitSize(n,size01,size01,size01)
-call UnitSpeed(n,speed01)
-call SetUnitAnimationByIndex(n,animId)
-call UnitColor(n,red01,green01,blue01,visible01)
-call MyRemoveUnit(n,life01)
-set a201=null
-endfunction
+
 
 ////////////////////// Black Goku Abilities
 
@@ -187165,13 +188019,6 @@ endif
 set caster=null
 set casterOriginal=null
 set SabracClone=null
-endfunction
-
-function SabracGnull takes nothing returns nothing
-local integer id=GetHandleId(GetExpiredTimer())
-call PauseTimer(GetExpiredTimer())
-call FlushChildHashtable(HH,id)
-call DestroyTimer(GetExpiredTimer())
 endfunction
 
 
@@ -211824,6 +212671,7 @@ call InitTrig_LearnEHeroX()
 call InitTrig_Switch()
 call InitTrig_BusterAttack()
 call InitTrig_HyperExalibur()
+call InitTrig_HeroineXChoice()
 call InitTrig_UranoMetria()
 call InitTrig_LucyKozel()
 call InitTrig_LucyVirgo()
