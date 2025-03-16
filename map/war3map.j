@@ -41704,7 +41704,7 @@ call UnitRemoveAbility(u,'A6HR')
 loop
     call StartAbilityCooldown(GetUnitAbility(u,'A24T'),25)
     if GetItemTypeId(UnitItemInSlot(u,i)) == 'I04E' then
-        call StartItemCooldown(u,UnitItemInSlot(u, i),25)
+        call StartItemCooldown(UnitItemInSlot(u, i),25)
     endif
 exitwhen i == 0
 set i=i - 1
@@ -41750,7 +41750,7 @@ call UnitRemoveAbility(u,'A14R')
 loop
     call StartAbilityCooldown(GetUnitAbility(u,'A0YJ'),15)
     if GetItemTypeId(UnitItemInSlot(u,i)) == 'I02Q' then
-        call StartItemCooldown(u,UnitItemInSlot(u, i),15)
+        call StartItemCooldown(UnitItemInSlot(u, i),15)
     endif
 exitwhen i == 0
 set i=i - 1
@@ -42693,7 +42693,7 @@ if IsAbilityOnCooldown(GetUnitAbility(Hero[i],'BorA'))==false and IsUnitPaused(H
 call UnitAddAbility(Hero[i],'BorB')
 call UnitMakeAbilityPermanent(Hero[i],true,'BorB')
 call UnitRemoveAbilityTimedPause(Hero[i],'BorB',5)
-call StartItemCooldown(Hero[i],UnitItemInSlot(Hero[i],ind),GetAbilityBaseRealLevelFieldById('BorA',ABILITY_RLF_COOLDOWN,0))
+call StartItemCooldown(UnitItemInSlot(Hero[i],ind),GetAbilityBaseRealLevelFieldById('BorA',ABILITY_RLF_COOLDOWN,0))
 elseif IsAbilityOnCooldown(GetUnitAbility(Hero[i],'BorA'))==false and IsUnitPaused(Hero[i])==false and GetUnitAbilityLevel(Hero[i],'A3BJ')==0 then
 call UnitAddAbility(Hero[i],'A3BJ')
 call UnitRemoveAbilityTimed(Hero[i],'A3BJ',0.4)
@@ -46146,7 +46146,7 @@ if SR(x1,y1,x,y)<80 and time>=0.5 then
         //loop
         //    call BJDebugMsg(I2S(GetHandleId(UnitItemInSlot(u, i))) + " " + I2S(GetHandleId(GetAbilityOwningItem(LoadAbilityHandle(h,id,45)))) )
         //    if UnitItemInSlot(u, i) == GetAbilityOwningItem(LoadAbilityHandle(h,id,45)) then
-        //        call StartItemCooldown(u,UnitItemInSlot(u, i),10)
+        //        call StartItemCooldown(UnitItemInSlot(u, i),10)
         //    endif
         //exitwhen i == 0
         //set i=i - 1
@@ -133303,7 +133303,7 @@ if GetUnitTypeId(E)=='H06G' or GetUnitTypeId(E)=='H06H' or GetUnitTypeId(E)=='H0
     call StartAbilityCooldown(GetUnitAbility(E,'A1DS'),0.1)
     loop
         if GetItemTypeId(UnitItemInSlot(E,i)) != 'I04V' and GetItemTypeId(UnitItemInSlot(E,i)) != 'I13R' and GetItemTypeId(UnitItemInSlot(E,i)) != 'IMDi'  then
-            call StartItemCooldown(E,UnitItemInSlot(E, i),0.1)
+            call StartItemCooldown(UnitItemInSlot(E, i),0.1)
         endif
     exitwhen i == 0
     set i=i - 1
@@ -133329,7 +133329,7 @@ call StartAbilityCooldown(GetUnitAbility(u,'A1DS'),0.1)
 loop
     //call BJDebugMsg(I2S(GetHandleId(UnitItemInSlot(u, i))) + " " + I2S(GetHandleId(GetAbilityOwningItem(LoadAbilityHandle(h,id,45)))) )
     if GetItemTypeId(UnitItemInSlot(u,i)) != 'I04V' and GetItemTypeId(UnitItemInSlot(u,i)) != 'I13R' and GetItemTypeId(UnitItemInSlot(u,i)) != 'IMDi'  then
-        call StartItemCooldown(u,UnitItemInSlot(u, i),0.1)
+        call StartItemCooldown(UnitItemInSlot(u, i),0.1)
     endif
 exitwhen i == 0
 set i=i - 1
@@ -185642,12 +185642,12 @@ endif
 
 
          //   if UnitItemInSlot(u, i) == GetAbilityOwningItem(LoadAbilityHandle(h,id,45)) then
-         //       call StartItemCooldown(u,UnitItemInSlot(u, i),10)
+         //       call StartItemCooldown(UnitItemInSlot(u, i),10)
          //   endif
 
 
 
-//call StartItemCooldown(n0, UnitItemInSlot(n000,i) , GetItemRemainingCooldown(UnitItemInSlot(caster,i)) )
+//call StartItemCooldown( UnitItemInSlot(n000,i) , GetItemRemainingCooldown(UnitItemInSlot(caster,i)) )
 
 //GetItemRemainingCooldown
 
@@ -185698,7 +185698,7 @@ endif
 
   //call StartAbilityCooldown(GetUnitAbility(n000, itemid2), GetAbilityRemainingCooldown(GetUnitAbility(caster, itemid2))   )
 
-//call StartItemCooldown(n000,UnitItemInSlot(caster,i),abilCd)
+//call StartItemCooldown(UnitItemInSlot(caster,i),abilCd)
 
  // call StartAbilityCooldown(GetUnitAbility(n000, itemId), GetAbilityRemainingCooldown(GetUnitAbility(caster, itemId))   )
 
@@ -185711,10 +185711,10 @@ endif
 
  //call StartAbilityCooldown()
 //GetItemAbilityById( UnitItemInSlot(n000, i), i )
- //call StartItemCooldown(n000,UnitItemInSlot(n000, i),abilCd)
+ //call StartItemCooldown(UnitItemInSlot(n000, i),abilCd)
 
            // if UnitItemInSlot(u, i) == GetAbilityOwningItem(LoadAbilityHandle(h,id,45)) then
-          //      call StartItemCooldown(u,UnitItemInSlot(u, i),10)
+          //      call StartItemCooldown(UnitItemInSlot(u, i),10)
          //   endif
 
 // call StartAbilityCooldown(    GetUnitAbility(n000, i0)     , GetAbilityRemainingCooldown(GetUnitAbility(caster, abilCd )))
@@ -185740,7 +185740,7 @@ endif
 
  // call StartAbilityCooldown(    GetUnitAbility(n000, i0)     , GetItemRemainingCooldown(UnitItemInSlot(caster,i))   )
 
-//call StartItemCooldown(n0, UnitItemInSlot(n000,i) , GetItemRemainingCooldown(UnitItemInSlot(caster,i)) )
+//call StartItemCooldown( UnitItemInSlot(n000,i) , GetItemRemainingCooldown(UnitItemInSlot(caster,i)) )
 /////call SetItemRemainingCooldown(UnitItemInSlot(n000,i),GetItemRemainingCooldown(UnitItemInSlot(caster,i)))
 
 //GetItemCooldown()
@@ -186382,7 +186382,7 @@ call SaveInteger(HH,id,10,GetSpellAbilityId())
    //     loop
             //call BJDebugMsg(I2S(GetHandleId(UnitItemInSlot(u, i))) + " " + I2S(GetHandleId(GetAbilityOwningItem(LoadAbilityHandle(h,id,45)))) )
     //        if UnitItemInSlot(u, i) == GetAbilityOwningItem(LoadAbilityHandle(h,id,45)) then
-     //           call StartItemCooldown(u,UnitItemInSlot(u, i),10)
+     //           call StartItemCooldown(UnitItemInSlot(u, i),10)
      //       endif
       //  exitwhen i == 0
       ////  set i=i - 1
@@ -205949,7 +205949,7 @@ function TobiramaFCast takes unit u, real x1, real y1 returns nothing
         if GetItemTypeId(UnitItemInSlot(u,i))!='Io39' then
             set bj_lastCreatedItem=UnitAddItemById(n,GetItemTypeId(UnitItemInSlot(u,i)))
             call SetItemDroppable(bj_lastCreatedItem,false)
-            //call StartItemCooldown(n,bj_lastCreatedItem,9999)
+            //call StartItemCooldown(bj_lastCreatedItem,9999)
         endif
         set i=i+1
         endloop
