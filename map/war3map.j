@@ -65683,6 +65683,7 @@ call SaveReal(HH,id,5,1)
 call SaveReal(HH,id,3,2000)
 call TimerStart(t,0.02,true,function BreakerEnergyWaveCast3)
 else
+call SetControlToUnit(u , u , 0.3 , "doomdebug")
 call SetUnitAnimation(u,"stand")
 call HealTextTag(u,u,GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.05*myCustomHeal2(u,1),"HealthRes")
 call HealTextTag(u,u,GetUnitState(u,UNIT_STATE_MAX_MANA)*0.05*myCustomMana2(u,1),"ManaRes")
@@ -65940,6 +65941,7 @@ else
         endif
         call RemoveSavedHandle(HH,idu,REVERSE_TARGET)
     else
+        call SetControlToUnit(u , u , 0.3 , "doomdebug")
         call SetUnitAnimation(u,"stand")
         call PauseUnit(u,false)
         call PauseTimer(t)
@@ -113527,6 +113529,7 @@ call PauseTimer(t)
 call SaveReal(HH,id,2,0)
 call TimerStart(t,0.02,true,function AvalonSCast3)
 else
+call SetControlToUnit(u , u , 0.3 , "doomdebug")
 call PauseUnit(u,false)
 call PauseTimer(t)
 call DestroyTimer(t)
@@ -168026,7 +168029,7 @@ local real f=GetUnitFacing(l__d)
 local real a=LoadReal(h,id,8)
 local real a2=Atan2(y2-y1,x2-x1)
 local real time=LoadReal(h,id,20)
-local real dmg=GetHeroStr(u,true)*(GetUnitAbilityLevel(u,'JNR1')+3)+25+75*GetUnitAbilityLevel(u,'JNR1')
+local real dmg=GetHeroStr(u,true)*(GetUnitAbilityLevel(u,'JNR1')+3)+50*(GetUnitAbilityLevel(u,'JNR1')+1)
 local real Range=LoadReal(h,id,9)
 local real time2=LoadReal(h,id,21)
 local unit dummy=LoadUnitHandle(h,id,22)
@@ -168332,7 +168335,7 @@ local group g=LoadGroupHandle(h,id,6)
 local real f=GetUnitFacing(l__d)
 local real a=LoadReal(h,id,8)
 local real time=LoadReal(h,id,10)
-local real dmg=GetHeroStr(u,true)*(GetUnitAbilityLevel(u,'JNE1')+2)+(75*(GetUnitAbilityLevel(u,'JNE1')+1)-100)
+local real dmg=GetHeroStr(u,true)*(GetUnitAbilityLevel(u,'JNE1')+2)+50*GetUnitAbilityLevel(u,'JNE1')
 local real Range=LoadReal(h,id,9)
 local real time2=LoadReal(h,id,12)
 if time==0 then
@@ -168470,7 +168473,7 @@ function JirenESelf_Cast3 takes nothing returns nothing
     local player p=GetOwningPlayer(u)
     local real time=LoadReal(HH,id,2)
     local integer i=1
-    local real dmg=GetHeroStr(u,true)*(2+GetUnitAbilityLevel(u,'JNE1'))+(75*(GetUnitAbilityLevel(u,'JNE1')+1)-100)
+    local real dmg=GetHeroStr(u,true)*(2+GetUnitAbilityLevel(u,'JNE1'))+50*GetUnitAbilityLevel(u,'JNE1')
     if time<3 then
         call SaveReal(HH,id,2,time+0.02)
         call PauseUnit(u,true)
@@ -168645,9 +168648,10 @@ function JirenESelf_Cast2 takes nothing returns nothing
             call RemoveSavedHandle(HH,idu,REVERSE_TARGET)
             call PauseTimer(t)
             call SaveReal(HH,id,2,0)
-            call SetAbilityRemainingCooldown(GetUnitAbility(u, 'JNE1'), GetAbilityRemainingCooldown(GetUnitAbility(u, 'JNE1'))+9)
+            call SetAbilityRemainingCooldown(GetUnitAbility(u, 'JNE1'), GetAbilityRemainingCooldown(GetUnitAbility(u, 'JNE1'))+12)
             call TimerStart(t,0.02,true,function JirenESelf_Cast3)
         else
+            call SetControlToUnit(u , u , 0.3 , "doomdebug")
             call PauseUnit(u,false)
             call PauseTimer(t)
             call DestroyTimer(t)
@@ -169221,9 +169225,10 @@ function JirenQSelf_Cast2 takes nothing returns nothing
             call PauseTimer(t)
             call SaveReal(HH,id,2,0)
             call StartSound(soundStr[106])
-            call SetAbilityRemainingCooldown(GetUnitAbility(u, 'JNQ1'), GetAbilityRemainingCooldown(GetUnitAbility(u, 'JNQ1'))+7)
+            call SetAbilityRemainingCooldown(GetUnitAbility(u, 'JNQ1'), GetAbilityRemainingCooldown(GetUnitAbility(u, 'JNQ1'))+10)
             call TimerStart(t,0.02,true,function JirenQSelf_Cast3)
         else
+            call SetControlToUnit(u , u , 0.3 , "doomdebug")
             call PauseUnit(u,false)
             call PauseTimer(t)
             call DestroyTimer(t)
@@ -176964,6 +176969,9 @@ if LoadUnitHandle(HH,id,20)!=null then
 call DestroyGroup(LoadGroupHandle(HH,id,4))
 call RemoveUnit(LoadUnitHandle(HH,id,20))
 endif
+if LoadBoolean(HH,GetHandleId(caster),ANTITARGET_ABILITY)==true then
+    call SetControlToUnit(caster , caster , 0.3 , "doomdebug")
+endif
 call SaveBoolean(HH,GetHandleId(caster),ANTITARGET_ABILITY,false)
 call PauseTimer(t)
 call DestroyTimer(t)
@@ -181477,6 +181485,9 @@ call PauseUnit(caster,true)
 endif
 
 if time==-0.02 then
+if LoadBoolean(HH,GetHandleId(caster),ANTITARGET_ABILITY)==true then
+    call SetControlToUnit(caster , caster , 0.3 , "doomdebug")
+endif
 call SaveBoolean(HH,GetHandleId(caster),ANTITARGET_ABILITY,false)
 call SaveBoolean(HH,GetHandleId(caster),StringHash("DanzoWBool"),false)
 call PauseUnit(caster,false)
@@ -198822,6 +198833,9 @@ function IchigoBankaiW_Periodic takes nothing returns nothing
             call RemoveSavedHandle(HH,GetHandleId(caster),REVERSE_TARGET)
         endif
     else
+        if LoadBoolean(HH,GetHandleId(caster),ANTITARGET_ABILITY)==true then
+            call SetControlToUnit(caster , caster , 0.3 , "doomdebug")
+        endif
         call DestroyEffect(LoadEffectHandle(h, id, 3))
         call DestroyEffect(LoadEffectHandle(h, id, 4))
         call SaveBoolean(HH,GetHandleId(caster),ANTITARGET_ABILITY,false)
