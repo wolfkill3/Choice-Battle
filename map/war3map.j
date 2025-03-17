@@ -46430,7 +46430,7 @@ set soundplay=CreateSound("Sound\\Music\\mp3Music\\NejiW2.mp3",false,false,true,
 call StartSound(soundplay)
 call KillSoundWhenDone(soundplay)
 call SetUnitAnimation(Neji,"Spell Two")
-call SetUnitTimeScale(Neji,2)
+call UnitAddAbility(Neji,'A0GN')
 call UnitRemoveAbility(u,'BHds')
 call UnitRemoveAbility(u,'B02T')
 call UnitRemoveAbility(u,'B039')
@@ -46452,6 +46452,9 @@ local trigger tt2=LoadTriggerHandle(h,id,6)
 if GetUnitCurrentOrder(Neji)!=OrderId("channel")then
 call SetUnitTimeScale(Neji,1)
 call SetUnitAnimation(Neji,"Stand")
+if GetUnitAbilityLevel(Neji,'A0GN')==0 then
+    call SetControlToUnit(Neji , Neji , 0.3 , "doomdebug")
+endif
 call TriggerClearActions(tt)
 call DestroyTrigger(tt)
 call TriggerClearActions(tt2)
