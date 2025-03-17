@@ -167392,7 +167392,7 @@ if GetWidgetLife(c)>0 and GetWidgetLife(u)>0 and time<4 then
         call SetSpecialEffectScale(EFF , 0.6)
         call DestroyEffect(EFF)
     endif
-    if time==2.1 then
+    if time==2.16 then
         call PauseUnit(c,true)
         call SetUnitInvulnerable(c,true)
         set n=CreateUnit(p,'eo9L',x1,y1,GetRandomReal(0,359))
@@ -167407,11 +167407,11 @@ if GetWidgetLife(c)>0 and GetWidgetLife(u)>0 and time<4 then
         call SetSpecialEffectVertexColour(EFF,195,195,195,125)
         call RemoveEffect(EFF,0.5,true,CreateTimer())
     endif
-    if time>2.1 and time<3.1 then
+    if time>2.16 and time<3.26 then
         call SetUnitVertexColor(dummy,255,255,255,190-R2I(GetUnitScale(dummy)*90))
         call SetUnitScale(dummy,GetUnitScale(dummy)+0.06,0.1,0.1)
     endif
-    if time==3.5 then
+    if time==3.6 then
         call RemoveUnit(dummy)
     endif
     if time>3 and time<3.42 then
