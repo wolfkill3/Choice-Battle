@@ -226,6 +226,7 @@ constant integer GokuEDMGHash         = StringHash("GokuEDMG")
 constant integer GokuUIDingHash       = StringHash("GokuUIDing")
 constant integer GokuUIMusicHash      = StringHash("GokuUIMusic")
 constant integer SpecUIHash           = StringHash("SpecUI")
+constant integer NIWHash              = StringHash("NIW")
 boolean NANAYA_CONDITION          = true // Возможность пика Нанаи
 //== Следующие переменные предназначены ТОЛЬКО для системных функций/методов
 timer sysTimer = null 
@@ -999,6 +1000,7 @@ boolean array ingame
 real deg90
 string array music
 sound array soundStr
+string array EffectID
 boolean PresentOff
 boolean DamageOff
 boolean array itemsc
@@ -1954,7 +1956,17 @@ function myCustomDamage2 takes unit target, real amount returns real
     //~ конец модификации уменьшения урона
 
 endfunction
+function DamageU takes boolean have_pure ,unit caster0,unit target0,real damage0 returns nothing
 
+
+
+//if 'e16T'!=GetUnitTypeId(target0) then
+
+call myCustomDamage(caster0,target0,damage0,false,false,null,null,null)
+//endif
+
+
+endfunction
 function myCustomHeal2 takes unit target, real amount returns real
     local real currentHeal = amount
     local integer idTar=GetHandleId(target)
@@ -2138,6 +2150,220 @@ set i=i+1
 endloop
 set udg_LR=CreateGroup()
 set udg_rou=15.00
+
+
+set EffectID[0]="Izayoi\\BY_Wood_GongChengSiPai_1.mdl"
+set EffectID[1]="Madara\\EffecthPush.mdl"
+set EffectID[2]="Others\\[A]BladeBeamFinalLarger.mdl"
+set EffectID[3]="Others\\HakenSaber2.mdl"
+set EffectID[4]="Aizen\\AZ_LCDark_W2_buff.mdl"
+set EffectID[5]="Others\\BlackBlink1.mdl"
+set EffectID[6]="Signum\\CF2.mdl"
+set EffectID[8]="war3mapImported\\az-slash-red.mdl" //эффект есть он у лучи
+set EffectID[9]="Others\\File00003933.mdl"
+set EffectID[10]="Others\\File00000827.mdl"
+set EffectID[12]="Others\\wind3.mdl"//эффект есть 
+set EffectID[15]="Signum\\DustWindFaster3.mdl"//не надо
+set EffectID[19]="Others\\WindNewFaw4.mdl"
+set EffectID[20]="Others\\WindCirclefaster.mdl"//не надо
+set EffectID[23]="Others\\[A]az_axe_ef1.mdl"
+set EffectID[24]="Signum\\tx_haohuoqiu.mdl"//не надо
+set EffectID[25]="Others\\[A]hit-white-guangxiao.mdl"
+set EffectID[27]="Izayoi\\az_pafeathermoon_b.mdl"//не надо
+set EffectID[28]="war3mapImported\\AuraCheck.mdl"
+set EffectID[33]="Guts\\[A]FireEruption2.mdl"//не надо
+set EffectID[35]="Others\\[A]BladeBeamFinalLarger-90.mdl"
+set EffectID[37]="BlackGoku\\ChuShou_BY_Wood_Effect_Unusual_ChongSheng11.mdl"
+set EffectID[38]="BlackGoku\\File00007390.mdl"
+set EffectID[39]="Others\\az_slb.mdl"
+set EffectID[41]="Madara\\az_siwen2.mdl"
+set EffectID[42]="Guts\\az-zidan.mdl"//не надо
+set EffectID[48]="Madara\\blue-blink.mdl"//не надо
+set EffectID[49]="Madara\\[DoFT]az_pafeathermoon_b.mdl"//не надо
+set EffectID[75]="Guts\\AfbRedCharge.mdl"
+set EffectID[78]="Others\\[a]Red-zhendi.mdl"
+set EffectID[79]="Others\\red-zhendi-shanguang.mdl"
+set EffectID[82]="Others\\windExploreEffect(Bigger).mdl"
+set EffectID[105]="Madara\\kaizokusfxbyvalk4.mdl"
+set EffectID[119]="BlackGoku\\[A]Hongse_Yellow.mdl"
+set EffectID[136]="Others\\ChuShou_Effect_Earth1.mdl"
+set EffectID[210]="Others\\AZ_hit-red.mdl"
+set EffectID[214]="Madara\\AOE2m.mdl"
+set EffectID[225]="Others\\Rb3.mdl" //нужен
+set EffectID[227]="Others\\red-lizi-shunjian.mdl"
+set EffectID[237]="Others\\[A]Explodeorange.mdl"
+set EffectID[240]="Guts\\[A]BY_Wood_XianHuo_2.mdl"
+set EffectID[265]="Signum\\dustwaveanimate2.mdl"
+set EffectID[295]="Kisame\\red-lizi-zhendi-fast.mdl"
+set EffectID[348]="Aizen\\File00001721.mdl"
+set EffectID[386]="Others\\File00000532.mdl"//нужен
+set EffectID[394]="Others\\hit-nl-star.mdl"
+set EffectID[417]="Others\\WindWeak(Thicker).mdl"
+set EffectID[425]="Others\\hit-juhuang-lizi.mdl"
+set EffectID[460]="Aizen\\red-smoke1.mdl"
+set EffectID[495]="Others\\blue-guangzhu-linghun.mdl"
+set EffectID[515]="Others\\[doft]Void4.mdl"//нужен
+set EffectID[525]="Others\\file00000676.mdl"//нужен
+set EffectID[526]="Others\\[doft]Void.mdl"//нужен
+set EffectID[616]="Others\\az-red-guangzhao1.mdl"//нужен
+set EffectID[623]="Madara\\Shana-12.mdl"
+set EffectID[684]="Others\\tsubaki-41.mdl"
+set EffectID[711]="Sabrac\\LXY_tx-shqy10-E.mdl"
+set EffectID[739]="Others\\[DoFT]e_slashred.mdl"//нужен
+set EffectID[752]="Others\\az_fireringblue.mdl"
+set EffectID[764]="Others\\blink-yellow2.mdl"
+set EffectID[768]="Others\\HakkeStart2.mdl"
+set EffectID[784]="Others\\[A]ExplodeorangeBlueBlackGoku.mdl"
+set EffectID[785]="Others\\aZ_siwenBlackGoku.mdl"
+set EffectID[823]="Aizen\\QQQQQyellow.mdl"
+set EffectID[854]="Aizen\\File0000 (644).mdl"
+set EffectID[910]="Others\\FSAEff (10).mdl"//нужен
+set EffectID[927]="Others\\FSAEff (27).mdl"
+set EffectID[940]="Others\\FSAEff (40).mdl"//нужен
+set EffectID[956]="Izayoi\\FSAeff (56).mdl"//нужен
+set EffectID[957]="Others\\FSAEff (57).mdl"//нужен
+set EffectID[967]="Others\\FSAEff (67).mdl"//нужен
+set EffectID[1031]="Others\\FSAeff (131).mdl"//нужен
+set EffectID[1039]="Others\\FSAeff (139).mdl"//нужен
+set EffectID[1073]="Others\\FSAeff (173).mdl"//нужен
+set EffectID[1077]="Signum\\FSAeff (177).mdl"
+set EffectID[1078]="Others\\FSAeff (178).mdl"//нужен
+set EffectID[1081]="Others\\FSAeff (181).mdl"//нужен
+set EffectID[1144]="Others\\LightningSlamRed3.mdl"
+set EffectID[1328]="Others\\File00000008.mdl"//нужен
+set EffectID[1329]="Others\\File00000009.mdl"//нужен
+set EffectID[1330]="Others\\buff_fire_Sonic.mdl"//нужен
+set EffectID[1331]="Others\\File00000007New_New.mdl"//нужен
+set EffectID[1350]="Others\\by_wood_effect_shuiying_smoke_feidun_1_1_2.mdl"
+set EffectID[1351]="Others\\[A]BladeBeamFinalLarger45.mdl"
+set EffectID[1352]="Others\\[A]BladeBeamFinalLarger-45.mdl"
+set EffectID[1353]="Others\\AFB (2556).mdl"
+set EffectID[104]="Others\\[a]LightStrikeArray3.mdl"
+set EffectID[328]="Others\\CloudEfYellow.mdl"
+set EffectID[44]="Others\\az_siwen.mdl"
+set EffectID[45]="Guts\\az_siwen3.mdl"
+set EffectID[170]="BlackGoku\\by_wood_bashenan_juqi_2.mdl"
+set EffectID[172]="Others\\AFB_hudie.mdl"
+set EffectID[173]="BlackGoku\\CarolAFBTohka-R.mdl"
+set EffectID[226]="Others\\File00002500.mdl"
+set EffectID[280]="Others\\A(BlackPurple).mdl"
+set EffectID[341]="Madara\\[A]RinRfire1.mdl"
+set EffectID[364]="Others\\Singularity I Red.mdl"
+set EffectID[368]="BlackGoku\\Singularity II Purple.mdl"
+set EffectID[371]="Aizen\\fire-boom-new-red.mdl"
+set EffectID[390]="BlackGoku\\[A]fense-lizi-toushewu.mdl"
+set EffectID[397]="BlackGoku\\[DoFT]purple-shoot.mdl"
+set EffectID[490]="Guts\\bymutou-hongse3.mdl"
+set EffectID[572]="Gojo\\By_Wood_K_BaoZha.mdl"
+set EffectID[539]="Izayoi\\File00001831.mdl"
+set EffectID[999]="Izayoi\\FSAeff (99).mdl"
+set EffectID[863]="Others\\flowerMoonEff (52).mdl"
+set EffectID[925]="Others\\FSAEff (25).mdl"
+set EffectID[875]="Aizen\\HitToumaAFB.mdl"
+set EffectID[855]="Aizen\\[A]GrassPisses.mdl"
+set EffectID[287]="Gojo\\[A]AsumaEXP4.mdl"
+set EffectID[523]="Gojo\\ChuShou_by_wood_Effect_Glow_guiPaiQiGong_XuliBlue.mdl"
+set EffectID[581]="Gojo\\[a]Boom-red-zhendi.mdl"
+set EffectID[717]="Gojo\\t_KL_fx.mdl"
+set EffectID[923]="Gojo\\FSAEff (23).mdl"
+set EffectID[949]="Gojo\\FSAEff (49).mdl"
+set EffectID[951]="Gojo\\FSAEff (51).mdl"
+set EffectID[985]="Gojo\\FSAEff (85).mdl"
+set EffectID[992]="Gojo\\FSAEff (92).mdl"
+set EffectID[1038]="Gojo\\FSAeff (138).mdl"
+set EffectID[1049]="Gojo\\FSAeff (149).mdl"
+set EffectID[1056]="Gojo\\FSAeff (156).mdl"
+set EffectID[1057]="Gojo\\FSAeff (157).mdl"
+set EffectID[1071]="Gojo\\FSAeff (171).mdl"
+set EffectID[1076]="Gojo\\FSAeff (176).mdl"
+set EffectID[1080]="Gojo\\FSAeff (180).mdl"
+set EffectID[1097]="Gojo\\FSAeff (197).mdl"
+set EffectID[1105]="Gojo\\FSAeff (205).mdl"
+set EffectID[1310]="Gojo\\RT(WhiteBirth).mdl"
+set EffectID[1311]="Gojo\\BF (1154)13mask.mdl"
+set EffectID[1314]="Gojo\\GojoG11.mdl"
+set EffectID[1315]="Gojo\\[A]NucleExp1Anim4.mdl"
+set EffectID[1317]="Gojo\\3yifu_2 2.mdl"
+set EffectID[1318]="Gojo\\3yifu_2 3.mdl"
+set EffectID[1319]="Gojo\\3yifu_2 01.mdl"
+set EffectID[1320]="Gojo\\FawEffects (11).mdl"
+set EffectID[1332]="Gojo\\XJCSMblBYQ.mdl"
+set EffectID[1334]="Gojo\\[Gojo]JeanneDark1mt_baozha1.mdl"
+set EffectID[1335]="Gojo\\Gojo_AZ_Alleria_R3.mdl"
+set EffectID[1336]="Gojo\\Red2.mdl"
+set EffectID[1337]="Gojo\\blue.mdl"
+set EffectID[1339]="Gojo\\AZ_BNPF_FF1Red.mdl"
+set EffectID[1340]="Gojo\\AZ_BNPF_FF1BLUE.mdl"
+set EffectID[1341]="Gojo\\az_fenghuang01_d3_rblue.mdx"
+set EffectID[1342]="Gojo\\az_fenghuang01_d3_red.mdx"
+set EffectID[1343]="Gojo\\m2 (573).mdl"
+set EffectID[1344]="Gojo\\[A]fense-lizi-toushewuGojo.mdl"
+set EffectID[1345]="Gojo\\Aizen-37.mdl"
+set EffectID[1346]="Gojo\\CarolLightning2Gojo.mdl"
+set EffectID[1347]="Gojo\\FSAeff (167)Gojo.mdl"
+set EffectID[1348]="Gojo\\BubbleCamera.mdl"
+set EffectID[1349]="Gojo\\Bubbles2.mdl"
+set EffectID[1354]="Gojo\\es78.mdl"
+set EffectID[1355]="Gojo\\RT(PurpleBirth).mdl"
+set EffectID[1356]="Gojo\\blinkcaster.mdl"
+set EffectID[48]="Madara\\blue-blink.mdl"
+set EffectID[49]="Madara\\[DoFT]az_pafeathermoon_b.mdl"
+set EffectID[1358]="Izayoi\\Kamijo-10.mdl"
+set EffectID[1371]="Signum\\[A]AceFireShockRun.mdl"
+set EffectID[1374]="Signum\\[Signum]AceFireShockRun.mdl"
+set EffectID[32]="Signum\\FireEffectOrange.mdl"
+set EffectID[99]="Madara\\[A]BY_Wood_Flame_explosion_2.mdl"
+set EffectID[100]="Others\\[A]BY_Wood_FenShenDaBaoPo_2.mdl"
+set EffectID[137]="Ace\\[a]File00001271.mdl"
+set EffectID[196]="Ace\\buff_fire.mdl"
+set EffectID[235]="Ace\\[A]BY_Wood_huoquan.mdl"
+set EffectID[236]="Ace\\[A]Holy_Fire_Slam3.mdl"
+set EffectID[239]="Others\\[A]BY_Wood_Kong.mdl"
+set EffectID[246]="Ace\\[A]Natsu roar 3.mdl"
+set EffectID[247]="Madara\\[A]File00002800.mdl"
+set EffectID[250]="Ace\\[A]AceBall.mdl"
+set EffectID[251]="Ace\\ZeroPinkGreen.mdl"
+set EffectID[256]="Ace\\[A]RedHarvest.mdl"
+set EffectID[258]="Ace\\[A]FireShockRun(fire).mdl"
+set EffectID[1050]="Ace\\FSAeff (150).mdl"
+set EffectID[1053]="Signum\\FSAeff (153).mdl"
+set EffectID[1136]="Ace\\Tsubaki-49.mdl"
+set EffectID[1258]="Ace\\op (1032).mdl"
+set EffectID[1260]="Ace\\op (1137).mdl"
+set EffectID[1363]="Ace\\[A]AceFist.mdl"
+set EffectID[1364]="Ace\\AceRef_new.mdl"
+set EffectID[1366]="Ace\\AceRef_new3.mdl"
+set EffectID[1367]="Ace\\chushou_by_wood_effect_unusual_kof_caoti_huozhu.mdl"
+set EffectID[1368]="Ace\\EscanorCruelSunExpAfb.mdl"
+set EffectID[1369]="Ace\\EscanorCruelSunExpAfb1.mdl"
+set EffectID[1370]="Ace\\Op (749)_new.mdl"
+set EffectID[1372]="Signum\\[A]Natsu ef roar.mdl"
+set EffectID[1373]="Others\\file00004805.mdl"
+set EffectID[1361]="Others\\T_coarse slash black.mdl"
+set EffectID[1362]="Others\\SilverBolts.mdx"
+set EffectID[73]="Madara\\BY_Wood_GongChengSiPai_6.mdl"
+set EffectID[290]="Madara\\[DoFT]az_hit-blue-blade.mdl"
+set EffectID[292]="Madara\\[A]n3s_o_target.mdl"
+set EffectID[1357]="Others\\Reapers Claws Blue.mdl"
+set EffectID[1359]="Others\\TealSlam2.mdl"
+set EffectID[92]="Others\\File00003583.mdl"
+set EffectID[401]="Others\\blue_fire_explosion.mdl"
+set EffectID[34]="Aizen\\flowerMoonEff (49).mdl"
+set EffectID[1375]="Others\\KiyohimeBell.mdl"
+set EffectID[1376]="Others\\by_wood_eff_ord_dange_geo_suolian_3_2-Gray.mdl"
+set EffectID[719]="Others\\tg_animeslashfinal_2.mdl"
+set EffectID[720]="Others\\tg_animeslashfinal_1.mdl"
+set EffectID[292]="Madara\\[A]n3s_o_target.mdl"
+set EffectID[291]="Madara\\blue-slash-more.mdl"
+set EffectID[293]="Others\\CloudSpark.mdl"
+set EffectID[1398]="Others\\[A]Stomp.mdl"
+set EffectID[1399]="Others\\[A]ShivasWrathTransparent.mdl"
+set EffectID[1402]="Others\\[A]Vertical Square.mdl"
+set EffectID[1403]="Others\\[A]valkkame3.mdl"
+set EffectID[1405]="Others\\FreezingRing.mdl"
+set EffectID[1409]="Others\\[A]Shockwave(Blue).mdl"
+set EffectID[1401]="Others\\[A]earthdom(nocolor)_new.mdl"
+set EffectID[205]="Kisame\\az_hitheavy.mdl"
 endfunction
 function InitSounds takes nothing returns nothing
 set gg_snd_exiao=CreateSound("war3mapImported\\exiao.mp3",false,false,false,10,10,"")
@@ -5843,7 +6069,7 @@ function Condition_RecipeString takes integer id returns boolean
 return id=='I00E' or id=='I01P' or id=='I01R' or id=='I01T' or id=='I01V' or id=='I02U' or id=='I02X' or id=='I02Z' or id=='I045' or id=='I047' or id=='I04Y' or id=='I04U' or id=='I04X' or id=='I04Z' or id=='I051' or id=='I14R' or id=='IGDr' or id=='IPar' or id=='IHYr' or id=='ISTr' or id=='IBSR' or id=='I052' or id=='I053' or id=='I055' or id=='I06P' or id=='I06S' or id=='I06T'
 endfunction
 function Condition_AbilityString2 takes integer id returns boolean
-return id=='A0YX' or id=='A0Z0' or id=='KkR1' or id=='KkR2' or id=='BRRS' or id=='BRSS' or id=='IcF2' or id=='IcF5' or id=='GKF1' or id=='VGF1' or id=='GKG1' or id=='GKBS' or id=='GKSS' or id=='GKS2' or id=='GKS3' or id=='GKS4' or id=='GKSR' or id=='GKSB' or id=='GKUI' or id=='GKMI' or id=='GKQ1' or id=='GKW1' or id=='GKE1' or id=='GKT1' or id=='JNF1' or id=='JNF4'
+return id=='A0YX' or id=='A0Z0' or id=='KkR1' or id=='KkR2' or id=='BRRS' or id=='BRSS' or id=='IcF2' or id=='IcF5' or id=='GKF1' or id=='VGF1' or id=='GKG1' or id=='GKBS' or id=='GKSS' or id=='GKS2' or id=='GKS3' or id=='GKS4' or id=='GKSR' or id=='GKSB' or id=='GKUI' or id=='GKMI' or id=='GKQ1' or id=='GKW1' or id=='GKE1' or id=='GKT1' or id=='JNF1' or id=='JNF4' or id=='GSQ1' or id=='GSQ2' or id=='GSE1' or id=='GSE2' or id=='GST1' or id=='GST3' or id=='GSF1' or id=='GSF2'
 endfunction
 function Condition_AbilityString takes integer id returns boolean
 return Condition_AbilityString2(id) or id=='SaW1' or id=='SaE1' or id=='SaR1' or id=='SaT1' or id=='TMW0' or id=='A0P6' or id=='A1D7' or id=='HSW1' or id=='HST1' or id=='KHG1' or id=='A2DJ' or id=='IcQ1' or id=='IcT1' or id=='MadF' or id=='A0N1' or id=='A2CZ' or id=='A0CZ' or id=='DSW1' or id=='Ad02' or id=='BGW1' or id=='KaA6' or id=='KaAF' or id=='BGG1' or id=='ASQ1' or id=='ASW1' or id=='ASE1' or id=='AST1' or id=='A1BO' or id=='A1BT' or id=='A1BW' or id=='A085' or id=='A08J' or id=='MiQ1' or id=='MiE1' or id=='MiR1' or id=='A0FN' or id=='WE03' or id=='WE06' or id=='A1AJ' or id=='A1ER' or id=='A0QK' or id=='A1HO' or id=='AlFS' or id=='OM13' or id=='A17D' or id=='A177' or id=='A172' or id=='A16U' or id=='A0TN'
@@ -7791,6 +8017,7 @@ call PreloadSound("Voice\\HashiramaSummon.mp3")
 call PreloadSound("Voice\\KarnaSummon.mp3")
 call PreloadSound("Voice\\JirenSummon.mp3")
 call PreloadSound("Voice\\JirenSummon-jap.mp3")
+call PreloadSound("Voice\\GojoSummon.mp3")
 set soundStr[1]=CreateSound("Sound\\Music\\mp3Music\\BrolyFirstLSSTransform.mp3",false,false,true,12700,12700,"")
 set soundStr[2]=CreateSound("Sound\\Music\\mp3Music\\BrolyFirstLSSTransformGoku.mp3",false,false,true,12700,12700,"")
 set soundStr[3]=CreateSound("Sound\\Music\\mp3Music\\BrolyLSSTransform.mp3",false,false,true,12700,12700,"")
@@ -8288,7 +8515,8 @@ set l__s="KarnaSummon.mp3"
 elseif id=='HSab' then
 set l__s="SabracSummon.mp3"
 
-
+elseif id=='HGoj' then
+set l__s="GojoSummon.mp3"
 
 endif
 return l__s
@@ -8762,6 +8990,7 @@ set udg_RH[132]='HKar'
 set udg_RH[133]='HBGN'//Black Goku надо 133
 set udg_RH[134]='HSab'//sabrac
 set udg_RH[135]='HJi1'//Jiren
+set udg_RH[136]='HGoj'//Gojo
 
 
 //set udg_RH[127]='HIc3'
@@ -8911,6 +9140,7 @@ set udg_RH2[132]="Karna"
 set udg_RH2[133]="Goku Black"
 set udg_RH2[134]="Sabrac"
 set udg_RH2[135]="Jiren"
+set udg_RH2[136]="Gojo"
 call DestroyTrigger(GetTriggeringTrigger())
 endfunction
 function InitTrig_Init takes nothing returns nothing
@@ -11414,7 +11644,7 @@ function OnButtonRandom takes nothing returns nothing
                 set udg_Repick[i+1]=-2
         endif
         loop
-        set id=GetRandomInt(0,135)
+        set id=GetRandomInt(0,136)
         if udg_RH[id]!=0 then
         set u[i+1]=CreateUnit(Player(i),udg_RH[id],GetRectCenterX(gg_rct_Rect1),GetRectCenterY(gg_rct_Rect1),0)
         call UnitInventorySetSize(u[i+1],10)
@@ -14643,6 +14873,121 @@ function OnButtonAddonAbility takes nothing returns nothing
                 call AddFrameText( GetFrameByName("TavernAbilityTooltipText",i), "\n\n"+GetAbilityBaseStringFieldById( 'JNF1', ABILITY_SF_NAME )+", (|cffffcc00"+IntToChar(GetAbilityBaseIntegerFieldById( 'JNF1', ABILITY_IF_BUTTON_HOTKEY_RESEARCH ))+"|r)\n\n"+GetAbilityBaseStringFieldById( 'JNF1', ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED ))
                 call SetFrameSize( GetFrameByName("TavernAbilityTooltip",i), .26, GetFrameHeight( GetFrameByName("TavernAbilityTooltipText",i))+0.03)
 
+            elseif GetFrameTexture(but,0)==GetAbilityBaseStringFieldById('GSQ1',ABILITY_SF_ICON_NORMAL) and i==GetFrameContext(but) then
+                call SetFrameText( GetFrameByName("TavernAbilityTooltipText",i), "     " )
+                call SetFrameTexture( GetFrameByName("TavernAbility",i), GetAbilityBaseStringFieldById( 'GSQ2', ABILITY_SF_ICON_NORMAL ), 0, true )
+                call SetFrameTexture( GetFrameByName("TavernAbility",i), GetAbilityBaseStringFieldById( 'GSQ2', ABILITY_SF_ICON_NORMAL ), 1, true )
+                call SetFrameTexture( GetFrameByName("TavernAbility",i), GetAbilityBaseStringFieldById( 'GSQ2', ABILITY_SF_ICON_NORMAL ), 2, true )
+                set j=0
+                loop
+                    call AddFrameText( GetFrameByName("TavernAbilityTooltipText",i), "|cffffcc00"+I2S(GetAbilityBaseIntegerLevelFieldById( 'GSQ2', ABILITY_ILF_MANA_COST, j ))+"|r")
+                    exitwhen j==GetAbilityBaseIntegerFieldById('GSQ2', ABILITY_IF_LEVELS)-1
+                    call AddFrameText( GetFrameByName("TavernAbilityTooltipText",i), "/")
+                    set j=j+1
+                endloop                        
+                call AddFrameText( GetFrameByName("TavernAbilityTooltipText",i), "\n\n"+GetAbilityBaseStringFieldById( 'GSQ2', ABILITY_SF_NAME )+", (|cffffcc00"+IntToChar(GetAbilityBaseIntegerFieldById( 'GSQ2', ABILITY_IF_BUTTON_HOTKEY_RESEARCH ))+"|r)\n\n"+GetAbilityBaseStringFieldById( 'GSQ2', ABILITY_SLF_TOOLTIP_LEARN_EXTENDED ))
+                call SetFrameSize( GetFrameByName("TavernAbilityTooltip",i), .26, GetFrameHeight( GetFrameByName("TavernAbilityTooltipText",i))+0.03)
+            elseif GetFrameTexture(but,0)==GetAbilityBaseStringFieldById('GSQ2',ABILITY_SF_ICON_NORMAL) and i==GetFrameContext(but) then
+                call SetFrameText( GetFrameByName("TavernAbilityTooltipText",i), "     " )
+                call SetFrameTexture( GetFrameByName("TavernAbility",i), GetAbilityBaseStringFieldById( 'GSQ1', ABILITY_SF_ICON_NORMAL ), 0, true )
+                call SetFrameTexture( GetFrameByName("TavernAbility",i), GetAbilityBaseStringFieldById( 'GSQ1', ABILITY_SF_ICON_NORMAL ), 1, true )
+                call SetFrameTexture( GetFrameByName("TavernAbility",i), GetAbilityBaseStringFieldById( 'GSQ1', ABILITY_SF_ICON_NORMAL ), 2, true )
+                set j=0
+                loop
+                    call AddFrameText( GetFrameByName("TavernAbilityTooltipText",i), "|cffffcc00"+I2S(GetAbilityBaseIntegerLevelFieldById( 'GSQ1', ABILITY_ILF_MANA_COST, j ))+"|r")
+                    exitwhen j==GetAbilityBaseIntegerFieldById('GSQ1', ABILITY_IF_LEVELS)-1
+                    call AddFrameText( GetFrameByName("TavernAbilityTooltipText",i), "/")
+                    set j=j+1
+                endloop                        
+                call AddFrameText( GetFrameByName("TavernAbilityTooltipText",i), "\n\n"+GetAbilityBaseStringFieldById( 'GSQ1', ABILITY_SF_NAME )+", (|cffffcc00"+IntToChar(GetAbilityBaseIntegerFieldById( 'GSQ1', ABILITY_IF_BUTTON_HOTKEY_RESEARCH ))+"|r)\n\n"+GetAbilityBaseStringFieldById( 'GSQ1', ABILITY_SLF_TOOLTIP_LEARN_EXTENDED ))
+                call SetFrameSize( GetFrameByName("TavernAbilityTooltip",i), .26, GetFrameHeight( GetFrameByName("TavernAbilityTooltipText",i))+0.03)
+
+            elseif GetFrameTexture(but,0)==GetAbilityBaseStringFieldById('GSE1',ABILITY_SF_ICON_NORMAL) and i==GetFrameContext(but) then
+                call SetFrameText( GetFrameByName("TavernAbilityTooltipText",i), "     " )
+                call SetFrameTexture( GetFrameByName("TavernAbility",i), GetAbilityBaseStringFieldById( 'GSE2', ABILITY_SF_ICON_NORMAL ), 0, true )
+                call SetFrameTexture( GetFrameByName("TavernAbility",i), GetAbilityBaseStringFieldById( 'GSE2', ABILITY_SF_ICON_NORMAL ), 1, true )
+                call SetFrameTexture( GetFrameByName("TavernAbility",i), GetAbilityBaseStringFieldById( 'GSE2', ABILITY_SF_ICON_NORMAL ), 2, true )
+                set j=0
+                loop
+                    call AddFrameText( GetFrameByName("TavernAbilityTooltipText",i), "|cffffcc00"+I2S(GetAbilityBaseIntegerLevelFieldById( 'GSE2', ABILITY_ILF_MANA_COST, j ))+"|r")
+                    exitwhen j==GetAbilityBaseIntegerFieldById('GSE2', ABILITY_IF_LEVELS)-1
+                    call AddFrameText( GetFrameByName("TavernAbilityTooltipText",i), "/")
+                    set j=j+1
+                endloop                        
+                call AddFrameText( GetFrameByName("TavernAbilityTooltipText",i), "\n\n"+GetAbilityBaseStringFieldById( 'GSE2', ABILITY_SF_NAME )+", (|cffffcc00"+IntToChar(GetAbilityBaseIntegerFieldById( 'GSE2', ABILITY_IF_BUTTON_HOTKEY_RESEARCH ))+"|r)\n\n"+GetAbilityBaseStringFieldById( 'GSE2', ABILITY_SLF_TOOLTIP_LEARN_EXTENDED ))
+                call SetFrameSize( GetFrameByName("TavernAbilityTooltip",i), .26, GetFrameHeight( GetFrameByName("TavernAbilityTooltipText",i))+0.03)
+            elseif GetFrameTexture(but,0)==GetAbilityBaseStringFieldById('GSE2',ABILITY_SF_ICON_NORMAL) and i==GetFrameContext(but) then
+                call SetFrameText( GetFrameByName("TavernAbilityTooltipText",i), "     " )
+                call SetFrameTexture( GetFrameByName("TavernAbility",i), GetAbilityBaseStringFieldById( 'GSE1', ABILITY_SF_ICON_NORMAL ), 0, true )
+                call SetFrameTexture( GetFrameByName("TavernAbility",i), GetAbilityBaseStringFieldById( 'GSE1', ABILITY_SF_ICON_NORMAL ), 1, true )
+                call SetFrameTexture( GetFrameByName("TavernAbility",i), GetAbilityBaseStringFieldById( 'GSE1', ABILITY_SF_ICON_NORMAL ), 2, true )
+                set j=0
+                loop
+                    call AddFrameText( GetFrameByName("TavernAbilityTooltipText",i), "|cffffcc00"+I2S(GetAbilityBaseIntegerLevelFieldById( 'GSE1', ABILITY_ILF_MANA_COST, j ))+"|r")
+                    exitwhen j==GetAbilityBaseIntegerFieldById('GSE1', ABILITY_IF_LEVELS)-1
+                    call AddFrameText( GetFrameByName("TavernAbilityTooltipText",i), "/")
+                    set j=j+1
+                endloop                        
+                call AddFrameText( GetFrameByName("TavernAbilityTooltipText",i), "\n\n"+GetAbilityBaseStringFieldById( 'GSE1', ABILITY_SF_NAME )+", (|cffffcc00"+IntToChar(GetAbilityBaseIntegerFieldById( 'GSE1', ABILITY_IF_BUTTON_HOTKEY_RESEARCH ))+"|r)\n\n"+GetAbilityBaseStringFieldById( 'GSE1', ABILITY_SLF_TOOLTIP_LEARN_EXTENDED ))
+                call SetFrameSize( GetFrameByName("TavernAbilityTooltip",i), .26, GetFrameHeight( GetFrameByName("TavernAbilityTooltipText",i))+0.03)
+
+            elseif GetFrameTexture(but,0)==GetAbilityBaseStringFieldById('GSF1',ABILITY_SF_ICON_NORMAL) and i==GetFrameContext(but) then
+                call SetFrameText( GetFrameByName("TavernAbilityTooltipText",i), "     " )
+                call SetFrameTexture( GetFrameByName("TavernAbility",i), GetAbilityBaseStringFieldById( 'GSF2', ABILITY_SF_ICON_NORMAL ), 0, true )
+                call SetFrameTexture( GetFrameByName("TavernAbility",i), GetAbilityBaseStringFieldById( 'GSF2', ABILITY_SF_ICON_NORMAL ), 1, true )
+                call SetFrameTexture( GetFrameByName("TavernAbility",i), GetAbilityBaseStringFieldById( 'GSF2', ABILITY_SF_ICON_NORMAL ), 2, true )
+                set j=0
+                loop
+                    call AddFrameText( GetFrameByName("TavernAbilityTooltipText",i), "|cffffcc00"+I2S(GetAbilityBaseIntegerLevelFieldById( 'GSF2', ABILITY_ILF_MANA_COST, j ))+"|r")
+                    exitwhen j==GetAbilityBaseIntegerFieldById('GSF2', ABILITY_IF_LEVELS)-1
+                    call AddFrameText( GetFrameByName("TavernAbilityTooltipText",i), "/")
+                    set j=j+1
+                endloop                        
+                call AddFrameText( GetFrameByName("TavernAbilityTooltipText",i), "\n\n"+GetAbilityBaseStringFieldById( 'GSF2', ABILITY_SF_NAME )+", (|cffffcc00"+IntToChar(GetAbilityBaseIntegerFieldById( 'GSF2', ABILITY_IF_BUTTON_HOTKEY_RESEARCH ))+"|r)\n\n"+GetAbilityBaseStringFieldById( 'GSF2', ABILITY_SLF_TOOLTIP_LEARN_EXTENDED ))
+                call SetFrameSize( GetFrameByName("TavernAbilityTooltip",i), .26, GetFrameHeight( GetFrameByName("TavernAbilityTooltipText",i))+0.03)
+            elseif GetFrameTexture(but,0)==GetAbilityBaseStringFieldById('GSF2',ABILITY_SF_ICON_NORMAL) and i==GetFrameContext(but) then
+                call SetFrameText( GetFrameByName("TavernAbilityTooltipText",i), "     " )
+                call SetFrameTexture( GetFrameByName("TavernAbility",i), GetAbilityBaseStringFieldById( 'GSF1', ABILITY_SF_ICON_NORMAL ), 0, true )
+                call SetFrameTexture( GetFrameByName("TavernAbility",i), GetAbilityBaseStringFieldById( 'GSF1', ABILITY_SF_ICON_NORMAL ), 1, true )
+                call SetFrameTexture( GetFrameByName("TavernAbility",i), GetAbilityBaseStringFieldById( 'GSF1', ABILITY_SF_ICON_NORMAL ), 2, true )
+                set j=0
+                loop
+                    call AddFrameText( GetFrameByName("TavernAbilityTooltipText",i), "|cffffcc00"+I2S(GetAbilityBaseIntegerLevelFieldById( 'GSF1', ABILITY_ILF_MANA_COST, j ))+"|r")
+                    exitwhen j==GetAbilityBaseIntegerFieldById('GSF1', ABILITY_IF_LEVELS)-1
+                    call AddFrameText( GetFrameByName("TavernAbilityTooltipText",i), "/")
+                    set j=j+1
+                endloop                        
+                call AddFrameText( GetFrameByName("TavernAbilityTooltipText",i), "\n\n"+GetAbilityBaseStringFieldById( 'GSF1', ABILITY_SF_NAME )+", (|cffffcc00"+IntToChar(GetAbilityBaseIntegerFieldById( 'GSF1', ABILITY_IF_BUTTON_HOTKEY_RESEARCH ))+"|r)\n\n"+GetAbilityBaseStringFieldById( 'GSF1', ABILITY_SLF_TOOLTIP_LEARN_EXTENDED ))
+                call SetFrameSize( GetFrameByName("TavernAbilityTooltip",i), .26, GetFrameHeight( GetFrameByName("TavernAbilityTooltipText",i))+0.03)
+
+            elseif GetFrameTexture(but,0)==GetAbilityBaseStringFieldById('GST1',ABILITY_SF_ICON_NORMAL) and i==GetFrameContext(but) then
+                call SetFrameText( GetFrameByName("TavernAbilityTooltipText",i), "     " )
+                call SetFrameTexture( GetFrameByName("TavernAbility",i), GetAbilityBaseStringFieldById( 'GST3', ABILITY_SF_ICON_NORMAL ), 0, true )
+                call SetFrameTexture( GetFrameByName("TavernAbility",i), GetAbilityBaseStringFieldById( 'GST3', ABILITY_SF_ICON_NORMAL ), 1, true )
+                call SetFrameTexture( GetFrameByName("TavernAbility",i), GetAbilityBaseStringFieldById( 'GST3', ABILITY_SF_ICON_NORMAL ), 2, true )
+                set j=0
+                loop
+                    call AddFrameText( GetFrameByName("TavernAbilityTooltipText",i), "|cffffcc00"+I2S(GetAbilityBaseIntegerLevelFieldById( 'GST3', ABILITY_ILF_MANA_COST, j ))+"|r")
+                    exitwhen j==GetAbilityBaseIntegerFieldById('GST3', ABILITY_IF_LEVELS)-1
+                    call AddFrameText( GetFrameByName("TavernAbilityTooltipText",i), "/")
+                    set j=j+1
+                endloop                        
+                call AddFrameText( GetFrameByName("TavernAbilityTooltipText",i), "\n\n"+GetAbilityBaseStringFieldById( 'GST3', ABILITY_SF_NAME )+", (|cffffcc00"+IntToChar(GetAbilityBaseIntegerFieldById( 'GST3', ABILITY_IF_BUTTON_HOTKEY_RESEARCH ))+"|r)\n\n"+GetAbilityBaseStringFieldById( 'GST3', ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED ))
+                call SetFrameSize( GetFrameByName("TavernAbilityTooltip",i), .26, GetFrameHeight( GetFrameByName("TavernAbilityTooltipText",i))+0.03)
+            elseif GetFrameTexture(but,0)==GetAbilityBaseStringFieldById('GST3',ABILITY_SF_ICON_NORMAL) and i==GetFrameContext(but) then
+                call SetFrameText( GetFrameByName("TavernAbilityTooltipText",i), "     " )
+                call SetFrameTexture( GetFrameByName("TavernAbility",i), GetAbilityBaseStringFieldById( 'GST1', ABILITY_SF_ICON_NORMAL ), 0, true )
+                call SetFrameTexture( GetFrameByName("TavernAbility",i), GetAbilityBaseStringFieldById( 'GST1', ABILITY_SF_ICON_NORMAL ), 1, true )
+                call SetFrameTexture( GetFrameByName("TavernAbility",i), GetAbilityBaseStringFieldById( 'GST1', ABILITY_SF_ICON_NORMAL ), 2, true )
+                set j=0
+                loop
+                    call AddFrameText( GetFrameByName("TavernAbilityTooltipText",i), "|cffffcc00"+I2S(GetAbilityBaseIntegerLevelFieldById( 'GST1', ABILITY_ILF_MANA_COST, j ))+"|r")
+                    exitwhen j==GetAbilityBaseIntegerFieldById('GST1', ABILITY_IF_LEVELS)-1
+                    call AddFrameText( GetFrameByName("TavernAbilityTooltipText",i), "/")
+                    set j=j+1
+                endloop                        
+                call AddFrameText( GetFrameByName("TavernAbilityTooltipText",i), "\n\n"+GetAbilityBaseStringFieldById( 'GST1', ABILITY_SF_NAME )+", (|cffffcc00"+IntToChar(GetAbilityBaseIntegerFieldById( 'GST1', ABILITY_IF_BUTTON_HOTKEY_RESEARCH ))+"|r)\n\n"+GetAbilityBaseStringFieldById( 'GST1', ABILITY_SLF_TOOLTIP_LEARN_EXTENDED ))
+                call SetFrameSize( GetFrameByName("TavernAbilityTooltip",i), .26, GetFrameHeight( GetFrameByName("TavernAbilityTooltipText",i))+0.03)
 
             elseif GetFrameTexture(but,0)==GetAbilityBaseStringFieldById('A0YX',ABILITY_SF_ICON_NORMAL) and i==GetFrameContext(but) then
                 call SetFrameText( GetFrameByName("TavernAbilityTooltipText",i), "     " )
@@ -17904,6 +18249,54 @@ else
 call DisplayChatMessageEx(null,CHAT_RECIPIENT_UNKNOWN,10,true,"FFA: OFF! Number of wins - 15")
 // call AddFrameText(TavernChat,"FFA: OFF! Количество побед - 15")
 endif
+set y=0
+loop 
+exitwhen y>=12
+    if LoadBoolean(HH,GetHandleId(Player(y)),NIWHash)==true and udg_RH[136]!=0 then
+        call SetFrameTexture( GetFrameByName("SelectedHeroPlayer",y), GetFrameTexture(GetFrameByName("TavernBarHero",136),0), 0, true ) 
+        call SetFrameTexture( GetFrameByName("SelectedHeroPlayer",y), GetFrameTexture(GetFrameByName("TavernBarHero",136),0), 1, true ) 
+        call SetFrameTexture( GetFrameByName("SelectedHeroPlayer",y), GetFrameTexture(GetFrameByName("TavernBarHero",136),0), 2, true ) 
+        call SetFrameTexture( GetFrameByName("TavernCMHero",Globalpick), GetFrameTexture(GetFrameByName("TavernBarHero",136),0), 0, true ) 
+        call SetFrameTexture( GetFrameByName("TavernCMHero",Globalpick), GetFrameTexture(GetFrameByName("TavernBarHero",136),0), 1, true ) 
+        call SetFrameTexture( GetFrameByName("TavernCMHero",Globalpick), GetFrameTexture(GetFrameByName("TavernBarHero",136),0), 2, true ) 
+        call SetFrameColourEx( GetFrameByName("TavernBarHero",136),0, 0xFF505050 )
+        call SetFrameColourEx( GetFrameByName("TavernBarHero",136),1, 0xFF505050 )
+        call SetFrameColourEx( GetFrameByName("TavernBarHero",136),2, 0xFF505050 )
+        call SetFrameColourEx( GetFrameByName("TavernBarHeroTitle",136),0, 0xFF505050 )
+        call SetFrameColourEx( GetFrameByName("TavernBarHeroTitle",136),1, 0xFF505050 )
+        call SetFrameColourEx( GetFrameByName("TavernBarHeroTitle",136),2, 0xFF505050 )
+        set Hero[y]=CreateUnit(Player(y),udg_RH[136],GetRectCenterX(gg_rct_Rect1),GetRectCenterY(gg_rct_Rect1),0)
+        call UnitInventorySetSize(Hero[y],10)
+        set udg_Hero[y+1]=Hero[y]
+        call W3MMD_Lite_Set_Integer(Player(y),"Picked_hero",HeroSkin(udg_Hero[y+1]))
+        set udg_RH[136]=0
+        set TavernPlayerPickAllow[y]=false
+        set TavernHeroId[136]=0
+        if GetLocalPlayer()==Player(y) then
+            if bu==udg_Button[4] then
+                call SetFrameColourEx( TavernHeroPick,0, 0xFFFF2020 )
+                call SetFrameColourEx( TavernHeroPick,1, 0xFFFF2020 )
+                call SetFrameColourEx( TavernHeroPick,2, 0xFFFF2020 )
+                call SetFrameColourEx( TavernHeroRandom,0, 0xFF404040 )
+                call SetFrameColourEx( TavernHeroRandom,1, 0xFF404040 )
+                call SetFrameColourEx( TavernHeroRandom,2, 0xFF404040 )
+                call ClickFrame(CloseTavernButton)
+                call ClickFrame(OpenStatusButton)
+            else
+                call SetFrameColourEx( TavernHeroPick,0, 0xFF404040 )
+                call SetFrameColourEx( TavernHeroPick,1, 0xFF404040 )
+                call SetFrameColourEx( TavernHeroPick,2, 0xFF404040 )
+                call SetFrameColourEx( TavernHeroRandom,0, 0xFF404040 )
+                call SetFrameColourEx( TavernHeroRandom,1, 0xFF404040 )
+                call SetFrameColourEx( TavernHeroRandom,2, 0xFF404040 )
+                call ClickFrame(CloseTavernButton)
+                call ClickFrame(OpenStatusButton)
+            endif
+        endif
+    endif
+    set y=y+1
+endloop 
+set y=0 
 call EnableTrigger(gg_trg_mult)
 call DisplayTextToPlayer(Player(0),0,0,"Start")
 call PauseAllUnitsBJ(false)
@@ -18059,15 +18452,26 @@ set i=0
 loop
 exitwhen i>9
 call W3MMD_Lite_Set_String(Player(i),"Game_Mode","Standard Mode")
-set TavernPlayerPickAllow[i]=true
+if Hero[i]==null then
+    set TavernPlayerPickAllow[i]=true
+endif
 set i=i+1
 endloop
-call SetFrameColourEx( TavernHeroPick,0, 0xFFFFFFFF )
-call SetFrameColourEx( TavernHeroPick,1, 0xFFFFFFFF )
-call SetFrameColourEx( TavernHeroPick,2, 0xFFFFFFFF )
-call SetFrameColourEx( TavernHeroRandom,0, 0xFFFFFFFF )
-call SetFrameColourEx( TavernHeroRandom,1, 0xFFFFFFFF )
-call SetFrameColourEx( TavernHeroRandom,2, 0xFFFFFFFF )
+if TavernPlayerPickAllow[GetPlayerId(GetLocalPlayer())]==true then
+    call SetFrameColourEx( TavernHeroPick,0, 0xFFFFFFFF )
+    call SetFrameColourEx( TavernHeroPick,1, 0xFFFFFFFF )
+    call SetFrameColourEx( TavernHeroPick,2, 0xFFFFFFFF )
+    call SetFrameColourEx( TavernHeroRandom,0, 0xFFFFFFFF )
+    call SetFrameColourEx( TavernHeroRandom,1, 0xFFFFFFFF )
+    call SetFrameColourEx( TavernHeroRandom,2, 0xFFFFFFFF )
+else
+    call SetFrameColourEx( TavernHeroPick,0, 0xFF404040 )
+    call SetFrameColourEx( TavernHeroPick,1, 0xFF404040 )
+    call SetFrameColourEx( TavernHeroPick,2, 0xFF404040 )
+    call SetFrameColourEx( TavernHeroRandom,0, 0xFF404040 )
+    call SetFrameColourEx( TavernHeroRandom,1, 0xFF404040 )
+    call SetFrameColourEx( TavernHeroRandom,2, 0xFF404040 )
+endif
 call TimerStart(udg_Timer,100.0,false,null) //Start
 call TimerStart(udg_TimerRandom,90.0,false,null) //Start
 set udg_TB=CreateTimerDialog(udg_Timer)
@@ -18086,16 +18490,27 @@ elseif bu==udg_Button[4] then
     loop
     exitwhen i>=10
     call W3MMD_Lite_Set_String(Player(i),"Game_Mode","Ban Mode")
-    set TavernPlayerPickAllow[i]=true
+    if Hero[i]==null then
+        set TavernPlayerPickAllow[i]=true
+    endif
 	set bonus_repick[i]=2
     set i=i+1
     endloop
-    call SetFrameColourEx( TavernHeroPick,0, 0xFFFF2020 )
-    call SetFrameColourEx( TavernHeroPick,1, 0xFFFF2020 )
-    call SetFrameColourEx( TavernHeroPick,2, 0xFFFF2020 )
-    call SetFrameColourEx( TavernHeroRandom,0, 0xFF404040 )
-    call SetFrameColourEx( TavernHeroRandom,1, 0xFF404040 )
-    call SetFrameColourEx( TavernHeroRandom,2, 0xFF404040 )
+    if TavernPlayerPickAllow[GetPlayerId(GetLocalPlayer())]==true then
+        call SetFrameColourEx( TavernHeroPick,0, 0xFFFF2020 )
+        call SetFrameColourEx( TavernHeroPick,1, 0xFFFF2020 )
+        call SetFrameColourEx( TavernHeroPick,2, 0xFFFF2020 )
+        call SetFrameColourEx( TavernHeroRandom,0, 0xFF404040 )
+        call SetFrameColourEx( TavernHeroRandom,1, 0xFF404040 )
+        call SetFrameColourEx( TavernHeroRandom,2, 0xFF404040 )
+    else
+        call SetFrameColourEx( TavernHeroPick,0, 0xFF404040 )
+        call SetFrameColourEx( TavernHeroPick,1, 0xFF404040 )
+        call SetFrameColourEx( TavernHeroPick,2, 0xFF404040 )
+        call SetFrameColourEx( TavernHeroRandom,0, 0xFF404040 )
+        call SetFrameColourEx( TavernHeroRandom,1, 0xFF404040 )
+        call SetFrameColourEx( TavernHeroRandom,2, 0xFF404040 )
+    endif
     call SetFrameText( TavernHeroPickText, "Ban")
     set pick=3
     set cmp=4
@@ -18130,7 +18545,7 @@ set rand[i]=true
 set udg_Repick[i+1]=0
 if GetPlayerSlotState(Player(i))==PLAYER_SLOT_STATE_PLAYING and u[i+1]==null then
 loop
-set id=GetRandomInt(0,135)
+set id=GetRandomInt(0,136)
 if udg_RH[id]!=0 then
 set u[i+1]=CreateUnit(Player(i),udg_RH[id],x1,y1,0)
 call UnitInventorySetSize(u[i+1],10)
@@ -19893,7 +20308,13 @@ if GetUnitTypeId(u)=='HSab' then
 endif
 //Sabrac2End
 
-
+if GetUnitTypeId(u)=='HGoj' then
+call SetPlayerAbilityAvailable(GetOwningPlayer(u),'GSQ2',false)
+call SetPlayerAbilityAvailable(GetOwningPlayer(u),'GSE2',false)
+call SetPlayerAbilityAvailable(GetOwningPlayer(u),'GSF2',false)
+call SetPlayerAbilityAvailable(GetOwningPlayer(u),'GST2',false)
+call SetPlayerAbilityAvailable(GetOwningPlayer(u),'GST3',false)
+endif
 
 
 if GetUnitTypeId(u)=='H02M' then
@@ -23293,7 +23714,7 @@ local integer ty=GetUnitTypeId(u)
 local integer r=0
 local integer l__s
 if cmb!=true then
-    if pick==3 then
+    if pick==3 and Hero[id]!=u then
         if IsUnitType(u,UNIT_TYPE_HERO)then
             set i=0
             loop
@@ -23301,7 +23722,7 @@ if cmb!=true then
                 set udg_RH[i]=0
             endif
             set i=i+1
-            exitwhen i>=135
+            exitwhen i>=136
             endloop
             call RemoveUnit(u)
             call SetPlayerStateBJ(GetOwningPlayer(u),PLAYER_STATE_FOOD_CAP_CEILING,0)
@@ -23481,6 +23902,7 @@ if cmb!=true then
         call IH('H34Z',u,"ReplaceableTextures\\CommandButtons\\BTNTobiramaP.blp")
         call IH('HKar',u,"ReplaceableTextures\\CommandButtons\\BTNKarnaP.blp")
         call IH('HJi1',u,"ReplaceableTextures\\CommandButtons\\BTNJiren.blp")
+        call IH('HGoj',u,"ReplaceableTextures\\CommandButtons\\BTNGojoIcon.blp")
         set hero[id]=u
         if GetUnitTypeId(u)=='H074' then
             set oreha=u
@@ -23516,7 +23938,7 @@ if cmb!=true then
                     set udg_RH[i]=0
                 endif
                 set i=i+1
-                exitwhen i>=135
+                exitwhen i>=136
             endloop
         endif
         call SaveInteger(h,GetHandleId(u),'A1GS',0)
@@ -23539,7 +23961,7 @@ if IsUnitType(u,UNIT_TYPE_HERO) and CPTModeON and cmb==true then
         call RemoveUnit(u)
         set i=0
         loop
-        exitwhen i>=135
+        exitwhen i>=136
             if GetUnitTypeId(u)==udg_RH[i] then
                 set udg_RH[i]=0
             endif
@@ -25395,6 +25817,17 @@ else
 call SaveBoolean(HH,ip,SpecUIHash,true)
 endif
 endfunction
+function nahidwinCond takes nothing returns boolean
+return GetPlayerName(GetTriggerPlayer())=="PinkieNecro" or GetPlayerName(GetTriggerPlayer())=="NecromanseR_RuS" or GetPlayerName(GetTriggerPlayer())=="Altron223" or GetPlayerName(GetTriggerPlayer())=="AlTrOn" or GetPlayerName(GetTriggerPlayer())==AdminNickname
+endfunction
+function nahidwin takes nothing returns nothing
+local integer ip=GetHandleId(GetTriggerPlayer())
+if LoadBoolean(HH,ip,NIWHash)==true then
+call SaveBoolean(HH,ip,NIWHash,false)
+else
+call SaveBoolean(HH,ip,NIWHash,true)
+endif
+endfunction
 function DemonCond takes nothing returns boolean
 return GetPlayerName(GetTriggerPlayer())=="PinkieNecro" or GetPlayerName(GetTriggerPlayer())=="NecromanseR_RuS" or GetPlayerName(GetTriggerPlayer())==AdminNickname
 endfunction
@@ -26543,6 +26976,7 @@ endif
 set soundplay=CreateSound("Voice\\"+InitVoice(GetUnitTypeId(n)),false,false,true,12700,12700,"")
 if GetLocalPlayer()==p then
 call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
 endif
 call KillSoundWhenDone(soundplay)
 loop
@@ -26613,6 +27047,7 @@ endif
 set soundplay=CreateSound("Voice\\"+InitVoice(GetUnitTypeId(n)),false,false,true,12700,12700,"")
 if GetLocalPlayer()==p then
 call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
 endif
 call KillSoundWhenDone(soundplay)
 loop
@@ -26683,6 +27118,7 @@ endif
 set soundplay=CreateSound("Voice\\"+InitVoice(GetUnitTypeId(n)),false,false,true,12700,12700,"")
 if GetLocalPlayer()==p then
 call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
 endif
 call KillSoundWhenDone(soundplay)
 loop
@@ -26753,6 +27189,7 @@ endif
 set soundplay=CreateSound("Voice\\"+InitVoice(GetUnitTypeId(n)),false,false,true,12700,12700,"")
 if GetLocalPlayer()==p then
 call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
 endif
 call KillSoundWhenDone(soundplay)
 loop
@@ -26823,6 +27260,7 @@ endif
 set soundplay=CreateSound("Voice\\"+InitVoice(GetUnitTypeId(n)),false,false,true,12700,12700,"")
 if GetLocalPlayer()==p then
 call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
 endif
 call KillSoundWhenDone(soundplay)
 loop
@@ -26893,6 +27331,7 @@ endif
 set soundplay=CreateSound("Voice\\"+InitVoice(GetUnitTypeId(n)),false,false,true,12700,12700,"")
 if GetLocalPlayer()==p then
 call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
 endif
 call KillSoundWhenDone(soundplay)
 loop
@@ -26982,6 +27421,7 @@ endif
 set soundplay=CreateSound("Voice\\"+InitVoice(GetUnitTypeId(n)),false,false,true,12700,12700,"")
 if GetLocalPlayer()==p then
 call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
 endif
 call KillSoundWhenDone(soundplay)
 loop
@@ -27052,6 +27492,7 @@ endif
 set soundplay=CreateSound("Voice\\"+InitVoice(GetUnitTypeId(n)),false,false,true,12700,12700,"")
 if GetLocalPlayer()==p then
 call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
 endif
 call KillSoundWhenDone(soundplay)
 loop
@@ -27122,6 +27563,7 @@ endif
 set soundplay=CreateSound("Voice\\"+InitVoice(GetUnitTypeId(n)),false,false,true,12700,12700,"")
 if GetLocalPlayer()==p then
 call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
 endif
 call KillSoundWhenDone(soundplay)
 loop
@@ -27192,6 +27634,7 @@ endif
 set soundplay=CreateSound("Voice\\"+InitVoice(GetUnitTypeId(n)),false,false,true,12700,12700,"")
 if GetLocalPlayer()==p then
 call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
 endif
 call KillSoundWhenDone(soundplay)
 loop
@@ -27262,6 +27705,7 @@ endif
 set soundplay=CreateSound("Voice\\"+InitVoice(GetUnitTypeId(n)),false,false,true,12700,12700,"")
 if GetLocalPlayer()==p then
 call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
 endif
 call KillSoundWhenDone(soundplay)
 loop
@@ -27332,6 +27776,7 @@ endif
 set soundplay=CreateSound("Voice\\"+InitVoice(GetUnitTypeId(n)),false,false,true,12700,12700,"")
 if GetLocalPlayer()==p then
 call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
 endif
 call KillSoundWhenDone(soundplay)
 loop
@@ -27402,6 +27847,7 @@ endif
 set soundplay=CreateSound("Voice\\"+InitVoice(GetUnitTypeId(n)),false,false,true,12700,12700,"")
 if GetLocalPlayer()==p then
 call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
 endif
 call KillSoundWhenDone(soundplay)
 loop
@@ -27472,6 +27918,7 @@ endif
 set soundplay=CreateSound("Voice\\"+InitVoice(GetUnitTypeId(n)),false,false,true,12700,12700,"")
 if GetLocalPlayer()==p then
 call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
 endif
 call KillSoundWhenDone(soundplay)
 loop
@@ -27542,6 +27989,7 @@ endif
 set soundplay=CreateSound("Voice\\"+InitVoice(GetUnitTypeId(n)),false,false,true,12700,12700,"")
 if GetLocalPlayer()==p then
 call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
 endif
 call KillSoundWhenDone(soundplay)
 loop
@@ -27616,6 +28064,7 @@ endif
 set soundplay=CreateSound("Voice\\"+InitVoice(GetUnitTypeId(n)),false,false,true,12700,12700,"")
 if GetLocalPlayer()==p then
 call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
 endif
 call KillSoundWhenDone(soundplay)
 loop
@@ -27687,6 +28136,7 @@ endif
 set soundplay=CreateSound("Voice\\"+InitVoice(GetUnitTypeId(n)),false,false,true,12700,12700,"")
 if GetLocalPlayer()==p then
 call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
 endif
 call KillSoundWhenDone(soundplay)
 loop
@@ -27757,6 +28207,7 @@ endif
 set soundplay=CreateSound("Voice\\"+InitVoice(GetUnitTypeId(n)),false,false,true,12700,12700,"")
 if GetLocalPlayer()==p then
 call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
 endif
 call KillSoundWhenDone(soundplay)
 loop
@@ -27827,6 +28278,7 @@ endif
 set soundplay=CreateSound("Voice\\"+InitVoice(GetUnitTypeId(n)),false,false,true,12700,12700,"")
 if GetLocalPlayer()==p then
 call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
 endif
 call KillSoundWhenDone(soundplay)
 loop
@@ -27897,6 +28349,7 @@ endif
 set soundplay=CreateSound("Voice\\"+InitVoice(GetUnitTypeId(n)),false,false,true,12700,12700,"")
 if GetLocalPlayer()==p then
 call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
 endif
 call KillSoundWhenDone(soundplay)
 loop
@@ -27967,6 +28420,7 @@ endif
 set soundplay=CreateSound("Voice\\"+InitVoice(GetUnitTypeId(n)),false,false,true,12700,12700,"")
 if GetLocalPlayer()==p then
 call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
 endif
 call KillSoundWhenDone(soundplay)
 loop
@@ -28037,6 +28491,7 @@ endif
 set soundplay=CreateSound("Voice\\"+InitVoice(GetUnitTypeId(n)),false,false,true,12700,12700,"")
 if GetLocalPlayer()==p then
 call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
 endif
 call KillSoundWhenDone(soundplay)
 loop
@@ -28584,7 +29039,7 @@ if bonus_repick[i]==2 then
         set udg_Repick[i+1]=-2
 endif
 loop
-set id=GetRandomInt(0,135)
+set id=GetRandomInt(0,136)
 if udg_RH[id]!=0 then
 set u[i+1]=CreateUnit(Player(i),udg_RH[id],GetRectCenterX(gg_rct_Rect1),GetRectCenterY(gg_rct_Rect1),0)
 call UnitInventorySetSize(u[i+1],10)
@@ -28861,7 +29316,7 @@ if udg_Repick[i]<2 then
         set udg_Repick[i]=udg_Repick[i]+1
 endif
 loop
-set id=GetRandomInt(0,135)
+set id=GetRandomInt(0,136)
 if udg_RH[id]!=0 then
 set udg_Hero[i]=CreateUnit(p,udg_RH[id],GetRectCenterX(gg_rct_Rect1),GetRectCenterY(gg_rct_Rect1),0)
 call UnitInventorySetSize(udg_Hero[i],10)
@@ -29790,7 +30245,7 @@ function Trig_idNew_Actions takes nothing returns nothing
     exitwhen bj_forLoopAIndex>bj_forLoopAIndexEnd
     call DisplayTextToPlayer(GetLocalPlayer(),0,0,I2S(bj_forLoopAIndex)+"-"+udg_RH2[bj_forLoopAIndex]+"; "+I2S(bj_forLoopAIndex+1)+"-"+udg_RH2[bj_forLoopAIndex+1]+"; "+I2S(bj_forLoopAIndex+2)+"-"+udg_RH2[bj_forLoopAIndex+2]+"; "+I2S(bj_forLoopAIndex+3)+"-"+udg_RH2[bj_forLoopAIndex+3]+"; "+I2S(bj_forLoopAIndex+4)+"-"+udg_RH2[bj_forLoopAIndex+4]+"; ")
     //udg_RH[bj_forLoopAIndex]    
-    if bj_forLoopAIndex>=135 and bj_forLoopAIndex<190 then
+    if bj_forLoopAIndex>=136 and bj_forLoopAIndex<190 then
     set bj_forLoopAIndex=200
     else
     set bj_forLoopAIndex=bj_forLoopAIndex+5
@@ -29816,7 +30271,7 @@ function Trig_id_Actions takes nothing returns nothing
     exitwhen bj_forLoopAIndex>bj_forLoopAIndexEnd
     call DisplayTextToPlayer(GetLocalPlayer(),0,0,I2S(bj_forLoopAIndex)+"-"+udg_RH2[bj_forLoopAIndex]+"; "+I2S(bj_forLoopAIndex+1)+"-"+udg_RH2[bj_forLoopAIndex+1]+"; "+I2S(bj_forLoopAIndex+2)+"-"+udg_RH2[bj_forLoopAIndex+2]+"; "+I2S(bj_forLoopAIndex+3)+"-"+udg_RH2[bj_forLoopAIndex+3]+"; "+I2S(bj_forLoopAIndex+4)+"-"+udg_RH2[bj_forLoopAIndex+4]+"; ")
     //udg_RH[bj_forLoopAIndex]    
-    if bj_forLoopAIndex>=135 and bj_forLoopAIndex<190 then
+    if bj_forLoopAIndex>=136 and bj_forLoopAIndex<190 then
     set bj_forLoopAIndex=200
     else
     set bj_forLoopAIndex=bj_forLoopAIndex+5
@@ -32625,18 +33080,29 @@ function Trig_BanEnd_Actions2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
 local integer i=0
 loop
+if Hero[i]==null then
 set TavernPlayerPickAllow[i]=true
+endif
 set i=i+1
 exitwhen i>11
 endloop
 set TavernPlayerPickAllow[10]=false
 set TavernPlayerPickAllow[11]=false
-call SetFrameColourEx( TavernHeroPick,0, 0xFFFFFFFF )
-call SetFrameColourEx( TavernHeroPick,1, 0xFFFFFFFF )
-call SetFrameColourEx( TavernHeroPick,2, 0xFFFFFFFF )
-call SetFrameColourEx( TavernHeroRandom,0, 0xFFFFFFFF )
-call SetFrameColourEx( TavernHeroRandom,1, 0xFFFFFFFF )
-call SetFrameColourEx( TavernHeroRandom,2, 0xFFFFFFFF )
+if TavernPlayerPickAllow[GetPlayerId(GetLocalPlayer())]==true then
+    call SetFrameColourEx( TavernHeroPick,0, 0xFFFFFFFF )
+    call SetFrameColourEx( TavernHeroPick,1, 0xFFFFFFFF )
+    call SetFrameColourEx( TavernHeroPick,2, 0xFFFFFFFF )
+    call SetFrameColourEx( TavernHeroRandom,0, 0xFFFFFFFF )
+    call SetFrameColourEx( TavernHeroRandom,1, 0xFFFFFFFF )
+    call SetFrameColourEx( TavernHeroRandom,2, 0xFFFFFFFF )
+else
+    call SetFrameColourEx( TavernHeroPick,0, 0xFF404040 )
+    call SetFrameColourEx( TavernHeroPick,1, 0xFF404040 )
+    call SetFrameColourEx( TavernHeroPick,2, 0xFF404040 )
+    call SetFrameColourEx( TavernHeroRandom,0, 0xFF404040 )
+    call SetFrameColourEx( TavernHeroRandom,1, 0xFF404040 )
+    call SetFrameColourEx( TavernHeroRandom,2, 0xFF404040 )
+endif
 set t=null
 endfunction
 function Trig_BanEnd_Actions takes nothing returns nothing
@@ -32711,7 +33177,7 @@ if bonus_repick[i]==2 then
 	set udg_Repick[i+1]=-2
 endif
 loop
-set id=GetRandomInt(0,135)
+set id=GetRandomInt(0,136)
 if udg_RH[id]!=0 then
     set u[i+1]=CreateUnit(Player(i),udg_RH[id],GetRectCenterX(gg_rct_Rect1),GetRectCenterY(gg_rct_Rect1),0)
     call UnitInventorySetSize(u[i+1],10)
@@ -32807,7 +33273,7 @@ else
     set i=pick1
 endif
 loop
-set id=GetRandomInt(0,135)
+set id=GetRandomInt(0,136)
 if udg_RH[id]!=0 then
 set u=CreateUnit(Player(i),udg_RH[id],GetRectCenterX(gg_rct_Rect1),GetRectCenterY(gg_rct_Rect1),0)
 call UnitInventorySetSize(u,10)
@@ -33929,11 +34395,11 @@ else
 set n=CreateUnit(p,'e0ZT',x1,y1,GetRandomReal(0,359))
 call SetUnitVertexColor(n,255,255,255,255)
 call UnitApplyTimedLife(n,1,3)
-set n=CreateUnit(p,0x65305A4D,x1,y1,a*bj_RADTODEG)
+set n=CreateUnit(p,'e0ZM',x1,y1,a*bj_RADTODEG)
 call SetUnitVertexColor(n,255,255,255,255)
 call UnitApplyTimedLife(n,1,2)
 call SetUnitTimeScale(n,1)
-set n=CreateUnit(p,0x65305A4E,x1,y1,a*bj_RADTODEG)
+set n=CreateUnit(p,'e0ZN',x1,y1,a*bj_RADTODEG)
 call SetUnitVertexColor(n,255,255,255,255)
 call UnitApplyTimedLife(n,1,0.5)
 call SetUnitTimeScale(n,3)
@@ -34000,43 +34466,43 @@ local real a=LoadReal(h,id,6)
 local real dist=LoadReal(h,id,2)
 local player p=GetOwningPlayer(u)
 if dist<LoadReal(h,id,7)+600 then
-set x=x+120*Cos(a)
-set y=y+120*Sin(a)
-set n=CreateUnit(p,'e0ZK',x,y,GetRandomReal(0,359))
-call SetUnitVertexColor(n,255,255,255,255)
-call SetUnitTimeScale(n,2)
-call SetUnitScale(n,1,1,1)
-call UnitApplyTimedLife(n,1,2)
-set n=CreateUnit(p,'e0ZL',x,y,a*bj_RADTODEG+180)
-call SetUnitVertexColor(n,255,255,255,125)
-call UnitApplyTimedLife(n,1,0.1)
-call SetUnitTimeScale(n,4)
-call SetUnitAnimation(n,"Spell four")
-set n=CreateUnit(p,0x65305A52,x,y,a*bj_RADTODEG-45)
-call SetUnitVertexColor(n,255,255,255,255)
-call UnitApplyTimedLife(n,1,0.08)
-call SetUnitScale(n,1,1,1)
-call SetUnitTimeScale(n,4)
-set n=CreateUnit(p,0x65305A53,x,y,a*bj_RADTODEG+45)
-call SetUnitVertexColor(n,255,255,255,255)
-call SetUnitScale(n,1,1,1)
-call UnitApplyTimedLife(n,1,0.08)
-call SetUnitTimeScale(n,4)
-call SetUnitFacing(u,a*bj_RADTODEG)
-call SetUnitXY_1(l__d,x,y, false)
-call SaveReal(h,id,2,dist+120)
-call SetUnitInvulnerable(u,true)
+    set x=x+120*Cos(a)
+    set y=y+120*Sin(a)
+    set n=CreateUnit(p,'e0ZK',x,y,GetRandomReal(0,359))
+    call SetUnitVertexColor(n,255,255,255,255)
+    call SetUnitTimeScale(n,2)
+    call SetUnitScale(n,1,1,1)
+    call UnitApplyTimedLife(n,1,2)
+    set n=CreateUnit(p,'e0ZL',x,y,a*bj_RADTODEG+180)
+    call SetUnitVertexColor(n,255,255,255,125)
+    call UnitApplyTimedLife(n,1,0.1)
+    call SetUnitTimeScale(n,4)
+    call SetUnitAnimation(n,"Spell four")
+    set n=CreateUnit(p,'e0ZR',x,y,a*bj_RADTODEG-45)
+    call SetUnitVertexColor(n,255,255,255,255)
+    call UnitApplyTimedLife(n,1,0.08)
+    call SetUnitScale(n,1,1,1)
+    call SetUnitTimeScale(n,4)
+    set n=CreateUnit(p,'e0ZS',x,y,a*bj_RADTODEG+45)
+    call SetUnitVertexColor(n,255,255,255,255)
+    call SetUnitScale(n,1,1,1)
+    call UnitApplyTimedLife(n,1,0.08)
+    call SetUnitTimeScale(n,4)
+    call SetUnitFacing(u,a*bj_RADTODEG)
+    call SetUnitXY_1(l__d,x,y, false)
+    call SaveReal(h,id,2,dist+120)
+    call SetUnitInvulnerable(u,true)
 else
-set n=CreateUnit(p,'e0RV',x1,y1,0)
-call SetUnitFlyHeight(n,1,0)
-call SetUnitVertexColor(n,255,255,255,180)
-call SetUnitTimeScale(n,0.3)
-call SetUnitScale(n,2,2,2)
-call UnitApplyTimedLife(n,1,2)
-call ShakeCamera(1,20)
-call SaveReal(h,id,2,0)
-call PauseTimer(t)
-call TimerStart(t,0.1,true,function SakuraSlashDamage4)
+    set n=CreateUnit(p,'e0RV',x1,y1,0)
+    call SetUnitFlyHeight(n,1,0)
+    call SetUnitVertexColor(n,255,255,255,180)
+    call SetUnitTimeScale(n,0.3)
+    call SetUnitScale(n,2,2,2)
+    call UnitApplyTimedLife(n,1,2)
+    call ShakeCamera(1,20)
+    call SaveReal(h,id,2,0)
+    call PauseTimer(t)
+    call TimerStart(t,0.1,true,function SakuraSlashDamage4)
 endif
 set c=null
 set l__d=null
@@ -38315,7 +38781,10 @@ if cond==0 then
 
             set nb=nb*0.75
         endif
-                
+        if GetUnitAbilityLevel( u ,'BGSG')>0  and nb>0 then
+            call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-nb*0.5)
+            set nb=nb*0.5
+        endif        
         if GetUnitAbilityLevel(u,'Gi01')>0 and nb>0 then        // GilW1 buff
 
             //call SetEventDamage(nb*0.5)
@@ -38659,6 +39128,20 @@ if cond==0 then
     endif
     if GetUnitTypeId(c)=='h004' and nb>0 and GetUnitAbilityLevel(Hero[idc],'A3WR')==0 then
         call SlowUnit(Hero[idc],u,0.1,0.1,7,4,false)
+    endif
+    if GetUnitAbilityLevel( u ,'GSG1')>0  and nb>0 then
+        if GetUnitAbilityLevel( u ,'BGSG')>0 then
+            call HealTextTag(u,u,nb*0.4*myCustomMana2(u,1),"ManaRes")
+            call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)+nb*0.4)
+        else
+            call HealTextTag(u,u,nb*0.2*myCustomMana2(u,1),"ManaRes")
+            call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)+nb*0.2)
+        endif
+            
+    endif
+    if GetUnitAbilityLevel( c ,'GSG1')>0  and nb>0 then
+        call HealTextTag(c,c,nb*0.2*myCustomMana2(c,1),"ManaRes")
+        call SetUnitState(c,UNIT_STATE_MANA,GetUnitState(c,UNIT_STATE_MANA)+nb*0.2)
     endif
     if CurrentEventAttack and nb>0 and GetUnitAbilityLevel(c,'A0UT')>0 and GetRandomIntMem(0,100)<=17 and GetHeroLevel(c)>5 then
         
@@ -39728,7 +40211,7 @@ if cond==0 then
         call UnitRemoveAbility(c,'A1C7')
         //set nb=nb+GetWidgetMaxLife(u)*0.05
     endif
-    if IsUnitPaused(u)==true and nb>0 and PauseRes==true and GetUnitAbilityLevel(c,'A1WR')==0 then
+    if IsUnitPaused(u)==true and nb>0 and PauseRes==true and GetUnitAbilityLevel(c,'GST4')==0 and GetUnitAbilityLevel(c,'A1WR')==0 then
         //call SetEventDamage(nb*0.5)
         set nb=nb*0.5
         set b=b*0.5
@@ -56763,6 +57246,7 @@ call SaveReal(h,id,3,y1)
 call SetUnitAnimationByIndex(u,9)
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\EffectQQ.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
 call SaveSoundHandle(h,id,16,soundplay)
 if GetUnitTypeId(u)=='H01N' then
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\DanteQQ.mp3",false,false,true,12700,12700,"")
@@ -65820,6 +66304,7 @@ else
     call PauseUnit(u,false)
     call SetUnitInvulnerable(u,false)
     call PauseUnit(c,false)
+    call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,false)
     call myCustomDamage(u,c,dmg,false,false,null,null,null)
     call SetControlToUnit(u,c, 1, "stun")
     call Push5(c,40,a,400,"")
@@ -65902,6 +66387,7 @@ else
             call PauseUnit(u,true)
             call SetUnitInvulnerable(u,true)
             call PauseUnit(c,true)
+            call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,true)
             set EFF=AddSpecialEffect("war3mapImported\\BlackBlink.mdx", GetUnitX(u), GetUnitY(u))
             call SetSpecialEffectZ(EFF, GetUnitFlyHeight(u))
             call SetSpecialEffectTimeScale(EFF , 3)
@@ -73406,6 +73892,7 @@ set he=290
 if music==false then
 set soundplay=CreateSound("Sound\\war3mapImported\\BuuT2.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
 call SaveSoundHandle(h,id,16,soundplay)
 call SaveBoolean(h,id,11,true)
 endif
@@ -74447,6 +74934,7 @@ call SetUnitTimeScale(u,0.05)
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\LawMassiveCut.mp3",false,false,true,12700,12700,"")
 if GetLocalPlayer()==p then
 call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
 endif
 call KillSoundWhenDone(soundplay)
 call TimerStart(t,3.6,false,function MassiveCutCast2)
@@ -94297,6 +94785,7 @@ else
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\Vegeta\\FinalKamehamehaCharges-jap.mp3",false,false,true,12700,12700,"")
 endif
 call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
 call SaveSoundHandle(h,id,16,soundplay)
 call TimerStart(t,0.1,true,function FinalFlashCast2)
 set u=null
@@ -100442,10 +100931,12 @@ call SaveUnitHandle(h,id,1,n)
 if GetRandomInt(0,100) < 6 then
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\Departures1.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
 call SaveSoundHandle(h,id,4,soundplay)
 else
 set soundplay=CreateSound("Departures.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
 call SaveSoundHandle(h,id,4,soundplay)
 endif
 call SetUnitTimeScale(n,0.35)
@@ -100699,10 +101190,12 @@ call UnitAddAbility(u,'A0UL')
 if GetRandomInt(0,100) < 6 then
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\InoriPrettySong1.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
 call SaveSoundHandle(h,id,4,soundplay)
 else
 set soundplay=CreateSound("InoriPrettySong.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
 call SaveSoundHandle(h,id,4,soundplay)
 endif
 call SetUnitTimeScale(u,0.35)
@@ -100881,10 +101374,12 @@ call SetUnitFlyHeight(u,700,0)
 if GetRandomInt(0,100) < 6 then
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\UltimateSong1.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
 call SaveSoundHandle(h,id,4,soundplay)
 else
 set soundplay=CreateSound("UltimateSong.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
 call SaveSoundHandle(h,id,4,soundplay)
 endif
 call SetUnitTimeScale(u,0.20)
@@ -112710,6 +113205,7 @@ call KillSoundWhenDone(soundplay)
 else
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\Caladbolg.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
 call SetSoundVolumeBJ(soundplay,100)
 call KillSoundWhenDone(soundplay)
 endif
@@ -115508,6 +116004,7 @@ call UnitApplyTimedLife(n,1,3)
 call SetUnitTimeScale(n,0.3)
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\Fujitora2.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
 call SetSoundVolumeBJ(soundplay,60)
 call KillSoundWhenDone(soundplay)
 call TimerStart(t,0.5,false,function GravitaCast2)
@@ -124903,6 +125400,7 @@ if di>0.25 then
 call ShakeCamera(0.15,15)
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\NanayaHit.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
 call SetSoundVolumeBJ(soundplay,60)
 call KillSoundWhenDone(soundplay)
 set n=CreateUnit(p,'e11I',x,y,a*bj_RADTODEG)
@@ -133609,7 +134107,7 @@ call SetControlToUnit(u,c,1,"stun")
 endif
 endif
 if i>=120 and i<=160 then
-if i==125 or i==135 or i==145 or i==155 then
+if i==125 or i==136 or i==145 or i==155 then
 //war3mapImported\icytouch.mdl
 call UnitCreateAndMove(u,'e2WK',c,d2,1,1.5,1,100,100,100,30,100,c,0,d2)
 endif
@@ -151712,6 +152210,7 @@ call SaveReal(h,id,2,0.9)
 call PauseTimer(t)
 set soundplay=CreateSound("Sound\\war3mapImported\\DeidaraT.mp3",false,false,false,1,3,null)
 call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
 call SetSoundVolume(soundplay,250)
 call KillSoundWhenDone(soundplay)
 call TimerStart(t,0.01,true,function TDeidaraCast3)
@@ -151753,6 +152252,7 @@ call UnitApplyTimedLife(n,1,0.4)
 call SetUnitTimeScale(n,3)
 set soundplay=CreateSound("Sound\\war3mapImported\\DeidaraT1.mp3",false,false,false,1,3,null)
 call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
 call SetSoundVolume(soundplay,250)
 call KillSoundWhenDone(soundplay)
 call TimerStart(t,0.02,true,function TDeidaraCast2)
@@ -151912,6 +152412,7 @@ call UnitAddAbility(u,'Arav')
 call UnitRemoveAbility(u,'Arav')
 set soundplay=CreateSound("Sound\\war3mapImported\\DeidaraR1.mp3",false,false,false,1,3,null)
 call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
 call SetSoundVolume(soundplay,250)
 call KillSoundWhenDone(soundplay)
 call TimerStart(t,0.02,true,function RDeidaraCast2)
@@ -152101,6 +152602,7 @@ call SetUnitAnimation(n,"Spell Two")
 call SaveUnitHandle(h,id,4,n)
 set soundplay=CreateSound("Sound\\war3mapImported\\DeidaraE1.mp3",false,false,false,1,3,null)
 call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
 call SetSoundVolume(soundplay,250)
 call KillSoundWhenDone(soundplay)
 call TimerStart(t,0.02,true,function EDeidaraCast2)
@@ -152180,6 +152682,7 @@ local real dmg=(1+GetUnitAbilityLevel(u,'Ad07'))*GetHeroInt(u,true)+(GetUnitAbil
 call SetUnitAnimation(u,"Spell Three")
 set soundplay=CreateSound("Sound\\war3mapImported\\DeidaraQ1.mp3",false,false,false,1,3,null)
 call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
 call SetSoundVolume(soundplay,220)
 call KillSoundWhenDone(soundplay)
 call GroupEnumUnitsInRange(G,x,y,2500,Base)
@@ -152237,6 +152740,7 @@ call DestroyEffect(AddSpecialEffect("war3mapImported\\aerialexplosionv3.mdx",x,y
 call GroupEnumUnitsInRange(G,x,y,250,Base)
 set soundplay=CreateSound("Sound\\war3mapImported\\DeidaraQ2.mp3",false,false,false,1,3,null)
 call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
 call SetSoundVolume(soundplay,350)
 call KillSoundWhenDone(soundplay)
 elseif GetUnitTypeId(u)=='eo9M' then
@@ -152245,6 +152749,7 @@ set ids='A09B'
 set lvl=2
 set soundplay=CreateSound("Sound\\war3mapImported\\DeidaraR2.mp3",false,false,false,1,3,null)
 call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
 call SetSoundVolume(soundplay,250)
 call KillSoundWhenDone(soundplay)
 call GroupEnumUnitsInRange(G,x,y,800,Base)
@@ -153467,6 +153972,7 @@ local real y=GetUnitY(u)
 local player p=GetOwningPlayer(u)
 set soundplay=CreateSound("Sound\\war3mapImported\\Kirei_F.mp3",false,false,false,1,3,null)
 call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
 call SetSoundVolume(soundplay,250)
 call KillSoundWhenDone(soundplay)
 set n=CreateUnit(p,'eo89',x,y,GetRandomReal(0,359))
@@ -153833,7 +154339,7 @@ call KireiQMissles(n,75,a,1800+dist,0.05,dmg,u,tr)
 set rd=0
 set x1=x+rd*Cos(a+deg90)
 set y1=y+rd*Sin(a+deg90)
-set rd=135
+set rd=136
 set x1=x1+rd*Cos(a)
 set y1=y1+rd*Sin(a)
 set n=CreateUnit(p,0x656F3730,x1,y1,a*bj_RADTODEG)
@@ -167390,7 +167896,7 @@ if GetWidgetLife(c)>0 and GetWidgetLife(u)>0 and time<4 then
         call SetSpecialEffectScale(EFF , 0.6)
         call DestroyEffect(EFF)
     endif
-    if time==2.1 then
+    if time==2.16 then
         call PauseUnit(c,true)
         call SetUnitInvulnerable(c,true)
         set n=CreateUnit(p,'eo9L',x1,y1,GetRandomReal(0,359))
@@ -167405,11 +167911,11 @@ if GetWidgetLife(c)>0 and GetWidgetLife(u)>0 and time<4 then
         call SetSpecialEffectVertexColour(EFF,195,195,195,125)
         call RemoveEffect(EFF,0.5,true,CreateTimer())
     endif
-    if time>2.1 and time<3.1 then
+    if time>2.16 and time<3.26 then
         call SetUnitVertexColor(dummy,255,255,255,190-R2I(GetUnitScale(dummy)*90))
         call SetUnitScale(dummy,GetUnitScale(dummy)+0.06,0.1,0.1)
     endif
-    if time==3.5 then
+    if time==3.6 then
         call RemoveUnit(dummy)
     endif
     if time>3 and time<3.42 then
@@ -168479,6 +168985,7 @@ function JirenESelf_Cast3 takes nothing returns nothing
         call SaveReal(HH,id,2,time+0.02)
         call PauseUnit(u,true)
         call PauseUnit(c,true)
+        call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,true)
         call SetUnitInvulnerable(u,true)
         call SetUnitInvulnerable(c,true)
         if time==0 then
@@ -168597,6 +169104,7 @@ function JirenESelf_Cast3 takes nothing returns nothing
         call SetUnitInvulnerable(u,false)
         call PauseUnit(c,false)
         call SetUnitInvulnerable(c,false)
+        call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,false)
         call myCustomDamage(u,c,dmg,false,false,null,null,null)
         call SetControlToUnit(u,c,1,"stun")
         call PauseTimer(t)
@@ -168627,7 +169135,8 @@ function JirenESelf_Cast2 takes nothing returns nothing
     endif
     if time<2 and c==null then
         call PauseUnit(u,true)
-        if ModuloReal(time,0.28)==0.04 then
+        if ModuloReal(time,0.32)==0.04 then
+            call SaveReal(HH,id,2,time+0.04)
             set EFF=AddSpecialEffect("war3mapImported\\wind4.mdl",x,y)
             call SetSpecialEffectScale(EFF,1.3)
             call SetSpecialEffectVertexColour(EFF,235,225,235,190)
@@ -169113,6 +169622,7 @@ function JirenQSelf_Cast3 takes nothing returns nothing
         call SaveReal(HH,id,2,time+0.02)
         call PauseUnit(u,true)
         call PauseUnit(c,true)
+        call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,true)
         call SetUnitInvulnerable(u,true)
         call SetUnitInvulnerable(c,true)
         if time==0 then
@@ -169172,6 +169682,7 @@ function JirenQSelf_Cast3 takes nothing returns nothing
         call PauseUnit(u,false)
         call SetUnitInvulnerable(u,false)
         call PauseUnit(c,false)
+        call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,false)
         call SetUnitInvulnerable(c,false)
         call myCustomDamage(u,c,dmg,false,false,null,null,null)
         call SetControlToUnit(u,c,1,"stun")
@@ -169203,7 +169714,8 @@ function JirenQSelf_Cast2 takes nothing returns nothing
     endif
     if time<2 and c==null then
         call PauseUnit(u,true)
-        if ModuloReal(time,0.28)==0.04 then
+        if ModuloReal(time,0.32)==0.04 then
+            call SaveReal(HH,id,2,time+0.04)
             set EFF=AddSpecialEffect("war3mapImported\\wind4.mdl",x,y)
             call SetSpecialEffectScale(EFF,1.3)
             call SetSpecialEffectVertexColour(EFF,235,225,235,190)
@@ -169364,40 +169876,40 @@ function YujiD_Target_Periodic takes nothing returns nothing
         call SaveReal(h, id, 6, time + 0.1)
     else
         if GetUnitAbilityLevel(target, 'CE04')==0 and GetUnitAbilityLevel(target, 'A151')==0 and GetUnitAbilityLevel(target, 'IMDc')==0 then
-                set n=CreateUnit(GetOwningPlayer(target), 'dR53', GetUnitX(target), GetUnitY(target), GetRandomInt(0, 360))
-                call SetUnitScale(n, 1.7, 1.7, 1.7)
-                call MyRemoveUnit(n, 1.5)
-                set n=CreateUnit(GetOwningPlayer(target), 'dR54', GetUnitX(target), GetUnitY(target), GetRandomInt(0, 360))
-                call SetUnitScale(n, 1.7, 1.7, 1.7)
-                call SetUnitFlyHeight(n, 40, 0)
-                call MyRemoveUnit(n, 1.5)
-                set n=CreateUnit(GetOwningPlayer(target), 'dR55', GetUnitX(target), GetUnitY(target), GetRandomInt(0, 360))
-                call SetUnitScale(n, 1.7, 1.7, 1.7)
-                call SetUnitFlyHeight(n, 40, 0)
-                call MyRemoveUnit(n, 1.5)
-                if UnitIsAlive(target) then
-                        call SetUnitX(target, LoadReal(h, id, 1))
-                        call SetUnitY(target, LoadReal(h, id, 2))
-                        set hp_persent = (LoadReal(h, id, 3) - hp_persent)/2
-                        set mp_persent = (LoadReal(h, id, 4) - mp_persent)/2
-                        call SetUnitState(target, UNIT_STATE_LIFE, GetWidgetLife(target)+GetWidgetMaxLife(target)*hp_persent)
-                        call SetUnitState(target, UNIT_STATE_MANA, GetWidgetMana(target)+GetWidgetMaxMana(target)*hp_persent)
-                endif
-                set n=CreateUnit(GetOwningPlayer(target), 'dR53', GetUnitX(target), GetUnitY(target), GetRandomInt(0, 360))
-                call SetUnitScale(n, 1.7, 1.7, 1.7)
-                call MyRemoveUnit(n, 1.5)
-                set n=CreateUnit(GetOwningPlayer(target), 'dR54', GetUnitX(target), GetUnitY(target), GetRandomInt(0, 360))
-                call SetUnitScale(n, 1.7, 1.7, 1.7)
-                call SetUnitFlyHeight(n, 40, 0)
-                call MyRemoveUnit(n, 1.5)
-                set n=CreateUnit(GetOwningPlayer(target), 'dR55', GetUnitX(target), GetUnitY(target), GetRandomInt(0, 360))
-                call SetUnitScale(n, 1.7, 1.7, 1.7)
-                call SetUnitFlyHeight(n, 40, 0)
-                call MyRemoveUnit(n, 1.5)
-                set n=CreateUnit(GetOwningPlayer(target), 'dR56', GetUnitX(target), GetUnitY(target), GetRandomInt(0, 360))
-                call SetUnitScale(n, 1.1, 1.1, 1.1)
-                call SetUnitFlyHeight(n, 40, 0)
-                call MyRemoveUnit(n, 1.5)
+            set n=CreateUnit(GetOwningPlayer(target), 'dR53', GetUnitX(target), GetUnitY(target), GetRandomInt(0, 360))
+            call SetUnitScale(n, 1.7, 1.7, 1.7)
+            call MyRemoveUnit(n, 1.5)
+            set n=CreateUnit(GetOwningPlayer(target), 'dR54', GetUnitX(target), GetUnitY(target), GetRandomInt(0, 360))
+            call SetUnitScale(n, 1.7, 1.7, 1.7)
+            call SetUnitFlyHeight(n, 40, 0)
+            call MyRemoveUnit(n, 1.5)
+            set n=CreateUnit(GetOwningPlayer(target), 'dR55', GetUnitX(target), GetUnitY(target), GetRandomInt(0, 360))
+            call SetUnitScale(n, 1.7, 1.7, 1.7)
+            call SetUnitFlyHeight(n, 40, 0)
+            call MyRemoveUnit(n, 1.5)
+            if UnitIsAlive(target) then
+                call SetUnitX(target, LoadReal(h, id, 1))
+                call SetUnitY(target, LoadReal(h, id, 2))
+                set hp_persent = (LoadReal(h, id, 3) - hp_persent)/2
+                set mp_persent = (LoadReal(h, id, 4) - mp_persent)/2
+                call SetUnitState(target, UNIT_STATE_LIFE, GetWidgetLife(target)+GetWidgetMaxLife(target)*hp_persent)
+                call SetUnitState(target, UNIT_STATE_MANA, GetWidgetMana(target)+GetWidgetMaxMana(target)*hp_persent)
+            endif
+            set n=CreateUnit(GetOwningPlayer(target), 'dR53', GetUnitX(target), GetUnitY(target), GetRandomInt(0, 360))
+            call SetUnitScale(n, 1.7, 1.7, 1.7)
+            call MyRemoveUnit(n, 1.5)
+            set n=CreateUnit(GetOwningPlayer(target), 'dR54', GetUnitX(target), GetUnitY(target), GetRandomInt(0, 360))
+            call SetUnitScale(n, 1.7, 1.7, 1.7)
+            call SetUnitFlyHeight(n, 40, 0)
+            call MyRemoveUnit(n, 1.5)
+            set n=CreateUnit(GetOwningPlayer(target), 'dR55', GetUnitX(target), GetUnitY(target), GetRandomInt(0, 360))
+            call SetUnitScale(n, 1.7, 1.7, 1.7)
+            call SetUnitFlyHeight(n, 40, 0)
+            call MyRemoveUnit(n, 1.5)
+            set n=CreateUnit(GetOwningPlayer(target), 'dR56', GetUnitX(target), GetUnitY(target), GetRandomInt(0, 360))
+            call SetUnitScale(n, 1.1, 1.1, 1.1)
+            call SetUnitFlyHeight(n, 40, 0)
+            call MyRemoveUnit(n, 1.5)
         endif
         call DestroyEffect(LoadEffectHandle(h, id, 5))
         call FlushChildHashtable(h, id)
@@ -184677,10 +185189,12 @@ endif
 
 call SetSoundVolume(soundplay,370)
 call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
 call SaveSoundHandle(HH,id,24,soundplay)
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\SoundJap\\BlackGokuR1.mp3",false,false,true,12000,12000,"Default")
 call SetSoundVolume(soundplay,370)
 call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
 call SaveSoundHandle(HH,id,25,soundplay)
 call UnitSpeed(caster,2)
 call SetUnitAnimationByIndex(caster,63)
@@ -188867,6 +189381,7 @@ endif
 call SaveBoolean(HH,GetHandleId(casterOriginal),StringHash("SabracW"),true)
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\SabracW2.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
 call SaveSoundHandle(HH,id,24,soundplay)
 call PauseUnit(caster,true)
 //call SetUnitInvulnerable(caster,true)
@@ -188885,6 +189400,7 @@ call UnitAddAbility(caster,'SaT2')
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\SabracT.mp3",false,false,true,12700,12700,"")
 if(GetLocalPlayer()==GetOwningPlayer(caster))then
 call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
 endif
 call KillSoundWhenDone(soundplay)
 call SetUnitAnimationByIndex(caster,5)
@@ -190913,6 +191429,7 @@ call SaveEffectHandle(HH,id,28,AddSpecialEffectTarget("Aizen\\file00001326.mdl",
 call SaveEffectHandle(HH,id,29,AddSpecialEffectTarget("Aizen\\buff_zi.mdl",caster,"hand left"))
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\AizenRself.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
 call SaveSoundHandle(HH,id,24,soundplay)
 set n0=CreateUnit(GetOwningPlayer(caster),'e200',GetUnitX(caster),GetUnitY(caster),facing)
 call SetUnitModel(n0,"Others\\HakkeStart2.mdl")
@@ -191299,6 +191816,7 @@ set soundplay=CreateSound("Sound\\Music\\mp3Music\\AizenTstart2.mp3",false,false
 endif
 if(GetLocalPlayer()==GetOwningPlayer(caster))then
 call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
 endif
 call KillSoundWhenDone(soundplay)
 if GetLocalPlayer()==GetOwningPlayer(caster)then
@@ -209035,8 +209553,8 @@ function Trig_TobiramaInt_Actions takes nothing returns nothing
             call MyRemoveUnit(n , 1.5)
             call TobiramaW2Cast(u , a , 700 , CreateTimer())
             set soundplay=CreateSound("Sound\\Music\\mp3Music\\TobiramaF.mp3", false, false, true, 12700, 12700, "")
-                        call StartSound(soundplay)
-                        call KillSoundWhenDone(soundplay)
+            call StartSound(soundplay)
+            call KillSoundWhenDone(soundplay)
         else
             call SaveBoolean(HH, idu, StringHash("TobiramaW_Blink"), true)
         endif
@@ -209066,6 +209584,3224 @@ function InitTrig_TobiramaInt takes nothing returns nothing
     endloop
     call TriggerAddAction( trig, function Trig_TobiramaInt_Actions )
     set trig=null
+endfunction
+
+//Gojo5Start
+function AbilityCD takes unit u,integer abili_id,real time0 returns nothing
+
+call StartAbilityCooldown(GetUnitAbility(u, abili_id), time0)
+
+endfunction
+
+function GetUnitAbilityCD takes unit u,integer name_abil returns boolean
+if GetAbilityRemainingCooldown(GetUnitAbility(u, name_abil))>0 then
+return true
+else
+return false
+endif
+endfunction
+
+
+
+function UnitPathingTimed_Act takes nothing returns nothing
+local timer t=GetExpiredTimer()
+local integer id=GetHandleId(t)
+local unit u=LoadUnitHandle(HH,id,1)
+local real time=LoadReal(HH,id,5)
+local real maxtime=LoadReal(HH,id,6)
+set time=time+0.1
+call SaveReal(HH,id,5,time)
+call SetUnitPathing(u,false)
+if time>=maxtime then
+call UnitRemoveAbility(u,'AUP0')
+call SetUnitPathing(u,true)
+call PauseTimer(t)
+call DestroyTimer(t)
+call FlushChildHashtable(HH,id)
+endif
+set u=null
+set t=null
+endfunction
+function UnitPathingTimed takes unit u,real time returns nothing
+local timer t=null
+local integer id=0
+if GetUnitAbilityLevel(u,'AUP0')==0 then
+call UnitAddAbility(u,'AUP0')
+set t=CreateTimer()
+set id=GetHandleId(t)
+call SaveUnitHandle(HH,id,1,u)
+call SaveReal(HH,id,6,time)
+call SetUnitPathing(u,false)
+call TimerStart(t,0.1,true,function UnitPathingTimed_Act)
+endif
+set t=null
+endfunction
+function AbilAdd2Paused takes nothing returns nothing
+local timer t=GetExpiredTimer()
+local integer id=GetHandleId(t)
+local unit u=LoadUnitHandle(HH,id,0)
+local integer abil=LoadInteger(HH,id,1)
+local real time=LoadReal(HH,id,5)
+local real maxtime=LoadReal(HH,id,6)
+if IsUnitPaused(u)==false and GetUnitAbilityLevel(u,'Avul')==0 then
+set time=time+0.1
+call SaveReal(HH,id,5,time)
+endif
+if time>=maxtime then
+call UnitRemoveAbility(u,abil)
+call PauseTimer(t)
+call DestroyTimer(t)
+call FlushChildHashtable(HH,id)
+endif
+set u=null
+set t=null
+endfunction
+function UnitAddAbilityTimedPaused takes unit u,real time,integer abil returns nothing
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+call SaveUnitHandle(HH,id,0,u)
+call SaveInteger(HH,id,1,abil)
+call UnitAddAbility(u,abil)
+call SaveReal(HH,id,6,time)
+call TimerStart(t,0.1,true,function AbilAdd2Paused)
+set t=null
+endfunction
+
+
+function Gojo_Q2_Self_Act2 takes nothing returns nothing
+local integer id=GetHandleId(GetExpiredTimer())
+local unit caster=LoadUnitHandle(HH,id,1)
+local unit Dummy=LoadUnitHandle(HH,id,20)
+local real time=LoadReal(HH,id,5)
+local real time1=LoadReal(HH,id,6)
+local real x0=GetUnitX(Dummy)
+local real y0=GetUnitY(Dummy)
+local real x1=LoadReal(HH,id,11)
+local real y1=LoadReal(HH,id,12)
+local real damage=LoadReal(HH,id,15)
+local real facing=LoadReal(HH,id,3)
+set time=time+0.02
+call SaveReal(HH,id,5,time)
+if time>2.5+GetUnitAbilityLevel(caster,'GSQ1')*0.5 then
+call UnitSpeed(LoadUnitHandle(HH,id,21),0.5)
+call SetUnitAnimationByIndex(LoadUnitHandle(HH,id,20),1)
+call SetUnitAnimationByIndex(LoadUnitHandle(HH,id,21),2)
+call MyRemoveUnit(LoadUnitHandle(HH,id,20),1)
+call MyRemoveUnit(LoadUnitHandle(HH,id,21),1)
+call MyRemoveUnit(LoadUnitHandle(HH,id,22),1)
+call MyRemoveUnit(LoadUnitHandle(HH,id,23),1)
+call PauseTimer(GetExpiredTimer())
+call FlushChildHashtable(HH,id)
+call DestroyTimer(GetExpiredTimer())
+else
+if time==0.02 or time==0.4 or time==0.8 or time==1.2 or time==1.6 then
+call EffectCreateAndMove(true,EffectID[23],GetRandomReal(0,360),1.25,1.25,0.5,60,60,100,60,0,caster,0,facing)
+call EffectCreateAndMove(true,EffectID[48],GetRandomReal(0,360),1.25,1.5,0.4,100,100,100,30,0,caster,0,facing)
+endif
+if time==0.02 then
+call UnitSpeed(caster,1)
+call SetUnitAnimationByIndex(caster,54)
+set soundplay=CreateSound("Sound\\Gojo\\Ao_Self_Charge.mp3",false,false,true,12700,12700,"")
+call SetSoundVolume(soundplay,150)
+call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
+endif
+if time==0.3 then
+call UnitSpeed(LoadUnitHandle(HH,id,22),0)
+call UnitSpeed(Dummy,1)
+call UnitSpeed(caster,1.25)
+call SetUnitAnimationByIndex(caster,56)
+endif
+if time==1.5 then
+set soundplay=CreateSound("Sound\\Gojo\\Ao_Self_Charge1.mp3",false,false,true,12700,12700,"")
+call SetSoundVolume(soundplay,150)
+call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
+endif
+if time<2 then
+call PauseUnit(caster,true)
+call SetUnitInvulnerable(caster,true)
+endif
+if time==2 then
+call AbilityCD(caster,'GSQ2',20)
+call CreateModeIndicatorForm(caster, "ReplaceableTextures\\CommandButtons\\BTNGojoQ2.blp", 20)
+call UnitSpeed(caster,1)
+call PauseUnit(caster,false)
+call SetUnitInvulnerable(caster,false)
+endif
+if time==3 then
+set soundplay=CreateSound("Sound\\Gojo\\Ao_Self_Ao.mp3",false,false,true,12700,12700,"")
+call SetSoundVolume(soundplay,150)
+call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
+endif
+if time<0.2 then
+call MoveUnit(Dummy,Dummy,15,facing-90)
+call SaveReal(HH,id,11,GetUnitX(Dummy))
+call SaveReal(HH,id,12,GetUnitY(Dummy))
+endif
+if time>0.2 and time<10 then
+set facing=facing-4
+if time>2 then
+call MoveAoe1(x1,y1,Dummy,500,facing)
+else
+call MoveAoe1(x1,y1,Dummy,(time-0.2)*277,facing)
+endif
+call SaveReal(HH,id,3,facing)
+call GroupClear(G)
+call GroupEnumUnitsInRange(G,x0,y0,500,null)
+loop
+set n0=FirstOfGroup(G)
+exitwhen n0==null
+if IsUnitEnemy(n0,GetOwningPlayer(caster))==true and n0!=caster and IsUnitType(n0,UNIT_TYPE_STRUCTURE)==false and GetUnitAbilityLevel(n0,'Avul')==0 then
+call UnitPathingTimed(n0,1)
+call MoveUnit(n0,n0,40,facing)
+if SR(GetUnitX(n0),GetUnitY(n0),GetUnitX(Dummy),GetUnitY(Dummy))>100 then
+set facing=Angle2(GetUnitX(n0),GetUnitY(n0),GetUnitX(Dummy),GetUnitY(Dummy))
+call MoveUnit(n0,n0,50,facing)
+endif
+endif
+call GroupRemoveUnit(G,n0)
+endloop
+call GroupClear(G)
+endif
+call MoveUnit(Dummy,LoadUnitHandle(HH,id,21),0,facing)
+call MoveUnit(Dummy,LoadUnitHandle(HH,id,22),0,facing)
+call MoveUnit(Dummy,LoadUnitHandle(HH,id,23),0,facing)
+set time1=time1+0.02
+if time1>=0.22 then
+set time1=0
+call SetUnitAnimationByIndex(LoadUnitHandle(HH,id,23),0)
+call DamageAoeOneTime0(caster,x0,y0,500,damage*0.05)
+endif
+call SaveReal(HH,id,6,time1)
+endif
+set caster=null
+set Dummy=null
+endfunction
+function Gojo_Q2_Self_Act takes unit caster returns nothing
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+local real x0=0
+local real y0=0
+local real facing=0
+local real dist
+local real damage=9*GetHeroAgi(caster,true)
+local real MaxDist=2000+GetHeroInt(caster,true)*5
+call SaveUnitHandle(HH,id,1,caster)
+call SaveReal(HH,id,15,damage)
+call UnitAddAbilityTimedPaused(caster,4,'GSQ0')
+call PauseUnit(caster,true)
+call SetUnitInvulnerable(caster,true)
+set n0=LoadUnitHandle(HH,GetHandleId(caster),StringHash("GojoQU"))
+call RemoveSavedHandle(HH,GetHandleId(caster),StringHash("GojoQU"))
+call SetUnitModel(n0,EffectID[1317])
+set x0=GetUnitX(n0)
+set y0=GetUnitY(n0)
+set facing=GetUnitFacing(caster)
+call UnitSpeed(n0,3)
+call SaveReal(HH,id,11,GetUnitX(n0))
+call SaveReal(HH,id,12,GetUnitY(n0))
+call SaveReal(HH,id,3,facing)
+call SaveUnitHandle(HH,id,20,n0)
+call SaveBoolean(HH,GetHandleId(caster),StringHash("GojoQ2act"),true)
+set n0=CreateUnit(GetOwningPlayer(caster),'e200',GetUnitX(LoadUnitHandle(HH,id,20)),GetUnitY(LoadUnitHandle(HH,id,20)),GetUnitFacing(caster))
+call SetUnitModel(n0,EffectID[1332])
+call UnitAddAbility(n0,0x416D7266)
+call UnitRemoveAbility(n0,0x416D7266)
+call UnitSize(n0,3,1,1)
+call UnitSpeed(n0,1)
+call UnitColor(n0,100,100,100,60)
+call SetUnitFlyHeight(n0,150,0)
+call SaveUnitHandle(HH,id,21,n0)
+set n0=CreateUnit(GetOwningPlayer(caster),'e200',GetUnitX(LoadUnitHandle(HH,id,20)),GetUnitY(LoadUnitHandle(HH,id,20)),GetUnitFacing(caster))
+call SetUnitModel(n0,EffectID[768])
+call UnitAddAbility(n0,0x416D7266)
+call UnitRemoveAbility(n0,0x416D7266)
+call UnitSize(n0,1,1,1)
+call UnitSpeed(n0,1.5)
+call UnitColor(n0,100,100,100,60)
+call SetUnitFlyHeight(n0,0,0)
+call SaveUnitHandle(HH,id,22,n0)
+set n0=CreateUnit(GetOwningPlayer(caster),'e200',GetUnitX(LoadUnitHandle(HH,id,20)),GetUnitY(LoadUnitHandle(HH,id,20)),GetUnitFacing(caster))
+call SetUnitModel(n0,EffectID[44])
+call UnitAddAbility(n0,0x416D7266)
+call UnitRemoveAbility(n0,0x416D7266)
+call UnitSize(n0,1.1,1,1)
+call UnitSpeed(n0,1.1)
+call UnitColor(n0,80,80,100,40)
+call SetUnitFlyHeight(n0,150,0)
+call SaveUnitHandle(HH,id,23,n0)
+call TimerStart(t,0.02,true,function Gojo_Q2_Self_Act2)
+set n0=null
+set t=null
+endfunction
+function Gojo_Q2_Act2 takes nothing returns nothing
+local integer id=GetHandleId(GetExpiredTimer())
+local unit caster=LoadUnitHandle(HH,id,1)
+local unit Dummy=LoadUnitHandle(HH,id,20)
+local real time=LoadReal(HH,id,5)
+local real time1=LoadReal(HH,id,6)
+local real x0=GetUnitX(Dummy)
+local real y0=GetUnitY(Dummy)
+local real x1=LoadReal(HH,id,11)
+local real y1=LoadReal(HH,id,12)
+local real dist=SR(x0,y0,x1,y1)
+local real damage=LoadReal(HH,id,15)
+local real facing=LoadReal(HH,id,3)
+set time=time+0.02
+call SaveReal(HH,id,5,time)
+if time>12 then
+call RemoveUnit(LoadUnitHandle(HH,id,20))
+call PauseTimer(GetExpiredTimer())
+call FlushChildHashtable(HH,id)
+call DestroyTimer(GetExpiredTimer())
+else
+if time==0.02 then
+call UnitSpeed(caster,1)
+call SetUnitAnimationByIndex(caster,25)
+set soundplay=CreateSound("Sound\\Gojo\\Ao_Self_Ao.mp3",false,false,true,12700,12700,"")
+call SetSoundVolume(soundplay,200)
+call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
+call EffectCreateAndMove(true,EffectID[768],facing,1.5,0.75,1.5,100,100,100,80,0,caster,0,facing)
+call EffectCreateAndMove(true,EffectID[23],facing,1.5,1,0.5,60,60,100,0,0,caster,0,facing)
+endif
+if time==0.2 then
+call EffectCreateAndMove(true,EffectID[0],facing+180,1,1,0.75,60,60,100,0,100,Dummy,0,facing)
+call EffectCreateAndMove(true,EffectID[6],facing,1,0.4,0.4,60,60,100,0,100,Dummy,0,facing)
+call EffectCreateAndMove90(true,EffectID[49],facing,1.5,1.75,0.5,100,100,100,0,100,Dummy,50,facing)
+endif
+if time>0.2 and time<10 then
+call MoveUnit(Dummy,Dummy,50,facing)
+call GroupClear(G)
+call GroupEnumUnitsInRange(G,x0,y0,300,null)
+loop
+set n0=FirstOfGroup(G)
+exitwhen n0==null
+if IsUnitEnemy(n0,GetOwningPlayer(caster))==true and IsUnitType(n0,UNIT_TYPE_STRUCTURE)==false and GetUnitAbilityLevel(n0,'Avul')==0 then
+call SetUnitPathing(n0,false)
+if SR(GetUnitX(n0),GetUnitY(n0),GetUnitX(Dummy),GetUnitY(Dummy))<200 then
+call MoveUnit(n0,n0,40,LoadReal(HH,id,3))
+endif
+if SR(GetUnitX(n0),GetUnitY(n0),GetUnitX(Dummy),GetUnitY(Dummy))>70 then
+set facing=Angle2(GetUnitX(n0),GetUnitY(n0),GetUnitX(Dummy),GetUnitY(Dummy))
+call MoveUnit(n0,n0,25,facing)
+endif
+endif
+call GroupRemoveUnit(G,n0)
+endloop
+call GroupClear(G)
+if dist<=55 or IsTerrainPathable(PolX(x0,50,facing),PolY(y0,50,facing),PATHING_TYPE_FLYABILITY)==true then
+call EffectCreateAndMove(true,EffectID[1317],GetRandomReal(0,360),2,1,1,100,100,100,0,0,Dummy,0,facing)
+call EffectCreateAndMove(true,EffectID[523],GetRandomReal(0,360),2,1.5,0.5,100,100,100,60,0,Dummy,0,facing)
+set soundplay=CreateSound("Sound\\Gojo\\Ao_Self_Ao_Hit.mp3",false,false,true,12700,12700,"")
+call SetSoundVolume(soundplay,127)
+call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
+call EffectCreateAndMove(true,EffectID[768],facing,2,1.25,0.5,100,100,100,80,-200,Dummy,0,facing)
+set time=10
+call SaveReal(HH,id,5,10)
+call UnitSize(Dummy,2,1,1)
+endif
+endif
+if time==10.3 then
+call SetUnitModel(Dummy,"war3mapimported\\Dummy.mdl")
+endif
+if time>10 then
+if time==10.02 or time==10.4 or time==10.8 or time==11.2 or time==11.6 then
+call EffectCreateAndMoveAn(true,EffectID[1318],GetRandomReal(0,360),2,2,1,100,100,100,0,0,Dummy,0,facing,1)
+call EffectCreateAndMove(true,EffectID[23],GetRandomReal(0,360),1,1.5,0.3,60,60,100,60,-200,Dummy,0,facing)
+endif
+set time1=time1-0.02
+if time1<0 then
+set time1=0.2
+call DamageAoeOneTime0(caster,x0,y0,400,damage*0.1)
+endif
+call SaveReal(HH,id,6,time1)
+call GroupClear(G)
+call GroupEnumUnitsInRange(G,x0,y0,400,null)
+loop
+set n0=FirstOfGroup(G)
+exitwhen n0==null
+if IsUnitEnemy(n0,GetOwningPlayer(caster))==true and IsUnitType(n0,UNIT_TYPE_STRUCTURE)==false and GetUnitAbilityLevel(n0,'Avul')==0 then
+if SR(GetUnitX(Dummy),GetUnitY(Dummy),GetUnitX(n0),GetUnitY(n0))>150 then
+set facing=Angle2(GetUnitX(Dummy),GetUnitY(Dummy),GetUnitX(n0),GetUnitY(n0))
+call MoveUnit(n0,n0,-20,facing)
+call UnitPathingTimed(n0,2)
+endif
+endif
+call GroupRemoveUnit(G,n0)
+endloop
+call GroupClear(G)
+endif
+endif
+set caster=null
+set Dummy=null
+endfunction
+function Gojo_Q2_Act takes unit caster,real x1,real y1 returns nothing
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+local real x0=0
+local real y0=0
+local real facing=0
+local real dist
+local real damage=(GetUnitAbilityLevel(caster,'GSQ1')+1)*GetHeroAgi(caster,true)
+local real MaxDist=1000+GetHeroInt(caster,true)*3
+call SaveUnitHandle(HH,id,1,caster)
+call SaveReal(HH,id,15,damage)
+call UnitAddAbilityTimedPaused(caster,3,'GSQ0')
+set n0=LoadUnitHandle(HH,GetHandleId(caster),StringHash("GojoQU"))
+call RemoveSavedHandle(HH,GetHandleId(caster),StringHash("GojoQU"))
+set x0=GetUnitX(n0)
+set y0=GetUnitY(n0)
+set facing=Angle2(x0,y0,x1,y1)
+set dist=SR(x0,y0,x1,y1)
+if dist>MaxDist then
+set x1=PolX(x0,MaxDist,facing)
+set y1=PolY(y0,MaxDist,facing)
+endif
+set dist=SR(x0,y0,x1,y1)
+call SaveReal(HH,id,8,dist)
+call SaveReal(HH,id,11,x1)
+call SaveReal(HH,id,12,y1)
+call SaveReal(HH,id,3,facing)
+call SaveUnitHandle(HH,id,20,n0)
+call SaveBoolean(HH,GetHandleId(caster),StringHash("GojoQ2act"),true)
+
+
+call CreateModeIndicatorForm(caster, "ReplaceableTextures\\CommandButtons\\BTNGojoQ2.blp", 15)
+
+call TimerStart(t,0.02,true,function Gojo_Q2_Act2)
+set t=null
+endfunction
+function Gojo_Q1_Act2 takes nothing returns nothing
+local integer id=GetHandleId(GetExpiredTimer())
+local unit caster=LoadUnitHandle(HH,id,1)
+local real time=LoadReal(HH,id,5)
+local real damage=LoadReal(HH,id,15)
+local real x0=GetUnitX(caster)
+local real y0=GetUnitY(caster)
+local real facing=GetUnitFacing(caster)
+
+if time<0.02 or IsUnitPaused(caster)==false then
+set time=time+0.02
+call SaveReal(HH,id,5,time)
+endif
+
+if time>0.02 and LoadBoolean(HH,GetHandleId(caster),StringHash("GojoQ2act"))==true then
+call UnitRemoveAbility(caster,'GSQ6')
+if LoadBoolean(HH,id,19)==true then
+call SetPlayerAbilityAvailable(GetOwningPlayer(caster),'GSF2',false)
+call SetPlayerAbilityAvailable(GetOwningPlayer(caster),'GSF1',true)
+endif
+call SaveBoolean(HH,GetHandleId(caster),StringHash("GojoQ2act"),false)
+call SetPlayerAbilityAvailable(GetOwningPlayer(caster),'GSQ2',false)
+call SetPlayerAbilityAvailable(GetOwningPlayer(caster),'GSQ1',true)
+call PauseTimer(GetExpiredTimer())
+call FlushChildHashtable(HH,id)
+call DestroyTimer(GetExpiredTimer())
+endif
+if time>=GetUnitAbilityLevel(caster,'GSQ1')then
+call UnitRemoveAbility(caster,'GSQ6')
+if LoadBoolean(HH,id,19)==true then
+call SetPlayerAbilityAvailable(GetOwningPlayer(caster),'GSF2',false)
+call SetPlayerAbilityAvailable(GetOwningPlayer(caster),'GSF1',true)
+endif
+call SetPlayerAbilityAvailable(GetOwningPlayer(caster),'GSQ2',false)
+call SetPlayerAbilityAvailable(GetOwningPlayer(caster),'GSQ1',true)
+call RemoveUnit(LoadUnitHandle(HH,id,20))
+call PauseTimer(GetExpiredTimer())
+call FlushChildHashtable(HH,id)
+call DestroyTimer(GetExpiredTimer())
+else
+if LoadBoolean(HH,id,19)==true then
+call SetPlayerAbilityAvailable(GetOwningPlayer(caster),'GSF1',false)
+call SetPlayerAbilityAvailable(GetOwningPlayer(caster),'GSF2',true)
+endif
+if time==0.02 then
+
+
+
+call UnitAddAbility(caster,'GSQ6')
+//call CreateModeIndicatorWithPauseFormAbility(caster, "ReplaceableTextures\\CommandButtons\\BTNGojoQ2.blp",GetUnitAbilityLevel(caster,'GSQ1'),'GSQ6')
+
+
+
+
+call SaveBoolean(HH,GetHandleId(caster),StringHash("GojoQ2act"),false)
+call UnitSpeed(caster,1)
+call SetUnitAnimationByIndex(caster,23)
+call SetPlayerAbilityAvailable(GetOwningPlayer(caster),'GSQ1',false)
+call SetPlayerAbilityAvailable(GetOwningPlayer(caster),'GSQ2',true)
+set soundplay=CreateSound("Sound\\Gojo\\Ao_Q1.mp3",false,false,true,12700,12700,"")
+call SetSoundVolume(soundplay,175)
+call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
+set n0=CreateUnit(GetOwningPlayer(caster),'e200',GetUnitX(caster),GetUnitY(caster),GetUnitFacing(caster))
+call SaveUnitHandle(HH,id,20,n0)
+call MoveUnit(caster,LoadUnitHandle(HH,id,20),150,facing+45)
+call SetUnitModel(n0,EffectID[1319])
+call UnitSize(n0,1,1,1)
+call UnitSpeed(n0,1)
+call UnitColor(n0,100,100,100,0)
+call SetUnitFlyHeight(n0,250,0)
+call SaveUnitHandle(HH,GetHandleId(caster),StringHash("GojoQU"),n0)
+set n0=null
+call EffectCreateAndMove(true,EffectID[768],facing,1.5,0.75,1.5,100,100,100,80,0,caster,0,facing)
+call EffectCreateAndMove(true,EffectID[23],facing,1.5,1,0.5,60,60,100,0,0,caster,0,facing)
+call EffectCreateAndMove(true,EffectID[949],facing,1,1,0.75,100,100,100,0,0,caster,0,facing)
+call EffectCreateAndMove(true,EffectID[48],facing,1.5,1.25,0.35,100,100,100,0,0,caster,0,facing)
+endif
+if time>0.02 then
+call MoveUnit(caster,LoadUnitHandle(HH,id,20),150,facing+45)
+call SetUnitFlyHeight(LoadUnitHandle(HH,id,20),GetUnitFlyHeight(caster)+150,0)
+endif
+endif
+set caster=null
+endfunction
+function Gojo_Q1_Act takes unit caster returns nothing
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+local real x0=GetUnitX(caster)
+local real y0=GetUnitY(caster)
+local real facing=GetUnitFacing(caster)
+call SaveUnitHandle(HH,id,1,caster)
+call SaveReal(HH,id,3,facing)
+
+
+
+
+if GetUnitAbilityCD(caster,'GSF2')==true then
+call SaveBoolean(HH,id,19,false)
+else
+call SaveBoolean(HH,id,19,true)
+endif
+call TimerStart(t,0.02,true,function Gojo_Q1_Act2)
+set t=null
+endfunction
+
+
+
+
+
+
+
+function Gojo_W_Act2 takes nothing returns nothing
+local integer id=GetHandleId(GetExpiredTimer())
+local unit caster=LoadUnitHandle(HH,id,1)
+local unit target=LoadUnitHandle(HH,id,2)
+local real time=LoadReal(HH,id,5)
+local real time1=LoadReal(HH,id,6)
+local real damage=LoadReal(HH,id,15)
+local real x0=GetUnitX(caster)
+local real y0=GetUnitY(caster)
+local real x1=GetUnitX(target)
+local real y1=GetUnitY(target)
+local real facing=LoadReal(HH,id,3)
+local integer GojoRandInt=LoadInteger(HH,id,25)
+set time=time+0.02
+call SaveReal(HH,id,5,time)
+if time>=1.5 then
+call DestroyEffect(LoadEffectHandle(HH,id,26))
+call DestroyEffect(LoadEffectHandle(HH,id,27))
+call UnitSpeed(caster,1)
+call PauseUnit(caster,false)
+call SetUnitInvulnerable(caster,false)
+call SetUnitPathing(caster,true)
+call SetUnitPathing(target,true)
+call DamageU(false,caster,target,damage*0.4)
+
+call SetControlToUnit(target,target, 2, "stun")
+call PushTimed(target,facing,40,10)
+call EffectCreateAndMove(true,EffectID[41],facing,1.5,1.25,0.6,100,100,100,60,100,target,100,facing)
+call EffectCreateAndMove(true,EffectID[25],facing,1.5,2.5,0.7,100,100,100,60,100,target,100,facing)
+call EffectCreateAndMove(true,EffectID[1320],facing,1.5,2,0.7,100,100,100,30,100,target,100,facing)
+call EffectCreateAndMove90(true,EffectID[12],facing,1.5,1.75,1.5,100,100,100,20,100,target,100,facing)
+call EffectCreateAndMove45(true,EffectID[925],facing+45,1.5,1.5,1.5,100,100,100,20,100,target,100,facing)
+call EffectCreateAndMove45(true,EffectID[925],facing-45,1.5,1.5,1.5,100,100,100,20,100,target,100,facing)
+call EffectCreateAndMove45(true,EffectID[923],facing+45,1.5,1.75,1.5,100,100,100,20,100,target,100,facing)
+call EffectCreateAndMove45(true,EffectID[923],facing-45,1.5,1.75,1.5,100,100,100,20,100,target,100,facing)
+call EffectCreateAndMove(true,EffectID[1],facing,1.5,0.5,0.8,100,100,100,0,100,target,100,facing)
+call EffectCreateAndMove(true,EffectID[0],facing+180,1.5,2,0.8,100,100,100,0,100,target,100,facing)
+call PauseTimer(GetExpiredTimer())
+call FlushChildHashtable(HH,id)
+call DestroyTimer(GetExpiredTimer())
+else
+call PauseUnit(caster,true)
+call SetUnitInvulnerable(caster,true)
+call SetUnitPathing(caster,false)
+call SetUnitFacing(caster,facing)
+call SetUnitPathing(target,false)
+if time==0.02 then
+call SaveInteger(HH,id,25,GetRandomInt(1,2))
+call EffectCreateAndMove(true,EffectID[23],facing,1.5,1,0.5,100,100,100,0,0,caster,0,facing)
+call EffectCreateAndMove(true,EffectID[3],facing,1.5,1,0.5,100,100,100,0,0,caster,0,facing)
+call EffectCreateAndMove(true,EffectID[5],facing,1.5,1,1,100,100,100,0,0,caster,0,facing)
+set soundplay=CreateSound("Sound\\Gojo\\MadaMada.mp3",false,false,true,12700,12700,"")
+call SetSoundVolume(soundplay,175)
+call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
+set soundplay=CreateSound("Sound\\Gojo\\MadaMadPunches.mp3",false,false,true,12700,12700,"")
+call SetSoundVolume(soundplay,175)
+call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
+call SetUnitAnimationByIndex(caster,11)
+call UnitSpeed(caster,1.75)
+endif
+if time==0.1 then
+call MoveUnit(target,caster,-150,facing)
+endif
+if time==0.1 or time==1 or time==0.5 then
+call SetControlToUnit(target,target, 0.5, "stunbkb")
+call DamageU(false,caster,target,damage*0.2)
+call EffectCreateAndMove(true,EffectID[768],facing,1.5,1.25,1.5,100,100,100,60,0,target,100,facing)
+call EffectCreateAndMove45(true,EffectID[925],facing+45,1.5,1.35,1.5,100,100,100,30,100,target,100,facing)
+call EffectCreateAndMove45(true,EffectID[925],facing-45,1.5,1.35,1.5,100,100,100,30,100,target,100,facing)
+if GojoRandInt==1 then
+call EffectCreateAndMove(true,EffectID[23],GetRandomReal(0,360),1.5,1,0.5,100,100,100,40,0,target,100,facing)
+call EffectCreateAndMove45(true,EffectID[923],facing-45,1.5,1.5,0.8,100,100,100,0,100,target,100,facing)
+call EffectCreateAndMove45(true,EffectID[999],facing+45,1.5,1.25,1.5,100,100,100,30,200,target,100,facing)
+call EffectCreateAndMove(true,EffectID[41],facing,1.5,0.8,0.3,100,100,100,60,100,target,100,facing)
+call EffectCreateAndMove(true,EffectID[25],facing,1.5,1.5,0.5,100,100,100,60,100,target,100,facing)
+call SaveInteger(HH,id,25,2)
+else
+call EffectCreateAndMove(true,EffectID[19],GetRandomReal(0,360),1.5,1,0.5,100,100,100,40,0,target,100,facing)
+call EffectCreateAndMove45(true,EffectID[923],facing+45,1.5,1.5,0.8,100,100,100,20,100,target,100,facing)
+call EffectCreateAndMove45(true,EffectID[999],facing-45,1.5,1.25,1.5,100,100,100,30,200,target,100,facing)
+call EffectCreateAndMove(true,EffectID[1320],facing,1.5,1.5,0.7,100,100,100,30,100,target,100,facing)
+call SaveInteger(HH,id,25,1)
+endif
+endif
+if time>0.1 and time<0.2 or time>0.5 and time<0.8 or time>1 and time<1.3 then
+call MoveUnit(target,target,10,facing)
+endif
+if time>0.4 and time<0.5 or time>0.9 and time<1 or time>1.3 and time<1.5 then
+call MoveUnit(target,caster,-150,facing)
+endif
+if time==0.3 then
+call SetUnitAnimationByIndex(caster,4)
+call UnitSpeed(caster,1)
+endif
+if time==0.8 then
+call SetUnitAnimationByIndex(caster,5)
+call UnitSpeed(caster,1)
+endif
+if time==1.3 then
+call SetUnitAnimationByIndex(caster,6)
+call UnitSpeed(caster,1.25)
+set soundplay=CreateSound("Sound\\Gojo\\MadaMadKick.mp3",false,false,true,12700,12700,"")
+call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
+call SetSoundVolume(soundplay,185)
+endif
+endif
+set caster=null
+set target=null
+endfunction
+function Gojo_W_E_Act2 takes nothing returns nothing
+local integer id=GetHandleId(GetExpiredTimer())
+local unit caster=LoadUnitHandle(HH,id,1)
+local unit target=LoadUnitHandle(HH,id,2)
+local unit Dummy=LoadUnitHandle(HH,id,20)
+local real time=LoadReal(HH,id,5)
+local real time1=LoadReal(HH,id,6)
+local real damage=LoadReal(HH,id,15)
+local real x0=GetUnitX(caster)
+local real y0=GetUnitY(caster)
+local real x1=GetUnitX(target)
+local real y1=GetUnitY(target)
+local real x2=GetUnitX(Dummy)
+local real y2=GetUnitY(Dummy)
+local real facing=LoadReal(HH,id,3)
+local integer GojoRandInt=LoadInteger(HH,id,25)
+set time=time+0.02
+call SaveReal(HH,id,5,time)
+if time>=1.2 then
+call DestroyEffect(LoadEffectHandle(HH,id,26))
+call DestroyEffect(LoadEffectHandle(HH,id,27))
+call AbilityCD(caster,'GSW1',25)
+call EffectCreateAndMove(true,EffectID[863],facing,1.5,1,0.7,100,100,100,0,0,Dummy,0,facing)
+call EffectCreateAndMove(true,EffectID[768],facing,1.5,1.25,0.5,100,100,100,80,-200,Dummy,0,facing)
+call EffectCreateAndMove(true,EffectID[371],facing,1.5,1,0.5,100,100,100,100,0,Dummy,0,facing)
+call EffectCreateAndMove(true,EffectID[45],GetRandomReal(0,360),1.5,1.25,0.3,100,100,100,40,0,Dummy,0,facing)
+call EffectCreateAndMove(true,EffectID[23],GetRandomReal(0,360),1,1.5,0.3,100,60,60,60,-200,Dummy,0,facing)
+set soundplay=CreateSound("Sound\\Gojo\\Aka_Target_Aka.mp3",false,false,true,12700,12700,"")
+call SetSoundVolume(soundplay,200)
+call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
+call MyRemoveUnit(Dummy,1)
+set soundplay=CreateSound("Sound\\Gojo\\Aka_Target_Exp.mp3",false,false,true,12700,12700,"")
+call SetSoundVolume(soundplay,150)
+call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
+call UnitSpeed(caster,1)
+call PauseUnit(caster,false)
+call SetUnitInvulnerable(caster,false)
+call SetUnitPathing(caster,true)
+call SetUnitPathing(target,true)
+call DamageAoeAndStun(caster,GetUnitX(target),GetUnitY(target),300,damage,1.5)
+call PauseTimer(GetExpiredTimer())
+call FlushChildHashtable(HH,id)
+call DestroyTimer(GetExpiredTimer())
+else
+call PauseUnit(caster,true)
+call SetUnitInvulnerable(caster,true)
+call SetUnitPathing(caster,false)
+call SetUnitPathing(target,false)
+if time==0.02 then
+
+
+call EffectCreateAndMove(true,EffectID[23],facing,1.5,1,0.5,100,60,60,0,0,caster,0,facing)
+call EffectCreateAndMove(true,EffectID[3],facing,1.5,1,0.5,100,60,60,0,0,caster,0,facing)
+call EffectCreateAndMove(true,EffectID[5],facing,1.5,1,1,100,100,100,0,0,caster,0,facing)
+set soundplay=CreateSound("Sound\\Gojo\\PunchSound2.mp3",false,false,true,12700,12700,"")
+call SetSoundVolume(soundplay,127)
+call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
+set soundplay=CreateSound("Sound\\Gojo\\Aka_Target_Speech.mp3",false,false,true,12700,12700,"")
+call SetSoundVolume(soundplay,150)
+call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
+call SetUnitAnimationByIndex(caster,47)
+call UnitSpeed(caster,1.25)
+endif
+if time==0.1 then
+call MoveUnit(target,caster,150,facing)
+call EffectCreateAndMove(true,EffectID[23],facing,1.5,1,0.5,100,60,60,0,0,caster,0,facing)
+call EffectCreateAndMove(true,EffectID[3],facing,1.5,1,0.5,100,60,60,0,0,caster,0,facing)
+call SetUnitFacing(caster,facing+180)
+set facing=Angle2(x0,y0,x1,y1)
+call SaveReal(HH,id,3,facing)
+call DamageU(false,caster,target,damage*0.25)
+call EffectCreateAndMove(true,EffectID[45],GetRandomReal(0,360),0.5,0.5,1,80,80,100,40,100,target,-50,facing)
+call EffectCreateAndMove(true,EffectID[0],facing,1,2,0.75,100,60,60,20,100,target,-50,facing)
+set soundplay=CreateSound("Sound\\Gojo\\Aka_Target_Charge.mp3",false,false,true,12700,12700,"")
+call SetSoundVolume(soundplay,150)
+call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
+endif
+if time<0.5 then
+call MoveUnit(caster,Dummy,-100,facing)
+endif
+if time==0.3 then
+call EffectCreateAndMove(true,EffectID[23],GetRandomReal(0,360),1.5,1,0.5,100,60,60,0,0,caster,0,facing)
+call SetUnitAnimationByIndex(caster,66)
+call UnitSpeed(caster,1.5)
+call EffectCreateAndMove(true,EffectID[863],facing,1.5,0.5,0.5,100,100,100,40,100,caster,-150,facing)
+endif
+if time==0.5 then
+call EffectCreateAndMove(true,EffectID[23],GetRandomReal(0,360),1.5,1,0.5,100,60,60,0,0,caster,0,facing)
+call EffectCreateAndMove(true,EffectID[6],facing+180,1.5,0.4,0.5,100,60,60,20,100,caster,-150,facing)
+set soundplay=CreateSound("Sound\\Gojo\\Ao_Target_Push.mp3",false,false,true,12700,12700,"")
+call SetSoundVolume(soundplay,150)
+call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
+endif
+if time==0.7 then
+set facing=Angle2(x0,y0,x1,y1)
+call SaveReal(HH,id,3,facing)
+call SetUnitAnimationByIndex(caster,67)
+endif
+if time>0.1 and time<0.7 then
+call MoveUnit(target,target,-10,facing)
+endif
+if time>0.5 and time<0.7 then
+if SR(x1,y1,GetUnitX(Dummy),GetUnitY(Dummy))>100 then
+set facing=Angle2(GetUnitX(Dummy),GetUnitY(Dummy),x1,y1)
+call MoveUnit(Dummy,Dummy,40,facing)
+endif
+endif
+if time>0.7 and time<1.2 then
+call MoveUnit(target,target,30,facing)
+call MoveUnit(target,Dummy,-100,facing)
+endif
+if time>0.5 and time<1.2 then
+call GroupClear(G)
+call GroupEnumUnitsInRange(G,x2,y2,200,null)
+loop
+set n0=FirstOfGroup(G)
+exitwhen n0==null
+if target!=n0 and IsUnitEnemy(n0,GetOwningPlayer(caster))==true and IsUnitType(n0,UNIT_TYPE_STRUCTURE)==false and GetUnitAbilityLevel(n0,'Avul')==0 then
+if time<0.7 then
+call MoveUnit(n0,n0,10,facing)
+else
+call MoveUnit(n0,n0,30,facing)
+endif
+call UnitPathingTimed(n0,1)
+endif
+call GroupRemoveUnit(G,n0)
+endloop
+endif
+endif
+set Dummy=null
+set caster=null
+set target=null
+endfunction
+function Gojo_W_Q_Act2 takes nothing returns nothing
+local integer id=GetHandleId(GetExpiredTimer())
+local unit caster=LoadUnitHandle(HH,id,1)
+local unit target=LoadUnitHandle(HH,id,2)
+local unit Dummy=LoadUnitHandle(HH,id,20)
+local real time=LoadReal(HH,id,5)
+local real time1=LoadReal(HH,id,6)
+local real damage=LoadReal(HH,id,15)
+local real x0=GetUnitX(caster)
+local real y0=GetUnitY(caster)
+local real x1=GetUnitX(target)
+local real y1=GetUnitY(target)
+local real facing=LoadReal(HH,id,3)
+local integer GojoRandInt=LoadInteger(HH,id,25)
+set time=time+0.02
+call SaveReal(HH,id,5,time)
+if time>=1.2 then
+call DestroyEffect(LoadEffectHandle(HH,id,26))
+call DestroyEffect(LoadEffectHandle(HH,id,27))
+call AbilityCD(caster,'GSW1',25)
+call SetUnitModel(Dummy,EffectID[1318])
+call UnitSpeed(Dummy,0.5)
+call SetUnitAnimationByIndex(Dummy,1)
+call MyRemoveUnit(Dummy,1)
+
+call UnitSpeed(caster,1)
+call PauseUnit(caster,false)
+call SetUnitInvulnerable(caster,false)
+call SetUnitPathing(caster,true)
+call SetUnitPathing(target,true)
+call EffectCreateAndMove(true,EffectID[23],GetRandomReal(0,360),1.5,1,0.3,60,60,100,0,-200,Dummy,0,facing)
+call DamageAoeAndStun(caster,GetUnitX(target),GetUnitY(target),400,damage,1.5)
+call PauseTimer(GetExpiredTimer())
+call FlushChildHashtable(HH,id)
+call DestroyTimer(GetExpiredTimer())
+else
+call MoveUnit(target,Dummy,0,facing)
+call PauseUnit(caster,true)
+call SetUnitInvulnerable(caster,true)
+call SetUnitPathing(caster,false)
+call SetUnitFacing(caster,facing)
+call SetUnitPathing(target,false)
+
+if time==0.02 then
+
+
+call EffectCreateAndMove(true,EffectID[23],facing,1.5,1,0.5,60,60,100,0,0,caster,0,facing)
+call EffectCreateAndMove(true,EffectID[3],facing,1.5,1,0.5,60,60,100,0,0,caster,0,facing)
+call EffectCreateAndMove(true,EffectID[5],facing,1.5,1,1,100,100,100,0,0,caster,0,facing)
+set soundplay=CreateSound("Sound\\Gojo\\PunchJogo.mp3",false,false,true,12700,12700,"")
+call SetSoundVolume(soundplay,127)
+call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
+call SetUnitAnimationByIndex(caster,3)
+call UnitSpeed(caster,1.25)
+endif
+if time==0.1 then
+call MoveUnit(target,caster,-150,facing)
+call EffectCreateAndMove(true,EffectID[23],facing,1.5,1,0.5,60,60,100,0,0,caster,0,facing)
+call EffectCreateAndMove(true,EffectID[3],facing,1.5,1,0.5,60,60,100,0,0,caster,0,facing)
+call DamageU(false,caster,target,damage*0.3)
+call EffectCreateAndMove(true,EffectID[1105],facing,1.5,0.75,0.5,80,80,100,0,150,target,50,facing)
+call EffectCreateAndMove(true,EffectID[44],facing,1.5,0.75,0.5,80,80,100,0,150,target,50,facing)
+set soundplay=CreateSound("Sound\\Gojo\\Ao_Target.mp3",false,false,true,12700,12700,"")
+call SetSoundVolume(soundplay,150)
+call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
+endif
+if time==0.5 then
+call SetUnitAnimationByIndex(caster,21)
+call UnitSpeed(caster,1.5)
+set soundplay=CreateSound("Sound\\Gojo\\Ao_Target_Push.mp3",false,false,true,12700,12700,"")
+call SetSoundVolume(soundplay,127)
+call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
+endif
+if time==0.6 then
+call EffectCreateAndMove(true,EffectID[1317],facing,1,1,3,100,100,100,0,100,Dummy,0,facing)
+call EffectCreateAndMove90(true,EffectID[49],facing,1.5,1,0.5,60,60,100,0,100,caster,50,facing)
+call EffectCreateAndMove(true,EffectID[23],GetRandomReal(0,360),1.5,1,0.75,60,60,100,0,0,caster,0,facing)
+endif
+if time==0.7 then
+set n0=CreateUnit(GetOwningPlayer(caster),'e200',GetUnitX(target),GetUnitY(target),facing)
+call SetUnitModel(n0,EffectID[768])
+call UnitSize(n0,1,1,1)
+call UnitSpeed(n0,0.7)
+call UnitColor(n0,100,100,100,60)
+call SetUnitFlyHeight(n0,150,0)
+call SaveUnitHandle(HH,id,21,n0)
+call MyRemoveUnit(n0,2)
+call EffectCreateAndMove(true,EffectID[949],GetRandomReal(0,360),1.5,1.25,0.75,100,100,100,0,0,Dummy,0,facing)
+call EffectCreateAndMove(true,EffectID[48],GetRandomReal(0,360),1.5,2,0.3,100,100,100,0,0,Dummy,0,facing)
+call EffectCreateAndMove(true,EffectID[23],GetRandomReal(0,360),1.5,1,0.5,60,60,100,0,-200,Dummy,0,facing)
+endif
+if time>0.7 then
+call MoveUnit(target,LoadUnitHandle(HH,id,21),0,facing)
+endif
+if time>0.1 and time<0.4 then
+call MoveUnit(target,target,25,facing)
+endif
+if time>0.1 and time<0.6 then
+call MoveUnit(caster,caster,-10,facing)
+endif
+if time>0.1 and time<0.7 then
+call GroupClear(G)
+call GroupEnumUnitsInRange(G,x1,y1,200,null)
+loop
+set n0=FirstOfGroup(G)
+exitwhen n0==null
+if target!=n0 and IsUnitEnemy(n0,GetOwningPlayer(caster))==true and IsUnitType(n0,UNIT_TYPE_STRUCTURE)==false and GetUnitAbilityLevel(n0,'Avul')==0 then
+if SR(GetUnitX(n0),GetUnitY(n0),GetUnitX(target),GetUnitY(target))>100 then
+set facing=Angle2(GetUnitX(n0),GetUnitY(n0),GetUnitX(target),GetUnitY(target))
+call MoveUnit(n0,n0,15,facing)
+call UnitPathingTimed(n0,1)
+endif
+endif
+call GroupRemoveUnit(G,n0)
+endloop
+endif
+if time>0.7 and time<1.2 then
+call GroupClear(G)
+call GroupEnumUnitsInRange(G,x1,y1,400,null)
+loop
+set n0=FirstOfGroup(G)
+exitwhen n0==null
+if target!=n0 and IsUnitEnemy(n0,GetOwningPlayer(caster))==true and IsUnitType(n0,UNIT_TYPE_STRUCTURE)==false and GetUnitAbilityLevel(n0,'Avul')==0 then
+if SR(GetUnitX(n0),GetUnitY(n0),GetUnitX(target),GetUnitY(target))>100 then
+set facing=Angle2(GetUnitX(n0),GetUnitY(n0),GetUnitX(target),GetUnitY(target))
+call MoveUnit(n0,n0,25,facing)
+call UnitPathingTimed(n0,1)
+endif
+endif
+call GroupRemoveUnit(G,n0)
+endloop
+endif
+if time==1.1 then
+call EffectCreateAndMove(true,EffectID[572],GetRandomReal(0,360),1.5,5,0.5,100,100,100,60,100,Dummy,0,facing)
+call EffectCreateAndMove(true,EffectID[341],GetRandomReal(0,360),1.5,1,0.5,60,60,100,60,0,Dummy,0,facing)
+call EffectCreateAndMove(true,EffectID[44],GetRandomReal(0,360),1.5,1.25,0.5,60,60,100,40,150,Dummy,0,facing)
+endif
+endif
+set Dummy=null
+set caster=null
+set target=null
+endfunction
+function Gojo_W_Act takes unit caster,unit target returns nothing
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+local real x0=GetUnitX(caster)
+local real y0=GetUnitY(caster)
+local real x1=GetUnitX(target)
+local real y1=GetUnitY(target)
+local real facing=Angle2(x0,y0,x1,y1)
+local real damage=(GetUnitAbilityLevel(caster,'GSW1')+2)*GetHeroAgi(caster,true)
+local integer Have_balls=0
+call SaveUnitHandle(HH,id,1,caster)
+call SaveUnitHandle(HH,id,2,target)
+call SaveReal(HH,id,3,facing)
+call PauseUnit(caster,true)
+call SetUnitInvulnerable(caster,true)
+call PauseUnit(caster,true)
+call SetUnitInvulnerable(caster,true)
+call SetUnitPathing(caster,false)
+call SetUnitFacing(caster,facing)
+call SetUnitPathing(target,false)
+call SaveReal(HH,id,15,damage)
+if LoadUnitHandle(HH,GetHandleId(caster),StringHash("GojoQU"))!=null and LoadUnitHandle(HH,GetHandleId(caster),StringHash("GojoEU"))!=null then
+    set Have_balls=GetRandomInt(1,2)
+else
+    if LoadUnitHandle(HH,GetHandleId(caster),StringHash("GojoQU"))!=null then
+        set Have_balls=1
+    endif
+    if LoadUnitHandle(HH,GetHandleId(caster),StringHash("GojoEU"))!=null then
+        set Have_balls=2
+    endif
+endif
+if Have_balls==1 then
+    if LoadBoolean(HH,GetHandleId(target),ANTITARGET_ABILITY)==false then
+        call SaveBoolean(HH,GetHandleId(caster),StringHash("GojoQ2act"),true)
+        set n0=LoadUnitHandle(HH,GetHandleId(caster),StringHash("GojoQU"))
+        call SaveUnitHandle(HH,id,20,n0)
+        call UnitAddAbilityTimedPaused(caster,4,'GSQ5')
+
+        call SetControlToUnit(target,target, 1.4,"heavystun")
+        call SaveEffectHandle(HH,id,26,AddSpecialEffectTarget(EffectID[956],caster,"hand right"))
+        call SaveEffectHandle(HH,id,27,AddSpecialEffectTarget(EffectID[956],caster,"hand left"))
+        call TimerStart(t,0.02,true,function Gojo_W_Q_Act2)
+    else
+        call MoveUnit(target,caster,-150,facing)
+        call MyRemoveUnit(LoadUnitHandle(HH,GetHandleId(caster),StringHash("GojoQU")),1)
+        call AbilityCD(caster,'GSW1',25)
+        call SaveUnitHandle(HH,GetHandleId(target),REVERSE_TARGET,caster)
+        call UnitSpeed(caster,1)
+        call PauseUnit(caster,false)
+        call SetUnitInvulnerable(caster,false)
+        call SetUnitPathing(caster,true)
+        call SetUnitPathing(target,true)
+        call PauseTimer(t)
+        call DestroyTimer(t)
+        call FlushChildHashtable(HH,id)
+    endif
+else
+    if Have_balls==2 then
+        if LoadBoolean(HH,GetHandleId(target),ANTITARGET_ABILITY)==false then
+            call SaveBoolean(HH,GetHandleId(caster),StringHash("GojoE2act"),true)
+            set n0=LoadUnitHandle(HH,GetHandleId(caster),StringHash("GojoEU"))
+            call SaveUnitHandle(HH,id,20,n0)
+            call UnitSize(n0,1,1,1)
+            call SaveReal(HH,id,15,(GetUnitAbilityLevel(caster,'GSW1')+3)*GetHeroAgi(caster,true))
+            call UnitAddAbilityTimedPaused(caster,4,'GSE5')
+
+            call SetControlToUnit(target,target, 1.4,"heavystun")
+            call SaveEffectHandle(HH,id,26,AddSpecialEffectTarget(EffectID[957],caster,"hand right"))
+            call SaveEffectHandle(HH,id,27,AddSpecialEffectTarget(EffectID[957],caster,"hand left"))
+            call TimerStart(t,0.02,true,function Gojo_W_E_Act2)
+        else
+            call MoveUnit(target,caster,150,facing)
+            call MyRemoveUnit(LoadUnitHandle(HH,GetHandleId(caster),StringHash("GojoEU")),1)
+            call AbilityCD(caster,'GSW1',25)
+            call SaveUnitHandle(HH,GetHandleId(target),REVERSE_TARGET,caster)
+            call UnitSpeed(caster,1)
+            call PauseUnit(caster,false)
+            call SetUnitInvulnerable(caster,false)
+            call SetUnitPathing(caster,true)
+            call SetUnitPathing(target,true)
+            call PauseTimer(t)
+            call DestroyTimer(t)
+            call FlushChildHashtable(HH,id)
+        endif
+    else
+        if LoadBoolean(HH,GetHandleId(target),ANTITARGET_ABILITY)==false then
+            call SetControlToUnit(target,target, 1.7, "heavystun")
+            call SaveEffectHandle(HH,id,26,AddSpecialEffectTarget(EffectID[956],caster,"hand right"))
+            call SaveEffectHandle(HH,id,27,AddSpecialEffectTarget(EffectID[956],caster,"hand left"))
+            call TimerStart(t,0.02,true,function Gojo_W_Act2)
+        else
+            call MoveUnit(target,caster,-150,facing)
+            call SaveUnitHandle(HH,GetHandleId(target),REVERSE_TARGET,caster)
+            call UnitSpeed(caster,1)
+            call PauseUnit(caster,false)
+            call SetUnitInvulnerable(caster,false)
+            call SetUnitPathing(caster,true)
+            call SetUnitPathing(target,true)
+            call PauseTimer(t)
+            call DestroyTimer(t)
+            call FlushChildHashtable(HH,id)
+        endif
+    endif
+endif
+set t=null
+endfunction
+
+
+
+
+
+function Gojo_E2_Self_Act2 takes nothing returns nothing
+local integer id=GetHandleId(GetExpiredTimer())
+local unit caster=LoadUnitHandle(HH,id,1)
+local unit Dummy=LoadUnitHandle(HH,id,20)
+local group gr=LoadGroupHandle(HH,id,4)
+local real time=LoadReal(HH,id,5)
+local real x0=GetUnitX(Dummy)
+local real y0=GetUnitY(Dummy)
+local real x1=LoadReal(HH,id,11)
+local real y1=LoadReal(HH,id,12)
+local real damage=LoadReal(HH,id,15)
+local real facing=LoadReal(HH,id,3)
+set time=time+0.02
+call SaveReal(HH,id,5,time)
+if time==1.4 then
+call EffectCreateAndMove(true,EffectID[967],facing,1.5,4,0.3,100,100,100,0,0,Dummy,0,facing)
+call EffectCreateAndMove(true,EffectID[75],facing,1.5,2.5,0.25,100,100,100,0,0,Dummy,0,facing)
+call EffectCreateAndMove(true,EffectID[364],facing,1.5,1.5,0.5,100,100,100,60,0,Dummy,0,facing)
+call EffectCreateAndMove(true,EffectID[45],GetRandomReal(0,360),1,1.75,0.4,100,100,100,0,0,Dummy,0,facing)
+endif
+if time>1.5 then
+call DestroyGroup(gr)
+call AbilityCD(caster,'GSE2',20)
+call CreateModeIndicatorForm(caster, "ReplaceableTextures\\CommandButtons\\BTNGojoE2.blp", 20)
+call PauseUnit(caster,false)
+call SetUnitInvulnerable(caster,false)
+call UnitSize(Dummy,4,1,1)
+call SetUnitAnimationByIndex(Dummy,1)
+call MyRemoveUnit(LoadUnitHandle(HH,id,20),2)
+call PauseTimer(GetExpiredTimer())
+call FlushChildHashtable(HH,id)
+call DestroyTimer(GetExpiredTimer())
+else
+call MoveAoe1(x1,y1,caster,0,facing)
+call PauseUnit(caster,true)
+call SetUnitInvulnerable(caster,true)
+if time==0.02 then
+set soundplay=CreateSound("Sound\\Gojo\\Aka_Self_charge.mp3",false,false,true,12700,12700,"")
+call SetSoundVolume(soundplay,250)
+call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
+
+call UnitSpeed(caster,1)
+call SetUnitAnimationByIndex(caster,35)
+call EffectCreateAndMove(true,EffectID[768],facing,1.5,0.75,1.5,100,100,100,80,0,caster,0,facing)
+endif
+if time==0.02 or time==0.4 or time==0.8 or time==1.2 then
+call EffectCreateAndMove(true,EffectID[23],GetRandomReal(0,360),1.5,1.2,GetRandomReal(0.3,0.6),100,60,60,0,0,caster,0,facing)
+call EffectCreateAndMove(true,EffectID[75],GetRandomReal(0,360),1.5,1.25,GetRandomReal(0.3,0.6),100,100,100,0,0,caster,0,facing)
+endif
+if time<0.2 then
+call MoveUnit(Dummy,Dummy,15,facing+90)
+endif
+if time==0.2 then
+call EffectCreateAndMove(true,EffectID[364],facing,1.5,0.5,0.5,100,100,100,60,0,Dummy,0,facing)
+call EffectCreateAndMove90(true,EffectID[1335],facing,1.5,1,1,100,100,100,0,100,Dummy,-50,facing)
+endif
+if time==1.2 then
+call EffectCreateAndMove(true,EffectID[1334],GetRandomReal(0,360),1.5,2,0.5,100,100,100,20,-150,Dummy,0,facing)
+call EffectCreateAndMove(true,EffectID[1334],GetRandomReal(0,360),1.5,1.5,1,100,100,100,20,-150,Dummy,0,facing)
+call EffectCreateAndMove(true,EffectID[1334],GetRandomReal(0,360),1.5,1,1.5,100,100,100,20,-150,Dummy,0,facing)
+call EffectCreateAndMove(true,EffectID[20],GetRandomReal(0,360),1.5,2.5,1,100,100,100,40,-150,Dummy,0,facing)
+call EffectCreateAndMove(true,EffectID[23],GetRandomReal(0,360),1.5,2,0.3,100,60,60,60,-200,Dummy,0,facing)
+call EffectCreateAndMove(true,EffectID[581],GetRandomReal(0,360),1.5,2.2,0.75,100,100,100,60,-150,Dummy,0,facing)
+set soundplay=CreateSound("Sound\\Gojo\\Aka_Self_Exp.mp3",false,false,true,12700,12700,"")
+call SetSoundVolume(soundplay,175)
+call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
+
+set soundplay=CreateSound("Sound\\Gojo\\Aka_Self_Aka.mp3",false,false,true,12700,12700,"")
+call SetSoundVolume(soundplay,250)
+call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
+endif
+if time>1.2 then
+call GroupClear(G)
+call GroupEnumUnitsInRange(G,x0,y0,420+(time-1.2)*1000,null)
+loop
+set n0=FirstOfGroup(G)
+exitwhen n0==null
+if IsUnitInGroup(n0,gr)==false and IsUnitEnemy(n0,GetOwningPlayer(caster))==true and IsUnitType(n0,UNIT_TYPE_STRUCTURE)==false and GetUnitAbilityLevel(n0,'Avul')==0 then
+set facing=Angle2(x0,y0,GetUnitX(n0),GetUnitY(n0))
+call DamageU(false,caster,n0,damage)
+
+call SetControlToUnit(n0,n0, 2, "stun")
+
+
+call PushTimed(n0,facing,50,20)
+call GroupAddUnit(gr,n0)
+endif
+call GroupRemoveUnit(G,n0)
+endloop
+call GroupClear(G)
+call SaveGroupHandle(HH,id,4,gr)
+endif
+endif
+set caster=null
+set gr=null
+set Dummy=null
+endfunction
+function Gojo_E2_Self_Act takes unit caster returns nothing
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+local real x0=0
+local real y0=0
+local real facing=0
+local real damage=(GetUnitAbilityLevel(caster,'GSE1')+5)*GetHeroAgi(caster,true)
+call SaveUnitHandle(HH,id,1,caster)
+call SaveReal(HH,id,15,damage)
+call UnitAddAbilityTimedPaused(caster,4,'GSE0')
+call PauseUnit(caster,true)
+call SetUnitInvulnerable(caster,true)
+set n0=LoadUnitHandle(HH,GetHandleId(caster),StringHash("GojoEU"))
+call RemoveSavedHandle(HH,GetHandleId(caster),StringHash("GojoEU"))
+set x0=GetUnitX(n0)
+set y0=GetUnitY(n0)
+set facing=GetUnitFacing(caster)
+call SaveGroupHandle(HH,id,4,CreateGroup())
+call SaveReal(HH,id,11,GetUnitX(caster))
+call SaveReal(HH,id,12,GetUnitY(caster))
+call SaveReal(HH,id,3,facing)
+call SaveUnitHandle(HH,id,20,n0)
+call SaveBoolean(HH,GetHandleId(caster),StringHash("GojoE2act"),true)
+call TimerStart(t,0.02,true,function Gojo_E2_Self_Act2)
+set t=null
+endfunction
+function Gojo_E2_Act2 takes nothing returns nothing
+local integer id=GetHandleId(GetExpiredTimer())
+local unit caster=LoadUnitHandle(HH,id,1)
+local unit Dummy=LoadUnitHandle(HH,id,20)
+local real time=LoadReal(HH,id,5)
+local real x0=GetUnitX(Dummy)
+local real y0=GetUnitY(Dummy)
+local real x1=LoadReal(HH,id,11)
+local real y1=LoadReal(HH,id,12)
+local real dist=LoadReal(HH,id,8)
+local real damage=LoadReal(HH,id,15)
+local real facing=LoadReal(HH,id,3)
+set time=time+0.02
+call SaveReal(HH,id,5,time)
+if time>0.2 and dist>=0 then
+call EffectCreateAndMove(true,EffectID[768],facing,1.5,1.25,0.5,100,100,100,80,-200,Dummy,0,facing)
+call EffectCreateAndMove(true,EffectID[364],facing,1.5,2,1,100,100,100,0,0,Dummy,0,facing)
+call EffectCreateAndMove(true,EffectID[371],facing,1.5,2,0.5,100,100,100,100,0,Dummy,0,facing)
+call EffectCreateAndMove(true,EffectID[45],GetRandomReal(0,360),1,1.5,0.5,100,100,100,40,0,Dummy,0,facing)
+call EffectCreateAndMove(true,EffectID[23],GetRandomReal(0,360),1,1.5,0.3,100,60,60,60,-200,Dummy,0,facing)
+set soundplay=CreateSound("Sound\\Gojo\\Aka_Jamada_Hit.mp3",false,false,true,12700,12700,"")
+call SetSoundVolume(soundplay,150)
+call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
+
+call GroupClear(G)
+call GroupEnumUnitsInRange(G,x0,y0,400,null)
+loop
+set n0=FirstOfGroup(G)
+exitwhen n0==null
+if IsUnitEnemy(n0,GetOwningPlayer(caster))==true and IsUnitType(n0,UNIT_TYPE_STRUCTURE)==false and GetUnitAbilityLevel(n0,'Avul')==0 then
+call DamageU(false,caster,n0,damage)
+
+call SetControlToUnit(n0,n0, 2, "stun")
+
+call PushTimed(n0,facing,50,10)
+endif
+call GroupRemoveUnit(G,n0)
+endloop
+call GroupClear(G)
+call UnitSize(Dummy,4,1,1)
+call SetUnitAnimationByIndex(Dummy,1)
+call MyRemoveUnit(LoadUnitHandle(HH,id,20),2)
+call PauseTimer(GetExpiredTimer())
+call FlushChildHashtable(HH,id)
+call DestroyTimer(GetExpiredTimer())
+else
+if time==0.02 then
+call UnitSpeed(caster,1)
+call SetUnitAnimationByIndex(caster,25)
+set soundplay=CreateSound("Sound\\Gojo\\Aka_Jamada.mp3",false,false,true,12700,12700,"")
+call SetSoundVolume(soundplay,150)
+call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
+call EffectCreateAndMove(true,EffectID[768],facing,1.5,0.75,1.5,100,100,100,80,0,caster,0,facing)
+call EffectCreateAndMove(true,EffectID[23],facing,1.5,1,0.5,100,60,60,0,0,caster,0,facing)
+endif
+if time==0.2 then
+call EffectCreateAndMove(true,EffectID[0],facing+180,1,1,0.75,100,80,80,0,100,Dummy,0,facing)
+call EffectCreateAndMove(true,EffectID[6],facing,1,0.4,0.4,100,80,80,0,100,Dummy,0,facing)
+call EffectCreateAndMove(true,EffectID[227],facing,1,2,0.7,100,100,100,0,120,Dummy,0,facing)
+set soundplay=CreateSound("Sound\\Gojo\\Aka_Jamada_Throw.mp3",false,false,true,12700,12700,"")
+call SetSoundVolume(soundplay,127)
+call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
+endif
+if time>0.2 then
+call MoveUnit(Dummy,Dummy,50,facing)
+call GroupClear(G)
+call GroupEnumUnitsInRange(G,x0,y0,200,null)
+loop
+set n0=FirstOfGroup(G)
+exitwhen n0==null
+if IsUnitEnemy(n0,GetOwningPlayer(caster))==true and IsUnitType(n0,UNIT_TYPE_STRUCTURE)==false and GetUnitAbilityLevel(n0,'Avul')==0 then
+set dist=2500
+exitwhen true
+endif
+call GroupRemoveUnit(G,n0)
+endloop
+call GroupClear(G)
+call SaveReal(HH,id,8,dist+40)
+endif
+endif
+set caster=null
+set Dummy=null
+endfunction
+function Gojo_E2_Act takes unit caster,real x1,real y1 returns nothing
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+local real x0=0
+local real y0=0
+local real facing=0
+local real dist
+local real damage=(GetUnitAbilityLevel(caster,'GSE1')+2)*GetHeroAgi(caster,true)
+local real MaxDist=1000+GetHeroStr(caster,true)*3
+call SaveUnitHandle(HH,id,1,caster)
+call SaveReal(HH,id,15,damage)
+call UnitAddAbilityTimedPaused(caster,3,'GSE0')
+set n0=LoadUnitHandle(HH,GetHandleId(caster),StringHash("GojoEU"))
+call RemoveSavedHandle(HH,GetHandleId(caster),StringHash("GojoEU"))
+set x0=GetUnitX(n0)
+set y0=GetUnitY(n0)
+set facing=Angle2(x0,y0,x1,y1)
+call SaveReal(HH,id,8,-MaxDist)
+call SaveReal(HH,id,11,x1)
+call SaveReal(HH,id,12,y1)
+call SaveReal(HH,id,3,facing)
+call SaveUnitHandle(HH,id,20,n0)
+call SaveBoolean(HH,GetHandleId(caster),StringHash("GojoE2act"),true)
+
+call CreateModeIndicatorForm(caster, "ReplaceableTextures\\CommandButtons\\BTNGojoE2.blp", 20)
+call TimerStart(t,0.02,true,function Gojo_E2_Act2)
+set t=null
+endfunction
+function Gojo_E1_Act2 takes nothing returns nothing
+local integer id=GetHandleId(GetExpiredTimer())
+local unit caster=LoadUnitHandle(HH,id,1)
+local real time=LoadReal(HH,id,5)
+local real damage=LoadReal(HH,id,15)
+local real x0=GetUnitX(caster)
+local real y0=GetUnitY(caster)
+local real facing=GetUnitFacing(caster)
+if time<0.02 or IsUnitPaused(caster)==false then
+set time=time+0.02
+call SaveReal(HH,id,5,time)
+endif
+if time>0.02 and LoadBoolean(HH,GetHandleId(caster),StringHash("GojoE2act"))==true then
+call UnitRemoveAbility(caster,'GSE6')
+if LoadBoolean(HH,id,19)==true then
+call SetPlayerAbilityAvailable(GetOwningPlayer(caster),'GSF2',false)
+call SetPlayerAbilityAvailable(GetOwningPlayer(caster),'GSF1',true)
+endif
+call SaveBoolean(HH,GetHandleId(caster),StringHash("GojoE2act"),false)
+call SetPlayerAbilityAvailable(GetOwningPlayer(caster),'GSE2',false)
+call SetPlayerAbilityAvailable(GetOwningPlayer(caster),'GSE1',true)
+call PauseTimer(GetExpiredTimer())
+call FlushChildHashtable(HH,id)
+call DestroyTimer(GetExpiredTimer())
+endif
+if time>=GetUnitAbilityLevel(caster,'GSE1')then
+call UnitRemoveAbility(caster,'GSE6')
+if LoadBoolean(HH,id,19)==true then
+call SetPlayerAbilityAvailable(GetOwningPlayer(caster),'GSF2',false)
+call SetPlayerAbilityAvailable(GetOwningPlayer(caster),'GSF1',true)
+endif
+call SetPlayerAbilityAvailable(GetOwningPlayer(caster),'GSE2',false)
+call SetPlayerAbilityAvailable(GetOwningPlayer(caster),'GSE1',true)
+call RemoveUnit(LoadUnitHandle(HH,id,20))
+call PauseTimer(GetExpiredTimer())
+call FlushChildHashtable(HH,id)
+call DestroyTimer(GetExpiredTimer())
+else
+if LoadBoolean(HH,id,19)==true then
+call SetPlayerAbilityAvailable(GetOwningPlayer(caster),'GSF1',false)
+call SetPlayerAbilityAvailable(GetOwningPlayer(caster),'GSF2',true)
+endif
+if time==0.02 then
+call UnitAddAbility(caster,'GSE6')
+
+//call CreateModeIndicatorWithPauseFormAbility(caster, "ReplaceableTextures\\CommandButtons\\BTNGojoE2.blp",GetUnitAbilityLevel(caster,'GSE1'),'GSE6')
+
+
+
+
+
+
+call SaveBoolean(HH,GetHandleId(caster),StringHash("GojoE2act"),false)
+call UnitSpeed(caster,1)
+call SetUnitAnimationByIndex(caster,35)
+call SetPlayerAbilityAvailable(GetOwningPlayer(caster),'GSE1',false)
+call SetPlayerAbilityAvailable(GetOwningPlayer(caster),'GSE2',true)
+set soundplay=CreateSound("Sound\\Gojo\\Aka_E1.mp3",false,false,true,12700,12700,"")
+call SetSoundVolume(soundplay,200)
+call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
+
+set n0=CreateUnit(GetOwningPlayer(caster),'e200',GetUnitX(caster),GetUnitY(caster),GetUnitFacing(caster))
+call UnitAddAbility(n0,'Amrf')
+call UnitRemoveAbility(n0,'Amrf')
+call UnitSize(n0,1.75,1,1)
+call UnitSpeed(n0,1)
+call UnitColor(n0,100,100,100,0)
+call SetUnitFlyHeight(n0,150,0)
+call SaveUnitHandle(HH,id,20,n0)
+call SetUnitModel(n0,EffectID[985])
+call SaveUnitHandle(HH,GetHandleId(caster),StringHash("GojoEU"),n0)
+set n0=null
+call EffectCreateAndMove(true,EffectID[768],facing,1.5,0.75,1.5,100,100,100,80,0,caster,0,facing)
+call EffectCreateAndMove(true,EffectID[23],facing,1.5,1,0.5,100,60,60,0,0,caster,0,facing)
+call EffectCreateAndMove(true,EffectID[967],facing,1.5,2,0.5,100,100,100,0,0,caster,0,facing)
+call EffectCreateAndMove(true,EffectID[75],facing,1.5,1.25,0.35,100,100,100,0,0,caster,0,facing)
+endif
+if time>0.02 then
+call MoveUnit(caster,LoadUnitHandle(HH,id,20),150,facing-45)
+call SetUnitFlyHeight(LoadUnitHandle(HH,id,20),GetUnitFlyHeight(caster)+150,0)
+endif
+endif
+set caster=null
+endfunction
+function Gojo_E1_Act takes unit caster returns nothing
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+local real x0=GetUnitX(caster)
+local real y0=GetUnitY(caster)
+local real facing=GetUnitFacing(caster)
+call SaveUnitHandle(HH,id,1,caster)
+call SaveReal(HH,id,3,facing)
+
+
+
+
+
+if GetUnitAbilityCD(caster,'GSF2')==true then
+call SaveBoolean(HH,id,19,false)
+else
+call SaveBoolean(HH,id,19,true)
+endif
+call TimerStart(t,0.02,true,function Gojo_E1_Act2)
+set t=null
+endfunction
+
+
+
+function Gojo_F2_E_Act2 takes nothing returns nothing
+local integer id=GetHandleId(GetExpiredTimer())
+local unit caster=LoadUnitHandle(HH,id,1)
+local unit Dummy=null
+local real facing=LoadReal(HH,id,3)
+local real time=LoadReal(HH,id,5)
+local real time1=LoadReal(HH,id,6)
+local real x0=GetUnitX(caster)
+local real y0=GetUnitY(caster)
+local real damage=LoadReal(HH,id,15)
+local real dist=LoadReal(HH,id,8)
+local real dist_Base=LoadReal(HH,id,9)
+local real dist_New=LoadReal(HH,id,18)
+set time=time+0.02
+call SaveReal(HH,id,5,time)
+if dist<0 then
+call DestroyEffect(LoadEffectHandle(HH,id,26))
+call DestroyEffect(LoadEffectHandle(HH,id,27))
+call RemoveUnit(LoadUnitHandle(HH,GetHandleId(caster),StringHash("GojoEU")))
+call RemoveSavedHandle(HH,GetHandleId(caster),StringHash("GojoEU"))
+call SaveBoolean(HH,GetHandleId(caster),StringHash("GojoE2act"),true)
+set soundplay=CreateSound("Sound\\Gojo\\InfinityPush.mp3",false,false,true,12700,12700,"")
+call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
+call SetSoundVolume(soundplay,200)
+call UnitSpeed(caster,1)
+call SetUnitFlyHeight(caster,0,GetUnitFlyHeight(caster))
+call SetUnitInvulnerable(caster,false)
+call PauseUnit(caster,false)
+call SetUnitPathing(caster,true)
+set x0=PolX(x0,100,facing)
+set y0=PolY(y0,100,facing)
+set Dummy=CreateUnit(GetOwningPlayer(caster),'e200',x0,y0,facing)
+call UnitAddAbility(Dummy,'Amrf')
+call UnitRemoveAbility(Dummy,'Amrf')
+call SetUnitFlyHeight(Dummy,0,0)
+call MyRemoveUnit(Dummy,1)
+call EffectCreateAndMove(true,EffectID[967],facing,1.5,3,0.5,100,100,100,0,0,Dummy,0,facing)
+call EffectCreateAndMove(true,EffectID[45],GetRandomReal(0,360),1.5,1.35,0.5,100,100,100,0,150,Dummy,0,facing)
+call EffectCreateAndMove(true,EffectID[75],GetRandomReal(0,360),1.5,2.5,0.5,100,100,100,0,0,Dummy,0,facing)
+call EffectCreateAndMove(true,EffectID[768],GetRandomReal(0,360),1.5,1.5,0.5,100,100,100,60,0,Dummy,0,facing)
+call EffectCreateAndMove(true,EffectID[490],GetRandomReal(0,360),1.5,1.4,0.8,100,100,100,0,0,Dummy,0,facing)
+call EffectCreateAndMove(true,EffectID[20],facing,1.5,1.5,1,100,100,100,40,0,Dummy,0,facing)
+set Dummy=null
+call GroupClear(G)
+call GroupEnumUnitsInRange(G,x0,y0,400,Base)
+loop
+set n0=FirstOfGroup(G)
+exitwhen n0==null
+if UnitIsAlive(n0)and IsUnitEnemy(n0,GetOwningPlayer(caster))==true and IsUnitType(n0,UNIT_TYPE_STRUCTURE)==false and GetUnitAbilityLevel(n0,'Avul')==0 then
+    call DamageU(false,caster,n0,damage)
+    call SetControlToUnit(n0,n0, 2, "stun")
+    set facing=Angle2(GetUnitX(n0),GetUnitY(n0),x0,y0)
+    call PushTimed(n0,facing,25,-8)
+endif
+call GroupRemoveUnit(G,n0)
+endloop
+call GroupClear(G)
+call PauseTimer(GetExpiredTimer())
+call FlushChildHashtable(HH,id)
+call DestroyTimer(GetExpiredTimer())
+else
+if time<5 then
+call SetUnitInvulnerable(caster,true)
+call PauseUnit(caster,true)
+call SetUnitPathing(caster,false)
+endif
+if time==0.02 then
+call EffectCreateAndMove(true,EffectID[768],facing,1,1,1.5,100,100,100,60,0,caster,0,facing)
+call SetUnitAnimationByIndex(caster,6)
+call UnitSpeed(caster,1)
+set soundplay=CreateSound("Sound\\Gojo\\SukunaFightSpeech.mp3",false,false,true,12700,12700,"")
+call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
+call SetSoundVolume(soundplay,200)
+call EffectCreateAndMove(true,EffectID[20],facing,1.5,1,0.5,100,100,100,60,0,caster,0,facing)
+call EffectCreateAndMove(true,EffectID[23],facing,1.5,1,0.5,100,60,60,60,0,caster,0,facing)
+call EffectCreateAndMove(true,EffectID[75],facing,1.5,1.5,1,100,100,100,0,0,caster,0,facing)
+endif
+if time==0.1 then
+call EffectCreateAndMove(true,EffectID[6],facing,1,0.4,0.6,100,100,100,20,50,caster,0,facing)
+call SetUnitAnimationByIndex(caster,7)
+if dist>1000 then
+call UnitSpeed(caster,0.6)
+else
+call UnitSpeed(caster,3-dist*0.0025)
+endif
+endif
+if time>0.1 and time<5 then
+call SaveReal(HH,id,8,dist-40)
+call MoveUnit(caster,caster,40,facing)
+endif
+endif
+set caster=null
+set Dummy=null
+endfunction
+function Gojo_F2_Q_Act2 takes nothing returns nothing
+local integer id=GetHandleId(GetExpiredTimer())
+local unit caster=LoadUnitHandle(HH,id,1)
+local unit Dummy=null
+local real facing=LoadReal(HH,id,3)
+local real time=LoadReal(HH,id,5)
+local real time1=LoadReal(HH,id,6)
+local real x0=GetUnitX(caster)
+local real y0=GetUnitY(caster)
+local real damage=LoadReal(HH,id,15)
+local real dist=LoadReal(HH,id,8)
+local real dist_Base=LoadReal(HH,id,9)
+local real dist_New=LoadReal(HH,id,18)
+set time=time+0.02
+call SaveReal(HH,id,5,time)
+if dist<0 then
+call DestroyEffect(LoadEffectHandle(HH,id,26))
+call DestroyEffect(LoadEffectHandle(HH,id,27))
+call RemoveUnit(LoadUnitHandle(HH,GetHandleId(caster),StringHash("GojoQU")))
+call RemoveSavedHandle(HH,GetHandleId(caster),StringHash("GojoQU"))
+call SaveBoolean(HH,GetHandleId(caster),StringHash("GojoQ2act"),true)
+set soundplay=CreateSound("Sound\\Gojo\\GroundSlam.mp3",false,false,true,12700,12700,"")
+call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
+call SetSoundVolume(soundplay,175)
+call UnitSpeed(caster,1)
+call SetUnitFlyHeight(caster,0,GetUnitFlyHeight(caster))
+call SetUnitInvulnerable(caster,false)
+call PauseUnit(caster,false)
+call SetUnitPathing(caster,true)
+set x0=PolX(x0,100,facing)
+set y0=PolY(y0,100,facing)
+set Dummy=CreateUnit(GetOwningPlayer(caster),'e200',x0,y0,facing)
+call UnitAddAbility(Dummy,'Amrf')
+call UnitRemoveAbility(Dummy,'Amrf')
+call SetUnitFlyHeight(Dummy,0,0)
+call MyRemoveUnit(Dummy,1)
+call EffectCreateAndMove(true,EffectID[44],GetRandomReal(0,360),1.5,1.35,0.5,100,100,100,0,150,Dummy,0,facing)
+call EffectCreateAndMove(true,EffectID[48],GetRandomReal(0,360),1.5,2.5,0.5,100,100,100,0,0,Dummy,0,facing)
+call EffectCreateAndMove(true,EffectID[768],GetRandomReal(0,360),1.5,1.5,0.5,100,100,100,60,0,Dummy,0,facing)
+call EffectCreateAndMove(true,EffectID[341],GetRandomReal(0,360),1.5,1.4,0.8,100,100,100,0,0,Dummy,0,facing)
+call EffectCreateAndMove(true,EffectID[20],facing,1.5,1.5,1,100,100,100,40,0,Dummy,0,facing)
+call EffectCreateAndMove(true,EffectID[949],facing,1.5,1.75,1,100,100,100,0,0,Dummy,0,facing)
+set Dummy=null
+call GroupClear(G)
+call GroupEnumUnitsInRange(G,x0,y0,400,Base)
+loop
+set n0=FirstOfGroup(G)
+exitwhen n0==null
+if UnitIsAlive(n0)and IsUnitEnemy(n0,GetOwningPlayer(caster))==true and IsUnitType(n0,UNIT_TYPE_STRUCTURE)==false and GetUnitAbilityLevel(n0,'Avul')==0 then
+call DamageU(false,caster,n0,damage)
+
+call SetControlToUnit(n0,n0, 2, "stun")
+set facing=Angle2(GetUnitX(n0),GetUnitY(n0),x0,y0)
+if SR(GetUnitX(n0),GetUnitY(n0),x0,y0)>200 then
+call PushTimed(n0,facing,25,8)
+endif
+endif
+call GroupRemoveUnit(G,n0)
+endloop
+call GroupClear(G)
+call PauseTimer(GetExpiredTimer())
+call FlushChildHashtable(HH,id)
+call DestroyTimer(GetExpiredTimer())
+else
+if time<5 then
+call SetUnitInvulnerable(caster,true)
+call PauseUnit(caster,true)
+call SetUnitPathing(caster,false)
+endif
+if time==0.02 then
+call EffectCreateAndMove(true,EffectID[768],facing,1,1,1.5,100,100,100,60,0,caster,0,facing)
+call SetUnitAnimationByIndex(caster,6)
+call UnitSpeed(caster,1)
+set soundplay=CreateSound("Sound\\Gojo\\gojo-g2.mp3",false,false,true,12700,12700,"")
+call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
+call SetSoundVolume(soundplay,150)
+call EffectCreateAndMove(true,EffectID[20],facing,1.5,1,0.5,100,100,100,60,0,caster,0,facing)
+call EffectCreateAndMove(true,EffectID[23],facing,1.5,1,0.5,60,60,100,0,0,caster,0,facing)
+call EffectCreateAndMove(true,EffectID[48],facing,1.5,1.5,1,100,100,100,0,0,caster,0,facing)
+endif
+if time==0.1 then
+call EffectCreateAndMove(true,EffectID[6],facing,1,0.4,0.6,60,60,100,20,50,caster,0,facing)
+call SetUnitAnimationByIndex(caster,38)
+if dist>1000 then
+call UnitSpeed(caster,0.75)
+else
+call UnitSpeed(caster,3.3-dist*0.0025)
+endif
+endif
+if time>0.1 and time<5 then
+call SaveReal(HH,id,8,dist-45)
+call MoveUnit(caster,caster,45,facing)
+call SetUnitFlyHeight(caster,ParabolaZ(650,dist_Base-100,dist-100),0)
+endif
+endif
+set caster=null
+set Dummy=null
+endfunction
+function Gojo_F2_Act takes unit caster,real x1,real y1 returns nothing
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+local real x0=GetUnitX(caster)
+local real y0=GetUnitY(caster)
+local real facing=Angle2(x0,y0,x1,y1)
+local real damage=(GetUnitAbilityLevel(caster,'GSF2'))*GetHeroAgi(caster,true)
+local real dist=SR(x0,y0,x1,y1)
+local integer Have_balls=0
+call SaveUnitHandle(HH,id,1,caster)
+call SaveReal(HH,id,3,facing)
+call PauseUnit(caster,true)
+call SetUnitInvulnerable(caster,true)
+if dist>1200 then
+set dist=1200
+endif
+call SaveReal(HH,id,8,dist)
+call SaveReal(HH,id,9,dist)
+call SaveReal(HH,id,15,damage)
+if LoadUnitHandle(HH,GetHandleId(caster),StringHash("GojoQU"))!=null and LoadUnitHandle(HH,GetHandleId(caster),StringHash("GojoEU"))!=null then
+set Have_balls=GetRandomInt(1,2)
+else
+if LoadUnitHandle(HH,GetHandleId(caster),StringHash("GojoQU"))!=null then
+set Have_balls=1
+endif
+if LoadUnitHandle(HH,GetHandleId(caster),StringHash("GojoEU"))!=null then
+set Have_balls=2
+endif
+endif
+if Have_balls==1 then
+call UnitAddAbility(caster,'Amrf')
+call UnitRemoveAbility(caster,'Amrf')
+call UnitAddAbilityTimedPaused(caster,4,'GSQF')
+call SaveEffectHandle(HH,id,26,AddSpecialEffectTarget(EffectID[956],caster,"hand right"))
+call SaveEffectHandle(HH,id,27,AddSpecialEffectTarget(EffectID[956],caster,"hand left"))
+call TimerStart(t,0.02,true,function Gojo_F2_Q_Act2)
+else
+call UnitAddAbilityTimedPaused(caster,4,'GSEF')
+call SaveReal(HH,id,15,(GetUnitAbilityLevel(caster,'GSF2')+1)*GetHeroAgi(caster,true))
+call SaveEffectHandle(HH,id,26,AddSpecialEffectTarget(EffectID[957],caster,"hand right"))
+call SaveEffectHandle(HH,id,27,AddSpecialEffectTarget(EffectID[957],caster,"hand left"))
+call TimerStart(t,0.02,true,function Gojo_F2_E_Act2)
+endif
+
+
+call CreateModeIndicatorForm(caster, "ReplaceableTextures\\CommandButtons\\BTNGojoF2.blp", 30)
+
+
+set t=null
+endfunction
+
+
+function Gojo_F_Act2 takes nothing returns nothing
+local integer id=GetHandleId(GetExpiredTimer())
+local unit caster=LoadUnitHandle(HH,id,1)
+local real facing=LoadReal(HH,id,3)
+local group gr=LoadGroupHandle(HH,id,4)
+local real time=LoadReal(HH,id,5)
+local real dist=LoadReal(HH,id,8)
+local real x1=LoadReal(HH,id,11)
+local real y1=LoadReal(HH,id,12)
+local real damage=LoadReal(HH,id,15)
+local boolean Gojo_F_hit=LoadBoolean(HH,id,19)
+local integer Level_F=GetUnitAbilityLevel(caster,'GSF1')
+set time=time+0.02
+call SaveReal(HH,id,5,time)
+if time==0.02 then
+call SetUnitAnimationByIndex(caster,9)
+call UnitSpeed(caster,1.5)
+set soundplay=CreateSound("Sound\\Gojo\\Blink.mp3",false,false,true,12700,12700,"")
+call SetSoundVolume(soundplay,100)
+call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
+
+set soundplay=CreateSound("Sound\\Gojo\\Ikuyo.mp3",false,false,true,12700,12700,"")
+call SetSoundVolume(soundplay,127)
+call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
+call EffectCreateAndMove(true,EffectID[6],facing,1,0.4,0.6,100,100,100,20,50,caster,0,facing)
+call EffectCreateAndMove(true,EffectID[19],facing,1,0.8,0.8,100,100,100,60,0,caster,0,facing)
+call EffectCreateAndMove(true,EffectID[23],facing,1.5,1,0.4,100,100,100,80,0,caster,0,facing)
+call EffectCreateAndMove(true,EffectID[5],facing,1.5,1,1,100,100,100,0,0,caster,0,facing)
+call EffectCreateAndMove(true,EffectID[768],facing,1,0.5,2,100,100,100,60,0,caster,0,facing)
+call MoveUnit(caster,caster,dist,facing)
+call EffectCreateAndMove(true,EffectID[19],facing,1,0.8,0.8,100,100,100,60,0,caster,0,facing)
+call EffectCreateAndMove(true,EffectID[23],facing,1.5,1,0.4,100,100,100,80,0,caster,0,facing)
+call EffectCreateAndMove(true,EffectID[768],facing,1,0.5,2,100,100,100,60,0,caster,0,facing)
+endif
+if Level_F>=5 then
+call GroupClear(G)
+call GroupEnumUnitsInRange(G,x1,y1,150,Base)
+loop
+set n0=FirstOfGroup(G)
+exitwhen n0==null
+if IsUnitInGroup(n0,gr)==false and UnitIsAlive(n0)and IsUnitEnemy(n0,GetOwningPlayer(caster))==true and IsUnitType(n0,UNIT_TYPE_STRUCTURE)==false and GetUnitAbilityLevel(n0,'Avul')==0 then
+if Gojo_F_hit==false then
+set Gojo_F_hit=true
+call SaveBoolean(HH,id,19,Gojo_F_hit)
+set soundplay=CreateSound("Sound\\Gojo\\Punches_Film_2.mp3",false,false,true,12700,12700,"")
+call SetSoundVolume(soundplay,127)
+call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
+endif
+call EffectCreateAndMoveAn(true,EffectID[539],GetRandomReal(0,360),1,1.5,0.8,100,100,100,0,120,n0,0,facing,2)
+
+call SetControlToUnit(n0,n0, 1.5, "stun")
+call DamageU(false,caster,n0,damage)
+call GroupAddUnit(gr,n0)
+endif
+call GroupRemoveUnit(G,n0)
+endloop
+call SaveGroupHandle(HH,id,4,gr)
+call GroupClear(G)
+if dist>150 then
+set x1=PolX(x1,150,facing)
+set y1=PolY(y1,150,facing)
+call GroupClear(G)
+call GroupEnumUnitsInRange(G,x1,y1,150,Base)
+loop
+set n0=FirstOfGroup(G)
+exitwhen n0==null
+if IsUnitInGroup(n0,gr)==false and UnitIsAlive(n0)and IsUnitEnemy(n0,GetOwningPlayer(caster))==true and IsUnitType(n0,UNIT_TYPE_STRUCTURE)==false and GetUnitAbilityLevel(n0,'Avul')==0 then
+if Gojo_F_hit==false then
+set Gojo_F_hit=true
+call SaveBoolean(HH,id,19,Gojo_F_hit)
+set soundplay=CreateSound("Sound\\Gojo\\Punches_Film_2.mp3",false,false,true,12700,12700,"")
+call SetSoundVolume(soundplay,127)
+call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
+endif
+call EffectCreateAndMoveAn(true,EffectID[539],GetRandomReal(0,360),1,1.5,0.8,100,100,100,0,120,n0,0,facing,2)
+call SetControlToUnit(n0,n0, 1.5, "stun")
+call DamageU(false,caster,n0,damage)
+call GroupAddUnit(gr,n0)
+endif
+call GroupRemoveUnit(G,n0)
+endloop
+call SaveGroupHandle(HH,id,4,gr)
+call GroupClear(G)
+endif
+if dist>300 then
+set x1=PolX(x1,150,facing)
+set y1=PolY(y1,150,facing)
+call GroupClear(G)
+call GroupEnumUnitsInRange(G,x1,y1,150,Base)
+loop
+set n0=FirstOfGroup(G)
+exitwhen n0==null
+if IsUnitInGroup(n0,gr)==false and UnitIsAlive(n0)and IsUnitEnemy(n0,GetOwningPlayer(caster))==true and IsUnitType(n0,UNIT_TYPE_STRUCTURE)==false and GetUnitAbilityLevel(n0,'Avul')==0 then
+if Gojo_F_hit==false then
+set Gojo_F_hit=true
+call SaveBoolean(HH,id,19,Gojo_F_hit)
+set soundplay=CreateSound("Sound\\Gojo\\Punches_Film_2.mp3",false,false,true,12700,12700,"")
+call SetSoundVolume(soundplay,127)
+call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
+endif
+call EffectCreateAndMoveAn(true,EffectID[539],GetRandomReal(0,360),1,1.5,0.8,100,100,100,0,120,n0,0,facing,2)
+call SetControlToUnit(n0,n0, 1.5, "stun")
+call DamageU(false,caster,n0,damage)
+call GroupAddUnit(gr,n0)
+endif
+call GroupRemoveUnit(G,n0)
+endloop
+call SaveGroupHandle(HH,id,4,gr)
+call GroupClear(G)
+endif
+if dist>450 then
+set x1=PolX(x1,150,facing)
+set y1=PolY(y1,150,facing)
+call GroupClear(G)
+call GroupEnumUnitsInRange(G,x1,y1,150,Base)
+loop
+set n0=FirstOfGroup(G)
+exitwhen n0==null
+if IsUnitInGroup(n0,gr)==false and UnitIsAlive(n0)and IsUnitEnemy(n0,GetOwningPlayer(caster))==true and IsUnitType(n0,UNIT_TYPE_STRUCTURE)==false and GetUnitAbilityLevel(n0,'Avul')==0 then
+if Gojo_F_hit==false then
+set Gojo_F_hit=true
+call SaveBoolean(HH,id,19,Gojo_F_hit)
+endif
+set soundplay=CreateSound("Sound\\Gojo\\Punches_Film_2.mp3",false,false,true,12700,12700,"")
+call SetSoundVolume(soundplay,127)
+call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
+call EffectCreateAndMoveAn(true,EffectID[539],GetRandomReal(0,360),1,1.5,0.8,100,100,100,0,120,n0,0,facing,2)
+call SetControlToUnit(n0,n0, 1.5, "stun")
+call DamageU(false,caster,n0,damage)
+call GroupAddUnit(gr,n0)
+endif
+call GroupRemoveUnit(G,n0)
+endloop
+call SaveGroupHandle(HH,id,4,gr)
+call GroupClear(G)
+endif
+if dist>600 then
+set x1=PolX(x1,150,facing)
+set y1=PolY(y1,150,facing)
+call GroupClear(G)
+call GroupEnumUnitsInRange(G,x1,y1,150,Base)
+loop
+set n0=FirstOfGroup(G)
+exitwhen n0==null
+if IsUnitInGroup(n0,gr)==false and UnitIsAlive(n0)and IsUnitEnemy(n0,GetOwningPlayer(caster))==true and IsUnitType(n0,UNIT_TYPE_STRUCTURE)==false and GetUnitAbilityLevel(n0,'Avul')==0 then
+if Gojo_F_hit==false then
+set Gojo_F_hit=true
+call SaveBoolean(HH,id,19,Gojo_F_hit)
+endif
+set soundplay=CreateSound("Sound\\Gojo\\Punches_Film_2.mp3",false,false,true,12700,12700,"")
+call SetSoundVolume(soundplay,127)
+call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
+call EffectCreateAndMoveAn(true,EffectID[539],GetRandomReal(0,360),1,1.5,0.8,100,100,100,0,120,n0,0,facing,2)
+call SetControlToUnit(n0,n0, 1.5, "stun")
+call DamageU(false,caster,n0,damage)
+call GroupAddUnit(gr,n0)
+endif
+call GroupRemoveUnit(G,n0)
+endloop
+call SaveGroupHandle(HH,id,4,gr)
+call GroupClear(G)
+endif
+endif
+if time==0.1 then
+if LoadBoolean(HH,id,19)==true then
+call AbilityCD(caster,'GSF1',20)
+endif
+call MoveUnit(LoadUnitHandle(HH,id,20),LoadUnitHandle(HH,id,20),dist,facing)
+call MoveUnit(LoadUnitHandle(HH,id,21),LoadUnitHandle(HH,id,21),dist,facing)
+call MoveUnit(LoadUnitHandle(HH,id,22),LoadUnitHandle(HH,id,22),dist,facing)
+call UnitSpeed(caster,1.5)
+call GroupClear(gr)
+call DestroyGroup(gr)
+call PauseTimer(GetExpiredTimer())
+call FlushChildHashtable(HH,id)
+call DestroyTimer(GetExpiredTimer())
+endif
+set caster=null
+set gr=null
+endfunction
+function Gojo_F_Act takes unit caster,real x1,real y1 returns nothing
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+local real x0=GetUnitX(caster)
+local real y0=GetUnitY(caster)
+local real facing=Angle2(x0,y0,x1,y1)
+local real damage=GetHeroAgi(caster,true)*3
+local real dist=SR(x0,y0,x1,y1)
+call SaveUnitHandle(HH,id,1,caster)
+call SaveReal(HH,id,3,facing)
+call UnitAddAbility(caster,'Amrf')
+call UnitRemoveAbility(caster,'Amrf')
+call SaveReal(HH,id,11,GetUnitX(caster))
+call SaveReal(HH,id,12,GetUnitY(caster))
+call SaveReal(HH,id,15,damage)
+call SaveBoolean(HH,id,19,false)
+if dist>800 then
+set dist=800
+endif
+call SaveReal(HH,id,8,dist)
+set n0=CreateUnit(GetOwningPlayer(caster),'e200',x0,y0,facing)
+call SetUnitModel(n0,EffectID[4])
+call UnitSize(n0,1,1,1)
+call UnitSpeed(n0,1.5)
+call UnitColor(n0,100,100,100,100)
+call SetUnitFlyHeight(n0,100,0)
+call MyRemoveUnit(n0,2)
+call SaveUnitHandle(HH,id,20,n0)
+set n0=CreateUnit(GetOwningPlayer(caster),'e200',x0,y0,facing+60)
+call SetUnitModel(n0,EffectID[4])
+call UnitSize(n0,1,1,1)
+call UnitSpeed(n0,1.5)
+call UnitColor(n0,100,100,100,100)
+call SetUnitFlyHeight(n0,100,0)
+call MyRemoveUnit(n0,2)
+call SaveUnitHandle(HH,id,21,n0)
+set n0=null
+set n0=CreateUnit(GetOwningPlayer(caster),'e200',x0,y0,facing-60)
+call SetUnitModel(n0,EffectID[4])
+call UnitSize(n0,1,1,1)
+call UnitSpeed(n0,1.5)
+call UnitColor(n0,100,100,100,100)
+call SetUnitFlyHeight(n0,100,0)
+call MyRemoveUnit(n0,2)
+call SaveUnitHandle(HH,id,22,n0)
+set n0=null
+call SaveGroupHandle(HH,id,4,CreateGroup())
+call TimerStart(t,0.02,true,function Gojo_F_Act2)
+set t=null
+endfunction
+
+function Gojo_G_Act2 takes nothing returns nothing
+local integer id=GetHandleId(GetExpiredTimer())
+local unit caster=LoadUnitHandle(HH,id,1)
+local real time=LoadReal(HH,id,5)
+local real damage=LoadReal(HH,id,15)
+local real x0=GetUnitX(caster)
+local real y0=GetUnitY(caster)
+local real facing=LoadReal(HH,id,3)
+set time=time+0.02
+call SaveReal(HH,id,5,time)
+if time>1 and(GetUnitAbilityLevel(caster,'BGSG')==0 or GetUnitState(caster,UNIT_STATE_MANA)<GetUnitState(caster,UNIT_STATE_MAX_MANA)*0.1)then
+call EffectCreateAndMove(true,EffectID[572],GetRandomReal(0,360),1,2,1,100,100,100,60,100,caster,0,facing)
+call EffectCreateAndMove(true,EffectID[768],facing,1.5,0.75,1.5,100,100,100,80,0,caster,0,facing)
+call EffectCreateAndMove(true,EffectID[23],facing,1.5,1,0.5,60,60,100,0,0,caster,0,facing)
+call AbilityCD(caster,'GSG1',5)
+call UnitRemoveAbility(caster,'BGSG')
+call StopSound(LoadSoundHandle(HH,id,25),true,false)
+set soundplay=CreateSound("Sound\\Gojo\\G_OFF.mp3",false,false,true,12700,12700,"")
+call SetSoundVolume(soundplay,127)
+call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
+
+call IssueImmediateOrder(caster,"manashieldoff")
+call RemoveUnit(LoadUnitHandle(HH,id,20))
+call PauseTimer(GetExpiredTimer())
+call FlushChildHashtable(HH,id)
+call DestroyTimer(GetExpiredTimer())
+else
+if time==0.02 then
+set soundplay=CreateSound("Sound\\Gojo\\G_Speech.mp3",false,false,true,12700,12700,"")
+call SetSoundVolume(soundplay,150)
+call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
+call SaveSoundHandle(HH,id,25,soundplay)
+set n0=CreateUnit(GetOwningPlayer(caster),'e200',GetUnitX(caster),GetUnitY(caster),GetUnitFacing(caster))
+call SetUnitModel(n0,EffectID[1314])
+call UnitSize(n0,1.25,1,1)
+call UnitSpeed(n0,1)
+call UnitColor(n0,100,100,100,60)
+call SetUnitFlyHeight(n0,0,0)
+call SaveUnitHandle(HH,id,20,n0)
+set n0=null
+call EffectCreateAndMove(true,EffectID[768],facing,1.5,0.75,1.5,100,100,100,80,0,caster,0,facing)
+call EffectCreateAndMove(true,EffectID[23],facing,1.5,1,0.5,60,60,100,0,0,caster,0,facing)
+call EffectCreateAndMove(true,EffectID[44],GetRandomReal(0,360),1.5,1,1,100,100,100,0,50,caster,0,facing)
+call EffectCreateAndMove(true,EffectID[341],GetRandomReal(0,360),1.5,1,1.25,100,100,100,0,0,caster,0,facing)
+call EffectCreateAndMove(true,EffectID[49],GetRandomReal(0,360),1.5,2.5,1,100,100,100,0,0,caster,0,facing)
+call SetUnitAnimationByIndex(caster,26)
+call UnitSpeed(caster,1)
+endif
+if time==6 then
+set soundplay=CreateSound("Sound\\Gojo\\G_Active.mp3",false,false,true,12700,12700,"")
+call SetSoundVolume(soundplay,127)
+call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
+call SaveSoundHandle(HH,id,25,soundplay)
+endif
+if time>0.02 then
+call MoveUnit(caster,LoadUnitHandle(HH,id,20),0,facing)
+call SetUnitFlyHeight(LoadUnitHandle(HH,id,20),GetUnitFlyHeight(caster)+50,0)
+endif
+call GroupClear(G)
+call GroupEnumUnitsInRange(G,x0,y0,300,null)
+loop
+set n0=FirstOfGroup(G)
+exitwhen n0==null
+
+
+if GetUnitAbilityLevel(n0,'A1WT')==0 and  GetUnitAbilityLevel(n0,'B059')==0 and GetUnitAbilityLevel(caster,'Bwul')==0 then
+
+if GetUnitAbilityLevel(n0,'Avul')==0 and IsUnitEnemy(n0,GetOwningPlayer(caster))==true and IsUnitType(n0,UNIT_TYPE_STRUCTURE)==false then
+if SR(x0,y0,GetUnitX(n0),GetUnitY(n0))<250 then
+set facing=Angle2(x0,y0,GetUnitX(n0),GetUnitY(n0))
+call MoveUnit(n0,n0,30,facing)
+endif
+
+endif
+
+endif
+
+
+
+
+call GroupRemoveUnit(G,n0)
+endloop
+endif
+set caster=null
+endfunction
+function Gojo_G_Act takes unit caster returns nothing
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+local real x0=GetUnitX(caster)
+local real y0=GetUnitY(caster)
+local real facing=GetUnitFacing(caster)
+//local real damage=6*GetHeroInt(caster,true)
+local boolean IshidaGTargets=false
+call SaveUnitHandle(HH,id,1,caster)
+call SaveReal(HH,id,3,facing)
+//call SaveReal(HH,id,15,damage)
+call SetUnitState(caster,UNIT_STATE_MANA,GetUnitState(caster,UNIT_STATE_MANA)-GetUnitState(caster,UNIT_STATE_MAX_MANA)*0.05)
+call TimerStart(t,0.02,true,function Gojo_G_Act2)
+set t=null
+endfunction
+function Gojo_R2_Fast_Act2 takes nothing returns nothing
+local integer id=GetHandleId(GetExpiredTimer())
+local unit caster=LoadUnitHandle(HH,id,1)
+local unit Dummy=LoadUnitHandle(HH,id,20)
+local group gr=LoadGroupHandle(HH,id,4)
+local real time=LoadReal(HH,id,5)
+local real time1=LoadReal(HH,id,6)
+local real x0=GetUnitX(Dummy)
+local real y0=GetUnitY(Dummy)
+local real x1=LoadReal(HH,id,11)
+local real y1=LoadReal(HH,id,12)
+local real dist=LoadReal(HH,id,8)
+local real damage=LoadReal(HH,id,15)
+local real facing=LoadReal(HH,id,3)
+set time=time+0.02
+call SaveReal(HH,id,5,time)
+if time>11 then
+call RemoveUnit(LoadUnitHandle(HH,id,20))
+call RemoveUnit(LoadUnitHandle(HH,id,21))
+call PauseTimer(GetExpiredTimer())
+call FlushChildHashtable(HH,id)
+call DestroyTimer(GetExpiredTimer())
+else
+if time==0.02 then
+call UnitSpeed(caster,1)
+call SetUnitAnimationByIndex(caster,30)
+set soundplay=CreateSound("Sound\\Gojo\\Murasaki_Fast.mp3",false,false,true,12700,12700,"")
+call SetSoundVolume(soundplay,175)
+call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
+set n0=CreateUnit(GetOwningPlayer(caster),'e200',GetUnitX(caster),GetUnitY(caster),facing)
+call SetUnitModel(n0,EffectID[1344])
+call UnitSize(n0,1,1,1)
+call UnitSpeed(n0,1)
+call UnitColor(n0,100,100,100,0)
+call SetUnitFlyHeight(n0,150,0)
+call SaveUnitHandle(HH,id,20,n0)
+call MoveUnit(n0,n0,150,facing)
+set n0=null
+set n0=CreateUnit(GetOwningPlayer(caster),'e200',GetUnitX(caster),GetUnitY(caster),facing)
+call SetUnitModel(n0,EffectID[768])
+call UnitSize(n0,1.5,1,1)
+call UnitSpeed(n0,1.5)
+call UnitColor(n0,100,100,100,60)
+call SetUnitFlyHeight(n0,0,0)
+call SaveUnitHandle(HH,id,22,n0)
+call MyRemoveUnit(n0,2.5)
+set n0=null
+call EffectCreateAndMove(true,EffectID[280],facing,1,0.65,1.5,100,100,100,40,150,caster,150,facing)
+call EffectCreateAndMove(true,EffectID[170],facing,1,0.5,0.4,100,100,100,0,150,caster,150,facing)
+call EffectCreateAndMove(true,EffectID[1345],facing,1.5,1,1.5,100,100,100,40,50,caster,0,facing)
+endif
+if time==0.5 then
+call UnitSpeed(LoadUnitHandle(HH,id,22),0)
+call DestroyEffect(AddSpecialEffectTarget(EffectID[992],caster,"hand right"))
+set soundplay=CreateSound("Sound\\Gojo\\Murasaki_Fast_Throw.mp3",false,false,true,12700,12700,"")
+call SetSoundVolume(soundplay,150)
+call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
+set n0=CreateUnit(GetOwningPlayer(caster),'e200',GetUnitX(caster),GetUnitY(caster),facing)
+call SetUnitModel(n0,EffectID[368])
+call UnitSize(n0,0.8,1,1)
+call UnitSpeed(n0,0.1)
+call UnitColor(n0,100,100,100,0)
+call SetUnitFlyHeight(n0,100,0)
+call SaveUnitHandle(HH,id,21,n0)
+call MoveUnit(Dummy,n0,0,facing)
+set n0=null
+endif
+if time<1 then
+call PauseUnit(caster,true)
+call SetUnitInvulnerable(caster,true)
+set time1=time1+0.02
+if time1>0.3 then
+set time1=0
+call EffectCreateAndMove(true,EffectID[23],GetRandomReal(0,360),1,1.5,0.5,80,20,100,40,0,caster,0,facing)
+endif
+call SaveReal(HH,id,6,time1)
+endif
+if time==0.8 then
+call UnitSpeed(caster,1)
+call SetUnitAnimationByIndex(caster,31)
+endif
+if time==0.9 then
+call EffectCreateAndMove(true,EffectID[226],facing,1.5,1.5,1,100,100,100,40,50,Dummy,0,facing)
+endif
+if time==1 then
+call EffectCreateAndMove(true,EffectID[0],facing+180,1.5,1.5,0.75,80,20,100,0,50,Dummy,0,facing)
+call EffectCreateAndMove(true,EffectID[6],facing,1.5,0.4,0.4,80,20,100,0,50,Dummy,0,facing)
+call EffectCreateAndMove(true,EffectID[397],facing,1.5,1.25,1,100,100,100,40,50,Dummy,0,facing)
+call EffectCreateAndMoveAn(true,EffectID[717],facing,1.5,2,0.5,100,100,100,0,50,Dummy,0,facing,2)
+call PauseUnit(caster,false)
+call SetUnitInvulnerable(caster,false)
+endif
+if time>1 and time<10 then
+call MoveUnit(Dummy,Dummy,60,facing)
+call SaveReal(HH,id,8,dist-60)
+call MoveUnit(Dummy,LoadUnitHandle(HH,id,21),0,facing)
+call DamageAoeOneTime(caster,x0,y0,350,damage*0.5,gr)
+if dist<=50 or IsTerrainPathable(PolX(x0,50,facing),PolY(y0,50,facing),PATHING_TYPE_FLYABILITY)==true then
+call EffectCreateAndMove(true,"Signum\\[Signum]JeanneDark1mt_baozha1.mdl",GetRandomInt(0,360),1.5,1.25,0.5,90,30,80,20,0,Dummy,0,facing)
+call EffectCreateAndMove(true,EffectID[368],facing,1.5,3.25,0.2,100,100,100,50,0,Dummy,0,facing)
+call EffectCreateAndMove(true,EffectID[1344],facing,1.5,5,1,100,100,100,50,0,Dummy,0,facing)
+call EffectCreateAndMoveAn(true,EffectID[1344],facing,1.5,7,0.3,100,100,100,50,0,Dummy,0,facing,1)
+call EffectCreateAndMove(true,EffectID[768],facing,2,1.25,0.5,100,100,100,80,-200,Dummy,0,facing)
+call EffectCreateAndMoveAn(true,EffectID[172],facing,1.5,2.25,0.5,100,100,100,50,0,Dummy,0,facing,3)
+call EffectCreateAndMove(true,EffectID[173],facing,1.5,1.75,1,100,100,100,50,0,Dummy,0,facing)
+call EffectCreateAndMove(true,EffectID[287],facing,1.5,1.5,1,100,100,100,50,0,Dummy,0,facing)
+set time=10
+call SaveReal(HH,id,5,10)
+call UnitSize(Dummy,2,1,1)
+endif
+endif
+if time>10 then
+set time1=time1-0.02
+if time1<0 then
+set time1=0.2
+call DamageAoeOneTime0(caster,x0,y0,600,damage*0.1)
+call SetUnitAnimationByIndex(Dummy,2)
+endif
+call SaveReal(HH,id,6,time1)
+endif
+endif
+set caster=null
+set Dummy=null
+set gr=null
+endfunction
+
+function Gojo_R2_Act2 takes nothing returns nothing
+local integer id=GetHandleId(GetExpiredTimer())
+local unit caster=LoadUnitHandle(HH,id,1)
+local unit Dummy=LoadUnitHandle(HH,id,20)
+local unit Dummy1=LoadUnitHandle(HH,id,25)
+local group gr=LoadGroupHandle(HH,id,4)
+local real time=LoadReal(HH,id,5)
+local real time1=LoadReal(HH,id,6)
+local real time2=LoadReal(HH,id,7)
+local real x0=GetUnitX(Dummy)
+local real y0=GetUnitY(Dummy)
+local real x1=LoadReal(HH,id,11)
+local real y1=LoadReal(HH,id,12)
+local real dist=LoadReal(HH,id,8)
+local real damage=LoadReal(HH,id,15)
+local real facing=LoadReal(HH,id,3)
+local integer Have_balls=LoadInteger(HH,id,10)
+
+local real new_facing=LoadReal(HH, GetHandleId( (GetOwningPlayer( caster )) ), StringHash("DummyFacing") )
+
+set time=time+0.02
+call SaveReal(HH,id,5,time)
+if time>21 then
+
+
+
+
+call RemoveUnit(LoadUnitHandle(HH,id,20))
+call RemoveUnit(LoadUnitHandle(HH,id,21))
+call RemoveUnit(LoadUnitHandle(HH,id,25))
+call RemoveUnit(LoadUnitHandle(HH,id,26))
+call RemoveUnit(LoadUnitHandle(HH,id,22))
+call PauseTimer(GetExpiredTimer())
+call FlushChildHashtable(HH,id)
+call DestroyTimer(GetExpiredTimer())
+else
+if time==0.02 then
+call EffectCreateAndMove(true,EffectID[20],facing,1,2,0.75,100,100,100,20,0,caster,0,facing)
+set n0=CreateUnit(GetOwningPlayer(caster),'e200',GetUnitX(caster),GetUnitY(caster),facing-90)
+call UnitSize(n0,2.5,1,1)
+call UnitSpeed(n0,1)
+call UnitColor(n0,100,100,100,0)
+call SetUnitFlyHeight(n0,0,0)
+call SaveUnitHandle(HH,id,23,n0)
+call MoveUnit(n0,n0,200,facing)
+call MoveUnit(n0,n0,250,facing+90)
+set n0=null
+set n0=CreateUnit(GetOwningPlayer(caster),'e200',GetUnitX(caster),GetUnitY(caster),facing+90)
+call UnitSize(n0,2.5,1,1)
+call UnitSpeed(n0,1)
+call UnitColor(n0,100,100,100,0)
+call SetUnitFlyHeight(n0,0,0)
+call SaveUnitHandle(HH,id,24,n0)
+call MoveUnit(n0,n0,200,facing)
+call MoveUnit(n0,n0,250,facing-90)
+set n0=null
+call UnitSpeed(caster,1)
+call SetUnitAnimationByIndex(caster,29)
+set soundplay=CreateSound("Sound\\Gojo\\Murasaki_Full_Charge1.mp3",false,false,true,12700,12700,"")
+call SetSoundVolume(soundplay,250)
+call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
+set n0=CreateUnit(GetOwningPlayer(caster),'e200',GetUnitX(caster),GetUnitY(caster),facing)
+call UnitSize(n0,0.75,1,1)
+call UnitSpeed(n0,1)
+call UnitColor(n0,100,100,100,0)
+call SetUnitFlyHeight(n0,100,0)
+call SaveUnitHandle(HH,id,20,n0)
+call MoveUnit(n0,n0,150,facing)
+set n0=null
+set n0=CreateUnit(GetOwningPlayer(caster),'e200',GetUnitX(caster),GetUnitY(caster),facing)
+call SetUnitModel(n0,EffectID[768])
+call UnitSize(n0,1.5,1,1)
+call UnitSpeed(n0,1.5)
+call UnitColor(n0,100,100,100,40)
+call SetUnitFlyHeight(n0,0,0)
+call SaveUnitHandle(HH,id,22,n0)
+set n0=null
+endif
+if time==0.5 then
+call UnitSpeed(LoadUnitHandle(HH,id,22),0)
+call UnitSpeed(caster,0)
+endif
+if time==1.2 then
+set soundplay=CreateSound("Sound\\Gojo\\Murasaki_Full_Charge2.mp3",false,false,true,12700,12700,"")
+call SetSoundVolume(soundplay,250)
+call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
+if Have_balls==1 then
+call SaveReal(HH,id,5,3.2)
+endif
+if Have_balls==3 then
+call SaveReal(HH,id,5,5.2)
+endif
+endif
+if time==3 then
+set soundplay=CreateSound("Sound\\Gojo\\Murasaki_Full_Charge_Ao.mp3",false,false,true,12700,12700,"")
+call SetSoundVolume(soundplay,250)
+call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
+if Have_balls==2 then
+call SaveReal(HH,id,5,5)
+endif
+endif
+if Have_balls==3 then
+if time==5.3 then
+call EffectCreateAndMoveAn(true,EffectID[1340],facing,1,0.25,0.5,100,100,100,0,200,LoadUnitHandle(HH,id,23),0,facing,2)
+endif
+if time==5.8 then
+call EffectCreateAndMove90(true,EffectID[48],facing+90,1.5,1,0.5,100,100,100,0,200,LoadUnitHandle(HH,id,23),0,facing)
+call EffectCreateAndMove90(true,EffectID[1341],facing+90,1.5,1.5,1,100,100,100,0,200,LoadUnitHandle(HH,id,23),0,facing)
+endif
+if time==6 then
+call UnitColor(LoadUnitHandle(HH,id,23),100,100,100,100)
+call SetUnitModel(LoadUnitHandle(HH,id,23),EffectID[1337])
+endif
+if time==5.3 then
+call EffectCreateAndMoveAn(true,EffectID[1339],facing,1,0.25,0.5,100,100,100,0,200,LoadUnitHandle(HH,id,24),0,facing,2)
+endif
+if time==5.8 then
+call EffectCreateAndMove90(true,EffectID[75],facing-90,1.5,1,0.5,100,100,100,0,200,LoadUnitHandle(HH,id,24),0,facing)
+call EffectCreateAndMove90(true,EffectID[1342],facing-90,1.5,1.5,1,100,100,100,0,200,LoadUnitHandle(HH,id,24),0,facing)
+endif
+if time==6 then
+call UnitColor(LoadUnitHandle(HH,id,24),100,100,100,100)
+call SetUnitModel(LoadUnitHandle(HH,id,24),EffectID[1336])
+endif
+if time>6 and time<7 then
+call UnitColor(LoadUnitHandle(HH,id,23),100,100,100,100-(time-6)*100)
+call UnitColor(LoadUnitHandle(HH,id,24),100,100,100,100-(time-6)*100)
+endif
+endif
+if Have_balls==2 then
+if time==5.3 then
+call EffectCreateAndMoveAn(true,EffectID[1340],facing,1,0.25,0.5,100,100,100,0,200,LoadUnitHandle(HH,id,23),0,facing,2)
+endif
+if time==5.8 then
+call EffectCreateAndMove90(true,EffectID[48],facing+90,1.5,1,0.5,100,100,100,0,200,LoadUnitHandle(HH,id,23),0,facing)
+call EffectCreateAndMove90(true,EffectID[1341],facing+90,1.5,1.5,1,100,100,100,0,200,LoadUnitHandle(HH,id,23),0,facing)
+endif
+if time==6 then
+call UnitColor(LoadUnitHandle(HH,id,23),100,100,100,100)
+call SetUnitModel(LoadUnitHandle(HH,id,23),EffectID[1337])
+endif
+if time>6 and time<7 then
+call UnitColor(LoadUnitHandle(HH,id,23),100,100,100,100-(time-6)*100)
+endif
+if time==2.3 then
+call EffectCreateAndMoveAn(true,EffectID[1339],facing,1,0.25,0.5,100,100,100,0,200,LoadUnitHandle(HH,id,24),0,facing,2)
+endif
+if time==2.8 then
+call EffectCreateAndMove90(true,EffectID[75],facing-90,1.5,1,0.5,100,100,100,0,200,LoadUnitHandle(HH,id,24),0,facing)
+call EffectCreateAndMove90(true,EffectID[1342],facing-90,1.5,1.5,1,100,100,100,0,200,LoadUnitHandle(HH,id,24),0,facing)
+endif
+if time==3 then
+call UnitColor(LoadUnitHandle(HH,id,24),100,100,100,100)
+call SetUnitModel(LoadUnitHandle(HH,id,24),EffectID[1336])
+endif
+if time>5 and time<6 then
+call UnitColor(LoadUnitHandle(HH,id,24),100,100,100,100-(time-5)*100)
+endif
+endif
+if Have_balls==1 or Have_balls==0 then
+if time==3.3 then
+call EffectCreateAndMoveAn(true,EffectID[1340],facing,1,0.25,0.5,100,100,100,0,200,LoadUnitHandle(HH,id,23),0,facing,2)
+endif
+if time==3.8 then
+call EffectCreateAndMove90(true,EffectID[48],facing+90,1.5,1,0.5,100,100,100,0,200,LoadUnitHandle(HH,id,23),0,facing)
+call EffectCreateAndMove90(true,EffectID[1341],facing+90,1.5,1.5,1,100,100,100,0,200,LoadUnitHandle(HH,id,23),0,facing)
+endif
+if time==4 then
+call UnitColor(LoadUnitHandle(HH,id,23),100,100,100,100)
+call SetUnitModel(LoadUnitHandle(HH,id,23),EffectID[1337])
+endif
+if time>4 and time<5 then
+call UnitColor(LoadUnitHandle(HH,id,23),100,100,100,100-(time-4)*100)
+endif
+if time==5.3 then
+call EffectCreateAndMoveAn(true,EffectID[1339],facing,1,0.25,0.5,100,100,100,0,200,LoadUnitHandle(HH,id,24),0,facing,2)
+endif
+if time==5.8 then
+call EffectCreateAndMove90(true,EffectID[75],facing-90,1.5,1,0.5,100,100,100,0,200,LoadUnitHandle(HH,id,24),0,facing)
+call EffectCreateAndMove90(true,EffectID[1342],facing-90,1.5,1.5,1,100,100,100,0,200,LoadUnitHandle(HH,id,24),0,facing)
+endif
+if time==6 then
+call UnitColor(LoadUnitHandle(HH,id,24),100,100,100,100)
+call SetUnitModel(LoadUnitHandle(HH,id,24),EffectID[1336])
+endif
+if time>6 and time<7 then
+call UnitColor(LoadUnitHandle(HH,id,24),100,100,100,100-(time-6)*100)
+endif
+endif
+if time==5 then
+set soundplay=CreateSound("Sound\\Gojo\\Murasaki_Full_Charge_Aka.mp3",false,false,true,12700,12700,"")
+call SetSoundVolume(soundplay,250)
+call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
+endif
+if time==7 then
+call UnitColor(LoadUnitHandle(HH,id,23),100,100,100,0)
+call UnitColor(LoadUnitHandle(HH,id,24),100,100,100,0)
+call UnitSpeed(caster,1)
+set soundplay=CreateSound("Sound\\Gojo\\Murasaki_Full_Charge4.mp3",false,false,true,12700,12700,"")
+call SetSoundVolume(soundplay,250)
+call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
+endif
+if time>7 and time<8.2 then
+call MoveUnit(LoadUnitHandle(HH,id,23),LoadUnitHandle(HH,id,23),-4,facing+90)
+call MoveUnit(LoadUnitHandle(HH,id,24),LoadUnitHandle(HH,id,24),-4,facing-90)
+endif
+if time==7.8 then
+call SaveReal(HH, GetHandleId( (GetOwningPlayer( caster )) ), StringHash("DummyFacing"), facing )
+set soundplay=CreateSound("Sound\\Gojo\\Murasaki_Full_Charge5.mp3",false,false,true,12700,12700,"")
+call SetSoundVolume(soundplay,250)
+call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
+set n0=CreateUnit(GetOwningPlayer(caster),'gbRd',GetUnitX(caster),GetUnitY(caster),facing)
+call UnitAddAbility(n0,'Pet2')
+call UnitSize(n0,1,1,1)
+call MoveUnit(n0,n0,250,facing)
+call SetUnitFlyHeight(n0,0,0)
+call SaveUnitHandle(HH,id,25,n0)
+endif
+if time==7.8 then
+call EffectCreateAndMove90(true,EffectID[1076],facing,1.5,1,1,100,100,100,40,150,caster,100,facing)
+call EffectCreateAndMove(true,EffectID[1343],facing,1,1,1,100,100,100,0,0,caster,200,facing)
+call SetUnitModel(LoadUnitHandle(HH,id,20),EffectID[1049])
+endif
+if time==8.5 then
+call EffectCreateAndMove(true,EffectID[1346],facing+60,1,1.2,0.8,100,0,100,20,0,caster,200,facing)
+call EffectCreateAndMove(true,EffectID[1346],facing-60,1,1.2,0.8,100,0,100,20,0,caster,200,facing)
+call EffectCreateAndMove90(true,EffectID[1080],facing,1,1.25,0.5,100,100,100,0,150,caster,100,facing)
+call EffectCreateAndMove(true,EffectID[1348],facing,1,3,0.75,80,50,100,60,150,caster,200,facing)
+call EffectCreateAndMove(true,EffectID[1349],facing,1,0.25,2.2,80,40,100,60,150,caster,200,facing)
+endif
+if time==8.5 then
+
+call EffectCreateAndMove(true,EffectID[1345],facing,1.5,1,1.5,100,100,100,40,50,caster,0,facing)
+set n0=CreateUnit(GetOwningPlayer(caster),'090e',GetUnitX(caster),GetUnitY(caster),facing)
+call SetUnitModel(n0,EffectID[390])
+call MoveUnit(n0,n0,200,facing)
+call UnitSize(n0,1,1,1)
+call UnitSpeed(n0,1)
+call UnitColor(n0,100,100,100,0)
+call SetUnitFlyHeight(n0,200,0)
+call SaveUnitHandle(HH,id,26,n0)
+set n0=null
+call RemoveUnit(LoadUnitHandle(HH,id,23))
+call RemoveUnit(LoadUnitHandle(HH,id,24))
+endif
+if time==9 then
+
+set soundplay=CreateSound("Sound\\Gojo\\Murasaki_Full_Charge_Throw.mp3",false,false,true,12700,12700,"")
+call SetSoundVolume(soundplay,250)
+call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
+endif
+if time==9.5 then
+call UnitSpeed(caster,1)
+call SetUnitAnimationByIndex(caster,31)
+endif
+if time>8.5 and time<10 then
+call MoveUnit(caster,LoadUnitHandle(HH,id,26),200,facing)
+call UnitSize(LoadUnitHandle(HH,id,26),1+(time-8.5)*2,1,1)
+call UnitSize(LoadUnitHandle(HH,id,20),0.75+(time-8.5)*0.755,1,1)
+endif
+if time==10 then
+call EffectCreateAndMove(true,EffectID[226],facing,1.5,2.25,1,100,100,100,40,150,Dummy,200,facing)
+call EffectCreateAndMove(true,EffectID[0],facing+180,1.5,1.5,0.75,80,20,100,0,150,Dummy,100,facing)
+call EffectCreateAndMove(true,EffectID[6],facing,1.5,0.6,0.4,80,20,100,0,150,Dummy,100,facing)
+call EffectCreateAndMove(true,EffectID[397],facing,1.5,1.5,1,100,100,100,40,150,Dummy,100,facing)
+call EffectCreateAndMoveAn(true,EffectID[717],facing,1.5,3,0.5,100,100,100,0,150,Dummy,100,facing,2)
+set soundplay=CreateSound("Sound\\Gojo\\Murasaki_Full_Charge_Throw2.mp3",false,false,true,12700,12700,"")
+call SetSoundVolume(soundplay,250)
+call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
+endif
+if time>8 and time<10 then
+call MoveUnit(caster,Dummy1,500,facing)
+call MoveUnit(Dummy1,Dummy,-250,facing)
+set facing=new_facing//GetUnitFacing(Dummy1)
+
+call SetUnitFacing(caster,facing)
+
+call SaveReal(HH,id,3,GetUnitFacing(caster))
+
+if GetLocalPlayer()==GetOwningPlayer(caster)then
+call ClearSelection()
+call SelectUnit(Dummy1,true)
+endif
+endif
+if time==10 then
+
+set facing=LoadReal(HH,id,3)
+
+//set facing=Angle2(GetUnitX(caster),GetUnitY(caster),GetUnitX(Dummy1),GetUnitY(Dummy1))
+//call SaveReal(HH,id,3,facing)
+call UnitSpeed(LoadUnitHandle(HH,id,20),2)
+call SetUnitFlyHeight(LoadUnitHandle(HH,id,26),300,0)
+set n0=CreateUnit(GetOwningPlayer(caster),'e200',GetUnitX(caster),GetUnitY(caster),facing)
+call MoveUnit(n0,n0,250,facing)
+call SetUnitModel(n0,EffectID[1315])
+call UnitSize(n0,1,1,1)
+call UnitSpeed(n0,1)
+call UnitColor(n0,100,100,100,0)
+call SetUnitFlyHeight(n0,0,0)
+call SaveUnitHandle(HH,id,21,n0)
+call MoveUnit(Dummy,n0,0,facing)
+set n0=null
+endif
+if time<10 then
+call MoveAoe1(x1,y1,caster,0,facing)
+call PauseUnit(caster,true)
+set time1=time1+0.02
+if time>8 then
+if time1>0.08 then
+set time1=0
+call EffectCreateAndMove(true,EffectID[1038],GetRandomReal(0,360),1.25,GetRandomReal(1,1.5),GetRandomReal(0.75,1.25),100,100,100,GetRandomReal(20,40),0,caster,GetRandomInt(350,550),GetRandomReal(0,360))
+endif
+else
+if time1>0.3 then
+set time1=0
+call EffectCreateAndMove(true,EffectID[19],GetRandomReal(0,360),1.25,GetRandomReal(0.75,1.25),GetRandomReal(0.4,0.8),100,100,100,GetRandomReal(60,80),0,caster,0,facing)
+call EffectCreateAndMove(true,EffectID[23],GetRandomReal(0,360),1.25,GetRandomReal(0.75,1),GetRandomReal(0.2,0.5),100,100,100,GetRandomReal(30,50),0,caster,0,facing)
+endif
+endif
+call SaveReal(HH,id,6,time1)
+endif
+if time==10 then
+
+//call SetUnitFacing(Dummy1,facing)
+call SetUnitFacing(LoadUnitHandle(HH,id,21),facing)
+//call SetUnitFacing(LoadUnitHandle(HH,id,26),facing)
+
+
+call UnitSpeed(caster,1)
+if GetLocalPlayer()==GetOwningPlayer(caster)then
+call ClearSelection()
+call SelectUnit(caster,true)
+endif
+call PauseUnit(caster,false)
+
+call AbilityCD(caster,'GSR1',30)
+
+
+
+endif
+if time>10 and time<20 then
+set time2=time2+0.02
+if time2==0.08 then
+call EffectCreateAndMove(true,EffectID[1049],facing,1,GetRandomReal(1,1.25),GetRandomReal(1,1.5),100,100,100,50,0,LoadUnitHandle(HH,id,20),0,facing)
+call EffectCreateAndMove(true,EffectID[1071],facing,1.5,GetRandomReal(2.25,2.75),GetRandomReal(1,1.5),100,100,100,50,0,LoadUnitHandle(HH,id,20),0,facing)
+set time2=0
+endif
+call SaveReal(HH,id,7,time2)
+call MoveUnit(Dummy,Dummy,75,facing)
+call MoveUnit(Dummy,LoadUnitHandle(HH,id,21),0,facing)
+call MoveUnit(Dummy,LoadUnitHandle(HH,id,26),0,facing)
+call SaveReal(HH,id,8,dist-60)
+call DamageAoeOneTime(caster,x0,y0,450,damage,gr)
+if dist<=80 or IsTerrainPathable(PolX(x0,50,facing),PolY(y0,50,facing),PATHING_TYPE_FLYABILITY)==true then
+call SetUnitModel(LoadUnitHandle(HH,id,21),"war3mapImported\\Dummy.mdl")
+call UnitSpeed(LoadUnitHandle(HH,id,26),0.3)
+call SetUnitAnimationByIndex(LoadUnitHandle(HH,id,26),1)
+call UnitSize(LoadUnitHandle(HH,id,26),5,1,1)
+call UnitSize(LoadUnitHandle(HH,id,20),3.5,1,1)
+call UnitColor(LoadUnitHandle(HH,id,26),100,100,100,20)
+set soundplay=CreateSound("Sound\\Gojo\\Murasaki_Full_Charge_Throw3.mp3",false,false,true,12700,12700,"")
+call SetSoundVolume(soundplay,250)
+call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
+call EffectCreateAndMove(true,EffectID[1347],facing,1.5,1,0.5,100,100,100,0,100,Dummy,0,facing)
+call EffectCreateAndMove(true,"Signum\\[Signum]JeanneDark1mt_baozha1.mdl",GetRandomInt(0,360),1.5,1,0.5,90,30,80,20,0,Dummy,0,facing)
+call EffectCreateAndMove(true,"Signum\\[Signum]JeanneDark1mt_baozha1.mdl",GetRandomInt(0,360),1.5,1.5,0.5,90,30,80,20,0,Dummy,0,facing)
+call EffectCreateAndMove(true,"Signum\\[Signum]JeanneDark1mt_baozha1.mdl",GetRandomInt(0,360),1.5,2,0.5,90,30,80,20,0,Dummy,0,facing)
+call EffectCreateAndMove(true,EffectID[768],facing,2,1.25,0.5,100,100,100,80,-300,Dummy,0,facing)
+call EffectCreateAndMove(true,EffectID[20],facing,2,3.5,1.5,100,100,100,40,-300,Dummy,0,facing)
+call EffectCreateAndMove(true,EffectID[173],facing,1.5,3.2,1,100,100,100,30,-300,Dummy,0,facing)
+set time=20
+call SaveReal(HH,id,5,time)
+endif
+endif
+if time>20 then
+set time1=time1-0.02
+call DamageAoeOneTime(caster,x0,y0,1000,damage,gr)
+if time1<0 then
+set time1=0.2
+call DamageAoeOneTime0(caster,x0,y0,1000,damage*0.1)
+call SetUnitAnimationByIndex(Dummy,2)
+endif
+call SaveReal(HH,id,6,time1)
+endif
+endif
+set caster=null
+set Dummy=null
+set Dummy1=null
+set gr=null
+endfunction
+
+function Gojo_R_Act takes unit caster,real x1,real y1 returns nothing
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+local real x0=GetUnitX(caster)
+local real y0=GetUnitY(caster)
+local real facing=Angle2(x0,y0,x1,y1)
+local real dist
+local real damage=(GetUnitAbilityLevel(caster,'GSR1')+5)*GetHeroAgi(caster,true)
+local integer Have_balls=0
+call SaveUnitHandle(HH,id,1,caster)
+call SaveReal(HH,id,11,x1)
+call SaveReal(HH,id,12,y1)
+call SaveReal(HH,id,3,facing)
+call SaveGroupHandle(HH,id,4,CreateGroup())
+if(GetUnitAbilityLevel(caster,'GSQF')>0 and GetUnitAbilityLevel(caster,'GSE5')>0)or(GetUnitAbilityLevel(caster,'GSQF')>0 and GetUnitAbilityLevel(caster,'GSE0')>0)or(GetUnitAbilityLevel(caster,'GSQ0')>0 and GetUnitAbilityLevel(caster,'GSEF')>0)or(GetUnitAbilityLevel(caster,'GSQ5')>0 and GetUnitAbilityLevel(caster,'GSEF')>0)or(GetUnitAbilityLevel(caster,'GSQ5')>0 and GetUnitAbilityLevel(caster,'GSE5')>0)or(GetUnitAbilityLevel(caster,'GSQ0')>0 and GetUnitAbilityLevel(caster,'GSE5')>0)or(GetUnitAbilityLevel(caster,'GSQ5')>0 and GetUnitAbilityLevel(caster,'GSE0')>0)or(GetUnitAbilityLevel(caster,'GSQ0')>0 and GetUnitAbilityLevel(caster,'GSE0')>0)then
+call PauseUnit(caster,true)
+call SetUnitInvulnerable(caster,true)
+call SaveReal(HH,id,15,damage)
+set dist=SR(x0,y0,x1,y1)
+if dist>3000 then
+set dist=3000
+endif
+call SaveReal(HH,id,8,dist)
+call TimerStart(t,0.02,true,function Gojo_R2_Fast_Act2)
+else
+call SaveReal(HH,id,8,6000)
+if LoadUnitHandle(HH,GetHandleId(caster),StringHash("GojoQU"))!=null then
+set Have_balls=1
+endif
+if LoadUnitHandle(HH,GetHandleId(caster),StringHash("GojoEU"))!=null then
+set Have_balls=2
+endif
+if LoadUnitHandle(HH,GetHandleId(caster),StringHash("GojoQU"))!=null and LoadUnitHandle(HH,GetHandleId(caster),StringHash("GojoEU"))!=null then
+set Have_balls=3
+call RemoveUnit(LoadUnitHandle(HH,GetHandleId(caster),StringHash("GojoQU")))
+call RemoveSavedHandle(HH,GetHandleId(caster),StringHash("GojoQU"))
+call SaveBoolean(HH,GetHandleId(caster),StringHash("GojoQ2act"),true)
+call RemoveUnit(LoadUnitHandle(HH,GetHandleId(caster),StringHash("GojoEU")))
+call RemoveSavedHandle(HH,GetHandleId(caster),StringHash("GojoEU"))
+call SaveBoolean(HH,GetHandleId(caster),StringHash("GojoE2act"),true)
+set damage=(GetUnitAbilityLevel(caster,'GSR1')*2+2)*GetHeroAgi(caster,true)
+endif
+if Have_balls==1 then
+call RemoveUnit(LoadUnitHandle(HH,GetHandleId(caster),StringHash("GojoQU")))
+call RemoveSavedHandle(HH,GetHandleId(caster),StringHash("GojoQU"))
+call SaveBoolean(HH,GetHandleId(caster),StringHash("GojoQ2act"),true)
+set damage=(GetUnitAbilityLevel(caster,'GSR1')*2+4)*GetHeroAgi(caster,true)
+endif
+if Have_balls==2 then
+set damage=(GetUnitAbilityLevel(caster,'GSR1')*2+4)*GetHeroAgi(caster,true)
+call RemoveUnit(LoadUnitHandle(HH,GetHandleId(caster),StringHash("GojoEU")))
+call RemoveSavedHandle(HH,GetHandleId(caster),StringHash("GojoEU"))
+call SaveBoolean(HH,GetHandleId(caster),StringHash("GojoE2act"),true)
+endif
+if Have_balls==0 then
+set damage=(GetUnitAbilityLevel(caster,'GSR1')*2+6)*GetHeroAgi(caster,true)
+endif
+call SaveReal(HH,id,11,x0)
+call SaveReal(HH,id,12,y0)
+call SaveReal(HH,id,15,damage)
+call SaveInteger(HH,id,10,Have_balls)
+call TimerStart(t,0.02,true,function Gojo_R2_Act2)
+endif
+set t=null
+endfunction
+function Gojo_T3_Act2 takes nothing returns nothing
+local integer id=GetHandleId(GetExpiredTimer())
+local unit caster=LoadUnitHandle(HH,id,1)
+local group gr=LoadGroupHandle(HH,id,4)
+local real time=LoadReal(HH,id,5)
+local real time1=LoadReal(HH,id,6)
+//local real damage=LoadReal(HH,id,15)
+local real x0=GetUnitX(caster)
+local real y0=GetUnitY(caster)
+local real facing=GetUnitFacing(caster)
+set time=time+0.02
+call SaveReal(HH,id,5,time)
+if time>2 then
+ call SetUnitPathing(caster,true)
+call AddUnitAnimationProperties(caster,"Alternate",false)
+call EffectCreateAndMove(true,EffectID[768],facing,1.5,0.75,1.5,100,100,100,80,0,caster,0,facing)
+call EffectCreateAndMove(true,EffectID[23],facing,1.5,1,0.5,100,100,100,0,0,caster,0,facing)
+call DestroyGroup(gr)
+//call SetUnitInvulnerable(caster,false)
+call MyRemoveUnit(LoadUnitHandle(HH,id,20),0.5)
+call MyRemoveUnit(LoadUnitHandle(HH,id,21),0.5)
+call MyRemoveUnit(LoadUnitHandle(HH,id,22),0.5)
+call PauseTimer(GetExpiredTimer())
+call FlushChildHashtable(HH,id)
+call DestroyTimer(GetExpiredTimer())
+else
+
+call SetUnitPathing(caster,false)
+
+
+
+
+//call SetUnitInvulnerable(caster,true)
+
+
+if time==0.02 then
+call AddUnitAnimationProperties(caster,"Alternate",true)
+set n0=CreateUnit(GetOwningPlayer(caster),'e200',GetUnitX(caster),GetUnitY(caster),GetUnitFacing(caster))
+call SetUnitModel(n0,"Aizen\\file00002360.mdl")
+call UnitSize(n0,3.5,1,1)
+call UnitSpeed(n0,1)
+call UnitColor(n0,100,100,100,0)
+call SetUnitFlyHeight(n0,100,0)
+call SaveUnitHandle(HH,id,20,n0)
+set n0=CreateUnit(GetOwningPlayer(caster),'e200',GetUnitX(caster),GetUnitY(caster),GetUnitFacing(caster))
+call SetUnitModel(n0,"Izayoi\\FSAeff (56).mdl")
+call UnitSize(n0,2,1,1)
+call UnitSpeed(n0,1)
+call UnitColor(n0,100,100,100,0)
+call SetUnitFlyHeight(n0,100,0)
+call SaveUnitHandle(HH,id,21,n0)
+set n0=null
+set n0=CreateUnit(GetOwningPlayer(caster),'e200',GetUnitX(caster),GetUnitY(caster),GetUnitFacing(caster))
+call SetUnitModel(n0,EffectID[4])
+call UnitSize(n0,2,1,1)
+call UnitSpeed(n0,1)
+call UnitColor(n0,100,100,100,0)
+call SetUnitFlyHeight(n0,100,0)
+call SaveUnitHandle(HH,id,22,n0)
+set n0=null
+set soundplay=CreateSound("Sound\\Gojo\\GojoTSelfRun.mp3",false,false,true,12700,12700,"")
+call SetSoundVolume(soundplay,127)
+call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
+call EffectCreateAndMove(true,EffectID[768],facing,1.5,0.75,1.5,100,100,100,80,0,caster,0,facing)
+call EffectCreateAndMove(true,EffectID[23],facing,1.5,1,0.5,100,100,100,0,0,caster,0,facing)
+call SetUnitAnimationByIndex(caster,34)
+call UnitSpeed(caster,1)
+endif
+call MoveUnit(caster,caster,20,facing)
+call MoveUnit(caster,LoadUnitHandle(HH,id,20),0,facing)
+call MoveUnit(caster,LoadUnitHandle(HH,id,21),0,facing)
+call MoveUnit(caster,LoadUnitHandle(HH,id,22),0,facing)
+
+
+//call DamageAoeOneTime(caster,x0,y0,200,GetHeroAgi(caster,true)*2,gr)
+
+          
+
+call GroupClear(G)
+call GroupEnumUnitsInRange(G,x0,y0,200,Base)
+loop
+set n0=FirstOfGroup(G)
+exitwhen n0==null
+if IsUnitInGroup(n0,gr)==false and IsUnitEnemy(n0,GetOwningPlayer(caster))==true and IsUnitType(n0,UNIT_TYPE_STRUCTURE)==false and GetUnitAbilityLevel(n0,'Avul')==0 then
+
+    if LoadBoolean(HH,GetHandleId(n0),ANTITARGET_ABILITY)==true then
+        set time=20+time
+        call SaveReal(HH,id,5,20+time)
+        call SaveUnitHandle(HH,GetHandleId(n0),REVERSE_TARGET,caster)
+    else
+
+        if Karna_ModifAttack(caster, n0, 2, 0, 2, false) then
+        endif
+
+        call CustomTrueDamage(caster, n0, GetHeroAgi(caster,true)*2)
+        
+    endif
+    //call myCustomDamage(caster,n0,GetHeroAgi(caster,true)*2,false,false,null, DAMAGE_TYPE_UNIVERSAL,WEAPON_TYPE_WHOKNOWS)
+
+    call GroupAddUnit(gr,n0)
+endif
+call GroupRemoveUnit(G,n0)
+endloop
+call SaveGroupHandle(HH,id,4,gr)
+
+
+set time1=time1+0.02
+if time1==0.2 then
+call EffectCreateAndMove(true,EffectID[854],facing,1,0.8,1,100,100,100,30,0,caster,50,facing)
+endif
+if time1>=0.3 or time==0.02 then
+call EffectCreateAndMove(true,EffectID[6],facing,1.5,0.3,0.6,100,100,100,20,75,caster,100,facing)
+set time1=0
+endif
+call SaveReal(HH,id,6,time1)
+endif
+set caster=null
+set gr=null
+endfunction
+function Gojo_T3_Act takes unit caster returns nothing
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+local real x0=GetUnitX(caster)
+local real y0=GetUnitY(caster)
+local real facing=GetUnitFacing(caster)
+//local real damage=6*GetHeroInt(caster,true)
+call SaveUnitHandle(HH,id,1,caster)
+//call SetUnitInvulnerable(caster,true)
+call SaveGroupHandle(HH,id,4,CreateGroup())
+//call SaveReal(HH,id,15,damage)
+call TimerStart(t,0.02,true,function Gojo_T3_Act2)
+set t=null
+endfunction
+function Gojo_T_GroupAct2 takes nothing returns nothing
+call PauseUnit(GetEnumUnit(),false)
+call SaveBoolean(HH,GetHandleId( GetEnumUnit() ),TARGET_ABILITY,false)
+endfunction
+function Gojo_T_GroupAct takes nothing returns nothing
+local integer id=GetHandleId(GetExpiredTimer())
+local real x0=GetUnitX(LoadUnitHandle(HH,id,21))
+local real y0=GetUnitY(LoadUnitHandle(HH,id,21))
+local real x1=GetUnitX(GetEnumUnit())
+local real y1=GetUnitY(GetEnumUnit())
+local real dist=SR(x1,y1,x0,y0)
+local real timeplus=LoadReal(HH,id,9)*1500
+local real facing=Angle2(x0,y0,x1,y1)
+if dist>timeplus+50 then
+call MoveAoe1(x0,y0,GetEnumUnit(),timeplus+50,facing)
+endif
+if GetEnumUnit()!=LoadUnitHandle(HH,id,1)then
+call PauseUnit(GetEnumUnit(),true)
+endif
+endfunction
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function CreateModeIndicatorGojoT_Periodic takes nothing returns nothing
+    local timer t               =GetExpiredTimer()
+    local integer id            =GetHandleId(t)
+    local unit caster           =LoadUnitHandle(HH, id, c_CASTER)
+    local player p              =GetOwningPlayer(caster)
+    local integer idp           =GetHandleId(p)
+    local string mode_name      =LoadStr(HH, id, c_NAME)
+    local framehandle NewFrame  =LoadFrameHandle(HH, idp,StringHash(mode_name))
+    local real duration         =LoadReal(HH, GetHandleId(NewFrame), c_DURATION)-0.05
+    local integer position         =LoadInteger(HH, id, c_POSITION)
+
+    if position>0 then
+        if LoadBoolean(HH,idp,position-1)==false then
+        call SaveBoolean(HH,idp,position-1,true)
+        call SaveBoolean(HH,idp,position,false)
+        call SaveInteger(HH, id, c_POSITION,position-1)
+        set position=position-1
+        endif
+    endif
+
+    if GetUnitAbilityLevel(caster,'Avul')==0 and IsUnitHidden(caster)==false and GetUnitAbilityLevel(caster,'Pet1')==0 then
+        call SaveReal           (HH, GetHandleId(NewFrame), c_DURATION, duration)
+        call SetFrameText( LoadFrameHandle(HH, idp,StringHash(mode_name+"2")), R2SW(duration,2, 1) )
+    endif
+
+    call SetFrameRelativePoint( NewFrame, FRAMEPOINT_CENTER, StatusBarFrame, FRAMEPOINT_LEFT, 0.017+position*0.025, 0.005 )
+    if duration<=0 or udg_B==false or DU2==false or UnitIsAlive(caster)==false or GetUnitAbilityLevel(caster,LoadInteger(HH,id,10))==0 then
+        call ShowFrame( NewFrame, false )
+        call SaveReal(HH, GetHandleId(NewFrame), c_DURATION, 0)
+        call SaveBoolean(HH,idp,position,false)
+        call FlushChildHashtable(HH, id)
+        call DestroyTimer(t)
+    endif
+    set t=null
+    set caster=null
+    set mode_name=null
+    set NewFrame=null
+    set p=null
+endfunction
+
+function CreateModeIndicatorGojoT takes unit newCaster, string newString, real newDur,integer abil_code returns nothing
+        local timer newTimer        = CreateTimer()
+        local integer id            = GetHandleId(newTimer)
+    local framehandle NewFrame  = null
+    local framehandle NewFrameText  = null
+    local player p              =GetOwningPlayer(newCaster)
+    local integer idp           =GetHandleId(p)
+    local framehandle consoleUI=GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 )
+    local integer i=9
+    local integer j=0
+    if LoadFrameHandle(HH, idp,StringHash(newString))==null then    
+        set NewFrame = CreateFrameByType( "SIMPLEBUTTON", newString, StatusBarFrame, "", 0 )
+        call ClearFrameAllPoints( NewFrame )
+        call SetFrameTexture( NewFrame, newString, 0, true )
+        call SetFrameTexture( NewFrame, newString, 1, true )
+        call SetFrameTexture( NewFrame, newString, 2, true )
+        call SetFrameSize( NewFrame, .0237, .0237 )
+        call SetFramePriority( NewFrame, 7 )
+        call HandleListAddHandle(StatusBarFrameList[GetPlayerId(p)],NewFrame)
+        call SetFrameParent(NewFrame,StatusBarFrame)
+        if GetOwningPlayer(newCaster)!=GetLocalPlayer()then
+            call ShowFrame( NewFrame, false)
+        else
+            call ShowFrame( NewFrame, true)
+        endif
+        call SaveFrameHandle(HH,idp,StringHash(newString),NewFrame)
+        //call SaveReal               (HH, GetHandleId(NewFrame), c_DURATION, 2)
+        
+        set NewFrameText=CreateFrameByType( "SIMPLETEXT", newString+"1", NewFrame, "", 0 )
+        call ClearFrameAllPoints( NewFrameText )
+        call SetFramePriority( NewFrameText, 2 )
+        call SetFrameFont( NewFrameText, "Fonts\\FRIZQT__.TTF", .008, 0 )
+        call SetFrameTextAlignment( NewFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_LEFT )
+        call SetFrameText( NewFrameText, R2SW(newDur,2, 1) )
+        call SetFrameTextColour( NewFrameText, 0xFFFFA500 )
+        //call HandleListAddHandle(StatusBarFrameList[GetPlayerId(p)],NewFrameText)
+        if GetOwningPlayer(newCaster)!=GetLocalPlayer()then
+            call ShowFrame( NewFrameText, false)
+        else
+            call ShowFrame( NewFrameText, true)
+        endif
+        call SaveFrameHandle(HH,idp,StringHash(newString+"2"),NewFrameText)
+    else
+        set NewFrame=LoadFrameHandle(HH, idp,StringHash(newString))
+        set NewFrameText=LoadFrameHandle(HH, idp,StringHash(newString+"2"))
+        call SetFrameText( NewFrameText, R2SW(newDur,2, 1) )
+        if GetOwningPlayer(newCaster)!=GetLocalPlayer()then
+            call ShowFrame( NewFrame, false)
+        else
+            call ShowFrame( NewFrame, true)
+        endif
+    endif
+    if LoadReal(HH, GetHandleId(NewFrame), c_DURATION)<=0 then
+        loop
+            exitwhen i==0
+            if LoadBoolean(HH,idp,i)==false then
+            call SaveBoolean(HH,idp,i,true)
+            call SaveBoolean(HH,idp,i+1,false)
+            set j=i
+            endif
+            set i=i-1
+        endloop
+        call SetFrameRelativePoint( NewFrame, FRAMEPOINT_CENTER, StatusBarFrame, FRAMEPOINT_LEFT, 0.017+j*0.025, 0.005 )
+        call SetFrameRelativePoint( NewFrameText, FRAMEPOINT_BOTTOM, NewFrame, FRAMEPOINT_BOTTOM, .0, -.01 )
+        call SaveUnitHandle         (HH, id, c_CASTER, newCaster)
+        call SaveReal               (HH, GetHandleId(NewFrame), c_DURATION, newDur)
+        call SaveInteger            (HH, id, c_POSITION, j)
+        call SaveStr                (HH, id, c_NAME, newString)
+        call SaveInteger            (HH, id, 10, abil_code)
+
+        call TimerStart             (newTimer, 0.05, true, function CreateModeIndicatorGojoT_Periodic)
+    else
+        call SaveReal           (HH, GetHandleId(NewFrame), c_DURATION, newDur)
+    endif
+    set consoleUI=null
+    set newTimer=null
+    set p=null
+    set NewFrame=null
+    set NewFrameText=null
+endfunction
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function Gojo_T_Act2 takes nothing returns nothing
+local integer id=GetHandleId(GetExpiredTimer())
+local unit caster=LoadUnitHandle(HH,id,1)
+local unit Dummy1=LoadUnitHandle(HH,id,20)
+local unit Dummy2=LoadUnitHandle(HH,id,21)
+local group gr=LoadGroupHandle(HH,id,4)
+local real time=LoadReal(HH,id,5)
+local real time1=LoadReal(HH,id,6)
+local real time2=LoadReal(HH,id,8)
+local real timeplus=LoadReal(HH,id,9)
+local real damage=LoadReal(HH,id,15)
+local real x0=GetUnitX(Dummy1)
+local real y0=GetUnitY(Dummy1)
+local real facing=LoadReal(HH,id,3)
+if time<3 then
+set time=time+0.02
+else
+set time2=time2+0.02
+if time2>=1 then
+call SetUnitState(caster,UNIT_STATE_MANA,GetUnitState(caster,UNIT_STATE_MANA)-GetUnitState(caster,UNIT_STATE_MAX_MANA)*0.04)
+set time2=0
+endif
+call SaveReal(HH,id,8,time2)
+if GetUnitAbilityLevel(caster,'Avul')==0 then
+set time=time+0.02
+endif
+endif
+call SaveReal(HH,id,5,time)
+if time>15-timeplus*5 or(time>3 and(GetUnitState(caster,UNIT_STATE_MANA)<GetUnitState(caster,UNIT_STATE_MAX_MANA)*0.1 or LoadBoolean(HH,GetHandleId(caster),StringHash("GojoToff"))==false))then
+
+call UnitRemoveAbility(caster, 'GST4')
+
+
+
+call AbilityCD(caster,'GST1',60)
+call UnitRemoveAbility(caster,'Abun')
+call SetPlayerAbilityAvailable(GetOwningPlayer(caster),'GST2',false)
+call SetPlayerAbilityAvailable(GetOwningPlayer(caster),'GST3',false)
+call SetPlayerAbilityAvailable(GetOwningPlayer(caster),'GST1',true)
+call SaveBoolean(HH,GetHandleId(caster),StringHash("GojoToff"),false)
+call ForGroup(gr,function Gojo_T_GroupAct2)
+call EffectCreateAndMove(true,EffectID[768],facing,1.5,1.5,1.5,100,100,100,80,0,caster,0,facing)
+call EffectCreateAndMove(true,EffectID[23],facing,1.5,1,0.5,100,100,100,0,0,caster,0,facing)
+call EffectCreateAndMove(true,EffectID[41],facing,1.5,0.8,0.8,100,100,100,0,100,caster,0,facing)
+call EffectCreateAndMove(true,EffectID[20],facing,1.5,1.4,1.5,100,100,100,60,100,caster,0,facing)
+call EffectCreateAndMove(true,EffectID[3],facing,1.5,1,1,100,100,100,40,0,caster,0,facing)
+call EffectCreateAndMove(true,EffectID[951],facing,1.5,1,1,100,100,100,50,50,caster,0,facing)
+call EffectCreateAndMove(true,EffectID[1356],GetRandomInt(1,360),1.5,2+timeplus*7,1,100,100,100,40,0,Dummy1,0,facing)
+call EffectCreateAndMove(true,EffectID[1356],GetRandomInt(1,360),1.5,2+timeplus*7,1,100,100,100,40,0,Dummy1,0,facing)
+call EffectCreateAndMove(true,EffectID[1356],GetRandomInt(1,360),1.5,2+timeplus*7,1,100,100,100,40,0,Dummy1,0,facing)
+call EffectCreateAndMove(true,EffectID[1356],GetRandomInt(1,360),1.5,1+timeplus*5,1,100,100,100,40,0,Dummy1,0,facing)
+call EffectCreateAndMove(true,EffectID[1356],GetRandomInt(1,360),1.5,1+timeplus*5,1,100,100,100,40,0,Dummy1,0,facing)
+call EffectCreateAndMove(true,EffectID[1356],GetRandomInt(1,360),1.5,1+timeplus*5,1,100,100,100,40,0,Dummy1,0,facing)
+set soundplay=CreateSound("Sound\\Gojo\\GojoTend.mp3",false,false,true,12700,12700,"")
+call SetSoundVolume(soundplay,127)
+call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
+
+call DestroyGroup(gr)
+call RemoveUnit(Dummy1)
+call RemoveUnit(Dummy2)
+call PauseTimer(GetExpiredTimer())
+call FlushChildHashtable(HH,id)
+call DestroyTimer(GetExpiredTimer())
+else
+
+
+if time==0.02 or time==0.5 or time==1 or time==1.5 then
+call AbilityCD(caster,'GSQ1',1)
+call AbilityCD(caster,'GSE1',1)
+endif
+
+if time==0.02 then
+
+//call UnitAddAbility(caster, 'GST5')
+//call UnitRemoveAbility(caster, 'GST5')
+set n0=CreateUnit(GetOwningPlayer(caster),'e200',GetUnitX(caster),GetUnitY(caster),GetUnitFacing(caster))
+call SetUnitModel(n0,EffectID[1310])
+call UnitSize(n0,1.5,1,1)
+call UnitSpeed(n0,1.1)
+call SetUnitFlyHeight(n0,20,0)
+call SaveUnitHandle(HH,id,21,n0)
+set n0=null
+call EffectCreateAndMove(true,EffectID[3],facing,1.5,1,0.5,100,100,100,0,0,caster,0,facing)
+call EffectCreateAndMove(true,EffectID[41],facing,1.5,0.8,0.5,100,100,100,50,50,caster,0,facing)
+call EffectCreateAndMove(true,EffectID[1097],facing,1.5,0.8,0.5,100,100,100,40,0,caster,0,facing)
+call EffectCreateAndMove(true,EffectID[20],facing,1.5,1.5,1,100,100,100,20,0,caster,0,facing)
+call EffectCreateAndMove(true,EffectID[1056],facing,1.5,1,1,100,100,100,40,0,caster,0,facing)
+call EffectCreateAndMove(true,EffectID[768],facing,2,1,1,100,100,100,60,0,caster,0,facing)
+set soundplay=CreateSound("Sound\\Gojo\\GojoTSelf.mp3",false,false,true,12700,12700,"")
+call SetSoundVolume(soundplay,150)
+call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
+call SetUnitAnimationByIndex(caster,32)
+call UnitSpeed(caster,1)
+endif
+if time<1 and GetUnitCurrentOrder(caster)!=OrderId("tornado")then
+//call UnitRemoveAbility(caster, 'GST5')
+call RemoveUnit(LoadUnitHandle(HH,id,21))
+call DestroyGroup(gr)
+call PauseTimer(GetExpiredTimer())
+call FlushChildHashtable(HH,id)
+call DestroyTimer(GetExpiredTimer())
+endif
+if time==1.02 then
+call UnitAddAbility(caster,'Abun')
+call SetPlayerAbilityAvailable(GetOwningPlayer(caster),'GST1',false)
+call SetPlayerAbilityAvailable(GetOwningPlayer(caster),'GST2',true)
+call SetPlayerAbilityAvailable(GetOwningPlayer(caster),'GST3',true)
+call EffectCreateAndMove(true,EffectID[925],facing,1.5,1.5,0.5,100,100,100,0,50,caster,0,facing)
+call EffectCreateAndMove(true,EffectID[41],facing,1.5,0.8,0.5,100,100,100,50,50,caster,0,facing)
+call EffectCreateAndMove(true,EffectID[951],facing,1.5,1,1,100,100,100,50,50,caster,0,facing)
+call EffectCreateAndMove(true,EffectID[20],facing,2,2,1.5,100,100,100,20,0,caster,0,facing)
+set soundplay=CreateSound("Sound\\Gojo\\GojoTSelfCharge.mp3",false,false,true,12700,12700,"")
+call SetSoundVolume(soundplay,150)
+call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
+endif
+if time>1 and time<=2 then
+set timeplus=timeplus+0.02
+call SaveReal(HH,id,9,timeplus)
+call SetUnitInvulnerable(caster,true)
+if GetUnitCurrentOrder(caster)!=OrderId("tornado")then
+call SaveReal(HH,id,5,2)
+endif
+endif
+if time==2 then
+call UnitColor(Dummy2,100,100,100,40)
+call SetUnitModel(Dummy2,EffectID[1355])
+call UnitSpeed(Dummy2,1)
+endif
+if time==2.02 then
+call SetUnitAnimationByIndex(caster,33)
+call EffectCreateAndMove(true,EffectID[20],facing,2,2,1.5,100,100,100,20,0,caster,0,facing)
+call EffectCreateAndMove(true,EffectID[1057],facing,1.5,0.8,0.5,100,100,100,0,0,caster,0,facing)
+set soundplay=CreateSound("Sound\\Gojo\\GojoTSelf1.mp3",false,false,true,12700,12700,"")
+call SetSoundVolume(soundplay,150)
+call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
+
+set n0=CreateUnit(GetOwningPlayer(caster),'e200',GetUnitX(caster),GetUnitY(caster),GetUnitFacing(caster))
+call SetUnitModel(n0,EffectID[1354])
+call UnitSize(n0,1,1,1)
+call UnitSpeed(n0,1)
+call UnitColor(n0,100,100,100,0)
+call SetUnitFlyHeight(n0,0,0)
+call SaveUnitHandle(HH,id,20,n0)
+set n0=null
+
+endif
+if time>2.02 and time<3 then
+call UnitSize(Dummy1,1+timeplus*(time-2)*10,1,1)
+call UnitSize(Dummy2,1+timeplus*(time-2)*8.2,1,1)
+call SetUnitAnimationByIndex(caster,33)
+call PauseUnit(caster,true)
+call SetUnitInvulnerable(caster,true)
+endif
+if time<3 then
+set time1=time1+0.02
+if time1>0.4 or time==0.02 then
+set time1=0
+call EffectCreateAndMove(true,EffectID[19],GetRandomReal(0,360),1.25,GetRandomReal(0.75,1.25),GetRandomReal(0.4,0.8),100,100,100,GetRandomReal(60,80),0,caster,0,facing)
+call EffectCreateAndMove(true,EffectID[23],GetRandomReal(0,360),1.25,GetRandomReal(0.75,1),GetRandomReal(0.2,0.5),100,100,100,GetRandomReal(30,50),0,caster,0,facing)
+endif
+call SaveReal(HH,id,6,time1)
+endif
+if time==3 then
+//call UnitRemoveAbility(caster, 'GST5')
+        call UnitAddAbility(caster, 'GST4')
+        call UnitMakeAbilityPermanent(caster, true, 'GST4')
+call CreateModeIndicatorGojoT(caster,"ReplaceableTextures\\CommandButtons\\BTNGojoT.blp",12-timeplus*5,'GST4')
+
+
+
+call UnitSpeed(LoadUnitHandle(HH,id,21),0.5)
+call SetUnitModel(LoadUnitHandle(HH,id,21),EffectID[1311])
+call UnitColor(LoadUnitHandle(HH,id,21),60,60,60,0)
+call SetUnitAnimationByIndex(LoadUnitHandle(HH,id,21),0)
+
+
+call MoveUnit(LoadUnitHandle(HH,id,20),LoadUnitHandle(HH,id,21),0,facing)
+
+
+
+call PauseUnit(caster,false)
+call SetUnitInvulnerable(caster,false)
+endif
+if time>2 then
+call GroupClear(G)
+if time>2 and time<3 then
+call GroupEnumUnitsInRange(G,x0,y0,150+timeplus*(time-2)*150,null)
+else
+if time<3.2 then
+call GroupEnumUnitsInRange(G,x0,y0,150+timeplus*1500,null)
+else
+call GroupEnumUnitsInRange(G,x0,y0,150+timeplus*1500,null)
+endif
+endif
+loop
+set n0=FirstOfGroup(G)
+exitwhen n0==null
+if IsUnitInGroup(n0,gr)==false and IsUnitType(n0,UNIT_TYPE_STRUCTURE)==false then
+if time<3.2 then
+call GroupAddUnit(gr,n0)
+call PauseUnit(n0,true)
+
+call SaveBoolean(HH,GetHandleId( n0 ),TARGET_ABILITY,true)
+
+else
+set facing=Angle2(x0,y0,GetUnitX(n0),GetUnitY(n0))
+if SR(x0,y0,GetUnitX(n0),GetUnitY(n0))<150+timeplus*1500 then
+call MoveAoe1(x0,y0,n0,timeplus*1500+150,facing)
+endif
+endif
+endif
+call GroupRemoveUnit(G,n0)
+endloop
+call SaveGroupHandle(HH,id,4,gr)
+call ForGroup(gr,function Gojo_T_GroupAct)
+endif
+endif
+set gr=null
+set caster=null
+set Dummy1=null
+set Dummy2=null
+endfunction
+function Gojo_T_Act takes unit caster returns nothing
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+local real x0=GetUnitX(caster)
+local real y0=GetUnitY(caster)
+local real facing=GetUnitFacing(caster)
+local real damage=6*GetHeroInt(caster,true)
+call SaveUnitHandle(HH,id,1,caster)
+call SaveReal(HH,id,3,facing)
+call SaveGroupHandle(HH,id,4,CreateGroup())
+call SaveReal(HH,id,15,damage)
+call SaveBoolean(HH,GetHandleId(caster),StringHash("GojoToff"),true)
+call SetUnitState(caster,UNIT_STATE_MANA,GetUnitState(caster,UNIT_STATE_MANA)-GetUnitState(caster,UNIT_STATE_MAX_MANA)*0.05)
+call TimerStart(t,0.02,true,function Gojo_T_Act2)
+set t=null
+endfunction
+
+
+
+
+///ини абилок
+function AbilitiesForChoice_Cond takes nothing returns boolean
+    local boolean cond1=GetSpellAbilityId()=='GSQ1' or GetSpellAbilityId()=='GSQ2' or GetSpellAbilityId()=='GSW1' or GetSpellAbilityId()=='GSE1' or GetSpellAbilityId()=='GSE2' or GetSpellAbilityId()=='GSF1' or GetSpellAbilityId()=='GSF2' or GetSpellAbilityId()=='GSG1' or GetSpellAbilityId()=='GSR1' or GetSpellAbilityId()=='GST1' or GetSpellAbilityId()=='GST2' or GetSpellAbilityId()=='GST3'
+    if cond1 then
+            return true
+    else
+            return false
+    endif
+endfunction
+
+function AbilitiesForChoice_Act takes nothing returns nothing//моя функция для всех абилок в чоус
+    local unit caster=GetSpellAbilityUnit()//замени на каких-то юнитов
+    local unit target=GetSpellTargetUnit()//
+    local real x1=GetSpellTargetX()
+    local real y1=GetSpellTargetY()
+
+    if GetSpellAbilityId()=='GSQ1'  then
+        call Gojo_Q1_Act(caster)
+    endif
+    if GetSpellAbilityId()=='GSQ2' then
+        if caster==target then
+            call Gojo_Q2_Self_Act(caster)
+        else
+            call Gojo_Q2_Act(caster,x1,y1)
+        endif
+    endif
+
+    if GetSpellAbilityId()=='GSW1' then
+        call Gojo_W_Act(caster,target)
+    endif
+
+
+    if GetSpellAbilityId()=='GSE1'  then
+        call Gojo_E1_Act(caster)
+    endif
+    if GetSpellAbilityId()=='GSE2' then
+        if caster==target then
+            call Gojo_E2_Self_Act(caster)
+        else
+            call Gojo_E2_Act(caster,x1,y1)
+        endif
+    endif
+
+    if GetSpellAbilityId()=='GSF2' then
+        call Gojo_F2_Act(caster,x1,y1)
+    endif
+    if GetSpellAbilityId()=='GSF1' then
+        call Gojo_F_Act(caster,x1,y1)
+    endif
+
+    if GetSpellAbilityId()=='GSG1' then
+        call Gojo_G_Act(caster)
+    endif
+
+    if GetSpellAbilityId()=='GSR1' then
+        call Gojo_R_Act(caster,x1,y1)
+    endif
+
+    if GetSpellAbilityId()=='GST3' then
+        call Gojo_T3_Act(caster)
+    endif
+
+    if GetSpellAbilityId()=='GST2' then
+        call SaveBoolean(HH,GetHandleId(caster),StringHash("GojoToff"),false)
+    endif
+
+    if GetSpellAbilityId()=='GST1' then
+        call Gojo_T_Act(caster)
+    endif
+
+
+    set caster=null
+    set target=null
+endfunction
+
+function InitTrig_AbilitiesForChoice takes nothing returns nothing
+    local trigger trig=CreateTrigger()
+    local integer index
+    set index=0
+    loop
+    call TriggerRegisterPlayerUnitEvent(trig,Player(index),EVENT_PLAYER_UNIT_SPELL_EFFECT,null)
+    set index=index+1
+    exitwhen index==bj_MAX_PLAYER_SLOTS
+    endloop
+    call TriggerAddCondition(trig,Condition(function AbilitiesForChoice_Cond))
+    call TriggerAddAction(trig,function AbilitiesForChoice_Act)
+    set trig=null
+    set index=0
+endfunction
+
+
+function AbilitiesForChoiceLearn_Cond takes nothing returns boolean
+return GetLearnedSkill()=='GSE1'
+endfunction
+
+function AbilitiesForChoiceLearn_Act takes nothing returns nothing//моя прокачка абилок для всех героев разберешься
+//local leaderboard leadb=null
+local unit caster=GetTriggerUnit()
+local player skillPlayer=GetOwningPlayer(caster)
+local integer lvl=0
+
+set lvl='GSE1'
+if GetLearnedSkill()==lvl then
+call SetUnitAbilityLevel(caster,'GSF2',GetUnitAbilityLevel(caster,'GSE1'))
+call SetUnitAbilityLevel(caster,'GSF1',GetUnitAbilityLevel(caster,'GSE1'))
+call SetUnitAbilityLevel(caster,'GSE2',GetUnitAbilityLevel(caster,'GSE1'))
+//call DisplayTextToPlayer(Player(0),0,0,"Gojo F LVL up")
+endif
+
+set caster=null
+set skillPlayer=null
+endfunction
+function InitTrig_AbilitiesForChoiceLearn takes nothing returns nothing
+local trigger trig=CreateTrigger()
+call TriggerRegisterAnyUnitEventBJ(trig,EVENT_PLAYER_HERO_SKILL)
+call TriggerAddCondition(trig,Condition(function AbilitiesForChoiceLearn_Cond))
+call TriggerAddAction(trig,function AbilitiesForChoiceLearn_Act)
+set trig=null
 endfunction
 
 function OrochimaruF4Cond takes nothing returns boolean
@@ -210092,8 +213828,7 @@ function OrochimaruECast takes nothing returns nothing
     local integer i=0
     if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
         call PauseUnit(u,true)
-        call SetControlToUnit(c,c,1,"stunbkb")
-        call SetControlToUnit(c,c,1,"doom")
+        call SetControlToUnit(c,c,1,"heavystun")
         set n=CreateUnit(p,0x6F723038,x1,y1,0)
         call SetUnitTimeScale(n,0.25)
         call UnitApplyTimedLife(n,1,5)
@@ -211808,7 +215543,7 @@ if cmb!=true and u!=null then
             set udg_RH[i2]=0
         endif
         set i2=i2+1
-        exitwhen i2==135
+        exitwhen i2==136
         endloop
         call SetUnitPosition(u,GetRectCenterX(gg_rct_Resp7),GetRectCenterY(gg_rct_Resp7))
         set p=GetOwningPlayer(u)
@@ -212734,6 +216469,7 @@ call InitTrig_WRin()
 call InitTrig_TRinLearn()
 call InitTrig_TRin()
 call InitTrig_QRinLearn()
+call InitTrig_AbilitiesForChoiceLearn()
 call InitTrig_QRin()
 call InitTrig_ERin2()
 call InitTrig_ERin()
@@ -213433,6 +217169,15 @@ set i=i+1
 endloop
 call TriggerAddCondition(t,Condition(function AUICond))
 call TriggerAddAction(t,function AUI)
+set i=0
+set t=CreateTrigger()
+loop
+exitwhen i>=11
+call TriggerRegisterPlayerChatEvent(t,Player(i),"-nahidwin",true)
+set i=i+1
+endloop
+call TriggerAddCondition(t,Condition(function nahidwinCond))
+call TriggerAddAction(t,function nahidwin)
 set i=0
 set t=CreateTrigger()
 loop
@@ -215194,6 +218939,7 @@ call InitTrig_LucciShigan()
 call InitTrig_LucciShiganAA()
 call InitTrig_LucciSoru()
 call InitTrig_ShiroF()
+call InitTrig_AbilitiesForChoice()
 //madarachoice
 call InitTrig_MadaraChoice()
 //
