@@ -211877,7 +211877,7 @@ set soundplay=CreateSound("Sound\\Gojo\\Murasaki_Full_Charge5.mp3",false,false,t
 call SetSoundVolume(soundplay,250)
 call StartSound(soundplay)
 call KillSoundWhenDone(soundplay)
-set n0=CreateUnit(GetOwningPlayer(caster),'gbRd',GetUnitX(caster),GetUnitY(caster),facing)
+set n0=CreateUnit(GetOwningPlayer(caster),'sgRd',GetUnitX(caster),GetUnitY(caster),facing)
 call UnitAddAbility(n0,'Pet2')
 call UnitSize(n0,1,1,1)
 call MoveUnit(n0,n0,250,facing)
@@ -211947,9 +211947,9 @@ call SetUnitFacing(caster,facing)
 
 call SaveReal(HH,id,3,GetUnitFacing(caster))
 
-if GetLocalPlayer()==GetOwningPlayer(caster)then
-call ClearSelection()
-call SelectUnit(Dummy1,true)
+if (GetLocalPlayer()==GetOwningPlayer(caster) or GetPlayerAlliance(GetOwningPlayer(caster),GetLocalPlayer(),ALLIANCE_SHARED_CONTROL)) and GetUnitSelected(GetLocalPlayer())==caster then
+    call ClearSelection()
+    call SelectUnit(Dummy1,true)
 endif
 endif
 if time==10 then
