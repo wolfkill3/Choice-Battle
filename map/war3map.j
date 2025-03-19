@@ -45687,7 +45687,7 @@ endif
 call GroupRemoveUnit(g,u)
 exitwhen u==null
 endloop
-if dist>=1000 then
+if dist>=1200 then
 call DestroyGroup(g)
 call DestroyTimer(t)
 call FlushChildHashtable(h,id)
@@ -94811,61 +94811,92 @@ local real y=GetUnitY(u)
 local real x1=GetUnitX(c)
 local real y1=GetUnitY(c)
 local real a=LoadReal(h,id,5)
-local real dmg=(GetUnitAbilityLevel(u,'A0RH')+4)*GetHeroStr(u,true)+300
+local real dmg=(GetUnitAbilityLevel(u,'A0RH')+4)*GetHeroStr(u,true)
 local player p=GetOwningPlayer(u)
 local real time=LoadReal(h,id,7)
 local real mt=LoadReal(h,id,8)
 local real ang=GetRandomReal(-1.1,1.1)
 if mt>0 and UnitIsAlive(u)and UnitIsAlive(c) and udg_B then
-set x1=x1+((20-mt)+31)*Cos(a)
-set y1=y1+((20-mt)+31)*Sin(a)
-call SetUnitXY_1(c,x1,y1, false)
-set x1=x1+(time*2-140)*Cos(a)
-set y1=y1+(time*2-140)*Sin(a)
-call SetUnitXY_1(u,x1,y1, false)
-if mt==20 and time>=16 then
-call SetUnitAnimationByIndex(u,22)
-endif
-if mt==11 and time>=7 then
-call UnitAddAbility(u,'A0RG')
-call SetUnitAnimationByIndex(u,27)
-endif
-if mt==8 and time>=5  then
-call EffectToRandomBone("war3mapImported\\BloodEX.mdx",c)
-call SetUnitAnimationByIndex(u,17)
-endif
-if time<0 then
-if GetUnitAbilityLevel(u,'A0RG')==0 then
-call EffectToRandomBone("az_hit-red-blade.mdx",c)
-call EffectToRandomBone("az_hit-red-blade.mdx",c)
-call DestroyEffect(AddSpecialEffect("Abilities\\Weapons\\AncientProtectorMissile\\AncientProtectorMissile.mdl",x1,y1))
-endif
-set n=CreateUnit(p,'e0H9',x,y,GetRandomReal(0,359))
-call UnitApplyTimedLife(n,1,0.7)
-call SetUnitVertexColor(n,200,200,200,70)
-call SaveReal(h,id,7,mt)
-call SaveReal(h,id,8,mt-1)
-endif
-call SetUnitFacing(u,a*bj_RADTODEG)
-call SaveReal(h,id,7,LoadReal(h,id,7)-3)
+    if mt>11 then
+        set x1=x1+((11-mt)+31)*Cos(a)
+        set y1=y1+((11-mt)+31)*Sin(a)
+        call SetUnitXY_1(c,x1,y1, false)
+        set x1=x1+(time*2-140)*Cos(a)
+        set y1=y1+(time*2-140)*Sin(a)
+        call SetUnitXY_1(u,x1,y1, false)
+        call PauseUnit(c,true)
+        call SetUnitInvulnerable(c,true)
+        call PauseUnit(u,true)
+        call SetUnitInvulnerable(u,true)
+    endif
+    if mt==20 and time>=16 then
+        call SetUnitAnimationByIndex(u,22)
+    endif
+    if mt==11 and time>=7 then
+        call UnitAddAbility(u,'A0RG')
+        call SetUnitAnimationByIndex(u,27)
+        call Push3(c,50,a,200,"Abilities\\Weapons\\AncientProtectorMissile\\AncientProtectorMissile.mdl")
+        set EFF=AddSpecialEffect("WindVectorPush.mdx", x1,y1)
+        call SetSpecialEffectOrientation(EFF,a*bj_RADTODEG,0,0)
+        call SetSpecialEffectScale(EFF , 0.6)
+        call SetSpecialEffectZ(EFF , 90)
+        call SetSpecialEffectVertexColour(EFF,255,255,255,220)
+        call RemoveEffect(EFF,1,true,CreateTimer())
+    endif
+    if mt==8 and time>=5  then
+        call Push3(c,50,a,200,"Abilities\\Weapons\\AncientProtectorMissile\\AncientProtectorMissile.mdl")
+        call EffectToRandomBone("war3mapImported\\BloodEX.mdx",c)
+        call SetUnitAnimationByIndex(u,17)
+    endif
+    if mt==5 and time>=3 then
+        call Push(u,100,a,1200)
+    endif
+    if time<0 then
+        if GetUnitAbilityLevel(u,'A0RG')==0 then
+            call EffectToRandomBone("az_hit-red-blade.mdx",c)
+            call EffectToRandomBone("az_hit-red-blade.mdx",c)
+            call DestroyEffect(AddSpecialEffect("Abilities\\Weapons\\AncientProtectorMissile\\AncientProtectorMissile.mdl",x1,y1))
+            if mt>8 then
+                set EFF=AddSpecialEffect("Minato-37.mdx", x1+GetRandomReal(-45,45)*Cos(GetRandomReal(0,359)),y1+GetRandomReal(-45,45)*Sin(GetRandomReal(0,359)))
+                call SetSpecialEffectFacing(EFF , a* bj_RADTODEG)
+                call SetSpecialEffectScale(EFF , GetRandomReal(1.25,2.35))
+                call SetSpecialEffectZ(EFF , GetRandomReal(30,90))
+                call DestroyEffect(EFF)
+                set EFF=AddSpecialEffect("WindVectorPush.mdx", x1+GetRandomReal(-45,45)*Cos(GetRandomReal(0,359)),y1+GetRandomReal(-45,45)*Sin(GetRandomReal(0,359)))
+                call SetSpecialEffectOrientation(EFF,a*bj_RADTODEG,0,0)
+                call SetSpecialEffectScale(EFF , GetRandomReal(0.25,0.45))
+                call SetSpecialEffectZ(EFF , GetRandomReal(70,100))
+                call SetSpecialEffectVertexColour(EFF,255,255,255,160)
+                call RemoveEffect(EFF,1,true,CreateTimer())
+            endif
+        endif
+        set n=CreateUnit(p,'e0H9',x,y,GetRandomReal(0,359))
+        call UnitApplyTimedLife(n,1,0.7)
+        call SetUnitVertexColor(n,200,200,200,70)
+        call SaveReal(h,id,7,mt)
+        call SaveReal(h,id,8,mt-1)
+    endif
+    call SetUnitFacing(u,a*bj_RADTODEG)
+    call SaveReal(h,id,7,LoadReal(h,id,7)-3)
 else
-call Push3(c,35,a,750,"Abilities\\Weapons\\AncientProtectorMissile\\AncientProtectorMissile.mdl")
-call UnitApplyTimedLife(CreateUnit(p,'e0FA',x1,y1,GetRandomReal(0,359)),1,1)
-call UnitApplyTimedLife(CreateUnit(p,'e0HL',x1,y1,a*bj_RADTODEG),1,1)
-call UnitApplyTimedLife(CreateUnit(p,'e0HM',x1,y1,a*bj_RADTODEG),1,1)
-call ShakeCamera(0.8,20)
-call UnitRemoveAbility(u,'A0RG')
-call EffectToRandomBone("war3mapImported\\BloodEX.mdx",c)
-call PauseUnit(c,false)
-call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,false)
-call PauseUnit(u,false)
-call myCustomDamage(u,c,dmg,false,false,null,null,null)
-call SetControlToUnit(u,c,2, "stun")
-call PauseTimer(t)
-call DestroyTimer(t)
-call SetUnitVertexColor(u,255,255,255,255)
-call FlushChildHashtable(h,id)
-call SetUnitTimeScale(u,1)
+    call UnitApplyTimedLife(CreateUnit(p,'e0FA',x1,y1,GetRandomReal(0,359)),1,1)
+    call UnitApplyTimedLife(CreateUnit(p,'e0HL',x1,y1,a*bj_RADTODEG),1,1)
+    call UnitApplyTimedLife(CreateUnit(p,'e0HM',x1,y1,a*bj_RADTODEG),1,1)
+    call ShakeCamera(0.8,20)
+    call UnitRemoveAbility(u,'A0RG')
+    call EffectToRandomBone("war3mapImported\\BloodEX.mdx",c)
+    call PauseUnit(c,false)
+    call SetUnitInvulnerable(c,false)
+    call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,false)
+    call PauseUnit(u,false)
+    call SetUnitInvulnerable(u,false)
+    call myCustomDamage(u,c,dmg,false,false,null,null,null)
+    call SetControlToUnit(u,c,2, "stun")
+    call PauseTimer(t)
+    call DestroyTimer(t)
+    call SetUnitVertexColor(u,255,255,255,255)
+    call FlushChildHashtable(h,id)
+    call SetUnitTimeScale(u,1)
 endif
 set p=null
 set u=null
@@ -94884,8 +94915,10 @@ local real x1=GetSpellTargetX()
 local real y1=GetSpellTargetY()
 if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
     call PauseUnit(c,true)
+    call SetUnitInvulnerable(c,true)
     call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,true)
     call PauseUnit(u,true)
+    call SetUnitInvulnerable(u,true)
     call SaveUnitHandle(h,id,0,u)
     call SaveUnitHandle(h,id,1,c)
     call SaveReal(h,id,7,20)
@@ -95019,11 +95052,7 @@ call SetUnitXY_1(l__d,x+speed*Cos(a),y+speed*Sin(a), false)
 call SetUnitFacing(l__d,a*bj_RADTODEG)
 call SaveReal(h,id,1,speed+1)
 else
-if Dp1>0 then
-call GroupEnumUnitsInRange(G,x1,y1,165,Base)
-else
 call GroupEnumUnitsInRange(G,x1,y1,150,Base)
-endif
 loop
 set E=FirstOfGroup(G)
 exitwhen E==null
@@ -95095,14 +95124,14 @@ local player p=GetOwningPlayer(u)
 local integer Dp1
 local real dmg=(1+.3*GetUnitAbilityLevel(u,'A0RD'))*GetHeroStr(u,true)
 if GetUnitAbilityLevel(u,'A176')>0 then
-set dmg=dmg+0.25*GetHeroStr(u,true)
+set dmg=dmg+0.15*GetHeroStr(u,true)
 set Dp1=1
 else
 set Dp1=0
 endif
 if dist<5 then
 if GetUnitAbilityLevel(u,'A176')>0 then
-set n=CreateUnit(p,0x72555733,x+45*Cos(a),y+45*Sin(a),a*bj_RADTODEG)
+set n=CreateUnit(p,'rUW3',x+45*Cos(a),y+45*Sin(a),a*bj_RADTODEG)
 call SetUnitScale(n,1,1,1)
 else
 set n=CreateUnit(p,'e0M1',x+45*Cos(a),y+45*Sin(a),a*bj_RADTODEG)
@@ -144193,7 +144222,7 @@ local real x=GetUnitX(u)
 local real y=GetUnitY(u)
 local real x1=GetUnitX(c)
 local real y1=GetUnitY(c)
-local real dmg=12*GetHeroStr(u,true)
+local real dmg=10*GetHeroStr(u,true)
 local real a=Atan2(y1-y,x1-x)
 local real dist=LoadReal(h,id,2)
 local real as=LoadReal(h,id,3)
