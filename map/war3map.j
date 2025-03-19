@@ -94837,7 +94837,7 @@ if mt>0 and UnitIsAlive(u)and UnitIsAlive(c) and udg_B then
     if mt==11 and time>=7 then
         call UnitAddAbility(u,'A0RG')
         call SetUnitAnimationByIndex(u,27)
-        call Push3(c,50,a,200,"Abilities\\Weapons\\AncientProtectorMissile\\AncientProtectorMissile.mdl")
+        call Push3(c,50,a,150,"Abilities\\Weapons\\AncientProtectorMissile\\AncientProtectorMissile.mdl")
         set EFF=AddSpecialEffect("WindVectorPush.mdx", x1,y1)
         call SetSpecialEffectOrientation(EFF,a*bj_RADTODEG,0,0)
         call SetSpecialEffectScale(EFF , 0.6)
@@ -94926,7 +94926,9 @@ if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
     call SaveReal(h,id,7,20)
     call SaveReal(h,id,8,20)
     call SaveReal(h,id,5,Atan2(y1-y,x1-x))
+    call DestroyEffect(AddSpecialEffect("war3mapImported\\BlackBlink.mdx",x,y))
     call SetUnitXY_1(u,x1,y1, false)
+    call DestroyEffect(AddSpecialEffect("war3mapImported\\BlackBlink.mdx",x1,y1))
     call SetUnitVertexColor(u,255,255,255,225)
     if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
         set soundplay=CreateSound("Sound\\Music\\mp3Music\\VegittoR.mp3",false,false,true,12700,12700,"")
@@ -94938,7 +94940,9 @@ if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
     call TimerStart(t,0.03,true,function SpiritSwordVegitoCast2)
 else
     call SetUnitTimeScale(u,1)
+    call DestroyEffect(AddSpecialEffect("war3mapImported\\BlackBlink.mdx",x,y))
     call SetUnitXY_1(u,x1,y1, false)
+    call DestroyEffect(AddSpecialEffect("war3mapImported\\BlackBlink.mdx",x1,y1))
     call PauseUnit(u,false)
     call SetUnitInvulnerable(u,false)
     call PauseUnit(c,false)
