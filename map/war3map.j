@@ -94813,14 +94813,14 @@ local real y=GetUnitY(u)
 local real x1=GetUnitX(c)
 local real y1=GetUnitY(c)
 local real a=LoadReal(h,id,5)
-local real dmg=(GetUnitAbilityLevel(u,'A0RH')+4)*GetHeroStr(u,true)+300
+local real dmg=(GetUnitAbilityLevel(u,'A0RH')+4)*GetHeroStr(u,true)
 local player p=GetOwningPlayer(u)
 local real time=LoadReal(h,id,7)
 local real mt=LoadReal(h,id,8)
 local real ang=GetRandomReal(-1.1,1.1)
 if mt>0 and UnitIsAlive(u)and UnitIsAlive(c) and udg_B then
-set x1=x1+((20-mt)+31)*Cos(a)
-set y1=y1+((20-mt)+31)*Sin(a)
+set x1=x1+((10-mt)+31)*Cos(a)
+set y1=y1+((10-mt)+31)*Sin(a)
 call SetUnitXY_1(c,x1,y1, false)
 set x1=x1+(time*2-140)*Cos(a)
 set y1=y1+(time*2-140)*Sin(a)
@@ -95021,11 +95021,7 @@ call SetUnitXY_1(l__d,x+speed*Cos(a),y+speed*Sin(a), false)
 call SetUnitFacing(l__d,a*bj_RADTODEG)
 call SaveReal(h,id,1,speed+1)
 else
-if Dp1>0 then
-call GroupEnumUnitsInRange(G,x1,y1,165,Base)
-else
 call GroupEnumUnitsInRange(G,x1,y1,150,Base)
-endif
 loop
 set E=FirstOfGroup(G)
 exitwhen E==null
@@ -95097,14 +95093,14 @@ local player p=GetOwningPlayer(u)
 local integer Dp1
 local real dmg=(1+.3*GetUnitAbilityLevel(u,'A0RD'))*GetHeroStr(u,true)
 if GetUnitAbilityLevel(u,'A176')>0 then
-set dmg=dmg+0.25*GetHeroStr(u,true)
+set dmg=dmg+0.15*GetHeroStr(u,true)
 set Dp1=1
 else
 set Dp1=0
 endif
 if dist<5 then
 if GetUnitAbilityLevel(u,'A176')>0 then
-set n=CreateUnit(p,0x72555733,x+45*Cos(a),y+45*Sin(a),a*bj_RADTODEG)
+set n=CreateUnit(p,'rUW3',x+45*Cos(a),y+45*Sin(a),a*bj_RADTODEG)
 call SetUnitScale(n,1,1,1)
 else
 set n=CreateUnit(p,'e0M1',x+45*Cos(a),y+45*Sin(a),a*bj_RADTODEG)
