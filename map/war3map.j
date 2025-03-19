@@ -45689,7 +45689,7 @@ endif
 call GroupRemoveUnit(g,u)
 exitwhen u==null
 endloop
-if dist>=1000 then
+if dist>=1200 then
 call DestroyGroup(g)
 call DestroyTimer(t)
 call FlushChildHashtable(h,id)
@@ -144191,7 +144191,7 @@ local real x=GetUnitX(u)
 local real y=GetUnitY(u)
 local real x1=GetUnitX(c)
 local real y1=GetUnitY(c)
-local real dmg=12*GetHeroStr(u,true)
+local real dmg=10*GetHeroStr(u,true)
 local real a=Atan2(y1-y,x1-x)
 local real dist=LoadReal(h,id,2)
 local real as=LoadReal(h,id,3)
