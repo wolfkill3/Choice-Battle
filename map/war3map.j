@@ -24504,7 +24504,7 @@ call UnitRemoveAbility(Hero[ip],'A3AU')
 endfunction
 function GomerCond takes nothing returns boolean
 set P=GetTriggerPlayer()
-return GetPlayerName(P)=="PinkieNecro" or GetPlayerName(P)==AdminNickname  or GetPlayerName(P)=="NecromanseR_RuS" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="belugaa" or GetPlayerName(P)=="IIIafep"
+return GetPlayerName(P)=="PinkieNecro" or GetPlayerName(P)==AdminNickname  or GetPlayerName(P)=="NecromanseR_RuS" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="belugaa" or GetPlayerName(P)=="IIIafep" or GetPlayerName(P)=="Akaashi" or GetPlayerName(P)=="Zanka"
 endfunction
 function Gomer takes nothing returns nothing
 local integer ip=GetPlayerId(GetTriggerPlayer())
@@ -94432,7 +94432,7 @@ local player p=GetOwningPlayer(u)
 local real time=LoadReal(h,id,5)
 local real starttime=LoadReal(h,id,6)
 local real timeEnd=LoadReal(h,id,15)
-if time<2.01 and GetAbilityIntegerLevelField(GetUnitAbility(u,'A0RI'), ABILITY_ILF_TARGET_TYPE,GetUnitAbilityLevel(u,'A0RI')-1)!=1 then
+if time<2.21 and GetAbilityIntegerLevelField(GetUnitAbility(u,'A0RI'), ABILITY_ILF_TARGET_TYPE,GetUnitAbilityLevel(u,'A0RI')-1)!=1 then
     call SaveReal(h,id,5,time+0.01)
     if time==starttime+0.02 then
         call SetUnitAnimationByIndex(u,23)
@@ -94482,7 +94482,7 @@ if time<2.01 and GetAbilityIntegerLevelField(GetUnitAbility(u,'A0RI'), ABILITY_I
         endif
     endif
     if IsUnitEnemy(c,p) then
-        if time==0.31 then
+        if time==0.51 then
             call SetUnitInvulnerable(u,true)
             call PauseUnit(u,true)
             call DestroyEffect(AddSpecialEffect("war3mapImported\\BlackBlink.mdx",x2,y2))
@@ -94499,20 +94499,20 @@ if time<2.01 and GetAbilityIntegerLevelField(GetUnitAbility(u,'A0RI'), ABILITY_I
             call SetSpecialEffectScale(EFF , 0.6)
             call RemoveEffect(EFF,0.6,false,CreateTimer())
         endif
-        if time>0.36 and time<0.61 then
+        if time>0.56 and time<0.81 then
             call SetUnitInvulnerable(u,true)
             call PauseUnit(u,true) 
             call SetUnitXY_1(u,x3-60*Cos(a),y3-60*Sin(a), false)
             call SetUnitFlyHeight(u,GetUnitFlyHeight(u)+(36-R2I(time*94)),0)
         endif
-        if time==0.61 or (time>0.36 and time<0.61 and GetUnitFlyHeight(u)+20<GetUnitFlyHeight(c)) then
+        if time==0.81 or (time>0.56 and time<0.81 and GetUnitFlyHeight(u)+20<GetUnitFlyHeight(c)) then
             if IsUnitInvulnerable(c)==false and LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then    
                 if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
                     call StartSound(soundStr[97])
                 else
                     call StartSound(soundStr[98])
                 endif
-                call SaveReal(h,id,5,0.62)
+                call SaveReal(h,id,5,0.82)
                 call SaveReal(h,id,16,x2)
                 call SaveReal(h,id,17,y2)
                 call SaveReal(h,id,18,x3)
@@ -94565,7 +94565,7 @@ if time<2.01 and GetAbilityIntegerLevelField(GetUnitAbility(u,'A0RI'), ABILITY_I
                 endif
             endif
         endif
-        if time>0.62 and time<1.85 then
+        if time>0.82 and time<2.05 then
             call SetUnitXY_1(u,x4,y4, false)
             call SetUnitXY_1(c,x5,y5, false)
             call SetUnitFlyHeight(c,GetUnitFlyHeight(u)-39,0)
@@ -94575,7 +94575,7 @@ if time<2.01 and GetAbilityIntegerLevelField(GetUnitAbility(u,'A0RI'), ABILITY_I
             call PauseUnit(c,true)
             call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,true)
         endif
-        if time==1.85 then
+        if time==2.05 then
             call SetUnitAnimationByIndex(u,26)
             call Push9(c,10,a,50)
             set EFF=AddSpecialEffect("war3mapImported\\CF2.mdl", x3,y3)
@@ -94595,7 +94595,7 @@ if time<2.01 and GetAbilityIntegerLevelField(GetUnitAbility(u,'A0RI'), ABILITY_I
             call SetSpecialEffectZ(EFF , GetUnitFlyHeight(c)-60)
             call RemoveEffect(EFF,0.3,true,CreateTimer())
         endif
-        if time==2 then
+        if time==2.2 then
             call SetUnitInvulnerable(c,false)
             call PauseUnit(c,false)
             call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,false)
@@ -94614,7 +94614,7 @@ if time<2.01 and GetAbilityIntegerLevelField(GetUnitAbility(u,'A0RI'), ABILITY_I
             call SetUnitFacingInstant(u,a*bj_RADTODEG)
         endif
     else
-        if time==0.31 then
+        if time==0.21 then
             call DestroyEffect(AddSpecialEffect("war3mapImported\\BlackBlink.mdx",x2,y2))
             call SetUnitXY_1(u,x1,y1, false)
             set EFF=AddSpecialEffect("war3mapImported\\BlackBlink.mdx", GetUnitX(u), GetUnitY(u))
