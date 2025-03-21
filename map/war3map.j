@@ -8156,17 +8156,19 @@ set soundStr[130]=CreateSound("Sound\\Music\\mp3Music\\JirenTransformation.mp3",
 set soundStr[131]=CreateSound("Sound\\Music\\mp3Music\\Jiren\\JirenTransformation-jap.mp3",false,false,true,12700,12700,"")
 set soundStr[132]=CreateSound("Sound\\Music\\mp3Music\\JirenF2.mp3",false,false,true,12700,12700,"")
 set soundStr[133]=CreateSound("Sound\\Music\\mp3Music\\Jiren\\JirenF2-jap.mp3",false,false,true,12700,12700,"")
+set soundStr[134]=CreateSound("Sound\\Music\\mp3Music\\VegitoG0.mp3",false,false,true,12700,12700,"")
+set soundStr[135]=CreateSound("Sound\\Music\\mp3Music\\Vegitto\\VegitoG0-jap.mp3",false,false,true,12700,12700,"")
 loop
 set i=i+1
 call StartSound(soundStr[i])
-exitwhen i>133
+exitwhen i>135
 endloop
 call TriggerSleepAction(0)
 set i=0
 loop
 set i=i+1
 call StopSound(soundStr[i],false,false)
-exitwhen i>133
+exitwhen i>135
 endloop
 endfunction
 function InitTrig_VoicePreload takes nothing returns nothing
@@ -94467,10 +94469,17 @@ if time<2.01 and GetAbilityIntegerLevelField(GetUnitAbility(u,'A0RI'), ABILITY_I
         call SetUnitAcquireRange(u,600)
         call SetUnitInvulnerable(u,true)
         call PauseUnit(u,true)
-        set EFF=AddSpecialEffect("GokuAuraBurstBlue.mdl", x2, y2)
-        call SetSpecialEffectTimeScale(EFF , 0.5)
-        call SetSpecialEffectScale(EFF , 0.32)
-        call RemoveEffect(EFF,0.3,true,CreateTimer())
+        if IsUnitEnemy(c,p) then
+            if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
+                call StartSound(soundStr[134])
+            else
+                call StartSound(soundStr[135])
+            endif
+            set EFF=AddSpecialEffect("GokuAuraBurstBlue.mdl", x2, y2)
+            call SetSpecialEffectTimeScale(EFF , 0.5)
+            call SetSpecialEffectScale(EFF , 0.32)
+            call RemoveEffect(EFF,0.3,true,CreateTimer())
+        endif
     endif
     if IsUnitEnemy(c,p) then
         if time==0.31 then
