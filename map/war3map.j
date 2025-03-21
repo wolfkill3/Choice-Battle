@@ -7768,7 +7768,7 @@ call CreateQuestBJ(bj_QUESTTYPE_OPT_DISCOVERED,"Commands p.1","|cFFFFC850Игр�
 call CreateQuestBJ(bj_QUESTTYPE_OPT_DISCOVERED,"Commands p.2","|cFFFFC850Игровые команды|r:\n\"-debug\" - снимает все эффекты, неуязвимости и паузы, если вы 15 секунд не двигалась. Телепортирует в случайную точку не далее 120 ед.\n\"-rfh\" - пересоздает героя, в случае бага, возможно только вне раунда.\n\"-re\" - воскрешает героя, применимо только на базе.\n\"killme\" - убивает героя через 10 сек.\n\"-swap x\" - поменяться персанажем с союзником.","ReplaceableTextures\\CommandButtons\\BTNOrochimaru.blp")
 call CreateQuestBJ(bj_QUESTTYPE_OPT_DISCOVERED,"Commands p.3","|cFFFFC850Игровые команды|r:\n\"-mr\" - показывает текущее количество магических резистов у вашего персонажа.\n\"-cr\" - показывает текущее количество резистов к контролю у вашего персонажа.\n\"-damage\" - показывает игроку весь урон, который он нанес за всё время в игре, также количество уменьшенного урона общими резистами (не маг) и также количество урона, которое он заблокировал щитами или другими источниками.\n\"-tdamage\" - показывает всю эту информацию также и про других игроков.\n\"-theal\" - показывает всю информацию по восстановленному себе или союзным героям HP и MP у всех игроков.","ReplaceableTextures\\CommandButtons\\BTNLaxusExD_Port.blp")
 call CreateQuestBJ(bj_QUESTTYPE_OPT_DISCOVERED,"Commands p.4","|cFFFFC850Игровые команды|r:\n\"-rounds xx\" - устанавливает кол-во раундов от 2 до 50.\n\"-setduels xx\" - устанавливает разницу между дуэлями, указать можно от 2 до 50. Написать можно лишь в первом раунде.\n\"-noduels\" - включает/выключает дуэли. Так же, после раунда, когда дуэль должна произойти, выдается компенсация. Написать можно лишь в первом раунде.","ReplaceableTextures\\CommandButtons\\BTNWendy.blp")
-call CreateQuestBJ(bj_QUESTTYPE_OPT_DISCOVERED,"Commands for Test Mode","|cFFFFC850Игровые команды|r:\n\"-hero x yyy\" - Создается герой c id yyy для игрока x. Узнать id можно с помощью команды \"-id 1..4 \".\n\"-cd\" - сбрасывает перезарядку у всех героев.\n\"-setmr\" - позволяет установить текуший маг резист.\n\"-heal\" и \"-unheal\" - Восстанавливает/Уменьшает до 1 здоровье и ману всех героев.\n\"-start\" - Начинает раунд спустя 3 сек.\n\"-pause\" - Останавливает любой таймер на экране.\"-amir\" - Дает каждому игроку 99999999 золота.\n\"-lvlamir\" - Дает максимальный уровень всем героям.\n\"-lvl x\" - устанавливает всем игрокам X уровень.","ReplaceableTextures\\CommandButtons\\BTNHourglass_Yukirin.blp")
+call CreateQuestBJ(bj_QUESTTYPE_OPT_DISCOVERED,"Commands for Test Mode","|cFFFFC850Игровые команды|r:\n\"-hero x yyy\" - Создается герой c id yyy для игрока x. Узнать id можно с помощью команды \"-id 1..4 \".\n\"-cd\" - сбрасывает перезарядку у всех героев.\n\"-setmr\" - позволяет установить текуший маг резист.\n\"-heal\" и \"-unheal\" - Восстанавливает/Уменьшает до 1 здоровье и ману всех героев.\n\"-start\" - Начинает раунд спустя 3 сек.\n\"-pause\" - Останавливает любой таймер на экране.\"-amir\" - Дает каждому игроку 99999999 золота.\n\"-lvlamir\" - Дает максимальный уровень всем героям.\n\"-lvl x\" - устанавливает всем игрокам X уровень.\n\"-control x\" - Дает контроль над указанным игроком.\n\"-height x\" - Устанавливает выбранному юниту X высоту.","ReplaceableTextures\\CommandButtons\\BTNHourglass_Yukirin.blp")
 //call CreateQuestBJ(bj_QUESTTYPE_OPT_DISCOVERED,"Sounds and Music!","|cFFFFC850Информация об озвучке в карте:|r:\n\nЧтобы в карте появилась озвучка, вам необходимо:\n\n1)Скачать архив, из паблика Вконтакте, на ХГМ или Нарутоваре.\n2)Выполнить инструкцию написанную в \"ридми\".\n3)Играть :)","ReplaceableTextures\\CommandButtons\\BTNDrum.blp")
 call CreateQuestBJ(bj_QUESTTYPE_OPT_DISCOVERED,"Help!","|cFFFFC850Что собирать в начале|r:\n1)Сапоги скорости\n2)Медаль храбрости\n3)Медаль храбрости или шинель квинси\nДальше по вашему усмотрению.","ReplaceableTextures\\CommandButtons\\BTNSelectHeroOff.blp")
 //call CreateQuestBJ(bj_QUESTTYPE_OPT_DISCOVERED,"Important Information!","|cFFFFC850Для некоторых героев запрещено использовать.","war3mapImported\\BTNVegili.blp")
@@ -30466,6 +30466,28 @@ function InitTrig_codeon_test takes nothing returns nothing
     call TriggerRegisterPlayerChatEvent(t,Player(11),"-code",true)
     call TriggerAddCondition(t,Condition(function Trig_codeon_Condition))
     call TriggerAddAction(t,function Trig_codeon_Actions)
+    set t=null
+endfunction
+function Trig_height_Actions takes nothing returns nothing
+    local real LvlS=S2R(SubString(GetEventPlayerChatString(),8,12))
+    call SetUnitFlyHeight(GetUnitSelected(GetTriggerPlayer()),LvlS,0)
+endfunction
+function InitTrig_height takes nothing returns nothing
+    local trigger t=CreateTrigger()
+    call TriggerRegisterPlayerChatEvent(t,Player(0),"-height ",false)
+    call TriggerRegisterPlayerChatEvent(t,Player(1),"-height ",false)
+    call TriggerRegisterPlayerChatEvent(t,Player(2),"-height ",false)
+    call TriggerRegisterPlayerChatEvent(t,Player(3),"-height ",false)
+    call TriggerRegisterPlayerChatEvent(t,Player(4),"-height ",false)
+    call TriggerRegisterPlayerChatEvent(t,Player(5),"-height ",false)
+    call TriggerRegisterPlayerChatEvent(t,Player(6),"-height ",false)
+    call TriggerRegisterPlayerChatEvent(t,Player(7),"-height ",false)
+    call TriggerRegisterPlayerChatEvent(t,Player(8),"-height ",false)
+    call TriggerRegisterPlayerChatEvent(t,Player(9),"-height ",false)
+    call TriggerRegisterPlayerChatEvent(t,Player(10),"-height ",false)
+    call TriggerRegisterPlayerChatEvent(t,Player(11),"-height ",false)
+    call TriggerAddCondition(t,Condition(function Trig_test_Condition))
+    call TriggerAddAction(t,function Trig_height_Actions)
     set t=null
 endfunction
 function InitTrig_Goddess takes nothing returns nothing
@@ -94408,7 +94430,7 @@ local player p=GetOwningPlayer(u)
 local real time=LoadReal(h,id,5)
 local real starttime=LoadReal(h,id,6)
 local real timeEnd=LoadReal(h,id,15)
-if time<1.93 and GetAbilityIntegerLevelField(GetUnitAbility(u,'A0RI'), ABILITY_ILF_TARGET_TYPE,GetUnitAbilityLevel(u,'A0RI')-1)!=1 then
+if time<2.01 and GetAbilityIntegerLevelField(GetUnitAbility(u,'A0RI'), ABILITY_ILF_TARGET_TYPE,GetUnitAbilityLevel(u,'A0RI')-1)!=1 then
     call SaveReal(h,id,5,time+0.01)
     if time==starttime+0.02 then
         call SetUnitAnimationByIndex(u,23)
@@ -94542,32 +94564,35 @@ if time<1.93 and GetAbilityIntegerLevelField(GetUnitAbility(u,'A0RI'), ABILITY_I
         endif
         if time==1.85 then
             call SetUnitAnimationByIndex(u,26)
-            call SetUnitInvulnerable(c,false)
-            call PauseUnit(c,false)
-            call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,false)
-            if IsUnitInvulnerable(c)==false then
-                if GetUnitAbilityLevel(u,'A176')>0 then
-                    set dmg=dmg+1*GetHeroStr(u,true)
-                endif
-                call myCustomDamage(u,c,dmg,false,false,null,null,null)
-                call SetControlToUnit(u,c, 1, "stun")
-                call Push9(c,10,a,50)
-            endif
-            call SetUnitTimeScale(u,1)
+            call Push9(c,10,a,50)
             set EFF=AddSpecialEffect("war3mapImported\\CF2.mdl", x3,y3)
             call SetSpecialEffectOrientation(EFF,a*bj_RADTODEG,90,0)
             call SetSpecialEffectZ(EFF, GetUnitFlyHeight(c)+50)
             call SetSpecialEffectScale(EFF , 1)
             call DestroyEffect(EFF)
             set EFF=AddSpecialEffect("GokuAuraBurstBlue.mdl", x3, y3)
-            call SetSpecialEffectTimeScale(EFF , 0.5)
-            call SetSpecialEffectScale(EFF , 0.32)
+            call SetSpecialEffectTimeScale(EFF , 2)
+            call SetSpecialEffectScale(EFF , 0.52)
             call SetSpecialEffectZ(EFF , GetUnitFlyHeight(c))
             call SetSpecialEffectOrientation(EFF,a*bj_RADTODEG,-180,0)
-            call RemoveEffect(EFF,0.1,true,CreateTimer())
-            call SetUnitFlyHeight(u,0,3000)
+            call RemoveEffect(EFF,0.3,true,CreateTimer())
+            set EFF=AddSpecialEffect("war3mapImported\\Energy_Release.mdl", x3, y3)
+            call SetSpecialEffectTimeScale(EFF , 1)
+            call SetSpecialEffectScale(EFF , 0.62)
+            call SetSpecialEffectZ(EFF , GetUnitFlyHeight(c)-60)
+            call RemoveEffect(EFF,0.3,true,CreateTimer())
         endif
-        if time==1.91 then
+        if time==2 then
+            call SetUnitInvulnerable(c,false)
+            call PauseUnit(c,false)
+            call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,false)
+            if GetUnitAbilityLevel(u,'A176')>0 then
+                set dmg=dmg+1*GetHeroStr(u,true)
+            endif
+            call myCustomDamage(u,c,dmg,false,false,null,null,null)
+            call SetControlToUnit(u,c, 1, "stun")
+            call SetUnitTimeScale(u,1)
+            call SetUnitFlyHeight(u,0,2500)
             call SetUnitInvulnerable(u,false)
             call PauseUnit(u,false)
             call UnitEnableInventoryCustom(u,true,false )
@@ -218418,6 +218443,7 @@ call InitTrig_SwapOk()
 call InitTrig_Repick()
 call InitTrig_cd()
 call InitTrig_Goddess()
+call InitTrig_height()
 call InitTrig_shd1_test()
 call InitTrig_codeon_test()
 call InitTrig_codeon2_test()
