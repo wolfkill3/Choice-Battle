@@ -24504,7 +24504,7 @@ call UnitRemoveAbility(Hero[ip],'A3AU')
 endfunction
 function GomerCond takes nothing returns boolean
 set P=GetTriggerPlayer()
-return GetPlayerName(P)=="PinkieNecro" or GetPlayerName(P)==AdminNickname  or GetPlayerName(P)=="NecromanseR_RuS" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="belugaa" or GetPlayerName(P)=="IIIafep" or GetPlayerName(P)=="Akaashi" or GetPlayerName(P)=="Zanka"
+return GetPlayerName(P)=="PinkieNecro" or GetPlayerName(P)==AdminNickname  or GetPlayerName(P)=="NecromanseR_RuS" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="belugaa" or GetPlayerName(P)=="IIIafep" or GetPlayerName(P)=="Akaashi" or GetPlayerName(P)=="TvoyHazyin"
 endfunction
 function Gomer takes nothing returns nothing
 local integer ip=GetPlayerId(GetTriggerPlayer())
@@ -26045,7 +26045,7 @@ set t=null
 endfunction
 function HomerCond takes nothing returns boolean
 set P=GetTriggerPlayer()
-return BaseSkinPetCond(P) or GetPlayerName(P)=="KamaBr" or GetPlayerName(P)=="Akaashi" or GetPlayerName(P)=="[OSV] Kama" or GetPlayerName(P)=="Annieh" or GetPlayerName(P)=="Akaashi" or GetPlayerName(P)=="Zanka" or GetPlayerName(P)=="belugaa" or GetPlayerName(P)=="IIIafep" or GetPlayerName(P)=="AnimeRandom" or GetPlayerName(P)=="zld6334" or GetPlayerName(P)=="Denamesh" or GetPlayerName(P)=="xxNu-13xx" or GetPlayerName(P)=="zelim9" or GetPlayerName(P)=="MoonX3" or GetPlayerName(P)=="Kuzeyuta" or GetPlayerName(P)=="[Nirvash][Neo]" or GetPlayerName(P)=="KazuneReyes" or GetPlayerName(P)=="X53Arcan" or GetPlayerName(P)=="Lord_Orochimaru" or GetPlayerName(P)=="BERKUNT" or GetPlayerName(P)=="PinkieNecro" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="NecromanseR_RuS" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="Oma_Kurotsu"
+return BaseSkinPetCond(P) or GetPlayerName(P)=="KamaBr" or GetPlayerName(P)=="Akaashi" or GetPlayerName(P)=="[OSV] Kama" or GetPlayerName(P)=="Annieh" or GetPlayerName(P)=="Akaashi" or GetPlayerName(P)=="TvoyHazyin" or GetPlayerName(P)=="belugaa" or GetPlayerName(P)=="IIIafep" or GetPlayerName(P)=="AnimeRandom" or GetPlayerName(P)=="zld6334" or GetPlayerName(P)=="Denamesh" or GetPlayerName(P)=="xxNu-13xx" or GetPlayerName(P)=="zelim9" or GetPlayerName(P)=="MoonX3" or GetPlayerName(P)=="Kuzeyuta" or GetPlayerName(P)=="[Nirvash][Neo]" or GetPlayerName(P)=="KazuneReyes" or GetPlayerName(P)=="X53Arcan" or GetPlayerName(P)=="Lord_Orochimaru" or GetPlayerName(P)=="BERKUNT" or GetPlayerName(P)=="PinkieNecro" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="NecromanseR_RuS" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="Oma_Kurotsu"
 endfunction
 function Homer2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
@@ -26963,7 +26963,7 @@ set t=null
 endfunction
 function TsunadeRFHCond takes nothing returns boolean
 set P=GetTriggerPlayer()
-return udg_B==false and(GetPlayerName(P)=="Sylphiette" or GetPlayerName(P)=="Antitilt" or GetPlayerName(P)=="Zanka" or GetPlayerName(P)=="tenros" or GetPlayerName(P)=="Uriska" or GetPlayerName(P)=="Annieh" or GetPlayerName(P)=="zld6334" or GetPlayerName(P)=="Sasaki..Haise" or GetPlayerName(P)=="PinkieNecro" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="NecromanseR_RuS" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="Wolfkill" or GetPlayerName(P)=="Famouzy" or GetPlayerName(P)=="xxNu-13xx" or GetPlayerName(P)=="ROC4IK" or GetPlayerName(P)=="pro100master999" or GetPlayerName(P)=="SAOkirito1121" or GetPlayerName(P)=="I_Arioh*" or GetPlayerName(P)=="I_Arioh" or GetPlayerName(P)=="Denamesh" or GetPlayerName(P)=="KamaBr" or GetPlayerName(P)=="[OSV] Kama" or BaseSkinCond(P))
+return udg_B==false and(GetPlayerName(P)=="Sylphiette" or GetPlayerName(P)=="Antitilt" or GetPlayerName(P)=="TvoyHazyin" or GetPlayerName(P)=="tenros" or GetPlayerName(P)=="Uriska" or GetPlayerName(P)=="Annieh" or GetPlayerName(P)=="zld6334" or GetPlayerName(P)=="Sasaki..Haise" or GetPlayerName(P)=="PinkieNecro" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="NecromanseR_RuS" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="Wolfkill" or GetPlayerName(P)=="Famouzy" or GetPlayerName(P)=="xxNu-13xx" or GetPlayerName(P)=="ROC4IK" or GetPlayerName(P)=="pro100master999" or GetPlayerName(P)=="SAOkirito1121" or GetPlayerName(P)=="I_Arioh*" or GetPlayerName(P)=="I_Arioh" or GetPlayerName(P)=="Denamesh" or GetPlayerName(P)=="KamaBr" or GetPlayerName(P)=="[OSV] Kama" or BaseSkinCond(P))
 endfunction
 function TsunadeRFHCast takes nothing returns nothing
 local integer ip=GetPlayerId(GetTriggerPlayer())
@@ -27621,7 +27621,7 @@ set p=null
 endfunction
 function MidoRFHCond takes nothing returns boolean
 set P=GetTriggerPlayer()
-return udg_B==false and (GetPlayerName(P)=="Sylphiette" or GetPlayerName(P)=="Zanka" or GetPlayerName(P)=="KamaBr" or GetPlayerName(P)=="[OSV] Kama" or GetPlayerName(P)=="Kiyoma" or GetPlayerName(P)=="dadadacer777" or GetPlayerName(P)=="Antitilt" or GetPlayerName(P)=="Annieh" or GetPlayerName(P)=="zld6334" or GetPlayerName(P)=="Denamesh" or GetPlayerName(P)=="Jaunty_D-Mai" or GetPlayerName(P)=="Magistor" or GetPlayerName(P)=="Chevalier" or GetPlayerName(P)=="PinkieNecro" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="NecromanseR_RuS" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="Uriska" or GetPlayerName(P)=="PIROMANI9K" or GetPlayerName(P)=="WorldEdit" or GetPlayerName(P)=="Wolfkill" or GetPlayerName(P)=="Famouzy" or GetPlayerName(P)=="TheStalkerCraft" or GetPlayerName(P)=="MrNarkoman.2013" or GetPlayerName(P)=="Faimon" or GetPlayerName(P)=="Renex" or GetPlayerName(P)=="knowyourplace" or BaseSkinCond(P))
+return udg_B==false and (GetPlayerName(P)=="Sylphiette" or GetPlayerName(P)=="TvoyHazyin" or GetPlayerName(P)=="KamaBr" or GetPlayerName(P)=="[OSV] Kama" or GetPlayerName(P)=="Kiyoma" or GetPlayerName(P)=="dadadacer777" or GetPlayerName(P)=="Antitilt" or GetPlayerName(P)=="Annieh" or GetPlayerName(P)=="zld6334" or GetPlayerName(P)=="Denamesh" or GetPlayerName(P)=="Jaunty_D-Mai" or GetPlayerName(P)=="Magistor" or GetPlayerName(P)=="Chevalier" or GetPlayerName(P)=="PinkieNecro" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="NecromanseR_RuS" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="Uriska" or GetPlayerName(P)=="PIROMANI9K" or GetPlayerName(P)=="WorldEdit" or GetPlayerName(P)=="Wolfkill" or GetPlayerName(P)=="Famouzy" or GetPlayerName(P)=="TheStalkerCraft" or GetPlayerName(P)=="MrNarkoman.2013" or GetPlayerName(P)=="Faimon" or GetPlayerName(P)=="Renex" or GetPlayerName(P)=="knowyourplace" or BaseSkinCond(P))
 endfunction
 function MidoRFHCast takes nothing returns nothing
 local integer ip=GetPlayerId(GetTriggerPlayer())
@@ -94493,10 +94493,13 @@ if time<2.21 and GetAbilityIntegerLevelField(GetUnitAbility(u,'A0RI'), ABILITY_I
             call SetSpecialEffectZ(EFF, GetUnitFlyHeight(u))
             call DestroyEffect(EFF)
             call StartSound(soundStr[54])
-            call SetUnitTimeScale(u,1.75)
+            call SetUnitTimeScale(u,3)
             call SetUnitAnimationByIndex(u,25)
-            set EFF=AddSpecialEffectTarget("war3mapImported\\Rasengan6.mdx",u,"left hand")
+            set EFF=AddSpecialEffectTarget("war3mapImported\\RuneSphere.mdx",u,"left hand")
             call SetSpecialEffectScale(EFF , 0.6)
+            call RemoveEffect(EFF,0.6,false,CreateTimer())
+            set EFF=AddSpecialEffectTarget("Abilities\\Spells\\NightElf\\SpiritOfVengeance\\SpiritOfVengeanceBirthMissile.mdl",u,"left hand")
+            call SetSpecialEffectScale(EFF , 1.6)
             call RemoveEffect(EFF,0.6,false,CreateTimer())
         endif
         if time>0.56 and time<0.81 then
@@ -94585,10 +94588,10 @@ if time<2.21 and GetAbilityIntegerLevelField(GetUnitAbility(u,'A0RI'), ABILITY_I
             call DestroyEffect(EFF)
             set EFF=AddSpecialEffect("GokuAuraBurstBlue.mdl", x3, y3)
             call SetSpecialEffectTimeScale(EFF , 2)
-            call SetSpecialEffectScale(EFF , 0.52)
+            call SetSpecialEffectScale(EFF , 0.22)
             call SetSpecialEffectZ(EFF , GetUnitFlyHeight(c))
             call SetSpecialEffectOrientation(EFF,a*bj_RADTODEG,-180,0)
-            call RemoveEffect(EFF,0.3,true,CreateTimer())
+            call RemoveEffect(EFF,0.2,true,CreateTimer())
             set EFF=AddSpecialEffect("war3mapImported\\Energy_Release.mdl", x3, y3)
             call SetSpecialEffectTimeScale(EFF , 1)
             call SetSpecialEffectScale(EFF , 0.62)
