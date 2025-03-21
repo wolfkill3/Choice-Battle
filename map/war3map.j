@@ -41833,7 +41833,7 @@ endfunction
 function SaiyanSetCast takes nothing returns nothing
 local unit u=GetTriggerUnit()
 local integer id=GetSpellAbilityId()
-if id!='A0NL' and id!='A0TN' and id!='A0P2' and id!='A0EH' and id!='A0CZ' and id!='A2CZ' and id!='A015' and id!='A315' and id!='A0SK' and id!='A1SK' and id!='A0YZ' and id!='A13V' and id!='A23V' then
+if id!='A0NL' and id!='A0TN' and id!='A0P2' and id!='A0EH' and id!='A0CZ' and id!='A2CZ' and id!='A015' and id!='A315' and id!='A0SK' and id!='A1SK' and id!='A0YZ' and id!='A13V' and id!='A23V' and GetAbilityStringField(GetUnitAbility(u,id),ABILITY_SF_ICON_NORMAL)!="ReplaceableTextures\\CommandButtons\\BTNCancel1.blp" then
 call HealTextTag(u,u,GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.04*myCustomHeal2(u,1),"HealthRes")
 call HealTextTag(u,u,GetUnitState(u,UNIT_STATE_MAX_MANA)*0.03*myCustomMana2(u,1),"ManaRes")
 call SetUnitState(u,UNIT_STATE_LIFE,GetWidgetLife(u)+GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.04)
@@ -68978,7 +68978,7 @@ if time<0.630 and GetAbilityIntegerLevelField(GetUnitAbility(u,'GKR1'), ABILITY_
         endif
     endif
 else
-    if GetAbilityIntegerLevelField(GetUnitAbility(u,'GKR1'), ABILITY_ILF_TARGET_TYPE,GetUnitAbilityLevel(u,'GKR1')-1)!=1 then
+    if GetAbilityIntegerLevelField(GetUnitAbility(u,'GKR1'), ABILITY_ILF_TARGET_TYPE,GetUnitAbilityLevel(u,'GKR1')-1)!=1 and timeEnd<2 then
         call SetAbilityRemainingCooldown(GetUnitAbility(u,'GKR1'),GetAbilityBaseRealLevelFieldById('GKR1',ABILITY_RLF_COOLDOWN,GetUnitAbilityLevel(u,'GKR1')-1))
         if LoadBoolean(HH,GetHandleId(u),ITRangeHash) then
             if GetUnitState(u,UNIT_STATE_MANA)>GetUnitState(u,UNIT_STATE_MAX_MANA)*0.05 then
@@ -94467,6 +94467,10 @@ if time<2.01 and GetAbilityIntegerLevelField(GetUnitAbility(u,'A0RI'), ABILITY_I
         call SetUnitAcquireRange(u,600)
         call SetUnitInvulnerable(u,true)
         call PauseUnit(u,true)
+        set EFF=AddSpecialEffect("GokuAuraBurstBlue.mdl", x2, y2)
+        call SetSpecialEffectTimeScale(EFF , 0.5)
+        call SetSpecialEffectScale(EFF , 0.32)
+        call RemoveEffect(EFF,0.3,true,CreateTimer())
     endif
     if IsUnitEnemy(c,p) then
         if time==0.31 then
@@ -94619,7 +94623,7 @@ if time<2.01 and GetAbilityIntegerLevelField(GetUnitAbility(u,'A0RI'), ABILITY_I
         endif
     endif
 else
-    if GetAbilityIntegerLevelField(GetUnitAbility(u,'A0RI'), ABILITY_ILF_TARGET_TYPE,GetUnitAbilityLevel(u,'A0RI')-1)!=1 then
+    if GetAbilityIntegerLevelField(GetUnitAbility(u,'A0RI'), ABILITY_ILF_TARGET_TYPE,GetUnitAbilityLevel(u,'A0RI')-1)!=1 and timeEnd<2 then
         call SetAbilityRemainingCooldown(GetUnitAbility(u,'A0RI'),GetAbilityBaseRealLevelFieldById('A0RI',ABILITY_RLF_COOLDOWN,GetUnitAbilityLevel(u,'A0RI')-1))
         if LoadBoolean(HH,GetHandleId(u),ITRangeHash) then
             if GetUnitState(u,UNIT_STATE_MANA)>GetUnitState(u,UNIT_STATE_MAX_MANA)*0.05 then
@@ -94694,8 +94698,8 @@ if GetAbilityIntegerLevelField(GetUnitAbility(u,'A0RI'), ABILITY_ILF_TARGET_TYPE
             call SetUnitInvulnerable(u,true)
             call PauseUnit(u,true)
         else
-            call SetAbilityStringLevelField(GetUnitAbility(u,'A0RI'),ABILITY_SLF_TOOLTIP_NORMAL,GetUnitAbilityLevel(u,'A0RI')-1,GetAbilityBaseStringLevelFieldById('GKR2',ABILITY_SLF_TOOLTIP_NORMAL,0))
-            call SetAbilityStringLevelField(GetUnitAbility(u,'A0RI'),ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED,GetUnitAbilityLevel(u,'A0RI')-1,GetAbilityBaseStringFieldById('GKR2',ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED))
+            call SetAbilityStringLevelField(GetUnitAbility(u,'A0RI'),ABILITY_SLF_TOOLTIP_NORMAL,GetUnitAbilityLevel(u,'A0RI')-1,GetAbilityBaseStringLevelFieldById('A1RI',ABILITY_SLF_TOOLTIP_NORMAL,0))
+            call SetAbilityStringLevelField(GetUnitAbility(u,'A0RI'),ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED,GetUnitAbilityLevel(u,'A0RI')-1,GetAbilityBaseStringFieldById('A1RI',ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED))
             if SquareRootUnit(u,c)<8000 then
                 call SaveReal(h,id,5,-0.001*((SquareRootUnit(u,c)-1000-ModuloReal(SquareRootUnit(u,c),10))))
                 call SaveReal(h,id,6,-0.001*((SquareRootUnit(u,c)-1000-ModuloReal(SquareRootUnit(u,c),10))))
@@ -169963,6 +169967,7 @@ function JirenQSelf_Cast2 takes nothing returns nothing
             call SetAbilityRemainingCooldown(GetUnitAbility(u, 'JNQ1'), GetAbilityRemainingCooldown(GetUnitAbility(u, 'JNQ1'))+10)
             call TimerStart(t,0.02,true,function JirenQSelf_Cast3)
         else
+            call RemoveSavedHandle(HH,idu,REVERSE_TARGET)
             if c==null then
                 call SetControlToUnit(u , u , 0.3 , "doomdebug")
             endif
