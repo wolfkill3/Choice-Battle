@@ -315,6 +315,7 @@ framehandle  InfoTavernText
 framehandle array TavernPickedHeroFrame
 framehandle array TavernPickedHeroFrame2
 framehandle TavernHeroPortrait
+framehandle CodeFrame
 boolean array TavernPlayerPickAllow
 integer array TavernHeroId
 real array SetCamera
@@ -29565,7 +29566,21 @@ function Trig_codeon_Actions takes nothing returns nothing
     if IsTriggerEnabled(Codeon)==false then
         call EnableTrigger(Codeon)
         call BJDebugMsg("code: on")
+        // set CodeFrame = CreateFrameByType( "TEXTAREA", "CodeText", GetOriginFrame( ORIGIN_FRAME_GAME_UI, 0 ), "", 0 )
+        // call ClearFrameAllPoints( CodeFrame )
+        // call SetFrameRelativePoint( CodeFrame, FRAMEPOINT_CENTER, GetOriginFrame( ORIGIN_FRAME_GAME_UI, 0 ), FRAMEPOINT_LEFT, 0.095, -0.055 )
+        // call SetFrameSize( CodeFrame, .295, .17 )
+        // call SetFrameItemsBorder( CodeFrame, .01 )
+        // call SetFrameItemsHeight( CodeFrame, .02 )
+        // call SetFrameFont( CodeFrame, "Fonts\\FRIZQT__.TTF", .02, 0 )
+        // call SetFrameTextAlignment( CodeFrame, TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_LEFT )
+        // call AddFrameSlider( CodeFrame )
+        // call SetFrameText( CodeFrame, "")
+        // call SetFramePriority( CodeFrame, 6 )
+        // call ShowFrame( CodeFrame, true )
+        // call SetFrameText(CodeFrame,"test")
     else
+        // call DestroyFrame(CodeFrame)
         call DisableTrigger(Codeon)
         call BJDebugMsg("code: off")
     endif
