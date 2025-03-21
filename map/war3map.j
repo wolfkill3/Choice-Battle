@@ -52,6 +52,7 @@ boolean FFAMode=false
 boolean AH=false
 boolean AllIsVisible=false
 boolean KarnaW1=false
+trigger Codeon=null
 //region mapArea
 integer array udg_UIS_ItemId
 integer array udg_UIS_ItemCount
@@ -314,6 +315,7 @@ framehandle  InfoTavernText
 framehandle array TavernPickedHeroFrame
 framehandle array TavernPickedHeroFrame2
 framehandle TavernHeroPortrait
+framehandle CodeFrame
 boolean array TavernPlayerPickAllow
 integer array TavernHeroId
 real array SetCamera
@@ -6119,6 +6121,9 @@ endfunction
 function Trig_test2_Condition takes nothing returns boolean
 return ((udg_test==false and GetPlayerId(GetTriggerPlayer())==0 and round==1 and udg_B==false) or (GetPlayerId(GetTriggerPlayer())==10 and udg_test==false) or (GetPlayerId(GetTriggerPlayer())==11 and udg_test==false)) and ValidHLC()==false
 endfunction
+function Trig_codeon_Condition takes nothing returns boolean
+return GetPlayerName(GetTriggerPlayer())=="PinkieNecro" or GetPlayerName(GetTriggerPlayer())=="NecromanseR_RuS"
+endfunction
 function BoolMH takes nothing returns boolean
 return GetUnitTypeId(GetFilterUnit())!='htow'
 endfunction
@@ -7763,7 +7768,7 @@ call CreateQuestBJ(bj_QUESTTYPE_OPT_DISCOVERED,"Commands p.1","|cFFFFC850Game co
 call CreateQuestBJ(bj_QUESTTYPE_OPT_DISCOVERED,"Commands p.2","|cFFFFC850Game commands|r:\n\"-debug\" - removes all effects, invulnerabilities and pauses if you have not moved for 15 seconds. Teleports to a random point no further than 120 units.\n\"-rfh\" - recreates the hero, in case of a bug, only possible outside the round.\n\"-re\" - resurrects the hero, only applicable at the base.\n\"killme\" - kills the hero after 10 sec.\n\"-swap x\" - swap characters with an ally.","ReplaceableTextures\\CommandButtons\\BTNOrochimaru.blp")
 call CreateQuestBJ(bj_QUESTTYPE_OPT_DISCOVERED,"Commands p.3","|cFFFFC850Game commands|r:\n\"-mr\" - shows the current amount of magic resistances your character has.\n\"-cr\" - shows the current amount of control resistances your character has.\n\"-damage\" - shows the player all the damage he has dealt throughout the entire game, as well as the amount of damage reduced by general resistances (not a mage) and also the amount of damage he has blocked with shields or other sources.\n\"-tdamage\" - shows all this information about other players as well.\n\"-theal\" - shows all the information about HP and MP restored to yourself or allied heroes for all players.","ReplaceableTextures\\CommandButtons\\BTNLaxusExD_Port.blp")
 call CreateQuestBJ(bj_QUESTTYPE_OPT_DISCOVERED,"Commands p.4","|cFFFFC850Game commands|r:\n\"-rounds xx\" - sets the number of rounds from 2 to 50.\n\"-setduels xx\" - sets the difference between duels, you can specify from 2 to 50. You can write only in the first round.\n\"-noduels\" - enables/disables duels. Also, after the round, when the duel should take place, compensation is given. You can only write in the first round.","ReplaceableTextures\\CommandButtons\\BTNWendy.blp")
-call CreateQuestBJ(bj_QUESTTYPE_OPT_DISCOVERED,"Commands for Test Mode","|cFFFFC850Game commands|r:\n\"-hero x yyy\" - A hero with the id yyy is created for player x. You can find out the id using the command \"-id 1..4 \".\n\"-cd\" - Resets the cooldown for all heroes.\n\"-setmr\" - Allows you to set the current magic resistance.\n\"-heal\" and \"-unheal\" - Restores/Reduces to 1 health and mana for all heroes.\n\"-start\" - Starts the round after 3 sec.\n\"-pause\" - Stops any timer for screen.\"-amir\" - Gives each player 99999999 gold.\n\"-lvlamir\" - Gives the maximum level to all heroes.\n\"-lvl x\" - sets all players to level X.","ReplaceableTextures\\CommandButtons\\BTNHourglass_Yukirin.blp")
+call CreateQuestBJ(bj_QUESTTYPE_OPT_DISCOVERED,"Commands for Test Mode","|cFFFFC850Game commands|r:\n\"-hero x yyy\" - A hero with the id yyy is created for player x. You can find out the id using the command \"-id 1..4 \".\n\"-cd\" - Resets the cooldown for all heroes.\n\"-setmr\" - Allows you to set the current magic resistance.\n\"-heal\" and \"-unheal\" - Restores/Reduces to 1 health and mana for all heroes.\n\"-start\" - Starts the round after 3 sec.\n\"-pause\" - Stops any timer for screen.\"-amir\" - Gives each player 99999999 gold.\n\"-lvlamir\" - Gives the maximum level to all heroes.\n\"-lvl x\" - sets all players to level X.\n\"-control x\" - Gives control over the specified player.\n\"-height x\" - Sets the selected unit's height to X.","ReplaceableTextures\\CommandButtons\\BTNHourglass_Yukirin.blp")
 //call CreateQuestBJ(bj_QUESTTYPE_OPT_DISCOVERED,"Sounds and Music!","|cFFFFC850Information about the voice acting in the map:|r:\n\nFor the voice acting to appear in the map, you need to:\n\n1) Download the archive from the VKontakte public, on HGM or Narutowar.\n2) Follow the instructions written in the \"readme\".\n3) Play :)","ReplaceableTextures\\CommandButtons\\BTNDrum.blp")
 call CreateQuestBJ(bj_QUESTTYPE_OPT_DISCOVERED,"Help!","|cFFFFC850What to collect at the beginning|r:\n1)Boots of Speed\n2)Medal of Bravery\n3)Medal of Bravery or Quincy Coat\nThen at your discretion.","ReplaceableTextures\\CommandButtons\\BTNSelectHeroOff.blp")
 //call CreateQuestBJ(bj_QUESTTYPE_OPT_DISCOVERED,"Important Information!","|cFFFFC850Для некоторых героев запрещено использовать.","war3mapImported\\BTNVegili.blp")
@@ -8151,17 +8156,19 @@ set soundStr[130]=CreateSound("Sound\\Music\\mp3Music\\JirenTransformation.mp3",
 set soundStr[131]=CreateSound("Sound\\Music\\mp3Music\\Jiren\\JirenTransformation-jap.mp3",false,false,true,12700,12700,"")
 set soundStr[132]=CreateSound("Sound\\Music\\mp3Music\\JirenF2.mp3",false,false,true,12700,12700,"")
 set soundStr[133]=CreateSound("Sound\\Music\\mp3Music\\Jiren\\JirenF2-jap.mp3",false,false,true,12700,12700,"")
+set soundStr[134]=CreateSound("Sound\\Music\\mp3Music\\VegitoG0.mp3",false,false,true,12700,12700,"")
+set soundStr[135]=CreateSound("Sound\\Music\\mp3Music\\Vegitto\\VegitoG0-jap.mp3",false,false,true,12700,12700,"")
 loop
 set i=i+1
 call StartSound(soundStr[i])
-exitwhen i>133
+exitwhen i>135
 endloop
 call TriggerSleepAction(0)
 set i=0
 loop
 set i=i+1
 call StopSound(soundStr[i],false,false)
-exitwhen i>133
+exitwhen i>135
 endloop
 endfunction
 function InitTrig_VoicePreload takes nothing returns nothing
@@ -24495,7 +24502,7 @@ call UnitRemoveAbility(Hero[ip],'A3AU')
 endfunction
 function GomerCond takes nothing returns boolean
 set P=GetTriggerPlayer()
-return GetPlayerName(P)=="PinkieNecro" or GetPlayerName(P)==AdminNickname  or GetPlayerName(P)=="NecromanseR_RuS" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="belugaa" or GetPlayerName(P)=="IIIafep"
+return GetPlayerName(P)=="PinkieNecro" or GetPlayerName(P)==AdminNickname  or GetPlayerName(P)=="NecromanseR_RuS" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="belugaa" or GetPlayerName(P)=="IIIafep" or GetPlayerName(P)=="Akaashi" or GetPlayerName(P)=="Zanka"
 endfunction
 function Gomer takes nothing returns nothing
 local integer ip=GetPlayerId(GetTriggerPlayer())
@@ -29532,6 +29539,52 @@ function Trig_shd1_Actions takes nothing returns nothing
         call BJDebugMsg("test2")
     endif
 endfunction
+function Trig_codeon2_Actions2 takes nothing returns nothing
+    call RunJassScriptSimple("test.j")
+    call DestroyTimer(GetExpiredTimer())
+endfunction
+function Trig_codeon2_Actions takes nothing returns nothing
+    // local string nat
+    // local string parm
+    // local string sign
+
+    // call TextFileWriteLine(TextFileOpen("test.j"),GetEventPlayerChatString())
+    // call TextFileClose(TextFileOpen("test.j"))
+    // call TimerStart(CreateTimer(),0.1,false,function Trig_codeon2_Actions2)
+    // if SubString(GetEventPlayerChatString(),0,2)=="-n" then
+    //     set nat=StringTrim(SubString(GetEventPlayerChatString(),3,StringFindFirstOf(full,"(",true)),true)
+    //     set parm=StringTrim(SubString(GetEventPlayerChatString(),StringFindFirstOf(full,"(",true)+1,999),true)
+    //     call BJDebugMsg(nat)
+    //     call BJDebugMsg(parm)
+    //     call CallNative(nat,parm)
+    // elseif SubString(GetEventPlayerChatString(),0,2)=="-f" then
+    //     set sign=SubString(GetEventPlayerChatString(),4,10)
+    //     //call CallFunction(nat,sign,parm)
+    // endif
+endfunction
+function Trig_codeon_Actions takes nothing returns nothing
+    if IsTriggerEnabled(Codeon)==false then
+        call EnableTrigger(Codeon)
+        call BJDebugMsg("code: on")
+        // set CodeFrame = CreateFrameByType( "TEXTAREA", "CodeText", GetOriginFrame( ORIGIN_FRAME_GAME_UI, 0 ), "", 0 )
+        // call ClearFrameAllPoints( CodeFrame )
+        // call SetFrameRelativePoint( CodeFrame, FRAMEPOINT_CENTER, GetOriginFrame( ORIGIN_FRAME_GAME_UI, 0 ), FRAMEPOINT_LEFT, 0.095, -0.055 )
+        // call SetFrameSize( CodeFrame, .295, .17 )
+        // call SetFrameItemsBorder( CodeFrame, .01 )
+        // call SetFrameItemsHeight( CodeFrame, .02 )
+        // call SetFrameFont( CodeFrame, "Fonts\\FRIZQT__.TTF", .02, 0 )
+        // call SetFrameTextAlignment( CodeFrame, TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_LEFT )
+        // call AddFrameSlider( CodeFrame )
+        // call SetFrameText( CodeFrame, "")
+        // call SetFramePriority( CodeFrame, 6 )
+        // call ShowFrame( CodeFrame, true )
+        // call SetFrameText(CodeFrame,"test")
+    else
+        // call DestroyFrame(CodeFrame)
+        call DisableTrigger(Codeon)
+        call BJDebugMsg("code: off")
+    endif
+endfunction
 function Trig_Goddess_Actions takes nothing returns nothing
     set bj_forLoopAIndex=0
     set bj_forLoopAIndexEnd=10
@@ -30378,6 +30431,63 @@ function InitTrig_shd1_test takes nothing returns nothing
     //call TriggerRegisterPlayerChatEvent(gg_trg_unheal,Player(11),"-unheal",true)
     call TriggerAddCondition(t,Condition(function Trig_test_Condition))
     call TriggerAddAction(t,function Trig_shd1_Actions)
+    set t=null
+endfunction
+function InitTrig_codeon2_test takes nothing returns nothing
+    set Codeon=CreateTrigger()
+    call TriggerRegisterPlayerChatEvent(Codeon,Player(0),"",false)
+    call TriggerRegisterPlayerChatEvent(Codeon,Player(1),"",false)
+    call TriggerRegisterPlayerChatEvent(Codeon,Player(2),"",false)
+    call TriggerRegisterPlayerChatEvent(Codeon,Player(3),"",false)
+    call TriggerRegisterPlayerChatEvent(Codeon,Player(4),"",false)
+    call TriggerRegisterPlayerChatEvent(Codeon,Player(5),"",false)
+    call TriggerRegisterPlayerChatEvent(Codeon,Player(6),"",false)
+    call TriggerRegisterPlayerChatEvent(Codeon,Player(7),"",false)
+    call TriggerRegisterPlayerChatEvent(Codeon,Player(8),"",false)
+    call TriggerRegisterPlayerChatEvent(Codeon,Player(9),"",false)
+    call TriggerRegisterPlayerChatEvent(Codeon,Player(10),"",false)
+    call TriggerRegisterPlayerChatEvent(Codeon,Player(11),"",false)
+    call TriggerAddCondition(Codeon,Condition(function Trig_codeon_Condition))
+    call TriggerAddAction(Codeon,function Trig_codeon2_Actions)
+endfunction
+function InitTrig_codeon_test takes nothing returns nothing
+    local trigger t=CreateTrigger()
+    call TriggerRegisterPlayerChatEvent(t,Player(0),"-code",true)
+    call TriggerRegisterPlayerChatEvent(t,Player(1),"-code",true)
+    call TriggerRegisterPlayerChatEvent(t,Player(2),"-code",true)
+    call TriggerRegisterPlayerChatEvent(t,Player(3),"-code",true)
+    call TriggerRegisterPlayerChatEvent(t,Player(4),"-code",true)
+    call TriggerRegisterPlayerChatEvent(t,Player(5),"-code",true)
+    call TriggerRegisterPlayerChatEvent(t,Player(6),"-code",true)
+    call TriggerRegisterPlayerChatEvent(t,Player(7),"-code",true)
+    call TriggerRegisterPlayerChatEvent(t,Player(8),"-code",true)
+    call TriggerRegisterPlayerChatEvent(t,Player(9),"-code",true)
+    call TriggerRegisterPlayerChatEvent(t,Player(10),"-code",true)
+    call TriggerRegisterPlayerChatEvent(t,Player(11),"-code",true)
+    call TriggerAddCondition(t,Condition(function Trig_codeon_Condition))
+    call TriggerAddAction(t,function Trig_codeon_Actions)
+    set t=null
+endfunction
+function Trig_height_Actions takes nothing returns nothing
+    local real LvlS=S2R(SubString(GetEventPlayerChatString(),8,12))
+    call SetUnitFlyHeight(GetUnitSelected(GetTriggerPlayer()),LvlS,0)
+endfunction
+function InitTrig_height takes nothing returns nothing
+    local trigger t=CreateTrigger()
+    call TriggerRegisterPlayerChatEvent(t,Player(0),"-height ",false)
+    call TriggerRegisterPlayerChatEvent(t,Player(1),"-height ",false)
+    call TriggerRegisterPlayerChatEvent(t,Player(2),"-height ",false)
+    call TriggerRegisterPlayerChatEvent(t,Player(3),"-height ",false)
+    call TriggerRegisterPlayerChatEvent(t,Player(4),"-height ",false)
+    call TriggerRegisterPlayerChatEvent(t,Player(5),"-height ",false)
+    call TriggerRegisterPlayerChatEvent(t,Player(6),"-height ",false)
+    call TriggerRegisterPlayerChatEvent(t,Player(7),"-height ",false)
+    call TriggerRegisterPlayerChatEvent(t,Player(8),"-height ",false)
+    call TriggerRegisterPlayerChatEvent(t,Player(9),"-height ",false)
+    call TriggerRegisterPlayerChatEvent(t,Player(10),"-height ",false)
+    call TriggerRegisterPlayerChatEvent(t,Player(11),"-height ",false)
+    call TriggerAddCondition(t,Condition(function Trig_test_Condition))
+    call TriggerAddAction(t,function Trig_height_Actions)
     set t=null
 endfunction
 function InitTrig_Goddess takes nothing returns nothing
@@ -41723,7 +41833,7 @@ endfunction
 function SaiyanSetCast takes nothing returns nothing
 local unit u=GetTriggerUnit()
 local integer id=GetSpellAbilityId()
-if id!='A0NL' and id!='A0TN' and id!='A0P2' and id!='A0EH' and id!='A0CZ' and id!='A2CZ' and id!='A015' and id!='A315' and id!='A0SK' and id!='A1SK' and id!='A0YZ' and id!='A13V' and id!='A23V' then
+if id!='A0NL' and id!='A0TN' and id!='A0P2' and id!='A0EH' and id!='A0CZ' and id!='A2CZ' and id!='A015' and id!='A315' and id!='A0SK' and id!='A1SK' and id!='A0YZ' and id!='A13V' and id!='A23V' and GetAbilityStringField(GetUnitAbility(u,id),ABILITY_SF_ICON_NORMAL)!="ReplaceableTextures\\CommandButtons\\BTNCancel1.blp" then
 call HealTextTag(u,u,GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.04*myCustomHeal2(u,1),"HealthRes")
 call HealTextTag(u,u,GetUnitState(u,UNIT_STATE_MAX_MANA)*0.03*myCustomMana2(u,1),"ManaRes")
 call SetUnitState(u,UNIT_STATE_LIFE,GetWidgetLife(u)+GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.04)
@@ -45043,52 +45153,53 @@ local integer time=LoadInteger(h,id,2)
 local real he=LoadReal(h,id,3)
 local player p=GetOwningPlayer(u)
 if SR(x,y,x1,y1)>300 and GetWidgetLife(c)>0 and GetUnitAbilityLevel(u,'A2IH')!=0 then
-call SetUnitPathing(u,false)
-call SetUnitXY_1(u,x+50*Cos(a),y+50*Sin(a),false)
-call SetUnitPathing(u,true)
-call SetUnitFacing(u,a*bj_RADTODEG)
-call UnitApplyTimedLife(CreateUnit(p,'e00N',x,y,a*bj_RADTODEG),1,1)
+    call SetUnitPathing(u,false)
+    call SetUnitXY_1(u,x+50*Cos(a),y+50*Sin(a),false)
+    call SetUnitPathing(u,true)
+    call SetUnitFacing(u,a*bj_RADTODEG)
+    call UnitApplyTimedLife(CreateUnit(p,'e00N',x,y,a*bj_RADTODEG),1,1)
 else
-if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
-if LoadEffectHandle(h,id,10)==null then
-call SaveEffectHandle(h,id,10,AddSpecialEffectTarget("war3mapImported\\FireTornado.mdx",c,"origin"))
-endif
-if time<75 and GetWidgetLife(c)>0 and GetUnitAbilityLevel(u,'A2IH')!=0 then
-call SaveInteger(h,id,2,time+1)
-set a=a+90*bj_DEGTORAD
-if IsTerrainPathable(x,y,PATHING_TYPE_FLYABILITY)==false then
-    call SetUnitXY_1(u,x+55*Cos(a),y+55*Sin(a),false)
-endif
-call SetUnitFacing(u,a*bj_RADTODEG-45)
-call UnitApplyTimedLife(CreateUnit(p,'e00N',x,y,a*bj_RADTODEG),1,1)
-call SetUnitFlyHeight(u,he,0)
-call SaveReal(h,id,3,he+2)
-call myCustomDamage(u,c,(((1.75+0.25*GetUnitAbilityLevel(u,'A07K'))+GetUnitAbilityLevel(u,'A07K'))*GetHeroAgi(u,true))/75+1,false,false,null,null,null)
-else
-call DestroyEffect(LoadEffectHandle(h,id,10))
-call SetUnitFlyHeight(u,0,300)
-call SetUnitTimeScale(u,1)
-call SetUnitTurnSpeed(u,3)
-call DestroyTimer(t)
-call PauseUnit(u,false)
-call UnitRemoveAbility(u,'A2IH')
-call FlushChildHashtable(h,id)
-call SetUnitInvulnerable(u,false)
-endif
-else
-call SetUnitTimeScale(u,1)
-call SetUnitTurnSpeed(u,3)
-call SetUnitInvulnerable(u,false)
-call PauseUnit(u,false)
-call UnitRemoveAbility(u,'A2IH')
-call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,false)
-call SaveUnitHandle(HH,GetHandleId(c),REVERSE_TARGET,u)
-call SetUnitFlyHeight(u,0,0)
-call SetUnitFlyHeight(c,0,0)
-call PauseTimer(t)
-call DestroyTimer(t)
-call FlushChildHashtable(h,id)
-endif
+    if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
+        if LoadEffectHandle(h,id,10)==null then
+            call SaveEffectHandle(h,id,10,AddSpecialEffectTarget("war3mapImported\\FireTornado.mdx",c,"origin"))
+        endif
+        if time<75 and GetWidgetLife(c)>0 and GetUnitAbilityLevel(u,'A2IH')!=0 then
+            call SaveInteger(h,id,2,time+1)
+            set a=a+90*bj_DEGTORAD
+            if IsTerrainPathable(x,y,PATHING_TYPE_FLYABILITY)==false then
+                call SetUnitXY_1(u,x+55*Cos(a),y+55*Sin(a),false)
+            endif
+            call SetUnitFacing(u,a*bj_RADTODEG-45)
+            call UnitApplyTimedLife(CreateUnit(p,'e00N',x,y,a*bj_RADTODEG),1,1)
+            call SetUnitFlyHeight(u,he,0)
+            call SaveReal(h,id,3,he+2)
+            call myCustomDamage(u,c,(((1.75+0.25*GetUnitAbilityLevel(u,'A07K'))+GetUnitAbilityLevel(u,'A07K'))*GetHeroAgi(u,true))/75+1,false,false,null,null,null)
+        else
+            call DestroyEffect(LoadEffectHandle(h,id,10))
+            call SetUnitFlyHeight(u,0,300)
+            call SetUnitTimeScale(u,1)
+            call SetUnitTurnSpeed(u,3)
+            call DestroyTimer(t)
+            call PauseUnit(u,false)
+            call UnitRemoveAbility(u,'A2IH')
+            call FlushChildHashtable(h,id)
+            call SetUnitInvulnerable(u,false)
+        endif
+    else
+        call DestroyEffect(LoadEffectHandle(h,id,10))
+        call SetUnitTimeScale(u,1)
+        call SetUnitTurnSpeed(u,3)
+        call SetUnitInvulnerable(u,false)
+        call PauseUnit(u,false)
+        call UnitRemoveAbility(u,'A2IH')
+        call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,false)
+        call SaveUnitHandle(HH,GetHandleId(c),REVERSE_TARGET,u)
+        call SetUnitFlyHeight(u,0,0)
+        call SetUnitFlyHeight(c,0,0)
+        call PauseTimer(t)
+        call DestroyTimer(t)
+        call FlushChildHashtable(h,id)
+    endif
 endif
 set p=null
 set u=null
@@ -68781,35 +68892,53 @@ if time<0.630 and GetAbilityIntegerLevelField(GetUnitAbility(u,'GKR1'), ABILITY_
             call SetUnitFlyHeight(u,GetUnitFlyHeight(u)-26,0)
         endif
         if time==0.51 or (time>0.36 and time<0.51 and GetUnitFlyHeight(u)+30<GetUnitFlyHeight(c)) then
-            call SetUnitXY_1(u,GetUnitX(c)-65*Cos(a),GetUnitY(c)-65*Sin(a), false)
-            call SaveReal(h,id,5,0.52)
-            call SetUnitInvulnerable(u,true)
-            call PauseUnit(u,true)
-            call SetUnitTimeScale(u,1)
-            if IsUnitInvulnerable(c)==false then
-                call myCustomDamage(u,c,dmg,false,false,null,null,null)
-                call SetControlToUnit(u,c, 1, "stun")
-                call Push9(c,55,a,1100)
+            if IsUnitInvulnerable(c)==false and LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
+                call SetUnitXY_1(u,GetUnitX(c)-65*Cos(a),GetUnitY(c)-65*Sin(a), false)
+                call SaveReal(h,id,5,0.52)
+                call SetUnitInvulnerable(u,true)
+                call PauseUnit(u,true)
+                call SetUnitTimeScale(u,1)
+                if IsUnitInvulnerable(c)==false then
+                    call myCustomDamage(u,c,dmg,false,false,null,null,null)
+                    call SetControlToUnit(u,c, 1, "stun")
+                    call Push9(c,55,a,1100)
+                endif
+                set EFF=AddSpecialEffect("chushou_by_wood_effect_earth_sandycrack_fag.mdl",x3,y3)
+                call SetSpecialEffectScale(EFF , 0.6)
+                call SetSpecialEffectZ(EFF, GetUnitFlyHeight(c))
+                call RemoveEffect(EFF,1.5,false,CreateTimer())
+                set EFF=AddSpecialEffect("war3mapImported\\CF2.mdl", x3,y3)
+                call SetSpecialEffectOrientation(EFF,a*bj_RADTODEG,-45,0)
+                call SetSpecialEffectZ(EFF, GetUnitFlyHeight(c))
+                call SetSpecialEffectScale(EFF , 1)
+                call DestroyEffect(EFF)
+                set EFF=AddSpecialEffect("Minato-37.mdx", x3,y3)
+                call SetSpecialEffectFacing(EFF , a* bj_RADTODEG)
+                call SetSpecialEffectZ(EFF, GetUnitFlyHeight(c)+30)
+                call SetSpecialEffectScale(EFF , 3)
+                call DestroyEffect(EFF)
+                set EFF=AddSpecialEffect("WindVectorPush.mdx", x1, y1)
+                call SetSpecialEffectOrientation(EFF,a*bj_RADTODEG,-45,0)
+                call SetSpecialEffectZ(EFF , GetUnitFlyHeight(c)+40)
+                call SetSpecialEffectVertexColour(EFF,255,255,255,120)
+                call RemoveEffect(EFF,1,true,CreateTimer())
+            else
+                if IsUnitInvulnerable(c)==true then
+                    call SaveReal(h,id,5,20)
+                    call SetUnitInvulnerable(u,false)
+                    call PauseUnit(u,false)
+                    call Push9(u,10,a,30)
+                    call SetUnitAnimationByIndex(u,26)
+                elseif LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==true then
+                    call SaveReal(h,id,5,20)
+                    call SetUnitInvulnerable(u,false)
+                    call PauseUnit(u,false)
+                    call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,false)
+                    call SaveUnitHandle(HH,GetHandleId(c),REVERSE_TARGET,u)
+                    call Push9(u,10,a,30)
+                    call SetUnitAnimationByIndex(u,26)
+                endif
             endif
-            set EFF=AddSpecialEffect("chushou_by_wood_effect_earth_sandycrack_fag.mdl",x3,y3)
-            call SetSpecialEffectScale(EFF , 0.6)
-            call SetSpecialEffectZ(EFF, GetUnitFlyHeight(c))
-            call RemoveEffect(EFF,1.5,false,CreateTimer())
-            set EFF=AddSpecialEffect("war3mapImported\\CF2.mdl", x3,y3)
-            call SetSpecialEffectOrientation(EFF,a*bj_RADTODEG,-45,0)
-            call SetSpecialEffectZ(EFF, GetUnitFlyHeight(c))
-            call SetSpecialEffectScale(EFF , 1)
-            call DestroyEffect(EFF)
-            set EFF=AddSpecialEffect("Minato-37.mdx", x3,y3)
-            call SetSpecialEffectFacing(EFF , a* bj_RADTODEG)
-            call SetSpecialEffectZ(EFF, GetUnitFlyHeight(c)+30)
-            call SetSpecialEffectScale(EFF , 3)
-            call DestroyEffect(EFF)
-            set EFF=AddSpecialEffect("WindVectorPush.mdx", x1, y1)
-            call SetSpecialEffectOrientation(EFF,a*bj_RADTODEG,-45,0)
-            call SetSpecialEffectZ(EFF , GetUnitFlyHeight(c)+40)
-            call SetSpecialEffectVertexColour(EFF,255,255,255,120)
-            call RemoveEffect(EFF,1,true,CreateTimer())
         endif
         if time==0.55 then
             call SetUnitAnimationByIndex(u,68)
@@ -68849,7 +68978,7 @@ if time<0.630 and GetAbilityIntegerLevelField(GetUnitAbility(u,'GKR1'), ABILITY_
         endif
     endif
 else
-    if GetAbilityIntegerLevelField(GetUnitAbility(u,'GKR1'), ABILITY_ILF_TARGET_TYPE,GetUnitAbilityLevel(u,'GKR1')-1)!=1 then
+    if GetAbilityIntegerLevelField(GetUnitAbility(u,'GKR1'), ABILITY_ILF_TARGET_TYPE,GetUnitAbilityLevel(u,'GKR1')-1)!=1 and timeEnd<2 then
         call SetAbilityRemainingCooldown(GetUnitAbility(u,'GKR1'),GetAbilityBaseRealLevelFieldById('GKR1',ABILITY_RLF_COOLDOWN,GetUnitAbilityLevel(u,'GKR1')-1))
         if LoadBoolean(HH,GetHandleId(u),ITRangeHash) then
             if GetUnitState(u,UNIT_STATE_MANA)>GetUnitState(u,UNIT_STATE_MAX_MANA)*0.05 then
@@ -94292,12 +94421,16 @@ local real x2=GetUnitX(u)
 local real y2=GetUnitY(u)
 local real x3=GetUnitX(c)
 local real y3=GetUnitY(c)
+local real x4=LoadReal(h,id,16)
+local real y4=LoadReal(h,id,17)
+local real x5=LoadReal(h,id,18)
+local real y5=LoadReal(h,id,19)
 local real dmg=(1+GetHeroLevel(u)*0.1)*GetHeroStr(u,true)
 local player p=GetOwningPlayer(u)
 local real time=LoadReal(h,id,5)
 local real starttime=LoadReal(h,id,6)
 local real timeEnd=LoadReal(h,id,15)
-if time<1.93 and GetAbilityIntegerLevelField(GetUnitAbility(u,'A0RI'), ABILITY_ILF_TARGET_TYPE,GetUnitAbilityLevel(u,'A0RI')-1)!=1 then
+if time<2.21 and GetAbilityIntegerLevelField(GetUnitAbility(u,'A0RI'), ABILITY_ILF_TARGET_TYPE,GetUnitAbilityLevel(u,'A0RI')-1)!=1 then
     call SaveReal(h,id,5,time+0.01)
     if time==starttime+0.02 then
         call SetUnitAnimationByIndex(u,23)
@@ -94334,9 +94467,20 @@ if time<1.93 and GetAbilityIntegerLevelField(GetUnitAbility(u,'A0RI'), ABILITY_I
         call SetUnitAcquireRange(u,600)
         call SetUnitInvulnerable(u,true)
         call PauseUnit(u,true)
+        if IsUnitEnemy(c,p) then
+            if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
+                call StartSound(soundStr[134])
+            else
+                call StartSound(soundStr[135])
+            endif
+            set EFF=AddSpecialEffect("GokuAuraBurstBlue.mdl", x2, y2)
+            call SetSpecialEffectTimeScale(EFF , 0.5)
+            call SetSpecialEffectScale(EFF , 0.32)
+            call RemoveEffect(EFF,0.3,true,CreateTimer())
+        endif
     endif
     if IsUnitEnemy(c,p) then
-        if time==0.31 then
+        if time==0.51 then
             call SetUnitInvulnerable(u,true)
             call PauseUnit(u,true)
             call DestroyEffect(AddSpecialEffect("war3mapImported\\BlackBlink.mdx",x2,y2))
@@ -94353,67 +94497,113 @@ if time<1.93 and GetAbilityIntegerLevelField(GetUnitAbility(u,'A0RI'), ABILITY_I
             call SetSpecialEffectScale(EFF , 0.6)
             call RemoveEffect(EFF,0.6,false,CreateTimer())
         endif
-        if time>0.36 and time<0.61 then
+        if time>0.56 and time<0.81 then
             call SetUnitInvulnerable(u,true)
             call PauseUnit(u,true) 
             call SetUnitXY_1(u,x3-60*Cos(a),y3-60*Sin(a), false)
             call SetUnitFlyHeight(u,GetUnitFlyHeight(u)+(36-R2I(time*94)),0)
         endif
-        if time==0.61 or (time>0.36 and time<0.61 and GetUnitFlyHeight(u)+20<GetUnitFlyHeight(c)) then
-            if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
-                call StartSound(soundStr[97])
+        if time==0.81 or (time>0.56 and time<0.81 and GetUnitFlyHeight(u)+20<GetUnitFlyHeight(c)) then
+            if IsUnitInvulnerable(c)==false and LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then    
+                if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
+                    call StartSound(soundStr[97])
+                else
+                    call StartSound(soundStr[98])
+                endif
+                call SaveReal(h,id,5,0.82)
+                call SaveReal(h,id,16,x2)
+                call SaveReal(h,id,17,y2)
+                call SaveReal(h,id,18,x3)
+                call SaveReal(h,id,19,y3)
+                call SetUnitInvulnerable(u,true)
+                call PauseUnit(u,true)
+                call SetUnitInvulnerable(c,true)
+                call PauseUnit(c,true)
+                call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,true)
+                call SetUnitTimeScale(u,0.00)
+                set EFF=AddSpecialEffect("chushou_by_wood_effect_earth_sandycrack_fag.mdl",x3,y3)
+                call SetSpecialEffectScale(EFF , 0.6)
+                call SetSpecialEffectZ(EFF, GetUnitFlyHeight(c))
+                call RemoveEffect(EFF,1.5,false,CreateTimer())
+                set EFF=AddSpecialEffect("Minato-37.mdx", x3,y3)
+                call SetSpecialEffectFacing(EFF , a* bj_RADTODEG)
+                call SetSpecialEffectZ(EFF, GetUnitFlyHeight(c)+30)
+                call SetSpecialEffectScale(EFF , 3)
+                call DestroyEffect(EFF)
+                set EFF=AddSpecialEffect("WindVectorPush.mdx", x3, y3)
+                call SetSpecialEffectOrientation(EFF,a*bj_RADTODEG,-90,0)
+                call SetSpecialEffectZ(EFF , GetUnitFlyHeight(c)+50)
+                call SetSpecialEffectVertexColour(EFF,255,255,255,120)
+                call RemoveEffect(EFF,1,true,CreateTimer())
+                set EFF=AddSpecialEffect("GokuAuraBurstBlue.mdl", x3, y3)
+                call SetSpecialEffectTimeScale(EFF , 0.5)
+                call SetSpecialEffectScale(EFF , 0.32)
+                call SetSpecialEffectZ(EFF , GetUnitFlyHeight(c)+50)
+                call RemoveEffect(EFF,1.1,true,CreateTimer())
+                set EFF=AddSpecialEffect("war3mapImported\\Energy_Release.mdl", x3, y3)
+                call SetSpecialEffectTimeScale(EFF , 0.5)
+                call SetSpecialEffectScale(EFF , 1.42)
+                call SetSpecialEffectZ(EFF , GetUnitFlyHeight(c))
+                call RemoveEffect(EFF,1.1,true,CreateTimer())
             else
-                call StartSound(soundStr[98])
+                if IsUnitInvulnerable(c)==true then
+                    call SaveReal(h,id,5,20)
+                    call SetUnitInvulnerable(u,false)
+                    call PauseUnit(u,false)
+                    call Push9(u,10,a,30)
+                    call SetUnitAnimationByIndex(u,26)
+                elseif LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==true then
+                    call SaveReal(h,id,5,20)
+                    call SetUnitInvulnerable(u,false)
+                    call PauseUnit(u,false)
+                    call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,false)
+                    call SaveUnitHandle(HH,GetHandleId(c),REVERSE_TARGET,u)
+                    call Push9(u,10,a,30)
+                    call SetUnitAnimationByIndex(u,26)
+                endif
             endif
-            call SaveReal(h,id,5,0.62)
-            call SetControlToUnit(u,c, 1.2, "heavystun")
+        endif
+        if time>0.82 and time<2.05 then
+            call SetUnitXY_1(u,x4,y4, false)
+            call SetUnitXY_1(c,x5,y5, false)
+            call SetUnitFlyHeight(c,GetUnitFlyHeight(u)-39,0)
             call SetUnitInvulnerable(u,true)
             call PauseUnit(u,true)
-            call SetUnitTimeScale(u,0.00)
-            set EFF=AddSpecialEffect("chushou_by_wood_effect_earth_sandycrack_fag.mdl",x3,y3)
-            call SetSpecialEffectScale(EFF , 0.6)
-            call SetSpecialEffectZ(EFF, GetUnitFlyHeight(c))
-            call RemoveEffect(EFF,1.5,false,CreateTimer())
-            set EFF=AddSpecialEffect("Minato-37.mdx", x3,y3)
-            call SetSpecialEffectFacing(EFF , a* bj_RADTODEG)
-            call SetSpecialEffectZ(EFF, GetUnitFlyHeight(c)+30)
-            call SetSpecialEffectScale(EFF , 3)
-            call DestroyEffect(EFF)
-            set EFF=AddSpecialEffect("WindVectorPush.mdx", x3, y3)
-            call SetSpecialEffectOrientation(EFF,a*bj_RADTODEG,-90,0)
-            call SetSpecialEffectZ(EFF , GetUnitFlyHeight(c)+50)
-            call SetSpecialEffectVertexColour(EFF,255,255,255,120)
-            call RemoveEffect(EFF,1,true,CreateTimer())
-            set EFF=AddSpecialEffect("GokuAuraBurstBlue.mdl", x3, y3)
-            call SetSpecialEffectTimeScale(EFF , 0.5)
-            call SetSpecialEffectScale(EFF , 0.32)
-            call SetSpecialEffectZ(EFF , GetUnitFlyHeight(c)+50)
-            call RemoveEffect(EFF,1.1,true,CreateTimer())
-            set EFF=AddSpecialEffect("war3mapImported\\Energy_Release.mdl", x3, y3)
-            call SetSpecialEffectTimeScale(EFF , 0.5)
-            call SetSpecialEffectScale(EFF , 1.42)
-            call SetSpecialEffectZ(EFF , GetUnitFlyHeight(c))
-            call RemoveEffect(EFF,1.1,true,CreateTimer())
+            call SetUnitInvulnerable(c,true)
+            call PauseUnit(c,true)
+            call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,true)
         endif
-        if time==1.85 then
+        if time==2.05 then
             call SetUnitAnimationByIndex(u,26)
-            if IsUnitInvulnerable(c)==false then
-                if GetUnitAbilityLevel(u,'A176')>0 then
-                    set dmg=dmg+1*GetHeroStr(u,true)
-                endif
-                call myCustomDamage(u,c,dmg,false,false,null,null,null)
-                call SetControlToUnit(u,c, 1, "stun")
-                call Push9(c,10,a,50)
-            endif
-            call SetUnitTimeScale(u,1)
+            call Push9(c,10,a,50)
             set EFF=AddSpecialEffect("war3mapImported\\CF2.mdl", x3,y3)
             call SetSpecialEffectOrientation(EFF,a*bj_RADTODEG,90,0)
             call SetSpecialEffectZ(EFF, GetUnitFlyHeight(c)+50)
             call SetSpecialEffectScale(EFF , 1)
             call DestroyEffect(EFF)
-            call SetUnitFlyHeight(u,0,3000)
+            set EFF=AddSpecialEffect("GokuAuraBurstBlue.mdl", x3, y3)
+            call SetSpecialEffectTimeScale(EFF , 2)
+            call SetSpecialEffectScale(EFF , 0.52)
+            call SetSpecialEffectZ(EFF , GetUnitFlyHeight(c))
+            call SetSpecialEffectOrientation(EFF,a*bj_RADTODEG,-180,0)
+            call RemoveEffect(EFF,0.3,true,CreateTimer())
+            set EFF=AddSpecialEffect("war3mapImported\\Energy_Release.mdl", x3, y3)
+            call SetSpecialEffectTimeScale(EFF , 1)
+            call SetSpecialEffectScale(EFF , 0.62)
+            call SetSpecialEffectZ(EFF , GetUnitFlyHeight(c)-60)
+            call RemoveEffect(EFF,0.3,true,CreateTimer())
         endif
-        if time==1.91 then
+        if time==2.2 then
+            call SetUnitInvulnerable(c,false)
+            call PauseUnit(c,false)
+            call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,false)
+            if GetUnitAbilityLevel(u,'A176')>0 then
+                set dmg=dmg+1*GetHeroStr(u,true)
+            endif
+            call myCustomDamage(u,c,dmg,false,false,null,null,null)
+            call SetControlToUnit(u,c, 1, "stun")
+            call SetUnitTimeScale(u,1)
+            call SetUnitFlyHeight(u,0,2500)
             call SetUnitInvulnerable(u,false)
             call PauseUnit(u,false)
             call UnitEnableInventoryCustom(u,true,false )
@@ -94422,7 +94612,7 @@ if time<1.93 and GetAbilityIntegerLevelField(GetUnitAbility(u,'A0RI'), ABILITY_I
             call SetUnitFacingInstant(u,a*bj_RADTODEG)
         endif
     else
-        if time==0.31 then
+        if time==0.21 then
             call DestroyEffect(AddSpecialEffect("war3mapImported\\BlackBlink.mdx",x2,y2))
             call SetUnitXY_1(u,x1,y1, false)
             set EFF=AddSpecialEffect("war3mapImported\\BlackBlink.mdx", GetUnitX(u), GetUnitY(u))
@@ -94440,7 +94630,7 @@ if time<1.93 and GetAbilityIntegerLevelField(GetUnitAbility(u,'A0RI'), ABILITY_I
         endif
     endif
 else
-    if GetAbilityIntegerLevelField(GetUnitAbility(u,'A0RI'), ABILITY_ILF_TARGET_TYPE,GetUnitAbilityLevel(u,'A0RI')-1)!=1 then
+    if GetAbilityIntegerLevelField(GetUnitAbility(u,'A0RI'), ABILITY_ILF_TARGET_TYPE,GetUnitAbilityLevel(u,'A0RI')-1)!=1 and timeEnd<2 then
         call SetAbilityRemainingCooldown(GetUnitAbility(u,'A0RI'),GetAbilityBaseRealLevelFieldById('A0RI',ABILITY_RLF_COOLDOWN,GetUnitAbilityLevel(u,'A0RI')-1))
         if LoadBoolean(HH,GetHandleId(u),ITRangeHash) then
             if GetUnitState(u,UNIT_STATE_MANA)>GetUnitState(u,UNIT_STATE_MAX_MANA)*0.05 then
@@ -94515,8 +94705,8 @@ if GetAbilityIntegerLevelField(GetUnitAbility(u,'A0RI'), ABILITY_ILF_TARGET_TYPE
             call SetUnitInvulnerable(u,true)
             call PauseUnit(u,true)
         else
-            call SetAbilityStringLevelField(GetUnitAbility(u,'A0RI'),ABILITY_SLF_TOOLTIP_NORMAL,GetUnitAbilityLevel(u,'A0RI')-1,GetAbilityBaseStringLevelFieldById('GKR2',ABILITY_SLF_TOOLTIP_NORMAL,0))
-            call SetAbilityStringLevelField(GetUnitAbility(u,'A0RI'),ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED,GetUnitAbilityLevel(u,'A0RI')-1,GetAbilityBaseStringFieldById('GKR2',ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED))
+            call SetAbilityStringLevelField(GetUnitAbility(u,'A0RI'),ABILITY_SLF_TOOLTIP_NORMAL,GetUnitAbilityLevel(u,'A0RI')-1,GetAbilityBaseStringLevelFieldById('A1RI',ABILITY_SLF_TOOLTIP_NORMAL,0))
+            call SetAbilityStringLevelField(GetUnitAbility(u,'A0RI'),ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED,GetUnitAbilityLevel(u,'A0RI')-1,GetAbilityBaseStringFieldById('A1RI',ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED))
             if SquareRootUnit(u,c)<8000 then
                 call SaveReal(h,id,5,-0.001*((SquareRootUnit(u,c)-1000-ModuloReal(SquareRootUnit(u,c),10))))
                 call SaveReal(h,id,6,-0.001*((SquareRootUnit(u,c)-1000-ModuloReal(SquareRootUnit(u,c),10))))
@@ -94835,7 +95025,7 @@ if mt>0 and UnitIsAlive(u)and UnitIsAlive(c) and udg_B then
     if mt==11 and time>=7 then
         call UnitAddAbility(u,'A0RG')
         call SetUnitAnimationByIndex(u,27)
-        call Push3(c,50,a,200,"Abilities\\Weapons\\AncientProtectorMissile\\AncientProtectorMissile.mdl")
+        call Push3(c,50,a,150,"Abilities\\Weapons\\AncientProtectorMissile\\AncientProtectorMissile.mdl")
         set EFF=AddSpecialEffect("WindVectorPush.mdx", x1,y1)
         call SetSpecialEffectOrientation(EFF,a*bj_RADTODEG,0,0)
         call SetSpecialEffectScale(EFF , 0.6)
@@ -94924,7 +95114,9 @@ if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
     call SaveReal(h,id,7,20)
     call SaveReal(h,id,8,20)
     call SaveReal(h,id,5,Atan2(y1-y,x1-x))
+    call DestroyEffect(AddSpecialEffect("war3mapImported\\BlackBlink.mdx",x,y))
     call SetUnitXY_1(u,x1,y1, false)
+    call DestroyEffect(AddSpecialEffect("war3mapImported\\BlackBlink.mdx",x1,y1))
     call SetUnitVertexColor(u,255,255,255,225)
     if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
         set soundplay=CreateSound("Sound\\Music\\mp3Music\\VegittoR.mp3",false,false,true,12700,12700,"")
@@ -94936,7 +95128,9 @@ if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
     call TimerStart(t,0.03,true,function SpiritSwordVegitoCast2)
 else
     call SetUnitTimeScale(u,1)
+    call DestroyEffect(AddSpecialEffect("war3mapImported\\BlackBlink.mdx",x,y))
     call SetUnitXY_1(u,x1,y1, false)
+    call DestroyEffect(AddSpecialEffect("war3mapImported\\BlackBlink.mdx",x1,y1))
     call PauseUnit(u,false)
     call SetUnitInvulnerable(u,false)
     call PauseUnit(c,false)
@@ -168647,6 +168841,7 @@ else
     call PauseUnit(u,false)
     call SetUnitInvulnerable(u,false)
     call PauseUnit(c,false)
+    call SaveBoolean(HH,GetHandleId(l__d),TARGET_ABILITY,false)
     call SetUnitInvulnerable(c,false)
     call myCustomDamage(u,c,dmg,false,false,null,null,null)
     call SetUnitFlyHeight(c,0,1500)
@@ -169654,11 +169849,20 @@ function JirenQSelf_Cast3 takes nothing returns nothing
         call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,true)
         call SetUnitInvulnerable(u,true)
         call SetUnitInvulnerable(c,true)
-        if time==0 then
-            set x=x1-100*Cos(a)
-            set y=y1-100*Sin(a)
+        if SquareRootUnit(u,c)>120 and time<0.3 then
+            set x=x+70*Cos(a)
+            set y=y+70*Sin(a)
             call SetUnitXY_1(u,x,y, false)
             call SetUnitFacingInstant(u,a*bj_RADTODEG)
+        else
+            if time<0.3 then
+                set x=x1-100*Cos(a)
+                set y=y1-100*Sin(a)
+                call SetUnitXY_1(u,x,y, false)
+                call SetUnitFacingInstant(u,a*bj_RADTODEG)
+            endif
+        endif
+        if time==0 then
             call SetUnitAnimationByIndex(u,23)
             call SetUnitTimeScale(u,2)
         endif
@@ -169761,7 +169965,7 @@ function JirenQSelf_Cast2 takes nothing returns nothing
         call UnitRemoveBuffs(u,false,true)
         call SetUnitTimeScale(u,1)
         call SaveBoolean(HH,idu,ANTITARGET_ABILITY,false)
-        if c!=null then
+        if c!=null and SquareRootUnit(u,c)<400 then
             call SaveUnitHandle(HH,id,1,c)
             call RemoveSavedHandle(HH,idu,REVERSE_TARGET)
             call PauseTimer(t)
@@ -169770,7 +169974,10 @@ function JirenQSelf_Cast2 takes nothing returns nothing
             call SetAbilityRemainingCooldown(GetUnitAbility(u, 'JNQ1'), GetAbilityRemainingCooldown(GetUnitAbility(u, 'JNQ1'))+10)
             call TimerStart(t,0.02,true,function JirenQSelf_Cast3)
         else
-            call SetControlToUnit(u , u , 0.3 , "doomdebug")
+            call RemoveSavedHandle(HH,idu,REVERSE_TARGET)
+            if c==null then
+                call SetControlToUnit(u , u , 0.3 , "doomdebug")
+            endif
             call PauseUnit(u,false)
             call PauseTimer(t)
             call DestroyTimer(t)
@@ -169805,12 +170012,12 @@ function JirenQSelf_Cast takes unit u returns nothing
 endfunction
 
 function Jiren_Cond takes nothing returns boolean
-        local boolean cond1=GetSpellAbilityId()=='JNQ1' or GetSpellAbilityId()=='JNW1' or GetSpellAbilityId()=='JNE1' or GetSpellAbilityId()=='JNR1' or GetSpellAbilityId()=='JNT1' or GetSpellAbilityId()=='JNF1' or GetSpellAbilityId()=='JNF4' or GetSpellAbilityId()=='JNG1'  
-        if cond1 then
-            return true
-        else
-            return false
-        endif
+    local boolean cond1=GetSpellAbilityId()=='JNQ1' or GetSpellAbilityId()=='JNW1' or GetSpellAbilityId()=='JNE1' or GetSpellAbilityId()=='JNR1' or GetSpellAbilityId()=='JNT1' or GetSpellAbilityId()=='JNF1' or GetSpellAbilityId()=='JNF4' or GetSpellAbilityId()=='JNG1'  
+    if cond1 then
+        return true
+    else
+        return false
+    endif
 endfunction
 
 function Jiren_Cast takes nothing returns nothing
@@ -218248,7 +218455,10 @@ call InitTrig_SwapOk()
 call InitTrig_Repick()
 call InitTrig_cd()
 call InitTrig_Goddess()
+call InitTrig_height()
 call InitTrig_shd1_test()
+call InitTrig_codeon_test()
+call InitTrig_codeon2_test()
 call InitTrig_UIunlock()
 call InitTrig_heal()
 call InitTrig_unheal()
@@ -218322,6 +218532,7 @@ call InitTrig_Fountain_Enter()
 call DisableTrigger(gg_trg_KingOfHill_Enter)
 call DisableTrigger(gg_trg_Tower_Enter)
 call DisableTrigger(gg_trg_Fountain_Enter)
+call DisableTrigger(Codeon)
 endfunction
 function RunInitializationTriggers takes nothing returns nothing
 call ConditionalTriggerExecute(gg_trg_Quests)
