@@ -37374,48 +37374,52 @@ if (LoadReal(HH,GetHandleId(c),StringHash("yamato"))==1 or GetRandomInt(0,100)<1
         call SetUnitY(c,y+100*Sin(a2))
     endif
 endif
-if GetRandomInt(0,100)<15 and (UnitHasItemOfTypeBJ(c,'I01J') or GetUnitAbilityLevel(c,'KI06')>0) and CurrentEventAttack and IsUnitType(c, UNIT_TYPE_HERO) and IsUnitIllusion(c)==false and GetUnitAbilityLevel(c,'A3WR')==0 then
+if GetRandomInt(0,100)<15 and (UnitHasItemOfTypeBJ(c,'I01J') or GetUnitAbilityLevel(c,'KI06')>0) and CurrentEventAttack and IsUnitType(c, UNIT_TYPE_HERO) and nb>0 and GetUnitAbilityLevel(c,'A3WR')==0 then
     set critcoef=critcoef+0.5
 endif
-if GetRandomInt(0,100)<15 and (UnitHasItemOfTypeBJ(c,'I01I') or GetUnitAbilityLevel(c,'KI08')>0) and CurrentEventAttack and IsUnitType(c, UNIT_TYPE_HERO) and IsUnitIllusion(c)==false and GetUnitAbilityLevel(c,'A3WR')==0 then
+if GetRandomInt(0,100)<15 and (UnitHasItemOfTypeBJ(c,'I01I') or GetUnitAbilityLevel(c,'KI08')>0) and CurrentEventAttack and IsUnitType(c, UNIT_TYPE_HERO) and nb>0 and GetUnitAbilityLevel(c,'A3WR')==0 then
     set critcoef=critcoef+0.75
 endif
-if GetRandomInt(0,100)<15 and (UnitHasItemOfTypeBJ(c,'I01K') or GetUnitAbilityLevel(c,'KI10')>0) and CurrentEventAttack and IsUnitType(c, UNIT_TYPE_HERO) and IsUnitIllusion(c)==false and GetUnitAbilityLevel(c,'A3WR')==0 then
+if GetRandomInt(0,100)<15 and (UnitHasItemOfTypeBJ(c,'I01K') or GetUnitAbilityLevel(c,'KI10')>0) and CurrentEventAttack and IsUnitType(c, UNIT_TYPE_HERO) and nb>0 and GetUnitAbilityLevel(c,'A3WR')==0 then
     set critcoef=critcoef+1
 endif
-if GetRandomInt(0,100)<15 and (UnitHasItemOfTypeBJ(c,'I01L') or GetUnitAbilityLevel(c,'KI12')>0) and CurrentEventAttack and IsUnitType(c, UNIT_TYPE_HERO) and IsUnitIllusion(c)==false and GetUnitAbilityLevel(c,'A3WR')==0 then
+if GetRandomInt(0,100)<15 and (UnitHasItemOfTypeBJ(c,'I01L') or GetUnitAbilityLevel(c,'KI12')>0) and CurrentEventAttack and IsUnitType(c, UNIT_TYPE_HERO) and nb>0 and GetUnitAbilityLevel(c,'A3WR')==0 then
     set critcoef=critcoef+1
 endif
-if GetRandomInt(0,100)<20 and (UnitHasItemOfTypeBJ(c,'I01O') or GetUnitAbilityLevel(c,'KI14')>0) and CurrentEventAttack and IsUnitType(c, UNIT_TYPE_HERO) and IsUnitIllusion(c)==false and GetUnitAbilityLevel(c,'A3WR')==0 then
+if GetRandomInt(0,100)<20 and (UnitHasItemOfTypeBJ(c,'I01O') or GetUnitAbilityLevel(c,'KI14')>0) and CurrentEventAttack and IsUnitType(c, UNIT_TYPE_HERO) and nb>0 and GetUnitAbilityLevel(c,'A3WR')==0 then
     set critcoef=critcoef+1
 endif
-if GetRandomInt(0,100)<20 and (UnitHasItemOfTypeBJ(c,'I01Q') or GetUnitAbilityLevel(c,'KI16')>0) and CurrentEventAttack and IsUnitType(c, UNIT_TYPE_HERO) and IsUnitIllusion(c)==false and GetUnitAbilityLevel(c,'A3WR')==0 then
+if GetRandomInt(0,100)<20 and (UnitHasItemOfTypeBJ(c,'I01Q') or GetUnitAbilityLevel(c,'KI16')>0) and CurrentEventAttack and IsUnitType(c, UNIT_TYPE_HERO) and nb>0 and GetUnitAbilityLevel(c,'A3WR')==0 then
     set critcoef=critcoef+1
 endif
-if GetRandomInt(0,100)<30 and (UnitHasItemOfTypeBJ(c,'I01S') or GetUnitAbilityLevel(c,'KI18')>0) and CurrentEventAttack and IsUnitType(c, UNIT_TYPE_HERO) and IsUnitIllusion(c)==false and GetUnitAbilityLevel(c,'A3WR')==0 then
+if GetRandomInt(0,100)<30 and (UnitHasItemOfTypeBJ(c,'I01S') or GetUnitAbilityLevel(c,'KI18')>0) and CurrentEventAttack and IsUnitType(c, UNIT_TYPE_HERO) and nb>0 and GetUnitAbilityLevel(c,'A3WR')==0 then
     set critcoef=critcoef+1
 endif
-if GetRandomInt(0,100)<20 and (UnitHasItemOfTypeBJ(c,'I01U') or GetUnitAbilityLevel(c,'KI20')>0) and CurrentEventAttack and IsUnitType(c, UNIT_TYPE_HERO) and IsUnitIllusion(c)==false and GetUnitAbilityLevel(c,'A3WR')==0 then
+if GetRandomInt(0,100)<20 and (UnitHasItemOfTypeBJ(c,'I01U') or GetUnitAbilityLevel(c,'KI20')>0) and CurrentEventAttack and IsUnitType(c, UNIT_TYPE_HERO) and nb>0 and GetUnitAbilityLevel(c,'A3WR')==0 then
     set critcoef=critcoef+1
 endif
-if GetRandomInt(0,100)<15 and (UnitHasItemOfTypeBJ(c,'IBSI') or GetUnitAbilityLevel(c,'KI0Y')>0) and CurrentEventAttack and IsUnitType(c, UNIT_TYPE_HERO) and IsUnitIllusion(c)==false and GetUnitAbilityLevel(c,'A3WR')==0 then
+if GetRandomInt(0,100)<25 and (UnitHasItemOfTypeBJ(c,'IBSI') or GetUnitAbilityLevel(c,'KI0Y')>0) and CurrentEventAttack and IsUnitType(c, UNIT_TYPE_HERO) and nb>0 and GetUnitAbilityLevel(c,'A3WR')==0 then
     set critcoef=critcoef+1
 endif
-if GetRandomInt(0,100)<7.5+3.5*GetUnitAbilityLevel(c,'A0IR') and GetUnitAbilityLevel(c,'A0IR')>0 and CurrentEventAttack and IsUnitType(c, UNIT_TYPE_HERO) and IsUnitIllusion(c)==false and GetUnitAbilityLevel(c,'A3WR')==0 and GetHeroLevel(c)>5 then
+if GetRandomInt(0,100)<7.5+3.5*GetUnitAbilityLevel(c,'A0IR') and GetUnitAbilityLevel(c,'A0IR')>0 and CurrentEventAttack and IsUnitType(c, UNIT_TYPE_HERO) and nb>0 and GetUnitAbilityLevel(c,'A3WR')==0 and GetHeroLevel(c)>5 then
     set critcoef=critcoef+1
 endif
-if GetRandomInt(0,100)<15 and GetUnitAbilityLevel(c,'CS02')>0 and CurrentEventAttack and IsUnitType(c, UNIT_TYPE_HERO) and IsUnitIllusion(c)==false and GetUnitAbilityLevel(c,'A3WR')==0 and GetHeroLevel(c)>5 then
+if GetRandomInt(0,100)<15 and GetUnitAbilityLevel(c,'CS02')>0 and CurrentEventAttack and IsUnitType(c, UNIT_TYPE_HERO) and nb>0 and GetUnitAbilityLevel(c,'A3WR')==0 and GetHeroLevel(c)>5 then
     set critcoef=critcoef+1
 endif
-if GetRandomInt(0,100)<30 and GetUnitAbilityLevel(c,'WAE1')>0 and CurrentEventAttack and IsUnitType(c, UNIT_TYPE_HERO) and IsUnitIllusion(c)==false and GetUnitAbilityLevel(c,'A3WR')==0 then
+if GetRandomInt(0,100)<30 and GetUnitAbilityLevel(c,'WAE1')>0 and CurrentEventAttack and IsUnitType(c, UNIT_TYPE_HERO) and nb>0 and GetUnitAbilityLevel(c,'A3WR')==0 then
     set critcoef=critcoef+0.5
 endif
-if (UnitHasItemOfTypeBJ(u,'IAoF') or GetUnitAbilityLevel(u,'KI1A')>0) and IsUnitType(c, UNIT_TYPE_HERO) and IsUnitIllusion(c)==false then
+if (UnitHasItemOfTypeBJ(u,'IAoF') or GetUnitAbilityLevel(u,'KI1A')>0) and IsUnitType(c, UNIT_TYPE_HERO) and nb>0 then
     if critcoef>2 then
         set critcoef=critcoef-1
     else
         set critcoef=1
     endif
+endif
+if critcoef>1 then
+    call DestroyEffect(AddSpecialEffectTarget("war3mapImported\\BloodEX.mdx",u,"chest"))
+    set nb=nb+nb*(critcoef-1)
 endif
 if nb>l and GetUnitTypeId(u)=='H03T' or GetUnitTypeId(u)=='H03W' or GetUnitTypeId(u)=='H03S' or GetUnitTypeId(u)=='H03V' or GetUnitTypeId(u)=='H03U' and LoadBoolean(h,GetHandleId(Hero[idu]),StringHash("alive"))==true then
     call SetUnitInvulnerable(u,true)
@@ -39173,13 +39177,6 @@ if cond==0 then
     endif
     if (UnitHasItemOfTypeBJ(c,'I02V') or GetUnitAbilityLevel(c,'KIG4')>0) and nb>0 and GetUnitAbilityLevel(c,'A3WR')==0 and CurrentEventAttack and IsUnitType(c, UNIT_TYPE_HERO) and IsUnitIllusion(c)==false then
         call Essence(c,u,1)
-    endif
-    if critcoef>1 and GetUnitAbilityLevel(c,'A3WR')==0 then
-        call UnitAddAbility(c,'A3WR')
-        call DestroyEffect(AddSpecialEffectTarget("war3mapImported\\BloodEX.mdx",u,"chest"))
-        //call SetEventDamage(nb+nb*(critcoef-1))
-        set nb=nb+nb*(critcoef-1)
-        call UnitRemoveAbility(c,'A3WR')
     endif
     if(CurrentEventAttack)and nb>0 and GetUnitAbilityLevel(c,'A17K')>0 and GetUnitAbilityLevel(c,'A3WR')==0 then
         //call SetEventDamage(nb+(GetHeroAgi(c,true)*2 + GetUnitTotalDamage(c)*0.6)*myCustomDamage2(u,1))
@@ -141024,7 +141021,7 @@ function GilgameshModifiedAttack takes unit newCaster, unit newTarget returns bo
     if GetRandomInt(0,100)<20 and (UnitHasItemOfTypeBJ(newCaster,'I01U') or GetUnitAbilityLevel(newCaster,'KI20')>0) and IsUnitType(newCaster, UNIT_TYPE_HERO) and IsUnitIllusion(newCaster)==false then
         set critcoef=critcoef+1
     endif
-    if GetRandomInt(0,100)<15 and (UnitHasItemOfTypeBJ(newCaster,'IBSI') or GetUnitAbilityLevel(newCaster,'KI0Y')>0) and IsUnitType(newCaster, UNIT_TYPE_HERO) and IsUnitIllusion(newCaster)==false then
+    if GetRandomInt(0,100)<25 and (UnitHasItemOfTypeBJ(newCaster,'IBSI') or GetUnitAbilityLevel(newCaster,'KI0Y')>0) and IsUnitType(newCaster, UNIT_TYPE_HERO) and IsUnitIllusion(newCaster)==false then
         set critcoef=critcoef+1
     endif
     if GetRandomInt(0,100)<7.5+3.5*GetUnitAbilityLevel(newCaster,'A0IR') and GetUnitAbilityLevel(newCaster,'A0IR')>0 and IsUnitType(newCaster, UNIT_TYPE_HERO) and IsUnitIllusion(newCaster)==false and GetHeroLevel(newCaster)>5 then
