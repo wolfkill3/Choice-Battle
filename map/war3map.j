@@ -40949,7 +40949,7 @@ local real x1=GetUnitX(u)+125*Cos(a)
 local real y1=GetUnitY(u)+125*Sin(a)
 local group g=CreateGroup()
 local player p=GetOwningPlayer(u)
-local real dmg=GetUnitTotalDamage(u)*1.75
+local real dmg=GetUnitTotalDamage(u)*2
 call SetUnitAnimation(u,"attack")
 set EFF=AddSpecialEffect("BrolyKickSlash.mdl", x1,y1)
 call SetSpecialEffectFacing(EFF , a* bj_RADTODEG)
