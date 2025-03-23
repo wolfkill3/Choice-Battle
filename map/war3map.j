@@ -18280,6 +18280,7 @@ exitwhen y>=12
         set udg_RH[136]=0
         set TavernPlayerPickAllow[y]=false
         set TavernHeroId[136]=0
+        call TriggerSleepAction(0.01)
         if GetLocalPlayer()==Player(y) then
             if bu==udg_Button[4] then
                 call SetFrameColourEx( TavernHeroPick,0, 0xFFFF2020 )
@@ -95031,9 +95032,11 @@ if mt>0 and UnitIsAlive(u)and UnitIsAlive(c) and udg_B then
     if mt==20 and time>=16 then
         call SetUnitAnimationByIndex(u,22)
     endif
-    if mt==11 and time>=7 then
+    if mt==11 and time>=9 then
         call SetUnitAnimationByIndex(u,27)
         call Push3(c,50,a,100,"Abilities\\Weapons\\AncientProtectorMissile\\AncientProtectorMissile.mdl")
+    endif
+    if mt==9 and time>6 then
         set EFF=AddSpecialEffect("WindVectorPush.mdx", x1,y1)
         call SetSpecialEffectOrientation(EFF,a*bj_RADTODEG,0,0)
         call SetSpecialEffectScale(EFF , 0.6)
@@ -95053,37 +95056,54 @@ if mt>0 and UnitIsAlive(u)and UnitIsAlive(c) and udg_B then
     if mt==5 and time>=3 then
         call Push(u,100,a,1200)
     endif
-    if mt==3 then
-        set EFF=AddSpecialEffect("BrolyKickSlash.mdl", x1-140*Cos(a),y1-140*Sin(a))
+    if mt==4 and time>1 then
+        set EFF=AddSpecialEffect("BrolyKickSlash.mdl", x+140*Cos(a),y+140*Sin(a))
         call SetSpecialEffectOrientation(EFF , a* bj_RADTODEG,0,-179)
-        call SetSpecialEffectTimeScale(EFF , 0.65)
+        call SetSpecialEffectTimeScale(EFF , 0.5)
         call SetSpecialEffectScale(EFF , 1.6)
         call SetSpecialEffectZ(EFF, 170)
-        call RemoveEffect(EFF,0.6,true,CreateTimer())
-        set EFF=AddSpecialEffect("BrolyKickSlash.mdl", x1-140*Cos(a),y1-140*Sin(a))
+        call SaveEffectHandle(h,id,21,EFF)
+        call RemoveEffect(EFF,1.2,true,CreateTimer())
+        set EFF=AddSpecialEffect("BrolyKickSlash.mdl", x+140*Cos(a),y+140*Sin(a))
         call SetSpecialEffectOrientation(EFF , a* bj_RADTODEG,0,-179)
-        call SetSpecialEffectTimeScale(EFF , 0.65)
+        call SetSpecialEffectTimeScale(EFF , 0.5)
         call SetSpecialEffectScale(EFF , 2.1)
         call SetSpecialEffectZ(EFF, 200)
-        call RemoveEffect(EFF,0.6,true,CreateTimer())
-        set EFF=AddSpecialEffect("BrolyKickSlash.mdl", x1-140*Cos(a),y1-140*Sin(a))
+        call SaveEffectHandle(h,id,22,EFF)
+        call RemoveEffect(EFF,1.2,true,CreateTimer())
+        set EFF=AddSpecialEffect("BrolyKickSlash.mdl", x+140*Cos(a),y+140*Sin(a))
         call SetSpecialEffectOrientation(EFF , a* bj_RADTODEG,0,-179)
-        call SetSpecialEffectTimeScale(EFF , 0.65)
+        call SetSpecialEffectTimeScale(EFF , 0.5)
         call SetSpecialEffectScale(EFF , 2.7)
         call SetSpecialEffectZ(EFF, 240)
-        call RemoveEffect(EFF,0.6,true,CreateTimer())
-        set EFF=AddSpecialEffect("BrolyKickSlash.mdl", x1-140*Cos(a),y1-140*Sin(a))
+        call SaveEffectHandle(h,id,23,EFF)
+        call RemoveEffect(EFF,1.2,true,CreateTimer())
+        set EFF=AddSpecialEffect("BrolyKickSlash.mdl", x+140*Cos(a),y+140*Sin(a))
         call SetSpecialEffectOrientation(EFF , a* bj_RADTODEG,0,-179)
-        call SetSpecialEffectTimeScale(EFF , 0.65)
+        call SetSpecialEffectTimeScale(EFF , 0.5)
         call SetSpecialEffectScale(EFF , 3.3)
         call SetSpecialEffectZ(EFF, 280)
-        call RemoveEffect(EFF,0.6,true,CreateTimer())
-        set EFF=AddSpecialEffect("BrolyKickSlash.mdl", x1-140*Cos(a),y1-140*Sin(a))
+        call SaveEffectHandle(h,id,24,EFF)
+        call RemoveEffect(EFF,1.2,true,CreateTimer())
+        set EFF=AddSpecialEffect("BrolyKickSlash.mdl", x+140*Cos(a),y+140*Sin(a))
         call SetSpecialEffectOrientation(EFF , a* bj_RADTODEG,0,-179)
-        call SetSpecialEffectTimeScale(EFF , 0.65)
+        call SetSpecialEffectTimeScale(EFF , 0.5)
         call SetSpecialEffectScale(EFF , 4)
         call SetSpecialEffectZ(EFF, 320)
-        call RemoveEffect(EFF,0.6,true,CreateTimer())
+        call SaveEffectHandle(h,id,25,EFF)
+        call RemoveEffect(EFF,1.2,true,CreateTimer())
+    endif
+    if mt<=4 then
+        call SetSpecialEffectX(LoadEffectHandle(h,id,21),x+140*Cos(a))
+        call SetSpecialEffectY(LoadEffectHandle(h,id,21),y+140*Sin(a))
+        call SetSpecialEffectX(LoadEffectHandle(h,id,22),x+140*Cos(a))
+        call SetSpecialEffectY(LoadEffectHandle(h,id,22),y+140*Sin(a))
+        call SetSpecialEffectX(LoadEffectHandle(h,id,23),x+140*Cos(a))
+        call SetSpecialEffectY(LoadEffectHandle(h,id,23),y+140*Sin(a))
+        call SetSpecialEffectX(LoadEffectHandle(h,id,24),x+140*Cos(a))
+        call SetSpecialEffectY(LoadEffectHandle(h,id,24),y+140*Sin(a))
+        call SetSpecialEffectX(LoadEffectHandle(h,id,25),x+140*Cos(a))
+        call SetSpecialEffectY(LoadEffectHandle(h,id,25),y+140*Sin(a))
     endif
     if mt==2 then
         call UnitRemoveAbility(u,'A0RG')
@@ -95094,12 +95114,12 @@ if mt>0 and UnitIsAlive(u)and UnitIsAlive(c) and udg_B then
             call EffectToRandomBone("az_hit-red-blade.mdx",c)
             call DestroyEffect(AddSpecialEffect("Abilities\\Weapons\\AncientProtectorMissile\\AncientProtectorMissile.mdl",x1,y1))
             if mt>8 then
-                set EFF=AddSpecialEffect("Minato-37.mdx", x1+GetRandomReal(-45,45)*Cos(GetRandomReal(0,359)),y1+GetRandomReal(-45,45)*Sin(GetRandomReal(0,359)))
+                set EFF=AddSpecialEffect("Minato-37.mdx", (x1+170*Cos(a))+GetRandomReal(-45,45)*Cos(GetRandomReal(0,359)),(y1+170*Sin(a))+GetRandomReal(-45,45)*Sin(GetRandomReal(0,359)))
                 call SetSpecialEffectFacing(EFF , a* bj_RADTODEG)
                 call SetSpecialEffectScale(EFF , GetRandomReal(1.25,2.35))
                 call SetSpecialEffectZ(EFF , GetRandomReal(30,90))
                 call DestroyEffect(EFF)
-                set EFF=AddSpecialEffect("WindVectorPush.mdx", x1+GetRandomReal(-45,45)*Cos(GetRandomReal(0,359)),y1+GetRandomReal(-45,45)*Sin(GetRandomReal(0,359)))
+                set EFF=AddSpecialEffect("WindVectorPush.mdx", (x1+170*Cos(a))+GetRandomReal(-45,45)*Cos(GetRandomReal(0,359)),(y1+170*Sin(a))+GetRandomReal(-45,45)*Sin(GetRandomReal(0,359)))
                 call SetSpecialEffectOrientation(EFF,a*bj_RADTODEG,0,0)
                 call SetSpecialEffectScale(EFF , GetRandomReal(0.25,0.45))
                 call SetSpecialEffectZ(EFF , GetRandomReal(70,100))
