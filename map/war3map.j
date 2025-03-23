@@ -23289,12 +23289,14 @@ function Trig_Multup_Actions takes nothing returns nothing
             if GetUnitAbilityLevel(Hero[x],'B074')>0 and LoadInteger(HH,GetHandleId(Hero[x]),StringHash("OrihimeF"))!=1 then
                 call OrihimeFCast(Hero[x])
             endif
-            if GetUnitAbilityLevel(Hero[x],'A18B')>0 then
+            if UnitIsAlive(Hero[x]) then
+                if GetUnitAbilityLevel(Hero[x],'A18B')>0 then
                     call HealTextTag(Hero[x],Hero[x],0.045*SunRing(Hero[x])*I2R(GetHeroInt(Hero[x],true))*myCustomHeal2(Hero[x],1),"HealthRes")
                     call SetUnitState(Hero[x],UNIT_STATE_LIFE,GetWidgetLife(Hero[x])+0.045*SunRing(Hero[x])*I2R(GetHeroInt(Hero[x],true)))
-            else
+                else
                     call HealTextTag(Hero[x],Hero[x],0.015*SunRing(Hero[x])*I2R(GetHeroInt(Hero[x],true))*myCustomHeal2(Hero[x],1),"HealthRes")
                     call SetUnitState(Hero[x],UNIT_STATE_LIFE,GetWidgetLife(Hero[x])+0.015*SunRing(Hero[x])*I2R(GetHeroInt(Hero[x],true)))
+                endif
             endif
             if IsUnitPaused(Hero[x])==false and UnitHasItemOfTypeBJ(Hero[x],'I02K')==true and GetWidgetLife(Hero[x])>0.01*GetWidgetMaxLife(Hero[x]) then
                 call SetUnitState(Hero[x],UNIT_STATE_LIFE,GetWidgetLife(Hero[x])-(0.001*GetWidgetMaxLife(Hero[x])+1))
@@ -37279,7 +37281,6 @@ local item it
 set nb=b
 set nb2=nb
 set critcoef=1
-call UnitRemoveAbility(u,'cbc7')
 if GetUnitAbilityLevel(c,'Bwk1')>0 and nb>0 then
     call SaveReal(HH,GetHandleId(bufh),0,b)
     call HandleListEnumUnitBuffs(bufh,c,Condition(function WeakenBool))
@@ -37486,8 +37487,11 @@ if nb>500 and GetUnitAbilityLevel( u ,'BSaR')>0 then
     set nb=0
     call SaveBoolean(HH,GetHandleId(u),StringHash("SabracEReverse"),true)
 endif
-if GetUnitTypeId(u)=='H34X' and nb>0 then
-    call KillUnit(u)
+if (CurrentEventAttack and nb>0) or nb>50 then
+    call UnitRemoveAbility(u,'cbc7')
+    if GetUnitTypeId(u)=='H34X' then
+        call KillUnit(u)
+    endif
 endif
 if nb>50 and GetUnitAbilityLevel(u,'A19B')>0 then
     //call SetEventDamage(0.05)
@@ -95013,8 +95017,8 @@ local real mt=LoadReal(h,id,8)
 local real ang=GetRandomReal(-1.1,1.1)
 if mt>0 and UnitIsAlive(u)and UnitIsAlive(c) and udg_B then
     if mt>11 then
-        set x1=x1+((11-mt)+31)*Cos(a)
-        set y1=y1+((11-mt)+31)*Sin(a)
+        set x1=x1+((10-mt)+31)*Cos(a)
+        set y1=y1+((10-mt)+31)*Sin(a)
         call SetUnitXY_1(c,x1,y1, false)
         set x1=x1+(time*2-140)*Cos(a)
         set y1=y1+(time*2-140)*Sin(a)
@@ -95028,9 +95032,8 @@ if mt>0 and UnitIsAlive(u)and UnitIsAlive(c) and udg_B then
         call SetUnitAnimationByIndex(u,22)
     endif
     if mt==11 and time>=7 then
-        call UnitAddAbility(u,'A0RG')
         call SetUnitAnimationByIndex(u,27)
-        call Push3(c,50,a,150,"Abilities\\Weapons\\AncientProtectorMissile\\AncientProtectorMissile.mdl")
+        call Push3(c,50,a,100,"Abilities\\Weapons\\AncientProtectorMissile\\AncientProtectorMissile.mdl")
         set EFF=AddSpecialEffect("WindVectorPush.mdx", x1,y1)
         call SetSpecialEffectOrientation(EFF,a*bj_RADTODEG,0,0)
         call SetSpecialEffectScale(EFF , 0.6)
@@ -95038,13 +95041,52 @@ if mt>0 and UnitIsAlive(u)and UnitIsAlive(c) and udg_B then
         call SetSpecialEffectVertexColour(EFF,255,255,255,220)
         call RemoveEffect(EFF,1,true,CreateTimer())
     endif
-    if mt==8 and time>=5  then
-        call Push3(c,50,a,200,"Abilities\\Weapons\\AncientProtectorMissile\\AncientProtectorMissile.mdl")
+    if mt==8 and time>=6  then
+        call UnitAddAbility(u,'A0RG')
+        call Push3(c,50,a,300,"Abilities\\Weapons\\AncientProtectorMissile\\AncientProtectorMissile.mdl")
         call EffectToRandomBone("war3mapImported\\BloodEX.mdx",c)
+    endif
+    if mt==6 and time>=4 then
+        call SetUnitTimeScale(u,0.7)
         call SetUnitAnimationByIndex(u,17)
     endif
     if mt==5 and time>=3 then
         call Push(u,100,a,1200)
+    endif
+    if mt==3 then
+        set EFF=AddSpecialEffect("BrolyKickSlash.mdl", x1-140*Cos(a),y1-140*Sin(a))
+        call SetSpecialEffectOrientation(EFF , a* bj_RADTODEG,0,-179)
+        call SetSpecialEffectTimeScale(EFF , 0.65)
+        call SetSpecialEffectScale(EFF , 1.6)
+        call SetSpecialEffectZ(EFF, 170)
+        call RemoveEffect(EFF,0.6,true,CreateTimer())
+        set EFF=AddSpecialEffect("BrolyKickSlash.mdl", x1-140*Cos(a),y1-140*Sin(a))
+        call SetSpecialEffectOrientation(EFF , a* bj_RADTODEG,0,-179)
+        call SetSpecialEffectTimeScale(EFF , 0.65)
+        call SetSpecialEffectScale(EFF , 2.1)
+        call SetSpecialEffectZ(EFF, 200)
+        call RemoveEffect(EFF,0.6,true,CreateTimer())
+        set EFF=AddSpecialEffect("BrolyKickSlash.mdl", x1-140*Cos(a),y1-140*Sin(a))
+        call SetSpecialEffectOrientation(EFF , a* bj_RADTODEG,0,-179)
+        call SetSpecialEffectTimeScale(EFF , 0.65)
+        call SetSpecialEffectScale(EFF , 2.7)
+        call SetSpecialEffectZ(EFF, 240)
+        call RemoveEffect(EFF,0.6,true,CreateTimer())
+        set EFF=AddSpecialEffect("BrolyKickSlash.mdl", x1-140*Cos(a),y1-140*Sin(a))
+        call SetSpecialEffectOrientation(EFF , a* bj_RADTODEG,0,-179)
+        call SetSpecialEffectTimeScale(EFF , 0.65)
+        call SetSpecialEffectScale(EFF , 3.3)
+        call SetSpecialEffectZ(EFF, 280)
+        call RemoveEffect(EFF,0.6,true,CreateTimer())
+        set EFF=AddSpecialEffect("BrolyKickSlash.mdl", x1-140*Cos(a),y1-140*Sin(a))
+        call SetSpecialEffectOrientation(EFF , a* bj_RADTODEG,0,-179)
+        call SetSpecialEffectTimeScale(EFF , 0.65)
+        call SetSpecialEffectScale(EFF , 4)
+        call SetSpecialEffectZ(EFF, 320)
+        call RemoveEffect(EFF,0.6,true,CreateTimer())
+    endif
+    if mt==2 then
+        call UnitRemoveAbility(u,'A0RG')
     endif
     if time<0 then
         if GetUnitAbilityLevel(u,'A0RG')==0 then
@@ -95074,11 +95116,7 @@ if mt>0 and UnitIsAlive(u)and UnitIsAlive(c) and udg_B then
     call SetUnitFacing(u,a*bj_RADTODEG)
     call SaveReal(h,id,7,LoadReal(h,id,7)-3)
 else
-    call UnitApplyTimedLife(CreateUnit(p,'e0FA',x1,y1,GetRandomReal(0,359)),1,1)
-    call UnitApplyTimedLife(CreateUnit(p,'e0HL',x1,y1,a*bj_RADTODEG),1,1)
-    call UnitApplyTimedLife(CreateUnit(p,'e0HM',x1,y1,a*bj_RADTODEG),1,1)
     call ShakeCamera(0.8,20)
-    call UnitRemoveAbility(u,'A0RG')
     call EffectToRandomBone("war3mapImported\\BloodEX.mdx",c)
     call PauseUnit(c,false)
     call SetUnitInvulnerable(c,false)
@@ -169336,6 +169374,7 @@ function JirenESelf_Cast3 takes nothing returns nothing
         call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,false)
         call myCustomDamage(u,c,dmg,false,false,null,null,null)
         call SetControlToUnit(u,c,1,"stun")
+        call SetUnitAnimation(c,"stand")
         call PauseTimer(t)
         call DestroyTimer(t)
         call UnitRemoveAbility(u,'A0BX')
