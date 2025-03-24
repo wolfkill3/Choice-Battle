@@ -168185,7 +168185,7 @@ if GetWidgetLife(c)>0 and GetWidgetLife(u)>0 and time<4 then
         set n=CreateUnit(p,'eo9L',x1,y1,GetRandomReal(0,359))
         call SetUnitModel(n,"war3mapImported\\[DoFT]Natsu_Fire_Ball_n.mdl")
         call SetUnitFlyHeight(n,GetUnitFlyHeight(c),0)
-        call SetUnitVertexColor(n,255,255,255,190)
+        call SetUnitVertexColor(n,255,255,255,220)
         call SetUnitTimeScale(n,4.4)
         call SetUnitScale(n,0.1,0.1,0.1)
         call SaveUnitHandle(HH,id,5,n)
@@ -168195,8 +168195,10 @@ if GetWidgetLife(c)>0 and GetWidgetLife(u)>0 and time<4 then
         call RemoveEffect(EFF,0.5,true,CreateTimer())
     endif
     if time>2.16 and time<3.26 then
-        call SetUnitVertexColor(dummy,255,255,255,190-R2I(GetUnitScale(dummy)*90))
-        call SetUnitScale(dummy,GetUnitScale(dummy)+0.06,0.1,0.1)
+        if time>2.6 then
+            call SetUnitVertexColor(dummy,255,255,255,250-R2I(GetUnitScale(dummy)*75))
+        endif
+        call SetUnitScale(dummy,GetUnitScale(dummy)+0.08,0.1,0.1)
     endif
     if time==3.6 then
         call RemoveUnit(dummy)
