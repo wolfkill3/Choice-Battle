@@ -103044,7 +103044,7 @@ function NarutoFCast takes nothing returns nothing
         if GetUnitAbilityLevel(u,'A0V8')>0 then
             call UnitAddAbility(n,'A0V8')
             call SetUnitAbilityLevel(n,'A0V8',GetUnitAbilityLevel(u,'A0V8'))
-            call SetAbilityIntegerLevelField(GetUnitAbility(n,'A0V8'),ABILITY_ILF_MANA_COST,GetUnitAbilityLevel(n,'A0V8')-1,GetAbilityIntegerLevelField(GetUnitAbility(u,'A0V8'),ABILITY_ILF_MANA_COST,R2I(GetUnitAbilityLevel(u,'A0V8')-1)*1.50))
+            call SetAbilityIntegerLevelField(GetUnitAbility(n,'A0V8'),ABILITY_ILF_MANA_COST,GetUnitAbilityLevel(n,'A0V8')-1,R2I(GetAbilityIntegerLevelField(GetUnitAbility(u,'A0V8'),ABILITY_ILF_MANA_COST,GetUnitAbilityLevel(u,'A0V8')-1)*1.50))
             if GetAbilityRemainingCooldown(GetUnitAbility(u,'A0V8'))>0.1 then
                 call StartAbilityCooldown(GetUnitAbility(n, 'A0V8'), GetAbilityRemainingCooldown(GetUnitAbility(u,'A0V8')))
             endif
@@ -103052,7 +103052,7 @@ function NarutoFCast takes nothing returns nothing
         if GetUnitAbilityLevel(u,'A0V9')>0 then
             call UnitAddAbility(n,'A0V9')
             call SetUnitAbilityLevel(n,'A0V9',GetUnitAbilityLevel(u,'A0V9'))
-            call SetAbilityIntegerLevelField(GetUnitAbility(n,'A0V9'),ABILITY_ILF_MANA_COST,GetUnitAbilityLevel(n,'A0V9')-1,GetAbilityIntegerLevelField(GetUnitAbility(u,'A0V9'),ABILITY_ILF_MANA_COST,R2I(GetUnitAbilityLevel(u,'A0V9')-1)*1.50))
+            call SetAbilityIntegerLevelField(GetUnitAbility(n,'A0V9'),ABILITY_ILF_MANA_COST,GetUnitAbilityLevel(n,'A0V9')-1,R2I(GetAbilityIntegerLevelField(GetUnitAbility(u,'A0V9'),ABILITY_ILF_MANA_COST,GetUnitAbilityLevel(u,'A0V9')-1)*1.50))
             if GetAbilityRemainingCooldown(GetUnitAbility(u,'A0V9'))>0.1 then
                 call StartAbilityCooldown(GetUnitAbility(n, 'A0V9'), GetAbilityRemainingCooldown(GetUnitAbility(u,'A0V9')))
             endif
