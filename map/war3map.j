@@ -23209,6 +23209,68 @@ call TimerStart(t,0.01,true,function OrihimeFCast2)
 set t=null
 set u=null
 endfunction
+function IceSphereRegenCast2 takes nothing returns nothing
+local timer t=GetExpiredTimer()
+local integer id=GetHandleId(t)
+local unit u=LoadUnitHandle(h,id,1)
+local real life=LoadReal(h,id,0)
+local real life2=GetUnitState(u,UNIT_STATE_MANA)
+local real dmg=0
+if (UnitHasItemOfTypeBJ(u,'I02S') or GetUnitAbilityLevel(u,'KIG0')>0) and udg_B==true and DU2==true then
+if life2<life then
+set dmg=GetUnitState(u,UNIT_STATE_MANA)-LoadReal(h,id,0)
+call SetUnitState(u,UNIT_STATE_MANA,life-(life-life2)*0.90)
+endif
+call SaveReal(h,id,0,GetUnitState(u,UNIT_STATE_MANA))
+else
+call SaveInteger(HH,GetHandleId(u),StringHash("IceSphere"),0)
+call DestroyTimer(t)
+call FlushChildHashtable(h,id)
+endif
+set t=null
+set u=null
+endfunction
+function IceSphereRegenCast takes unit u returns nothing
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+call SaveUnitHandle(h,id,1,u)
+call SaveReal(h,id,0,GetUnitState(u,UNIT_STATE_MANA))
+call SaveInteger(HH,GetHandleId(u),StringHash("IceSphere"),1)
+call TimerStart(t,0.01,true,function IceSphereRegenCast2)
+set t=null
+set u=null
+endfunction
+function IceBootsRegenCast2 takes nothing returns nothing
+local timer t=GetExpiredTimer()
+local integer id=GetHandleId(t)
+local unit u=LoadUnitHandle(h,id,1)
+local real life=LoadReal(h,id,0)
+local real life2=GetUnitState(u,UNIT_STATE_MANA)
+local real dmg=0
+if UnitHasItemOfTypeBJ(u,'I054') and udg_B==true and DU2==true then
+if life2<life then
+set dmg=GetUnitState(u,UNIT_STATE_MANA)-LoadReal(h,id,0)
+call SetUnitState(u,UNIT_STATE_MANA,life-(life-life2)*0.85)
+endif
+call SaveReal(h,id,0,GetUnitState(u,UNIT_STATE_MANA))
+else
+call SaveInteger(HH,GetHandleId(u),StringHash("IceBoots"),0)
+call DestroyTimer(t)
+call FlushChildHashtable(h,id)
+endif
+set t=null
+set u=null
+endfunction
+function IceBootsRegenCast takes unit u returns nothing
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+call SaveUnitHandle(h,id,1,u)
+call SaveReal(h,id,0,GetUnitState(u,UNIT_STATE_MANA))
+call SaveInteger(HH,GetHandleId(u),StringHash("IceBoots"),1)
+call TimerStart(t,0.01,true,function IceBootsRegenCast2)
+set t=null
+set u=null
+endfunction
 function TimeAct takes nothing returns nothing
 local integer x
 local integer i=0
@@ -23289,6 +23351,12 @@ function Trig_Multup_Actions takes nothing returns nothing
             endif
             if GetUnitAbilityLevel(Hero[x],'B074')>0 and LoadInteger(HH,GetHandleId(Hero[x]),StringHash("OrihimeF"))!=1 then
                 call OrihimeFCast(Hero[x])
+            endif
+            if UnitHasItemOfTypeBJ(Hero[x],'I054') and LoadInteger(HH,GetHandleId(Hero[x]),StringHash("IceBoots"))!=1 then
+                call IceBootsRegenCast(Hero[x])
+            endif
+            if (UnitHasItemOfTypeBJ(Hero[x],'I02S') or GetUnitAbilityLevel(Hero[x],'KIG0')>0) and LoadInteger(HH,GetHandleId(Hero[x]),StringHash("IceSphere"))!=1 then
+                call IceSphereRegenCast(Hero[x])
             endif
             if UnitIsAlive(Hero[x]) then
                 if GetUnitAbilityLevel(Hero[x],'A18B')>0 then
@@ -43189,9 +43257,9 @@ if GetUnitAbilityLevel(u,'A25F')>0 then
 call SaveReal(h,id,4,0)
 endif
 if life2<life then
-call SetUnitState(u,UNIT_STATE_MANA,life)
+call SetUnitState(u,UNIT_STATE_MANA,life-(life-life2)*0.5)
 endif
-call SaveReal(h,id,0,GetWidgetMana(u))
+call SaveReal(h,id,0,GetUnitState(u,UNIT_STATE_MANA))
 else
 call UnitRemoveAbility(u,'A15F')
 call SaveInteger(HH,GetHandleId(u),StringHash("cold2"),0)
@@ -43207,13 +43275,13 @@ local unit u=GetTriggerUnit()
 local unit c=GetSpellTargetUnit()
 local timer t=CreateTimer()
 local integer id=GetHandleId(t)
-call SaveReal(h,id,4,5)
+call SaveReal(h,id,4,8)
 call SaveReal(h,id,5,0)
 call UnitAddAbility(c,'A15F')
 call SaveUnitHandle(h,id,1,c)
 call SaveInteger(HH,GetHandleId(c),StringHash("cold2"),0)
-call HealTextTag(u,c,GetUnitState(c,UNIT_STATE_MAX_MANA)*0.2*myCustomMana2(c,1),"ManaRes")
-call SetUnitState(c,UNIT_STATE_MANA,GetWidgetMana(c)+GetUnitState(c,UNIT_STATE_MAX_MANA)*0.2)
+call HealTextTag(u,c,GetUnitState(c,UNIT_STATE_MAX_MANA)*0.1*myCustomMana2(c,1),"ManaRes")
+call SetUnitState(c,UNIT_STATE_MANA,GetWidgetMana(c)+GetUnitState(c,UNIT_STATE_MAX_MANA)*0.1)
 call SaveReal(h,id,0,GetWidgetMana(c))
 call TimerStart(t,0.01,true,function FrozenManaCast2)
 set t=null
@@ -43640,8 +43708,8 @@ endfunction
 function Trig_RegenMana_Actions takes nothing returns nothing
 local unit u=GetTriggerUnit()
 local unit c=GetSpellTargetUnit()
-call HealTextTag(u,c,GetUnitState(c,UNIT_STATE_MAX_MANA)*0.2*myCustomMana2(c,1),"ManaRes")
-call SetUnitState(c,UNIT_STATE_MANA,GetWidgetMana(c)+GetUnitState(c,UNIT_STATE_MAX_MANA)*0.2)
+call HealTextTag(u,c,GetUnitState(c,UNIT_STATE_MAX_MANA)*0.1*myCustomMana2(c,1),"ManaRes")
+call SetUnitState(c,UNIT_STATE_MANA,GetWidgetMana(c)+GetUnitState(c,UNIT_STATE_MAX_MANA)*0.1)
 call DestroyEffect(AddSpecialEffectTarget("Abilities\\Spells\\Items\\AIma\\AImaTarget.mdl",c,"origin"))
 set u=null
 set c=null
@@ -86345,10 +86413,10 @@ if GetUnitAbilityLevel(u,'A16Y')>0 then
     call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-GetUnitState(u,UNIT_STATE_MAX_MANA)*0.0003)
 endif
 if GetUnitAbilityLevel(u,'A170')>0 then
-    call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-GetUnitState(u,UNIT_STATE_MAX_MANA)*0.0009)
+    call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-GetUnitState(u,UNIT_STATE_MAX_MANA)*0.00105)
 endif
 if GetUnitAbilityLevel(u,'A171')>0 then
-    call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-GetUnitState(u,UNIT_STATE_MAX_MANA)*0.001)
+    call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-GetUnitState(u,UNIT_STATE_MAX_MANA)*0.00115)
 endif
 endif
 if GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.1>GetUnitState(u,UNIT_STATE_LIFE) or GetUnitState(u,UNIT_STATE_MAX_MANA)*0.04>GetUnitState(u,UNIT_STATE_MANA) or LoadBoolean(HH,GetHandleId(u),SST)==true then
@@ -94331,7 +94399,7 @@ if GetUnitAbilityLevel(u,'A174')>0 then
     call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-GetUnitState(u,UNIT_STATE_MAX_MANA)*0.0003)
 endif
 if GetUnitAbilityLevel(u,'A176')>0 then
-    call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-GetUnitState(u,UNIT_STATE_MAX_MANA)*0.001)
+    call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-GetUnitState(u,UNIT_STATE_MAX_MANA)*0.00115)
 endif
 endif
 if GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.1>GetUnitState(u,UNIT_STATE_LIFE) or GetUnitState(u,UNIT_STATE_MAX_MANA)*0.04>GetUnitState(u,UNIT_STATE_MANA) or LoadBoolean(HH,GetHandleId(u),SST)==true then
@@ -137640,7 +137708,7 @@ loop
 set E=FirstOfGroup(G)
 set ide=GetHandleId(E)
 exitwhen E==null
-if Condition_Base(p,E) and GetUnitTypeId( E )!='or01'  and GetUnitTypeId( E )!='or02'     then
+if Condition_Base(p,E) and GetUnitTypeId( E )!='or01' and GetUnitTypeId( E )!='or02' and udg_B then
 set bPaused=false
 if IsUnitPaused(E) then
     set bPaused=true
@@ -177460,7 +177528,7 @@ call SaveInteger(HH,id,9,typeSusano)
 if typeSusano==1 then
 call SaveReal(HH,GetHandleId(caster0),StringHash("MadaraSusDur"),LoadReal(HH,GetHandleId(caster0),StringHash("MadaraSusDur"))+6+R2I((GetUnitState(caster0,UNIT_STATE_MANA)*0.001)))
 call SaveReal(HH,id,10,LoadReal(HH,GetHandleId(caster0),StringHash("MadaraSusDur"))+6+R2I((GetUnitState(caster0,UNIT_STATE_MANA)*0.001)))
-call SetUnitState(caster0,UNIT_STATE_MANA,GetUnitState(caster0,UNIT_STATE_MANA)-GetUnitState(caster0,UNIT_STATE_MAX_MANA)*0.1)
+call SetUnitState(caster0,UNIT_STATE_MANA,GetUnitState(caster0,UNIT_STATE_MANA)-GetUnitState(caster0,UNIT_STATE_MAX_MANA)*0.05)
 if LoadBoolean(HH,GetHandleId(caster0),StringHash("MadaraSusT"))==null and LoadBoolean(HH,GetHandleId(caster0),StringHash("MadaraSusT2"))==null and LoadUnitHandle(HH,GetHandleId(caster0),StringHash("MadaraSusano"))==null then
 set n0=CreateUnit(GetOwningPlayer(caster0),'e211',GetUnitX(caster0),GetUnitY(caster0),GetUnitFacing(caster0))
 call UnitSize(n0,14,1,1)
@@ -177492,7 +177560,7 @@ endif
 call SetFrameTexture( LoadFrameHandle(HH, idp,StringHash("ReplaceableTextures\\CommandButtons\\BTNMadaraR.blp")), "ReplaceableTextures\\CommandButtons\\BTNMadaraT2.blp", 0, true )
 call SetFrameTexture( LoadFrameHandle(HH, idp,StringHash("ReplaceableTextures\\CommandButtons\\BTNMadaraR.blp")), "ReplaceableTextures\\CommandButtons\\BTNMadaraT2.blp", 1, true )
 call SetFrameTexture( LoadFrameHandle(HH, idp,StringHash("ReplaceableTextures\\CommandButtons\\BTNMadaraR.blp")), "ReplaceableTextures\\CommandButtons\\BTNMadaraT2.blp", 2, true )
-call SetUnitState(caster0,UNIT_STATE_MANA,GetUnitState(caster0,UNIT_STATE_MANA)-GetUnitState(caster0,UNIT_STATE_MAX_MANA)*0.15)
+call SetUnitState(caster0,UNIT_STATE_MANA,GetUnitState(caster0,UNIT_STATE_MANA)-GetUnitState(caster0,UNIT_STATE_MAX_MANA)*0.1)
 call SaveReal(HH,id,10,LoadReal(HH,GetHandleId(caster0),StringHash("MadaraSusDur")))
 call SaveBoolean(HH,GetHandleId(caster0),StringHash("MadaraSusT"),true)
 set n0=CreateUnit(GetOwningPlayer(caster0),'e211',GetUnitX(caster0),GetUnitY(caster0),GetUnitFacing(caster0))
@@ -177523,7 +177591,7 @@ endif
 call SetFrameTexture( LoadFrameHandle(HH, idp,StringHash("ReplaceableTextures\\CommandButtons\\BTNMadaraR.blp")), "ReplaceableTextures\\CommandButtons\\BTNMadaraT1.blp", 0, true )
 call SetFrameTexture( LoadFrameHandle(HH, idp,StringHash("ReplaceableTextures\\CommandButtons\\BTNMadaraR.blp")), "ReplaceableTextures\\CommandButtons\\BTNMadaraT1.blp", 1, true )
 call SetFrameTexture( LoadFrameHandle(HH, idp,StringHash("ReplaceableTextures\\CommandButtons\\BTNMadaraR.blp")), "ReplaceableTextures\\CommandButtons\\BTNMadaraT1.blp", 2, true )
-call SetUnitState(caster0,UNIT_STATE_MANA,GetUnitState(caster0,UNIT_STATE_MANA)-GetUnitState(caster0,UNIT_STATE_MAX_MANA)*0.15)
+call SetUnitState(caster0,UNIT_STATE_MANA,GetUnitState(caster0,UNIT_STATE_MANA)-GetUnitState(caster0,UNIT_STATE_MAX_MANA)*0.1)
 call TimerStart(t,0.02,true,function MadaraSusanoAct3)
 endif
 endif
