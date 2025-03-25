@@ -103030,6 +103030,9 @@ function NarutoFCast takes nothing returns nothing
     loop
     exitwhen j>=3
         set n=CreateUnit(GetOwningPlayer(u),'H14F',GetUnitX(u)+125*Cos(GetRandomReal(0,359)*bj_DEGTORAD),GetUnitY(u)+125*Sin(GetRandomReal(0,359)*bj_DEGTORAD),GetRandomReal(0,359))
+        if IsUnitAlly(n,GetLocalPlayer()) then
+            call SetUnitVertexColor(n,155,155,255,255)
+        endif
         set EFF=AddSpecialEffect("war3mapImported\\Poff.mdx",GetUnitX(n),GetUnitY(n))
         call SetSpecialEffectScale(EFF,0.2)
         call SetSpecialEffectZ(EFF,55)
@@ -103038,9 +103041,6 @@ function NarutoFCast takes nothing returns nothing
         call SetHeroAgi(n,GetHeroAgi(u,false),true)
         call SetHeroStr(n,GetHeroStr(u,false),true)
         call SetHeroInt(n,GetHeroInt(u,false),true)
-        if IsUnitAlly(n,GetLocalPlayer()) then
-            call SetUnitVertexColor(n,155,155,255,255)
-        endif
         if GetUnitAbilityLevel(u,'A0V8')>0 then
             call UnitAddAbility(n,'A0V8')
             call SetUnitAbilityLevel(n,'A0V8',GetUnitAbilityLevel(u,'A0V8'))
@@ -103062,6 +103062,7 @@ function NarutoFCast takes nothing returns nothing
             call SetUnitAbilityLevel(n,'A0VB',GetUnitAbilityLevel(u,'A0VB'))
         endif
         call UnitInventorySetSize(n,10)
+        set i=0
         loop
         exitwhen i>=10
         if GetItemTypeId(UnitItemInSlot(u,i))!='Io39' then
@@ -209860,6 +209861,9 @@ function TobiramaFCast takes unit u, real x1, real y1 returns nothing
         call StartSound(soundplay)
         call KillSoundWhenDone(soundplay)
         set n=CreateUnit(GetOwningPlayer(u),'H34X',GetUnitX(u)+125*Cos(GetRandomReal(0,359)*bj_DEGTORAD),GetUnitY(u)+125*Sin(GetRandomReal(0,359)*bj_DEGTORAD),GetRandomReal(0,359))
+        if IsUnitAlly(n,GetLocalPlayer()) then
+            call SetUnitVertexColor(n,155,155,255,255)
+        endif
         set ef=AddSpecialEffect("war3mapImported\\Poff.mdx",GetUnitX(n),GetUnitY(n))
         call SetSpecialEffectScale(ef,0.2)
         call SetSpecialEffectZ(ef,55)
