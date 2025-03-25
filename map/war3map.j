@@ -103076,6 +103076,7 @@ function NarutoFCast takes nothing returns nothing
         call SetUnitState(n,UNIT_STATE_LIFE,GetWidgetLife(u))
         call SetUnitState(n,UNIT_STATE_MANA,GetWidgetMana(u))
         call UnitApplyTimedLife(n,1,25)
+        call SetUnitIntegerField(n,UNIT_IF_PROPER_NAME_GENERATION,0)
         set j=j+1
     endloop
     set u=null
@@ -159463,7 +159464,7 @@ set dmg = dmg*1.25
 endif
 call ExtraTime()
 if time == 0 then
-set n = CreateUnit(p,0x65353556,GetUnitX(LoadUnitHandle(HH,MUIHandle(),CasterHash)),GetUnitY(LoadUnitHandle(HH,MUIHandle(),CasterHash)),LoadFloat("ang")*bj_RADTODEG)
+set n = CreateUnit(p,'e55V',GetUnitX(LoadUnitHandle(HH,MUIHandle(),CasterHash)),GetUnitY(LoadUnitHandle(HH,MUIHandle(),CasterHash)),LoadFloat("ang")*bj_RADTODEG)
 call SetUnitScale(n, 0.9, 0.9, 0.9)
 call UnitApplyTimedLife(n,1,0.2)
 call SetUnitTimeScale(LoadUnit("Dummy"),2.8)
@@ -159557,9 +159558,9 @@ local real a=Atan2(GetSpellTargetY()-GetUnitY(u),GetSpellTargetX()-GetUnitX(u))
 local integer id2 = NewTimer(GetPlayerId(GetTriggerPlayer()))
 call SaveAgentHandle(HH,id2, CasterHash, u)
 if GetUnitTypeId(u)=='H248' then
-call SaveAgentHandle(HH,id2, DummyHash, CreateUnit(p,0x65333556,GetUnitX(u)-60*Cos(a),GetUnitY(u)-60*Sin(a),a*bj_RADTODEG))
+call SaveAgentHandle(HH,id2, DummyHash, CreateUnit(p,'e35V',GetUnitX(u)-60*Cos(a),GetUnitY(u)-60*Sin(a),a*bj_RADTODEG))
 else
-call SaveAgentHandle(HH,id2, DummyHash, CreateUnit(p,0x65323556,GetUnitX(u)-60*Cos(a),GetUnitY(u)-60*Sin(a),a*bj_RADTODEG))
+call SaveAgentHandle(HH,id2, DummyHash, CreateUnit(p,'e25V',GetUnitX(u)-60*Cos(a),GetUnitY(u)-60*Sin(a),a*bj_RADTODEG))
 endif
 call SetUnitTimeScale(LoadUnitHandle(HH,id2,DummyHash),2.5)
 call SetUnitScale(LoadUnitHandle(HH,id2,DummyHash), 1.4, 1.4, 1.4)
