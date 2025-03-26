@@ -8853,7 +8853,6 @@ call SetPlayerAbilityAvailableBJ(false,'KI1B',ConvertedPlayer(GetForLoopIndexA()
 call SaveBoolean(HH,GetHandleId(ConvertedPlayer(GetForLoopIndexA())),SOUND_LANGUAGE,true)
 set bj_forLoopAIndex=bj_forLoopAIndex+1
 endloop
-set h=InitHashtable()
 call FogMaskEnableOn()
 set udg_Color[1]="|cffFF0000"
 set udg_Color[2]="|cff0066CC"
@@ -38716,7 +38715,7 @@ if cond==0 then
             if nb>30 then
                 set soundplay=CreateSound("Sound\\Music\\mp3Music\\AcceleratorPassive.mp3",false,false,true,12700,12700,"")
                 call StartSound(soundplay)
-                call KillSoundWhenDone(soundplay)
+                //call KillSoundWhenDone(soundplay)
                 call StopSound(LoadSoundHandle(h,idu,118),true,true)
                 call SaveSoundHandle(h,idu,118,soundplay)
             endif
@@ -38946,8 +38945,8 @@ if cond==0 then
                     call SaveUnitHandle(h,GetHandleId(tlambo),0,u)
                     call SaveUnitHandle(h,GetHandleId(tlambo),1,c)
                     call SaveReal(h,GetHandleId(tlambo),3,100)
-                    call SaveUnitHandle(h,GetHandleId(tlambo),4,CreateUnit(GetOwningPlayer(u),0x65303047,x,y,GetRandomReal(0,359)))
-                    call SaveUnitHandle(h,GetHandleId(tlambo),5,CreateUnit(GetOwningPlayer(u),0x65303047,x1,y1,GetRandomReal(0,359)))
+                    call SaveUnitHandle(h,GetHandleId(tlambo),4,CreateUnit(GetOwningPlayer(u),'e00G',x,y,GetRandomReal(0,359)))
+                    call SaveUnitHandle(h,GetHandleId(tlambo),5,CreateUnit(GetOwningPlayer(u),'e00G',x1,y1,GetRandomReal(0,359)))
                     call TimerStart(tlambo,0.04,true,function Lampo_Damage_Actions)
                     set tlambo=null
                 endif
@@ -38959,7 +38958,7 @@ if cond==0 then
             if GetRandomIntMem(0,100)<=5 then
                 set soundplay=CreateSound("Sound\\Music\\mp3Music\\WhiteApplause.mp3",false,false,true,12700,12700,"")
                 call StartSound(soundplay)
-                call KillSoundWhenDone(soundplay)
+                //call KillSoundWhenDone(soundplay)
                 call StopSound(LoadSoundHandle(h,idu,117),true,true)
                 call SaveSoundHandle(h,idu,117,soundplay)
             endif
@@ -57902,7 +57901,7 @@ call SaveReal(h,id,3,y1)
 call SetUnitAnimationByIndex(u,9)
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\EffectQQ.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+//call KillSoundWhenDone(soundplay)
 call SaveSoundHandle(h,id,16,soundplay)
 if GetUnitTypeId(u)=='H01N' then
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\DanteQQ.mp3",false,false,true,12700,12700,"")
@@ -74566,7 +74565,7 @@ set he=290
 if music==false then
 set soundplay=CreateSound("Sound\\war3mapImported\\BuuT2.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+//call KillSoundWhenDone(soundplay)
 call SaveSoundHandle(h,id,16,soundplay)
 call SaveBoolean(h,id,11,true)
 endif
@@ -95531,7 +95530,7 @@ else
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\Vegeta\\FinalKamehamehaCharges-jap.mp3",false,false,true,12700,12700,"")
 endif
 call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+//call KillSoundWhenDone(soundplay)
 call SaveSoundHandle(h,id,16,soundplay)
 call TimerStart(t,0.1,true,function FinalFlashCast2)
 set u=null
@@ -101763,12 +101762,12 @@ call SaveUnitHandle(h,id,1,n)
 if GetRandomInt(0,100) < 6 then
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\Departures1.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+//call KillSoundWhenDone(soundplay)
 call SaveSoundHandle(h,id,4,soundplay)
 else
 set soundplay=CreateSound("Departures.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+//call KillSoundWhenDone(soundplay)
 call SaveSoundHandle(h,id,4,soundplay)
 endif
 call SetUnitTimeScale(n,0.35)
@@ -102022,12 +102021,12 @@ call UnitAddAbility(u,'A0UL')
 if GetRandomInt(0,100) < 6 then
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\InoriPrettySong1.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+//call KillSoundWhenDone(soundplay)
 call SaveSoundHandle(h,id,4,soundplay)
 else
 set soundplay=CreateSound("InoriPrettySong.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+//call KillSoundWhenDone(soundplay)
 call SaveSoundHandle(h,id,4,soundplay)
 endif
 call SetUnitTimeScale(u,0.35)
@@ -102206,12 +102205,12 @@ call SetUnitFlyHeight(u,700,0)
 if GetRandomInt(0,100) < 6 then
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\UltimateSong1.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+//call KillSoundWhenDone(soundplay)
 call SaveSoundHandle(h,id,4,soundplay)
 else
 set soundplay=CreateSound("UltimateSong.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+//call KillSoundWhenDone(soundplay)
 call SaveSoundHandle(h,id,4,soundplay)
 endif
 call SetUnitTimeScale(u,0.20)
@@ -186142,12 +186141,12 @@ endif
 
 call SetSoundVolume(soundplay,370)
 call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+//call KillSoundWhenDone(soundplay)
 call SaveSoundHandle(HH,id,24,soundplay)
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\SoundJap\\BlackGokuR1.mp3",false,false,true,12000,12000,"Default")
 call SetSoundVolume(soundplay,370)
 call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+//call KillSoundWhenDone(soundplay)
 call SaveSoundHandle(HH,id,25,soundplay)
 call UnitSpeed(caster,2)
 call SetUnitAnimationByIndex(caster,63)
@@ -190334,7 +190333,7 @@ endif
 call SaveBoolean(HH,GetHandleId(casterOriginal),StringHash("SabracW"),true)
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\SabracW2.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+//call KillSoundWhenDone(soundplay)
 call SaveSoundHandle(HH,id,24,soundplay)
 call PauseUnit(caster,true)
 //call SetUnitInvulnerable(caster,true)
@@ -192382,7 +192381,7 @@ call SaveEffectHandle(HH,id,28,AddSpecialEffectTarget("Aizen\\file00001326.mdl",
 call SaveEffectHandle(HH,id,29,AddSpecialEffectTarget("Aizen\\buff_zi.mdl",caster,"hand left"))
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\AizenRself.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+//call KillSoundWhenDone(soundplay)
 call SaveSoundHandle(HH,id,24,soundplay)
 set n0=CreateUnit(GetOwningPlayer(caster),'e200',GetUnitX(caster),GetUnitY(caster),facing)
 call SetUnitModel(n0,"Others\\HakkeStart2.mdl")
@@ -200951,7 +200950,7 @@ function IchigoBankaiR_Cast takes unit newCaster, unit newTarget returns nothing
             call RemoveEffect(AddSpecialEffectTarget("BDEF (152).mdl", newCaster, "origin"), 4, true, CreateTimer())
             set soundplay=CreateSound("Sound\\war3mapImported\\VastoT.mp3", false, false, true, 12700, 12700, "")
             call StartSound(soundplay)
-            call KillSoundWhenDone(soundplay)
+            //call KillSoundWhenDone(soundplay)
         else
             if GetRandomInt(0, 1)==0 then
                 set soundplay=CreateSound("Sound\\war3mapImported\\IchigoTR.mp3", false, false, true, 12700, 12700, "")
@@ -200959,7 +200958,7 @@ function IchigoBankaiR_Cast takes unit newCaster, unit newTarget returns nothing
                 set soundplay=CreateSound("Sound\\war3mapImported\\IchigoTR2.mp3", false, false, true, 12700, 12700, "")
             endif
             call StartSound(soundplay)
-            call KillSoundWhenDone(soundplay)
+            //call KillSoundWhenDone(soundplay)
         endif
         call SaveSoundHandle(h, id, 102, soundplay)
         call TimerStart(newTimer, 0.02, true, function IchigoBankaiR_Periodic1)
@@ -205547,7 +205546,7 @@ function SinonW_Cast takes unit newCaster, real point_x, real point_y returns no
     call SetUnitFacingInstant(newCaster, angle*bj_RADTODEG)
     set soundplay=CreateSound("Sound\\Music\\mp3Music\\SinonW.mp3", false, false, true, 12700, 12700, "")
     call StartSound(soundplay)
-    call KillSoundWhenDone(soundplay)
+    //call KillSoundWhenDone(soundplay)
     call SaveSoundHandle(h, id, 102, soundplay)
     call SaveUnitHandle(h, id, 0, newCaster)
     call SaveReal(h, id, 1, angle)
@@ -205996,7 +205995,7 @@ function Sinon_AmmoReload takes unit newCaster returns nothing
     call SetUnitTimeScale(newCaster, 0.5)
     set soundplay=CreateSound("Sound\\Music\\mp3Music\\SinonF.mp3", false, false, true, 12700, 12700, "")
     call StartSound(soundplay)
-    call KillSoundWhenDone(soundplay)
+    //call KillSoundWhenDone(soundplay)
     call SaveSoundHandle(h, id, 2, soundplay)
     call SaveUnitHandle(h, id, 0, newCaster)
     call TimerStart(newTimer, 0.1, true, function Sinon_ARPeriodic)
@@ -212426,7 +212425,7 @@ if time==0.02 then
 set soundplay=CreateSound("Sound\\Gojo\\G_Speech.mp3",false,false,true,12700,12700,"")
 call SetSoundVolume(soundplay,150)
 call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+//call KillSoundWhenDone(soundplay)
 call SaveSoundHandle(HH,id,25,soundplay)
 set n0=CreateUnit(GetOwningPlayer(caster),'e200',GetUnitX(caster),GetUnitY(caster),GetUnitFacing(caster))
 call SetUnitModel(n0,EffectID[1314])
@@ -212448,7 +212447,7 @@ if time==6 then
 set soundplay=CreateSound("Sound\\Gojo\\G_Active.mp3",false,false,true,12700,12700,"")
 call SetSoundVolume(soundplay,127)
 call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+//call KillSoundWhenDone(soundplay)
 call SaveSoundHandle(HH,id,25,soundplay)
 endif
 if time>0.02 then
