@@ -10736,7 +10736,7 @@ function OnButtonEmoteClick takes nothing returns nothing
     endif
     set EFF=AddSpecialEffect("Emote.mdx",GetUnitX(Hero[GetPlayerId(p)]),GetUnitY(Hero[GetPlayerId(p)]))
     call SetSpecialEffectTexture(EFF,GetFrameTexture(but,0),0)
-    call SetSpecialEffectScale(EFF , 0.8)
+    call SetSpecialEffectScale(EFF , 1)
     call SetSpecialEffectZ(EFF,120)
     call RemoveEffect(EFF,2.5,false,CreateTimer())
     set p = null
