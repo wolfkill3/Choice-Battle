@@ -23108,7 +23108,7 @@ function Trig_StatusBar_Actions takes nothing returns nothing
     call ClearFrameAllPoints( EmoteBarGridFrame )
     call SetFrameRelativePoint( EmoteBarGridFrame, FRAMEPOINT_TOPLEFT, EmoteBarFrame, FRAMEPOINT_TOPLEFT,  .015, -.04  )
     call SetFrameGridSize( EmoteBarGridFrame, 6, 19 )
-    call SetFrameSize( EmoteBarGridFrame, .70, .2)
+    call SetFrameSize( EmoteBarGridFrame, .70, .24)
     call SetFramePriority( EmoteBarGridFrame, 8 )
 
     set tOnPress = CreateTrigger( )
