@@ -23309,6 +23309,54 @@ function Trig_StatusBar_Actions takes nothing returns nothing
     call TriggerRegisterFrameEvent( tOnClick, EmoteFrame, FRAMEEVENT_CONTROL_CLICK )
     call TriggerRegisterFrameEvent( tOnHover, EmoteFrame, FRAMEEVENT_MOUSE_ENTER )
     call TriggerRegisterFrameEvent( tOnUnHover, EmoteFrame, FRAMEEVENT_MOUSE_LEAVE )
+    
+    set EmoteFrame=CreateFrameByType( "SIMPLEBUTTON", "EmoteFrame", EmoteBarGridFrame, "", 12 )
+    call ClearFrameAllPoints( EmoteFrame )
+    call SetFrameTexture( EmoteFrame, "Emotes\\Thanks.blp", 0, true )
+    call SetFrameTexture( EmoteFrame, "Emotes\\Thanks.blp", 1, true )
+    call SetFrameTexture( EmoteFrame, "Emotes\\Thanks.blp", 2, true )
+    call SetFrameSize( EmoteFrame, .035, .035 )
+    call ShowFrame( EmoteFrame, true )
+    call SetFramePriority( EmoteFrame, 6 )
+    call SetFrameGridFrame( EmoteBarGridFrame, 0, 12, EmoteFrame )
+    
+    call TriggerRegisterFrameEvent( tOnPress, EmoteFrame, FRAMEEVENT_MOUSE_DOWN )
+    call TriggerRegisterFrameEvent( tOnUnPress, EmoteFrame, FRAMEEVENT_MOUSE_UP )
+    call TriggerRegisterFrameEvent( tOnClick, EmoteFrame, FRAMEEVENT_CONTROL_CLICK )
+    call TriggerRegisterFrameEvent( tOnHover, EmoteFrame, FRAMEEVENT_MOUSE_ENTER )
+    call TriggerRegisterFrameEvent( tOnUnHover, EmoteFrame, FRAMEEVENT_MOUSE_LEAVE )
+        
+    set EmoteFrame=CreateFrameByType( "SIMPLEBUTTON", "EmoteFrame", EmoteBarGridFrame, "", 13 )
+    call ClearFrameAllPoints( EmoteFrame )
+    call SetFrameTexture( EmoteFrame, "Emotes\\GroupUp.blp", 0, true )
+    call SetFrameTexture( EmoteFrame, "Emotes\\GroupUp.blp", 1, true )
+    call SetFrameTexture( EmoteFrame, "Emotes\\GroupUp.blp", 2, true )
+    call SetFrameSize( EmoteFrame, .035, .035 )
+    call ShowFrame( EmoteFrame, true )
+    call SetFramePriority( EmoteFrame, 6 )
+    call SetFrameGridFrame( EmoteBarGridFrame, 0, 13, EmoteFrame )
+    
+    call TriggerRegisterFrameEvent( tOnPress, EmoteFrame, FRAMEEVENT_MOUSE_DOWN )
+    call TriggerRegisterFrameEvent( tOnUnPress, EmoteFrame, FRAMEEVENT_MOUSE_UP )
+    call TriggerRegisterFrameEvent( tOnClick, EmoteFrame, FRAMEEVENT_CONTROL_CLICK )
+    call TriggerRegisterFrameEvent( tOnHover, EmoteFrame, FRAMEEVENT_MOUSE_ENTER )
+    call TriggerRegisterFrameEvent( tOnUnHover, EmoteFrame, FRAMEEVENT_MOUSE_LEAVE )
+            
+    set EmoteFrame=CreateFrameByType( "SIMPLEBUTTON", "EmoteFrame", EmoteBarGridFrame, "", 14 )
+    call ClearFrameAllPoints( EmoteFrame )
+    call SetFrameTexture( EmoteFrame, "Emotes\\Retreat.blp", 0, true )
+    call SetFrameTexture( EmoteFrame, "Emotes\\Retreat.blp", 1, true )
+    call SetFrameTexture( EmoteFrame, "Emotes\\Retreat.blp", 2, true )
+    call SetFrameSize( EmoteFrame, .035, .035 )
+    call ShowFrame( EmoteFrame, true )
+    call SetFramePriority( EmoteFrame, 6 )
+    call SetFrameGridFrame( EmoteBarGridFrame, 0, 14, EmoteFrame )
+    
+    call TriggerRegisterFrameEvent( tOnPress, EmoteFrame, FRAMEEVENT_MOUSE_DOWN )
+    call TriggerRegisterFrameEvent( tOnUnPress, EmoteFrame, FRAMEEVENT_MOUSE_UP )
+    call TriggerRegisterFrameEvent( tOnClick, EmoteFrame, FRAMEEVENT_CONTROL_CLICK )
+    call TriggerRegisterFrameEvent( tOnHover, EmoteFrame, FRAMEEVENT_MOUSE_ENTER )
+    call TriggerRegisterFrameEvent( tOnUnHover, EmoteFrame, FRAMEEVENT_MOUSE_LEAVE )
 
 //paywall emotes start
 
@@ -23471,7 +23519,7 @@ function Trig_StatusBar_Actions takes nothing returns nothing
     call TriggerRegisterFrameEvent( tOnClick, EmoteFrame, FRAMEEVENT_CONTROL_CLICK )
     call TriggerRegisterFrameEvent( tOnHover, EmoteFrame, FRAMEEVENT_MOUSE_ENTER )
     call TriggerRegisterFrameEvent( tOnUnHover, EmoteFrame, FRAMEEVENT_MOUSE_LEAVE )
-    
+
 //paywall emotes end
 
     set CloseEmoteButton=CreateFrameByType( "SIMPLEBUTTON", "EmoteBarClose", EmoteBarFrame, "", 0 )
