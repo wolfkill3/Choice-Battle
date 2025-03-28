@@ -1733,9 +1733,9 @@ function myCustomDamage takes unit whichUnit, unit target, real amount, boolean 
         if GetUnitAbilityLevel(whichUnit,'A171') > 0 then
             set currentDmg = currentDmg * 1.10
         endif  
-		if GetUnitAbilityLevel(whichUnit,'A176') > 0 then
-            set currentDmg = currentDmg * 1.05
-        endif  
+		//if GetUnitAbilityLevel(whichUnit,'A176') > 0 then
+        //    set currentDmg = currentDmg * 1.05
+        //endif  
         if GetUnitAbilityLevel(whichUnit,'GkH5') > 0 or GetUnitAbilityLevel(whichUnit,'VGH5') > 0 or GetUnitAbilityLevel(whichUnit,'GkH8') > 0 then
             set currentDmg = currentDmg * 1.05
         endif
@@ -24059,7 +24059,7 @@ local real dmg=0
 if UnitHasItemOfTypeBJ(u,'I054') and udg_B==true and DU2==true then
 if life2<life then
 set dmg=GetUnitState(u,UNIT_STATE_MANA)-LoadReal(h,id,0)
-call SetUnitState(u,UNIT_STATE_MANA,life-(life-life2)*0.85)
+call SetUnitState(u,UNIT_STATE_MANA,life-(life-life2)*0.75)
 endif
 call SaveReal(h,id,0,GetUnitState(u,UNIT_STATE_MANA))
 else
@@ -33232,7 +33232,7 @@ function EndOfChoiceAct takes nothing returns nothing
             call SetUnitModel(Hero[i],"[By XeSHTeG]JirenBase.mdx")
             call ShowAbility2('JNF4',false)
             call ShowAbility2('JNF1',true)
-            call SetAbilityRealLevelField(GetUnitAbility(Hero[i],'JNG1'), ABILITY_RLF_CAST_RANGE,0,300)
+            call SetAbilityRealLevelField(GetUnitAbility(Hero[i],'JNG1'), ABILITY_RLF_CAST_RANGE,0,400)
             call UnitRemoveAbility(Hero[i],'JNF2')
             call UnitRemoveAbility(Hero[i],'JNF3')
         endif
@@ -34487,7 +34487,7 @@ exitwhen i>=10
         call SetUnitModel(Hero[i],"[By XeSHTeG]JirenBase.mdx")
         call ShowAbility2('JNF4',false)
         call ShowAbility2('JNF1',true)
-        call SetAbilityRealLevelField(GetUnitAbility(Hero[i],'JNG1'), ABILITY_RLF_CAST_RANGE,0,300)
+        call SetAbilityRealLevelField(GetUnitAbility(Hero[i],'JNG1'), ABILITY_RLF_CAST_RANGE,0,400)
         call UnitRemoveAbility(Hero[i],'JNF2')
         call UnitRemoveAbility(Hero[i],'JNF3')
     endif
@@ -41141,7 +41141,7 @@ if cond==0 then
         call SetUnitTimeScale(n, 0.75)
         call SetUnitFlyHeight(n, 50, 0)
         call MyRemoveUnit(n, 1.2)
-        call SetWidgetMana(u, GetWidgetMana(u)-GetWidgetMaxMana(u)*0.08)
+        call SetWidgetMana(u, GetWidgetMana(u)-GetWidgetMaxMana(u)*0.07)
         call SaveInteger(HH, GetHandleId(c), StringHash("GaeDeargP_CD"), 0)
         call GaeDearg_Passive(c)
     endif
@@ -41392,7 +41392,13 @@ if cond==0 then
         call SetWidgetLife(c, GetWidgetLife(c)+ nb*0.3)
     endif
 	if GetUnitAbilityLevel(c,'A1WT')==0 and GetUnitAbilityLevel(c,'A3WR')==0 and  (GetUnitAbilityLevel(c,'CB01')==0 or (GetUnitAbilityLevel(c,'CB01')>0 and CurrentEventAttack==true)) and GetUnitAbilityLevel(c,'B059')==0 and GetUnitAbilityLevel(u,'Bwul')==0 and LoadInteger(HH,cid,BlockPenetrate)==0 then
-		if (UnitHasItemOfTypeBJ(u,'I05B') or GetUnitAbilityLevel(c,'KIR2')>0)and nb>0.05*ll then
+        if GetUnitTypeId(u)=='HJi1' then
+            if GetUnitModel(u)=="[By XeSHTeG]JirenBase.mdx" and GetUnitState(u,UNIT_STATE_LIFE)-nb<0.25*ll and GetHeroLevel(u)>=26 then 
+                call SetEventDamage((GetUnitState(u,UNIT_STATE_LIFE)-ll*0.25)+10)
+                set nb=(GetUnitState(u,UNIT_STATE_LIFE)-ll*0.25)+10
+            endif
+        endif
+        if (UnitHasItemOfTypeBJ(u,'I05B') or GetUnitAbilityLevel(c,'KIR2')>0)and nb>0.05*ll then
 			if IsUnitInvulnerable(c)==true then
 				call SetUnitInvulnerable(c,false)
 				call SetControlToUnit(u,c,0.5,"silenceTE") //"stunbkb"
@@ -44092,8 +44098,8 @@ call SaveReal(h,id,5,0)
 call UnitAddAbility(c,'A15F')
 call SaveUnitHandle(h,id,1,c)
 call SaveInteger(HH,GetHandleId(c),StringHash("cold2"),0)
-call HealTextTag(u,c,GetUnitState(c,UNIT_STATE_MAX_MANA)*0.1*myCustomMana2(c,1),"ManaRes")
-call SetUnitState(c,UNIT_STATE_MANA,GetWidgetMana(c)+GetUnitState(c,UNIT_STATE_MAX_MANA)*0.1)
+call HealTextTag(u,c,GetUnitState(c,UNIT_STATE_MAX_MANA)*0.15*myCustomMana2(c,1),"ManaRes")
+call SetUnitState(c,UNIT_STATE_MANA,GetWidgetMana(c)+GetUnitState(c,UNIT_STATE_MAX_MANA)*0.15)
 call SaveReal(h,id,0,GetWidgetMana(c))
 call TimerStart(t,0.01,true,function FrozenManaCast2)
 set t=null
@@ -44520,8 +44526,8 @@ endfunction
 function Trig_RegenMana_Actions takes nothing returns nothing
 local unit u=GetTriggerUnit()
 local unit c=GetSpellTargetUnit()
-call HealTextTag(u,c,GetUnitState(c,UNIT_STATE_MAX_MANA)*0.1*myCustomMana2(c,1),"ManaRes")
-call SetUnitState(c,UNIT_STATE_MANA,GetWidgetMana(c)+GetUnitState(c,UNIT_STATE_MAX_MANA)*0.1)
+call HealTextTag(u,c,GetUnitState(c,UNIT_STATE_MAX_MANA)*0.15*myCustomMana2(c,1),"ManaRes")
+call SetUnitState(c,UNIT_STATE_MANA,GetWidgetMana(c)+GetUnitState(c,UNIT_STATE_MAX_MANA)*0.15)
 call DestroyEffect(AddSpecialEffectTarget("Abilities\\Spells\\Items\\AIma\\AImaTarget.mdl",c,"origin"))
 set u=null
 set c=null
@@ -95348,7 +95354,7 @@ local real x4=LoadReal(h,id,16)
 local real y4=LoadReal(h,id,17)
 local real x5=LoadReal(h,id,18)
 local real y5=LoadReal(h,id,19)
-local real dmg=(1+GetHeroLevel(u)*0.1)*GetHeroStr(u,true)
+local real dmg=(0.5+GetHeroLevel(u)*0.1)*GetHeroStr(u,true)
 local player p=GetOwningPlayer(u)
 local real time=LoadReal(h,id,5)
 local real starttime=LoadReal(h,id,6)
