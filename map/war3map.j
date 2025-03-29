@@ -40091,7 +40091,7 @@ if cond==0 then
             call DestroyEffect(AddSpecialEffectTarget("war3mapImported\\BloodEX.mdx",u,"origin"))
             call SaveInteger(HH,cid,StringHash("SA"),FI-1)
             call MissUnit(c,u,3,0.2,false)
-            else
+        else
             call UnitRemoveAbility(c,'B05R')
         endif
     endif
@@ -87086,7 +87086,7 @@ local player p=GetOwningPlayer(u)
 loop
 exitwhen i>6
 set r=i*60.
-set n=CreateUnit(p,0x65304E34,x,y,r)
+set n=CreateUnit(p,'e0N4',x,y,r)
 call GroupAddUnit(g,n)
 call SaveUnitHandle(h,id,1+i,n)
 set i=i+1
@@ -102677,7 +102677,7 @@ local player p=GetOwningPlayer(u)
 loop
 exitwhen i>6
 set r=i*60.
-set n=CreateUnit(p,0x65304E34,x,y,r)
+set n=CreateUnit(p,'e0N4',x,y,r)
 call GroupAddUnit(g,n)
 call SaveUnitHandle(h,id,1+i,n)
 set i=i+1
@@ -102701,8 +102701,127 @@ call TriggerRegisterAnyUnitEventBJ(gg_trg_CrystalStrykeInori,EVENT_PLAYER_UNIT_S
 call TriggerAddCondition(gg_trg_CrystalStrykeInori,Condition(function CrystalStrykeInoriCond))
 call TriggerAddAction(gg_trg_CrystalStrykeInori,function CrystalStrykeInoriCast)
 endfunction
+function HeartStrikeCond takes nothing returns boolean
+return GetSpellAbilityId()=='A15L' and udg_B==true
+endfunction
+function HeartStrikeCast2 takes nothing returns nothing
+local timer t=GetExpiredTimer()
+local integer id=GetHandleId(t)
+local unit u=LoadUnitHandle(h,id,0)
+local real x1=GetUnitX(u)
+local real y1=GetUnitY(u)
+local real x2=LoadReal(h,id,4)
+local real y2=LoadReal(h,id,5)
+local real a=LoadReal(h,id,1)
+local group g=LoadGroupHandle(h,id,3)
+local integer l__idg=GetHandleId(g)
+local player p=GetOwningPlayer(u)
+local real dist=LoadReal(h,id,100)
+local real dmg=GetUnitTotalDamage(u)+GetHeroAgi(u,true)*GetUnitAbilityLevel(u,'A15L')
+if dist<800 and LoadBoolean(HH,GetHandleId(u),DASH_USER)==true then
+if IsTerrainPathable(x1,y1,PATHING_TYPE_FLYABILITY)==false then
+set x1=x1+50*Cos(a)
+set y1=y1+50*Sin(a)
+else
+set x1=x1-15*Cos(a)
+set y1=y1-15*Sin(a)
+endif
+call SetUnitXY_1(u,x1,y1, false)
+call SaveReal(h,id,100,dist+50)
+set n=CreateUnit(p,'e01S',x1,y1,a*bj_RADTODEG)
+call SetUnitScale(n,0.7,0.7,0.7)
+call SetUnitModel(n,"Killua.mdl")
+call UnitApplyTimedLife(n,1,0.25)
+call UnitAddAbility(n,'A0LR')
+call SetUnitTimeScale(n,2)
+call SetUnitVertexColor(n,255,255,255,125)
+call SetUnitAnimation(n,"Spell three")
+call GroupEnumUnitsInRange(g,x1,y1,130,Base)
+loop
+set E=FirstOfGroup(g)
+set ide=GetHandleId(E)
+exitwhen E==null
+if Condition_Base(p,E)and LoadUnitHandle(h,l__idg,ide)!=E then
+    if LoadBoolean(HH,ide,ANTITARGET_ABILITY)==false then
+        call myCustomDamage(u,E,dmg,false,false,null,null,null)
+        call DestroyEffect(AddSpecialEffectTarget("Abilities\\Spells\\Other\\Stampede\\StampedeMissileDeath.mdl",E,"chest"))
+        call Essence(u,E,2)
+        if GetUnitLifePercent(E)<10 and GetUnitTypeId(E)!='H075' then
+            call SetUnitState(E,UNIT_STATE_LIFE,1)
+            call DamageIndicatorFunction(u,E,GetUnitState(E,UNIT_STATE_LIFE)*0.1)
+            call myCustomDamage(u,E,GetUnitState(E,UNIT_STATE_LIFE)*0.1,false,false,null,DAMAGE_TYPE_UNIVERSAL,null)
+            set soundplay=CreateSound("Sound\\Music\\mp3Music\\KilluaWKill.mp3",false,false,true,12700,12700,"")
+            call StartSound(soundplay)
+            call KillSoundWhenDone(soundplay)
+            call DestroyEffect(AddSpecialEffectTarget("war3mapImported\\BloodEX.mdx",u,"left hand"))
+        endif
+    else
+        call SaveBoolean(HH,GetHandleId(u),DASH_USER,false)
+        call SaveUnitHandle(HH,GetHandleId(E),REVERSE_TARGET,u)
+    endif
+    call SaveUnitHandle(h,l__idg,ide,E)
+endif
+call GroupRemoveUnit(g,E)
+endloop
+else
+call SaveBoolean(HH,GetHandleId(u),DASH_USER,false)
+call UnitRemoveAbility(u,'A0LR')
+call FlushChildHashtable(h,id)
+call FlushChildHashtable(h,l__idg)
+call PauseTimer(t)
+call DestroyTimer(t)
+call DestroyGroup(g)
+call PauseUnit(u,false)
+call SetUnitInvulnerable(u,false)
+call SetUnitTimeScale(u,1)
+call SetUnitVertexColor(u,255,255,255,255)
+endif
+set u=null
+set p=null
+set t=null
+set g=null
+endfunction
+function HeartStrikeCast takes nothing returns nothing
+local unit u=GetTriggerUnit()
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+local real x=GetUnitX(u)
+local real y=GetUnitY(u)
+call SaveUnitHandle(h,id,0,u)
+call SaveReal(h,id,4,x)
+call SaveReal(h,id,5,y)
+call SaveReal(h,id,1,Atan2(GetSpellTargetY()-y,GetSpellTargetX()-x))
+call SaveGroupHandle(h,id,3,CreateGroup())
+call PauseUnit(u,true)
+call SaveReal(h,id,100,0)
+call UnitAddAbility(u,'A0LR')
+call UnitRemoveAbility(u,'A2VJ')
+call SetUnitInvulnerable(u,true)
+call SaveBoolean(HH,GetHandleId(u),DASH_USER,true)
+call SetUnitTimeScale(u,3)
+call SetUnitAnimation(u,"Spell three")
+call SetUnitVertexColor(u,255,255,255,125)
+set soundplay=CreateSound("Sound\\Music\\mp3Music\\KilluaW0.mp3",false,false,true,12700,12700,"")
+call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
+call TimerStart(t,0.008,true,function HeartStrikeCast2)
+set u=null
+set t=null
+endfunction
+function HeartStrikeInit takes nothing returns nothing
+local trigger t=CreateTrigger()
+local integer i=0
+loop
+call TriggerRegisterPlayerUnitEvent(t,Player(i),EVENT_PLAYER_UNIT_SPELL_EFFECT,null)
+set i=i+1
+exitwhen i>=bj_MAX_PLAYER_SLOTS
+endloop
+call TriggerAddAction(t,function HeartStrikeCast)
+call TriggerAddCondition(t,Condition(function HeartStrikeCond))
+set t=null
+endfunction
 function SnakesAwakesCond takes nothing returns boolean
-return GetSpellAbilityId()=='A15L'
+return GetSpellAbilityId()=='A0UT'
 endfunction
 function SnakesAwakesCast2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
@@ -102731,7 +102850,7 @@ local player p=GetOwningPlayer(u)
 call SetUnitVertexColor(u,155,155,155,180)
 call SaveUnitHandle(HH,id,0,u)
 call UnitAddAbility(u,'A15M')
-call SaveInteger(HH,idu,StringHash("SA"),2+GetUnitAbilityLevel(u,'A15L'))
+call SaveInteger(HH,idu,StringHash("SA"),4)
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\KilluaW.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
 call KillSoundWhenDone(soundplay)
@@ -102741,7 +102860,7 @@ set p=null
 set t=null
 endfunction
 function StaticFieldCond takes nothing returns boolean
-return GetSpellAbilityId()==0x41305559
+return GetSpellAbilityId()=='A0UY'
 endfunction
 function StaticFieldCast2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
@@ -102760,10 +102879,10 @@ call SetUnitInvulnerable(u,false)
 call SetUnitTimeScale(u,1)
 else
 call SetUnitInvulnerable(u,true)
-call UnitAddAbility(u,0x41305556)
-call UnitAddAbility(u,0x41305557)
-call UnitRemoveAbility(u,0x41305556)
-call UnitRemoveAbility(u,0x41305557)
+call UnitAddAbility(u,'A0UV')
+call UnitAddAbility(u,'A0UW')
+call UnitRemoveAbility(u,'A0UV')
+call UnitRemoveAbility(u,'A0UW')
 call GroupEnumUnitsInRange(G,x,y,350,Base)
 loop
 set E=FirstOfGroup(G)
@@ -102853,7 +102972,7 @@ local integer i=0
 local real dmg=(2+GetUnitAbilityLevel(u,'A0UX'))*GetHeroAgi(u,true)+75*GetUnitAbilityLevel(u,'A0UX')
 loop
 exitwhen i>=7
-call UnitApplyTimedLife(CreateUnit(p,0x65305331,x,y,GetRandomReal(0,359)),1,3)
+call UnitApplyTimedLife(CreateUnit(p,'e0S1',x,y,GetRandomReal(0,359)),1,3)
 call UnitApplyTimedLife(CreateUnit(p,'e086',x,y,GetRandomReal(0,359)),1,3)
 set n=CreateUnit(p,'e016',x,y,GetRandomReal(0,359))
 call UnitAddAbility(n,'Arav')
@@ -103081,8 +103200,8 @@ if IsTerrainPathable(GetUnitX(u),GetUnitY(u),PATHING_TYPE_FLYABILITY) then
 call IssueImmediateOrder(u,"stop")
 endif
 else
-call UnitRemoveAbility(u,0x41305556)
-call UnitRemoveAbility(u,0x41305557)
+call UnitRemoveAbility(u,'A0UV')
+call UnitRemoveAbility(u,'A0UW')
 call SaveBoolean(HH,idu,str3,false)
 call PauseTimer(t)
 call DestroyGroup(g)
@@ -103118,8 +103237,8 @@ if speed>10 then
 endif
 if LoadBoolean(HH,idu,str3)==false then
 if speed>10 then
-call UnitAddAbility(u,0x41305556)
-call UnitAddAbility(u,0x41305557)
+call UnitAddAbility(u,'A0UV')
+call UnitAddAbility(u,'A0UW')
 endif
 call SaveUnitHandle(HH,id,0,u)
 call SaveBoolean(HH,idu,str3,true)
@@ -163514,6 +163633,8 @@ call AlbedoW_SecondAct(LoadUnitHandle(h,id,CasterHash),LoadUnitHandle(h,id,Targe
 call FlushChildHashtable(h,id)
 call DestroyTimer(GetExpiredTimer())
 else
+call PauseUnit(LoadUnitHandle(h,id,CasterHash),false)
+call SetUnitInvulnerable(LoadUnitHandle(h,id,CasterHash),false)
 call SetUnitVertexColor(LoadUnitHandle(h,id,CasterHash),255,255,255,255)
 call SaveUnitHandle(HH,GetHandleId(LoadUnitHandle(h,id,TargetHash)),REVERSE_TARGET,LoadUnitHandle(h,id,CasterHash))
 call FlushChildHashtable(h,id)
@@ -217620,6 +217741,7 @@ call InitTrig_CrystalSlash()
 call InitTrig_PrettySong()
 call InitTrig_UltimateSong()
 call InitTrig_CrystalStrykeInori()
+call HeartStrikeInit()
 call InitTrig_StaticField()
 call InitTrig_LightningStrikeKillua()
 call InitTrig_ChangeGodspeed()
