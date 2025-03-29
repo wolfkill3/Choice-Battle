@@ -10733,6 +10733,17 @@ endfunction
 
 function OnButtonEmoteClick2 takes nothing returns nothing
     local player p=GetTriggerPlayer()
+    if Hero[GetPlayerId(p)]!=null then
+        set EFF=AddSpecialEffect("Emote.mdx",GetTriggerPlayerMouseWorldX(),GetTriggerPlayerMouseWorldY())
+        if IsPlayerAlly(GetLocalPlayer(),p)==false then
+            call SetSpecialEffectVertexColour(EFF,0,0,0,0)
+        endif
+        call SetSpecialEffectPlayerColour(EFF,GetPlayerColor(p))
+        call SetSpecialEffectTexture(EFF,GetUnitStringField(Hero[GetPlayerId(p)],UNIT_SF_ICON_NORMAL),0)
+        call SetSpecialEffectScale(EFF , 0.5)
+        call SetSpecialEffectZ(EFF,350)
+        call RemoveEffect(EFF,2.5,false,CreateTimer())
+    endif
     set EFF=AddSpecialEffect("Emote.mdx",GetTriggerPlayerMouseWorldX(),GetTriggerPlayerMouseWorldY())
     if IsPlayerAlly(GetLocalPlayer(),p)==false then
         call SetSpecialEffectVertexColour(EFF,0,0,0,0)
@@ -103348,7 +103359,7 @@ call SetUnitXY_1(l__d,x1+speed*Cos(a),y1+speed*Sin(a), false)
 call SetUnitFacing(l__d,a*bj_RADTODEG)
 call SetUnitAnimation(l__d,"walk")
 set n=CreateUnit(p,'e0RU',x1,y1,f)
-call UnitApplyTimedLife(n,1,0.2)
+call UnitApplyTimedLife(n,1,0.1)
 call SetUnitTimeScale(n,2)
 call SetUnitVertexColor(n,255,255,255,50)
 call SetUnitAnimation(n,"walk")
@@ -103378,7 +103389,7 @@ call SaveReal(h,id,4,y)
 call SaveReal(h,id,6,dmg)
 call SaveReal(h,id,9,range)
 call SaveReal(h,id,10,mas)
-call TimerStart(t,0.025,true,function Slash_EchoRitm2)
+call TimerStart(t,0.03,true,function Slash_EchoRitm2)
 set t=null
 endfunction
 function EchoRitmCast3 takes nothing returns nothing
@@ -103423,8 +103434,8 @@ set n=CreateUnit(p,'e0RW',x,y,f*bj_RADTODEG)
 call UnitApplyTimedLife(n,1,0.3)
 call SetUnitTimeScale(n,2)
 call IssueImmediateOrder(c,"stop")
-call SaveReal(h,id,101,dist+0.03)
-call SaveReal(h,id,102,speed+0.66)
+call SaveReal(h,id,101,dist+0.04)
+call SaveReal(h,id,102,speed+0.8)
 if dist>=2 then
 call PauseTimer(t)
 call PauseUnit(u,false)
@@ -103433,7 +103444,7 @@ set i=0
 loop
 set E=FirstOfGroup(gn)
 exitwhen E==null
-call Slash_EchoRitm(E,75,0,Atan2(y-GetUnitY(E),x-GetUnitX(E)),500,40,0,0,0,0)
+call Slash_EchoRitm(E,80,0,Atan2(y-GetUnitY(E),x-GetUnitX(E)),500,40,0,0,0,0)
 call GroupRemoveUnit(gn,E)
 endloop
 call ShowUnit(u,true)
@@ -103443,10 +103454,6 @@ call SelectUnit(u,true)
 endif
 call SetUnitX(u,x3)
 call SetUnitY(u,y3)
-call UnitApplyTimedLife(CreateUnit(p,'e03V',x3,y3,GetRandomReal(0,359)),1,2)
-call UnitApplyTimedLife(CreateUnit(p,'e04D',x3,y3,GetRandomReal(0,359)),1,2)
-call UnitApplyTimedLife(CreateUnit(p,'e03V',x3,y3,GetRandomReal(0,359)),1,2)
-call UnitApplyTimedLife(CreateUnit(p,'e04D',x3,y3,GetRandomReal(0,359)),1,2)
 call UnitApplyTimedLife(CreateUnit(p,'e03V',x3,y3,GetRandomReal(0,359)),1,2)
 call UnitApplyTimedLife(CreateUnit(p,'e04D',x3,y3,GetRandomReal(0,359)),1,2)
 call UnitApplyTimedLife(CreateUnit(p,'e0HM',x3,y3,GetRandomReal(0,359)),1,1.4)
@@ -103505,7 +103512,7 @@ call SetUnitAnimation(n,"walk")
 endloop
 if dist>=400 then
 call PauseTimer(t)
-call TimerStart(t,.03,true,function EchoRitmCast3)
+call TimerStart(t,.04,true,function EchoRitmCast3)
 set i=0
 loop
 set i=i+1
@@ -103537,7 +103544,7 @@ loop
 exitwhen i>6
 set r=i*60.
 set n=CreateUnit(p,'e0RU',x,y,r)
-call UnitAddAbility(n,0x41305553)
+call UnitAddAbility(n,'A0US')
 call GroupAddUnit(g,n)
 call SaveUnitHandle(h,id,1+i,n)
 set i=i+1
