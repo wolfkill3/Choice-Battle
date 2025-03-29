@@ -284,6 +284,7 @@ framehandle  CloseEmoteButton
 framehandle  CloseEmoteButtonText
 handlelist array EmoteBarFrameList
 framehandle  EmoteBarFrame
+framehandle  EmoteBarFrameText
 framehandle  EmoteBarGridFrame
 framehandle  OpenEmoteButton
 framehandle  OpenEmoteButtonText
@@ -1732,9 +1733,9 @@ function myCustomDamage takes unit whichUnit, unit target, real amount, boolean 
         if GetUnitAbilityLevel(whichUnit,'A171') > 0 then
             set currentDmg = currentDmg * 1.10
         endif  
-		if GetUnitAbilityLevel(whichUnit,'A176') > 0 then
-            set currentDmg = currentDmg * 1.05
-        endif  
+		//if GetUnitAbilityLevel(whichUnit,'A176') > 0 then
+        //    set currentDmg = currentDmg * 1.05
+        //endif  
         if GetUnitAbilityLevel(whichUnit,'GkH5') > 0 or GetUnitAbilityLevel(whichUnit,'VGH5') > 0 or GetUnitAbilityLevel(whichUnit,'GkH8') > 0 then
             set currentDmg = currentDmg * 1.05
         endif
@@ -10301,6 +10302,17 @@ call TriggerAddAction(t,function ItemDoubleClickCast)
 set t=null
 endfunction
 
+function Trig_Sync_Actions takes nothing returns nothing
+local player p=GetTriggerPlayer()
+if GetLocalPlayer() == p then
+call SaveReal(HSYNC,GetHandleId(p),c_MOUSE_X,GetMouseWorldX())
+call SaveReal(HSYNC,GetHandleId(p),c_MOUSE_Y,GetMouseWorldY())
+call SyncSavedReal(HSYNC, GetHandleId(p), c_MOUSE_X)
+call SyncSavedReal(HSYNC, GetHandleId(p), c_MOUSE_Y)
+set p=null
+endif
+endfunction
+
 function ShowEmote takes nothing returns nothing //
 local framehandle SFrame=HandleListGetEnumFrame()
 if LoadReal(HH, GetHandleId(HandleListGetEnumFrame()), c_DURATION)>0 then
@@ -10719,6 +10731,21 @@ function ToggleOpenEmoteBar takes nothing returns nothing
     set p = null
 endfunction
 
+function OnButtonEmoteClick2 takes nothing returns nothing
+    local player p=GetTriggerPlayer()
+    set EFF=AddSpecialEffect("Emote.mdx",GetTriggerPlayerMouseWorldX(),GetTriggerPlayerMouseWorldY())
+    if IsPlayerAlly(GetLocalPlayer(),p)==false then
+        call SetSpecialEffectVertexColour(EFF,0,0,0,0)
+    endif
+    call SetSpecialEffectPlayerColour(EFF,GetPlayerColor(p))
+    call SetSpecialEffectTexture(EFF,GetFrameTexture(LoadFrameHandle(HH,GetHandleId( p ),StringHash("1488")),0),0)
+    call SetSpecialEffectScale(EFF , 1)
+    call SetSpecialEffectZ(EFF,10)
+    call RemoveEffect(EFF,2.5,false,CreateTimer())
+    call SaveBoolean(HH,GetHandleId( p ),StringHash("1487"),false)
+    set p=null
+endfunction
+
 function OnButtonEmoteClick takes nothing returns nothing
     local player p = GetTriggerPlayer( )
     local integer pHid = GetHandleId( p )
@@ -10727,6 +10754,8 @@ function OnButtonEmoteClick takes nothing returns nothing
     local integer butHid = 0
     local integer itemTypeId = 0
     local integer freeSlotId = 0
+    local trigger tt
+    local integer i=0
 
     if buttonId == -1 then
         return
@@ -10734,13 +10763,20 @@ function OnButtonEmoteClick takes nothing returns nothing
     if p==GetLocalPlayer() then
         call ClickFrame(CloseEmoteButton)
     endif
-    set EFF=AddSpecialEffect("Emote.mdx",GetUnitX(Hero[GetPlayerId(p)]),GetUnitY(Hero[GetPlayerId(p)]))
-    call SetSpecialEffectTexture(EFF,GetFrameTexture(but,0),0)
-    call SetSpecialEffectScale(EFF , 0.8)
-    call SetSpecialEffectZ(EFF,120)
-    call RemoveEffect(EFF,2.5,false,CreateTimer())
+    if GetTriggerFrameMouseButton()==MOUSE_BUTTON_TYPE_RIGHT then
+        call SaveBoolean(HH,pHid,StringHash("1487"),true)
+        call SaveFrameHandle(HH,pHid,StringHash("1488"),but)
+    elseif GetTriggerFrameMouseButton()==MOUSE_BUTTON_TYPE_LEFT then
+        set EFF=AddSpecialEffect("Emote.mdx",GetUnitX(Hero[GetPlayerId(p)]),GetUnitY(Hero[GetPlayerId(p)]))
+        call SetSpecialEffectPlayerColour(EFF,GetPlayerColor(p))
+        call SetSpecialEffectTexture(EFF,GetFrameTexture(but,0),0)
+        call SetSpecialEffectScale(EFF , 1.1)
+        call SetSpecialEffectZ(EFF,120)
+        call RemoveEffect(EFF,2.5,false,CreateTimer())
+    endif
     set p = null
     set but = null
+    set tt=null
 endfunction
 
 function OnButtonCloseId takes nothing returns nothing
@@ -19503,16 +19539,6 @@ return false
 endif
 return true
 endfunction
-function Trig_Sync_Actions takes nothing returns nothing
-local player p=GetTriggerPlayer()
-if GetLocalPlayer() == p then
-call SaveReal(HSYNC,GetHandleId(p),c_MOUSE_X,GetMouseWorldX())
-call SaveReal(HSYNC,GetHandleId(p),c_MOUSE_Y,GetMouseWorldY())
-call SyncSavedReal(HSYNC, GetHandleId(p), c_MOUSE_X)
-call SyncSavedReal(HSYNC, GetHandleId(p), c_MOUSE_Y)
-set p=null
-endif
-endfunction
 function Trig_Target_Actions takes nothing returns nothing
 local player p=null
 if GetSyncSavedChildKey()==c_MOUSE_Y and GetSyncSavedHashtable()==HSYNC then
@@ -19541,6 +19567,21 @@ loop
     set i=i+1
 endloop
 call TriggerAddAction(gg_trg_Target,function Trig_Target_Actions)
+endfunction
+function Trig_EmoteClick_Condition takes nothing returns boolean
+return LoadBoolean(HH,GetHandleId(GetTriggerPlayer()),StringHash("1487"))
+endfunction
+function InitTrig_EmoteClick takes nothing returns nothing
+local trigger t=CreateTrigger()
+local integer i=0
+loop
+    call TriggerRegisterPlayerEvent( t, Player(i), EVENT_PLAYER_TERRAIN_CLICK)
+    exitwhen i>=12
+    set i=i+1
+endloop
+call TriggerAddCondition(t,Condition(function Trig_EmoteClick_Condition))
+call TriggerAddAction(t,function OnButtonEmoteClick2)
+set t=null
 endfunction
 function Trig_Set_Ability_Conditions takes nothing returns boolean
 return IsUnitType(GetTriggerUnit(),UNIT_TYPE_HERO) and pick!=3
@@ -23102,12 +23143,23 @@ function Trig_StatusBar_Actions takes nothing returns nothing
     call SetFrameSize( EmoteBarFrame, .76, .39)
     call SetFrameTextureEx(EmoteBarFrame, 0, "UI\\widgets\\BattleNet\\bnet-tooltip-background.blp", false, "Choice-tooltip-border.blp", 0)
     call SetFramePriority( EmoteBarFrame, 7 )
+        
+    set EmoteBarFrameText=CreateFrameByType( "SIMPLETEXT", "EmoteBarText", EmoteBarFrame, "", 0 )
+    call ClearFrameAllPoints( EmoteBarFrameText )
+    call SetFrameBlendMode( EmoteBarFrameText, 0, BLEND_MODE_BLEND )
+    call SetFrameFont( EmoteBarFrameText, "Fonts\\FRIZQT__.TTF", .011, 0 )
+    call SetFrameTextAlignment( EmoteBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
+    call SetFrameTextColour( EmoteBarFrameText, 0xFFFFA500 )
+    call SetFrameParent( EmoteBarFrameText, EmoteBarFrame )
+    call SetFrameText( EmoteBarFrameText, "Right Click - Place on land with left click, only allies can see. Left click - place above your hero, can be seen by everyone")
+    call ShowFrame( EmoteBarFrameText, true )
+    call SetFrameRelativePoint( EmoteBarFrameText, FRAMEPOINT_TOPLEFT, EmoteBarFrame, FRAMEPOINT_TOPLEFT, .013, -.02 )
     
     set EmoteBarGridFrame=CreateFrameByType("SIMPLEGRID", "EmoteBarGrid", EmoteBarFrame, "", 0)
     call ClearFrameAllPoints( EmoteBarGridFrame )
     call SetFrameRelativePoint( EmoteBarGridFrame, FRAMEPOINT_TOPLEFT, EmoteBarFrame, FRAMEPOINT_TOPLEFT,  .015, -.04  )
     call SetFrameGridSize( EmoteBarGridFrame, 6, 19 )
-    call SetFrameSize( EmoteBarGridFrame, .70, .2)
+    call SetFrameSize( EmoteBarGridFrame, .70, .24)
     call SetFramePriority( EmoteBarGridFrame, 8 )
 
     set tOnPress = CreateTrigger( )
@@ -23119,11 +23171,12 @@ function Trig_StatusBar_Actions takes nothing returns nothing
 
     set EmoteFrame=CreateFrameByType( "SIMPLEBUTTON", "EmoteFrame", EmoteBarGridFrame, "", 0 )
     call ClearFrameAllPoints( EmoteFrame )
-    call SetFrameTexture( EmoteFrame, "Emotes\\RoflanEbalo.blp", 0, true )
-    call SetFrameTexture( EmoteFrame, "Emotes\\RoflanEbalo.blp", 1, true )
-    call SetFrameTexture( EmoteFrame, "Emotes\\RoflanEbalo.blp", 2, true )
+    call SetFrameTexture( EmoteFrame, "Emotes\\Yes.blp", 0, true )
+    call SetFrameTexture( EmoteFrame, "Emotes\\Yes.blp", 1, true )
+    call SetFrameTexture( EmoteFrame, "Emotes\\Yes.blp", 2, true )
     call SetFrameSize( EmoteFrame, .035, .035 )
     call ShowFrame( EmoteFrame, true )
+    call RegisterFrameMouseButton( EmoteFrame, MOUSE_BUTTON_TYPE_RIGHT, true)
     call SetFramePriority( EmoteFrame, 6 )
     call SetFrameGridFrame( EmoteBarGridFrame, 0, 0, EmoteFrame )
     
@@ -23135,11 +23188,12 @@ function Trig_StatusBar_Actions takes nothing returns nothing
 
     set EmoteFrame=CreateFrameByType( "SIMPLEBUTTON", "EmoteFrame", EmoteBarGridFrame, "", 1 )
     call ClearFrameAllPoints( EmoteFrame )
-    call SetFrameTexture( EmoteFrame, "Emotes\\RoflanGorit.blp", 0, true )
-    call SetFrameTexture( EmoteFrame, "Emotes\\RoflanGorit.blp", 1, true )
-    call SetFrameTexture( EmoteFrame, "Emotes\\RoflanGorit.blp", 2, true )
+    call SetFrameTexture( EmoteFrame, "Emotes\\No.blp", 0, true )
+    call SetFrameTexture( EmoteFrame, "Emotes\\No.blp", 1, true )
+    call SetFrameTexture( EmoteFrame, "Emotes\\No.blp", 2, true )
     call SetFrameSize( EmoteFrame, .035, .035 )
     call ShowFrame( EmoteFrame, true )
+    call RegisterFrameMouseButton( EmoteFrame, MOUSE_BUTTON_TYPE_RIGHT, true)
     call SetFramePriority( EmoteFrame, 6 )
     call SetFrameGridFrame( EmoteBarGridFrame, 0, 1, EmoteFrame )
     
@@ -23151,11 +23205,12 @@ function Trig_StatusBar_Actions takes nothing returns nothing
 
     set EmoteFrame=CreateFrameByType( "SIMPLEBUTTON", "EmoteFrame", EmoteBarGridFrame, "", 2 )
     call ClearFrameAllPoints( EmoteFrame )
-    call SetFrameTexture( EmoteFrame, "Emotes\\RoflanPominki.blp", 0, true )
-    call SetFrameTexture( EmoteFrame, "Emotes\\RoflanPominki.blp", 1, true )
-    call SetFrameTexture( EmoteFrame, "Emotes\\RoflanPominki.blp", 2, true )
+    call SetFrameTexture( EmoteFrame, "Emotes\\Attack.blp", 0, true )
+    call SetFrameTexture( EmoteFrame, "Emotes\\Attack.blp", 1, true )
+    call SetFrameTexture( EmoteFrame, "Emotes\\Attack.blp", 2, true )
     call SetFrameSize( EmoteFrame, .035, .035 )
     call ShowFrame( EmoteFrame, true )
+    call RegisterFrameMouseButton( EmoteFrame, MOUSE_BUTTON_TYPE_RIGHT, true)
     call SetFramePriority( EmoteFrame, 6 )
     call SetFrameGridFrame( EmoteBarGridFrame, 0, 2, EmoteFrame )
     
@@ -23167,11 +23222,12 @@ function Trig_StatusBar_Actions takes nothing returns nothing
 
     set EmoteFrame=CreateFrameByType( "SIMPLEBUTTON", "EmoteFrame", EmoteBarGridFrame, "", 3 )
     call ClearFrameAllPoints( EmoteFrame )
-    call SetFrameTexture( EmoteFrame, "Emotes\\ShadowRage.blp", 0, true )
-    call SetFrameTexture( EmoteFrame, "Emotes\\ShadowRage.blp", 1, true )
-    call SetFrameTexture( EmoteFrame, "Emotes\\ShadowRage.blp", 2, true )
+    call SetFrameTexture( EmoteFrame, "Emotes\\Defend.blp", 0, true )
+    call SetFrameTexture( EmoteFrame, "Emotes\\Defend.blp", 1, true )
+    call SetFrameTexture( EmoteFrame, "Emotes\\Defend.blp", 2, true )
     call SetFrameSize( EmoteFrame, .035, .035 )
     call ShowFrame( EmoteFrame, true )
+    call RegisterFrameMouseButton( EmoteFrame, MOUSE_BUTTON_TYPE_RIGHT, true)
     call SetFramePriority( EmoteFrame, 6 )
     call SetFrameGridFrame( EmoteBarGridFrame, 0, 3, EmoteFrame )
     
@@ -23183,11 +23239,12 @@ function Trig_StatusBar_Actions takes nothing returns nothing
 
     set EmoteFrame=CreateFrameByType( "SIMPLEBUTTON", "EmoteFrame", EmoteBarGridFrame, "", 4 )
     call ClearFrameAllPoints( EmoteFrame )
-    call SetFrameTexture( EmoteFrame, "Emotes\\Slowpoke.blp", 0, true )
-    call SetFrameTexture( EmoteFrame, "Emotes\\Slowpoke.blp", 1, true )
-    call SetFrameTexture( EmoteFrame, "Emotes\\Slowpoke.blp", 2, true )
+    call SetFrameTexture( EmoteFrame, "Emotes\\Stop.blp", 0, true )
+    call SetFrameTexture( EmoteFrame, "Emotes\\Stop.blp", 1, true )
+    call SetFrameTexture( EmoteFrame, "Emotes\\Stop.blp", 2, true )
     call SetFrameSize( EmoteFrame, .035, .035 )
     call ShowFrame( EmoteFrame, true )
+    call RegisterFrameMouseButton( EmoteFrame, MOUSE_BUTTON_TYPE_RIGHT, true)
     call SetFramePriority( EmoteFrame, 6 )
     call SetFrameGridFrame( EmoteBarGridFrame, 0, 4, EmoteFrame )
     
@@ -23199,11 +23256,12 @@ function Trig_StatusBar_Actions takes nothing returns nothing
 
     set EmoteFrame=CreateFrameByType( "SIMPLEBUTTON", "EmoteFrame", EmoteBarGridFrame, "", 5 )
     call ClearFrameAllPoints( EmoteFrame )
-    call SetFrameTexture( EmoteFrame, "Emotes\\Shrek1.blp", 0, true )
-    call SetFrameTexture( EmoteFrame, "Emotes\\Shrek1.blp", 1, true )
-    call SetFrameTexture( EmoteFrame, "Emotes\\Shrek1.blp", 2, true )
+    call SetFrameTexture( EmoteFrame, "Emotes\\NoHP.blp", 0, true )
+    call SetFrameTexture( EmoteFrame, "Emotes\\NoHP.blp", 1, true )
+    call SetFrameTexture( EmoteFrame, "Emotes\\NoHP.blp", 2, true )
     call SetFrameSize( EmoteFrame, .035, .035 )
     call ShowFrame( EmoteFrame, true )
+    call RegisterFrameMouseButton( EmoteFrame, MOUSE_BUTTON_TYPE_RIGHT, true)
     call SetFramePriority( EmoteFrame, 6 )
     call SetFrameGridFrame( EmoteBarGridFrame, 0, 5, EmoteFrame )
     
@@ -23215,11 +23273,12 @@ function Trig_StatusBar_Actions takes nothing returns nothing
 
     set EmoteFrame=CreateFrameByType( "SIMPLEBUTTON", "EmoteFrame", EmoteBarGridFrame, "", 6 )
     call ClearFrameAllPoints( EmoteFrame )
-    call SetFrameTexture( EmoteFrame, "Emotes\\KEKW.blp", 0, true )
-    call SetFrameTexture( EmoteFrame, "Emotes\\KEKW.blp", 1, true )
-    call SetFrameTexture( EmoteFrame, "Emotes\\KEKW.blp", 2, true )
+    call SetFrameTexture( EmoteFrame, "Emotes\\NoMP.blp", 0, true )
+    call SetFrameTexture( EmoteFrame, "Emotes\\NoMP.blp", 1, true )
+    call SetFrameTexture( EmoteFrame, "Emotes\\NoMP.blp", 2, true )
     call SetFrameSize( EmoteFrame, .035, .035 )
     call ShowFrame( EmoteFrame, true )
+    call RegisterFrameMouseButton( EmoteFrame, MOUSE_BUTTON_TYPE_RIGHT, true)
     call SetFramePriority( EmoteFrame, 6 )
     call SetFrameGridFrame( EmoteBarGridFrame, 0, 6, EmoteFrame )
     
@@ -23231,11 +23290,12 @@ function Trig_StatusBar_Actions takes nothing returns nothing
 
     set EmoteFrame=CreateFrameByType( "SIMPLEBUTTON", "EmoteFrame", EmoteBarGridFrame, "", 7 )
     call ClearFrameAllPoints( EmoteFrame )
-    call SetFrameTexture( EmoteFrame, "Emotes\\KEKWait.blp", 0, true )
-    call SetFrameTexture( EmoteFrame, "Emotes\\KEKWait.blp", 1, true )
-    call SetFrameTexture( EmoteFrame, "Emotes\\KEKWait.blp", 2, true )
+    call SetFrameTexture( EmoteFrame, "Emotes\\OnCooldown.blp", 0, true )
+    call SetFrameTexture( EmoteFrame, "Emotes\\OnCooldown.blp", 1, true )
+    call SetFrameTexture( EmoteFrame, "Emotes\\OnCooldown.blp", 2, true )
     call SetFrameSize( EmoteFrame, .035, .035 )
     call ShowFrame( EmoteFrame, true )
+    call RegisterFrameMouseButton( EmoteFrame, MOUSE_BUTTON_TYPE_RIGHT, true)
     call SetFramePriority( EmoteFrame, 6 )
     call SetFrameGridFrame( EmoteBarGridFrame, 0, 7, EmoteFrame )
     
@@ -23247,11 +23307,12 @@ function Trig_StatusBar_Actions takes nothing returns nothing
 
     set EmoteFrame=CreateFrameByType( "SIMPLEBUTTON", "EmoteFrame", EmoteBarGridFrame, "", 8 )
     call ClearFrameAllPoints( EmoteFrame )
-    call SetFrameTexture( EmoteFrame, "Emotes\\Puchkov1.blp", 0, true )
-    call SetFrameTexture( EmoteFrame, "Emotes\\Puchkov1.blp", 1, true )
-    call SetFrameTexture( EmoteFrame, "Emotes\\Puchkov1.blp", 2, true )
+    call SetFrameTexture( EmoteFrame, "Emotes\\AbilityRdy.blp", 0, true )
+    call SetFrameTexture( EmoteFrame, "Emotes\\AbilityRdy.blp", 1, true )
+    call SetFrameTexture( EmoteFrame, "Emotes\\AbilityRdy.blp", 2, true )
     call SetFrameSize( EmoteFrame, .035, .035 )
     call ShowFrame( EmoteFrame, true )
+    call RegisterFrameMouseButton( EmoteFrame, MOUSE_BUTTON_TYPE_RIGHT, true)
     call SetFramePriority( EmoteFrame, 6 )
     call SetFrameGridFrame( EmoteBarGridFrame, 0, 8, EmoteFrame )
     
@@ -23263,11 +23324,12 @@ function Trig_StatusBar_Actions takes nothing returns nothing
 
     set EmoteFrame=CreateFrameByType( "SIMPLEBUTTON", "EmoteFrame", EmoteBarGridFrame, "", 9 )
     call ClearFrameAllPoints( EmoteFrame )
-    call SetFrameTexture( EmoteFrame, "Emotes\\Puchkov2.blp", 0, true )
-    call SetFrameTexture( EmoteFrame, "Emotes\\Puchkov2.blp", 1, true )
-    call SetFrameTexture( EmoteFrame, "Emotes\\Puchkov2.blp", 2, true )
+    call SetFrameTexture( EmoteFrame, "Emotes\\Ready.blp", 0, true )
+    call SetFrameTexture( EmoteFrame, "Emotes\\Ready.blp", 1, true )
+    call SetFrameTexture( EmoteFrame, "Emotes\\Ready.blp", 2, true )
     call SetFrameSize( EmoteFrame, .035, .035 )
     call ShowFrame( EmoteFrame, true )
+    call RegisterFrameMouseButton( EmoteFrame, MOUSE_BUTTON_TYPE_RIGHT, true)
     call SetFramePriority( EmoteFrame, 6 )
     call SetFrameGridFrame( EmoteBarGridFrame, 0, 9, EmoteFrame )
     
@@ -23276,6 +23338,315 @@ function Trig_StatusBar_Actions takes nothing returns nothing
     call TriggerRegisterFrameEvent( tOnClick, EmoteFrame, FRAMEEVENT_CONTROL_CLICK )
     call TriggerRegisterFrameEvent( tOnHover, EmoteFrame, FRAMEEVENT_MOUSE_ENTER )
     call TriggerRegisterFrameEvent( tOnUnHover, EmoteFrame, FRAMEEVENT_MOUSE_LEAVE )
+
+    set EmoteFrame=CreateFrameByType( "SIMPLEBUTTON", "EmoteFrame", EmoteBarGridFrame, "", 10 )
+    call ClearFrameAllPoints( EmoteFrame )
+    call SetFrameTexture( EmoteFrame, "Emotes\\NotReady.blp", 0, true )
+    call SetFrameTexture( EmoteFrame, "Emotes\\NotReady.blp", 1, true )
+    call SetFrameTexture( EmoteFrame, "Emotes\\NotReady.blp", 2, true )
+    call SetFrameSize( EmoteFrame, .035, .035 )
+    call ShowFrame( EmoteFrame, true )
+    call RegisterFrameMouseButton( EmoteFrame, MOUSE_BUTTON_TYPE_RIGHT, true)
+    call SetFramePriority( EmoteFrame, 6 )
+    call SetFrameGridFrame( EmoteBarGridFrame, 0, 10, EmoteFrame )
+    
+    call TriggerRegisterFrameEvent( tOnPress, EmoteFrame, FRAMEEVENT_MOUSE_DOWN )
+    call TriggerRegisterFrameEvent( tOnUnPress, EmoteFrame, FRAMEEVENT_MOUSE_UP )
+    call TriggerRegisterFrameEvent( tOnClick, EmoteFrame, FRAMEEVENT_CONTROL_CLICK )
+    call TriggerRegisterFrameEvent( tOnHover, EmoteFrame, FRAMEEVENT_MOUSE_ENTER )
+    call TriggerRegisterFrameEvent( tOnUnHover, EmoteFrame, FRAMEEVENT_MOUSE_LEAVE )
+
+    set EmoteFrame=CreateFrameByType( "SIMPLEBUTTON", "EmoteFrame", EmoteBarGridFrame, "", 11 )
+    call ClearFrameAllPoints( EmoteFrame )
+    call SetFrameTexture( EmoteFrame, "Emotes\\HealRdy.blp", 0, true )
+    call SetFrameTexture( EmoteFrame, "Emotes\\HealRdy.blp", 1, true )
+    call SetFrameTexture( EmoteFrame, "Emotes\\HealRdy.blp", 2, true )
+    call SetFrameSize( EmoteFrame, .035, .035 )
+    call ShowFrame( EmoteFrame, true )
+    call RegisterFrameMouseButton( EmoteFrame, MOUSE_BUTTON_TYPE_RIGHT, true)
+    call SetFramePriority( EmoteFrame, 6 )
+    call SetFrameGridFrame( EmoteBarGridFrame, 0, 11, EmoteFrame )
+    
+    call TriggerRegisterFrameEvent( tOnPress, EmoteFrame, FRAMEEVENT_MOUSE_DOWN )
+    call TriggerRegisterFrameEvent( tOnUnPress, EmoteFrame, FRAMEEVENT_MOUSE_UP )
+    call TriggerRegisterFrameEvent( tOnClick, EmoteFrame, FRAMEEVENT_CONTROL_CLICK )
+    call TriggerRegisterFrameEvent( tOnHover, EmoteFrame, FRAMEEVENT_MOUSE_ENTER )
+    call TriggerRegisterFrameEvent( tOnUnHover, EmoteFrame, FRAMEEVENT_MOUSE_LEAVE )
+    
+    set EmoteFrame=CreateFrameByType( "SIMPLEBUTTON", "EmoteFrame", EmoteBarGridFrame, "", 12 )
+    call ClearFrameAllPoints( EmoteFrame )
+    call SetFrameTexture( EmoteFrame, "Emotes\\Thanks.blp", 0, true )
+    call SetFrameTexture( EmoteFrame, "Emotes\\Thanks.blp", 1, true )
+    call SetFrameTexture( EmoteFrame, "Emotes\\Thanks.blp", 2, true )
+    call SetFrameSize( EmoteFrame, .035, .035 )
+    call ShowFrame( EmoteFrame, true )
+    call RegisterFrameMouseButton( EmoteFrame, MOUSE_BUTTON_TYPE_RIGHT, true)
+    call SetFramePriority( EmoteFrame, 6 )
+    call SetFrameGridFrame( EmoteBarGridFrame, 0, 12, EmoteFrame )
+    
+    call TriggerRegisterFrameEvent( tOnPress, EmoteFrame, FRAMEEVENT_MOUSE_DOWN )
+    call TriggerRegisterFrameEvent( tOnUnPress, EmoteFrame, FRAMEEVENT_MOUSE_UP )
+    call TriggerRegisterFrameEvent( tOnClick, EmoteFrame, FRAMEEVENT_CONTROL_CLICK )
+    call TriggerRegisterFrameEvent( tOnHover, EmoteFrame, FRAMEEVENT_MOUSE_ENTER )
+    call TriggerRegisterFrameEvent( tOnUnHover, EmoteFrame, FRAMEEVENT_MOUSE_LEAVE )
+        
+    set EmoteFrame=CreateFrameByType( "SIMPLEBUTTON", "EmoteFrame", EmoteBarGridFrame, "", 13 )
+    call ClearFrameAllPoints( EmoteFrame )
+    call SetFrameTexture( EmoteFrame, "Emotes\\GroupUp.blp", 0, true )
+    call SetFrameTexture( EmoteFrame, "Emotes\\GroupUp.blp", 1, true )
+    call SetFrameTexture( EmoteFrame, "Emotes\\GroupUp.blp", 2, true )
+    call SetFrameSize( EmoteFrame, .035, .035 )
+    call ShowFrame( EmoteFrame, true )
+    call RegisterFrameMouseButton( EmoteFrame, MOUSE_BUTTON_TYPE_RIGHT, true)
+    call SetFramePriority( EmoteFrame, 6 )
+    call SetFrameGridFrame( EmoteBarGridFrame, 0, 13, EmoteFrame )
+    
+    call TriggerRegisterFrameEvent( tOnPress, EmoteFrame, FRAMEEVENT_MOUSE_DOWN )
+    call TriggerRegisterFrameEvent( tOnUnPress, EmoteFrame, FRAMEEVENT_MOUSE_UP )
+    call TriggerRegisterFrameEvent( tOnClick, EmoteFrame, FRAMEEVENT_CONTROL_CLICK )
+    call TriggerRegisterFrameEvent( tOnHover, EmoteFrame, FRAMEEVENT_MOUSE_ENTER )
+    call TriggerRegisterFrameEvent( tOnUnHover, EmoteFrame, FRAMEEVENT_MOUSE_LEAVE )
+            
+    set EmoteFrame=CreateFrameByType( "SIMPLEBUTTON", "EmoteFrame", EmoteBarGridFrame, "", 14 )
+    call ClearFrameAllPoints( EmoteFrame )
+    call SetFrameTexture( EmoteFrame, "Emotes\\Retreat.blp", 0, true )
+    call SetFrameTexture( EmoteFrame, "Emotes\\Retreat.blp", 1, true )
+    call SetFrameTexture( EmoteFrame, "Emotes\\Retreat.blp", 2, true )
+    call SetFrameSize( EmoteFrame, .035, .035 )
+    call ShowFrame( EmoteFrame, true )
+    call RegisterFrameMouseButton( EmoteFrame, MOUSE_BUTTON_TYPE_RIGHT, true)
+    call SetFramePriority( EmoteFrame, 6 )
+    call SetFrameGridFrame( EmoteBarGridFrame, 0, 14, EmoteFrame )
+    
+    call TriggerRegisterFrameEvent( tOnPress, EmoteFrame, FRAMEEVENT_MOUSE_DOWN )
+    call TriggerRegisterFrameEvent( tOnUnPress, EmoteFrame, FRAMEEVENT_MOUSE_UP )
+    call TriggerRegisterFrameEvent( tOnClick, EmoteFrame, FRAMEEVENT_CONTROL_CLICK )
+    call TriggerRegisterFrameEvent( tOnHover, EmoteFrame, FRAMEEVENT_MOUSE_ENTER )
+    call TriggerRegisterFrameEvent( tOnUnHover, EmoteFrame, FRAMEEVENT_MOUSE_LEAVE )
+
+//paywall emotes start
+
+    set EmoteFrame=CreateFrameByType( "SIMPLEBUTTON", "EmoteFrame", EmoteBarGridFrame, "", 20 )
+    call ClearFrameAllPoints( EmoteFrame )
+    call SetFrameTexture( EmoteFrame, "Emotes\\RoflanEbalo.blp", 0, true )
+    call SetFrameTexture( EmoteFrame, "Emotes\\RoflanEbalo.blp", 1, true )
+    call SetFrameTexture( EmoteFrame, "Emotes\\RoflanEbalo.blp", 2, true )
+    call SetFrameSize( EmoteFrame, .035, .035 )
+    call ShowFrame( EmoteFrame, true )
+    call RegisterFrameMouseButton( EmoteFrame, MOUSE_BUTTON_TYPE_RIGHT, true)
+    call SetFramePriority( EmoteFrame, 6 )
+    call SetFrameGridFrame( EmoteBarGridFrame, 1, 0, EmoteFrame )
+    
+    call TriggerRegisterFrameEvent( tOnPress, EmoteFrame, FRAMEEVENT_MOUSE_DOWN )
+    call TriggerRegisterFrameEvent( tOnUnPress, EmoteFrame, FRAMEEVENT_MOUSE_UP )
+    call TriggerRegisterFrameEvent( tOnClick, EmoteFrame, FRAMEEVENT_CONTROL_CLICK )
+    call TriggerRegisterFrameEvent( tOnHover, EmoteFrame, FRAMEEVENT_MOUSE_ENTER )
+    call TriggerRegisterFrameEvent( tOnUnHover, EmoteFrame, FRAMEEVENT_MOUSE_LEAVE )
+
+    set EmoteFrame=CreateFrameByType( "SIMPLEBUTTON", "EmoteFrame", EmoteBarGridFrame, "", 21 )
+    call ClearFrameAllPoints( EmoteFrame )
+    call SetFrameTexture( EmoteFrame, "Emotes\\RoflanGorit.blp", 0, true )
+    call SetFrameTexture( EmoteFrame, "Emotes\\RoflanGorit.blp", 1, true )
+    call SetFrameTexture( EmoteFrame, "Emotes\\RoflanGorit.blp", 2, true )
+    call SetFrameSize( EmoteFrame, .035, .035 )
+    call ShowFrame( EmoteFrame, true )
+    call RegisterFrameMouseButton( EmoteFrame, MOUSE_BUTTON_TYPE_RIGHT, true)
+    call SetFramePriority( EmoteFrame, 6 )
+    call SetFrameGridFrame( EmoteBarGridFrame, 1, 1, EmoteFrame )
+    
+    call TriggerRegisterFrameEvent( tOnPress, EmoteFrame, FRAMEEVENT_MOUSE_DOWN )
+    call TriggerRegisterFrameEvent( tOnUnPress, EmoteFrame, FRAMEEVENT_MOUSE_UP )
+    call TriggerRegisterFrameEvent( tOnClick, EmoteFrame, FRAMEEVENT_CONTROL_CLICK )
+    call TriggerRegisterFrameEvent( tOnHover, EmoteFrame, FRAMEEVENT_MOUSE_ENTER )
+    call TriggerRegisterFrameEvent( tOnUnHover, EmoteFrame, FRAMEEVENT_MOUSE_LEAVE )
+
+    set EmoteFrame=CreateFrameByType( "SIMPLEBUTTON", "EmoteFrame", EmoteBarGridFrame, "", 22 )
+    call ClearFrameAllPoints( EmoteFrame )
+    call SetFrameTexture( EmoteFrame, "Emotes\\RoflanPominki.blp", 0, true )
+    call SetFrameTexture( EmoteFrame, "Emotes\\RoflanPominki.blp", 1, true )
+    call SetFrameTexture( EmoteFrame, "Emotes\\RoflanPominki.blp", 2, true )
+    call SetFrameSize( EmoteFrame, .035, .035 )
+    call ShowFrame( EmoteFrame, true )
+    call RegisterFrameMouseButton( EmoteFrame, MOUSE_BUTTON_TYPE_RIGHT, true)
+    call SetFramePriority( EmoteFrame, 6 )
+    call SetFrameGridFrame( EmoteBarGridFrame, 1, 2, EmoteFrame )
+    
+    call TriggerRegisterFrameEvent( tOnPress, EmoteFrame, FRAMEEVENT_MOUSE_DOWN )
+    call TriggerRegisterFrameEvent( tOnUnPress, EmoteFrame, FRAMEEVENT_MOUSE_UP )
+    call TriggerRegisterFrameEvent( tOnClick, EmoteFrame, FRAMEEVENT_CONTROL_CLICK )
+    call TriggerRegisterFrameEvent( tOnHover, EmoteFrame, FRAMEEVENT_MOUSE_ENTER )
+    call TriggerRegisterFrameEvent( tOnUnHover, EmoteFrame, FRAMEEVENT_MOUSE_LEAVE )
+
+    set EmoteFrame=CreateFrameByType( "SIMPLEBUTTON", "EmoteFrame", EmoteBarGridFrame, "", 23 )
+    call ClearFrameAllPoints( EmoteFrame )
+    call SetFrameTexture( EmoteFrame, "Emotes\\ShadowRage.blp", 0, true )
+    call SetFrameTexture( EmoteFrame, "Emotes\\ShadowRage.blp", 1, true )
+    call SetFrameTexture( EmoteFrame, "Emotes\\ShadowRage.blp", 2, true )
+    call SetFrameSize( EmoteFrame, .035, .035 )
+    call ShowFrame( EmoteFrame, true )
+    call RegisterFrameMouseButton( EmoteFrame, MOUSE_BUTTON_TYPE_RIGHT, true)
+    call SetFramePriority( EmoteFrame, 6 )
+    call SetFrameGridFrame( EmoteBarGridFrame, 1, 3, EmoteFrame )
+    
+    call TriggerRegisterFrameEvent( tOnPress, EmoteFrame, FRAMEEVENT_MOUSE_DOWN )
+    call TriggerRegisterFrameEvent( tOnUnPress, EmoteFrame, FRAMEEVENT_MOUSE_UP )
+    call TriggerRegisterFrameEvent( tOnClick, EmoteFrame, FRAMEEVENT_CONTROL_CLICK )
+    call TriggerRegisterFrameEvent( tOnHover, EmoteFrame, FRAMEEVENT_MOUSE_ENTER )
+    call TriggerRegisterFrameEvent( tOnUnHover, EmoteFrame, FRAMEEVENT_MOUSE_LEAVE )
+
+    set EmoteFrame=CreateFrameByType( "SIMPLEBUTTON", "EmoteFrame", EmoteBarGridFrame, "", 24 )
+    call ClearFrameAllPoints( EmoteFrame )
+    call SetFrameTexture( EmoteFrame, "Emotes\\Slowpoke.blp", 0, true )
+    call SetFrameTexture( EmoteFrame, "Emotes\\Slowpoke.blp", 1, true )
+    call SetFrameTexture( EmoteFrame, "Emotes\\Slowpoke.blp", 2, true )
+    call SetFrameSize( EmoteFrame, .035, .035 )
+    call ShowFrame( EmoteFrame, true )
+    call RegisterFrameMouseButton( EmoteFrame, MOUSE_BUTTON_TYPE_RIGHT, true)
+    call SetFramePriority( EmoteFrame, 6 )
+    call SetFrameGridFrame( EmoteBarGridFrame, 1, 4, EmoteFrame )
+    
+    call TriggerRegisterFrameEvent( tOnPress, EmoteFrame, FRAMEEVENT_MOUSE_DOWN )
+    call TriggerRegisterFrameEvent( tOnUnPress, EmoteFrame, FRAMEEVENT_MOUSE_UP )
+    call TriggerRegisterFrameEvent( tOnClick, EmoteFrame, FRAMEEVENT_CONTROL_CLICK )
+    call TriggerRegisterFrameEvent( tOnHover, EmoteFrame, FRAMEEVENT_MOUSE_ENTER )
+    call TriggerRegisterFrameEvent( tOnUnHover, EmoteFrame, FRAMEEVENT_MOUSE_LEAVE )
+
+    set EmoteFrame=CreateFrameByType( "SIMPLEBUTTON", "EmoteFrame", EmoteBarGridFrame, "", 25 )
+    call ClearFrameAllPoints( EmoteFrame )
+    call SetFrameTexture( EmoteFrame, "Emotes\\Shrek1.blp", 0, true )
+    call SetFrameTexture( EmoteFrame, "Emotes\\Shrek1.blp", 1, true )
+    call SetFrameTexture( EmoteFrame, "Emotes\\Shrek1.blp", 2, true )
+    call SetFrameSize( EmoteFrame, .035, .035 )
+    call ShowFrame( EmoteFrame, true )
+    call RegisterFrameMouseButton( EmoteFrame, MOUSE_BUTTON_TYPE_RIGHT, true)
+    call SetFramePriority( EmoteFrame, 6 )
+    call SetFrameGridFrame( EmoteBarGridFrame, 1, 5, EmoteFrame )
+    
+    call TriggerRegisterFrameEvent( tOnPress, EmoteFrame, FRAMEEVENT_MOUSE_DOWN )
+    call TriggerRegisterFrameEvent( tOnUnPress, EmoteFrame, FRAMEEVENT_MOUSE_UP )
+    call TriggerRegisterFrameEvent( tOnClick, EmoteFrame, FRAMEEVENT_CONTROL_CLICK )
+    call TriggerRegisterFrameEvent( tOnHover, EmoteFrame, FRAMEEVENT_MOUSE_ENTER )
+    call TriggerRegisterFrameEvent( tOnUnHover, EmoteFrame, FRAMEEVENT_MOUSE_LEAVE )
+
+    set EmoteFrame=CreateFrameByType( "SIMPLEBUTTON", "EmoteFrame", EmoteBarGridFrame, "", 26 )
+    call ClearFrameAllPoints( EmoteFrame )
+    call SetFrameTexture( EmoteFrame, "Emotes\\KEKW.blp", 0, true )
+    call SetFrameTexture( EmoteFrame, "Emotes\\KEKW.blp", 1, true )
+    call SetFrameTexture( EmoteFrame, "Emotes\\KEKW.blp", 2, true )
+    call SetFrameSize( EmoteFrame, .035, .035 )
+    call ShowFrame( EmoteFrame, true )
+    call RegisterFrameMouseButton( EmoteFrame, MOUSE_BUTTON_TYPE_RIGHT, true)
+    call SetFramePriority( EmoteFrame, 6 )
+    call SetFrameGridFrame( EmoteBarGridFrame, 1, 6, EmoteFrame )
+    
+    call TriggerRegisterFrameEvent( tOnPress, EmoteFrame, FRAMEEVENT_MOUSE_DOWN )
+    call TriggerRegisterFrameEvent( tOnUnPress, EmoteFrame, FRAMEEVENT_MOUSE_UP )
+    call TriggerRegisterFrameEvent( tOnClick, EmoteFrame, FRAMEEVENT_CONTROL_CLICK )
+    call TriggerRegisterFrameEvent( tOnHover, EmoteFrame, FRAMEEVENT_MOUSE_ENTER )
+    call TriggerRegisterFrameEvent( tOnUnHover, EmoteFrame, FRAMEEVENT_MOUSE_LEAVE )
+
+    set EmoteFrame=CreateFrameByType( "SIMPLEBUTTON", "EmoteFrame", EmoteBarGridFrame, "", 27 )
+    call ClearFrameAllPoints( EmoteFrame )
+    call SetFrameTexture( EmoteFrame, "Emotes\\KEKWait.blp", 0, true )
+    call SetFrameTexture( EmoteFrame, "Emotes\\KEKWait.blp", 1, true )
+    call SetFrameTexture( EmoteFrame, "Emotes\\KEKWait.blp", 2, true )
+    call SetFrameSize( EmoteFrame, .035, .035 )
+    call ShowFrame( EmoteFrame, true )
+    call RegisterFrameMouseButton( EmoteFrame, MOUSE_BUTTON_TYPE_RIGHT, true)
+    call SetFramePriority( EmoteFrame, 6 )
+    call SetFrameGridFrame( EmoteBarGridFrame, 1, 7, EmoteFrame )
+    
+    call TriggerRegisterFrameEvent( tOnPress, EmoteFrame, FRAMEEVENT_MOUSE_DOWN )
+    call TriggerRegisterFrameEvent( tOnUnPress, EmoteFrame, FRAMEEVENT_MOUSE_UP )
+    call TriggerRegisterFrameEvent( tOnClick, EmoteFrame, FRAMEEVENT_CONTROL_CLICK )
+    call TriggerRegisterFrameEvent( tOnHover, EmoteFrame, FRAMEEVENT_MOUSE_ENTER )
+    call TriggerRegisterFrameEvent( tOnUnHover, EmoteFrame, FRAMEEVENT_MOUSE_LEAVE )
+
+    set EmoteFrame=CreateFrameByType( "SIMPLEBUTTON", "EmoteFrame", EmoteBarGridFrame, "", 28 )
+    call ClearFrameAllPoints( EmoteFrame )
+    call SetFrameTexture( EmoteFrame, "Emotes\\Puchkov1.blp", 0, true )
+    call SetFrameTexture( EmoteFrame, "Emotes\\Puchkov1.blp", 1, true )
+    call SetFrameTexture( EmoteFrame, "Emotes\\Puchkov1.blp", 2, true )
+    call SetFrameSize( EmoteFrame, .035, .035 )
+    call ShowFrame( EmoteFrame, true )
+    call RegisterFrameMouseButton( EmoteFrame, MOUSE_BUTTON_TYPE_RIGHT, true)
+    call SetFramePriority( EmoteFrame, 6 )
+    call SetFrameGridFrame( EmoteBarGridFrame, 1, 8, EmoteFrame )
+    
+    call TriggerRegisterFrameEvent( tOnPress, EmoteFrame, FRAMEEVENT_MOUSE_DOWN )
+    call TriggerRegisterFrameEvent( tOnUnPress, EmoteFrame, FRAMEEVENT_MOUSE_UP )
+    call TriggerRegisterFrameEvent( tOnClick, EmoteFrame, FRAMEEVENT_CONTROL_CLICK )
+    call TriggerRegisterFrameEvent( tOnHover, EmoteFrame, FRAMEEVENT_MOUSE_ENTER )
+    call TriggerRegisterFrameEvent( tOnUnHover, EmoteFrame, FRAMEEVENT_MOUSE_LEAVE )
+
+    set EmoteFrame=CreateFrameByType( "SIMPLEBUTTON", "EmoteFrame", EmoteBarGridFrame, "", 29 )
+    call ClearFrameAllPoints( EmoteFrame )
+    call SetFrameTexture( EmoteFrame, "Emotes\\Puchkov2.blp", 0, true )
+    call SetFrameTexture( EmoteFrame, "Emotes\\Puchkov2.blp", 1, true )
+    call SetFrameTexture( EmoteFrame, "Emotes\\Puchkov2.blp", 2, true )
+    call SetFrameSize( EmoteFrame, .035, .035 )
+    call ShowFrame( EmoteFrame, true )
+    call RegisterFrameMouseButton( EmoteFrame, MOUSE_BUTTON_TYPE_RIGHT, true)
+    call SetFramePriority( EmoteFrame, 6 )
+    call SetFrameGridFrame( EmoteBarGridFrame, 1, 9, EmoteFrame )
+    
+    call TriggerRegisterFrameEvent( tOnPress, EmoteFrame, FRAMEEVENT_MOUSE_DOWN )
+    call TriggerRegisterFrameEvent( tOnUnPress, EmoteFrame, FRAMEEVENT_MOUSE_UP )
+    call TriggerRegisterFrameEvent( tOnClick, EmoteFrame, FRAMEEVENT_CONTROL_CLICK )
+    call TriggerRegisterFrameEvent( tOnHover, EmoteFrame, FRAMEEVENT_MOUSE_ENTER )
+    call TriggerRegisterFrameEvent( tOnUnHover, EmoteFrame, FRAMEEVENT_MOUSE_LEAVE )
+
+    set EmoteFrame=CreateFrameByType( "SIMPLEBUTTON", "EmoteFrame", EmoteBarGridFrame, "", 30 )
+    call ClearFrameAllPoints( EmoteFrame )
+    call SetFrameTexture( EmoteFrame, "Emotes\\TamaSad.blp", 0, true )
+    call SetFrameTexture( EmoteFrame, "Emotes\\TamaSad.blp", 1, true )
+    call SetFrameTexture( EmoteFrame, "Emotes\\TamaSad.blp", 2, true )
+    call SetFrameSize( EmoteFrame, .035, .035 )
+    call ShowFrame( EmoteFrame, true )
+    call RegisterFrameMouseButton( EmoteFrame, MOUSE_BUTTON_TYPE_RIGHT, true)
+    call SetFramePriority( EmoteFrame, 6 )
+    call SetFrameGridFrame( EmoteBarGridFrame, 1, 10, EmoteFrame )
+    
+    call TriggerRegisterFrameEvent( tOnPress, EmoteFrame, FRAMEEVENT_MOUSE_DOWN )
+    call TriggerRegisterFrameEvent( tOnUnPress, EmoteFrame, FRAMEEVENT_MOUSE_UP )
+    call TriggerRegisterFrameEvent( tOnClick, EmoteFrame, FRAMEEVENT_CONTROL_CLICK )
+    call TriggerRegisterFrameEvent( tOnHover, EmoteFrame, FRAMEEVENT_MOUSE_ENTER )
+    call TriggerRegisterFrameEvent( tOnUnHover, EmoteFrame, FRAMEEVENT_MOUSE_LEAVE )
+
+    set EmoteFrame=CreateFrameByType( "SIMPLEBUTTON", "EmoteFrame", EmoteBarGridFrame, "", 31 )
+    call ClearFrameAllPoints( EmoteFrame )
+    call SetFrameTexture( EmoteFrame, "Emotes\\TamaWut.blp", 0, true )
+    call SetFrameTexture( EmoteFrame, "Emotes\\TamaWut.blp", 1, true )
+    call SetFrameTexture( EmoteFrame, "Emotes\\TamaWut.blp", 2, true )
+    call SetFrameSize( EmoteFrame, .035, .035 )
+    call ShowFrame( EmoteFrame, true )
+    call RegisterFrameMouseButton( EmoteFrame, MOUSE_BUTTON_TYPE_RIGHT, true)
+    call SetFramePriority( EmoteFrame, 6 )
+    call SetFrameGridFrame( EmoteBarGridFrame, 1, 11, EmoteFrame )
+    
+    call TriggerRegisterFrameEvent( tOnPress, EmoteFrame, FRAMEEVENT_MOUSE_DOWN )
+    call TriggerRegisterFrameEvent( tOnUnPress, EmoteFrame, FRAMEEVENT_MOUSE_UP )
+    call TriggerRegisterFrameEvent( tOnClick, EmoteFrame, FRAMEEVENT_CONTROL_CLICK )
+    call TriggerRegisterFrameEvent( tOnHover, EmoteFrame, FRAMEEVENT_MOUSE_ENTER )
+    call TriggerRegisterFrameEvent( tOnUnHover, EmoteFrame, FRAMEEVENT_MOUSE_LEAVE )
+
+    set EmoteFrame=CreateFrameByType( "SIMPLEBUTTON", "EmoteFrame", EmoteBarGridFrame, "", 32 )
+    call ClearFrameAllPoints( EmoteFrame )
+    call SetFrameTexture( EmoteFrame, "Emotes\\Moyai.blp", 0, true )
+    call SetFrameTexture( EmoteFrame, "Emotes\\Moyai.blp", 1, true )
+    call SetFrameTexture( EmoteFrame, "Emotes\\Moyai.blp", 2, true )
+    call SetFrameSize( EmoteFrame, .035, .035 )
+    call ShowFrame( EmoteFrame, true )
+    call RegisterFrameMouseButton( EmoteFrame, MOUSE_BUTTON_TYPE_RIGHT, true)
+    call SetFramePriority( EmoteFrame, 6 )
+    call SetFrameGridFrame( EmoteBarGridFrame, 1, 12, EmoteFrame )
+    
+    call TriggerRegisterFrameEvent( tOnPress, EmoteFrame, FRAMEEVENT_MOUSE_DOWN )
+    call TriggerRegisterFrameEvent( tOnUnPress, EmoteFrame, FRAMEEVENT_MOUSE_UP )
+    call TriggerRegisterFrameEvent( tOnClick, EmoteFrame, FRAMEEVENT_CONTROL_CLICK )
+    call TriggerRegisterFrameEvent( tOnHover, EmoteFrame, FRAMEEVENT_MOUSE_ENTER )
+    call TriggerRegisterFrameEvent( tOnUnHover, EmoteFrame, FRAMEEVENT_MOUSE_LEAVE )
+//paywall emotes end
 
     set CloseEmoteButton=CreateFrameByType( "SIMPLEBUTTON", "EmoteBarClose", EmoteBarFrame, "", 0 )
     call ClearFrameAllPoints( CloseEmoteButton )
@@ -23687,7 +24058,7 @@ local real dmg=0
 if UnitHasItemOfTypeBJ(u,'I054') and udg_B==true and DU2==true then
 if life2<life then
 set dmg=GetUnitState(u,UNIT_STATE_MANA)-LoadReal(h,id,0)
-call SetUnitState(u,UNIT_STATE_MANA,life-(life-life2)*0.85)
+call SetUnitState(u,UNIT_STATE_MANA,life-(life-life2)*0.75)
 endif
 call SaveReal(h,id,0,GetUnitState(u,UNIT_STATE_MANA))
 else
@@ -32859,7 +33230,7 @@ function EndOfChoiceAct takes nothing returns nothing
             call SetUnitModel(Hero[i],"[By XeSHTeG]JirenBase.mdx")
             call ShowAbility2('JNF4',false)
             call ShowAbility2('JNF1',true)
-            call SetAbilityRealLevelField(GetUnitAbility(Hero[i],'JNG1'), ABILITY_RLF_CAST_RANGE,0,300)
+            call SetAbilityRealLevelField(GetUnitAbility(Hero[i],'JNG1'), ABILITY_RLF_CAST_RANGE,0,400)
             call UnitRemoveAbility(Hero[i],'JNF2')
             call UnitRemoveAbility(Hero[i],'JNF3')
         endif
@@ -34114,7 +34485,7 @@ exitwhen i>=10
         call SetUnitModel(Hero[i],"[By XeSHTeG]JirenBase.mdx")
         call ShowAbility2('JNF4',false)
         call ShowAbility2('JNF1',true)
-        call SetAbilityRealLevelField(GetUnitAbility(Hero[i],'JNG1'), ABILITY_RLF_CAST_RANGE,0,300)
+        call SetAbilityRealLevelField(GetUnitAbility(Hero[i],'JNG1'), ABILITY_RLF_CAST_RANGE,0,400)
         call UnitRemoveAbility(Hero[i],'JNF2')
         call UnitRemoveAbility(Hero[i],'JNF3')
     endif
@@ -39718,7 +40089,7 @@ if cond==0 then
             call DestroyEffect(AddSpecialEffectTarget("war3mapImported\\BloodEX.mdx",u,"origin"))
             call SaveInteger(HH,cid,StringHash("SA"),FI-1)
             call MissUnit(c,u,3,0.2,false)
-            else
+        else
             call UnitRemoveAbility(c,'B05R')
         endif
     endif
@@ -40768,7 +41139,7 @@ if cond==0 then
         call SetUnitTimeScale(n, 0.75)
         call SetUnitFlyHeight(n, 50, 0)
         call MyRemoveUnit(n, 1.2)
-        call SetWidgetMana(u, GetWidgetMana(u)-GetWidgetMaxMana(u)*0.08)
+        call SetWidgetMana(u, GetWidgetMana(u)-GetWidgetMaxMana(u)*0.07)
         call SaveInteger(HH, GetHandleId(c), StringHash("GaeDeargP_CD"), 0)
         call GaeDearg_Passive(c)
     endif
@@ -41019,7 +41390,13 @@ if cond==0 then
         call SetWidgetLife(c, GetWidgetLife(c)+ nb*0.3)
     endif
 	if GetUnitAbilityLevel(c,'A1WT')==0 and GetUnitAbilityLevel(c,'A3WR')==0 and  (GetUnitAbilityLevel(c,'CB01')==0 or (GetUnitAbilityLevel(c,'CB01')>0 and CurrentEventAttack==true)) and GetUnitAbilityLevel(c,'B059')==0 and GetUnitAbilityLevel(u,'Bwul')==0 and LoadInteger(HH,cid,BlockPenetrate)==0 then
-		if (UnitHasItemOfTypeBJ(u,'I05B') or GetUnitAbilityLevel(c,'KIR2')>0)and nb>0.05*ll then
+        if GetUnitTypeId(u)=='HJi1' then
+            if GetUnitModel(u)=="[By XeSHTeG]JirenBase.mdx" and GetUnitState(u,UNIT_STATE_LIFE)-nb<0.25*ll and GetHeroLevel(u)>=26 then 
+                call SetEventDamage((GetUnitState(u,UNIT_STATE_LIFE)-ll*0.25)+10)
+                set nb=(GetUnitState(u,UNIT_STATE_LIFE)-ll*0.25)+10
+            endif
+        endif
+        if (UnitHasItemOfTypeBJ(u,'I05B') or GetUnitAbilityLevel(c,'KIR2')>0)and nb>0.05*ll then
 			if IsUnitInvulnerable(c)==true then
 				call SetUnitInvulnerable(c,false)
 				call SetControlToUnit(u,c,0.5,"silenceTE") //"stunbkb"
@@ -43719,8 +44096,8 @@ call SaveReal(h,id,5,0)
 call UnitAddAbility(c,'A15F')
 call SaveUnitHandle(h,id,1,c)
 call SaveInteger(HH,GetHandleId(c),StringHash("cold2"),0)
-call HealTextTag(u,c,GetUnitState(c,UNIT_STATE_MAX_MANA)*0.1*myCustomMana2(c,1),"ManaRes")
-call SetUnitState(c,UNIT_STATE_MANA,GetWidgetMana(c)+GetUnitState(c,UNIT_STATE_MAX_MANA)*0.1)
+call HealTextTag(u,c,GetUnitState(c,UNIT_STATE_MAX_MANA)*0.15*myCustomMana2(c,1),"ManaRes")
+call SetUnitState(c,UNIT_STATE_MANA,GetWidgetMana(c)+GetUnitState(c,UNIT_STATE_MAX_MANA)*0.15)
 call SaveReal(h,id,0,GetWidgetMana(c))
 call TimerStart(t,0.01,true,function FrozenManaCast2)
 set t=null
@@ -44147,8 +44524,8 @@ endfunction
 function Trig_RegenMana_Actions takes nothing returns nothing
 local unit u=GetTriggerUnit()
 local unit c=GetSpellTargetUnit()
-call HealTextTag(u,c,GetUnitState(c,UNIT_STATE_MAX_MANA)*0.1*myCustomMana2(c,1),"ManaRes")
-call SetUnitState(c,UNIT_STATE_MANA,GetWidgetMana(c)+GetUnitState(c,UNIT_STATE_MAX_MANA)*0.1)
+call HealTextTag(u,c,GetUnitState(c,UNIT_STATE_MAX_MANA)*0.15*myCustomMana2(c,1),"ManaRes")
+call SetUnitState(c,UNIT_STATE_MANA,GetWidgetMana(c)+GetUnitState(c,UNIT_STATE_MAX_MANA)*0.15)
 call DestroyEffect(AddSpecialEffectTarget("Abilities\\Spells\\Items\\AIma\\AImaTarget.mdl",c,"origin"))
 set u=null
 set c=null
@@ -86707,7 +87084,7 @@ local player p=GetOwningPlayer(u)
 loop
 exitwhen i>6
 set r=i*60.
-set n=CreateUnit(p,0x65304E34,x,y,r)
+set n=CreateUnit(p,'e0N4',x,y,r)
 call GroupAddUnit(g,n)
 call SaveUnitHandle(h,id,1+i,n)
 set i=i+1
@@ -94975,7 +95352,7 @@ local real x4=LoadReal(h,id,16)
 local real y4=LoadReal(h,id,17)
 local real x5=LoadReal(h,id,18)
 local real y5=LoadReal(h,id,19)
-local real dmg=(1+GetHeroLevel(u)*0.1)*GetHeroStr(u,true)
+local real dmg=(0.5+GetHeroLevel(u)*0.1)*GetHeroStr(u,true)
 local player p=GetOwningPlayer(u)
 local real time=LoadReal(h,id,5)
 local real starttime=LoadReal(h,id,6)
@@ -102298,7 +102675,7 @@ local player p=GetOwningPlayer(u)
 loop
 exitwhen i>6
 set r=i*60.
-set n=CreateUnit(p,0x65304E34,x,y,r)
+set n=CreateUnit(p,'e0N4',x,y,r)
 call GroupAddUnit(g,n)
 call SaveUnitHandle(h,id,1+i,n)
 set i=i+1
@@ -102322,8 +102699,127 @@ call TriggerRegisterAnyUnitEventBJ(gg_trg_CrystalStrykeInori,EVENT_PLAYER_UNIT_S
 call TriggerAddCondition(gg_trg_CrystalStrykeInori,Condition(function CrystalStrykeInoriCond))
 call TriggerAddAction(gg_trg_CrystalStrykeInori,function CrystalStrykeInoriCast)
 endfunction
+function HeartStrikeCond takes nothing returns boolean
+return GetSpellAbilityId()=='A15L' and udg_B==true
+endfunction
+function HeartStrikeCast2 takes nothing returns nothing
+local timer t=GetExpiredTimer()
+local integer id=GetHandleId(t)
+local unit u=LoadUnitHandle(h,id,0)
+local real x1=GetUnitX(u)
+local real y1=GetUnitY(u)
+local real x2=LoadReal(h,id,4)
+local real y2=LoadReal(h,id,5)
+local real a=LoadReal(h,id,1)
+local group g=LoadGroupHandle(h,id,3)
+local integer l__idg=GetHandleId(g)
+local player p=GetOwningPlayer(u)
+local real dist=LoadReal(h,id,100)
+local real dmg=GetUnitTotalDamage(u)+GetHeroAgi(u,true)*GetUnitAbilityLevel(u,'A15L')
+if dist<800 and LoadBoolean(HH,GetHandleId(u),DASH_USER)==true then
+if IsTerrainPathable(x1,y1,PATHING_TYPE_FLYABILITY)==false then
+set x1=x1+50*Cos(a)
+set y1=y1+50*Sin(a)
+else
+set x1=x1-15*Cos(a)
+set y1=y1-15*Sin(a)
+endif
+call SetUnitXY_1(u,x1,y1, false)
+call SaveReal(h,id,100,dist+50)
+set n=CreateUnit(p,'e01S',x1,y1,a*bj_RADTODEG)
+call SetUnitScale(n,0.7,0.7,0.7)
+call SetUnitModel(n,"Killua.mdl")
+call UnitApplyTimedLife(n,1,0.25)
+call UnitAddAbility(n,'A0LR')
+call SetUnitTimeScale(n,2)
+call SetUnitVertexColor(n,255,255,255,125)
+call SetUnitAnimation(n,"Spell three")
+call GroupEnumUnitsInRange(g,x1,y1,130,Base)
+loop
+set E=FirstOfGroup(g)
+set ide=GetHandleId(E)
+exitwhen E==null
+if Condition_Base(p,E)and LoadUnitHandle(h,l__idg,ide)!=E then
+    if LoadBoolean(HH,ide,ANTITARGET_ABILITY)==false then
+        call myCustomDamage(u,E,dmg,false,false,null,null,null)
+        call DestroyEffect(AddSpecialEffectTarget("Abilities\\Spells\\Other\\Stampede\\StampedeMissileDeath.mdl",E,"chest"))
+        call Essence(u,E,2)
+        if GetUnitLifePercent(E)<10 and GetUnitTypeId(E)!='H075' then
+            call SetUnitState(E,UNIT_STATE_LIFE,1)
+            call DamageIndicatorFunction(u,E,GetUnitState(E,UNIT_STATE_LIFE)*0.1)
+            call myCustomDamage(u,E,GetUnitState(E,UNIT_STATE_LIFE)*0.1,false,false,null,DAMAGE_TYPE_UNIVERSAL,null)
+            set soundplay=CreateSound("Sound\\Music\\mp3Music\\KilluaWKill.mp3",false,false,true,12700,12700,"")
+            call StartSound(soundplay)
+            call KillSoundWhenDone(soundplay)
+            call DestroyEffect(AddSpecialEffectTarget("war3mapImported\\BloodEX.mdx",u,"left hand"))
+        endif
+    else
+        call SaveBoolean(HH,GetHandleId(u),DASH_USER,false)
+        call SaveUnitHandle(HH,GetHandleId(E),REVERSE_TARGET,u)
+    endif
+    call SaveUnitHandle(h,l__idg,ide,E)
+endif
+call GroupRemoveUnit(g,E)
+endloop
+else
+call SaveBoolean(HH,GetHandleId(u),DASH_USER,false)
+call UnitRemoveAbility(u,'A0LR')
+call FlushChildHashtable(h,id)
+call FlushChildHashtable(h,l__idg)
+call PauseTimer(t)
+call DestroyTimer(t)
+call DestroyGroup(g)
+call PauseUnit(u,false)
+call SetUnitInvulnerable(u,false)
+call SetUnitTimeScale(u,1)
+call SetUnitVertexColor(u,255,255,255,255)
+endif
+set u=null
+set p=null
+set t=null
+set g=null
+endfunction
+function HeartStrikeCast takes nothing returns nothing
+local unit u=GetTriggerUnit()
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+local real x=GetUnitX(u)
+local real y=GetUnitY(u)
+call SaveUnitHandle(h,id,0,u)
+call SaveReal(h,id,4,x)
+call SaveReal(h,id,5,y)
+call SaveReal(h,id,1,Atan2(GetSpellTargetY()-y,GetSpellTargetX()-x))
+call SaveGroupHandle(h,id,3,CreateGroup())
+call PauseUnit(u,true)
+call SaveReal(h,id,100,0)
+call UnitAddAbility(u,'A0LR')
+call UnitRemoveAbility(u,'A2VJ')
+call SetUnitInvulnerable(u,true)
+call SaveBoolean(HH,GetHandleId(u),DASH_USER,true)
+call SetUnitTimeScale(u,3)
+call SetUnitAnimation(u,"Spell three")
+call SetUnitVertexColor(u,255,255,255,125)
+set soundplay=CreateSound("Sound\\Music\\mp3Music\\KilluaW0.mp3",false,false,true,12700,12700,"")
+call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
+call TimerStart(t,0.008,true,function HeartStrikeCast2)
+set u=null
+set t=null
+endfunction
+function HeartStrikeInit takes nothing returns nothing
+local trigger t=CreateTrigger()
+local integer i=0
+loop
+call TriggerRegisterPlayerUnitEvent(t,Player(i),EVENT_PLAYER_UNIT_SPELL_EFFECT,null)
+set i=i+1
+exitwhen i>=bj_MAX_PLAYER_SLOTS
+endloop
+call TriggerAddAction(t,function HeartStrikeCast)
+call TriggerAddCondition(t,Condition(function HeartStrikeCond))
+set t=null
+endfunction
 function SnakesAwakesCond takes nothing returns boolean
-return GetSpellAbilityId()=='A15L'
+return GetSpellAbilityId()=='A0UT'
 endfunction
 function SnakesAwakesCast2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
@@ -102352,7 +102848,7 @@ local player p=GetOwningPlayer(u)
 call SetUnitVertexColor(u,155,155,155,180)
 call SaveUnitHandle(HH,id,0,u)
 call UnitAddAbility(u,'A15M')
-call SaveInteger(HH,idu,StringHash("SA"),2+GetUnitAbilityLevel(u,'A15L'))
+call SaveInteger(HH,idu,StringHash("SA"),4)
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\KilluaW.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
 call KillSoundWhenDone(soundplay)
@@ -102362,7 +102858,7 @@ set p=null
 set t=null
 endfunction
 function StaticFieldCond takes nothing returns boolean
-return GetSpellAbilityId()==0x41305559
+return GetSpellAbilityId()=='A0UY'
 endfunction
 function StaticFieldCast2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
@@ -102381,10 +102877,10 @@ call SetUnitInvulnerable(u,false)
 call SetUnitTimeScale(u,1)
 else
 call SetUnitInvulnerable(u,true)
-call UnitAddAbility(u,0x41305556)
-call UnitAddAbility(u,0x41305557)
-call UnitRemoveAbility(u,0x41305556)
-call UnitRemoveAbility(u,0x41305557)
+call UnitAddAbility(u,'A0UV')
+call UnitAddAbility(u,'A0UW')
+call UnitRemoveAbility(u,'A0UV')
+call UnitRemoveAbility(u,'A0UW')
 call GroupEnumUnitsInRange(G,x,y,350,Base)
 loop
 set E=FirstOfGroup(G)
@@ -102474,7 +102970,7 @@ local integer i=0
 local real dmg=(2+GetUnitAbilityLevel(u,'A0UX'))*GetHeroAgi(u,true)+75*GetUnitAbilityLevel(u,'A0UX')
 loop
 exitwhen i>=7
-call UnitApplyTimedLife(CreateUnit(p,0x65305331,x,y,GetRandomReal(0,359)),1,3)
+call UnitApplyTimedLife(CreateUnit(p,'e0S1',x,y,GetRandomReal(0,359)),1,3)
 call UnitApplyTimedLife(CreateUnit(p,'e086',x,y,GetRandomReal(0,359)),1,3)
 set n=CreateUnit(p,'e016',x,y,GetRandomReal(0,359))
 call UnitAddAbility(n,'Arav')
@@ -102702,8 +103198,8 @@ if IsTerrainPathable(GetUnitX(u),GetUnitY(u),PATHING_TYPE_FLYABILITY) then
 call IssueImmediateOrder(u,"stop")
 endif
 else
-call UnitRemoveAbility(u,0x41305556)
-call UnitRemoveAbility(u,0x41305557)
+call UnitRemoveAbility(u,'A0UV')
+call UnitRemoveAbility(u,'A0UW')
 call SaveBoolean(HH,idu,str3,false)
 call PauseTimer(t)
 call DestroyGroup(g)
@@ -102739,8 +103235,8 @@ if speed>10 then
 endif
 if LoadBoolean(HH,idu,str3)==false then
 if speed>10 then
-call UnitAddAbility(u,0x41305556)
-call UnitAddAbility(u,0x41305557)
+call UnitAddAbility(u,'A0UV')
+call UnitAddAbility(u,'A0UW')
 endif
 call SaveUnitHandle(HH,id,0,u)
 call SaveBoolean(HH,idu,str3,true)
@@ -163135,6 +163631,8 @@ call AlbedoW_SecondAct(LoadUnitHandle(h,id,CasterHash),LoadUnitHandle(h,id,Targe
 call FlushChildHashtable(h,id)
 call DestroyTimer(GetExpiredTimer())
 else
+call PauseUnit(LoadUnitHandle(h,id,CasterHash),false)
+call SetUnitInvulnerable(LoadUnitHandle(h,id,CasterHash),false)
 call SetUnitVertexColor(LoadUnitHandle(h,id,CasterHash),255,255,255,255)
 call SaveUnitHandle(HH,GetHandleId(LoadUnitHandle(h,id,TargetHash)),REVERSE_TARGET,LoadUnitHandle(h,id,CasterHash))
 call FlushChildHashtable(h,id)
@@ -217241,6 +217739,7 @@ call InitTrig_CrystalSlash()
 call InitTrig_PrettySong()
 call InitTrig_UltimateSong()
 call InitTrig_CrystalStrykeInori()
+call HeartStrikeInit()
 call InitTrig_StaticField()
 call InitTrig_LightningStrikeKillua()
 call InitTrig_ChangeGodspeed()
@@ -219151,6 +219650,7 @@ call InitTrig_Dialog2()
 call InitTrig_RemovePerDie()
 call InitTrig_Remove()
 call InitTrig_Target()
+call InitTrig_EmoteClick()
 call InitTrig_Execute()
 call InitTrig_Execute2()
 call InitTrig_Set_Ability()
