@@ -23203,7 +23203,7 @@ function Trig_StatusBar_Actions takes nothing returns nothing
     set EmoteFrameBG=CreateFrameByType("SIMPLEFRAME", "EmoteFrameBG", EmoteFrame, "", 0)
     call ClearFrameAllPoints( EmoteFrameBG )
     call SetFrameRelativePoint( EmoteFrameBG, FRAMEPOINT_CENTER, EmoteFrame, FRAMEPOINT_CENTER,  0, 0  )
-    call SetFrameSize( EmoteFrameBG, .057, .057)
+    call SetFrameSize( EmoteFrameBG, .06, .06)
     call SetFrameTexture(EmoteFrameBG, "Emotes\\EmoteBackground.blp", 0, true)
     call SetFramePriority( EmoteFrameBG, 7 )
 
@@ -23227,7 +23227,7 @@ function Trig_StatusBar_Actions takes nothing returns nothing
     set EmoteFrameBG=CreateFrameByType("SIMPLEFRAME", "EmoteFrameBG", EmoteFrame, "", 1)
     call ClearFrameAllPoints( EmoteFrameBG )
     call SetFrameRelativePoint( EmoteFrameBG, FRAMEPOINT_CENTER, EmoteFrame, FRAMEPOINT_CENTER,  0, 0  )
-    call SetFrameSize( EmoteFrameBG, .057, .057)
+    call SetFrameSize( EmoteFrameBG, .06, .06)
     call SetFrameTexture(EmoteFrameBG, "Emotes\\EmoteBackground.blp", 0, true)
     call SetFramePriority( EmoteFrameBG, 7 )
 
@@ -23251,7 +23251,7 @@ function Trig_StatusBar_Actions takes nothing returns nothing
     set EmoteFrameBG=CreateFrameByType("SIMPLEFRAME", "EmoteFrameBG", EmoteFrame, "", 2)
     call ClearFrameAllPoints( EmoteFrameBG )
     call SetFrameRelativePoint( EmoteFrameBG, FRAMEPOINT_CENTER, EmoteFrame, FRAMEPOINT_CENTER,  0, 0  )
-    call SetFrameSize( EmoteFrameBG, .057, .057)
+    call SetFrameSize( EmoteFrameBG, .06, .06)
     call SetFrameTexture(EmoteFrameBG, "Emotes\\EmoteBackground.blp", 0, true)
     call SetFramePriority( EmoteFrameBG, 7 )
 
@@ -23275,7 +23275,7 @@ function Trig_StatusBar_Actions takes nothing returns nothing
     set EmoteFrameBG=CreateFrameByType("SIMPLEFRAME", "EmoteFrameBG", EmoteFrame, "", 3)
     call ClearFrameAllPoints( EmoteFrameBG )
     call SetFrameRelativePoint( EmoteFrameBG, FRAMEPOINT_CENTER, EmoteFrame, FRAMEPOINT_CENTER,  0, 0  )
-    call SetFrameSize( EmoteFrameBG, .057, .057)
+    call SetFrameSize( EmoteFrameBG, .06, .06)
     call SetFrameTexture(EmoteFrameBG, "Emotes\\EmoteBackground.blp", 0, true)
     call SetFramePriority( EmoteFrameBG, 7 )
 
@@ -23299,7 +23299,7 @@ function Trig_StatusBar_Actions takes nothing returns nothing
     set EmoteFrameBG=CreateFrameByType("SIMPLEFRAME", "EmoteFrameBG", EmoteFrame, "", 4)
     call ClearFrameAllPoints( EmoteFrameBG )
     call SetFrameRelativePoint( EmoteFrameBG, FRAMEPOINT_CENTER, EmoteFrame, FRAMEPOINT_CENTER,  0, 0  )
-    call SetFrameSize( EmoteFrameBG, .057, .057)
+    call SetFrameSize( EmoteFrameBG, .06, .06)
     call SetFrameTexture(EmoteFrameBG, "Emotes\\EmoteBackground.blp", 0, true)
     call SetFramePriority( EmoteFrameBG, 7 )
 
@@ -23323,7 +23323,7 @@ function Trig_StatusBar_Actions takes nothing returns nothing
     set EmoteFrameBG=CreateFrameByType("SIMPLEFRAME", "EmoteFrameBG", EmoteFrame, "", 5)
     call ClearFrameAllPoints( EmoteFrameBG )
     call SetFrameRelativePoint( EmoteFrameBG, FRAMEPOINT_CENTER, EmoteFrame, FRAMEPOINT_CENTER,  0, 0  )
-    call SetFrameSize( EmoteFrameBG, .057, .057)
+    call SetFrameSize( EmoteFrameBG, .06, .06)
     call SetFrameTexture(EmoteFrameBG, "Emotes\\EmoteBackground.blp", 0, true)
     call SetFramePriority( EmoteFrameBG, 7 )
 
@@ -23347,7 +23347,7 @@ function Trig_StatusBar_Actions takes nothing returns nothing
     set EmoteFrameBG=CreateFrameByType("SIMPLEFRAME", "EmoteFrameBG", EmoteFrame, "", 6)
     call ClearFrameAllPoints( EmoteFrameBG )
     call SetFrameRelativePoint( EmoteFrameBG, FRAMEPOINT_CENTER, EmoteFrame, FRAMEPOINT_CENTER,  0, 0  )
-    call SetFrameSize( EmoteFrameBG, .057, .057)
+    call SetFrameSize( EmoteFrameBG, .06, .06)
     call SetFrameTexture(EmoteFrameBG, "Emotes\\EmoteBackground.blp", 0, true)
     call SetFramePriority( EmoteFrameBG, 7 )
 
@@ -23372,7 +23372,7 @@ function Trig_StatusBar_Actions takes nothing returns nothing
     set EmoteFrameBG=CreateFrameByType("SIMPLEFRAME", "EmoteFrameBG", EmoteFrame, "", 7)
     call ClearFrameAllPoints( EmoteFrameBG )
     call SetFrameRelativePoint( EmoteFrameBG, FRAMEPOINT_CENTER, EmoteFrame, FRAMEPOINT_CENTER,  0, 0  )
-    call SetFrameSize( EmoteFrameBG, .057, .057)
+    call SetFrameSize( EmoteFrameBG, .06, .06)
     call SetFrameTexture(EmoteFrameBG, "Emotes\\EmoteBackground.blp", 0, true)
     call SetFramePriority( EmoteFrameBG, 7 )
 
@@ -23396,7 +23396,7 @@ function Trig_StatusBar_Actions takes nothing returns nothing
     set EmoteFrameBG=CreateFrameByType("SIMPLEFRAME", "EmoteFrameBG", EmoteFrame, "", 8)
     call ClearFrameAllPoints( EmoteFrameBG )
     call SetFrameRelativePoint( EmoteFrameBG, FRAMEPOINT_CENTER, EmoteFrame, FRAMEPOINT_CENTER,  0, 0  )
-    call SetFrameSize( EmoteFrameBG, .057, .057)
+    call SetFrameSize( EmoteFrameBG, .06, .06)
     call SetFrameTexture(EmoteFrameBG, "Emotes\\EmoteBackground.blp", 0, true)
     call SetFramePriority( EmoteFrameBG, 7 )
 
@@ -23420,7 +23420,7 @@ function Trig_StatusBar_Actions takes nothing returns nothing
     set EmoteFrameBG=CreateFrameByType("SIMPLEFRAME", "EmoteFrameBG", EmoteFrame, "", 9)
     call ClearFrameAllPoints( EmoteFrameBG )
     call SetFrameRelativePoint( EmoteFrameBG, FRAMEPOINT_CENTER, EmoteFrame, FRAMEPOINT_CENTER,  0, 0  )
-    call SetFrameSize( EmoteFrameBG, .057, .057)
+    call SetFrameSize( EmoteFrameBG, .06, .06)
     call SetFrameTexture(EmoteFrameBG, "Emotes\\EmoteBackground.blp", 0, true)
     call SetFramePriority( EmoteFrameBG, 7 )
 
@@ -23444,7 +23444,7 @@ function Trig_StatusBar_Actions takes nothing returns nothing
     set EmoteFrameBG=CreateFrameByType("SIMPLEFRAME", "EmoteFrameBG", EmoteFrame, "", 10)
     call ClearFrameAllPoints( EmoteFrameBG )
     call SetFrameRelativePoint( EmoteFrameBG, FRAMEPOINT_CENTER, EmoteFrame, FRAMEPOINT_CENTER,  0, 0  )
-    call SetFrameSize( EmoteFrameBG, .057, .057)
+    call SetFrameSize( EmoteFrameBG, .06, .06)
     call SetFrameTexture(EmoteFrameBG, "Emotes\\EmoteBackground.blp", 0, true)
     call SetFramePriority( EmoteFrameBG, 7 )
 
@@ -23468,7 +23468,7 @@ function Trig_StatusBar_Actions takes nothing returns nothing
     set EmoteFrameBG=CreateFrameByType("SIMPLEFRAME", "EmoteFrameBG", EmoteFrame, "", 11)
     call ClearFrameAllPoints( EmoteFrameBG )
     call SetFrameRelativePoint( EmoteFrameBG, FRAMEPOINT_CENTER, EmoteFrame, FRAMEPOINT_CENTER,  0, 0  )
-    call SetFrameSize( EmoteFrameBG, .057, .057)
+    call SetFrameSize( EmoteFrameBG, .06, .06)
     call SetFrameTexture(EmoteFrameBG, "Emotes\\EmoteBackground.blp", 0, true)
     call SetFramePriority( EmoteFrameBG, 7 )
 
@@ -23492,7 +23492,7 @@ function Trig_StatusBar_Actions takes nothing returns nothing
     set EmoteFrameBG=CreateFrameByType("SIMPLEFRAME", "EmoteFrameBG", EmoteFrame, "", 12)
     call ClearFrameAllPoints( EmoteFrameBG )
     call SetFrameRelativePoint( EmoteFrameBG, FRAMEPOINT_CENTER, EmoteFrame, FRAMEPOINT_CENTER,  0, 0  )
-    call SetFrameSize( EmoteFrameBG, .057, .057)
+    call SetFrameSize( EmoteFrameBG, .06, .06)
     call SetFrameTexture(EmoteFrameBG, "Emotes\\EmoteBackground.blp", 0, true)
     call SetFramePriority( EmoteFrameBG, 7 )
 
@@ -23516,7 +23516,7 @@ function Trig_StatusBar_Actions takes nothing returns nothing
     set EmoteFrameBG=CreateFrameByType("SIMPLEFRAME", "EmoteFrameBG", EmoteFrame, "", 13)
     call ClearFrameAllPoints( EmoteFrameBG )
     call SetFrameRelativePoint( EmoteFrameBG, FRAMEPOINT_CENTER, EmoteFrame, FRAMEPOINT_CENTER,  0, 0  )
-    call SetFrameSize( EmoteFrameBG, .057, .057)
+    call SetFrameSize( EmoteFrameBG, .06, .06)
     call SetFrameTexture(EmoteFrameBG, "Emotes\\EmoteBackground.blp", 0, true)
     call SetFramePriority( EmoteFrameBG, 7 )
 
@@ -23540,7 +23540,7 @@ function Trig_StatusBar_Actions takes nothing returns nothing
     set EmoteFrameBG=CreateFrameByType("SIMPLEFRAME", "EmoteFrameBG", EmoteFrame, "", 14)
     call ClearFrameAllPoints( EmoteFrameBG )
     call SetFrameRelativePoint( EmoteFrameBG, FRAMEPOINT_CENTER, EmoteFrame, FRAMEPOINT_CENTER,  0, 0  )
-    call SetFrameSize( EmoteFrameBG, .057, .057)
+    call SetFrameSize( EmoteFrameBG, .06, .06)
     call SetFrameTexture(EmoteFrameBG, "Emotes\\EmoteBackground.blp", 0, true)
     call SetFramePriority( EmoteFrameBG, 7 )
 
@@ -23564,7 +23564,7 @@ function Trig_StatusBar_Actions takes nothing returns nothing
     set EmoteFrameBG=CreateFrameByType("SIMPLEFRAME", "EmoteFrameBG", EmoteFrame, "", 15)
     call ClearFrameAllPoints( EmoteFrameBG )
     call SetFrameRelativePoint( EmoteFrameBG, FRAMEPOINT_CENTER, EmoteFrame, FRAMEPOINT_CENTER,  0, 0  )
-    call SetFrameSize( EmoteFrameBG, .057, .057)
+    call SetFrameSize( EmoteFrameBG, .06, .06)
     call SetFrameTexture(EmoteFrameBG, "Emotes\\EmoteBackground.blp", 0, true)
     call SetFramePriority( EmoteFrameBG, 7 )
 
@@ -23585,10 +23585,10 @@ function Trig_StatusBar_Actions takes nothing returns nothing
     call SetFramePriority( EmoteFrame, 6 )
     call SetFrameGridFrame( EmoteBarGridFrame, 0, 16, EmoteFrame )
     
-    set EmoteFrameBG=CreateFrameByType("SIMPLEFRAME", "EmoteFrameBG", EmoteFrame, "", 17)
+    set EmoteFrameBG=CreateFrameByType("SIMPLEFRAME", "EmoteFrameBG", EmoteFrame, "", 16)
     call ClearFrameAllPoints( EmoteFrameBG )
     call SetFrameRelativePoint( EmoteFrameBG, FRAMEPOINT_CENTER, EmoteFrame, FRAMEPOINT_CENTER,  0, 0  )
-    call SetFrameSize( EmoteFrameBG, .057, .057)
+    call SetFrameSize( EmoteFrameBG, .06, .06)
     call SetFrameTexture(EmoteFrameBG, "Emotes\\EmoteBackground.blp", 0, true)
     call SetFramePriority( EmoteFrameBG, 7 )
 
@@ -23610,7 +23610,14 @@ function Trig_StatusBar_Actions takes nothing returns nothing
     call RegisterFrameMouseButton( EmoteFrame, MOUSE_BUTTON_TYPE_RIGHT, true)
     call SetFramePriority( EmoteFrame, 6 )
     call SetFrameGridFrame( EmoteBarGridFrame, 1, 0, EmoteFrame )
-    
+
+    set EmoteFrameBG=CreateFrameByType("SIMPLEFRAME", "EmoteFrameBG", EmoteFrame, "", 17)
+    call ClearFrameAllPoints( EmoteFrameBG )
+    call SetFrameRelativePoint( EmoteFrameBG, FRAMEPOINT_CENTER, EmoteFrame, FRAMEPOINT_CENTER,  0, 0  )
+    call SetFrameSize( EmoteFrameBG, .06, .06)
+    call SetFrameTexture(EmoteFrameBG, "Emotes\\EmoteBackground.blp", 0, true)
+    call SetFramePriority( EmoteFrameBG, 7 )
+
     call TriggerRegisterFrameEvent( tOnPress, EmoteFrame, FRAMEEVENT_MOUSE_DOWN )
     call TriggerRegisterFrameEvent( tOnUnPress, EmoteFrame, FRAMEEVENT_MOUSE_UP )
     call TriggerRegisterFrameEvent( tOnClick, EmoteFrame, FRAMEEVENT_CONTROL_CLICK )
@@ -23628,6 +23635,13 @@ function Trig_StatusBar_Actions takes nothing returns nothing
     call SetFramePriority( EmoteFrame, 6 )
     call SetFrameGridFrame( EmoteBarGridFrame, 1, 1, EmoteFrame )
     
+    set EmoteFrameBG=CreateFrameByType("SIMPLEFRAME", "EmoteFrameBG", EmoteFrame, "", 18)
+    call ClearFrameAllPoints( EmoteFrameBG )
+    call SetFrameRelativePoint( EmoteFrameBG, FRAMEPOINT_CENTER, EmoteFrame, FRAMEPOINT_CENTER,  0, 0  )
+    call SetFrameSize( EmoteFrameBG, .06, .06)
+    call SetFrameTexture(EmoteFrameBG, "Emotes\\EmoteBackground.blp", 0, true)
+    call SetFramePriority( EmoteFrameBG, 7 )
+
     call TriggerRegisterFrameEvent( tOnPress, EmoteFrame, FRAMEEVENT_MOUSE_DOWN )
     call TriggerRegisterFrameEvent( tOnUnPress, EmoteFrame, FRAMEEVENT_MOUSE_UP )
     call TriggerRegisterFrameEvent( tOnClick, EmoteFrame, FRAMEEVENT_CONTROL_CLICK )
@@ -23645,6 +23659,13 @@ function Trig_StatusBar_Actions takes nothing returns nothing
     call SetFramePriority( EmoteFrame, 6 )
     call SetFrameGridFrame( EmoteBarGridFrame, 1, 2, EmoteFrame )
     
+    set EmoteFrameBG=CreateFrameByType("SIMPLEFRAME", "EmoteFrameBG", EmoteFrame, "", 19)
+    call ClearFrameAllPoints( EmoteFrameBG )
+    call SetFrameRelativePoint( EmoteFrameBG, FRAMEPOINT_CENTER, EmoteFrame, FRAMEPOINT_CENTER,  0, 0  )
+    call SetFrameSize( EmoteFrameBG, .06, .06)
+    call SetFrameTexture(EmoteFrameBG, "Emotes\\EmoteBackground.blp", 0, true)
+    call SetFramePriority( EmoteFrameBG, 7 )
+
     call TriggerRegisterFrameEvent( tOnPress, EmoteFrame, FRAMEEVENT_MOUSE_DOWN )
     call TriggerRegisterFrameEvent( tOnUnPress, EmoteFrame, FRAMEEVENT_MOUSE_UP )
     call TriggerRegisterFrameEvent( tOnClick, EmoteFrame, FRAMEEVENT_CONTROL_CLICK )
@@ -23662,6 +23683,13 @@ function Trig_StatusBar_Actions takes nothing returns nothing
     call SetFramePriority( EmoteFrame, 6 )
     call SetFrameGridFrame( EmoteBarGridFrame, 1, 3, EmoteFrame )
     
+    set EmoteFrameBG=CreateFrameByType("SIMPLEFRAME", "EmoteFrameBG", EmoteFrame, "", 20)
+    call ClearFrameAllPoints( EmoteFrameBG )
+    call SetFrameRelativePoint( EmoteFrameBG, FRAMEPOINT_CENTER, EmoteFrame, FRAMEPOINT_CENTER,  0, 0  )
+    call SetFrameSize( EmoteFrameBG, .06, .06)
+    call SetFrameTexture(EmoteFrameBG, "Emotes\\EmoteBackground.blp", 0, true)
+    call SetFramePriority( EmoteFrameBG, 7 )
+
     call TriggerRegisterFrameEvent( tOnPress, EmoteFrame, FRAMEEVENT_MOUSE_DOWN )
     call TriggerRegisterFrameEvent( tOnUnPress, EmoteFrame, FRAMEEVENT_MOUSE_UP )
     call TriggerRegisterFrameEvent( tOnClick, EmoteFrame, FRAMEEVENT_CONTROL_CLICK )
@@ -23679,6 +23707,13 @@ function Trig_StatusBar_Actions takes nothing returns nothing
     call SetFramePriority( EmoteFrame, 6 )
     call SetFrameGridFrame( EmoteBarGridFrame, 1, 4, EmoteFrame )
     
+    set EmoteFrameBG=CreateFrameByType("SIMPLEFRAME", "EmoteFrameBG", EmoteFrame, "", 21)
+    call ClearFrameAllPoints( EmoteFrameBG )
+    call SetFrameRelativePoint( EmoteFrameBG, FRAMEPOINT_CENTER, EmoteFrame, FRAMEPOINT_CENTER,  0, 0  )
+    call SetFrameSize( EmoteFrameBG, .06, .06)
+    call SetFrameTexture(EmoteFrameBG, "Emotes\\EmoteBackground.blp", 0, true)
+    call SetFramePriority( EmoteFrameBG, 7 )
+
     call TriggerRegisterFrameEvent( tOnPress, EmoteFrame, FRAMEEVENT_MOUSE_DOWN )
     call TriggerRegisterFrameEvent( tOnUnPress, EmoteFrame, FRAMEEVENT_MOUSE_UP )
     call TriggerRegisterFrameEvent( tOnClick, EmoteFrame, FRAMEEVENT_CONTROL_CLICK )
@@ -23696,6 +23731,13 @@ function Trig_StatusBar_Actions takes nothing returns nothing
     call SetFramePriority( EmoteFrame, 6 )
     call SetFrameGridFrame( EmoteBarGridFrame, 1, 5, EmoteFrame )
     
+    set EmoteFrameBG=CreateFrameByType("SIMPLEFRAME", "EmoteFrameBG", EmoteFrame, "", 22)
+    call ClearFrameAllPoints( EmoteFrameBG )
+    call SetFrameRelativePoint( EmoteFrameBG, FRAMEPOINT_CENTER, EmoteFrame, FRAMEPOINT_CENTER,  0, 0  )
+    call SetFrameSize( EmoteFrameBG, .06, .06)
+    call SetFrameTexture(EmoteFrameBG, "Emotes\\EmoteBackground.blp", 0, true)
+    call SetFramePriority( EmoteFrameBG, 7 )
+
     call TriggerRegisterFrameEvent( tOnPress, EmoteFrame, FRAMEEVENT_MOUSE_DOWN )
     call TriggerRegisterFrameEvent( tOnUnPress, EmoteFrame, FRAMEEVENT_MOUSE_UP )
     call TriggerRegisterFrameEvent( tOnClick, EmoteFrame, FRAMEEVENT_CONTROL_CLICK )
@@ -23713,6 +23755,13 @@ function Trig_StatusBar_Actions takes nothing returns nothing
     call SetFramePriority( EmoteFrame, 6 )
     call SetFrameGridFrame( EmoteBarGridFrame, 1, 6, EmoteFrame )
     
+    set EmoteFrameBG=CreateFrameByType("SIMPLEFRAME", "EmoteFrameBG", EmoteFrame, "", 23)
+    call ClearFrameAllPoints( EmoteFrameBG )
+    call SetFrameRelativePoint( EmoteFrameBG, FRAMEPOINT_CENTER, EmoteFrame, FRAMEPOINT_CENTER,  0, 0  )
+    call SetFrameSize( EmoteFrameBG, .06, .06)
+    call SetFrameTexture(EmoteFrameBG, "Emotes\\EmoteBackground.blp", 0, true)
+    call SetFramePriority( EmoteFrameBG, 7 )
+
     call TriggerRegisterFrameEvent( tOnPress, EmoteFrame, FRAMEEVENT_MOUSE_DOWN )
     call TriggerRegisterFrameEvent( tOnUnPress, EmoteFrame, FRAMEEVENT_MOUSE_UP )
     call TriggerRegisterFrameEvent( tOnClick, EmoteFrame, FRAMEEVENT_CONTROL_CLICK )
@@ -23730,6 +23779,13 @@ function Trig_StatusBar_Actions takes nothing returns nothing
     call SetFramePriority( EmoteFrame, 6 )
     call SetFrameGridFrame( EmoteBarGridFrame, 1, 7, EmoteFrame )
     
+    set EmoteFrameBG=CreateFrameByType("SIMPLEFRAME", "EmoteFrameBG", EmoteFrame, "", 24)
+    call ClearFrameAllPoints( EmoteFrameBG )
+    call SetFrameRelativePoint( EmoteFrameBG, FRAMEPOINT_CENTER, EmoteFrame, FRAMEPOINT_CENTER,  0, 0  )
+    call SetFrameSize( EmoteFrameBG, .06, .06)
+    call SetFrameTexture(EmoteFrameBG, "Emotes\\EmoteBackground.blp", 0, true)
+    call SetFramePriority( EmoteFrameBG, 7 )
+
     call TriggerRegisterFrameEvent( tOnPress, EmoteFrame, FRAMEEVENT_MOUSE_DOWN )
     call TriggerRegisterFrameEvent( tOnUnPress, EmoteFrame, FRAMEEVENT_MOUSE_UP )
     call TriggerRegisterFrameEvent( tOnClick, EmoteFrame, FRAMEEVENT_CONTROL_CLICK )
@@ -23747,6 +23803,13 @@ function Trig_StatusBar_Actions takes nothing returns nothing
     call SetFramePriority( EmoteFrame, 6 )
     call SetFrameGridFrame( EmoteBarGridFrame, 1, 8, EmoteFrame )
     
+    set EmoteFrameBG=CreateFrameByType("SIMPLEFRAME", "EmoteFrameBG", EmoteFrame, "", 25)
+    call ClearFrameAllPoints( EmoteFrameBG )
+    call SetFrameRelativePoint( EmoteFrameBG, FRAMEPOINT_CENTER, EmoteFrame, FRAMEPOINT_CENTER,  0, 0  )
+    call SetFrameSize( EmoteFrameBG, .06, .06)
+    call SetFrameTexture(EmoteFrameBG, "Emotes\\EmoteBackground.blp", 0, true)
+    call SetFramePriority( EmoteFrameBG, 7 )
+
     call TriggerRegisterFrameEvent( tOnPress, EmoteFrame, FRAMEEVENT_MOUSE_DOWN )
     call TriggerRegisterFrameEvent( tOnUnPress, EmoteFrame, FRAMEEVENT_MOUSE_UP )
     call TriggerRegisterFrameEvent( tOnClick, EmoteFrame, FRAMEEVENT_CONTROL_CLICK )
@@ -23764,6 +23827,13 @@ function Trig_StatusBar_Actions takes nothing returns nothing
     call SetFramePriority( EmoteFrame, 6 )
     call SetFrameGridFrame( EmoteBarGridFrame, 1, 9, EmoteFrame )
     
+    set EmoteFrameBG=CreateFrameByType("SIMPLEFRAME", "EmoteFrameBG", EmoteFrame, "", 26)
+    call ClearFrameAllPoints( EmoteFrameBG )
+    call SetFrameRelativePoint( EmoteFrameBG, FRAMEPOINT_CENTER, EmoteFrame, FRAMEPOINT_CENTER,  0, 0  )
+    call SetFrameSize( EmoteFrameBG, .06, .06)
+    call SetFrameTexture(EmoteFrameBG, "Emotes\\EmoteBackground.blp", 0, true)
+    call SetFramePriority( EmoteFrameBG, 7 )
+
     call TriggerRegisterFrameEvent( tOnPress, EmoteFrame, FRAMEEVENT_MOUSE_DOWN )
     call TriggerRegisterFrameEvent( tOnUnPress, EmoteFrame, FRAMEEVENT_MOUSE_UP )
     call TriggerRegisterFrameEvent( tOnClick, EmoteFrame, FRAMEEVENT_CONTROL_CLICK )
@@ -23781,6 +23851,13 @@ function Trig_StatusBar_Actions takes nothing returns nothing
     call SetFramePriority( EmoteFrame, 6 )
     call SetFrameGridFrame( EmoteBarGridFrame, 1, 10, EmoteFrame )
     
+    set EmoteFrameBG=CreateFrameByType("SIMPLEFRAME", "EmoteFrameBG", EmoteFrame, "", 27)
+    call ClearFrameAllPoints( EmoteFrameBG )
+    call SetFrameRelativePoint( EmoteFrameBG, FRAMEPOINT_CENTER, EmoteFrame, FRAMEPOINT_CENTER,  0, 0  )
+    call SetFrameSize( EmoteFrameBG, .06, .06)
+    call SetFrameTexture(EmoteFrameBG, "Emotes\\EmoteBackground.blp", 0, true)
+    call SetFramePriority( EmoteFrameBG, 7 )
+
     call TriggerRegisterFrameEvent( tOnPress, EmoteFrame, FRAMEEVENT_MOUSE_DOWN )
     call TriggerRegisterFrameEvent( tOnUnPress, EmoteFrame, FRAMEEVENT_MOUSE_UP )
     call TriggerRegisterFrameEvent( tOnClick, EmoteFrame, FRAMEEVENT_CONTROL_CLICK )
@@ -23798,6 +23875,13 @@ function Trig_StatusBar_Actions takes nothing returns nothing
     call SetFramePriority( EmoteFrame, 6 )
     call SetFrameGridFrame( EmoteBarGridFrame, 1, 11, EmoteFrame )
     
+    set EmoteFrameBG=CreateFrameByType("SIMPLEFRAME", "EmoteFrameBG", EmoteFrame, "", 28)
+    call ClearFrameAllPoints( EmoteFrameBG )
+    call SetFrameRelativePoint( EmoteFrameBG, FRAMEPOINT_CENTER, EmoteFrame, FRAMEPOINT_CENTER,  0, 0  )
+    call SetFrameSize( EmoteFrameBG, .06, .06)
+    call SetFrameTexture(EmoteFrameBG, "Emotes\\EmoteBackground.blp", 0, true)
+    call SetFramePriority( EmoteFrameBG, 7 )
+
     call TriggerRegisterFrameEvent( tOnPress, EmoteFrame, FRAMEEVENT_MOUSE_DOWN )
     call TriggerRegisterFrameEvent( tOnUnPress, EmoteFrame, FRAMEEVENT_MOUSE_UP )
     call TriggerRegisterFrameEvent( tOnClick, EmoteFrame, FRAMEEVENT_CONTROL_CLICK )
@@ -23815,6 +23899,13 @@ function Trig_StatusBar_Actions takes nothing returns nothing
     call SetFramePriority( EmoteFrame, 6 )
     call SetFrameGridFrame( EmoteBarGridFrame, 1, 12, EmoteFrame )
     
+    set EmoteFrameBG=CreateFrameByType("SIMPLEFRAME", "EmoteFrameBG", EmoteFrame, "", 29)
+    call ClearFrameAllPoints( EmoteFrameBG )
+    call SetFrameRelativePoint( EmoteFrameBG, FRAMEPOINT_CENTER, EmoteFrame, FRAMEPOINT_CENTER,  0, 0  )
+    call SetFrameSize( EmoteFrameBG, .06, .06)
+    call SetFrameTexture(EmoteFrameBG, "Emotes\\EmoteBackground.blp", 0, true)
+    call SetFramePriority( EmoteFrameBG, 7 )
+
     call TriggerRegisterFrameEvent( tOnPress, EmoteFrame, FRAMEEVENT_MOUSE_DOWN )
     call TriggerRegisterFrameEvent( tOnUnPress, EmoteFrame, FRAMEEVENT_MOUSE_UP )
     call TriggerRegisterFrameEvent( tOnClick, EmoteFrame, FRAMEEVENT_CONTROL_CLICK )
@@ -88889,7 +88980,7 @@ local real l__s=LoadReal(h,id,8)
 if l__d<2300 then
 set x=x+l__d*Cos(a)
 set y=y+l__d*Sin(a)
-set n=CreateUnit(p,0x65304E53,x,y,(a*bj_RADTODEG))
+set n=CreateUnit(p,'e0NS',x,y,(a*bj_RADTODEG))
 call SetUnitScale(n,l__s,l__s,l__s)
 call SaveReal(h,id,8,l__s+0.24)
 call UnitApplyTimedLife(n,1,1)
@@ -88960,6 +89051,97 @@ exitwhen i>=bj_MAX_PLAYER_SLOTS
 endloop
 call TriggerAddAction(t,function DobleCeroCast)
 call TriggerAddCondition(t,Condition(function DobleCeroCond))
+set t=null
+endfunction
+function CeroSincreticoCond takes nothing returns boolean
+return GetSpellAbilityId()=='A1PA' and udg_B==true
+endfunction
+function CeroSincreticoCast2 takes nothing returns nothing
+local timer t=GetExpiredTimer()
+local integer id=GetHandleId(t)
+local unit u=LoadUnitHandle(h,id,0)
+local real x=LoadReal(h,id,1)
+local real y=LoadReal(h,id,2)
+local real a=Atan2(LoadReal(h,id,4)-y,LoadReal(h,id,3)-x)
+local real l__d=LoadReal(h,id,5)
+local group g=LoadGroupHandle(h,id,6)
+local player p=GetOwningPlayer(u)
+local real dmg=GetHeroInt(u,true)*5+GetHeroStr(u,true)*5
+local real l__s=LoadReal(h,id,8)
+if l__d<2300 then
+set x=x+l__d*Cos(a)
+set y=y+l__d*Sin(a)
+set n=CreateUnit(p,'e0NS',x,y,(a*bj_RADTODEG))
+call SetUnitScale(n,l__s,l__s,l__s)
+call SaveReal(h,id,8,l__s+0.24)
+call UnitApplyTimedLife(n,1,1)
+call SaveReal(h,id,5,l__d+30)
+call GroupEnumUnitsInRange(g,x,y,125+15*l__s,Base)
+set idg=GetHandleId(g)
+loop
+set E=FirstOfGroup(g)
+exitwhen E==null
+set ide=GetHandleId(E)
+if Condition_Base(p,E)and E!=LoadUnitHandle(h,idg,ide)then
+call myCustomDamage(u,E,dmg,false,false,null,null,null)
+call SaveUnitHandle(h,idg,ide,E)
+endif
+call GroupRemoveUnit(g,E)
+endloop
+else
+call SaveReal(h,GetHandleId(u),StringHash("nelld"),0)
+set x=x+l__d*Cos(a)
+set y=y+l__d*Sin(a)
+call UnitApplyTimedLife(CreateUnit(p,'e0NJ',x,y,GetRandomReal(0,359)),1,3)
+//call UnitApplyTimedLife(CreateUnit(p,'e0NK',x,y,GetRandomReal(0,359)),1,6)
+call UnitApplyTimedLife(CreateUnit(p,'e0NI',x,y,GetRandomReal(0,359)),1,3)
+call UnitApplyTimedLife(CreateUnit(p,'e0NL',x,y,GetRandomReal(0,359)),1,3)
+call UnitApplyTimedLife(CreateUnit(p,'e0NM',x,y,GetRandomReal(0,359)),1,3)
+set idg=GetHandleId(g)
+call PauseTimer(t)
+call DestroyTimer(t)
+call DestroyGroup(g)
+call FlushChildHashtable(h,id)
+call FlushChildHashtable(h,idg)
+endif
+set p=null
+set u=null
+set g=null
+set t=null
+endfunction
+function CeroSincreticoCast takes nothing returns nothing
+local unit u=GetTriggerUnit()
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+local real x=GetUnitX(u)
+local real y=GetUnitY(u)
+local real a=Atan2(GetSpellTargetY()-y,GetSpellTargetX()-x)
+local player p=GetOwningPlayer(u)
+call SaveGroupHandle(h,id,6,CreateGroup())
+call SaveUnitHandle(h,id,0,u)
+call SaveReal(h,id,1,x)
+call SaveReal(h,id,8,1.5)
+call SaveReal(h,id,2,y)
+call SaveReal(h,id,3,GetSpellTargetX())
+call SaveReal(h,id,4,GetSpellTargetY())
+set soundplay=CreateSound("Sound\\Music\\mp3Music\\NellG.mp3",false,false,true,12700,12700,"")
+call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
+call TimerStart(t,0.017,true,function CeroSincreticoCast2)
+set p=null
+set u=null
+set t=null
+endfunction
+function CeroSincreticoInit takes nothing returns nothing
+local trigger t=CreateTrigger()
+local integer i=0
+loop
+call TriggerRegisterPlayerUnitEvent(t,Player(i),EVENT_PLAYER_UNIT_SPELL_EFFECT,null)
+set i=i+1
+exitwhen i>=bj_MAX_PLAYER_SLOTS
+endloop
+call TriggerAddAction(t,function CeroSincreticoCast)
+call TriggerAddCondition(t,Condition(function CeroSincreticoCond))
 set t=null
 endfunction
 function ImmitadeBodyCond takes nothing returns boolean
@@ -220555,6 +220737,7 @@ call JSInit()
 call LanzadorVerdeInit()
 call InitAbsorb()
 call DobleCeroInit()
+call CeroSincreticoInit()
 call ImmitadeBodyInit()
 call InitCuttingSaw()
 call UpperSlashInit()
