@@ -11174,7 +11174,7 @@ function OnButtonChangeAbilityMode takes nothing returns nothing
         set pHid=GetHandleId(GetOwningPlayer(Goku))
         if LoadReal(HH,pHid,VariationQHash)==0 then
             call SaveReal(HH,pHid,VariationQHash,1)
-            call SetAbilityIntegerLevelField(GetUnitAbility(Goku,'GKQ1'), ABILITY_ILF_MANA_COST,GetUnitAbilityLevel(Goku,'GKQ1')-1,45*GetUnitAbilityLevel(Goku,'GKQ1'))
+            call SetAbilityIntegerLevelField(GetUnitAbility(Goku,'GKQ1'), ABILITY_ILF_MANA_COST,GetUnitAbilityLevel(Goku,'GKQ1')-1,60*GetUnitAbilityLevel(Goku,'GKQ1'))
             if GetLocalPlayer()==p then
                 call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 8 ), "ReplaceableTextures\\CommandButtons\\BTNSuperKamehameha.blp", 0, true )
                 call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 8 ), "ReplaceableTextures\\CommandButtons\\BTNSuperKamehameha.blp", 1, true )
@@ -41833,6 +41833,7 @@ if GetUnitTypeId(u)=='HJi1' then
         call SetUnitModel(u,"[By XeSHTeG]JirenFullPower.mdx")
         call ShowAbility2('JNF1',false)
         call ShowAbility2('JNF4',true)
+        call UnitRemoveBuffs(u,false,true)
         call SetAbilityRealLevelField(GetUnitAbility(u,'JNG1'), ABILITY_RLF_CAST_RANGE,0,1000)
         call UnitAddAbility(u,'JNF2')
         call UnitAddAbility(u,'JNF3')
@@ -67626,7 +67627,7 @@ else
     call DestroyTimer(t)
     call UnitRemoveAbility(u,'A0BX')
     if LoadBoolean(HH,id,3) then
-        call StartAbilityCooldown(GetUnitAbility(u, 'GKG7'), 1)
+        call StartAbilityCooldown(GetUnitAbility(u, 'GKG7'), 3)
         call CreateModeIndicatorFormGoku(u, "ReplaceableTextures\\CommandButtons\\BTNUIReverse.blp", 10)
     endif
     call SetUnitTimeScale(u,1)
@@ -67719,7 +67720,7 @@ else
         else
             call SetUnitAnimationByIndex(u,GetRandomInt(248,251))
             if LoadBoolean(HH,id,3) then
-                call StartAbilityCooldown(GetUnitAbility(u, 'GKG7'), 1)
+                call StartAbilityCooldown(GetUnitAbility(u, 'GKG7'), 3)
                 call CreateModeIndicatorFormGoku(u, "ReplaceableTextures\\CommandButtons\\BTNUIReverse.blp", 10)
             endif
             if ran==1 then
@@ -67796,7 +67797,7 @@ function LearnKamehamehaCast takes nothing returns nothing
     if LoadReal(HH,GetHandleId(GetOwningPlayer(Goku)),VariationQHash)==0 then
         call SetAbilityIntegerLevelField(GetUnitAbility(Goku,'GKQ1'), ABILITY_ILF_MANA_COST,GetUnitAbilityLevel(Goku,'GKQ1')-1,30*GetUnitAbilityLevel(Goku,'GKQ1'))
     else
-        call SetAbilityIntegerLevelField(GetUnitAbility(Goku,'GKQ1'), ABILITY_ILF_MANA_COST,GetUnitAbilityLevel(Goku,'GKQ1')-1,45*GetUnitAbilityLevel(Goku,'GKQ1'))
+        call SetAbilityIntegerLevelField(GetUnitAbility(Goku,'GKQ1'), ABILITY_ILF_MANA_COST,GetUnitAbilityLevel(Goku,'GKQ1')-1,60*GetUnitAbilityLevel(Goku,'GKQ1'))
     endif
 endfunction
 function LearnKamehamehaInit takes nothing returns nothing
@@ -89064,52 +89065,92 @@ local integer id=GetHandleId(t)
 local unit u=LoadUnitHandle(h,id,0)
 local real x=LoadReal(h,id,1)
 local real y=LoadReal(h,id,2)
+local real x1=LoadReal(h,id,21)
+local real y1=LoadReal(h,id,22)
 local real a=Atan2(LoadReal(h,id,4)-y,LoadReal(h,id,3)-x)
 local real l__d=LoadReal(h,id,5)
 local group g=LoadGroupHandle(h,id,6)
 local player p=GetOwningPlayer(u)
 local real dmg=GetHeroInt(u,true)*5+GetHeroStr(u,true)*5
 local real l__s=LoadReal(h,id,8)
-if l__d<2300 then
-set x=x+l__d*Cos(a)
-set y=y+l__d*Sin(a)
-set n=CreateUnit(p,'e0NS',x,y,(a*bj_RADTODEG))
-call SetUnitScale(n,l__s,l__s,l__s)
-call SaveReal(h,id,8,l__s+0.24)
-call UnitApplyTimedLife(n,1,1)
-call SaveReal(h,id,5,l__d+30)
-call GroupEnumUnitsInRange(g,x,y,125+15*l__s,Base)
-set idg=GetHandleId(g)
-loop
-set E=FirstOfGroup(g)
-exitwhen E==null
-set ide=GetHandleId(E)
-if Condition_Base(p,E)and E!=LoadUnitHandle(h,idg,ide)then
-call myCustomDamage(u,E,dmg,false,false,null,null,null)
-call SaveUnitHandle(h,idg,ide,E)
-endif
-call GroupRemoveUnit(g,E)
-endloop
+local real time=LoadReal(h,id,9)
+local unit dummy1=LoadUnitHandle(h,id,10)
+local unit dummy2=LoadUnitHandle(h,id,11)
+local unit dummy3=LoadUnitHandle(h,id,14)
+if time<5 then
+    call SaveReal(h,id,9,time+0.02)
+    if time==0.3 then
+        set EFF=AddSpecialEffect("NellDondonG.mdx", GetUnitX(dummy1)+120*Cos(a), GetUnitY(dummy1)+120*Sin(a))
+        call SetSpecialEffectZ(EFF, GetUnitFlyHeight(dummy1)+40)
+        call SetSpecialEffectScale(EFF,0.2)
+        call SaveEffectHandle(h,id,12,EFF)
+        set EFF=AddSpecialEffect("NellPescheG.mdx", GetUnitX(dummy2)+100*Cos(a), GetUnitY(dummy2)+100*Sin(a))
+        call SetSpecialEffectZ(EFF, GetUnitFlyHeight(dummy2)+60)
+        call SetSpecialEffectScale(EFF,0.2)
+        call SaveEffectHandle(h,id,13,EFF)
+    endif
+    if time>0.6 and time<1.3 then
+        call SetSpecialEffectX(LoadEffectHandle(h,id,12),GetSpecialEffectX(LoadEffectHandle(h,id,12))+3*Cos(a))
+        call SetSpecialEffectY(LoadEffectHandle(h,id,12),GetSpecialEffectY(LoadEffectHandle(h,id,12))+3*Sin(a))
+        call SetSpecialEffectX(LoadEffectHandle(h,id,13),GetSpecialEffectX(LoadEffectHandle(h,id,13))+3.5*Cos(a))
+        call SetSpecialEffectY(LoadEffectHandle(h,id,13),GetSpecialEffectY(LoadEffectHandle(h,id,13))+3.5*Sin(a))
+    endif
+    if time>1.1 and time<1.9 then
+        call SetSpecialEffectZ(LoadEffectHandle(h,id,12),GetSpecialEffectZ(LoadEffectHandle(h,id,12))+2)
+        call SetSpecialEffectZ(LoadEffectHandle(h,id,13),GetSpecialEffectZ(LoadEffectHandle(h,id,13))-2)
+    endif
+    if time==1.5 then
+        set n=CreateUnit(p,'eNCS',GetSpecialEffectX(LoadEffectHandle(h,id,13)),GetSpecialEffectY(LoadEffectHandle(h,id,13)),a*bj_RADTODEG)
+        call SetUnitFlyHeight(n,110,0)
+        call SaveUnitHandle(h,id,14,n)
+    endif
+    if time==1.6 then
+        call RemoveEffect(LoadEffectHandle(h,id,12),0.3,false,CreateTimer())
+        call RemoveEffect(LoadEffectHandle(h,id,13),0.3,false,CreateTimer())
+    endif
 else
-call SaveReal(h,GetHandleId(u),StringHash("nelld"),0)
-set x=x+l__d*Cos(a)
-set y=y+l__d*Sin(a)
-call UnitApplyTimedLife(CreateUnit(p,'e0NJ',x,y,GetRandomReal(0,359)),1,3)
-//call UnitApplyTimedLife(CreateUnit(p,'e0NK',x,y,GetRandomReal(0,359)),1,6)
-call UnitApplyTimedLife(CreateUnit(p,'e0NI',x,y,GetRandomReal(0,359)),1,3)
-call UnitApplyTimedLife(CreateUnit(p,'e0NL',x,y,GetRandomReal(0,359)),1,3)
-call UnitApplyTimedLife(CreateUnit(p,'e0NM',x,y,GetRandomReal(0,359)),1,3)
-set idg=GetHandleId(g)
-call PauseTimer(t)
-call DestroyTimer(t)
-call DestroyGroup(g)
-call FlushChildHashtable(h,id)
-call FlushChildHashtable(h,idg)
+    if l__d<4000 then
+        set x1=x1+l__d*Cos(a)
+        set y1=y1+l__d*Sin(a)
+        call SetUnitXY_1(dummy3,x1,y1, false)
+        call SaveReal(h,id,5,l__d+40)
+        call GroupEnumUnitsInRange(g,x,y,300,Base)
+        set idg=GetHandleId(g)
+        loop
+            set E=FirstOfGroup(g)
+            exitwhen E==null
+            set ide=GetHandleId(E)
+            if Condition_Base(p,E)and E!=LoadUnitHandle(h,idg,ide)then
+                call myCustomDamage(u,E,dmg,false,false,null,null,null)
+                call SaveUnitHandle(h,idg,ide,E)
+            endif
+            call GroupRemoveUnit(g,E)
+        endloop
+    else
+        set EFF=AddSpecialEffect("war3mapImported\\BlackBlink.mdx", GetUnitX(dummy1), GetUnitY(dummy1))
+        call SetSpecialEffectZ(EFF, GetUnitFlyHeight(dummy1))
+        call DestroyEffect(EFF)
+        set EFF=AddSpecialEffect("war3mapImported\\BlackBlink.mdx", GetUnitX(dummy2), GetUnitY(dummy2))
+        call SetSpecialEffectZ(EFF, GetUnitFlyHeight(dummy2))
+        call DestroyEffect(EFF)
+        call RemoveUnit(dummy1)
+        call RemoveUnit(dummy2)
+        call RemoveUnit(dummy3)
+        set idg=GetHandleId(g)
+        call PauseTimer(t)
+        call DestroyTimer(t)
+        call DestroyGroup(g)
+        call FlushChildHashtable(h,id)
+        call FlushChildHashtable(h,idg)
+    endif
 endif
 set p=null
 set u=null
 set g=null
 set t=null
+set dummy1=null
+set dummy2=null
+set dummy3=null
 endfunction
 function CeroSincreticoCast takes nothing returns nothing
 local unit u=GetTriggerUnit()
@@ -89119,17 +89160,32 @@ local real x=GetUnitX(u)
 local real y=GetUnitY(u)
 local real a=Atan2(GetSpellTargetY()-y,GetSpellTargetX()-x)
 local player p=GetOwningPlayer(u)
-call SaveGroupHandle(h,id,6,CreateGroup())
 call SaveUnitHandle(h,id,0,u)
 call SaveReal(h,id,1,x)
-call SaveReal(h,id,8,1.5)
 call SaveReal(h,id,2,y)
+call SaveReal(h,id,8,1.5)
 call SaveReal(h,id,3,GetSpellTargetX())
 call SaveReal(h,id,4,GetSpellTargetY())
+call SaveReal(h,id,21,x+450*Cos(a))
+call SaveReal(h,id,22,y+450*Sin(a))
+set n=CreateUnit(p,'eNLD',x+200*Cos(a),y+200*Sin(a),a*bj_RADTODEG)
+call SetUnitAnimation(n,"Spell Channel")
+call SaveUnitHandle(h,id,10,n)
+set EFF=AddSpecialEffect("war3mapImported\\BlackBlink.mdx", GetUnitX(n), GetUnitY(n))
+call SetSpecialEffectZ(EFF, GetUnitFlyHeight(n))
+call DestroyEffect(EFF)
+set n=CreateUnit(p,'eNLP',x+220*Cos(a),y+220*Sin(a),a*bj_RADTODEG)
+call SetUnitFlyHeight(n,100,0)
+call SetUnitAnimation(n,"Spell Channel")
+call SaveUnitHandle(h,id,11,n)
+set EFF=AddSpecialEffect("war3mapImported\\BlackBlink.mdx", GetUnitX(n), GetUnitY(n))
+call SetSpecialEffectZ(EFF, GetUnitFlyHeight(n))
+call DestroyEffect(EFF)
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\NellG.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
 call KillSoundWhenDone(soundplay)
-call TimerStart(t,0.017,true,function CeroSincreticoCast2)
+
+call TimerStart(t,0.02,true,function CeroSincreticoCast2)
 set p=null
 set u=null
 set t=null
@@ -89144,6 +89200,35 @@ exitwhen i>=bj_MAX_PLAYER_SLOTS
 endloop
 call TriggerAddAction(t,function CeroSincreticoCast)
 call TriggerAddCondition(t,Condition(function CeroSincreticoCond))
+set t=null
+endfunction
+function FireMirageCond takes nothing returns boolean
+return GetSpellAbilityId()=='A29T' and udg_B==true
+endfunction
+function FireMirageCast takes nothing returns nothing
+local unit c=GetSpellTargetUnit()
+local player p=GetOwningPlayer(GetTriggerUnit())
+set n=CreateIllusionFromUnit(c)
+call SetUnitFacingInstant(n,GetUnitFacing(c))
+call SetUnitOwner(c,p,false)
+call UnitCancelTimedLife(n)
+call UnitAddBuffById(n,'B11N')
+call UnitApplyTimedLife(n,'B11N',15)
+call SetIllusionDamageDealt(n,0)
+call SetIllusionDamageReceived(n,1)
+set c=null
+set p=null
+endfunction
+function FireMirageInit takes nothing returns nothing
+local trigger t=CreateTrigger()
+local integer i=0
+loop
+call TriggerRegisterPlayerUnitEvent(t,Player(i),EVENT_PLAYER_UNIT_SPELL_EFFECT,null)
+set i=i+1
+exitwhen i>=bj_MAX_PLAYER_SLOTS
+endloop
+call TriggerAddAction(t,function FireMirageCast)
+call TriggerAddCondition(t,Condition(function FireMirageCond))
 set t=null
 endfunction
 function ImmitadeBodyCond takes nothing returns boolean
@@ -89383,7 +89468,7 @@ call PauseUnit(u,true)
 call SetUnitInvulnerable(u,true)
 call SaveReal(h,id,4,time+0.1)
 set a=Atan2(y1-y,x1-x)+r
-set n=CreateUnit(p,0x65304F32,x,y,a*bj_RADTODEG)
+set n=CreateUnit(p,'e0O2',x,y,a*bj_RADTODEG)
 call SetUnitAnimation(u,"Spell One")
 call CuttingSawSlash(n,35,2*GetHeroAgi(u,true),a,1500,125,x,y,x1,y1,time)
         if GetUnitTypeId(u)=='H03N' then
@@ -112248,7 +112333,7 @@ call TriggerAddCondition(gg_trg_die3,Condition(function Trig_die3_Conditions))
 call TriggerAddAction(gg_trg_die3,function Trig_die3_Actions)
 endfunction
 function Trig_die6_Conditions takes nothing returns boolean
-return GetUnitTypeId(GetTriggerUnit())=='H34X' or GetUnitTypeId(GetTriggerUnit())=='H14F' or GetUnitAbilityLevel(GetTriggerUnit(),'A2X2')>0 or GetUnitAbilityLevel(GetTriggerUnit(),'B03P')>0 or GetUnitAbilityLevel(GetTriggerUnit(),'B03O')>0 or GetUnitAbilityLevel(GetTriggerUnit(),'B03Q')>0 or GetUnitAbilityLevel(GetTriggerUnit(),'B01N')>0 or GetUnitAbilityLevel(GetTriggerUnit(),'B01Z')>0 or GetUnitAbilityLevel(GetTriggerUnit(),'B02A')>0 
+return GetUnitTypeId(GetTriggerUnit())=='H34X' or GetUnitTypeId(GetTriggerUnit())=='H14F' or GetUnitAbilityLevel(GetTriggerUnit(),'A2X2')>0 or GetUnitAbilityLevel(GetTriggerUnit(),'B03P')>0 or GetUnitAbilityLevel(GetTriggerUnit(),'B03O')>0 or GetUnitAbilityLevel(GetTriggerUnit(),'B03Q')>0 or GetUnitAbilityLevel(GetTriggerUnit(),'B01N')>0 or GetUnitAbilityLevel(GetTriggerUnit(),'B01Z')>0 or GetUnitAbilityLevel(GetTriggerUnit(),'B02A')>0 or GetUnitAbilityLevel(GetTriggerUnit(),'B11N')>0 
 endfunction
 function Trig_die6_Actions takes nothing returns nothing
 local unit u=GetTriggerUnit()
@@ -112263,6 +112348,9 @@ call DestroyEffect(EFF)
 endif
 if GetUnitAbilityLevel(u,'B03P')>0 or GetUnitAbilityLevel(u,'B03O')>0 or GetUnitAbilityLevel(u,'B03Q')>0 or GetUnitAbilityLevel(u,'B01N')>0 or GetUnitAbilityLevel(u,'B01Z')>0 or GetUnitAbilityLevel(u,'B02A')>0 then
 call DestroyEffect(AddSpecialEffect("war3mapImported\\BlackBlink.mdx",GetUnitX(u),GetUnitY(u)))
+endif
+if GetUnitAbilityLevel(u,'B11N')>0 then
+call DestroyEffect(AddSpecialEffect("war3mapImported\\Flameshock.mdx",GetUnitX(u),GetUnitY(u)))
 endif
 call RemoveUnit(u)
 set u=null
@@ -169626,7 +169714,7 @@ local real dist=LoadReal(h,id,6)
 local real time=LoadReal(h,id,8)
 local real mh=LoadReal(h,id,5)
 local real rd=SR(x,y,x1,y1)
-if rd>30+speed and udg_B==true and rd<1100 and GetUnitAbilityLevel(l__d,'A1BL')==0 and time<2 then
+if rd>30+speed and udg_B==true and rd<880 and GetUnitAbilityLevel(l__d,'A1BL')==0 and time<2 then
 call SetUnitXY_1(l__d,x+speed*Cos(a),y+speed*Sin(a), false)
 call SetUnitFlyHeight(l__d,ParabolaZ(mh,dist,rd),0)
 call SaveReal(h,id,8,time+0.03)
@@ -169802,7 +169890,7 @@ if GetWidgetLife(c)>0 and GetWidgetLife(u)>0 and time<4 then
         call SetSpecialEffectOrientation(EFF , a* bj_RADTODEG-180,-75,0)
         call SetSpecialEffectVertexColour(EFF,235,225,235,190)
         call DestroyEffect(EFF)
-        call MissleMoveJirenG1_NonPause(c,45,0,x-1000*Cos(a),y-1000*Sin(a),300)
+        call MissleMoveJirenG1_NonPause(c,38,0,x-800*Cos(a),y-800*Sin(a),300)
         call SetUnitFlyHeight(u,0,0)
         if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
             //call StartSound(soundStr[69])
@@ -169910,7 +169998,7 @@ function JirenF2_Periodic takes nothing returns nothing
 	local real x=GetUnitX(u)
 	local real y=GetUnitY(u)
     local real time=LoadReal(h,id,1)
-    local real dmg=GetHeroStr(u,true)*3+200
+    local real dmg=GetHeroStr(u,true)*3+300
     local group g=CreateGroup()
     if time==0 and GetUnitCurrentAnimationId(u)!=11 then
         call SetUnitAnimationByIndex(u,11)
@@ -169922,15 +170010,15 @@ function JirenF2_Periodic takes nothing returns nothing
         if GetUnitAnimationOffsetPercent(u)>0.5 then
             call SetUnitAnimationOffsetPercent(u,0.4)
         endif
-        set EFF=AddSpecialEffect("GokuAuraBurstRed.mdl",x+GetRandomReal(-320,320)*Cos(GetRandomReal(0,359)),y+GetRandomReal(-320,320)*Sin(GetRandomReal(0,359)))
+        set EFF=AddSpecialEffect("GokuAuraBurstRed.mdl",x+GetRandomReal(-520,520)*Cos(GetRandomReal(0,359)),y+GetRandomReal(-520,520)*Sin(GetRandomReal(0,359)))
         call SetSpecialEffectTimeScale(EFF , 1.6)
-        call SetSpecialEffectScale(EFF , 0.25)
+        call SetSpecialEffectScale(EFF , 0.3)
         call RemoveEffect(EFF,0.4,true,CreateTimer())
-        set EFF=AddSpecialEffect("GokuAuraBurstRed.mdl",x+GetRandomReal(-320,320)*Cos(GetRandomReal(0,359)),y+GetRandomReal(-320,320)*Sin(GetRandomReal(0,359)))
+        set EFF=AddSpecialEffect("GokuAuraBurstRed.mdl",x+GetRandomReal(-520,520)*Cos(GetRandomReal(0,359)),y+GetRandomReal(-520,520)*Sin(GetRandomReal(0,359)))
         call SetSpecialEffectTimeScale(EFF , 1.6)
-        call SetSpecialEffectScale(EFF , 0.25)
+        call SetSpecialEffectScale(EFF , 0.3)
         call RemoveEffect(EFF,0.4,true,CreateTimer())
-        call GroupEnumUnitsInRange(g,x,y,400,Base)
+        call GroupEnumUnitsInRange(g,x,y,600,Base)
         loop
         set E=FirstOfGroup(g)
         exitwhen E==null
@@ -169994,8 +170082,8 @@ function JirenF1_Periodic takes nothing returns nothing
         call SetSpecialEffectVertexColour(EFF,235,225,235,190)
         call SetSpecialEffectFacing(EFF,GetRandomReal(0,359))
         call DestroyEffect(EFF)
-        call HealTextTag(u,u,GetUnitState(u,UNIT_STATE_MAX_MANA)*0.004*myCustomMana2(u,1),"ManaRes")
-        call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)+GetUnitState(u,UNIT_STATE_MAX_MANA)*0.004)
+        call HealTextTag(u,u,GetUnitState(u,UNIT_STATE_MAX_MANA)*0.008*myCustomMana2(u,1),"ManaRes")
+        call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)+GetUnitState(u,UNIT_STATE_MAX_MANA)*0.008)
 	else
         call UnitRemoveAbility(u,'A4DF')
         if GetUnitCurrentAnimationId(u)==37 then
@@ -170742,28 +170830,21 @@ elseif Range<2500 and UnitIsAlive(l__d) and IsTerrainPathable(x1,y1,PATHING_TYPE
     call SetUnitFacing(l__d,a*bj_RADTODEG)
     call SaveReal(h,id,9,Range+75)
     call GroupEnumUnitsInRange(g,x1,y1,180,Base)
-    set idg=GetHandleId(g)
     loop
         set E=FirstOfGroup(g)
         exitwhen E==null
-        set ide=GetHandleId(E)
         if Condition_Base(p,E) then
-            if E!=LoadUnitHandle(h,idg,ide) then
-                call myCustomDamage(u,E,dmg,false,false,null,null,null)
-                call SaveUnitHandle(h,idg,ide,E)
-            endif
+            call SaveReal(h,id,9,Range+2500)
         endif
         call GroupRemoveUnit(g,E)
     endloop
     call GroupClear(g)
 else
-    call GroupEnumUnitsInRange(g,x1,y1,350,Base)
-    set idg=GetHandleId(g)
+    call GroupEnumUnitsInRange(g,x1,y1,400,Base)
     loop
         set E=FirstOfGroup(g)
         exitwhen E==null
-        set ide=GetHandleId(E)
-        if Condition_Base(p,E) and E!=LoadUnitHandle(h,idg,ide) then
+        if Condition_Base(p,E) then
             call myCustomDamage(u,E,dmg,false,false,null,null,null)
         endif
         call GroupRemoveUnit(g,E)
@@ -170781,7 +170862,6 @@ else
     call DestroyGroup(g)
     call RemoveUnit(l__d)
     call FlushChildHashtable(h,id)
-    call FlushChildHashtable(h,idg)
     call PauseTimer(t)
     call DestroyTimer(t)
 endif
@@ -170980,7 +171060,7 @@ function JirenESelf_Cast2 takes nothing returns nothing
     local integer idu=GetHandleId(u)
     local unit c=LoadUnitHandle(HH,idu,REVERSE_TARGET)
     if time==0 then
-        call SetAbilityRemainingCooldown(GetUnitAbility(u, 'JNE1'), 10)
+        call SetAbilityRemainingCooldown(GetUnitAbility(u, 'JNE1'), 13)
         call SetUnitAnimationByIndex(u,42)
         call StartSound(soundStr[115])
     endif
@@ -171009,7 +171089,7 @@ function JirenESelf_Cast2 takes nothing returns nothing
             call RemoveSavedHandle(HH,idu,REVERSE_TARGET)
             call PauseTimer(t)
             call SaveReal(HH,id,2,0)
-            call SetAbilityRemainingCooldown(GetUnitAbility(u, 'JNE1'), GetAbilityRemainingCooldown(GetUnitAbility(u, 'JNE1'))+12)
+            call SetAbilityRemainingCooldown(GetUnitAbility(u, 'JNE1'), GetAbilityRemainingCooldown(GetUnitAbility(u, 'JNE1'))+9)
             call TimerStart(t,0.02,true,function JirenESelf_Cast3)
         else
             call SetControlToUnit(u , u , 0.3 , "doomdebug")
@@ -171569,7 +171649,7 @@ function JirenQSelf_Cast2 takes nothing returns nothing
     local integer idu=GetHandleId(u)
     local unit c=LoadUnitHandle(HH,idu,REVERSE_TARGET)
     if time==0 then
-        call SetAbilityRemainingCooldown(GetUnitAbility(u, 'JNQ1'), 10)
+        call SetAbilityRemainingCooldown(GetUnitAbility(u, 'JNQ1'), 13)
         call SetUnitAnimationByIndex(u,18)
     endif
     if time<2 and c==null then
@@ -171598,7 +171678,7 @@ function JirenQSelf_Cast2 takes nothing returns nothing
             call PauseTimer(t)
             call SaveReal(HH,id,2,0)
             call StartSound(soundStr[106])
-            call SetAbilityRemainingCooldown(GetUnitAbility(u, 'JNQ1'), GetAbilityRemainingCooldown(GetUnitAbility(u, 'JNQ1'))+10)
+            call SetAbilityRemainingCooldown(GetUnitAbility(u, 'JNQ1'), GetAbilityRemainingCooldown(GetUnitAbility(u, 'JNQ1'))+7)
             call TimerStart(t,0.02,true,function JirenQSelf_Cast3)
         else
             call RemoveSavedHandle(HH,idu,REVERSE_TARGET)
@@ -220740,6 +220820,7 @@ call LanzadorVerdeInit()
 call InitAbsorb()
 call DobleCeroInit()
 call CeroSincreticoInit()
+call FireMirageInit()
 call ImmitadeBodyInit()
 call InitCuttingSaw()
 call UpperSlashInit()
