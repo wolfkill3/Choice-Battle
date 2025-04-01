@@ -134131,19 +134131,26 @@ if GetTradeGold()>0 then
         //call BJDebugMsg(" ")
         //call BJDebugMsg(I2S(GoldLimit[i2]))
         //call BJDebugMsg(I2S(gold21))
-        call SetTradeGold(GoldLimit[i2]) 
-        //call BJDebugMsg(" ")
-        //call BJDebugMsg(I2S(GetTradeGold()))
-        //call BJDebugMsg(" ")
-        call SaveInteger(HPlayer,i1,i2,gold12+GoldLimit[i2])
-        call SaveInteger(HPlayer,i2,i1,gold21-GoldLimit[i2])
-        call SaveInteger(HPlayer,i1+20,i2+20,goldround12+GoldLimit[i2])
-        call SaveInteger(HPlayer,i2+20,i1+20,goldround21-GoldLimit[i2]-gold21)
-        if GoldLimit[i1]+LoadInteger(HPlayer,i1+20,i2+20)<GoldTotalLimit[i1] then
-        set GoldLimit[i1]=GoldLimit[i1]+goldround12
+        if gold21>0 then
+            call SetTradeGold(GoldLimit[i2]+gold21) 
+            call SaveInteger(HPlayer,i1,i2,gold12+GoldLimit[i2]+gold21)
+            call SaveInteger(HPlayer,i2,i1,gold21-GoldLimit[i2]-gold21)
+            call SaveInteger(HPlayer,i1+20,i2+20,goldround12+GoldLimit[i2]+gold21)
+            call SaveInteger(HPlayer,i2+20,i1+20,goldround21-GoldLimit[i2]-gold21)
         else
-        set GoldLimit[i1]=GoldTotalLimit[i1]
+            call SetTradeGold(GoldLimit[i2]) 
+            call SaveInteger(HPlayer,i1,i2,gold12+GoldLimit[i2])
+            call SaveInteger(HPlayer,i2,i1,gold21-GoldLimit[i2])
+            call SaveInteger(HPlayer,i1+20,i2+20,goldround12+GoldLimit[i2])
+            call SaveInteger(HPlayer,i2+20,i1+20,goldround21-GoldLimit[i2])
         endif
+        if GoldLimit[i1]+LoadInteger(HPlayer,i1+20,i2+20)<GoldTotalLimit[i1] then
+            set GoldLimit[i1]=GoldLimit[i1]+LoadInteger(HPlayer,i1+20,i2+20)
+        else
+            set GoldLimit[i1]=GoldTotalLimit[i1]
+        endif
+        //call BJDebugMsg(" ")
+        //call BJDebugMsg(I2S(GoldLimit[i1]))
         set GoldLimit[i2]=0
     else
         if gold21>0 then
