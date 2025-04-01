@@ -134126,11 +134126,18 @@ if GetTradeGold()>0 then
         call DisplayTimedWarningMessage(p,10,"У игрока исчерпан лимит на получение золота.")
     endif
     if GetTradeGold()>GoldLimit[i2]+gold21 then
-        // call BJDebugMsg("1")
-        call SetTradeGold(GoldLimit[i2]+gold21) 
-        call SaveInteger(HPlayer,i1,i2,gold12+GoldLimit[i2]+gold21)
+        //call BJDebugMsg("1")
+        //call BJDebugMsg(I2S(GetTradeGold()))
+        //call BJDebugMsg(" ")
+        //call BJDebugMsg(I2S(GoldLimit[i2]))
+        //call BJDebugMsg(I2S(gold21))
+        call SetTradeGold(GoldLimit[i2]) 
+        //call BJDebugMsg(" ")
+        //call BJDebugMsg(I2S(GetTradeGold()))
+        //call BJDebugMsg(" ")
+        call SaveInteger(HPlayer,i1,i2,gold12+GoldLimit[i2])
         call SaveInteger(HPlayer,i2,i1,gold21-GoldLimit[i2])
-        call SaveInteger(HPlayer,i1+20,i2+20,goldround12+GoldLimit[i2]+gold21)
+        call SaveInteger(HPlayer,i1+20,i2+20,goldround12+GoldLimit[i2])
         call SaveInteger(HPlayer,i2+20,i1+20,goldround21-GoldLimit[i2]-gold21)
         if GoldLimit[i1]+LoadInteger(HPlayer,i1+20,i2+20)<GoldTotalLimit[i1] then
         set GoldLimit[i1]=GoldLimit[i1]+goldround12
@@ -134141,7 +134148,7 @@ if GetTradeGold()>0 then
     else
         if gold21>0 then
             if GoldInt<=gold21 then
-                // call BJDebugMsg("2")
+                //call BJDebugMsg("2")
                 set gold21=gold21-GoldInt
                 set gold12=gold12+GoldInt
                 set goldround21=goldround21-GoldInt
@@ -134153,7 +134160,7 @@ if GetTradeGold()>0 then
                 call SaveInteger(HPlayer,i1+20,i2+20,goldround12)
                 call SaveInteger(HPlayer,i2+20,i1+20,goldround21)
             else
-                // call BJDebugMsg("3")
+                //call BJDebugMsg("3")
                 set GoldInt=goldround21-GoldInt
                 set GoldLimit[i2]=GoldLimit[i2]+GoldInt
                 set GoldLimit[i1]=GoldLimit[i1]-GoldInt
@@ -134163,7 +134170,7 @@ if GetTradeGold()>0 then
                 call SaveInteger(HPlayer,i2+20,i1+20,goldround21-GetTradeGold())
             endif
         else
-            // call BJDebugMsg("4")
+            //call BJDebugMsg("4")
             set gold12=LoadInteger(HPlayer,i1,i2)
             set gold21=LoadInteger(HPlayer,i2,i1)
             set goldround12=LoadInteger(HPlayer,i1+20,i2+20)
