@@ -89071,58 +89071,80 @@ local real a=Atan2(LoadReal(h,id,4)-y,LoadReal(h,id,3)-x)
 local real l__d=LoadReal(h,id,5)
 local group g=LoadGroupHandle(h,id,6)
 local player p=GetOwningPlayer(u)
-local real dmg=GetHeroInt(u,true)*5+GetHeroStr(u,true)*5
-local real l__s=LoadReal(h,id,8)
+local real dmg=LoadReal(h,id,7)
 local real time=LoadReal(h,id,9)
 local unit dummy1=LoadUnitHandle(h,id,10)
 local unit dummy2=LoadUnitHandle(h,id,11)
 local unit dummy3=LoadUnitHandle(h,id,14)
-if time<5 then
+if time<7 then
     call SaveReal(h,id,9,time+0.02)
+    if time==0.1 then
+        set soundplay=CreateSound("Sound\\Music\\mp3Music\\NellG.mp3",false,false,true,12700,12700,"")
+        call StartSound(soundplay)
+        call KillSoundWhenDone(soundplay)
+    endif
     if time==0.3 then
-        set EFF=AddSpecialEffect("NellDondonG.mdx", GetUnitX(dummy1)+120*Cos(a), GetUnitY(dummy1)+120*Sin(a))
-        call SetSpecialEffectZ(EFF, GetUnitFlyHeight(dummy1)+40)
-        call SetSpecialEffectScale(EFF,0.2)
+        set EFF=AddSpecialEffect("NellDondonG.mdx", GetUnitX(dummy1)+70*Cos(a), GetUnitY(dummy1)+70*Sin(a))
+        call SetSpecialEffectZ(EFF, 40)
+        call SetSpecialEffectScale(EFF,0.3)
         call SaveEffectHandle(h,id,12,EFF)
-        set EFF=AddSpecialEffect("NellPescheG.mdx", GetUnitX(dummy2)+100*Cos(a), GetUnitY(dummy2)+100*Sin(a))
-        call SetSpecialEffectZ(EFF, GetUnitFlyHeight(dummy2)+60)
-        call SetSpecialEffectScale(EFF,0.2)
+        set EFF=AddSpecialEffect("NellPescheG.mdx", GetUnitX(dummy2)+50*Cos(a), GetUnitY(dummy2)+50*Sin(a))
+        call SetSpecialEffectZ(EFF, GetUnitFlyHeight(dummy2)+80)
+        call SetSpecialEffectScale(EFF,0.3)
         call SaveEffectHandle(h,id,13,EFF)
     endif
-    if time>0.6 and time<1.3 then
-        call SetSpecialEffectX(LoadEffectHandle(h,id,12),GetSpecialEffectX(LoadEffectHandle(h,id,12))+3*Cos(a))
-        call SetSpecialEffectY(LoadEffectHandle(h,id,12),GetSpecialEffectY(LoadEffectHandle(h,id,12))+3*Sin(a))
-        call SetSpecialEffectX(LoadEffectHandle(h,id,13),GetSpecialEffectX(LoadEffectHandle(h,id,13))+3.5*Cos(a))
-        call SetSpecialEffectY(LoadEffectHandle(h,id,13),GetSpecialEffectY(LoadEffectHandle(h,id,13))+3.5*Sin(a))
+    if time>1.6 and time<2.3 then
+        call SetSpecialEffectX(LoadEffectHandle(h,id,12),GetSpecialEffectX(LoadEffectHandle(h,id,12))+1.3*Cos(a))
+        call SetSpecialEffectY(LoadEffectHandle(h,id,12),GetSpecialEffectY(LoadEffectHandle(h,id,12))+1.3*Sin(a))
+        call SetSpecialEffectX(LoadEffectHandle(h,id,13),GetSpecialEffectX(LoadEffectHandle(h,id,13))+1.6*Cos(a))
+        call SetSpecialEffectY(LoadEffectHandle(h,id,13),GetSpecialEffectY(LoadEffectHandle(h,id,13))+1.6*Sin(a))
     endif
-    if time>1.1 and time<1.9 then
+    if time>2.1 and time<2.9 then
         call SetSpecialEffectZ(LoadEffectHandle(h,id,12),GetSpecialEffectZ(LoadEffectHandle(h,id,12))+2)
         call SetSpecialEffectZ(LoadEffectHandle(h,id,13),GetSpecialEffectZ(LoadEffectHandle(h,id,13))-2)
     endif
-    if time==1.5 then
+    if time==2.5 then
         set n=CreateUnit(p,'eNCS',GetSpecialEffectX(LoadEffectHandle(h,id,13)),GetSpecialEffectY(LoadEffectHandle(h,id,13)),a*bj_RADTODEG)
         call SetUnitFlyHeight(n,110,0)
         call SaveUnitHandle(h,id,14,n)
+        call SetUnitAnimation(n,"birth")
     endif
-    if time==1.6 then
+    if time==2.66 then
+        call SetUnitAnimation(n,"stand")
         call RemoveEffect(LoadEffectHandle(h,id,12),0.3,false,CreateTimer())
         call RemoveEffect(LoadEffectHandle(h,id,13),0.3,false,CreateTimer())
     endif
 else
-    if l__d<4000 then
+    if l__d<4000 and IsUnitAlive(dummy3) then
         set x1=x1+l__d*Cos(a)
         set y1=y1+l__d*Sin(a)
         call SetUnitXY_1(dummy3,x1,y1, false)
         call SaveReal(h,id,5,l__d+40)
-        call GroupEnumUnitsInRange(g,x,y,300,Base)
+        if ModuloReal(l__d,240)<40 then
+            set bjLCE=AddSpecialEffect("war3mapImported\\CF2.mdl",x1,y1)
+            call SetSpecialEffectScale(bjLCE,0.6)
+            call SetSpecialEffectOrientation(bjLCE,a*bj_RADTODEG,0,0)
+            call SetSpecialEffectZ(bjLCE, 110)
+            call SetSpecialEffectAnimationByIndex(bjLCE,0)
+            call SetSpecialEffectVertexColour(bjLCE,205,225,235,190)
+            call DestroyEffect(bjLCE)
+        endif
+        call GroupEnumUnitsInRange(g,x1,y1,300,Base)
         set idg=GetHandleId(g)
         loop
             set E=FirstOfGroup(g)
             exitwhen E==null
             set ide=GetHandleId(E)
-            if Condition_Base(p,E)and E!=LoadUnitHandle(h,idg,ide)then
-                call myCustomDamage(u,E,dmg,false,false,null,null,null)
-                call SaveUnitHandle(h,idg,ide,E)
+            if E!=LoadUnitHandle(h,idg,ide) then
+                if E==u and GetUnitAbilityLevel(u,'A0PC')>0 then
+                    call SetUnitXY_1(dummy3,x1+100*Cos(a),y1+100*Sin(a), false)
+                    call SaveReal(h,GetHandleId(u),StringHash("nelld"),LoadReal(h,GetHandleId(u),StringHash("nelld"))+dmg)
+                    call KillUnit(dummy3)
+                    call MyRemoveUnit(dummy3, 1)
+                elseif Condition_Base(p,E) then
+                    call myCustomDamage(u,E,dmg,false,false,null,null,null)
+                    call SaveUnitHandle(h,idg,ide,E)
+                endif
             endif
             call GroupRemoveUnit(g,E)
         endloop
@@ -89135,7 +89157,37 @@ else
         call DestroyEffect(EFF)
         call RemoveUnit(dummy1)
         call RemoveUnit(dummy2)
-        call RemoveUnit(dummy3)
+        set x1=x1+l__d*Cos(a)
+        set y1=y1+l__d*Sin(a)
+        if IsUnitAlive(dummy3) then
+            set n=CreateUnit(p,'kaTB',x1,y1,GetRandomReal(0,359))
+            call UnitApplyTimedLife(n,1,2.5)
+            set n=CreateUnit(p,'kaTD',x1,y1,GetRandomReal(0,359))
+            call UnitApplyTimedLife(n,1,2.5)
+            set n=CreateUnit(p,'kaTC',x1,y1,GetRandomReal(0,359))
+            call UnitApplyTimedLife(n,1,2.5)
+            set n=CreateUnit(p,'kaTG',x1,y1,GetRandomReal(0,359))
+            call UnitApplyTimedLife(n,1,2.5)
+            call SetUnitTimeScale(n,1)
+            call KillUnit(dummy3)
+            call MyRemoveUnit(dummy3, 1)
+            call GroupEnumUnitsInRange(g,x1,y1,700,Base)
+            set idg=GetHandleId(g)
+            loop
+                set E=FirstOfGroup(g)
+                exitwhen E==null
+                set ide=GetHandleId(E)
+                if E!=LoadUnitHandle(h,idg,ide) then
+                    if E==u and GetUnitAbilityLevel(u,'A0PC')>0 then
+                        call SaveReal(h,GetHandleId(u),StringHash("nelld"),LoadReal(h,GetHandleId(u),StringHash("nelld"))+dmg)
+                    elseif Condition_Base(p,E) then
+                        call myCustomDamage(u,E,dmg,false,false,null,null,null)
+                        call SaveUnitHandle(h,idg,ide,E)
+                    endif
+                endif
+                call GroupRemoveUnit(g,E)
+            endloop
+        endif
         set idg=GetHandleId(g)
         call PauseTimer(t)
         call DestroyTimer(t)
@@ -89163,11 +89215,12 @@ local player p=GetOwningPlayer(u)
 call SaveUnitHandle(h,id,0,u)
 call SaveReal(h,id,1,x)
 call SaveReal(h,id,2,y)
-call SaveReal(h,id,8,1.5)
 call SaveReal(h,id,3,GetSpellTargetX())
 call SaveReal(h,id,4,GetSpellTargetY())
-call SaveReal(h,id,21,x+450*Cos(a))
-call SaveReal(h,id,22,y+450*Sin(a))
+call SaveGroupHandle(h,id,6,CreateGroup())
+call SaveReal(h,id,7,GetHeroInt(u,true)*4+GetHeroStr(u,true)*4)
+call SaveReal(h,id,21,x+350*Cos(a))
+call SaveReal(h,id,22,y+350*Sin(a))
 set n=CreateUnit(p,'eNLD',x+200*Cos(a),y+200*Sin(a),a*bj_RADTODEG)
 call SetUnitAnimation(n,"Spell Channel")
 call SaveUnitHandle(h,id,10,n)
@@ -89181,10 +89234,6 @@ call SaveUnitHandle(h,id,11,n)
 set EFF=AddSpecialEffect("war3mapImported\\BlackBlink.mdx", GetUnitX(n), GetUnitY(n))
 call SetSpecialEffectZ(EFF, GetUnitFlyHeight(n))
 call DestroyEffect(EFF)
-set soundplay=CreateSound("Sound\\Music\\mp3Music\\NellG.mp3",false,false,true,12700,12700,"")
-call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
-
 call TimerStart(t,0.02,true,function CeroSincreticoCast2)
 set p=null
 set u=null
