@@ -89362,17 +89362,17 @@ else
         if Condition_Base(p,E)then
         call myCustomDamage(u,E,dmg,false,false,null,null,null)
         call DestroyEffect(AddSpecialEffectTarget("war3mapImported\\Flameshock.mdx",E,"chest"))
-        set x1=GetUnitX(E)
-        set y1=GetUnitY(E)
-        set a1=Atan2(y1-y,x1-x)
-        call SetControlToUnit(E,E, 3, "stun")
+        set x=GetUnitX(E)
+        set y=GetUnitY(E)
+        set a1=Atan2(y-y1,x-x1)
+        call SetControlToUnit(E,E, 2, "stun")
         call UnitAddAbility(E,'Arav')
         call UnitRemoveAbility(E,'Arav')
         set a=GetRandomReal(0,7)
-        set l__d=300
+        set l__d=400
         call SetUnitPathing(E,false)
         call UnitRemoveAbility(E,'A2VJ')
-        call MissleMoveMagmaBurst(E,20,0,x1+l__d*Cos(a1),y1+l__d*Sin(a1),300,u)
+        call MissleMoveMagmaBurst(E,20,0,x+l__d*Cos(a1),y+l__d*Sin(a1),300,u)
         endif
         call GroupRemoveUnit(g,E)
         endloop
@@ -89391,6 +89391,7 @@ else
         call ResetUnitZ(u)
         call PauseUnit(u,false)
         call SetUnitInvulnerable(u,false)
+        call SetAbilityRemainingCooldown(GetUnitAbility(u,'A06Y'),35)
     endif
     if time>0.5 and time<5.5 then
         if ModuloReal(time,0.2)<0.001 then
