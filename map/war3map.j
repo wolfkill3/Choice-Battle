@@ -71,6 +71,7 @@ string array udg_Color
 string array EmoteList
 string HLCcommand=""
 boolean udg_RM=false
+boolean GameEnd=false
 unit bjLCU = null
 unit EAlive = null
 unit uMusicPlayer = null
@@ -292,7 +293,7 @@ framehandle  OpenEmoteButtonText
 
 framehandle  CloseStatsButton
 framehandle  CloseStatsButtonText
-handlelist array StatsFrameList
+//handlelist array StatsFrameList
 framehandle  StatsBarFrame
 framehandle  StatsBarFrameText
 framehandle  StatsBarGridFrame
@@ -1015,7 +1016,7 @@ real A
 boolean timerg
 boolean Rounds
 unit d
-integer seconds
+integer seconds=1
 integer minutes
 integer ours
 boolean array ingame
@@ -10730,6 +10731,7 @@ function OnButtonCloseStatsBar takes nothing returns nothing
         return
     endif
     if p==GetLocalPlayer() then
+        call SetFramePriority(GetOriginFrame( ORIGIN_FRAME_CHAT_MSG, 0 ),7)
         call ShowFrame( OpenStatsButton, true )
         call ShowFrame( multbframw, true )
         call ShowFrame( StatsBarFrame, false )
@@ -10754,6 +10756,7 @@ function OnButtonOpenStatsBar takes nothing returns nothing
         return
     endif
     if p==GetLocalPlayer() then
+        call SetFramePriority(GetOriginFrame( ORIGIN_FRAME_CHAT_MSG, 0 ),0)
         call ShowFrame( StatsBarFrame, true )
         call ShowFrame( EmoteBarFrame, false )
         call ShowFrame( multbframw, false )
@@ -10772,12 +10775,14 @@ function ToggleOpenStatsBar takes nothing returns nothing
     local integer i=0
     if p==GetLocalPlayer() then
         if IsFrameVisible(OpenStatsButton)==true then
+            call SetFramePriority(GetOriginFrame( ORIGIN_FRAME_CHAT_MSG, 0 ),0)
             call ShowFrame( StatsBarFrame, true )
             call ShowFrame( EmoteBarFrame, false )
             call ShowFrame( multbframw, false )
             call ShowFrame( OpenEmoteButton, true )
             call ShowFrame( OpenStatsButton, false )
         elseif IsFrameVisible(CloseStatsButton)==true then
+            call SetFramePriority(GetOriginFrame( ORIGIN_FRAME_CHAT_MSG, 0 ),7)
             call ShowFrame( OpenStatsButton, true )
             call ShowFrame( multbframw, true )
             call ShowFrame( StatsBarFrame, false )
@@ -19318,8 +19323,8 @@ function UpdateMultiboard takes nothing returns nothing
         local integer Rowx
         set Rowx=0
         loop
-        exitwhen Rowx>=10
-        if ingame[Rowx]==true then
+            exitwhen Rowx>=10
+            if ingame[Rowx]==true then
                 set nick[Rowx]=udg_Color[Rowx+1]+GetPlayerName(Player(Rowx))+"["+I2S(Rowx+1)+"]"
                 set mbitem=MultiboardGetItem(mbg,row[Rowx],0)
                 call MultiboardSetItemValue(mbitem,nick[Rowx])
@@ -19355,50 +19360,50 @@ function UpdateMultiboard takes nothing returns nothing
                 call MultiboardSetItemStyle(mbitem,true,false)
                 call MultiboardSetItemValue(mbitem,I2S(2-udg_Repick[Rowx+1])+"       ")
                 if rand[Rowx]==true then
-                        call MultiboardSetItemValueColor(mbitem,255,150,150,255)
+                    call MultiboardSetItemValueColor(mbitem,255,150,150,255)
                 else
-                        call MultiboardSetItemValueColor(mbitem,255,255,255,255)
+                    call MultiboardSetItemValueColor(mbitem,255,255,255,255)
                 endif
                 call MultiboardSetItemWidth(mbitem,.04)
                 call MultiboardReleaseItem(mbitem)
                 set mbitem=MultiboardGetItem(mbg,row[Rowx],7)
                 call MultiboardSetItemStyle(mbitem,true,false)
                 if Streak[Rowx]>0 then
-                        call MultiboardSetItemValue(mbitem,udg_Color[5]+"+"+I2S(Streak[Rowx])) //streak
+                    call MultiboardSetItemValue(mbitem,udg_Color[5]+"+"+I2S(Streak[Rowx])) //streak
                 else
-                        call MultiboardSetItemValue(mbitem,udg_Color[5]+I2S(Streak[Rowx])) //streak
+                    call MultiboardSetItemValue(mbitem,udg_Color[5]+I2S(Streak[Rowx])) //streak
                 endif
                 call MultiboardSetItemWidth(mbitem,.02)
                 call MultiboardReleaseItem(mbitem)
+            endif
+            if FFAMode==false then
+                if Rowx>=0 and Rowx<=4 then
+                    call SetPlayerState(Player(Rowx),PLAYER_STATE_RESOURCE_LUMBER,win[1])
+                elseif Rowx>=5 and Rowx<=9 then
+                    call SetPlayerState(Player(Rowx),PLAYER_STATE_RESOURCE_LUMBER,win[2])
                 endif
-                if FFAMode==false then
-                    if Rowx>=0 and Rowx<=4 then
-                        call SetPlayerState(Player(Rowx),PLAYER_STATE_RESOURCE_LUMBER,win[1])
-                    elseif Rowx>=5 and Rowx<=9 then
-                        call SetPlayerState(Player(Rowx),PLAYER_STATE_RESOURCE_LUMBER,win[2])
-                    endif
-                else
-                    call SetPlayerState(Player(Rowx),PLAYER_STATE_RESOURCE_LUMBER,win[Rowx])
+            else
+                call SetPlayerState(Player(Rowx),PLAYER_STATE_RESOURCE_LUMBER,win[Rowx])
+            endif
+            if GetUnitAbilityLevel(Hero[Rowx],'B072')>0 then
+                if GetUnitAbilityLevel(Hero[Rowx],'A1GH')==0 then
+                //call UnitAddAbility(Hero[Rowx],'A1GH')
                 endif
-                if GetUnitAbilityLevel(Hero[Rowx],'B072')>0 then
-                        if GetUnitAbilityLevel(Hero[Rowx],'A1GH')==0 then
-                        //call UnitAddAbility(Hero[Rowx],'A1GH')
-                        endif
-                else
-                        if GetUnitAbilityLevel(Hero[Rowx],'A1GH')>0 then
-                        //call UnitRemoveAbility(Hero[Rowx],'A1GH')
-                        endif
+            else
+                if GetUnitAbilityLevel(Hero[Rowx],'A1GH')>0 then
+                //call UnitRemoveAbility(Hero[Rowx],'A1GH')
                 endif
-                if GetUnitAbilityLevel(Hero[Rowx],'B073')>0 then
-                        if GetUnitAbilityLevel(Hero[Rowx],'A1GJ')==0 then
-                        //call UnitAddAbility(Hero[Rowx],'A1GJ')
-                        endif
-                else
-                        if GetUnitAbilityLevel(Hero[Rowx],'A1GJ')>0 then
-                        //call UnitRemoveAbility(Hero[Rowx],'A1GJ')
-                        endif
+            endif
+            if GetUnitAbilityLevel(Hero[Rowx],'B073')>0 then
+                if GetUnitAbilityLevel(Hero[Rowx],'A1GJ')==0 then
+                //call UnitAddAbility(Hero[Rowx],'A1GJ')
                 endif
-        set Rowx=Rowx+1
+            else
+                if GetUnitAbilityLevel(Hero[Rowx],'A1GJ')>0 then
+                //call UnitRemoveAbility(Hero[Rowx],'A1GJ')
+                endif
+            endif
+            set Rowx=Rowx+1
         endloop
         set mbitem=MultiboardGetItem(mbg,row[11],0)
         call MultiboardSetItemStyle(mbitem,true,false)
@@ -22901,6 +22906,7 @@ function Trig_StatusBar_Actions takes nothing returns nothing
     local framehandle EmoteFrame
     local framehandle EmoteFrameBG
     local framehandle EmoteFrameBlock
+    local framehandle StatsIconFrame
     local trigger tOnPress = null
     local trigger tOnUnPress = null
     local trigger tOnClick = null
@@ -23487,35 +23493,408 @@ function Trig_StatusBar_Actions takes nothing returns nothing
     call SetFrameTextureEx(StatsBarFrame, 0, "UI\\widgets\\BattleNet\\bnet-tooltip-background.blp", false, "Choice-tooltip-border.blp", 0)
     call SetFramePriority( StatsBarFrame, 5 )
         
-    set StatsBarFrameText=CreateFrameByType( "SIMPLETEXT", "StatsBarText", StatsBarFrame, "", 0 )
+    
+
+    set StatsBarFrameText=CreateFrameByType( "SIMPLETEXT", "StatsPlayerNameRoot", StatsBarFrame, "", 0 )
     call ClearFrameAllPoints( StatsBarFrameText )
     call SetFrameBlendMode( StatsBarFrameText, 0, BLEND_MODE_BLEND )
-    call SetFrameFont( StatsBarFrameText, "Fonts\\FRIZQT__.TTF", .011, 0 )
+    call SetFrameFont( StatsBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
     call SetFrameTextAlignment( StatsBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
     call SetFrameTextColour( StatsBarFrameText, 0xFFFFA500 )
     call SetFrameParent( StatsBarFrameText, StatsBarFrame )
-    call SetFrameText( StatsBarFrameText, "Hero statistics")
+    call SetFrameText( StatsBarFrameText, "Player")
     call ShowFrame( StatsBarFrameText, true )
-    call SetFrameRelativePoint( StatsBarFrameText, FRAMEPOINT_TOPLEFT, StatsBarFrame, FRAMEPOINT_TOPLEFT, .013, -.02 )
-    
-    set StatsBarGridFrame=CreateFrameByType("SIMPLEGRID", "StatsBarGrid", StatsBarFrame, "", 0)
-    call ClearFrameAllPoints( StatsBarGridFrame )
-    call SetFrameRelativePoint( StatsBarGridFrame, FRAMEPOINT_TOPLEFT, StatsBarFrame, FRAMEPOINT_TOPLEFT,  .015, -.04  )
-    call SetFrameGridSize( StatsBarGridFrame, 6, 19 )
-    call SetFrameSize( StatsBarGridFrame, .70, .24)
-    call SetFramePriority( StatsBarGridFrame, 6 )
+    call SetFrameRelativePoint( StatsBarFrameText, FRAMEPOINT_TOPLEFT, StatsBarFrame, FRAMEPOINT_TOPLEFT,  .01, -.03  )
+    // call SetFrameGridFrame( StatsBarGridFrame, 0, 0, StatsBarFrameText )
 
-    set tOnPress = CreateTrigger( )
-    set tOnUnPress = CreateTrigger( )
-    set tOnClick = CreateTrigger( )
-    set tOnHover = CreateTrigger( )
-    set tOnUnHover = CreateTrigger( )
+    set StatsBarFrameText=CreateFrameByType( "SIMPLETEXT", "StatsHeroIconRoot", StatsBarFrame, "", 0 )
+    call ClearFrameAllPoints( StatsBarFrameText )
+    call SetFrameBlendMode( StatsBarFrameText, 0, BLEND_MODE_BLEND )
+    call SetFrameFont( StatsBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+    call SetFrameTextAlignment( StatsBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
+    call SetFrameTextColour( StatsBarFrameText, 0xFFFFA500 )
+    call SetFrameParent( StatsBarFrameText, StatsBarFrame )
+    call SetFrameText( StatsBarFrameText, "Hero")
+    call ShowFrame( StatsBarFrameText, true )
+    call SetFrameRelativePoint( StatsBarFrameText, FRAMEPOINT_TOPLEFT, GetFrameByName("StatsPlayerNameRoot",0), FRAMEPOINT_TOPLEFT,  .07, 0  )
+
+    set StatsBarFrameText=CreateFrameByType( "SIMPLETEXT", "StatsHeroLevelRoot", StatsBarFrame, "", 0 )
+    call ClearFrameAllPoints( StatsBarFrameText )
+    call SetFrameBlendMode( StatsBarFrameText, 0, BLEND_MODE_BLEND )
+    call SetFrameFont( StatsBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+    call SetFrameTextAlignment( StatsBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
+    call SetFrameTextColour( StatsBarFrameText, 0xFFFFA500 )
+    call SetFrameParent( StatsBarFrameText, StatsBarFrame )
+    call SetFrameText( StatsBarFrameText, "L")
+    call ShowFrame( StatsBarFrameText, true )
+    call SetFrameRelativePoint( StatsBarFrameText, FRAMEPOINT_TOPLEFT, GetFrameByName("StatsHeroIconRoot",0), FRAMEPOINT_TOPLEFT,  .03, 0  )
+
+    set StatsBarFrameText=CreateFrameByType( "SIMPLETEXT", "StatsHeroKillRoot", StatsBarFrame, "", 0 )
+    call ClearFrameAllPoints( StatsBarFrameText )
+    call SetFrameBlendMode( StatsBarFrameText, 0, BLEND_MODE_BLEND )
+    call SetFrameFont( StatsBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+    call SetFrameTextAlignment( StatsBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
+    call SetFrameTextColour( StatsBarFrameText, 0xFFFFA500 )
+    call SetFrameParent( StatsBarFrameText, StatsBarFrame )
+    call SetFrameText( StatsBarFrameText, "K")
+    call ShowFrame( StatsBarFrameText, true )
+    call SetFrameRelativePoint( StatsBarFrameText, FRAMEPOINT_TOPLEFT, GetFrameByName("StatsHeroLevelRoot",0), FRAMEPOINT_TOPLEFT,  .02, 0  )
+
+    set StatsBarFrameText=CreateFrameByType( "SIMPLETEXT", "StatsHeroDeathRoot", StatsBarFrame, "", 0 )
+    call ClearFrameAllPoints( StatsBarFrameText )
+    call SetFrameBlendMode( StatsBarFrameText, 0, BLEND_MODE_BLEND )
+    call SetFrameFont( StatsBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+    call SetFrameTextAlignment( StatsBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
+    call SetFrameTextColour( StatsBarFrameText, 0xFFFFA500 )
+    call SetFrameParent( StatsBarFrameText, StatsBarFrame )
+    call SetFrameText( StatsBarFrameText, "D")
+    call ShowFrame( StatsBarFrameText, true )
+    call SetFrameRelativePoint( StatsBarFrameText, FRAMEPOINT_TOPLEFT, GetFrameByName("StatsHeroKillRoot",0), FRAMEPOINT_TOPLEFT,  .01, 0  )
+
+    set StatsBarFrameText=CreateFrameByType( "SIMPLETEXT", "StatsHeroAssistRoot", StatsBarFrame, "", 0 )
+    call ClearFrameAllPoints( StatsBarFrameText )
+    call SetFrameBlendMode( StatsBarFrameText, 0, BLEND_MODE_BLEND )
+    call SetFrameFont( StatsBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+    call SetFrameTextAlignment( StatsBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
+    call SetFrameTextColour( StatsBarFrameText, 0xFFFFA500 )
+    call SetFrameParent( StatsBarFrameText, StatsBarFrame )
+    call SetFrameText( StatsBarFrameText, "A")
+    call ShowFrame( StatsBarFrameText, true )
+    call SetFrameRelativePoint( StatsBarFrameText, FRAMEPOINT_TOPLEFT, GetFrameByName("StatsHeroDeathRoot",0), FRAMEPOINT_TOPLEFT,  .01, 0  )
+
+    set StatsBarFrameText=CreateFrameByType( "SIMPLETEXT", "StatsHeroWinRoot", StatsBarFrame, "", 0 )
+    call ClearFrameAllPoints( StatsBarFrameText )
+    call SetFrameBlendMode( StatsBarFrameText, 0, BLEND_MODE_BLEND )
+    call SetFrameFont( StatsBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+    call SetFrameTextAlignment( StatsBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
+    call SetFrameTextColour( StatsBarFrameText, 0xFFFFA500 )
+    call SetFrameParent( StatsBarFrameText, StatsBarFrame )
+    call SetFrameText( StatsBarFrameText, "W")
+    call ShowFrame( StatsBarFrameText, true )
+    call SetFrameRelativePoint( StatsBarFrameText, FRAMEPOINT_TOPLEFT, GetFrameByName("StatsHeroAssistRoot",0), FRAMEPOINT_TOPLEFT,  .015, 0  )
+
+    set StatsBarFrameText=CreateFrameByType( "SIMPLETEXT", "StatsHeroInventoryRoot", StatsBarFrame, "", 0 )
+    call ClearFrameAllPoints( StatsBarFrameText )
+    call SetFrameBlendMode( StatsBarFrameText, 0, BLEND_MODE_BLEND )
+    call SetFrameFont( StatsBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+    call SetFrameTextAlignment( StatsBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
+    call SetFrameTextColour( StatsBarFrameText, 0xFFFFA500 )
+    call SetFrameParent( StatsBarFrameText, StatsBarFrame )
+    call SetFrameText( StatsBarFrameText, "Inventory")
+    call ShowFrame( StatsBarFrameText, true )
+    call SetFrameRelativePoint( StatsBarFrameText, FRAMEPOINT_TOPLEFT, GetFrameByName("StatsHeroWinRoot",0), FRAMEPOINT_TOPLEFT,  .025, 0  )
+
+    set StatsBarFrameText=CreateFrameByType( "SIMPLETEXT", "StatsGoldRoot", StatsBarFrame, "", 0 )
+    call ClearFrameAllPoints( StatsBarFrameText )
+    call SetFrameBlendMode( StatsBarFrameText, 0, BLEND_MODE_BLEND )
+    call SetFrameFont( StatsBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+    call SetFrameTextAlignment( StatsBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
+    call SetFrameTextColour( StatsBarFrameText, 0xFFFFA500 )
+    call SetFrameParent( StatsBarFrameText, StatsBarFrame )
+    call SetFrameText( StatsBarFrameText, "Gold")
+    call ShowFrame( StatsBarFrameText, true )
+    call SetFrameRelativePoint( StatsBarFrameText, FRAMEPOINT_TOPLEFT, GetFrameByName("StatsHeroInventoryRoot",0), FRAMEPOINT_TOPLEFT,  .045, 0  )
+
+
+    set StatsBarFrameText=CreateFrameByType( "SIMPLETEXT", "StatsHeroTDRoot", StatsBarFrame, "", 0 )
+    call ClearFrameAllPoints( StatsBarFrameText )
+    call SetFrameBlendMode( StatsBarFrameText, 0, BLEND_MODE_BLEND )
+    call SetFrameFont( StatsBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+    call SetFrameTextAlignment( StatsBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
+    call SetFrameTextColour( StatsBarFrameText, 0xFFFFA500 )
+    call SetFrameParent( StatsBarFrameText, StatsBarFrame )
+    call SetFrameText( StatsBarFrameText, "Total\nDMG")
+    call ShowFrame( StatsBarFrameText, true )
+    call SetFrameRelativePoint( StatsBarFrameText, FRAMEPOINT_TOPLEFT, GetFrameByName("StatsGoldRoot",0), FRAMEPOINT_TOPLEFT,  .06, 0  )
+
+    
+    set StatsBarFrameText=CreateFrameByType( "SIMPLETEXT", "StatsHeroDTRoot", StatsBarFrame, "", 0 )
+    call ClearFrameAllPoints( StatsBarFrameText )
+    call SetFrameBlendMode( StatsBarFrameText, 0, BLEND_MODE_BLEND )
+    call SetFrameFont( StatsBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+    call SetFrameTextAlignment( StatsBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
+    call SetFrameTextColour( StatsBarFrameText, 0xFFFFA500 )
+    call SetFrameParent( StatsBarFrameText, StatsBarFrame )
+    call SetFrameText( StatsBarFrameText, "DMG\nTanked")
+    call ShowFrame( StatsBarFrameText, true )
+    call SetFrameRelativePoint( StatsBarFrameText, FRAMEPOINT_TOPLEFT, GetFrameByName("StatsHeroTDRoot",0), FRAMEPOINT_TOPLEFT,  .045, 0  )
+
+    set StatsBarFrameText=CreateFrameByType( "SIMPLETEXT", "StatsHeroGRRoot", StatsBarFrame, "", 0 )
+    call ClearFrameAllPoints( StatsBarFrameText )
+    call SetFrameBlendMode( StatsBarFrameText, 0, BLEND_MODE_BLEND )
+    call SetFrameFont( StatsBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+    call SetFrameTextAlignment( StatsBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
+    call SetFrameTextColour( StatsBarFrameText, 0xFFFFA500 )
+    call SetFrameParent( StatsBarFrameText, StatsBarFrame )
+    call SetFrameText( StatsBarFrameText, "General\nResist")
+    call ShowFrame( StatsBarFrameText, true )
+    call SetFrameRelativePoint( StatsBarFrameText, FRAMEPOINT_TOPLEFT, GetFrameByName("StatsHeroDTRoot",0), FRAMEPOINT_TOPLEFT,  .045, 0  )
+
+    set StatsBarFrameText=CreateFrameByType( "SIMPLETEXT", "StatsHeroTSRoot", StatsBarFrame, "", 0 )
+    call ClearFrameAllPoints( StatsBarFrameText )
+    call SetFrameBlendMode( StatsBarFrameText, 0, BLEND_MODE_BLEND )
+    call SetFrameFont( StatsBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+    call SetFrameTextAlignment( StatsBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
+    call SetFrameTextColour( StatsBarFrameText, 0xFFFFA500 )
+    call SetFrameParent( StatsBarFrameText, StatsBarFrame )
+    call SetFrameText( StatsBarFrameText, "DMG\nShielded")
+    call ShowFrame( StatsBarFrameText, true )
+    call SetFrameRelativePoint( StatsBarFrameText, FRAMEPOINT_TOPLEFT, GetFrameByName("StatsHeroGRRoot",0), FRAMEPOINT_TOPLEFT,  .045, 0  )
+
+    set StatsBarFrameText=CreateFrameByType( "SIMPLETEXT", "StatsHeroTSHRoot", StatsBarFrame, "", 0 )
+    call ClearFrameAllPoints( StatsBarFrameText )
+    call SetFrameBlendMode( StatsBarFrameText, 0, BLEND_MODE_BLEND )
+    call SetFrameFont( StatsBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+    call SetFrameTextAlignment( StatsBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
+    call SetFrameTextColour( StatsBarFrameText, 0xFFFFA500 )
+    call SetFrameParent( StatsBarFrameText, StatsBarFrame )
+    call SetFrameText( StatsBarFrameText, "Self\nHeal")
+    call ShowFrame( StatsBarFrameText, true )
+    call SetFrameRelativePoint( StatsBarFrameText, FRAMEPOINT_TOPLEFT, GetFrameByName("StatsHeroTSRoot",0), FRAMEPOINT_TOPLEFT,  .06, 0  )
+
+    set StatsBarFrameText=CreateFrameByType( "SIMPLETEXT", "StatsHeroTAHRoot", StatsBarFrame, "", 0 )
+    call ClearFrameAllPoints( StatsBarFrameText )
+    call SetFrameBlendMode( StatsBarFrameText, 0, BLEND_MODE_BLEND )
+    call SetFrameFont( StatsBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+    call SetFrameTextAlignment( StatsBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
+    call SetFrameTextColour( StatsBarFrameText, 0xFFFFA500 )
+    call SetFrameParent( StatsBarFrameText, StatsBarFrame )
+    call SetFrameText( StatsBarFrameText, "Ally\nHeal")
+    call ShowFrame( StatsBarFrameText, true )
+    call SetFrameRelativePoint( StatsBarFrameText, FRAMEPOINT_TOPLEFT, GetFrameByName("StatsHeroTSHRoot",0), FRAMEPOINT_TOPLEFT,  .045, 0  )
+
+    set StatsBarFrameText=CreateFrameByType( "SIMPLETEXT", "StatsHeroTSMRoot", StatsBarFrame, "", 0 )
+    call ClearFrameAllPoints( StatsBarFrameText )
+    call SetFrameBlendMode( StatsBarFrameText, 0, BLEND_MODE_BLEND )
+    call SetFrameFont( StatsBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+    call SetFrameTextAlignment( StatsBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
+    call SetFrameTextColour( StatsBarFrameText, 0xFFFFA500 )
+    call SetFrameParent( StatsBarFrameText, StatsBarFrame )
+    call SetFrameText( StatsBarFrameText, "Self\nMana")
+    call ShowFrame( StatsBarFrameText, true )
+    call SetFrameRelativePoint( StatsBarFrameText, FRAMEPOINT_TOPLEFT, GetFrameByName("StatsHeroTAHRoot",0), FRAMEPOINT_TOPLEFT,  .06, 0  )
+
+    set StatsBarFrameText=CreateFrameByType( "SIMPLETEXT", "StatsHeroTAMRoot", StatsBarFrame, "", 0 )
+    call ClearFrameAllPoints( StatsBarFrameText )
+    call SetFrameBlendMode( StatsBarFrameText, 0, BLEND_MODE_BLEND )
+    call SetFrameFont( StatsBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+    call SetFrameTextAlignment( StatsBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
+    call SetFrameTextColour( StatsBarFrameText, 0xFFFFA500 )
+    call SetFrameParent( StatsBarFrameText, StatsBarFrame )
+    call SetFrameText( StatsBarFrameText, "Ally\nMana")
+    call ShowFrame( StatsBarFrameText, true )
+    call SetFrameRelativePoint( StatsBarFrameText, FRAMEPOINT_TOPLEFT, GetFrameByName("StatsHeroTSMRoot",0), FRAMEPOINT_TOPLEFT,  .045, 0  )
 
     set x=0
     loop 
     exitwhen x>9
-    
-    set x=x+1
+        set StatsBarFrameText=CreateFrameByType( "SIMPLETEXT", "StatsPlayerName", StatsBarFrame, "", x )
+        call ClearFrameAllPoints( StatsBarFrameText )
+        call SetFrameBlendMode( StatsBarFrameText, 0, BLEND_MODE_BLEND )
+        call SetFrameFont( StatsBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+        call SetFrameTextAlignment( StatsBarFrameText, TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_MIDDLE )
+        call SetFrameTextColour( StatsBarFrameText, Colour[x] )
+        call SetFrameParent( StatsBarFrameText, StatsBarFrame )
+        call SetFrameText( StatsBarFrameText, "-----")
+        call ShowFrame( StatsBarFrameText, true )
+        call SetFrameRelativePoint( StatsBarFrameText, FRAMEPOINT_TOPLEFT, GetFrameByName("StatsPlayerNameRoot",0), FRAMEPOINT_TOPLEFT,  .0, (-.032*(x+1))-0.003  )
+
+        set StatsIconFrame=CreateFrameByType( "SIMPLEBUTTON", "StatsHeroIcon", StatsBarFrame, "", x )
+        call ClearFrameAllPoints( StatsIconFrame )
+        call SetFrameTexture( StatsIconFrame, "UI\\Widgets\\Console\\Human\\human-inventory-slotfiller.blp", 0, true )
+        call SetFrameTexture( StatsIconFrame, "UI\\Widgets\\Console\\Human\\human-inventory-slotfiller.blp", 1, true )
+        call SetFrameTexture( StatsIconFrame, "UI\\Widgets\\Console\\Human\\human-inventory-slotfiller.blp", 2, true )
+        call SetFrameSize( StatsIconFrame, .018, .018 )
+        call ShowFrame( StatsIconFrame, true )
+        call SetFramePriority( StatsIconFrame, 5 )
+        call SetFrameRelativePoint( StatsIconFrame, FRAMEPOINT_TOPLEFT, GetFrameByName("StatsHeroIconRoot",0), FRAMEPOINT_TOPLEFT,  .0, -.032*(x+1)  )
+
+        set StatsBarFrameText=CreateFrameByType( "SIMPLETEXT", "StatsHeroLevel", StatsBarFrame, "", x )
+        call ClearFrameAllPoints( StatsBarFrameText )
+        call SetFrameBlendMode( StatsBarFrameText, 0, BLEND_MODE_BLEND )
+        call SetFrameFont( StatsBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+        call SetFrameTextAlignment( StatsBarFrameText, TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_MIDDLE )
+        call SetFrameTextColour( StatsBarFrameText, Colour[x] )
+        call SetFrameParent( StatsBarFrameText, StatsBarFrame )
+        call SetFrameText( StatsBarFrameText, "0")
+        call ShowFrame( StatsBarFrameText, true )
+        call SetFrameRelativePoint( StatsBarFrameText, FRAMEPOINT_TOPLEFT, GetFrameByName("StatsHeroLevelRoot",0), FRAMEPOINT_TOPLEFT,  .0, (-.032*(x+1))-0.003  )
+
+        set StatsBarFrameText=CreateFrameByType( "SIMPLETEXT", "StatsHeroKill", StatsBarFrame, "", x )
+        call ClearFrameAllPoints( StatsBarFrameText )
+        call SetFrameBlendMode( StatsBarFrameText, 0, BLEND_MODE_BLEND )
+        call SetFrameFont( StatsBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+        call SetFrameTextAlignment( StatsBarFrameText, TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_MIDDLE )
+        call SetFrameTextColour( StatsBarFrameText, Colour[x] )
+        call SetFrameParent( StatsBarFrameText, StatsBarFrame )
+        call SetFrameText( StatsBarFrameText, "0")
+        call ShowFrame( StatsBarFrameText, true )
+        call SetFrameRelativePoint( StatsBarFrameText, FRAMEPOINT_TOPLEFT, GetFrameByName("StatsHeroKillRoot",0), FRAMEPOINT_TOPLEFT,  .0, (-.032*(x+1))-0.003  )
+        
+        set StatsBarFrameText=CreateFrameByType( "SIMPLETEXT", "StatsHeroDeath", StatsBarFrame, "", x )
+        call ClearFrameAllPoints( StatsBarFrameText )
+        call SetFrameBlendMode( StatsBarFrameText, 0, BLEND_MODE_BLEND )
+        call SetFrameFont( StatsBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+        call SetFrameTextAlignment( StatsBarFrameText, TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_MIDDLE )
+        call SetFrameTextColour( StatsBarFrameText, Colour[x] )
+        call SetFrameParent( StatsBarFrameText, StatsBarFrame )
+        call SetFrameText( StatsBarFrameText, "0")
+        call ShowFrame( StatsBarFrameText, true )
+        call SetFrameRelativePoint( StatsBarFrameText, FRAMEPOINT_TOPLEFT, GetFrameByName("StatsHeroDeathRoot",0), FRAMEPOINT_TOPLEFT,  .0, (-.032*(x+1))-0.003  )
+        
+        set StatsBarFrameText=CreateFrameByType( "SIMPLETEXT", "StatsHeroAssist", StatsBarFrame, "", x )
+        call ClearFrameAllPoints( StatsBarFrameText )
+        call SetFrameBlendMode( StatsBarFrameText, 0, BLEND_MODE_BLEND )
+        call SetFrameFont( StatsBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+        call SetFrameTextAlignment( StatsBarFrameText, TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_MIDDLE )
+        call SetFrameTextColour( StatsBarFrameText, Colour[x] )
+        call SetFrameParent( StatsBarFrameText, StatsBarFrame )
+        call SetFrameText( StatsBarFrameText, "0")
+        call ShowFrame( StatsBarFrameText, true )
+        call SetFrameRelativePoint( StatsBarFrameText, FRAMEPOINT_TOPLEFT, GetFrameByName("StatsHeroAssistRoot",0), FRAMEPOINT_TOPLEFT,  .0, (-.032*(x+1))-0.003  )
+        
+        set StatsBarFrameText=CreateFrameByType( "SIMPLETEXT", "StatsHeroWin", StatsBarFrame, "", x )
+        call ClearFrameAllPoints( StatsBarFrameText )
+        call SetFrameBlendMode( StatsBarFrameText, 0, BLEND_MODE_BLEND )
+        call SetFrameFont( StatsBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+        call SetFrameTextAlignment( StatsBarFrameText, TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_MIDDLE )
+        call SetFrameTextColour( StatsBarFrameText, Colour[x] )
+        call SetFrameParent( StatsBarFrameText, StatsBarFrame )
+        call SetFrameText( StatsBarFrameText, "0")
+        call ShowFrame( StatsBarFrameText, true )
+        call SetFrameRelativePoint( StatsBarFrameText, FRAMEPOINT_TOPLEFT, GetFrameByName("StatsHeroWinRoot",0), FRAMEPOINT_TOPLEFT,  .0, (-.032*(x+1))-0.003  )
+
+        set StatsBarGridFrame=CreateFrameByType("SIMPLEGRID", "StatsHeroInventory", StatsBarFrame, "", x)
+        call ClearFrameAllPoints( StatsBarGridFrame )
+        call SetFrameGridSize( StatsBarGridFrame, 3, 4 )
+        call SetFrameSize( StatsBarGridFrame, .04, .03)
+        call SetFramePriority( StatsBarGridFrame, 6 )
+        call SetFrameRelativePoint( StatsBarGridFrame, FRAMEPOINT_TOPLEFT, GetFrameByName("StatsHeroInventoryRoot",0), FRAMEPOINT_TOPLEFT,  -.01, (-.032*(x+1))+0.008  )
+
+        set j=0
+        loop 
+        exitwhen j>10
+
+            set StatsIconFrame=CreateFrameByType( "SIMPLEBUTTON", "StatsHeroInventoryIcon", StatsBarFrame, "", x*10+j )
+            call ClearFrameAllPoints( StatsIconFrame )
+            call SetFrameTexture( StatsIconFrame, "UI\\Widgets\\Console\\Human\\human-inventory-slotfiller.blp", 0, true )
+            call SetFrameTexture( StatsIconFrame, "UI\\Widgets\\Console\\Human\\human-inventory-slotfiller.blp", 1, true )
+            call SetFrameTexture( StatsIconFrame, "UI\\Widgets\\Console\\Human\\human-inventory-slotfiller.blp", 2, true )
+            call SetFrameSize( StatsIconFrame, .0105, .0105 )
+            call ShowFrame( StatsIconFrame, true )
+            call SetFramePriority( StatsIconFrame, 5 )
+            if j<3 then
+                call SetFrameGridFrame( StatsBarGridFrame, 0, j+1, StatsIconFrame )
+            elseif j>=3 and j<6 then
+                call SetFrameGridFrame( StatsBarGridFrame, 1, (j-3)+1, StatsIconFrame )
+            elseif j>=6 and j<9 then
+                call SetFrameGridFrame( StatsBarGridFrame, 2, (j-6)+1, StatsIconFrame )
+            elseif j==9 then
+                call SetFrameGridFrame( StatsBarGridFrame, 1, 0, StatsIconFrame )
+            endif
+            set j=j+1
+        endloop  
+
+        set StatsBarFrameText=CreateFrameByType( "SIMPLETEXT", "StatsGold", StatsBarFrame, "", x )
+        call ClearFrameAllPoints( StatsBarFrameText )
+        call SetFrameBlendMode( StatsBarFrameText, 0, BLEND_MODE_BLEND )
+        call SetFrameFont( StatsBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+        call SetFrameTextAlignment( StatsBarFrameText, TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_MIDDLE )
+        call SetFrameTextColour( StatsBarFrameText, Colour[x] )
+        call SetFrameParent( StatsBarFrameText, StatsBarFrame )
+        call SetFrameText( StatsBarFrameText, "0")
+        call ShowFrame( StatsBarFrameText, true )
+        call SetFrameRelativePoint( StatsBarFrameText, FRAMEPOINT_TOPLEFT, GetFrameByName("StatsGoldRoot",0), FRAMEPOINT_TOPLEFT,  .01, (-.032*(x+1))-0.003  )
+                
+        set StatsBarFrameText=CreateFrameByType( "SIMPLETEXT", "StatsHeroTD", StatsBarFrame, "", x )
+        call ClearFrameAllPoints( StatsBarFrameText )
+        call SetFrameBlendMode( StatsBarFrameText, 0, BLEND_MODE_BLEND )
+        call SetFrameFont( StatsBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+        call SetFrameTextAlignment( StatsBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
+        call SetFrameTextColour( StatsBarFrameText, Colour[x] )
+        call SetFrameParent( StatsBarFrameText, StatsBarFrame )
+        call SetFrameText( StatsBarFrameText, "0")
+        call ShowFrame( StatsBarFrameText, true )
+        call SetFrameRelativePoint( StatsBarFrameText, FRAMEPOINT_TOPLEFT, GetFrameByName("StatsHeroTDRoot",0), FRAMEPOINT_TOPLEFT,  .01, (-.032*(x+1))-0.003  )
+        
+        set StatsBarFrameText=CreateFrameByType( "SIMPLETEXT", "StatsHeroDT", StatsBarFrame, "", x )
+        call ClearFrameAllPoints( StatsBarFrameText )
+        call SetFrameBlendMode( StatsBarFrameText, 0, BLEND_MODE_BLEND )
+        call SetFrameFont( StatsBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+        call SetFrameTextAlignment( StatsBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
+        call SetFrameTextColour( StatsBarFrameText, Colour[x] )
+        call SetFrameParent( StatsBarFrameText, StatsBarFrame )
+        call SetFrameText( StatsBarFrameText, "0")
+        call ShowFrame( StatsBarFrameText, true )
+        call SetFrameRelativePoint( StatsBarFrameText, FRAMEPOINT_TOPLEFT, GetFrameByName("StatsHeroDTRoot",0), FRAMEPOINT_TOPLEFT,  .01, (-.032*(x+1))-0.003  )
+        
+        set StatsBarFrameText=CreateFrameByType( "SIMPLETEXT", "StatsHeroGR", StatsBarFrame, "", x )
+        call ClearFrameAllPoints( StatsBarFrameText )
+        call SetFrameBlendMode( StatsBarFrameText, 0, BLEND_MODE_BLEND )
+        call SetFrameFont( StatsBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+        call SetFrameTextAlignment( StatsBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
+        call SetFrameTextColour( StatsBarFrameText, Colour[x] )
+        call SetFrameParent( StatsBarFrameText, StatsBarFrame )
+        call SetFrameText( StatsBarFrameText, "0")
+        call ShowFrame( StatsBarFrameText, true )
+        call SetFrameRelativePoint( StatsBarFrameText, FRAMEPOINT_TOPLEFT, GetFrameByName("StatsHeroGRRoot",0), FRAMEPOINT_TOPLEFT,  .01, (-.032*(x+1))-0.003  )
+        
+        set StatsBarFrameText=CreateFrameByType( "SIMPLETEXT", "StatsHeroTS", StatsBarFrame, "", x )
+        call ClearFrameAllPoints( StatsBarFrameText )
+        call SetFrameBlendMode( StatsBarFrameText, 0, BLEND_MODE_BLEND )
+        call SetFrameFont( StatsBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+        call SetFrameTextAlignment( StatsBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
+        call SetFrameTextColour( StatsBarFrameText, Colour[x] )
+        call SetFrameParent( StatsBarFrameText, StatsBarFrame )
+        call SetFrameText( StatsBarFrameText, "0")
+        call ShowFrame( StatsBarFrameText, true )
+        call SetFrameRelativePoint( StatsBarFrameText, FRAMEPOINT_TOPLEFT, GetFrameByName("StatsHeroTSRoot",0), FRAMEPOINT_TOPLEFT,  .01, (-.032*(x+1))-0.003  )
+        
+        set StatsBarFrameText=CreateFrameByType( "SIMPLETEXT", "StatsHeroTSH", StatsBarFrame, "", x )
+        call ClearFrameAllPoints( StatsBarFrameText )
+        call SetFrameBlendMode( StatsBarFrameText, 0, BLEND_MODE_BLEND )
+        call SetFrameFont( StatsBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+        call SetFrameTextAlignment( StatsBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
+        call SetFrameTextColour( StatsBarFrameText, Colour[x] )
+        call SetFrameParent( StatsBarFrameText, StatsBarFrame )
+        call SetFrameText( StatsBarFrameText, "0")
+        call ShowFrame( StatsBarFrameText, true )
+        call SetFrameRelativePoint( StatsBarFrameText, FRAMEPOINT_TOPLEFT, GetFrameByName("StatsHeroTSHRoot",0), FRAMEPOINT_TOPLEFT,  .01, (-.032*(x+1))-0.003  )
+        
+        set StatsBarFrameText=CreateFrameByType( "SIMPLETEXT", "StatsHeroTAH", StatsBarFrame, "", x )
+        call ClearFrameAllPoints( StatsBarFrameText )
+        call SetFrameBlendMode( StatsBarFrameText, 0, BLEND_MODE_BLEND )
+        call SetFrameFont( StatsBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+        call SetFrameTextAlignment( StatsBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
+        call SetFrameTextColour( StatsBarFrameText, Colour[x] )
+        call SetFrameParent( StatsBarFrameText, StatsBarFrame )
+        call SetFrameText( StatsBarFrameText, "0")
+        call ShowFrame( StatsBarFrameText, true )
+        call SetFrameRelativePoint( StatsBarFrameText, FRAMEPOINT_TOPLEFT, GetFrameByName("StatsHeroTAHRoot",0), FRAMEPOINT_TOPLEFT,  .01, (-.032*(x+1))-0.003  )
+        
+        set StatsBarFrameText=CreateFrameByType( "SIMPLETEXT", "StatsHeroTSM", StatsBarFrame, "", x )
+        call ClearFrameAllPoints( StatsBarFrameText )
+        call SetFrameBlendMode( StatsBarFrameText, 0, BLEND_MODE_BLEND )
+        call SetFrameFont( StatsBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+        call SetFrameTextAlignment( StatsBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
+        call SetFrameTextColour( StatsBarFrameText, Colour[x] )
+        call SetFrameParent( StatsBarFrameText, StatsBarFrame )
+        call SetFrameText( StatsBarFrameText, "0")
+        call ShowFrame( StatsBarFrameText, true )
+        call SetFrameRelativePoint( StatsBarFrameText, FRAMEPOINT_TOPLEFT, GetFrameByName("StatsHeroTSMRoot",0), FRAMEPOINT_TOPLEFT,  .01, (-.032*(x+1))-0.003  )
+        
+        set StatsBarFrameText=CreateFrameByType( "SIMPLETEXT", "StatsHeroTAM", StatsBarFrame, "", x )
+        call ClearFrameAllPoints( StatsBarFrameText )
+        call SetFrameBlendMode( StatsBarFrameText, 0, BLEND_MODE_BLEND )
+        call SetFrameFont( StatsBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+        call SetFrameTextAlignment( StatsBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
+        call SetFrameTextColour( StatsBarFrameText, Colour[x] )
+        call SetFrameParent( StatsBarFrameText, StatsBarFrame )
+        call SetFrameText( StatsBarFrameText, "0")
+        call ShowFrame( StatsBarFrameText, true )
+        call SetFrameRelativePoint( StatsBarFrameText, FRAMEPOINT_TOPLEFT, GetFrameByName("StatsHeroTAMRoot",0), FRAMEPOINT_TOPLEFT,  .01, (-.032*(x+1))-0.003  )
+
+        set x=x+1
     endloop  
 
     set CloseStatsButton=CreateFrameByType( "SIMPLEBUTTON", "StatsBarClose", StatsBarFrame, "", 0 )
@@ -23671,6 +24050,7 @@ function Trig_StatusBar_Actions takes nothing returns nothing
     endloop
     call ClickFrame(CloseEmoteButton)
     call ClickFrame(CloseStatsButton)
+    call EnableTrigger(gg_trg_Time)
     //call CreateDoodad('D01P',500,-280,270,1,1)
 set tOnPress = null
 set tOnUnPress = null
@@ -23955,15 +24335,107 @@ set u=null
 endfunction
 function TimeAct takes nothing returns nothing
 local integer x
-local integer i=0
+local integer i
 set seconds=seconds+1
 set x=0
 loop
 exitwhen x>=12
-if GetPlayerSlotState(Player(x))!=PLAYER_SLOT_STATE_PLAYING then
-set ingame[x]=false
-endif
-set x=x+1
+    if GetPlayerSlotState(Player(x))!=PLAYER_SLOT_STATE_PLAYING then
+        set ingame[x]=false
+    endif
+    call SetFrameText(GetFrameByName("StatsHeroTD",x),I2S(R2I(LoadReal(HH, GetHandleId(Player(x)), TD_INDICATOR))))
+    if StringLength(I2S(R2I(LoadReal(HH, GetHandleId(Player(x)), TD_INDICATOR))))<6 then
+        call SetFrameFont( GetFrameByName("StatsHeroTD",x), "Fonts\\FRIZQT__.TTF", .009, 0 )
+    else 
+        call SetFrameFont( GetFrameByName("StatsHeroTD",x), "Fonts\\FRIZQT__.TTF", .008, 0 )
+    endif
+    call SetFrameText(GetFrameByName("StatsHeroDT",x),I2S(R2I(LoadReal(HH, GetHandleId(Player(x)), TTD_INDICATOR))))
+    if StringLength(I2S(R2I(LoadReal(HH, GetHandleId(Player(x)), TTD_INDICATOR))))<6 then
+        call SetFrameFont( GetFrameByName("StatsHeroDT",x), "Fonts\\FRIZQT__.TTF", .009, 0 )
+    else
+        call SetFrameFont( GetFrameByName("StatsHeroDT",x), "Fonts\\FRIZQT__.TTF", .008, 0 )
+    endif
+    call SetFrameText(GetFrameByName("StatsHeroGR",x),I2S(R2I(LoadReal(HH, GetHandleId(Player(x)), GR_INDICATOR))))
+    if StringLength(I2S(R2I(LoadReal(HH, GetHandleId(Player(x)), GR_INDICATOR))))<6 then
+        call SetFrameFont( GetFrameByName("StatsHeroGR",x), "Fonts\\FRIZQT__.TTF", .009, 0 )
+    else
+        call SetFrameFont( GetFrameByName("StatsHeroGR",x), "Fonts\\FRIZQT__.TTF", .008, 0 )
+    endif
+    call SetFrameText(GetFrameByName("StatsHeroTS",x),I2S(R2I(LoadReal(HH, GetHandleId(Player(x)), TS_INDICATOR))))
+    if StringLength(I2S(R2I(LoadReal(HH, GetHandleId(Player(x)), TS_INDICATOR))))<6 then
+        call SetFrameFont( GetFrameByName("StatsHeroTS",x), "Fonts\\FRIZQT__.TTF", .009, 0 )
+    else
+        call SetFrameFont( GetFrameByName("StatsHeroTS",x), "Fonts\\FRIZQT__.TTF", .008, 0 )
+    endif
+    call SetFrameText(GetFrameByName("StatsHeroTSH",x),I2S(R2I(LoadReal(HH, GetHandleId(Player(x)), TSH_INDICATOR))))
+    if StringLength(I2S(R2I(LoadReal(HH, GetHandleId(Player(x)), TSH_INDICATOR))))<6 then
+        call SetFrameFont( GetFrameByName("StatsHeroTSH",x), "Fonts\\FRIZQT__.TTF", .009, 0 )
+    else
+        call SetFrameFont( GetFrameByName("StatsHeroTSH",x), "Fonts\\FRIZQT__.TTF", .008, 0 )
+    endif
+    call SetFrameText(GetFrameByName("StatsHeroTAH",x),I2S(R2I(LoadReal(HH, GetHandleId(Player(x)), TAH_INDICATOR))))
+    if StringLength(I2S(R2I(LoadReal(HH, GetHandleId(Player(x)), TAH_INDICATOR))))<6 then
+        call SetFrameFont( GetFrameByName("StatsHeroTAH",x), "Fonts\\FRIZQT__.TTF", .009, 0 )
+    else
+        call SetFrameFont( GetFrameByName("StatsHeroTAH",x), "Fonts\\FRIZQT__.TTF", .008, 0 )
+    endif
+    call SetFrameText(GetFrameByName("StatsHeroTSM",x),I2S(R2I(LoadReal(HH, GetHandleId(Player(x)), TSM_INDICATOR))))
+    if StringLength(I2S(R2I(LoadReal(HH, GetHandleId(Player(x)), TSM_INDICATOR))))<6 then
+        call SetFrameFont( GetFrameByName("StatsHeroTSM",x), "Fonts\\FRIZQT__.TTF", .009, 0 )
+    else
+        call SetFrameFont( GetFrameByName("StatsHeroTSM",x), "Fonts\\FRIZQT__.TTF", .008, 0 )
+    endif
+    call SetFrameText(GetFrameByName("StatsHeroTAM",x),I2S(R2I(LoadReal(HH, GetHandleId(Player(x)), TAM_INDICATOR))))
+    if StringLength(I2S(R2I(LoadReal(HH, GetHandleId(Player(x)), TAM_INDICATOR))))<6 then
+        call SetFrameFont( GetFrameByName("StatsHeroTAM",x), "Fonts\\FRIZQT__.TTF", .009, 0 )
+    else
+        call SetFrameFont( GetFrameByName("StatsHeroTAM",x), "Fonts\\FRIZQT__.TTF", .008, 0 )
+    endif
+    if ingame[x]==true then
+        if StringLength(GetPlayerName(Player(x)))<6 then
+            call SetFrameFont( GetFrameByName("StatsPlayerName",x), "Fonts\\FRIZQT__.TTF", .011, 0 )
+        elseif StringLength(GetPlayerName(Player(x)))>=6 and StringLength(GetPlayerName(Player(x)))<11 then
+            call SetFrameFont( GetFrameByName("StatsPlayerName",x), "Fonts\\FRIZQT__.TTF", .01, 0 )
+        else
+            call SetFrameFont( GetFrameByName("StatsPlayerName",x), "Fonts\\FRIZQT__.TTF", .009, 0 )
+        endif
+        call SetFrameText(GetFrameByName("StatsPlayerName",x),GetPlayerName(Player(x)))
+        if Hero[x]!=null then
+            call SetFrameTexture( GetFrameByName("StatsHeroIcon",x), GetUnitStringField(Hero[x],UNIT_SF_ICON_NORMAL), 0, true )
+            call SetFrameTexture( GetFrameByName("StatsHeroIcon",x), GetUnitStringField(Hero[x],UNIT_SF_ICON_NORMAL), 1, true )
+            call SetFrameTexture( GetFrameByName("StatsHeroIcon",x), GetUnitStringField(Hero[x],UNIT_SF_ICON_NORMAL), 2, true )
+            call SetFrameText(GetFrameByName("StatsHeroLevel",x),I2S(GetHeroLevel(Hero[x])))
+            set i=0
+            loop
+            exitwhen i>9
+            if (IsPlayerAlly(GetLocalPlayer(),Player(x)) or udg_B==false) and UnitItemInSlot(Hero[x],i)!=null then
+                call SetFrameTexture( GetFrameByName("StatsHeroInventoryIcon",x*10+i), GetItemStringField(UnitItemInSlot(Hero[x],i),ITEM_SF_ICON), 0, true )
+                call SetFrameTexture( GetFrameByName("StatsHeroInventoryIcon",x*10+i), GetItemStringField(UnitItemInSlot(Hero[x],i),ITEM_SF_ICON), 1, true )
+                call SetFrameTexture( GetFrameByName("StatsHeroInventoryIcon",x*10+i), GetItemStringField(UnitItemInSlot(Hero[x],i),ITEM_SF_ICON), 2, true )
+            else
+                call SetFrameTexture( GetFrameByName("StatsHeroInventoryIcon",x*10+i), "UI\\Widgets\\Console\\Human\\human-inventory-slotfiller.blp", 0, true )
+                call SetFrameTexture( GetFrameByName("StatsHeroInventoryIcon",x*10+i), "UI\\Widgets\\Console\\Human\\human-inventory-slotfiller.blp", 1, true )
+                call SetFrameTexture( GetFrameByName("StatsHeroInventoryIcon",x*10+i), "UI\\Widgets\\Console\\Human\\human-inventory-slotfiller.blp", 2, true )
+            endif
+            set i=i+1
+            endloop
+        endif
+        call SetFrameText(GetFrameByName("StatsHeroKill",x),I2S(udg_kill[x]))
+        call SetFrameText(GetFrameByName("StatsHeroDeath",x),I2S(udg_death[x]))
+        call SetFrameText(GetFrameByName("StatsHeroAssist",x),I2S(udg_assist[x]))
+        call SetFrameText(GetFrameByName("StatsHeroWin",x),I2S(GetPlayerState(Player(x),PLAYER_STATE_RESOURCE_LUMBER)))
+        if IsPlayerAlly(GetLocalPlayer(),Player(x)) or GameEnd then
+            call SetFrameText(GetFrameByName("StatsGold",x),I2S(GetPlayerState(Player(x),PLAYER_STATE_RESOURCE_GOLD)))
+            if StringLength(I2S(R2I(LoadReal(HH, GetHandleId(Player(x)), TD_INDICATOR))))<6 then
+                call SetFrameFont( GetFrameByName("StatsGold",x), "Fonts\\FRIZQT__.TTF", .009, 0 )
+            else 
+                call SetFrameFont( GetFrameByName("StatsGold",x), "Fonts\\FRIZQT__.TTF", .008, 0 )
+            endif
+        else
+            call SetFrameText(GetFrameByName("StatsGold",x),"???")
+        endif
+    endif
+    set x=x+1
 endloop
 if seconds==60 then
 set seconds=0
@@ -32427,8 +32899,18 @@ endfunction
 function GameLeftAct takes nothing returns nothing
 local player p=GetTriggerPlayer()
 local integer i=GetPlayerId(p)
+local integer x=0
 call DisplayChatMessageEx(null,CHAT_RECIPIENT_UNKNOWN,10,true,Color[i]+GetPlayerName(Player(i))+" вышел из игры")
 call SetPlayerName(GetTriggerPlayer(),GetPlayerName(GetTriggerPlayer())+"|cFFB4B4B7 (Leaver)|r")
+loop
+exitwhen x>9
+if UnitItemInSlot(Hero[i],x)!=null then
+call SetFrameTexture( GetFrameByName("StatsHeroInventoryIcon",i*10+x), GetItemStringField(UnitItemInSlot(Hero[i],x),ITEM_SF_ICON), 0, true )
+call SetFrameTexture( GetFrameByName("StatsHeroInventoryIcon",i*10+x), GetItemStringField(UnitItemInSlot(Hero[i],x),ITEM_SF_ICON), 1, true )
+call SetFrameTexture( GetFrameByName("StatsHeroInventoryIcon",i*10+x), GetItemStringField(UnitItemInSlot(Hero[i],x),ITEM_SF_ICON), 2, true )
+endif
+set x=x+1
+endloop
 set nick[i]="|cFFB4B4B7"+nick[i]+"|r"
 if GetUnitTypeId(Hero[i])=='H06T' then
 call RemoveUnit(Lucy[GetPlayerId(p)])
@@ -32754,7 +33236,6 @@ function EndOfChoiceAct takes nothing returns nothing
     local integer is=0
     local unit gon
     local item array it
-    local boolean b=false
     local integer i
     local integer j
     set i=0
@@ -32992,7 +33473,7 @@ function EndOfChoiceAct takes nothing returns nothing
         endif
         if GetPlayerState(Player(i),PLAYER_STATE_LUMBER_GATHERED)>=udg_rou then
             call CustomVictoryBJ(Player(i),true,true)
-            set b=true
+            set GameEnd=true
         endif
         if UnitIsAlive(Hero[i])==false then
             call ReviveHero(Hero[i],RX,RY,false)
@@ -33144,21 +33625,21 @@ function EndOfChoiceAct takes nothing returns nothing
         set i=i+1
     endloop
     if GetPlayerState(Player(0),PLAYER_STATE_LUMBER_GATHERED)>=udg_rou or GetPlayerState(Player(5),PLAYER_STATE_LUMBER_GATHERED)>=udg_rou  then
-        set b=true
+        set GameEnd=true
     endif
-    if b then
-            call LastDamageIndicator()
+    if GameEnd then
+        call ClickFrame(OpenStatsButton)
     endif
     set i=0
     loop
     exitwhen i>9
     if GetPlayerState(Player(i),PLAYER_STATE_LUMBER_GATHERED)>=udg_rou then
         call CustomVictoryBJ(Player(i),true,true)
-        set b=true
+        set GameEnd=true
     endif
     set i=i+1
     endloop
-    if b==true then
+    if GameEnd==true then
         call DestroyTimer(udg_Timer)
         call DestroyTimerDialog(udg_TB)
         set i=0
@@ -33238,7 +33719,7 @@ function EndOfChoiceAct takes nothing returns nothing
     call DestroyTimer(udg_Timer)
     call DestroyTimerDialog(udg_TB)
     elseif win[3]>=udg_rou then
-    call LastDamageIndicator()
+    call ClickFrame(OpenStatsButton)
     //call CustomDefeatBJ(Player(0),"Вы проиграли!")
     //call CustomDefeatBJ(Player(1),"Вы проиграли!")
     //call CustomDefeatBJ(Player(2),"Вы проиграли!")
@@ -33258,7 +33739,7 @@ function EndOfChoiceAct takes nothing returns nothing
     set he=1
     loop
     if win[he]>=udg_rou then
-    call LastDamageIndicator()
+    call ClickFrame(OpenStatsButton)
     call DestroyTimer(udg_Timer)
     call DestroyTimerDialog(udg_TB)
     call DisplayTextToPlayer(GetLocalPlayer(),0,0,GetPlayerName(Player(he))+" wins FFA Match")
@@ -220356,6 +220837,7 @@ call DisableTrigger(gg_trg_KingOfHill_Enter)
 call DisableTrigger(gg_trg_Tower_Enter)
 call DisableTrigger(gg_trg_Fountain_Enter)
 call DisableTrigger(Codeon)
+call DisableTrigger(gg_trg_Time)
 endfunction
 function RunInitializationTriggers takes nothing returns nothing
 call ConditionalTriggerExecute(gg_trg_Quests)
