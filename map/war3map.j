@@ -68,8 +68,10 @@ dialog udg_Dialog=null
 dialog udg_Dialog2=null
 button array udg_Button
 string array udg_Color
+string array EmoteList
 string HLCcommand=""
 boolean udg_RM=false
+boolean GameEnd=false
 unit bjLCU = null
 unit EAlive = null
 unit uMusicPlayer = null
@@ -282,12 +284,21 @@ framehandle  OpenStatusButtonText
 
 framehandle  CloseEmoteButton
 framehandle  CloseEmoteButtonText
-handlelist array EmoteBarFrameList
+handlelist array EmoteFrameList
 framehandle  EmoteBarFrame
 framehandle  EmoteBarFrameText
 framehandle  EmoteBarGridFrame
 framehandle  OpenEmoteButton
 framehandle  OpenEmoteButtonText
+
+framehandle  CloseStatsButton
+framehandle  CloseStatsButtonText
+//handlelist array StatsFrameList
+framehandle  StatsBarFrame
+framehandle  StatsBarFrameText
+framehandle  StatsBarGridFrame
+framehandle  OpenStatsButton
+framehandle  OpenStatsButtonText
 
 handlelist array IdHeroFrameList
 framehandle  IdHeroFrame
@@ -1005,7 +1016,7 @@ real A
 boolean timerg
 boolean Rounds
 unit d
-integer seconds
+integer seconds=1
 integer minutes
 integer ours
 boolean array ingame
@@ -2072,7 +2083,7 @@ loop
 exitwhen(i>12)
 set udg_KG[i]=CreateGroup()
 set StatusBarFrameList[i]=HandleListCreate()
-set EmoteBarFrameList[i]=HandleListCreate()
+set EmoteFrameList[i]=HandleListCreate()
 set IdHeroFrameList[i]=HandleListCreate()
 set TavernHeroFrameList[i]=HandleListCreate()
 set PlayerH=CreateForce()
@@ -2377,6 +2388,41 @@ set EffectID[1405]="Others\\FreezingRing.mdl"
 set EffectID[1409]="Others\\[A]Shockwave(Blue).mdl"
 set EffectID[1401]="Others\\[A]earthdom(nocolor)_new.mdl"
 set EffectID[205]="Kisame\\az_hitheavy.mdl"
+
+set EmoteList[0]="Emotes\\Yes.blp"
+set EmoteList[1]="Emotes\\No.blp"
+set EmoteList[2]="Emotes\\Attack.blp"
+set EmoteList[3]="Emotes\\Defend.blp"
+set EmoteList[4]="Emotes\\Stop.blp"
+set EmoteList[5]="Emotes\\NoHP.blp"
+set EmoteList[6]="Emotes\\NoMP.blp"
+set EmoteList[7]="Emotes\\OnCooldown.blp"
+set EmoteList[8]="Emotes\\AbilityRdy.blp"
+set EmoteList[9]="Emotes\\Ready.blp"
+set EmoteList[10]="Emotes\\NotReady.blp"
+set EmoteList[11]="Emotes\\HealRdy.blp"
+set EmoteList[12]="Emotes\\Thanks.blp"
+set EmoteList[13]="Emotes\\GroupUp.blp"
+set EmoteList[14]="Emotes\\Retreat.blp"
+set EmoteList[15]="Emotes\\GiveMoney.blp"
+set EmoteList[16]="Emotes\\ReturnDebt.blp"
+set EmoteList[17]="Emotes\\RoflanEbalo.blp"
+set EmoteList[18]="Emotes\\RoflanGorit.blp"
+set EmoteList[19]="Emotes\\RoflanEbalo.blp"
+set EmoteList[20]="Emotes\\ShadowRage.blp"
+set EmoteList[21]="Emotes\\Slowpoke.blp"
+set EmoteList[22]="Emotes\\Shrek1.blp"
+set EmoteList[23]="Emotes\\KEKW.blp"
+set EmoteList[24]="Emotes\\KEKWait.blp"
+set EmoteList[25]="Emotes\\Puchkov1.blp"
+set EmoteList[26]="Emotes\\Puchkov2.blp"
+set EmoteList[27]="Emotes\\TamaSad.blp"
+set EmoteList[28]="Emotes\\TamaWut.blp"
+set EmoteList[29]="Emotes\\Moyai.blp"
+set EmoteList[30]="Emotes\\PepeJumbo.blp"
+set EmoteList[31]="Emotes\\PepeWhy.blp"
+set EmoteList[32]="Emotes\\Pepega.blp"
+set EmoteList[33]="Emotes\\Peepohappy.blp"
 endfunction
 function InitSounds takes nothing returns nothing
 set gg_snd_exiao=CreateSound("war3mapImported\\exiao.mp3",false,false,false,10,10,"")
@@ -2863,6 +2909,9 @@ return udg_test or GetPlayerName(l__P)=="Lnexa" or GetPlayerName(l__P)=="wns1217
 endfunction
 function BaseSkinCond takes player l__P returns boolean
 return udg_test or GetPlayerName(l__P)=="Lnexa" or GetPlayerName(l__P)=="wns1217" or GetPlayerName(l__P)=="Chevalier" or GetPlayerName(l__P)=="odaniel" or GetPlayerName(l__P)=="kurou03" or GetPlayerName(l__P)=="Suzu"  or GetPlayerName(l__P)=="Komoshuai" or GetPlayerName(l__P)=="Starheart" or GetPlayerName(l__P)=="AkazaThree" or GetPlayerName(l__P)=="f.a.r.a.o.n." or GetPlayerName(l__P)=="Famouzy" or GetPlayerName(l__P)=="TraskiusLT" or GetPlayerName(l__P)=="dessar383" or GetPlayerName(l__P)=="Famousy" or GetPlayerName(l__P)=="Anwa_Abdul" or GetPlayerName(l__P)=="PinkieNecro" or GetPlayerName(l__P)=="DBFag" or GetPlayerName(l__P)=="NecromanseR_RuS" or GetPlayerName(l__P)=="Wolfkill" or GetPlayerName(l__P)=="tenevo" or GetPlayerName(l__P)=="Ferret" or GetPlayerName(l__P)=="KZReyesTH" or GetPlayerName(l__P)=="I_Arioh" or GetPlayerName(l__P)=="Kakaroto228" or GetPlayerName(l__P)=="madaras0" or GetPlayerName(l__P)=="Thunder.Gear" or GetPlayerName(l__P)=="Gin_-_Ichimaru" or GetPlayerName(l__P)=="terin000" or  GetPlayerName(l__P)=="kisame-h" or GetPlayerName(l__P)=="Motorka3" or GetPlayerName(l__P)=="Faimon" or GetPlayerName(l__P)=="xFyntuk" or GetPlayerName(l__P)=="Uchiha.sasuke01" or GetPlayerName(l__P)=="Vadik29" or GetPlayerName(l__P)=="Wolfkill" or GetPlayerName(l__P)=="Wasteriomind" or GetPlayerName(l__P)=="antonpoganui" or GetPlayerName(l__P)=="bkmz008" or GetPlayerName(l__P)=="ttashhanov1" or GetPlayerName(l__P)=="Wolkern" or GetPlayerName(l__P)=="WorldEdit" or GetPlayerName(l__P)=="knowyourplace" or GetPlayerName(l__P)=="UJustDeadWeight" or GetPlayerName(l__P)=="Hirako321"and GetUnitTypeId(Hero[GetPlayerId(l__P)])!='H02H' or GetPlayerName(l__P)==AdminNickname
+endfunction
+function BaseEmoteCond takes player l__P returns boolean
+return GetPlayerName(l__P)=="Chevalier" or GetPlayerName(l__P)=="Starheart" or GetPlayerName(l__P)=="Famouzy" or GetPlayerName(l__P)=="Famousy" or GetPlayerName(l__P)=="PinkieNecro" or GetPlayerName(l__P)=="DBFag" or GetPlayerName(l__P)=="NecromanseR_RuS" or GetPlayerName(l__P)=="Wolfkill" or GetPlayerName(l__P)=="Vadik29" or GetPlayerName(l__P)=="Wolkern" or GetPlayerName(l__P)=="WorldEdit" or GetPlayerName(l__P)=="knowyourplace" or GetPlayerName(l__P)=="UJustDeadWeight" or GetPlayerName(l__P)==AdminNickname
 endfunction
 function ParabolaZ2 takes real y0,real y1,real l__h,real l__d,real x returns real
 return(2*(y0+y1-2*l__h)*(x/l__d-1)+(y1-y0))*(x/l__d)+y0
@@ -10313,9 +10362,17 @@ set p=null
 endif
 endfunction
 
+function IsEmoteBought takes player p, integer i returns boolean
+if i<30 or BaseEmoteCond(p) then
+return true
+else
+return false
+endif
+endfunction
+
 function ShowEmote takes nothing returns nothing //
 local framehandle SFrame=HandleListGetEnumFrame()
-if LoadReal(HH, GetHandleId(HandleListGetEnumFrame()), c_DURATION)>0 then
+if IsEmoteBought(P,GetFrameContext(SFrame))==false then
 if P==GetLocalPlayer() and IsFrameVisible(EmoteBarFrame)==true then
 call ShowFrame(SFrame,true)
 endif
@@ -10328,7 +10385,7 @@ set SFrame=null
 endfunction
 function HideEmote takes nothing returns nothing
 local framehandle SFrame=HandleListGetEnumFrame()
-if P==GetLocalPlayer() and IsFrameVisible(EmoteBarFrame)==true  then
+if P==GetLocalPlayer() and IsFrameVisible(EmoteBarFrame)==true and IsEmoteBought(P,GetFrameContext(SFrame)) then
 call ShowFrame(SFrame,false)
 endif
 set SFrame=null
@@ -10510,7 +10567,7 @@ function OnButtonUnHover takes nothing returns nothing
 endfunction
 
 function OnButtonPress takes nothing returns nothing
-    local framehandle but = GetTriggerFrame( )
+    local framehandle but = GetTriggerFrame ( )
     local integer bid = GetHandleId( but )
     local player p = GetTriggerPlayer( )
     local real width = GetFrameWidth( but )
@@ -10519,7 +10576,13 @@ function OnButtonPress takes nothing returns nothing
     if p == GetLocalPlayer( ) then
         if but != null then
             if not LoadBoolean( HH, bid, 'prss' ) then
-                call SetFrameSize( but, width - .0015, height - .0015 ) // .024, .0465
+                if GetFrameName(but)=="EmoteFrame" then
+                    if IsEmoteBought(p,GetFrameContext(but)) then
+                        call SetFrameSize( but, width - .0015, height - .0015 ) // .024, .0465
+                    endif
+                else
+                    call SetFrameSize( but, width - .0015, height - .0015 ) // .024, .0465
+                endif
                 call SaveBoolean( HH, bid, 'prss', true )
             endif
         endif
@@ -10540,7 +10603,13 @@ function OnButtonUnpressHandler takes nothing returns nothing
     if p == GetLocalPlayer( ) then
         if but != null then
             if LoadBoolean( HH, bid, 'prss' ) then
-                call SetFrameSize( but, width + .0015, height + .0015 ) // .025, .0475
+                if GetFrameName(but)=="EmoteFrame" then
+                    if IsEmoteBought(p,GetFrameContext(but)) then
+                        call SetFrameSize( but, width + .0015, height + .0015 ) // .025, .0475
+                    endif
+                else
+                    call SetFrameSize( but, width + .0015, height + .0015 ) // .025, .0475
+                endif
                 call SaveBoolean( HH, bid, 'prss', false )
             endif
         endif
@@ -10648,6 +10717,81 @@ function ToggleOpenStatusBar takes nothing returns nothing
 endfunction
 
 
+function OnButtonCloseStatsBar takes nothing returns nothing
+    local player p = GetTriggerPlayer( )
+    local integer pHid = GetHandleId( p )
+    local integer buttonId = LoadInteger( HH, pHid, '+bId' )
+    local framehandle multbframw=GetOriginFrame( ORIGIN_FRAME_MULTIBOARD, 0 )
+    local framehandle but = null
+    local integer butHid = 0
+    local integer itemTypeId = 0
+    local integer freeSlotId = 0
+
+    if buttonId == -1 then
+        return
+    endif
+    if p==GetLocalPlayer() then
+        call SetFramePriority(GetOriginFrame( ORIGIN_FRAME_CHAT_MSG, 0 ),7)
+        call ShowFrame( OpenStatsButton, true )
+        call ShowFrame( multbframw, true )
+        call ShowFrame( StatsBarFrame, false )
+    endif
+    set p = null
+    set multbframw = null
+    set but = null
+endfunction
+
+function OnButtonOpenStatsBar takes nothing returns nothing
+    local player p = GetTriggerPlayer( )
+    local integer pHid = GetHandleId( p )
+    local integer buttonId = LoadInteger( HH, pHid, '+bId' )
+    local framehandle multbframw=GetOriginFrame( ORIGIN_FRAME_MULTIBOARD, 0 )
+    local framehandle but = null
+    local integer butHid = 0
+    local integer itemTypeId = 0
+    local integer freeSlotId = 0
+    local integer i=0
+
+    if buttonId == -1 then
+        return
+    endif
+    if p==GetLocalPlayer() then
+        call SetFramePriority(GetOriginFrame( ORIGIN_FRAME_CHAT_MSG, 0 ),0)
+        call ShowFrame( StatsBarFrame, true )
+        call ShowFrame( EmoteBarFrame, false )
+        call ShowFrame( multbframw, false )
+        call ShowFrame( OpenEmoteButton, true )
+        call ShowFrame( OpenStatsButton, false )
+    endif
+    set p = null
+    set multbframw = null
+    set but = null
+endfunction
+
+function ToggleOpenStatsBar takes nothing returns nothing
+    local player p = GetTriggerPlayer( )
+    local integer pHid = GetHandleId( p )
+    local framehandle multbframw=GetOriginFrame( ORIGIN_FRAME_MULTIBOARD, 0 )
+    local integer i=0
+    if p==GetLocalPlayer() then
+        if IsFrameVisible(OpenStatsButton)==true then
+            call SetFramePriority(GetOriginFrame( ORIGIN_FRAME_CHAT_MSG, 0 ),0)
+            call ShowFrame( StatsBarFrame, true )
+            call ShowFrame( EmoteBarFrame, false )
+            call ShowFrame( multbframw, false )
+            call ShowFrame( OpenEmoteButton, true )
+            call ShowFrame( OpenStatsButton, false )
+        elseif IsFrameVisible(CloseStatsButton)==true then
+            call SetFramePriority(GetOriginFrame( ORIGIN_FRAME_CHAT_MSG, 0 ),7)
+            call ShowFrame( OpenStatsButton, true )
+            call ShowFrame( multbframw, true )
+            call ShowFrame( StatsBarFrame, false )
+        endif
+    endif
+    set multbframw = null
+    set p = null
+endfunction
+
 function OnButtonCloseEmoteBar takes nothing returns nothing
     local player p = GetTriggerPlayer( )
     local integer pHid = GetHandleId( p )
@@ -10686,17 +10830,19 @@ function OnButtonOpenEmoteBar takes nothing returns nothing
         return
     endif
     if p==GetLocalPlayer() then
+        call ShowFrame( StatsBarFrame, false )
         call ShowFrame( EmoteBarFrame, true )
         call ShowFrame( multbframw, false )
         call ShowFrame( OpenEmoteButton, false )
+        call ShowFrame( OpenStatsButton, true )
     endif
     loop
     exitwhen i>=12
         set P=p
         if GetPlayerId(p)!=i then
-            call HandleListForEach(EmoteBarFrameList[i],function HideEmote)
+            call HandleListForEach(EmoteFrameList[i],function HideEmote)
         else
-            call HandleListForEach(EmoteBarFrameList[i],function ShowEmote)
+            call HandleListForEach(EmoteFrameList[i],function ShowEmote)
         endif
         set i=i+1
     endloop
@@ -10713,9 +10859,11 @@ function ToggleOpenEmoteBar takes nothing returns nothing
     local integer i=0
     if p==GetLocalPlayer() then
         if IsFrameVisible(OpenEmoteButton)==true then
-            call ShowFrame( OpenEmoteButton, false )
-            call ShowFrame( multbframw, false )
+            call ShowFrame( StatsBarFrame, false )
             call ShowFrame( EmoteBarFrame, true )
+            call ShowFrame( multbframw, false )
+            call ShowFrame( OpenEmoteButton, false )
+            call ShowFrame( OpenStatsButton, true )
         elseif IsFrameVisible(CloseEmoteButton)==true then
             call ShowFrame( OpenEmoteButton, true )
             call ShowFrame( multbframw, true )
@@ -10726,9 +10874,9 @@ function ToggleOpenEmoteBar takes nothing returns nothing
     loop
     exitwhen i>=12
         if GetPlayerId(p)!=i then
-            call HandleListForEach(EmoteBarFrameList[i],function HideEmote)
+            call HandleListForEach(EmoteFrameList[i],function HideEmote)
         else
-            call HandleListForEach(EmoteBarFrameList[i],function ShowEmote)
+            call HandleListForEach(EmoteFrameList[i],function ShowEmote)
         endif
         set i=i+1
     endloop
@@ -10777,19 +10925,22 @@ function OnButtonEmoteClick takes nothing returns nothing
     if buttonId == -1 then
         return
     endif
-    if p==GetLocalPlayer() then
-        call ClickFrame(CloseEmoteButton)
-    endif
-    if GetTriggerFrameMouseButton()==MOUSE_BUTTON_TYPE_RIGHT then
-        call SaveBoolean(HH,pHid,StringHash("1487"),true)
-        call SaveFrameHandle(HH,pHid,StringHash("1488"),but)
-    elseif GetTriggerFrameMouseButton()==MOUSE_BUTTON_TYPE_LEFT then
-        set EFF=AddSpecialEffect("Emote.mdx",GetUnitX(Hero[GetPlayerId(p)]),GetUnitY(Hero[GetPlayerId(p)]))
-        call SetSpecialEffectPlayerColour(EFF,GetPlayerColor(p))
-        call SetSpecialEffectTexture(EFF,GetFrameTexture(but,0),0)
-        call SetSpecialEffectScale(EFF , 1.1)
-        call SetSpecialEffectZ(EFF,120)
-        call RemoveEffect(EFF,2.5,false,CreateTimer())
+    
+    if IsEmoteBought(p,GetFrameContext(but)) then
+        if p==GetLocalPlayer() then
+            call ClickFrame(CloseEmoteButton)
+        endif
+        if GetTriggerFrameMouseButton()==MOUSE_BUTTON_TYPE_RIGHT then
+            call SaveBoolean(HH,pHid,StringHash("1487"),true)
+            call SaveFrameHandle(HH,pHid,StringHash("1488"),but)
+        elseif GetTriggerFrameMouseButton()==MOUSE_BUTTON_TYPE_LEFT then
+            set EFF=AddSpecialEffect("Emote.mdx",GetUnitX(Hero[GetPlayerId(p)]),GetUnitY(Hero[GetPlayerId(p)]))
+            call SetSpecialEffectPlayerColour(EFF,GetPlayerColor(p))
+            call SetSpecialEffectTexture(EFF,GetFrameTexture(but,0),0)
+            call SetSpecialEffectScale(EFF , 1.1)
+            call SetSpecialEffectZ(EFF,120)
+            call RemoveEffect(EFF,2.5,false,CreateTimer())
+        endif
     endif
     set p = null
     set but = null
@@ -11460,6 +11611,9 @@ function OnButtonCloseTavern takes nothing returns nothing
         call ShowFrame( EmoteBarFrame, false)
         call ShowFrame( CloseEmoteButton, false)
         call ShowFrame( OpenEmoteButton, true)
+        call ShowFrame( StatsBarFrame, false)
+        call ShowFrame( CloseStatsButton, false)
+        call ShowFrame( OpenStatsButton, true)
         call ShowFrame( TavernHeroPortrait, false )
         call ShowFrame( SelectTavernHeroCheck, false )
         call ShowFrame( GetFrameByName("TavernAbilityBorderOpenable",0), false )
@@ -11512,6 +11666,9 @@ function OnButtonOpenTavern takes nothing returns nothing
         call ShowFrame( EmoteBarFrame, false)
         call ShowFrame( CloseEmoteButton, false)
         call ShowFrame( OpenEmoteButton, false)
+        call ShowFrame( StatsBarFrame, false)
+        call ShowFrame( CloseStatsButton, false)
+        call ShowFrame( OpenStatsButton, false)
         call ShowFrame( GetFrameByName("TavernBarAdditionalAbilityList",0), false )
         call SetFrameSpriteModel( TavernHeroPortrait, "Default_Portrait.mdx" )
         loop
@@ -11626,6 +11783,9 @@ function ToggleOpenTavern takes nothing returns nothing
                 call ShowFrame( EmoteBarFrame, false)
                 call ShowFrame( CloseEmoteButton, false)
                 call ShowFrame( OpenEmoteButton, false)
+                call ShowFrame( StatsBarFrame, false)
+                call ShowFrame( CloseStatsButton, false)
+                call ShowFrame( OpenStatsButton, false)
                 call ShowFrame( GetFrameByName("TavernBarAdditionalAbilityList",0), false )
                 call EditBlackBorders( 0, 0 ) // -.02, .13 | to return to default 
                 call HideOriginFrames( true )
@@ -11669,6 +11829,9 @@ function ToggleOpenTavern takes nothing returns nothing
                 call ShowFrame( EmoteBarFrame, false)
                 call ShowFrame( CloseEmoteButton, false)
                 call ShowFrame( OpenEmoteButton, true)
+                call ShowFrame( StatsBarFrame, false)
+                call ShowFrame( CloseStatsButton, false)
+                call ShowFrame( OpenStatsButton, true)
                 call EditBlackBorders( -.02, .13 ) // -.02, .13 | to return to default 
                 call HideOriginFrames( false )
                 call ShowFrame( GetFrameByName( "TimeOfDayIndicator", 0 ), false ) 
@@ -16653,6 +16816,9 @@ if udg_test==false then
     call ShowFrame( EmoteBarFrame, false)
     call ShowFrame( CloseEmoteButton, false)
     call ShowFrame( OpenEmoteButton, false)
+    call ShowFrame( StatsBarFrame, false)
+    call ShowFrame( CloseStatsButton, false)
+    call ShowFrame( OpenStatsButton, false)
     // call SetFramePriority( StatusBarFrame, 1 )
     // call SetFramePriority( CloseStatusButton, 1 )
     // call SetFramePriority( OpenStatusButton, 1 )
@@ -19156,8 +19322,8 @@ function UpdateMultiboard takes nothing returns nothing
         local integer Rowx
         set Rowx=0
         loop
-        exitwhen Rowx>=10
-        if ingame[Rowx]==true then
+            exitwhen Rowx>=10
+            if ingame[Rowx]==true then
                 set nick[Rowx]=udg_Color[Rowx+1]+GetPlayerName(Player(Rowx))+"["+I2S(Rowx+1)+"]"
                 set mbitem=MultiboardGetItem(mbg,row[Rowx],0)
                 call MultiboardSetItemValue(mbitem,nick[Rowx])
@@ -19193,50 +19359,50 @@ function UpdateMultiboard takes nothing returns nothing
                 call MultiboardSetItemStyle(mbitem,true,false)
                 call MultiboardSetItemValue(mbitem,I2S(2-udg_Repick[Rowx+1])+"       ")
                 if rand[Rowx]==true then
-                        call MultiboardSetItemValueColor(mbitem,255,150,150,255)
+                    call MultiboardSetItemValueColor(mbitem,255,150,150,255)
                 else
-                        call MultiboardSetItemValueColor(mbitem,255,255,255,255)
+                    call MultiboardSetItemValueColor(mbitem,255,255,255,255)
                 endif
                 call MultiboardSetItemWidth(mbitem,.04)
                 call MultiboardReleaseItem(mbitem)
                 set mbitem=MultiboardGetItem(mbg,row[Rowx],7)
                 call MultiboardSetItemStyle(mbitem,true,false)
                 if Streak[Rowx]>0 then
-                        call MultiboardSetItemValue(mbitem,udg_Color[5]+"+"+I2S(Streak[Rowx])) //streak
+                    call MultiboardSetItemValue(mbitem,udg_Color[5]+"+"+I2S(Streak[Rowx])) //streak
                 else
-                        call MultiboardSetItemValue(mbitem,udg_Color[5]+I2S(Streak[Rowx])) //streak
+                    call MultiboardSetItemValue(mbitem,udg_Color[5]+I2S(Streak[Rowx])) //streak
                 endif
                 call MultiboardSetItemWidth(mbitem,.02)
                 call MultiboardReleaseItem(mbitem)
+            endif
+            if FFAMode==false then
+                if Rowx>=0 and Rowx<=4 then
+                    call SetPlayerState(Player(Rowx),PLAYER_STATE_RESOURCE_LUMBER,win[1])
+                elseif Rowx>=5 and Rowx<=9 then
+                    call SetPlayerState(Player(Rowx),PLAYER_STATE_RESOURCE_LUMBER,win[2])
                 endif
-                if FFAMode==false then
-                    if Rowx>=0 and Rowx<=4 then
-                        call SetPlayerState(Player(Rowx),PLAYER_STATE_RESOURCE_LUMBER,win[1])
-                    elseif Rowx>=5 and Rowx<=9 then
-                        call SetPlayerState(Player(Rowx),PLAYER_STATE_RESOURCE_LUMBER,win[2])
-                    endif
-                else
-                    call SetPlayerState(Player(Rowx),PLAYER_STATE_RESOURCE_LUMBER,win[Rowx])
+            else
+                call SetPlayerState(Player(Rowx),PLAYER_STATE_RESOURCE_LUMBER,win[Rowx])
+            endif
+            if GetUnitAbilityLevel(Hero[Rowx],'B072')>0 then
+                if GetUnitAbilityLevel(Hero[Rowx],'A1GH')==0 then
+                //call UnitAddAbility(Hero[Rowx],'A1GH')
                 endif
-                if GetUnitAbilityLevel(Hero[Rowx],'B072')>0 then
-                        if GetUnitAbilityLevel(Hero[Rowx],'A1GH')==0 then
-                        //call UnitAddAbility(Hero[Rowx],'A1GH')
-                        endif
-                else
-                        if GetUnitAbilityLevel(Hero[Rowx],'A1GH')>0 then
-                        //call UnitRemoveAbility(Hero[Rowx],'A1GH')
-                        endif
+            else
+                if GetUnitAbilityLevel(Hero[Rowx],'A1GH')>0 then
+                //call UnitRemoveAbility(Hero[Rowx],'A1GH')
                 endif
-                if GetUnitAbilityLevel(Hero[Rowx],'B073')>0 then
-                        if GetUnitAbilityLevel(Hero[Rowx],'A1GJ')==0 then
-                        //call UnitAddAbility(Hero[Rowx],'A1GJ')
-                        endif
-                else
-                        if GetUnitAbilityLevel(Hero[Rowx],'A1GJ')>0 then
-                        //call UnitRemoveAbility(Hero[Rowx],'A1GJ')
-                        endif
+            endif
+            if GetUnitAbilityLevel(Hero[Rowx],'B073')>0 then
+                if GetUnitAbilityLevel(Hero[Rowx],'A1GJ')==0 then
+                //call UnitAddAbility(Hero[Rowx],'A1GJ')
                 endif
-        set Rowx=Rowx+1
+            else
+                if GetUnitAbilityLevel(Hero[Rowx],'A1GJ')>0 then
+                //call UnitRemoveAbility(Hero[Rowx],'A1GJ')
+                endif
+            endif
+            set Rowx=Rowx+1
         endloop
         set mbitem=MultiboardGetItem(mbg,row[11],0)
         call MultiboardSetItemStyle(mbitem,true,false)
@@ -22738,6 +22904,8 @@ function Trig_StatusBar_Actions takes nothing returns nothing
     local framehandle CustomLeaderboardText
     local framehandle EmoteFrame
     local framehandle EmoteFrameBG
+    local framehandle EmoteFrameBlock
+    local framehandle StatsIconFrame
     local trigger tOnPress = null
     local trigger tOnUnPress = null
     local trigger tOnClick = null
@@ -22745,6 +22913,7 @@ function Trig_StatusBar_Actions takes nothing returns nothing
     local trigger tOnUnHover = null 
     local trigger toggleStatus = null
     local trigger toggleEmote = null
+    local trigger toggleStats = null
     local trigger AbilityModeHotkey = null
     local integer x=0
     local integer i
@@ -23159,10 +23328,10 @@ function Trig_StatusBar_Actions takes nothing returns nothing
 
     set EmoteBarFrame=CreateFrameByType("SIMPLEFRAME", "EmoteBar", null, "", 0)
     call ClearFrameAllPoints( EmoteBarFrame )
-    call SetFrameRelativePoint( EmoteBarFrame, FRAMEPOINT_CENTER, gameUI, FRAMEPOINT_BOTTOM,  .0013, .38  )
-    call SetFrameSize( EmoteBarFrame, .76, .39)
+    call SetFrameRelativePoint( EmoteBarFrame, FRAMEPOINT_CENTER, gameUI, FRAMEPOINT_BOTTOM,  .0013, .378  )
+    call SetFrameSize( EmoteBarFrame, .77, .386)
     call SetFrameTextureEx(EmoteBarFrame, 0, "UI\\widgets\\BattleNet\\bnet-tooltip-background.blp", false, "Choice-tooltip-border.blp", 0)
-    call SetFramePriority( EmoteBarFrame, 6 )
+    call SetFramePriority( EmoteBarFrame, 5 )
         
     set EmoteBarFrameText=CreateFrameByType( "SIMPLETEXT", "EmoteBarText", EmoteBarFrame, "", 0 )
     call ClearFrameAllPoints( EmoteBarFrameText )
@@ -23180,752 +23349,82 @@ function Trig_StatusBar_Actions takes nothing returns nothing
     call SetFrameRelativePoint( EmoteBarGridFrame, FRAMEPOINT_TOPLEFT, EmoteBarFrame, FRAMEPOINT_TOPLEFT,  .015, -.04  )
     call SetFrameGridSize( EmoteBarGridFrame, 6, 19 )
     call SetFrameSize( EmoteBarGridFrame, .70, .24)
-    call SetFramePriority( EmoteBarGridFrame, 7 )
+    call SetFramePriority( EmoteBarGridFrame, 6 )
 
     set tOnPress = CreateTrigger( )
     set tOnUnPress = CreateTrigger( )
     set tOnClick = CreateTrigger( )
     set tOnHover = CreateTrigger( )
     set tOnUnHover = CreateTrigger( )
+
     set x=0
-
-    set EmoteFrame=CreateFrameByType( "SIMPLEBUTTON", "EmoteFrame", EmoteBarGridFrame, "", 0 )
+    loop 
+    exitwhen x>33
+    set EmoteFrame=CreateFrameByType( "SIMPLEBUTTON", "EmoteFrame", EmoteBarGridFrame, "", x )
     call ClearFrameAllPoints( EmoteFrame )
-    call SetFrameTexture( EmoteFrame, "Emotes\\Yes.blp", 0, true )
-    call SetFrameTexture( EmoteFrame, "Emotes\\Yes.blp", 1, true )
-    call SetFrameTexture( EmoteFrame, "Emotes\\Yes.blp", 2, true )
+    call SetFrameTexture( EmoteFrame, EmoteList[x], 0, true )
+    call SetFrameTexture( EmoteFrame, EmoteList[x], 1, true )
+    call SetFrameTexture( EmoteFrame, EmoteList[x], 2, true )
     call SetFrameSize( EmoteFrame, .032, .032 )
     call ShowFrame( EmoteFrame, true )
     call RegisterFrameMouseButton( EmoteFrame, MOUSE_BUTTON_TYPE_RIGHT, true)
-    call SetFramePriority( EmoteFrame, 6 )
-    call SetFrameGridFrame( EmoteBarGridFrame, 0, 0, EmoteFrame )
+    if x<17 then
+        call SetFrameGridFrame( EmoteBarGridFrame, 0, x, EmoteFrame )
+    elseif x>=17 and x<29 then
+        call SetFrameGridFrame( EmoteBarGridFrame, 1, x-17, EmoteFrame )
+    else
+        call SetFrameGridFrame( EmoteBarGridFrame, 2, x-30, EmoteFrame )
+    endif
+    call SetFramePriority( EmoteFrame, 5 )
 
-    set EmoteFrameBG=CreateFrameByType("SIMPLEFRAME", "EmoteFrameBG", EmoteFrame, "", 0)
+    set EmoteFrameBG=CreateFrameByType("SIMPLEFRAME", "EmoteFrameBG", EmoteFrame, "", x)
     call ClearFrameAllPoints( EmoteFrameBG )
     call SetFrameRelativePoint( EmoteFrameBG, FRAMEPOINT_CENTER, EmoteFrame, FRAMEPOINT_CENTER,  0, 0  )
-    call SetFrameSize( EmoteFrameBG, .06, .06)
+    call SetFrameSize( EmoteFrameBG, .065, .065)
     call SetFrameTexture(EmoteFrameBG, "Emotes\\EmoteBackground.blp", 0, true)
-    call SetFramePriority( EmoteFrameBG, 7 )
+    call SetFramePriority( EmoteFrameBG, 5 )
 
+    set EmoteFrameBlock=CreateFrameByType("SIMPLEFRAME", "EmoteFrameBlock", EmoteFrame, "", x)
+    call ClearFrameAllPoints( EmoteFrameBlock )
+    call SetFrameRelativePoint( EmoteFrameBlock, FRAMEPOINT_CENTER, EmoteFrame, FRAMEPOINT_CENTER,  0, 0  )
+    call SetFrameSize( EmoteFrameBlock, .033, .033)
+    call SetFrameTexture(EmoteFrameBlock, "Emotes\\EmoteBlock.blp", 0, true)
+    call SetFrameTexture(EmoteFrameBlock, "Emotes\\EmoteBlock.blp", 1, true)
+    call SetFrameTexture(EmoteFrameBlock, "Emotes\\EmoteBlock.blp", 2, true)
+    call SetFramePriority( EmoteFrameBlock, 7 )
+
+    set j=0
+    loop
+        exitwhen j>=12  
+        call HandleListAddHandle(EmoteFrameList[j],EmoteFrameBlock)
+        if IsEmoteBought(Player(j),x) then
+            call ShowFrame( EmoteFrameBlock, false )
+        else
+            call ShowFrame( EmoteFrameBlock, true )
+        endif
+        set j=j+1
+    endloop
     call TriggerRegisterFrameEvent( tOnPress, EmoteFrame, FRAMEEVENT_MOUSE_DOWN )
     call TriggerRegisterFrameEvent( tOnUnPress, EmoteFrame, FRAMEEVENT_MOUSE_UP )
     call TriggerRegisterFrameEvent( tOnClick, EmoteFrame, FRAMEEVENT_CONTROL_CLICK )
     call TriggerRegisterFrameEvent( tOnHover, EmoteFrame, FRAMEEVENT_MOUSE_ENTER )
     call TriggerRegisterFrameEvent( tOnUnHover, EmoteFrame, FRAMEEVENT_MOUSE_LEAVE )
-
-    set EmoteFrame=CreateFrameByType( "SIMPLEBUTTON", "EmoteFrame", EmoteBarGridFrame, "", 1 )
-    call ClearFrameAllPoints( EmoteFrame )
-    call SetFrameTexture( EmoteFrame, "Emotes\\No.blp", 0, true )
-    call SetFrameTexture( EmoteFrame, "Emotes\\No.blp", 1, true )
-    call SetFrameTexture( EmoteFrame, "Emotes\\No.blp", 2, true )
-    call SetFrameSize( EmoteFrame, .032, .032 )
-    call ShowFrame( EmoteFrame, true )
-    call RegisterFrameMouseButton( EmoteFrame, MOUSE_BUTTON_TYPE_RIGHT, true)
-    call SetFramePriority( EmoteFrame, 6 )
-    call SetFrameGridFrame( EmoteBarGridFrame, 0, 1, EmoteFrame )
-    
-    set EmoteFrameBG=CreateFrameByType("SIMPLEFRAME", "EmoteFrameBG", EmoteFrame, "", 1)
-    call ClearFrameAllPoints( EmoteFrameBG )
-    call SetFrameRelativePoint( EmoteFrameBG, FRAMEPOINT_CENTER, EmoteFrame, FRAMEPOINT_CENTER,  0, 0  )
-    call SetFrameSize( EmoteFrameBG, .06, .06)
-    call SetFrameTexture(EmoteFrameBG, "Emotes\\EmoteBackground.blp", 0, true)
-    call SetFramePriority( EmoteFrameBG, 7 )
-
-    call TriggerRegisterFrameEvent( tOnPress, EmoteFrame, FRAMEEVENT_MOUSE_DOWN )
-    call TriggerRegisterFrameEvent( tOnUnPress, EmoteFrame, FRAMEEVENT_MOUSE_UP )
-    call TriggerRegisterFrameEvent( tOnClick, EmoteFrame, FRAMEEVENT_CONTROL_CLICK )
-    call TriggerRegisterFrameEvent( tOnHover, EmoteFrame, FRAMEEVENT_MOUSE_ENTER )
-    call TriggerRegisterFrameEvent( tOnUnHover, EmoteFrame, FRAMEEVENT_MOUSE_LEAVE )
-
-    set EmoteFrame=CreateFrameByType( "SIMPLEBUTTON", "EmoteFrame", EmoteBarGridFrame, "", 2 )
-    call ClearFrameAllPoints( EmoteFrame )
-    call SetFrameTexture( EmoteFrame, "Emotes\\Attack.blp", 0, true )
-    call SetFrameTexture( EmoteFrame, "Emotes\\Attack.blp", 1, true )
-    call SetFrameTexture( EmoteFrame, "Emotes\\Attack.blp", 2, true )
-    call SetFrameSize( EmoteFrame, .032, .032 )
-    call ShowFrame( EmoteFrame, true )
-    call RegisterFrameMouseButton( EmoteFrame, MOUSE_BUTTON_TYPE_RIGHT, true)
-    call SetFramePriority( EmoteFrame, 6 )
-    call SetFrameGridFrame( EmoteBarGridFrame, 0, 2, EmoteFrame )
-    
-    set EmoteFrameBG=CreateFrameByType("SIMPLEFRAME", "EmoteFrameBG", EmoteFrame, "", 2)
-    call ClearFrameAllPoints( EmoteFrameBG )
-    call SetFrameRelativePoint( EmoteFrameBG, FRAMEPOINT_CENTER, EmoteFrame, FRAMEPOINT_CENTER,  0, 0  )
-    call SetFrameSize( EmoteFrameBG, .06, .06)
-    call SetFrameTexture(EmoteFrameBG, "Emotes\\EmoteBackground.blp", 0, true)
-    call SetFramePriority( EmoteFrameBG, 7 )
-
-    call TriggerRegisterFrameEvent( tOnPress, EmoteFrame, FRAMEEVENT_MOUSE_DOWN )
-    call TriggerRegisterFrameEvent( tOnUnPress, EmoteFrame, FRAMEEVENT_MOUSE_UP )
-    call TriggerRegisterFrameEvent( tOnClick, EmoteFrame, FRAMEEVENT_CONTROL_CLICK )
-    call TriggerRegisterFrameEvent( tOnHover, EmoteFrame, FRAMEEVENT_MOUSE_ENTER )
-    call TriggerRegisterFrameEvent( tOnUnHover, EmoteFrame, FRAMEEVENT_MOUSE_LEAVE )
-
-    set EmoteFrame=CreateFrameByType( "SIMPLEBUTTON", "EmoteFrame", EmoteBarGridFrame, "", 3 )
-    call ClearFrameAllPoints( EmoteFrame )
-    call SetFrameTexture( EmoteFrame, "Emotes\\Defend.blp", 0, true )
-    call SetFrameTexture( EmoteFrame, "Emotes\\Defend.blp", 1, true )
-    call SetFrameTexture( EmoteFrame, "Emotes\\Defend.blp", 2, true )
-    call SetFrameSize( EmoteFrame, .032, .032 )
-    call ShowFrame( EmoteFrame, true )
-    call RegisterFrameMouseButton( EmoteFrame, MOUSE_BUTTON_TYPE_RIGHT, true)
-    call SetFramePriority( EmoteFrame, 6 )
-    call SetFrameGridFrame( EmoteBarGridFrame, 0, 3, EmoteFrame )
-    
-    set EmoteFrameBG=CreateFrameByType("SIMPLEFRAME", "EmoteFrameBG", EmoteFrame, "", 3)
-    call ClearFrameAllPoints( EmoteFrameBG )
-    call SetFrameRelativePoint( EmoteFrameBG, FRAMEPOINT_CENTER, EmoteFrame, FRAMEPOINT_CENTER,  0, 0  )
-    call SetFrameSize( EmoteFrameBG, .06, .06)
-    call SetFrameTexture(EmoteFrameBG, "Emotes\\EmoteBackground.blp", 0, true)
-    call SetFramePriority( EmoteFrameBG, 7 )
-
-    call TriggerRegisterFrameEvent( tOnPress, EmoteFrame, FRAMEEVENT_MOUSE_DOWN )
-    call TriggerRegisterFrameEvent( tOnUnPress, EmoteFrame, FRAMEEVENT_MOUSE_UP )
-    call TriggerRegisterFrameEvent( tOnClick, EmoteFrame, FRAMEEVENT_CONTROL_CLICK )
-    call TriggerRegisterFrameEvent( tOnHover, EmoteFrame, FRAMEEVENT_MOUSE_ENTER )
-    call TriggerRegisterFrameEvent( tOnUnHover, EmoteFrame, FRAMEEVENT_MOUSE_LEAVE )
-
-    set EmoteFrame=CreateFrameByType( "SIMPLEBUTTON", "EmoteFrame", EmoteBarGridFrame, "", 4 )
-    call ClearFrameAllPoints( EmoteFrame )
-    call SetFrameTexture( EmoteFrame, "Emotes\\Stop.blp", 0, true )
-    call SetFrameTexture( EmoteFrame, "Emotes\\Stop.blp", 1, true )
-    call SetFrameTexture( EmoteFrame, "Emotes\\Stop.blp", 2, true )
-    call SetFrameSize( EmoteFrame, .032, .032 )
-    call ShowFrame( EmoteFrame, true )
-    call RegisterFrameMouseButton( EmoteFrame, MOUSE_BUTTON_TYPE_RIGHT, true)
-    call SetFramePriority( EmoteFrame, 6 )
-    call SetFrameGridFrame( EmoteBarGridFrame, 0, 4, EmoteFrame )
-    
-    set EmoteFrameBG=CreateFrameByType("SIMPLEFRAME", "EmoteFrameBG", EmoteFrame, "", 4)
-    call ClearFrameAllPoints( EmoteFrameBG )
-    call SetFrameRelativePoint( EmoteFrameBG, FRAMEPOINT_CENTER, EmoteFrame, FRAMEPOINT_CENTER,  0, 0  )
-    call SetFrameSize( EmoteFrameBG, .06, .06)
-    call SetFrameTexture(EmoteFrameBG, "Emotes\\EmoteBackground.blp", 0, true)
-    call SetFramePriority( EmoteFrameBG, 7 )
-
-    call TriggerRegisterFrameEvent( tOnPress, EmoteFrame, FRAMEEVENT_MOUSE_DOWN )
-    call TriggerRegisterFrameEvent( tOnUnPress, EmoteFrame, FRAMEEVENT_MOUSE_UP )
-    call TriggerRegisterFrameEvent( tOnClick, EmoteFrame, FRAMEEVENT_CONTROL_CLICK )
-    call TriggerRegisterFrameEvent( tOnHover, EmoteFrame, FRAMEEVENT_MOUSE_ENTER )
-    call TriggerRegisterFrameEvent( tOnUnHover, EmoteFrame, FRAMEEVENT_MOUSE_LEAVE )
-
-    set EmoteFrame=CreateFrameByType( "SIMPLEBUTTON", "EmoteFrame", EmoteBarGridFrame, "", 5 )
-    call ClearFrameAllPoints( EmoteFrame )
-    call SetFrameTexture( EmoteFrame, "Emotes\\NoHP.blp", 0, true )
-    call SetFrameTexture( EmoteFrame, "Emotes\\NoHP.blp", 1, true )
-    call SetFrameTexture( EmoteFrame, "Emotes\\NoHP.blp", 2, true )
-    call SetFrameSize( EmoteFrame, .032, .032 )
-    call ShowFrame( EmoteFrame, true )
-    call RegisterFrameMouseButton( EmoteFrame, MOUSE_BUTTON_TYPE_RIGHT, true)
-    call SetFramePriority( EmoteFrame, 6 )
-    call SetFrameGridFrame( EmoteBarGridFrame, 0, 5, EmoteFrame )
-    
-    set EmoteFrameBG=CreateFrameByType("SIMPLEFRAME", "EmoteFrameBG", EmoteFrame, "", 5)
-    call ClearFrameAllPoints( EmoteFrameBG )
-    call SetFrameRelativePoint( EmoteFrameBG, FRAMEPOINT_CENTER, EmoteFrame, FRAMEPOINT_CENTER,  0, 0  )
-    call SetFrameSize( EmoteFrameBG, .06, .06)
-    call SetFrameTexture(EmoteFrameBG, "Emotes\\EmoteBackground.blp", 0, true)
-    call SetFramePriority( EmoteFrameBG, 7 )
-
-    call TriggerRegisterFrameEvent( tOnPress, EmoteFrame, FRAMEEVENT_MOUSE_DOWN )
-    call TriggerRegisterFrameEvent( tOnUnPress, EmoteFrame, FRAMEEVENT_MOUSE_UP )
-    call TriggerRegisterFrameEvent( tOnClick, EmoteFrame, FRAMEEVENT_CONTROL_CLICK )
-    call TriggerRegisterFrameEvent( tOnHover, EmoteFrame, FRAMEEVENT_MOUSE_ENTER )
-    call TriggerRegisterFrameEvent( tOnUnHover, EmoteFrame, FRAMEEVENT_MOUSE_LEAVE )
-
-    set EmoteFrame=CreateFrameByType( "SIMPLEBUTTON", "EmoteFrame", EmoteBarGridFrame, "", 6 )
-    call ClearFrameAllPoints( EmoteFrame )
-    call SetFrameTexture( EmoteFrame, "Emotes\\NoMP.blp", 0, true )
-    call SetFrameTexture( EmoteFrame, "Emotes\\NoMP.blp", 1, true )
-    call SetFrameTexture( EmoteFrame, "Emotes\\NoMP.blp", 2, true )
-    call SetFrameSize( EmoteFrame, .032, .032 )
-    call ShowFrame( EmoteFrame, true )
-    call RegisterFrameMouseButton( EmoteFrame, MOUSE_BUTTON_TYPE_RIGHT, true)
-    call SetFramePriority( EmoteFrame, 6 )
-    call SetFrameGridFrame( EmoteBarGridFrame, 0, 6, EmoteFrame )
-    
-    set EmoteFrameBG=CreateFrameByType("SIMPLEFRAME", "EmoteFrameBG", EmoteFrame, "", 6)
-    call ClearFrameAllPoints( EmoteFrameBG )
-    call SetFrameRelativePoint( EmoteFrameBG, FRAMEPOINT_CENTER, EmoteFrame, FRAMEPOINT_CENTER,  0, 0  )
-    call SetFrameSize( EmoteFrameBG, .06, .06)
-    call SetFrameTexture(EmoteFrameBG, "Emotes\\EmoteBackground.blp", 0, true)
-    call SetFramePriority( EmoteFrameBG, 7 )
-
-    call TriggerRegisterFrameEvent( tOnPress, EmoteFrame, FRAMEEVENT_MOUSE_DOWN )
-    call TriggerRegisterFrameEvent( tOnUnPress, EmoteFrame, FRAMEEVENT_MOUSE_UP )
-    call TriggerRegisterFrameEvent( tOnClick, EmoteFrame, FRAMEEVENT_CONTROL_CLICK )
-    call TriggerRegisterFrameEvent( tOnHover, EmoteFrame, FRAMEEVENT_MOUSE_ENTER )
-    call TriggerRegisterFrameEvent( tOnUnHover, EmoteFrame, FRAMEEVENT_MOUSE_LEAVE )
-
-
-    set EmoteFrame=CreateFrameByType( "SIMPLEBUTTON", "EmoteFrame", EmoteBarGridFrame, "", 7 )
-    call ClearFrameAllPoints( EmoteFrame )
-    call SetFrameTexture( EmoteFrame, "Emotes\\OnCooldown.blp", 0, true )
-    call SetFrameTexture( EmoteFrame, "Emotes\\OnCooldown.blp", 1, true )
-    call SetFrameTexture( EmoteFrame, "Emotes\\OnCooldown.blp", 2, true )
-    call SetFrameSize( EmoteFrame, .032, .032 )
-    call ShowFrame( EmoteFrame, true )
-    call RegisterFrameMouseButton( EmoteFrame, MOUSE_BUTTON_TYPE_RIGHT, true)
-    call SetFramePriority( EmoteFrame, 6 )
-    call SetFrameGridFrame( EmoteBarGridFrame, 0, 7, EmoteFrame )
-    
-    set EmoteFrameBG=CreateFrameByType("SIMPLEFRAME", "EmoteFrameBG", EmoteFrame, "", 7)
-    call ClearFrameAllPoints( EmoteFrameBG )
-    call SetFrameRelativePoint( EmoteFrameBG, FRAMEPOINT_CENTER, EmoteFrame, FRAMEPOINT_CENTER,  0, 0  )
-    call SetFrameSize( EmoteFrameBG, .06, .06)
-    call SetFrameTexture(EmoteFrameBG, "Emotes\\EmoteBackground.blp", 0, true)
-    call SetFramePriority( EmoteFrameBG, 7 )
-
-    call TriggerRegisterFrameEvent( tOnPress, EmoteFrame, FRAMEEVENT_MOUSE_DOWN )
-    call TriggerRegisterFrameEvent( tOnUnPress, EmoteFrame, FRAMEEVENT_MOUSE_UP )
-    call TriggerRegisterFrameEvent( tOnClick, EmoteFrame, FRAMEEVENT_CONTROL_CLICK )
-    call TriggerRegisterFrameEvent( tOnHover, EmoteFrame, FRAMEEVENT_MOUSE_ENTER )
-    call TriggerRegisterFrameEvent( tOnUnHover, EmoteFrame, FRAMEEVENT_MOUSE_LEAVE )
-
-    set EmoteFrame=CreateFrameByType( "SIMPLEBUTTON", "EmoteFrame", EmoteBarGridFrame, "", 8 )
-    call ClearFrameAllPoints( EmoteFrame )
-    call SetFrameTexture( EmoteFrame, "Emotes\\AbilityRdy.blp", 0, true )
-    call SetFrameTexture( EmoteFrame, "Emotes\\AbilityRdy.blp", 1, true )
-    call SetFrameTexture( EmoteFrame, "Emotes\\AbilityRdy.blp", 2, true )
-    call SetFrameSize( EmoteFrame, .032, .032 )
-    call ShowFrame( EmoteFrame, true )
-    call RegisterFrameMouseButton( EmoteFrame, MOUSE_BUTTON_TYPE_RIGHT, true)
-    call SetFramePriority( EmoteFrame, 6 )
-    call SetFrameGridFrame( EmoteBarGridFrame, 0, 8, EmoteFrame )
-    
-    set EmoteFrameBG=CreateFrameByType("SIMPLEFRAME", "EmoteFrameBG", EmoteFrame, "", 8)
-    call ClearFrameAllPoints( EmoteFrameBG )
-    call SetFrameRelativePoint( EmoteFrameBG, FRAMEPOINT_CENTER, EmoteFrame, FRAMEPOINT_CENTER,  0, 0  )
-    call SetFrameSize( EmoteFrameBG, .06, .06)
-    call SetFrameTexture(EmoteFrameBG, "Emotes\\EmoteBackground.blp", 0, true)
-    call SetFramePriority( EmoteFrameBG, 7 )
-
-    call TriggerRegisterFrameEvent( tOnPress, EmoteFrame, FRAMEEVENT_MOUSE_DOWN )
-    call TriggerRegisterFrameEvent( tOnUnPress, EmoteFrame, FRAMEEVENT_MOUSE_UP )
-    call TriggerRegisterFrameEvent( tOnClick, EmoteFrame, FRAMEEVENT_CONTROL_CLICK )
-    call TriggerRegisterFrameEvent( tOnHover, EmoteFrame, FRAMEEVENT_MOUSE_ENTER )
-    call TriggerRegisterFrameEvent( tOnUnHover, EmoteFrame, FRAMEEVENT_MOUSE_LEAVE )
-
-    set EmoteFrame=CreateFrameByType( "SIMPLEBUTTON", "EmoteFrame", EmoteBarGridFrame, "", 9 )
-    call ClearFrameAllPoints( EmoteFrame )
-    call SetFrameTexture( EmoteFrame, "Emotes\\Ready.blp", 0, true )
-    call SetFrameTexture( EmoteFrame, "Emotes\\Ready.blp", 1, true )
-    call SetFrameTexture( EmoteFrame, "Emotes\\Ready.blp", 2, true )
-    call SetFrameSize( EmoteFrame, .032, .032 )
-    call ShowFrame( EmoteFrame, true )
-    call RegisterFrameMouseButton( EmoteFrame, MOUSE_BUTTON_TYPE_RIGHT, true)
-    call SetFramePriority( EmoteFrame, 6 )
-    call SetFrameGridFrame( EmoteBarGridFrame, 0, 9, EmoteFrame )
-    
-    set EmoteFrameBG=CreateFrameByType("SIMPLEFRAME", "EmoteFrameBG", EmoteFrame, "", 9)
-    call ClearFrameAllPoints( EmoteFrameBG )
-    call SetFrameRelativePoint( EmoteFrameBG, FRAMEPOINT_CENTER, EmoteFrame, FRAMEPOINT_CENTER,  0, 0  )
-    call SetFrameSize( EmoteFrameBG, .06, .06)
-    call SetFrameTexture(EmoteFrameBG, "Emotes\\EmoteBackground.blp", 0, true)
-    call SetFramePriority( EmoteFrameBG, 7 )
-
-    call TriggerRegisterFrameEvent( tOnPress, EmoteFrame, FRAMEEVENT_MOUSE_DOWN )
-    call TriggerRegisterFrameEvent( tOnUnPress, EmoteFrame, FRAMEEVENT_MOUSE_UP )
-    call TriggerRegisterFrameEvent( tOnClick, EmoteFrame, FRAMEEVENT_CONTROL_CLICK )
-    call TriggerRegisterFrameEvent( tOnHover, EmoteFrame, FRAMEEVENT_MOUSE_ENTER )
-    call TriggerRegisterFrameEvent( tOnUnHover, EmoteFrame, FRAMEEVENT_MOUSE_LEAVE )
-
-    set EmoteFrame=CreateFrameByType( "SIMPLEBUTTON", "EmoteFrame", EmoteBarGridFrame, "", 10 )
-    call ClearFrameAllPoints( EmoteFrame )
-    call SetFrameTexture( EmoteFrame, "Emotes\\NotReady.blp", 0, true )
-    call SetFrameTexture( EmoteFrame, "Emotes\\NotReady.blp", 1, true )
-    call SetFrameTexture( EmoteFrame, "Emotes\\NotReady.blp", 2, true )
-    call SetFrameSize( EmoteFrame, .032, .032 )
-    call ShowFrame( EmoteFrame, true )
-    call RegisterFrameMouseButton( EmoteFrame, MOUSE_BUTTON_TYPE_RIGHT, true)
-    call SetFramePriority( EmoteFrame, 6 )
-    call SetFrameGridFrame( EmoteBarGridFrame, 0, 10, EmoteFrame )
-    
-    set EmoteFrameBG=CreateFrameByType("SIMPLEFRAME", "EmoteFrameBG", EmoteFrame, "", 10)
-    call ClearFrameAllPoints( EmoteFrameBG )
-    call SetFrameRelativePoint( EmoteFrameBG, FRAMEPOINT_CENTER, EmoteFrame, FRAMEPOINT_CENTER,  0, 0  )
-    call SetFrameSize( EmoteFrameBG, .06, .06)
-    call SetFrameTexture(EmoteFrameBG, "Emotes\\EmoteBackground.blp", 0, true)
-    call SetFramePriority( EmoteFrameBG, 7 )
-
-    call TriggerRegisterFrameEvent( tOnPress, EmoteFrame, FRAMEEVENT_MOUSE_DOWN )
-    call TriggerRegisterFrameEvent( tOnUnPress, EmoteFrame, FRAMEEVENT_MOUSE_UP )
-    call TriggerRegisterFrameEvent( tOnClick, EmoteFrame, FRAMEEVENT_CONTROL_CLICK )
-    call TriggerRegisterFrameEvent( tOnHover, EmoteFrame, FRAMEEVENT_MOUSE_ENTER )
-    call TriggerRegisterFrameEvent( tOnUnHover, EmoteFrame, FRAMEEVENT_MOUSE_LEAVE )
-
-    set EmoteFrame=CreateFrameByType( "SIMPLEBUTTON", "EmoteFrame", EmoteBarGridFrame, "", 11 )
-    call ClearFrameAllPoints( EmoteFrame )
-    call SetFrameTexture( EmoteFrame, "Emotes\\HealRdy.blp", 0, true )
-    call SetFrameTexture( EmoteFrame, "Emotes\\HealRdy.blp", 1, true )
-    call SetFrameTexture( EmoteFrame, "Emotes\\HealRdy.blp", 2, true )
-    call SetFrameSize( EmoteFrame, .032, .032 )
-    call ShowFrame( EmoteFrame, true )
-    call RegisterFrameMouseButton( EmoteFrame, MOUSE_BUTTON_TYPE_RIGHT, true)
-    call SetFramePriority( EmoteFrame, 6 )
-    call SetFrameGridFrame( EmoteBarGridFrame, 0, 11, EmoteFrame )
-    
-    set EmoteFrameBG=CreateFrameByType("SIMPLEFRAME", "EmoteFrameBG", EmoteFrame, "", 11)
-    call ClearFrameAllPoints( EmoteFrameBG )
-    call SetFrameRelativePoint( EmoteFrameBG, FRAMEPOINT_CENTER, EmoteFrame, FRAMEPOINT_CENTER,  0, 0  )
-    call SetFrameSize( EmoteFrameBG, .06, .06)
-    call SetFrameTexture(EmoteFrameBG, "Emotes\\EmoteBackground.blp", 0, true)
-    call SetFramePriority( EmoteFrameBG, 7 )
-
-    call TriggerRegisterFrameEvent( tOnPress, EmoteFrame, FRAMEEVENT_MOUSE_DOWN )
-    call TriggerRegisterFrameEvent( tOnUnPress, EmoteFrame, FRAMEEVENT_MOUSE_UP )
-    call TriggerRegisterFrameEvent( tOnClick, EmoteFrame, FRAMEEVENT_CONTROL_CLICK )
-    call TriggerRegisterFrameEvent( tOnHover, EmoteFrame, FRAMEEVENT_MOUSE_ENTER )
-    call TriggerRegisterFrameEvent( tOnUnHover, EmoteFrame, FRAMEEVENT_MOUSE_LEAVE )
-    
-    set EmoteFrame=CreateFrameByType( "SIMPLEBUTTON", "EmoteFrame", EmoteBarGridFrame, "", 12 )
-    call ClearFrameAllPoints( EmoteFrame )
-    call SetFrameTexture( EmoteFrame, "Emotes\\Thanks.blp", 0, true )
-    call SetFrameTexture( EmoteFrame, "Emotes\\Thanks.blp", 1, true )
-    call SetFrameTexture( EmoteFrame, "Emotes\\Thanks.blp", 2, true )
-    call SetFrameSize( EmoteFrame, .032, .032 )
-    call ShowFrame( EmoteFrame, true )
-    call RegisterFrameMouseButton( EmoteFrame, MOUSE_BUTTON_TYPE_RIGHT, true)
-    call SetFramePriority( EmoteFrame, 6 )
-    call SetFrameGridFrame( EmoteBarGridFrame, 0, 12, EmoteFrame )
-    
-    set EmoteFrameBG=CreateFrameByType("SIMPLEFRAME", "EmoteFrameBG", EmoteFrame, "", 12)
-    call ClearFrameAllPoints( EmoteFrameBG )
-    call SetFrameRelativePoint( EmoteFrameBG, FRAMEPOINT_CENTER, EmoteFrame, FRAMEPOINT_CENTER,  0, 0  )
-    call SetFrameSize( EmoteFrameBG, .06, .06)
-    call SetFrameTexture(EmoteFrameBG, "Emotes\\EmoteBackground.blp", 0, true)
-    call SetFramePriority( EmoteFrameBG, 7 )
-
-    call TriggerRegisterFrameEvent( tOnPress, EmoteFrame, FRAMEEVENT_MOUSE_DOWN )
-    call TriggerRegisterFrameEvent( tOnUnPress, EmoteFrame, FRAMEEVENT_MOUSE_UP )
-    call TriggerRegisterFrameEvent( tOnClick, EmoteFrame, FRAMEEVENT_CONTROL_CLICK )
-    call TriggerRegisterFrameEvent( tOnHover, EmoteFrame, FRAMEEVENT_MOUSE_ENTER )
-    call TriggerRegisterFrameEvent( tOnUnHover, EmoteFrame, FRAMEEVENT_MOUSE_LEAVE )
-        
-    set EmoteFrame=CreateFrameByType( "SIMPLEBUTTON", "EmoteFrame", EmoteBarGridFrame, "", 13 )
-    call ClearFrameAllPoints( EmoteFrame )
-    call SetFrameTexture( EmoteFrame, "Emotes\\GroupUp.blp", 0, true )
-    call SetFrameTexture( EmoteFrame, "Emotes\\GroupUp.blp", 1, true )
-    call SetFrameTexture( EmoteFrame, "Emotes\\GroupUp.blp", 2, true )
-    call SetFrameSize( EmoteFrame, .032, .032 )
-    call ShowFrame( EmoteFrame, true )
-    call RegisterFrameMouseButton( EmoteFrame, MOUSE_BUTTON_TYPE_RIGHT, true)
-    call SetFramePriority( EmoteFrame, 6 )
-    call SetFrameGridFrame( EmoteBarGridFrame, 0, 13, EmoteFrame )
-    
-    set EmoteFrameBG=CreateFrameByType("SIMPLEFRAME", "EmoteFrameBG", EmoteFrame, "", 13)
-    call ClearFrameAllPoints( EmoteFrameBG )
-    call SetFrameRelativePoint( EmoteFrameBG, FRAMEPOINT_CENTER, EmoteFrame, FRAMEPOINT_CENTER,  0, 0  )
-    call SetFrameSize( EmoteFrameBG, .06, .06)
-    call SetFrameTexture(EmoteFrameBG, "Emotes\\EmoteBackground.blp", 0, true)
-    call SetFramePriority( EmoteFrameBG, 7 )
-
-    call TriggerRegisterFrameEvent( tOnPress, EmoteFrame, FRAMEEVENT_MOUSE_DOWN )
-    call TriggerRegisterFrameEvent( tOnUnPress, EmoteFrame, FRAMEEVENT_MOUSE_UP )
-    call TriggerRegisterFrameEvent( tOnClick, EmoteFrame, FRAMEEVENT_CONTROL_CLICK )
-    call TriggerRegisterFrameEvent( tOnHover, EmoteFrame, FRAMEEVENT_MOUSE_ENTER )
-    call TriggerRegisterFrameEvent( tOnUnHover, EmoteFrame, FRAMEEVENT_MOUSE_LEAVE )
-            
-    set EmoteFrame=CreateFrameByType( "SIMPLEBUTTON", "EmoteFrame", EmoteBarGridFrame, "", 14 )
-    call ClearFrameAllPoints( EmoteFrame )
-    call SetFrameTexture( EmoteFrame, "Emotes\\Retreat.blp", 0, true )
-    call SetFrameTexture( EmoteFrame, "Emotes\\Retreat.blp", 1, true )
-    call SetFrameTexture( EmoteFrame, "Emotes\\Retreat.blp", 2, true )
-    call SetFrameSize( EmoteFrame, .032, .032 )
-    call ShowFrame( EmoteFrame, true )
-    call RegisterFrameMouseButton( EmoteFrame, MOUSE_BUTTON_TYPE_RIGHT, true)
-    call SetFramePriority( EmoteFrame, 6 )
-    call SetFrameGridFrame( EmoteBarGridFrame, 0, 14, EmoteFrame )
-    
-    set EmoteFrameBG=CreateFrameByType("SIMPLEFRAME", "EmoteFrameBG", EmoteFrame, "", 14)
-    call ClearFrameAllPoints( EmoteFrameBG )
-    call SetFrameRelativePoint( EmoteFrameBG, FRAMEPOINT_CENTER, EmoteFrame, FRAMEPOINT_CENTER,  0, 0  )
-    call SetFrameSize( EmoteFrameBG, .06, .06)
-    call SetFrameTexture(EmoteFrameBG, "Emotes\\EmoteBackground.blp", 0, true)
-    call SetFramePriority( EmoteFrameBG, 7 )
-
-    call TriggerRegisterFrameEvent( tOnPress, EmoteFrame, FRAMEEVENT_MOUSE_DOWN )
-    call TriggerRegisterFrameEvent( tOnUnPress, EmoteFrame, FRAMEEVENT_MOUSE_UP )
-    call TriggerRegisterFrameEvent( tOnClick, EmoteFrame, FRAMEEVENT_CONTROL_CLICK )
-    call TriggerRegisterFrameEvent( tOnHover, EmoteFrame, FRAMEEVENT_MOUSE_ENTER )
-    call TriggerRegisterFrameEvent( tOnUnHover, EmoteFrame, FRAMEEVENT_MOUSE_LEAVE )
-            
-    set EmoteFrame=CreateFrameByType( "SIMPLEBUTTON", "EmoteFrame", EmoteBarGridFrame, "", 15 )
-    call ClearFrameAllPoints( EmoteFrame )
-    call SetFrameTexture( EmoteFrame, "Emotes\\GiveMoney.blp", 0, true )
-    call SetFrameTexture( EmoteFrame, "Emotes\\GiveMoney.blp", 1, true )
-    call SetFrameTexture( EmoteFrame, "Emotes\\GiveMoney.blp", 2, true )
-    call SetFrameSize( EmoteFrame, .032, .032 )
-    call ShowFrame( EmoteFrame, true )
-    call RegisterFrameMouseButton( EmoteFrame, MOUSE_BUTTON_TYPE_RIGHT, true)
-    call SetFramePriority( EmoteFrame, 6 )
-    call SetFrameGridFrame( EmoteBarGridFrame, 0, 15, EmoteFrame )
-    
-    set EmoteFrameBG=CreateFrameByType("SIMPLEFRAME", "EmoteFrameBG", EmoteFrame, "", 15)
-    call ClearFrameAllPoints( EmoteFrameBG )
-    call SetFrameRelativePoint( EmoteFrameBG, FRAMEPOINT_CENTER, EmoteFrame, FRAMEPOINT_CENTER,  0, 0  )
-    call SetFrameSize( EmoteFrameBG, .06, .06)
-    call SetFrameTexture(EmoteFrameBG, "Emotes\\EmoteBackground.blp", 0, true)
-    call SetFramePriority( EmoteFrameBG, 7 )
-
-    call TriggerRegisterFrameEvent( tOnPress, EmoteFrame, FRAMEEVENT_MOUSE_DOWN )
-    call TriggerRegisterFrameEvent( tOnUnPress, EmoteFrame, FRAMEEVENT_MOUSE_UP )
-    call TriggerRegisterFrameEvent( tOnClick, EmoteFrame, FRAMEEVENT_CONTROL_CLICK )
-    call TriggerRegisterFrameEvent( tOnHover, EmoteFrame, FRAMEEVENT_MOUSE_ENTER )
-    call TriggerRegisterFrameEvent( tOnUnHover, EmoteFrame, FRAMEEVENT_MOUSE_LEAVE )
-                
-    set EmoteFrame=CreateFrameByType( "SIMPLEBUTTON", "EmoteFrame", EmoteBarGridFrame, "", 16 )
-    call ClearFrameAllPoints( EmoteFrame )
-    call SetFrameTexture( EmoteFrame, "Emotes\\ReturnDebt.blp", 0, true )
-    call SetFrameTexture( EmoteFrame, "Emotes\\ReturnDebt.blp", 1, true )
-    call SetFrameTexture( EmoteFrame, "Emotes\\ReturnDebt.blp", 2, true )
-    call SetFrameSize( EmoteFrame, .032, .032 )
-    call ShowFrame( EmoteFrame, true )
-    call RegisterFrameMouseButton( EmoteFrame, MOUSE_BUTTON_TYPE_RIGHT, true)
-    call SetFramePriority( EmoteFrame, 6 )
-    call SetFrameGridFrame( EmoteBarGridFrame, 0, 16, EmoteFrame )
-    
-    set EmoteFrameBG=CreateFrameByType("SIMPLEFRAME", "EmoteFrameBG", EmoteFrame, "", 16)
-    call ClearFrameAllPoints( EmoteFrameBG )
-    call SetFrameRelativePoint( EmoteFrameBG, FRAMEPOINT_CENTER, EmoteFrame, FRAMEPOINT_CENTER,  0, 0  )
-    call SetFrameSize( EmoteFrameBG, .06, .06)
-    call SetFrameTexture(EmoteFrameBG, "Emotes\\EmoteBackground.blp", 0, true)
-    call SetFramePriority( EmoteFrameBG, 7 )
-
-    call TriggerRegisterFrameEvent( tOnPress, EmoteFrame, FRAMEEVENT_MOUSE_DOWN )
-    call TriggerRegisterFrameEvent( tOnUnPress, EmoteFrame, FRAMEEVENT_MOUSE_UP )
-    call TriggerRegisterFrameEvent( tOnClick, EmoteFrame, FRAMEEVENT_CONTROL_CLICK )
-    call TriggerRegisterFrameEvent( tOnHover, EmoteFrame, FRAMEEVENT_MOUSE_ENTER )
-    call TriggerRegisterFrameEvent( tOnUnHover, EmoteFrame, FRAMEEVENT_MOUSE_LEAVE )
-                
-//paywall emotes start
-
-    set EmoteFrame=CreateFrameByType( "SIMPLEBUTTON", "EmoteFrame", EmoteBarGridFrame, "", 17 )
-    call ClearFrameAllPoints( EmoteFrame )
-    call SetFrameTexture( EmoteFrame, "Emotes\\RoflanEbalo.blp", 0, true )
-    call SetFrameTexture( EmoteFrame, "Emotes\\RoflanEbalo.blp", 1, true )
-    call SetFrameTexture( EmoteFrame, "Emotes\\RoflanEbalo.blp", 2, true )
-    call SetFrameSize( EmoteFrame, .032, .032 )
-    call ShowFrame( EmoteFrame, true )
-    call RegisterFrameMouseButton( EmoteFrame, MOUSE_BUTTON_TYPE_RIGHT, true)
-    call SetFramePriority( EmoteFrame, 6 )
-    call SetFrameGridFrame( EmoteBarGridFrame, 1, 0, EmoteFrame )
-
-    set EmoteFrameBG=CreateFrameByType("SIMPLEFRAME", "EmoteFrameBG", EmoteFrame, "", 17)
-    call ClearFrameAllPoints( EmoteFrameBG )
-    call SetFrameRelativePoint( EmoteFrameBG, FRAMEPOINT_CENTER, EmoteFrame, FRAMEPOINT_CENTER,  0, 0  )
-    call SetFrameSize( EmoteFrameBG, .06, .06)
-    call SetFrameTexture(EmoteFrameBG, "Emotes\\EmoteBackground.blp", 0, true)
-    call SetFramePriority( EmoteFrameBG, 7 )
-
-    call TriggerRegisterFrameEvent( tOnPress, EmoteFrame, FRAMEEVENT_MOUSE_DOWN )
-    call TriggerRegisterFrameEvent( tOnUnPress, EmoteFrame, FRAMEEVENT_MOUSE_UP )
-    call TriggerRegisterFrameEvent( tOnClick, EmoteFrame, FRAMEEVENT_CONTROL_CLICK )
-    call TriggerRegisterFrameEvent( tOnHover, EmoteFrame, FRAMEEVENT_MOUSE_ENTER )
-    call TriggerRegisterFrameEvent( tOnUnHover, EmoteFrame, FRAMEEVENT_MOUSE_LEAVE )
-
-    set EmoteFrame=CreateFrameByType( "SIMPLEBUTTON", "EmoteFrame", EmoteBarGridFrame, "", 18 )
-    call ClearFrameAllPoints( EmoteFrame )
-    call SetFrameTexture( EmoteFrame, "Emotes\\RoflanGorit.blp", 0, true )
-    call SetFrameTexture( EmoteFrame, "Emotes\\RoflanGorit.blp", 1, true )
-    call SetFrameTexture( EmoteFrame, "Emotes\\RoflanGorit.blp", 2, true )
-    call SetFrameSize( EmoteFrame, .032, .032 )
-    call ShowFrame( EmoteFrame, true )
-    call RegisterFrameMouseButton( EmoteFrame, MOUSE_BUTTON_TYPE_RIGHT, true)
-    call SetFramePriority( EmoteFrame, 6 )
-    call SetFrameGridFrame( EmoteBarGridFrame, 1, 1, EmoteFrame )
-    
-    set EmoteFrameBG=CreateFrameByType("SIMPLEFRAME", "EmoteFrameBG", EmoteFrame, "", 18)
-    call ClearFrameAllPoints( EmoteFrameBG )
-    call SetFrameRelativePoint( EmoteFrameBG, FRAMEPOINT_CENTER, EmoteFrame, FRAMEPOINT_CENTER,  0, 0  )
-    call SetFrameSize( EmoteFrameBG, .06, .06)
-    call SetFrameTexture(EmoteFrameBG, "Emotes\\EmoteBackground.blp", 0, true)
-    call SetFramePriority( EmoteFrameBG, 7 )
-
-    call TriggerRegisterFrameEvent( tOnPress, EmoteFrame, FRAMEEVENT_MOUSE_DOWN )
-    call TriggerRegisterFrameEvent( tOnUnPress, EmoteFrame, FRAMEEVENT_MOUSE_UP )
-    call TriggerRegisterFrameEvent( tOnClick, EmoteFrame, FRAMEEVENT_CONTROL_CLICK )
-    call TriggerRegisterFrameEvent( tOnHover, EmoteFrame, FRAMEEVENT_MOUSE_ENTER )
-    call TriggerRegisterFrameEvent( tOnUnHover, EmoteFrame, FRAMEEVENT_MOUSE_LEAVE )
-
-    set EmoteFrame=CreateFrameByType( "SIMPLEBUTTON", "EmoteFrame", EmoteBarGridFrame, "", 19 )
-    call ClearFrameAllPoints( EmoteFrame )
-    call SetFrameTexture( EmoteFrame, "Emotes\\RoflanPominki.blp", 0, true )
-    call SetFrameTexture( EmoteFrame, "Emotes\\RoflanPominki.blp", 1, true )
-    call SetFrameTexture( EmoteFrame, "Emotes\\RoflanPominki.blp", 2, true )
-    call SetFrameSize( EmoteFrame, .032, .032 )
-    call ShowFrame( EmoteFrame, true )
-    call RegisterFrameMouseButton( EmoteFrame, MOUSE_BUTTON_TYPE_RIGHT, true)
-    call SetFramePriority( EmoteFrame, 6 )
-    call SetFrameGridFrame( EmoteBarGridFrame, 1, 2, EmoteFrame )
-    
-    set EmoteFrameBG=CreateFrameByType("SIMPLEFRAME", "EmoteFrameBG", EmoteFrame, "", 19)
-    call ClearFrameAllPoints( EmoteFrameBG )
-    call SetFrameRelativePoint( EmoteFrameBG, FRAMEPOINT_CENTER, EmoteFrame, FRAMEPOINT_CENTER,  0, 0  )
-    call SetFrameSize( EmoteFrameBG, .06, .06)
-    call SetFrameTexture(EmoteFrameBG, "Emotes\\EmoteBackground.blp", 0, true)
-    call SetFramePriority( EmoteFrameBG, 7 )
-
-    call TriggerRegisterFrameEvent( tOnPress, EmoteFrame, FRAMEEVENT_MOUSE_DOWN )
-    call TriggerRegisterFrameEvent( tOnUnPress, EmoteFrame, FRAMEEVENT_MOUSE_UP )
-    call TriggerRegisterFrameEvent( tOnClick, EmoteFrame, FRAMEEVENT_CONTROL_CLICK )
-    call TriggerRegisterFrameEvent( tOnHover, EmoteFrame, FRAMEEVENT_MOUSE_ENTER )
-    call TriggerRegisterFrameEvent( tOnUnHover, EmoteFrame, FRAMEEVENT_MOUSE_LEAVE )
-
-    set EmoteFrame=CreateFrameByType( "SIMPLEBUTTON", "EmoteFrame", EmoteBarGridFrame, "", 20 )
-    call ClearFrameAllPoints( EmoteFrame )
-    call SetFrameTexture( EmoteFrame, "Emotes\\ShadowRage.blp", 0, true )
-    call SetFrameTexture( EmoteFrame, "Emotes\\ShadowRage.blp", 1, true )
-    call SetFrameTexture( EmoteFrame, "Emotes\\ShadowRage.blp", 2, true )
-    call SetFrameSize( EmoteFrame, .032, .032 )
-    call ShowFrame( EmoteFrame, true )
-    call RegisterFrameMouseButton( EmoteFrame, MOUSE_BUTTON_TYPE_RIGHT, true)
-    call SetFramePriority( EmoteFrame, 6 )
-    call SetFrameGridFrame( EmoteBarGridFrame, 1, 3, EmoteFrame )
-    
-    set EmoteFrameBG=CreateFrameByType("SIMPLEFRAME", "EmoteFrameBG", EmoteFrame, "", 20)
-    call ClearFrameAllPoints( EmoteFrameBG )
-    call SetFrameRelativePoint( EmoteFrameBG, FRAMEPOINT_CENTER, EmoteFrame, FRAMEPOINT_CENTER,  0, 0  )
-    call SetFrameSize( EmoteFrameBG, .06, .06)
-    call SetFrameTexture(EmoteFrameBG, "Emotes\\EmoteBackground.blp", 0, true)
-    call SetFramePriority( EmoteFrameBG, 7 )
-
-    call TriggerRegisterFrameEvent( tOnPress, EmoteFrame, FRAMEEVENT_MOUSE_DOWN )
-    call TriggerRegisterFrameEvent( tOnUnPress, EmoteFrame, FRAMEEVENT_MOUSE_UP )
-    call TriggerRegisterFrameEvent( tOnClick, EmoteFrame, FRAMEEVENT_CONTROL_CLICK )
-    call TriggerRegisterFrameEvent( tOnHover, EmoteFrame, FRAMEEVENT_MOUSE_ENTER )
-    call TriggerRegisterFrameEvent( tOnUnHover, EmoteFrame, FRAMEEVENT_MOUSE_LEAVE )
-
-    set EmoteFrame=CreateFrameByType( "SIMPLEBUTTON", "EmoteFrame", EmoteBarGridFrame, "", 21 )
-    call ClearFrameAllPoints( EmoteFrame )
-    call SetFrameTexture( EmoteFrame, "Emotes\\Slowpoke.blp", 0, true )
-    call SetFrameTexture( EmoteFrame, "Emotes\\Slowpoke.blp", 1, true )
-    call SetFrameTexture( EmoteFrame, "Emotes\\Slowpoke.blp", 2, true )
-    call SetFrameSize( EmoteFrame, .032, .032 )
-    call ShowFrame( EmoteFrame, true )
-    call RegisterFrameMouseButton( EmoteFrame, MOUSE_BUTTON_TYPE_RIGHT, true)
-    call SetFramePriority( EmoteFrame, 6 )
-    call SetFrameGridFrame( EmoteBarGridFrame, 1, 4, EmoteFrame )
-    
-    set EmoteFrameBG=CreateFrameByType("SIMPLEFRAME", "EmoteFrameBG", EmoteFrame, "", 21)
-    call ClearFrameAllPoints( EmoteFrameBG )
-    call SetFrameRelativePoint( EmoteFrameBG, FRAMEPOINT_CENTER, EmoteFrame, FRAMEPOINT_CENTER,  0, 0  )
-    call SetFrameSize( EmoteFrameBG, .06, .06)
-    call SetFrameTexture(EmoteFrameBG, "Emotes\\EmoteBackground.blp", 0, true)
-    call SetFramePriority( EmoteFrameBG, 7 )
-
-    call TriggerRegisterFrameEvent( tOnPress, EmoteFrame, FRAMEEVENT_MOUSE_DOWN )
-    call TriggerRegisterFrameEvent( tOnUnPress, EmoteFrame, FRAMEEVENT_MOUSE_UP )
-    call TriggerRegisterFrameEvent( tOnClick, EmoteFrame, FRAMEEVENT_CONTROL_CLICK )
-    call TriggerRegisterFrameEvent( tOnHover, EmoteFrame, FRAMEEVENT_MOUSE_ENTER )
-    call TriggerRegisterFrameEvent( tOnUnHover, EmoteFrame, FRAMEEVENT_MOUSE_LEAVE )
-
-    set EmoteFrame=CreateFrameByType( "SIMPLEBUTTON", "EmoteFrame", EmoteBarGridFrame, "", 22 )
-    call ClearFrameAllPoints( EmoteFrame )
-    call SetFrameTexture( EmoteFrame, "Emotes\\Shrek1.blp", 0, true )
-    call SetFrameTexture( EmoteFrame, "Emotes\\Shrek1.blp", 1, true )
-    call SetFrameTexture( EmoteFrame, "Emotes\\Shrek1.blp", 2, true )
-    call SetFrameSize( EmoteFrame, .032, .032 )
-    call ShowFrame( EmoteFrame, true )
-    call RegisterFrameMouseButton( EmoteFrame, MOUSE_BUTTON_TYPE_RIGHT, true)
-    call SetFramePriority( EmoteFrame, 6 )
-    call SetFrameGridFrame( EmoteBarGridFrame, 1, 5, EmoteFrame )
-    
-    set EmoteFrameBG=CreateFrameByType("SIMPLEFRAME", "EmoteFrameBG", EmoteFrame, "", 22)
-    call ClearFrameAllPoints( EmoteFrameBG )
-    call SetFrameRelativePoint( EmoteFrameBG, FRAMEPOINT_CENTER, EmoteFrame, FRAMEPOINT_CENTER,  0, 0  )
-    call SetFrameSize( EmoteFrameBG, .06, .06)
-    call SetFrameTexture(EmoteFrameBG, "Emotes\\EmoteBackground.blp", 0, true)
-    call SetFramePriority( EmoteFrameBG, 7 )
-
-    call TriggerRegisterFrameEvent( tOnPress, EmoteFrame, FRAMEEVENT_MOUSE_DOWN )
-    call TriggerRegisterFrameEvent( tOnUnPress, EmoteFrame, FRAMEEVENT_MOUSE_UP )
-    call TriggerRegisterFrameEvent( tOnClick, EmoteFrame, FRAMEEVENT_CONTROL_CLICK )
-    call TriggerRegisterFrameEvent( tOnHover, EmoteFrame, FRAMEEVENT_MOUSE_ENTER )
-    call TriggerRegisterFrameEvent( tOnUnHover, EmoteFrame, FRAMEEVENT_MOUSE_LEAVE )
-
-    set EmoteFrame=CreateFrameByType( "SIMPLEBUTTON", "EmoteFrame", EmoteBarGridFrame, "", 23 )
-    call ClearFrameAllPoints( EmoteFrame )
-    call SetFrameTexture( EmoteFrame, "Emotes\\KEKW.blp", 0, true )
-    call SetFrameTexture( EmoteFrame, "Emotes\\KEKW.blp", 1, true )
-    call SetFrameTexture( EmoteFrame, "Emotes\\KEKW.blp", 2, true )
-    call SetFrameSize( EmoteFrame, .032, .032 )
-    call ShowFrame( EmoteFrame, true )
-    call RegisterFrameMouseButton( EmoteFrame, MOUSE_BUTTON_TYPE_RIGHT, true)
-    call SetFramePriority( EmoteFrame, 6 )
-    call SetFrameGridFrame( EmoteBarGridFrame, 1, 6, EmoteFrame )
-    
-    set EmoteFrameBG=CreateFrameByType("SIMPLEFRAME", "EmoteFrameBG", EmoteFrame, "", 23)
-    call ClearFrameAllPoints( EmoteFrameBG )
-    call SetFrameRelativePoint( EmoteFrameBG, FRAMEPOINT_CENTER, EmoteFrame, FRAMEPOINT_CENTER,  0, 0  )
-    call SetFrameSize( EmoteFrameBG, .06, .06)
-    call SetFrameTexture(EmoteFrameBG, "Emotes\\EmoteBackground.blp", 0, true)
-    call SetFramePriority( EmoteFrameBG, 7 )
-
-    call TriggerRegisterFrameEvent( tOnPress, EmoteFrame, FRAMEEVENT_MOUSE_DOWN )
-    call TriggerRegisterFrameEvent( tOnUnPress, EmoteFrame, FRAMEEVENT_MOUSE_UP )
-    call TriggerRegisterFrameEvent( tOnClick, EmoteFrame, FRAMEEVENT_CONTROL_CLICK )
-    call TriggerRegisterFrameEvent( tOnHover, EmoteFrame, FRAMEEVENT_MOUSE_ENTER )
-    call TriggerRegisterFrameEvent( tOnUnHover, EmoteFrame, FRAMEEVENT_MOUSE_LEAVE )
-
-    set EmoteFrame=CreateFrameByType( "SIMPLEBUTTON", "EmoteFrame", EmoteBarGridFrame, "", 24 )
-    call ClearFrameAllPoints( EmoteFrame )
-    call SetFrameTexture( EmoteFrame, "Emotes\\KEKWait.blp", 0, true )
-    call SetFrameTexture( EmoteFrame, "Emotes\\KEKWait.blp", 1, true )
-    call SetFrameTexture( EmoteFrame, "Emotes\\KEKWait.blp", 2, true )
-    call SetFrameSize( EmoteFrame, .032, .032 )
-    call ShowFrame( EmoteFrame, true )
-    call RegisterFrameMouseButton( EmoteFrame, MOUSE_BUTTON_TYPE_RIGHT, true)
-    call SetFramePriority( EmoteFrame, 6 )
-    call SetFrameGridFrame( EmoteBarGridFrame, 1, 7, EmoteFrame )
-    
-    set EmoteFrameBG=CreateFrameByType("SIMPLEFRAME", "EmoteFrameBG", EmoteFrame, "", 24)
-    call ClearFrameAllPoints( EmoteFrameBG )
-    call SetFrameRelativePoint( EmoteFrameBG, FRAMEPOINT_CENTER, EmoteFrame, FRAMEPOINT_CENTER,  0, 0  )
-    call SetFrameSize( EmoteFrameBG, .06, .06)
-    call SetFrameTexture(EmoteFrameBG, "Emotes\\EmoteBackground.blp", 0, true)
-    call SetFramePriority( EmoteFrameBG, 7 )
-
-    call TriggerRegisterFrameEvent( tOnPress, EmoteFrame, FRAMEEVENT_MOUSE_DOWN )
-    call TriggerRegisterFrameEvent( tOnUnPress, EmoteFrame, FRAMEEVENT_MOUSE_UP )
-    call TriggerRegisterFrameEvent( tOnClick, EmoteFrame, FRAMEEVENT_CONTROL_CLICK )
-    call TriggerRegisterFrameEvent( tOnHover, EmoteFrame, FRAMEEVENT_MOUSE_ENTER )
-    call TriggerRegisterFrameEvent( tOnUnHover, EmoteFrame, FRAMEEVENT_MOUSE_LEAVE )
-
-    set EmoteFrame=CreateFrameByType( "SIMPLEBUTTON", "EmoteFrame", EmoteBarGridFrame, "", 25 )
-    call ClearFrameAllPoints( EmoteFrame )
-    call SetFrameTexture( EmoteFrame, "Emotes\\Puchkov1.blp", 0, true )
-    call SetFrameTexture( EmoteFrame, "Emotes\\Puchkov1.blp", 1, true )
-    call SetFrameTexture( EmoteFrame, "Emotes\\Puchkov1.blp", 2, true )
-    call SetFrameSize( EmoteFrame, .032, .032 )
-    call ShowFrame( EmoteFrame, true )
-    call RegisterFrameMouseButton( EmoteFrame, MOUSE_BUTTON_TYPE_RIGHT, true)
-    call SetFramePriority( EmoteFrame, 6 )
-    call SetFrameGridFrame( EmoteBarGridFrame, 1, 8, EmoteFrame )
-    
-    set EmoteFrameBG=CreateFrameByType("SIMPLEFRAME", "EmoteFrameBG", EmoteFrame, "", 25)
-    call ClearFrameAllPoints( EmoteFrameBG )
-    call SetFrameRelativePoint( EmoteFrameBG, FRAMEPOINT_CENTER, EmoteFrame, FRAMEPOINT_CENTER,  0, 0  )
-    call SetFrameSize( EmoteFrameBG, .06, .06)
-    call SetFrameTexture(EmoteFrameBG, "Emotes\\EmoteBackground.blp", 0, true)
-    call SetFramePriority( EmoteFrameBG, 7 )
-
-    call TriggerRegisterFrameEvent( tOnPress, EmoteFrame, FRAMEEVENT_MOUSE_DOWN )
-    call TriggerRegisterFrameEvent( tOnUnPress, EmoteFrame, FRAMEEVENT_MOUSE_UP )
-    call TriggerRegisterFrameEvent( tOnClick, EmoteFrame, FRAMEEVENT_CONTROL_CLICK )
-    call TriggerRegisterFrameEvent( tOnHover, EmoteFrame, FRAMEEVENT_MOUSE_ENTER )
-    call TriggerRegisterFrameEvent( tOnUnHover, EmoteFrame, FRAMEEVENT_MOUSE_LEAVE )
-
-    set EmoteFrame=CreateFrameByType( "SIMPLEBUTTON", "EmoteFrame", EmoteBarGridFrame, "", 26 )
-    call ClearFrameAllPoints( EmoteFrame )
-    call SetFrameTexture( EmoteFrame, "Emotes\\Puchkov2.blp", 0, true )
-    call SetFrameTexture( EmoteFrame, "Emotes\\Puchkov2.blp", 1, true )
-    call SetFrameTexture( EmoteFrame, "Emotes\\Puchkov2.blp", 2, true )
-    call SetFrameSize( EmoteFrame, .032, .032 )
-    call ShowFrame( EmoteFrame, true )
-    call RegisterFrameMouseButton( EmoteFrame, MOUSE_BUTTON_TYPE_RIGHT, true)
-    call SetFramePriority( EmoteFrame, 6 )
-    call SetFrameGridFrame( EmoteBarGridFrame, 1, 9, EmoteFrame )
-    
-    set EmoteFrameBG=CreateFrameByType("SIMPLEFRAME", "EmoteFrameBG", EmoteFrame, "", 26)
-    call ClearFrameAllPoints( EmoteFrameBG )
-    call SetFrameRelativePoint( EmoteFrameBG, FRAMEPOINT_CENTER, EmoteFrame, FRAMEPOINT_CENTER,  0, 0  )
-    call SetFrameSize( EmoteFrameBG, .06, .06)
-    call SetFrameTexture(EmoteFrameBG, "Emotes\\EmoteBackground.blp", 0, true)
-    call SetFramePriority( EmoteFrameBG, 7 )
-
-    call TriggerRegisterFrameEvent( tOnPress, EmoteFrame, FRAMEEVENT_MOUSE_DOWN )
-    call TriggerRegisterFrameEvent( tOnUnPress, EmoteFrame, FRAMEEVENT_MOUSE_UP )
-    call TriggerRegisterFrameEvent( tOnClick, EmoteFrame, FRAMEEVENT_CONTROL_CLICK )
-    call TriggerRegisterFrameEvent( tOnHover, EmoteFrame, FRAMEEVENT_MOUSE_ENTER )
-    call TriggerRegisterFrameEvent( tOnUnHover, EmoteFrame, FRAMEEVENT_MOUSE_LEAVE )
-
-    set EmoteFrame=CreateFrameByType( "SIMPLEBUTTON", "EmoteFrame", EmoteBarGridFrame, "", 27 )
-    call ClearFrameAllPoints( EmoteFrame )
-    call SetFrameTexture( EmoteFrame, "Emotes\\TamaSad.blp", 0, true )
-    call SetFrameTexture( EmoteFrame, "Emotes\\TamaSad.blp", 1, true )
-    call SetFrameTexture( EmoteFrame, "Emotes\\TamaSad.blp", 2, true )
-    call SetFrameSize( EmoteFrame, .032, .032 )
-    call ShowFrame( EmoteFrame, true )
-    call RegisterFrameMouseButton( EmoteFrame, MOUSE_BUTTON_TYPE_RIGHT, true)
-    call SetFramePriority( EmoteFrame, 6 )
-    call SetFrameGridFrame( EmoteBarGridFrame, 1, 10, EmoteFrame )
-    
-    set EmoteFrameBG=CreateFrameByType("SIMPLEFRAME", "EmoteFrameBG", EmoteFrame, "", 27)
-    call ClearFrameAllPoints( EmoteFrameBG )
-    call SetFrameRelativePoint( EmoteFrameBG, FRAMEPOINT_CENTER, EmoteFrame, FRAMEPOINT_CENTER,  0, 0  )
-    call SetFrameSize( EmoteFrameBG, .06, .06)
-    call SetFrameTexture(EmoteFrameBG, "Emotes\\EmoteBackground.blp", 0, true)
-    call SetFramePriority( EmoteFrameBG, 7 )
-
-    call TriggerRegisterFrameEvent( tOnPress, EmoteFrame, FRAMEEVENT_MOUSE_DOWN )
-    call TriggerRegisterFrameEvent( tOnUnPress, EmoteFrame, FRAMEEVENT_MOUSE_UP )
-    call TriggerRegisterFrameEvent( tOnClick, EmoteFrame, FRAMEEVENT_CONTROL_CLICK )
-    call TriggerRegisterFrameEvent( tOnHover, EmoteFrame, FRAMEEVENT_MOUSE_ENTER )
-    call TriggerRegisterFrameEvent( tOnUnHover, EmoteFrame, FRAMEEVENT_MOUSE_LEAVE )
-
-    set EmoteFrame=CreateFrameByType( "SIMPLEBUTTON", "EmoteFrame", EmoteBarGridFrame, "", 28 )
-    call ClearFrameAllPoints( EmoteFrame )
-    call SetFrameTexture( EmoteFrame, "Emotes\\TamaWut.blp", 0, true )
-    call SetFrameTexture( EmoteFrame, "Emotes\\TamaWut.blp", 1, true )
-    call SetFrameTexture( EmoteFrame, "Emotes\\TamaWut.blp", 2, true )
-    call SetFrameSize( EmoteFrame, .032, .032 )
-    call ShowFrame( EmoteFrame, true )
-    call RegisterFrameMouseButton( EmoteFrame, MOUSE_BUTTON_TYPE_RIGHT, true)
-    call SetFramePriority( EmoteFrame, 6 )
-    call SetFrameGridFrame( EmoteBarGridFrame, 1, 11, EmoteFrame )
-    
-    set EmoteFrameBG=CreateFrameByType("SIMPLEFRAME", "EmoteFrameBG", EmoteFrame, "", 28)
-    call ClearFrameAllPoints( EmoteFrameBG )
-    call SetFrameRelativePoint( EmoteFrameBG, FRAMEPOINT_CENTER, EmoteFrame, FRAMEPOINT_CENTER,  0, 0  )
-    call SetFrameSize( EmoteFrameBG, .06, .06)
-    call SetFrameTexture(EmoteFrameBG, "Emotes\\EmoteBackground.blp", 0, true)
-    call SetFramePriority( EmoteFrameBG, 7 )
-
-    call TriggerRegisterFrameEvent( tOnPress, EmoteFrame, FRAMEEVENT_MOUSE_DOWN )
-    call TriggerRegisterFrameEvent( tOnUnPress, EmoteFrame, FRAMEEVENT_MOUSE_UP )
-    call TriggerRegisterFrameEvent( tOnClick, EmoteFrame, FRAMEEVENT_CONTROL_CLICK )
-    call TriggerRegisterFrameEvent( tOnHover, EmoteFrame, FRAMEEVENT_MOUSE_ENTER )
-    call TriggerRegisterFrameEvent( tOnUnHover, EmoteFrame, FRAMEEVENT_MOUSE_LEAVE )
-
-    set EmoteFrame=CreateFrameByType( "SIMPLEBUTTON", "EmoteFrame", EmoteBarGridFrame, "", 29 )
-    call ClearFrameAllPoints( EmoteFrame )
-    call SetFrameTexture( EmoteFrame, "Emotes\\Moyai.blp", 0, true )
-    call SetFrameTexture( EmoteFrame, "Emotes\\Moyai.blp", 1, true )
-    call SetFrameTexture( EmoteFrame, "Emotes\\Moyai.blp", 2, true )
-    call SetFrameSize( EmoteFrame, .032, .032 )
-    call ShowFrame( EmoteFrame, true )
-    call RegisterFrameMouseButton( EmoteFrame, MOUSE_BUTTON_TYPE_RIGHT, true)
-    call SetFramePriority( EmoteFrame, 6 )
-    call SetFrameGridFrame( EmoteBarGridFrame, 1, 12, EmoteFrame )
-    
-    set EmoteFrameBG=CreateFrameByType("SIMPLEFRAME", "EmoteFrameBG", EmoteFrame, "", 29)
-    call ClearFrameAllPoints( EmoteFrameBG )
-    call SetFrameRelativePoint( EmoteFrameBG, FRAMEPOINT_CENTER, EmoteFrame, FRAMEPOINT_CENTER,  0, 0  )
-    call SetFrameSize( EmoteFrameBG, .06, .06)
-    call SetFrameTexture(EmoteFrameBG, "Emotes\\EmoteBackground.blp", 0, true)
-    call SetFramePriority( EmoteFrameBG, 7 )
-
-    call TriggerRegisterFrameEvent( tOnPress, EmoteFrame, FRAMEEVENT_MOUSE_DOWN )
-    call TriggerRegisterFrameEvent( tOnUnPress, EmoteFrame, FRAMEEVENT_MOUSE_UP )
-    call TriggerRegisterFrameEvent( tOnClick, EmoteFrame, FRAMEEVENT_CONTROL_CLICK )
-    call TriggerRegisterFrameEvent( tOnHover, EmoteFrame, FRAMEEVENT_MOUSE_ENTER )
-    call TriggerRegisterFrameEvent( tOnUnHover, EmoteFrame, FRAMEEVENT_MOUSE_LEAVE )
-//paywall emotes end
-
+    set x=x+1
+    endloop  
 
     call TriggerAddAction( tOnPress, function OnButtonPress )
     call TriggerAddAction( tOnUnPress, function OnButtonUnpress )
     call TriggerAddAction( tOnClick, function OnButtonEmoteClick )
     call TriggerAddAction( tOnHover, function OnEmoteHover )
     call TriggerAddAction( tOnUnHover, function OnEmoteUnHover )
-
+    set x=0
+    set j=0
     set CloseEmoteButton=CreateFrameByType( "SIMPLEBUTTON", "EmoteBarClose", EmoteBarFrame, "", 0 )
     call ClearFrameAllPoints( CloseEmoteButton )
     call SetFrameTexture( CloseEmoteButton, "UI\\Widgets\\EscMenu\\Human\\checkbox-depressed.blp", 0, true )
     call SetFrameTexture( CloseEmoteButton, "UI\\Widgets\\EscMenu\\Human\\checkbox-depressed.blp", 1, true )
     call SetFrameTexture( CloseEmoteButton, "UI\\Widgets\\EscMenu\\Human\\checkbox-depressed.blp", 2, true )
-    call SetFrameSize( CloseEmoteButton, .015, .015 )
+    call SetFrameSize( CloseEmoteButton, .017, .017 )
     call SetFrameParent( CloseEmoteButton, EmoteBarFrame )
     call ShowFrame( CloseEmoteButton, true )
     call SetFramePriority( CloseEmoteButton, 7 )
@@ -23955,10 +23454,10 @@ function Trig_StatusBar_Actions takes nothing returns nothing
 
     set OpenEmoteButton=CreateFrameByType( "SIMPLEBUTTON", "EmoteBarOpen", null, "", 0 )
     call ClearFrameAllPoints( OpenEmoteButton )
-    call SetFrameTexture( OpenEmoteButton, "UI\\Widgets\\EscMenu\\Human\\checkbox-depressed.blp", 0, true )
-    call SetFrameTexture( OpenEmoteButton, "UI\\Widgets\\EscMenu\\Human\\checkbox-depressed.blp", 1, true )
-    call SetFrameTexture( OpenEmoteButton, "UI\\Widgets\\EscMenu\\Human\\checkbox-depressed.blp", 2, true )
-    call SetFrameSize( OpenEmoteButton, .015, .015 )
+    call SetFrameTexture( OpenEmoteButton, "Emotes\\EmoteButton.blp", 0, true )
+    call SetFrameTexture( OpenEmoteButton, "Emotes\\EmoteButton.blp", 1, true )
+    call SetFrameTexture( OpenEmoteButton, "Emotes\\EmoteButton.blp", 2, true )
+    call SetFrameSize( OpenEmoteButton, .017, .017 )
     call ShowFrame( OpenEmoteButton, false )
     call SetFramePriority( OpenEmoteButton, 7 )
     call SetFrameRelativePoint( OpenEmoteButton, FRAMEPOINT_CENTER, CloseEmoteButton, FRAMEPOINT_CENTER, 0, 0 )
@@ -23968,9 +23467,9 @@ function Trig_StatusBar_Actions takes nothing returns nothing
     call SetFrameBlendMode( OpenEmoteButtonText, 0, BLEND_MODE_BLEND )
     call SetFrameFont( OpenEmoteButtonText, "Fonts\\FRIZQT__.TTF", .01, 0 )
     call SetFrameTextAlignment( OpenEmoteButtonText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
-    call SetFrameTextColour( OpenEmoteButtonText, 0xFFFFA500 )
+    call SetFrameTextColour( OpenEmoteButtonText, 0xFFFFFFFF )
     call SetFrameParent( OpenEmoteButtonText, OpenEmoteButton )
-    call SetFrameText( OpenEmoteButtonText, "<3")
+    call SetFrameText( OpenEmoteButtonText, "J")
     call ShowFrame( OpenEmoteButtonText, true )
     call SetFrameRelativePoint( OpenEmoteButtonText, FRAMEPOINT_CENTER, OpenEmoteButton, FRAMEPOINT_CENTER, .00033, .0 )
     
@@ -23985,6 +23484,483 @@ function Trig_StatusBar_Actions takes nothing returns nothing
     call TriggerAddAction( tOnUnPress, function OnButtonUnpress )
     call TriggerAddAction( tOnClick, function OnButtonOpenEmoteBar )
 
+
+    set StatsBarFrame=CreateFrameByType("SIMPLEFRAME", "StatsBar", null, "", 0)
+    call ClearFrameAllPoints( StatsBarFrame )
+    call SetFrameRelativePoint( StatsBarFrame, FRAMEPOINT_CENTER, gameUI, FRAMEPOINT_BOTTOM,  .0013, .378  )
+    call SetFrameSize( StatsBarFrame, .74, .386)
+    call SetFrameTextureEx(StatsBarFrame, 0, "UI\\widgets\\BattleNet\\bnet-tooltip-background.blp", false, "Choice-tooltip-border.blp", 0)
+    call SetFramePriority( StatsBarFrame, 5 )
+        
+    
+
+    set StatsBarFrameText=CreateFrameByType( "SIMPLETEXT", "StatsPlayerNameRoot", StatsBarFrame, "", 0 )
+    call ClearFrameAllPoints( StatsBarFrameText )
+    call SetFrameBlendMode( StatsBarFrameText, 0, BLEND_MODE_BLEND )
+    call SetFrameFont( StatsBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+    call SetFrameTextAlignment( StatsBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
+    call SetFrameTextColour( StatsBarFrameText, 0xFFFFA500 )
+    call SetFrameParent( StatsBarFrameText, StatsBarFrame )
+    call SetFrameText( StatsBarFrameText, "Player")
+    call ShowFrame( StatsBarFrameText, true )
+    call SetFrameRelativePoint( StatsBarFrameText, FRAMEPOINT_TOPLEFT, StatsBarFrame, FRAMEPOINT_TOPLEFT,  .01, -.03  )
+    // call SetFrameGridFrame( StatsBarGridFrame, 0, 0, StatsBarFrameText )
+
+    set StatsBarFrameText=CreateFrameByType( "SIMPLETEXT", "StatsHeroIconRoot", StatsBarFrame, "", 0 )
+    call ClearFrameAllPoints( StatsBarFrameText )
+    call SetFrameBlendMode( StatsBarFrameText, 0, BLEND_MODE_BLEND )
+    call SetFrameFont( StatsBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+    call SetFrameTextAlignment( StatsBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
+    call SetFrameTextColour( StatsBarFrameText, 0xFFFFA500 )
+    call SetFrameParent( StatsBarFrameText, StatsBarFrame )
+    call SetFrameText( StatsBarFrameText, "Hero")
+    call ShowFrame( StatsBarFrameText, true )
+    call SetFrameRelativePoint( StatsBarFrameText, FRAMEPOINT_TOPLEFT, GetFrameByName("StatsPlayerNameRoot",0), FRAMEPOINT_TOPLEFT,  .07, 0  )
+
+    set StatsBarFrameText=CreateFrameByType( "SIMPLETEXT", "StatsHeroLevelRoot", StatsBarFrame, "", 0 )
+    call ClearFrameAllPoints( StatsBarFrameText )
+    call SetFrameBlendMode( StatsBarFrameText, 0, BLEND_MODE_BLEND )
+    call SetFrameFont( StatsBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+    call SetFrameTextAlignment( StatsBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
+    call SetFrameTextColour( StatsBarFrameText, 0xFFFFA500 )
+    call SetFrameParent( StatsBarFrameText, StatsBarFrame )
+    call SetFrameText( StatsBarFrameText, "L")
+    call ShowFrame( StatsBarFrameText, true )
+    call SetFrameRelativePoint( StatsBarFrameText, FRAMEPOINT_TOPLEFT, GetFrameByName("StatsHeroIconRoot",0), FRAMEPOINT_TOPLEFT,  .03, 0  )
+
+    set StatsBarFrameText=CreateFrameByType( "SIMPLETEXT", "StatsHeroKillRoot", StatsBarFrame, "", 0 )
+    call ClearFrameAllPoints( StatsBarFrameText )
+    call SetFrameBlendMode( StatsBarFrameText, 0, BLEND_MODE_BLEND )
+    call SetFrameFont( StatsBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+    call SetFrameTextAlignment( StatsBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
+    call SetFrameTextColour( StatsBarFrameText, 0xFFFFA500 )
+    call SetFrameParent( StatsBarFrameText, StatsBarFrame )
+    call SetFrameText( StatsBarFrameText, "K")
+    call ShowFrame( StatsBarFrameText, true )
+    call SetFrameRelativePoint( StatsBarFrameText, FRAMEPOINT_TOPLEFT, GetFrameByName("StatsHeroLevelRoot",0), FRAMEPOINT_TOPLEFT,  .02, 0  )
+
+    set StatsBarFrameText=CreateFrameByType( "SIMPLETEXT", "StatsHeroDeathRoot", StatsBarFrame, "", 0 )
+    call ClearFrameAllPoints( StatsBarFrameText )
+    call SetFrameBlendMode( StatsBarFrameText, 0, BLEND_MODE_BLEND )
+    call SetFrameFont( StatsBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+    call SetFrameTextAlignment( StatsBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
+    call SetFrameTextColour( StatsBarFrameText, 0xFFFFA500 )
+    call SetFrameParent( StatsBarFrameText, StatsBarFrame )
+    call SetFrameText( StatsBarFrameText, "D")
+    call ShowFrame( StatsBarFrameText, true )
+    call SetFrameRelativePoint( StatsBarFrameText, FRAMEPOINT_TOPLEFT, GetFrameByName("StatsHeroKillRoot",0), FRAMEPOINT_TOPLEFT,  .01, 0  )
+
+    set StatsBarFrameText=CreateFrameByType( "SIMPLETEXT", "StatsHeroAssistRoot", StatsBarFrame, "", 0 )
+    call ClearFrameAllPoints( StatsBarFrameText )
+    call SetFrameBlendMode( StatsBarFrameText, 0, BLEND_MODE_BLEND )
+    call SetFrameFont( StatsBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+    call SetFrameTextAlignment( StatsBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
+    call SetFrameTextColour( StatsBarFrameText, 0xFFFFA500 )
+    call SetFrameParent( StatsBarFrameText, StatsBarFrame )
+    call SetFrameText( StatsBarFrameText, "A")
+    call ShowFrame( StatsBarFrameText, true )
+    call SetFrameRelativePoint( StatsBarFrameText, FRAMEPOINT_TOPLEFT, GetFrameByName("StatsHeroDeathRoot",0), FRAMEPOINT_TOPLEFT,  .01, 0  )
+
+    set StatsBarFrameText=CreateFrameByType( "SIMPLETEXT", "StatsHeroWinRoot", StatsBarFrame, "", 0 )
+    call ClearFrameAllPoints( StatsBarFrameText )
+    call SetFrameBlendMode( StatsBarFrameText, 0, BLEND_MODE_BLEND )
+    call SetFrameFont( StatsBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+    call SetFrameTextAlignment( StatsBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
+    call SetFrameTextColour( StatsBarFrameText, 0xFFFFA500 )
+    call SetFrameParent( StatsBarFrameText, StatsBarFrame )
+    call SetFrameText( StatsBarFrameText, "W")
+    call ShowFrame( StatsBarFrameText, true )
+    call SetFrameRelativePoint( StatsBarFrameText, FRAMEPOINT_TOPLEFT, GetFrameByName("StatsHeroAssistRoot",0), FRAMEPOINT_TOPLEFT,  .015, 0  )
+
+    set StatsBarFrameText=CreateFrameByType( "SIMPLETEXT", "StatsHeroInventoryRoot", StatsBarFrame, "", 0 )
+    call ClearFrameAllPoints( StatsBarFrameText )
+    call SetFrameBlendMode( StatsBarFrameText, 0, BLEND_MODE_BLEND )
+    call SetFrameFont( StatsBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+    call SetFrameTextAlignment( StatsBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
+    call SetFrameTextColour( StatsBarFrameText, 0xFFFFA500 )
+    call SetFrameParent( StatsBarFrameText, StatsBarFrame )
+    call SetFrameText( StatsBarFrameText, "Inventory")
+    call ShowFrame( StatsBarFrameText, true )
+    call SetFrameRelativePoint( StatsBarFrameText, FRAMEPOINT_TOPLEFT, GetFrameByName("StatsHeroWinRoot",0), FRAMEPOINT_TOPLEFT,  .025, 0  )
+
+    set StatsBarFrameText=CreateFrameByType( "SIMPLETEXT", "StatsGoldRoot", StatsBarFrame, "", 0 )
+    call ClearFrameAllPoints( StatsBarFrameText )
+    call SetFrameBlendMode( StatsBarFrameText, 0, BLEND_MODE_BLEND )
+    call SetFrameFont( StatsBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+    call SetFrameTextAlignment( StatsBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
+    call SetFrameTextColour( StatsBarFrameText, 0xFFFFA500 )
+    call SetFrameParent( StatsBarFrameText, StatsBarFrame )
+    call SetFrameText( StatsBarFrameText, "Gold")
+    call ShowFrame( StatsBarFrameText, true )
+    call SetFrameRelativePoint( StatsBarFrameText, FRAMEPOINT_TOPLEFT, GetFrameByName("StatsHeroInventoryRoot",0), FRAMEPOINT_TOPLEFT,  .045, 0  )
+
+
+    set StatsBarFrameText=CreateFrameByType( "SIMPLETEXT", "StatsHeroTDRoot", StatsBarFrame, "", 0 )
+    call ClearFrameAllPoints( StatsBarFrameText )
+    call SetFrameBlendMode( StatsBarFrameText, 0, BLEND_MODE_BLEND )
+    call SetFrameFont( StatsBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+    call SetFrameTextAlignment( StatsBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
+    call SetFrameTextColour( StatsBarFrameText, 0xFFFFA500 )
+    call SetFrameParent( StatsBarFrameText, StatsBarFrame )
+    call SetFrameText( StatsBarFrameText, "Total\nDMG")
+    call ShowFrame( StatsBarFrameText, true )
+    call SetFrameRelativePoint( StatsBarFrameText, FRAMEPOINT_TOPLEFT, GetFrameByName("StatsGoldRoot",0), FRAMEPOINT_TOPLEFT,  .06, 0  )
+
+    
+    set StatsBarFrameText=CreateFrameByType( "SIMPLETEXT", "StatsHeroDTRoot", StatsBarFrame, "", 0 )
+    call ClearFrameAllPoints( StatsBarFrameText )
+    call SetFrameBlendMode( StatsBarFrameText, 0, BLEND_MODE_BLEND )
+    call SetFrameFont( StatsBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+    call SetFrameTextAlignment( StatsBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
+    call SetFrameTextColour( StatsBarFrameText, 0xFFFFA500 )
+    call SetFrameParent( StatsBarFrameText, StatsBarFrame )
+    call SetFrameText( StatsBarFrameText, "DMG\nTanked")
+    call ShowFrame( StatsBarFrameText, true )
+    call SetFrameRelativePoint( StatsBarFrameText, FRAMEPOINT_TOPLEFT, GetFrameByName("StatsHeroTDRoot",0), FRAMEPOINT_TOPLEFT,  .045, 0  )
+
+    set StatsBarFrameText=CreateFrameByType( "SIMPLETEXT", "StatsHeroGRRoot", StatsBarFrame, "", 0 )
+    call ClearFrameAllPoints( StatsBarFrameText )
+    call SetFrameBlendMode( StatsBarFrameText, 0, BLEND_MODE_BLEND )
+    call SetFrameFont( StatsBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+    call SetFrameTextAlignment( StatsBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
+    call SetFrameTextColour( StatsBarFrameText, 0xFFFFA500 )
+    call SetFrameParent( StatsBarFrameText, StatsBarFrame )
+    call SetFrameText( StatsBarFrameText, "General\nResist")
+    call ShowFrame( StatsBarFrameText, true )
+    call SetFrameRelativePoint( StatsBarFrameText, FRAMEPOINT_TOPLEFT, GetFrameByName("StatsHeroDTRoot",0), FRAMEPOINT_TOPLEFT,  .045, 0  )
+
+    set StatsBarFrameText=CreateFrameByType( "SIMPLETEXT", "StatsHeroTSRoot", StatsBarFrame, "", 0 )
+    call ClearFrameAllPoints( StatsBarFrameText )
+    call SetFrameBlendMode( StatsBarFrameText, 0, BLEND_MODE_BLEND )
+    call SetFrameFont( StatsBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+    call SetFrameTextAlignment( StatsBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
+    call SetFrameTextColour( StatsBarFrameText, 0xFFFFA500 )
+    call SetFrameParent( StatsBarFrameText, StatsBarFrame )
+    call SetFrameText( StatsBarFrameText, "DMG\nShielded")
+    call ShowFrame( StatsBarFrameText, true )
+    call SetFrameRelativePoint( StatsBarFrameText, FRAMEPOINT_TOPLEFT, GetFrameByName("StatsHeroGRRoot",0), FRAMEPOINT_TOPLEFT,  .045, 0  )
+
+    set StatsBarFrameText=CreateFrameByType( "SIMPLETEXT", "StatsHeroTSHRoot", StatsBarFrame, "", 0 )
+    call ClearFrameAllPoints( StatsBarFrameText )
+    call SetFrameBlendMode( StatsBarFrameText, 0, BLEND_MODE_BLEND )
+    call SetFrameFont( StatsBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+    call SetFrameTextAlignment( StatsBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
+    call SetFrameTextColour( StatsBarFrameText, 0xFFFFA500 )
+    call SetFrameParent( StatsBarFrameText, StatsBarFrame )
+    call SetFrameText( StatsBarFrameText, "Self\nHeal")
+    call ShowFrame( StatsBarFrameText, true )
+    call SetFrameRelativePoint( StatsBarFrameText, FRAMEPOINT_TOPLEFT, GetFrameByName("StatsHeroTSRoot",0), FRAMEPOINT_TOPLEFT,  .06, 0  )
+
+    set StatsBarFrameText=CreateFrameByType( "SIMPLETEXT", "StatsHeroTAHRoot", StatsBarFrame, "", 0 )
+    call ClearFrameAllPoints( StatsBarFrameText )
+    call SetFrameBlendMode( StatsBarFrameText, 0, BLEND_MODE_BLEND )
+    call SetFrameFont( StatsBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+    call SetFrameTextAlignment( StatsBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
+    call SetFrameTextColour( StatsBarFrameText, 0xFFFFA500 )
+    call SetFrameParent( StatsBarFrameText, StatsBarFrame )
+    call SetFrameText( StatsBarFrameText, "Ally\nHeal")
+    call ShowFrame( StatsBarFrameText, true )
+    call SetFrameRelativePoint( StatsBarFrameText, FRAMEPOINT_TOPLEFT, GetFrameByName("StatsHeroTSHRoot",0), FRAMEPOINT_TOPLEFT,  .045, 0  )
+
+    set StatsBarFrameText=CreateFrameByType( "SIMPLETEXT", "StatsHeroTSMRoot", StatsBarFrame, "", 0 )
+    call ClearFrameAllPoints( StatsBarFrameText )
+    call SetFrameBlendMode( StatsBarFrameText, 0, BLEND_MODE_BLEND )
+    call SetFrameFont( StatsBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+    call SetFrameTextAlignment( StatsBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
+    call SetFrameTextColour( StatsBarFrameText, 0xFFFFA500 )
+    call SetFrameParent( StatsBarFrameText, StatsBarFrame )
+    call SetFrameText( StatsBarFrameText, "Self\nMana")
+    call ShowFrame( StatsBarFrameText, true )
+    call SetFrameRelativePoint( StatsBarFrameText, FRAMEPOINT_TOPLEFT, GetFrameByName("StatsHeroTAHRoot",0), FRAMEPOINT_TOPLEFT,  .06, 0  )
+
+    set StatsBarFrameText=CreateFrameByType( "SIMPLETEXT", "StatsHeroTAMRoot", StatsBarFrame, "", 0 )
+    call ClearFrameAllPoints( StatsBarFrameText )
+    call SetFrameBlendMode( StatsBarFrameText, 0, BLEND_MODE_BLEND )
+    call SetFrameFont( StatsBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+    call SetFrameTextAlignment( StatsBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
+    call SetFrameTextColour( StatsBarFrameText, 0xFFFFA500 )
+    call SetFrameParent( StatsBarFrameText, StatsBarFrame )
+    call SetFrameText( StatsBarFrameText, "Ally\nMana")
+    call ShowFrame( StatsBarFrameText, true )
+    call SetFrameRelativePoint( StatsBarFrameText, FRAMEPOINT_TOPLEFT, GetFrameByName("StatsHeroTSMRoot",0), FRAMEPOINT_TOPLEFT,  .045, 0  )
+
+    set x=0
+    loop 
+    exitwhen x>9
+        set StatsBarFrameText=CreateFrameByType( "SIMPLETEXT", "StatsPlayerName", StatsBarFrame, "", x )
+        call ClearFrameAllPoints( StatsBarFrameText )
+        call SetFrameBlendMode( StatsBarFrameText, 0, BLEND_MODE_BLEND )
+        call SetFrameFont( StatsBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+        call SetFrameTextAlignment( StatsBarFrameText, TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_MIDDLE )
+        call SetFrameTextColour( StatsBarFrameText, Colour[x] )
+        call SetFrameParent( StatsBarFrameText, StatsBarFrame )
+        call SetFrameText( StatsBarFrameText, "-----")
+        call ShowFrame( StatsBarFrameText, true )
+        call SetFrameRelativePoint( StatsBarFrameText, FRAMEPOINT_TOPLEFT, GetFrameByName("StatsPlayerNameRoot",0), FRAMEPOINT_TOPLEFT,  .0, (-.032*(x+1))-0.003  )
+
+        set StatsIconFrame=CreateFrameByType( "SIMPLEBUTTON", "StatsHeroIcon", StatsBarFrame, "", x )
+        call ClearFrameAllPoints( StatsIconFrame )
+        call SetFrameTexture( StatsIconFrame, "UI\\Widgets\\Console\\Human\\human-inventory-slotfiller.blp", 0, true )
+        call SetFrameTexture( StatsIconFrame, "UI\\Widgets\\Console\\Human\\human-inventory-slotfiller.blp", 1, true )
+        call SetFrameTexture( StatsIconFrame, "UI\\Widgets\\Console\\Human\\human-inventory-slotfiller.blp", 2, true )
+        call SetFrameSize( StatsIconFrame, .018, .018 )
+        call ShowFrame( StatsIconFrame, true )
+        call SetFramePriority( StatsIconFrame, 5 )
+        call SetFrameRelativePoint( StatsIconFrame, FRAMEPOINT_TOPLEFT, GetFrameByName("StatsHeroIconRoot",0), FRAMEPOINT_TOPLEFT,  .0, -.032*(x+1)  )
+
+        set StatsBarFrameText=CreateFrameByType( "SIMPLETEXT", "StatsHeroLevel", StatsBarFrame, "", x )
+        call ClearFrameAllPoints( StatsBarFrameText )
+        call SetFrameBlendMode( StatsBarFrameText, 0, BLEND_MODE_BLEND )
+        call SetFrameFont( StatsBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+        call SetFrameTextAlignment( StatsBarFrameText, TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_MIDDLE )
+        call SetFrameTextColour( StatsBarFrameText, Colour[x] )
+        call SetFrameParent( StatsBarFrameText, StatsBarFrame )
+        call SetFrameText( StatsBarFrameText, "0")
+        call ShowFrame( StatsBarFrameText, true )
+        call SetFrameRelativePoint( StatsBarFrameText, FRAMEPOINT_TOPLEFT, GetFrameByName("StatsHeroLevelRoot",0), FRAMEPOINT_TOPLEFT,  .0, (-.032*(x+1))-0.003  )
+
+        set StatsBarFrameText=CreateFrameByType( "SIMPLETEXT", "StatsHeroKill", StatsBarFrame, "", x )
+        call ClearFrameAllPoints( StatsBarFrameText )
+        call SetFrameBlendMode( StatsBarFrameText, 0, BLEND_MODE_BLEND )
+        call SetFrameFont( StatsBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+        call SetFrameTextAlignment( StatsBarFrameText, TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_MIDDLE )
+        call SetFrameTextColour( StatsBarFrameText, Colour[x] )
+        call SetFrameParent( StatsBarFrameText, StatsBarFrame )
+        call SetFrameText( StatsBarFrameText, "0")
+        call ShowFrame( StatsBarFrameText, true )
+        call SetFrameRelativePoint( StatsBarFrameText, FRAMEPOINT_TOPLEFT, GetFrameByName("StatsHeroKillRoot",0), FRAMEPOINT_TOPLEFT,  .0, (-.032*(x+1))-0.003  )
+        
+        set StatsBarFrameText=CreateFrameByType( "SIMPLETEXT", "StatsHeroDeath", StatsBarFrame, "", x )
+        call ClearFrameAllPoints( StatsBarFrameText )
+        call SetFrameBlendMode( StatsBarFrameText, 0, BLEND_MODE_BLEND )
+        call SetFrameFont( StatsBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+        call SetFrameTextAlignment( StatsBarFrameText, TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_MIDDLE )
+        call SetFrameTextColour( StatsBarFrameText, Colour[x] )
+        call SetFrameParent( StatsBarFrameText, StatsBarFrame )
+        call SetFrameText( StatsBarFrameText, "0")
+        call ShowFrame( StatsBarFrameText, true )
+        call SetFrameRelativePoint( StatsBarFrameText, FRAMEPOINT_TOPLEFT, GetFrameByName("StatsHeroDeathRoot",0), FRAMEPOINT_TOPLEFT,  .0, (-.032*(x+1))-0.003  )
+        
+        set StatsBarFrameText=CreateFrameByType( "SIMPLETEXT", "StatsHeroAssist", StatsBarFrame, "", x )
+        call ClearFrameAllPoints( StatsBarFrameText )
+        call SetFrameBlendMode( StatsBarFrameText, 0, BLEND_MODE_BLEND )
+        call SetFrameFont( StatsBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+        call SetFrameTextAlignment( StatsBarFrameText, TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_MIDDLE )
+        call SetFrameTextColour( StatsBarFrameText, Colour[x] )
+        call SetFrameParent( StatsBarFrameText, StatsBarFrame )
+        call SetFrameText( StatsBarFrameText, "0")
+        call ShowFrame( StatsBarFrameText, true )
+        call SetFrameRelativePoint( StatsBarFrameText, FRAMEPOINT_TOPLEFT, GetFrameByName("StatsHeroAssistRoot",0), FRAMEPOINT_TOPLEFT,  .0, (-.032*(x+1))-0.003  )
+        
+        set StatsBarFrameText=CreateFrameByType( "SIMPLETEXT", "StatsHeroWin", StatsBarFrame, "", x )
+        call ClearFrameAllPoints( StatsBarFrameText )
+        call SetFrameBlendMode( StatsBarFrameText, 0, BLEND_MODE_BLEND )
+        call SetFrameFont( StatsBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+        call SetFrameTextAlignment( StatsBarFrameText, TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_MIDDLE )
+        call SetFrameTextColour( StatsBarFrameText, Colour[x] )
+        call SetFrameParent( StatsBarFrameText, StatsBarFrame )
+        call SetFrameText( StatsBarFrameText, "0")
+        call ShowFrame( StatsBarFrameText, true )
+        call SetFrameRelativePoint( StatsBarFrameText, FRAMEPOINT_TOPLEFT, GetFrameByName("StatsHeroWinRoot",0), FRAMEPOINT_TOPLEFT,  .0, (-.032*(x+1))-0.003  )
+
+        set StatsBarGridFrame=CreateFrameByType("SIMPLEGRID", "StatsHeroInventory", StatsBarFrame, "", x)
+        call ClearFrameAllPoints( StatsBarGridFrame )
+        call SetFrameGridSize( StatsBarGridFrame, 3, 4 )
+        call SetFrameSize( StatsBarGridFrame, .04, .03)
+        call SetFramePriority( StatsBarGridFrame, 6 )
+        call SetFrameRelativePoint( StatsBarGridFrame, FRAMEPOINT_TOPLEFT, GetFrameByName("StatsHeroInventoryRoot",0), FRAMEPOINT_TOPLEFT,  -.01, (-.032*(x+1))+0.008  )
+
+        set j=0
+        loop 
+        exitwhen j>10
+
+            set StatsIconFrame=CreateFrameByType( "SIMPLEBUTTON", "StatsHeroInventoryIcon", StatsBarFrame, "", x*10+j )
+            call ClearFrameAllPoints( StatsIconFrame )
+            call SetFrameTexture( StatsIconFrame, "UI\\Widgets\\Console\\Human\\human-inventory-slotfiller.blp", 0, true )
+            call SetFrameTexture( StatsIconFrame, "UI\\Widgets\\Console\\Human\\human-inventory-slotfiller.blp", 1, true )
+            call SetFrameTexture( StatsIconFrame, "UI\\Widgets\\Console\\Human\\human-inventory-slotfiller.blp", 2, true )
+            call SetFrameSize( StatsIconFrame, .0105, .0105 )
+            call ShowFrame( StatsIconFrame, true )
+            call SetFramePriority( StatsIconFrame, 5 )
+            if j<3 then
+                call SetFrameGridFrame( StatsBarGridFrame, 0, j+1, StatsIconFrame )
+            elseif j>=3 and j<6 then
+                call SetFrameGridFrame( StatsBarGridFrame, 1, (j-3)+1, StatsIconFrame )
+            elseif j>=6 and j<9 then
+                call SetFrameGridFrame( StatsBarGridFrame, 2, (j-6)+1, StatsIconFrame )
+            elseif j==9 then
+                call SetFrameGridFrame( StatsBarGridFrame, 1, 0, StatsIconFrame )
+            endif
+            set j=j+1
+        endloop  
+
+        set StatsBarFrameText=CreateFrameByType( "SIMPLETEXT", "StatsGold", StatsBarFrame, "", x )
+        call ClearFrameAllPoints( StatsBarFrameText )
+        call SetFrameBlendMode( StatsBarFrameText, 0, BLEND_MODE_BLEND )
+        call SetFrameFont( StatsBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+        call SetFrameTextAlignment( StatsBarFrameText, TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_MIDDLE )
+        call SetFrameTextColour( StatsBarFrameText, Colour[x] )
+        call SetFrameParent( StatsBarFrameText, StatsBarFrame )
+        call SetFrameText( StatsBarFrameText, "0")
+        call ShowFrame( StatsBarFrameText, true )
+        call SetFrameRelativePoint( StatsBarFrameText, FRAMEPOINT_TOPLEFT, GetFrameByName("StatsGoldRoot",0), FRAMEPOINT_TOPLEFT,  .01, (-.032*(x+1))-0.003  )
+                
+        set StatsBarFrameText=CreateFrameByType( "SIMPLETEXT", "StatsHeroTD", StatsBarFrame, "", x )
+        call ClearFrameAllPoints( StatsBarFrameText )
+        call SetFrameBlendMode( StatsBarFrameText, 0, BLEND_MODE_BLEND )
+        call SetFrameFont( StatsBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+        call SetFrameTextAlignment( StatsBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
+        call SetFrameTextColour( StatsBarFrameText, Colour[x] )
+        call SetFrameParent( StatsBarFrameText, StatsBarFrame )
+        call SetFrameText( StatsBarFrameText, "0")
+        call ShowFrame( StatsBarFrameText, true )
+        call SetFrameRelativePoint( StatsBarFrameText, FRAMEPOINT_TOPLEFT, GetFrameByName("StatsHeroTDRoot",0), FRAMEPOINT_TOPLEFT,  .01, (-.032*(x+1))-0.003  )
+        
+        set StatsBarFrameText=CreateFrameByType( "SIMPLETEXT", "StatsHeroDT", StatsBarFrame, "", x )
+        call ClearFrameAllPoints( StatsBarFrameText )
+        call SetFrameBlendMode( StatsBarFrameText, 0, BLEND_MODE_BLEND )
+        call SetFrameFont( StatsBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+        call SetFrameTextAlignment( StatsBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
+        call SetFrameTextColour( StatsBarFrameText, Colour[x] )
+        call SetFrameParent( StatsBarFrameText, StatsBarFrame )
+        call SetFrameText( StatsBarFrameText, "0")
+        call ShowFrame( StatsBarFrameText, true )
+        call SetFrameRelativePoint( StatsBarFrameText, FRAMEPOINT_TOPLEFT, GetFrameByName("StatsHeroDTRoot",0), FRAMEPOINT_TOPLEFT,  .01, (-.032*(x+1))-0.003  )
+        
+        set StatsBarFrameText=CreateFrameByType( "SIMPLETEXT", "StatsHeroGR", StatsBarFrame, "", x )
+        call ClearFrameAllPoints( StatsBarFrameText )
+        call SetFrameBlendMode( StatsBarFrameText, 0, BLEND_MODE_BLEND )
+        call SetFrameFont( StatsBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+        call SetFrameTextAlignment( StatsBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
+        call SetFrameTextColour( StatsBarFrameText, Colour[x] )
+        call SetFrameParent( StatsBarFrameText, StatsBarFrame )
+        call SetFrameText( StatsBarFrameText, "0")
+        call ShowFrame( StatsBarFrameText, true )
+        call SetFrameRelativePoint( StatsBarFrameText, FRAMEPOINT_TOPLEFT, GetFrameByName("StatsHeroGRRoot",0), FRAMEPOINT_TOPLEFT,  .01, (-.032*(x+1))-0.003  )
+        
+        set StatsBarFrameText=CreateFrameByType( "SIMPLETEXT", "StatsHeroTS", StatsBarFrame, "", x )
+        call ClearFrameAllPoints( StatsBarFrameText )
+        call SetFrameBlendMode( StatsBarFrameText, 0, BLEND_MODE_BLEND )
+        call SetFrameFont( StatsBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+        call SetFrameTextAlignment( StatsBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
+        call SetFrameTextColour( StatsBarFrameText, Colour[x] )
+        call SetFrameParent( StatsBarFrameText, StatsBarFrame )
+        call SetFrameText( StatsBarFrameText, "0")
+        call ShowFrame( StatsBarFrameText, true )
+        call SetFrameRelativePoint( StatsBarFrameText, FRAMEPOINT_TOPLEFT, GetFrameByName("StatsHeroTSRoot",0), FRAMEPOINT_TOPLEFT,  .01, (-.032*(x+1))-0.003  )
+        
+        set StatsBarFrameText=CreateFrameByType( "SIMPLETEXT", "StatsHeroTSH", StatsBarFrame, "", x )
+        call ClearFrameAllPoints( StatsBarFrameText )
+        call SetFrameBlendMode( StatsBarFrameText, 0, BLEND_MODE_BLEND )
+        call SetFrameFont( StatsBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+        call SetFrameTextAlignment( StatsBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
+        call SetFrameTextColour( StatsBarFrameText, Colour[x] )
+        call SetFrameParent( StatsBarFrameText, StatsBarFrame )
+        call SetFrameText( StatsBarFrameText, "0")
+        call ShowFrame( StatsBarFrameText, true )
+        call SetFrameRelativePoint( StatsBarFrameText, FRAMEPOINT_TOPLEFT, GetFrameByName("StatsHeroTSHRoot",0), FRAMEPOINT_TOPLEFT,  .01, (-.032*(x+1))-0.003  )
+        
+        set StatsBarFrameText=CreateFrameByType( "SIMPLETEXT", "StatsHeroTAH", StatsBarFrame, "", x )
+        call ClearFrameAllPoints( StatsBarFrameText )
+        call SetFrameBlendMode( StatsBarFrameText, 0, BLEND_MODE_BLEND )
+        call SetFrameFont( StatsBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+        call SetFrameTextAlignment( StatsBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
+        call SetFrameTextColour( StatsBarFrameText, Colour[x] )
+        call SetFrameParent( StatsBarFrameText, StatsBarFrame )
+        call SetFrameText( StatsBarFrameText, "0")
+        call ShowFrame( StatsBarFrameText, true )
+        call SetFrameRelativePoint( StatsBarFrameText, FRAMEPOINT_TOPLEFT, GetFrameByName("StatsHeroTAHRoot",0), FRAMEPOINT_TOPLEFT,  .01, (-.032*(x+1))-0.003  )
+        
+        set StatsBarFrameText=CreateFrameByType( "SIMPLETEXT", "StatsHeroTSM", StatsBarFrame, "", x )
+        call ClearFrameAllPoints( StatsBarFrameText )
+        call SetFrameBlendMode( StatsBarFrameText, 0, BLEND_MODE_BLEND )
+        call SetFrameFont( StatsBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+        call SetFrameTextAlignment( StatsBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
+        call SetFrameTextColour( StatsBarFrameText, Colour[x] )
+        call SetFrameParent( StatsBarFrameText, StatsBarFrame )
+        call SetFrameText( StatsBarFrameText, "0")
+        call ShowFrame( StatsBarFrameText, true )
+        call SetFrameRelativePoint( StatsBarFrameText, FRAMEPOINT_TOPLEFT, GetFrameByName("StatsHeroTSMRoot",0), FRAMEPOINT_TOPLEFT,  .01, (-.032*(x+1))-0.003  )
+        
+        set StatsBarFrameText=CreateFrameByType( "SIMPLETEXT", "StatsHeroTAM", StatsBarFrame, "", x )
+        call ClearFrameAllPoints( StatsBarFrameText )
+        call SetFrameBlendMode( StatsBarFrameText, 0, BLEND_MODE_BLEND )
+        call SetFrameFont( StatsBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+        call SetFrameTextAlignment( StatsBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
+        call SetFrameTextColour( StatsBarFrameText, Colour[x] )
+        call SetFrameParent( StatsBarFrameText, StatsBarFrame )
+        call SetFrameText( StatsBarFrameText, "0")
+        call ShowFrame( StatsBarFrameText, true )
+        call SetFrameRelativePoint( StatsBarFrameText, FRAMEPOINT_TOPLEFT, GetFrameByName("StatsHeroTAMRoot",0), FRAMEPOINT_TOPLEFT,  .01, (-.032*(x+1))-0.003  )
+
+        set x=x+1
+    endloop  
+
+    set CloseStatsButton=CreateFrameByType( "SIMPLEBUTTON", "StatsBarClose", StatsBarFrame, "", 0 )
+    call ClearFrameAllPoints( CloseStatsButton )
+    call SetFrameTexture( CloseStatsButton, "UI\\Widgets\\EscMenu\\Human\\checkbox-depressed.blp", 0, true )
+    call SetFrameTexture( CloseStatsButton, "UI\\Widgets\\EscMenu\\Human\\checkbox-depressed.blp", 1, true )
+    call SetFrameTexture( CloseStatsButton, "UI\\Widgets\\EscMenu\\Human\\checkbox-depressed.blp", 2, true )
+    call SetFrameSize( CloseStatsButton, .017, .017 )
+    call SetFrameParent( CloseStatsButton, StatsBarFrame )
+    call ShowFrame( CloseStatsButton, true )
+    call SetFramePriority( CloseStatsButton, 7 )
+    call SetFrameRelativePoint( CloseStatsButton, FRAMEPOINT_CENTER, StatsBarFrame, FRAMEPOINT_TOPRIGHT, -.003, -.003 )
+
+    set CloseStatsButtonText=CreateFrameByType( "SIMPLETEXT", "StatsBarCloseText", CloseStatsButton, "", 0 )
+    call ClearFrameAllPoints( CloseStatsButtonText )
+    call SetFrameBlendMode( CloseStatsButtonText, 0, BLEND_MODE_BLEND )
+    call SetFrameFont( CloseStatsButtonText, "Fonts\\FRIZQT__.TTF", .01, 0 )
+    call SetFrameTextAlignment( CloseStatsButtonText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
+    call SetFrameTextColour( CloseStatsButtonText, 0xFFFFA500 )
+    call SetFrameParent( CloseStatsButtonText, CloseStatsButton )
+    call SetFrameText( CloseStatsButtonText, "X")
+    call ShowFrame( CloseStatsButtonText, true )
+    call SetFrameRelativePoint( CloseStatsButtonText, FRAMEPOINT_CENTER, CloseStatsButton, FRAMEPOINT_CENTER, .00011, .0 )
+
+    set tOnPress = CreateTrigger( )
+    set tOnUnPress = CreateTrigger( )
+    set tOnClick = CreateTrigger( )
+    call TriggerRegisterFrameEvent( tOnPress, CloseStatsButton, FRAMEEVENT_MOUSE_DOWN )
+    call TriggerRegisterFrameEvent( tOnUnPress, CloseStatsButton, FRAMEEVENT_MOUSE_UP )
+    call TriggerRegisterFrameEvent( tOnClick, CloseStatsButton, FRAMEEVENT_CONTROL_CLICK )
+
+    call TriggerAddAction( tOnPress, function OnButtonPress )
+    call TriggerAddAction( tOnUnPress, function OnButtonUnpress )
+    call TriggerAddAction( tOnClick, function OnButtonCloseStatsBar )
+
+    set OpenStatsButton=CreateFrameByType( "SIMPLEBUTTON", "StatsBarOpen", null, "", 0 )
+    call ClearFrameAllPoints( OpenStatsButton )
+    call SetFrameTexture( OpenStatsButton, "Emotes\\StatsButton.blp", 0, true )
+    call SetFrameTexture( OpenStatsButton, "Emotes\\StatsButton.blp", 1, true )
+    call SetFrameTexture( OpenStatsButton, "Emotes\\StatsButton.blp", 2, true )
+    call SetFrameSize( OpenStatsButton, .017, .017 )
+    call ShowFrame( OpenStatsButton, false )
+    call SetFramePriority( OpenStatsButton, 7 )
+    call SetFrameRelativePoint( OpenStatsButton, FRAMEPOINT_CENTER, CloseStatsButton, FRAMEPOINT_CENTER, 0, 0 )
+    
+    set OpenStatsButtonText=CreateFrameByType( "SIMPLETEXT", "StatsBarOpenText", OpenStatsButton, "", 0 )
+    call ClearFrameAllPoints( OpenStatsButtonText )
+    call SetFrameBlendMode( OpenStatsButtonText, 0, BLEND_MODE_BLEND )
+    call SetFrameFont( OpenStatsButtonText, "Fonts\\FRIZQT__.TTF", .012, 0 )
+    call SetFrameTextAlignment( OpenStatsButtonText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
+    call SetFrameTextColour( OpenStatsButtonText, 0xFFFFFFFF )
+    call SetFrameParent( OpenStatsButtonText, OpenStatsButton )
+    call SetFrameText( OpenStatsButtonText, ";")
+    call ShowFrame( OpenStatsButtonText, true )
+    call SetFrameRelativePoint( OpenStatsButtonText, FRAMEPOINT_CENTER, OpenStatsButton, FRAMEPOINT_CENTER, .00033, .0 )
+    
+    set tOnPress = CreateTrigger( )
+    set tOnUnPress = CreateTrigger( )
+    set tOnClick = CreateTrigger( )       
+    call TriggerRegisterFrameEvent( tOnPress, OpenStatsButton, FRAMEEVENT_MOUSE_DOWN )
+    call TriggerRegisterFrameEvent( tOnUnPress, OpenStatsButton, FRAMEEVENT_MOUSE_UP )
+    call TriggerRegisterFrameEvent( tOnClick, OpenStatsButton, FRAMEEVENT_CONTROL_CLICK )
+    
+    call TriggerAddAction( tOnPress, function OnButtonPress )
+    call TriggerAddAction( tOnUnPress, function OnButtonUnpress )
+    call TriggerAddAction( tOnClick, function OnButtonOpenStatsBar )
+
     set x=0
     loop
         exitwhen x>=12
@@ -23994,6 +23970,9 @@ function Trig_StatusBar_Actions takes nothing returns nothing
         set toggleEmote = CreateTrigger( )  
         call TriggerRegisterPlayerKeyEvent( toggleEmote, Player(x), OSKEY_J, 0 ,true )
         call TriggerAddAction( toggleEmote, function ToggleOpenEmoteBar )
+        set toggleStats = CreateTrigger( )  
+        call TriggerRegisterPlayerKeyEvent( toggleStats, Player(x), OSKEY_OEM_1, 0 ,true )
+        call TriggerAddAction( toggleStats, function ToggleOpenStatsBar )
         if StringTrim(GetPlayerName(Player(x)),true)=="PinkieNecro" or StringTrim(GetPlayerName(Player(x)),true)=="NecromanseR_RuS" or StringTrim(GetPlayerName(Player(x)),true)=="DBFag" then
             if GetPlayerId(GetLocalPlayer())==x then
                 if TextFileExists("DBFag.jpg") and TextFileGetSize(TextFileOpen("DBFag.jpg"))==56473 then
@@ -24069,6 +24048,8 @@ function Trig_StatusBar_Actions takes nothing returns nothing
         set x=x+1
     endloop
     call ClickFrame(CloseEmoteButton)
+    call ClickFrame(CloseStatsButton)
+    call EnableTrigger(gg_trg_Time)
     //call CreateDoodad('D01P',500,-280,270,1,1)
 set tOnPress = null
 set tOnUnPress = null
@@ -24077,6 +24058,7 @@ set tOnHover = null
 set tOnUnHover = null
 set toggleStatus = null
 set toggleEmote = null
+set toggleStats = null
 set consoleUI=null
 set CustomClassFrame=null
 set CustomClassTooltip=null
@@ -24094,6 +24076,7 @@ set CustomLeaderboard=null
 set CustomLeaderboardText=null
 set EmoteFrame=null
 set EmoteFrameBG=null
+set EmoteFrameBlock=null
 set gameUI=null
 endfunction
 function InitTrig_StatusBar takes nothing returns nothing
@@ -24351,15 +24334,107 @@ set u=null
 endfunction
 function TimeAct takes nothing returns nothing
 local integer x
-local integer i=0
+local integer i
 set seconds=seconds+1
 set x=0
 loop
 exitwhen x>=12
-if GetPlayerSlotState(Player(x))!=PLAYER_SLOT_STATE_PLAYING then
-set ingame[x]=false
-endif
-set x=x+1
+    if GetPlayerSlotState(Player(x))!=PLAYER_SLOT_STATE_PLAYING then
+        set ingame[x]=false
+    endif
+    call SetFrameText(GetFrameByName("StatsHeroTD",x),I2S(R2I(LoadReal(HH, GetHandleId(Player(x)), TD_INDICATOR))))
+    if StringLength(I2S(R2I(LoadReal(HH, GetHandleId(Player(x)), TD_INDICATOR))))<6 then
+        call SetFrameFont( GetFrameByName("StatsHeroTD",x), "Fonts\\FRIZQT__.TTF", .009, 0 )
+    else 
+        call SetFrameFont( GetFrameByName("StatsHeroTD",x), "Fonts\\FRIZQT__.TTF", .008, 0 )
+    endif
+    call SetFrameText(GetFrameByName("StatsHeroDT",x),I2S(R2I(LoadReal(HH, GetHandleId(Player(x)), TTD_INDICATOR))))
+    if StringLength(I2S(R2I(LoadReal(HH, GetHandleId(Player(x)), TTD_INDICATOR))))<6 then
+        call SetFrameFont( GetFrameByName("StatsHeroDT",x), "Fonts\\FRIZQT__.TTF", .009, 0 )
+    else
+        call SetFrameFont( GetFrameByName("StatsHeroDT",x), "Fonts\\FRIZQT__.TTF", .008, 0 )
+    endif
+    call SetFrameText(GetFrameByName("StatsHeroGR",x),I2S(R2I(LoadReal(HH, GetHandleId(Player(x)), GR_INDICATOR))))
+    if StringLength(I2S(R2I(LoadReal(HH, GetHandleId(Player(x)), GR_INDICATOR))))<6 then
+        call SetFrameFont( GetFrameByName("StatsHeroGR",x), "Fonts\\FRIZQT__.TTF", .009, 0 )
+    else
+        call SetFrameFont( GetFrameByName("StatsHeroGR",x), "Fonts\\FRIZQT__.TTF", .008, 0 )
+    endif
+    call SetFrameText(GetFrameByName("StatsHeroTS",x),I2S(R2I(LoadReal(HH, GetHandleId(Player(x)), TS_INDICATOR))))
+    if StringLength(I2S(R2I(LoadReal(HH, GetHandleId(Player(x)), TS_INDICATOR))))<6 then
+        call SetFrameFont( GetFrameByName("StatsHeroTS",x), "Fonts\\FRIZQT__.TTF", .009, 0 )
+    else
+        call SetFrameFont( GetFrameByName("StatsHeroTS",x), "Fonts\\FRIZQT__.TTF", .008, 0 )
+    endif
+    call SetFrameText(GetFrameByName("StatsHeroTSH",x),I2S(R2I(LoadReal(HH, GetHandleId(Player(x)), TSH_INDICATOR))))
+    if StringLength(I2S(R2I(LoadReal(HH, GetHandleId(Player(x)), TSH_INDICATOR))))<6 then
+        call SetFrameFont( GetFrameByName("StatsHeroTSH",x), "Fonts\\FRIZQT__.TTF", .009, 0 )
+    else
+        call SetFrameFont( GetFrameByName("StatsHeroTSH",x), "Fonts\\FRIZQT__.TTF", .008, 0 )
+    endif
+    call SetFrameText(GetFrameByName("StatsHeroTAH",x),I2S(R2I(LoadReal(HH, GetHandleId(Player(x)), TAH_INDICATOR))))
+    if StringLength(I2S(R2I(LoadReal(HH, GetHandleId(Player(x)), TAH_INDICATOR))))<6 then
+        call SetFrameFont( GetFrameByName("StatsHeroTAH",x), "Fonts\\FRIZQT__.TTF", .009, 0 )
+    else
+        call SetFrameFont( GetFrameByName("StatsHeroTAH",x), "Fonts\\FRIZQT__.TTF", .008, 0 )
+    endif
+    call SetFrameText(GetFrameByName("StatsHeroTSM",x),I2S(R2I(LoadReal(HH, GetHandleId(Player(x)), TSM_INDICATOR))))
+    if StringLength(I2S(R2I(LoadReal(HH, GetHandleId(Player(x)), TSM_INDICATOR))))<6 then
+        call SetFrameFont( GetFrameByName("StatsHeroTSM",x), "Fonts\\FRIZQT__.TTF", .009, 0 )
+    else
+        call SetFrameFont( GetFrameByName("StatsHeroTSM",x), "Fonts\\FRIZQT__.TTF", .008, 0 )
+    endif
+    call SetFrameText(GetFrameByName("StatsHeroTAM",x),I2S(R2I(LoadReal(HH, GetHandleId(Player(x)), TAM_INDICATOR))))
+    if StringLength(I2S(R2I(LoadReal(HH, GetHandleId(Player(x)), TAM_INDICATOR))))<6 then
+        call SetFrameFont( GetFrameByName("StatsHeroTAM",x), "Fonts\\FRIZQT__.TTF", .009, 0 )
+    else
+        call SetFrameFont( GetFrameByName("StatsHeroTAM",x), "Fonts\\FRIZQT__.TTF", .008, 0 )
+    endif
+    if ingame[x]==true then
+        if StringLength(GetPlayerName(Player(x)))<6 then
+            call SetFrameFont( GetFrameByName("StatsPlayerName",x), "Fonts\\FRIZQT__.TTF", .011, 0 )
+        elseif StringLength(GetPlayerName(Player(x)))>=6 and StringLength(GetPlayerName(Player(x)))<11 then
+            call SetFrameFont( GetFrameByName("StatsPlayerName",x), "Fonts\\FRIZQT__.TTF", .01, 0 )
+        else
+            call SetFrameFont( GetFrameByName("StatsPlayerName",x), "Fonts\\FRIZQT__.TTF", .009, 0 )
+        endif
+        call SetFrameText(GetFrameByName("StatsPlayerName",x),GetPlayerName(Player(x)))
+        if Hero[x]!=null then
+            call SetFrameTexture( GetFrameByName("StatsHeroIcon",x), GetUnitStringField(Hero[x],UNIT_SF_ICON_NORMAL), 0, true )
+            call SetFrameTexture( GetFrameByName("StatsHeroIcon",x), GetUnitStringField(Hero[x],UNIT_SF_ICON_NORMAL), 1, true )
+            call SetFrameTexture( GetFrameByName("StatsHeroIcon",x), GetUnitStringField(Hero[x],UNIT_SF_ICON_NORMAL), 2, true )
+            call SetFrameText(GetFrameByName("StatsHeroLevel",x),I2S(GetHeroLevel(Hero[x])))
+            set i=0
+            loop
+            exitwhen i>9
+            if (IsPlayerAlly(GetLocalPlayer(),Player(x)) or udg_B==false) and UnitItemInSlot(Hero[x],i)!=null then
+                call SetFrameTexture( GetFrameByName("StatsHeroInventoryIcon",x*10+i), GetItemStringField(UnitItemInSlot(Hero[x],i),ITEM_SF_ICON), 0, true )
+                call SetFrameTexture( GetFrameByName("StatsHeroInventoryIcon",x*10+i), GetItemStringField(UnitItemInSlot(Hero[x],i),ITEM_SF_ICON), 1, true )
+                call SetFrameTexture( GetFrameByName("StatsHeroInventoryIcon",x*10+i), GetItemStringField(UnitItemInSlot(Hero[x],i),ITEM_SF_ICON), 2, true )
+            else
+                call SetFrameTexture( GetFrameByName("StatsHeroInventoryIcon",x*10+i), "UI\\Widgets\\Console\\Human\\human-inventory-slotfiller.blp", 0, true )
+                call SetFrameTexture( GetFrameByName("StatsHeroInventoryIcon",x*10+i), "UI\\Widgets\\Console\\Human\\human-inventory-slotfiller.blp", 1, true )
+                call SetFrameTexture( GetFrameByName("StatsHeroInventoryIcon",x*10+i), "UI\\Widgets\\Console\\Human\\human-inventory-slotfiller.blp", 2, true )
+            endif
+            set i=i+1
+            endloop
+        endif
+        call SetFrameText(GetFrameByName("StatsHeroKill",x),I2S(udg_kill[x]))
+        call SetFrameText(GetFrameByName("StatsHeroDeath",x),I2S(udg_death[x]))
+        call SetFrameText(GetFrameByName("StatsHeroAssist",x),I2S(udg_assist[x]))
+        call SetFrameText(GetFrameByName("StatsHeroWin",x),I2S(GetPlayerState(Player(x),PLAYER_STATE_RESOURCE_LUMBER)))
+        if IsPlayerAlly(GetLocalPlayer(),Player(x)) or GameEnd then
+            call SetFrameText(GetFrameByName("StatsGold",x),I2S(GetPlayerState(Player(x),PLAYER_STATE_RESOURCE_GOLD)))
+            if StringLength(I2S(R2I(LoadReal(HH, GetHandleId(Player(x)), TD_INDICATOR))))<6 then
+                call SetFrameFont( GetFrameByName("StatsGold",x), "Fonts\\FRIZQT__.TTF", .009, 0 )
+            else 
+                call SetFrameFont( GetFrameByName("StatsGold",x), "Fonts\\FRIZQT__.TTF", .008, 0 )
+            endif
+        else
+            call SetFrameText(GetFrameByName("StatsGold",x),"???")
+        endif
+    endif
+    set x=x+1
 endloop
 if seconds==60 then
 set seconds=0
@@ -30868,6 +30943,9 @@ function Trig_test_Actions takes nothing returns nothing
     call ShowFrame( EmoteBarFrame, false)
     call ShowFrame( CloseEmoteButton, false)
     call ShowFrame( OpenEmoteButton, true)
+    call ShowFrame( StatsBarFrame, false)
+    call ShowFrame( CloseStatsButton, false)
+    call ShowFrame( OpenStatsButton, true)
     call ShowFrame( ClassBarFrame, false)
     call EditBlackBorders( -.02, .13 ) // -.02, .13 | to return to default 
     call HideOriginFrames( false )
@@ -32768,19 +32846,21 @@ elseif GetPlayerSlotState(Player(i))==PLAYER_SLOT_STATE_PLAYING and Hero[i]!=nul
         call UnitRemoveAbility(Hero[i], 'A2VJ')
         call UnitRemoveAbility(Hero[i], 'B01L')
     endif
-        if GetUnitAbilityLevel(Hero[i],'cb10')==0 and GetUnitAbilityLevel(Hero[i],'cb11')==0 then
-            if GetUnitAbilityLevel(Hero[i],'B15A')>0 then
-                set f=CreateFogModifierRadius(Player(i),FOG_OF_WAR_VISIBLE,GetUnitX(Hero[i]),GetUnitY(Hero[i]),2500,true,true)
-            else
-                set f=CreateFogModifierRadius(Player(i),FOG_OF_WAR_VISIBLE,GetUnitX(Hero[i]),GetUnitY(Hero[i]),1500,true,true)
-            endif
+    if GetUnitAbilityLevel(Hero[i],'cb10')==0 and GetUnitAbilityLevel(Hero[i],'cb11')==0 then
+        if GetUnitAbilityLevel(Hero[i],'B15A')>0 then
+            call SetUnitCurrentSight(Hero[i],2500)
         else
-            if GetUnitAbilityLevel(Hero[i],'cb10')==1 or GetUnitAbilityLevel(Hero[i],'cb11')==1 then
-                set f=CreateFogModifierRadius(Player(i),FOG_OF_WAR_VISIBLE,GetUnitX(Hero[i]),GetUnitY(Hero[i]),100,true,true)
+            if GetUnitAbilityLevel(Hero[i],'Blnd')==0 then
+                call SetUnitCurrentSight(Hero[i],1500)
+            else
+                call SetUnitCurrentSight(Hero[i],1200)
             endif
-        endif   
-call SaveFogModifierHandle(HH,id,i,f)
-call FogModifierStart(f)
+        endif
+    else
+        if GetUnitAbilityLevel(Hero[i],'cb10')==1 or GetUnitAbilityLevel(Hero[i],'cb11')==1 then
+            call SetUnitCurrentSight(Hero[i],100)
+        endif
+    endif   
 endif
 set i=i+1
 endloop
@@ -32794,9 +32874,15 @@ if GetFrameText(SpectacleTeamSelect1Text)=="Full Map Vision" then
     call SaveFogModifierHandle(HH,id,11,f)
     call FogModifierStart(f)
 endif
+if f!=null then
 call ShowFrame( SpectacleTeamSelect, GetPlayerId(GetLocalPlayer())==10 )
 call ShowFrame( SpectacleTeamSelect1, GetPlayerId(GetLocalPlayer())==11 )
 call TimerStart(t,1,false,function VisibityOfHeroesCast2)
+else
+    call FlushChildHashtable(HH,id)
+    call PauseTimer(t)
+    call DestroyTimer(t)
+endif
 set t=null
 set f=null
 endfunction
@@ -32811,8 +32897,18 @@ endfunction
 function GameLeftAct takes nothing returns nothing
 local player p=GetTriggerPlayer()
 local integer i=GetPlayerId(p)
+local integer x=0
 call DisplayChatMessageEx(null,CHAT_RECIPIENT_UNKNOWN,10,true,Color[i]+GetPlayerName(Player(i))+" left the game")
 call SetPlayerName(GetTriggerPlayer(),GetPlayerName(GetTriggerPlayer())+"|cFFB4B4B7 (Leaver)|r")
+loop
+exitwhen x>9
+if UnitItemInSlot(Hero[i],x)!=null then
+call SetFrameTexture( GetFrameByName("StatsHeroInventoryIcon",i*10+x), GetItemStringField(UnitItemInSlot(Hero[i],x),ITEM_SF_ICON), 0, true )
+call SetFrameTexture( GetFrameByName("StatsHeroInventoryIcon",i*10+x), GetItemStringField(UnitItemInSlot(Hero[i],x),ITEM_SF_ICON), 1, true )
+call SetFrameTexture( GetFrameByName("StatsHeroInventoryIcon",i*10+x), GetItemStringField(UnitItemInSlot(Hero[i],x),ITEM_SF_ICON), 2, true )
+endif
+set x=x+1
+endloop
 set nick[i]="|cFFB4B4B7"+nick[i]+"|r"
 if GetUnitTypeId(Hero[i])=='H06T' then
 call RemoveUnit(Lucy[GetPlayerId(p)])
@@ -33138,7 +33234,6 @@ function EndOfChoiceAct takes nothing returns nothing
     local integer is=0
     local unit gon
     local item array it
-    local boolean b=false
     local integer i
     local integer j
     set i=0
@@ -33376,7 +33471,7 @@ function EndOfChoiceAct takes nothing returns nothing
         endif
         if GetPlayerState(Player(i),PLAYER_STATE_LUMBER_GATHERED)>=udg_rou then
             call CustomVictoryBJ(Player(i),true,true)
-            set b=true
+            set GameEnd=true
         endif
         if UnitIsAlive(Hero[i])==false then
             call ReviveHero(Hero[i],RX,RY,false)
@@ -33528,21 +33623,21 @@ function EndOfChoiceAct takes nothing returns nothing
         set i=i+1
     endloop
     if GetPlayerState(Player(0),PLAYER_STATE_LUMBER_GATHERED)>=udg_rou or GetPlayerState(Player(5),PLAYER_STATE_LUMBER_GATHERED)>=udg_rou  then
-        set b=true
+        set GameEnd=true
     endif
-    if b then
-            call LastDamageIndicator()
+    if GameEnd then
+        call ClickFrame(OpenStatsButton)
     endif
     set i=0
     loop
     exitwhen i>9
     if GetPlayerState(Player(i),PLAYER_STATE_LUMBER_GATHERED)>=udg_rou then
         call CustomVictoryBJ(Player(i),true,true)
-        set b=true
+        set GameEnd=true
     endif
     set i=i+1
     endloop
-    if b==true then
+    if GameEnd==true then
         call DestroyTimer(udg_Timer)
         call DestroyTimerDialog(udg_TB)
         set i=0
@@ -33622,7 +33717,7 @@ function EndOfChoiceAct takes nothing returns nothing
     call DestroyTimer(udg_Timer)
     call DestroyTimerDialog(udg_TB)
     elseif win[3]>=udg_rou then
-    call LastDamageIndicator()
+    call ClickFrame(OpenStatsButton)
     //call CustomDefeatBJ(Player(0),"Вы проиграли!")
     //call CustomDefeatBJ(Player(1),"Вы проиграли!")
     //call CustomDefeatBJ(Player(2),"Вы проиграли!")
@@ -33642,7 +33737,7 @@ function EndOfChoiceAct takes nothing returns nothing
     set he=1
     loop
     if win[he]>=udg_rou then
-    call LastDamageIndicator()
+    call ClickFrame(OpenStatsButton)
     call DestroyTimer(udg_Timer)
     call DestroyTimerDialog(udg_TB)
     call DisplayTextToPlayer(GetLocalPlayer(),0,0,GetPlayerName(Player(he))+" wins FFA Match")
@@ -39331,6 +39426,8 @@ if cond==0 then
             set n=CreateIllusionFromUnit(u)
             call SetUnitFacingInstant(n,GetUnitFacing(u))
             call UnitCancelTimedLife(n)
+            call SetUnitCurrentSight(n,600)
+call SetUnitUseFood(n,true)
             call UnitAddBuffById(n,'B03Q')
             call UnitApplyTimedLife(n,'B03Q',4)
             call SetIllusionDamageDealt(n,0.2)
@@ -39623,8 +39720,8 @@ if cond==0 then
         endif
         if b>(GetUnitState(u,UNIT_STATE_MAX_LIFE) * 0.03) and GetUnitAbilityLevel(u,'A06Y')>0 and nb>0 then
             //call SetEventDamage(nb*(0.925-0.025*GetUnitAbilityLevel(u,'A06Y')))
-            call HealCast(u, nb*0.1, 7)
-            set nb=nb*(0.925-0.025*GetUnitAbilityLevel(u,'A06Y'))
+            call HealCast(u, nb*(0.0875+0.0125*GetUnitAbilityLevel(u,'A06Y')), 7)
+            set nb=nb*0.9
         endif
         if b>ll*0.3 and GetUnitAbilityLevel(u,'A149')>0 then
             call UnitRemoveAbility(u,'A149')
@@ -40684,9 +40781,6 @@ if cond==0 then
         set nb=nb+GetHeroAgi(c,true)*myCustomDamage2(u,1)
     endif
     if CurrentEventAttack and nb>0 and GetUnitAbilityLevel(c,'A155')>0 and GetUnitAbilityLevel(c,'A3WR')==0 then
-        set soundplay=CreateSound("Sound\\Music\\mp3Music\\Meigo.mp3",false,false,true,12700,12700,"")
-        call StartSound(soundplay)
-        call KillSoundWhenDone(soundplay)
         if GetUnitAbilityLevel(c,'A155')==3 then
         call Essence(c,u,2)
         endif
@@ -53698,6 +53792,8 @@ call UnitAddBuffById(n,'B01N')
 call UnitApplyTimedLife(n,'B01N',7.5)
 call SetIllusionDamageDealt(n,0.15)
 call SetIllusionDamageReceived(n,1)
+call SetUnitCurrentSight(n,600)
+call SetUnitUseFood(n,true)
 set i=i+1
 exitwhen i>=3*GetUnitAbilityLevel(u,'A09S')
 endloop
@@ -54215,6 +54311,8 @@ call UnitAddBuffById(n,'B01Z')
 call UnitApplyTimedLife(n,'B01Z',20)
 call SetIllusionDamageDealt(n,0.3)
 call SetIllusionDamageReceived(n,1)
+call SetUnitCurrentSight(n,600)
+call SetUnitUseFood(n,true)
 set i=i+1
 exitwhen i>=1+GetUnitAbilityLevel(u,'A0B6')
 endloop
@@ -54272,8 +54370,6 @@ local real r=GetRandomReal(100,200)
 local real a=GetRandomReal(0,7)
 set x=x+r*Cos(a)
 set y=y+r*Sin(a)
-set n=CreateUnit(p,0x68303632,x,y,0)
-call Vision(n,u)
 call DestroyEffect(AddSpecialEffect("war3mapImported\\BlackBlink.mdx",x,y))
 call SetUnitXY_1(u,x,y, false)
 set p=null
@@ -56788,6 +56884,8 @@ exitwhen i>=2+GetUnitAbilityLevel(u,'A0C4')
 set n=CreateIllusionFromUnit(u)
 call SetUnitFacingInstant(n,GetUnitFacing(u))
 call UnitCancelTimedLife(n)
+call SetUnitCurrentSight(n,600)
+call SetUnitUseFood(n,true)
 call UnitAddBuffById(n,'B02A')
 call UnitApplyTimedLife(n,'B02A',15)
 call SetIllusionDamageDealt(n,0.1)
@@ -68131,7 +68229,7 @@ if time==2.1 then
     set i=0
     loop
     exitwhen i>=11
-        set f=CreateFogModifierRadius(Player(i),FOG_OF_WAR_VISIBLE,GetUnitX(u)+50*Cos(a),GetUnitY(u)+50*Sin(a),200,true,true)
+        set f=CreateFogModifierRadius(Player(i),FOG_OF_WAR_VISIBLE,GetUnitX(u)+50*Cos(a),GetUnitY(u)+50*Sin(a),250,true,true)
         call SaveFogModifierHandle(HH,id,20+i,f)
         call FogModifierStart(f)
         set i=i+1
@@ -68384,7 +68482,7 @@ if time==0.7 then
     set i=0
     loop
     exitwhen i>=11
-        set f=CreateFogModifierRadius(Player(i),FOG_OF_WAR_VISIBLE,x+50*Cos(a),y+50*Sin(a),200,true,true)
+        set f=CreateFogModifierRadius(Player(i),FOG_OF_WAR_VISIBLE,x+50*Cos(a),y+50*Sin(a),250,true,true)
         call SaveFogModifierHandle(HH,id,20+i,f)
         call FogModifierStart(f)
         set i=i+1
@@ -80012,6 +80110,8 @@ loop
 set n=CreateIllusionFromUnit(u)
 call SetUnitFacingInstant(n,GetUnitFacing(u))
 call UnitCancelTimedLife(n)
+call SetUnitCurrentSight(n,600)
+call SetUnitUseFood(n,true)
 call UnitAddBuffById(n,'B03M')
 call UnitApplyTimedLife(n,'B03M',20)
 call SetIllusionDamageDealt(n,0.25)
@@ -81021,6 +81121,8 @@ call SaveReal(h,id,100,dist+0.3)
 set n=CreateIllusionFromUnit(u)
 call SetUnitFacingInstant(n,GetUnitFacing(u))
 call UnitCancelTimedLife(n)
+call SetUnitCurrentSight(n,600)
+call SetUnitUseFood(n,true)
 call UnitAddBuffById(n,'B03P')
 call UnitApplyTimedLife(n,'B03P',2)
 call SetIllusionDamageDealt(n,0.45)
@@ -81373,6 +81475,8 @@ loop
 set n=CreateIllusionFromUnit(u)
 call SetUnitFacingInstant(n,GetUnitFacing(u))
 call UnitCancelTimedLife(n)
+call SetUnitCurrentSight(n,600)
+call SetUnitUseFood(n,true)
 call UnitAddBuffById(n,'B03O')
 call UnitApplyTimedLife(n,'B03O',10)
 call SetIllusionDamageDealt(n,0.3)
@@ -88999,7 +89103,7 @@ set n=CreateUnit(p,'e0NS',x,y,(a*bj_RADTODEG))
 call SetUnitScale(n,l__s,l__s,l__s)
 call SaveReal(h,id,8,l__s+0.24)
 call UnitApplyTimedLife(n,1,1)
-call SaveReal(h,id,5,l__d+30)
+call SaveReal(h,id,5,l__d+40)
 call GroupEnumUnitsInRange(g,x,y,125+15*l__s,Base)
 set idg=GetHandleId(g)
 loop
@@ -89051,7 +89155,7 @@ call SaveReal(h,id,4,GetSpellTargetY())
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\CeroNell.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
 call KillSoundWhenDone(soundplay)
-call TimerStart(t,0.017,true,function DobleCeroCast2)
+call TimerStart(t,0.015,true,function DobleCeroCast2)
 set p=null
 set u=null
 set t=null
@@ -89263,200 +89367,6 @@ call TriggerAddAction(t,function CeroSincreticoCast)
 call TriggerAddCondition(t,Condition(function CeroSincreticoCond))
 set t=null
 endfunction
-function AkainuRCond takes nothing returns boolean
-return GetSpellAbilityId()=='A06Y' and udg_B==true
-endfunction
-function AkainuRCast2 takes nothing returns nothing
-local timer t=GetExpiredTimer()
-local integer id=GetHandleId(t)
-local unit u=LoadUnitHandle(h,id,0)
-local real x=LoadReal(h,id,1)
-local real y=LoadReal(h,id,2)
-local real x1=LoadReal(h,id,3)
-local real y1=LoadReal(h,id,4)
-local real starttime=LoadReal(h,id,6)
-local real a=Atan2(y1-y,x1-x)
-local real l__d=0
-local real r=0
-local real a1=0
-local player p=GetOwningPlayer(u)
-local real dmg=GetHeroStr(u,true)*(2+GetUnitAbilityLevel(u,'A06Y'))
-local real time=LoadReal(h,id,9)
-local group g=LoadGroupHandle(h,id,7)
-call SaveReal(h,id,9,time+0.001)
-if time==starttime+0.01 then
-    set EFF=AddSpecialEffect("acg_Wenzhang_huoyan.mdl", x,y)
-    call SetSpecialEffectScale(EFF , 2.0)
-    call RemoveEffect(EFF,0.9,false,CreateTimer())
-    set EFF=AddSpecialEffect("ornamental_magma2.mdl", x,y)
-    call SetSpecialEffectScale(EFF , 0.2)
-    call RemoveEffect(EFF,0.4,true,CreateTimer())
-endif
-if time>starttime+0.01 and time<starttime+0.4 then
-    call SetUnitZ(u,GetUnitZCustom(u)-15)
-    call PauseUnit(u,true)
-    call SetUnitInvulnerable(u,true)
-endif
-if time<0.5 then
-    if time==0.0 then
-        set soundplay=CreateSound("Sound\\Music\\mp3Music\\AkainuR2.mp3",false,false,true,12700,12700,"")
-        call StartSound(soundplay)
-        call KillSoundWhenDone(soundplay)
-        set EFF=AddSpecialEffect("[choice]JirenEarthBlast.mdl", x1,y1)
-        call SetSpecialEffectScale(EFF , 2.0)
-        call DestroyEffect(EFF)
-    endif
-    call PauseUnit(u,true)
-    call SetUnitInvulnerable(u,true)
-else
-    if time==0.5 then
-        call PauseUnit(u,true)
-        call SetUnitInvulnerable(u,true)
-        call UnitApplyTimedLife(CreateUnit(p,'e0JG',x1,y1,GetRandomReal(0,359)),1,1)
-        call UnitApplyTimedLife(CreateUnit(p,'e0JH',x1,y1,GetRandomReal(0,359)),1,1)
-        set EFF=AddSpecialEffect("ornamental_magma2.mdl", x1,y1)
-        call SetSpecialEffectScale(EFF , 0.9)
-        call RemoveEffect(EFF,5,true,CreateTimer())
-        call SetUnitXY_1(u,x1,y1,false)
-        set n=CreateUnit(p,'e0JI',x1,y1,GetRandomReal(0,359))
-        set l__d=GetRandomReal(500,800)
-        set r=GetRandomReal(0,7)
-        call MissleMovePointMagmaBurst(n,GetRandomReal(9,15),0,x1+l__d*Cos(r),y1+l__d*Sin(r),GetRandomReal(300,600),0,0)
-        set n=CreateUnit(p,'e0JI',x1,y1,GetRandomReal(0,359))
-        set l__d=GetRandomReal(500,800)
-        set r=GetRandomReal(0,7)
-        call MissleMovePointMagmaBurst(n,GetRandomReal(9,15),0,x1+l__d*Cos(r),y1+l__d*Sin(r),GetRandomReal(300,600),0,0)
-        set n=CreateUnit(p,'e0JI',x1,y1,GetRandomReal(0,359))
-        set l__d=GetRandomReal(500,800)
-        set r=GetRandomReal(0,7)
-        call MissleMovePointMagmaBurst(n,GetRandomReal(9,15),0,x1+l__d*Cos(r),y1+l__d*Sin(r),GetRandomReal(300,600),0,0)
-        set n=CreateUnit(p,'e0JI',x1,y1,GetRandomReal(0,359))
-        set l__d=GetRandomReal(500,800)
-        set r=GetRandomReal(0,7)
-        call MissleMovePointMagmaBurst(n,GetRandomReal(9,15),0,x1+l__d*Cos(r),y1+l__d*Sin(r),GetRandomReal(300,600),0,0)
-        set n=CreateUnit(p,'e0JI',x1,y1,GetRandomReal(0,359))
-        set l__d=GetRandomReal(500,800)
-        set r=GetRandomReal(0,7)
-        call MissleMovePointMagmaBurst(n,GetRandomReal(5,9),0,x1+l__d*Cos(r),y1+l__d*Sin(r),GetRandomReal(300,600),0,0)
-        set n=CreateUnit(p,'e0JS',x1,y1,GetRandomReal(0,359))
-        call UnitApplyTimedLife(n,1,0.01)
-        call SetUnitVertexColor(n,255,255,255,255)
-        call SetUnitTimeScale(n,0.5)
-        call SetUnitScale(n,1,1,1)
-        set n=CreateUnit(p,'e0JS',x1,y1,GetRandomReal(0,359))
-        call UnitApplyTimedLife(n,1,0.01)
-        call SetUnitVertexColor(n,255,255,255,255)
-        call SetUnitTimeScale(n,0.5)
-        call SetUnitScale(n,1.5,1.5,1.5)
-        set n=CreateUnit(p,'e0JS',x1,y1,GetRandomReal(0,359))
-        call UnitApplyTimedLife(n,1,0.01)
-        call SetUnitVertexColor(n,255,255,255,255)
-        call SetUnitTimeScale(n,0.5)
-        call SetUnitScale(n,2,2,2)
-        call GroupEnumUnitsInRange(g,x1,y1,400,Base)
-        loop
-        set E=FirstOfGroup(g)
-        exitwhen E==null
-        if Condition_Base(p,E)then
-        call myCustomDamage(u,E,dmg,false,false,null,null,null)
-        call DestroyEffect(AddSpecialEffectTarget("war3mapImported\\Flameshock.mdx",E,"chest"))
-        set x=GetUnitX(E)
-        set y=GetUnitY(E)
-        set a1=Atan2(y-y1,x-x1)
-        call SetControlToUnit(E,E, 2, "stun")
-        call UnitAddAbility(E,'Arav')
-        call UnitRemoveAbility(E,'Arav')
-        set a=GetRandomReal(0,7)
-        set l__d=400
-        call SetUnitPathing(E,false)
-        call UnitRemoveAbility(E,'A2VJ')
-        call MissleMoveMagmaBurst(E,20,0,x+l__d*Cos(a1),y+l__d*Sin(a1),300,u)
-        endif
-        call GroupRemoveUnit(g,E)
-        endloop
-    elseif time>0.5 and time<0.7 then
-        call PauseUnit(u,true)
-        call SetUnitInvulnerable(u,true)
-        call SetUnitZ(u,GetUnitZCustom(u)+30)
-    elseif time>5.5 then
-        call DestroyGroup(g)
-        call FlushChildHashtable(h,id)
-        call PauseTimer(t)
-        call DestroyTimer(t)
-    endif
-    if time==0.7 then
-        call UnitRemoveAbility(u,'A0QL')
-        call ResetUnitZ(u)
-        call PauseUnit(u,false)
-        call SetUnitInvulnerable(u,false)
-        call SetAbilityRemainingCooldown(GetUnitAbility(u,'A06Y'),35)
-    endif
-    if time>0.5 and time<5.5 then
-        if ModuloReal(time,0.2)<0.001 then
-            call GroupEnumUnitsInRange(g,x1,y1,450,Base)
-            loop
-                set E=FirstOfGroup(g)
-                exitwhen E==null
-                if Condition_Base(p,E) and GetUnitFlyHeight(E)<50 then
-                    call myCustomDamage(u,E,GetUnitState(E,UNIT_STATE_MAX_LIFE)*0.01,false,false,null,null,null)
-                    call SlowUnit(u,E,0.6,0,3,1,false)
-                endif
-                call GroupRemoveUnit(g,E)
-            endloop
-        endif
-    endif
-endif
-set p=null
-set u=null
-set g=null
-set t=null
-endfunction
-function AkainuRCast takes nothing returns nothing
-local unit u=GetTriggerUnit()
-local timer t=CreateTimer()
-local integer id=GetHandleId(t)
-local real x=GetUnitX(u)
-local real y=GetUnitY(u)
-local real a=Atan2(GetSpellTargetY()-y,GetSpellTargetX()-x)
-local player p=GetOwningPlayer(u)
-call SaveUnitHandle(h,id,0,u)
-call SaveReal(h,id,1,x)
-call SaveReal(h,id,2,y)
-call SaveReal(h,id,3,GetSpellTargetX())
-call SaveReal(h,id,4,GetSpellTargetY())
-call SaveReal(h,id,6,-1-0.001*MathRealCeil(SR(x,y,GetSpellTargetX(),GetSpellTargetY())))
-call SaveReal(h,id,9,-1-0.001*MathRealCeil(SR(x,y,GetSpellTargetX(),GetSpellTargetY())))
-call SaveGroupHandle(h,id,7,CreateGroup())
-call UnitAddAbility(u,'A0QL')
-set soundplay=CreateSound("Sound\\Music\\mp3Music\\AkainuR1.mp3",false,false,true,12700,12700,"")
-call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
-call PauseUnit(u,true)
-call SetUnitInvulnerable(u,true)
-call SetUnitZ(u,MathRealFloor(0))
-if GetUnitAbilityLevel(u,'A155')==0 and GetHeroLevel(u)>5 then
-call UnitAddAbility(u,'A155')
-call UnitMakeAbilityPermanent(u,true,'A155')
-else
-call SetUnitAbilityLevel(u,'A155',GetUnitAbilityLevel(u,'A155')+1)
-endif
-call TimerStart(t,0.001,true,function AkainuRCast2)
-set p=null
-set u=null
-set t=null
-endfunction
-function AkainuRInit takes nothing returns nothing
-local trigger t=CreateTrigger()
-local integer i=0
-loop
-call TriggerRegisterPlayerUnitEvent(t,Player(i),EVENT_PLAYER_UNIT_SPELL_EFFECT,null)
-set i=i+1
-exitwhen i>=bj_MAX_PLAYER_SLOTS
-endloop
-call TriggerAddAction(t,function AkainuRCast)
-call TriggerAddCondition(t,Condition(function AkainuRCond))
-set t=null
-endfunction
 function FireMirageCond takes nothing returns boolean
 return GetSpellAbilityId()=='A29T' and udg_B==true
 endfunction
@@ -89470,6 +89380,8 @@ set n=CreateIllusionFromUnit(c)
 call SetUnitFacingInstant(n,GetUnitFacing(c))
 call SetUnitOwner(c,p,false)
 call UnitCancelTimedLife(n)
+call SetUnitCurrentSight(n,600)
+call SetUnitUseFood(n,true)
 call UnitAddBuffById(n,'B11N')
 call UnitApplyTimedLife(n,'B11N',15)
 call SetIllusionDamageDealt(n,0)
@@ -103457,16 +103369,16 @@ if dist==0 then
     call SetSpecialEffectVertexColour(EFF,255,120,205,120)
     call RemoveEffect(EFF,1,true,CreateTimer())
 endif
-if dist<800 and LoadBoolean(HH,GetHandleId(u),DASH_USER)==true then
+if dist<700 and LoadBoolean(HH,GetHandleId(u),DASH_USER)==true then
 if IsTerrainPathable(x1,y1,PATHING_TYPE_FLYABILITY)==false then
-set x1=x1+50*Cos(a)
-set y1=y1+50*Sin(a)
+set x1=x1+35*Cos(a)
+set y1=y1+35*Sin(a)
 else
 set x1=x1-15*Cos(a)
 set y1=y1-15*Sin(a)
 endif
 call SetUnitXY_1(u,x1,y1, false)
-call SaveReal(h,id,100,dist+50)
+call SaveReal(h,id,100,dist+35)
 set n=CreateUnit(p,'e01S',x1,y1,a*bj_RADTODEG)
 call SetUnitScale(n,0.7,0.7,0.7)
 call SetUnitModel(n,"Killua.mdl")
@@ -103921,12 +103833,12 @@ local real dmg=GetHeroAgi(u,true)*2
 local real dist10=0
 if(OrderId2String(GetUnitCurrentOrder(u))=="move" or OrderId2String(GetUnitCurrentOrder(u))=="smart" or OrderId2String(GetUnitCurrentOrder(u))=="attack")and SR(x,y,x1,y1)>50+speed*0.001 and speed>30 and GetUnitAbilityLevel(u, 'CBC2')==0 and GetUnitAbilityLevel(u, 'CBC1')==0 and GetUnitAbilityLevel(u, 'cbc4')==0 and GetUnitAbilityLevel(u, 'cbc6')==0 and GetUnitAbilityLevel(u, 'cbc5')==0  and GetUnitAbilityLevel(u, 'cbc7')==0 and GetUnitAbilityLevel(u, 'cbc8')==0 and GetUnitAbilityLevel(u, 'cbc9')==0 and IsUnitPaused(u)==false then
 set dist10=speed*0.034
-if dist10<46 then
+if dist10<39 then
 set x=x+dist10*(1+SpeedRes*0.01)*Cos(a)
 set y=y+dist10*(1+SpeedRes*0.01)*Sin(a)
 call SaveReal(HH,idu,str6,dist2+speed*0.0044)
 else
-set dist10=46
+set dist10=39
 set x=x+dist10*(1+SpeedRes*0.01)*Cos(a)
 set y=y+dist10*(1+SpeedRes*0.01)*Sin(a)
 call SaveReal(HH,idu,str6,dist2+speed*0.0044)
@@ -104804,6 +104716,8 @@ function NarutoFCast takes nothing returns nothing
         call SetHeroAgi(n,GetHeroAgi(u,false),true)
         call SetHeroStr(n,GetHeroStr(u,false),true)
         call SetHeroInt(n,GetHeroInt(u,false),true)
+        call SetUnitCurrentSight(n,600)
+call SetUnitUseFood(n,true)
         if GetUnitAbilityLevel(u,'A0V8')>0 then
             call UnitAddAbility(n,'A0V8')
             call SetUnitAbilityLevel(n,'A0V8',GetUnitAbilityLevel(u,'A0V8'))
@@ -112350,6 +112264,7 @@ local string dmgtext=""
 local string Healtext=""
 local integer i=0
 call UnitInventorySetSize(l__d,10)
+call SetUnitCurrentSight(l__d,600)
 call SetUnitPathing(l__d,false)
 call SetUnitXY_1(l__d,x,y, false)
 call SetUnitFacing(l__d,f)
@@ -134686,6 +134601,8 @@ set n=CreateIllusionFromUnit(u)
 call SetUnitFacingInstant(n,a)
 call SetIllusionDamageDealt(n,1)
 call SetIllusionDamageReceived(n,2)
+call SetUnitCurrentSight(n,600)
+call SetUnitUseFood(n,true)
 call UnitAddAbility(n,'A2X2')
 call UnitApplyTimedLife(n,'B04X',15)
 call SetUnitXY_1(n,x1+250*Cos((a-rand2*90)*bj_DEGTORAD),y1+250*Sin((a-rand2*90)*bj_DEGTORAD),false)
@@ -154246,6 +154163,7 @@ call IssuePointOrder(l__d,"move",x+800*Cos(f*bj_DEGTORAD),y+800*Sin(f*bj_DEGTORA
 call SetHeroAgi(l__d,GetHeroAgi(u,false),true)
 call SetHeroStr(l__d,GetHeroStr(u,false),true)
 call SetHeroInt(l__d,GetHeroInt(u,false),true)
+call SetUnitCurrentSight(l__d,600)
 loop
 exitwhen i>=10
 if GetItemTypeId(UnitItemInSlot(u,i))!='Io39' then
@@ -169551,6 +169469,403 @@ function InitTrig_StigmataInt takes nothing returns nothing
         call TriggerAddCondition(trig,Condition(function Stigmata_Cond))
     call TriggerAddAction(trig, function Stigmata_Cast)
         set trig=null
+endfunction
+
+function AkainuRCond takes nothing returns boolean
+    return GetSpellAbilityId()=='A06Y' and udg_B==true
+endfunction
+function AkainuRCast2 takes nothing returns nothing
+    local timer t=GetExpiredTimer()
+    local integer id=GetHandleId(t)
+    local unit u=LoadUnitHandle(h,id,0)
+    local real x=LoadReal(h,id,1)
+    local real y=LoadReal(h,id,2)
+    local real x1=LoadReal(h,id,3)
+    local real y1=LoadReal(h,id,4)
+    local real starttime=LoadReal(h,id,6)
+    local real a=Atan2(y1-y,x1-x)
+    local real l__d=0
+    local real r=0
+    local real a1=0
+    local player p=GetOwningPlayer(u)
+    local real dmg=GetHeroStr(u,true)*(2+GetUnitAbilityLevel(u,'A06Y'))
+    local real time=LoadReal(h,id,9)
+    local group g=LoadGroupHandle(h,id,7)
+    call SaveReal(h,id,9,time+0.001)
+    if time==starttime+0.01 then
+        set EFF=AddSpecialEffect("acg_Wenzhang_huoyan.mdl", x,y)
+        call SetSpecialEffectScale(EFF , 2.0)
+        call RemoveEffect(EFF,0.9,false,CreateTimer())
+        set EFF=AddSpecialEffect("ornamental_magma2.mdl", x,y)
+        call SetSpecialEffectScale(EFF , 0.2)
+        call RemoveEffect(EFF,0.4,true,CreateTimer())
+    endif
+    if time>starttime+0.01 and time<starttime+0.4 then
+        call SetUnitZ(u,GetUnitZCustom(u)-15)
+        call PauseUnit(u,true)
+        call SetUnitInvulnerable(u,true)
+    endif
+    if time<0.5 then
+        if time==0.0 then
+            set soundplay=CreateSound("Sound\\Music\\mp3Music\\AkainuR2.mp3",false,false,true,12700,12700,"")
+            call StartSound(soundplay)
+            call KillSoundWhenDone(soundplay)
+            set EFF=AddSpecialEffect("[choice]JirenEarthBlast.mdl", x1,y1)
+            call SetSpecialEffectScale(EFF , 2.0)
+            call DestroyEffect(EFF)
+        endif
+        call PauseUnit(u,true)
+        call SetUnitInvulnerable(u,true)
+    else
+        if time==0.5 then
+            call PauseUnit(u,true)
+            call SetUnitInvulnerable(u,true)
+            call UnitApplyTimedLife(CreateUnit(p,'e0JG',x1,y1,GetRandomReal(0,359)),1,1)
+            call UnitApplyTimedLife(CreateUnit(p,'e0JH',x1,y1,GetRandomReal(0,359)),1,1)
+            set EFF=AddSpecialEffect("ornamental_magma2.mdl", x1,y1)
+            call SetSpecialEffectScale(EFF , 0.9)
+            call RemoveEffect(EFF,5,true,CreateTimer())
+            call SetUnitXY_1(u,x1,y1,false)
+            set n=CreateUnit(p,'e0JI',x1,y1,GetRandomReal(0,359))
+            set l__d=GetRandomReal(500,800)
+            set r=GetRandomReal(0,7)
+            call MissleMovePointMagmaBurst(n,GetRandomReal(9,15),0,x1+l__d*Cos(r),y1+l__d*Sin(r),GetRandomReal(300,600),0,0)
+            set n=CreateUnit(p,'e0JI',x1,y1,GetRandomReal(0,359))
+            set l__d=GetRandomReal(500,800)
+            set r=GetRandomReal(0,7)
+            call MissleMovePointMagmaBurst(n,GetRandomReal(9,15),0,x1+l__d*Cos(r),y1+l__d*Sin(r),GetRandomReal(300,600),0,0)
+            set n=CreateUnit(p,'e0JI',x1,y1,GetRandomReal(0,359))
+            set l__d=GetRandomReal(500,800)
+            set r=GetRandomReal(0,7)
+            call MissleMovePointMagmaBurst(n,GetRandomReal(9,15),0,x1+l__d*Cos(r),y1+l__d*Sin(r),GetRandomReal(300,600),0,0)
+            set n=CreateUnit(p,'e0JI',x1,y1,GetRandomReal(0,359))
+            set l__d=GetRandomReal(500,800)
+            set r=GetRandomReal(0,7)
+            call MissleMovePointMagmaBurst(n,GetRandomReal(9,15),0,x1+l__d*Cos(r),y1+l__d*Sin(r),GetRandomReal(300,600),0,0)
+            set n=CreateUnit(p,'e0JI',x1,y1,GetRandomReal(0,359))
+            set l__d=GetRandomReal(500,800)
+            set r=GetRandomReal(0,7)
+            call MissleMovePointMagmaBurst(n,GetRandomReal(5,9),0,x1+l__d*Cos(r),y1+l__d*Sin(r),GetRandomReal(300,600),0,0)
+            set n=CreateUnit(p,'e0JS',x1,y1,GetRandomReal(0,359))
+            call UnitApplyTimedLife(n,1,0.01)
+            call SetUnitVertexColor(n,255,255,255,255)
+            call SetUnitTimeScale(n,0.5)
+            call SetUnitScale(n,1,1,1)
+            set n=CreateUnit(p,'e0JS',x1,y1,GetRandomReal(0,359))
+            call UnitApplyTimedLife(n,1,0.01)
+            call SetUnitVertexColor(n,255,255,255,255)
+            call SetUnitTimeScale(n,0.5)
+            call SetUnitScale(n,1.5,1.5,1.5)
+            set n=CreateUnit(p,'e0JS',x1,y1,GetRandomReal(0,359))
+            call UnitApplyTimedLife(n,1,0.01)
+            call SetUnitVertexColor(n,255,255,255,255)
+            call SetUnitTimeScale(n,0.5)
+            call SetUnitScale(n,2,2,2)
+            call GroupEnumUnitsInRange(g,x1,y1,400,Base)
+            loop
+            set E=FirstOfGroup(g)
+            exitwhen E==null
+            if Condition_Base(p,E)then
+            call myCustomDamage(u,E,dmg,false,false,null,null,null)
+            call DestroyEffect(AddSpecialEffectTarget("war3mapImported\\Flameshock.mdx",E,"chest"))
+            set x=GetUnitX(E)
+            set y=GetUnitY(E)
+            set a1=Atan2(y-y1,x-x1)
+            call SetControlToUnit(E,E, 2, "stun")
+            call UnitAddAbility(E,'Arav')
+            call UnitRemoveAbility(E,'Arav')
+            set a=GetRandomReal(0,7)
+            set l__d=400
+            call SetUnitPathing(E,false)
+            call UnitRemoveAbility(E,'A2VJ')
+            call MissleMoveMagmaBurst(E,20,0,x+l__d*Cos(a1),y+l__d*Sin(a1),300,u)
+            endif
+            call GroupRemoveUnit(g,E)
+            endloop
+        elseif time>0.5 and time<0.7 then
+            call PauseUnit(u,true)
+            call SetUnitInvulnerable(u,true)
+            call SetUnitZ(u,GetUnitZCustom(u)+30)
+        elseif time>5.5 then
+            call DestroyGroup(g)
+            call FlushChildHashtable(h,id)
+            call PauseTimer(t)
+            call DestroyTimer(t)
+        endif
+        if time==0.7 then
+            call UnitRemoveAbility(u,'A0QL')
+            call ResetUnitZ(u)
+            call PauseUnit(u,false)
+            call SetUnitInvulnerable(u,false)
+            call SetAbilityRemainingCooldown(GetUnitAbility(u,'A06Y'),35)
+        endif
+        if time>0.5 and time<5.5 then
+            if ModuloReal(time,0.2)<0.001 then
+                call GroupEnumUnitsInRange(g,x1,y1,450,Base)
+                loop
+                    set E=FirstOfGroup(g)
+                    exitwhen E==null
+                    if Condition_Base(p,E) and GetUnitFlyHeight(E)<50 then
+                        call myCustomDamage(u,E,GetUnitState(E,UNIT_STATE_MAX_LIFE)*0.01,false,false,null,null,null)
+                        call SlowUnit(u,E,0.6,0,3,1,false)
+                    endif
+                    call GroupRemoveUnit(g,E)
+                endloop
+            endif
+        endif
+    endif
+    set p=null
+    set u=null
+    set g=null
+    set t=null
+endfunction
+function AkainuRCast takes nothing returns nothing
+    local unit u=GetTriggerUnit()
+    local timer t=CreateTimer()
+    local integer id=GetHandleId(t)
+    local real x=GetUnitX(u)
+    local real y=GetUnitY(u)
+    local real a=Atan2(GetSpellTargetY()-y,GetSpellTargetX()-x)
+    local player p=GetOwningPlayer(u)
+    call SaveUnitHandle(h,id,0,u)
+    call SaveReal(h,id,1,x)
+    call SaveReal(h,id,2,y)
+    call SaveReal(h,id,3,GetSpellTargetX())
+    call SaveReal(h,id,4,GetSpellTargetY())
+    call SaveReal(h,id,6,-1-0.001*MathRealCeil(SR(x,y,GetSpellTargetX(),GetSpellTargetY())))
+    call SaveReal(h,id,9,-1-0.001*MathRealCeil(SR(x,y,GetSpellTargetX(),GetSpellTargetY())))
+    call SaveGroupHandle(h,id,7,CreateGroup())
+    call UnitAddAbility(u,'A0QL')
+    set soundplay=CreateSound("Sound\\Music\\mp3Music\\AkainuR1.mp3",false,false,true,12700,12700,"")
+    call StartSound(soundplay)
+    call KillSoundWhenDone(soundplay)
+    call PauseUnit(u,true)
+    call SetUnitInvulnerable(u,true)
+    call SetUnitZ(u,MathRealFloor(0))
+    if GetUnitAbilityLevel(u,'A155')==0 and GetHeroLevel(u)>5 then
+    call UnitAddAbility(u,'A155')
+    call UnitMakeAbilityPermanent(u,true,'A155')
+    else
+    call SetUnitAbilityLevel(u,'A155',GetUnitAbilityLevel(u,'A155')+1)
+    endif
+    call TimerStart(t,0.001,true,function AkainuRCast2)
+    set p=null
+    set u=null
+    set t=null
+endfunction
+function AkainuRInit takes nothing returns nothing
+    local trigger t=CreateTrigger()
+    local integer i=0
+    loop
+    call TriggerRegisterPlayerUnitEvent(t,Player(i),EVENT_PLAYER_UNIT_SPELL_EFFECT,null)
+    set i=i+1
+    exitwhen i>=bj_MAX_PLAYER_SLOTS
+    endloop
+    call TriggerAddAction(t,function AkainuRCast)
+    call TriggerAddCondition(t,Condition(function AkainuRCond))
+    set t=null
+endfunction
+function AkainuFCond takes nothing returns boolean
+    return GetSpellAbilityId()=='A156' and udg_B==true
+endfunction
+function AkainuFCast2 takes nothing returns nothing
+    local integer id=GetHandleId(GetExpiredTimer())
+    local unit caster=LoadUnitHandle(HH,id,1)
+    local unit target=LoadUnitHandle(HH,id,2)
+    local real time=LoadReal(HH,id,5)
+    local real time1=LoadReal(HH,id,6)
+    local real damage=LoadReal(HH,id,15)
+    local boolean miss=false
+    local real x0=GetUnitX(caster)
+    local real y0=GetUnitY(caster)
+    local real x1=GetUnitX(target)
+    local real y1=GetUnitY(target)
+    local real facing=LoadReal(HH,id,3)
+    set time=time+0.02
+    call SaveReal(HH,id,5,time)
+    if time>=5 then
+
+
+
+    call UnitSpeed(caster,1)
+    call PauseUnit(caster,false)
+    call SetUnitInvulnerable(caster,false)
+    call SetUnitPathing(caster,true)
+    call SetUnitPathing(target,true)
+
+
+    if IsUnitInvulnerable(target) then
+        set damage=0
+    endif
+    if (UnitHasItemOfTypeBJ(caster,'I04E')==true or GetUnitAbilityLevel(caster,'KIN4') > 0) then  //666
+        if GetRandomIntMem(0,100)<=35 or GetUnitAbilityLevel(GetAttacker(),'A6HR') > 0 then
+            call ComboChecker(caster,2,0.1, false )
+            call SetControlToUnit(caster,target, 0.06,"stunbkb") //"stunbkb"
+        endif
+    endif
+    if GetUnitAbilityLevel(caster, 'A3IG')==0 and GetUnitAbilityLevel(caster, 'A6HR')==0 then	// Патриот анти-миссы и миссы в целом
+
+        if (UnitHasItemOfTypeBJ(target, 'I03E') or UnitHasItemOfTypeBJ(target, 'I03F') or GetUnitAbilityLevel(target, 'KIJ2')>0 or GetUnitAbilityLevel(target, 'KIJ4')>0) and GetRandomInt(0, 99)<=34 then	// Туфли или Комплект Анбу - уклонение
+            set damage=0
+            set miss=true
+        endif
+        
+        if GetUnitAbilityLevel(target, 'A14R')>0 or GetUnitAbilityLevel(caster, 'B037')>0 or GetUnitAbilityLevel(caster, 'cb10')>0 then	// Демон Глаз активка или слепота
+            set damage=0
+            set miss=true
+        endif
+        
+        if GetUnitAbilityLevel(caster, 'cb12')>0 then 		// Промахи все
+            call SaveReal(HH,GetHandleId(bufh),0,1)
+            call HandleListEnumUnitBuffs(bufh,caster,Condition(function MissBool))
+            call HandleListForEach(bufh,function MissBuff)
+            if LoadReal(HH,GetHandleId(bufh),0)==0 then
+                set damage=0
+                set miss=true
+            endif
+            call FlushChildHashtable(HH,GetHandleId(bufh))
+            call HandleListClear(bufh)	
+        endif
+    endif
+
+    if damage>0 and miss==false then
+        call myCustomDamage(caster,target,damage,true,false,null,null,null)
+        if UnitHasItemOfTypeBJ(target,'I05O')or UnitHasItemOfTypeBJ(target,'I05P')or UnitHasItemOfTypeBJ(target,'I05Q')or UnitHasItemOfTypeBJ(target,'I05R')or UnitHasItemOfTypeBJ(target,'I05S')or UnitHasItemOfTypeBJ(target,'I05T') or GetUnitAbilityLevel(target, 'KIT8')>0 or GetUnitAbilityLevel(target, 'KIU0')>0 or GetUnitAbilityLevel(target, 'KIU2')>0 or GetUnitAbilityLevel(target, 'KIU4')>0 or GetUnitAbilityLevel(target, 'KIU6')>0 or GetUnitAbilityLevel(target, 'KIU8')>0 then
+            call RainMare_Actions(caster,target)
+        endif
+        if UnitHasItemOfTypeBJ(caster, 'I01Q') and (GetRandomInt(1, 100)<=20 or GetUnitAbilityLevel(caster,'A06K')>0) then 		// Сюсуй
+            call Shusui_Cast(caster, 1)
+        endif
+        if UnitHasItemOfTypeBJ(caster, 'I01U') and GetRandomInt(1, 100)<=45 then 		// Feng
+            call PoisonDamage5(caster,target,2.5*GetHeroInt(caster,true),6,"Abilities\\Weapons\\PoisonSting\\PoisonStingTarget.mdl","chest")
+            call SlowUnit(caster,target,0.5,0.,1,1,false)
+        endif
+    elseif damage>0 and miss==true then
+        call AllTextTag("|c00C0C0C0Miss!|r" , target)
+        set damage = 0
+    endif
+
+    call EffectCreateAndMove45(true,"Izayoi\\[a]wavejojo.mdl",facing+45,1.5,1.4,1.5,100,100,100,30,200,target,0,facing)
+    call EffectCreateAndMove45(true,"Izayoi\\[a]wavejojo.mdl",facing-45,1.5,1.4,1.5,100,100,100,30,200,target,0,facing)
+    call EffectCreateAndMove(true,"Others\\HakkeStart2.mdl",facing,1.5,1.25,1.5,100,100,100,60,0,target,0,facing)
+    //call EffectCreateAndMove(true,"Izayoi\\[A]az_axe_ef1.mdl",facing,1.5,1,0.75,100,100,100,40,0,target,0,facing)
+    //call EffectCreateAndMove(true,"Izayoi\\AFBCronoseffect1.mdl",facing,1.5,1.5,0.75,100,100,100,0,100,target,0,facing)
+    //call EffectCreateAndMove(true,"Izayoi\\AZ_hit-red.mdl",facing+180,1.5,2,0.75,100,100,100,0,100,target,0,facing)
+    call EffectCreateAndMove(true,"Izayoi\\qqqqqr.mdl",facing,1.5,2,0.5,100,80,80,0,100,target,0,facing)
+    call EffectCreateAndMove90(true,"Others\\WindCirclefaster.mdl",facing,1,1.25,1.5,100,100,100,40,100,target,0,facing)
+    call EffectCreateAndMove(true,"Others\\WindCirclefaster.mdl",facing,1,1.5,1.5,100,100,100,40,0,target,0,facing)
+    call EffectCreateAndMove(true,"Magmablast.mdl",facing,1.5,3,1,100,100,100,0,100,target,0,facing)
+    call UnitSpeed(caster,1)
+    call DestroyEffect(AddSpecialEffect("war3mapImported\\Abyssal_Impact_Base.mdl",x1,y1))
+    call DestroyEffect(AddSpecialEffectTarget("war3mapImported\\Flameshock.mdl",target,"chest"))
+    call DestroyEffect(AddSpecialEffectTarget("Magmablast.mdl",target,"chest"))
+
+
+    call PauseTimer(GetExpiredTimer())
+    call FlushChildHashtable(HH,id)
+    call DestroyTimer(GetExpiredTimer())
+    else
+    call PauseUnit(caster,true)
+    call SetUnitInvulnerable(caster,true)
+    call SetUnitPathing(caster,false)
+    call SetUnitFacing(caster,facing)
+    if time==0.02 then
+    call SetUnitAnimation(caster,"attack")
+    //call SetUnitAnimationByIndex(caster,6)
+    call UnitSpeed(caster,0.8)
+    call EffectCreateAndMove(true,"Others\\HakkeStart2.mdl",facing,1.5,0.75,1.5,100,100,100,60,0,caster,0,facing)
+    endif
+
+    if time==0.3 then
+    call UnitSpeed(caster,0)
+    endif
+
+    //if time<1 then
+    set facing=Angle2(x0,y0,x1,y1)
+    call SaveReal(HH,id,3,facing)
+
+    if SR(x0,y0,x1,y1)>150 then
+    call MoveUnit(caster,caster,8+SR(x0,y0,x1,y1)*0.04,facing)
+    else
+
+    call SaveReal(HH,id,5,5)
+    call MoveUnit(target,target,50,facing)
+    call MoveUnit(target,caster,-150,facing)
+
+    endif
+
+
+    //endif
+    set time1=time1+0.02
+
+    if time==0.02 or time1==0.04 or time1==0.08 then
+    call EffectCreateAndMove(true,"Magmablast.mdl",facing,1,GetRandomReal(2,2.5),GetRandomReal(1.25,1.5),100,100,100,0,100,caster,50,facing)
+    endif
+
+    if time==0.02 or time1==0.1 then
+    set time1=0
+    //call EffectCreateAndMove(true,"BlackGoku\\CF2.mdl",facing,1,GetRandomReal(0.3,0.5),GetRandomReal(0.5,0.7),100,100,100,40,100,caster,50,facing)
+    //call EffectCreateAndMove(true,"Others\\ChongFeng2.mdl",facing,1,GetRandomReal(0.75,1),GetRandomReal(0.6,0.8),100,100,100,20,0,caster,50,facing)
+    call EffectCreateAndMove90(true,"Others\\wind3.mdl",facing,1,GetRandomReal(1,1.25),GetRandomReal(1.25,1.5),100,100,100,40,150,caster,50,facing)
+
+
+    //Magmablast
+
+    endif
+
+    call SaveReal(HH,id,6,time1)
+
+
+    endif
+    set caster=null
+    set target=null
+endfunction
+function AkainuFCast takes nothing returns nothing
+    local unit caster=GetTriggerUnit()
+    local unit target=GetSpellTargetUnit()
+    local timer t=CreateTimer()
+    local integer id=GetHandleId(t)
+    local real x0=GetUnitX(caster)
+    local real y0=GetUnitY(caster)
+    local real x1=GetUnitX(target)
+    local real y1=GetUnitY(target)
+    local real facing=Angle2(x0,y0,x1,y1)
+    local real damage=GetUnitTotalDamage(caster)+GetHeroStr(caster,true)*2
+    local real dist=SR(x0,y0,x1,y1)
+
+
+    call SaveUnitHandle(HH,id,1,caster)
+    call SaveReal(HH,id,3,facing)
+    call SaveReal(HH,id,8,dist)
+    //if target!=caster and target!=null and SR(x0,y0,GetUnitX(target),GetUnitY(target))<800 then
+    call SaveUnitHandle(HH,id,2,target)
+    call SaveReal(HH,id,15,damage)
+
+    call SaveInteger(HH,id,19,GetUnitAbilityLevel(caster,'A155'))
+
+    call PauseUnit(caster,true)
+    call SetUnitInvulnerable(caster,true)
+            set soundplay=CreateSound("Sound\\Music\\mp3Music\\Meigo.mp3",false,false,true,12700,12700,"")
+            call StartSound(soundplay)
+            call SetSoundVolume(soundplay,220)
+            ////call KillSoundWhenDone(soundplay)
+    call TimerStart(t,0.02,true,function AkainuFCast2)
+    //endif
+    set caster=null
+    set target=null
+    set t=null
+endfunction
+function AkainuFInit takes nothing returns nothing
+    local trigger t=CreateTrigger()
+    local integer i=0
+    loop
+    call TriggerRegisterPlayerUnitEvent(t,Player(i),EVENT_PLAYER_UNIT_SPELL_EFFECT,null)
+    set i=i+1
+    exitwhen i>=bj_MAX_PLAYER_SLOTS
+    endloop
+    call TriggerAddAction(t,function AkainuFCast)
+    call TriggerAddCondition(t,Condition(function AkainuFCond))
+    set t=null
 endfunction
 
 //=========================================== Vergil New
@@ -202852,6 +203167,8 @@ function GenkshiPassiveX2 takes unit newCaster, unit newTarget returns nothing
     set n=CreateIllusionFromUnit(newTarget)
     call SetUnitFacingInstant(n,GetUnitFacing(newTarget))
     call UnitCancelTimedLife(n)
+    call SetUnitCurrentSight(n,600)
+call SetUnitUseFood(n,true)
     call UnitAddBuffById(n,'B03Q')
     call UnitApplyTimedLife(n,'B03Q',4)
     call SetIllusionDamageDealt(n,0.2)
@@ -211639,6 +211956,8 @@ function TobiramaFCast takes unit u, real x1, real y1 returns nothing
         call SetHeroAgi(n,GetHeroAgi(u,false),true)
         call SetHeroStr(n,GetHeroStr(u,false),true)
         call SetHeroInt(n,GetHeroInt(u,false),true)
+        call SetUnitCurrentSight(n,600)
+call SetUnitUseFood(n,true)
         call UnitInventorySetSize(n,10)
         loop
         exitwhen i>=10
@@ -220516,6 +220835,7 @@ call DisableTrigger(gg_trg_KingOfHill_Enter)
 call DisableTrigger(gg_trg_Tower_Enter)
 call DisableTrigger(gg_trg_Fountain_Enter)
 call DisableTrigger(Codeon)
+call DisableTrigger(gg_trg_Time)
 endfunction
 function RunInitializationTriggers takes nothing returns nothing
 call ConditionalTriggerExecute(gg_trg_Quests)
@@ -221088,6 +221408,7 @@ call DobleCeroInit()
 call CeroSincreticoInit()
 call FireMirageInit()
 call AkainuRInit()
+call AkainuFInit()
 call ImmitadeBodyInit()
 call InitCuttingSaw()
 call UpperSlashInit()
