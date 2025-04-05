@@ -23504,7 +23504,7 @@ function Trig_StatusBar_Actions takes nothing returns nothing
     call SetFrameParent( StatsBarFrameText, StatsBarFrame )
     call SetFrameText( StatsBarFrameText, "Player")
     call ShowFrame( StatsBarFrameText, true )
-    call SetFrameRelativePoint( StatsBarFrameText, FRAMEPOINT_TOPLEFT, StatsBarFrame, FRAMEPOINT_TOPLEFT,  .01, -.03  )
+    call SetFrameRelativePoint( StatsBarFrameText, FRAMEPOINT_TOPLEFT, StatsBarFrame, FRAMEPOINT_TOPLEFT,  .015, -.03  )
     // call SetFrameGridFrame( StatsBarGridFrame, 0, 0, StatsBarFrameText )
 
     set StatsBarFrameText=CreateFrameByType( "SIMPLETEXT", "StatsHeroIconRoot", StatsBarFrame, "", 0 )
@@ -23804,7 +23804,7 @@ function Trig_StatusBar_Actions takes nothing returns nothing
         call SetFrameParent( StatsBarFrameText, StatsBarFrame )
         call SetFrameText( StatsBarFrameText, "0")
         call ShowFrame( StatsBarFrameText, true )
-        call SetFrameRelativePoint( StatsBarFrameText, FRAMEPOINT_TOPLEFT, GetFrameByName("StatsGoldRoot",0), FRAMEPOINT_TOPLEFT,  .01, (-.032*(x+1))-0.003  )
+        call SetFrameRelativePoint( StatsBarFrameText, FRAMEPOINT_TOPLEFT, GetFrameByName("StatsGoldRoot",0), FRAMEPOINT_TOPLEFT,  -.005, (-.032*(x+1))-0.003  )
                 
         set StatsBarFrameText=CreateFrameByType( "SIMPLETEXT", "StatsHeroTD", StatsBarFrame, "", x )
         call ClearFrameAllPoints( StatsBarFrameText )
@@ -115566,7 +115566,7 @@ set g2=CopyGroup(g)
 loop
 set E=FirstOfGroup(g2)
 exitwhen E==null
-if IsUnitAlly(E,p)then
+if IsUnitAlly(E,p) and IsUnitAlive(E) then
 if GetUnitAbilityLevel(u,'A143')>0 then
 call HealTextTag(u,E,GetUnitState(E,UNIT_STATE_MAX_LIFE)*0.00125*myCustomHeal2(E,1),"HealthRes")
 call SetUnitState(E,UNIT_STATE_LIFE,GetWidgetLife(E)+GetUnitState(E,UNIT_STATE_MAX_LIFE)*0.00125)
