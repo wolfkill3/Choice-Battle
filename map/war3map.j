@@ -23503,7 +23503,7 @@ function Trig_StatusBar_Actions takes nothing returns nothing
     call SetFrameParent( StatsBarFrameText, StatsBarFrame )
     call SetFrameText( StatsBarFrameText, "Player")
     call ShowFrame( StatsBarFrameText, true )
-    call SetFrameRelativePoint( StatsBarFrameText, FRAMEPOINT_TOPLEFT, StatsBarFrame, FRAMEPOINT_TOPLEFT,  .01, -.03  )
+    call SetFrameRelativePoint( StatsBarFrameText, FRAMEPOINT_TOPLEFT, StatsBarFrame, FRAMEPOINT_TOPLEFT,  .015, -.03  )
     // call SetFrameGridFrame( StatsBarGridFrame, 0, 0, StatsBarFrameText )
 
     set StatsBarFrameText=CreateFrameByType( "SIMPLETEXT", "StatsHeroIconRoot", StatsBarFrame, "", 0 )
@@ -23803,7 +23803,7 @@ function Trig_StatusBar_Actions takes nothing returns nothing
         call SetFrameParent( StatsBarFrameText, StatsBarFrame )
         call SetFrameText( StatsBarFrameText, "0")
         call ShowFrame( StatsBarFrameText, true )
-        call SetFrameRelativePoint( StatsBarFrameText, FRAMEPOINT_TOPLEFT, GetFrameByName("StatsGoldRoot",0), FRAMEPOINT_TOPLEFT,  .01, (-.032*(x+1))-0.003  )
+        call SetFrameRelativePoint( StatsBarFrameText, FRAMEPOINT_TOPLEFT, GetFrameByName("StatsGoldRoot",0), FRAMEPOINT_TOPLEFT,  -.005, (-.032*(x+1))-0.003  )
                 
         set StatsBarFrameText=CreateFrameByType( "SIMPLETEXT", "StatsHeroTD", StatsBarFrame, "", x )
         call ClearFrameAllPoints( StatsBarFrameText )
@@ -46790,6 +46790,105 @@ call TriggerRegisterAnyUnitEventBJ(gg_trg_NejiE,EVENT_PLAYER_UNIT_SPELL_EFFECT)
 call TriggerAddAction(gg_trg_NejiE,function NejiECast)
 call TriggerAddCondition(gg_trg_NejiE,Condition(function NejiECond))
 endfunction
+
+function NejiGCond takes nothing returns boolean
+return GetSpellAbilityId()=='A24D' and udg_B==true
+endfunction
+function NejiGCast2 takes nothing returns nothing
+local timer t=GetExpiredTimer()
+local integer id=GetHandleId(t)
+local unit u=LoadUnitHandle(h,id,0)
+local real x1=GetUnitX(u)
+local real y1=GetUnitY(u)
+local real x2=LoadReal(h,id,4)
+local real y2=LoadReal(h,id,5)
+local real x3=LoadReal(h,id,2)
+local real y3=LoadReal(h,id,3)
+local real a=LoadReal(h,id,1)
+local player p=GetOwningPlayer(u)
+local real dist=LoadReal(h,id,100)
+if dist==0 then
+    set EFF=AddSpecialEffect("WindVectorPush.mdx", x1, y1)
+    call SetSpecialEffectOrientation(EFF,a*bj_RADTODEG,0,0)
+    call SetSpecialEffectZ(EFF , 40)
+    call SetSpecialEffectScale(EFF , 0.5)
+    call SetSpecialEffectVertexColour(EFF,155,155,155,110)
+    call RemoveEffect(EFF,1,true,CreateTimer())
+endif
+if dist<600 and SR(x1,y1,x3,y3)>40 then
+if IsTerrainPathable(x1,y1,PATHING_TYPE_FLYABILITY)==false then
+set x1=x1+25*Cos(a)
+set y1=y1+25*Sin(a)
+else
+set x1=x1-15*Cos(a)
+set y1=y1-15*Sin(a)
+endif
+call SetUnitXY_1(u,x1,y1, false)
+call SaveReal(h,id,100,dist+25)
+set n=CreateUnit(p,'e01S',x1,y1,a*bj_RADTODEG)
+call SetUnitScale(n,0.95,0.95,0.95)
+call SetUnitModel(n,"Neji.mdl")
+call UnitApplyTimedLife(n,1,0.25)
+call UnitAddAbility(n,'A0LR')
+call SetUnitTimeScale(n,2)
+call SetUnitVertexColor(n,255,255,255,125)
+call SetUnitAnimation(n,"attack")
+set n=CreateUnit(p,'e117',x1,y1,a*bj_RADTODEG)
+call SetUnitVertexColor(n,255,125,205,75)
+call SetUnitScale(n,GetRandomReal(0.55,1.25),GetRandomReal(0.55,1.25),GetRandomReal(0.55,1.25))
+call UnitApplyTimedLife(n,1,0.4)
+call SetUnitTimeScale(n,3)
+else
+call FlushChildHashtable(h,id)
+call PauseTimer(t)
+call DestroyTimer(t)
+call PauseUnit(u,false)
+call SetUnitInvulnerable(u,false)
+call SetUnitTimeScale(u,1)
+call SetUnitVertexColor(u,255,255,255,255)
+endif
+set u=null
+set p=null
+set t=null
+endfunction
+function NejiGCast takes nothing returns nothing
+local unit u=GetTriggerUnit()
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+local real x=GetUnitX(u)
+local real y=GetUnitY(u)
+call SaveUnitHandle(h,id,0,u)
+call SaveReal(h,id,2,GetSpellTargetX())
+call SaveReal(h,id,3,GetSpellTargetY())
+call SaveReal(h,id,4,x)
+call SaveReal(h,id,5,y)
+call SaveReal(h,id,1,Atan2(GetSpellTargetY()-y,GetSpellTargetX()-x))
+call PauseUnit(u,true)
+call SaveReal(h,id,100,0)
+call UnitRemoveAbility(u,'A2VJ')
+call SetUnitInvulnerable(u,true)
+call SetUnitTimeScale(u,3)
+call SetUnitAnimation(u,"attack")
+call SetUnitVertexColor(u,255,255,255,125)
+// set soundplay=CreateSound("Sound\\Music\\mp3Music\\NejiG.mp3",false,false,true,12700,12700,"")
+// call StartSound(soundplay)
+// call KillSoundWhenDone(soundplay)
+call TimerStart(t,0.008,true,function NejiGCast2)
+set u=null
+set t=null
+endfunction
+function NejiGInit takes nothing returns nothing
+local trigger t=CreateTrigger()
+local integer i=0
+loop
+call TriggerRegisterPlayerUnitEvent(t,Player(i),EVENT_PLAYER_UNIT_SPELL_EFFECT,null)
+set i=i+1
+exitwhen i>=bj_MAX_PLAYER_SLOTS
+endloop
+call TriggerAddAction(t,function NejiGCast)
+call TriggerAddCondition(t,Condition(function NejiGCond))
+set t=null
+endfunction
 function TsubakiNoMaiCond takes nothing returns boolean
 return GetSpellAbilityId()=='A0G2'
 endfunction
@@ -60370,7 +60469,7 @@ set x=x+speed*Cos(a)
 set y=y+speed*Sin(a)
 call SetUnitXY_1(l__d,x,y, false)
 call SetUnitFacing(l__d,a*bj_RADTODEG)
-call UnitApplyTimedLife(CreateUnit(p,0x65303859,x,y,a*bj_RADTODEG),1,0.5)
+call UnitApplyTimedLife(CreateUnit(p,'e08Y',x,y,a*bj_RADTODEG),1,0.5)
 else
 call DestroyEffect(AddSpecialEffect("war3mapImported\\explode.mdx",x1,y1))
 call DestroyEffect(AddSpecialEffect("war3mapImported\\SuperBigExplosion.mdx",x1,y1))
@@ -60412,9 +60511,9 @@ local real y=GetUnitY(u)
 local player p=GetOwningPlayer(u)
 local real f=GetUnitFacing(u)
 local real dmg=(0.5*GetUnitAbilityLevel(u,'A0FV'))*GetHeroAgi(u,true)+45*GetUnitAbilityLevel(u,'A0FV')
-call MissleMoveDarylVoid(u,c,CreateUnit(p,0x65303859,x,y,f),60,GetRandomReal(-0.8,0.8),dmg)
-call MissleMoveDarylVoid(u,c,CreateUnit(p,0x65303859,x,y,f),60,GetRandomReal(-0.8,0.8),dmg)
-call MissleMoveDarylVoid(u,c,CreateUnit(p,0x65303859,x,y,f),60,GetRandomReal(-0.8,0.8),dmg)
+call MissleMoveDarylVoid(u,c,CreateUnit(p,'e08Y',x,y,f),60,GetRandomReal(-0.8,0.8),dmg)
+call MissleMoveDarylVoid(u,c,CreateUnit(p,'e08Y',x,y,f),60,GetRandomReal(-0.8,0.8),dmg)
+call MissleMoveDarylVoid(u,c,CreateUnit(p,'e08Y',x,y,f),60,GetRandomReal(-0.8,0.8),dmg)
 set u=null
 set p=null
 set c=null
@@ -115564,7 +115663,7 @@ set g2=CopyGroup(g)
 loop
 set E=FirstOfGroup(g2)
 exitwhen E==null
-if IsUnitAlly(E,p)then
+if IsUnitAlly(E,p) and IsUnitAlive(E) then
 if GetUnitAbilityLevel(u,'A143')>0 then
 call HealTextTag(u,E,GetUnitState(E,UNIT_STATE_MAX_LIFE)*0.00125*myCustomHeal2(E,1),"HealthRes")
 call SetUnitState(E,UNIT_STATE_LIFE,GetWidgetLife(E)+GetUnitState(E,UNIT_STATE_MAX_LIFE)*0.00125)
@@ -116525,7 +116624,7 @@ call UnitApplyTimedLife(n,1,1)
 call SetUnitScale(n,l__s,l__s,l__s)
 if IsTerrainPathable(x1,y1,PATHING_TYPE_FLYABILITY)==false then
 set EFF=AddSpecialEffect("war3mapImported\\dash sfx.mdl", x1, y1)
-call SetSpecialEffectFacing(EFF , a* bj_RADTODEG)
+call SetSpecialEffectOrientation(EFF , a* bj_RADTODEG,-90,0)
 call SetSpecialEffectZ(EFF , 100)
 call SetSpecialEffectScale(EFF , l__s-0.7)
 call SetSpecialEffectVertexColour(EFF,255,255,255,120)
@@ -154513,7 +154612,7 @@ local real y1=GetSpellTargetY()
 local real a=Atan2(y1-y,x1-x)
 local player p=GetOwningPlayer(u)
 call SaveUnitHandle(h,id,0,u)
-set n=CreateUnit(p,0x656F394A,x+75*Cos(a+0.55),y+75*Sin(a+0.55),(a+0.55)*bj_RADTODEG)
+set n=CreateUnit(p,'eo9J',x+75*Cos(a+0.55),y+75*Sin(a+0.55),(a+0.55)*bj_RADTODEG)
 call SaveUnitHandle(h,id,1,n)
 call SetUnitFlyHeight(n,220,0)
 set n=CreateUnit(p,'eo9N',x,y,GetRandomReal(0,359))
@@ -154538,7 +154637,7 @@ call StartSound(soundplay)
 call KillSoundWhenDone(soundplay)
 call SetSoundVolume(soundplay,250)
 call KillSoundWhenDone(soundplay)
-call TimerStart(t,0.02,true,function RDeidaraCast2)
+call TimerStart(t,0.015,true,function RDeidaraCast2)
 set u=null
 set t=null
 set p=null
@@ -218859,6 +218958,7 @@ call InitTrig_KatonIta()
 call InitTrig_itemblock()
 call InitTrig_Bunshin()
 call InitTrig_NejiE()
+call NejiGInit()
 call InitTrig_GenjutsuMaster()
 call InitTrig_Tsukuoymi()
 call InitTrig_die3()
