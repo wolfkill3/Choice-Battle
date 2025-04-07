@@ -46677,8 +46677,8 @@ local integer id=GetHandleId(t)
 local unit u=LoadUnitHandle(h,id,0)
 local group g=LoadGroupHandle(h,id,1)
 local integer i=1
-local real x=LoadReal(h,id,2)
-local real y=LoadReal(h,id,3)
+local real x=GetUnitX(u)
+local real y=GetUnitY(u)
 local real dmg=GetHeroAgi(u,true)*.1
 local real dmg2=GetHeroAgi(u,true)*(GetUnitAbilityLevel(u,'A3G2')+2)
 local player p=GetOwningPlayer(u)
@@ -46690,6 +46690,7 @@ call SaveReal(h,id,7,time+0.05)
 if GetUnitCurrentOrder(u)==OrderId("root") then
 call SetUnitScale(LoadUnitHandle(h,id,8),1.6,1.6,1.6)
 call SetUnitVertexColor(LoadUnitHandle(h,id,8),70,70,250,220)
+call SetUnitXY_1(LoadUnitHandle(h,id,8),x,y,false)
 if dist>=2 then
 set n=CreateUnit(p,'e0B2',x,y,GetRandomReal(0,359))
 call UnitApplyTimedLife(n,1,.25)
@@ -46817,7 +46818,7 @@ if dist==0 then
     call SetSpecialEffectVertexColour(EFF,155,155,155,110)
     call RemoveEffect(EFF,1,true,CreateTimer())
 endif
-if dist<600 and SR(x1,y1,x3,y3)>40 then
+if dist<500 and SR(x1,y1,x3,y3)>40 then
 if IsTerrainPathable(x1,y1,PATHING_TYPE_FLYABILITY)==false then
 set x1=x1+25*Cos(a)
 set y1=y1+25*Sin(a)
@@ -46844,9 +46845,6 @@ else
 call FlushChildHashtable(h,id)
 call PauseTimer(t)
 call DestroyTimer(t)
-call PauseUnit(u,false)
-call SetUnitInvulnerable(u,false)
-call SetUnitTimeScale(u,1)
 call SetUnitVertexColor(u,255,255,255,255)
 endif
 set u=null
@@ -46865,17 +46863,14 @@ call SaveReal(h,id,3,GetSpellTargetY())
 call SaveReal(h,id,4,x)
 call SaveReal(h,id,5,y)
 call SaveReal(h,id,1,Atan2(GetSpellTargetY()-y,GetSpellTargetX()-x))
-call PauseUnit(u,true)
 call SaveReal(h,id,100,0)
 call UnitRemoveAbility(u,'A2VJ')
-call SetUnitInvulnerable(u,true)
-call SetUnitTimeScale(u,3)
 call SetUnitAnimation(u,"attack")
 call SetUnitVertexColor(u,255,255,255,125)
 // set soundplay=CreateSound("Sound\\Music\\mp3Music\\NejiG.mp3",false,false,true,12700,12700,"")
 // call StartSound(soundplay)
 // call KillSoundWhenDone(soundplay)
-call TimerStart(t,0.008,true,function NejiGCast2)
+call TimerStart(t,0.015,true,function NejiGCast2)
 set u=null
 set t=null
 endfunction
