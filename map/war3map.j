@@ -24343,96 +24343,98 @@ exitwhen x>=12
     if GetPlayerSlotState(Player(x))!=PLAYER_SLOT_STATE_PLAYING then
         set ingame[x]=false
     endif
-    call SetFrameText(GetFrameByName("StatsHeroTD",x),I2S(R2I(LoadReal(HH, GetHandleId(Player(x)), TD_INDICATOR))))
-    if StringLength(I2S(R2I(LoadReal(HH, GetHandleId(Player(x)), TD_INDICATOR))))<6 then
-        call SetFrameFont( GetFrameByName("StatsHeroTD",x), "Fonts\\FRIZQT__.TTF", .009, 0 )
-    else 
-        call SetFrameFont( GetFrameByName("StatsHeroTD",x), "Fonts\\FRIZQT__.TTF", .008, 0 )
-    endif
-    call SetFrameText(GetFrameByName("StatsHeroDT",x),I2S(R2I(LoadReal(HH, GetHandleId(Player(x)), TTD_INDICATOR))))
-    if StringLength(I2S(R2I(LoadReal(HH, GetHandleId(Player(x)), TTD_INDICATOR))))<6 then
-        call SetFrameFont( GetFrameByName("StatsHeroDT",x), "Fonts\\FRIZQT__.TTF", .009, 0 )
-    else
-        call SetFrameFont( GetFrameByName("StatsHeroDT",x), "Fonts\\FRIZQT__.TTF", .008, 0 )
-    endif
-    call SetFrameText(GetFrameByName("StatsHeroGR",x),I2S(R2I(LoadReal(HH, GetHandleId(Player(x)), GR_INDICATOR))))
-    if StringLength(I2S(R2I(LoadReal(HH, GetHandleId(Player(x)), GR_INDICATOR))))<6 then
-        call SetFrameFont( GetFrameByName("StatsHeroGR",x), "Fonts\\FRIZQT__.TTF", .009, 0 )
-    else
-        call SetFrameFont( GetFrameByName("StatsHeroGR",x), "Fonts\\FRIZQT__.TTF", .008, 0 )
-    endif
-    call SetFrameText(GetFrameByName("StatsHeroTS",x),I2S(R2I(LoadReal(HH, GetHandleId(Player(x)), TS_INDICATOR))))
-    if StringLength(I2S(R2I(LoadReal(HH, GetHandleId(Player(x)), TS_INDICATOR))))<6 then
-        call SetFrameFont( GetFrameByName("StatsHeroTS",x), "Fonts\\FRIZQT__.TTF", .009, 0 )
-    else
-        call SetFrameFont( GetFrameByName("StatsHeroTS",x), "Fonts\\FRIZQT__.TTF", .008, 0 )
-    endif
-    call SetFrameText(GetFrameByName("StatsHeroTSH",x),I2S(R2I(LoadReal(HH, GetHandleId(Player(x)), TSH_INDICATOR))))
-    if StringLength(I2S(R2I(LoadReal(HH, GetHandleId(Player(x)), TSH_INDICATOR))))<6 then
-        call SetFrameFont( GetFrameByName("StatsHeroTSH",x), "Fonts\\FRIZQT__.TTF", .009, 0 )
-    else
-        call SetFrameFont( GetFrameByName("StatsHeroTSH",x), "Fonts\\FRIZQT__.TTF", .008, 0 )
-    endif
-    call SetFrameText(GetFrameByName("StatsHeroTAH",x),I2S(R2I(LoadReal(HH, GetHandleId(Player(x)), TAH_INDICATOR))))
-    if StringLength(I2S(R2I(LoadReal(HH, GetHandleId(Player(x)), TAH_INDICATOR))))<6 then
-        call SetFrameFont( GetFrameByName("StatsHeroTAH",x), "Fonts\\FRIZQT__.TTF", .009, 0 )
-    else
-        call SetFrameFont( GetFrameByName("StatsHeroTAH",x), "Fonts\\FRIZQT__.TTF", .008, 0 )
-    endif
-    call SetFrameText(GetFrameByName("StatsHeroTSM",x),I2S(R2I(LoadReal(HH, GetHandleId(Player(x)), TSM_INDICATOR))))
-    if StringLength(I2S(R2I(LoadReal(HH, GetHandleId(Player(x)), TSM_INDICATOR))))<6 then
-        call SetFrameFont( GetFrameByName("StatsHeroTSM",x), "Fonts\\FRIZQT__.TTF", .009, 0 )
-    else
-        call SetFrameFont( GetFrameByName("StatsHeroTSM",x), "Fonts\\FRIZQT__.TTF", .008, 0 )
-    endif
-    call SetFrameText(GetFrameByName("StatsHeroTAM",x),I2S(R2I(LoadReal(HH, GetHandleId(Player(x)), TAM_INDICATOR))))
-    if StringLength(I2S(R2I(LoadReal(HH, GetHandleId(Player(x)), TAM_INDICATOR))))<6 then
-        call SetFrameFont( GetFrameByName("StatsHeroTAM",x), "Fonts\\FRIZQT__.TTF", .009, 0 )
-    else
-        call SetFrameFont( GetFrameByName("StatsHeroTAM",x), "Fonts\\FRIZQT__.TTF", .008, 0 )
-    endif
-    if ingame[x]==true then
-        if StringLength(GetPlayerName(Player(x)))<6 then
-            call SetFrameFont( GetFrameByName("StatsPlayerName",x), "Fonts\\FRIZQT__.TTF", .011, 0 )
-        elseif StringLength(GetPlayerName(Player(x)))>=6 and StringLength(GetPlayerName(Player(x)))<11 then
-            call SetFrameFont( GetFrameByName("StatsPlayerName",x), "Fonts\\FRIZQT__.TTF", .01, 0 )
-        else
-            call SetFrameFont( GetFrameByName("StatsPlayerName",x), "Fonts\\FRIZQT__.TTF", .009, 0 )
+    if ModuloInteger(seconds,10)<1 or udg_B then
+        call SetFrameText(GetFrameByName("StatsHeroTD",x),I2S(R2I(LoadReal(HH, GetHandleId(Player(x)), TD_INDICATOR))))
+        if StringLength(I2S(R2I(LoadReal(HH, GetHandleId(Player(x)), TD_INDICATOR))))<6 then
+            call SetFrameFont( GetFrameByName("StatsHeroTD",x), "Fonts\\FRIZQT__.TTF", .009, 0 )
+        else 
+            call SetFrameFont( GetFrameByName("StatsHeroTD",x), "Fonts\\FRIZQT__.TTF", .008, 0 )
         endif
-        call SetFrameText(GetFrameByName("StatsPlayerName",x),GetPlayerName(Player(x)))
-        if Hero[x]!=null then
-            call SetFrameTexture( GetFrameByName("StatsHeroIcon",x), GetUnitStringField(Hero[x],UNIT_SF_ICON_NORMAL), 0, true )
-            call SetFrameTexture( GetFrameByName("StatsHeroIcon",x), GetUnitStringField(Hero[x],UNIT_SF_ICON_NORMAL), 1, true )
-            call SetFrameTexture( GetFrameByName("StatsHeroIcon",x), GetUnitStringField(Hero[x],UNIT_SF_ICON_NORMAL), 2, true )
-            call SetFrameText(GetFrameByName("StatsHeroLevel",x),I2S(GetHeroLevel(Hero[x])))
-            set i=0
-            loop
-            exitwhen i>9
-            if (IsPlayerAlly(GetLocalPlayer(),Player(x)) or udg_B==false) and UnitItemInSlot(Hero[x],i)!=null then
-                call SetFrameTexture( GetFrameByName("StatsHeroInventoryIcon",x*10+i), GetItemStringField(UnitItemInSlot(Hero[x],i),ITEM_SF_ICON), 0, true )
-                call SetFrameTexture( GetFrameByName("StatsHeroInventoryIcon",x*10+i), GetItemStringField(UnitItemInSlot(Hero[x],i),ITEM_SF_ICON), 1, true )
-                call SetFrameTexture( GetFrameByName("StatsHeroInventoryIcon",x*10+i), GetItemStringField(UnitItemInSlot(Hero[x],i),ITEM_SF_ICON), 2, true )
+        call SetFrameText(GetFrameByName("StatsHeroDT",x),I2S(R2I(LoadReal(HH, GetHandleId(Player(x)), TTD_INDICATOR))))
+        if StringLength(I2S(R2I(LoadReal(HH, GetHandleId(Player(x)), TTD_INDICATOR))))<6 then
+            call SetFrameFont( GetFrameByName("StatsHeroDT",x), "Fonts\\FRIZQT__.TTF", .009, 0 )
+        else
+            call SetFrameFont( GetFrameByName("StatsHeroDT",x), "Fonts\\FRIZQT__.TTF", .008, 0 )
+        endif
+        call SetFrameText(GetFrameByName("StatsHeroGR",x),I2S(R2I(LoadReal(HH, GetHandleId(Player(x)), GR_INDICATOR))))
+        if StringLength(I2S(R2I(LoadReal(HH, GetHandleId(Player(x)), GR_INDICATOR))))<6 then
+            call SetFrameFont( GetFrameByName("StatsHeroGR",x), "Fonts\\FRIZQT__.TTF", .009, 0 )
+        else
+            call SetFrameFont( GetFrameByName("StatsHeroGR",x), "Fonts\\FRIZQT__.TTF", .008, 0 )
+        endif
+        call SetFrameText(GetFrameByName("StatsHeroTS",x),I2S(R2I(LoadReal(HH, GetHandleId(Player(x)), TS_INDICATOR))))
+        if StringLength(I2S(R2I(LoadReal(HH, GetHandleId(Player(x)), TS_INDICATOR))))<6 then
+            call SetFrameFont( GetFrameByName("StatsHeroTS",x), "Fonts\\FRIZQT__.TTF", .009, 0 )
+        else
+            call SetFrameFont( GetFrameByName("StatsHeroTS",x), "Fonts\\FRIZQT__.TTF", .008, 0 )
+        endif
+        call SetFrameText(GetFrameByName("StatsHeroTSH",x),I2S(R2I(LoadReal(HH, GetHandleId(Player(x)), TSH_INDICATOR))))
+        if StringLength(I2S(R2I(LoadReal(HH, GetHandleId(Player(x)), TSH_INDICATOR))))<6 then
+            call SetFrameFont( GetFrameByName("StatsHeroTSH",x), "Fonts\\FRIZQT__.TTF", .009, 0 )
+        else
+            call SetFrameFont( GetFrameByName("StatsHeroTSH",x), "Fonts\\FRIZQT__.TTF", .008, 0 )
+        endif
+        call SetFrameText(GetFrameByName("StatsHeroTAH",x),I2S(R2I(LoadReal(HH, GetHandleId(Player(x)), TAH_INDICATOR))))
+        if StringLength(I2S(R2I(LoadReal(HH, GetHandleId(Player(x)), TAH_INDICATOR))))<6 then
+            call SetFrameFont( GetFrameByName("StatsHeroTAH",x), "Fonts\\FRIZQT__.TTF", .009, 0 )
+        else
+            call SetFrameFont( GetFrameByName("StatsHeroTAH",x), "Fonts\\FRIZQT__.TTF", .008, 0 )
+        endif
+        call SetFrameText(GetFrameByName("StatsHeroTSM",x),I2S(R2I(LoadReal(HH, GetHandleId(Player(x)), TSM_INDICATOR))))
+        if StringLength(I2S(R2I(LoadReal(HH, GetHandleId(Player(x)), TSM_INDICATOR))))<6 then
+            call SetFrameFont( GetFrameByName("StatsHeroTSM",x), "Fonts\\FRIZQT__.TTF", .009, 0 )
+        else
+            call SetFrameFont( GetFrameByName("StatsHeroTSM",x), "Fonts\\FRIZQT__.TTF", .008, 0 )
+        endif
+        call SetFrameText(GetFrameByName("StatsHeroTAM",x),I2S(R2I(LoadReal(HH, GetHandleId(Player(x)), TAM_INDICATOR))))
+        if StringLength(I2S(R2I(LoadReal(HH, GetHandleId(Player(x)), TAM_INDICATOR))))<6 then
+            call SetFrameFont( GetFrameByName("StatsHeroTAM",x), "Fonts\\FRIZQT__.TTF", .009, 0 )
+        else
+            call SetFrameFont( GetFrameByName("StatsHeroTAM",x), "Fonts\\FRIZQT__.TTF", .008, 0 )
+        endif
+        if ingame[x]==true then
+            if StringLength(GetPlayerName(Player(x)))<6 then
+                call SetFrameFont( GetFrameByName("StatsPlayerName",x), "Fonts\\FRIZQT__.TTF", .011, 0 )
+            elseif StringLength(GetPlayerName(Player(x)))>=6 and StringLength(GetPlayerName(Player(x)))<11 then
+                call SetFrameFont( GetFrameByName("StatsPlayerName",x), "Fonts\\FRIZQT__.TTF", .01, 0 )
             else
-                call SetFrameTexture( GetFrameByName("StatsHeroInventoryIcon",x*10+i), "UI\\Widgets\\Console\\Human\\human-inventory-slotfiller.blp", 0, true )
-                call SetFrameTexture( GetFrameByName("StatsHeroInventoryIcon",x*10+i), "UI\\Widgets\\Console\\Human\\human-inventory-slotfiller.blp", 1, true )
-                call SetFrameTexture( GetFrameByName("StatsHeroInventoryIcon",x*10+i), "UI\\Widgets\\Console\\Human\\human-inventory-slotfiller.blp", 2, true )
+                call SetFrameFont( GetFrameByName("StatsPlayerName",x), "Fonts\\FRIZQT__.TTF", .009, 0 )
             endif
-            set i=i+1
-            endloop
-        endif
-        call SetFrameText(GetFrameByName("StatsHeroKill",x),I2S(udg_kill[x]))
-        call SetFrameText(GetFrameByName("StatsHeroDeath",x),I2S(udg_death[x]))
-        call SetFrameText(GetFrameByName("StatsHeroAssist",x),I2S(udg_assist[x]))
-        call SetFrameText(GetFrameByName("StatsHeroWin",x),I2S(GetPlayerState(Player(x),PLAYER_STATE_RESOURCE_LUMBER)))
-        if IsPlayerAlly(GetLocalPlayer(),Player(x)) or GameEnd then
-            call SetFrameText(GetFrameByName("StatsGold",x),I2S(GetPlayerState(Player(x),PLAYER_STATE_RESOURCE_GOLD)))
-            if StringLength(I2S(R2I(LoadReal(HH, GetHandleId(Player(x)), TD_INDICATOR))))<6 then
-                call SetFrameFont( GetFrameByName("StatsGold",x), "Fonts\\FRIZQT__.TTF", .009, 0 )
-            else 
-                call SetFrameFont( GetFrameByName("StatsGold",x), "Fonts\\FRIZQT__.TTF", .008, 0 )
+            call SetFrameText(GetFrameByName("StatsPlayerName",x),GetPlayerName(Player(x)))
+            if Hero[x]!=null then
+                call SetFrameTexture( GetFrameByName("StatsHeroIcon",x), GetUnitStringField(Hero[x],UNIT_SF_ICON_NORMAL), 0, true )
+                call SetFrameTexture( GetFrameByName("StatsHeroIcon",x), GetUnitStringField(Hero[x],UNIT_SF_ICON_NORMAL), 1, true )
+                call SetFrameTexture( GetFrameByName("StatsHeroIcon",x), GetUnitStringField(Hero[x],UNIT_SF_ICON_NORMAL), 2, true )
+                call SetFrameText(GetFrameByName("StatsHeroLevel",x),I2S(GetHeroLevel(Hero[x])))
+                set i=0
+                loop
+                exitwhen i>9
+                if (IsPlayerAlly(GetLocalPlayer(),Player(x)) or udg_B==false) and UnitItemInSlot(Hero[x],i)!=null then
+                    call SetFrameTexture( GetFrameByName("StatsHeroInventoryIcon",x*10+i), GetItemStringField(UnitItemInSlot(Hero[x],i),ITEM_SF_ICON), 0, true )
+                    call SetFrameTexture( GetFrameByName("StatsHeroInventoryIcon",x*10+i), GetItemStringField(UnitItemInSlot(Hero[x],i),ITEM_SF_ICON), 1, true )
+                    call SetFrameTexture( GetFrameByName("StatsHeroInventoryIcon",x*10+i), GetItemStringField(UnitItemInSlot(Hero[x],i),ITEM_SF_ICON), 2, true )
+                else
+                    call SetFrameTexture( GetFrameByName("StatsHeroInventoryIcon",x*10+i), "UI\\Widgets\\Console\\Human\\human-inventory-slotfiller.blp", 0, true )
+                    call SetFrameTexture( GetFrameByName("StatsHeroInventoryIcon",x*10+i), "UI\\Widgets\\Console\\Human\\human-inventory-slotfiller.blp", 1, true )
+                    call SetFrameTexture( GetFrameByName("StatsHeroInventoryIcon",x*10+i), "UI\\Widgets\\Console\\Human\\human-inventory-slotfiller.blp", 2, true )
+                endif
+                set i=i+1
+                endloop
             endif
-        else
-            call SetFrameText(GetFrameByName("StatsGold",x),"???")
+            call SetFrameText(GetFrameByName("StatsHeroKill",x),I2S(udg_kill[x]))
+            call SetFrameText(GetFrameByName("StatsHeroDeath",x),I2S(udg_death[x]))
+            call SetFrameText(GetFrameByName("StatsHeroAssist",x),I2S(udg_assist[x]))
+            call SetFrameText(GetFrameByName("StatsHeroWin",x),I2S(GetPlayerState(Player(x),PLAYER_STATE_RESOURCE_LUMBER)))
+            if IsPlayerAlly(GetLocalPlayer(),Player(x)) or GameEnd then
+                call SetFrameText(GetFrameByName("StatsGold",x),I2S(GetPlayerState(Player(x),PLAYER_STATE_RESOURCE_GOLD)))
+                if StringLength(I2S(R2I(LoadReal(HH, GetHandleId(Player(x)), TD_INDICATOR))))<6 then
+                    call SetFrameFont( GetFrameByName("StatsGold",x), "Fonts\\FRIZQT__.TTF", .009, 0 )
+                else 
+                    call SetFrameFont( GetFrameByName("StatsGold",x), "Fonts\\FRIZQT__.TTF", .008, 0 )
+                endif
+            else
+                call SetFrameText(GetFrameByName("StatsGold",x),"???")
+            endif
         endif
     endif
     set x=x+1
@@ -39429,7 +39431,7 @@ if cond==0 then
             call SetUnitFacingInstant(n,GetUnitFacing(u))
             call UnitCancelTimedLife(n)
             call SetUnitCurrentSight(n,600)
-call SetUnitUseFood(n,true)
+            call SetUnitUseFood(n,true)
             call UnitAddBuffById(n,'B03Q')
             call UnitApplyTimedLife(n,'B03Q',4)
             call SetIllusionDamageDealt(n,0.2)
@@ -104813,7 +104815,7 @@ function NarutoFCast takes nothing returns nothing
         call SetHeroStr(n,GetHeroStr(u,false),true)
         call SetHeroInt(n,GetHeroInt(u,false),true)
         call SetUnitCurrentSight(n,600)
-call SetUnitUseFood(n,true)
+        call SetUnitUseFood(n,true)
         if GetUnitAbilityLevel(u,'A0V8')>0 then
             call UnitAddAbility(n,'A0V8')
             call SetUnitAbilityLevel(n,'A0V8',GetUnitAbilityLevel(u,'A0V8'))
@@ -203264,7 +203266,7 @@ function GenkshiPassiveX2 takes unit newCaster, unit newTarget returns nothing
     call SetUnitFacingInstant(n,GetUnitFacing(newTarget))
     call UnitCancelTimedLife(n)
     call SetUnitCurrentSight(n,600)
-call SetUnitUseFood(n,true)
+    call SetUnitUseFood(n,true)
     call UnitAddBuffById(n,'B03Q')
     call UnitApplyTimedLife(n,'B03Q',4)
     call SetIllusionDamageDealt(n,0.2)
@@ -212053,7 +212055,7 @@ function TobiramaFCast takes unit u, real x1, real y1 returns nothing
         call SetHeroStr(n,GetHeroStr(u,false),true)
         call SetHeroInt(n,GetHeroInt(u,false),true)
         call SetUnitCurrentSight(n,600)
-call SetUnitUseFood(n,true)
+        call SetUnitUseFood(n,true)
         call UnitInventorySetSize(n,10)
         loop
         exitwhen i>=10
