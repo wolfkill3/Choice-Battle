@@ -24343,7 +24343,7 @@ exitwhen x>=12
     if GetPlayerSlotState(Player(x))!=PLAYER_SLOT_STATE_PLAYING then
         set ingame[x]=false
     endif
-    if ModuloInteger(seconds,10)<1 or udg_B then
+    if ModuloInteger(seconds,10)<1 or udg_B==false then
         call SetFrameText(GetFrameByName("StatsHeroTD",x),I2S(R2I(LoadReal(HH, GetHandleId(Player(x)), TD_INDICATOR))))
         if StringLength(I2S(R2I(LoadReal(HH, GetHandleId(Player(x)), TD_INDICATOR))))<6 then
             call SetFrameFont( GetFrameByName("StatsHeroTD",x), "Fonts\\FRIZQT__.TTF", .009, 0 )
