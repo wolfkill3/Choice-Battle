@@ -24342,96 +24342,98 @@ exitwhen x>=12
     if GetPlayerSlotState(Player(x))!=PLAYER_SLOT_STATE_PLAYING then
         set ingame[x]=false
     endif
-    call SetFrameText(GetFrameByName("StatsHeroTD",x),I2S(R2I(LoadReal(HH, GetHandleId(Player(x)), TD_INDICATOR))))
-    if StringLength(I2S(R2I(LoadReal(HH, GetHandleId(Player(x)), TD_INDICATOR))))<6 then
-        call SetFrameFont( GetFrameByName("StatsHeroTD",x), "Fonts\\FRIZQT__.TTF", .009, 0 )
-    else 
-        call SetFrameFont( GetFrameByName("StatsHeroTD",x), "Fonts\\FRIZQT__.TTF", .008, 0 )
-    endif
-    call SetFrameText(GetFrameByName("StatsHeroDT",x),I2S(R2I(LoadReal(HH, GetHandleId(Player(x)), TTD_INDICATOR))))
-    if StringLength(I2S(R2I(LoadReal(HH, GetHandleId(Player(x)), TTD_INDICATOR))))<6 then
-        call SetFrameFont( GetFrameByName("StatsHeroDT",x), "Fonts\\FRIZQT__.TTF", .009, 0 )
-    else
-        call SetFrameFont( GetFrameByName("StatsHeroDT",x), "Fonts\\FRIZQT__.TTF", .008, 0 )
-    endif
-    call SetFrameText(GetFrameByName("StatsHeroGR",x),I2S(R2I(LoadReal(HH, GetHandleId(Player(x)), GR_INDICATOR))))
-    if StringLength(I2S(R2I(LoadReal(HH, GetHandleId(Player(x)), GR_INDICATOR))))<6 then
-        call SetFrameFont( GetFrameByName("StatsHeroGR",x), "Fonts\\FRIZQT__.TTF", .009, 0 )
-    else
-        call SetFrameFont( GetFrameByName("StatsHeroGR",x), "Fonts\\FRIZQT__.TTF", .008, 0 )
-    endif
-    call SetFrameText(GetFrameByName("StatsHeroTS",x),I2S(R2I(LoadReal(HH, GetHandleId(Player(x)), TS_INDICATOR))))
-    if StringLength(I2S(R2I(LoadReal(HH, GetHandleId(Player(x)), TS_INDICATOR))))<6 then
-        call SetFrameFont( GetFrameByName("StatsHeroTS",x), "Fonts\\FRIZQT__.TTF", .009, 0 )
-    else
-        call SetFrameFont( GetFrameByName("StatsHeroTS",x), "Fonts\\FRIZQT__.TTF", .008, 0 )
-    endif
-    call SetFrameText(GetFrameByName("StatsHeroTSH",x),I2S(R2I(LoadReal(HH, GetHandleId(Player(x)), TSH_INDICATOR))))
-    if StringLength(I2S(R2I(LoadReal(HH, GetHandleId(Player(x)), TSH_INDICATOR))))<6 then
-        call SetFrameFont( GetFrameByName("StatsHeroTSH",x), "Fonts\\FRIZQT__.TTF", .009, 0 )
-    else
-        call SetFrameFont( GetFrameByName("StatsHeroTSH",x), "Fonts\\FRIZQT__.TTF", .008, 0 )
-    endif
-    call SetFrameText(GetFrameByName("StatsHeroTAH",x),I2S(R2I(LoadReal(HH, GetHandleId(Player(x)), TAH_INDICATOR))))
-    if StringLength(I2S(R2I(LoadReal(HH, GetHandleId(Player(x)), TAH_INDICATOR))))<6 then
-        call SetFrameFont( GetFrameByName("StatsHeroTAH",x), "Fonts\\FRIZQT__.TTF", .009, 0 )
-    else
-        call SetFrameFont( GetFrameByName("StatsHeroTAH",x), "Fonts\\FRIZQT__.TTF", .008, 0 )
-    endif
-    call SetFrameText(GetFrameByName("StatsHeroTSM",x),I2S(R2I(LoadReal(HH, GetHandleId(Player(x)), TSM_INDICATOR))))
-    if StringLength(I2S(R2I(LoadReal(HH, GetHandleId(Player(x)), TSM_INDICATOR))))<6 then
-        call SetFrameFont( GetFrameByName("StatsHeroTSM",x), "Fonts\\FRIZQT__.TTF", .009, 0 )
-    else
-        call SetFrameFont( GetFrameByName("StatsHeroTSM",x), "Fonts\\FRIZQT__.TTF", .008, 0 )
-    endif
-    call SetFrameText(GetFrameByName("StatsHeroTAM",x),I2S(R2I(LoadReal(HH, GetHandleId(Player(x)), TAM_INDICATOR))))
-    if StringLength(I2S(R2I(LoadReal(HH, GetHandleId(Player(x)), TAM_INDICATOR))))<6 then
-        call SetFrameFont( GetFrameByName("StatsHeroTAM",x), "Fonts\\FRIZQT__.TTF", .009, 0 )
-    else
-        call SetFrameFont( GetFrameByName("StatsHeroTAM",x), "Fonts\\FRIZQT__.TTF", .008, 0 )
-    endif
-    if ingame[x]==true then
-        if StringLength(GetPlayerName(Player(x)))<6 then
-            call SetFrameFont( GetFrameByName("StatsPlayerName",x), "Fonts\\FRIZQT__.TTF", .011, 0 )
-        elseif StringLength(GetPlayerName(Player(x)))>=6 and StringLength(GetPlayerName(Player(x)))<11 then
-            call SetFrameFont( GetFrameByName("StatsPlayerName",x), "Fonts\\FRIZQT__.TTF", .01, 0 )
-        else
-            call SetFrameFont( GetFrameByName("StatsPlayerName",x), "Fonts\\FRIZQT__.TTF", .009, 0 )
+    if ModuloInteger(seconds,10)<1 or udg_B then
+        call SetFrameText(GetFrameByName("StatsHeroTD",x),I2S(R2I(LoadReal(HH, GetHandleId(Player(x)), TD_INDICATOR))))
+        if StringLength(I2S(R2I(LoadReal(HH, GetHandleId(Player(x)), TD_INDICATOR))))<6 then
+            call SetFrameFont( GetFrameByName("StatsHeroTD",x), "Fonts\\FRIZQT__.TTF", .009, 0 )
+        else 
+            call SetFrameFont( GetFrameByName("StatsHeroTD",x), "Fonts\\FRIZQT__.TTF", .008, 0 )
         endif
-        call SetFrameText(GetFrameByName("StatsPlayerName",x),GetPlayerName(Player(x)))
-        if Hero[x]!=null then
-            call SetFrameTexture( GetFrameByName("StatsHeroIcon",x), GetUnitStringField(Hero[x],UNIT_SF_ICON_NORMAL), 0, true )
-            call SetFrameTexture( GetFrameByName("StatsHeroIcon",x), GetUnitStringField(Hero[x],UNIT_SF_ICON_NORMAL), 1, true )
-            call SetFrameTexture( GetFrameByName("StatsHeroIcon",x), GetUnitStringField(Hero[x],UNIT_SF_ICON_NORMAL), 2, true )
-            call SetFrameText(GetFrameByName("StatsHeroLevel",x),I2S(GetHeroLevel(Hero[x])))
-            set i=0
-            loop
-            exitwhen i>9
-            if (IsPlayerAlly(GetLocalPlayer(),Player(x)) or udg_B==false) and UnitItemInSlot(Hero[x],i)!=null then
-                call SetFrameTexture( GetFrameByName("StatsHeroInventoryIcon",x*10+i), GetItemStringField(UnitItemInSlot(Hero[x],i),ITEM_SF_ICON), 0, true )
-                call SetFrameTexture( GetFrameByName("StatsHeroInventoryIcon",x*10+i), GetItemStringField(UnitItemInSlot(Hero[x],i),ITEM_SF_ICON), 1, true )
-                call SetFrameTexture( GetFrameByName("StatsHeroInventoryIcon",x*10+i), GetItemStringField(UnitItemInSlot(Hero[x],i),ITEM_SF_ICON), 2, true )
+        call SetFrameText(GetFrameByName("StatsHeroDT",x),I2S(R2I(LoadReal(HH, GetHandleId(Player(x)), TTD_INDICATOR))))
+        if StringLength(I2S(R2I(LoadReal(HH, GetHandleId(Player(x)), TTD_INDICATOR))))<6 then
+            call SetFrameFont( GetFrameByName("StatsHeroDT",x), "Fonts\\FRIZQT__.TTF", .009, 0 )
+        else
+            call SetFrameFont( GetFrameByName("StatsHeroDT",x), "Fonts\\FRIZQT__.TTF", .008, 0 )
+        endif
+        call SetFrameText(GetFrameByName("StatsHeroGR",x),I2S(R2I(LoadReal(HH, GetHandleId(Player(x)), GR_INDICATOR))))
+        if StringLength(I2S(R2I(LoadReal(HH, GetHandleId(Player(x)), GR_INDICATOR))))<6 then
+            call SetFrameFont( GetFrameByName("StatsHeroGR",x), "Fonts\\FRIZQT__.TTF", .009, 0 )
+        else
+            call SetFrameFont( GetFrameByName("StatsHeroGR",x), "Fonts\\FRIZQT__.TTF", .008, 0 )
+        endif
+        call SetFrameText(GetFrameByName("StatsHeroTS",x),I2S(R2I(LoadReal(HH, GetHandleId(Player(x)), TS_INDICATOR))))
+        if StringLength(I2S(R2I(LoadReal(HH, GetHandleId(Player(x)), TS_INDICATOR))))<6 then
+            call SetFrameFont( GetFrameByName("StatsHeroTS",x), "Fonts\\FRIZQT__.TTF", .009, 0 )
+        else
+            call SetFrameFont( GetFrameByName("StatsHeroTS",x), "Fonts\\FRIZQT__.TTF", .008, 0 )
+        endif
+        call SetFrameText(GetFrameByName("StatsHeroTSH",x),I2S(R2I(LoadReal(HH, GetHandleId(Player(x)), TSH_INDICATOR))))
+        if StringLength(I2S(R2I(LoadReal(HH, GetHandleId(Player(x)), TSH_INDICATOR))))<6 then
+            call SetFrameFont( GetFrameByName("StatsHeroTSH",x), "Fonts\\FRIZQT__.TTF", .009, 0 )
+        else
+            call SetFrameFont( GetFrameByName("StatsHeroTSH",x), "Fonts\\FRIZQT__.TTF", .008, 0 )
+        endif
+        call SetFrameText(GetFrameByName("StatsHeroTAH",x),I2S(R2I(LoadReal(HH, GetHandleId(Player(x)), TAH_INDICATOR))))
+        if StringLength(I2S(R2I(LoadReal(HH, GetHandleId(Player(x)), TAH_INDICATOR))))<6 then
+            call SetFrameFont( GetFrameByName("StatsHeroTAH",x), "Fonts\\FRIZQT__.TTF", .009, 0 )
+        else
+            call SetFrameFont( GetFrameByName("StatsHeroTAH",x), "Fonts\\FRIZQT__.TTF", .008, 0 )
+        endif
+        call SetFrameText(GetFrameByName("StatsHeroTSM",x),I2S(R2I(LoadReal(HH, GetHandleId(Player(x)), TSM_INDICATOR))))
+        if StringLength(I2S(R2I(LoadReal(HH, GetHandleId(Player(x)), TSM_INDICATOR))))<6 then
+            call SetFrameFont( GetFrameByName("StatsHeroTSM",x), "Fonts\\FRIZQT__.TTF", .009, 0 )
+        else
+            call SetFrameFont( GetFrameByName("StatsHeroTSM",x), "Fonts\\FRIZQT__.TTF", .008, 0 )
+        endif
+        call SetFrameText(GetFrameByName("StatsHeroTAM",x),I2S(R2I(LoadReal(HH, GetHandleId(Player(x)), TAM_INDICATOR))))
+        if StringLength(I2S(R2I(LoadReal(HH, GetHandleId(Player(x)), TAM_INDICATOR))))<6 then
+            call SetFrameFont( GetFrameByName("StatsHeroTAM",x), "Fonts\\FRIZQT__.TTF", .009, 0 )
+        else
+            call SetFrameFont( GetFrameByName("StatsHeroTAM",x), "Fonts\\FRIZQT__.TTF", .008, 0 )
+        endif
+        if ingame[x]==true then
+            if StringLength(GetPlayerName(Player(x)))<6 then
+                call SetFrameFont( GetFrameByName("StatsPlayerName",x), "Fonts\\FRIZQT__.TTF", .011, 0 )
+            elseif StringLength(GetPlayerName(Player(x)))>=6 and StringLength(GetPlayerName(Player(x)))<11 then
+                call SetFrameFont( GetFrameByName("StatsPlayerName",x), "Fonts\\FRIZQT__.TTF", .01, 0 )
             else
-                call SetFrameTexture( GetFrameByName("StatsHeroInventoryIcon",x*10+i), "UI\\Widgets\\Console\\Human\\human-inventory-slotfiller.blp", 0, true )
-                call SetFrameTexture( GetFrameByName("StatsHeroInventoryIcon",x*10+i), "UI\\Widgets\\Console\\Human\\human-inventory-slotfiller.blp", 1, true )
-                call SetFrameTexture( GetFrameByName("StatsHeroInventoryIcon",x*10+i), "UI\\Widgets\\Console\\Human\\human-inventory-slotfiller.blp", 2, true )
+                call SetFrameFont( GetFrameByName("StatsPlayerName",x), "Fonts\\FRIZQT__.TTF", .009, 0 )
             endif
-            set i=i+1
-            endloop
-        endif
-        call SetFrameText(GetFrameByName("StatsHeroKill",x),I2S(udg_kill[x]))
-        call SetFrameText(GetFrameByName("StatsHeroDeath",x),I2S(udg_death[x]))
-        call SetFrameText(GetFrameByName("StatsHeroAssist",x),I2S(udg_assist[x]))
-        call SetFrameText(GetFrameByName("StatsHeroWin",x),I2S(GetPlayerState(Player(x),PLAYER_STATE_RESOURCE_LUMBER)))
-        if IsPlayerAlly(GetLocalPlayer(),Player(x)) or GameEnd then
-            call SetFrameText(GetFrameByName("StatsGold",x),I2S(GetPlayerState(Player(x),PLAYER_STATE_RESOURCE_GOLD)))
-            if StringLength(I2S(R2I(LoadReal(HH, GetHandleId(Player(x)), TD_INDICATOR))))<6 then
-                call SetFrameFont( GetFrameByName("StatsGold",x), "Fonts\\FRIZQT__.TTF", .009, 0 )
-            else 
-                call SetFrameFont( GetFrameByName("StatsGold",x), "Fonts\\FRIZQT__.TTF", .008, 0 )
+            call SetFrameText(GetFrameByName("StatsPlayerName",x),GetPlayerName(Player(x)))
+            if Hero[x]!=null then
+                call SetFrameTexture( GetFrameByName("StatsHeroIcon",x), GetUnitStringField(Hero[x],UNIT_SF_ICON_NORMAL), 0, true )
+                call SetFrameTexture( GetFrameByName("StatsHeroIcon",x), GetUnitStringField(Hero[x],UNIT_SF_ICON_NORMAL), 1, true )
+                call SetFrameTexture( GetFrameByName("StatsHeroIcon",x), GetUnitStringField(Hero[x],UNIT_SF_ICON_NORMAL), 2, true )
+                call SetFrameText(GetFrameByName("StatsHeroLevel",x),I2S(GetHeroLevel(Hero[x])))
+                set i=0
+                loop
+                exitwhen i>9
+                if (IsPlayerAlly(GetLocalPlayer(),Player(x)) or udg_B==false) and UnitItemInSlot(Hero[x],i)!=null then
+                    call SetFrameTexture( GetFrameByName("StatsHeroInventoryIcon",x*10+i), GetItemStringField(UnitItemInSlot(Hero[x],i),ITEM_SF_ICON), 0, true )
+                    call SetFrameTexture( GetFrameByName("StatsHeroInventoryIcon",x*10+i), GetItemStringField(UnitItemInSlot(Hero[x],i),ITEM_SF_ICON), 1, true )
+                    call SetFrameTexture( GetFrameByName("StatsHeroInventoryIcon",x*10+i), GetItemStringField(UnitItemInSlot(Hero[x],i),ITEM_SF_ICON), 2, true )
+                else
+                    call SetFrameTexture( GetFrameByName("StatsHeroInventoryIcon",x*10+i), "UI\\Widgets\\Console\\Human\\human-inventory-slotfiller.blp", 0, true )
+                    call SetFrameTexture( GetFrameByName("StatsHeroInventoryIcon",x*10+i), "UI\\Widgets\\Console\\Human\\human-inventory-slotfiller.blp", 1, true )
+                    call SetFrameTexture( GetFrameByName("StatsHeroInventoryIcon",x*10+i), "UI\\Widgets\\Console\\Human\\human-inventory-slotfiller.blp", 2, true )
+                endif
+                set i=i+1
+                endloop
             endif
-        else
-            call SetFrameText(GetFrameByName("StatsGold",x),"???")
+            call SetFrameText(GetFrameByName("StatsHeroKill",x),I2S(udg_kill[x]))
+            call SetFrameText(GetFrameByName("StatsHeroDeath",x),I2S(udg_death[x]))
+            call SetFrameText(GetFrameByName("StatsHeroAssist",x),I2S(udg_assist[x]))
+            call SetFrameText(GetFrameByName("StatsHeroWin",x),I2S(GetPlayerState(Player(x),PLAYER_STATE_RESOURCE_LUMBER)))
+            if IsPlayerAlly(GetLocalPlayer(),Player(x)) or GameEnd then
+                call SetFrameText(GetFrameByName("StatsGold",x),I2S(GetPlayerState(Player(x),PLAYER_STATE_RESOURCE_GOLD)))
+                if StringLength(I2S(R2I(LoadReal(HH, GetHandleId(Player(x)), TD_INDICATOR))))<6 then
+                    call SetFrameFont( GetFrameByName("StatsGold",x), "Fonts\\FRIZQT__.TTF", .009, 0 )
+                else 
+                    call SetFrameFont( GetFrameByName("StatsGold",x), "Fonts\\FRIZQT__.TTF", .008, 0 )
+                endif
+            else
+                call SetFrameText(GetFrameByName("StatsGold",x),"???")
+            endif
         endif
     endif
     set x=x+1
@@ -32848,19 +32850,21 @@ elseif GetPlayerSlotState(Player(i))==PLAYER_SLOT_STATE_PLAYING and Hero[i]!=nul
     endif
     if GetUnitAbilityLevel(Hero[i],'cb10')==0 and GetUnitAbilityLevel(Hero[i],'cb11')==0 then
         if GetUnitAbilityLevel(Hero[i],'B15A')>0 then
-            call SetUnitCurrentSight(Hero[i],2500)
+            set f=CreateFogModifierRadius(Player(i),FOG_OF_WAR_VISIBLE,GetUnitX(Hero[i]),GetUnitY(Hero[i]),2500,true,true)
         else
             if GetUnitAbilityLevel(Hero[i],'Blnd')==0 then
-                call SetUnitCurrentSight(Hero[i],1500)
+                set f=CreateFogModifierRadius(Player(i),FOG_OF_WAR_VISIBLE,GetUnitX(Hero[i]),GetUnitY(Hero[i]),1500,true,true)
             else
-                call SetUnitCurrentSight(Hero[i],1200)
+                set f=CreateFogModifierRadius(Player(i),FOG_OF_WAR_VISIBLE,GetUnitX(Hero[i]),GetUnitY(Hero[i]),1200,true,true)
             endif
         endif
     else
         if GetUnitAbilityLevel(Hero[i],'cb10')==1 or GetUnitAbilityLevel(Hero[i],'cb11')==1 then
-            call SetUnitCurrentSight(Hero[i],100)
+            set f=CreateFogModifierRadius(Player(i),FOG_OF_WAR_VISIBLE,GetUnitX(Hero[i]),GetUnitY(Hero[i]),100,true,true)
         endif
     endif   
+    call SaveFogModifierHandle(HH,id,i,f)
+    call FogModifierStart(f)
 endif
 set i=i+1
 endloop
@@ -32874,15 +32878,15 @@ if GetFrameText(SpectacleTeamSelect1Text)=="Full Map Vision" then
     call SaveFogModifierHandle(HH,id,11,f)
     call FogModifierStart(f)
 endif
-if f!=null then
+// if f!=null then
 call ShowFrame( SpectacleTeamSelect, GetPlayerId(GetLocalPlayer())==10 )
 call ShowFrame( SpectacleTeamSelect1, GetPlayerId(GetLocalPlayer())==11 )
 call TimerStart(t,1,false,function VisibityOfHeroesCast2)
-else
-    call FlushChildHashtable(HH,id)
-    call PauseTimer(t)
-    call DestroyTimer(t)
-endif
+// else
+//     call FlushChildHashtable(HH,id)
+//     call PauseTimer(t)
+//     call DestroyTimer(t)
+// endif
 set t=null
 set f=null
 endfunction
@@ -39427,7 +39431,7 @@ if cond==0 then
             call SetUnitFacingInstant(n,GetUnitFacing(u))
             call UnitCancelTimedLife(n)
             call SetUnitCurrentSight(n,600)
-call SetUnitUseFood(n,true)
+            call SetUnitUseFood(n,true)
             call UnitAddBuffById(n,'B03Q')
             call UnitApplyTimedLife(n,'B03Q',4)
             call SetIllusionDamageDealt(n,0.2)
@@ -84812,8 +84816,8 @@ call SetUnitAnimation(E,"Birth")
 set x2=x-500*Cos(a)
 set y2=y-500*Sin(a)
 call UnitAddAbility(u,'A0MX')
-call UnitApplyTimedLife(CreateUnit(p,0x65304B45,x2,y2,GetRandomReal(0,359)),1,0.3)
-call UnitApplyTimedLife(CreateUnit(p,0x65304B47,x2,y2,GetRandomReal(0,359)),1,0.5)
+call UnitApplyTimedLife(CreateUnit(p,'e0KE',x2,y2,GetRandomReal(0,359)),1,0.3)
+call UnitApplyTimedLife(CreateUnit(p,'e0KG',x2,y2,GetRandomReal(0,359)),1,0.5)
 set l__n=CreateUnit(p,0x65304B44,x2,y2,a*bj_RADTODEG)
 call SetUnitAnimation(l__n,"Spell One")
 call UnitApplyTimedLife(l__n,1,3)
@@ -91853,10 +91857,14 @@ local real dmg=(3+GetUnitAbilityLevel(u,'A0PW'))*GetHeroAgi(u,true)
 local real time2=LoadReal(h,id,6)
 if time2<1.5 then
 call SaveReal(h,id,6,time2+0.3)
+call PauseUnit(u,true)
+call SetUnitInvulnerable(u,true)
 if time2==1.2 then
 if GetUnitTypeId(u)!='H03R' then
 call SetUnitAnimation(u,"Spell channel one")
 endif
+call SetUnitXY_1(u,x1,y1, false)
+if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
 if GetUnitTypeId(u)!='H03R' then
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\SaberSakura3.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
@@ -91866,16 +91874,18 @@ set soundplay=CreateSound("Sound\\Music\\mp3Music\\YomuE.mp3",false,false,true,1
 call StartSound(soundplay)
 call KillSoundWhenDone(soundplay)
 endif
-call SetUnitXY_1(u,x1,y1, false)
 call UnitApplyTimedLife(CreateUnit(p,'e0FA',x1,y1,GetRandomReal(0,359)),1,1)
 call UnitApplyTimedLife(CreateUnit(p,'e0HL',x1,y1,a*bj_RADTODEG),1,1)
 call UnitApplyTimedLife(CreateUnit(p,'e0HM',x1,y1,a*bj_RADTODEG),1,1)
 call ShakeCamera(0.4,20)
 call DestroyEffect(AddSpecialEffectTarget("war3mapImported\\BloodEX.mdx",c,"chest"))
+endif
 call SetUnitFacing(u,a*bj_RADTODEG)
 endif
 else
-if time<=3 then
+if time<=3 and LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
+call PauseUnit(u,true)
+call SetUnitInvulnerable(u,true)
 call UnitApplyTimedLife(CreateUnit(p,'e0FA',x1,y1,GetRandomReal(0,359)),1,1)
 call UnitApplyTimedLife(CreateUnit(p,'e0HL',x1,y1,a*bj_RADTODEG),1,1)
 call UnitApplyTimedLife(CreateUnit(p,'e0HM',x1,y1,a*bj_RADTODEG),1,1)
@@ -91889,7 +91899,7 @@ loop
 set E=FirstOfGroup(G)
 exitwhen E==null
 if Condition_Base(p,E)then
-if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
+if LoadBoolean(HH,GetHandleId(E),ANTITARGET_ABILITY)==false then
 call SetControlToUnit(E,E, 1, "stun")
 else
 call SaveReal(h,id,5,time+6)
@@ -91898,11 +91908,13 @@ endif
 call GroupRemoveUnit(G,E)
 endloop
 else
+if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
 call UnitApplyTimedLife(CreateUnit(p,'e0FA',x1,y1,GetRandomReal(0,359)),1,1)
 call UnitApplyTimedLife(CreateUnit(p,'e0HL',x1,y1,a*bj_RADTODEG),1,1)
 call UnitApplyTimedLife(CreateUnit(p,'e0HM',x1,y1,a*bj_RADTODEG),1,1)
 call ShakeCamera(0.8,20)
 call DestroyEffect(AddSpecialEffectTarget("war3mapImported\\BloodEX.mdx",c,"chest"))
+endif
 call UnitRemoveAbility(u,'A0PX')
 call UnitRemoveAbility(u,'A0PX')
 call UnitRemoveAbility(u,'A0PX')
@@ -92052,12 +92064,12 @@ call SetUnitAnimation(n,"attack")
 set dist=GetRandomReal(-70,70)
 set x3=x1+dist*Cos(a+deg90)
 set y3=y1+dist*Sin(a+deg90)
-set n=CreateUnit(p,0x65304F44,x3,y3,a*bj_RADTODEG)
+set n=CreateUnit(p,'e0OD',x3,y3,a*bj_RADTODEG)
 call UnitApplyTimedLife(n,'B000',0.25)
 set dist=GetRandomReal(-70,70)
 set x3=x1+dist*Cos(a+deg90)
 set y3=y1+dist*Sin(a+deg90)
-set n=CreateUnit(p,0x65304F46,x3,y3,a*bj_RADTODEG)
+set n=CreateUnit(p,'e0OF',x3,y3,a*bj_RADTODEG)
 call UnitApplyTimedLife(n,'B000',0.25)
 call GroupEnumUnitsInRange(G,x1,y1,175,Base)
 loop
@@ -92179,7 +92191,7 @@ local real dmg=(GetHeroAgi(u,true)+75)*GetUnitAbilityLevel(u,'A0PU')
 if SR(x,y,x1,y1)<=2250 then
 call SetUnitX(l__d,x1+50*Cos(a))
 call SetUnitY(l__d,y1+50*Sin(a))
-call UnitApplyTimedLife(CreateUnit(p,0x65304F42,x1,y1,a*bj_RADTODEG),1,0.12)
+call UnitApplyTimedLife(CreateUnit(p,'e0OB',x1,y1,a*bj_RADTODEG),1,0.12)
 call GroupEnumUnitsInRange(g,x1,y1,200,Base)
 loop
 set E=FirstOfGroup(g)
@@ -92243,7 +92255,7 @@ local timer t=CreateTimer()
 local integer id=GetHandleId(t)
 local real a=Atan2(GetSpellTargetY()-y,GetSpellTargetX()-x)
 call SaveUnitHandle(h,id,0,u)
-call SaveUnitHandle(h,id,1,CreateUnit(GetOwningPlayer(u),0x65304F41,x+80*Cos(a),y+80*Sin(a),f))
+call SaveUnitHandle(h,id,1,CreateUnit(GetOwningPlayer(u),'e0OA',x+80*Cos(a),y+80*Sin(a),f))
 call SaveGroupHandle(h,id,4,CreateGroup())
 call SaveReal(h,id,2,x)
 call SaveReal(h,id,3,y)
@@ -92324,7 +92336,7 @@ if rd>70 then
 call SetUnitXY_1(l__d,x+speed*Cos(a),y+speed*Sin(a), false)
 call SetUnitFacing(l__d,a*bj_RADTODEG)
 else
-set n=CreateUnit(p,0x65305243,x1,y1,a*bj_RADTODEG)
+set n=CreateUnit(p,'e0RC',x1,y1,a*bj_RADTODEG)
 call UnitApplyTimedLife(n,1,6)
 call GroupAddUnit(g,n)
 call SaveInteger(h,idun,StringHash("number"),l__s)
@@ -93994,7 +94006,7 @@ local real l__s=LoadReal(h,id,4)
 local player p=GetOwningPlayer(u)
 local real dmg=GetHeroInt(u,true)*(GetUnitAbilityLevel(u,'A0QD')+2)
 if SR(x1,y1,x2,y2)>26.00 then
-set n=CreateUnit(p,0x65304F54,x1,y1,a*bj_RADTODEG)
+set n=CreateUnit(p,'e0OT',x1,y1,a*bj_RADTODEG)
 call UnitApplyTimedLife(n,1,1)
 call SetUnitScale(n,l__s,l__s,l__s)
 set x1=x1+47*Cos(a)
@@ -94042,7 +94054,7 @@ call SaveUnitHandle(h,id,0,u)
 call SaveReal(h,id,2,x1)
 call SaveReal(h,id,3,y1)
 call SaveReal(h,id,4,0.25)
-call SaveUnitHandle(h,id,1,CreateUnit(GetOwningPlayer(u),0x65304F54,x,y,a*bj_RADTODEG))
+call SaveUnitHandle(h,id,1,CreateUnit(GetOwningPlayer(u),'e0OT',x,y,a*bj_RADTODEG))
 call TimerStart(t,0.03,true,function LaserCast2)
 set u=null
 set t=null
@@ -94169,8 +94181,8 @@ local real y=GetUnitY(u)
 local real a=GetUnitFacing(u)*bj_DEGTORAD
 set n=CreateUnit(p,'H03Y',x,y,0)
 call UnitApplyTimedLife(n,1,25)
-call UnitApplyTimedLife(CreateUnit(p,0x65304B45,x,y,GetRandomReal(0,359)),1,0.3)
-call UnitApplyTimedLife(CreateUnit(p,0x65304B47,x,y,GetRandomReal(0,359)),1,0.5)
+call UnitApplyTimedLife(CreateUnit(p,'e0KE',x,y,GetRandomReal(0,359)),1,0.3)
+call UnitApplyTimedLife(CreateUnit(p,'e0KG',x,y,GetRandomReal(0,359)),1,0.5)
 set E=CreateUnit(p,'e0KF',x+35*Cos(a),y+35*Sin(a),GetRandomReal(0,359))
 call UnitApplyTimedLife(E,1,0.25)
 call SetUnitTimeScale(E,0.65)
@@ -94278,8 +94290,8 @@ call SetTextTagVelocity(LoadTextTagHandle(HH,GetHandleId(u),TextTagTargetHash),0
 call SetTextTagFadepoint(LoadTextTagHandle(HH,GetHandleId(u),TextTagTargetHash),0.5)
 call SetTextTagLifespan(LoadTextTagHandle(HH,GetHandleId(u),TextTagTargetHash),0.2)
 call RemoveSavedHandle(HH,GetHandleId(u),TextTagTargetHash)
-call UnitApplyTimedLife(CreateUnit(p,0x65304B45,x,y,GetRandomReal(0,359)),1,0.3)
-call UnitApplyTimedLife(CreateUnit(p,0x65304B47,x,y,GetRandomReal(0,359)),1,0.5)
+call UnitApplyTimedLife(CreateUnit(p,'e0KE',x,y,GetRandomReal(0,359)),1,0.3)
+call UnitApplyTimedLife(CreateUnit(p,'e0KG',x,y,GetRandomReal(0,359)),1,0.5)
 call RemoveUnit(u)
 set u=null
 set p=null
@@ -94348,8 +94360,8 @@ call SetUnitFlyHeight(n,250,0)
 call SetUnitFlyHeight(n,0,500)
 call UnitApplyTimedLife(n,1,0.6)
 else
-call UnitApplyTimedLife(CreateUnit(p,0x65304B45,x,y,GetRandomReal(0,359)),1,0.3)
-call UnitApplyTimedLife(CreateUnit(p,0x65304B47,x,y,GetRandomReal(0,359)),1,0.5)
+call UnitApplyTimedLife(CreateUnit(p,'e0KE',x,y,GetRandomReal(0,359)),1,0.3)
+call UnitApplyTimedLife(CreateUnit(p,'e0KG',x,y,GetRandomReal(0,359)),1,0.5)
 call RemoveUnit(l__d)
 call FlushChildHashtable(h,id)
 call PauseTimer(t)
@@ -94371,8 +94383,8 @@ local real a=Atan2(y1-y,x1-x)
 local player p=GetOwningPlayer(u)
 call SaveReal(h,id,1,x)
 call SaveReal(h,id,2,y)
-call UnitApplyTimedLife(CreateUnit(p,0x65304B45,x,y,GetRandomReal(0,359)),1,0.3)
-call UnitApplyTimedLife(CreateUnit(p,0x65304B47,x,y,GetRandomReal(0,359)),1,0.5)
+call UnitApplyTimedLife(CreateUnit(p,'e0KE',x,y,GetRandomReal(0,359)),1,0.3)
+call UnitApplyTimedLife(CreateUnit(p,'e0KG',x,y,GetRandomReal(0,359)),1,0.5)
 set E=CreateUnit(p,'e0KF',x+35*Cos(a),y+35*Sin(a),GetRandomReal(0,359))
 call UnitApplyTimedLife(E,1,0.25)
 call SetUnitTimeScale(E,0.65)
@@ -94439,8 +94451,8 @@ call GroupRemoveUnit(g,E)
 endloop
 call SaveReal(h,id,5,LoadReal(h,id,5)-0.30)
 else
-call UnitApplyTimedLife(CreateUnit(p,0x65304B45,x,y,GetRandomReal(0,359)),1,0.3)
-call UnitApplyTimedLife(CreateUnit(p,0x65304B47,x,y,GetRandomReal(0,359)),1,0.5)
+call UnitApplyTimedLife(CreateUnit(p,'e0KE',x,y,GetRandomReal(0,359)),1,0.3)
+call UnitApplyTimedLife(CreateUnit(p,'e0KG',x,y,GetRandomReal(0,359)),1,0.5)
 call PauseTimer(t)
 call DestroyTimer(t)
 call FlushChildHashtable(h,id)
@@ -94476,8 +94488,8 @@ call SetUnitTimeScale(E,0.65)
 call SetUnitAnimation(E,"Birth")
 set x2=x+200*Cos(a)
 set y2=y+200*Sin(a)
-call UnitApplyTimedLife(CreateUnit(p,0x65304B45,x2,y2,GetRandomReal(0,359)),1,0.3)
-call UnitApplyTimedLife(CreateUnit(p,0x65304B47,x2,y2,GetRandomReal(0,359)),1,0.5)
+call UnitApplyTimedLife(CreateUnit(p,'e0KE',x2,y2,GetRandomReal(0,359)),1,0.3)
+call UnitApplyTimedLife(CreateUnit(p,'e0KG',x2,y2,GetRandomReal(0,359)),1,0.5)
 set n=CreateUnit(p,0x65304F51,x2,y2,a*bj_RADTODEG)
 call SaveUnitHandle(h,id,1,n)
 call SetUnitAnimation(n,"Walk")
@@ -104811,7 +104823,7 @@ function NarutoFCast takes nothing returns nothing
         call SetHeroStr(n,GetHeroStr(u,false),true)
         call SetHeroInt(n,GetHeroInt(u,false),true)
         call SetUnitCurrentSight(n,600)
-call SetUnitUseFood(n,true)
+        call SetUnitUseFood(n,true)
         if GetUnitAbilityLevel(u,'A0V8')>0 then
             call UnitAddAbility(n,'A0V8')
             call SetUnitAbilityLevel(n,'A0V8',GetUnitAbilityLevel(u,'A0V8'))
@@ -115598,8 +115610,8 @@ call SetUnitScale(n,0.75,0.75,0.75)
 endif
 call GroupRemoveUnit(G,E)
 endloop
-call UnitApplyTimedLife(CreateUnit(p,0x65304B45,x2,y2,GetRandomReal(0,359)),1,0.3)
-call UnitApplyTimedLife(CreateUnit(p,0x65304B47,x2,y2,GetRandomReal(0,359)),1,0.5)
+call UnitApplyTimedLife(CreateUnit(p,'e0KE',x2,y2,GetRandomReal(0,359)),1,0.3)
+call UnitApplyTimedLife(CreateUnit(p,'e0KG',x2,y2,GetRandomReal(0,359)),1,0.5)
 set l__d=CreateUnit(p,'e0XS',x2,y2,a*bj_RADTODEG)
 
 call SetUnitModel(l__d,"Katsuya1.mdl")
@@ -203262,7 +203274,7 @@ function GenkshiPassiveX2 takes unit newCaster, unit newTarget returns nothing
     call SetUnitFacingInstant(n,GetUnitFacing(newTarget))
     call UnitCancelTimedLife(n)
     call SetUnitCurrentSight(n,600)
-call SetUnitUseFood(n,true)
+    call SetUnitUseFood(n,true)
     call UnitAddBuffById(n,'B03Q')
     call UnitApplyTimedLife(n,'B03Q',4)
     call SetIllusionDamageDealt(n,0.2)
@@ -212051,7 +212063,7 @@ function TobiramaFCast takes unit u, real x1, real y1 returns nothing
         call SetHeroStr(n,GetHeroStr(u,false),true)
         call SetHeroInt(n,GetHeroInt(u,false),true)
         call SetUnitCurrentSight(n,600)
-call SetUnitUseFood(n,true)
+        call SetUnitUseFood(n,true)
         call UnitInventorySetSize(n,10)
         loop
         exitwhen i>=10
