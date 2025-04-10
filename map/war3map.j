@@ -117,7 +117,7 @@ constant integer c_DUMMY3       =-3
 constant integer c_DUMMY4       =-4
 constant integer c_DUMMY5       =-5
 constant integer c_DUMMY6       =-7
-constant integer GokuR_Circle             = 1049 // Юнит-круг для Карны Т
+constant integer KizaruT_Circle             = 1049 // Юнит-круг для Kizaru Т
 constant integer GAE_DEARG_CONDITION  = 1050
 constant integer Shield_RengokuE          = 1051
 constant integer Shield_YujiE             = 1052
@@ -1748,7 +1748,7 @@ function myCustomDamage takes unit whichUnit, unit target, real amount, boolean 
         //    set currentDmg = currentDmg * 1.05
         //endif  
         if GetUnitAbilityLevel(whichUnit,'GkH5') > 0 or GetUnitAbilityLevel(whichUnit,'VGH5') > 0 or GetUnitAbilityLevel(whichUnit,'GkH8') > 0 then
-            set currentDmg = currentDmg * 1.05
+            set currentDmg = currentDmg * 1.1
         endif
         if GetUnitAbilityLevel(whichUnit,'GkH6') > 0 or GetUnitAbilityLevel(whichUnit,'VGH6') > 0 then
             set currentDmg = currentDmg * 1.1
@@ -9331,13 +9331,13 @@ set BaseUBW2=Condition(function BaseBoolUBW2)
 set LevelBase=Condition(function LvlBool)
 set FrendaBool=Condition(function BoolFrenda)
 set BuggedBool=Condition(function BoolBugged)
-set Color[0]="|cFFFF0000"
-set Color[1]="|cFF0000FF"
+set Color[0]="|cFFFF1010"
+set Color[1]="|cFF9090FF"
 set Color[2]="|cFF00FFFF"
-set Color[3]="|cFF4B009E"
+set Color[3]="|cFF7B709E"
 set Color[4]="|cFFFFDC00"
 set Color[5]="|cFFFF8C00"
-set Color[6]="|cFF00D850"
+set Color[6]="|cFF10D850"
 set Color[7]="|cFFFF5AFF"
 set Color[8]="|cFFA9A9A9"
 set Color[9]="|cFF7EBFFF"
@@ -9345,13 +9345,13 @@ set Color[10]="|cFF005A39"
 set Color[11]="|cFF683600"
 set Color[12]="|c0059ACFF"
 set Color[13]="|c009AFF35"
-set Colour[0]= 0xFFFF0000
-set Colour[1]= 0xFF0000FF
+set Colour[0]= 0xFFFF1010
+set Colour[1]= 0xFF9090FF
 set Colour[2]= 0xFF00FFFF
-set Colour[3]= 0xFF4B009E
+set Colour[3]= 0xFF7B709E
 set Colour[4]= 0xFFFFDC00
 set Colour[5]= 0xFFFF8C00
-set Colour[6]= 0xFF00D850
+set Colour[6]= 0xFF10D850
 set Colour[7]= 0xFFFF5AFF
 set Colour[8]= 0xFFA9A9A9
 set Colour[9]= 0xFF7EBFFF
@@ -10899,14 +10899,19 @@ function OnButtonEmoteClick2 takes nothing returns nothing
         call RemoveEffect(EFF,2.5,false,CreateTimer())
     endif
     set EFF=AddSpecialEffect("Emote.mdx",GetTriggerPlayerMouseWorldX(),GetTriggerPlayerMouseWorldY())
-    if IsPlayerAlly(GetLocalPlayer(),p)==false then
-        call SetSpecialEffectVertexColour(EFF,0,0,0,0)
+    if LoadBoolean(HH,GetHandleId( p ),StringHash("1489")) then
+        call SaveBoolean(HH,GetHandleId( p ),StringHash("1489"),false)
+    else
+        if IsPlayerAlly(GetLocalPlayer(),p)==false then
+            call SetSpecialEffectVertexColour(EFF,0,0,0,0)
+        endif
     endif
     call SetSpecialEffectPlayerColour(EFF,GetPlayerColor(p))
     call SetSpecialEffectTexture(EFF,GetFrameTexture(LoadFrameHandle(HH,GetHandleId( p ),StringHash("1488")),0),0)
     call SetSpecialEffectScale(EFF , 1)
     call SetSpecialEffectZ(EFF,10)
     call RemoveEffect(EFF,2.5,false,CreateTimer())
+    call SaveInteger(HH,GetHandleId( p ),StringHash("1486"),3)
     call SaveBoolean(HH,GetHandleId( p ),StringHash("1487"),false)
     set p=null
 endfunction
@@ -10927,19 +10932,28 @@ function OnButtonEmoteClick takes nothing returns nothing
     endif
     
     if IsEmoteBought(p,GetFrameContext(but)) then
-        if p==GetLocalPlayer() then
-            call ClickFrame(CloseEmoteButton)
-        endif
-        if GetTriggerFrameMouseButton()==MOUSE_BUTTON_TYPE_RIGHT then
-            call SaveBoolean(HH,pHid,StringHash("1487"),true)
-            call SaveFrameHandle(HH,pHid,StringHash("1488"),but)
-        elseif GetTriggerFrameMouseButton()==MOUSE_BUTTON_TYPE_LEFT then
-            set EFF=AddSpecialEffect("Emote.mdx",GetUnitX(Hero[GetPlayerId(p)]),GetUnitY(Hero[GetPlayerId(p)]))
-            call SetSpecialEffectPlayerColour(EFF,GetPlayerColor(p))
-            call SetSpecialEffectTexture(EFF,GetFrameTexture(but,0),0)
-            call SetSpecialEffectScale(EFF , 1.1)
-            call SetSpecialEffectZ(EFF,120)
-            call RemoveEffect(EFF,2.5,false,CreateTimer())
+        if LoadInteger(HH,pHid,StringHash("1486"))==0 then
+            if p==GetLocalPlayer() then
+                call ClickFrame(CloseEmoteButton)
+            endif
+            if GetTriggerFrameMouseButton()==MOUSE_BUTTON_TYPE_RIGHT then
+                call SaveBoolean(HH,pHid,StringHash("1487"),true)
+                call SaveFrameHandle(HH,pHid,StringHash("1488"),but)
+            elseif GetTriggerFrameMouseButton()==MOUSE_BUTTON_TYPE_LEFT then
+                if p!=Player(10) and p!=Player(11) then
+                    set EFF=AddSpecialEffect("Emote.mdx",GetUnitX(Hero[GetPlayerId(p)]),GetUnitY(Hero[GetPlayerId(p)]))
+                    call SetSpecialEffectPlayerColour(EFF,GetPlayerColor(p))
+                    call SetSpecialEffectTexture(EFF,GetFrameTexture(but,0),0)
+                    call SetSpecialEffectScale(EFF , 1.1)
+                    call SetSpecialEffectZ(EFF,120)
+                    call RemoveEffect(EFF,2.5,false,CreateTimer())
+                    call SaveInteger(HH,pHid,StringHash("1486"),3)
+                else
+                    call SaveBoolean(HH,pHid,StringHash("1487"),true)
+                    call SaveFrameHandle(HH,pHid,StringHash("1488"),but)
+                    call SaveBoolean(HH,pHid,StringHash("1489"),true)
+                endif
+            endif
         endif
     endif
     set p = null
@@ -22263,7 +22277,7 @@ local unit u=LoadUnitHandle(HH,id,0)
 local item it=LoadItemHandle(HH,id,1)
 local player p=GetOwningPlayer(u)
 if GetItemOwner(it)==null and it!=null then
-if Condition_RecipeString(GetItemTypeId(it))==false and GetItemTypeId(it)!='I03V' and GetItemTypeId(it)!='I13V' then
+if Condition_RecipeString(GetItemTypeId(it))==false and GetItemTypeId(it)!='I03V' and GetItemTypeId(it)!='I13V' and IsItemPowerup(it)==false then
 call UnitAddItem(Chest[GetPlayerId(p)],it)
 call DestroyEffect(AddSpecialEffect("Abilities\\Spells\\Other\\Transmute\\GoldBottleMissile.mdl",GetUnitX(Chest[GetPlayerId(p)]),GetUnitY(Chest[GetPlayerId(p)])))
 endif
@@ -23330,7 +23344,7 @@ function Trig_StatusBar_Actions takes nothing returns nothing
     set EmoteBarFrame=CreateFrameByType("SIMPLEFRAME", "EmoteBar", null, "", 0)
     call ClearFrameAllPoints( EmoteBarFrame )
     call SetFrameRelativePoint( EmoteBarFrame, FRAMEPOINT_CENTER, gameUI, FRAMEPOINT_BOTTOM,  .0013, .378  )
-    call SetFrameSize( EmoteBarFrame, .77, .386)
+    call SetFrameSize( EmoteBarFrame, .8, .386)
     call SetFrameTextureEx(EmoteBarFrame, 0, "UI\\widgets\\BattleNet\\bnet-tooltip-background.blp", false, "Choice-tooltip-border.blp", 0)
     call SetFramePriority( EmoteBarFrame, 5 )
         
@@ -23429,7 +23443,7 @@ function Trig_StatusBar_Actions takes nothing returns nothing
     call SetFrameParent( CloseEmoteButton, EmoteBarFrame )
     call ShowFrame( CloseEmoteButton, true )
     call SetFramePriority( CloseEmoteButton, 7 )
-    call SetFrameRelativePoint( CloseEmoteButton, FRAMEPOINT_CENTER, EmoteBarFrame, FRAMEPOINT_TOPRIGHT, -.003, -.003 )
+    call SetFrameRelativePoint( CloseEmoteButton, FRAMEPOINT_CENTER, EmoteBarFrame, FRAMEPOINT_TOPLEFT, .056, -.004 )
 
     set CloseEmoteButtonText=CreateFrameByType( "SIMPLETEXT", "EmoteBarCloseText", CloseEmoteButton, "", 0 )
     call ClearFrameAllPoints( CloseEmoteButtonText )
@@ -23489,8 +23503,8 @@ function Trig_StatusBar_Actions takes nothing returns nothing
     set StatsBarFrame=CreateFrameByType("SIMPLEFRAME", "StatsBar", null, "", 0)
     call ClearFrameAllPoints( StatsBarFrame )
     call SetFrameRelativePoint( StatsBarFrame, FRAMEPOINT_CENTER, gameUI, FRAMEPOINT_BOTTOM,  .0013, .378  )
-    call SetFrameSize( StatsBarFrame, .74, .386)
-    call SetFrameTextureEx(StatsBarFrame, 0, "UI\\widgets\\BattleNet\\bnet-tooltip-background.blp", false, "Choice-tooltip-border.blp", 0)
+    call SetFrameSize( StatsBarFrame, .8, .386)
+    call SetFrameTextureEx(StatsBarFrame, 0, "TooltipLessVisible.blp", false, "Choice-tooltip-border.blp", 0)
     call SetFramePriority( StatsBarFrame, 5 )
         
     
@@ -23498,7 +23512,7 @@ function Trig_StatusBar_Actions takes nothing returns nothing
     set StatsBarFrameText=CreateFrameByType( "SIMPLETEXT", "StatsPlayerNameRoot", StatsBarFrame, "", 0 )
     call ClearFrameAllPoints( StatsBarFrameText )
     call SetFrameBlendMode( StatsBarFrameText, 0, BLEND_MODE_BLEND )
-    call SetFrameFont( StatsBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+    call SetFrameFont( StatsBarFrameText, "Fonts\\FRIZQT__.TTF", .01, 0 )
     call SetFrameTextAlignment( StatsBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
     call SetFrameTextColour( StatsBarFrameText, 0xFFFFA500 )
     call SetFrameParent( StatsBarFrameText, StatsBarFrame )
@@ -23510,7 +23524,7 @@ function Trig_StatusBar_Actions takes nothing returns nothing
     set StatsBarFrameText=CreateFrameByType( "SIMPLETEXT", "StatsHeroIconRoot", StatsBarFrame, "", 0 )
     call ClearFrameAllPoints( StatsBarFrameText )
     call SetFrameBlendMode( StatsBarFrameText, 0, BLEND_MODE_BLEND )
-    call SetFrameFont( StatsBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+    call SetFrameFont( StatsBarFrameText, "Fonts\\FRIZQT__.TTF", .01, 0 )
     call SetFrameTextAlignment( StatsBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
     call SetFrameTextColour( StatsBarFrameText, 0xFFFFA500 )
     call SetFrameParent( StatsBarFrameText, StatsBarFrame )
@@ -23521,169 +23535,169 @@ function Trig_StatusBar_Actions takes nothing returns nothing
     set StatsBarFrameText=CreateFrameByType( "SIMPLETEXT", "StatsHeroLevelRoot", StatsBarFrame, "", 0 )
     call ClearFrameAllPoints( StatsBarFrameText )
     call SetFrameBlendMode( StatsBarFrameText, 0, BLEND_MODE_BLEND )
-    call SetFrameFont( StatsBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+    call SetFrameFont( StatsBarFrameText, "Fonts\\FRIZQT__.TTF", .01, 0 )
     call SetFrameTextAlignment( StatsBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
     call SetFrameTextColour( StatsBarFrameText, 0xFFFFA500 )
     call SetFrameParent( StatsBarFrameText, StatsBarFrame )
     call SetFrameText( StatsBarFrameText, "L")
     call ShowFrame( StatsBarFrameText, true )
-    call SetFrameRelativePoint( StatsBarFrameText, FRAMEPOINT_TOPLEFT, GetFrameByName("StatsHeroIconRoot",0), FRAMEPOINT_TOPLEFT,  .03, 0  )
+    call SetFrameRelativePoint( StatsBarFrameText, FRAMEPOINT_TOPLEFT, GetFrameByName("StatsHeroIconRoot",0), FRAMEPOINT_TOPLEFT,  .02, 0  )
 
     set StatsBarFrameText=CreateFrameByType( "SIMPLETEXT", "StatsHeroKillRoot", StatsBarFrame, "", 0 )
     call ClearFrameAllPoints( StatsBarFrameText )
     call SetFrameBlendMode( StatsBarFrameText, 0, BLEND_MODE_BLEND )
-    call SetFrameFont( StatsBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+    call SetFrameFont( StatsBarFrameText, "Fonts\\FRIZQT__.TTF", .01, 0 )
     call SetFrameTextAlignment( StatsBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
     call SetFrameTextColour( StatsBarFrameText, 0xFFFFA500 )
     call SetFrameParent( StatsBarFrameText, StatsBarFrame )
     call SetFrameText( StatsBarFrameText, "K")
     call ShowFrame( StatsBarFrameText, true )
-    call SetFrameRelativePoint( StatsBarFrameText, FRAMEPOINT_TOPLEFT, GetFrameByName("StatsHeroLevelRoot",0), FRAMEPOINT_TOPLEFT,  .02, 0  )
+    call SetFrameRelativePoint( StatsBarFrameText, FRAMEPOINT_TOPLEFT, GetFrameByName("StatsHeroLevelRoot",0), FRAMEPOINT_TOPLEFT,  .023, 0  )
 
     set StatsBarFrameText=CreateFrameByType( "SIMPLETEXT", "StatsHeroDeathRoot", StatsBarFrame, "", 0 )
     call ClearFrameAllPoints( StatsBarFrameText )
     call SetFrameBlendMode( StatsBarFrameText, 0, BLEND_MODE_BLEND )
-    call SetFrameFont( StatsBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+    call SetFrameFont( StatsBarFrameText, "Fonts\\FRIZQT__.TTF", .01, 0 )
     call SetFrameTextAlignment( StatsBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
     call SetFrameTextColour( StatsBarFrameText, 0xFFFFA500 )
     call SetFrameParent( StatsBarFrameText, StatsBarFrame )
     call SetFrameText( StatsBarFrameText, "D")
     call ShowFrame( StatsBarFrameText, true )
-    call SetFrameRelativePoint( StatsBarFrameText, FRAMEPOINT_TOPLEFT, GetFrameByName("StatsHeroKillRoot",0), FRAMEPOINT_TOPLEFT,  .01, 0  )
+    call SetFrameRelativePoint( StatsBarFrameText, FRAMEPOINT_TOPLEFT, GetFrameByName("StatsHeroKillRoot",0), FRAMEPOINT_TOPLEFT,  .012, 0  )
 
     set StatsBarFrameText=CreateFrameByType( "SIMPLETEXT", "StatsHeroAssistRoot", StatsBarFrame, "", 0 )
     call ClearFrameAllPoints( StatsBarFrameText )
     call SetFrameBlendMode( StatsBarFrameText, 0, BLEND_MODE_BLEND )
-    call SetFrameFont( StatsBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+    call SetFrameFont( StatsBarFrameText, "Fonts\\FRIZQT__.TTF", .01, 0 )
     call SetFrameTextAlignment( StatsBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
     call SetFrameTextColour( StatsBarFrameText, 0xFFFFA500 )
     call SetFrameParent( StatsBarFrameText, StatsBarFrame )
     call SetFrameText( StatsBarFrameText, "A")
     call ShowFrame( StatsBarFrameText, true )
-    call SetFrameRelativePoint( StatsBarFrameText, FRAMEPOINT_TOPLEFT, GetFrameByName("StatsHeroDeathRoot",0), FRAMEPOINT_TOPLEFT,  .01, 0  )
+    call SetFrameRelativePoint( StatsBarFrameText, FRAMEPOINT_TOPLEFT, GetFrameByName("StatsHeroDeathRoot",0), FRAMEPOINT_TOPLEFT,  .012, 0  )
 
     set StatsBarFrameText=CreateFrameByType( "SIMPLETEXT", "StatsHeroWinRoot", StatsBarFrame, "", 0 )
     call ClearFrameAllPoints( StatsBarFrameText )
     call SetFrameBlendMode( StatsBarFrameText, 0, BLEND_MODE_BLEND )
-    call SetFrameFont( StatsBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+    call SetFrameFont( StatsBarFrameText, "Fonts\\FRIZQT__.TTF", .01, 0 )
     call SetFrameTextAlignment( StatsBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
     call SetFrameTextColour( StatsBarFrameText, 0xFFFFA500 )
     call SetFrameParent( StatsBarFrameText, StatsBarFrame )
     call SetFrameText( StatsBarFrameText, "W")
     call ShowFrame( StatsBarFrameText, true )
-    call SetFrameRelativePoint( StatsBarFrameText, FRAMEPOINT_TOPLEFT, GetFrameByName("StatsHeroAssistRoot",0), FRAMEPOINT_TOPLEFT,  .015, 0  )
+    call SetFrameRelativePoint( StatsBarFrameText, FRAMEPOINT_TOPLEFT, GetFrameByName("StatsHeroAssistRoot",0), FRAMEPOINT_TOPLEFT,  .023, 0  )
 
     set StatsBarFrameText=CreateFrameByType( "SIMPLETEXT", "StatsHeroInventoryRoot", StatsBarFrame, "", 0 )
     call ClearFrameAllPoints( StatsBarFrameText )
     call SetFrameBlendMode( StatsBarFrameText, 0, BLEND_MODE_BLEND )
-    call SetFrameFont( StatsBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+    call SetFrameFont( StatsBarFrameText, "Fonts\\FRIZQT__.TTF", .01, 0 )
     call SetFrameTextAlignment( StatsBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
     call SetFrameTextColour( StatsBarFrameText, 0xFFFFA500 )
     call SetFrameParent( StatsBarFrameText, StatsBarFrame )
     call SetFrameText( StatsBarFrameText, "Inventory")
     call ShowFrame( StatsBarFrameText, true )
-    call SetFrameRelativePoint( StatsBarFrameText, FRAMEPOINT_TOPLEFT, GetFrameByName("StatsHeroWinRoot",0), FRAMEPOINT_TOPLEFT,  .025, 0  )
+    call SetFrameRelativePoint( StatsBarFrameText, FRAMEPOINT_TOPLEFT, GetFrameByName("StatsHeroWinRoot",0), FRAMEPOINT_TOPLEFT,  .035, 0  )
 
     set StatsBarFrameText=CreateFrameByType( "SIMPLETEXT", "StatsGoldRoot", StatsBarFrame, "", 0 )
     call ClearFrameAllPoints( StatsBarFrameText )
     call SetFrameBlendMode( StatsBarFrameText, 0, BLEND_MODE_BLEND )
-    call SetFrameFont( StatsBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+    call SetFrameFont( StatsBarFrameText, "Fonts\\FRIZQT__.TTF", .01, 0 )
     call SetFrameTextAlignment( StatsBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
     call SetFrameTextColour( StatsBarFrameText, 0xFFFFA500 )
     call SetFrameParent( StatsBarFrameText, StatsBarFrame )
     call SetFrameText( StatsBarFrameText, "Gold")
     call ShowFrame( StatsBarFrameText, true )
-    call SetFrameRelativePoint( StatsBarFrameText, FRAMEPOINT_TOPLEFT, GetFrameByName("StatsHeroInventoryRoot",0), FRAMEPOINT_TOPLEFT,  .045, 0  )
+    call SetFrameRelativePoint( StatsBarFrameText, FRAMEPOINT_TOPLEFT, GetFrameByName("StatsHeroInventoryRoot",0), FRAMEPOINT_TOPLEFT,  .05, 0  )
 
 
     set StatsBarFrameText=CreateFrameByType( "SIMPLETEXT", "StatsHeroTDRoot", StatsBarFrame, "", 0 )
     call ClearFrameAllPoints( StatsBarFrameText )
     call SetFrameBlendMode( StatsBarFrameText, 0, BLEND_MODE_BLEND )
-    call SetFrameFont( StatsBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+    call SetFrameFont( StatsBarFrameText, "Fonts\\FRIZQT__.TTF", .01, 0 )
     call SetFrameTextAlignment( StatsBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
     call SetFrameTextColour( StatsBarFrameText, 0xFFFFA500 )
     call SetFrameParent( StatsBarFrameText, StatsBarFrame )
     call SetFrameText( StatsBarFrameText, "Total\nDMG")
     call ShowFrame( StatsBarFrameText, true )
-    call SetFrameRelativePoint( StatsBarFrameText, FRAMEPOINT_TOPLEFT, GetFrameByName("StatsGoldRoot",0), FRAMEPOINT_TOPLEFT,  .06, 0  )
+    call SetFrameRelativePoint( StatsBarFrameText, FRAMEPOINT_TOPLEFT, GetFrameByName("StatsGoldRoot",0), FRAMEPOINT_TOPLEFT,  .07, 0  )
 
     
     set StatsBarFrameText=CreateFrameByType( "SIMPLETEXT", "StatsHeroDTRoot", StatsBarFrame, "", 0 )
     call ClearFrameAllPoints( StatsBarFrameText )
     call SetFrameBlendMode( StatsBarFrameText, 0, BLEND_MODE_BLEND )
-    call SetFrameFont( StatsBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+    call SetFrameFont( StatsBarFrameText, "Fonts\\FRIZQT__.TTF", .01, 0 )
     call SetFrameTextAlignment( StatsBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
     call SetFrameTextColour( StatsBarFrameText, 0xFFFFA500 )
     call SetFrameParent( StatsBarFrameText, StatsBarFrame )
     call SetFrameText( StatsBarFrameText, "DMG\nTanked")
     call ShowFrame( StatsBarFrameText, true )
-    call SetFrameRelativePoint( StatsBarFrameText, FRAMEPOINT_TOPLEFT, GetFrameByName("StatsHeroTDRoot",0), FRAMEPOINT_TOPLEFT,  .045, 0  )
+    call SetFrameRelativePoint( StatsBarFrameText, FRAMEPOINT_TOPLEFT, GetFrameByName("StatsHeroTDRoot",0), FRAMEPOINT_TOPLEFT,  .05, 0  )
 
     set StatsBarFrameText=CreateFrameByType( "SIMPLETEXT", "StatsHeroGRRoot", StatsBarFrame, "", 0 )
     call ClearFrameAllPoints( StatsBarFrameText )
     call SetFrameBlendMode( StatsBarFrameText, 0, BLEND_MODE_BLEND )
-    call SetFrameFont( StatsBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+    call SetFrameFont( StatsBarFrameText, "Fonts\\FRIZQT__.TTF", .01, 0 )
     call SetFrameTextAlignment( StatsBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
     call SetFrameTextColour( StatsBarFrameText, 0xFFFFA500 )
     call SetFrameParent( StatsBarFrameText, StatsBarFrame )
     call SetFrameText( StatsBarFrameText, "General\nResist")
     call ShowFrame( StatsBarFrameText, true )
-    call SetFrameRelativePoint( StatsBarFrameText, FRAMEPOINT_TOPLEFT, GetFrameByName("StatsHeroDTRoot",0), FRAMEPOINT_TOPLEFT,  .045, 0  )
+    call SetFrameRelativePoint( StatsBarFrameText, FRAMEPOINT_TOPLEFT, GetFrameByName("StatsHeroDTRoot",0), FRAMEPOINT_TOPLEFT,  .05, 0  )
 
     set StatsBarFrameText=CreateFrameByType( "SIMPLETEXT", "StatsHeroTSRoot", StatsBarFrame, "", 0 )
     call ClearFrameAllPoints( StatsBarFrameText )
     call SetFrameBlendMode( StatsBarFrameText, 0, BLEND_MODE_BLEND )
-    call SetFrameFont( StatsBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+    call SetFrameFont( StatsBarFrameText, "Fonts\\FRIZQT__.TTF", .01, 0 )
     call SetFrameTextAlignment( StatsBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
     call SetFrameTextColour( StatsBarFrameText, 0xFFFFA500 )
     call SetFrameParent( StatsBarFrameText, StatsBarFrame )
     call SetFrameText( StatsBarFrameText, "DMG\nShielded")
     call ShowFrame( StatsBarFrameText, true )
-    call SetFrameRelativePoint( StatsBarFrameText, FRAMEPOINT_TOPLEFT, GetFrameByName("StatsHeroGRRoot",0), FRAMEPOINT_TOPLEFT,  .045, 0  )
+    call SetFrameRelativePoint( StatsBarFrameText, FRAMEPOINT_TOPLEFT, GetFrameByName("StatsHeroGRRoot",0), FRAMEPOINT_TOPLEFT,  .05, 0  )
 
     set StatsBarFrameText=CreateFrameByType( "SIMPLETEXT", "StatsHeroTSHRoot", StatsBarFrame, "", 0 )
     call ClearFrameAllPoints( StatsBarFrameText )
     call SetFrameBlendMode( StatsBarFrameText, 0, BLEND_MODE_BLEND )
-    call SetFrameFont( StatsBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+    call SetFrameFont( StatsBarFrameText, "Fonts\\FRIZQT__.TTF", .01, 0 )
     call SetFrameTextAlignment( StatsBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
     call SetFrameTextColour( StatsBarFrameText, 0xFFFFA500 )
     call SetFrameParent( StatsBarFrameText, StatsBarFrame )
     call SetFrameText( StatsBarFrameText, "Self\nHeal")
     call ShowFrame( StatsBarFrameText, true )
-    call SetFrameRelativePoint( StatsBarFrameText, FRAMEPOINT_TOPLEFT, GetFrameByName("StatsHeroTSRoot",0), FRAMEPOINT_TOPLEFT,  .06, 0  )
+    call SetFrameRelativePoint( StatsBarFrameText, FRAMEPOINT_TOPLEFT, GetFrameByName("StatsHeroTSRoot",0), FRAMEPOINT_TOPLEFT,  .07, 0  )
 
     set StatsBarFrameText=CreateFrameByType( "SIMPLETEXT", "StatsHeroTAHRoot", StatsBarFrame, "", 0 )
     call ClearFrameAllPoints( StatsBarFrameText )
     call SetFrameBlendMode( StatsBarFrameText, 0, BLEND_MODE_BLEND )
-    call SetFrameFont( StatsBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+    call SetFrameFont( StatsBarFrameText, "Fonts\\FRIZQT__.TTF", .01, 0 )
     call SetFrameTextAlignment( StatsBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
     call SetFrameTextColour( StatsBarFrameText, 0xFFFFA500 )
     call SetFrameParent( StatsBarFrameText, StatsBarFrame )
     call SetFrameText( StatsBarFrameText, "Ally\nHeal")
     call ShowFrame( StatsBarFrameText, true )
-    call SetFrameRelativePoint( StatsBarFrameText, FRAMEPOINT_TOPLEFT, GetFrameByName("StatsHeroTSHRoot",0), FRAMEPOINT_TOPLEFT,  .045, 0  )
+    call SetFrameRelativePoint( StatsBarFrameText, FRAMEPOINT_TOPLEFT, GetFrameByName("StatsHeroTSHRoot",0), FRAMEPOINT_TOPLEFT,  .05, 0  )
 
     set StatsBarFrameText=CreateFrameByType( "SIMPLETEXT", "StatsHeroTSMRoot", StatsBarFrame, "", 0 )
     call ClearFrameAllPoints( StatsBarFrameText )
     call SetFrameBlendMode( StatsBarFrameText, 0, BLEND_MODE_BLEND )
-    call SetFrameFont( StatsBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+    call SetFrameFont( StatsBarFrameText, "Fonts\\FRIZQT__.TTF", .01, 0 )
     call SetFrameTextAlignment( StatsBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
     call SetFrameTextColour( StatsBarFrameText, 0xFFFFA500 )
     call SetFrameParent( StatsBarFrameText, StatsBarFrame )
     call SetFrameText( StatsBarFrameText, "Self\nMana")
     call ShowFrame( StatsBarFrameText, true )
-    call SetFrameRelativePoint( StatsBarFrameText, FRAMEPOINT_TOPLEFT, GetFrameByName("StatsHeroTAHRoot",0), FRAMEPOINT_TOPLEFT,  .06, 0  )
+    call SetFrameRelativePoint( StatsBarFrameText, FRAMEPOINT_TOPLEFT, GetFrameByName("StatsHeroTAHRoot",0), FRAMEPOINT_TOPLEFT,  .07, 0  )
 
     set StatsBarFrameText=CreateFrameByType( "SIMPLETEXT", "StatsHeroTAMRoot", StatsBarFrame, "", 0 )
     call ClearFrameAllPoints( StatsBarFrameText )
     call SetFrameBlendMode( StatsBarFrameText, 0, BLEND_MODE_BLEND )
-    call SetFrameFont( StatsBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+    call SetFrameFont( StatsBarFrameText, "Fonts\\FRIZQT__.TTF", .01, 0 )
     call SetFrameTextAlignment( StatsBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
     call SetFrameTextColour( StatsBarFrameText, 0xFFFFA500 )
     call SetFrameParent( StatsBarFrameText, StatsBarFrame )
     call SetFrameText( StatsBarFrameText, "Ally\nMana")
     call ShowFrame( StatsBarFrameText, true )
-    call SetFrameRelativePoint( StatsBarFrameText, FRAMEPOINT_TOPLEFT, GetFrameByName("StatsHeroTSMRoot",0), FRAMEPOINT_TOPLEFT,  .045, 0  )
+    call SetFrameRelativePoint( StatsBarFrameText, FRAMEPOINT_TOPLEFT, GetFrameByName("StatsHeroTSMRoot",0), FRAMEPOINT_TOPLEFT,  .05, 0  )
 
     set x=0
     loop 
@@ -23691,7 +23705,7 @@ function Trig_StatusBar_Actions takes nothing returns nothing
         set StatsBarFrameText=CreateFrameByType( "SIMPLETEXT", "StatsPlayerName", StatsBarFrame, "", x )
         call ClearFrameAllPoints( StatsBarFrameText )
         call SetFrameBlendMode( StatsBarFrameText, 0, BLEND_MODE_BLEND )
-        call SetFrameFont( StatsBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+        call SetFrameFont( StatsBarFrameText, "Fonts\\FRIZQT__.TTF", .01, 0 )
         call SetFrameTextAlignment( StatsBarFrameText, TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_MIDDLE )
         call SetFrameTextColour( StatsBarFrameText, Colour[x] )
         call SetFrameParent( StatsBarFrameText, StatsBarFrame )
@@ -23712,7 +23726,7 @@ function Trig_StatusBar_Actions takes nothing returns nothing
         set StatsBarFrameText=CreateFrameByType( "SIMPLETEXT", "StatsHeroLevel", StatsBarFrame, "", x )
         call ClearFrameAllPoints( StatsBarFrameText )
         call SetFrameBlendMode( StatsBarFrameText, 0, BLEND_MODE_BLEND )
-        call SetFrameFont( StatsBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+        call SetFrameFont( StatsBarFrameText, "Fonts\\FRIZQT__.TTF", .01, 0 )
         call SetFrameTextAlignment( StatsBarFrameText, TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_MIDDLE )
         call SetFrameTextColour( StatsBarFrameText, Colour[x] )
         call SetFrameParent( StatsBarFrameText, StatsBarFrame )
@@ -23723,7 +23737,7 @@ function Trig_StatusBar_Actions takes nothing returns nothing
         set StatsBarFrameText=CreateFrameByType( "SIMPLETEXT", "StatsHeroKill", StatsBarFrame, "", x )
         call ClearFrameAllPoints( StatsBarFrameText )
         call SetFrameBlendMode( StatsBarFrameText, 0, BLEND_MODE_BLEND )
-        call SetFrameFont( StatsBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+        call SetFrameFont( StatsBarFrameText, "Fonts\\FRIZQT__.TTF", .01, 0 )
         call SetFrameTextAlignment( StatsBarFrameText, TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_MIDDLE )
         call SetFrameTextColour( StatsBarFrameText, Colour[x] )
         call SetFrameParent( StatsBarFrameText, StatsBarFrame )
@@ -23734,7 +23748,7 @@ function Trig_StatusBar_Actions takes nothing returns nothing
         set StatsBarFrameText=CreateFrameByType( "SIMPLETEXT", "StatsHeroDeath", StatsBarFrame, "", x )
         call ClearFrameAllPoints( StatsBarFrameText )
         call SetFrameBlendMode( StatsBarFrameText, 0, BLEND_MODE_BLEND )
-        call SetFrameFont( StatsBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+        call SetFrameFont( StatsBarFrameText, "Fonts\\FRIZQT__.TTF", .01, 0 )
         call SetFrameTextAlignment( StatsBarFrameText, TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_MIDDLE )
         call SetFrameTextColour( StatsBarFrameText, Colour[x] )
         call SetFrameParent( StatsBarFrameText, StatsBarFrame )
@@ -23745,7 +23759,7 @@ function Trig_StatusBar_Actions takes nothing returns nothing
         set StatsBarFrameText=CreateFrameByType( "SIMPLETEXT", "StatsHeroAssist", StatsBarFrame, "", x )
         call ClearFrameAllPoints( StatsBarFrameText )
         call SetFrameBlendMode( StatsBarFrameText, 0, BLEND_MODE_BLEND )
-        call SetFrameFont( StatsBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+        call SetFrameFont( StatsBarFrameText, "Fonts\\FRIZQT__.TTF", .01, 0 )
         call SetFrameTextAlignment( StatsBarFrameText, TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_MIDDLE )
         call SetFrameTextColour( StatsBarFrameText, Colour[x] )
         call SetFrameParent( StatsBarFrameText, StatsBarFrame )
@@ -23756,7 +23770,7 @@ function Trig_StatusBar_Actions takes nothing returns nothing
         set StatsBarFrameText=CreateFrameByType( "SIMPLETEXT", "StatsHeroWin", StatsBarFrame, "", x )
         call ClearFrameAllPoints( StatsBarFrameText )
         call SetFrameBlendMode( StatsBarFrameText, 0, BLEND_MODE_BLEND )
-        call SetFrameFont( StatsBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+        call SetFrameFont( StatsBarFrameText, "Fonts\\FRIZQT__.TTF", .01, 0 )
         call SetFrameTextAlignment( StatsBarFrameText, TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_MIDDLE )
         call SetFrameTextColour( StatsBarFrameText, Colour[x] )
         call SetFrameParent( StatsBarFrameText, StatsBarFrame )
@@ -23798,7 +23812,7 @@ function Trig_StatusBar_Actions takes nothing returns nothing
         set StatsBarFrameText=CreateFrameByType( "SIMPLETEXT", "StatsGold", StatsBarFrame, "", x )
         call ClearFrameAllPoints( StatsBarFrameText )
         call SetFrameBlendMode( StatsBarFrameText, 0, BLEND_MODE_BLEND )
-        call SetFrameFont( StatsBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+        call SetFrameFont( StatsBarFrameText, "Fonts\\FRIZQT__.TTF", .01, 0 )
         call SetFrameTextAlignment( StatsBarFrameText, TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_MIDDLE )
         call SetFrameTextColour( StatsBarFrameText, Colour[x] )
         call SetFrameParent( StatsBarFrameText, StatsBarFrame )
@@ -23809,7 +23823,7 @@ function Trig_StatusBar_Actions takes nothing returns nothing
         set StatsBarFrameText=CreateFrameByType( "SIMPLETEXT", "StatsHeroTD", StatsBarFrame, "", x )
         call ClearFrameAllPoints( StatsBarFrameText )
         call SetFrameBlendMode( StatsBarFrameText, 0, BLEND_MODE_BLEND )
-        call SetFrameFont( StatsBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+        call SetFrameFont( StatsBarFrameText, "Fonts\\FRIZQT__.TTF", .01, 0 )
         call SetFrameTextAlignment( StatsBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
         call SetFrameTextColour( StatsBarFrameText, Colour[x] )
         call SetFrameParent( StatsBarFrameText, StatsBarFrame )
@@ -23820,7 +23834,7 @@ function Trig_StatusBar_Actions takes nothing returns nothing
         set StatsBarFrameText=CreateFrameByType( "SIMPLETEXT", "StatsHeroDT", StatsBarFrame, "", x )
         call ClearFrameAllPoints( StatsBarFrameText )
         call SetFrameBlendMode( StatsBarFrameText, 0, BLEND_MODE_BLEND )
-        call SetFrameFont( StatsBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+        call SetFrameFont( StatsBarFrameText, "Fonts\\FRIZQT__.TTF", .01, 0 )
         call SetFrameTextAlignment( StatsBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
         call SetFrameTextColour( StatsBarFrameText, Colour[x] )
         call SetFrameParent( StatsBarFrameText, StatsBarFrame )
@@ -23831,7 +23845,7 @@ function Trig_StatusBar_Actions takes nothing returns nothing
         set StatsBarFrameText=CreateFrameByType( "SIMPLETEXT", "StatsHeroGR", StatsBarFrame, "", x )
         call ClearFrameAllPoints( StatsBarFrameText )
         call SetFrameBlendMode( StatsBarFrameText, 0, BLEND_MODE_BLEND )
-        call SetFrameFont( StatsBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+        call SetFrameFont( StatsBarFrameText, "Fonts\\FRIZQT__.TTF", .01, 0 )
         call SetFrameTextAlignment( StatsBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
         call SetFrameTextColour( StatsBarFrameText, Colour[x] )
         call SetFrameParent( StatsBarFrameText, StatsBarFrame )
@@ -23842,7 +23856,7 @@ function Trig_StatusBar_Actions takes nothing returns nothing
         set StatsBarFrameText=CreateFrameByType( "SIMPLETEXT", "StatsHeroTS", StatsBarFrame, "", x )
         call ClearFrameAllPoints( StatsBarFrameText )
         call SetFrameBlendMode( StatsBarFrameText, 0, BLEND_MODE_BLEND )
-        call SetFrameFont( StatsBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+        call SetFrameFont( StatsBarFrameText, "Fonts\\FRIZQT__.TTF", .01, 0 )
         call SetFrameTextAlignment( StatsBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
         call SetFrameTextColour( StatsBarFrameText, Colour[x] )
         call SetFrameParent( StatsBarFrameText, StatsBarFrame )
@@ -23853,7 +23867,7 @@ function Trig_StatusBar_Actions takes nothing returns nothing
         set StatsBarFrameText=CreateFrameByType( "SIMPLETEXT", "StatsHeroTSH", StatsBarFrame, "", x )
         call ClearFrameAllPoints( StatsBarFrameText )
         call SetFrameBlendMode( StatsBarFrameText, 0, BLEND_MODE_BLEND )
-        call SetFrameFont( StatsBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+        call SetFrameFont( StatsBarFrameText, "Fonts\\FRIZQT__.TTF", .01, 0 )
         call SetFrameTextAlignment( StatsBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
         call SetFrameTextColour( StatsBarFrameText, Colour[x] )
         call SetFrameParent( StatsBarFrameText, StatsBarFrame )
@@ -23864,7 +23878,7 @@ function Trig_StatusBar_Actions takes nothing returns nothing
         set StatsBarFrameText=CreateFrameByType( "SIMPLETEXT", "StatsHeroTAH", StatsBarFrame, "", x )
         call ClearFrameAllPoints( StatsBarFrameText )
         call SetFrameBlendMode( StatsBarFrameText, 0, BLEND_MODE_BLEND )
-        call SetFrameFont( StatsBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+        call SetFrameFont( StatsBarFrameText, "Fonts\\FRIZQT__.TTF", .01, 0 )
         call SetFrameTextAlignment( StatsBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
         call SetFrameTextColour( StatsBarFrameText, Colour[x] )
         call SetFrameParent( StatsBarFrameText, StatsBarFrame )
@@ -23875,7 +23889,7 @@ function Trig_StatusBar_Actions takes nothing returns nothing
         set StatsBarFrameText=CreateFrameByType( "SIMPLETEXT", "StatsHeroTSM", StatsBarFrame, "", x )
         call ClearFrameAllPoints( StatsBarFrameText )
         call SetFrameBlendMode( StatsBarFrameText, 0, BLEND_MODE_BLEND )
-        call SetFrameFont( StatsBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+        call SetFrameFont( StatsBarFrameText, "Fonts\\FRIZQT__.TTF", .01, 0 )
         call SetFrameTextAlignment( StatsBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
         call SetFrameTextColour( StatsBarFrameText, Colour[x] )
         call SetFrameParent( StatsBarFrameText, StatsBarFrame )
@@ -23886,7 +23900,7 @@ function Trig_StatusBar_Actions takes nothing returns nothing
         set StatsBarFrameText=CreateFrameByType( "SIMPLETEXT", "StatsHeroTAM", StatsBarFrame, "", x )
         call ClearFrameAllPoints( StatsBarFrameText )
         call SetFrameBlendMode( StatsBarFrameText, 0, BLEND_MODE_BLEND )
-        call SetFrameFont( StatsBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+        call SetFrameFont( StatsBarFrameText, "Fonts\\FRIZQT__.TTF", .01, 0 )
         call SetFrameTextAlignment( StatsBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
         call SetFrameTextColour( StatsBarFrameText, Colour[x] )
         call SetFrameParent( StatsBarFrameText, StatsBarFrame )
@@ -23906,7 +23920,7 @@ function Trig_StatusBar_Actions takes nothing returns nothing
     call SetFrameParent( CloseStatsButton, StatsBarFrame )
     call ShowFrame( CloseStatsButton, true )
     call SetFramePriority( CloseStatsButton, 7 )
-    call SetFrameRelativePoint( CloseStatsButton, FRAMEPOINT_CENTER, StatsBarFrame, FRAMEPOINT_TOPRIGHT, -.003, -.003 )
+    call SetFrameRelativePoint( CloseStatsButton, FRAMEPOINT_CENTER, StatsBarFrame, FRAMEPOINT_TOPLEFT, .072, -.004 )
 
     set CloseStatsButtonText=CreateFrameByType( "SIMPLETEXT", "StatsBarCloseText", CloseStatsButton, "", 0 )
     call ClearFrameAllPoints( CloseStatsButtonText )
@@ -24343,54 +24357,57 @@ exitwhen x>=12
     if GetPlayerSlotState(Player(x))!=PLAYER_SLOT_STATE_PLAYING then
         set ingame[x]=false
     endif
-    if ModuloInteger(seconds,10)<1 or udg_B==false then
+    if LoadInteger(HH,GetHandleId( Player(x) ),StringHash("1486"))>0 then
+        call SaveInteger(HH,GetHandleId( Player(x) ),StringHash("1486"),LoadInteger(HH,GetHandleId( Player(x) ),StringHash("1486"))-1)
+    endif
+    if ModuloInteger(seconds,15)<1 or (udg_B==false and ModuloInteger(seconds,5)<1) then
         call SetFrameText(GetFrameByName("StatsHeroTD",x),I2S(R2I(LoadReal(HH, GetHandleId(Player(x)), TD_INDICATOR))))
         if StringLength(I2S(R2I(LoadReal(HH, GetHandleId(Player(x)), TD_INDICATOR))))<6 then
-            call SetFrameFont( GetFrameByName("StatsHeroTD",x), "Fonts\\FRIZQT__.TTF", .009, 0 )
+            call SetFrameFont( GetFrameByName("StatsHeroTD",x), "Fonts\\FRIZQT__.TTF", .01, 0 )
         else 
-            call SetFrameFont( GetFrameByName("StatsHeroTD",x), "Fonts\\FRIZQT__.TTF", .008, 0 )
+            call SetFrameFont( GetFrameByName("StatsHeroTD",x), "Fonts\\FRIZQT__.TTF", .009, 0 )
         endif
         call SetFrameText(GetFrameByName("StatsHeroDT",x),I2S(R2I(LoadReal(HH, GetHandleId(Player(x)), TTD_INDICATOR))))
         if StringLength(I2S(R2I(LoadReal(HH, GetHandleId(Player(x)), TTD_INDICATOR))))<6 then
-            call SetFrameFont( GetFrameByName("StatsHeroDT",x), "Fonts\\FRIZQT__.TTF", .009, 0 )
+            call SetFrameFont( GetFrameByName("StatsHeroDT",x), "Fonts\\FRIZQT__.TTF", .01, 0 )
         else
-            call SetFrameFont( GetFrameByName("StatsHeroDT",x), "Fonts\\FRIZQT__.TTF", .008, 0 )
+            call SetFrameFont( GetFrameByName("StatsHeroDT",x), "Fonts\\FRIZQT__.TTF", .009, 0 )
         endif
         call SetFrameText(GetFrameByName("StatsHeroGR",x),I2S(R2I(LoadReal(HH, GetHandleId(Player(x)), GR_INDICATOR))))
         if StringLength(I2S(R2I(LoadReal(HH, GetHandleId(Player(x)), GR_INDICATOR))))<6 then
-            call SetFrameFont( GetFrameByName("StatsHeroGR",x), "Fonts\\FRIZQT__.TTF", .009, 0 )
+            call SetFrameFont( GetFrameByName("StatsHeroGR",x), "Fonts\\FRIZQT__.TTF", .01, 0 )
         else
-            call SetFrameFont( GetFrameByName("StatsHeroGR",x), "Fonts\\FRIZQT__.TTF", .008, 0 )
+            call SetFrameFont( GetFrameByName("StatsHeroGR",x), "Fonts\\FRIZQT__.TTF", .009, 0 )
         endif
         call SetFrameText(GetFrameByName("StatsHeroTS",x),I2S(R2I(LoadReal(HH, GetHandleId(Player(x)), TS_INDICATOR))))
         if StringLength(I2S(R2I(LoadReal(HH, GetHandleId(Player(x)), TS_INDICATOR))))<6 then
-            call SetFrameFont( GetFrameByName("StatsHeroTS",x), "Fonts\\FRIZQT__.TTF", .009, 0 )
+            call SetFrameFont( GetFrameByName("StatsHeroTS",x), "Fonts\\FRIZQT__.TTF", .01, 0 )
         else
-            call SetFrameFont( GetFrameByName("StatsHeroTS",x), "Fonts\\FRIZQT__.TTF", .008, 0 )
+            call SetFrameFont( GetFrameByName("StatsHeroTS",x), "Fonts\\FRIZQT__.TTF", .009, 0 )
         endif
         call SetFrameText(GetFrameByName("StatsHeroTSH",x),I2S(R2I(LoadReal(HH, GetHandleId(Player(x)), TSH_INDICATOR))))
         if StringLength(I2S(R2I(LoadReal(HH, GetHandleId(Player(x)), TSH_INDICATOR))))<6 then
-            call SetFrameFont( GetFrameByName("StatsHeroTSH",x), "Fonts\\FRIZQT__.TTF", .009, 0 )
+            call SetFrameFont( GetFrameByName("StatsHeroTSH",x), "Fonts\\FRIZQT__.TTF", .01, 0 )
         else
-            call SetFrameFont( GetFrameByName("StatsHeroTSH",x), "Fonts\\FRIZQT__.TTF", .008, 0 )
+            call SetFrameFont( GetFrameByName("StatsHeroTSH",x), "Fonts\\FRIZQT__.TTF", .009, 0 )
         endif
         call SetFrameText(GetFrameByName("StatsHeroTAH",x),I2S(R2I(LoadReal(HH, GetHandleId(Player(x)), TAH_INDICATOR))))
         if StringLength(I2S(R2I(LoadReal(HH, GetHandleId(Player(x)), TAH_INDICATOR))))<6 then
-            call SetFrameFont( GetFrameByName("StatsHeroTAH",x), "Fonts\\FRIZQT__.TTF", .009, 0 )
+            call SetFrameFont( GetFrameByName("StatsHeroTAH",x), "Fonts\\FRIZQT__.TTF", .01, 0 )
         else
-            call SetFrameFont( GetFrameByName("StatsHeroTAH",x), "Fonts\\FRIZQT__.TTF", .008, 0 )
+            call SetFrameFont( GetFrameByName("StatsHeroTAH",x), "Fonts\\FRIZQT__.TTF", .009, 0 )
         endif
         call SetFrameText(GetFrameByName("StatsHeroTSM",x),I2S(R2I(LoadReal(HH, GetHandleId(Player(x)), TSM_INDICATOR))))
         if StringLength(I2S(R2I(LoadReal(HH, GetHandleId(Player(x)), TSM_INDICATOR))))<6 then
-            call SetFrameFont( GetFrameByName("StatsHeroTSM",x), "Fonts\\FRIZQT__.TTF", .009, 0 )
+            call SetFrameFont( GetFrameByName("StatsHeroTSM",x), "Fonts\\FRIZQT__.TTF", .01, 0 )
         else
-            call SetFrameFont( GetFrameByName("StatsHeroTSM",x), "Fonts\\FRIZQT__.TTF", .008, 0 )
+            call SetFrameFont( GetFrameByName("StatsHeroTSM",x), "Fonts\\FRIZQT__.TTF", .009, 0 )
         endif
         call SetFrameText(GetFrameByName("StatsHeroTAM",x),I2S(R2I(LoadReal(HH, GetHandleId(Player(x)), TAM_INDICATOR))))
         if StringLength(I2S(R2I(LoadReal(HH, GetHandleId(Player(x)), TAM_INDICATOR))))<6 then
-            call SetFrameFont( GetFrameByName("StatsHeroTAM",x), "Fonts\\FRIZQT__.TTF", .009, 0 )
+            call SetFrameFont( GetFrameByName("StatsHeroTAM",x), "Fonts\\FRIZQT__.TTF", .01, 0 )
         else
-            call SetFrameFont( GetFrameByName("StatsHeroTAM",x), "Fonts\\FRIZQT__.TTF", .008, 0 )
+            call SetFrameFont( GetFrameByName("StatsHeroTAM",x), "Fonts\\FRIZQT__.TTF", .009, 0 )
         endif
         if ingame[x]==true then
             if StringLength(GetPlayerName(Player(x)))<6 then
@@ -24398,7 +24415,7 @@ exitwhen x>=12
             elseif StringLength(GetPlayerName(Player(x)))>=6 and StringLength(GetPlayerName(Player(x)))<11 then
                 call SetFrameFont( GetFrameByName("StatsPlayerName",x), "Fonts\\FRIZQT__.TTF", .01, 0 )
             else
-                call SetFrameFont( GetFrameByName("StatsPlayerName",x), "Fonts\\FRIZQT__.TTF", .009, 0 )
+                call SetFrameFont( GetFrameByName("StatsPlayerName",x), "Fonts\\FRIZQT__.TTF", .01, 0 )
             endif
             call SetFrameText(GetFrameByName("StatsPlayerName",x),GetPlayerName(Player(x)))
             if Hero[x]!=null then
@@ -24428,9 +24445,9 @@ exitwhen x>=12
             if IsPlayerAlly(GetLocalPlayer(),Player(x)) or GameEnd then
                 call SetFrameText(GetFrameByName("StatsGold",x),I2S(GetPlayerState(Player(x),PLAYER_STATE_RESOURCE_GOLD)))
                 if StringLength(I2S(R2I(LoadReal(HH, GetHandleId(Player(x)), TD_INDICATOR))))<6 then
-                    call SetFrameFont( GetFrameByName("StatsGold",x), "Fonts\\FRIZQT__.TTF", .009, 0 )
+                    call SetFrameFont( GetFrameByName("StatsGold",x), "Fonts\\FRIZQT__.TTF", .01, 0 )
                 else 
-                    call SetFrameFont( GetFrameByName("StatsGold",x), "Fonts\\FRIZQT__.TTF", .008, 0 )
+                    call SetFrameFont( GetFrameByName("StatsGold",x), "Fonts\\FRIZQT__.TTF", .009, 0 )
                 endif
             else
                 call SetFrameText(GetFrameByName("StatsGold",x),"???")
@@ -33671,7 +33688,7 @@ function EndOfChoiceAct takes nothing returns nothing
     set Rounds=true
     if FFAMode==false then
     if win[1]>=udg_rou then
-    call LastDamageIndicator()
+    call ClickFrame(OpenStatsButton)
     call DisplayTextToPlayer(GetLocalPlayer(),0,0,"TEAM 1 wins the game")
     call TriggerClearActions(LoadTriggerHandle( W3MMDTable, GetHandleId( W3MMDTable ), StringHash( "GetLeaveTrig" ) ))
     set i=0
@@ -33697,7 +33714,7 @@ function EndOfChoiceAct takes nothing returns nothing
     call DestroyTimer(udg_Timer)
     call DestroyTimerDialog(udg_TB)
     elseif win[2]>=udg_rou then
-    call LastDamageIndicator()
+    call ClickFrame(OpenStatsButton)
     call DisplayTextToPlayer(GetLocalPlayer(),0,0,"TEAM 2 wins the game")
     call TriggerClearActions(LoadTriggerHandle( W3MMDTable, GetHandleId( W3MMDTable ), StringHash( "GetLeaveTrig" ) ))
     set i=0
@@ -38884,14 +38901,14 @@ if cond==0 then
             endif
             set i=0
         endif
-        if b>0 and nb>0 and (GetUnitAbilityLevel(u,'Avul')>0 or GetUnitAbilityLevel(u,'A16H')>0 or GetUnitAbilityLevel(u,'A4DF')>0 or GetUnitAbilityLevel(u,'A2E2')>0 or GetUnitAbilityLevel(u,'B06V')>0 or GetUnitAbilityLevel(u,'A1I2')>0 or GetUnitAbilityLevel(u,'A1HV')>0 or GetUnitAbilityLevel(u,'A1DO')>0 or GetUnitAbilityLevel(u,'B06P')>0 or GetUnitAbilityLevel(u,'B06I')>0 or GetUnitAbilityLevel(u,'B02E')>0 or GetUnitAbilityLevel(u,'B05J')>0 or GetUnitAbilityLevel(u,'A16D')>0 or GetUnitAbilityLevel(u,'A12P')>0 or GetUnitAbilityLevel(u,'A0VJ')>0 or udg_B==false or GetUnitAbilityLevel(u,'A7IH')>0 or GetUnitAbilityLevel(u,'B04H')>0 or GetUnitAbilityLevel(u,'B04E')>0 or GetUnitAbilityLevel(u,'B049')>0 or GetUnitAbilityLevel(u,'B01G')>0 or GetUnitAbilityLevel(u,'ItV1')>0 or GetUnitAbilityLevel(u,'B00Y')>0 or GetUnitAbilityLevel(u,'B02U')>0 or GetUnitAbilityLevel(u,'AP08')>0 or GetUnitTypeId(u)=='H01E' or GetUnitTypeId(u)=='H01G' or GetUnitTypeId(u)=='H01I' or GetUnitTypeId(u)=='H03Q' or GetUnitTypeId(u)=='H06O')  then //
+        if b>0 and nb>0 and (GetUnitAbilityLevel(u,'Avul')>0 or GetUnitAbilityLevel(u,'A16H')>0 or GetUnitAbilityLevel(u,'A4DF')>0 or GetUnitAbilityLevel(u,'B06V')>0 or GetUnitAbilityLevel(u,'A1I2')>0 or GetUnitAbilityLevel(u,'A1HV')>0 or GetUnitAbilityLevel(u,'A1DO')>0 or GetUnitAbilityLevel(u,'B06P')>0 or GetUnitAbilityLevel(u,'B06I')>0 or GetUnitAbilityLevel(u,'B02E')>0 or GetUnitAbilityLevel(u,'B05J')>0 or GetUnitAbilityLevel(u,'A16D')>0 or GetUnitAbilityLevel(u,'A12P')>0 or GetUnitAbilityLevel(u,'A0VJ')>0 or udg_B==false or GetUnitAbilityLevel(u,'A7IH')>0 or GetUnitAbilityLevel(u,'B04H')>0 or GetUnitAbilityLevel(u,'B04E')>0 or GetUnitAbilityLevel(u,'B049')>0 or GetUnitAbilityLevel(u,'B01G')>0 or GetUnitAbilityLevel(u,'ItV1')>0 or GetUnitAbilityLevel(u,'B00Y')>0 or GetUnitAbilityLevel(u,'B02U')>0 or GetUnitAbilityLevel(u,'AP08')>0 or GetUnitTypeId(u)=='H01E' or GetUnitTypeId(u)=='H01G' or GetUnitTypeId(u)=='H01I' or GetUnitTypeId(u)=='H03Q' or GetUnitTypeId(u)=='H06O')  then //
             if GetUnitAbilityLevel(u,'A7IH')>0 then
                 call SetUnitAnimationByIndex(u,GetRandomInt(222,230))
             endif
             //call SetEventDamage(0.05)
             set nb=0
         endif
-        if nb>0 and LoadInteger(HH,GetHandleId( GetOwningPlayer(u) ),UIDodgeHash)>0 and (nb<(GetUnitState(u,UNIT_STATE_MAX_LIFE)-GetUnitState(u,UNIT_STATE_LIFE))*0.4) and GetUnitAbilityLevel(u,'A7IH')==0 then
+        if nb>0 and LoadInteger(HH,GetHandleId( GetOwningPlayer(u) ),UIDodgeHash)>0 and (nb<(GetUnitState(u,UNIT_STATE_MAX_LIFE)-GetUnitState(u,UNIT_STATE_LIFE))*0.4) and GetUnitAbilityLevel(u,'A7IH')==0 and and GetUnitAbilityLevel(u, 'CBC2')==0 and GetUnitAbilityLevel(u, 'CBC1')==0 and GetUnitAbilityLevel(u, 'cbc4')==0 and GetUnitAbilityLevel(u, 'cbc6')==0 and GetUnitAbilityLevel(u, 'cbc7')==0 and GetUnitAbilityLevel(u, 'cbc8')==0 and GetUnitAbilityLevel(u, 'cbc9')==0 and GetUnitAbilityLevel(u, 'cbc5')==0 and IsUnitPaused(u)==false then
             call SaveInteger(HH,GetHandleId( GetOwningPlayer(u) ),UIDodgeHash,LoadInteger(HH,GetHandleId( GetOwningPlayer(u) ),UIDodgeHash)-1)
             //call SetEventDamage(0.05)
             call UnitAddAbility(u,'A7IH')
@@ -38959,12 +38976,17 @@ if cond==0 then
             endif
 
             if GetUnitAbilityLevel( u ,'A18L')==0  and LoadBoolean(HH,GetHandleId( u ),StringHash("SabracFdie"))==false and nb>=GetUnitState(u,UNIT_STATE_LIFE)and LoadUnitHandle(HH,GetHandleId(u),StringHash("SabracZoneU"))!=null and SR(GetUnitX( u ),GetUnitY( u ),GetUnitX(LoadUnitHandle(HH,GetHandleId( u ),StringHash("SabracZoneU"))),GetUnitY(LoadUnitHandle(HH,GetHandleId( u ),StringHash("SabracZoneU"))))<1500 then
-              //call SetEventDamage(0.05)
-              call SetUnitTargetable(u, false)
-              call SaveUnitHandle(HH,GetHandleId( u ),StringHash("SabracFKillU"),Hero[idc])
-              call SaveBoolean(HH,GetHandleId( u ),StringHash("SabracFdie"),true)
-              call SetUnitState(u,UNIT_STATE_LIFE,10000)
-              set nb=0
+                //call SetEventDamage(0.05)
+                call SetUnitTargetable(u, false)
+                call SaveUnitHandle(HH,GetHandleId( u ),StringHash("SabracFKillU"),Hero[idc])
+                call SaveBoolean(HH,GetHandleId( u ),StringHash("SabracFdie"),true)
+                call UnitRemoveAbility(u,'IHYs')
+                call UnitRemoveAbility(u, 'IHYb')
+                call UnitRemoveAbility(u, 'IOb3')
+                call UnitRemoveAbility(u, 'IO3b')
+                call SetUnitTargetable(u, false)
+                call SetUnitState(u,UNIT_STATE_LIFE,10000)
+                set nb=0
             endif
 
 
@@ -40021,71 +40043,91 @@ if cond==0 then
             if nb>15 then
                 set nb=nb-15
             else
-                set nb=0
+                if nb>=10 then
+                    set nb=10
+                endif
             endif
         endif
         if nb>0 and (UnitHasItemOfTypeBJ(u,'I040')or GetUnitAbilityLevel(u,'KIL4')>0)and CurrentEventAttack then
             if nb>20 then
                 set nb=nb-20
             else
-                set nb=0
+                if nb>=10 then
+                    set nb=10
+                endif
             endif
         endif
         if nb>0 and (UnitHasItemOfTypeBJ(u,'I060')or GetUnitAbilityLevel(u,'KIW2')>0)and CurrentEventAttack then
-            if nb>30 then
-                set nb=nb-30
+            if nb>20 then
+                set nb=nb-20
             else
-                set nb=0
+                if nb>=10 then
+                    set nb=10
+                endif
             endif
         endif
         if nb>0 and (UnitHasItemOfTypeBJ(u,'I061')or GetUnitAbilityLevel(u,'KIW4')>0)and CurrentEventAttack then
-            if nb>50 then
-                set nb=nb-50
+            if nb>40 then
+                set nb=nb-40
             else
-                set nb=0
+                if nb>=10 then
+                    set nb=10
+                endif
             endif
         endif
         if nb>0 and (UnitHasItemOfTypeBJ(u,'I062')or GetUnitAbilityLevel(u,'KIW6')>0)and CurrentEventAttack then
-            if nb>70 then
-                set nb=nb-70
+            if nb>60 then
+                set nb=nb-60
             else
-                set nb=0
+                if nb>=10 then
+                    set nb=10
+                endif
             endif
         endif
         if nb>0 and (UnitHasItemOfTypeBJ(u,'I063')or GetUnitAbilityLevel(u,'KIW8')>0)and CurrentEventAttack then
-            if nb>90 then
-                set nb=nb-90
+            if nb>80 then
+                set nb=nb-80
             else
-                set nb=0
+                if nb>=10 then
+                    set nb=10
+                endif
             endif
         endif
         if nb>0 and (UnitHasItemOfTypeBJ(u,'I064')or GetUnitAbilityLevel(u,'KIX0')>0)and CurrentEventAttack then
-            if nb>110 then
-                set nb=nb-110
+            if nb>100 then
+                set nb=nb-100
             else
-                set nb=0
+                if nb>=10 then
+                    set nb=10
+                endif
             endif
         endif
         if nb>0 and (UnitHasItemOfTypeBJ(u,'I065')or GetUnitAbilityLevel(u,'KIX2')>0)and CurrentEventAttack then
-            if nb>130 then
-                set nb=nb-130
+            if nb>120 then
+                set nb=nb-120
             else
-                set nb=0
+                if nb>=10 then
+                    set nb=10
+                endif
             endif
         endif
         if nb>0 and (UnitHasItemOfTypeBJ(u,'IAoF')or GetUnitAbilityLevel(u,'KI1A')>0)and CurrentEventAttack then
             if nb>90+10*round then
-                set nb=nb-(80+5*round)
+                set nb=nb-(60+5*round)
             else
-                set nb=0
+                if nb>=10 then
+                    set nb=10
+                endif
             endif
         endif
         if nb>0 and (UnitHasItemOfTypeBJ(u,'I03C')or GetUnitAbilityLevel(u,'KII8')>0)and CurrentEventAttack then
             call DestroyEffect(AddSpecialEffectTarget("Abilities\\Spells\\Human\\Heal\\HealTarget.mdl",u,"origin"))
-            if nb>35 then
-                set nb=nb-35
+            if nb>25 then
+                set nb=nb-25
             else
-                set nb=0
+                if nb>=10 then
+                    set nb=10
+                endif
             endif
         endif
         if nb>0 and (UnitHasItemOfTypeBJ(u,'I03F') or GetUnitAbilityLevel(u,'KIJ4')>0) and CurrentEventAttack then
@@ -40095,7 +40137,9 @@ if cond==0 then
                 set nb=nb-50
             else
                 //call SetEventDamage(0.05)
-                set nb=0
+                if nb>=10 then
+                    set nb=10
+                endif
             endif
         endif
         // if GetUnitAbilityLevel(u,'A162')>0 and nb>0 then
@@ -48146,7 +48190,7 @@ local real scale=LoadReal(h,id,10)
 local real time=LoadReal(h,id,17)
 local trigger tt=LoadTriggerHandle(h,id,1)
 if time>0 then
-call SetControlToUnit(u,u,0.11,"doom")
+call SetControlToUnit(u,u,0.11,"doomdebug")
 set n=CreateUnit(p,'e0K9',x,y,GetRandomReal(0,359))
 call UnitApplyTimedLife(n,1,0.01)
 call SetUnitScale(n,0.65,0.65,0.65)
@@ -48406,7 +48450,7 @@ if GetUnitCurrentOrder(Neji)!=OrderId("channel")then
 call SetUnitTimeScale(Neji,1)
 call SetUnitAnimation(Neji,"Stand")
 if GetUnitAbilityLevel(Neji,'A0GN')==0 then
-    call SetControlToUnit(Neji , Neji , 0.3 , "doomdebug")
+    call SetControlToUnit(Neji , Neji , 0.5 , "doomdebug")
 endif
 call TriggerClearActions(tt)
 call DestroyTrigger(tt)
@@ -49562,7 +49606,7 @@ local real time=LoadReal(h,id,13)+0.1
 local trigger tt=LoadTriggerHandle(h,id,1)
 if time<3 then
 call SetUnitInvulnerable(u,true)
-call SetControlToUnit(u,u,0.11,"doom")
+call SetControlToUnit(u,u,0.11,"doomdebug")
 call SetUnitTimeScale(u,0.1)
 set n=CreateUnit(p,'e0B2',x,y,GetRandomReal(0,359))
 call UnitApplyTimedLife(n,1,0.01)
@@ -65875,10 +65919,10 @@ function PowerDownGoku takes nothing returns nothing
             call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-GetUnitState(u,UNIT_STATE_MAX_MANA)*0.00135)
         endif
         if GetUnitAbilityLevel(u,'GkH7')>0 then
-            call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-GetUnitState(u,UNIT_STATE_MAX_MANA)*0.002)
+            call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-GetUnitState(u,UNIT_STATE_MAX_MANA)*0.00225)
         endif
         if GetUnitAbilityLevel(u,'GkH8')>0 then
-            call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-GetUnitState(u,UNIT_STATE_MAX_MANA)*0.004)
+            call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-GetUnitState(u,UNIT_STATE_MAX_MANA)*0.0035)
         endif
     endif
     if GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.1>GetUnitState(u,UNIT_STATE_LIFE) or GetUnitState(u,UNIT_STATE_MAX_MANA)*0.04>GetUnitState(u,UNIT_STATE_MANA) or LoadBoolean(HH,GetHandleId(u),SST)==true then
@@ -67452,6 +67496,10 @@ else
         endif
     else
         call StartAbilityCooldown(GetUnitAbility(u,'GKG1'),60)
+        if (GetLocalPlayer()==p or GetPlayerAlliance(p,GetLocalPlayer(),ALLIANCE_SHARED_CONTROL)) and GetUnitSelected(GetLocalPlayer())==dummy then
+            call ClearSelection()
+            call SelectUnit(u,true)
+        endif
     endif
     call RemoveUnit(dummy)
     call FlushChildHashtable(h,id)
@@ -67677,7 +67725,7 @@ call SaveReal(HH,id,5,1)
 call SaveReal(HH,id,3,2000)
 call TimerStart(t,0.02,true,function BreakerEnergyWaveCast3)
 else
-call SetControlToUnit(u , u , 0.3 , "doomdebug")
+call SetControlToUnit(u , u , 0.5 , "doomdebug")
 call SetUnitAnimation(u,"stand")
 call HealTextTag(u,u,GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.05*myCustomHeal2(u,1),"HealthRes")
 call HealTextTag(u,u,GetUnitState(u,UNIT_STATE_MAX_MANA)*0.05*myCustomMana2(u,1),"ManaRes")
@@ -67937,7 +67985,7 @@ else
         endif
         call RemoveSavedHandle(HH,idu,REVERSE_TARGET)
     else
-        call SetControlToUnit(u , u , 0.3 , "doomdebug")
+        call SetControlToUnit(u , u , 0.5 , "doomdebug")
         call SetUnitAnimation(u,"stand")
         call PauseUnit(u,false)
         call PauseTimer(t)
@@ -69637,7 +69685,6 @@ if time<0.3 then
 else
     call SetUnitTimeScale(u,1)
     call DestroyTimer(t)
-    call SetUnitInvulnerable(u,false)
     call PauseUnit(u,false)
     call SetUnitAnimation(u,"stand")
     call SetUnitTimeScale(u,1)
@@ -69657,7 +69704,6 @@ local real x=GetUnitX(u)
 local real y=GetUnitY(u)
 local real x1=GetUnitX(c)
 local real y1=GetUnitY(c)
-call SetUnitInvulnerable(u,true)
 call PauseUnit(u,true)
 call SaveUnitHandle(HH,id,0,u)
 call SaveGroupHandle(HH,id,1,CreateGroup())
@@ -72955,7 +73001,7 @@ call PauseUnit(u,false)
 call SetUnitInvulnerable(u,false)
 endif
 else
-if ModuloReal(dist,0.5)<0.05 then
+if ModuloReal(dist,0.15)<0.05 then
 endif
 call GroupEnumUnitsInRange(G,x,y,800,Base)
 loop
@@ -72963,8 +73009,8 @@ set E=FirstOfGroup(G)
 exitwhen E==null
 if Condition_Base(p,E)then
 if GetUnitTypeId(E)!='h019' then
-call SetControlToUnit(E,E,1,"doom")
-call SetControlToUnit(E,E,1,"blind")
+call SetControlToUnit(E,E,0.5,"doomdebug")
+call SetControlToUnit(E,E,0.5,"blind")
 endif
 endif
 call GroupRemoveUnit(G,E)
@@ -77869,44 +77915,127 @@ endfunction
 function YasakaniNoMagatamaCond takes nothing returns boolean
 return GetSpellAbilityId()=='A0KR'
 endfunction
+function YasakaniNoMagatamaCircle2 takes nothing returns nothing
+local timer t=GetExpiredTimer()
+local integer id=GetHandleId(t)
+local unit u=LoadUnitHandle(HH,id,0)
+local integer idu=GetHandleId(u)
+local unit uHero=LoadUnitHandle(HH,id,1)
+local real x=GetUnitX(u)
+local real y=GetUnitY(u)
+local real x1=LoadReal(HH,idu,3)
+local real y1=LoadReal(HH,idu,4)
+local real a=Atan2(y1-y,x1-x)
+if SquareRootPoint(x,y,x1,y1)>35 then
+call IssueImmediateOrder(u,"stop")
+call SetUnitXY_1(u,x+30*Cos(a),y+30*Sin(a),false)
+else
+call SetUnitXY_1(u,x1,y1,false)
+call SaveBoolean(HH,idu,2,false)
+call PauseTimer(t)
+call DestroyTimer(t)
+call FlushChildHashtable(HH,id)
+endif
+set t=null
+set u=null
+set uHero=null
+endfunction
+function YasakaniNoMagatamaCircle takes nothing returns nothing
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+local unit u=GetTriggerUnit()
+local integer idu=GetHandleId(u)
+local unit uHero=LoadUnitHandle(HH,idu,KizaruT_Circle)
+if LoadBoolean(HH,idu,2)==false then
+    call SaveBoolean(HH,idu,2,true)
+    call SaveUnitHandle(HH,id,0,u)
+    call SaveUnitHandle(HH,id,1,uHero)
+    if GetOrderTargetUnit()==null then
+        call SaveReal(HH,idu,3,GetOrderPointX())
+        call SaveReal(HH,idu,4,GetOrderPointY())
+    else
+        call SaveReal(HH,idu,3,GetUnitX(GetOrderTargetUnit()))
+        call SaveReal(HH,idu,4,GetUnitY(GetOrderTargetUnit()))
+    endif
+    if SquareRootPoint(GetUnitX(uHero), GetUnitY(uHero), LoadReal(HH,idu,3), LoadReal(HH,idu,4))>1500 then
+        call SaveReal(HH,idu,3,GetUnitX(uHero)+1500*Cos(AP(GetUnitX(uHero), GetUnitY(uHero), LoadReal(HH,idu,3), LoadReal(HH,idu,4))))
+        call SaveReal(HH,idu,4,GetUnitY(uHero)+1500*Sin(AP(GetUnitX(uHero), GetUnitY(uHero), LoadReal(HH,idu,3), LoadReal(HH,idu,4))))
+    endif
+    call TimerStart(t,0.05,true,function YasakaniNoMagatamaCircle2)
+else
+    if GetOrderTargetUnit()==null then
+        call SaveReal(HH,idu,3,GetOrderPointX())
+        call SaveReal(HH,idu,4,GetOrderPointY())
+    else
+        call SaveReal(HH,idu,3,GetUnitX(GetOrderTargetUnit()))
+        call SaveReal(HH,idu,4,GetUnitY(GetOrderTargetUnit()))
+    endif
+    if SquareRootPoint(GetUnitX(uHero), GetUnitY(uHero), LoadReal(HH,idu,3), LoadReal(HH,idu,4))>1500 then
+        call SaveReal(HH,idu,3,GetUnitX(uHero)+1500*Cos(AP(GetUnitX(uHero), GetUnitY(uHero), LoadReal(HH,idu,3), LoadReal(HH,idu,4))))
+        call SaveReal(HH,idu,4,GetUnitY(uHero)+1500*Sin(AP(GetUnitX(uHero), GetUnitY(uHero), LoadReal(HH,idu,3), LoadReal(HH,idu,4))))
+    endif
+    call DestroyTimer(t)
+endif
+set t=null
+set u=null
+set uHero=null
+endfunction
 function YasakaniNoMagatamaCast2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
 local unit u=LoadUnitHandle(h,id,0)
+local unit l__d=LoadUnitHandle(h,id,2)
 local real x=GetUnitX(u)
 local real y=GetUnitY(u)
-local real x1=LoadReal(h,id,2)
-local real y1=LoadReal(h,id,3)
+local real x1=GetUnitX(l__d)
+local real y1=GetUnitY(l__d)
 local real time=LoadReal(h,id,4)+0.1
 local player p=GetOwningPlayer(u)
 local real dmg=GetHeroAgi(u,true)*1
 local real he=0
+local real a=Atan2(y1-y,x1-x)
+local trigger tt=LoadTriggerHandle(h,id,11)
 call SaveReal(h,id,4,time)
+if (GetLocalPlayer()==p or GetPlayerAlliance(p,GetLocalPlayer(),ALLIANCE_SHARED_CONTROL)) and GetUnitSelected(GetLocalPlayer())==u then
+    call ClearSelection()
+    call SelectUnit(l__d,true)
+endif
 if time==1 then
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\YsakaniNoMagatama.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
 call KillSoundWhenDone(soundplay)
 endif
-if time>1 and time<=7 then
+if time>1 and time<=6 then
 call PauseUnit(u,true)
-set n=CreateUnit(p,0x65304737,x+GetRandomReal(-150,150),y+GetRandomReal(-150,150),Atan2(y1-y,x1-x)*bj_RADTODEG)
+call SetUnitFacingInstant(u,a*bj_RADTODEG)
+set n=CreateUnit(p,'e0G7',x+GetRandomReal(-150,150),y+GetRandomReal(-150,150),Atan2(y1-y,x1-x)*bj_RADTODEG)
 set he=GetRandomReal(400,475)
 call SetUnitFlyHeight(n,he,0)
 call SetUnitInvulnerable(u,true)
 call YasakaniNoMagatamaMissleFly(u,n,50,0,x1+GetRandomReal(-325,325),y1+GetRandomReal(-325,325),he,dmg)
-elseif time>7 then
+elseif time>6 then
+if (GetLocalPlayer()==p or GetPlayerAlliance(p,GetLocalPlayer(),ALLIANCE_SHARED_CONTROL)) and GetUnitSelected(GetLocalPlayer())==l__d then
+    call ClearSelection()
+    call SelectUnit(u,true)
+endif
+call FlushChildHashtable(HH,GetHandleId(n))
+call RemoveUnit(l__d)
 call SetUnitFlyHeight(u,0,400)
 call SetUnitInvulnerable(u,false)
 call PauseUnit(u,false)
 call UnitRemoveAbility(n,'A0KM')
 call UnitRemoveAbility(n,'A0KN')
+call TriggerClearActions(tt)
+call DestroyTrigger(tt)
 call PauseTimer(t)
 call DestroyTimer(t)
 call FlushChildHashtable(h,id)
 endif
 set p=null
 set u=null
+set l__d=null
 set t=null
+set tt=null
 endfunction
 function YasakaniNoMagatamaCast takes nothing returns nothing
 local unit u=GetTriggerUnit()
@@ -77914,10 +78043,11 @@ local timer t=CreateTimer()
 local integer id=GetHandleId(t)
 local real x=GetUnitX(u)
 local real y=GetUnitY(u)
+local real x1=GetSpellTargetX()
+local real y1=GetSpellTargetY()
 local player p=GetOwningPlayer(u)
+local trigger tt=CreateTrigger()
 call SaveUnitHandle(h,id,0,u)
-call SaveReal(h,id,2,GetSpellTargetX())
-call SaveReal(h,id,3,GetSpellTargetY())
 call UnitAddAbility(u,'Arav')
 call UnitRemoveAbility(u,'Arav')
 call SetUnitInvulnerable(u,true)
@@ -77938,10 +78068,20 @@ call UnitApplyTimedLife(n,1,6)
 call SetUnitTimeScale(n,2)
 call UnitAddAbility(n,'A0KM')
 call UnitAddAbility(n,'A0KN')
+set n = CreateUnit(p, 'd222', x1, y1, 0)
+call UnitScale(n, 3, 5.0, 0.5)
+call SaveUnitHandle(h,id,2,n)
+call SaveUnitHandle(HH,GetHandleId(n),KizaruT_Circle,u)
+call SaveBoolean(HH,GetHandleId(n),2,false)
+call TriggerRegisterUnitEvent(tt,n,EVENT_UNIT_ISSUED_TARGET_ORDER)
+call TriggerRegisterUnitEvent(tt,n,EVENT_UNIT_ISSUED_POINT_ORDER)
+call TriggerAddAction(tt,function YasakaniNoMagatamaCircle)
+call SaveTriggerHandle(h,id,11,tt)
 call TimerStart(t,0.1,true,function YasakaniNoMagatamaCast2)
 set u=null
 set p=null
 set t=null
+set tt=null
 endfunction
 function InitYasakaniNoMagatama takes nothing returns nothing
 local trigger t=CreateTrigger()
@@ -83023,7 +83163,7 @@ call TriggerClearActions(tt)
 call DestroyTrigger(tt)
 endif
 if time==0.08 then
-call SetControlToUnit(u, u, 1.25, "doom")
+call SetControlToUnit(u, u, 1.25, "doomdebug")
 endif
 else
 if dist>0 and IsTerrainPathable(x,y,PATHING_TYPE_FLYABILITY)==false then
@@ -84089,7 +84229,7 @@ function MissleMoveParabola2 takes nothing returns nothing
     call SetUnitFlyHeight(l__d,ParabolaZ(mh,dist,rd),0)
     call SaveReal(h,id,8,time+0.03)
     call IssueImmediateOrder(l__d, "stop")
-    call SetControlToUnit(l__d, l__d, 0.11, "doom")
+    call SetControlToUnit(l__d, l__d, 0.11, "doomdebug")
     //call PauseUnit(l__d,true)
     call SaveBoolean(HH,GetHandleId(l__d),TARGET_ABILITY,true)
     else
@@ -90577,9 +90717,9 @@ function VergilQ_ModifAttack takes unit newCaster, unit newTarget, boolean b_clo
 	endif
 	
 	if UnitHasItemOfTypeBJ(newTarget, 'I03C') and UnitHasItemOfTypeBJ(newTarget, 'I03F')==false then	// Жилет Анбу у таргета
-		set damage=damage-35
+        set damage=damage-25
 		call DestroyEffect(AddSpecialEffectTarget("Abilities\\Spells\\Human\\Heal\\HealTarget.mdl", newTarget,"origin"))
-	endif
+    endif
 	
 	if UnitHasItemOfTypeBJ(newTarget, 'I03F') then														// Комплект Анбу у таргета
 		set damage=damage-50
@@ -90587,7 +90727,7 @@ function VergilQ_ModifAttack takes unit newCaster, unit newTarget, boolean b_clo
 	endif
 	
     if (UnitHasItemOfTypeBJ(newTarget,'IAoF') or GetUnitAbilityLevel(newTarget,'KI1A')>0) then                                                                                                          // Комплект Анбу у таргета
-        set damage=damage-(80+5*round)
+        set damage=damage-(60+5*round)
     endif
 
     if (UnitHasItemOfTypeBJ(newTarget,'I03Z')or GetUnitAbilityLevel(newTarget,'KIL2')>0) then
@@ -90599,29 +90739,29 @@ function VergilQ_ModifAttack takes unit newCaster, unit newTarget, boolean b_clo
     endif
 
 	if UnitHasItemOfTypeBJ(newTarget, 'I060') then														// Облако Маре D ранг
-		set damage=damage-30
+		set damage=damage-20
 	endif
 	
 	if UnitHasItemOfTypeBJ(newTarget, 'I061') then														// Облако Маре C ранг
-		set damage=damage-50
+		set damage=damage-40
 	endif
 	
 	if UnitHasItemOfTypeBJ(newTarget, 'I062') then														// Облако Маре B ранг
-		set damage=damage-70
+		set damage=damage-60
 	endif
 	
 	if UnitHasItemOfTypeBJ(newTarget, 'I063') then														// Облако Маре A ранг
-		set damage=damage-90
+		set damage=damage-80
 	endif
 		
 	if UnitHasItemOfTypeBJ(newTarget, 'I064') then														// Облако Маре Фальшивое
-		set damage=damage-110
+		set damage=damage-100
 	endif
 	
 	if UnitHasItemOfTypeBJ(newTarget, 'I065') then														// Облако Маре Истинное
-		set damage=damage-130
+		set damage=damage-120
 	endif
-	
+
 	endif
 	
 	if miss then
@@ -90635,7 +90775,11 @@ function VergilQ_ModifAttack takes unit newCaster, unit newTarget, boolean b_clo
 	if fatal_damage==false then
 		if damage>0 then
 			call myCustomDamage(newCaster,newTarget,damage,false,false,ATTACK_TYPE_HERO,DAMAGE_TYPE_NORMAL,null)
-		endif
+		else
+            if miss==false then
+                call myCustomDamage(newCaster,newTarget,10,false,false,ATTACK_TYPE_HERO,DAMAGE_TYPE_NORMAL,null)
+            endif
+        endif
 	else
 		call UnitRemoveBuffs(newTarget,true,true)
 		call UnitAddAbility(newTarget,'A0WR')
@@ -99214,7 +99358,7 @@ local real time=LoadReal(h,id,18)+0.1
 local trigger tt=LoadTriggerHandle(h, id, 20)
 call SaveReal(h,id,11,GetUnitFacing(u)*bj_DEGTORAD)
 if time<=2 then
-call SetControlToUnit(u, u, 0.11, "doom")
+call SetControlToUnit(u, u, 0.11, "doomdebug")
 set n=CreateUnit(p,'e0QG',x,y,GetRandomReal(0,359))
 call UnitApplyTimedLife(n,1,0.01)
 call SetUnitScale(n,1,1,1)
@@ -100712,7 +100856,7 @@ if dist>0 then
         call SetUnitXY_1(l__d,x-speed*Cos(a),y-speed*Sin(a), false)
     endif
     if dist>160 then
-        call SetControlToUnit(u,u,0.04,"doom")
+        call SetControlToUnit(u,u,0.04,"doomdebug")
         call SetUnitFacing(u,a*bj_RADTODEG)
     else
         call SetUnitFacingInstant(u,(a2*bj_RADTODEG)-180)
@@ -100777,7 +100921,7 @@ call SaveUnitHandle(h,id,5,u)
 call SetUnitAcquireRange(u, 51)
 call UnitAddAbility(u, 'A1FU') //Slow
 call UnitAddAbility(u, 'Pet1')
-call SetControlToUnit(u,u,0.04,"doom")
+call SetControlToUnit(u,u,0.04,"doomdebug")
 call TriggerRegisterUnitEvent(newTrigger, u, EVENT_UNIT_ISSUED_TARGET_ORDER)
 call TriggerRegisterUnitEvent(newTrigger, u, EVENT_UNIT_ISSUED_POINT_ORDER)
 call TriggerAddAction(newTrigger,function FriezaW_StopOrders)
@@ -102248,7 +102392,7 @@ local real mt=LoadReal(h,id,18)
 local trigger tt=LoadTriggerHandle(h,id,1)
 if time>0 then
 call SetUnitInvulnerable(u,true)
-call SetControlToUnit(u,u,0.15,"doom")
+call SetControlToUnit(u,u,0.15,"doomdebug")
 set n=CreateUnit(p,'e0K9',x,y,GetRandomReal(0,359))
 call UnitApplyTimedLife(n,1,0.01)
 call SetUnitScale(n,0.65,0.65,0.65)
@@ -102727,7 +102871,7 @@ local real time=LoadReal(h,id,17)
 local trigger tt=LoadTriggerHandle(h,id,1)
 if time>0 then
 call SetUnitInvulnerable(u,true)
-call SetControlToUnit(u,u,0.11,"doom")
+call SetControlToUnit(u,u,0.11,"doomdebug")
 set n=CreateUnit(p,'e0K9',x,y,GetRandomReal(0,359))
 call UnitApplyTimedLife(n,1,0.01)
 call SetUnitScale(n,0.65,0.65,0.65)
@@ -105328,7 +105472,7 @@ local trigger tt=LoadTriggerHandle(h, id, StringHash("OrderTrigger"))
 if time<2.25 then
 call SaveReal(h,id,11,time+0.05)
 if time<2 then
-call SetControlToUnit(u, u, 0.1, "doom")
+call SetControlToUnit(u, u, 0.1, "doomdebug")
 endif
 if time==2 then
 call SaveReal(h,id,4,GetUnitFacing(u)*bj_DEGTORAD)
@@ -108090,7 +108234,7 @@ local real tm=GetWidgetMana(u)
 local real deg=75*bj_DEGTORAD
 local trigger tt=LoadTriggerHandle(h, id, StringHash("OrderTrigger"))
 if time<=4 then
-        call SetControlToUnit(u, u, 0.13, "doom")
+        call SetControlToUnit(u, u, 0.13, "doomdebug")
         set n=CreateUnit(p,'e0B2',x,y,GetRandomReal(0,359))
         call SetUnitScale(n,0.5,0.5,0.5)
         call UnitApplyTimedLife(n,1,0.01)
@@ -108588,7 +108732,7 @@ local unit c=LoadUnitHandle(h,id,StringHash("door"))
 local real x1=GetUnitX(c)
 local real y1=GetUnitY(c)
 local integer i=0
-if GetUnitTypeId(u)=='e0VE' and IsUnitPaused(Hero[ip])==false and IsUnitHidden(Hero[ip])==false and GetUnitAbilityLevel(Hero[ip], 'CBC1')==0 and GetUnitAbilityLevel(Hero[ip], 'CBC2')==0 and GetUnitAbilityLevel(Hero[ip], 'cbc6')==0 and u!=Hero[ip]and SR(x2,y2,x,y)<400 and IsUnitAlly(Hero[ip],GetOwningPlayer(u))then
+if GetUnitTypeId(u)=='e0VE' and IsUnitPaused(Hero[ip])==false and IsUnitHidden(Hero[ip])==false and GetUnitAbilityLevel(Hero[ip], 'CBC1')==0 and GetUnitAbilityLevel(Hero[ip], 'CBC2')==0 and GetUnitAbilityLevel(Hero[ip], 'cbc6')==0 and GetUnitAbilityLevel(Hero[ip], 'cbc9')==0 and GetUnitAbilityLevel(Hero[ip], 'cbc8')==0 and u!=Hero[ip]and SR(x2,y2,x,y)<400 and IsUnitAlly(Hero[ip],GetOwningPlayer(u))then
 call SetUnitX(Hero[ip],x1)
 call SetUnitY(Hero[ip],y1)
 call DestroyEffect(AddSpecialEffect("Abilities\\Spells\\Human\\MassTeleport\\MassTeleportTarget.mdl",x,y))
@@ -116242,7 +116386,7 @@ call PauseTimer(t)
 call SaveReal(HH,id,2,0)
 call TimerStart(t,0.02,true,function AvalonSCast3)
 else
-call SetControlToUnit(u , u , 0.3 , "doomdebug")
+call SetControlToUnit(u , u , 0.5 , "doomdebug")
 call PauseUnit(u,false)
 call PauseTimer(t)
 call DestroyTimer(t)
@@ -142316,7 +142460,7 @@ local real dist=LoadReal(h,id,2)
 local group g=LoadGroupHandle(h,id,10)
 local player p=GetOwningPlayer(u)
 if dist<2.3 then
-call SetControlToUnit(u, u, 0.11, "doom")
+call SetControlToUnit(u, u, 0.11, "doomdebug")
 call SaveReal(h,id,2,dist+0.1)
 call SaveReal(h,id,3,a)
 if dist<1.7 then
@@ -142939,139 +143083,139 @@ function GilgameshModifiedAttack takes unit newCaster, unit newTarget returns bo
 	endif
 	
 	if IsUnitType(newCaster,UNIT_TYPE_HERO) and IsUnitIllusion(newCaster)==false and miss==false then
-    if (LoadReal(HH,GetHandleId(newCaster),StringHash("yamato"))==1 or GetRandomInt(0,100)<15) and (UnitHasItemOfTypeBJ(newCaster,'I02V') or GetUnitAbilityLevel(newCaster,'KIG4')>0) and IsUnitType(newCaster, UNIT_TYPE_HERO) and IsUnitIllusion(newCaster)==false then
-        call DestroyEffect(AddSpecialEffectTarget("war3mapImported\\BloodEX.mdx",newTarget,"chest"))
-        call SaveReal(HH,GetHandleId(newCaster),StringHash("yamato"),0)
-        set critcoef=critcoef+2
-    endif
-	if GetRandomInt(0,100)<15 and (UnitHasItemOfTypeBJ(newCaster,'I01J') or GetUnitAbilityLevel(newCaster,'KI06')>0) and IsUnitType(newCaster, UNIT_TYPE_HERO) and IsUnitIllusion(newCaster)==false then
-        set critcoef=critcoef+0.5
-    endif
-    if GetRandomInt(0,100)<15 and (UnitHasItemOfTypeBJ(newCaster,'I01I') or GetUnitAbilityLevel(newCaster,'KI08')>0) and IsUnitType(newCaster, UNIT_TYPE_HERO) and IsUnitIllusion(newCaster)==false then
-        set critcoef=critcoef+0.75
-    endif
-    if GetRandomInt(0,100)<15 and (UnitHasItemOfTypeBJ(newCaster,'I01K') or GetUnitAbilityLevel(newCaster,'KI10')>0) and IsUnitType(newCaster, UNIT_TYPE_HERO) and IsUnitIllusion(newCaster)==false then
-        set critcoef=critcoef+1
-    endif
-    if GetRandomInt(0,100)<15 and (UnitHasItemOfTypeBJ(newCaster,'I01L') or GetUnitAbilityLevel(newCaster,'KI12')>0) and IsUnitType(newCaster, UNIT_TYPE_HERO) and IsUnitIllusion(newCaster)==false then
-        set critcoef=critcoef+1
-    endif
-    if GetRandomInt(0,100)<20 and (UnitHasItemOfTypeBJ(newCaster,'I01O') or GetUnitAbilityLevel(newCaster,'KI14')>0) and IsUnitType(newCaster, UNIT_TYPE_HERO) and IsUnitIllusion(newCaster)==false then
-        set critcoef=critcoef+1
-    endif
-    if GetRandomInt(0,100)<20 and (UnitHasItemOfTypeBJ(newCaster,'I01Q') or GetUnitAbilityLevel(newCaster,'KI16')>0) and IsUnitType(newCaster, UNIT_TYPE_HERO) and IsUnitIllusion(newCaster)==false then
-        set critcoef=critcoef+1
-    endif
-    if GetRandomInt(0,100)<30 and (UnitHasItemOfTypeBJ(newCaster,'I01S') or GetUnitAbilityLevel(newCaster,'KI18')>0) and IsUnitType(newCaster, UNIT_TYPE_HERO) and IsUnitIllusion(newCaster)==false then
-        set critcoef=critcoef+1
-    endif
-    if GetRandomInt(0,100)<20 and (UnitHasItemOfTypeBJ(newCaster,'I01U') or GetUnitAbilityLevel(newCaster,'KI20')>0) and IsUnitType(newCaster, UNIT_TYPE_HERO) and IsUnitIllusion(newCaster)==false then
-        set critcoef=critcoef+1
-    endif
-    if GetRandomInt(0,100)<25 and (UnitHasItemOfTypeBJ(newCaster,'IBSI') or GetUnitAbilityLevel(newCaster,'KI0Y')>0) and IsUnitType(newCaster, UNIT_TYPE_HERO) and IsUnitIllusion(newCaster)==false then
-        set critcoef=critcoef+1
-    endif
-    if GetRandomInt(0,100)<7.5+3.5*GetUnitAbilityLevel(newCaster,'A0IR') and GetUnitAbilityLevel(newCaster,'A0IR')>0 and IsUnitType(newCaster, UNIT_TYPE_HERO) and IsUnitIllusion(newCaster)==false and GetHeroLevel(newCaster)>5 then
-        set critcoef=critcoef+1
-    endif
-    if GetRandomInt(0,100)<15 and GetUnitAbilityLevel(newCaster,'CS02')>0 and IsUnitType(newCaster, UNIT_TYPE_HERO) and IsUnitIllusion(newCaster)==false and GetHeroLevel(newCaster)>5 then
-        set critcoef=critcoef+1
-    endif
-    if GetRandomInt(0,100)<30 and GetUnitAbilityLevel(newCaster,'WAE1')>0 and IsUnitType(newCaster, UNIT_TYPE_HERO) and IsUnitIllusion(newCaster)==false then
-        set critcoef=critcoef+0.5
-    endif
-    if (UnitHasItemOfTypeBJ(newTarget,'IAoF') or GetUnitAbilityLevel(newTarget,'KI1A')>0) and IsUnitType(newCaster, UNIT_TYPE_HERO) and IsUnitIllusion(newCaster)==false then
-        if critcoef>2 then
-            set critcoef=critcoef-1
-        else
-            set critcoef=1
+        if (LoadReal(HH,GetHandleId(newCaster),StringHash("yamato"))==1 or GetRandomInt(0,100)<15) and (UnitHasItemOfTypeBJ(newCaster,'I02V') or GetUnitAbilityLevel(newCaster,'KIG4')>0) and IsUnitType(newCaster, UNIT_TYPE_HERO) and IsUnitIllusion(newCaster)==false then
+            call DestroyEffect(AddSpecialEffectTarget("war3mapImported\\BloodEX.mdx",newTarget,"chest"))
+            call SaveReal(HH,GetHandleId(newCaster),StringHash("yamato"),0)
+            set critcoef=critcoef+2
         endif
-    endif
-    if UnitHaveShield(newCaster,newTarget,damage)==false then
-        if UnitHasItemOfTypeBJ(newCaster, 'I031') and IsUnitType(newTarget,UNIT_TYPE_HERO) and IsUnitIllusion(newTarget)==false then 	// Патриот
-            set tt=CreateTimer()
-            call SetHeroAgi(newCaster,GetHeroAgi(newCaster,false)+1,true)
-            call SetHeroStr(newCaster,GetHeroStr(newCaster,false)+1,true)
-            call SetHeroInt(newCaster,GetHeroInt(newCaster,false)+1,true)
-            call SetHeroAgi(newTarget,GetHeroAgi(newTarget,false)-1,true)
-            call SetHeroStr(newTarget,GetHeroStr(newTarget,false)-1,true)
-            call SetHeroInt(newTarget,GetHeroInt(newTarget,false)-1,true)
-            call SaveUnitHandle(h,GetHandleId(tt), 0, newTarget)
-            call SaveUnitHandle(h,GetHandleId(tt), 1, newCaster)
-            call TimerStart(tt, 5, false, function GilPatriotModifEnd)
-            set tt=null
-            //set damage=damage-damage*0.3
+        if GetRandomInt(0,100)<15 and (UnitHasItemOfTypeBJ(newCaster,'I01J') or GetUnitAbilityLevel(newCaster,'KI06')>0) and IsUnitType(newCaster, UNIT_TYPE_HERO) and IsUnitIllusion(newCaster)==false then
+            set critcoef=critcoef+0.5
         endif
-        
-        if UnitHasItemOfTypeBJ(newCaster, 'I04F') then 				// Экскалибур
-            call SetWidgetLife(newCaster, GetWidgetLife(newCaster)+damage*0.2*myCustomDamage2(newTarget,1))
-            
-            set tt=CreateTimer()
-                call SetUnitArmour(newTarget, GetUnitArmour(newTarget)-1)
+        if GetRandomInt(0,100)<15 and (UnitHasItemOfTypeBJ(newCaster,'I01I') or GetUnitAbilityLevel(newCaster,'KI08')>0) and IsUnitType(newCaster, UNIT_TYPE_HERO) and IsUnitIllusion(newCaster)==false then
+            set critcoef=critcoef+0.75
+        endif
+        if GetRandomInt(0,100)<15 and (UnitHasItemOfTypeBJ(newCaster,'I01K') or GetUnitAbilityLevel(newCaster,'KI10')>0) and IsUnitType(newCaster, UNIT_TYPE_HERO) and IsUnitIllusion(newCaster)==false then
+            set critcoef=critcoef+1
+        endif
+        if GetRandomInt(0,100)<15 and (UnitHasItemOfTypeBJ(newCaster,'I01L') or GetUnitAbilityLevel(newCaster,'KI12')>0) and IsUnitType(newCaster, UNIT_TYPE_HERO) and IsUnitIllusion(newCaster)==false then
+            set critcoef=critcoef+1
+        endif
+        if GetRandomInt(0,100)<20 and (UnitHasItemOfTypeBJ(newCaster,'I01O') or GetUnitAbilityLevel(newCaster,'KI14')>0) and IsUnitType(newCaster, UNIT_TYPE_HERO) and IsUnitIllusion(newCaster)==false then
+            set critcoef=critcoef+1
+        endif
+        if GetRandomInt(0,100)<20 and (UnitHasItemOfTypeBJ(newCaster,'I01Q') or GetUnitAbilityLevel(newCaster,'KI16')>0) and IsUnitType(newCaster, UNIT_TYPE_HERO) and IsUnitIllusion(newCaster)==false then
+            set critcoef=critcoef+1
+        endif
+        if GetRandomInt(0,100)<30 and (UnitHasItemOfTypeBJ(newCaster,'I01S') or GetUnitAbilityLevel(newCaster,'KI18')>0) and IsUnitType(newCaster, UNIT_TYPE_HERO) and IsUnitIllusion(newCaster)==false then
+            set critcoef=critcoef+1
+        endif
+        if GetRandomInt(0,100)<20 and (UnitHasItemOfTypeBJ(newCaster,'I01U') or GetUnitAbilityLevel(newCaster,'KI20')>0) and IsUnitType(newCaster, UNIT_TYPE_HERO) and IsUnitIllusion(newCaster)==false then
+            set critcoef=critcoef+1
+        endif
+        if GetRandomInt(0,100)<25 and (UnitHasItemOfTypeBJ(newCaster,'IBSI') or GetUnitAbilityLevel(newCaster,'KI0Y')>0) and IsUnitType(newCaster, UNIT_TYPE_HERO) and IsUnitIllusion(newCaster)==false then
+            set critcoef=critcoef+1
+        endif
+        if GetRandomInt(0,100)<7.5+3.5*GetUnitAbilityLevel(newCaster,'A0IR') and GetUnitAbilityLevel(newCaster,'A0IR')>0 and IsUnitType(newCaster, UNIT_TYPE_HERO) and IsUnitIllusion(newCaster)==false and GetHeroLevel(newCaster)>5 then
+            set critcoef=critcoef+1
+        endif
+        if GetRandomInt(0,100)<15 and GetUnitAbilityLevel(newCaster,'CS02')>0 and IsUnitType(newCaster, UNIT_TYPE_HERO) and IsUnitIllusion(newCaster)==false and GetHeroLevel(newCaster)>5 then
+            set critcoef=critcoef+1
+        endif
+        if GetRandomInt(0,100)<30 and GetUnitAbilityLevel(newCaster,'WAE1')>0 and IsUnitType(newCaster, UNIT_TYPE_HERO) and IsUnitIllusion(newCaster)==false then
+            set critcoef=critcoef+0.5
+        endif
+        if (UnitHasItemOfTypeBJ(newTarget,'IAoF') or GetUnitAbilityLevel(newTarget,'KI1A')>0) and IsUnitType(newCaster, UNIT_TYPE_HERO) and IsUnitIllusion(newCaster)==false then
+            if critcoef>2 then
+                set critcoef=critcoef-1
+            else
+                set critcoef=1
+            endif
+        endif
+        if UnitHaveShield(newCaster,newTarget,damage)==false then
+            if UnitHasItemOfTypeBJ(newCaster, 'I031') and IsUnitType(newTarget,UNIT_TYPE_HERO) and IsUnitIllusion(newTarget)==false then 	// Патриот
+                set tt=CreateTimer()
+                call SetHeroAgi(newCaster,GetHeroAgi(newCaster,false)+1,true)
+                call SetHeroStr(newCaster,GetHeroStr(newCaster,false)+1,true)
+                call SetHeroInt(newCaster,GetHeroInt(newCaster,false)+1,true)
+                call SetHeroAgi(newTarget,GetHeroAgi(newTarget,false)-1,true)
+                call SetHeroStr(newTarget,GetHeroStr(newTarget,false)-1,true)
+                call SetHeroInt(newTarget,GetHeroInt(newTarget,false)-1,true)
                 call SaveUnitHandle(h,GetHandleId(tt), 0, newTarget)
                 call SaveUnitHandle(h,GetHandleId(tt), 1, newCaster)
-                call TimerStart(tt, 10, false, function GilExcaliburModifEnd)
-            set tt=null
-        endif
-        
-        if UnitHasItemOfTypeBJ(newCaster, 'I01S') and GetRandomInt(0, 9)<=3 then 				// Темный Экскалибур
-            if LoadBoolean(h, GetHandleId(newCaster), StringHash("ItemDarkExc_CD"))==false then
+                call TimerStart(tt, 5, false, function GilPatriotModifEnd)
+                set tt=null
+                //set damage=damage-damage*0.3
+            endif
+            
+            if UnitHasItemOfTypeBJ(newCaster, 'I04F') then 				// Экскалибур
+                call SetWidgetLife(newCaster, GetWidgetLife(newCaster)+damage*0.2*myCustomDamage2(newTarget,1))
+                
                 set tt=CreateTimer()
-                call SaveBoolean(h, GetHandleId(newCaster), StringHash("ItemDarkExc_CD"), true)
-                call UnitRemoveAbility(newCaster, 'A26R')
-                call UnitAddAbility(newCaster,'A26R')
-                call SaveUnitHandle(h,GetHandleId(tt),0,newCaster)
-                call TimerStart(tt,3,false,function GilDarkExcaliburModifEnd)
+                    call SetUnitArmour(newTarget, GetUnitArmour(newTarget)-1)
+                    call SaveUnitHandle(h,GetHandleId(tt), 0, newTarget)
+                    call SaveUnitHandle(h,GetHandleId(tt), 1, newCaster)
+                    call TimerStart(tt, 10, false, function GilExcaliburModifEnd)
                 set tt=null
             endif
-        endif
-        
-        if GetUnitAbilityLevel(newCaster, 'A26R')>0 then										// Темный Экскалибур Хилл
-            call SetWidgetLife(newCaster, GetWidgetLife(newCaster)+damage*0.6*myCustomDamage2(newTarget, 1))
-        endif
-        
-        if GetUnitAbilityLevel(newCaster, 'B06N')>0 then										// Темный Экскалибур Хилл
-            call SetWidgetLife(newCaster, GetWidgetLife(newCaster)+damage*0.4*myCustomDamage2(newTarget, 1))
-        endif
-        
-        if UnitHasItemOfTypeBJ(newCaster, 'I03O') then 				// Самехада: Чистый Урон
-            set bonus_damage=30+GetUnitTotalDamage(newCaster)*0.08
-            if GetWidgetLife(newTarget)>bonus_damage then
-                call SetWidgetLife(newTarget, GetWidgetLife(newTarget)-bonus_damage)
-            else
-                set fatal_damage=true
-            endif
-        endif
-        
-        if UnitHasItemOfTypeBJ(newCaster, 'I03B') then				// Меч Анбу
-            set bonus_damage=16.5
-            if GetWidgetLife(newTarget)>bonus_damage then
-                call SetWidgetLife(newTarget, GetWidgetLife(newTarget)-bonus_damage)
-            else
-                set fatal_damage=true
-            endif
-        endif
-        
-        if UnitHasItemOfTypeBJ(newCaster, 'I050') then				// Гегецебури
-            set bonus_damage=30
-            if GetWidgetLife(newTarget)>bonus_damage then
-                call SetWidgetLife(newTarget, GetWidgetLife(newTarget)-bonus_damage)
-            else
-                set fatal_damage=true
-            endif
-            if GetRandomInt(0, 99)<=19 then
-                call DestroyEffect(AddSpecialEffect("war3mapImported\\Cleave.mdx",GetUnitX(newTarget),GetUnitY(newTarget)))
-                call SetControlToUnit(newTarget, newTarget, 0.3, "stun")
-            endif
-        endif
-        
-        if GetUnitAbilityLevel(newCaster,'WAE4')==0 and GetUnitAbilityLevel(newCaster,'WAE1')>0 then
-            call SetControlToUnit(newTarget,newTarget, 0.3, "stun")
-            call UnitAddAbility(newCaster,'WAE4')
-            call UnitRemoveAbilityTimed(newCaster,'WAE4',0.7)
-            call myCustomDamage(newCaster,newTarget,GetHeroInt(newCaster,true),false,false,null,null,null)
-        endif
             
+            if UnitHasItemOfTypeBJ(newCaster, 'I01S') and GetRandomInt(0, 9)<=3 then 				// Темный Экскалибур
+                if LoadBoolean(h, GetHandleId(newCaster), StringHash("ItemDarkExc_CD"))==false then
+                    set tt=CreateTimer()
+                    call SaveBoolean(h, GetHandleId(newCaster), StringHash("ItemDarkExc_CD"), true)
+                    call UnitRemoveAbility(newCaster, 'A26R')
+                    call UnitAddAbility(newCaster,'A26R')
+                    call SaveUnitHandle(h,GetHandleId(tt),0,newCaster)
+                    call TimerStart(tt,3,false,function GilDarkExcaliburModifEnd)
+                    set tt=null
+                endif
+            endif
+            
+            if GetUnitAbilityLevel(newCaster, 'A26R')>0 then										// Темный Экскалибур Хилл
+                call SetWidgetLife(newCaster, GetWidgetLife(newCaster)+damage*0.6*myCustomDamage2(newTarget, 1))
+            endif
+            
+            if GetUnitAbilityLevel(newCaster, 'B06N')>0 then										// Темный Экскалибур Хилл
+                call SetWidgetLife(newCaster, GetWidgetLife(newCaster)+damage*0.4*myCustomDamage2(newTarget, 1))
+            endif
+            
+            if UnitHasItemOfTypeBJ(newCaster, 'I03O') then 				// Самехада: Чистый Урон
+                set bonus_damage=30+GetUnitTotalDamage(newCaster)*0.08
+                if GetWidgetLife(newTarget)>bonus_damage then
+                    call SetWidgetLife(newTarget, GetWidgetLife(newTarget)-bonus_damage)
+                else
+                    set fatal_damage=true
+                endif
+            endif
+            
+            if UnitHasItemOfTypeBJ(newCaster, 'I03B') then				// Меч Анбу
+                set bonus_damage=16.5
+                if GetWidgetLife(newTarget)>bonus_damage then
+                    call SetWidgetLife(newTarget, GetWidgetLife(newTarget)-bonus_damage)
+                else
+                    set fatal_damage=true
+                endif
+            endif
+            
+            if UnitHasItemOfTypeBJ(newCaster, 'I050') then				// Гегецебури
+                set bonus_damage=30
+                if GetWidgetLife(newTarget)>bonus_damage then
+                    call SetWidgetLife(newTarget, GetWidgetLife(newTarget)-bonus_damage)
+                else
+                    set fatal_damage=true
+                endif
+                if GetRandomInt(0, 99)<=19 then
+                    call DestroyEffect(AddSpecialEffect("war3mapImported\\Cleave.mdx",GetUnitX(newTarget),GetUnitY(newTarget)))
+                    call SetControlToUnit(newTarget, newTarget, 0.3, "stun")
+                endif
+            endif
+            
+            if GetUnitAbilityLevel(newCaster,'WAE4')==0 and GetUnitAbilityLevel(newCaster,'WAE1')>0 then
+                call SetControlToUnit(newTarget,newTarget, 0.3, "stun")
+                call UnitAddAbility(newCaster,'WAE4')
+                call UnitRemoveAbilityTimed(newCaster,'WAE4',0.7)
+                call myCustomDamage(newCaster,newTarget,GetHeroInt(newCaster,true),false,false,null,null,null)
+            endif
+                
             if UnitHasItemOfTypeBJ(newCaster, 'I03N') then                          // Самехада: Манажор
                 call DestroyEffect(AddSpecialEffectTarget("Abilities\\Spells\\Human\\Feedback\\ArcaneTowerAttack.mdl", newTarget,"origin"))
                 call DestroyEffect(AddSpecialEffectTarget("Abilities\\Spells\\Undead\\AbsorbMana\\AbsorbManaBirthMissile.mdl", newTarget,"chest"))
@@ -143085,7 +143229,7 @@ function GilgameshModifiedAttack takes unit newCaster, unit newTarget returns bo
             
             
             if UnitHasItemOfTypeBJ(newTarget, 'I03C') and UnitHasItemOfTypeBJ(newTarget, 'I03F')==false then        // Жилет Анбу у таргета
-                    set damage=damage-35
+                    set damage=damage-25
                     call DestroyEffect(AddSpecialEffectTarget("Abilities\\Spells\\Human\\Heal\\HealTarget.mdl", newTarget,"origin"))
             endif
             
@@ -143095,7 +143239,7 @@ function GilgameshModifiedAttack takes unit newCaster, unit newTarget returns bo
             endif
 
             if (UnitHasItemOfTypeBJ(newTarget,'IAoF') or GetUnitAbilityLevel(newTarget,'KI1A')>0) then                                                                                                          // Комплект Анбу у таргета
-                    set damage=damage-(80+5*round)
+                    set damage=damage-(60+5*round)
             endif
 
             if (UnitHasItemOfTypeBJ(newTarget,'I03Z')or GetUnitAbilityLevel(newTarget,'KIL2')>0) then
@@ -143107,49 +143251,53 @@ function GilgameshModifiedAttack takes unit newCaster, unit newTarget returns bo
             endif
 
             if UnitHasItemOfTypeBJ(newTarget, 'I060') then                                                                                                          // Облако Маре D ранг
-                    set damage=damage-30*2
+                    set damage=damage-20
             endif
             
             if UnitHasItemOfTypeBJ(newTarget, 'I061') then                                                                                                          // Облако Маре C ранг
-                    set damage=damage-50*2
+                    set damage=damage-40
             endif
             
             if UnitHasItemOfTypeBJ(newTarget, 'I062') then                                                                                                          // Облако Маре B ранг
-                    set damage=damage-70*2
+                    set damage=damage-60
             endif
             
             if UnitHasItemOfTypeBJ(newTarget, 'I063') then                                                                                                          // Облако Маре A ранг
-                    set damage=damage-90*2
+                    set damage=damage-80
             endif
                     
             if UnitHasItemOfTypeBJ(newTarget, 'I064') then                                                                                                          // Облако Маре Фальшивое
-                    set damage=damage-110*2
+                    set damage=damage-100
             endif
             
             if UnitHasItemOfTypeBJ(newTarget, 'I065') then                                                                                                          // Облако Маре Истинное
-                    set damage=damage-130*2
+                    set damage=damage-120
             endif
-            
-            endif
+        
         endif
-        if miss then
-                call AllTextTag("|c00C0C0C0Miss!|r" , newTarget)
-        endif
-        if critcoef>1 then
-            call AllTextTag("|c00FF3737CRIT x"+R2SW(critcoef,2,2)+"|r" , newCaster)
-        endif
-        if fatal_damage==false then
-                if damage>0 then
-                    call myCustomDamage(newCaster,newTarget,damage*critcoef,false,false,ATTACK_TYPE_HERO,DAMAGE_TYPE_NORMAL,null)
-                endif
+    endif
+    if miss then
+            call AllTextTag("|c00C0C0C0Miss!|r" , newTarget)
+    endif
+    if critcoef>1 then
+        call AllTextTag("|c00FF3737CRIT x"+R2SW(critcoef,2,2)+"|r" , newCaster)
+    endif
+    if fatal_damage==false then
+        if damage>0 then
+            call myCustomDamage(newCaster,newTarget,damage*critcoef,false,false,ATTACK_TYPE_HERO,DAMAGE_TYPE_NORMAL,null)
         else
-                call UnitRemoveBuffs(newTarget,true,true)
-                call UnitAddAbility(newTarget,'A0WR')
-                call DamageIndicatorFunction(newCaster,newTarget,damage)
-                call myCustomDamage(newCaster, newTarget, GetWidgetMaxLife(newTarget)*2,false,false,null,null,null)
-                call UnitRemoveAbility(newTarget,'A0WR')
+            if miss==false then
+                call myCustomDamage(newCaster,newTarget,10,false,false,ATTACK_TYPE_HERO,DAMAGE_TYPE_NORMAL,null)
+            endif
         endif
-        return miss
+    else
+        call UnitRemoveBuffs(newTarget,true,true)
+        call UnitAddAbility(newTarget,'A0WR')
+        call DamageIndicatorFunction(newCaster,newTarget,damage)
+        call myCustomDamage(newCaster, newTarget, GetWidgetMaxLife(newTarget)*2,false,false,null,null,null)
+        call UnitRemoveAbility(newTarget,'A0WR')
+    endif
+    return miss
 endfunction
 
 function AGilPush2 takes nothing returns nothing
@@ -143971,7 +144119,7 @@ local real st=LoadReal(h,id,4)
 local real sc=0
 local real he=GetUnitFlyHeight(u)
 local trigger tt=LoadTriggerHandle(h, id, StringHash("OrderTrigger"))
-call SetControlToUnit(u,u,0.1,"doom")
+call SetControlToUnit(u,u,0.1,"doomdebug")
 if time>0 then
 if time<3 then
     if he<750 then
@@ -144080,12 +144228,12 @@ local integer id=GetHandleId(t)
 local unit u=LoadUnitHandle(h,id,0)
 local real time=LoadReal(h,id,10)
 if time>1 then
-call SetControlToUnit(u,u,0.1,"doom")
+call SetControlToUnit(u,u,0.1,"doomdebug")
 call SaveReal(h,id,10,time-0.05)
 else
 call PauseTimer(t)
 call SetUnitAnimation(u,"stand channel")
-call SetControlToUnit(u,u,0.1,"doom")
+call SetControlToUnit(u,u,0.1,"doomdebug")
 call SetUnitTimeScale(u,0.72)
 call TimerStart(t,0.03,true,function TGilCast3)
 endif
@@ -171781,7 +171929,7 @@ function JirenESelf_Cast2 takes nothing returns nothing
             call SetAbilityRemainingCooldown(GetUnitAbility(u, 'JNE1'), GetAbilityRemainingCooldown(GetUnitAbility(u, 'JNE1'))+9)
             call TimerStart(t,0.02,true,function JirenESelf_Cast3)
         else
-            call SetControlToUnit(u , u , 0.3 , "doomdebug")
+            call SetControlToUnit(u , u , 0.5 , "doomdebug")
             call PauseUnit(u,false)
             call PauseTimer(t)
             call DestroyTimer(t)
@@ -172372,7 +172520,7 @@ function JirenQSelf_Cast2 takes nothing returns nothing
         else
             call RemoveSavedHandle(HH,idu,REVERSE_TARGET)
             if c==null then
-                call SetControlToUnit(u , u , 0.3 , "doomdebug")
+                call SetControlToUnit(u , u , 0.5 , "doomdebug")
             endif
             call PauseUnit(u,false)
             call PauseTimer(t)
@@ -176058,7 +176206,7 @@ function MinatoT_Combination_Periodic takes nothing returns nothing
         call SaveBoolean(HH,GetHandleId(target),TARGET_ABILITY,true)
         if act == 0 then
             call SetUnitInvulnerable(caster, true)
-            call SetControlToUnit(caster , caster , 0.11 , "doom")
+            call SetControlToUnit(caster , caster , 0.11 , "doomdebug")
             if time < 1.5 then
                 call SetUnitX(target, GetUnitX(target) + 10 * Cos(angle))
                 call SetUnitY(target, GetUnitY(target) + 10 * Sin(angle))
@@ -180115,7 +180263,7 @@ call DestroyGroup(LoadGroupHandle(HH,id,4))
 call RemoveUnit(LoadUnitHandle(HH,id,20))
 endif
 if LoadBoolean(HH,GetHandleId(caster),ANTITARGET_ABILITY)==true then
-    call SetControlToUnit(caster , caster , 0.3 , "doomdebug")
+    call SetControlToUnit(caster , caster , 0.5 , "doomdebug")
 endif
 call SaveBoolean(HH,GetHandleId(caster),ANTITARGET_ABILITY,false)
 call PauseTimer(t)
@@ -184631,7 +184779,7 @@ endif
 
 if time==-0.02 then
 if LoadBoolean(HH,GetHandleId(caster),ANTITARGET_ABILITY)==true then
-    call SetControlToUnit(caster , caster , 0.3 , "doomdebug")
+    call SetControlToUnit(caster , caster , 0.5 , "doomdebug")
 endif
 call SaveBoolean(HH,GetHandleId(caster),ANTITARGET_ABILITY,false)
 call SaveBoolean(HH,GetHandleId(caster),StringHash("DanzoWBool"),false)
@@ -201065,7 +201213,7 @@ function IchigoShikaiR_Periodic1 takes nothing returns nothing
     if time<1.7 and UnitIsAlive(caster) then
         call SaveReal(h, id, 2, time)
         call SetUnitInvulnerable(caster,true)
-        call SetControlToUnit(caster,caster,0.11,"doom")
+        call SetControlToUnit(caster,caster,0.11,"doomdebug")
         if eff_period<=0 then
             call SetUnitX(LoadUnitHandle(h, id, 12), GetUnitX(caster))
             call SetUnitY(LoadUnitHandle(h, id, 12), GetUnitY(caster))
@@ -201985,7 +202133,7 @@ function IchigoBankaiW_Periodic takes nothing returns nothing
         endif
     else
         if LoadBoolean(HH,GetHandleId(caster),ANTITARGET_ABILITY)==true then
-            call SetControlToUnit(caster , caster , 0.3 , "doomdebug")
+            call SetControlToUnit(caster , caster , 0.5 , "doomdebug")
         endif
         call DestroyEffect(LoadEffectHandle(h, id, 3))
         call DestroyEffect(LoadEffectHandle(h, id, 4))
@@ -202872,7 +203020,7 @@ function IchigoVasterR_WaitTime takes nothing returns nothing
     call SaveReal(h, id, 11, time)
     
     if time<1.25 then
-        call SetControlToUnit(caster, caster, 0.25, "doom")
+        call SetControlToUnit(caster, caster, 0.25, "doomdebug")
         call SetUnitX(dummy, caster_x+150*Cos(angle))
         call SetUnitY(dummy, caster_y+150*Sin(angle))
         if eff_period<=0 then
@@ -203563,7 +203711,7 @@ function Karna_ModifAttack takes unit newCaster, unit newTarget, real attack_fac
                 call RainMare_Actions(newCaster,newTarget)
             endif
             if UnitHasItemOfTypeBJ(newTarget, 'I03C') and UnitHasItemOfTypeBJ(newTarget, 'I03F')==false then	// Жилет Анбу у таргета
-                set damage=damage-35
+                set damage=damage-25
                 call DestroyEffect(AddSpecialEffectTarget("Abilities\\Spells\\Human\\Heal\\HealTarget.mdl", newTarget,"origin"))
             endif
             
@@ -203573,7 +203721,7 @@ function Karna_ModifAttack takes unit newCaster, unit newTarget, real attack_fac
             endif
 
             if (UnitHasItemOfTypeBJ(newTarget,'IAoF') or GetUnitAbilityLevel(newTarget,'KI1A')>0) then                                                                                                          // Комплект Анбу у таргета
-                set damage=damage-(80+5*round)
+                set damage=damage-(60+5*round)
             endif
 
             if (UnitHasItemOfTypeBJ(newTarget,'I03Z')or GetUnitAbilityLevel(newTarget,'KIL2')>0) then
@@ -203585,27 +203733,27 @@ function Karna_ModifAttack takes unit newCaster, unit newTarget, real attack_fac
             endif
             
             if UnitHasItemOfTypeBJ(newTarget, 'I060') then														// Облако Маре D ранг
-                set damage=damage-30
+                set damage=damage-20
             endif
             
             if UnitHasItemOfTypeBJ(newTarget, 'I061') then														// Облако Маре C ранг
-                set damage=damage-50
+                set damage=damage-40
             endif
             
             if UnitHasItemOfTypeBJ(newTarget, 'I062') then														// Облако Маре B ранг
-                set damage=damage-70
+                set damage=damage-60
             endif
             
             if UnitHasItemOfTypeBJ(newTarget, 'I063') then														// Облако Маре A ранг
-                set damage=damage-90
+                set damage=damage-80
             endif
                 
             if UnitHasItemOfTypeBJ(newTarget, 'I064') then														// Облако Маре Фальшивое
-                set damage=damage-110
+                set damage=damage-100
             endif
             
             if UnitHasItemOfTypeBJ(newTarget, 'I065') then														// Облако Маре Истинное
-                set damage=damage-130
+                set damage=damage-120
             endif
         
         endif
@@ -203640,6 +203788,10 @@ function Karna_ModifAttack takes unit newCaster, unit newTarget, real attack_fac
 	if fatal_damage==false then
 		if damage>0 then
 			call myCustomDamage(newCaster,newTarget,damage,false,false,null,null,null)
+        else
+            if miss==false then
+                call myCustomDamage(newCaster,newTarget,10,false,false,null,null,null)
+            endif
 		endif
 	else
 		call UnitRemoveBuffs(newTarget,true,true)
@@ -203900,7 +204052,7 @@ function Sinon_ModifAttack takes unit newCaster, unit newTarget, real attack_fac
             call RainMare_Actions(newCaster,newTarget)
         endif
 		// if UnitHasItemOfTypeBJ(newTarget, 'I03C') and UnitHasItemOfTypeBJ(newTarget, 'I03F')==false then	// Жилет Анбу у таргета
-			// set damage=damage-35
+			// set damage=damage-25
 			// call DestroyEffect(AddSpecialEffectTarget("Abilities\\Spells\\Human\\Heal\\HealTarget.mdl", newTarget,"origin"))
 		// endif
 		
@@ -203910,27 +204062,27 @@ function Sinon_ModifAttack takes unit newCaster, unit newTarget, real attack_fac
 		// endif
 		
 		// if UnitHasItemOfTypeBJ(newTarget, 'I060') then														// Облако Маре D ранг
-			// set damage=damage-30
+			// set damage=damage-20
 		// endif
 		
 		// if UnitHasItemOfTypeBJ(newTarget, 'I061') then														// Облако Маре C ранг
-			// set damage=damage-50
+			// set damage=damage-40
 		// endif
 		
 		// if UnitHasItemOfTypeBJ(newTarget, 'I062') then														// Облако Маре B ранг
-			// set damage=damage-70
+			// set damage=damage-60
 		// endif
 		
 		// if UnitHasItemOfTypeBJ(newTarget, 'I063') then														// Облако Маре A ранг
-			// set damage=damage-90
+			// set damage=damage-80
 		// endif
 			
 		// if UnitHasItemOfTypeBJ(newTarget, 'I064') then														// Облако Маре Фальшивое
-			// set damage=damage-110
+			// set damage=damage-100
 		// endif
 		
 		// if UnitHasItemOfTypeBJ(newTarget, 'I065') then														// Облако Маре Истинное
-			// set damage=damage-130
+			// set damage=damage-120
 		// endif
 		
 		endif
@@ -204001,6 +204153,10 @@ function Sinon_ModifAttack takes unit newCaster, unit newTarget, real attack_fac
 	if fatal_damage==false then
 		if damage>0 then
 			call myCustomDamage(newCaster,newTarget,damage,false,false,null,null,null)
+        else
+            if miss==false then
+                call myCustomDamage(newCaster,newTarget,10,false,false,null,null,null)
+            endif
 		endif
 	else
 		call UnitRemoveBuffs(newTarget,true,true)
@@ -205158,7 +205314,7 @@ function KarnaE_Periodic2 takes nothing returns nothing
     local real    damage   = GetHeroAgi(caster, true)*(2+GetUnitAbilityLevel(caster, 'KaA8'))
     local trigger newTrigger = null
     if time<=2.0 then
-        call SetControlToUnit(caster, caster, 0.11, "doom")
+        call SetControlToUnit(caster, caster, 0.11, "doomdebug")
         call SaveReal(h, id, StringHash("Time"), time+0.05)
 
 
@@ -205945,7 +206101,7 @@ function KarnaT_Periodic1 takes nothing returns nothing
             endif
             call GroupRemoveUnit(G, E)
         endloop
-        call SetControlToUnit(caster, caster, 0.11,"doom")
+        call SetControlToUnit(caster, caster, 0.11,"doomdebug")
     else
         if GetOwningPlayer(caster)==GetLocalPlayer()then
             call ClearSelection()
