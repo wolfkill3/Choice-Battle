@@ -4222,7 +4222,12 @@ function CreateModeIndicatorWithPauseFormMadara_Periodic takes nothing returns n
         call SaveReal           (HH, GetHandleId(NewFrame), c_DURATION, duration)
         call SetFrameText( LoadFrameHandle(HH, idp,StringHash(mode_name+"2")), R2SW(duration,2, 1) )
     endif
-    call SetFrameRelativePoint( NewFrame, FRAMEPOINT_CENTER, StatusBarFrame, FRAMEPOINT_LEFT, 0.017+position*0.025, 0.005 )
+    if GetFrameHeight( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 ))==0.132 then
+        call SetFrameSize( NewFrame, .0237*(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505), .0237 *(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505))
+        call SetFrameRelativePoint( NewFrame, FRAMEPOINT_CENTER, StatusBarFrame, FRAMEPOINT_LEFT, 0.017+position*0.025*(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505), 0.005 )
+    else
+        call SetFrameRelativePoint( NewFrame, FRAMEPOINT_CENTER, StatusBarFrame, FRAMEPOINT_LEFT, 0.017+position*0.025, 0.005 )
+    endif
     if duration<=0 or udg_B==false or DU2==false or UnitIsAlive(caster)==false then
         call SaveReal(HH, GetHandleId(LoadFrameHandle(HH, idp,StringHash(mode_name+"2"))), c_DURATION, 0)
         call ShowFrame( NewFrame, false )
@@ -4324,7 +4329,12 @@ function CreateModeIndicatorFormLaxus_Periodic takes nothing returns nothing
     call SaveReal           (HH, GetHandleId(NewFrame), c_DURATION, duration)
     call SetFrameText( LoadFrameHandle(HH, idp,StringHash(mode_name+"2")), R2SW(duration,2, 1) )
     //endif
-    call SetFrameRelativePoint( NewFrame, FRAMEPOINT_CENTER, StatusBarFrame, FRAMEPOINT_LEFT, 0.017+position*0.025, 0.005 )
+    if GetFrameHeight( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 ))==0.132 then
+        call SetFrameSize( NewFrame, .0237*(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505), .0237 *(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505))
+        call SetFrameRelativePoint( NewFrame, FRAMEPOINT_CENTER, StatusBarFrame, FRAMEPOINT_LEFT, 0.017+position*0.025*(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505), 0.005 )
+    else
+        call SetFrameRelativePoint( NewFrame, FRAMEPOINT_CENTER, StatusBarFrame, FRAMEPOINT_LEFT, 0.017+position*0.025, 0.005 )
+    endif
     if duration<=0 or GetUnitAbilityLevel(LoadUnitHandle(HH, id, c_CASTER),'LAE1')==0 or udg_B==false then
         call SaveReal(HH, GetHandleId(NewFrame), c_DURATION, 0)
         call SaveReal(HH, GetHandleId(LoadFrameHandle(HH, idp,StringHash(mode_name+"2"))), c_DURATION, 0)
@@ -4433,7 +4443,12 @@ function CreateModeIndicatorKarnaQ_Periodic takes nothing returns nothing
     call SaveReal           (HH, GetHandleId(NewFrame), c_DURATION, duration)
     call SetFrameText( LoadFrameHandle(HH, idp,StringHash(mode_name+"2")), R2SW(duration,2, 1) )
     //endif
-    call SetFrameRelativePoint( NewFrame, FRAMEPOINT_CENTER, StatusBarFrame, FRAMEPOINT_LEFT, 0.017+position*0.025, 0.005 )
+    if GetFrameHeight( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 ))==0.132 then
+        call SetFrameSize( NewFrame, .0237*(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505), .0237 *(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505))
+        call SetFrameRelativePoint( NewFrame, FRAMEPOINT_CENTER, StatusBarFrame, FRAMEPOINT_LEFT, 0.017+position*0.025*(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505), 0.005 )
+    else
+        call SetFrameRelativePoint( NewFrame, FRAMEPOINT_CENTER, StatusBarFrame, FRAMEPOINT_LEFT, 0.017+position*0.025, 0.005 )
+    endif
     if duration<=0 or (GetUnitAbilityLevel(LoadUnitHandle(HH, id, c_CASTER),'KaA4')==0 and GetUnitAbilityLevel(LoadUnitHandle(HH, id, c_CASTER),'KaA5')==0) or udg_B==false then
         call SaveReal(HH, GetHandleId(NewFrame), c_DURATION, 0)
         call SaveReal(HH, GetHandleId(LoadFrameHandle(HH, idp,StringHash(mode_name+"2"))), c_DURATION, 0)
@@ -4542,7 +4557,12 @@ function CreateModeIndicatorKarnaW_Periodic takes nothing returns nothing
     call SaveReal           (HH, GetHandleId(NewFrame), c_DURATION, duration)
     call SetFrameText( LoadFrameHandle(HH, idp,StringHash(mode_name+"2")), R2SW(duration,2, 1) )
     //endif
-    call SetFrameRelativePoint( NewFrame, FRAMEPOINT_CENTER, StatusBarFrame, FRAMEPOINT_LEFT, 0.017+position*0.025, 0.005 )
+    if GetFrameHeight( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 ))==0.132 then
+        call SetFrameSize( NewFrame, .0237*(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505), .0237 *(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505))
+        call SetFrameRelativePoint( NewFrame, FRAMEPOINT_CENTER, StatusBarFrame, FRAMEPOINT_LEFT, 0.017+position*0.025*(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505), 0.005 )
+    else
+        call SetFrameRelativePoint( NewFrame, FRAMEPOINT_CENTER, StatusBarFrame, FRAMEPOINT_LEFT, 0.017+position*0.025, 0.005 )
+    endif
     if duration<=0 or GetUnitAbilityLevel(LoadUnitHandle(HH, id, c_CASTER),'KaA7')==0 or udg_B==false then
         call SaveReal(HH, GetHandleId(NewFrame), c_DURATION, 0)
         call SaveReal(HH, GetHandleId(LoadFrameHandle(HH, idp,StringHash(mode_name+"2"))), c_DURATION, 0)
@@ -4655,7 +4675,12 @@ function CreateModeIndicatorFormYujiD_Periodic takes nothing returns nothing
         call SaveReal           (HH, GetHandleId(NewFrame), c_DURATION, duration)
         call SetFrameText( LoadFrameHandle(HH, idp,StringHash(mode_name+"2")), R2SW(duration,2, 1) )
     endif
-    call SetFrameRelativePoint( NewFrame, FRAMEPOINT_CENTER, StatusBarFrame, FRAMEPOINT_LEFT, 0.017+position*0.025, 0.005 )
+    if GetFrameHeight( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 ))==0.132 then
+        call SetFrameSize( NewFrame, .0237*(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505), .0237 *(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505))
+        call SetFrameRelativePoint( NewFrame, FRAMEPOINT_CENTER, StatusBarFrame, FRAMEPOINT_LEFT, 0.017+position*0.025*(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505), 0.005 )
+    else
+        call SetFrameRelativePoint( NewFrame, FRAMEPOINT_CENTER, StatusBarFrame, FRAMEPOINT_LEFT, 0.017+position*0.025, 0.005 )
+    endif
     if duration<=0 and caster!=null and GetUnitAbilityLevel(caster,'YujE')>0 then
         call SaveReal(HH, GetHandleId(NewFrame), c_DURATION, 240)
         if IsUnitAlive(caster) then
@@ -4802,7 +4827,12 @@ function CreateModeIndicatorFormGoku_Periodic takes nothing returns nothing
     call SaveReal           (HH, GetHandleId(NewFrame), c_DURATION, duration)
     call SetFrameText( LoadFrameHandle(HH, idp,StringHash(mode_name+"2")), R2SW(duration,2, 1) )
     //endif
-    call SetFrameRelativePoint( NewFrame, FRAMEPOINT_CENTER, StatusBarFrame, FRAMEPOINT_LEFT, 0.017+position*0.025, 0.005 )
+    if GetFrameHeight( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 ))==0.132 then
+        call SetFrameSize( NewFrame, .0237*(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505), .0237 *(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505))
+        call SetFrameRelativePoint( NewFrame, FRAMEPOINT_CENTER, StatusBarFrame, FRAMEPOINT_LEFT, 0.017+position*0.025*(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505), 0.005 )
+    else
+        call SetFrameRelativePoint( NewFrame, FRAMEPOINT_CENTER, StatusBarFrame, FRAMEPOINT_LEFT, 0.017+position*0.025, 0.005 )
+    endif
     if duration<=0 or udg_B==false or DU2==false or UnitIsAlive(caster)==false then
         call SaveReal(HH, GetHandleId(NewFrame), c_DURATION, 0)
         call SaveReal(HH, GetHandleId(LoadFrameHandle(HH, idp,StringHash(mode_name+"2"))), c_DURATION, 0)
@@ -4913,7 +4943,12 @@ function CreateModeIndicatorForm_Periodic takes nothing returns nothing
     call SaveReal           (HH, GetHandleId(NewFrame), c_DURATION, duration)
     call SetFrameText( LoadFrameHandle(HH, idp,StringHash(mode_name+"2")), R2SW(duration,2, 1) )
     //endif
-    call SetFrameRelativePoint( NewFrame, FRAMEPOINT_CENTER, StatusBarFrame, FRAMEPOINT_LEFT, 0.017+position*0.025, 0.005 )
+    if GetFrameHeight( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 ))==0.132 then
+        call SetFrameSize( NewFrame, .0237*(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505), .0237 *(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505))
+        call SetFrameRelativePoint( NewFrame, FRAMEPOINT_CENTER, StatusBarFrame, FRAMEPOINT_LEFT, 0.017+position*0.025*(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505), 0.005 )
+    else
+        call SetFrameRelativePoint( NewFrame, FRAMEPOINT_CENTER, StatusBarFrame, FRAMEPOINT_LEFT, 0.017+position*0.025, 0.005 )
+    endif
     if duration<=0 or udg_B==false or DU2==false or UnitIsAlive(caster)==false then
         call SaveReal(HH, GetHandleId(NewFrame), c_DURATION, 0)
         call SaveReal(HH, GetHandleId(LoadFrameHandle(HH, idp,StringHash(mode_name+"2"))), c_DURATION, 0)
@@ -5026,7 +5061,12 @@ function CreateModeIndicatorWithPauseForm_Periodic takes nothing returns nothing
         call SetFrameText( LoadFrameHandle(HH, idp,StringHash(mode_name+"2")), R2SW(duration,2, 1) )
     endif
 
-    call SetFrameRelativePoint( NewFrame, FRAMEPOINT_CENTER, StatusBarFrame, FRAMEPOINT_LEFT, 0.017+position*0.025, 0.005 )
+    if GetFrameHeight( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 ))==0.132 then
+        call SetFrameSize( NewFrame, .0237*(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505), .0237 *(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505))
+        call SetFrameRelativePoint( NewFrame, FRAMEPOINT_CENTER, StatusBarFrame, FRAMEPOINT_LEFT, 0.017+position*0.025*(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505), 0.005 )
+    else
+        call SetFrameRelativePoint( NewFrame, FRAMEPOINT_CENTER, StatusBarFrame, FRAMEPOINT_LEFT, 0.017+position*0.025, 0.005 )
+    endif
     if duration<=0 or udg_B==false or DU2==false or UnitIsAlive(caster)==false  then
         call ShowFrame( NewFrame, false )
         call SaveReal(HH, GetHandleId(NewFrame), c_DURATION, 0)
@@ -5137,7 +5177,12 @@ function CreateModeIndicatorFormDispellable_Periodic takes nothing returns nothi
     call SaveReal           (HH, GetHandleId(NewFrame), c_DURATION, duration)
     call SetFrameText( LoadFrameHandle(HH, idp,StringHash(mode_name+"2")), R2SW(duration,2, 1) )
     //endif
-    call SetFrameRelativePoint( NewFrame, FRAMEPOINT_CENTER, StatusBarFrame, FRAMEPOINT_LEFT, 0.017+position*0.025, 0.005 )
+    if GetFrameHeight( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 ))==0.132 then
+        call SetFrameSize( NewFrame, .0237*(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505), .0237 *(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505))
+        call SetFrameRelativePoint( NewFrame, FRAMEPOINT_CENTER, StatusBarFrame, FRAMEPOINT_LEFT, 0.017+position*0.025*(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505), 0.005 )
+    else
+        call SetFrameRelativePoint( NewFrame, FRAMEPOINT_CENTER, StatusBarFrame, FRAMEPOINT_LEFT, 0.017+position*0.025, 0.005 )
+    endif
     if duration<=0 or udg_B==false or DU2==false or UnitIsAlive(caster)==false or GetUnitAbilityLevel(caster,buffId)==0 then
         call SaveReal(HH, GetHandleId(NewFrame), c_DURATION, 0)
         call SaveReal(HH, GetHandleId(LoadFrameHandle(HH, idp,StringHash(mode_name+"2"))), c_DURATION, 0)
@@ -5250,7 +5295,12 @@ function CreateModeIndicatorWithPauseFormDispellable_Periodic takes nothing retu
         call SetFrameText( LoadFrameHandle(HH, idp,StringHash(mode_name+"2")), R2SW(duration,2, 1) )
     endif
 
-    call SetFrameRelativePoint( NewFrame, FRAMEPOINT_CENTER, StatusBarFrame, FRAMEPOINT_LEFT, 0.017+position*0.025, 0.005 )
+    if GetFrameHeight( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 ))==0.132 then
+        call SetFrameSize( NewFrame, .0237*(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505), .0237 *(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505))
+        call SetFrameRelativePoint( NewFrame, FRAMEPOINT_CENTER, StatusBarFrame, FRAMEPOINT_LEFT, 0.017+position*0.025*(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505), 0.005 )
+    else
+        call SetFrameRelativePoint( NewFrame, FRAMEPOINT_CENTER, StatusBarFrame, FRAMEPOINT_LEFT, 0.017+position*0.025, 0.005 )
+    endif
     if duration<=0 or udg_B==false or DU2==false or UnitIsAlive(caster)==false or GetUnitAbilityLevel(caster,buffId)==0 then
         call ShowFrame( NewFrame, false )
         call SaveReal(HH, GetHandleId(NewFrame), c_DURATION, 0)
@@ -5365,7 +5415,12 @@ function CreateModeIndicatorWithPauseFormDispellableHash_Periodic takes nothing 
         call SetFrameText( LoadFrameHandle(HH, idp,StringHash(mode_name+"2")), R2SW(duration,2, 1) )
     endif
 
-    call SetFrameRelativePoint( NewFrame, FRAMEPOINT_CENTER, StatusBarFrame, FRAMEPOINT_LEFT, 0.017+position*0.025, 0.005 )
+    if GetFrameHeight( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 ))==0.132 then
+        call SetFrameSize( NewFrame, .0237*(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505), .0237 *(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505))
+        call SetFrameRelativePoint( NewFrame, FRAMEPOINT_CENTER, StatusBarFrame, FRAMEPOINT_LEFT, 0.017+position*0.025*(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505), 0.005 )
+    else
+        call SetFrameRelativePoint( NewFrame, FRAMEPOINT_CENTER, StatusBarFrame, FRAMEPOINT_LEFT, 0.017+position*0.025, 0.005 )
+    endif
     if duration<=0 or udg_B==false or DU2==false or UnitIsAlive(caster)==false or LoadReal(h,GetHandleId(caster),HashId)==0 then
         call ShowFrame( NewFrame, false )
         call SaveReal(HH, GetHandleId(NewFrame), c_DURATION, 0)
@@ -20212,7 +20267,12 @@ function ShadowCoverIndicator_Periodic takes nothing returns nothing
     call SaveReal           (HH, GetHandleId(NewFrame), c_DURATION, duration)
     call SetFrameText( LoadFrameHandle(HH, idp,StringHash(mode_name+"2")), R2SW(duration,2, 1) )
     //endif
-    call SetFrameRelativePoint( NewFrame, FRAMEPOINT_CENTER, StatusBarFrame, FRAMEPOINT_LEFT, 0.017+position*0.025, 0.005 )
+if GetFrameHeight( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 ))==0.132 then
+        call SetFrameSize( NewFrame, .0237*(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505), .0237 *(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505))
+        call SetFrameRelativePoint( NewFrame, FRAMEPOINT_CENTER, StatusBarFrame, FRAMEPOINT_LEFT, 0.017+position*0.025*(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505), 0.005 )
+    else
+        call SetFrameRelativePoint( NewFrame, FRAMEPOINT_CENTER, StatusBarFrame, FRAMEPOINT_LEFT, 0.017+position*0.025, 0.005 )
+    endif
     if duration<=0 or udg_B==false or DU2==false or UnitIsAlive(caster)==false then
         call SaveReal(HH, GetHandleId(NewFrame), c_DURATION, 0)
         call SaveReal(HH, GetHandleId(LoadFrameHandle(HH, idp,StringHash(mode_name+"2"))), c_DURATION, 0)
@@ -93065,7 +93125,7 @@ if time>11.8 and FFAMode==false then
         loop
         exitwhen i>=10
         set random_i=GetRandomInt(0, 4)
-        if Hero[random_i]!=u and UnitIsAlive(Hero[random_i])==false and Hero[random_i]!=null then
+        if Hero[random_i]!=u and UnitIsAlive(Hero[random_i])==false and Hero[random_i]!=null and ingame[random_i] then
             call ReviveHero(Hero[random_i],x-200*Cos(f),y-200*Sin(f),true)
             call SaveInteger(HH,GetHandleId(Hero[random_i]),StringHash("VegetaDeath"),1)
             call SetUnitState(Hero[random_i],UNIT_STATE_LIFE,1)
@@ -93087,7 +93147,7 @@ if time>11.8 and FFAMode==false then
         loop
         exitwhen i>=10
         set random_i=GetRandomInt(5, 9)
-        if Hero[random_i]!=u and UnitIsAlive(Hero[random_i])==false and Hero[random_i]!=null then
+        if Hero[random_i]!=u and UnitIsAlive(Hero[random_i])==false and Hero[random_i]!=null and ingame[random_i] then
             call ReviveHero(Hero[random_i],x-200*Cos(f),y-200*Sin(f),true)
             call SaveInteger(HH,GetHandleId(Hero[random_i]),StringHash("VegetaDeath"),1)
             call SetUnitState(Hero[random_i],UNIT_STATE_LIFE,1)
@@ -98654,7 +98714,12 @@ function IchigoVaster_OvertimeForm_Periodic takes nothing returns nothing
         call SaveReal           (HH, GetHandleId(NewFrame), c_DURATION, duration)
         call SetFrameText( LoadFrameHandle(HH, idp,StringHash(mode_name+"2")), R2SW(duration,2, 1) )
     endif
-    call SetFrameRelativePoint( NewFrame, FRAMEPOINT_CENTER, StatusBarFrame, FRAMEPOINT_LEFT, 0.017+position*0.025, 0.005 )
+    if GetFrameHeight( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 ))==0.132 then
+        call SetFrameSize( NewFrame, .0237*(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505), .0237 *(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505))
+        call SetFrameRelativePoint( NewFrame, FRAMEPOINT_CENTER, StatusBarFrame, FRAMEPOINT_LEFT, 0.017+position*0.025*(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505), 0.005 )
+    else
+        call SetFrameRelativePoint( NewFrame, FRAMEPOINT_CENTER, StatusBarFrame, FRAMEPOINT_LEFT, 0.017+position*0.025, 0.005 )
+    endif
     if duration<=0 or udg_B==false or DU2==false or UnitIsAlive(caster)==false then
         if udg_B and UnitIsAlive(caster) then
 			call PauseUnit(caster, false)
@@ -190379,7 +190444,12 @@ function CreateModeIndicatorWithPauseSabrac_Periodic takes nothing returns nothi
         call SetFrameText( LoadFrameHandle(HH, idp,StringHash(mode_name+"2")), R2SW(duration,2, 1) )
     endif
 
-    call SetFrameRelativePoint( NewFrame, FRAMEPOINT_CENTER, StatusBarFrame, FRAMEPOINT_LEFT, 0.017+position*0.025, 0.005 )
+    if GetFrameHeight( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 ))==0.132 then
+        call SetFrameSize( NewFrame, .0237*(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505), .0237 *(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505))
+        call SetFrameRelativePoint( NewFrame, FRAMEPOINT_CENTER, StatusBarFrame, FRAMEPOINT_LEFT, 0.017+position*0.025*(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505), 0.005 )
+    else
+        call SetFrameRelativePoint( NewFrame, FRAMEPOINT_CENTER, StatusBarFrame, FRAMEPOINT_LEFT, 0.017+position*0.025, 0.005 )
+    endif
     if duration<=0 or udg_B==false or DU2==false or UnitIsAlive(caster)==false  or SabracTOn==false then
         call ShowFrame( NewFrame, false )
         call SaveReal(HH, GetHandleId(NewFrame), c_DURATION, 0)
@@ -195293,7 +195363,12 @@ function CreateModeIndicatorWithPauseAizen_Periodic takes nothing returns nothin
         call SetFrameText( LoadFrameHandle(HH, idp,StringHash(mode_name+"2")), R2SW(duration,2, 1) )
     endif
 
-    call SetFrameRelativePoint( NewFrame, FRAMEPOINT_CENTER, StatusBarFrame, FRAMEPOINT_LEFT, 0.017+position*0.025, 0.005 )
+    if GetFrameHeight( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 ))==0.132 then
+        call SetFrameSize( NewFrame, .0237*(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505), .0237 *(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505))
+        call SetFrameRelativePoint( NewFrame, FRAMEPOINT_CENTER, StatusBarFrame, FRAMEPOINT_LEFT, 0.017+position*0.025*(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505), 0.005 )
+    else
+        call SetFrameRelativePoint( NewFrame, FRAMEPOINT_CENTER, StatusBarFrame, FRAMEPOINT_LEFT, 0.017+position*0.025, 0.005 )
+    endif
     
     if duration<=0 or udg_B==false or DU2==false or UnitIsAlive(caster)==false  or SabracTOn==false then
         call ShowFrame( NewFrame, false )
@@ -215244,7 +215319,12 @@ function CreateModeIndicatorGojoT_Periodic takes nothing returns nothing
         call SetFrameText( LoadFrameHandle(HH, idp,StringHash(mode_name+"2")), R2SW(duration,2, 1) )
     endif
 
-    call SetFrameRelativePoint( NewFrame, FRAMEPOINT_CENTER, StatusBarFrame, FRAMEPOINT_LEFT, 0.017+position*0.025, 0.005 )
+    if GetFrameHeight( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 ))==0.132 then
+        call SetFrameSize( NewFrame, .0237*(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505), .0237 *(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505))
+        call SetFrameRelativePoint( NewFrame, FRAMEPOINT_CENTER, StatusBarFrame, FRAMEPOINT_LEFT, 0.017+position*0.025*(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505), 0.005 )
+    else
+        call SetFrameRelativePoint( NewFrame, FRAMEPOINT_CENTER, StatusBarFrame, FRAMEPOINT_LEFT, 0.017+position*0.025, 0.005 )
+    endif
     if duration<=0 or udg_B==false or DU2==false or UnitIsAlive(caster)==false or GetUnitAbilityLevel(caster,LoadInteger(HH,id,10))==0 then
         call ShowFrame( NewFrame, false )
         call SaveReal(HH, GetHandleId(NewFrame), c_DURATION, 0)
