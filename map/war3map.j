@@ -63801,9 +63801,6 @@ local group g=LoadGroupHandle(h,id,6)
 local player p=GetOwningPlayer(u)
 local real dmg=(2+GetUnitAbilityLevel(u,'A02P'))*GetHeroStr(u,true)+35
 if l__d<1500 then
-call PauseUnit(c,true)
-call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,true)
-call PauseUnit(u,true)
 set x=x+l__d*Cos(a)
 set y=y+l__d*Sin(a)
 set n=CreateUnit(p,'e0B1',x,y,(a*bj_RADTODEG))
@@ -71933,7 +71930,7 @@ function GinW_Periodic takes nothing returns nothing
         local real caster_y = GetUnitY(LoadUnitHandle(h, id, CasterHash))
         local real angle = LoadReal(h, id, AngleHash)
         if distance<1000 then
-            call PauseUnit(newCaster, true)
+            call PauseUnit(LoadUnitHandle(h, id, CasterHash), true)
             call SetUnitX(LoadUnitHandle(h, id, CasterHash), caster_x+35*Cos(angle))
             call SetUnitY(LoadUnitHandle(h, id, CasterHash), caster_y+35*Sin(angle))
             call SaveReal(h, id, StringHash("Distance"), distance+35)
@@ -99283,8 +99280,8 @@ function LaxusD_Periodic takes nothing returns nothing
 	local real caster_y = GetUnitY(caster)
 	local real angle = LoadReal(h, id, AngleHash)
 	if distance<1000 then
-        call SetUnitInvulnerable(newCaster, true)
-        call PauseUnit(newCaster, true)
+        call SetUnitInvulnerable(caster, true)
+        call PauseUnit(caster, true)
 		call SetUnitX(caster, caster_x+35*Cos(angle))
 		call SetUnitY(caster, caster_y+35*Sin(angle))
 		call SaveReal(h, id, StringHash("Distance"), distance+35)
@@ -99334,8 +99331,8 @@ function LaxusD_Periodic takes nothing returns nothing
 			call SetUnitVertexColor(bjLCU, 255, 255, 255, 300)
 			call MyRemoveUnit(bjLCU, 1.5)
 		else
-            call SetUnitInvulnerable(newCaster, true)
-            call PauseUnit(newCaster, true)
+            call SetUnitInvulnerable(caster, true)
+            call PauseUnit(caster, true)
 			call SetUnitInvulnerable(LoadUnitHandle(h, id, TargetHash), true)
 			call PauseUnit(LoadUnitHandle(h, id, TargetHash), true)
 			call SaveBoolean(HH,GetHandleId(LoadUnitHandle(h, id, TargetHash)),TARGET_ABILITY,true)
@@ -161500,6 +161497,7 @@ function TKiyoCast2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
 local unit u=LoadUnitHandle(h,id,0)
+local unit c=LoadUnitHandle(h,id,1)
 local real x=GetUnitX(u)
 local real y=GetUnitY(u)
 local player p=GetOwningPlayer(u)
@@ -161519,6 +161517,7 @@ call UnitApplyTimedLife(n,1,1)
 call TimerStart(t,0.05,true,function TKiyoCast3)
 endif
 set u=null
+set c=null
 set t=null
 set p=null
 endfunction
