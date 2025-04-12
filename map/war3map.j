@@ -38663,6 +38663,85 @@ function GinT_AddStack takes unit newCaster, unit newTarget returns nothing
         endif
 endfunction
 
+
+function JirenF2_Periodic takes nothing returns nothing
+	local timer t=GetExpiredTimer()
+	local integer id=GetHandleId(t)
+	local unit u=LoadUnitHandle(h,id,0)
+	local real x=GetUnitX(u)
+	local real y=GetUnitY(u)
+    local real time=LoadReal(h,id,1)
+    local real dmg=GetHeroStr(u,true)*3+300
+    local group g=CreateGroup()
+    if time==0 and GetUnitCurrentAnimationId(u)!=11 then
+        call SetUnitAnimationByIndex(u,11)
+    endif
+	if time<2 then
+        call SaveReal(h,id,1,time+0.2)
+        call PauseUnit(u,true)
+        call SetUnitInvulnerable(u,true)
+        if GetUnitAnimationOffsetPercent(u)>0.5 then
+            call SetUnitAnimationOffsetPercent(u,0.4)
+        endif
+        set EFF=AddSpecialEffect("GokuAuraBurstRed.mdl",x+GetRandomReal(-520,520)*Cos(GetRandomReal(0,359)),y+GetRandomReal(-520,520)*Sin(GetRandomReal(0,359)))
+        call SetSpecialEffectTimeScale(EFF , 1.6)
+        call SetSpecialEffectScale(EFF , 0.3)
+        call RemoveEffect(EFF,0.4,true,CreateTimer())
+        set EFF=AddSpecialEffect("GokuAuraBurstRed.mdl",x+GetRandomReal(-520,520)*Cos(GetRandomReal(0,359)),y+GetRandomReal(-520,520)*Sin(GetRandomReal(0,359)))
+        call SetSpecialEffectTimeScale(EFF , 1.6)
+        call SetSpecialEffectScale(EFF , 0.3)
+        call RemoveEffect(EFF,0.4,true,CreateTimer())
+        call GroupEnumUnitsInRange(g,x,y,600,Base)
+        loop
+        set E=FirstOfGroup(g)
+        exitwhen E==null
+            if Condition_Base(GetOwningPlayer(u),E) then
+                call myCustomDamage(u,E,dmg*0.2,false,false,null,null,null)
+                call SlowUnit(u,E,0.6,0.6,4,0,false)
+            endif
+            call GroupRemoveUnit(g,E)
+        endloop
+        call DestroyGroup(g)
+	else
+        if GetUnitCurrentAnimationId(u)==11 then
+            call SetUnitAnimationByIndex(u,27)
+        endif
+        call PauseUnit(u,false)
+        call SetUnitInvulnerable(u,false)
+		call PauseTimer(t)
+		call DestroyTimer(t)
+		call FlushChildHashtable(h,id)
+	endif
+	set u=null
+    set g=null
+	set t=null
+endfunction
+function JirenF2_Cast takes unit u returns nothing
+    local timer t=CreateTimer()
+    local integer id=GetHandleId(t)
+    call SaveUnitHandle(h,id,0,u)
+    call SetUnitAnimationByIndex(u,11)
+    call SaveReal(h,id,1,0)
+    set EFF=AddSpecialEffectTarget("GokuAuraBurstRed.mdl",u,"origin")
+    call SetSpecialEffectTimeScale(EFF , 0.6)
+    call SetSpecialEffectScale(EFF , 0.45)
+    call RemoveEffect(EFF,2,true,CreateTimer())
+    set EFF=AddSpecialEffectTarget("war3mapImported\\HollowRoar10.mdl",u,"origin")
+    call SetSpecialEffectTimeScale(EFF , 0.6)
+    call SetSpecialEffectScale(EFF , 3.2)
+    call RemoveEffect(EFF,2,true,CreateTimer())
+    call PauseUnit(u,true)
+    call SetUnitInvulnerable(u,true)
+    if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
+        call StartSound(soundStr[132])
+    else
+        call StartSound(soundStr[133])
+    endif
+    call TimerStart(t,0.2,true,function JirenF2_Periodic)
+    set u=null
+    set t=null
+endfunction
+
 function Trig_Text_Damage_Actions takes nothing returns nothing
 local real b=GetEventDamage()
 local timer t
@@ -42140,15 +42219,12 @@ if CurrentEventAttack and GetUnitAbilityLevel(c,'A13N')>0 and nb>0 and c!=Ultima
 endif
 if GetUnitTypeId(u)=='HJi1' then
     if GetUnitModel(u)=="[By XeSHTeG]JirenBase.mdx" and GetUnitState(u,UNIT_STATE_LIFE)-nb<0.25*ll and GetHeroLevel(u)>=26 then 
-        if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
-            call StartSound(soundStr[130])
-        else
-            call StartSound(soundStr[131])
-        endif
         call SetUnitModel(u,"[By XeSHTeG]JirenFullPower.mdx")
         call ShowAbility2('JNF1',false)
         call ShowAbility2('JNF4',true)
         call UnitRemoveBuffs(u,false,true)
+        call JirenF2_Cast(u)
+        call StartAbilityCooldown(GetUnitAbility(u,'JNF4'),10)
         call SetAbilityRealLevelField(GetUnitAbility(u,'JNG1'), ABILITY_RLF_CAST_RANGE,0,1000)
         call UnitAddAbility(u,'JNF2')
         call UnitAddAbility(u,'JNF3')
@@ -61980,7 +62056,7 @@ local group g=LoadGroupHandle(h,id,1)
 local integer i=1
 local real x=LoadReal(h,id,2)
 local real y=LoadReal(h,id,3)
-local real dmg=GetHeroAgi(u,true)*0.33
+local real dmg=GetHeroAgi(u,true)*0.24
 local player p=GetOwningPlayer(u)
 local real r=GetRandomReal(0.,6.283185)
 local integer l__s=StringHash("block")
@@ -62016,10 +62092,10 @@ call UnitRemoveAbility(u, 'cbc3')
 call DestroyGroup(g)
 call DestroyTimer(t)
 call SetUnitInvulnerable(u,false)
-call EnableUnitAbility2(u,'A0GP',false,true)
-call EnableUnitAbility2(u,'A0GL',false,true)
-call EnableUnitAbility2(u,'A0GH',false,true)
-call EnableUnitAbility2(u,'A0GG',false,true)
+//call EnableUnitAbility2(u,'A0GP',false,true)
+//call EnableUnitAbility2(u,'A0GL',false,true)
+//call EnableUnitAbility2(u,'A0GH',false,true)
+//call EnableUnitAbility2(u,'A0GG',false,true)
 call FlushChildHashtable(h,id)
 endif
 set g=null
@@ -62051,20 +62127,20 @@ exitwhen i>=19
 set x1=x+350*Cos(i*0.3491)
 set y1=y+350*Sin(i*0.3491)
 set a=Atan2(y-y1,x-x1)
-call GroupAddUnit(g,CreateUnit(p,0x65303956,x1,y1,a*bj_RADTODEG))
-call GroupAddUnit(g,CreateUnit(p,0x65303957,x1,y1,a*bj_RADTODEG))
+call GroupAddUnit(g,CreateUnit(p,'e09V',x1,y1,a*bj_RADTODEG))
+call GroupAddUnit(g,CreateUnit(p,'e09W',x1,y1,a*bj_RADTODEG))
 call SaveDestructableHandle(h,id,l__s+i,CreateDestructable('B003',x1,y1,a*bj_DEGTORAD,1,1))
 set x1=x+250*Cos(i*0.3491)
 set y1=y+250*Sin(i*0.3491)
-call GroupAddUnit(g,CreateUnit(p,0x65303959,x1,y1,a*bj_RADTODEG))
+call GroupAddUnit(g,CreateUnit(p,'e09Y',x1,y1,a*bj_RADTODEG))
 set i=i+1
 endloop
 call UnitAddAbility(u,'A0GN')
 call SetUnitTimeScale(u,4)
-call DisableUnitAbility2(u,'A0GP',false,true)
-call DisableUnitAbility2(u,'A0GL',false,true)
-call DisableUnitAbility2(u,'A0GH',false,true)
-call DisableUnitAbility2(u,'A0GG',false,true)
+//call DisableUnitAbility2(u,'A0GP',false,true)
+//call DisableUnitAbility2(u,'A0GL',false,true)
+//call DisableUnitAbility2(u,'A0GH',false,true)
+//call DisableUnitAbility2(u,'A0GG',false,true)
 call SetUnitInvulnerable(u,true)
 call SaveUnitHandle(h,id,0,u)
 call SaveGroupHandle(h,id,1,g)
@@ -69821,8 +69897,6 @@ local integer i=0
 local real r=0
 if time<0.3 then
     call SaveReal(HH,id,2,time+0.01)
-    call SetUnitInvulnerable(u,true)
-    call PauseUnit(u,true)
     if time==0.01 then
         call SetUnitAnimationByIndex(u,155)
     endif
@@ -170877,7 +170951,7 @@ if GetWidgetLife(c)>0 and GetWidgetLife(u)>0 and time<4 then
     call SetUnitInvulnerable(u,true)
     call PauseUnit(u,true)
     call SaveReal(HH,id,2,time+0.03)
-    if time<1.05 then       
+    if time<0.99 then       
         call PauseUnit(c,true)
         call SetUnitInvulnerable(c,true)
         call SetUnitXY_1(u,x+4*Cos(a),y+4*Sin(a), false)
@@ -170899,6 +170973,20 @@ if GetWidgetLife(c)>0 and GetWidgetLife(u)>0 and time<4 then
             call RemoveEffect(EFF,1,true,CreateTimer())
         endif
     endif
+    if time==1.05 then
+        call Push3(c,20,a,140,"null")
+        set EFF=AddSpecialEffect("Minato-37.mdx", x1+GetRandomReal(-45,45)*Cos(GetRandomReal(0,359)),y1+GetRandomReal(-45,45)*Sin(GetRandomReal(0,359)))
+        call SetSpecialEffectFacing(EFF , a* bj_RADTODEG)
+        call SetSpecialEffectScale(EFF , GetRandomReal(1.25,2.35))
+        call SetSpecialEffectZ(EFF , GetRandomReal(30,90))
+        call DestroyEffect(EFF)
+        set EFF=AddSpecialEffect("WindVectorPush.mdx", x1+GetRandomReal(-45,45)*Cos(GetRandomReal(0,359)),y1+GetRandomReal(-45,45)*Sin(GetRandomReal(0,359)))
+        call SetSpecialEffectOrientation(EFF,a*bj_RADTODEG,0,0)
+        call SetSpecialEffectScale(EFF , GetRandomReal(0.25,0.45))
+        call SetSpecialEffectZ(EFF , GetRandomReal(70,100))
+        call SetSpecialEffectVertexColour(EFF,255,255,255,220)
+        call RemoveEffect(EFF,1,true,CreateTimer())
+    endif
     if time==1.5 then
         set EFF=AddSpecialEffectTarget("war3mapImported\\RedGlow.mdl",u,"right hand")
         call SetSpecialEffectScale(EFF , 0.65)
@@ -170906,6 +170994,9 @@ if GetWidgetLife(c)>0 and GetWidgetLife(u)>0 and time<4 then
         call RemoveEffect(EFF,0.6,true,CreateTimer())
         call PauseUnit(c,true)
         call SetUnitInvulnerable(c,true)
+    endif
+    if time==1.65 then
+        call Push3(u,20,a,120,"null")
     endif
     if time==1.8 then
         call SetUnitTimeScale(u,2.6)
@@ -170954,7 +171045,13 @@ if GetWidgetLife(c)>0 and GetWidgetLife(u)>0 and time<4 then
     if time==3.6 then
         call RemoveUnit(dummy)
     endif
-    if time>3 and time<3.42 then
+    if time==2.7 then
+        call SetUnitTimeScale(u,0)
+    endif
+    if time==2.85 then
+        call SetUnitTimeScale(u,2.6)
+    endif
+    if time>3.15 and time<3.57 then
         call PauseUnit(c,true)
         call SetUnitInvulnerable(c,true)
         set x1=x1-22*Cos(a2-70*bj_DEGTORAD)
@@ -170962,10 +171059,10 @@ if GetWidgetLife(c)>0 and GetWidgetLife(u)>0 and time<4 then
         call SetUnitXY_1(c,x1,y1, false)
         call SetUnitFacingInstant(c,a2*bj_RADTODEG-180)
     endif
-    if time==3.21 then
+    if time==3.36 then
         call SetUnitTimeScale(u,1.25)
     endif
-    if time==3.6 then
+    if time==3.75 then
         set EFF=AddSpecialEffect("BrolyKickSlash.mdx", x,y)
         call SetSpecialEffectOrientation(EFF , a* bj_RADTODEG,0,-179)
         call SetSpecialEffectTimeScale(EFF , 0.8)
@@ -170973,7 +171070,7 @@ if GetWidgetLife(c)>0 and GetWidgetLife(u)>0 and time<4 then
         call SetSpecialEffectZ(EFF, 120)
         call DestroyEffect(EFF)
     endif
-    if time>3.45 and time<3.75 then
+    if time>3.6 and time<3.9 then
         call PauseUnit(c,true)
         call SetUnitInvulnerable(c,true)
         set x1=x1+45*Cos(a2-105*bj_DEGTORAD)
@@ -170981,7 +171078,7 @@ if GetWidgetLife(c)>0 and GetWidgetLife(u)>0 and time<4 then
         call SetUnitXY_1(c,x1,y1, false)
         call SetUnitFacingInstant(c,a2*bj_RADTODEG-180)
     endif
-    if time==3.75 then
+    if time==3.9 then
         call SetUnitFacingInstant(c,a2*bj_RADTODEG-180)
         set EFF=AddSpecialEffect("war3mapImported\\wind3.mdl",x1-40*Cos(a),y1-40*Sin(a))
         call SetSpecialEffectScale(EFF,0.8)
@@ -170997,7 +171094,7 @@ if GetWidgetLife(c)>0 and GetWidgetLife(u)>0 and time<4 then
             //call StartSound(soundStr[70])
         endif
     endif
-    if time==3.90 then
+    if time==3.96 then
         call SetUnitTimeScale(u,1)
         call SetUnitInvulnerable(u,false)
         call SetUnitInvulnerable(c,false)
@@ -171005,7 +171102,7 @@ if GetWidgetLife(c)>0 and GetWidgetLife(u)>0 and time<4 then
         call PauseUnit(c,false)
         call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,false)
         call myCustomDamage(u,c,dmg,false,false,null,null,null)
-        call SetControlToUnit(u,c, 2, "stun")
+        call SetControlToUnit(u,c, 1, "stun")
         call SetUnitTimeScale(u,1)
         call DestroyTimer(t)
         call FlushChildHashtable(HH,id)
@@ -171088,84 +171185,6 @@ set u=null
 set c=null
 set p=null
 set t=null
-endfunction
-
-function JirenF2_Periodic takes nothing returns nothing
-	local timer t=GetExpiredTimer()
-	local integer id=GetHandleId(t)
-	local unit u=LoadUnitHandle(h,id,0)
-	local real x=GetUnitX(u)
-	local real y=GetUnitY(u)
-    local real time=LoadReal(h,id,1)
-    local real dmg=GetHeroStr(u,true)*3+300
-    local group g=CreateGroup()
-    if time==0 and GetUnitCurrentAnimationId(u)!=11 then
-        call SetUnitAnimationByIndex(u,11)
-    endif
-	if time<2 then
-        call SaveReal(h,id,1,time+0.2)
-        call PauseUnit(u,true)
-        call SetUnitInvulnerable(u,true)
-        if GetUnitAnimationOffsetPercent(u)>0.5 then
-            call SetUnitAnimationOffsetPercent(u,0.4)
-        endif
-        set EFF=AddSpecialEffect("GokuAuraBurstRed.mdl",x+GetRandomReal(-520,520)*Cos(GetRandomReal(0,359)),y+GetRandomReal(-520,520)*Sin(GetRandomReal(0,359)))
-        call SetSpecialEffectTimeScale(EFF , 1.6)
-        call SetSpecialEffectScale(EFF , 0.3)
-        call RemoveEffect(EFF,0.4,true,CreateTimer())
-        set EFF=AddSpecialEffect("GokuAuraBurstRed.mdl",x+GetRandomReal(-520,520)*Cos(GetRandomReal(0,359)),y+GetRandomReal(-520,520)*Sin(GetRandomReal(0,359)))
-        call SetSpecialEffectTimeScale(EFF , 1.6)
-        call SetSpecialEffectScale(EFF , 0.3)
-        call RemoveEffect(EFF,0.4,true,CreateTimer())
-        call GroupEnumUnitsInRange(g,x,y,600,Base)
-        loop
-        set E=FirstOfGroup(g)
-        exitwhen E==null
-            if Condition_Base(GetOwningPlayer(u),E) then
-                call myCustomDamage(u,E,dmg*0.2,false,false,null,null,null)
-                call SlowUnit(u,E,0.6,0.6,4,0,false)
-            endif
-            call GroupRemoveUnit(g,E)
-        endloop
-        call DestroyGroup(g)
-	else
-        if GetUnitCurrentAnimationId(u)==11 then
-            call SetUnitAnimationByIndex(u,27)
-        endif
-        call PauseUnit(u,false)
-        call SetUnitInvulnerable(u,false)
-		call PauseTimer(t)
-		call DestroyTimer(t)
-		call FlushChildHashtable(h,id)
-	endif
-	set u=null
-    set g=null
-	set t=null
-endfunction
-function JirenF2_Cast takes unit u returns nothing
-    local timer t=CreateTimer()
-    local integer id=GetHandleId(t)
-    call SaveUnitHandle(h,id,0,u)
-    call SetUnitAnimationByIndex(u,11)
-    call SaveReal(h,id,1,0)
-    set EFF=AddSpecialEffectTarget("GokuAuraBurstRed.mdl",u,"origin")
-    call SetSpecialEffectTimeScale(EFF , 0.6)
-    call SetSpecialEffectScale(EFF , 0.45)
-    call RemoveEffect(EFF,2,true,CreateTimer())
-    set EFF=AddSpecialEffectTarget("war3mapImported\\HollowRoar10.mdl",u,"origin")
-    call SetSpecialEffectTimeScale(EFF , 0.6)
-    call SetSpecialEffectScale(EFF , 3.2)
-    call RemoveEffect(EFF,2,true,CreateTimer())
-    call PauseUnit(u,true)
-    call SetUnitInvulnerable(u,true)
-    if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
-        call StartSound(soundStr[132])
-    else
-        call StartSound(soundStr[133])
-    endif
-    call TimerStart(t,0.2,true,function JirenF2_Periodic)
-    set u=null
-    set t=null
 endfunction
 
 function JirenF1_Periodic takes nothing returns nothing
@@ -171432,16 +171451,16 @@ local real dist2=SR(x,y,x1,y1)
 local real PitchA=Atan2(dist,z)
 local effect efft=LoadEffectHandle(h,id,10)
 local integer efftA=LoadInteger(h,id,11)
-if time==0.02 or time==0.04 then
+if time==0.02 then
     call SetUnitAnimationByIndex(u,46)
     set EFF=AddSpecialEffect("JirenShock2.mdl", x,y)
     call SetSpecialEffectScale(EFF , 1.8)
     call SetSpecialEffectZ(EFF,740)
     call DestroyEffect(EFF)
+    call SetUnitTimeScale(u,2.75)
 endif
-if time==0.06 or time==0.08 then
-    call SetUnitAnimationOffsetPercent(u,0.214)
-    call SetUnitTimeScale(u,2.6)
+if time==0.02 or time==0.04 or time==0.06 or time==0.08 then
+    call SetUnitAnimationOffsetPercent(u,0.216)
 endif
 call SaveReal(h,id,7,time+0.02)
 if time==0.1 then
@@ -171450,12 +171469,12 @@ if time==0.1 then
     call SetUnitScale(n,sc,sc,sc)
     call SaveUnitHandle(h,id,9,n)
 endif
-if time>0.1 and time<0.5 then
-    call SaveReal(h,id,8,sc+0.06)
+if time>0.1 and time<0.4 then
+    call SaveReal(h,id,8,sc+0.07)
     call SetUnitScale(l__d,sc,sc,sc)
-    call SetUnitFlyHeight(l__d,hei2+29,0)
+    call SetUnitFlyHeight(l__d,hei2+32,0)
 endif
-if time==0.6 then
+if time==0.5 then
     call UnitEnableAutoOrientation(u,false)
     call SetUnitOrientation(u,a*bj_RADTODEG,(PitchA*bj_RADTODEG)-15,0)
     set EFF=AddSpecialEffectTarget("war3mapImported\\RedGlow.mdl",u,"right hand")
@@ -171469,22 +171488,22 @@ if time==0.6 then
     call RemoveEffect(efft,1.5,true,CreateTimer())
     call SaveEffectHandle(h,id,10,efft)
 endif
-if time>0.7 and time<0.9 then
-    call SetUnitTimeScale(u,0)
+if time>0.6 and time<0.8 then
+    call SetUnitTimeScale(u,0.02)
     call SetUnitXY_1(l__d,x2+10*Cos(a),y2+10*Sin(a), false)
-    call SetUnitFlyHeight(l__d,hei2-48,0)
+    call SetUnitFlyHeight(l__d,hei2-47,0)
 endif
-if time>0.9 and time<1.8 then
-    call SaveInteger(h,id,11,efftA+3)
+if time>0.8 and time<1.5 then
+    call SaveInteger(h,id,11,efftA+4)
     call SetSpecialEffectVertexColour(efft,25+efftA,25+efftA,25+efftA,25+efftA)
 endif
-if time==1.14 then
+if time==1.04 then
     set EFF=AddSpecialEffect("JirenShock2.mdl", x2,y2)
     call SetSpecialEffectScale(EFF , 1.6)
     call SetSpecialEffectZ(EFF,GetUnitZCustom(l__d))
     call DestroyEffect(EFF)
 endif
-if time==1.12 or time==1.38 then
+if time==1.02 or time==1.28 then
     call SaveReal(h,id,8,sc-0.7)
     call SetUnitScale(l__d,sc,sc,sc)
     set EFF=AddSpecialEffectTarget("war3mapImported\\JirenShock2.mdl",u,"right hand")
@@ -171492,12 +171511,12 @@ if time==1.12 or time==1.38 then
     call SetSpecialEffectTimeScale(EFF , 2)
     call RemoveEffect(EFF,0.6,true,CreateTimer())
 endif
-if time>1.2 and time<1.5 then
+if time>1.1 and time<1.4 then
     call SetUnitXY_1(l__d,x2-6*Cos(a),y2-6*Sin(a), false)
-    call SaveReal(h,id,8,sc-0.023)
+    call SaveReal(h,id,8,sc-0.02)
     call SetUnitScale(l__d,sc,sc,sc)
 endif
-if time==1.64 then
+if time==1.5 then
     set x=x+50*Cos(a)
     set y=y+50*Sin(a)
     set EFF=AddSpecialEffect("war3mapImported\\CF2.mdl", x,y)
@@ -171506,12 +171525,12 @@ if time==1.64 then
     call SetSpecialEffectScale(EFF , 1.8)
     call DestroyEffect(EFF)
     if SR(x,y,x1,y1)>400 then
-        call JirenT_Fly(u,l__d,SR(x,y,x1,y1)/20,0,x1,y1,hei+30,dmg)
+        call JirenT_Fly(u,l__d,SR(x,y,x1,y1)/15,0,x1,y1,hei+30,dmg)
     else
-        call JirenT_Fly3(u,l__d,SR(x,y,x1,y1)/30,0,x1,y1,hei+30,dmg)
+        call JirenT_Fly3(u,l__d,SR(x,y,x1,y1)/20,0,x1,y1,hei+30,dmg)
     endif
 endif
-if time==1.7 then
+if time==1.6 then
     call SetUnitTimeScale(u,1)
     call DestroyTimer(t)
     call FlushChildHashtable(h,id)
@@ -171657,6 +171676,7 @@ else
     call SaveBoolean(HH,GetHandleId(l__d),TARGET_ABILITY,false)
     call SetUnitInvulnerable(c,false)
     call myCustomDamage(u,c,dmg,false,false,null,null,null)
+    call SetControlToUnit(u,c, 2, "stun")
     call SetUnitFlyHeight(c,0,1500)
     call Push(c,40,a,200)
     call RemoveUnit(l__d)
