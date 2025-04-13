@@ -20037,7 +20037,7 @@ local integer ip=LoadInteger(HH,id,0)
 local unit u=Hero[ip]
 if GetUnitAbilityLevel(u, 'A1A5')>0 then
     if IsUnitSelected(u,GetLocalPlayer()) and IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(u)) then
-        call SetFrameText(GetFrameByName("CustomLeaderboardText",0),"|c00FF8080Damage|r: "+ I2S(R2I(bDamage))+ "/" + I2S(GetHeroStr(u,true)*30) + ". |c00FF0000STR|r: "+I2S(R2I(bState)))
+        call SetFrameText(GetFrameByName("CustomLeaderboardText",0),"|c00FF8080Damage|r: "+ I2S(R2I(bDamage))+ "/" + I2S(GetHeroStr(u,true)*(20+bState)) + ". |c00FF0000STR|r: "+I2S(R2I(bState)))
         call ShowFrame(GetFrameByName("CustomLeaderboard",0), true)
         call SetFrameSize( GetFrameByName("CustomLeaderboard",0), .1775, GetFrameHeight( GetFrameByName("CustomLeaderboardText",0))+0.016)
         call SetFrameTextAlignment( GetFrameByName("CustomLeaderboardText",0), TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_LEFT )
@@ -40957,9 +40957,9 @@ if cond==0 then
     endif
     if nb>0 and ((GetUnitTypeId(c) == 'H02L' and c == Hero[GetPlayerId(GetOwningPlayer(c))]) or (c==UltimateDamage and GetOwningPlayer(UltimateDamage)==GetOwningPlayer(Broly))) and IsUnitType(c, UNIT_TYPE_SUMMONED) == false and IsUnitIllusion(c) == false and DU==true then
         set bDamage = bDamage + nb
-        if bDamage >= 30*GetHeroStr(Broly,true) then
+        if bDamage >= (20+bState)*GetHeroStr(Broly,true) then
             
-            set bDamage = bDamage - (30*GetHeroStr(Broly,true))
+            set bDamage = bDamage - ((20+bState)*GetHeroStr(Broly,true))
             if bDamage < 0 then
                 set bDamage = 0
             endif
@@ -45527,9 +45527,9 @@ call UnitRemoveAbility(c,'A0WR')
 else
 if GetUnitTypeId(u) == 'H02L' and DU==true then
     set bDamage = bDamage + dmg
-    if bDamage >= 30*GetHeroStr(u,true) then
+    if bDamage >= (20+bState)*GetHeroStr(u,true) then
         
-        set bDamage = bDamage - (30*GetHeroStr(u,true))
+        set bDamage = bDamage - ((20+bState)*GetHeroStr(u,true))
         if bDamage < 0 then
             set bDamage = 0
         endif
@@ -205606,7 +205606,6 @@ function KarnaE_Periodic2 takes nothing returns nothing
     local real    damage   = GetHeroAgi(caster, true)*(2+GetUnitAbilityLevel(caster, 'KaA8'))
     local trigger newTrigger = null
     if time<=2.0 then
-        call PauseUnit(caster, true)
         call SetUnitInvulnerable(caster, true)
         call SetControlToUnit(caster, caster, 0.11, "doomdebug")
         call SaveReal(h, id, StringHash("Time"), time+0.05)
@@ -205928,7 +205927,6 @@ function KarnaE_WaitTime takes nothing returns nothing
     local real    waittime = LoadReal(h, id, StringHash("Wait"))-0.05
     if waittime>0.0 then
         call SaveReal(h, id, StringHash("Wait"), waittime)
-        call PauseUnit(caster, true)
         call SetUnitInvulnerable(caster, true)
         if LoadInteger(h, id,  EffectPeriodHash ) == 0 then
             set bjLCU=CreateUnit(GetOwningPlayer(caster), 'd118', caster_x, caster_y, GetRandomInt(0, 360))
