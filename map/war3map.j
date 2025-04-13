@@ -11489,7 +11489,7 @@ function OnButtonChangeAbilityMode takes nothing returns nothing
         endif
         if LoadReal(HH,pHid,VariationWHash)==3 then
             call SaveReal(HH,pHid,VariationWHash,4)
-            call SetAbilityIntegerLevelField(GetUnitAbility(Goku,'GKW5'),ABILITY_ILF_MANA_COST,0,310)
+            call SetAbilityIntegerLevelField(GetUnitAbility(Goku,'GKW5'),ABILITY_ILF_MANA_COST,0,370)
             if GetLocalPlayer()==p then
                 call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 9 ), "ReplaceableTextures\\CommandButtons\\BTNAcceleratingBattleSpirit3.blp", 0, true )
                 call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 9 ), "ReplaceableTextures\\CommandButtons\\BTNAcceleratingBattleSpirit3.blp", 1, true )
@@ -11501,7 +11501,7 @@ function OnButtonChangeAbilityMode takes nothing returns nothing
             endif
         elseif LoadReal(HH,pHid,VariationWHash)==4 then
             call SaveReal(HH,pHid,VariationWHash,3)
-            call SetAbilityIntegerLevelField(GetUnitAbility(Goku,'GKW5'),ABILITY_ILF_MANA_COST,0,110)
+            call SetAbilityIntegerLevelField(GetUnitAbility(Goku,'GKW5'),ABILITY_ILF_MANA_COST,0,170)
             if GetLocalPlayer()==p then
                 call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 9 ), "ReplaceableTextures\\CommandButtons\\BTNAcceleratingBattleSpirit2.blp", 0, true )
                 call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 9 ), "ReplaceableTextures\\CommandButtons\\BTNAcceleratingBattleSpirit2.blp", 1, true )
@@ -61928,7 +61928,7 @@ set y=y+50*Sin(a)
 call DestroyEffect(AddSpecialEffect("war3mapImported\\BluSlam.mdl",x,y))
 call SaveReal(h,id,2,x)
 call SaveReal(h,id,3,y)
-call UnitApplyTimedLife(CreateUnit(p,0x65303953,x,y,GetRandomReal(0,359)),1,2)
+call UnitApplyTimedLife(CreateUnit(p,'e09S',x,y,GetRandomReal(0,359)),1,2)
 else
 call UnitApplyTimedLife(CreateUnit(p,0x6530395A,x1,y1,GetRandomReal(0,359)),1,2)
 call UnitApplyTimedLife(CreateUnit(p,0x6530395A,x1,y1,GetRandomReal(0,359)),1,2)
@@ -61969,7 +61969,7 @@ endfunction
 function IceStrikeInit takes nothing returns nothing
 endfunction
 function HissatsuHyosoCond takes nothing returns boolean
-return GetSpellAbilityId()==0x4130474C and udg_B==true
+return GetSpellAbilityId()=='A0GL' and udg_B==true
 endfunction
 function HissatsuHyosoCast2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
@@ -61982,7 +61982,7 @@ local real y=LoadReal(h,id,3)
 local real x1
 local real y1
 local real dist
-local real dmg=GetHeroAgi(u,true)*(4+GetUnitAbilityLevel(u,0x4130474C))
+local real dmg=GetHeroAgi(u,true)*(4+GetUnitAbilityLevel(u,'A0GL'))
 local integer l__idg=GetHandleId(g)
 local real f
 local player p=GetOwningPlayer(u)
@@ -61993,7 +61993,7 @@ call SaveReal(h,id,StringHash("Dist"+I2S(i)),dist)
 set f=(30*i)*bj_DEGTORAD
 set x1=x+dist*Cos(f)
 set y1=y+dist*Sin(f)
-call UnitApplyTimedLife(CreateUnit(p,0x65303953,x1,y1,GetRandomReal(0,359)),1,2)
+call UnitApplyTimedLife(CreateUnit(p,'e09S',x1,y1,GetRandomReal(0,359)),1,2)
 set i=i+1
 endloop
 call GroupEnumUnitsInRange(g,x,y,dist,Base)
@@ -70294,7 +70294,7 @@ function KiSpamBlast_Act takes nothing returns nothing
         set E=FirstOfGroup(G)
         exitwhen E==null
         if Condition_Base(p,E)then
-        call myCustomDamage(caster,E,dmg*Pow(0.85,LoadInteger(h,GetHandleId(E),GokuEDMGHash)),false,false,null,null,null)
+        call myCustomDamage(caster,E,dmg*Pow(0.9,LoadInteger(h,GetHandleId(E),GokuEDMGHash)),false,false,null,null,null)
         call SetControlToUnit(caster,E, 0.15, "stun")
         call SaveInteger(h,GetHandleId(E),GokuEDMGHash,LoadInteger(h,GetHandleId(E),GokuEDMGHash)+1)
         call RemoveSaveHashTimed(3,GetHandleId(E),GokuEDMGHash)
@@ -70423,7 +70423,7 @@ local unit u=GetTriggerUnit()
 local player p=GetOwningPlayer(u)
 local real x=GetUnitX(u)
 local real y=GetUnitY(u)
-local real lvl=1+GetUnitAbilityLevel(u,'GKE2')
+local real lvl=1.5+GetUnitAbilityLevel(u,'GKE2')*0.5
 call UnitApplyTimedLife(CreateUnit(p,'e0CJ',x,y,GetRandomReal(0,359)),1,1)
 call UnitApplyTimedLife(CreateUnit(p,'e0CK',x,y,GetRandomReal(0,359)),1,1)
 call UnitApplyTimedLife(CreateUnit(p,'e0CI',x,y,GetRandomReal(0,359)),1,1)
