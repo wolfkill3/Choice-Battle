@@ -43397,9 +43397,9 @@ local unit u=GetTriggerUnit()
 local integer id=GetSpellAbilityId()
 if id!='A0NL' and id!='A0TN' and id!='A0P2' and id!='A0EH' and id!='A0CZ' and id!='A2CZ' and id!='A015' and id!='A315' and id!='A0SK' and id!='A1SK' and id!='A0YZ' and id!='A13V' and id!='A23V' and GetAbilityStringField(GetUnitAbility(u,id),ABILITY_SF_ICON_NORMAL)!="ReplaceableTextures\\CommandButtons\\BTNCancel1.blp" then
 call HealTextTag(u,u,GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.04*myCustomHeal2(u,1),"HealthRes")
-call HealTextTag(u,u,GetUnitState(u,UNIT_STATE_MAX_MANA)*0.03*myCustomMana2(u,1),"ManaRes")
+call HealTextTag(u,u,GetUnitState(u,UNIT_STATE_MAX_MANA)*0.025*myCustomMana2(u,1),"ManaRes")
 call SetUnitState(u,UNIT_STATE_LIFE,GetWidgetLife(u)+GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.04)
-call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)+GetUnitState(u,UNIT_STATE_MAX_MANA)*0.03)
+call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)+GetUnitState(u,UNIT_STATE_MAX_MANA)*0.025)
 endif
 set u=null
 endfunction
