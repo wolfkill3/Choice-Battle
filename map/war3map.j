@@ -300,6 +300,15 @@ framehandle  StatsBarGridFrame
 framehandle  OpenStatsButton
 framehandle  OpenStatsButtonText
 
+// framehandle  CloseResistButton
+// framehandle  CloseResistButtonText
+// handlelist array ResistFrameList
+framehandle  ResistBarFrame
+framehandle  ResistBarFrameText
+// framehandle  ResistBarGridFrame
+framehandle  OpenResistButton
+// framehandle  OpenResistButtonText
+
 handlelist array IdHeroFrameList
 framehandle  IdHeroFrame
 framehandle  CloseIdButton
@@ -9401,13 +9410,13 @@ set Color[11]="|cFF683600"
 set Color[12]="|c0059ACFF"
 set Color[13]="|c009AFF35"
 set Colour[0]= 0xFFFF1010
-set Colour[1]= 0xFF9090FF
+set Colour[1]= 0xFF4A6AFF
 set Colour[2]= 0xFF00FFFF
-set Colour[3]= 0xFF7B709E
+set Colour[3]= 0xFFC470FC
 set Colour[4]= 0xFFFFDC00
 set Colour[5]= 0xFFFF8C00
 set Colour[6]= 0xFF10D850
-set Colour[7]= 0xFFFF5AFF
+set Colour[7]= 0xFFFFA6D2
 set Colour[8]= 0xFFA9A9A9
 set Colour[9]= 0xFF7EBFFF
 set Colour[10]= 0xFF005A39
@@ -10692,6 +10701,70 @@ function OnButtonUnpress takes nothing returns nothing
     set but = null
 endfunction
 
+
+function OnButtonPressResist takes nothing returns nothing
+    local framehandle but = GetTriggerFrame ( )
+    local integer bid = GetHandleId( but )
+    local player p = GetTriggerPlayer( )
+    local real width = GetFrameWidth( but )
+    local real height = GetFrameHeight( but )
+
+    if p == GetLocalPlayer( ) then
+        if but != null then
+            if not LoadBoolean( HH, bid, 'prss' ) then
+                call ShowFrame(ResistBarFrame,true)
+                call SetFrameSize( but, width - .0015, height - .0015 ) // .024, .0465
+                call SaveBoolean( HH, bid, 'prss', true )
+            endif
+        endif
+    endif
+
+    set p = null
+    set but = null
+endfunction
+
+function OnButtonUnpressResistHandler takes nothing returns nothing
+    local integer hid = GetHandleId( GetExpiredTimer( ) )
+    local player p = LoadPlayerHandle( HH, hid, '+ply' )
+    local framehandle but = LoadFrameHandle( HH, hid, '+frm' )
+    local integer bid = GetHandleId( but )
+    local real width = GetFrameWidth( but )
+    local real height = GetFrameHeight( but )
+
+    if p == GetLocalPlayer( ) then
+        if but != null then
+            if LoadBoolean( HH, bid, 'prss' ) then
+                call SetFrameSize( but, width + .0015, height + .0015 ) // .025, .0475
+                call ShowFrame(ResistBarFrame,false)
+                call ShowFrame(OpenResistButton,true)
+                call SaveBoolean( HH, bid, 'prss', false )
+            endif
+        endif
+    endif
+
+    set p = null
+    set but = null
+endfunction
+
+function OnButtonUnpressResist takes nothing returns nothing
+    local player p = GetTriggerPlayer( )
+    local framehandle but = GetTriggerFrame( )
+    local timer tmr = LoadTimerHandle( HH, GetHandleId( but ), '+tmr' )
+
+    if tmr == null then
+        set tmr = CreateTimer( )
+        call SaveTimerHandle( HH, GetHandleId( but ), '+tmr', tmr )
+        call SavePlayerHandle( HH, GetHandleId( tmr ), '+ply', p )
+        call SaveFrameHandle( HH, GetHandleId( tmr ), '+frm', but )
+    endif
+
+    call TimerStart( tmr, .1, false, function OnButtonUnpressResistHandler )
+
+    set p = null
+    set but = null
+endfunction
+
+
 function OnButtonCloseStatusBar takes nothing returns nothing
     local player p = GetTriggerPlayer( )
     local integer pHid = GetHandleId( p )
@@ -11677,6 +11750,7 @@ function OnButtonCloseTavern takes nothing returns nothing
         call ShowFrame( StatusBarFrame, false)
         call ShowFrame( CloseStatusButton, false)
         call ShowFrame( OpenStatusButton, true)
+        call ShowFrame( OpenResistButton, true)
         call ShowFrame( EmoteBarFrame, false)
         call ShowFrame( CloseEmoteButton, false)
         call ShowFrame( OpenEmoteButton, true)
@@ -11732,6 +11806,7 @@ function OnButtonOpenTavern takes nothing returns nothing
         call ShowFrame( StatusBarFrame, false)
         call ShowFrame( CloseStatusButton, false)
         call ShowFrame( OpenStatusButton, false)
+        call ShowFrame( ResistBarFrame, false)
         call ShowFrame( EmoteBarFrame, false)
         call ShowFrame( CloseEmoteButton, false)
         call ShowFrame( OpenEmoteButton, false)
@@ -11849,6 +11924,7 @@ function ToggleOpenTavern takes nothing returns nothing
                 call ShowFrame( StatusBarFrame, false)
                 call ShowFrame( CloseStatusButton, false)
                 call ShowFrame( OpenStatusButton, false)
+                call ShowFrame( ResistBarFrame, false)
                 call ShowFrame( EmoteBarFrame, false)
                 call ShowFrame( CloseEmoteButton, false)
                 call ShowFrame( OpenEmoteButton, false)
@@ -11895,6 +11971,7 @@ function ToggleOpenTavern takes nothing returns nothing
                 call ShowFrame( StatusBarFrame, false)
                 call ShowFrame( CloseStatusButton, false)
                 call ShowFrame( OpenStatusButton, true)
+                call ShowFrame( OpenResistButton, true)
                 call ShowFrame( EmoteBarFrame, false)
                 call ShowFrame( CloseEmoteButton, false)
                 call ShowFrame( OpenEmoteButton, true)
@@ -16883,6 +16960,7 @@ if udg_test==false then
     call ShowFrame( StatusBarFrame, false)
     call ShowFrame( CloseStatusButton, false)
     call ShowFrame( OpenStatusButton, false)
+    call ShowFrame( OpenResistButton, false)
     call ShowFrame( EmoteBarFrame, false)
     call ShowFrame( CloseEmoteButton, false)
     call ShowFrame( OpenEmoteButton, false)
@@ -24036,6 +24114,88 @@ function Trig_StatusBar_Actions takes nothing returns nothing
     call TriggerAddAction( tOnUnPress, function OnButtonUnpress )
     call TriggerAddAction( tOnClick, function OnButtonOpenStatsBar )
 
+    set ResistBarFrame=CreateFrameByType("SIMPLEFRAME", "ResistBar", null, "", 0)
+    call ClearFrameAllPoints( ResistBarFrame )
+    call SetFrameRelativePoint( ResistBarFrame, FRAMEPOINT_CENTER, GetOriginFrame(ORIGIN_FRAME_PORTRAIT,0), FRAMEPOINT_CENTER,  -.001, -.001  )
+    call SetFrameSize( ResistBarFrame, .069, .091)    
+    call ShowFrame( ResistBarFrame, false )
+    call SetFrameTextureEx(ResistBarFrame, 0, "TooltipLessVisible.blp", false, "Choice-tooltip-border.blp", 0)
+    call SetFramePriority( ResistBarFrame, 6 )
+
+    set ResistBarFrameText=CreateFrameByType( "SIMPLETEXT", "MagicalResistRoot", ResistBarFrame, "", 0 )
+    call ClearFrameAllPoints( ResistBarFrameText )
+    call SetFrameBlendMode( ResistBarFrameText, 0, BLEND_MODE_BLEND )
+    call SetFrameFont( ResistBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+    call SetFrameTextAlignment( ResistBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
+    call SetFrameTextColour( ResistBarFrameText, 0xFFAAAAFF )
+    call SetFrameParent( ResistBarFrameText, ResistBarFrame )
+    call SetFrameText( ResistBarFrameText, "Mag. Res.")
+    call ShowFrame( ResistBarFrameText, true )
+    call SetFrameRelativePoint( ResistBarFrameText, FRAMEPOINT_TOPLEFT, ResistBarFrame, FRAMEPOINT_TOPLEFT,  .005, -.01  )
+
+    set ResistBarFrameText=CreateFrameByType( "SIMPLETEXT", "GeneralResistRoot", ResistBarFrame, "", 0 )
+    call ClearFrameAllPoints( ResistBarFrameText )
+    call SetFrameBlendMode( ResistBarFrameText, 0, BLEND_MODE_BLEND )
+    call SetFrameFont( ResistBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+    call SetFrameTextAlignment( ResistBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
+    call SetFrameTextColour( ResistBarFrameText, 0xFFBBBBBB )
+    call SetFrameParent( ResistBarFrameText, ResistBarFrame )
+    call SetFrameText( ResistBarFrameText, "Gen. Res.")
+    call ShowFrame( ResistBarFrameText, true )
+    call SetFrameRelativePoint( ResistBarFrameText, FRAMEPOINT_TOPLEFT, GetFrameByName("MagicalResistRoot",0), FRAMEPOINT_TOPLEFT,  0, -.01  )
+
+    set ResistBarFrameText=CreateFrameByType( "SIMPLETEXT", "ControlResistRoot", ResistBarFrame, "", 0 )
+    call ClearFrameAllPoints( ResistBarFrameText )
+    call SetFrameBlendMode( ResistBarFrameText, 0, BLEND_MODE_BLEND )
+    call SetFrameFont( ResistBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+    call SetFrameTextAlignment( ResistBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
+    call SetFrameTextColour( ResistBarFrameText, 0xFFFFA500 )
+    call SetFrameParent( ResistBarFrameText, ResistBarFrame )
+    call SetFrameText( ResistBarFrameText, "Cont. Res.")
+    call ShowFrame( ResistBarFrameText, true )
+    call SetFrameRelativePoint( ResistBarFrameText, FRAMEPOINT_TOPLEFT, GetFrameByName("GeneralResistRoot",0), FRAMEPOINT_TOPLEFT,  0, -.01  )
+
+    set ResistBarFrameText=CreateFrameByType( "SIMPLETEXT", "HPHealEffRoot", ResistBarFrame, "", 0 )
+    call ClearFrameAllPoints( ResistBarFrameText )
+    call SetFrameBlendMode( ResistBarFrameText, 0, BLEND_MODE_BLEND )
+    call SetFrameFont( ResistBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+    call SetFrameTextAlignment( ResistBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
+    call SetFrameTextColour( ResistBarFrameText, 0xFF55FF55 )
+    call SetFrameParent( ResistBarFrameText, ResistBarFrame )
+    call SetFrameText( ResistBarFrameText, "HP Heal. Eff.")
+    call ShowFrame( ResistBarFrameText, true )
+    call SetFrameRelativePoint( ResistBarFrameText, FRAMEPOINT_TOPLEFT, GetFrameByName("ControlResistRoot",0), FRAMEPOINT_TOPLEFT,  0, -.01  )
+
+    set ResistBarFrameText=CreateFrameByType( "SIMPLETEXT", "MPHealEffRoot", ResistBarFrame, "", 0 )
+    call ClearFrameAllPoints( ResistBarFrameText )
+    call SetFrameBlendMode( ResistBarFrameText, 0, BLEND_MODE_BLEND )
+    call SetFrameFont( ResistBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+    call SetFrameTextAlignment( ResistBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
+    call SetFrameTextColour( ResistBarFrameText, 0xFF7777FF )
+    call SetFrameParent( ResistBarFrameText, ResistBarFrame )
+    call SetFrameText( ResistBarFrameText, "MP Heal. Eff.")
+    call ShowFrame( ResistBarFrameText, true )
+    call SetFrameRelativePoint( ResistBarFrameText, FRAMEPOINT_TOPLEFT, GetFrameByName("HPHealEffRoot",0), FRAMEPOINT_TOPLEFT,  0, -.01  )
+
+    set OpenResistButton=CreateFrameByType( "SIMPLEBUTTON", "ResistBarOpen", null, "", 0 )
+    call ClearFrameAllPoints( OpenResistButton )
+    call SetFrameTexture( OpenResistButton, "Emotes\\ResistButton.blp", 0, true )
+    call SetFrameTexture( OpenResistButton, "Emotes\\ResistButton.blp", 1, true )
+    call SetFrameTexture( OpenResistButton, "Emotes\\ResistButton.blp", 2, true )
+    call SetFrameSize( OpenResistButton, .017, .017 )
+    call ShowFrame( OpenResistButton, true )
+    call SetFramePriority( OpenResistButton, 7 )
+    call SetFrameRelativePoint( OpenResistButton, FRAMEPOINT_CENTER, ResistBarFrame, FRAMEPOINT_TOPRIGHT, -.003, -.003 )
+
+    set tOnPress = CreateTrigger( )
+    set tOnUnPress = CreateTrigger( ) 
+    call TriggerRegisterFrameEvent( tOnPress, OpenResistButton, FRAMEEVENT_MOUSE_DOWN )
+    call TriggerRegisterFrameEvent( tOnUnPress, OpenResistButton, FRAMEEVENT_MOUSE_UP )
+    
+    call TriggerAddAction( tOnPress, function OnButtonPressResist )
+    call TriggerAddAction( tOnUnPress, function OnButtonUnpressResist )
+
+
     set x=0
     loop
         exitwhen x>=12
@@ -24416,6 +24576,7 @@ if ModuloInteger(seconds,10)<1 and GetFrameHeight( GetFrameChild(GetOriginFrame(
     //call SetFrameGridSize( GetOriginFrame( ORIGIN_FRAME_INVENTORY_BAR, 0 ), 3, 4 )
     if GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 ))==0.505 then
         call SetFrameSize( StatusBarFrame, .21*(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505), .0425)
+        call SetFrameSize( ResistBarFrame, .069*(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505), .091)
         call SetFrameRelativePoint(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 0), FRAMEPOINT_TOPLEFT, GetFrameRelativePointParent(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 0),FRAMEPOINT_TOPLEFT),FRAMEPOINT_TOPRIGHT,.0175*(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505), -.0292)
         call SetFrameRelativePoint(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 0), FRAMEPOINT_TOP, GetFrameRelativePointParent(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 0),FRAMEPOINT_TOP),FRAMEPOINT_TOPLEFT,.00, -.0292)
         call SetFrameRelativePoint(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 0), FRAMEPOINT_TOPRIGHT, GetFrameRelativePointParent(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 0),FRAMEPOINT_TOPRIGHT),FRAMEPOINT_TOPLEFT,.00, -.0292)
@@ -24475,6 +24636,7 @@ if ModuloInteger(seconds,10)<1 and GetFrameHeight( GetFrameChild(GetOriginFrame(
         call SetFrameSpriteScale( GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON_AUTOCAST_FRAME, 9), 0.65)
     else
         call SetFrameSize( StatusBarFrame, .21*(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505), .0425)
+        call SetFrameSize( ResistBarFrame, .069*(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505), .091)
         call SetFrameRelativePoint(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 0), FRAMEPOINT_TOPLEFT, GetFrameRelativePointParent(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 0),FRAMEPOINT_TOPLEFT),FRAMEPOINT_TOPRIGHT,.0175*(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505), -.0292)
         call SetFrameRelativePoint(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 0), FRAMEPOINT_CENTER, GetOriginFrame(ORIGIN_FRAME_CONSOLE_UI, 0),FRAMEPOINT_CENTER,.1255*(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505), -.2268)
         call ClearFrameAllPoints(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 2))
@@ -31136,6 +31298,7 @@ function Trig_test_Actions takes nothing returns nothing
     call ShowFrame( StatusBarFrame, false)
     call ShowFrame( CloseStatusButton, false)
     call ShowFrame( OpenStatusButton, true)
+    call ShowFrame( OpenResistButton, true)
     call ShowFrame( EmoteBarFrame, false)
     call ShowFrame( CloseEmoteButton, false)
     call ShowFrame( OpenEmoteButton, true)
