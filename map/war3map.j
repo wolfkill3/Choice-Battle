@@ -153,6 +153,13 @@ constant integer TSH_INDICATOR         = 1266 // Индикатор Урона -
 constant integer TAM_INDICATOR         = 1267 // Индикатор Урона - Хил МП Союзов
 constant integer TSM_INDICATOR         = 1268 // Индикатор Урона - Хил МП Себя
 constant integer TTD_INDICATOR         = 1269 // Индикатор Урона - Урона получено
+constant integer Unit_Debuff           = 1350 // Debuffed
+constant integer Stun_Debuff           = 1351 // Debuff Stun
+constant integer Silence_Debuff        = 1352 // Debuff Silence
+constant integer Doom_Debuff           = 1353 // Debuff Doom
+constant integer Root_Debuff           = 1354 // Debuff Root
+constant integer Ensnare_Debuff        = 1355 // Debuff Ensnare
+constant integer Sleep_Debuff          = 1356 // Debuff Sleep
 constant integer TIME_HASH            = StringHash( "Time" )
 constant integer TIMER_ITERATOR_HASH  = StringHash( "TimerIterator" )
 constant integer TIMER_MAX_COUNT_HASH = StringHash( "TimerMaximumCount" )
@@ -299,6 +306,15 @@ framehandle  StatsBarFrameText
 framehandle  StatsBarGridFrame
 framehandle  OpenStatsButton
 framehandle  OpenStatsButtonText
+
+// framehandle  CloseResistButton
+// framehandle  CloseResistButtonText
+// handlelist array ResistFrameList
+framehandle  ResistBarFrame
+framehandle  ResistBarFrameText
+// framehandle  ResistBarGridFrame
+framehandle  OpenResistButton
+// framehandle  OpenResistButtonText
 
 handlelist array IdHeroFrameList
 framehandle  IdHeroFrame
@@ -1702,6 +1718,34 @@ function SquareRootUnit takes unit a,unit b returns real
         return SquareRoot((GetUnitX(b)-GetUnitX(a))*(GetUnitX(b)-GetUnitX(a))+(GetUnitY(b)-GetUnitY(a))*(GetUnitY(b)-GetUnitY(a)))
 endfunction
 
+function WeakenBool takes nothing returns boolean
+return GetBuffTypeId(GetFilterBuff())=='Bwk1'
+endfunction
+function MissBool takes nothing returns boolean
+return GetBuffTypeId(GetFilterBuff())=='cb12'
+endfunction
+
+
+function MissBuff takes nothing returns nothing
+local buff buf=HandleListGetEnumBuff()
+local integer HLid=GetHandleId(bufh)
+local integer bid=GetHandleId(buf)
+local real chance=LoadReal(HH,HLid,0)
+if GetRandomReal(0,1)<LoadReal(HH,bid,MissBuffHash) and chance!=0 then
+call SaveReal(HH,HLid,0,0)
+endif
+set buf=null
+endfunction
+
+function Weaken takes nothing returns nothing
+local buff buf=HandleListGetEnumBuff()
+local integer HLid=GetHandleId(bufh)
+local integer bid=GetHandleId(buf)
+local real dmg=LoadReal(HH,HLid,0)
+call SaveReal(HH,HLid,0,dmg*(1-LoadReal(HH,bid,MinusDmgHash)))
+set buf=null
+endfunction
+
 function myCustomDamage takes unit whichUnit, unit target, real amount, boolean attack, boolean ranged, attacktype attackType, damagetype damageType, weapontype weaponType returns nothing
     local real currentDmg = amount
     local real classic_res = 0.0
@@ -1866,7 +1910,7 @@ function myCustomDamage takes unit whichUnit, unit target, real amount, boolean 
                 
         endif
         if GetUnitAbilityLevel(whichUnit, 'IcF4') > 0 then
-            set currentDmg=currentDmg * (1-0.4*minusres)
+            set currentDmg=currentDmg * 0.8
         endif
             //=======
         //endif
@@ -1933,9 +1977,16 @@ function myCustomDamage2 takes unit target, real amount returns real
             if GetUnitAbilityLevel(target,'BW01') > 0 then
                 set currentDmg = currentDmg * (1-0.15*minusres)
             endif
+            //T Waver   
+            if GetUnitAbilityLevel(target,'WaT1') > 0 then
+                set currentDmg = currentDmg * 1.20
+            endif   
             // Аокиджи R (Ice Ball)
             if GetUnitAbilityLevel(target,'aokb') > 0 then
                 set currentDmg = currentDmg * (1-0.6*minusres)
+            endif
+            if GetUnitAbilityLevel(target, 'IcF3') > 0 then
+                set currentDmg=currentDmg * 1.15
             endif
             // Албедо F
             if LoadInteger(HH,idTar,StringHash("AlbedoF_Mod")) == 2 then
@@ -1959,23 +2010,331 @@ function myCustomDamage2 takes unit target, real amount returns real
                 set currentDmg = currentDmg * (1-0.15*minusres)
             endif
                         
-                        //======= Ичиго Блют Вене
-                        if GetUnitAbilityLevel(target, 'IcF4') > 0 then
-                                if currentDmg <= GetHeroInt(target, true)*1.5 then
-                                        set currentDmg=currentDmg*(1-0.4*minusres)
-                                else
-                                        set currentDmg=currentDmg - GetHeroInt(target, true) * 1.5*minusres
-                                endif
-                                
-                        endif
-                        //=======
-                        
-                        
-                        if currentDmg<0 then
-                                set currentDmg=0
-                        endif
+            //======= Ичиго Блют Вене
+            if GetUnitAbilityLevel(target, 'IcF4') > 0 then
+                if currentDmg <= GetHeroInt(target, true)*1.5 then
+                        set currentDmg=currentDmg*(1-0.4*minusres)
+                else
+                        set currentDmg=currentDmg - GetHeroInt(target, true) * 1.5*minusres
+                endif
+                    
+            endif
+            //=======
+            
+            
+            if currentDmg<0 then
+                    set currentDmg=0
+            endif
         //endif
     return currentDmg
+    //~ конец модификации уменьшения урона
+
+endfunction
+function myCustomDamage2_inc takes unit whichUnit, real amount returns real
+    local real currentDmg = amount
+    local real classic_res = 0.0
+    local real minusres
+
+    if GetUnitAbilityLevel(whichUnit,'BW01') > 0 then
+        set currentDmg = currentDmg * 1.10
+    endif
+    if GetUnitAbilityLevel(whichUnit,'A171') > 0 then
+        set currentDmg = currentDmg * 1.10
+    endif
+    if GetUnitAbilityLevel(whichUnit,'GkH5') > 0 or GetUnitAbilityLevel(whichUnit,'VGH5') > 0 or GetUnitAbilityLevel(whichUnit,'GkH8') > 0 then
+        set currentDmg = currentDmg * 1.1
+    endif
+    if GetUnitAbilityLevel(whichUnit,'GkH6') > 0 or GetUnitAbilityLevel(whichUnit,'VGH6') > 0 then
+        set currentDmg = currentDmg * 1.1
+    endif
+    // W Kiyohime ослабление
+    if GetUnitAbilityLevel(whichUnit,'B17Y') > 0 then
+        set currentDmg = currentDmg * 0.65
+    endif
+            
+    // Брейкер уменьшение наносимого урона
+    if GetUnitAbilityLevel(whichUnit,'A15H') > 0 then
+        set currentDmg = currentDmg * 0.9
+    endif   
+    if GetUnitAbilityLevel(whichUnit, 'IcF3') > 0 then
+        set currentDmg=currentDmg * 1.2
+    endif
+    if GetUnitAbilityLevel(whichUnit, 'IcF4') > 0 then
+        set currentDmg=currentDmg * 0.8
+    endif
+    if GetUnitAbilityLevel(whichUnit, 'AP01') > 0 then
+        set currentDmg=currentDmg * 0.8
+    endif
+    return currentDmg
+    //~ конец модификации уменьшения урона
+
+endfunction
+function myCustomDamage2_dec takes unit target, real amount returns real
+    local real currentDmg = amount
+        local real classic_res = 0.0
+    local real minusres
+    local integer idTar=GetHandleId(target)
+    if GetUnitAbilityLevel(target,'GDSV') == 1 then
+        set minusres=0.6
+    else
+        if GetUnitAbilityLevel(target,'RiSV') == 1 then
+            set minusres=0.7
+        else
+            set minusres=1
+        endif
+    endif
+    if GetUnitAbilityLevel(target,'SNT1') == 1 then  // Хрупкость Синон
+        set minusres = minusres - 0.15
+    endif
+    //~ конец модификации увеличения урона
+        //if GetUnitAbilityLevel(target,'GDSV') == 0 then
+            if passedTime < 0 then
+                set currentDmg = currentDmg*(1.00+(0.05*passedTime)*minusres)
+            endif
+        //endif
+        // Калейдожезл Руби
+        if GetUnitAbilityLevel(target,'B072') > 0 then
+            set currentDmg = currentDmg * 1.10
+        endif
+                // T Gin уменьшение маг реза -> увеличение урона по нему
+        if GetUnitAbilityLevel(target,'BGiT') > 0 then
+            set currentDmg = currentDmg + amount*(I2R(GetUnitAbilityLevel(target, 'BGiT'))*0.05)
+        endif
+        // Шторм Вонголы и Гае Дирг
+        //if GetUnitAbilityLevel(target,'RiSV') == 0 and GetUnitAbilityLevel(target,'GDSV') == 0  then
+            // Увеличение урона от прошедшего времени после 6ой минуты.
+            if passedTime > 0 then
+                set currentDmg = currentDmg*(1.00+(0.05*passedTime))
+            endif
+            if GetUnitAbilityLevel(target,'A15H') > 0 then
+                set currentDmg = currentDmg * 0.8
+            endif 
+            // Калейдожезл Сапфир
+            if GetUnitAbilityLevel(target,'B073') > 0 then
+                set currentDmg = currentDmg * (1-0.15*minusres)
+            endif
+            // F Wendy
+            if GetUnitAbilityLevel(target,'BW01') > 0 then
+                set currentDmg = currentDmg * (1-0.15*minusres)
+            endif
+            //T Waver   
+            if GetUnitAbilityLevel(target,'WaT1') > 0 then
+                set currentDmg = currentDmg * 1.20
+            endif   
+            // Аокиджи R (Ice Ball)
+            if GetUnitAbilityLevel(target,'aokb') > 0 then
+                set currentDmg = currentDmg * (1-0.6*minusres)
+            endif
+            if GetUnitAbilityLevel(target, 'IcF3') > 0 then
+                set currentDmg=currentDmg * 1.15
+            endif
+            // Албедо F
+            if LoadInteger(HH,idTar,StringHash("AlbedoF_Mod")) == 2 then
+                set currentDmg = currentDmg * (1-0.2*minusres)
+                        elseif GetUnitTypeId(target)!='HAlb' then
+                                call RemoveSavedInteger(HH,idTar,StringHash("AlbedoF_Mod"))
+            endif
+            // Комплект акацки
+            if IsItemInInventory(target, 'I040') > 0 or GetUnitAbilityLevel(target,'KIL4') > 0 then
+                set currentDmg = currentDmg * (1-0.15*minusres)
+            endif
+                        
+            // Хломида акацки
+            if IsItemInInventory(target, 'I03X') > 0 or GetUnitAbilityLevel(target,'KIK8') > 0 then
+                set currentDmg = currentDmg * (1-0.1*minusres)
+            endif
+                        
+            //Гримуар прелати
+                        
+            if IsItemInInventory(target, 'I06Z') > 0 or IsItemInInventory(target, 'I06X') > 0 or IsItemInInventory(target, 'I06W') > 0 or GetUnitAbilityLevel(target,'KI0E') > 0 then
+                set currentDmg = currentDmg * (1-0.15*minusres)
+            endif
+            
+            if currentDmg<0 then
+                    set currentDmg=0
+            endif
+        //endif
+    return currentDmg
+    //~ конец модификации уменьшения урона
+
+endfunction
+function myCustomDamage3_targ takes unit u, real amount returns real
+    local real nb = amount
+    local integer uid=GetHandleId(u)
+    local integer i
+    if GetUnitAbilityLevel(u,'BHXR')>0 and nb>0 then 
+        set nb=nb*1.15                       
+    endif
+    if GetUnitAbilityLevel(u,'BKKQ')>0 and nb>0 then 
+        set nb=nb*1.2                     
+    endif
+    if IsUnitPaused(u)==true and nb>0 and PauseRes==true then
+        set nb=nb*0.5
+    endif
+    if GetUnitAbilityLevel(u,'BSaE')>0 and nb>0 then
+        set nb=nb*0.5
+    endif
+    if GetUnitAbilityLevel(u,'BHSW')>0 and nb>0 then 
+        set nb=nb*0.7                
+    endif
+    if LoadReal(HH,uid,StringHash("HashiramaR"))==-100 and nb>0 then 
+        set nb=nb*0.5
+    endif
+    if GetUnitAbilityLevel(u,'A06Y')>0 and nb>0 then
+        set nb=nb*0.9
+    endif
+    if nb>0 and GetUnitAbilityLevel(u,'YuT1')>0 then                // Yuji T Resist
+        //call SetEventDamage(nb*0.7)
+        set nb=nb*0.7
+    endif
+    if nb>0 and GetUnitTypeId(u)=='H131' then               // Sanji G Soba Mask Resist
+        //call SetEventDamage(nb*0.75)
+        set nb=nb*0.75
+    endif
+    
+    set i=0
+    loop
+        exitwhen i>=17
+        if nb>0 and u==DarknessTarget[i] and LoadReal(HH,GetHandleId(Darkness[i]),StringHash("darkHP"))>0 and GetUnitAbilityLevel(u,'Ao8U')==0 and GetUnitFlyHeight(Darkness[i])<4000 then
+            set nb=nb*0.65
+        endif
+        set i=i+1
+    endloop
+
+    if GetUnitAbilityLevel(u,'B00V')>0 and nb>0 then
+        set nb=nb*0.6
+    endif
+    if GetUnitAbilityLevel(u,'BHXE')>0 and nb>0 then 
+        set nb=nb*0.6              
+    endif
+    if GetUnitAbilityLevel(u,'A1F0')>0 and nb>0 then
+        set nb=nb*0.85
+    endif
+    if GetUnitAbilityLevel(u,'B06R')>0 and nb>0 then
+        set nb=nb*0.7
+    endif
+    if(GetUnitAbilityLevel(u,'A0RO')>0 or GetUnitAbilityLevel(u,'A19L')>0 or GetUnitAbilityLevel(u,'A00G')>0)and nb>0 and GetHeroLevel(u)>=6 then
+        set nb=nb*0.75
+    endif
+    if GetUnitAbilityLevel( u ,'BGSG')>0  and nb>0 then
+        set nb=nb*0.5
+    endif        
+    if GetUnitAbilityLevel(u,'Gi01')>0 and nb>0 then        // GilW1 buff
+        set nb=nb*0.5
+    endif
+            
+    if GetUnitAbilityLevel(u,'B06N')>0 and nb>0 then
+        set nb=nb*0.65
+    endif
+    
+    if LoadInteger(HH,uid,StringHash("KuukoQ"))==1 and nb>0 then
+        set nb=nb*0.60
+    endif
+
+    if GetUnitAbilityLevel(u,'A1FY')>0 and nb>0 then
+        set nb=nb*0.7
+    endif
+
+    if GetUnitAbilityLevel(u,'B06L')>0 or GetUnitAbilityLevel(u,'B16L')>0 and nb>0 then
+        set nb=nb*0.7
+    endif
+
+    if GetUnitAbilityLevel(u,'A12O')>0 and nb>0 then
+        set nb=nb*0.4
+    endif
+
+    if GetUnitAbilityLevel(u,'B00G')>0 and nb>0 then
+        set nb=nb*0.80
+    endif
+
+    // кости 20% резист
+    if (LoadBoolean(HH,uid,StringHash("MadaraSusR"))==true or LoadUnitHandle(HH,uid,StringHash("MadaraBone"))!=null) and nb>0 then // Laxus F - Резисты 
+        set nb=nb*0.8
+    endif
+
+    if GetUnitAbilityLevel(u,'B05Y')>0 and nb>0 then        
+        set nb=nb*(1-(0.12+0.03*GetUnitAbilityLevel(u,'A168')))
+    endif
+
+    if GetUnitAbilityLevel(u,'LAE1')>0 and nb>0 then // Laxus F - Резисты 
+        set nb=nb*0.85
+    endif
+
+    if GetUnitAbilityLevel(u,'B04P')>0 and nb>0 then
+        set nb=nb*0.88
+    endif
+
+    if GetUnitAbilityLevel(u,'BFr1')>0 and nb>0 then
+        set nb=nb*0.9
+    endif
+    if UnitHasItemOfTypeBJ(u,'I00X')and nb>0 then
+        set nb=nb*0.90
+    elseif UnitHasItemOfTypeBJ(u,'I00Y')and nb>0 then
+        set nb=nb*0.87
+    elseif UnitHasItemOfTypeBJ(u,'I00Z')and nb>0 then
+        set nb=nb*0.84
+    elseif UnitHasItemOfTypeBJ(u,'I010')and nb>0 then
+        set nb=nb*0.81
+    elseif UnitHasItemOfTypeBJ(u,'I011')and nb>0 then
+        set nb=nb*0.78
+    elseif UnitHasItemOfTypeBJ(u,'I012')and nb>0 then
+        set nb=nb*0.75
+    endif
+
+    if GetUnitAbilityLevel(u,'AlEp')>=1 and nb>0 then
+        set nb=nb*(0.925-GetUnitAbilityLevel(u,'AlEp')*0.025)
+    endif
+    if LoadInteger(HH,uid,StringHash("AlbedoF_Mod"))==3 then
+        set nb=nb*0.85
+    endif
+            
+    if (UnitHasItemOfTypeBJ(u,'ISTi') or GetUnitAbilityLevel(u, 'KI0S')>0 ) and nb>0 then // Stigmata Resist
+        set nb=nb*0.85
+    endif
+    if GetUnitAbilityLevel(u,'A2A1')>0 and nb>0 then 
+        set nb=nb*0.7
+    endif
+
+    if GetUnitAbilityLevel(u,'KkR4')>0 and nb>0 then //курапика уменьшение получаемого урона
+        set nb=nb*0.6                     
+    endif
+
+
+    return nb
+endfunction
+function myCustomDamage3_user takes unit c, real amount returns real
+    local real nb = amount
+
+    if GetUnitAbilityLevel(c,'Bwk1')>0 and nb>0 then
+        call SaveReal(HH,GetHandleId(bufh),0,nb)
+        call HandleListEnumUnitBuffs(bufh,c,Condition(function WeakenBool))
+        call HandleListForEach(bufh,function Weaken)
+        call FlushChildHashtable(HH,GetHandleId(bufh))
+        call HandleListClear(bufh)
+        set nb=LoadReal(HH,GetHandleId(bufh),0)
+    endif
+    if GetUnitAbilityLevel(c,'BAr2')>0 and nb>0 then 
+        set nb=nb*0.85               
+    endif
+    if GetUnitAbilityLevel(c,'BAr1')>0 and nb>0 then 
+        set nb=nb*1.15                   
+    endif
+    if GetUnitAbilityLevel(c,'BHXW')>0 and nb>0 then 
+        set nb=nb*1.15                      
+    endif
+    if GetUnitAbilityLevel(c,'KkR3')>0 and nb>0 then //курапика цепи уменьшение наносимого урона цели
+        set nb=nb*0.6                  
+    endif
+    if GetUnitAbilityLevel(c,'KkR4')>0 and nb>0 then //курапика увеличение урона союзника курапики
+        set nb=nb*1.2  
+    endif
+    if (GetUnitTypeId( c )=='HASC' or GetUnitTypeId( c )=='HAST') and nb>0 and IsUnitAlly(c,GetLocalPlayer()) then
+        set nb=nb*0.8
+    endif
+    if nb>0 and GetUnitAbilityLevel(c, 'PV01')>0 and GetUnitAbilityLevel(c,'A2WR')==0 and GetUnitAbilityLevel(c,'A3WR')==0 then     // дополнительный урон от Перчатки Вонголы
+        set nb=nb*1.1
+    endif
+    return nb
     //~ конец модификации уменьшения урона
 
 endfunction
@@ -2048,6 +2407,42 @@ function myCustomMana2 takes unit target, real amount returns real
     if GetUnitAbilityLevel(target,'A26F') > 0 then // эссенс
         set currentHeal=0
     endif         
+    if currentHeal<0 then
+        set currentHeal=0
+    endif
+
+    return currentHeal
+
+endfunction
+
+function myCustomMana3 takes unit target, real amount returns real
+    local real currentHeal = amount
+    local integer idTar=GetHandleId(target)
+    
+    set currentHeal = 1
+    // if LoadReal(HH,GetHandleId(target),MinusHealHash)!=0 then
+    //     set currentHeal = currentHeal * LoadReal(HH,GetHandleId(target),MinusHealHash)
+    // endif
+    if UnitHasItemOfTypeBJ(target,'I054') then // IceBoots
+        set currentHeal = currentHeal * 0.75
+    endif
+
+    if GetUnitAbilityLevel(target,'A15F')>0 then // IceBoots Active
+        set currentHeal = currentHeal * 0.5
+    endif
+
+    if UnitHasItemOfTypeBJ(target,'I02S') or GetUnitAbilityLevel(target,'KIG0')>0 then // IceSphere
+        set currentHeal = currentHeal * 0.9
+    endif
+    // if GetUnitAbilityLevel(target,'IHYs') > 0 then // Часы
+    //     set currentHeal = currentHeal * (GetUnitAbilityLevel(target,'IHYs')*(1-0.25))
+    // endif
+    // if GetUnitAbilityLevel(target,'B074') > 0 then // Пассива Орехи
+    //     set currentHeal = currentHeal * 1.15
+    // endif
+    // if UnitHasItemOfTypeBJCustom(target,'I00D') or GetUnitAbilityLevel(target,'KI58')>0 then // Солнце вонголы
+    //     set currentHeal = currentHeal * 1.15
+    // endif     
     if currentHeal<0 then
         set currentHeal=0
     endif
@@ -6197,12 +6592,6 @@ endfunction
 function Condition_BaseUBW takes player p,unit e returns boolean
 return IsUnitEnemy(e,p) and IsUnitType(e,UNIT_TYPE_DEAD)==false and IsUnitType(e,UNIT_TYPE_STRUCTURE)==false and 'dumm'!=GetUnitTypeId(e) and 'cdm1'!=GetUnitTypeId(e) and 'e16T'!=GetUnitTypeId(e) and 'h071'!=GetUnitTypeId(e) and UltimateDamage!=e and GetUnitTypeId(e)!='dM02'
 endfunction
-function WeakenBool takes nothing returns boolean
-return GetBuffTypeId(GetFilterBuff())=='Bwk1'
-endfunction
-function MissBool takes nothing returns boolean
-return GetBuffTypeId(GetFilterBuff())=='cb12'
-endfunction
 function BoolFrenda takes nothing returns boolean
 return(GetUnitTypeId(GetFilterUnit())=='e0ZY' or GetUnitTypeId(GetFilterUnit())=='e0ZV')and GetUnitAbilityLevel(GetFilterUnit(),'B06J')==0 and IsUnitType(GetFilterUnit(),UNIT_TYPE_STRUCTURE)==false and GetUnitAbilityLevel(GetFilterUnit(),'A1C3')==0
 endfunction
@@ -9401,13 +9790,13 @@ set Color[11]="|cFF683600"
 set Color[12]="|c0059ACFF"
 set Color[13]="|c009AFF35"
 set Colour[0]= 0xFFFF1010
-set Colour[1]= 0xFF9090FF
+set Colour[1]= 0xFF4A6AFF
 set Colour[2]= 0xFF00FFFF
-set Colour[3]= 0xFF7B709E
+set Colour[3]= 0xFFC470FC
 set Colour[4]= 0xFFFFDC00
 set Colour[5]= 0xFFFF8C00
 set Colour[6]= 0xFF10D850
-set Colour[7]= 0xFFFF5AFF
+set Colour[7]= 0xFFFFA6D2
 set Colour[8]= 0xFFA9A9A9
 set Colour[9]= 0xFF7EBFFF
 set Colour[10]= 0xFF005A39
@@ -10365,26 +10754,6 @@ call PauseBuff(buf,state)
 set buf=null
 endfunction
 
-function MissBuff takes nothing returns nothing
-local buff buf=HandleListGetEnumBuff()
-local integer HLid=GetHandleId(bufh)
-local integer bid=GetHandleId(buf)
-local real chance=LoadReal(HH,HLid,0)
-if GetRandomReal(0,1)<LoadReal(HH,bid,MissBuffHash) and chance!=0 then
-call SaveReal(HH,HLid,0,0)
-endif
-set buf=null
-endfunction
-
-function Weaken takes nothing returns nothing
-local buff buf=HandleListGetEnumBuff()
-local integer HLid=GetHandleId(bufh)
-local integer bid=GetHandleId(buf)
-local real dmg=LoadReal(HH,HLid,0)
-call SaveReal(HH,HLid,0,dmg*(1-LoadReal(HH,bid,MinusDmgHash)))
-set buf=null
-endfunction
-
 function ItemDoubleClickCond takes nothing returns boolean
 return GetSpellAbilityId()=='A048' or GetSpellAbilityId()=='A15E' or GetSpellAbilityId()=='A10Q' or GetSpellAbilityId()=='A0HL' or GetSpellAbilityId()=='A0WJ' or GetSpellAbilityId()=='A09A'
 endfunction
@@ -10691,6 +11060,70 @@ function OnButtonUnpress takes nothing returns nothing
     set p = null
     set but = null
 endfunction
+
+
+function OnButtonPressResist takes nothing returns nothing
+    local framehandle but = GetTriggerFrame ( )
+    local integer bid = GetHandleId( but )
+    local player p = GetTriggerPlayer( )
+    local real width = GetFrameWidth( but )
+    local real height = GetFrameHeight( but )
+
+    if p == GetLocalPlayer( ) then
+        if but != null then
+            if not LoadBoolean( HH, bid, 'prss' ) then
+                call ShowFrame(ResistBarFrame,true)
+                call SetFrameSize( but, width - .0015, height - .0015 ) // .024, .0465
+                call SaveBoolean( HH, bid, 'prss', true )
+            endif
+        endif
+    endif
+
+    set p = null
+    set but = null
+endfunction
+
+function OnButtonUnpressResistHandler takes nothing returns nothing
+    local integer hid = GetHandleId( GetExpiredTimer( ) )
+    local player p = LoadPlayerHandle( HH, hid, '+ply' )
+    local framehandle but = LoadFrameHandle( HH, hid, '+frm' )
+    local integer bid = GetHandleId( but )
+    local real width = GetFrameWidth( but )
+    local real height = GetFrameHeight( but )
+
+    if p == GetLocalPlayer( ) then
+        if but != null then
+            if LoadBoolean( HH, bid, 'prss' ) then
+                call SetFrameSize( but, width + .0015, height + .0015 ) // .025, .0475
+                call ShowFrame(ResistBarFrame,false)
+                call ShowFrame(OpenResistButton,true)
+                call SaveBoolean( HH, bid, 'prss', false )
+            endif
+        endif
+    endif
+
+    set p = null
+    set but = null
+endfunction
+
+function OnButtonUnpressResist takes nothing returns nothing
+    local player p = GetTriggerPlayer( )
+    local framehandle but = GetTriggerFrame( )
+    local timer tmr = LoadTimerHandle( HH, GetHandleId( but ), '+tmr' )
+
+    if tmr == null then
+        set tmr = CreateTimer( )
+        call SaveTimerHandle( HH, GetHandleId( but ), '+tmr', tmr )
+        call SavePlayerHandle( HH, GetHandleId( tmr ), '+ply', p )
+        call SaveFrameHandle( HH, GetHandleId( tmr ), '+frm', but )
+    endif
+
+    call TimerStart( tmr, .1, false, function OnButtonUnpressResistHandler )
+
+    set p = null
+    set but = null
+endfunction
+
 
 function OnButtonCloseStatusBar takes nothing returns nothing
     local player p = GetTriggerPlayer( )
@@ -11677,6 +12110,7 @@ function OnButtonCloseTavern takes nothing returns nothing
         call ShowFrame( StatusBarFrame, false)
         call ShowFrame( CloseStatusButton, false)
         call ShowFrame( OpenStatusButton, true)
+        call ShowFrame( OpenResistButton, true)
         call ShowFrame( EmoteBarFrame, false)
         call ShowFrame( CloseEmoteButton, false)
         call ShowFrame( OpenEmoteButton, true)
@@ -11732,6 +12166,7 @@ function OnButtonOpenTavern takes nothing returns nothing
         call ShowFrame( StatusBarFrame, false)
         call ShowFrame( CloseStatusButton, false)
         call ShowFrame( OpenStatusButton, false)
+        call ShowFrame( ResistBarFrame, false)
         call ShowFrame( EmoteBarFrame, false)
         call ShowFrame( CloseEmoteButton, false)
         call ShowFrame( OpenEmoteButton, false)
@@ -11849,6 +12284,7 @@ function ToggleOpenTavern takes nothing returns nothing
                 call ShowFrame( StatusBarFrame, false)
                 call ShowFrame( CloseStatusButton, false)
                 call ShowFrame( OpenStatusButton, false)
+                call ShowFrame( ResistBarFrame, false)
                 call ShowFrame( EmoteBarFrame, false)
                 call ShowFrame( CloseEmoteButton, false)
                 call ShowFrame( OpenEmoteButton, false)
@@ -11895,6 +12331,7 @@ function ToggleOpenTavern takes nothing returns nothing
                 call ShowFrame( StatusBarFrame, false)
                 call ShowFrame( CloseStatusButton, false)
                 call ShowFrame( OpenStatusButton, true)
+                call ShowFrame( OpenResistButton, true)
                 call ShowFrame( EmoteBarFrame, false)
                 call ShowFrame( CloseEmoteButton, false)
                 call ShowFrame( OpenEmoteButton, true)
@@ -16882,6 +17319,8 @@ if udg_test==false then
     call ShowFrame( StatusBarFrame, false)
     call ShowFrame( CloseStatusButton, false)
     call ShowFrame( OpenStatusButton, false)
+    call ShowFrame( OpenResistButton, false)
+    call ShowFrame( ResistBarFrame, false)
     call ShowFrame( EmoteBarFrame, false)
     call ShowFrame( CloseEmoteButton, false)
     call ShowFrame( OpenEmoteButton, false)
@@ -24035,6 +24474,275 @@ function Trig_StatusBar_Actions takes nothing returns nothing
     call TriggerAddAction( tOnUnPress, function OnButtonUnpress )
     call TriggerAddAction( tOnClick, function OnButtonOpenStatsBar )
 
+    set ResistBarFrame=CreateFrameByType("SIMPLEFRAME", "ResistBar", null, "", 0)
+    call ClearFrameAllPoints( ResistBarFrame )
+    call SetFrameRelativePoint( ResistBarFrame, FRAMEPOINT_CENTER, GetOriginFrame(ORIGIN_FRAME_PORTRAIT,0), FRAMEPOINT_CENTER,  -.001, -.014  )
+    call SetFrameSize( ResistBarFrame, .094, .125)    
+    call ShowFrame( ResistBarFrame, false )
+    call SetFrameTextureEx(ResistBarFrame, 0, "TooltipLessVisible.blp", false, "Choice-tooltip-border.blp", 0)
+    call SetFramePriority( ResistBarFrame, 6 )
+
+    set ResistBarFrameText=CreateFrameByType( "SIMPLETEXT", "MoveSpeedRoot", ResistBarFrame, "", 0 )
+    call ClearFrameAllPoints( ResistBarFrameText )
+    call SetFrameBlendMode( ResistBarFrameText, 0, BLEND_MODE_BLEND )
+    call SetFrameFont( ResistBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+    call SetFrameTextAlignment( ResistBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
+    call SetFrameTextColour( ResistBarFrameText, 0xFFFF1010 )
+    call SetFrameParent( ResistBarFrameText, ResistBarFrame )
+    call SetFrameText( ResistBarFrameText, "Move Speed")
+    call ShowFrame( ResistBarFrameText, true )
+    call SetFrameRelativePoint( ResistBarFrameText, FRAMEPOINT_TOPLEFT, ResistBarFrame, FRAMEPOINT_TOPLEFT,  .005, -.008  )
+
+    set ResistBarFrameText=CreateFrameByType( "SIMPLETEXT", "MoveSpeedNumber", ResistBarFrame, "", 0 )
+    call ClearFrameAllPoints( ResistBarFrameText )
+    call SetFrameBlendMode( ResistBarFrameText, 0, BLEND_MODE_BLEND )
+    call SetFrameFont( ResistBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+    call SetFrameTextAlignment( ResistBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
+    call SetFrameTextColour( ResistBarFrameText, 0xFFFF1010 )
+    call SetFrameParent( ResistBarFrameText, ResistBarFrame )
+    call SetFrameText( ResistBarFrameText, "0")
+    call ShowFrame( ResistBarFrameText, true )
+    call SetFrameRelativePoint( ResistBarFrameText, FRAMEPOINT_TOPRIGHT, ResistBarFrame, FRAMEPOINT_TOPRIGHT,  -.01, -.008  )
+
+    set ResistBarFrameText=CreateFrameByType( "SIMPLETEXT", "AttackSpeedRoot", ResistBarFrame, "", 0 )
+    call ClearFrameAllPoints( ResistBarFrameText )
+    call SetFrameBlendMode( ResistBarFrameText, 0, BLEND_MODE_BLEND )
+    call SetFrameFont( ResistBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+    call SetFrameTextAlignment( ResistBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
+    call SetFrameTextColour( ResistBarFrameText, 0xFFFF6060 )
+    call SetFrameParent( ResistBarFrameText, ResistBarFrame )
+    call SetFrameText( ResistBarFrameText, "Attack Speed")
+    call ShowFrame( ResistBarFrameText, true )
+    call SetFrameRelativePoint( ResistBarFrameText, FRAMEPOINT_TOPLEFT, GetFrameByName("MoveSpeedRoot",0), FRAMEPOINT_TOPLEFT,  0, -.01  )
+
+    set ResistBarFrameText=CreateFrameByType( "SIMPLETEXT", "AttackSpeedNumber", ResistBarFrame, "", 0 )
+    call ClearFrameAllPoints( ResistBarFrameText )
+    call SetFrameBlendMode( ResistBarFrameText, 0, BLEND_MODE_BLEND )
+    call SetFrameFont( ResistBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+    call SetFrameTextAlignment( ResistBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
+    call SetFrameTextColour( ResistBarFrameText, 0xFFFF6060 )
+    call SetFrameParent( ResistBarFrameText, ResistBarFrame )
+    call SetFrameText( ResistBarFrameText, "0")
+    call ShowFrame( ResistBarFrameText, true )
+    call SetFrameRelativePoint( ResistBarFrameText, FRAMEPOINT_TOPRIGHT, ResistBarFrame, FRAMEPOINT_TOPRIGHT,  -.01, -.018  )
+
+    set ResistBarFrameText=CreateFrameByType( "SIMPLETEXT", "MagicDMGImpRoot", ResistBarFrame, "", 0 )
+    call ClearFrameAllPoints( ResistBarFrameText )
+    call SetFrameBlendMode( ResistBarFrameText, 0, BLEND_MODE_BLEND )
+    call SetFrameFont( ResistBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+    call SetFrameTextAlignment( ResistBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
+    call SetFrameTextColour( ResistBarFrameText, 0xFFFF60AA )
+    call SetFrameParent( ResistBarFrameText, ResistBarFrame )
+    call SetFrameText( ResistBarFrameText, "Magic DMG Bonus")
+    call ShowFrame( ResistBarFrameText, true )
+    call SetFrameRelativePoint( ResistBarFrameText, FRAMEPOINT_TOPLEFT, GetFrameByName("AttackSpeedRoot",0), FRAMEPOINT_TOPLEFT,  0, -.01  )
+
+    set ResistBarFrameText=CreateFrameByType( "SIMPLETEXT", "MagicDMGImpNumber", ResistBarFrame, "", 0 )
+    call ClearFrameAllPoints( ResistBarFrameText )
+    call SetFrameBlendMode( ResistBarFrameText, 0, BLEND_MODE_BLEND )
+    call SetFrameFont( ResistBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+    call SetFrameTextAlignment( ResistBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
+    call SetFrameTextColour( ResistBarFrameText, 0xFFFF60AA )
+    call SetFrameParent( ResistBarFrameText, ResistBarFrame )
+    call SetFrameText( ResistBarFrameText, "0%")
+    call ShowFrame( ResistBarFrameText, true )
+    call SetFrameRelativePoint( ResistBarFrameText, FRAMEPOINT_TOPRIGHT, ResistBarFrame, FRAMEPOINT_TOPRIGHT,  -.01, -.028  )
+
+    set ResistBarFrameText=CreateFrameByType( "SIMPLETEXT", "GeneralDMGImpRoot", ResistBarFrame, "", 0 )
+    call ClearFrameAllPoints( ResistBarFrameText )
+    call SetFrameBlendMode( ResistBarFrameText, 0, BLEND_MODE_BLEND )
+    call SetFrameFont( ResistBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+    call SetFrameTextAlignment( ResistBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
+    call SetFrameTextColour( ResistBarFrameText, 0xFFFFAACC )
+    call SetFrameParent( ResistBarFrameText, ResistBarFrame )
+    call SetFrameText( ResistBarFrameText, "General DMG Bonus")
+    call ShowFrame( ResistBarFrameText, true )
+    call SetFrameRelativePoint( ResistBarFrameText, FRAMEPOINT_TOPLEFT, GetFrameByName("MagicDMGImpRoot",0), FRAMEPOINT_TOPLEFT,  0, -.01  )
+
+    set ResistBarFrameText=CreateFrameByType( "SIMPLETEXT", "GeneralDMGImpNumber", ResistBarFrame, "", 0 )
+    call ClearFrameAllPoints( ResistBarFrameText )
+    call SetFrameBlendMode( ResistBarFrameText, 0, BLEND_MODE_BLEND )
+    call SetFrameFont( ResistBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+    call SetFrameTextAlignment( ResistBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
+    call SetFrameTextColour( ResistBarFrameText, 0xFFFFAACC )
+    call SetFrameParent( ResistBarFrameText, ResistBarFrame )
+    call SetFrameText( ResistBarFrameText, "0%")
+    call ShowFrame( ResistBarFrameText, true )
+    call SetFrameRelativePoint( ResistBarFrameText, FRAMEPOINT_TOPRIGHT, ResistBarFrame, FRAMEPOINT_TOPRIGHT,  -.01, -.038  )
+
+    set ResistBarFrameText=CreateFrameByType( "SIMPLETEXT", "MagicalResistRoot", ResistBarFrame, "", 0 )
+    call ClearFrameAllPoints( ResistBarFrameText )
+    call SetFrameBlendMode( ResistBarFrameText, 0, BLEND_MODE_BLEND )
+    call SetFrameFont( ResistBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+    call SetFrameTextAlignment( ResistBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
+    call SetFrameTextColour( ResistBarFrameText, 0xFFAAAAFF )
+    call SetFrameParent( ResistBarFrameText, ResistBarFrame )
+    call SetFrameText( ResistBarFrameText, "Magic Resist")
+    call ShowFrame( ResistBarFrameText, true )
+    call SetFrameRelativePoint( ResistBarFrameText, FRAMEPOINT_TOPLEFT, GetFrameByName("GeneralDMGImpRoot",0), FRAMEPOINT_TOPLEFT,  0, -.01  )
+
+    set ResistBarFrameText=CreateFrameByType( "SIMPLETEXT", "MagicalResistNumber", ResistBarFrame, "", 0 )
+    call ClearFrameAllPoints( ResistBarFrameText )
+    call SetFrameBlendMode( ResistBarFrameText, 0, BLEND_MODE_BLEND )
+    call SetFrameFont( ResistBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+    call SetFrameTextAlignment( ResistBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
+    call SetFrameTextColour( ResistBarFrameText, 0xFFAAAAFF )
+    call SetFrameParent( ResistBarFrameText, ResistBarFrame )
+    call SetFrameText( ResistBarFrameText, "0%")
+    call ShowFrame( ResistBarFrameText, true )
+    call SetFrameRelativePoint( ResistBarFrameText, FRAMEPOINT_TOPRIGHT, ResistBarFrame, FRAMEPOINT_TOPRIGHT,  -.01, -.048  )
+
+    set ResistBarFrameText=CreateFrameByType( "SIMPLETEXT", "GeneralResistRoot", ResistBarFrame, "", 0 )
+    call ClearFrameAllPoints( ResistBarFrameText )
+    call SetFrameBlendMode( ResistBarFrameText, 0, BLEND_MODE_BLEND )
+    call SetFrameFont( ResistBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+    call SetFrameTextAlignment( ResistBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
+    call SetFrameTextColour( ResistBarFrameText, 0xFFBBBBBB )
+    call SetFrameParent( ResistBarFrameText, ResistBarFrame )
+    call SetFrameText( ResistBarFrameText, "General Resist")
+    call ShowFrame( ResistBarFrameText, true )
+    call SetFrameRelativePoint( ResistBarFrameText, FRAMEPOINT_TOPLEFT, GetFrameByName("MagicalResistRoot",0), FRAMEPOINT_TOPLEFT,  0, -.01  )
+
+    set ResistBarFrameText=CreateFrameByType( "SIMPLETEXT", "GeneralResistNumber", ResistBarFrame, "", 0 )
+    call ClearFrameAllPoints( ResistBarFrameText )
+    call SetFrameBlendMode( ResistBarFrameText, 0, BLEND_MODE_BLEND )
+    call SetFrameFont( ResistBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+    call SetFrameTextAlignment( ResistBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
+    call SetFrameTextColour( ResistBarFrameText, 0xFFBBBBBB )
+    call SetFrameParent( ResistBarFrameText, ResistBarFrame )
+    call SetFrameText( ResistBarFrameText, "0%")
+    call ShowFrame( ResistBarFrameText, true )
+    call SetFrameRelativePoint( ResistBarFrameText, FRAMEPOINT_TOPRIGHT, ResistBarFrame, FRAMEPOINT_TOPRIGHT,  -.01, -.058  )
+
+    set ResistBarFrameText=CreateFrameByType( "SIMPLETEXT", "ResistSummRoot", ResistBarFrame, "", 0 )
+    call ClearFrameAllPoints( ResistBarFrameText )
+    call SetFrameBlendMode( ResistBarFrameText, 0, BLEND_MODE_BLEND )
+    call SetFrameFont( ResistBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+    call SetFrameTextAlignment( ResistBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
+    call SetFrameTextColour( ResistBarFrameText, 0xFFDDDDDD )
+    call SetFrameParent( ResistBarFrameText, ResistBarFrame )
+    call SetFrameText( ResistBarFrameText, "Resist Sum")
+    call ShowFrame( ResistBarFrameText, true )
+    call SetFrameRelativePoint( ResistBarFrameText, FRAMEPOINT_TOPLEFT, GetFrameByName("GeneralResistRoot",0), FRAMEPOINT_TOPLEFT,  0, -.01  )
+
+    set ResistBarFrameText=CreateFrameByType( "SIMPLETEXT", "ResistSummNumber", ResistBarFrame, "", 0 )
+    call ClearFrameAllPoints( ResistBarFrameText )
+    call SetFrameBlendMode( ResistBarFrameText, 0, BLEND_MODE_BLEND )
+    call SetFrameFont( ResistBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+    call SetFrameTextAlignment( ResistBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
+    call SetFrameTextColour( ResistBarFrameText, 0xFFDDDDDD )
+    call SetFrameParent( ResistBarFrameText, ResistBarFrame )
+    call SetFrameText( ResistBarFrameText, "0%")
+    call ShowFrame( ResistBarFrameText, true )
+    call SetFrameRelativePoint( ResistBarFrameText, FRAMEPOINT_TOPRIGHT, ResistBarFrame, FRAMEPOINT_TOPRIGHT,  -.01, -.068  )
+
+    set ResistBarFrameText=CreateFrameByType( "SIMPLETEXT", "ControlResistRoot", ResistBarFrame, "", 0 )
+    call ClearFrameAllPoints( ResistBarFrameText )
+    call SetFrameBlendMode( ResistBarFrameText, 0, BLEND_MODE_BLEND )
+    call SetFrameFont( ResistBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+    call SetFrameTextAlignment( ResistBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
+    call SetFrameTextColour( ResistBarFrameText, 0xFFFFA500 )
+    call SetFrameParent( ResistBarFrameText, ResistBarFrame )
+    call SetFrameText( ResistBarFrameText, "Control Resist")
+    call ShowFrame( ResistBarFrameText, true )
+    call SetFrameRelativePoint( ResistBarFrameText, FRAMEPOINT_TOPLEFT, GetFrameByName("ResistSummRoot",0), FRAMEPOINT_TOPLEFT,  0, -.01  )
+
+    set ResistBarFrameText=CreateFrameByType( "SIMPLETEXT", "ControlResistNumber", ResistBarFrame, "", 0 )
+    call ClearFrameAllPoints( ResistBarFrameText )
+    call SetFrameBlendMode( ResistBarFrameText, 0, BLEND_MODE_BLEND )
+    call SetFrameFont( ResistBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+    call SetFrameTextAlignment( ResistBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
+    call SetFrameTextColour( ResistBarFrameText, 0xFFFFA500 )
+    call SetFrameParent( ResistBarFrameText, ResistBarFrame )
+    call SetFrameText( ResistBarFrameText, "0%")
+    call ShowFrame( ResistBarFrameText, true )
+    call SetFrameRelativePoint( ResistBarFrameText, FRAMEPOINT_TOPRIGHT, ResistBarFrame, FRAMEPOINT_TOPRIGHT,  -.01, -.078  )
+
+    set ResistBarFrameText=CreateFrameByType( "SIMPLETEXT", "HPHealEffRoot", ResistBarFrame, "", 0 )
+    call ClearFrameAllPoints( ResistBarFrameText )
+    call SetFrameBlendMode( ResistBarFrameText, 0, BLEND_MODE_BLEND )
+    call SetFrameFont( ResistBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+    call SetFrameTextAlignment( ResistBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
+    call SetFrameTextColour( ResistBarFrameText, 0xFF55FF55 )
+    call SetFrameParent( ResistBarFrameText, ResistBarFrame )
+    call SetFrameText( ResistBarFrameText, "HP Heal Eff.")
+    call ShowFrame( ResistBarFrameText, true )
+    call SetFrameRelativePoint( ResistBarFrameText, FRAMEPOINT_TOPLEFT, GetFrameByName("ControlResistRoot",0), FRAMEPOINT_TOPLEFT,  0, -.01  )
+
+    set ResistBarFrameText=CreateFrameByType( "SIMPLETEXT", "HPHealEffNumber", ResistBarFrame, "", 0 )
+    call ClearFrameAllPoints( ResistBarFrameText )
+    call SetFrameBlendMode( ResistBarFrameText, 0, BLEND_MODE_BLEND )
+    call SetFrameFont( ResistBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+    call SetFrameTextAlignment( ResistBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
+    call SetFrameTextColour( ResistBarFrameText, 0xFF55FF55 )
+    call SetFrameParent( ResistBarFrameText, ResistBarFrame )
+    call SetFrameText( ResistBarFrameText, "0%")
+    call ShowFrame( ResistBarFrameText, true )
+    call SetFrameRelativePoint( ResistBarFrameText, FRAMEPOINT_TOPRIGHT, ResistBarFrame, FRAMEPOINT_TOPRIGHT,  -.01, -.088  )
+
+    set ResistBarFrameText=CreateFrameByType( "SIMPLETEXT", "MPHealEffRoot", ResistBarFrame, "", 0 )
+    call ClearFrameAllPoints( ResistBarFrameText )
+    call SetFrameBlendMode( ResistBarFrameText, 0, BLEND_MODE_BLEND )
+    call SetFrameFont( ResistBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+    call SetFrameTextAlignment( ResistBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
+    call SetFrameTextColour( ResistBarFrameText, 0xFF7777FF )
+    call SetFrameParent( ResistBarFrameText, ResistBarFrame )
+    call SetFrameText( ResistBarFrameText, "MP Heal Eff.")
+    call ShowFrame( ResistBarFrameText, true )
+    call SetFrameRelativePoint( ResistBarFrameText, FRAMEPOINT_TOPLEFT, GetFrameByName("HPHealEffRoot",0), FRAMEPOINT_TOPLEFT,  0, -.01  )
+
+    set ResistBarFrameText=CreateFrameByType( "SIMPLETEXT", "MPHealEffNumber", ResistBarFrame, "", 0 )
+    call ClearFrameAllPoints( ResistBarFrameText )
+    call SetFrameBlendMode( ResistBarFrameText, 0, BLEND_MODE_BLEND )
+    call SetFrameFont( ResistBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+    call SetFrameTextAlignment( ResistBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
+    call SetFrameTextColour( ResistBarFrameText, 0xFF7777FF )
+    call SetFrameParent( ResistBarFrameText, ResistBarFrame )
+    call SetFrameText( ResistBarFrameText, "0%")
+    call ShowFrame( ResistBarFrameText, true )
+    call SetFrameRelativePoint( ResistBarFrameText, FRAMEPOINT_TOPRIGHT, ResistBarFrame, FRAMEPOINT_TOPRIGHT,  -.01, -.098  )
+
+    set ResistBarFrameText=CreateFrameByType( "SIMPLETEXT", "MPLossReduceRoot", ResistBarFrame, "", 0 )
+    call ClearFrameAllPoints( ResistBarFrameText )
+    call SetFrameBlendMode( ResistBarFrameText, 0, BLEND_MODE_BLEND )
+    call SetFrameFont( ResistBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+    call SetFrameTextAlignment( ResistBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
+    call SetFrameTextColour( ResistBarFrameText, 0xFF9999FF )
+    call SetFrameParent( ResistBarFrameText, ResistBarFrame )
+    call SetFrameText( ResistBarFrameText, "MP Loss Reduce")
+    call ShowFrame( ResistBarFrameText, true )
+    call SetFrameRelativePoint( ResistBarFrameText, FRAMEPOINT_TOPLEFT, GetFrameByName("MPHealEffRoot",0), FRAMEPOINT_TOPLEFT,  0, -.01  )
+
+    set ResistBarFrameText=CreateFrameByType( "SIMPLETEXT", "MPLossReduceNumber", ResistBarFrame, "", 0 )
+    call ClearFrameAllPoints( ResistBarFrameText )
+    call SetFrameBlendMode( ResistBarFrameText, 0, BLEND_MODE_BLEND )
+    call SetFrameFont( ResistBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+    call SetFrameTextAlignment( ResistBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
+    call SetFrameTextColour( ResistBarFrameText, 0xFF9999FF )
+    call SetFrameParent( ResistBarFrameText, ResistBarFrame )
+    call SetFrameText( ResistBarFrameText, "0%")
+    call ShowFrame( ResistBarFrameText, true )
+    call SetFrameRelativePoint( ResistBarFrameText, FRAMEPOINT_TOPRIGHT, ResistBarFrame, FRAMEPOINT_TOPRIGHT,  -.01, -.108  )
+
+    set OpenResistButton=CreateFrameByType( "SIMPLEBUTTON", "ResistBarOpen", null, "", 0 )
+    call ClearFrameAllPoints( OpenResistButton )
+    call SetFrameTexture( OpenResistButton, "Emotes\\ResistButton.blp", 0, true )
+    call SetFrameTexture( OpenResistButton, "Emotes\\ResistButton.blp", 1, true )
+    call SetFrameTexture( OpenResistButton, "Emotes\\ResistButton.blp", 2, true )
+    call SetFrameSize( OpenResistButton, .017, .017 )
+    call ShowFrame( OpenResistButton, true )
+    call SetFramePriority( OpenResistButton, 7 )
+    call SetFrameRelativePoint( OpenResistButton, FRAMEPOINT_CENTER, ResistBarFrame, FRAMEPOINT_TOPRIGHT, -.003, -.003 )
+
+    set tOnPress = CreateTrigger( )
+    set tOnUnPress = CreateTrigger( ) 
+    call TriggerRegisterFrameEvent( tOnPress, OpenResistButton, FRAMEEVENT_MOUSE_DOWN )
+    call TriggerRegisterFrameEvent( tOnUnPress, OpenResistButton, FRAMEEVENT_MOUSE_UP )
+    
+    call TriggerAddAction( tOnPress, function OnButtonPressResist )
+    call TriggerAddAction( tOnUnPress, function OnButtonUnpressResist )
+
+
     set x=0
     loop
         exitwhen x>=12
@@ -24411,10 +25119,35 @@ local integer x
 local integer i
 set seconds=seconds+1
 set x=0
+if IsFrameVisible(ResistBarFrame) then
+    call SetFrameText(GetFrameByName("MoveSpeedNumber",0), I2S(R2I(GetUnitMoveSpeed(GetUnitSelected(GetLocalPlayer())))))
+    call SetFrameText(GetFrameByName("AttackSpeedNumber",0), R2SW(GetUnitAttackSpeed(GetUnitSelected(GetLocalPlayer())),1,1))
+    call SetFrameText(GetFrameByName("MagicDMGImpNumber",0), I2S(R2I((MathRealCeil(myCustomDamage2_inc(GetUnitSelected(GetLocalPlayer()),1)*100))))+"%")
+    call SetFrameText(GetFrameByName("GeneralDMGImpNumber",0), I2S(R2I((MathRealCeil(myCustomDamage3_user(GetUnitSelected(GetLocalPlayer()),1)*100))))+"%")
+    call SetFrameText(GetFrameByName("MagicalResistNumber",0), I2S(R2I(((1-myCustomDamage2_dec(GetUnitSelected(GetLocalPlayer()),1))*100)))+"%")
+    call SetFrameText(GetFrameByName("GeneralResistNumber",0), I2S(R2I(((1-myCustomDamage3_targ(GetUnitSelected(GetLocalPlayer()),1))*100)))+"%")
+    call SetFrameText(GetFrameByName("ResistSummNumber",0), I2S(R2I(((1-myCustomDamage2_dec(GetUnitSelected(GetLocalPlayer()),myCustomDamage3_targ(GetUnitSelected(GetLocalPlayer()),1)))*100)))+"%")
+    call SetFrameText(GetFrameByName("ControlResistNumber",0), I2S(R2I(((10-CalculateControlResist(GetUnitSelected(GetLocalPlayer()), 10))*10)))+"%")
+    call SetFrameText(GetFrameByName("HPHealEffNumber",0), I2S(R2I(MathRealCeil(myCustomHeal2(GetUnitSelected(GetLocalPlayer()),1)*100)))+"%")
+    call SetFrameText(GetFrameByName("MPHealEffNumber",0), I2S(R2I(MathRealCeil(myCustomMana2(GetUnitSelected(GetLocalPlayer()),1)*100)))+"%")
+    call SetFrameText(GetFrameByName("MPLossReduceNumber",0), I2S(R2I(MathRealCeil(myCustomMana3(GetUnitSelected(GetLocalPlayer()),1)*100)))+"%")
+endif
 if ModuloInteger(seconds,10)<1 and GetFrameHeight( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 ))==0.132 then
     //call SetFrameGridSize( GetOriginFrame( ORIGIN_FRAME_INVENTORY_BAR, 0 ), 3, 4 )
     if GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 ))==0.505 then
         call SetFrameSize( StatusBarFrame, .21*(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505), .0425)
+        call SetFrameSize( ResistBarFrame, .094*(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505), .125)
+        call SetFrameText( GetFrameByName("MoveSpeedRoot",0), "Move Speed")
+        call SetFrameText( GetFrameByName("AttackSpeedRoot",0), "Attack Speed")
+        call SetFrameText( GetFrameByName("MagicDMGImpRoot",0), "Magic DMG Bonus")
+        call SetFrameText( GetFrameByName("GeneralDMGImpRoot",0), "General DMG Bonus")
+        call SetFrameText( GetFrameByName("MagicalResistRoot",0), "Magic Resist")
+        call SetFrameText( GetFrameByName("GeneralResistRoot",0), "General Resist")
+        call SetFrameText( GetFrameByName("ResistSummRoot",0), "Resist Sum")
+        call SetFrameText( GetFrameByName("ControlResistRoot",0), "Control Resist")
+        call SetFrameText( GetFrameByName("HPHealEffRoot",0), "HP Heal Eff.")
+        call SetFrameText( GetFrameByName("MPHealEffRoot",0), "MP Heal Eff.")
+        call SetFrameText( GetFrameByName("MPLossReduceRoot",0), "MP Loss Reduce")
         call SetFrameRelativePoint(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 0), FRAMEPOINT_TOPLEFT, GetFrameRelativePointParent(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 0),FRAMEPOINT_TOPLEFT),FRAMEPOINT_TOPRIGHT,.0175*(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505), -.0292)
         call SetFrameRelativePoint(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 0), FRAMEPOINT_TOP, GetFrameRelativePointParent(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 0),FRAMEPOINT_TOP),FRAMEPOINT_TOPLEFT,.00, -.0292)
         call SetFrameRelativePoint(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 0), FRAMEPOINT_TOPRIGHT, GetFrameRelativePointParent(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 0),FRAMEPOINT_TOPRIGHT),FRAMEPOINT_TOPLEFT,.00, -.0292)
@@ -24474,6 +25207,18 @@ if ModuloInteger(seconds,10)<1 and GetFrameHeight( GetFrameChild(GetOriginFrame(
         call SetFrameSpriteScale( GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON_AUTOCAST_FRAME, 9), 0.65)
     else
         call SetFrameSize( StatusBarFrame, .21*(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505), .0425)
+        call SetFrameSize( ResistBarFrame, .094*(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505), .125)
+        call SetFrameText( GetFrameByName("MoveSpeedRoot",0), "MS")
+        call SetFrameText( GetFrameByName("AttackSpeedRoot",0), "AS")
+        call SetFrameText( GetFrameByName("MagicDMGImpRoot",0), "M DMG +")
+        call SetFrameText( GetFrameByName("GeneralDMGImpRoot",0), "G DMG +")
+        call SetFrameText( GetFrameByName("MagicalResistRoot",0), "MR")
+        call SetFrameText( GetFrameByName("GeneralResistRoot",0), "GR")
+        call SetFrameText( GetFrameByName("ResistSummRoot",0), "R Sum")
+        call SetFrameText( GetFrameByName("ControlResistRoot",0), "CR")
+        call SetFrameText( GetFrameByName("HPHealEffRoot",0), "HP Eff")
+        call SetFrameText( GetFrameByName("MPHealEffRoot",0), "MP Eff")
+        call SetFrameText( GetFrameByName("MPLossReduceRoot",0), "MP Loss -")
         call SetFrameRelativePoint(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 0), FRAMEPOINT_TOPLEFT, GetFrameRelativePointParent(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 0),FRAMEPOINT_TOPLEFT),FRAMEPOINT_TOPRIGHT,.0175*(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505), -.0292)
         call SetFrameRelativePoint(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 0), FRAMEPOINT_CENTER, GetOriginFrame(ORIGIN_FRAME_CONSOLE_UI, 0),FRAMEPOINT_CENTER,.1255*(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505), -.2268)
         call ClearFrameAllPoints(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 2))
@@ -31134,6 +31879,7 @@ function Trig_test_Actions takes nothing returns nothing
     call ShowFrame( StatusBarFrame, false)
     call ShowFrame( CloseStatusButton, false)
     call ShowFrame( OpenStatusButton, true)
+    call ShowFrame( OpenResistButton, true)
     call ShowFrame( EmoteBarFrame, false)
     call ShowFrame( CloseEmoteButton, false)
     call ShowFrame( OpenEmoteButton, true)
@@ -31626,7 +32372,7 @@ call DisplayTextToPlayer(Player(GetPlayerId(GetTriggerPlayer())),0,0,"Your curre
 endfunction
 function Trig_he_Actions takes nothing returns nothing
 call DisplayTextToPlayer(Player(GetPlayerId(GetTriggerPlayer())),0,0,"Your current health recovery efficiency - "+R2SW(((myCustomHeal2(udg_Hero[GetPlayerId(GetTriggerPlayer())+1],1))*100),1,1)+"%.")
-call DisplayTextToPlayer(Player(GetPlayerId(GetTriggerPlayer())),0,0,"Your current Mana recovery efficiency - "+R2SW(((myCustomHeal2(udg_Hero[GetPlayerId(GetTriggerPlayer())+1],1))*100),1,1)+"%.")
+call DisplayTextToPlayer(Player(GetPlayerId(GetTriggerPlayer())),0,0,"Your current Mana recovery efficiency - "+R2SW(((myCustomMana2(udg_Hero[GetPlayerId(GetTriggerPlayer())+1],1))*100),1,1)+"%.")
 endfunction
 function Trig_ControlResist_Actions takes nothing returns nothing
 call DisplayTextToPlayer(Player(GetPlayerId(GetTriggerPlayer())),0,0,"Your current resistance to control is "+R2SW(((10-CalculateControlResist(udg_Hero[GetPlayerId(GetTriggerPlayer())+1], 10))*10),1,1)+"%.")
@@ -32568,6 +33314,7 @@ call SetControlToUnit(Hero[GetPlayerId(GetTriggerPlayer())],Hero[GetPlayerId(Get
 call SetControlToUnit(Hero[GetPlayerId(GetTriggerPlayer())],Hero[GetPlayerId(GetTriggerPlayer())],1,"root")
 call SetControlToUnit(Hero[GetPlayerId(GetTriggerPlayer())],Hero[GetPlayerId(GetTriggerPlayer())],1,"doom")
 call SetControlToUnit(Hero[GetPlayerId(GetTriggerPlayer())],Hero[GetPlayerId(GetTriggerPlayer())],1,"silence")
+call SetControlToUnit(Hero[GetPlayerId(GetTriggerPlayer())],Hero[GetPlayerId(GetTriggerPlayer())],1,"sleep")
 call IssueImmediateOrder(Hero[GetPlayerId(GetTriggerPlayer())],"stop")
 call IssuePointOrder( Hero[GetPlayerId(GetTriggerPlayer())], "smart", GetUnitX( Hero[GetPlayerId(GetTriggerPlayer())] )+GetRandomReal(-20,20), GetUnitY( Hero[GetPlayerId(GetTriggerPlayer())] )+GetRandomReal(-20,20) )
 call UnitAddAbility(Hero[GetPlayerId(GetTriggerPlayer())],'A0WR')
@@ -40283,14 +41030,6 @@ if cond==0 then
             endif
                 
         endif
-        if nb>0 and GetUnitAbilityLevel(u,'YuT1')>0 then                // Yuji T Resist
-            //call SetEventDamage(nb*0.7)
-            set nb=nb*0.7
-        endif
-        if nb>0 and GetUnitTypeId(u)=='H131' then               // Sanji G Soba Mask Resist
-            //call SetEventDamage(nb*0.75)
-            set nb=nb*0.75
-        endif
         if nb>0 and (UnitHasItemOfTypeBJ(u,'I03Z')or GetUnitAbilityLevel(u,'KIL2')>0)and CurrentEventAttack then
             if nb>15 then
                 set nb=nb-15
@@ -40393,6 +41132,14 @@ if cond==0 then
                     set nb=10
                 endif
             endif
+        endif
+        if nb>0 and GetUnitAbilityLevel(u,'YuT1')>0 then                // Yuji T Resist
+            //call SetEventDamage(nb*0.7)
+            set nb=nb*0.7
+        endif
+        if nb>0 and GetUnitTypeId(u)=='H131' then               // Sanji G Soba Mask Resist
+            //call SetEventDamage(nb*0.75)
+            set nb=nb*0.75
         endif
         // if GetUnitAbilityLevel(u,'A162')>0 and nb>0 then
             // if udg_kill[idu]<70 then
@@ -135009,6 +135756,438 @@ call TriggerRegisterAnyUnitEventBJ(gg_trg_Cyclone,EVENT_PLAYER_UNIT_SPELL_EFFECT
 call TriggerAddCondition(gg_trg_Cyclone,Condition(function CycloneCond))
 call TriggerAddAction(gg_trg_Cyclone,function CycloneCast)
 endfunction
+function ControlDebuffCond takes nothing returns boolean
+return GetBuffTypeId(GetTriggerBuff())=='CBC1' or GetBuffTypeId(GetTriggerBuff())=='CBC2' or GetBuffTypeId(GetTriggerBuff())=='cbc3' or GetBuffTypeId(GetTriggerBuff())=='cbc5' or GetBuffTypeId(GetTriggerBuff())=='cbc6' or GetBuffTypeId(GetTriggerBuff())=='cbc7'
+endfunction
+function ControlDebuffCast2 takes nothing returns nothing
+local timer t=GetExpiredTimer()
+local integer id=GetHandleId(t)
+local unit u=LoadUnitHandle(HH,id,0)
+local integer idu=GetHandleId(u)
+local framehandle DebuffFrameGrid=LoadFrameHandle(HH,id,1)
+local framehandle Stun_DebuffFrame
+local framehandle Stun_DebuffFrameText
+local framehandle Root_DebuffFrame
+local framehandle Root_DebuffFrameText
+local framehandle Silence_DebuffFrame
+local framehandle Silence_DebuffFrameText
+local framehandle Doom_DebuffFrame
+local framehandle Doom_DebuffFrameText
+local framehandle Ensnare_DebuffFrame
+local framehandle Ensnare_DebuffFrameText
+local framehandle Sleep_DebuffFrame
+local framehandle Sleep_DebuffFrameText
+local real x=GetUnitScreenX(u)
+local real y=GetUnitScreenY(u)
+local integer i
+local integer j
+call SetFrameAbsolutePoint( DebuffFrameGrid, FRAMEPOINT_LEFT, x-0.04,y+0.002  )
+if IsUnitVisible(u,GetLocalPlayer()) then
+    call ShowFrame( DebuffFrameGrid, true )
+else
+    call ShowFrame( DebuffFrameGrid, false )
+endif
+if GetUnitAbilityLevel(u,'CBC2')>0 then
+    if LoadBoolean(HH,idu,Stun_Debuff)==false then
+        call SaveBoolean(HH,idu,Stun_Debuff,true)
+        set Stun_DebuffFrame=CreateFrameByType( "SIMPLEFRAME", "StunDebuff", DebuffFrameGrid, "", 0 )
+        call ClearFrameAllPoints( Stun_DebuffFrame )
+        call SetFrameTexture( Stun_DebuffFrame, GetBuffBaseStringFieldById('CBC2',BUFF_SF_ICON_NORMAL), 0, true )
+        call SetFrameTexture( Stun_DebuffFrame, GetBuffBaseStringFieldById('CBC2',BUFF_SF_ICON_NORMAL), 1, true )
+        call SetFrameTexture( Stun_DebuffFrame, GetBuffBaseStringFieldById('CBC2',BUFF_SF_ICON_NORMAL), 2, true )
+        call SetFrameSize( Stun_DebuffFrame, .0125, .0125 )
+        call ShowFrame( Stun_DebuffFrame, true )
+        call SetFramePriority( Stun_DebuffFrame, 0 )
+        set i=1
+        loop 
+        exitwhen i>8
+            if GetFrameGridFrame(DebuffFrameGrid, 0, i)==null then
+                call SetFrameGridFrame( DebuffFrameGrid, 0, i, Stun_DebuffFrame )
+                set i=8
+            endif
+            set i=i+1
+        endloop
+        call SaveFrameHandle(HH,id,2,Stun_DebuffFrame)
+        
+        set Stun_DebuffFrameText=CreateFrameByType( "SIMPLETEXT", "StunDebuffText", Stun_DebuffFrame, "", 0 )
+        call ClearFrameAllPoints( Stun_DebuffFrameText )
+        call SetFrameBlendMode( Stun_DebuffFrameText, 0, BLEND_MODE_BLEND )
+        call SetFrameFont( Stun_DebuffFrameText, "Fonts\\FRIZQT__.TTF", .01, 0 )
+        call SetFrameTextAlignment( Stun_DebuffFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
+        call SetFrameTextColour( Stun_DebuffFrameText, ConvertColour(255,255,255,255) )
+        call SetFrameParent( Stun_DebuffFrameText, Stun_DebuffFrame )
+        call SetFrameText( Stun_DebuffFrameText, "0.1")
+        call ShowFrame( Stun_DebuffFrameText, true )
+        call SetFrameRelativePoint( Stun_DebuffFrameText, FRAMEPOINT_CENTER, Stun_DebuffFrame, FRAMEPOINT_CENTER, 0, 0 )
+        call SaveFrameHandle(HH,id,3,Stun_DebuffFrameText)
+    endif
+    set Stun_DebuffFrame=LoadFrameHandle(HH,id,2)
+    set Stun_DebuffFrameText=LoadFrameHandle(HH,id,3)
+    //call SetFrameGridFrame( DebuffFrameGrid, 0, 1, Stun_DebuffFrame )
+    call SetFrameText( Stun_DebuffFrameText, R2SW(GetBuffRemainingDuration(GetUnitBuff(u,'CBC2')),1,1))
+else
+    if LoadBoolean(HH,idu,Stun_Debuff)==true then
+        set Stun_DebuffFrame=LoadFrameHandle(HH,id,2)
+        set Stun_DebuffFrameText=LoadFrameHandle(HH,id,3)
+        call SaveBoolean(HH,idu,Stun_Debuff,false)
+        call DestroyFrame(Stun_DebuffFrame)
+        call DestroyFrame(Stun_DebuffFrameText)
+        call RemoveSavedHandle(HH,id,2)
+        call RemoveSavedHandle(HH,id,3)
+        set i=1
+        loop 
+        exitwhen i>8
+            if GetFrameGridFrame(DebuffFrameGrid, 0, i)==null then
+                call SetFrameGridFrame( DebuffFrameGrid, 0, i, GetFrameGridFrame(DebuffFrameGrid, 0, i+1) )
+            endif
+            set i=i+1
+        endloop
+    endif
+endif
+if GetUnitAbilityLevel(u,'CBC1')>0 then
+    if LoadBoolean(HH,idu,Root_Debuff)==false then
+        call SaveBoolean(HH,idu,Root_Debuff,true)
+        set Root_DebuffFrame=CreateFrameByType( "SIMPLEFRAME", "RootDebuff", DebuffFrameGrid, "", 0 )
+        call ClearFrameAllPoints( Root_DebuffFrame )
+        call SetFrameTexture( Root_DebuffFrame, GetBuffBaseStringFieldById('CBC1',BUFF_SF_ICON_NORMAL), 0, true )
+        call SetFrameTexture( Root_DebuffFrame, GetBuffBaseStringFieldById('CBC1',BUFF_SF_ICON_NORMAL), 1, true )
+        call SetFrameTexture( Root_DebuffFrame, GetBuffBaseStringFieldById('CBC1',BUFF_SF_ICON_NORMAL), 2, true )
+        call SetFrameSize( Root_DebuffFrame, .0125, .0125 )
+        call ShowFrame( Root_DebuffFrame, true )
+        call SetFramePriority( Root_DebuffFrame, 0 )
+        set i=1
+        loop 
+        exitwhen i>8
+            if GetFrameGridFrame(DebuffFrameGrid, 0, i)==null then
+                call SetFrameGridFrame( DebuffFrameGrid, 0, i, Root_DebuffFrame )
+                set i=8
+            endif
+            set i=i+1
+        endloop
+        call SaveFrameHandle(HH,id,4,Root_DebuffFrame)
+        
+        set Root_DebuffFrameText=CreateFrameByType( "SIMPLETEXT", "RootDebuffText", Root_DebuffFrame, "", 0 )
+        call ClearFrameAllPoints( Root_DebuffFrameText )
+        call SetFrameBlendMode( Root_DebuffFrameText, 0, BLEND_MODE_BLEND )
+        call SetFrameFont( Root_DebuffFrameText, "Fonts\\FRIZQT__.TTF", .01, 0 )
+        call SetFrameTextAlignment( Root_DebuffFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
+        call SetFrameTextColour( Root_DebuffFrameText, ConvertColour(255,255,255,255) )
+        call SetFrameParent( Root_DebuffFrameText, Root_DebuffFrame )
+        call SetFrameText( Root_DebuffFrameText, "0.1")
+        call ShowFrame( Root_DebuffFrameText, true )
+        call SetFrameRelativePoint( Root_DebuffFrameText, FRAMEPOINT_CENTER, Root_DebuffFrame, FRAMEPOINT_CENTER, 0, 0 )
+        call SaveFrameHandle(HH,id,5,Root_DebuffFrameText)
+    endif
+    set Root_DebuffFrame=LoadFrameHandle(HH,id,4)
+    set Root_DebuffFrameText=LoadFrameHandle(HH,id,5)
+    //call SetFrameGridFrame( DebuffFrameGrid, 0, 1, Root_DebuffFrame )
+    call SetFrameText( Root_DebuffFrameText, R2SW(GetBuffRemainingDuration(GetUnitBuff(u,'CBC1')),1,1))
+else
+    if LoadBoolean(HH,idu,Root_Debuff)==true then
+        set Root_DebuffFrame=LoadFrameHandle(HH,id,4)
+        set Root_DebuffFrameText=LoadFrameHandle(HH,id,5)
+        call SaveBoolean(HH,idu,Root_Debuff,false)
+        call DestroyFrame(Root_DebuffFrame)
+        call DestroyFrame(Root_DebuffFrameText)
+        call RemoveSavedHandle(HH,id,4)
+        call RemoveSavedHandle(HH,id,5)
+        set i=1
+        loop 
+        exitwhen i>8
+            if GetFrameGridFrame(DebuffFrameGrid, 0, i)==null then
+                call SetFrameGridFrame( DebuffFrameGrid, 0, i, GetFrameGridFrame(DebuffFrameGrid, 0, i+1) )
+            endif
+            set i=i+1
+        endloop
+    endif
+endif
+if GetUnitAbilityLevel(u,'cbc3')>0 then
+    if LoadBoolean(HH,idu,Silence_Debuff)==false then
+        call SaveBoolean(HH,idu,Silence_Debuff,true)
+        set Silence_DebuffFrame=CreateFrameByType( "SIMPLEFRAME", "SilenceDebuff", DebuffFrameGrid, "", 0 )
+        call ClearFrameAllPoints( Silence_DebuffFrame )
+        call SetFrameTexture( Silence_DebuffFrame, GetBuffBaseStringFieldById('cbc3',BUFF_SF_ICON_NORMAL), 0, true )
+        call SetFrameTexture( Silence_DebuffFrame, GetBuffBaseStringFieldById('cbc3',BUFF_SF_ICON_NORMAL), 1, true )
+        call SetFrameTexture( Silence_DebuffFrame, GetBuffBaseStringFieldById('cbc3',BUFF_SF_ICON_NORMAL), 2, true )
+        call SetFrameSize( Silence_DebuffFrame, .0125, .0125 )
+        call ShowFrame( Silence_DebuffFrame, true )
+        call SetFramePriority( Silence_DebuffFrame, 0 )
+        set i=1
+        loop 
+        exitwhen i>8
+            if GetFrameGridFrame(DebuffFrameGrid, 0, i)==null then
+                call SetFrameGridFrame( DebuffFrameGrid, 0, i, Silence_DebuffFrame )
+                set i=8
+            endif
+            set i=i+1
+        endloop
+        call SaveFrameHandle(HH,id,6,Silence_DebuffFrame)
+        
+        set Silence_DebuffFrameText=CreateFrameByType( "SIMPLETEXT", "SilenceDebuffText", Silence_DebuffFrame, "", 0 )
+        call ClearFrameAllPoints( Silence_DebuffFrameText )
+        call SetFrameBlendMode( Silence_DebuffFrameText, 0, BLEND_MODE_BLEND )
+        call SetFrameFont( Silence_DebuffFrameText, "Fonts\\FRIZQT__.TTF", .01, 0 )
+        call SetFrameTextAlignment( Silence_DebuffFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
+        call SetFrameTextColour( Silence_DebuffFrameText, ConvertColour(255,255,255,255) )
+        call SetFrameParent( Silence_DebuffFrameText, Silence_DebuffFrame )
+        call SetFrameText( Silence_DebuffFrameText, "0.1")
+        call ShowFrame( Silence_DebuffFrameText, true )
+        call SetFrameRelativePoint( Silence_DebuffFrameText, FRAMEPOINT_CENTER, Silence_DebuffFrame, FRAMEPOINT_CENTER, 0, 0 )
+        call SaveFrameHandle(HH,id,7,Silence_DebuffFrameText)
+    endif
+    set Silence_DebuffFrame=LoadFrameHandle(HH,id,6)
+    set Silence_DebuffFrameText=LoadFrameHandle(HH,id,7)
+    //call SetFrameGridFrame( DebuffFrameGrid, 0, 1, Silence_DebuffFrame )
+    call SetFrameText( Silence_DebuffFrameText, R2SW(GetBuffRemainingDuration(GetUnitBuff(u,'cbc3')),1,1))
+else
+    if LoadBoolean(HH,idu,Silence_Debuff)==true then
+        set Silence_DebuffFrame=LoadFrameHandle(HH,id,6)
+        set Silence_DebuffFrameText=LoadFrameHandle(HH,id,7)
+        call SaveBoolean(HH,idu,Silence_Debuff,false)
+        call DestroyFrame(Silence_DebuffFrame)
+        call DestroyFrame(Silence_DebuffFrameText)
+        call RemoveSavedHandle(HH,id,6)
+        call RemoveSavedHandle(HH,id,7)
+        set i=1
+        loop 
+        exitwhen i>8
+            if GetFrameGridFrame(DebuffFrameGrid, 0, i)==null then
+                call SetFrameGridFrame( DebuffFrameGrid, 0, i, GetFrameGridFrame(DebuffFrameGrid, 0, i+1) )
+            endif
+            set i=i+1
+        endloop
+    endif
+endif
+if GetUnitAbilityLevel(u,'cbc5')>0 then
+    if LoadBoolean(HH,idu,Doom_Debuff)==false then
+        call SaveBoolean(HH,idu,Doom_Debuff,true)
+        set Doom_DebuffFrame=CreateFrameByType( "SIMPLEFRAME", "DoomDebuff", DebuffFrameGrid, "", 0 )
+        call ClearFrameAllPoints( Doom_DebuffFrame )
+        call SetFrameTexture( Doom_DebuffFrame, GetBuffBaseStringFieldById('cbc5',BUFF_SF_ICON_NORMAL), 0, true )
+        call SetFrameTexture( Doom_DebuffFrame, GetBuffBaseStringFieldById('cbc5',BUFF_SF_ICON_NORMAL), 1, true )
+        call SetFrameTexture( Doom_DebuffFrame, GetBuffBaseStringFieldById('cbc5',BUFF_SF_ICON_NORMAL), 2, true )
+        call SetFrameSize( Doom_DebuffFrame, .0125, .0125 )
+        call ShowFrame( Doom_DebuffFrame, true )
+        call SetFramePriority( Doom_DebuffFrame, 0 )
+        set i=1
+        loop 
+        exitwhen i>8
+            if GetFrameGridFrame(DebuffFrameGrid, 0, i)==null then
+                call SetFrameGridFrame( DebuffFrameGrid, 0, i, Doom_DebuffFrame )
+                set i=8
+            endif
+            set i=i+1
+        endloop
+        call SaveFrameHandle(HH,id,8,Doom_DebuffFrame)
+        
+        set Doom_DebuffFrameText=CreateFrameByType( "SIMPLETEXT", "DoomDebuffText", Doom_DebuffFrame, "", 0 )
+        call ClearFrameAllPoints( Doom_DebuffFrameText )
+        call SetFrameBlendMode( Doom_DebuffFrameText, 0, BLEND_MODE_BLEND )
+        call SetFrameFont( Doom_DebuffFrameText, "Fonts\\FRIZQT__.TTF", .01, 0 )
+        call SetFrameTextAlignment( Doom_DebuffFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
+        call SetFrameTextColour( Doom_DebuffFrameText, ConvertColour(255,255,255,255) )
+        call SetFrameParent( Doom_DebuffFrameText, Doom_DebuffFrame )
+        call SetFrameText( Doom_DebuffFrameText, "0.1")
+        call ShowFrame( Doom_DebuffFrameText, true )
+        call SetFrameRelativePoint( Doom_DebuffFrameText, FRAMEPOINT_CENTER, Doom_DebuffFrame, FRAMEPOINT_CENTER, 0, 0 )
+        call SaveFrameHandle(HH,id,9,Doom_DebuffFrameText)
+    endif
+    set Doom_DebuffFrame=LoadFrameHandle(HH,id,8)
+    set Doom_DebuffFrameText=LoadFrameHandle(HH,id,9)
+    //call SetFrameGridFrame( DebuffFrameGrid, 0, 1, Doom_DebuffFrame )
+    call SetFrameText( Doom_DebuffFrameText, R2SW(GetBuffRemainingDuration(GetUnitBuff(u,'cbc5')),1,1))
+else
+    if LoadBoolean(HH,idu,Doom_Debuff)==true then
+        set Doom_DebuffFrame=LoadFrameHandle(HH,id,8)
+        set Doom_DebuffFrameText=LoadFrameHandle(HH,id,9)
+        call SaveBoolean(HH,idu,Doom_Debuff,false)
+        call DestroyFrame(Doom_DebuffFrame)
+        call DestroyFrame(Doom_DebuffFrameText)
+        call RemoveSavedHandle(HH,id,8)
+        call RemoveSavedHandle(HH,id,9)
+        set i=1
+        loop 
+        exitwhen i>8
+            if GetFrameGridFrame(DebuffFrameGrid, 0, i)==null then
+                call SetFrameGridFrame( DebuffFrameGrid, 0, i, GetFrameGridFrame(DebuffFrameGrid, 0, i+1) )
+            endif
+            set i=i+1
+        endloop
+    endif
+endif
+if GetUnitAbilityLevel(u,'cbc6')>0 then
+    if LoadBoolean(HH,idu,Ensnare_Debuff)==false then
+        call SaveBoolean(HH,idu,Ensnare_Debuff,true)
+        set Ensnare_DebuffFrame=CreateFrameByType( "SIMPLEFRAME", "EnsnareDebuff", DebuffFrameGrid, "", 0 )
+        call ClearFrameAllPoints( Ensnare_DebuffFrame )
+        call SetFrameTexture( Ensnare_DebuffFrame, GetBuffBaseStringFieldById('cbc6',BUFF_SF_ICON_NORMAL), 0, true )
+        call SetFrameTexture( Ensnare_DebuffFrame, GetBuffBaseStringFieldById('cbc6',BUFF_SF_ICON_NORMAL), 1, true )
+        call SetFrameTexture( Ensnare_DebuffFrame, GetBuffBaseStringFieldById('cbc6',BUFF_SF_ICON_NORMAL), 2, true )
+        call SetFrameSize( Ensnare_DebuffFrame, .0125, .0125 )
+        call ShowFrame( Ensnare_DebuffFrame, true )
+        call SetFramePriority( Ensnare_DebuffFrame, 0 )
+        set i=1
+        loop 
+        exitwhen i>8
+            if GetFrameGridFrame(DebuffFrameGrid, 0, i)==null then
+                call SetFrameGridFrame( DebuffFrameGrid, 0, i, Ensnare_DebuffFrame )
+                set i=8
+            endif
+            set i=i+1
+        endloop
+        call SaveFrameHandle(HH,id,10,Ensnare_DebuffFrame)
+        
+        set Ensnare_DebuffFrameText=CreateFrameByType( "SIMPLETEXT", "EnsnareDebuffText", Ensnare_DebuffFrame, "", 0 )
+        call ClearFrameAllPoints( Ensnare_DebuffFrameText )
+        call SetFrameBlendMode( Ensnare_DebuffFrameText, 0, BLEND_MODE_BLEND )
+        call SetFrameFont( Ensnare_DebuffFrameText, "Fonts\\FRIZQT__.TTF", .01, 0 )
+        call SetFrameTextAlignment( Ensnare_DebuffFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
+        call SetFrameTextColour( Ensnare_DebuffFrameText, ConvertColour(255,255,255,255) )
+        call SetFrameParent( Ensnare_DebuffFrameText, Ensnare_DebuffFrame )
+        call SetFrameText( Ensnare_DebuffFrameText, "0.1")
+        call ShowFrame( Ensnare_DebuffFrameText, true )
+        call SetFrameRelativePoint( Ensnare_DebuffFrameText, FRAMEPOINT_CENTER, Ensnare_DebuffFrame, FRAMEPOINT_CENTER, 0, 0 )
+        call SaveFrameHandle(HH,id,11,Ensnare_DebuffFrameText)
+    endif
+    set Ensnare_DebuffFrame=LoadFrameHandle(HH,id,10)
+    set Ensnare_DebuffFrameText=LoadFrameHandle(HH,id,11)
+    //call SetFrameGridFrame( DebuffFrameGrid, 0, 1, Ensnare_DebuffFrame )
+    call SetFrameText( Ensnare_DebuffFrameText, R2SW(GetBuffRemainingDuration(GetUnitBuff(u,'cbc6')),1,1))
+else
+    if LoadBoolean(HH,idu,Ensnare_Debuff)==true then
+        set Ensnare_DebuffFrame=LoadFrameHandle(HH,id,10)
+        set Ensnare_DebuffFrameText=LoadFrameHandle(HH,id,11)
+        call SaveBoolean(HH,idu,Ensnare_Debuff,false)
+        call DestroyFrame(Ensnare_DebuffFrame)
+        call DestroyFrame(Ensnare_DebuffFrameText)
+        call RemoveSavedHandle(HH,id,10)
+        call RemoveSavedHandle(HH,id,11)
+        set i=1
+        loop 
+        exitwhen i>8
+            if GetFrameGridFrame(DebuffFrameGrid, 0, i)==null then
+                call SetFrameGridFrame( DebuffFrameGrid, 0, i, GetFrameGridFrame(DebuffFrameGrid, 0, i+1) )
+            endif
+            set i=i+1
+        endloop
+    endif
+endif
+if GetUnitAbilityLevel(u,'cbc7')>0 then
+    if LoadBoolean(HH,idu,Sleep_Debuff)==false then
+        call SaveBoolean(HH,idu,Sleep_Debuff,true)
+        set Sleep_DebuffFrame=CreateFrameByType( "SIMPLEFRAME", "SleepDebuff", DebuffFrameGrid, "", 0 )
+        call ClearFrameAllPoints( Sleep_DebuffFrame )
+        call SetFrameTexture( Sleep_DebuffFrame, GetBuffBaseStringFieldById('cbc7',BUFF_SF_ICON_NORMAL), 0, true )
+        call SetFrameTexture( Sleep_DebuffFrame, GetBuffBaseStringFieldById('cbc7',BUFF_SF_ICON_NORMAL), 1, true )
+        call SetFrameTexture( Sleep_DebuffFrame, GetBuffBaseStringFieldById('cbc7',BUFF_SF_ICON_NORMAL), 2, true )
+        call SetFrameSize( Sleep_DebuffFrame, .0125, .0125 )
+        call ShowFrame( Sleep_DebuffFrame, true )
+        call SetFramePriority( Sleep_DebuffFrame, 0 )
+        set i=1
+        loop 
+        exitwhen i>8
+            if GetFrameGridFrame(DebuffFrameGrid, 0, i)==null then
+                call SetFrameGridFrame( DebuffFrameGrid, 0, i, Sleep_DebuffFrame )
+                set i=8
+            endif
+            set i=i+1
+        endloop
+        call SaveFrameHandle(HH,id,12,Sleep_DebuffFrame)
+        
+        set Sleep_DebuffFrameText=CreateFrameByType( "SIMPLETEXT", "SleepDebuffText", Sleep_DebuffFrame, "", 0 )
+        call ClearFrameAllPoints( Sleep_DebuffFrameText )
+        call SetFrameBlendMode( Sleep_DebuffFrameText, 0, BLEND_MODE_BLEND )
+        call SetFrameFont( Sleep_DebuffFrameText, "Fonts\\FRIZQT__.TTF", .01, 0 )
+        call SetFrameTextAlignment( Sleep_DebuffFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
+        call SetFrameTextColour( Sleep_DebuffFrameText, ConvertColour(255,255,255,255) )
+        call SetFrameParent( Sleep_DebuffFrameText, Sleep_DebuffFrame )
+        call SetFrameText( Sleep_DebuffFrameText, "0.1")
+        call ShowFrame( Sleep_DebuffFrameText, true )
+        call SetFrameRelativePoint( Sleep_DebuffFrameText, FRAMEPOINT_CENTER, Sleep_DebuffFrame, FRAMEPOINT_CENTER, 0, 0 )
+        call SaveFrameHandle(HH,id,13,Sleep_DebuffFrameText)
+    endif
+    set Sleep_DebuffFrame=LoadFrameHandle(HH,id,12)
+    set Sleep_DebuffFrameText=LoadFrameHandle(HH,id,13)
+    //call SetFrameGridFrame( DebuffFrameGrid, 0, 1, Sleep_DebuffFrame )
+    call SetFrameText( Sleep_DebuffFrameText, R2SW(GetBuffRemainingDuration(GetUnitBuff(u,'cbc7')),1,1))
+else
+    if LoadBoolean(HH,idu,Sleep_Debuff)==true then
+        set Sleep_DebuffFrame=LoadFrameHandle(HH,id,12)
+        set Sleep_DebuffFrameText=LoadFrameHandle(HH,id,13)
+        call SaveBoolean(HH,idu,Sleep_Debuff,false)
+        call DestroyFrame(Sleep_DebuffFrame)
+        call DestroyFrame(Sleep_DebuffFrameText)
+        call RemoveSavedHandle(HH,id,12)
+        call RemoveSavedHandle(HH,id,13)
+        set i=1
+        loop 
+        exitwhen i>8
+            if GetFrameGridFrame(DebuffFrameGrid, 0, i)==null then
+                call SetFrameGridFrame( DebuffFrameGrid, 0, i, GetFrameGridFrame(DebuffFrameGrid, 0, i+1) )
+            endif
+            set i=i+1
+        endloop
+    endif
+endif
+if GetUnitAbilityLevel(u,'CBC1')==0 and GetUnitAbilityLevel(u,'CBC2')==0 and GetUnitAbilityLevel(u,'cbc3')==0 and GetUnitAbilityLevel(u,'cbc5')==0 and GetUnitAbilityLevel(u,'cbc6')==0 and GetUnitAbilityLevel(u,'cbc7')==0 then
+    call SaveBoolean(HH,idu,Unit_Debuff,false)
+    call DestroyFrame(DebuffFrameGrid)
+    call PauseTimer(t)
+    call DestroyTimer(t)
+    call FlushChildHashtable(HH,id)
+endif
+set t=null
+set u=null
+set DebuffFrameGrid=null
+set Stun_DebuffFrame=null
+set Stun_DebuffFrameText=null
+set Root_DebuffFrame=null
+set Root_DebuffFrameText=null
+set Silence_DebuffFrame=null
+set Silence_DebuffFrameText=null
+set Doom_DebuffFrame=null
+set Doom_DebuffFrameText=null
+set Ensnare_DebuffFrame=null
+set Ensnare_DebuffFrameText=null
+set Sleep_DebuffFrame=null
+set Sleep_DebuffFrameText=null
+endfunction
+function ControlDebuffCast takes nothing returns nothing
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+local unit u=GetTriggerUnit()
+local integer idu=GetHandleId(u)
+local framehandle DebuffFrameGrid
+local real x=GetUnitScreenX(u)
+local real y=GetUnitScreenY(u)
+if LoadBoolean(HH,idu,Unit_Debuff)==false then
+    call SaveUnitHandle(HH,id,0,u)
+    call SaveBoolean(HH,idu,Unit_Debuff,true)
+    set DebuffFrameGrid=CreateFrameByType("SIMPLEGRID", "UnitDebuffs", GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ), "", 0)
+    call ClearFrameAllPoints( DebuffFrameGrid )
+    call SetFrameAbsolutePoint( DebuffFrameGrid, FRAMEPOINT_LEFT, x-500/GetClientWidth(),y+400/GetClientHeight()  )
+    call SetFrameGridSize( DebuffFrameGrid, 2, 8 )
+    call SetFrameSize( DebuffFrameGrid, .1, .032)
+    call SetFrameGridFlag(DebuffFrameGrid,GRID_STYLE_JUSTIFY_CENTER,true)
+    call SetFrameGridFlag(DebuffFrameGrid,GRID_STYLE_JUSTIFY_MIDDLE,true)
+    call SetFramePriority( DebuffFrameGrid, 0 )
+    call ShowFrame( DebuffFrameGrid, true )
+    call SaveFrameHandle(HH,id,1,DebuffFrameGrid)
+    call TimerStart(t,.05,true,function ControlDebuffCast2)
+else
+    call PauseTimer(t)
+    call DestroyTimer(t)
+endif
+set t=null
+set u=null
+endfunction
+function ControlDebuffStartInit takes nothing returns nothing
+local trigger t=CreateTrigger()
+call TriggerRegisterAnyUnitEventBJ(t,EVENT_PLAYER_UNIT_BUFF_RECEIVED)
+call TriggerAddCondition(t,Condition(function ControlDebuffCond))
+call TriggerAddAction(t,function ControlDebuffCast)
+set t=null
+endfunction
 function WeakenEndCond takes nothing returns boolean
 return GetBuffTypeId(GetTriggerBuff())=='Bwk1' or GetBuffTypeId(GetTriggerBuff())=='cb12'
 endfunction
@@ -222008,6 +223187,7 @@ call WeakenEndInit()
 // call PauseAbilInit()
 //call SlowAuraStartInit()
 call CycloneStartInit()
+call ControlDebuffStartInit()
 // call Pet1StartInit()
 //call CycloneEndInit()
 call RunInitializationTriggers()
