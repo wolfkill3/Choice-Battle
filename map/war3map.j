@@ -135783,7 +135783,12 @@ local real x=GetUnitScreenX(u)
 local real y=GetUnitScreenY(u)
 local integer i
 local integer j
-call SetFrameAbsolutePoint( DebuffFrameGrid, FRAMEPOINT_LEFT, x+500/GetClientWidth(),y+400/GetClientHeight()  )
+call SetFrameAbsolutePoint( DebuffFrameGrid, FRAMEPOINT_LEFT, x-0.04,y+0.002  )
+if IsUnitVisible(u,GetLocalPlayer()) then
+    call ShowFrame( DebuffFrameGrid, true )
+else
+    call ShowFrame( DebuffFrameGrid, false )
+endif
 if GetUnitAbilityLevel(u,'CBC2')>0 then
     if LoadBoolean(HH,idu,Stun_Debuff)==false then
         call SaveBoolean(HH,idu,Stun_Debuff,true)
@@ -136164,7 +136169,9 @@ if LoadBoolean(HH,idu,Unit_Debuff)==false then
     call ClearFrameAllPoints( DebuffFrameGrid )
     call SetFrameAbsolutePoint( DebuffFrameGrid, FRAMEPOINT_LEFT, x-500/GetClientWidth(),y+400/GetClientHeight()  )
     call SetFrameGridSize( DebuffFrameGrid, 2, 8 )
-    call SetFrameSize( DebuffFrameGrid, .135, .032)
+    call SetFrameSize( DebuffFrameGrid, .1, .032)
+    call SetFrameGridFlag(DebuffFrameGrid,GRID_STYLE_JUSTIFY_CENTER,true)
+    call SetFrameGridFlag(DebuffFrameGrid,GRID_STYLE_JUSTIFY_MIDDLE,true)
     call SetFramePriority( DebuffFrameGrid, 0 )
     call ShowFrame( DebuffFrameGrid, true )
     call SaveFrameHandle(HH,id,1,DebuffFrameGrid)
