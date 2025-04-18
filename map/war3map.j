@@ -33316,6 +33316,7 @@ call SetControlToUnit(Hero[GetPlayerId(GetTriggerPlayer())],Hero[GetPlayerId(Get
 call SetControlToUnit(Hero[GetPlayerId(GetTriggerPlayer())],Hero[GetPlayerId(GetTriggerPlayer())],1,"root")
 call SetControlToUnit(Hero[GetPlayerId(GetTriggerPlayer())],Hero[GetPlayerId(GetTriggerPlayer())],1,"doom")
 call SetControlToUnit(Hero[GetPlayerId(GetTriggerPlayer())],Hero[GetPlayerId(GetTriggerPlayer())],1,"silence")
+call SetControlToUnit(Hero[GetPlayerId(GetTriggerPlayer())],Hero[GetPlayerId(GetTriggerPlayer())],1,"sleep")
 call IssueImmediateOrder(Hero[GetPlayerId(GetTriggerPlayer())],"stop")
 call IssuePointOrder( Hero[GetPlayerId(GetTriggerPlayer())], "smart", GetUnitX( Hero[GetPlayerId(GetTriggerPlayer())] )+GetRandomReal(-20,20), GetUnitY( Hero[GetPlayerId(GetTriggerPlayer())] )+GetRandomReal(-20,20) )
 call UnitAddAbility(Hero[GetPlayerId(GetTriggerPlayer())],'A0WR')
@@ -135768,29 +135769,49 @@ local integer idu=GetHandleId(u)
 local framehandle DebuffFrameGrid=LoadFrameHandle(HH,id,1)
 local framehandle Stun_DebuffFrame
 local framehandle Stun_DebuffFrameText
-local real x=GetWidgetScreenX(u)+100
-local real y=GetWidgetScreenY(u)+50
-call SetFrameAbsolutePoint( DebuffFrameGrid, FRAMEPOINT_LEFT, x,y  )
+local framehandle Root_DebuffFrame
+local framehandle Root_DebuffFrameText
+local framehandle Silence_DebuffFrame
+local framehandle Silence_DebuffFrameText
+local framehandle Doom_DebuffFrame
+local framehandle Doom_DebuffFrameText
+local framehandle Ensnare_DebuffFrame
+local framehandle Ensnare_DebuffFrameText
+local framehandle Sleep_DebuffFrame
+local framehandle Sleep_DebuffFrameText
+local real x=GetUnitScreenX(u)
+local real y=GetUnitScreenY(u)
+local integer i
+local integer j
+call SetFrameAbsolutePoint( DebuffFrameGrid, FRAMEPOINT_LEFT, x+500/GetClientWidth(),y+400/GetClientHeight()  )
 if GetUnitAbilityLevel(u,'CBC2')>0 then
     if LoadBoolean(HH,idu,Stun_Debuff)==false then
         call SaveBoolean(HH,idu,Stun_Debuff,true)
-        set Stun_DebuffFrame=CreateFrameByType( "SIMPLEBUTTON", "StunDebuff", DebuffFrameGrid, "", 0 )
+        set Stun_DebuffFrame=CreateFrameByType( "SIMPLEFRAME", "StunDebuff", DebuffFrameGrid, "", 0 )
         call ClearFrameAllPoints( Stun_DebuffFrame )
-        call SetFrameTexture( Stun_DebuffFrame, GetBuffStringField(GetUnitBuff(u,'CBC2'),BUFF_SF_ICON_NORMAL), 0, true )
-        call SetFrameTexture( Stun_DebuffFrame, GetBuffStringField(GetUnitBuff(u,'CBC2'),BUFF_SF_ICON_NORMAL), 1, true )
-        call SetFrameTexture( Stun_DebuffFrame, GetBuffStringField(GetUnitBuff(u,'CBC2'),BUFF_SF_ICON_NORMAL), 2, true )
+        call SetFrameTexture( Stun_DebuffFrame, GetBuffBaseStringFieldById('CBC2',BUFF_SF_ICON_NORMAL), 0, true )
+        call SetFrameTexture( Stun_DebuffFrame, GetBuffBaseStringFieldById('CBC2',BUFF_SF_ICON_NORMAL), 1, true )
+        call SetFrameTexture( Stun_DebuffFrame, GetBuffBaseStringFieldById('CBC2',BUFF_SF_ICON_NORMAL), 2, true )
         call SetFrameSize( Stun_DebuffFrame, .0125, .0125 )
         call ShowFrame( Stun_DebuffFrame, true )
-        call SetFramePriority( Stun_DebuffFrame, 1 )
-        call SetFrameGridFrame( DebuffFrameGrid, 0, 0, Stun_DebuffFrame )
+        call SetFramePriority( Stun_DebuffFrame, 0 )
+        set i=1
+        loop 
+        exitwhen i>8
+            if GetFrameGridFrame(DebuffFrameGrid, 0, i)==null then
+                call SetFrameGridFrame( DebuffFrameGrid, 0, i, Stun_DebuffFrame )
+                set i=8
+            endif
+            set i=i+1
+        endloop
         call SaveFrameHandle(HH,id,2,Stun_DebuffFrame)
         
         set Stun_DebuffFrameText=CreateFrameByType( "SIMPLETEXT", "StunDebuffText", Stun_DebuffFrame, "", 0 )
         call ClearFrameAllPoints( Stun_DebuffFrameText )
         call SetFrameBlendMode( Stun_DebuffFrameText, 0, BLEND_MODE_BLEND )
-        call SetFrameFont( Stun_DebuffFrameText, "Fonts\\FRIZQT__.TTF", .008, 0 )
+        call SetFrameFont( Stun_DebuffFrameText, "Fonts\\FRIZQT__.TTF", .01, 0 )
         call SetFrameTextAlignment( Stun_DebuffFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
-        call SetFrameTextColour( Stun_DebuffFrameText, ConvertColour(255,255,30,30) )
+        call SetFrameTextColour( Stun_DebuffFrameText, ConvertColour(255,255,255,255) )
         call SetFrameParent( Stun_DebuffFrameText, Stun_DebuffFrame )
         call SetFrameText( Stun_DebuffFrameText, "0.1")
         call ShowFrame( Stun_DebuffFrameText, true )
@@ -135799,6 +135820,7 @@ if GetUnitAbilityLevel(u,'CBC2')>0 then
     endif
     set Stun_DebuffFrame=LoadFrameHandle(HH,id,2)
     set Stun_DebuffFrameText=LoadFrameHandle(HH,id,3)
+    //call SetFrameGridFrame( DebuffFrameGrid, 0, 1, Stun_DebuffFrame )
     call SetFrameText( Stun_DebuffFrameText, R2SW(GetBuffRemainingDuration(GetUnitBuff(u,'CBC2')),1,1))
 else
     if LoadBoolean(HH,idu,Stun_Debuff)==true then
@@ -135809,6 +135831,299 @@ else
         call DestroyFrame(Stun_DebuffFrameText)
         call RemoveSavedHandle(HH,id,2)
         call RemoveSavedHandle(HH,id,3)
+        set i=1
+        loop 
+        exitwhen i>8
+            if GetFrameGridFrame(DebuffFrameGrid, 0, i)==null then
+                call SetFrameGridFrame( DebuffFrameGrid, 0, i, GetFrameGridFrame(DebuffFrameGrid, 0, i+1) )
+            endif
+            set i=i+1
+        endloop
+    endif
+endif
+if GetUnitAbilityLevel(u,'CBC1')>0 then
+    if LoadBoolean(HH,idu,Root_Debuff)==false then
+        call SaveBoolean(HH,idu,Root_Debuff,true)
+        set Root_DebuffFrame=CreateFrameByType( "SIMPLEFRAME", "RootDebuff", DebuffFrameGrid, "", 0 )
+        call ClearFrameAllPoints( Root_DebuffFrame )
+        call SetFrameTexture( Root_DebuffFrame, GetBuffBaseStringFieldById('CBC1',BUFF_SF_ICON_NORMAL), 0, true )
+        call SetFrameTexture( Root_DebuffFrame, GetBuffBaseStringFieldById('CBC1',BUFF_SF_ICON_NORMAL), 1, true )
+        call SetFrameTexture( Root_DebuffFrame, GetBuffBaseStringFieldById('CBC1',BUFF_SF_ICON_NORMAL), 2, true )
+        call SetFrameSize( Root_DebuffFrame, .0125, .0125 )
+        call ShowFrame( Root_DebuffFrame, true )
+        call SetFramePriority( Root_DebuffFrame, 0 )
+        set i=1
+        loop 
+        exitwhen i>8
+            if GetFrameGridFrame(DebuffFrameGrid, 0, i)==null then
+                call SetFrameGridFrame( DebuffFrameGrid, 0, i, Root_DebuffFrame )
+                set i=8
+            endif
+            set i=i+1
+        endloop
+        call SaveFrameHandle(HH,id,4,Root_DebuffFrame)
+        
+        set Root_DebuffFrameText=CreateFrameByType( "SIMPLETEXT", "RootDebuffText", Root_DebuffFrame, "", 0 )
+        call ClearFrameAllPoints( Root_DebuffFrameText )
+        call SetFrameBlendMode( Root_DebuffFrameText, 0, BLEND_MODE_BLEND )
+        call SetFrameFont( Root_DebuffFrameText, "Fonts\\FRIZQT__.TTF", .01, 0 )
+        call SetFrameTextAlignment( Root_DebuffFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
+        call SetFrameTextColour( Root_DebuffFrameText, ConvertColour(255,255,255,255) )
+        call SetFrameParent( Root_DebuffFrameText, Root_DebuffFrame )
+        call SetFrameText( Root_DebuffFrameText, "0.1")
+        call ShowFrame( Root_DebuffFrameText, true )
+        call SetFrameRelativePoint( Root_DebuffFrameText, FRAMEPOINT_CENTER, Root_DebuffFrame, FRAMEPOINT_CENTER, 0, 0 )
+        call SaveFrameHandle(HH,id,5,Root_DebuffFrameText)
+    endif
+    set Root_DebuffFrame=LoadFrameHandle(HH,id,4)
+    set Root_DebuffFrameText=LoadFrameHandle(HH,id,5)
+    //call SetFrameGridFrame( DebuffFrameGrid, 0, 1, Root_DebuffFrame )
+    call SetFrameText( Root_DebuffFrameText, R2SW(GetBuffRemainingDuration(GetUnitBuff(u,'CBC1')),1,1))
+else
+    if LoadBoolean(HH,idu,Root_Debuff)==true then
+        set Root_DebuffFrame=LoadFrameHandle(HH,id,4)
+        set Root_DebuffFrameText=LoadFrameHandle(HH,id,5)
+        call SaveBoolean(HH,idu,Root_Debuff,false)
+        call DestroyFrame(Root_DebuffFrame)
+        call DestroyFrame(Root_DebuffFrameText)
+        call RemoveSavedHandle(HH,id,4)
+        call RemoveSavedHandle(HH,id,5)
+        set i=1
+        loop 
+        exitwhen i>8
+            if GetFrameGridFrame(DebuffFrameGrid, 0, i)==null then
+                call SetFrameGridFrame( DebuffFrameGrid, 0, i, GetFrameGridFrame(DebuffFrameGrid, 0, i+1) )
+            endif
+            set i=i+1
+        endloop
+    endif
+endif
+if GetUnitAbilityLevel(u,'cbc3')>0 then
+    if LoadBoolean(HH,idu,Silence_Debuff)==false then
+        call SaveBoolean(HH,idu,Silence_Debuff,true)
+        set Silence_DebuffFrame=CreateFrameByType( "SIMPLEFRAME", "SilenceDebuff", DebuffFrameGrid, "", 0 )
+        call ClearFrameAllPoints( Silence_DebuffFrame )
+        call SetFrameTexture( Silence_DebuffFrame, GetBuffBaseStringFieldById('cbc3',BUFF_SF_ICON_NORMAL), 0, true )
+        call SetFrameTexture( Silence_DebuffFrame, GetBuffBaseStringFieldById('cbc3',BUFF_SF_ICON_NORMAL), 1, true )
+        call SetFrameTexture( Silence_DebuffFrame, GetBuffBaseStringFieldById('cbc3',BUFF_SF_ICON_NORMAL), 2, true )
+        call SetFrameSize( Silence_DebuffFrame, .0125, .0125 )
+        call ShowFrame( Silence_DebuffFrame, true )
+        call SetFramePriority( Silence_DebuffFrame, 0 )
+        set i=1
+        loop 
+        exitwhen i>8
+            if GetFrameGridFrame(DebuffFrameGrid, 0, i)==null then
+                call SetFrameGridFrame( DebuffFrameGrid, 0, i, Silence_DebuffFrame )
+                set i=8
+            endif
+            set i=i+1
+        endloop
+        call SaveFrameHandle(HH,id,6,Silence_DebuffFrame)
+        
+        set Silence_DebuffFrameText=CreateFrameByType( "SIMPLETEXT", "SilenceDebuffText", Silence_DebuffFrame, "", 0 )
+        call ClearFrameAllPoints( Silence_DebuffFrameText )
+        call SetFrameBlendMode( Silence_DebuffFrameText, 0, BLEND_MODE_BLEND )
+        call SetFrameFont( Silence_DebuffFrameText, "Fonts\\FRIZQT__.TTF", .01, 0 )
+        call SetFrameTextAlignment( Silence_DebuffFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
+        call SetFrameTextColour( Silence_DebuffFrameText, ConvertColour(255,255,255,255) )
+        call SetFrameParent( Silence_DebuffFrameText, Silence_DebuffFrame )
+        call SetFrameText( Silence_DebuffFrameText, "0.1")
+        call ShowFrame( Silence_DebuffFrameText, true )
+        call SetFrameRelativePoint( Silence_DebuffFrameText, FRAMEPOINT_CENTER, Silence_DebuffFrame, FRAMEPOINT_CENTER, 0, 0 )
+        call SaveFrameHandle(HH,id,7,Silence_DebuffFrameText)
+    endif
+    set Silence_DebuffFrame=LoadFrameHandle(HH,id,6)
+    set Silence_DebuffFrameText=LoadFrameHandle(HH,id,7)
+    //call SetFrameGridFrame( DebuffFrameGrid, 0, 1, Silence_DebuffFrame )
+    call SetFrameText( Silence_DebuffFrameText, R2SW(GetBuffRemainingDuration(GetUnitBuff(u,'cbc3')),1,1))
+else
+    if LoadBoolean(HH,idu,Silence_Debuff)==true then
+        set Silence_DebuffFrame=LoadFrameHandle(HH,id,6)
+        set Silence_DebuffFrameText=LoadFrameHandle(HH,id,7)
+        call SaveBoolean(HH,idu,Silence_Debuff,false)
+        call DestroyFrame(Silence_DebuffFrame)
+        call DestroyFrame(Silence_DebuffFrameText)
+        call RemoveSavedHandle(HH,id,6)
+        call RemoveSavedHandle(HH,id,7)
+        set i=1
+        loop 
+        exitwhen i>8
+            if GetFrameGridFrame(DebuffFrameGrid, 0, i)==null then
+                call SetFrameGridFrame( DebuffFrameGrid, 0, i, GetFrameGridFrame(DebuffFrameGrid, 0, i+1) )
+            endif
+            set i=i+1
+        endloop
+    endif
+endif
+if GetUnitAbilityLevel(u,'cbc5')>0 then
+    if LoadBoolean(HH,idu,Doom_Debuff)==false then
+        call SaveBoolean(HH,idu,Doom_Debuff,true)
+        set Doom_DebuffFrame=CreateFrameByType( "SIMPLEFRAME", "DoomDebuff", DebuffFrameGrid, "", 0 )
+        call ClearFrameAllPoints( Doom_DebuffFrame )
+        call SetFrameTexture( Doom_DebuffFrame, GetBuffBaseStringFieldById('cbc5',BUFF_SF_ICON_NORMAL), 0, true )
+        call SetFrameTexture( Doom_DebuffFrame, GetBuffBaseStringFieldById('cbc5',BUFF_SF_ICON_NORMAL), 1, true )
+        call SetFrameTexture( Doom_DebuffFrame, GetBuffBaseStringFieldById('cbc5',BUFF_SF_ICON_NORMAL), 2, true )
+        call SetFrameSize( Doom_DebuffFrame, .0125, .0125 )
+        call ShowFrame( Doom_DebuffFrame, true )
+        call SetFramePriority( Doom_DebuffFrame, 0 )
+        set i=1
+        loop 
+        exitwhen i>8
+            if GetFrameGridFrame(DebuffFrameGrid, 0, i)==null then
+                call SetFrameGridFrame( DebuffFrameGrid, 0, i, Doom_DebuffFrame )
+                set i=8
+            endif
+            set i=i+1
+        endloop
+        call SaveFrameHandle(HH,id,8,Doom_DebuffFrame)
+        
+        set Doom_DebuffFrameText=CreateFrameByType( "SIMPLETEXT", "DoomDebuffText", Doom_DebuffFrame, "", 0 )
+        call ClearFrameAllPoints( Doom_DebuffFrameText )
+        call SetFrameBlendMode( Doom_DebuffFrameText, 0, BLEND_MODE_BLEND )
+        call SetFrameFont( Doom_DebuffFrameText, "Fonts\\FRIZQT__.TTF", .01, 0 )
+        call SetFrameTextAlignment( Doom_DebuffFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
+        call SetFrameTextColour( Doom_DebuffFrameText, ConvertColour(255,255,255,255) )
+        call SetFrameParent( Doom_DebuffFrameText, Doom_DebuffFrame )
+        call SetFrameText( Doom_DebuffFrameText, "0.1")
+        call ShowFrame( Doom_DebuffFrameText, true )
+        call SetFrameRelativePoint( Doom_DebuffFrameText, FRAMEPOINT_CENTER, Doom_DebuffFrame, FRAMEPOINT_CENTER, 0, 0 )
+        call SaveFrameHandle(HH,id,9,Doom_DebuffFrameText)
+    endif
+    set Doom_DebuffFrame=LoadFrameHandle(HH,id,8)
+    set Doom_DebuffFrameText=LoadFrameHandle(HH,id,9)
+    //call SetFrameGridFrame( DebuffFrameGrid, 0, 1, Doom_DebuffFrame )
+    call SetFrameText( Doom_DebuffFrameText, R2SW(GetBuffRemainingDuration(GetUnitBuff(u,'cbc5')),1,1))
+else
+    if LoadBoolean(HH,idu,Doom_Debuff)==true then
+        set Doom_DebuffFrame=LoadFrameHandle(HH,id,8)
+        set Doom_DebuffFrameText=LoadFrameHandle(HH,id,9)
+        call SaveBoolean(HH,idu,Doom_Debuff,false)
+        call DestroyFrame(Doom_DebuffFrame)
+        call DestroyFrame(Doom_DebuffFrameText)
+        call RemoveSavedHandle(HH,id,8)
+        call RemoveSavedHandle(HH,id,9)
+        set i=1
+        loop 
+        exitwhen i>8
+            if GetFrameGridFrame(DebuffFrameGrid, 0, i)==null then
+                call SetFrameGridFrame( DebuffFrameGrid, 0, i, GetFrameGridFrame(DebuffFrameGrid, 0, i+1) )
+            endif
+            set i=i+1
+        endloop
+    endif
+endif
+if GetUnitAbilityLevel(u,'cbc6')>0 then
+    if LoadBoolean(HH,idu,Ensnare_Debuff)==false then
+        call SaveBoolean(HH,idu,Ensnare_Debuff,true)
+        set Ensnare_DebuffFrame=CreateFrameByType( "SIMPLEFRAME", "EnsnareDebuff", DebuffFrameGrid, "", 0 )
+        call ClearFrameAllPoints( Ensnare_DebuffFrame )
+        call SetFrameTexture( Ensnare_DebuffFrame, GetBuffBaseStringFieldById('cbc6',BUFF_SF_ICON_NORMAL), 0, true )
+        call SetFrameTexture( Ensnare_DebuffFrame, GetBuffBaseStringFieldById('cbc6',BUFF_SF_ICON_NORMAL), 1, true )
+        call SetFrameTexture( Ensnare_DebuffFrame, GetBuffBaseStringFieldById('cbc6',BUFF_SF_ICON_NORMAL), 2, true )
+        call SetFrameSize( Ensnare_DebuffFrame, .0125, .0125 )
+        call ShowFrame( Ensnare_DebuffFrame, true )
+        call SetFramePriority( Ensnare_DebuffFrame, 0 )
+        set i=1
+        loop 
+        exitwhen i>8
+            if GetFrameGridFrame(DebuffFrameGrid, 0, i)==null then
+                call SetFrameGridFrame( DebuffFrameGrid, 0, i, Ensnare_DebuffFrame )
+                set i=8
+            endif
+            set i=i+1
+        endloop
+        call SaveFrameHandle(HH,id,10,Ensnare_DebuffFrame)
+        
+        set Ensnare_DebuffFrameText=CreateFrameByType( "SIMPLETEXT", "EnsnareDebuffText", Ensnare_DebuffFrame, "", 0 )
+        call ClearFrameAllPoints( Ensnare_DebuffFrameText )
+        call SetFrameBlendMode( Ensnare_DebuffFrameText, 0, BLEND_MODE_BLEND )
+        call SetFrameFont( Ensnare_DebuffFrameText, "Fonts\\FRIZQT__.TTF", .01, 0 )
+        call SetFrameTextAlignment( Ensnare_DebuffFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
+        call SetFrameTextColour( Ensnare_DebuffFrameText, ConvertColour(255,255,255,255) )
+        call SetFrameParent( Ensnare_DebuffFrameText, Ensnare_DebuffFrame )
+        call SetFrameText( Ensnare_DebuffFrameText, "0.1")
+        call ShowFrame( Ensnare_DebuffFrameText, true )
+        call SetFrameRelativePoint( Ensnare_DebuffFrameText, FRAMEPOINT_CENTER, Ensnare_DebuffFrame, FRAMEPOINT_CENTER, 0, 0 )
+        call SaveFrameHandle(HH,id,11,Ensnare_DebuffFrameText)
+    endif
+    set Ensnare_DebuffFrame=LoadFrameHandle(HH,id,10)
+    set Ensnare_DebuffFrameText=LoadFrameHandle(HH,id,11)
+    //call SetFrameGridFrame( DebuffFrameGrid, 0, 1, Ensnare_DebuffFrame )
+    call SetFrameText( Ensnare_DebuffFrameText, R2SW(GetBuffRemainingDuration(GetUnitBuff(u,'cbc6')),1,1))
+else
+    if LoadBoolean(HH,idu,Ensnare_Debuff)==true then
+        set Ensnare_DebuffFrame=LoadFrameHandle(HH,id,10)
+        set Ensnare_DebuffFrameText=LoadFrameHandle(HH,id,11)
+        call SaveBoolean(HH,idu,Ensnare_Debuff,false)
+        call DestroyFrame(Ensnare_DebuffFrame)
+        call DestroyFrame(Ensnare_DebuffFrameText)
+        call RemoveSavedHandle(HH,id,10)
+        call RemoveSavedHandle(HH,id,11)
+        set i=1
+        loop 
+        exitwhen i>8
+            if GetFrameGridFrame(DebuffFrameGrid, 0, i)==null then
+                call SetFrameGridFrame( DebuffFrameGrid, 0, i, GetFrameGridFrame(DebuffFrameGrid, 0, i+1) )
+            endif
+            set i=i+1
+        endloop
+    endif
+endif
+if GetUnitAbilityLevel(u,'cbc7')>0 then
+    if LoadBoolean(HH,idu,Sleep_Debuff)==false then
+        call SaveBoolean(HH,idu,Sleep_Debuff,true)
+        set Sleep_DebuffFrame=CreateFrameByType( "SIMPLEFRAME", "SleepDebuff", DebuffFrameGrid, "", 0 )
+        call ClearFrameAllPoints( Sleep_DebuffFrame )
+        call SetFrameTexture( Sleep_DebuffFrame, GetBuffBaseStringFieldById('cbc7',BUFF_SF_ICON_NORMAL), 0, true )
+        call SetFrameTexture( Sleep_DebuffFrame, GetBuffBaseStringFieldById('cbc7',BUFF_SF_ICON_NORMAL), 1, true )
+        call SetFrameTexture( Sleep_DebuffFrame, GetBuffBaseStringFieldById('cbc7',BUFF_SF_ICON_NORMAL), 2, true )
+        call SetFrameSize( Sleep_DebuffFrame, .0125, .0125 )
+        call ShowFrame( Sleep_DebuffFrame, true )
+        call SetFramePriority( Sleep_DebuffFrame, 0 )
+        set i=1
+        loop 
+        exitwhen i>8
+            if GetFrameGridFrame(DebuffFrameGrid, 0, i)==null then
+                call SetFrameGridFrame( DebuffFrameGrid, 0, i, Sleep_DebuffFrame )
+                set i=8
+            endif
+            set i=i+1
+        endloop
+        call SaveFrameHandle(HH,id,12,Sleep_DebuffFrame)
+        
+        set Sleep_DebuffFrameText=CreateFrameByType( "SIMPLETEXT", "SleepDebuffText", Sleep_DebuffFrame, "", 0 )
+        call ClearFrameAllPoints( Sleep_DebuffFrameText )
+        call SetFrameBlendMode( Sleep_DebuffFrameText, 0, BLEND_MODE_BLEND )
+        call SetFrameFont( Sleep_DebuffFrameText, "Fonts\\FRIZQT__.TTF", .01, 0 )
+        call SetFrameTextAlignment( Sleep_DebuffFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
+        call SetFrameTextColour( Sleep_DebuffFrameText, ConvertColour(255,255,255,255) )
+        call SetFrameParent( Sleep_DebuffFrameText, Sleep_DebuffFrame )
+        call SetFrameText( Sleep_DebuffFrameText, "0.1")
+        call ShowFrame( Sleep_DebuffFrameText, true )
+        call SetFrameRelativePoint( Sleep_DebuffFrameText, FRAMEPOINT_CENTER, Sleep_DebuffFrame, FRAMEPOINT_CENTER, 0, 0 )
+        call SaveFrameHandle(HH,id,13,Sleep_DebuffFrameText)
+    endif
+    set Sleep_DebuffFrame=LoadFrameHandle(HH,id,12)
+    set Sleep_DebuffFrameText=LoadFrameHandle(HH,id,13)
+    //call SetFrameGridFrame( DebuffFrameGrid, 0, 1, Sleep_DebuffFrame )
+    call SetFrameText( Sleep_DebuffFrameText, R2SW(GetBuffRemainingDuration(GetUnitBuff(u,'cbc7')),1,1))
+else
+    if LoadBoolean(HH,idu,Sleep_Debuff)==true then
+        set Sleep_DebuffFrame=LoadFrameHandle(HH,id,12)
+        set Sleep_DebuffFrameText=LoadFrameHandle(HH,id,13)
+        call SaveBoolean(HH,idu,Sleep_Debuff,false)
+        call DestroyFrame(Sleep_DebuffFrame)
+        call DestroyFrame(Sleep_DebuffFrameText)
+        call RemoveSavedHandle(HH,id,12)
+        call RemoveSavedHandle(HH,id,13)
+        set i=1
+        loop 
+        exitwhen i>8
+            if GetFrameGridFrame(DebuffFrameGrid, 0, i)==null then
+                call SetFrameGridFrame( DebuffFrameGrid, 0, i, GetFrameGridFrame(DebuffFrameGrid, 0, i+1) )
+            endif
+            set i=i+1
+        endloop
     endif
 endif
 if GetUnitAbilityLevel(u,'CBC1')==0 and GetUnitAbilityLevel(u,'CBC2')==0 and GetUnitAbilityLevel(u,'cbc3')==0 and GetUnitAbilityLevel(u,'cbc5')==0 and GetUnitAbilityLevel(u,'cbc6')==0 and GetUnitAbilityLevel(u,'cbc7')==0 then
@@ -135823,6 +136138,16 @@ set u=null
 set DebuffFrameGrid=null
 set Stun_DebuffFrame=null
 set Stun_DebuffFrameText=null
+set Root_DebuffFrame=null
+set Root_DebuffFrameText=null
+set Silence_DebuffFrame=null
+set Silence_DebuffFrameText=null
+set Doom_DebuffFrame=null
+set Doom_DebuffFrameText=null
+set Ensnare_DebuffFrame=null
+set Ensnare_DebuffFrameText=null
+set Sleep_DebuffFrame=null
+set Sleep_DebuffFrameText=null
 endfunction
 function ControlDebuffCast takes nothing returns nothing
 local timer t=CreateTimer()
@@ -135830,20 +136155,20 @@ local integer id=GetHandleId(t)
 local unit u=GetTriggerUnit()
 local integer idu=GetHandleId(u)
 local framehandle DebuffFrameGrid
-local real x=GetWidgetScreenX(u)+100
-local real y=GetWidgetScreenY(u)+50
+local real x=GetUnitScreenX(u)
+local real y=GetUnitScreenY(u)
 if LoadBoolean(HH,idu,Unit_Debuff)==false then
     call SaveUnitHandle(HH,id,0,u)
     call SaveBoolean(HH,idu,Unit_Debuff,true)
-    set DebuffFrameGrid=CreateFrameByType("SIMPLEGRID", "UnitDebuffs", GetOriginFrame(ORIGIN_FRAME_GAME_UI,0), "", 0)
+    set DebuffFrameGrid=CreateFrameByType("SIMPLEGRID", "UnitDebuffs", GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ), "", 0)
     call ClearFrameAllPoints( DebuffFrameGrid )
-    call SetFrameAbsolutePoint( DebuffFrameGrid, FRAMEPOINT_LEFT, x,y  )
-    call SetFrameGridSize( DebuffFrameGrid, 2, 6 )
-    call SetFrameSize( DebuffFrameGrid, .155, .052)
-    call SetFramePriority( DebuffFrameGrid, 1 )
+    call SetFrameAbsolutePoint( DebuffFrameGrid, FRAMEPOINT_LEFT, x-500/GetClientWidth(),y+400/GetClientHeight()  )
+    call SetFrameGridSize( DebuffFrameGrid, 2, 8 )
+    call SetFrameSize( DebuffFrameGrid, .135, .032)
+    call SetFramePriority( DebuffFrameGrid, 0 )
     call ShowFrame( DebuffFrameGrid, true )
     call SaveFrameHandle(HH,id,1,DebuffFrameGrid)
-    call TimerStart(t,.1,true,function ControlDebuffCast2)
+    call TimerStart(t,.05,true,function ControlDebuffCast2)
 else
     call PauseTimer(t)
     call DestroyTimer(t)
