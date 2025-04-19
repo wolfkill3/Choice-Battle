@@ -1869,6 +1869,7 @@ function myCustomDamage takes unit whichUnit, unit target, real amount, boolean 
         if GetUnitAbilityLevel(target,'BW01') > 0 then
             set currentDmg = currentDmg * (1-0.15*minusres)
         endif
+        // R Lucy
         if GetUnitAbilityLevel(target,'A1EO') > 0 then
             set currentDmg = currentDmg * (1-0.25*minusres)
         endif                        
@@ -1981,6 +1982,10 @@ function myCustomDamage2 takes unit target, real amount returns real
             if GetUnitAbilityLevel(target,'WaT1') > 0 then
                 set currentDmg = currentDmg * 1.20
             endif   
+            // R Lucy
+            if GetUnitAbilityLevel(target,'A1EO') > 0 then
+                set currentDmg = currentDmg * (1-0.25*minusres)
+            endif                        
             // Аокиджи R (Ice Ball)
             if GetUnitAbilityLevel(target,'aokb') > 0 then
                 set currentDmg = currentDmg * (1-0.6*minusres)
@@ -2121,6 +2126,10 @@ function myCustomDamage2_dec takes unit target, real amount returns real
             if GetUnitAbilityLevel(target,'WaT1') > 0 then
                 set currentDmg = currentDmg * 1.20
             endif   
+            // R Lucy
+            if GetUnitAbilityLevel(target,'A1EO') > 0 then
+                set currentDmg = currentDmg * (1-0.25*minusres)
+            endif                        
             // Аокиджи R (Ice Ball)
             if GetUnitAbilityLevel(target,'aokb') > 0 then
                 set currentDmg = currentDmg * (1-0.6*minusres)
@@ -11071,10 +11080,12 @@ function OnButtonPressResist takes nothing returns nothing
 
     if p == GetLocalPlayer( ) then
         if but != null then
-            if not LoadBoolean( HH, bid, 'prss' ) then
-                call ShowFrame(ResistBarFrame,true)
+            if not LoadBoolean( HH, bid, 'prs2' ) then
                 call SetFrameSize( but, width - .0015, height - .0015 ) // .024, .0465
-                call SaveBoolean( HH, bid, 'prss', true )
+                call SaveBoolean( HH, bid, 'prs2', true )
+            else
+                call SetFrameSize( but, width + .0015, height + .0015 ) // .024, .0465
+                call SaveBoolean( HH, bid, 'prs2', false )
             endif
         endif
     endif
@@ -11093,11 +11104,9 @@ function OnButtonUnpressResistHandler takes nothing returns nothing
 
     if p == GetLocalPlayer( ) then
         if but != null then
-            if LoadBoolean( HH, bid, 'prss' ) then
+            if LoadBoolean( HH, bid, 'prs2' ) then
                 call SetFrameSize( but, width + .0015, height + .0015 ) // .025, .0475
-                call ShowFrame(ResistBarFrame,false)
-                call ShowFrame(OpenResistButton,true)
-                call SaveBoolean( HH, bid, 'prss', false )
+                call SaveBoolean( HH, bid, 'prs2', false )
             endif
         endif
     endif
@@ -11124,6 +11133,47 @@ function OnButtonUnpressResist takes nothing returns nothing
     set but = null
 endfunction
 
+function OnResistHover takes nothing returns nothing
+    local framehandle but = GetTriggerFrame ( )
+    local integer bid = GetHandleId( but )
+    local player p = GetTriggerPlayer( )
+    local real width = GetFrameWidth( but )
+    local real height = GetFrameHeight( but )
+
+    if p == GetLocalPlayer( ) then
+        if but != null then
+            if not LoadBoolean( HH, bid, 'prss' ) then
+                call ShowFrame(ResistBarFrame,true)
+                call SaveBoolean( HH, bid, 'prss', true )
+            endif
+        endif
+    endif
+
+    set p = null
+    set but = null
+endfunction
+
+function OnResistUnHover takes nothing returns nothing
+    local player p = GetTriggerPlayer( )
+    local framehandle cursor = GetOriginFrame( ORIGIN_FRAME_CURSOR_FRAME, 0 )
+    local framehandle but = GetTriggerFrame( ) //GetFrameContext(but)
+    local integer bid = GetHandleId( but )
+    local real width = GetFrameWidth( but )
+    local real height = GetFrameHeight( but )
+    local integer i=0
+    if p == GetLocalPlayer( ) then
+        if but != null then
+            if LoadBoolean( HH, bid, 'prss' ) and not LoadBoolean( HH, bid, 'prs2' ) then
+                call ShowFrame(ResistBarFrame,false)
+                call ShowFrame(OpenResistButton,true)
+                call SaveBoolean( HH, bid, 'prss', false )
+            endif
+        endif
+    endif
+    set p = null
+    set but = null
+    set cursor=null
+endfunction
 
 function OnButtonCloseStatusBar takes nothing returns nothing
     local player p = GetTriggerPlayer( )
@@ -22512,6 +22562,103 @@ function Trig_Killer_Actions takes nothing returns nothing
                         set assistnames=assistnames+Color[i]+GetUnitName(Hero[i])+"|r "
                         call ForceAddPlayer(PlayerH,GetOwningPlayer(Hero[i]))
                     endif
+                    if IsPlayerInForce(GetOwningPlayer(Hero[i]),PlayerH)==false and Hero[i]!=null and GetOwningPlayer(Hero[i])!=Player(iu) then
+                        if (GetUnitAbilityLevel(u,'A1DF')>0 or GetUnitAbilityLevel(u,'A1DG')>0) and GetUnitTypeId(Hero[i])=='H051' then //Shielder
+                            set udg_assist[i]=udg_assist[i]+1
+                            set assistnames=assistnames+Color[i]+GetUnitName(Hero[i])+"|r "
+                            call ForceAddPlayer(PlayerH,GetOwningPlayer(Hero[i]))
+                        endif
+                        if (GetUnitAbilityLevel(u,'A1HV')>0 or GetUnitAbilityLevel(u,'A1I2')>0) and GetUnitTypeId(Hero[i])=='H077' then //enkidu
+                            set udg_assist[i]=udg_assist[i]+1
+                            set assistnames=assistnames+Color[i]+GetUnitName(Hero[i])+"|r "
+                            call ForceAddPlayer(PlayerH,GetOwningPlayer(Hero[i]))
+                        endif
+                        if GetUnitAbilityLevel(u,'A1HG')>0 and GetUnitTypeId(Hero[i])=='H074' then //orihime
+                            set udg_assist[i]=udg_assist[i]+1
+                            set assistnames=assistnames+Color[i]+GetUnitName(Hero[i])+"|r "
+                            call ForceAddPlayer(PlayerH,GetOwningPlayer(Hero[i]))
+                        endif
+                        if (GetUnitAbilityLevel(u,'A10G')>0 or GetUnitAbilityLevel(u,'B059')>0) and (GetUnitTypeId(Hero[i])=='H053' or GetUnitTypeId(Hero[i])=='H06Q') then //Louise
+                            set udg_assist[i]=udg_assist[i]+1
+                            set assistnames=assistnames+Color[i]+GetUnitName(Hero[i])+"|r "
+                            call ForceAddPlayer(PlayerH,GetOwningPlayer(Hero[i]))
+                        endif
+                        if LoadReal(h, GetHandleId(u), StringHash("YujiE_Shield"))>0 and GetUnitTypeId(Hero[i])=='HYuj' then //Yuji
+                            set udg_assist[i]=udg_assist[i]+1
+                            set assistnames=assistnames+Color[i]+GetUnitName(Hero[i])+"|r "
+                            call ForceAddPlayer(PlayerH,GetOwningPlayer(Hero[i]))
+                        endif
+                        if LoadReal(h, GetHandleId(u), StringHash("ShieldBelfF"))>0 and GetUnitTypeId(Hero[i])=='Hbel' then //Belphegor
+                            set udg_assist[i]=udg_assist[i]+1
+                            set assistnames=assistnames+Color[i]+GetUnitName(Hero[i])+"|r "
+                            call ForceAddPlayer(PlayerH,GetOwningPlayer(Hero[i]))
+                        endif
+                        if LoadBoolean(h,  GetHandleId(u), StringHash("GaaraTshield"))==true and GetUnitTypeId(Hero[i])=='H02R' then //Gaara
+                            set udg_assist[i]=udg_assist[i]+1
+                            set assistnames=assistnames+Color[i]+GetUnitName(Hero[i])+"|r "
+                            call ForceAddPlayer(PlayerH,GetOwningPlayer(Hero[i]))
+                        endif
+                        if GetUnitAbilityLevel(u,'A1G0')>0 and GetUnitTypeId(Hero[i])=='H073' then //Rin
+                            set udg_assist[i]=udg_assist[i]+1
+                            set assistnames=assistnames+Color[i]+GetUnitName(Hero[i])+"|r "
+                            call ForceAddPlayer(PlayerH,GetOwningPlayer(Hero[i]))
+                        endif
+                        if LoadBoolean(h, GetHandleId(u), Shield_RengokuE)==true and GetUnitTypeId(Hero[i])=='HRen' then //Rengoku
+                            set udg_assist[i]=udg_assist[i]+1
+                            set assistnames=assistnames+Color[i]+GetUnitName(Hero[i])+"|r "
+                            call ForceAddPlayer(PlayerH,GetOwningPlayer(Hero[i]))
+                        endif
+                        if (GetUnitAbilityLevel(u,'A3DF')>0 or GetUnitAbilityLevel(u,'WAE1')) and (GetUnitTypeId(Hero[i])=='Ho0O' or GetUnitTypeId(Hero[i])=='Ho1O') then //Waver
+                            set udg_assist[i]=udg_assist[i]+1
+                            set assistnames=assistnames+Color[i]+GetUnitName(Hero[i])+"|r "
+                            call ForceAddPlayer(PlayerH,GetOwningPlayer(Hero[i]))
+                        endif
+                        if GetUnitAbilityLevel(u,'B06I')>0 and GetUnitTypeId(Hero[i])=='H05R' then //Touma
+                            set udg_assist[i]=udg_assist[i]+1
+                            set assistnames=assistnames+Color[i]+GetUnitName(Hero[i])+"|r "
+                            call ForceAddPlayer(PlayerH,GetOwningPlayer(Hero[i]))
+                        endif
+                        if (GetUnitAbilityLevel(u,'MaE3')>0 or GetUnitAbilityLevel(u,'MaE4')>0) and (GetUnitTypeId(Hero[i])=='HMaG' or GetUnitTypeId(Hero[i])=='HMad') then //Madoka
+                            set udg_assist[i]=udg_assist[i]+1
+                            set assistnames=assistnames+Color[i]+GetUnitName(Hero[i])+"|r "
+                            call ForceAddPlayer(PlayerH,GetOwningPlayer(Hero[i]))
+                        endif
+                        if GetUnitAbilityLevel(u,'B025')>0 and (GetUnitTypeId(Hero[i])=='H01D' or GetUnitTypeId(Hero[i])=='H01E') then //Maka
+                            set udg_assist[i]=udg_assist[i]+1
+                            set assistnames=assistnames+Color[i]+GetUnitName(Hero[i])+"|r "
+                            call ForceAddPlayer(PlayerH,GetOwningPlayer(Hero[i]))
+                        endif
+                        if u==DarknessTarget[i] and LoadReal(HH,GetHandleId(Darkness[i]),StringHash("darkHP"))>0 and GetUnitTypeId(Hero[i])=='Ho14' then //Kazuma
+                            set udg_assist[i]=udg_assist[i]+1
+                            set assistnames=assistnames+Color[i]+GetUnitName(Hero[i])+"|r "
+                            call ForceAddPlayer(PlayerH,GetOwningPlayer(Hero[i]))
+                        endif
+                        if (GetUnitAbilityLevel(u,'A1EO')>0 or GetUnitAbilityLevel(u,'A1F0')>0) and GetUnitTypeId(Hero[i])=='H05R' then //Lucy
+                            set udg_assist[i]=udg_assist[i]+1
+                            set assistnames=assistnames+Color[i]+GetUnitName(Hero[i])+"|r "
+                            call ForceAddPlayer(PlayerH,GetOwningPlayer(Hero[i]))
+                        endif
+                        if GetUnitAbilityLevel(u,'A1H1')>0 and GetUnitTypeId(Hero[i])=='H076' then //Jeanne
+                            set udg_assist[i]=udg_assist[i]+1
+                            set assistnames=assistnames+Color[i]+GetUnitName(Hero[i])+"|r "
+                            call ForceAddPlayer(PlayerH,GetOwningPlayer(Hero[i]))
+                        endif
+                        if LoadBoolean(h, GetHandleId(u), StringHash("MeiT_Shield"))==true and GetUnitTypeId(Hero[i])=='H032' then //Mei
+                            set udg_assist[i]=udg_assist[i]+1
+                            set assistnames=assistnames+Color[i]+GetUnitName(Hero[i])+"|r "
+                            call ForceAddPlayer(PlayerH,GetOwningPlayer(Hero[i]))
+                        endif
+                        if GetUnitAbilityLevel(u,'AHSF')>0 and (GetUnitTypeId(Hero[i])=='HHSN' or GetUnitTypeId(Hero[i])=='HHSG') then //Hashirama
+                            set udg_assist[i]=udg_assist[i]+1
+                            set assistnames=assistnames+Color[i]+GetUnitName(Hero[i])+"|r "
+                            call ForceAddPlayer(PlayerH,GetOwningPlayer(Hero[i]))
+                        endif
+                        if GetUnitAbilityLevel(u,'aokb')>0 and (GetUnitTypeId(Hero[i])=='H02U' or GetUnitTypeId(Hero[i])=='H05X') then //Aokiji
+                            set udg_assist[i]=udg_assist[i]+1
+                            set assistnames=assistnames+Color[i]+GetUnitName(Hero[i])+"|r "
+                            call ForceAddPlayer(PlayerH,GetOwningPlayer(Hero[i]))
+                        endif
+                    endif
                     set i=i+1
                 endloop
                 //set stats[ic]=stats[ic]+1
@@ -24556,7 +24703,7 @@ function Trig_StatusBar_Actions takes nothing returns nothing
     call SetFrameTextAlignment( ResistBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
     call SetFrameTextColour( ResistBarFrameText, 0xFFFFAACC )
     call SetFrameParent( ResistBarFrameText, ResistBarFrame )
-    call SetFrameText( ResistBarFrameText, "General DMG Bonus")
+    call SetFrameText( ResistBarFrameText, "Full DMG Bonus")
     call ShowFrame( ResistBarFrameText, true )
     call SetFrameRelativePoint( ResistBarFrameText, FRAMEPOINT_TOPLEFT, GetFrameByName("MagicDMGImpRoot",0), FRAMEPOINT_TOPLEFT,  0, -.01  )
 
@@ -24600,7 +24747,7 @@ function Trig_StatusBar_Actions takes nothing returns nothing
     call SetFrameTextAlignment( ResistBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
     call SetFrameTextColour( ResistBarFrameText, 0xFFBBBBBB )
     call SetFrameParent( ResistBarFrameText, ResistBarFrame )
-    call SetFrameText( ResistBarFrameText, "General Resist")
+    call SetFrameText( ResistBarFrameText, "Full Resist")
     call ShowFrame( ResistBarFrameText, true )
     call SetFrameRelativePoint( ResistBarFrameText, FRAMEPOINT_TOPLEFT, GetFrameByName("MagicalResistRoot",0), FRAMEPOINT_TOPLEFT,  0, -.01  )
 
@@ -24736,13 +24883,19 @@ function Trig_StatusBar_Actions takes nothing returns nothing
     call SetFrameRelativePoint( OpenResistButton, FRAMEPOINT_CENTER, ResistBarFrame, FRAMEPOINT_TOPRIGHT, -.003, -.003 )
 
     set tOnPress = CreateTrigger( )
-    set tOnUnPress = CreateTrigger( ) 
-    call TriggerRegisterFrameEvent( tOnPress, OpenResistButton, FRAMEEVENT_MOUSE_DOWN )
-    call TriggerRegisterFrameEvent( tOnUnPress, OpenResistButton, FRAMEEVENT_MOUSE_UP )
+    // set tOnUnPress = CreateTrigger( ) 
+    set tOnHover = CreateTrigger( ) 
+    set tOnUnHover = CreateTrigger( ) 
     
-    call TriggerAddAction( tOnPress, function OnButtonPressResist )
-    call TriggerAddAction( tOnUnPress, function OnButtonUnpressResist )
+    call TriggerRegisterFrameEvent( tOnPress, OpenResistButton, FRAMEEVENT_MOUSE_DOWN )
+    // call TriggerRegisterFrameEvent( tOnUnPress, OpenResistButton, FRAMEEVENT_MOUSE_UP )
+    call TriggerRegisterFrameEvent( tOnHover, OpenResistButton, FRAMEEVENT_MOUSE_ENTER )
+    call TriggerRegisterFrameEvent( tOnUnHover, OpenResistButton, FRAMEEVENT_MOUSE_LEAVE )
 
+    call TriggerAddAction( tOnPress, function OnButtonPressResist )
+    // call TriggerAddAction( tOnUnPress, function OnButtonUnpressResist )
+    call TriggerAddAction( tOnHover, function OnResistHover )
+    call TriggerAddAction( tOnUnHover, function OnResistUnHover )
 
     set x=0
     loop
@@ -25125,10 +25278,10 @@ if IsFrameVisible(ResistBarFrame) then
     call SetFrameText(GetFrameByName("AttackSpeedNumber",0), R2SW(GetUnitAttackSpeed(GetUnitSelected(GetLocalPlayer())),1,1))
     call SetFrameText(GetFrameByName("MagicDMGImpNumber",0), I2S(R2I((MathRealCeil(myCustomDamage2_inc(GetUnitSelected(GetLocalPlayer()),1)*100))))+"%")
     call SetFrameText(GetFrameByName("GeneralDMGImpNumber",0), I2S(R2I((MathRealCeil(myCustomDamage3_user(GetUnitSelected(GetLocalPlayer()),1)*100))))+"%")
-    call SetFrameText(GetFrameByName("MagicalResistNumber",0), I2S(R2I(((1-myCustomDamage2_dec(GetUnitSelected(GetLocalPlayer()),1))*100)))+"%")
-    call SetFrameText(GetFrameByName("GeneralResistNumber",0), I2S(R2I(((1-myCustomDamage3_targ(GetUnitSelected(GetLocalPlayer()),1))*100)))+"%")
-    call SetFrameText(GetFrameByName("ResistSummNumber",0), I2S(R2I(((1-myCustomDamage2_dec(GetUnitSelected(GetLocalPlayer()),myCustomDamage3_targ(GetUnitSelected(GetLocalPlayer()),1)))*100)))+"%")
-    call SetFrameText(GetFrameByName("ControlResistNumber",0), I2S(R2I(((10-CalculateControlResist(GetUnitSelected(GetLocalPlayer()), 10))*10)))+"%")
+    call SetFrameText(GetFrameByName("MagicalResistNumber",0), I2S(R2I((MathRealCeil((1-myCustomDamage2_dec(GetUnitSelected(GetLocalPlayer()),1))*100))))+"%")
+    call SetFrameText(GetFrameByName("GeneralResistNumber",0), I2S(R2I((MathRealCeil((1-myCustomDamage3_targ(GetUnitSelected(GetLocalPlayer()),1))*100))))+"%")
+    call SetFrameText(GetFrameByName("ResistSummNumber",0), I2S(R2I((MathRealCeil((1-myCustomDamage2_dec(GetUnitSelected(GetLocalPlayer()),myCustomDamage3_targ(GetUnitSelected(GetLocalPlayer()),1)))*100))))+"%")
+    call SetFrameText(GetFrameByName("ControlResistNumber",0), I2S(R2I(MathRealCeil(((10-CalculateControlResist(GetUnitSelected(GetLocalPlayer()), 10))*10))))+"%")
     call SetFrameText(GetFrameByName("HPHealEffNumber",0), I2S(R2I(MathRealCeil(myCustomHeal2(GetUnitSelected(GetLocalPlayer()),1)*100)))+"%")
     call SetFrameText(GetFrameByName("MPHealEffNumber",0), I2S(R2I(MathRealCeil(myCustomMana2(GetUnitSelected(GetLocalPlayer()),1)*100)))+"%")
     call SetFrameText(GetFrameByName("MPLossReduceNumber",0), I2S(R2I(MathRealCeil(myCustomMana3(GetUnitSelected(GetLocalPlayer()),1)*100)))+"%")
@@ -25141,9 +25294,9 @@ if ModuloInteger(seconds,10)<1 and GetFrameHeight( GetFrameChild(GetOriginFrame(
         call SetFrameText( GetFrameByName("MoveSpeedRoot",0), "Move Speed")
         call SetFrameText( GetFrameByName("AttackSpeedRoot",0), "Attack Speed")
         call SetFrameText( GetFrameByName("MagicDMGImpRoot",0), "Magic DMG Bonus")
-        call SetFrameText( GetFrameByName("GeneralDMGImpRoot",0), "General DMG Bonus")
+        call SetFrameText( GetFrameByName("GeneralDMGImpRoot",0), "Full DMG Bonus")
         call SetFrameText( GetFrameByName("MagicalResistRoot",0), "Magic Resist")
-        call SetFrameText( GetFrameByName("GeneralResistRoot",0), "General Resist")
+        call SetFrameText( GetFrameByName("GeneralResistRoot",0), "Full Resist")
         call SetFrameText( GetFrameByName("ResistSummRoot",0), "Resist Sum")
         call SetFrameText( GetFrameByName("ControlResistRoot",0), "Control Resist")
         call SetFrameText( GetFrameByName("HPHealEffRoot",0), "HP Heal Eff.")
@@ -25212,9 +25365,9 @@ if ModuloInteger(seconds,10)<1 and GetFrameHeight( GetFrameChild(GetOriginFrame(
         call SetFrameText( GetFrameByName("MoveSpeedRoot",0), "MS")
         call SetFrameText( GetFrameByName("AttackSpeedRoot",0), "AS")
         call SetFrameText( GetFrameByName("MagicDMGImpRoot",0), "M DMG +")
-        call SetFrameText( GetFrameByName("GeneralDMGImpRoot",0), "G DMG +")
+        call SetFrameText( GetFrameByName("GeneralDMGImpRoot",0), "F DMG +")
         call SetFrameText( GetFrameByName("MagicalResistRoot",0), "MR")
-        call SetFrameText( GetFrameByName("GeneralResistRoot",0), "GR")
+        call SetFrameText( GetFrameByName("GeneralResistRoot",0), "FR")
         call SetFrameText( GetFrameByName("ResistSummRoot",0), "R Sum")
         call SetFrameText( GetFrameByName("ControlResistRoot",0), "CR")
         call SetFrameText( GetFrameByName("HPHealEffRoot",0), "HP Eff")
@@ -76675,8 +76828,8 @@ local real mm=GetUnitState(u,UNIT_STATE_MAX_MANA)
 if GetUnitAbilityLevel(u,'BuF1')>0 and l>lm*0.025 and m>mm*0.025 and LoadBoolean(HH,GetHandleId(u),SST)==true then
 if IsUnitPaused(u)==false and GetUnitAbilityLevel(u,'Pet1')==0 then
 call HealTextTag(u,u,lm*0.025*0.03*myCustomHeal2(u,1),"HealthRes")
-call SetUnitState(u,UNIT_STATE_LIFE,l+lm*0.025*0.03)
-call SetUnitState(u,UNIT_STATE_MANA,m-mm*0.025*0.03)
+call SetUnitState(u,UNIT_STATE_LIFE,l+lm*0.035*0.03)
+call SetUnitState(u,UNIT_STATE_MANA,m-mm*0.035*0.03)
 endif
 else
 call SaveBoolean(HH,GetHandleId(u),SS,false)
@@ -76735,22 +76888,25 @@ local player p=GetOwningPlayer(u)
 local real x=GetUnitX(u)
 local real y=GetUnitY(u)
 local real dmg=(3+GetUnitAbilityLevel(u,'A0SL'))*GetHeroStr(u,true)+300
-call GroupEnumUnitsInRange(DG,x,y,1200,Base)
+local group g=CreateGroup()
+call GroupEnumUnitsInRange(g,x,y,1200,Base)
 loop
-set E=FirstOfGroup(DG)
+set E=FirstOfGroup(g)
 exitwhen E==null
 if Condition_Base(p,E)then
 call myCustomDamage(u,E,dmg,false,false,null,null,null)
 endif
-call GroupRemoveUnit(DG,E)
+call GroupRemoveUnit(g,E)
 endloop
 call SetUnitTimeScale(u,1)
 call PauseUnit(u,false)
 call SetUnitInvulnerable(u,false)
+call DestroyGroup(g)
 call DestroyTimer(t)
 call FlushChildHashtable(h,id)
 set u=null
 set p=null
+set g=null
 set t=null
 endfunction
 function AngryExplosionCast takes nothing returns nothing
@@ -135783,7 +135939,7 @@ local real x=GetUnitScreenX(u)
 local real y=GetUnitScreenY(u)
 local integer i
 local integer j
-call SetFrameAbsolutePoint( DebuffFrameGrid, FRAMEPOINT_LEFT, x-0.04,y+0.002  )
+call SetFrameAbsolutePoint( DebuffFrameGrid, FRAMEPOINT_LEFT, x-0.04,y+GetUnitOverheadOffset(u)/15000  )
 if IsUnitVisible(u,GetLocalPlayer()) then
     call ShowFrame( DebuffFrameGrid, true )
 else
@@ -179020,13 +179176,13 @@ function MadokaE1_Cast takes unit newCaster,unit newTarget,timer newTimer return
     call StartSound(soundplay)
     call KillSoundWhenDone(soundplay)
     call UnitAddAbility(newTarget, 'MaE3')
-        call UnitMakeAbilityPermanent(newTarget, true, 'MaE3')
+    call UnitMakeAbilityPermanent(newTarget, true, 'MaE3')
     call SetHeroStr(newTarget, GetHeroStr(newTarget, false) + bonus_stat, false)
     call SetHeroAgi(newTarget, GetHeroAgi(newTarget, false) + bonus_stat, false)
     call SetHeroInt(newTarget, GetHeroInt(newTarget, false) + bonus_stat, false)
     call SaveEffectHandle(h, id, Effect2Hash, AddSpecialEffectTarget("buff-obsidiandestroyer_n2s_t_target.mdl", newTarget, "origin"))
     call SaveEffectHandle(h, id, Effect1Hash, AddSpecialEffectTarget("buff-cbb_m.mdl", newTarget, "chest"))
-        call SaveUnitHandle(h, id, CasterHash, newCaster)
+    call SaveUnitHandle(h, id, CasterHash, newCaster)
     call SaveUnitHandle(h, id, TargetHash, newTarget)
     call SaveInteger(h, id, StringHash("Bonus_Stat"), bonus_stat)
     call TimerStart(newTimer, 0.1, true, function MadokaE1_Periodic)
