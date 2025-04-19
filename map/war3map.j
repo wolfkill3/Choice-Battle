@@ -22608,7 +22608,7 @@ function Trig_Killer_Actions takes nothing returns nothing
                             set assistnames=assistnames+Color[i]+GetUnitName(Hero[i])+"|r "
                             call ForceAddPlayer(PlayerH,GetOwningPlayer(Hero[i]))
                         endif
-                        if (GetUnitAbilityLevel(u,'A3DF')>0 or GetUnitAbilityLevel(u,'WAE1')) and (GetUnitTypeId(Hero[i])=='Ho0O' or GetUnitTypeId(Hero[i])=='Ho1O') then //Waver
+                        if (GetUnitAbilityLevel(u,'A3DF')>0 or GetUnitAbilityLevel(u,'WAE1')>0) and (GetUnitTypeId(Hero[i])=='Ho0O' or GetUnitTypeId(Hero[i])=='Ho1O') then //Waver
                             set udg_assist[i]=udg_assist[i]+1
                             set assistnames=assistnames+Color[i]+GetUnitName(Hero[i])+"|r "
                             call ForceAddPlayer(PlayerH,GetOwningPlayer(Hero[i]))
