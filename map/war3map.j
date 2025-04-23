@@ -1772,6 +1772,9 @@ function myCustomDamage takes unit whichUnit, unit target, real amount, boolean 
         if passedTime < 0 then
             set currentDmg = currentDmg*(1.00+(0.05*passedTime)*minusres)
         endif
+        if GetHeroInt(target, true)>0 then
+            set currentDmg = currentDmg*(1.00-(0.0004*GetHeroInt(target, true))*minusres)
+        endif
         // Калейдожезл Руби
         if GetUnitAbilityLevel(target,'B072') > 0 then
             set currentDmg = currentDmg * 1.10
@@ -1961,6 +1964,9 @@ function myCustomDamage2 takes unit target, real amount returns real
         if GetUnitAbilityLevel(target,'BGiT') > 0 then
             set currentDmg = currentDmg + amount*(I2R(GetUnitAbilityLevel(target, 'BGiT'))*0.05)
         endif
+        if GetHeroInt(target, true)>0 then
+            set currentDmg = currentDmg*(1.00-(0.0004*GetHeroInt(target, true))*minusres)
+        endif
         // Шторм Вонголы и Гае Дирг
         //if GetUnitAbilityLevel(target,'RiSV') == 0 and GetUnitAbilityLevel(target,'GDSV') == 0  then
             // Увеличение урона от прошедшего времени после 6ой минуты.
@@ -2104,6 +2110,9 @@ function myCustomDamage2_dec takes unit target, real amount returns real
                 // T Gin уменьшение маг реза -> увеличение урона по нему
         if GetUnitAbilityLevel(target,'BGiT') > 0 then
             set currentDmg = currentDmg + amount*(I2R(GetUnitAbilityLevel(target, 'BGiT'))*0.05)
+        endif
+        if GetHeroInt(target, true)>0 then
+            set currentDmg = currentDmg*(1.00-(0.0004*GetHeroInt(target, true))*minusres)
         endif
         // Шторм Вонголы и Гае Дирг
         //if GetUnitAbilityLevel(target,'RiSV') == 0 and GetUnitAbilityLevel(target,'GDSV') == 0  then
@@ -2410,9 +2419,9 @@ function myCustomMana2 takes unit target, real amount returns real
     // if GetUnitAbilityLevel(target,'B074') > 0 then // Пассива Орехи
     //     set currentHeal = currentHeal * 1.15
     // endif
-    // if UnitHasItemOfTypeBJCustom(target,'I00D') or GetUnitAbilityLevel(target,'KI58')>0 then // Солнце вонголы
-    //     set currentHeal = currentHeal * 1.15
-    // endif
+    if UnitHasItemOfTypeBJCustom(target,'I043') or GetUnitAbilityLevel(target,'KIL8')>0 then // Сфера Крови
+        set currentHeal = currentHeal * 1.1
+    endif
     if GetUnitAbilityLevel(target,'A26F') > 0 then // эссенс
         set currentHeal=0
     endif         
@@ -25152,15 +25161,19 @@ local real life=LoadReal(h,id,0)
 local real life2=GetWidgetLife(u)
 local real dmg=0
 if (UnitHasItemOfTypeBJ(u,'I00D') or GetUnitAbilityLevel(u,'KI58')>0) and GetWidgetLife(u)>0 and udg_B==true and DU2==true then
-if life2>life then
-set dmg=GetWidgetLife(u)-LoadReal(h,id,0)
-call SetWidgetLife(u, GetWidgetLife(u)+(dmg*0.15)+0.5)
-endif
-call SaveReal(h,id,0,GetWidgetLife(u))
+    if life2>life then
+        set dmg=GetWidgetLife(u)-LoadReal(h,id,0)
+        call SaveReal(h,id,3,LoadReal(h,id,3)+(dmg*0.15))
+        call SetWidgetLife(u, GetWidgetLife(u)+MathRealFloor(dmg*0.15)+MathRealFloor(LoadReal(h,id,3)))
+        if LoadReal(h,id,3)>1 then
+            call SaveReal(h,id,3,LoadReal(h,id,3)-MathRealFloor(LoadReal(h,id,3)))
+        endif
+    endif
+    call SaveReal(h,id,0,GetWidgetLife(u))
 else
-call SaveInteger(HH,GetHandleId(u),StringHash("SunVongola"),0)
-call DestroyTimer(t)
-call FlushChildHashtable(h,id)
+    call SaveInteger(HH,GetHandleId(u),StringHash("SunVongola"),0)
+    call DestroyTimer(t)
+    call FlushChildHashtable(h,id)
 endif
 set t=null
 set u=null
@@ -25183,15 +25196,19 @@ local real life=LoadReal(h,id,0)
 local real life2=GetWidgetLife(u)
 local real dmg=0
 if GetUnitAbilityLevel(u,'B074')>0 and GetWidgetLife(u)>0 and udg_B==true and DU2==true then
-if life2>life then
-set dmg=GetWidgetLife(u)-LoadReal(h,id,0)
-call SetWidgetLife(u, GetWidgetLife(u)+(dmg*0.15)+0.5)
-endif
-call SaveReal(h,id,0,GetWidgetLife(u))
+    if life2>life then
+        set dmg=GetWidgetLife(u)-LoadReal(h,id,0)
+        call SaveReal(h,id,3,LoadReal(h,id,3)+(dmg*0.15))
+        call SetWidgetLife(u, GetWidgetLife(u)+MathRealFloor(dmg*0.15)+MathRealFloor(LoadReal(h,id,3)))
+        if LoadReal(h,id,3)>1 then
+            call SaveReal(h,id,3,LoadReal(h,id,3)-MathRealFloor(LoadReal(h,id,3)))
+        endif
+    endif
+    call SaveReal(h,id,0,GetWidgetLife(u))
 else
-call SaveInteger(HH,GetHandleId(u),StringHash("OrihimeF"),0)
-call DestroyTimer(t)
-call FlushChildHashtable(h,id)
+    call SaveInteger(HH,GetHandleId(u),StringHash("OrihimeF"),0)
+    call DestroyTimer(t)
+    call FlushChildHashtable(h,id)
 endif
 set t=null
 set u=null
@@ -25203,6 +25220,41 @@ call SaveUnitHandle(h,id,1,u)
 call SaveReal(h,id,0,GetWidgetLife(u))
 call SaveInteger(HH,GetHandleId(u),StringHash("OrihimeF"),1)
 call TimerStart(t,0.01,true,function OrihimeFCast2)
+set t=null
+set u=null
+endfunction
+function BloodSphereMPRegenCast2 takes nothing returns nothing
+local timer t=GetExpiredTimer()
+local integer id=GetHandleId(t)
+local unit u=LoadUnitHandle(h,id,1)
+local real life=LoadReal(h,id,0)
+local real life2=GetUnitState(u,UNIT_STATE_MANA)
+local real dmg=0
+if (UnitHasItemOfTypeBJ(u,'I043') or GetUnitAbilityLevel(u,'KIL8')>0) and GetWidgetLife(u)>0 and udg_B==true and DU2==true then
+    if life2>life then
+        set dmg=GetUnitState(u,UNIT_STATE_MANA)-LoadReal(h,id,0)
+        call SaveReal(h,id,3,LoadReal(h,id,3)+(dmg*0.1))
+        call SetUnitState(u,UNIT_STATE_MANA, GetUnitState(u,UNIT_STATE_MANA)+MathRealFloor(dmg*0.1)+MathRealFloor(LoadReal(h,id,3)))
+        if LoadReal(h,id,3)>1 then
+            call SaveReal(h,id,3,LoadReal(h,id,3)-MathRealFloor(LoadReal(h,id,3)))
+        endif
+    endif
+    call SaveReal(h,id,0,GetUnitState(u,UNIT_STATE_MANA))
+else
+    call SaveInteger(HH,GetHandleId(u),StringHash("BloodSphere"),0)
+    call DestroyTimer(t)
+    call FlushChildHashtable(h,id)
+endif
+set t=null
+set u=null
+endfunction
+function BloodSphereMPRegenCast takes unit u returns nothing
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+call SaveUnitHandle(h,id,1,u)
+call SaveReal(h,id,0,GetUnitState(u,UNIT_STATE_MANA))
+call SaveInteger(HH,GetHandleId(u),StringHash("BloodSphere"),1)
+call TimerStart(t,0.01,true,function BloodSphereMPRegenCast2)
 set t=null
 set u=null
 endfunction
@@ -25598,6 +25650,9 @@ function Trig_Multup_Actions takes nothing returns nothing
             if GetUnitAbilityLevel(Hero[x],'B074')>0 and LoadInteger(HH,GetHandleId(Hero[x]),StringHash("OrihimeF"))!=1 then
                 call OrihimeFCast(Hero[x])
             endif
+            if (UnitHasItemOfTypeBJ(Hero[x],'I043') or GetUnitAbilityLevel(Hero[x],'KIL8')>0) and LoadInteger(HH,GetHandleId(Hero[x]),StringHash("BloodSphere"))!=1 then
+                call BloodSphereMPRegenCast(Hero[x])
+            endif
             if UnitHasItemOfTypeBJ(Hero[x],'I054') and LoadInteger(HH,GetHandleId(Hero[x]),StringHash("IceBoots"))!=1 then
                 call IceBootsRegenCast(Hero[x])
             endif
@@ -25616,6 +25671,21 @@ function Trig_Multup_Actions takes nothing returns nothing
             if IsUnitPaused(Hero[x])==false and UnitHasItemOfTypeBJ(Hero[x],'I02K')==true and GetWidgetLife(Hero[x])>0.01*GetWidgetMaxLife(Hero[x]) then
                 call SetUnitState(Hero[x],UNIT_STATE_LIFE,GetWidgetLife(Hero[x])-(0.001*GetWidgetMaxLife(Hero[x])+1))
             endif
+            // if IsUnitPaused(Hero[x])==false and GetUnitAbilityLevel(Hero[x],'Pet1')==0 then
+            //     if IsUnitLifeRegenEnabled(Hero[x])==false then
+            //         call SetUnitLifeRegenEnabled(Hero[x],true)
+            //     endif
+            //     if IsUnitManaRegenEnabled(Hero[x])==false then
+            //         call SetUnitManaRegenEnabled(Hero[x],true)
+            //     endif
+            // else
+            //     if IsUnitLifeRegenEnabled(Hero[x])==true then
+            //         call SetUnitLifeRegenEnabled(Hero[x],false)
+            //     endif
+            //     if IsUnitManaRegenEnabled(Hero[x])==true then
+            //         call SetUnitManaRegenEnabled(Hero[x],false)
+            //     endif
+            // endif
             if udg_DM[x+1]!=null then
                 if (GetWidgetMana(Hero[x])>=100 and GetWidgetMana(udg_DM[x+1])>=100) and manaMoria[x]!=1 then
                     set udg_DMM[x]=CreateUnit(GetOwningPlayer(udg_DM[x+1]),'h13J',RX,RY,0)
@@ -44109,8 +44179,8 @@ set E=FirstOfGroup(G)
 set ms=GetWidgetLife(E)
 exitwhen E==null
 if IsUnitAlly(E,p)==false and IsUnitIllusion(E)==false and IsUnitType(E,UNIT_TYPE_HERO)then
-call SetUnitState(E,UNIT_STATE_LIFE,ms-0.08*ms)
-set heal = heal + ms*0.08
+call SetUnitState(E,UNIT_STATE_LIFE,ms-0.09*ms)
+set heal = heal + ms*0.09
 call DestroyEffect(AddSpecialEffectTarget("war3mapImported\\BluefireBolt.mdx",E,"chest"))
 endif
 call GroupRemoveUnit(G,E)
@@ -67078,6 +67148,33 @@ function PowerDownGoku takes nothing returns nothing
         if GetUnitAbilityLevel(u,'GkH8')>0 then
             call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-GetUnitState(u,UNIT_STATE_MAX_MANA)*0.0035)
         endif
+    else
+        if GetUnitState(u,UNIT_STATE_MAX_MANA)*0.05>GetUnitState(u,UNIT_STATE_MANA) then
+            if GetUnitAbilityLevel(u,'GkH1')>0 then
+                call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-GetUnitState(u,UNIT_STATE_MAX_MANA)*0.00015)
+            endif
+            if GetUnitAbilityLevel(u,'GkH2')>0 then
+                call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-GetUnitState(u,UNIT_STATE_MAX_MANA)*0.00025)
+            endif
+            if GetUnitAbilityLevel(u,'GkH3')>0 then
+                call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-GetUnitState(u,UNIT_STATE_MAX_MANA)*0.0004)
+            endif
+            if GetUnitAbilityLevel(u,'GkH4')>0 then
+                call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-GetUnitState(u,UNIT_STATE_MAX_MANA)*0.0005)
+            endif
+            if GetUnitAbilityLevel(u,'GkH5')>0 then
+                call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-GetUnitState(u,UNIT_STATE_MAX_MANA)*0.00045)
+            endif
+            if GetUnitAbilityLevel(u,'GkH6')>0 then
+                call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-GetUnitState(u,UNIT_STATE_MAX_MANA)*0.000675)
+            endif
+            if GetUnitAbilityLevel(u,'GkH7')>0 then
+                call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-GetUnitState(u,UNIT_STATE_MAX_MANA)*0.001125)
+            endif
+            if GetUnitAbilityLevel(u,'GkH8')>0 then
+                call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-GetUnitState(u,UNIT_STATE_MAX_MANA)*0.00175)
+            endif
+        endif
     endif
     if GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.1>GetUnitState(u,UNIT_STATE_LIFE) or GetUnitState(u,UNIT_STATE_MAX_MANA)*0.04>GetUnitState(u,UNIT_STATE_MANA) or LoadBoolean(HH,GetHandleId(u),SST)==true then
         call SaveBoolean(HH,GetHandleId(u),SS,false)
@@ -71914,6 +72011,27 @@ if IsUnitPaused(u)==false and GetUnitAbilityLevel(u,'Pet1')==0 then
     if GetUnitAbilityLevel(u,'VGH6')>0 then
         call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-GetUnitState(u,UNIT_STATE_MAX_MANA)*0.00135)
     endif
+else
+    if GetUnitState(u,UNIT_STATE_MAX_MANA)*0.05>GetUnitState(u,UNIT_STATE_MANA) then
+        if GetUnitAbilityLevel(u,'VGH1')>0 then
+            call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-GetUnitState(u,UNIT_STATE_MAX_MANA)*0.00015)
+        endif
+        if GetUnitAbilityLevel(u,'VGH2')>0 then
+            call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-GetUnitState(u,UNIT_STATE_MAX_MANA)*0.00025)
+        endif
+        if GetUnitAbilityLevel(u,'VGH3')>0 then
+            call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-GetUnitState(u,UNIT_STATE_MAX_MANA)*0.0004)
+        endif
+        if GetUnitAbilityLevel(u,'VGH4')>0 then
+            call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-GetUnitState(u,UNIT_STATE_MAX_MANA)*0.0005)
+        endif
+        if GetUnitAbilityLevel(u,'VGH5')>0 then
+            call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-GetUnitState(u,UNIT_STATE_MAX_MANA)*0.00045)
+        endif
+        if GetUnitAbilityLevel(u,'VGH6')>0 then
+            call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-GetUnitState(u,UNIT_STATE_MAX_MANA)*0.000675)
+        endif
+    endif
 endif
 if GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.1>GetUnitState(u,UNIT_STATE_LIFE) or GetUnitState(u,UNIT_STATE_MAX_MANA)*0.04>GetUnitState(u,UNIT_STATE_MANA) or LoadBoolean(HH,GetHandleId(u),SST)==true then
 if GetUnitAbilityLevel(u,'VGH4')>0 then
@@ -74938,6 +75056,12 @@ function PowerDownBroly takes nothing returns nothing
                         call SetWidgetLife(u,1)
                     endif
                     call SetWidgetMana(u,GetWidgetMana(u)-GetWidgetMaxMana(u)*0.1)
+                endif
+            endif
+        else
+            if GetUnitState(u,UNIT_STATE_MAX_MANA)*0.05>GetUnitState(u,UNIT_STATE_MANA) then
+                if GetUnitAbilityLevel(u,'A0TJ')>0 or GetUnitAbilityLevel(u,'A0TK')>0 then
+                    call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-GetUnitState(u,UNIT_STATE_MAX_MANA)*0.00015)
                 endif
             endif
         endif
@@ -86379,12 +86503,21 @@ local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
 local unit u=LoadUnitHandle(h,id,0)
 if IsUnitPaused(u)==false and GetUnitAbilityLevel(u,'Pet1')==0 then
-if GetUnitAbilityLevel(u,'A17A')>0 then
-    call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-GetUnitState(u,UNIT_STATE_MAX_MANA)*0.0003)
-endif
-if GetUnitAbilityLevel(u,'A17C')>0 then
-    call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-GetUnitState(u,UNIT_STATE_MAX_MANA)*0.0008)
-endif
+    if GetUnitAbilityLevel(u,'A17A')>0 then
+        call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-GetUnitState(u,UNIT_STATE_MAX_MANA)*0.0003)
+    endif
+    if GetUnitAbilityLevel(u,'A17C')>0 then
+        call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-GetUnitState(u,UNIT_STATE_MAX_MANA)*0.0008)
+    endif
+else
+    if GetUnitState(u,UNIT_STATE_MAX_MANA)*0.05>GetUnitState(u,UNIT_STATE_MANA) then
+        if GetUnitAbilityLevel(u,'A17A')>0 then
+            call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-GetUnitState(u,UNIT_STATE_MAX_MANA)*0.00015)
+        endif
+        if GetUnitAbilityLevel(u,'A17C')>0 then
+            call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-GetUnitState(u,UNIT_STATE_MAX_MANA)*0.0004)
+        endif
+    endif
 endif
 if GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.1>GetUnitState(u,UNIT_STATE_LIFE) or GetUnitState(u,UNIT_STATE_MAX_MANA)*0.04>GetUnitState(u,UNIT_STATE_MANA) or LoadBoolean(HH,GetHandleId(u),SST)==true then
 if GetUnitAbilityLevel(u,'A17C')>0 then
@@ -89036,15 +89169,27 @@ local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
 local unit u=LoadUnitHandle(h,id,0)
 if IsUnitPaused(u)==false and GetUnitAbilityLevel(u,'Pet1')==0 then
-if GetUnitAbilityLevel(u,'A16Y')>0 then
-    call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-GetUnitState(u,UNIT_STATE_MAX_MANA)*0.0003)
-endif
-if GetUnitAbilityLevel(u,'A170')>0 then
-    call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-GetUnitState(u,UNIT_STATE_MAX_MANA)*0.00105)
-endif
-if GetUnitAbilityLevel(u,'A171')>0 then
-    call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-GetUnitState(u,UNIT_STATE_MAX_MANA)*0.00115)
-endif
+    if GetUnitAbilityLevel(u,'A16Y')>0 then
+        call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-GetUnitState(u,UNIT_STATE_MAX_MANA)*0.0003)
+    endif
+    if GetUnitAbilityLevel(u,'A170')>0 then
+        call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-GetUnitState(u,UNIT_STATE_MAX_MANA)*0.00105)
+    endif
+    if GetUnitAbilityLevel(u,'A171')>0 then
+        call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-GetUnitState(u,UNIT_STATE_MAX_MANA)*0.00115)
+    endif
+else
+    if GetUnitState(u,UNIT_STATE_MAX_MANA)*0.05>GetUnitState(u,UNIT_STATE_MANA) then
+        if GetUnitAbilityLevel(u,'A16Y')>0 then
+            call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-GetUnitState(u,UNIT_STATE_MAX_MANA)*0.00015)
+        endif
+        if GetUnitAbilityLevel(u,'A170')>0 then
+            call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-GetUnitState(u,UNIT_STATE_MAX_MANA)*0.000525)
+        endif
+        if GetUnitAbilityLevel(u,'A171')>0 then
+            call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-GetUnitState(u,UNIT_STATE_MAX_MANA)*0.000575)
+        endif
+    endif
 endif
 if GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.1>GetUnitState(u,UNIT_STATE_LIFE) or GetUnitState(u,UNIT_STATE_MAX_MANA)*0.04>GetUnitState(u,UNIT_STATE_MANA) or LoadBoolean(HH,GetHandleId(u),SST)==true then
 if GetUnitAbilityLevel(u,'A171')>0 or GetUnitAbilityLevel(u,'A170')>0 then
@@ -96053,15 +96198,27 @@ local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
 local unit u=LoadUnitHandle(h,id,0)
 if IsUnitPaused(u)==false and GetUnitAbilityLevel(u,'Pet1')==0 then
-if GetUnitAbilityLevel(u,'A16S')>0 then
-    call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-GetUnitState(u,UNIT_STATE_MAX_MANA)*0.0003)
-endif
-if GetUnitAbilityLevel(u,'A16T')>0 then
-    call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-GetUnitState(u,UNIT_STATE_MAX_MANA)*0.0006)
-endif
-if GetUnitAbilityLevel(u,'A26T')>0 then
-    call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-GetUnitState(u,UNIT_STATE_MAX_MANA)*0.0009)
-endif
+    if GetUnitAbilityLevel(u,'A16S')>0 then
+        call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-GetUnitState(u,UNIT_STATE_MAX_MANA)*0.0003)
+    endif
+    if GetUnitAbilityLevel(u,'A16T')>0 then
+        call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-GetUnitState(u,UNIT_STATE_MAX_MANA)*0.0006)
+    endif
+    if GetUnitAbilityLevel(u,'A26T')>0 then
+        call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-GetUnitState(u,UNIT_STATE_MAX_MANA)*0.0009)
+    endif
+else
+    if GetUnitState(u,UNIT_STATE_MAX_MANA)*0.05>GetUnitState(u,UNIT_STATE_MANA) then
+        if GetUnitAbilityLevel(u,'A16S')>0 then
+            call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-GetUnitState(u,UNIT_STATE_MAX_MANA)*0.00015)
+        endif
+        if GetUnitAbilityLevel(u,'A16T')>0 then
+            call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-GetUnitState(u,UNIT_STATE_MAX_MANA)*0.0003)
+        endif
+        if GetUnitAbilityLevel(u,'A26T')>0 then
+            call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-GetUnitState(u,UNIT_STATE_MAX_MANA)*0.00045)
+        endif
+    endif
 endif
 if GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.1>GetUnitState(u,UNIT_STATE_LIFE) or GetUnitState(u,UNIT_STATE_MAX_MANA)*0.04>GetUnitState(u,UNIT_STATE_MANA) or LoadBoolean(HH,GetHandleId(u),SST)==true then
 if GetUnitAbilityLevel(u,'A26T')>0 then
@@ -97278,12 +97435,21 @@ local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
 local unit u=LoadUnitHandle(h,id,0)
 if IsUnitPaused(u)==false and GetUnitAbilityLevel(u,'Pet1')==0 then
-if GetUnitAbilityLevel(u,'A174')>0 then
-    call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-GetUnitState(u,UNIT_STATE_MAX_MANA)*0.0003)
-endif
-if GetUnitAbilityLevel(u,'A176')>0 then
-    call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-GetUnitState(u,UNIT_STATE_MAX_MANA)*0.00115)
-endif
+    if GetUnitAbilityLevel(u,'A174')>0 then
+        call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-GetUnitState(u,UNIT_STATE_MAX_MANA)*0.0003)
+    endif
+    if GetUnitAbilityLevel(u,'A176')>0 then
+        call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-GetUnitState(u,UNIT_STATE_MAX_MANA)*0.00115)
+    endif
+else
+    if GetUnitState(u,UNIT_STATE_MAX_MANA)*0.05>GetUnitState(u,UNIT_STATE_MANA) then
+        if GetUnitAbilityLevel(u,'A174')>0 then
+            call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-GetUnitState(u,UNIT_STATE_MAX_MANA)*0.00015)
+        endif
+        if GetUnitAbilityLevel(u,'A176')>0 then
+            call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-GetUnitState(u,UNIT_STATE_MAX_MANA)*0.000575)
+        endif
+    endif
 endif
 if GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.1>GetUnitState(u,UNIT_STATE_LIFE) or GetUnitState(u,UNIT_STATE_MAX_MANA)*0.04>GetUnitState(u,UNIT_STATE_MANA) or LoadBoolean(HH,GetHandleId(u),SST)==true then
 if GetUnitAbilityLevel(u,'A176')>0 then
