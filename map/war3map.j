@@ -206104,7 +206104,7 @@ function KarnaQ_LaserBlastAct takes nothing returns nothing
             //     call SetUnitFlyHeight(n, 100, 0)
             //     call MyRemoveUnit(n, 2.5)
             // endif
-            if Karna_ModifAttack(caster, E, damage_factor*0.6, damage*0.6, 0.6, false) then
+            if Karna_ModifAttack(caster, E, damage_factor*0.7, damage*0.7, 0.6, false) then
             endif
             call SetControlToUnit(E, E, 1.0, "stun")
             call UnitAddAbility(E, 'KaAW')
@@ -223512,7 +223512,7 @@ call WeakenEndInit()
 // call PauseAbilInit()
 //call SlowAuraStartInit()
 call CycloneStartInit()
-call ControlDebuffStartInit()
+//call ControlDebuffStartInit()
 // call Pet1StartInit()
 //call CycloneEndInit()
 call RunInitializationTriggers()
