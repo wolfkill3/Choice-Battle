@@ -136103,12 +136103,8 @@ local real x=GetUnitScreenX(u)
 local real y=GetUnitScreenY(u)
 local integer i
 local integer j
+call ClearFrameAllPoints( DebuffFrameGrid )
 call SetFrameAbsolutePoint( DebuffFrameGrid, FRAMEPOINT_LEFT, x-0.04,y+GetUnitOverheadOffset(u)/15000  )
-if IsUnitVisible(u,GetLocalPlayer()) then
-    call ShowFrame( DebuffFrameGrid, true )
-else
-    call ShowFrame( DebuffFrameGrid, false )
-endif
 if GetUnitAbilityLevel(u,'CBC2')>0 then
     if LoadBoolean(HH,idu,Stun_Debuff)==false then
         call SaveBoolean(HH,idu,Stun_Debuff,true)
@@ -136451,6 +136447,11 @@ else
         endloop
     endif
 endif
+if IsUnitVisible(u,GetLocalPlayer()) then
+    call ShowFrame( DebuffFrameGrid, true )
+else
+    call ShowFrame( DebuffFrameGrid, false )
+endif
 if GetUnitAbilityLevel(u,'CBC1')==0 and GetUnitAbilityLevel(u,'CBC2')==0 and GetUnitAbilityLevel(u,'cbc3')==0 and GetUnitAbilityLevel(u,'cbc5')==0 and GetUnitAbilityLevel(u,'cbc6')==0 and GetUnitAbilityLevel(u,'cbc7')==0 then
     call SaveBoolean(HH,idu,Unit_Debuff,false)
     call DestroyFrame(DebuffFrameGrid)
@@ -136487,7 +136488,7 @@ if LoadBoolean(HH,idu,Unit_Debuff)==false then
     call SaveBoolean(HH,idu,Unit_Debuff,true)
     set DebuffFrameGrid=CreateFrameByType("SIMPLEGRID", "UnitDebuffs", GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ), "", 0)
     call ClearFrameAllPoints( DebuffFrameGrid )
-    call SetFrameAbsolutePoint( DebuffFrameGrid, FRAMEPOINT_LEFT, x-500/GetClientWidth(),y+400/GetClientHeight()  )
+    call SetFrameAbsolutePoint( DebuffFrameGrid, FRAMEPOINT_LEFT, x-0.04,y+GetUnitOverheadOffset(u)/15000  )
     call SetFrameGridSize( DebuffFrameGrid, 2, 8 )
     call SetFrameSize( DebuffFrameGrid, .1, .032)
     call SetFrameGridFlag(DebuffFrameGrid,GRID_STYLE_JUSTIFY_CENTER,true)
@@ -136495,7 +136496,7 @@ if LoadBoolean(HH,idu,Unit_Debuff)==false then
     call SetFramePriority( DebuffFrameGrid, 0 )
     call ShowFrame( DebuffFrameGrid, true )
     call SaveFrameHandle(HH,id,1,DebuffFrameGrid)
-    call TimerStart(t,.05,true,function ControlDebuffCast2)
+    call TimerStart(t,.1,true,function ControlDebuffCast2)
 else
     call PauseTimer(t)
     call DestroyTimer(t)
@@ -206101,7 +206102,7 @@ function KarnaQ_LaserBlastAct takes nothing returns nothing
             //     call SetUnitFlyHeight(n, 100, 0)
             //     call MyRemoveUnit(n, 2.5)
             // endif
-            if Karna_ModifAttack(caster, E, damage_factor*0.6, damage*0.6, 0.6, false) then
+            if Karna_ModifAttack(caster, E, damage_factor*0.7, damage*0.7, 0.6, false) then
             endif
             call SetControlToUnit(E, E, 1.0, "stun")
             call UnitAddAbility(E, 'KaAW')
@@ -223509,7 +223510,7 @@ call WeakenEndInit()
 // call PauseAbilInit()
 //call SlowAuraStartInit()
 call CycloneStartInit()
-call ControlDebuffStartInit()
+//call ControlDebuffStartInit()
 // call Pet1StartInit()
 //call CycloneEndInit()
 call RunInitializationTriggers()
