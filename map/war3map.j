@@ -4076,15 +4076,22 @@ function MUIHandle takes nothing returns integer
             
             set time=CalculateControlResist(target, time)
             
-            if checker==true and c_type == "silence" and time<0.25 then
+            if checker==true and (c_type == "silence" or c_type == "doom") and time<0.25 then
                 set time=0.25
             endif
             if (UnitHasItemOfTypeBJCustom(target,'I13S') or UnitHasItemOfTypeBJCustom(target,'I13R')) and (c_type == "weakness" or c_type == "miss") then //boros
                 set percent=percent*0.65
             endif
+            if GetUnitAbilityLevel(target,'A13I')>0 and (c_type == "weakness" or c_type == "miss") then //boros
+                set percent=percent*0.5
+            endif
             if (UnitHasItemOfTypeBJCustom(target,'I13S') or UnitHasItemOfTypeBJCustom(target,'I13R')) and c_type == "slow" then //boros
                 set slowMS=slowMS*0.65
                 set slowAS=slowAS*0.65
+            endif
+            if GetUnitAbilityLevel(target,'A13I')>0 and c_type == "slow" then //boros
+                set slowMS=slowMS*0.5
+                set slowAS=slowAS*0.5
             endif
             if ((c_type=="shortsight" or c_type=="blind") and GetUnitAbilityLevel(target,'Blnd')>0) or (c_type=="shortsight" and GetUnitTypeId(target)=='H116') then
                 set time=0
@@ -65178,7 +65185,7 @@ local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
 local unit u=LoadUnitHandle(h,id,0)
 local unit c=LoadUnitHandle(h,id,1)
-local real heal=LoadReal(h,id,2)/13
+local real heal=(LoadReal(h,id,2)*(1+GetUnitAbilityLevel(u,'A1A3')))/13
 local integer i=LoadInteger(h,id,3)
 if i<13 then
 call HealTextTag(u,c,heal*myCustomHeal2(c,1),"HealthRes")
@@ -65186,7 +65193,7 @@ call SetUnitState(c,UNIT_STATE_LIFE,GetWidgetLife(c)+heal)
 call SaveInteger(h,id,3,i+1)
 call DestroyEffect(AddSpecialEffectTarget("Abilities\\Spells\\NightElf\\FaerieDragonInvis\\FaerieDragon_Invis.mdl",c,"origin"))
 else
-call UnitRemoveAbility(c,0x41304842)
+call UnitRemoveAbility(c,'A0HB')
 call PauseTimer(t)
 call DestroyTimer(t)
 call DestroyEffect(LoadEffectHandle(h,id,0))
@@ -65201,7 +65208,7 @@ local timer t=CreateTimer()
 local integer id=GetHandleId(t)
 call SaveUnitHandle(h,id,0,u)
 call SaveUnitHandle(h,id,1,l__d)
-call UnitAddAbility(l__d,0x41304842)
+call UnitAddAbility(l__d,'A0HB')
 call SaveReal(h,id,2,GetHeroStr(u,true)*(2+GetUnitAbilityLevel(u,'A02Q'))+50)
 call TimerStart(t,0.5,true,function SunStimulationCast2)
 set t=null
@@ -65217,7 +65224,7 @@ local player p=GetOwningPlayer(u)
 if GetHeroLevel(u)<35 then
 call SunStimulationCast(u,l__d)
 else
-call GroupEnumUnitsInRange(DG,x,y,300,Base)
+call GroupEnumUnitsInRange(DG,x,y,400,Base)
 loop
 set E=FirstOfGroup(DG)
 exitwhen E==null
@@ -65237,7 +65244,7 @@ endfunction
 function SunStimulationInit takes nothing returns nothing
 endfunction
 function KangaruuCond takes nothing returns boolean
-return GetSpellAbilityId()==0x41303252
+return GetSpellAbilityId()=='A02R'
 endfunction
 function KangaruuCast3 takes nothing returns nothing
 local timer t=GetExpiredTimer()
