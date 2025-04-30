@@ -58417,7 +58417,7 @@ endfunction
 function BlackStarBigWaveInit takes nothing returns nothing
 endfunction
 function CondInfinity takes nothing returns boolean
-return GetSpellAbilityId()==0x41304333 and udg_B==true and GetUnitTypeId(GetTriggerUnit())=='H01G'
+return GetSpellAbilityId()=='A0C3' and udg_B==true and GetUnitTypeId(GetTriggerUnit())=='H01G'
 endfunction
 function CastInfinity2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
@@ -58467,7 +58467,7 @@ call SetUnitInvulnerable(u,false)
 call PauseUnit(c,false)
 call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,false)
 call PauseUnit(u,false)
-call myCustomDamage(u,c,(5+GetUnitAbilityLevel(u,0x41304333))*GetHeroStr(u,true),false,false,null,null,null)
+call myCustomDamage(u,c,(5+GetUnitAbilityLevel(u,'A0C3'))*GetHeroStr(u,true),false,false,null,null,null)
 call PauseTimer(t)
 call DestroyTimer(t)
 call FlushChildHashtable(h,id)
@@ -90937,7 +90937,7 @@ call StartSound(soundplay)
 call KillSoundWhenDone(soundplay)
 set n=CreateIllusionFromUnit(c)
 call SetUnitFacingInstant(n,GetUnitFacing(c))
-call SetUnitOwner(c,p,false)
+call SetUnitOwner(n,p,false)
 call UnitCancelTimedLife(n)
 call SetUnitCurrentSight(n,600)
 call SetUnitUseFood(n,true)
@@ -138065,15 +138065,15 @@ call UnitSpeed(u,1)
 call UnitSpeed(c,1)
 call SetUnitPathing(c,true)
 call SetUnitPathing(u,true)
+call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,false)
+call SaveUnitHandle(HH,GetHandleId(c),REVERSE_TARGET,u)
 call SetUnitInvulnerable(u,false)
 call PauseUnit(u,false)
 call SetUnitInvulnerable(c,false)
 call PauseUnit(c,false)
-call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,false)
-call SaveUnitHandle(HH,GetHandleId(c),REVERSE_TARGET,u)
 call FlushChildHashtable(HH,id)
-call PauseTimer(GetExpiredTimer())
-call DestroyTimer(GetExpiredTimer())
+call PauseTimer(t)
+call DestroyTimer(t)
 endif
 endif
 endif
@@ -138107,9 +138107,11 @@ call SetUnitFacing(u,d2)
 if i<145 then
 call SaveReal(HH,id,3,Angle2(GetUnitX(u),GetUnitY(u),GetUnitX(c),GetUnitY(c)))
 endif
+if i<75 or i>145 then
 call SetUnitPathing(u,false)
 call SetUnitInvulnerable(u,true)
 call PauseUnit(u,true)
+endif
 endif
 if i==175 then
 call DestroyEffect(LoadEffectHandle(HH,id,25))
@@ -138183,17 +138185,17 @@ call KillSoundWhenDone(soundplay)
 else
 call UnitSpeed(u,1)
 call UnitSpeed(c,1)
+call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,false)
+call SaveUnitHandle(HH,GetHandleId(c),REVERSE_TARGET,u)
 call SetUnitPathing(c,true)
 call SetUnitPathing(u,true)
 call SetUnitInvulnerable(u,false)
 call PauseUnit(u,false)
 call SetUnitInvulnerable(c,false)
 call PauseUnit(c,false)
-call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,false)
-call SaveUnitHandle(HH,GetHandleId(c),REVERSE_TARGET,u)
 call FlushChildHashtable(HH,id)
-call PauseTimer(GetExpiredTimer())
-call DestroyTimer(GetExpiredTimer())
+call PauseTimer(t)
+call DestroyTimer(t)
 endif
 endif
 if i==70 then
@@ -138214,9 +138216,11 @@ call MoveUnit(c,LoadUnitHandle(HH,id,20),0,d2)
 endif
 endif
 call SaveReal(HH,id,3,Angle2(GetUnitX(u),GetUnitY(u),GetUnitX(c),GetUnitY(c)))
+if i!=50 then
 call SetUnitPathing(u,false)
 call SetUnitInvulnerable(u,true)
 call PauseUnit(u,true)
+endif
 endif
 if i==80 then
 //war3mapImported\blacksphere.mdl
