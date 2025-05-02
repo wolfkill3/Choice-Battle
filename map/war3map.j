@@ -1777,7 +1777,7 @@ function myCustomDamage takes unit whichUnit, unit target, real amount, boolean 
         endif
         // Калейдожезл Руби
         if GetUnitAbilityLevel(target,'B072') > 0 then
-            set currentDmg = currentDmg * 1.10
+            set currentDmg = currentDmg * 1.15
         endif
                 
         // if GetUnitAbilityLevel(whichUnit,'A0U5') > 0 then
@@ -1958,7 +1958,7 @@ function myCustomDamage2 takes unit target, real amount returns real
         //endif
         // Калейдожезл Руби
         if GetUnitAbilityLevel(target,'B072') > 0 then
-            set currentDmg = currentDmg * 1.10
+            set currentDmg = currentDmg * 1.15
         endif
                 // T Gin уменьшение маг реза -> увеличение урона по нему
         if GetUnitAbilityLevel(target,'BGiT') > 0 then
@@ -2105,7 +2105,7 @@ function myCustomDamage2_dec takes unit target, real amount returns real
         //endif
         // Калейдожезл Руби
         if GetUnitAbilityLevel(target,'B072') > 0 then
-            set currentDmg = currentDmg * 1.10
+            set currentDmg = currentDmg * 1.15
         endif
                 // T Gin уменьшение маг реза -> увеличение урона по нему
         if GetUnitAbilityLevel(target,'BGiT') > 0 then
@@ -9801,13 +9801,13 @@ set LevelBase=Condition(function LvlBool)
 set FrendaBool=Condition(function BoolFrenda)
 set BuggedBool=Condition(function BoolBugged)
 set Color[0]="|cFFFF1010"
-set Color[1]="|cFF9090FF"
+set Color[1]="|cFF4A6AFF"
 set Color[2]="|cFF00FFFF"
-set Color[3]="|cFF7B709E"
+set Color[3]="|cFFC470FC"
 set Color[4]="|cFFFFDC00"
 set Color[5]="|cFFFF8C00"
 set Color[6]="|cFF10D850"
-set Color[7]="|cFFFF5AFF"
+set Color[7]="|cFFFFA6D2"
 set Color[8]="|cFFA9A9A9"
 set Color[9]="|cFF7EBFFF"
 set Color[10]="|cFF005A39"
