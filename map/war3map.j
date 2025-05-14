@@ -65185,7 +65185,7 @@ local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
 local unit u=LoadUnitHandle(h,id,0)
 local unit c=LoadUnitHandle(h,id,1)
-local real heal=(LoadReal(h,id,2)*(1+GetUnitAbilityLevel(u,'A1A3')))/13
+local real heal=(LoadReal(h,id,2)*(1+GetUnitAbilityLevel(u,'A1A3')*0.5))/13
 local integer i=LoadInteger(h,id,3)
 if i<13 then
 call HealTextTag(u,c,heal*myCustomHeal2(c,1),"HealthRes")
@@ -186469,7 +186469,7 @@ local unit target=LoadUnitHandle(HH,GetHandleId(caster),StringHash("DanzoW"))
 call SetUnitState(caster,UNIT_STATE_MANA,GetUnitState(caster,UNIT_STATE_MANA)-GetUnitState(caster,UNIT_STATE_MAX_MANA)*0.05)
 call UnitCreateAndMove(caster,'ds29',caster,GetRandomReal(0,360),1,0.8,0.8,100,100,100,30,50,caster,0,facing)
 call UnitCreateAndMove(caster,'ds13',caster,GetRandomReal(0,360),1,8,0.4,100,100,100,0,100,target,0,facing)
-call UnitCreateAndMove(caster,0x64733134,caster,GetRandomReal(0,360),1,0.75,2,100,100,100,30,100,target,0,facing)
+call UnitCreateAndMove(caster,'ds14',caster,GetRandomReal(0,360),1,0.75,2,100,100,100,30,100,target,0,facing)
 call UnitCreateAndMove(caster,'ds26',caster,GetRandomReal(0,360),1,1.25,0.8,100,100,100,30,50,target,0,facing)
 
 
@@ -187164,6 +187164,7 @@ call SaveBoolean(HH,GetHandleId(caster),ANTITARGET_ABILITY,true)
 endif
 call PauseUnit(caster,true)
 call SaveReal(HH,id,15,(1+GetUnitAbilityLevel(caster,'DSW1'))*GetHeroInt(caster,true))
+call SaveBoolean(HH,GetHandleId(caster),TARGET_ABILITY,false)
 call TimerStart(t,0.02,true,function DanzoW1Act)
 endif
 
