@@ -40143,7 +40143,7 @@ if cond==0 then
             call SaveInteger(HH,GetHandleId( GetOwningPlayer(u) ),UIDodgeHash,LoadInteger(HH,GetHandleId( GetOwningPlayer(u) ),UIDodgeHash)-1)
             //call SetEventDamage(0.05)
             call UnitAddAbility(u,'A7IH')
-            call UnitRemoveAbilityTimedPause(u,'A7IH',0.2)
+            call UnitRemoveAbilityTimedPause(u,'A7IH',0.15)
             call SetUnitAnimationByIndex(u,GetRandomInt(222,230))
             set nb=0
             if GetHeroLevel(u)>=35 and LoadBoolean(HH,GetHandleId( GetOwningPlayer(u) ),MUIAvailableHash)==false then
@@ -67150,10 +67150,10 @@ function PowerDownGoku takes nothing returns nothing
             call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-GetUnitState(u,UNIT_STATE_MAX_MANA)*0.00135)
         endif
         if GetUnitAbilityLevel(u,'GkH7')>0 then
-            call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-GetUnitState(u,UNIT_STATE_MAX_MANA)*0.00225)
+            call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-GetUnitState(u,UNIT_STATE_MAX_MANA)*0.0025)
         endif
         if GetUnitAbilityLevel(u,'GkH8')>0 then
-            call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-GetUnitState(u,UNIT_STATE_MAX_MANA)*0.0035)
+            call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-GetUnitState(u,UNIT_STATE_MAX_MANA)*0.003)
         endif
     else
         if GetUnitState(u,UNIT_STATE_MAX_MANA)*0.05>GetUnitState(u,UNIT_STATE_MANA) then
@@ -67176,10 +67176,10 @@ function PowerDownGoku takes nothing returns nothing
                 call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-GetUnitState(u,UNIT_STATE_MAX_MANA)*0.000675)
             endif
             if GetUnitAbilityLevel(u,'GkH7')>0 then
-                call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-GetUnitState(u,UNIT_STATE_MAX_MANA)*0.001125)
+                call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-GetUnitState(u,UNIT_STATE_MAX_MANA)*0.00125)
             endif
             if GetUnitAbilityLevel(u,'GkH8')>0 then
-                call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-GetUnitState(u,UNIT_STATE_MAX_MANA)*0.00175)
+                call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-GetUnitState(u,UNIT_STATE_MAX_MANA)*0.0015)
             endif
         endif
     endif
@@ -68251,7 +68251,7 @@ function MissleMoveSuperSpiritBomb3 takes nothing returns nothing
             call SetUnitModel(n,"war3mapImported\\IonCannonWithoutPillar.mdl")
             call UnitApplyTimedLife(n,1,3)
             call SetUnitTimeScale(n,0.5)
-            call SetUnitScale(n,0.2+GetUnitScale(GenkiDama),GetUnitScale(GenkiDama),GetUnitScale(GenkiDama))
+            call SetUnitScale(n,0.4+GetUnitScale(GenkiDama),GetUnitScale(GenkiDama),GetUnitScale(GenkiDama))
             call SetUnitFlyHeight(n,100,0)
         endif
     else
@@ -68267,11 +68267,11 @@ function MissleMoveSuperSpiritBomb3 takes nothing returns nothing
             call GroupRemoveUnit(DG,E)
         endloop
         set n=CreateUnit(p, 'e0C5', x, y, GetRandomInt(0, 360))
-        call SetUnitScale(n,2+GetUnitScale(GenkiDama),2+GetUnitScale(GenkiDama),2+GetUnitScale(GenkiDama))
+        call SetUnitScale(n,3+GetUnitScale(GenkiDama),3+GetUnitScale(GenkiDama),3+GetUnitScale(GenkiDama))
         call SetUnitFlyHeight(n, 0, 0)
         call MyRemoveUnit(n, 2.5)
         set n=CreateUnit(p, 'dH50', x, y, GetRandomInt(0, 360))
-		call SetUnitScale(n, 5+GetUnitScale(GenkiDama), 5+GetUnitScale(GenkiDama), 5+GetUnitScale(GenkiDama))
+		call SetUnitScale(n, 6+GetUnitScale(GenkiDama), 6+GetUnitScale(GenkiDama), 6+GetUnitScale(GenkiDama))
 		call SetUnitFlyHeight(n, 40, 0)
 		call MyRemoveUnit(n, 1.5)
         call FlushChildHashtable(HH,GetHandleId(GenkiDama))
@@ -68706,7 +68706,7 @@ if time<100 and GetUnitState(u,UNIT_STATE_LIFE)>0.405 and LoadBoolean(HH,GetHand
             call UnitRemoveAbility(dummy,'GKG4')
             call UnitAddAbility(dummy,'GKG5')
         endif
-        call SetAbilityRealLevelField(GetUnitAbility(dummy,'GKG5'),ABILITY_RLF_AREA_OF_EFFECT,0,400+333.3333*(GetUnitScale(GenkiDama)-0.5)) 
+        call SetAbilityRealLevelField(GetUnitAbility(dummy,'GKG5'),ABILITY_RLF_AREA_OF_EFFECT,0,600+333.3333*(GetUnitScale(GenkiDama)-0.5)) 
     endif 
 else
     call StopSound(soundStr[29],false,true)
@@ -69231,7 +69231,7 @@ else
                 call Push5(u,30,a-90*bj_DEGTORAD,300,"")
             endif
             call UnitAddAbility(u,'A7IH')
-            call UnitRemoveAbilityTimedPause(u,'A7IH',0.2)
+            call UnitRemoveAbilityTimedPause(u,'A7IH',0.15)
             call StartSound(soundStr[24])
             call PauseTimer(t)
             call DestroyTimer(t)
