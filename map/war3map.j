@@ -22549,7 +22549,9 @@ function Trig_Killer_Actions takes nothing returns nothing
             call HealTextTag(u,u,GetUnitState(c,UNIT_STATE_MAX_LIFE)*(0.07+0.03*GetUnitAbilityLevel(u,'A105'))*myCustomHeal2(u,1),"HealthRes")
             call SetUnitState(u,UNIT_STATE_LIFE,GetWidgetLife(u)+GetUnitState(c,UNIT_STATE_MAX_LIFE)*(0.07+0.03*GetUnitAbilityLevel(u,'A105')))
             //call SetUnitState(u,UNIT_STATE_MANA,GetWidgetMana(u)+GetUnitState(c,UNIT_STATE_MAX_MANA)*(0.07+0.03*GetUnitAbilityLevel(u,'A105')))
-            call SetHeroInt(u,GetHeroInt(u,false)+2,true)
+            call SetHeroAgi(u,SetHeroAgi(u,false)+1,true)
+            call SetHeroStr(u,SetHeroStr(u,false)+1,true)
+            call SetHeroInt(u,GetHeroInt(u,false)+1,true)
         endif
         if u!=null and u!=c and GetUnitTypeId(u)!='H02A' and DU==true and GetUnitTypeId(c)!='H06U' then
                 set udg_kill[iu]=udg_kill[iu]+1
@@ -22576,6 +22578,15 @@ function Trig_Killer_Actions takes nothing returns nothing
                         set udg_assist[i]=udg_assist[i]+1
                         set assistnames=assistnames+Color[i]+GetUnitName(Hero[i])+"|r "
                         call ForceAddPlayer(PlayerH,GetOwningPlayer(Hero[i]))
+                        if GetUnitAbilityLevel(Hero[i],'A1F3')>0 then
+                            call SetPlayerState(Player(i),PLAYER_STATE_RESOURCE_GOLD,GetPlayerState(Player(i),PLAYER_STATE_RESOURCE_GOLD)+20)
+                        endif
+                        if GetUnitTypeId(Hero[i])=='HYuj' then //old 'H049'
+                            set yuji4[i]=yuji4[i]+1
+                            call UnitAddAbility(Hero[i],'A0T8')
+                            call SetUnitAbilityLevel(Hero[i],'A0T8',2)
+                            call UnitRemoveAbility(Hero[i],'A0T8')
+                        endif
                     endif
                     if IsPlayerInForce(GetOwningPlayer(Hero[i]),PlayerH)==false and Hero[i]!=null and GetOwningPlayer(Hero[i])!=Player(iu) then
                         if (GetUnitAbilityLevel(u,'A1DF')>0 or GetUnitAbilityLevel(u,'A1DG')>0) and GetUnitTypeId(Hero[i])=='H051' then //Shielder
@@ -29411,7 +29422,9 @@ call ClearSelection()
 call SelectUnit(n,true)
 endif
 if GetUnitTypeId(Hero[ip])=='H052' then
-call SetHeroInt(Hero[ip],GetHeroInt(Hero[ip],false)+udg_kill[ip]*2,true)
+call SetHeroInt(Hero[ip],GetHeroInt(Hero[ip],false)+udg_kill[ip]+udg_assist[ip],true)
+call SetHeroStr(Hero[ip],GetHeroStr(Hero[ip],false)+udg_kill[ip],true)
+call SetHeroAgi(Hero[ip],SetHeroAgi(Hero[ip],false)+udg_kill[ip],true)
 endif
 //call AddUnitMaxLife(Hero[ip],(round-1)*150)
 call SetHeroInt(Hero[ip],GetHeroInt(Hero[ip],false)+((round-1)-GetPlayerState(p,PLAYER_STATE_RESOURCE_LUMBER))*3,true)
@@ -29482,7 +29495,9 @@ call ClearSelection()
 call SelectUnit(n,true)
 endif
 if GetUnitTypeId(Hero[ip])=='H052' then
-call SetHeroInt(Hero[ip],GetHeroInt(Hero[ip],false)+udg_kill[ip]*2,true)
+call SetHeroInt(Hero[ip],GetHeroInt(Hero[ip],false)+udg_kill[ip]+udg_assist[ip],true)
+call SetHeroStr(Hero[ip],GetHeroStr(Hero[ip],false)+udg_kill[ip],true)
+call SetHeroAgi(Hero[ip],SetHeroAgi(Hero[ip],false)+udg_kill[ip],true)
 endif
 //call AddUnitMaxLife(Hero[ip],(round-1)*150)
 call SetHeroInt(Hero[ip],GetHeroInt(Hero[ip],false)+((round-1)-GetPlayerState(p,PLAYER_STATE_RESOURCE_LUMBER))*3,true)
@@ -29553,7 +29568,9 @@ call ClearSelection()
 call SelectUnit(n,true)
 endif
 if GetUnitTypeId(Hero[ip])=='H052' then
-call SetHeroInt(Hero[ip],GetHeroInt(Hero[ip],false)+udg_kill[ip]*2,true)
+call SetHeroInt(Hero[ip],GetHeroInt(Hero[ip],false)+udg_kill[ip]+udg_assist[ip],true)
+call SetHeroStr(Hero[ip],GetHeroStr(Hero[ip],false)+udg_kill[ip],true)
+call SetHeroAgi(Hero[ip],SetHeroAgi(Hero[ip],false)+udg_kill[ip],true)
 endif
 //call AddUnitMaxLife(Hero[ip],(round-1)*150)
 call SetHeroInt(Hero[ip],GetHeroInt(Hero[ip],false)+((round-1)-GetPlayerState(p,PLAYER_STATE_RESOURCE_LUMBER))*3,true)
@@ -29624,7 +29641,9 @@ call ClearSelection()
 call SelectUnit(n,true)
 endif
 if GetUnitTypeId(Hero[ip])=='H052' then
-call SetHeroInt(Hero[ip],GetHeroInt(Hero[ip],false)+udg_kill[ip]*2,true)
+call SetHeroInt(Hero[ip],GetHeroInt(Hero[ip],false)+udg_kill[ip]+udg_assist[ip],true)
+call SetHeroStr(Hero[ip],GetHeroStr(Hero[ip],false)+udg_kill[ip],true)
+call SetHeroAgi(Hero[ip],SetHeroAgi(Hero[ip],false)+udg_kill[ip],true)
 endif
 //call AddUnitMaxLife(Hero[ip],(round-1)*150)
 call SetHeroInt(Hero[ip],GetHeroInt(Hero[ip],false)+((round-1)-GetPlayerState(p,PLAYER_STATE_RESOURCE_LUMBER))*3,true)
@@ -29695,7 +29714,9 @@ call ClearSelection()
 call SelectUnit(n,true)
 endif
 if GetUnitTypeId(Hero[ip])=='H052' then
-call SetHeroInt(Hero[ip],GetHeroInt(Hero[ip],false)+udg_kill[ip]*2,true)
+call SetHeroInt(Hero[ip],GetHeroInt(Hero[ip],false)+udg_kill[ip]+udg_assist[ip],true)
+call SetHeroStr(Hero[ip],GetHeroStr(Hero[ip],false)+udg_kill[ip],true)
+call SetHeroAgi(Hero[ip],SetHeroAgi(Hero[ip],false)+udg_kill[ip],true)
 endif
 //call AddUnitMaxLife(Hero[ip],(round-1)*150)
 call SetHeroInt(Hero[ip],GetHeroInt(Hero[ip],false)+((round-1)-GetPlayerState(p,PLAYER_STATE_RESOURCE_LUMBER))*3,true)
@@ -29766,7 +29787,9 @@ call ClearSelection()
 call SelectUnit(n,true)
 endif
 if GetUnitTypeId(Hero[ip])=='H052' then
-call SetHeroInt(Hero[ip],GetHeroInt(Hero[ip],false)+udg_kill[ip]*2,true)
+call SetHeroInt(Hero[ip],GetHeroInt(Hero[ip],false)+udg_kill[ip]+udg_assist[ip],true)
+call SetHeroStr(Hero[ip],GetHeroStr(Hero[ip],false)+udg_kill[ip],true)
+call SetHeroAgi(Hero[ip],SetHeroAgi(Hero[ip],false)+udg_kill[ip],true)
 endif
 //call AddUnitMaxLife(Hero[ip],(round-1)*150)
 call SetHeroInt(Hero[ip],GetHeroInt(Hero[ip],false)+((round-1)-GetPlayerState(p,PLAYER_STATE_RESOURCE_LUMBER))*3,true)
@@ -29856,7 +29879,9 @@ call ClearSelection()
 call SelectUnit(n,true)
 endif
 if GetUnitTypeId(Hero[ip])=='H052' then
-call SetHeroInt(Hero[ip],GetHeroInt(Hero[ip],false)+udg_kill[ip]*2,true)
+call SetHeroInt(Hero[ip],GetHeroInt(Hero[ip],false)+udg_kill[ip]+udg_assist[ip],true)
+call SetHeroStr(Hero[ip],GetHeroStr(Hero[ip],false)+udg_kill[ip],true)
+call SetHeroAgi(Hero[ip],SetHeroAgi(Hero[ip],false)+udg_kill[ip],true)
 endif
 //call AddUnitMaxLife(Hero[ip],(round-1)*150)
 call SetHeroInt(Hero[ip],GetHeroInt(Hero[ip],false)+((round-1)-GetPlayerState(p,PLAYER_STATE_RESOURCE_LUMBER))*3,true)
@@ -29927,7 +29952,9 @@ call ClearSelection()
 call SelectUnit(n,true)
 endif
 if GetUnitTypeId(Hero[ip])=='H052' then
-call SetHeroInt(Hero[ip],GetHeroInt(Hero[ip],false)+udg_kill[ip]*2,true)
+call SetHeroInt(Hero[ip],GetHeroInt(Hero[ip],false)+udg_kill[ip]+udg_assist[ip],true)
+call SetHeroStr(Hero[ip],GetHeroStr(Hero[ip],false)+udg_kill[ip],true)
+call SetHeroAgi(Hero[ip],SetHeroAgi(Hero[ip],false)+udg_kill[ip],true)
 endif
 //call AddUnitMaxLife(Hero[ip],(round-1)*150)
 call SetHeroInt(Hero[ip],GetHeroInt(Hero[ip],false)+((round-1)-GetPlayerState(p,PLAYER_STATE_RESOURCE_LUMBER))*3,true)
@@ -29998,7 +30025,9 @@ call ClearSelection()
 call SelectUnit(n,true)
 endif
 if GetUnitTypeId(Hero[ip])=='H052' then
-call SetHeroInt(Hero[ip],GetHeroInt(Hero[ip],false)+udg_kill[ip]*2,true)
+call SetHeroInt(Hero[ip],GetHeroInt(Hero[ip],false)+udg_kill[ip]+udg_assist[ip],true)
+call SetHeroStr(Hero[ip],GetHeroStr(Hero[ip],false)+udg_kill[ip],true)
+call SetHeroAgi(Hero[ip],SetHeroAgi(Hero[ip],false)+udg_kill[ip],true)
 endif
 //call AddUnitMaxLife(Hero[ip],(round-1)*150)
 call SetHeroInt(Hero[ip],GetHeroInt(Hero[ip],false)+((round-1)-GetPlayerState(p,PLAYER_STATE_RESOURCE_LUMBER))*3,true)
@@ -30069,7 +30098,9 @@ call ClearSelection()
 call SelectUnit(n,true)
 endif
 if GetUnitTypeId(Hero[ip])=='H052' then
-call SetHeroInt(Hero[ip],GetHeroInt(Hero[ip],false)+udg_kill[ip]*2,true)
+call SetHeroInt(Hero[ip],GetHeroInt(Hero[ip],false)+udg_kill[ip]+udg_assist[ip],true)
+call SetHeroStr(Hero[ip],GetHeroStr(Hero[ip],false)+udg_kill[ip],true)
+call SetHeroAgi(Hero[ip],SetHeroAgi(Hero[ip],false)+udg_kill[ip],true)
 endif
 //call AddUnitMaxLife(Hero[ip],(round-1)*150)
 call SetHeroInt(Hero[ip],GetHeroInt(Hero[ip],false)+((round-1)-GetPlayerState(p,PLAYER_STATE_RESOURCE_LUMBER))*3,true)
@@ -30140,7 +30171,9 @@ call ClearSelection()
 call SelectUnit(n,true)
 endif
 if GetUnitTypeId(Hero[ip])=='H052' then
-call SetHeroInt(Hero[ip],GetHeroInt(Hero[ip],false)+udg_kill[ip]*2,true)
+call SetHeroInt(Hero[ip],GetHeroInt(Hero[ip],false)+udg_kill[ip]+udg_assist[ip],true)
+call SetHeroStr(Hero[ip],GetHeroStr(Hero[ip],false)+udg_kill[ip],true)
+call SetHeroAgi(Hero[ip],SetHeroAgi(Hero[ip],false)+udg_kill[ip],true)
 endif
 //call AddUnitMaxLife(Hero[ip],(round-1)*150)
 call SetHeroInt(Hero[ip],GetHeroInt(Hero[ip],false)+((round-1)-GetPlayerState(p,PLAYER_STATE_RESOURCE_LUMBER))*3,true)
@@ -30211,7 +30244,9 @@ call ClearSelection()
 call SelectUnit(n,true)
 endif
 if GetUnitTypeId(Hero[ip])=='H052' then
-call SetHeroInt(Hero[ip],GetHeroInt(Hero[ip],false)+udg_kill[ip]*2,true)
+call SetHeroInt(Hero[ip],GetHeroInt(Hero[ip],false)+udg_kill[ip]+udg_assist[ip],true)
+call SetHeroStr(Hero[ip],GetHeroStr(Hero[ip],false)+udg_kill[ip],true)
+call SetHeroAgi(Hero[ip],SetHeroAgi(Hero[ip],false)+udg_kill[ip],true)
 endif
 //call AddUnitMaxLife(Hero[ip],(round-1)*150)
 call SetHeroInt(Hero[ip],GetHeroInt(Hero[ip],false)+((round-1)-GetPlayerState(p,PLAYER_STATE_RESOURCE_LUMBER))*3,true)
@@ -30282,7 +30317,9 @@ call ClearSelection()
 call SelectUnit(n,true)
 endif
 if GetUnitTypeId(Hero[ip])=='H052' then
-call SetHeroInt(Hero[ip],GetHeroInt(Hero[ip],false)+udg_kill[ip]*2,true)
+call SetHeroInt(Hero[ip],GetHeroInt(Hero[ip],false)+udg_kill[ip]+udg_assist[ip],true)
+call SetHeroStr(Hero[ip],GetHeroStr(Hero[ip],false)+udg_kill[ip],true)
+call SetHeroAgi(Hero[ip],SetHeroAgi(Hero[ip],false)+udg_kill[ip],true)
 endif
 //call AddUnitMaxLife(Hero[ip],(round-1)*150)
 call SetHeroInt(Hero[ip],GetHeroInt(Hero[ip],false)+((round-1)-GetPlayerState(p,PLAYER_STATE_RESOURCE_LUMBER))*3,true)
@@ -30353,7 +30390,9 @@ call ClearSelection()
 call SelectUnit(n,true)
 endif
 if GetUnitTypeId(Hero[ip])=='H052' then
-call SetHeroInt(Hero[ip],GetHeroInt(Hero[ip],false)+udg_kill[ip]*2,true)
+call SetHeroInt(Hero[ip],GetHeroInt(Hero[ip],false)+udg_kill[ip]+udg_assist[ip],true)
+call SetHeroStr(Hero[ip],GetHeroStr(Hero[ip],false)+udg_kill[ip],true)
+call SetHeroAgi(Hero[ip],SetHeroAgi(Hero[ip],false)+udg_kill[ip],true)
 endif
 //call AddUnitMaxLife(Hero[ip],(round-1)*150)
 call SetHeroInt(Hero[ip],GetHeroInt(Hero[ip],false)+((round-1)-GetPlayerState(p,PLAYER_STATE_RESOURCE_LUMBER))*3,true)
@@ -30424,7 +30463,9 @@ call ClearSelection()
 call SelectUnit(n,true)
 endif
 if GetUnitTypeId(Hero[ip])=='H052' then
-call SetHeroInt(Hero[ip],GetHeroInt(Hero[ip],false)+udg_kill[ip]*2,true)
+call SetHeroInt(Hero[ip],GetHeroInt(Hero[ip],false)+udg_kill[ip]+udg_assist[ip],true)
+call SetHeroStr(Hero[ip],GetHeroStr(Hero[ip],false)+udg_kill[ip],true)
+call SetHeroAgi(Hero[ip],SetHeroAgi(Hero[ip],false)+udg_kill[ip],true)
 endif
 //call AddUnitMaxLife(Hero[ip],(round-1)*150)
 call SetHeroInt(Hero[ip],GetHeroInt(Hero[ip],false)+((round-1)-GetPlayerState(p,PLAYER_STATE_RESOURCE_LUMBER))*3,true)
@@ -30500,7 +30541,9 @@ call ClearSelection()
 call SelectUnit(n,true)
 endif
 if GetUnitTypeId(Hero[ip])=='H052' then
-call SetHeroInt(Hero[ip],GetHeroInt(Hero[ip],false)+udg_kill[ip]*2,true)
+call SetHeroInt(Hero[ip],GetHeroInt(Hero[ip],false)+udg_kill[ip]+udg_assist[ip],true)
+call SetHeroStr(Hero[ip],GetHeroStr(Hero[ip],false)+udg_kill[ip],true)
+call SetHeroAgi(Hero[ip],SetHeroAgi(Hero[ip],false)+udg_kill[ip],true)
 endif
 //call AddUnitMaxLife(Hero[ip],(round-1)*150)
 call SetHeroInt(Hero[ip],GetHeroInt(Hero[ip],false)+((round-1)-GetPlayerState(p,PLAYER_STATE_RESOURCE_LUMBER))*3,true)
@@ -30571,7 +30614,9 @@ call ClearSelection()
 call SelectUnit(n,true)
 endif
 if GetUnitTypeId(Hero[ip])=='H052' then
-call SetHeroInt(Hero[ip],GetHeroInt(Hero[ip],false)+udg_kill[ip]*2,true)
+call SetHeroInt(Hero[ip],GetHeroInt(Hero[ip],false)+udg_kill[ip]+udg_assist[ip],true)
+call SetHeroStr(Hero[ip],GetHeroStr(Hero[ip],false)+udg_kill[ip],true)
+call SetHeroAgi(Hero[ip],SetHeroAgi(Hero[ip],false)+udg_kill[ip],true)
 endif
 //call AddUnitMaxLife(Hero[ip],(round-1)*150)
 call SetHeroInt(Hero[ip],GetHeroInt(Hero[ip],false)+((round-1)-GetPlayerState(p,PLAYER_STATE_RESOURCE_LUMBER))*3,true)
@@ -30642,7 +30687,9 @@ call ClearSelection()
 call SelectUnit(n,true)
 endif
 if GetUnitTypeId(Hero[ip])=='H052' then
-call SetHeroInt(Hero[ip],GetHeroInt(Hero[ip],false)+udg_kill[ip]*2,true)
+call SetHeroInt(Hero[ip],GetHeroInt(Hero[ip],false)+udg_kill[ip]+udg_assist[ip],true)
+call SetHeroStr(Hero[ip],GetHeroStr(Hero[ip],false)+udg_kill[ip],true)
+call SetHeroAgi(Hero[ip],SetHeroAgi(Hero[ip],false)+udg_kill[ip],true)
 endif
 //call AddUnitMaxLife(Hero[ip],(round-1)*150)
 call SetHeroInt(Hero[ip],GetHeroInt(Hero[ip],false)+((round-1)-GetPlayerState(p,PLAYER_STATE_RESOURCE_LUMBER))*3,true)
@@ -30713,7 +30760,9 @@ call ClearSelection()
 call SelectUnit(n,true)
 endif
 if GetUnitTypeId(Hero[ip])=='H052' then
-call SetHeroInt(Hero[ip],GetHeroInt(Hero[ip],false)+udg_kill[ip]*2,true)
+call SetHeroInt(Hero[ip],GetHeroInt(Hero[ip],false)+udg_kill[ip]+udg_assist[ip],true)
+call SetHeroStr(Hero[ip],GetHeroStr(Hero[ip],false)+udg_kill[ip],true)
+call SetHeroAgi(Hero[ip],SetHeroAgi(Hero[ip],false)+udg_kill[ip],true)
 endif
 //call AddUnitMaxLife(Hero[ip],(round-1)*150)
 call SetHeroInt(Hero[ip],GetHeroInt(Hero[ip],false)+((round-1)-GetPlayerState(p,PLAYER_STATE_RESOURCE_LUMBER))*3,true)
@@ -30784,7 +30833,9 @@ call ClearSelection()
 call SelectUnit(n,true)
 endif
 if GetUnitTypeId(Hero[ip])=='H052' then
-call SetHeroInt(Hero[ip],GetHeroInt(Hero[ip],false)+udg_kill[ip]*2,true)
+call SetHeroInt(Hero[ip],GetHeroInt(Hero[ip],false)+udg_kill[ip]+udg_assist[ip],true)
+call SetHeroStr(Hero[ip],GetHeroStr(Hero[ip],false)+udg_kill[ip],true)
+call SetHeroAgi(Hero[ip],SetHeroAgi(Hero[ip],false)+udg_kill[ip],true)
 endif
 //call AddUnitMaxLife(Hero[ip],(round-1)*150)
 call SetHeroInt(Hero[ip],GetHeroInt(Hero[ip],false)+((round-1)-GetPlayerState(p,PLAYER_STATE_RESOURCE_LUMBER))*3,true)
@@ -30855,7 +30906,9 @@ call ClearSelection()
 call SelectUnit(n,true)
 endif
 if GetUnitTypeId(Hero[ip])=='H052' then
-call SetHeroInt(Hero[ip],GetHeroInt(Hero[ip],false)+udg_kill[ip]*2,true)
+call SetHeroInt(Hero[ip],GetHeroInt(Hero[ip],false)+udg_kill[ip]+udg_assist[ip],true)
+call SetHeroStr(Hero[ip],GetHeroStr(Hero[ip],false)+udg_kill[ip],true)
+call SetHeroAgi(Hero[ip],SetHeroAgi(Hero[ip],false)+udg_kill[ip],true)
 endif
 //call AddUnitMaxLife(Hero[ip],(round-1)*150)
 call SetHeroInt(Hero[ip],GetHeroInt(Hero[ip],false)+((round-1)-GetPlayerState(p,PLAYER_STATE_RESOURCE_LUMBER))*3,true)
@@ -30926,7 +30979,9 @@ call ClearSelection()
 call SelectUnit(n,true)
 endif
 if GetUnitTypeId(Hero[ip])=='H052' then
-call SetHeroInt(Hero[ip],GetHeroInt(Hero[ip],false)+udg_kill[ip]*2,true)
+call SetHeroInt(Hero[ip],GetHeroInt(Hero[ip],false)+udg_kill[ip]+udg_assist[ip],true)
+call SetHeroStr(Hero[ip],GetHeroStr(Hero[ip],false)+udg_kill[ip],true)
+call SetHeroAgi(Hero[ip],SetHeroAgi(Hero[ip],false)+udg_kill[ip],true)
 endif
 //call AddUnitMaxLife(Hero[ip],(round-1)*150)
 call SetHeroInt(Hero[ip],GetHeroInt(Hero[ip],false)+((round-1)-GetPlayerState(p,PLAYER_STATE_RESOURCE_LUMBER))*3,true)
@@ -30991,7 +31046,9 @@ call ClearSelection()
 call SelectUnit(n,true)
 endif
 if GetUnitTypeId(Hero[ip])=='H052' then
-call SetHeroInt(Hero[ip],GetHeroInt(Hero[ip],false)+udg_kill[ip]*2,true)
+call SetHeroInt(Hero[ip],GetHeroInt(Hero[ip],false)+udg_kill[ip]+udg_assist[ip],true)
+call SetHeroStr(Hero[ip],GetHeroStr(Hero[ip],false)+udg_kill[ip],true)
+call SetHeroAgi(Hero[ip],SetHeroAgi(Hero[ip],false)+udg_kill[ip],true)
 endif
 //call AddUnitMaxLife(Hero[ip],(round-1)*150)
 call SetHeroInt(Hero[ip],GetHeroInt(Hero[ip],false)+((round-1)-GetPlayerState(p,PLAYER_STATE_RESOURCE_LUMBER))*3,true)
@@ -31056,7 +31113,9 @@ call ClearSelection()
 call SelectUnit(n,true)
 endif
 if GetUnitTypeId(Hero[ip])=='H052' then
-call SetHeroInt(Hero[ip],GetHeroInt(Hero[ip],false)+udg_kill[ip]*2,true)
+call SetHeroInt(Hero[ip],GetHeroInt(Hero[ip],false)+udg_kill[ip]+udg_assist[ip],true)
+call SetHeroStr(Hero[ip],GetHeroStr(Hero[ip],false)+udg_kill[ip],true)
+call SetHeroAgi(Hero[ip],SetHeroAgi(Hero[ip],false)+udg_kill[ip],true)
 endif
 //call AddUnitMaxLife(Hero[ip],(round-1)*150)
 call SetHeroInt(Hero[ip],GetHeroInt(Hero[ip],false)+((round-1)-GetPlayerState(p,PLAYER_STATE_RESOURCE_LUMBER))*3,true)
@@ -31151,7 +31210,9 @@ if GetLocalPlayer()==p then
     call SelectUnit(n,true)
 endif
 if GetUnitTypeId(Hero[ip])=='H052' then
-    call SetHeroInt(Hero[ip],GetHeroInt(Hero[ip],false)+udg_kill[ip]*2,true)
+    call SetHeroInt(Hero[ip],GetHeroInt(Hero[ip],false)+udg_kill[ip]+udg_assist[ip],true)
+    call SetHeroStr(Hero[ip],GetHeroStr(Hero[ip],false)+udg_kill[ip],true)
+    call SetHeroAgi(Hero[ip],SetHeroAgi(Hero[ip],false)+udg_kill[ip],true)
 endif
 if GetUnitTypeId(Hero[ip])=='H06T' then
     set LUcy[ip]=Hero[ip]
@@ -33711,7 +33772,9 @@ call ClearSelection()
 call SelectUnit(n,true)
 endif
 if GetUnitTypeId(Hero[ip])=='H052' then
-call SetHeroInt(Hero[ip],GetHeroInt(Hero[ip],false)+udg_kill[ip]*2,true)
+call SetHeroInt(Hero[ip],GetHeroInt(Hero[ip],false)+udg_kill[ip]+udg_assist[ip],true)
+call SetHeroStr(Hero[ip],GetHeroStr(Hero[ip],false)+udg_kill[ip],true)
+call SetHeroAgi(Hero[ip],SetHeroAgi(Hero[ip],false)+udg_kill[ip],true)
 endif
 if GetUnitTypeId(Hero[ip])=='H06T' then
 set LUcy[ip]=Hero[ip]
@@ -40141,7 +40204,7 @@ if cond==0 then
             call SaveInteger(HH,GetHandleId( GetOwningPlayer(u) ),UIDodgeHash,LoadInteger(HH,GetHandleId( GetOwningPlayer(u) ),UIDodgeHash)-1)
             //call SetEventDamage(0.05)
             call UnitAddAbility(u,'A7IH')
-            call UnitRemoveAbilityTimedPause(u,'A7IH',0.2)
+            call UnitRemoveAbilityTimedPause(u,'A7IH',0.15)
             call SetUnitAnimationByIndex(u,GetRandomInt(222,230))
             set nb=0
             if GetHeroLevel(u)>=35 and LoadBoolean(HH,GetHandleId( GetOwningPlayer(u) ),MUIAvailableHash)==false then
@@ -67148,10 +67211,10 @@ function PowerDownGoku takes nothing returns nothing
             call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-GetUnitState(u,UNIT_STATE_MAX_MANA)*0.00135)
         endif
         if GetUnitAbilityLevel(u,'GkH7')>0 then
-            call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-GetUnitState(u,UNIT_STATE_MAX_MANA)*0.00225)
+            call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-GetUnitState(u,UNIT_STATE_MAX_MANA)*0.0025)
         endif
         if GetUnitAbilityLevel(u,'GkH8')>0 then
-            call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-GetUnitState(u,UNIT_STATE_MAX_MANA)*0.0035)
+            call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-GetUnitState(u,UNIT_STATE_MAX_MANA)*0.003)
         endif
     else
         if GetUnitState(u,UNIT_STATE_MAX_MANA)*0.05>GetUnitState(u,UNIT_STATE_MANA) then
@@ -67174,10 +67237,10 @@ function PowerDownGoku takes nothing returns nothing
                 call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-GetUnitState(u,UNIT_STATE_MAX_MANA)*0.000675)
             endif
             if GetUnitAbilityLevel(u,'GkH7')>0 then
-                call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-GetUnitState(u,UNIT_STATE_MAX_MANA)*0.001125)
+                call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-GetUnitState(u,UNIT_STATE_MAX_MANA)*0.00125)
             endif
             if GetUnitAbilityLevel(u,'GkH8')>0 then
-                call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-GetUnitState(u,UNIT_STATE_MAX_MANA)*0.00175)
+                call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-GetUnitState(u,UNIT_STATE_MAX_MANA)*0.0015)
             endif
         endif
     endif
@@ -68249,7 +68312,7 @@ function MissleMoveSuperSpiritBomb3 takes nothing returns nothing
             call SetUnitModel(n,"war3mapImported\\IonCannonWithoutPillar.mdl")
             call UnitApplyTimedLife(n,1,3)
             call SetUnitTimeScale(n,0.5)
-            call SetUnitScale(n,0.2+GetUnitScale(GenkiDama),GetUnitScale(GenkiDama),GetUnitScale(GenkiDama))
+            call SetUnitScale(n,0.4+GetUnitScale(GenkiDama),GetUnitScale(GenkiDama),GetUnitScale(GenkiDama))
             call SetUnitFlyHeight(n,100,0)
         endif
     else
@@ -68265,11 +68328,11 @@ function MissleMoveSuperSpiritBomb3 takes nothing returns nothing
             call GroupRemoveUnit(DG,E)
         endloop
         set n=CreateUnit(p, 'e0C5', x, y, GetRandomInt(0, 360))
-        call SetUnitScale(n,2+GetUnitScale(GenkiDama),2+GetUnitScale(GenkiDama),2+GetUnitScale(GenkiDama))
+        call SetUnitScale(n,3+GetUnitScale(GenkiDama),3+GetUnitScale(GenkiDama),3+GetUnitScale(GenkiDama))
         call SetUnitFlyHeight(n, 0, 0)
         call MyRemoveUnit(n, 2.5)
         set n=CreateUnit(p, 'dH50', x, y, GetRandomInt(0, 360))
-		call SetUnitScale(n, 5+GetUnitScale(GenkiDama), 5+GetUnitScale(GenkiDama), 5+GetUnitScale(GenkiDama))
+		call SetUnitScale(n, 6+GetUnitScale(GenkiDama), 6+GetUnitScale(GenkiDama), 6+GetUnitScale(GenkiDama))
 		call SetUnitFlyHeight(n, 40, 0)
 		call MyRemoveUnit(n, 1.5)
         call FlushChildHashtable(HH,GetHandleId(GenkiDama))
@@ -68704,7 +68767,7 @@ if time<100 and GetUnitState(u,UNIT_STATE_LIFE)>0.405 and LoadBoolean(HH,GetHand
             call UnitRemoveAbility(dummy,'GKG4')
             call UnitAddAbility(dummy,'GKG5')
         endif
-        call SetAbilityRealLevelField(GetUnitAbility(dummy,'GKG5'),ABILITY_RLF_AREA_OF_EFFECT,0,400+333.3333*(GetUnitScale(GenkiDama)-0.5)) 
+        call SetAbilityRealLevelField(GetUnitAbility(dummy,'GKG5'),ABILITY_RLF_AREA_OF_EFFECT,0,600+333.3333*(GetUnitScale(GenkiDama)-0.5)) 
     endif 
 else
     call StopSound(soundStr[29],false,true)
@@ -69229,7 +69292,7 @@ else
                 call Push5(u,30,a-90*bj_DEGTORAD,300,"")
             endif
             call UnitAddAbility(u,'A7IH')
-            call UnitRemoveAbilityTimedPause(u,'A7IH',0.2)
+            call UnitRemoveAbilityTimedPause(u,'A7IH',0.15)
             call StartSound(soundStr[24])
             call PauseTimer(t)
             call DestroyTimer(t)
@@ -145424,17 +145487,18 @@ else
     call IssueImmediateOrder(c,"stop")
     call PauseTimer(t)
     call KillUnit(l__d)
-    call SetControlToUnit(u,c,3, "stun")
     call SaveReal(h,id,6,x1)
     call SaveReal(h,id,7,y1)
-    call SaveReal(h,id,2,3.5)
+    call SaveReal(h,id,2,1.5+GetUnitAbilityLevel(u,'A12Y')*0.5)
     loop
     exitwhen i>=10
     if IsUnitAlly(Hero[i],Player(i))and GetUnitTypeId(Hero[i])=='H077' then
-        call SaveReal(h,id,2,4.5)
+        call SaveReal(h,id,2,2.5+GetUnitAbilityLevel(u,'A12Y')*0.5)
     endif
     set i=i+1
     endloop
+    call SaveReal(h,id,2,CalculateControlResist(c, LoadReal(h,id,2)))
+    call SetControlToUnit(u,c,LoadReal(h,id,2), "stun")
     call TimerStart(t,0.02,true,function EGilCast3)
 endif
 set c=null
@@ -179383,6 +179447,7 @@ function MadokaE_Switcher takes unit newCaster,unit newTarget returns nothing
         call KillSoundWhenDone(soundplay)
         call SetControlToUnit(newTarget, newTarget, 3.0, "silenceTE")
         call SetControlToUnit(newTarget, newTarget, GetUnitAbilityLevel(newCaster, 'MaE1')+1, "blind")
+        call StartAbilityCooldown(GetUnitAbility(newCaster , 'MaE1' ), 20)
         call RemoveEffect(AddSpecialEffectTarget("az_atropos_f1.mdl", newTarget, "origin"), 3, true, CreateTimer())
     endif
 endfunction
