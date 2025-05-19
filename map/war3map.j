@@ -206055,7 +206055,7 @@ function KarnaQ_Periodic takes nothing returns nothing
     local real    duration = LoadReal(h, id, 1)+0.02
     local real    angle    = 0.0
     local real    damage   = LoadReal(HH, c_id, KarnaQ_Damage)
-	local real    damage_force = GetUnitAbilityLevel(caster, 'KaA3')*0.5
+	local real    damage_force = 1+GetUnitAbilityLevel(caster, 'KaA3')*0.3
     local integer index    = 0
     local integer eff_period = LoadInteger(h, id, 12)
     if duration<8.0 and damage>0 then
