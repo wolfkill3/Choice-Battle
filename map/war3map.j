@@ -22526,6 +22526,10 @@ function Trig_Killer_Actions takes nothing returns nothing
         set E=FirstOfGroup(g)
         exitwhen E==null
             if GetUnitTypeId(E)=='H02O' and GetHeroLevel(E)>5 then
+                set EFF=AddSpecialEffect("BuuSplat.mdl",GetUnitX(E),GetUnitY(E))
+                call SetSpecialEffectScale(EFF , 0.45)
+                call SetSpecialEffectZ(EFF , GetUnitZCustom(E)+70)
+                call DestroyEffect(EFF)
                 set t=CreateTimer()
                 set i2=R2I(I2R(GetHeroAgi(Hero[ic],true))*0.05)
                 call SaveInteger(h,GetHandleId(t),2,i2)
