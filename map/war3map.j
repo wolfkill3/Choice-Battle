@@ -22416,6 +22416,21 @@ call FlushChildHashtable(h,id)
 set u=null
 set t=null
 endfunction
+function BuuAbsorbCheck takes nothing returns nothing
+local timer t=GetExpiredTimer()
+local integer id=GetHandleId(t)
+local unit u=LoadUnitHandle(h,id,1)
+if udg_B==false or DU2==false then
+call SetHeroAgi(u,GetHeroAgi(u,false)-LoadInteger(h,id,2),true)
+call SetHeroStr(u,GetHeroStr(u,false)-LoadInteger(h,id,3),true)
+call SetHeroInt(u,GetHeroInt(u,false)-LoadInteger(h,id,4),true)
+call PauseTimer(t)
+call DestroyTimer(t)
+call FlushChildHashtable(h,id)
+endif
+set u=null
+set t=null
+endfunction
 function KillerCombo takes nothing returns nothing
 local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
@@ -22442,80 +22457,90 @@ function Trig_Killer_Actions takes nothing returns nothing
         local timer t
         local integer i=0
         local real kf//
-
+        local group g=CreateGroup()
+        local integer i2=0
         //sabrac5start
-       if UnitIsAlive(Hero[iu])==true and GetUnitTypeId(Hero[iu])=='HSab' and GetUnitAbilityLevel(Hero[ic],'A1EA')>0 then
-       set i=1
-        if GetUnitTypeId(c)=='H06M' or GetUnitTypeId(c)=='H017' or GetUnitTypeId(c)=='H06W' or  GetUnitTypeId(c)=='H02F' or  GetUnitTypeId(c)=='H05Y' or  GetUnitTypeId(c)=='H03R' or  GetUnitTypeId(c)=='H064' then
-          set i=1
-        endif
+        if UnitIsAlive(Hero[iu])==true and GetUnitTypeId(Hero[iu])=='HSab' and GetUnitAbilityLevel(Hero[ic],'A1EA')>0 then
+            set i=1
+            if GetUnitTypeId(c)=='H06M' or GetUnitTypeId(c)=='H017' or GetUnitTypeId(c)=='H06W' or  GetUnitTypeId(c)=='H02F' or  GetUnitTypeId(c)=='H05Y' or  GetUnitTypeId(c)=='H03R' or  GetUnitTypeId(c)=='H064' then
+            set i=1
+            endif
 
-        if GetUnitTypeId(c)=='H00M' then
-          set i=1
-        endif
+            if GetUnitTypeId(c)=='H00M' then
+            set i=1
+            endif
 
-        if GetUnitTypeId(c)=='H02Y' or GetUnitTypeId(c)=='H02Z' then
-          set i=1
-        endif
+            if GetUnitTypeId(c)=='H02Y' or GetUnitTypeId(c)=='H02Z' then
+            set i=1
+            endif
 
-        if GetUnitTypeId(c)=='HYuj' or GetUnitTypeId(c)=='H016' then
-          set i=1
-        endif
+            if GetUnitTypeId(c)=='HYuj' or GetUnitTypeId(c)=='H016' then
+            set i=1
+            endif
 
-        if GetUnitTypeId(c)=='H02X' or GetUnitTypeId( c )=='H03I' then
-          set i=1
-        endif
-//sabrac8 start
-          set i=i+LoadInteger(HH,GetHandleId( (GetOwningPlayer( Hero[iu] )) ) ,SabracSwordsHash)//+swordstake
-          call SaveInteger(HH,GetHandleId( (GetOwningPlayer( Hero[iu] )) ),SabracSwordsHash,i)
-          call SetUnitBaseDamageByIndex(Hero[iu],0,GetHeroStr(Hero[iu],false)+i*3)
-//sabrac8 end
+            if GetUnitTypeId(c)=='H02X' or GetUnitTypeId( c )=='H03I' then
+            set i=1
+            endif
+    //sabrac8 start
+            set i=i+LoadInteger(HH,GetHandleId( (GetOwningPlayer( Hero[iu] )) ) ,SabracSwordsHash)//+swordstake
+            call SaveInteger(HH,GetHandleId( (GetOwningPlayer( Hero[iu] )) ),SabracSwordsHash,i)
+            call SetUnitBaseDamageByIndex(Hero[iu],0,GetHeroStr(Hero[iu],false)+i*3)
+    //sabrac8 end
 
 
 
-          set soundplay=CreateSound("Sound\\Music\\mp3Music\\SabracG_Sword"+I2S(GetRandomInt(1,4))+".mp3",false,false,true,12700,12700,"")
-          call StartSound(soundplay)
-          call KillSoundWhenDone(soundplay)
+            set soundplay=CreateSound("Sound\\Music\\mp3Music\\SabracG_Sword"+I2S(GetRandomInt(1,4))+".mp3",false,false,true,12700,12700,"")
+            call StartSound(soundplay)
+            call KillSoundWhenDone(soundplay)
 
-          set i=0
+            set i=0
 
         endif
         set i=0
         if UnitIsAlive(Hero[iu])==true and GetUnitTypeId(Hero[iu])=='H06M' and (GetUnitAbilityLevel(Hero[ic],'A1EA')>0 or GetUnitAbilityLevel(Hero[ic],'A1EB')>0) then
-        set i=1
+            set i=1
 
-        if GetUnitAbilityLevel(Hero[ic],'A1EB')>0 then
-        set i=2
-        endif
-
-
-                set i=i+LoadInteger(HH,GetHandleId( GetOwningPlayer( Hero[iu] ) ),StringHash("HerKill"))//+swordstake
+            if GetUnitAbilityLevel(Hero[ic],'A1EB')>0 then
+                set i=2
+            endif
 
 
+            set i=i+LoadInteger(HH,GetHandleId( GetOwningPlayer( Hero[iu] ) ),StringHash("HerKill"))//+swordstake
+            call SaveInteger(HH,GetHandleId( GetOwningPlayer( Hero[iu] ) ) , StringHash("HerKill") ,i)
 
-
-
-                call SaveInteger(HH,GetHandleId( GetOwningPlayer( Hero[iu] ) ) , StringHash("HerKill") ,i)
-
-
-        if (GetLocalPlayer()==GetOwningPlayer(u)) then
-        call DisplayTextToPlayer(GetLocalPlayer(),0,0,"Heroine X убила мечника. Количество убийств мечников: "+I2S(i)  )
-        endif
-
-
-
-        set i=0
+            set i=0
         endif
         //sabrac5end
         if GetUnitTypeId(Hero[iu])=='HYuj' then //old 'H049'
-                set yuji4[iu]=yuji4[iu]+1
-                call UnitAddAbility(Hero[iu],'A0T8')
-                call SetUnitAbilityLevel(Hero[iu],'A0T8',2)
-                call UnitRemoveAbility(Hero[iu],'A0T8')
+            set yuji4[iu]=yuji4[iu]+1
+            call UnitAddAbility(Hero[iu],'A0T8')
+            call SetUnitAbilityLevel(Hero[iu],'A0T8',2)
+            call UnitRemoveAbility(Hero[iu],'A0T8')
         //call UnitAddAbility(Hero[iu],'A0T7')
         //call SetUnitAbilityLevel(Hero[iu],'A0T7',2)
         //call UnitRemoveAbility(Hero[iu],'A0T7')
         endif
+        call GroupEnumUnitsInRange(g, GetUnitX(Hero[ic]), GetUnitY(Hero[ic]), 600, Base)
+        loop
+        set E=FirstOfGroup(g)
+        exitwhen E==null
+            if GetUnitTypeId(E)=='H02O' and GetHeroLevel(E)>5 then
+                set t=CreateTimer()
+                set i2=R2I(I2R(GetHeroAgi(Hero[ic],true))*0.05)
+                call SaveInteger(h,GetHandleId(t),2,i2)
+                call SetHeroAgi(E,GetHeroAgi(E,false)+i2,true)
+                set i2=R2I(I2R(GetHeroStr(Hero[ic],true))*0.05)
+                call SaveInteger(h,GetHandleId(t),3,i2)
+                call SetHeroStr(E,GetHeroStr(E,false)+i2,true)
+                set i2=R2I(I2R(GetHeroInt(Hero[ic],true))*0.05)
+                call SaveInteger(h,GetHandleId(t),4,i2)
+                call SetHeroInt(E,GetHeroInt(E,false)+i2,true)
+                call SaveUnitHandle(h,GetHandleId(t),1,E)
+                call TimerStart(t,0.1,true,function BuuAbsorbCheck)
+            endif
+            call GroupRemoveUnit(g, E)
+        endloop
+        call DestroyGroup(g)
         if GetUnitTypeId(Hero[ic])=='H072' then // Archetype T - Архетип смерть
             set bjLCG=CreateGroup()
             call GroupEnumUnitsInRange(bjLCG, 0, 0, 99999, Base)
@@ -22537,14 +22562,14 @@ function Trig_Killer_Actions takes nothing returns nothing
             endif
             set hibari[iu]=hibari[iu]+1
         endif
-    if GetUnitAbilityLevel(u,'A065')>0 then
-        set t=CreateTimer()
-        call SetHeroAgi(u,GetHeroAgi(u,false)+10,true)
-        call SetHeroStr(u,GetHeroStr(u,false)+10,true)
-        call SetHeroInt(u,GetHeroInt(u,false)+10,true)
-        call SaveUnitHandle(h,GetHandleId(t),1,u)
-        call TimerStart(t,7.5+GetUnitAbilityLevel(u,'A065')*2.5,false,function KageKageAction2)
-    endif
+        if GetUnitAbilityLevel(u,'A065')>0 then
+            set t=CreateTimer()
+            call SetHeroAgi(u,GetHeroAgi(u,false)+10,true)
+            call SetHeroStr(u,GetHeroStr(u,false)+10,true)
+            call SetHeroInt(u,GetHeroInt(u,false)+10,true)
+            call SaveUnitHandle(h,GetHandleId(t),1,u)
+            call TimerStart(t,7.5+GetUnitAbilityLevel(u,'A065')*2.5,false,function KageKageAction2)
+        endif
         if u!=null and GetUnitTypeId(u)!='H02A' and GetUnitAbilityLevel(u,'A105')>0 then
             call HealTextTag(u,u,GetUnitState(c,UNIT_STATE_MAX_LIFE)*(0.07+0.03*GetUnitAbilityLevel(u,'A105'))*myCustomHeal2(u,1),"HealthRes")
             call SetUnitState(u,UNIT_STATE_LIFE,GetWidgetLife(u)+GetUnitState(c,UNIT_STATE_MAX_LIFE)*(0.07+0.03*GetUnitAbilityLevel(u,'A105')))
@@ -22554,285 +22579,285 @@ function Trig_Killer_Actions takes nothing returns nothing
             call SetHeroInt(u,GetHeroInt(u,false)+1,true)
         endif
         if u!=null and u!=c and GetUnitTypeId(u)!='H02A' and DU==true and GetUnitTypeId(c)!='H06U' then
-                set udg_kill[iu]=udg_kill[iu]+1
-                set udg_death[ic]=udg_death[ic]+1
-                call KillerSound(iu,ic)
-                set i=0
-                loop
-                    exitwhen i>=10
-                    if FFAMode then
-                        if LoadInteger(HH,GetHandleId(c),TextDamageValueHash+GetPlayerId(GetOwningPlayer(Hero[i])))>0 then
-                            set totaldamage=totaldamage+LoadInteger(HH,GetHandleId(c),TextDamageValueHash+GetPlayerId(GetOwningPlayer(Hero[i])))
-                        endif
-                    else
-                        if LoadInteger(HH,GetHandleId(c),TextDamageValueHash+GetPlayerId(GetOwningPlayer(Hero[i])))>0 and IsUnitAlly(Hero[i],Player(iu)) then
-                            set totaldamage=totaldamage+LoadInteger(HH,GetHandleId(c),TextDamageValueHash+GetPlayerId(GetOwningPlayer(Hero[i])))
-                        endif
+            set udg_kill[iu]=udg_kill[iu]+1
+            set udg_death[ic]=udg_death[ic]+1
+            call KillerSound(iu,ic)
+            set i=0
+            loop
+                exitwhen i>=10
+                if FFAMode then
+                    if LoadInteger(HH,GetHandleId(c),TextDamageValueHash+GetPlayerId(GetOwningPlayer(Hero[i])))>0 then
+                        set totaldamage=totaldamage+LoadInteger(HH,GetHandleId(c),TextDamageValueHash+GetPlayerId(GetOwningPlayer(Hero[i])))
                     endif
-                    set i=i+1
-                endloop
-                set i=0
-                loop
-                    exitwhen i>=10
-                    if (LoadInteger(HH,GetHandleId(c),TextDamageValueHash+GetPlayerId(GetOwningPlayer(Hero[i])))>totaldamage*0.15 or LoadInteger(HH,GetHandleId(u),TextHealAllyValueHash+StringHash("HealthRes")+GetPlayerId(GetOwningPlayer(Hero[i])))>GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.05 or LoadInteger(HH,GetHandleId(u),TextHealAllyValueHash+StringHash("ManaRes")+GetPlayerId(GetOwningPlayer(Hero[i])))>GetUnitState(u,UNIT_STATE_MAX_MANA)*0.05) and Hero[i]!=null and GetOwningPlayer(Hero[i])!=Player(iu) then
+                else
+                    if LoadInteger(HH,GetHandleId(c),TextDamageValueHash+GetPlayerId(GetOwningPlayer(Hero[i])))>0 and IsUnitAlly(Hero[i],Player(iu)) then
+                        set totaldamage=totaldamage+LoadInteger(HH,GetHandleId(c),TextDamageValueHash+GetPlayerId(GetOwningPlayer(Hero[i])))
+                    endif
+                endif
+                set i=i+1
+            endloop
+            set i=0
+            loop
+                exitwhen i>=10
+                if (LoadInteger(HH,GetHandleId(c),TextDamageValueHash+GetPlayerId(GetOwningPlayer(Hero[i])))>totaldamage*0.15 or LoadInteger(HH,GetHandleId(u),TextHealAllyValueHash+StringHash("HealthRes")+GetPlayerId(GetOwningPlayer(Hero[i])))>GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.05 or LoadInteger(HH,GetHandleId(u),TextHealAllyValueHash+StringHash("ManaRes")+GetPlayerId(GetOwningPlayer(Hero[i])))>GetUnitState(u,UNIT_STATE_MAX_MANA)*0.05) and Hero[i]!=null and GetOwningPlayer(Hero[i])!=Player(iu) then
+                    set udg_assist[i]=udg_assist[i]+1
+                    set assistnames=assistnames+Color[i]+GetUnitName(Hero[i])+"|r "
+                    call ForceAddPlayer(PlayerH,GetOwningPlayer(Hero[i]))
+                    if GetUnitAbilityLevel(Hero[i],'A1F3')>0 then
+                        call SetPlayerState(Player(i),PLAYER_STATE_RESOURCE_GOLD,GetPlayerState(Player(i),PLAYER_STATE_RESOURCE_GOLD)+20)
+                    endif
+                    if GetUnitTypeId(Hero[i])=='HYuj' then //old 'H049'
+                        set yuji4[i]=yuji4[i]+1
+                        call UnitAddAbility(Hero[i],'A0T8')
+                        call SetUnitAbilityLevel(Hero[i],'A0T8',2)
+                        call UnitRemoveAbility(Hero[i],'A0T8')
+                    endif
+                endif
+                if IsPlayerInForce(GetOwningPlayer(Hero[i]),PlayerH)==false and Hero[i]!=null and GetOwningPlayer(Hero[i])!=Player(iu) then
+                    if (GetUnitAbilityLevel(u,'A1DF')>0 or GetUnitAbilityLevel(u,'A1DG')>0) and GetUnitTypeId(Hero[i])=='H051' then //Shielder
                         set udg_assist[i]=udg_assist[i]+1
                         set assistnames=assistnames+Color[i]+GetUnitName(Hero[i])+"|r "
                         call ForceAddPlayer(PlayerH,GetOwningPlayer(Hero[i]))
-                        if GetUnitAbilityLevel(Hero[i],'A1F3')>0 then
-                            call SetPlayerState(Player(i),PLAYER_STATE_RESOURCE_GOLD,GetPlayerState(Player(i),PLAYER_STATE_RESOURCE_GOLD)+20)
-                        endif
-                        if GetUnitTypeId(Hero[i])=='HYuj' then //old 'H049'
-                            set yuji4[i]=yuji4[i]+1
-                            call UnitAddAbility(Hero[i],'A0T8')
-                            call SetUnitAbilityLevel(Hero[i],'A0T8',2)
-                            call UnitRemoveAbility(Hero[i],'A0T8')
-                        endif
                     endif
-                    if IsPlayerInForce(GetOwningPlayer(Hero[i]),PlayerH)==false and Hero[i]!=null and GetOwningPlayer(Hero[i])!=Player(iu) then
-                        if (GetUnitAbilityLevel(u,'A1DF')>0 or GetUnitAbilityLevel(u,'A1DG')>0) and GetUnitTypeId(Hero[i])=='H051' then //Shielder
-                            set udg_assist[i]=udg_assist[i]+1
-                            set assistnames=assistnames+Color[i]+GetUnitName(Hero[i])+"|r "
-                            call ForceAddPlayer(PlayerH,GetOwningPlayer(Hero[i]))
-                        endif
-                        if (GetUnitAbilityLevel(u,'A1HV')>0 or GetUnitAbilityLevel(u,'A1I2')>0) and GetUnitTypeId(Hero[i])=='H077' then //enkidu
-                            set udg_assist[i]=udg_assist[i]+1
-                            set assistnames=assistnames+Color[i]+GetUnitName(Hero[i])+"|r "
-                            call ForceAddPlayer(PlayerH,GetOwningPlayer(Hero[i]))
-                        endif
-                        if GetUnitAbilityLevel(u,'A1HG')>0 and GetUnitTypeId(Hero[i])=='H074' then //orihime
-                            set udg_assist[i]=udg_assist[i]+1
-                            set assistnames=assistnames+Color[i]+GetUnitName(Hero[i])+"|r "
-                            call ForceAddPlayer(PlayerH,GetOwningPlayer(Hero[i]))
-                        endif
-                        if (GetUnitAbilityLevel(u,'A10G')>0 or GetUnitAbilityLevel(u,'B059')>0) and (GetUnitTypeId(Hero[i])=='H053' or GetUnitTypeId(Hero[i])=='H06Q') then //Louise
-                            set udg_assist[i]=udg_assist[i]+1
-                            set assistnames=assistnames+Color[i]+GetUnitName(Hero[i])+"|r "
-                            call ForceAddPlayer(PlayerH,GetOwningPlayer(Hero[i]))
-                        endif
-                        if LoadReal(h, GetHandleId(u), StringHash("YujiE_Shield"))>0 and GetUnitTypeId(Hero[i])=='HYuj' then //Yuji
-                            set udg_assist[i]=udg_assist[i]+1
-                            set assistnames=assistnames+Color[i]+GetUnitName(Hero[i])+"|r "
-                            call ForceAddPlayer(PlayerH,GetOwningPlayer(Hero[i]))
-                        endif
-                        if LoadReal(h, GetHandleId(u), StringHash("ShieldBelfF"))>0 and GetUnitTypeId(Hero[i])=='Hbel' then //Belphegor
-                            set udg_assist[i]=udg_assist[i]+1
-                            set assistnames=assistnames+Color[i]+GetUnitName(Hero[i])+"|r "
-                            call ForceAddPlayer(PlayerH,GetOwningPlayer(Hero[i]))
-                        endif
-                        if LoadBoolean(h,  GetHandleId(u), StringHash("GaaraTshield"))==true and GetUnitTypeId(Hero[i])=='H02R' then //Gaara
-                            set udg_assist[i]=udg_assist[i]+1
-                            set assistnames=assistnames+Color[i]+GetUnitName(Hero[i])+"|r "
-                            call ForceAddPlayer(PlayerH,GetOwningPlayer(Hero[i]))
-                        endif
-                        if GetUnitAbilityLevel(u,'A1G0')>0 and GetUnitTypeId(Hero[i])=='H073' then //Rin
-                            set udg_assist[i]=udg_assist[i]+1
-                            set assistnames=assistnames+Color[i]+GetUnitName(Hero[i])+"|r "
-                            call ForceAddPlayer(PlayerH,GetOwningPlayer(Hero[i]))
-                        endif
-                        if LoadBoolean(h, GetHandleId(u), Shield_RengokuE)==true and GetUnitTypeId(Hero[i])=='HRen' then //Rengoku
-                            set udg_assist[i]=udg_assist[i]+1
-                            set assistnames=assistnames+Color[i]+GetUnitName(Hero[i])+"|r "
-                            call ForceAddPlayer(PlayerH,GetOwningPlayer(Hero[i]))
-                        endif
-                        if (GetUnitAbilityLevel(u,'A3DF')>0 or GetUnitAbilityLevel(u,'WAE1')>0) and (GetUnitTypeId(Hero[i])=='Ho0O' or GetUnitTypeId(Hero[i])=='Ho1O') then //Waver
-                            set udg_assist[i]=udg_assist[i]+1
-                            set assistnames=assistnames+Color[i]+GetUnitName(Hero[i])+"|r "
-                            call ForceAddPlayer(PlayerH,GetOwningPlayer(Hero[i]))
-                        endif
-                        if GetUnitAbilityLevel(u,'B06I')>0 and GetUnitTypeId(Hero[i])=='H05R' then //Touma
-                            set udg_assist[i]=udg_assist[i]+1
-                            set assistnames=assistnames+Color[i]+GetUnitName(Hero[i])+"|r "
-                            call ForceAddPlayer(PlayerH,GetOwningPlayer(Hero[i]))
-                        endif
-                        if (GetUnitAbilityLevel(u,'MaE3')>0 or GetUnitAbilityLevel(u,'MaE4')>0) and (GetUnitTypeId(Hero[i])=='HMaG' or GetUnitTypeId(Hero[i])=='HMad') then //Madoka
-                            set udg_assist[i]=udg_assist[i]+1
-                            set assistnames=assistnames+Color[i]+GetUnitName(Hero[i])+"|r "
-                            call ForceAddPlayer(PlayerH,GetOwningPlayer(Hero[i]))
-                        endif
-                        if GetUnitAbilityLevel(u,'B025')>0 and (GetUnitTypeId(Hero[i])=='H01D' or GetUnitTypeId(Hero[i])=='H01E') then //Maka
-                            set udg_assist[i]=udg_assist[i]+1
-                            set assistnames=assistnames+Color[i]+GetUnitName(Hero[i])+"|r "
-                            call ForceAddPlayer(PlayerH,GetOwningPlayer(Hero[i]))
-                        endif
-                        if u==DarknessTarget[i] and LoadReal(HH,GetHandleId(Darkness[i]),StringHash("darkHP"))>0 and GetUnitTypeId(Hero[i])=='Ho14' then //Kazuma
-                            set udg_assist[i]=udg_assist[i]+1
-                            set assistnames=assistnames+Color[i]+GetUnitName(Hero[i])+"|r "
-                            call ForceAddPlayer(PlayerH,GetOwningPlayer(Hero[i]))
-                        endif
-                        if (GetUnitAbilityLevel(u,'A1EO')>0 or GetUnitAbilityLevel(u,'A1F0')>0) and GetUnitTypeId(Hero[i])=='H05R' then //Lucy
-                            set udg_assist[i]=udg_assist[i]+1
-                            set assistnames=assistnames+Color[i]+GetUnitName(Hero[i])+"|r "
-                            call ForceAddPlayer(PlayerH,GetOwningPlayer(Hero[i]))
-                        endif
-                        if GetUnitAbilityLevel(u,'A1H1')>0 and GetUnitTypeId(Hero[i])=='H076' then //Jeanne
-                            set udg_assist[i]=udg_assist[i]+1
-                            set assistnames=assistnames+Color[i]+GetUnitName(Hero[i])+"|r "
-                            call ForceAddPlayer(PlayerH,GetOwningPlayer(Hero[i]))
-                        endif
-                        if LoadBoolean(h, GetHandleId(u), StringHash("MeiT_Shield"))==true and GetUnitTypeId(Hero[i])=='H032' then //Mei
-                            set udg_assist[i]=udg_assist[i]+1
-                            set assistnames=assistnames+Color[i]+GetUnitName(Hero[i])+"|r "
-                            call ForceAddPlayer(PlayerH,GetOwningPlayer(Hero[i]))
-                        endif
-                        if GetUnitAbilityLevel(u,'AHSF')>0 and (GetUnitTypeId(Hero[i])=='HHSN' or GetUnitTypeId(Hero[i])=='HHSG') then //Hashirama
-                            set udg_assist[i]=udg_assist[i]+1
-                            set assistnames=assistnames+Color[i]+GetUnitName(Hero[i])+"|r "
-                            call ForceAddPlayer(PlayerH,GetOwningPlayer(Hero[i]))
-                        endif
-                        if GetUnitAbilityLevel(u,'aokb')>0 and (GetUnitTypeId(Hero[i])=='H02U' or GetUnitTypeId(Hero[i])=='H05X') then //Aokiji
-                            set udg_assist[i]=udg_assist[i]+1
-                            set assistnames=assistnames+Color[i]+GetUnitName(Hero[i])+"|r "
-                            call ForceAddPlayer(PlayerH,GetOwningPlayer(Hero[i]))
-                        endif
+                    if (GetUnitAbilityLevel(u,'A1HV')>0 or GetUnitAbilityLevel(u,'A1I2')>0) and GetUnitTypeId(Hero[i])=='H077' then //enkidu
+                        set udg_assist[i]=udg_assist[i]+1
+                        set assistnames=assistnames+Color[i]+GetUnitName(Hero[i])+"|r "
+                        call ForceAddPlayer(PlayerH,GetOwningPlayer(Hero[i]))
                     endif
-                    set i=i+1
-                endloop
-                //set stats[ic]=stats[ic]+1
-                if GetUnitAbilityLevel(Hero[iu],'A1F3')>0 then
+                    if GetUnitAbilityLevel(u,'A1HG')>0 and GetUnitTypeId(Hero[i])=='H074' then //orihime
+                        set udg_assist[i]=udg_assist[i]+1
+                        set assistnames=assistnames+Color[i]+GetUnitName(Hero[i])+"|r "
+                        call ForceAddPlayer(PlayerH,GetOwningPlayer(Hero[i]))
+                    endif
+                    if (GetUnitAbilityLevel(u,'A10G')>0 or GetUnitAbilityLevel(u,'B059')>0) and (GetUnitTypeId(Hero[i])=='H053' or GetUnitTypeId(Hero[i])=='H06Q') then //Louise
+                        set udg_assist[i]=udg_assist[i]+1
+                        set assistnames=assistnames+Color[i]+GetUnitName(Hero[i])+"|r "
+                        call ForceAddPlayer(PlayerH,GetOwningPlayer(Hero[i]))
+                    endif
+                    if LoadReal(h, GetHandleId(u), StringHash("YujiE_Shield"))>0 and GetUnitTypeId(Hero[i])=='HYuj' then //Yuji
+                        set udg_assist[i]=udg_assist[i]+1
+                        set assistnames=assistnames+Color[i]+GetUnitName(Hero[i])+"|r "
+                        call ForceAddPlayer(PlayerH,GetOwningPlayer(Hero[i]))
+                    endif
+                    if LoadReal(h, GetHandleId(u), StringHash("ShieldBelfF"))>0 and GetUnitTypeId(Hero[i])=='Hbel' then //Belphegor
+                        set udg_assist[i]=udg_assist[i]+1
+                        set assistnames=assistnames+Color[i]+GetUnitName(Hero[i])+"|r "
+                        call ForceAddPlayer(PlayerH,GetOwningPlayer(Hero[i]))
+                    endif
+                    if LoadBoolean(h,  GetHandleId(u), StringHash("GaaraTshield"))==true and GetUnitTypeId(Hero[i])=='H02R' then //Gaara
+                        set udg_assist[i]=udg_assist[i]+1
+                        set assistnames=assistnames+Color[i]+GetUnitName(Hero[i])+"|r "
+                        call ForceAddPlayer(PlayerH,GetOwningPlayer(Hero[i]))
+                    endif
+                    if GetUnitAbilityLevel(u,'A1G0')>0 and GetUnitTypeId(Hero[i])=='H073' then //Rin
+                        set udg_assist[i]=udg_assist[i]+1
+                        set assistnames=assistnames+Color[i]+GetUnitName(Hero[i])+"|r "
+                        call ForceAddPlayer(PlayerH,GetOwningPlayer(Hero[i]))
+                    endif
+                    if LoadBoolean(h, GetHandleId(u), Shield_RengokuE)==true and GetUnitTypeId(Hero[i])=='HRen' then //Rengoku
+                        set udg_assist[i]=udg_assist[i]+1
+                        set assistnames=assistnames+Color[i]+GetUnitName(Hero[i])+"|r "
+                        call ForceAddPlayer(PlayerH,GetOwningPlayer(Hero[i]))
+                    endif
+                    if (GetUnitAbilityLevel(u,'A3DF')>0 or GetUnitAbilityLevel(u,'WAE1')>0) and (GetUnitTypeId(Hero[i])=='Ho0O' or GetUnitTypeId(Hero[i])=='Ho1O') then //Waver
+                        set udg_assist[i]=udg_assist[i]+1
+                        set assistnames=assistnames+Color[i]+GetUnitName(Hero[i])+"|r "
+                        call ForceAddPlayer(PlayerH,GetOwningPlayer(Hero[i]))
+                    endif
+                    if GetUnitAbilityLevel(u,'B06I')>0 and GetUnitTypeId(Hero[i])=='H05R' then //Touma
+                        set udg_assist[i]=udg_assist[i]+1
+                        set assistnames=assistnames+Color[i]+GetUnitName(Hero[i])+"|r "
+                        call ForceAddPlayer(PlayerH,GetOwningPlayer(Hero[i]))
+                    endif
+                    if (GetUnitAbilityLevel(u,'MaE3')>0 or GetUnitAbilityLevel(u,'MaE4')>0) and (GetUnitTypeId(Hero[i])=='HMaG' or GetUnitTypeId(Hero[i])=='HMad') then //Madoka
+                        set udg_assist[i]=udg_assist[i]+1
+                        set assistnames=assistnames+Color[i]+GetUnitName(Hero[i])+"|r "
+                        call ForceAddPlayer(PlayerH,GetOwningPlayer(Hero[i]))
+                    endif
+                    if GetUnitAbilityLevel(u,'B025')>0 and (GetUnitTypeId(Hero[i])=='H01D' or GetUnitTypeId(Hero[i])=='H01E') then //Maka
+                        set udg_assist[i]=udg_assist[i]+1
+                        set assistnames=assistnames+Color[i]+GetUnitName(Hero[i])+"|r "
+                        call ForceAddPlayer(PlayerH,GetOwningPlayer(Hero[i]))
+                    endif
+                    if u==DarknessTarget[i] and LoadReal(HH,GetHandleId(Darkness[i]),StringHash("darkHP"))>0 and GetUnitTypeId(Hero[i])=='Ho14' then //Kazuma
+                        set udg_assist[i]=udg_assist[i]+1
+                        set assistnames=assistnames+Color[i]+GetUnitName(Hero[i])+"|r "
+                        call ForceAddPlayer(PlayerH,GetOwningPlayer(Hero[i]))
+                    endif
+                    if (GetUnitAbilityLevel(u,'A1EO')>0 or GetUnitAbilityLevel(u,'A1F0')>0) and GetUnitTypeId(Hero[i])=='H05R' then //Lucy
+                        set udg_assist[i]=udg_assist[i]+1
+                        set assistnames=assistnames+Color[i]+GetUnitName(Hero[i])+"|r "
+                        call ForceAddPlayer(PlayerH,GetOwningPlayer(Hero[i]))
+                    endif
+                    if GetUnitAbilityLevel(u,'A1H1')>0 and GetUnitTypeId(Hero[i])=='H076' then //Jeanne
+                        set udg_assist[i]=udg_assist[i]+1
+                        set assistnames=assistnames+Color[i]+GetUnitName(Hero[i])+"|r "
+                        call ForceAddPlayer(PlayerH,GetOwningPlayer(Hero[i]))
+                    endif
+                    if LoadBoolean(h, GetHandleId(u), StringHash("MeiT_Shield"))==true and GetUnitTypeId(Hero[i])=='H032' then //Mei
+                        set udg_assist[i]=udg_assist[i]+1
+                        set assistnames=assistnames+Color[i]+GetUnitName(Hero[i])+"|r "
+                        call ForceAddPlayer(PlayerH,GetOwningPlayer(Hero[i]))
+                    endif
+                    if GetUnitAbilityLevel(u,'AHSF')>0 and (GetUnitTypeId(Hero[i])=='HHSN' or GetUnitTypeId(Hero[i])=='HHSG') then //Hashirama
+                        set udg_assist[i]=udg_assist[i]+1
+                        set assistnames=assistnames+Color[i]+GetUnitName(Hero[i])+"|r "
+                        call ForceAddPlayer(PlayerH,GetOwningPlayer(Hero[i]))
+                    endif
+                    if GetUnitAbilityLevel(u,'aokb')>0 and (GetUnitTypeId(Hero[i])=='H02U' or GetUnitTypeId(Hero[i])=='H05X') then //Aokiji
+                        set udg_assist[i]=udg_assist[i]+1
+                        set assistnames=assistnames+Color[i]+GetUnitName(Hero[i])+"|r "
+                        call ForceAddPlayer(PlayerH,GetOwningPlayer(Hero[i]))
+                    endif
+                endif
+                set i=i+1
+            endloop
+            //set stats[ic]=stats[ic]+1
+            if GetUnitAbilityLevel(Hero[iu],'A1F3')>0 then
+                call SetPlayerState(Player(iu),PLAYER_STATE_RESOURCE_GOLD,GetPlayerState(Player(iu),PLAYER_STATE_RESOURCE_GOLD)+100)
+            endif
+            if GetUnitAbilityLevel(Hero[iu],'A13P')>0 and GetHeroLevel(Hero[iu])>=35 then
+                call SetAbilityRemainingCooldown(GetUnitAbility(Hero[iu],'A0IZ'),0.01)
+            endif
+            set i=0
+            loop
+            exitwhen i>=10
+                if GetUnitTypeId(Hero[iu])=='H077' and IsUnitAlly(Hero[i],Player(i))and(GetUnitTypeId(Hero[i])=='H059' or GetUnitTypeId(Hero[i])=='H070' or GetUnitTypeId(Hero[i])=='H06S')then
                     call SetPlayerState(Player(iu),PLAYER_STATE_RESOURCE_GOLD,GetPlayerState(Player(iu),PLAYER_STATE_RESOURCE_GOLD)+100)
                 endif
-                if GetUnitAbilityLevel(Hero[iu],'A13P')>0 and GetHeroLevel(Hero[iu])>=35 then
-                    call SetAbilityRemainingCooldown(GetUnitAbility(Hero[iu],'A0IZ'),0.01)
-                endif
-                set i=0
-                loop
-                exitwhen i>=10
-                    if GetUnitTypeId(Hero[iu])=='H077' and IsUnitAlly(Hero[i],Player(i))and(GetUnitTypeId(Hero[i])=='H059' or GetUnitTypeId(Hero[i])=='H070' or GetUnitTypeId(Hero[i])=='H06S')then
-                        call SetPlayerState(Player(iu),PLAYER_STATE_RESOURCE_GOLD,GetPlayerState(Player(iu),PLAYER_STATE_RESOURCE_GOLD)+100)
+            set i=i+1
+            endloop
+            //if GetUnitTypeId(c)!='H06U' then
+            //call SetHeroAgi(Hero[ic],GetHeroAgi(Hero[ic],false)+3,true)
+            //call SetHeroStr(Hero[ic],GetHeroStr(Hero[ic],false)+3,true)
+            //call SetHeroInt(Hero[ic],GetHeroInt(Hero[ic],false)+3,true)
+            //endif
+            if CK[iu]==0 then
+                call TimerStart(combo[iu],1,true,function KillerCombo)
+                call SaveInteger(HH,GetHandleId(combo[iu]),0,iu)
+            endif
+            set CK[iu]=CK[iu]+1
+            set kombo[iu]=14+2*CK[iu]
+            if iu>=5 then
+                set kf=Koef[2]
+            else
+                set kf=Koef[1]
+            endif
+            if CK[iu]==1 then//
+                call DisplayTextToPlayer(GetLocalPlayer(),0,0,Color[iu]+GetUnitName(Hero[iu])+"|r kill's "+Color[ic]+GetUnitName(Hero[ic])+"|r for +"+I2S(R2I(140*kf))+" gold")
+                call SetPlayerState(Player(iu),PLAYER_STATE_RESOURCE_GOLD,GetPlayerState(Player(iu),PLAYER_STATE_RESOURCE_GOLD)+R2I(140*kf))
+                set goldTotal=goldTotal+R2I(140*kf)
+            elseif CK[iu]==2 then
+                set soundplay=CreateSound("Double_Kill.mp3",false,false,true,12700,12700,"")
+                call StartSound(soundplay)
+                call KillSoundWhenDone(soundplay)
+                call DisplayTextToPlayer(GetLocalPlayer(),0,0,Color[iu]+GetUnitName(Hero[iu])+"|r kill's "+Color[ic]+GetUnitName(Hero[ic])+"|r")
+                call DisplayTextToPlayer(GetLocalPlayer(),0,0,"|cFF00C850Double Kill|r, +"+I2S(R2I(160*kf))+" gold")
+                call SetPlayerState(Player(iu),PLAYER_STATE_RESOURCE_GOLD,GetPlayerState(Player(iu),PLAYER_STATE_RESOURCE_GOLD)+R2I(160*kf))
+                set goldTotal=goldTotal+R2I(160*kf)
+            elseif CK[iu]==3 then
+                set soundplay=CreateSound("triple_kill.mp3",false,false,true,12700,12700,"")
+                call StartSound(soundplay)
+                call KillSoundWhenDone(soundplay)
+                call DisplayTextToPlayer(GetLocalPlayer(),0,0,Color[iu]+GetUnitName(Hero[iu])+"|r kill's "+Color[ic]+GetUnitName(Hero[ic])+"|r")
+                call DisplayTextToPlayer(GetLocalPlayer(),0,0,"|cFFA000FFTripple Kill|r, +"+I2S(R2I(200*kf))+" gold")
+                call SetPlayerState(Player(iu),PLAYER_STATE_RESOURCE_GOLD,GetPlayerState(Player(iu),PLAYER_STATE_RESOURCE_GOLD)+R2I(200*kf))
+                set goldTotal=goldTotal+R2I(200*kf)
+            elseif CK[iu]==4 then
+                set soundplay=CreateSound("MegaKill.mp3",false,false,true,12700,12700,"")
+                call StartSound(soundplay)
+                call KillSoundWhenDone(soundplay)
+                call DisplayTextToPlayer(GetLocalPlayer(),0,0,Color[iu]+GetUnitName(Hero[iu])+"|r kill's "+Color[ic]+GetUnitName(Hero[ic])+"|r")
+                call DisplayTextToPlayer(GetLocalPlayer(),0,0,"|cFFA000FFMega Kill|r, +"+I2S(R2I(250*kf))+" gold")
+                call SetPlayerState(Player(iu),PLAYER_STATE_RESOURCE_GOLD,GetPlayerState(Player(iu),PLAYER_STATE_RESOURCE_GOLD)+R2I(250*kf))
+                set goldTotal=goldTotal+R2I(250*kf)
+            elseif CK[iu]==5 then
+                set soundplay=CreateSound("UltraKill.mp3",false,false,true,12700,12700,"")
+                call StartSound(soundplay)
+                call KillSoundWhenDone(soundplay)
+                call DisplayTextToPlayer(GetLocalPlayer(),0,0,Color[iu]+GetUnitName(Hero[iu])+"|r kill's "+Color[ic]+GetUnitName(Hero[ic])+"|r")
+                call DisplayTextToPlayer(GetLocalPlayer(),0,0,"|cFFFF0000Ultra Kill!|r, +"+I2S(R2I(300*kf))+" gold")
+                call SetPlayerState(Player(iu),PLAYER_STATE_RESOURCE_GOLD,GetPlayerState(Player(iu),PLAYER_STATE_RESOURCE_GOLD)+R2I(300*kf))
+                set goldTotal=goldTotal+R2I(300*kf)
+            elseif CK[iu]==6 then
+                set soundplay=CreateSound("Rampage.mp3",false,false,true,12700,12700,"")
+                call StartSound(soundplay)
+                call KillSoundWhenDone(soundplay)
+                call DisplayTextToPlayer(GetLocalPlayer(),0,0,Color[iu]+GetUnitName(Hero[iu])+"|r kill's "+Color[ic]+GetUnitName(Hero[ic])+"|r")
+                call DisplayTextToPlayer(GetLocalPlayer(),0,0,"|cFFFF0000RAMPAGE!!!|r, +"+I2S(R2I(500*kf))+" gold")
+                call SetPlayerState(Player(iu),PLAYER_STATE_RESOURCE_GOLD,GetPlayerState(Player(iu),PLAYER_STATE_RESOURCE_GOLD)+R2I(500*kf))
+                set goldTotal=goldTotal+R2I(500*kf)
+            elseif CK[iu]==7 then
+                set soundplay=CreateSound("Ownage.mp3",false,false,true,12700,12700,"")
+                call StartSound(soundplay)
+                call KillSoundWhenDone(soundplay)
+                call DisplayTextToPlayer(GetLocalPlayer(),0,0,Color[iu]+GetUnitName(Hero[iu])+"|r kill's "+Color[ic]+GetUnitName(Hero[ic])+"|r")
+                call DisplayTextToPlayer(GetLocalPlayer(),0,0,"|cFFFFEA00GodLike!|r, +"+I2S(R2I(500*kf))+" gold")
+                call SetPlayerState(Player(iu),PLAYER_STATE_RESOURCE_GOLD,GetPlayerState(Player(iu),PLAYER_STATE_RESOURCE_GOLD)+R2I(500*kf))
+                set goldTotal=goldTotal+R2I(500*kf)
+            elseif CK[iu]==8 then
+                set soundplay=CreateSound("GodLike.mp3",false,false,true,12700,12700,"")
+                call StartSound(soundplay)
+                call KillSoundWhenDone(soundplay)
+                call DisplayTextToPlayer(GetLocalPlayer(),0,0,Color[iu]+GetUnitName(Hero[iu])+"|r kill's "+Color[ic]+GetUnitName(Hero[ic])+"|r")
+                call DisplayTextToPlayer(GetLocalPlayer(),0,0,"|cFFFFEA00BEYOND GODLIKE!|r, +"+I2S(R2I(500*kf))+" gold")
+                call SetPlayerState(Player(iu),PLAYER_STATE_RESOURCE_GOLD,GetPlayerState(Player(iu),PLAYER_STATE_RESOURCE_GOLD)+R2I(500*kf))
+                set goldTotal=goldTotal+R2I(500*kf)
+            elseif CK[iu]==9 then
+                set soundplay=CreateSound("HolyShit.mp3",false,false,true,12700,12700,"")
+                call StartSound(soundplay)
+                call KillSoundWhenDone(soundplay)
+                call DisplayTextToPlayer(GetLocalPlayer(),0,0,Color[iu]+GetUnitName(Hero[iu])+"|r kill's "+Color[ic]+GetUnitName(Hero[ic])+"|r")
+                call DisplayTextToPlayer(GetLocalPlayer(),0,0,"|cFFFF0000Have ownd the Gods!|r, +"+I2S(R2I(500*kf))+" gold")
+                call SetPlayerState(Player(iu),PLAYER_STATE_RESOURCE_GOLD,GetPlayerState(Player(iu),PLAYER_STATE_RESOURCE_GOLD)+R2I(500*kf))
+                set goldTotal=goldTotal+R2I(500*kf)
+            elseif CK[iu]>=10 then
+                set soundplay=CreateSound("WhoreCombo.mp3",false,false,true,12700,12700,"")
+                call StartSound(soundplay)
+                call KillSoundWhenDone(soundplay)
+                call DisplayTextToPlayer(GetLocalPlayer(),0,0,Color[iu]+GetUnitName(Hero[iu])+"|r kill's "+Color[ic]+GetUnitName(Hero[ic])+"|r")
+                call DisplayTextToPlayer(GetLocalPlayer(),0,0,"|cFFA000ffYOU did the Impossible, SOMEBODY KILL HIM!|r, +"+I2S(R2I(500*kf))+" gold")
+                call SetPlayerState(Player(iu),PLAYER_STATE_RESOURCE_GOLD,GetPlayerState(Player(iu),PLAYER_STATE_RESOURCE_GOLD)+R2I(500*kf))
+                set goldTotal=goldTotal+R2I(500*kf)
+            endif
+            call DestroyEffect(AddSpecialEffect("Abilities\\Spells\\Other\\Transmute\\PileofGold.mdl",GetUnitX(u),GetUnitY(u)))
+            
+            //=== Streak System
+            set Streak_Counter[iu]=Streak_Counter[iu]+1
+            
+            
+            if Streak_Counter[iu]>2 then
+                set Streak[iu]=R2I(100*(1.3*(Streak_Counter[iu]-2)))
+            elseif Streak_Counter[iu]==2 then
+                set Streak[iu]=100
+            endif
+            
+            if IsUnitAlly(Hero[ic], Player(iu))==false then
+                if Streak[ic]>0 then
+                    if Streak[ic]>500 then
+                        call DisplayTextToPlayer(GetLocalPlayer(),0,0,Color[iu]+GetUnitName(Hero[iu])+"|r KNOCKS DOWN A STREAK "+Color[ic]+GetUnitName(Hero[ic])+"|r AND GETS +"+I2S(Streak[ic])+" GOLD!")
+                    else
+                        call DisplayTextToPlayer(GetLocalPlayer(),0,0,Color[iu]+GetUnitName(Hero[iu])+"|r knocks down a streak "+Color[ic]+GetUnitName(Hero[ic])+"|r and gets +"+I2S(Streak[ic])+" gold!")
                     endif
-                set i=i+1
-                endloop
-                //if GetUnitTypeId(c)!='H06U' then
-                //call SetHeroAgi(Hero[ic],GetHeroAgi(Hero[ic],false)+3,true)
-                //call SetHeroStr(Hero[ic],GetHeroStr(Hero[ic],false)+3,true)
-                //call SetHeroInt(Hero[ic],GetHeroInt(Hero[ic],false)+3,true)
-                //endif
-                if CK[iu]==0 then
-                    call TimerStart(combo[iu],1,true,function KillerCombo)
-                    call SaveInteger(HH,GetHandleId(combo[iu]),0,iu)
+                    call SetPlayerState(Player(iu),PLAYER_STATE_RESOURCE_GOLD,GetPlayerState(Player(iu),PLAYER_STATE_RESOURCE_GOLD)+Streak[ic])
+                    loop
+                    exitwhen Streak_Counter[ic]==0
+                        call DestroyEffect(AddSpecialEffect("Abilities\\Spells\\Other\\Transmute\\PileofGold.mdl",GetUnitX(u)+GetRandomInt(100, 100),GetUnitY(u)+GetRandomInt(100, 100)))
+                        set Streak_Counter[ic]=Streak_Counter[ic]-1
+                    endloop
                 endif
-                set CK[iu]=CK[iu]+1
-                set kombo[iu]=14+2*CK[iu]
-                if iu>=5 then
-                    set kf=Koef[2]
-                else
-                    set kf=Koef[1]
-                endif
-                if CK[iu]==1 then//
-                        call DisplayTextToPlayer(GetLocalPlayer(),0,0,Color[iu]+GetUnitName(Hero[iu])+"|r kill's "+Color[ic]+GetUnitName(Hero[ic])+"|r for +"+I2S(R2I(140*kf))+" gold")
-                        call SetPlayerState(Player(iu),PLAYER_STATE_RESOURCE_GOLD,GetPlayerState(Player(iu),PLAYER_STATE_RESOURCE_GOLD)+R2I(140*kf))
-                        set goldTotal=goldTotal+R2I(140*kf)
-                elseif CK[iu]==2 then
-                        set soundplay=CreateSound("Double_Kill.mp3",false,false,true,12700,12700,"")
-                        call StartSound(soundplay)
-                        call KillSoundWhenDone(soundplay)
-                        call DisplayTextToPlayer(GetLocalPlayer(),0,0,Color[iu]+GetUnitName(Hero[iu])+"|r kill's "+Color[ic]+GetUnitName(Hero[ic])+"|r")
-                        call DisplayTextToPlayer(GetLocalPlayer(),0,0,"|cFF00C850Double Kill|r, +"+I2S(R2I(160*kf))+" gold")
-                        call SetPlayerState(Player(iu),PLAYER_STATE_RESOURCE_GOLD,GetPlayerState(Player(iu),PLAYER_STATE_RESOURCE_GOLD)+R2I(160*kf))
-                        set goldTotal=goldTotal+R2I(160*kf)
-                elseif CK[iu]==3 then
-                        set soundplay=CreateSound("triple_kill.mp3",false,false,true,12700,12700,"")
-                        call StartSound(soundplay)
-                        call KillSoundWhenDone(soundplay)
-                        call DisplayTextToPlayer(GetLocalPlayer(),0,0,Color[iu]+GetUnitName(Hero[iu])+"|r kill's "+Color[ic]+GetUnitName(Hero[ic])+"|r")
-                        call DisplayTextToPlayer(GetLocalPlayer(),0,0,"|cFFA000FFTripple Kill|r, +"+I2S(R2I(200*kf))+" gold")
-                        call SetPlayerState(Player(iu),PLAYER_STATE_RESOURCE_GOLD,GetPlayerState(Player(iu),PLAYER_STATE_RESOURCE_GOLD)+R2I(200*kf))
-                        set goldTotal=goldTotal+R2I(200*kf)
-                elseif CK[iu]==4 then
-                        set soundplay=CreateSound("MegaKill.mp3",false,false,true,12700,12700,"")
-                        call StartSound(soundplay)
-                        call KillSoundWhenDone(soundplay)
-                        call DisplayTextToPlayer(GetLocalPlayer(),0,0,Color[iu]+GetUnitName(Hero[iu])+"|r kill's "+Color[ic]+GetUnitName(Hero[ic])+"|r")
-                        call DisplayTextToPlayer(GetLocalPlayer(),0,0,"|cFFA000FFMega Kill|r, +"+I2S(R2I(250*kf))+" gold")
-                        call SetPlayerState(Player(iu),PLAYER_STATE_RESOURCE_GOLD,GetPlayerState(Player(iu),PLAYER_STATE_RESOURCE_GOLD)+R2I(250*kf))
-                        set goldTotal=goldTotal+R2I(250*kf)
-                elseif CK[iu]==5 then
-                        set soundplay=CreateSound("UltraKill.mp3",false,false,true,12700,12700,"")
-                        call StartSound(soundplay)
-                        call KillSoundWhenDone(soundplay)
-                        call DisplayTextToPlayer(GetLocalPlayer(),0,0,Color[iu]+GetUnitName(Hero[iu])+"|r kill's "+Color[ic]+GetUnitName(Hero[ic])+"|r")
-                        call DisplayTextToPlayer(GetLocalPlayer(),0,0,"|cFFFF0000Ultra Kill!|r, +"+I2S(R2I(300*kf))+" gold")
-                        call SetPlayerState(Player(iu),PLAYER_STATE_RESOURCE_GOLD,GetPlayerState(Player(iu),PLAYER_STATE_RESOURCE_GOLD)+R2I(300*kf))
-                        set goldTotal=goldTotal+R2I(300*kf)
-                elseif CK[iu]==6 then
-                        set soundplay=CreateSound("Rampage.mp3",false,false,true,12700,12700,"")
-                        call StartSound(soundplay)
-                        call KillSoundWhenDone(soundplay)
-                        call DisplayTextToPlayer(GetLocalPlayer(),0,0,Color[iu]+GetUnitName(Hero[iu])+"|r kill's "+Color[ic]+GetUnitName(Hero[ic])+"|r")
-                        call DisplayTextToPlayer(GetLocalPlayer(),0,0,"|cFFFF0000RAMPAGE!!!|r, +"+I2S(R2I(500*kf))+" gold")
-                        call SetPlayerState(Player(iu),PLAYER_STATE_RESOURCE_GOLD,GetPlayerState(Player(iu),PLAYER_STATE_RESOURCE_GOLD)+R2I(500*kf))
-                        set goldTotal=goldTotal+R2I(500*kf)
-                elseif CK[iu]==7 then
-                        set soundplay=CreateSound("Ownage.mp3",false,false,true,12700,12700,"")
-                        call StartSound(soundplay)
-                        call KillSoundWhenDone(soundplay)
-                        call DisplayTextToPlayer(GetLocalPlayer(),0,0,Color[iu]+GetUnitName(Hero[iu])+"|r kill's "+Color[ic]+GetUnitName(Hero[ic])+"|r")
-                        call DisplayTextToPlayer(GetLocalPlayer(),0,0,"|cFFFFEA00GodLike!|r, +"+I2S(R2I(500*kf))+" gold")
-                        call SetPlayerState(Player(iu),PLAYER_STATE_RESOURCE_GOLD,GetPlayerState(Player(iu),PLAYER_STATE_RESOURCE_GOLD)+R2I(500*kf))
-                        set goldTotal=goldTotal+R2I(500*kf)
-                elseif CK[iu]==8 then
-                        set soundplay=CreateSound("GodLike.mp3",false,false,true,12700,12700,"")
-                        call StartSound(soundplay)
-                        call KillSoundWhenDone(soundplay)
-                        call DisplayTextToPlayer(GetLocalPlayer(),0,0,Color[iu]+GetUnitName(Hero[iu])+"|r kill's "+Color[ic]+GetUnitName(Hero[ic])+"|r")
-                        call DisplayTextToPlayer(GetLocalPlayer(),0,0,"|cFFFFEA00BEYOND GODLIKE!|r, +"+I2S(R2I(500*kf))+" gold")
-                        call SetPlayerState(Player(iu),PLAYER_STATE_RESOURCE_GOLD,GetPlayerState(Player(iu),PLAYER_STATE_RESOURCE_GOLD)+R2I(500*kf))
-                        set goldTotal=goldTotal+R2I(500*kf)
-                elseif CK[iu]==9 then
-                        set soundplay=CreateSound("HolyShit.mp3",false,false,true,12700,12700,"")
-                        call StartSound(soundplay)
-                        call KillSoundWhenDone(soundplay)
-                        call DisplayTextToPlayer(GetLocalPlayer(),0,0,Color[iu]+GetUnitName(Hero[iu])+"|r kill's "+Color[ic]+GetUnitName(Hero[ic])+"|r")
-                        call DisplayTextToPlayer(GetLocalPlayer(),0,0,"|cFFFF0000Have ownd the Gods!|r, +"+I2S(R2I(500*kf))+" gold")
-                        call SetPlayerState(Player(iu),PLAYER_STATE_RESOURCE_GOLD,GetPlayerState(Player(iu),PLAYER_STATE_RESOURCE_GOLD)+R2I(500*kf))
-                        set goldTotal=goldTotal+R2I(500*kf)
-                elseif CK[iu]>=10 then
-                        set soundplay=CreateSound("WhoreCombo.mp3",false,false,true,12700,12700,"")
-                        call StartSound(soundplay)
-                        call KillSoundWhenDone(soundplay)
-                        call DisplayTextToPlayer(GetLocalPlayer(),0,0,Color[iu]+GetUnitName(Hero[iu])+"|r kill's "+Color[ic]+GetUnitName(Hero[ic])+"|r")
-                        call DisplayTextToPlayer(GetLocalPlayer(),0,0,"|cFFA000ffYOU did the Impossible, SOMEBODY KILL HIM!|r, +"+I2S(R2I(500*kf))+" gold")
-                        call SetPlayerState(Player(iu),PLAYER_STATE_RESOURCE_GOLD,GetPlayerState(Player(iu),PLAYER_STATE_RESOURCE_GOLD)+R2I(500*kf))
-                        set goldTotal=goldTotal+R2I(500*kf)
-                endif
-                call DestroyEffect(AddSpecialEffect("Abilities\\Spells\\Other\\Transmute\\PileofGold.mdl",GetUnitX(u),GetUnitY(u)))
-                
-                //=== Streak System
-                set Streak_Counter[iu]=Streak_Counter[iu]+1
-                
-                
-                if Streak_Counter[iu]>2 then
-                        set Streak[iu]=R2I(100*(1.3*(Streak_Counter[iu]-2)))
-                elseif Streak_Counter[iu]==2 then
-                        set Streak[iu]=100
-                endif
-                
-                if IsUnitAlly(Hero[ic], Player(iu))==false then
-                        if Streak[ic]>0 then
-                                if Streak[ic]>500 then
-                                        call DisplayTextToPlayer(GetLocalPlayer(),0,0,Color[iu]+GetUnitName(Hero[iu])+"|r KNOCKS DOWN A STREAK "+Color[ic]+GetUnitName(Hero[ic])+"|r AND GETS +"+I2S(Streak[ic])+" GOLD!")
-                                else
-                                        call DisplayTextToPlayer(GetLocalPlayer(),0,0,Color[iu]+GetUnitName(Hero[iu])+"|r knocks down a streak "+Color[ic]+GetUnitName(Hero[ic])+"|r and gets +"+I2S(Streak[ic])+" gold!")
-                                endif
-                                call SetPlayerState(Player(iu),PLAYER_STATE_RESOURCE_GOLD,GetPlayerState(Player(iu),PLAYER_STATE_RESOURCE_GOLD)+Streak[ic])
-                                loop
-                                exitwhen Streak_Counter[ic]==0
-                                        call DestroyEffect(AddSpecialEffect("Abilities\\Spells\\Other\\Transmute\\PileofGold.mdl",GetUnitX(u)+GetRandomInt(100, 100),GetUnitY(u)+GetRandomInt(100, 100)))
-                                set Streak_Counter[ic]=Streak_Counter[ic]-1
-                                endloop
-                        endif
-                        set goldTotal=goldTotal+Streak[ic]
-                        set Streak_Counter[ic]=0
-                        set Streak[ic]=0
-                endif
-                //=== End Streak System
-                if assistnames!="" then
-                    call DisplayTextToPlayer(GetLocalPlayer(),0,0,assistnames+"assisted in the kill and gets +"+I2S(R2I(goldTotal*0.25))+" gold!")
-                    call SaveReal(HH,GetHandleId(PlayerH),0,goldTotal*0.25)
-                    call ForForce(PlayerH,function PlayerAssistGold)
-                    call FlushChildHashtable(HH,GetHandleId(PlayerH))
-                    call ForceClear(PlayerH)	
-                endif
+                set goldTotal=goldTotal+Streak[ic]
+                set Streak_Counter[ic]=0
+                set Streak[ic]=0
+            endif
+            //=== End Streak System
+            if assistnames!="" then
+                call DisplayTextToPlayer(GetLocalPlayer(),0,0,assistnames+"assisted in the kill and gets +"+I2S(R2I(goldTotal*0.25))+" gold!")
+                call SaveReal(HH,GetHandleId(PlayerH),0,goldTotal*0.25)
+                call ForForce(PlayerH,function PlayerAssistGold)
+                call FlushChildHashtable(HH,GetHandleId(PlayerH))
+                call ForceClear(PlayerH)	
+            endif
                 
         elseif u!=null and GetUnitTypeId(u)!='H02A' and DU==false then
                 set udg_kill[iu]=udg_kill[iu]+1
@@ -22869,7 +22894,8 @@ function Trig_Killer_Actions takes nothing returns nothing
         call UpdateMultiboard()
         set c=null
         set u=null
-    set t=null
+        set g=null
+        set t=null
 endfunction
 function InitTrig_Killer takes nothing returns nothing
 set gg_trg_Killer=CreateTrigger()
@@ -45175,72 +45201,74 @@ function GrimorePrelatyCond takes nothing returns boolean
 return GetItemTypeId(GetManipulatedItem())=='I06W' or GetItemTypeId(GetManipulatedItem())=='I06X' or GetItemTypeId(GetManipulatedItem())=='I06Z' and GetUnitTypeId(GetTriggerUnit())!='H007'
 endfunction
 
-        function GetInventoryIndexOfItem takes unit whichUnit, integer itemId returns integer
-                local integer index = 0
+function GetInventoryIndexOfItem takes unit whichUnit, integer itemId returns integer
+    local integer index = 0
 
-                loop
-                        set bj_lastCreatedItem = UnitItemInSlot( whichUnit, index )
-                        if bj_lastCreatedItem != null and GetItemTypeId( bj_lastCreatedItem ) == itemId then
-                                return index + 1
-                        endif
+    loop
+        set bj_lastCreatedItem = UnitItemInSlot( whichUnit, index )
+        if bj_lastCreatedItem != null and GetItemTypeId( bj_lastCreatedItem ) == itemId then
+                return index + 1
+        endif
 
-                        set index = index + 1
-                        exitwhen index >= 10
-                endloop
+        set index = index + 1
+        exitwhen index >= 10
+    endloop
 
-                return 0
-        endfunction
+    return 0
+endfunction
 
-        function GetItemById takes unit whichUnit, integer itemId returns item
-                local integer index = GetInventoryIndexOfItem( whichUnit, itemId )
-                if index == 0 then
-                        return null
-                else
-                        return UnitItemInSlot( whichUnit, index - 1 )
-                endif
-        endfunction
+function GetItemById takes unit whichUnit, integer itemId returns item
+    local integer index = GetInventoryIndexOfItem( whichUnit, itemId )
+    if index == 0 then
+        return null
+    else
+        return UnitItemInSlot( whichUnit, index - 1 )
+    endif
+endfunction
+
+
+function BuffGrimoireTimerLoop takes nothing returns nothing
+    local integer   hh   = MUIHandle()
+    local real hpl = GetUnitState(LoadUnitHandle(HH,hh,CasterHash), UNIT_STATE_LIFE)
+    local real hpml = GetUnitState(LoadUnitHandle(HH,hh,CasterHash), UNIT_STATE_MAX_LIFE)
+    local real mpl = GetUnitState(LoadUnitHandle(HH,hh,CasterHash), UNIT_STATE_MANA)
+    local real mpml = GetUnitState(LoadUnitHandle(HH,hh,CasterHash), UNIT_STATE_MAX_MANA)
+    if DU2 and udg_B then
+        if GetItemById(LoadUnitHandle(HH,hh,CasterHash), 'I06W') != null then
+            if hpl < hpml and IsUnitType(LoadUnitHandle(HH,hh,CasterHash), UNIT_TYPE_DEAD) == false and mpl > (mpml*0.06) then
+                call HealTextTag(LoadUnitHandle(HH,hh,CasterHash),LoadUnitHandle(HH,hh,CasterHash),  ((hpml * 0.02)*0.1)*myCustomHeal2(LoadUnitHandle(HH,hh,CasterHash),1),"HealthRes")
+                call SetUnitState(LoadUnitHandle(HH,hh,CasterHash), UNIT_STATE_LIFE,hpl + ((hpml * 0.02)*0.1))
+                call SetUnitState(LoadUnitHandle(HH,hh,CasterHash), UNIT_STATE_MANA,mpl - ((mpml * 0.035)*0.1))
+            endif
+        elseif GetItemById(LoadUnitHandle(HH,hh,CasterHash), 'I06X') != null then
+            if mpl < mpml and IsUnitType(LoadUnitHandle(HH,hh,CasterHash), UNIT_TYPE_DEAD) == false and hpl > (hpml*0.06) then
+                call HealTextTag(LoadUnitHandle(HH,hh,CasterHash),LoadUnitHandle(HH,hh,CasterHash),  ((mpml * 0.035)*0.1)*myCustomMana2(LoadUnitHandle(HH,hh,CasterHash),1),"ManaRes")
+                call SetUnitState(LoadUnitHandle(HH,hh,CasterHash), UNIT_STATE_LIFE,hpl - ((hpml * 0.02)*0.1))
+                call SetUnitState(LoadUnitHandle(HH,hh,CasterHash), UNIT_STATE_MANA,mpl + ((mpml * 0.035)*0.1))
+            endif
+        endif
         
+        if GetItemById(LoadUnitHandle(HH,hh,CasterHash), 'I06W') == null and GetItemById(LoadUnitHandle(HH,hh,CasterHash), 'I06X') == null and GetItemById(LoadUnitHandle(HH,hh,CasterHash), 'I06Z') == null then
+            call SaveBoolean(HH, GetHandleId(LoadUnitHandle(HH,hh,CasterHash)), StringHash("IsEnabled"), false)
+            call Clear(hh)
+        endif
+    endif
+endfunction 
 
-        function BuffGrimoireTimerLoop takes nothing returns nothing
-        local integer   hh   = MUIHandle()
-                local real hpl = GetUnitState(LoadUnitHandle(HH,MUIHandle(),CasterHash), UNIT_STATE_LIFE)
-                local real hpml = GetUnitState(LoadUnitHandle(HH,MUIHandle(),CasterHash), UNIT_STATE_MAX_LIFE)
-                local real mpl = GetUnitState(LoadUnitHandle(HH,MUIHandle(),CasterHash), UNIT_STATE_MANA)
-                local real mpml = GetUnitState(LoadUnitHandle(HH,MUIHandle(),CasterHash), UNIT_STATE_MAX_MANA)
-                if GetItemById(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'I06W') != null then
-                        if hpl < hpml and IsUnitType(LoadUnitHandle(HH,MUIHandle(),CasterHash), UNIT_TYPE_DEAD) == false and mpl > (mpml*0.06) then
-                                call HealTextTag(LoadUnitHandle(HH,MUIHandle(),CasterHash),LoadUnitHandle(HH,MUIHandle(),CasterHash),  ((hpml * 0.02)*0.1)*myCustomHeal2(LoadUnitHandle(HH,MUIHandle(),CasterHash),1),"HealthRes")
-                                call SetUnitState(LoadUnitHandle(HH,MUIHandle(),CasterHash), UNIT_STATE_LIFE,hpl + ((hpml * 0.02)*0.1))
-                                call SetUnitState(LoadUnitHandle(HH,MUIHandle(),CasterHash), UNIT_STATE_MANA,mpl - ((mpml * 0.035)*0.1))
-                        endif
-                elseif GetItemById(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'I06X') != null then
-                        if mpl < mpml and IsUnitType(LoadUnitHandle(HH,MUIHandle(),CasterHash), UNIT_TYPE_DEAD) == false and hpl > (hpml*0.06) then
-                                call HealTextTag(LoadUnitHandle(HH,MUIHandle(),CasterHash),LoadUnitHandle(HH,MUIHandle(),CasterHash),  ((mpml * 0.035)*0.1)*myCustomMana2(LoadUnitHandle(HH,MUIHandle(),CasterHash),1),"ManaRes")
-                                call SetUnitState(LoadUnitHandle(HH,MUIHandle(),CasterHash), UNIT_STATE_LIFE,hpl - ((hpml * 0.02)*0.1))
-                                call SetUnitState(LoadUnitHandle(HH,MUIHandle(),CasterHash), UNIT_STATE_MANA,mpl + ((mpml * 0.035)*0.1))
-                        endif
-                endif
-                
-                if GetItemById(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'I06W') == null and GetItemById(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'I06X') == null and GetItemById(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'I06Z') == null then
-                        call SaveBoolean(HH, GetHandleId(LoadUnitHandle(HH,MUIHandle(),CasterHash)), StringHash("IsEnabled"), false)
-                        call Clear(hh)
-                endif
-        endfunction 
-   
-        function BuffGrimoireTimer takes unit a returns nothing
-                local integer PID = GetPlayerId(GetOwningPlayer(a))
-                local integer hh = NewTimer(PID)
-                call SaveBoolean(HH, GetHandleId(a), StringHash("IsEnabled"), true)
-        call SaveAgentHandle(HH,hh,CasterHash,a)
-        call TimerStart(LoadTimer(PID), 0.1, true, function BuffGrimoireTimerLoop)
-        endfunction
+function BuffGrimoireTimer takes unit a returns nothing
+    local integer PID = GetPlayerId(GetOwningPlayer(a))
+    local integer hh = NewTimer(PID)
+    call SaveBoolean(HH, GetHandleId(a), StringHash("IsEnabled"), true)
+    call SaveAgentHandle(HH,hh,CasterHash,a)
+    call TimerStart(LoadTimer(PID), 0.1, true, function BuffGrimoireTimerLoop)
+endfunction
         
 function GrimorePrelatyCast2 takes nothing returns nothing
-        if GetItemTypeId(GetManipulatedItem())=='I06W' or GetItemTypeId(GetManipulatedItem())=='I06X' or GetItemTypeId(GetManipulatedItem())=='I06Z' then
-                if LoadBoolean(HH, GetHandleId(GetTriggerUnit()), StringHash("IsEnabled")) == false then
-                        call BuffGrimoireTimer(GetTriggerUnit())
-                endif
+    if GetItemTypeId(GetManipulatedItem())=='I06W' or GetItemTypeId(GetManipulatedItem())=='I06X' or GetItemTypeId(GetManipulatedItem())=='I06Z' then
+        if LoadBoolean(HH, GetHandleId(GetTriggerUnit()), StringHash("IsEnabled")) == false then
+            call BuffGrimoireTimer(GetTriggerUnit())
         endif
+    endif
 endfunction
 
 function GrimorePrelatyCast takes nothing returns nothing
@@ -45328,26 +45356,26 @@ local real x=GetUnitX(u)
 local real y=GetUnitY(u)
 local real time=LoadReal(h,id,2)
 if time>0 and GetUnitAbilityLevel(u,'cbc5')==0 then
-        call SaveReal(h,id,2,time-0.1)
-        call DestroyEffect(AddSpecialEffect("war3mapImported\\BlinkCaster.mdx",x,y))
-        call UnitRemoveAbility(u,'A0J4')
-        call UnitRemoveAbility(u,'A128')
-        call UnitRemoveAbility(u,'A15F')
-        call UnitRemoveAbility(u,'A224')
-        //call UnitRemoveAbility(u, 'cbc3')
-        //call UnitRemoveAbility(u, 'CBC2')
-        call UnitRemoveBuffs(u,false,true)
-        call UnitRemoveAbility(u, 'A1VJ')
-        call UnitRemoveAbility(u, 'IHYs')
-        call UnitRemoveAbility(u, 'IOb3')
+    call SaveReal(h,id,2,time-0.1)
+    call DestroyEffect(AddSpecialEffect("war3mapImported\\BlinkCaster.mdx",x,y))
+    call UnitRemoveAbility(u,'A0J4')
+    call UnitRemoveAbility(u,'A128')
+    call UnitRemoveAbility(u,'A15F')
+    call UnitRemoveAbility(u,'A224')
+    //call UnitRemoveAbility(u, 'cbc3')
+    //call UnitRemoveAbility(u, 'CBC2')
+    call UnitRemoveBuffs(u,false,true)
+    call UnitRemoveAbility(u, 'A1VJ')
+    call UnitRemoveAbility(u, 'IHYs')
+    call UnitRemoveAbility(u, 'IOb3')
     call UnitRemoveAbility(u, 'CBC1')
 else
-call SaveReal(h,id,2,11)
+    call SaveReal(h,id,2,11)
     call UnitRemoveAbility(u, 'CE04')
     call UnitRemoveAbility(u, 'CB03')
     call PauseTimer(t)
-call DestroyTimer(t)
-call FlushChildHashtable(h,id)
+    call DestroyTimer(t)
+    call FlushChildHashtable(h,id)
 endif
 set t=null
 set u=null
@@ -49503,7 +49531,7 @@ if GetUnitAbilityLevel(u,'LuG3')==0 then
 call SetUnitAnimation(u,"Spell Four Two")
 call UnitApplyTimedLife(CreateUnit(p,'e03Z',x,y,a*bj_RADTODEG),0,1)
 call SaveUnitHandle(h,id,7,CreateUnit(p,'e045',x+65*Cos(a),y+65*Sin(a),a*bj_RADTODEG))
-set n=CreateUnit(p,0x65305359,x+75*Cos(a),y+75*Sin(a),a*bj_RADTODEG)
+set n=CreateUnit(p,'e0SY',x+75*Cos(a),y+75*Sin(a),a*bj_RADTODEG)
 call UnitApplyTimedLife(n,1,1.5)
 call SetUnitTimeScale(n,2)
 call UnitRemoveAbility(u,'A1FU')
@@ -74193,7 +74221,7 @@ exitwhen i>=30
 set r=(a+6*i)*bj_DEGTORAD
 set x1=x2+50*Cos(r)
 set y1=y2+50*Sin(r)
-set n=CreateUnit(p,0x65304532,x1,y1,r*bj_RADTODEG)
+set n=CreateUnit(p,'e0E2',x1,y1,r*bj_RADTODEG)
 call GroupAddUnit(g,n)
 set i=i+1
 endloop
@@ -77016,12 +77044,12 @@ local unit u=LoadUnitHandle(h,id,0)
 local real l=GetWidgetLife(u)
 local real m=GetWidgetMana(u)
 local real lm=GetUnitState(u,UNIT_STATE_MAX_LIFE)
-local real mm=GetUnitState(u,UNIT_STATE_MAX_MANA)
-if GetUnitAbilityLevel(u,'BuF1')>0 and l>lm*0.025 and m>mm*0.025 and LoadBoolean(HH,GetHandleId(u),SST)==true then
+local real mm=GetUnitState(u,UNIT_STATE_MANA)
+if GetUnitAbilityLevel(u,'BuF1')>0 and GetUnitAbilityLevel(u,'BNC1')==0 and GetUnitAbilityLevel(u,'BNC2')==0 and l>lm*0.025 and l<lm*0.99 and m>mm*0.025 and LoadBoolean(HH,GetHandleId(u),SST)==true then
 if IsUnitPaused(u)==false and GetUnitAbilityLevel(u,'Pet1')==0 then
-call HealTextTag(u,u,lm*0.025*0.03*myCustomHeal2(u,1),"HealthRes")
-call SetUnitState(u,UNIT_STATE_LIFE,l+lm*0.035*0.03)
-call SetUnitState(u,UNIT_STATE_MANA,m-mm*0.035*0.03)
+call HealTextTag(u,u,mm*0.1*0.03*myCustomHeal2(u,1),"HealthRes")
+call SetUnitState(u,UNIT_STATE_LIFE,l+mm*0.1*0.03)
+call SetUnitState(u,UNIT_STATE_MANA,m-mm*0.1*0.03)
 endif
 else
 call SaveBoolean(HH,GetHandleId(u),SS,false)
@@ -100808,7 +100836,7 @@ call SetUnitAcquireRange(u, 600)
 call IssueImmediateOrder(u, "stop")
 call RemoveUnit(l__d)
 call SaveUnitHandle(h,id,7,CreateUnit(p,'e0QH',x+65*Cos(a),y+65*Sin(a),a*bj_RADTODEG))
-set n=CreateUnit(p,0x65305359,x+75*Cos(a),y+75*Sin(a),a*bj_RADTODEG)
+set n=CreateUnit(p,'e0SY',x+75*Cos(a),y+75*Sin(a),a*bj_RADTODEG)
 call UnitApplyTimedLife(n,1,1.5)
 call SetUnitTimeScale(n,2)
 call SetUnitInvulnerable(u,false)
@@ -120443,7 +120471,7 @@ set x=x+60*Cos(a)
 set y=y+60*Sin(a)
 call SetUnitXY_1(u,x,y,false)
 call SetUnitFacing(u,a*bj_RADTODEG)
-set n=CreateUnit(p,0x65305950,x,y,a*bj_RADTODEG)
+set n=CreateUnit(p,'e0YP',x,y,a*bj_RADTODEG)
 call UnitApplyTimedLife(n,'B000',0.25)
 call SetUnitVertexColor(n,170,170,170,255)
 call SetUnitTimeScale(n,2)
@@ -120494,7 +120522,7 @@ set y=y+60*Sin(a)
 call SetUnitXY_1(u,x,y,false)
 call DestroyEffect(AddSpecialEffectTarget("war3mapImported\\BloodEX.mdx",u,"right hand"))
 call SetUnitFacing(u,a*bj_RADTODEG)
-set n=CreateUnit(p,0x65305950,x,y,a*bj_RADTODEG)
+set n=CreateUnit(p,'e0YP',x,y,a*bj_RADTODEG)
 call UnitApplyTimedLife(n,'B000',0.25)
 call SetUnitVertexColor(n,170,170,170,255)
 call SetUnitTimeScale(n,2)
@@ -135880,7 +135908,7 @@ local unit u=GetTriggerUnit()
 local real x=GetUnitX(u)
 local real y=GetUnitY(u)
 local player p=GetOwningPlayer(u)
-call GroupEnumUnitsInRange(G,x,y,700,Base)
+call GroupEnumUnitsInRange(G,x,y,900,Base)
 loop
 set E=FirstOfGroup(G)
 exitwhen E==null
@@ -142459,9 +142487,9 @@ else
 
 call myCustomDamage(LUcy[ip],c,LoadReal(h,id,5),false,false,null,null,null)
 call UranoMetriaPush(c,20,a,40)
-call UnitApplyTimedLife(CreateUnit(p,0x65304731,x1,y1,GetRandomReal(0,359)),'BHwe',1)
-call UnitApplyTimedLife(CreateUnit(p,0x65304732,x1,y1,GetRandomReal(0,359)),'BHwe',1)
-call UnitApplyTimedLife(CreateUnit(p,0x65304733,x1,y1,GetRandomReal(0,359)),'BHwe',1)
+call UnitApplyTimedLife(CreateUnit(p,'e0G1',x1,y1,GetRandomReal(0,359)),'BHwe',1)
+call UnitApplyTimedLife(CreateUnit(p,'e0G2',x1,y1,GetRandomReal(0,359)),'BHwe',1)
+call UnitApplyTimedLife(CreateUnit(p,'e0G3',x1,y1,GetRandomReal(0,359)),'BHwe',1)
 call FlushChildHashtable(h,id)
 call PauseTimer(t)
 call DestroyTimer(t)
@@ -142499,7 +142527,7 @@ local integer ip=GetPlayerId(p)
 local integer ur=LoadInteger(h,id,4)
 if ur>0 then
 call SaveInteger(h,id,4,ur-1)
-set n=CreateUnit(p,0x65313444,x+GetRandomReal(-300,300),y+GetRandomReal(-300,300),GetRandomReal(0,359))
+set n=CreateUnit(p,'e14D',x+GetRandomReal(-300,300),y+GetRandomReal(-300,300),GetRandomReal(0,359))
 call GroupAddUnit(g,n)
 call SetUnitVertexColor(n,GetRandomInt(50,255),GetRandomInt(50,255),GetRandomInt(50,255),GetRandomInt(150,255))
 set sc=GetRandomReal(0.3,0.9)
@@ -142951,7 +142979,7 @@ call SetUnitTimeScale(n,0.4)
 call UnitApplyTimedLife(n,1,3)
 call SetUnitScale(n,0.5,0.5,0.5)
 call SetUnitVertexColor(n,255,255,255,150)
-set n=CreateUnit(p,0x65313443,x1,y1,GetRandomReal(0,359))
+set n=CreateUnit(p,'e14C',x1,y1,GetRandomReal(0,359))
 call DestroyEffect(AddSpecialEffect("war3mapImported\\SandPoff.mdx",x1,y1))
 call DestroyEffect(AddSpecialEffect("Objects\\Spawnmodels\\Undead\\ImpaleTargetDust\\ImpaleTargetDust.mdl",x1,y1))
 call SetUnitAnimation(n,"Spell Two")
