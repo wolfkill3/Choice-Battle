@@ -45254,10 +45254,10 @@ function BuffGrimoireTimerLoop takes nothing returns nothing
             endif
         endif
         
-        if GetItemById(LoadUnitHandle(HH,hh,CasterHash), 'I06W') == null and GetItemById(LoadUnitHandle(HH,hh,CasterHash), 'I06X') == null and GetItemById(LoadUnitHandle(HH,hh,CasterHash), 'I06Z') == null then
-            call SaveBoolean(HH, GetHandleId(LoadUnitHandle(HH,hh,CasterHash)), StringHash("IsEnabled"), false)
-            call Clear(hh)
-        endif
+    endif
+    if GetItemById(LoadUnitHandle(HH,hh,CasterHash), 'I06W') == null and GetItemById(LoadUnitHandle(HH,hh,CasterHash), 'I06X') == null and GetItemById(LoadUnitHandle(HH,hh,CasterHash), 'I06Z') == null then
+        call SaveBoolean(HH, GetHandleId(LoadUnitHandle(HH,hh,CasterHash)), StringHash("IsEnabled"), false)
+        call Clear(hh)
     endif
 endfunction 
 
