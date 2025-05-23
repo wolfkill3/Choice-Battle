@@ -77051,21 +77051,27 @@ local real l=GetWidgetLife(u)
 local real m=GetWidgetMana(u)
 local real lm=GetUnitState(u,UNIT_STATE_MAX_LIFE)
 local real mm=GetUnitState(u,UNIT_STATE_MANA)
-if GetUnitAbilityLevel(u,'BuF1')>0 and GetUnitAbilityLevel(u,'BNC1')==0 and GetUnitAbilityLevel(u,'BNC2')==0 and l>lm*0.025 and l<lm*0.99 and m>mm*0.025 and LoadBoolean(HH,GetHandleId(u),SST)==true then
-if IsUnitPaused(u)==false and GetUnitAbilityLevel(u,'Pet1')==0 then
-call HealTextTag(u,u,mm*0.1*0.03*myCustomHeal2(u,1),"HealthRes")
-call SetUnitState(u,UNIT_STATE_LIFE,l+mm*0.1*0.03)
-call SetUnitState(u,UNIT_STATE_MANA,m-mm*0.1*0.03)
-endif
+local real extratime=LoadReal(h,id,1)
+if GetUnitAbilityLevel(u,'BuF1')>0 and GetUnitAbilityLevel(u,'BNC1')==0 and GetUnitAbilityLevel(u,'BNC2')==0 and l>lm*0.025 and m>mm*0.025 and LoadBoolean(HH,GetHandleId(u),SST)==true and extratime<0.33 then
+    if IsUnitPaused(u)==false and GetUnitAbilityLevel(u,'Pet1')==0 then
+        call HealTextTag(u,u,mm*0.1*0.03*myCustomHeal2(u,1),"HealthRes")
+        call SetUnitState(u,UNIT_STATE_LIFE,l+mm*0.1*0.03)
+        call SetUnitState(u,UNIT_STATE_MANA,m-mm*0.1*0.03)
+    endif
+    if l>lm*0.99 then
+        call SaveReal(h,id,1,extratime+0.03)
+    else
+        call SaveReal(h,id,1,0)
+    endif
 else
-call SaveBoolean(HH,GetHandleId(u),SS,false)
-call SaveBoolean(HH,GetHandleId(u),SST,false)
-call ShowAbility2('A1SK',false)
-call ShowAbility2('A0SK',true)
-call PauseTimer(t)
-call DestroyTimer(t)
-call FlushChildHashtable(h,id)
-call UnitRemoveAbility(u,'BuF1')
+    call SaveBoolean(HH,GetHandleId(u),SS,false)
+    call SaveBoolean(HH,GetHandleId(u),SST,false)
+    call ShowAbility2('A1SK',false)
+    call ShowAbility2('A0SK',true)
+    call PauseTimer(t)
+    call DestroyTimer(t)
+    call FlushChildHashtable(h,id)
+    call UnitRemoveAbility(u,'BuF1')
 endif
 set u=null
 set t=null
