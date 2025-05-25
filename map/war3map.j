@@ -22521,7 +22521,7 @@ function Trig_Killer_Actions takes nothing returns nothing
         //call SetUnitAbilityLevel(Hero[iu],'A0T7',2)
         //call UnitRemoveAbility(Hero[iu],'A0T7')
         endif
-        call GroupEnumUnitsInRange(g, GetUnitX(Hero[ic]), GetUnitY(Hero[ic]), 600, Base)
+        call GroupEnumUnitsInRange(g, GetUnitX(Hero[ic]), GetUnitY(Hero[ic]), 750, Base)
         loop
         set E=FirstOfGroup(g)
         exitwhen E==null
@@ -77054,8 +77054,8 @@ local real mm=GetUnitState(u,UNIT_STATE_MANA)
 local real extratime=LoadReal(h,id,1)
 if GetUnitAbilityLevel(u,'BuF1')>0 and GetUnitAbilityLevel(u,'BNC1')==0 and GetUnitAbilityLevel(u,'BNC2')==0 and l>lm*0.025 and m>mm*0.025 and LoadBoolean(HH,GetHandleId(u),SST)==true and extratime<0.33 then
     if IsUnitPaused(u)==false and GetUnitAbilityLevel(u,'Pet1')==0 then
-        call HealTextTag(u,u,mm*0.1*0.03*myCustomHeal2(u,1),"HealthRes")
-        call SetUnitState(u,UNIT_STATE_LIFE,l+mm*0.1*0.03)
+        call HealTextTag(u,u,mm*0.125*0.03*myCustomHeal2(u,1),"HealthRes")
+        call SetUnitState(u,UNIT_STATE_LIFE,l+mm*0.125*0.03)
         call SetUnitState(u,UNIT_STATE_MANA,m-mm*0.1*0.03)
     endif
     if l>lm*0.99 then
