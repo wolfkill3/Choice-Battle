@@ -38114,7 +38114,7 @@ function MadokaF1_Periodic takes nothing returns nothing
         if udg_B then
             call UnitAddAbility(caster, 'MaF2')
             call UnitAddAbility(caster, 'A0WR')
-            call myCustomDamage(LoadUnitHandle(h, id, StringHash("Source")) , caster , 99999 , false , false , null , null , null)
+            call myCustomDamage(LoadUnitHandle(h, id, StringHash("Source")) , caster , 99999 , false , false , null , DAMAGE_TYPE_UNKNOWN , null)
             call UnitRemoveAbility(caster, 'MaF2')
             call UnitRemoveAbility(caster, 'A0WR')
         endif
@@ -38177,7 +38177,7 @@ function MadokaF2_Periodic takes nothing returns nothing
                         call UnitRemoveAbility(caster,'A0QL')
                         call UnitAddAbility(caster, 'MaF2')
                         call UnitAddAbility(caster, 'A0WR')
-                        call myCustomDamage(LoadUnitHandle(h, id, StringHash("Source")) , caster , 99999 , false , false , null , null , null)
+                        call myCustomDamage(LoadUnitHandle(h, id, StringHash("Source")) , caster , 99999 , false , false , null , DAMAGE_TYPE_UNKNOWN , null)
                         call UnitRemoveAbility(caster, 'MaF2')
                         call UnitRemoveAbility(caster, 'A0WR')
                 endif
@@ -38422,7 +38422,7 @@ function MadokaF4_Periodic takes nothing returns nothing
         if udg_B then
             call UnitAddAbility(caster, 'MaF2')
             call UnitAddAbility(caster, 'A0WR')
-            call myCustomDamage(LoadUnitHandle(h, id, StringHash("Source")) , caster , 99999 , false , false , null , null , null)
+            call myCustomDamage(LoadUnitHandle(h, id, StringHash("Source")) , caster , 99999 , false , false , null , DAMAGE_TYPE_UNKNOWN , null)
             call UnitRemoveAbility(caster, 'MaF2')
             call UnitRemoveAbility(caster, 'A0WR')
         endif
@@ -125023,7 +125023,7 @@ local real x=GetUnitX(u)
 local real y=GetUnitY(u)
 local player p=GetOwningPlayer(u)
 local integer ip=GetPlayerId(p)
-local real dmg=GetHeroInt(Hero[ip],true)*GetHeroLevel(Hero[ip])*0.02+75+GetHeroInt(Hero[ip],true)*0.5
+local real dmg=GetHeroInt(Hero[ip],true)*GetHeroLevel(Hero[ip])*0.02+50+GetHeroInt(Hero[ip],true)*0.5
 local group g=CreateGroup()
 call GroupEnumUnitsInRange(g,x,y,300,BaseFrenda)
 call DestroyEffect(AddSpecialEffect("war3mapImported\\NewGroundEX.mdx",x,y))
@@ -125098,8 +125098,8 @@ call UnitApplyTimedLife(n,0,80)
 call SetUnitInvulnerableTimed(n,false,40)
 call UnitAddAbility(n,'A0QL')
 call UnitMakeAbilityPermanent(n,true,'A0QL')
-call UnitAddAbility(n,0x41314944)
-call UnitMakeAbilityPermanent(n,true,0x41314944)
+call UnitAddAbility(n,'A1ID')
+call UnitMakeAbilityPermanent(n,true,'A1ID')
 call SetUnitInvulnerable(n,true)
 call UnitAddAbility(n,'Avul')
 call ShowUnit(n,false)
