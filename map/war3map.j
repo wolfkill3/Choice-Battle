@@ -123035,23 +123035,24 @@ function RyougiF_Cast3 takes nothing returns nothing
     local player p=GetOwningPlayer(u)
     local real RotPitch=LoadReal(HH,id,10)
     call SaveReal(HH,id,2,time+0.03)
-    if time<1.1 then
+    if time<1.3 then
         call SetUnitInvulnerable(u,true)
         call PauseUnit(u,true)
         call SetUnitInvulnerable(c,true)
         call PauseUnit(c,true)
         if time<0.45 then
-            call SetUnitXY_1(c,x1-3*Cos(a),y1-3*Sin(a), false)
+            call SetUnitXY_1(c,x1-2*Cos(a),y1-2*Sin(a), false)
+            call SetUnitXY_1(u,x+1*Cos(a),y+1*Sin(a), false)
         endif
         if time>0.3 and time<0.6 then
             call SaveReal(HH,id,10,RotPitch+9)
             call SetUnitOrientation(c,GetUnitFacing(u)-180,RotPitch,0)
         endif
         if time==0.6 then
-            set EFF=AddSpecialEffect("chushou_by_wood_effect_earth_sandycrack_fag.mdl",x1,y1)
+            set EFF=AddSpecialEffect("chushou_by_wood_effect_earth_sandycrack_fag.mdl",x1+50*Cos(a),y1+50*Sin(a))
             call SetSpecialEffectScale(EFF ,     0.3)
             call RemoveEffect(EFF,1.5,false,CreateTimer())
-            set EFF=AddSpecialEffect("war3mapImported\\WindCircleFaster.mdl",x1,y1)
+            set EFF=AddSpecialEffect("war3mapImported\\WindCircleFaster.mdl",x1+50*Cos(a),y1+50*Sin(a))
             call SetSpecialEffectScale(EFF , 0.7)
             call RemoveEffect(EFF,2,false,CreateTimer())
         endif
@@ -123113,7 +123114,6 @@ function RyougiF_Cast2 takes nothing returns nothing
     local player p=GetOwningPlayer(u)
     call SaveReal(HH,id,2,time+0.01)
     call PauseUnit(u,true)
-    call SetUnitInvulnerable(u,true)
     if time==0.01 then
         call SetUnitAnimationByIndex(u,16)
         set EFF=AddSpecialEffect("Keyesdevilslamita.mdl",x,y)
@@ -123180,7 +123180,6 @@ function RyougiF_Cast2 takes nothing returns nothing
     else
         call SetUnitAnimationByIndex(u,0)
         call SetUnitTimeScale(u,1)
-        call SetUnitInvulnerable(u, false)
         call PauseUnit(u,false)
         call PauseTimer(t)
         call DestroyTimer(t)
@@ -123207,7 +123206,6 @@ function RyougiF_Cast takes nothing returns nothing
     call SaveReal(HH,id,3,a)
     call SaveBoolean(HH,id,1,false)
     call PauseUnit(u,true)
-    call SetUnitInvulnerable(u,true)
     call SetUnitTimeScale(u,1)
     set n=CreateUnit(p,'e0ZH',x,y,a*bj_RADTODEG+55)
     call SetUnitVertexColor(n,255,255,255,155)
