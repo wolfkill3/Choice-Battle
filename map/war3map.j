@@ -123057,7 +123057,7 @@ function RyougiF_Cast3 takes nothing returns nothing
             call RemoveEffect(EFF,2,false,CreateTimer())
         endif
         if time==0.9 then
-            set n=CreateUnit(p,'e11S',x,y,a*bj_RADTODEG)
+            set n=CreateUnit(p,'e11S',x+50*Cos(a),y+50*Sin(a),a*bj_RADTODEG)
             call SetUnitVertexColor(n,255,255,255,155)
             call SetUnitScale(n,2,2,2)
             call UnitApplyTimedLife(n,1,1.4)
