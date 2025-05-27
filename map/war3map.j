@@ -918,6 +918,7 @@ trigger gg_trg_CMare=null
 trigger gg_trg_Cyclone=null
 trigger gg_trg_CycloneStart=null
 trigger gg_trg_CycloneEnd=null
+trigger gg_trg_ItemBowStart=null
 trigger gg_trg_LightningPencil=null
 trigger gg_trg_MoveHeroes=null
 trigger gg_trg_KingOfHill_Enter=null
@@ -136331,6 +136332,41 @@ call TriggerAddCondition(t,Condition(function Pet1StartCond))
 call TriggerAddAction(t,function Pet1StartCast)
 set t=null
 endfunction
+function ItemBowStartCond takes nothing returns boolean
+return GetBuffTypeId(GetTriggerBuff())=='B150'
+endfunction
+function ItemBowStartCast2 takes nothing returns nothing
+local timer t=GetExpiredTimer()
+local integer id=GetHandleId(t)
+local unit u=LoadUnitHandle(HH,id,0)
+if GetUnitAbilityLevel(u,'B150')==0 then
+    call SetUnitAttackRangeByIndex(u, 0, GetUnitAttackRangeByIndex(u,0)-LoadReal(HH,id,1)*0.1-50)
+    call PauseTimer(t)
+    call DestroyTimer(t)
+    call FlushChildHashtable(HH,id)
+endif
+set t=null
+set u=null
+endfunction
+function ItemBowStartCast takes nothing returns nothing
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+local unit u=GetTriggerUnit()
+local real x=GetUnitX(u)
+local real y=GetUnitX(u)
+call SaveUnitHandle(HH,id,0,u)
+call SaveReal(HH,id,1,GetUnitAttackRangeByIndex(u,0))
+call SetUnitAttackRangeByIndex(u, 0, GetUnitAttackRangeByIndex(u,0)+LoadReal(HH,id,1)*0.1+50)
+call TimerStart(t,.05,true,function ItemBowStartCast2)
+set t=null
+set u=null
+endfunction
+function ItemBowStartInit takes nothing returns nothing
+set gg_trg_ItemBowStart=CreateTrigger()
+call TriggerRegisterAnyUnitEventBJ(gg_trg_ItemBowStart,EVENT_PLAYER_UNIT_BUFF_RECEIVED)
+call TriggerAddCondition(gg_trg_ItemBowStart,Condition(function ItemBowStartCond))
+call TriggerAddAction(gg_trg_ItemBowStart,function ItemBowStartCast)
+endfunction
 function CycloneStartCond takes nothing returns boolean
 return GetBuffTypeId(GetTriggerBuff())=='cbc9'
 endfunction
@@ -161810,6 +161846,12 @@ function FKazumaList takes unit u, integer id returns nothing
         call UnitRemoveAbilityTimed(u,'KI1A',10)
         call UnitAddAbility(u,'KI1B')
         call UnitRemoveAbilityTimed(u,'KI1B',10)
+    endif
+    if id=='IPRB' then //Сердце Фафнира
+        call UnitAddAbility(u,'KI1C')
+        call UnitRemoveAbilityTimed(u,'KI1C',10)
+        call UnitAddAbility(u,'KI1D')
+        call UnitRemoveAbilityTimed(u,'KI1D',10)
     endif
 endfunction
 function FKazumaCond takes nothing returns boolean
@@ -223847,6 +223889,7 @@ call WeakenEndInit()
 //call SlowAuraStartInit()
 call CycloneStartInit()
 //call ControlDebuffStartInit()
+call ItemBowStartInit()
 // call Pet1StartInit()
 //call CycloneEndInit()
 call RunInitializationTriggers()
