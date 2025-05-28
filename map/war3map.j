@@ -918,7 +918,7 @@ trigger gg_trg_CMare=null
 trigger gg_trg_Cyclone=null
 trigger gg_trg_CycloneStart=null
 trigger gg_trg_CycloneEnd=null
-trigger gg_trg_ItemBowStart=null
+// trigger gg_trg_ItemBowStart=null
 trigger gg_trg_LightningPencil=null
 trigger gg_trg_MoveHeroes=null
 trigger gg_trg_KingOfHill_Enter=null
@@ -1238,6 +1238,28 @@ function UnitHasItemOfTypeBJCustom takes unit whichUnit, integer itemId returns 
 
     return GetItemOfTypeFromUnitBJCustom(whichUnit, itemId) != null
 
+endfunction
+function UnitHasBow takes unit whichUnit returns boolean
+    return GetItemOfTypeFromUnitBJ(whichUnit, 'IPRB') != null or GetUnitAbilityLevel(whichUnit,'KI1C')>0
+endfunction
+function CheckUnitBonusRange2 takes nothing returns nothing
+local timer t=GetExpiredTimer()
+local integer id=GetHandleId(t)
+local unit u=LoadUnitHandle(HH,id,0)
+call SetUnitAcquireRange(u, GetUnitAcquireRange(u)+B2I(UnitHasBow(u))*(GetUnitAttackRangeByIndex(u,0)*0.1+75))
+call SetUnitAttackRangeByIndex(u, 0, GetUnitBaseWeaponRealFieldById(GetUnitTypeId(u),UNIT_WEAPON_RF_ATTACK_RANGE,0)+B2I(UnitHasBow(u))*(GetUnitBaseWeaponRealFieldById(GetUnitTypeId(u),UNIT_WEAPON_RF_ATTACK_RANGE,0)*0.1+75))
+call PauseTimer(t)
+call DestroyTimer(t)
+call FlushChildHashtable(HH,id)
+set t=null
+set u=null
+endfunction
+function CheckUnitBonusRange takes unit u returns nothing
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+call SaveUnitHandle(HH,id,0,u)
+call TimerStart(t,0.01,false, function CheckUnitBonusRange2)
+set t=null
 endfunction
 function CinematicFadeCommonBJCustom takes real red, real green, real blue, real duration, string tex, real startTrans, real endTrans returns nothing
     if (duration == 0) then
@@ -22976,6 +22998,23 @@ set i=i+12
 endloop
 return-1
 endfunction
+
+function GetUnitItemSlot takes unit whichUnit, item it returns integer
+    local integer index = 0
+
+    loop
+        set bj_lastCreatedItem = UnitItemInSlot( whichUnit, index )
+        if bj_lastCreatedItem != null and bj_lastCreatedItem == it then
+                return index + 1
+        endif
+
+        set index = index + 1
+        exitwhen index >= 10
+    endloop
+
+    return 0
+endfunction
+
 function Trig_DropItem_Actions2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
@@ -22983,10 +23022,10 @@ local unit u=LoadUnitHandle(HH,id,0)
 local item it=LoadItemHandle(HH,id,1)
 local player p=GetOwningPlayer(u)
 if GetItemOwner(it)==null and it!=null then
-if Condition_RecipeString(GetItemTypeId(it))==false and GetItemTypeId(it)!='I03V' and GetItemTypeId(it)!='I13V' and IsItemPowerup(it)==false then
-call UnitAddItem(Chest[GetPlayerId(p)],it)
-call DestroyEffect(AddSpecialEffect("Abilities\\Spells\\Other\\Transmute\\GoldBottleMissile.mdl",GetUnitX(Chest[GetPlayerId(p)]),GetUnitY(Chest[GetPlayerId(p)])))
-endif
+    if Condition_RecipeString(GetItemTypeId(it))==false and GetItemTypeId(it)!='I03V' and GetItemTypeId(it)!='I13V' and IsItemPowerup(it)==false then
+        call UnitAddItem(Chest[GetPlayerId(p)],it)
+        call DestroyEffect(AddSpecialEffect("Abilities\\Spells\\Other\\Transmute\\GoldBottleMissile.mdl",GetUnitX(Chest[GetPlayerId(p)]),GetUnitY(Chest[GetPlayerId(p)])))
+    endif
 endif
 call PauseTimer(t)
 call DestroyTimer(t)
@@ -23007,6 +23046,13 @@ if GetItemPlayer(it)==p and udg_test==false and (udg_B==false or DU2==false) the
     call SaveItemHandle(HH,id,1,it)
     call TimerStart(t,0.02,false,function Trig_DropItem_Actions2)
     //
+elseif GetItemPlayer(it)==p then
+    if GetItemTypeId(it) ==  'IPRB' then
+        if LoadInteger(HH,GetHandleId(it),'slot')<6 then
+            call SetUnitAcquireRange(u, GetUnitAcquireRange(u)-GetUnitBaseRealFieldById(GetUnitTypeId(u),UNIT_RF_ACQUISITION_RANGE)*0.1-75)
+            call SetUnitAttackRangeByIndex(u, 0, GetUnitAttackRangeByIndex(u,0)-GetUnitBaseWeaponRealFieldById(GetUnitTypeId(u),UNIT_WEAPON_RF_ATTACK_RANGE,0)*0.1-75)
+        endif
+    endif
 endif
 set t=null
 set u=null
@@ -23049,6 +23095,14 @@ if GetItemPlayer(it)==Player(15) or GetItemPlayer(it)==p or udg_test==true then
         if GetItemTypeId(it) ==  'I054' then
             call SetAbilityIntegerLevelField(GetUnitAbility(u,'A15E'), ABILITY_ILF_TARGET_TYPE,0,0)
         endif
+    endif
+    if GetItemTypeId(it) ==  'IPRB' then
+        if UnitItemInSlot(u,0)==it or UnitItemInSlot(u,1)==it or UnitItemInSlot(u,2)==it or UnitItemInSlot(u,3)==it or UnitItemInSlot(u,4)==it or UnitItemInSlot(u,5)==it then
+            call SetUnitAcquireRange(u, GetUnitAcquireRange(u)+GetUnitAttackRangeByIndex(u,0)*0.1+75)
+            call SetUnitAttackRangeByIndex(u, 0, GetUnitAttackRangeByIndex(u,0)+GetUnitAttackRangeByIndex(u,0)*0.1+75)
+        endif
+        call SaveInteger(HH,GetHandleId(it),'slot',GetUnitItemSlot(u,it))
+        // call BJDebugMsg(I2S(LoadInteger(HH,GetHandleId(it),'slot')))
     endif
     if GetItemTypeId(it) ==  'I04V' or GetItemTypeId(it) ==  'I13R' or GetItemTypeId(it) ==  'I13S' or GetItemTypeId(it) ==  'IMDi' then
         if UnitItemInSlot(u,0)==it or UnitItemInSlot(u,1)==it or UnitItemInSlot(u,2)==it or UnitItemInSlot(u,3)==it or UnitItemInSlot(u,4)==it or UnitItemInSlot(u,5)==it or UnitItemInSlot(u,6)==it or UnitItemInSlot(u,7)==it or UnitItemInSlot(u,8)==it then
@@ -23208,11 +23262,19 @@ else
             if not(slotSource==6 or slotSource==7 or slotSource==8) then 
                 call DisableItem(it,true,true,25)
                 call SetItemRemainingCooldown(it,cd)
+                if GetItemTypeId(it) ==  'IPRB' then
+                    call SetUnitAcquireRange(u, GetUnitAcquireRange(u)-GetUnitBaseRealFieldById(GetUnitTypeId(u),UNIT_RF_ACQUISITION_RANGE)*0.1-75)
+                    call SetUnitAttackRangeByIndex(u, 0, GetUnitAttackRangeByIndex(u,0)-GetUnitBaseWeaponRealFieldById(GetUnitTypeId(u),UNIT_WEAPON_RF_ATTACK_RANGE,0)*0.1-75)
+                endif
             endif
         else
             if slotSource==6 or slotSource==7 or slotSource==8 then 
                 call EnableItem(it,true,true,25)
                 call SetItemRemainingCooldown(it,5)
+                if GetItemTypeId(it) ==  'IPRB' then
+                    call SetUnitAcquireRange(u, GetUnitAcquireRange(u)+GetUnitAttackRangeByIndex(u,0)*0.1+75)
+                    call SetUnitAttackRangeByIndex(u, 0, GetUnitAttackRangeByIndex(u,0)+GetUnitAttackRangeByIndex(u,0)*0.1+75)
+                endif
             endif
         endif
         if ittarg!=null then
@@ -23221,14 +23283,32 @@ else
                     call DisableItem(ittarg,true,true,25)
                     call SetItemRemainingCooldown(ittarg,cdtar)
                     call SetItemRemainingCooldown(it,5)
+                    if GetItemTypeId(ittarg) ==  'IPRB' then
+                        call SetUnitAcquireRange(u, GetUnitAcquireRange(u)-GetUnitBaseRealFieldById(GetUnitTypeId(u),UNIT_RF_ACQUISITION_RANGE)*0.1-75)
+                        call SetUnitAttackRangeByIndex(u, 0, GetUnitAttackRangeByIndex(u,0)-GetUnitBaseWeaponRealFieldById(GetUnitTypeId(u),UNIT_WEAPON_RF_ATTACK_RANGE,0)*0.1-75)
+                    endif
                 endif
             else
                 if (slotTarget==6 or slotTarget==7 or slotTarget==8) then
                     call EnableItem(ittarg,true,true,25)
                     call SetItemRemainingCooldown(ittarg,5)
+                    if GetItemTypeId(ittarg) ==  'IPRB' then
+                        call SetUnitAcquireRange(u, GetUnitAcquireRange(u)+GetUnitAttackRangeByIndex(u,0)*0.1+75)
+                        call SetUnitAttackRangeByIndex(u, 0, GetUnitAttackRangeByIndex(u,0)+GetUnitAttackRangeByIndex(u,0)*0.1+75)
+                    endif
                 endif
             endif
         endif
+    endif
+    if itemId ==  'IPRB' then
+        call SaveInteger(HH,GetHandleId(it),'slot',slotTarget)
+        // call BJDebugMsg(I2S(LoadInteger(HH,GetHandleId(it),'slot')))
+        // call BJDebugMsg(Id2String(GetItemTypeId(it))+"\n")
+    endif
+    if ittargId ==  'IPRB' then
+        call SaveInteger(HH,GetHandleId(ittarg),'slot',slotSource)
+        // call BJDebugMsg(I2S(LoadInteger(HH,GetHandleId(ittarg),'slot')))
+        // call BJDebugMsg(Id2String(GetItemTypeId(ittarg)))
     endif
     if itemId ==  'I04V' or itemId ==  'I13R' or itemId ==  'I13S' or itemId ==  'IMDi' or ittargId ==  'I04V' or ittargId ==  'I13R' or ittargId ==  'I13S' or ittargId ==  'IMDi' or slotTarget==9 then
         call SetTriggerItemAllowMoveSlot(false)
@@ -27917,6 +27997,7 @@ if GetUnitTypeId(u) == 'H248' then
     endif
     call SetPlayerAbilityAvailable(GetOwningPlayer(u), 'AFUP', true)
 endif
+call CheckUnitBonusRange(u)
 endfunction
 function EndGameCond takes nothing returns boolean
 set P=GetTriggerPlayer()
@@ -32093,6 +32174,7 @@ function Trig_Goddess_Actions takes nothing returns nothing
         call UnitAddAbility(udg_Hero[GetForLoopIndexA()], 'MaR2')
         call ShowAbility2( 'MaE1' , false)
         call ShowAbility2( 'MadR' , false)
+        call CheckUnitBonusRange(udg_Hero[GetForLoopIndexA()])
     elseif GetUnitTypeId(udg_Hero[GetForLoopIndexA()]) == 'HMaG' then      // Madoka Goddess обратно в обычную 
         call ShowAbility2( 'MaT1' , true)
         call ShowAbility2( 'MaE1' , true)
@@ -32110,6 +32192,7 @@ function Trig_Goddess_Actions takes nothing returns nothing
             call TimerStart(bjLCT,0.1,true,function MadokaKyubei2)
             set bjLCT=null
         endif
+        call CheckUnitBonusRange(udg_Hero[GetForLoopIndexA()])
     endif
     set bj_forLoopAIndex=bj_forLoopAIndex+1
     endloop
@@ -33865,6 +33948,7 @@ endif
 if GetUnitTypeId(Hero[ip])=='H02L' then
     set Broly=Hero[ip]
 endif
+call CheckUnitBonusRange(Hero[ip])
 endif
 set u=null
 set p=null
@@ -34862,6 +34946,7 @@ function EndOfChoiceAct takes nothing returns nothing
             call ClearSelection()
             call SelectUnit(Hero[i],true)
         endif
+        call CheckUnitBonusRange(Hero[i])
         if GetUnitTypeId(Hero[i])=='HJi1' then
             call SetUnitModel(Hero[i],"[By XeSHTeG]JirenBase.mdx")
             call ShowAbility2('JNF4',false)
@@ -35619,6 +35704,7 @@ call UnitAddAbility(GetEnumUnit(),'A182')
 endif
 if GetUnitTypeId(GetEnumUnit())=='H04U' then
 call IssueImmediateOrder(GetEnumUnit(),"bearform")
+call CheckUnitBonusRange(GetEnumUnit())
 endif
 endfunction
 function Trig_Start_Func001B takes nothing returns nothing
@@ -35630,6 +35716,7 @@ call UnitAddAbility(GetEnumUnit(),'A182')
 endif
 if GetUnitTypeId(GetEnumUnit())=='H04U' then
 call IssueImmediateOrder(GetEnumUnit(),"bearform")
+call CheckUnitBonusRange(GetEnumUnit())
 endif
 endfunction
 function Trig_Start_FFA takes nothing returns nothing
@@ -35648,6 +35735,7 @@ call UnitAddAbility(GetEnumUnit(),'A182')
 endif
 if GetUnitTypeId(GetEnumUnit())=='H04U' then
 call IssueImmediateOrder(GetEnumUnit(),"bearform")
+call CheckUnitBonusRange(GetEnumUnit())
 endif
 endfunction
 function Trig_Start_Func001A takes nothing returns nothing
@@ -35659,6 +35747,7 @@ call UnitAddAbility(GetEnumUnit(),'A182')
 endif
 if GetUnitTypeId(GetEnumUnit())=='H04U' then
 call IssueImmediateOrder(GetEnumUnit(),"bearform")
+call CheckUnitBonusRange(GetEnumUnit())
 endif
 endfunction
 function Trig_Start_Func002C takes nothing returns nothing
@@ -35670,6 +35759,7 @@ call UnitAddAbility(GetEnumUnit(),'A182')
 endif
 if GetUnitTypeId(GetEnumUnit())=='H04U' then
 call IssueImmediateOrder(GetEnumUnit(),"bearform")
+call CheckUnitBonusRange(GetEnumUnit())
 endif
 endfunction
 function Trig_Start_Func002B takes nothing returns nothing
@@ -35681,6 +35771,7 @@ call UnitAddAbility(GetEnumUnit(),'A182')
 endif
 if GetUnitTypeId(GetEnumUnit())=='H04U' then
 call IssueImmediateOrder(GetEnumUnit(),"bearform")
+call CheckUnitBonusRange(GetEnumUnit())
 endif
 endfunction
 function Trig_Start_Func002A takes nothing returns nothing
@@ -35692,6 +35783,7 @@ call UnitAddAbility(GetEnumUnit(),'A182')
 endif
 if GetUnitTypeId(GetEnumUnit())=='H04U' then
 call IssueImmediateOrder(GetEnumUnit(),"bearform")
+call CheckUnitBonusRange(GetEnumUnit())
 endif
 endfunction
 function Trig_Start_Func003A takes nothing returns nothing
@@ -35703,6 +35795,7 @@ call UnitAddAbility(GetEnumUnit(),'A182')
 endif
 if GetUnitTypeId(GetEnumUnit())=='H04U' then
 call IssueImmediateOrder(GetEnumUnit(),"bearform")
+call CheckUnitBonusRange(GetEnumUnit())
 endif
 endfunction
 function Trig_BanEnd_Actions2 takes nothing returns nothing
@@ -38308,6 +38401,7 @@ function MadokaF3_Periodic takes nothing returns nothing
 				call ShowAbility2( 'MaT1' , false)
 				call UnitAddAbility(caster, 'MaT2')
 			endif
+            call CheckUnitBonusRange(caster)
 			call UnitAddAbility(caster, 'MaE2')
 			call UnitAddAbility(caster, 'MaR2')
 			call ShowAbility2( 'MaE1' , false)
@@ -41815,7 +41909,8 @@ if cond==0 then
         call SetControlToUnit(u,u, 1, "stun")
         call DestroyEffect(AddSpecialEffectTarget("war3mapImported\\jiejinmao.mdx",c,"Right Hand"))
         call DestroyEffect(AddSpecialEffectTarget("war3mapImported\\BloodEX.mdx",u,"origin"))
-        call SetUnitAttackRangeByIndex(c,0, 600)
+        call SetUnitAcquireRange(c, 600+B2I(UnitHasBow(c))*(600*0.1+75))
+        call SetUnitAttackRangeByIndex(c,0, 600+B2I(UnitHasBow(c))*(600*0.1+75))
     endif
     if CurrentEventAttack and nb>0 and GetUnitAbilityLevel(c,'A160')>0 and c!=UltimateDamage and GetHeroLevel(c)>=6 and GetRandomReal(0,100)<30 then
         set n=CreateUnit(GetOwningPlayer(c),'e0F0',x1,y1,a*bj_RADTODEG)
@@ -45234,7 +45329,6 @@ function GetItemById takes unit whichUnit, integer itemId returns item
         return UnitItemInSlot( whichUnit, index - 1 )
     endif
 endfunction
-
 
 function BuffGrimoireTimerLoop takes nothing returns nothing
     local integer   hh   = MUIHandle()
@@ -59917,6 +60011,7 @@ elseif GetUnitTypeId(u)=='H21N' then //ss
     call ShowAbility2('A0DM',true)
     call ShowAbility2('A0CZ',true)
 endif
+call CheckUnitBonusRange(u)
 call PauseTimer(t)
 call DestroyTimer(t)
 call FlushChildHashtable(h,id)
@@ -59976,6 +60071,7 @@ function DevilTriggerCast2 takes nothing returns nothing
                 call ShowAbility2('A2DM',true)
                 call ShowAbility2('A2CZ',true)
             endif
+            call CheckUnitBonusRange(u)
             if LoadBoolean(HH,GetHandleId(u),SS)==false then
                 call SaveBoolean(HH,GetHandleId(u),SS,true)
                 call SaveUnitHandle(h,GetHandleId(tt),0,u)
@@ -60677,6 +60773,7 @@ elseif GetUnitAbilityLevel(u,'A0D4')==2 then
 call SetUnitAbilityLevel(u,'A0D4',1)
 call AddUnitAnimationProperties(u,"alternate",false)
 endif
+call CheckUnitBonusRange(u)
 //set soundplay=CreateSound("Sound\\Music\\mp3Music\\Comeon.wav",false,false,true,12700,12700,"")
 //call StartSound(soundplay)
 //call KillSoundWhenDone(soundplay)
@@ -98779,6 +98876,7 @@ function LevelSixCast2 takes nothing returns nothing
                     call IssueImmediateOrder(u, "bearform")
                     call UnitRemoveAbility(u, 'SS06')
                 endif
+                call CheckUnitBonusRange(u)
                 if GetUnitTypeId(u)=='H044' or GetUnitTypeId(u)=='H06R' then
                     call FlushChildHashtable(h,id)
                     call UnitRemoveAbility(u, 'B05A')
@@ -98819,6 +98917,7 @@ function LevelSixCast takes nothing returns nothing
                 call SaveStr(h, id, StringHash("MisakaModel"), "MisakaMeido.mdl")
                 call SaveReal(h, id, StringHash("MisakaModelScale"), 0.95)
             endif
+            call CheckUnitBonusRange(u)
             call UnitAddAbility(u,'MisF')
             call UnitRemoveAbilityTimedPause(u,'MisF',15)
             call CreateModeIndicatorWithPauseForm(u, "ReplaceableTextures\\CommandButtons\\BTNMisakaF.blp", 15)
@@ -100006,6 +100105,7 @@ function IchigoVaster_OvertimeForm_Periodic takes nothing returns nothing
 			call UnitAddAbility(caster, 'IcT7')
 			call IssueImmediateOrder(caster, "bearform")
 			call UnitRemoveAbility(caster, 'IcT7')
+            call CheckUnitBonusRange(caster)
 		endif
         call ShowFrame( NewFrame, false )
         call SaveReal(HH, GetHandleId(NewFrame), c_DURATION, 0)
@@ -100124,6 +100224,7 @@ function IchigoVaster_Ressurection takes nothing returns nothing
 			call UnitRemoveAbility(caster, 'IcT6')
 			call SetUnitAnimationByIndex(caster, 15)
             call IchigoVaster_OvertimeForm(caster, "war3mapImported\\BTNHollowIchigo.blp", 70)
+            call CheckUnitBonusRange(caster)
         endif
         call PauseUnit(caster, false)
         call SetUnitInvulnerable(caster, false)
@@ -103219,6 +103320,7 @@ if GetUnitAbilityLevel(Gon,'A0U8')==1 then
 call UnitAddAbility(Gon,'S008')
 call IssueImmediateOrder(Gon, "bearform")
 call UnitRemoveAbility(Gon,'S008')
+call CheckUnitBonusRange(Gon)
 //call GroupEnumUnitsInRange(G,x,y,400,Base)
 //loop
 //set E=FirstOfGroup(G)
@@ -103293,6 +103395,7 @@ function GonG_Periodic takes nothing returns nothing
             call UnitAddAbility(Gon,'S008')
             call IssueImmediateOrder(Gon, "bearform")
             call UnitRemoveAbility(Gon,'S008')
+            call CheckUnitBonusRange(Gon)
             call HealTextTag(Gon,Gon,GetUnitState(Gon,UNIT_STATE_MAX_LIFE)*0.15*myCustomHeal2(Gon,1),"HealthRes")
             call SetUnitState(Gon,UNIT_STATE_LIFE,GetWidgetLife(Gon)+GetUnitState(Gon,UNIT_STATE_MAX_LIFE)*0.15)
             call UnitApplyTimedLife(CreateUnit(p,'e0LA',caster_x, caster_y,0),1,3)
@@ -121034,9 +121137,12 @@ return GetSpellAbilityId()=='A17G' and udg_B
 endfunction
 function SinonQBonusRange takes nothing returns nothing
         local integer id = GetHandleId(GetExpiredTimer())
-        call SetUnitAttackRangeByIndex(LoadUnitHandle(h, id, CasterHash),0, 600)
+        local unit u=LoadUnitHandle(h, id, CasterHash)
+        call SetUnitAcquireRange(u, 600+B2I(UnitHasBow(u))*(600*0.1+75))
+        call SetUnitAttackRangeByIndex(u,0, 600+B2I(UnitHasBow(u))*(600*0.1+75))
         call FlushChildHashtable(h, id)
         call DestroyTimer(GetExpiredTimer())
+        set u=null
 endfunction
 function VolteretaCast2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
@@ -121061,7 +121167,8 @@ else
     call SetUnitInvulnerable(u,false)
     call SetUnitTimeScale(u,1)
     call UnitAddAbilityTimed(u,2,'A17K')
-    call SetUnitAttackRangeByIndex(u,0, 1200)
+    call SetUnitAcquireRange(u, 1200+B2I(UnitHasBow(u))*(1200*0.1+75))
+    call SetUnitAttackRangeByIndex(u,0, 1200+B2I(UnitHasBow(u))*(1200*0.1+75))
     set tt = CreateTimer()
     call SaveUnitHandle(h, GetHandleId(tt), CasterHash, u)
     call TimerStart(tt, 2.1, false, function SinonQBonusRange)
@@ -136332,41 +136439,41 @@ call TriggerAddCondition(t,Condition(function Pet1StartCond))
 call TriggerAddAction(t,function Pet1StartCast)
 set t=null
 endfunction
-function ItemBowStartCond takes nothing returns boolean
-return GetBuffTypeId(GetTriggerBuff())=='B150'
-endfunction
-function ItemBowStartCast2 takes nothing returns nothing
-local timer t=GetExpiredTimer()
-local integer id=GetHandleId(t)
-local unit u=LoadUnitHandle(HH,id,0)
-if GetUnitAbilityLevel(u,'B150')==0 then
-    call SetUnitAttackRangeByIndex(u, 0, GetUnitAttackRangeByIndex(u,0)-LoadReal(HH,id,1)*0.1-50)
-    call PauseTimer(t)
-    call DestroyTimer(t)
-    call FlushChildHashtable(HH,id)
-endif
-set t=null
-set u=null
-endfunction
-function ItemBowStartCast takes nothing returns nothing
-local timer t=CreateTimer()
-local integer id=GetHandleId(t)
-local unit u=GetTriggerUnit()
-local real x=GetUnitX(u)
-local real y=GetUnitX(u)
-call SaveUnitHandle(HH,id,0,u)
-call SaveReal(HH,id,1,GetUnitAttackRangeByIndex(u,0))
-call SetUnitAttackRangeByIndex(u, 0, GetUnitAttackRangeByIndex(u,0)+LoadReal(HH,id,1)*0.1+50)
-call TimerStart(t,.05,true,function ItemBowStartCast2)
-set t=null
-set u=null
-endfunction
-function ItemBowStartInit takes nothing returns nothing
-set gg_trg_ItemBowStart=CreateTrigger()
-call TriggerRegisterAnyUnitEventBJ(gg_trg_ItemBowStart,EVENT_PLAYER_UNIT_BUFF_RECEIVED)
-call TriggerAddCondition(gg_trg_ItemBowStart,Condition(function ItemBowStartCond))
-call TriggerAddAction(gg_trg_ItemBowStart,function ItemBowStartCast)
-endfunction
+// function ItemBowStartCond takes nothing returns boolean
+// return GetBuffTypeId(GetTriggerBuff())=='B150'
+// endfunction
+// function ItemBowStartCast2 takes nothing returns nothing
+// local timer t=GetExpiredTimer()
+// local integer id=GetHandleId(t)
+// local unit u=LoadUnitHandle(HH,id,0)
+// if GetUnitAbilityLevel(u,'B150')==0 then
+//     call SetUnitAttackRangeByIndex(u, 0, GetUnitAttackRangeByIndex(u,0)-LoadReal(HH,id,1)*0.1-75)
+//     call PauseTimer(t)
+//     call DestroyTimer(t)
+//     call FlushChildHashtable(HH,id)
+// endif
+// set t=null
+// set u=null
+// endfunction
+// function ItemBowStartCast takes nothing returns nothing
+// local timer t=CreateTimer()
+// local integer id=GetHandleId(t)
+// local unit u=GetTriggerUnit()
+// local real x=GetUnitX(u)
+// local real y=GetUnitX(u)
+// call SaveUnitHandle(HH,id,0,u)
+// call SaveReal(HH,id,1,GetUnitAttackRangeByIndex(u,0))
+// call SetUnitAttackRangeByIndex(u, 0, GetUnitAttackRangeByIndex(u,0)+LoadReal(HH,id,1)*0.1+75)
+// call TimerStart(t,.05,true,function ItemBowStartCast2)
+// set t=null
+// set u=null
+// endfunction
+// function ItemBowStartInit takes nothing returns nothing
+// set gg_trg_ItemBowStart=CreateTrigger()
+// call TriggerRegisterAnyUnitEventBJ(gg_trg_ItemBowStart,EVENT_PLAYER_UNIT_BUFF_RECEIVED)
+// call TriggerAddCondition(gg_trg_ItemBowStart,Condition(function ItemBowStartCond))
+// call TriggerAddAction(gg_trg_ItemBowStart,function ItemBowStartCast)
+// endfunction
 function CycloneStartCond takes nothing returns boolean
 return GetBuffTypeId(GetTriggerBuff())=='cbc9'
 endfunction
@@ -149423,6 +149530,7 @@ function OrihimeTCast3 takes nothing returns nothing
         local real y=LoadReal(h,id,2)
         call IssueImmediateOrder(u,"metamorphosis")
         call UnitResetCooldown(u)
+        call CheckUnitBonusRange(u)
         call DestroyEffect(AddSpecialEffectTarget("Abilities\\Spells\\Human\\Resurrect\\ResurrectCaster.mdl",u,"origin"))
         call PauseTimer(t)
         call DestroyTimer(t)
@@ -161847,7 +161955,7 @@ function FKazumaList takes unit u, integer id returns nothing
         call UnitAddAbility(u,'KI1B')
         call UnitRemoveAbilityTimed(u,'KI1B',10)
     endif
-    if id=='IPRB' then //Сердце Фафнира
+    if id=='IPRB' then //Лук начинающей жрицы
         call UnitAddAbility(u,'KI1C')
         call UnitRemoveAbilityTimed(u,'KI1C',10)
         call UnitAddAbility(u,'KI1D')
@@ -163781,6 +163889,7 @@ call SetAbilityCastPoint(GetUnitAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash
 call SetAbilityCastPoint(GetUnitAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'A0SX'), 0.02)
 call SetAbilityCastPoint(GetUnitAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'A0SY'), 0.02)
 call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'SS02')
+call CheckUnitBonusRange(LoadUnitHandle(HH,MUIHandle(),CasterHash))
 call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'All1')
 call SetUnitInvulnerable(LoadUnitHandle(HH,MUIHandle(),CasterHash),true)
 set EFF = AddSpecialEffect("war3mapImported\\kansou2.mdx",x,y)
@@ -163810,6 +163919,7 @@ if IsUnitType(LoadUnitHandle(HH,MUIHandle(),CasterHash), UNIT_TYPE_DEAD) == fals
 call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'SS01')
 call IssueImmediateOrder(LoadUnitHandle(HH,MUIHandle(),CasterHash), "bearform")
 call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'SS01')
+call CheckUnitBonusRange(LoadUnitHandle(HH,MUIHandle(),CasterHash))
 call SetAbilityCastPoint(GetUnitAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'A0SP'), 0.35)
 call SetAbilityCastPoint(GetUnitAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'A0SS'), 0.35)
 call SetAbilityCastPoint(GetUnitAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'A0SW'), 0.35)
@@ -164175,6 +164285,7 @@ if time > 0 and time2!=0 and GetWidgetLife(LoadUnitHandle(HH,MUIHandle(),CasterH
             call ShowAbility2('A168', false)
             call SaveInteger(HH,id,StringHash("ID"), 25)
         endif
+        call CheckUnitBonusRange(LoadUnitHandle(HH,MUIHandle(),CasterHash))
     endif
     if not(TransfID==1 or TransfID==2 or TransfID==3 or TransfID==4 or TransfID==5 or TransfID==6 or TransfID==7 or TransfID==8 or TransfID==9 or TransfID==10 or TransfID==11 or TransfID==12 or TransfID==13 or TransfID==14 or TransfID==15 or TransfID==16 or TransfID==17 or TransfID==18 or TransfID==19 or TransfID==20 or TransfID==21 or TransfID==22 or TransfID==23 or TransfID==24 or TransfID==25) then
         call SaveInteger(HH,id,TIME_HASH, 0)
@@ -164377,6 +164488,7 @@ else
             call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'B05Y')
             call ShowAbility2('A168', true)
         endif
+        call CheckUnitBonusRange(LoadUnitHandle(HH,MUIHandle(),CasterHash))
     endif
     call Clear(id)
 endif
@@ -171103,6 +171215,7 @@ function UlquiorraR_New takes nothing returns nothing
         call UnitAddAbility(caster, 'SU12')
         call IssueImmediateOrder(caster, "bearform")
         call UnitRemoveAbility(caster, 'SU12')
+        call CheckUnitBonusRange(caster)
         call SetUnitAbilityLevel(caster,'A0RS', GetUnitAbilityLevel(caster,'A0WV')+1)
         call CreateModeIndicatorWithPauseForm(caster, "war3mapImported\\BTNUlquiorra.blp", 30)
         set n=CreateUnit(GetOwningPlayer(caster), 'e0TL', caster_x, caster_y, GetRandomInt(0, 360))
@@ -171130,6 +171243,7 @@ function UlquiorraR_New takes nothing returns nothing
             call IssueImmediateOrder(caster, "bearform")
             call UnitRemoveAbility(caster, 'SU11')
             call SetUnitAbilityLevel(caster,'A0RS', 1)
+            call CheckUnitBonusRange(caster)
             call FlushChildHashtable(h, id)
             call DestroyTimer(newTimer)
         endif
@@ -181921,7 +182035,7 @@ call SaveReal(HH,GetHandleId(caster),StringHash("MadaraSusDur"),0)
 call UnitAddAbility(caster, 'AMUB')
 call IssueImmediateOrder(caster, "bearform")
 call UnitRemoveAbility(caster, 'AMUB')
-
+call CheckUnitBonusRange(caster)
 call SaveReal(HH,id,5,-0.04)
 endif
 if time==-0.02 then
@@ -181930,6 +182044,7 @@ if GetUnitTypeId(caster)!='H033' then
 call UnitAddAbility(caster, 'AMUB')
 call IssueImmediateOrder(caster, "bearform")
 call UnitRemoveAbility(caster, 'AMUB')
+call CheckUnitBonusRange(caster)
 endif
 
 
@@ -183826,6 +183941,7 @@ function MadaraChoice_Act takes nothing returns nothing
         call UnitAddAbility(caster, 'AMUN')
         call IssueImmediateOrder(caster,"bearform")
         call UnitRemoveAbility(caster, 'AMUN')
+        call CheckUnitBonusRange(caster)
             call UnitRemoveBuffs(caster,false,true)
         call MadaraSusanoAct(caster,3)
         call TimerStart(t,0.02,true,function MadaraTSharinganAct)
@@ -185600,6 +185716,7 @@ endloop
 call UnitAddAbility(caster, 'HST4')
 call IssueImmediateOrder(caster,"bearform") 
 call UnitRemoveAbility(caster, 'HST4')
+call CheckUnitBonusRange(caster)
 call ShowAbility2('HST3',false)
 call ShowAbility2('HST2',false)
 call ShowAbility2Timed('HST1',true,0.1)
@@ -192870,13 +192987,13 @@ call PauseUnit(caster,false)
 call SetUnitInvulnerable(caster,false)
 if SR(GetUnitX(caster),GetUnitY(caster),GetUnitX(SabrackFU),GetUnitY(SabrackFU))<1500 and SabrackFU!=null then
 
-
-call SetUnitAttackRangeByIndex(caster, 0, 800)
+call SetUnitAcquireRange(caster, 800+B2I(UnitHasBow(caster))*(800*0.1+75))
+call SetUnitAttackRangeByIndex(caster, 0, 800+B2I(UnitHasBow(caster))*(800*0.1+75))
 
 else
 
-
-call SetUnitAttackRangeByIndex(caster, 0, 600)
+call SetUnitAcquireRange(caster, 600+B2I(UnitHasBow(caster))*(600*0.1+75))
+call SetUnitAttackRangeByIndex(caster, 0, 600+B2I(UnitHasBow(caster))*(600*0.1+75))
 
 endif
 endif
@@ -192934,8 +193051,8 @@ call UnitRemoveAbility(caster,'SaWB')
 call UnitRemoveAbility(caster,'BSaW')
 call SetPlayerAbilityAvailable(GetOwningPlayer(casterOriginal),'SaW1',true)
 
-
-call SetUnitAttackRangeByIndex(caster, 0, 150)
+call SetUnitAcquireRange(caster, 150+B2I(UnitHasBow(caster))*(150*0.1+75))
+call SetUnitAttackRangeByIndex(caster, 0, 150+B2I(UnitHasBow(caster))*(150*0.1+75))
 
 call SetUnitPathing(caster,true)
 call RemoveUnit(LoadUnitHandle(HH,id,20))
@@ -198371,8 +198488,8 @@ if time>=5 then
 call UnitRemoveAbility(caster,'KHW2')
 call UnitRemoveAbility(caster,'BHK1')
 
-
-call SetUnitAttackRangeByIndex(caster, 0, 150)
+call SetUnitAcquireRange(caster, 150+B2I(UnitHasBow(caster))*(150*0.1+75))
+call SetUnitAttackRangeByIndex(caster, 0, 150+B2I(UnitHasBow(caster))*(150*0.1+75))
 
 call PauseTimer(GetExpiredTimer())
 call FlushChildHashtable(HH,id)
@@ -198745,7 +198862,8 @@ endif
 if GetSpellAbilityId()=='HiW1' then
 if GetUnitAbilityLevel(caster,'KHG1')>0 then
 call UnitAddAbility(caster,'KHW2')
-call SetUnitAttackRangeByIndex(caster, 0, 600)
+call SetUnitAcquireRange(caster, 600+B2I(UnitHasBow(caster))*(600*0.1+75))
+call SetUnitAttackRangeByIndex(caster, 0, 600+B2I(UnitHasBow(caster))*(600*0.1+75))
 call TimerStart(t,0.02,true,function HibarGW1)
 endif
 
@@ -203545,7 +203663,7 @@ function IchigoShikaiT_MorfPeriodic takes nothing returns nothing
                 call PauseUnit(caster, true)
                 endif
             endif
-                        
+            call CheckUnitBonusRange(caster)            
             set n=CreateUnit(GetOwningPlayer(caster), 'd006', caster_x, caster_y, GetRandomInt(0, 360))
             call SetUnitScale(n, 1.5, 1.5, 1.5)
             call MyRemoveUnit(n, 1.5)
@@ -203615,7 +203733,7 @@ function IchigoShikaiT_Periodic takes nothing returns nothing
                 call UnitAddAbility(caster, 'IcF3')
         call UnitMakeAbilityPermanent(caster, true, 'IcF3')
         call SetUnitAbilityLevel(caster, 'IcF2', 2)
-                
+        call CheckUnitBonusRange(caster)        
         call PauseUnit(caster, true)
                 call SetUnitInvulnerable(caster, true)
         call RemoveEffect(AddSpecialEffectTarget("EffBank.mdl", caster, "origin"), 6, true, CreateTimer())
@@ -207064,7 +207182,7 @@ function KarnaW1_Periodic takes nothing returns nothing
             call StartAbilityCooldown(GetUnitAbility(caster, 'KaA6'), GetAbilityCooldown(GetUnitAbility(caster, 'KaA6')))
         endif
         call SetUnitAcquireRange(caster, 600)
-        call SetUnitAttackRangeByIndex(caster, 0, 200)
+        call SetUnitAttackRangeByIndex(caster, 0, 200+B2I(UnitHasBow(caster))*(200*0.1+75))
         call SetUnitWeaponTypeByIndex(caster, 0, ConvertWeaponType(1))
         call TriggerClearActions(LoadTriggerHandle(h, id, 9))
         call TriggerClearActions(LoadTriggerHandle(h, id, 10))
@@ -207272,8 +207390,8 @@ function KarnaW1_Cast takes unit newCaster returns nothing
     call SaveTriggerHandle(h, id, 10, trigger2)
 
     //== Триггеры на автоатаку
-    call SetUnitAcquireRange(newCaster, 1500)
-    call SetUnitAttackRangeByIndex(newCaster, 0, 1500)
+    call SetUnitAcquireRange(newCaster, 1500+B2I(UnitHasBow(newCaster))*(1500*0.1+75))
+    call SetUnitAttackRangeByIndex(newCaster, 0, 1500+B2I(UnitHasBow(newCaster))*(1500*0.1+75))
     call SetUnitWeaponTypeByIndex(newCaster, 0, ConvertWeaponType(5))
 
     call TriggerAddAction(trigger1,function KarnaWAttackAct)
@@ -223889,7 +224007,7 @@ call WeakenEndInit()
 //call SlowAuraStartInit()
 call CycloneStartInit()
 //call ControlDebuffStartInit()
-call ItemBowStartInit()
+// call ItemBowStartInit()
 // call Pet1StartInit()
 //call CycloneEndInit()
 call RunInitializationTriggers()
