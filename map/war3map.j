@@ -1240,13 +1240,13 @@ function UnitHasItemOfTypeBJCustom takes unit whichUnit, integer itemId returns 
 
 endfunction
 function UnitHasBow takes unit whichUnit returns boolean
-    return GetItemOfTypeFromUnitBJ(whichUnit, 'IPRB') != null or GetUnitAbilityLevel(whichUnit,'KI1C')>0
+    return GetItemOfTypeFromUnitBJ(whichUnit, 'ISPB') != null or GetUnitAbilityLevel(whichUnit,'KI1C')>0 or GetItemOfTypeFromUnitBJ(whichUnit, 'IPRB') != null or GetUnitAbilityLevel(whichUnit,'KI1E')>0
 endfunction
 function CheckUnitBonusRange2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
 local unit u=LoadUnitHandle(HH,id,0)
-call SetUnitAcquireRange(u, GetUnitAcquireRange(u)+B2I(UnitHasBow(u))*(GetUnitAttackRangeByIndex(u,0)*0.1+75))
+call SetUnitAcquireRange(u, GetUnitAcquireRange(u)+B2I(UnitHasBow(u))*(GetUnitBaseWeaponRealFieldById(GetUnitTypeId(u),UNIT_WEAPON_RF_ATTACK_RANGE,0)*0.1+75))
 call SetUnitAttackRangeByIndex(u, 0, GetUnitBaseWeaponRealFieldById(GetUnitTypeId(u),UNIT_WEAPON_RF_ATTACK_RANGE,0)+B2I(UnitHasBow(u))*(GetUnitBaseWeaponRealFieldById(GetUnitTypeId(u),UNIT_WEAPON_RF_ATTACK_RANGE,0)*0.1+75))
 call PauseTimer(t)
 call DestroyTimer(t)
@@ -6626,7 +6626,7 @@ call ForGroup(g,function GroupAddGroupEnum)
 return bj_groupAddGroupDest
 endfunction
 function Condition_RecipeString takes integer id returns boolean
-return id=='I00E' or id=='I01P' or id=='I01R' or id=='I01T' or id=='I01V' or id=='I02U' or id=='I02X' or id=='I02Z' or id=='I045' or id=='I047' or id=='I04Y' or id=='I04U' or id=='I04X' or id=='I04Z' or id=='I051' or id=='I14R' or id=='IGDr' or id=='IPar' or id=='IHYr' or id=='ISTr' or id=='IBSR' or id=='I052' or id=='I053' or id=='I055' or id=='I06P' or id=='I06S' or id=='I06T'
+return id=='I00E' or id=='I01P' or id=='I01R' or id=='I01T' or id=='I01V' or id=='I02U' or id=='I02X' or id=='I02Z' or id=='I045' or id=='I047' or id=='I04Y' or id=='I04U' or id=='I04X' or id=='I04Z' or id=='I051' or id=='I14R' or id=='IGDr' or id=='IPar' or id=='IHYr' or id=='ISTr' or id=='IBSR' or id=='I052' or id=='I053' or id=='I055' or id=='I06P' or id=='I06S' or id=='I06T' or id=='IPRR'
 endfunction
 function Condition_AbilityString2 takes integer id returns boolean
 return id=='A0YX' or id=='A0Z0' or id=='KkR1' or id=='KkR2' or id=='BRRS' or id=='BRSS' or id=='IcF2' or id=='IcF5' or id=='GKF1' or id=='VGF1' or id=='GKG1' or id=='GKBS' or id=='GKSS' or id=='GKS2' or id=='GKS3' or id=='GKS4' or id=='GKSR' or id=='GKSB' or id=='GKUI' or id=='GKMI' or id=='GKQ1' or id=='GKW1' or id=='GKE1' or id=='GKT1' or id=='JNF1' or id=='JNF4' or id=='GSQ1' or id=='GSQ2' or id=='GSE1' or id=='GSE2' or id=='GST1' or id=='GST3' or id=='GSF1' or id=='GSF2'
@@ -8279,6 +8279,7 @@ if LoadReal(HH,id,3)<LoadReal(HH,id,2) and GetUnitAbilityLevel(LoadUnitHandle(HH
 call SaveReal(HH,id,3,LoadReal(HH,id,3)+0.1)
 else
 call UnitRemoveAbility(LoadUnitHandle(HH,id,0),LoadInteger(HH,id,1))
+call CheckUnitBonusRange(LoadUnitHandle(HH,id,0))
 call FlushChildHashtable(HH,id)
 call PauseTimer(t)
 call DestroyTimer(t)
@@ -9394,6 +9395,8 @@ call SetPlayerAbilityAvailableBJ(false,'KI0V',ConvertedPlayer(GetForLoopIndexA()
 call SetPlayerAbilityAvailableBJ(false,'KI0X',ConvertedPlayer(GetForLoopIndexA()))
 call SetPlayerAbilityAvailableBJ(false,'KI0Z',ConvertedPlayer(GetForLoopIndexA()))
 call SetPlayerAbilityAvailableBJ(false,'KI1B',ConvertedPlayer(GetForLoopIndexA()))
+call SetPlayerAbilityAvailableBJ(false,'KI1D',ConvertedPlayer(GetForLoopIndexA()))
+call SetPlayerAbilityAvailableBJ(false,'KI1F',ConvertedPlayer(GetForLoopIndexA()))
 call SaveBoolean(HH,GetHandleId(ConvertedPlayer(GetForLoopIndexA())),SOUND_LANGUAGE,true)
 set bj_forLoopAIndex=bj_forLoopAIndex+1
 endloop
@@ -23005,7 +23008,7 @@ function GetUnitItemSlot takes unit whichUnit, item it returns integer
     loop
         set bj_lastCreatedItem = UnitItemInSlot( whichUnit, index )
         if bj_lastCreatedItem != null and bj_lastCreatedItem == it then
-                return index + 1
+                return index
         endif
 
         set index = index + 1
@@ -23041,13 +23044,27 @@ local integer id=GetHandleId(t)
 local unit u=GetTriggerUnit()
 local item it=GetManipulatedItem()
 local player p=GetOwningPlayer(u)
+local integer i=0
+local integer count=0
+loop
+    exitwhen i>5
+    if GetItemTypeId(UnitItemInSlot(u,i))=='ISPB' or GetItemTypeId(UnitItemInSlot(u,i))=='IPRB' then
+    set count=count+1
+    endif
+    set i=i+1
+endloop
+if GetUnitAbilityLevel(u,'KI1C')>0 or GetUnitAbilityLevel(u,'KI1E')>0 then
+    set count=count+1
+endif
+// call BJDebugMsg(I2S(count))
 if GetItemPlayer(it)==p and udg_test==false and (udg_B==false or DU2==false) then
     call SaveUnitHandle(HH,id,0,u)
     call SaveItemHandle(HH,id,1,it)
     call TimerStart(t,0.02,false,function Trig_DropItem_Actions2)
     //
 elseif GetItemPlayer(it)==p then
-    if GetItemTypeId(it) ==  'IPRB' then
+    if (GetItemTypeId(it) ==  'ISPB' or GetItemTypeId(it) ==  'IPRB') and count==1 then
+        // call BJDebugMsg(I2S(LoadInteger(HH,GetHandleId(it),'slot')))
         if LoadInteger(HH,GetHandleId(it),'slot')<6 then
             call SetUnitAcquireRange(u, GetUnitAcquireRange(u)-GetUnitBaseRealFieldById(GetUnitTypeId(u),UNIT_RF_ACQUISITION_RANGE)*0.1-75)
             call SetUnitAttackRangeByIndex(u, 0, GetUnitAttackRangeByIndex(u,0)-GetUnitBaseWeaponRealFieldById(GetUnitTypeId(u),UNIT_WEAPON_RF_ATTACK_RANGE,0)*0.1-75)
@@ -23066,6 +23083,8 @@ local player p=GetOwningPlayer(u)
 local integer id
 local real cd=GetItemRemainingCooldown(it)
 local item f=null
+local integer i=0
+local integer count=0
 if GetItemPlayer(it)==Player(15) or GetItemPlayer(it)==p or udg_test==true then
     call SetItemPlayer(it,p,false)
     call SetItemStringField(it,ITEM_SF_NAME,GetBaseItemStringFieldById(GetItemTypeId(it),ITEM_SF_NAME)+" ("+Color[GetPlayerId(p)]+GetPlayerName(p)+"|r)")
@@ -23096,13 +23115,25 @@ if GetItemPlayer(it)==Player(15) or GetItemPlayer(it)==p or udg_test==true then
             call SetAbilityIntegerLevelField(GetUnitAbility(u,'A15E'), ABILITY_ILF_TARGET_TYPE,0,0)
         endif
     endif
-    if GetItemTypeId(it) ==  'IPRB' then
-        if UnitItemInSlot(u,0)==it or UnitItemInSlot(u,1)==it or UnitItemInSlot(u,2)==it or UnitItemInSlot(u,3)==it or UnitItemInSlot(u,4)==it or UnitItemInSlot(u,5)==it then
-            call SetUnitAcquireRange(u, GetUnitAcquireRange(u)+GetUnitAttackRangeByIndex(u,0)*0.1+75)
-            call SetUnitAttackRangeByIndex(u, 0, GetUnitAttackRangeByIndex(u,0)+GetUnitAttackRangeByIndex(u,0)*0.1+75)
-        endif
+    if GetItemTypeId(it) ==  'ISPB' or GetItemTypeId(it) ==  'IPRB' then
         call SaveInteger(HH,GetHandleId(it),'slot',GetUnitItemSlot(u,it))
         // call BJDebugMsg(I2S(LoadInteger(HH,GetHandleId(it),'slot')))
+        if UnitItemInSlot(u,0)==it or UnitItemInSlot(u,1)==it or UnitItemInSlot(u,2)==it or UnitItemInSlot(u,3)==it or UnitItemInSlot(u,4)==it or UnitItemInSlot(u,5)==it then
+            loop
+                exitwhen i>5
+                if GetItemTypeId(UnitItemInSlot(u,i))=='ISPB' or GetItemTypeId(UnitItemInSlot(u,i))=='IPRB' then
+                set count=count+1
+                endif
+                set i=i+1
+            endloop
+            if GetUnitAbilityLevel(u,'KI1C')>0 or GetUnitAbilityLevel(u,'KI1E')>0 then
+                set count=count+1
+            endif
+            if count==1 then
+                call SetUnitAcquireRange(u, GetUnitAcquireRange(u)+GetUnitAttackRangeByIndex(u,0)*0.1+75)
+                call SetUnitAttackRangeByIndex(u, 0, GetUnitAttackRangeByIndex(u,0)+GetUnitAttackRangeByIndex(u,0)*0.1+75)
+            endif
+        endif
     endif
     if GetItemTypeId(it) ==  'I04V' or GetItemTypeId(it) ==  'I13R' or GetItemTypeId(it) ==  'I13S' or GetItemTypeId(it) ==  'IMDi' then
         if UnitItemInSlot(u,0)==it or UnitItemInSlot(u,1)==it or UnitItemInSlot(u,2)==it or UnitItemInSlot(u,3)==it or UnitItemInSlot(u,4)==it or UnitItemInSlot(u,5)==it or UnitItemInSlot(u,6)==it or UnitItemInSlot(u,7)==it or UnitItemInSlot(u,8)==it then
@@ -23254,15 +23285,28 @@ local integer itemId=GetItemTypeId(it)
 local integer ittargId=GetItemTypeId(it)
 local real cd=GetItemRemainingCooldown(it)
 local real cdtar=GetItemRemainingCooldown(ittarg)
+local integer i=0
+local integer count=0
 if (GetItemRemainingCooldown(it)>0 or GetItemRemainingCooldown(ittarg)>0) and (slotSource==6 or slotSource==7 or slotSource==8 or slotTarget==6 or slotTarget==7 or slotTarget==8 or slotTarget==9) then
     call SetTriggerItemAllowMoveSlot(false)
 else
+    loop
+        exitwhen i>5
+        if GetItemTypeId(UnitItemInSlot(u,i))=='ISPB' or GetItemTypeId(UnitItemInSlot(u,i))=='IPRB' then
+        set count=count+1
+        endif
+        set i=i+1
+    endloop
+    if GetUnitAbilityLevel(u,'KI1C')>0 or GetUnitAbilityLevel(u,'KI1E')>0 then
+        set count=count+1
+    endif
+    // call BJDebugMsg(I2S(count))
     if slotSource!=9 and slotTarget!=9 then
         if (slotTarget==6 or slotTarget==7 or slotTarget==8) then 
             if not(slotSource==6 or slotSource==7 or slotSource==8) then 
                 call DisableItem(it,true,true,25)
                 call SetItemRemainingCooldown(it,cd)
-                if GetItemTypeId(it) ==  'IPRB' then
+                if (GetItemTypeId(it) ==  'ISPB' or GetItemTypeId(it) ==  'IPRB') and count==1 and GetItemTypeId(ittarg) !=  'ISPB' and GetItemTypeId(ittarg) !=  'IPRB' then
                     call SetUnitAcquireRange(u, GetUnitAcquireRange(u)-GetUnitBaseRealFieldById(GetUnitTypeId(u),UNIT_RF_ACQUISITION_RANGE)*0.1-75)
                     call SetUnitAttackRangeByIndex(u, 0, GetUnitAttackRangeByIndex(u,0)-GetUnitBaseWeaponRealFieldById(GetUnitTypeId(u),UNIT_WEAPON_RF_ATTACK_RANGE,0)*0.1-75)
                 endif
@@ -23271,7 +23315,7 @@ else
             if slotSource==6 or slotSource==7 or slotSource==8 then 
                 call EnableItem(it,true,true,25)
                 call SetItemRemainingCooldown(it,5)
-                if GetItemTypeId(it) ==  'IPRB' then
+                if (GetItemTypeId(it) ==  'ISPB' or GetItemTypeId(it) ==  'IPRB') and count==0  then
                     call SetUnitAcquireRange(u, GetUnitAcquireRange(u)+GetUnitAttackRangeByIndex(u,0)*0.1+75)
                     call SetUnitAttackRangeByIndex(u, 0, GetUnitAttackRangeByIndex(u,0)+GetUnitAttackRangeByIndex(u,0)*0.1+75)
                 endif
@@ -23283,7 +23327,7 @@ else
                     call DisableItem(ittarg,true,true,25)
                     call SetItemRemainingCooldown(ittarg,cdtar)
                     call SetItemRemainingCooldown(it,5)
-                    if GetItemTypeId(ittarg) ==  'IPRB' then
+                    if (GetItemTypeId(ittarg) ==  'ISPB' or GetItemTypeId(ittarg) ==  'IPRB') and count==1 and GetItemTypeId(it) !=  'ISPB' and GetItemTypeId(it) !=  'IPRB' then
                         call SetUnitAcquireRange(u, GetUnitAcquireRange(u)-GetUnitBaseRealFieldById(GetUnitTypeId(u),UNIT_RF_ACQUISITION_RANGE)*0.1-75)
                         call SetUnitAttackRangeByIndex(u, 0, GetUnitAttackRangeByIndex(u,0)-GetUnitBaseWeaponRealFieldById(GetUnitTypeId(u),UNIT_WEAPON_RF_ATTACK_RANGE,0)*0.1-75)
                     endif
@@ -23292,7 +23336,7 @@ else
                 if (slotTarget==6 or slotTarget==7 or slotTarget==8) then
                     call EnableItem(ittarg,true,true,25)
                     call SetItemRemainingCooldown(ittarg,5)
-                    if GetItemTypeId(ittarg) ==  'IPRB' then
+                    if (GetItemTypeId(ittarg) ==  'ISPB' or GetItemTypeId(ittarg) ==  'IPRB') and count==0  then
                         call SetUnitAcquireRange(u, GetUnitAcquireRange(u)+GetUnitAttackRangeByIndex(u,0)*0.1+75)
                         call SetUnitAttackRangeByIndex(u, 0, GetUnitAttackRangeByIndex(u,0)+GetUnitAttackRangeByIndex(u,0)*0.1+75)
                     endif
@@ -23300,12 +23344,12 @@ else
             endif
         endif
     endif
-    if itemId ==  'IPRB' then
+    if itemId == 'ISPB' or itemId == 'IPRB' then
         call SaveInteger(HH,GetHandleId(it),'slot',slotTarget)
         // call BJDebugMsg(I2S(LoadInteger(HH,GetHandleId(it),'slot')))
         // call BJDebugMsg(Id2String(GetItemTypeId(it))+"\n")
     endif
-    if ittargId ==  'IPRB' then
+    if ittargId == 'ISPB' or ittargId == 'IPRB' then
         call SaveInteger(HH,GetHandleId(ittarg),'slot',slotSource)
         // call BJDebugMsg(I2S(LoadInteger(HH,GetHandleId(ittarg),'slot')))
         // call BJDebugMsg(Id2String(GetItemTypeId(ittarg)))
@@ -161955,11 +161999,19 @@ function FKazumaList takes unit u, integer id returns nothing
         call UnitAddAbility(u,'KI1B')
         call UnitRemoveAbilityTimed(u,'KI1B',10)
     endif
-    if id=='IPRB' then //Лук начинающей жрицы
+    if id=='ISPB' then //Спортивный лук
         call UnitAddAbility(u,'KI1C')
         call UnitRemoveAbilityTimed(u,'KI1C',10)
         call UnitAddAbility(u,'KI1D')
         call UnitRemoveAbilityTimed(u,'KI1D',10)
+        call CheckUnitBonusRange(u)
+    endif
+    if id=='IPRB' then //Лук жрицы
+        call UnitAddAbility(u,'KI1D')
+        call UnitRemoveAbilityTimed(u,'KI1D',10)
+        call UnitAddAbility(u,'KI1F')
+        call UnitRemoveAbilityTimed(u,'KI1F',10)
+        call CheckUnitBonusRange(u)
     endif
 endfunction
 function FKazumaCond takes nothing returns boolean
@@ -162005,6 +162057,7 @@ if time > 10 then
         call FlushChildHashtable(HH, id)
         call DestroyTimer(GetExpiredTimer())
     endif
+    call CheckUnitBonusRange(c)
 endif
 set p=null
 set c=null
@@ -221829,6 +221882,7 @@ call UIS_RegisterItem('I01H','IOS3','I12R',0,0,0,0,0,0,0,0,'ISHk')              
 call UIS_RegisterItem('I02Y','ISHk',0,0,0,0,0,0,0,0,0,'IHnK')                                 // Hakka No Togame
 call UIS_RegisterItem('I01L','I12R',0,0,0,0,0,0,0,0,'IBSR','IBSI')                                 // Buster Sword
 call UIS_RegisterItem('I03Z','I03C','I060',0,0,0,0,0,0,0,0,'IAoF')                                 // Fafnir
+call UIS_RegisterItem('ISPB','I06K','I01X',0,0,0,0,0,0,0,'IPRR','IPRB')                                 // Лук Жрицы
 call UIS_RegisterItem('IOS3','IOS4','IOS2','IOS1',0,0,0,0,0,0,0,'I1S4')
 call UIS_RegisterItem('I01Z','I02T',0,0,0,0,0,0,0,0,'I052','I04G')
 // call UIS_RegisterItem('I03B','I01I',0,'I053',0,0,'I038') //old Kosa
