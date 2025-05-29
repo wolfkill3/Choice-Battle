@@ -46325,10 +46325,10 @@ if c==u or GetSpellTargetItem()==it then
     set t=CreateTimer()
     set id=GetHandleId(t)
     if LoadBoolean(HH,idt,'BoMd')==true then
-        call DisplayTextToPlayer(Player(idp),0,0,"Лук Жрицы теперь отталкивает.")
+        call DisplayTextToPlayer(Player(idp),0,0,"Priestess's Bow now knocks back.")
         call SaveBoolean(HH,idt,'BoMd',false)
     else
-        call DisplayTextToPlayer(Player(idp),0,0,"Лук Жрицы теперь притягивает.")
+        call DisplayTextToPlayer(Player(idp),0,0,"Priestess's Bow now pulls in.")
         call SaveBoolean(HH,idt,'BoMd',true)
     endif
     call SaveItemHandle(HH,id,0,it)
