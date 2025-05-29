@@ -42162,7 +42162,12 @@ if cond==0 then
     //==============================================================================
     //========= Kurapika Q E R Choice END
     //==============================================================================
-
+    if CurrentEventAttack and nb>0 and GetUnitAbilityLevel(c,'BoPB')>0 then
+        call Push5(u,20,a,40,"")
+    endif
+    if CurrentEventAttack and nb>0 and GetUnitAbilityLevel(c,'BoPD')>0 then
+        call Push5(u,20,a-180*bj_DEGTORAD,40,"")
+    endif
 
     if CurrentEventAttack and nb>0 and GetUnitTypeId(c) == 'H02L' and GetHeroLevel(c)>=6 then
         set dmg=GetHeroStr(c,true) * 0.45
@@ -44585,7 +44590,7 @@ function AkatsukiSetCast takes nothing returns nothing
 local timer t=CreateTimer()
 local unit u=GetTriggerUnit()
 local integer id=GetHandleId(t)
-if GetSpellAbilityId()=='MaE1' and GetUnitAbilityLevel(GetSpellTargetUnit(), 'Wome')>0 and ((IsUnitAlly(GetSpellTargetUnit(), GetOwningPlayer(u))==false and GetWidgetLife(GetSpellTargetUnit()) > GetWidgetMaxLife(GetSpellTargetUnit()) * 0.3) or GetUnitAbilityLevel(GetSpellTargetUnit(), 'MaE3')>0) then
+if (GetSpellAbilityId()=='MaE1' and GetUnitAbilityLevel(GetSpellTargetUnit(), 'Wome')>0 and ((IsUnitAlly(GetSpellTargetUnit(), GetOwningPlayer(u))==false and GetWidgetLife(GetSpellTargetUnit()) > GetWidgetMaxLife(GetSpellTargetUnit()) * 0.3) or GetUnitAbilityLevel(GetSpellTargetUnit(), 'MaE3')>0)) or (GetSpellAbilityId()=='BoPA' and (u==GetSpellTargetUnit() or GetSpellTargetItem()==GetAbilityOwningItem(GetTriggerAbility()))) then
 call DestroyTimer(t)
 else
 call SaveUnitHandle(h,id,0,u)
@@ -44607,7 +44612,7 @@ endfunction
 function SaiyanSetCast takes nothing returns nothing
 local unit u=GetTriggerUnit()
 local integer id=GetSpellAbilityId()
-if id!='A0NL' and id!='A0TN' and id!='A0P2' and id!='A0EH' and id!='A0CZ' and id!='A2CZ' and id!='A015' and id!='A315' and id!='A0SK' and id!='A1SK' and id!='A0YZ' and id!='A13V' and id!='A23V' and GetAbilityStringField(GetUnitAbility(u,id),ABILITY_SF_ICON_NORMAL)!="ReplaceableTextures\\CommandButtons\\BTNCancel1.blp" then
+if id!='A0NL' and id!='A0TN' and id!='A0P2' and id!='A0EH' and id!='A0CZ' and id!='A2CZ' and id!='A015' and id!='A315' and id!='A0SK' and id!='A1SK' and id!='A0YZ' and id!='A13V' and id!='A23V' and GetAbilityStringField(GetUnitAbility(u,id),ABILITY_SF_ICON_NORMAL)!="ReplaceableTextures\\CommandButtons\\BTNCancel1.blp" and not(id=='BoPA' and (u==GetSpellTargetUnit() or GetSpellTargetItem()==GetAbilityOwningItem(GetTriggerAbility()))) then
 call HealTextTag(u,u,GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.04*myCustomHeal2(u,1),"HealthRes")
 call HealTextTag(u,u,GetUnitState(u,UNIT_STATE_MAX_MANA)*0.025*myCustomMana2(u,1),"ManaRes")
 call SetUnitState(u,UNIT_STATE_LIFE,GetWidgetLife(u)+GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.04)
@@ -46295,6 +46300,64 @@ set gg_trg_YataMirror=CreateTrigger()
 call TriggerRegisterAnyUnitEventBJ(gg_trg_YataMirror,EVENT_PLAYER_UNIT_SPELL_EFFECT)
 call TriggerAddCondition(gg_trg_YataMirror,Condition(function Trig_YataMirror_Conditions))
 call TriggerAddAction(gg_trg_YataMirror,function Trig_YataMirror_Actions)
+endfunction
+function Trig_PriestessBow_Conditions takes nothing returns boolean
+return GetSpellAbilityId()=='BoPA' and GetUnitTypeId(GetTriggerUnit())!='H007'
+endfunction
+function Trig_PriestessBow_Actions2 takes nothing returns nothing
+local timer t=GetExpiredTimer()
+local integer id=GetHandleId(t)
+local item it=LoadItemHandle(HH,id,0)
+call StartItemCooldown(it,0.1)
+call DestroyTimer(t)
+call FlushChildHashtable(HH,id)
+set t=null
+endfunction
+function Trig_PriestessBow_Actions takes nothing returns nothing
+local unit u=GetTriggerUnit()
+local unit c=GetSpellTargetUnit()
+local integer idp=GetPlayerId(GetOwningPlayer(u))
+local item it=GetAbilityOwningItem(GetTriggerAbility())
+local integer idt=GetHandleId(it)
+local timer t
+local integer id
+if c==u or GetSpellTargetItem()==it then
+    // call BJDebugMsg(Id2String(GetAbilityTypeId(GetTriggerAbility())))
+    // call BJDebugMsg(Id2String(GetItemTypeId(it)))
+    set t=CreateTimer()
+    set id=GetHandleId(t)
+    if LoadBoolean(HH,idt,'BoMd')==true then
+        call DisplayTextToPlayer(Player(idp),0,0,"Лук Жрицы теперь отталкивает.")
+        call SaveBoolean(HH,idt,'BoMd',false)
+    else
+        call DisplayTextToPlayer(Player(idp),0,0,"Лук Жрицы теперь притягивает.")
+        call SaveBoolean(HH,idt,'BoMd',true)
+    endif
+    call SaveItemHandle(HH,id,0,it)
+    call TimerStart(t,0.02,false,function Trig_PriestessBow_Actions2)
+else
+    // call BJDebugMsg("test2")
+    if LoadBoolean(HH,idt,'BoMd')==false then
+        call UnitAddAbility(u,'BoPB')
+        call UnitMakeAbilityPermanent(u,true,'BoPB')
+        call UnitRemoveAbilityTimedPause(u,'BoPB',7)
+    else
+        call UnitAddAbility(u,'BoPD')
+        call UnitMakeAbilityPermanent(u,true,'BoPD')
+        call UnitRemoveAbilityTimedPause(u,'BoPD',7)
+    endif
+endif
+set it=null
+set u=null
+set c=null
+set t=null
+endfunction
+function InitTrig_PriestessBow takes nothing returns nothing
+local trigger t=CreateTrigger()
+call TriggerRegisterAnyUnitEventBJ(t,EVENT_PLAYER_UNIT_SPELL_EFFECT)
+call TriggerAddCondition(t,Condition(function Trig_PriestessBow_Conditions))
+call TriggerAddAction(t,function Trig_PriestessBow_Actions)
+set t=null
 endfunction
 function Trig_CloudVongola_Conditions takes nothing returns boolean
 return GetSpellAbilityId()=='A0WT' and GetUnitTypeId(GetTriggerUnit())!='H007'
@@ -221327,6 +221390,7 @@ call InitTrig_OnizukaSet()
 call InitTrig_BorosArmor()
 call InitTrig_YataMirror()
 call InitTrig_CloudVongola()
+call InitTrig_PriestessBow()
 call InitTrig_Rain_ring()
 call InitTrig_Mist_ring()
 call InitTrig_RegenMana()
