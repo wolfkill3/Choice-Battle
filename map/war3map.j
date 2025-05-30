@@ -69742,15 +69742,8 @@ endif
 call StartSound(soundStr[47])
 call UnitApplyTimedLife(l__d,1,0.5)
 call SetUnitAnimationByIndex(l__d,1)
-call SetDoodadTimeScale(LoadDoodadHandle(h,id,13),1)
-call SetDoodadAnimationByIndex(LoadDoodadHandle(h,id,13),3)
-call RemoveDoodadTimed(LoadDoodadHandle(h,id,13),0.5)
-set i=0
-loop
-exitwhen i>=12
-call DestroyFogModifier(LoadFogModifierHandle(HH,id,20+i))
-set i=i+1
-endloop
+call SetUnitAnimationByIndex(n,3)
+call UnitApplyTimedLife(LoadUnitHandle(h,id,13),1,0.5)
 call SetUnitInvulnerable(u,false)
 call PauseUnit(u,false)
 call SetUnitTimeScale(u,1)
@@ -69832,8 +69825,6 @@ local real y=GetUnitY(u)
 local trigger tt=LoadTriggerHandle(h,id,5)
 local real time=LoadReal(h,id,12)
 local real time2=LoadReal(h,id,13)
-local doodad kamewave=null
-local fogmodifier f
 local integer i
 if time==-0.9 then
     call SetUnitAnimationByIndex(u,169)
@@ -69934,14 +69925,6 @@ if time==2.1 then
         call StartSound(soundStr[53])
         endif
     endif
-    set i=0
-    loop
-    exitwhen i>=11
-        set f=CreateFogModifierRadius(Player(i),FOG_OF_WAR_VISIBLE,GetUnitX(u)+50*Cos(a),GetUnitY(u)+50*Sin(a),250,true,true)
-        call SaveFogModifierHandle(HH,id,20+i,f)
-        call FogModifierStart(f)
-        set i=i+1
-    endloop
 endif
 if time>-1 and time<2.1 then
     call SaveReal(h,id,12,time+0.1)
@@ -69992,14 +69975,16 @@ if time==2.4 then
     call StartSound(soundStr[56])
     endif
     call StartSound(soundStr[46])
-    set kamewave=CreateDoodad('D12R',x+80*Cos(a),y+80*Sin(a),a*bj_RADTODEG-180,1.3,1)
-    call SetDoodadZ(kamewave,75)
+    set n=CreateUnit(p,'e1CB',x,y,a*bj_RADTODEG-180)
     if LoadReal(HH,GetHandleId(GetOwningPlayer(u)),VariationQHash)==4 then
-        call SetDoodadModel(kamewave,"kamehameha10.mdl")
+        call SetUnitModel(n,"kamehameha10.mdl")
     endif
-    call SetDoodadAnimationByIndex(kamewave,2)
-    call SaveDoodadHandle(h,id,13,kamewave)
-    call SetDoodadTimeScale(kamewave,1.02)
+    call SetUnitSpriteFlag(n,SPRITE_FLAG_IGNORE_FOG,true)
+    call SetUnitAnimationByIndex(n,2)
+    call SaveUnitHandle(h,id,13,n)
+    call SetUnitAnimationOffsetPercent(n,0.01) 
+    call SetUnitTimeScale(n,1.02)
+    call SetUnitScale(n, 1.3, 1.3, 1.3)
     set n=CreateUnit(p,'e0CB',x,y,a*bj_RADTODEG)
     if LoadReal(HH,GetHandleId(GetOwningPlayer(u)),VariationQHash)==4 then
         call SetUnitVertexColor(n,255,0,0,255)
@@ -70033,9 +70018,7 @@ if time==2.4 then
     call TimerStart(t,0.017,true,function CastSuperKamehameha2)
 endif
 set u=null
-set kamewave=null
 set p=null
-set f=null
 set p=null
 set t=null
 set tt=null
@@ -70116,15 +70099,8 @@ endif
 call StartSound(soundStr[47])
 call UnitApplyTimedLife(l__d,1,0.5)
 call SetUnitAnimationByIndex(l__d,1)
-call SetDoodadTimeScale(LoadDoodadHandle(h,id,13),1)
-call SetDoodadAnimationByIndex(LoadDoodadHandle(h,id,13),3)
-call RemoveDoodadTimed(LoadDoodadHandle(h,id,13),0.5)
-set i=0
-loop
-exitwhen i>=12
-call DestroyFogModifier(LoadFogModifierHandle(HH,id,20+i))
-set i=i+1
-endloop
+call SetUnitAnimationByIndex(n,3)
+call UnitApplyTimedLife(LoadUnitHandle(h,id,13),1,0.5)
 call SetUnitInvulnerable(u,false)
 call PauseUnit(u,false)
 call SetUnitTimeScale(u,1)
@@ -70166,7 +70142,6 @@ local real x=GetUnitX(u)
 local real y=GetUnitY(u)
 local trigger tt=LoadTriggerHandle(h,id,5)
 local real time=LoadReal(h,id,12)
-local doodad kamewave=null
 local fogmodifier f
 local integer i
 call SaveReal(h,id,12,time+0.1)
@@ -70186,27 +70161,19 @@ if time==0.1 then
     call StartSound(soundStr[45])
     endif
 endif
-if time==0.7 then
-    set i=0
-    loop
-    exitwhen i>=11
-        set f=CreateFogModifierRadius(Player(i),FOG_OF_WAR_VISIBLE,x+50*Cos(a),y+50*Sin(a),250,true,true)
-        call SaveFogModifierHandle(HH,id,20+i,f)
-        call FogModifierStart(f)
-        set i=i+1
-    endloop
-endif
 if time==0.8 then
     set a=GetUnitFacing(u)*bj_DEGTORAD
     call SaveReal(h,id,4,GetUnitFacing(u)*bj_DEGTORAD)
     call PauseUnit(u, true)
     call SetUnitTimeScale(u,0)
     call StartSound(soundStr[46])
-    set kamewave=CreateDoodad('D12R',x+80*Cos(a),y+80*Sin(a),a*bj_RADTODEG-180,0.8,1)
-    call SetDoodadZ(kamewave,75)
-    call SetDoodadAnimationByIndex(kamewave,2)
-    call SaveDoodadHandle(h,id,13,kamewave)
-    call SetDoodadTimeScale(kamewave,1.2)
+    set n=CreateUnit(p,'e1CB',x,y,a*bj_RADTODEG-180)
+    call SetUnitAnimationOffsetPercent(n,0.01) 
+    call SetUnitSpriteFlag(n,SPRITE_FLAG_IGNORE_FOG,true)
+    call SetUnitAnimationByIndex(n,2)
+    call SaveUnitHandle(h,id,13,n)
+    call SetUnitTimeScale(n,1.2)
+    call SetUnitScale(n, 0.8, 0.7, 0.7)
     call UnitApplyTimedLife(CreateUnit(p,'e0CB',x,y,a*bj_RADTODEG),1,1)
     set n=CreateUnit(p,'e0C9',x+55*Cos(a),y+55*Sin(a),a*bj_RADTODEG)
     call UnitApplyTimedLife(n,1,0.5)
@@ -70226,8 +70193,6 @@ if time==0.8 then
     call TimerStart(t,0.017,true,function CastKamehameha22)
 endif
 set u=null
-set kamewave=null
-set f=null
 set p=null
 set t=null
 set tt=null
@@ -138283,7 +138248,7 @@ set E=FirstOfGroup(g)
 exitwhen E==null
 call UnitRemoveAbility(E,'A1DH')
 call UnitRemoveAbility(E,'B06Q')
-call SetUnitStunCounter(E,GetUnitStunCounter(E)-1)
+call SetUnitControlCount(E,9,GetUnitControlCount(E,9)-1)
 if IsUnitAlive(E)==true then
 call IssueImmediateOrder(E,"stop")
 endif
@@ -138323,7 +138288,7 @@ if Condition_Base(p,E)and IsUnitPaused(E)==false and IsUnitInvulnerable(E)==fals
 call GroupAddUnit(g,E)
 call UnitAddAbility(E,'A1DH')
 call IssueTargetOrder(E,"attack",u)
-call SetUnitStunCounter(E,GetUnitStunCounter(E)+1)
+call SetUnitControlCount(E,9,GetUnitControlCount(E,9)+1)
 endif
 call GroupRemoveUnit(g2,E)
 endloop
@@ -145593,8 +145558,6 @@ function GilgameshModifiedAttack takes unit newCaster, unit newTarget returns bo
                 call SetWidgetMana(newTarget, GetWidgetMana(newTarget)-GetWidgetMana(newTarget)*0.024)
             endif
             
-            
-            
             if UnitHasItemOfTypeBJ(newTarget, 'I03C') and UnitHasItemOfTypeBJ(newTarget, 'I03F')==false then        // Жилет Анбу у таргета
                     set damage=damage-25
                     call DestroyEffect(AddSpecialEffectTarget("Abilities\\Spells\\Human\\Heal\\HealTarget.mdl", newTarget,"origin"))
@@ -145745,6 +145708,12 @@ if Condition_Base(p,E) or (IsUnitEnemy(E,p)!=true and E==c and IsUnitType(E,UNIT
                         call EffectToRandomBone("war3mapImported\\BloodEX.mdx",E)
                 endif
                 call AGilPush(E,10,a,40)
+                if GetUnitAbilityLevel(u,'BoPB')>0 then
+                    call Push5(E,5,a,10,"")
+                endif
+                if GetUnitAbilityLevel(u,'BoPD')>0 then
+                    call Push5(E,5,a-180*bj_DEGTORAD,10,"")
+                endif
         endif
 call KillUnit(l__d)
 endif
@@ -206714,6 +206683,12 @@ function KarnaQ_LaserBlastAct takes nothing returns nothing
             //     call MyRemoveUnit(n, 2.5)
             // endif
             if Karna_ModifAttack(caster, E, damage_factor*0.7, damage*0.7, 0.6, false) then
+                if GetUnitAbilityLevel(caster,'BoPB')>0 then
+                    call Push5(E,20,AU(caster,E),40,"")
+                endif
+                if GetUnitAbilityLevel(caster,'BoPD')>0 then
+                    call Push5(E,20,AU(E,caster),40,"")
+                endif
             endif
             call SetControlToUnit(E, E, 1.0, "stun")
             call UnitAddAbility(E, 'KaAW')
@@ -206778,6 +206753,12 @@ function KarnaQ1_Periodic2 takes nothing returns nothing
                     //     call MyRemoveUnit(n, 2.5)
                     // endif
                     if Karna_ModifAttack(caster, E, damage_factor, damage, 0.6, false) then
+                        if GetUnitAbilityLevel(caster,'BoPB')>0 then
+                            call Push5(E,20,AU(caster,E),40,"")
+                        endif
+                        if GetUnitAbilityLevel(caster,'BoPD')>0 then
+                            call Push5(E,20,AU(E,caster),40,"")
+                        endif
                     endif
                     call SetControlToUnit(E, E, 2, "stun")
                     call UnitAddAbility(E, 'KaAW')
@@ -206973,6 +206954,12 @@ function KarnaQ2_Periodic takes nothing returns nothing
             exitwhen bjLCU == null
                 if Condition_Base(GetOwningPlayer(caster) , bjLCU) and IsUnitInGroup(bjLCU, LoadGroupHandle(h, id, c_GROUP2)) == false then
                     if Karna_ModifAttack(caster, bjLCU, damage_factor, damage, 0.6, false) then
+                        if GetUnitAbilityLevel(caster,'BoPB')>0 then
+                            call Push5(bjLCU,20,AU(caster,bjLCU),40,"")
+                        endif
+                        if GetUnitAbilityLevel(caster,'BoPD')>0 then
+                            call Push5(bjLCU,20,AU(bjLCU,caster),40,"")
+                        endif
                     endif
                     call RengokuW_EW_Act(caster, bjLCU , LoadReal(h, id, 19) , null, 800)
                     call SetControlToUnit(bjLCU, bjLCU, 2.0, "stun")
@@ -207150,6 +207137,12 @@ function KarnaQ1_LPeriodic2 takes nothing returns nothing
                 // endif
                 if Karna_ModifAttack(caster, E, damage_factor*0.4, damage*0.4, 0.6, false) then
                     call SetControlToUnit(E, E, 1.0, "stun")
+                    if GetUnitAbilityLevel(caster,'BoPB')>0 then
+                        call Push5(E,20,AU(caster,E),40,"")
+                    endif
+                    if GetUnitAbilityLevel(caster,'BoPD')>0 then
+                        call Push5(E,20,AU(E,caster),40,"")
+                    endif
                 endif
                 call UnitAddAbility(E, 'KaAW')
                 call UnitMakeAbilityPermanent(E, true, 'KaAW')
@@ -207385,10 +207378,22 @@ function KarnaWAttack_Periodic takes nothing returns nothing
         exitwhen E==null
         if Condition_Base(GetOwningPlayer(d_sword), E) then
             if Karna_ModifAttack(LoadUnitHandle(h, id, 1), E, 0.25+GetUnitAbilityLevel(LoadUnitHandle(h, id, 1), 'KaA6')*0.05, LoadReal(h, id, 4), 0.6, true) then
+                if GetUnitAbilityLevel(LoadUnitHandle(h, id, 1),'BoPB')>0 then
+                    call Push5(E,20,AU(LoadUnitHandle(h, id, 1),E),40,"")
+                endif
+                if GetUnitAbilityLevel(LoadUnitHandle(h, id, 1),'BoPD')>0 then
+                    call Push5(E,20,AU(E,LoadUnitHandle(h, id, 1)),40,"")
+                endif
             endif
             call AGilPush(E,10,angle,40)
 		elseif IsUnitAlly(E, GetOwningPlayer(LoadUnitHandle(h, id, 1)))==true and GetWidgetLife(E)<=GetWidgetMaxLife(E)*0.1 then
 			if Karna_ModifAttack(LoadUnitHandle(h, id, 1), E, 0.25+GetUnitAbilityLevel(LoadUnitHandle(h, id, 1), 'KaA6')*0.05, LoadReal(h, id, 4), 0.6, false) then
+                if GetUnitAbilityLevel(LoadUnitHandle(h, id, 1),'BoPB')>0 then
+                    call Push5(E,20,AU(LoadUnitHandle(h, id, 1),E),40,"")
+                endif
+                if GetUnitAbilityLevel(LoadUnitHandle(h, id, 1),'BoPD')>0 then
+                    call Push5(E,20,AU(E,LoadUnitHandle(h, id, 1)),40,"")
+                endif
             endif
         endif
         call GroupRemoveUnit(G, E)
@@ -207622,6 +207627,12 @@ function KarnaW2_Periodic takes nothing returns nothing
                             call MyRemoveUnit(n, 2.5)
                         endif
                         if Karna_ModifAttack(caster, E, 0.5, damage, 0.3, false) then
+                            if GetUnitAbilityLevel(caster,'BoPB')>0 then
+                                call Push5(E,20,AU(caster,E),40,"")
+                            endif
+                            if GetUnitAbilityLevel(caster,'BoPD')>0 then
+                                call Push5(E,20,AU(E,caster),40,"")
+                            endif
                         endif
                         if index==0 then
                             call SetControlToUnit(E, E, 0.5, "stun")
@@ -209536,6 +209547,12 @@ function ShiendoCast2 takes nothing returns nothing // SinonE
                 exitwhen E==null
                 if Condition_Base(p,E)then
                     if Sinon_ModifAttack(u, E, 1.0, dmg, 1.0, false) then
+                        if GetUnitAbilityLevel(u,'BoPB')>0 then
+                            call Push5(E,20,AU(u,E),40,"")
+                        endif
+                        if GetUnitAbilityLevel(u,'BoPD')>0 then
+                            call Push5(E,20,AU(E,u),40,"")
+                        endif
                     endif
                     call SetControlToUnit(E, E, 2, "stun")
                 endif
@@ -209612,6 +209629,12 @@ function SinonW_SSPeriodic takes nothing returns nothing
             if Condition_Base(GetOwningPlayer(bullet), E) and IsUnitInvulnerable(E)==false  then
                 
                 if Sinon_ModifAttack(LoadUnitHandle(h, id, 0), E, 0.06, damage, 0.00, false) then
+                    if GetUnitAbilityLevel(LoadUnitHandle(h, id, 0),'BoPB')>0 then
+                        call Push5(E,20,AU(LoadUnitHandle(h, id, 0),E),40,"")
+                    endif
+                    if GetUnitAbilityLevel(LoadUnitHandle(h, id, 0),'BoPD')>0 then
+                        call Push5(E,20,AU(E,LoadUnitHandle(h, id, 0)),40,"")
+                    endif
                 endif
                 call SetControlToUnit(E, E, 0.06, "stun")
                 call Push3(E, 20, angle, 20, "null")
@@ -209925,6 +209948,12 @@ function SinonR_Periodic takes nothing returns nothing
                     call MyRemoveUnit(n, 1.5)
                 endif
                 if Sinon_ModifAttack(caster, E, 1.0, GetHeroAgi(caster, true)*2, 1.0, last_crit) then
+                    if GetUnitAbilityLevel(caster,'BoPB')>0 then
+                        call Push5(E,20,AU(caster,E),40,"")
+                    endif
+                    if GetUnitAbilityLevel(caster,'BoPD')>0 then
+                        call Push5(E,20,AU(E,caster),40,"")
+                    endif
                 endif
                 call Push3(E, 20, angle, 150, "null")
                 call GroupClear(bjLCG)
@@ -210132,6 +210161,12 @@ function SinonT_Periodic takes nothing returns nothing
                     call StartSound(soundplay)
                     call KillSoundWhenDone(soundplay)
                     if Sinon_ModifAttack(caster, E, 1.25, GetHeroAgi(caster, true)*3, 1.0, last_crit) then
+                        if GetUnitAbilityLevel(caster,'BoPB')>0 then
+                            call Push5(E,20,AU(caster,E),40,"")
+                        endif
+                        if GetUnitAbilityLevel(caster,'BoPD')>0 then
+                            call Push5(E,20,AU(E,caster),40,"")
+                        endif
                     endif
                     call UnitAddAbility(E, 'SNT1')
                     call UnitMakeAbilityPermanent(E, true, 'SNT1')
@@ -217429,6 +217464,12 @@ if IsUnitInGroup(n0,gr)==false and IsUnitEnemy(n0,GetOwningPlayer(caster))==true
     else
 
         if Karna_ModifAttack(caster, n0, 2, 0, 2, false) then
+            if GetUnitAbilityLevel(caster,'BoPB')>0 then
+                call Push5(n0,20,AU(caster,n0),40,"")
+            endif
+            if GetUnitAbilityLevel(caster,'BoPD')>0 then
+                call Push5(n0,20,AU(n0,caster),40,"")
+            endif
         endif
 
         call CustomTrueDamage(caster, n0, GetHeroAgi(caster,true)*2)
