@@ -177258,7 +177258,7 @@ endfunction
 function MinatoQWQ_Cast takes unit newCaster,real angle,real distance,timer newTimer returns nothing
     local integer id= GetHandleId(newTimer)
     local integer id_caster= GetHandleId(newCaster)
-    local real damage= 50 + GetHeroAgi(newCaster, true) * ( 0.5 + 0.5 * GetUnitAbilityLevel(newCaster, 'MiQ1') ) + LoadReal(h, id_caster, StringHash("MinatoW_Damage"))
+    local real damage= GetHeroAgi(newCaster, true) * ( 1.5 + 0.5 * GetUnitAbilityLevel(newCaster, 'MiQ1') ) + LoadReal(h, id_caster, StringHash("MinatoW_Damage"))
     
     set soundplay=CreateSound("Sound\\war3mapImported\\Minato_WQQ.mp3", false, false, true, 12700, 12700, "")
     call StartSound(soundplay)
@@ -177479,7 +177479,7 @@ function MinatoRQWQ_Cast takes unit newCaster,real angle,timer newTimer returns 
     local integer id= GetHandleId(newTimer)
     local integer id_caster= GetHandleId(newCaster)
     local boolean MinatoR_Mod= LoadBoolean(h, id_caster, StringHash("MinatoR_Mod"))
-    local real damage= 50 + ( 0.5 + 0.5 * GetUnitAbilityLevel(newCaster, 'MiQ4') ) * GetHeroAgi(newCaster, true)
+    local real damage= ( 1.5 + 0.5 * GetUnitAbilityLevel(newCaster, 'MiQ4') ) * GetHeroAgi(newCaster, true)
     call PauseUnit(newCaster, true)
     call SetUnitInvulnerable(newCaster, true)
     call UnitAddAbility(newCaster, 'Arav')
@@ -177539,7 +177539,7 @@ function MinatoQ1_Periodic takes nothing returns nothing
                 call Push3(bjLCU , 75 , angle , 50 , "")
                 call KillUnit(bjLCU)
                 call DestroyEffect(AddSpecialEffectTarget("HeroBladeMasterpf_E1.mdl", E, "origin"))
-                call myCustomDamage(LoadUnitHandle(h, id, CasterHash) , E , 50+GetHeroAgi(LoadUnitHandle(h, id, CasterHash), true) * ( 0.5 + 0.5 * GetUnitAbilityLevel(LoadUnitHandle(h, id, CasterHash), 'MiQ1') ) , false , false , null , null , null)
+                call myCustomDamage(LoadUnitHandle(h, id, CasterHash) , E , GetHeroAgi(LoadUnitHandle(h, id, CasterHash), true) * ( 1.5 + 0.5 * GetUnitAbilityLevel(LoadUnitHandle(h, id, CasterHash), 'MiQ1') ) , false , false , null , null , null)
                 call SetControlToUnit(LoadUnitHandle(h, id, CasterHash) , E , 0.5 , "stun")
                 call Push(E , 75 , angle , 50)
                 call MinatoAddHiraishinSeal(E , CreateTimer())
