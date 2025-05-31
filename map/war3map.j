@@ -1246,8 +1246,8 @@ function CheckUnitBonusRange2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
 local unit u=LoadUnitHandle(HH,id,0)
-call SetUnitAcquireRange(u, GetUnitAcquireRange(u)+B2I(UnitHasBow(u))*(GetUnitBaseWeaponRealFieldById(GetUnitTypeId(u),UNIT_WEAPON_RF_ATTACK_RANGE,0)*0.1+75))
-call SetUnitAttackRangeByIndex(u, 0, GetUnitBaseWeaponRealFieldById(GetUnitTypeId(u),UNIT_WEAPON_RF_ATTACK_RANGE,0)+B2I(UnitHasBow(u))*(GetUnitBaseWeaponRealFieldById(GetUnitTypeId(u),UNIT_WEAPON_RF_ATTACK_RANGE,0)*0.1+75))
+call SetUnitAcquireRange(u, GetUnitAcquireRange(u)+B2I(UnitHasBow(u))*(GetUnitBaseWeaponRealFieldById(GetUnitTypeId(u),UNIT_WEAPON_RF_ATTACK_RANGE,0)*0.3+50))
+call SetUnitAttackRangeByIndex(u, 0, GetUnitBaseWeaponRealFieldById(GetUnitTypeId(u),UNIT_WEAPON_RF_ATTACK_RANGE,0)+B2I(UnitHasBow(u))*(GetUnitBaseWeaponRealFieldById(GetUnitTypeId(u),UNIT_WEAPON_RF_ATTACK_RANGE,0)*0.3+50))
 call PauseTimer(t)
 call DestroyTimer(t)
 call FlushChildHashtable(HH,id)
@@ -23066,8 +23066,8 @@ elseif GetItemPlayer(it)==p then
     if (GetItemTypeId(it) ==  'ISPB' or GetItemTypeId(it) ==  'IPRB') and count==1 then
         // call BJDebugMsg(I2S(LoadInteger(HH,GetHandleId(it),'slot')))
         if LoadInteger(HH,GetHandleId(it),'slot')<6 then
-            call SetUnitAcquireRange(u, GetUnitAcquireRange(u)-GetUnitBaseRealFieldById(GetUnitTypeId(u),UNIT_RF_ACQUISITION_RANGE)*0.1-75)
-            call SetUnitAttackRangeByIndex(u, 0, GetUnitAttackRangeByIndex(u,0)-GetUnitBaseWeaponRealFieldById(GetUnitTypeId(u),UNIT_WEAPON_RF_ATTACK_RANGE,0)*0.1-75)
+            call SetUnitAcquireRange(u, GetUnitAcquireRange(u)-GetUnitBaseRealFieldById(GetUnitTypeId(u),UNIT_RF_ACQUISITION_RANGE)*0.3-50)
+            call SetUnitAttackRangeByIndex(u, 0, GetUnitAttackRangeByIndex(u,0)-GetUnitBaseWeaponRealFieldById(GetUnitTypeId(u),UNIT_WEAPON_RF_ATTACK_RANGE,0)*0.3-50)
         endif
     endif
 endif
@@ -23130,8 +23130,8 @@ if GetItemPlayer(it)==Player(15) or GetItemPlayer(it)==p or udg_test==true then
                 set count=count+1
             endif
             if count==1 then
-                call SetUnitAcquireRange(u, GetUnitAcquireRange(u)+GetUnitAttackRangeByIndex(u,0)*0.1+75)
-                call SetUnitAttackRangeByIndex(u, 0, GetUnitAttackRangeByIndex(u,0)+GetUnitAttackRangeByIndex(u,0)*0.1+75)
+                call SetUnitAcquireRange(u, GetUnitAcquireRange(u)+GetUnitAttackRangeByIndex(u,0)*0.3+50)
+                call SetUnitAttackRangeByIndex(u, 0, GetUnitAttackRangeByIndex(u,0)+GetUnitAttackRangeByIndex(u,0)*0.3+50)
             endif
         endif
     endif
@@ -23307,8 +23307,8 @@ else
                 call DisableItem(it,true,true,25)
                 call SetItemRemainingCooldown(it,cd)
                 if (GetItemTypeId(it) ==  'ISPB' or GetItemTypeId(it) ==  'IPRB') and count==1 and GetItemTypeId(ittarg) !=  'ISPB' and GetItemTypeId(ittarg) !=  'IPRB' then
-                    call SetUnitAcquireRange(u, GetUnitAcquireRange(u)-GetUnitBaseRealFieldById(GetUnitTypeId(u),UNIT_RF_ACQUISITION_RANGE)*0.1-75)
-                    call SetUnitAttackRangeByIndex(u, 0, GetUnitAttackRangeByIndex(u,0)-GetUnitBaseWeaponRealFieldById(GetUnitTypeId(u),UNIT_WEAPON_RF_ATTACK_RANGE,0)*0.1-75)
+                    call SetUnitAcquireRange(u, GetUnitAcquireRange(u)-GetUnitBaseRealFieldById(GetUnitTypeId(u),UNIT_RF_ACQUISITION_RANGE)*0.3-50)
+                    call SetUnitAttackRangeByIndex(u, 0, GetUnitAttackRangeByIndex(u,0)-GetUnitBaseWeaponRealFieldById(GetUnitTypeId(u),UNIT_WEAPON_RF_ATTACK_RANGE,0)*0.3-50)
                 endif
             endif
         else
@@ -23316,8 +23316,8 @@ else
                 call EnableItem(it,true,true,25)
                 call SetItemRemainingCooldown(it,5)
                 if (GetItemTypeId(it) ==  'ISPB' or GetItemTypeId(it) ==  'IPRB') and count==0  then
-                    call SetUnitAcquireRange(u, GetUnitAcquireRange(u)+GetUnitAttackRangeByIndex(u,0)*0.1+75)
-                    call SetUnitAttackRangeByIndex(u, 0, GetUnitAttackRangeByIndex(u,0)+GetUnitAttackRangeByIndex(u,0)*0.1+75)
+                    call SetUnitAcquireRange(u, GetUnitAcquireRange(u)+GetUnitAttackRangeByIndex(u,0)*0.3+50)
+                    call SetUnitAttackRangeByIndex(u, 0, GetUnitAttackRangeByIndex(u,0)+GetUnitAttackRangeByIndex(u,0)*0.3+50)
                 endif
             endif
         endif
@@ -23328,8 +23328,8 @@ else
                     call SetItemRemainingCooldown(ittarg,cdtar)
                     call SetItemRemainingCooldown(it,5)
                     if (GetItemTypeId(ittarg) ==  'ISPB' or GetItemTypeId(ittarg) ==  'IPRB') and count==1 and GetItemTypeId(it) !=  'ISPB' and GetItemTypeId(it) !=  'IPRB' then
-                        call SetUnitAcquireRange(u, GetUnitAcquireRange(u)-GetUnitBaseRealFieldById(GetUnitTypeId(u),UNIT_RF_ACQUISITION_RANGE)*0.1-75)
-                        call SetUnitAttackRangeByIndex(u, 0, GetUnitAttackRangeByIndex(u,0)-GetUnitBaseWeaponRealFieldById(GetUnitTypeId(u),UNIT_WEAPON_RF_ATTACK_RANGE,0)*0.1-75)
+                        call SetUnitAcquireRange(u, GetUnitAcquireRange(u)-GetUnitBaseRealFieldById(GetUnitTypeId(u),UNIT_RF_ACQUISITION_RANGE)*0.3-50)
+                        call SetUnitAttackRangeByIndex(u, 0, GetUnitAttackRangeByIndex(u,0)-GetUnitBaseWeaponRealFieldById(GetUnitTypeId(u),UNIT_WEAPON_RF_ATTACK_RANGE,0)*0.3-50)
                     endif
                 endif
             else
@@ -23337,8 +23337,8 @@ else
                     call EnableItem(ittarg,true,true,25)
                     call SetItemRemainingCooldown(ittarg,5)
                     if (GetItemTypeId(ittarg) ==  'ISPB' or GetItemTypeId(ittarg) ==  'IPRB') and count==0  then
-                        call SetUnitAcquireRange(u, GetUnitAcquireRange(u)+GetUnitAttackRangeByIndex(u,0)*0.1+75)
-                        call SetUnitAttackRangeByIndex(u, 0, GetUnitAttackRangeByIndex(u,0)+GetUnitAttackRangeByIndex(u,0)*0.1+75)
+                        call SetUnitAcquireRange(u, GetUnitAcquireRange(u)+GetUnitAttackRangeByIndex(u,0)*0.3+50)
+                        call SetUnitAttackRangeByIndex(u, 0, GetUnitAttackRangeByIndex(u,0)+GetUnitAttackRangeByIndex(u,0)*0.3+50)
                     endif
                 endif
             endif
@@ -41953,8 +41953,8 @@ if cond==0 then
         call SetControlToUnit(u,u, 1, "stun")
         call DestroyEffect(AddSpecialEffectTarget("war3mapImported\\jiejinmao.mdx",c,"Right Hand"))
         call DestroyEffect(AddSpecialEffectTarget("war3mapImported\\BloodEX.mdx",u,"origin"))
-        call SetUnitAcquireRange(c, 600+B2I(UnitHasBow(c))*(600*0.1+75))
-        call SetUnitAttackRangeByIndex(c,0, 600+B2I(UnitHasBow(c))*(600*0.1+75))
+        call SetUnitAcquireRange(c, 600+B2I(UnitHasBow(c))*(600*0.3+50))
+        call SetUnitAttackRangeByIndex(c,0, 600+B2I(UnitHasBow(c))*(600*0.3+50))
     endif
     if CurrentEventAttack and nb>0 and GetUnitAbilityLevel(c,'A160')>0 and c!=UltimateDamage and GetHeroLevel(c)>=6 and GetRandomReal(0,100)<30 then
         set n=CreateUnit(GetOwningPlayer(c),'e0F0',x1,y1,a*bj_RADTODEG)
@@ -42163,10 +42163,10 @@ if cond==0 then
     //========= Kurapika Q E R Choice END
     //==============================================================================
     if CurrentEventAttack and nb>0 and GetUnitAbilityLevel(c,'BoPB')>0 then
-        call Push5(u,20,a,40,"")
+        call Push5(u,35,a,70,"")
     endif
     if CurrentEventAttack and nb>0 and GetUnitAbilityLevel(c,'BoPD')>0 then
-        call Push5(u,20,a-180*bj_DEGTORAD,40,"")
+        call Push5(u,35,a-180*bj_DEGTORAD,70,"")
     endif
 
     if CurrentEventAttack and nb>0 and GetUnitTypeId(c) == 'H02L' and GetHeroLevel(c)>=6 then
@@ -43262,7 +43262,7 @@ if cond==0 then
         //call SetEventDamage(nb*1.1)
         set nb=nb*1.1
     endif
-    if (CurrentEventAttack or GetUnitAbilityLevel(c,'A3WR')>0) and (UnitHasItemOfTypeBJ(c,'I04F') or GetUnitAbilityLevel(c,'KIN6')>0) and GetUnitAttackRangeByIndex(c,0)<250 and nb>0 then
+    if (CurrentEventAttack or GetUnitAbilityLevel(c,'A3WR')>0) and (UnitHasItemOfTypeBJ(c,'I04F') or GetUnitAbilityLevel(c,'KIN6')>0) and GetUnitAttackRangeByIndex(c,0)<250+B2I(UnitHasBow(c))*GetUnitAttackRangeByIndex(c,0)*0.3+50  and nb>0 then
         call HealTextTag(c,c,nb*0.2*myCustomHeal2(c,1),"HealthRes")
         call SetWidgetLife(c, GetWidgetLife(c)+ nb*0.2)
     endif
@@ -43270,7 +43270,7 @@ if cond==0 then
         call HealTextTag(c,c,nb*0.45*myCustomHeal2(c,1),"HealthRes")
         call SetWidgetLife(c, GetWidgetLife(c)+ nb*0.45)
     endif
-    if (CurrentEventAttack or GetUnitAbilityLevel(c,'A3WR')>0) and GetUnitAbilityLevel(c,'B06N')>0 and nb>0 and GetUnitAttackRangeByIndex(c,0)<250 then
+    if (CurrentEventAttack or GetUnitAbilityLevel(c,'A3WR')>0) and GetUnitAbilityLevel(c,'B06N')>0 and nb>0 and GetUnitAttackRangeByIndex(c,0)<250+B2I(UnitHasBow(c))*GetUnitAttackRangeByIndex(c,0)*0.3+50 then
         call HealTextTag(c,c,nb*0.3*myCustomHeal2(c,1),"HealthRes")
         call SetWidgetLife(c, GetWidgetLife(c)+ nb*0.3)
     endif
@@ -121210,8 +121210,8 @@ endfunction
 function SinonQBonusRange takes nothing returns nothing
         local integer id = GetHandleId(GetExpiredTimer())
         local unit u=LoadUnitHandle(h, id, CasterHash)
-        call SetUnitAcquireRange(u, 600+B2I(UnitHasBow(u))*(600*0.1+75))
-        call SetUnitAttackRangeByIndex(u,0, 600+B2I(UnitHasBow(u))*(600*0.1+75))
+        call SetUnitAcquireRange(u, 600+B2I(UnitHasBow(u))*(600*0.3+50))
+        call SetUnitAttackRangeByIndex(u,0, 600+B2I(UnitHasBow(u))*(600*0.3+50))
         call FlushChildHashtable(h, id)
         call DestroyTimer(GetExpiredTimer())
         set u=null
@@ -121239,8 +121239,8 @@ else
     call SetUnitInvulnerable(u,false)
     call SetUnitTimeScale(u,1)
     call UnitAddAbilityTimed(u,2,'A17K')
-    call SetUnitAcquireRange(u, 1200+B2I(UnitHasBow(u))*(1200*0.1+75))
-    call SetUnitAttackRangeByIndex(u,0, 1200+B2I(UnitHasBow(u))*(1200*0.1+75))
+    call SetUnitAcquireRange(u, 1200+B2I(UnitHasBow(u))*(1200*0.3+50))
+    call SetUnitAttackRangeByIndex(u,0, 1200+B2I(UnitHasBow(u))*(1200*0.3+50))
     set tt = CreateTimer()
     call SaveUnitHandle(h, GetHandleId(tt), CasterHash, u)
     call TimerStart(tt, 2.1, false, function SinonQBonusRange)
@@ -136519,7 +136519,7 @@ endfunction
 // local integer id=GetHandleId(t)
 // local unit u=LoadUnitHandle(HH,id,0)
 // if GetUnitAbilityLevel(u,'B150')==0 then
-//     call SetUnitAttackRangeByIndex(u, 0, GetUnitAttackRangeByIndex(u,0)-LoadReal(HH,id,1)*0.1-75)
+//     call SetUnitAttackRangeByIndex(u, 0, GetUnitAttackRangeByIndex(u,0)-LoadReal(HH,id,1)*0.3-50)
 //     call PauseTimer(t)
 //     call DestroyTimer(t)
 //     call FlushChildHashtable(HH,id)
@@ -136535,7 +136535,7 @@ endfunction
 // local real y=GetUnitX(u)
 // call SaveUnitHandle(HH,id,0,u)
 // call SaveReal(HH,id,1,GetUnitAttackRangeByIndex(u,0))
-// call SetUnitAttackRangeByIndex(u, 0, GetUnitAttackRangeByIndex(u,0)+LoadReal(HH,id,1)*0.1+75)
+// call SetUnitAttackRangeByIndex(u, 0, GetUnitAttackRangeByIndex(u,0)+LoadReal(HH,id,1)*0.3+50)
 // call TimerStart(t,.05,true,function ItemBowStartCast2)
 // set t=null
 // set u=null
@@ -145709,10 +145709,10 @@ if Condition_Base(p,E) or (IsUnitEnemy(E,p)!=true and E==c and IsUnitType(E,UNIT
                 endif
                 call AGilPush(E,10,a,40)
                 if GetUnitAbilityLevel(u,'BoPB')>0 then
-                    call Push5(E,5,a,10,"")
+                    call Push5(E,10,a,20,"")
                 endif
                 if GetUnitAbilityLevel(u,'BoPD')>0 then
-                    call Push5(E,5,a-180*bj_DEGTORAD,10,"")
+                    call Push5(E,10,a-180*bj_DEGTORAD,20,"")
                 endif
         endif
 call KillUnit(l__d)
@@ -146385,16 +146385,19 @@ set x=x+125*Cos(a)
 set y=y+125*Sin(a)
 //set dood=CreateDoodad
 set n=CreateUnit(p,'e14M',x,y,a*bj_RADTODEG)
+call SetUnitSpriteFlag(n,SPRITE_FLAG_IGNORE_FOG,true)
 call SetUnitTimeScale(n,0.9)
 call SetUnitScale(n,1.2,1.2,1.2)
 call SetUnitFlyHeight(n,he+55,0)
 call UnitApplyTimedLife(n,'BTLF',1.6)
 set n=CreateUnit(p,'e14M',x,y,a*bj_RADTODEG)
+call SetUnitSpriteFlag(n,SPRITE_FLAG_IGNORE_FOG,true)
 call SetUnitTimeScale(n,0.9)
 call SetUnitFlyHeight(n,he+55,0)
 call SetUnitScale(n,0.8,0.8,0.8)
 call UnitApplyTimedLife(n,'BTLF',1.6)
 set n=CreateUnit(p,'e14M',x,y,a*bj_RADTODEG)
+call SetUnitSpriteFlag(n,SPRITE_FLAG_IGNORE_FOG,true)
 call SetUnitTimeScale(n,0.9)
 call SetUnitFlyHeight(n,he+55,0)
 call SetUnitScale(n,0.2,0.2,0.2)
@@ -193072,13 +193075,13 @@ call PauseUnit(caster,false)
 call SetUnitInvulnerable(caster,false)
 if SR(GetUnitX(caster),GetUnitY(caster),GetUnitX(SabrackFU),GetUnitY(SabrackFU))<1500 and SabrackFU!=null then
 
-call SetUnitAcquireRange(caster, 800+B2I(UnitHasBow(caster))*(800*0.1+75))
-call SetUnitAttackRangeByIndex(caster, 0, 800+B2I(UnitHasBow(caster))*(800*0.1+75))
+call SetUnitAcquireRange(caster, 800+B2I(UnitHasBow(caster))*(800*0.3+50))
+call SetUnitAttackRangeByIndex(caster, 0, 800+B2I(UnitHasBow(caster))*(800*0.3+50))
 
 else
 
-call SetUnitAcquireRange(caster, 600+B2I(UnitHasBow(caster))*(600*0.1+75))
-call SetUnitAttackRangeByIndex(caster, 0, 600+B2I(UnitHasBow(caster))*(600*0.1+75))
+call SetUnitAcquireRange(caster, 600+B2I(UnitHasBow(caster))*(600*0.3+50))
+call SetUnitAttackRangeByIndex(caster, 0, 600+B2I(UnitHasBow(caster))*(600*0.3+50))
 
 endif
 endif
@@ -193136,8 +193139,8 @@ call UnitRemoveAbility(caster,'SaWB')
 call UnitRemoveAbility(caster,'BSaW')
 call SetPlayerAbilityAvailable(GetOwningPlayer(casterOriginal),'SaW1',true)
 
-call SetUnitAcquireRange(caster, 150+B2I(UnitHasBow(caster))*(150*0.1+75))
-call SetUnitAttackRangeByIndex(caster, 0, 150+B2I(UnitHasBow(caster))*(150*0.1+75))
+call SetUnitAcquireRange(caster, 150+B2I(UnitHasBow(caster))*(150*0.3+50))
+call SetUnitAttackRangeByIndex(caster, 0, 150+B2I(UnitHasBow(caster))*(150*0.3+50))
 
 call SetUnitPathing(caster,true)
 call RemoveUnit(LoadUnitHandle(HH,id,20))
@@ -198573,8 +198576,8 @@ if time>=5 then
 call UnitRemoveAbility(caster,'KHW2')
 call UnitRemoveAbility(caster,'BHK1')
 
-call SetUnitAcquireRange(caster, 150+B2I(UnitHasBow(caster))*(150*0.1+75))
-call SetUnitAttackRangeByIndex(caster, 0, 150+B2I(UnitHasBow(caster))*(150*0.1+75))
+call SetUnitAcquireRange(caster, 150+B2I(UnitHasBow(caster))*(150*0.3+50))
+call SetUnitAttackRangeByIndex(caster, 0, 150+B2I(UnitHasBow(caster))*(150*0.3+50))
 
 call PauseTimer(GetExpiredTimer())
 call FlushChildHashtable(HH,id)
@@ -198947,8 +198950,8 @@ endif
 if GetSpellAbilityId()=='HiW1' then
 if GetUnitAbilityLevel(caster,'KHG1')>0 then
 call UnitAddAbility(caster,'KHW2')
-call SetUnitAcquireRange(caster, 600+B2I(UnitHasBow(caster))*(600*0.1+75))
-call SetUnitAttackRangeByIndex(caster, 0, 600+B2I(UnitHasBow(caster))*(600*0.1+75))
+call SetUnitAcquireRange(caster, 600+B2I(UnitHasBow(caster))*(600*0.3+50))
+call SetUnitAttackRangeByIndex(caster, 0, 600+B2I(UnitHasBow(caster))*(600*0.3+50))
 call TimerStart(t,0.02,true,function HibarGW1)
 endif
 
@@ -206684,10 +206687,10 @@ function KarnaQ_LaserBlastAct takes nothing returns nothing
             // endif
             if Karna_ModifAttack(caster, E, damage_factor*0.7, damage*0.7, 0.6, false) then
                 if GetUnitAbilityLevel(caster,'BoPB')>0 then
-                    call Push5(E,20,AU(caster,E),40,"")
+                    call Push5(E,35,AU(caster,E),70,"")
                 endif
                 if GetUnitAbilityLevel(caster,'BoPD')>0 then
-                    call Push5(E,20,AU(E,caster),40,"")
+                    call Push5(E,35,AU(E,caster),70,"")
                 endif
             endif
             call SetControlToUnit(E, E, 1.0, "stun")
@@ -206754,10 +206757,10 @@ function KarnaQ1_Periodic2 takes nothing returns nothing
                     // endif
                     if Karna_ModifAttack(caster, E, damage_factor, damage, 0.6, false) then
                         if GetUnitAbilityLevel(caster,'BoPB')>0 then
-                            call Push5(E,20,AU(caster,E),40,"")
+                            call Push5(E,35,AU(caster,E),70,"")
                         endif
                         if GetUnitAbilityLevel(caster,'BoPD')>0 then
-                            call Push5(E,20,AU(E,caster),40,"")
+                            call Push5(E,35,AU(E,caster),70,"")
                         endif
                     endif
                     call SetControlToUnit(E, E, 2, "stun")
@@ -206955,10 +206958,10 @@ function KarnaQ2_Periodic takes nothing returns nothing
                 if Condition_Base(GetOwningPlayer(caster) , bjLCU) and IsUnitInGroup(bjLCU, LoadGroupHandle(h, id, c_GROUP2)) == false then
                     if Karna_ModifAttack(caster, bjLCU, damage_factor, damage, 0.6, false) then
                         if GetUnitAbilityLevel(caster,'BoPB')>0 then
-                            call Push5(bjLCU,20,AU(caster,bjLCU),40,"")
+                            call Push5(bjLCU,35,AU(caster,bjLCU),70,"")
                         endif
                         if GetUnitAbilityLevel(caster,'BoPD')>0 then
-                            call Push5(bjLCU,20,AU(bjLCU,caster),40,"")
+                            call Push5(bjLCU,35,AU(bjLCU,caster),70,"")
                         endif
                     endif
                     call RengokuW_EW_Act(caster, bjLCU , LoadReal(h, id, 19) , null, 800)
@@ -207138,10 +207141,10 @@ function KarnaQ1_LPeriodic2 takes nothing returns nothing
                 if Karna_ModifAttack(caster, E, damage_factor*0.4, damage*0.4, 0.6, false) then
                     call SetControlToUnit(E, E, 1.0, "stun")
                     if GetUnitAbilityLevel(caster,'BoPB')>0 then
-                        call Push5(E,20,AU(caster,E),40,"")
+                        call Push5(E,35,AU(caster,E),70,"")
                     endif
                     if GetUnitAbilityLevel(caster,'BoPD')>0 then
-                        call Push5(E,20,AU(E,caster),40,"")
+                        call Push5(E,35,AU(E,caster),70,"")
                     endif
                 endif
                 call UnitAddAbility(E, 'KaAW')
@@ -207291,7 +207294,7 @@ function KarnaW1_Periodic takes nothing returns nothing
             call StartAbilityCooldown(GetUnitAbility(caster, 'KaA6'), GetAbilityCooldown(GetUnitAbility(caster, 'KaA6')))
         endif
         call SetUnitAcquireRange(caster, 600)
-        call SetUnitAttackRangeByIndex(caster, 0, 200+B2I(UnitHasBow(caster))*(200*0.1+75))
+        call SetUnitAttackRangeByIndex(caster, 0, 200+B2I(UnitHasBow(caster))*(200*0.3+50))
         call SetUnitWeaponTypeByIndex(caster, 0, ConvertWeaponType(1))
         call TriggerClearActions(LoadTriggerHandle(h, id, 9))
         call TriggerClearActions(LoadTriggerHandle(h, id, 10))
@@ -207379,20 +207382,20 @@ function KarnaWAttack_Periodic takes nothing returns nothing
         if Condition_Base(GetOwningPlayer(d_sword), E) then
             if Karna_ModifAttack(LoadUnitHandle(h, id, 1), E, 0.25+GetUnitAbilityLevel(LoadUnitHandle(h, id, 1), 'KaA6')*0.05, LoadReal(h, id, 4), 0.6, true) then
                 if GetUnitAbilityLevel(LoadUnitHandle(h, id, 1),'BoPB')>0 then
-                    call Push5(E,20,AU(LoadUnitHandle(h, id, 1),E),40,"")
+                    call Push5(E,35,AU(LoadUnitHandle(h, id, 1),E),70,"")
                 endif
                 if GetUnitAbilityLevel(LoadUnitHandle(h, id, 1),'BoPD')>0 then
-                    call Push5(E,20,AU(E,LoadUnitHandle(h, id, 1)),40,"")
+                    call Push5(E,35,AU(E,LoadUnitHandle(h, id, 1)),70,"")
                 endif
             endif
             call AGilPush(E,10,angle,40)
 		elseif IsUnitAlly(E, GetOwningPlayer(LoadUnitHandle(h, id, 1)))==true and GetWidgetLife(E)<=GetWidgetMaxLife(E)*0.1 then
 			if Karna_ModifAttack(LoadUnitHandle(h, id, 1), E, 0.25+GetUnitAbilityLevel(LoadUnitHandle(h, id, 1), 'KaA6')*0.05, LoadReal(h, id, 4), 0.6, false) then
                 if GetUnitAbilityLevel(LoadUnitHandle(h, id, 1),'BoPB')>0 then
-                    call Push5(E,20,AU(LoadUnitHandle(h, id, 1),E),40,"")
+                    call Push5(E,35,AU(LoadUnitHandle(h, id, 1),E),70,"")
                 endif
                 if GetUnitAbilityLevel(LoadUnitHandle(h, id, 1),'BoPD')>0 then
-                    call Push5(E,20,AU(E,LoadUnitHandle(h, id, 1)),40,"")
+                    call Push5(E,35,AU(E,LoadUnitHandle(h, id, 1)),70,"")
                 endif
             endif
         endif
@@ -207511,8 +207514,8 @@ function KarnaW1_Cast takes unit newCaster returns nothing
     call SaveTriggerHandle(h, id, 10, trigger2)
 
     //== Триггеры на автоатаку
-    call SetUnitAcquireRange(newCaster, 1500+B2I(UnitHasBow(newCaster))*(1500*0.1+75))
-    call SetUnitAttackRangeByIndex(newCaster, 0, 1500+B2I(UnitHasBow(newCaster))*(1500*0.1+75))
+    call SetUnitAcquireRange(newCaster, 1500+B2I(UnitHasBow(newCaster))*(1500*0.3+50))
+    call SetUnitAttackRangeByIndex(newCaster, 0, 1500+B2I(UnitHasBow(newCaster))*(1500*0.3+50))
     call SetUnitWeaponTypeByIndex(newCaster, 0, ConvertWeaponType(5))
 
     call TriggerAddAction(trigger1,function KarnaWAttackAct)
@@ -207628,10 +207631,10 @@ function KarnaW2_Periodic takes nothing returns nothing
                         endif
                         if Karna_ModifAttack(caster, E, 0.5, damage, 0.3, false) then
                             if GetUnitAbilityLevel(caster,'BoPB')>0 then
-                                call Push5(E,20,AU(caster,E),40,"")
+                                call Push5(E,35,AU(caster,E),70,"")
                             endif
                             if GetUnitAbilityLevel(caster,'BoPD')>0 then
-                                call Push5(E,20,AU(E,caster),40,"")
+                                call Push5(E,35,AU(E,caster),70,"")
                             endif
                         endif
                         if index==0 then
@@ -209548,10 +209551,10 @@ function ShiendoCast2 takes nothing returns nothing // SinonE
                 if Condition_Base(p,E)then
                     if Sinon_ModifAttack(u, E, 1.0, dmg, 1.0, false) then
                         if GetUnitAbilityLevel(u,'BoPB')>0 then
-                            call Push5(E,20,AU(u,E),40,"")
+                            call Push5(E,35,AU(u,E),70,"")
                         endif
                         if GetUnitAbilityLevel(u,'BoPD')>0 then
-                            call Push5(E,20,AU(E,u),40,"")
+                            call Push5(E,35,AU(E,u),70,"")
                         endif
                     endif
                     call SetControlToUnit(E, E, 2, "stun")
@@ -209630,10 +209633,10 @@ function SinonW_SSPeriodic takes nothing returns nothing
                 
                 if Sinon_ModifAttack(LoadUnitHandle(h, id, 0), E, 0.06, damage, 0.00, false) then
                     if GetUnitAbilityLevel(LoadUnitHandle(h, id, 0),'BoPB')>0 then
-                        call Push5(E,20,AU(LoadUnitHandle(h, id, 0),E),40,"")
+                        call Push5(E,35,AU(LoadUnitHandle(h, id, 0),E),70,"")
                     endif
                     if GetUnitAbilityLevel(LoadUnitHandle(h, id, 0),'BoPD')>0 then
-                        call Push5(E,20,AU(E,LoadUnitHandle(h, id, 0)),40,"")
+                        call Push5(E,35,AU(E,LoadUnitHandle(h, id, 0)),70,"")
                     endif
                 endif
                 call SetControlToUnit(E, E, 0.06, "stun")
@@ -209949,10 +209952,10 @@ function SinonR_Periodic takes nothing returns nothing
                 endif
                 if Sinon_ModifAttack(caster, E, 1.0, GetHeroAgi(caster, true)*2, 1.0, last_crit) then
                     if GetUnitAbilityLevel(caster,'BoPB')>0 then
-                        call Push5(E,20,AU(caster,E),40,"")
+                        call Push5(E,35,AU(caster,E),70,"")
                     endif
                     if GetUnitAbilityLevel(caster,'BoPD')>0 then
-                        call Push5(E,20,AU(E,caster),40,"")
+                        call Push5(E,35,AU(E,caster),70,"")
                     endif
                 endif
                 call Push3(E, 20, angle, 150, "null")
@@ -210162,10 +210165,10 @@ function SinonT_Periodic takes nothing returns nothing
                     call KillSoundWhenDone(soundplay)
                     if Sinon_ModifAttack(caster, E, 1.25, GetHeroAgi(caster, true)*3, 1.0, last_crit) then
                         if GetUnitAbilityLevel(caster,'BoPB')>0 then
-                            call Push5(E,20,AU(caster,E),40,"")
+                            call Push5(E,35,AU(caster,E),70,"")
                         endif
                         if GetUnitAbilityLevel(caster,'BoPD')>0 then
-                            call Push5(E,20,AU(E,caster),40,"")
+                            call Push5(E,35,AU(E,caster),70,"")
                         endif
                     endif
                     call UnitAddAbility(E, 'SNT1')
@@ -217465,10 +217468,10 @@ if IsUnitInGroup(n0,gr)==false and IsUnitEnemy(n0,GetOwningPlayer(caster))==true
 
         if Karna_ModifAttack(caster, n0, 2, 0, 2, false) then
             if GetUnitAbilityLevel(caster,'BoPB')>0 then
-                call Push5(n0,20,AU(caster,n0),40,"")
+                call Push5(n0,35,AU(caster,n0),70,"")
             endif
             if GetUnitAbilityLevel(caster,'BoPD')>0 then
-                call Push5(n0,20,AU(n0,caster),40,"")
+                call Push5(n0,35,AU(n0,caster),70,"")
             endif
         endif
 
