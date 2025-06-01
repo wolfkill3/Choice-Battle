@@ -145286,16 +145286,15 @@ function GilgameshAADetails takes nothing returns nothing
         call DisplayTimedTextToPlayer(GetTriggerPlayer(), 0, 0, 7, "  ")
         call DisplayTimedTextToPlayer(GetTriggerPlayer(), 0, 0, 7, "• Меч Анбу: 16.5 чистого урона")
         call DisplayTimedTextToPlayer(GetTriggerPlayer(), 0, 0, 7, "• Гегецебури: 30 чистого урона + вероятный стан уменьшен до 0.3 сек")
-        call DisplayTimedTextToPlayer(GetTriggerPlayer(), 0, 0, 7, "• Самехада Манажор: 2.6% текущего мп выжигание за меч и 3.6% восстановление хп от вражеской текущей маны.")
-        call DisplayTimedTextToPlayer(GetTriggerPlayer(), 0, 0, 7, "• Жилет Анбу: враг восстанавливает 35 хп за каждый меч.")
-        call DisplayTimedTextToPlayer(GetTriggerPlayer(), 0, 0, 7, "• Комлпект Анбу: враг восстанавливает 50 хп за каждый меч.")
-        call DisplayTimedTextToPlayer(GetTriggerPlayer(), 0, 0, 7, "• Все облака маре: эффект блокирования каждого кольца теперь работает на каждый меч Гильгамеша.")
-        call DisplayTimedTextToPlayer(GetTriggerPlayer(), 0, 0, 7, "• Патриот: каждая автоатака отнимает 1 Allstat на 5 сек, но при этом уменьшается сила атаки Гильгамеша на 30% ед.")
-        call DisplayTimedTextToPlayer(GetTriggerPlayer(), 0, 0, 7, "• Экскалибур: каждая автоатака восстанавливает 20% от урона меча после маг резистов. Каждая автоатака уменьшает броню на 1 на 10 сек.")
-        call DisplayTimedTextToPlayer(GetTriggerPlayer(), 0, 0, 7, "• Темный экскалибур: пассивка работает также как и должна.")
+        call DisplayTimedTextToPlayer(GetTriggerPlayer(), 0, 0, 7, "• Самехада ManaBurn: 2.6% текущего MP выжигается за меч и 3.6% восстановление HP от вражеской текущей MP.")
+        call DisplayTimedTextToPlayer(GetTriggerPlayer(), 0, 0, 7, "• Облако Маре, Жилет/Комплект Анбу, Протектор Акатсуки, Сердце Фафнира: эффект блокирования теперь работает на каждый меч Гильгамеша.")
+        call DisplayTimedTextToPlayer(GetTriggerPlayer(), 0, 0, 7, "• Патриот: каждая автоатака отнимает 1 Allstat на 5 сек.")
+        call DisplayTimedTextToPlayer(GetTriggerPlayer(), 0, 0, 7, "• Экскалибур: каждая автоатака восстанавливает 20% от урона меча. Каждая автоатака уменьшает броню на 1 на 10 сек.")
+        call DisplayTimedTextToPlayer(GetTriggerPlayer(), 0, 0, 7, "• Темный Экскалибур: пассивка работает также как и должна.")
         call DisplayTimedTextToPlayer(GetTriggerPlayer(), 0, 0, 7, "• Туфли Анбу/Комплект Анбу: Гильгамеш может промахиваться с шансом 35%.")
         call DisplayTimedTextToPlayer(GetTriggerPlayer(), 0, 0, 7, "• Демон Глаз: Гильгамеш полностью промахивается мечами.")
-        call DisplayTimedTextToPlayer(GetTriggerPlayer(), 0, 0, 7, "• Патриот: активка дает возможность Гильгамешу не промахиваться.")
+        call DisplayTimedTextToPlayer(GetTriggerPlayer(), 0, 0, 7, "• 666: активка дает возможность Гильгамешу не промахиваться.")
+        call DisplayTimedTextToPlayer(GetTriggerPlayer(), 0, 0, 7, "• Лук Жрицы: Сила притягивания и отталкивания ослаблена до 20 ед.")
 endfunction
 
 function GilgameshAADetails_Int takes nothing returns nothing
@@ -145484,6 +145483,7 @@ function GilgameshModifiedAttack takes unit newCaster, unit newTarget returns bo
             endif
             
             if UnitHasItemOfTypeBJ(newCaster, 'I04F') then 				// Экскалибур
+                call HealTextTag(newCaster,newCaster,damage*0.2*myCustomHeal2(newCaster,1),"HealthRes")
                 call SetWidgetLife(newCaster, GetWidgetLife(newCaster)+damage*0.2*myCustomDamage2(newTarget,1))
                 
                 set tt=CreateTimer()
@@ -145507,10 +145507,12 @@ function GilgameshModifiedAttack takes unit newCaster, unit newTarget returns bo
             endif
             
             if GetUnitAbilityLevel(newCaster, 'A26R')>0 then										// Темный Экскалибур Хилл
+                call HealTextTag(newCaster,newCaster,damage*0.6*myCustomHeal2(newCaster,1),"HealthRes")
                 call SetWidgetLife(newCaster, GetWidgetLife(newCaster)+damage*0.6*myCustomDamage2(newTarget, 1))
             endif
             
             if GetUnitAbilityLevel(newCaster, 'B06N')>0 then										// Темный Экскалибур Хилл
+                call HealTextTag(newCaster,newCaster,damage*0.4*myCustomHeal2(newCaster,1),"HealthRes")
                 call SetWidgetLife(newCaster, GetWidgetLife(newCaster)+damage*0.4*myCustomDamage2(newTarget, 1))
             endif
             
