@@ -118338,16 +118338,21 @@ loop
 set n0=FirstOfGroup(G)
 exitwhen n0==null
 if Condition_Base(GetOwningPlayer(caster),n0)  then
-call SaveUnitHandle(HH,id,2,n0)
-call SaveReal(HH,id,5,5-R2I(dist/28)*0.02)
-call UnitSpeed(caster,0)
-call PauseUnit(n0,true)
-call UnitAddAbility(n0,'Amrf')
-call UnitRemoveAbility(n0,'Amrf')
-call SetUnitAnimation(n0,"death")
-call UnitSpeed(n0,1.5)
-exitwhen true
-
+    if LoadBoolean(HH,GetHandleId(n0),ANTITARGET_ABILITY)==false then
+        call SaveUnitHandle(HH,id,2,n0)
+        call SaveReal(HH,id,5,5-R2I(dist/28)*0.02)
+        call UnitSpeed(caster,0)
+        call PauseUnit(n0,true)
+        call UnitAddAbility(n0,'Amrf')
+        call UnitRemoveAbility(n0,'Amrf')
+        call SetUnitAnimation(n0,"death")
+        call UnitSpeed(n0,1.5)
+    else
+        call SaveBoolean(HH,GetHandleId(n0),TARGET_ABILITY,false)
+        call SaveUnitHandle(HH,GetHandleId(n0),REVERSE_TARGET,u)
+        call SaveReal(HH,id,8,0)
+    endif
+    exitwhen true
 endif
 call GroupRemoveUnit(G,n0)
 endloop
