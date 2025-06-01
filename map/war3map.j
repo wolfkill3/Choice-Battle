@@ -39430,6 +39430,347 @@ set distance=0
 set d2=0
 endfunction
 
+function EffectCreateAndMove225 takes boolean SetSpecialEffectVisibilitybool,string name01,real d101,real life01,real size01,real speed01,integer red01,integer green01,integer blue01,real visible01,real high01,unit a201,real distance01,real d201 returns nothing
+set n=CreateUnit(GetOwningPlayer(a201),'225e',GetUnitX(a201),GetUnitY(a201),d101)
+call SetUnitModel(n,name01)
+call UnitAddAbility(n,'Amrf')
+call UnitRemoveAbility(n,'Amrf')
+call SetUnitFlyHeight(n,GetUnitFlyHeight(a201)+high01,0)
+call MoveUnit(a201,n,distance01,d201)
+call UnitSize(n,size01,size01,size01)
+call UnitSpeed(n,speed01)
+call UnitColor(n,red01,green01,blue01,visible01)
+call MyRemoveUnit(n,life01)
+set a201=null
+endfunction
+function EffectCreateAndMove45 takes boolean SetSpecialEffectVisibilitybool,string name01,real d101,real life01,real size01,real speed01,integer red01,integer green01,integer blue01,real visible01,real high01,unit a201,real distance01,real d201 returns nothing
+set n=CreateUnit(GetOwningPlayer(a201),'045e',GetUnitX(a201),GetUnitY(a201),d101)
+call SetUnitModel(n,name01)
+call UnitAddAbility(n,'Amrf')
+call UnitRemoveAbility(n,'Amrf')
+call SetUnitFlyHeight(n,GetUnitFlyHeight(a201)+high01,0)
+call MoveUnit(a201,n,distance01,d201)
+call UnitSize(n,size01,size01,size01)
+call UnitSpeed(n,speed01)
+call UnitColor(n,red01,green01,blue01,visible01)
+call MyRemoveUnit(n,life01)
+set a201=null
+endfunction
+function EffectCreateAndMove90 takes boolean SetSpecialEffectVisibilitybool,string name01,real d101,real life01,real size01,real speed01,integer red01,integer green01,integer blue01,real visible01,real high01,unit a201,real distance01,real d201 returns nothing
+set n=CreateUnit(GetOwningPlayer(a201),'090e',GetUnitX(a201),GetUnitY(a201),d101)
+call SetUnitModel(n,name01)
+call UnitAddAbility(n,'Amrf')
+call UnitRemoveAbility(n,'Amrf')
+call SetUnitFlyHeight(n,GetUnitFlyHeight(a201)+high01,0)
+call MoveUnit(a201,n,distance01,d201)
+call UnitSize(n,size01,size01,size01)
+call UnitSpeed(n,speed01)
+call UnitColor(n,red01,green01,blue01,visible01)
+call MyRemoveUnit(n,life01)
+set a201=null
+endfunction
+function EffectCreateAndMoveAn takes boolean SetSpecialEffectVisibilitybool,string name01,real d101,real life01,real size01,real speed01,integer red01,integer green01,integer blue01,real visible01,real high01,unit a201,real distance01,real d201,integer animId returns nothing
+set n=CreateUnit(GetOwningPlayer(a201),'e000',GetUnitX(a201),GetUnitY(a201),d101)
+call SetUnitModel(n,name01)
+call UnitAddAbility(n,'Amrf')
+call UnitRemoveAbility(n,'Amrf')
+call SetUnitFlyHeight(n,GetUnitFlyHeight(a201)+high01,0)
+call MoveUnit(a201,n,distance01,d201)
+call UnitSize(n,size01,size01,size01)
+call UnitSpeed(n,speed01)
+call SetUnitAnimationByIndex(n,animId)
+call UnitColor(n,red01,green01,blue01,visible01)
+call MyRemoveUnit(n,life01)
+set a201=null
+endfunction
+
+function EffectLifeTime1 takes nothing returns nothing
+local timer t=GetExpiredTimer()
+local integer id=GetHandleId(t)
+call DestroyEffect(LoadEffectHandle(HH,id,10))
+call FlushChildHashtable(HH,id)
+call PauseTimer(t)
+call DestroyTimer(t)
+set t=null
+endfunction
+function EffectLifeTime takes effect effectforcreal,real timebeforeclear returns nothing
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+call SaveEffectHandle(HH,id,10,effectforcreal)
+call TimerStart(t,timebeforeclear,false,function EffectLifeTime1)
+set t=null
+endfunction
+
+function MoveEffect takes unit uniteffect,effect effectunit,real distanceUnit,real degreesUnit returns nothing
+local real x01=PolX(GetUnitX(uniteffect),distanceUnit,degreesUnit)
+local real y01=PolY(GetUnitY(uniteffect),distanceUnit,degreesUnit)
+if IsTerrainPathable(x01,y01,PATHING_TYPE_FLYABILITY)==false then
+call SetSpecialEffectX(effectunit,x01)
+call SetSpecialEffectY(effectunit,y01)
+endif
+set uniteffect=null
+set effectunit=null
+endfunction
+
+function EffectCreateAndMove1 takes boolean SetSpecialEffectVisibilitybool,string name01,real d101,real life01,real size01,real speed01,integer red01,integer green01,integer blue01,integer visible01,real high01,real pitch01,unit a201,real distance01,real d201 returns nothing
+local real x01=PolX(GetUnitX(a201),distance01,d201)
+local real y01=PolY(GetUnitY(a201),distance01,d201)
+set EFF=AddSpecialEffect(name01,x01,y01)
+call SetSpecialEffectVisible(EFF,true)
+call SetSpecialEffectOrientation(EFF,d101,pitch01,0)
+call RemoveEffect(EFF,life01,SetSpecialEffectVisibilitybool,CreateTimer())
+call SetSpecialEffectScale(EFF,size01)
+call SetSpecialEffectTimeScale(EFF,speed01)
+call SetSpecialEffectVertexColour(EFF,ColorPercentT(red01,255),ColorPercentT(green01,255),ColorPercentT(blue01,255),ColorPercentT((100-visible01),255))
+call SetSpecialEffectZ(EFF,GetUnitFlyHeight(a201)+high01)
+set name01=null
+set a201=null
+endfunction
+
+
+function EffectCreateAndMove takes boolean SetSpecialEffectVisibilitybool,string name01,real d101,real life01,real size01,real speed01,integer red01,integer green01,integer blue01,real visible01,real high01,unit a201,real distance01,real d201 returns nothing
+set n=CreateUnit(GetOwningPlayer(a201),'e200',GetUnitX(a201),GetUnitY(a201),d101)
+call SetUnitModel(n,name01)
+call UnitAddAbility(n,'Amrf')
+call UnitRemoveAbility(n,'Amrf')
+call SetUnitFlyHeight(n,GetUnitFlyHeight(a201)+high01,0)
+call MoveUnit(a201,n,distance01,d201)
+call UnitSize(n,size01,size01,size01)
+call UnitSpeed(n,speed01)
+call UnitColor(n,red01,green01,blue01,visible01)
+call MyRemoveUnit(n,life01)
+set a201=null
+endfunction
+
+
+function EffectCreateAndMove21 takes boolean SetSpecialEffectVisibilitybool,string name01,real d101,real life01,real size01,real speed01,integer red01,integer green01,integer blue01,real visible01,real high01,unit a201,real distance01,real d201 returns nothing
+set n=CreateUnit(GetOwningPlayer(a201),'e290',GetUnitX(a201),GetUnitY(a201),d101)
+call SetUnitModel(n,name01)
+call UnitAddAbility(n,'Amrf')
+call UnitRemoveAbility(n,'Amrf')
+call SetUnitFlyHeight(n,GetUnitFlyHeight(a201)+high01,0)
+call MoveUnit(a201,n,distance01,d201)
+call UnitSize(n,size01,size01,size01)
+call UnitSpeed(n,speed01)
+call UnitColor(n,red01,green01,blue01,visible01)
+call MyRemoveUnit(n,life01)
+set a201=null
+endfunction
+
+// толчок для E в риннегане
+function PushTimedMadara1 takes nothing returns nothing
+local timer t=GetExpiredTimer()
+local integer id=GetHandleId(t)
+local real time=LoadReal(HH,id,6)
+local real distance=LoadReal(HH,id,8)
+call MoveUnit(LoadUnitHandle(HH,id,1),LoadUnitHandle(HH,id,1),LoadReal(HH,id,2),LoadReal(HH,id,3))
+set time=time+0.02
+if time==0.02 then
+set time=-0.1
+call EffectCreateAndMove(true,"Madara\\[A]sandpoff123.mdl",GetRandomReal(0,360),1,1,1.25,100,100,100,0,0,LoadUnitHandle(HH,id,1),0,GetRandomReal(0,360))
+endif
+call SaveReal(HH,id,6,time)
+if LoadReal(HH,id,2)<=0 then
+set distance=distance-LoadReal(HH,id,2)
+else
+set distance=distance+LoadReal(HH,id,2)
+endif
+call SaveReal(HH,id,8,distance)
+if distance>=LoadReal(HH,id,10)then
+call PauseTimer(t)
+call FlushChildHashtable(HH,id)
+call DestroyTimer(t)
+endif
+set t=null
+endfunction
+function PushTimedMadara takes unit a00,real facing0,real distance0,real x00,real y00,real speed00 returns nothing
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+call SaveUnitHandle(HH,id,1,a00)
+call SaveReal(HH,id,2,speed00)
+call SaveReal(HH,id,3,facing0)
+call SaveReal(HH,id,8,SR(GetUnitX(a00),GetUnitY(a00),x00,y00))
+call SaveReal(HH,id,10,distance0)
+call TimerStart(t,0.02,true,function PushTimedMadara1)
+set a00=null
+set t=null
+endfunction
+// толчок для Т в шарингане
+function PushTimed1 takes nothing returns nothing
+local integer id=GetHandleId(GetExpiredTimer())
+call SaveInteger(HH,id,5,LoadInteger(HH,id,5)+1)
+call MoveUnit(LoadUnitHandle(HH,id,1),LoadUnitHandle(HH,id,1),LoadReal(HH,id,2),LoadReal(HH,id,3))
+if LoadInteger(HH,id,5)==LoadInteger(HH,id,6)then
+call PauseTimer(GetExpiredTimer())
+call FlushChildHashtable(HH,id)
+call DestroyTimer(GetExpiredTimer())
+endif
+endfunction
+function PushTimed takes unit l__a,real facing,integer time,real speed00 returns nothing
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+call SaveUnitHandle(HH,id,1,l__a)
+call SaveInteger(HH,id,5,0)
+call SaveInteger(HH,id,6,time)
+call SaveReal(HH,id,2,speed00)
+call SaveReal(HH,id,3,facing)
+call TimerStart(t,0.02,true,function PushTimed1)
+set l__a=null
+set t=null
+endfunction
+//
+
+//
+function DpsMokuton1 takes nothing returns nothing
+local timer t=GetExpiredTimer()
+local integer id=GetHandleId(t)
+local real d=LoadReal(HH,id,3)
+local real time=LoadReal(HH,id,5)
+local real time1
+if IsUnitPaused(LoadUnitHandle(HH,id,2))==false then
+set time1=LoadReal(HH,id,6)
+set time=time+0.02
+set time1=time1+0.02
+call SaveReal(HH,id,5,time)
+if time1==1 then
+set time1=0
+call  myCustomDamage(LoadUnitHandle(HH,id,1),LoadUnitHandle(HH,id,2),LoadReal(HH,id,15),false,false,null,null,null)
+endif
+call SaveReal(HH,id,6,time1)
+endif
+if time==LoadReal(HH,id,8)then
+call PauseTimer(t)
+call FlushChildHashtable(HH,id)
+call DestroyTimer(t)
+endif
+set t=null
+endfunction
+function DpsMokuton takes unit caster0,unit target0,real damage0,real time0 returns nothing
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+call SaveInteger(HH,id,5,0)
+call SaveUnitHandle(HH,id,1,caster0)
+call SaveUnitHandle(HH,id,2,target0)
+call SaveReal(HH,id,6,0.98)
+call SaveReal(HH,id,8,time0)
+call SaveReal(HH,id,15,damage0)
+call TimerStart(t,0.02,true,function DpsMokuton1)
+set caster0=null
+set target0=null
+set t=null
+endfunction
+
+
+function DamageAoeOneTime3 takes unit damager,real x0,real y0,real range,real damage,group gr1,integer time0,integer speed0,real facing0 returns nothing
+local timer t=GetExpiredTimer()
+local integer id=GetHandleId(t)
+call GroupClear(G)
+call GroupEnumUnitsInRange(G,x0,y0,range,Base)
+loop
+set n0=FirstOfGroup(G)
+exitwhen n0==null
+if  Condition_Base(GetOwningPlayer(damager),n0) and IsUnitInGroup(n0,gr1)==false  then
+call myCustomDamage(damager,n0,damage,false,false,null,null,null)
+call PushTimed(n0,facing0,time0,speed0)
+call GroupAddUnit(gr1,n0)
+endif
+call GroupRemoveUnit(G,n0)
+endloop
+call GroupClear(G)
+call SaveGroupHandle(HH,id,4,gr1)
+set damager=null
+set gr1=null
+set t=null              
+endfunction
+
+
+function DamageAoeOneTime2 takes unit damager,real x0,real y0,real range,real damage,group gr1, real level returns nothing
+local timer t=GetExpiredTimer()
+local integer id=GetHandleId(t)
+call GroupClear(G)
+call GroupEnumUnitsInRange(G,x0,y0,range,Base)
+loop
+set n0=FirstOfGroup(G)
+exitwhen n0==null
+if  Condition_Base(GetOwningPlayer(damager),n0) and IsUnitInGroup(n0,gr1)==false  then
+call myCustomDamage(damager,n0,damage,false,false,null,null,null)
+call CC_UnitEx( n0, n0, 0., 1.5+level*0.5, "root", false, "Abilities\\Spells\\NightElf\\EntanglingRoots\\EntanglingRootsTarget.mdl", "chest", 0,0 )
+
+//нужно узнать бафф рутов
+//call RootUnit(LoadUnitHandle(HH,id,1),n0,150,0x554D526F,'BUMr')
+
+call GroupAddUnit(gr1,n0)
+endif
+call GroupRemoveUnit(G,n0)
+endloop
+call GroupClear(G)
+call SaveGroupHandle(HH,id,4,gr1)
+set damager=null
+set gr1=null
+set t=null
+
+
+endfunction
+
+function DamageAoeOneTime1 takes unit damager,real x0,real y0,real range,real damage,group gr1 returns nothing
+local timer t=GetExpiredTimer()
+local integer id=GetHandleId(t)
+call GroupClear(G)
+call GroupEnumUnitsInRange(G,x0,y0,range,Base)
+loop
+set n0=FirstOfGroup(G)
+exitwhen n0==null
+if  Condition_Base(GetOwningPlayer(damager),n0) and IsUnitInGroup(n0,gr1)==false  then
+call DpsMokuton(damager,n0,damage*0.25,4)
+call GroupAddUnit(gr1,n0)
+endif
+call GroupRemoveUnit(G,n0)
+endloop
+call GroupClear(G)
+call SaveGroupHandle(HH,id,40,gr1)
+set damager=null
+set gr1=null
+set t=null      
+endfunction
+
+
+function DamageAoeOneTimeJirayaQ takes unit damager,real x0,real y0,real range,real damage returns nothing
+local timer t=GetExpiredTimer()
+local integer id=GetHandleId(t)
+call GroupClear(G)
+call GroupEnumUnitsInRange(G,x0,y0,range,Base)
+loop
+set n0=FirstOfGroup(G)
+exitwhen n0==null
+if  Condition_Base(GetOwningPlayer(damager),n0)  then
+call myCustomDamage(damager,n0,damage,false,false,null,null,null)
+call SlowUnit(damager,n0,0.7,0,4,0,false)
+endif
+call GroupRemoveUnit(G,n0)
+endloop
+call GroupClear(G)
+set damager=null
+set t=null
+endfunction
+
+
+function DamageAoeOneTime0 takes unit damager,real x0,real y0,real range,real damage returns nothing
+
+call GroupClear(G)
+call GroupEnumUnitsInRange(G,x0,y0,range,Base)
+loop
+set n0=FirstOfGroup(G)
+exitwhen n0==null
+if  Condition_Base(GetOwningPlayer(damager),n0)  then
+call myCustomDamage(damager,n0,damage,false,false,null,null,null)
+endif
+call GroupRemoveUnit(G,n0)
+endloop
+call GroupClear(G)
+set damager=null
+                        
+endfunction
+
 function JanneAlterDecreaseDef1 takes nothing returns nothing
 local integer id=GetHandleId(GetExpiredTimer())
 local unit target=LoadUnitHandle(HH,id,1)
@@ -117391,7 +117732,7 @@ call SetUnitAnimation(l__d,"Spell")
 call UnitApplyTimedLife(l__d,'BTLF',3)
 call SetUnitTimeScale(l__d,3)
 if GetUnitTypeId(u)=='H05D' then
-set soundplay=CreateSound("Sound\\Music\\mp3Music\\SakuraR.mp3",false,false,true,12700,12700,"")
+set soundplay=CreateSound("Sound\\Others\\SakuraR.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
 call KillSoundWhenDone(soundplay)
 else
@@ -117661,9 +118002,16 @@ endif
 endif
 call UnitAddAbility(u,'A147')
 call UnitAddAbility(c,'A145')
-set soundplay=CreateSound("Sound\\Music\\mp3Music\\SakuraF.mp3",false,false,true,12700,12700,"")
+if GetUnitTypeId(u)=='H05D' then
+set soundplay=CreateSound("Sound\\Others\\SakuraF.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
 call KillSoundWhenDone(soundplay)
+else
+call SetUnitAnimation(u,"Spell Slam")
+set soundplay=CreateSound("Sound\\Music\\mp3Music\\TsunadeF.mp3",false,false,true,12700,12700,"")
+call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
+endif
 call TimerStart(t,0.1,true,function ReleaseManaCast2)
 endif
 set c=null
@@ -117921,6 +118269,190 @@ call UnitAddAbility(u,'A13W')
 call TimerStart(t,0.1,true,function OkashoCast2)
 set u=null
 set p=null
+set t=null
+endfunction
+function Sakura_G_Act2 takes nothing returns nothing
+local integer id=GetHandleId(GetExpiredTimer())
+local unit caster=LoadUnitHandle(HH,id,1)
+local unit target=LoadUnitHandle(HH,id,2)
+local real time=LoadReal(HH,id,5)
+local real time1=LoadReal(HH,id,6)
+local real damage=LoadReal(HH,id,15)
+local real x0=GetUnitX(caster)
+local real y0=GetUnitY(caster)
+local real x1=GetUnitX(target)
+local real y1=GetUnitY(target)
+local real facing=LoadReal(HH,id,3)
+local real dist=LoadReal(HH,id,8)
+set time=time+0.02
+call SaveReal(HH,id,5,time)
+if dist<0 then
+call DestroyEffect(LoadEffectHandle(HH,id,25))
+call DestroyEffect(LoadEffectHandle(HH,id,26))
+call DestroyEffect(LoadEffectHandle(HH,id,27))
+call UnitSpeed(caster,1)
+call PauseUnit(caster,false)
+call SetUnitInvulnerable(caster,false)
+call SetUnitPathing(caster,true)
+call SetUnitPathing(target,true)
+call PauseTimer(GetExpiredTimer())
+call FlushChildHashtable(HH,id)
+call DestroyTimer(GetExpiredTimer())
+else
+call PauseUnit(caster,true)
+call SetUnitInvulnerable(caster,true)
+call SetUnitPathing(caster,false)
+call SetUnitFacing(caster,facing)
+if time==0.02 then
+    call SetUnitAnimationByIndex(caster,3)
+    call UnitSpeed(caster,0.8)
+    call SaveEffectHandle(HH,id,25,AddSpecialEffectTarget("war3mapImported\\RuneSphere.mdx",caster,"hand right"))
+    call SaveEffectHandle(HH,id,26,AddSpecialEffectTarget("war3mapImported\\BluefireBolt.mdx",caster,"hand right"))
+    call SaveEffectHandle(HH,id,27,AddSpecialEffectTarget("Abilities\\Spells\\NightElf\\SpiritOfVengeance\\SpiritOfVengeanceBirthMissile.mdl",caster,"hand right"))
+    call EffectCreateAndMove90(true,"Izayoi\\wind3.mdl",facing,1.5,1,1,100,100,100,40,100,caster,0,facing)
+    call EffectCreateAndMove(true,"Others\\CF2.mdl",facing,1,0.4,0.5,100,100,100,30,50,caster,0,facing)
+    call EffectCreateAndMove(true,"Izayoi\\[A]az_axe_ef1.mdl",facing,1.5,1,0.5,60,60,100,0,0,caster,0,facing)
+    if GetUnitTypeId(caster)=='H05D' then
+        set soundplay=CreateSound("Sound\\Others\\SakuraG1.mp3",false,false,true,12700,12700,"")
+        call StartSound(soundplay)
+        //call KillSoundWhenDone(soundplay)
+    else
+        set soundplay=CreateSound("Sound\\Music\\mp3Music\\TsunadeG1.mp3",false,false,true,12700,12700,"")
+        call StartSound(soundplay)
+    //call KillSoundWhenDone(soundplay)
+    endif
+endif
+if time==0.3 then
+call UnitSpeed(caster,0)
+endif
+if time<1 then
+call MoveUnit(caster,caster,30,facing)
+call SaveReal(HH,id,8,dist-30)
+set x0=PolX(x0,150,facing)
+set y0=PolY(y0,150,facing)
+call GroupClear(G)
+call GroupEnumUnitsInRange(G,x0,y0,150,Base)
+loop
+set n0=FirstOfGroup(G)
+exitwhen n0==null
+if Condition_Base(GetOwningPlayer(caster),n0)  then
+    if LoadBoolean(HH,GetHandleId(n0),ANTITARGET_ABILITY)==false then
+        call SaveUnitHandle(HH,id,2,n0)
+        call SaveReal(HH,id,5,5-R2I(dist/28)*0.02)
+        call UnitSpeed(caster,0)
+        call PauseUnit(n0,true)
+        call UnitAddAbility(n0,'Amrf')
+        call UnitRemoveAbility(n0,'Amrf')
+        call SetUnitAnimation(n0,"death")
+        call UnitSpeed(n0,1.5)
+    else
+        call SaveBoolean(HH,GetHandleId(n0),TARGET_ABILITY,false)
+        call SaveUnitHandle(HH,GetHandleId(n0),REVERSE_TARGET,u)
+        call SaveReal(HH,id,8,0)
+    endif
+    exitwhen true
+endif
+call GroupRemoveUnit(G,n0)
+endloop
+call GroupClear(G)
+endif
+if time>1 then
+call PauseUnit(target,true)
+if time==5 then
+if GetUnitTypeId(caster)=='H05D' then
+        set soundplay=CreateSound("Sound\\Others\\SakuraG2.mp3",false,false,true,12700,12700,"")
+        call StartSound(soundplay)
+        //call KillSoundWhenDone(soundplay)
+    else
+        set soundplay=CreateSound("Sound\\Music\\mp3Music\\TsunadeG2.mp3",false,false,true,12700,12700,"")
+        call StartSound(soundplay)
+    //call KillSoundWhenDone(soundplay)
+    endif
+//call KillSoundWhenDone(soundplay)
+endif
+if time==5.1 then
+call UnitSpeed(target,0)
+call SetUnitAnimationByIndex(caster,7)
+call UnitSpeed(caster,1)
+endif
+if time<5.2 then
+call MoveUnit(caster,caster,15,facing)
+call MoveUnit(caster,target,-100,facing+45)
+endif
+if time>5.3 and time<5.4 then
+call SetUnitFlyHeight(target,GetUnitFlyHeight(target)+25,0)
+endif
+if time>5.4 and time<5.5 then
+call SetUnitFlyHeight(target,GetUnitFlyHeight(target)-25,0)
+endif
+if time>5.3 then
+call MoveUnit(target,target,15,facing)
+endif
+if time>=5.5 then
+call UnitSpeed(target,1)
+call PauseUnit(target,false)
+
+call DamageAoeOneTime0(caster,x1,y1,400,damage)
+
+call myCustomDamage(caster,target,damage,false,false,null,null,null)
+call SetControlToUnit(target,target, 1.5, "stun")
+
+
+call EffectCreateAndMove(true,"Others\\HakkeStart2.mdl",facing,1.5,1.5,1,100,100,100,60,0,target,0,facing)
+call EffectCreateAndMove(true,"Others\\WindCirclefaster.mdl",facing,1.5,1.5,1,100,100,100,40,0,target,0,facing)
+call EffectCreateAndMove(true,"Others\\az_slb.mdl",facing,1.25,1.75,1.5,100,100,100,0,0,target,0,facing)
+call EffectCreateAndMove(true,"Signum\\[A]Sand2.mdl",facing,1.5,1.35,1.5,100,100,100,60,0,target,0,facing)
+call EffectCreateAndMove(true,"Others\\ChuShou_Effect_Earth1.mdl",facing,1.5,0.9,1.5,100,100,100,0,0,target,0,facing)
+call EffectCreateAndMove(true,"Madara\\[A]RinRfire1.mdl",facing,1.5,1.5,0.75,100,100,100,0,100,target,0,facing)
+call EffectCreateAndMove90(true,"Izayoi\\Kamijo-10.mdl",facing,1,2.5,1,100,100,100,0,0,target,-400,facing)
+set n0=CreateUnit(GetOwningPlayer(caster),'270e',GetUnitX(target),GetUnitY(target),GetRandomReal(0,360))
+call SetUnitModel(n0,"Izayoi\\CloudSpark.mdl")
+call UnitAddAbility(n0,'Amrf')
+call UnitRemoveAbility(n0,'Amrf')
+call SetUnitFlyHeight(n0,100,0)
+call UnitSize(n0,4,1,1)
+call UnitSpeed(n0,5)
+call MyRemoveUnit(n0,1.5)
+set n=CreateUnit(GetOwningPlayer(caster),'270e',GetUnitX(target),GetUnitY(target),GetRandomReal(0,360))
+call SetUnitModel(n0,"Izayoi\\CloudSpark.mdl")
+call UnitAddAbility(n0,'Amrf')
+call UnitRemoveAbility(n0,'Amrf')
+call SetUnitFlyHeight(n0,100,0)
+call UnitSize(n0,4,1,1)
+call UnitSpeed(n0,5)
+call MyRemoveUnit(n0,1.5)
+set n=CreateUnit(GetOwningPlayer(caster),'270e',GetUnitX(target),GetUnitY(target),GetRandomReal(0,360))
+call SetUnitModel(n0,"Izayoi\\CloudSpark.mdl")
+call UnitAddAbility(n0,'Amrf')
+call UnitRemoveAbility(n0,'Amrf')
+call SetUnitFlyHeight(n0,100,0)
+call UnitSize(n0,4,1,1)
+call UnitSpeed(n0,5)
+call MyRemoveUnit(n0,1.5)
+set n0=null
+call SaveReal(HH,id,8,-100)
+endif
+endif
+endif
+set caster=null
+set target=null
+endfunction
+function Sakura_G_Act takes unit caster,real x1,real y1 returns nothing
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+local real x0=GetUnitX(caster)
+local real y0=GetUnitY(caster)
+local real facing=Angle2(x0,y0,x1,y1)
+local real damage=(GetHeroStr(caster,true)*(2.5+GetHeroLevel(caster)*0.1))*0.5
+local real dist=SR(x0,y0,x1,y1)
+call SaveUnitHandle(HH,id,1,caster)
+call SaveReal(HH,id,3,facing)
+set dist=800
+call SaveReal(HH,id,8,dist)
+call PauseUnit(caster,true)
+call SetUnitInvulnerable(caster,true)
+call SaveReal(HH,id,15,damage)
+call TimerStart(t,0.02,true,function Sakura_G_Act2)
 set t=null
 endfunction
 function AvalonSCond takes nothing returns boolean
@@ -142160,134 +142692,6 @@ call TriggerAddCondition(gg_trg_HyperExalibur,Condition(function HyperExaliburCo
 call TriggerAddAction(gg_trg_HyperExalibur,function HyperExaliburCast)
 endfunction
 //heroinex2start
-
-function EffectCreateAndMove225 takes boolean SetSpecialEffectVisibilitybool,string name01,real d101,real life01,real size01,real speed01,integer red01,integer green01,integer blue01,real visible01,real high01,unit a201,real distance01,real d201 returns nothing
-set n=CreateUnit(GetOwningPlayer(a201),'225e',GetUnitX(a201),GetUnitY(a201),d101)
-call SetUnitModel(n,name01)
-call UnitAddAbility(n,'Amrf')
-call UnitRemoveAbility(n,'Amrf')
-call SetUnitFlyHeight(n,GetUnitFlyHeight(a201)+high01,0)
-call MoveUnit(a201,n,distance01,d201)
-call UnitSize(n,size01,size01,size01)
-call UnitSpeed(n,speed01)
-call UnitColor(n,red01,green01,blue01,visible01)
-call MyRemoveUnit(n,life01)
-set a201=null
-endfunction
-function EffectCreateAndMove45 takes boolean SetSpecialEffectVisibilitybool,string name01,real d101,real life01,real size01,real speed01,integer red01,integer green01,integer blue01,real visible01,real high01,unit a201,real distance01,real d201 returns nothing
-set n=CreateUnit(GetOwningPlayer(a201),'045e',GetUnitX(a201),GetUnitY(a201),d101)
-call SetUnitModel(n,name01)
-call UnitAddAbility(n,'Amrf')
-call UnitRemoveAbility(n,'Amrf')
-call SetUnitFlyHeight(n,GetUnitFlyHeight(a201)+high01,0)
-call MoveUnit(a201,n,distance01,d201)
-call UnitSize(n,size01,size01,size01)
-call UnitSpeed(n,speed01)
-call UnitColor(n,red01,green01,blue01,visible01)
-call MyRemoveUnit(n,life01)
-set a201=null
-endfunction
-function EffectCreateAndMove90 takes boolean SetSpecialEffectVisibilitybool,string name01,real d101,real life01,real size01,real speed01,integer red01,integer green01,integer blue01,real visible01,real high01,unit a201,real distance01,real d201 returns nothing
-set n=CreateUnit(GetOwningPlayer(a201),'090e',GetUnitX(a201),GetUnitY(a201),d101)
-call SetUnitModel(n,name01)
-call UnitAddAbility(n,'Amrf')
-call UnitRemoveAbility(n,'Amrf')
-call SetUnitFlyHeight(n,GetUnitFlyHeight(a201)+high01,0)
-call MoveUnit(a201,n,distance01,d201)
-call UnitSize(n,size01,size01,size01)
-call UnitSpeed(n,speed01)
-call UnitColor(n,red01,green01,blue01,visible01)
-call MyRemoveUnit(n,life01)
-set a201=null
-endfunction
-function EffectCreateAndMoveAn takes boolean SetSpecialEffectVisibilitybool,string name01,real d101,real life01,real size01,real speed01,integer red01,integer green01,integer blue01,real visible01,real high01,unit a201,real distance01,real d201,integer animId returns nothing
-set n=CreateUnit(GetOwningPlayer(a201),'e000',GetUnitX(a201),GetUnitY(a201),d101)
-call SetUnitModel(n,name01)
-call UnitAddAbility(n,'Amrf')
-call UnitRemoveAbility(n,'Amrf')
-call SetUnitFlyHeight(n,GetUnitFlyHeight(a201)+high01,0)
-call MoveUnit(a201,n,distance01,d201)
-call UnitSize(n,size01,size01,size01)
-call UnitSpeed(n,speed01)
-call SetUnitAnimationByIndex(n,animId)
-call UnitColor(n,red01,green01,blue01,visible01)
-call MyRemoveUnit(n,life01)
-set a201=null
-endfunction
-
-function EffectLifeTime1 takes nothing returns nothing
-local timer t=GetExpiredTimer()
-local integer id=GetHandleId(t)
-call DestroyEffect(LoadEffectHandle(HH,id,10))
-call FlushChildHashtable(HH,id)
-call PauseTimer(t)
-call DestroyTimer(t)
-set t=null
-endfunction
-function EffectLifeTime takes effect effectforcreal,real timebeforeclear returns nothing
-local timer t=CreateTimer()
-local integer id=GetHandleId(t)
-call SaveEffectHandle(HH,id,10,effectforcreal)
-call TimerStart(t,timebeforeclear,false,function EffectLifeTime1)
-set t=null
-endfunction
-
-function MoveEffect takes unit uniteffect,effect effectunit,real distanceUnit,real degreesUnit returns nothing
-local real x01=PolX(GetUnitX(uniteffect),distanceUnit,degreesUnit)
-local real y01=PolY(GetUnitY(uniteffect),distanceUnit,degreesUnit)
-if IsTerrainPathable(x01,y01,PATHING_TYPE_FLYABILITY)==false then
-call SetSpecialEffectX(effectunit,x01)
-call SetSpecialEffectY(effectunit,y01)
-endif
-set uniteffect=null
-set effectunit=null
-endfunction
-
-function EffectCreateAndMove1 takes boolean SetSpecialEffectVisibilitybool,string name01,real d101,real life01,real size01,real speed01,integer red01,integer green01,integer blue01,integer visible01,real high01,real pitch01,unit a201,real distance01,real d201 returns nothing
-local real x01=PolX(GetUnitX(a201),distance01,d201)
-local real y01=PolY(GetUnitY(a201),distance01,d201)
-set EFF=AddSpecialEffect(name01,x01,y01)
-call SetSpecialEffectVisible(EFF,true)
-call SetSpecialEffectOrientation(EFF,d101,pitch01,0)
-call RemoveEffect(EFF,life01,SetSpecialEffectVisibilitybool,CreateTimer())
-call SetSpecialEffectScale(EFF,size01)
-call SetSpecialEffectTimeScale(EFF,speed01)
-call SetSpecialEffectVertexColour(EFF,ColorPercentT(red01,255),ColorPercentT(green01,255),ColorPercentT(blue01,255),ColorPercentT((100-visible01),255))
-call SetSpecialEffectZ(EFF,GetUnitFlyHeight(a201)+high01)
-set name01=null
-set a201=null
-endfunction
-
-
-function EffectCreateAndMove takes boolean SetSpecialEffectVisibilitybool,string name01,real d101,real life01,real size01,real speed01,integer red01,integer green01,integer blue01,real visible01,real high01,unit a201,real distance01,real d201 returns nothing
-set n=CreateUnit(GetOwningPlayer(a201),'e200',GetUnitX(a201),GetUnitY(a201),d101)
-call SetUnitModel(n,name01)
-call UnitAddAbility(n,'Amrf')
-call UnitRemoveAbility(n,'Amrf')
-call SetUnitFlyHeight(n,GetUnitFlyHeight(a201)+high01,0)
-call MoveUnit(a201,n,distance01,d201)
-call UnitSize(n,size01,size01,size01)
-call UnitSpeed(n,speed01)
-call UnitColor(n,red01,green01,blue01,visible01)
-call MyRemoveUnit(n,life01)
-set a201=null
-endfunction
-
-
-function EffectCreateAndMove21 takes boolean SetSpecialEffectVisibilitybool,string name01,real d101,real life01,real size01,real speed01,integer red01,integer green01,integer blue01,real visible01,real high01,unit a201,real distance01,real d201 returns nothing
-set n=CreateUnit(GetOwningPlayer(a201),'e290',GetUnitX(a201),GetUnitY(a201),d101)
-call SetUnitModel(n,name01)
-call UnitAddAbility(n,'Amrf')
-call UnitRemoveAbility(n,'Amrf')
-call SetUnitFlyHeight(n,GetUnitFlyHeight(a201)+high01,0)
-call MoveUnit(a201,n,distance01,d201)
-call UnitSize(n,size01,size01,size01)
-call UnitSpeed(n,speed01)
-call UnitColor(n,red01,green01,blue01,visible01)
-call MyRemoveUnit(n,life01)
-set a201=null
-endfunction
-
 
 function DamageAoeOneTimeHeroine takes unit damager,real x0,real y0,real range,real damage,group gr1 returns nothing
 local integer id=GetHandleId(GetExpiredTimer())
@@ -182237,221 +182641,6 @@ set p=null
 set t=null
 endfunction
 
-// толчок для E в риннегане
-function PushTimedMadara1 takes nothing returns nothing
-local timer t=GetExpiredTimer()
-local integer id=GetHandleId(t)
-local real time=LoadReal(HH,id,6)
-local real distance=LoadReal(HH,id,8)
-call MoveUnit(LoadUnitHandle(HH,id,1),LoadUnitHandle(HH,id,1),LoadReal(HH,id,2),LoadReal(HH,id,3))
-set time=time+0.02
-if time==0.02 then
-set time=-0.1
-call EffectCreateAndMove(true,"Madara\\[A]sandpoff123.mdl",GetRandomReal(0,360),1,1,1.25,100,100,100,0,0,LoadUnitHandle(HH,id,1),0,GetRandomReal(0,360))
-endif
-call SaveReal(HH,id,6,time)
-if LoadReal(HH,id,2)<=0 then
-set distance=distance-LoadReal(HH,id,2)
-else
-set distance=distance+LoadReal(HH,id,2)
-endif
-call SaveReal(HH,id,8,distance)
-if distance>=LoadReal(HH,id,10)then
-call PauseTimer(t)
-call FlushChildHashtable(HH,id)
-call DestroyTimer(t)
-endif
-set t=null
-endfunction
-function PushTimedMadara takes unit a00,real facing0,real distance0,real x00,real y00,real speed00 returns nothing
-local timer t=CreateTimer()
-local integer id=GetHandleId(t)
-call SaveUnitHandle(HH,id,1,a00)
-call SaveReal(HH,id,2,speed00)
-call SaveReal(HH,id,3,facing0)
-call SaveReal(HH,id,8,SR(GetUnitX(a00),GetUnitY(a00),x00,y00))
-call SaveReal(HH,id,10,distance0)
-call TimerStart(t,0.02,true,function PushTimedMadara1)
-set a00=null
-set t=null
-endfunction
-// толчок для Т в шарингане
-function PushTimed1 takes nothing returns nothing
-local integer id=GetHandleId(GetExpiredTimer())
-call SaveInteger(HH,id,5,LoadInteger(HH,id,5)+1)
-call MoveUnit(LoadUnitHandle(HH,id,1),LoadUnitHandle(HH,id,1),LoadReal(HH,id,2),LoadReal(HH,id,3))
-if LoadInteger(HH,id,5)==LoadInteger(HH,id,6)then
-call PauseTimer(GetExpiredTimer())
-call FlushChildHashtable(HH,id)
-call DestroyTimer(GetExpiredTimer())
-endif
-endfunction
-function PushTimed takes unit l__a,real facing,integer time,real speed00 returns nothing
-local timer t=CreateTimer()
-local integer id=GetHandleId(t)
-call SaveUnitHandle(HH,id,1,l__a)
-call SaveInteger(HH,id,5,0)
-call SaveInteger(HH,id,6,time)
-call SaveReal(HH,id,2,speed00)
-call SaveReal(HH,id,3,facing)
-call TimerStart(t,0.02,true,function PushTimed1)
-set l__a=null
-set t=null
-endfunction
-//
-
-//
-function DpsMokuton1 takes nothing returns nothing
-local timer t=GetExpiredTimer()
-local integer id=GetHandleId(t)
-local real d=LoadReal(HH,id,3)
-local real time=LoadReal(HH,id,5)
-local real time1
-if IsUnitPaused(LoadUnitHandle(HH,id,2))==false then
-set time1=LoadReal(HH,id,6)
-set time=time+0.02
-set time1=time1+0.02
-call SaveReal(HH,id,5,time)
-if time1==1 then
-set time1=0
-call  myCustomDamage(LoadUnitHandle(HH,id,1),LoadUnitHandle(HH,id,2),LoadReal(HH,id,15),false,false,null,null,null)
-endif
-call SaveReal(HH,id,6,time1)
-endif
-if time==LoadReal(HH,id,8)then
-call PauseTimer(t)
-call FlushChildHashtable(HH,id)
-call DestroyTimer(t)
-endif
-set t=null
-endfunction
-function DpsMokuton takes unit caster0,unit target0,real damage0,real time0 returns nothing
-local timer t=CreateTimer()
-local integer id=GetHandleId(t)
-call SaveInteger(HH,id,5,0)
-call SaveUnitHandle(HH,id,1,caster0)
-call SaveUnitHandle(HH,id,2,target0)
-call SaveReal(HH,id,6,0.98)
-call SaveReal(HH,id,8,time0)
-call SaveReal(HH,id,15,damage0)
-call TimerStart(t,0.02,true,function DpsMokuton1)
-set caster0=null
-set target0=null
-set t=null
-endfunction
-
-
-function DamageAoeOneTime3 takes unit damager,real x0,real y0,real range,real damage,group gr1,integer time0,integer speed0,real facing0 returns nothing
-local timer t=GetExpiredTimer()
-local integer id=GetHandleId(t)
-call GroupClear(G)
-call GroupEnumUnitsInRange(G,x0,y0,range,Base)
-loop
-set n0=FirstOfGroup(G)
-exitwhen n0==null
-if  Condition_Base(GetOwningPlayer(damager),n0) and IsUnitInGroup(n0,gr1)==false  then
-call myCustomDamage(damager,n0,damage,false,false,null,null,null)
-call PushTimed(n0,facing0,time0,speed0)
-call GroupAddUnit(gr1,n0)
-endif
-call GroupRemoveUnit(G,n0)
-endloop
-call GroupClear(G)
-call SaveGroupHandle(HH,id,4,gr1)
-set damager=null
-set gr1=null
-set t=null              
-endfunction
-
-
-function DamageAoeOneTime2 takes unit damager,real x0,real y0,real range,real damage,group gr1, real level returns nothing
-local timer t=GetExpiredTimer()
-local integer id=GetHandleId(t)
-call GroupClear(G)
-call GroupEnumUnitsInRange(G,x0,y0,range,Base)
-loop
-set n0=FirstOfGroup(G)
-exitwhen n0==null
-if  Condition_Base(GetOwningPlayer(damager),n0) and IsUnitInGroup(n0,gr1)==false  then
-call myCustomDamage(damager,n0,damage,false,false,null,null,null)
-call CC_UnitEx( n0, n0, 0., 1.5+level*0.5, "root", false, "Abilities\\Spells\\NightElf\\EntanglingRoots\\EntanglingRootsTarget.mdl", "chest", 0,0 )
-
-//нужно узнать бафф рутов
-//call RootUnit(LoadUnitHandle(HH,id,1),n0,150,0x554D526F,'BUMr')
-
-call GroupAddUnit(gr1,n0)
-endif
-call GroupRemoveUnit(G,n0)
-endloop
-call GroupClear(G)
-call SaveGroupHandle(HH,id,4,gr1)
-set damager=null
-set gr1=null
-set t=null
-
-
-endfunction
-
-function DamageAoeOneTime1 takes unit damager,real x0,real y0,real range,real damage,group gr1 returns nothing
-local timer t=GetExpiredTimer()
-local integer id=GetHandleId(t)
-call GroupClear(G)
-call GroupEnumUnitsInRange(G,x0,y0,range,Base)
-loop
-set n0=FirstOfGroup(G)
-exitwhen n0==null
-if  Condition_Base(GetOwningPlayer(damager),n0) and IsUnitInGroup(n0,gr1)==false  then
-call DpsMokuton(damager,n0,damage*0.25,4)
-call GroupAddUnit(gr1,n0)
-endif
-call GroupRemoveUnit(G,n0)
-endloop
-call GroupClear(G)
-call SaveGroupHandle(HH,id,40,gr1)
-set damager=null
-set gr1=null
-set t=null      
-endfunction
-
-
-function DamageAoeOneTimeJirayaQ takes unit damager,real x0,real y0,real range,real damage returns nothing
-local timer t=GetExpiredTimer()
-local integer id=GetHandleId(t)
-call GroupClear(G)
-call GroupEnumUnitsInRange(G,x0,y0,range,Base)
-loop
-set n0=FirstOfGroup(G)
-exitwhen n0==null
-if  Condition_Base(GetOwningPlayer(damager),n0)  then
-call myCustomDamage(damager,n0,damage,false,false,null,null,null)
-call SlowUnit(damager,n0,0.7,0,4,0,false)
-endif
-call GroupRemoveUnit(G,n0)
-endloop
-call GroupClear(G)
-set damager=null
-set t=null
-endfunction
-
-
-function DamageAoeOneTime0 takes unit damager,real x0,real y0,real range,real damage returns nothing
-
-call GroupClear(G)
-call GroupEnumUnitsInRange(G,x0,y0,range,Base)
-loop
-set n0=FirstOfGroup(G)
-exitwhen n0==null
-if  Condition_Base(GetOwningPlayer(damager),n0)  then
-call myCustomDamage(damager,n0,damage,false,false,null,null,null)
-endif
-call GroupRemoveUnit(G,n0)
-endloop
-call GroupClear(G)
-set damager=null
-                        
-endfunction
-
-
 function MadaraWCheck1 takes nothing returns nothing
 local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
@@ -217950,11 +218139,11 @@ endfunction
 
 ///ини абилок
 function AbilitiesForChoice_Cond takes nothing returns boolean
-    local boolean cond1=GetSpellAbilityId()=='GSQ1' or GetSpellAbilityId()=='GSQ2' or GetSpellAbilityId()=='GSW1' or GetSpellAbilityId()=='GSE1' or GetSpellAbilityId()=='GSE2' or GetSpellAbilityId()=='GSF1' or GetSpellAbilityId()=='GSF2' or GetSpellAbilityId()=='GSG1' or GetSpellAbilityId()=='GSR1' or GetSpellAbilityId()=='GST1' or GetSpellAbilityId()=='GST2' or GetSpellAbilityId()=='GST3'
+    local boolean cond1=GetSpellAbilityId()=='GSQ1' or GetSpellAbilityId()=='GSQ2' or GetSpellAbilityId()=='GSW1' or GetSpellAbilityId()=='GSE1' or GetSpellAbilityId()=='GSE2' or GetSpellAbilityId()=='GSF1' or GetSpellAbilityId()=='GSF2' or GetSpellAbilityId()=='GSG1' or GetSpellAbilityId()=='GSR1' or GetSpellAbilityId()=='GST1' or GetSpellAbilityId()=='GST2' or GetSpellAbilityId()=='GST3' or GetSpellAbilityId()=='SHG1'
     if cond1 then
-            return true
+        return true
     else
-            return false
+        return false
     endif
 endfunction
 
@@ -218017,7 +218206,11 @@ function AbilitiesForChoice_Act takes nothing returns nothing//моя функц
     if GetSpellAbilityId()=='GST1' then
         call Gojo_T_Act(caster)
     endif
+    if GetSpellAbilityId()=='SHG1' then
 
+        call Sakura_G_Act(caster,x1,y1)
+
+    endif
 
     set caster=null
     set target=null
