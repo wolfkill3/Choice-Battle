@@ -118347,7 +118347,7 @@ if Condition_Base(GetOwningPlayer(caster),n0)  then
         call UnitSpeed(n0,1.5)
     else
         call SaveBoolean(HH,GetHandleId(n0),TARGET_ABILITY,false)
-        call SaveUnitHandle(HH,GetHandleId(n0),REVERSE_TARGET,u)
+        call SaveUnitHandle(HH,GetHandleId(n0),REVERSE_TARGET,caster)
         call SaveReal(HH,id,8,0)
     endif
     exitwhen true
