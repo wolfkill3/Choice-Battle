@@ -145279,21 +145279,20 @@ return GetLearnedSkill()=='A131'
 endfunction
 
 function GilgameshAADetails takes nothing returns nothing
-	call DisplayTimedTextToPlayer(GetTriggerPlayer(), 0, 0, 7, "Gilgamesh's basic attack pickups.")
-	call DisplayTimedTextToPlayer(GetTriggerPlayer(), 0, 0, 7, "Swords now work most of their auto-attack modifiers at 30% effectiveness. For example: Samehada now deals (150+40% aa)*20% = 30+8% aa per sword")
-	call DisplayTimedTextToPlayer(GetTriggerPlayer(), 0, 0, 7, "  ")
-	call DisplayTimedTextToPlayer(GetTriggerPlayer(), 0, 0, 7, "• Anbu Sword: 16.5 pure damage")
-	call DisplayTimedTextToPlayer(GetTriggerPlayer(), 0, 0, 7, "• Gegetzeburi: 30 true damage + likely stun reduced to 0.3 seconds")
-	call DisplayTimedTextToPlayer(GetTriggerPlayer(), 0, 0, 7, "• Samehada Manajor: 2.6% current MP burn per sword and 3.6% HP recovery from enemy current mana.")
-	call DisplayTimedTextToPlayer(GetTriggerPlayer(), 0, 0, 7, "• Anbu Vest: The enemy recovers 35 HP for each sword.")
-	call DisplayTimedTextToPlayer(GetTriggerPlayer(), 0, 0, 7, "• Anbu Set: The enemy recovers 50 HP for each sword.")
-	call DisplayTimedTextToPlayer(GetTriggerPlayer(), 0, 0, 7, "• All Mare Clouds: The blocking effect of each ring now works on every sword of Gilgamesh.")
-	call DisplayTimedTextToPlayer(GetTriggerPlayer(), 0, 0, 7, "• Patriot: Each basic attack takes away 1 Allstat for 5 seconds, but reduces Gilgamesh's attack power by 30%.")
-	call DisplayTimedTextToPlayer(GetTriggerPlayer(), 0, 0, 7, "• Excalibur: Each auto attack restores 20% of the damage of the sword after magic resistance. Each auto attack reduces armor by 1 for 10 seconds.")
-	call DisplayTimedTextToPlayer(GetTriggerPlayer(), 0, 0, 7, "• Dark Excalibur: Passive works as it should.")
-	call DisplayTimedTextToPlayer(GetTriggerPlayer(), 0, 0, 7, "• Anbu Shoes/Anbu Set: Gilgamesh has a 35% chance to miss.")
-	call DisplayTimedTextToPlayer(GetTriggerPlayer(), 0, 0, 7, "• Demon Eye: Gilgamesh completely misses with swords.")
-	call DisplayTimedTextToPlayer(GetTriggerPlayer(), 0, 0, 7, "• Patriot: This active allows Gilgamesh not to miss.")
+    call DisplayTimedTextToPlayer(GetTriggerPlayer(), 0, 0, 7, "Gilgamesh's auto attack selection.")
+    call DisplayTimedTextToPlayer(GetTriggerPlayer(), 0, 0, 7, "Most auto attack modifiers now work on swords with 30% effectiveness. For example: Samehada now deals (150+40% aa)*20% = 30+8% aa from each sword")
+    call DisplayTimedTextToPlayer(GetTriggerPlayer(), 0, 0, 7, " ")
+    call DisplayTimedTextToPlayer(GetTriggerPlayer(), 0, 0, 7, "• Anbu Sword: 16.5 true damage")
+    call DisplayTimedTextToPlayer(GetTriggerPlayer(), 0, 0, 7, "• Gegetseburi: 30 true damage + probable stun reduced to 0.3 sec")
+    call DisplayTimedTextToPlayer(GetTriggerPlayer(), 0, 0, 7, "• Samehada ManaBurn: 2.6% of current MP is burned per sword and 3.6% HP is restored from enemy's current MP.")
+    call DisplayTimedTextToPlayer(GetTriggerPlayer(), 0, 0, 7, "• Mare Cloud, Anbu Vest/Set, Akatsuki Protector, Heart of Fafnir: Block effect now works on each of Gilgamesh's swords.")
+    call DisplayTimedTextToPlayer(GetTriggerPlayer(), 0, 0, 7, "• Patriot: Each auto attack takes away 1 Allstat for 5 sec.")
+    call DisplayTimedTextToPlayer(GetTriggerPlayer(), 0, 0, 7, "• Excalibur: Each auto attack restores 20% of sword damage. Each auto attack reduces armor by 1 for 10 sec.")
+    call DisplayTimedTextToPlayer(GetTriggerPlayer(), 0, 0, 7, "• Dark Excalibur: Passive works as expected.")
+    call DisplayTimedTextToPlayer(GetTriggerPlayer(), 0, 0, 7, "• Anbu Shoes/Anbu Set: Gilgamesh has a 35% chance to miss.")
+    call DisplayTimedTextToPlayer(GetTriggerPlayer(), 0, 0, 7, "• Demon Eye: Gilgamesh completely misses with swords.")
+    call DisplayTimedTextToPlayer(GetTriggerPlayer(), 0, 0, 7, "• 666: Active gives Gilgamesh a chance to not miss.")
+    call DisplayTimedTextToPlayer(GetTriggerPlayer(), 0, 0, 7, "• Priestess's Bow: Pull and Repel Power reduced to 20.")
 endfunction
 
 function GilgameshAADetails_Int takes nothing returns nothing
@@ -145482,6 +145481,7 @@ function GilgameshModifiedAttack takes unit newCaster, unit newTarget returns bo
             endif
             
             if UnitHasItemOfTypeBJ(newCaster, 'I04F') then 				// Экскалибур
+                call HealTextTag(newCaster,newCaster,damage*0.2*myCustomHeal2(newCaster,1),"HealthRes")
                 call SetWidgetLife(newCaster, GetWidgetLife(newCaster)+damage*0.2*myCustomDamage2(newTarget,1))
                 
                 set tt=CreateTimer()
@@ -145505,10 +145505,12 @@ function GilgameshModifiedAttack takes unit newCaster, unit newTarget returns bo
             endif
             
             if GetUnitAbilityLevel(newCaster, 'A26R')>0 then										// Темный Экскалибур Хилл
+                call HealTextTag(newCaster,newCaster,damage*0.6*myCustomHeal2(newCaster,1),"HealthRes")
                 call SetWidgetLife(newCaster, GetWidgetLife(newCaster)+damage*0.6*myCustomDamage2(newTarget, 1))
             endif
             
             if GetUnitAbilityLevel(newCaster, 'B06N')>0 then										// Темный Экскалибур Хилл
+                call HealTextTag(newCaster,newCaster,damage*0.4*myCustomHeal2(newCaster,1),"HealthRes")
                 call SetWidgetLife(newCaster, GetWidgetLife(newCaster)+damage*0.4*myCustomDamage2(newTarget, 1))
             endif
             
