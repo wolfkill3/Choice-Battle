@@ -11885,12 +11885,12 @@ if IsUnitAlive(Hero[ip]) and IsUnitPaused(Hero[ip])==false and GetUnitAbilityLev
 set n=CreateUnit(p,'e0CF',x,y,GetRandomReal(0,359))
 call SetUnitPathing(n,false)
 if GetUnitState(Hero[ip],UNIT_STATE_MANA)>GetUnitState(Hero[ip],UNIT_STATE_MAX_MANA)*0.1 then
-call GenkiMoveSpiritBomb(GenkiDama,n,SR(GetUnitX(n),GetUnitY(n),x1,y1)*0.01,0,GetUnitFlyHeight(GenkiDama),(GetUnitState(Hero[ip],UNIT_STATE_MAX_MANA)*0.1)*0.03*0.02)
-call SetUnitScale(n,1.2+(GetUnitState(Hero[ip],UNIT_STATE_MAX_MANA)*0.1)*0.03*0.02,1.2+(GetUnitState(Hero[ip],UNIT_STATE_MAX_MANA)*0.1)*0.03*0.02,1.2+(GetUnitState(Hero[ip],UNIT_STATE_MAX_MANA)*0.1)*0.03*0.02)
+call GenkiMoveSpiritBomb(GenkiDama,n,SR(GetUnitX(n),GetUnitY(n),x1,y1)*0.015,0,GetUnitFlyHeight(GenkiDama),(GetUnitState(Hero[ip],UNIT_STATE_MAX_MANA)*0.1)*0.05*0.02)
+call SetUnitScale(n,1.2+(GetUnitState(Hero[ip],UNIT_STATE_MAX_MANA)*0.1)*0.05*0.02,1.2+(GetUnitState(Hero[ip],UNIT_STATE_MAX_MANA)*0.1)*0.05*0.02,1.2+(GetUnitState(Hero[ip],UNIT_STATE_MAX_MANA)*0.1)*0.03*0.02)
 call SetUnitState(Hero[ip],UNIT_STATE_MANA,GetUnitState(Hero[ip],UNIT_STATE_MANA)-GetUnitState(Hero[ip],UNIT_STATE_MAX_MANA)*0.1)
 else
-call SetUnitScale(n,1.2+GetUnitState(Hero[ip],UNIT_STATE_MANA)*0.03*0.02,1.2+GetUnitState(Hero[ip],UNIT_STATE_MANA)*0.03*0.02,1.2+GetUnitState(Hero[ip],UNIT_STATE_MANA)*0.03*0.02)
-call GenkiMoveSpiritBomb(GenkiDama,n,SR(GetUnitX(n),GetUnitY(n),x1,y1)*0.01,0,GetUnitFlyHeight(GenkiDama),GetUnitState(Hero[ip],UNIT_STATE_MANA)*0.03*0.02)
+call SetUnitScale(n,1.2+GetUnitState(Hero[ip],UNIT_STATE_MANA)*0.05*0.02,1.2+GetUnitState(Hero[ip],UNIT_STATE_MANA)*0.05*0.02,1.2+GetUnitState(Hero[ip],UNIT_STATE_MANA)*0.05*0.02)
+call GenkiMoveSpiritBomb(GenkiDama,n,SR(GetUnitX(n),GetUnitY(n),x1,y1)*0.015,0,GetUnitFlyHeight(GenkiDama),GetUnitState(Hero[ip],UNIT_STATE_MANA)*0.05*0.02)
 call SetUnitState(Hero[ip],UNIT_STATE_MANA,0)
 endif
 set GenkiUsed[ip]=false
@@ -69367,9 +69367,12 @@ if time<100 and GetUnitState(u,UNIT_STATE_LIFE)>0.405 and LoadBoolean(HH,GetHand
     call SetTextTagPosUnit(l__txt,u,700)
     call SetTextTagColor(l__txt,180,180,255,255)
     if GetUnitScale(GenkiDama)<(0.58+GetHeroLevel(u)*0.04) and time>1 then
-        set n=CreateUnit(p,'e0CF',x+GetRandomReal(-3500,3500),y+GetRandomReal(-3500,3500),GetRandomReal(0,359))
+        set n=CreateUnit(p,'e0CF',x+GetRandomReal(-3200,3200),y+GetRandomReal(-3200,3200),GetRandomReal(0,359))
         call SetUnitPathing(n,false)
-        call GenkiMoveSpiritBomb(GenkiDama,n,SR(GetUnitX(n),GetUnitY(n),x,y)*0.01,0,GetUnitFlyHeight(GenkiDama),0.002)
+        call GenkiMoveSpiritBomb(GenkiDama,n,SR(GetUnitX(n),GetUnitY(n),x,y)*0.015,0,GetUnitFlyHeight(GenkiDama),0.002)
+        set n=CreateUnit(p,'e0CF',x+GetRandomReal(-3200,3200),y+GetRandomReal(-3200,3200),GetRandomReal(0,359))
+        call SetUnitPathing(n,false)
+        call GenkiMoveSpiritBomb(GenkiDama,n,SR(GetUnitX(n),GetUnitY(n),x,y)*0.015,0,GetUnitFlyHeight(GenkiDama),0.002)
     else
         if GetUnitScale(GenkiDama)>0.58+GetHeroLevel(u)*0.04 and GetUnitScale(GenkiDama)<0.6+GetHeroLevel(u)*0.04 then
             set n=CreateUnit(p,'e0PB',x,y,0)
