@@ -183776,7 +183776,7 @@ local real distance=SR(GetUnitX(LoadUnitHandle(HH,id,20)),GetUnitY(LoadUnitHandl
 local real time=LoadReal(HH,id,5)
 set time=time+0.02
 call SaveReal(HH,id,5,time)
-if time>10 or distance<40 then
+if time>10 or distance<50 then
 call EffectCreateAndMove(true,"Madara\\Madara-huitu-20.mdl",facing,1,1.5,0.8,100,100,100,0,0,LoadUnitHandle(HH,id,20),0,facing)
 call EffectCreateAndMove(true,"Madara\\File00002270.mdl",facing,1,3,0.8,100,100,100,0,0,LoadUnitHandle(HH,id,20),0,facing)
         set soundplay=CreateSound("war3mapimported\\MadaraWBoom.mp3",false,false,true,12700,12700,"")
@@ -183794,7 +183794,7 @@ set facing=Angle2(GetUnitX(b1),GetUnitY(b1),LoadReal(HH,id,11),LoadReal(HH,id,12
 else
 set facing=Angle2(GetUnitX(b1),GetUnitY(b1),LoadReal(HH,id,11),LoadReal(HH,id,12))-30
 endif
-call MoveUnit(b1,b1,40,facing)
+call MoveUnit(b1,b1,50,facing)
 endif
 set caster=null
 set t=null
@@ -184070,10 +184070,10 @@ local real time=LoadReal(HH,id,5)
 local real distance=LoadReal(HH,id,8)
 local unit dummyUnit=LoadUnitHandle(HH,id,20)
 local real time1
-local real damage= GetUnitState(caster,UNIT_STATE_MAX_MANA)*0.6
+local real damage= GetUnitState(caster,UNIT_STATE_MAX_MANA)*0.7
 set time=time+0.02
 call SaveReal(HH,id,5,time)
-if distance==4020 then
+if distance>6000 then
 call DestroyGroup(LoadGroupHandle(HH,id,4))
 call MyRemoveUnit(LoadUnitHandle(HH,id,20),3)
 call UnitColor(LoadUnitHandle(HH,id,20),100,100,100,100)
