@@ -39660,7 +39660,6 @@ endfunction
 function DpsMokuton1 takes nothing returns nothing
 local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
-local real d=LoadReal(HH,id,3)
 local real time=LoadReal(HH,id,5)
 local real time1
 if IsUnitPaused(LoadUnitHandle(HH,id,2))==false then
