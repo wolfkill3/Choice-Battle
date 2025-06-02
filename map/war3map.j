@@ -1580,16 +1580,18 @@ endfunction
 function MadokaCalculate takes unit source, unit target, real damage returns nothing
 local integer tp_id = GetPlayerId(GetOwningPlayer(target))
 local integer ap_id = GetPlayerId(GetOwningPlayer(source))
-call SaveReal(HH,GetHandleId(source),MadokaHHash,LoadReal(HH,GetHandleId(source),MadokaHHash)+damage)
-if LoadReal(HH,GetHandleId(source),MadokaHHash)>=LoadReal(HH,GetHandleId(source),MadokaTHHash) and LoadInteger(HH,GetHandleId(source),MadokaMHash)==0 then
-call SaveInteger(HH,GetHandleId(source),MadokaMHash,1)
-call SaveReal(HH,GetHandleId(source),MadokaTHHash,LoadReal(HH,GetHandleId(source),MadokaTHHash)*2)
-endif
-if LoadReal(HH,GetHandleId(source),MadokaHHash)>=LoadReal(HH,GetHandleId(source),MadokaTHHash) and LoadInteger(HH,GetHandleId(source),MadokaMHash)==1 then
-call SaveInteger(HH,GetHandleId(source),MadokaMHash,2)
-endif
-if LoadReal(HH,GetHandleId(source),MadokaDHash)>=LoadReal(HH,GetHandleId(source),MadokaTDHash) and LoadInteger(HH,GetHandleId(source),MadokaMHash)==2 then
-call SaveInteger(HH,GetHandleId(source),MadokaMHash,3)
+if LoadBoolean(HH,GetHandleId(source),'mdf+')==false and IsUnitAlive(source) then
+    call SaveReal(HH,GetHandleId(source),MadokaHHash,LoadReal(HH,GetHandleId(source),MadokaHHash)+damage)
+    if LoadReal(HH,GetHandleId(source),MadokaHHash)>=LoadReal(HH,GetHandleId(source),MadokaTHHash) and LoadInteger(HH,GetHandleId(source),MadokaMHash)==0 then
+    call SaveInteger(HH,GetHandleId(source),MadokaMHash,1)
+    call SaveReal(HH,GetHandleId(source),MadokaTHHash,LoadReal(HH,GetHandleId(source),MadokaTHHash)*2)
+    endif
+    if LoadReal(HH,GetHandleId(source),MadokaHHash)>=LoadReal(HH,GetHandleId(source),MadokaTHHash) and LoadInteger(HH,GetHandleId(source),MadokaMHash)==1 then
+    call SaveInteger(HH,GetHandleId(source),MadokaMHash,2)
+    endif
+    if LoadReal(HH,GetHandleId(source),MadokaDHash)>=LoadReal(HH,GetHandleId(source),MadokaTDHash) and LoadInteger(HH,GetHandleId(source),MadokaMHash)==2 then
+    call SaveInteger(HH,GetHandleId(source),MadokaMHash,3)
+    endif
 endif
 endfunction
 function AllTextTagHeal3 takes nothing returns nothing
@@ -7556,6 +7558,34 @@ call SaveEffectHandle(h,id,0,AddSpecialEffectTarget(l__s,c,s2))
 call SaveReal(h,id,2,dmg)
 call SaveReal(h,id,3,per)
 call TimerStart(sysTimer,1,true,function PoisonDamage6)
+set sysTimer=null
+endfunction
+function PoisonDamage4Ace takes nothing returns nothing
+local integer id=GetHandleId(GetExpiredTimer())
+local real per=LoadReal(h,id,3)
+local integer i=LoadInteger(h,id,3)
+if i<per and GetUnitAbilityLevel(LoadUnitHandle(h,id,1),'CE04')==0 then
+        call myCustomDamage(LoadUnitHandle(h,id,4),LoadUnitHandle(h,id,1),LoadReal(h,id,2)/per,false,false,null,null,null)
+        call SaveInteger(h,id,3,i+1)
+        //call BJDebugMsg("Poison Damage TICK:" +R2S(LoadReal(h,id,2)/per)+", Caster: "+GetUnitName(LoadUnitHandle(h,id,4)))
+else
+        call DestroyEffect(LoadEffectHandle(h,id,0))
+        call FlushChildHashtable(h,id)
+        call PauseTimer(GetExpiredTimer())
+        call DestroyTimer(GetExpiredTimer())
+endif
+endfunction
+function PoisonDamage3Ace takes unit u,unit c,real dmg,real per,string l__s,string s2 returns nothing
+local integer id=0
+set sysTimer=CreateTimer()
+set id=GetHandleId(sysTimer)
+call SaveUnitHandle(h,id,1,c)
+call SaveUnitHandle(h,id,4,u)
+call SaveEffectHandle(h,id,0,AddSpecialEffectTarget(l__s,c,s2))
+call SlowUnit(c,c,0.05,0.05,4,2,false)
+call SaveReal(h,id,2,dmg)
+call SaveReal(h,id,3,per)
+call TimerStart(sysTimer,1,true,function PoisonDamage4Ace)
 set sysTimer=null
 endfunction
 function PoisonDamage4 takes nothing returns nothing
@@ -38254,10 +38284,11 @@ function MadokaF1_Periodic takes nothing returns nothing
         if udg_B then
             call UnitAddAbility(caster, 'MaF2')
             call UnitAddAbility(caster, 'A0WR')
-            call myCustomDamage(LoadUnitHandle(h, id, StringHash("Source")) , caster , 99999 , false , false , null , DAMAGE_TYPE_UNKNOWN , null)
+            call myCustomDamage(LoadUnitHandle(h, id, StringHash("Source")) , caster , 999999 , false , false , null , DAMAGE_TYPE_UNKNOWN , null)
             call UnitRemoveAbility(caster, 'MaF2')
             call UnitRemoveAbility(caster, 'A0WR')
         endif
+        call SaveBoolean(HH,GetHandleId(caster),'mdf+',false)
         call DestroyGroup(LoadGroupHandle(h, id, GroupHash))
         call FlushChildHashtable(h, id)
         call DestroyTimer(GetExpiredTimer())
@@ -38317,9 +38348,10 @@ function MadokaF2_Periodic takes nothing returns nothing
                         call UnitRemoveAbility(caster,'A0QL')
                         call UnitAddAbility(caster, 'MaF2')
                         call UnitAddAbility(caster, 'A0WR')
-                        call myCustomDamage(LoadUnitHandle(h, id, StringHash("Source")) , caster , 99999 , false , false , null , DAMAGE_TYPE_UNKNOWN , null)
+                        call myCustomDamage(LoadUnitHandle(h, id, StringHash("Source")) , caster , 999999 , false , false , null , DAMAGE_TYPE_UNKNOWN , null)
                         call UnitRemoveAbility(caster, 'MaF2')
                         call UnitRemoveAbility(caster, 'A0WR')
+                        call SaveBoolean(HH,GetHandleId(caster),'mdf+',false)
                 endif
         if time == 4.0 then
             set soundplay=CreateSound("Sound\\war3mapImported\\MadokaF2_Sound.mp3", false, false, true, 12700, 12700, "")
@@ -38563,10 +38595,11 @@ function MadokaF4_Periodic takes nothing returns nothing
         if udg_B then
             call UnitAddAbility(caster, 'MaF2')
             call UnitAddAbility(caster, 'A0WR')
-            call myCustomDamage(LoadUnitHandle(h, id, StringHash("Source")) , caster , 99999 , false , false , null , DAMAGE_TYPE_UNKNOWN , null)
+            call myCustomDamage(LoadUnitHandle(h, id, StringHash("Source")) , caster , 999999 , false , false , null , DAMAGE_TYPE_UNKNOWN , null)
             call UnitRemoveAbility(caster, 'MaF2')
             call UnitRemoveAbility(caster, 'A0WR')
         endif
+        call SaveBoolean(HH,GetHandleId(caster),'mdf+',false)
         call FlushChildHashtable(h, id)
         call DestroyTimer(GetExpiredTimer())
     endif
@@ -38626,6 +38659,7 @@ function MadokaF_Death takes unit newCaster,unit newSource returns nothing
     call SetUnitInvulnerable(newCaster, true)
     call UnitAddAbility(newCaster,'A0QL')
     call SetUnitAnimationByIndex(newCaster, 10)
+    call SaveBoolean(HH,GetHandleId(newCaster),'mdf+',true)
     call SetWidgetLife(newCaster, GetWidgetMaxLife(newCaster) * 0.5)
     if LoadInteger(HH,GetHandleId(newCaster),MadokaMHash)==0 then
         call MadokaF1_Cast(newCaster , newSource , CreateTimer())
@@ -42551,7 +42585,7 @@ if cond==0 then
             endif
         endif
     endif
-    if nb>0 and GetUnitTypeId(c) == 'HMad' and c == Hero[GetPlayerId(GetOwningPlayer(c))] then
+    if nb>0 and GetUnitTypeId(c) == 'HMad' and c == Hero[GetPlayerId(GetOwningPlayer(c))] and LoadBoolean(HH,GetHandleId(c),'mdf+')==false and IsUnitAlive(c) then
         call SaveReal(HH,GetHandleId( c ),MadokaDHash,LoadReal(HH,GetHandleId( c ),MadokaDHash)+nb)
         if LoadReal(HH,GetHandleId( c ),MadokaDHash)>= LoadReal(HH,GetHandleId( c ),MadokaTDHash) and LoadInteger(HH,GetHandleId( c ),MadokaMHash)==2 then
             call SaveInteger(HH,GetHandleId( c ),MadokaMHash,3)
@@ -83808,6 +83842,9 @@ set E=FirstOfGroup(G)
 exitwhen E==null
 if Condition_Base(p,E)then
 call myCustomDamage(u,E,dmg,false,false,null,null,null)
+if GetUnitAbilityLevel(u,'AcF1')>0 then
+call PoisonDamage3Ace(u,E,GetHeroStr(u,true),4,"Environment\\LargeBuildingFire\\LargeBuildingFire1.mdl","origin")
+endif
 endif
 call GroupRemoveUnit(G,E)
 endloop
@@ -83919,6 +83956,9 @@ exitwhen E==null
 if Condition_Base(p,E)then
 call myCustomDamage(u,E,dmg*2/3,false,false,null,null,null)
 call SetControlToUnit(E,E, 2, "stun")
+if GetUnitAbilityLevel(u,'AcF1')>0 then
+call PoisonDamage3Ace(u,E,GetHeroStr(u,true),4,"Environment\\LargeBuildingFire\\LargeBuildingFire1.mdl","origin")
+endif
 endif
 call GroupRemoveUnit(G,E)
 endloop
@@ -83951,6 +83991,9 @@ exitwhen E==null
 if Condition_Base(p,E)then
 call myCustomDamage(u,E,dmg/3,false,false,null,null,null)
 call SlowUnit(u,E,0.5,0.5,5,0,false)
+if GetUnitAbilityLevel(u,'AcF1')>0 then
+call PoisonDamage3Ace(u,E,GetHeroStr(u,true),4,"Environment\\LargeBuildingFire\\LargeBuildingFire1.mdl","origin")
+endif
 endif
 call GroupRemoveUnit(G,E)
 endloop
@@ -84031,6 +84074,9 @@ set E=FirstOfGroup(g)
 set ide=GetHandleId(E)
 if Condition_Base(p,E)and E!=LoadUnitHandle(h,idg,ide)then
 call myCustomDamage(u,E,dmg,false,false,null,null,null)
+if GetUnitAbilityLevel(u,'AcF1')>0 then
+call PoisonDamage3Ace(u,E,GetHeroStr(u,true),4,"Environment\\LargeBuildingFire\\LargeBuildingFire1.mdl","origin")
+endif
 call SaveUnitHandle(h,idg,ide,E)
 endif
 call GroupRemoveUnit(g,E)
@@ -84130,6 +84176,9 @@ call SetUnitTimeScale(n,0)
 else
 call myCustomDamage(u,c,dmg,false,false,null,null,null)
 call SlowUnit(u,c,0.5,0,3,2,false)
+if GetUnitAbilityLevel(u,'AcF1')>0 then
+call PoisonDamage3Ace(u,c,GetHeroStr(u,true),4,"Environment\\LargeBuildingFire\\LargeBuildingFire1.mdl","origin")
+endif
 call UnitApplyTimedLife(CreateUnit(p,'e01Z',x1,y1,GetRandomReal(0,359)),'BTLF',1)
 call UnitApplyTimedLife(CreateUnit(p,'e048',x1,y1,0),'BTLF',3)
 call UnitApplyTimedLife(CreateUnit(p,'e03W',x1,y1,0),'BTLF',4)
@@ -84215,6 +84264,9 @@ exitwhen E==null
 if Condition_Base(p,E)then
 call myCustomDamage(Hero[idu],E,dmg,false,false,null,null,null)
 call SetControlToUnit(Hero[idu],E, 3, "stun")
+if GetUnitAbilityLevel(Hero[idu],'AcF1')>0 then
+call PoisonDamage3Ace(Hero[idu],E,GetHeroStr(Hero[idu],true),4,"Environment\\LargeBuildingFire\\LargeBuildingFire1.mdl","origin")
+endif
 endif
 call GroupRemoveUnit(g,E)
 endloop
