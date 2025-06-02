@@ -11885,12 +11885,12 @@ if IsUnitAlive(Hero[ip]) and IsUnitPaused(Hero[ip])==false and GetUnitAbilityLev
 set n=CreateUnit(p,'e0CF',x,y,GetRandomReal(0,359))
 call SetUnitPathing(n,false)
 if GetUnitState(Hero[ip],UNIT_STATE_MANA)>GetUnitState(Hero[ip],UNIT_STATE_MAX_MANA)*0.1 then
-call GenkiMoveSpiritBomb(GenkiDama,n,SR(GetUnitX(n),GetUnitY(n),x1,y1)*0.01,0,GetUnitFlyHeight(GenkiDama),(GetUnitState(Hero[ip],UNIT_STATE_MAX_MANA)*0.1)*0.03*0.02)
-call SetUnitScale(n,1.2+(GetUnitState(Hero[ip],UNIT_STATE_MAX_MANA)*0.1)*0.03*0.02,1.2+(GetUnitState(Hero[ip],UNIT_STATE_MAX_MANA)*0.1)*0.03*0.02,1.2+(GetUnitState(Hero[ip],UNIT_STATE_MAX_MANA)*0.1)*0.03*0.02)
+call GenkiMoveSpiritBomb(GenkiDama,n,SR(GetUnitX(n),GetUnitY(n),x1,y1)*0.015,0,GetUnitFlyHeight(GenkiDama),(GetUnitState(Hero[ip],UNIT_STATE_MAX_MANA)*0.1)*0.05*0.02)
+call SetUnitScale(n,1.2+(GetUnitState(Hero[ip],UNIT_STATE_MAX_MANA)*0.1)*0.05*0.02,1.2+(GetUnitState(Hero[ip],UNIT_STATE_MAX_MANA)*0.1)*0.05*0.02,1.2+(GetUnitState(Hero[ip],UNIT_STATE_MAX_MANA)*0.1)*0.03*0.02)
 call SetUnitState(Hero[ip],UNIT_STATE_MANA,GetUnitState(Hero[ip],UNIT_STATE_MANA)-GetUnitState(Hero[ip],UNIT_STATE_MAX_MANA)*0.1)
 else
-call SetUnitScale(n,1.2+GetUnitState(Hero[ip],UNIT_STATE_MANA)*0.03*0.02,1.2+GetUnitState(Hero[ip],UNIT_STATE_MANA)*0.03*0.02,1.2+GetUnitState(Hero[ip],UNIT_STATE_MANA)*0.03*0.02)
-call GenkiMoveSpiritBomb(GenkiDama,n,SR(GetUnitX(n),GetUnitY(n),x1,y1)*0.01,0,GetUnitFlyHeight(GenkiDama),GetUnitState(Hero[ip],UNIT_STATE_MANA)*0.03*0.02)
+call SetUnitScale(n,1.2+GetUnitState(Hero[ip],UNIT_STATE_MANA)*0.05*0.02,1.2+GetUnitState(Hero[ip],UNIT_STATE_MANA)*0.05*0.02,1.2+GetUnitState(Hero[ip],UNIT_STATE_MANA)*0.05*0.02)
+call GenkiMoveSpiritBomb(GenkiDama,n,SR(GetUnitX(n),GetUnitY(n),x1,y1)*0.015,0,GetUnitFlyHeight(GenkiDama),GetUnitState(Hero[ip],UNIT_STATE_MANA)*0.05*0.02)
 call SetUnitState(Hero[ip],UNIT_STATE_MANA,0)
 endif
 set GenkiUsed[ip]=false
@@ -69365,9 +69365,12 @@ if time<100 and GetUnitState(u,UNIT_STATE_LIFE)>0.405 and LoadBoolean(HH,GetHand
     call SetTextTagPosUnit(l__txt,u,700)
     call SetTextTagColor(l__txt,180,180,255,255)
     if GetUnitScale(GenkiDama)<(0.58+GetHeroLevel(u)*0.04) and time>1 then
-        set n=CreateUnit(p,'e0CF',x+GetRandomReal(-3500,3500),y+GetRandomReal(-3500,3500),GetRandomReal(0,359))
+        set n=CreateUnit(p,'e0CF',x+GetRandomReal(-3200,3200),y+GetRandomReal(-3200,3200),GetRandomReal(0,359))
         call SetUnitPathing(n,false)
-        call GenkiMoveSpiritBomb(GenkiDama,n,SR(GetUnitX(n),GetUnitY(n),x,y)*0.01,0,GetUnitFlyHeight(GenkiDama),0.002)
+        call GenkiMoveSpiritBomb(GenkiDama,n,SR(GetUnitX(n),GetUnitY(n),x,y)*0.015,0,GetUnitFlyHeight(GenkiDama),0.002)
+        set n=CreateUnit(p,'e0CF',x+GetRandomReal(-3200,3200),y+GetRandomReal(-3200,3200),GetRandomReal(0,359))
+        call SetUnitPathing(n,false)
+        call GenkiMoveSpiritBomb(GenkiDama,n,SR(GetUnitX(n),GetUnitY(n),x,y)*0.015,0,GetUnitFlyHeight(GenkiDama),0.002)
     else
         if GetUnitScale(GenkiDama)>0.58+GetHeroLevel(u)*0.04 and GetUnitScale(GenkiDama)<0.6+GetHeroLevel(u)*0.04 then
             set n=CreateUnit(p,'e0PB',x,y,0)
@@ -183771,7 +183774,7 @@ local real distance=SR(GetUnitX(LoadUnitHandle(HH,id,20)),GetUnitY(LoadUnitHandl
 local real time=LoadReal(HH,id,5)
 set time=time+0.02
 call SaveReal(HH,id,5,time)
-if time>10 or distance<40 then
+if time>10 or distance<50 then
 call EffectCreateAndMove(true,"Madara\\Madara-huitu-20.mdl",facing,1,1.5,0.8,100,100,100,0,0,LoadUnitHandle(HH,id,20),0,facing)
 call EffectCreateAndMove(true,"Madara\\File00002270.mdl",facing,1,3,0.8,100,100,100,0,0,LoadUnitHandle(HH,id,20),0,facing)
         set soundplay=CreateSound("war3mapimported\\MadaraWBoom.mp3",false,false,true,12700,12700,"")
@@ -183789,7 +183792,7 @@ set facing=Angle2(GetUnitX(b1),GetUnitY(b1),LoadReal(HH,id,11),LoadReal(HH,id,12
 else
 set facing=Angle2(GetUnitX(b1),GetUnitY(b1),LoadReal(HH,id,11),LoadReal(HH,id,12))-30
 endif
-call MoveUnit(b1,b1,40,facing)
+call MoveUnit(b1,b1,50,facing)
 endif
 set caster=null
 set t=null
@@ -184065,10 +184068,10 @@ local real time=LoadReal(HH,id,5)
 local real distance=LoadReal(HH,id,8)
 local unit dummyUnit=LoadUnitHandle(HH,id,20)
 local real time1
-local real damage= GetUnitState(caster,UNIT_STATE_MAX_MANA)*0.6
+local real damage= GetUnitState(caster,UNIT_STATE_MAX_MANA)*0.7
 set time=time+0.02
 call SaveReal(HH,id,5,time)
-if distance==4020 then
+if distance>6000 then
 call DestroyGroup(LoadGroupHandle(HH,id,4))
 call MyRemoveUnit(LoadUnitHandle(HH,id,20),3)
 call UnitColor(LoadUnitHandle(HH,id,20),100,100,100,100)
