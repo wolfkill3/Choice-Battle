@@ -68941,7 +68941,7 @@ function MissleMoveSuperSpiritBomb3 takes nothing returns nothing
             set E=FirstOfGroup(DG)
             exitwhen E==null
             if Condition_Base(p,E)then
-                call myCustomDamage(u,E,GetHeroLevel(u)*0.1*GetHeroStr(u,true)+dmg,false,false,null,null,null)
+                call myCustomDamage(u,E,GetHeroLevel(u)*0.1*GetHeroStr(u,true)+dmg+200,false,false,null,null,null)
                 call SetControlToUnit(u,E, .21, "heavystun")
             endif
             call GroupRemoveUnit(DG,E)
@@ -69089,7 +69089,7 @@ function MissleMoveSpiritBomb3 takes nothing returns nothing
         call myCustomDamage(u,c,dmg*0.2,false,false,null,null,null) 
     else
         call StartSound(soundStr[37])
-        call myCustomDamage(u,c,GetHeroLevel(u)*0.1*GetHeroStr(u,true)+dmg,false,false,null,null,null) 
+        call myCustomDamage(u,c,GetHeroLevel(u)*0.1*GetHeroStr(u,true)+dmg+200,false,false,null,null,null) 
         set n=CreateUnit(p, 'e0C5', x, y, GetRandomInt(0, 360))
         call SetUnitScale(n, 2, 2, 2)
         call SetUnitFlyHeight(n, GetUnitZCustom(c), 0)
@@ -69275,7 +69275,7 @@ endif
 if GetSpellAbilityId()=='GKG4' then
     call SaveInteger(HH,GetHandleId(GenkiDama),0,1)
     call SetUnitFacing(Goku,AU(Goku,c)*bj_RADTODEG)
-    call MissleMoveSpiritBomb(Goku,c,GenkiDama,45,GetUnitFlyHeight(GenkiDama),50*0.1*GetUnitScale(GenkiDama)*GetHeroStr(Goku,true))
+    call MissleMoveSpiritBomb(Goku,c,GenkiDama,50,GetUnitFlyHeight(GenkiDama),50*0.1*GetUnitScale(GenkiDama)*GetHeroStr(Goku,true))
     if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
         call StartSound(soundStr[32])
     else
@@ -69290,7 +69290,7 @@ endif
 if GetSpellAbilityId()=='GKG5' then
     call SaveInteger(HH,GetHandleId(GenkiDama),0,1)
     call SetUnitFacing(Goku,a*bj_RADTODEG)
-    call MissleMoveSuperSpiritBomb(Goku,x1,y1,GenkiDama,30,AU(Goku,c),GetUnitFlyHeight(GenkiDama),GetAbilityRealLevelField(GetUnitAbility(u,'GKG5'),ABILITY_RLF_AREA_OF_EFFECT,0) ,50*0.1*GetUnitScale(GenkiDama)*GetHeroStr(Goku,true))
+    call MissleMoveSuperSpiritBomb(Goku,x1,y1,GenkiDama,40,AU(Goku,c),GetUnitFlyHeight(GenkiDama),GetAbilityRealLevelField(GetUnitAbility(u,'GKG5'),ABILITY_RLF_AREA_OF_EFFECT,0) ,50*0.1*GetUnitScale(GenkiDama)*GetHeroStr(Goku,true))
     if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
         call StartSound(soundStr[34])
     else
@@ -174799,7 +174799,7 @@ function JirenW_Action takes nothing returns nothing
     local real a = LoadReal(h,id,5)
     local real is=0
     local real ig=30*bj_DEGTORAD
-    local real damage    = GetHeroStr(u,true)*(2 + GetUnitAbilityLevel(u,'JNW1'))
+    local real damage    = GetHeroStr(u,true)*(1 + GetUnitAbilityLevel(u,'JNW1')) +50
     call SaveReal(h,id,4,time+0.1)
     if time<1.0 then
         loop
