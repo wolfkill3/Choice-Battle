@@ -68939,7 +68939,7 @@ function MissleMoveSuperSpiritBomb3 takes nothing returns nothing
             set E=FirstOfGroup(DG)
             exitwhen E==null
             if Condition_Base(p,E)then
-                call myCustomDamage(u,E,GetHeroLevel(u)*0.1*GetHeroStr(u,true)+dmg,false,false,null,null,null)
+                call myCustomDamage(u,E,GetHeroLevel(u)*0.1*GetHeroStr(u,true)+dmg+200,false,false,null,null,null)
                 call SetControlToUnit(u,E, .21, "heavystun")
             endif
             call GroupRemoveUnit(DG,E)
@@ -69087,7 +69087,7 @@ function MissleMoveSpiritBomb3 takes nothing returns nothing
         call myCustomDamage(u,c,dmg*0.2,false,false,null,null,null) 
     else
         call StartSound(soundStr[37])
-        call myCustomDamage(u,c,GetHeroLevel(u)*0.1*GetHeroStr(u,true)+dmg,false,false,null,null,null) 
+        call myCustomDamage(u,c,GetHeroLevel(u)*0.1*GetHeroStr(u,true)+dmg+200,false,false,null,null,null) 
         set n=CreateUnit(p, 'e0C5', x, y, GetRandomInt(0, 360))
         call SetUnitScale(n, 2, 2, 2)
         call SetUnitFlyHeight(n, GetUnitZCustom(c), 0)
@@ -69273,7 +69273,7 @@ endif
 if GetSpellAbilityId()=='GKG4' then
     call SaveInteger(HH,GetHandleId(GenkiDama),0,1)
     call SetUnitFacing(Goku,AU(Goku,c)*bj_RADTODEG)
-    call MissleMoveSpiritBomb(Goku,c,GenkiDama,45,GetUnitFlyHeight(GenkiDama),50*0.1*GetUnitScale(GenkiDama)*GetHeroStr(Goku,true))
+    call MissleMoveSpiritBomb(Goku,c,GenkiDama,50,GetUnitFlyHeight(GenkiDama),50*0.1*GetUnitScale(GenkiDama)*GetHeroStr(Goku,true))
     if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
         call StartSound(soundStr[32])
     else
@@ -69288,7 +69288,7 @@ endif
 if GetSpellAbilityId()=='GKG5' then
     call SaveInteger(HH,GetHandleId(GenkiDama),0,1)
     call SetUnitFacing(Goku,a*bj_RADTODEG)
-    call MissleMoveSuperSpiritBomb(Goku,x1,y1,GenkiDama,30,AU(Goku,c),GetUnitFlyHeight(GenkiDama),GetAbilityRealLevelField(GetUnitAbility(u,'GKG5'),ABILITY_RLF_AREA_OF_EFFECT,0) ,50*0.1*GetUnitScale(GenkiDama)*GetHeroStr(Goku,true))
+    call MissleMoveSuperSpiritBomb(Goku,x1,y1,GenkiDama,40,AU(Goku,c),GetUnitFlyHeight(GenkiDama),GetAbilityRealLevelField(GetUnitAbility(u,'GKG5'),ABILITY_RLF_AREA_OF_EFFECT,0) ,50*0.1*GetUnitScale(GenkiDama)*GetHeroStr(Goku,true))
     if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
         call StartSound(soundStr[34])
     else
@@ -91677,7 +91677,7 @@ function ImmitadeBodyCast2 takes nothing returns nothing
 			call SetUnitY(l__d,y2)
 			call IssueImmediateOrder(l__d,"stop")
 		endif
-		call SetUnitState(u,UNIT_STATE_MANA,m-mm*0.006*0.06)
+		call SetUnitState(u,UNIT_STATE_MANA,m-mm*0.005*0.06)
 	else
 		set n=CreateUnit(p, 'dR54', X1, Y1, GetRandomInt(0, 360))
 		call SetUnitScale(n, 1.55, 1.55, 1.55)
@@ -91702,6 +91702,10 @@ function ImmitadeBodyCast2 takes nothing returns nothing
 		set soundplay=CreateSound("Sound\\Music\\mp3Music\\VergilT2.mp3",false,false,true,12700,12700,"")
 		call StartSound(soundplay)
 		call KillSoundWhenDone(soundplay)
+        call SetAbilityIntegerLevelField(GetUnitAbility(u,'A0PI'), ABILITY_ILF_MANA_COST,GetUnitAbilityLevel(u,'A0PI')-1,GetAbilityBaseIntegerLevelFieldById(String2Id( "A0PI" ),ABILITY_ILF_MANA_COST,GetUnitAbilityLevel(u,'A0PI')-1))
+        call SetAbilityIntegerLevelField(GetUnitAbility(u,'VerW'), ABILITY_ILF_MANA_COST,GetUnitAbilityLevel(u,'VerW')-1,GetAbilityBaseIntegerLevelFieldById(String2Id( "VerW" ),ABILITY_ILF_MANA_COST,GetUnitAbilityLevel(u,'VerW')-1))
+        call SetAbilityIntegerLevelField(GetUnitAbility(u,'A0PM'), ABILITY_ILF_MANA_COST,GetUnitAbilityLevel(u,'A0PI')-1,GetAbilityBaseIntegerLevelFieldById(String2Id( "A0PM" ),ABILITY_ILF_MANA_COST,GetUnitAbilityLevel(u,'A0PM')-1))
+        call SetAbilityIntegerLevelField(GetUnitAbility(u,'A0PN'), ABILITY_ILF_MANA_COST,GetUnitAbilityLevel(u,'A0PN')-1,GetAbilityBaseIntegerLevelFieldById(String2Id( "A0PN" ),ABILITY_ILF_MANA_COST,GetUnitAbilityLevel(u,'A0PN')-1))
 	endif
 	set u=null
 	set l__d=null
@@ -91732,15 +91736,19 @@ function ImmitadeBodyCast takes nothing returns nothing
     // Q Vergil
 	call UnitAddAbility(n, 'A0PI')
 	call SetUnitAbilityLevel(n,'A0PI',GetUnitAbilityLevel(u,'A0PI'))
+    call SetAbilityIntegerLevelField(GetUnitAbility(u,'A0PI'), ABILITY_ILF_MANA_COST,GetUnitAbilityLevel(u,'A0PI')-1,R2I(GetAbilityIntegerLevelField(GetUnitAbility(u,'A0PI'),ABILITY_ILF_MANA_COST,GetUnitAbilityLevel(u,'A0PI')-1)*1.60))
     // W Vergil
 	call UnitAddAbility(n, 'VerW')
 	call SetUnitAbilityLevel(n, 'VerW', GetUnitAbilityLevel(u, 'VerW'))
+    call SetAbilityIntegerLevelField(GetUnitAbility(u,'VerW'), ABILITY_ILF_MANA_COST,GetUnitAbilityLevel(u,'VerW')-1,R2I(GetAbilityIntegerLevelField(GetUnitAbility(u,'VerW'),ABILITY_ILF_MANA_COST,GetUnitAbilityLevel(u,'VerW')-1)*1.60))
     // E Vergil
 	call UnitAddAbility(n, 'A0PM')
 	call SetUnitAbilityLevel(n,'A0PM',GetUnitAbilityLevel(u,'A0PM'))
+    call SetAbilityIntegerLevelField(GetUnitAbility(u,'A0PM'), ABILITY_ILF_MANA_COST,GetUnitAbilityLevel(u,'A0PM')-1,R2I(GetAbilityIntegerLevelField(GetUnitAbility(u,'A0PM'),ABILITY_ILF_MANA_COST,GetUnitAbilityLevel(u,'A0PM')-1)*1.60))
     // R Vergil
 	call UnitAddAbility(n, 'A0PN')
 	call SetUnitAbilityLevel(n, 'A0PN', GetUnitAbilityLevel(u, 'A0PN'))
+    call SetAbilityIntegerLevelField(GetUnitAbility(u,'A0PN'), ABILITY_ILF_MANA_COST,GetUnitAbilityLevel(u,'A0PN')-1,R2I(GetAbilityIntegerLevelField(GetUnitAbility(u,'A0PN'),ABILITY_ILF_MANA_COST,GetUnitAbilityLevel(u,'A0PN')-1)*1.60))
     // T Vergil
 	call UnitAddAbility(n, 'A0PJ')
 
@@ -174797,7 +174805,7 @@ function JirenW_Action takes nothing returns nothing
     local real a = LoadReal(h,id,5)
     local real is=0
     local real ig=30*bj_DEGTORAD
-    local real damage    = GetHeroStr(u,true)*(2 + GetUnitAbilityLevel(u,'JNW1'))
+    local real damage    = GetHeroStr(u,true)*(1 + GetUnitAbilityLevel(u,'JNW1')) +50
     call SaveReal(h,id,4,time+0.1)
     if time<1.0 then
         loop
@@ -215282,7 +215290,7 @@ local real x0=0
 local real y0=0
 local real facing=0
 local real dist
-local real damage=9*GetHeroAgi(caster,true)
+local real damage=8*GetHeroAgi(caster,true)
 local real MaxDist=2000+GetHeroInt(caster,true)*5
 call SaveUnitHandle(HH,id,1,caster)
 call SaveReal(HH,id,15,damage)
@@ -215303,8 +215311,8 @@ call SaveUnitHandle(HH,id,20,n0)
 call SaveBoolean(HH,GetHandleId(caster),StringHash("GojoQ2act"),true)
 set n0=CreateUnit(GetOwningPlayer(caster),'e200',GetUnitX(LoadUnitHandle(HH,id,20)),GetUnitY(LoadUnitHandle(HH,id,20)),GetUnitFacing(caster))
 call SetUnitModel(n0,EffectID[1332])
-call UnitAddAbility(n0,0x416D7266)
-call UnitRemoveAbility(n0,0x416D7266)
+call UnitAddAbility(n0,'Amrf')
+call UnitRemoveAbility(n0,'Amrf')
 call UnitSize(n0,3,1,1)
 call UnitSpeed(n0,1)
 call UnitColor(n0,100,100,100,60)
@@ -215312,8 +215320,8 @@ call SetUnitFlyHeight(n0,150,0)
 call SaveUnitHandle(HH,id,21,n0)
 set n0=CreateUnit(GetOwningPlayer(caster),'e200',GetUnitX(LoadUnitHandle(HH,id,20)),GetUnitY(LoadUnitHandle(HH,id,20)),GetUnitFacing(caster))
 call SetUnitModel(n0,EffectID[768])
-call UnitAddAbility(n0,0x416D7266)
-call UnitRemoveAbility(n0,0x416D7266)
+call UnitAddAbility(n0,'Amrf')
+call UnitRemoveAbility(n0,'Amrf')
 call UnitSize(n0,1,1,1)
 call UnitSpeed(n0,1.5)
 call UnitColor(n0,100,100,100,60)
@@ -215321,8 +215329,8 @@ call SetUnitFlyHeight(n0,0,0)
 call SaveUnitHandle(HH,id,22,n0)
 set n0=CreateUnit(GetOwningPlayer(caster),'e200',GetUnitX(LoadUnitHandle(HH,id,20)),GetUnitY(LoadUnitHandle(HH,id,20)),GetUnitFacing(caster))
 call SetUnitModel(n0,EffectID[44])
-call UnitAddAbility(n0,0x416D7266)
-call UnitRemoveAbility(n0,0x416D7266)
+call UnitAddAbility(n0,'Amrf')
+call UnitRemoveAbility(n0,'Amrf')
 call UnitSize(n0,1.1,1,1)
 call UnitSpeed(n0,1.1)
 call UnitColor(n0,80,80,100,40)
