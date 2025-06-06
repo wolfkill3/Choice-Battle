@@ -145745,20 +145745,21 @@ return GetLearnedSkill()=='A131'
 endfunction
 
 function GilgameshAADetails takes nothing returns nothing
-    call DisplayTimedTextToPlayer(GetTriggerPlayer(), 0, 0, 7, "Gilgamesh's auto attack selection.")
-    call DisplayTimedTextToPlayer(GetTriggerPlayer(), 0, 0, 7, "Most auto attack modifiers now work on swords with 30% effectiveness. For example: Samehada now deals (150+40% aa)*20% = 30+8% aa from each sword")
-    call DisplayTimedTextToPlayer(GetTriggerPlayer(), 0, 0, 7, " ")
-    call DisplayTimedTextToPlayer(GetTriggerPlayer(), 0, 0, 7, "• Anbu Sword: 16.5 true damage")
-    call DisplayTimedTextToPlayer(GetTriggerPlayer(), 0, 0, 7, "• Gegetseburi: 30 true damage + probable stun reduced to 0.3 sec")
-    call DisplayTimedTextToPlayer(GetTriggerPlayer(), 0, 0, 7, "• Samehada ManaBurn: 2.6% of current MP is burned per sword and 3.6% HP is restored from enemy's current MP.")
-    call DisplayTimedTextToPlayer(GetTriggerPlayer(), 0, 0, 7, "• Mare Cloud, Anbu Vest/Set, Akatsuki Protector, Heart of Fafnir: Block effect now works on each of Gilgamesh's swords.")
-    call DisplayTimedTextToPlayer(GetTriggerPlayer(), 0, 0, 7, "• Patriot: Each auto attack takes away 1 Allstat for 5 sec.")
-    call DisplayTimedTextToPlayer(GetTriggerPlayer(), 0, 0, 7, "• Excalibur: Each auto attack restores 20% of sword damage. Each auto attack reduces armor by 1 for 10 sec.")
-    call DisplayTimedTextToPlayer(GetTriggerPlayer(), 0, 0, 7, "• Dark Excalibur: Passive works as expected.")
-    call DisplayTimedTextToPlayer(GetTriggerPlayer(), 0, 0, 7, "• Anbu Shoes/Anbu Set: Gilgamesh has a 35% chance to miss.")
-    call DisplayTimedTextToPlayer(GetTriggerPlayer(), 0, 0, 7, "• Demon Eye: Gilgamesh completely misses with swords.")
-    call DisplayTimedTextToPlayer(GetTriggerPlayer(), 0, 0, 7, "• 666: Active gives Gilgamesh a chance to not miss.")
-    call DisplayTimedTextToPlayer(GetTriggerPlayer(), 0, 0, 7, "• Priestess's Bow: Pull and Repel Power reduced to 20.")
+        call DisplayTimedTextToPlayer(GetTriggerPlayer(), 0, 0, 7, "Gilgamesh's auto attack selection.")
+        call DisplayTimedTextToPlayer(GetTriggerPlayer(), 0, 0, 7, "Most auto attack modifiers now work on swords with 30% effectiveness. For example: Samehada now deals (150+40% aa)*20% = 30+8% aa from each sword")
+        call DisplayTimedTextToPlayer(GetTriggerPlayer(), 0, 0, 7, " ")
+        call DisplayTimedTextToPlayer(GetTriggerPlayer(), 0, 0, 7, "• Anbu Sword: 16.5 true damage")
+        call DisplayTimedTextToPlayer(GetTriggerPlayer(), 0, 0, 7, "• Gegetseburi: 30 true damage + probable stun reduced to 0.3 sec")
+        call DisplayTimedTextToPlayer(GetTriggerPlayer(), 0, 0, 7, "• Samehada ManaBurn: 2.6% of current MP is burned per sword and 3.6% HP is restored from enemy's current MP.")
+        call DisplayTimedTextToPlayer(GetTriggerPlayer(), 0, 0, 7, "• Mare Cloud, Anbu Vest/Set, Akatsuki Protector, Heart of Fafnir: the block effect works on each of Gilgamesh's swords.")
+        call DisplayTimedTextToPlayer(GetTriggerPlayer(), 0, 0, 7, "• Patriot: each auto attack takes away 1 Allstat for 5 sec.")
+        call DisplayTimedTextToPlayer(GetTriggerPlayer(), 0, 0, 7, "• Excalibur: each auto attack restores 20% of sword damage. Each auto attack reduces armor by 1 for 10 sec.")
+        call DisplayTimedTextToPlayer(GetTriggerPlayer(), 0, 0, 7, "• Dark Excalibur: The passive works as expected.")
+        call DisplayTimedTextToPlayer(GetTriggerPlayer(), 0, 0, 7, "• Anbu Shoes/Anbu Set: Gilgamesh has a 35% chance to miss.")
+        call DisplayTimedTextToPlayer(GetTriggerPlayer(), 0, 0, 7, "• Demon Eye: Gilgamesh completely misses with swords. Mare's Rain: Works with 100% efficiency.")
+        call DisplayTimedTextToPlayer(GetTriggerPlayer(), 0, 0, 7, "• 666: The active allows Gilgamesh to not miss.")
+        call DisplayTimedTextToPlayer(GetTriggerPlayer(), 0, 0, 7, "• Priestess's Bow: Attraction and repulsion power is reduced to 20 units.")
+        call DisplayTimedTextToPlayer(GetTriggerPlayer(), 0, 0, 7, "• Shusui, Feng: Work with 20% efficiency, only the duration is affected in slowdown.")
 endfunction
 
 function GilgameshAADetails_Int takes nothing returns nothing
@@ -146027,7 +146028,16 @@ function GilgameshModifiedAttack takes unit newCaster, unit newTarget returns bo
                 endif
                 call SetWidgetMana(newTarget, GetWidgetMana(newTarget)-GetWidgetMana(newTarget)*0.024)
             endif
-            
+            if UnitHasItemOfTypeBJ(newCaster, 'I01U') and GetRandomInt(1, 100)<=45 then 		// Feng
+                call PoisonDamage5(newCaster,newTarget, 0.5*GetHeroInt(newCaster,true), 6, "Abilities\\Weapons\\PoisonSting\\PoisonStingTarget.mdl", "chest")
+                call SlowUnit(newCaster,newTarget,0.5,0.,0.2,1,false)
+            endif
+            if UnitHasItemOfTypeBJ(newCaster, 'I01Q') and (GetRandomInt(1, 100)<=20 or GetUnitAbilityLevel(newCaster,'A06K')>0) then 		// Сюсуй
+                call Shusui_Cast(newCaster, 0.2)
+            endif
+            if UnitHasItemOfTypeBJ(newTarget,'I05O')or UnitHasItemOfTypeBJ(newTarget,'I05P')or UnitHasItemOfTypeBJ(newTarget,'I05Q')or UnitHasItemOfTypeBJ(newTarget,'I05R')or UnitHasItemOfTypeBJ(newTarget,'I05S')or UnitHasItemOfTypeBJ(newTarget,'I05T') or GetUnitAbilityLevel(newTarget, 'KIT8')>0 or GetUnitAbilityLevel(newTarget, 'KIU0')>0 or GetUnitAbilityLevel(newTarget, 'KIU2')>0 or GetUnitAbilityLevel(newTarget, 'KIU4')>0 or GetUnitAbilityLevel(newTarget, 'KIU6')>0 or GetUnitAbilityLevel(newTarget, 'KIU8')>0 then
+                call RainMare_Actions(newCaster,newTarget)
+            endif
             if UnitHasItemOfTypeBJ(newTarget, 'I03C') and UnitHasItemOfTypeBJ(newTarget, 'I03F')==false then        // Жилет Анбу у таргета
                     set damage=damage-25
                     call DestroyEffect(AddSpecialEffectTarget("Abilities\\Spells\\Human\\Heal\\HealTarget.mdl", newTarget,"origin"))
@@ -146280,7 +146290,7 @@ local real a=GetUnitFacing(u)*bj_DEGTORAD
 local real time=LoadReal(HH,id,2)
 local integer st=LoadInteger(HH,idu,str)
 local texttag l__txt=LoadTextTagHandle(HH,id,4)
-if time<I2R(8-GetHeroLevel(u)/5)then
+if time<2-GetHeroLevel(u)*0.04 then
 call SaveReal(HH,id,2,time+0.03)
 set x=x+150*Cos(a+deg90)
 set y=y+150*Sin(a+deg90)
@@ -206330,11 +206340,7 @@ function Karna_ModifAttack takes unit newCaster, unit newTarget, real attack_fac
             
             if UnitHasItemOfTypeBJ(newCaster, 'I01U') and GetRandomInt(1, 100)<=45 then 		// Feng
                 call PoisonDamage5(newCaster,newTarget, 2.5*GetHeroInt(newCaster,true)*modif_factor, 6, "Abilities\\Weapons\\PoisonSting\\PoisonStingTarget.mdl", "chest")
-                set n=CreateUnit(GetOwningPlayer(newCaster),'h019',GetUnitX(newTarget),GetUnitY(newTarget),0)
-                call UnitAddAbility(n,'A2CW')
-                call SetUnitAbilityLevel(n,'A2CW',1)
-                call UnitApplyTimedLife(n,'BHwe',1)
-                call IssueTargetOrder(n,"cripple",newTarget)
+                call SlowUnit(newCaster,newTarget,0.5,0.,1*modif_factor,1,false)
             endif
             if UnitHasItemOfTypeBJ(newCaster, 'I01Q') and (GetRandomInt(1, 100)<=20 or GetUnitAbilityLevel(newCaster,'A06K')>0) then 		// Сюсуй
                 call Shusui_Cast(newCaster, 1.0)
@@ -206671,11 +206677,7 @@ function Sinon_ModifAttack takes unit newCaster, unit newTarget, real attack_fac
 		
 		if UnitHasItemOfTypeBJ(newCaster, 'I01U') and GetRandomInt(1, 100)<=45 then 		// Feng
 			call PoisonDamage5(newCaster,newTarget, 2.5*GetHeroInt(newCaster,true)*modif_factor, 3, "Abilities\\Weapons\\PoisonSting\\PoisonStingTarget.mdl", "chest")
-			set n=CreateUnit(GetOwningPlayer(newCaster),'h019',GetUnitX(newTarget),GetUnitY(newTarget),0)
-			call UnitAddAbility(n,'A2CW')
-			call SetUnitAbilityLevel(n,'A2CW',1)
-			call UnitApplyTimedLife(n,'BHwe',1)
-			call IssueTargetOrder(n,"cripple",newTarget)
+			call SlowUnit(newCaster,newTarget,0.5,0.,1*modif_factor,1,false)
 		endif
 		if UnitHasItemOfTypeBJ(newCaster, 'I01Q') and (GetRandomInt(1, 100)<=20 or GetUnitAbilityLevel(newCaster,'A06K')>0) then 		// Сюсуй
 			call Shusui_Cast(newCaster, modif_factor)
