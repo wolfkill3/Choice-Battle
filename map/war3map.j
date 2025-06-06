@@ -145753,14 +145753,15 @@ function GilgameshAADetails takes nothing returns nothing
         call DisplayTimedTextToPlayer(GetTriggerPlayer(), 0, 0, 7, "• Меч Анбу: 16.5 чистого урона")
         call DisplayTimedTextToPlayer(GetTriggerPlayer(), 0, 0, 7, "• Гегецебури: 30 чистого урона + вероятный стан уменьшен до 0.3 сек")
         call DisplayTimedTextToPlayer(GetTriggerPlayer(), 0, 0, 7, "• Самехада ManaBurn: 2.6% текущего MP выжигается за меч и 3.6% восстановление HP от вражеской текущей MP.")
-        call DisplayTimedTextToPlayer(GetTriggerPlayer(), 0, 0, 7, "• Облако Маре, Жилет/Комплект Анбу, Протектор Акатсуки, Сердце Фафнира: эффект блокирования теперь работает на каждый меч Гильгамеша.")
+        call DisplayTimedTextToPlayer(GetTriggerPlayer(), 0, 0, 7, "• Облако Маре, Жилет/Комплект Анбу, Протектор Акатсуки, Сердце Фафнира: эффект блокирования работает на каждый меч Гильгамеша.")
         call DisplayTimedTextToPlayer(GetTriggerPlayer(), 0, 0, 7, "• Патриот: каждая автоатака отнимает 1 Allstat на 5 сек.")
         call DisplayTimedTextToPlayer(GetTriggerPlayer(), 0, 0, 7, "• Экскалибур: каждая автоатака восстанавливает 20% от урона меча. Каждая автоатака уменьшает броню на 1 на 10 сек.")
         call DisplayTimedTextToPlayer(GetTriggerPlayer(), 0, 0, 7, "• Темный Экскалибур: пассивка работает также как и должна.")
         call DisplayTimedTextToPlayer(GetTriggerPlayer(), 0, 0, 7, "• Туфли Анбу/Комплект Анбу: Гильгамеш может промахиваться с шансом 35%.")
-        call DisplayTimedTextToPlayer(GetTriggerPlayer(), 0, 0, 7, "• Демон Глаз: Гильгамеш полностью промахивается мечами.")
+        call DisplayTimedTextToPlayer(GetTriggerPlayer(), 0, 0, 7, "• Демон Глаз: Гильгамеш полностью промахивается мечами. Дождь Маре: работает со 100% эффективностью.")
         call DisplayTimedTextToPlayer(GetTriggerPlayer(), 0, 0, 7, "• 666: активка дает возможность Гильгамешу не промахиваться.")
         call DisplayTimedTextToPlayer(GetTriggerPlayer(), 0, 0, 7, "• Лук Жрицы: Сила притягивания и отталкивания ослаблена до 20 ед.")
+        call DisplayTimedTextToPlayer(GetTriggerPlayer(), 0, 0, 7, "• Сюсуй, Фэнг: Работают с 20% эффективностью, в замедлении касается лишь длительность.")
 endfunction
 
 function GilgameshAADetails_Int takes nothing returns nothing
@@ -146029,7 +146030,16 @@ function GilgameshModifiedAttack takes unit newCaster, unit newTarget returns bo
                 endif
                 call SetWidgetMana(newTarget, GetWidgetMana(newTarget)-GetWidgetMana(newTarget)*0.024)
             endif
-            
+            if UnitHasItemOfTypeBJ(newCaster, 'I01U') and GetRandomInt(1, 100)<=45 then 		// Feng
+                call PoisonDamage5(newCaster,newTarget, 0.5*GetHeroInt(newCaster,true), 6, "Abilities\\Weapons\\PoisonSting\\PoisonStingTarget.mdl", "chest")
+                call SlowUnit(newCaster,newTarget,0.5,0.,0.2,1,false)
+            endif
+            if UnitHasItemOfTypeBJ(newCaster, 'I01Q') and (GetRandomInt(1, 100)<=20 or GetUnitAbilityLevel(newCaster,'A06K')>0) then 		// Сюсуй
+                call Shusui_Cast(newCaster, 0.2)
+            endif
+            if UnitHasItemOfTypeBJ(newTarget,'I05O')or UnitHasItemOfTypeBJ(newTarget,'I05P')or UnitHasItemOfTypeBJ(newTarget,'I05Q')or UnitHasItemOfTypeBJ(newTarget,'I05R')or UnitHasItemOfTypeBJ(newTarget,'I05S')or UnitHasItemOfTypeBJ(newTarget,'I05T') or GetUnitAbilityLevel(newTarget, 'KIT8')>0 or GetUnitAbilityLevel(newTarget, 'KIU0')>0 or GetUnitAbilityLevel(newTarget, 'KIU2')>0 or GetUnitAbilityLevel(newTarget, 'KIU4')>0 or GetUnitAbilityLevel(newTarget, 'KIU6')>0 or GetUnitAbilityLevel(newTarget, 'KIU8')>0 then
+                call RainMare_Actions(newCaster,newTarget)
+            endif
             if UnitHasItemOfTypeBJ(newTarget, 'I03C') and UnitHasItemOfTypeBJ(newTarget, 'I03F')==false then        // Жилет Анбу у таргета
                     set damage=damage-25
                     call DestroyEffect(AddSpecialEffectTarget("Abilities\\Spells\\Human\\Heal\\HealTarget.mdl", newTarget,"origin"))
@@ -146282,7 +146292,7 @@ local real a=GetUnitFacing(u)*bj_DEGTORAD
 local real time=LoadReal(HH,id,2)
 local integer st=LoadInteger(HH,idu,str)
 local texttag l__txt=LoadTextTagHandle(HH,id,4)
-if time<I2R(8-GetHeroLevel(u)/5)then
+if time<2-GetHeroLevel(u)*0.04 then
 call SaveReal(HH,id,2,time+0.03)
 set x=x+150*Cos(a+deg90)
 set y=y+150*Sin(a+deg90)
@@ -206332,11 +206342,7 @@ function Karna_ModifAttack takes unit newCaster, unit newTarget, real attack_fac
             
             if UnitHasItemOfTypeBJ(newCaster, 'I01U') and GetRandomInt(1, 100)<=45 then 		// Feng
                 call PoisonDamage5(newCaster,newTarget, 2.5*GetHeroInt(newCaster,true)*modif_factor, 6, "Abilities\\Weapons\\PoisonSting\\PoisonStingTarget.mdl", "chest")
-                set n=CreateUnit(GetOwningPlayer(newCaster),'h019',GetUnitX(newTarget),GetUnitY(newTarget),0)
-                call UnitAddAbility(n,'A2CW')
-                call SetUnitAbilityLevel(n,'A2CW',1)
-                call UnitApplyTimedLife(n,'BHwe',1)
-                call IssueTargetOrder(n,"cripple",newTarget)
+                call SlowUnit(newCaster,newTarget,0.5,0.,1*modif_factor,1,false)
             endif
             if UnitHasItemOfTypeBJ(newCaster, 'I01Q') and (GetRandomInt(1, 100)<=20 or GetUnitAbilityLevel(newCaster,'A06K')>0) then 		// Сюсуй
                 call Shusui_Cast(newCaster, 1.0)
@@ -206673,11 +206679,7 @@ function Sinon_ModifAttack takes unit newCaster, unit newTarget, real attack_fac
 		
 		if UnitHasItemOfTypeBJ(newCaster, 'I01U') and GetRandomInt(1, 100)<=45 then 		// Feng
 			call PoisonDamage5(newCaster,newTarget, 2.5*GetHeroInt(newCaster,true)*modif_factor, 3, "Abilities\\Weapons\\PoisonSting\\PoisonStingTarget.mdl", "chest")
-			set n=CreateUnit(GetOwningPlayer(newCaster),'h019',GetUnitX(newTarget),GetUnitY(newTarget),0)
-			call UnitAddAbility(n,'A2CW')
-			call SetUnitAbilityLevel(n,'A2CW',1)
-			call UnitApplyTimedLife(n,'BHwe',1)
-			call IssueTargetOrder(n,"cripple",newTarget)
+			call SlowUnit(newCaster,newTarget,0.5,0.,1*modif_factor,1,false)
 		endif
 		if UnitHasItemOfTypeBJ(newCaster, 'I01Q') and (GetRandomInt(1, 100)<=20 or GetUnitAbilityLevel(newCaster,'A06K')>0) then 		// Сюсуй
 			call Shusui_Cast(newCaster, modif_factor)
