@@ -50972,7 +50972,6 @@ local integer l__idg=GetHandleId(g)
 local real f
 local player p=GetOwningPlayer(c)
 local integer idu
-local unit l__dm
 loop
 exitwhen i>15
 set dist=LoadReal(h,id,StringHash("dist"+I2S(i)))+80
@@ -50989,9 +50988,8 @@ if IsUnitEnemy(u,p)and u!=LoadUnitHandle(h,l__idg,idu)and IsUnitType(u,UNIT_TYPE
 call myCustomDamage(c,u,dmg,false,false,null,null,null)
 call SaveUnitHandle(h,l__idg,idu,u)
 call UnitApplyTimedLife(CreateUnit(p,'e025',GetUnitX(u),GetUnitY(u),GetRandomReal(0,359)),'BHwe',2)
-set l__dm=CreateUnit(p,'hspt',x,y,0)
-call UnitApplyTimedLife(l__dm,'BHwe',3)
-call IssueTargetOrder(l__dm,"drunkenhaze",u)
+call SlowUnit(c,u,0.3,0.3,3,2,false)
+call SetControlToUnit(c,u,3, "Silence")
 endif
 call GroupRemoveUnit(g,u)
 exitwhen u==null
@@ -51003,7 +51001,6 @@ call FlushChildHashtable(h,id)
 call FlushChildHashtable(h,l__idg)
 endif
 set c=null
-set l__dm=null
 set g=null
 set u=null
 set t=null
@@ -137723,25 +137720,30 @@ endfunction
 function SlowAuraStartCast takes nothing returns nothing
 local buff buf=GetTriggerBuff()
 local unit u=GetTriggerUnit()
+local real koeffic=1
 if UnitHasItemOfTypeBJCustom(u,'I13S') or UnitHasItemOfTypeBJCustom(u,'I13R') then
-    call DisableTrigger(GetTriggeringTrigger())
-    if GetBuffBaseTypeId(buf)=='Basl' then
-        call BJDebugMsg(R2S(GetBuffRealField(buf,ABILITY_RLF_MOVEMENT_SPEED_FACTOR_SLO1)))
-        call SetBuffRealField(buf,ABILITY_RLF_MOVEMENT_SPEED_FACTOR_SLO1,GetBuffRealField(buf,ABILITY_RLF_MOVEMENT_SPEED_FACTOR_SLO1)*0.65)
-        call SetBuffRealField(buf,ABILITY_RLF_ATTACK_SPEED_FACTOR_SLO2,GetBuffRealField(buf,ABILITY_RLF_ATTACK_SPEED_FACTOR_SLO2)*0.65)
-        call BJDebugMsg(R2S(GetBuffRealField(buf,ABILITY_RLF_MOVEMENT_SPEED_FACTOR_SLO1)))
-    elseif GetBuffBaseTypeId(buf)=='BOae' then
-        call BJDebugMsg(R2S(GetBuffRealField(buf,ABILITY_RLF_MOVEMENT_SPEED_INCREASE_PERCENT_OAE1)))
-        call SetBuffRealField(buf,ABILITY_RLF_MOVEMENT_SPEED_INCREASE_PERCENT_OAE1,GetBuffRealField(buf,ABILITY_RLF_MOVEMENT_SPEED_INCREASE_PERCENT_OAE1)*0.65)
-        call SetBuffRealField(buf,ABILITY_RLF_ATTACK_SPEED_INCREASE_PERCENT_OAE2,GetBuffRealField(buf,ABILITY_RLF_ATTACK_SPEED_INCREASE_PERCENT_OAE2)*0.65)
-        call BJDebugMsg(R2S(GetBuffRealField(buf,ABILITY_RLF_MOVEMENT_SPEED_INCREASE_PERCENT_OAE1)))
-    elseif GetBuffBaseTypeId(buf)=='BOac' then
-        call BJDebugMsg(R2S(GetBuffRealField(buf,ABILITY_RLF_ATTACK_DAMAGE_INCREASE_CAC1)))
-        call SetBuffRealField(buf,ABILITY_RLF_ATTACK_DAMAGE_INCREASE_CAC1,GetBuffRealField(buf,ABILITY_RLF_ATTACK_DAMAGE_INCREASE_CAC1)*0.65)
-        call BJDebugMsg(R2S(GetBuffRealField(buf,ABILITY_RLF_ATTACK_DAMAGE_INCREASE_CAC1)))
-    endif
-    call EnableTrigger(GetTriggeringTrigger())
+    set koeffic=koeffic*0.65
 endif
+if GetUnitTypeId(u)=='H04H' or  GetUnitTypeId(u)=='H14H' then
+    set koeffic=koeffic*0.5
+endif
+call DisableTrigger(GetTriggeringTrigger())
+if GetBuffBaseTypeId(buf)=='Basl' then
+    call BJDebugMsg(R2S(GetBuffRealField(buf,ABILITY_RLF_MOVEMENT_SPEED_FACTOR_SLO1)))
+    call SetBuffRealField(buf,ABILITY_RLF_MOVEMENT_SPEED_FACTOR_SLO1,GetBuffRealField(buf,ABILITY_RLF_MOVEMENT_SPEED_FACTOR_SLO1)*koeffic)
+    call SetBuffRealField(buf,ABILITY_RLF_ATTACK_SPEED_FACTOR_SLO2,GetBuffRealField(buf,ABILITY_RLF_ATTACK_SPEED_FACTOR_SLO2)*koeffic)
+    call BJDebugMsg(R2S(GetBuffRealField(buf,ABILITY_RLF_MOVEMENT_SPEED_FACTOR_SLO1)))
+elseif GetBuffBaseTypeId(buf)=='BOae' then
+    call BJDebugMsg(R2S(GetBuffRealField(buf,ABILITY_RLF_MOVEMENT_SPEED_INCREASE_PERCENT_OAE1)))
+    call SetBuffRealField(buf,ABILITY_RLF_MOVEMENT_SPEED_INCREASE_PERCENT_OAE1,GetBuffRealField(buf,ABILITY_RLF_MOVEMENT_SPEED_INCREASE_PERCENT_OAE1)*koeffic)
+    call SetBuffRealField(buf,ABILITY_RLF_ATTACK_SPEED_INCREASE_PERCENT_OAE2,GetBuffRealField(buf,ABILITY_RLF_ATTACK_SPEED_INCREASE_PERCENT_OAE2)*koeffic)
+    call BJDebugMsg(R2S(GetBuffRealField(buf,ABILITY_RLF_MOVEMENT_SPEED_INCREASE_PERCENT_OAE1)))
+elseif GetBuffBaseTypeId(buf)=='BOac' then
+    call BJDebugMsg(R2S(GetBuffRealField(buf,ABILITY_RLF_ATTACK_DAMAGE_INCREASE_CAC1)))
+    call SetBuffRealField(buf,ABILITY_RLF_ATTACK_DAMAGE_INCREASE_CAC1,GetBuffRealField(buf,ABILITY_RLF_ATTACK_DAMAGE_INCREASE_CAC1)*koeffic)
+    call BJDebugMsg(R2S(GetBuffRealField(buf,ABILITY_RLF_ATTACK_DAMAGE_INCREASE_CAC1)))
+endif
+call EnableTrigger(GetTriggeringTrigger())
 set buf=null
 set u=null
 endfunction
@@ -224427,7 +224429,7 @@ call WeakenEndInit()
 // call PauseAbilAddInit()
 // call PauseAbilRemInit()
 // call PauseAbilInit()
-//call SlowAuraStartInit()
+// call SlowAuraStartInit()
 call CycloneStartInit()
 //call ControlDebuffStartInit()
 // call ItemBowStartInit()
