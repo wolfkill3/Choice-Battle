@@ -8258,7 +8258,7 @@ if LoadReal(HH,id,3)<LoadReal(HH,id,2) and GetUnitAbilityLevel(LoadUnitHandle(HH
         call SaveReal(HH,id,3,LoadReal(HH,id,3)+0.05)
     endif
 else
-    if LoadBoolean(HH,GetHandleId(LoadUnitHandle(HH,id,0)),SST)==false then
+    if LoadBoolean(HH,GetHandleId(LoadUnitHandle(HH,id,0)),SST)==false and LoadInteger(HH,id,1)!='GkH8' then
         call SaveBoolean(HH,GetHandleId(LoadUnitHandle(HH,id,0)),SST,true)
     endif
     call FlushChildHashtable(HH,id)
@@ -10159,6 +10159,7 @@ call SetPlayerAbilityAvailable(Player(i),'TRBB',false)
 call SetPlayerAbilityAvailable(Player(i),'GTBB',false)
 call SetPlayerAbilityAvailable(Player(i),'GGBB',false)
 call SetPlayerAbilityAvailable(Player(i),'GKBB',false)
+call SetPlayerAbilityAvailable(Player(i),'GKBI',false)
 call SetPlayerAbilityAvailable(Player(i),'VGBB',false)
 call SetPlayerAbilityAvailable(Player(i),'GKSF',false)
 call SetPlayerAbilityAvailable(Player(i),'GKG6',false)
@@ -12046,7 +12047,7 @@ function OnButtonChangeAbilityMode takes nothing returns nothing
         endif
         if LoadReal(HH,pHid,VariationWHash)==3 then
             call SaveReal(HH,pHid,VariationWHash,4)
-            call SetAbilityIntegerLevelField(GetUnitAbility(Goku,'GKW5'),ABILITY_ILF_MANA_COST,0,370)
+            call SetAbilityIntegerLevelField(GetUnitAbility(Goku,'GKW5'),ABILITY_ILF_MANA_COST,0,360)
             if GetLocalPlayer()==p then
                 call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 9 ), "ReplaceableTextures\\CommandButtons\\BTNAcceleratingBattleSpirit3.blp", 0, true )
                 call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 9 ), "ReplaceableTextures\\CommandButtons\\BTNAcceleratingBattleSpirit3.blp", 1, true )
@@ -12058,7 +12059,7 @@ function OnButtonChangeAbilityMode takes nothing returns nothing
             endif
         elseif LoadReal(HH,pHid,VariationWHash)==4 then
             call SaveReal(HH,pHid,VariationWHash,3)
-            call SetAbilityIntegerLevelField(GetUnitAbility(Goku,'GKW5'),ABILITY_ILF_MANA_COST,0,170)
+            call SetAbilityIntegerLevelField(GetUnitAbility(Goku,'GKW5'),ABILITY_ILF_MANA_COST,0,160)
             if GetLocalPlayer()==p then
                 call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 9 ), "ReplaceableTextures\\CommandButtons\\BTNAcceleratingBattleSpirit2.blp", 0, true )
                 call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 9 ), "ReplaceableTextures\\CommandButtons\\BTNAcceleratingBattleSpirit2.blp", 1, true )
@@ -20542,7 +20543,7 @@ if GetUnitTypeId(u)=='H02H' then
         elseif GetHeroLevel(u)>=26 and GetHeroLevel(u)<35 and LoadBoolean(HH,idp,UIAvailableHash)==true then
             call SetFrameText(GetFrameByName("CustomLeaderboardText",0),"|c00FF0000Kaioken|r: "+I2S(R2I(LoadInteger(HH,idp, KaiokenHash)))+"  |c00C7C7D6Dodges|r: "+I2S(LoadInteger(HH,idp, UIDodgeHash))+ "/"+I2S(LoadInteger(HH,idp,UIMaxDodgeHash)))
         elseif GetHeroLevel(u)>=35 and LoadBoolean(HH,idp,UIAvailableHash)==true and LoadBoolean(HH,idp,MUIAvailableHash)==false then
-            call SetFrameText(GetFrameByName("CustomLeaderboardText",0),"|c00FF0000Kaioken|r: "+I2S(R2I(LoadInteger(HH,idp, KaiokenHash)))+"  |c00C7C7D6Dodges|r: "+I2S(LoadInteger(HH,idp, UIDodgeHash))+ "/"+I2S(LoadInteger(HH,idp,UIMaxDodgeHash))+"|n|c00F1F1F5MUI Unlock|r: "+I2S(LoadInteger(HH,idp, MUIDodgeCountHash))+ "/20")
+            call SetFrameText(GetFrameByName("CustomLeaderboardText",0),"|c00FF0000Kaioken|r: "+I2S(R2I(LoadInteger(HH,idp, KaiokenHash)))+"  |c00C7C7D6Dodges|r: "+I2S(LoadInteger(HH,idp, UIDodgeHash))+ "/"+I2S(LoadInteger(HH,idp,UIMaxDodgeHash))+"|n|c00F1F1F5MUI Unlock|r: "+I2S(LoadInteger(HH,idp, MUIDodgeCountHash))+ "/15")
         elseif GetHeroLevel(u)>=35 and LoadBoolean(HH,idp,UIAvailableHash)==true and LoadBoolean(HH,idp,MUIAvailableHash)==true then
             call SetFrameText(GetFrameByName("CustomLeaderboardText",0),"|c00FF0000Kaioken|r: "+I2S(R2I(LoadInteger(HH,idp, KaiokenHash)))+"  |c00C7C7D6Dodges|r: "+I2S(LoadInteger(HH,idp, UIDodgeHash))+ "/"+I2S(LoadInteger(HH,idp,UIMaxDodgeHash)))
         endif
@@ -22587,6 +22588,7 @@ function Trig_Killer_Actions takes nothing returns nothing
                 call SetSpecialEffectScale(EFF , 0.45)
                 call SetSpecialEffectZ(EFF , GetUnitZCustom(E)+70)
                 call DestroyEffect(EFF)
+                call UnitAddAbilityTimed(E,5,'A0JY')
                 set t=CreateTimer()
                 set i2=R2I(I2R(GetHeroAgi(Hero[ic],true))*0.05)
                 call SaveInteger(h,GetHandleId(t),2,i2)
@@ -23984,6 +23986,13 @@ function Trig_StatusBar_Actions takes nothing returns nothing
         call TriggerRegisterPlayerKeyEvent( AbilityModeHotkey, Player(x), OSKEY_T, 2 ,true )
         call TriggerRegisterPlayerKeyEvent( AbilityModeHotkey, Player(x), OSKEY_F, 2 ,true )
         call TriggerRegisterPlayerKeyEvent( AbilityModeHotkey, Player(x), OSKEY_G, 2 ,true )
+        call TriggerRegisterPlayerKeyEvent( AbilityModeHotkey, Player(x), OSKEY_Q, 4 ,true )
+        call TriggerRegisterPlayerKeyEvent( AbilityModeHotkey, Player(x), OSKEY_W, 4 ,true )
+        call TriggerRegisterPlayerKeyEvent( AbilityModeHotkey, Player(x), OSKEY_E, 4 ,true )
+        call TriggerRegisterPlayerKeyEvent( AbilityModeHotkey, Player(x), OSKEY_R, 4 ,true )
+        call TriggerRegisterPlayerKeyEvent( AbilityModeHotkey, Player(x), OSKEY_T, 4 ,true )
+        call TriggerRegisterPlayerKeyEvent( AbilityModeHotkey, Player(x), OSKEY_F, 4 ,true )
+        call TriggerRegisterPlayerKeyEvent( AbilityModeHotkey, Player(x), OSKEY_G, 4 ,true )
         call TriggerAddAction( AbilityModeHotkey, function AbilityModeClick )
         set x=x+1
     endloop
@@ -40544,7 +40553,7 @@ if (GetUnitAbilityLevel(u,'A14J')>0  and (nb>200 or CurrentEventAttack)) or (Get
     if GetUnitAbilityLevel(u,'A34J')>0 then
         if GetHeroLevel(u)>=35 and LoadBoolean(HH,GetHandleId( GetOwningPlayer(u) ),MUIAvailableHash)==false then
             call SaveInteger(HH,GetHandleId( GetOwningPlayer(u) ),MUIDodgeCountHash,LoadInteger(HH,GetHandleId( GetOwningPlayer(u) ),MUIDodgeCountHash)+1)
-            if LoadInteger(HH,GetHandleId( GetOwningPlayer(u) ),MUIDodgeCountHash)>=20 then
+            if LoadInteger(HH,GetHandleId( GetOwningPlayer(u) ),MUIDodgeCountHash)>=15 then
                 call SaveBoolean(HH,GetHandleId( GetOwningPlayer(u) ),MUIAvailableHash,true)
                 set MUIUnlock[GetPlayerId(GetOwningPlayer(u))]=CreateUnit(GetOwningPlayer(u),'h111',RX,RY,0)
             endif
@@ -40754,7 +40763,7 @@ if cond==0 then
             set nb=0
             if GetHeroLevel(u)>=35 and LoadBoolean(HH,GetHandleId( GetOwningPlayer(u) ),MUIAvailableHash)==false then
                 call SaveInteger(HH,GetHandleId( GetOwningPlayer(u) ),MUIDodgeCountHash,LoadInteger(HH,GetHandleId( GetOwningPlayer(u) ),MUIDodgeCountHash)+1)
-                if LoadInteger(HH,GetHandleId( GetOwningPlayer(u) ),MUIDodgeCountHash)>=20 then
+                if LoadInteger(HH,GetHandleId( GetOwningPlayer(u) ),MUIDodgeCountHash)>=15 then
                     call SaveBoolean(HH,GetHandleId( GetOwningPlayer(u) ),MUIAvailableHash,true)
                     set MUIUnlock[GetPlayerId(GetOwningPlayer(u))]=CreateUnit(GetOwningPlayer(u),'h111',RX,RY,0)
                 endif
@@ -44983,7 +44992,7 @@ call TriggerAddCondition(gg_trg_AkatsukiSet,Condition(function AkatsukiSetCond))
 call TriggerAddAction(gg_trg_AkatsukiSet,function AkatsukiSetCast)
 endfunction
 function SaiyanSetCond takes nothing returns boolean
-return GetHeroPrimaryAttribute(GetTriggerUnit())==HERO_ATTRIBUTE_STR and GetSpellAbilityId()!='VTBB' and GetSpellAbilityId()!='VTSG' and GetSpellAbilityId()!='VTSS' and GetSpellAbilityId()!='VTBS' and GetSpellAbilityId()!='GGBB' and GetSpellAbilityId()!='GGSG' and GetSpellAbilityId()!='GGS4' and GetSpellAbilityId()!='GGSS' and GetSpellAbilityId()!='GGBS' and GetSpellAbilityId()!='A11G' and GetSpellAbilityId()!='A16E' and GetSpellAbilityId()!='A1AA' and GetSpellAbilityId()!='A1AB' and GetSpellAbilityId()!='A11E' and GetSpellAbilityId()!='A11D' and GetSpellAbilityId()!='A11F' and UnitHasItemOfTypeBJ(GetTriggerUnit(),'I06E')and GetSpellAbilityId()!='A0N1' and GetSpellAbilityId()!='A0N2' and GetSpellAbilityId()!='A0A2' and GetSpellAbilityId()!='A0EH' and GetSpellAbilityId()!='A0UG' and GetSpellAbilityId()!='A06J' and GetSpellAbilityId()!='A0VQ' and GetSpellAbilityId()!='A1I3'  and GetSpellAbilityId()!='A0X6'  and GetSpellAbilityId()!='A0B3' and GetSpellAbilityId()!='IcF2' and GetSpellAbilityId()!='IcFS' and GetSpellAbilityId()!='IcD3' and GetSpellAbilityId()!='A14T' and GetSpellAbilityId()!='GKBS' and GetSpellAbilityId()!='GKBB' and GetSpellAbilityId()!='GKSS' and GetSpellAbilityId()!='GKS2' and GetSpellAbilityId()!='GKS3' and GetSpellAbilityId()!='GKS4' and GetSpellAbilityId()!='GKSR' and GetSpellAbilityId()!='GKSB' and GetSpellAbilityId()!='GKUI' and GetSpellAbilityId()!='GKMI' and GetSpellAbilityId()!='VGBS' and GetSpellAbilityId()!='VGBB' and GetSpellAbilityId()!='VGSS' and GetSpellAbilityId()!='VGS2' and GetSpellAbilityId()!='VGS3' and GetSpellAbilityId()!='VGS4' and GetSpellAbilityId()!='VGSR' and GetSpellAbilityId()!='VGSB' and RectContainsUnit(gg_rct_HibariFight,GetTriggerUnit())==false
+return GetHeroPrimaryAttribute(GetTriggerUnit())==HERO_ATTRIBUTE_STR and GetSpellAbilityId()!='VTBB' and GetSpellAbilityId()!='VTSG' and GetSpellAbilityId()!='VTSS' and GetSpellAbilityId()!='VTBS' and GetSpellAbilityId()!='GGBB' and GetSpellAbilityId()!='GGSG' and GetSpellAbilityId()!='GGS4' and GetSpellAbilityId()!='GGSS' and GetSpellAbilityId()!='GGBS' and GetSpellAbilityId()!='A11G' and GetSpellAbilityId()!='A16E' and GetSpellAbilityId()!='A1AA' and GetSpellAbilityId()!='A1AB' and GetSpellAbilityId()!='A11E' and GetSpellAbilityId()!='A11D' and GetSpellAbilityId()!='A11F' and UnitHasItemOfTypeBJ(GetTriggerUnit(),'I06E')and GetSpellAbilityId()!='A0N1' and GetSpellAbilityId()!='A0N2' and GetSpellAbilityId()!='A0A2' and GetSpellAbilityId()!='A0EH' and GetSpellAbilityId()!='A0UG' and GetSpellAbilityId()!='A06J' and GetSpellAbilityId()!='A0VQ' and GetSpellAbilityId()!='A1I3'  and GetSpellAbilityId()!='A0X6'  and GetSpellAbilityId()!='A0B3' and GetSpellAbilityId()!='IcF2' and GetSpellAbilityId()!='IcFS' and GetSpellAbilityId()!='IcD3' and GetSpellAbilityId()!='A14T' and GetSpellAbilityId()!='GKBS' and GetSpellAbilityId()!='GKBB' and GetSpellAbilityId()!='GKBI' and GetSpellAbilityId()!='GKSS' and GetSpellAbilityId()!='GKS2' and GetSpellAbilityId()!='GKS3' and GetSpellAbilityId()!='GKS4' and GetSpellAbilityId()!='GKSR' and GetSpellAbilityId()!='GKSB' and GetSpellAbilityId()!='GKUI' and GetSpellAbilityId()!='GKMI' and GetSpellAbilityId()!='VGBS' and GetSpellAbilityId()!='VGBB' and GetSpellAbilityId()!='VGSS' and GetSpellAbilityId()!='VGS2' and GetSpellAbilityId()!='VGS3' and GetSpellAbilityId()!='VGS4' and GetSpellAbilityId()!='VGSR' and GetSpellAbilityId()!='VGSB' and RectContainsUnit(gg_rct_HibariFight,GetTriggerUnit())==false
 endfunction
 function SaiyanSetCast takes nothing returns nothing
 local unit u=GetTriggerUnit()
@@ -65061,9 +65070,9 @@ call StartSound(soundplay)
 call KillSoundWhenDone(soundplay)
 call SetUnitInvulnerable(u,false)
 call Push3(c,65,a,575,"Abilities\\Weapons\\AncientProtectorMissile\\AncientProtectorMissile.mdl")
-call UnitRemoveAbility(l__d,0x41305957)
-call UnitRemoveAbility(l__d,0x41304835)
-call UnitRemoveAbility(l__d,0x41304836)
+call UnitRemoveAbility(l__d,'A0YW')
+call UnitRemoveAbility(l__d,'A0H5')
+call UnitRemoveAbility(l__d,'A0H6')
 call SetUnitTimeScale(u,1)
 call FlushChildHashtable(h,id)
 call PauseTimer(t)
@@ -65116,13 +65125,13 @@ call SetUnitFacing(u,a*bj_RADTODEG)
 set n=CreateUnit(p,'e0AF',x,y,GetRandomReal(0,359))
 call UnitApplyTimedLife(n,'BTLF',0.01)
 call SetUnitVertexColor(n,190,255,255,100)
-call UnitApplyTimedLife(CreateUnit(p,0x6530414C,x,y,GetRandomReal(0,359)),'BTLF',0.5)
-if l__s>1 and l__s<2 and GetUnitAbilityLevel(u,'A0GN')==0 then
-call UnitAddAbility(u,0x41305957)
-elseif l__s>2 and l__s<4 and GetUnitAbilityLevel(u,0x41304835)==0 then
-call UnitAddAbility(u,0x41304835)
-elseif l__s>4 and l__s<6 and GetUnitAbilityLevel(u,0x41304836)==0 then
-call UnitAddAbility(u,0x41304836)
+call UnitApplyTimedLife(CreateUnit(p,'e0AL',x,y,GetRandomReal(0,359)),'BTLF',0.5)
+if l__s==0.8 and GetUnitAbilityLevel(u,'A0YW')==0 then
+call UnitAddAbility(u,'A0YW')
+elseif l__s==1.5 and GetUnitAbilityLevel(u,'A0H5')==0 then
+call UnitAddAbility(u,'A0H5')
+elseif l__s==1.8 and GetUnitAbilityLevel(u,'A0H6')==0 then
+call UnitAddAbility(u,'A0H6')
 endif
 else
 call MissleMoveVStrike(u,c,u,60,0,dmg+100)
@@ -65146,7 +65155,7 @@ local real a=Atan2(GetUnitY(c)-y,GetUnitX(c)-x)
 call SaveUnitHandle(h,id,0,u)
 call SaveUnitHandle(h,id,1,c)
 call SaveReal(h,id,8,1)
-call SaveReal(h,id,6,4*GetHeroStr(u,true))
+call SaveReal(h,id,6,(2.5+0.5*GetUnitAbilityLevel(u,'A0H4'))*GetHeroStr(u,true))
 call TimerStart(t,0.05,true,function VStrikeCast2)
 set c=null
 set u=null
@@ -65211,7 +65220,7 @@ call TimerStart(t,0.03,true,function MissleMoveSunshineUppercut2)
 set t=null
 endfunction
 function SunshineUppercutCond takes nothing returns boolean
-return GetSpellAbilityId()==0x41304846 and udg_B==true
+return GetSpellAbilityId()=='A0HF' and udg_B==true
 endfunction
 function SunshineUppercutCast2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
@@ -65307,16 +65316,16 @@ endif
 if hs>=3 and hs<=5 then
 set ids='A0HE'
 elseif hs>=6 and hs<=8 then
-set ids=0x41304846
+set ids='A0HF'
 elseif hs>8 then
-set ids=0x41304847
+set ids='A0HG'
 endif
 if GetUnitAbilityLevel(u,'A0HE')>0 and hs>5 then
 call UnitRemoveAbility(u,'A0HE')
-elseif GetUnitAbilityLevel(u,0x41304846)>0 and hs>8 then
-call UnitRemoveAbility(u,0x41304846)
-elseif GetUnitAbilityLevel(u,0x41304846)>0 and hs<8 then
-call UnitRemoveAbility(u,0x41304847)
+elseif GetUnitAbilityLevel(u,'A0HF')>0 and hs>8 then
+call UnitRemoveAbility(u,'A0HF')
+elseif GetUnitAbilityLevel(u,'A0HF')>0 and hs<8 then
+call UnitRemoveAbility(u,'A0HG')
 endif
 if time>=25 then
 call SaveReal(HH,idu,strh,0)
@@ -65327,7 +65336,7 @@ endif
 endif
 call SetTextTagPos(txt,GetUnitX(u)-190*Cos(f),GetUnitY(u)-190*Sin(f),GetUnitFlyHeight(u)+100+(10.5*0.08)/10)
 if GetUnitAbilityLevel(u,'A1A3')>0 then
-if GetUnitAbilityLevel(u,'A0HE')==0 and GetUnitAbilityLevel(u,0x41304846)==0 and GetUnitAbilityLevel(u,0x41304847)==0 then
+if GetUnitAbilityLevel(u,'A0HE')==0 and GetUnitAbilityLevel(u,'A0HF')==0 and GetUnitAbilityLevel(u,'A0HG')==0 then
 call UnitAddAbility(u,ids)
 endif
 if GetLocalPlayer()==GetOwningPlayer(u)then
@@ -65336,8 +65345,8 @@ endif
 else
 call SaveInteger(HH,idu,StringHash("d"),0)
 call UnitRemoveAbility(u,'A0HE')
-call UnitRemoveAbility(u,0x41304846)
-call UnitRemoveAbility(u,0x41304847)
+call UnitRemoveAbility(u,'A0HF')
+call UnitRemoveAbility(u,'A0HG')
 call SetTextTagVisibility(txt,false)
 call DestroyTextTag(txt)
 endif
@@ -65672,7 +65681,7 @@ endfunction
 function SunCounterInit takes nothing returns nothing
 endfunction
 function MaxSunCounterCond takes nothing returns boolean
-return GetSpellAbilityId()==0x41304847
+return GetSpellAbilityId()=='A0HG'
 endfunction
 function MaxSunCounterCast2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
@@ -67870,59 +67879,127 @@ function PowerDownGoku takes nothing returns nothing
             call StartAbilityCooldown(GetUnitAbility(u,'GKW1'),GetAbilityRemainingCooldown(GetUnitAbility(u,'GKW5')))
         endif
         if GetUnitAbilityLevel(u,'GkH8')>0 then
-            call StartAbilityCooldown(GetUnitAbility(u,'GKUI'),75)
-            call StartAbilityCooldown(GetUnitAbility(u,'GKMI'),75)
-            call StartAbilityCooldown(GetUnitAbility(u,'GKW1'),GetAbilityRemainingCooldown(GetUnitAbility(u,'GKW5')))
             if GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.1>GetUnitState(u,UNIT_STATE_LIFE) or GetUnitState(u,UNIT_STATE_MAX_MANA)*0.04>GetUnitState(u,UNIT_STATE_MANA) then
                 call SetControlToUnit(u,u,1,"heavystun")
                 call SetControlToUnit(u,u,4,"SilenceTE")
                 call SlowUnit(u,u,0.5,0.5,7,2,false)
                 call DestroyEffect(AddSpecialEffect("war3mapImported\\BloodEX.mdx",GetUnitX(u),GetUnitY(u)))
+                call StartAbilityCooldown(GetUnitAbility(u,'GKUI'),75)
+                call StartAbilityCooldown(GetUnitAbility(u,'GKMI'),75)
+                call StartAbilityCooldown(GetUnitAbility(u,'GKW1'),GetAbilityRemainingCooldown(GetUnitAbility(u,'GKW5')))
+                call SaveInteger(HH,idp,UIDodgeHash,0)
+                call SaveInteger(HH,idp,UIMaxDodgeHash,0)
+                call UnitRemoveAbility(u,'GkH1')
+                call UnitRemoveAbility(u,'GkH2')
+                call UnitRemoveAbility(u,'GkH3')
+                call UnitRemoveAbility(u,'GkH4')
+                call UnitRemoveAbility(u,'GkH5')
+                call UnitRemoveAbility(u,'GkH6')
+                call UnitRemoveAbility(u,'GkH7')
+                call UnitRemoveAbility(u,'GkH8')
+                call UnitRemoveAbility(u,'A4AU')
+                call ShowAbility2('GKSS',true)
+                call ShowAbility2('GKS2',true)
+                call ShowAbility2('GKS3',true)
+                call ShowAbility2('GKS4',true)
+                call ShowAbility2('GKSR',true)
+                call ShowAbility2('GKSB',true)
+                call ShowAbility2('GKUI',true)
+                call ShowAbility2('GKBB',false)
+                call ShowAbility2('GKBI',false)
+                call ShowAbility2('GKF1',true)
+                call ShowAbility2('GKG6',false)
+                call ShowAbility2('GKG7',false)
+                call ShowAbility2('GKG1',true)
+                call ShowAbility2('GKW5',false)
+                call ShowAbility2('GKW1',true)
+                call UnitAddAbility(u,'GkH0')
+                call SetUnitAbilityLevel(u,'A0NM',1)
+                call UnitMakeAbilityPermanent(u,true,'GkH0')
+                if LoadReal(HH,GetHandleId(GetOwningPlayer(Goku)),VariationQHash)==2 or LoadReal(HH,GetHandleId(GetOwningPlayer(Goku)),VariationQHash)==3 or LoadReal(HH,GetHandleId(GetOwningPlayer(Goku)),VariationQHash)==4 then
+                    call SaveReal(HH,GetHandleId(GetOwningPlayer(Goku)),VariationQHash,0)
+                    call SetAbilityIntegerLevelField(GetUnitAbility(Goku,'GKQ1'), ABILITY_ILF_MANA_COST,GetUnitAbilityLevel(Goku,'GKQ1')-1,30*GetUnitAbilityLevel(Goku,'GKQ1'))
+                endif
+                call SaveReal(HH,GetHandleId(GetOwningPlayer(Goku)),VariationWHash,0)
+                call PauseTimer(t)
+                call DestroyTimer(t)
+                call FlushChildHashtable(h,id)
+            else
+                call SaveBoolean(HH,GetHandleId(u),SS,true)
+                if LoadInteger(HH,idp,UIDodgeHash)>10 then
+                    call SaveInteger(HH,idp,UIDodgeHash,10)
+                endif
+                call SaveInteger(HH,idp,UIMaxDodgeHash,10)
+                call ShowAbility2('GKSS',false)
+                call ShowAbility2('GKS2',false)
+                call ShowAbility2('GKS3',false)
+                call ShowAbility2('GKS4',false)
+                call ShowAbility2('GKSR',false)
+                call ShowAbility2('GKSB',false)
+                call ShowAbility2('GKUI',false)
+                call ShowAbility2('GKG1',false)
+                call ShowAbility2('GKG6',false)
+                call ShowAbility2('GKG7',true)
+                call ShowAbility2('GKW1',false)
+                call ShowAbility2('GKW5',true)
+                call UnitRemoveAbility(u,'GkH8')
+                call UnitAddAbility(u,'GkH7')
+                call UnitMakeAbilityPermanent(u,true,'GkH7')
+                call ShowAbility2('GKBI',false)
+                call ShowAbility2('GKF1',true)
+                call StartAbilityCooldown(GetUnitAbility(u,'GKMI'),25)
+                set EFF=AddSpecialEffect("Mdx_Effect_Shield_Blue.mdx", GetUnitX(u),GetUnitY(u))
+                call SetSpecialEffectZ(EFF , 15)
+                call SetSpecialEffectScale(EFF , 1.4)
+                call SetSpecialEffectTimeScale(EFF , 0.6)
+                call SetSpecialEffectAlphaTimed(EFF , 255 , 255 , 255 , 255 , 1)
             endif
+        else
+            call SaveInteger(HH,idp,UIDodgeHash,0)
+            call SaveInteger(HH,idp,UIMaxDodgeHash,0)
+            call UnitRemoveAbility(u,'GkH1')
+            call UnitRemoveAbility(u,'GkH2')
+            call UnitRemoveAbility(u,'GkH3')
+            call UnitRemoveAbility(u,'GkH4')
+            call UnitRemoveAbility(u,'GkH5')
+            call UnitRemoveAbility(u,'GkH6')
+            call UnitRemoveAbility(u,'GkH7')
+            call UnitRemoveAbility(u,'GkH8')
+            call UnitRemoveAbility(u,'A4AU')
+            call ShowAbility2('GKSS',true)
+            call ShowAbility2('GKS2',true)
+            call ShowAbility2('GKS3',true)
+            call ShowAbility2('GKS4',true)
+            call ShowAbility2('GKSR',true)
+            call ShowAbility2('GKSB',true)
+            call ShowAbility2('GKUI',true)
+            call ShowAbility2('GKBB',false)
+            call ShowAbility2('GKBI',false)
+            call ShowAbility2('GKF1',true)
+            call ShowAbility2('GKG6',false)
+            call ShowAbility2('GKG7',false)
+            call ShowAbility2('GKG1',true)
+            call ShowAbility2('GKW5',false)
+            call ShowAbility2('GKW1',true)
+            call UnitAddAbility(u,'GkH0')
+            call SetUnitAbilityLevel(u,'A0NM',1)
+            call UnitMakeAbilityPermanent(u,true,'GkH0')
+            if LoadReal(HH,GetHandleId(GetOwningPlayer(Goku)),VariationQHash)==2 or LoadReal(HH,GetHandleId(GetOwningPlayer(Goku)),VariationQHash)==3 or LoadReal(HH,GetHandleId(GetOwningPlayer(Goku)),VariationQHash)==4 then
+                call SaveReal(HH,GetHandleId(GetOwningPlayer(Goku)),VariationQHash,0)
+                call SetAbilityIntegerLevelField(GetUnitAbility(Goku,'GKQ1'), ABILITY_ILF_MANA_COST,GetUnitAbilityLevel(Goku,'GKQ1')-1,30*GetUnitAbilityLevel(Goku,'GKQ1'))
+            endif
+            call SaveReal(HH,GetHandleId(GetOwningPlayer(Goku)),VariationWHash,0)
+            call PauseTimer(t)
+            call DestroyTimer(t)
+            call FlushChildHashtable(h,id)
         endif
-        call SaveInteger(HH,idp,UIDodgeHash,0)
-        call SaveInteger(HH,idp,UIMaxDodgeHash,0)
-        call UnitRemoveAbility(u,'GkH1')
-        call UnitRemoveAbility(u,'GkH2')
-        call UnitRemoveAbility(u,'GkH3')
-        call UnitRemoveAbility(u,'GkH4')
-        call UnitRemoveAbility(u,'GkH5')
-        call UnitRemoveAbility(u,'GkH6')
-        call UnitRemoveAbility(u,'GkH7')
-        call UnitRemoveAbility(u,'GkH8')
-        call UnitRemoveAbility(u,'A4AU')
-        call ShowAbility2('GKSS',true)
-        call ShowAbility2('GKS2',true)
-        call ShowAbility2('GKS3',true)
-        call ShowAbility2('GKS4',true)
-        call ShowAbility2('GKSR',true)
-        call ShowAbility2('GKSB',true)
-        call ShowAbility2('GKUI',true)
-        call ShowAbility2('GKBB',false)
-        call ShowAbility2('GKF1',true)
-        call ShowAbility2('GKG6',false)
-        call ShowAbility2('GKG7',false)
-        call ShowAbility2('GKG1',true)
-        call ShowAbility2('GKW5',false)
-        call ShowAbility2('GKW1',true)
-        call UnitAddAbility(u,'GkH0')
-        call SetUnitAbilityLevel(u,'A0NM',1)
-        call UnitMakeAbilityPermanent(u,true,'GkH0')
-        if LoadReal(HH,GetHandleId(GetOwningPlayer(Goku)),VariationQHash)==2 or LoadReal(HH,GetHandleId(GetOwningPlayer(Goku)),VariationQHash)==3 or LoadReal(HH,GetHandleId(GetOwningPlayer(Goku)),VariationQHash)==4 then
-            call SaveReal(HH,GetHandleId(GetOwningPlayer(Goku)),VariationQHash,0)
-            call SetAbilityIntegerLevelField(GetUnitAbility(Goku,'GKQ1'), ABILITY_ILF_MANA_COST,GetUnitAbilityLevel(Goku,'GKQ1')-1,30*GetUnitAbilityLevel(Goku,'GKQ1'))
-        endif
-        call SaveReal(HH,GetHandleId(GetOwningPlayer(Goku)),VariationWHash,0)
-        call PauseTimer(t)
-        call DestroyTimer(t)
-        call FlushChildHashtable(h,id)
     endif
     set t=null
     set u=null
     set p=null
 endfunction
 function PowerUpGokuCond takes nothing returns boolean
-return (GetSpellAbilityId()=='GKBS' or GetSpellAbilityId()=='GKBB' or GetSpellAbilityId()=='GKSS' or GetSpellAbilityId()=='GKS2' or GetSpellAbilityId()=='GKS3' or GetSpellAbilityId()=='GKS4' or GetSpellAbilityId()=='GKSR' or GetSpellAbilityId()=='GKSB' or GetSpellAbilityId()=='GKUI' or GetSpellAbilityId()=='GKMI') and udg_B==true
+return (GetSpellAbilityId()=='GKBS' or GetSpellAbilityId()=='GKBB' or GetSpellAbilityId()=='GKBI' or GetSpellAbilityId()=='GKSS' or GetSpellAbilityId()=='GKS2' or GetSpellAbilityId()=='GKS3' or GetSpellAbilityId()=='GKS4' or GetSpellAbilityId()=='GKSR' or GetSpellAbilityId()=='GKSB' or GetSpellAbilityId()=='GKUI' or GetSpellAbilityId()=='GKMI') and udg_B==true
 endfunction
 function PowerUpGokuCast2 takes nothing returns nothing
     local timer t=GetExpiredTimer()
@@ -68238,6 +68315,7 @@ function PowerUpGokuCast2 takes nothing returns nothing
             call ShowAbility2('GKG6',true)
             call SetUnitModel(u,"GokuSS4.mdx")
             call ShowAbility2('GKF1',false)
+            call ShowAbility2('GKBI',false)
             call ShowAbility2('GKBB',true)
             call StartSound(soundStr[90])
         elseif LoadInteger(h,id,3)==5 and GetUnitAbilityLevel(u,'GkH5')==0 then //ssg
@@ -68284,7 +68362,7 @@ function PowerUpGokuCast2 takes nothing returns nothing
             call ShowAbility2('GKS3',false)
             call ShowAbility2('GKS4',false)
             call StartSound(soundStr[90])
-        elseif LoadInteger(h,id,3)==7 then //UI
+        elseif LoadInteger(h,id,3)==7 or LoadInteger(h,id,3)==9 then //UI
             call SetUnitInvulnerable(u,false)
             call UnitRemoveAbility(u,'GkH0')
             call UnitRemoveAbility(u,'GkH1')
@@ -68309,12 +68387,18 @@ function PowerUpGokuCast2 takes nothing returns nothing
             call ShowAbility2('GKG7',true)
             call ShowAbility2('GKW1',false)
             call ShowAbility2('GKW5',true)
-            call StartAbilityCooldown(GetUnitAbility(u,'GKW5'),GetAbilityRemainingCooldown(GetUnitAbility(u,'GKW1')))
-            if LoadBoolean(HH,idp,MUIAvailableHash)==false then
-                call UnitRemoveTransformTimedPause(u,'GkH7',20)
-                call CreateModeIndicatorWithPauseFormDispellable(u, "ReplaceableTextures\\Commandbuttons\\BTNGokuUI.blp", 20,'GkH7')
+            if LoadInteger(h,id,3)==9 then
+                call ShowAbility2('GKBB',false)
+                call ShowAbility2('GKBI',false)
+                call ShowAbility2('GKF1',true)
+            else
+                call StartAbilityCooldown(GetUnitAbility(u,'GKW5'),GetAbilityRemainingCooldown(GetUnitAbility(u,'GKW1')))
+                if LoadBoolean(HH,idp,MUIAvailableHash)==false then
+                    call UnitRemoveTransformTimedPause(u,'GkH7',20)
+                    call CreateModeIndicatorWithPauseFormDispellable(u, "ReplaceableTextures\\Commandbuttons\\BTNGokuUI.blp", 20,'GkH7')
+                endif
+                call SaveReal(HH,GetHandleId(GetOwningPlayer(Goku)),VariationWHash,3)
             endif
-            call SaveReal(HH,GetHandleId(GetOwningPlayer(Goku)),VariationWHash,3)
         elseif LoadInteger(h,id,3)==8 then //MUI
             call SetUnitInvulnerable(u,false)
             call UnitRemoveAbility(u,'GkH0')
@@ -68329,7 +68413,8 @@ function PowerUpGokuCast2 takes nothing returns nothing
             call UnitAddAbility(u,'GkH8')
             call UnitMakeAbilityPermanent(u,true,'GkH8')
             call ShowAbility2('GKF1',false)
-            call ShowAbility2('GKBB',true)
+            call ShowAbility2('GKBB',false)
+            call ShowAbility2('GKBI',true)
             call ShowAbility2('GKG1',false)
             call ShowAbility2('GKG6',false)
             call ShowAbility2('GKG7',true)
@@ -68379,10 +68464,14 @@ function PowerUpGokuCast takes nothing returns nothing
         call ShowAbility2Timed('GKF1',true,0.025)
         call SaveReal(h,id,1,6.975)
         call SaveReal(HH,GetHandleId(GetOwningPlayer(Goku)),VariationWHash,0)
-    elseif GetSpellAbilityId()=='GKBS' or GetSpellAbilityId()=='GKBB' then
+    elseif GetSpellAbilityId()=='GKBS' or GetSpellAbilityId()=='GKBB' or GetSpellAbilityId()=='GKBI' then
         call SaveReal(h,id,1,6.975)
-        call SaveInteger(h,id,3,0)
-        call SaveReal(HH,GetHandleId(GetOwningPlayer(Goku)),VariationWHash,0)
+        if GetSpellAbilityId()=='GKBI' then
+            call SaveInteger(h,id,3,9)
+        else
+            call SaveInteger(h,id,3,0)
+            call SaveReal(HH,GetHandleId(GetOwningPlayer(Goku)),VariationWHash,0)
+        endif
     elseif GetSpellAbilityId()=='GKUI' or GetSpellAbilityId()=='GKMI' then
         if MusicGokuUITransform[GetPlayerId(p)]==false then
             call ClearMapMusic()
@@ -77599,17 +77688,13 @@ local real l=GetWidgetLife(u)
 local real m=GetWidgetMana(u)
 local real lm=GetUnitState(u,UNIT_STATE_MAX_LIFE)
 local real mm=GetUnitState(u,UNIT_STATE_MANA)
-local real extratime=LoadReal(h,id,1)
-if GetUnitAbilityLevel(u,'BuF1')>0 and GetUnitAbilityLevel(u,'BNC1')==0 and GetUnitAbilityLevel(u,'BNC2')==0 and l>lm*0.025 and m>mm*0.025 and LoadBoolean(HH,GetHandleId(u),SST)==true and extratime<0.33 then
+if GetUnitAbilityLevel(u,'BuF1')>0 and GetUnitAbilityLevel(u,'BNC1')==0 and GetUnitAbilityLevel(u,'BNC2')==0 and m>mm*0.03 and LoadBoolean(HH,GetHandleId(u),SST)==true then
     if IsUnitPaused(u)==false and GetUnitAbilityLevel(u,'Pet1')==0 then
-        call HealTextTag(u,u,mm*0.125*0.03*myCustomHeal2(u,1),"HealthRes")
-        call SetUnitState(u,UNIT_STATE_LIFE,l+mm*0.125*0.03)
-        call SetUnitState(u,UNIT_STATE_MANA,m-mm*0.1*0.03)
-    endif
-    if l>lm*0.99 then
-        call SaveReal(h,id,1,extratime+0.03)
-    else
-        call SaveReal(h,id,1,0)
+        if l<lm*0.97 then
+            call HealTextTag(u,u,mm*0.15*0.03*myCustomHeal2(u,1),"HealthRes")
+            call SetUnitState(u,UNIT_STATE_LIFE,l+mm*0.15*0.03)
+            call SetUnitState(u,UNIT_STATE_MANA,m-mm*0.1*0.03)
+        endif
     endif
 else
     call SaveBoolean(HH,GetHandleId(u),SS,false)
