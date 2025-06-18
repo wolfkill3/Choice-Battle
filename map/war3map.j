@@ -8258,8 +8258,10 @@ if LoadReal(HH,id,3)<LoadReal(HH,id,2) and GetUnitAbilityLevel(LoadUnitHandle(HH
         call SaveReal(HH,id,3,LoadReal(HH,id,3)+0.05)
     endif
 else
-    if LoadBoolean(HH,GetHandleId(LoadUnitHandle(HH,id,0)),SST)==false and LoadInteger(HH,id,1)!='GkH8' then
-        call SaveBoolean(HH,GetHandleId(LoadUnitHandle(HH,id,0)),SST,true)
+    if LoadBoolean(HH,GetHandleId(LoadUnitHandle(HH,id,0)),SST)==false then
+        if not(LoadInteger(HH,id,1)=='GkH8' and GetUnitAbilityLevel(LoadUnitHandle(HH,id,0),'GkH7')>0) then
+            call SaveBoolean(HH,GetHandleId(LoadUnitHandle(HH,id,0)),SST,true)
+        endif
     endif
     call FlushChildHashtable(HH,id)
     call PauseTimer(t)
@@ -67868,8 +67870,6 @@ function PowerDownGoku takes nothing returns nothing
         endif
     endif
     if GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.1>GetUnitState(u,UNIT_STATE_LIFE) or GetUnitState(u,UNIT_STATE_MAX_MANA)*0.04>GetUnitState(u,UNIT_STATE_MANA) or LoadBoolean(HH,GetHandleId(u),SST)==true then
-        call SaveBoolean(HH,GetHandleId(u),SS,false)
-        call SaveBoolean(HH,GetHandleId(u),SST,false)
         if GetUnitModel(u)=="GokuSS4.mdx" then 
             call SetUnitModel(u,"GokuLow.mdx")
         endif
@@ -67880,6 +67880,8 @@ function PowerDownGoku takes nothing returns nothing
         endif
         if GetUnitAbilityLevel(u,'GkH8')>0 then
             if GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.1>GetUnitState(u,UNIT_STATE_LIFE) or GetUnitState(u,UNIT_STATE_MAX_MANA)*0.04>GetUnitState(u,UNIT_STATE_MANA) then
+                call SaveBoolean(HH,GetHandleId(u),SS,false)
+                call SaveBoolean(HH,GetHandleId(u),SST,false)
                 call SetControlToUnit(u,u,1,"heavystun")
                 call SetControlToUnit(u,u,4,"SilenceTE")
                 call SlowUnit(u,u,0.5,0.5,7,2,false)
@@ -67942,19 +67944,23 @@ function PowerDownGoku takes nothing returns nothing
                 call ShowAbility2('GKG7',true)
                 call ShowAbility2('GKW1',false)
                 call ShowAbility2('GKW5',true)
-                call UnitRemoveAbility(u,'GkH8')
+                call UnitRemoveAbilityTimed(u,'GkH8',0.2)
                 call UnitAddAbility(u,'GkH7')
                 call UnitMakeAbilityPermanent(u,true,'GkH7')
                 call ShowAbility2('GKBI',false)
                 call ShowAbility2('GKF1',true)
                 call StartAbilityCooldown(GetUnitAbility(u,'GKMI'),25)
-                set EFF=AddSpecialEffect("Mdx_Effect_Shield_Blue.mdx", GetUnitX(u),GetUnitY(u))
+                set EFF=AddSpecialEffect("rasengan_eff4.mdx", GetUnitX(u),GetUnitY(u))
                 call SetSpecialEffectZ(EFF , 15)
                 call SetSpecialEffectScale(EFF , 1.4)
                 call SetSpecialEffectTimeScale(EFF , 0.6)
                 call SetSpecialEffectAlphaTimed(EFF , 255 , 255 , 255 , 255 , 1)
+                // call BJDebugMsg("Test")
+                call SaveBoolean(HH,GetHandleId(u),SST,false)
             endif
         else
+            call SaveBoolean(HH,GetHandleId(u),SS,false)
+            call SaveBoolean(HH,GetHandleId(u),SST,false)
             call SaveInteger(HH,idp,UIDodgeHash,0)
             call SaveInteger(HH,idp,UIMaxDodgeHash,0)
             call UnitRemoveAbility(u,'GkH1')
@@ -68363,18 +68369,6 @@ function PowerUpGokuCast2 takes nothing returns nothing
             call ShowAbility2('GKS4',false)
             call StartSound(soundStr[90])
         elseif LoadInteger(h,id,3)==7 or LoadInteger(h,id,3)==9 then //UI
-            call SetUnitInvulnerable(u,false)
-            call UnitRemoveAbility(u,'GkH0')
-            call UnitRemoveAbility(u,'GkH1')
-            call UnitRemoveAbility(u,'GkH2')
-            call UnitRemoveAbility(u,'GkH3')
-            call UnitRemoveAbility(u,'GkH4')
-            call UnitRemoveAbility(u,'GkH5')
-            call UnitRemoveAbility(u,'GkH6')
-            call UnitRemoveAbility(u,'GkH7')
-            call UnitRemoveAbility(u,'GkH8')
-            call UnitAddAbility(u,'GkH7')
-            call UnitMakeAbilityPermanent(u,true,'GkH7')
             call ShowAbility2('GKSS',false)
             call ShowAbility2('GKS2',false)
             call ShowAbility2('GKS3',false)
@@ -68391,7 +68385,21 @@ function PowerUpGokuCast2 takes nothing returns nothing
                 call ShowAbility2('GKBB',false)
                 call ShowAbility2('GKBI',false)
                 call ShowAbility2('GKF1',true)
+                call StartAbilityCooldown(GetUnitAbility(u,'GKMI'),25)
+
             else
+                call SetUnitInvulnerable(u,false)
+                call UnitRemoveAbility(u,'GkH0')
+                call UnitRemoveAbility(u,'GkH1')
+                call UnitRemoveAbility(u,'GkH2')
+                call UnitRemoveAbility(u,'GkH3')
+                call UnitRemoveAbility(u,'GkH4')
+                call UnitRemoveAbility(u,'GkH5')
+                call UnitRemoveAbility(u,'GkH6')
+                call UnitRemoveAbility(u,'GkH7')
+                call UnitRemoveAbility(u,'GkH8')
+                call UnitAddAbility(u,'GkH7')
+                call UnitMakeAbilityPermanent(u,true,'GkH7')
                 call StartAbilityCooldown(GetUnitAbility(u,'GKW5'),GetAbilityRemainingCooldown(GetUnitAbility(u,'GKW1')))
                 if LoadBoolean(HH,idp,MUIAvailableHash)==false then
                     call UnitRemoveTransformTimedPause(u,'GkH7',20)
@@ -68434,7 +68442,7 @@ function PowerUpGokuCast2 takes nothing returns nothing
             call SaveReal(h,id,1,0)
             call TimerStart(tt,0.1,true,function PowerDownGoku)
         endif
-        if LoadInteger(h,id,3)==0 and LoadBoolean(HH,GetHandleId(u),SST)==false then
+        if (LoadInteger(h,id,3)==0 or LoadInteger(h,id,3)==9) and LoadBoolean(HH,GetHandleId(u),SST)==false then
             call SaveBoolean(HH,GetHandleId(u),SST,true)
         endif
         call PauseTimer(t)
