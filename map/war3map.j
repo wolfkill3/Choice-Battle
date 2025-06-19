@@ -40760,6 +40760,7 @@ if cond==0 then
         endif
         if nb>0 and LoadInteger(HH,GetHandleId( GetOwningPlayer(u) ),UIDodgeHash)>0 and (nb<(GetUnitState(u,UNIT_STATE_MAX_LIFE)-GetUnitState(u,UNIT_STATE_LIFE))*0.4) and GetUnitAbilityLevel(u,'A7IH')==0 and GetUnitAbilityLevel(u, 'CBC2')==0 and GetUnitAbilityLevel(u, 'CBC1')==0 and GetUnitAbilityLevel(u, 'cbc4')==0 and GetUnitAbilityLevel(u, 'cbc6')==0 and GetUnitAbilityLevel(u, 'cbc7')==0 and GetUnitAbilityLevel(u, 'cbc8')==0 and GetUnitAbilityLevel(u, 'cbc9')==0 and GetUnitAbilityLevel(u, 'cbc5')==0 and IsUnitPaused(u)==false then
             call SaveInteger(HH,GetHandleId( GetOwningPlayer(u) ),UIDodgeHash,LoadInteger(HH,GetHandleId( GetOwningPlayer(u) ),UIDodgeHash)-1)
+            call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-nb*0.1)
             //call SetEventDamage(0.05)
             call UnitAddAbility(u,'A7IH')
             call UnitRemoveAbilityTimedPause(u,'A7IH',0.15)
@@ -67841,7 +67842,7 @@ function PowerDownGoku takes nothing returns nothing
             call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-GetUnitState(u,UNIT_STATE_MAX_MANA)*0.0025)
         endif
         if GetUnitAbilityLevel(u,'GkH8')>0 then
-            call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-GetUnitState(u,UNIT_STATE_MAX_MANA)*0.003)
+            call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-GetUnitState(u,UNIT_STATE_MAX_MANA)*0.00325)
         endif
     else
         if GetUnitState(u,UNIT_STATE_MAX_MANA)*0.05>GetUnitState(u,UNIT_STATE_MANA) then
@@ -67867,7 +67868,7 @@ function PowerDownGoku takes nothing returns nothing
                 call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-GetUnitState(u,UNIT_STATE_MAX_MANA)*0.00125)
             endif
             if GetUnitAbilityLevel(u,'GkH8')>0 then
-                call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-GetUnitState(u,UNIT_STATE_MAX_MANA)*0.0015)
+                call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-GetUnitState(u,UNIT_STATE_MAX_MANA)*0.001625)
             endif
         endif
     endif
@@ -145856,7 +145857,7 @@ function GilgameshAADetails takes nothing returns nothing
         call DisplayTimedTextToPlayer(GetTriggerPlayer(), 0, 0, 7, "• Демон Глаз: Гильгамеш полностью промахивается мечами. Дождь Маре: работает со 100% эффективностью.")
         call DisplayTimedTextToPlayer(GetTriggerPlayer(), 0, 0, 7, "• 666: активка дает возможность Гильгамешу не промахиваться.")
         call DisplayTimedTextToPlayer(GetTriggerPlayer(), 0, 0, 7, "• Лук Жрицы: Сила притягивания и отталкивания ослаблена до 20 ед.")
-        call DisplayTimedTextToPlayer(GetTriggerPlayer(), 0, 0, 7, "• Сюсуй, Фэнг: Работают с 20% эффективностью, в замедлении касается лишь длительность.")
+        call DisplayTimedTextToPlayer(GetTriggerPlayer(), 0, 0, 7, "• Сюсуй, Фэнг: Работают с 30% эффективностью, в замедлении касается лишь длительность.")
 endfunction
 
 function GilgameshAADetails_Int takes nothing returns nothing
@@ -146126,11 +146127,11 @@ function GilgameshModifiedAttack takes unit newCaster, unit newTarget returns bo
                 call SetWidgetMana(newTarget, GetWidgetMana(newTarget)-GetWidgetMana(newTarget)*0.024)
             endif
             if UnitHasItemOfTypeBJ(newCaster, 'I01U') and GetRandomInt(1, 100)<=45 then 		// Feng
-                call PoisonDamage5(newCaster,newTarget, 0.5*GetHeroInt(newCaster,true), 6, "Abilities\\Weapons\\PoisonSting\\PoisonStingTarget.mdl", "chest")
-                call SlowUnit(newCaster,newTarget,0.5,0.,0.2,1,false)
+                call PoisonDamage5(newCaster,newTarget, 0.75*GetHeroInt(newCaster,true), 6, "Abilities\\Weapons\\PoisonSting\\PoisonStingTarget.mdl", "chest")
+                call SlowUnit(newCaster,newTarget,0.5,0.,0.3,1,false)
             endif
             if UnitHasItemOfTypeBJ(newCaster, 'I01Q') and (GetRandomInt(1, 100)<=20 or GetUnitAbilityLevel(newCaster,'A06K')>0) then 		// Сюсуй
-                call Shusui_Cast(newCaster, 0.2)
+                call Shusui_Cast(newCaster, 0.3)
             endif
             if UnitHasItemOfTypeBJ(newTarget,'I05O')or UnitHasItemOfTypeBJ(newTarget,'I05P')or UnitHasItemOfTypeBJ(newTarget,'I05Q')or UnitHasItemOfTypeBJ(newTarget,'I05R')or UnitHasItemOfTypeBJ(newTarget,'I05S')or UnitHasItemOfTypeBJ(newTarget,'I05T') or GetUnitAbilityLevel(newTarget, 'KIT8')>0 or GetUnitAbilityLevel(newTarget, 'KIU0')>0 or GetUnitAbilityLevel(newTarget, 'KIU2')>0 or GetUnitAbilityLevel(newTarget, 'KIU4')>0 or GetUnitAbilityLevel(newTarget, 'KIU6')>0 or GetUnitAbilityLevel(newTarget, 'KIU8')>0 then
                 call RainMare_Actions(newCaster,newTarget)
@@ -146387,7 +146388,7 @@ local real a=GetUnitFacing(u)*bj_DEGTORAD
 local real time=LoadReal(HH,id,2)
 local integer st=LoadInteger(HH,idu,str)
 local texttag l__txt=LoadTextTagHandle(HH,id,4)
-if time<2-GetHeroLevel(u)*0.04 then
+if time<2-GetHeroLevel(u)*0.05 then
 call SaveReal(HH,id,2,time+0.03)
 set x=x+150*Cos(a+deg90)
 set y=y+150*Sin(a+deg90)
