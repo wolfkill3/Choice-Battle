@@ -1044,6 +1044,7 @@ string array EffectID
 boolean PresentOff
 boolean DamageOff
 boolean array itemsc
+boolean array AutoE
 integer array luffypunch
 boolean randcond
 integer array score
@@ -2538,6 +2539,7 @@ set Streak_Counter[i]=0
 set GoldLimit[i]=500
 set GoldTotalLimit[i]=500
 set itemsc[i]=true
+set AutoE[i]=false
 set i=i+1
 endloop
 set TavernPlayerPickAllow[10]=false
@@ -32942,6 +32944,20 @@ function Trig_itemsc_Actions takes nothing returns nothing
         set itemsc[id]=false
     endif
 endfunction
+function Trig_AutoE_Actions takes nothing returns nothing
+    local integer id=GetPlayerId(GetTriggerPlayer())
+    if AutoE[id]==false then
+        if(GetLocalPlayer()==GetTriggerPlayer() ) then
+            call DisplayChatMessageEx(null,CHAT_RECIPIENT_UNKNOWN,10,true,"E Goku automatically switches when used.")
+        endif
+        set AutoE[id]=true
+    else
+        if(GetLocalPlayer()==GetTriggerPlayer() ) then
+            call DisplayChatMessageEx(null,CHAT_RECIPIENT_UNKNOWN,10,true,"E Goku does NOT automatically switch when used.")
+        endif
+        set AutoE[id]=false
+    endif
+endfunction
 function Trig_idNew_Actions takes nothing returns nothing
     local integer LvlS=S2I(SubString(GetEventPlayerChatString(),4,6))
     if LvlS==1 then
@@ -33302,6 +33318,20 @@ function InitTrig_mr takes nothing returns nothing
     //call TriggerRegisterPlayerChatEvent(t,Player(10),"-itemsc",true)
     //call TriggerRegisterPlayerChatEvent(t,Player(11),"-itemsc",true)
     call TriggerAddAction(t,function Trig_itemsc_Actions)
+    set t=CreateTrigger()
+	call TriggerRegisterPlayerChatEvent(t,Player(0),"-AutoE",true)
+    call TriggerRegisterPlayerChatEvent(t,Player(1),"-AutoE",true)
+    call TriggerRegisterPlayerChatEvent(t,Player(2),"-AutoE",true)
+    call TriggerRegisterPlayerChatEvent(t,Player(3),"-AutoE",true)
+    call TriggerRegisterPlayerChatEvent(t,Player(4),"-AutoE",true)
+    call TriggerRegisterPlayerChatEvent(t,Player(5),"-AutoE",true)
+    call TriggerRegisterPlayerChatEvent(t,Player(6),"-AutoE",true)
+    call TriggerRegisterPlayerChatEvent(t,Player(7),"-AutoE",true)
+    call TriggerRegisterPlayerChatEvent(t,Player(8),"-AutoE",true)
+    call TriggerRegisterPlayerChatEvent(t,Player(9),"-AutoE",true)
+    //call TriggerRegisterPlayerChatEvent(t,Player(10),"-AutoE",true)
+    //call TriggerRegisterPlayerChatEvent(t,Player(11),"-AutoE",true)
+    call TriggerAddAction(t,function Trig_AutoE_Actions)
 	set t=null
 endfunction
 function InitTrig_IndicatorDamage takes nothing returns nothing
@@ -46715,10 +46745,10 @@ if c==u or GetSpellTargetItem()==it then
     set t=CreateTimer()
     set id=GetHandleId(t)
     if LoadBoolean(HH,idt,'BoMd')==true then
-        call DisplayTextToPlayer(Player(idp),0,0,"Priestess's Bow now knocks back.")
+        call DisplayTextToPlayer(Player(idp),0,0,"Priestess's Bow now pulls in.")
         call SaveBoolean(HH,idt,'BoMd',false)
     else
-        call DisplayTextToPlayer(Player(idp),0,0,"Priestess's Bow now pulls in.")
+        call DisplayTextToPlayer(Player(idp),0,0,"Priestess's Bow now knocks back.")
         call SaveBoolean(HH,idt,'BoMd',true)
     endif
     call SaveItemHandle(HH,id,0,it)
@@ -46726,13 +46756,13 @@ if c==u or GetSpellTargetItem()==it then
 else
     // call BJDebugMsg("test2")
     if LoadBoolean(HH,idt,'BoMd')==false then
-        call UnitAddAbility(u,'BoPB')
-        call UnitMakeAbilityPermanent(u,true,'BoPB')
-        call UnitRemoveAbilityTimedPause(u,'BoPB',7)
-    else
         call UnitAddAbility(u,'BoPD')
         call UnitMakeAbilityPermanent(u,true,'BoPD')
         call UnitRemoveAbilityTimedPause(u,'BoPD',7)
+    else
+        call UnitAddAbility(u,'BoPB')
+        call UnitMakeAbilityPermanent(u,true,'BoPB')
+        call UnitRemoveAbilityTimedPause(u,'BoPB',7)
     endif
 endif
 set it=null
@@ -69015,7 +69045,7 @@ function MissleMoveSuperSpiritBomb3 takes nothing returns nothing
             exitwhen E==null
             if Condition_Base(p,E)then
                 call myCustomDamage(u,E,dmg*0.2,false,false,null,null,null)
-                call SetControlToUnit(u,E, .21, "heavystun")
+                call SetControlToUnit(u,E, .3, "heavystun")
             endif
             call GroupRemoveUnit(DG,E)
         endloop
@@ -69035,7 +69065,7 @@ function MissleMoveSuperSpiritBomb3 takes nothing returns nothing
             exitwhen E==null
             if Condition_Base(p,E)then
                 call myCustomDamage(u,E,GetHeroLevel(u)*0.1*GetHeroStr(u,true)+dmg+200,false,false,null,null,null)
-                call SetControlToUnit(u,E, .21, "heavystun")
+                call SetControlToUnit(u,E, .3, "heavystun")
             endif
             call GroupRemoveUnit(DG,E)
         endloop
@@ -69482,7 +69512,7 @@ if time<100 and GetUnitState(u,UNIT_STATE_LIFE)>0.405 and LoadBoolean(HH,GetHand
             call UnitRemoveAbility(dummy,'GKG4')
             call UnitAddAbility(dummy,'GKG5')
         endif
-        call SetAbilityRealLevelField(GetUnitAbility(dummy,'GKG5'),ABILITY_RLF_AREA_OF_EFFECT,0,600+333.3333*(GetUnitScale(GenkiDama)-0.5)) 
+        call SetAbilityRealLevelField(GetUnitAbility(dummy,'GKG5'),ABILITY_RLF_AREA_OF_EFFECT,0,700+333.3333*(GetUnitScale(GenkiDama)-0.5)) 
     endif 
 else
     call StopSound(soundStr[29],false,true)
@@ -71694,13 +71724,14 @@ set t=null
 endfunction
 function KiaiCast takes nothing returns nothing
 local unit u=GetTriggerUnit()
-local unit c=GetSpellTargetUnit()
+local player p=GetOwningPlayer(u)
 local timer t=CreateTimer()
 local integer id=GetHandleId(t)
 local real x=GetUnitX(u)
 local real y=GetUnitY(u)
-local real x1=GetUnitX(c)
-local real y1=GetUnitY(c)
+if p==GetLocalPlayer() and IsFrameVisible(GetFrameByName( "AbilityVarBarIcon", 10 )) and AutoE[GetPlayerId(p)]==true then
+    call ClickFrame(GetFrameByName( "AbilityVarBarIcon", 10 ))
+endif
 call PauseUnit(u,true)
 call SaveUnitHandle(HH,id,0,u)
 call SaveGroupHandle(HH,id,1,CreateGroup())
@@ -71712,7 +71743,7 @@ call StartSound(soundStr[84])
 endif
 call TimerStart(t,0.01,true,function KiaiCast2)
 set u=null
-set c=null
+set p=null
 set t=null
 endfunction
 function GokuKiaiInit takes nothing returns nothing
@@ -71795,6 +71826,10 @@ local timer t=CreateTimer()
 local integer id=GetHandleId(t)
 local real x=GetUnitX(u)
 local real y=GetUnitY(u)
+local player p=GetOwningPlayer(u)
+if p==GetLocalPlayer() and IsFrameVisible(GetFrameByName( "AbilityVarBarIcon", 10 )) and AutoE[GetPlayerId(p)]==true then
+    call ClickFrame(GetFrameByName( "AbilityVarBarIcon", 10 ))
+endif
 call SaveUnitHandle(HH,id,0,u)
 call SetUnitVertexColor(u,255,255,255,60)
 set EFF=AddSpecialEffect("war3mapImported\\BlackBlink.mdx", GetUnitX(u), GetUnitY(u))
@@ -71803,7 +71838,7 @@ call SetSpecialEffectTimeScale(EFF , 3)
 call SetSpecialEffectVertexColour(EFF,255,255,255,60)
 call DestroyEffect(EFF)
 call SetUnitTargetable(u, false)
-set n=CreateUnit(GetOwningPlayer(u),'e2GZ',x+GetRandomReal(-200,200)*Cos(GetRandomReal(0,359)*bj_DEGTORAD),y+GetRandomReal(-200,200)*Sin(GetRandomReal(0,359)*bj_DEGTORAD),GetUnitFacing(u))
+set n=CreateUnit(p,'e2GZ',x+GetRandomReal(-200,200)*Cos(GetRandomReal(0,359)*bj_DEGTORAD),y+GetRandomReal(-200,200)*Sin(GetRandomReal(0,359)*bj_DEGTORAD),GetUnitFacing(u))
 call UnitApplyTimedLife(n,'BTLF',0.25)
 call SetUnitVertexColor(n,255,255,255,60)
 call ShikiCloneEffect(n,1.5,1.05,1.25,150)
@@ -71836,6 +71871,7 @@ call SetSpecialEffectVertexColour(EFF,255,255,255,120)
 call DestroyEffect(EFF)
 call TimerStart(t,0.01,true,function ZanzokenCast2)
 set u=null
+set p=null
 set t=null
 endfunction
 function GokuZanzokenInit takes nothing returns nothing
@@ -71997,6 +72033,7 @@ local real y=GetUnitY(u)
 local real x1=GetSpellTargetX()
 local real y1=GetSpellTargetY()
 local real a=Atan2(y1-y,x1-x)
+local player p=GetOwningPlayer(u)
 call SaveUnitHandle(HH,id,0,u)
 call SaveReal(HH,id,1,x)
 call SaveReal(HH,id,2,y)
@@ -72007,8 +72044,12 @@ call StartSound(soundStr[87])
 else
 call StartSound(soundStr[88])
 endif
+if p==GetLocalPlayer() and IsFrameVisible(GetFrameByName( "AbilityVarBarIcon", 10 )) and AutoE[GetPlayerId(p)]==true then
+    call ClickFrame(GetFrameByName( "AbilityVarBarIcon", 10 ))
+endif
 call TimerStart(t,0.01,true,function KiBlastCast2)
 set u=null
+set p=null
 set t=null
 endfunction
 function GokuKiBlastInit takes nothing returns nothing
@@ -72140,10 +72181,14 @@ local real y=GetUnitY(u)
 local real x1=GetSpellTargetX()
 local real y1=GetSpellTargetY()
 local real a=Atan2(y1-y,x1-x)
+local player p=GetOwningPlayer(u)
 call SaveUnitHandle(HH,id,0,u)
 call SaveReal(HH,id,1,x)
 call SaveReal(HH,id,2,y)
 call SetUnitFacingInstant(u,a*bj_RADTODEG)
+if p==GetLocalPlayer() and IsFrameVisible(GetFrameByName( "AbilityVarBarIcon", 10 )) and AutoE[GetPlayerId(p)]==true then
+    call ClickFrame(GetFrameByName( "AbilityVarBarIcon", 10 ))
+endif
 call PauseUnit(u,true)
 call SetUnitTimeScale(u,1)
 if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
@@ -72153,6 +72198,7 @@ call StartSound(soundStr[86])
 endif
 call TimerStart(t,0.01,true,function KiSpamCast2)
 set u=null
+set p=null
 set t=null
 endfunction
 function GokuKiSpamInit takes nothing returns nothing
@@ -72200,6 +72246,9 @@ call SlowUnit(u,E,0.85,0.85,lvl,2,false)
 endif
 call GroupRemoveUnit(G,E)
 endloop
+if p==GetLocalPlayer() and IsFrameVisible(GetFrameByName( "AbilityVarBarIcon", 10 )) and AutoE[GetPlayerId(p)]==true then
+    call ClickFrame(GetFrameByName( "AbilityVarBarIcon", 10 ))
+endif
 set u=null
 set p=null
 endfunction
@@ -139909,10 +139958,7 @@ else
 call UnitRemoveAbility(u,'A00D')
 call UnitRemoveAbility(u,'A1DU')
 call ShowAbility2('A1DT',false)
-call UnitRemoveAbility(u,'A1DS')
-call UnitAddAbility(u,'A1DS')
-call SetUnitAbilityLevel(u,'A1DS',GetUnitAbilityLevel(u,'A1DR'))
-call UnitMakeAbilityPermanent(u,true,'A1DS')
+call StartAbilityCooldown(GetUnitAbility(u,'A1DS'),2)
 call ShowAbility2('A1DS',true)
 endif
 call RemoveSavedReal(h,GetHandleId(u),StringHash("QRng"))
@@ -140203,6 +140249,7 @@ call UnitRemoveAbility(u,'A1DU')
 call UnitRemoveAbility(u,'A00D')
 call UnitRemoveAbility(u,'Basl')
 call PauseUnit(u,false)
+call StartAbilityCooldown(GetUnitAbility(u,'A1DS'),15)
 call ShakeCamera(0.5,25)
 call TimerStart(t,0.01,true,function QAtalanta2Cast3)
 set u=null
@@ -140363,6 +140410,7 @@ call SetUnitY(n,y+150*Sin(a))
 call SaveReal(h,id,4,time+0.02)
 else
 call PauseUnit(u,false)
+call StartAbilityCooldown(GetUnitAbility(u,'A1DS'),15)
 call SaveReal(h,id,5,he+90)
 call SaveReal(h,id,8,SR(x,y,x1,y1))
 call PauseTimer(t)
@@ -145945,7 +145993,7 @@ endfunction
 
 
 function GilgameshModifiedAttack takes unit newCaster, unit newTarget returns boolean
-    local real damage=GetUnitTotalDamage(newCaster)*0.4
+    local real damage=GetUnitTotalDamage(newCaster)*0.5
     local real bonus_damage=0.0
     local real critcoef
     local boolean fatal_damage=false
