@@ -43184,7 +43184,7 @@ if cond==0 then
         call DestroyEffect(AddSpecialEffect("Abilities\\Spells\\Other\\Doom\\DoomDeath.mdl",x,y))
         call SetUnitAnimation(LoadUnitHandle(h,GetHandleId(c),SusanoCnst),"attack")
     endif
-    if CurrentEventAttack and (UnitHasItemOfTypeBJ(c,'I03B') or GetUnitAbilityLevel(c,'KII6')>0) and GetUnitAbilityLevel(c,'A3WR')==0 and c==Hero[idc] and c!=UltimateDamage then
+    if CurrentEventAttack and (UnitHasItemOfTypeBJ(c,'I03B') or UnitHasItemOfTypeBJ(c,'I03F') or GetUnitAbilityLevel(c,'KII6')>0 or GetUnitAbilityLevel(c,'KIJ4')>0) and GetUnitAbilityLevel(c,'A3WR')==0 and c==Hero[idc] and c!=UltimateDamage then
         call DestroyEffect(AddSpecialEffect("war3mapImported\\Cleave.mdx",GetUnitX(u),GetUnitY(u)))      
         //call SetEventDamage(nb+55)
         set nb=nb+55
@@ -43479,10 +43479,10 @@ if cond==0 then
         call UnitAddAbility(c,'A1C7')
         if GetUnitAbilityLevel(c,'A1WR')>0 then
         //call SetEventDamage(nb+GetWidgetMaxLife(u)*0.015)
-        set nb=nb+GetWidgetMaxLife(u)*0.015
+        set nb=nb+GetWidgetMaxLife(u)*0.01+GetHeroStr(u,true)*0.5
         else
         //call SetEventDamage(nb+GetWidgetMaxLife(u)*0.03)
-        set nb=nb+GetWidgetMaxLife(u)*0.03
+        set nb=nb+GetWidgetMaxLife(u)*0.02+GetHeroStr(u,true)
         endif
         call UnitRemoveAbility(c,'A1C7')
         //set nb=nb+GetWidgetMaxLife(u)*0.05
@@ -46125,7 +46125,7 @@ set E=FirstOfGroup(DG)
 exitwhen E==null
 if Condition_Base(p,E)then
 call Push3(E,50,Atan2(GetUnitY(E)-y,GetUnitX(E)-x),400,"Abilities\\Weapons\\AncientProtectorMissile\\AncientProtectorMissile.mdl")
-call myCustomDamage(u,E,GetUnitState(E,UNIT_STATE_MAX_LIFE)*0.3,false,false,null,null,null)
+call myCustomDamage(u,E,GetUnitState(E,UNIT_STATE_MAX_LIFE)*0.35,false,false,null,null,null)
 endif
 call GroupRemoveUnit(DG,E)
 endloop
@@ -70268,6 +70268,7 @@ call EnableUnitAbility2(u,'GKG6',false,true)
 call EnableUnitAbility2(u,'GKG7',false,true)
 call UnitEnableInventoryCustom(u,true,false )
 call SetAbilityStringField(GetUnitAbility(u,'GKR1'),ABILITY_SF_ICON_NORMAL,"ReplaceableTextures\\CommandButtons\\BTNInstant_transmission.blp")
+call SetAbilityRealLevelField(GetUnitAbility(u,'GKR1'), ABILITY_RLF_CAST_RANGE,GetUnitAbilityLevel(u,'GKR1')-1,99999)
 if LoadReal(HH,GetHandleId(GetOwningPlayer(u)),VariationQHash)==2 then
     if LoadInteger(HH,idp,KaiokenHash)<5 then
         if GetUnitState(u,UNIT_STATE_LIFE)>GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.02*LoadInteger(HH,idp,KaiokenHash) then
@@ -70761,11 +70762,14 @@ call TriggerRegisterUnitEvent(tt,u,EVENT_UNIT_ISSUED_POINT_ORDER)
 call TriggerAddAction(tt,function GokuKamehamehaStopOrders)
 call SaveTriggerHandle(h,id,5,tt)
 if LoadReal(HH,idp,VariationQHash)==0 then
-call DisableUnitAbility2(u,'GKR1',false,true)
-call TimerStart(t,0.1,true,function CastKamehameha21)
+    call DisableUnitAbility2(u,'GKR1',false,true)
+    call TimerStart(t,0.1,true,function CastKamehameha21)
 else
-call SetAbilityStringField(GetUnitAbility(u,'GKR1'),ABILITY_SF_ICON_NORMAL,"ReplaceableTextures\\CommandButtons\\BTNWarpKamehameha.blp")
-call TimerStart(t,0.1,true,function CastSuperKamehameha)
+    if GetUnitAbilityLevel(u,'GKR1')>0 then
+        call SetAbilityStringField(GetUnitAbility(u,'GKR1'),ABILITY_SF_ICON_NORMAL,"ReplaceableTextures\\CommandButtons\\BTNWarpKamehameha.blp")
+        call SetAbilityRealLevelField(GetUnitAbility(u,'GKR1'), ABILITY_RLF_CAST_RANGE,GetUnitAbilityLevel(u,'GKR1')-1,2000)
+    endif
+    call TimerStart(t,0.1,true,function CastSuperKamehameha)
 endif
 set u=null
 set p=null
@@ -92811,7 +92815,7 @@ function VergilQ_ModifAttack takes unit newCaster, unit newTarget, boolean b_clo
 		endif
 	endif
 	
-	if UnitHasItemOfTypeBJ(newCaster, 'I03B') then				// Меч Анбу
+	if UnitHasItemOfTypeBJ(newCaster, 'I03B') or UnitHasItemOfTypeBJ(newCaster, 'I03F') then				// Меч Анбу
 		set bonus_damage=55
 		if GetWidgetLife(newTarget)>bonus_damage then
 			call SetWidgetLife(newTarget, GetWidgetLife(newTarget)-bonus_damage)
@@ -140251,7 +140255,7 @@ call UnitRemoveAbility(u,'A1DU')
 call UnitRemoveAbility(u,'A00D')
 call UnitRemoveAbility(u,'Basl')
 call PauseUnit(u,false)
-call StartAbilityCooldown(GetUnitAbility(u,'A1DS'),15)
+call StartAbilityCooldown(GetUnitAbility(u,'A1DS'),12)
 call ShakeCamera(0.5,25)
 call TimerStart(t,0.01,true,function QAtalanta2Cast3)
 set u=null
@@ -140412,7 +140416,7 @@ call SetUnitY(n,y+150*Sin(a))
 call SaveReal(h,id,4,time+0.02)
 else
 call PauseUnit(u,false)
-call StartAbilityCooldown(GetUnitAbility(u,'A1DS'),15)
+call StartAbilityCooldown(GetUnitAbility(u,'A1DS'),12)
 call SaveReal(h,id,5,he+90)
 call SaveReal(h,id,8,SR(x,y,x1,y1))
 call PauseTimer(t)
@@ -146136,7 +146140,7 @@ function GilgameshModifiedAttack takes unit newCaster, unit newTarget returns bo
                 endif
             endif
             
-            if UnitHasItemOfTypeBJ(newCaster, 'I03B') then				// Меч Анбу
+            if UnitHasItemOfTypeBJ(newCaster, 'I03B') or UnitHasItemOfTypeBJ(newCaster, 'I03F') then				// Меч Анбу
                 set bonus_damage=16.5
                 if GetWidgetLife(newTarget)>bonus_damage then
                     call SetWidgetLife(newTarget, GetWidgetLife(newTarget)-bonus_damage)
@@ -172554,8 +172558,8 @@ if time==2 then
     call UnitRemoveBuffs(u,false,true)
     call SetUnitVertexColor(u, 255, 255, 255, 255)
     call SetUnitTimeScale(u, 1)
-    call HealTextTag(u,u,GetWidgetMaxLife(u)*0.2*myCustomHeal2(u,1),"HealthRes")
-    call SetWidgetLife(u, LoadReal(HH,id,StringHash("HP"))+GetWidgetMaxLife(u)*0.2)
+    call HealTextTag(u,u,GetWidgetMaxLife(u)*0.15*myCustomHeal2(u,1),"HealthRes")
+    call SetWidgetLife(u, LoadReal(HH,id,StringHash("HP"))+GetWidgetMaxLife(u)*0.15)
 endif
 if time>2 then
     if GetUnitAbilityLevel(u, 'B05G')>0 and u!=null then
@@ -206441,7 +206445,7 @@ function Karna_ModifAttack takes unit newCaster, unit newTarget, real attack_fac
                 endif
             endif
             
-            if UnitHasItemOfTypeBJ(newCaster, 'I03B') then				// Меч Анбу
+            if UnitHasItemOfTypeBJ(newCaster, 'I03B') or UnitHasItemOfTypeBJ(newCaster, 'I03F') then				// Меч Анбу
                 set bonus_damage=55*modif_factor
                 if GetWidgetLife(newTarget)>bonus_damage then
                     //call SetWidgetLife(newTarget, GetWidgetLife(newTarget)-bonus_damage)
@@ -206779,7 +206783,7 @@ function Sinon_ModifAttack takes unit newCaster, unit newTarget, real attack_fac
 			endif
 		endif
 		
-		if UnitHasItemOfTypeBJ(newCaster, 'I03B') then				// Меч Анбу
+		if UnitHasItemOfTypeBJ(newCaster, 'I03B') or UnitHasItemOfTypeBJ(newCaster, 'I03F') then				// Меч Анбу
 			set bonus_damage=55*modif_factor
 			if GetWidgetLife(newTarget)>bonus_damage then
 				//call SetWidgetLife(newTarget, GetWidgetLife(newTarget)-bonus_damage)
