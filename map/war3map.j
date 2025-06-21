@@ -1452,7 +1452,7 @@ endfunction
 
 function Trig_Remove_Conditions takes nothing returns boolean
     set n=GetTriggerUnit()
-    return GetUnitTypeId(n)=='e06F' or GetUnitTypeId(n)==0x6F723237 or GetUnitTypeId(n)==0x6F723431 or GetUnitTypeId(n)==0x6F723430 or GetUnitTypeId(n)=='or30' or GetUnitTypeId(n)==0x6F723037 or GetUnitTypeId(n)==0x6F723039 or GetUnitTypeId(n)==0x6F723038 or GetUnitTypeId(n)==0x6F723035 or GetUnitTypeId(n)=='or00' or  GetUnitTypeId(n)=='edR2' or GetUnitTypeId(n)=='eo9T' or GetUnitTypeId(n)=='ed9T' or GetUnitTypeId(n)=='kaD1' or GetUnitTypeId(n)=='eo9E' or GetUnitTypeId(n)=='e17L' or GetUnitTypeId(n)=='e17K' or GetUnitTypeId(n)=='e17H' or GetUnitTypeId(n)=='dBel' or GetUnitTypeId(n)=='e17J'
+    return GetUnitTypeId(n)=='e06F' or GetUnitTypeId(n)=='or27' or GetUnitTypeId(n)=='or41' or GetUnitTypeId(n)=='or40' or GetUnitTypeId(n)=='or30' or GetUnitTypeId(n)=='or07' or GetUnitTypeId(n)=='or09' or GetUnitTypeId(n)=='or08' or GetUnitTypeId(n)=='or05' or GetUnitTypeId(n)=='or00' or  GetUnitTypeId(n)=='edR2' or GetUnitTypeId(n)=='eo9T' or GetUnitTypeId(n)=='ed9T' or GetUnitTypeId(n)=='kaD1' or GetUnitTypeId(n)=='eo9E' or GetUnitTypeId(n)=='e17L' or GetUnitTypeId(n)=='e17K' or GetUnitTypeId(n)=='e17H' or GetUnitTypeId(n)=='dBel' or GetUnitTypeId(n)=='e17J'
 endfunction
 function Trig_Remove_Actions takes nothing returns nothing
     call RemoveUnit(GetTriggerUnit())
@@ -2538,7 +2538,7 @@ set Streak[i]=0
 set Streak_Counter[i]=0
 set GoldLimit[i]=500
 set GoldTotalLimit[i]=500
-set itemsc[i]=true
+set itemsc[i]=false
 set AutoE[i]=false
 set i=i+1
 endloop
@@ -39771,7 +39771,7 @@ call myCustomDamage(damager,n0,damage,false,false,null,null,null)
 call CC_UnitEx( n0, n0, 0., 1.5+level*0.5, "root", false, "Abilities\\Spells\\NightElf\\EntanglingRoots\\EntanglingRootsTarget.mdl", "chest", 0,0 )
 
 //нужно узнать бафф рутов
-//call RootUnit(LoadUnitHandle(HH,id,1),n0,150,0x554D526F,'BUMr')
+//call RootUnit(LoadUnitHandle(HH,id,1),n0,150,'UMRo','BUMr')
 
 call GroupAddUnit(gr1,n0)
 endif
@@ -45373,6 +45373,7 @@ if Condition_Base(p,E) and E!=LoadUnitHandle(HH,idg,ide)then
 call SaveUnitHandle(HH,idg,ide,E)
 call Push3(E,60,a,1000,"Abilities\\Weapons\\AncientProtectorMissile\\AncientProtectorMissile.mdl")
 call myCustomDamage(u,E,dmg,false,false,null,null,null)
+call WeakenUnit(u,E,4,0.5, false )
 endif
 call GroupRemoveUnit(g,E)
 endloop
@@ -45958,6 +45959,11 @@ local real x=GetUnitX(c)
 local real y=GetUnitY(c)
 local timer t=CreateTimer()
 local integer id=GetHandleId(t)
+if GetAbilityIntegerLevelField(GetUnitAbility(u,'A10Q'), ABILITY_ILF_TARGET_TYPE,0)==0 then
+set c=u
+set x=GetUnitX(u)
+set y=GetUnitY(u)
+endif
 call SaveUnitHandle(h,id,1,c)
 call SaveReal(h,id,2,2)
 call DestroyEffect(AddSpecialEffect("war3mapImported\\BlinkCaster.mdx",x,y))
@@ -46394,6 +46400,9 @@ local unit u=GetTriggerUnit()
 local unit c=GetSpellTargetUnit()
 local timer t=CreateTimer()
 local integer id=GetHandleId(t)
+if GetAbilityIntegerLevelField(GetUnitAbility(u,'A15E'), ABILITY_ILF_TARGET_TYPE,0)==0 then
+set c=u
+endif
 call SaveReal(h,id,4,8)
 call SaveReal(h,id,5,0)
 call UnitAddAbility(c,'A15F')
@@ -46618,6 +46627,11 @@ local unit u=GetTriggerUnit()
 local unit c=GetSpellTargetUnit()
 local real l=GetUnitState(c,UNIT_STATE_LIFE)
 local real ml=GetUnitState(c,UNIT_STATE_MAX_LIFE)
+if GetAbilityIntegerLevelField(GetUnitAbility(u,'A048'), ABILITY_ILF_TARGET_TYPE,0)==0 then
+set c=u
+set l=GetUnitState(u,UNIT_STATE_LIFE)
+set ml=GetUnitState(u,UNIT_STATE_MAX_LIFE)
+endif
 call HealTextTag(u,c,ml*.20*myCustomHeal2(c,1),"HealthRes")
 call SetUnitState(c,UNIT_STATE_LIFE,l+ml*.20)
 call UnitApplyTimedLife(CreateUnit(GetOwningPlayer(c),'e01O',GetUnitX(c),GetUnitY(c),0),'BTLF',1.1)
@@ -46885,6 +46899,9 @@ endfunction
 function Trig_RegenMana_Actions takes nothing returns nothing
 local unit u=GetTriggerUnit()
 local unit c=GetSpellTargetUnit()
+if GetAbilityIntegerLevelField(GetUnitAbility(u,'A0HL'), ABILITY_ILF_TARGET_TYPE,0)==0 then
+set c=u
+endif
 call HealTextTag(u,c,GetUnitState(c,UNIT_STATE_MAX_MANA)*0.15*myCustomMana2(c,1),"ManaRes")
 call SetUnitState(c,UNIT_STATE_MANA,GetWidgetMana(c)+GetUnitState(c,UNIT_STATE_MAX_MANA)*0.15)
 call DestroyEffect(AddSpecialEffectTarget("Abilities\\Spells\\Items\\AIma\\AImaTarget.mdl",c,"origin"))
@@ -107424,13 +107441,13 @@ if GetUnitTypeId(u)=='H14H' then
 set dist=LoadReal(h,id,StringHash("dist"))+50
 call SaveReal(h,id,StringHash("Dist"),dist)
 if dist<=50 then
-set n=CreateUnit(p,0x6F723136,x,y,0)
+set n=CreateUnit(p,'or16',x,y,0)
 call SetUnitTimeScale(n,1)
 call UnitApplyTimedLife(n,'BTLF',0.01)
-set n=CreateUnit(p,0x6F723137,x,y,0)
+set n=CreateUnit(p,'or17',x,y,0)
 call SetUnitTimeScale(n,1)
 call UnitApplyTimedLife(n,'BTLF',0.01)
-set n=CreateUnit(p,0x6F723138,x,y,0)
+set n=CreateUnit(p,'or18',x,y,0)
 call SetUnitTimeScale(n,1)
 call UnitApplyTimedLife(n,'BTLF',0.01)
 endif
@@ -107439,7 +107456,7 @@ exitwhen i>=9
 if dist>650 and dist<=700 then
 set x1=x+GetRandomReal(600,700)*Cos(45*i*bj_DEGTORAD-22*bj_DEGTORAD)
 set y1=y+GetRandomReal(600,700)*Sin(45*i*bj_DEGTORAD-22*bj_DEGTORAD)
-set n=CreateUnit(p,0x6F723139,x1,y1,GetRandomReal(0,359))
+set n=CreateUnit(p,'or19',x1,y1,GetRandomReal(0,359))
 call SetUnitScale(n,1,1,1)
 call UnitApplyTimedLife(n,'BTLF',0.35)
 call SetUnitTimeScale(n,1.5)
@@ -107447,7 +107464,7 @@ endif
 if dist>450 and dist<=500 then
 set x1=x+GetRandomReal(400,500)*Cos(45*i*bj_DEGTORAD-45*bj_DEGTORAD)
 set y1=y+GetRandomReal(400,500)*Sin(45*i*bj_DEGTORAD-45*bj_DEGTORAD)
-set n=CreateUnit(p,0x6F723139,x1,y1,GetRandomReal(0,359))
+set n=CreateUnit(p,'or19',x1,y1,GetRandomReal(0,359))
 call SetUnitScale(n,0.8,0.8,0.8)
 call UnitApplyTimedLife(n,'BTLF',0.35)
 call SetUnitTimeScale(n,1.5)
@@ -107455,7 +107472,7 @@ endif
 if dist>150 and dist<=200 then
 set x1=x+GetRandomReal(200,300)*Cos(45*i*bj_DEGTORAD)
 set y1=y+GetRandomReal(200,300)*Sin(45*i*bj_DEGTORAD)
-set n=CreateUnit(p,0x6F723139,x1,y1,GetRandomReal(0,359))
+set n=CreateUnit(p,'or19',x1,y1,GetRandomReal(0,359))
 call SetUnitScale(n,0.6,0.6,0.6)
 call UnitApplyTimedLife(n,'BTLF',0.35)
 call SetUnitTimeScale(n,1.5)
@@ -193202,7 +193219,7 @@ endif
 
 call RemoveUnit(LoadUnitHandle(HH,id,21))
 
-call UnitRemoveAbility(caster,0x53615449)
+call UnitRemoveAbility(caster,'SaTI')
 
 
 //call SetItemDroppable(UnitItemInSlot(caster,0),true)
@@ -193233,7 +193250,7 @@ endif
 
 call RemoveUnit(LoadUnitHandle(HH,id,21))
 
-call UnitRemoveAbility(caster,0x53615449)
+call UnitRemoveAbility(caster,'SaTI')
 
 
 //call SetItemDroppable(UnitItemInSlot(caster,0),true)
@@ -194981,7 +194998,7 @@ call KillSoundWhenDone(soundplay)
 endif
 call KillSoundWhenDone(soundplay)
 call SetUnitAnimationByIndex(caster,5)
-call UnitAddAbility(caster,0x53615449)
+call UnitAddAbility(caster,'SaTI')
 call UnitSpeed(caster,1)
 call PauseUnit(caster,false)
 call SetUnitInvulnerable(caster,false)
@@ -201746,7 +201763,7 @@ call myCustomDamage(damager,n0,damage,false,false,null,null,null)
 call CC_UnitEx( n0, n0, 0., 3, "root", false, "Others\\by_wood_eff_ord_dange_geo_suolian_3_2-Gray.mdl", "origin",0,0 )
 
 //нужно узнать бафф рутов
-//call RootUnit(LoadUnitHandle(HH,id,1),n0,150,0x554D526F,'BUMr')
+//call RootUnit(LoadUnitHandle(HH,id,1),n0,150,'UMRo','BUMr')
 
 call GroupAddUnit(gr1,n0)
 endif
@@ -218977,13 +218994,13 @@ function OrochimaruQCast2 takes nothing returns nothing
     call SaveReal(h,id,9,per*k)
     call SaveReal(h,id,10,he*k)
     if dist<1700 then
-    set n=CreateUnit(p,0x6F723035,x,y,a*bj_RADTODEG)
+    set n=CreateUnit(p,'or05',x,y,a*bj_RADTODEG)
     call SetUnitVertexColor(n,255,255,255,35)
     call SetUnitFlyHeight(n,he,0)
     call SetUnitScale(n,sc1,sc1,sc1)
     call UnitApplyTimedLife(n,'BTLF',0.3)
     endif
-    set n=CreateUnit(p,0x6F723036,x,y,a*bj_RADTODEG)
+    set n=CreateUnit(p,'or06',x,y,a*bj_RADTODEG)
     call SetUnitVertexColor(n,255,255,255,125)
     call SetUnitFlyHeight(n,he,0)
     call SetUnitTimeScale(n,3)
@@ -219177,7 +219194,7 @@ function OrochimaruWCast5 takes nothing returns nothing
     exitwhen i>=11
     set x2=x1+600*Cos((a*bj_RADTODEG+GetRandomReal(28,40)*i)*bj_DEGTORAD)
     set y2=y1+600*Sin((a*bj_RADTODEG+GetRandomReal(28,40)*i)*bj_DEGTORAD)
-    set n=CreateUnit(p,0x6F723037,x2,y2,Atan2(y1-y2,x1-x2)*bj_RADTODEG)
+    set n=CreateUnit(p,'or07',x2,y2,Atan2(y1-y2,x1-x2)*bj_RADTODEG)
     set sc=GetRandomReal(0.6,0.8)
     call SetUnitScale(n,sc,sc,sc)
     call IssuePointOrder(n,"move",x1,y1)
@@ -219197,10 +219214,10 @@ function OrochimaruWCast5 takes nothing returns nothing
     endif
     call SetUnitX(u,x1)
     call SetUnitY(u,y1)
-    set n=CreateUnit(p,0x6F723038,x1,y1,a*bj_RADTODEG)
+    set n=CreateUnit(p,'or08',x1,y1,a*bj_RADTODEG)
     call SetUnitTimeScale(n,0.5)
     call UnitApplyTimedLife(n,'BTLF',1.8)
-    set n=CreateUnit(p,0x6F723039,x1,y1,a*bj_RADTODEG)
+    set n=CreateUnit(p,'or09',x1,y1,a*bj_RADTODEG)
     call UnitApplyTimedLife(n,'BTLF',1.8)
     set n=CreateUnit(p,'ed0O',x1,y1,0)
     call SetUnitVertexColor(n,255,255,255,155)
@@ -219213,7 +219230,7 @@ function OrochimaruWCast5 takes nothing returns nothing
     if Condition_Base(p,E)then
     call myCustomDamage(u,E,dmg,false,false,null,null,null)
     call CC_UnitEx( E, E, 0., 4, "root", false, "war3mapImported\\Aoda2.mdx", "origin", 0,0 )
-    set n=CreateUnit(p,0x6F723130,GetUnitX(E),GetUnitY(E),a*bj_RADTODEG)
+    set n=CreateUnit(p,'or10',GetUnitX(E),GetUnitY(E),a*bj_RADTODEG)
     call UnitApplyTimedLife(n,'BTLF',3)
     endif
     call GroupRemoveUnit(G,E)
@@ -219313,7 +219330,7 @@ function OrochimaruWCast3 takes nothing returns nothing
     set y=y+GetRandomReal(70,100)*Sin(a)
     loop
     exitwhen i>=31
-    set n=CreateUnit(p,0x6F723037,x-20*Cos(a),y-20*Sin(a),a*bj_RADTODEG+GetRandomReal(1,2)*(i-15))
+    set n=CreateUnit(p,'or07',x-20*Cos(a),y-20*Sin(a),a*bj_RADTODEG+GetRandomReal(1,2)*(i-15))
     set x2=x+1300*Cos((a*bj_RADTODEG+GetRandomReal(1,2)*(i-15))*bj_DEGTORAD)
     set y2=y+1300*Sin((a*bj_RADTODEG+GetRandomReal(1,2)*(i-15))*bj_DEGTORAD)
     set sc=GetRandomReal(0.6,0.8)
@@ -219377,7 +219394,7 @@ function OrochimaruWCast takes nothing returns nothing
     call PauseUnit(u,true)
     call SetUnitInvulnerable(u,true)
     call SetUnitAnimation(u,"spell one")
-    set n=CreateUnit(p,0x6F723038,x,y,a*bj_RADTODEG)
+    set n=CreateUnit(p,'or08',x,y,a*bj_RADTODEG)
     call SetUnitTimeScale(n,0.5)
     call UnitApplyTimedLife(n,'BTLF',1.3)
     set n=CreateUnit(p,'ed0O',x,y,0)
@@ -219403,7 +219420,7 @@ function OrochimaruECond takes nothing returns boolean
 endfunction
 function ForGroupOrochimaruECast takes nothing returns nothing
     set E=GetEnumUnit()
-    set n=CreateUnit(GetOwningPlayer(E),0x6F723132,GetUnitX(E),GetUnitY(E),0)
+    set n=CreateUnit(GetOwningPlayer(E),'or12',GetUnitX(E),GetUnitY(E),0)
     call UnitApplyTimedLife(n,'BTLF',0.25)
 endfunction
 function OrochimaruECast4 takes nothing returns nothing
@@ -219476,7 +219493,7 @@ function OrochimaruECast2 takes nothing returns nothing
     local integer i=0
     loop
     exitwhen i>=6
-    set n=CreateUnit(p,0x6F723131,x1+200*Cos(rad*i),y1+200*Sin(rad*i),rad*i*bj_RADTODEG)
+    set n=CreateUnit(p,'or11',x1+200*Cos(rad*i),y1+200*Sin(rad*i),rad*i*bj_RADTODEG)
     call AddUnitAnimationProperties(n,"alternate",true)
     call SetUnitAnimation(n,"Stand Alternate")
     call GroupAddUnit(g,n)
@@ -219512,7 +219529,7 @@ function OrochimaruECast takes nothing returns nothing
     if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
         call PauseUnit(u,true)
         call SetControlToUnit(c,c,1,"heavystun")
-        set n=CreateUnit(p,0x6F723038,x1,y1,0)
+        set n=CreateUnit(p,'or08',x1,y1,0)
         call SetUnitTimeScale(n,0.25)
         call UnitApplyTimedLife(n,'BTLF',5)
         set n=CreateUnit(p,'ed0O',x1,y1,0)
@@ -219586,13 +219603,13 @@ function OrochimaruRCast4 takes nothing returns nothing
     local real a=Atan2(y-y1,x-x1)
     local integer i=0
     local real dmg=GetHeroInt(u,true)*(4+GetUnitAbilityLevel(u,'OM10'))
-    set n=CreateUnit(p,0x6F723136,x1,y1,0)
+    set n=CreateUnit(p,'or16',x1,y1,0)
     call SetUnitTimeScale(n,1)
     call UnitApplyTimedLife(n,'BTLF',0.01)
-    set n=CreateUnit(p,0x6F723137,x1,y1,0)
+    set n=CreateUnit(p,'or17',x1,y1,0)
     call SetUnitTimeScale(n,1)
     call UnitApplyTimedLife(n,'BTLF',0.01)
-    set n=CreateUnit(p,0x6F723138,x1,y1,0)
+    set n=CreateUnit(p,'or18',x1,y1,0)
     call SetUnitTimeScale(n,1)
     call UnitApplyTimedLife(n,'BTLF',0.01)
     loop
@@ -219600,19 +219617,19 @@ function OrochimaruRCast4 takes nothing returns nothing
     set x2=x1+GetRandomReal(630,760)*Cos(36*i*bj_DEGTORAD-18*bj_DEGTORAD)
     set y2=y1+GetRandomReal(630,760)*Sin(36*i*bj_DEGTORAD-18*bj_DEGTORAD)
     set a=Atan2(y1-y2,x1-x2)
-    set n=CreateUnit(p,0x6F723139,x2,y2,GetRandomReal(0,359))
+    set n=CreateUnit(p,'or19',x2,y2,GetRandomReal(0,359))
     call UnitApplyTimedLife(n,'BTLF',0.35)
     call SetUnitTimeScale(n,1.5)
     set x2=x1+GetRandomReal(400,500)*Cos(36*i*bj_DEGTORAD-36*bj_DEGTORAD)
     set y2=y1+GetRandomReal(400,500)*Sin(36*i*bj_DEGTORAD-36*bj_DEGTORAD)
     set a=Atan2(y1-y2,x1-x2)
-    set n=CreateUnit(p,0x6F723139,x2,y2,GetRandomReal(0,359))
+    set n=CreateUnit(p,'or19',x2,y2,GetRandomReal(0,359))
     call UnitApplyTimedLife(n,'BTLF',0.35)
     call SetUnitTimeScale(n,1.5)
     set x2=x1+GetRandomReal(200,300)*Cos(36*i*bj_DEGTORAD)
     set y2=y1+GetRandomReal(200,300)*Sin(36*i*bj_DEGTORAD)
     set a=Atan2(y1-y2,x1-x2)
-    set n=CreateUnit(p,0x6F723139,x2,y2,GetRandomReal(0,359))
+    set n=CreateUnit(p,'or19',x2,y2,GetRandomReal(0,359))
     call UnitApplyTimedLife(n,'BTLF',0.35)
     call SetUnitTimeScale(n,1.5)
     set i=i+1
@@ -219662,7 +219679,7 @@ function OrochimaruRCast2 takes nothing returns nothing
     local real y1=LoadReal(h,id,2)
     local real a=Atan2(y-y1,x-x1)
     call PauseUnit(u,false)
-    set n=CreateUnit(p,0x6F723134,x1+750*Cos(a),y1+750*Sin(a),a*bj_RADTODEG+180)
+    set n=CreateUnit(p,'or14',x1+750*Cos(a),y1+750*Sin(a),a*bj_RADTODEG+180)
     call UnitApplyTimedLife(n,'BTLF',5)
     call SaveUnitHandle(h,id,5,n)
     call TimerStart(t,0.3,false,function OrochimaruRCast3)
@@ -219684,7 +219701,7 @@ function OrochimaruRCast takes nothing returns nothing
     call SaveUnitHandle(h,id,0,u)
     call SaveReal(h,id,1,x1)
     call SaveReal(h,id,2,y1)
-    set n=CreateUnit(p,0x6F723135,x+75*Cos(a),y+75*Sin(a),0)
+    set n=CreateUnit(p,'or15',x+75*Cos(a),y+75*Sin(a),0)
     call SetUnitTimeScale(n,1)
     call UnitApplyTimedLife(n,'BTLF',0.01)
     call PauseUnit(u,true)
@@ -219709,7 +219726,7 @@ endfunction
 function KillGroupOrochimaru takes nothing returns nothing
     set E=GetEnumUnit()
     call KillUnit(E)
-    if GetUnitTypeId(E)==0x6F723233 then
+    if GetUnitTypeId(E)=='or23' then
     call SetUnitTimeScale(E,-1)
     endif
 endfunction
@@ -219802,26 +219819,26 @@ function OrochimaruTCast8 takes nothing returns nothing
     call SetUnitFlyHeight(tobic,he-60,0)
     call SaveReal(h,id,13,time-0.03)
     else
-    set n=CreateUnit(p,0x6F723430,x1,y1,0)
+    set n=CreateUnit(p,'or40',x1,y1,0)
     call UnitApplyTimedLife(n,'BTLF',3)
-    set n=CreateUnit(p,0x6F723430,x1,y1,60)
+    set n=CreateUnit(p,'or40',x1,y1,60)
     call UnitApplyTimedLife(n,'BTLF',3)
-    set n=CreateUnit(p,0x6F723430,x1,y1,120)
+    set n=CreateUnit(p,'or40',x1,y1,120)
     call UnitApplyTimedLife(n,'BTLF',3)
-    set n=CreateUnit(p,0x6F723430,x1,y1,180)
+    set n=CreateUnit(p,'or40',x1,y1,180)
     call UnitApplyTimedLife(n,'BTLF',3)
-    set n=CreateUnit(p,0x6F723430,x1,y1,240)
+    set n=CreateUnit(p,'or40',x1,y1,240)
     call UnitApplyTimedLife(n,'BTLF',3)
-    set n=CreateUnit(p,0x6F723430,x1,y1,300)
+    set n=CreateUnit(p,'or40',x1,y1,300)
     call UnitApplyTimedLife(n,'BTLF',3)
     call UnitApplyTimedLife(n,'BTLF',3)
-    set n=CreateUnit(p,0x6F723136,x1,y1,0)
+    set n=CreateUnit(p,'or16',x1,y1,0)
     call SetUnitTimeScale(n,1)
     call UnitApplyTimedLife(n,'BTLF',0.01)
-    set n=CreateUnit(p,0x6F723137,x1,y1,0)
+    set n=CreateUnit(p,'or17',x1,y1,0)
     call SetUnitTimeScale(n,1)
     call UnitApplyTimedLife(n,'BTLF',0.01)
-    set n=CreateUnit(p,0x6F723138,x1,y1,0)
+    set n=CreateUnit(p,'or18',x1,y1,0)
     call SetUnitTimeScale(n,1)
     call UnitApplyTimedLife(n,'BTLF',0.01)
     loop
@@ -219875,7 +219892,7 @@ function OrochimaruTCast7 takes nothing returns nothing
     if time>0 then
     set x3=x3-250*Cos(GetUnitFacing(tobic)*bj_DEGTORAD)
     set y3=y3-250*Sin(GetUnitFacing(tobic)*bj_DEGTORAD)
-    set n=CreateUnit(p,0x6F723237,x3,y3,GetRandomReal(0,359))
+    set n=CreateUnit(p,'or27',x3,y3,GetRandomReal(0,359))
     call UnitApplyTimedLife(n,'BTLF',0.4)
     call SetUnitFlyHeight(n,he+150,0)
     call SetUnitFlyHeight(tobic,he+60,0)
@@ -220022,46 +220039,46 @@ function OrochimaruTCast4 takes nothing returns nothing
     call SetUnitTimeScale(tobic,2)
     set x2=x1+rg*Cos(a+150*bj_DEGTORAD)
     set y2=y1+rg*Sin(a+150*bj_DEGTORAD)
-    set n=CreateUnit(p,0x6F723234,x2,y2,Atan2(y1-y2,x1-x2)*bj_RADTODEG)
+    set n=CreateUnit(p,'or24',x2,y2,Atan2(y1-y2,x1-x2)*bj_RADTODEG)
     call SetUnitTimeScale(n,2)
     call GroupAddUnit(g,n)
     call SetUnitAnimation(n,"Birth")
     set x2=x1+rg*Cos(a+270*bj_DEGTORAD)
     set y2=y1+rg*Sin(a+270*bj_DEGTORAD)
-    set n=CreateUnit(p,0x6F723234,x2,y2,Atan2(y1-y2,x1-x2)*bj_RADTODEG)
+    set n=CreateUnit(p,'or24',x2,y2,Atan2(y1-y2,x1-x2)*bj_RADTODEG)
     call SetUnitTimeScale(n,2)
     call GroupAddUnit(g,n)
     call SetUnitAnimation(n,"Birth")
     set x2=x1+rg*Cos(a+30*bj_DEGTORAD)
     set y2=y1+rg*Sin(a+30*bj_DEGTORAD)
-    set n=CreateUnit(p,0x6F723234,x2,y2,Atan2(y1-y2,x1-x2)*bj_RADTODEG)
+    set n=CreateUnit(p,'or24',x2,y2,Atan2(y1-y2,x1-x2)*bj_RADTODEG)
     call SetUnitTimeScale(n,2)
     call GroupAddUnit(g,n)
     call SetUnitAnimation(n,"Birth")
     set x2=x1+rg*Cos(a)
     set y2=y1+rg*Sin(a)
-    set n=CreateUnit(p,0x6F723235,x2,y2,Atan2(y1-y2,x1-x2)*bj_RADTODEG)
+    set n=CreateUnit(p,'or25',x2,y2,Atan2(y1-y2,x1-x2)*bj_RADTODEG)
     call SetUnitTimeScale(n,2)
     call GroupAddUnit(g,n)
     call SetUnitAnimation(n,"Birth")
     call SetUnitFlyHeight(n,125,400)
     set x2=x1+rg*Cos(a+90*bj_DEGTORAD)
     set y2=y1+rg*Sin(a+90*bj_DEGTORAD)
-    set n=CreateUnit(p,0x6F723235,x2,y2,Atan2(y1-y2,x1-x2)*bj_RADTODEG)
+    set n=CreateUnit(p,'or25',x2,y2,Atan2(y1-y2,x1-x2)*bj_RADTODEG)
     call SetUnitTimeScale(n,2)
     call GroupAddUnit(g,n)
     call SetUnitAnimation(n,"Birth")
     call SetUnitFlyHeight(n,125,400)
     set x2=x1+rg*Cos(a+180*bj_DEGTORAD)
     set y2=y1+rg*Sin(a+180*bj_DEGTORAD)
-    set n=CreateUnit(p,0x6F723235,x2,y2,Atan2(y1-y2,x1-x2)*bj_RADTODEG)
+    set n=CreateUnit(p,'or25',x2,y2,Atan2(y1-y2,x1-x2)*bj_RADTODEG)
     call SetUnitTimeScale(n,2)
     call GroupAddUnit(g,n)
     call SetUnitAnimation(n,"Birth")
     call SetUnitFlyHeight(n,125,400)
     set x2=x1+rg*Cos(a+270*bj_DEGTORAD)
     set y2=y1+rg*Sin(a+270*bj_DEGTORAD)
-    set n=CreateUnit(p,0x6F723235,x2,y2,Atan2(y1-y2,x1-x2)*bj_RADTODEG)
+    set n=CreateUnit(p,'or25',x2,y2,Atan2(y1-y2,x1-x2)*bj_RADTODEG)
     call SetUnitTimeScale(n,2)
     call GroupAddUnit(g,n)
     call SetUnitAnimation(n,"Birth")
@@ -220095,7 +220112,7 @@ function OrochimaruTCast3 takes nothing returns nothing
     set y=y+150*Sin(a)
     set x2=x+250*Cos(a+deg90)
     set y2=y+250*Sin(a+deg90)
-    set n=CreateUnit(p,0x6F723231,x2,y2,a*bj_RADTODEG)
+    set n=CreateUnit(p,'or21',x2,y2,a*bj_RADTODEG)
     call SaveUnitHandle(h,id,10,n)
     set x2=x2+200*Cos(a)
     set y2=y2+200*Sin(a)
@@ -220103,7 +220120,7 @@ function OrochimaruTCast3 takes nothing returns nothing
     call PauseUnit(n,true)
     set x2=x+250*Cos(a-deg90)
     set y2=y+250*Sin(a-deg90)
-    set n=CreateUnit(p,0x6F723232,x2,y2,a*bj_RADTODEG)
+    set n=CreateUnit(p,'or22',x2,y2,a*bj_RADTODEG)
     call SaveUnitHandle(h,id,11,n)
     set x2=x2+200*Cos(a)
     set y2=y2+200*Sin(a)
@@ -220146,19 +220163,19 @@ function OrochimaruTCast2 takes nothing returns nothing
     set y=y+150*Sin(a)
     set x2=x+250*Cos(a+deg90)
     set y2=y+250*Sin(a+deg90)
-    set n=CreateUnit(p,0x6F723230,x2,y2,a*bj_RADTODEG)
+    set n=CreateUnit(p,'or20',x2,y2,a*bj_RADTODEG)
     call SetUnitTimeScale(n,1.1)
     call SetUnitAnimation(n,"Birth")
     call UnitApplyTimedLife(n,'BTLF',1)
     set x2=x+250*Cos(a-deg90)
     set y2=y+250*Sin(a-deg90)
-    set n=CreateUnit(p,0x6F723230,x2,y2,a*bj_RADTODEG)
+    set n=CreateUnit(p,'or20',x2,y2,a*bj_RADTODEG)
     call SetUnitTimeScale(n,1.1)
     call UnitApplyTimedLife(n,'BTLF',1)
     call SetUnitAnimation(n,"Birth")
     set x2=x1+rg*Cos(a+90*bj_DEGTORAD)
     set y2=y1+rg*Sin(a+90*bj_DEGTORAD)
-    set n=CreateUnit(p,0x6F723233,x2,y2,Atan2(y1-y2,x1-x2)*bj_RADTODEG+180)
+    set n=CreateUnit(p,'or23',x2,y2,Atan2(y1-y2,x1-x2)*bj_RADTODEG+180)
     call SetUnitTimeScale(n,6.6)
     call PauseUnit(n,true)
     call SetUnitFlyHeight(n,0,550)
@@ -220167,19 +220184,19 @@ function OrochimaruTCast2 takes nothing returns nothing
     set a2=GetUnitFacing(n)*bj_DEGTORAD
     set x3=x2+rg2*Cos(a2+deg90)
     set y3=y2+rg2*Sin(a2+deg90)
-    set n=CreateUnit(p,0x6F723431,x3,y3,(a2-deg90)*bj_RADTODEG)
+    set n=CreateUnit(p,'or41',x3,y3,(a2-deg90)*bj_RADTODEG)
     call SetUnitTimeScale(n,.3)
     call SetUnitVertexColor(n,255,255,255,75)
     call UnitApplyTimedLife(n,'BTLF',1.3)
     set x3=x2-rg2*Cos(a2+deg90)
     set y3=y2-rg2*Sin(a2+deg90)
-    set n=CreateUnit(p,0x6F723431,x3,y3,(a2+deg90)*bj_RADTODEG)
+    set n=CreateUnit(p,'or41',x3,y3,(a2+deg90)*bj_RADTODEG)
     call SetUnitTimeScale(n,.3)
     call SetUnitVertexColor(n,255,255,255,75)
     call UnitApplyTimedLife(n,'BTLF',1.3)
     set x2=x1+rg*Cos(a+330*bj_DEGTORAD)
     set y2=y1+rg*Sin(a+330*bj_DEGTORAD)
-    set n=CreateUnit(p,0x6F723233,x2,y2,Atan2(y1-y2,x1-x2)*bj_RADTODEG+180)
+    set n=CreateUnit(p,'or23',x2,y2,Atan2(y1-y2,x1-x2)*bj_RADTODEG+180)
     call SetUnitTimeScale(n,6.6)
     call SetUnitFlyHeight(n,0,550)
     call PauseUnit(n,true)
@@ -220188,19 +220205,19 @@ function OrochimaruTCast2 takes nothing returns nothing
     set a2=GetUnitFacing(n)*bj_DEGTORAD
     set x3=x2+rg2*Cos(a2+deg90)
     set y3=y2+rg2*Sin(a2+deg90)
-    set n=CreateUnit(p,0x6F723431,x3,y3,(a2-deg90)*bj_RADTODEG)
+    set n=CreateUnit(p,'or41',x3,y3,(a2-deg90)*bj_RADTODEG)
     call SetUnitTimeScale(n,.3)
     call SetUnitVertexColor(n,255,255,255,75)
     call UnitApplyTimedLife(n,'BTLF',1.3)
     set x3=x2-rg2*Cos(a2+deg90)
     set y3=y2-rg2*Sin(a2+deg90)
-    set n=CreateUnit(p,0x6F723431,x3,y3,(a2+deg90)*bj_RADTODEG)
+    set n=CreateUnit(p,'or41',x3,y3,(a2+deg90)*bj_RADTODEG)
     call SetUnitTimeScale(n,.3)
     call SetUnitVertexColor(n,255,255,255,75)
     call UnitApplyTimedLife(n,'BTLF',1.3)
     set x2=x1+rg*Cos(a+210*bj_DEGTORAD)
     set y2=y1+rg*Sin(a+210*bj_DEGTORAD)
-    set n=CreateUnit(p,0x6F723233,x2,y2,Atan2(y1-y2,x1-x2)*bj_RADTODEG+180)
+    set n=CreateUnit(p,'or23',x2,y2,Atan2(y1-y2,x1-x2)*bj_RADTODEG+180)
     call SetUnitTimeScale(n,6.6)
     call SetUnitFlyHeight(n,0,550)
     call PauseUnit(n,true)
@@ -220209,13 +220226,13 @@ function OrochimaruTCast2 takes nothing returns nothing
     set a2=GetUnitFacing(n)*bj_DEGTORAD
     set x3=x2+rg2*Cos(a2+deg90)
     set y3=y2+rg2*Sin(a2+deg90)
-    set n=CreateUnit(p,0x6F723431,x3,y3,(a2-deg90)*bj_RADTODEG)
+    set n=CreateUnit(p,'or41',x3,y3,(a2-deg90)*bj_RADTODEG)
     call SetUnitTimeScale(n,.3)
     call SetUnitVertexColor(n,255,255,255,75)
     call UnitApplyTimedLife(n,'BTLF',1.3)
     set x3=x2-rg2*Cos(a2+deg90)
     set y3=y2-rg2*Sin(a2+deg90)
-    set n=CreateUnit(p,0x6F723431,x3,y3,(a2+deg90)*bj_RADTODEG)
+    set n=CreateUnit(p,'or41',x3,y3,(a2+deg90)*bj_RADTODEG)
     call SetUnitTimeScale(n,.3)
     call SetUnitVertexColor(n,255,255,255,75)
     call UnitApplyTimedLife(n,'BTLF',1.3)
@@ -220260,7 +220277,7 @@ function OrochimaruTCast takes nothing returns nothing
     call SaveGroupHandle(h,id,6,g)
     call PauseUnit(u,true)
     call SetUnitAnimationByIndex(u,5)
-    set n=CreateUnit(p,0x6F723038,x,y,a*bj_RADTODEG)
+    set n=CreateUnit(p,'or08',x,y,a*bj_RADTODEG)
     call SetUnitTimeScale(n,0.5)
     call UnitApplyTimedLife(n,'BTLF',1.3)
     set n=CreateUnit(p,'ed0O',x,y,0)
@@ -220502,7 +220519,7 @@ function OrochimaruVCast takes nothing returns nothing
         call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,true)
         call SetUnitInvulnerable(u,true)
         call SetUnitInvulnerable(c,true)
-        set n=CreateUnit(p,0x6F723038,x,y,a*bj_RADTODEG)
+        set n=CreateUnit(p,'or08',x,y,a*bj_RADTODEG)
         call SetUnitTimeScale(n,0.3)
         call GroupAddUnit(g,n)
         set n=CreateUnit(p,'ed0O',x,y,0)
