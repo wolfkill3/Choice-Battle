@@ -164156,6 +164156,7 @@ call SetUnitPathing(u,true)
 call SetUnitInvulnerable(u,false)
 call SetUnitInvulnerable(c,false)
 call myCustomDamage(u,c,10*GetHeroStr(u,true),false,false,null,null,null)
+call SetControlToUnit(u,c,2,"silence")
 if udg_B==true then
 call SaveInteger(HH,cid,StringHash("BonusSTR"),LoadInteger(HH,cid,StringHash("BonusSTR"))+10)
 call SetHeroStr(u,GetHeroStr(u,false)+10,true)
