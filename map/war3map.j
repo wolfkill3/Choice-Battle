@@ -9192,16 +9192,16 @@ call CreateFogModifierRectBJ(true,ConvertedPlayer(GetForLoopIndexA()),FOG_OF_WAR
 call CreateFogModifierRectBJ(true,ConvertedPlayer(GetForLoopIndexA()),FOG_OF_WAR_VISIBLE,gg_rct_OblTeatr)
 call CreateFogModifierRectBJ(true,ConvertedPlayer(GetForLoopIndexA()),FOG_OF_WAR_VISIBLE,gg_rct_UBW2)
 call CreateFogModifierRectBJ(true,ConvertedPlayer(GetForLoopIndexA()),FOG_OF_WAR_VISIBLE,gg_rct_HibariFight)
-call SetPlayerState(Player(0),PLAYER_STATE_RESOURCE_GOLD,3100)
-call SetPlayerState(Player(1),PLAYER_STATE_RESOURCE_GOLD,3100)
-call SetPlayerState(Player(2),PLAYER_STATE_RESOURCE_GOLD,3100)
-call SetPlayerState(Player(3),PLAYER_STATE_RESOURCE_GOLD,3100)
-call SetPlayerState(Player(4),PLAYER_STATE_RESOURCE_GOLD,3100)
-call SetPlayerState(Player(5),PLAYER_STATE_RESOURCE_GOLD,3100)
-call SetPlayerState(Player(6),PLAYER_STATE_RESOURCE_GOLD,3100)
-call SetPlayerState(Player(7),PLAYER_STATE_RESOURCE_GOLD,3100)
-call SetPlayerState(Player(8),PLAYER_STATE_RESOURCE_GOLD,3100)
-call SetPlayerState(Player(9),PLAYER_STATE_RESOURCE_GOLD,3100)
+call SetPlayerState(Player(0),PLAYER_STATE_RESOURCE_GOLD,3200)
+call SetPlayerState(Player(1),PLAYER_STATE_RESOURCE_GOLD,3200)
+call SetPlayerState(Player(2),PLAYER_STATE_RESOURCE_GOLD,3200)
+call SetPlayerState(Player(3),PLAYER_STATE_RESOURCE_GOLD,3200)
+call SetPlayerState(Player(4),PLAYER_STATE_RESOURCE_GOLD,3200)
+call SetPlayerState(Player(5),PLAYER_STATE_RESOURCE_GOLD,3200)
+call SetPlayerState(Player(6),PLAYER_STATE_RESOURCE_GOLD,3200)
+call SetPlayerState(Player(7),PLAYER_STATE_RESOURCE_GOLD,3200)
+call SetPlayerState(Player(8),PLAYER_STATE_RESOURCE_GOLD,3200)
+call SetPlayerState(Player(9),PLAYER_STATE_RESOURCE_GOLD,3200)
 call SetPlayerAbilityAvailableBJ(false,'JNF4',ConvertedPlayer(GetForLoopIndexA()))
 call SetPlayerAbilityAvailableBJ(false,'A02O',ConvertedPlayer(GetForLoopIndexA()))
 call SetPlayerAbilityAvailableBJ(false,'A0AA',ConvertedPlayer(GetForLoopIndexA()))
@@ -19376,16 +19376,16 @@ call W3MMD_Lite_Set_Integer(Player(6),"Rounds_to_win",7)
 call W3MMD_Lite_Set_Integer(Player(7),"Rounds_to_win",7)
 call W3MMD_Lite_Set_Integer(Player(8),"Rounds_to_win",7)
 call W3MMD_Lite_Set_Integer(Player(9),"Rounds_to_win",7)
-call SetPlayerState(Player(0),PLAYER_STATE_RESOURCE_GOLD,4100)
-call SetPlayerState(Player(1),PLAYER_STATE_RESOURCE_GOLD,4100)
-call SetPlayerState(Player(2),PLAYER_STATE_RESOURCE_GOLD,4100)
-call SetPlayerState(Player(3),PLAYER_STATE_RESOURCE_GOLD,4100)
-call SetPlayerState(Player(4),PLAYER_STATE_RESOURCE_GOLD,4100)
-call SetPlayerState(Player(5),PLAYER_STATE_RESOURCE_GOLD,4100)
-call SetPlayerState(Player(6),PLAYER_STATE_RESOURCE_GOLD,4100)
-call SetPlayerState(Player(7),PLAYER_STATE_RESOURCE_GOLD,4100)
-call SetPlayerState(Player(8),PLAYER_STATE_RESOURCE_GOLD,4100)
-call SetPlayerState(Player(9),PLAYER_STATE_RESOURCE_GOLD,4100)
+call SetPlayerState(Player(0),PLAYER_STATE_RESOURCE_GOLD,4200)
+call SetPlayerState(Player(1),PLAYER_STATE_RESOURCE_GOLD,4200)
+call SetPlayerState(Player(2),PLAYER_STATE_RESOURCE_GOLD,4200)
+call SetPlayerState(Player(3),PLAYER_STATE_RESOURCE_GOLD,4200)
+call SetPlayerState(Player(4),PLAYER_STATE_RESOURCE_GOLD,4200)
+call SetPlayerState(Player(5),PLAYER_STATE_RESOURCE_GOLD,4200)
+call SetPlayerState(Player(6),PLAYER_STATE_RESOURCE_GOLD,4200)
+call SetPlayerState(Player(7),PLAYER_STATE_RESOURCE_GOLD,4200)
+call SetPlayerState(Player(8),PLAYER_STATE_RESOURCE_GOLD,4200)
+call SetPlayerState(Player(9),PLAYER_STATE_RESOURCE_GOLD,4200)
 call SetPlayerTeam(Player(0),0)
 call SetPlayerTeam(Player(1),1)
 call SetPlayerTeam(Player(2),2)
@@ -45784,7 +45784,7 @@ function GetInventoryIndexOfItem takes unit whichUnit, integer itemId returns in
         endif
 
         set index = index + 1
-        exitwhen index >= 10
+        exitwhen index >= 6
     endloop
 
     return 0
@@ -45868,6 +45868,7 @@ local trigger t2=CreateTrigger()
 local integer i=0
 loop
 call TriggerRegisterPlayerUnitEvent(t,Player(i),EVENT_PLAYER_UNIT_USE_ITEM,null)
+call TriggerRegisterPlayerUnitEvent(t2,Player(i),EVENT_PLAYER_UNIT_MOVE_ITEM_SLOT,null)
 call TriggerRegisterPlayerUnitEvent(t2,Player(i),EVENT_PLAYER_UNIT_PICKUP_ITEM,null)
 set i=i+1
 exitwhen i>=bj_MAX_PLAYER_SLOTS
@@ -164153,6 +164154,7 @@ call SetUnitPathing(u,true)
 call SetUnitInvulnerable(u,false)
 call SetUnitInvulnerable(c,false)
 call myCustomDamage(u,c,10*GetHeroStr(u,true),false,false,null,null,null)
+call SetControlToUnit(u,c,2,"silence")
 if udg_B==true then
 call SaveInteger(HH,cid,StringHash("BonusSTR"),LoadInteger(HH,cid,StringHash("BonusSTR"))+10)
 call SetHeroStr(u,GetHeroStr(u,false)+10,true)
@@ -182587,9 +182589,9 @@ function LucciShiganAA_Actions takes nothing returns nothing
         local boolean LucciShiganAttack=LoadBoolean(HH,id_caster,StringHash("LucciShigan"))==true
         if LucciShiganAttack then
                 if GetUnitTypeId(u)=='HHT2' then
-                        call LucciShiganAttackMove(c,u,damage*3+GetHeroAgi(u,true)*1)
+                        call LucciShiganAttackMove(c,u,damage*(1.95+GetHeroLevel(u)*0.03)+GetHeroAgi(u,true)*1)
                 else
-                        call LucciShiganAttackMove(c,u,damage*2+GetHeroAgi(u,true)*2)
+                        call LucciShiganAttackMove(c,u,damage*(1.3+GetHeroLevel(u)*0.02)+GetHeroAgi(u,true)*(1.3+GetHeroLevel(u)*0.02))
                 endif 
         else
                 call RemoveSavedBoolean(HH, id_caster, StringHash("LucciShigan"))
@@ -205405,6 +205407,9 @@ function IchigoBankaiR_Periodic2 takes nothing returns nothing
         call SaveBoolean(HH,GetHandleId(target),TARGET_ABILITY,false)
         call SetUnitInvulnerable(caster, false)
         call SetUnitInvulnerable(target, false)
+        if (1-GetWidgetLife(target)/GetWidgetMaxLife(target))>0.5 then
+            set bonus_damage=LoadReal(h, id, 2)*0.5
+        endif
         call myCustomDamage(caster, target, LoadReal(h, id, 2)+bonus_damage, false,false,null,null,null)
         call FlushChildHashtable(h, id)
         call PauseTimer(GetExpiredTimer())
