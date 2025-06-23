@@ -8017,15 +8017,14 @@ local unit u=LoadUnitHandle(h,id,1)
 local real heal=LoadReal(h,id,2)
 local integer i=LoadInteger(h,id,3)
 if i<LoadInteger(h,id,4)then
-// call HealTextTag(u,u,heal*myCustomHeal2(u,1),"HealthRes")
-// call SetUnitState(u,UNIT_STATE_LIFE,GetWidgetLife(u)+heal)
+call HealTextTag(u,u,heal*myCustomHeal2(u,1),"HealthRes")
+call SetUnitState(u,UNIT_STATE_LIFE,GetWidgetLife(u)+heal)
 call SaveInteger(h,id,3,i+1)
 else
-    call SetUnitLifeRegen(u,GetUnitLifeRegen(u)-heal)
-    call PauseTimer(t)
-    call DestroyTimer(t)
-    call DestroyEffect(LoadEffectHandle(h,id,0))
-    call FlushChildHashtable(h,id)
+call PauseTimer(t)
+call DestroyTimer(t)
+call DestroyEffect(LoadEffectHandle(h,id,0))
+call FlushChildHashtable(h,id)
 endif
 set u=null
 set t=null
@@ -8037,7 +8036,6 @@ call SaveUnitHandle(h,id,1,u)
 call SaveReal(h,id,2,heal/time)
 call SaveInteger(h,id,3,0)
 call SaveInteger(h,id,4,time)
-call SetUnitLifeRegen(u,GetUnitLifeRegen(u)+(heal/time))
 call TimerStart(t,1,true,function HealCast2)
 set t=null
 endfunction
@@ -19926,26 +19924,22 @@ local real sc=0
 loop
 exitwhen i>=6
 if GetItemTypeId(UnitItemInSlot(u,i))=='I05H' or GetUnitAbilityLevel(u,'KIS4')>0 then
-    if GetUnitAbilityLevel(u,'A18B')>0 then
-        set sc=sc+0.45
-    else
-        set sc=sc+0.15
-    endif
+set sc=sc+1
 endif
 if GetItemTypeId(UnitItemInSlot(u,i))=='I05G' or GetUnitAbilityLevel(u,'KIS2')>0 then
-set sc=sc+0.14
+set sc=sc+0.9
 endif
 if GetItemTypeId(UnitItemInSlot(u,i))=='I05F' or GetUnitAbilityLevel(u,'KIS0')>0 then
-set sc=sc+0.13
+set sc=sc+0.8
 endif
 if GetItemTypeId(UnitItemInSlot(u,i))=='I05E' or GetUnitAbilityLevel(u,'KIR8')>0 then
-set sc=sc+0.12
+set sc=sc+0.7
 endif
 if GetItemTypeId(UnitItemInSlot(u,i))=='I05D' or GetUnitAbilityLevel(u,'KIR6')>0 then
-set sc=sc+0.11
+set sc=sc+0.6
 endif
 if GetItemTypeId(UnitItemInSlot(u,i))=='I05C' or GetUnitAbilityLevel(u,'KIR4')>0 then
-set sc=sc+0.1
+set sc=sc+0.5
 endif
 set i=i+1
 endloop
@@ -23511,69 +23505,38 @@ return GetOwningPlayer(n)!=Player(PLAYER_NEUTRAL_PASSIVE)and GetUnitAbilityLevel
 endfunction
 function AvalonCast2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
-local integer id=GetHandleId(t)
-local unit u=LoadUnitHandle(HH,id,0)
+local unit u=LoadUnitHandle(HH,GetHandleId(t),0)
 local real ml=GetUnitState(u,UNIT_STATE_MAX_LIFE)
+local real l=GetWidgetLife(u)
 local integer i=0
 local integer ip=GetPlayerId(GetOwningPlayer(u))
 if Hero[ip]!=u then
-    loop
-    exitwhen i>=10
-    if(GetUnitTypeId(Hero[i])=='H05C' or GetUnitTypeId(Hero[i])=='H15C' or GetUnitTypeId(Hero[i])=='H05E' or GetUnitTypeId(Hero[i])=='H06P' or GetUnitTypeId(Hero[i])=='H06P')and IsUnitAlly(Hero[i],GetOwningPlayer(u)) and IsUnitAlive(Hero[i]) then
-        if LoadReal(HH,id,2)>0 then
-            call SetUnitLifeRegen(Hero[i],GetUnitLifeRegen(Hero[i])-LoadReal(HH,id,2))
-        endif
-    endif
-    set i=i+1
-    endloop
-    call FlushChildHashtable(HH,id)
-    call PauseTimer(t)
-    call DestroyTimer(t)
-else
-    if IsUnitAlive(u) then
-        if LoadReal(HH,id,1)!=ml*0065 then
-            //call BJDebugMsg(R2S(LoadReal(h,id,0))+"     "+R2S(SunRing(u)*I2R(GetHeroInt(u,true))))
-            call SetUnitLifeRegen(u,GetUnitLifeRegen(u)-LoadReal(HH,id,1))
-            call SaveReal(HH,id,1,ml*0065)
-            call SetUnitLifeRegen(u,GetUnitLifeRegen(u)+LoadReal(HH,id,1))
-        endif
-    endif
-    loop
-    exitwhen i>=10
-    if(GetUnitTypeId(Hero[i])=='H05C' or GetUnitTypeId(Hero[i])=='H15C' or GetUnitTypeId(Hero[i])=='H05E' or GetUnitTypeId(Hero[i])=='H06P' or GetUnitTypeId(Hero[i])=='H06P')and IsUnitAlly(Hero[i],GetOwningPlayer(u)) and IsUnitAlive(Hero[i]) then
-        if LoadReal(HH,id,2)!=GetUnitState(Hero[i],UNIT_STATE_MAX_LIFE)*0065 then
-            //call BJDebugMsg(R2S(LoadReal(h,id,0))+"     "+R2S(SunRing(u)*I2R(GetHeroInt(u,true))))
-            call SetUnitLifeRegen(Hero[i],GetUnitLifeRegen(Hero[i])-LoadReal(HH,id,2))
-            call SaveReal(HH,id,2,GetUnitState(Hero[i],UNIT_STATE_MAX_LIFE)*0065)
-            call SetUnitLifeRegen(Hero[i],GetUnitLifeRegen(Hero[i])+LoadReal(HH,id,2))
-        endif
-    endif
-    set i=i+1
-    endloop
+call PauseTimer(t)
+call DestroyTimer(t)
 endif
+if IsUnitAlive(u) then
+call HealTextTag(u,u,ml*0.0065*myCustomHeal2(u,1),"HealthRes")
+call SetUnitState(u,UNIT_STATE_LIFE,l+ml*0.0065)
+endif
+loop
+exitwhen i>=10
+if(GetUnitTypeId(Hero[i])=='H05C' or GetUnitTypeId(Hero[i])=='H15C' or GetUnitTypeId(Hero[i])=='H05E' or GetUnitTypeId(Hero[i])=='H06P' or GetUnitTypeId(Hero[i])=='H06P')and IsUnitAlly(Hero[i],GetOwningPlayer(u)) and IsUnitAlive(Hero[i]) then
+call HealTextTag(Hero[i],Hero[i],GetUnitState(Hero[i],UNIT_STATE_MAX_LIFE)*0.0065*myCustomHeal2(Hero[i],1),"HealthRes")
+call SetUnitState(Hero[i],UNIT_STATE_LIFE,GetWidgetLife(Hero[i])+GetUnitState(Hero[i],UNIT_STATE_MAX_LIFE)*0.0065)
+endif
+set i=i+1
+endloop
 set t=null
 set u=null
 endfunction
 function HighSpeedRegenerationCast2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
-local integer id=GetHandleId(t)
-local unit u=LoadUnitHandle(HH,id,0)
+local unit u=LoadUnitHandle(HH,GetHandleId(t),0)
 local real ml=GetUnitState(u,UNIT_STATE_MAX_LIFE)
 local real l=GetWidgetLife(u)
 if 0.25<l/ml and IsUnitAlive(u) then
-    if LoadReal(HH,id,1)!=GetHeroAgi(u,true)*(0.05+(GetUnitAbilityLevel(u,'A0RS')*0.025)) then
-        //call BJDebugMsg(R2S(LoadReal(HH,id,1))+"     "+R2S(GetHeroAgi(u,true)*(0.05+(GetUnitAbilityLevel(u,'A0RS')*0.025))))
-        // call BJDebugMsg(R2S(GetUnitLifeRegen(u)))
-        call SetUnitLifeRegen(u,GetUnitLifeRegen(u)-LoadReal(HH,id,1))
-        // call BJDebugMsg(R2S(GetUnitLifeRegen(u)))
-        call SaveReal(HH,id,1,GetHeroAgi(u,true)*(0.05+(GetUnitAbilityLevel(u,'A0RS')*0.025)))
-        call SetUnitLifeRegen(u,GetUnitLifeRegen(u)+LoadReal(HH,id,1))
-        // call BJDebugMsg(R2S(GetUnitLifeRegen(u)))
-        // call BJDebugMsg("_")
-    endif
-elseif LoadReal(HH,id,1)>0 then
-    call SetUnitLifeRegen(u,GetUnitLifeRegen(u)-LoadReal(HH,id,1))
-    call SaveReal(HH,id,1,0)
+call HealTextTag(u,u,GetHeroAgi(u,true)*0.1*(0.05+(GetUnitAbilityLevel(u,'A0RS')*0.025))*myCustomHeal2(u,1),"HealthRes")
+call SetUnitState(u,UNIT_STATE_LIFE,l+GetHeroAgi(u,true)*0.1*(0.05+(GetUnitAbilityLevel(u,'A0RS')*0.025)))
 endif
 set t=null
 set u=null
@@ -23586,41 +23549,27 @@ return SR(GetUnitX(Neji),GetUnitY(Neji),GetUnitX(GetTriggerUnit()),GetUnitY(GetT
 endfunction
 function CellRegeneration takes nothing returns nothing
 local timer t=GetExpiredTimer()
-local integer id=GetHandleId(t)
-local unit u=LoadUnitHandle(HH,id,0)
+local unit u=LoadUnitHandle(HH,GetHandleId(t),0)
 local real ml=GetUnitState(u,UNIT_STATE_MAX_LIFE)
 local real l=GetWidgetLife(u)
 if GetHeroLevel(u)>=6 and IsUnitAlive(u) then
-    if LoadReal(HH,id,1)!=ml*(0.0005+(GetUnitAbilityLevel(u,'A105')*0.0005)) then
-        //call BJDebugMsg(R2S(LoadReal(h,id,0))+"     "+R2S(SunRing(u)*I2R(GetHeroInt(u,true))))
-        call SetUnitLifeRegen(u,GetUnitLifeRegen(u)-LoadReal(HH,id,1))
-        call SaveReal(HH,id,1,ml*(0.0005+(GetUnitAbilityLevel(u,'A105')*0.0005)))
-        call SetUnitLifeRegen(u,GetUnitLifeRegen(u)+LoadReal(HH,id,1))
-    endif
+call HealTextTag(u,u,ml*(0.005+(GetUnitAbilityLevel(u,'A105')*0.005))*0.01*myCustomHeal2(u,1),"HealthRes")
+call SetUnitState(u,UNIT_STATE_LIFE,l+ml*(0.005+(GetUnitAbilityLevel(u,'A105')*0.005))*0.01)
 endif
 set t=null
 set u=null
 endfunction
 function MajinVegeta takes nothing returns nothing
     local timer t=GetExpiredTimer()
-    local integer id=GetHandleId(t)
-    local unit u=LoadUnitHandle(HH,id,0)
+    local unit u=LoadUnitHandle(HH,GetHandleId(t),0)
     local real ml=GetUnitState(u,UNIT_STATE_MAX_LIFE)
     local real l=GetWidgetLife(u)
     if 0.25>l/ml and GetHeroLevel(u)>=6 and IsUnitAlive(u) then
-        call SetUnitAbilityLevel(u,'A0IT',GetUnitAbilityLevel(u,'A0IR')+1)
-        if LoadReal(HH,id,1)!=ml*(0.005+0.001*GetUnitAbilityLevel(u,'A0IR')) then
-            //call BJDebugMsg(R2S(LoadReal(h,id,0))+"     "+R2S(SunRing(u)*I2R(GetHeroInt(u,true))))
-            call SetUnitLifeRegen(u,GetUnitLifeRegen(u)-LoadReal(HH,id,1))
-            call SaveReal(HH,id,1,ml*(0.005+0.001*GetUnitAbilityLevel(u,'A0IR')))
-            call SetUnitLifeRegen(u,GetUnitLifeRegen(u)+LoadReal(HH,id,1))
-        endif
+    call SetUnitAbilityLevel(u,'A0IT',GetUnitAbilityLevel(u,'A0IR')+1)
+    call HealTextTag(u,u,ml*(0.0005+0.0001*GetUnitAbilityLevel(u,'A0IR'))*myCustomHeal2(u,1),"HealthRes")
+    call SetUnitState(u,UNIT_STATE_LIFE,GetWidgetLife(u)+ml*(0.0005+0.0001*GetUnitAbilityLevel(u,'A0IR')))
     else
-        if LoadReal(HH,id,1)>0 then
-            call SetUnitLifeRegen(u,GetUnitLifeRegen(u)-LoadReal(HH,id,1))
-            call SaveReal(HH,id,1,0)
-        endif
-        call SetUnitAbilityLevel(u,'A0IT',1)
+    call SetUnitAbilityLevel(u,'A0IT',1)
     endif
     set t=null
     set u=null
@@ -23724,25 +23673,20 @@ call CreateUnit(GetOwningPlayer(u),'h109',RX,RY,0)
 set lvl35[pid]=1
 endif
 if GetUnitTypeId(u)=='H045' and LoadInteger(HH,idu,StringHash("HSR"))!=1 and GetHeroLevel(u)>=6 then
-    set cjlocgn_00000000=CreateTimer()
-    call SaveInteger(HH,idu,StringHash("HSR"),1)
-    call UnitMakeAbilityPermanent(u,true,'A0RS')
-    call SaveUnitHandle(HH,GetHandleId(cjlocgn_00000000),0,u)
-    call SaveReal(HH,GetHandleId(cjlocgn_00000000),1,GetHeroAgi(u,true)*(0.05+(GetUnitAbilityLevel(u,'A0RS')*0.025)))
-    call SetUnitLifeRegen(u,GetUnitLifeRegen(u)+GetHeroAgi(u,true)*(0.05+(GetUnitAbilityLevel(u,'A0RS')*0.025)))
-    call TimerStart(cjlocgn_00000000,0.1,true,function HighSpeedRegenerationCast2)
-    set cjlocgn_00000000=null
+set cjlocgn_00000000=CreateTimer()
+call SaveInteger(HH,idu,StringHash("HSR"),1)
+call UnitMakeAbilityPermanent(u,true,'A0RS')
+call SaveUnitHandle(HH,GetHandleId(cjlocgn_00000000),0,u)
+call TimerStart(cjlocgn_00000000,0.1,true,function HighSpeedRegenerationCast2)
+set cjlocgn_00000000=null
 endif
 if(GetUnitTypeId(u)=='H05A' or GetUnitTypeId(u)=='H05B')and LoadInteger(HH,idu,StringHash("AVL"))!=1 and GetHeroLevel(u)>=6 then
-    call SaveInteger(HH,idu,StringHash("AVL"),1)
-    set cjlocgn_00000000=CreateTimer()
-    call UnitMakeAbilityPermanent(u,true,'A134')
-    call SaveUnitHandle(HH,GetHandleId(cjlocgn_00000000),0,u)
-    call SaveReal(HH,GetHandleId(cjlocgn_00000000),1,GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.0065)
-    call SaveReal(HH,GetHandleId(cjlocgn_00000000),2,0)
-    call SetUnitLifeRegen(u,GetUnitLifeRegen(u)+GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.0065)
-    call TimerStart(cjlocgn_00000000,1,true,function AvalonCast2)
-    set cjlocgn_00000000=null
+call SaveInteger(HH,idu,StringHash("AVL"),1)
+set cjlocgn_00000000=CreateTimer()
+call UnitMakeAbilityPermanent(u,true,'A134')
+call SaveUnitHandle(HH,GetHandleId(cjlocgn_00000000),0,u)
+call TimerStart(cjlocgn_00000000,1,true,function AvalonCast2)
+set cjlocgn_00000000=null
 endif
 if GetHeroLevel(u)>=25 then
 call CreateUnit(GetOwningPlayer(u),'h03J',RX,RY,0)
@@ -23772,8 +23716,6 @@ if GetUnitTypeId(u)=='H052' then
         set cjlocgn_00000000=CreateTimer()
         call SaveInteger(HH,idu,StringHash("ABS"),1)
         call SaveUnitHandle(HH,GetHandleId(cjlocgn_00000000),0,u)
-        call SaveReal(HH,GetHandleId(cjlocgn_00000000),1,GetUnitState(u,UNIT_STATE_MAX_LIFE)*(0.0005+(GetUnitAbilityLevel(u,'A105')*0.0005)))
-        call SetUnitLifeRegen(u,GetUnitLifeRegen(u)+GetUnitState(u,UNIT_STATE_MAX_LIFE)*(0.0005+(GetUnitAbilityLevel(u,'A105')*0.0005)))
         call TimerStart(cjlocgn_00000000,0.1,true,function CellRegeneration)
     endif
 endif
@@ -23785,8 +23727,6 @@ if GetUnitTypeId(u)=='H02I' and GetHeroLevel(u)>=6 then
         set cjlocgn_00000000=CreateTimer()
         call SaveInteger(HH,idu,StringHash("VSP"),1)
         call SaveUnitHandle(HH,GetHandleId(cjlocgn_00000000),0,u)
-        // call SaveReal(HH,GetHandleId(cjlocgn_00000000),1,GetUnitState(u,UNIT_STATE_MAX_LIFE)*(0.005+0.0001*GetUnitAbilityLevel(u,'A0IR')))
-        // call SetUnitLifeRegen(u,GetUnitLifeRegen(u)+GetUnitState(u,UNIT_STATE_MAX_LIFE)*(0.005+0.0001*GetUnitAbilityLevel(u,'A0IR')))
         call TimerStart(cjlocgn_00000000,0.1,true,function MajinVegeta)
     endif
 endif
@@ -25536,38 +25476,6 @@ call TimerStart(t,0.01,true,function BloodSphereMPRegenCast2)
 set t=null
 set u=null
 endfunction
-function SunMareRingRegenCast2 takes nothing returns nothing
-local timer t=GetExpiredTimer()
-local integer id=GetHandleId(t)
-local unit u=LoadUnitHandle(h,id,1)
-local real dmg=0
-if SunRing(u)>0 and udg_B==true and DU2==true then
-    if LoadReal(h,id,0)!=SunRing(u)*I2R(GetHeroInt(u,true)) then
-        //call BJDebugMsg(R2S(LoadReal(h,id,0))+"     "+R2S(SunRing(u)*I2R(GetHeroInt(u,true))))
-        call SetUnitLifeRegen(u,GetUnitLifeRegen(u)-LoadReal(h,id,0))
-        call SaveReal(h,id,0,SunRing(u)*I2R(GetHeroInt(u,true)))
-        call SetUnitLifeRegen(u,GetUnitLifeRegen(u)+LoadReal(h,id,0))
-    endif
-else
-    call SaveInteger(HH,GetHandleId(u),StringHash("SunMareRing"),0)
-    call SetUnitLifeRegen(u,GetUnitLifeRegen(u)-LoadReal(h,id,0))
-    call DestroyTimer(t)
-    call FlushChildHashtable(h,id)
-endif
-set t=null
-set u=null
-endfunction
-function SunMareRingRegenCast takes unit u returns nothing
-local timer t=CreateTimer()
-local integer id=GetHandleId(t)
-call SaveUnitHandle(h,id,1,u)
-call SaveReal(h,id,0,SunRing(u)*I2R(GetHeroInt(u,true)))
-call SetUnitLifeRegen(u,GetUnitLifeRegen(u)+SunRing(u)*I2R(GetHeroInt(u,true)))
-call SaveInteger(HH,GetHandleId(u),StringHash("SunMareRing"),1)
-call TimerStart(t,0.1,true,function SunMareRingRegenCast2)
-set t=null
-set u=null
-endfunction
 function IceSphereRegenCast2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
@@ -25969,9 +25877,14 @@ function Trig_Multup_Actions takes nothing returns nothing
             if (UnitHasItemOfTypeBJ(Hero[x],'I02S') or GetUnitAbilityLevel(Hero[x],'KIG0')>0) and LoadInteger(HH,GetHandleId(Hero[x]),StringHash("IceSphere"))!=1 then
                 call IceSphereRegenCast(Hero[x])
             endif
-            if UnitIsAlive(Hero[x]) and SunRing(Hero[x])>0 and LoadInteger(HH,GetHandleId(Hero[x]),StringHash("SunMareRing"))!=1 then
-                call SunMareRingRegenCast(Hero[x])
-                // call BJDebugMsg("test")
+            if UnitIsAlive(Hero[x]) then
+                if GetUnitAbilityLevel(Hero[x],'A18B')>0 then
+                    call HealTextTag(Hero[x],Hero[x],0.045*SunRing(Hero[x])*I2R(GetHeroInt(Hero[x],true))*myCustomHeal2(Hero[x],1),"HealthRes")
+                    call SetUnitState(Hero[x],UNIT_STATE_LIFE,GetWidgetLife(Hero[x])+0.045*SunRing(Hero[x])*I2R(GetHeroInt(Hero[x],true)))
+                else
+                    call HealTextTag(Hero[x],Hero[x],0.015*SunRing(Hero[x])*I2R(GetHeroInt(Hero[x],true))*myCustomHeal2(Hero[x],1),"HealthRes")
+                    call SetUnitState(Hero[x],UNIT_STATE_LIFE,GetWidgetLife(Hero[x])+0.015*SunRing(Hero[x])*I2R(GetHeroInt(Hero[x],true)))
+                endif
             endif
             if IsUnitPaused(Hero[x])==false and UnitHasItemOfTypeBJ(Hero[x],'I02K')==true and GetWidgetLife(Hero[x])>0.01*GetWidgetMaxLife(Hero[x]) then
                 call SetUnitState(Hero[x],UNIT_STATE_LIFE,GetWidgetLife(Hero[x])-(0.001*GetWidgetMaxLife(Hero[x])+1))
@@ -41685,9 +41598,9 @@ if cond==0 then
         endif
         if b>100 and (UnitHasItemOfTypeBJ(u,'I05H') or GetUnitAbilityLevel(u,'KIS4')>0) and nb>100 then
             if GetUnitAbilityLevel(u,'A18B')==0 then
-                call HealCast(u,nb*0.1,5)
+            call HealCast(u,nb*0.1,5)
             else
-                call HealCast(u,nb*0.3,5)
+            call HealCast(u,nb*0.3,5)
             endif
         endif
         if b>(GetUnitState(u,UNIT_STATE_MAX_LIFE) * 0.03) and GetUnitAbilityLevel(u,'A06Y')>0 and nb>0 then
@@ -45873,7 +45786,7 @@ function GetInventoryIndexOfItem takes unit whichUnit, integer itemId returns in
         endif
 
         set index = index + 1
-        exitwhen index >= 6
+        exitwhen index >= 10
     endloop
 
     return 0
@@ -45890,90 +45803,36 @@ endfunction
 
 function BuffGrimoireTimerLoop takes nothing returns nothing
     local integer   hh   = MUIHandle()
-    local unit u=LoadUnitHandle(HH,hh,CasterHash)
-    local real hpl = GetUnitState(u, UNIT_STATE_LIFE)
-    local real hpml = GetUnitState(u, UNIT_STATE_MAX_LIFE)
-    local real mpl = GetUnitState(u, UNIT_STATE_MANA)
-    local real mpml = GetUnitState(u, UNIT_STATE_MAX_MANA)
+    local real hpl = GetUnitState(LoadUnitHandle(HH,hh,CasterHash), UNIT_STATE_LIFE)
+    local real hpml = GetUnitState(LoadUnitHandle(HH,hh,CasterHash), UNIT_STATE_MAX_LIFE)
+    local real mpl = GetUnitState(LoadUnitHandle(HH,hh,CasterHash), UNIT_STATE_MANA)
+    local real mpml = GetUnitState(LoadUnitHandle(HH,hh,CasterHash), UNIT_STATE_MAX_MANA)
     if DU2 and udg_B then
-        if GetItemById(u, 'I06W') != null then
-            if hpl < hpml and IsUnitType(u, UNIT_TYPE_DEAD) == false and mpl > (mpml*0.06) then
-                // call HealTextTag(u,u,  ((hpml * 0.02)*0.1)*myCustomHeal2(u,1),"HealthRes")
-                // call SetUnitState(u, UNIT_STATE_LIFE,hpl + ((hpml * 0.02)*0.1))
-                // call SetUnitState(u, UNIT_STATE_MANA,mpl - ((mpml * 0.035)*0.1))
-                if LoadReal(HH,hh,'grh+')!=hpml * 0.02 then
-                    //call BJDebugMsg(R2S(LoadReal(h,id,0))+"     "+R2S(SunRing(u)*I2R(GetHeroInt(u,true))))
-                    call SetUnitLifeRegen(u,GetUnitLifeRegen(u)-LoadReal(HH,hh,'grh+'))
-                    call SaveReal(HH,hh,'grh+',hpml * 0.02)
-                    call SetUnitLifeRegen(u,GetUnitLifeRegen(u)+LoadReal(HH,hh,'grh+'))
-                endif
-                if LoadReal(HH,hh,'grm+')!=mpml * 0.035 then
-                    //call BJDebugMsg(R2S(LoadReal(h,id,0))+"     "+R2S(SunRing(u)*I2R(GetHeroInt(u,true))))
-                    call SetUnitLifeRegen(u,GetUnitManaRegen(u)+LoadReal(HH,hh,'grm+'))
-                    call SaveReal(HH,hh,'grm+',mpml * 0.035)
-                    call SetUnitLifeRegen(u,GetUnitManaRegen(u)-LoadReal(HH,hh,'grm+'))
-                endif
-            elseif LoadReal(HH,hh,'grh+')!=0 then
-                call SetUnitLifeRegen(u,GetUnitLifeRegen(u)-LoadReal(HH,hh,'grh+'))
-                call SaveReal(HH,hh,'grh+',0)
-                call SetUnitLifeRegen(u,GetUnitManaRegen(u)+LoadReal(HH,hh,'grm+'))
-                call SaveReal(HH,hh,'grm+',0)
+        if GetItemById(LoadUnitHandle(HH,hh,CasterHash), 'I06W') != null then
+            if hpl < hpml and IsUnitType(LoadUnitHandle(HH,hh,CasterHash), UNIT_TYPE_DEAD) == false and mpl > (mpml*0.06) then
+                call HealTextTag(LoadUnitHandle(HH,hh,CasterHash),LoadUnitHandle(HH,hh,CasterHash),  ((hpml * 0.02)*0.1)*myCustomHeal2(LoadUnitHandle(HH,hh,CasterHash),1),"HealthRes")
+                call SetUnitState(LoadUnitHandle(HH,hh,CasterHash), UNIT_STATE_LIFE,hpl + ((hpml * 0.02)*0.1))
+                call SetUnitState(LoadUnitHandle(HH,hh,CasterHash), UNIT_STATE_MANA,mpl - ((mpml * 0.035)*0.1))
             endif
-        elseif GetItemById(u, 'I06X') != null then
-            if mpl < mpml and IsUnitType(u, UNIT_TYPE_DEAD) == false and hpl > (hpml*0.06) then
-                // call HealTextTag(u,u,  ((mpml * 0.035)*0.1)*myCustomMana2(u,1),"ManaRes")
-                // call SetUnitState(u, UNIT_STATE_LIFE,hpl - ((hpml * 0.02)*0.1))
-                // call SetUnitState(u, UNIT_STATE_MANA,mpl + ((mpml * 0.035)*0.1))
-                if LoadReal(HH,hh,'grh+')!=hpml * 0.02 then
-                    //call BJDebugMsg(R2S(LoadReal(h,id,0))+"     "+R2S(SunRing(u)*I2R(GetHeroInt(u,true))))
-                    call SetUnitLifeRegen(u,GetUnitLifeRegen(u)+LoadReal(HH,hh,'grh+'))
-                    call SaveReal(HH,hh,'grh+',hpml * 0.02)
-                    call SetUnitLifeRegen(u,GetUnitLifeRegen(u)-LoadReal(HH,hh,'grh+'))
-                endif
-                if LoadReal(HH,hh,'grm+')!=mpml * 0.035 then
-                    //call BJDebugMsg(R2S(LoadReal(h,id,0))+"     "+R2S(SunRing(u)*I2R(GetHeroInt(u,true))))
-                    call SetUnitLifeRegen(u,GetUnitManaRegen(u)-LoadReal(HH,hh,'grm+'))
-                    call SaveReal(HH,hh,'grm+',mpml * 0.035)
-                    call SetUnitLifeRegen(u,GetUnitManaRegen(u)+LoadReal(HH,hh,'grm+'))
-                endif
-            elseif LoadReal(HH,hh,'grh+')!=0 then
-                call SetUnitLifeRegen(u,GetUnitLifeRegen(u)+LoadReal(HH,hh,'grh+'))
-                call SaveReal(HH,hh,'grh+',0)
-                call SetUnitLifeRegen(u,GetUnitManaRegen(u)-LoadReal(HH,hh,'grm+'))
-                call SaveReal(HH,hh,'grm+',0)
+        elseif GetItemById(LoadUnitHandle(HH,hh,CasterHash), 'I06X') != null then
+            if mpl < mpml and IsUnitType(LoadUnitHandle(HH,hh,CasterHash), UNIT_TYPE_DEAD) == false and hpl > (hpml*0.06) then
+                call HealTextTag(LoadUnitHandle(HH,hh,CasterHash),LoadUnitHandle(HH,hh,CasterHash),  ((mpml * 0.035)*0.1)*myCustomMana2(LoadUnitHandle(HH,hh,CasterHash),1),"ManaRes")
+                call SetUnitState(LoadUnitHandle(HH,hh,CasterHash), UNIT_STATE_LIFE,hpl - ((hpml * 0.02)*0.1))
+                call SetUnitState(LoadUnitHandle(HH,hh,CasterHash), UNIT_STATE_MANA,mpl + ((mpml * 0.035)*0.1))
             endif
-        elseif GetItemById(u, 'I06Z') != null and LoadReal(HH,hh,'grh+')!=0 then
-            call SetUnitLifeRegen(u,GetUnitLifeRegen(u)+LoadReal(HH,hh,'grh+'))
-            call SaveReal(HH,hh,'grh+',0)
-            call SetUnitLifeRegen(u,GetUnitManaRegen(u)-LoadReal(HH,hh,'grm+'))
-            call SaveReal(HH,hh,'grm+',0)
         endif
         
     endif
-    if GetItemById(u, 'I06W') == null and GetItemById(u, 'I06X') == null and GetItemById(u, 'I06Z') == null then
-        call SaveBoolean(HH, GetHandleId(u), StringHash("IsEnabled"), false)
-        if LoadReal(HH,hh,'grh+')<0 then
-            call SetUnitLifeRegen(u,GetUnitLifeRegen(u)+LoadReal(HH,hh,'grh+'))
-            call SaveReal(HH,hh,'grh+',0)
-            call SetUnitLifeRegen(u,GetUnitManaRegen(u)-LoadReal(HH,hh,'grm+'))
-            call SaveReal(HH,hh,'grm+',0)
-        elseif LoadReal(HH,hh,'grh+')>0 then
-            call SetUnitLifeRegen(u,GetUnitLifeRegen(u)-LoadReal(HH,hh,'grh+'))
-            call SaveReal(HH,hh,'grh+',0)
-            call SetUnitLifeRegen(u,GetUnitManaRegen(u)+LoadReal(HH,hh,'grm+'))
-            call SaveReal(HH,hh,'grm+',0)
-        endif
+    if GetItemById(LoadUnitHandle(HH,hh,CasterHash), 'I06W') == null and GetItemById(LoadUnitHandle(HH,hh,CasterHash), 'I06X') == null and GetItemById(LoadUnitHandle(HH,hh,CasterHash), 'I06Z') == null then
+        call SaveBoolean(HH, GetHandleId(LoadUnitHandle(HH,hh,CasterHash)), StringHash("IsEnabled"), false)
         call Clear(hh)
     endif
-    set u=null
 endfunction 
 
 function BuffGrimoireTimer takes unit a returns nothing
     local integer PID = GetPlayerId(GetOwningPlayer(a))
     local integer hh = NewTimer(PID)
     call SaveBoolean(HH, GetHandleId(a), StringHash("IsEnabled"), true)
-    call SaveReal(HH,hh,'grh+',0)
-    call SaveReal(HH,hh,'grm+',0)
     call SaveAgentHandle(HH,hh,CasterHash,a)
     call TimerStart(LoadTimer(PID), 0.1, true, function BuffGrimoireTimerLoop)
 endfunction
@@ -204318,9 +204177,9 @@ function IchigoShikaiT_MorfPeriodic takes nothing returns nothing
 		    call SetHeroStr(caster,GetHeroStr(caster,false)-20,true)
 
             call StartAbilityCooldown(GetUnitAbility(caster, 'IcQ1'), GetAbilityRemainingCooldown(GetUnitAbility(caster, 'IcQ3')))
-            call StartAbilityCooldown(GetUnitAbility(caster, 'IcW1'), GetAbilityRemainingCooldown(GetUnitAbility(caster, 'IcW2')))
-            call StartAbilityCooldown(GetUnitAbility(caster, 'IcE1'), GetAbilityRemainingCooldown(GetUnitAbility(caster, 'IcE2')))
-            call StartAbilityCooldown(GetUnitAbility(caster, 'IcR1'), GetAbilityRemainingCooldown(GetUnitAbility(caster, 'IcR2')))
+                        call StartAbilityCooldown(GetUnitAbility(caster, 'IcW1'), GetAbilityRemainingCooldown(GetUnitAbility(caster, 'IcW2')))
+                        call StartAbilityCooldown(GetUnitAbility(caster, 'IcE1'), GetAbilityRemainingCooldown(GetUnitAbility(caster, 'IcE2')))
+                        call StartAbilityCooldown(GetUnitAbility(caster, 'IcR1'), GetAbilityRemainingCooldown(GetUnitAbility(caster, 'IcR2')))
                         
             if IsUnitPaused(caster)==false then
                 call IssueImmediateOrder(caster, "stop")
@@ -205548,9 +205407,6 @@ function IchigoBankaiR_Periodic2 takes nothing returns nothing
         call SaveBoolean(HH,GetHandleId(target),TARGET_ABILITY,false)
         call SetUnitInvulnerable(caster, false)
         call SetUnitInvulnerable(target, false)
-        if (1-GetWidgetLife(target)/GetWidgetMaxLife(target))>0.5 then
-            set bonus_damage=LoadReal(h, id, 2)*0.5
-        endif
         call myCustomDamage(caster, target, LoadReal(h, id, 2)+bonus_damage, false,false,null,null,null)
         call FlushChildHashtable(h, id)
         call PauseTimer(GetExpiredTimer())
