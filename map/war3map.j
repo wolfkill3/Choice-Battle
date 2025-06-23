@@ -45786,7 +45786,7 @@ function GetInventoryIndexOfItem takes unit whichUnit, integer itemId returns in
         endif
 
         set index = index + 1
-        exitwhen index >= 10
+        exitwhen index >= 6
     endloop
 
     return 0
@@ -45870,6 +45870,7 @@ local trigger t2=CreateTrigger()
 local integer i=0
 loop
 call TriggerRegisterPlayerUnitEvent(t,Player(i),EVENT_PLAYER_UNIT_USE_ITEM,null)
+call TriggerRegisterPlayerUnitEvent(t2,Player(i),EVENT_PLAYER_UNIT_MOVE_ITEM_SLOT,null)
 call TriggerRegisterPlayerUnitEvent(t2,Player(i),EVENT_PLAYER_UNIT_PICKUP_ITEM,null)
 set i=i+1
 exitwhen i>=bj_MAX_PLAYER_SLOTS
@@ -205407,6 +205408,9 @@ function IchigoBankaiR_Periodic2 takes nothing returns nothing
         call SaveBoolean(HH,GetHandleId(target),TARGET_ABILITY,false)
         call SetUnitInvulnerable(caster, false)
         call SetUnitInvulnerable(target, false)
+        if (1-GetWidgetLife(target)/GetWidgetMaxLife(target))>0.5 then
+            set bonus_damage=LoadReal(h, id, 2)*0.5
+        endif
         call myCustomDamage(caster, target, LoadReal(h, id, 2)+bonus_damage, false,false,null,null,null)
         call FlushChildHashtable(h, id)
         call PauseTimer(GetExpiredTimer())
