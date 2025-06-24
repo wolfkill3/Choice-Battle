@@ -23747,13 +23747,12 @@ call TimerStart(cjlocgn_00000000,16-GetHeroLevel(u) / 3,true,function HieHieNoMi
 call SaveBoolean(HH,GetHandleId(u),StringHash("heal"),true)
 set cjlocgn_00000000=null
 endif
+if GetUnitTypeId(u)=='HKar' then
+call SetAbilityIntegerLevelField(GetUnitAbility(u,'KaA1'), ABILITY_ILF_MANA_COST,0,50+GetHeroLevel(u)*5)
+endif
 if GetUnitTypeId(u)=='H058' and GetHeroLevel(u)>=6 then
 call SetUnitAbilityLevel(u,'A11O',(GetHeroLevel(u)-2) / 4)
-endif
-if GetUnitTypeId(u)=='H058' and GetHeroLevel(u)>=6 then
 call SetUnitAbilityLevel(u,'A11M',(GetHeroLevel(u)-2) / 4)
-endif
-if GetUnitTypeId(u)=='H058' and GetHeroLevel(u)>=6 then
 call SetUnitAbilityLevel(u,'A11X',(GetHeroLevel(u)-2) / 4)
 endif
 set u=null
@@ -63723,6 +63722,7 @@ set ide=GetHandleId(E)
 exitwhen E==null
 if Condition_Base(p,E)and E!=LoadUnitHandle(h,l__idg,ide)then
 call myCustomDamage(u,E,dmg,false,false,null,null,null)
+call ReduceHeal(u, E, 0.5, 4)
 call SaveUnitHandle(h,l__idg,ide,E)
 endif
 call GroupRemoveUnit(g,E)
@@ -207078,8 +207078,7 @@ function KarnaQ_LaserBlastAct takes nothing returns nothing
     local real    point_x = LoadReal(h, id, 1)
     local real    point_y = LoadReal(h, id, 2)
     local boolean second_anim   = LoadBoolean(h, id, 4)
-    local real    damage_factor = LoadReal(h, id, 3)
-    local real    damage        = GetHeroAgi(caster, true)*GetUnitAbilityLevel(caster, 'KaA3')
+    local real    damage        = GetHeroAgi(caster, true)*(1+GetHeroLevel(caster)*0.1)
     //set damage = damage + damage*0.3*(damage_factor-1.0)/8.3
 
     set n = CreateUnit(GetOwningPlayer(caster), 'dR36', point_x, point_y, GetRandomInt(0, 360))
@@ -207126,14 +207125,7 @@ function KarnaQ_LaserBlastAct takes nothing returns nothing
             //     call SetUnitFlyHeight(n, 100, 0)
             //     call MyRemoveUnit(n, 2.5)
             // endif
-            if Karna_ModifAttack(caster, E, damage_factor*0.7, damage*0.7, 0.6, false) then
-                if GetUnitAbilityLevel(caster,'BoPB')>0 then
-                    call Push5(E,35,AU(caster,E),70,"")
-                endif
-                if GetUnitAbilityLevel(caster,'BoPD')>0 then
-                    call Push5(E,35,AU(E,caster),70,"")
-                endif
-            endif
+            call myCustomDamage(caster, E, damage, false,false,null,null,null)
             call SetControlToUnit(E, E, 1.0, "stun")
             call UnitAddAbility(E, 'KaAW')
             call UnitMakeAbilityPermanent(E, true, 'KaAW')
@@ -207148,7 +207140,7 @@ function KarnaQ_LaserBlastAct takes nothing returns nothing
     set caster   = null
 endfunction
 
-function KarnaQ_LaserBlast takes unit newCaster, real point_x, real point_y, real damage_factor, boolean second_anim returns nothing
+function KarnaQ_LaserBlast takes unit newCaster, real point_x, real point_y, boolean second_anim returns nothing
     local timer newTimer = CreateTimer()
     local integer id     = GetHandleId(newTimer)
 
@@ -207159,7 +207151,6 @@ function KarnaQ_LaserBlast takes unit newCaster, real point_x, real point_y, rea
     call SaveUnitHandle(h, id, 0, newCaster)
     call SaveReal(h, id, 1, point_x)
     call SaveReal(h, id, 2, point_y)
-    call SaveReal(h, id, 3, damage_factor)
     call SaveBoolean(h, id, 4, second_anim)
     call TimerStart(newTimer, 1.0, false, function KarnaQ_LaserBlastAct)
     set newTimer = null
@@ -207177,10 +207168,10 @@ function KarnaQ1_Periodic2 takes nothing returns nothing
     local integer eff_period    = LoadInteger(h, id, 6)
     //set damage = damage + damage*0.3*(damage_factor-1.0)/8.3
     if distance>0 and LoadBoolean(HH,GetHandleId(caster),DASH_USER)==true then
-        call SetUnitX(dummy, GetUnitX(dummy)+40*Cos(angle))
-        call SetUnitY(dummy, GetUnitY(dummy)+40*Sin(angle))
-        call SaveReal(h, id, 4, distance-40)
-        call GroupEnumUnitsInRange(G, GetUnitX(dummy), GetUnitY(dummy), (100+distance*0.3), Base)
+        call SetUnitX(dummy, GetUnitX(dummy)+50*Cos(angle))
+        call SetUnitY(dummy, GetUnitY(dummy)+50*Sin(angle))
+        call SaveReal(h, id, 4, distance-50)
+        call GroupEnumUnitsInRange(G, GetUnitX(dummy), GetUnitY(dummy), 220, Base)
         loop
             set E=FirstOfGroup(G)
             exitwhen E==null
@@ -207259,29 +207250,29 @@ function KarnaQ1_Periodic1 takes nothing returns nothing
         call SaveReal(h, id, 3, duration)
     else
         call ShakeCamera(0.3, 10)
-        set n=CreateUnit(GetOwningPlayer(caster), 'd131', GetUnitX(caster)+400*Cos(angle), GetUnitY(caster)+400*Sin(angle), angle*bj_RADTODEG)
+        set n=CreateUnit(GetOwningPlayer(caster), 'd131', GetUnitX(caster)+200*Cos(angle), GetUnitY(caster)+200*Sin(angle), angle*bj_RADTODEG)
         call SetUnitFlyHeight(n, 100, 0)
-        call UnitScale(n, 0.1, 4.0, 0.2)
+        call UnitScale(n, 0.1, 2.0, 0.2)
         call UnitApplyTimedLife(n,'BTLF', 0.4)
         call MyRemoveUnit(n, 1.5)
-        set n=CreateUnit(GetOwningPlayer(caster), 'd131', GetUnitX(caster)+400*Cos(angle), GetUnitY(caster)+400*Sin(angle), angle*bj_RADTODEG)
+        set n=CreateUnit(GetOwningPlayer(caster), 'd131', GetUnitX(caster)+200*Cos(angle), GetUnitY(caster)+200*Sin(angle), angle*bj_RADTODEG)
         call SetUnitFlyHeight(n, 100, 0)
-        call SetUnitScale(n, 4.0, 4.0, 4.0)
+        call SetUnitScale(n, 2.0, 2.0, 2.0)
         call KillUnit(n)
         call MyRemoveUnit(n, 1.5)
 
-        set n=CreateUnit(GetOwningPlayer(caster), 'dR39', GetUnitX(caster)+250*Cos(angle), GetUnitY(caster)+250*Sin(angle), angle*bj_RADTODEG+90)
+        set n=CreateUnit(GetOwningPlayer(caster), 'dR39', GetUnitX(caster)+150*Cos(angle), GetUnitY(caster)+150*Sin(angle), angle*bj_RADTODEG+90)
         call SetUnitFlyHeight(n, 50, 0)
-        call UnitScale(n, 0.1, 1.5, 0.2)
+        call UnitScale(n, 0.1, 1.1, 0.2)
         call MyRemoveUnit(n, 1.4)
         set n=CreateUnit(GetOwningPlayer(caster), 'dR39', GetUnitX(caster), GetUnitY(caster), angle*bj_RADTODEG+90)
         call SetUnitFlyHeight(n, 50, 0)
-        call UnitScale(n, 0.1, 1.5, 0.2)
+        call UnitScale(n, 0.1, 1.3, 0.2)
         call MyRemoveUnit(n, 1.4)
 
-        set n=CreateUnit(GetOwningPlayer(caster), 'dR39', GetUnitX(caster)+250*Cos(angle), GetUnitY(caster)+250*Sin(angle), angle*bj_RADTODEG+90)
+        set n=CreateUnit(GetOwningPlayer(caster), 'dR39', GetUnitX(caster)+150*Cos(angle), GetUnitY(caster)+150*Sin(angle), angle*bj_RADTODEG+90)
         call SetUnitFlyHeight(n, 50, 0)
-        call UnitScale(n, 0.1, 2.2, 0.2)
+        call UnitScale(n, 0.1, 1.5, 0.2)
         call MyRemoveUnit(n, 1.4)
         
         set n=CreateUnit(GetOwningPlayer(caster), 'dAlb', GetUnitX(caster), GetUnitY(caster), angle*bj_RADTODEG)
@@ -207310,7 +207301,10 @@ function KarnaQ1_Cast takes unit newCaster, real point_x, real point_y returns n
     call PauseUnit(newCaster, true)
     call SetUnitInvulnerable(newCaster, true)
     call SetUnitAnimationByIndex(newCaster, 13)
-	
+    if SquareRootPoint(caster_x, caster_y, point_x, point_y)>1000 then
+        set point_x=caster_x+1000*Cos(angle)
+        set point_y=caster_y+1000*Sin(angle)
+    endif
 	call RengokuE_Shifting(newCaster, newCaster, angle, SquareRootPoint(caster_x, caster_y, point_x, point_y), CreateTimer())
 	set bjLCU=CreateUnit(GetOwningPlayer(newCaster), 'dH05', caster_x, caster_y, angle*bj_RADTODEG)
 	call SetUnitScale(bjLCU, 1.5, 1.5, 1.5)
@@ -207333,7 +207327,7 @@ function KarnaQ1_Cast takes unit newCaster, real point_x, real point_y returns n
     call SaveReal(h, id, 1, LoadReal(HH, GetHandleId(newCaster), KarnaQ_Damage)) // фулл урон спелла
     call SaveReal(h, id, 2, angle)
     call SaveReal(h, id, 3, 0.5)  // время ожидания первого акта
-    call SaveReal(h, id, 4, 900) // дальность спелла
+    call SaveReal(h, id, 4, 350) // дальность спелла
     call SaveReal(HH, GetHandleId(newCaster), KarnaQ_Damage, 0.0)
     call TimerStart(newTimer, 0.1, true, function KarnaQ1_Periodic1)
     set newTimer = null
@@ -207407,12 +207401,12 @@ function KarnaQ2_Periodic takes nothing returns nothing
                     endif
                     call RengokuW_EW_Act(caster, bjLCU , LoadReal(h, id, 19) , null, 800)
                     call SetControlToUnit(bjLCU, bjLCU, 2.0, "stun")
+                    call SlowUnit(caster,bjLCU,0.5,0.5,3,0,false)
                     //call RengokuE_Shifting(caster , bjLCU , LoadReal(h, id, 19) , 150 , CreateTimer())
-                    //call SlowUnit(caster,bjLCU,0.5,0.5,3,0,false)
-					set n=CreateUnit(GetOwningPlayer(caster), 'dAlb', GetUnitX(bjLCU), GetUnitY(bjLCU), 0)
-                    call UnitAddAbility(n, 'RenS')
-                    call IssueTargetOrder(n, "slow", bjLCU)
-                    call MyRemoveUnit(n , 1.25)
+					// set n=CreateUnit(GetOwningPlayer(caster), 'dAlb', GetUnitX(bjLCU), GetUnitY(bjLCU), 0)
+                    // call UnitAddAbility(n, 'RenS')
+                    // call IssueTargetOrder(n, "slow", bjLCU)
+                    // call MyRemoveUnit(n , 1.25)
 					set n=CreateUnit(GetOwningPlayer(caster), 'dR36', GetUnitX(bjLCU), GetUnitY(bjLCU), GetRandomInt(0, 360))
 					call SetUnitScale(n, 2, 2, 2)
 					call MyRemoveUnit(n, 1.5)
@@ -207516,6 +207510,10 @@ function KarnaQ2_Cast takes unit newCaster,real point_x,real point_y returns not
     call SetUnitInvulnerable(newCaster, true)
     call SetUnitAnimationByIndex(newCaster, 8)
     call SetUnitTimeScale(newCaster, 1.5)
+    if SquareRootPoint(caster_x, caster_y, point_x, point_y)>1000 then
+        set point_x=caster_x+1000*Cos(angle)
+        set point_y=caster_y+1000*Sin(angle)
+    endif
 	call RengokuE_Shifting(newCaster, newCaster, angle, SquareRootPoint(caster_x, caster_y, point_x, point_y), CreateTimer())
 	
 	set bjLCU=CreateUnit(GetOwningPlayer(newCaster), 'dH05', caster_x, caster_y, angle*bj_RADTODEG)
@@ -207555,8 +207553,7 @@ function KarnaQ1_LPeriodic2 takes nothing returns nothing
     local unit    dummy  = LoadUnitHandle(h, id, 5)
     local real    distance = LoadReal(h, id, 4)
     local real    angle    = LoadReal(h, id, 2)
-    local real    damage_factor = LoadReal(h, id, 1) * 0.6
-    local real    damage        = GetHeroAgi(caster, true)*GetUnitAbilityLevel(caster, 'KaA3')
+    local real    damage        = GetHeroAgi(caster, true)*(0.75+GetHeroLevel(caster)*0.05)
     local integer eff_period    = LoadInteger(h, id, 6)
     //set damage = damage + damage*0.3*(damage_factor-1.0)/8.3
     if distance>0 then
@@ -207579,23 +207576,17 @@ function KarnaQ1_LPeriodic2 takes nothing returns nothing
                 //     call SetUnitFlyHeight(n, 100, 0)
                 //     call MyRemoveUnit(n, 2.5)
                 // endif
-                if Karna_ModifAttack(caster, E, damage_factor*0.4, damage*0.4, 0.6, false) then
-                    call SetControlToUnit(E, E, 1.0, "stun")
-                    if GetUnitAbilityLevel(caster,'BoPB')>0 then
-                        call Push5(E,35,AU(caster,E),70,"")
-                    endif
-                    if GetUnitAbilityLevel(caster,'BoPD')>0 then
-                        call Push5(E,35,AU(E,caster),70,"")
-                    endif
-                endif
+                call myCustomDamage(caster, E, damage, false,false,null,null,null)
+                call SetControlToUnit(E, E, 1.0, "stun")
                 call UnitAddAbility(E, 'KaAW')
                 call UnitMakeAbilityPermanent(E, true, 'KaAW')
                 call UnitRemoveAbilityTimed(E, 'KaAW', 0.2)
                 call AGilPush(E,10,angle,50)
-                set n=CreateUnit(GetOwningPlayer(caster), 'dAlb', GetUnitX(E), GetUnitY(E), 0)
-				call UnitAddAbility(n, 'RenS')
-				call IssueTargetOrder(n, "slow", E)
-				call MyRemoveUnit(n , 1.25)
+                // set n=CreateUnit(GetOwningPlayer(caster), 'dAlb', GetUnitX(E), GetUnitY(E), 0)
+				// call UnitAddAbility(n, 'RenS')
+				// call IssueTargetOrder(n, "slow", E)
+				// call MyRemoveUnit(n , 1.25)
+                call SlowUnit(caster,E,0.5,0.5,3,0,false)
             endif
         call GroupRemoveUnit(G, E)
         endloop
@@ -207616,7 +207607,7 @@ function KarnaQ1_LPeriodic2 takes nothing returns nothing
 			// call MyRemoveUnit(n, 1.7)
 
             if eff_period<=0 then
-                call KarnaQ_LaserBlast(caster, GetUnitX(dummy), GetUnitY(dummy), damage_factor, false)
+                call KarnaQ_LaserBlast(caster, GetUnitX(dummy), GetUnitY(dummy), false)
                 call SaveInteger(h, id, 6, 4)
             else
                 call SaveInteger(h, id, 6, eff_period - 1)
@@ -207687,11 +207678,10 @@ function KarnaQ1_Laser takes unit newCaster, real point_x, real point_y returns 
     call SetUnitAnimationByIndex(newCaster, 14)
     call SetUnitTimeScale(newCaster, 3.2)
     call SaveUnitHandle(h, id, 0, newCaster)
-    call SaveReal(h, id, 1, LoadReal(HH, GetHandleId(newCaster), KarnaQ_Damage)) // фулл урон спелла
     call SaveReal(h, id, 2, angle)
     call SaveReal(h, id, 3, 0.5)  // время ожидания первого акта
     call SaveReal(h, id, 4, 2500) // дальность спелла
-    call SaveReal(HH, GetHandleId(newCaster), KarnaQ_Damage, 0.0)
+    //call SaveReal(HH, GetHandleId(newCaster), KarnaQ_Damage, 0.0)
     call TimerStart(newTimer, 0.1, true, function KarnaQ1_LPeriodic1)
     set newTimer = null
 endfunction
@@ -209858,7 +209848,7 @@ function Trig_KarnaInt_Actions takes nothing returns nothing
         call KarnaD_Active(GetSpellAbilityUnit())
     endif
 
-    if GetSpellAbilityId()=='KaA3' or GetSpellAbilityId()=='KaA3' or GetSpellAbilityId()=='KaA6' or GetSpellAbilityId()=='KaA8' or GetSpellAbilityId()=='KaAA' then
+    if GetSpellAbilityId()=='KaA3' or GetSpellAbilityId()=='KaA3' or GetSpellAbilityId()=='KaA6' or GetSpellAbilityId()=='KaA8' or GetSpellAbilityId()=='KaAA' or GetSpellAbilityId()=='KaA1' then
         call KarnaD_AddStack(GetSpellAbilityUnit())
     endif
 
@@ -209866,16 +209856,16 @@ function Trig_KarnaInt_Actions takes nothing returns nothing
         call KarnaQ_Cast(GetSpellAbilityUnit())
     endif
     
-    if GetSpellAbilityId()=='KaA4' and SquareRootPoint(GetUnitX(GetSpellAbilityUnit()), GetUnitY(GetSpellAbilityUnit()),GetSpellTargetX(), GetSpellTargetY())>=1000 then
-        call KarnaQ1_Laser(GetSpellAbilityUnit(), GetSpellTargetX(), GetSpellTargetY())
-    elseif GetSpellAbilityId()=='KaA4' then
+    if GetSpellAbilityId()=='KaA4' then
         call KarnaQ1_Cast(GetSpellAbilityUnit(), GetSpellTargetX(), GetSpellTargetY())
     endif
 
-    if GetSpellAbilityId()=='KaA5' and SquareRootPoint(GetUnitX(GetSpellAbilityUnit()), GetUnitY(GetSpellAbilityUnit()),GetSpellTargetX(), GetSpellTargetY())>=1000 then
-        call KarnaQ1_Laser(GetSpellAbilityUnit(), GetSpellTargetX(), GetSpellTargetY())
-    elseif GetSpellAbilityId()=='KaA5' then
+    if GetSpellAbilityId()=='KaA5' then
         call KarnaQ2_Cast(GetSpellAbilityUnit(), GetSpellTargetX(), GetSpellTargetY())
+    endif
+    
+    if GetSpellAbilityId()=='KaA1' then
+        call KarnaQ1_Laser(GetSpellAbilityUnit(), GetSpellTargetX(), GetSpellTargetY())
     endif
 
     if GetSpellAbilityId()=='KaA6' then
@@ -213798,7 +213788,7 @@ function YoruichiTCast3 takes nothing returns nothing
         if SR(x,y,x2,y2)<300 or time2>0.3 then
             call SetUnitInvulnerable(u,true)
             call PauseUnit(u,true)
-            if jump>4 then
+            if jump>3 then
                 call SaveReal(h,id,7,0)
                 call GroupEnumUnitsInRange(g,x1,y1,1800,Base)
                 if NumberOfEnemiesInEachGroupHeroes(g,p)>0 then
@@ -213846,7 +213836,7 @@ function YoruichiTCast3 takes nothing returns nothing
                 call myCustomDamage(u,E,dmg,false,false,null,null,null)
                 call SetControlToUnit(u,E,0.1,"stun")
                 call UnitAddAbility(E,'YoT1')
-                call UnitRemoveAbilityTimed(E,'YoT1',0.5)
+                call UnitRemoveAbilityTimed(E,'YoT1',0.4)
             endif
             call GroupRemoveUnit(G,E)
         endloop
@@ -214959,9 +214949,9 @@ function TobiramaTCast2 takes nothing returns nothing
                     exitwhen E==null
                     if Condition_Base(p,E)then
                         call myCustomDamage(u,E,dmg/100,false,false,null,null,null)
-                        //if ModuloReal(time,0.06)<0.01 then
-                        //    call SetControlToUnit(E,E, 0.5, "stun")
-                        //endif
+                        if ModuloReal(time,0.25)<0.01 then
+                            call SetControlToUnit(E,E, 0.1, "stun")
+                        endif
                     endif
                     call GroupRemoveUnit(G,E)
                 endloop
