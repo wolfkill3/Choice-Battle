@@ -37499,14 +37499,14 @@ local integer l__ide
 local player p=GetOwningPlayer(u)
 local real dmg
 if GetUnitAbilityLevel(u,'B01A')>0 then
-set dmg=GetHeroAgi(u,true)*2
+set dmg=GetHeroAgi(u,true)*(0.75+0.25*GetUnitAbilityLevel(u,'A07Q'))
 elseif GetUnitAbilityLevel(u,'BA1A')>0 then
-set dmg=GetHeroAgi(u,true)*2
+set dmg=GetHeroAgi(u,true)*(0.75+0.25*GetUnitAbilityLevel(u,'A27Q'))
 endif
 if SR(x,y,x1,y1)<=1500 then
 call SetUnitX(l__d,x1+42*Cos(a))
 call SetUnitY(l__d,y1+42*Sin(a))
-call SetUnitFacing(l__d,a*bj_RADTODEG)
+call SetUnitFacingInstant(l__d,a*bj_RADTODEG)
 call GroupEnumUnitsInRange(g,x1,y1,125,Base)
 loop
 set E=FirstOfGroup(g)
@@ -43012,22 +43012,22 @@ if cond==0 then
         call TimerStart(cjlocgn_00000000,0,false,function Block_Damage2)
         set cjlocgn_00000000=null
     endif
-    if CurrentEventAttack and(GetUnitAbilityLevel(c,'B01A')>0 and nb>0 and GetRandomIntMem(0,100)<30)then
+    if CurrentEventAttack and(GetUnitAbilityLevel(c,'B01A')>0 and nb>0 )then
         set cjlocgn_00000000=CreateTimer()
         call SaveUnitHandle(h,GetHandleId(cjlocgn_00000000),0,c)
         call SaveUnitHandle(h,GetHandleId(cjlocgn_00000000),1,CreateUnit(GetOwningPlayer(u),'e02R',x+80*Cos(f*bj_RADTODEG),y+80*Sin(f*bj_RADTODEG),f))
-        call SaveReal(h,GetHandleId(cjlocgn_00000000),2,Atan2(y-y1,x-x1))
+        call SaveReal(h,GetHandleId(cjlocgn_00000000),2,Atan2(y-y1,x-x1)+GetRandomReal(-10,10)*bj_DEGTORAD)
         call SaveReal(h,GetHandleId(cjlocgn_00000000),3,x1)
         call SaveReal(h,GetHandleId(cjlocgn_00000000),4,y1)
         call SaveGroupHandle(h,GetHandleId(cjlocgn_00000000),5,CreateGroup())
         call TimerStart(cjlocgn_00000000,0.025,true,function Trig_Getsuga_Damage)
         set cjlocgn_00000000=null
     endif
-    if CurrentEventAttack and(GetUnitAbilityLevel(c,'BA1A')>0 and nb>0 and GetRandomIntMem(0,100)<30)then
+    if CurrentEventAttack and(GetUnitAbilityLevel(c,'BA1A')>0 and nb>0 )then
         set cjlocgn_00000000=CreateTimer()
         call SaveUnitHandle(h,GetHandleId(cjlocgn_00000000),0,c)
         call SaveUnitHandle(h,GetHandleId(cjlocgn_00000000),1,CreateUnit(GetOwningPlayer(u),'eA2R',x+80*Cos(f*bj_RADTODEG),y+80*Sin(f*bj_RADTODEG),f))
-        call SaveReal(h,GetHandleId(cjlocgn_00000000),2,Atan2(y-y1,x-x1))
+        call SaveReal(h,GetHandleId(cjlocgn_00000000),2,Atan2(y-y1,x-x1)+GetRandomReal(-10,10)*bj_DEGTORAD)
         call SaveReal(h,GetHandleId(cjlocgn_00000000),3,x1)
         call SaveReal(h,GetHandleId(cjlocgn_00000000),4,y1)
         call SaveGroupHandle(h,GetHandleId(cjlocgn_00000000),5,CreateGroup())
@@ -69080,7 +69080,7 @@ function MissleMoveSuperSpiritBomb3 takes nothing returns nothing
             call SetUnitModel(n,"war3mapImported\\IonCannonWithoutPillar.mdl")
             call UnitApplyTimedLife(n,'BTLF',3)
             call SetUnitTimeScale(n,0.5)
-            call SetUnitScale(n,0.4+GetUnitScale(GenkiDama),GetUnitScale(GenkiDama),GetUnitScale(GenkiDama))
+            call SetUnitScale(n,0.5+GetUnitScale(GenkiDama),GetUnitScale(GenkiDama),GetUnitScale(GenkiDama))
             call SetUnitFlyHeight(n,100,0)
         endif
     else
@@ -69096,11 +69096,11 @@ function MissleMoveSuperSpiritBomb3 takes nothing returns nothing
             call GroupRemoveUnit(DG,E)
         endloop
         set n=CreateUnit(p, 'e0C5', x, y, GetRandomInt(0, 360))
-        call SetUnitScale(n,3+GetUnitScale(GenkiDama),3+GetUnitScale(GenkiDama),3+GetUnitScale(GenkiDama))
+        call SetUnitScale(n,3.4+GetUnitScale(GenkiDama),3.4+GetUnitScale(GenkiDama),3.4+GetUnitScale(GenkiDama))
         call SetUnitFlyHeight(n, 0, 0)
         call MyRemoveUnit(n, 2.5)
         set n=CreateUnit(p, 'dH50', x, y, GetRandomInt(0, 360))
-		call SetUnitScale(n, 6+GetUnitScale(GenkiDama), 6+GetUnitScale(GenkiDama), 6+GetUnitScale(GenkiDama))
+		call SetUnitScale(n, 6.5+GetUnitScale(GenkiDama), 6.5+GetUnitScale(GenkiDama), 6.5+GetUnitScale(GenkiDama))
 		call SetUnitFlyHeight(n, 40, 0)
 		call MyRemoveUnit(n, 1.5)
         call FlushChildHashtable(HH,GetHandleId(GenkiDama))
@@ -85124,9 +85124,9 @@ endif
 call SetUnitAnimation(u,"attack")
 call SetUnitFacing(u,a)
 if GetUnitAbilityLevel(u,'B01A')>0 then
-call Slash(CreateUnit(p,'e02R',x,y,a),75,2*GetHeroAgi(u,true),a*bj_DEGTORAD,1000,125,x,y,x,y)
+call Slash(CreateUnit(p,'e02R',x,y,a),75,(0.75+0.25*GetUnitAbilityLevel(u,'A07Q'))*GetHeroAgi(u,true),a*bj_DEGTORAD,1000,125,x,y,x,y)
 elseif GetUnitAbilityLevel(u,'BA1A')>0 then
-call Slash(CreateUnit(p,'eA2R',x,y,a),75,2*GetHeroAgi(u,true),a*bj_DEGTORAD,1000,125,x,y,x,y)
+call Slash(CreateUnit(p,'eA2R',x,y,a),75,(0.75+0.25*GetUnitAbilityLevel(u,'A27Q'))*GetHeroAgi(u,true),a*bj_DEGTORAD,1000,125,x,y,x,y)
 endif
 call GroupEnumUnitsInRange(G,x,y,220,Base)
 loop
@@ -86103,17 +86103,19 @@ set E=FirstOfGroup(G)
 exitwhen E==null
 if Condition_Base(p,E)then
         if GetUnitState(E,UNIT_STATE_LIFE)<GetUnitState(E,UNIT_STATE_MAX_LIFE)*0.02 then
-                call myCustomDamage(u,E,GetUnitState(E,UNIT_STATE_MAX_LIFE)*0.05,false,false,null,null,null)
+            call myCustomDamage(u,E,GetUnitState(E,UNIT_STATE_MAX_LIFE)*0.05,false,false,null,null,null)
         else
-                call SetUnitState(E,UNIT_STATE_LIFE,GetUnitState(E,UNIT_STATE_LIFE)-GetUnitState(E,UNIT_STATE_LIFE)*0.012)
-                call SetUnitState(E,UNIT_STATE_LIFE,GetUnitState(E,UNIT_STATE_LIFE)-(GetUnitAbilityLevel(u, 'A0MO')*30 + 15)*0.2)
+            call DamageIndicatorFunction(u,E,GetUnitState(E,UNIT_STATE_LIFE)*0.012)
+            call SetUnitState(E,UNIT_STATE_LIFE,GetUnitState(E,UNIT_STATE_LIFE)-GetUnitState(E,UNIT_STATE_LIFE)*0.012)
+            call DamageIndicatorFunction(u,E,(GetUnitAbilityLevel(u, 'A0MO')*30 + 15)*0.2)
+            call SetUnitState(E,UNIT_STATE_LIFE,GetUnitState(E,UNIT_STATE_LIFE)-(GetUnitAbilityLevel(u, 'A0MO')*30 + 15)*0.2)
         endif
         if GetUnitAbilityLevel(E,'B03T')==0 then
-                set n=CreateUnit(p,'h019',x,y,0)
-                call UnitAddAbility(n,'A0MP')
-                call SetUnitAbilityLevel(n,'A0MP',lvl)
-                call UnitApplyTimedLife(n,'BHwe',1)
-                call IssueTargetOrder(n,"acidbomb",E)
+            set n=CreateUnit(p,'h019',x,y,0)
+            call UnitAddAbility(n,'A0MP')
+            call SetUnitAbilityLevel(n,'A0MP',lvl)
+            call UnitApplyTimedLife(n,'BHwe',1)
+            call IssueTargetOrder(n,"acidbomb",E)
         endif
 endif
 call GroupRemoveUnit(G,E)
@@ -124847,7 +124849,7 @@ endif
 call DamageTextTag(u,l__d,dmg*0.25)
 call DamageIndicatorFunction(u,l__d,dmg*0.25)
 call myCustomDamage(u,l__d,dmg-dmg*0.25,false,false,null,null,null)
-call SetControlToUnit(l__d,l__d,2,"doom")
+call SetControlToUnit(l__d,l__d,2,"silence")
 call DestroyTimer(t)
 call FlushChildHashtable(h,id)
 endif
@@ -155771,20 +155773,20 @@ if time==0.8 or time==1.4 then
     set n=CreateUnit(p,'e168',x1,y1,GetRandomReal(0,359))
     call SetUnitModel(n,"DantesExplosion1R.mdx")
     call UnitApplyTimedLife(n,'BTLF',0.03)
-    call SetUnitScale(n,0.7,0.7,0.7)
+    call SetUnitScale(n,0.9,0.9,0.9)
     call SetUnitVertexColor(n,255,255,255,125)
     call SetUnitTimeScale(n,1.3)
     set EFF=AddSpecialEffect("war3mapImported\\blue-guagnzhu-special.mdl",x1,y1)
-    call SetSpecialEffectScale(EFF , 1.3)
+    call SetSpecialEffectScale(EFF , 1.7)
     call SetSpecialEffectTimeScale(EFF, 4)
     call RemoveEffect(EFF,0.5,true,CreateTimer())
     set EFF=AddSpecialEffect("tx_huoyandaji_blue.mdl",x1,y1)
-    call SetSpecialEffectScale(EFF , 1.8)
+    call SetSpecialEffectScale(EFF , 2.4)
     call RemoveEffect(EFF,0.9,true,CreateTimer())
     if DMGBool then
         set dmg = dmg * 1.15
     endif
-    call GroupEnumUnitsInRange(DG,x1,y1,300,Base)
+    call GroupEnumUnitsInRange(DG,x1,y1,400,Base)
     loop
         set E=FirstOfGroup(DG)
         exitwhen E==null
