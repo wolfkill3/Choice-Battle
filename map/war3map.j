@@ -12174,6 +12174,36 @@ function OnButtonChangeAbilityMode takes nothing returns nothing
             endif
         endif
     endif
+    // if GetUnitTypeId(GetUnitSelected(p))=='HIc2' and (p==GetOwningPlayer(GetUnitSelected(p)) or GetPlayerAlliance(GetOwningPlayer(GetUnitSelected(p),p,ALLIANCE_SHARED_CONTROL)) and but==GetFrameByName( "AbilityVarBarIcon", 7 ) and IsUnitPaused(GetUnitSelected(p))==false and GetUnitAbilityLevel(GetUnitSelected(p),'Pet1')==0 then
+    //     set pHid=GetHandleId(GetOwningPlayer(GetUnitSelected(p)))
+    //     if LoadReal(HH,pHid,VariationTHash)==0 then
+    //         call SaveReal(HH,pHid,VariationTHash,1)
+    //         call SetAbilityIntegerLevelField(GetUnitAbility(GetUnitSelected(p),'GKT1'), ABILITY_ILF_TARGET_TYPE,0,1)
+    //         call SetAbilityRealLevelField(GetUnitAbility(GetUnitSelected(p),'GKT1'), ABILITY_RLF_CAST_RANGE,0,900)
+    //         if GetLocalPlayer()==p then
+    //             call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 7 ), "ReplaceableTextures\\CommandButtons\\BTNDragonFist2.blp", 0, true )
+    //             call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 7 ), "ReplaceableTextures\\CommandButtons\\BTNDragonFist2.blp", 1, true )
+    //             call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 7 ), "ReplaceableTextures\\CommandButtons\\BTNDragonFist2.blp", 2, true )
+    //             call SetFrameText( GetFrameByName("AbilityVarBarTooltipText", 7), GetAbilityBaseStringFieldById( String2Id( "GKT3" ), ABILITY_SF_NAME )+", \n\n"+GetAbilityBaseStringFieldById( String2Id( "GKT3" ), ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED ))
+    //             call SetFrameSize( GetFrameByName("AbilityVarBarTooltip", 7), .24, GetFrameHeight( GetFrameByName("AbilityVarBarTooltipText", 7))+0.03)
+    //             call SetFrameTextAlignment( GetFrameByName("AbilityVarBarTooltipText", 7), TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_LEFT )
+    //             call SetFrameRelativePoint( GetFrameByName("AbilityVarBarTooltip", 7), FRAMEPOINT_CENTER, GetFrameByName("AbilityVarBarIcon", 7), FRAMEPOINT_CENTER,  -.1, (0.5*GetFrameHeight( GetFrameByName("AbilityVarBarTooltipText", 7)))+.02  )
+    //         endif
+    //     else
+    //         call SaveReal(HH,pHid,VariationTHash,0)
+    //         call SetAbilityIntegerLevelField(GetUnitAbility(GetUnitSelected(p),'GKT1'), ABILITY_ILF_TARGET_TYPE,0,2)
+    //         call SetAbilityRealLevelField(GetUnitAbility(GetUnitSelected(p),'GKT1'), ABILITY_RLF_CAST_RANGE,0,99999)
+    //         if GetLocalPlayer()==p then
+    //             call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 7 ), "ReplaceableTextures\\CommandButtons\\BTNDragonFist1.blp", 0, true )
+    //             call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 7 ), "ReplaceableTextures\\CommandButtons\\BTNDragonFist1.blp", 1, true )
+    //             call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 7 ), "ReplaceableTextures\\CommandButtons\\BTNDragonFist1.blp", 2, true )
+    //             call SetFrameText( GetFrameByName("AbilityVarBarTooltipText", 7), GetAbilityBaseStringFieldById( String2Id( "GKT2" ), ABILITY_SF_NAME )+", \n\n"+GetAbilityBaseStringFieldById( String2Id( "GKT2" ), ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED ))
+    //             call SetFrameSize( GetFrameByName("AbilityVarBarTooltip", 7), .24, GetFrameHeight( GetFrameByName("AbilityVarBarTooltipText", 7))+0.03)
+    //             call SetFrameTextAlignment( GetFrameByName("AbilityVarBarTooltipText", 7), TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_LEFT )
+    //             call SetFrameRelativePoint( GetFrameByName("AbilityVarBarTooltip", 7), FRAMEPOINT_CENTER, GetFrameByName("AbilityVarBarIcon", 7), FRAMEPOINT_CENTER,  -.1, (0.5*GetFrameHeight( GetFrameByName("AbilityVarBarTooltipText", 7)))+.02  )
+    //         endif
+    //     endif
+    // endif
     set p = null
     set but = null
 endfunction
@@ -22752,7 +22782,7 @@ function Trig_Killer_Actions takes nothing returns nothing
                         set assistnames=assistnames+Color[i]+GetUnitName(Hero[i])+"|r "
                         call ForceAddPlayer(PlayerH,GetOwningPlayer(Hero[i]))
                     endif
-                    if (GetUnitAbilityLevel(u,'A1EO')>0 or GetUnitAbilityLevel(u,'A1F0')>0) and GetUnitTypeId(Hero[i])=='H05R' then //Lucy
+                    if (GetUnitAbilityLevel(u,'A1EO')>0 or GetUnitAbilityLevel(u,'A1F0')>0) and GetUnitTypeId(Hero[i])=='H06T' then //Lucy
                         set udg_assist[i]=udg_assist[i]+1
                         set assistnames=assistnames+Color[i]+GetUnitName(Hero[i])+"|r "
                         call ForceAddPlayer(PlayerH,GetOwningPlayer(Hero[i]))
@@ -26101,6 +26131,34 @@ function Trig_Multup_Actions takes nothing returns nothing
             else
                 call ShowFrame(GetFrameByName( "AbilityVarBarIcon", 7 ),false)
             endif
+        // elseif GetUnitTypeId(GetUnitSelected(GetLocalPlayer()))=='HIc2' and (GetLocalPlayer()==GetOwningPlayer(GetUnitSelected(GetLocalPlayer())) or GetPlayerAlliance(GetOwningPlayer(GetUnitSelected(GetLocalPlayer())),GetLocalPlayer(),ALLIANCE_SHARED_CONTROL)) and GetUnitSelected(GetLocalPlayer())==GetUnitSelected(GetLocalPlayer()) then
+        //     if IsAbilityVisible(GetUnitAbility(GetUnitSelected(GetLocalPlayer()),'GKT1')) and (GetLocalPlayer()==GetOwningPlayer(GetUnitSelected(GetLocalPlayer())) or GetPlayerAlliance(GetOwningPlayer(GetUnitSelected(GetLocalPlayer())),GetLocalPlayer(),ALLIANCE_SHARED_CONTROL)) and (GetFrameTexture(GetOriginFrame(ORIGIN_FRAME_COMMAND_BUTTON,11),1)!="ReplaceableTextures\\CommandButtons\\BTNCancel.blp" or (GetFrameTexture(GetOriginFrame(ORIGIN_FRAME_COMMAND_BUTTON,0),1)=="war3mapImported\\BTNMove.blp" and IsFrameVisible(GetOriginFrame(ORIGIN_FRAME_COMMAND_BUTTON,0)))) then
+        //         call ShowFrame(GetFrameByName( "AbilityVarBarIcon", 7 ),true)
+        //         if LoadBoolean(HH,GetHandleId(GetFrameByName( "AbilityVarBarIcon", 7 )),BUTTONHOVER)==false then
+        //             call ShowFrame(GetFrameByName( "AbilityVarBarTooltip", 7 ),false)
+        //         else
+        //             call ShowFrame(GetFrameByName( "AbilityVarBarTooltip", 7 ),true)
+        //         endif
+        //         if LoadReal(HH,GetHandleId(GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))),VariationTHash)==1 then
+        //             call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 7 ), "ReplaceableTextures\\CommandButtons\\BTNDragonFist2.blp", 0, true )
+        //             call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 7 ), "ReplaceableTextures\\CommandButtons\\BTNDragonFist2.blp", 1, true )
+        //             call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 7 ), "ReplaceableTextures\\CommandButtons\\BTNDragonFist2.blp", 2, true )
+        //             call SetFrameText( GetFrameByName("AbilityVarBarTooltipText", 7), GetAbilityBaseStringFieldById( String2Id( "GKT3" ), ABILITY_SF_NAME )+", \n\n"+GetAbilityBaseStringFieldById( String2Id( "GKT3" ), ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED ))
+        //             call SetFrameSize( GetFrameByName("AbilityVarBarTooltip", 7), .24, GetFrameHeight( GetFrameByName("AbilityVarBarTooltipText", 7))+0.03)
+        //             call SetFrameTextAlignment( GetFrameByName("AbilityVarBarTooltipText", 7), TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_LEFT )
+        //             call SetFrameRelativePoint( GetFrameByName("AbilityVarBarTooltip", 7), FRAMEPOINT_CENTER, GetFrameByName("AbilityVarBarIcon", 7), FRAMEPOINT_CENTER,  -.1, (0.5*GetFrameHeight( GetFrameByName("AbilityVarBarTooltipText", 7)))+.02  )
+        //         elseif LoadReal(HH,GetHandleId(GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))),VariationTHash)==0 then
+        //             call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 7 ), "ReplaceableTextures\\CommandButtons\\BTNDragonFist1.blp", 0, true )
+        //             call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 7 ), "ReplaceableTextures\\CommandButtons\\BTNDragonFist1.blp", 1, true )
+        //             call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 7 ), "ReplaceableTextures\\CommandButtons\\BTNDragonFist1.blp", 2, true )
+        //             call SetFrameText( GetFrameByName("AbilityVarBarTooltipText", 7), GetAbilityBaseStringFieldById( String2Id( "GKT2" ), ABILITY_SF_NAME )+", \n\n"+GetAbilityBaseStringFieldById( String2Id( "GKT2" ), ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED ))
+        //             call SetFrameSize( GetFrameByName("AbilityVarBarTooltip", 7), .24, GetFrameHeight( GetFrameByName("AbilityVarBarTooltipText", 7))+0.03)
+        //             call SetFrameTextAlignment( GetFrameByName("AbilityVarBarTooltipText", 7), TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_LEFT )
+        //             call SetFrameRelativePoint( GetFrameByName("AbilityVarBarTooltip", 7), FRAMEPOINT_CENTER, GetFrameByName("AbilityVarBarIcon", 7), FRAMEPOINT_CENTER,  -.1, (0.5*GetFrameHeight( GetFrameByName("AbilityVarBarTooltipText", 7)))+.02  )
+        //         endif
+        //     else
+        //         call ShowFrame(GetFrameByName( "AbilityVarBarIcon", 7 ),false)
+        //     endif
         endif
         if GenkiUsed[GetPlayerId(GetLocalPlayer())]==true and GetOwningPlayer(Goku)!=GetLocalPlayer() then
             call ShowFrame(GetFrameByName( "GlobalAbilityBarIcon", 0 ),true)
@@ -27872,6 +27930,8 @@ if GetUnitTypeId(u) == 'HIc3' then      // Ichigo Vasterlord обратно в s
     call UnitAddAbility(u, 'IcT7')
     call IssueImmediateOrder(u, "bearform")
     call UnitRemoveAbility(u, 'IcT7')
+    call SetHeroAgi(u,GetHeroAgi(u,false)-20,true)
+    call SetHeroStr(u,GetHeroStr(u,false)-20,true)
 endif
 if GetUnitTypeId(u) == 'H013' then
     call UnitAddAbility(u, 'S101')
@@ -31612,6 +31672,12 @@ loop
 set E=GroupForEachUnit(GGlobal)
 set id=GetHandleId(E)
 set time=LoadInteger(h,id,'HerT')
+if LoadReal(HH,id,'AAcd')>0 then
+    call SaveReal(HH,id,'AAcd',LoadReal(HH,id,'AAcd')-0.2)
+else
+    call SaveReal(HH,id,'AAcd',0)
+endif
+// call BJDebugMsg(GetUnitName(E)+"  "+R2S(LoadReal(HH,id,'AAcd')))
 if time<20 then
 call SaveInteger(h,id,'HerT',time+1)
 endif
@@ -37819,7 +37885,8 @@ local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
 local unit u=LoadUnitHandle(h,id,0)
 local real per=GetWidgetLife(u)/GetUnitState(u,UNIT_STATE_MAX_LIFE)
-call SetHeroStr(u,GetHeroStr(u,false)-LoadInteger(h,id,1),true)
+call SetHeroAgi(u,GetHeroAgi(u,false)-LoadInteger(h,id,1),true)
+call SetUnitMaxLife(u,GetWidgetMaxLife(u)-LoadInteger(h,id,2))
 call SetUnitState(u,UNIT_STATE_LIFE,GetUnitState(u,UNIT_STATE_MAX_LIFE)*per)
 call PauseTimer(t)
 call DestroyTimer(t)
@@ -42252,10 +42319,12 @@ if cond==0 then
         endif
         if (UnitHasItemOfTypeBJ(u,'I065') or GetUnitAbilityLevel(u, 'KIX2')>0 ) and nb>ll*0.05 then
             set cjlocgn_00000000=CreateTimer()
-            call SetHeroStr(u,GetHeroStr(u,false)+R2I(5*(nb/(ll*0.05))),true)
+            call SetHeroAgi(u,GetHeroAgi(u,false)+R2I(5*(nb/(ll*0.05))),true)
+            call SetUnitMaxLife(u,GetWidgetMaxLife(u)+R2I(100*(nb/(ll*0.05))))
             call SaveUnitHandle(h,GetHandleId(cjlocgn_00000000),0,u)
             call SaveInteger(h,GetHandleId(cjlocgn_00000000),1,R2I(5*(nb/(ll*0.05))))
-            call TimerStart(cjlocgn_00000000,10,false,function CloudMare)
+            call SaveInteger(h,GetHandleId(cjlocgn_00000000),2,R2I(100*(nb/(ll*0.05))))
+            call TimerStart(cjlocgn_00000000,15,false,function CloudMare)
             set cjlocgn_00000000=null
         endif
         if GetUnitAbilityLevel(u,'A12J')>0 then
@@ -42383,12 +42452,12 @@ if cond==0 then
         call UnitAddAbility(c,'A00D')
         //set nb=nb+GetHeroStr(c,true)*0.5*myCustomDamage2(u,1)
     endif
-    if (UnitHasItemOfTypeBJ(c,'I050')==true or GetUnitAbilityLevel(c,'KIQ0')>0) and GetUnitAbilityLevel(c,'GEP1')==0 and IsUnitIllusion(c) == false and nb>0 and (CurrentEventAttack)and GetRandomIntMem(0,100)<=20 and udg_B==true and DU2==true then //Gegetsu
+    if (UnitHasItemOfTypeBJ(c,'I050')==true or GetUnitAbilityLevel(c,'KIQ0')>0) and GetUnitAbilityLevel(c,'GEP1')==0 and IsUnitIllusion(c) == false and nb>0 and (CurrentEventAttack)and (GetRandomIntMem(0,100)<=20 or LoadReal(HH,cid,'AAcd')==0) and udg_B==true and DU2==true then //Gegetsu
         call UnitAddAbility(c,'GEP1')
         call UnitRemoveAbilityTimed(c,'GEP1',1)
         call SetControlToUnit(c,u, 1,"stun") //"stunbkb"
         call SetControlToUnit(c,u, 0.2,"stunbkb") //"stunbkb"
-        call DestroyEffect(AddSpecialEffect("war3mapImported\\Cleave.mdx",GetUnitX(u),GetUnitFlyHeight(u)))
+        call DestroyEffect(AddSpecialEffect("war3mapImported\\Cleave.mdx",GetUnitX(u),GetUnitY(u)))
     endif
     if GetUnitAbilityLevel(c,'A0OP')>0 and nb>0 then
         call myCustomDamage(Hero[idc],u,GetHeroInt(Hero[idc],true)*GetUnitAbilityLevel(Hero[idc],'A0OQ')*0.05,false,false,null,null,null)
@@ -43729,6 +43798,9 @@ if cond==0 then
     endif
 endif
 if nb>0 then
+    if CurrentEventAttack then
+        call SaveReal(HH,cid,'AAcd',10)
+    endif
     call SetEventDamage(nb)
     if GetUnitAbilityLevel(u,'A4DF')>0 then
         call IssueImmediateOrder(u,"stop")
@@ -100757,6 +100829,8 @@ function IchigoVaster_OvertimeForm_Periodic takes nothing returns nothing
 			call IssueImmediateOrder(caster, "bearform")
 			call UnitRemoveAbility(caster, 'IcT7')
             call CheckUnitBonusRange(caster)
+            call SetHeroAgi(caster,GetHeroAgi(caster,false)-20,true)
+            call SetHeroStr(caster,GetHeroStr(caster,false)-20,true)
 		endif
         call ShowFrame( NewFrame, false )
         call SaveReal(HH, GetHandleId(NewFrame), c_DURATION, 0)
@@ -100870,6 +100944,8 @@ function IchigoVaster_Ressurection takes nothing returns nothing
 			call ShowAbility2('IcE1', false)
 			call ShowAbility2('IcR1', false)
 			call ShowAbility2('IcT1', false)
+            call SetHeroAgi(caster,GetHeroAgi(caster,false)+20,true)
+		    call SetHeroStr(caster,GetHeroStr(caster,false)+20,true)
 			call UnitAddAbility(caster, 'IcT6')
 			call IssueImmediateOrder(caster, "bearform")
 			call UnitRemoveAbility(caster, 'IcT6')
@@ -146187,7 +146263,7 @@ function GilgameshModifiedAttack takes unit newCaster, unit newTarget returns bo
                 else
                     set fatal_damage=true
                 endif
-                if GetRandomInt(0, 99)<=19 then
+                if GetRandomInt(0, 99)<=19 or LoadReal(HH,GetHandleId(newCaster),'AAcd')==0 then
                     call DestroyEffect(AddSpecialEffect("war3mapImported\\Cleave.mdx",GetUnitX(newTarget),GetUnitY(newTarget)))
                     call SetControlToUnit(newTarget, newTarget, 0.3, "stun")
                 endif
@@ -146268,7 +146344,9 @@ function GilgameshModifiedAttack takes unit newCaster, unit newTarget returns bo
         endif
     endif
     if miss then
-            call AllTextTag("|c00C0C0C0Miss!|r" , newTarget)
+        call AllTextTag("|c00C0C0C0Miss!|r" , newTarget)
+    else
+        call SaveReal(HH,GetHandleId(newCaster),'AAcd',10)
     endif
     if critcoef>1 then
         call AllTextTag("|c00FF3737CRIT x"+R2SW(critcoef,2,2)+"|r" , newCaster)
@@ -150304,9 +150382,9 @@ local timer t
 local integer id
 local player p=GetOwningPlayer(u)
 set n=LoadUnitHandle(h,GetHandleId(c),0)
-if GetUnitTypeId(n)=='HIc1' or GetUnitTypeId(n)=='HIc2' then
-        call OrehimeT_IchigoVaster(u,n)
-else
+// if GetUnitTypeId(n)=='HIc1' or GetUnitTypeId(n)=='HIc2' then
+//         call OrehimeT_IchigoVaster(u,n)
+// else
         set soundplay=CreateSound("Sound\\Music\\mp3Music\\OriT2.mp3",false,false,true,12700,12700,"")
         call StartSound(soundplay)
         call KillSoundWhenDone(soundplay)
@@ -150321,7 +150399,7 @@ else
         call RemoveTransformation(n)
         call SaveInteger(HH,GetHandleId(n),StringHash("VegetaDeath"),1)
         call DestroyEffect(AddSpecialEffectTarget("Abilities\\Spells\\Human\\Resurrect\\ResurrectCaster.mdl",n,"origin"))
-endif
+// endif
 call KillUnit(LoadUnitHandle(h,GetHandleId(c),1))
 call KillUnit(c)
 set t=null
@@ -150349,27 +150427,27 @@ local integer ip=GetPlayerId(p)
 local real x1=GetUnitX(oreha)
 local real y1=GetUnitY(oreha)
 if IsUnitAlly(u,GetOwningPlayer(oreha))then
-set c=CreateUnit(p,'e16T',x,y,315)
-call UnitApplyTimedLife(c,'BTLF',15)
-call SetUnitTimeScale(c,0.02)
-set id=GetHandleId(c)
-call SetUnitInvulnerable(c,true)
-call SaveUnitHandle(h,id,0,u)
-call RemoveSaveHashTimed(26,id,0)
-set n=CreateUnit(p,'e11W',x,y,315)
-call SaveUnitHandle(h,id,1,n)
-call RemoveSaveHashTimed(26,id,1)
-call UnitApplyTimedLife(n,'BTLF',15)
-call SetUnitScale(n,0.3,0.3,0.3)
-if GetUnitTypeId(u)=='HIc3' then
-call RemoveTransformation(u)
-endif
-        if GetUnitTypeId(u)=='HIc1' or GetUnitTypeId(u)=='HIc2' then
+    set c=CreateUnit(p,'e16T',x,y,315)
+    call UnitApplyTimedLife(c,'BTLF',15)
+    call SetUnitTimeScale(c,0.02)
+    set id=GetHandleId(c)
+    call SetUnitInvulnerable(c,true)
+    call SaveUnitHandle(h,id,0,u)
+    call RemoveSaveHashTimed(26,id,0)
+    set n=CreateUnit(p,'e11W',x,y,315)
+    call SaveUnitHandle(h,id,1,n)
+    call RemoveSaveHashTimed(26,id,1)
+    call UnitApplyTimedLife(n,'BTLF',15)
+    call SetUnitScale(n,0.3,0.3,0.3)
+    if GetUnitTypeId(u)=='HIc3' then
         call RemoveTransformation(u)
-                set soundplay=CreateSound("Sound\\Music\\mp3Music\\OriSecret1.mp3",false,false,true,12700,12700,"")
-                call StartSound(soundplay)
-                call KillSoundWhenDone(soundplay)
-        endif
+    endif
+    // if GetUnitTypeId(u)=='HIc1' or GetUnitTypeId(u)=='HIc2' then
+    //     call RemoveTransformation(u)
+    //     set soundplay=CreateSound("Sound\\Music\\mp3Music\\OriSecret1.mp3",false,false,true,12700,12700,"")
+    //     call StartSound(soundplay)
+    //     call KillSoundWhenDone(soundplay)
+    // endif
 endif
 set c=null
 set p=null
@@ -151913,7 +151991,7 @@ loop
 set E=FirstOfGroup(G)
 exitwhen E==null
 if Condition_Base(p,E)and IsUnitInGroup(E,g)==false then
-if GetUnitAbilityLevel(E,'A1FR')>0 or GetUnitAbilityLevel(E,'A1FS')>0 or GetUnitAbilityLevel(E,'A1FT')>0 and lvl>0 then
+if LoadBoolean(h,GetHandleId(E),'RQG+')==true and lvl>0 then
 call UnitRemoveAbility(u,'A1G5')
 call UnitAddAbility(u,'A1G5')
 call SetUnitAbilityLevel(u,'A1G5',lvl)
@@ -151926,6 +152004,8 @@ call UnitAddAbility(E,'A1FS')
 elseif idu=='e15U' then
 call UnitAddAbility(E,'A1FT')
 endif
+call SaveBoolean(h,GetHandleId(E),'RQG+',true)
+call RemoveSaveHashTimed(3,GetHandleId(E),'RQG+')
 call GroupAddUnit(g,E)
 endif
 call GroupRemoveUnit(G,E)
@@ -204179,9 +204259,9 @@ function IchigoShikaiT_MorfPeriodic takes nothing returns nothing
 		    call SetHeroStr(caster,GetHeroStr(caster,false)-20,true)
 
             call StartAbilityCooldown(GetUnitAbility(caster, 'IcQ1'), GetAbilityRemainingCooldown(GetUnitAbility(caster, 'IcQ3')))
-                        call StartAbilityCooldown(GetUnitAbility(caster, 'IcW1'), GetAbilityRemainingCooldown(GetUnitAbility(caster, 'IcW2')))
-                        call StartAbilityCooldown(GetUnitAbility(caster, 'IcE1'), GetAbilityRemainingCooldown(GetUnitAbility(caster, 'IcE2')))
-                        call StartAbilityCooldown(GetUnitAbility(caster, 'IcR1'), GetAbilityRemainingCooldown(GetUnitAbility(caster, 'IcR2')))
+            call StartAbilityCooldown(GetUnitAbility(caster, 'IcW1'), GetAbilityRemainingCooldown(GetUnitAbility(caster, 'IcW2')))
+            call StartAbilityCooldown(GetUnitAbility(caster, 'IcE1'), GetAbilityRemainingCooldown(GetUnitAbility(caster, 'IcE2')))
+            call StartAbilityCooldown(GetUnitAbility(caster, 'IcR1'), GetAbilityRemainingCooldown(GetUnitAbility(caster, 'IcR2')))
                         
             if IsUnitPaused(caster)==false then
                 call IssueImmediateOrder(caster, "stop")
@@ -204262,15 +204342,19 @@ function IchigoShikaiT_Periodic takes nothing returns nothing
         call ShowAbility2('IcE1', false)
         call ShowAbility2('IcR1', false)
         call ShowAbility2('IcT1', false)
+        call StartAbilityCooldown(GetUnitAbility(caster, 'IcQ3'), (0.01+GetAbilityRemainingCooldown(GetUnitAbility(caster, 'IcQ1')))/2)
+        call StartAbilityCooldown(GetUnitAbility(caster, 'IcW2'), (0.01+GetAbilityRemainingCooldown(GetUnitAbility(caster, 'IcW1')))/2)
+        call StartAbilityCooldown(GetUnitAbility(caster, 'IcE2'), (0.01+GetAbilityRemainingCooldown(GetUnitAbility(caster, 'IcE1')))/2)
+        call StartAbilityCooldown(GetUnitAbility(caster, 'IcR2'), (0.01+GetAbilityRemainingCooldown(GetUnitAbility(caster, 'IcR1')))/2)
         call UnitAddAbility(caster, 'IcT3')
         call IssueImmediateOrder(caster, "bearform")
         call UnitRemoveAbility(caster, 'IcT3')
-                call UnitAddAbility(caster, 'IcF3')
+        call UnitAddAbility(caster, 'IcF3')
         call UnitMakeAbilityPermanent(caster, true, 'IcF3')
         call SetUnitAbilityLevel(caster, 'IcF2', 2)
         call CheckUnitBonusRange(caster)        
         call PauseUnit(caster, true)
-                call SetUnitInvulnerable(caster, true)
+        call SetUnitInvulnerable(caster, true)
         call RemoveEffect(AddSpecialEffectTarget("EffBank.mdl", caster, "origin"), 6, true, CreateTimer())
         set n=CreateUnit(GetOwningPlayer(caster), 'd001',  caster_x, caster_y, GetRandomInt(0, 360))
         call SetUnitScale(n, 2.5, 2.5, 2.5)
@@ -206500,7 +206584,7 @@ function Karna_ModifAttack takes unit newCaster, unit newTarget, real attack_fac
                     set fatal_damage=true
                 endif
                 call DestroyEffect(AddSpecialEffect("war3mapImported\\Cleave.mdx",GetUnitX(newTarget),GetUnitY(newTarget)))
-                if GetRandomIntMem(0,100)<20 then
+                if GetRandomIntMem(0,100)<20 or LoadReal(HH,GetHandleId(newCaster),'AAcd')==0 then
                     call SetControlToUnit(newTarget, newTarget, 1.0, "stun")
                     call SetControlToUnit(newTarget, newTarget, 0.2,"stunbkb")
                 endif
@@ -206593,6 +206677,7 @@ function Karna_ModifAttack takes unit newCaster, unit newTarget, real attack_fac
 		call AllTextTag("|c00C0C0C0Miss!|r" , newTarget)
         set damage = 0
     else
+        call SaveReal(HH,GetHandleId(newCaster),'AAcd',10)
         // Текст над головой
         if crit_count>0 then
             if crit_count>1 then
@@ -206838,7 +206923,7 @@ function Sinon_ModifAttack takes unit newCaster, unit newTarget, real attack_fac
 				set fatal_damage=true
 			endif
 			call DestroyEffect(AddSpecialEffect("war3mapImported\\Cleave.mdx",GetUnitX(newTarget),GetUnitY(newTarget)))
-            if GetRandomIntMem(0,100)<20 then
+            if GetRandomIntMem(0,100)<20 or LoadReal(HH,GetHandleId(newCaster),'AAcd')==0 then
                 call SetControlToUnit(newTarget, newTarget, 1.0, "stun")
                 call SetControlToUnit(newTarget, newTarget, 0.2, "stunbkb")
             endif
@@ -206936,6 +207021,7 @@ function Sinon_ModifAttack takes unit newCaster, unit newTarget, real attack_fac
 		call AllTextTag("|c00C0C0C0Miss!|r" , newTarget)
         set damage = 0
     else
+        call SaveReal(HH,GetHandleId(newCaster),'AAcd',10)
         if attack_factor>0.5 then
             // Текст над головой
             if first_crit==false then
@@ -208236,7 +208322,7 @@ function KarnaE_Periodic2 takes nothing returns nothing
             call SetUnitY(E, GetUnitY(caster)+70*Sin(LoadReal(HH, GetHandleId(E), KarnaE_Index)))
             call PauseUnit(E, true)
             call SaveBoolean(HH,GetHandleId(E),TARGET_ABILITY,true)
-            // call SetControlToUnit(E, E, 0.11, "doom")
+            call SetControlToUnit(E, E, 0.11, "heavystun")
             // call SetControlToUnit(E, E, 0.11, "stun")
         call GroupRemoveUnit(bjLCG, E)
         endloop
@@ -208406,6 +208492,7 @@ function KarnaE_Periodic1 takes nothing returns nothing
         exitwhen E==null
             call SetUnitX(E, GetUnitX(caster)+70*Cos(LoadReal(HH, GetHandleId(E), KarnaE_Index)))
             call SetUnitY(E, GetUnitY(caster)+70*Sin(LoadReal(HH, GetHandleId(E), KarnaE_Index)))
+            call SetControlToUnit(E, E, 0.11, "doomdebug")
         call GroupRemoveUnit(bjLCG, E)
         endloop
         call DestroyGroup(bjLCG)
