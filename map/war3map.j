@@ -4450,6 +4450,9 @@ if LoadInteger(h,id,2)==StringHash("BrolyQ") or LoadInteger(h,id,2)==StringHash(
         call SetMusicVolume(127)
     endif
 endif
+if LoadInteger(h,id,2)=='RQG+' then
+    call SaveBoolean(h,LoadInteger(h,id,1),LoadInteger(h,id,2),false)
+endif
 call RemoveSavedHandle(h,LoadInteger(h,id,1),LoadInteger(h,id,2))
 call FlushChildHashtable(h,id)
 call DestroyTimer(t)
