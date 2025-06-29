@@ -59,7 +59,7 @@ integer array udg_UIS_ItemCount
 integer udg_UIS_Index=0
 unit array udg_ExtraH
 unit array udg_DM
-unit array udg_DMM
+// unit array udg_DMM
 unit array Chest
 integer array udg_RH
 integer array RH_Force
@@ -987,7 +987,7 @@ integer array lvl26
 integer array lvl29
 integer array lvl32
 integer array lvl35
-integer array manaMoria
+// integer array manaMoria
 integer array rfhr
 unit array UIUnlock
 unit array MUIUnlock
@@ -25936,15 +25936,15 @@ function Trig_Multup_Actions takes nothing returns nothing
             //         call SetUnitManaRegenEnabled(Hero[x],false)
             //     endif
             // endif
-            if udg_DM[x+1]!=null then
-                if (GetWidgetMana(Hero[x])>=100 and GetWidgetMana(udg_DM[x+1])>=100) and manaMoria[x]!=1 then
-                    set udg_DMM[x]=CreateUnit(GetOwningPlayer(udg_DM[x+1]),'h13J',RX,RY,0)
-                    set manaMoria[x]=1
-                elseif (GetWidgetMana(Hero[x])<100 or GetWidgetMana(udg_DM[x+1])<100) and manaMoria[x]==1 then
-                    call RemoveUnit(udg_DMM[x])
-                    set manaMoria[x]=0
-                endif
-            endif
+            // if udg_DM[x+1]!=null then
+            //     if (GetWidgetMana(Hero[x])>=100 and GetWidgetMana(udg_DM[x+1])>=100) and manaMoria[x]!=1 then
+            //         set udg_DMM[x]=CreateUnit(GetOwningPlayer(udg_DM[x+1]),'h13J',RX,RY,0)
+            //         set manaMoria[x]=1
+            //     elseif (GetWidgetMana(Hero[x])<100 or GetWidgetMana(udg_DM[x+1])<100) and manaMoria[x]==1 then
+            //         call RemoveUnit(udg_DMM[x])
+            //         set manaMoria[x]=0
+            //     endif
+            // endif
         endif
         set x=x+1
         endloop
@@ -50898,11 +50898,18 @@ function Trig_Doppleman_Actions2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
 local unit u=LoadUnitHandle(h,id,0)
-if udg_B==false or UnitIsAlive(u)==false then
-call RemoveUnit(udg_DM[GetPlayerId(GetOwningPlayer(u))+1])
-call PauseTimer(t)
-call DestroyTimer(t)
-call FlushChildHashtable(h,id)
+call SetUnitLifeRegen(udg_DM[GetPlayerId(GetOwningPlayer(u))+1],GetUnitLifeRegen(u)*2)
+call SetUnitState(udg_DM[id],UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA))
+if udg_B==false or UnitIsAlive(u)==false or UnitIsAlive(udg_DM[GetPlayerId(GetOwningPlayer(u))+1])==false then
+    if UnitIsAlive(udg_DM[GetPlayerId(GetOwningPlayer(u))+1]) then
+        call RemoveUnit(udg_DM[GetPlayerId(GetOwningPlayer(u))+1])
+    endif
+    call UnitRemoveAbility(u,'A063')
+    call ShowAbility2('A062',true)
+    call StartAbilityCooldown(GetUnitAbility(u,'A062'),70)
+    call PauseTimer(t)
+    call DestroyTimer(t)
+    call FlushChildHashtable(h,id)
 endif
 set u=null
 set t=null
@@ -50914,25 +50921,38 @@ local real y=GetUnitY(u)
 local player p=GetOwningPlayer(u)
 local timer t=CreateTimer()
 local integer uid=GetHandleId(t)
-local integer lvl=GetUnitAbilityLevel(u,'A062')
+// local integer lvl=GetUnitAbilityLevel(u,'A062')
 local integer id=GetPlayerId(p)+1
 if udg_DM[id]!=null then
 call RemoveUnit(udg_DM[id])
 endif
-if lvl==1 then
-set udg_DM[id]=CreateUnit(p,'h00Q',x,y,GetUnitFacing(u))
-elseif lvl==2 then
-set udg_DM[id]=CreateUnit(p,'h00R',x,y,GetUnitFacing(u))
-elseif lvl==3 then
-set udg_DM[id]=CreateUnit(p,'h00S',x,y,GetUnitFacing(u))
-elseif lvl==4 then
-set udg_DM[id]=CreateUnit(p,'h00T',x,y,GetUnitFacing(u))
-elseif lvl==5 then
-set udg_DM[id]=CreateUnit(p,'h00U',x,y,GetUnitFacing(u))
-endif
-call SetUnitMaxLife(udg_DM[id],GetUnitState(u, UNIT_STATE_MAX_LIFE)*0.6+GetHeroInt(u,true)*10)
+// if lvl==1 then
+set udg_DM[id]=CreateUnit(p,'H00Q',x,y,GetUnitFacing(u))
+// elseif lvl==2 then
+// set udg_DM[id]=CreateUnit(p,'h00R',x,y,GetUnitFacing(u))
+// elseif lvl==3 then
+// set udg_DM[id]=CreateUnit(p,'h00S',x,y,GetUnitFacing(u))
+// elseif lvl==4 then
+// set udg_DM[id]=CreateUnit(p,'h00T',x,y,GetUnitFacing(u))
+// elseif lvl==5 then
+// set udg_DM[id]=CreateUnit(p,'h00U',x,y,GetUnitFacing(u))
+// endif
+call SetHeroLevel(udg_DM[id],GetHeroLevel(u),false)
+call SetHeroAgi(udg_DM[id],GetHeroAgi(u,true),false)
+call SetHeroStr(udg_DM[id],GetHeroStr(u,true),false)
+call SetHeroInt(udg_DM[id],GetHeroInt(u,true),false)
+call SetUnitMaxLife(udg_DM[id],GetUnitMaxLife(u))
+call SetUnitMaxMana(udg_DM[id],GetUnitMaxMana(u))
+call SetUnitArmour(udg_DM[id],GetUnitArmour(u))
+call SetUnitLifeRegen(udg_DM[id],GetUnitLifeRegen(u)*2)
 call SetUnitState(udg_DM[id],UNIT_STATE_LIFE,GetUnitState(udg_DM[id],UNIT_STATE_MAX_LIFE))
 call SetUnitState(udg_DM[id],UNIT_STATE_MANA,GetUnitState(udg_DM[id],UNIT_STATE_MAX_MANA))
+call SetUnitMoveSpeed(udg_DM[id],GetUnitMoveSpeed(u))
+call SetUnitAttackSpeed(udg_DM[id],GetUnitAttackSpeed(u))
+call SetUnitBaseDamageByIndex(udg_DM[id],0,GetUnitTotalDamage(u))
+call ShowAbility2('A062',false)
+call UnitAddAbility(u,'A063')
+call UnitMakeAbilityPermanent(u,true,'A063')
 call SaveUnitHandle(h,uid,0,u)
 call UnitApplyTimedLife(CreateUnit(p,'e025',x,y,GetRandomReal(0,359)),'BTLF',2)
 call UnitApplyTimedLife(CreateUnit(p,'e026',x,y,GetRandomReal(0,359)),'BTLF',2)
