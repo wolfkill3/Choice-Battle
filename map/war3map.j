@@ -50898,6 +50898,70 @@ endfunction
 function Trig_Doppleman_Conditions takes nothing returns boolean
 return GetSpellAbilityId()=='A062' and udg_B
 endfunction
+
+function CloneAddCDMoria takes unit caster,unit n000 returns nothing
+    local integer i=0
+    call SetUnitFlyHeight(n000,GetUnitFlyHeight(caster),0)
+    // call UnitAddAbility(n000,'AST2')
+    call SetHeroLevel(n000,GetHeroLevel(caster),false)
+    call SetUnitPathing(n000,true)
+    call SetHeroAgi(n000,GetHeroAgi(caster,false),true)
+    call SetHeroStr(n000,GetHeroStr(caster,false),true)
+    call SetHeroInt(n000,GetHeroInt(caster,false),true)
+    loop
+        exitwhen i>=10
+        if GetItemTypeId(UnitItemInSlot(caster,i))!='Io39' then
+            call UnitAddItemToSlotById(n000, GetItemTypeId(UnitItemInSlot(caster,i) )  , i)
+            call SetItemDroppable(UnitItemInSlot(n000,i),false)
+        endif
+        set i=i+1
+    endloop
+
+    // if GetUnitAbilityLevel(caster,'ASG3')>0 then
+    //     call UnitAddAbility(n000,'ASG3')
+    //     call SetUnitAbilityLevel(n000,'ASG3',GetUnitAbilityLevel(caster,'ASG3'))
+    // endif
+
+    // call UnitAddAbility(n000,'ASQ1')
+    // call UnitAddAbility(n000,'ASW1')
+    // call UnitAddAbility(n000,'ASE1')
+    // call UnitAddAbility(n000,'ASR1')
+    // call UnitAddAbility(n000,'ASF1')
+    // call UnitAddAbility(n000,'ASG1')
+    // call SetUnitAbilityLevel(n000,'ASQ1',GetUnitAbilityLevel(caster,'ASQ1'))
+    // call SetUnitAbilityLevel(n000,'ASW1',GetUnitAbilityLevel(caster,'ASW1'))
+    // call SetUnitAbilityLevel(n000,'ASE1',GetUnitAbilityLevel(caster,'ASE1'))
+    // call SetUnitAbilityLevel(n000,'ASR1',GetUnitAbilityLevel(caster,'ASR1'))
+
+
+    // if GetAbilityCooldown(GetUnitAbility(caster, 'ASQ1'))>0 then
+    //     call StartAbilityCooldown(GetUnitAbility(n000, 'ASQ1'), GetAbilityRemainingCooldown(GetUnitAbility(caster, 'ASQ1')))
+    // endif
+
+    // if GetAbilityCooldown(GetUnitAbility(caster, 'ASW1'))>0 then
+    //     call StartAbilityCooldown(GetUnitAbility(n000, 'ASW1'), GetAbilityRemainingCooldown(GetUnitAbility(caster, 'ASW1')))
+    // endif
+
+    // if GetAbilityCooldown(GetUnitAbility(caster, 'ASE1'))>0 then
+    //     call StartAbilityCooldown(GetUnitAbility(n000, 'ASE1'), GetAbilityRemainingCooldown(GetUnitAbility(caster, 'ASE1')))
+    // endif
+
+    // if GetAbilityCooldown(GetUnitAbility(caster, 'ASR1'))>0 then
+    //     call StartAbilityCooldown(GetUnitAbility(n000, 'ASR1'), GetAbilityRemainingCooldown(GetUnitAbility(caster, 'ASR1')))
+    // endif
+
+    // if GetAbilityCooldown(GetUnitAbility(caster, 'ASF1'))>0 then
+    //     call StartAbilityCooldown(GetUnitAbility(n000, 'ASF1'), GetAbilityRemainingCooldown(GetUnitAbility(caster, 'ASF1')))
+    // endif
+
+    // if GetAbilityCooldown(GetUnitAbility(caster, 'ASG1'))>0 then
+    //     call StartAbilityCooldown(GetUnitAbility(n000, 'ASG1'), GetAbilityRemainingCooldown(GetUnitAbility(caster, 'ASG1')))
+    // endif
+    call SetUnitState(n000,UNIT_STATE_LIFE,GetUnitState(caster,UNIT_STATE_LIFE))
+    call SetUnitState(n000,UNIT_STATE_MANA,GetUnitState(caster,UNIT_STATE_MANA))
+    set n000=null
+    set caster=null
+endfunction
 function Trig_Doppleman_Actions2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
@@ -50941,19 +51005,9 @@ set udg_DM[id]=CreateUnit(p,'H00Q',x,y,GetUnitFacing(u))
 // elseif lvl==5 then
 // set udg_DM[id]=CreateUnit(p,'h00U',x,y,GetUnitFacing(u))
 // endif
-call SetHeroLevel(udg_DM[id],GetHeroLevel(u),false)
-call SetHeroAgi(udg_DM[id],GetHeroAgi(u,true),false)
-call SetHeroStr(udg_DM[id],GetHeroStr(u,true),false)
-call SetHeroInt(udg_DM[id],GetHeroInt(u,true),false)
-call SetUnitMaxLife(udg_DM[id],GetUnitMaxLife(u))
-call SetUnitMaxMana(udg_DM[id],GetUnitMaxMana(u))
-call SetUnitArmour(udg_DM[id],GetUnitArmour(u))
-call SetUnitLifeRegen(udg_DM[id],GetUnitLifeRegen(u)*2)
-call SetUnitState(udg_DM[id],UNIT_STATE_LIFE,GetUnitState(udg_DM[id],UNIT_STATE_MAX_LIFE))
-call SetUnitState(udg_DM[id],UNIT_STATE_MANA,GetUnitState(udg_DM[id],UNIT_STATE_MAX_MANA))
-call SetUnitMoveSpeed(udg_DM[id],GetUnitMoveSpeed(u))
-call SetUnitAttackSpeed(udg_DM[id],GetUnitAttackSpeed(u))
-call SetUnitBaseDamageByIndex(udg_DM[id],0,GetUnitTotalDamage(u))
+call UnitInventorySetSize(udg_DM[id],10)
+call UnitEnableInventoryCustom(udg_DM[id],false,false)
+call CloneAddCDMoria(u,udg_DM[id])
 call ShowAbility2('A062',false)
 call UnitAddAbility(u,'A063')
 call UnitMakeAbilityPermanent(u,true,'A063')
