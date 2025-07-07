@@ -43336,12 +43336,12 @@ if cond==0 then
         call TimerStart(cjlocgn_00000000,0,false,function Block_Damage2)
         set cjlocgn_00000000=null
     endif
-    if(GetUnitTypeId(c)=='h00Q' or GetUnitTypeId(c)=='h00R' or GetUnitTypeId(c)=='h00S' or GetUnitTypeId(c)=='h00T' or GetUnitTypeId(c)=='h00U')and nb>0 then
-        call UnitAddAbility(c,'A1C7')
-        call myCustomDamage(Hero[idc],u,0.5*GetHeroInt(Hero[idc],true)+0.25*GetHeroInt(Hero[idc],true)*GetUnitAbilityLevel(Hero[idc],'A062'),false,false,null,null,null)
-        call UnitRemoveAbility(c,'A1C7')
-        //set nb=nb+0.5*GetHeroInt(Hero[idc],true)+0.25*GetHeroInt(Hero[idc],true)*GetUnitAbilityLevel(Hero[idc],'A062')*myCustomDamage2(u,1)
-    endif
+    // if(GetUnitTypeId(c)=='h00Q' or GetUnitTypeId(c)=='h00R' or GetUnitTypeId(c)=='h00S' or GetUnitTypeId(c)=='h00T' or GetUnitTypeId(c)=='h00U')and nb>0 then
+    //     call UnitAddAbility(c,'A1C7')
+    //     call myCustomDamage(Hero[idc],u,0.5*GetHeroInt(Hero[idc],true)+0.25*GetHeroInt(Hero[idc],true)*GetUnitAbilityLevel(Hero[idc],'A062'),false,false,null,null,null)
+    //     call UnitRemoveAbility(c,'A1C7')
+    //     //set nb=nb+0.5*GetHeroInt(Hero[idc],true)+0.25*GetHeroInt(Hero[idc],true)*GetUnitAbilityLevel(Hero[idc],'A062')*myCustomDamage2(u,1)
+    // endif
     if GetUnitAbilityLevel(c,'AlbE')>=1 and nb>0 and nb<GetWidgetLife(u) and CurrentEventAttack  then
         //call SetUnitOwner(UltimateDamage,Player(idc),false)
         //set lkp=idc
@@ -50913,6 +50913,7 @@ function CloneAddCDMoria takes unit caster,unit n000 returns nothing
         if GetItemTypeId(UnitItemInSlot(caster,i))!='Io39' then
             call UnitAddItemToSlotById(n000, GetItemTypeId(UnitItemInSlot(caster,i) )  , i)
             call SetItemDroppable(UnitItemInSlot(n000,i),false)
+            call StartItemCooldown(UnitItemInSlot(n000,i),GetItemRemainingCooldown(UnitItemInSlot(caster,i)))
         endif
         set i=i+1
     endloop
@@ -50966,8 +50967,8 @@ function Trig_Doppleman_Actions2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
 local unit u=LoadUnitHandle(h,id,0)
-call SetUnitLifeRegen(udg_DM[GetPlayerId(GetOwningPlayer(u))+1],GetUnitLifeRegen(u)*2)
-call SetUnitState(udg_DM[id],UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA))
+// call SetUnitLifeRegen(udg_DM[GetPlayerId(GetOwningPlayer(u))+1],GetUnitLifeRegen(u)*2)
+call SetUnitState(udg_DM[GetPlayerId(GetOwningPlayer(u))+1],UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA))
 if udg_B==false or UnitIsAlive(u)==false or UnitIsAlive(udg_DM[GetPlayerId(GetOwningPlayer(u))+1])==false then
     if UnitIsAlive(udg_DM[GetPlayerId(GetOwningPlayer(u))+1]) then
         call RemoveUnit(udg_DM[GetPlayerId(GetOwningPlayer(u))+1])
@@ -111982,16 +111983,28 @@ function VergilD_Tricker takes unit newCaster, real point_x, real point_y return
 endfunction
 
 function InstantSpell_Action takes nothing returns nothing
+    local unit u=GetSpellAbilityUnit()
+    local player p=GetOwningPlayer(u)
 	// F new Саске
 	if GetSpellAbilityId()=='SasF' then
-		call SasukeF_Cast(GetSpellAbilityUnit(), GetSpellTargetUnit())
+		call SasukeF_Cast(u, GetSpellTargetUnit())
 	endif
 
 	// F Vergil
 	if GetSpellAbilityId()=='AP03' then
-		call VergilD_Tricker(GetSpellAbilityUnit(), GetSpellTargetX(), GetSpellTargetY())
+		call VergilD_Tricker(u, GetSpellTargetX(), GetSpellTargetY())
 	endif
     
+    // Мория и клон
+    if GetUnitTypeId(u)=='H00Q' then
+        call SetAbilityRemainingCooldown(GetUnitAbility(Hero[GetPlayerId(p)],GetAbilityTypeId(GetTriggerAbility())),GetAbilityBaseRealLevelFieldById(GetAbilityTypeId(GetTriggerAbility()),ABILITY_RLF_COOLDOWN,GetUnitAbilityLevel(Hero[GetPlayerId(p)],GetAbilityTypeId(GetTriggerAbility()))-1))    
+        // call BJDebugMsg("test1")
+    elseif GetUnitTypeId(u)!='H00Q' and udg_DM[GetPlayerId(p)+1]!=null then
+        call SetAbilityRemainingCooldown(GetUnitAbility(udg_DM[GetPlayerId(p)+1],GetAbilityTypeId(GetTriggerAbility())),GetAbilityBaseRealLevelFieldById(GetAbilityTypeId(GetTriggerAbility()),ABILITY_RLF_COOLDOWN,GetUnitAbilityLevel(Hero[GetPlayerId(p)],GetAbilityTypeId(GetTriggerAbility()))-1))
+        // call BJDebugMsg("test2")
+    endif
+    set u=null
+    set p=null
 endfunction
 
 function InitTrig_InstantSpell takes nothing returns nothing
