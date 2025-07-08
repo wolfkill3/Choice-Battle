@@ -38028,19 +38028,19 @@ local real y1=GetUnitY(u)
 local unit d1=LoadUnitHandle(h,id,4)
 local unit d2=LoadUnitHandle(h,id,5)
 if r>0 then
-call MoveLightningEx(l,false,x1,y1,GetUnitZCustom(u)+75,x,y,GetUnitZCustom(c)+75)
-call SaveReal(h,id,3,r-6)
-call SetLightningColor(l,0,100,0,r)
-call SetUnitX(d1,x)
-call SetUnitY(d1,y)
-call SetUnitX(d2,x1)
-call SetUnitY(d2,y1)
+    call MoveLightningEx(l,false,x1,y1,GetUnitZCustom(u)+75,x,y,GetUnitZCustom(c)+75)
+    call SaveReal(h,id,3,r-6)
+    call SetLightningColor(l,0,100,0,r)
+    call SetUnitX(d1,x)
+    call SetUnitY(d1,y)
+    call SetUnitX(d2,x1)
+    call SetUnitY(d2,y1)
 else
-call RemoveUnit(d1)
-call RemoveUnit(d2)
-call DestroyTimer(t)
-call DestroyLightning(l)
-call FlushChildHashtable(h,id)
+    call RemoveUnit(d1)
+    call RemoveUnit(d2)
+    call DestroyTimer(t)
+    call DestroyLightning(l)
+    call FlushChildHashtable(h,id)
 endif
 set t=null
 set u=null
@@ -38052,7 +38052,7 @@ endfunction
 
 function AlbedoEPass_Periodic takes nothing returns nothing
     local integer id= GetHandleId(GetExpiredTimer())
-        local unit target= LoadUnitHandle(HH, id, c_TARGET)
+    local unit target= LoadUnitHandle(HH, id, c_TARGET)
     local real time= LoadReal(HH, id, c_TIME)
     if IsUnitHidden(target)==false and GetUnitAbilityLevel(target,'cbc9')==0 then
         call SaveReal(HH, id, c_TIME, time + 0.05)
@@ -38097,7 +38097,7 @@ function AlbedoEPassive takes unit newSource, unit newTarget, timer newTimer ret
     local integer max_iteration= 30
     local integer random_slot= 0
     if AlbedoEPassiveCounter >=4 and UnitIsAlive(newTarget) then
-                if IsUnitType(newTarget, UNIT_TYPE_HERO) and IsUnitIllusion(newTarget)==false and GetUnitAbilityLevel(newSource, 'AlEp')>0 and GetUnitTypeId(newTarget)!='H007' and GetUnitTypeId(newTarget)!='Ho13' and GetUnitTypeId(newTarget)!='H34X' and GetUnitTypeId(newTarget)!='H14F' then
+        if IsUnitType(newTarget, UNIT_TYPE_HERO) and IsUnitIllusion(newTarget)==false and GetUnitAbilityLevel(newSource, 'AlEp')>0 and GetUnitTypeId(newTarget)!='H007' and GetUnitTypeId(newTarget)!='Ho13' and GetUnitTypeId(newTarget)!='H34X' and GetUnitTypeId(newTarget)!='H14F' then
             loop
             exitwhen max_iteration <= 0
                 set max_iteration=max_iteration - 1
@@ -38122,9 +38122,9 @@ function AlbedoEPassive takes unit newSource, unit newTarget, timer newTimer ret
                 if GetUnitAbilityLevel(newTarget,'cbc5')>0 then
                     call EnableUnitAbility2(newTarget,'AInv',false,true)
                 endif
-                                set bj_lastCreatedItem = UnitItemInSlot(newTarget, random_slot)
-                                call SetItemDroppable(bj_lastCreatedItem,false)
-                                call SaveItemHandle(HH, id, StringHash("BrokenItem"), bj_lastCreatedItem)
+                set bj_lastCreatedItem = UnitItemInSlot(newTarget, random_slot)
+                call SetItemDroppable(bj_lastCreatedItem,false)
+                call SaveItemHandle(HH, id, StringHash("BrokenItem"), bj_lastCreatedItem)
                 call SaveUnitHandle(HH, id, c_TARGET, newTarget)
                 call SaveReal(HH, id, c_TIME, 0)
                 call SaveInteger(HH, id, StringHash("BrokenItemSlot"), random_slot)
@@ -44648,39 +44648,84 @@ if GetTriggerPlayerKey()==OSKEY_OEM_3 then
     endif
 endif
 if UnitHasItemOfTypeBJCustom(Hero[GetPlayerId(GetTriggerPlayer())],'I04V') and IsUnitPaused(Hero[GetPlayerId(GetTriggerPlayer())])==false and (RectContainsUnit(gg_rct_AntiMh,Hero[GetPlayerId(GetTriggerPlayer())])==false and RectContainsUnit(gg_rct_HibariFight,Hero[GetPlayerId(GetTriggerPlayer())])==false) and GetUnitState(Hero[GetPlayerId(GetTriggerPlayer())],UNIT_STATE_MANA)>=25 and GetUnitAbilityLevel(Hero[GetPlayerId(GetTriggerPlayer())],'Pet1')==0 and GetUnitAbilityLevel(Hero[GetPlayerId(GetTriggerPlayer())],'cbc8')==0 then
-loop
-exitwhen lp==10
-if GetItemTypeId(UnitItemInSlot(Hero[i],lp))=='I04V' then
-set ind=lp
-endif
-set lp=lp+1
-endloop
-if IsAbilityOnCooldown(GetUnitAbility(Hero[i],'A12B'))==false and IsUnitPaused(Hero[i])==false and (GetUnitAbilityLevel(Hero[i],'A3BJ')>0 or GetTriggerPlayerKey()==OSKEY_OEM_3 ) then
-call UnitAddAbility(Hero[i],'A151')
-call UnitRemoveAbilityTimedPause(Hero[i],'A151',7)
-call UnitAddAbility(Hero[i],'A22B')
-call UnitRemoveAbilityTimedPause(Hero[i],'A22B',7)
-call UnitRemoveBuffs(Hero[i],false,true)
-call UnitRemoveAbility(Hero[i], 'A3BJ')
-call UnitRemoveAbility(Hero[i], 'cbc3')
-call UnitRemoveAbility(Hero[i], 'CBC1')
-call UnitRemoveAbility(Hero[i], 'CBC2')
-call UnitRemoveAbility(Hero[i], 'Bslo')
-call UnitRemoveAbility(Hero[i], 'Bsl1')
-call UnitRemoveAbility(Hero[i], 'WAE1')
-call UnitRemoveAbility(Hero[i], 'Ao53')
-call UnitRemoveAbility(Hero[i], 'A00D')
-call UnitRemoveAbility(Hero[i], 'Ao2Z')
-call UnitRemoveAbility(Hero[i], 'A1VJ')
-call UnitRemoveAbility(Hero[i], 'A2VJ')
-call UnitRemoveAbility(Hero[i], 'AoSV')
-call UnitRemoveAbility(Hero[i], 'A1SV')
-call SetUnitMoveSpeed(Hero[i], GetUnitDefaultMoveSpeed(Hero[i]))
-call UnitUseItem(Hero[i],UnitItemInSlot(Hero[i],ind))
-elseif IsAbilityOnCooldown(GetUnitAbility(Hero[i],'A12B'))==false and IsUnitPaused(Hero[i])==false and GetUnitAbilityLevel(Hero[i],'A3BJ')==0 then
-call UnitAddAbility(Hero[i],'A3BJ')
-call UnitRemoveAbilityTimed(Hero[i],'A3BJ',0.4)
-endif
+    loop
+        exitwhen lp==10
+        if GetItemTypeId(UnitItemInSlot(Hero[i],lp))=='I04V' then
+            set ind=lp
+        endif
+        set lp=lp+1
+    endloop
+    if IsAbilityOnCooldown(GetUnitAbility(Hero[i],'A12B'))==false and IsUnitPaused(Hero[i])==false and (GetUnitAbilityLevel(Hero[i],'A3BJ')>0 or GetTriggerPlayerKey()==OSKEY_OEM_3 ) then
+        if udg_DM[i+1]!=null then
+            call UnitAddAbility(Hero[i],'A151')
+            call UnitRemoveAbilityTimedPause(Hero[i],'A151',7)
+            call UnitAddAbility(Hero[i],'A22B')
+            call UnitRemoveAbilityTimedPause(Hero[i],'A22B',7)
+            call UnitRemoveBuffs(Hero[i],false,true)
+            call UnitRemoveAbility(Hero[i], 'A3BJ')
+            call UnitRemoveAbility(Hero[i], 'cbc3')
+            call UnitRemoveAbility(Hero[i], 'CBC1')
+            call UnitRemoveAbility(Hero[i], 'CBC2')
+            call UnitRemoveAbility(Hero[i], 'Bslo')
+            call UnitRemoveAbility(Hero[i], 'Bsl1')
+            call UnitRemoveAbility(Hero[i], 'WAE1')
+            call UnitRemoveAbility(Hero[i], 'Ao53')
+            call UnitRemoveAbility(Hero[i], 'A00D')
+            call UnitRemoveAbility(Hero[i], 'Ao2Z')
+            call UnitRemoveAbility(Hero[i], 'A1VJ')
+            call UnitRemoveAbility(Hero[i], 'A2VJ')
+            call UnitRemoveAbility(Hero[i], 'AoSV')
+            call UnitRemoveAbility(Hero[i], 'A1SV')
+            call SetUnitMoveSpeed(Hero[i], GetUnitDefaultMoveSpeed(Hero[i]))
+            call UnitUseItem(Hero[i],UnitItemInSlot(Hero[i],ind))
+            call UnitAddAbility(udg_DM[i+1],'A151')
+            call UnitRemoveAbilityTimedPause(udg_DM[i+1],'A151',7)
+            call UnitAddAbility(udg_DM[i+1],'A22B')
+            call UnitRemoveAbilityTimedPause(udg_DM[i+1],'A22B',7)
+            call UnitRemoveBuffs(udg_DM[i+1],false,true)
+            call UnitRemoveAbility(udg_DM[i+1], 'A3BJ')
+            call UnitRemoveAbility(udg_DM[i+1], 'cbc3')
+            call UnitRemoveAbility(udg_DM[i+1], 'CBC1')
+            call UnitRemoveAbility(udg_DM[i+1], 'CBC2')
+            call UnitRemoveAbility(udg_DM[i+1], 'Bslo')
+            call UnitRemoveAbility(udg_DM[i+1], 'Bsl1')
+            call UnitRemoveAbility(udg_DM[i+1], 'WAE1')
+            call UnitRemoveAbility(udg_DM[i+1], 'Ao53')
+            call UnitRemoveAbility(udg_DM[i+1], 'A00D')
+            call UnitRemoveAbility(udg_DM[i+1], 'Ao2Z')
+            call UnitRemoveAbility(udg_DM[i+1], 'A1VJ')
+            call UnitRemoveAbility(udg_DM[i+1], 'A2VJ')
+            call UnitRemoveAbility(udg_DM[i+1], 'AoSV')
+            call UnitRemoveAbility(udg_DM[i+1], 'A1SV')
+            call SetUnitMoveSpeed(udg_DM[i+1], GetUnitDefaultMoveSpeed(udg_DM[i+1]))
+            call UnitUseItem(udg_DM[i+1],UnitItemInSlot(udg_DM[i+1],ind))
+        else
+            call UnitAddAbility(Hero[i],'A151')
+            call UnitRemoveAbilityTimedPause(Hero[i],'A151',7)
+            call UnitAddAbility(Hero[i],'A22B')
+            call UnitRemoveAbilityTimedPause(Hero[i],'A22B',7)
+            call UnitRemoveBuffs(Hero[i],false,true)
+            call UnitRemoveAbility(Hero[i], 'A3BJ')
+            call UnitRemoveAbility(Hero[i], 'cbc3')
+            call UnitRemoveAbility(Hero[i], 'CBC1')
+            call UnitRemoveAbility(Hero[i], 'CBC2')
+            call UnitRemoveAbility(Hero[i], 'Bslo')
+            call UnitRemoveAbility(Hero[i], 'Bsl1')
+            call UnitRemoveAbility(Hero[i], 'WAE1')
+            call UnitRemoveAbility(Hero[i], 'Ao53')
+            call UnitRemoveAbility(Hero[i], 'A00D')
+            call UnitRemoveAbility(Hero[i], 'Ao2Z')
+            call UnitRemoveAbility(Hero[i], 'A1VJ')
+            call UnitRemoveAbility(Hero[i], 'A2VJ')
+            call UnitRemoveAbility(Hero[i], 'AoSV')
+            call UnitRemoveAbility(Hero[i], 'A1SV')
+            call SetUnitMoveSpeed(Hero[i], GetUnitDefaultMoveSpeed(Hero[i]))
+            call UnitUseItem(Hero[i],UnitItemInSlot(Hero[i],ind))
+        endif
+    elseif IsAbilityOnCooldown(GetUnitAbility(Hero[i],'A12B'))==false and IsUnitPaused(Hero[i])==false and GetUnitAbilityLevel(Hero[i],'A3BJ')==0 then
+        call UnitAddAbility(Hero[i],'A3BJ')
+        call UnitRemoveAbilityTimed(Hero[i],'A3BJ',0.4)
+    endif
 endif
 endfunction
 function InitTrig_BKB takes nothing returns nothing
@@ -45767,6 +45812,7 @@ local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
 local unit u=LoadUnitHandle(HH,id,0)
 local real time=LoadReal(HH,id,1)
+local player p=GetOwningPlayer(u)
 local integer i=10
 if IsUnitPaused(u)==false and GetUnitAbilityLevel(u,'Pet1')==0 then
 call SaveReal(HH,id,1,time+0.05)
@@ -45777,7 +45823,13 @@ call UnitRemoveAbility(u,'A6HR')
 loop
     call StartAbilityCooldown(GetUnitAbility(u,'A24T'),25)
     if GetItemTypeId(UnitItemInSlot(u,i)) == 'I04E' then
-        call StartItemCooldown(UnitItemInSlot(u, i),25)
+        // Мория и клон
+        if GetUnitTypeId(u)=='H00Q' or GetUnitTypeId(u)!='H00Q' and udg_DM[GetPlayerId(p)+1]!=null then
+            call StartItemCooldown(UnitItemInSlot(Hero[GetPlayerId(p)], i),25)
+            call StartItemCooldown(UnitItemInSlot(udg_DM[GetPlayerId(p)+1], i),25)
+        else
+            call StartItemCooldown(UnitItemInSlot(u, i),25)
+        endif
     endif
 exitwhen i == 0
 set i=i - 1
@@ -45785,6 +45837,8 @@ endloop
 call FlushChildHashtable(HH,id)
 call DestroyTimer(t)
 endif
+set t=null
+set p=null
 set u=null
 endfunction
 function Active666Cast takes nothing returns nothing
@@ -45798,6 +45852,7 @@ call CreateModeIndicatorWithPauseFormDispellable(u, "war3mapImported\\BTN666Hell
 call SaveUnitHandle(HH,id,0,u)
 call TimerStart(t,0.05,true,function Active666Cast2)
 set u=null
+set t=null
 endfunction
 function InitTrig_Active666 takes nothing returns nothing
 set gg_trg_Active666=CreateTrigger()
@@ -45812,6 +45867,7 @@ function HellRingCast2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
 local unit u=LoadUnitHandle(HH,id,0)
+local player p=GetOwningPlayer(u)
 local real time=LoadReal(HH,id,1)
 local integer i=10
 if IsUnitPaused(u)==false and GetUnitAbilityLevel(u,'Pet1')==0 then
@@ -45823,7 +45879,12 @@ call UnitRemoveAbility(u,'A14R')
 loop
     call StartAbilityCooldown(GetUnitAbility(u,'A0YJ'),15)
     if GetItemTypeId(UnitItemInSlot(u,i)) == 'I02Q' then
-        call StartItemCooldown(UnitItemInSlot(u, i),15)
+        if GetUnitTypeId(u)=='H00Q' or GetUnitTypeId(u)!='H00Q' and udg_DM[GetPlayerId(p)+1]!=null then
+            call StartItemCooldown(UnitItemInSlot(Hero[GetPlayerId(p)], i),15)
+            call StartItemCooldown(UnitItemInSlot(udg_DM[GetPlayerId(p)+1], i),15)
+        else
+            call StartItemCooldown(UnitItemInSlot(u, i),15)
+        endif
     endif
 exitwhen i == 0
 set i=i - 1
@@ -45832,6 +45893,8 @@ call FlushChildHashtable(HH,id)
 call DestroyTimer(t)
 endif
 set u=null
+set t=null
+set p=null
 endfunction
 function HellRingCast takes nothing returns nothing
 local timer t=CreateTimer()
@@ -45843,6 +45906,7 @@ call CreateModeIndicatorWithPauseFormDispellable(u, "war3mapImported\\BTNEvilEye
 call SaveUnitHandle(HH,id,0,u)
 call TimerStart(t,0.05,true,function HellRingCast2)
 set u=null
+set t=null
 endfunction
 function InitTrig_HellRing takes nothing returns nothing
 set gg_trg_HellRing=CreateTrigger()
@@ -46744,9 +46808,22 @@ function Trig_BorosArmor_Conditions takes nothing returns boolean
 return GetSpellAbilityId()=='BorA' and GetUnitTypeId(GetTriggerUnit())!='H007'
 endfunction
 function Trig_BorosArmor_Actions takes nothing returns nothing
-call UnitAddAbility(GetTriggerUnit(),'BorB')
-call UnitMakeAbilityPermanent(GetTriggerUnit(),true,'BorB')
-call UnitRemoveAbilityTimedPause(GetTriggerUnit(),'BorB',5)
+local unit u=GetTriggerUnit()
+local player p=GetOwningPlayer(u)
+if udg_DM[GetPlayerId(p)+1]!=null then
+    call UnitAddAbility(Hero[GetPlayerId(p)],'BorB')
+    call UnitMakeAbilityPermanent(Hero[GetPlayerId(p)],true,'BorB')
+    call UnitRemoveAbilityTimedPause(Hero[GetPlayerId(p)],'BorB',5)
+    call UnitAddAbility(udg_DM[GetPlayerId(p)+1],'BorB')
+    call UnitMakeAbilityPermanent(udg_DM[GetPlayerId(p)+1],true,'BorB')
+    call UnitRemoveAbilityTimedPause(udg_DM[GetPlayerId(p)+1],'BorB',5)
+else
+    call UnitAddAbility(u,'BorB')
+    call UnitMakeAbilityPermanent(u,true,'BorB')
+    call UnitRemoveAbilityTimedPause(u,'BorB',5)
+endif
+set u=null
+set p=null
 endfunction
 function InitTrig_BorosArmor takes nothing returns nothing
 local integer i=0
@@ -46770,22 +46847,33 @@ if GetTriggerPlayerKey()==OSKEY_OEM_3 then
     endif
 endif
 if UnitHasItemOfTypeBJCustom(Hero[GetPlayerId(GetTriggerPlayer())],'I13R') and IsUnitPaused(Hero[GetPlayerId(GetTriggerPlayer())])==false and (RectContainsUnit(gg_rct_AntiMh,Hero[GetPlayerId(GetTriggerPlayer())])==false and RectContainsUnit(gg_rct_HibariFight,Hero[GetPlayerId(GetTriggerPlayer())])==false) and GetUnitState(Hero[GetPlayerId(GetTriggerPlayer())],UNIT_STATE_MANA)>=25 and GetUnitAbilityLevel(Hero[GetPlayerId(GetTriggerPlayer())],'Pet1')==0 and GetUnitAbilityLevel(Hero[GetPlayerId(GetTriggerPlayer())],'cbc8')==0 then
-loop
-exitwhen lp==10
-if GetItemTypeId(UnitItemInSlot(Hero[i],lp))=='I13R' then
-set ind=lp
-endif
-set lp=lp+1
-endloop
-if IsAbilityOnCooldown(GetUnitAbility(Hero[i],'BorA'))==false and IsUnitPaused(Hero[i])==false and (GetUnitAbilityLevel(Hero[i],'A3BJ')>0 or GetTriggerPlayerKey()==OSKEY_OEM_3 ) then
-call UnitAddAbility(Hero[i],'BorB')
-call UnitMakeAbilityPermanent(Hero[i],true,'BorB')
-call UnitRemoveAbilityTimedPause(Hero[i],'BorB',5)
-call StartItemCooldown(UnitItemInSlot(Hero[i],ind),GetAbilityBaseRealLevelFieldById('BorA',ABILITY_RLF_COOLDOWN,0))
-elseif IsAbilityOnCooldown(GetUnitAbility(Hero[i],'BorA'))==false and IsUnitPaused(Hero[i])==false and GetUnitAbilityLevel(Hero[i],'A3BJ')==0 then
-call UnitAddAbility(Hero[i],'A3BJ')
-call UnitRemoveAbilityTimed(Hero[i],'A3BJ',0.4)
-endif
+    loop
+        exitwhen lp==10
+        if GetItemTypeId(UnitItemInSlot(Hero[i],lp))=='I13R' then
+            set ind=lp
+        endif
+        set lp=lp+1
+    endloop
+    if IsAbilityOnCooldown(GetUnitAbility(Hero[i],'BorA'))==false and IsUnitPaused(Hero[i])==false and (GetUnitAbilityLevel(Hero[i],'A3BJ')>0 or GetTriggerPlayerKey()==OSKEY_OEM_3 ) then
+        if udg_DM[i+1]!=null then
+            call UnitAddAbility(Hero[i],'BorB')
+            call UnitMakeAbilityPermanent(Hero[i],true,'BorB')
+            call UnitRemoveAbilityTimedPause(Hero[i],'BorB',5)
+            call StartItemCooldown(UnitItemInSlot(Hero[i],ind),GetAbilityBaseRealLevelFieldById('BorA',ABILITY_RLF_COOLDOWN,0))
+            call UnitAddAbility(udg_DM[i+1],'BorB')
+            call UnitMakeAbilityPermanent(udg_DM[i+1],true,'BorB')
+            call UnitRemoveAbilityTimedPause(udg_DM[i+1],'BorB',5)
+            call StartItemCooldown(UnitItemInSlot(udg_DM[i+1],ind),GetAbilityBaseRealLevelFieldById('BorA',ABILITY_RLF_COOLDOWN,0))
+        else
+            call UnitAddAbility(Hero[i],'BorB')
+            call UnitMakeAbilityPermanent(Hero[i],true,'BorB')
+            call UnitRemoveAbilityTimedPause(Hero[i],'BorB',5)
+            call StartItemCooldown(UnitItemInSlot(Hero[i],ind),GetAbilityBaseRealLevelFieldById('BorA',ABILITY_RLF_COOLDOWN,0))
+        endif
+    elseif IsAbilityOnCooldown(GetUnitAbility(Hero[i],'BorA'))==false and IsUnitPaused(Hero[i])==false and GetUnitAbilityLevel(Hero[i],'A3BJ')==0 then
+        call UnitAddAbility(Hero[i],'A3BJ')
+        call UnitRemoveAbilityTimed(Hero[i],'A3BJ',0.4)
+    endif
 endif
 endfunction
 function InitTrig_EscBoros takes nothing returns nothing
@@ -46821,10 +46909,22 @@ endfunction
 function Trig_PriestessBow_Actions2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
-local item it=LoadItemHandle(HH,id,0)
-call StartItemCooldown(it,0.1)
+local unit u=LoadUnitHandle(HH,id,0)
+local player p=GetOwningPlayer(u)
+local item it=LoadItemHandle(HH,id,1)
+local ability ab=LoadAbilityHandle(HH,id,2)
+if GetUnitTypeId(u)=='H00Q' or GetUnitTypeId(u)!='H00Q' and udg_DM[GetPlayerId(p)+1]!=null then
+    call StartItemCooldown(GetAbilityOwningItem(GetUnitAbility(u,BlzGetAbilityId(ab))),0.1)
+    call StartItemCooldown(GetAbilityOwningItem(GetUnitAbility(udg_DM[GetPlayerId(p)+1],BlzGetAbilityId(ab))),0.1)
+else
+    call StartItemCooldown(it,0.1)
+endif
 call DestroyTimer(t)
 call FlushChildHashtable(HH,id)
+set u=null
+set ab=null
+set it=null
+set p=null
 set t=null
 endfunction
 function Trig_PriestessBow_Actions takes nothing returns nothing
@@ -46847,7 +46947,9 @@ if c==u or GetSpellTargetItem()==it then
         call DisplayTextToPlayer(Player(idp),0,0,"Лук Жрицы теперь отталкивает.")
         call SaveBoolean(HH,idt,'BoMd',true)
     endif
-    call SaveItemHandle(HH,id,0,it)
+    call SaveUnitHandle(HH,id,0,u)
+    call SaveItemHandle(HH,id,1,it)
+    call SaveAbilityHandle(HH,id,2,GetTriggerAbility())
     call TimerStart(t,0.02,false,function Trig_PriestessBow_Actions2)
 else
     // call BJDebugMsg("test2")
@@ -172917,20 +173019,51 @@ if UnitHasItemOfTypeBJCustom(Hero[GetPlayerId(GetTriggerPlayer())],'IMDi') and I
         set lp=lp+1
     endloop
     if IsAbilityOnCooldown(GetUnitAbility(Hero[i],'IMDs'))==false and IsUnitPaused(Hero[i])==false and (GetUnitAbilityLevel(Hero[i],'A3BJ')>0 or GetTriggerPlayerKey()==OSKEY_OEM_3 )then
-        call UnitRemoveBuffs(Hero[i],false,true)
-        call UnitRemoveAbility(Hero[i], 'cbc3')
-        call UnitRemoveAbility(Hero[i], 'cbc7')
-        call UnitRemoveAbility(Hero[i], 'CBC2')
-        call UnitRemoveAbility(Hero[i], 'Bslo')
-        call UnitRemoveAbility(Hero[i], 'Bsl1')
-        call UnitRemoveAbility(Hero[i], 'WAE1')
-        call UnitRemoveAbility(Hero[i], 'Ao53')
-        call UnitRemoveAbility(Hero[i], 'A00D')
-        call UnitRemoveAbility(Hero[i], 'Ao2Z')
-        call UnitRemoveAbility(Hero[i], 'A1VJ')
-        call UnitRemoveAbility(Hero[i], 'A3BJ')
-        call SetUnitMoveSpeed(Hero[i], GetUnitDefaultMoveSpeed(Hero[i]))
-        call UnitUseItem(Hero[i],UnitItemInSlot(Hero[i],ind))
+        if udg_DM[i+1]!=null then
+            call UnitRemoveBuffs(Hero[i],false,true)
+            call UnitRemoveAbility(Hero[i], 'cbc3')
+            call UnitRemoveAbility(Hero[i], 'cbc7')
+            call UnitRemoveAbility(Hero[i], 'CBC2')
+            call UnitRemoveAbility(Hero[i], 'Bslo')
+            call UnitRemoveAbility(Hero[i], 'Bsl1')
+            call UnitRemoveAbility(Hero[i], 'WAE1')
+            call UnitRemoveAbility(Hero[i], 'Ao53')
+            call UnitRemoveAbility(Hero[i], 'A00D')
+            call UnitRemoveAbility(Hero[i], 'Ao2Z')
+            call UnitRemoveAbility(Hero[i], 'A1VJ')
+            call UnitRemoveAbility(Hero[i], 'A3BJ')
+            call SetUnitMoveSpeed(Hero[i], GetUnitDefaultMoveSpeed(Hero[i]))
+            call UnitUseItem(Hero[i],UnitItemInSlot(Hero[i],ind))
+            call UnitRemoveBuffs(udg_DM[i+1],false,true)
+            call UnitRemoveAbility(udg_DM[i+1], 'cbc3')
+            call UnitRemoveAbility(udg_DM[i+1], 'cbc7')
+            call UnitRemoveAbility(udg_DM[i+1], 'CBC2')
+            call UnitRemoveAbility(udg_DM[i+1], 'Bslo')
+            call UnitRemoveAbility(udg_DM[i+1], 'Bsl1')
+            call UnitRemoveAbility(udg_DM[i+1], 'WAE1')
+            call UnitRemoveAbility(udg_DM[i+1], 'Ao53')
+            call UnitRemoveAbility(udg_DM[i+1], 'A00D')
+            call UnitRemoveAbility(udg_DM[i+1], 'Ao2Z')
+            call UnitRemoveAbility(udg_DM[i+1], 'A1VJ')
+            call UnitRemoveAbility(udg_DM[i+1], 'A3BJ')
+            call SetUnitMoveSpeed(udg_DM[i+1], GetUnitDefaultMoveSpeed(udg_DM[i+1]))
+            call UnitUseItem(udg_DM[i+1],UnitItemInSlot(udg_DM[i+1],ind))
+        else
+            call UnitRemoveBuffs(Hero[i],false,true)
+            call UnitRemoveAbility(Hero[i], 'cbc3')
+            call UnitRemoveAbility(Hero[i], 'cbc7')
+            call UnitRemoveAbility(Hero[i], 'CBC2')
+            call UnitRemoveAbility(Hero[i], 'Bslo')
+            call UnitRemoveAbility(Hero[i], 'Bsl1')
+            call UnitRemoveAbility(Hero[i], 'WAE1')
+            call UnitRemoveAbility(Hero[i], 'Ao53')
+            call UnitRemoveAbility(Hero[i], 'A00D')
+            call UnitRemoveAbility(Hero[i], 'Ao2Z')
+            call UnitRemoveAbility(Hero[i], 'A1VJ')
+            call UnitRemoveAbility(Hero[i], 'A3BJ')
+            call SetUnitMoveSpeed(Hero[i], GetUnitDefaultMoveSpeed(Hero[i]))
+            call UnitUseItem(Hero[i],UnitItemInSlot(Hero[i],ind))
+        endif
     elseif IsAbilityOnCooldown(GetUnitAbility(Hero[i],'A12B'))==false and IsUnitPaused(Hero[i])==false and GetUnitAbilityLevel(Hero[i],'A3BJ')==0 then
         call UnitAddAbility(Hero[i],'A3BJ')
         call UnitRemoveAbilityTimed(Hero[i],'A3BJ',0.4)
