@@ -45785,6 +45785,7 @@ endloop
 call FlushChildHashtable(HH,id)
 call DestroyTimer(t)
 endif
+set t=null
 set u=null
 endfunction
 function Active666Cast takes nothing returns nothing
@@ -45797,6 +45798,7 @@ call ComboChecker(u,2,4, false )
 call CreateModeIndicatorWithPauseFormDispellable(u, "war3mapImported\\BTN666HellRing.blp", 4,'A6HR')
 call SaveUnitHandle(HH,id,0,u)
 call TimerStart(t,0.05,true,function Active666Cast2)
+set t=null
 set u=null
 endfunction
 function InitTrig_Active666 takes nothing returns nothing
@@ -45831,6 +45833,7 @@ endloop
 call FlushChildHashtable(HH,id)
 call DestroyTimer(t)
 endif
+set t=null
 set u=null
 endfunction
 function HellRingCast takes nothing returns nothing
@@ -45842,6 +45845,7 @@ call UnitMakeAbilityPermanent(u,true,'A14R')
 call CreateModeIndicatorWithPauseFormDispellable(u, "war3mapImported\\BTNEvilEye's.blp", 5,'A14R')
 call SaveUnitHandle(HH,id,0,u)
 call TimerStart(t,0.05,true,function HellRingCast2)
+set t=null
 set u=null
 endfunction
 function InitTrig_HellRing takes nothing returns nothing
