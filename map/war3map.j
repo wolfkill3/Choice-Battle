@@ -22451,7 +22451,7 @@ call TriggerAddCondition(gg_trg_UltimateItems,Condition(function Trig_UltimateIt
 call TriggerAddAction(gg_trg_UltimateItems,function Trig_UltimateItems_Actions)
 endfunction
 function Trig_Killer_Conditions takes nothing returns boolean
-return IsUnitType(GetTriggerUnit(),UNIT_TYPE_HERO)and GetUnitAbilityLevel(GetTriggerUnit(),'A14Y')==0 and  GetUnitTypeId(GetTriggerUnit())!='HSaC'   and GetUnitTypeId(GetTriggerUnit())!='HASC' and GetUnitTypeId(GetTriggerUnit())!='HAST'  and GetUnitTypeId(GetTriggerUnit())!='H03Y' and GetUnitTypeId(GetTriggerUnit())!='Ho13' and GetUnitTypeId(GetTriggerUnit())!='H34X' and GetUnitTypeId(GetTriggerUnit())!='H14F' and GetUnitTypeId(GetTriggerUnit())!='H03T' and GetUnitTypeId(GetTriggerUnit())!='H03W' and GetUnitTypeId(GetTriggerUnit())!='H03X' and GetUnitTypeId(GetTriggerUnit())!='H03V' and GetUnitTypeId(GetTriggerUnit())!='H03U' and GetUnitTypeId(GetTriggerUnit())!='H035' and GetUnitTypeId(GetTriggerUnit())!='H007' and GetOwningPlayer(GetTriggerUnit())!=Player(14)
+return IsUnitType(GetTriggerUnit(),UNIT_TYPE_HERO)and GetUnitAbilityLevel(GetTriggerUnit(),'A14Y')==0 and  GetUnitTypeId(GetTriggerUnit())!='HSaC'   and GetUnitTypeId(GetTriggerUnit())!='HASC' and GetUnitTypeId(GetTriggerUnit())!='HAST'  and GetUnitTypeId(GetTriggerUnit())!='H03Y' and GetUnitTypeId(GetTriggerUnit())!='Ho13' and GetUnitTypeId(GetTriggerUnit())!='H34X' and GetUnitTypeId(GetTriggerUnit())!='H14F' and GetUnitTypeId(GetTriggerUnit())!='H03T' and GetUnitTypeId(GetTriggerUnit())!='H03W' and GetUnitTypeId(GetTriggerUnit())!='H03X' and GetUnitTypeId(GetTriggerUnit())!='H03V' and GetUnitTypeId(GetTriggerUnit())!='H03U' and GetUnitTypeId(GetTriggerUnit())!='H035' and GetUnitTypeId(GetTriggerUnit())!='H007' and GetUnitTypeId(GetTriggerUnit())!='H00Q' and GetOwningPlayer(GetTriggerUnit())!=Player(14)
 endfunction
 function KillerSound takes integer id,integer id2 returns nothing
 local integer i=0
@@ -23142,6 +23142,9 @@ elseif GetItemPlayer(it)==p then
         endif
     endif
 endif
+if udg_DM[GetPlayerId(p)+1]!=null then
+    call SaveBoolean(HH,GetHandleId(udg_DM[GetPlayerId(p)+1]),'ItCh',true)
+endif
 set t=null
 set u=null
 set p=null
@@ -23156,6 +23159,9 @@ local real cd=GetItemRemainingCooldown(it)
 local item f=null
 local integer i=0
 local integer count=0
+if udg_DM[GetPlayerId(p)+1]!=null then
+    call SaveBoolean(HH,GetHandleId(udg_DM[GetPlayerId(p)+1]),'ItCh',true)
+endif
 if GetItemPlayer(it)==Player(15) or GetItemPlayer(it)==p or udg_test==true then
     call SetItemPlayer(it,p,false)
     call SetItemStringField(it,ITEM_SF_NAME,GetBaseItemStringFieldById(GetItemTypeId(it),ITEM_SF_NAME)+" ("+Color[GetPlayerId(p)]+GetPlayerName(p)+"|r)")
@@ -23356,6 +23362,7 @@ local integer itemId=GetItemTypeId(it)
 local integer ittargId=GetItemTypeId(it)
 local real cd=GetItemRemainingCooldown(it)
 local real cdtar=GetItemRemainingCooldown(ittarg)
+local player p=GetOwningPlayer(u)
 local integer i=0
 local integer count=0
 if (GetItemRemainingCooldown(it)>0 or GetItemRemainingCooldown(ittarg)>0) and (slotSource==6 or slotSource==7 or slotSource==8 or slotTarget==6 or slotTarget==7 or slotTarget==8 or slotTarget==9) then
@@ -23429,8 +23436,12 @@ else
         call SetTriggerItemAllowMoveSlot(false)
     endif
 endif
+if udg_DM[GetPlayerId(p)+1]!=null then
+    call SaveBoolean(HH,GetHandleId(udg_DM[GetPlayerId(p)+1]),'ItCh',true)
+endif
 set it=null
 set ittarg=null
+set p=null
 set u=null
 endfunction
 function UIS_RegisterItem takes integer a1,integer a2,integer a3,integer a4,integer a5,integer a6,integer a7,integer a8,integer a9,integer a10,integer a11,integer l__n returns nothing
@@ -23536,7 +23547,7 @@ call TriggerAddAction(gg_trg_Pick_Heroes,function Trig_Pick_Heroes_Actions)
 endfunction
 function Trig_LevelUp_Conditions takes nothing returns boolean  
 set n=GetTriggerUnit()
-return GetOwningPlayer(n)!=Player(PLAYER_NEUTRAL_PASSIVE)and GetUnitAbilityLevel(n,'Aloc')==0 and  GetUnitTypeId(n)!='HSaC' and  GetUnitTypeId(n)!='HASC' and  GetUnitTypeId(n)!='HAST' and GetUnitTypeId(n)!='Ho13' and GetUnitTypeId(n)!='H34X' and GetUnitTypeId(n)!='H14F' and GetUnitTypeId(n)!='H007' and GetUnitTypeId(n)!='H035' and GetUnitTypeId(n)!='H03O' and GetUnitTypeId(n)!='H03Y' and GetUnitTypeId(n)!='H03T' and GetUnitTypeId(n)!='H03W' and GetUnitTypeId(n)!='H03X' and GetUnitTypeId(n)!='H03V' and GetUnitTypeId(n)!='H03U'
+return GetOwningPlayer(n)!=Player(PLAYER_NEUTRAL_PASSIVE)and GetUnitAbilityLevel(n,'Aloc')==0 and  GetUnitTypeId(n)!='HSaC' and  GetUnitTypeId(n)!='HASC' and  GetUnitTypeId(n)!='HAST' and GetUnitTypeId(n)!='Ho13' and GetUnitTypeId(n)!='H34X' and GetUnitTypeId(n)!='H14F' and GetUnitTypeId(n)!='H007' and GetUnitTypeId(n)!='H035' and GetUnitTypeId(n)!='H03O' and GetUnitTypeId(n)!='H03Y' and GetUnitTypeId(n)!='H03T' and GetUnitTypeId(n)!='H03W' and GetUnitTypeId(n)!='H03X' and GetUnitTypeId(n)!='H03V' and GetUnitTypeId(n)!='H03U' and GetUnitTypeId(n)!='H00Q'
 endfunction
 function AvalonCast2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
@@ -37777,6 +37788,10 @@ local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
 call SetUnitInvulnerable(LoadUnitHandle(h,id,33),false)
 call UnitRemoveBuffs(LoadUnitHandle(h,id,33),false,true)
+if udg_DM[GetPlayerId(GetOwningPlayer(LoadUnitHandle(h,id,33)))+1]!=null then
+call SetUnitInvulnerable(udg_DM[GetPlayerId(GetOwningPlayer(LoadUnitHandle(h,id,33)))+1],false)
+call UnitRemoveBuffs(udg_DM[GetPlayerId(GetOwningPlayer(LoadUnitHandle(h,id,33)))+1],false,true)
+endif
 call PauseTimer(t)
 call DestroyTimer(t)
 call FlushChildHashtable(h,id)
@@ -38098,41 +38113,71 @@ function AlbedoEPassive takes unit newSource, unit newTarget, timer newTimer ret
     local integer random_slot= 0
     if AlbedoEPassiveCounter >=4 and UnitIsAlive(newTarget) then
         if IsUnitType(newTarget, UNIT_TYPE_HERO) and IsUnitIllusion(newTarget)==false and GetUnitAbilityLevel(newSource, 'AlEp')>0 and GetUnitTypeId(newTarget)!='H007' and GetUnitTypeId(newTarget)!='Ho13' and GetUnitTypeId(newTarget)!='H34X' and GetUnitTypeId(newTarget)!='H14F' then
-            loop
-            exitwhen max_iteration <= 0
-                set max_iteration=max_iteration - 1
-                set random_slot=GetRandomInt(0, 5)
-                if GetItemTypeId(UnitItemInSlot(newTarget, random_slot)) != 0 and AlbedoBreakCond(newTarget , random_slot) then
-                    set item_id=GetItemTypeId(UnitItemInSlot(newTarget, random_slot))
-                    call RemoveItem(UnitItemInSlot(newTarget, random_slot))
-                    set max_iteration=0
+            if GetUnitTypeId(newTarget)=='H00Q' then
+                loop
+                exitwhen max_iteration <= 0
+                    set max_iteration=max_iteration - 1
+                    set random_slot=GetRandomInt(0, 5)
+                    if GetItemTypeId(UnitItemInSlot(Hero[GetPlayerId(GetOwningPlayer(newTarget))], random_slot)) != 0 and AlbedoBreakCond(Hero[GetPlayerId(GetOwningPlayer(newTarget))] , random_slot) then
+                        set item_id=GetItemTypeId(UnitItemInSlot(Hero[GetPlayerId(GetOwningPlayer(newTarget))], random_slot))
+                        call RemoveItem(UnitItemInSlot(Hero[GetPlayerId(GetOwningPlayer(newTarget))], random_slot))
+                        set max_iteration=0
+                    endif
+                endloop
+                if item_id != 0 then
+                    if GetUnitAbilityLevel(Hero[GetPlayerId(GetOwningPlayer(newTarget))],'cbc5')>0 then
+                        call EnableUnitAbility2(Hero[GetPlayerId(GetOwningPlayer(newTarget))],'AInv',false,true)
+                    endif
+                    if IsUnitPaused(Hero[GetPlayerId(GetOwningPlayer(newTarget))])==false then
+                        call UnitAddItemToSlotById(Hero[GetPlayerId(GetOwningPlayer(newTarget))], 'Ibrk', random_slot)
+                    else
+                        call PauseUnit(Hero[GetPlayerId(GetOwningPlayer(newTarget))], false)
+                        call UnitAddItemToSlotById(Hero[GetPlayerId(GetOwningPlayer(newTarget))], 'Ibrk', random_slot)
+                        call PauseUnit(Hero[GetPlayerId(GetOwningPlayer(newTarget))],true)
+                    endif
+                    if GetUnitAbilityLevel(Hero[GetPlayerId(GetOwningPlayer(newTarget))],'cbc5')>0 then
+                        call EnableUnitAbility2(Hero[GetPlayerId(GetOwningPlayer(newTarget))],'AInv',false,true)
+                    endif
+                    set bj_lastCreatedItem = UnitItemInSlot(Hero[GetPlayerId(GetOwningPlayer(newTarget))], random_slot)
+                    call SetItemDroppable(bj_lastCreatedItem,false)
+                    call SaveItemHandle(HH, id, StringHash("BrokenItem"), bj_lastCreatedItem)
+                    call SaveUnitHandle(HH, id, c_TARGET, Hero[GetPlayerId(GetOwningPlayer(newTarget))])
                 endif
-            endloop
-            if item_id != 0 then
-                if GetUnitAbilityLevel(newTarget,'cbc5')>0 then
-                    call EnableUnitAbility2(newTarget,'AInv',false,true)
+            else
+                loop
+                exitwhen max_iteration <= 0
+                    set max_iteration=max_iteration - 1
+                    set random_slot=GetRandomInt(0, 5)
+                    if GetItemTypeId(UnitItemInSlot(newTarget, random_slot)) != 0 and AlbedoBreakCond(newTarget , random_slot) then
+                        set item_id=GetItemTypeId(UnitItemInSlot(newTarget, random_slot))
+                        call RemoveItem(UnitItemInSlot(newTarget, random_slot))
+                        set max_iteration=0
+                    endif
+                endloop
+                if item_id != 0 then
+                    if GetUnitAbilityLevel(newTarget,'cbc5')>0 then
+                        call EnableUnitAbility2(newTarget,'AInv',false,true)
+                    endif
+                    if IsUnitPaused(newTarget)==false then
+                        call UnitAddItemToSlotById(newTarget, 'Ibrk', random_slot)
+                    else
+                        call PauseUnit(newTarget, false)
+                        call UnitAddItemToSlotById(newTarget, 'Ibrk', random_slot)
+                        call PauseUnit(newTarget,true)
+                    endif
+                    if GetUnitAbilityLevel(newTarget,'cbc5')>0 then
+                        call EnableUnitAbility2(newTarget,'AInv',false,true)
+                    endif
+                    set bj_lastCreatedItem = UnitItemInSlot(newTarget, random_slot)
+                    call SetItemDroppable(bj_lastCreatedItem,false)
+                    call SaveItemHandle(HH, id, StringHash("BrokenItem"), bj_lastCreatedItem)
+                    call SaveUnitHandle(HH, id, c_TARGET, newTarget)
                 endif
-				if IsUnitPaused(newTarget)==false then
-					call UnitAddItemToSlotById(newTarget, 'Ibrk', random_slot)
-				else
-					call PauseUnit(newTarget, false)
-					call UnitAddItemToSlotById(newTarget, 'Ibrk', random_slot)
-					call PauseUnit(newTarget,true)
-				endif
-                if GetUnitAbilityLevel(newTarget,'cbc5')>0 then
-                    call EnableUnitAbility2(newTarget,'AInv',false,true)
-                endif
-                set bj_lastCreatedItem = UnitItemInSlot(newTarget, random_slot)
-                call SetItemDroppable(bj_lastCreatedItem,false)
-                call SaveItemHandle(HH, id, StringHash("BrokenItem"), bj_lastCreatedItem)
-                call SaveUnitHandle(HH, id, c_TARGET, newTarget)
-                call SaveReal(HH, id, c_TIME, 0)
-                call SaveInteger(HH, id, StringHash("BrokenItemSlot"), random_slot)
-                call SaveInteger(HH, id, StringHash("BrokenItemId"), item_id)
-                call TimerStart(newTimer, 0.05, true, function AlbedoEPass_Periodic)
-            //else
-                //call BJDebugMsg("Item not found")
             endif
+            call SaveReal(HH, id, c_TIME, 0)
+            call SaveInteger(HH, id, StringHash("BrokenItemSlot"), random_slot)
+            call SaveInteger(HH, id, StringHash("BrokenItemId"), item_id)
+            call TimerStart(newTimer, 0.05, true, function AlbedoEPass_Periodic)
 		endif
 		// if GetUnitTypeId(newTarget)=='H04A' and GetUnitTypeId(newTarget)=='H04B' then
 			// set new_dmg = new_dmg + GetWidgetMaxLife(newTarget)*0.065
@@ -41515,86 +41560,249 @@ if cond==0 then
             set nb=0
             set t=null
         endif
-        if(UnitHasItemOfTypeBJ(u,'I03R')and nb>500) and CurrentEventAttack==false and IsUnitType(u,UNIT_TYPE_SUMMONED)==false and u==Hero[idu] then
-            set cjlocgn_00000000=CreateTimer()
-            set t=CreateTimer()
-            call SaveUnitHandle(h,GetHandleId(cjlocgn_00000000),0,u)
-            set it=GetItemOfTypeFromUnitBJCustom(u,'I03R')
-            call UnitRemoveItem(u,it)
-            call RemoveItem(it)
-            call UnitAddAbility(u,'A0VV')
-            call UnitRemoveAbility(u,'A0VV')
-            call UnitRemoveBuffs(u,false,true)
-            call UnitRemoveAbility(u,'A0J4')
-            set it=UnitAddItemById(u,'I03S')
-            call SetItemDroppable(it,false)
-            call SaveItemHandle(h,GetHandleId(cjlocgn_00000000),1,it)
-            call TimerStart(cjlocgn_00000000,0.1,true,function LinkenSphere)
-            call SaveReal(h,GetHandleId(cjlocgn_00000000),2,30)
-            call SaveInteger(h,GetHandleId(cjlocgn_00000000),3,idu)
-            call DestroyEffect(AddSpecialEffectTarget("war3mapImported\\EMPBubble2.mdx",u,"chest"))
-            call CreateModeIndicatorForm(u, "war3mapImported\\BTNVoidSphere.blp", 30)
-            call SetUnitInvulnerable(u,true)
-            call UnitRemoveAbility(u,'B04S')
-            call UnitRemoveAbility(u,'B04R')
-            call SaveUnitHandle(h,GetHandleId(t),33,u)
-            call TimerStart(t,0.02,false,function Linken_Block)
-            set nb=0
-            set t=null
-            set cjlocgn_00000000=null
-        endif
-        if(UnitHasItemOfTypeBJCustom(u,'I13R')and nb>500) and CurrentEventAttack==false and GetUnitAbilityLevel(u,'BorB')==0 and IsUnitType(u,UNIT_TYPE_SUMMONED)==false and u==Hero[idu] then
-            set cjlocgn_00000000=CreateTimer()
-            set t=CreateTimer()
-            if IsAbilityEnabled(GetUnitAbility(u,'AInv'))==true then
-                call SaveUnitHandle(h,GetHandleId(cjlocgn_00000000),0,u)
-                set it=GetItemOfTypeFromUnitBJCustom(u,'I13R')
-                call UnitRemoveItem(u,it)
-                call RemoveItem(it)
-                call UnitAddAbility(u,'A0VV')
-                call UnitRemoveAbilityTimedPause(u,'A0VV',6)
-                call UnitAddAbility(u,'A28W')
-                call UnitRemoveAbilityTimedPause(u,'A28W',6)
-                call UnitRemoveBuffs(u,false,true)
-                call UnitRemoveAbility(u,'A0J4')
-                set it=CreateItem('I13S',MathRealFloor(GetUnitX(u)),MathRealFloor(GetUnitY(u)))
-                call UnitAddItemToSlot(u,it,9)
-                call SetItemDroppable(it,false)
-                call SaveItemHandle(h,GetHandleId(cjlocgn_00000000),1,it)
-                call TimerStart(cjlocgn_00000000,0.1,true,function LinkenSphere2)
+        if(UnitHasItemOfTypeBJ(u,'I03R')and nb>500) and CurrentEventAttack==false and IsUnitType(u,UNIT_TYPE_SUMMONED)==false and (u==Hero[idu] or u==udg_DM[idu+1]) then
+            if GetUnitTypeId(u)=='H00Q' then
+                if UnitHasItemOfTypeBJ(Hero[idu],'I03R') then
+                    set cjlocgn_00000000=CreateTimer()
+                    set t=CreateTimer()
+                    if IsAbilityEnabled(GetUnitAbility(Hero[idu],'AInv'))==true then
+                        call SaveUnitHandle(h,GetHandleId(cjlocgn_00000000),0,Hero[idu])
+                        set it=GetItemOfTypeFromUnitBJCustom(Hero[idu],'I03R')
+                        call UnitRemoveItem(Hero[idu],it)
+                        call RemoveItem(it)
+                        call UnitAddAbility(u,'A0VV')
+                        call UnitRemoveAbility(u,'A0VV')
+                        call UnitAddAbility(Hero[idu],'A0VV')
+                        call UnitRemoveAbility(Hero[idu],'A0VV')
+                        call UnitRemoveBuffs(Hero[idu],false,true)
+                        call UnitRemoveBuffs(u,false,true)
+                        call UnitRemoveAbility(Hero[idu],'A0J4')
+                        call UnitRemoveAbility(u,'A0J4')
+                        set it=UnitAddItemById(Hero[idu],'I03S')
+                        call SetItemDroppable(it,false)
+                        call SaveItemHandle(h,GetHandleId(cjlocgn_00000000),1,it)
+                        call TimerStart(cjlocgn_00000000,0.1,true,function LinkenSphere)
+                        call SaveReal(h,GetHandleId(cjlocgn_00000000),2,30)
+                        call SaveInteger(h,GetHandleId(cjlocgn_00000000),3,idu)
+                        call DestroyEffect(AddSpecialEffectTarget("war3mapImported\\EMPBubble2.mdx",Hero[idu],"chest"))
+                        call CreateModeIndicatorForm(Hero[idu], "war3mapImported\\BTNVoidSphere.blp", 30)
+                        call SetUnitInvulnerable(Hero[idu],true)
+                        call UnitRemoveAbility(Hero[idu],'B04S')
+                        call UnitRemoveAbility(Hero[idu],'B04R')
+                        call UnitRemoveAbility(u,'B04S')
+                        call UnitRemoveAbility(u,'B04R')
+                        call SaveUnitHandle(h,GetHandleId(t),33,Hero[idu])
+                        call TimerStart(t,0.02,false,function Linken_Block)
+                    else
+                        call EnableUnitAbility2(Hero[idu],'AInv',false,true)
+                        call SaveUnitHandle(h,GetHandleId(cjlocgn_00000000),0,Hero[idu])
+                        set it=GetItemOfTypeFromUnitBJCustom(Hero[idu],'I03R')
+                        call UnitRemoveItem(Hero[idu],it)
+                        call RemoveItem(it)
+                        call UnitAddAbility(u,'A0VV')
+                        call UnitRemoveAbility(u,'A0VV')
+                        call UnitAddAbility(Hero[idu],'A0VV')
+                        call UnitRemoveAbility(Hero[idu],'A0VV')
+                        call UnitRemoveBuffs(Hero[idu],false,true)
+                        call UnitRemoveBuffs(u,false,true)
+                        call UnitRemoveAbility(Hero[idu],'A0J4')
+                        call UnitRemoveAbility(u,'A0J4')
+                        set it=UnitAddItemById(Hero[idu],'I03S')
+                        call SetItemDroppable(it,false)
+                        call SaveItemHandle(h,GetHandleId(cjlocgn_00000000),1,it)
+                        call TimerStart(cjlocgn_00000000,0.1,true,function LinkenSphere)
+                        call SaveReal(h,GetHandleId(cjlocgn_00000000),2,30)
+                        call SaveInteger(h,GetHandleId(cjlocgn_00000000),3,idu)
+                        call DestroyEffect(AddSpecialEffectTarget("war3mapImported\\EMPBubble2.mdx",Hero[idu],"chest"))
+                        call CreateModeIndicatorForm(Hero[idu], "war3mapImported\\BTNVoidSphere.blp", 30)
+                        call SetUnitInvulnerable(Hero[idu],true)
+                        call UnitRemoveAbility(Hero[idu],'B04S')
+                        call UnitRemoveAbility(Hero[idu],'B04R')
+                        call UnitRemoveAbility(u,'B04S')
+                        call UnitRemoveAbility(u,'B04R')
+                        call SaveUnitHandle(h,GetHandleId(t),33,Hero[idu])
+                        call TimerStart(t,0.02,false,function Linken_Block)
+                        call DisableUnitAbility2(Hero[idu],'AInv',false,true)
+                    endif
+                    set nb=0
+                    set t=null
+                    set cjlocgn_00000000=null
+                endif
             else
-                call EnableUnitAbility2(u,'AInv',false,true)
-                call SaveUnitHandle(h,GetHandleId(cjlocgn_00000000),0,u)
-                set it=GetItemOfTypeFromUnitBJCustom(u,'I13R')
-                call UnitRemoveItem(u,it)
-                call RemoveItem(it)
-                call UnitAddAbility(u,'A0VV')
-                call UnitRemoveAbilityTimedPause(u,'A0VV',6)
-                call UnitAddAbility(u,'A28W')
-                call UnitRemoveAbilityTimedPause(u,'A28W',6)
-                call UnitRemoveBuffs(u,false,true)
-                call UnitRemoveAbility(u,'A0J4')
-                set it=CreateItem('I13S',MathRealFloor(GetUnitX(u)),MathRealFloor(GetUnitY(u)))
-                call UnitAddItemToSlot(u,it,9)
-                call SetItemDroppable(it,false)
-                call SaveItemHandle(h,GetHandleId(cjlocgn_00000000),1,it)
-                call TimerStart(cjlocgn_00000000,0.1,true,function LinkenSphere2)
-                call DisableUnitAbility2(u,'AInv',false,true)
+                set cjlocgn_00000000=CreateTimer()
+                set t=CreateTimer()
+                if IsAbilityEnabled(GetUnitAbility(u,'AInv'))==true then
+                    call SaveUnitHandle(h,GetHandleId(cjlocgn_00000000),0,u)
+                    set it=GetItemOfTypeFromUnitBJCustom(u,'I03R')
+                    call UnitRemoveItem(u,it)
+                    call RemoveItem(it)
+                    call UnitAddAbility(u,'A0VV')
+                    call UnitRemoveAbility(u,'A0VV')
+                    call UnitRemoveBuffs(u,false,true)
+                    call UnitRemoveAbility(u,'A0J4')
+                    set it=UnitAddItemById(u,'I03S')
+                    call SetItemDroppable(it,false)
+                    call SaveItemHandle(h,GetHandleId(cjlocgn_00000000),1,it)
+                    call TimerStart(cjlocgn_00000000,0.1,true,function LinkenSphere)
+                else
+                    call EnableUnitAbility2(u,'AInv',false,true)
+                    call SaveUnitHandle(h,GetHandleId(cjlocgn_00000000),0,u)
+                    set it=GetItemOfTypeFromUnitBJCustom(u,'I03R')
+                    call UnitRemoveItem(u,it)
+                    call RemoveItem(it)
+                    call UnitAddAbility(u,'A0VV')
+                    call UnitRemoveAbility(u,'A0VV')
+                    call UnitRemoveBuffs(u,false,true)
+                    call UnitRemoveAbility(u,'A0J4')
+                    set it=UnitAddItemById(u,'I03S')
+                    call SetItemDroppable(it,false)
+                    call SaveItemHandle(h,GetHandleId(cjlocgn_00000000),1,it)
+                    call TimerStart(cjlocgn_00000000,0.1,true,function LinkenSphere)
+                    call DisableUnitAbility2(u,'AInv',false,true)
+                endif
+                call SaveReal(h,GetHandleId(cjlocgn_00000000),2,30)
+                call SaveInteger(h,GetHandleId(cjlocgn_00000000),3,idu)
+                call DestroyEffect(AddSpecialEffectTarget("war3mapImported\\EMPBubble2.mdx",u,"chest"))
+                call CreateModeIndicatorForm(u, "war3mapImported\\BTNVoidSphere.blp", 30)
+                call SetUnitInvulnerable(u,true)
+                call UnitRemoveAbility(u,'B04S')
+                call UnitRemoveAbility(u,'B04R')
+                call SaveUnitHandle(h,GetHandleId(t),33,u)
+                call TimerStart(t,0.02,false,function Linken_Block)
+                set nb=0
+                set t=null
+                set cjlocgn_00000000=null
             endif
-            call SaveReal(h,GetHandleId(cjlocgn_00000000),2,30)
-            call SaveInteger(h,GetHandleId(cjlocgn_00000000),3,idu)
-            call DestroyEffect(AddSpecialEffectTarget("war3mapImported\\EMPBubble2.mdx",u,"chest"))
-            call DestroyEffect(AddSpecialEffectTarget("GhostLighthin3.mdl",u,"chest"))
-            call CreateModeIndicatorWithPauseFormDispellable(u, "ReplaceableTextures\\CommandButtons\\BTNBorosArmorBroken.blp", 6,'A28W')
-            call CreateModeIndicatorForm(u, "war3mapImported\\BTNBorosArmor.blp", 30)
-            call SetUnitInvulnerable(u,true)
-            call UnitRemoveAbility(u,'B14S')
-            call UnitRemoveAbility(u,'B14R')
-            call SaveUnitHandle(h,GetHandleId(t),33,u)
-            call TimerStart(t,0.02,false,function Linken_Block)
-            set nb=0
-            set t=null
-            set cjlocgn_00000000=null
+        endif
+        if(UnitHasItemOfTypeBJCustom(u,'I13R')and nb>500) and CurrentEventAttack==false and GetUnitAbilityLevel(u,'BorB')==0 and IsUnitType(u,UNIT_TYPE_SUMMONED)==false and (u==Hero[idu] or u==udg_DM[idu+1]) then
+            if GetUnitTypeId(u)=='H00Q' then
+                if UnitHasItemOfTypeBJCustom(Hero[idu],'I13R') then
+                    set cjlocgn_00000000=CreateTimer()
+                    set t=CreateTimer()
+                    if IsAbilityEnabled(GetUnitAbility(Hero[idu],'AInv'))==true then
+                        call SaveUnitHandle(h,GetHandleId(cjlocgn_00000000),0,Hero[idu])
+                        set it=GetItemOfTypeFromUnitBJCustom(Hero[idu],'I13R')
+                        call UnitRemoveItem(Hero[idu],it)
+                        call RemoveItem(it)
+                        call UnitAddAbility(Hero[idu],'A0VV')
+                        call UnitRemoveAbilityTimedPause(Hero[idu],'A0VV',6)
+                        call UnitAddAbility(Hero[idu],'A28W')
+                        call UnitRemoveAbilityTimedPause(Hero[idu],'A28W',6)
+                        call UnitRemoveBuffs(Hero[idu],false,true)
+                        call UnitAddAbility(u,'A0VV')
+                        call UnitRemoveAbilityTimedPause(u,'A0VV',6)
+                        call UnitAddAbility(u,'A28W')
+                        call UnitRemoveAbilityTimedPause(u,'A28W',6)
+                        call UnitRemoveBuffs(u,false,true)
+                        call UnitRemoveAbility(Hero[idu],'A0J4')
+                        set it=CreateItem('I13S',MathRealFloor(GetUnitX(Hero[idu])),MathRealFloor(GetUnitY(Hero[idu])))
+                        call UnitAddItemToSlot(Hero[idu],it,9)
+                        call SetItemDroppable(it,false)
+                        call SaveItemHandle(h,GetHandleId(cjlocgn_00000000),1,it)
+                        call TimerStart(cjlocgn_00000000,0.1,true,function LinkenSphere2)
+                    else
+                        call EnableUnitAbility2(Hero[idu],'AInv',false,true)
+                        call SaveUnitHandle(h,GetHandleId(cjlocgn_00000000),0,Hero[idu])
+                        set it=GetItemOfTypeFromUnitBJCustom(Hero[idu],'I13R')
+                        call UnitRemoveItem(Hero[idu],it)
+                        call RemoveItem(it)
+                        call UnitAddAbility(Hero[idu],'A0VV')
+                        call UnitRemoveAbilityTimedPause(Hero[idu],'A0VV',6)
+                        call UnitAddAbility(Hero[idu],'A28W')
+                        call UnitRemoveAbilityTimedPause(Hero[idu],'A28W',6)
+                        call UnitRemoveBuffs(Hero[idu],false,true)
+                        call UnitAddAbility(u,'A0VV')
+                        call UnitRemoveAbilityTimedPause(u,'A0VV',6)
+                        call UnitAddAbility(u,'A28W')
+                        call UnitRemoveAbilityTimedPause(u,'A28W',6)
+                        call UnitRemoveBuffs(u,false,true)
+                        call UnitRemoveAbility(Hero[idu],'A0J4')
+                        set it=CreateItem('I13S',MathRealFloor(GetUnitX(Hero[idu])),MathRealFloor(GetUnitY(Hero[idu])))
+                        call UnitAddItemToSlot(Hero[idu],it,9)
+                        call SetItemDroppable(it,false)
+                        call SaveItemHandle(h,GetHandleId(cjlocgn_00000000),1,it)
+                        call TimerStart(cjlocgn_00000000,0.1,true,function LinkenSphere2)
+                        call DisableUnitAbility2(Hero[idu],'AInv',false,true)
+                    endif
+                    call SaveReal(h,GetHandleId(cjlocgn_00000000),2,30)
+                    call SaveInteger(h,GetHandleId(cjlocgn_00000000),3,idu)
+                    call DestroyEffect(AddSpecialEffectTarget("war3mapImported\\EMPBubble2.mdx",Hero[idu],"chest"))
+                    call DestroyEffect(AddSpecialEffectTarget("GhostLighthin3.mdl",Hero[idu],"chest"))
+                    call DestroyEffect(AddSpecialEffectTarget("war3mapImported\\EMPBubble2.mdx",u,"chest"))
+                    call DestroyEffect(AddSpecialEffectTarget("GhostLighthin3.mdl",u,"chest"))
+                    call CreateModeIndicatorWithPauseFormDispellable(Hero[idu], "ReplaceableTextures\\CommandButtons\\BTNBorosArmorBroken.blp", 6,'A28W')
+                    call CreateModeIndicatorForm(Hero[idu], "war3mapImported\\BTNBorosArmor.blp", 30)
+                    call SetUnitInvulnerable(Hero[idu],true)
+                    call SetUnitInvulnerable(u,true)
+                    call UnitRemoveAbility(Hero[idu],'B14S')
+                    call UnitRemoveAbility(Hero[idu],'B14R')
+                    call UnitRemoveAbility(u,'B14S')
+                    call UnitRemoveAbility(u,'B14R')
+                    call SaveUnitHandle(h,GetHandleId(t),33,Hero[idu])
+                    call TimerStart(t,0.02,false,function Linken_Block)
+                    set nb=0
+                    set t=null
+                    set cjlocgn_00000000=null
+                endif
+            else
+                set cjlocgn_00000000=CreateTimer()
+                set t=CreateTimer()
+                if IsAbilityEnabled(GetUnitAbility(u,'AInv'))==true then
+                    call SaveUnitHandle(h,GetHandleId(cjlocgn_00000000),0,u)
+                    set it=GetItemOfTypeFromUnitBJCustom(u,'I13R')
+                    call UnitRemoveItem(u,it)
+                    call RemoveItem(it)
+                    call UnitAddAbility(u,'A0VV')
+                    call UnitRemoveAbilityTimedPause(u,'A0VV',6)
+                    call UnitAddAbility(u,'A28W')
+                    call UnitRemoveAbilityTimedPause(u,'A28W',6)
+                    call UnitRemoveBuffs(u,false,true)
+                    call UnitRemoveAbility(u,'A0J4')
+                    set it=CreateItem('I13S',MathRealFloor(GetUnitX(u)),MathRealFloor(GetUnitY(u)))
+                    call UnitAddItemToSlot(u,it,9)
+                    call SetItemDroppable(it,false)
+                    call SaveItemHandle(h,GetHandleId(cjlocgn_00000000),1,it)
+                    call TimerStart(cjlocgn_00000000,0.1,true,function LinkenSphere2)
+                else
+                    call EnableUnitAbility2(u,'AInv',false,true)
+                    call SaveUnitHandle(h,GetHandleId(cjlocgn_00000000),0,u)
+                    set it=GetItemOfTypeFromUnitBJCustom(u,'I13R')
+                    call UnitRemoveItem(u,it)
+                    call RemoveItem(it)
+                    call UnitAddAbility(u,'A0VV')
+                    call UnitRemoveAbilityTimedPause(u,'A0VV',6)
+                    call UnitAddAbility(u,'A28W')
+                    call UnitRemoveAbilityTimedPause(u,'A28W',6)
+                    call UnitRemoveBuffs(u,false,true)
+                    call UnitRemoveAbility(u,'A0J4')
+                    set it=CreateItem('I13S',MathRealFloor(GetUnitX(u)),MathRealFloor(GetUnitY(u)))
+                    call UnitAddItemToSlot(u,it,9)
+                    call SetItemDroppable(it,false)
+                    call SaveItemHandle(h,GetHandleId(cjlocgn_00000000),1,it)
+                    call TimerStart(cjlocgn_00000000,0.1,true,function LinkenSphere2)
+                    call DisableUnitAbility2(u,'AInv',false,true)
+                endif
+                call SaveReal(h,GetHandleId(cjlocgn_00000000),2,30)
+                call SaveInteger(h,GetHandleId(cjlocgn_00000000),3,idu)
+                if udg_DM[idu+1]!=null then
+                    call UnitAddAbility(udg_DM[idu+1],'A0VV')
+                    call UnitRemoveAbilityTimedPause(udg_DM[idu+1],'A0VV',6)
+                    call UnitAddAbility(udg_DM[idu+1],'A28W')
+                    call UnitRemoveAbilityTimedPause(udg_DM[idu+1],'A28W',6)
+                endif
+                call DestroyEffect(AddSpecialEffectTarget("war3mapImported\\EMPBubble2.mdx",u,"chest"))
+                call DestroyEffect(AddSpecialEffectTarget("GhostLighthin3.mdl",u,"chest"))
+                call CreateModeIndicatorWithPauseFormDispellable(u, "ReplaceableTextures\\CommandButtons\\BTNBorosArmorBroken.blp", 6,'A28W')
+                call CreateModeIndicatorForm(u, "war3mapImported\\BTNBorosArmor.blp", 30)
+                call SetUnitInvulnerable(u,true)
+                call UnitRemoveAbility(u,'B14S')
+                call UnitRemoveAbility(u,'B14R')
+                call SaveUnitHandle(h,GetHandleId(t),33,u)
+                call TimerStart(t,0.02,false,function Linken_Block)
+                set nb=0
+                set t=null
+                set cjlocgn_00000000=null
+            endif
         endif
         if GetUnitTypeId(u)=='Hbel' and nb>0 then
             if LoadBoolean(h,GetHandleId(u),StringHash("BelfegorRPassiveCD"))==false and GetUnitAbilityLevel(u,'BelR')!=0 and GetWidgetLife(u)<=(GetWidgetMaxLife(u)*0.35)+nb then
@@ -51069,11 +51277,51 @@ function Trig_Doppleman_Actions2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
 local unit u=LoadUnitHandle(h,id,0)
+local real x=GetUnitX(u)
+local real y=GetUnitY(u)
+local player p=GetOwningPlayer(u)
+local integer i=0
+local integer idp=GetPlayerId(p)+1
 // call SetUnitLifeRegen(udg_DM[GetPlayerId(GetOwningPlayer(u))+1],GetUnitLifeRegen(u)*2)
-call SetUnitState(udg_DM[GetPlayerId(GetOwningPlayer(u))+1],UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA))
-if udg_B==false or UnitIsAlive(u)==false or UnitIsAlive(udg_DM[GetPlayerId(GetOwningPlayer(u))+1])==false then
-    if UnitIsAlive(udg_DM[GetPlayerId(GetOwningPlayer(u))+1]) then
-        call RemoveUnit(udg_DM[GetPlayerId(GetOwningPlayer(u))+1])
+// call SetUnitState(udg_DM[idp],UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA))
+call SetHeroAgi(udg_DM[idp],GetHeroAgi(u,false),true)
+call SetHeroStr(udg_DM[idp],GetHeroStr(u,false),true)
+call SetHeroInt(udg_DM[idp],GetHeroInt(u,false),true)
+if LoadBoolean(HH,GetHandleId(udg_DM[idp]),'ItCh')==true then
+    if GetUnitAbilityLevel(udg_DM[idp],'cbc5')>0 then
+        call EnableUnitAbility2(udg_DM[idp],'AInv',false,true)
+    endif
+    loop
+        exitwhen i>=10
+        call SetItemDroppable(UnitItemInSlot(udg_DM[idp],i),true)
+        call RemoveItem(UnitRemoveItemFromSlot(udg_DM[idp],i))
+        set i=i+1
+    endloop
+    set i=0
+    loop
+        exitwhen i>=10
+        call UnitAddItemToSlotById(udg_DM[idp], GetItemTypeId(UnitItemInSlot(u,i) )  , i)
+        call SetItemDroppable(UnitItemInSlot(udg_DM[idp],i),false)
+        call StartItemCooldown(UnitItemInSlot(udg_DM[idp],i),GetItemRemainingCooldown(UnitItemInSlot(u,i)))
+        set i=i+1
+    endloop
+    if GetUnitAbilityLevel(udg_DM[idp],'cbc5')>0 then
+        call EnableUnitAbility2(udg_DM[idp],'AInv',false,true)
+    endif
+    call SaveBoolean(HH,GetHandleId(udg_DM[idp]),'ItCh',false)
+endif
+if udg_B==false or UnitIsAlive(u)==false or UnitIsAlive(udg_DM[idp])==false then
+    call RemoveUnit(udg_DM[idp])
+    call FlushChildHashtable(HH,GetHandleId(udg_DM[idp]))
+    if udg_B and UnitIsAlive(u)==true then
+        if GetUnitState(u,UNIT_STATE_LIFE)>GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.4 then
+            call SetUnitState(u,UNIT_STATE_LIFE,GetUnitState(u,UNIT_STATE_LIFE)-GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.4)
+        else
+            call SetUnitState(u,UNIT_STATE_LIFE,1)
+        endif
+        call SetControlToUnit(u,u,5,"doom")
+        call Essence(u,u,3)
+        call DestroyEffect(AddSpecialEffect("war3mapImported\\Death Release.mdx",x,y))
     endif
     call UnitRemoveAbility(u,'A063')
     call ShowAbility2('A062',true)
@@ -51083,6 +51331,7 @@ if udg_B==false or UnitIsAlive(u)==false or UnitIsAlive(udg_DM[GetPlayerId(GetOw
     call FlushChildHashtable(h,id)
 endif
 set u=null
+set p=null
 set t=null
 endfunction
 function Trig_Doppleman_Actions takes nothing returns nothing
