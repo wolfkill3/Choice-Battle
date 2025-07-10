@@ -2413,6 +2413,9 @@ function myCustomHeal2 takes unit target, real amount returns real
     if UnitHasItemOfTypeBJ(target,'I00D') or GetUnitAbilityLevel(target,'KI58')>0 then // Солнце вонголы
         set currentHeal = currentHeal * 1.15
     endif
+    if GetUnitTypeId(target)=='H00Q' then // Доппель Мории
+        set currentHeal = currentHeal * 1.5
+    endif
     if GetUnitAbilityLevel(target,'BNC1') > 0 or GetUnitAbilityLevel(target,'BNC2') > 0 then // эссенс
         set currentHeal=0
     endif         
@@ -3357,7 +3360,7 @@ function ParabolaZ2 takes real y0,real y1,real l__h,real l__d,real x returns rea
 return(2*(y0+y1-2*l__h)*(x/l__d-1)+(y1-y0))*(x/l__d)+y0
 endfunction
 function AU takes unit a, unit b returns real
-        return Atan2(GetUnitY(b)-GetUnitY(a),GetUnitX(b)-GetUnitX(a))
+    return Atan2(GetUnitY(b)-GetUnitY(a),GetUnitX(b)-GetUnitX(a))
 endfunction
 function AddWidgetLife takes unit newUnit,real bonus returns nothing
 call SetWidgetLife(newUnit,GetWidgetLife(newUnit)+bonus)
@@ -3365,23 +3368,23 @@ endfunction
 function MyRemoveUnitAct takes nothing returns nothing
     local timer t=GetExpiredTimer()
     local integer id=GetHandleId(t)
-        local unit localRemoveUnit=LoadUnitHandle(h,id,0)
-        if localRemoveUnit!=null then
-            call RemoveUnit(localRemoveUnit)
-        endif
-        call FlushChildHashtable(h,id)
-        call DestroyTimer(GetExpiredTimer())
+    local unit localRemoveUnit=LoadUnitHandle(h,id,0)
+    if localRemoveUnit!=null then
+        call RemoveUnit(localRemoveUnit)
+    endif
+    call FlushChildHashtable(h,id)
+    call DestroyTimer(GetExpiredTimer())
     set t=null
-        set localRemoveUnit=null
+    set localRemoveUnit=null
 endfunction
 
 function MyRemoveUnit takes unit newRemoveUnit,real newDur returns nothing
     local integer id
-        set RemoveUnitTimer=CreateTimer()
-        set id=GetHandleId(RemoveUnitTimer)
-        call SaveUnitHandle(h,id,0,newRemoveUnit)
-        call TimerStart(RemoveUnitTimer, newDur, false, function MyRemoveUnitAct)
-        set RemoveUnitTimer=null
+    set RemoveUnitTimer=CreateTimer()
+    set id=GetHandleId(RemoveUnitTimer)
+    call SaveUnitHandle(h,id,0,newRemoveUnit)
+    call TimerStart(RemoveUnitTimer, newDur, false, function MyRemoveUnitAct)
+    set RemoveUnitTimer=null
 endfunction
 
 function GetWidgetMaxLife takes unit newUnit returns real
@@ -25416,6 +25419,41 @@ set gg_trg_mult=CreateTrigger()
 call TriggerRegisterTimerEventSingle(gg_trg_mult,1.01)
 call TriggerAddAction(gg_trg_mult,function Trig_mult_Actions)
 endfunction
+function MoriaDoppelCast2 takes nothing returns nothing
+local timer t=GetExpiredTimer()
+local integer id=GetHandleId(t)
+local unit u=LoadUnitHandle(h,id,1)
+local real life=LoadReal(h,id,0)
+local real life2=GetWidgetLife(u)
+local real dmg=0
+if GetWidgetLife(u)>0 and udg_B==true and DU2==true then
+    if life2>life then
+        set dmg=GetWidgetLife(u)-LoadReal(h,id,0)
+        call SaveReal(h,id,3,LoadReal(h,id,3)+(dmg*0.5))
+        call SetWidgetLife(u, GetWidgetLife(u)+MathRealFloor(dmg*0.5)+MathRealFloor(LoadReal(h,id,3)))
+        if LoadReal(h,id,3)>1 then
+            call SaveReal(h,id,3,LoadReal(h,id,3)-MathRealFloor(LoadReal(h,id,3)))
+        endif
+    endif
+    call SaveReal(h,id,0,GetWidgetLife(u))
+else
+    call SaveInteger(HH,GetHandleId(u),StringHash("MoriaDoppel"),0)
+    call DestroyTimer(t)
+    call FlushChildHashtable(h,id)
+endif
+set t=null
+set u=null
+endfunction
+function MoriaDoppelCast takes unit u returns nothing
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+call SaveUnitHandle(h,id,1,u)
+call SaveReal(h,id,0,GetWidgetLife(u))
+call SaveInteger(HH,GetHandleId(u),StringHash("MoriaDoppel"),1)
+call TimerStart(t,0.01,true,function MoriaDoppelCast2)
+set t=null
+set u=null
+endfunction
 function SunVongolaRegenCast2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
@@ -25921,6 +25959,9 @@ function Trig_Multup_Actions takes nothing returns nothing
             endif
             if (UnitHasItemOfTypeBJ(Hero[x],'I02S') or GetUnitAbilityLevel(Hero[x],'KIG0')>0) and LoadInteger(HH,GetHandleId(Hero[x]),StringHash("IceSphere"))!=1 then
                 call IceSphereRegenCast(Hero[x])
+            endif
+            if udg_DM[x+1]!=null and LoadInteger(HH,GetHandleId(udg_DM[x+1]),StringHash("MoriaDoppel"))!=1 then
+                call MoriaDoppelCast(udg_DM[x+1])
             endif
             if UnitIsAlive(Hero[x]) then
                 if GetUnitAbilityLevel(Hero[x],'A18B')>0 then
@@ -40555,6 +40596,11 @@ if GetUnitAbilityLevel(c,'Bwk1')>0 and nb>0 then
     set b=GetEventDamage()
     set nb=b
 endif
+if GetUnitTypeId(c)=='H00Q' and SquareRootUnit(c,Hero[idc])>2500 and nb>0 then 
+    call SetEventDamage(nb*0.6) 
+    set b=GetEventDamage()
+    set nb=b               
+endif
 if GetUnitAbilityLevel(c,'BAr2')>0 and nb>0 then 
     call SetEventDamage(nb*0.85) 
     set b=GetEventDamage()
@@ -40702,11 +40748,11 @@ set nb=0
 endif
 if (GetUnitAbilityLevel(u,'A14J')>0  and (nb>200 or CurrentEventAttack)) or (GetUnitAbilityLevel(u,'A24J')>0 and (nb>200 or CurrentEventAttack)) or (GetUnitAbilityLevel(u,'A34J')>0 and (nb>200 or CurrentEventAttack)) or (GetUnitAbilityLevel(u,'JNQ2')>0 and CurrentEventAttack and SquareRootUnit(c,u)<350) or (GetUnitAbilityLevel(u,'JNE2')>0 and (nb>200 or CurrentEventAttack)) then
     if GetUnitAbilityLevel(u,'A34J')>0 then
-        if GetHeroLevel(u)>=35 and LoadBoolean(HH,GetHandleId( GetOwningPlayer(u) ),MUIAvailableHash)==false then
-            call SaveInteger(HH,GetHandleId( GetOwningPlayer(u) ),MUIDodgeCountHash,LoadInteger(HH,GetHandleId( GetOwningPlayer(u) ),MUIDodgeCountHash)+1)
-            if LoadInteger(HH,GetHandleId( GetOwningPlayer(u) ),MUIDodgeCountHash)>=15 then
-                call SaveBoolean(HH,GetHandleId( GetOwningPlayer(u) ),MUIAvailableHash,true)
-                set MUIUnlock[GetPlayerId(GetOwningPlayer(u))]=CreateUnit(GetOwningPlayer(u),'h111',RX,RY,0)
+        if GetHeroLevel(u)>=35 and LoadBoolean(HH,GetHandleId(GetOwningPlayer(u)),MUIAvailableHash)==false then
+            call SaveInteger(HH,GetHandleId(GetOwningPlayer(u)),MUIDodgeCountHash,LoadInteger(HH,GetHandleId(GetOwningPlayer(u)),MUIDodgeCountHash)+1)
+            if LoadInteger(HH,GetHandleId(GetOwningPlayer(u)),MUIDodgeCountHash)>=15 then
+                call SaveBoolean(HH,GetHandleId(GetOwningPlayer(u)),MUIAvailableHash,true)
+                set MUIUnlock[idu]=CreateUnit(GetOwningPlayer(u),'h111',RX,RY,0)
             endif
         endif
     endif
@@ -40905,19 +40951,19 @@ if cond==0 then
             //call SetEventDamage(0.05)
             set nb=0
         endif
-        if nb>0 and LoadInteger(HH,GetHandleId( GetOwningPlayer(u) ),UIDodgeHash)>0 and (nb<(GetUnitState(u,UNIT_STATE_MAX_LIFE)-GetUnitState(u,UNIT_STATE_LIFE))*0.4) and GetUnitAbilityLevel(u,'A7IH')==0 and GetUnitAbilityLevel(u, 'CBC2')==0 and GetUnitAbilityLevel(u, 'CBC1')==0 and GetUnitAbilityLevel(u, 'cbc4')==0 and GetUnitAbilityLevel(u, 'cbc6')==0 and GetUnitAbilityLevel(u, 'cbc7')==0 and GetUnitAbilityLevel(u, 'cbc8')==0 and GetUnitAbilityLevel(u, 'cbc9')==0 and GetUnitAbilityLevel(u, 'cbc5')==0 and IsUnitPaused(u)==false then
-            call SaveInteger(HH,GetHandleId( GetOwningPlayer(u) ),UIDodgeHash,LoadInteger(HH,GetHandleId( GetOwningPlayer(u) ),UIDodgeHash)-1)
+        if nb>0 and LoadInteger(HH,GetHandleId(GetOwningPlayer(u)),UIDodgeHash)>0 and (nb<(GetUnitState(u,UNIT_STATE_MAX_LIFE)-GetUnitState(u,UNIT_STATE_LIFE))*0.4) and GetUnitAbilityLevel(u,'A7IH')==0 and GetUnitAbilityLevel(u, 'CBC2')==0 and GetUnitAbilityLevel(u, 'CBC1')==0 and GetUnitAbilityLevel(u, 'cbc4')==0 and GetUnitAbilityLevel(u, 'cbc6')==0 and GetUnitAbilityLevel(u, 'cbc7')==0 and GetUnitAbilityLevel(u, 'cbc8')==0 and GetUnitAbilityLevel(u, 'cbc9')==0 and GetUnitAbilityLevel(u, 'cbc5')==0 and IsUnitPaused(u)==false then
+            call SaveInteger(HH,GetHandleId(GetOwningPlayer(u)),UIDodgeHash,LoadInteger(HH,GetHandleId(GetOwningPlayer(u)),UIDodgeHash)-1)
             call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-nb*0.1)
             //call SetEventDamage(0.05)
             call UnitAddAbility(u,'A7IH')
             call UnitRemoveAbilityTimedPause(u,'A7IH',0.15)
             call SetUnitAnimationByIndex(u,GetRandomInt(222,230))
             set nb=0
-            if GetHeroLevel(u)>=35 and LoadBoolean(HH,GetHandleId( GetOwningPlayer(u) ),MUIAvailableHash)==false then
-                call SaveInteger(HH,GetHandleId( GetOwningPlayer(u) ),MUIDodgeCountHash,LoadInteger(HH,GetHandleId( GetOwningPlayer(u) ),MUIDodgeCountHash)+1)
-                if LoadInteger(HH,GetHandleId( GetOwningPlayer(u) ),MUIDodgeCountHash)>=15 then
-                    call SaveBoolean(HH,GetHandleId( GetOwningPlayer(u) ),MUIAvailableHash,true)
-                    set MUIUnlock[GetPlayerId(GetOwningPlayer(u))]=CreateUnit(GetOwningPlayer(u),'h111',RX,RY,0)
+            if GetHeroLevel(u)>=35 and LoadBoolean(HH,GetHandleId(GetOwningPlayer(u)),MUIAvailableHash)==false then
+                call SaveInteger(HH,GetHandleId(GetOwningPlayer(u)),MUIDodgeCountHash,LoadInteger(HH,GetHandleId(GetOwningPlayer(u)),MUIDodgeCountHash)+1)
+                if LoadInteger(HH,GetHandleId(GetOwningPlayer(u)),MUIDodgeCountHash)>=15 then
+                    call SaveBoolean(HH,GetHandleId(GetOwningPlayer(u)),MUIAvailableHash,true)
+                    set MUIUnlock[idu]=CreateUnit(GetOwningPlayer(u),'h111',RX,RY,0)
                 endif
             endif
         endif
@@ -42994,14 +43040,28 @@ if cond==0 then
     endif
     if (UnitHasItemOfTypeBJ(c,'I031') or GetUnitAbilityLevel(c,'KIG8')>0) and CurrentEventAttack and nb>0 and IsUnitType(c,UNIT_TYPE_SUMMONED)==false and c==Hero[idc] and GetUnitAbilityLevel(c,'A3WR')==0 then
         set cjlocgn_00000000=CreateTimer() //patriot
-        call SetHeroAgi(u,GetHeroAgi(u,false)-3,true)
-        call SetHeroStr(u,GetHeroStr(u,false)-3,true)
-        call SetHeroInt(u,GetHeroInt(u,false)-3,true)
-        call SetHeroAgi(c,GetHeroAgi(c,false)+3,true)
-        call SetHeroStr(c,GetHeroStr(c,false)+3,true)
-        call SetHeroInt(c,GetHeroInt(c,false)+3,true)
-        call SaveUnitHandle(h,GetHandleId(cjlocgn_00000000),0,u)
-        call SaveUnitHandle(h,GetHandleId(cjlocgn_00000000),1,c)
+        if GetUnitTypeId(c)=='H00Q' then
+            call SetHeroAgi(Hero[idc],GetHeroAgi(Hero[idc],false)+3,true)
+            call SetHeroStr(Hero[idc],GetHeroStr(Hero[idc],false)+3,true)
+            call SetHeroInt(Hero[idc],GetHeroInt(Hero[idc],false)+3,true)
+            call SaveUnitHandle(h,GetHandleId(cjlocgn_00000000),1,Hero[idc])
+        else
+            call SetHeroAgi(c,GetHeroAgi(c,false)+3,true)
+            call SetHeroStr(c,GetHeroStr(c,false)+3,true)
+            call SetHeroInt(c,GetHeroInt(c,false)+3,true)
+            call SaveUnitHandle(h,GetHandleId(cjlocgn_00000000),1,c)
+        endif
+        if GetUnitTypeId(u)=='H00Q' then
+            call SetHeroAgi(Hero[idu],GetHeroAgi(Hero[idu],false)-3,true)
+            call SetHeroStr(Hero[idu],GetHeroStr(Hero[idu],false)-3,true)
+            call SetHeroInt(Hero[idu],GetHeroInt(Hero[idu],false)-3,true)
+            call SaveUnitHandle(h,GetHandleId(cjlocgn_00000000),0,Hero[idu])
+        else
+            call SetHeroAgi(u,GetHeroAgi(u,false)-3,true)
+            call SetHeroStr(u,GetHeroStr(u,false)-3,true)
+            call SetHeroInt(u,GetHeroInt(u,false)-3,true)
+            call SaveUnitHandle(h,GetHandleId(cjlocgn_00000000),0,u)
+        endif
         call TimerStart(cjlocgn_00000000,10,false,function PatriotAction)
         set cjlocgn_00000000=null
     endif
@@ -43950,6 +44010,14 @@ if cond==0 then
         call SetWidgetLife(c, GetWidgetLife(c)+ nb*0.3)
     endif
 	if GetUnitAbilityLevel(c,'A1WT')==0 and GetUnitAbilityLevel(c,'A3WR')==0 and  (GetUnitAbilityLevel(c,'CB01')==0 or (GetUnitAbilityLevel(c,'CB01')>0 and CurrentEventAttack==true)) and GetUnitAbilityLevel(c,'B059')==0 and GetUnitAbilityLevel(u,'Bwul')==0 and LoadInteger(HH,cid,BlockPenetrate)==0 then
+        if nb>0 and udg_DM[idu+1]!=null and u==Hero[idu] then
+            if SquareRootUnit(udg_DM[idu+1],Hero[idu])<700 then
+                call SaveReal(HH,uid,'MrDd',nb*0.3)
+                // call myCustomDamage(c,n,b,false,false,ATTACK_TYPE_MAGIC,DAMAGE_TYPE_MAGIC,null)
+                //call SetEventDamage(0.05)
+                set nb=nb*0.7
+            endif
+        endif
         if GetUnitTypeId(u)=='HJi1' then
             if GetUnitModel(u)=="[By XeSHTeG]JirenBase.mdx" and GetUnitState(u,UNIT_STATE_LIFE)-nb<0.25*ll and GetHeroLevel(u)>=26 then 
                 call SetEventDamage((GetUnitState(u,UNIT_STATE_LIFE)-ll*0.25)+10)
@@ -44066,6 +44134,20 @@ if (UnitHasItemOfTypeBJ(u,'I04T') or GetUnitAbilityLevel(u,'KIP8')>0) and c!=Ult
         call UnitRemoveAbility(u,'A1WR')
     endif
 endif
+if LoadReal(HH,uid,'MrDd')>0 then
+    if IsUnitInvulnerable(udg_DM[idu+1])==true then
+        call SetUnitInvulnerable(udg_DM[idu+1],false)
+        call UnitAddAbility(c,'A1WR')
+        call myCustomDamage(c,udg_DM[idu+1],LoadReal(HH,uid,'MrDd'),false,false,null,DAMAGE_TYPE_UNIVERSAL,null)
+        call UnitRemoveAbility(c,'A1WR')
+        call SetUnitInvulnerable(udg_DM[idu+1],true)
+    else
+        call UnitAddAbility(c,'A1WR')
+        call myCustomDamage(c,udg_DM[idu+1],LoadReal(HH,uid,'MrDd'),false,false,null,DAMAGE_TYPE_UNIVERSAL,null)
+        call UnitRemoveAbility(c,'A1WR')
+    endif
+    call RemoveSavedReal(HH,uid,'MrDd')
+endif
 if LoadReal(HH,uid,'Lrvd')>0 then
     if UnitHasItemOfTypeBJCustom(c,'I13R')==false then
         if IsUnitInvulnerable(c)==true then
@@ -44106,11 +44188,11 @@ if GetUnitTypeId(u)=='H02H' then
     if GetUnitModel(u)=="GokuHalf.mdx" and GetUnitState(u,UNIT_STATE_LIFE)<0.3*ll then 
         call SetUnitModel(u,"GokuLow.mdx")
     endif
-    if GetHeroLevel(u)>=26 and LoadBoolean(HH,GetHandleId( GetOwningPlayer(u) ),UIAvailableHash)==false then
-        call SaveReal(HH,GetHandleId( GetOwningPlayer(u) ),UIDMGHash,LoadReal(HH,GetHandleId( GetOwningPlayer(u) ),UIDMGHash)+nb)
-        if LoadReal(HH,GetHandleId( GetOwningPlayer(u) ),UIDMGHash)>=LoadReal(HH,GetHandleId( GetOwningPlayer(u) ),UILimitDMGHash)then
-            call SaveBoolean(HH,GetHandleId( GetOwningPlayer(u) ),UIAvailableHash,true)
-            set UIUnlock[GetPlayerId(GetOwningPlayer(u))]=CreateUnit(GetOwningPlayer(u),'h110',RX,RY,0)
+    if GetHeroLevel(u)>=26 and LoadBoolean(HH,GetHandleId(GetOwningPlayer(u)),UIAvailableHash)==false then
+        call SaveReal(HH,GetHandleId(GetOwningPlayer(u)),UIDMGHash,LoadReal(HH,GetHandleId(GetOwningPlayer(u)),UIDMGHash)+nb)
+        if LoadReal(HH,GetHandleId(GetOwningPlayer(u)),UIDMGHash)>=LoadReal(HH,GetHandleId(GetOwningPlayer(u)),UILimitDMGHash)then
+            call SaveBoolean(HH,GetHandleId(GetOwningPlayer(u)),UIAvailableHash,true)
+            set UIUnlock[idu]=CreateUnit(GetOwningPlayer(u),'h110',RX,RY,0)
         endif
     endif
 endif
@@ -45775,15 +45857,34 @@ call RemoveAbility(LoadAbilityHandle(h,id,8))
 call SetHeroAgi(c,GetHeroAgi(c,false)+30,true)
 call SetHeroStr(c,GetHeroStr(c,false)+30,true)
 call SetHeroInt(c,GetHeroInt(c,false)+30,true)
+if c!=udg_DM[GetPlayerId(GetOwningPlayer(c))+1] then
 call SetHeroAgi(u,GetHeroAgi(u,false)-30,true)
 call SetHeroStr(u,GetHeroStr(u,false)-30,true)
 call SetHeroInt(u,GetHeroInt(u,false)-30,true)
+endif
 call SaveReal(h,id,5,0)
 call PauseTimer(t)
 call DestroyTimer(t)
 call FlushChildHashtable(h,id)
 endif
 set u=null
+set t=null
+endfunction
+function PatriotCustomCast takes unit u, unit c returns nothing
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+call SaveUnitHandle(h,id,0,u)
+call SaveUnitHandle(h,id,1,c)
+call SaveAbilityHandle(h,id,7,CreateAbility( 'A0NG' ))
+call SetAbilityOwner(LoadAbilityHandle(h,id,7),c)
+call SaveAbilityHandle(h,id,8,CreateAbility( 'SHD2' ))
+call SetAbilityOwner(LoadAbilityHandle(h,id,8),c)
+call SetHeroAgi(c,GetHeroAgi(c,false)-30,true)
+call SetHeroStr(c,GetHeroStr(c,false)-30,true)
+call SetHeroInt(c,GetHeroInt(c,false)-30,true)
+call TimerStart(t,0.1,true,function PatriotCast2)
+set u=null
+set c=null
 set t=null
 endfunction
 function PatriotCast takes nothing returns nothing
@@ -45797,12 +45898,20 @@ call SaveAbilityHandle(h,id,7,CreateAbility( 'A0NG' ))
 call SetAbilityOwner(LoadAbilityHandle(h,id,7),c)
 call SaveAbilityHandle(h,id,8,CreateAbility( 'SHD2' ))
 call SetAbilityOwner(LoadAbilityHandle(h,id,8),c)
+if GetUnitTypeId(c)=='H00Q' then
+    call PatriotCustomCast(u,Hero[GetPlayerId(GetOwningPlayer(c))])
+else
+    if GetUnitTypeId(u)=='H00Q' then
+        set u=Hero[GetPlayerId(GetOwningPlayer(u))]
+        call SaveUnitHandle(h,id,0,u)
+    endif
+    call SetHeroAgi(u,GetHeroAgi(u,false)+30,true)
+    call SetHeroStr(u,GetHeroStr(u,false)+30,true)
+    call SetHeroInt(u,GetHeroInt(u,false)+30,true)
+endif
 call SetHeroAgi(c,GetHeroAgi(c,false)-30,true)
 call SetHeroStr(c,GetHeroStr(c,false)-30,true)
 call SetHeroInt(c,GetHeroInt(c,false)-30,true)
-call SetHeroAgi(u,GetHeroAgi(u,false)+30,true)
-call SetHeroStr(u,GetHeroStr(u,false)+30,true)
-call SetHeroInt(u,GetHeroInt(u,false)+30,true)
 call TimerStart(t,0.1,true,function PatriotCast2)
 set u=null
 set c=null
@@ -51311,21 +51420,23 @@ if LoadBoolean(HH,GetHandleId(udg_DM[idp]),'ItCh')==true then
     call SaveBoolean(HH,GetHandleId(udg_DM[idp]),'ItCh',false)
 endif
 if udg_B==false or UnitIsAlive(u)==false or UnitIsAlive(udg_DM[idp])==false then
-    call RemoveUnit(udg_DM[idp])
-    call FlushChildHashtable(HH,GetHandleId(udg_DM[idp]))
+    call SaveReal(HH,GetHandleId(udg_DM[idp]),TextTagTimeHash,-0.03)
+    call SaveReal(HH,GetHandleId(udg_DM[idp]),TextTagHealTimeHash,-0.03)
+    call MyRemoveUnit(udg_DM[idp],0.5)
+    //call FlushChildHashtable(HH,GetHandleId(udg_DM[idp]))
     if udg_B and UnitIsAlive(u)==true then
-        if GetUnitState(u,UNIT_STATE_LIFE)>GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.4 then
-            call SetUnitState(u,UNIT_STATE_LIFE,GetUnitState(u,UNIT_STATE_LIFE)-GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.4)
+        if GetUnitState(u,UNIT_STATE_LIFE)>GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.4 + 300 then
+            call SetUnitState(u,UNIT_STATE_LIFE,GetUnitState(u,UNIT_STATE_LIFE)-(GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.4 + 300))
         else
             call SetUnitState(u,UNIT_STATE_LIFE,1)
         endif
         call SetControlToUnit(u,u,5,"doom")
-        call Essence(u,u,3)
+        call Essence(u,u,5)
         call DestroyEffect(AddSpecialEffect("war3mapImported\\Death Release.mdx",x,y))
     endif
     call UnitRemoveAbility(u,'A063')
     call ShowAbility2('A062',true)
-    call StartAbilityCooldown(GetUnitAbility(u,'A062'),70)
+    call StartAbilityCooldown(GetUnitAbility(u,'A062'),20)
     call PauseTimer(t)
     call DestroyTimer(t)
     call FlushChildHashtable(h,id)
@@ -51370,7 +51481,7 @@ call DestroyEffect(AddSpecialEffect("war3mapImported\\Death Release.mdx",x,y))
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\Doppelman.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
 call KillSoundWhenDone(soundplay)
-call TimerStart(t,0.5,true,function Trig_Doppleman_Actions2)
+call TimerStart(t,0.33,true,function Trig_Doppleman_Actions2)
 set u=null
 set t=null
 set p=null
@@ -93306,7 +93417,17 @@ function VergilQ_ModifAttack takes unit newCaster, unit newTarget, boolean b_clo
 			call SetHeroAgi(newTarget,GetHeroAgi(newTarget,false)-3,true)
 			call SetHeroStr(newTarget,GetHeroStr(newTarget,false)-3,true)
 			call SetHeroInt(newTarget,GetHeroInt(newTarget,false)-3,true)
-			call SaveUnitHandle(h,GetHandleId(bjLCT), 0, newTarget)
+            if GetUnitTypeId(newTarget)=='H00Q' then
+                call SetHeroAgi(Hero[GetPlayerId(GetOwningPlayer(newTarget))],GetHeroAgi(Hero[GetPlayerId(GetOwningPlayer(newTarget))],false)-3,true)
+                call SetHeroStr(Hero[GetPlayerId(GetOwningPlayer(newTarget))],GetHeroStr(Hero[GetPlayerId(GetOwningPlayer(newTarget))],false)-3,true)
+                call SetHeroInt(Hero[GetPlayerId(GetOwningPlayer(newTarget))],GetHeroInt(Hero[GetPlayerId(GetOwningPlayer(newTarget))],false)-3,true)
+                call SaveUnitHandle(h,GetHandleId(bjLCT), 0, newTarget)
+            else
+                call SetHeroAgi(newTarget,GetHeroAgi(newTarget,false)-3,true)
+                call SetHeroStr(newTarget,GetHeroStr(newTarget,false)-3,true)
+                call SetHeroInt(newTarget,GetHeroInt(newTarget,false)-3,true)
+                call SaveUnitHandle(h,GetHandleId(bjLCT), 0, newTarget)
+            endif
 			call SaveUnitHandle(h,GetHandleId(bjLCT), 1, newCaster)
 			call TimerStart(bjLCT, 5, false, function VergilPatriot_ModifEnd)
 		set bjLCT=null
@@ -146660,10 +146781,17 @@ function GilgameshModifiedAttack takes unit newCaster, unit newTarget returns bo
                 call SetHeroAgi(newCaster,GetHeroAgi(newCaster,false)+1,true)
                 call SetHeroStr(newCaster,GetHeroStr(newCaster,false)+1,true)
                 call SetHeroInt(newCaster,GetHeroInt(newCaster,false)+1,true)
-                call SetHeroAgi(newTarget,GetHeroAgi(newTarget,false)-1,true)
-                call SetHeroStr(newTarget,GetHeroStr(newTarget,false)-1,true)
-                call SetHeroInt(newTarget,GetHeroInt(newTarget,false)-1,true)
-                call SaveUnitHandle(h,GetHandleId(tt), 0, newTarget)
+                if GetUnitTypeId(newTarget)=='H00Q' then
+                    call SetHeroAgi(Hero[GetPlayerId(GetOwningPlayer(newTarget))],GetHeroAgi(Hero[GetPlayerId(GetOwningPlayer(newTarget))],false)-1,true)
+                    call SetHeroStr(Hero[GetPlayerId(GetOwningPlayer(newTarget))],GetHeroStr(Hero[GetPlayerId(GetOwningPlayer(newTarget))],false)-1,true)
+                    call SetHeroInt(Hero[GetPlayerId(GetOwningPlayer(newTarget))],GetHeroInt(Hero[GetPlayerId(GetOwningPlayer(newTarget))],false)-1,true)
+                    call SaveUnitHandle(h,GetHandleId(tt), 0, newTarget)
+                else
+                    call SetHeroAgi(newTarget,GetHeroAgi(newTarget,false)-1,true)
+                    call SetHeroStr(newTarget,GetHeroStr(newTarget,false)-1,true)
+                    call SetHeroInt(newTarget,GetHeroInt(newTarget,false)-1,true)
+                    call SaveUnitHandle(h,GetHandleId(tt), 0, newTarget)
+                endif
                 call SaveUnitHandle(h,GetHandleId(tt), 1, newCaster)
                 call TimerStart(tt, 5, false, function GilPatriotModifEnd)
                 set tt=null
@@ -163354,6 +163482,10 @@ if SR(x,y,x1,y1)<1400 and IsUnitHidden(c)==false then
             call DestroyEffect(AddSpecialEffectTarget("war3mapImported\\ArcaneExplosion_Blue.mdx",c,"chest"))
             call ShowAbility2('Ao7V',false)
             call ShowAbility2Timed('Ao7V',true,10.1)
+            if GetUnitTypeId(c)=='H00Q' then
+                set c=Hero[GetPlayerId(GetOwningPlayer(c))]
+                call SaveUnitHandle(HH,id,1,c)
+            endif
             loop
             exitwhen max_iteration <= 0
                 set max_iteration=max_iteration - 1
@@ -207013,10 +207145,17 @@ function Karna_ModifAttack takes unit newCaster, unit newTarget, real attack_fac
                     call SetHeroAgi(newCaster,GetHeroAgi(newCaster,false)+3,true)
                     call SetHeroStr(newCaster,GetHeroStr(newCaster,false)+3,true)
                     call SetHeroInt(newCaster,GetHeroInt(newCaster,false)+3,true)
-                    call SetHeroAgi(newTarget,GetHeroAgi(newTarget,false)-3,true)
-                    call SetHeroStr(newTarget,GetHeroStr(newTarget,false)-3,true)
-                    call SetHeroInt(newTarget,GetHeroInt(newTarget,false)-3,true)
-                    call SaveUnitHandle(h,GetHandleId(bjLCT), 0, newTarget)
+                    if GetUnitTypeId(newTarget)=='H00Q' then
+                        call SetHeroAgi(Hero[GetPlayerId(GetOwningPlayer(newTarget))],GetHeroAgi(Hero[GetPlayerId(GetOwningPlayer(newTarget))],false)-3,true)
+                        call SetHeroStr(Hero[GetPlayerId(GetOwningPlayer(newTarget))],GetHeroStr(Hero[GetPlayerId(GetOwningPlayer(newTarget))],false)-3,true)
+                        call SetHeroInt(Hero[GetPlayerId(GetOwningPlayer(newTarget))],GetHeroInt(Hero[GetPlayerId(GetOwningPlayer(newTarget))],false)-3,true)
+                        call SaveUnitHandle(h,GetHandleId(bjLCT), 0, newTarget)
+                    else
+                        call SetHeroAgi(newTarget,GetHeroAgi(newTarget,false)-3,true)
+                        call SetHeroStr(newTarget,GetHeroStr(newTarget,false)-3,true)
+                        call SetHeroInt(newTarget,GetHeroInt(newTarget,false)-3,true)
+                        call SaveUnitHandle(h,GetHandleId(bjLCT), 0, newTarget)
+                    endif
                     call SaveUnitHandle(h,GetHandleId(bjLCT), 1, newCaster)
                     call TimerStart(bjLCT, 5, false, function VergilPatriot_ModifEnd)
                 set bjLCT=null
@@ -207352,10 +207491,17 @@ function Sinon_ModifAttack takes unit newCaster, unit newTarget, real attack_fac
 				call SetHeroAgi(newCaster,GetHeroAgi(newCaster,false)+3,true)
 				call SetHeroStr(newCaster,GetHeroStr(newCaster,false)+3,true)
 				call SetHeroInt(newCaster,GetHeroInt(newCaster,false)+3,true)
-				call SetHeroAgi(newTarget,GetHeroAgi(newTarget,false)-3,true)
-				call SetHeroStr(newTarget,GetHeroStr(newTarget,false)-3,true)
-				call SetHeroInt(newTarget,GetHeroInt(newTarget,false)-3,true)
-				call SaveUnitHandle(h,GetHandleId(bjLCT), 0, newTarget)
+				if GetUnitTypeId(newTarget)=='H00Q' then
+                    call SetHeroAgi(Hero[GetPlayerId(GetOwningPlayer(newTarget))],GetHeroAgi(Hero[GetPlayerId(GetOwningPlayer(newTarget))],false)-3,true)
+                    call SetHeroStr(Hero[GetPlayerId(GetOwningPlayer(newTarget))],GetHeroStr(Hero[GetPlayerId(GetOwningPlayer(newTarget))],false)-3,true)
+                    call SetHeroInt(Hero[GetPlayerId(GetOwningPlayer(newTarget))],GetHeroInt(Hero[GetPlayerId(GetOwningPlayer(newTarget))],false)-3,true)
+                    call SaveUnitHandle(h,GetHandleId(bjLCT), 0, newTarget)
+                else
+                    call SetHeroAgi(newTarget,GetHeroAgi(newTarget,false)-3,true)
+                    call SetHeroStr(newTarget,GetHeroStr(newTarget,false)-3,true)
+                    call SetHeroInt(newTarget,GetHeroInt(newTarget,false)-3,true)
+                    call SaveUnitHandle(h,GetHandleId(bjLCT), 0, newTarget)
+                endif
 				call SaveUnitHandle(h,GetHandleId(bjLCT), 1, newCaster)
 				call TimerStart(bjLCT, 5*modif_factor, false, function VergilPatriot_ModifEnd)
 			set bjLCT=null
