@@ -29819,7 +29819,7 @@ set p=null
 endfunction
 function ScathachRFHCond takes nothing returns boolean
 set P=GetTriggerPlayer()
-return udg_B==false and(GetPlayerName(P)=="Shunova" or GetPlayerName(P)=="Scathach_" or GetPlayerName(P)=="who?ch1sen" or GetPlayerName(P)=="Annieh" or GetPlayerName(P)=="KamaBr" or GetPlayerName(P)=="[OSV] Kama" or GetPlayerName(P)=="zld6334" or GetPlayerName(P)=="Abylai142536" or GetPlayerName(P)=="DarkSonic1" or GetPlayerName(P)=="Beerus_Sama" or GetPlayerName(P)=="54Dzangetsu75" or GetPlayerName(P)=="Sylphiette" or GetPlayerName(P)=="I_Arioh*" or GetPlayerName(P)=="PinkieNecro" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="NecromanseR_RuS" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="msseva16" or GetPlayerName(P)=="Shunova" or GetPlayerName(P)=="Wolfkill" or GetPlayerName(P)=="Famouzy" or GetPlayerName(P)=="Semko157" or GetPlayerName(P)=="xxNu-13xx" or GetPlayerName(P)=="pro100master999" or GetPlayerName(P)=="I_Arioh" or GetPlayerName(P)=="3Deviant" or GetPlayerName(P)=="Denamesh" or GetPlayerName(P)=="Renex" or BaseSkinCond(P))
+return udg_B==false and(GetPlayerName(P)=="Shunova" or GetPlayerName(P)=="roshidere" or GetPlayerName(P)=="who?ch1sen" or GetPlayerName(P)=="Annieh" or GetPlayerName(P)=="KamaBr" or GetPlayerName(P)=="[OSV] Kama" or GetPlayerName(P)=="zld6334" or GetPlayerName(P)=="Abylai142536" or GetPlayerName(P)=="DarkSonic1" or GetPlayerName(P)=="Beerus_Sama" or GetPlayerName(P)=="54Dzangetsu75" or GetPlayerName(P)=="Sylphiette" or GetPlayerName(P)=="I_Arioh*" or GetPlayerName(P)=="PinkieNecro" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="NecromanseR_RuS" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="msseva16" or GetPlayerName(P)=="Shunova" or GetPlayerName(P)=="Wolfkill" or GetPlayerName(P)=="Famouzy" or GetPlayerName(P)=="Semko157" or GetPlayerName(P)=="xxNu-13xx" or GetPlayerName(P)=="pro100master999" or GetPlayerName(P)=="I_Arioh" or GetPlayerName(P)=="3Deviant" or GetPlayerName(P)=="Denamesh" or GetPlayerName(P)=="Renex" or BaseSkinCond(P))
 endfunction
 function ScathachRFHCast takes nothing returns nothing
 local integer ip=GetPlayerId(GetTriggerPlayer())
@@ -30865,7 +30865,7 @@ set p=null
 endfunction
 function AlterRFHCond takes nothing returns boolean
 set P=GetTriggerPlayer()
-return udg_B==false and(GetPlayerName(P)=="Sylphiette" or GetPlayerName(P)=="Ratti" or GetPlayerName(P)=="ti123vn00" or GetPlayerName(P)=="Scathach_" or GetPlayerName(P)=="who?ch1sen" or GetPlayerName(P)=="Принц" or GetPlayerName(P)=="Hermaeus" or GetPlayerName(P)=="KamaBr" or GetPlayerName(P)=="[OSV] Kama" or GetPlayerName(P)=="Antitilt" or GetPlayerName(P)=="No_Dust" or GetPlayerName(P)=="Luna000" or GetPlayerName(P)=="TheDunwich525" or GetPlayerName(P)=="KuroNico" or GetPlayerName(P)=="Annieh" or GetPlayerName(P)=="zld6334" or GetPlayerName(P)=="WamPIRok" or GetPlayerName(P)=="Cermia" or GetPlayerName(P)=="Jaunty_D-Mai" or GetPlayerName(P)=="Sekaiyo" or GetPlayerName(P)=="SAOkirito1121" or GetPlayerName(P)=="PinkieNecro" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="NecromanseR_RuS" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="Wolfkill" or GetPlayerName(P)=="Famouzy" or GetPlayerName(P)=="Famousy" or GetPlayerName(P)=="Anwa_Abdul" or GetPlayerName(P)=="antonpoganui" or GetPlayerName(P)=="xxNu-13xx" or GetPlayerName(P)=="f.a.r.a.o.n." or GetPlayerName(P)=="Denamesh" or  GetPlayerName(P)=="Sheogarath57" or GetPlayerName(P)=="Awenger93" or  GetPlayerName(P)=="Gun62rus" or GetPlayerName(P)=="XDragon_FrostX" or GetPlayerName(P)=="Odi" or GetPlayerName(P)=="ROC4ik" or GetPlayerName(P)=="zelim9" or GetPlayerName(P)=="tenevo" or GetPlayerName(P)=="MoonX3" or GetPlayerName(P)=="Gin_-_Ichimaru" or GetPlayerName(P)=="CFA-Kirito" or GetPlayerName(P)=="Uriska" or GetPlayerName(P)=="hrUd" or GetPlayerName(P)=="Kuzeyuta" or GetPlayerName(P)=="FT.Lancer" or GetPlayerName(P)=="Maryana.Ro" or GetPlayerName(P)=="Neo_Hirai" or GetPlayerName(P)=="msseva16" or GetPlayerName(P)=="Blaze_drago_x" or GetPlayerName(P)=="adara3" or GetPlayerName(P)=="Shunova" or GetPlayerName(P)=="Renex" or GetPlayerName(P)=="Chevalier" or GetPlayerName(P)=="knowyourplace" or BaseSkinCond(P))
+return udg_B==false and(GetPlayerName(P)=="Sylphiette" or GetPlayerName(P)=="Ratti" or GetPlayerName(P)=="ti123vn00" or GetPlayerName(P)=="roshidere" or GetPlayerName(P)=="who?ch1sen" or GetPlayerName(P)=="Принц" or GetPlayerName(P)=="Hermaeus" or GetPlayerName(P)=="KamaBr" or GetPlayerName(P)=="[OSV] Kama" or GetPlayerName(P)=="Antitilt" or GetPlayerName(P)=="No_Dust" or GetPlayerName(P)=="Luna000" or GetPlayerName(P)=="TheDunwich525" or GetPlayerName(P)=="KuroNico" or GetPlayerName(P)=="Annieh" or GetPlayerName(P)=="zld6334" or GetPlayerName(P)=="WamPIRok" or GetPlayerName(P)=="Cermia" or GetPlayerName(P)=="Jaunty_D-Mai" or GetPlayerName(P)=="Sekaiyo" or GetPlayerName(P)=="SAOkirito1121" or GetPlayerName(P)=="PinkieNecro" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="NecromanseR_RuS" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="Wolfkill" or GetPlayerName(P)=="Famouzy" or GetPlayerName(P)=="Famousy" or GetPlayerName(P)=="Anwa_Abdul" or GetPlayerName(P)=="antonpoganui" or GetPlayerName(P)=="xxNu-13xx" or GetPlayerName(P)=="f.a.r.a.o.n." or GetPlayerName(P)=="Denamesh" or  GetPlayerName(P)=="Sheogarath57" or GetPlayerName(P)=="Awenger93" or  GetPlayerName(P)=="Gun62rus" or GetPlayerName(P)=="XDragon_FrostX" or GetPlayerName(P)=="Odi" or GetPlayerName(P)=="ROC4ik" or GetPlayerName(P)=="zelim9" or GetPlayerName(P)=="tenevo" or GetPlayerName(P)=="MoonX3" or GetPlayerName(P)=="Gin_-_Ichimaru" or GetPlayerName(P)=="CFA-Kirito" or GetPlayerName(P)=="Uriska" or GetPlayerName(P)=="hrUd" or GetPlayerName(P)=="Kuzeyuta" or GetPlayerName(P)=="FT.Lancer" or GetPlayerName(P)=="Maryana.Ro" or GetPlayerName(P)=="Neo_Hirai" or GetPlayerName(P)=="msseva16" or GetPlayerName(P)=="Blaze_drago_x" or GetPlayerName(P)=="adara3" or GetPlayerName(P)=="Shunova" or GetPlayerName(P)=="Renex" or GetPlayerName(P)=="Chevalier" or GetPlayerName(P)=="knowyourplace" or BaseSkinCond(P))
 endfunction
 function AlterRFHCast takes nothing returns nothing
 local integer ip=GetPlayerId(GetTriggerPlayer())
@@ -31230,7 +31230,7 @@ set p=null
 endfunction
 function ArthurRFHCond takes nothing returns boolean
 set P=GetTriggerPlayer()
-return udg_B==false and(GetPlayerName(P)=="UJustDeadWeight" or GetPlayerName(P)=="Magistor" or GetPlayerName(P)=="Scathach_" or GetPlayerName(P)=="who?ch1sen" or GetPlayerName(P)=="Kiyoma" or GetPlayerName(P)=="Slaikee" or GetPlayerName(P)=="Renex" or GetPlayerName(P)=="Antitilt" or GetPlayerName(P)=="Annieh" or GetPlayerName(P)=="KamaBr" or GetPlayerName(P)=="[OSV] Kama" or GetPlayerName(P)=="zld6334" or BaseSkinCond(P))
+return udg_B==false and(GetPlayerName(P)=="UJustDeadWeight" or GetPlayerName(P)=="Magistor" or GetPlayerName(P)=="roshidere" or GetPlayerName(P)=="who?ch1sen" or GetPlayerName(P)=="Kiyoma" or GetPlayerName(P)=="Slaikee" or GetPlayerName(P)=="Renex" or GetPlayerName(P)=="Antitilt" or GetPlayerName(P)=="Annieh" or GetPlayerName(P)=="KamaBr" or GetPlayerName(P)=="[OSV] Kama" or GetPlayerName(P)=="zld6334" or BaseSkinCond(P))
 endfunction
 function ArthurRFHCast takes nothing returns nothing
 local integer ip=GetPlayerId(GetTriggerPlayer())
@@ -40904,7 +40904,7 @@ if cond==0 then
         endif
         if nb>0 and LoadInteger(HH,GetHandleId( GetOwningPlayer(u) ),UIDodgeHash)>0 and (nb<(GetUnitState(u,UNIT_STATE_MAX_LIFE)-GetUnitState(u,UNIT_STATE_LIFE))*0.4) and GetUnitAbilityLevel(u,'A7IH')==0 and GetUnitAbilityLevel(u, 'CBC2')==0 and GetUnitAbilityLevel(u, 'CBC1')==0 and GetUnitAbilityLevel(u, 'cbc4')==0 and GetUnitAbilityLevel(u, 'cbc6')==0 and GetUnitAbilityLevel(u, 'cbc7')==0 and GetUnitAbilityLevel(u, 'cbc8')==0 and GetUnitAbilityLevel(u, 'cbc9')==0 and GetUnitAbilityLevel(u, 'cbc5')==0 and IsUnitPaused(u)==false then
             call SaveInteger(HH,GetHandleId( GetOwningPlayer(u) ),UIDodgeHash,LoadInteger(HH,GetHandleId( GetOwningPlayer(u) ),UIDodgeHash)-1)
-            call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-nb*0.1)
+            call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-nb*0.2)
             //call SetEventDamage(0.05)
             call UnitAddAbility(u,'A7IH')
             call UnitRemoveAbilityTimedPause(u,'A7IH',0.15)
@@ -167877,7 +167877,7 @@ call GroupEnumUnitsInRange(g,x,y,GetUnitAbilityLevel(LoadUnitHandle(h,id,CasterH
 loop
 set bjLCU=FirstOfGroup(g)
 exitwhen bjLCU==null
-if Condition_Base(GetOwningPlayer(LoadUnitHandle(h,id,CasterHash)),bjLCU)==true then
+if Condition_Base(GetOwningPlayer(LoadUnitHandle(h,id,CasterHash)),bjLCU)==true and IsUnitInvulnerable(bjLCU)==false then
 set dmg_hp=GetWidgetMaxLife(bjLCU)*0.0025
 call HealTextTag(LoadUnitHandle(h,id,CasterHash),LoadUnitHandle(h,id,CasterHash),dmg_hp*myCustomHeal2(LoadUnitHandle(h,id,CasterHash),1),"HealthRes")
 call AddWidgetLife(LoadUnitHandle(h,id,CasterHash),dmg_hp)
@@ -184755,11 +184755,11 @@ function HashiramaQCasttimeCast takes nothing returns nothing
         endif
     elseif GetIssuedOrderId()==OrderId("absorb") then
         if GetOrderTargetUnit()==u then
-            call SetAbilityRealLevelField(GetUnitAbility(u,'JNQ1'),ABILITY_RLF_CASTING_TIME,0,0)
-            call SetAbilityRealLevelField(GetUnitAbility(u,'JNQ1'),ABILITY_RLF_CASTING_TIME,1,0)
-            call SetAbilityRealLevelField(GetUnitAbility(u,'JNQ1'),ABILITY_RLF_CASTING_TIME,2,0)
-            call SetAbilityRealLevelField(GetUnitAbility(u,'JNQ1'),ABILITY_RLF_CASTING_TIME,3,0)
-            call SetAbilityRealLevelField(GetUnitAbility(u,'JNQ1'),ABILITY_RLF_CASTING_TIME,4,0)
+            call SetAbilityRealLevelField(GetUnitAbility(u,'JNQ1'),ABILITY_RLF_CASTING_TIME,0,0.2)
+            call SetAbilityRealLevelField(GetUnitAbility(u,'JNQ1'),ABILITY_RLF_CASTING_TIME,1,0.2)
+            call SetAbilityRealLevelField(GetUnitAbility(u,'JNQ1'),ABILITY_RLF_CASTING_TIME,2,0.2)
+            call SetAbilityRealLevelField(GetUnitAbility(u,'JNQ1'),ABILITY_RLF_CASTING_TIME,3,0.2)
+            call SetAbilityRealLevelField(GetUnitAbility(u,'JNQ1'),ABILITY_RLF_CASTING_TIME,4,0.2)
         else
             call SetAbilityRealLevelField(GetUnitAbility(u,'JNQ1'),ABILITY_RLF_CASTING_TIME,0,0.2)
             call SetAbilityRealLevelField(GetUnitAbility(u,'JNQ1'),ABILITY_RLF_CASTING_TIME,1,0.2)
