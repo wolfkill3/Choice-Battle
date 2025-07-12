@@ -2416,6 +2416,9 @@ function myCustomHeal2 takes unit target, real amount returns real
     if GetUnitTypeId(target)=='H00Q' then // Доппель Мории
         set currentHeal = currentHeal * 1.5
     endif
+    if GetUnitTypeId(target)=='H02O' and GetHeroLevel(target)>5 then //Buu Passive
+        set currentHeal = currentHeal * (1.049+(GetUnitState(target,UNIT_STATE_MANA) / GetUnitState(target,UNIT_STATE_MAX_MANA))*0.201)
+    endif
     if GetUnitAbilityLevel(target,'BNC1') > 0 or GetUnitAbilityLevel(target,'BNC2') > 0 then // эссенс
         set currentHeal=0
     endif         
@@ -22317,7 +22320,7 @@ set i=i+1
 endloop
 if count>1 then
 call RemoveItem(it)
-call SetPlayerState(Player(id),PLAYER_STATE_RESOURCE_GOLD,GetPlayerState(Player(id),PLAYER_STATE_RESOURCE_GOLD)+5250)
+call SetPlayerState(Player(id),PLAYER_STATE_RESOURCE_GOLD,GetPlayerState(Player(id),PLAYER_STATE_RESOURCE_GOLD)+4800)
 call DisplayTextToPlayer(Player(id),0,0,"Нельзя иметь больше одного такого предмета!")
 endif
 set i=0
@@ -22523,9 +22526,9 @@ local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
 local unit u=LoadUnitHandle(h,id,1)
 if udg_B==false or DU2==false then
-call SetHeroAgi(u,GetHeroAgi(u,false)-LoadInteger(h,id,2),true)
-call SetHeroStr(u,GetHeroStr(u,false)-LoadInteger(h,id,3),true)
-call SetHeroInt(u,GetHeroInt(u,false)-LoadInteger(h,id,4),true)
+call SetHeroAgi(u,GetHeroAgi(u,false)-(LoadInteger(h,id,2)+2),true)
+call SetHeroStr(u,GetHeroStr(u,false)-(LoadInteger(h,id,3)+2),true)
+call SetHeroInt(u,GetHeroInt(u,false)-(LoadInteger(h,id,4)+2),true)
 call PauseTimer(t)
 call DestroyTimer(t)
 call FlushChildHashtable(h,id)
@@ -22635,13 +22638,13 @@ function Trig_Killer_Actions takes nothing returns nothing
                 set t=CreateTimer()
                 set i2=R2I(I2R(GetHeroAgi(Hero[ic],true))*0.05)
                 call SaveInteger(h,GetHandleId(t),2,i2)
-                call SetHeroAgi(E,GetHeroAgi(E,false)+i2,true)
+                call SetHeroAgi(E,GetHeroAgi(E,false)+i2+2,true)
                 set i2=R2I(I2R(GetHeroStr(Hero[ic],true))*0.05)
                 call SaveInteger(h,GetHandleId(t),3,i2)
-                call SetHeroStr(E,GetHeroStr(E,false)+i2,true)
+                call SetHeroStr(E,GetHeroStr(E,false)+i2+2,true)
                 set i2=R2I(I2R(GetHeroInt(Hero[ic],true))*0.05)
                 call SaveInteger(h,GetHandleId(t),4,i2)
-                call SetHeroInt(E,GetHeroInt(E,false)+i2,true)
+                call SetHeroInt(E,GetHeroInt(E,false)+i2+2,true)
                 call SaveUnitHandle(h,GetHandleId(t),1,E)
                 call TimerStart(t,0.1,true,function BuuAbsorbCheck)
             endif
@@ -25419,6 +25422,41 @@ set gg_trg_mult=CreateTrigger()
 call TriggerRegisterTimerEventSingle(gg_trg_mult,1.01)
 call TriggerAddAction(gg_trg_mult,function Trig_mult_Actions)
 endfunction
+function BuuPassiveRegenCast2 takes nothing returns nothing
+local timer t=GetExpiredTimer()
+local integer id=GetHandleId(t)
+local unit u=LoadUnitHandle(h,id,1)
+local real life=LoadReal(h,id,0)
+local real life2=GetWidgetLife(u)
+local real dmg=0
+if GetHeroLevel(u)>5 and GetWidgetLife(u)>0 and udg_B==true and DU2==true then
+    if life2>life then
+        set dmg=GetWidgetLife(u)-LoadReal(h,id,0)
+        call SaveReal(h,id,3,LoadReal(h,id,3)+(dmg*(0.049+(GetUnitState(u,UNIT_STATE_MANA) / GetUnitState(u,UNIT_STATE_MAX_MANA))*0.201)))
+        call SetWidgetLife(u, GetWidgetLife(u)+MathRealFloor(dmg*(0.049+(GetUnitState(u,UNIT_STATE_MANA) / GetUnitState(u,UNIT_STATE_MAX_MANA))*0.201))+MathRealFloor(LoadReal(h,id,3)))
+        if LoadReal(h,id,3)>1 then
+            call SaveReal(h,id,3,LoadReal(h,id,3)-MathRealFloor(LoadReal(h,id,3)))
+        endif
+    endif
+    call SaveReal(h,id,0,GetWidgetLife(u))
+else
+    call SaveInteger(HH,GetHandleId(u),StringHash("BuuPassive"),0)
+    call DestroyTimer(t)
+    call FlushChildHashtable(h,id)
+endif
+set t=null
+set u=null
+endfunction
+function BuuPassiveRegenCast takes unit u returns nothing
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+call SaveUnitHandle(h,id,1,u)
+call SaveReal(h,id,0,GetWidgetLife(u))
+call SaveInteger(HH,GetHandleId(u),StringHash("BuuPassive"),1)
+call TimerStart(t,0.01,true,function BuuPassiveRegenCast2)
+set t=null
+set u=null
+endfunction
 function MoriaDoppelCast2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
@@ -25944,6 +25982,9 @@ function Trig_Multup_Actions takes nothing returns nothing
         if ingame[x]==true then
             if udg_B==false then
                 call SetUnitInvulnerable(Hero[x],true)
+            endif
+            if GetUnitTypeId(Hero[x])=='H02O' and GetHeroLevel(Hero[x])>5 and LoadInteger(HH,GetHandleId(Hero[x]),StringHash("BuuPassive"))!=1 then
+                call BuuPassiveRegenCast(Hero[x])
             endif
             if (UnitHasItemOfTypeBJ(Hero[x],'I00D') or GetUnitAbilityLevel(Hero[x],'KI58')>0) and LoadInteger(HH,GetHandleId(Hero[x]),StringHash("SunVongola"))!=1 then
                 call SunVongolaRegenCast(Hero[x])
@@ -28384,11 +28425,11 @@ endfunction
 function Magistor takes nothing returns nothing
 local integer ip=GetPlayerId(GetTriggerPlayer())
 local integer id=GetHandleId(Hero[ip])
-if GetSpecialEffectModel(LoadEffectHandle(HH,id,StringHash("orig")))=="MagistorBanner.mdx" then
+if GetSpecialEffectModel(LoadEffectHandle(HH,id,StringHash("orig")))=="LibeBanner.mdx" then
 call DestroyEffect(LoadEffectHandle(HH,id,StringHash("orig")))
 else
 call DestroyEffect(LoadEffectHandle(HH,id,StringHash("orig")))
-set EFF=AddSpecialEffectTarget("MagistorBanner.mdx",Hero[ip],"origin")
+set EFF=AddSpecialEffectTarget("LibeBanner.mdx",Hero[ip],"origin")
 call SaveEffectHandle(HH,id,StringHash("orig"),EFF)
 endif
 endfunction
@@ -28559,7 +28600,7 @@ call SaveBoolean(HH,ip,NIWHash,true)
 endif
 endfunction
 function DemonCond takes nothing returns boolean
-return GetPlayerName(GetTriggerPlayer())=="PinkieNecro" or GetPlayerName(GetTriggerPlayer())=="NecromanseR_RuS" or GetPlayerName(GetTriggerPlayer())==AdminNickname
+return GetPlayerName(GetTriggerPlayer())=="Magistor" or GetPlayerName(GetTriggerPlayer())=="PinkieNecro" or GetPlayerName(GetTriggerPlayer())=="NecromanseR_RuS" or GetPlayerName(GetTriggerPlayer())==AdminNickname
 endfunction
 function Demon takes nothing returns nothing
 local integer ip=GetPlayerId(GetTriggerPlayer())
@@ -29830,7 +29871,7 @@ set p=null
 endfunction
 function ScathachRFHCond takes nothing returns boolean
 set P=GetTriggerPlayer()
-return udg_B==false and(GetPlayerName(P)=="Shunova" or GetPlayerName(P)=="Scathach_" or GetPlayerName(P)=="who?ch1sen" or GetPlayerName(P)=="Annieh" or GetPlayerName(P)=="KamaBr" or GetPlayerName(P)=="[OSV] Kama" or GetPlayerName(P)=="zld6334" or GetPlayerName(P)=="Abylai142536" or GetPlayerName(P)=="DarkSonic1" or GetPlayerName(P)=="Beerus_Sama" or GetPlayerName(P)=="54Dzangetsu75" or GetPlayerName(P)=="Sylphiette" or GetPlayerName(P)=="I_Arioh*" or GetPlayerName(P)=="PinkieNecro" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="NecromanseR_RuS" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="msseva16" or GetPlayerName(P)=="Shunova" or GetPlayerName(P)=="Wolfkill" or GetPlayerName(P)=="Famouzy" or GetPlayerName(P)=="Semko157" or GetPlayerName(P)=="xxNu-13xx" or GetPlayerName(P)=="pro100master999" or GetPlayerName(P)=="I_Arioh" or GetPlayerName(P)=="3Deviant" or GetPlayerName(P)=="Denamesh" or GetPlayerName(P)=="Renex" or BaseSkinCond(P))
+return udg_B==false and(GetPlayerName(P)=="Shunova" or GetPlayerName(P)=="roshidere" or GetPlayerName(P)=="who?ch1sen" or GetPlayerName(P)=="Annieh" or GetPlayerName(P)=="KamaBr" or GetPlayerName(P)=="[OSV] Kama" or GetPlayerName(P)=="zld6334" or GetPlayerName(P)=="Abylai142536" or GetPlayerName(P)=="DarkSonic1" or GetPlayerName(P)=="Beerus_Sama" or GetPlayerName(P)=="54Dzangetsu75" or GetPlayerName(P)=="Sylphiette" or GetPlayerName(P)=="I_Arioh*" or GetPlayerName(P)=="PinkieNecro" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="NecromanseR_RuS" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="msseva16" or GetPlayerName(P)=="Shunova" or GetPlayerName(P)=="Wolfkill" or GetPlayerName(P)=="Famouzy" or GetPlayerName(P)=="Semko157" or GetPlayerName(P)=="xxNu-13xx" or GetPlayerName(P)=="pro100master999" or GetPlayerName(P)=="I_Arioh" or GetPlayerName(P)=="3Deviant" or GetPlayerName(P)=="Denamesh" or GetPlayerName(P)=="Renex" or BaseSkinCond(P))
 endfunction
 function ScathachRFHCast takes nothing returns nothing
 local integer ip=GetPlayerId(GetTriggerPlayer())
@@ -30122,7 +30163,7 @@ set p=null
 endfunction
 function BrideRFHCond takes nothing returns boolean
 set P=GetTriggerPlayer()
-return udg_B==false and(GetPlayerName(P)=="PinkieNecro" or GetPlayerName(P)=="No_Dust" or GetPlayerName(P)=="KamaBr" or GetPlayerName(P)=="[OSV] Kama" or GetPlayerName(P)=="SasukeMV" or GetPlayerName(P)=="SoloOfTheBest" or GetPlayerName(P)=="Renex" or GetPlayerName(P)=="Annieh" or GetPlayerName(P)=="zld6334" or GetPlayerName(P)=="WorldEdit" or GetPlayerName(P)=="UJustDeadWeight" or GetPlayerName(P)=="No_Dust" or GetPlayerName(P)=="Chevalier" or GetPlayerName(P)=="Antitilt" or GetPlayerName(P)=="dadadacer777" or GetPlayerName(P)=="belugaa" or GetPlayerName(P)=="IIIafep" or BaseSkinCond(P))
+return udg_B==false and(GetPlayerName(P)=="PinkieNecro" or GetPlayerName(P)=="Magistor" or GetPlayerName(P)=="No_Dust" or GetPlayerName(P)=="KamaBr" or GetPlayerName(P)=="[OSV] Kama" or GetPlayerName(P)=="SasukeMV" or GetPlayerName(P)=="SoloOfTheBest" or GetPlayerName(P)=="Renex" or GetPlayerName(P)=="Annieh" or GetPlayerName(P)=="zld6334" or GetPlayerName(P)=="WorldEdit" or GetPlayerName(P)=="UJustDeadWeight" or GetPlayerName(P)=="No_Dust" or GetPlayerName(P)=="Chevalier" or GetPlayerName(P)=="Antitilt" or GetPlayerName(P)=="dadadacer777" or GetPlayerName(P)=="belugaa" or GetPlayerName(P)=="IIIafep" or BaseSkinCond(P))
 endfunction
 function BrideRFHCast takes nothing returns nothing
 local integer ip=GetPlayerId(GetTriggerPlayer())
@@ -30579,7 +30620,7 @@ set p=null
 endfunction
 function MomoRFHCond takes nothing returns boolean
 set P=GetTriggerPlayer()
-return udg_B==false and(GetPlayerName(P)=="Sylphiette" or GetPlayerName(P)=="IIIafep" or GetPlayerName(P)=="Nezoke" or GetPlayerName(P)=="KamaBr" or GetPlayerName(P)=="[OSV] Kama" or GetPlayerName(P)=="Luna000" or GetPlayerName(P)=="Uriska" or GetPlayerName(P)=="Jaunty_D-Mai" or GetPlayerName(P)=="Yin-Ying" or GetPlayerName(P)=="Annieh" or GetPlayerName(P)=="zld6334" or GetPlayerName(P)=="pro100master999" or GetPlayerName(P)=="Falaminator" or GetPlayerName(P)=="PinkieNecro" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="NecromanseR_RuS" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="Blaze_drago_x" or GetPlayerName(P)=="xXLarsikXx" or GetPlayerName(P)=="Wolfkill" or GetPlayerName(P)=="Famouzy" or GetPlayerName(P)=="falaminator" or GetPlayerName(P)=="xxNu-13xx" or GetPlayerName(P)=="Denamesh" or GetPlayerName(P)=="Rey_Calabaza" or GetPlayerName(P)=="akama001" or GetPlayerName(P)=="AkazaThree" or GetPlayerName(P)=="ZOIBERG_SVS" or GetPlayerName(P)=="neketEXE" or GetPlayerName(P)=="KickSuckem" or GetPlayerName(P)=="Renex" or GetPlayerName(P)=="knowyourplace" or BaseSkinCond(P))
+return udg_B==false and(GetPlayerName(P)=="Sylphiette" or GetPlayerName(P)=="Magistor" or GetPlayerName(P)=="IIIafep" or GetPlayerName(P)=="Nezoke" or GetPlayerName(P)=="KamaBr" or GetPlayerName(P)=="[OSV] Kama" or GetPlayerName(P)=="Luna000" or GetPlayerName(P)=="Uriska" or GetPlayerName(P)=="Jaunty_D-Mai" or GetPlayerName(P)=="Yin-Ying" or GetPlayerName(P)=="Annieh" or GetPlayerName(P)=="zld6334" or GetPlayerName(P)=="pro100master999" or GetPlayerName(P)=="Falaminator" or GetPlayerName(P)=="PinkieNecro" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="NecromanseR_RuS" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="Blaze_drago_x" or GetPlayerName(P)=="xXLarsikXx" or GetPlayerName(P)=="Wolfkill" or GetPlayerName(P)=="Famouzy" or GetPlayerName(P)=="falaminator" or GetPlayerName(P)=="xxNu-13xx" or GetPlayerName(P)=="Denamesh" or GetPlayerName(P)=="Rey_Calabaza" or GetPlayerName(P)=="akama001" or GetPlayerName(P)=="AkazaThree" or GetPlayerName(P)=="ZOIBERG_SVS" or GetPlayerName(P)=="neketEXE" or GetPlayerName(P)=="KickSuckem" or GetPlayerName(P)=="Renex" or GetPlayerName(P)=="knowyourplace" or BaseSkinCond(P))
 endfunction
 function MomoRFHCast takes nothing returns nothing
 local integer ip=GetPlayerId(GetTriggerPlayer())
@@ -30652,7 +30693,7 @@ set p=null
 endfunction
 function MystoganRFHCond takes nothing returns boolean
 set P=GetTriggerPlayer()
-return udg_B==false and(GetPlayerName(P)=="Black_XeSHTeG" or GetPlayerName(P)=="IIIafep" or GetPlayerName(P)=="Ratti" or GetPlayerName(P)=="PinkieNecro" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="NecromanseR_RuS" or GetPlayerName(P)=="knowyourplace" or BaseSkinCond(P))
+return udg_B==false and(GetPlayerName(P)=="Black_XeSHTeG" or GetPlayerName(P)=="Magistor" or GetPlayerName(P)=="IIIafep" or GetPlayerName(P)=="Ratti" or GetPlayerName(P)=="PinkieNecro" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="NecromanseR_RuS" or GetPlayerName(P)=="knowyourplace" or BaseSkinCond(P))
 endfunction
 function MystoganRFHCast takes nothing returns nothing
 local integer ip=GetPlayerId(GetTriggerPlayer())
@@ -30876,7 +30917,7 @@ set p=null
 endfunction
 function AlterRFHCond takes nothing returns boolean
 set P=GetTriggerPlayer()
-return udg_B==false and(GetPlayerName(P)=="Sylphiette" or GetPlayerName(P)=="Ratti" or GetPlayerName(P)=="ti123vn00" or GetPlayerName(P)=="Scathach_" or GetPlayerName(P)=="who?ch1sen" or GetPlayerName(P)=="Принц" or GetPlayerName(P)=="Hermaeus" or GetPlayerName(P)=="KamaBr" or GetPlayerName(P)=="[OSV] Kama" or GetPlayerName(P)=="Antitilt" or GetPlayerName(P)=="No_Dust" or GetPlayerName(P)=="Luna000" or GetPlayerName(P)=="TheDunwich525" or GetPlayerName(P)=="KuroNico" or GetPlayerName(P)=="Annieh" or GetPlayerName(P)=="zld6334" or GetPlayerName(P)=="WamPIRok" or GetPlayerName(P)=="Cermia" or GetPlayerName(P)=="Jaunty_D-Mai" or GetPlayerName(P)=="Sekaiyo" or GetPlayerName(P)=="SAOkirito1121" or GetPlayerName(P)=="PinkieNecro" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="NecromanseR_RuS" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="Wolfkill" or GetPlayerName(P)=="Famouzy" or GetPlayerName(P)=="Famousy" or GetPlayerName(P)=="Anwa_Abdul" or GetPlayerName(P)=="antonpoganui" or GetPlayerName(P)=="xxNu-13xx" or GetPlayerName(P)=="f.a.r.a.o.n." or GetPlayerName(P)=="Denamesh" or  GetPlayerName(P)=="Sheogarath57" or GetPlayerName(P)=="Awenger93" or  GetPlayerName(P)=="Gun62rus" or GetPlayerName(P)=="XDragon_FrostX" or GetPlayerName(P)=="Odi" or GetPlayerName(P)=="ROC4ik" or GetPlayerName(P)=="zelim9" or GetPlayerName(P)=="tenevo" or GetPlayerName(P)=="MoonX3" or GetPlayerName(P)=="Gin_-_Ichimaru" or GetPlayerName(P)=="CFA-Kirito" or GetPlayerName(P)=="Uriska" or GetPlayerName(P)=="hrUd" or GetPlayerName(P)=="Kuzeyuta" or GetPlayerName(P)=="FT.Lancer" or GetPlayerName(P)=="Maryana.Ro" or GetPlayerName(P)=="Neo_Hirai" or GetPlayerName(P)=="msseva16" or GetPlayerName(P)=="Blaze_drago_x" or GetPlayerName(P)=="adara3" or GetPlayerName(P)=="Shunova" or GetPlayerName(P)=="Renex" or GetPlayerName(P)=="Chevalier" or GetPlayerName(P)=="knowyourplace" or BaseSkinCond(P))
+return udg_B==false and(GetPlayerName(P)=="Sylphiette" or GetPlayerName(P)=="Ratti" or GetPlayerName(P)=="ti123vn00" or GetPlayerName(P)=="roshidere" or GetPlayerName(P)=="who?ch1sen" or GetPlayerName(P)=="Принц" or GetPlayerName(P)=="Hermaeus" or GetPlayerName(P)=="KamaBr" or GetPlayerName(P)=="[OSV] Kama" or GetPlayerName(P)=="Antitilt" or GetPlayerName(P)=="No_Dust" or GetPlayerName(P)=="Luna000" or GetPlayerName(P)=="TheDunwich525" or GetPlayerName(P)=="KuroNico" or GetPlayerName(P)=="Annieh" or GetPlayerName(P)=="zld6334" or GetPlayerName(P)=="WamPIRok" or GetPlayerName(P)=="Cermia" or GetPlayerName(P)=="Jaunty_D-Mai" or GetPlayerName(P)=="Sekaiyo" or GetPlayerName(P)=="SAOkirito1121" or GetPlayerName(P)=="PinkieNecro" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="NecromanseR_RuS" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="Wolfkill" or GetPlayerName(P)=="Famouzy" or GetPlayerName(P)=="Famousy" or GetPlayerName(P)=="Anwa_Abdul" or GetPlayerName(P)=="antonpoganui" or GetPlayerName(P)=="xxNu-13xx" or GetPlayerName(P)=="f.a.r.a.o.n." or GetPlayerName(P)=="Denamesh" or  GetPlayerName(P)=="Sheogarath57" or GetPlayerName(P)=="Awenger93" or  GetPlayerName(P)=="Gun62rus" or GetPlayerName(P)=="XDragon_FrostX" or GetPlayerName(P)=="Odi" or GetPlayerName(P)=="ROC4ik" or GetPlayerName(P)=="zelim9" or GetPlayerName(P)=="tenevo" or GetPlayerName(P)=="MoonX3" or GetPlayerName(P)=="Gin_-_Ichimaru" or GetPlayerName(P)=="CFA-Kirito" or GetPlayerName(P)=="Uriska" or GetPlayerName(P)=="hrUd" or GetPlayerName(P)=="Kuzeyuta" or GetPlayerName(P)=="FT.Lancer" or GetPlayerName(P)=="Maryana.Ro" or GetPlayerName(P)=="Neo_Hirai" or GetPlayerName(P)=="msseva16" or GetPlayerName(P)=="Blaze_drago_x" or GetPlayerName(P)=="adara3" or GetPlayerName(P)=="Shunova" or GetPlayerName(P)=="Renex" or GetPlayerName(P)=="Chevalier" or GetPlayerName(P)=="knowyourplace" or BaseSkinCond(P))
 endfunction
 function AlterRFHCast takes nothing returns nothing
 local integer ip=GetPlayerId(GetTriggerPlayer())
@@ -31241,7 +31282,7 @@ set p=null
 endfunction
 function ArthurRFHCond takes nothing returns boolean
 set P=GetTriggerPlayer()
-return udg_B==false and(GetPlayerName(P)=="UJustDeadWeight" or GetPlayerName(P)=="Scathach_" or GetPlayerName(P)=="who?ch1sen" or GetPlayerName(P)=="Kiyoma" or GetPlayerName(P)=="Slaikee" or GetPlayerName(P)=="Renex" or GetPlayerName(P)=="Antitilt" or GetPlayerName(P)=="Annieh" or GetPlayerName(P)=="KamaBr" or GetPlayerName(P)=="[OSV] Kama" or GetPlayerName(P)=="zld6334" or BaseSkinCond(P))
+return udg_B==false and(GetPlayerName(P)=="UJustDeadWeight" or GetPlayerName(P)=="Magistor" or GetPlayerName(P)=="roshidere" or GetPlayerName(P)=="who?ch1sen" or GetPlayerName(P)=="Kiyoma" or GetPlayerName(P)=="Slaikee" or GetPlayerName(P)=="Renex" or GetPlayerName(P)=="Antitilt" or GetPlayerName(P)=="Annieh" or GetPlayerName(P)=="KamaBr" or GetPlayerName(P)=="[OSV] Kama" or GetPlayerName(P)=="zld6334" or BaseSkinCond(P))
 endfunction
 function ArthurRFHCast takes nothing returns nothing
 local integer ip=GetPlayerId(GetTriggerPlayer())
@@ -31843,6 +31884,7 @@ call SetFrameColourEx( GetFrameByName("TavernBarHero",id),2, 0xFF505050 )
 call SetFrameColourEx( GetFrameByName("TavernBarHeroTitle",id),0, 0xFF505050 )
 call SetFrameColourEx( GetFrameByName("TavernBarHeroTitle",id),1, 0xFF505050 )
 call SetFrameColourEx( GetFrameByName("TavernBarHeroTitle",id),2, 0xFF505050 )
+set TavernPlayerPickAllow[i]=false
 if GetLocalPlayer()==GetTriggerPlayer() then
     call SetFrameColourEx( TavernHeroPick,0, 0xFF404040 )
     call SetFrameColourEx( TavernHeroPick,1, 0xFF404040 )
@@ -40951,9 +40993,9 @@ if cond==0 then
             //call SetEventDamage(0.05)
             set nb=0
         endif
-        if nb>0 and LoadInteger(HH,GetHandleId(GetOwningPlayer(u)),UIDodgeHash)>0 and (nb<(GetUnitState(u,UNIT_STATE_MAX_LIFE)-GetUnitState(u,UNIT_STATE_LIFE))*0.4) and GetUnitAbilityLevel(u,'A7IH')==0 and GetUnitAbilityLevel(u, 'CBC2')==0 and GetUnitAbilityLevel(u, 'CBC1')==0 and GetUnitAbilityLevel(u, 'cbc4')==0 and GetUnitAbilityLevel(u, 'cbc6')==0 and GetUnitAbilityLevel(u, 'cbc7')==0 and GetUnitAbilityLevel(u, 'cbc8')==0 and GetUnitAbilityLevel(u, 'cbc9')==0 and GetUnitAbilityLevel(u, 'cbc5')==0 and IsUnitPaused(u)==false then
-            call SaveInteger(HH,GetHandleId(GetOwningPlayer(u)),UIDodgeHash,LoadInteger(HH,GetHandleId(GetOwningPlayer(u)),UIDodgeHash)-1)
-            call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-nb*0.1)
+        if nb>0 and LoadInteger(HH,GetHandleId( GetOwningPlayer(u) ),UIDodgeHash)>0 and (nb<(GetUnitState(u,UNIT_STATE_MAX_LIFE)-GetUnitState(u,UNIT_STATE_LIFE))*0.4) and GetUnitAbilityLevel(u,'A7IH')==0 and GetUnitAbilityLevel(u, 'CBC2')==0 and GetUnitAbilityLevel(u, 'CBC1')==0 and GetUnitAbilityLevel(u, 'cbc4')==0 and GetUnitAbilityLevel(u, 'cbc6')==0 and GetUnitAbilityLevel(u, 'cbc7')==0 and GetUnitAbilityLevel(u, 'cbc8')==0 and GetUnitAbilityLevel(u, 'cbc9')==0 and GetUnitAbilityLevel(u, 'cbc5')==0 and IsUnitPaused(u)==false then
+            call SaveInteger(HH,GetHandleId( GetOwningPlayer(u) ),UIDodgeHash,LoadInteger(HH,GetHandleId( GetOwningPlayer(u) ),UIDodgeHash)-1)
+            call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-nb*0.2)
             //call SetEventDamage(0.05)
             call UnitAddAbility(u,'A7IH')
             call UnitRemoveAbilityTimedPause(u,'A7IH',0.15)
@@ -70034,6 +70076,8 @@ if GetSpellAbilityId()=='GKG3' then // Отмена Бомбы Гоку
         call SelectUnit(Goku,true)
     endif
     call RemoveUnit(u)
+    call UnitEnableMovement(Goku,true,true)
+    call UnitEnableAttack(Goku,true,false)
 endif 
 if GetSpellAbilityId()=='GKG4' then
     call SaveInteger(HH,GetHandleId(GenkiDama),0,1)
@@ -70049,6 +70093,8 @@ if GetSpellAbilityId()=='GKG4' then
         call SelectUnit(Goku,true)
     endif
     call RemoveUnit(u)
+    call UnitEnableMovement(Goku,true,true)
+    call UnitEnableAttack(Goku,true,false)
 endif
 if GetSpellAbilityId()=='GKG5' then
     call SaveInteger(HH,GetHandleId(GenkiDama),0,1)
@@ -70066,6 +70112,8 @@ if GetSpellAbilityId()=='GKG5' then
         call SelectUnit(Goku,true)
     endif
     call RemoveUnit(u)
+    call UnitEnableMovement(Goku,true,true)
+    call UnitEnableAttack(Goku,true,false)
 endif
 set u=null
 set c=null
@@ -70117,7 +70165,6 @@ if time<100 and GetUnitState(u,UNIT_STATE_LIFE)>0.405 and LoadBoolean(HH,GetHand
         call ClearSelection()
         call SelectUnit(dummy,true)
     endif
-    call PauseUnit(u,true)
     call SaveReal(h,id,7,time)
     call SetUnitXY_1(GenkiDama,x,y, false)
     call SetUnitXY_1(dummy,x,y, false)
@@ -70129,7 +70176,7 @@ if time<100 and GetUnitState(u,UNIT_STATE_LIFE)>0.405 and LoadBoolean(HH,GetHand
     endif
     call SetTextTagPosUnit(l__txt,u,700)
     call SetTextTagColor(l__txt,180,180,255,255)
-    if GetUnitScale(GenkiDama)<(0.58+GetHeroLevel(u)*0.04) and time>1 then
+    if GetUnitScale(GenkiDama)<(0.58+GetHeroLevel(u)*0.04) and time>0.01 then
         set n=CreateUnit(p,'e0CF',x+GetRandomReal(-3200,3200),y+GetRandomReal(-3200,3200),GetRandomReal(0,359))
         call SetUnitPathing(n,false)
         call GenkiMoveSpiritBomb(GenkiDama,n,SR(GetUnitX(n),GetUnitY(n),x,y)*0.015,0,GetUnitFlyHeight(GenkiDama),0.002)
@@ -70163,11 +70210,10 @@ else
         set i=i+1
         exitwhen i>=bj_MAX_PLAYER_SLOTS
     endloop
-    call PauseUnit(u,false)
     call SetUnitTimeScale(u,1)
     if LoadInteger(HH,GetHandleId(GenkiDama),0)==0 then 
         call SetUnitAnimation(u,"stand")
-        call StartAbilityCooldown(GetUnitAbility(u,'GKG1'),30)
+        call StartAbilityCooldown(GetUnitAbility(u,'GKG1'),15)
         call FlushChildHashtable(HH,GetHandleId(GenkiDama))
         if GetUnitScale(GenkiDama)>0.1 then
             // set n=CreateUnit(p,'e04B',x,y,0)
@@ -70205,6 +70251,8 @@ else
             call SelectUnit(u,true)
         endif
     endif
+    call UnitEnableMovement(u,true,false)
+    call UnitEnableAttack(u,true,false)
     call RemoveUnit(dummy)
     call FlushChildHashtable(h,id)
     call PauseTimer(t)
@@ -70230,6 +70278,8 @@ local player p=GetOwningPlayer(u)
 local integer i=0
 local texttag l__txt=CreateTextTag()
 call SaveUnitHandle(h,id,0,u)
+call UnitEnableMovement(u,false,false)
+call UnitEnableAttack(u,false,false)
 set GenkiDama=CreateUnit(p,'e0CE',x,y,a*bj_RADTODEG)
 call SetUnitVertexColor(GenkiDama, 255, 255, 255, 0)
 call SetUnitFlyHeight(GenkiDama,570,0)
@@ -70886,8 +70936,8 @@ endif
 call StartSound(soundStr[47])
 call UnitApplyTimedLife(l__d,'BTLF',0.5)
 call SetUnitAnimationByIndex(l__d,1)
-call SetUnitAnimationByIndex(n,3)
 call UnitApplyTimedLife(LoadUnitHandle(h,id,13),'BTLF',0.5)
+call SetUnitAnimationByIndex(LoadUnitHandle(h,id,13),3)
 call SetUnitInvulnerable(u,false)
 call PauseUnit(u,false)
 call SetUnitTimeScale(u,1)
@@ -71244,8 +71294,8 @@ endif
 call StartSound(soundStr[47])
 call UnitApplyTimedLife(l__d,'BTLF',0.5)
 call SetUnitAnimationByIndex(l__d,1)
-call SetUnitAnimationByIndex(n,3)
 call UnitApplyTimedLife(LoadUnitHandle(h,id,13),'BTLF',0.5)
+call SetUnitAnimationByIndex(LoadUnitHandle(h,id,13),3)
 call SetUnitInvulnerable(u,false)
 call PauseUnit(u,false)
 call SetUnitTimeScale(u,1)
@@ -78393,9 +78443,9 @@ local real mm=GetUnitState(u,UNIT_STATE_MANA)
 if GetUnitAbilityLevel(u,'BuF1')>0 and GetUnitAbilityLevel(u,'BNC1')==0 and GetUnitAbilityLevel(u,'BNC2')==0 and m>mm*0.03 and LoadBoolean(HH,GetHandleId(u),SST)==true then
     if IsUnitPaused(u)==false and GetUnitAbilityLevel(u,'Pet1')==0 then
         if l<lm*0.97 then
-            call HealTextTag(u,u,mm*0.15*0.03*myCustomHeal2(u,1),"HealthRes")
-            call SetUnitState(u,UNIT_STATE_LIFE,l+mm*0.15*0.03)
-            call SetUnitState(u,UNIT_STATE_MANA,m-mm*0.1*0.03)
+            call HealTextTag(u,u,mm*0.075*0.03*myCustomHeal2(u,1),"HealthRes")
+            call SetUnitState(u,UNIT_STATE_LIFE,l+mm*0.075*0.03)
+            call SetUnitState(u,UNIT_STATE_MANA,m-mm*0.05*0.03)
         endif
     endif
 else
@@ -127624,14 +127674,14 @@ call TriggerAddCondition(gg_trg_Tentacle,Condition(function TentacleCond))
 call TriggerAddAction(gg_trg_Tentacle,function TentacleCast)
 endfunction
 function GoshikitoCond takes nothing returns boolean
-return GetSpellAbilityId()==0x41314149
+return GetSpellAbilityId()=='A1AI'
 endfunction
 function GoshikitoCast2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
 local unit u=LoadUnitHandle(h,id,0)
 local unit l__d=LoadUnitHandle(h,id,1)
-local real dmg=75+(1+GetUnitAbilityLevel(u,0x41314149))*GetHeroInt(u,true)
+local real dmg=75+(1+GetUnitAbilityLevel(u,'A1AI'))*GetHeroInt(u,true)
 local real x=GetUnitX(l__d)
 local real y=GetUnitY(l__d)
 local real x1=GetUnitX(u)
@@ -127739,7 +127789,7 @@ call TriggerAddCondition(gg_trg_Goshikito,Condition(function GoshikitoCond))
 call TriggerAddAction(gg_trg_Goshikito,function GoshikitoCast)
 endfunction
 function Trig_LearnParasite_Conditions takes nothing returns boolean
-return GetLearnedSkill()==0x4131414A
+return GetLearnedSkill()=='A1AJ'
 endfunction
 function JokerHealing takes nothing returns nothing
 local timer t=GetExpiredTimer()
@@ -127767,7 +127817,7 @@ set u=null
 endfunction
 function Trig_LearnParasite_Actions takes nothing returns nothing
 local unit u=GetTriggerUnit()
-local integer lvl=GetUnitAbilityLevel(u,0x4131414A)
+local integer lvl=GetUnitAbilityLevel(u,'A1AJ')
 local timer t=CreateTimer()
 local integer id=GetHandleId(t)
 if lvl==1 then
@@ -129776,7 +129826,8 @@ loop
 set E=FirstOfGroup(GTamamo)
 exitwhen E==null
 if GetUnitAbilityLevel(E,'B02Z')==0 then
-call SetControlToUnit(E,E,0.5,"doom")
+call SetControlToUnit(E,E,0.5,"doomdebug")
+call SlowUnit(u,E,0.75,0.75,0.5,0,false)
 endif
 call GroupRemoveUnit(GTamamo,E)
 endloop
@@ -129949,7 +130000,6 @@ call ShowUnit(u,false)
 call SetUnitInvulnerable(u,true)
 call SaveReal(h,id,4,0)
 call SaveReal(h,id,5,0)
-call UnitAddAbility(LoadUnitHandle(h,GetHandleId(u),StringHash("hramd")),0x41314239)
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\Tamamo Cat Phantasm 1.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
 call KillSoundWhenDone(soundplay)
@@ -147635,6 +147685,7 @@ set y2=y+5*Sin(a2-deg90)
 set x2=x2+15*Cos(a2)
 set y2=y2+15*Sin(a2)
 set n=CreateUnit(p,'e14N',x2,y2,a2*bj_RADTODEG)
+call SetUnitSpriteFlag(n,SPRITE_FLAG_IGNORE_FOG,true)
 call SetUnitTimeScale(n,1.5)
 call SetUnitVertexColor(n,255,255,255,255)
 call SetUnitFlyHeight(n,he-5,0)
@@ -168392,7 +168443,7 @@ call GroupEnumUnitsInRange(g,x,y,GetUnitAbilityLevel(LoadUnitHandle(h,id,CasterH
 loop
 set bjLCU=FirstOfGroup(g)
 exitwhen bjLCU==null
-if Condition_Base(GetOwningPlayer(LoadUnitHandle(h,id,CasterHash)),bjLCU)==true then
+if Condition_Base(GetOwningPlayer(LoadUnitHandle(h,id,CasterHash)),bjLCU)==true and IsUnitInvulnerable(bjLCU)==false then
 set dmg_hp=GetWidgetMaxLife(bjLCU)*0.0025
 call HealTextTag(LoadUnitHandle(h,id,CasterHash),LoadUnitHandle(h,id,CasterHash),dmg_hp*myCustomHeal2(LoadUnitHandle(h,id,CasterHash),1),"HealthRes")
 call AddWidgetLife(LoadUnitHandle(h,id,CasterHash),dmg_hp)
@@ -185301,11 +185352,11 @@ function HashiramaQCasttimeCast takes nothing returns nothing
         endif
     elseif GetIssuedOrderId()==OrderId("absorb") then
         if GetOrderTargetUnit()==u then
-            call SetAbilityRealLevelField(GetUnitAbility(u,'JNQ1'),ABILITY_RLF_CASTING_TIME,0,0)
-            call SetAbilityRealLevelField(GetUnitAbility(u,'JNQ1'),ABILITY_RLF_CASTING_TIME,1,0)
-            call SetAbilityRealLevelField(GetUnitAbility(u,'JNQ1'),ABILITY_RLF_CASTING_TIME,2,0)
-            call SetAbilityRealLevelField(GetUnitAbility(u,'JNQ1'),ABILITY_RLF_CASTING_TIME,3,0)
-            call SetAbilityRealLevelField(GetUnitAbility(u,'JNQ1'),ABILITY_RLF_CASTING_TIME,4,0)
+            call SetAbilityRealLevelField(GetUnitAbility(u,'JNQ1'),ABILITY_RLF_CASTING_TIME,0,0.2)
+            call SetAbilityRealLevelField(GetUnitAbility(u,'JNQ1'),ABILITY_RLF_CASTING_TIME,1,0.2)
+            call SetAbilityRealLevelField(GetUnitAbility(u,'JNQ1'),ABILITY_RLF_CASTING_TIME,2,0.2)
+            call SetAbilityRealLevelField(GetUnitAbility(u,'JNQ1'),ABILITY_RLF_CASTING_TIME,3,0.2)
+            call SetAbilityRealLevelField(GetUnitAbility(u,'JNQ1'),ABILITY_RLF_CASTING_TIME,4,0.2)
         else
             call SetAbilityRealLevelField(GetUnitAbility(u,'JNQ1'),ABILITY_RLF_CASTING_TIME,0,0.2)
             call SetAbilityRealLevelField(GetUnitAbility(u,'JNQ1'),ABILITY_RLF_CASTING_TIME,1,0.2)
@@ -223146,7 +223197,7 @@ call UIS_RegisterItem('I04P',0,0,0,0,0,0,0,0,0,'I00E','I04Q')
 call UIS_RegisterItem('I04Q',0,0,0,0,0,0,0,0,0,'I00E','I04R')
 call UIS_RegisterItem('I02S','I01M','I02S',0,0,0,0,0,0,0,0,'I04L')
 call UIS_RegisterItem('I02S','I02R','I02T',0,0,0,0,0,0,0,'I04Y','I03A')
-call UIS_RegisterItem('I02T','I01K',0,0,0,0,0,0,0,0,'I04U','I042')
+call UIS_RegisterItem('I06L','I032','I02T',0,0,0,0,0,0,0,'I04U','I042')
 call UIS_RegisterItem('I01O',0,0,0,0,0,0,0,0,0,'I04X','I04F')
 call UIS_RegisterItem('I01O',0,0,0,0,0,0,0,0,0,'I04Z','I03O')
 call UIS_RegisterItem('I033','I03B','I01M',0,0,0,0,0,0,0,'I051','I050')
@@ -223601,15 +223652,15 @@ set i=i+1
 endloop
 call TriggerAddCondition(t,Condition(function AUICond))
 call TriggerAddAction(t,function AUI)
-set i=0
-set t=CreateTrigger()
-loop
-exitwhen i>=11
-call TriggerRegisterPlayerChatEvent(t,Player(i),"-nahidwin",true)
-set i=i+1
-endloop
-call TriggerAddCondition(t,Condition(function nahidwinCond))
-call TriggerAddAction(t,function nahidwin)
+// set i=0
+// set t=CreateTrigger()
+// loop
+// exitwhen i>=11
+// call TriggerRegisterPlayerChatEvent(t,Player(i),"-nahidwin",true)
+// set i=i+1
+// endloop
+// call TriggerAddCondition(t,Condition(function nahidwinCond))
+// call TriggerAddAction(t,function nahidwin)
 set i=0
 set t=CreateTrigger()
 loop
