@@ -51371,18 +51371,29 @@ local integer i=GetPlayerId(p)+1
 local real x1=GetUnitX(udg_DM[i])
 local real y1=GetUnitY(udg_DM[i])
 if udg_DM[i]!=null then
-call SetUnitXY_1(u,x1,y1, false)
-call SetUnitX(udg_DM[i],x)
-call SetUnitY(udg_DM[i],y)
-call IssueImmediateOrder(u,"stop")
-call IssueImmediateOrder(udg_DM[i],"stop")
-call SetWidgetMana(udg_DM[i],GetWidgetMana(udg_DM[i])-100)
-call UnitApplyTimedLife(CreateUnit(p,'e025',x,y,GetRandomReal(0,359)),'BTLF',2)
-call UnitApplyTimedLife(CreateUnit(p,'e025',x1,y1,GetRandomReal(0,359)),'BTLF',2)
-call UnitApplyTimedLife(CreateUnit(p,'e025',x,y,GetRandomReal(0,359)),'BTLF',2)
-call UnitApplyTimedLife(CreateUnit(p,'e025',x1,y1,GetRandomReal(0,359)),'BTLF',2)
-call DestroyEffect(AddSpecialEffect("war3mapImported\\Death Release.mdx",x,y))
-call DestroyEffect(AddSpecialEffect("war3mapImported\\Death Release.mdx",x1,y1))
+    if u==udg_DM[i] then
+        set x1=GetUnitX(Hero[i])
+        set y1=GetUnitY(Hero[i])
+        call SetUnitXY_1(u,x1,y1, false)
+        call SetUnitX(Hero[i],x)
+        call SetUnitY(Hero[i],y)
+        call IssueImmediateOrder(u,"stop")
+        call IssueImmediateOrder(Hero[i],"stop")
+        // call SetWidgetMana(Hero[i],GetWidgetMana(Hero[i])-100)
+    else
+        call SetUnitXY_1(u,x1,y1, false)
+        call SetUnitX(udg_DM[i],x)
+        call SetUnitY(udg_DM[i],y)
+        call IssueImmediateOrder(u,"stop")
+        call IssueImmediateOrder(udg_DM[i],"stop")
+        // call SetWidgetMana(udg_DM[i],GetWidgetMana(udg_DM[i])-100)
+    endif
+    call UnitApplyTimedLife(CreateUnit(p,'e025',x,y,GetRandomReal(0,359)),'BTLF',2)
+    call UnitApplyTimedLife(CreateUnit(p,'e025',x1,y1,GetRandomReal(0,359)),'BTLF',2)
+    call UnitApplyTimedLife(CreateUnit(p,'e025',x,y,GetRandomReal(0,359)),'BTLF',2)
+    call UnitApplyTimedLife(CreateUnit(p,'e025',x1,y1,GetRandomReal(0,359)),'BTLF',2)
+    call DestroyEffect(AddSpecialEffect("war3mapImported\\Death Release.mdx",x,y))
+    call DestroyEffect(AddSpecialEffect("war3mapImported\\Death Release.mdx",x1,y1))
 endif
 set p=null
 set u=null
@@ -176180,21 +176191,21 @@ function CloneAddCDMoria takes unit caster,unit n000 returns nothing
     //     call SetUnitAbilityLevel(n000,'ASG3',GetUnitAbilityLevel(caster,'ASG3'))
     // endif
 
-    // call UnitAddAbility(n000,'ASQ1')
+    call UnitAddAbility(n000,'MrQ1')
     // call UnitAddAbility(n000,'ASW1')
     // call UnitAddAbility(n000,'ASE1')
     // call UnitAddAbility(n000,'ASR1')
     // call UnitAddAbility(n000,'ASF1')
     // call UnitAddAbility(n000,'ASG1')
-    // call SetUnitAbilityLevel(n000,'ASQ1',GetUnitAbilityLevel(caster,'ASQ1'))
+    call SetUnitAbilityLevel(n000,'MrQ1',GetUnitAbilityLevel(caster,'MrQ1'))
     // call SetUnitAbilityLevel(n000,'ASW1',GetUnitAbilityLevel(caster,'ASW1'))
     // call SetUnitAbilityLevel(n000,'ASE1',GetUnitAbilityLevel(caster,'ASE1'))
     // call SetUnitAbilityLevel(n000,'ASR1',GetUnitAbilityLevel(caster,'ASR1'))
 
 
-    // if GetAbilityCooldown(GetUnitAbility(caster, 'ASQ1'))>0 then
-    //     call StartAbilityCooldown(GetUnitAbility(n000, 'ASQ1'), GetAbilityRemainingCooldown(GetUnitAbility(caster, 'ASQ1')))
-    // endif
+    if GetAbilityCooldown(GetUnitAbility(caster, 'MrQ1'))>0 then
+        call StartAbilityCooldown(GetUnitAbility(n000, 'MrQ1'), GetAbilityRemainingCooldown(GetUnitAbility(caster, 'MrQ1')))
+    endif
 
     // if GetAbilityCooldown(GetUnitAbility(caster, 'ASW1'))>0 then
     //     call StartAbilityCooldown(GetUnitAbility(n000, 'ASW1'), GetAbilityRemainingCooldown(GetUnitAbility(caster, 'ASW1')))
@@ -176398,6 +176409,10 @@ function moriaQCast3 takes nothing returns nothing
             call SlashBrickBat(CreateUnit(p,'e027',x1+100*Cos(a)+GetRandomReal(-150,150)*Cos(GetRandomReal(0,359)*bj_DEGTORAD),y1+100*Sin(a)+GetRandomReal(-150,150)*Sin(GetRandomReal(0,359)*bj_DEGTORAD),0),40,a,1500,l__d)
             call SlashBrickBat(CreateUnit(p,'e027',x1+100*Cos(a)+GetRandomReal(-150,150)*Cos(GetRandomReal(0,359)*bj_DEGTORAD),y1+100*Sin(a)+GetRandomReal(-150,150)*Sin(GetRandomReal(0,359)*bj_DEGTORAD),0),40,a,1500,l__d)
         endif
+        if GetUnitTypeId(u)=='H00Q' then
+            call PauseUnit(u,true)
+            call SetUnitInvulnerable(u,true)
+        endif
         call SetUnitXY_1(l__d,x,y, false)
         call GroupEnumUnitsInRange(g,x,y,200,Base)
         set idg=GetHandleId(g)
@@ -176413,6 +176428,11 @@ function moriaQCast3 takes nothing returns nothing
                     call UnitAddAbility(E,'Ao3Z')
                     call UnitRemoveAbilityTimedPause(E,'Ao3Z',2)
                     call SetControlToUnit(u,E,2,"silence")
+                    if GetUnitTypeId(u)=='H00Q' then
+                        call SetControlToUnit(u,E,1,"stun")
+                        call SetUnitXY_1(u,GetUnitX(E)+100*Cos(a),GetUnitY(E)+100*Cos(a), false)
+                        call SetUnitFacingInstant(u,Atan2(GetUnitY(u)-GetUnitY(E),GetUnitX(u)-GetUnitX(E))*bj_RADTODEG)
+                    endif
                     call SaveReal(h,id,2,0)
                     call SaveUnitHandle(h,GetHandleId(l__d),'mrqt',E)
                 endif
@@ -176424,6 +176444,21 @@ function moriaQCast3 takes nothing returns nothing
     else
         call SaveReal(h,id,15,time+0.05)
         if time<0.4 then
+            if GetUnitTypeId(u)=='H00Q' then
+                if LoadUnitHandle(h,GetHandleId(l__d),'mrqt')==null and time==0.05 then
+                    call SetUnitXY_1(u,GetUnitX(l__d),GetUnitY(l__d), false)
+                endif
+                call SetUnitVertexColor(u,0+R2I(time*70),0+R2I(time*70),0+R2I(time*70),0+R2I(time*70))
+                if time==0.2 then
+                    call PauseUnit(u,false)
+                    call SetUnitInvulnerable(u,false)
+                    call UnitRemoveAbility(u,'A0QL')
+                endif
+            endif
+        else
+            if GetUnitTypeId(u)=='H00Q' then
+                call SetUnitVertexColor(u,255,255,255,255)
+            endif
             call SetUnitTimeScale(u,1)
             call FlushChildHashtable(h,GetHandleId(l__d))
             call RemoveUnit(l__d)
@@ -176469,14 +176504,26 @@ function moriaQCast2 takes nothing returns nothing
         call PauseUnit(u,true)
         if time==0.1 then
             if GetUnitTypeId(u)=='H00P' then
-            call SetUnitAnimationByIndex(u,7)
-            else
+                call SetUnitAnimationByIndex(u,7)
+            elseif GetUnitTypeId(u)=='H00V' then
                 call SetUnitAnimation(u,"attack")
+            else 
+                call SetUnitAnimation(u,"spell one")
             endif
         endif
+        if GetUnitTypeId(u)=='H00Q' then
+            call SetUnitVertexColor(u,255-R2I(time*60),255-R2I(time*60),255-R2I(time*60),255-R2I(time*60))
+        endif
     else
-        call PauseUnit(u,false)
-        call SetUnitInvulnerable(u,false)
+        if GetUnitTypeId(u)=='H00Q' then
+            call SetUnitVertexColor(u,0,0,0,0)
+            call SetUnitInvulnerable(u,true)
+            call PauseUnit(u,true)
+            call UnitAddAbility(u,'A0QL')
+        else
+            call PauseUnit(u,false)
+            call SetUnitInvulnerable(u,false)
+        endif
         call SetUnitTimeScale(u,3)
         call RemoveUnit(l__d)
         call SaveUnitHandle(h,id,7,CreateUnit(p,'e1VS',x+45*Cos(a),y+45*Sin(a),a*bj_RADTODEG))
@@ -176537,7 +176584,7 @@ function moriaQCast takes unit u, real x1, real y1 returns nothing
     // call SetSpecialEffectTimeScale(bjLCE,0.65)
     call RemoveEffect(bjLCE,1,true,CreateTimer())
     call SaveReal(h,id,17,0)
-    call SaveReal(h,id,4,(2+GetUnitAbilityLevel(u,'A064'))*GetHeroInt(u,true))
+    call SaveReal(h,id,4,(2+GetUnitAbilityLevel(u,'MrQ1'))*GetHeroInt(u,true))
     call SaveReal(h,id,22,GetUnitX(u))
     call SaveReal(h,id,23,GetUnitY(u))
     call SaveReal(h,id,2,1500)
