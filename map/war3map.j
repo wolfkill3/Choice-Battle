@@ -112278,6 +112278,7 @@ function InstantSpell_Action takes nothing returns nothing
     // Мория и клон
     if GetUnitTypeId(u)=='H00Q' then
         call SetAbilityRemainingCooldown(GetUnitAbility(Hero[GetPlayerId(p)],GetAbilityTypeId(GetTriggerAbility())),GetAbilityBaseRealLevelFieldById(GetAbilityTypeId(GetTriggerAbility()),ABILITY_RLF_COOLDOWN,GetUnitAbilityLevel(Hero[GetPlayerId(p)],GetAbilityTypeId(GetTriggerAbility()))-1))    
+        call SetUnitState(Hero[GetPlayerId(p)],UNIT_STATE_MANA,GetUnitState(Hero[GetPlayerId(p)],UNIT_STATE_MANA)-GetAbilityBaseIntegerLevelFieldById(GetAbilityTypeId(GetTriggerAbility()),ABILITY_ILF_MANA_COST,GetUnitAbilityLevel(Hero[GetPlayerId(p)],GetAbilityTypeId(GetTriggerAbility()))-1))
         // call BJDebugMsg("test1")
     elseif GetUnitTypeId(u)!='H00Q' and udg_DM[GetPlayerId(p)+1]!=null then
         call SetAbilityRemainingCooldown(GetUnitAbility(udg_DM[GetPlayerId(p)+1],GetAbilityTypeId(GetTriggerAbility())),GetAbilityBaseRealLevelFieldById(GetAbilityTypeId(GetTriggerAbility()),ABILITY_RLF_COOLDOWN,GetUnitAbilityLevel(Hero[GetPlayerId(p)],GetAbilityTypeId(GetTriggerAbility()))-1))
@@ -176291,7 +176292,7 @@ local player p=GetOwningPlayer(u)
 local integer i=0
 local integer idp=GetPlayerId(p)+1
 // call SetUnitLifeRegen(udg_DM[GetPlayerId(GetOwningPlayer(u))+1],GetUnitLifeRegen(u)*2)
-// call SetUnitState(udg_DM[idp],UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA))
+call SetUnitState(udg_DM[idp],UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA))
 call SetHeroAgi(udg_DM[idp],GetHeroAgi(u,false),true)
 call SetHeroStr(udg_DM[idp],GetHeroStr(u,false),true)
 call SetHeroInt(udg_DM[idp],GetHeroInt(u,false),true)
