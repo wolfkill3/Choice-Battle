@@ -26557,7 +26557,7 @@ if cmb!=true then
         call IH('H00H',u,"ReplaceableTextures\\CommandButtons\\BTNRyohei1.blp")
         call IH('H00X',u,"ReplaceableTextures\\CommandButtons\\BTNHibariK.blp")
         call IH('H014',u,"ReplaceableTextures\\CommandButtons\\BTNGokudera1.blp")
-        call IH('H00P',u,"war3mapImported\\BTNgecko moria.blp")
+        call IH('H00P',u,"ReplaceableTextures\\CommandButtons\\BTNMoriaP.blp")
         call IH('H00K',u,"ReplaceableTextures\\CommandButtons\\BTNEnel.blp")
         call IH('H016',u,"ReplaceableTextures\\CommandButtons\\BTNYamamotoT.blp")
         call IH('H00D',u,"war3mapImported\\BTNAce.blp")
