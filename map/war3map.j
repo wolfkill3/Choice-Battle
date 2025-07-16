@@ -35175,7 +35175,21 @@ function EndOfChoiceAct takes nothing returns nothing
             call SaveReal(HH,GetHandleId( Hero[i] ),MadokaTHHash,2000+round*50)
             call SaveInteger(HH,GetHandleId( Hero[i] ),MadokaMHash,0)
         endif
-
+        if LoadBoolean(HH,GetHandleId(Hero[i]),'ShSt') then
+            call SaveBoolean(HH,GetHandleId(Hero[i]),'ShSt',false)
+            call SetHeroStr(Hero[i],GetHeroStr(Hero[i],false)+LoadInteger(HH,GetHandleId(Hero[i]),'ShAS'),true)
+            call SetHeroAgi(Hero[i],GetHeroAgi(Hero[i],false)+LoadInteger(HH,GetHandleId(Hero[i]),'ShAA'),true)
+            call SetHeroInt(Hero[i],GetHeroInt(Hero[i],false)+LoadInteger(HH,GetHandleId(Hero[i]),'ShAI'),true)
+            call SaveInteger(HH,GetHandleId(Hero[i]),'ShAS',0)
+            call SaveInteger(HH,GetHandleId(Hero[i]),'ShAA',0)
+            call SaveInteger(HH,GetHandleId(Hero[i]),'ShAI',0)
+            call DestroyImage(GetUnitImage(Hero[i],3))
+            call SetUnitImage(Hero[i],3,LoadImageHandle(HH,GetHandleId(Hero[i]),'ShIm'))
+            call SetImageRender(GetUnitImage(Hero[i],3),true)
+            call SetImageRenderAlways(GetUnitImage(Hero[i],3),true)
+            call ShowImage(GetUnitImage(Hero[i],3),true)
+            call RemoveSavedHandle(HH,GetHandleId(Hero[i]),'ShIm')
+        endif
         //блекгоку конец раунда
         if GetUnitTypeId(Hero[i]) == 'H35Z' then
             call UnitRemoveAbility(Hero[i], 'YoF1')
@@ -36571,6 +36585,21 @@ exitwhen i>=10
         call SaveReal(HH,GetHandleId( Hero[i] ),MadokaHHash,0)
         call SaveReal(HH,GetHandleId( Hero[i] ),MadokaTHHash,2000+round*50)
         call SaveInteger(HH,GetHandleId( Hero[i] ),MadokaMHash,0)
+    endif
+    if LoadBoolean(HH,GetHandleId(Hero[i]),'ShSt') then
+        call SaveBoolean(HH,GetHandleId(Hero[i]),'ShSt',false)
+        call SetHeroStr(Hero[i],GetHeroStr(Hero[i],false)+LoadInteger(HH,GetHandleId(Hero[i]),'ShAS'),true)
+        call SetHeroAgi(Hero[i],GetHeroAgi(Hero[i],false)+LoadInteger(HH,GetHandleId(Hero[i]),'ShAA'),true)
+        call SetHeroInt(Hero[i],GetHeroInt(Hero[i],false)+LoadInteger(HH,GetHandleId(Hero[i]),'ShAI'),true)
+        call SaveInteger(HH,GetHandleId(Hero[i]),'ShAS',0)
+        call SaveInteger(HH,GetHandleId(Hero[i]),'ShAA',0)
+        call SaveInteger(HH,GetHandleId(Hero[i]),'ShAI',0)
+        call DestroyImage(GetUnitImage(Hero[i],3))
+        call SetUnitImage(Hero[i],3,LoadImageHandle(HH,GetHandleId(Hero[i]),'ShIm'))
+        call SetImageRender(GetUnitImage(Hero[i],3),true)
+        call SetImageRenderAlways(GetUnitImage(Hero[i],3),true)
+        call ShowImage(GetUnitImage(Hero[i],3),true)
+        call RemoveSavedHandle(HH,GetHandleId(Hero[i]),'ShIm')
     endif
         //sabrac7start
     if GetUnitTypeId( Hero[i] )=='HSab' then //'H05Z' old sabrac
@@ -45503,11 +45532,15 @@ local timer t=CreateTimer()
 local unit u=GetTriggerUnit()
 local integer id=GetHandleId(t)
 if (GetSpellAbilityId()=='MaE1' and GetUnitAbilityLevel(GetSpellTargetUnit(), 'Wome')>0 and ((IsUnitAlly(GetSpellTargetUnit(), GetOwningPlayer(u))==false and GetWidgetLife(GetSpellTargetUnit()) > GetWidgetMaxLife(GetSpellTargetUnit()) * 0.3) or GetUnitAbilityLevel(GetSpellTargetUnit(), 'MaE3')>0)) or (GetSpellAbilityId()=='BoPA' and (u==GetSpellTargetUnit() or GetSpellTargetItem()==GetAbilityOwningItem(GetTriggerAbility()))) then
-call DestroyTimer(t)
+    call DestroyTimer(t)
 else
-call SaveUnitHandle(h,id,0,u)
-call SetHeroInt(u,GetHeroInt(u,false)+8,true)
-call TimerStart(t,10,false,function AkatsukiSetCast2)
+    call SaveUnitHandle(h,id,0,u)
+    if u==udg_DM[GetPlayerId(GetOwningPlayer(u))+1] then
+        call SetHeroInt(Hero[GetPlayerId(GetOwningPlayer(u))],GetHeroInt(Hero[GetPlayerId(GetOwningPlayer(u))],false)+8,true)
+    else
+        call SetHeroInt(u,GetHeroInt(u,false)+8,true)
+    endif
+    call TimerStart(t,10,false,function AkatsukiSetCast2)
 endif
 set u=null
 set t=null
@@ -176164,7 +176197,7 @@ function InitTrig_JirenInt takes nothing returns nothing
     set trig=null
 endfunction
 
-function MoriaG1Cast takes unit u returns nothing
+function MoriaG2Cast takes unit u returns nothing
     local real x=GetUnitX(u)
     local real y=GetUnitY(u)
     local player p=GetOwningPlayer(u)
@@ -176180,6 +176213,119 @@ function MoriaG1Cast takes unit u returns nothing
     call DestroyEffect(AddSpecialEffect("war3mapImported\\Death Release.mdx",x1,y1))
     set p=null
     set u=null
+endfunction
+
+function MoriaG1AllyCast takes unit u, unit c returns nothing
+local real x=GetUnitX(u)
+local real y=GetUnitY(u)
+local real x1=GetUnitX(c)
+local real y1=GetUnitY(c)
+local unit l__d=LoadUnitHandle(HH,GetHandleId(GetOwningPlayer(u)),VariationGHash)
+call SaveBoolean(HH,GetHandleId(c),'ShGv',true)
+call SaveInteger(HH,GetHandleId(c),'ShGS',LoadInteger(HH,GetHandleId(c),'ShGS')+LoadInteger(HH,GetHandleId(l__d),'ShAS'))
+call SaveInteger(HH,GetHandleId(c),'ShGA',LoadInteger(HH,GetHandleId(c),'ShGA')+LoadInteger(HH,GetHandleId(l__d),'ShAA'))
+call SaveInteger(HH,GetHandleId(c),'ShGI',LoadInteger(HH,GetHandleId(c),'ShGI')+LoadInteger(HH,GetHandleId(l__d),'ShAI'))
+call SetHeroStr(c,GetHeroStr(c,false)+LoadInteger(HH,GetHandleId(c),'ShAS'),true)
+call SetHeroAgi(c,GetHeroAgi(c,false)+LoadInteger(HH,GetHandleId(c),'ShAA'),true)
+call SetHeroInt(c,GetHeroInt(c,false)+LoadInteger(HH,GetHandleId(c),'ShAI'),true)
+call DestroyEffect(AddSpecialEffect("war3mapImported\\Death Release.mdx",x1,y1))
+set u=null
+set l__d=null
+set c=null
+endfunction
+
+function MoriaG1Cast2 takes nothing returns nothing
+local timer t=GetExpiredTimer()
+local integer id=GetHandleId(t)
+local unit u=LoadUnitHandle(HH,id,0)
+local unit c=LoadUnitHandle(HH,id,1)
+local real x=GetUnitX(u)
+local real y=GetUnitY(u)
+local real x1=GetUnitX(c)
+local real y1=GetUnitY(c)
+local real a=Atan2(y1-y,x1-x)
+local real time=LoadReal(HH,id,2)-0.1
+local player p=GetOwningPlayer(u)
+local integer i=0
+local integer l__s=0
+local integer ls=0
+if GetUnitAbilityLevel(u, 'CBC2')==0 and GetUnitAbilityLevel(u, 'CBC1')==0 and GetUnitAbilityLevel(u, 'cbc4')==0 and GetUnitAbilityLevel(u, 'cbc6')==0 and GetUnitAbilityLevel(u, 'cbc7')==0 and GetUnitAbilityLevel(u, 'cbc8')==0 and GetUnitAbilityLevel(u, 'cbc9')==0 and GetUnitAbilityLevel(u, 'cbc5')==0 and LoadBoolean(HH,GetHandleId(u),TARGET_ABILITY)==false then
+    if time>0 then
+        if time==1.9 then
+            call SetUnitAnimationByIndex(u,5)
+            set bjLCE=AddSpecialEffect("123 (136)1.mdl",x1,y1)
+            call SetSpecialEffectScale(bjLCE,1.1)
+            call SetSpecialEffectTimeScale(bjLCE,0.4)
+            call DestroyEffect(bjLCE)
+        endif
+        call SaveReal(HH,id,2,time)
+        call SetUnitFacing(u,a*bj_RADTODEG)
+        if time==1.2 then
+            call DestroyEffect(AddSpecialEffect("war3mapImported\\Death Release.mdx",x,y))
+            set EFF=AddSpecialEffectTarget(GetUnitModel(c), u, "right hand")
+            call SetSpecialEffectVertexColour(EFF,0,0,0,255)
+            call SetSpecialEffectScale(EFF,GetUnitScale(c)*0.4)
+            call SaveEffectHandle(HH,id,7,EFF)
+        endif
+    else
+        call SetSpecialEffectVertexColour(LoadEffectHandle(HH,id,7),0,0,0,0)
+        call RemoveEffect(LoadEffectHandle(HH,id,7), 0.1, false, CreateTimer())
+        call PauseUnit(u,false)
+        if IsUnitType(c, UNIT_TYPE_HERO) and c==Hero[GetPlayerId(GetOwningPlayer(c))] and LoadBoolean(HH,GetHandleId(c),'ShSt')==false and IsUnitIllusion(c)==false and GetUnitTypeId(c)!='H007' and GetUnitTypeId(c)!='Ho13' and GetUnitTypeId(c)!='H34X' and GetUnitTypeId(c)!='H14F' then
+            call SaveBoolean(HH,GetHandleId(c),'ShSt',true)
+            call SaveInteger(HH,GetHandleId(c),'ShAS',R2I(GetHeroStr(c,false)*0.15))
+            call SaveInteger(HH,GetHandleId(c),'ShAA',R2I(GetHeroAgi(c,false)*0.15))
+            call SaveInteger(HH,GetHandleId(c),'ShAI',R2I(GetHeroInt(c,false)*0.15))
+            call SaveImageHandle(HH,GetHandleId(c),'ShIm',GetUnitImage(c,3))
+            call SetHeroStr(c,GetHeroStr(c,false)-LoadInteger(HH,GetHandleId(c),'ShAS'),true)
+            call SetHeroAgi(c,GetHeroAgi(c,false)-LoadInteger(HH,GetHandleId(c),'ShAA'),true)
+            call SetHeroInt(c,GetHeroInt(c,false)-LoadInteger(HH,GetHandleId(c),'ShAI'),true)
+            call SetImageRender(GetUnitImage(c,3),false)
+            call SetImageRenderAlways(GetUnitImage(c,3),false)
+            call ShowImage(GetUnitImage(c,3),false)
+            call SetUnitImage(c,3,CreateImageSimple("",0,0,0,0,0,3))
+        endif
+        call SetUnitTimeScale(u,1)
+        call DestroyTimer(t)
+        call FlushChildHashtable(HH,id)
+    endif
+else
+    if LoadEffectHandle(HH,id,7)!=null then
+        call SetSpecialEffectVertexColour(LoadEffectHandle(HH,id,7),0,0,0,0)
+        call RemoveEffect(LoadEffectHandle(HH,id,7), 0.1, false, CreateTimer())
+    endif
+    call SetUnitTimeScale(u,1)
+    call PauseUnit(u,false)
+    call DestroyTimer(t)
+    call FlushChildHashtable(HH,id)
+endif
+set p=null
+set c=null
+set u=null
+set t=null
+endfunction
+function MoriaG1Cast takes unit u, unit c returns nothing
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+local real x=GetUnitX(u)
+local real y=GetUnitY(u)
+local real x1=GetUnitX(c)
+local real y1=GetUnitY(c)
+local real a=Atan2(y1-y,x1-x)
+local player p=GetOwningPlayer(u)
+call SaveUnitHandle(HH,id,0,u)
+call SaveUnitHandle(HH,id,1,c)
+call PauseUnit(u,true)
+set soundplay=CreateSound("Sound\\Music\\mp3Music\\MoriaG.mp3",false,false,true,12700,12700,"")
+call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
+call SaveReal(HH,id,2,2)
+call SetUnitTimeScale(u,3)
+call TimerStart(t,0.1,true,function MoriaG1Cast2)
+set u=null
+set t=null
+set c=null
+set p=null
 endfunction
 
 function MoriaF2Cast takes unit u returns nothing
@@ -176757,7 +176903,7 @@ function MoriaQSelfCast2 takes nothing returns nothing
         call PauseUnit(u,true)
         if time==0.1 then
             if GetUnitTypeId(u)=='H00P' then
-                call SetUnitAnimationByIndex(u,7)
+                call SetUnitAnimationByIndex(u,11)
             elseif GetUnitTypeId(u)=='H00V' then
                 call SetUnitAnimation(u,"attack")
             else 
@@ -176837,7 +176983,7 @@ endfunction
 
 
 function Moria_Cond takes nothing returns boolean
-    local boolean cond1=GetSpellAbilityId()=='MrQ1' or GetSpellAbilityId()=='MrF1' or GetSpellAbilityId()=='MrF2' or GetSpellAbilityId()=='MrG1'
+    local boolean cond1=GetSpellAbilityId()=='MrQ1' or GetSpellAbilityId()=='MrF1' or GetSpellAbilityId()=='MrF2' or GetSpellAbilityId()=='MrG1' or GetSpellAbilityId()=='MrG2'
     if cond1 then
         return true
     else
@@ -176850,13 +176996,6 @@ function Moria_Cast takes nothing returns nothing
     local unit c=GetSpellTargetUnit()
     local real x=GetSpellTargetX()
     local real y=GetSpellTargetY()
-    if GetSpellAbilityId() == 'MrQ1' then
-        if c==u then
-            call MoriaQSelfCast(u)
-        else
-		    call moriaQCast(u,x,y)
-        endif
-    endif
     if GetSpellAbilityId() == 'MrF1' then
 		call MoriaF1Cast(u)
     endif
@@ -176864,7 +177003,35 @@ function Moria_Cast takes nothing returns nothing
 		call MoriaF2Cast(u)
     endif
     if GetSpellAbilityId() == 'MrG1' then
-		call MoriaG1Cast(u)
+        if IsUnitEnemy(c,GetOwningPlayer(u)) then
+            if LoadBoolean(HH,GetHandleId(c),'ShSt')==false then
+                call MoriaG1Cast(u,c)
+            else
+                call IssueImmediateOrder(u, "stop")
+                call SetWidgetMana(u, GetWidgetMana(u)+GetAbilityIntegerLevelField(GetUnitAbility(u,'MrG1'),ABILITY_ILF_MANA_COST,GetUnitAbilityLevel(u,'MrG1')-1))
+                call StartAbilityCooldown(GetUnitAbility(u , 'MrG1' ), 0.5)
+                call DisplayTimedWarningMessage(GetOwningPlayer(u),10,"У героя уже нет тени.")
+            endif
+        else
+            if c!=Hero[GetPlayerId(GetOwningPlayer(c))] then
+                call MoriaG1AllyCast(u,c)
+            else
+                call IssueImmediateOrder(u, "stop")
+                call SetWidgetMana(u, GetWidgetMana(u)+GetAbilityIntegerLevelField(GetUnitAbility(u,'MrG1'),ABILITY_ILF_MANA_COST,GetUnitAbilityLevel(u,'MrG1')-1))
+                call StartAbilityCooldown(GetUnitAbility(u , 'MrG1' ), 0.5)
+                call DisplayTimedWarningMessage(GetOwningPlayer(u),10,"Нельзя передать тень этой цели.")
+            endif
+        endif
+    endif
+    if GetSpellAbilityId() == 'MrG2' then
+		call MoriaG2Cast(u)
+    endif
+    if GetSpellAbilityId() == 'MrQ1' then
+        if c==u then
+            call MoriaQSelfCast(u)
+        else
+		    call moriaQCast(u,x,y)
+        endif
     endif
     // if GetSpellAbilityId() == 'JNF4' then
 	// 	call MoriaF2_Cast(u)
