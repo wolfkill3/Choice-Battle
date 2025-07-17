@@ -2537,6 +2537,9 @@ set TestModePlayerId[i]=13
 set TeamPoints[i]=0
 set udg_Shiro[i]=0
 set udg_Swap[i]=false
+set udg_DM[i]=null
+set udg_Hero[i]=null
+set Hero[i]=null
 set udg_SwapId[i]=0
 set udg_Repick[i]=2
 set bonus_repick[i]=0
@@ -26288,7 +26291,7 @@ if GetUnitTypeId(GetUnitSelected(GetLocalPlayer()))=='H00P' and (GetLocalPlayer(
         call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 6 ), GetUnitStringField(LoadUnitHandle(HH,GetHandleId(GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))),'ShNU'+LoadInteger(HH,GetHandleId(GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))),VariationGHash)),UNIT_SF_ICON_NORMAL), 0, true )
         call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 6 ), GetUnitStringField(LoadUnitHandle(HH,GetHandleId(GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))),'ShNU'+LoadInteger(HH,GetHandleId(GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))),VariationGHash)),UNIT_SF_ICON_NORMAL), 1, true )
         call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 6 ), GetUnitStringField(LoadUnitHandle(HH,GetHandleId(GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))),'ShNU'+LoadInteger(HH,GetHandleId(GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))),VariationGHash)),UNIT_SF_ICON_NORMAL), 2, true )
-        call SetFrameText( GetFrameByName("AbilityVarBarTooltipText",6), GetUnitStringField( LoadUnitHandle(HH,GetHandleId(GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))),'ShNU'+LoadInteger(HH,GetHandleId(GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))),VariationGHash)), UNIT_SF_PROPER_NAME )+"'s Shadow, (|cffffcc00Ctrl+G|r)\n\nStats:\n|c00FF5555STR|r: "+I2S(LoadInteger(HH,GetHandleId(GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))),'ShAS'+LoadInteger(HH,GetHandleId(GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))),VariationGHash)))+"\n|c003CFF3CAGI|r: "+I2S(LoadInteger(HH,GetHandleId(GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))),'ShAA'+LoadInteger(HH,GetHandleId(GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))),VariationGHash)))+"\n|c0077FFFFINT|r: "+I2S(LoadInteger(HH,GetHandleId(GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))),'ShAI'+LoadInteger(HH,GetHandleId(GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))),VariationGHash)))+"\nImplanted: "+LoadStr(HH,GetHandleId(GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))),'ShNP'+LoadInteger(HH,GetHandleId(GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))),VariationGHash)))
+        call SetFrameText( GetFrameByName("AbilityVarBarTooltipText",6), GetUnitStringField( LoadUnitHandle(HH,GetHandleId(GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))),'ShNU'+LoadInteger(HH,GetHandleId(GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))),VariationGHash)), UNIT_SF_NAME )+"'s Shadow, (|cffffcc00Ctrl+G|r)\n\nStats:\n|c00FF5555STR|r: "+I2S(LoadInteger(HH,GetHandleId(GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))),'ShAS'+LoadInteger(HH,GetHandleId(GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))),VariationGHash)))+"\n|c003CFF3CAGI|r: "+I2S(LoadInteger(HH,GetHandleId(GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))),'SHAA'+LoadInteger(HH,GetHandleId(GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))),VariationGHash)))+"\n|c0077FFFFINT|r: "+I2S(LoadInteger(HH,GetHandleId(GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))),'sHAI'+LoadInteger(HH,GetHandleId(GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))),VariationGHash)))+"\nImplanted: "+LoadStr(HH,GetHandleId(GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))),'ShNP'+LoadInteger(HH,GetHandleId(GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))),VariationGHash)))
         call SetFrameSize( GetFrameByName("AbilityVarBarTooltip",6), .24, GetFrameHeight( GetFrameByName("AbilityVarBarTooltipText",6))+0.03)
         call SetFrameTextAlignment( GetFrameByName("AbilityVarBarTooltipText",6), TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_LEFT )
         call SetFrameRelativePoint( GetFrameByName("AbilityVarBarTooltip",6), FRAMEPOINT_CENTER, GetFrameByName("AbilityVarBarIcon",6), FRAMEPOINT_CENTER,  -.06, (0.5*GetFrameHeight( GetFrameByName("AbilityVarBarTooltipText",6)))+.02  )
@@ -35200,8 +35203,8 @@ function EndOfChoiceAct takes nothing returns nothing
                 call RemoveSavedHandle(HH,GetHandleId(GetOwningPlayer(Hero[i])),'ShNU'+j)
                 call RemoveSavedHandle(HH,GetHandleId(GetOwningPlayer(Hero[i])),'ShNT'+j)
                 call SaveInteger(HH,GetHandleId(GetOwningPlayer(Hero[i])),'ShAS'+j,0)
-                call SaveInteger(HH,GetHandleId(GetOwningPlayer(Hero[i])),'ShAA'+j,0)
-                call SaveInteger(HH,GetHandleId(GetOwningPlayer(Hero[i])),'ShAI'+j,0)
+                call SaveInteger(HH,GetHandleId(GetOwningPlayer(Hero[i])),'SHAA'+j,0)
+                call SaveInteger(HH,GetHandleId(GetOwningPlayer(Hero[i])),'sHAI'+j,0)
                 call SaveStr(HH,GetHandleId(GetOwningPlayer(Hero[i])),'ShNP'+j,null)
                 set j=j-1
             endloop    
@@ -36626,8 +36629,8 @@ exitwhen i>=10
             call RemoveSavedHandle(HH,GetHandleId(GetOwningPlayer(Hero[i])),'ShNU'+j)
             call RemoveSavedHandle(HH,GetHandleId(GetOwningPlayer(Hero[i])),'ShNT'+j)
             call SaveInteger(HH,GetHandleId(GetOwningPlayer(Hero[i])),'ShAS'+j,0)
-            call SaveInteger(HH,GetHandleId(GetOwningPlayer(Hero[i])),'ShAA'+j,0)
-            call SaveInteger(HH,GetHandleId(GetOwningPlayer(Hero[i])),'ShAI'+j,0)
+            call SaveInteger(HH,GetHandleId(GetOwningPlayer(Hero[i])),'SHAA'+j,0)
+            call SaveInteger(HH,GetHandleId(GetOwningPlayer(Hero[i])),'sHAI'+j,0)
             call SaveStr(HH,GetHandleId(GetOwningPlayer(Hero[i])),'ShNP'+j,null)
             set j=j-1
         endloop    
@@ -176326,12 +176329,12 @@ if GetUnitAbilityLevel(u, 'CBC2')==0 and GetUnitAbilityLevel(u, 'CBC1')==0 and G
             call SaveInteger(HH,GetHandleId(c),'ShAI',R2I(GetHeroInt(c,false)*0.25))
             call SaveImageHandle(HH,GetHandleId(c),'ShIm',GetUnitImage(c,3))
             call SaveInteger(HH,GetHandleId(p),'ShSn',LoadInteger(HH,GetHandleId(p),'ShSn')+1)
-            call SaveUnitHandle(HH,GetHandleId(p),'ShNU'+LoadInteger(HH,GetHandleId(p),'ShSn'),c)
-            call SaveStr(HH,GetHandleId(p),'ShNP'+LoadInteger(HH,GetHandleId(p),'ShSn'),"Nowhere")
-            call SaveInteger(HH,GetHandleId(p),'ShAS'+LoadInteger(HH,GetHandleId(p),'ShSn'),R2I(GetHeroStr(c,false)*0.25))
-            call SaveInteger(HH,GetHandleId(p),'ShAA'+LoadInteger(HH,GetHandleId(p),'ShSn'),R2I(GetHeroAgi(c,false)*0.25))
-            call SaveInteger(HH,GetHandleId(p),'ShAI'+LoadInteger(HH,GetHandleId(p),'ShSn'),R2I(GetHeroInt(c,false)*0.25))
             call SaveInteger(HH,GetHandleId(p),VariationGHash,LoadInteger(HH,GetHandleId(p),'ShSn'))
+            call SaveUnitHandle(HH,GetHandleId(p),'ShNU'+LoadInteger(HH,GetHandleId(p),'ShSn'),c)
+            call SaveInteger(HH,GetHandleId(p),'ShAS'+LoadInteger(HH,GetHandleId(p),'ShSn'),R2I(GetHeroStr(c,false)*0.25))
+            call SaveInteger(HH,GetHandleId(p),'SHAA'+LoadInteger(HH,GetHandleId(p),'ShSn'),R2I(GetHeroAgi(c,false)*0.25))
+            call SaveInteger(HH,GetHandleId(p),'sHAI'+LoadInteger(HH,GetHandleId(p),'ShSn'),R2I(GetHeroInt(c,false)*0.25))
+            call SaveStr(HH,GetHandleId(p),'ShNP'+LoadInteger(HH,GetHandleId(p),'ShSn'),"Nowhere")
             call SetHeroStr(c,GetHeroStr(c,false)-LoadInteger(HH,GetHandleId(c),'ShAS'),true)
             call SetHeroAgi(c,GetHeroAgi(c,false)-LoadInteger(HH,GetHandleId(c),'ShAA'),true)
             call SetHeroInt(c,GetHeroInt(c,false)-LoadInteger(HH,GetHandleId(c),'ShAI'),true)
@@ -177068,7 +177071,7 @@ function Moria_Cast takes nothing returns nothing
                 call DisplayTimedWarningMessage(GetOwningPlayer(u),10,"У героя уже нет тени.")
             endif
         else
-            if c!=Hero[GetPlayerId(GetOwningPlayer(c))] then
+            if c==Hero[GetPlayerId(GetOwningPlayer(c))] then
                 call MoriaG1AllyCast(u,c)
             else
                 call IssueImmediateOrder(u, "stop")
