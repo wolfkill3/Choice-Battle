@@ -236,6 +236,7 @@ constant integer GokuEDMGHash         = StringHash("GokuEDMG")
 constant integer GokuUIDingHash       = StringHash("GokuUIDing")
 constant integer GokuUIMusicHash      = StringHash("GokuUIMusic")
 constant integer SpecUIHash           = StringHash("SpecUI")
+constant integer ChannelHash          = StringHash("Channel")
 constant integer NIWHash              = StringHash("NIW")
 boolean NANAYA_CONDITION          = true // Возможность пика Нанаи
 //== Следующие переменные предназначены ТОЛЬКО для системных функций/методов
@@ -26288,10 +26289,10 @@ if GetUnitTypeId(GetUnitSelected(GetLocalPlayer()))=='H00P' and (GetLocalPlayer(
         else
             call ShowFrame(GetFrameByName( "AbilityVarBarTooltip", 6 ),true)
         endif
-        call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 6 ), GetUnitStringField(LoadUnitHandle(HH,GetHandleId(GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))),'ShNU'+LoadInteger(HH,GetHandleId(GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))),VariationGHash)),UNIT_SF_ICON_NORMAL), 0, true )
-        call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 6 ), GetUnitStringField(LoadUnitHandle(HH,GetHandleId(GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))),'ShNU'+LoadInteger(HH,GetHandleId(GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))),VariationGHash)),UNIT_SF_ICON_NORMAL), 1, true )
-        call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 6 ), GetUnitStringField(LoadUnitHandle(HH,GetHandleId(GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))),'ShNU'+LoadInteger(HH,GetHandleId(GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))),VariationGHash)),UNIT_SF_ICON_NORMAL), 2, true )
-        call SetFrameText( GetFrameByName("AbilityVarBarTooltipText",6), GetUnitStringField( LoadUnitHandle(HH,GetHandleId(GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))),'ShNU'+LoadInteger(HH,GetHandleId(GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))),VariationGHash)), UNIT_SF_NAME )+"'s Shadow, (|cffffcc00Ctrl+G|r)\n\nStats:\n|c00FF5555STR|r: "+I2S(LoadInteger(HH,GetHandleId(GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))),'ShAS'+LoadInteger(HH,GetHandleId(GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))),VariationGHash)))+"\n|c003CFF3CAGI|r: "+I2S(LoadInteger(HH,GetHandleId(GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))),'SHAA'+LoadInteger(HH,GetHandleId(GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))),VariationGHash)))+"\n|c0077FFFFINT|r: "+I2S(LoadInteger(HH,GetHandleId(GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))),'sHAI'+LoadInteger(HH,GetHandleId(GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))),VariationGHash)))+"\nImplanted: "+LoadStr(HH,GetHandleId(GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))),'ShNP'+LoadInteger(HH,GetHandleId(GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))),VariationGHash)))
+        call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 6 ), GetUnitStringField(LoadUnitHandle(HH,GetHandleId(GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))),'ShPS'+LoadInteger(HH,GetHandleId(GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))),VariationGHash)),UNIT_SF_ICON_NORMAL), 0, true )
+        call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 6 ), GetUnitStringField(LoadUnitHandle(HH,GetHandleId(GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))),'ShPS'+LoadInteger(HH,GetHandleId(GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))),VariationGHash)),UNIT_SF_ICON_NORMAL), 1, true )
+        call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 6 ), GetUnitStringField(LoadUnitHandle(HH,GetHandleId(GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))),'ShPS'+LoadInteger(HH,GetHandleId(GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))),VariationGHash)),UNIT_SF_ICON_NORMAL), 2, true )
+        call SetFrameText( GetFrameByName("AbilityVarBarTooltipText",6), GetUnitStringField( LoadUnitHandle(HH,GetHandleId(GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))),'ShPS'+LoadInteger(HH,GetHandleId(GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))),VariationGHash)), UNIT_SF_NAME )+"'s Shadow, (|cffffcc00Ctrl+G|r)\n\nStats:\n|c00FF5555STR|r: "+I2S(LoadInteger(HH,GetHandleId(GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))),'ShSA'+LoadInteger(HH,GetHandleId(GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))),VariationGHash)))+"\n|c003CFF3CAGI|r: "+I2S(LoadInteger(HH,GetHandleId(GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))),'ShAA'+LoadInteger(HH,GetHandleId(GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))),VariationGHash)))+"\n|c0077FFFFINT|r: "+I2S(LoadInteger(HH,GetHandleId(GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))),'ShIA'+LoadInteger(HH,GetHandleId(GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))),VariationGHash)))+"\nImplanted: "+LoadStr(HH,GetHandleId(GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))),'ShNP'+LoadInteger(HH,GetHandleId(GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))),VariationGHash)))
         call SetFrameSize( GetFrameByName("AbilityVarBarTooltip",6), .24, GetFrameHeight( GetFrameByName("AbilityVarBarTooltipText",6))+0.03)
         call SetFrameTextAlignment( GetFrameByName("AbilityVarBarTooltipText",6), TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_LEFT )
         call SetFrameRelativePoint( GetFrameByName("AbilityVarBarTooltip",6), FRAMEPOINT_CENTER, GetFrameByName("AbilityVarBarIcon",6), FRAMEPOINT_CENTER,  -.06, (0.5*GetFrameHeight( GetFrameByName("AbilityVarBarTooltipText",6)))+.02  )
@@ -35183,12 +35184,12 @@ function EndOfChoiceAct takes nothing returns nothing
         endif
         if LoadBoolean(HH,GetHandleId(Hero[i]),'ShSt') then
             call SaveBoolean(HH,GetHandleId(Hero[i]),'ShSt',false)
-            call SetHeroStr(Hero[i],GetHeroStr(Hero[i],false)+LoadInteger(HH,GetHandleId(Hero[i]),'ShAS'),true)
+            call SetHeroStr(Hero[i],GetHeroStr(Hero[i],false)+LoadInteger(HH,GetHandleId(Hero[i]),'ShSA'),true)
             call SetHeroAgi(Hero[i],GetHeroAgi(Hero[i],false)+LoadInteger(HH,GetHandleId(Hero[i]),'ShAA'),true)
-            call SetHeroInt(Hero[i],GetHeroInt(Hero[i],false)+LoadInteger(HH,GetHandleId(Hero[i]),'ShAI'),true)
-            call SaveInteger(HH,GetHandleId(Hero[i]),'ShAS',0)
+            call SetHeroInt(Hero[i],GetHeroInt(Hero[i],false)+LoadInteger(HH,GetHandleId(Hero[i]),'ShIA'),true)
+            call SaveInteger(HH,GetHandleId(Hero[i]),'ShSA',0)
             call SaveInteger(HH,GetHandleId(Hero[i]),'ShAA',0)
-            call SaveInteger(HH,GetHandleId(Hero[i]),'ShAI',0)
+            call SaveInteger(HH,GetHandleId(Hero[i]),'ShIA',0)
             call DestroyImage(GetUnitImage(Hero[i],3))
             call SetUnitImage(Hero[i],3,LoadImageHandle(HH,GetHandleId(Hero[i]),'ShIm'))
             call SetImageRender(GetUnitImage(Hero[i],3),true)
@@ -35200,11 +35201,11 @@ function EndOfChoiceAct takes nothing returns nothing
             set j=LoadInteger(HH,GetHandleId(GetOwningPlayer(Hero[i])),'ShSn')
             loop
             exitwhen j==0
-                call RemoveSavedHandle(HH,GetHandleId(GetOwningPlayer(Hero[i])),'ShNU'+j)
+                call RemoveSavedHandle(HH,GetHandleId(GetOwningPlayer(Hero[i])),'ShPS'+j)
                 call RemoveSavedHandle(HH,GetHandleId(GetOwningPlayer(Hero[i])),'ShNT'+j)
-                call SaveInteger(HH,GetHandleId(GetOwningPlayer(Hero[i])),'ShAS'+j,0)
-                call SaveInteger(HH,GetHandleId(GetOwningPlayer(Hero[i])),'SHAA'+j,0)
-                call SaveInteger(HH,GetHandleId(GetOwningPlayer(Hero[i])),'sHAI'+j,0)
+                call SaveInteger(HH,GetHandleId(GetOwningPlayer(Hero[i])),'ShSA'+j,0)
+                call SaveInteger(HH,GetHandleId(GetOwningPlayer(Hero[i])),'ShAA'+j,0)
+                call SaveInteger(HH,GetHandleId(GetOwningPlayer(Hero[i])),'ShIA'+j,0)
                 call SaveStr(HH,GetHandleId(GetOwningPlayer(Hero[i])),'ShNP'+j,null)
                 set j=j-1
             endloop    
@@ -36399,7 +36400,7 @@ local real x=GetRectMaxX(gg_rct_Weiw)
 local real x1=GetRectMinX(gg_rct_Weiw)
 local real y=GetRectMaxY(gg_rct_Weiw)
 local real y1=GetRectMinY(gg_rct_Weiw)
-call ClearStrings()
+// call ClearStrings()
 call FlushParentHashtable(h)
 set h=InitHashtable()
 call DestroyTimerDialog(udg_TB)
@@ -36609,12 +36610,12 @@ exitwhen i>=10
     endif
     if LoadBoolean(HH,GetHandleId(Hero[i]),'ShSt') then
         call SaveBoolean(HH,GetHandleId(Hero[i]),'ShSt',false)
-        call SetHeroStr(Hero[i],GetHeroStr(Hero[i],false)+LoadInteger(HH,GetHandleId(Hero[i]),'ShAS'),true)
+        call SetHeroStr(Hero[i],GetHeroStr(Hero[i],false)+LoadInteger(HH,GetHandleId(Hero[i]),'ShSA'),true)
         call SetHeroAgi(Hero[i],GetHeroAgi(Hero[i],false)+LoadInteger(HH,GetHandleId(Hero[i]),'ShAA'),true)
-        call SetHeroInt(Hero[i],GetHeroInt(Hero[i],false)+LoadInteger(HH,GetHandleId(Hero[i]),'ShAI'),true)
-        call SaveInteger(HH,GetHandleId(Hero[i]),'ShAS',0)
+        call SetHeroInt(Hero[i],GetHeroInt(Hero[i],false)+LoadInteger(HH,GetHandleId(Hero[i]),'ShIA'),true)
+        call SaveInteger(HH,GetHandleId(Hero[i]),'ShSA',0)
         call SaveInteger(HH,GetHandleId(Hero[i]),'ShAA',0)
-        call SaveInteger(HH,GetHandleId(Hero[i]),'ShAI',0)
+        call SaveInteger(HH,GetHandleId(Hero[i]),'ShIA',0)
         call DestroyImage(GetUnitImage(Hero[i],3))
         call SetUnitImage(Hero[i],3,LoadImageHandle(HH,GetHandleId(Hero[i]),'ShIm'))
         call SetImageRender(GetUnitImage(Hero[i],3),true)
@@ -36626,11 +36627,11 @@ exitwhen i>=10
         set j=LoadInteger(HH,GetHandleId(GetOwningPlayer(Hero[i])),'ShSn')
         loop
         exitwhen j==0
-            call RemoveSavedHandle(HH,GetHandleId(GetOwningPlayer(Hero[i])),'ShNU'+j)
+            call RemoveSavedHandle(HH,GetHandleId(GetOwningPlayer(Hero[i])),'ShPS'+j)
             call RemoveSavedHandle(HH,GetHandleId(GetOwningPlayer(Hero[i])),'ShNT'+j)
-            call SaveInteger(HH,GetHandleId(GetOwningPlayer(Hero[i])),'ShAS'+j,0)
-            call SaveInteger(HH,GetHandleId(GetOwningPlayer(Hero[i])),'SHAA'+j,0)
-            call SaveInteger(HH,GetHandleId(GetOwningPlayer(Hero[i])),'sHAI'+j,0)
+            call SaveInteger(HH,GetHandleId(GetOwningPlayer(Hero[i])),'ShSA'+j,0)
+            call SaveInteger(HH,GetHandleId(GetOwningPlayer(Hero[i])),'ShAA'+j,0)
+            call SaveInteger(HH,GetHandleId(GetOwningPlayer(Hero[i])),'ShIA'+j,0)
             call SaveStr(HH,GetHandleId(GetOwningPlayer(Hero[i])),'ShNP'+j,null)
             set j=j-1
         endloop    
@@ -45550,7 +45551,7 @@ call TriggerAddCondition(gg_trg_SunStrike,Condition(function SunStrikeCond))
 call TriggerAddAction(gg_trg_SunStrike,function SunStrikeCast)
 endfunction
 function AkatsukiSetCond takes nothing returns boolean
-return GetHeroPrimaryAttribute(GetTriggerUnit())==HERO_ATTRIBUTE_INT and  GetSpellAbilityId()!='ASGG' and GetSpellAbilityId()!='A1I3' and GetSpellAbilityId()!='A11G' and GetSpellAbilityId()!='A1G2' and GetSpellAbilityId()!='A1G1' and GetSpellAbilityId()!='A16E' and GetSpellAbilityId()!='A1AA' and GetSpellAbilityId()!='A1AB' and GetSpellAbilityId()!='A11E' and GetSpellAbilityId()!='A11D' and GetSpellAbilityId()!='A11F' and UnitHasItemOfTypeBJ(GetTriggerUnit(),'I040')and GetSpellAbilityId()!='A0N1' and GetSpellAbilityId()!='A0N2' and GetSpellAbilityId()!='A0A2' and GetSpellAbilityId()!='A0EH' and GetSpellAbilityId()!='A0UG' and GetSpellAbilityId()!='A1I3' and GetSpellAbilityId()!='A0X6'  and GetSpellAbilityId()!='A0B3' and GetSpellAbilityId()!='A0N0' and GetSpellAbilityId()!='A40C' and GetSpellAbilityId()!='A30C' and GetSpellAbilityId()!='MadD' and GetSpellAbilityId()!='TMF0' and GetSpellAbilityId()!='TMF2' and GetSpellAbilityId()!='A06J' and GetSpellAbilityId()!='A0VQ' and GetSpellAbilityId()!='A0HX' and GetSpellAbilityId()!='A2HX' and GetSpellAbilityId()!='A14T' and GetSpellAbilityId()!='A19O' and udg_B==true
+return GetHeroPrimaryAttribute(GetTriggerUnit())==HERO_ATTRIBUTE_INT and  GetSpellAbilityId()!='ASGG' and GetSpellAbilityId()!='A1I3' and GetSpellAbilityId()!='A11G' and GetSpellAbilityId()!='A1G2' and GetSpellAbilityId()!='A1G1' and GetSpellAbilityId()!='A16E' and GetSpellAbilityId()!='A1AA' and GetSpellAbilityId()!='A1AB' and GetSpellAbilityId()!='A11E' and GetSpellAbilityId()!='A11D' and GetSpellAbilityId()!='A11F' and UnitHasItemOfTypeBJ(GetTriggerUnit(),'I040')and GetSpellAbilityId()!='A0N1' and GetSpellAbilityId()!='A0N2' and GetSpellAbilityId()!='A0A2' and GetSpellAbilityId()!='A0EH' and GetSpellAbilityId()!='A0UG' and GetSpellAbilityId()!='A1I3' and GetSpellAbilityId()!='A0X6'  and GetSpellAbilityId()!='A0B3' and GetSpellAbilityId()!='A0N0' and GetSpellAbilityId()!='A40C' and GetSpellAbilityId()!='A30C' and GetSpellAbilityId()!='MadD' and GetSpellAbilityId()!='TMF0' and GetSpellAbilityId()!='TMF2' and GetSpellAbilityId()!='A06J' and GetSpellAbilityId()!='A0VQ' and GetSpellAbilityId()!='A0HX' and GetSpellAbilityId()!='A2HX' and GetSpellAbilityId()!='A14T' and GetSpellAbilityId()!='A19O' and GetSpellAbilityId()!='MrF2' and GetSpellAbilityId()!='MrG1' and GetSpellAbilityId()!='MrG2' and udg_B==true
 endfunction
 function AkatsukiSetCast2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
@@ -45624,6 +45625,7 @@ if GetUnitAbilityLevel(u, 'BlTP')==0 then
         call SetUnitX(u,LoadReal(h,id,'tpx_'+1))
         call SetUnitY(u,LoadReal(h,id,'tpy_'+1))
 endif
+call SaveBoolean(HH,id,ChannelHash,false)
 call DestroyEffect(AddSpecialEffect("war3mapImported\\Sci Teleport.mdx",GetUnitX(u),GetUnitY(u)))
 endif
 set u=null
@@ -176263,22 +176265,23 @@ local unit l__d=LoadUnitHandle(HH,idp,'ShNT'+j)
 local integer idl__d=GetHandleId(l__d)
 // call SaveBoolean(HH,GetHandleId(c),'ShGv',true)
 if LoadUnitHandle(HH,idp,'ShNT'+j)!=null then
-    call SetHeroStr(l__d,GetHeroStr(l__d,false)-LoadInteger(HH,idl__d,'ShAS'),true)
-    call SetHeroAgi(l__d,GetHeroAgi(l__d,false)-LoadInteger(HH,idl__d,'ShAA'),true)
-    call SetHeroInt(l__d,GetHeroInt(l__d,false)-LoadInteger(HH,idl__d,'ShAI'),true)
-    call SaveInteger(HH,idl__d,'ShGS',LoadInteger(HH,idl__d,'ShGS')-LoadInteger(HH,idp+j,'ShAS'))
-    call SaveInteger(HH,idl__d,'ShGA',LoadInteger(HH,idl__d,'ShGA')-LoadInteger(HH,idp+j,'ShAA'))
-    call SaveInteger(HH,idl__d,'ShGI',LoadInteger(HH,idl__d,'ShGI')-LoadInteger(HH,idp+j,'ShAI'))
+    call SetHeroStr(l__d,GetHeroStr(l__d,false)-LoadInteger(HH,idp,'ShSA'+j),true)
+    call SetHeroAgi(l__d,GetHeroAgi(l__d,false)-LoadInteger(HH,idp,'ShAA'+j),true)
+    call SetHeroInt(l__d,GetHeroInt(l__d,false)-LoadInteger(HH,idp,'ShIA'+j),true)
+    call SaveInteger(HH,idl__d,'SSG+',LoadInteger(HH,idl__d,'SSG+')-LoadInteger(HH,idp,'ShSA'+j))
+    call SaveInteger(HH,idl__d,'SAG+',LoadInteger(HH,idl__d,'SAG+')-LoadInteger(HH,idp,'ShAA'+j))
+    call SaveInteger(HH,idl__d,'SIG+',LoadInteger(HH,idl__d,'SIG+')-LoadInteger(HH,idp,'ShIA'+j))
 endif
-call SaveInteger(HH,idc,'ShGS',LoadInteger(HH,idc,'ShGS')+LoadInteger(HH,idp+j,'ShAS'))
-call SaveInteger(HH,idc,'ShGA',LoadInteger(HH,idc,'ShGA')+LoadInteger(HH,idp+j,'ShAA'))
-call SaveInteger(HH,idc,'ShGI',LoadInteger(HH,idc,'ShGI')+LoadInteger(HH,idp+j,'ShAI'))
+call SaveInteger(HH,idc,'SSG+',LoadInteger(HH,idc,'SSG+')+LoadInteger(HH,idp,'ShSA'+j))
+call SaveInteger(HH,idc,'SAG+',LoadInteger(HH,idc,'SAG+')+LoadInteger(HH,idp,'ShAA'+j))
+call SaveInteger(HH,idc,'SIG+',LoadInteger(HH,idc,'SIG+')+LoadInteger(HH,idp,'ShIA'+j))
 call SaveUnitHandle(HH,idp,'ShNT'+j,c)
 call SaveStr(HH,idp,'ShNP'+j,GetUnitName(c))
-call SetHeroStr(c,GetHeroStr(c,false)+LoadInteger(HH,idc,'ShAS'),true)
-call SetHeroAgi(c,GetHeroAgi(c,false)+LoadInteger(HH,idc,'ShAA'),true)
-call SetHeroInt(c,GetHeroInt(c,false)+LoadInteger(HH,idc,'ShAI'),true)
+call SetHeroStr(c,GetHeroStr(c,false)+LoadInteger(HH,idp,'ShSA'+j),true)
+call SetHeroAgi(c,GetHeroAgi(c,false)+LoadInteger(HH,idp,'ShAA'+j),true)
+call SetHeroInt(c,GetHeroInt(c,false)+LoadInteger(HH,idp,'ShIA'+j),true)
 call DestroyEffect(AddSpecialEffect("war3mapImported\\Death Release.mdx",x1,y1))
+call SetUnitAnimation(u,"stand")
 set u=null
 set l__d=null
 set p=null
@@ -176300,14 +176303,10 @@ local player p=GetOwningPlayer(u)
 local integer i=0
 local integer l__s=0
 local integer ls=0
-if GetUnitAbilityLevel(u, 'CBC2')==0 and GetUnitAbilityLevel(u, 'CBC1')==0 and GetUnitAbilityLevel(u, 'cbc4')==0 and GetUnitAbilityLevel(u, 'cbc6')==0 and GetUnitAbilityLevel(u, 'cbc7')==0 and GetUnitAbilityLevel(u, 'cbc8')==0 and GetUnitAbilityLevel(u, 'cbc9')==0 and GetUnitAbilityLevel(u, 'cbc5')==0 and LoadBoolean(HH,GetHandleId(u),TARGET_ABILITY)==false then
+if GetUnitAbilityLevel(u, 'CBC2')==0 and GetUnitAbilityLevel(u, 'CBC1')==0 and GetUnitAbilityLevel(u, 'cbc4')==0 and GetUnitAbilityLevel(u, 'cbc6')==0 and GetUnitAbilityLevel(u, 'cbc7')==0 and GetUnitAbilityLevel(u, 'cbc8')==0 and GetUnitAbilityLevel(u, 'cbc9')==0 and GetUnitAbilityLevel(u, 'cbc5')==0 and LoadBoolean(HH,GetHandleId(u),TARGET_ABILITY)==false and LoadBoolean(HH,GetHandleId(u),ChannelHash)==true then
     if time>0 then
         if time==1.9 then
             call SetUnitAnimationByIndex(u,5)
-            set bjLCE=AddSpecialEffect("123 (136)1.mdl",x1,y1)
-            call SetSpecialEffectScale(bjLCE,1.1)
-            call SetSpecialEffectTimeScale(bjLCE,0.4)
-            call DestroyEffect(bjLCE)
         endif
         call SaveReal(HH,id,2,time)
         call SetUnitFacing(u,a*bj_RADTODEG)
@@ -176324,36 +176323,47 @@ if GetUnitAbilityLevel(u, 'CBC2')==0 and GetUnitAbilityLevel(u, 'CBC1')==0 and G
         call PauseUnit(u,false)
         if IsUnitType(c, UNIT_TYPE_HERO) and c==Hero[GetPlayerId(GetOwningPlayer(c))] and LoadBoolean(HH,GetHandleId(c),'ShSt')==false and IsUnitIllusion(c)==false and GetUnitTypeId(c)!='H007' and GetUnitTypeId(c)!='Ho13' and GetUnitTypeId(c)!='H34X' and GetUnitTypeId(c)!='H14F' then
             call SaveBoolean(HH,GetHandleId(c),'ShSt',true)
-            call SaveInteger(HH,GetHandleId(c),'ShAS',R2I(GetHeroStr(c,false)*0.25))
-            call SaveInteger(HH,GetHandleId(c),'ShAA',R2I(GetHeroAgi(c,false)*0.25))
-            call SaveInteger(HH,GetHandleId(c),'ShAI',R2I(GetHeroInt(c,false)*0.25))
+            call SaveInteger(HH,GetHandleId(c),'ShSA',R2I(GetHeroStr(c,false)*0.15)+4)
+            call SaveInteger(HH,GetHandleId(c),'ShAA',R2I(GetHeroAgi(c,false)*0.15)+4)
+            call SaveInteger(HH,GetHandleId(c),'ShIA',R2I(GetHeroInt(c,false)*0.15)+4)
             call SaveImageHandle(HH,GetHandleId(c),'ShIm',GetUnitImage(c,3))
             call SaveInteger(HH,GetHandleId(p),'ShSn',LoadInteger(HH,GetHandleId(p),'ShSn')+1)
             call SaveInteger(HH,GetHandleId(p),VariationGHash,LoadInteger(HH,GetHandleId(p),'ShSn'))
-            call SaveUnitHandle(HH,GetHandleId(p),'ShNU'+LoadInteger(HH,GetHandleId(p),'ShSn'),c)
-            call SaveInteger(HH,GetHandleId(p),'ShAS'+LoadInteger(HH,GetHandleId(p),'ShSn'),R2I(GetHeroStr(c,false)*0.25))
-            call SaveInteger(HH,GetHandleId(p),'SHAA'+LoadInteger(HH,GetHandleId(p),'ShSn'),R2I(GetHeroAgi(c,false)*0.25))
-            call SaveInteger(HH,GetHandleId(p),'sHAI'+LoadInteger(HH,GetHandleId(p),'ShSn'),R2I(GetHeroInt(c,false)*0.25))
+            call SaveUnitHandle(HH,GetHandleId(p),'ShPS'+LoadInteger(HH,GetHandleId(p),'ShSn'),c)
+            call SaveInteger(HH,GetHandleId(p),'ShSA'+LoadInteger(HH,GetHandleId(p),'ShSn'),R2I(GetHeroStr(c,false)*0.15)+4)
+            call SaveInteger(HH,GetHandleId(p),'ShAA'+LoadInteger(HH,GetHandleId(p),'ShSn'),R2I(GetHeroAgi(c,false)*0.15)+4)
+            call SaveInteger(HH,GetHandleId(p),'ShIA'+LoadInteger(HH,GetHandleId(p),'ShSn'),R2I(GetHeroInt(c,false)*0.15)+4)
             call SaveStr(HH,GetHandleId(p),'ShNP'+LoadInteger(HH,GetHandleId(p),'ShSn'),"Nowhere")
-            call SetHeroStr(c,GetHeroStr(c,false)-LoadInteger(HH,GetHandleId(c),'ShAS'),true)
+            call SetHeroStr(c,GetHeroStr(c,false)-LoadInteger(HH,GetHandleId(c),'ShSA'),true)
             call SetHeroAgi(c,GetHeroAgi(c,false)-LoadInteger(HH,GetHandleId(c),'ShAA'),true)
-            call SetHeroInt(c,GetHeroInt(c,false)-LoadInteger(HH,GetHandleId(c),'ShAI'),true)
+            call SetHeroInt(c,GetHeroInt(c,false)-LoadInteger(HH,GetHandleId(c),'ShIA'),true)
+            call myCustomDamage(u,c,100,false,false,null,null,null)
+            call SetControlToUnit(u,c, 2, "stun")
+            call SetControlToUnit(u,c, 4, "sleep")
+            set bjLCE=AddSpecialEffect("123 (136)1.mdl",x1,y1)
+            call SetSpecialEffectScale(bjLCE,1.1)
+            call SetSpecialEffectTimeScale(bjLCE,0.4)
+            call DestroyEffect(bjLCE)
             call SetImageRender(GetUnitImage(c,3),false)
             call SetImageRenderAlways(GetUnitImage(c,3),false)
             call ShowImage(GetUnitImage(c,3),false)
             call SetUnitImage(c,3,CreateImageSimple("",0,0,0,0,0,3))
         endif
+        call SetUnitAnimation(u,"stand")
         call SetUnitTimeScale(u,1)
         call DestroyTimer(t)
+        call SaveBoolean(HH,GetHandleId(u),ChannelHash,false)
         call FlushChildHashtable(HH,id)
     endif
 else
+    call SetUnitAnimation(u,"stand")
     if LoadEffectHandle(HH,id,7)!=null then
         call SetSpecialEffectVertexColour(LoadEffectHandle(HH,id,7),0,0,0,0)
         call RemoveEffect(LoadEffectHandle(HH,id,7), 0.1, false, CreateTimer())
     endif
     call SetUnitTimeScale(u,1)
     call PauseUnit(u,false)
+    call SaveBoolean(HH,GetHandleId(u),ChannelHash,false)
     call DestroyTimer(t)
     call FlushChildHashtable(HH,id)
 endif
@@ -176379,6 +176389,7 @@ call StartSound(soundplay)
 call KillSoundWhenDone(soundplay)
 call SaveReal(HH,id,2,2)
 call SetUnitTimeScale(u,3)
+call SaveBoolean(HH,GetHandleId(u),ChannelHash,true)
 call TimerStart(t,0.1,true,function MoriaG1Cast2)
 set u=null
 set t=null
@@ -176401,7 +176412,8 @@ function MoriaF2Cast takes unit u returns nothing
             call SetUnitX(Hero[i-1],x)
             call SetUnitY(Hero[i-1],y)
             call IssueImmediateOrder(u,"stop")
-            call IssueImmediateOrder(Hero[i],"stop")
+            call IssueImmediateOrder(Hero[i-1],"stop")
+            call SaveBoolean(HH,GetHandleId(Hero[i-1]),ChannelHash,false)
             // call SetWidgetMana(Hero[i],GetWidgetMana(Hero[i])-100)
         else
             call SetUnitXY_1(u,x1,y1, false)
