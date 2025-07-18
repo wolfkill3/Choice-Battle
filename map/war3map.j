@@ -176314,19 +176314,20 @@ local real y=GetUnitY(u)
 local real x1=GetUnitX(c)
 local real y1=GetUnitY(c)
 local real a=Atan2(y1-y,x1-x)
-local real time=LoadReal(HH,id,2)-0.1
+local real time=LoadReal(HH,id,2)-0.05
 local player p=GetOwningPlayer(u)
 local integer i=0
 local integer l__s=0
 local integer ls=0
-if GetUnitAbilityLevel(u, 'CBC2')==0 and GetUnitAbilityLevel(u, 'CBC1')==0 and GetUnitAbilityLevel(u, 'cbc4')==0 and GetUnitAbilityLevel(u, 'cbc6')==0 and GetUnitAbilityLevel(u, 'cbc7')==0 and GetUnitAbilityLevel(u, 'cbc8')==0 and GetUnitAbilityLevel(u, 'cbc9')==0 and GetUnitAbilityLevel(u, 'cbc5')==0 and LoadBoolean(HH,GetHandleId(u),TARGET_ABILITY)==false and LoadBoolean(HH,GetHandleId(u),ChannelHash)==true then
+if IsUnitHidden(c)==false and GetUnitAbilityLevel(u, 'CBC2')==0 and GetUnitAbilityLevel(u, 'CBC1')==0 and GetUnitAbilityLevel(u, 'cbc4')==0 and GetUnitAbilityLevel(u, 'cbc6')==0 and GetUnitAbilityLevel(u, 'cbc7')==0 and GetUnitAbilityLevel(u, 'cbc8')==0 and GetUnitAbilityLevel(u, 'cbc9')==0 and GetUnitAbilityLevel(u, 'cbc5')==0 and LoadBoolean(HH,GetHandleId(u),TARGET_ABILITY)==false and LoadBoolean(HH,GetHandleId(u),ChannelHash)==true then
     if time>0 then
-        if time==1.9 then
+        if time==1.45 then
             call SetUnitAnimationByIndex(u,5)
         endif
         call SaveReal(HH,id,2,time)
         call SetUnitFacing(u,a*bj_RADTODEG)
-        if time==1.2 then
+        call SetUnitXY_1(c,x1-(SquareRootUnit(u,c)/25)*Cos(a),y1-(SquareRootUnit(u,c)/25)*Sin(a),false)
+        if time==0.8 then
             call DestroyEffect(AddSpecialEffect("war3mapImported\\Death Release.mdx",x,y))
             set EFF=AddSpecialEffectTarget(GetUnitModel(c), u, "right hand")
             call SetSpecialEffectVertexColour(EFF,0,0,0,255)
@@ -176353,7 +176354,6 @@ if GetUnitAbilityLevel(u, 'CBC2')==0 and GetUnitAbilityLevel(u, 'CBC1')==0 and G
             call SetHeroStr(c,GetHeroStr(c,false)-LoadInteger(HH,GetHandleId(c),'ShSA'),true)
             call SetHeroAgi(c,GetHeroAgi(c,false)-LoadInteger(HH,GetHandleId(c),'ShAA'),true)
             call SetHeroInt(c,GetHeroInt(c,false)-LoadInteger(HH,GetHandleId(c),'ShIA'),true)
-            call myCustomDamage(u,c,100,false,false,null,null,null)
             call SetControlToUnit(u,c, 2, "stun")
             call SetControlToUnit(u,c, 4, "sleep")
             set bjLCE=AddSpecialEffect("123 (136)1.mdl",x1,y1)
@@ -176403,10 +176403,10 @@ call PauseUnit(u,true)
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\MoriaG.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
 call KillSoundWhenDone(soundplay)
-call SaveReal(HH,id,2,2)
-call SetUnitTimeScale(u,3)
+call SaveReal(HH,id,2,1.5)
+call SetUnitTimeScale(u,4)
 call SaveBoolean(HH,GetHandleId(u),ChannelHash,true)
-call TimerStart(t,0.1,true,function MoriaG1Cast2)
+call TimerStart(t,0.05,true,function MoriaG1Cast2)
 set u=null
 set t=null
 set c=null
