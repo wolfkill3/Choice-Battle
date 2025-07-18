@@ -176326,7 +176326,7 @@ if IsUnitHidden(c)==false and GetUnitAbilityLevel(u, 'CBC2')==0 and GetUnitAbili
         endif
         call SaveReal(HH,id,2,time)
         call SetUnitFacing(u,a*bj_RADTODEG)
-        call SetUnitXY_1(c,x1-(SquareRootUnit(u,c)/25)*Cos(a),y1-(SquareRootUnit(u,c)/25)*Sin(a),false)
+        call SetUnitXY_1(c,x1-(SquareRootUnit(u,c)/20)*Cos(a),y1-(SquareRootUnit(u,c)/20)*Sin(a),false)
         if time==0.8 then
             call DestroyEffect(AddSpecialEffect("war3mapImported\\Death Release.mdx",x,y))
             set EFF=AddSpecialEffectTarget(GetUnitModel(c), u, "right hand")
