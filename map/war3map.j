@@ -35197,6 +35197,14 @@ function EndOfChoiceAct takes nothing returns nothing
             call ShowImage(GetUnitImage(Hero[i],3),true)
             call RemoveSavedHandle(HH,GetHandleId(Hero[i]),'ShIm')
         endif
+        if LoadInteger(HH,GetHandleId(Hero[i]),'SSG+')>0 then
+            call SetHeroStr(Hero[i],GetHeroStr(Hero[i],false)-LoadInteger(HH,GetHandleId(Hero[i]),'SSG+'),true)
+            call SetHeroAgi(Hero[i],GetHeroAgi(Hero[i],false)-LoadInteger(HH,GetHandleId(Hero[i]),'SAG+'),true)
+            call SetHeroInt(Hero[i],GetHeroInt(Hero[i],false)-LoadInteger(HH,GetHandleId(Hero[i]),'SIG+'),true)
+            call SaveInteger(HH,GetHandleId(Hero[i]),'SSG+',0)
+            call SaveInteger(HH,GetHandleId(Hero[i]),'SAG+',0)
+            call SaveInteger(HH,GetHandleId(Hero[i]),'SIG+',0)
+        endif
         if GetUnitTypeId(Hero[i])=='H00P' or GetUnitTypeId(Hero[i])=='H00V' then
             set j=LoadInteger(HH,GetHandleId(GetOwningPlayer(Hero[i])),'ShSn')
             loop
@@ -36622,6 +36630,14 @@ exitwhen i>=10
         call SetImageRenderAlways(GetUnitImage(Hero[i],3),true)
         call ShowImage(GetUnitImage(Hero[i],3),true)
         call RemoveSavedHandle(HH,GetHandleId(Hero[i]),'ShIm')
+    endif
+    if LoadInteger(HH,GetHandleId(Hero[i]),'SSG+')>0 then
+        call SetHeroStr(Hero[i],GetHeroStr(Hero[i],false)-LoadInteger(HH,GetHandleId(Hero[i]),'SSG+'),true)
+        call SetHeroAgi(Hero[i],GetHeroAgi(Hero[i],false)-LoadInteger(HH,GetHandleId(Hero[i]),'SAG+'),true)
+        call SetHeroInt(Hero[i],GetHeroInt(Hero[i],false)-LoadInteger(HH,GetHandleId(Hero[i]),'SIG+'),true)
+        call SaveInteger(HH,GetHandleId(Hero[i]),'SSG+',0)
+        call SaveInteger(HH,GetHandleId(Hero[i]),'SAG+',0)
+        call SaveInteger(HH,GetHandleId(Hero[i]),'SIG+',0)
     endif
     if GetUnitTypeId(Hero[i])=='H00P' or GetUnitTypeId(Hero[i])=='H00V' then
         set j=LoadInteger(HH,GetHandleId(GetOwningPlayer(Hero[i])),'ShSn')
@@ -176323,16 +176339,16 @@ if GetUnitAbilityLevel(u, 'CBC2')==0 and GetUnitAbilityLevel(u, 'CBC1')==0 and G
         call PauseUnit(u,false)
         if IsUnitType(c, UNIT_TYPE_HERO) and c==Hero[GetPlayerId(GetOwningPlayer(c))] and LoadBoolean(HH,GetHandleId(c),'ShSt')==false and IsUnitIllusion(c)==false and GetUnitTypeId(c)!='H007' and GetUnitTypeId(c)!='Ho13' and GetUnitTypeId(c)!='H34X' and GetUnitTypeId(c)!='H14F' then
             call SaveBoolean(HH,GetHandleId(c),'ShSt',true)
-            call SaveInteger(HH,GetHandleId(c),'ShSA',R2I(GetHeroStr(c,false)*0.15)+4)
-            call SaveInteger(HH,GetHandleId(c),'ShAA',R2I(GetHeroAgi(c,false)*0.15)+4)
-            call SaveInteger(HH,GetHandleId(c),'ShIA',R2I(GetHeroInt(c,false)*0.15)+4)
+            call SaveInteger(HH,GetHandleId(c),'ShSA',R2I(GetHeroStr(c,false)*0.10)+3)
+            call SaveInteger(HH,GetHandleId(c),'ShAA',R2I(GetHeroAgi(c,false)*0.10)+3)
+            call SaveInteger(HH,GetHandleId(c),'ShIA',R2I(GetHeroInt(c,false)*0.10)+3)
             call SaveImageHandle(HH,GetHandleId(c),'ShIm',GetUnitImage(c,3))
             call SaveInteger(HH,GetHandleId(p),'ShSn',LoadInteger(HH,GetHandleId(p),'ShSn')+1)
             call SaveInteger(HH,GetHandleId(p),VariationGHash,LoadInteger(HH,GetHandleId(p),'ShSn'))
             call SaveUnitHandle(HH,GetHandleId(p),'ShPS'+LoadInteger(HH,GetHandleId(p),'ShSn'),c)
-            call SaveInteger(HH,GetHandleId(p),'ShSA'+LoadInteger(HH,GetHandleId(p),'ShSn'),R2I(GetHeroStr(c,false)*0.15)+4)
-            call SaveInteger(HH,GetHandleId(p),'ShAA'+LoadInteger(HH,GetHandleId(p),'ShSn'),R2I(GetHeroAgi(c,false)*0.15)+4)
-            call SaveInteger(HH,GetHandleId(p),'ShIA'+LoadInteger(HH,GetHandleId(p),'ShSn'),R2I(GetHeroInt(c,false)*0.15)+4)
+            call SaveInteger(HH,GetHandleId(p),'ShSA'+LoadInteger(HH,GetHandleId(p),'ShSn'),R2I(GetHeroStr(c,false)*0.10)+3)
+            call SaveInteger(HH,GetHandleId(p),'ShAA'+LoadInteger(HH,GetHandleId(p),'ShSn'),R2I(GetHeroAgi(c,false)*0.10)+3)
+            call SaveInteger(HH,GetHandleId(p),'ShIA'+LoadInteger(HH,GetHandleId(p),'ShSn'),R2I(GetHeroInt(c,false)*0.10)+3)
             call SaveStr(HH,GetHandleId(p),'ShNP'+LoadInteger(HH,GetHandleId(p),'ShSn'),"Nowhere")
             call SetHeroStr(c,GetHeroStr(c,false)-LoadInteger(HH,GetHandleId(c),'ShSA'),true)
             call SetHeroAgi(c,GetHeroAgi(c,false)-LoadInteger(HH,GetHandleId(c),'ShAA'),true)
@@ -177103,11 +177119,8 @@ function Moria_Cast takes nothing returns nothing
 		    call moriaQCast(u,x,y)
         endif
     endif
-    // if GetSpellAbilityId() == 'JNF4' then
-	// 	call MoriaF2_Cast(u)
-    // endif
-	// if GetSpellAbilityId() == 'JNW1' then
-	// 	call MoriaW_Cast(u,x,y)
+	// if GetSpellAbilityId() == 'MrW1' then
+	// 	call MoriaWCast(u,x,y)
     // endif
 	// if GetSpellAbilityId() == 'JNE1' then
     //     if c==u then
