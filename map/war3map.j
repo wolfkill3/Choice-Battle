@@ -176326,7 +176326,7 @@ if IsUnitHidden(c)==false and GetUnitAbilityLevel(u, 'CBC2')==0 and GetUnitAbili
         endif
         call SaveReal(HH,id,2,time)
         call SetUnitFacing(u,a*bj_RADTODEG)
-        call SetUnitXY_1(c,x1-(SquareRootUnit(u,c)/20)*Cos(a),y1-(SquareRootUnit(u,c)/20)*Sin(a),false)
+        call SetUnitXY_1(c,x1-(10+(SquareRootUnit(u,c)/25))*Cos(a),y1-(10+(SquareRootUnit(u,c)/25))*Sin(a),false)
         if time==0.8 then
             call DestroyEffect(AddSpecialEffect("war3mapImported\\Death Release.mdx",x,y))
             set EFF=AddSpecialEffectTarget(GetUnitModel(c), u, "right hand")
@@ -176680,7 +176680,7 @@ endif
 call TimerStart(t,0.03,true,function SlashBrickBat2)
 set t=null
 endfunction
-function moriaQCast3 takes nothing returns nothing
+function MoriaQCast3 takes nothing returns nothing
     local timer t=GetExpiredTimer()
     local integer id=GetHandleId(t)
     local unit u=LoadUnitHandle(h,id,0)
@@ -176774,7 +176774,7 @@ function moriaQCast3 takes nothing returns nothing
     set l__d=null
     set p=null
 endfunction
-function moriaQCast2 takes nothing returns nothing
+function MoriaQCast2 takes nothing returns nothing
     local timer t=GetExpiredTimer()
     local integer id=GetHandleId(t)
     local unit u=LoadUnitHandle(h,id,0)
@@ -176830,14 +176830,14 @@ function moriaQCast2 takes nothing returns nothing
         call UnitApplyTimedLife(n,'BTLF',1.5)
         call SetUnitTimeScale(n,2)
         call PauseTimer(t)
-        call TimerStart(t,0.05,true,function moriaQCast3)
+        call TimerStart(t,0.05,true,function MoriaQCast3)
     endif
     set l__d=null
     set p=null
     set u=null
     set t=null
 endfunction
-function moriaQCast takes unit u, real x1, real y1 returns nothing
+function MoriaQCast takes unit u, real x1, real y1 returns nothing
     local timer t=CreateTimer()
     local integer id=GetHandleId(t)
     local player p=GetOwningPlayer(u)
@@ -176894,7 +176894,7 @@ function moriaQCast takes unit u, real x1, real y1 returns nothing
     set soundplay=CreateSound("Sound\\Music\\mp3Music\\MoriaQ.mp3",false,false,true,12700,12700,"")
     call StartSound(soundplay)
     call KillSoundWhenDone(soundplay)
-    call TimerStart(t,0.1,true,function moriaQCast2)
+    call TimerStart(t,0.1,true,function MoriaQCast2)
     set u=null
     set p=null
     set t=null
@@ -177067,6 +177067,43 @@ function MoriaQSelfCast takes unit u returns nothing
     set t=null
 endfunction
 
+function MoriaW1Cast2 takes nothing returns nothing
+    local timer t=GetExpiredTimer()
+    local integer id=GetHandleId(t)
+    local unit u=LoadUnitHandle(HH,id,0)
+    local real time=LoadReal(HH,id,1)
+    local player p=GetOwningPlayer(u)
+    local real x1=LoadReal(HH,id,2)
+    local real y1=LoadReal(HH,id,3)
+    if time>0 then
+        call SaveReal(HH,id,1,time-0.25)
+    else
+        call PauseTimer(t)
+        call DestroyTimer(t)
+        call FlushChildHashtable(HH,id)
+    endif
+    set p=null
+    set u=null
+    set t=null
+endfunction
+function MoriaW1Cast takes unit u, real x1, real y1 returns nothing
+    local timer t=CreateTimer()
+    local integer id=GetHandleId(t)
+    local player p=GetOwningPlayer(u)
+    local real x=GetUnitX(u)
+    local real y=GetUnitY(u)
+    call SaveUnitHandle(HH,id,0,u)
+    call SaveReal(HH,id,1,0.5+GetUnitAbilityLevel(u,'MrW1')*0.5)
+    call SaveReal(HH,id,2,x1)
+    call SaveReal(HH,id,3,y1)
+    set soundplay=CreateSound("Sound\\Music\\mp3Music\\MoriaW1.mp3",false,false,true,12700,12700,"")
+    call StartSound(soundplay)
+    call KillSoundWhenDone(soundplay)
+    call TimerStart(t,0.25,true,function MoriaW1Cast2)
+    set u=null
+    set p=null
+    set t=null
+endfunction
 
 function Moria_Cond takes nothing returns boolean
     local boolean cond1=GetSpellAbilityId()=='MrQ1' or GetSpellAbilityId()=='MrF1' or GetSpellAbilityId()=='MrF2' or GetSpellAbilityId()=='MrG1' or GetSpellAbilityId()=='MrG2'
@@ -177099,13 +177136,20 @@ function Moria_Cast takes nothing returns nothing
                 call DisplayTimedWarningMessage(GetOwningPlayer(u),10,"У героя уже нет тени.")
             endif
         else
-            if c==Hero[GetPlayerId(GetOwningPlayer(c))] then
-                call MoriaG1AllyCast(u,c)
+            if LoadInteger(HH,GetHandleId(GetOwningPlayer(u)),'ShSn')>0 then
+                if c==Hero[GetPlayerId(GetOwningPlayer(c))] then
+                    call MoriaG1AllyCast(u,c)
+                else
+                    call IssueImmediateOrder(u, "stop")
+                    call SetWidgetMana(u, GetWidgetMana(u)+GetAbilityIntegerLevelField(GetUnitAbility(u,'MrG1'),ABILITY_ILF_MANA_COST,GetUnitAbilityLevel(u,'MrG1')-1))
+                    call StartAbilityCooldown(GetUnitAbility(u , 'MrG1' ), 0.5)
+                    call DisplayTimedWarningMessage(GetOwningPlayer(u),10,"Нельзя передать тень этой цели.")
+                endif
             else
                 call IssueImmediateOrder(u, "stop")
                 call SetWidgetMana(u, GetWidgetMana(u)+GetAbilityIntegerLevelField(GetUnitAbility(u,'MrG1'),ABILITY_ILF_MANA_COST,GetUnitAbilityLevel(u,'MrG1')-1))
                 call StartAbilityCooldown(GetUnitAbility(u , 'MrG1' ), 0.5)
-                call DisplayTimedWarningMessage(GetOwningPlayer(u),10,"Нельзя передать тень этой цели.")
+                call DisplayTimedWarningMessage(GetOwningPlayer(u),10,"Отсутствуют тени для передачи.")
             endif
         endif
     endif
@@ -177116,12 +177160,16 @@ function Moria_Cast takes nothing returns nothing
         if c==u then
             call MoriaQSelfCast(u)
         else
-		    call moriaQCast(u,x,y)
+		    call MoriaQCast(u,x,y)
         endif
     endif
-	// if GetSpellAbilityId() == 'MrW1' then
-	// 	call MoriaWCast(u,x,y)
-    // endif
+	if GetSpellAbilityId() == 'MrW1' then
+		if c==u and LoadInteger(HH,GetHandleId(GetOwningPlayer(u)),'ShSn')>0 then
+            call MoriaW1SelfCast(u)
+        else
+		    call MoriaW1Cast(u,x,y)
+        endif
+    endif
 	// if GetSpellAbilityId() == 'JNE1' then
     //     if c==u then
     //         call MoriaESelf_Cast(u)
