@@ -85024,7 +85024,7 @@ local real a=Atan2(y-y1,x-x1)*bj_DEGTORAD
 local group g=CreateGroup()
 loop
 exitwhen i>21
-set n=CreateUnit(p,0x65304237,x1+GetRandomReal(-250,250),y1+GetRandomReal(-250,250),a+GetRandomReal(-1,1))
+set n=CreateUnit(p,'e0B7',x1+GetRandomReal(-250,250),y1+GetRandomReal(-250,250),a+GetRandomReal(-1,1))
 call SetUnitColor(n,PLAYER_COLOR_GREEN)
 call SetUnitVertexColor(n,255,255,255,125)
 call GroupAddUnit(g,n)
@@ -177077,6 +177077,14 @@ function MoriaW1Cast2 takes nothing returns nothing
     local real y1=LoadReal(HH,id,3)
     if time>0 then
         call SaveReal(HH,id,1,time-0.25)
+        set n=CreateUnit(p,'h15T',x1+GetRandomReal(-350,350),y1+GetRandomReal(-350,350),GetRandomReal(0,359))
+        call UnitApplyTimedLife(n,'BTLF',8)
+        call SetUnitMoveSpeed(n, 300+GetHeroAgi(u,true)) 
+        call SetUnitBaseDamageByIndex(n,0,30+R2I(GetHeroInt(u,true)*(0.35+0.05*GetUnitAbilityLevel(u,'MrW1'))))
+        set bjLCE=AddSpecialEffect("shadowtrap-ny.mdl",GetUnitX(n),GetUnitY(n))
+        call SetSpecialEffectZ(bjLCE,50)
+        call SetSpecialEffectScale(bjLCE,0.25)
+        call RemoveEffect(bjLCE,1,true,CreateTimer())
     else
         call PauseTimer(t)
         call DestroyTimer(t)
@@ -177094,6 +177102,11 @@ function MoriaW1Cast takes unit u, real x1, real y1 returns nothing
     local real y=GetUnitY(u)
     call SaveUnitHandle(HH,id,0,u)
     call SaveReal(HH,id,1,0.5+GetUnitAbilityLevel(u,'MrW1')*0.5)
+    call DestroyEffect(AddSpecialEffect("war3mapImported\\DarkNova.mdx",x1,y1))
+    call DestroyEffect(AddSpecialEffect("war3mapImported\\Death Release.mdx",x1,y1))
+    set EFF=AddSpecialEffect("BrolyExplosion2.mdl", x1,y1)
+    call SetSpecialEffectScale(EFF , 1.3)
+    call DestroyEffect(EFF)
     call SaveReal(HH,id,2,x1)
     call SaveReal(HH,id,3,y1)
     set soundplay=CreateSound("Sound\\Music\\mp3Music\\MoriaW1.mp3",false,false,true,12700,12700,"")
@@ -177106,7 +177119,7 @@ function MoriaW1Cast takes unit u, real x1, real y1 returns nothing
 endfunction
 
 function Moria_Cond takes nothing returns boolean
-    local boolean cond1=GetSpellAbilityId()=='MrQ1' or GetSpellAbilityId()=='MrF1' or GetSpellAbilityId()=='MrF2' or GetSpellAbilityId()=='MrG1' or GetSpellAbilityId()=='MrG2'
+    local boolean cond1=GetSpellAbilityId()=='MrQ1' or GetSpellAbilityId()=='MrW1' or GetSpellAbilityId()=='MrF1' or GetSpellAbilityId()=='MrF2' or GetSpellAbilityId()=='MrG1' or GetSpellAbilityId()=='MrG2'
     if cond1 then
         return true
     else
@@ -177165,7 +177178,7 @@ function Moria_Cast takes nothing returns nothing
     endif
 	if GetSpellAbilityId() == 'MrW1' then
 		if c==u and LoadInteger(HH,GetHandleId(GetOwningPlayer(u)),'ShSn')>0 then
-            call MoriaW1SelfCast(u)
+            // call MoriaW1SelfCast(u)
         else
 		    call MoriaW1Cast(u,x,y)
         endif
