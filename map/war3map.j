@@ -176473,30 +176473,30 @@ function CloneAddCDMoria takes unit caster,unit n000 returns nothing
     //     call UnitAddAbility(n000,'ASG3')
     //     call SetUnitAbilityLevel(n000,'ASG3',GetUnitAbilityLevel(caster,'ASG3'))
     // endif
-
-    call UnitAddAbility(n000,'MrQ1')
-    // call UnitAddAbility(n000,'ASW1')
-    // call UnitAddAbility(n000,'ASE1')
-    // call UnitAddAbility(n000,'ASR1')
-    // call UnitAddAbility(n000,'ASF1')
-    // call UnitAddAbility(n000,'ASG1')
-    call SetUnitAbilityLevel(n000,'MrQ1',GetUnitAbilityLevel(caster,'MrQ1'))
-    // call SetUnitAbilityLevel(n000,'ASW1',GetUnitAbilityLevel(caster,'ASW1'))
-    // call SetUnitAbilityLevel(n000,'ASE1',GetUnitAbilityLevel(caster,'ASE1'))
-    // call SetUnitAbilityLevel(n000,'ASR1',GetUnitAbilityLevel(caster,'ASR1'))
-
+    if GetUnitAbilityLevel(caster,'MrQ1')>0 then
+        call UnitAddAbility(n000,'MrQ1')
+        call SetUnitAbilityLevel(n000,'MrQ1',GetUnitAbilityLevel(caster,'MrQ1'))
+    endif
+    if GetUnitAbilityLevel(caster,'MrW1')>0 then
+        call UnitAddAbility(n000,'MrW1')
+        call SetUnitAbilityLevel(n000,'MrW1',GetUnitAbilityLevel(caster,'MrW1'))
+    endif
+    if GetUnitAbilityLevel(caster,'MrE1')>0 then
+        call UnitAddAbility(n000,'MrE1')
+        call SetUnitAbilityLevel(n000,'MrE1',GetUnitAbilityLevel(caster,'MrE1'))
+    endif
 
     if GetAbilityCooldown(GetUnitAbility(caster, 'MrQ1'))>0 then
         call StartAbilityCooldown(GetUnitAbility(n000, 'MrQ1'), GetAbilityRemainingCooldown(GetUnitAbility(caster, 'MrQ1')))
     endif
 
-    // if GetAbilityCooldown(GetUnitAbility(caster, 'ASW1'))>0 then
-    //     call StartAbilityCooldown(GetUnitAbility(n000, 'ASW1'), GetAbilityRemainingCooldown(GetUnitAbility(caster, 'ASW1')))
-    // endif
+    if GetAbilityCooldown(GetUnitAbility(caster, 'MrW1'))>0 then
+        call StartAbilityCooldown(GetUnitAbility(n000, 'MrW1'), GetAbilityRemainingCooldown(GetUnitAbility(caster, 'MrW1')))
+    endif
 
-    // if GetAbilityCooldown(GetUnitAbility(caster, 'ASE1'))>0 then
-    //     call StartAbilityCooldown(GetUnitAbility(n000, 'ASE1'), GetAbilityRemainingCooldown(GetUnitAbility(caster, 'ASE1')))
-    // endif
+    if GetAbilityCooldown(GetUnitAbility(caster, 'MrE1'))>0 then
+        call StartAbilityCooldown(GetUnitAbility(n000, 'MrE1'), GetAbilityRemainingCooldown(GetUnitAbility(caster, 'MrE1')))
+    endif
 
     // if GetAbilityCooldown(GetUnitAbility(caster, 'ASR1'))>0 then
     //     call StartAbilityCooldown(GetUnitAbility(n000, 'ASR1'), GetAbilityRemainingCooldown(GetUnitAbility(caster, 'ASR1')))
@@ -177210,7 +177210,7 @@ function MoriaW1SelfCast takes unit u returns nothing
 endfunction
 
 function Moria_Cond takes nothing returns boolean
-    local boolean cond1=GetSpellAbilityId()=='MrQ1' or GetSpellAbilityId()=='MrW1' or GetSpellAbilityId()=='MrF1' or GetSpellAbilityId()=='MrF2' or GetSpellAbilityId()=='MrG1' or GetSpellAbilityId()=='MrG2'
+    local boolean cond1=GetSpellAbilityId()=='MrQ1' or GetSpellAbilityId()=='MrW1' or GetSpellAbilityId()=='MrE1' or GetSpellAbilityId()=='MrF1' or GetSpellAbilityId()=='MrF2' or GetSpellAbilityId()=='MrG1' or GetSpellAbilityId()=='MrG2'
     if cond1 then
         return true
     else
