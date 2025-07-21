@@ -177127,12 +177127,12 @@ function MoriaW1SelfCast2 takes nothing returns nothing
     local real x=GetUnitX(u)
     local real y=GetUnitY(u)
     local integer idp=GetHandleId(p)
-    local integer j=LoadInteger(HH,idp,VariationGHash)
+    local integer j=LoadInteger(HH,id,2)
     local real r
     local real f
     local real x1
     local real y1
-    if UnitIsAlive(u) and udg_B and DU2 and LoadUnitHandle(HH,idp,LoadInteger(HH,id,2))==l__d then
+    if UnitIsAlive(u) and udg_B and DU2 and LoadUnitHandle(HH,idp,'ShNT'+j)==l__d then
         set x1=GetUnitX(l__d)
         set y1=GetUnitY(l__d)
         if RectContainsUnit(gg_rct_UBW2,u)==true then
@@ -177190,7 +177190,7 @@ function MoriaW1SelfCast takes unit u returns nothing
         call SaveInteger(HH,idl__d,'SIG+',LoadInteger(HH,idl__d,'SIG+')-LoadInteger(HH,idp,'ShIA'+j))
     endif
     call SaveUnitHandle(HH,id,0,u)
-    call SaveInteger(HH,id,2,'ShNT'+j)
+    call SaveInteger(HH,id,2,j)
     set soundplay=CreateSound("Sound\\Music\\mp3Music\\MoriaW1Self.mp3",false,false,true,12700,12700,"")
     call StartSound(soundplay)
     call KillSoundWhenDone(soundplay)
