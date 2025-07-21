@@ -177078,9 +177078,9 @@ function MoriaW1Cast2 takes nothing returns nothing
     if time>0 then
         call SaveReal(HH,id,1,time-0.25)
         set n=CreateUnit(p,'h15T',x1+GetRandomReal(-350,350),y1+GetRandomReal(-350,350),GetRandomReal(0,359))
-        call UnitApplyTimedLife(n,'BTLF',8)
-        call SetUnitMoveSpeed(n, 300+GetHeroAgi(u,true)) 
-        call SetUnitBaseDamageByIndex(n,0,30+R2I(GetHeroInt(u,true)*(0.35+0.05*GetUnitAbilityLevel(u,'MrW1'))))
+        call UnitApplyTimedLife(n,'BTLF',5)
+        call SetUnitMoveSpeed(n, 350+GetHeroAgi(u,true)) 
+        call SetUnitBaseDamageByIndex(n,0,30+R2I(GetHeroInt(u,true)*(0.25+0.05*GetUnitAbilityLevel(u,'MrW1'))))
         set bjLCE=AddSpecialEffect("shadowtrap-ny.mdl",GetUnitX(n),GetUnitY(n))
         call SetSpecialEffectZ(bjLCE,50)
         call SetSpecialEffectScale(bjLCE,0.25)
@@ -177114,6 +177114,97 @@ function MoriaW1Cast takes unit u, real x1, real y1 returns nothing
     call KillSoundWhenDone(soundplay)
     call TimerStart(t,0.25,true,function MoriaW1Cast2)
     set u=null
+    set p=null
+    set t=null
+endfunction
+
+function MoriaW1SelfCast2 takes nothing returns nothing
+    local timer t=GetExpiredTimer()
+    local integer id=GetHandleId(t)
+    local unit u=LoadUnitHandle(HH,id,0)
+    local unit l__d=LoadUnitHandle(HH,id,1)
+    local player p=GetOwningPlayer(u)
+    local real x=GetUnitX(u)
+    local real y=GetUnitY(u)
+    local integer idp=GetHandleId(p)
+    local integer j=LoadInteger(HH,idp,VariationGHash)
+    local real r
+    local real f
+    local real x1
+    local real y1
+    if UnitIsAlive(u) and udg_B and DU2 and LoadUnitHandle(HH,idp,LoadInteger(HH,id,2))==l__d then
+        set x1=GetUnitX(l__d)
+        set y1=GetUnitY(l__d)
+        if RectContainsUnit(gg_rct_UBW2,u)==true then
+            call UnitAddAbility(l__d,'A0IH')
+        else
+            call UnitRemoveAbility(l__d,'A0IH')
+        endif
+        if SR(x,y,x1,y1)<1500 and IsUnitPaused(l__d)==false then
+            if GetUnitCurrentOrder(l__d)!=OrderId("attack")then
+                set f=GetRandomReal(0,6.3)
+                set r=GetRandomReal(-1400,1400)
+                if GetUnitCurrentOrder(u)==OrderId("attack")then
+                    call SetUnitX(l__d,x+50*Cos(GetUnitFacing(u)*bj_DEGTORAD))
+                    call SetUnitY(l__d,y+50*Sin(GetUnitFacing(u)*bj_DEGTORAD))
+                    call SetUnitFacingInstant(l__d,GetUnitFacing(u)*bj_DEGTORAD)
+                    call IssuePointOrder(l__d,"attack",x+50*Cos(GetUnitFacing(u)*bj_DEGTORAD),y+50*Sin(GetUnitFacing(u)*bj_DEGTORAD))
+                else
+                    call IssuePointOrder(l__d,"attack",x+r*Cos(f),y+r*Sin(f))
+                endif
+            endif
+        elseif GetUnitCurrentOrder(l__d)!=OrderId("move")then
+            set f=GetRandomReal(0,6.3)
+            set r=GetRandomReal(-1400,1400)
+            call IssuePointOrder(l__d,"move",x+r*Cos(f),y+r*Sin(f))
+        endif
+    else
+        call UnitApplyTimedLife(l__d,'BTLF',0.05)
+        call SaveStr(HH,idp,'ShNP'+j,"Nowhere")
+        call PauseTimer(t)
+        call DestroyTimer(t)
+        call FlushChildHashtable(HH,id)
+    endif
+    set p=null
+    set u=null
+    set l__d=null
+    set t=null
+endfunction
+function MoriaW1SelfCast takes unit u returns nothing
+    local timer t=CreateTimer()
+    local integer id=GetHandleId(t)
+    local player p=GetOwningPlayer(u)
+    local real x=GetUnitX(u)
+    local real y=GetUnitY(u)
+    local integer idp=GetHandleId(p)
+    local integer j=LoadInteger(HH,idp,VariationGHash)
+    local unit l__d=LoadUnitHandle(HH,idp,'ShNT'+j)
+    local integer idl__d=GetHandleId(l__d)
+    // call SaveBoolean(HH,GetHandleId(c),'ShGv',true)
+    if LoadUnitHandle(HH,idp,'ShNT'+j)!=null then
+        call SetHeroStr(l__d,GetHeroStr(l__d,false)-LoadInteger(HH,idp,'ShSA'+j),true)
+        call SetHeroAgi(l__d,GetHeroAgi(l__d,false)-LoadInteger(HH,idp,'ShAA'+j),true)
+        call SetHeroInt(l__d,GetHeroInt(l__d,false)-LoadInteger(HH,idp,'ShIA'+j),true)
+        call SaveInteger(HH,idl__d,'SSG+',LoadInteger(HH,idl__d,'SSG+')-LoadInteger(HH,idp,'ShSA'+j))
+        call SaveInteger(HH,idl__d,'SAG+',LoadInteger(HH,idl__d,'SAG+')-LoadInteger(HH,idp,'ShAA'+j))
+        call SaveInteger(HH,idl__d,'SIG+',LoadInteger(HH,idl__d,'SIG+')-LoadInteger(HH,idp,'ShIA'+j))
+    endif
+    call SaveUnitHandle(HH,id,0,u)
+    call SaveInteger(HH,id,2,'ShNT'+j)
+    set soundplay=CreateSound("Sound\\Music\\mp3Music\\MoriaW1Self.mp3",false,false,true,12700,12700,"")
+    call StartSound(soundplay)
+    call KillSoundWhenDone(soundplay)
+    set n=CreateUnit(p,'h25T',x+GetRandomReal(-350,350),y+GetRandomReal(-350,350),GetRandomReal(0,359))
+    call SetUnitMoveSpeed(n, 400+GetHeroAgi(u,true)) 
+    call SetUnitBaseDamageByIndex(n,0,60+(3+GetUnitAbilityLevel(u,'MrW1'))*(LoadInteger(HH,idp,'ShSA'+j)+LoadInteger(HH,idp,'ShAA'+j)+LoadInteger(HH,idp,'ShIA'+j)))
+    call SaveUnitHandle(HH,id,1,n)
+    call SaveUnitHandle(HH,idp,'ShNT'+j,n)
+    call SaveStr(HH,idp,'ShNP'+j,"Zombie. DMG: "+I2S(60+(3+GetUnitAbilityLevel(u,'MrW1'))*(LoadInteger(HH,idp,'ShSA'+j)+LoadInteger(HH,idp,'ShAA'+j)+LoadInteger(HH,idp,'ShIA'+j))))
+    call DestroyEffect(AddSpecialEffect("war3mapImported\\DarkNova.mdx",GetUnitX(n),GetUnitY(n)))
+    call DestroyEffect(AddSpecialEffect("war3mapImported\\Death Release.mdx",GetUnitX(n),GetUnitY(n)))
+    call TimerStart(t,0.15,true,function MoriaW1SelfCast2)
+    set u=null
+    set l__d=null
     set p=null
     set t=null
 endfunction
@@ -177177,8 +177268,8 @@ function Moria_Cast takes nothing returns nothing
         endif
     endif
 	if GetSpellAbilityId() == 'MrW1' then
-		if c==u and LoadInteger(HH,GetHandleId(GetOwningPlayer(u)),'ShSn')>0 then
-            // call MoriaW1SelfCast(u)
+		if c==u and LoadInteger(HH,GetHandleId(GetOwningPlayer(u)),'ShSn')>0 and GetUnitTypeId(u)!='H00Q' then
+            call MoriaW1SelfCast(u)
         else
 		    call MoriaW1Cast(u,x,y)
         endif
