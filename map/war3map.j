@@ -77813,14 +77813,14 @@ call TriggerAddCondition(t,Condition(function ShikaiAizenCond))
 set t=null
 endfunction
 function KruhitsugiCond takes nothing returns boolean
-return GetSpellAbilityId()==0x41304A51
+return GetSpellAbilityId()=='A0JQ'
 endfunction
 function KruhitsugiCast takes nothing returns nothing
 local unit u=GetTriggerUnit()
 local real x=GetSpellTargetX()
 local real y=GetSpellTargetY()
 local player p=GetOwningPlayer(u)
-local real dmg=GetHeroInt(u,true)*(3+GetUnitAbilityLevel(u,0x41304A51))
+local real dmg=GetHeroInt(u,true)*(3+GetUnitAbilityLevel(u,'A0JQ'))
 call GroupEnumUnitsInRange(DG,x,y,500,Base)
 call UnitApplyTimedLife(CreateUnit(p,'e0EW',x,y,0),'BTLF',3)
 call UnitApplyTimedLife(CreateUnit(p,'e0EX',x,y,0),'BTLF',3)
@@ -177209,8 +177209,75 @@ function MoriaW1SelfCast takes unit u returns nothing
     set t=null
 endfunction
 
+
+function MoriaECast2 takes nothing returns nothing
+    local timer t=GetExpiredTimer()
+    local integer id=GetHandleId(t)
+    local unit u=LoadUnitHandle(HH,id,0)
+    local unit c=LoadUnitHandle(HH,id,1)
+    local real x=GetUnitX(u)
+    local real y=GetUnitY(u)
+    local real x1=GetUnitX(c)
+    local real y1=GetUnitY(c)
+    local real a=Atan2(y1-y,x1-x)
+    local real time=LoadReal(HH,id,2)-0.1
+    local player p=GetOwningPlayer(u)
+    local integer i=0
+    local integer l__s=0
+    local integer ls=0
+    local real dmg=(2+GetUnitAbilityLevel(u,'MrE1'))*(GetHeroInt(u,true)+50)
+    if time>0 then
+        call SaveReal(HH,id,2,time)
+        if ModuloReal(time,0.5)<0.1 then
+            call DestroyEffect(AddSpecialEffectTarget("AZ_anyemoW2_R.mdx",c,"chest"))
+            set EFF=AddSpecialEffect("war3mapImported\\wind3.mdl",x1,y1)
+            call SetSpecialEffectScale(EFF,0.8)
+            call SetSpecialEffectVertexColour(EFF,235,100,235,190)
+            call SetSpecialEffectTimeScale(EFF,1.2)
+            call SetSpecialEffectFacing(EFF,GetRandomReal(0,359))
+            call DestroyEffect(EFF)
+        endif
+    else
+        call UnitApplyTimedLife(CreateUnit(p,'e1EW',x1,y1,0),'BTLF',3)
+        call UnitApplyTimedLife(CreateUnit(p,'e0EY',x1,y1,0),'BTLF',3)
+        // call UnitApplyTimedLife(CreateUnit(p,'e0EX',x1,y1,0),'BTLF',3)
+        // call UnitApplyTimedLife(CreateUnit(p,'e0EZ',x1,y1,0),'BTLF',3)
+        call myCustomDamage(u,c,dmg,false,false,null,null,null)
+        call SetControlToUnit(u,c, 3, "shortsight")
+        call SetControlToUnit(u,c, 3, "ensnare")
+        call DestroyTimer(t)
+        call FlushChildHashtable(HH,id)
+    endif
+    set p=null
+    set c=null
+    set u=null
+    set t=null
+endfunction
+function MoriaECast takes unit u, unit c returns nothing
+    local timer t=CreateTimer()
+    local integer id=GetHandleId(t)
+    local real x=GetUnitX(u)
+    local real y=GetUnitY(u)
+    local real x1=GetUnitX(c)
+    local real y1=GetUnitY(c)
+    local real a=Atan2(y1-y,x1-x)
+    local player p=GetOwningPlayer(u)
+    call SaveUnitHandle(HH,id,0,u)
+    call SaveUnitHandle(HH,id,1,c)
+    set soundplay=CreateSound("Sound\\Music\\mp3Music\\MoriaE.mp3",false,false,true,12700,12700,"")
+    call StartSound(soundplay)
+    call KillSoundWhenDone(soundplay)
+    call SaveReal(HH,id,2,1)
+    call DestroyEffect(AddSpecialEffectTarget("AZ_anyemoW2_R.mdx",c,"chest"))
+    call TimerStart(t,0.1,true,function MoriaECast2)
+    set u=null
+    set t=null
+    set c=null
+    set p=null
+endfunction
+
 function Moria_Cond takes nothing returns boolean
-    local boolean cond1=GetSpellAbilityId()=='MrQ1' or GetSpellAbilityId()=='MrW1' or GetSpellAbilityId()=='MrE1' or GetSpellAbilityId()=='MrF1' or GetSpellAbilityId()=='MrF2' or GetSpellAbilityId()=='MrG1' or GetSpellAbilityId()=='MrG2'
+    local boolean cond1=GetSpellAbilityId()=='MrQ1' or GetSpellAbilityId()=='MrW1' or GetSpellAbilityId()=='MrE1' or GetSpellAbilityId()=='MrR1' or GetSpellAbilityId()=='MrF1' or GetSpellAbilityId()=='MrF2' or GetSpellAbilityId()=='MrG1' or GetSpellAbilityId()=='MrG2'
     if cond1 then
         return true
     else
@@ -177274,16 +177341,13 @@ function Moria_Cast takes nothing returns nothing
 		    call MoriaW1Cast(u,x,y)
         endif
     endif
-	// if GetSpellAbilityId() == 'JNE1' then
-    //     if c==u then
-    //         call MoriaESelf_Cast(u)
-    //     else
-	// 	    call MoriaE1_Cast(u,x,y)
-    //     endif
+	if GetSpellAbilityId() == 'MrE1' then
+        call MoriaECast(u,c)
+    endif
+    // if GetSpellAbilityId() == 'MrR1' then
+    //     call MoriaRCast(u,x,y)
     // endif
-    // if GetSpellAbilityId() == 'JNR1' then
-	// 	call MoriaR1_Cast(u,c)
-    // endif
+
 	// if GetSpellAbilityId() == 'JNT1' then
 	// 	call MoriaT_Cast(u,x,y)
     // endif
