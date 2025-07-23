@@ -177383,8 +177383,7 @@ function MoriaRCast2 takes nothing returns nothing
                     call myCustomDamage(u,E,dmg,false,false,null,null,null)
                     call MissleMoveMoriaR_NonPause(E,1,0,x1+50*Cos(a1),y1+50*Sin(a1),1000,u)
                 else
-                    call SetUnitXY_1(E,x,y,false)
-                    call myCustomDamage(u,E,dmg+dmg*0.2,false,false,null,null,null)
+                    call myCustomDamage(u,E,dmg*1.2,false,false,null,null,null)
                 endif
                 call SetControlToUnit(E,E, 3, "stun")
             endif
@@ -177442,7 +177441,7 @@ function MoriaRCast takes unit u, real x, real y returns nothing
     set n=CreateUnit(p,'e0RV',x,y,0)
     call UnitApplyTimedLife(n,'BTLF',3)
     call SetUnitScale(n,0.35,0.35,0.35)
-    call SetUnitTimeScale(n,0.3)
+    call SetUnitTimeScale(n,0.5)
     set soundplay=CreateSound("Sound\\Music\\mp3Music\\MoriaR.mp3",false,false,true,12700,12700,"")
     call StartSound(soundplay)
     call KillSoundWhenDone(soundplay)
