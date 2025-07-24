@@ -51585,38 +51585,38 @@ call TimerStart(t,.03,true,function Trig_Steal_Shadow_Actions2)
 set u=null
 set t=null
 endfunction
-function Trig_Shadows_Conditions takes nothing returns boolean
-return GetSpellAbilityId()=='A068'
-endfunction
-function Trig_Shadows_Actions takes nothing returns nothing
-local unit u=GetTriggerUnit()
-local group g=CreateGroup()
-local real x=GetUnitX(u)
-local real y=GetUnitY(u)
-local player p=GetOwningPlayer(u)
-local real dmg=9*GetHeroInt(u,true)
-call DestroyEffect(AddSpecialEffect("war3mapImported\\NetherStrike.mdx",x,y))
-call DestroyEffect(AddSpecialEffect("war3mapImported\\DarkNova.mdx",x,y))
-call DestroyEffect(AddSpecialEffect("war3mapImported\\Death Release.mdx",x,y))
-call UnitApplyTimedLife(CreateUnit(p,'e029',x,y,GetRandomReal(0,359)),'BTLF',2)
-call UnitApplyTimedLife(CreateUnit(p,'e029',x,y,GetRandomReal(0,359)),'BTLF',2)
-call GroupEnumUnitsInRange(g,x,y,400,Base)
-set soundplay=CreateSound("Sound\\Music\\mp3Music\\Moria3.mp3",false,false,true,12700,12700,"")
-call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
-loop
-set E=FirstOfGroup(g)
-if Condition_Base(p,E) then
-call myCustomDamage(u,E,dmg,false,false,null,null,null)
-endif
-call GroupRemoveUnit(g,E)
-exitwhen E==null
-endloop
-call DestroyGroup(g)
-set g=null
-set u=null
-set p=null
-endfunction
+// function Trig_Shadows_Conditions takes nothing returns boolean
+// return GetSpellAbilityId()=='MrT1'
+// endfunction
+// function Trig_Shadows_Actions takes nothing returns nothing
+// local unit u=GetTriggerUnit()
+// local group g=CreateGroup()
+// local real x=GetUnitX(u)
+// local real y=GetUnitY(u)
+// local player p=GetOwningPlayer(u)
+// local real dmg=9*GetHeroInt(u,true)
+// call DestroyEffect(AddSpecialEffect("war3mapImported\\NetherStrike.mdx",x,y))
+// call DestroyEffect(AddSpecialEffect("war3mapImported\\DarkNova.mdx",x,y))
+// call DestroyEffect(AddSpecialEffect("war3mapImported\\Death Release.mdx",x,y))
+// call UnitApplyTimedLife(CreateUnit(p,'e029',x,y,GetRandomReal(0,359)),'BTLF',2)
+// call UnitApplyTimedLife(CreateUnit(p,'e029',x,y,GetRandomReal(0,359)),'BTLF',2)
+// call GroupEnumUnitsInRange(g,x,y,400,Base)
+// set soundplay=CreateSound("Sound\\Music\\mp3Music\\Moria3.mp3",false,false,true,12700,12700,"")
+// call StartSound(soundplay)
+// call KillSoundWhenDone(soundplay)
+// loop
+// set E=FirstOfGroup(g)
+// if Condition_Base(p,E) then
+// call myCustomDamage(u,E,dmg,false,false,null,null,null)
+// endif
+// call GroupRemoveUnit(g,E)
+// exitwhen E==null
+// endloop
+// call DestroyGroup(g)
+// set g=null
+// set u=null
+// set p=null
+// endfunction
 function Trig_Magma_Charge_Conditions takes nothing returns boolean
 return GetSpellAbilityId()=='A06X' and udg_B==true
 endfunction
@@ -165306,9 +165306,6 @@ if time > 0 and time2!=0 and GetWidgetLife(LoadUnitHandle(HH,MUIHandle(),CasterH
             call SaveInteger(HH,id,StringHash("ID"), 2)
         endif
         if GetUnitTypeId(LoadUnitHandle(HH,MUIHandle(),CasterHash))=='H00P' then
-            set soundplay=CreateSound("Sound\\Music\\mp3Music\\Moria3.mp3",false,false,true,12700,12700,"")
-            call StartSound(soundplay)
-            call KillSoundWhenDone(soundplay)
             call CreateModeIndicatorWithPauseForm(LoadUnitHandle(HH,MUIHandle(),CasterHash), "ReplaceableTextures\\CommandButtons\\BTNMoria5.blp", 25)
             call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S302')
             call IssueImmediateOrder(LoadUnitHandle(HH,MUIHandle(),CasterHash), "bearform")
@@ -166032,7 +166029,7 @@ function SpellAct takes nothing returns nothing
 local integer id = GetSpellAbilityId()
 if id == 'AFUP' then
 call GoldenFriezaStart(GetTriggerUnit())
-elseif id == 'A07U' or id == 'A1D2' or id == 'A068' or id == 'A0LY' or id == 'A1OX' or id == 'A0OX' or id == 'A03N' or id == 'A119' or id == 'A0GE' or id == 'A0PD' or id == 'A0KP' or id == 'A0CI' or id == 'LCE1' or id == 'A1DX' or id == 'A0UN' or id == 'A1EF' or id == 'A0PR' or id == 'A0BT' or id == 'A0BZ' or id == 'A1EG' or id == 'A0C8' or id=='A0JA' or id=='A0TF' or id=='A01O' or id=='A168' then
+elseif id == 'A07U' or id == 'A1D2' or id == 'A0LY' or id == 'A1OX' or id == 'A0OX' or id == 'A03N' or id == 'A119' or id == 'A0GE' or id == 'A0PD' or id == 'A0KP' or id == 'A0CI' or id == 'LCE1' or id == 'A1DX' or id == 'A0UN' or id == 'A1EF' or id == 'A0PR' or id == 'A0BT' or id == 'A0BZ' or id == 'A1EG' or id == 'A0C8' or id=='A0JA' or id=='A0TF' or id=='A01O' or id=='A168' then
 call TransformationStart(GetTriggerUnit())
 elseif id == 'CS01' then
 call EDantesStart(GetTriggerUnit())
@@ -176485,6 +176482,10 @@ function CloneAddCDMoria takes unit caster,unit n000 returns nothing
         call UnitAddAbility(n000,'MrE1')
         call SetUnitAbilityLevel(n000,'MrE1',GetUnitAbilityLevel(caster,'MrE1'))
     endif
+    if GetUnitAbilityLevel(caster,'MrR1')>0 then
+        call UnitAddAbility(n000,'MrR1')
+        call SetUnitAbilityLevel(n000,'MrR1',GetUnitAbilityLevel(caster,'MrR1'))
+    endif
 
     if GetAbilityCooldown(GetUnitAbility(caster, 'MrQ1'))>0 then
         call StartAbilityCooldown(GetUnitAbility(n000, 'MrQ1'), GetAbilityRemainingCooldown(GetUnitAbility(caster, 'MrQ1')))
@@ -176498,6 +176499,9 @@ function CloneAddCDMoria takes unit caster,unit n000 returns nothing
         call StartAbilityCooldown(GetUnitAbility(n000, 'MrE1'), GetAbilityRemainingCooldown(GetUnitAbility(caster, 'MrE1')))
     endif
 
+    if GetAbilityCooldown(GetUnitAbility(caster, 'MrR1'))>0 then
+        call StartAbilityCooldown(GetUnitAbility(n000, 'MrR1'), GetAbilityRemainingCooldown(GetUnitAbility(caster, 'MrR1')))
+    endif
     // if GetAbilityCooldown(GetUnitAbility(caster, 'ASR1'))>0 then
     //     call StartAbilityCooldown(GetUnitAbility(n000, 'ASR1'), GetAbilityRemainingCooldown(GetUnitAbility(caster, 'ASR1')))
     // endif
@@ -177226,7 +177230,17 @@ function MoriaECast2 takes nothing returns nothing
     local integer l__s=0
     local integer ls=0
     local real dmg=(2+GetUnitAbilityLevel(u,'MrE1'))*(GetHeroInt(u,true)+50)
+    local group g=LoadGroupHandle(HH,id,6)
     call SaveReal(HH,id,2,time)
+    if time==0.9 then
+        if GetUnitTypeId(u)=='H00P' then
+            call SetUnitAnimationByIndex(u,11)
+        elseif GetUnitTypeId(u)=='H00V' then
+            call SetUnitAnimation(u,"Spell one")
+        else 
+            call SetUnitAnimation(u,"spell one")
+        endif
+    endif
     if time>0 then
         if ModuloReal(time,0.5)<0.1 then
             call DestroyEffect(AddSpecialEffectTarget("AZ_anyemoW2_R.mdx",c,"chest"))
@@ -177238,25 +177252,43 @@ function MoriaECast2 takes nothing returns nothing
             call DestroyEffect(EFF)
         endif
     elseif time==0 then
-        call UnitApplyTimedLife(CreateUnit(p,'e1EW',x1,y1,0),'BTLF',3)
+        set n=CreateUnit(p,'e1EW',x1,y1,0)
+        call UnitApplyTimedLife(n,'BTLF',3)
+        if GetUnitTypeId(u)=='H00V' then
+            call SetUnitScale(n,0.85,0.85,0.85)
+            call GroupEnumUnitsInRange(g,x1,y1,350,Base)
+            loop
+                set E=FirstOfGroup(g)
+                exitwhen E==null
+                if Condition_Base(p,E)then
+                    call myCustomDamage(u,E,dmg,false,false,null,null,null)
+                    call SetControlToUnit(u,E, 3, "shortsight")
+                    call SetControlToUnit(u,E, 3, "ensnare")
+                endif
+                call GroupRemoveUnit(g,E)
+            endloop
+            call SaveReal(HH,id,8,0.85)
+        else
+            call myCustomDamage(u,c,dmg,false,false,null,null,null)
+            call SetControlToUnit(u,c, 3, "shortsight")
+            call SetControlToUnit(u,c, 3, "ensnare")
+            call SaveReal(HH,id,8,0.2)
+        endif
         call UnitApplyTimedLife(CreateUnit(p,'e0EY',x1,y1,0),'BTLF',3)
-        // call UnitApplyTimedLife(CreateUnit(p,'e0EX',x1,y1,0),'BTLF',3)
-        // call UnitApplyTimedLife(CreateUnit(p,'e0EZ',x1,y1,0),'BTLF',3)
-        call myCustomDamage(u,c,dmg,false,false,null,null,null)
-        call SetControlToUnit(u,c, 3, "shortsight")
-        call SetControlToUnit(u,c, 3, "ensnare")
         call SaveReal(HH,id,4,x1)
         call SaveReal(HH,id,5,y1)
-    elseif time==-1 then
+    elseif time==-2.2 then
         set EFF=AddSpecialEffect("AZ_anyemoW_R.mdx",LoadReal(HH,id,4),LoadReal(HH,id,5))
-        call SetSpecialEffectScale(EFF,0.2)
+        call SetSpecialEffectScale(EFF,LoadReal(HH,id,8))
         call SetSpecialEffectZ(EFF,50)
         call DestroyEffect(EFF)
+        call DestroyGroup(g)
         call DestroyTimer(t)
         call FlushChildHashtable(HH,id)
     endif
     set p=null
     set c=null
+    set g=null
     set u=null
     set t=null
 endfunction
@@ -177275,7 +177307,12 @@ function MoriaECast takes unit u, unit c returns nothing
     call StartSound(soundplay)
     call KillSoundWhenDone(soundplay)
     call SaveReal(HH,id,2,1)
-    call DestroyEffect(AddSpecialEffectTarget("AZ_anyemoW2_R.mdx",c,"chest"))
+    call SaveGroupHandle(HH,id,6,CreateGroup())
+    set EFF=AddSpecialEffectTarget("AZ_anyemoW2_R.mdx",c,"chest")
+    if GetUnitTypeId(u)=='H00V' then
+        call SetSpecialEffectScale(EFF,2)
+    endif
+    call DestroyEffect(EFF)
     call TimerStart(t,0.1,true,function MoriaECast2)
     set u=null
     set t=null
@@ -177360,6 +177397,15 @@ function MoriaRCast2 takes nothing returns nothing
     local real y1=0
     local real a1=0
     local real time=LoadReal(h,id,7)
+    if time==0.05 then
+        if GetUnitTypeId(u)=='H00P' then
+            call SetUnitAnimationByIndex(u,9)
+        elseif GetUnitTypeId(u)=='H00V' then
+            call SetUnitAnimation(u,"attack")
+        else 
+            call SetUnitAnimation(u,"spell one")
+        endif
+    endif
     call SaveReal(h,id,7,time+0.05)
     if time==0.5 then
         call GroupEnumUnitsInRange(g,x,y,250,Base)
@@ -177451,8 +177497,81 @@ function MoriaRCast takes unit u, real x, real y returns nothing
     set t=null
 endfunction
 
+function MoriaTCast2 takes nothing returns nothing
+    local timer t=GetExpiredTimer()
+    local integer id=GetHandleId(t)
+    local unit u=LoadUnitHandle(HH,id,0)
+    local player p=GetOwningPlayer(u)
+    local real time=LoadReal(HH,id,1)-0.05
+    call SaveReal(HH,id,1,time)
+    if time>0 then
+        call SetUnitInvulnerable(u,true)
+        call PauseUnit(u,true)
+        if time==4.5 then
+            call SetUnitAnimationByIndex(u, 10)
+        endif
+        if time<2 and time>1 then
+            call SetUnitVertexColor(u,255-R2I((2-time)*250),255-R2I((2-time)*250),255-R2I((2-time)*250),255)
+            call SetUnitScale(u,GetUnitScale(u)+0.02,GetUnitScale(u)+0.02,GetUnitScale(u)+0.02)
+        endif
+        if time==1.1 then
+            call TransformationStart(u)
+        endif
+        if time==1 then
+            call PauseUnit(u,false)
+        endif
+        if time==0.95 then
+            call SetUnitScale(u,0.9,0.9,0.9)
+            call SetUnitAnimation(u,"stand")
+        endif
+        if time>0.45 and time<0.95 then
+            call SetUnitScale(u,GetUnitScale(u)+0.03,GetUnitScale(u)+0.03,GetUnitScale(u)+0.03)
+        endif
+        if time<0.95 then
+            call SetUnitVertexColor(u,5+R2I((1-time)*250),5+R2I((1-time)*250),5+R2I((1-time)*250),255)
+        endif
+    else
+        call SetUnitScale(u,1.2,1.2,1.2)
+        call SetUnitInvulnerable(u,false)
+        call PauseUnit(u,false)
+        call PauseTimer(t)
+        call DestroyTimer(t)
+        call FlushChildHashtable(HH,id)
+    endif
+    set p=null
+    set u=null
+    set t=null
+endfunction
+function MoriaTCast takes unit u returns nothing
+    local real x=GetUnitX(u)
+    local real y=GetUnitY(u)
+    local player p=GetOwningPlayer(u)
+    local timer t=CreateTimer()
+    local integer uid=GetHandleId(t)
+    local integer id=GetPlayerId(p)+1
+    if udg_DM[id]!=null then
+        call RemoveEffect(AddSpecialEffectTarget("by_wood_effect_yuzhiboyou_unusual_fenshendabaopo_1.mdx", udg_DM[id], "chest"), 0.2, true, CreateTimer())
+        call PauseUnit(udg_DM[id],true)
+        call SetUnitInvulnerable(udg_DM[id],true)
+        call ShikiCloneEffect(udg_DM[id],0.5,1.05,1.25,250)
+        call SaveBoolean(HH,GetHandleId(u),'MrGR',true)
+        call DestroyEffect(AddSpecialEffect("war3mapImported\\Death Release.mdx",GetUnitX(udg_DM[id]),GetUnitY(udg_DM[id])))
+    endif
+    set soundplay=CreateSound("Sound\\Music\\mp3Music\\MoriaT.mp3",false,false,true,12700,12700,"")
+    call StartSound(soundplay)
+    call KillSoundWhenDone(soundplay)
+    call SaveUnitHandle(HH,uid,0,u)
+    call SaveReal(HH,uid,1,4.55)
+    call SetUnitInvulnerable(u,true)
+    call PauseUnit(u,true)
+    call TimerStart(t,0.05,true,function MoriaTCast2)
+    set u=null
+    set t=null
+    set p=null
+endfunction
+
 function Moria_Cond takes nothing returns boolean
-    local boolean cond1=GetSpellAbilityId()=='MrQ1' or GetSpellAbilityId()=='MrW1' or GetSpellAbilityId()=='MrE1' or GetSpellAbilityId()=='MrR1' or GetSpellAbilityId()=='MrF1' or GetSpellAbilityId()=='MrF2' or GetSpellAbilityId()=='MrG1' or GetSpellAbilityId()=='MrG2'
+    local boolean cond1=GetSpellAbilityId()=='MrQ1' or GetSpellAbilityId()=='MrW1' or GetSpellAbilityId()=='MrE1' or GetSpellAbilityId()=='MrR1'  or GetSpellAbilityId()=='MrT1' or GetSpellAbilityId()=='MrF1' or GetSpellAbilityId()=='MrF2' or GetSpellAbilityId()=='MrG1' or GetSpellAbilityId()=='MrG2'
     if cond1 then
         return true
     else
@@ -177522,10 +177641,9 @@ function Moria_Cast takes nothing returns nothing
     if GetSpellAbilityId() == 'MrR1' then
         call MoriaRCast(u,x,y)
     endif
-
-	// if GetSpellAbilityId() == 'JNT1' then
-	// 	call MoriaT_Cast(u,x,y)
-    // endif
+	if GetSpellAbilityId() == 'MrT1' then
+		call MoriaTCast(u)
+    endif
     set u=null
     set c=null
 endfunction
@@ -223094,14 +223212,14 @@ call TriggerAddAction(t,function Trig_die7_Actions)
 // call TriggerRegisterPlayerUnitEvent(t,p,EVENT_PLAYER_UNIT_SPELL_EFFECT,null)
 // call TriggerAddCondition(t,Condition(function Trig_Black_Box_Conditions))
 // call TriggerAddAction(t,function Trig_Black_Box_Actions)
-set t=CreateTrigger()
-call TriggerRegisterPlayerUnitEvent(t,p,EVENT_PLAYER_UNIT_SPELL_EFFECT,null)
-call TriggerAddCondition(t,Condition(function Trig_Steal_Shadow_Conditions))
-call TriggerAddAction(t,function Trig_Steal_Shadow_Actions)
-set t=CreateTrigger()
-call TriggerRegisterPlayerUnitEvent(t,p,EVENT_PLAYER_UNIT_SPELL_EFFECT,null)
-call TriggerAddCondition(t,Condition(function Trig_Shadows_Conditions))
-call TriggerAddAction(t,function Trig_Shadows_Actions)
+// set t=CreateTrigger()
+// call TriggerRegisterPlayerUnitEvent(t,p,EVENT_PLAYER_UNIT_SPELL_EFFECT,null)
+// call TriggerAddCondition(t,Condition(function Trig_Steal_Shadow_Conditions))
+// call TriggerAddAction(t,function Trig_Steal_Shadow_Actions)
+// set t=CreateTrigger()
+// call TriggerRegisterPlayerUnitEvent(t,p,EVENT_PLAYER_UNIT_SPELL_EFFECT,null)
+// call TriggerAddCondition(t,Condition(function Trig_Shadows_Conditions))
+// call TriggerAddAction(t,function Trig_Shadows_Actions)
 elseif ty=='H05R' then
 set t=CreateTrigger()
 call TriggerRegisterPlayerUnitEvent(t,p,EVENT_PLAYER_UNIT_DEATH,null)
