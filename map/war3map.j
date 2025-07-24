@@ -6737,6 +6737,74 @@ endfunction
 function SR1 takes real x1,real y1,real x2,real y2 returns real
 return SquareRoot((x1-x2)*(x1-x2)+(y1-y2)*(y1-y2))
 endfunction
+
+
+function MissleMoveMoria2 takes nothing returns nothing
+    local timer t=GetExpiredTimer()
+    local integer id=GetHandleId(t)
+    local unit l__d=LoadUnitHandle(h,id,0)
+    local unit c=LoadUnitHandle(h,id,4)
+    local real speed=LoadReal(h,id,1)
+    local real angle=LoadReal(h,id,2)
+    local real x=GetUnitX(l__d)
+    local real y=GetUnitY(l__d)
+    local real x1=GetUnitX(c)
+    local real y1=GetUnitY(c)
+    local real a=Atan2(y1-y,x1-x)+angle
+    if SR(x,y,x1,y1)>150 then
+        call SetUnitXY_1(l__d,x+speed*Cos(a),y+speed*Sin(a), false)
+        call SetUnitFacing(l__d,a*bj_RADTODEG)
+    else
+        call RemoveUnit(l__d)
+        call PauseTimer(t)
+        call DestroyTimer(t)
+        call FlushChildHashtable(h,id)
+    endif
+    set c=null
+    set l__d=null
+    set t=null
+endfunction
+function MissleMoveMoria takes unit l__d,real speed,real angle,unit target returns nothing
+    local timer t=CreateTimer()
+    local integer id=GetHandleId(t)
+    call SaveUnitHandle(h,id,0,l__d)
+    call SaveReal(h,id,1,speed)
+    call SaveReal(h,id,2,angle*bj_DEGTORAD)
+    call SaveUnitHandle(h,id,4,target)
+    call TimerStart(t,0.02,true,function MissleMoveMoria2)
+set t=null
+endfunction
+
+function MyRemoveZombieAct takes nothing returns nothing
+    local timer t=GetExpiredTimer()
+    local integer id=GetHandleId(t)
+    local unit u=LoadUnitHandle(h,id,0)
+    local player p=GetOwningPlayer(u)
+    local real time=LoadReal(h,id,1)-0.1
+    call SaveReal(h,id,1,time)
+    if time<=0 and LoadBoolean(HH,GetHandleId(Hero[GetPlayerId(p)]),'MrTR')==false then
+        if u!=null then
+            call UnitApplyTimedLife(u,'BTLF',0.1)
+        endif
+        call MissleMoveMoria(CreateUnit(p,'e02D',GetUnitX(u),GetUnitY(u),GetRandomReal(0,359)),90,Atan2(GetUnitY(Hero[GetPlayerId(p)])-GetUnitY(u),GetUnitX(Hero[GetPlayerId(p)])-GetUnitX(u)),Hero[GetPlayerId(p)])
+        call FlushChildHashtable(h,id)
+        call DestroyTimer(t)
+    endif
+    set t=null
+    set u=null
+    set p=null
+endfunction
+
+function MyRemoveZombie takes unit newRemoveZombie,real newDur returns nothing
+    local timer t=CreateTimer()
+    local integer id=GetHandleId(t)
+    call SaveUnitHandle(h,id,0,newRemoveZombie)
+    call SaveReal(h,id,1,newDur)
+    call TimerStart(t, 0.1, true, function MyRemoveZombieAct)
+    set t=null
+endfunction
+
+
 function DestroyGroupTimed2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
@@ -28087,6 +28155,15 @@ if GetUnitTypeId(u) == 'H00V' then
     call UnitAddAbility(u, 'S301')
     call IssueImmediateOrder(u, "bearform")
     call UnitRemoveAbility(u, 'S301')
+    call ShowAbility2('MrF1',true)
+    call ShowAbility2('MrG1',true)
+    call ShowAbility2('MrW1',true)
+    call SetHeroStr(u, GetHeroStr(u, false)-LoadInteger(HH,GetHandleId(u),'SASB'), true)
+    call SetHeroAgi(u, GetHeroAgi(u, false)-LoadInteger(HH,GetHandleId(u),'SAAB'), true)
+    call SetHeroInt(u, GetHeroInt(u, false)-LoadInteger(HH,GetHandleId(u),'SAIB'), true)
+    call SaveInteger(HH,GetHandleId(u),'SASB',0)
+    call SaveInteger(HH,GetHandleId(u),'SAAB',0)
+    call SaveInteger(HH,GetHandleId(u),'SAIB',0)
 endif
 if GetUnitTypeId(u) == 'H02Z' then
     call UnitAddAbility(u, 'S401')
@@ -81947,11 +82024,13 @@ local real a=Atan2(y1-y,x1-x)+angle
 if SR(x,y,x1,y1)>100 then
 call SetUnitXY_1(l__d,x+speed*Cos(a),y+speed*Sin(a), false)
 call SetUnitFacing(l__d,a*bj_RADTODEG)
+if GetUnitTypeId(l__d)=='e1GZ' then
 set n=CreateUnit(GetOwningPlayer(l__d),'e1GZ',x,y,GetRandomReal(0,359))
 call UnitApplyTimedLife(n,'BTLF',0.15)
 call SetUnitVertexColor(n,190,255,255,60)
 call ShikiCloneEffect(n,1.5,1.05,1.25,150)
 call SetUnitAnimation(n,"attack")
+endif
 else
 call RemoveUnit(l__d)
 call PauseTimer(t)
@@ -165283,539 +165362,559 @@ local integer id = GetHandleID()
 local integer time = LoadInt("Time")
 local integer time2 = LoadInt("Time2")
 local integer TransfID = LoadInt("ID")
-if time > 0 and time2!=0 and GetWidgetLife(LoadUnitHandle(HH,MUIHandle(),CasterHash)) > 0.405 and udg_B==true and DU2==true then
+local unit u=LoadUnitHandle(HH,MUIHandle(),CasterHash)
+if time > 0 and time2!=0 and GetWidgetLife(u) > 0.405 and udg_B==true and DU2==true then
     if time2==time then
-        if GetUnitTypeId(LoadUnitHandle(HH,MUIHandle(),CasterHash))=='H012' then
+        if GetUnitTypeId(u)=='H012' then
             set soundplay=CreateSound("Sound\\Music\\mp3Music\\HichigoT.mp3",false,false,true,12700,12700,"")
             call StartSound(soundplay)
             call KillSoundWhenDone(soundplay)
-            call CreateModeIndicatorWithPauseForm(LoadUnitHandle(HH,MUIHandle(),CasterHash), "war3mapImported\\BTNHollowHichigo.blp", 25)
-            call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S102')
-            call IssueImmediateOrder(LoadUnitHandle(HH,MUIHandle(),CasterHash), "bearform")
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S102')
+            call CreateModeIndicatorWithPauseForm(u, "war3mapImported\\BTNHollowHichigo.blp", 25)
+            call UnitAddAbility(u, 'S102')
+            call IssueImmediateOrder(u, "bearform")
+            call UnitRemoveAbility(u, 'S102')
             call SaveInteger(HH,id,StringHash("ID"), 1)
         endif
-        if GetUnitTypeId(LoadUnitHandle(HH,MUIHandle(),CasterHash))=='H06D' then
+        if GetUnitTypeId(u)=='H06D' then
             set soundplay=CreateSound("Sound\\Music\\mp3Music\\Alterl_T.mp3",false,false,true,12700,12700,"")
             call StartSound(soundplay)
             call KillSoundWhenDone(soundplay)
-            call CreateModeIndicatorWithPauseForm(LoadUnitHandle(HH,MUIHandle(),CasterHash), "ReplaceableTextures\\CommandButtons\\BTNSaberAlterArmoured.blp", 25)
-            call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S202')
-            call IssueImmediateOrder(LoadUnitHandle(HH,MUIHandle(),CasterHash), "bearform")
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S202')
+            call CreateModeIndicatorWithPauseForm(u, "ReplaceableTextures\\CommandButtons\\BTNSaberAlterArmoured.blp", 25)
+            call UnitAddAbility(u, 'S202')
+            call IssueImmediateOrder(u, "bearform")
+            call UnitRemoveAbility(u, 'S202')
             call SaveInteger(HH,id,StringHash("ID"), 2)
         endif
-        if GetUnitTypeId(LoadUnitHandle(HH,MUIHandle(),CasterHash))=='H00P' then
-            call CreateModeIndicatorWithPauseForm(LoadUnitHandle(HH,MUIHandle(),CasterHash), "ReplaceableTextures\\CommandButtons\\BTNMoria5.blp", 25)
-            call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S302')
-            call IssueImmediateOrder(LoadUnitHandle(HH,MUIHandle(),CasterHash), "bearform")
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S302')
+        if GetUnitTypeId(u)=='H00P' then
+            call SaveInteger(HH,GetHandleId(u),'SASB',R2I(GetHeroStr(u,true)*0.2))
+            call SaveInteger(HH,GetHandleId(u),'SAAB',R2I(GetHeroAgi(u,true)*0.2))
+            call SaveInteger(HH,GetHandleId(u),'SAIB',R2I(GetHeroInt(u,true)*0.2))
+            call SetHeroStr(u, GetHeroStr(u, false)+LoadInteger(HH,GetHandleId(u),'SASB'), true)
+            call SetHeroAgi(u, GetHeroAgi(u, false)+LoadInteger(HH,GetHandleId(u),'SAAB'), true)
+            call SetHeroInt(u, GetHeroInt(u, false)+LoadInteger(HH,GetHandleId(u),'SAIB'), true)
+            call CreateModeIndicatorWithPauseForm(u, "ReplaceableTextures\\CommandButtons\\BTNMoria5.blp", 25)
+            call UnitAddAbility(u, 'S302')
+            call IssueImmediateOrder(u, "bearform")
+            call UnitRemoveAbility(u, 'S302')
             call SaveInteger(HH,id,StringHash("ID"), 3)
+            call ShowAbility2('MrF1',false)
+            call ShowAbility2('MrG1',false)
+            call ShowAbility2('MrW1',false)
         endif
-        if GetUnitTypeId(LoadUnitHandle(HH,MUIHandle(),CasterHash))=='H02Y' then
+        if GetUnitTypeId(u)=='H02Y' then
             set soundplay=CreateSound("Sound\\Music\\mp3Music\\GenkshiT.mp3",false,false,true,12700,12700,"")
             call StartSound(soundplay)
             call KillSoundWhenDone(soundplay)
-            call CreateModeIndicatorWithPauseForm(LoadUnitHandle(HH,MUIHandle(),CasterHash), "war3mapImported\\BTNGenkshi_Armatura.blp", 25)
-            call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S402')
-            call IssueImmediateOrder(LoadUnitHandle(HH,MUIHandle(),CasterHash), "bearform")
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S402')
+            call CreateModeIndicatorWithPauseForm(u, "war3mapImported\\BTNGenkshi_Armatura.blp", 25)
+            call UnitAddAbility(u, 'S402')
+            call IssueImmediateOrder(u, "bearform")
+            call UnitRemoveAbility(u, 'S402')
             call SaveInteger(HH,id,StringHash("ID"), 4)
         endif
-        if GetUnitTypeId(LoadUnitHandle(HH,MUIHandle(),CasterHash))=='H031' then
+        if GetUnitTypeId(u)=='H031' then
             set soundplay=CreateSound("Sound\\Music\\mp3Music\\SobaMask.mp3",false,false,true,12700,12700,"")
             call StartSound(soundplay)
             call KillSoundWhenDone(soundplay)
-            if GetUnitAbilityLevel(LoadUnitHandle(HH,MUIHandle(),CasterHash),'A0O1')==0 then
-                call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'A2A1')
-                call UnitMakeAbilityPermanent(LoadUnitHandle(HH,MUIHandle(),CasterHash),true,'A2A1')    
+            if GetUnitAbilityLevel(u,'A0O1')==0 then
+                call UnitAddAbility(u,'A2A1')
+                call UnitMakeAbilityPermanent(u,true,'A2A1')    
             endif
-            call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'A2IA')
-            call UnitMakeAbilityPermanent(LoadUnitHandle(HH,MUIHandle(),CasterHash),true,'A2IA')
-            call CreateModeIndicatorWithPauseForm(LoadUnitHandle(HH,MUIHandle(),CasterHash), "BTNSobaMask.blp", 10)
-            call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S502')
-            call IssueImmediateOrder(LoadUnitHandle(HH,MUIHandle(),CasterHash), "bearform")
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S502')
+            call UnitAddAbility(u,'A2IA')
+            call UnitMakeAbilityPermanent(u,true,'A2IA')
+            call CreateModeIndicatorWithPauseForm(u, "BTNSobaMask.blp", 10)
+            call UnitAddAbility(u, 'S502')
+            call IssueImmediateOrder(u, "bearform")
+            call UnitRemoveAbility(u, 'S502')
             call SaveInteger(HH,id,StringHash("ID"), 5)
         endif
-        if GetUnitTypeId(LoadUnitHandle(HH,MUIHandle(),CasterHash))=='H02X' then
+        if GetUnitTypeId(u)=='H02X' then
             set soundplay=CreateSound("Sound\\war3mapImported\\BeeT.mp3",false,false,true,12700,12700,"")
             call StartSound(soundplay)
             call KillSoundWhenDone(soundplay)
-            call CreateModeIndicatorWithPauseForm(LoadUnitHandle(HH,MUIHandle(),CasterHash), "war3mapImported\\BTNKillerBeeHachibiForm.blp", 25)
-            call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S602')
-            call IssueImmediateOrder(LoadUnitHandle(HH,MUIHandle(),CasterHash), "bearform")
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S602')
+            call CreateModeIndicatorWithPauseForm(u, "war3mapImported\\BTNKillerBeeHachibiForm.blp", 25)
+            call UnitAddAbility(u, 'S602')
+            call IssueImmediateOrder(u, "bearform")
+            call UnitRemoveAbility(u, 'S602')
             call SaveInteger(HH,id,StringHash("ID"), 6)
         endif
-        if GetUnitTypeId(LoadUnitHandle(HH,MUIHandle(),CasterHash))=='H00I' then
+        if GetUnitTypeId(u)=='H00I' then
             set soundplay=CreateSound("Sound\\Music\\mp3Music\\Blackwings.mp3",false,false,true,12700,12700,"")
             call StartSound(soundplay)
             call KillSoundWhenDone(soundplay)
-            call CreateModeIndicatorWithPauseForm(LoadUnitHandle(HH,MUIHandle(),CasterHash), "war3mapImported\\BTNByakuran Wings.blp", 25)
-            call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S702')
-            call IssueImmediateOrder(LoadUnitHandle(HH,MUIHandle(),CasterHash), "bearform")
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S702')
-            call StartAbilityCooldown(GetUnitAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'A03N'),GetAbilityRemainingCooldown(GetUnitAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'A03N')))
+            call CreateModeIndicatorWithPauseForm(u, "war3mapImported\\BTNByakuran Wings.blp", 25)
+            call UnitAddAbility(u, 'S702')
+            call IssueImmediateOrder(u, "bearform")
+            call UnitRemoveAbility(u, 'S702')
+            call StartAbilityCooldown(GetUnitAbility(u,'A03N'),GetAbilityRemainingCooldown(GetUnitAbility(u,'A03N')))
             call SaveInteger(HH,id,StringHash("ID"), 7)
         endif
-        if GetUnitTypeId(LoadUnitHandle(HH,MUIHandle(),CasterHash))=='H055' then
+        if GetUnitTypeId(u)=='H055' then
             set soundplay=CreateSound("Sound\\Music\\mp3Music\\XanxusUlti.mp3",false,false,true,12700,12700,"")
             call StartSound(soundplay)
             call KillSoundWhenDone(soundplay)
-            call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'XanT')
-            call UnitMakeAbilityPermanent(LoadUnitHandle(HH,MUIHandle(),CasterHash),true,'XanT')
-            call CreateModeIndicatorWithPauseForm(LoadUnitHandle(HH,MUIHandle(),CasterHash), "war3mapImported\\BTNCambio Forma Pistole Imperatore Animale.blp", 30)
+            call UnitAddAbility(u,'XanT')
+            call UnitMakeAbilityPermanent(u,true,'XanT')
+            call CreateModeIndicatorWithPauseForm(u, "war3mapImported\\BTNCambio Forma Pistole Imperatore Animale.blp", 30)
             call ShowAbility2('A119', false)
             call SaveInteger(HH,id,StringHash("ID"), 8)
         endif
-        if GetUnitTypeId(LoadUnitHandle(HH,MUIHandle(),CasterHash))=='H02B' then
+        if GetUnitTypeId(u)=='H02B' then
             set soundplay=CreateSound("Sound\\Music\\mp3Music\\AcceleratorT.mp3",false,false,true,12700,12700,"")
             call StartSound(soundplay)
             call KillSoundWhenDone(soundplay)
-            call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'A0GC')
-            call UnitMakeAbilityPermanent(LoadUnitHandle(HH,MUIHandle(),CasterHash),true,'A0GC')
-            call CreateModeIndicatorWithPauseForm(LoadUnitHandle(HH,MUIHandle(),CasterHash), "war3mapImported\\BTNBlackMistWings.blp", 15)
+            call UnitAddAbility(u,'A0GC')
+            call UnitMakeAbilityPermanent(u,true,'A0GC')
+            call CreateModeIndicatorWithPauseForm(u, "war3mapImported\\BTNBlackMistWings.blp", 15)
             call ShowAbility2('A0GE', false)
             call SaveInteger(HH,id,StringHash("ID"), 9)
         endif
-        if GetUnitTypeId(LoadUnitHandle(HH,MUIHandle(),CasterHash))=='H03L' then
+        if GetUnitTypeId(u)=='H03L' then
             set soundplay=CreateSound("Sound\\Music\\mp3Music\\Gamuza.mp3",false,false,true,12700,12700,"")
             call StartSound(soundplay)
             call KillSoundWhenDone(soundplay)
-            call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S802')
-            call IssueImmediateOrder(LoadUnitHandle(HH,MUIHandle(),CasterHash), "bearform")
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S802')
-            call SetUnitAbilityLevel(LoadUnitHandle(HH,MUIHandle(),CasterHash),'NeEE', GetUnitAbilityLevel(LoadUnitHandle(HH,MUIHandle(),CasterHash),'A0PD')+1)
-            call CreateModeIndicatorWithPauseForm(LoadUnitHandle(HH,MUIHandle(),CasterHash), "war3mapImported\\BTNNell 3.blp", 30)
+            call UnitAddAbility(u, 'S802')
+            call IssueImmediateOrder(u, "bearform")
+            call UnitRemoveAbility(u, 'S802')
+            call SetUnitAbilityLevel(u,'NeEE', GetUnitAbilityLevel(u,'A0PD')+1)
+            call CreateModeIndicatorWithPauseForm(u, "war3mapImported\\BTNNell 3.blp", 30)
             call SaveInteger(HH,id,StringHash("ID"), 10)
         endif
-        if GetUnitTypeId(LoadUnitHandle(HH,MUIHandle(),CasterHash))=='H02S' then
-            call SetUnitPathing(LoadUnitHandle(HH,MUIHandle(),CasterHash),false)
-            call UnitAddType(LoadUnitHandle(HH,MUIHandle(),CasterHash),UNIT_TYPE_FLYING)
+        if GetUnitTypeId(u)=='H02S' then
+            call SetUnitPathing(u,false)
+            call UnitAddType(u,UNIT_TYPE_FLYING)
             set soundplay=CreateSound("Sound\\Music\\mp3Music\\AmaNoMurakumo.mp3",false,false,true,12700,12700,"")
             call StartSound(soundplay)
             call KillSoundWhenDone(soundplay)
-            call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S902')
-            call IssueImmediateOrder(LoadUnitHandle(HH,MUIHandle(),CasterHash), "bearform")
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S902')
-            call CreateModeIndicatorWithPauseForm(LoadUnitHandle(HH,MUIHandle(),CasterHash), "war3mapImported\\BTNAma_no_Murakumo.blp", 12)
+            call UnitAddAbility(u, 'S902')
+            call IssueImmediateOrder(u, "bearform")
+            call UnitRemoveAbility(u, 'S902')
+            call CreateModeIndicatorWithPauseForm(u, "war3mapImported\\BTNAma_no_Murakumo.blp", 12)
             call SaveInteger(HH,id,StringHash("ID"), 11)
         endif
-        if GetUnitTypeId(LoadUnitHandle(HH,MUIHandle(),CasterHash))=='H01J' then
+        if GetUnitTypeId(u)=='H01J' then
             set soundplay=CreateSound("Sound\\Music\\mp3Music\\SenninModoJiraya.mp3",false,false,true,12700,12700,"")
             call StartSound(soundplay)
             call KillSoundWhenDone(soundplay)
-            call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S112')
-            call IssueImmediateOrder(LoadUnitHandle(HH,MUIHandle(),CasterHash), "bearform")
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S112')
-            if GetUnitAbilityLevel(LoadUnitHandle(HH,MUIHandle(),CasterHash),'A0CI')==1 then
-                call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'JiE3')
-            elseif GetUnitAbilityLevel(LoadUnitHandle(HH,MUIHandle(),CasterHash),'A0CI')==2 then
-                call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'JiE4')
-            elseif GetUnitAbilityLevel(LoadUnitHandle(HH,MUIHandle(),CasterHash),'A0CI')==3 then
-                call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'JiE5')
-            elseif GetUnitAbilityLevel(LoadUnitHandle(HH,MUIHandle(),CasterHash),'A0CI')==4 then
-                call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'JiE6')
-            elseif GetUnitAbilityLevel(LoadUnitHandle(HH,MUIHandle(),CasterHash),'A0CI')==5 then
-                call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'JiE7')
+            call UnitAddAbility(u, 'S112')
+            call IssueImmediateOrder(u, "bearform")
+            call UnitRemoveAbility(u, 'S112')
+            if GetUnitAbilityLevel(u,'A0CI')==1 then
+                call UnitAddAbility(u,'JiE3')
+            elseif GetUnitAbilityLevel(u,'A0CI')==2 then
+                call UnitAddAbility(u,'JiE4')
+            elseif GetUnitAbilityLevel(u,'A0CI')==3 then
+                call UnitAddAbility(u,'JiE5')
+            elseif GetUnitAbilityLevel(u,'A0CI')==4 then
+                call UnitAddAbility(u,'JiE6')
+            elseif GetUnitAbilityLevel(u,'A0CI')==5 then
+                call UnitAddAbility(u,'JiE7')
             endif
-            call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'JiE2')
-            call UnitMakeAbilityPermanent(LoadUnitHandle(HH,MUIHandle(),CasterHash),true,'JiE2')
-            call SetUnitAbilityLevel(LoadUnitHandle(HH,MUIHandle(),CasterHash),'JiE2', GetUnitAbilityLevel(LoadUnitHandle(HH,MUIHandle(),CasterHash),'A0CI'))
-            call CreateModeIndicatorWithPauseForm(LoadUnitHandle(HH,MUIHandle(),CasterHash), "war3mapImported\\BTNJiraiya_Sage_Mode.blp", 25)
+            call UnitAddAbility(u,'JiE2')
+            call UnitMakeAbilityPermanent(u,true,'JiE2')
+            call SetUnitAbilityLevel(u,'JiE2', GetUnitAbilityLevel(u,'A0CI'))
+            call CreateModeIndicatorWithPauseForm(u, "war3mapImported\\BTNJiraiya_Sage_Mode.blp", 25)
             call SaveInteger(HH,id,StringHash("ID"), 12)
         endif
-        if GetUnitTypeId(LoadUnitHandle(HH,MUIHandle(),CasterHash))=='H10L' then
+        if GetUnitTypeId(u)=='H10L' then
             set soundplay=CreateSound("Sound\\Music\\mp3Music\\LucciE.mp3",false,false,true,12700,12700,"")
             call StartSound(soundplay)
             call KillSoundWhenDone(soundplay)
-            call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S122')
-            call IssueImmediateOrder(LoadUnitHandle(HH,MUIHandle(),CasterHash), "bearform")
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S122')
-            call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'LcE4')
-            call UnitMakeAbilityPermanent(LoadUnitHandle(HH,MUIHandle(),CasterHash),true,'LcE4')
-            if GetUnitAbilityLevel(LoadUnitHandle(HH,MUIHandle(),CasterHash),'LCE1')==1 then
-                call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'LCE5')
-            elseif GetUnitAbilityLevel(LoadUnitHandle(HH,MUIHandle(),CasterHash),'LCE1')==2 then
-                call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'LCE6')
-            elseif GetUnitAbilityLevel(LoadUnitHandle(HH,MUIHandle(),CasterHash),'LCE1')==3 then
-                call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'LCE7')
-            elseif GetUnitAbilityLevel(LoadUnitHandle(HH,MUIHandle(),CasterHash),'LCE1')==4 then
-                call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'LCE8')
-            elseif GetUnitAbilityLevel(LoadUnitHandle(HH,MUIHandle(),CasterHash),'LCE1')==5 then
-                call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'LCE9')
+            call UnitAddAbility(u, 'S122')
+            call IssueImmediateOrder(u, "bearform")
+            call UnitRemoveAbility(u, 'S122')
+            call UnitAddAbility(u,'LcE4')
+            call UnitMakeAbilityPermanent(u,true,'LcE4')
+            if GetUnitAbilityLevel(u,'LCE1')==1 then
+                call UnitAddAbility(u,'LCE5')
+            elseif GetUnitAbilityLevel(u,'LCE1')==2 then
+                call UnitAddAbility(u,'LCE6')
+            elseif GetUnitAbilityLevel(u,'LCE1')==3 then
+                call UnitAddAbility(u,'LCE7')
+            elseif GetUnitAbilityLevel(u,'LCE1')==4 then
+                call UnitAddAbility(u,'LCE8')
+            elseif GetUnitAbilityLevel(u,'LCE1')==5 then
+                call UnitAddAbility(u,'LCE9')
             endif
-            call SetUnitAbilityLevel(LoadUnitHandle(HH,MUIHandle(),CasterHash),'LcE4', GetUnitAbilityLevel(LoadUnitHandle(HH,MUIHandle(),CasterHash),'LCE1'))
-            call CreateModeIndicatorWithPauseForm(LoadUnitHandle(HH,MUIHandle(),CasterHash), "ReplaceableTextures\\CommandButtons\\BTNRobLucciE.blp", 25)
+            call SetUnitAbilityLevel(u,'LcE4', GetUnitAbilityLevel(u,'LCE1'))
+            call CreateModeIndicatorWithPauseForm(u, "ReplaceableTextures\\CommandButtons\\BTNRobLucciE.blp", 25)
             call SaveInteger(HH,id,StringHash("ID"), 13)
         endif
-        if GetUnitTypeId(LoadUnitHandle(HH,MUIHandle(),CasterHash))=='H06G' then
+        if GetUnitTypeId(u)=='H06G' then
             set soundplay=CreateSound("Sound\\Music\\mp3Music\\AtalantaE.mp3",false,false,true,12700,12700,"")
             call StartSound(soundplay)
             call KillSoundWhenDone(soundplay)
-            call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S132')
-            call IssueImmediateOrder(LoadUnitHandle(HH,MUIHandle(),CasterHash), "bearform")
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S132')
-            call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'AtE1')
-            call UnitMakeAbilityPermanent(LoadUnitHandle(HH,MUIHandle(),CasterHash),true,'AtE1')
-            call SetUnitAbilityLevel(LoadUnitHandle(HH,MUIHandle(),CasterHash),'AtE1', GetUnitAbilityLevel(LoadUnitHandle(HH,MUIHandle(),CasterHash),'A1DX'))
-            call SetUnitAbilityLevel(LoadUnitHandle(HH,MUIHandle(),CasterHash),'A1DS', GetUnitAbilityLevel(LoadUnitHandle(HH,MUIHandle(),CasterHash),'A1DS')+5)
-            call CreateModeIndicatorWithPauseForm(LoadUnitHandle(HH,MUIHandle(),CasterHash), "ReplaceableTextures\\CommandButtons\\BTNAtalantaE.blp", 25)
+            call UnitAddAbility(u, 'S132')
+            call IssueImmediateOrder(u, "bearform")
+            call UnitRemoveAbility(u, 'S132')
+            call UnitAddAbility(u,'AtE1')
+            call UnitMakeAbilityPermanent(u,true,'AtE1')
+            call SetUnitAbilityLevel(u,'AtE1', GetUnitAbilityLevel(u,'A1DX'))
+            call SetUnitAbilityLevel(u,'A1DS', GetUnitAbilityLevel(u,'A1DS')+5)
+            call CreateModeIndicatorWithPauseForm(u, "ReplaceableTextures\\CommandButtons\\BTNAtalantaE.blp", 25)
             call SaveInteger(HH,id,StringHash("ID"), 14)
         endif
-        if GetUnitTypeId(LoadUnitHandle(HH,MUIHandle(),CasterHash))=='H04C' then
+        if GetUnitTypeId(u)=='H04C' then
             set soundplay=CreateSound("Sound\\Music\\mp3Music\\InoriE.mp3",false,false,true,12700,12700,"")
             call StartSound(soundplay)
             call KillSoundWhenDone(soundplay)
-            call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S142')
-            call IssueImmediateOrder(LoadUnitHandle(HH,MUIHandle(),CasterHash), "bearform")
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S142')
-            call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'InE1')
-            call UnitMakeAbilityPermanent(LoadUnitHandle(HH,MUIHandle(),CasterHash),true,'InE1')
+            call UnitAddAbility(u, 'S142')
+            call IssueImmediateOrder(u, "bearform")
+            call UnitRemoveAbility(u, 'S142')
+            call UnitAddAbility(u,'InE1')
+            call UnitMakeAbilityPermanent(u,true,'InE1')
             call ShowAbility2('A0UK',false)
             call ShowAbility2('A0UQ',false)
-            call SetUnitAbilityLevel(LoadUnitHandle(HH,MUIHandle(),CasterHash),'InE1', GetUnitAbilityLevel(LoadUnitHandle(HH,MUIHandle(),CasterHash),'A0UN'))
-            call CreateModeIndicatorWithPauseForm(LoadUnitHandle(HH,MUIHandle(),CasterHash), "war3mapImported\\BTNVirus.blp", 15)
+            call SetUnitAbilityLevel(u,'InE1', GetUnitAbilityLevel(u,'A0UN'))
+            call CreateModeIndicatorWithPauseForm(u, "war3mapImported\\BTNVirus.blp", 15)
             call SaveInteger(HH,id,StringHash("ID"), 15)
         endif
-        if GetUnitTypeId(LoadUnitHandle(HH,MUIHandle(),CasterHash))=='H04L' or GetUnitTypeId(LoadUnitHandle(HH,MUIHandle(),CasterHash))=='H06V' then
+        if GetUnitTypeId(u)=='H04L' or GetUnitTypeId(u)=='H06V' then
             set soundplay=CreateSound("Sound\\Music\\mp3Music\\GrayG.mp3",false,false,true,12700,12700,"")
             call StartSound(soundplay)
             call KillSoundWhenDone(soundplay)
-            call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'GrG1')
-            call UnitMakeAbilityPermanent(LoadUnitHandle(HH,MUIHandle(),CasterHash),true,'GrG1')
-            call CreateModeIndicatorWithPauseForm(LoadUnitHandle(HH,MUIHandle(),CasterHash), "ReplaceableTextures\\CommandButtons\\BTNGrayIceDevilSlayer.blp", 20)
+            call UnitAddAbility(u,'GrG1')
+            call UnitMakeAbilityPermanent(u,true,'GrG1')
+            call CreateModeIndicatorWithPauseForm(u, "ReplaceableTextures\\CommandButtons\\BTNGrayIceDevilSlayer.blp", 20)
             call ShowAbility2('A1EF', false)
             call SaveInteger(HH,id,StringHash("ID"), 16)
         endif
-        if GetUnitTypeId(LoadUnitHandle(HH,MUIHandle(),CasterHash))=='H01H' then
+        if GetUnitTypeId(u)=='H01H' then
             set soundplay=CreateSound("Sound\\Music\\mp3Music\\KidMadness.mp3",false,false,true,12700,12700,"")
             call StartSound(soundplay)
             call KillSoundWhenDone(soundplay)
-            call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S152')
-            call IssueImmediateOrder(LoadUnitHandle(HH,MUIHandle(),CasterHash), "bearform")
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S152')
-            call CreateModeIndicatorWithPauseForm(LoadUnitHandle(HH,MUIHandle(),CasterHash), "war3mapImported\\BTNMadnessKid.blp", 2+GetUnitAbilityLevel(LoadUnitHandle(HH,MUIHandle(),CasterHash),'A0C8'))
+            call UnitAddAbility(u, 'S152')
+            call IssueImmediateOrder(u, "bearform")
+            call UnitRemoveAbility(u, 'S152')
+            call CreateModeIndicatorWithPauseForm(u, "war3mapImported\\BTNMadnessKid.blp", 2+GetUnitAbilityLevel(u,'A0C8'))
             call SaveInteger(HH,id,StringHash("ID"), 17)
         endif
-        if GetUnitTypeId(LoadUnitHandle(HH,MUIHandle(),CasterHash))=='H06N' then
+        if GetUnitTypeId(u)=='H06N' then
             set soundplay=CreateSound("Sound\\Music\\mp3Music\\DrakeE.mp3",false,false,true,12700,12700,"")
             call StartSound(soundplay)
             call KillSoundWhenDone(soundplay)
-            call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S162')
-            call IssueImmediateOrder(LoadUnitHandle(HH,MUIHandle(),CasterHash), "bearform")
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S162')
-            call CreateModeIndicatorWithPauseForm(LoadUnitHandle(HH,MUIHandle(),CasterHash), "ReplaceableTextures\\CommandButtons\\BTNFransisDrake.blp", 2+GetUnitAbilityLevel(LoadUnitHandle(HH,MUIHandle(),CasterHash),'A1EG'))
+            call UnitAddAbility(u, 'S162')
+            call IssueImmediateOrder(u, "bearform")
+            call UnitRemoveAbility(u, 'S162')
+            call CreateModeIndicatorWithPauseForm(u, "ReplaceableTextures\\CommandButtons\\BTNFransisDrake.blp", 2+GetUnitAbilityLevel(u,'A1EG'))
             call SaveInteger(HH,id,StringHash("ID"), 18)
         endif
-        if GetUnitTypeId(LoadUnitHandle(HH,MUIHandle(),CasterHash))=='H01F' then
+        if GetUnitTypeId(u)=='H01F' then
             set soundplay=CreateSound("Sound\\Music\\mp3Music\\BlackStarMadness.mp3",false,false,true,12700,12700,"")
             call StartSound(soundplay)
             call KillSoundWhenDone(soundplay)
-            call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S172')
-            call IssueImmediateOrder(LoadUnitHandle(HH,MUIHandle(),CasterHash), "bearform")
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S172')
-            call CreateModeIndicatorWithPauseForm(LoadUnitHandle(HH,MUIHandle(),CasterHash), "war3mapImported\\BTNsoul_eater_78__black_star__by_shadsonic2-d2zd6p0.blp", 2+GetUnitAbilityLevel(LoadUnitHandle(HH,MUIHandle(),CasterHash),'A0BZ'))
+            call UnitAddAbility(u, 'S172')
+            call IssueImmediateOrder(u, "bearform")
+            call UnitRemoveAbility(u, 'S172')
+            call CreateModeIndicatorWithPauseForm(u, "war3mapImported\\BTNsoul_eater_78__black_star__by_shadsonic2-d2zd6p0.blp", 2+GetUnitAbilityLevel(u,'A0BZ'))
             call SaveInteger(HH,id,StringHash("ID"), 19)
         endif
-        if GetUnitTypeId(LoadUnitHandle(HH,MUIHandle(),CasterHash))=='H01D' then
+        if GetUnitTypeId(u)=='H01D' then
             set soundplay=CreateSound("Sound\\Music\\mp3Music\\MakaBlackBlood.mp3",false,false,true,12700,12700,"")
             call StartSound(soundplay)
             call KillSoundWhenDone(soundplay)
-            call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S182')
-            call IssueImmediateOrder(LoadUnitHandle(HH,MUIHandle(),CasterHash), "bearform")
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S182')
-            call CreateModeIndicatorWithPauseForm(LoadUnitHandle(HH,MUIHandle(),CasterHash), "war3mapImported\\BTNBlackBlood.blp", 2+GetUnitAbilityLevel(LoadUnitHandle(HH,MUIHandle(),CasterHash),'A0BT'))
+            call UnitAddAbility(u, 'S182')
+            call IssueImmediateOrder(u, "bearform")
+            call UnitRemoveAbility(u, 'S182')
+            call CreateModeIndicatorWithPauseForm(u, "war3mapImported\\BTNBlackBlood.blp", 2+GetUnitAbilityLevel(u,'A0BT'))
             call SaveInteger(HH,id,StringHash("ID"), 20)
         endif
-        if GetUnitTypeId(LoadUnitHandle(HH,MUIHandle(),CasterHash))=='H03P' then
+        if GetUnitTypeId(u)=='H03P' then
             set soundplay=CreateSound("Sound\\Music\\mp3Music\\KatsuraE.mp3",false,false,true,12700,12700,"")
             call StartSound(soundplay)
             call KillSoundWhenDone(soundplay)
-            call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S192')
-            call IssueImmediateOrder(LoadUnitHandle(HH,MUIHandle(),CasterHash), "bearform")
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S192')
-            call CreateModeIndicatorWithPauseForm(LoadUnitHandle(HH,MUIHandle(),CasterHash), "war3mapImported\\BTNElizabeth.blp", 2+GetUnitAbilityLevel(LoadUnitHandle(HH,MUIHandle(),CasterHash),'A0PR'))
+            call UnitAddAbility(u, 'S192')
+            call IssueImmediateOrder(u, "bearform")
+            call UnitRemoveAbility(u, 'S192')
+            call CreateModeIndicatorWithPauseForm(u, "war3mapImported\\BTNElizabeth.blp", 2+GetUnitAbilityLevel(u,'A0PR'))
             call SaveInteger(HH,id,StringHash("ID"), 21)
         endif
-        if GetUnitTypeId(LoadUnitHandle(HH,MUIHandle(),CasterHash))=='H02K' then
+        if GetUnitTypeId(u)=='H02K' then
             set soundplay=CreateSound("Sound\\Music\\mp3Music\\TousenE.mp3",false,false,true,12700,12700,"")
             call StartSound(soundplay)
             call KillSoundWhenDone(soundplay)
-            if GetUnitAbilityLevel(LoadUnitHandle(HH,MUIHandle(),CasterHash),'A0JA')==1 then
-                call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'ToE2')
-            elseif GetUnitAbilityLevel(LoadUnitHandle(HH,MUIHandle(),CasterHash),'A0JA')==2 then
-                call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'ToE3')
-            elseif GetUnitAbilityLevel(LoadUnitHandle(HH,MUIHandle(),CasterHash),'A0JA')==3 then
-                call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'ToE4')
-            elseif GetUnitAbilityLevel(LoadUnitHandle(HH,MUIHandle(),CasterHash),'A0JA')==4 then
-                call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'ToE5')
-            elseif GetUnitAbilityLevel(LoadUnitHandle(HH,MUIHandle(),CasterHash),'A0JA')==5 then
-                call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'ToE6')
+            if GetUnitAbilityLevel(u,'A0JA')==1 then
+                call UnitAddAbility(u,'ToE2')
+            elseif GetUnitAbilityLevel(u,'A0JA')==2 then
+                call UnitAddAbility(u,'ToE3')
+            elseif GetUnitAbilityLevel(u,'A0JA')==3 then
+                call UnitAddAbility(u,'ToE4')
+            elseif GetUnitAbilityLevel(u,'A0JA')==4 then
+                call UnitAddAbility(u,'ToE5')
+            elseif GetUnitAbilityLevel(u,'A0JA')==5 then
+                call UnitAddAbility(u,'ToE6')
             endif
-            call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'ToE1')
-            call UnitMakeAbilityPermanent(LoadUnitHandle(HH,MUIHandle(),CasterHash),true,'ToE1')
-            call CreateModeIndicatorWithPauseForm(LoadUnitHandle(HH,MUIHandle(),CasterHash), "war3mapImported\\BTNTosen 3.blp", 15)
+            call UnitAddAbility(u,'ToE1')
+            call UnitMakeAbilityPermanent(u,true,'ToE1')
+            call CreateModeIndicatorWithPauseForm(u, "war3mapImported\\BTNTosen 3.blp", 15)
             call ShowAbility2('A0JA', false)
             call SaveInteger(HH,id,StringHash("ID"), 22)
         endif
-        if GetUnitTypeId(LoadUnitHandle(HH,MUIHandle(),CasterHash))=='H018' then
+        if GetUnitTypeId(u)=='H018' then
             set soundplay=CreateSound("Sound\\Music\\mp3Music\\IshidaT.mp3",false,false,true,12700,12700,"")
             call StartSound(soundplay)
             call KillSoundWhenDone(soundplay)
-            call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'IsiT')
-            call UnitMakeAbilityPermanent(LoadUnitHandle(HH,MUIHandle(),CasterHash),true,'IsiT')
-            call SetUnitVertexColor(LoadUnitHandle(HH,MUIHandle(),CasterHash),255,255,255,200)
-            call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'A0Z8')
-            call UnitMakeAbilityPermanent(LoadUnitHandle(HH,MUIHandle(),CasterHash),true,'A0Z8')
-            call CreateModeIndicatorWithPauseForm(LoadUnitHandle(HH,MUIHandle(),CasterHash), "war3mapImported\\BTNPiercing Sparrow.blp", 25)
+            call UnitAddAbility(u,'IsiT')
+            call UnitMakeAbilityPermanent(u,true,'IsiT')
+            call SetUnitVertexColor(u,255,255,255,200)
+            call UnitAddAbility(u,'A0Z8')
+            call UnitMakeAbilityPermanent(u,true,'A0Z8')
+            call CreateModeIndicatorWithPauseForm(u, "war3mapImported\\BTNPiercing Sparrow.blp", 25)
             call ShowAbility2('A0TF', false)
             call SaveInteger(HH,id,StringHash("ID"), 23)
         endif
-        if GetUnitTypeId(LoadUnitHandle(HH,MUIHandle(),CasterHash))=='H00J' then
+        if GetUnitTypeId(u)=='H00J' then
             set soundplay=CreateSound("Sound\\Music\\mp3Music\\GearSado.mp3",false,false,true,12700,12700,"")
             call StartSound(soundplay)
             call KillSoundWhenDone(soundplay)
-            call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'LuG3')
-            call UnitMakeAbilityPermanent(LoadUnitHandle(HH,MUIHandle(),CasterHash),true,'LuG3')
-            call CreateModeIndicatorWithPauseForm(LoadUnitHandle(HH,MUIHandle(),CasterHash), "war3mapImported\\BTNLuffyGearSecond.blp", 13)
+            call UnitAddAbility(u,'LuG3')
+            call UnitMakeAbilityPermanent(u,true,'LuG3')
+            call CreateModeIndicatorWithPauseForm(u, "war3mapImported\\BTNLuffyGearSecond.blp", 13)
             call ShowAbility2('A01O', false)
             call SaveInteger(HH,id,StringHash("ID"), 24)
         endif
-        if GetUnitTypeId(LoadUnitHandle(HH,MUIHandle(),CasterHash))=='H00A' then
+        if GetUnitTypeId(u)=='H00A' then
             set soundplay=CreateSound("Sound\\Music\\mp3Music\\LamboThunderSet.mp3",false,false,true,12700,12700,"")
             call StartSound(soundplay)
             call KillSoundWhenDone(soundplay)
-            call UnitApplyTimedLife(CreateUnit(GetOwningPlayer(LoadUnitHandle(HH,MUIHandle(),CasterHash)),'e03T',GetUnitX(LoadUnitHandle(HH,MUIHandle(),CasterHash)),GetUnitY(LoadUnitHandle(HH,MUIHandle(),CasterHash)),GetRandomReal(0,359)),'BTLF',1)
-            call DestroyEffect(AddSpecialEffect("war3mapImported\\GreenSlam.mdx",GetUnitX(LoadUnitHandle(HH,MUIHandle(),CasterHash)),GetUnitY(LoadUnitHandle(HH,MUIHandle(),CasterHash))))
-            call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'LmE1')
-            call UnitMakeAbilityPermanent(LoadUnitHandle(HH,MUIHandle(),CasterHash),true,'LmE1')
-            if GetUnitAbilityLevel(LoadUnitHandle(HH,MUIHandle(),CasterHash),'A168')==1 then
-                call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'LmE2')
-            elseif GetUnitAbilityLevel(LoadUnitHandle(HH,MUIHandle(),CasterHash),'A168')==2 then
-                call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'LmE3')
-            elseif GetUnitAbilityLevel(LoadUnitHandle(HH,MUIHandle(),CasterHash),'A168')==3 then
-                call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'LmE4')
-            elseif GetUnitAbilityLevel(LoadUnitHandle(HH,MUIHandle(),CasterHash),'A168')==4 then
-                call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'LmE5')
-            elseif GetUnitAbilityLevel(LoadUnitHandle(HH,MUIHandle(),CasterHash),'A168')==5 then
-                call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'LmE6')
+            call UnitApplyTimedLife(CreateUnit(GetOwningPlayer(u),'e03T',GetUnitX(u),GetUnitY(u),GetRandomReal(0,359)),'BTLF',1)
+            call DestroyEffect(AddSpecialEffect("war3mapImported\\GreenSlam.mdx",GetUnitX(u),GetUnitY(u)))
+            call UnitAddAbility(u,'LmE1')
+            call UnitMakeAbilityPermanent(u,true,'LmE1')
+            if GetUnitAbilityLevel(u,'A168')==1 then
+                call UnitAddAbility(u,'LmE2')
+            elseif GetUnitAbilityLevel(u,'A168')==2 then
+                call UnitAddAbility(u,'LmE3')
+            elseif GetUnitAbilityLevel(u,'A168')==3 then
+                call UnitAddAbility(u,'LmE4')
+            elseif GetUnitAbilityLevel(u,'A168')==4 then
+                call UnitAddAbility(u,'LmE5')
+            elseif GetUnitAbilityLevel(u,'A168')==5 then
+                call UnitAddAbility(u,'LmE6')
             endif
-            call CreateModeIndicatorWithPauseForm(LoadUnitHandle(HH,MUIHandle(),CasterHash), "ReplaceableTextures\\CommandButtons\\BTNLambo 1.blp", 15)
+            call CreateModeIndicatorWithPauseForm(u, "ReplaceableTextures\\CommandButtons\\BTNLambo 1.blp", 15)
             call ShowAbility2('A168', false)
             call SaveInteger(HH,id,StringHash("ID"), 25)
         endif
-        call CheckUnitBonusRange(LoadUnitHandle(HH,MUIHandle(),CasterHash))
+        call CheckUnitBonusRange(u)
     endif
     if not(TransfID==1 or TransfID==2 or TransfID==3 or TransfID==4 or TransfID==5 or TransfID==6 or TransfID==7 or TransfID==8 or TransfID==9 or TransfID==10 or TransfID==11 or TransfID==12 or TransfID==13 or TransfID==14 or TransfID==15 or TransfID==16 or TransfID==17 or TransfID==18 or TransfID==19 or TransfID==20 or TransfID==21 or TransfID==22 or TransfID==23 or TransfID==24 or TransfID==25) then
         call SaveInteger(HH,id,TIME_HASH, 0)
     endif
     if TransfID==5 then
-        if GetUnitAbilityLevel(LoadUnitHandle(HH,MUIHandle(),CasterHash),'A0O1')>0 or GetUnitCurrentOrder(LoadUnitHandle(HH,MUIHandle(),CasterHash))==OrderId("dispel") then
-            call UnitMakeAbilityPermanent(LoadUnitHandle(HH,MUIHandle(),CasterHash),false,'A2A1')
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'A2A1')
+        if GetUnitAbilityLevel(u,'A0O1')>0 or GetUnitCurrentOrder(u)==OrderId("dispel") then
+            call UnitMakeAbilityPermanent(u,false,'A2A1')
+            call UnitRemoveAbility(u,'A2A1')
         else
-            call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'A2A1')
-            call UnitMakeAbilityPermanent(LoadUnitHandle(HH,MUIHandle(),CasterHash),true,'A2A1')
+            call UnitAddAbility(u,'A2A1')
+            call UnitMakeAbilityPermanent(u,true,'A2A1')
         endif
     endif
     if TransfID==9 then
-        call HealTextTag(LoadUnitHandle(HH,MUIHandle(),CasterHash),LoadUnitHandle(HH,MUIHandle(),CasterHash),GetUnitState(LoadUnitHandle(HH,MUIHandle(),CasterHash),UNIT_STATE_MAX_LIFE)*0.003*myCustomHeal2(LoadUnitHandle(HH,MUIHandle(),CasterHash),1),"HealthRes")
-        call HealTextTag(LoadUnitHandle(HH,MUIHandle(),CasterHash),LoadUnitHandle(HH,MUIHandle(),CasterHash),GetUnitState(LoadUnitHandle(HH,MUIHandle(),CasterHash),UNIT_STATE_MAX_MANA)*0.0015*myCustomMana2(LoadUnitHandle(HH,MUIHandle(),CasterHash),1),"ManaRes")
-        call SetUnitState(LoadUnitHandle(HH,MUIHandle(),CasterHash),UNIT_STATE_LIFE,GetWidgetLife(LoadUnitHandle(HH,MUIHandle(),CasterHash))+GetUnitState(LoadUnitHandle(HH,MUIHandle(),CasterHash),UNIT_STATE_MAX_LIFE)*0.003)
-        call SetUnitState(LoadUnitHandle(HH,MUIHandle(),CasterHash),UNIT_STATE_MANA,GetWidgetMana(LoadUnitHandle(HH,MUIHandle(),CasterHash))+GetUnitState(LoadUnitHandle(HH,MUIHandle(),CasterHash),UNIT_STATE_MAX_MANA)*0.0015)
+        call HealTextTag(u,u,GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.003*myCustomHeal2(u,1),"HealthRes")
+        call HealTextTag(u,u,GetUnitState(u,UNIT_STATE_MAX_MANA)*0.0015*myCustomMana2(u,1),"ManaRes")
+        call SetUnitState(u,UNIT_STATE_LIFE,GetWidgetLife(u)+GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.003)
+        call SetUnitState(u,UNIT_STATE_MANA,GetWidgetMana(u)+GetUnitState(u,UNIT_STATE_MAX_MANA)*0.0015)
     endif
     if TransfID==22 then
-        call HealTextTag(LoadUnitHandle(HH,MUIHandle(),CasterHash),LoadUnitHandle(HH,MUIHandle(),CasterHash),GetUnitState(LoadUnitHandle(HH,MUIHandle(),CasterHash),UNIT_STATE_MAX_LIFE)*0.0015*myCustomHeal2(LoadUnitHandle(HH,MUIHandle(),CasterHash),1),"HealthRes")
-        call SetUnitState(LoadUnitHandle(HH,MUIHandle(),CasterHash),UNIT_STATE_LIFE,GetWidgetLife(LoadUnitHandle(HH,MUIHandle(),CasterHash))+GetUnitState(LoadUnitHandle(HH,MUIHandle(),CasterHash),UNIT_STATE_MAX_LIFE)*0.0015)
+        call HealTextTag(u,u,GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.0015*myCustomHeal2(u,1),"HealthRes")
+        call SetUnitState(u,UNIT_STATE_LIFE,GetWidgetLife(u)+GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.0015)
     endif
     if TransfID==23 then
-        call HealTextTag(LoadUnitHandle(HH,MUIHandle(),CasterHash),LoadUnitHandle(HH,MUIHandle(),CasterHash),GetUnitState(LoadUnitHandle(HH,MUIHandle(),CasterHash),UNIT_STATE_MAX_MANA)*0.003*myCustomMana2(LoadUnitHandle(HH,MUIHandle(),CasterHash),1),"ManaRes")
-        call SetUnitState(LoadUnitHandle(HH,MUIHandle(),CasterHash),UNIT_STATE_MANA,GetWidgetMana(LoadUnitHandle(HH,MUIHandle(),CasterHash))+GetUnitState(LoadUnitHandle(HH,MUIHandle(),CasterHash),UNIT_STATE_MAX_MANA)*0.003)
+        call HealTextTag(u,u,GetUnitState(u,UNIT_STATE_MAX_MANA)*0.003*myCustomMana2(u,1),"ManaRes")
+        call SetUnitState(u,UNIT_STATE_MANA,GetWidgetMana(u)+GetUnitState(u,UNIT_STATE_MAX_MANA)*0.003)
     endif
     if TransfID==25 then
-        call UnitApplyTimedLife(CreateUnit(GetOwningPlayer(LoadUnitHandle(HH,MUIHandle(),CasterHash)),'e0BB',GetUnitX(LoadUnitHandle(HH,MUIHandle(),CasterHash)),GetUnitY(LoadUnitHandle(HH,MUIHandle(),CasterHash)),GetRandomReal(0,359)),'BTLF',0.4)
+        call UnitApplyTimedLife(CreateUnit(GetOwningPlayer(u),'e0BB',GetUnitX(u),GetUnitY(u),GetRandomReal(0,359)),'BTLF',0.4)
     endif
 else
-    if IsUnitType(LoadUnitHandle(HH,MUIHandle(),CasterHash), UNIT_TYPE_DEAD) == false and GetWidgetLife(LoadUnitHandle(HH,MUIHandle(),CasterHash)) > 0.405 then
+    if IsUnitType(u, UNIT_TYPE_DEAD) == false and GetWidgetLife(u) > 0.405 then
         if TransfID==1 then
-            call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S101')
-            call IssueImmediateOrder(LoadUnitHandle(HH,MUIHandle(),CasterHash), "bearform")
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S101')
+            call UnitAddAbility(u, 'S101')
+            call IssueImmediateOrder(u, "bearform")
+            call UnitRemoveAbility(u, 'S101')
         endif
         if TransfID==2 then
-            call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S201')
-            call IssueImmediateOrder(LoadUnitHandle(HH,MUIHandle(),CasterHash), "bearform")
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S201')
+            call UnitAddAbility(u, 'S201')
+            call IssueImmediateOrder(u, "bearform")
+            call UnitRemoveAbility(u, 'S201')
         endif
         if TransfID==3 then
-            call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S301')
-            call IssueImmediateOrder(LoadUnitHandle(HH,MUIHandle(),CasterHash), "bearform")
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S301')
+            call UnitAddAbility(u, 'S301')
+            call IssueImmediateOrder(u, "bearform")
+            call UnitRemoveAbility(u, 'S301')
+            call ShowAbility2('MrF1',true)
+            call ShowAbility2('MrG1',true)
+            call ShowAbility2('MrW1',true)
+            call SetHeroStr(u, GetHeroStr(u, false)-LoadInteger(HH,GetHandleId(u),'SASB'), true)
+            call SetHeroAgi(u, GetHeroAgi(u, false)-LoadInteger(HH,GetHandleId(u),'SAAB'), true)
+            call SetHeroInt(u, GetHeroInt(u, false)-LoadInteger(HH,GetHandleId(u),'SAIB'), true)
+            call SaveInteger(HH,GetHandleId(u),'SASB',0)
+            call SaveInteger(HH,GetHandleId(u),'SAAB',0)
+            call SaveInteger(HH,GetHandleId(u),'SAIB',0)
         endif
         if TransfID==4 then
-            call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S401')
-            call IssueImmediateOrder(LoadUnitHandle(HH,MUIHandle(),CasterHash), "bearform")
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S401')
+            call UnitAddAbility(u, 'S401')
+            call IssueImmediateOrder(u, "bearform")
+            call UnitRemoveAbility(u, 'S401')
         endif
         if TransfID==5 then
-            call UnitMakeAbilityPermanent(LoadUnitHandle(HH,MUIHandle(),CasterHash),false,'A2A1')
-            call UnitMakeAbilityPermanent(LoadUnitHandle(HH,MUIHandle(),CasterHash),false,'A2IA')
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'A2IA')
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'A2A1')
-            call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S501')
-            call IssueImmediateOrder(LoadUnitHandle(HH,MUIHandle(),CasterHash), "bearform")
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S501')
+            call UnitMakeAbilityPermanent(u,false,'A2A1')
+            call UnitMakeAbilityPermanent(u,false,'A2IA')
+            call UnitRemoveAbility(u,'A2IA')
+            call UnitRemoveAbility(u,'A2A1')
+            call UnitAddAbility(u, 'S501')
+            call IssueImmediateOrder(u, "bearform")
+            call UnitRemoveAbility(u, 'S501')
         endif
         if TransfID==6 then
-            call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S601')
-            call IssueImmediateOrder(LoadUnitHandle(HH,MUIHandle(),CasterHash), "bearform")
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S601')
+            call UnitAddAbility(u, 'S601')
+            call IssueImmediateOrder(u, "bearform")
+            call UnitRemoveAbility(u, 'S601')
         endif
         if TransfID==7 then
-            call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S701')
-            call IssueImmediateOrder(LoadUnitHandle(HH,MUIHandle(),CasterHash), "bearform")
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S701')
+            call UnitAddAbility(u, 'S701')
+            call IssueImmediateOrder(u, "bearform")
+            call UnitRemoveAbility(u, 'S701')
         endif
         if TransfID==8 then
-            call UnitMakeAbilityPermanent(LoadUnitHandle(HH,MUIHandle(),CasterHash),false,'XanT')
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'XanT')
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'B05E')
+            call UnitMakeAbilityPermanent(u,false,'XanT')
+            call UnitRemoveAbility(u,'XanT')
+            call UnitRemoveAbility(u,'B05E')
             call ShowAbility2('A119', true)
         endif
         if TransfID==9 then
-            call UnitMakeAbilityPermanent(LoadUnitHandle(HH,MUIHandle(),CasterHash),false,'A0GC')
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'A0GC')
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'B02S')
+            call UnitMakeAbilityPermanent(u,false,'A0GC')
+            call UnitRemoveAbility(u,'A0GC')
+            call UnitRemoveAbility(u,'B02S')
             call ShowAbility2('A0GE', true)
         endif
         if TransfID==10 then
-            call SetUnitAbilityLevel(LoadUnitHandle(HH,MUIHandle(),CasterHash),'NeEE', 1)
-            call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S801')
-            call IssueImmediateOrder(LoadUnitHandle(HH,MUIHandle(),CasterHash), "bearform")
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S801')
+            call SetUnitAbilityLevel(u,'NeEE', 1)
+            call UnitAddAbility(u, 'S801')
+            call IssueImmediateOrder(u, "bearform")
+            call UnitRemoveAbility(u, 'S801')
         endif
         if TransfID==11 then
-            call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S901')
-            call IssueImmediateOrder(LoadUnitHandle(HH,MUIHandle(),CasterHash), "bearform")
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S901')
-            call UnitRemoveType(LoadUnitHandle(HH,MUIHandle(),CasterHash),UNIT_TYPE_FLYING)
-            call SetUnitPathing(LoadUnitHandle(HH,MUIHandle(),CasterHash),true)
+            call UnitAddAbility(u, 'S901')
+            call IssueImmediateOrder(u, "bearform")
+            call UnitRemoveAbility(u, 'S901')
+            call UnitRemoveType(u,UNIT_TYPE_FLYING)
+            call SetUnitPathing(u,true)
         endif
         if TransfID==12 then
-            call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S111')
-            call IssueImmediateOrder(LoadUnitHandle(HH,MUIHandle(),CasterHash), "bearform")
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S111')
-            call UnitMakeAbilityPermanent(LoadUnitHandle(HH,MUIHandle(),CasterHash),false,'JiE2')
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'JiE3')
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'JiE4')
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'JiE5')
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'JiE6')
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'JiE7')
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'JiE2')
+            call UnitAddAbility(u, 'S111')
+            call IssueImmediateOrder(u, "bearform")
+            call UnitRemoveAbility(u, 'S111')
+            call UnitMakeAbilityPermanent(u,false,'JiE2')
+            call UnitRemoveAbility(u,'JiE3')
+            call UnitRemoveAbility(u,'JiE4')
+            call UnitRemoveAbility(u,'JiE5')
+            call UnitRemoveAbility(u,'JiE6')
+            call UnitRemoveAbility(u,'JiE7')
+            call UnitRemoveAbility(u,'JiE2')
         endif
         if TransfID==13 then
-            call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S121')
-            call IssueImmediateOrder(LoadUnitHandle(HH,MUIHandle(),CasterHash), "bearform")
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S121')
-            call UnitMakeAbilityPermanent(LoadUnitHandle(HH,MUIHandle(),CasterHash),false,'LcE4')
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'LcE4')
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'LcE5')
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'LcE6')
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'LcE7')
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'LcE8')
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'LcE9')
+            call UnitAddAbility(u, 'S121')
+            call IssueImmediateOrder(u, "bearform")
+            call UnitRemoveAbility(u, 'S121')
+            call UnitMakeAbilityPermanent(u,false,'LcE4')
+            call UnitRemoveAbility(u,'LcE4')
+            call UnitRemoveAbility(u,'LcE5')
+            call UnitRemoveAbility(u,'LcE6')
+            call UnitRemoveAbility(u,'LcE7')
+            call UnitRemoveAbility(u,'LcE8')
+            call UnitRemoveAbility(u,'LcE9')
         endif
         if TransfID==14 then
-            call UnitMakeAbilityPermanent(LoadUnitHandle(HH,MUIHandle(),CasterHash),false,'AtE1')
-            call SetUnitAbilityLevel(LoadUnitHandle(HH,MUIHandle(),CasterHash),'A1DS', GetUnitAbilityLevel(LoadUnitHandle(HH,MUIHandle(),CasterHash),'A1DS')-5)
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'AtE1')
-            call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S131')
-            call IssueImmediateOrder(LoadUnitHandle(HH,MUIHandle(),CasterHash), "bearform")
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S131')
+            call UnitMakeAbilityPermanent(u,false,'AtE1')
+            call SetUnitAbilityLevel(u,'A1DS', GetUnitAbilityLevel(u,'A1DS')-5)
+            call UnitRemoveAbility(u,'AtE1')
+            call UnitAddAbility(u, 'S131')
+            call IssueImmediateOrder(u, "bearform")
+            call UnitRemoveAbility(u, 'S131')
         endif
         if TransfID==15 then
-            call UnitMakeAbilityPermanent(LoadUnitHandle(HH,MUIHandle(),CasterHash),false,'InE1')
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'InE1')
+            call UnitMakeAbilityPermanent(u,false,'InE1')
+            call UnitRemoveAbility(u,'InE1')
             call ShowAbility2('A0UK',true)
             call ShowAbility2('A0UQ',true)
-            call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S141')
-            call IssueImmediateOrder(LoadUnitHandle(HH,MUIHandle(),CasterHash), "bearform")
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S141')
+            call UnitAddAbility(u, 'S141')
+            call IssueImmediateOrder(u, "bearform")
+            call UnitRemoveAbility(u, 'S141')
         endif
         if TransfID==16 then
-            call UnitMakeAbilityPermanent(LoadUnitHandle(HH,MUIHandle(),CasterHash),false,'GrG1')
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'GrG1')
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'B06U')
+            call UnitMakeAbilityPermanent(u,false,'GrG1')
+            call UnitRemoveAbility(u,'GrG1')
+            call UnitRemoveAbility(u,'B06U')
             call ShowAbility2('A1EF', true)
         endif
         if TransfID==17 then
-            call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S151')
-            call IssueImmediateOrder(LoadUnitHandle(HH,MUIHandle(),CasterHash), "bearform")
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S151')
+            call UnitAddAbility(u, 'S151')
+            call IssueImmediateOrder(u, "bearform")
+            call UnitRemoveAbility(u, 'S151')
         endif
         if TransfID==18 then
-            call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S161')
-            call IssueImmediateOrder(LoadUnitHandle(HH,MUIHandle(),CasterHash), "bearform")
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S161')
+            call UnitAddAbility(u, 'S161')
+            call IssueImmediateOrder(u, "bearform")
+            call UnitRemoveAbility(u, 'S161')
         endif
         if TransfID==19 then
-            call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S171')
-            call IssueImmediateOrder(LoadUnitHandle(HH,MUIHandle(),CasterHash), "bearform")
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S171')
+            call UnitAddAbility(u, 'S171')
+            call IssueImmediateOrder(u, "bearform")
+            call UnitRemoveAbility(u, 'S171')
         endif
         if TransfID==20 then
-            call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S181')
-            call IssueImmediateOrder(LoadUnitHandle(HH,MUIHandle(),CasterHash), "bearform")
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S181')
+            call UnitAddAbility(u, 'S181')
+            call IssueImmediateOrder(u, "bearform")
+            call UnitRemoveAbility(u, 'S181')
         endif
         if TransfID==21 then
-            call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S191')
-            call IssueImmediateOrder(LoadUnitHandle(HH,MUIHandle(),CasterHash), "bearform")
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S191')
+            call UnitAddAbility(u, 'S191')
+            call IssueImmediateOrder(u, "bearform")
+            call UnitRemoveAbility(u, 'S191')
         endif
         if TransfID==22 then
-            call UnitMakeAbilityPermanent(LoadUnitHandle(HH,MUIHandle(),CasterHash),false,'ToE1')
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'ToE1')
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'ToE2')
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'ToE3')
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'ToE4')
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'ToE5')
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'ToE6')
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'B03C')
+            call UnitMakeAbilityPermanent(u,false,'ToE1')
+            call UnitRemoveAbility(u,'ToE1')
+            call UnitRemoveAbility(u,'ToE2')
+            call UnitRemoveAbility(u,'ToE3')
+            call UnitRemoveAbility(u,'ToE4')
+            call UnitRemoveAbility(u,'ToE5')
+            call UnitRemoveAbility(u,'ToE6')
+            call UnitRemoveAbility(u,'B03C')
             call ShowAbility2('A0JA', true)
         endif
         if TransfID==23 then
-            call UnitMakeAbilityPermanent(LoadUnitHandle(HH,MUIHandle(),CasterHash),false,'IsiT')
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'IsiT')
-            call SetUnitVertexColor(LoadUnitHandle(HH,MUIHandle(),CasterHash),255,255,255,255)
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'A0Z8')
+            call UnitMakeAbilityPermanent(u,false,'IsiT')
+            call UnitRemoveAbility(u,'IsiT')
+            call SetUnitVertexColor(u,255,255,255,255)
+            call UnitRemoveAbility(u,'A0Z8')
             call ShowAbility2('A0TF', true)
         endif
         if TransfID==24 then
-            call UnitMakeAbilityPermanent(LoadUnitHandle(HH,MUIHandle(),CasterHash),false,'LuG3')
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'LuG3')
+            call UnitMakeAbilityPermanent(u,false,'LuG3')
+            call UnitRemoveAbility(u,'LuG3')
             call ShowAbility2('A01O', true)
         endif
         if TransfID==25 then
-            call UnitMakeAbilityPermanent(LoadUnitHandle(HH,MUIHandle(),CasterHash),false,'LmE1')
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'LmE1')
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'LmE2')
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'LmE3')
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'LmE4')
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'LmE5')
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'LmE6')
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'B05Y')
+            call UnitMakeAbilityPermanent(u,false,'LmE1')
+            call UnitRemoveAbility(u,'LmE1')
+            call UnitRemoveAbility(u,'LmE2')
+            call UnitRemoveAbility(u,'LmE3')
+            call UnitRemoveAbility(u,'LmE4')
+            call UnitRemoveAbility(u,'LmE5')
+            call UnitRemoveAbility(u,'LmE6')
+            call UnitRemoveAbility(u,'B05Y')
             call ShowAbility2('A168', true)
         endif
-        call CheckUnitBonusRange(LoadUnitHandle(HH,MUIHandle(),CasterHash))
+        call CheckUnitBonusRange(u)
     endif
     call Clear(id)
 endif
-if IsUnitPaused(LoadUnitHandle(HH,MUIHandle(),CasterHash))==false and IsUnitHidden(LoadUnitHandle(HH,MUIHandle(),CasterHash))==false and GetUnitAbilityLevel(LoadUnitHandle(HH,MUIHandle(),CasterHash),'Pet1')==0 then
+if IsUnitPaused(u)==false and IsUnitHidden(u)==false and GetUnitAbilityLevel(u,'Pet1')==0 then
     call SaveInteger(HH,id,TIME_HASH, time - 1)
 endif
+set u=null
 endfunction
 
 function TransformationStart takes unit a returns nothing
@@ -176284,6 +176383,7 @@ if LoadUnitHandle(HH,idp,'ShNT'+j)!=null then
     call SaveInteger(HH,idl__d,'SSG+',LoadInteger(HH,idl__d,'SSG+')-LoadInteger(HH,idp,'ShSA'+j))
     call SaveInteger(HH,idl__d,'SAG+',LoadInteger(HH,idl__d,'SAG+')-LoadInteger(HH,idp,'ShAA'+j))
     call SaveInteger(HH,idl__d,'SIG+',LoadInteger(HH,idl__d,'SIG+')-LoadInteger(HH,idp,'ShIA'+j))
+    call MissleMoveMoria(CreateUnit(p,'e02D',GetUnitX(l__d),GetUnitY(l__d),GetRandomReal(0,359)),90,Atan2(GetUnitY(c)-GetUnitY(l__d),GetUnitX(c)-GetUnitX(l__d)),c)
 endif
 call SaveInteger(HH,idc,'SSG+',LoadInteger(HH,idc,'SSG+')+LoadInteger(HH,idp,'ShSA'+j))
 call SaveInteger(HH,idc,'SAG+',LoadInteger(HH,idc,'SAG+')+LoadInteger(HH,idp,'ShAA'+j))
@@ -176561,7 +176661,7 @@ if udg_B==false or UnitIsAlive(u)==false or UnitIsAlive(udg_DM[idp])==false then
     call MyRemoveUnit(udg_DM[idp],0.5)
     //call FlushChildHashtable(HH,GetHandleId(udg_DM[idp]))
     if udg_B and UnitIsAlive(u)==true then
-        if LoadBoolean(HH,GetHandleId(u),'MrGR')==false then
+        if LoadBoolean(HH,GetHandleId(u),'MrGR')==false and LoadBoolean(HH,GetHandleId(u),'MrTR')==false then
             if GetUnitState(u,UNIT_STATE_LIFE)>GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.3 + 300 then
                 call SetUnitState(u,UNIT_STATE_LIFE,GetUnitState(u,UNIT_STATE_LIFE)-(GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.3 + 300))
             else
@@ -177079,12 +177179,13 @@ function MoriaW1Cast2 takes nothing returns nothing
     local player p=GetOwningPlayer(u)
     local real x1=LoadReal(HH,id,2)
     local real y1=LoadReal(HH,id,3)
-    if time>0 then
+    if time>0 and LoadBoolean(HH,GetHandleId(u),'MrTR')==false then
         call SaveReal(HH,id,1,time-0.25)
         set n=CreateUnit(p,'h15T',x1+GetRandomReal(-350,350),y1+GetRandomReal(-350,350),GetRandomReal(0,359))
-        call UnitApplyTimedLife(n,'BTLF',5)
+        call MyRemoveZombie(n,5)
         call SetUnitMoveSpeed(n, 350+GetHeroAgi(u,true)) 
         call SetUnitBaseDamageByIndex(n,0,30+R2I(GetHeroInt(u,true)*(0.25+0.05*GetUnitAbilityLevel(u,'MrW1'))))
+        call MissleMoveMoria(CreateUnit(p,'e02D',GetUnitX(u),GetUnitY(u),GetRandomReal(0,359)),90,Atan2(GetUnitY(n)-GetUnitY(u),GetUnitX(n)-GetUnitX(u)),n)
         set bjLCE=AddSpecialEffect("shadowtrap-ny.mdl",GetUnitX(n),GetUnitY(n))
         call SetSpecialEffectZ(bjLCE,50)
         call SetSpecialEffectScale(bjLCE,0.25)
@@ -177185,14 +177286,6 @@ function MoriaW1SelfCast takes unit u returns nothing
     local unit l__d=LoadUnitHandle(HH,idp,'ShNT'+j)
     local integer idl__d=GetHandleId(l__d)
     // call SaveBoolean(HH,GetHandleId(c),'ShGv',true)
-    if LoadUnitHandle(HH,idp,'ShNT'+j)!=null then
-        call SetHeroStr(l__d,GetHeroStr(l__d,false)-LoadInteger(HH,idp,'ShSA'+j),true)
-        call SetHeroAgi(l__d,GetHeroAgi(l__d,false)-LoadInteger(HH,idp,'ShAA'+j),true)
-        call SetHeroInt(l__d,GetHeroInt(l__d,false)-LoadInteger(HH,idp,'ShIA'+j),true)
-        call SaveInteger(HH,idl__d,'SSG+',LoadInteger(HH,idl__d,'SSG+')-LoadInteger(HH,idp,'ShSA'+j))
-        call SaveInteger(HH,idl__d,'SAG+',LoadInteger(HH,idl__d,'SAG+')-LoadInteger(HH,idp,'ShAA'+j))
-        call SaveInteger(HH,idl__d,'SIG+',LoadInteger(HH,idl__d,'SIG+')-LoadInteger(HH,idp,'ShIA'+j))
-    endif
     call SaveUnitHandle(HH,id,0,u)
     call SaveInteger(HH,id,2,j)
     set soundplay=CreateSound("Sound\\Music\\mp3Music\\MoriaW1Self.mp3",false,false,true,12700,12700,"")
@@ -177201,6 +177294,15 @@ function MoriaW1SelfCast takes unit u returns nothing
     set n=CreateUnit(p,'h25T',x+GetRandomReal(-350,350),y+GetRandomReal(-350,350),GetRandomReal(0,359))
     call SetUnitMoveSpeed(n, 400+GetHeroAgi(u,true)) 
     call SetUnitBaseDamageByIndex(n,0,60+(3+GetUnitAbilityLevel(u,'MrW1'))*(LoadInteger(HH,idp,'ShSA'+j)+LoadInteger(HH,idp,'ShAA'+j)+LoadInteger(HH,idp,'ShIA'+j)))
+    if LoadUnitHandle(HH,idp,'ShNT'+j)!=null then
+        call SetHeroStr(l__d,GetHeroStr(l__d,false)-LoadInteger(HH,idp,'ShSA'+j),true)
+        call SetHeroAgi(l__d,GetHeroAgi(l__d,false)-LoadInteger(HH,idp,'ShAA'+j),true)
+        call SetHeroInt(l__d,GetHeroInt(l__d,false)-LoadInteger(HH,idp,'ShIA'+j),true)
+        call SaveInteger(HH,idl__d,'SSG+',LoadInteger(HH,idl__d,'SSG+')-LoadInteger(HH,idp,'ShSA'+j))
+        call SaveInteger(HH,idl__d,'SAG+',LoadInteger(HH,idl__d,'SAG+')-LoadInteger(HH,idp,'ShAA'+j))
+        call SaveInteger(HH,idl__d,'SIG+',LoadInteger(HH,idl__d,'SIG+')-LoadInteger(HH,idp,'ShIA'+j))
+        call MissleMoveMoria(CreateUnit(p,'e02D',GetUnitX(l__d),GetUnitY(l__d),GetRandomReal(0,359)),90,Atan2(GetUnitY(n)-GetUnitY(l__d),GetUnitX(n)-GetUnitX(l__d)),n)
+    endif
     call SaveUnitHandle(HH,id,1,n)
     call SaveUnitHandle(HH,idp,'ShNT'+j,n)
     call SaveStr(HH,idp,'ShNP'+j,"Zombie. DMG: "+I2S(60+(3+GetUnitAbilityLevel(u,'MrW1'))*(LoadInteger(HH,idp,'ShSA'+j)+LoadInteger(HH,idp,'ShAA'+j)+LoadInteger(HH,idp,'ShIA'+j))))
@@ -177501,20 +177603,57 @@ function MoriaTCast2 takes nothing returns nothing
     local timer t=GetExpiredTimer()
     local integer id=GetHandleId(t)
     local unit u=LoadUnitHandle(HH,id,0)
+    local real x=GetUnitX(u)
+    local real y=GetUnitY(u)
     local player p=GetOwningPlayer(u)
     local real time=LoadReal(HH,id,1)-0.05
+    local integer j=0
+    local integer idp=GetHandleId(p)
+    local integer idu=GetHandleId(u)
+    local unit l__d
+    local integer idl__d
     call SaveReal(HH,id,1,time)
-    if time>0 then
+    if time>0 and udg_B and DU2 then
         call SetUnitInvulnerable(u,true)
         call PauseUnit(u,true)
         if time==4.5 then
             call SetUnitAnimationByIndex(u, 10)
+        endif
+        if time==2 then
+            loop
+                if LoadUnitHandle(HH,idp,'ShNT'+j)!=null and LoadUnitHandle(HH,idp,'ShNT'+j)!=u then
+                    set l__d=LoadUnitHandle(HH,idp,'ShNT'+j)
+                    set idl__d=GetHandleId(l__d)
+                    call SetHeroStr(l__d,GetHeroStr(l__d,false)-LoadInteger(HH,idp,'ShSA'+j),true)
+                    call SetHeroAgi(l__d,GetHeroAgi(l__d,false)-LoadInteger(HH,idp,'ShAA'+j),true)
+                    call SetHeroInt(l__d,GetHeroInt(l__d,false)-LoadInteger(HH,idp,'ShIA'+j),true)
+                    call SaveInteger(HH,idl__d,'SSG+',LoadInteger(HH,idl__d,'SSG+')-LoadInteger(HH,idp,'ShSA'+j))
+                    call SaveInteger(HH,idl__d,'SAG+',LoadInteger(HH,idl__d,'SAG+')-LoadInteger(HH,idp,'ShAA'+j))
+                    call SaveInteger(HH,idl__d,'SIG+',LoadInteger(HH,idl__d,'SIG+')-LoadInteger(HH,idp,'ShIA'+j))
+                    call MissleMoveMoria(CreateUnit(p,'e02D',GetUnitX(l__d),GetUnitY(l__d),GetRandomReal(0,359)),90,Atan2(GetUnitY(u)-GetUnitY(l__d),GetUnitX(u)-GetUnitX(l__d)),u)
+                    call SaveInteger(HH,idu,'SSG+',LoadInteger(HH,idu,'SSG+')+LoadInteger(HH,idp,'ShSA'+j))
+                    call SaveInteger(HH,idu,'SAG+',LoadInteger(HH,idu,'SAG+')+LoadInteger(HH,idp,'ShAA'+j))
+                    call SaveInteger(HH,idu,'SIG+',LoadInteger(HH,idu,'SIG+')+LoadInteger(HH,idp,'ShIA'+j))
+                    call SaveUnitHandle(HH,idp,'ShNT'+j,u)
+                    call SaveStr(HH,idp,'ShNP'+j,GetUnitName(u))
+                    call SetHeroStr(u,GetHeroStr(u,false)+LoadInteger(HH,idp,'ShSA'+j),true)
+                    call SetHeroAgi(u,GetHeroAgi(u,false)+LoadInteger(HH,idp,'ShAA'+j),true)
+                    call SetHeroInt(u,GetHeroInt(u,false)+LoadInteger(HH,idp,'ShIA'+j),true)
+                endif
+                exitwhen j==10
+                set j=j+1
+            endloop
         endif
         if time<2 and time>1 then
             call SetUnitVertexColor(u,255-R2I((2-time)*250),255-R2I((2-time)*250),255-R2I((2-time)*250),255)
             call SetUnitScale(u,GetUnitScale(u)+0.02,GetUnitScale(u)+0.02,GetUnitScale(u)+0.02)
         endif
         if time==1.1 then
+            set bjLCE=AddSpecialEffect("AZ_anyemoW_R.mdl",x,y)
+            call SetSpecialEffectScale(bjLCE,0.85)
+            call SetSpecialEffectZ(bjLCE,10)
+            call SetSpecialEffectTimeScale(bjLCE,0.65)
+            call RemoveEffect(bjLCE,1,true,CreateTimer())
             call TransformationStart(u)
         endif
         if time==1 then
@@ -177531,7 +177670,10 @@ function MoriaTCast2 takes nothing returns nothing
             call SetUnitVertexColor(u,5+R2I((1-time)*250),5+R2I((1-time)*250),5+R2I((1-time)*250),255)
         endif
     else
-        call SetUnitScale(u,1.2,1.2,1.2)
+        call SaveBoolean(HH,GetHandleId(u),'MrTR',false)
+        if GetUnitTypeId(u)!='H00P' then
+            call SetUnitScale(u,1.2,1.2,1.2)
+        endif
         call SetUnitInvulnerable(u,false)
         call PauseUnit(u,false)
         call PauseTimer(t)
@@ -177539,6 +177681,7 @@ function MoriaTCast2 takes nothing returns nothing
         call FlushChildHashtable(HH,id)
     endif
     set p=null
+    set l__d=null
     set u=null
     set t=null
 endfunction
@@ -177554,9 +177697,9 @@ function MoriaTCast takes unit u returns nothing
         call PauseUnit(udg_DM[id],true)
         call SetUnitInvulnerable(udg_DM[id],true)
         call ShikiCloneEffect(udg_DM[id],0.5,1.05,1.25,250)
-        call SaveBoolean(HH,GetHandleId(u),'MrGR',true)
         call DestroyEffect(AddSpecialEffect("war3mapImported\\Death Release.mdx",GetUnitX(udg_DM[id]),GetUnitY(udg_DM[id])))
     endif
+    call SaveBoolean(HH,GetHandleId(u),'MrTR',true)
     set soundplay=CreateSound("Sound\\Music\\mp3Music\\MoriaT.mp3",false,false,true,12700,12700,"")
     call StartSound(soundplay)
     call KillSoundWhenDone(soundplay)
