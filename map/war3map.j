@@ -6782,11 +6782,11 @@ function MyRemoveZombieAct takes nothing returns nothing
     local player p=GetOwningPlayer(u)
     local real time=LoadReal(h,id,1)-0.1
     call SaveReal(h,id,1,time)
-    if time<=0 and LoadBoolean(HH,GetHandleId(Hero[GetPlayerId(p)]),'MrTR')==false then
+    if time<=0 or LoadBoolean(HH,GetHandleId(Hero[GetPlayerId(p)]),'MrTR')==true then
         if u!=null then
             call UnitApplyTimedLife(u,'BTLF',0.1)
         endif
-        call MissleMoveMoria(CreateUnit(p,'e02D',GetUnitX(u),GetUnitY(u),GetRandomReal(0,359)),90,Atan2(GetUnitY(Hero[GetPlayerId(p)])-GetUnitY(u),GetUnitX(Hero[GetPlayerId(p)])-GetUnitX(u)),Hero[GetPlayerId(p)])
+        call MissleMoveMoria(CreateUnit(p,'e22D',GetUnitX(u),GetUnitY(u),GetRandomReal(0,359)),90,Atan2(GetUnitY(Hero[GetPlayerId(p)])-GetUnitY(u),GetUnitX(Hero[GetPlayerId(p)])-GetUnitX(u)),Hero[GetPlayerId(p)])
         call FlushChildHashtable(h,id)
         call DestroyTimer(t)
     endif
@@ -176383,7 +176383,7 @@ if LoadUnitHandle(HH,idp,'ShNT'+j)!=null then
     call SaveInteger(HH,idl__d,'SSG+',LoadInteger(HH,idl__d,'SSG+')-LoadInteger(HH,idp,'ShSA'+j))
     call SaveInteger(HH,idl__d,'SAG+',LoadInteger(HH,idl__d,'SAG+')-LoadInteger(HH,idp,'ShAA'+j))
     call SaveInteger(HH,idl__d,'SIG+',LoadInteger(HH,idl__d,'SIG+')-LoadInteger(HH,idp,'ShIA'+j))
-    call MissleMoveMoria(CreateUnit(p,'e02D',GetUnitX(l__d),GetUnitY(l__d),GetRandomReal(0,359)),90,Atan2(GetUnitY(c)-GetUnitY(l__d),GetUnitX(c)-GetUnitX(l__d)),c)
+    call MissleMoveMoria(CreateUnit(p,'e22D',GetUnitX(l__d),GetUnitY(l__d),GetRandomReal(0,359)),90,Atan2(GetUnitY(c)-GetUnitY(l__d),GetUnitX(c)-GetUnitX(l__d)),c)
 endif
 call SaveInteger(HH,idc,'SSG+',LoadInteger(HH,idc,'SSG+')+LoadInteger(HH,idp,'ShSA'+j))
 call SaveInteger(HH,idc,'SAG+',LoadInteger(HH,idc,'SAG+')+LoadInteger(HH,idp,'ShAA'+j))
@@ -177185,7 +177185,7 @@ function MoriaW1Cast2 takes nothing returns nothing
         call MyRemoveZombie(n,5)
         call SetUnitMoveSpeed(n, 350+GetHeroAgi(u,true)) 
         call SetUnitBaseDamageByIndex(n,0,30+R2I(GetHeroInt(u,true)*(0.25+0.05*GetUnitAbilityLevel(u,'MrW1'))))
-        call MissleMoveMoria(CreateUnit(p,'e02D',GetUnitX(u),GetUnitY(u),GetRandomReal(0,359)),90,Atan2(GetUnitY(n)-GetUnitY(u),GetUnitX(n)-GetUnitX(u)),n)
+        call MissleMoveMoria(CreateUnit(p,'e22D',GetUnitX(u),GetUnitY(u),GetRandomReal(0,359)),90,Atan2(GetUnitY(n)-GetUnitY(u),GetUnitX(n)-GetUnitX(u)),n)
         set bjLCE=AddSpecialEffect("shadowtrap-ny.mdl",GetUnitX(n),GetUnitY(n))
         call SetSpecialEffectZ(bjLCE,50)
         call SetSpecialEffectScale(bjLCE,0.25)
@@ -177301,7 +177301,7 @@ function MoriaW1SelfCast takes unit u returns nothing
         call SaveInteger(HH,idl__d,'SSG+',LoadInteger(HH,idl__d,'SSG+')-LoadInteger(HH,idp,'ShSA'+j))
         call SaveInteger(HH,idl__d,'SAG+',LoadInteger(HH,idl__d,'SAG+')-LoadInteger(HH,idp,'ShAA'+j))
         call SaveInteger(HH,idl__d,'SIG+',LoadInteger(HH,idl__d,'SIG+')-LoadInteger(HH,idp,'ShIA'+j))
-        call MissleMoveMoria(CreateUnit(p,'e02D',GetUnitX(l__d),GetUnitY(l__d),GetRandomReal(0,359)),90,Atan2(GetUnitY(n)-GetUnitY(l__d),GetUnitX(n)-GetUnitX(l__d)),n)
+        call MissleMoveMoria(CreateUnit(p,'e22D',GetUnitX(l__d),GetUnitY(l__d),GetRandomReal(0,359)),90,Atan2(GetUnitY(n)-GetUnitY(l__d),GetUnitX(n)-GetUnitX(l__d)),n)
     endif
     call SaveUnitHandle(HH,id,1,n)
     call SaveUnitHandle(HH,idp,'ShNT'+j,n)
@@ -177630,7 +177630,7 @@ function MoriaTCast2 takes nothing returns nothing
                     call SaveInteger(HH,idl__d,'SSG+',LoadInteger(HH,idl__d,'SSG+')-LoadInteger(HH,idp,'ShSA'+j))
                     call SaveInteger(HH,idl__d,'SAG+',LoadInteger(HH,idl__d,'SAG+')-LoadInteger(HH,idp,'ShAA'+j))
                     call SaveInteger(HH,idl__d,'SIG+',LoadInteger(HH,idl__d,'SIG+')-LoadInteger(HH,idp,'ShIA'+j))
-                    call MissleMoveMoria(CreateUnit(p,'e02D',GetUnitX(l__d),GetUnitY(l__d),GetRandomReal(0,359)),90,Atan2(GetUnitY(u)-GetUnitY(l__d),GetUnitX(u)-GetUnitX(l__d)),u)
+                    call MissleMoveMoria(CreateUnit(p,'e22D',GetUnitX(l__d),GetUnitY(l__d),GetRandomReal(0,359)),90,Atan2(GetUnitY(u)-GetUnitY(l__d),GetUnitX(u)-GetUnitX(l__d)),u)
                     call SaveInteger(HH,idu,'SSG+',LoadInteger(HH,idu,'SSG+')+LoadInteger(HH,idp,'ShSA'+j))
                     call SaveInteger(HH,idu,'SAG+',LoadInteger(HH,idu,'SAG+')+LoadInteger(HH,idp,'ShAA'+j))
                     call SaveInteger(HH,idu,'SIG+',LoadInteger(HH,idu,'SIG+')+LoadInteger(HH,idp,'ShIA'+j))
@@ -177643,6 +177643,10 @@ function MoriaTCast2 takes nothing returns nothing
                 exitwhen j==10
                 set j=j+1
             endloop
+            set n=CreateUnit(p, 'dR43', x, y, GetRandomInt(0, 359))
+            call SetUnitScale(n, 0.7, 0.7, 0.7)
+            call UnitApplyTimedLife(n,'BTLF', 0.6)
+            call MyRemoveUnit(n, 2)
         endif
         if time<2 and time>1 then
             call SetUnitVertexColor(u,255-R2I((2-time)*250),255-R2I((2-time)*250),255-R2I((2-time)*250),255)
@@ -177707,6 +177711,15 @@ function MoriaTCast takes unit u returns nothing
     call SaveReal(HH,uid,1,4.55)
     call SetUnitInvulnerable(u,true)
     call PauseUnit(u,true)
+    set n=CreateUnit(p,'e0RV',x,y,0)
+    call UnitApplyTimedLife(n,'BTLF',3)
+    call SetUnitScale(n,0.75,0.75,0.75)
+    call SetUnitTimeScale(n,0.4)
+    set bjLCE=AddSpecialEffect("war3mapImported\\DarkBrith.MDX",x,y)
+    call SetSpecialEffectScale(bjLCE,1.85)
+    call SetSpecialEffectZ(bjLCE,10)
+    call SetSpecialEffectTimeScale(bjLCE,0.65)
+    call RemoveEffect(bjLCE,1.5,true,CreateTimer())
     call TimerStart(t,0.05,true,function MoriaTCast2)
     set u=null
     set t=null
