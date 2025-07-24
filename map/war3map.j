@@ -177678,6 +177678,7 @@ function MoriaTCast2 takes nothing returns nothing
         if GetUnitTypeId(u)!='H00P' then
             call SetUnitScale(u,1.2,1.2,1.2)
         endif
+        call SetUnitTimeScale(u,1)
         call SetUnitInvulnerable(u,false)
         call PauseUnit(u,false)
         call PauseTimer(t)
@@ -177711,10 +177712,11 @@ function MoriaTCast takes unit u returns nothing
     call SaveReal(HH,uid,1,4.55)
     call SetUnitInvulnerable(u,true)
     call PauseUnit(u,true)
+    call SetUnitTimeScale(u,1.4)
     set n=CreateUnit(p,'e0RV',x,y,0)
-    call UnitApplyTimedLife(n,'BTLF',3)
-    call SetUnitScale(n,0.75,0.75,0.75)
-    call SetUnitTimeScale(n,0.4)
+    call UnitApplyTimedLife(n,'BTLF',4)
+    call SetUnitScale(n,0.85,0.85,0.85)
+    call SetUnitTimeScale(n,0.3)
     set bjLCE=AddSpecialEffect("war3mapImported\\DarkBrith.MDX",x,y)
     call SetSpecialEffectScale(bjLCE,1.85)
     call SetSpecialEffectZ(bjLCE,10)
