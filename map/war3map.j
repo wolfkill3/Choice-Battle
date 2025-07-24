@@ -177643,10 +177643,6 @@ function MoriaTCast2 takes nothing returns nothing
                 exitwhen j==10
                 set j=j+1
             endloop
-            set n=CreateUnit(p, 'dR43', x, y, GetRandomInt(0, 359))
-            call SetUnitScale(n, 0.7, 0.7, 0.7)
-            call UnitApplyTimedLife(n,'BTLF', 0.6)
-            call MyRemoveUnit(n, 2)
         endif
         if time<2 and time>1 then
             call SetUnitVertexColor(u,255-R2I((2-time)*250),255-R2I((2-time)*250),255-R2I((2-time)*250),255)
@@ -177659,6 +177655,10 @@ function MoriaTCast2 takes nothing returns nothing
             call SetSpecialEffectTimeScale(bjLCE,0.65)
             call RemoveEffect(bjLCE,1,true,CreateTimer())
             call TransformationStart(u)
+            set n=CreateUnit(p, 'dR43', x, y, GetRandomInt(0, 359))
+            call SetUnitScale(n, 0.3, 0.3, 0.3)
+            call UnitApplyTimedLife(n,'BTLF', 0.3)
+            call MyRemoveUnit(n, 1)
         endif
         if time==1 then
             call PauseUnit(u,false)
@@ -177702,7 +177702,6 @@ function MoriaTCast takes unit u returns nothing
         call PauseUnit(udg_DM[id],true)
         call SetUnitInvulnerable(udg_DM[id],true)
         call ShikiCloneEffect(udg_DM[id],0.5,1.05,1.25,250)
-        call DestroyEffect(AddSpecialEffect("war3mapImported\\Death Release.mdx",GetUnitX(udg_DM[id]),GetUnitY(udg_DM[id])))
     endif
     call SaveBoolean(HH,GetHandleId(u),'MrTR',true)
     set soundplay=CreateSound("Sound\\Music\\mp3Music\\MoriaT.mp3",false,false,true,12700,12700,"")
