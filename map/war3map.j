@@ -59,7 +59,7 @@ integer array udg_UIS_ItemCount
 integer udg_UIS_Index=0
 unit array udg_ExtraH
 unit array udg_DM
-unit array udg_DMM
+// unit array udg_DMM
 unit array Chest
 integer array udg_RH
 integer array RH_Force
@@ -236,6 +236,7 @@ constant integer GokuEDMGHash         = StringHash("GokuEDMG")
 constant integer GokuUIDingHash       = StringHash("GokuUIDing")
 constant integer GokuUIMusicHash      = StringHash("GokuUIMusic")
 constant integer SpecUIHash           = StringHash("SpecUI")
+constant integer ChannelHash          = StringHash("Channel")
 constant integer NIWHash              = StringHash("NIW")
 boolean NANAYA_CONDITION          = true // Возможность пика Нанаи
 //== Следующие переменные предназначены ТОЛЬКО для системных функций/методов
@@ -987,7 +988,7 @@ integer array lvl26
 integer array lvl29
 integer array lvl32
 integer array lvl35
-integer array manaMoria
+// integer array manaMoria
 integer array rfhr
 unit array UIUnlock
 unit array MUIUnlock
@@ -1017,7 +1018,7 @@ real RY
 real AX
 real AY
 unit oreha
-unit Goku
+unit Goku=null
 unit GenkiDama
 boolean array GenkiUsed
 //sabrac1
@@ -2413,6 +2414,9 @@ function myCustomHeal2 takes unit target, real amount returns real
     if UnitHasItemOfTypeBJ(target,'I00D') or GetUnitAbilityLevel(target,'KI58')>0 then // Солнце вонголы
         set currentHeal = currentHeal * 1.15
     endif
+    if GetUnitTypeId(target)=='H00Q' then // Доппель Мории
+        set currentHeal = currentHeal * 1.5
+    endif
     if GetUnitTypeId(target)=='H02O' and GetHeroLevel(target)>5 then //Buu Passive
         set currentHeal = currentHeal * (1.049+(GetUnitState(target,UNIT_STATE_MANA) / GetUnitState(target,UNIT_STATE_MAX_MANA))*0.201)
     endif
@@ -2534,6 +2538,9 @@ set TestModePlayerId[i]=13
 set TeamPoints[i]=0
 set udg_Shiro[i]=0
 set udg_Swap[i]=false
+set udg_DM[i]=null
+set udg_Hero[i]=null
+set Hero[i]=null
 set udg_SwapId[i]=0
 set udg_Repick[i]=2
 set bonus_repick[i]=0
@@ -3360,7 +3367,7 @@ function ParabolaZ2 takes real y0,real y1,real l__h,real l__d,real x returns rea
 return(2*(y0+y1-2*l__h)*(x/l__d-1)+(y1-y0))*(x/l__d)+y0
 endfunction
 function AU takes unit a, unit b returns real
-        return Atan2(GetUnitY(b)-GetUnitY(a),GetUnitX(b)-GetUnitX(a))
+    return Atan2(GetUnitY(b)-GetUnitY(a),GetUnitX(b)-GetUnitX(a))
 endfunction
 function AddWidgetLife takes unit newUnit,real bonus returns nothing
 call SetWidgetLife(newUnit,GetWidgetLife(newUnit)+bonus)
@@ -3368,23 +3375,23 @@ endfunction
 function MyRemoveUnitAct takes nothing returns nothing
     local timer t=GetExpiredTimer()
     local integer id=GetHandleId(t)
-        local unit localRemoveUnit=LoadUnitHandle(h,id,0)
-        if localRemoveUnit!=null then
-            call RemoveUnit(localRemoveUnit)
-        endif
-        call FlushChildHashtable(h,id)
-        call DestroyTimer(GetExpiredTimer())
+    local unit localRemoveUnit=LoadUnitHandle(h,id,0)
+    if localRemoveUnit!=null then
+        call RemoveUnit(localRemoveUnit)
+    endif
+    call FlushChildHashtable(h,id)
+    call DestroyTimer(GetExpiredTimer())
     set t=null
-        set localRemoveUnit=null
+    set localRemoveUnit=null
 endfunction
 
 function MyRemoveUnit takes unit newRemoveUnit,real newDur returns nothing
     local integer id
-        set RemoveUnitTimer=CreateTimer()
-        set id=GetHandleId(RemoveUnitTimer)
-        call SaveUnitHandle(h,id,0,newRemoveUnit)
-        call TimerStart(RemoveUnitTimer, newDur, false, function MyRemoveUnitAct)
-        set RemoveUnitTimer=null
+    set RemoveUnitTimer=CreateTimer()
+    set id=GetHandleId(RemoveUnitTimer)
+    call SaveUnitHandle(h,id,0,newRemoveUnit)
+    call TimerStart(RemoveUnitTimer, newDur, false, function MyRemoveUnitAct)
+    set RemoveUnitTimer=null
 endfunction
 
 function GetWidgetMaxLife takes unit newUnit returns real
@@ -3848,10 +3855,10 @@ function MUIHandle takes nothing returns integer
 		if GetUnitAbilityLevel(target,'A0U8')>1 then	// Gon R
 			set time=time*0.6
 		endif
-		if GetUnitAbilityLevel(target,'JNF2')>1 then	// Jiren F
+		if GetUnitAbilityLevel(target,'JNF2')>0 then	// Jiren F
 			set time=time*0.7
 		endif
-		if GetUnitAbilityLevel(target,'A5WT')>1 then	// Kurapika W INT
+		if GetUnitAbilityLevel(target,'A5WT')>0 then	// Kurapika W INT
 			set time=time*0.75
 		endif
         if GetUnitAbilityLevel(target,'AtE1')>0 then	// Atalanta E
@@ -6730,6 +6737,74 @@ endfunction
 function SR1 takes real x1,real y1,real x2,real y2 returns real
 return SquareRoot((x1-x2)*(x1-x2)+(y1-y2)*(y1-y2))
 endfunction
+
+
+function MissleMoveMoria2 takes nothing returns nothing
+    local timer t=GetExpiredTimer()
+    local integer id=GetHandleId(t)
+    local unit l__d=LoadUnitHandle(h,id,0)
+    local unit c=LoadUnitHandle(h,id,4)
+    local real speed=LoadReal(h,id,1)
+    local real angle=LoadReal(h,id,2)
+    local real x=GetUnitX(l__d)
+    local real y=GetUnitY(l__d)
+    local real x1=GetUnitX(c)
+    local real y1=GetUnitY(c)
+    local real a=Atan2(y1-y,x1-x)+angle
+    if SR(x,y,x1,y1)>150 then
+        call SetUnitXY_1(l__d,x+speed*Cos(a),y+speed*Sin(a), false)
+        call SetUnitFacing(l__d,a*bj_RADTODEG)
+    else
+        call RemoveUnit(l__d)
+        call PauseTimer(t)
+        call DestroyTimer(t)
+        call FlushChildHashtable(h,id)
+    endif
+    set c=null
+    set l__d=null
+    set t=null
+endfunction
+function MissleMoveMoria takes unit l__d,real speed,real angle,unit target returns nothing
+    local timer t=CreateTimer()
+    local integer id=GetHandleId(t)
+    call SaveUnitHandle(h,id,0,l__d)
+    call SaveReal(h,id,1,speed)
+    call SaveReal(h,id,2,angle*bj_DEGTORAD)
+    call SaveUnitHandle(h,id,4,target)
+    call TimerStart(t,0.02,true,function MissleMoveMoria2)
+set t=null
+endfunction
+
+function MyRemoveZombieAct takes nothing returns nothing
+    local timer t=GetExpiredTimer()
+    local integer id=GetHandleId(t)
+    local unit u=LoadUnitHandle(h,id,0)
+    local player p=GetOwningPlayer(u)
+    local real time=LoadReal(h,id,1)-0.1
+    call SaveReal(h,id,1,time)
+    if time<=0 or LoadBoolean(HH,GetHandleId(Hero[GetPlayerId(p)]),'MrTR')==true then
+        if u!=null then
+            call UnitApplyTimedLife(u,'BTLF',0.1)
+        endif
+        call MissleMoveMoria(CreateUnit(p,'e22D',GetUnitX(u),GetUnitY(u),GetRandomReal(0,359)),90,Atan2(GetUnitY(Hero[GetPlayerId(p)])-GetUnitY(u),GetUnitX(Hero[GetPlayerId(p)])-GetUnitX(u)),Hero[GetPlayerId(p)])
+        call FlushChildHashtable(h,id)
+        call DestroyTimer(t)
+    endif
+    set t=null
+    set u=null
+    set p=null
+endfunction
+
+function MyRemoveZombie takes unit newRemoveZombie,real newDur returns nothing
+    local timer t=CreateTimer()
+    local integer id=GetHandleId(t)
+    call SaveUnitHandle(h,id,0,newRemoveZombie)
+    call SaveReal(h,id,1,newDur)
+    call TimerStart(t, 0.1, true, function MyRemoveZombieAct)
+    set t=null
+endfunction
+
+
 function DestroyGroupTimed2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
@@ -12210,6 +12285,16 @@ function OnButtonChangeAbilityMode takes nothing returns nothing
     //         endif
     //     endif
     // endif
+    if GetUnitTypeId(GetUnitSelected(p))=='H00P' and (p==GetOwningPlayer(GetUnitSelected(p)) or GetPlayerAlliance(GetOwningPlayer(GetUnitSelected(p)),p,ALLIANCE_SHARED_CONTROL)) and but==GetFrameByName( "AbilityVarBarIcon", 6 ) and IsUnitPaused(GetUnitSelected(p))==false and GetUnitAbilityLevel(GetUnitSelected(p),'Pet1')==0 then
+        set pHid=GetHandleId(GetOwningPlayer(GetUnitSelected(p)))
+        if LoadInteger(HH,pHid,'ShSn')!=0 then
+            if LoadInteger(HH,pHid,VariationGHash)<LoadInteger(HH,pHid,'ShSn') then
+                call SaveInteger(HH,pHid,VariationGHash,LoadInteger(HH,pHid,VariationGHash)+1)
+            else
+                call SaveInteger(HH,pHid,VariationGHash,1)
+            endif
+        endif
+    endif
     set p = null
     set but = null
 endfunction
@@ -22453,7 +22538,7 @@ call TriggerAddCondition(gg_trg_UltimateItems,Condition(function Trig_UltimateIt
 call TriggerAddAction(gg_trg_UltimateItems,function Trig_UltimateItems_Actions)
 endfunction
 function Trig_Killer_Conditions takes nothing returns boolean
-return IsUnitType(GetTriggerUnit(),UNIT_TYPE_HERO)and GetUnitAbilityLevel(GetTriggerUnit(),'A14Y')==0 and  GetUnitTypeId(GetTriggerUnit())!='HSaC'   and GetUnitTypeId(GetTriggerUnit())!='HASC' and GetUnitTypeId(GetTriggerUnit())!='HAST'  and GetUnitTypeId(GetTriggerUnit())!='H03Y' and GetUnitTypeId(GetTriggerUnit())!='Ho13' and GetUnitTypeId(GetTriggerUnit())!='H34X' and GetUnitTypeId(GetTriggerUnit())!='H14F' and GetUnitTypeId(GetTriggerUnit())!='H03T' and GetUnitTypeId(GetTriggerUnit())!='H03W' and GetUnitTypeId(GetTriggerUnit())!='H03X' and GetUnitTypeId(GetTriggerUnit())!='H03V' and GetUnitTypeId(GetTriggerUnit())!='H03U' and GetUnitTypeId(GetTriggerUnit())!='H035' and GetUnitTypeId(GetTriggerUnit())!='H007' and GetOwningPlayer(GetTriggerUnit())!=Player(14)
+return IsUnitType(GetTriggerUnit(),UNIT_TYPE_HERO)and GetUnitAbilityLevel(GetTriggerUnit(),'A14Y')==0 and  GetUnitTypeId(GetTriggerUnit())!='HSaC'   and GetUnitTypeId(GetTriggerUnit())!='HASC' and GetUnitTypeId(GetTriggerUnit())!='HAST'  and GetUnitTypeId(GetTriggerUnit())!='H03Y' and GetUnitTypeId(GetTriggerUnit())!='Ho13' and GetUnitTypeId(GetTriggerUnit())!='H34X' and GetUnitTypeId(GetTriggerUnit())!='H14F' and GetUnitTypeId(GetTriggerUnit())!='H03T' and GetUnitTypeId(GetTriggerUnit())!='H03W' and GetUnitTypeId(GetTriggerUnit())!='H03X' and GetUnitTypeId(GetTriggerUnit())!='H03V' and GetUnitTypeId(GetTriggerUnit())!='H03U' and GetUnitTypeId(GetTriggerUnit())!='H035' and GetUnitTypeId(GetTriggerUnit())!='H007' and GetUnitTypeId(GetTriggerUnit())!='H00Q' and GetOwningPlayer(GetTriggerUnit())!=Player(14)
 endfunction
 function KillerSound takes integer id,integer id2 returns nothing
 local integer i=0
@@ -23144,6 +23229,9 @@ elseif GetItemPlayer(it)==p then
         endif
     endif
 endif
+if udg_DM[GetPlayerId(p)+1]!=null then
+    call SaveBoolean(HH,GetHandleId(udg_DM[GetPlayerId(p)+1]),'ItCh',true)
+endif
 set t=null
 set u=null
 set p=null
@@ -23158,6 +23246,9 @@ local real cd=GetItemRemainingCooldown(it)
 local item f=null
 local integer i=0
 local integer count=0
+if udg_DM[GetPlayerId(p)+1]!=null then
+    call SaveBoolean(HH,GetHandleId(udg_DM[GetPlayerId(p)+1]),'ItCh',true)
+endif
 if GetItemPlayer(it)==Player(15) or GetItemPlayer(it)==p or udg_test==true then
     call SetItemPlayer(it,p,false)
     call SetItemStringField(it,ITEM_SF_NAME,GetBaseItemStringFieldById(GetItemTypeId(it),ITEM_SF_NAME)+" ("+Color[GetPlayerId(p)]+GetPlayerName(p)+"|r)")
@@ -23358,6 +23449,7 @@ local integer itemId=GetItemTypeId(it)
 local integer ittargId=GetItemTypeId(it)
 local real cd=GetItemRemainingCooldown(it)
 local real cdtar=GetItemRemainingCooldown(ittarg)
+local player p=GetOwningPlayer(u)
 local integer i=0
 local integer count=0
 if (GetItemRemainingCooldown(it)>0 or GetItemRemainingCooldown(ittarg)>0) and (slotSource==6 or slotSource==7 or slotSource==8 or slotTarget==6 or slotTarget==7 or slotTarget==8 or slotTarget==9) then
@@ -23431,8 +23523,12 @@ else
         call SetTriggerItemAllowMoveSlot(false)
     endif
 endif
+if udg_DM[GetPlayerId(p)+1]!=null then
+    call SaveBoolean(HH,GetHandleId(udg_DM[GetPlayerId(p)+1]),'ItCh',true)
+endif
 set it=null
 set ittarg=null
+set p=null
 set u=null
 endfunction
 function UIS_RegisterItem takes integer a1,integer a2,integer a3,integer a4,integer a5,integer a6,integer a7,integer a8,integer a9,integer a10,integer a11,integer l__n returns nothing
@@ -23538,7 +23634,7 @@ call TriggerAddAction(gg_trg_Pick_Heroes,function Trig_Pick_Heroes_Actions)
 endfunction
 function Trig_LevelUp_Conditions takes nothing returns boolean  
 set n=GetTriggerUnit()
-return GetOwningPlayer(n)!=Player(PLAYER_NEUTRAL_PASSIVE)and GetUnitAbilityLevel(n,'Aloc')==0 and  GetUnitTypeId(n)!='HSaC' and  GetUnitTypeId(n)!='HASC' and  GetUnitTypeId(n)!='HAST' and GetUnitTypeId(n)!='Ho13' and GetUnitTypeId(n)!='H34X' and GetUnitTypeId(n)!='H14F' and GetUnitTypeId(n)!='H007' and GetUnitTypeId(n)!='H035' and GetUnitTypeId(n)!='H03O' and GetUnitTypeId(n)!='H03Y' and GetUnitTypeId(n)!='H03T' and GetUnitTypeId(n)!='H03W' and GetUnitTypeId(n)!='H03X' and GetUnitTypeId(n)!='H03V' and GetUnitTypeId(n)!='H03U'
+return GetOwningPlayer(n)!=Player(PLAYER_NEUTRAL_PASSIVE)and GetUnitAbilityLevel(n,'Aloc')==0 and  GetUnitTypeId(n)!='HSaC' and  GetUnitTypeId(n)!='HASC' and  GetUnitTypeId(n)!='HAST' and GetUnitTypeId(n)!='Ho13' and GetUnitTypeId(n)!='H34X' and GetUnitTypeId(n)!='H14F' and GetUnitTypeId(n)!='H007' and GetUnitTypeId(n)!='H035' and GetUnitTypeId(n)!='H03O' and GetUnitTypeId(n)!='H03Y' and GetUnitTypeId(n)!='H03T' and GetUnitTypeId(n)!='H03W' and GetUnitTypeId(n)!='H03X' and GetUnitTypeId(n)!='H03V' and GetUnitTypeId(n)!='H03U' and GetUnitTypeId(n)!='H00Q'
 endfunction
 function AvalonCast2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
@@ -25442,6 +25538,74 @@ call TimerStart(t,0.01,true,function BuuPassiveRegenCast2)
 set t=null
 set u=null
 endfunction
+function MoriaDoppelCast2 takes nothing returns nothing
+local timer t=GetExpiredTimer()
+local integer id=GetHandleId(t)
+local unit u=LoadUnitHandle(h,id,1)
+local real life=LoadReal(h,id,0)
+local real life2=GetWidgetLife(u)
+local real dmg=0
+if GetWidgetLife(u)>0 and udg_B==true and DU2==true then
+    if life2>life then
+        set dmg=GetWidgetLife(u)-LoadReal(h,id,0)
+        call SaveReal(h,id,3,LoadReal(h,id,3)+(dmg*0.5))
+        call SetWidgetLife(u, GetWidgetLife(u)+MathRealFloor(dmg*0.5)+MathRealFloor(LoadReal(h,id,3)))
+        if LoadReal(h,id,3)>1 then
+            call SaveReal(h,id,3,LoadReal(h,id,3)-MathRealFloor(LoadReal(h,id,3)))
+        endif
+    endif
+    call SaveReal(h,id,0,GetWidgetLife(u))
+else
+    call SaveInteger(HH,GetHandleId(u),StringHash("MoriaDoppel"),0)
+    call DestroyTimer(t)
+    call FlushChildHashtable(h,id)
+endif
+set t=null
+set u=null
+endfunction
+function MoriaDoppelCast takes unit u returns nothing
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+call SaveUnitHandle(h,id,1,u)
+call SaveReal(h,id,0,GetWidgetLife(u))
+call SaveInteger(HH,GetHandleId(u),StringHash("MoriaDoppel"),1)
+call TimerStart(t,0.01,true,function MoriaDoppelCast2)
+set t=null
+set u=null
+endfunction
+function MinusManaMoriaCast2 takes nothing returns nothing
+local timer t=GetExpiredTimer()
+local integer id=GetHandleId(t)
+local unit u=LoadUnitHandle(h,id,1)
+local real life=LoadReal(h,id,0)
+local real life2=GetWidgetMana(u)
+local real dmg=0
+if GetWidgetLife(u)>0 and IsUnitAlive(udg_DM[GetPlayerId(GetOwningPlayer(u))+1]) and udg_B==true and DU2==true then
+    if life2>life then
+        set dmg=GetWidgetMana(u)-LoadReal(h,id,0)
+        // call SaveReal(h,id,3,LoadReal(h,id,3)+(dmg*(0.95-0.01*GetHeroLevel(u))))
+        call SetWidgetMana(u, GetWidgetMana(u)-dmg*(0.95-0.01*GetHeroLevel(u))) //+MathRealFloor(LoadReal(h,id,3))))
+        // if LoadReal(h,id,3)>1 then
+        //     call SaveReal(h,id,3,LoadReal(h,id,3)-MathRealFloor(LoadReal(h,id,3)))
+        // endif
+    endif
+    call SaveReal(h,id,0,GetWidgetMana(u))
+else
+    call DestroyTimer(t)
+    call FlushChildHashtable(h,id)
+endif
+set t=null
+set u=null
+endfunction
+function MinusManaMoriaCast takes unit u returns nothing
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+call SaveUnitHandle(h,id,1,u)
+call SaveReal(h,id,0,GetWidgetMana(u))
+call TimerStart(t,0.01,true,function MinusManaMoriaCast2)
+set t=null
+set u=null
+endfunction
 function SunVongolaRegenCast2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
@@ -25904,510 +26068,507 @@ endfunction
 //endfunction
 
 function Trig_Multup_Actions takes nothing returns nothing
-        local string ours1
-        local string minutes1
-        local string seconds1
-        local integer x=0
-        
-        if ours<10 then
-                set ours1="0"
+local string ours1
+local string minutes1
+local string seconds1
+local integer x=0
+
+if ours<10 then
+    set ours1="0"
+else
+    set ours1=""
+endif
+if minutes<10 then
+    set minutes1="0"
+else
+    set minutes1=""
+endif
+if seconds<10 then
+    set seconds1="0"
+else
+    set seconds1=""
+endif
+call MultiboardSetTitleText(mbg,"|cffc3dbffRound|r - "+I2S(round)+", |cffc3dbffTime -|r "+ours1+I2S(ours)+":"+minutes1+I2S(minutes)+":"+seconds1+I2S(seconds))
+//call BJDebugMsg(R2S(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_INVENTORY_BAR, 0 ),0 )))+" "+R2S(GetFrameHeight( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_INVENTORY_BAR, 0 ),0 ) )))
+set x=0
+loop
+exitwhen x>=10
+if ingame[x]==true then
+    if udg_B==false then
+        call SetUnitInvulnerable(Hero[x],true)
+    endif
+    if GetUnitTypeId(Hero[x])=='H02O' and GetHeroLevel(Hero[x])>5 and LoadInteger(HH,GetHandleId(Hero[x]),StringHash("BuuPassive"))!=1 then
+        call BuuPassiveRegenCast(Hero[x])
+    endif
+    if (UnitHasItemOfTypeBJ(Hero[x],'I00D') or GetUnitAbilityLevel(Hero[x],'KI58')>0) and LoadInteger(HH,GetHandleId(Hero[x]),StringHash("SunVongola"))!=1 then
+        call SunVongolaRegenCast(Hero[x])
+    endif
+    if GetUnitAbilityLevel(Hero[x],'B074')>0 and LoadInteger(HH,GetHandleId(Hero[x]),StringHash("OrihimeF"))!=1 then
+        call OrihimeFCast(Hero[x])
+    endif
+    if (UnitHasItemOfTypeBJ(Hero[x],'I043') or GetUnitAbilityLevel(Hero[x],'KIL8')>0) and LoadInteger(HH,GetHandleId(Hero[x]),StringHash("BloodSphere"))!=1 then
+        call BloodSphereMPRegenCast(Hero[x])
+    endif
+    if UnitHasItemOfTypeBJ(Hero[x],'I054') and LoadInteger(HH,GetHandleId(Hero[x]),StringHash("IceBoots"))!=1 then
+        call IceBootsRegenCast(Hero[x])
+    endif
+    if (UnitHasItemOfTypeBJ(Hero[x],'I02S') or GetUnitAbilityLevel(Hero[x],'KIG0')>0) and LoadInteger(HH,GetHandleId(Hero[x]),StringHash("IceSphere"))!=1 then
+        call IceSphereRegenCast(Hero[x])
+    endif
+    if udg_DM[x+1]!=null and LoadInteger(HH,GetHandleId(udg_DM[x+1]),StringHash("MoriaDoppel"))!=1 then
+        call MoriaDoppelCast(udg_DM[x+1])
+        call MinusManaMoriaCast(Hero[x])
+    endif
+    if UnitIsAlive(Hero[x]) then
+        if GetUnitAbilityLevel(Hero[x],'A18B')>0 then
+            call HealTextTag(Hero[x],Hero[x],0.045*SunRing(Hero[x])*I2R(GetHeroInt(Hero[x],true))*myCustomHeal2(Hero[x],1),"HealthRes")
+            call SetUnitState(Hero[x],UNIT_STATE_LIFE,GetWidgetLife(Hero[x])+0.045*SunRing(Hero[x])*I2R(GetHeroInt(Hero[x],true)))
         else
-                set ours1=""
+            call HealTextTag(Hero[x],Hero[x],0.015*SunRing(Hero[x])*I2R(GetHeroInt(Hero[x],true))*myCustomHeal2(Hero[x],1),"HealthRes")
+            call SetUnitState(Hero[x],UNIT_STATE_LIFE,GetWidgetLife(Hero[x])+0.015*SunRing(Hero[x])*I2R(GetHeroInt(Hero[x],true)))
         endif
-        if minutes<10 then
-                set minutes1="0"
+    endif
+    if IsUnitPaused(Hero[x])==false and UnitHasItemOfTypeBJ(Hero[x],'I02K')==true and GetWidgetLife(Hero[x])>0.01*GetWidgetMaxLife(Hero[x]) then
+        call SetUnitState(Hero[x],UNIT_STATE_LIFE,GetWidgetLife(Hero[x])-(0.001*GetWidgetMaxLife(Hero[x])+1))
+    endif
+    // if IsUnitPaused(Hero[x])==false and GetUnitAbilityLevel(Hero[x],'Pet1')==0 then
+    //     if IsUnitLifeRegenEnabled(Hero[x])==false then
+    //         call SetUnitLifeRegenEnabled(Hero[x],true)
+    //     endif
+    //     if IsUnitManaRegenEnabled(Hero[x])==false then
+    //         call SetUnitManaRegenEnabled(Hero[x],true)
+    //     endif
+    // else
+    //     if IsUnitLifeRegenEnabled(Hero[x])==true then
+    //         call SetUnitLifeRegenEnabled(Hero[x],false)
+    //     endif
+    //     if IsUnitManaRegenEnabled(Hero[x])==true then
+    //         call SetUnitManaRegenEnabled(Hero[x],false)
+    //     endif
+    // endif
+    // if udg_DM[x+1]!=null then
+    //     if (GetWidgetMana(Hero[x])>=100 and GetWidgetMana(udg_DM[x+1])>=100) and manaMoria[x]!=1 then
+    //         set udg_DMM[x]=CreateUnit(GetOwningPlayer(udg_DM[x+1]),'h13J',RX,RY,0)
+    //         set manaMoria[x]=1
+    //     elseif (GetWidgetMana(Hero[x])<100 or GetWidgetMana(udg_DM[x+1])<100) and manaMoria[x]==1 then
+    //         call RemoveUnit(udg_DMM[x])
+    //         set manaMoria[x]=0
+    //     endif
+    // endif
+endif
+set x=x+1
+endloop
+set x=0
+if Goku!=null then
+    if (GetLocalPlayer()==GetOwningPlayer(Goku) or GetPlayerAlliance(GetOwningPlayer(Goku),GetLocalPlayer(),ALLIANCE_SHARED_CONTROL)) and GetUnitSelected(GetLocalPlayer())==Goku then
+        if IsAbilityVisible(GetUnitAbility(Goku,'GKQ1')) and (GetLocalPlayer()==GetOwningPlayer(Goku) or GetPlayerAlliance(GetOwningPlayer(Goku),GetLocalPlayer(),ALLIANCE_SHARED_CONTROL)) and (GetFrameTexture(GetOriginFrame(ORIGIN_FRAME_COMMAND_BUTTON,11),1)!="ReplaceableTextures\\CommandButtons\\BTNCancel.blp" or (GetFrameTexture(GetOriginFrame(ORIGIN_FRAME_COMMAND_BUTTON,0),1)=="war3mapImported\\BTNMove.blp" and IsFrameVisible(GetOriginFrame(ORIGIN_FRAME_COMMAND_BUTTON,0)))) then 
+            call ShowFrame(GetFrameByName( "AbilityVarBarIcon", 8 ),true)
+            if LoadBoolean(HH,GetHandleId(GetFrameByName( "AbilityVarBarIcon", 8 )),BUTTONHOVER)==false then
+                call ShowFrame(GetFrameByName( "AbilityVarBarTooltip", 8 ),false)
+            else
+                call ShowFrame(GetFrameByName( "AbilityVarBarTooltip", 8 ),true)
+            endif
+            if LoadReal(HH,GetHandleId(GetOwningPlayer(Goku)),VariationQHash)==0 then
+                call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 8 ), "ReplaceableTextures\\CommandButtons\\BTNKamehamehaNormal.blp", 0, true )
+                call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 8 ), "ReplaceableTextures\\CommandButtons\\BTNKamehamehaNormal.blp", 1, true )
+                call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 8 ), "ReplaceableTextures\\CommandButtons\\BTNKamehamehaNormal.blp", 2, true )
+                call SetFrameText( GetFrameByName("AbilityVarBarTooltipText",8), GetAbilityBaseStringFieldById( String2Id( "GKQ2" ), ABILITY_SF_NAME )+", \n\n"+GetAbilityBaseStringFieldById( String2Id( "GKQ2" ), ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED ))
+                call SetFrameSize( GetFrameByName("AbilityVarBarTooltip",8), .24, GetFrameHeight( GetFrameByName("AbilityVarBarTooltipText",8))+0.03)
+                call SetFrameTextAlignment( GetFrameByName("AbilityVarBarTooltipText",8), TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_LEFT )
+                call SetFrameRelativePoint( GetFrameByName("AbilityVarBarTooltip",8), FRAMEPOINT_CENTER, GetFrameByName("AbilityVarBarIcon",8), FRAMEPOINT_CENTER,  .02, (0.5*GetFrameHeight( GetFrameByName("AbilityVarBarTooltipText",8)))+.02  )
+            endif
+            if LoadReal(HH,GetHandleId(GetOwningPlayer(Goku)),VariationQHash)==1 then
+                call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 8 ), "ReplaceableTextures\\CommandButtons\\BTNSuperKamehameha.blp", 0, true )
+                call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 8 ), "ReplaceableTextures\\CommandButtons\\BTNSuperKamehameha.blp", 1, true )
+                call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 8 ), "ReplaceableTextures\\CommandButtons\\BTNSuperKamehameha.blp", 2, true )
+                call SetFrameText( GetFrameByName("AbilityVarBarTooltipText",8), GetAbilityBaseStringFieldById( String2Id( "GKQ3" ), ABILITY_SF_NAME )+", \n\n"+GetAbilityBaseStringFieldById( String2Id( "GKQ3" ), ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED ))
+                call SetFrameSize( GetFrameByName("AbilityVarBarTooltip",8), .24, GetFrameHeight( GetFrameByName("AbilityVarBarTooltipText",8))+0.03)
+                call SetFrameTextAlignment( GetFrameByName("AbilityVarBarTooltipText",8), TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_LEFT )
+                call SetFrameRelativePoint( GetFrameByName("AbilityVarBarTooltip",8), FRAMEPOINT_CENTER, GetFrameByName("AbilityVarBarIcon",8), FRAMEPOINT_CENTER,  .02, (0.5*GetFrameHeight( GetFrameByName("AbilityVarBarTooltipText",8)))+.02  )
+            endif
+            if LoadReal(HH,GetHandleId(GetOwningPlayer(Goku)),VariationQHash)==2 then
+                call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 8 ), "ReplaceableTextures\\CommandButtons\\BTNGokuKaioken.blp", 0, true )
+                call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 8 ), "ReplaceableTextures\\CommandButtons\\BTNGokuKaioken.blp", 1, true )
+                call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 8 ), "ReplaceableTextures\\CommandButtons\\BTNGokuKaioken.blp", 2, true )
+                call SetFrameText( GetFrameByName("AbilityVarBarTooltipText",8), GetAbilityBaseStringFieldById( String2Id( "GKQ4" ), ABILITY_SF_NAME )+", \n\n"+GetAbilityBaseStringFieldById( String2Id( "GKQ4" ), ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED ))
+                call SetFrameSize( GetFrameByName("AbilityVarBarTooltip",8), .24, GetFrameHeight( GetFrameByName("AbilityVarBarTooltipText",8))+0.03)
+                call SetFrameTextAlignment( GetFrameByName("AbilityVarBarTooltipText",8), TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_LEFT )
+                call SetFrameRelativePoint( GetFrameByName("AbilityVarBarTooltip",8), FRAMEPOINT_CENTER, GetFrameByName("AbilityVarBarIcon",8), FRAMEPOINT_CENTER,  .02, (0.5*GetFrameHeight( GetFrameByName("AbilityVarBarTooltipText",8)))+.02  )
+            endif
+            if LoadReal(HH,GetHandleId(GetOwningPlayer(Goku)),VariationQHash)==3 then
+                call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 8 ), "ReplaceableTextures\\CommandButtons\\BTNGokuSSGSSKaioken.blp", 0, true )
+                call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 8 ), "ReplaceableTextures\\CommandButtons\\BTNGokuSSGSSKaioken.blp", 1, true )
+                call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 8 ), "ReplaceableTextures\\CommandButtons\\BTNGokuSSGSSKaioken.blp", 2, true )
+                call SetFrameText( GetFrameByName("AbilityVarBarTooltipText",8), GetAbilityBaseStringFieldById( String2Id( "GKQ5" ), ABILITY_SF_NAME )+", \n\n"+GetAbilityBaseStringFieldById( String2Id( "GKQ5" ), ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED ))
+                call SetFrameSize( GetFrameByName("AbilityVarBarTooltip",8), .24, GetFrameHeight( GetFrameByName("AbilityVarBarTooltipText",8))+0.03)
+                call SetFrameTextAlignment( GetFrameByName("AbilityVarBarTooltipText",8), TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_LEFT )
+                call SetFrameRelativePoint( GetFrameByName("AbilityVarBarTooltip",8), FRAMEPOINT_CENTER, GetFrameByName("AbilityVarBarIcon",8), FRAMEPOINT_CENTER,  .02, (0.5*GetFrameHeight( GetFrameByName("AbilityVarBarTooltipText",8)))+.02  )
+            endif
+            if LoadReal(HH,GetHandleId(GetOwningPlayer(Goku)),VariationQHash)==4 then
+                call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 8 ), "ReplaceableTextures\\CommandButtons\\BTNKamehamehax10.blp", 0, true )
+                call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 8 ), "ReplaceableTextures\\CommandButtons\\BTNKamehamehax10.blp", 1, true )
+                call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 8 ), "ReplaceableTextures\\CommandButtons\\BTNKamehamehax10.blp", 2, true )
+                call SetFrameText( GetFrameByName("AbilityVarBarTooltipText",8), GetAbilityBaseStringFieldById( String2Id( "GKQ6" ), ABILITY_SF_NAME )+", \n\n"+GetAbilityBaseStringFieldById( String2Id( "GKQ6" ), ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED ))
+                call SetFrameSize( GetFrameByName("AbilityVarBarTooltip",8), .24, GetFrameHeight( GetFrameByName("AbilityVarBarTooltipText",8))+0.03)
+                call SetFrameTextAlignment( GetFrameByName("AbilityVarBarTooltipText",8), TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_LEFT )
+                call SetFrameRelativePoint( GetFrameByName("AbilityVarBarTooltip",8), FRAMEPOINT_CENTER, GetFrameByName("AbilityVarBarIcon",8), FRAMEPOINT_CENTER,  .02, (0.5*GetFrameHeight( GetFrameByName("AbilityVarBarTooltipText",8)))+.02  )
+            endif
         else
-                set minutes1=""
+            call ShowFrame(GetFrameByName( "AbilityVarBarIcon", 8 ),false)
         endif
-        if seconds<10 then
-                set seconds1="0"
+        if ((IsAbilityVisible(GetUnitAbility(Goku,'GKW1')) and (GetUnitAbilityLevel(Goku,'GkH6')>0 or GetUnitAbilityLevel(Goku,'GkH0')>0)) or (IsAbilityVisible(GetUnitAbility(Goku,'GKW5'))and (GetUnitAbilityLevel(Goku,'GkH7')>0 or GetUnitAbilityLevel(Goku,'GkH8')>0))) and (GetLocalPlayer()==GetOwningPlayer(Goku) or GetPlayerAlliance(GetOwningPlayer(Goku),GetLocalPlayer(),ALLIANCE_SHARED_CONTROL)) and (GetFrameTexture(GetOriginFrame(ORIGIN_FRAME_COMMAND_BUTTON,11),1)!="ReplaceableTextures\\CommandButtons\\BTNCancel.blp" or (GetFrameTexture(GetOriginFrame(ORIGIN_FRAME_COMMAND_BUTTON,0),1)=="war3mapImported\\BTNMove.blp" and IsFrameVisible(GetOriginFrame(ORIGIN_FRAME_COMMAND_BUTTON,0)))) then
+            call ShowFrame(GetFrameByName( "AbilityVarBarIcon", 9 ),true)
+            if LoadBoolean(HH,GetHandleId(GetFrameByName( "AbilityVarBarIcon", 9 )),BUTTONHOVER)==false then
+                call ShowFrame(GetFrameByName( "AbilityVarBarTooltip", 9 ),false)
+            else
+                call ShowFrame(GetFrameByName( "AbilityVarBarTooltip", 9 ),true)
+            endif
+            if LoadReal(HH,GetHandleId(GetOwningPlayer(Goku)),VariationWHash)==1 then
+                call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 9 ), "ReplaceableTextures\\CommandButtons\\BTNGokuKaioken.blp", 0, true )
+                call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 9 ), "ReplaceableTextures\\CommandButtons\\BTNGokuKaioken.blp", 1, true )
+                call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 9 ), "ReplaceableTextures\\CommandButtons\\BTNGokuKaioken.blp", 2, true )
+                call SetFrameText( GetFrameByName("AbilityVarBarTooltipText", 9), GetAbilityBaseStringFieldById( String2Id( "GKW3" ), ABILITY_SF_NAME )+", \n\n"+GetAbilityBaseStringFieldById( String2Id( "GKW3" ), ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED ))
+                call SetFrameSize( GetFrameByName("AbilityVarBarTooltip", 9), .24, GetFrameHeight( GetFrameByName("AbilityVarBarTooltipText", 9))+0.03)
+                call SetFrameTextAlignment( GetFrameByName("AbilityVarBarTooltipText", 9), TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_LEFT )
+                call SetFrameRelativePoint( GetFrameByName("AbilityVarBarTooltip", 9), FRAMEPOINT_CENTER, GetFrameByName("AbilityVarBarIcon", 9), FRAMEPOINT_CENTER,  -.02, (0.5*GetFrameHeight( GetFrameByName("AbilityVarBarTooltipText", 9)))+.02  )
+            elseif LoadReal(HH,GetHandleId(GetOwningPlayer(Goku)),VariationWHash)==2 then
+                call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 9 ), "ReplaceableTextures\\CommandButtons\\BTNGokuSSGSSKaioken.blp", 0, true )
+                call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 9 ), "ReplaceableTextures\\CommandButtons\\BTNGokuSSGSSKaioken.blp", 1, true )
+                call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 9 ), "ReplaceableTextures\\CommandButtons\\BTNGokuSSGSSKaioken.blp", 2, true )
+                call SetFrameText( GetFrameByName("AbilityVarBarTooltipText", 9), GetAbilityBaseStringFieldById( String2Id( "GKW4" ), ABILITY_SF_NAME )+", \n\n"+GetAbilityBaseStringFieldById( String2Id( "GKW4" ), ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED ))
+                call SetFrameSize( GetFrameByName("AbilityVarBarTooltip", 9), .24, GetFrameHeight( GetFrameByName("AbilityVarBarTooltipText", 9))+0.03)
+                call SetFrameTextAlignment( GetFrameByName("AbilityVarBarTooltipText", 9), TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_LEFT )
+                call SetFrameRelativePoint( GetFrameByName("AbilityVarBarTooltip", 9), FRAMEPOINT_CENTER, GetFrameByName("AbilityVarBarIcon", 9), FRAMEPOINT_CENTER,  -.02, (0.5*GetFrameHeight( GetFrameByName("AbilityVarBarTooltipText", 9)))+.02  )
+            elseif LoadReal(HH,GetHandleId(GetOwningPlayer(Goku)),VariationWHash)==0 then
+                call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 9 ), "ReplaceableTextures\\CommandButtons\\BTNGokuFightStance.blp", 0, true )
+                call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 9 ), "ReplaceableTextures\\CommandButtons\\BTNGokuFightStance.blp", 1, true )
+                call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 9 ), "ReplaceableTextures\\CommandButtons\\BTNGokuFightStance.blp", 2, true )
+                call SetFrameText( GetFrameByName("AbilityVarBarTooltipText", 9), GetAbilityBaseStringFieldById( String2Id( "GKW2" ), ABILITY_SF_NAME )+", \n\n"+GetAbilityBaseStringFieldById( String2Id( "GKW2" ), ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED ))
+                call SetFrameSize( GetFrameByName("AbilityVarBarTooltip", 9), .24, GetFrameHeight( GetFrameByName("AbilityVarBarTooltipText", 9))+0.03)
+                call SetFrameTextAlignment( GetFrameByName("AbilityVarBarTooltipText", 9), TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_LEFT )
+                call SetFrameRelativePoint( GetFrameByName("AbilityVarBarTooltip", 9), FRAMEPOINT_CENTER, GetFrameByName("AbilityVarBarIcon", 9), FRAMEPOINT_CENTER,  -.02, (0.5*GetFrameHeight( GetFrameByName("AbilityVarBarTooltipText", 9)))+.02  )
+            endif
+            if LoadReal(HH,GetHandleId(GetOwningPlayer(Goku)),VariationWHash)==4 then
+                call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 9 ), "ReplaceableTextures\\CommandButtons\\BTNAcceleratingBattleSpirit3.blp", 0, true )
+                call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 9 ), "ReplaceableTextures\\CommandButtons\\BTNAcceleratingBattleSpirit3.blp", 1, true )
+                call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 9 ), "ReplaceableTextures\\CommandButtons\\BTNAcceleratingBattleSpirit3.blp", 2, true )
+                call SetFrameText( GetFrameByName("AbilityVarBarTooltipText", 9), GetAbilityBaseStringFieldById( String2Id( "GKW7" ), ABILITY_SF_NAME )+", \n\n"+GetAbilityBaseStringFieldById( String2Id( "GKW7" ), ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED ))
+                call SetFrameSize( GetFrameByName("AbilityVarBarTooltip", 9), .24, GetFrameHeight( GetFrameByName("AbilityVarBarTooltipText", 9))+0.03)
+                call SetFrameTextAlignment( GetFrameByName("AbilityVarBarTooltipText", 9), TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_LEFT )
+                call SetFrameRelativePoint( GetFrameByName("AbilityVarBarTooltip", 9), FRAMEPOINT_CENTER, GetFrameByName("AbilityVarBarIcon", 9), FRAMEPOINT_CENTER,  -.02, (0.5*GetFrameHeight( GetFrameByName("AbilityVarBarTooltipText", 9)))+.02  )
+            elseif LoadReal(HH,GetHandleId(GetOwningPlayer(Goku)),VariationWHash)==3 then
+                call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 9 ), "ReplaceableTextures\\CommandButtons\\BTNAcceleratingBattleSpirit2.blp", 0, true )
+                call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 9 ), "ReplaceableTextures\\CommandButtons\\BTNAcceleratingBattleSpirit2.blp", 1, true )
+                call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 9 ), "ReplaceableTextures\\CommandButtons\\BTNAcceleratingBattleSpirit2.blp", 2, true )
+                call SetFrameText( GetFrameByName("AbilityVarBarTooltipText", 9), GetAbilityBaseStringFieldById( String2Id( "GKW6" ), ABILITY_SF_NAME )+", \n\n"+GetAbilityBaseStringFieldById( String2Id( "GKW6" ), ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED ))
+                call SetFrameSize( GetFrameByName("AbilityVarBarTooltip", 9), .24, GetFrameHeight( GetFrameByName("AbilityVarBarTooltipText", 9))+0.03)
+                call SetFrameTextAlignment( GetFrameByName("AbilityVarBarTooltipText", 9), TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_LEFT )
+                call SetFrameRelativePoint( GetFrameByName("AbilityVarBarTooltip", 9), FRAMEPOINT_CENTER, GetFrameByName("AbilityVarBarIcon", 9), FRAMEPOINT_CENTER,  -.02, (0.5*GetFrameHeight( GetFrameByName("AbilityVarBarTooltipText", 9)))+.02  )
+            endif
         else
-                set seconds1=""
+            call ShowFrame(GetFrameByName( "AbilityVarBarIcon", 9 ),false)
         endif
-        call MultiboardSetTitleText(mbg,"|cffc3dbffRound|r - "+I2S(round)+", |cffc3dbffTime -|r "+ours1+I2S(ours)+":"+minutes1+I2S(minutes)+":"+seconds1+I2S(seconds))
-        //call BJDebugMsg(R2S(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_INVENTORY_BAR, 0 ),0 )))+" "+R2S(GetFrameHeight( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_INVENTORY_BAR, 0 ),0 ) )))
-        set x=0
-        loop
-        exitwhen x>=10
-        if ingame[x]==true then
-            if udg_B==false then
-                call SetUnitInvulnerable(Hero[x],true)
-            endif
-            if GetUnitTypeId(Hero[x])=='H02O' and GetHeroLevel(Hero[x])>5 and LoadInteger(HH,GetHandleId(Hero[x]),StringHash("BuuPassive"))!=1 then
-                call BuuPassiveRegenCast(Hero[x])
-            endif
-            if (UnitHasItemOfTypeBJ(Hero[x],'I00D') or GetUnitAbilityLevel(Hero[x],'KI58')>0) and LoadInteger(HH,GetHandleId(Hero[x]),StringHash("SunVongola"))!=1 then
-                call SunVongolaRegenCast(Hero[x])
-            endif
-            if GetUnitAbilityLevel(Hero[x],'B074')>0 and LoadInteger(HH,GetHandleId(Hero[x]),StringHash("OrihimeF"))!=1 then
-                call OrihimeFCast(Hero[x])
-            endif
-            if (UnitHasItemOfTypeBJ(Hero[x],'I043') or GetUnitAbilityLevel(Hero[x],'KIL8')>0) and LoadInteger(HH,GetHandleId(Hero[x]),StringHash("BloodSphere"))!=1 then
-                call BloodSphereMPRegenCast(Hero[x])
-            endif
-            if UnitHasItemOfTypeBJ(Hero[x],'I054') and LoadInteger(HH,GetHandleId(Hero[x]),StringHash("IceBoots"))!=1 then
-                call IceBootsRegenCast(Hero[x])
-            endif
-            if (UnitHasItemOfTypeBJ(Hero[x],'I02S') or GetUnitAbilityLevel(Hero[x],'KIG0')>0) and LoadInteger(HH,GetHandleId(Hero[x]),StringHash("IceSphere"))!=1 then
-                call IceSphereRegenCast(Hero[x])
-            endif
-            if UnitIsAlive(Hero[x]) then
-                if GetUnitAbilityLevel(Hero[x],'A18B')>0 then
-                    call HealTextTag(Hero[x],Hero[x],0.045*SunRing(Hero[x])*I2R(GetHeroInt(Hero[x],true))*myCustomHeal2(Hero[x],1),"HealthRes")
-                    call SetUnitState(Hero[x],UNIT_STATE_LIFE,GetWidgetLife(Hero[x])+0.045*SunRing(Hero[x])*I2R(GetHeroInt(Hero[x],true)))
-                else
-                    call HealTextTag(Hero[x],Hero[x],0.015*SunRing(Hero[x])*I2R(GetHeroInt(Hero[x],true))*myCustomHeal2(Hero[x],1),"HealthRes")
-                    call SetUnitState(Hero[x],UNIT_STATE_LIFE,GetWidgetLife(Hero[x])+0.015*SunRing(Hero[x])*I2R(GetHeroInt(Hero[x],true)))
-                endif
-            endif
-            if IsUnitPaused(Hero[x])==false and UnitHasItemOfTypeBJ(Hero[x],'I02K')==true and GetWidgetLife(Hero[x])>0.01*GetWidgetMaxLife(Hero[x]) then
-                call SetUnitState(Hero[x],UNIT_STATE_LIFE,GetWidgetLife(Hero[x])-(0.001*GetWidgetMaxLife(Hero[x])+1))
-            endif
-            // if IsUnitPaused(Hero[x])==false and GetUnitAbilityLevel(Hero[x],'Pet1')==0 then
-            //     if IsUnitLifeRegenEnabled(Hero[x])==false then
-            //         call SetUnitLifeRegenEnabled(Hero[x],true)
-            //     endif
-            //     if IsUnitManaRegenEnabled(Hero[x])==false then
-            //         call SetUnitManaRegenEnabled(Hero[x],true)
-            //     endif
-            // else
-            //     if IsUnitLifeRegenEnabled(Hero[x])==true then
-            //         call SetUnitLifeRegenEnabled(Hero[x],false)
-            //     endif
-            //     if IsUnitManaRegenEnabled(Hero[x])==true then
-            //         call SetUnitManaRegenEnabled(Hero[x],false)
-            //     endif
-            // endif
-            if udg_DM[x+1]!=null then
-                if (GetWidgetMana(Hero[x])>=100 and GetWidgetMana(udg_DM[x+1])>=100) and manaMoria[x]!=1 then
-                    set udg_DMM[x]=CreateUnit(GetOwningPlayer(udg_DM[x+1]),'h13J',RX,RY,0)
-                    set manaMoria[x]=1
-                elseif (GetWidgetMana(Hero[x])<100 or GetWidgetMana(udg_DM[x+1])<100) and manaMoria[x]==1 then
-                    call RemoveUnit(udg_DMM[x])
-                    set manaMoria[x]=0
-                endif
-            endif
-        endif
-        set x=x+1
-        endloop
-        set x=0
-        if (GetLocalPlayer()==GetOwningPlayer(Goku) or GetPlayerAlliance(GetOwningPlayer(Goku),GetLocalPlayer(),ALLIANCE_SHARED_CONTROL)) and GetUnitSelected(GetLocalPlayer())==Goku then
-            if IsAbilityVisible(GetUnitAbility(Goku,'GKQ1')) and (GetLocalPlayer()==GetOwningPlayer(Goku) or GetPlayerAlliance(GetOwningPlayer(Goku),GetLocalPlayer(),ALLIANCE_SHARED_CONTROL)) and (GetFrameTexture(GetOriginFrame(ORIGIN_FRAME_COMMAND_BUTTON,11),1)!="ReplaceableTextures\\CommandButtons\\BTNCancel.blp" or (GetFrameTexture(GetOriginFrame(ORIGIN_FRAME_COMMAND_BUTTON,0),1)=="war3mapImported\\BTNMove.blp" and IsFrameVisible(GetOriginFrame(ORIGIN_FRAME_COMMAND_BUTTON,0)))) then 
-                call ShowFrame(GetFrameByName( "AbilityVarBarIcon", 8 ),true)
-                if LoadBoolean(HH,GetHandleId(GetFrameByName( "AbilityVarBarIcon", 8 )),BUTTONHOVER)==false then
-                    call ShowFrame(GetFrameByName( "AbilityVarBarTooltip", 8 ),false)
-                else
-                    call ShowFrame(GetFrameByName( "AbilityVarBarTooltip", 8 ),true)
-                endif
-                if LoadReal(HH,GetHandleId(GetOwningPlayer(Goku)),VariationQHash)==0 then
-                    call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 8 ), "ReplaceableTextures\\CommandButtons\\BTNKamehamehaNormal.blp", 0, true )
-                    call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 8 ), "ReplaceableTextures\\CommandButtons\\BTNKamehamehaNormal.blp", 1, true )
-                    call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 8 ), "ReplaceableTextures\\CommandButtons\\BTNKamehamehaNormal.blp", 2, true )
-                    call SetFrameText( GetFrameByName("AbilityVarBarTooltipText",8), GetAbilityBaseStringFieldById( String2Id( "GKQ2" ), ABILITY_SF_NAME )+", \n\n"+GetAbilityBaseStringFieldById( String2Id( "GKQ2" ), ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED ))
-                    call SetFrameSize( GetFrameByName("AbilityVarBarTooltip",8), .24, GetFrameHeight( GetFrameByName("AbilityVarBarTooltipText",8))+0.03)
-                    call SetFrameTextAlignment( GetFrameByName("AbilityVarBarTooltipText",8), TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_LEFT )
-                    call SetFrameRelativePoint( GetFrameByName("AbilityVarBarTooltip",8), FRAMEPOINT_CENTER, GetFrameByName("AbilityVarBarIcon",8), FRAMEPOINT_CENTER,  .02, (0.5*GetFrameHeight( GetFrameByName("AbilityVarBarTooltipText",8)))+.02  )
-                endif
-                if LoadReal(HH,GetHandleId(GetOwningPlayer(Goku)),VariationQHash)==1 then
-                    call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 8 ), "ReplaceableTextures\\CommandButtons\\BTNSuperKamehameha.blp", 0, true )
-                    call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 8 ), "ReplaceableTextures\\CommandButtons\\BTNSuperKamehameha.blp", 1, true )
-                    call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 8 ), "ReplaceableTextures\\CommandButtons\\BTNSuperKamehameha.blp", 2, true )
-                    call SetFrameText( GetFrameByName("AbilityVarBarTooltipText",8), GetAbilityBaseStringFieldById( String2Id( "GKQ3" ), ABILITY_SF_NAME )+", \n\n"+GetAbilityBaseStringFieldById( String2Id( "GKQ3" ), ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED ))
-                    call SetFrameSize( GetFrameByName("AbilityVarBarTooltip",8), .24, GetFrameHeight( GetFrameByName("AbilityVarBarTooltipText",8))+0.03)
-                    call SetFrameTextAlignment( GetFrameByName("AbilityVarBarTooltipText",8), TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_LEFT )
-                    call SetFrameRelativePoint( GetFrameByName("AbilityVarBarTooltip",8), FRAMEPOINT_CENTER, GetFrameByName("AbilityVarBarIcon",8), FRAMEPOINT_CENTER,  .02, (0.5*GetFrameHeight( GetFrameByName("AbilityVarBarTooltipText",8)))+.02  )
-                endif
-                if LoadReal(HH,GetHandleId(GetOwningPlayer(Goku)),VariationQHash)==2 then
-                    call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 8 ), "ReplaceableTextures\\CommandButtons\\BTNGokuKaioken.blp", 0, true )
-                    call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 8 ), "ReplaceableTextures\\CommandButtons\\BTNGokuKaioken.blp", 1, true )
-                    call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 8 ), "ReplaceableTextures\\CommandButtons\\BTNGokuKaioken.blp", 2, true )
-                    call SetFrameText( GetFrameByName("AbilityVarBarTooltipText",8), GetAbilityBaseStringFieldById( String2Id( "GKQ4" ), ABILITY_SF_NAME )+", \n\n"+GetAbilityBaseStringFieldById( String2Id( "GKQ4" ), ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED ))
-                    call SetFrameSize( GetFrameByName("AbilityVarBarTooltip",8), .24, GetFrameHeight( GetFrameByName("AbilityVarBarTooltipText",8))+0.03)
-                    call SetFrameTextAlignment( GetFrameByName("AbilityVarBarTooltipText",8), TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_LEFT )
-                    call SetFrameRelativePoint( GetFrameByName("AbilityVarBarTooltip",8), FRAMEPOINT_CENTER, GetFrameByName("AbilityVarBarIcon",8), FRAMEPOINT_CENTER,  .02, (0.5*GetFrameHeight( GetFrameByName("AbilityVarBarTooltipText",8)))+.02  )
-                endif
-                if LoadReal(HH,GetHandleId(GetOwningPlayer(Goku)),VariationQHash)==3 then
-                    call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 8 ), "ReplaceableTextures\\CommandButtons\\BTNGokuSSGSSKaioken.blp", 0, true )
-                    call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 8 ), "ReplaceableTextures\\CommandButtons\\BTNGokuSSGSSKaioken.blp", 1, true )
-                    call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 8 ), "ReplaceableTextures\\CommandButtons\\BTNGokuSSGSSKaioken.blp", 2, true )
-                    call SetFrameText( GetFrameByName("AbilityVarBarTooltipText",8), GetAbilityBaseStringFieldById( String2Id( "GKQ5" ), ABILITY_SF_NAME )+", \n\n"+GetAbilityBaseStringFieldById( String2Id( "GKQ5" ), ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED ))
-                    call SetFrameSize( GetFrameByName("AbilityVarBarTooltip",8), .24, GetFrameHeight( GetFrameByName("AbilityVarBarTooltipText",8))+0.03)
-                    call SetFrameTextAlignment( GetFrameByName("AbilityVarBarTooltipText",8), TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_LEFT )
-                    call SetFrameRelativePoint( GetFrameByName("AbilityVarBarTooltip",8), FRAMEPOINT_CENTER, GetFrameByName("AbilityVarBarIcon",8), FRAMEPOINT_CENTER,  .02, (0.5*GetFrameHeight( GetFrameByName("AbilityVarBarTooltipText",8)))+.02  )
-                endif
-                if LoadReal(HH,GetHandleId(GetOwningPlayer(Goku)),VariationQHash)==4 then
-                    call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 8 ), "ReplaceableTextures\\CommandButtons\\BTNKamehamehax10.blp", 0, true )
-                    call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 8 ), "ReplaceableTextures\\CommandButtons\\BTNKamehamehax10.blp", 1, true )
-                    call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 8 ), "ReplaceableTextures\\CommandButtons\\BTNKamehamehax10.blp", 2, true )
-                    call SetFrameText( GetFrameByName("AbilityVarBarTooltipText",8), GetAbilityBaseStringFieldById( String2Id( "GKQ6" ), ABILITY_SF_NAME )+", \n\n"+GetAbilityBaseStringFieldById( String2Id( "GKQ6" ), ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED ))
-                    call SetFrameSize( GetFrameByName("AbilityVarBarTooltip",8), .24, GetFrameHeight( GetFrameByName("AbilityVarBarTooltipText",8))+0.03)
-                    call SetFrameTextAlignment( GetFrameByName("AbilityVarBarTooltipText",8), TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_LEFT )
-                    call SetFrameRelativePoint( GetFrameByName("AbilityVarBarTooltip",8), FRAMEPOINT_CENTER, GetFrameByName("AbilityVarBarIcon",8), FRAMEPOINT_CENTER,  .02, (0.5*GetFrameHeight( GetFrameByName("AbilityVarBarTooltipText",8)))+.02  )
-                endif
+        if (IsAbilityVisible(GetUnitAbility(Goku,'GKE2')) or IsAbilityVisible(GetUnitAbility(Goku,'GKE3')) or IsAbilityVisible(GetUnitAbility(Goku,'GKE4')) or IsAbilityVisible(GetUnitAbility(Goku,'GKE5')) or IsAbilityVisible(GetUnitAbility(Goku,'GKE6'))) and (GetLocalPlayer()==GetOwningPlayer(Goku) or GetPlayerAlliance(GetOwningPlayer(Goku),GetLocalPlayer(),ALLIANCE_SHARED_CONTROL)) and (GetFrameTexture(GetOriginFrame(ORIGIN_FRAME_COMMAND_BUTTON,11),1)!="ReplaceableTextures\\CommandButtons\\BTNCancel.blp" or (GetFrameTexture(GetOriginFrame(ORIGIN_FRAME_COMMAND_BUTTON,0),1)=="war3mapImported\\BTNMove.blp" and IsFrameVisible(GetOriginFrame(ORIGIN_FRAME_COMMAND_BUTTON,0)))) then
+            call ShowFrame(GetFrameByName( "AbilityVarBarIcon", 10 ),true)
+            if LoadBoolean(HH,GetHandleId(GetFrameByName( "AbilityVarBarIcon", 10 )),BUTTONHOVER)==false then
+                call ShowFrame(GetFrameByName( "AbilityVarBarTooltip", 10 ),false)
             else
-                call ShowFrame(GetFrameByName( "AbilityVarBarIcon", 8 ),false)
+                call ShowFrame(GetFrameByName( "AbilityVarBarTooltip", 10 ),true)
             endif
-            if ((IsAbilityVisible(GetUnitAbility(Goku,'GKW1')) and (GetUnitAbilityLevel(Goku,'GkH6')>0 or GetUnitAbilityLevel(Goku,'GkH0')>0)) or (IsAbilityVisible(GetUnitAbility(Goku,'GKW5'))and (GetUnitAbilityLevel(Goku,'GkH7')>0 or GetUnitAbilityLevel(Goku,'GkH8')>0))) and (GetLocalPlayer()==GetOwningPlayer(Goku) or GetPlayerAlliance(GetOwningPlayer(Goku),GetLocalPlayer(),ALLIANCE_SHARED_CONTROL)) and (GetFrameTexture(GetOriginFrame(ORIGIN_FRAME_COMMAND_BUTTON,11),1)!="ReplaceableTextures\\CommandButtons\\BTNCancel.blp" or (GetFrameTexture(GetOriginFrame(ORIGIN_FRAME_COMMAND_BUTTON,0),1)=="war3mapImported\\BTNMove.blp" and IsFrameVisible(GetOriginFrame(ORIGIN_FRAME_COMMAND_BUTTON,0)))) then
-                call ShowFrame(GetFrameByName( "AbilityVarBarIcon", 9 ),true)
-                if LoadBoolean(HH,GetHandleId(GetFrameByName( "AbilityVarBarIcon", 9 )),BUTTONHOVER)==false then
-                    call ShowFrame(GetFrameByName( "AbilityVarBarTooltip", 9 ),false)
-                else
-                    call ShowFrame(GetFrameByName( "AbilityVarBarTooltip", 9 ),true)
-                endif
-                if LoadReal(HH,GetHandleId(GetOwningPlayer(Goku)),VariationWHash)==1 then
-                    call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 9 ), "ReplaceableTextures\\CommandButtons\\BTNGokuKaioken.blp", 0, true )
-                    call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 9 ), "ReplaceableTextures\\CommandButtons\\BTNGokuKaioken.blp", 1, true )
-                    call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 9 ), "ReplaceableTextures\\CommandButtons\\BTNGokuKaioken.blp", 2, true )
-                    call SetFrameText( GetFrameByName("AbilityVarBarTooltipText", 9), GetAbilityBaseStringFieldById( String2Id( "GKW3" ), ABILITY_SF_NAME )+", \n\n"+GetAbilityBaseStringFieldById( String2Id( "GKW3" ), ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED ))
-                    call SetFrameSize( GetFrameByName("AbilityVarBarTooltip", 9), .24, GetFrameHeight( GetFrameByName("AbilityVarBarTooltipText", 9))+0.03)
-                    call SetFrameTextAlignment( GetFrameByName("AbilityVarBarTooltipText", 9), TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_LEFT )
-                    call SetFrameRelativePoint( GetFrameByName("AbilityVarBarTooltip", 9), FRAMEPOINT_CENTER, GetFrameByName("AbilityVarBarIcon", 9), FRAMEPOINT_CENTER,  -.02, (0.5*GetFrameHeight( GetFrameByName("AbilityVarBarTooltipText", 9)))+.02  )
-                elseif LoadReal(HH,GetHandleId(GetOwningPlayer(Goku)),VariationWHash)==2 then
-                    call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 9 ), "ReplaceableTextures\\CommandButtons\\BTNGokuSSGSSKaioken.blp", 0, true )
-                    call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 9 ), "ReplaceableTextures\\CommandButtons\\BTNGokuSSGSSKaioken.blp", 1, true )
-                    call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 9 ), "ReplaceableTextures\\CommandButtons\\BTNGokuSSGSSKaioken.blp", 2, true )
-                    call SetFrameText( GetFrameByName("AbilityVarBarTooltipText", 9), GetAbilityBaseStringFieldById( String2Id( "GKW4" ), ABILITY_SF_NAME )+", \n\n"+GetAbilityBaseStringFieldById( String2Id( "GKW4" ), ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED ))
-                    call SetFrameSize( GetFrameByName("AbilityVarBarTooltip", 9), .24, GetFrameHeight( GetFrameByName("AbilityVarBarTooltipText", 9))+0.03)
-                    call SetFrameTextAlignment( GetFrameByName("AbilityVarBarTooltipText", 9), TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_LEFT )
-                    call SetFrameRelativePoint( GetFrameByName("AbilityVarBarTooltip", 9), FRAMEPOINT_CENTER, GetFrameByName("AbilityVarBarIcon", 9), FRAMEPOINT_CENTER,  -.02, (0.5*GetFrameHeight( GetFrameByName("AbilityVarBarTooltipText", 9)))+.02  )
-                elseif LoadReal(HH,GetHandleId(GetOwningPlayer(Goku)),VariationWHash)==0 then
-                    call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 9 ), "ReplaceableTextures\\CommandButtons\\BTNGokuFightStance.blp", 0, true )
-                    call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 9 ), "ReplaceableTextures\\CommandButtons\\BTNGokuFightStance.blp", 1, true )
-                    call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 9 ), "ReplaceableTextures\\CommandButtons\\BTNGokuFightStance.blp", 2, true )
-                    call SetFrameText( GetFrameByName("AbilityVarBarTooltipText", 9), GetAbilityBaseStringFieldById( String2Id( "GKW2" ), ABILITY_SF_NAME )+", \n\n"+GetAbilityBaseStringFieldById( String2Id( "GKW2" ), ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED ))
-                    call SetFrameSize( GetFrameByName("AbilityVarBarTooltip", 9), .24, GetFrameHeight( GetFrameByName("AbilityVarBarTooltipText", 9))+0.03)
-                    call SetFrameTextAlignment( GetFrameByName("AbilityVarBarTooltipText", 9), TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_LEFT )
-                    call SetFrameRelativePoint( GetFrameByName("AbilityVarBarTooltip", 9), FRAMEPOINT_CENTER, GetFrameByName("AbilityVarBarIcon", 9), FRAMEPOINT_CENTER,  -.02, (0.5*GetFrameHeight( GetFrameByName("AbilityVarBarTooltipText", 9)))+.02  )
-                endif
-                if LoadReal(HH,GetHandleId(GetOwningPlayer(Goku)),VariationWHash)==4 then
-                    call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 9 ), "ReplaceableTextures\\CommandButtons\\BTNAcceleratingBattleSpirit3.blp", 0, true )
-                    call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 9 ), "ReplaceableTextures\\CommandButtons\\BTNAcceleratingBattleSpirit3.blp", 1, true )
-                    call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 9 ), "ReplaceableTextures\\CommandButtons\\BTNAcceleratingBattleSpirit3.blp", 2, true )
-                    call SetFrameText( GetFrameByName("AbilityVarBarTooltipText", 9), GetAbilityBaseStringFieldById( String2Id( "GKW7" ), ABILITY_SF_NAME )+", \n\n"+GetAbilityBaseStringFieldById( String2Id( "GKW7" ), ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED ))
-                    call SetFrameSize( GetFrameByName("AbilityVarBarTooltip", 9), .24, GetFrameHeight( GetFrameByName("AbilityVarBarTooltipText", 9))+0.03)
-                    call SetFrameTextAlignment( GetFrameByName("AbilityVarBarTooltipText", 9), TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_LEFT )
-                    call SetFrameRelativePoint( GetFrameByName("AbilityVarBarTooltip", 9), FRAMEPOINT_CENTER, GetFrameByName("AbilityVarBarIcon", 9), FRAMEPOINT_CENTER,  -.02, (0.5*GetFrameHeight( GetFrameByName("AbilityVarBarTooltipText", 9)))+.02  )
-                elseif LoadReal(HH,GetHandleId(GetOwningPlayer(Goku)),VariationWHash)==3 then
-                    call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 9 ), "ReplaceableTextures\\CommandButtons\\BTNAcceleratingBattleSpirit2.blp", 0, true )
-                    call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 9 ), "ReplaceableTextures\\CommandButtons\\BTNAcceleratingBattleSpirit2.blp", 1, true )
-                    call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 9 ), "ReplaceableTextures\\CommandButtons\\BTNAcceleratingBattleSpirit2.blp", 2, true )
-                    call SetFrameText( GetFrameByName("AbilityVarBarTooltipText", 9), GetAbilityBaseStringFieldById( String2Id( "GKW6" ), ABILITY_SF_NAME )+", \n\n"+GetAbilityBaseStringFieldById( String2Id( "GKW6" ), ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED ))
-                    call SetFrameSize( GetFrameByName("AbilityVarBarTooltip", 9), .24, GetFrameHeight( GetFrameByName("AbilityVarBarTooltipText", 9))+0.03)
-                    call SetFrameTextAlignment( GetFrameByName("AbilityVarBarTooltipText", 9), TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_LEFT )
-                    call SetFrameRelativePoint( GetFrameByName("AbilityVarBarTooltip", 9), FRAMEPOINT_CENTER, GetFrameByName("AbilityVarBarIcon", 9), FRAMEPOINT_CENTER,  -.02, (0.5*GetFrameHeight( GetFrameByName("AbilityVarBarTooltipText", 9)))+.02  )
-                endif
-            else
-                call ShowFrame(GetFrameByName( "AbilityVarBarIcon", 9 ),false)
+            if LoadReal(HH,GetHandleId(GetOwningPlayer(Goku)),VariationEHash)==1 then
+                call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 10 ), GetAbilityBaseStringFieldById( String2Id( "GKE3" ), ABILITY_SF_ICON_NORMAL ), 0, true )
+                call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 10 ), GetAbilityBaseStringFieldById( String2Id( "GKE3" ), ABILITY_SF_ICON_NORMAL ), 1, true )
+                call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 10 ), GetAbilityBaseStringFieldById( String2Id( "GKE3" ), ABILITY_SF_ICON_NORMAL ), 2, true )                
+                call SetFrameText( GetFrameByName("AbilityVarBarTooltipText", 10), GetAbilityBaseStringFieldById( String2Id( "GKE3" ), ABILITY_SF_NAME )+", \n\n"+GetAbilityBaseStringLevelFieldById( String2Id( "GKE3" ), ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED, GetUnitAbilityLevel(Goku,'GKE3')-1 ))
+                call SetFrameSize( GetFrameByName("AbilityVarBarTooltip", 10), .24, GetFrameHeight( GetFrameByName("AbilityVarBarTooltipText", 10))+0.03)
+                call SetFrameTextAlignment( GetFrameByName("AbilityVarBarTooltipText", 10), TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_LEFT )
+                call SetFrameRelativePoint( GetFrameByName("AbilityVarBarTooltip", 10), FRAMEPOINT_CENTER, GetFrameByName("AbilityVarBarIcon", 10), FRAMEPOINT_CENTER,  -.06, (0.5*GetFrameHeight( GetFrameByName("AbilityVarBarTooltipText", 10)))+.02  )
+            elseif LoadReal(HH,GetHandleId(GetOwningPlayer(Goku)),VariationEHash)==0 then
+                call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 10 ), GetAbilityBaseStringFieldById( String2Id( "GKE2" ), ABILITY_SF_ICON_NORMAL ), 0, true )
+                call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 10 ), GetAbilityBaseStringFieldById( String2Id( "GKE2" ), ABILITY_SF_ICON_NORMAL ), 1, true )
+                call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 10 ), GetAbilityBaseStringFieldById( String2Id( "GKE2" ), ABILITY_SF_ICON_NORMAL ), 2, true )                
+                call SetFrameText( GetFrameByName("AbilityVarBarTooltipText", 10), GetAbilityBaseStringFieldById( String2Id( "GKE2" ), ABILITY_SF_NAME )+", \n\n"+GetAbilityBaseStringLevelFieldById( String2Id( "GKE2" ), ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED, GetUnitAbilityLevel(Goku,'GKE2')-1 ))
+                call SetFrameSize( GetFrameByName("AbilityVarBarTooltip", 10), .24, GetFrameHeight( GetFrameByName("AbilityVarBarTooltipText", 10))+0.03)
+                call SetFrameTextAlignment( GetFrameByName("AbilityVarBarTooltipText", 10), TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_LEFT )
+                call SetFrameRelativePoint( GetFrameByName("AbilityVarBarTooltip", 10), FRAMEPOINT_CENTER, GetFrameByName("AbilityVarBarIcon", 10), FRAMEPOINT_CENTER,  -.06, (0.5*GetFrameHeight( GetFrameByName("AbilityVarBarTooltipText", 10)))+.02  )
+            elseif LoadReal(HH,GetHandleId(GetOwningPlayer(Goku)),VariationEHash)==2 then
+                call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 10 ), GetAbilityBaseStringFieldById( String2Id( "GKE4" ), ABILITY_SF_ICON_NORMAL ), 0, true )
+                call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 10 ), GetAbilityBaseStringFieldById( String2Id( "GKE4" ), ABILITY_SF_ICON_NORMAL ), 1, true )
+                call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 10 ), GetAbilityBaseStringFieldById( String2Id( "GKE4" ), ABILITY_SF_ICON_NORMAL ), 2, true )                
+                call SetFrameText( GetFrameByName("AbilityVarBarTooltipText", 10), GetAbilityBaseStringFieldById( String2Id( "GKE4" ), ABILITY_SF_NAME )+", \n\n"+GetAbilityBaseStringLevelFieldById( String2Id( "GKE4" ), ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED, GetUnitAbilityLevel(Goku,'GKE4')-1 ))
+                call SetFrameSize( GetFrameByName("AbilityVarBarTooltip", 10), .24, GetFrameHeight( GetFrameByName("AbilityVarBarTooltipText", 10))+0.03)
+                call SetFrameTextAlignment( GetFrameByName("AbilityVarBarTooltipText", 10), TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_LEFT )
+                call SetFrameRelativePoint( GetFrameByName("AbilityVarBarTooltip", 10), FRAMEPOINT_CENTER, GetFrameByName("AbilityVarBarIcon", 10), FRAMEPOINT_CENTER,  -.06, (0.5*GetFrameHeight( GetFrameByName("AbilityVarBarTooltipText", 10)))+.02  )
+            elseif LoadReal(HH,GetHandleId(GetOwningPlayer(Goku)),VariationEHash)==3 then
+                call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 10 ), GetAbilityBaseStringFieldById( String2Id( "GKE5" ), ABILITY_SF_ICON_NORMAL ), 0, true )
+                call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 10 ), GetAbilityBaseStringFieldById( String2Id( "GKE5" ), ABILITY_SF_ICON_NORMAL ), 1, true )
+                call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 10 ), GetAbilityBaseStringFieldById( String2Id( "GKE5" ), ABILITY_SF_ICON_NORMAL ), 2, true )                
+                call SetFrameText( GetFrameByName("AbilityVarBarTooltipText", 10), GetAbilityBaseStringFieldById( String2Id( "GKE5" ), ABILITY_SF_NAME )+", \n\n"+GetAbilityBaseStringLevelFieldById( String2Id( "GKE5" ), ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED, GetUnitAbilityLevel(Goku,'GKE5')-1 ))
+                call SetFrameSize( GetFrameByName("AbilityVarBarTooltip", 10), .24, GetFrameHeight( GetFrameByName("AbilityVarBarTooltipText", 10))+0.03)
+                call SetFrameTextAlignment( GetFrameByName("AbilityVarBarTooltipText", 10), TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_LEFT )
+                call SetFrameRelativePoint( GetFrameByName("AbilityVarBarTooltip", 10), FRAMEPOINT_CENTER, GetFrameByName("AbilityVarBarIcon", 10), FRAMEPOINT_CENTER,  -.06, (0.5*GetFrameHeight( GetFrameByName("AbilityVarBarTooltipText", 10)))+.02  )
+            elseif LoadReal(HH,GetHandleId(GetOwningPlayer(Goku)),VariationEHash)==4 then
+                call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 10 ), GetAbilityBaseStringFieldById( String2Id( "GKE6" ), ABILITY_SF_ICON_NORMAL ), 0, true )
+                call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 10 ), GetAbilityBaseStringFieldById( String2Id( "GKE6" ), ABILITY_SF_ICON_NORMAL ), 1, true )
+                call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 10 ), GetAbilityBaseStringFieldById( String2Id( "GKE6" ), ABILITY_SF_ICON_NORMAL ), 2, true )                
+                call SetFrameText( GetFrameByName("AbilityVarBarTooltipText", 10), GetAbilityBaseStringFieldById( String2Id( "GKE6" ), ABILITY_SF_NAME )+", \n\n"+GetAbilityBaseStringLevelFieldById( String2Id( "GKE6" ), ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED, GetUnitAbilityLevel(Goku,'GKE6')-1 ))
+                call SetFrameSize( GetFrameByName("AbilityVarBarTooltip", 10), .24, GetFrameHeight( GetFrameByName("AbilityVarBarTooltipText", 10))+0.03)
+                call SetFrameTextAlignment( GetFrameByName("AbilityVarBarTooltipText", 10), TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_LEFT )
+                call SetFrameRelativePoint( GetFrameByName("AbilityVarBarTooltip", 10), FRAMEPOINT_CENTER, GetFrameByName("AbilityVarBarIcon", 10), FRAMEPOINT_CENTER,  -.06, (0.5*GetFrameHeight( GetFrameByName("AbilityVarBarTooltipText", 10)))+.02  )
             endif
-            if (IsAbilityVisible(GetUnitAbility(Goku,'GKE2')) or IsAbilityVisible(GetUnitAbility(Goku,'GKE3')) or IsAbilityVisible(GetUnitAbility(Goku,'GKE4')) or IsAbilityVisible(GetUnitAbility(Goku,'GKE5')) or IsAbilityVisible(GetUnitAbility(Goku,'GKE6'))) and (GetLocalPlayer()==GetOwningPlayer(Goku) or GetPlayerAlliance(GetOwningPlayer(Goku),GetLocalPlayer(),ALLIANCE_SHARED_CONTROL)) and (GetFrameTexture(GetOriginFrame(ORIGIN_FRAME_COMMAND_BUTTON,11),1)!="ReplaceableTextures\\CommandButtons\\BTNCancel.blp" or (GetFrameTexture(GetOriginFrame(ORIGIN_FRAME_COMMAND_BUTTON,0),1)=="war3mapImported\\BTNMove.blp" and IsFrameVisible(GetOriginFrame(ORIGIN_FRAME_COMMAND_BUTTON,0)))) then
-                call ShowFrame(GetFrameByName( "AbilityVarBarIcon", 10 ),true)
-                if LoadBoolean(HH,GetHandleId(GetFrameByName( "AbilityVarBarIcon", 10 )),BUTTONHOVER)==false then
-                    call ShowFrame(GetFrameByName( "AbilityVarBarTooltip", 10 ),false)
-                else
-                    call ShowFrame(GetFrameByName( "AbilityVarBarTooltip", 10 ),true)
-                endif
-                if LoadReal(HH,GetHandleId(GetOwningPlayer(Goku)),VariationEHash)==1 then
-                    call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 10 ), GetAbilityBaseStringFieldById( String2Id( "GKE3" ), ABILITY_SF_ICON_NORMAL ), 0, true )
-                    call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 10 ), GetAbilityBaseStringFieldById( String2Id( "GKE3" ), ABILITY_SF_ICON_NORMAL ), 1, true )
-                    call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 10 ), GetAbilityBaseStringFieldById( String2Id( "GKE3" ), ABILITY_SF_ICON_NORMAL ), 2, true )                
-                    call SetFrameText( GetFrameByName("AbilityVarBarTooltipText", 10), GetAbilityBaseStringFieldById( String2Id( "GKE3" ), ABILITY_SF_NAME )+", \n\n"+GetAbilityBaseStringLevelFieldById( String2Id( "GKE3" ), ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED, GetUnitAbilityLevel(Goku,'GKE3')-1 ))
-                    call SetFrameSize( GetFrameByName("AbilityVarBarTooltip", 10), .24, GetFrameHeight( GetFrameByName("AbilityVarBarTooltipText", 10))+0.03)
-                    call SetFrameTextAlignment( GetFrameByName("AbilityVarBarTooltipText", 10), TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_LEFT )
-                    call SetFrameRelativePoint( GetFrameByName("AbilityVarBarTooltip", 10), FRAMEPOINT_CENTER, GetFrameByName("AbilityVarBarIcon", 10), FRAMEPOINT_CENTER,  -.06, (0.5*GetFrameHeight( GetFrameByName("AbilityVarBarTooltipText", 10)))+.02  )
-                elseif LoadReal(HH,GetHandleId(GetOwningPlayer(Goku)),VariationEHash)==0 then
-                    call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 10 ), GetAbilityBaseStringFieldById( String2Id( "GKE2" ), ABILITY_SF_ICON_NORMAL ), 0, true )
-                    call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 10 ), GetAbilityBaseStringFieldById( String2Id( "GKE2" ), ABILITY_SF_ICON_NORMAL ), 1, true )
-                    call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 10 ), GetAbilityBaseStringFieldById( String2Id( "GKE2" ), ABILITY_SF_ICON_NORMAL ), 2, true )                
-                    call SetFrameText( GetFrameByName("AbilityVarBarTooltipText", 10), GetAbilityBaseStringFieldById( String2Id( "GKE2" ), ABILITY_SF_NAME )+", \n\n"+GetAbilityBaseStringLevelFieldById( String2Id( "GKE2" ), ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED, GetUnitAbilityLevel(Goku,'GKE2')-1 ))
-                    call SetFrameSize( GetFrameByName("AbilityVarBarTooltip", 10), .24, GetFrameHeight( GetFrameByName("AbilityVarBarTooltipText", 10))+0.03)
-                    call SetFrameTextAlignment( GetFrameByName("AbilityVarBarTooltipText", 10), TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_LEFT )
-                    call SetFrameRelativePoint( GetFrameByName("AbilityVarBarTooltip", 10), FRAMEPOINT_CENTER, GetFrameByName("AbilityVarBarIcon", 10), FRAMEPOINT_CENTER,  -.06, (0.5*GetFrameHeight( GetFrameByName("AbilityVarBarTooltipText", 10)))+.02  )
-                elseif LoadReal(HH,GetHandleId(GetOwningPlayer(Goku)),VariationEHash)==2 then
-                    call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 10 ), GetAbilityBaseStringFieldById( String2Id( "GKE4" ), ABILITY_SF_ICON_NORMAL ), 0, true )
-                    call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 10 ), GetAbilityBaseStringFieldById( String2Id( "GKE4" ), ABILITY_SF_ICON_NORMAL ), 1, true )
-                    call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 10 ), GetAbilityBaseStringFieldById( String2Id( "GKE4" ), ABILITY_SF_ICON_NORMAL ), 2, true )                
-                    call SetFrameText( GetFrameByName("AbilityVarBarTooltipText", 10), GetAbilityBaseStringFieldById( String2Id( "GKE4" ), ABILITY_SF_NAME )+", \n\n"+GetAbilityBaseStringLevelFieldById( String2Id( "GKE4" ), ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED, GetUnitAbilityLevel(Goku,'GKE4')-1 ))
-                    call SetFrameSize( GetFrameByName("AbilityVarBarTooltip", 10), .24, GetFrameHeight( GetFrameByName("AbilityVarBarTooltipText", 10))+0.03)
-                    call SetFrameTextAlignment( GetFrameByName("AbilityVarBarTooltipText", 10), TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_LEFT )
-                    call SetFrameRelativePoint( GetFrameByName("AbilityVarBarTooltip", 10), FRAMEPOINT_CENTER, GetFrameByName("AbilityVarBarIcon", 10), FRAMEPOINT_CENTER,  -.06, (0.5*GetFrameHeight( GetFrameByName("AbilityVarBarTooltipText", 10)))+.02  )
-                elseif LoadReal(HH,GetHandleId(GetOwningPlayer(Goku)),VariationEHash)==3 then
-                    call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 10 ), GetAbilityBaseStringFieldById( String2Id( "GKE5" ), ABILITY_SF_ICON_NORMAL ), 0, true )
-                    call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 10 ), GetAbilityBaseStringFieldById( String2Id( "GKE5" ), ABILITY_SF_ICON_NORMAL ), 1, true )
-                    call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 10 ), GetAbilityBaseStringFieldById( String2Id( "GKE5" ), ABILITY_SF_ICON_NORMAL ), 2, true )                
-                    call SetFrameText( GetFrameByName("AbilityVarBarTooltipText", 10), GetAbilityBaseStringFieldById( String2Id( "GKE5" ), ABILITY_SF_NAME )+", \n\n"+GetAbilityBaseStringLevelFieldById( String2Id( "GKE5" ), ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED, GetUnitAbilityLevel(Goku,'GKE5')-1 ))
-                    call SetFrameSize( GetFrameByName("AbilityVarBarTooltip", 10), .24, GetFrameHeight( GetFrameByName("AbilityVarBarTooltipText", 10))+0.03)
-                    call SetFrameTextAlignment( GetFrameByName("AbilityVarBarTooltipText", 10), TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_LEFT )
-                    call SetFrameRelativePoint( GetFrameByName("AbilityVarBarTooltip", 10), FRAMEPOINT_CENTER, GetFrameByName("AbilityVarBarIcon", 10), FRAMEPOINT_CENTER,  -.06, (0.5*GetFrameHeight( GetFrameByName("AbilityVarBarTooltipText", 10)))+.02  )
-                elseif LoadReal(HH,GetHandleId(GetOwningPlayer(Goku)),VariationEHash)==4 then
-                    call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 10 ), GetAbilityBaseStringFieldById( String2Id( "GKE6" ), ABILITY_SF_ICON_NORMAL ), 0, true )
-                    call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 10 ), GetAbilityBaseStringFieldById( String2Id( "GKE6" ), ABILITY_SF_ICON_NORMAL ), 1, true )
-                    call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 10 ), GetAbilityBaseStringFieldById( String2Id( "GKE6" ), ABILITY_SF_ICON_NORMAL ), 2, true )                
-                    call SetFrameText( GetFrameByName("AbilityVarBarTooltipText", 10), GetAbilityBaseStringFieldById( String2Id( "GKE6" ), ABILITY_SF_NAME )+", \n\n"+GetAbilityBaseStringLevelFieldById( String2Id( "GKE6" ), ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED, GetUnitAbilityLevel(Goku,'GKE6')-1 ))
-                    call SetFrameSize( GetFrameByName("AbilityVarBarTooltip", 10), .24, GetFrameHeight( GetFrameByName("AbilityVarBarTooltipText", 10))+0.03)
-                    call SetFrameTextAlignment( GetFrameByName("AbilityVarBarTooltipText", 10), TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_LEFT )
-                    call SetFrameRelativePoint( GetFrameByName("AbilityVarBarTooltip", 10), FRAMEPOINT_CENTER, GetFrameByName("AbilityVarBarIcon", 10), FRAMEPOINT_CENTER,  -.06, (0.5*GetFrameHeight( GetFrameByName("AbilityVarBarTooltipText", 10)))+.02  )
-                endif
-            else
-                call ShowFrame(GetFrameByName( "AbilityVarBarIcon", 10 ),false)
-            endif
-            if IsAbilityVisible(GetUnitAbility(Goku,'GKT1')) and (GetLocalPlayer()==GetOwningPlayer(Goku) or GetPlayerAlliance(GetOwningPlayer(Goku),GetLocalPlayer(),ALLIANCE_SHARED_CONTROL)) and (GetFrameTexture(GetOriginFrame(ORIGIN_FRAME_COMMAND_BUTTON,11),1)!="ReplaceableTextures\\CommandButtons\\BTNCancel.blp" or (GetFrameTexture(GetOriginFrame(ORIGIN_FRAME_COMMAND_BUTTON,0),1)=="war3mapImported\\BTNMove.blp" and IsFrameVisible(GetOriginFrame(ORIGIN_FRAME_COMMAND_BUTTON,0)))) then
-                call ShowFrame(GetFrameByName( "AbilityVarBarIcon", 7 ),true)
-                if LoadBoolean(HH,GetHandleId(GetFrameByName( "AbilityVarBarIcon", 7 )),BUTTONHOVER)==false then
-                    call ShowFrame(GetFrameByName( "AbilityVarBarTooltip", 7 ),false)
-                else
-                    call ShowFrame(GetFrameByName( "AbilityVarBarTooltip", 7 ),true)
-                endif
-                if LoadReal(HH,GetHandleId(GetOwningPlayer(Goku)),VariationTHash)==1 then
-                    call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 7 ), "ReplaceableTextures\\CommandButtons\\BTNDragonFist2.blp", 0, true )
-                    call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 7 ), "ReplaceableTextures\\CommandButtons\\BTNDragonFist2.blp", 1, true )
-                    call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 7 ), "ReplaceableTextures\\CommandButtons\\BTNDragonFist2.blp", 2, true )
-                    call SetFrameText( GetFrameByName("AbilityVarBarTooltipText", 7), GetAbilityBaseStringFieldById( String2Id( "GKT3" ), ABILITY_SF_NAME )+", \n\n"+GetAbilityBaseStringFieldById( String2Id( "GKT3" ), ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED ))
-                    call SetFrameSize( GetFrameByName("AbilityVarBarTooltip", 7), .24, GetFrameHeight( GetFrameByName("AbilityVarBarTooltipText", 7))+0.03)
-                    call SetFrameTextAlignment( GetFrameByName("AbilityVarBarTooltipText", 7), TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_LEFT )
-                    call SetFrameRelativePoint( GetFrameByName("AbilityVarBarTooltip", 7), FRAMEPOINT_CENTER, GetFrameByName("AbilityVarBarIcon", 7), FRAMEPOINT_CENTER,  -.1, (0.5*GetFrameHeight( GetFrameByName("AbilityVarBarTooltipText", 7)))+.02  )
-                elseif LoadReal(HH,GetHandleId(GetOwningPlayer(Goku)),VariationTHash)==0 then
-                    call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 7 ), "ReplaceableTextures\\CommandButtons\\BTNDragonFist1.blp", 0, true )
-                    call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 7 ), "ReplaceableTextures\\CommandButtons\\BTNDragonFist1.blp", 1, true )
-                    call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 7 ), "ReplaceableTextures\\CommandButtons\\BTNDragonFist1.blp", 2, true )
-                    call SetFrameText( GetFrameByName("AbilityVarBarTooltipText", 7), GetAbilityBaseStringFieldById( String2Id( "GKT2" ), ABILITY_SF_NAME )+", \n\n"+GetAbilityBaseStringFieldById( String2Id( "GKT2" ), ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED ))
-                    call SetFrameSize( GetFrameByName("AbilityVarBarTooltip", 7), .24, GetFrameHeight( GetFrameByName("AbilityVarBarTooltipText", 7))+0.03)
-                    call SetFrameTextAlignment( GetFrameByName("AbilityVarBarTooltipText", 7), TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_LEFT )
-                    call SetFrameRelativePoint( GetFrameByName("AbilityVarBarTooltip", 7), FRAMEPOINT_CENTER, GetFrameByName("AbilityVarBarIcon", 7), FRAMEPOINT_CENTER,  -.1, (0.5*GetFrameHeight( GetFrameByName("AbilityVarBarTooltipText", 7)))+.02  )
-                endif
-            else
-                call ShowFrame(GetFrameByName( "AbilityVarBarIcon", 7 ),false)
-            endif
-        // elseif GetUnitTypeId(GetUnitSelected(GetLocalPlayer()))=='HIc2' and (GetLocalPlayer()==GetOwningPlayer(GetUnitSelected(GetLocalPlayer())) or GetPlayerAlliance(GetOwningPlayer(GetUnitSelected(GetLocalPlayer())),GetLocalPlayer(),ALLIANCE_SHARED_CONTROL)) and GetUnitSelected(GetLocalPlayer())==GetUnitSelected(GetLocalPlayer()) then
-        //     if IsAbilityVisible(GetUnitAbility(GetUnitSelected(GetLocalPlayer()),'GKT1')) and (GetLocalPlayer()==GetOwningPlayer(GetUnitSelected(GetLocalPlayer())) or GetPlayerAlliance(GetOwningPlayer(GetUnitSelected(GetLocalPlayer())),GetLocalPlayer(),ALLIANCE_SHARED_CONTROL)) and (GetFrameTexture(GetOriginFrame(ORIGIN_FRAME_COMMAND_BUTTON,11),1)!="ReplaceableTextures\\CommandButtons\\BTNCancel.blp" or (GetFrameTexture(GetOriginFrame(ORIGIN_FRAME_COMMAND_BUTTON,0),1)=="war3mapImported\\BTNMove.blp" and IsFrameVisible(GetOriginFrame(ORIGIN_FRAME_COMMAND_BUTTON,0)))) then
-        //         call ShowFrame(GetFrameByName( "AbilityVarBarIcon", 7 ),true)
-        //         if LoadBoolean(HH,GetHandleId(GetFrameByName( "AbilityVarBarIcon", 7 )),BUTTONHOVER)==false then
-        //             call ShowFrame(GetFrameByName( "AbilityVarBarTooltip", 7 ),false)
-        //         else
-        //             call ShowFrame(GetFrameByName( "AbilityVarBarTooltip", 7 ),true)
-        //         endif
-        //         if LoadReal(HH,GetHandleId(GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))),VariationTHash)==1 then
-        //             call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 7 ), "ReplaceableTextures\\CommandButtons\\BTNDragonFist2.blp", 0, true )
-        //             call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 7 ), "ReplaceableTextures\\CommandButtons\\BTNDragonFist2.blp", 1, true )
-        //             call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 7 ), "ReplaceableTextures\\CommandButtons\\BTNDragonFist2.blp", 2, true )
-        //             call SetFrameText( GetFrameByName("AbilityVarBarTooltipText", 7), GetAbilityBaseStringFieldById( String2Id( "GKT3" ), ABILITY_SF_NAME )+", \n\n"+GetAbilityBaseStringFieldById( String2Id( "GKT3" ), ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED ))
-        //             call SetFrameSize( GetFrameByName("AbilityVarBarTooltip", 7), .24, GetFrameHeight( GetFrameByName("AbilityVarBarTooltipText", 7))+0.03)
-        //             call SetFrameTextAlignment( GetFrameByName("AbilityVarBarTooltipText", 7), TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_LEFT )
-        //             call SetFrameRelativePoint( GetFrameByName("AbilityVarBarTooltip", 7), FRAMEPOINT_CENTER, GetFrameByName("AbilityVarBarIcon", 7), FRAMEPOINT_CENTER,  -.1, (0.5*GetFrameHeight( GetFrameByName("AbilityVarBarTooltipText", 7)))+.02  )
-        //         elseif LoadReal(HH,GetHandleId(GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))),VariationTHash)==0 then
-        //             call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 7 ), "ReplaceableTextures\\CommandButtons\\BTNDragonFist1.blp", 0, true )
-        //             call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 7 ), "ReplaceableTextures\\CommandButtons\\BTNDragonFist1.blp", 1, true )
-        //             call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 7 ), "ReplaceableTextures\\CommandButtons\\BTNDragonFist1.blp", 2, true )
-        //             call SetFrameText( GetFrameByName("AbilityVarBarTooltipText", 7), GetAbilityBaseStringFieldById( String2Id( "GKT2" ), ABILITY_SF_NAME )+", \n\n"+GetAbilityBaseStringFieldById( String2Id( "GKT2" ), ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED ))
-        //             call SetFrameSize( GetFrameByName("AbilityVarBarTooltip", 7), .24, GetFrameHeight( GetFrameByName("AbilityVarBarTooltipText", 7))+0.03)
-        //             call SetFrameTextAlignment( GetFrameByName("AbilityVarBarTooltipText", 7), TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_LEFT )
-        //             call SetFrameRelativePoint( GetFrameByName("AbilityVarBarTooltip", 7), FRAMEPOINT_CENTER, GetFrameByName("AbilityVarBarIcon", 7), FRAMEPOINT_CENTER,  -.1, (0.5*GetFrameHeight( GetFrameByName("AbilityVarBarTooltipText", 7)))+.02  )
-        //         endif
-        //     else
-        //         call ShowFrame(GetFrameByName( "AbilityVarBarIcon", 7 ),false)
-        //     endif
-        endif
-        if GenkiUsed[GetPlayerId(GetLocalPlayer())]==true and GetOwningPlayer(Goku)!=GetLocalPlayer() then
-            call ShowFrame(GetFrameByName( "GlobalAbilityBarIcon", 0 ),true)
-            if LoadBoolean(HH,GetHandleId(GetFrameByName( "GlobalAbilityBarIcon", 0 )),BUTTONHOVER)==false then
-                call ShowFrame(GetFrameByName( "GlobalAbilityBarTooltip", 0 ),false)
-            else
-                call ShowFrame(GetFrameByName( "GlobalAbilityBarTooltip", 0 ),true)
-            endif
-            call SetFrameText( GetFrameByName("GlobalAbilityBarTooltipText", 0), GetAbilityBaseStringFieldById( String2Id( "GKG2" ), ABILITY_SF_NAME )+", \n\n"+GetAbilityBaseStringFieldById( String2Id( "GKG2" ), ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED ))
-            call SetFrameSize( GetFrameByName("GlobalAbilityBarTooltip", 0), .24, GetFrameHeight( GetFrameByName("GlobalAbilityBarTooltipText", 0))+0.03)
-            call SetFrameTextAlignment( GetFrameByName("GlobalAbilityBarTooltipText", 0), TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_LEFT )
-            call SetFrameRelativePoint( GetFrameByName("GlobalAbilityBarTooltip", 0), FRAMEPOINT_CENTER, GetFrameByName("GlobalAbilityBarIcon", 0), FRAMEPOINT_CENTER,  .15, (0.5*GetFrameHeight( GetFrameByName("GlobalAbilityBarTooltipText", 0)))+.01  )
         else
-            call ShowFrame(GetFrameByName( "GlobalAbilityBarIcon", 0 ),false)
+            call ShowFrame(GetFrameByName( "AbilityVarBarIcon", 10 ),false)
         endif
-        // set x=0
-        // loop
-        // exitwhen x>=10
-        // if ingame[x]==true then
-                // set nick[x]=udg_Color[x+1]+GetPlayerName(Player(x))+"["+I2S(x+1)+"]"
-                // set mbitem=MultiboardGetItem(mbg,row[x],0)
-                // call MultiboardSetItemValue(mbitem,nick[x])
-                // call MultiboardSetItemStyle(mbitem,true,true)
-                // call MultiboardSetItemWidth(mbitem,.1)
-                // call MultiboardReleaseItem(mbitem)
-                // set mbitem=MultiboardGetItem(mbg,row[x],1)
-                // call MultiboardSetItemStyle(mbitem,true,false)
-                // call MultiboardSetItemValue(mbitem,I2S(udg_kill[x]))
-                // call MultiboardSetItemWidth(mbitem,.02)
-                // call MultiboardReleaseItem(mbitem)
-                // set mbitem=MultiboardGetItem(mbg,row[x],2)
-                // call MultiboardSetItemStyle(mbitem,true,false)
-                // call MultiboardSetItemValue(mbitem,I2S(udg_death[x]))
-                // call MultiboardSetItemWidth(mbitem,.02)
-                // call MultiboardReleaseItem(mbitem)
-                // set mbitem=MultiboardGetItem(mbg,row[x],3)
-                // call MultiboardSetItemStyle(mbitem,true,false)
-                // call MultiboardSetItemValue(mbitem,I2S(GetHeroLevel(Hero[x])))
-                // call MultiboardSetItemWidth(mbitem,.02)
-                // call MultiboardReleaseItem(mbitem)
-                // set mbitem=MultiboardGetItem(mbg,row[x],4)
-                // call MultiboardSetItemStyle(mbitem,true,false)
-                // call MultiboardSetItemValue(mbitem,I2S(GetPlayerState(Player(x),PLAYER_STATE_RESOURCE_LUMBER)))
-                // call MultiboardSetItemWidth(mbitem,.02)
-                // call MultiboardReleaseItem(mbitem)
-                // set mbitem=MultiboardGetItem(mbg,row[x],5)
-                // call MultiboardSetItemStyle(mbitem,true,false)
-                // call MultiboardSetItemValue(mbitem,I2S(2-udg_Repick[x+1])+"       ")
-                // if rand[x]==true then
-                        // call MultiboardSetItemValueColor(mbitem,255,150,150,255)
-                // else
-                        // call MultiboardSetItemValueColor(mbitem,255,255,255,255)
-                // endif
-                // call MultiboardSetItemWidth(mbitem,.04)
-                // call MultiboardReleaseItem(mbitem)
-                // set mbitem=MultiboardGetItem(mbg,row[x],6)
-                // call MultiboardSetItemStyle(mbitem,true,false)
-                // if Streak[x]>0 then
-                        // call MultiboardSetItemValue(mbitem,udg_Color[5]+"+"+I2S(Streak[x])) //streak
-                // else
-                        // call MultiboardSetItemValue(mbitem,udg_Color[5]+I2S(Streak[x])) //streak
-                // endif
-                // call MultiboardSetItemWidth(mbitem,.02)
-                // call MultiboardReleaseItem(mbitem)
-                // endif
-                // if x>=0 and x<=4 then
-                        // call SetPlayerState(Player(x),PLAYER_STATE_RESOURCE_LUMBER,win[1])
-                // elseif x>=5 and x<=9 then
-                        // call SetPlayerState(Player(x),PLAYER_STATE_RESOURCE_LUMBER,win[2])
-                // endif
-                // if GetUnitAbilityLevel(Hero[x],'B072')>0 then
-                        // if GetUnitAbilityLevel(Hero[x],'A1GH')==0 then
-                        //* call UnitAddAbility(Hero[x],'A1GH')
-                        // endif
-                // else
-                        // if GetUnitAbilityLevel(Hero[x],'A1GH')>0 then
-                        //* call UnitRemoveAbility(Hero[x],'A1GH')
-                        // endif
-                // endif
-                // if GetUnitAbilityLevel(Hero[x],'B073')>0 then
-                        // if GetUnitAbilityLevel(Hero[x],'A1GJ')==0 then
-                        //* call UnitAddAbility(Hero[x],'A1GJ')
-                        // endif
-                // else
-                        // if GetUnitAbilityLevel(Hero[x],'A1GJ')>0 then
-                        //* call UnitRemoveAbility(Hero[x],'A1GJ')
-                        // endif
-                // endif
-                // if GetUnitAbilityLevel(Hero[x],'A18B')>0 then
-                        // call SetUnitState(Hero[x],UNIT_STATE_LIFE,GetWidgetLife(Hero[x])+0.045*SunRing(Hero[x])*I2R(GetHeroInt(Hero[x],true)))
-                // else
-                        // call SetUnitState(Hero[x],UNIT_STATE_LIFE,GetWidgetLife(Hero[x])+0.015*SunRing(Hero[x])*I2R(GetHeroInt(Hero[x],true)))
-                // endif
-        // set x=x+1
-        // endloop
-        // set mbitem=MultiboardGetItem(mbg,row[11],0)
-        // call MultiboardSetItemStyle(mbitem,true,false)
-        // call MultiboardSetItemValue(mbitem,"-----------------------------------------------------------------------------------------------------------------------------------------------")
-        // call MultiboardSetItemWidth(mbitem,.25)
+        if IsAbilityVisible(GetUnitAbility(Goku,'GKT1')) and (GetLocalPlayer()==GetOwningPlayer(Goku) or GetPlayerAlliance(GetOwningPlayer(Goku),GetLocalPlayer(),ALLIANCE_SHARED_CONTROL)) and (GetFrameTexture(GetOriginFrame(ORIGIN_FRAME_COMMAND_BUTTON,11),1)!="ReplaceableTextures\\CommandButtons\\BTNCancel.blp" or (GetFrameTexture(GetOriginFrame(ORIGIN_FRAME_COMMAND_BUTTON,0),1)=="war3mapImported\\BTNMove.blp" and IsFrameVisible(GetOriginFrame(ORIGIN_FRAME_COMMAND_BUTTON,0)))) then
+            call ShowFrame(GetFrameByName( "AbilityVarBarIcon", 7 ),true)
+            if LoadBoolean(HH,GetHandleId(GetFrameByName( "AbilityVarBarIcon", 7 )),BUTTONHOVER)==false then
+                call ShowFrame(GetFrameByName( "AbilityVarBarTooltip", 7 ),false)
+            else
+                call ShowFrame(GetFrameByName( "AbilityVarBarTooltip", 7 ),true)
+            endif
+            if LoadReal(HH,GetHandleId(GetOwningPlayer(Goku)),VariationTHash)==1 then
+                call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 7 ), "ReplaceableTextures\\CommandButtons\\BTNDragonFist2.blp", 0, true )
+                call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 7 ), "ReplaceableTextures\\CommandButtons\\BTNDragonFist2.blp", 1, true )
+                call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 7 ), "ReplaceableTextures\\CommandButtons\\BTNDragonFist2.blp", 2, true )
+                call SetFrameText( GetFrameByName("AbilityVarBarTooltipText", 7), GetAbilityBaseStringFieldById( String2Id( "GKT3" ), ABILITY_SF_NAME )+", \n\n"+GetAbilityBaseStringFieldById( String2Id( "GKT3" ), ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED ))
+                call SetFrameSize( GetFrameByName("AbilityVarBarTooltip", 7), .24, GetFrameHeight( GetFrameByName("AbilityVarBarTooltipText", 7))+0.03)
+                call SetFrameTextAlignment( GetFrameByName("AbilityVarBarTooltipText", 7), TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_LEFT )
+                call SetFrameRelativePoint( GetFrameByName("AbilityVarBarTooltip", 7), FRAMEPOINT_CENTER, GetFrameByName("AbilityVarBarIcon", 7), FRAMEPOINT_CENTER,  -.1, (0.5*GetFrameHeight( GetFrameByName("AbilityVarBarTooltipText", 7)))+.02  )
+            elseif LoadReal(HH,GetHandleId(GetOwningPlayer(Goku)),VariationTHash)==0 then
+                call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 7 ), "ReplaceableTextures\\CommandButtons\\BTNDragonFist1.blp", 0, true )
+                call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 7 ), "ReplaceableTextures\\CommandButtons\\BTNDragonFist1.blp", 1, true )
+                call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 7 ), "ReplaceableTextures\\CommandButtons\\BTNDragonFist1.blp", 2, true )
+                call SetFrameText( GetFrameByName("AbilityVarBarTooltipText", 7), GetAbilityBaseStringFieldById( String2Id( "GKT2" ), ABILITY_SF_NAME )+", \n\n"+GetAbilityBaseStringFieldById( String2Id( "GKT2" ), ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED ))
+                call SetFrameSize( GetFrameByName("AbilityVarBarTooltip", 7), .24, GetFrameHeight( GetFrameByName("AbilityVarBarTooltipText", 7))+0.03)
+                call SetFrameTextAlignment( GetFrameByName("AbilityVarBarTooltipText", 7), TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_LEFT )
+                call SetFrameRelativePoint( GetFrameByName("AbilityVarBarTooltip", 7), FRAMEPOINT_CENTER, GetFrameByName("AbilityVarBarIcon", 7), FRAMEPOINT_CENTER,  -.1, (0.5*GetFrameHeight( GetFrameByName("AbilityVarBarTooltipText", 7)))+.02  )
+            endif
+        else
+            call ShowFrame(GetFrameByName( "AbilityVarBarIcon", 7 ),false)
+        endif
+    endif
+endif
+if GetUnitTypeId(GetUnitSelected(GetLocalPlayer()))=='H00P' and (GetLocalPlayer()==GetOwningPlayer(GetUnitSelected(GetLocalPlayer())) or GetPlayerAlliance(GetOwningPlayer(GetUnitSelected(GetLocalPlayer())),GetLocalPlayer(),ALLIANCE_SHARED_CONTROL)) then
+    if IsAbilityVisible(GetUnitAbility(GetUnitSelected(GetLocalPlayer()),'MrG1')) and (GetLocalPlayer()==GetOwningPlayer(GetUnitSelected(GetLocalPlayer())) or GetPlayerAlliance(GetOwningPlayer(GetUnitSelected(GetLocalPlayer())),GetLocalPlayer(),ALLIANCE_SHARED_CONTROL)) and (GetFrameTexture(GetOriginFrame(ORIGIN_FRAME_COMMAND_BUTTON,11),1)!="ReplaceableTextures\\CommandButtons\\BTNCancel.blp" or (GetFrameTexture(GetOriginFrame(ORIGIN_FRAME_COMMAND_BUTTON,0),1)=="war3mapImported\\BTNMove.blp" and IsFrameVisible(GetOriginFrame(ORIGIN_FRAME_COMMAND_BUTTON,0)))) and LoadInteger(HH,GetHandleId(GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))),'ShSn')>0 then 
+        call ShowFrame(GetFrameByName( "AbilityVarBarIcon", 6 ),true)
+        if LoadBoolean(HH,GetHandleId(GetFrameByName( "AbilityVarBarIcon", 6 )),BUTTONHOVER)==false then
+            call ShowFrame(GetFrameByName( "AbilityVarBarTooltip", 6 ),false)
+        else
+            call ShowFrame(GetFrameByName( "AbilityVarBarTooltip", 6 ),true)
+        endif
+        call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 6 ), GetUnitStringField(LoadUnitHandle(HH,GetHandleId(GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))),'ShPS'+LoadInteger(HH,GetHandleId(GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))),VariationGHash)),UNIT_SF_ICON_NORMAL), 0, true )
+        call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 6 ), GetUnitStringField(LoadUnitHandle(HH,GetHandleId(GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))),'ShPS'+LoadInteger(HH,GetHandleId(GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))),VariationGHash)),UNIT_SF_ICON_NORMAL), 1, true )
+        call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 6 ), GetUnitStringField(LoadUnitHandle(HH,GetHandleId(GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))),'ShPS'+LoadInteger(HH,GetHandleId(GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))),VariationGHash)),UNIT_SF_ICON_NORMAL), 2, true )
+        call SetFrameText( GetFrameByName("AbilityVarBarTooltipText",6), GetUnitStringField( LoadUnitHandle(HH,GetHandleId(GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))),'ShPS'+LoadInteger(HH,GetHandleId(GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))),VariationGHash)), UNIT_SF_NAME )+"'s Shadow, (|cffffcc00Ctrl+G|r)\n\nStats:\n|c00FF5555STR|r: "+I2S(LoadInteger(HH,GetHandleId(GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))),'ShSA'+LoadInteger(HH,GetHandleId(GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))),VariationGHash)))+"\n|c003CFF3CAGI|r: "+I2S(LoadInteger(HH,GetHandleId(GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))),'ShAA'+LoadInteger(HH,GetHandleId(GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))),VariationGHash)))+"\n|c0077FFFFINT|r: "+I2S(LoadInteger(HH,GetHandleId(GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))),'ShIA'+LoadInteger(HH,GetHandleId(GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))),VariationGHash)))+"\nImplanted: "+LoadStr(HH,GetHandleId(GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))),'ShNP'+LoadInteger(HH,GetHandleId(GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))),VariationGHash)))
+        call SetFrameSize( GetFrameByName("AbilityVarBarTooltip",6), .24, GetFrameHeight( GetFrameByName("AbilityVarBarTooltipText",6))+0.03)
+        call SetFrameTextAlignment( GetFrameByName("AbilityVarBarTooltipText",6), TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_LEFT )
+        call SetFrameRelativePoint( GetFrameByName("AbilityVarBarTooltip",6), FRAMEPOINT_CENTER, GetFrameByName("AbilityVarBarIcon",6), FRAMEPOINT_CENTER,  -.06, (0.5*GetFrameHeight( GetFrameByName("AbilityVarBarTooltipText",6)))+.02  )
+    else
+        call ShowFrame(GetFrameByName( "AbilityVarBarIcon", 6 ),false)
+    endif
+endif
+if GenkiUsed[GetPlayerId(GetLocalPlayer())]==true and GetOwningPlayer(Goku)!=GetLocalPlayer() then
+    call ShowFrame(GetFrameByName( "GlobalAbilityBarIcon", 0 ),true)
+    if LoadBoolean(HH,GetHandleId(GetFrameByName( "GlobalAbilityBarIcon", 0 )),BUTTONHOVER)==false then
+        call ShowFrame(GetFrameByName( "GlobalAbilityBarTooltip", 0 ),false)
+    else
+        call ShowFrame(GetFrameByName( "GlobalAbilityBarTooltip", 0 ),true)
+    endif
+    call SetFrameText( GetFrameByName("GlobalAbilityBarTooltipText", 0), GetAbilityBaseStringFieldById( String2Id( "GKG2" ), ABILITY_SF_NAME )+", \n\n"+GetAbilityBaseStringFieldById( String2Id( "GKG2" ), ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED ))
+    call SetFrameSize( GetFrameByName("GlobalAbilityBarTooltip", 0), .24, GetFrameHeight( GetFrameByName("GlobalAbilityBarTooltipText", 0))+0.03)
+    call SetFrameTextAlignment( GetFrameByName("GlobalAbilityBarTooltipText", 0), TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_LEFT )
+    call SetFrameRelativePoint( GetFrameByName("GlobalAbilityBarTooltip", 0), FRAMEPOINT_CENTER, GetFrameByName("GlobalAbilityBarIcon", 0), FRAMEPOINT_CENTER,  .15, (0.5*GetFrameHeight( GetFrameByName("GlobalAbilityBarTooltipText", 0)))+.01  )
+else
+    call ShowFrame(GetFrameByName( "GlobalAbilityBarIcon", 0 ),false)
+endif
+// set x=0
+// loop
+// exitwhen x>=10
+// if ingame[x]==true then
+        // set nick[x]=udg_Color[x+1]+GetPlayerName(Player(x))+"["+I2S(x+1)+"]"
+        // set mbitem=MultiboardGetItem(mbg,row[x],0)
+        // call MultiboardSetItemValue(mbitem,nick[x])
+        // call MultiboardSetItemStyle(mbitem,true,true)
+        // call MultiboardSetItemWidth(mbitem,.1)
         // call MultiboardReleaseItem(mbitem)
-        // set mbitem=MultiboardGetItem(mbg,row[11],1)
+        // set mbitem=MultiboardGetItem(mbg,row[x],1)
         // call MultiboardSetItemStyle(mbitem,true,false)
-        // call MultiboardSetItemValue(mbitem," ")
-        // call MultiboardSetItemWidth(mbitem,.01)
-        // call MultiboardReleaseItem(mbitem)
-        // set mbitem=MultiboardGetItem(mbg,row[11],2)
-        // call MultiboardSetItemStyle(mbitem,true,false)
-        // call MultiboardSetItemValue(mbitem," ")
-        // call MultiboardSetItemWidth(mbitem,.01)
-        // call MultiboardReleaseItem(mbitem)
-        // set mbitem=MultiboardGetItem(mbg,row[11],3)
-        // call MultiboardSetItemStyle(mbitem,true,false)
-        // call MultiboardSetItemValue(mbitem," ")
-        // call MultiboardSetItemWidth(mbitem,.01)
-        // call MultiboardReleaseItem(mbitem)
-        // set mbitem=MultiboardGetItem(mbg,row[11],4)
-        // call MultiboardSetItemStyle(mbitem,true,false)
-        // call MultiboardSetItemValue(mbitem," ")
-        // call MultiboardSetItemWidth(mbitem,.01)
-        // call MultiboardReleaseItem(mbitem)
-        // set mbitem=MultiboardGetItem(mbg,row[11],5)
-        // call MultiboardSetItemStyle(mbitem,true,false)
-        // call MultiboardSetItemValue(mbitem," ")
-        // call MultiboardSetItemWidth(mbitem,.01)
-        // call MultiboardReleaseItem(mbitem)
-        // set mbitem=MultiboardGetItem(mbg,row[11],6)
-        // call MultiboardSetItemStyle(mbitem,true,false)
-        // call MultiboardSetItemValue(mbitem," ")
-        // call MultiboardSetItemWidth(mbitem,.01)
-        // call MultiboardReleaseItem(mbitem)
-        // set mbitem=MultiboardGetItem(mbg,row[12],0)
-        // call MultiboardSetItemStyle(mbitem,true,false)
-        // call MultiboardSetItemValue(mbitem,"|cff4499BBCurrent Magic Resistance:|r")
-        // call MultiboardSetItemWidth(mbitem,.20)
-        // call MultiboardReleaseItem(mbitem)
-        // set mbitem=MultiboardGetItem(mbg,row[12],1)
-        // call MultiboardSetItemStyle(mbitem,true,false)
-        // call MultiboardSetItemValue(mbitem,"")
-        // call MultiboardSetItemWidth(mbitem,.01)
-        // call MultiboardReleaseItem(mbitem)
-        // set mbitem=MultiboardGetItem(mbg,row[12],2)
-        // call MultiboardSetItemStyle(mbitem,true,false)
-        // call MultiboardSetItemValue(mbitem,"")
-        // call MultiboardSetItemWidth(mbitem,.01)
-        // call MultiboardReleaseItem(mbitem)
-        // set mbitem=MultiboardGetItem(mbg,row[12],3)
-        // call MultiboardSetItemStyle(mbitem,true,false)
-        // call MultiboardSetItemValue(mbitem,I2S(-1*passedTime*5)+"%")
-        // call MultiboardSetItemValueColor(mbitem,110+passedTime*13,130-passedTime*9,150-passedTime*12,255)
+        // call MultiboardSetItemValue(mbitem,I2S(udg_kill[x]))
         // call MultiboardSetItemWidth(mbitem,.02)
         // call MultiboardReleaseItem(mbitem)
-        // set mbitem=MultiboardGetItem(mbg,row[12],4)
+        // set mbitem=MultiboardGetItem(mbg,row[x],2)
         // call MultiboardSetItemStyle(mbitem,true,false)
-        // call MultiboardSetItemValue(mbitem," ")
+        // call MultiboardSetItemValue(mbitem,I2S(udg_death[x]))
         // call MultiboardSetItemWidth(mbitem,.02)
         // call MultiboardReleaseItem(mbitem)
-        // set mbitem=MultiboardGetItem(mbg,row[12],5)
+        // set mbitem=MultiboardGetItem(mbg,row[x],3)
         // call MultiboardSetItemStyle(mbitem,true,false)
-        // call MultiboardSetItemValue(mbitem," ")
-        // call MultiboardSetItemWidth(mbitem,.035)
-        // call MultiboardReleaseItem(mbitem)
-        // set mbitem=MultiboardGetItem(mbg,row[12],6)
-        // call MultiboardSetItemStyle(mbitem,true,false)
-        // call MultiboardSetItemValue(mbitem," ")
-        // call MultiboardSetItemWidth(mbitem,.035)
-        // call MultiboardReleaseItem(mbitem)
-        // set mbitem=MultiboardGetItem(mbg,row[13],0)
-        // call MultiboardSetItemStyle(mbitem,true,false)
-        // call MultiboardSetItemValue(mbitem,"|c00FF8080Global Regeneration Reduction:|r")
-        // call MultiboardSetItemWidth(mbitem,.20)
-        // call MultiboardReleaseItem(mbitem)
-        // set mbitem=MultiboardGetItem(mbg,row[13],1)
-        // call MultiboardSetItemStyle(mbitem,true,false)
-        // call MultiboardSetItemValue(mbitem,"")
-        // call MultiboardSetItemWidth(mbitem,.01)
-        // call MultiboardReleaseItem(mbitem)
-        // set mbitem=MultiboardGetItem(mbg,row[13],2)
-        // call MultiboardSetItemStyle(mbitem,true,false)
-        // call MultiboardSetItemValue(mbitem,"")
-        // call MultiboardSetItemWidth(mbitem,.01)
-        // call MultiboardReleaseItem(mbitem)
-        // set mbitem=MultiboardGetItem(mbg,row[13],3)
-        // call MultiboardSetItemStyle(mbitem,true,false)
-        // call MultiboardSetItemValue(mbitem,I2S(HealRes*-1)+"%")
-        // call MultiboardSetItemValueColor(mbitem,140-HealRes,100,100,255)
+        // call MultiboardSetItemValue(mbitem,I2S(GetHeroLevel(Hero[x])))
         // call MultiboardSetItemWidth(mbitem,.02)
         // call MultiboardReleaseItem(mbitem)
-        // set mbitem=MultiboardGetItem(mbg,row[13],4)
+        // set mbitem=MultiboardGetItem(mbg,row[x],4)
         // call MultiboardSetItemStyle(mbitem,true,false)
-        // call MultiboardSetItemValue(mbitem," ")
+        // call MultiboardSetItemValue(mbitem,I2S(GetPlayerState(Player(x),PLAYER_STATE_RESOURCE_LUMBER)))
         // call MultiboardSetItemWidth(mbitem,.02)
         // call MultiboardReleaseItem(mbitem)
-        // set mbitem=MultiboardGetItem(mbg,row[13],5)
+        // set mbitem=MultiboardGetItem(mbg,row[x],5)
         // call MultiboardSetItemStyle(mbitem,true,false)
-        // call MultiboardSetItemValue(mbitem," ")
-        // call MultiboardSetItemWidth(mbitem,.035)
+        // call MultiboardSetItemValue(mbitem,I2S(2-udg_Repick[x+1])+"       ")
+        // if rand[x]==true then
+                // call MultiboardSetItemValueColor(mbitem,255,150,150,255)
+        // else
+                // call MultiboardSetItemValueColor(mbitem,255,255,255,255)
+        // endif
+        // call MultiboardSetItemWidth(mbitem,.04)
         // call MultiboardReleaseItem(mbitem)
-        // set mbitem=MultiboardGetItem(mbg,row[13],6)
+        // set mbitem=MultiboardGetItem(mbg,row[x],6)
         // call MultiboardSetItemStyle(mbitem,true,false)
-        // call MultiboardSetItemValue(mbitem," ")
-        // call MultiboardSetItemWidth(mbitem,.035)
+        // if Streak[x]>0 then
+                // call MultiboardSetItemValue(mbitem,udg_Color[5]+"+"+I2S(Streak[x])) //streak
+        // else
+                // call MultiboardSetItemValue(mbitem,udg_Color[5]+I2S(Streak[x])) //streak
+        // endif
+        // call MultiboardSetItemWidth(mbitem,.02)
         // call MultiboardReleaseItem(mbitem)
-        // set mbitem=null
+        // endif
+        // if x>=0 and x<=4 then
+                // call SetPlayerState(Player(x),PLAYER_STATE_RESOURCE_LUMBER,win[1])
+        // elseif x>=5 and x<=9 then
+                // call SetPlayerState(Player(x),PLAYER_STATE_RESOURCE_LUMBER,win[2])
+        // endif
+        // if GetUnitAbilityLevel(Hero[x],'B072')>0 then
+                // if GetUnitAbilityLevel(Hero[x],'A1GH')==0 then
+                //* call UnitAddAbility(Hero[x],'A1GH')
+                // endif
+        // else
+                // if GetUnitAbilityLevel(Hero[x],'A1GH')>0 then
+                //* call UnitRemoveAbility(Hero[x],'A1GH')
+                // endif
+        // endif
+        // if GetUnitAbilityLevel(Hero[x],'B073')>0 then
+                // if GetUnitAbilityLevel(Hero[x],'A1GJ')==0 then
+                //* call UnitAddAbility(Hero[x],'A1GJ')
+                // endif
+        // else
+                // if GetUnitAbilityLevel(Hero[x],'A1GJ')>0 then
+                //* call UnitRemoveAbility(Hero[x],'A1GJ')
+                // endif
+        // endif
+        // if GetUnitAbilityLevel(Hero[x],'A18B')>0 then
+                // call SetUnitState(Hero[x],UNIT_STATE_LIFE,GetWidgetLife(Hero[x])+0.045*SunRing(Hero[x])*I2R(GetHeroInt(Hero[x],true)))
+        // else
+                // call SetUnitState(Hero[x],UNIT_STATE_LIFE,GetWidgetLife(Hero[x])+0.015*SunRing(Hero[x])*I2R(GetHeroInt(Hero[x],true)))
+        // endif
+// set x=x+1
+// endloop
+// set mbitem=MultiboardGetItem(mbg,row[11],0)
+// call MultiboardSetItemStyle(mbitem,true,false)
+// call MultiboardSetItemValue(mbitem,"-----------------------------------------------------------------------------------------------------------------------------------------------")
+// call MultiboardSetItemWidth(mbitem,.25)
+// call MultiboardReleaseItem(mbitem)
+// set mbitem=MultiboardGetItem(mbg,row[11],1)
+// call MultiboardSetItemStyle(mbitem,true,false)
+// call MultiboardSetItemValue(mbitem," ")
+// call MultiboardSetItemWidth(mbitem,.01)
+// call MultiboardReleaseItem(mbitem)
+// set mbitem=MultiboardGetItem(mbg,row[11],2)
+// call MultiboardSetItemStyle(mbitem,true,false)
+// call MultiboardSetItemValue(mbitem," ")
+// call MultiboardSetItemWidth(mbitem,.01)
+// call MultiboardReleaseItem(mbitem)
+// set mbitem=MultiboardGetItem(mbg,row[11],3)
+// call MultiboardSetItemStyle(mbitem,true,false)
+// call MultiboardSetItemValue(mbitem," ")
+// call MultiboardSetItemWidth(mbitem,.01)
+// call MultiboardReleaseItem(mbitem)
+// set mbitem=MultiboardGetItem(mbg,row[11],4)
+// call MultiboardSetItemStyle(mbitem,true,false)
+// call MultiboardSetItemValue(mbitem," ")
+// call MultiboardSetItemWidth(mbitem,.01)
+// call MultiboardReleaseItem(mbitem)
+// set mbitem=MultiboardGetItem(mbg,row[11],5)
+// call MultiboardSetItemStyle(mbitem,true,false)
+// call MultiboardSetItemValue(mbitem," ")
+// call MultiboardSetItemWidth(mbitem,.01)
+// call MultiboardReleaseItem(mbitem)
+// set mbitem=MultiboardGetItem(mbg,row[11],6)
+// call MultiboardSetItemStyle(mbitem,true,false)
+// call MultiboardSetItemValue(mbitem," ")
+// call MultiboardSetItemWidth(mbitem,.01)
+// call MultiboardReleaseItem(mbitem)
+// set mbitem=MultiboardGetItem(mbg,row[12],0)
+// call MultiboardSetItemStyle(mbitem,true,false)
+// call MultiboardSetItemValue(mbitem,"|cff4499BBCurrent Magic Resistance:|r")
+// call MultiboardSetItemWidth(mbitem,.20)
+// call MultiboardReleaseItem(mbitem)
+// set mbitem=MultiboardGetItem(mbg,row[12],1)
+// call MultiboardSetItemStyle(mbitem,true,false)
+// call MultiboardSetItemValue(mbitem,"")
+// call MultiboardSetItemWidth(mbitem,.01)
+// call MultiboardReleaseItem(mbitem)
+// set mbitem=MultiboardGetItem(mbg,row[12],2)
+// call MultiboardSetItemStyle(mbitem,true,false)
+// call MultiboardSetItemValue(mbitem,"")
+// call MultiboardSetItemWidth(mbitem,.01)
+// call MultiboardReleaseItem(mbitem)
+// set mbitem=MultiboardGetItem(mbg,row[12],3)
+// call MultiboardSetItemStyle(mbitem,true,false)
+// call MultiboardSetItemValue(mbitem,I2S(-1*passedTime*5)+"%")
+// call MultiboardSetItemValueColor(mbitem,110+passedTime*13,130-passedTime*9,150-passedTime*12,255)
+// call MultiboardSetItemWidth(mbitem,.02)
+// call MultiboardReleaseItem(mbitem)
+// set mbitem=MultiboardGetItem(mbg,row[12],4)
+// call MultiboardSetItemStyle(mbitem,true,false)
+// call MultiboardSetItemValue(mbitem," ")
+// call MultiboardSetItemWidth(mbitem,.02)
+// call MultiboardReleaseItem(mbitem)
+// set mbitem=MultiboardGetItem(mbg,row[12],5)
+// call MultiboardSetItemStyle(mbitem,true,false)
+// call MultiboardSetItemValue(mbitem," ")
+// call MultiboardSetItemWidth(mbitem,.035)
+// call MultiboardReleaseItem(mbitem)
+// set mbitem=MultiboardGetItem(mbg,row[12],6)
+// call MultiboardSetItemStyle(mbitem,true,false)
+// call MultiboardSetItemValue(mbitem," ")
+// call MultiboardSetItemWidth(mbitem,.035)
+// call MultiboardReleaseItem(mbitem)
+// set mbitem=MultiboardGetItem(mbg,row[13],0)
+// call MultiboardSetItemStyle(mbitem,true,false)
+// call MultiboardSetItemValue(mbitem,"|c00FF8080Global Regeneration Reduction:|r")
+// call MultiboardSetItemWidth(mbitem,.20)
+// call MultiboardReleaseItem(mbitem)
+// set mbitem=MultiboardGetItem(mbg,row[13],1)
+// call MultiboardSetItemStyle(mbitem,true,false)
+// call MultiboardSetItemValue(mbitem,"")
+// call MultiboardSetItemWidth(mbitem,.01)
+// call MultiboardReleaseItem(mbitem)
+// set mbitem=MultiboardGetItem(mbg,row[13],2)
+// call MultiboardSetItemStyle(mbitem,true,false)
+// call MultiboardSetItemValue(mbitem,"")
+// call MultiboardSetItemWidth(mbitem,.01)
+// call MultiboardReleaseItem(mbitem)
+// set mbitem=MultiboardGetItem(mbg,row[13],3)
+// call MultiboardSetItemStyle(mbitem,true,false)
+// call MultiboardSetItemValue(mbitem,I2S(HealRes*-1)+"%")
+// call MultiboardSetItemValueColor(mbitem,140-HealRes,100,100,255)
+// call MultiboardSetItemWidth(mbitem,.02)
+// call MultiboardReleaseItem(mbitem)
+// set mbitem=MultiboardGetItem(mbg,row[13],4)
+// call MultiboardSetItemStyle(mbitem,true,false)
+// call MultiboardSetItemValue(mbitem," ")
+// call MultiboardSetItemWidth(mbitem,.02)
+// call MultiboardReleaseItem(mbitem)
+// set mbitem=MultiboardGetItem(mbg,row[13],5)
+// call MultiboardSetItemStyle(mbitem,true,false)
+// call MultiboardSetItemValue(mbitem," ")
+// call MultiboardSetItemWidth(mbitem,.035)
+// call MultiboardReleaseItem(mbitem)
+// set mbitem=MultiboardGetItem(mbg,row[13],6)
+// call MultiboardSetItemStyle(mbitem,true,false)
+// call MultiboardSetItemValue(mbitem," ")
+// call MultiboardSetItemWidth(mbitem,.035)
+// call MultiboardReleaseItem(mbitem)
+// set mbitem=null
 endfunction
 function InitTrig_Multup takes nothing returns nothing
 set gg_trg_Multup=CreateTrigger()
@@ -26469,7 +26630,7 @@ if cmb!=true then
         call IH('H00H',u,"ReplaceableTextures\\CommandButtons\\BTNRyohei1.blp")
         call IH('H00X',u,"ReplaceableTextures\\CommandButtons\\BTNHibariK.blp")
         call IH('H014',u,"ReplaceableTextures\\CommandButtons\\BTNGokudera1.blp")
-        call IH('H00P',u,"war3mapImported\\BTNgecko moria.blp")
+        call IH('H00P',u,"ReplaceableTextures\\CommandButtons\\BTNMoriaP.blp")
         call IH('H00K',u,"ReplaceableTextures\\CommandButtons\\BTNEnel.blp")
         call IH('H016',u,"ReplaceableTextures\\CommandButtons\\BTNYamamotoT.blp")
         call IH('H00D',u,"war3mapImported\\BTNAce.blp")
@@ -27992,6 +28153,16 @@ if GetUnitTypeId(u) == 'H00V' then
     call UnitAddAbility(u, 'S301')
     call IssueImmediateOrder(u, "bearform")
     call UnitRemoveAbility(u, 'S301')
+    call UnitRemoveAbility(u, 'MrW2')
+    call ShowAbility2('MrF1',true)
+    call ShowAbility2('MrG1',true)
+    call ShowAbility2('MrW1',true)
+    call SetHeroStr(u, GetHeroStr(u, false)-LoadInteger(HH,GetHandleId(u),'SASB'), true)
+    call SetHeroAgi(u, GetHeroAgi(u, false)-LoadInteger(HH,GetHandleId(u),'SAAB'), true)
+    call SetHeroInt(u, GetHeroInt(u, false)-LoadInteger(HH,GetHandleId(u),'SAIB'), true)
+    call SaveInteger(HH,GetHandleId(u),'SASB',0)
+    call SaveInteger(HH,GetHandleId(u),'SAAB',0)
+    call SaveInteger(HH,GetHandleId(u),'SAIB',0)
 endif
 if GetUnitTypeId(u) == 'H02Z' then
     call UnitAddAbility(u, 'S401')
@@ -32420,6 +32591,7 @@ function Trig_cd_Actions takes nothing returns nothing
     loop
     exitwhen bj_forLoopAIndex>bj_forLoopAIndexEnd
     call UnitResetCooldown(udg_Hero[GetForLoopIndexA()])
+    call UnitResetCooldown(udg_DM[GetForLoopIndexA()])
     call UnitResetCooldown(Lucy[GetForLoopIndexA()-1])
     call SaveReal(HH,GetHandleId(Darkness[GetForLoopIndexA()]),StringHash("darkHP"),LoadReal(HH,GetHandleId(Darkness[GetForLoopIndexA()]),StringHash("darkMaxHP")))
     call SaveReal(HH,GetHandleId(Darkness[GetForLoopIndexA()]),StringHash("revivetime"),35)
@@ -35086,7 +35258,43 @@ function EndOfChoiceAct takes nothing returns nothing
             call SaveReal(HH,GetHandleId( Hero[i] ),MadokaTHHash,2000+round*50)
             call SaveInteger(HH,GetHandleId( Hero[i] ),MadokaMHash,0)
         endif
-
+        if LoadBoolean(HH,GetHandleId(Hero[i]),'ShSt') then
+            call SaveBoolean(HH,GetHandleId(Hero[i]),'ShSt',false)
+            call SetHeroStr(Hero[i],GetHeroStr(Hero[i],false)+LoadInteger(HH,GetHandleId(Hero[i]),'ShSA'),true)
+            call SetHeroAgi(Hero[i],GetHeroAgi(Hero[i],false)+LoadInteger(HH,GetHandleId(Hero[i]),'ShAA'),true)
+            call SetHeroInt(Hero[i],GetHeroInt(Hero[i],false)+LoadInteger(HH,GetHandleId(Hero[i]),'ShIA'),true)
+            call SaveInteger(HH,GetHandleId(Hero[i]),'ShSA',0)
+            call SaveInteger(HH,GetHandleId(Hero[i]),'ShAA',0)
+            call SaveInteger(HH,GetHandleId(Hero[i]),'ShIA',0)
+            call DestroyImage(GetUnitImage(Hero[i],3))
+            call SetUnitImage(Hero[i],3,LoadImageHandle(HH,GetHandleId(Hero[i]),'ShIm'))
+            call SetImageRender(GetUnitImage(Hero[i],3),true)
+            call SetImageRenderAlways(GetUnitImage(Hero[i],3),true)
+            call ShowImage(GetUnitImage(Hero[i],3),true)
+            call RemoveSavedHandle(HH,GetHandleId(Hero[i]),'ShIm')
+        endif
+        if LoadInteger(HH,GetHandleId(Hero[i]),'SSG+')>0 then
+            call SetHeroStr(Hero[i],GetHeroStr(Hero[i],false)-LoadInteger(HH,GetHandleId(Hero[i]),'SSG+'),true)
+            call SetHeroAgi(Hero[i],GetHeroAgi(Hero[i],false)-LoadInteger(HH,GetHandleId(Hero[i]),'SAG+'),true)
+            call SetHeroInt(Hero[i],GetHeroInt(Hero[i],false)-LoadInteger(HH,GetHandleId(Hero[i]),'SIG+'),true)
+            call SaveInteger(HH,GetHandleId(Hero[i]),'SSG+',0)
+            call SaveInteger(HH,GetHandleId(Hero[i]),'SAG+',0)
+            call SaveInteger(HH,GetHandleId(Hero[i]),'SIG+',0)
+        endif
+        if GetUnitTypeId(Hero[i])=='H00P' or GetUnitTypeId(Hero[i])=='H00V' then
+            set j=LoadInteger(HH,GetHandleId(GetOwningPlayer(Hero[i])),'ShSn')
+            loop
+            exitwhen j==0
+                call RemoveSavedHandle(HH,GetHandleId(GetOwningPlayer(Hero[i])),'ShPS'+j)
+                call RemoveSavedHandle(HH,GetHandleId(GetOwningPlayer(Hero[i])),'ShNT'+j)
+                call SaveInteger(HH,GetHandleId(GetOwningPlayer(Hero[i])),'ShSA'+j,0)
+                call SaveInteger(HH,GetHandleId(GetOwningPlayer(Hero[i])),'ShAA'+j,0)
+                call SaveInteger(HH,GetHandleId(GetOwningPlayer(Hero[i])),'ShIA'+j,0)
+                call SaveStr(HH,GetHandleId(GetOwningPlayer(Hero[i])),'ShNP'+j,null)
+                set j=j-1
+            endloop    
+            call SaveInteger(HH,GetHandleId(GetOwningPlayer(Hero[i])),'ShSn',0)
+        endif
         //блекгоку конец раунда
         if GetUnitTypeId(Hero[i]) == 'H35Z' then
             call UnitRemoveAbility(Hero[i], 'YoF1')
@@ -36269,12 +36477,14 @@ endfunction
 
 function Trig_Start_Actions takes nothing returns nothing
 local integer i=0
+local integer j=0
 local integer ri=0
 local group g=CreateGroup()
 local real x=GetRectMaxX(gg_rct_Weiw)
 local real x1=GetRectMinX(gg_rct_Weiw)
 local real y=GetRectMaxY(gg_rct_Weiw)
 local real y1=GetRectMinY(gg_rct_Weiw)
+// call ClearStrings()
 call FlushParentHashtable(h)
 set h=InitHashtable()
 call DestroyTimerDialog(udg_TB)
@@ -36481,6 +36691,43 @@ exitwhen i>=10
         call SaveReal(HH,GetHandleId( Hero[i] ),MadokaHHash,0)
         call SaveReal(HH,GetHandleId( Hero[i] ),MadokaTHHash,2000+round*50)
         call SaveInteger(HH,GetHandleId( Hero[i] ),MadokaMHash,0)
+    endif
+    if LoadBoolean(HH,GetHandleId(Hero[i]),'ShSt') then
+        call SaveBoolean(HH,GetHandleId(Hero[i]),'ShSt',false)
+        call SetHeroStr(Hero[i],GetHeroStr(Hero[i],false)+LoadInteger(HH,GetHandleId(Hero[i]),'ShSA'),true)
+        call SetHeroAgi(Hero[i],GetHeroAgi(Hero[i],false)+LoadInteger(HH,GetHandleId(Hero[i]),'ShAA'),true)
+        call SetHeroInt(Hero[i],GetHeroInt(Hero[i],false)+LoadInteger(HH,GetHandleId(Hero[i]),'ShIA'),true)
+        call SaveInteger(HH,GetHandleId(Hero[i]),'ShSA',0)
+        call SaveInteger(HH,GetHandleId(Hero[i]),'ShAA',0)
+        call SaveInteger(HH,GetHandleId(Hero[i]),'ShIA',0)
+        call DestroyImage(GetUnitImage(Hero[i],3))
+        call SetUnitImage(Hero[i],3,LoadImageHandle(HH,GetHandleId(Hero[i]),'ShIm'))
+        call SetImageRender(GetUnitImage(Hero[i],3),true)
+        call SetImageRenderAlways(GetUnitImage(Hero[i],3),true)
+        call ShowImage(GetUnitImage(Hero[i],3),true)
+        call RemoveSavedHandle(HH,GetHandleId(Hero[i]),'ShIm')
+    endif
+    if LoadInteger(HH,GetHandleId(Hero[i]),'SSG+')>0 then
+        call SetHeroStr(Hero[i],GetHeroStr(Hero[i],false)-LoadInteger(HH,GetHandleId(Hero[i]),'SSG+'),true)
+        call SetHeroAgi(Hero[i],GetHeroAgi(Hero[i],false)-LoadInteger(HH,GetHandleId(Hero[i]),'SAG+'),true)
+        call SetHeroInt(Hero[i],GetHeroInt(Hero[i],false)-LoadInteger(HH,GetHandleId(Hero[i]),'SIG+'),true)
+        call SaveInteger(HH,GetHandleId(Hero[i]),'SSG+',0)
+        call SaveInteger(HH,GetHandleId(Hero[i]),'SAG+',0)
+        call SaveInteger(HH,GetHandleId(Hero[i]),'SIG+',0)
+    endif
+    if GetUnitTypeId(Hero[i])=='H00P' or GetUnitTypeId(Hero[i])=='H00V' then
+        set j=LoadInteger(HH,GetHandleId(GetOwningPlayer(Hero[i])),'ShSn')
+        loop
+        exitwhen j==0
+            call RemoveSavedHandle(HH,GetHandleId(GetOwningPlayer(Hero[i])),'ShPS'+j)
+            call RemoveSavedHandle(HH,GetHandleId(GetOwningPlayer(Hero[i])),'ShNT'+j)
+            call SaveInteger(HH,GetHandleId(GetOwningPlayer(Hero[i])),'ShSA'+j,0)
+            call SaveInteger(HH,GetHandleId(GetOwningPlayer(Hero[i])),'ShAA'+j,0)
+            call SaveInteger(HH,GetHandleId(GetOwningPlayer(Hero[i])),'ShIA'+j,0)
+            call SaveStr(HH,GetHandleId(GetOwningPlayer(Hero[i])),'ShNP'+j,null)
+            set j=j-1
+        endloop    
+        call SaveInteger(HH,GetHandleId(GetOwningPlayer(Hero[i])),'ShSn',0)
     endif
         //sabrac7start
     if GetUnitTypeId( Hero[i] )=='HSab' then //'H05Z' old sabrac
@@ -37817,6 +38064,10 @@ local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
 call SetUnitInvulnerable(LoadUnitHandle(h,id,33),false)
 call UnitRemoveBuffs(LoadUnitHandle(h,id,33),false,true)
+if udg_DM[GetPlayerId(GetOwningPlayer(LoadUnitHandle(h,id,33)))+1]!=null then
+call SetUnitInvulnerable(udg_DM[GetPlayerId(GetOwningPlayer(LoadUnitHandle(h,id,33)))+1],false)
+call UnitRemoveBuffs(udg_DM[GetPlayerId(GetOwningPlayer(LoadUnitHandle(h,id,33)))+1],false,true)
+endif
 call PauseTimer(t)
 call DestroyTimer(t)
 call FlushChildHashtable(h,id)
@@ -38068,19 +38319,19 @@ local real y1=GetUnitY(u)
 local unit d1=LoadUnitHandle(h,id,4)
 local unit d2=LoadUnitHandle(h,id,5)
 if r>0 then
-call MoveLightningEx(l,false,x1,y1,GetUnitZCustom(u)+75,x,y,GetUnitZCustom(c)+75)
-call SaveReal(h,id,3,r-6)
-call SetLightningColor(l,0,100,0,r)
-call SetUnitX(d1,x)
-call SetUnitY(d1,y)
-call SetUnitX(d2,x1)
-call SetUnitY(d2,y1)
+    call MoveLightningEx(l,false,x1,y1,GetUnitZCustom(u)+75,x,y,GetUnitZCustom(c)+75)
+    call SaveReal(h,id,3,r-6)
+    call SetLightningColor(l,0,100,0,r)
+    call SetUnitX(d1,x)
+    call SetUnitY(d1,y)
+    call SetUnitX(d2,x1)
+    call SetUnitY(d2,y1)
 else
-call RemoveUnit(d1)
-call RemoveUnit(d2)
-call DestroyTimer(t)
-call DestroyLightning(l)
-call FlushChildHashtable(h,id)
+    call RemoveUnit(d1)
+    call RemoveUnit(d2)
+    call DestroyTimer(t)
+    call DestroyLightning(l)
+    call FlushChildHashtable(h,id)
 endif
 set t=null
 set u=null
@@ -38092,7 +38343,7 @@ endfunction
 
 function AlbedoEPass_Periodic takes nothing returns nothing
     local integer id= GetHandleId(GetExpiredTimer())
-        local unit target= LoadUnitHandle(HH, id, c_TARGET)
+    local unit target= LoadUnitHandle(HH, id, c_TARGET)
     local real time= LoadReal(HH, id, c_TIME)
     if IsUnitHidden(target)==false and GetUnitAbilityLevel(target,'cbc9')==0 then
         call SaveReal(HH, id, c_TIME, time + 0.05)
@@ -38137,42 +38388,72 @@ function AlbedoEPassive takes unit newSource, unit newTarget, timer newTimer ret
     local integer max_iteration= 30
     local integer random_slot= 0
     if AlbedoEPassiveCounter >=4 and UnitIsAlive(newTarget) then
-                if IsUnitType(newTarget, UNIT_TYPE_HERO) and IsUnitIllusion(newTarget)==false and GetUnitAbilityLevel(newSource, 'AlEp')>0 and GetUnitTypeId(newTarget)!='H007' and GetUnitTypeId(newTarget)!='Ho13' and GetUnitTypeId(newTarget)!='H34X' and GetUnitTypeId(newTarget)!='H14F' then
-            loop
-            exitwhen max_iteration <= 0
-                set max_iteration=max_iteration - 1
-                set random_slot=GetRandomInt(0, 5)
-                if GetItemTypeId(UnitItemInSlot(newTarget, random_slot)) != 0 and AlbedoBreakCond(newTarget , random_slot) then
-                    set item_id=GetItemTypeId(UnitItemInSlot(newTarget, random_slot))
-                    call RemoveItem(UnitItemInSlot(newTarget, random_slot))
-                    set max_iteration=0
+        if IsUnitType(newTarget, UNIT_TYPE_HERO) and IsUnitIllusion(newTarget)==false and GetUnitAbilityLevel(newSource, 'AlEp')>0 and GetUnitTypeId(newTarget)!='H007' and GetUnitTypeId(newTarget)!='Ho13' and GetUnitTypeId(newTarget)!='H34X' and GetUnitTypeId(newTarget)!='H14F' then
+            if GetUnitTypeId(newTarget)=='H00Q' then
+                loop
+                exitwhen max_iteration <= 0
+                    set max_iteration=max_iteration - 1
+                    set random_slot=GetRandomInt(0, 5)
+                    if GetItemTypeId(UnitItemInSlot(Hero[GetPlayerId(GetOwningPlayer(newTarget))], random_slot)) != 0 and AlbedoBreakCond(Hero[GetPlayerId(GetOwningPlayer(newTarget))] , random_slot) then
+                        set item_id=GetItemTypeId(UnitItemInSlot(Hero[GetPlayerId(GetOwningPlayer(newTarget))], random_slot))
+                        call RemoveItem(UnitItemInSlot(Hero[GetPlayerId(GetOwningPlayer(newTarget))], random_slot))
+                        set max_iteration=0
+                    endif
+                endloop
+                if item_id != 0 then
+                    if GetUnitAbilityLevel(Hero[GetPlayerId(GetOwningPlayer(newTarget))],'cbc5')>0 then
+                        call EnableUnitAbility2(Hero[GetPlayerId(GetOwningPlayer(newTarget))],'AInv',false,true)
+                    endif
+                    if IsUnitPaused(Hero[GetPlayerId(GetOwningPlayer(newTarget))])==false then
+                        call UnitAddItemToSlotById(Hero[GetPlayerId(GetOwningPlayer(newTarget))], 'Ibrk', random_slot)
+                    else
+                        call PauseUnit(Hero[GetPlayerId(GetOwningPlayer(newTarget))], false)
+                        call UnitAddItemToSlotById(Hero[GetPlayerId(GetOwningPlayer(newTarget))], 'Ibrk', random_slot)
+                        call PauseUnit(Hero[GetPlayerId(GetOwningPlayer(newTarget))],true)
+                    endif
+                    if GetUnitAbilityLevel(Hero[GetPlayerId(GetOwningPlayer(newTarget))],'cbc5')>0 then
+                        call EnableUnitAbility2(Hero[GetPlayerId(GetOwningPlayer(newTarget))],'AInv',false,true)
+                    endif
+                    set bj_lastCreatedItem = UnitItemInSlot(Hero[GetPlayerId(GetOwningPlayer(newTarget))], random_slot)
+                    call SetItemDroppable(bj_lastCreatedItem,false)
+                    call SaveItemHandle(HH, id, StringHash("BrokenItem"), bj_lastCreatedItem)
+                    call SaveUnitHandle(HH, id, c_TARGET, Hero[GetPlayerId(GetOwningPlayer(newTarget))])
                 endif
-            endloop
-            if item_id != 0 then
-                if GetUnitAbilityLevel(newTarget,'cbc5')>0 then
-                    call EnableUnitAbility2(newTarget,'AInv',false,true)
+            else
+                loop
+                exitwhen max_iteration <= 0
+                    set max_iteration=max_iteration - 1
+                    set random_slot=GetRandomInt(0, 5)
+                    if GetItemTypeId(UnitItemInSlot(newTarget, random_slot)) != 0 and AlbedoBreakCond(newTarget , random_slot) then
+                        set item_id=GetItemTypeId(UnitItemInSlot(newTarget, random_slot))
+                        call RemoveItem(UnitItemInSlot(newTarget, random_slot))
+                        set max_iteration=0
+                    endif
+                endloop
+                if item_id != 0 then
+                    if GetUnitAbilityLevel(newTarget,'cbc5')>0 then
+                        call EnableUnitAbility2(newTarget,'AInv',false,true)
+                    endif
+                    if IsUnitPaused(newTarget)==false then
+                        call UnitAddItemToSlotById(newTarget, 'Ibrk', random_slot)
+                    else
+                        call PauseUnit(newTarget, false)
+                        call UnitAddItemToSlotById(newTarget, 'Ibrk', random_slot)
+                        call PauseUnit(newTarget,true)
+                    endif
+                    if GetUnitAbilityLevel(newTarget,'cbc5')>0 then
+                        call EnableUnitAbility2(newTarget,'AInv',false,true)
+                    endif
+                    set bj_lastCreatedItem = UnitItemInSlot(newTarget, random_slot)
+                    call SetItemDroppable(bj_lastCreatedItem,false)
+                    call SaveItemHandle(HH, id, StringHash("BrokenItem"), bj_lastCreatedItem)
+                    call SaveUnitHandle(HH, id, c_TARGET, newTarget)
                 endif
-				if IsUnitPaused(newTarget)==false then
-					call UnitAddItemToSlotById(newTarget, 'Ibrk', random_slot)
-				else
-					call PauseUnit(newTarget, false)
-					call UnitAddItemToSlotById(newTarget, 'Ibrk', random_slot)
-					call PauseUnit(newTarget,true)
-				endif
-                if GetUnitAbilityLevel(newTarget,'cbc5')>0 then
-                    call EnableUnitAbility2(newTarget,'AInv',false,true)
-                endif
-                                set bj_lastCreatedItem = UnitItemInSlot(newTarget, random_slot)
-                                call SetItemDroppable(bj_lastCreatedItem,false)
-                                call SaveItemHandle(HH, id, StringHash("BrokenItem"), bj_lastCreatedItem)
-                call SaveUnitHandle(HH, id, c_TARGET, newTarget)
-                call SaveReal(HH, id, c_TIME, 0)
-                call SaveInteger(HH, id, StringHash("BrokenItemSlot"), random_slot)
-                call SaveInteger(HH, id, StringHash("BrokenItemId"), item_id)
-                call TimerStart(newTimer, 0.05, true, function AlbedoEPass_Periodic)
-            //else
-                //call BJDebugMsg("Item not found")
             endif
+            call SaveReal(HH, id, c_TIME, 0)
+            call SaveInteger(HH, id, StringHash("BrokenItemSlot"), random_slot)
+            call SaveInteger(HH, id, StringHash("BrokenItemId"), item_id)
+            call TimerStart(newTimer, 0.05, true, function AlbedoEPass_Periodic)
 		endif
 		// if GetUnitTypeId(newTarget)=='H04A' and GetUnitTypeId(newTarget)=='H04B' then
 			// set new_dmg = new_dmg + GetWidgetMaxLife(newTarget)*0.065
@@ -40550,6 +40831,11 @@ if GetUnitAbilityLevel(c,'Bwk1')>0 and nb>0 then
     set b=GetEventDamage()
     set nb=b
 endif
+if GetUnitTypeId(c)=='H00Q' and SquareRootUnit(c,Hero[idc])>2500 and nb>0 then 
+    call SetEventDamage(nb*0.6) 
+    set b=GetEventDamage()
+    set nb=b               
+endif
 if GetUnitAbilityLevel(c,'BAr2')>0 and nb>0 then 
     call SetEventDamage(nb*0.85) 
     set b=GetEventDamage()
@@ -40697,11 +40983,11 @@ set nb=0
 endif
 if (GetUnitAbilityLevel(u,'A14J')>0  and (nb>200 or CurrentEventAttack)) or (GetUnitAbilityLevel(u,'A24J')>0 and (nb>200 or CurrentEventAttack)) or (GetUnitAbilityLevel(u,'A34J')>0 and (nb>200 or CurrentEventAttack)) or (GetUnitAbilityLevel(u,'JNQ2')>0 and CurrentEventAttack and SquareRootUnit(c,u)<350) or (GetUnitAbilityLevel(u,'JNE2')>0 and (nb>200 or CurrentEventAttack)) then
     if GetUnitAbilityLevel(u,'A34J')>0 then
-        if GetHeroLevel(u)>=35 and LoadBoolean(HH,GetHandleId( GetOwningPlayer(u) ),MUIAvailableHash)==false then
-            call SaveInteger(HH,GetHandleId( GetOwningPlayer(u) ),MUIDodgeCountHash,LoadInteger(HH,GetHandleId( GetOwningPlayer(u) ),MUIDodgeCountHash)+1)
-            if LoadInteger(HH,GetHandleId( GetOwningPlayer(u) ),MUIDodgeCountHash)>=15 then
-                call SaveBoolean(HH,GetHandleId( GetOwningPlayer(u) ),MUIAvailableHash,true)
-                set MUIUnlock[GetPlayerId(GetOwningPlayer(u))]=CreateUnit(GetOwningPlayer(u),'h111',RX,RY,0)
+        if GetHeroLevel(u)>=35 and LoadBoolean(HH,GetHandleId(GetOwningPlayer(u)),MUIAvailableHash)==false then
+            call SaveInteger(HH,GetHandleId(GetOwningPlayer(u)),MUIDodgeCountHash,LoadInteger(HH,GetHandleId(GetOwningPlayer(u)),MUIDodgeCountHash)+1)
+            if LoadInteger(HH,GetHandleId(GetOwningPlayer(u)),MUIDodgeCountHash)>=15 then
+                call SaveBoolean(HH,GetHandleId(GetOwningPlayer(u)),MUIAvailableHash,true)
+                set MUIUnlock[idu]=CreateUnit(GetOwningPlayer(u),'h111',RX,RY,0)
             endif
         endif
     endif
@@ -40908,11 +41194,11 @@ if cond==0 then
             call UnitRemoveAbilityTimedPause(u,'A7IH',0.15)
             call SetUnitAnimationByIndex(u,GetRandomInt(222,230))
             set nb=0
-            if GetHeroLevel(u)>=35 and LoadBoolean(HH,GetHandleId( GetOwningPlayer(u) ),MUIAvailableHash)==false then
-                call SaveInteger(HH,GetHandleId( GetOwningPlayer(u) ),MUIDodgeCountHash,LoadInteger(HH,GetHandleId( GetOwningPlayer(u) ),MUIDodgeCountHash)+1)
-                if LoadInteger(HH,GetHandleId( GetOwningPlayer(u) ),MUIDodgeCountHash)>=15 then
-                    call SaveBoolean(HH,GetHandleId( GetOwningPlayer(u) ),MUIAvailableHash,true)
-                    set MUIUnlock[GetPlayerId(GetOwningPlayer(u))]=CreateUnit(GetOwningPlayer(u),'h111',RX,RY,0)
+            if GetHeroLevel(u)>=35 and LoadBoolean(HH,GetHandleId(GetOwningPlayer(u)),MUIAvailableHash)==false then
+                call SaveInteger(HH,GetHandleId(GetOwningPlayer(u)),MUIDodgeCountHash,LoadInteger(HH,GetHandleId(GetOwningPlayer(u)),MUIDodgeCountHash)+1)
+                if LoadInteger(HH,GetHandleId(GetOwningPlayer(u)),MUIDodgeCountHash)>=15 then
+                    call SaveBoolean(HH,GetHandleId(GetOwningPlayer(u)),MUIAvailableHash,true)
+                    set MUIUnlock[idu]=CreateUnit(GetOwningPlayer(u),'h111',RX,RY,0)
                 endif
             endif
         endif
@@ -41555,86 +41841,249 @@ if cond==0 then
             set nb=0
             set t=null
         endif
-        if(UnitHasItemOfTypeBJ(u,'I03R')and nb>500) and CurrentEventAttack==false and IsUnitType(u,UNIT_TYPE_SUMMONED)==false and u==Hero[idu] then
-            set cjlocgn_00000000=CreateTimer()
-            set t=CreateTimer()
-            call SaveUnitHandle(h,GetHandleId(cjlocgn_00000000),0,u)
-            set it=GetItemOfTypeFromUnitBJCustom(u,'I03R')
-            call UnitRemoveItem(u,it)
-            call RemoveItem(it)
-            call UnitAddAbility(u,'A0VV')
-            call UnitRemoveAbility(u,'A0VV')
-            call UnitRemoveBuffs(u,false,true)
-            call UnitRemoveAbility(u,'A0J4')
-            set it=UnitAddItemById(u,'I03S')
-            call SetItemDroppable(it,false)
-            call SaveItemHandle(h,GetHandleId(cjlocgn_00000000),1,it)
-            call TimerStart(cjlocgn_00000000,0.1,true,function LinkenSphere)
-            call SaveReal(h,GetHandleId(cjlocgn_00000000),2,30)
-            call SaveInteger(h,GetHandleId(cjlocgn_00000000),3,idu)
-            call DestroyEffect(AddSpecialEffectTarget("war3mapImported\\EMPBubble2.mdx",u,"chest"))
-            call CreateModeIndicatorForm(u, "war3mapImported\\BTNVoidSphere.blp", 30)
-            call SetUnitInvulnerable(u,true)
-            call UnitRemoveAbility(u,'B04S')
-            call UnitRemoveAbility(u,'B04R')
-            call SaveUnitHandle(h,GetHandleId(t),33,u)
-            call TimerStart(t,0.02,false,function Linken_Block)
-            set nb=0
-            set t=null
-            set cjlocgn_00000000=null
-        endif
-        if(UnitHasItemOfTypeBJCustom(u,'I13R')and nb>500) and CurrentEventAttack==false and GetUnitAbilityLevel(u,'BorB')==0 and IsUnitType(u,UNIT_TYPE_SUMMONED)==false and u==Hero[idu] then
-            set cjlocgn_00000000=CreateTimer()
-            set t=CreateTimer()
-            if IsAbilityEnabled(GetUnitAbility(u,'AInv'))==true then
-                call SaveUnitHandle(h,GetHandleId(cjlocgn_00000000),0,u)
-                set it=GetItemOfTypeFromUnitBJCustom(u,'I13R')
-                call UnitRemoveItem(u,it)
-                call RemoveItem(it)
-                call UnitAddAbility(u,'A0VV')
-                call UnitRemoveAbilityTimedPause(u,'A0VV',6)
-                call UnitAddAbility(u,'A28W')
-                call UnitRemoveAbilityTimedPause(u,'A28W',6)
-                call UnitRemoveBuffs(u,false,true)
-                call UnitRemoveAbility(u,'A0J4')
-                set it=CreateItem('I13S',MathRealFloor(GetUnitX(u)),MathRealFloor(GetUnitY(u)))
-                call UnitAddItemToSlot(u,it,9)
-                call SetItemDroppable(it,false)
-                call SaveItemHandle(h,GetHandleId(cjlocgn_00000000),1,it)
-                call TimerStart(cjlocgn_00000000,0.1,true,function LinkenSphere2)
+        if(UnitHasItemOfTypeBJ(u,'I03R')and nb>500) and CurrentEventAttack==false and IsUnitType(u,UNIT_TYPE_SUMMONED)==false and (u==Hero[idu] or u==udg_DM[idu+1]) then
+            if GetUnitTypeId(u)=='H00Q' then
+                if UnitHasItemOfTypeBJ(Hero[idu],'I03R') then
+                    set cjlocgn_00000000=CreateTimer()
+                    set t=CreateTimer()
+                    if IsAbilityEnabled(GetUnitAbility(Hero[idu],'AInv'))==true then
+                        call SaveUnitHandle(h,GetHandleId(cjlocgn_00000000),0,Hero[idu])
+                        set it=GetItemOfTypeFromUnitBJCustom(Hero[idu],'I03R')
+                        call UnitRemoveItem(Hero[idu],it)
+                        call RemoveItem(it)
+                        call UnitAddAbility(u,'A0VV')
+                        call UnitRemoveAbility(u,'A0VV')
+                        call UnitAddAbility(Hero[idu],'A0VV')
+                        call UnitRemoveAbility(Hero[idu],'A0VV')
+                        call UnitRemoveBuffs(Hero[idu],false,true)
+                        call UnitRemoveBuffs(u,false,true)
+                        call UnitRemoveAbility(Hero[idu],'A0J4')
+                        call UnitRemoveAbility(u,'A0J4')
+                        set it=UnitAddItemById(Hero[idu],'I03S')
+                        call SetItemDroppable(it,false)
+                        call SaveItemHandle(h,GetHandleId(cjlocgn_00000000),1,it)
+                        call TimerStart(cjlocgn_00000000,0.1,true,function LinkenSphere)
+                        call SaveReal(h,GetHandleId(cjlocgn_00000000),2,30)
+                        call SaveInteger(h,GetHandleId(cjlocgn_00000000),3,idu)
+                        call DestroyEffect(AddSpecialEffectTarget("war3mapImported\\EMPBubble2.mdx",Hero[idu],"chest"))
+                        call CreateModeIndicatorForm(Hero[idu], "war3mapImported\\BTNVoidSphere.blp", 30)
+                        call SetUnitInvulnerable(Hero[idu],true)
+                        call UnitRemoveAbility(Hero[idu],'B04S')
+                        call UnitRemoveAbility(Hero[idu],'B04R')
+                        call UnitRemoveAbility(u,'B04S')
+                        call UnitRemoveAbility(u,'B04R')
+                        call SaveUnitHandle(h,GetHandleId(t),33,Hero[idu])
+                        call TimerStart(t,0.02,false,function Linken_Block)
+                    else
+                        call EnableUnitAbility2(Hero[idu],'AInv',false,true)
+                        call SaveUnitHandle(h,GetHandleId(cjlocgn_00000000),0,Hero[idu])
+                        set it=GetItemOfTypeFromUnitBJCustom(Hero[idu],'I03R')
+                        call UnitRemoveItem(Hero[idu],it)
+                        call RemoveItem(it)
+                        call UnitAddAbility(u,'A0VV')
+                        call UnitRemoveAbility(u,'A0VV')
+                        call UnitAddAbility(Hero[idu],'A0VV')
+                        call UnitRemoveAbility(Hero[idu],'A0VV')
+                        call UnitRemoveBuffs(Hero[idu],false,true)
+                        call UnitRemoveBuffs(u,false,true)
+                        call UnitRemoveAbility(Hero[idu],'A0J4')
+                        call UnitRemoveAbility(u,'A0J4')
+                        set it=UnitAddItemById(Hero[idu],'I03S')
+                        call SetItemDroppable(it,false)
+                        call SaveItemHandle(h,GetHandleId(cjlocgn_00000000),1,it)
+                        call TimerStart(cjlocgn_00000000,0.1,true,function LinkenSphere)
+                        call SaveReal(h,GetHandleId(cjlocgn_00000000),2,30)
+                        call SaveInteger(h,GetHandleId(cjlocgn_00000000),3,idu)
+                        call DestroyEffect(AddSpecialEffectTarget("war3mapImported\\EMPBubble2.mdx",Hero[idu],"chest"))
+                        call CreateModeIndicatorForm(Hero[idu], "war3mapImported\\BTNVoidSphere.blp", 30)
+                        call SetUnitInvulnerable(Hero[idu],true)
+                        call UnitRemoveAbility(Hero[idu],'B04S')
+                        call UnitRemoveAbility(Hero[idu],'B04R')
+                        call UnitRemoveAbility(u,'B04S')
+                        call UnitRemoveAbility(u,'B04R')
+                        call SaveUnitHandle(h,GetHandleId(t),33,Hero[idu])
+                        call TimerStart(t,0.02,false,function Linken_Block)
+                        call DisableUnitAbility2(Hero[idu],'AInv',false,true)
+                    endif
+                    set nb=0
+                    set t=null
+                    set cjlocgn_00000000=null
+                endif
             else
-                call EnableUnitAbility2(u,'AInv',false,true)
-                call SaveUnitHandle(h,GetHandleId(cjlocgn_00000000),0,u)
-                set it=GetItemOfTypeFromUnitBJCustom(u,'I13R')
-                call UnitRemoveItem(u,it)
-                call RemoveItem(it)
-                call UnitAddAbility(u,'A0VV')
-                call UnitRemoveAbilityTimedPause(u,'A0VV',6)
-                call UnitAddAbility(u,'A28W')
-                call UnitRemoveAbilityTimedPause(u,'A28W',6)
-                call UnitRemoveBuffs(u,false,true)
-                call UnitRemoveAbility(u,'A0J4')
-                set it=CreateItem('I13S',MathRealFloor(GetUnitX(u)),MathRealFloor(GetUnitY(u)))
-                call UnitAddItemToSlot(u,it,9)
-                call SetItemDroppable(it,false)
-                call SaveItemHandle(h,GetHandleId(cjlocgn_00000000),1,it)
-                call TimerStart(cjlocgn_00000000,0.1,true,function LinkenSphere2)
-                call DisableUnitAbility2(u,'AInv',false,true)
+                set cjlocgn_00000000=CreateTimer()
+                set t=CreateTimer()
+                if IsAbilityEnabled(GetUnitAbility(u,'AInv'))==true then
+                    call SaveUnitHandle(h,GetHandleId(cjlocgn_00000000),0,u)
+                    set it=GetItemOfTypeFromUnitBJCustom(u,'I03R')
+                    call UnitRemoveItem(u,it)
+                    call RemoveItem(it)
+                    call UnitAddAbility(u,'A0VV')
+                    call UnitRemoveAbility(u,'A0VV')
+                    call UnitRemoveBuffs(u,false,true)
+                    call UnitRemoveAbility(u,'A0J4')
+                    set it=UnitAddItemById(u,'I03S')
+                    call SetItemDroppable(it,false)
+                    call SaveItemHandle(h,GetHandleId(cjlocgn_00000000),1,it)
+                    call TimerStart(cjlocgn_00000000,0.1,true,function LinkenSphere)
+                else
+                    call EnableUnitAbility2(u,'AInv',false,true)
+                    call SaveUnitHandle(h,GetHandleId(cjlocgn_00000000),0,u)
+                    set it=GetItemOfTypeFromUnitBJCustom(u,'I03R')
+                    call UnitRemoveItem(u,it)
+                    call RemoveItem(it)
+                    call UnitAddAbility(u,'A0VV')
+                    call UnitRemoveAbility(u,'A0VV')
+                    call UnitRemoveBuffs(u,false,true)
+                    call UnitRemoveAbility(u,'A0J4')
+                    set it=UnitAddItemById(u,'I03S')
+                    call SetItemDroppable(it,false)
+                    call SaveItemHandle(h,GetHandleId(cjlocgn_00000000),1,it)
+                    call TimerStart(cjlocgn_00000000,0.1,true,function LinkenSphere)
+                    call DisableUnitAbility2(u,'AInv',false,true)
+                endif
+                call SaveReal(h,GetHandleId(cjlocgn_00000000),2,30)
+                call SaveInteger(h,GetHandleId(cjlocgn_00000000),3,idu)
+                call DestroyEffect(AddSpecialEffectTarget("war3mapImported\\EMPBubble2.mdx",u,"chest"))
+                call CreateModeIndicatorForm(u, "war3mapImported\\BTNVoidSphere.blp", 30)
+                call SetUnitInvulnerable(u,true)
+                call UnitRemoveAbility(u,'B04S')
+                call UnitRemoveAbility(u,'B04R')
+                call SaveUnitHandle(h,GetHandleId(t),33,u)
+                call TimerStart(t,0.02,false,function Linken_Block)
+                set nb=0
+                set t=null
+                set cjlocgn_00000000=null
             endif
-            call SaveReal(h,GetHandleId(cjlocgn_00000000),2,30)
-            call SaveInteger(h,GetHandleId(cjlocgn_00000000),3,idu)
-            call DestroyEffect(AddSpecialEffectTarget("war3mapImported\\EMPBubble2.mdx",u,"chest"))
-            call DestroyEffect(AddSpecialEffectTarget("GhostLighthin3.mdl",u,"chest"))
-            call CreateModeIndicatorWithPauseFormDispellable(u, "ReplaceableTextures\\CommandButtons\\BTNBorosArmorBroken.blp", 6,'A28W')
-            call CreateModeIndicatorForm(u, "war3mapImported\\BTNBorosArmor.blp", 30)
-            call SetUnitInvulnerable(u,true)
-            call UnitRemoveAbility(u,'B14S')
-            call UnitRemoveAbility(u,'B14R')
-            call SaveUnitHandle(h,GetHandleId(t),33,u)
-            call TimerStart(t,0.02,false,function Linken_Block)
-            set nb=0
-            set t=null
-            set cjlocgn_00000000=null
+        endif
+        if(UnitHasItemOfTypeBJCustom(u,'I13R')and nb>500) and CurrentEventAttack==false and GetUnitAbilityLevel(u,'BorB')==0 and IsUnitType(u,UNIT_TYPE_SUMMONED)==false and (u==Hero[idu] or u==udg_DM[idu+1]) then
+            if GetUnitTypeId(u)=='H00Q' then
+                if UnitHasItemOfTypeBJCustom(Hero[idu],'I13R') then
+                    set cjlocgn_00000000=CreateTimer()
+                    set t=CreateTimer()
+                    if IsAbilityEnabled(GetUnitAbility(Hero[idu],'AInv'))==true then
+                        call SaveUnitHandle(h,GetHandleId(cjlocgn_00000000),0,Hero[idu])
+                        set it=GetItemOfTypeFromUnitBJCustom(Hero[idu],'I13R')
+                        call UnitRemoveItem(Hero[idu],it)
+                        call RemoveItem(it)
+                        call UnitAddAbility(Hero[idu],'A0VV')
+                        call UnitRemoveAbilityTimedPause(Hero[idu],'A0VV',6)
+                        call UnitAddAbility(Hero[idu],'A28W')
+                        call UnitRemoveAbilityTimedPause(Hero[idu],'A28W',6)
+                        call UnitRemoveBuffs(Hero[idu],false,true)
+                        call UnitAddAbility(u,'A0VV')
+                        call UnitRemoveAbilityTimedPause(u,'A0VV',6)
+                        call UnitAddAbility(u,'A28W')
+                        call UnitRemoveAbilityTimedPause(u,'A28W',6)
+                        call UnitRemoveBuffs(u,false,true)
+                        call UnitRemoveAbility(Hero[idu],'A0J4')
+                        set it=CreateItem('I13S',MathRealFloor(GetUnitX(Hero[idu])),MathRealFloor(GetUnitY(Hero[idu])))
+                        call UnitAddItemToSlot(Hero[idu],it,9)
+                        call SetItemDroppable(it,false)
+                        call SaveItemHandle(h,GetHandleId(cjlocgn_00000000),1,it)
+                        call TimerStart(cjlocgn_00000000,0.1,true,function LinkenSphere2)
+                    else
+                        call EnableUnitAbility2(Hero[idu],'AInv',false,true)
+                        call SaveUnitHandle(h,GetHandleId(cjlocgn_00000000),0,Hero[idu])
+                        set it=GetItemOfTypeFromUnitBJCustom(Hero[idu],'I13R')
+                        call UnitRemoveItem(Hero[idu],it)
+                        call RemoveItem(it)
+                        call UnitAddAbility(Hero[idu],'A0VV')
+                        call UnitRemoveAbilityTimedPause(Hero[idu],'A0VV',6)
+                        call UnitAddAbility(Hero[idu],'A28W')
+                        call UnitRemoveAbilityTimedPause(Hero[idu],'A28W',6)
+                        call UnitRemoveBuffs(Hero[idu],false,true)
+                        call UnitAddAbility(u,'A0VV')
+                        call UnitRemoveAbilityTimedPause(u,'A0VV',6)
+                        call UnitAddAbility(u,'A28W')
+                        call UnitRemoveAbilityTimedPause(u,'A28W',6)
+                        call UnitRemoveBuffs(u,false,true)
+                        call UnitRemoveAbility(Hero[idu],'A0J4')
+                        set it=CreateItem('I13S',MathRealFloor(GetUnitX(Hero[idu])),MathRealFloor(GetUnitY(Hero[idu])))
+                        call UnitAddItemToSlot(Hero[idu],it,9)
+                        call SetItemDroppable(it,false)
+                        call SaveItemHandle(h,GetHandleId(cjlocgn_00000000),1,it)
+                        call TimerStart(cjlocgn_00000000,0.1,true,function LinkenSphere2)
+                        call DisableUnitAbility2(Hero[idu],'AInv',false,true)
+                    endif
+                    call SaveReal(h,GetHandleId(cjlocgn_00000000),2,30)
+                    call SaveInteger(h,GetHandleId(cjlocgn_00000000),3,idu)
+                    call DestroyEffect(AddSpecialEffectTarget("war3mapImported\\EMPBubble2.mdx",Hero[idu],"chest"))
+                    call DestroyEffect(AddSpecialEffectTarget("GhostLighthin3.mdl",Hero[idu],"chest"))
+                    call DestroyEffect(AddSpecialEffectTarget("war3mapImported\\EMPBubble2.mdx",u,"chest"))
+                    call DestroyEffect(AddSpecialEffectTarget("GhostLighthin3.mdl",u,"chest"))
+                    call CreateModeIndicatorWithPauseFormDispellable(Hero[idu], "ReplaceableTextures\\CommandButtons\\BTNBorosArmorBroken.blp", 6,'A28W')
+                    call CreateModeIndicatorForm(Hero[idu], "war3mapImported\\BTNBorosArmor.blp", 30)
+                    call SetUnitInvulnerable(Hero[idu],true)
+                    call SetUnitInvulnerable(u,true)
+                    call UnitRemoveAbility(Hero[idu],'B14S')
+                    call UnitRemoveAbility(Hero[idu],'B14R')
+                    call UnitRemoveAbility(u,'B14S')
+                    call UnitRemoveAbility(u,'B14R')
+                    call SaveUnitHandle(h,GetHandleId(t),33,Hero[idu])
+                    call TimerStart(t,0.02,false,function Linken_Block)
+                    set nb=0
+                    set t=null
+                    set cjlocgn_00000000=null
+                endif
+            else
+                set cjlocgn_00000000=CreateTimer()
+                set t=CreateTimer()
+                if IsAbilityEnabled(GetUnitAbility(u,'AInv'))==true then
+                    call SaveUnitHandle(h,GetHandleId(cjlocgn_00000000),0,u)
+                    set it=GetItemOfTypeFromUnitBJCustom(u,'I13R')
+                    call UnitRemoveItem(u,it)
+                    call RemoveItem(it)
+                    call UnitAddAbility(u,'A0VV')
+                    call UnitRemoveAbilityTimedPause(u,'A0VV',6)
+                    call UnitAddAbility(u,'A28W')
+                    call UnitRemoveAbilityTimedPause(u,'A28W',6)
+                    call UnitRemoveBuffs(u,false,true)
+                    call UnitRemoveAbility(u,'A0J4')
+                    set it=CreateItem('I13S',MathRealFloor(GetUnitX(u)),MathRealFloor(GetUnitY(u)))
+                    call UnitAddItemToSlot(u,it,9)
+                    call SetItemDroppable(it,false)
+                    call SaveItemHandle(h,GetHandleId(cjlocgn_00000000),1,it)
+                    call TimerStart(cjlocgn_00000000,0.1,true,function LinkenSphere2)
+                else
+                    call EnableUnitAbility2(u,'AInv',false,true)
+                    call SaveUnitHandle(h,GetHandleId(cjlocgn_00000000),0,u)
+                    set it=GetItemOfTypeFromUnitBJCustom(u,'I13R')
+                    call UnitRemoveItem(u,it)
+                    call RemoveItem(it)
+                    call UnitAddAbility(u,'A0VV')
+                    call UnitRemoveAbilityTimedPause(u,'A0VV',6)
+                    call UnitAddAbility(u,'A28W')
+                    call UnitRemoveAbilityTimedPause(u,'A28W',6)
+                    call UnitRemoveBuffs(u,false,true)
+                    call UnitRemoveAbility(u,'A0J4')
+                    set it=CreateItem('I13S',MathRealFloor(GetUnitX(u)),MathRealFloor(GetUnitY(u)))
+                    call UnitAddItemToSlot(u,it,9)
+                    call SetItemDroppable(it,false)
+                    call SaveItemHandle(h,GetHandleId(cjlocgn_00000000),1,it)
+                    call TimerStart(cjlocgn_00000000,0.1,true,function LinkenSphere2)
+                    call DisableUnitAbility2(u,'AInv',false,true)
+                endif
+                call SaveReal(h,GetHandleId(cjlocgn_00000000),2,30)
+                call SaveInteger(h,GetHandleId(cjlocgn_00000000),3,idu)
+                if udg_DM[idu+1]!=null then
+                    call UnitAddAbility(udg_DM[idu+1],'A0VV')
+                    call UnitRemoveAbilityTimedPause(udg_DM[idu+1],'A0VV',6)
+                    call UnitAddAbility(udg_DM[idu+1],'A28W')
+                    call UnitRemoveAbilityTimedPause(udg_DM[idu+1],'A28W',6)
+                endif
+                call DestroyEffect(AddSpecialEffectTarget("war3mapImported\\EMPBubble2.mdx",u,"chest"))
+                call DestroyEffect(AddSpecialEffectTarget("GhostLighthin3.mdl",u,"chest"))
+                call CreateModeIndicatorWithPauseFormDispellable(u, "ReplaceableTextures\\CommandButtons\\BTNBorosArmorBroken.blp", 6,'A28W')
+                call CreateModeIndicatorForm(u, "war3mapImported\\BTNBorosArmor.blp", 30)
+                call SetUnitInvulnerable(u,true)
+                call UnitRemoveAbility(u,'B14S')
+                call UnitRemoveAbility(u,'B14R')
+                call SaveUnitHandle(h,GetHandleId(t),33,u)
+                call TimerStart(t,0.02,false,function Linken_Block)
+                set nb=0
+                set t=null
+                set cjlocgn_00000000=null
+            endif
         endif
         if GetUnitTypeId(u)=='Hbel' and nb>0 then
             if LoadBoolean(h,GetHandleId(u),StringHash("BelfegorRPassiveCD"))==false and GetUnitAbilityLevel(u,'BelR')!=0 and GetWidgetLife(u)<=(GetWidgetMaxLife(u)*0.35)+nb then
@@ -42826,14 +43275,28 @@ if cond==0 then
     endif
     if (UnitHasItemOfTypeBJ(c,'I031') or GetUnitAbilityLevel(c,'KIG8')>0) and CurrentEventAttack and nb>0 and IsUnitType(c,UNIT_TYPE_SUMMONED)==false and c==Hero[idc] and GetUnitAbilityLevel(c,'A3WR')==0 then
         set cjlocgn_00000000=CreateTimer() //patriot
-        call SetHeroAgi(u,GetHeroAgi(u,false)-3,true)
-        call SetHeroStr(u,GetHeroStr(u,false)-3,true)
-        call SetHeroInt(u,GetHeroInt(u,false)-3,true)
-        call SetHeroAgi(c,GetHeroAgi(c,false)+3,true)
-        call SetHeroStr(c,GetHeroStr(c,false)+3,true)
-        call SetHeroInt(c,GetHeroInt(c,false)+3,true)
-        call SaveUnitHandle(h,GetHandleId(cjlocgn_00000000),0,u)
-        call SaveUnitHandle(h,GetHandleId(cjlocgn_00000000),1,c)
+        if GetUnitTypeId(c)=='H00Q' then
+            call SetHeroAgi(Hero[idc],GetHeroAgi(Hero[idc],false)+3,true)
+            call SetHeroStr(Hero[idc],GetHeroStr(Hero[idc],false)+3,true)
+            call SetHeroInt(Hero[idc],GetHeroInt(Hero[idc],false)+3,true)
+            call SaveUnitHandle(h,GetHandleId(cjlocgn_00000000),1,Hero[idc])
+        else
+            call SetHeroAgi(c,GetHeroAgi(c,false)+3,true)
+            call SetHeroStr(c,GetHeroStr(c,false)+3,true)
+            call SetHeroInt(c,GetHeroInt(c,false)+3,true)
+            call SaveUnitHandle(h,GetHandleId(cjlocgn_00000000),1,c)
+        endif
+        if GetUnitTypeId(u)=='H00Q' then
+            call SetHeroAgi(Hero[idu],GetHeroAgi(Hero[idu],false)-3,true)
+            call SetHeroStr(Hero[idu],GetHeroStr(Hero[idu],false)-3,true)
+            call SetHeroInt(Hero[idu],GetHeroInt(Hero[idu],false)-3,true)
+            call SaveUnitHandle(h,GetHandleId(cjlocgn_00000000),0,Hero[idu])
+        else
+            call SetHeroAgi(u,GetHeroAgi(u,false)-3,true)
+            call SetHeroStr(u,GetHeroStr(u,false)-3,true)
+            call SetHeroInt(u,GetHeroInt(u,false)-3,true)
+            call SaveUnitHandle(h,GetHandleId(cjlocgn_00000000),0,u)
+        endif
         call TimerStart(cjlocgn_00000000,10,false,function PatriotAction)
         set cjlocgn_00000000=null
     endif
@@ -43376,12 +43839,12 @@ if cond==0 then
         call TimerStart(cjlocgn_00000000,0,false,function Block_Damage2)
         set cjlocgn_00000000=null
     endif
-    if(GetUnitTypeId(c)=='h00Q' or GetUnitTypeId(c)=='h00R' or GetUnitTypeId(c)=='h00S' or GetUnitTypeId(c)=='h00T' or GetUnitTypeId(c)=='h00U')and nb>0 then
-        call UnitAddAbility(c,'A1C7')
-        call myCustomDamage(Hero[idc],u,0.5*GetHeroInt(Hero[idc],true)+0.25*GetHeroInt(Hero[idc],true)*GetUnitAbilityLevel(Hero[idc],'A062'),false,false,null,null,null)
-        call UnitRemoveAbility(c,'A1C7')
-        //set nb=nb+0.5*GetHeroInt(Hero[idc],true)+0.25*GetHeroInt(Hero[idc],true)*GetUnitAbilityLevel(Hero[idc],'A062')*myCustomDamage2(u,1)
-    endif
+    // if(GetUnitTypeId(c)=='h00Q' or GetUnitTypeId(c)=='h00R' or GetUnitTypeId(c)=='h00S' or GetUnitTypeId(c)=='h00T' or GetUnitTypeId(c)=='h00U')and nb>0 then
+    //     call UnitAddAbility(c,'A1C7')
+    //     call myCustomDamage(Hero[idc],u,0.5*GetHeroInt(Hero[idc],true)+0.25*GetHeroInt(Hero[idc],true)*GetUnitAbilityLevel(Hero[idc],'MrF1'),false,false,null,null,null)
+    //     call UnitRemoveAbility(c,'A1C7')
+    //     //set nb=nb+0.5*GetHeroInt(Hero[idc],true)+0.25*GetHeroInt(Hero[idc],true)*GetUnitAbilityLevel(Hero[idc],'MrF1')*myCustomDamage2(u,1)
+    // endif
     if GetUnitAbilityLevel(c,'AlbE')>=1 and nb>0 and nb<GetWidgetLife(u) and CurrentEventAttack  then
         //call SetUnitOwner(UltimateDamage,Player(idc),false)
         //set lkp=idc
@@ -43782,6 +44245,14 @@ if cond==0 then
         call SetWidgetLife(c, GetWidgetLife(c)+ nb*0.3)
     endif
 	if GetUnitAbilityLevel(c,'A1WT')==0 and GetUnitAbilityLevel(c,'A3WR')==0 and  (GetUnitAbilityLevel(c,'CB01')==0 or (GetUnitAbilityLevel(c,'CB01')>0 and CurrentEventAttack==true)) and GetUnitAbilityLevel(c,'B059')==0 and GetUnitAbilityLevel(u,'Bwul')==0 and LoadInteger(HH,cid,BlockPenetrate)==0 then
+        if nb>0 and udg_DM[idu+1]!=null and u==Hero[idu] then
+            if SquareRootUnit(udg_DM[idu+1],Hero[idu])<700 then
+                call SaveReal(HH,uid,'MrDd',nb*0.3)
+                // call myCustomDamage(c,n,b,false,false,ATTACK_TYPE_MAGIC,DAMAGE_TYPE_MAGIC,null)
+                //call SetEventDamage(0.05)
+                set nb=nb*0.7
+            endif
+        endif
         if GetUnitTypeId(u)=='HJi1' then
             if GetUnitModel(u)=="[By XeSHTeG]JirenBase.mdx" and GetUnitState(u,UNIT_STATE_LIFE)-nb<0.25*ll and GetHeroLevel(u)>=26 then 
                 call SetEventDamage((GetUnitState(u,UNIT_STATE_LIFE)-ll*0.25)+10)
@@ -43898,6 +44369,20 @@ if (UnitHasItemOfTypeBJ(u,'I04T') or GetUnitAbilityLevel(u,'KIP8')>0) and c!=Ult
         call UnitRemoveAbility(u,'A1WR')
     endif
 endif
+if LoadReal(HH,uid,'MrDd')>0 then
+    if IsUnitInvulnerable(udg_DM[idu+1])==true then
+        call SetUnitInvulnerable(udg_DM[idu+1],false)
+        call UnitAddAbility(c,'A1WR')
+        call myCustomDamage(c,udg_DM[idu+1],LoadReal(HH,uid,'MrDd'),false,false,null,DAMAGE_TYPE_UNIVERSAL,null)
+        call UnitRemoveAbility(c,'A1WR')
+        call SetUnitInvulnerable(udg_DM[idu+1],true)
+    else
+        call UnitAddAbility(c,'A1WR')
+        call myCustomDamage(c,udg_DM[idu+1],LoadReal(HH,uid,'MrDd'),false,false,null,DAMAGE_TYPE_UNIVERSAL,null)
+        call UnitRemoveAbility(c,'A1WR')
+    endif
+    call RemoveSavedReal(HH,uid,'MrDd')
+endif
 if LoadReal(HH,uid,'Lrvd')>0 then
     if UnitHasItemOfTypeBJCustom(c,'I13R')==false then
         if IsUnitInvulnerable(c)==true then
@@ -43938,11 +44423,11 @@ if GetUnitTypeId(u)=='H02H' then
     if GetUnitModel(u)=="GokuHalf.mdx" and GetUnitState(u,UNIT_STATE_LIFE)<0.3*ll then 
         call SetUnitModel(u,"GokuLow.mdx")
     endif
-    if GetHeroLevel(u)>=26 and LoadBoolean(HH,GetHandleId( GetOwningPlayer(u) ),UIAvailableHash)==false then
-        call SaveReal(HH,GetHandleId( GetOwningPlayer(u) ),UIDMGHash,LoadReal(HH,GetHandleId( GetOwningPlayer(u) ),UIDMGHash)+nb)
-        if LoadReal(HH,GetHandleId( GetOwningPlayer(u) ),UIDMGHash)>=LoadReal(HH,GetHandleId( GetOwningPlayer(u) ),UILimitDMGHash)then
-            call SaveBoolean(HH,GetHandleId( GetOwningPlayer(u) ),UIAvailableHash,true)
-            set UIUnlock[GetPlayerId(GetOwningPlayer(u))]=CreateUnit(GetOwningPlayer(u),'h110',RX,RY,0)
+    if GetHeroLevel(u)>=26 and LoadBoolean(HH,GetHandleId(GetOwningPlayer(u)),UIAvailableHash)==false then
+        call SaveReal(HH,GetHandleId(GetOwningPlayer(u)),UIDMGHash,LoadReal(HH,GetHandleId(GetOwningPlayer(u)),UIDMGHash)+nb)
+        if LoadReal(HH,GetHandleId(GetOwningPlayer(u)),UIDMGHash)>=LoadReal(HH,GetHandleId(GetOwningPlayer(u)),UILimitDMGHash)then
+            call SaveBoolean(HH,GetHandleId(GetOwningPlayer(u)),UIAvailableHash,true)
+            set UIUnlock[idu]=CreateUnit(GetOwningPlayer(u),'h110',RX,RY,0)
         endif
     endif
 endif
@@ -44688,39 +45173,84 @@ if GetTriggerPlayerKey()==OSKEY_OEM_3 then
     endif
 endif
 if UnitHasItemOfTypeBJCustom(Hero[GetPlayerId(GetTriggerPlayer())],'I04V') and IsUnitPaused(Hero[GetPlayerId(GetTriggerPlayer())])==false and (RectContainsUnit(gg_rct_AntiMh,Hero[GetPlayerId(GetTriggerPlayer())])==false and RectContainsUnit(gg_rct_HibariFight,Hero[GetPlayerId(GetTriggerPlayer())])==false) and GetUnitState(Hero[GetPlayerId(GetTriggerPlayer())],UNIT_STATE_MANA)>=25 and GetUnitAbilityLevel(Hero[GetPlayerId(GetTriggerPlayer())],'Pet1')==0 and GetUnitAbilityLevel(Hero[GetPlayerId(GetTriggerPlayer())],'cbc8')==0 then
-loop
-exitwhen lp==10
-if GetItemTypeId(UnitItemInSlot(Hero[i],lp))=='I04V' then
-set ind=lp
-endif
-set lp=lp+1
-endloop
-if IsAbilityOnCooldown(GetUnitAbility(Hero[i],'A12B'))==false and IsUnitPaused(Hero[i])==false and (GetUnitAbilityLevel(Hero[i],'A3BJ')>0 or GetTriggerPlayerKey()==OSKEY_OEM_3 ) then
-call UnitAddAbility(Hero[i],'A151')
-call UnitRemoveAbilityTimedPause(Hero[i],'A151',7)
-call UnitAddAbility(Hero[i],'A22B')
-call UnitRemoveAbilityTimedPause(Hero[i],'A22B',7)
-call UnitRemoveBuffs(Hero[i],false,true)
-call UnitRemoveAbility(Hero[i], 'A3BJ')
-call UnitRemoveAbility(Hero[i], 'cbc3')
-call UnitRemoveAbility(Hero[i], 'CBC1')
-call UnitRemoveAbility(Hero[i], 'CBC2')
-call UnitRemoveAbility(Hero[i], 'Bslo')
-call UnitRemoveAbility(Hero[i], 'Bsl1')
-call UnitRemoveAbility(Hero[i], 'WAE1')
-call UnitRemoveAbility(Hero[i], 'Ao53')
-call UnitRemoveAbility(Hero[i], 'A00D')
-call UnitRemoveAbility(Hero[i], 'Ao2Z')
-call UnitRemoveAbility(Hero[i], 'A1VJ')
-call UnitRemoveAbility(Hero[i], 'A2VJ')
-call UnitRemoveAbility(Hero[i], 'AoSV')
-call UnitRemoveAbility(Hero[i], 'A1SV')
-call SetUnitMoveSpeed(Hero[i], GetUnitDefaultMoveSpeed(Hero[i]))
-call UnitUseItem(Hero[i],UnitItemInSlot(Hero[i],ind))
-elseif IsAbilityOnCooldown(GetUnitAbility(Hero[i],'A12B'))==false and IsUnitPaused(Hero[i])==false and GetUnitAbilityLevel(Hero[i],'A3BJ')==0 then
-call UnitAddAbility(Hero[i],'A3BJ')
-call UnitRemoveAbilityTimed(Hero[i],'A3BJ',0.4)
-endif
+    loop
+        exitwhen lp==10
+        if GetItemTypeId(UnitItemInSlot(Hero[i],lp))=='I04V' then
+            set ind=lp
+        endif
+        set lp=lp+1
+    endloop
+    if IsAbilityOnCooldown(GetUnitAbility(Hero[i],'A12B'))==false and IsUnitPaused(Hero[i])==false and (GetUnitAbilityLevel(Hero[i],'A3BJ')>0 or GetTriggerPlayerKey()==OSKEY_OEM_3 ) then
+        if udg_DM[i+1]!=null then
+            call UnitAddAbility(Hero[i],'A151')
+            call UnitRemoveAbilityTimedPause(Hero[i],'A151',7)
+            call UnitAddAbility(Hero[i],'A22B')
+            call UnitRemoveAbilityTimedPause(Hero[i],'A22B',7)
+            call UnitRemoveBuffs(Hero[i],false,true)
+            call UnitRemoveAbility(Hero[i], 'A3BJ')
+            call UnitRemoveAbility(Hero[i], 'cbc3')
+            call UnitRemoveAbility(Hero[i], 'CBC1')
+            call UnitRemoveAbility(Hero[i], 'CBC2')
+            call UnitRemoveAbility(Hero[i], 'Bslo')
+            call UnitRemoveAbility(Hero[i], 'Bsl1')
+            call UnitRemoveAbility(Hero[i], 'WAE1')
+            call UnitRemoveAbility(Hero[i], 'Ao53')
+            call UnitRemoveAbility(Hero[i], 'A00D')
+            call UnitRemoveAbility(Hero[i], 'Ao2Z')
+            call UnitRemoveAbility(Hero[i], 'A1VJ')
+            call UnitRemoveAbility(Hero[i], 'A2VJ')
+            call UnitRemoveAbility(Hero[i], 'AoSV')
+            call UnitRemoveAbility(Hero[i], 'A1SV')
+            call SetUnitMoveSpeed(Hero[i], GetUnitDefaultMoveSpeed(Hero[i]))
+            call UnitUseItem(Hero[i],UnitItemInSlot(Hero[i],ind))
+            call UnitAddAbility(udg_DM[i+1],'A151')
+            call UnitRemoveAbilityTimedPause(udg_DM[i+1],'A151',7)
+            call UnitAddAbility(udg_DM[i+1],'A22B')
+            call UnitRemoveAbilityTimedPause(udg_DM[i+1],'A22B',7)
+            call UnitRemoveBuffs(udg_DM[i+1],false,true)
+            call UnitRemoveAbility(udg_DM[i+1], 'A3BJ')
+            call UnitRemoveAbility(udg_DM[i+1], 'cbc3')
+            call UnitRemoveAbility(udg_DM[i+1], 'CBC1')
+            call UnitRemoveAbility(udg_DM[i+1], 'CBC2')
+            call UnitRemoveAbility(udg_DM[i+1], 'Bslo')
+            call UnitRemoveAbility(udg_DM[i+1], 'Bsl1')
+            call UnitRemoveAbility(udg_DM[i+1], 'WAE1')
+            call UnitRemoveAbility(udg_DM[i+1], 'Ao53')
+            call UnitRemoveAbility(udg_DM[i+1], 'A00D')
+            call UnitRemoveAbility(udg_DM[i+1], 'Ao2Z')
+            call UnitRemoveAbility(udg_DM[i+1], 'A1VJ')
+            call UnitRemoveAbility(udg_DM[i+1], 'A2VJ')
+            call UnitRemoveAbility(udg_DM[i+1], 'AoSV')
+            call UnitRemoveAbility(udg_DM[i+1], 'A1SV')
+            call SetUnitMoveSpeed(udg_DM[i+1], GetUnitDefaultMoveSpeed(udg_DM[i+1]))
+            call UnitUseItem(udg_DM[i+1],UnitItemInSlot(udg_DM[i+1],ind))
+        else
+            call UnitAddAbility(Hero[i],'A151')
+            call UnitRemoveAbilityTimedPause(Hero[i],'A151',7)
+            call UnitAddAbility(Hero[i],'A22B')
+            call UnitRemoveAbilityTimedPause(Hero[i],'A22B',7)
+            call UnitRemoveBuffs(Hero[i],false,true)
+            call UnitRemoveAbility(Hero[i], 'A3BJ')
+            call UnitRemoveAbility(Hero[i], 'cbc3')
+            call UnitRemoveAbility(Hero[i], 'CBC1')
+            call UnitRemoveAbility(Hero[i], 'CBC2')
+            call UnitRemoveAbility(Hero[i], 'Bslo')
+            call UnitRemoveAbility(Hero[i], 'Bsl1')
+            call UnitRemoveAbility(Hero[i], 'WAE1')
+            call UnitRemoveAbility(Hero[i], 'Ao53')
+            call UnitRemoveAbility(Hero[i], 'A00D')
+            call UnitRemoveAbility(Hero[i], 'Ao2Z')
+            call UnitRemoveAbility(Hero[i], 'A1VJ')
+            call UnitRemoveAbility(Hero[i], 'A2VJ')
+            call UnitRemoveAbility(Hero[i], 'AoSV')
+            call UnitRemoveAbility(Hero[i], 'A1SV')
+            call SetUnitMoveSpeed(Hero[i], GetUnitDefaultMoveSpeed(Hero[i]))
+            call UnitUseItem(Hero[i],UnitItemInSlot(Hero[i],ind))
+        endif
+    elseif IsAbilityOnCooldown(GetUnitAbility(Hero[i],'A12B'))==false and IsUnitPaused(Hero[i])==false and GetUnitAbilityLevel(Hero[i],'A3BJ')==0 then
+        call UnitAddAbility(Hero[i],'A3BJ')
+        call UnitRemoveAbilityTimed(Hero[i],'A3BJ',0.4)
+    endif
 endif
 endfunction
 function InitTrig_BKB takes nothing returns nothing
@@ -45113,7 +45643,7 @@ call TriggerAddCondition(gg_trg_SunStrike,Condition(function SunStrikeCond))
 call TriggerAddAction(gg_trg_SunStrike,function SunStrikeCast)
 endfunction
 function AkatsukiSetCond takes nothing returns boolean
-return GetHeroPrimaryAttribute(GetTriggerUnit())==HERO_ATTRIBUTE_INT and  GetSpellAbilityId()!='ASGG' and GetSpellAbilityId()!='A1I3' and GetSpellAbilityId()!='A11G' and GetSpellAbilityId()!='A1G2' and GetSpellAbilityId()!='A1G1' and GetSpellAbilityId()!='A16E' and GetSpellAbilityId()!='A1AA' and GetSpellAbilityId()!='A1AB' and GetSpellAbilityId()!='A11E' and GetSpellAbilityId()!='A11D' and GetSpellAbilityId()!='A11F' and UnitHasItemOfTypeBJ(GetTriggerUnit(),'I040')and GetSpellAbilityId()!='A0N1' and GetSpellAbilityId()!='A0N2' and GetSpellAbilityId()!='A0A2' and GetSpellAbilityId()!='A0EH' and GetSpellAbilityId()!='A0UG' and GetSpellAbilityId()!='A1I3' and GetSpellAbilityId()!='A0X6'  and GetSpellAbilityId()!='A0B3' and GetSpellAbilityId()!='A0N0' and GetSpellAbilityId()!='A40C' and GetSpellAbilityId()!='A30C' and GetSpellAbilityId()!='MadD' and GetSpellAbilityId()!='TMF0' and GetSpellAbilityId()!='TMF2' and GetSpellAbilityId()!='A06J' and GetSpellAbilityId()!='A0VQ' and GetSpellAbilityId()!='A0HX' and GetSpellAbilityId()!='A2HX' and GetSpellAbilityId()!='A14T' and GetSpellAbilityId()!='A19O' and udg_B==true
+return GetHeroPrimaryAttribute(GetTriggerUnit())==HERO_ATTRIBUTE_INT and  GetSpellAbilityId()!='ASGG' and GetSpellAbilityId()!='A1I3' and GetSpellAbilityId()!='A11G' and GetSpellAbilityId()!='A1G2' and GetSpellAbilityId()!='A1G1' and GetSpellAbilityId()!='A16E' and GetSpellAbilityId()!='A1AA' and GetSpellAbilityId()!='A1AB' and GetSpellAbilityId()!='A11E' and GetSpellAbilityId()!='A11D' and GetSpellAbilityId()!='A11F' and UnitHasItemOfTypeBJ(GetTriggerUnit(),'I040')and GetSpellAbilityId()!='A0N1' and GetSpellAbilityId()!='A0N2' and GetSpellAbilityId()!='A0A2' and GetSpellAbilityId()!='A0EH' and GetSpellAbilityId()!='A0UG' and GetSpellAbilityId()!='A1I3' and GetSpellAbilityId()!='A0X6'  and GetSpellAbilityId()!='A0B3' and GetSpellAbilityId()!='A0N0' and GetSpellAbilityId()!='A40C' and GetSpellAbilityId()!='A30C' and GetSpellAbilityId()!='MadD' and GetSpellAbilityId()!='TMF0' and GetSpellAbilityId()!='TMF2' and GetSpellAbilityId()!='A06J' and GetSpellAbilityId()!='A0VQ' and GetSpellAbilityId()!='A0HX' and GetSpellAbilityId()!='A2HX' and GetSpellAbilityId()!='A14T' and GetSpellAbilityId()!='A19O' and GetSpellAbilityId()!='MrF2' and GetSpellAbilityId()!='MrG1' and GetSpellAbilityId()!='MrG2' and udg_B==true
 endfunction
 function AkatsukiSetCast2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
@@ -45130,11 +45660,15 @@ local timer t=CreateTimer()
 local unit u=GetTriggerUnit()
 local integer id=GetHandleId(t)
 if (GetSpellAbilityId()=='MaE1' and GetUnitAbilityLevel(GetSpellTargetUnit(), 'Wome')>0 and ((IsUnitAlly(GetSpellTargetUnit(), GetOwningPlayer(u))==false and GetWidgetLife(GetSpellTargetUnit()) > GetWidgetMaxLife(GetSpellTargetUnit()) * 0.3) or GetUnitAbilityLevel(GetSpellTargetUnit(), 'MaE3')>0)) or (GetSpellAbilityId()=='BoPA' and (u==GetSpellTargetUnit() or GetSpellTargetItem()==GetAbilityOwningItem(GetTriggerAbility()))) then
-call DestroyTimer(t)
+    call DestroyTimer(t)
 else
-call SaveUnitHandle(h,id,0,u)
-call SetHeroInt(u,GetHeroInt(u,false)+8,true)
-call TimerStart(t,10,false,function AkatsukiSetCast2)
+    call SaveUnitHandle(h,id,0,u)
+    if u==udg_DM[GetPlayerId(GetOwningPlayer(u))+1] then
+        call SetHeroInt(Hero[GetPlayerId(GetOwningPlayer(u))],GetHeroInt(Hero[GetPlayerId(GetOwningPlayer(u))],false)+8,true)
+    else
+        call SetHeroInt(u,GetHeroInt(u,false)+8,true)
+    endif
+    call TimerStart(t,10,false,function AkatsukiSetCast2)
 endif
 set u=null
 set t=null
@@ -45183,6 +45717,7 @@ if GetUnitAbilityLevel(u, 'BlTP')==0 then
         call SetUnitX(u,LoadReal(h,id,'tpx_'+1))
         call SetUnitY(u,LoadReal(h,id,'tpy_'+1))
 endif
+call SaveBoolean(HH,id,ChannelHash,false)
 call DestroyEffect(AddSpecialEffect("war3mapImported\\Sci Teleport.mdx",GetUnitX(u),GetUnitY(u)))
 endif
 set u=null
@@ -45562,15 +46097,34 @@ call RemoveAbility(LoadAbilityHandle(h,id,8))
 call SetHeroAgi(c,GetHeroAgi(c,false)+30,true)
 call SetHeroStr(c,GetHeroStr(c,false)+30,true)
 call SetHeroInt(c,GetHeroInt(c,false)+30,true)
+if c!=udg_DM[GetPlayerId(GetOwningPlayer(c))+1] then
 call SetHeroAgi(u,GetHeroAgi(u,false)-30,true)
 call SetHeroStr(u,GetHeroStr(u,false)-30,true)
 call SetHeroInt(u,GetHeroInt(u,false)-30,true)
+endif
 call SaveReal(h,id,5,0)
 call PauseTimer(t)
 call DestroyTimer(t)
 call FlushChildHashtable(h,id)
 endif
 set u=null
+set t=null
+endfunction
+function PatriotCustomCast takes unit u, unit c returns nothing
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+call SaveUnitHandle(h,id,0,u)
+call SaveUnitHandle(h,id,1,c)
+call SaveAbilityHandle(h,id,7,CreateAbility( 'A0NG' ))
+call SetAbilityOwner(LoadAbilityHandle(h,id,7),c)
+call SaveAbilityHandle(h,id,8,CreateAbility( 'SHD2' ))
+call SetAbilityOwner(LoadAbilityHandle(h,id,8),c)
+call SetHeroAgi(c,GetHeroAgi(c,false)-30,true)
+call SetHeroStr(c,GetHeroStr(c,false)-30,true)
+call SetHeroInt(c,GetHeroInt(c,false)-30,true)
+call TimerStart(t,0.1,true,function PatriotCast2)
+set u=null
+set c=null
 set t=null
 endfunction
 function PatriotCast takes nothing returns nothing
@@ -45584,12 +46138,20 @@ call SaveAbilityHandle(h,id,7,CreateAbility( 'A0NG' ))
 call SetAbilityOwner(LoadAbilityHandle(h,id,7),c)
 call SaveAbilityHandle(h,id,8,CreateAbility( 'SHD2' ))
 call SetAbilityOwner(LoadAbilityHandle(h,id,8),c)
+if GetUnitTypeId(c)=='H00Q' then
+    call PatriotCustomCast(u,Hero[GetPlayerId(GetOwningPlayer(c))])
+else
+    if GetUnitTypeId(u)=='H00Q' then
+        set u=Hero[GetPlayerId(GetOwningPlayer(u))]
+        call SaveUnitHandle(h,id,0,u)
+    endif
+    call SetHeroAgi(u,GetHeroAgi(u,false)+30,true)
+    call SetHeroStr(u,GetHeroStr(u,false)+30,true)
+    call SetHeroInt(u,GetHeroInt(u,false)+30,true)
+endif
 call SetHeroAgi(c,GetHeroAgi(c,false)-30,true)
 call SetHeroStr(c,GetHeroStr(c,false)-30,true)
 call SetHeroInt(c,GetHeroInt(c,false)-30,true)
-call SetHeroAgi(u,GetHeroAgi(u,false)+30,true)
-call SetHeroStr(u,GetHeroStr(u,false)+30,true)
-call SetHeroInt(u,GetHeroInt(u,false)+30,true)
 call TimerStart(t,0.1,true,function PatriotCast2)
 set u=null
 set c=null
@@ -45807,6 +46369,7 @@ local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
 local unit u=LoadUnitHandle(HH,id,0)
 local real time=LoadReal(HH,id,1)
+local player p=GetOwningPlayer(u)
 local integer i=10
 if IsUnitPaused(u)==false and GetUnitAbilityLevel(u,'Pet1')==0 then
 call SaveReal(HH,id,1,time+0.05)
@@ -45817,7 +46380,13 @@ call UnitRemoveAbility(u,'A6HR')
 loop
     call StartAbilityCooldown(GetUnitAbility(u,'A24T'),25)
     if GetItemTypeId(UnitItemInSlot(u,i)) == 'I04E' then
-        call StartItemCooldown(UnitItemInSlot(u, i),25)
+        // Мория и клон
+        if GetUnitTypeId(u)=='H00Q' or GetUnitTypeId(u)!='H00Q' and udg_DM[GetPlayerId(p)+1]!=null then
+            call StartItemCooldown(UnitItemInSlot(Hero[GetPlayerId(p)], i),25)
+            call StartItemCooldown(UnitItemInSlot(udg_DM[GetPlayerId(p)+1], i),25)
+        else
+            call StartItemCooldown(UnitItemInSlot(u, i),25)
+        endif
     endif
 exitwhen i == 0
 set i=i - 1
@@ -45826,6 +46395,7 @@ call FlushChildHashtable(HH,id)
 call DestroyTimer(t)
 endif
 set t=null
+set p=null
 set u=null
 endfunction
 function Active666Cast takes nothing returns nothing
@@ -45838,8 +46408,8 @@ call ComboChecker(u,2,4, false )
 call CreateModeIndicatorWithPauseFormDispellable(u, "war3mapImported\\BTN666HellRing.blp", 4,'A6HR')
 call SaveUnitHandle(HH,id,0,u)
 call TimerStart(t,0.05,true,function Active666Cast2)
-set t=null
 set u=null
+set t=null
 endfunction
 function InitTrig_Active666 takes nothing returns nothing
 set gg_trg_Active666=CreateTrigger()
@@ -45854,6 +46424,7 @@ function HellRingCast2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
 local unit u=LoadUnitHandle(HH,id,0)
+local player p=GetOwningPlayer(u)
 local real time=LoadReal(HH,id,1)
 local integer i=10
 if IsUnitPaused(u)==false and GetUnitAbilityLevel(u,'Pet1')==0 then
@@ -45865,7 +46436,12 @@ call UnitRemoveAbility(u,'A14R')
 loop
     call StartAbilityCooldown(GetUnitAbility(u,'A0YJ'),15)
     if GetItemTypeId(UnitItemInSlot(u,i)) == 'I02Q' then
-        call StartItemCooldown(UnitItemInSlot(u, i),15)
+        if GetUnitTypeId(u)=='H00Q' or GetUnitTypeId(u)!='H00Q' and udg_DM[GetPlayerId(p)+1]!=null then
+            call StartItemCooldown(UnitItemInSlot(Hero[GetPlayerId(p)], i),15)
+            call StartItemCooldown(UnitItemInSlot(udg_DM[GetPlayerId(p)+1], i),15)
+        else
+            call StartItemCooldown(UnitItemInSlot(u, i),15)
+        endif
     endif
 exitwhen i == 0
 set i=i - 1
@@ -45873,8 +46449,9 @@ endloop
 call FlushChildHashtable(HH,id)
 call DestroyTimer(t)
 endif
-set t=null
 set u=null
+set t=null
+set p=null
 endfunction
 function HellRingCast takes nothing returns nothing
 local timer t=CreateTimer()
@@ -45885,8 +46462,8 @@ call UnitMakeAbilityPermanent(u,true,'A14R')
 call CreateModeIndicatorWithPauseFormDispellable(u, "war3mapImported\\BTNEvilEye's.blp", 5,'A14R')
 call SaveUnitHandle(HH,id,0,u)
 call TimerStart(t,0.05,true,function HellRingCast2)
-set t=null
 set u=null
+set t=null
 endfunction
 function InitTrig_HellRing takes nothing returns nothing
 set gg_trg_HellRing=CreateTrigger()
@@ -46788,9 +47365,22 @@ function Trig_BorosArmor_Conditions takes nothing returns boolean
 return GetSpellAbilityId()=='BorA' and GetUnitTypeId(GetTriggerUnit())!='H007'
 endfunction
 function Trig_BorosArmor_Actions takes nothing returns nothing
-call UnitAddAbility(GetTriggerUnit(),'BorB')
-call UnitMakeAbilityPermanent(GetTriggerUnit(),true,'BorB')
-call UnitRemoveAbilityTimedPause(GetTriggerUnit(),'BorB',5)
+local unit u=GetTriggerUnit()
+local player p=GetOwningPlayer(u)
+if udg_DM[GetPlayerId(p)+1]!=null then
+    call UnitAddAbility(Hero[GetPlayerId(p)],'BorB')
+    call UnitMakeAbilityPermanent(Hero[GetPlayerId(p)],true,'BorB')
+    call UnitRemoveAbilityTimedPause(Hero[GetPlayerId(p)],'BorB',5)
+    call UnitAddAbility(udg_DM[GetPlayerId(p)+1],'BorB')
+    call UnitMakeAbilityPermanent(udg_DM[GetPlayerId(p)+1],true,'BorB')
+    call UnitRemoveAbilityTimedPause(udg_DM[GetPlayerId(p)+1],'BorB',5)
+else
+    call UnitAddAbility(u,'BorB')
+    call UnitMakeAbilityPermanent(u,true,'BorB')
+    call UnitRemoveAbilityTimedPause(u,'BorB',5)
+endif
+set u=null
+set p=null
 endfunction
 function InitTrig_BorosArmor takes nothing returns nothing
 local integer i=0
@@ -46814,22 +47404,33 @@ if GetTriggerPlayerKey()==OSKEY_OEM_3 then
     endif
 endif
 if UnitHasItemOfTypeBJCustom(Hero[GetPlayerId(GetTriggerPlayer())],'I13R') and IsUnitPaused(Hero[GetPlayerId(GetTriggerPlayer())])==false and (RectContainsUnit(gg_rct_AntiMh,Hero[GetPlayerId(GetTriggerPlayer())])==false and RectContainsUnit(gg_rct_HibariFight,Hero[GetPlayerId(GetTriggerPlayer())])==false) and GetUnitState(Hero[GetPlayerId(GetTriggerPlayer())],UNIT_STATE_MANA)>=25 and GetUnitAbilityLevel(Hero[GetPlayerId(GetTriggerPlayer())],'Pet1')==0 and GetUnitAbilityLevel(Hero[GetPlayerId(GetTriggerPlayer())],'cbc8')==0 then
-loop
-exitwhen lp==10
-if GetItemTypeId(UnitItemInSlot(Hero[i],lp))=='I13R' then
-set ind=lp
-endif
-set lp=lp+1
-endloop
-if IsAbilityOnCooldown(GetUnitAbility(Hero[i],'BorA'))==false and IsUnitPaused(Hero[i])==false and (GetUnitAbilityLevel(Hero[i],'A3BJ')>0 or GetTriggerPlayerKey()==OSKEY_OEM_3 ) then
-call UnitAddAbility(Hero[i],'BorB')
-call UnitMakeAbilityPermanent(Hero[i],true,'BorB')
-call UnitRemoveAbilityTimedPause(Hero[i],'BorB',5)
-call StartItemCooldown(UnitItemInSlot(Hero[i],ind),GetAbilityBaseRealLevelFieldById('BorA',ABILITY_RLF_COOLDOWN,0))
-elseif IsAbilityOnCooldown(GetUnitAbility(Hero[i],'BorA'))==false and IsUnitPaused(Hero[i])==false and GetUnitAbilityLevel(Hero[i],'A3BJ')==0 then
-call UnitAddAbility(Hero[i],'A3BJ')
-call UnitRemoveAbilityTimed(Hero[i],'A3BJ',0.4)
-endif
+    loop
+        exitwhen lp==10
+        if GetItemTypeId(UnitItemInSlot(Hero[i],lp))=='I13R' then
+            set ind=lp
+        endif
+        set lp=lp+1
+    endloop
+    if IsAbilityOnCooldown(GetUnitAbility(Hero[i],'BorA'))==false and IsUnitPaused(Hero[i])==false and (GetUnitAbilityLevel(Hero[i],'A3BJ')>0 or GetTriggerPlayerKey()==OSKEY_OEM_3 ) then
+        if udg_DM[i+1]!=null then
+            call UnitAddAbility(Hero[i],'BorB')
+            call UnitMakeAbilityPermanent(Hero[i],true,'BorB')
+            call UnitRemoveAbilityTimedPause(Hero[i],'BorB',5)
+            call StartItemCooldown(UnitItemInSlot(Hero[i],ind),GetAbilityBaseRealLevelFieldById('BorA',ABILITY_RLF_COOLDOWN,0))
+            call UnitAddAbility(udg_DM[i+1],'BorB')
+            call UnitMakeAbilityPermanent(udg_DM[i+1],true,'BorB')
+            call UnitRemoveAbilityTimedPause(udg_DM[i+1],'BorB',5)
+            call StartItemCooldown(UnitItemInSlot(udg_DM[i+1],ind),GetAbilityBaseRealLevelFieldById('BorA',ABILITY_RLF_COOLDOWN,0))
+        else
+            call UnitAddAbility(Hero[i],'BorB')
+            call UnitMakeAbilityPermanent(Hero[i],true,'BorB')
+            call UnitRemoveAbilityTimedPause(Hero[i],'BorB',5)
+            call StartItemCooldown(UnitItemInSlot(Hero[i],ind),GetAbilityBaseRealLevelFieldById('BorA',ABILITY_RLF_COOLDOWN,0))
+        endif
+    elseif IsAbilityOnCooldown(GetUnitAbility(Hero[i],'BorA'))==false and IsUnitPaused(Hero[i])==false and GetUnitAbilityLevel(Hero[i],'A3BJ')==0 then
+        call UnitAddAbility(Hero[i],'A3BJ')
+        call UnitRemoveAbilityTimed(Hero[i],'A3BJ',0.4)
+    endif
 endif
 endfunction
 function InitTrig_EscBoros takes nothing returns nothing
@@ -46865,10 +47466,22 @@ endfunction
 function Trig_PriestessBow_Actions2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
-local item it=LoadItemHandle(HH,id,0)
-call StartItemCooldown(it,0.1)
+local unit u=LoadUnitHandle(HH,id,0)
+local player p=GetOwningPlayer(u)
+local item it=LoadItemHandle(HH,id,1)
+local ability ab=LoadAbilityHandle(HH,id,2)
+if GetUnitTypeId(u)=='H00Q' or GetUnitTypeId(u)!='H00Q' and udg_DM[GetPlayerId(p)+1]!=null then
+    call StartItemCooldown(GetAbilityOwningItem(GetUnitAbility(u,BlzGetAbilityId(ab))),0.1)
+    call StartItemCooldown(GetAbilityOwningItem(GetUnitAbility(udg_DM[GetPlayerId(p)+1],BlzGetAbilityId(ab))),0.1)
+else
+    call StartItemCooldown(it,0.1)
+endif
 call DestroyTimer(t)
 call FlushChildHashtable(HH,id)
+set u=null
+set ab=null
+set it=null
+set p=null
 set t=null
 endfunction
 function Trig_PriestessBow_Actions takes nothing returns nothing
@@ -46891,7 +47504,9 @@ if c==u or GetSpellTargetItem()==it then
         call DisplayTextToPlayer(Player(idp),0,0,"Priestess's Bow now knocks back.")
         call SaveBoolean(HH,idt,'BoMd',true)
     endif
-    call SaveItemHandle(HH,id,0,it)
+    call SaveUnitHandle(HH,id,0,u)
+    call SaveItemHandle(HH,id,1,it)
+    call SaveAbilityHandle(HH,id,2,GetTriggerAbility())
     call TimerStart(t,0.02,false,function Trig_PriestessBow_Actions2)
 else
     // call BJDebugMsg("test2")
@@ -50939,88 +51554,9 @@ call TriggerRegisterAnyUnitEventBJ(gg_trg_Pistol,EVENT_PLAYER_UNIT_SPELL_EFFECT)
 call TriggerAddCondition(gg_trg_Pistol,Condition(function Trig_Pistol_Conditions))
 call TriggerAddAction(gg_trg_Pistol,function Trig_Pistol_Actions)
 endfunction
-function Trig_Doppleman_Conditions takes nothing returns boolean
-return GetSpellAbilityId()=='A062' and udg_B
-endfunction
-function Trig_Doppleman_Actions2 takes nothing returns nothing
-local timer t=GetExpiredTimer()
-local integer id=GetHandleId(t)
-local unit u=LoadUnitHandle(h,id,0)
-if udg_B==false or UnitIsAlive(u)==false then
-call RemoveUnit(udg_DM[GetPlayerId(GetOwningPlayer(u))+1])
-call PauseTimer(t)
-call DestroyTimer(t)
-call FlushChildHashtable(h,id)
-endif
-set u=null
-set t=null
-endfunction
-function Trig_Doppleman_Actions takes nothing returns nothing
-local unit u=GetTriggerUnit()
-local real x=GetUnitX(u)
-local real y=GetUnitY(u)
-local player p=GetOwningPlayer(u)
-local timer t=CreateTimer()
-local integer uid=GetHandleId(t)
-local integer lvl=GetUnitAbilityLevel(u,'A062')
-local integer id=GetPlayerId(p)+1
-if udg_DM[id]!=null then
-call RemoveUnit(udg_DM[id])
-endif
-if lvl==1 then
-set udg_DM[id]=CreateUnit(p,'h00Q',x,y,GetUnitFacing(u))
-elseif lvl==2 then
-set udg_DM[id]=CreateUnit(p,'h00R',x,y,GetUnitFacing(u))
-elseif lvl==3 then
-set udg_DM[id]=CreateUnit(p,'h00S',x,y,GetUnitFacing(u))
-elseif lvl==4 then
-set udg_DM[id]=CreateUnit(p,'h00T',x,y,GetUnitFacing(u))
-elseif lvl==5 then
-set udg_DM[id]=CreateUnit(p,'h00U',x,y,GetUnitFacing(u))
-endif
-call SetUnitMaxLife(udg_DM[id],GetUnitState(u, UNIT_STATE_MAX_LIFE)*0.6+GetHeroInt(u,true)*10)
-call SetUnitState(udg_DM[id],UNIT_STATE_LIFE,GetUnitState(udg_DM[id],UNIT_STATE_MAX_LIFE))
-call SetUnitState(udg_DM[id],UNIT_STATE_MANA,GetUnitState(udg_DM[id],UNIT_STATE_MAX_MANA))
-call SaveUnitHandle(h,uid,0,u)
-call UnitApplyTimedLife(CreateUnit(p,'e025',x,y,GetRandomReal(0,359)),'BTLF',2)
-call UnitApplyTimedLife(CreateUnit(p,'e026',x,y,GetRandomReal(0,359)),'BTLF',2)
-call DestroyEffect(AddSpecialEffect("war3mapImported\\Death Release.mdx",x,y))
-set soundplay=CreateSound("Sound\\Music\\mp3Music\\Doppelman.mp3",false,false,true,12700,12700,"")
-call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
-call TimerStart(t,0.5,true,function Trig_Doppleman_Actions2)
-set u=null
-set t=null
-set p=null
-endfunction
-function Trig_Swap_Conditions takes nothing returns boolean
-return GetSpellAbilityId()=='A063' and udg_B==true
-endfunction
-function Trig_Swap_Actions takes nothing returns nothing
-local unit u=GetTriggerUnit()
-local real x=GetUnitX(u)
-local real y=GetUnitY(u)
-local player p=GetOwningPlayer(u)
-local integer i=GetPlayerId(p)+1
-local real x1=GetUnitX(udg_DM[i])
-local real y1=GetUnitY(udg_DM[i])
-if udg_DM[i]!=null then
-call SetUnitXY_1(u,x1,y1, false)
-call SetUnitX(udg_DM[i],x)
-call SetUnitY(udg_DM[i],y)
-call IssueImmediateOrder(u,"stop")
-call IssueImmediateOrder(udg_DM[i],"stop")
-call SetWidgetMana(udg_DM[i],GetWidgetMana(udg_DM[i])-100)
-call UnitApplyTimedLife(CreateUnit(p,'e025',x,y,GetRandomReal(0,359)),'BTLF',2)
-call UnitApplyTimedLife(CreateUnit(p,'e025',x1,y1,GetRandomReal(0,359)),'BTLF',2)
-call UnitApplyTimedLife(CreateUnit(p,'e025',x,y,GetRandomReal(0,359)),'BTLF',2)
-call UnitApplyTimedLife(CreateUnit(p,'e025',x1,y1,GetRandomReal(0,359)),'BTLF',2)
-call DestroyEffect(AddSpecialEffect("war3mapImported\\Death Release.mdx",x,y))
-call DestroyEffect(AddSpecialEffect("war3mapImported\\Death Release.mdx",x1,y1))
-endif
-set p=null
-set u=null
-endfunction
+// function Trig_Doppleman_Conditions takes nothing returns boolean
+// return GetSpellAbilityId()=='MrF1' and udg_B
+// endfunction
 function Trig_SwapC_Conditions takes nothing returns boolean
 return GetSpellAbilityId()=='A069' and udg_B==true
 endfunction
@@ -51057,87 +51593,6 @@ set udg_DM[GetPlayerId(GetOwningPlayer(u))+1]=null
 call UnitApplyTimedLife(CreateUnit(GetOwningPlayer(u),'e025',GetUnitX(u),GetUnitY(u),GetRandomReal(0,359)),'BTLF',2)
 call RemoveUnit(u)
 set u=null
-endfunction
-function Trig_Black_Box_Conditions takes nothing returns boolean
-return GetSpellAbilityId()=='A064' and udg_B==true
-endfunction
-function Trig_Black_Box_Actions2 takes nothing returns nothing
-local timer t=GetExpiredTimer()
-local integer id=GetHandleId(t)
-local unit u=LoadUnitHandle(h,id,0)
-local unit l__d
-local unit c=LoadUnitHandle(h,id,10)
-local real a
-local real x
-local real y
-local real x1=GetUnitX(c)
-local real y1=GetUnitY(c)
-local real f=GetUnitFacing(u)
-local player p=GetOwningPlayer(u)
-local integer i=1
-local integer b=1
-loop
-exitwhen i>=9
-set l__d=LoadUnitHandle(h,id,i)
-set x=GetUnitX(l__d)
-set y=GetUnitY(l__d)
-if(SR(x,y,x1,y1)>42.00)then
-set a=Atan2(y1-y,x1-x)
-call SetUnitX(l__d,x+21*Cos(a))
-call SetUnitY(l__d,y+21*Sin(a))
-call SetUnitFacing(l__d,a*bj_RADTODEG)
-else
-call myCustomDamage(u,c,(2+GetUnitAbilityLevel(u,'A064'))*GetHeroInt(u,true),false,false,null,null,null)
-call SetControlToUnit(u,c,2, "stun")
-loop
-exitwhen b==9
-set l__d=LoadUnitHandle(h,id,b)
-call RemoveUnit(l__d)
-set b=b+1
-endloop
-set soundplay=CreateSound("Sound\\Music\\mp3Music\\BlackBox.mp3",false,false,true,12700,12700,"")
-call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
-call UnitApplyTimedLife(CreateUnit(p,'e025',x1,y1,GetRandomReal(0,359)),'BTLF',2)
-call UnitApplyTimedLife(CreateUnit(p,'e026',x1,y1,GetRandomReal(0,359)),'BTLF',2)
-call UnitApplyTimedLife(CreateUnit(p,'e028',x1,y1,GetRandomReal(0,359)),'BTLF',2)
-call DestroyEffect(AddSpecialEffect("war3mapImported\\Death Release.mdx",x1,y1))
-call DestroyEffect(AddSpecialEffect("war3mapImported\\NetherStrike.mdx",x1,y1))
-call FlushChildHashtable(h,id)
-call DestroyTimer(t)
-endif
-set i=i+1
-endloop
-set u=null
-set l__d=null
-set t=null
-set c=null
-set p=null
-endfunction
-function Trig_Black_Box_Actions takes nothing returns nothing
-local unit u=GetTriggerUnit()
-local timer t=CreateTimer()
-local integer id=GetHandleId(t)
-local real f=GetUnitFacing(u)
-local real x=GetUnitX(u)
-local real y=GetUnitY(u)
-local player p=GetOwningPlayer(u)
-local integer i=1
-local real r
-local real l__h
-call SaveUnitHandle(h,id,0,u)
-loop
-exitwhen i>=9
-set l__h=GetRandomReal(0,359)*bj_DEGTORAD
-set r=GetRandomReal(0,400)
-call SaveUnitHandle(h,id,i,CreateUnit(p,'e027',x+r*Cos(l__h),y+r*Cos(l__h),f))
-set i=i+1
-endloop
-call SaveUnitHandle(h,id,10,GetSpellTargetUnit())
-call TimerStart(t,0.025,true,function Trig_Black_Box_Actions2)
-set u=null
-set t=null
-set p=null
 endfunction
 function Trig_Steal_Shadow_Conditions takes nothing returns boolean
 return GetSpellAbilityId()=='A066'
@@ -51206,38 +51661,38 @@ call TimerStart(t,.03,true,function Trig_Steal_Shadow_Actions2)
 set u=null
 set t=null
 endfunction
-function Trig_Shadows_Conditions takes nothing returns boolean
-return GetSpellAbilityId()=='A068'
-endfunction
-function Trig_Shadows_Actions takes nothing returns nothing
-local unit u=GetTriggerUnit()
-local group g=CreateGroup()
-local real x=GetUnitX(u)
-local real y=GetUnitY(u)
-local player p=GetOwningPlayer(u)
-local real dmg=9*GetHeroInt(u,true)
-call DestroyEffect(AddSpecialEffect("war3mapImported\\NetherStrike.mdx",x,y))
-call DestroyEffect(AddSpecialEffect("war3mapImported\\DarkNova.mdx",x,y))
-call DestroyEffect(AddSpecialEffect("war3mapImported\\Death Release.mdx",x,y))
-call UnitApplyTimedLife(CreateUnit(p,'e029',x,y,GetRandomReal(0,359)),'BTLF',2)
-call UnitApplyTimedLife(CreateUnit(p,'e029',x,y,GetRandomReal(0,359)),'BTLF',2)
-call GroupEnumUnitsInRange(g,x,y,400,Base)
-set soundplay=CreateSound("Sound\\Music\\mp3Music\\Moria3.mp3",false,false,true,12700,12700,"")
-call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
-loop
-set E=FirstOfGroup(g)
-if Condition_Base(p,E) then
-call myCustomDamage(u,E,dmg,false,false,null,null,null)
-endif
-call GroupRemoveUnit(g,E)
-exitwhen E==null
-endloop
-call DestroyGroup(g)
-set g=null
-set u=null
-set p=null
-endfunction
+// function Trig_Shadows_Conditions takes nothing returns boolean
+// return GetSpellAbilityId()=='MrT1'
+// endfunction
+// function Trig_Shadows_Actions takes nothing returns nothing
+// local unit u=GetTriggerUnit()
+// local group g=CreateGroup()
+// local real x=GetUnitX(u)
+// local real y=GetUnitY(u)
+// local player p=GetOwningPlayer(u)
+// local real dmg=9*GetHeroInt(u,true)
+// call DestroyEffect(AddSpecialEffect("war3mapImported\\NetherStrike.mdx",x,y))
+// call DestroyEffect(AddSpecialEffect("war3mapImported\\DarkNova.mdx",x,y))
+// call DestroyEffect(AddSpecialEffect("war3mapImported\\Death Release.mdx",x,y))
+// call UnitApplyTimedLife(CreateUnit(p,'e029',x,y,GetRandomReal(0,359)),'BTLF',2)
+// call UnitApplyTimedLife(CreateUnit(p,'e029',x,y,GetRandomReal(0,359)),'BTLF',2)
+// call GroupEnumUnitsInRange(g,x,y,400,Base)
+// set soundplay=CreateSound("Sound\\Music\\mp3Music\\Moria3.mp3",false,false,true,12700,12700,"")
+// call StartSound(soundplay)
+// call KillSoundWhenDone(soundplay)
+// loop
+// set E=FirstOfGroup(g)
+// if Condition_Base(p,E) then
+// call myCustomDamage(u,E,dmg,false,false,null,null,null)
+// endif
+// call GroupRemoveUnit(g,E)
+// exitwhen E==null
+// endloop
+// call DestroyGroup(g)
+// set g=null
+// set u=null
+// set p=null
+// endfunction
 function Trig_Magma_Charge_Conditions takes nothing returns boolean
 return GetSpellAbilityId()=='A06X' and udg_B==true
 endfunction
@@ -72513,7 +72968,7 @@ if time<0.630 and GetAbilityIntegerLevelField(GetUnitAbility(u,'GKR1'), ABILITY_
     endif
     if time<0 then
         call SetUnitFacingInstant(u,a*bj_RADTODEG)
-        if not(GetUnitState(u,UNIT_STATE_LIFE)>0.405 and IsUnitPaused(u)==false and GetUnitAbilityLevel(u,'CBC2')==0 and GetUnitAbilityLevel(u,'cbc3')==0  and GetUnitAbilityLevel(u,'cbc5')==0  and GetUnitAbilityLevel(u, 'cbc7')==0 and GetUnitAbilityLevel(u, 'cbc8')==0 and GetUnitAbilityLevel(u, 'cbc9')==0 and UnitIsAlive(u) and udg_B and DU2 and timeEnd<2) then
+        if not(GetUnitState(u,UNIT_STATE_LIFE)>0.405 and IsUnitPaused(u)==false and GetUnitAbilityLevel(u,'CBC2')==0 and GetUnitAbilityLevel(u,'cbc3')==0  and GetUnitAbilityLevel(u,'cbc5')==0  and GetUnitAbilityLevel(u, 'cbc7')==0 and GetUnitAbilityLevel(u, 'cbc8')==0 and GetUnitAbilityLevel(u, 'cbc9')==0 and UnitIsAlive(u) and udg_B and DU2 and timeEnd<1) then
             call SaveReal(h,id,5,20)
             call SetUnitAcquireRange(u,600)
         endif
@@ -72566,7 +73021,7 @@ if time<0.630 and GetAbilityIntegerLevelField(GetUnitAbility(u,'GKR1'), ABILITY_
                 call SetUnitTimeScale(u,1)
                 if IsUnitInvulnerable(c)==false then
                     call myCustomDamage(u,c,dmg,false,false,null,null,null)
-                    call SetControlToUnit(u,c, 1, "stun")
+                    call SetControlToUnit(u,c, 0.5, "stun")
                     call Push9(c,55,a,1100)
                 endif
                 set EFF=AddSpecialEffect("chushou_by_wood_effect_earth_sandycrack_fag.mdl",x3,y3)
@@ -72644,7 +73099,7 @@ if time<0.630 and GetAbilityIntegerLevelField(GetUnitAbility(u,'GKR1'), ABILITY_
         endif
     endif
 else
-    if GetAbilityIntegerLevelField(GetUnitAbility(u,'GKR1'), ABILITY_ILF_TARGET_TYPE,GetUnitAbilityLevel(u,'GKR1')-1)!=1 and timeEnd<2 then
+    if GetAbilityIntegerLevelField(GetUnitAbility(u,'GKR1'), ABILITY_ILF_TARGET_TYPE,GetUnitAbilityLevel(u,'GKR1')-1)!=1 and timeEnd<1 then
         call SetAbilityRemainingCooldown(GetUnitAbility(u,'GKR1'),GetAbilityBaseRealLevelFieldById('GKR1',ABILITY_RLF_COOLDOWN,GetUnitAbilityLevel(u,'GKR1')-1))
         if LoadBoolean(HH,GetHandleId(u),ITRangeHash) then
             if GetUnitState(u,UNIT_STATE_MANA)>GetUnitState(u,UNIT_STATE_MAX_MANA)*0.05 then
@@ -77434,14 +77889,14 @@ call TriggerAddCondition(t,Condition(function ShikaiAizenCond))
 set t=null
 endfunction
 function KruhitsugiCond takes nothing returns boolean
-return GetSpellAbilityId()==0x41304A51
+return GetSpellAbilityId()=='A0JQ'
 endfunction
 function KruhitsugiCast takes nothing returns nothing
 local unit u=GetTriggerUnit()
 local real x=GetSpellTargetX()
 local real y=GetSpellTargetY()
 local player p=GetOwningPlayer(u)
-local real dmg=GetHeroInt(u,true)*(3+GetUnitAbilityLevel(u,0x41304A51))
+local real dmg=GetHeroInt(u,true)*(3+GetUnitAbilityLevel(u,'A0JQ'))
 call GroupEnumUnitsInRange(DG,x,y,500,Base)
 call UnitApplyTimedLife(CreateUnit(p,'e0EW',x,y,0),'BTLF',3)
 call UnitApplyTimedLife(CreateUnit(p,'e0EX',x,y,0),'BTLF',3)
@@ -78396,7 +78851,7 @@ call TimerStart(t,0.03,true,function MissleMoveShockingBall2)
 set t=null
 endfunction
 function ShockingBallCond takes nothing returns boolean
-return GetSpellAbilityId()==0x41304B32 and udg_B==true
+return GetSpellAbilityId()=='A0K2' and udg_B==true
 endfunction
 function ShockingBallCast2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
@@ -78409,7 +78864,7 @@ local real x1=LoadReal(h,id,8)
 local real y1=LoadReal(h,id,9)
 local real time=LoadReal(h,id,10)+0.05
 local real a=Atan2(y1-y,x1-x)
-local real dmg=(2+GetUnitAbilityLevel(u,0x41304B32))*GetHeroStr(u,true)+125
+local real dmg=(2+GetUnitAbilityLevel(u,'A0K2'))*GetHeroStr(u,true)+125
 local real l__s=LoadReal(h,id,7)+0.35
 call SaveReal(h,id,10,time)
 if time==0.05 then
@@ -78470,7 +78925,7 @@ call TriggerAddCondition(t,Condition(function ShockingBallCond))
 set t=null
 endfunction
 function MesHeartKillCond takes nothing returns boolean
-return GetUnitTypeId(GetTriggerUnit())==0x68303251 and udg_B
+return GetUnitTypeId(GetTriggerUnit())=='h02Q' and udg_B
 endfunction
 function MesHeartKillAct takes nothing returns nothing
 local unit u=GetKillingUnit()
@@ -78552,7 +79007,7 @@ function MesCast2 takes nothing returns nothing
             set y=y+60*Sin(a)
             call SetUnitXY_1(u,x,y,false)
             call SetUnitFacing(u,a*bj_RADTODEG)
-            set n=CreateUnit(p,0x65304637,x,y,a*bj_RADTODEG)
+            set n=CreateUnit(p,'e0F7',x,y,a*bj_RADTODEG)
             call UnitApplyTimedLife(n,'BTLF',0.25)
             call SetUnitVertexColor(n,170,170,170,170)
             call SetUnitTimeScale(n,2)
@@ -78563,7 +79018,7 @@ function MesCast2 takes nothing returns nothing
                 if time>=2.96 then
                     call SetUnitXY_1(u,x1,y1,false)
                 endif
-                set n=CreateUnit(GetOwningPlayer(c),0x68303251,x1,y1,0)
+                set n=CreateUnit(GetOwningPlayer(c),'h02Q',x1,y1,0)
                 if RectContainsUnit(gg_rct_UBW2,c)==true then
                     call UnitAddAbility(n,'A0IH')
                 endif
@@ -78793,7 +79248,7 @@ local real y=GetUnitY(c)
 local player p=GetOwningPlayer(u)
 local real dmg=LoadReal(h,id,2)
 call UnitApplyTimedLife(CreateUnit(p,'e0F8',x,y,GetRandomReal(0,359)),'BTLF',1)
-call UnitApplyTimedLife(CreateUnit(p,0x65304639,x,y,GetRandomReal(0,359)),'BTLF',1)
+call UnitApplyTimedLife(CreateUnit(p,'e0F9',x,y,GetRandomReal(0,359)),'BTLF',1)
 call PauseTimer(t)
 call DestroyTimer(t)
 call PauseUnit(c,false)
@@ -78840,7 +79295,7 @@ call SaveReal(h,id,100,dist+65)
 call SetUnitXY_1(u,x1+65*Cos(a),y1+65*Sin(a), false)
 call SetUnitFacing(u,a*bj_RADTODEG)
 call SetUnitAnimation(u,"attack")
-set n=CreateUnit(p,0x65304637,x1,y1,a*bj_RADTODEG)
+set n=CreateUnit(p,'e0F7',x1,y1,a*bj_RADTODEG)
 call UnitApplyTimedLife(n,'BTLF',0.25)
 call SetUnitVertexColor(n,170,170,170,140)
 call SetUnitAnimation(n,"attack")
@@ -79062,7 +79517,7 @@ call SaveUnitHandle(h,id,0,u)
 call SaveReal(h,id,3,x)
 call SaveReal(h,id,4,y)
 call SaveReal(h,id,8,a)
-set n=CreateUnit(GetOwningPlayer(u),0x65305956,x,y,a*bj_RADTODEG)
+set n=CreateUnit(GetOwningPlayer(u),'e0YV',x,y,a*bj_RADTODEG)
 call SetUnitFlyHeight(n,90,0)
 call SetUnitScale(n,2,2,2)
 call SaveUnitHandle(h,id,1,n)
@@ -79297,12 +79752,12 @@ local player p=GetOwningPlayer(u)
 call SaveUnitHandle(h,id,0,u)
 set x2=x1+400*Cos(a+deg90)
 set y2=y1+400*Sin(a+deg90)
-set n=CreateUnit(p,0x6530464B,x2,y2,(a-2*deg90)*bj_RADTODEG)
+set n=CreateUnit(p,'e0FK',x2,y2,(a-2*deg90)*bj_RADTODEG)
 call SetUnitTimeScale(n,1.60)
 call UnitApplyTimedLife(n,'BTLF',2)
 set x2=x1+400*Cos(a-deg90)
 set y2=y1+400*Sin(a-deg90)
-set n=CreateUnit(p,0x6530464B,x2,y2,a*bj_RADTODEG)
+set n=CreateUnit(p,'e0FK',x2,y2,a*bj_RADTODEG)
 call SetUnitTimeScale(n,1.60)
 call UnitApplyTimedLife(n,'BTLF',2)
 set n=CreateUnit(p,'e0FM',x1,y1,GetRandomReal(0,359))
@@ -81568,11 +82023,13 @@ local real a=Atan2(y1-y,x1-x)+angle
 if SR(x,y,x1,y1)>100 then
 call SetUnitXY_1(l__d,x+speed*Cos(a),y+speed*Sin(a), false)
 call SetUnitFacing(l__d,a*bj_RADTODEG)
+if GetUnitTypeId(l__d)=='e1GZ' then
 set n=CreateUnit(GetOwningPlayer(l__d),'e1GZ',x,y,GetRandomReal(0,359))
 call UnitApplyTimedLife(n,'BTLF',0.15)
 call SetUnitVertexColor(n,190,255,255,60)
 call ShikiCloneEffect(n,1.5,1.05,1.25,150)
 call SetUnitAnimation(n,"attack")
+endif
 else
 call RemoveUnit(l__d)
 call PauseTimer(t)
@@ -84645,7 +85102,7 @@ local real a=Atan2(y-y1,x-x1)*bj_DEGTORAD
 local group g=CreateGroup()
 loop
 exitwhen i>21
-set n=CreateUnit(p,0x65304237,x1+GetRandomReal(-250,250),y1+GetRandomReal(-250,250),a+GetRandomReal(-1,1))
+set n=CreateUnit(p,'e0B7',x1+GetRandomReal(-250,250),y1+GetRandomReal(-250,250),a+GetRandomReal(-1,1))
 call SetUnitColor(n,PLAYER_COLOR_GREEN)
 call SetUnitVertexColor(n,255,255,255,125)
 call GroupAddUnit(g,n)
@@ -87639,7 +88096,7 @@ set x=x+speed*Cos(a)
 set y=y+speed*Sin(a)
 call SetUnitXY_1(l__d,x,y, false)
 call SetUnitFacing(l__d,a*bj_RADTODEG)
-set n=CreateUnit(p,0x65304D32,x,y,GetRandomReal(0,359))
+set n=CreateUnit(p,'e0M2',x,y,GetRandomReal(0,359))
 call SetUnitVertexColor(n,255,255,255,125)
 call UnitApplyTimedLife(n,'BTLF',0.5)
 else
@@ -87686,7 +88143,7 @@ local real x=GetUnitX(u)
 local real y=GetUnitY(u)
 local player p=GetOwningPlayer(u)
 local real f=GetUnitFacing(u)
-set n=CreateUnit(p,0x65304D32,x,y,f)
+set n=CreateUnit(p,'e0M2',x,y,f)
 call SetUnitScale(n,1.2,1.2,1.2)
 call MissleMoveGalacticDonut(u,c,n,40,0,0)
 set u=null
@@ -92932,7 +93389,17 @@ function VergilQ_ModifAttack takes unit newCaster, unit newTarget, boolean b_clo
 			call SetHeroAgi(newTarget,GetHeroAgi(newTarget,false)-3,true)
 			call SetHeroStr(newTarget,GetHeroStr(newTarget,false)-3,true)
 			call SetHeroInt(newTarget,GetHeroInt(newTarget,false)-3,true)
-			call SaveUnitHandle(h,GetHandleId(bjLCT), 0, newTarget)
+            if GetUnitTypeId(newTarget)=='H00Q' then
+                call SetHeroAgi(Hero[GetPlayerId(GetOwningPlayer(newTarget))],GetHeroAgi(Hero[GetPlayerId(GetOwningPlayer(newTarget))],false)-3,true)
+                call SetHeroStr(Hero[GetPlayerId(GetOwningPlayer(newTarget))],GetHeroStr(Hero[GetPlayerId(GetOwningPlayer(newTarget))],false)-3,true)
+                call SetHeroInt(Hero[GetPlayerId(GetOwningPlayer(newTarget))],GetHeroInt(Hero[GetPlayerId(GetOwningPlayer(newTarget))],false)-3,true)
+                call SaveUnitHandle(h,GetHandleId(bjLCT), 0, newTarget)
+            else
+                call SetHeroAgi(newTarget,GetHeroAgi(newTarget,false)-3,true)
+                call SetHeroStr(newTarget,GetHeroStr(newTarget,false)-3,true)
+                call SetHeroInt(newTarget,GetHeroInt(newTarget,false)-3,true)
+                call SaveUnitHandle(h,GetHandleId(bjLCT), 0, newTarget)
+            endif
 			call SaveUnitHandle(h,GetHandleId(bjLCT), 1, newCaster)
 			call TimerStart(bjLCT, 5, false, function VergilPatriot_ModifEnd)
 		set bjLCT=null
@@ -98616,7 +99083,7 @@ if time<2.21 and GetAbilityIntegerLevelField(GetUnitAbility(u,'A0RI'), ABILITY_I
     endif
     if time<0 then
         call SetUnitFacingInstant(u,a*bj_RADTODEG)
-        if not(GetUnitState(u,UNIT_STATE_LIFE)>0.405 and IsUnitPaused(u)==false and GetUnitAbilityLevel(u,'CBC2')==0 and GetUnitAbilityLevel(u,'cbc3')==0  and GetUnitAbilityLevel(u,'cbc5')==0  and GetUnitAbilityLevel(u, 'cbc7')==0 and GetUnitAbilityLevel(u, 'cbc8')==0 and GetUnitAbilityLevel(u, 'cbc9')==0 and UnitIsAlive(u) and udg_B and DU2 and timeEnd<2) then
+        if not(GetUnitState(u,UNIT_STATE_LIFE)>0.405 and IsUnitPaused(u)==false and GetUnitAbilityLevel(u,'CBC2')==0 and GetUnitAbilityLevel(u,'cbc3')==0  and GetUnitAbilityLevel(u,'cbc5')==0  and GetUnitAbilityLevel(u, 'cbc7')==0 and GetUnitAbilityLevel(u, 'cbc8')==0 and GetUnitAbilityLevel(u, 'cbc9')==0 and UnitIsAlive(u) and udg_B and DU2 and timeEnd<1) then
             call SaveReal(h,id,5,20)
             call SetUnitAcquireRange(u,600)
         endif
@@ -98798,7 +99265,7 @@ if time<2.21 and GetAbilityIntegerLevelField(GetUnitAbility(u,'A0RI'), ABILITY_I
         endif
     endif
 else
-    if GetAbilityIntegerLevelField(GetUnitAbility(u,'A0RI'), ABILITY_ILF_TARGET_TYPE,GetUnitAbilityLevel(u,'A0RI')-1)!=1 and timeEnd<2 then
+    if GetAbilityIntegerLevelField(GetUnitAbility(u,'A0RI'), ABILITY_ILF_TARGET_TYPE,GetUnitAbilityLevel(u,'A0RI')-1)!=1 and timeEnd<1 then
         call SetAbilityRemainingCooldown(GetUnitAbility(u,'A0RI'),GetAbilityBaseRealLevelFieldById('A0RI',ABILITY_RLF_COOLDOWN,GetUnitAbilityLevel(u,'A0RI')-1))
         if LoadBoolean(HH,GetHandleId(u),ITRangeHash) then
             if GetUnitState(u,UNIT_STATE_MANA)>GetUnitState(u,UNIT_STATE_MAX_MANA)*0.05 then
@@ -111960,16 +112427,29 @@ function VergilD_Tricker takes unit newCaster, real point_x, real point_y return
 endfunction
 
 function InstantSpell_Action takes nothing returns nothing
+    local unit u=GetSpellAbilityUnit()
+    local player p=GetOwningPlayer(u)
 	// F new Саске
 	if GetSpellAbilityId()=='SasF' then
-		call SasukeF_Cast(GetSpellAbilityUnit(), GetSpellTargetUnit())
+		call SasukeF_Cast(u, GetSpellTargetUnit())
 	endif
 
 	// F Vergil
 	if GetSpellAbilityId()=='AP03' then
-		call VergilD_Tricker(GetSpellAbilityUnit(), GetSpellTargetX(), GetSpellTargetY())
+		call VergilD_Tricker(u, GetSpellTargetX(), GetSpellTargetY())
 	endif
     
+    // Мория и клон
+    if GetUnitTypeId(u)=='H00Q' then
+        call SetAbilityRemainingCooldown(GetUnitAbility(Hero[GetPlayerId(p)],GetAbilityTypeId(GetTriggerAbility())),GetAbilityBaseRealLevelFieldById(GetAbilityTypeId(GetTriggerAbility()),ABILITY_RLF_COOLDOWN,GetUnitAbilityLevel(Hero[GetPlayerId(p)],GetAbilityTypeId(GetTriggerAbility()))-1))    
+        call SetUnitState(Hero[GetPlayerId(p)],UNIT_STATE_MANA,GetUnitState(Hero[GetPlayerId(p)],UNIT_STATE_MANA)-GetAbilityBaseIntegerLevelFieldById(GetAbilityTypeId(GetTriggerAbility()),ABILITY_ILF_MANA_COST,GetUnitAbilityLevel(Hero[GetPlayerId(p)],GetAbilityTypeId(GetTriggerAbility()))-1))
+        // call BJDebugMsg("test1")
+    elseif GetUnitTypeId(u)!='H00Q' and udg_DM[GetPlayerId(p)+1]!=null then
+        call SetAbilityRemainingCooldown(GetUnitAbility(udg_DM[GetPlayerId(p)+1],GetAbilityTypeId(GetTriggerAbility())),GetAbilityBaseRealLevelFieldById(GetAbilityTypeId(GetTriggerAbility()),ABILITY_RLF_COOLDOWN,GetUnitAbilityLevel(Hero[GetPlayerId(p)],GetAbilityTypeId(GetTriggerAbility()))-1))
+        // call BJDebugMsg("test2")
+    endif
+    set u=null
+    set p=null
 endfunction
 
 function InitTrig_InstantSpell takes nothing returns nothing
@@ -120832,13 +121312,13 @@ local real dmg=(1+GetUnitAbilityLevel(u,'A15N'))*GetHeroInt(u,true)+75
 local real dmg2=(1+GetUnitAbilityLevel(u,'A15N'))*GetHeroInt(u,true)+75
 local player p=GetOwningPlayer(u)
 call GroupEnumUnitsInRange(DG,x,y,600,Base)
-call UnitApplyTimedLife(CreateUnit(p,0x65304D50,x,y,GetRandomReal(0,359)),'BTLF',2)
 call UnitApplyTimedLife(CreateUnit(p,'e0MP',x,y,GetRandomReal(0,359)),'BTLF',2)
-call UnitApplyTimedLife(CreateUnit(p,0x65304D51,x,y,GetRandomReal(0,359)),'BTLF',2)
-call UnitApplyTimedLife(CreateUnit(p,0x65304D52,x,y,GetRandomReal(0,359)),'BTLF',2)
-call UnitApplyTimedLife(CreateUnit(p,0x65304D54,x,y,GetRandomReal(0,359)),'BTLF',2)
-call UnitApplyTimedLife(CreateUnit(p,0x65304D55,x,y,GetRandomReal(0,359)),'BTLF',2)
-call UnitApplyTimedLife(CreateUnit(p,0x65304D56,x,y,GetRandomReal(0,359)),'BTLF',2)
+call UnitApplyTimedLife(CreateUnit(p,'e0MP',x,y,GetRandomReal(0,359)),'BTLF',2)
+call UnitApplyTimedLife(CreateUnit(p,'e0MQ',x,y,GetRandomReal(0,359)),'BTLF',2)
+call UnitApplyTimedLife(CreateUnit(p,'e0MR',x,y,GetRandomReal(0,359)),'BTLF',2)
+call UnitApplyTimedLife(CreateUnit(p,'e0MT',x,y,GetRandomReal(0,359)),'BTLF',2)
+call UnitApplyTimedLife(CreateUnit(p,'e0MU',x,y,GetRandomReal(0,359)),'BTLF',2)
+call UnitApplyTimedLife(CreateUnit(p,'e0MV',x,y,GetRandomReal(0,359)),'BTLF',2)
 call UnitApplyTimedLife(CreateUnit(p,'e0MP',x,y,GetRandomReal(0,359)),'BTLF',2)
 call UnitApplyTimedLife(CreateUnit(p,'e0MP',x,y,GetRandomReal(0,359)),'BTLF',2)
 loop
@@ -146274,10 +146754,17 @@ function GilgameshModifiedAttack takes unit newCaster, unit newTarget returns bo
                 call SetHeroAgi(newCaster,GetHeroAgi(newCaster,false)+1,true)
                 call SetHeroStr(newCaster,GetHeroStr(newCaster,false)+1,true)
                 call SetHeroInt(newCaster,GetHeroInt(newCaster,false)+1,true)
-                call SetHeroAgi(newTarget,GetHeroAgi(newTarget,false)-1,true)
-                call SetHeroStr(newTarget,GetHeroStr(newTarget,false)-1,true)
-                call SetHeroInt(newTarget,GetHeroInt(newTarget,false)-1,true)
-                call SaveUnitHandle(h,GetHandleId(tt), 0, newTarget)
+                if GetUnitTypeId(newTarget)=='H00Q' then
+                    call SetHeroAgi(Hero[GetPlayerId(GetOwningPlayer(newTarget))],GetHeroAgi(Hero[GetPlayerId(GetOwningPlayer(newTarget))],false)-1,true)
+                    call SetHeroStr(Hero[GetPlayerId(GetOwningPlayer(newTarget))],GetHeroStr(Hero[GetPlayerId(GetOwningPlayer(newTarget))],false)-1,true)
+                    call SetHeroInt(Hero[GetPlayerId(GetOwningPlayer(newTarget))],GetHeroInt(Hero[GetPlayerId(GetOwningPlayer(newTarget))],false)-1,true)
+                    call SaveUnitHandle(h,GetHandleId(tt), 0, newTarget)
+                else
+                    call SetHeroAgi(newTarget,GetHeroAgi(newTarget,false)-1,true)
+                    call SetHeroStr(newTarget,GetHeroStr(newTarget,false)-1,true)
+                    call SetHeroInt(newTarget,GetHeroInt(newTarget,false)-1,true)
+                    call SaveUnitHandle(h,GetHandleId(tt), 0, newTarget)
+                endif
                 call SaveUnitHandle(h,GetHandleId(tt), 1, newCaster)
                 call TimerStart(tt, 5, false, function GilPatriotModifEnd)
                 set tt=null
@@ -162969,6 +163456,10 @@ if SR(x,y,x1,y1)<1400 and IsUnitHidden(c)==false then
             call DestroyEffect(AddSpecialEffectTarget("war3mapImported\\ArcaneExplosion_Blue.mdx",c,"chest"))
             call ShowAbility2('Ao7V',false)
             call ShowAbility2Timed('Ao7V',true,10.1)
+            if GetUnitTypeId(c)=='H00Q' then
+                set c=Hero[GetPlayerId(GetOwningPlayer(c))]
+                call SaveUnitHandle(HH,id,1,c)
+            endif
             loop
             exitwhen max_iteration <= 0
                 set max_iteration=max_iteration - 1
@@ -164870,542 +165361,562 @@ local integer id = GetHandleID()
 local integer time = LoadInt("Time")
 local integer time2 = LoadInt("Time2")
 local integer TransfID = LoadInt("ID")
-if time > 0 and time2!=0 and GetWidgetLife(LoadUnitHandle(HH,MUIHandle(),CasterHash)) > 0.405 and udg_B==true and DU2==true then
+local unit u=LoadUnitHandle(HH,MUIHandle(),CasterHash)
+if time > 0 and time2!=0 and GetWidgetLife(u) > 0.405 and udg_B==true and DU2==true then
     if time2==time then
-        if GetUnitTypeId(LoadUnitHandle(HH,MUIHandle(),CasterHash))=='H012' then
+        if GetUnitTypeId(u)=='H012' then
             set soundplay=CreateSound("Sound\\Music\\mp3Music\\HichigoT.mp3",false,false,true,12700,12700,"")
             call StartSound(soundplay)
             call KillSoundWhenDone(soundplay)
-            call CreateModeIndicatorWithPauseForm(LoadUnitHandle(HH,MUIHandle(),CasterHash), "war3mapImported\\BTNHollowHichigo.blp", 25)
-            call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S102')
-            call IssueImmediateOrder(LoadUnitHandle(HH,MUIHandle(),CasterHash), "bearform")
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S102')
+            call CreateModeIndicatorWithPauseForm(u, "war3mapImported\\BTNHollowHichigo.blp", 25)
+            call UnitAddAbility(u, 'S102')
+            call IssueImmediateOrder(u, "bearform")
+            call UnitRemoveAbility(u, 'S102')
             call SaveInteger(HH,id,StringHash("ID"), 1)
         endif
-        if GetUnitTypeId(LoadUnitHandle(HH,MUIHandle(),CasterHash))=='H06D' then
+        if GetUnitTypeId(u)=='H06D' then
             set soundplay=CreateSound("Sound\\Music\\mp3Music\\Alterl_T.mp3",false,false,true,12700,12700,"")
             call StartSound(soundplay)
             call KillSoundWhenDone(soundplay)
-            call CreateModeIndicatorWithPauseForm(LoadUnitHandle(HH,MUIHandle(),CasterHash), "ReplaceableTextures\\CommandButtons\\BTNSaberAlterArmoured.blp", 25)
-            call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S202')
-            call IssueImmediateOrder(LoadUnitHandle(HH,MUIHandle(),CasterHash), "bearform")
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S202')
+            call CreateModeIndicatorWithPauseForm(u, "ReplaceableTextures\\CommandButtons\\BTNSaberAlterArmoured.blp", 25)
+            call UnitAddAbility(u, 'S202')
+            call IssueImmediateOrder(u, "bearform")
+            call UnitRemoveAbility(u, 'S202')
             call SaveInteger(HH,id,StringHash("ID"), 2)
         endif
-        if GetUnitTypeId(LoadUnitHandle(HH,MUIHandle(),CasterHash))=='H00P' then
-            set soundplay=CreateSound("Sound\\Music\\mp3Music\\Moria3.mp3",false,false,true,12700,12700,"")
-            call StartSound(soundplay)
-            call KillSoundWhenDone(soundplay)
-            call CreateModeIndicatorWithPauseForm(LoadUnitHandle(HH,MUIHandle(),CasterHash), "ReplaceableTextures\\CommandButtons\\BTNMoria5.blp", 25)
-            call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S302')
-            call IssueImmediateOrder(LoadUnitHandle(HH,MUIHandle(),CasterHash), "bearform")
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S302')
+        if GetUnitTypeId(u)=='H00P' then
+            call SaveInteger(HH,GetHandleId(u),'SASB',R2I(GetHeroStr(u,true)*0.2))
+            call SaveInteger(HH,GetHandleId(u),'SAAB',R2I(GetHeroAgi(u,true)*0.2))
+            call SaveInteger(HH,GetHandleId(u),'SAIB',R2I(GetHeroInt(u,true)*0.2))
+            call SetHeroStr(u, GetHeroStr(u, false)+LoadInteger(HH,GetHandleId(u),'SASB'), true)
+            call SetHeroAgi(u, GetHeroAgi(u, false)+LoadInteger(HH,GetHandleId(u),'SAAB'), true)
+            call SetHeroInt(u, GetHeroInt(u, false)+LoadInteger(HH,GetHandleId(u),'SAIB'), true)
+            call CreateModeIndicatorWithPauseForm(u, "ReplaceableTextures\\CommandButtons\\BTNMoria5.blp", 25)
+            call UnitAddAbility(u, 'S302')
+            call IssueImmediateOrder(u, "bearform")
+            call UnitRemoveAbility(u, 'S302')
             call SaveInteger(HH,id,StringHash("ID"), 3)
+            call ShowAbility2('MrF1',false)
+            call ShowAbility2('MrG1',false)
+            call ShowAbility2('MrW1',false)
+            call UnitAddAbility(u, 'MrW2')
+            call UnitMakeAbilityPermanent(u,true,'MrW2')  
         endif
-        if GetUnitTypeId(LoadUnitHandle(HH,MUIHandle(),CasterHash))=='H02Y' then
+        if GetUnitTypeId(u)=='H02Y' then
             set soundplay=CreateSound("Sound\\Music\\mp3Music\\GenkshiT.mp3",false,false,true,12700,12700,"")
             call StartSound(soundplay)
             call KillSoundWhenDone(soundplay)
-            call CreateModeIndicatorWithPauseForm(LoadUnitHandle(HH,MUIHandle(),CasterHash), "war3mapImported\\BTNGenkshi_Armatura.blp", 25)
-            call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S402')
-            call IssueImmediateOrder(LoadUnitHandle(HH,MUIHandle(),CasterHash), "bearform")
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S402')
+            call CreateModeIndicatorWithPauseForm(u, "war3mapImported\\BTNGenkshi_Armatura.blp", 25)
+            call UnitAddAbility(u, 'S402')
+            call IssueImmediateOrder(u, "bearform")
+            call UnitRemoveAbility(u, 'S402')
             call SaveInteger(HH,id,StringHash("ID"), 4)
         endif
-        if GetUnitTypeId(LoadUnitHandle(HH,MUIHandle(),CasterHash))=='H031' then
+        if GetUnitTypeId(u)=='H031' then
             set soundplay=CreateSound("Sound\\Music\\mp3Music\\SobaMask.mp3",false,false,true,12700,12700,"")
             call StartSound(soundplay)
             call KillSoundWhenDone(soundplay)
-            if GetUnitAbilityLevel(LoadUnitHandle(HH,MUIHandle(),CasterHash),'A0O1')==0 then
-                call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'A2A1')
-                call UnitMakeAbilityPermanent(LoadUnitHandle(HH,MUIHandle(),CasterHash),true,'A2A1')    
+            if GetUnitAbilityLevel(u,'A0O1')==0 then
+                call UnitAddAbility(u,'A2A1')
+                call UnitMakeAbilityPermanent(u,true,'A2A1')    
             endif
-            call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'A2IA')
-            call UnitMakeAbilityPermanent(LoadUnitHandle(HH,MUIHandle(),CasterHash),true,'A2IA')
-            call CreateModeIndicatorWithPauseForm(LoadUnitHandle(HH,MUIHandle(),CasterHash), "BTNSobaMask.blp", 10)
-            call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S502')
-            call IssueImmediateOrder(LoadUnitHandle(HH,MUIHandle(),CasterHash), "bearform")
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S502')
+            call UnitAddAbility(u,'A2IA')
+            call UnitMakeAbilityPermanent(u,true,'A2IA')
+            call CreateModeIndicatorWithPauseForm(u, "BTNSobaMask.blp", 10)
+            call UnitAddAbility(u, 'S502')
+            call IssueImmediateOrder(u, "bearform")
+            call UnitRemoveAbility(u, 'S502')
             call SaveInteger(HH,id,StringHash("ID"), 5)
         endif
-        if GetUnitTypeId(LoadUnitHandle(HH,MUIHandle(),CasterHash))=='H02X' then
+        if GetUnitTypeId(u)=='H02X' then
             set soundplay=CreateSound("Sound\\war3mapImported\\BeeT.mp3",false,false,true,12700,12700,"")
             call StartSound(soundplay)
             call KillSoundWhenDone(soundplay)
-            call CreateModeIndicatorWithPauseForm(LoadUnitHandle(HH,MUIHandle(),CasterHash), "war3mapImported\\BTNKillerBeeHachibiForm.blp", 25)
-            call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S602')
-            call IssueImmediateOrder(LoadUnitHandle(HH,MUIHandle(),CasterHash), "bearform")
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S602')
+            call CreateModeIndicatorWithPauseForm(u, "war3mapImported\\BTNKillerBeeHachibiForm.blp", 25)
+            call UnitAddAbility(u, 'S602')
+            call IssueImmediateOrder(u, "bearform")
+            call UnitRemoveAbility(u, 'S602')
             call SaveInteger(HH,id,StringHash("ID"), 6)
         endif
-        if GetUnitTypeId(LoadUnitHandle(HH,MUIHandle(),CasterHash))=='H00I' then
+        if GetUnitTypeId(u)=='H00I' then
             set soundplay=CreateSound("Sound\\Music\\mp3Music\\Blackwings.mp3",false,false,true,12700,12700,"")
             call StartSound(soundplay)
             call KillSoundWhenDone(soundplay)
-            call CreateModeIndicatorWithPauseForm(LoadUnitHandle(HH,MUIHandle(),CasterHash), "war3mapImported\\BTNByakuran Wings.blp", 25)
-            call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S702')
-            call IssueImmediateOrder(LoadUnitHandle(HH,MUIHandle(),CasterHash), "bearform")
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S702')
-            call StartAbilityCooldown(GetUnitAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'A03N'),GetAbilityRemainingCooldown(GetUnitAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'A03N')))
+            call CreateModeIndicatorWithPauseForm(u, "war3mapImported\\BTNByakuran Wings.blp", 25)
+            call UnitAddAbility(u, 'S702')
+            call IssueImmediateOrder(u, "bearform")
+            call UnitRemoveAbility(u, 'S702')
+            call StartAbilityCooldown(GetUnitAbility(u,'A03N'),GetAbilityRemainingCooldown(GetUnitAbility(u,'A03N')))
             call SaveInteger(HH,id,StringHash("ID"), 7)
         endif
-        if GetUnitTypeId(LoadUnitHandle(HH,MUIHandle(),CasterHash))=='H055' then
+        if GetUnitTypeId(u)=='H055' then
             set soundplay=CreateSound("Sound\\Music\\mp3Music\\XanxusUlti.mp3",false,false,true,12700,12700,"")
             call StartSound(soundplay)
             call KillSoundWhenDone(soundplay)
-            call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'XanT')
-            call UnitMakeAbilityPermanent(LoadUnitHandle(HH,MUIHandle(),CasterHash),true,'XanT')
-            call CreateModeIndicatorWithPauseForm(LoadUnitHandle(HH,MUIHandle(),CasterHash), "war3mapImported\\BTNCambio Forma Pistole Imperatore Animale.blp", 30)
+            call UnitAddAbility(u,'XanT')
+            call UnitMakeAbilityPermanent(u,true,'XanT')
+            call CreateModeIndicatorWithPauseForm(u, "war3mapImported\\BTNCambio Forma Pistole Imperatore Animale.blp", 30)
             call ShowAbility2('A119', false)
             call SaveInteger(HH,id,StringHash("ID"), 8)
         endif
-        if GetUnitTypeId(LoadUnitHandle(HH,MUIHandle(),CasterHash))=='H02B' then
+        if GetUnitTypeId(u)=='H02B' then
             set soundplay=CreateSound("Sound\\Music\\mp3Music\\AcceleratorT.mp3",false,false,true,12700,12700,"")
             call StartSound(soundplay)
             call KillSoundWhenDone(soundplay)
-            call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'A0GC')
-            call UnitMakeAbilityPermanent(LoadUnitHandle(HH,MUIHandle(),CasterHash),true,'A0GC')
-            call CreateModeIndicatorWithPauseForm(LoadUnitHandle(HH,MUIHandle(),CasterHash), "war3mapImported\\BTNBlackMistWings.blp", 15)
+            call UnitAddAbility(u,'A0GC')
+            call UnitMakeAbilityPermanent(u,true,'A0GC')
+            call CreateModeIndicatorWithPauseForm(u, "war3mapImported\\BTNBlackMistWings.blp", 15)
             call ShowAbility2('A0GE', false)
             call SaveInteger(HH,id,StringHash("ID"), 9)
         endif
-        if GetUnitTypeId(LoadUnitHandle(HH,MUIHandle(),CasterHash))=='H03L' then
+        if GetUnitTypeId(u)=='H03L' then
             set soundplay=CreateSound("Sound\\Music\\mp3Music\\Gamuza.mp3",false,false,true,12700,12700,"")
             call StartSound(soundplay)
             call KillSoundWhenDone(soundplay)
-            call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S802')
-            call IssueImmediateOrder(LoadUnitHandle(HH,MUIHandle(),CasterHash), "bearform")
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S802')
-            call SetUnitAbilityLevel(LoadUnitHandle(HH,MUIHandle(),CasterHash),'NeEE', GetUnitAbilityLevel(LoadUnitHandle(HH,MUIHandle(),CasterHash),'A0PD')+1)
-            call CreateModeIndicatorWithPauseForm(LoadUnitHandle(HH,MUIHandle(),CasterHash), "war3mapImported\\BTNNell 3.blp", 30)
+            call UnitAddAbility(u, 'S802')
+            call IssueImmediateOrder(u, "bearform")
+            call UnitRemoveAbility(u, 'S802')
+            call SetUnitAbilityLevel(u,'NeEE', GetUnitAbilityLevel(u,'A0PD')+1)
+            call CreateModeIndicatorWithPauseForm(u, "war3mapImported\\BTNNell 3.blp", 30)
             call SaveInteger(HH,id,StringHash("ID"), 10)
         endif
-        if GetUnitTypeId(LoadUnitHandle(HH,MUIHandle(),CasterHash))=='H02S' then
-            call SetUnitPathing(LoadUnitHandle(HH,MUIHandle(),CasterHash),false)
-            call UnitAddType(LoadUnitHandle(HH,MUIHandle(),CasterHash),UNIT_TYPE_FLYING)
+        if GetUnitTypeId(u)=='H02S' then
+            call SetUnitPathing(u,false)
+            call UnitAddType(u,UNIT_TYPE_FLYING)
             set soundplay=CreateSound("Sound\\Music\\mp3Music\\AmaNoMurakumo.mp3",false,false,true,12700,12700,"")
             call StartSound(soundplay)
             call KillSoundWhenDone(soundplay)
-            call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S902')
-            call IssueImmediateOrder(LoadUnitHandle(HH,MUIHandle(),CasterHash), "bearform")
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S902')
-            call CreateModeIndicatorWithPauseForm(LoadUnitHandle(HH,MUIHandle(),CasterHash), "war3mapImported\\BTNAma_no_Murakumo.blp", 12)
+            call UnitAddAbility(u, 'S902')
+            call IssueImmediateOrder(u, "bearform")
+            call UnitRemoveAbility(u, 'S902')
+            call CreateModeIndicatorWithPauseForm(u, "war3mapImported\\BTNAma_no_Murakumo.blp", 12)
             call SaveInteger(HH,id,StringHash("ID"), 11)
         endif
-        if GetUnitTypeId(LoadUnitHandle(HH,MUIHandle(),CasterHash))=='H01J' then
+        if GetUnitTypeId(u)=='H01J' then
             set soundplay=CreateSound("Sound\\Music\\mp3Music\\SenninModoJiraya.mp3",false,false,true,12700,12700,"")
             call StartSound(soundplay)
             call KillSoundWhenDone(soundplay)
-            call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S112')
-            call IssueImmediateOrder(LoadUnitHandle(HH,MUIHandle(),CasterHash), "bearform")
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S112')
-            if GetUnitAbilityLevel(LoadUnitHandle(HH,MUIHandle(),CasterHash),'A0CI')==1 then
-                call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'JiE3')
-            elseif GetUnitAbilityLevel(LoadUnitHandle(HH,MUIHandle(),CasterHash),'A0CI')==2 then
-                call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'JiE4')
-            elseif GetUnitAbilityLevel(LoadUnitHandle(HH,MUIHandle(),CasterHash),'A0CI')==3 then
-                call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'JiE5')
-            elseif GetUnitAbilityLevel(LoadUnitHandle(HH,MUIHandle(),CasterHash),'A0CI')==4 then
-                call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'JiE6')
-            elseif GetUnitAbilityLevel(LoadUnitHandle(HH,MUIHandle(),CasterHash),'A0CI')==5 then
-                call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'JiE7')
+            call UnitAddAbility(u, 'S112')
+            call IssueImmediateOrder(u, "bearform")
+            call UnitRemoveAbility(u, 'S112')
+            if GetUnitAbilityLevel(u,'A0CI')==1 then
+                call UnitAddAbility(u,'JiE3')
+            elseif GetUnitAbilityLevel(u,'A0CI')==2 then
+                call UnitAddAbility(u,'JiE4')
+            elseif GetUnitAbilityLevel(u,'A0CI')==3 then
+                call UnitAddAbility(u,'JiE5')
+            elseif GetUnitAbilityLevel(u,'A0CI')==4 then
+                call UnitAddAbility(u,'JiE6')
+            elseif GetUnitAbilityLevel(u,'A0CI')==5 then
+                call UnitAddAbility(u,'JiE7')
             endif
-            call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'JiE2')
-            call UnitMakeAbilityPermanent(LoadUnitHandle(HH,MUIHandle(),CasterHash),true,'JiE2')
-            call SetUnitAbilityLevel(LoadUnitHandle(HH,MUIHandle(),CasterHash),'JiE2', GetUnitAbilityLevel(LoadUnitHandle(HH,MUIHandle(),CasterHash),'A0CI'))
-            call CreateModeIndicatorWithPauseForm(LoadUnitHandle(HH,MUIHandle(),CasterHash), "war3mapImported\\BTNJiraiya_Sage_Mode.blp", 25)
+            call UnitAddAbility(u,'JiE2')
+            call UnitMakeAbilityPermanent(u,true,'JiE2')
+            call SetUnitAbilityLevel(u,'JiE2', GetUnitAbilityLevel(u,'A0CI'))
+            call CreateModeIndicatorWithPauseForm(u, "war3mapImported\\BTNJiraiya_Sage_Mode.blp", 25)
             call SaveInteger(HH,id,StringHash("ID"), 12)
         endif
-        if GetUnitTypeId(LoadUnitHandle(HH,MUIHandle(),CasterHash))=='H10L' then
+        if GetUnitTypeId(u)=='H10L' then
             set soundplay=CreateSound("Sound\\Music\\mp3Music\\LucciE.mp3",false,false,true,12700,12700,"")
             call StartSound(soundplay)
             call KillSoundWhenDone(soundplay)
-            call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S122')
-            call IssueImmediateOrder(LoadUnitHandle(HH,MUIHandle(),CasterHash), "bearform")
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S122')
-            call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'LcE4')
-            call UnitMakeAbilityPermanent(LoadUnitHandle(HH,MUIHandle(),CasterHash),true,'LcE4')
-            if GetUnitAbilityLevel(LoadUnitHandle(HH,MUIHandle(),CasterHash),'LCE1')==1 then
-                call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'LCE5')
-            elseif GetUnitAbilityLevel(LoadUnitHandle(HH,MUIHandle(),CasterHash),'LCE1')==2 then
-                call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'LCE6')
-            elseif GetUnitAbilityLevel(LoadUnitHandle(HH,MUIHandle(),CasterHash),'LCE1')==3 then
-                call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'LCE7')
-            elseif GetUnitAbilityLevel(LoadUnitHandle(HH,MUIHandle(),CasterHash),'LCE1')==4 then
-                call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'LCE8')
-            elseif GetUnitAbilityLevel(LoadUnitHandle(HH,MUIHandle(),CasterHash),'LCE1')==5 then
-                call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'LCE9')
+            call UnitAddAbility(u, 'S122')
+            call IssueImmediateOrder(u, "bearform")
+            call UnitRemoveAbility(u, 'S122')
+            call UnitAddAbility(u,'LcE4')
+            call UnitMakeAbilityPermanent(u,true,'LcE4')
+            if GetUnitAbilityLevel(u,'LCE1')==1 then
+                call UnitAddAbility(u,'LCE5')
+            elseif GetUnitAbilityLevel(u,'LCE1')==2 then
+                call UnitAddAbility(u,'LCE6')
+            elseif GetUnitAbilityLevel(u,'LCE1')==3 then
+                call UnitAddAbility(u,'LCE7')
+            elseif GetUnitAbilityLevel(u,'LCE1')==4 then
+                call UnitAddAbility(u,'LCE8')
+            elseif GetUnitAbilityLevel(u,'LCE1')==5 then
+                call UnitAddAbility(u,'LCE9')
             endif
-            call SetUnitAbilityLevel(LoadUnitHandle(HH,MUIHandle(),CasterHash),'LcE4', GetUnitAbilityLevel(LoadUnitHandle(HH,MUIHandle(),CasterHash),'LCE1'))
-            call CreateModeIndicatorWithPauseForm(LoadUnitHandle(HH,MUIHandle(),CasterHash), "ReplaceableTextures\\CommandButtons\\BTNRobLucciE.blp", 25)
+            call SetUnitAbilityLevel(u,'LcE4', GetUnitAbilityLevel(u,'LCE1'))
+            call CreateModeIndicatorWithPauseForm(u, "ReplaceableTextures\\CommandButtons\\BTNRobLucciE.blp", 25)
             call SaveInteger(HH,id,StringHash("ID"), 13)
         endif
-        if GetUnitTypeId(LoadUnitHandle(HH,MUIHandle(),CasterHash))=='H06G' then
+        if GetUnitTypeId(u)=='H06G' then
             set soundplay=CreateSound("Sound\\Music\\mp3Music\\AtalantaE.mp3",false,false,true,12700,12700,"")
             call StartSound(soundplay)
             call KillSoundWhenDone(soundplay)
-            call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S132')
-            call IssueImmediateOrder(LoadUnitHandle(HH,MUIHandle(),CasterHash), "bearform")
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S132')
-            call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'AtE1')
-            call UnitMakeAbilityPermanent(LoadUnitHandle(HH,MUIHandle(),CasterHash),true,'AtE1')
-            call SetUnitAbilityLevel(LoadUnitHandle(HH,MUIHandle(),CasterHash),'AtE1', GetUnitAbilityLevel(LoadUnitHandle(HH,MUIHandle(),CasterHash),'A1DX'))
-            call SetUnitAbilityLevel(LoadUnitHandle(HH,MUIHandle(),CasterHash),'A1DS', GetUnitAbilityLevel(LoadUnitHandle(HH,MUIHandle(),CasterHash),'A1DS')+5)
-            call CreateModeIndicatorWithPauseForm(LoadUnitHandle(HH,MUIHandle(),CasterHash), "ReplaceableTextures\\CommandButtons\\BTNAtalantaE.blp", 25)
+            call UnitAddAbility(u, 'S132')
+            call IssueImmediateOrder(u, "bearform")
+            call UnitRemoveAbility(u, 'S132')
+            call UnitAddAbility(u,'AtE1')
+            call UnitMakeAbilityPermanent(u,true,'AtE1')
+            call SetUnitAbilityLevel(u,'AtE1', GetUnitAbilityLevel(u,'A1DX'))
+            call SetUnitAbilityLevel(u,'A1DS', GetUnitAbilityLevel(u,'A1DS')+5)
+            call CreateModeIndicatorWithPauseForm(u, "ReplaceableTextures\\CommandButtons\\BTNAtalantaE.blp", 25)
             call SaveInteger(HH,id,StringHash("ID"), 14)
         endif
-        if GetUnitTypeId(LoadUnitHandle(HH,MUIHandle(),CasterHash))=='H04C' then
+        if GetUnitTypeId(u)=='H04C' then
             set soundplay=CreateSound("Sound\\Music\\mp3Music\\InoriE.mp3",false,false,true,12700,12700,"")
             call StartSound(soundplay)
             call KillSoundWhenDone(soundplay)
-            call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S142')
-            call IssueImmediateOrder(LoadUnitHandle(HH,MUIHandle(),CasterHash), "bearform")
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S142')
-            call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'InE1')
-            call UnitMakeAbilityPermanent(LoadUnitHandle(HH,MUIHandle(),CasterHash),true,'InE1')
+            call UnitAddAbility(u, 'S142')
+            call IssueImmediateOrder(u, "bearform")
+            call UnitRemoveAbility(u, 'S142')
+            call UnitAddAbility(u,'InE1')
+            call UnitMakeAbilityPermanent(u,true,'InE1')
             call ShowAbility2('A0UK',false)
             call ShowAbility2('A0UQ',false)
-            call SetUnitAbilityLevel(LoadUnitHandle(HH,MUIHandle(),CasterHash),'InE1', GetUnitAbilityLevel(LoadUnitHandle(HH,MUIHandle(),CasterHash),'A0UN'))
-            call CreateModeIndicatorWithPauseForm(LoadUnitHandle(HH,MUIHandle(),CasterHash), "war3mapImported\\BTNVirus.blp", 15)
+            call SetUnitAbilityLevel(u,'InE1', GetUnitAbilityLevel(u,'A0UN'))
+            call CreateModeIndicatorWithPauseForm(u, "war3mapImported\\BTNVirus.blp", 15)
             call SaveInteger(HH,id,StringHash("ID"), 15)
         endif
-        if GetUnitTypeId(LoadUnitHandle(HH,MUIHandle(),CasterHash))=='H04L' or GetUnitTypeId(LoadUnitHandle(HH,MUIHandle(),CasterHash))=='H06V' then
+        if GetUnitTypeId(u)=='H04L' or GetUnitTypeId(u)=='H06V' then
             set soundplay=CreateSound("Sound\\Music\\mp3Music\\GrayG.mp3",false,false,true,12700,12700,"")
             call StartSound(soundplay)
             call KillSoundWhenDone(soundplay)
-            call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'GrG1')
-            call UnitMakeAbilityPermanent(LoadUnitHandle(HH,MUIHandle(),CasterHash),true,'GrG1')
-            call CreateModeIndicatorWithPauseForm(LoadUnitHandle(HH,MUIHandle(),CasterHash), "ReplaceableTextures\\CommandButtons\\BTNGrayIceDevilSlayer.blp", 20)
+            call UnitAddAbility(u,'GrG1')
+            call UnitMakeAbilityPermanent(u,true,'GrG1')
+            call CreateModeIndicatorWithPauseForm(u, "ReplaceableTextures\\CommandButtons\\BTNGrayIceDevilSlayer.blp", 20)
             call ShowAbility2('A1EF', false)
             call SaveInteger(HH,id,StringHash("ID"), 16)
         endif
-        if GetUnitTypeId(LoadUnitHandle(HH,MUIHandle(),CasterHash))=='H01H' then
+        if GetUnitTypeId(u)=='H01H' then
             set soundplay=CreateSound("Sound\\Music\\mp3Music\\KidMadness.mp3",false,false,true,12700,12700,"")
             call StartSound(soundplay)
             call KillSoundWhenDone(soundplay)
-            call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S152')
-            call IssueImmediateOrder(LoadUnitHandle(HH,MUIHandle(),CasterHash), "bearform")
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S152')
-            call CreateModeIndicatorWithPauseForm(LoadUnitHandle(HH,MUIHandle(),CasterHash), "war3mapImported\\BTNMadnessKid.blp", 2+GetUnitAbilityLevel(LoadUnitHandle(HH,MUIHandle(),CasterHash),'A0C8'))
+            call UnitAddAbility(u, 'S152')
+            call IssueImmediateOrder(u, "bearform")
+            call UnitRemoveAbility(u, 'S152')
+            call CreateModeIndicatorWithPauseForm(u, "war3mapImported\\BTNMadnessKid.blp", 2+GetUnitAbilityLevel(u,'A0C8'))
             call SaveInteger(HH,id,StringHash("ID"), 17)
         endif
-        if GetUnitTypeId(LoadUnitHandle(HH,MUIHandle(),CasterHash))=='H06N' then
+        if GetUnitTypeId(u)=='H06N' then
             set soundplay=CreateSound("Sound\\Music\\mp3Music\\DrakeE.mp3",false,false,true,12700,12700,"")
             call StartSound(soundplay)
             call KillSoundWhenDone(soundplay)
-            call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S162')
-            call IssueImmediateOrder(LoadUnitHandle(HH,MUIHandle(),CasterHash), "bearform")
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S162')
-            call CreateModeIndicatorWithPauseForm(LoadUnitHandle(HH,MUIHandle(),CasterHash), "ReplaceableTextures\\CommandButtons\\BTNFransisDrake.blp", 2+GetUnitAbilityLevel(LoadUnitHandle(HH,MUIHandle(),CasterHash),'A1EG'))
+            call UnitAddAbility(u, 'S162')
+            call IssueImmediateOrder(u, "bearform")
+            call UnitRemoveAbility(u, 'S162')
+            call CreateModeIndicatorWithPauseForm(u, "ReplaceableTextures\\CommandButtons\\BTNFransisDrake.blp", 2+GetUnitAbilityLevel(u,'A1EG'))
             call SaveInteger(HH,id,StringHash("ID"), 18)
         endif
-        if GetUnitTypeId(LoadUnitHandle(HH,MUIHandle(),CasterHash))=='H01F' then
+        if GetUnitTypeId(u)=='H01F' then
             set soundplay=CreateSound("Sound\\Music\\mp3Music\\BlackStarMadness.mp3",false,false,true,12700,12700,"")
             call StartSound(soundplay)
             call KillSoundWhenDone(soundplay)
-            call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S172')
-            call IssueImmediateOrder(LoadUnitHandle(HH,MUIHandle(),CasterHash), "bearform")
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S172')
-            call CreateModeIndicatorWithPauseForm(LoadUnitHandle(HH,MUIHandle(),CasterHash), "war3mapImported\\BTNsoul_eater_78__black_star__by_shadsonic2-d2zd6p0.blp", 2+GetUnitAbilityLevel(LoadUnitHandle(HH,MUIHandle(),CasterHash),'A0BZ'))
+            call UnitAddAbility(u, 'S172')
+            call IssueImmediateOrder(u, "bearform")
+            call UnitRemoveAbility(u, 'S172')
+            call CreateModeIndicatorWithPauseForm(u, "war3mapImported\\BTNsoul_eater_78__black_star__by_shadsonic2-d2zd6p0.blp", 2+GetUnitAbilityLevel(u,'A0BZ'))
             call SaveInteger(HH,id,StringHash("ID"), 19)
         endif
-        if GetUnitTypeId(LoadUnitHandle(HH,MUIHandle(),CasterHash))=='H01D' then
+        if GetUnitTypeId(u)=='H01D' then
             set soundplay=CreateSound("Sound\\Music\\mp3Music\\MakaBlackBlood.mp3",false,false,true,12700,12700,"")
             call StartSound(soundplay)
             call KillSoundWhenDone(soundplay)
-            call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S182')
-            call IssueImmediateOrder(LoadUnitHandle(HH,MUIHandle(),CasterHash), "bearform")
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S182')
-            call CreateModeIndicatorWithPauseForm(LoadUnitHandle(HH,MUIHandle(),CasterHash), "war3mapImported\\BTNBlackBlood.blp", 2+GetUnitAbilityLevel(LoadUnitHandle(HH,MUIHandle(),CasterHash),'A0BT'))
+            call UnitAddAbility(u, 'S182')
+            call IssueImmediateOrder(u, "bearform")
+            call UnitRemoveAbility(u, 'S182')
+            call CreateModeIndicatorWithPauseForm(u, "war3mapImported\\BTNBlackBlood.blp", 2+GetUnitAbilityLevel(u,'A0BT'))
             call SaveInteger(HH,id,StringHash("ID"), 20)
         endif
-        if GetUnitTypeId(LoadUnitHandle(HH,MUIHandle(),CasterHash))=='H03P' then
+        if GetUnitTypeId(u)=='H03P' then
             set soundplay=CreateSound("Sound\\Music\\mp3Music\\KatsuraE.mp3",false,false,true,12700,12700,"")
             call StartSound(soundplay)
             call KillSoundWhenDone(soundplay)
-            call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S192')
-            call IssueImmediateOrder(LoadUnitHandle(HH,MUIHandle(),CasterHash), "bearform")
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S192')
-            call CreateModeIndicatorWithPauseForm(LoadUnitHandle(HH,MUIHandle(),CasterHash), "war3mapImported\\BTNElizabeth.blp", 2+GetUnitAbilityLevel(LoadUnitHandle(HH,MUIHandle(),CasterHash),'A0PR'))
+            call UnitAddAbility(u, 'S192')
+            call IssueImmediateOrder(u, "bearform")
+            call UnitRemoveAbility(u, 'S192')
+            call CreateModeIndicatorWithPauseForm(u, "war3mapImported\\BTNElizabeth.blp", 2+GetUnitAbilityLevel(u,'A0PR'))
             call SaveInteger(HH,id,StringHash("ID"), 21)
         endif
-        if GetUnitTypeId(LoadUnitHandle(HH,MUIHandle(),CasterHash))=='H02K' then
+        if GetUnitTypeId(u)=='H02K' then
             set soundplay=CreateSound("Sound\\Music\\mp3Music\\TousenE.mp3",false,false,true,12700,12700,"")
             call StartSound(soundplay)
             call KillSoundWhenDone(soundplay)
-            if GetUnitAbilityLevel(LoadUnitHandle(HH,MUIHandle(),CasterHash),'A0JA')==1 then
-                call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'ToE2')
-            elseif GetUnitAbilityLevel(LoadUnitHandle(HH,MUIHandle(),CasterHash),'A0JA')==2 then
-                call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'ToE3')
-            elseif GetUnitAbilityLevel(LoadUnitHandle(HH,MUIHandle(),CasterHash),'A0JA')==3 then
-                call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'ToE4')
-            elseif GetUnitAbilityLevel(LoadUnitHandle(HH,MUIHandle(),CasterHash),'A0JA')==4 then
-                call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'ToE5')
-            elseif GetUnitAbilityLevel(LoadUnitHandle(HH,MUIHandle(),CasterHash),'A0JA')==5 then
-                call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'ToE6')
+            if GetUnitAbilityLevel(u,'A0JA')==1 then
+                call UnitAddAbility(u,'ToE2')
+            elseif GetUnitAbilityLevel(u,'A0JA')==2 then
+                call UnitAddAbility(u,'ToE3')
+            elseif GetUnitAbilityLevel(u,'A0JA')==3 then
+                call UnitAddAbility(u,'ToE4')
+            elseif GetUnitAbilityLevel(u,'A0JA')==4 then
+                call UnitAddAbility(u,'ToE5')
+            elseif GetUnitAbilityLevel(u,'A0JA')==5 then
+                call UnitAddAbility(u,'ToE6')
             endif
-            call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'ToE1')
-            call UnitMakeAbilityPermanent(LoadUnitHandle(HH,MUIHandle(),CasterHash),true,'ToE1')
-            call CreateModeIndicatorWithPauseForm(LoadUnitHandle(HH,MUIHandle(),CasterHash), "war3mapImported\\BTNTosen 3.blp", 15)
+            call UnitAddAbility(u,'ToE1')
+            call UnitMakeAbilityPermanent(u,true,'ToE1')
+            call CreateModeIndicatorWithPauseForm(u, "war3mapImported\\BTNTosen 3.blp", 15)
             call ShowAbility2('A0JA', false)
             call SaveInteger(HH,id,StringHash("ID"), 22)
         endif
-        if GetUnitTypeId(LoadUnitHandle(HH,MUIHandle(),CasterHash))=='H018' then
+        if GetUnitTypeId(u)=='H018' then
             set soundplay=CreateSound("Sound\\Music\\mp3Music\\IshidaT.mp3",false,false,true,12700,12700,"")
             call StartSound(soundplay)
             call KillSoundWhenDone(soundplay)
-            call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'IsiT')
-            call UnitMakeAbilityPermanent(LoadUnitHandle(HH,MUIHandle(),CasterHash),true,'IsiT')
-            call SetUnitVertexColor(LoadUnitHandle(HH,MUIHandle(),CasterHash),255,255,255,200)
-            call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'A0Z8')
-            call UnitMakeAbilityPermanent(LoadUnitHandle(HH,MUIHandle(),CasterHash),true,'A0Z8')
-            call CreateModeIndicatorWithPauseForm(LoadUnitHandle(HH,MUIHandle(),CasterHash), "war3mapImported\\BTNPiercing Sparrow.blp", 25)
+            call UnitAddAbility(u,'IsiT')
+            call UnitMakeAbilityPermanent(u,true,'IsiT')
+            call SetUnitVertexColor(u,255,255,255,200)
+            call UnitAddAbility(u,'A0Z8')
+            call UnitMakeAbilityPermanent(u,true,'A0Z8')
+            call CreateModeIndicatorWithPauseForm(u, "war3mapImported\\BTNPiercing Sparrow.blp", 25)
             call ShowAbility2('A0TF', false)
             call SaveInteger(HH,id,StringHash("ID"), 23)
         endif
-        if GetUnitTypeId(LoadUnitHandle(HH,MUIHandle(),CasterHash))=='H00J' then
+        if GetUnitTypeId(u)=='H00J' then
             set soundplay=CreateSound("Sound\\Music\\mp3Music\\GearSado.mp3",false,false,true,12700,12700,"")
             call StartSound(soundplay)
             call KillSoundWhenDone(soundplay)
-            call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'LuG3')
-            call UnitMakeAbilityPermanent(LoadUnitHandle(HH,MUIHandle(),CasterHash),true,'LuG3')
-            call CreateModeIndicatorWithPauseForm(LoadUnitHandle(HH,MUIHandle(),CasterHash), "war3mapImported\\BTNLuffyGearSecond.blp", 13)
+            call UnitAddAbility(u,'LuG3')
+            call UnitMakeAbilityPermanent(u,true,'LuG3')
+            call CreateModeIndicatorWithPauseForm(u, "war3mapImported\\BTNLuffyGearSecond.blp", 13)
             call ShowAbility2('A01O', false)
             call SaveInteger(HH,id,StringHash("ID"), 24)
         endif
-        if GetUnitTypeId(LoadUnitHandle(HH,MUIHandle(),CasterHash))=='H00A' then
+        if GetUnitTypeId(u)=='H00A' then
             set soundplay=CreateSound("Sound\\Music\\mp3Music\\LamboThunderSet.mp3",false,false,true,12700,12700,"")
             call StartSound(soundplay)
             call KillSoundWhenDone(soundplay)
-            call UnitApplyTimedLife(CreateUnit(GetOwningPlayer(LoadUnitHandle(HH,MUIHandle(),CasterHash)),'e03T',GetUnitX(LoadUnitHandle(HH,MUIHandle(),CasterHash)),GetUnitY(LoadUnitHandle(HH,MUIHandle(),CasterHash)),GetRandomReal(0,359)),'BTLF',1)
-            call DestroyEffect(AddSpecialEffect("war3mapImported\\GreenSlam.mdx",GetUnitX(LoadUnitHandle(HH,MUIHandle(),CasterHash)),GetUnitY(LoadUnitHandle(HH,MUIHandle(),CasterHash))))
-            call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'LmE1')
-            call UnitMakeAbilityPermanent(LoadUnitHandle(HH,MUIHandle(),CasterHash),true,'LmE1')
-            if GetUnitAbilityLevel(LoadUnitHandle(HH,MUIHandle(),CasterHash),'A168')==1 then
-                call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'LmE2')
-            elseif GetUnitAbilityLevel(LoadUnitHandle(HH,MUIHandle(),CasterHash),'A168')==2 then
-                call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'LmE3')
-            elseif GetUnitAbilityLevel(LoadUnitHandle(HH,MUIHandle(),CasterHash),'A168')==3 then
-                call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'LmE4')
-            elseif GetUnitAbilityLevel(LoadUnitHandle(HH,MUIHandle(),CasterHash),'A168')==4 then
-                call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'LmE5')
-            elseif GetUnitAbilityLevel(LoadUnitHandle(HH,MUIHandle(),CasterHash),'A168')==5 then
-                call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'LmE6')
+            call UnitApplyTimedLife(CreateUnit(GetOwningPlayer(u),'e03T',GetUnitX(u),GetUnitY(u),GetRandomReal(0,359)),'BTLF',1)
+            call DestroyEffect(AddSpecialEffect("war3mapImported\\GreenSlam.mdx",GetUnitX(u),GetUnitY(u)))
+            call UnitAddAbility(u,'LmE1')
+            call UnitMakeAbilityPermanent(u,true,'LmE1')
+            if GetUnitAbilityLevel(u,'A168')==1 then
+                call UnitAddAbility(u,'LmE2')
+            elseif GetUnitAbilityLevel(u,'A168')==2 then
+                call UnitAddAbility(u,'LmE3')
+            elseif GetUnitAbilityLevel(u,'A168')==3 then
+                call UnitAddAbility(u,'LmE4')
+            elseif GetUnitAbilityLevel(u,'A168')==4 then
+                call UnitAddAbility(u,'LmE5')
+            elseif GetUnitAbilityLevel(u,'A168')==5 then
+                call UnitAddAbility(u,'LmE6')
             endif
-            call CreateModeIndicatorWithPauseForm(LoadUnitHandle(HH,MUIHandle(),CasterHash), "ReplaceableTextures\\CommandButtons\\BTNLambo 1.blp", 15)
+            call CreateModeIndicatorWithPauseForm(u, "ReplaceableTextures\\CommandButtons\\BTNLambo 1.blp", 15)
             call ShowAbility2('A168', false)
             call SaveInteger(HH,id,StringHash("ID"), 25)
         endif
-        call CheckUnitBonusRange(LoadUnitHandle(HH,MUIHandle(),CasterHash))
+        call CheckUnitBonusRange(u)
     endif
     if not(TransfID==1 or TransfID==2 or TransfID==3 or TransfID==4 or TransfID==5 or TransfID==6 or TransfID==7 or TransfID==8 or TransfID==9 or TransfID==10 or TransfID==11 or TransfID==12 or TransfID==13 or TransfID==14 or TransfID==15 or TransfID==16 or TransfID==17 or TransfID==18 or TransfID==19 or TransfID==20 or TransfID==21 or TransfID==22 or TransfID==23 or TransfID==24 or TransfID==25) then
         call SaveInteger(HH,id,TIME_HASH, 0)
     endif
     if TransfID==5 then
-        if GetUnitAbilityLevel(LoadUnitHandle(HH,MUIHandle(),CasterHash),'A0O1')>0 or GetUnitCurrentOrder(LoadUnitHandle(HH,MUIHandle(),CasterHash))==OrderId("dispel") then
-            call UnitMakeAbilityPermanent(LoadUnitHandle(HH,MUIHandle(),CasterHash),false,'A2A1')
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'A2A1')
+        if GetUnitAbilityLevel(u,'A0O1')>0 or GetUnitCurrentOrder(u)==OrderId("dispel") then
+            call UnitMakeAbilityPermanent(u,false,'A2A1')
+            call UnitRemoveAbility(u,'A2A1')
         else
-            call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'A2A1')
-            call UnitMakeAbilityPermanent(LoadUnitHandle(HH,MUIHandle(),CasterHash),true,'A2A1')
+            call UnitAddAbility(u,'A2A1')
+            call UnitMakeAbilityPermanent(u,true,'A2A1')
         endif
     endif
     if TransfID==9 then
-        call HealTextTag(LoadUnitHandle(HH,MUIHandle(),CasterHash),LoadUnitHandle(HH,MUIHandle(),CasterHash),GetUnitState(LoadUnitHandle(HH,MUIHandle(),CasterHash),UNIT_STATE_MAX_LIFE)*0.003*myCustomHeal2(LoadUnitHandle(HH,MUIHandle(),CasterHash),1),"HealthRes")
-        call HealTextTag(LoadUnitHandle(HH,MUIHandle(),CasterHash),LoadUnitHandle(HH,MUIHandle(),CasterHash),GetUnitState(LoadUnitHandle(HH,MUIHandle(),CasterHash),UNIT_STATE_MAX_MANA)*0.0015*myCustomMana2(LoadUnitHandle(HH,MUIHandle(),CasterHash),1),"ManaRes")
-        call SetUnitState(LoadUnitHandle(HH,MUIHandle(),CasterHash),UNIT_STATE_LIFE,GetWidgetLife(LoadUnitHandle(HH,MUIHandle(),CasterHash))+GetUnitState(LoadUnitHandle(HH,MUIHandle(),CasterHash),UNIT_STATE_MAX_LIFE)*0.003)
-        call SetUnitState(LoadUnitHandle(HH,MUIHandle(),CasterHash),UNIT_STATE_MANA,GetWidgetMana(LoadUnitHandle(HH,MUIHandle(),CasterHash))+GetUnitState(LoadUnitHandle(HH,MUIHandle(),CasterHash),UNIT_STATE_MAX_MANA)*0.0015)
+        call HealTextTag(u,u,GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.003*myCustomHeal2(u,1),"HealthRes")
+        call HealTextTag(u,u,GetUnitState(u,UNIT_STATE_MAX_MANA)*0.0015*myCustomMana2(u,1),"ManaRes")
+        call SetUnitState(u,UNIT_STATE_LIFE,GetWidgetLife(u)+GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.003)
+        call SetUnitState(u,UNIT_STATE_MANA,GetWidgetMana(u)+GetUnitState(u,UNIT_STATE_MAX_MANA)*0.0015)
     endif
     if TransfID==22 then
-        call HealTextTag(LoadUnitHandle(HH,MUIHandle(),CasterHash),LoadUnitHandle(HH,MUIHandle(),CasterHash),GetUnitState(LoadUnitHandle(HH,MUIHandle(),CasterHash),UNIT_STATE_MAX_LIFE)*0.0015*myCustomHeal2(LoadUnitHandle(HH,MUIHandle(),CasterHash),1),"HealthRes")
-        call SetUnitState(LoadUnitHandle(HH,MUIHandle(),CasterHash),UNIT_STATE_LIFE,GetWidgetLife(LoadUnitHandle(HH,MUIHandle(),CasterHash))+GetUnitState(LoadUnitHandle(HH,MUIHandle(),CasterHash),UNIT_STATE_MAX_LIFE)*0.0015)
+        call HealTextTag(u,u,GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.0015*myCustomHeal2(u,1),"HealthRes")
+        call SetUnitState(u,UNIT_STATE_LIFE,GetWidgetLife(u)+GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.0015)
     endif
     if TransfID==23 then
-        call HealTextTag(LoadUnitHandle(HH,MUIHandle(),CasterHash),LoadUnitHandle(HH,MUIHandle(),CasterHash),GetUnitState(LoadUnitHandle(HH,MUIHandle(),CasterHash),UNIT_STATE_MAX_MANA)*0.003*myCustomMana2(LoadUnitHandle(HH,MUIHandle(),CasterHash),1),"ManaRes")
-        call SetUnitState(LoadUnitHandle(HH,MUIHandle(),CasterHash),UNIT_STATE_MANA,GetWidgetMana(LoadUnitHandle(HH,MUIHandle(),CasterHash))+GetUnitState(LoadUnitHandle(HH,MUIHandle(),CasterHash),UNIT_STATE_MAX_MANA)*0.003)
+        call HealTextTag(u,u,GetUnitState(u,UNIT_STATE_MAX_MANA)*0.003*myCustomMana2(u,1),"ManaRes")
+        call SetUnitState(u,UNIT_STATE_MANA,GetWidgetMana(u)+GetUnitState(u,UNIT_STATE_MAX_MANA)*0.003)
     endif
     if TransfID==25 then
-        call UnitApplyTimedLife(CreateUnit(GetOwningPlayer(LoadUnitHandle(HH,MUIHandle(),CasterHash)),'e0BB',GetUnitX(LoadUnitHandle(HH,MUIHandle(),CasterHash)),GetUnitY(LoadUnitHandle(HH,MUIHandle(),CasterHash)),GetRandomReal(0,359)),'BTLF',0.4)
+        call UnitApplyTimedLife(CreateUnit(GetOwningPlayer(u),'e0BB',GetUnitX(u),GetUnitY(u),GetRandomReal(0,359)),'BTLF',0.4)
     endif
 else
-    if IsUnitType(LoadUnitHandle(HH,MUIHandle(),CasterHash), UNIT_TYPE_DEAD) == false and GetWidgetLife(LoadUnitHandle(HH,MUIHandle(),CasterHash)) > 0.405 then
+    if IsUnitType(u, UNIT_TYPE_DEAD) == false and GetWidgetLife(u) > 0.405 then
         if TransfID==1 then
-            call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S101')
-            call IssueImmediateOrder(LoadUnitHandle(HH,MUIHandle(),CasterHash), "bearform")
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S101')
+            call UnitAddAbility(u, 'S101')
+            call IssueImmediateOrder(u, "bearform")
+            call UnitRemoveAbility(u, 'S101')
         endif
         if TransfID==2 then
-            call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S201')
-            call IssueImmediateOrder(LoadUnitHandle(HH,MUIHandle(),CasterHash), "bearform")
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S201')
+            call UnitAddAbility(u, 'S201')
+            call IssueImmediateOrder(u, "bearform")
+            call UnitRemoveAbility(u, 'S201')
         endif
         if TransfID==3 then
-            call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S301')
-            call IssueImmediateOrder(LoadUnitHandle(HH,MUIHandle(),CasterHash), "bearform")
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S301')
+            call UnitAddAbility(u, 'S301')
+            call IssueImmediateOrder(u, "bearform")
+            call UnitRemoveAbility(u, 'S301')
+            call UnitRemoveAbility(u, 'MrW2')
+            call ShowAbility2('MrF1',true)
+            call ShowAbility2('MrG1',true)
+            call ShowAbility2('MrW1',true)
+            call SetHeroStr(u, GetHeroStr(u, false)-LoadInteger(HH,GetHandleId(u),'SASB'), true)
+            call SetHeroAgi(u, GetHeroAgi(u, false)-LoadInteger(HH,GetHandleId(u),'SAAB'), true)
+            call SetHeroInt(u, GetHeroInt(u, false)-LoadInteger(HH,GetHandleId(u),'SAIB'), true)
+            call SaveInteger(HH,GetHandleId(u),'SASB',0)
+            call SaveInteger(HH,GetHandleId(u),'SAAB',0)
+            call SaveInteger(HH,GetHandleId(u),'SAIB',0)
         endif
         if TransfID==4 then
-            call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S401')
-            call IssueImmediateOrder(LoadUnitHandle(HH,MUIHandle(),CasterHash), "bearform")
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S401')
+            call UnitAddAbility(u, 'S401')
+            call IssueImmediateOrder(u, "bearform")
+            call UnitRemoveAbility(u, 'S401')
         endif
         if TransfID==5 then
-            call UnitMakeAbilityPermanent(LoadUnitHandle(HH,MUIHandle(),CasterHash),false,'A2A1')
-            call UnitMakeAbilityPermanent(LoadUnitHandle(HH,MUIHandle(),CasterHash),false,'A2IA')
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'A2IA')
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'A2A1')
-            call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S501')
-            call IssueImmediateOrder(LoadUnitHandle(HH,MUIHandle(),CasterHash), "bearform")
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S501')
+            call UnitMakeAbilityPermanent(u,false,'A2A1')
+            call UnitMakeAbilityPermanent(u,false,'A2IA')
+            call UnitRemoveAbility(u,'A2IA')
+            call UnitRemoveAbility(u,'A2A1')
+            call UnitAddAbility(u, 'S501')
+            call IssueImmediateOrder(u, "bearform")
+            call UnitRemoveAbility(u, 'S501')
         endif
         if TransfID==6 then
-            call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S601')
-            call IssueImmediateOrder(LoadUnitHandle(HH,MUIHandle(),CasterHash), "bearform")
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S601')
+            call UnitAddAbility(u, 'S601')
+            call IssueImmediateOrder(u, "bearform")
+            call UnitRemoveAbility(u, 'S601')
         endif
         if TransfID==7 then
-            call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S701')
-            call IssueImmediateOrder(LoadUnitHandle(HH,MUIHandle(),CasterHash), "bearform")
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S701')
+            call UnitAddAbility(u, 'S701')
+            call IssueImmediateOrder(u, "bearform")
+            call UnitRemoveAbility(u, 'S701')
         endif
         if TransfID==8 then
-            call UnitMakeAbilityPermanent(LoadUnitHandle(HH,MUIHandle(),CasterHash),false,'XanT')
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'XanT')
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'B05E')
+            call UnitMakeAbilityPermanent(u,false,'XanT')
+            call UnitRemoveAbility(u,'XanT')
+            call UnitRemoveAbility(u,'B05E')
             call ShowAbility2('A119', true)
         endif
         if TransfID==9 then
-            call UnitMakeAbilityPermanent(LoadUnitHandle(HH,MUIHandle(),CasterHash),false,'A0GC')
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'A0GC')
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'B02S')
+            call UnitMakeAbilityPermanent(u,false,'A0GC')
+            call UnitRemoveAbility(u,'A0GC')
+            call UnitRemoveAbility(u,'B02S')
             call ShowAbility2('A0GE', true)
         endif
         if TransfID==10 then
-            call SetUnitAbilityLevel(LoadUnitHandle(HH,MUIHandle(),CasterHash),'NeEE', 1)
-            call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S801')
-            call IssueImmediateOrder(LoadUnitHandle(HH,MUIHandle(),CasterHash), "bearform")
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S801')
+            call SetUnitAbilityLevel(u,'NeEE', 1)
+            call UnitAddAbility(u, 'S801')
+            call IssueImmediateOrder(u, "bearform")
+            call UnitRemoveAbility(u, 'S801')
         endif
         if TransfID==11 then
-            call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S901')
-            call IssueImmediateOrder(LoadUnitHandle(HH,MUIHandle(),CasterHash), "bearform")
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S901')
-            call UnitRemoveType(LoadUnitHandle(HH,MUIHandle(),CasterHash),UNIT_TYPE_FLYING)
-            call SetUnitPathing(LoadUnitHandle(HH,MUIHandle(),CasterHash),true)
+            call UnitAddAbility(u, 'S901')
+            call IssueImmediateOrder(u, "bearform")
+            call UnitRemoveAbility(u, 'S901')
+            call UnitRemoveType(u,UNIT_TYPE_FLYING)
+            call SetUnitPathing(u,true)
         endif
         if TransfID==12 then
-            call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S111')
-            call IssueImmediateOrder(LoadUnitHandle(HH,MUIHandle(),CasterHash), "bearform")
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S111')
-            call UnitMakeAbilityPermanent(LoadUnitHandle(HH,MUIHandle(),CasterHash),false,'JiE2')
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'JiE3')
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'JiE4')
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'JiE5')
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'JiE6')
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'JiE7')
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'JiE2')
+            call UnitAddAbility(u, 'S111')
+            call IssueImmediateOrder(u, "bearform")
+            call UnitRemoveAbility(u, 'S111')
+            call UnitMakeAbilityPermanent(u,false,'JiE2')
+            call UnitRemoveAbility(u,'JiE3')
+            call UnitRemoveAbility(u,'JiE4')
+            call UnitRemoveAbility(u,'JiE5')
+            call UnitRemoveAbility(u,'JiE6')
+            call UnitRemoveAbility(u,'JiE7')
+            call UnitRemoveAbility(u,'JiE2')
         endif
         if TransfID==13 then
-            call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S121')
-            call IssueImmediateOrder(LoadUnitHandle(HH,MUIHandle(),CasterHash), "bearform")
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S121')
-            call UnitMakeAbilityPermanent(LoadUnitHandle(HH,MUIHandle(),CasterHash),false,'LcE4')
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'LcE4')
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'LcE5')
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'LcE6')
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'LcE7')
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'LcE8')
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'LcE9')
+            call UnitAddAbility(u, 'S121')
+            call IssueImmediateOrder(u, "bearform")
+            call UnitRemoveAbility(u, 'S121')
+            call UnitMakeAbilityPermanent(u,false,'LcE4')
+            call UnitRemoveAbility(u,'LcE4')
+            call UnitRemoveAbility(u,'LcE5')
+            call UnitRemoveAbility(u,'LcE6')
+            call UnitRemoveAbility(u,'LcE7')
+            call UnitRemoveAbility(u,'LcE8')
+            call UnitRemoveAbility(u,'LcE9')
         endif
         if TransfID==14 then
-            call UnitMakeAbilityPermanent(LoadUnitHandle(HH,MUIHandle(),CasterHash),false,'AtE1')
-            call SetUnitAbilityLevel(LoadUnitHandle(HH,MUIHandle(),CasterHash),'A1DS', GetUnitAbilityLevel(LoadUnitHandle(HH,MUIHandle(),CasterHash),'A1DS')-5)
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'AtE1')
-            call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S131')
-            call IssueImmediateOrder(LoadUnitHandle(HH,MUIHandle(),CasterHash), "bearform")
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S131')
+            call UnitMakeAbilityPermanent(u,false,'AtE1')
+            call SetUnitAbilityLevel(u,'A1DS', GetUnitAbilityLevel(u,'A1DS')-5)
+            call UnitRemoveAbility(u,'AtE1')
+            call UnitAddAbility(u, 'S131')
+            call IssueImmediateOrder(u, "bearform")
+            call UnitRemoveAbility(u, 'S131')
         endif
         if TransfID==15 then
-            call UnitMakeAbilityPermanent(LoadUnitHandle(HH,MUIHandle(),CasterHash),false,'InE1')
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'InE1')
+            call UnitMakeAbilityPermanent(u,false,'InE1')
+            call UnitRemoveAbility(u,'InE1')
             call ShowAbility2('A0UK',true)
             call ShowAbility2('A0UQ',true)
-            call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S141')
-            call IssueImmediateOrder(LoadUnitHandle(HH,MUIHandle(),CasterHash), "bearform")
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S141')
+            call UnitAddAbility(u, 'S141')
+            call IssueImmediateOrder(u, "bearform")
+            call UnitRemoveAbility(u, 'S141')
         endif
         if TransfID==16 then
-            call UnitMakeAbilityPermanent(LoadUnitHandle(HH,MUIHandle(),CasterHash),false,'GrG1')
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'GrG1')
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'B06U')
+            call UnitMakeAbilityPermanent(u,false,'GrG1')
+            call UnitRemoveAbility(u,'GrG1')
+            call UnitRemoveAbility(u,'B06U')
             call ShowAbility2('A1EF', true)
         endif
         if TransfID==17 then
-            call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S151')
-            call IssueImmediateOrder(LoadUnitHandle(HH,MUIHandle(),CasterHash), "bearform")
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S151')
+            call UnitAddAbility(u, 'S151')
+            call IssueImmediateOrder(u, "bearform")
+            call UnitRemoveAbility(u, 'S151')
         endif
         if TransfID==18 then
-            call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S161')
-            call IssueImmediateOrder(LoadUnitHandle(HH,MUIHandle(),CasterHash), "bearform")
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S161')
+            call UnitAddAbility(u, 'S161')
+            call IssueImmediateOrder(u, "bearform")
+            call UnitRemoveAbility(u, 'S161')
         endif
         if TransfID==19 then
-            call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S171')
-            call IssueImmediateOrder(LoadUnitHandle(HH,MUIHandle(),CasterHash), "bearform")
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S171')
+            call UnitAddAbility(u, 'S171')
+            call IssueImmediateOrder(u, "bearform")
+            call UnitRemoveAbility(u, 'S171')
         endif
         if TransfID==20 then
-            call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S181')
-            call IssueImmediateOrder(LoadUnitHandle(HH,MUIHandle(),CasterHash), "bearform")
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S181')
+            call UnitAddAbility(u, 'S181')
+            call IssueImmediateOrder(u, "bearform")
+            call UnitRemoveAbility(u, 'S181')
         endif
         if TransfID==21 then
-            call UnitAddAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S191')
-            call IssueImmediateOrder(LoadUnitHandle(HH,MUIHandle(),CasterHash), "bearform")
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash), 'S191')
+            call UnitAddAbility(u, 'S191')
+            call IssueImmediateOrder(u, "bearform")
+            call UnitRemoveAbility(u, 'S191')
         endif
         if TransfID==22 then
-            call UnitMakeAbilityPermanent(LoadUnitHandle(HH,MUIHandle(),CasterHash),false,'ToE1')
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'ToE1')
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'ToE2')
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'ToE3')
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'ToE4')
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'ToE5')
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'ToE6')
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'B03C')
+            call UnitMakeAbilityPermanent(u,false,'ToE1')
+            call UnitRemoveAbility(u,'ToE1')
+            call UnitRemoveAbility(u,'ToE2')
+            call UnitRemoveAbility(u,'ToE3')
+            call UnitRemoveAbility(u,'ToE4')
+            call UnitRemoveAbility(u,'ToE5')
+            call UnitRemoveAbility(u,'ToE6')
+            call UnitRemoveAbility(u,'B03C')
             call ShowAbility2('A0JA', true)
         endif
         if TransfID==23 then
-            call UnitMakeAbilityPermanent(LoadUnitHandle(HH,MUIHandle(),CasterHash),false,'IsiT')
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'IsiT')
-            call SetUnitVertexColor(LoadUnitHandle(HH,MUIHandle(),CasterHash),255,255,255,255)
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'A0Z8')
+            call UnitMakeAbilityPermanent(u,false,'IsiT')
+            call UnitRemoveAbility(u,'IsiT')
+            call SetUnitVertexColor(u,255,255,255,255)
+            call UnitRemoveAbility(u,'A0Z8')
             call ShowAbility2('A0TF', true)
         endif
         if TransfID==24 then
-            call UnitMakeAbilityPermanent(LoadUnitHandle(HH,MUIHandle(),CasterHash),false,'LuG3')
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'LuG3')
+            call UnitMakeAbilityPermanent(u,false,'LuG3')
+            call UnitRemoveAbility(u,'LuG3')
             call ShowAbility2('A01O', true)
         endif
         if TransfID==25 then
-            call UnitMakeAbilityPermanent(LoadUnitHandle(HH,MUIHandle(),CasterHash),false,'LmE1')
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'LmE1')
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'LmE2')
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'LmE3')
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'LmE4')
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'LmE5')
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'LmE6')
-            call UnitRemoveAbility(LoadUnitHandle(HH,MUIHandle(),CasterHash),'B05Y')
+            call UnitMakeAbilityPermanent(u,false,'LmE1')
+            call UnitRemoveAbility(u,'LmE1')
+            call UnitRemoveAbility(u,'LmE2')
+            call UnitRemoveAbility(u,'LmE3')
+            call UnitRemoveAbility(u,'LmE4')
+            call UnitRemoveAbility(u,'LmE5')
+            call UnitRemoveAbility(u,'LmE6')
+            call UnitRemoveAbility(u,'B05Y')
             call ShowAbility2('A168', true)
         endif
-        call CheckUnitBonusRange(LoadUnitHandle(HH,MUIHandle(),CasterHash))
+        call CheckUnitBonusRange(u)
     endif
     call Clear(id)
 endif
-if IsUnitPaused(LoadUnitHandle(HH,MUIHandle(),CasterHash))==false and IsUnitHidden(LoadUnitHandle(HH,MUIHandle(),CasterHash))==false and GetUnitAbilityLevel(LoadUnitHandle(HH,MUIHandle(),CasterHash),'Pet1')==0 then
+if IsUnitPaused(u)==false and IsUnitHidden(u)==false and GetUnitAbilityLevel(u,'Pet1')==0 then
     call SaveInteger(HH,id,TIME_HASH, time - 1)
 endif
+set u=null
 endfunction
 
 function TransformationStart takes unit a returns nothing
@@ -165619,7 +166130,7 @@ function SpellAct takes nothing returns nothing
 local integer id = GetSpellAbilityId()
 if id == 'AFUP' then
 call GoldenFriezaStart(GetTriggerUnit())
-elseif id == 'A07U' or id == 'A1D2' or id == 'A068' or id == 'A0LY' or id == 'A1OX' or id == 'A0OX' or id == 'A03N' or id == 'A119' or id == 'A0GE' or id == 'A0PD' or id == 'A0KP' or id == 'A0CI' or id == 'LCE1' or id == 'A1DX' or id == 'A0UN' or id == 'A1EF' or id == 'A0PR' or id == 'A0BT' or id == 'A0BZ' or id == 'A1EG' or id == 'A0C8' or id=='A0JA' or id=='A0TF' or id=='A01O' or id=='A168' then
+elseif id == 'A07U' or id == 'A1D2' or id == 'A0LY' or id == 'A1OX' or id == 'A0OX' or id == 'A03N' or id == 'A119' or id == 'A0GE' or id == 'A0PD' or id == 'A0KP' or id == 'A0CI' or id == 'LCE1' or id == 'A1DX' or id == 'A0UN' or id == 'A1EF' or id == 'A0PR' or id == 'A0BT' or id == 'A0BZ' or id == 'A1EG' or id == 'A0C8' or id=='A0JA' or id=='A0TF' or id=='A01O' or id=='A168' then
 call TransformationStart(GetTriggerUnit())
 elseif id == 'CS01' then
 call EDantesStart(GetTriggerUnit())
@@ -172883,20 +173394,51 @@ if UnitHasItemOfTypeBJCustom(Hero[GetPlayerId(GetTriggerPlayer())],'IMDi') and I
         set lp=lp+1
     endloop
     if IsAbilityOnCooldown(GetUnitAbility(Hero[i],'IMDs'))==false and IsUnitPaused(Hero[i])==false and (GetUnitAbilityLevel(Hero[i],'A3BJ')>0 or GetTriggerPlayerKey()==OSKEY_OEM_3 )then
-        call UnitRemoveBuffs(Hero[i],false,true)
-        call UnitRemoveAbility(Hero[i], 'cbc3')
-        call UnitRemoveAbility(Hero[i], 'cbc7')
-        call UnitRemoveAbility(Hero[i], 'CBC2')
-        call UnitRemoveAbility(Hero[i], 'Bslo')
-        call UnitRemoveAbility(Hero[i], 'Bsl1')
-        call UnitRemoveAbility(Hero[i], 'WAE1')
-        call UnitRemoveAbility(Hero[i], 'Ao53')
-        call UnitRemoveAbility(Hero[i], 'A00D')
-        call UnitRemoveAbility(Hero[i], 'Ao2Z')
-        call UnitRemoveAbility(Hero[i], 'A1VJ')
-        call UnitRemoveAbility(Hero[i], 'A3BJ')
-        call SetUnitMoveSpeed(Hero[i], GetUnitDefaultMoveSpeed(Hero[i]))
-        call UnitUseItem(Hero[i],UnitItemInSlot(Hero[i],ind))
+        if udg_DM[i+1]!=null then
+            call UnitRemoveBuffs(Hero[i],false,true)
+            call UnitRemoveAbility(Hero[i], 'cbc3')
+            call UnitRemoveAbility(Hero[i], 'cbc7')
+            call UnitRemoveAbility(Hero[i], 'CBC2')
+            call UnitRemoveAbility(Hero[i], 'Bslo')
+            call UnitRemoveAbility(Hero[i], 'Bsl1')
+            call UnitRemoveAbility(Hero[i], 'WAE1')
+            call UnitRemoveAbility(Hero[i], 'Ao53')
+            call UnitRemoveAbility(Hero[i], 'A00D')
+            call UnitRemoveAbility(Hero[i], 'Ao2Z')
+            call UnitRemoveAbility(Hero[i], 'A1VJ')
+            call UnitRemoveAbility(Hero[i], 'A3BJ')
+            call SetUnitMoveSpeed(Hero[i], GetUnitDefaultMoveSpeed(Hero[i]))
+            call UnitUseItem(Hero[i],UnitItemInSlot(Hero[i],ind))
+            call UnitRemoveBuffs(udg_DM[i+1],false,true)
+            call UnitRemoveAbility(udg_DM[i+1], 'cbc3')
+            call UnitRemoveAbility(udg_DM[i+1], 'cbc7')
+            call UnitRemoveAbility(udg_DM[i+1], 'CBC2')
+            call UnitRemoveAbility(udg_DM[i+1], 'Bslo')
+            call UnitRemoveAbility(udg_DM[i+1], 'Bsl1')
+            call UnitRemoveAbility(udg_DM[i+1], 'WAE1')
+            call UnitRemoveAbility(udg_DM[i+1], 'Ao53')
+            call UnitRemoveAbility(udg_DM[i+1], 'A00D')
+            call UnitRemoveAbility(udg_DM[i+1], 'Ao2Z')
+            call UnitRemoveAbility(udg_DM[i+1], 'A1VJ')
+            call UnitRemoveAbility(udg_DM[i+1], 'A3BJ')
+            call SetUnitMoveSpeed(udg_DM[i+1], GetUnitDefaultMoveSpeed(udg_DM[i+1]))
+            call UnitUseItem(udg_DM[i+1],UnitItemInSlot(udg_DM[i+1],ind))
+        else
+            call UnitRemoveBuffs(Hero[i],false,true)
+            call UnitRemoveAbility(Hero[i], 'cbc3')
+            call UnitRemoveAbility(Hero[i], 'cbc7')
+            call UnitRemoveAbility(Hero[i], 'CBC2')
+            call UnitRemoveAbility(Hero[i], 'Bslo')
+            call UnitRemoveAbility(Hero[i], 'Bsl1')
+            call UnitRemoveAbility(Hero[i], 'WAE1')
+            call UnitRemoveAbility(Hero[i], 'Ao53')
+            call UnitRemoveAbility(Hero[i], 'A00D')
+            call UnitRemoveAbility(Hero[i], 'Ao2Z')
+            call UnitRemoveAbility(Hero[i], 'A1VJ')
+            call UnitRemoveAbility(Hero[i], 'A3BJ')
+            call SetUnitMoveSpeed(Hero[i], GetUnitDefaultMoveSpeed(Hero[i]))
+            call UnitUseItem(Hero[i],UnitItemInSlot(Hero[i],ind))
+        endif
     elseif IsAbilityOnCooldown(GetUnitAbility(Hero[i],'A12B'))==false and IsUnitPaused(Hero[i])==false and GetUnitAbilityLevel(Hero[i],'A3BJ')==0 then
         call UnitAddAbility(Hero[i],'A3BJ')
         call UnitRemoveAbilityTimed(Hero[i],'A3BJ',0.4)
@@ -175806,6 +176348,1608 @@ function InitTrig_JirenInt takes nothing returns nothing
     set trig=null
 endfunction
 
+function MoriaG2Cast takes unit u returns nothing
+    local real x=GetUnitX(u)
+    local real y=GetUnitY(u)
+    local player p=GetOwningPlayer(u)
+    local integer i=GetPlayerId(p)+1
+    local real x1=GetUnitX(Hero[i-1])
+    local real y1=GetUnitY(Hero[i-1])
+    call RemoveEffect(AddSpecialEffectTarget("by_wood_effect_yuzhiboyou_unusual_fenshendabaopo_1.mdx", udg_DM[i], "chest"), 0.2, true, CreateTimer())
+    call PauseUnit(u,true)
+    call SetUnitInvulnerable(u,true)
+    call ShikiCloneEffect(u,0.5,1.05,1.25,250)
+    call SaveBoolean(HH,GetHandleId(Hero[i-1]),'MrGR',true)
+    call DestroyEffect(AddSpecialEffect("war3mapImported\\Death Release.mdx",x,y))
+    call DestroyEffect(AddSpecialEffect("war3mapImported\\Death Release.mdx",x1,y1))
+    set p=null
+    set u=null
+endfunction
+
+function MoriaG1AllyCast takes unit u, unit c returns nothing
+local real x=GetUnitX(u)
+local real y=GetUnitY(u)
+local real x1=GetUnitX(c)
+local real y1=GetUnitY(c)
+local player p=GetOwningPlayer(u)
+local integer idc=GetHandleId(c)
+local integer idp=GetHandleId(p)
+local integer j=LoadInteger(HH,idp,VariationGHash)
+local unit l__d=LoadUnitHandle(HH,idp,'ShNT'+j)
+local integer idl__d=GetHandleId(l__d)
+// call SaveBoolean(HH,GetHandleId(c),'ShGv',true)
+if LoadUnitHandle(HH,idp,'ShNT'+j)!=null then
+    call SetHeroStr(l__d,GetHeroStr(l__d,false)-LoadInteger(HH,idp,'ShSA'+j),true)
+    call SetHeroAgi(l__d,GetHeroAgi(l__d,false)-LoadInteger(HH,idp,'ShAA'+j),true)
+    call SetHeroInt(l__d,GetHeroInt(l__d,false)-LoadInteger(HH,idp,'ShIA'+j),true)
+    call SaveInteger(HH,idl__d,'SSG+',LoadInteger(HH,idl__d,'SSG+')-LoadInteger(HH,idp,'ShSA'+j))
+    call SaveInteger(HH,idl__d,'SAG+',LoadInteger(HH,idl__d,'SAG+')-LoadInteger(HH,idp,'ShAA'+j))
+    call SaveInteger(HH,idl__d,'SIG+',LoadInteger(HH,idl__d,'SIG+')-LoadInteger(HH,idp,'ShIA'+j))
+    call MissleMoveMoria(CreateUnit(p,'e22D',GetUnitX(l__d),GetUnitY(l__d),GetRandomReal(0,359)),90,Atan2(GetUnitY(c)-GetUnitY(l__d),GetUnitX(c)-GetUnitX(l__d)),c)
+endif
+call SaveInteger(HH,idc,'SSG+',LoadInteger(HH,idc,'SSG+')+LoadInteger(HH,idp,'ShSA'+j))
+call SaveInteger(HH,idc,'SAG+',LoadInteger(HH,idc,'SAG+')+LoadInteger(HH,idp,'ShAA'+j))
+call SaveInteger(HH,idc,'SIG+',LoadInteger(HH,idc,'SIG+')+LoadInteger(HH,idp,'ShIA'+j))
+call SaveUnitHandle(HH,idp,'ShNT'+j,c)
+call SaveStr(HH,idp,'ShNP'+j,GetUnitName(c))
+call SetHeroStr(c,GetHeroStr(c,false)+LoadInteger(HH,idp,'ShSA'+j),true)
+call SetHeroAgi(c,GetHeroAgi(c,false)+LoadInteger(HH,idp,'ShAA'+j),true)
+call SetHeroInt(c,GetHeroInt(c,false)+LoadInteger(HH,idp,'ShIA'+j),true)
+call DestroyEffect(AddSpecialEffect("war3mapImported\\Death Release.mdx",x1,y1))
+call SetUnitAnimation(u,"stand")
+set u=null
+set l__d=null
+set p=null
+set c=null
+endfunction
+
+function MoriaG1Cast2 takes nothing returns nothing
+local timer t=GetExpiredTimer()
+local integer id=GetHandleId(t)
+local unit u=LoadUnitHandle(HH,id,0)
+local unit c=LoadUnitHandle(HH,id,1)
+local real x=GetUnitX(u)
+local real y=GetUnitY(u)
+local real x1=GetUnitX(c)
+local real y1=GetUnitY(c)
+local real a=Atan2(y1-y,x1-x)
+local real time=LoadReal(HH,id,2)-0.05
+local player p=GetOwningPlayer(u)
+local integer i=0
+local integer l__s=0
+local integer ls=0
+if IsUnitHidden(c)==false and GetUnitAbilityLevel(u, 'CBC2')==0 and GetUnitAbilityLevel(u, 'CBC1')==0 and GetUnitAbilityLevel(u, 'cbc4')==0 and GetUnitAbilityLevel(u, 'cbc6')==0 and GetUnitAbilityLevel(u, 'cbc7')==0 and GetUnitAbilityLevel(u, 'cbc8')==0 and GetUnitAbilityLevel(u, 'cbc9')==0 and GetUnitAbilityLevel(u, 'cbc5')==0 and LoadBoolean(HH,GetHandleId(u),TARGET_ABILITY)==false and LoadBoolean(HH,GetHandleId(u),ChannelHash)==true then
+    if time>0 then
+        if time==1.45 then
+            call SetUnitAnimationByIndex(u,5)
+        endif
+        call SaveReal(HH,id,2,time)
+        call SetUnitFacing(u,a*bj_RADTODEG)
+        call SetUnitXY_1(c,x1-(10+(SquareRootUnit(u,c)/25))*Cos(a),y1-(10+(SquareRootUnit(u,c)/25))*Sin(a),false)
+        if time==0.8 then
+            call DestroyEffect(AddSpecialEffect("war3mapImported\\Death Release.mdx",x,y))
+            set EFF=AddSpecialEffectTarget(GetUnitModel(c), u, "right hand")
+            call SetSpecialEffectVertexColour(EFF,0,0,0,255)
+            call SetSpecialEffectScale(EFF,GetUnitScale(c)*0.4)
+            call SaveEffectHandle(HH,id,7,EFF)
+        endif
+    else
+        call SetSpecialEffectVertexColour(LoadEffectHandle(HH,id,7),0,0,0,0)
+        call RemoveEffect(LoadEffectHandle(HH,id,7), 0.1, false, CreateTimer())
+        call PauseUnit(u,false)
+        if IsUnitType(c, UNIT_TYPE_HERO) and c==Hero[GetPlayerId(GetOwningPlayer(c))] and LoadBoolean(HH,GetHandleId(c),'ShSt')==false and IsUnitIllusion(c)==false and GetUnitTypeId(c)!='H007' and GetUnitTypeId(c)!='Ho13' and GetUnitTypeId(c)!='H34X' and GetUnitTypeId(c)!='H14F' then
+            call SaveBoolean(HH,GetHandleId(c),'ShSt',true)
+            call SaveInteger(HH,GetHandleId(c),'ShSA',R2I(GetHeroStr(c,false)*0.10)+3)
+            call SaveInteger(HH,GetHandleId(c),'ShAA',R2I(GetHeroAgi(c,false)*0.10)+3)
+            call SaveInteger(HH,GetHandleId(c),'ShIA',R2I(GetHeroInt(c,false)*0.10)+3)
+            call SaveImageHandle(HH,GetHandleId(c),'ShIm',GetUnitImage(c,3))
+            call SaveInteger(HH,GetHandleId(p),'ShSn',LoadInteger(HH,GetHandleId(p),'ShSn')+1)
+            call SaveInteger(HH,GetHandleId(p),VariationGHash,LoadInteger(HH,GetHandleId(p),'ShSn'))
+            call SaveUnitHandle(HH,GetHandleId(p),'ShPS'+LoadInteger(HH,GetHandleId(p),'ShSn'),c)
+            call SaveInteger(HH,GetHandleId(p),'ShSA'+LoadInteger(HH,GetHandleId(p),'ShSn'),R2I(GetHeroStr(c,false)*0.10)+3)
+            call SaveInteger(HH,GetHandleId(p),'ShAA'+LoadInteger(HH,GetHandleId(p),'ShSn'),R2I(GetHeroAgi(c,false)*0.10)+3)
+            call SaveInteger(HH,GetHandleId(p),'ShIA'+LoadInteger(HH,GetHandleId(p),'ShSn'),R2I(GetHeroInt(c,false)*0.10)+3)
+            call SaveStr(HH,GetHandleId(p),'ShNP'+LoadInteger(HH,GetHandleId(p),'ShSn'),"Nowhere")
+            call SetHeroStr(c,GetHeroStr(c,false)-LoadInteger(HH,GetHandleId(c),'ShSA'),true)
+            call SetHeroAgi(c,GetHeroAgi(c,false)-LoadInteger(HH,GetHandleId(c),'ShAA'),true)
+            call SetHeroInt(c,GetHeroInt(c,false)-LoadInteger(HH,GetHandleId(c),'ShIA'),true)
+            call SetControlToUnit(u,c, 2, "stun")
+            call SetControlToUnit(u,c, 4, "sleep")
+            set bjLCE=AddSpecialEffect("123 (136)1.mdl",x1,y1)
+            call SetSpecialEffectScale(bjLCE,1.1)
+            call SetSpecialEffectTimeScale(bjLCE,0.4)
+            call DestroyEffect(bjLCE)
+            call SetImageRender(GetUnitImage(c,3),false)
+            call SetImageRenderAlways(GetUnitImage(c,3),false)
+            call ShowImage(GetUnitImage(c,3),false)
+            call SetUnitImage(c,3,CreateImageSimple("",0,0,0,0,0,3))
+        endif
+        call SetUnitAnimation(u,"stand")
+        call SetUnitTimeScale(u,1)
+        call DestroyTimer(t)
+        call SaveBoolean(HH,GetHandleId(u),ChannelHash,false)
+        call FlushChildHashtable(HH,id)
+    endif
+else
+    call SetUnitAnimation(u,"stand")
+    if LoadEffectHandle(HH,id,7)!=null then
+        call SetSpecialEffectVertexColour(LoadEffectHandle(HH,id,7),0,0,0,0)
+        call RemoveEffect(LoadEffectHandle(HH,id,7), 0.1, false, CreateTimer())
+    endif
+    call SetUnitTimeScale(u,1)
+    call PauseUnit(u,false)
+    call SaveBoolean(HH,GetHandleId(u),ChannelHash,false)
+    call DestroyTimer(t)
+    call FlushChildHashtable(HH,id)
+endif
+set p=null
+set c=null
+set u=null
+set t=null
+endfunction
+function MoriaG1Cast takes unit u, unit c returns nothing
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+local real x=GetUnitX(u)
+local real y=GetUnitY(u)
+local real x1=GetUnitX(c)
+local real y1=GetUnitY(c)
+local real a=Atan2(y1-y,x1-x)
+local player p=GetOwningPlayer(u)
+call SaveUnitHandle(HH,id,0,u)
+call SaveUnitHandle(HH,id,1,c)
+call PauseUnit(u,true)
+set soundplay=CreateSound("Sound\\Music\\mp3Music\\MoriaG.mp3",false,false,true,12700,12700,"")
+call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
+call SaveReal(HH,id,2,1.5)
+call SetUnitTimeScale(u,4)
+call SaveBoolean(HH,GetHandleId(u),ChannelHash,true)
+call TimerStart(t,0.05,true,function MoriaG1Cast2)
+set u=null
+set t=null
+set c=null
+set p=null
+endfunction
+
+function MoriaF2Cast takes unit u returns nothing
+    local real x=GetUnitX(u)
+    local real y=GetUnitY(u)
+    local player p=GetOwningPlayer(u)
+    local integer i=GetPlayerId(p)+1
+    local real x1=GetUnitX(udg_DM[i])
+    local real y1=GetUnitY(udg_DM[i])
+    if udg_DM[i]!=null then
+        if u==udg_DM[i] then
+            set x1=GetUnitX(Hero[i-1])
+            set y1=GetUnitY(Hero[i-1])
+            call SetUnitXY_1(u,x1,y1, false)
+            call SetUnitX(Hero[i-1],x)
+            call SetUnitY(Hero[i-1],y)
+            call IssueImmediateOrder(u,"stop")
+            call IssueImmediateOrder(Hero[i-1],"stop")
+            call SaveBoolean(HH,GetHandleId(Hero[i-1]),ChannelHash,false)
+            // call SetWidgetMana(Hero[i],GetWidgetMana(Hero[i])-100)
+        else
+            call SetUnitXY_1(u,x1,y1, false)
+            call SetUnitX(udg_DM[i],x)
+            call SetUnitY(udg_DM[i],y)
+            call IssueImmediateOrder(u,"stop")
+            call IssueImmediateOrder(udg_DM[i],"stop")
+            // call SetWidgetMana(udg_DM[i],GetWidgetMana(udg_DM[i])-100)
+        endif
+        call UnitApplyTimedLife(CreateUnit(p,'e025',x,y,GetRandomReal(0,359)),'BTLF',2)
+        call UnitApplyTimedLife(CreateUnit(p,'e025',x1,y1,GetRandomReal(0,359)),'BTLF',2)
+        call UnitApplyTimedLife(CreateUnit(p,'e025',x,y,GetRandomReal(0,359)),'BTLF',2)
+        call UnitApplyTimedLife(CreateUnit(p,'e025',x1,y1,GetRandomReal(0,359)),'BTLF',2)
+        call DestroyEffect(AddSpecialEffect("war3mapImported\\Death Release.mdx",x,y))
+        call DestroyEffect(AddSpecialEffect("war3mapImported\\Death Release.mdx",x1,y1))
+    endif
+    set p=null
+    set u=null
+endfunction
+
+function CloneAddCDMoria takes unit caster,unit n000 returns nothing
+    local integer i=0
+    call SetUnitFlyHeight(n000,GetUnitFlyHeight(caster),0)
+    // call UnitAddAbility(n000,'AST2')
+    call SetHeroLevel(n000,GetHeroLevel(caster),false)
+    call SetUnitPathing(n000,true)
+    call SetHeroAgi(n000,GetHeroAgi(caster,false),true)
+    call SetHeroStr(n000,GetHeroStr(caster,false),true)
+    call SetHeroInt(n000,GetHeroInt(caster,false),true)
+    loop
+        exitwhen i>=10
+        if GetItemTypeId(UnitItemInSlot(caster,i))!='Io39' then
+            call UnitAddItemToSlotById(n000, GetItemTypeId(UnitItemInSlot(caster,i) )  , i)
+            call SetItemDroppable(UnitItemInSlot(n000,i),false)
+            call StartItemCooldown(UnitItemInSlot(n000,i),GetItemRemainingCooldown(UnitItemInSlot(caster,i)))
+        endif
+        set i=i+1
+    endloop
+
+    // if GetUnitAbilityLevel(caster,'ASG3')>0 then
+    //     call UnitAddAbility(n000,'ASG3')
+    //     call SetUnitAbilityLevel(n000,'ASG3',GetUnitAbilityLevel(caster,'ASG3'))
+    // endif
+    if GetUnitAbilityLevel(caster,'MrQ1')>0 then
+        call UnitAddAbility(n000,'MrQ1')
+        call SetUnitAbilityLevel(n000,'MrQ1',GetUnitAbilityLevel(caster,'MrQ1'))
+    endif
+    if GetUnitAbilityLevel(caster,'MrW1')>0 then
+        call UnitAddAbility(n000,'MrW1')
+        call SetUnitAbilityLevel(n000,'MrW1',GetUnitAbilityLevel(caster,'MrW1'))
+    endif
+    if GetUnitAbilityLevel(caster,'MrE1')>0 then
+        call UnitAddAbility(n000,'MrE1')
+        call SetUnitAbilityLevel(n000,'MrE1',GetUnitAbilityLevel(caster,'MrE1'))
+    endif
+    if GetUnitAbilityLevel(caster,'MrR1')>0 then
+        call UnitAddAbility(n000,'MrR1')
+        call SetUnitAbilityLevel(n000,'MrR1',GetUnitAbilityLevel(caster,'MrR1'))
+    endif
+
+    if GetAbilityCooldown(GetUnitAbility(caster, 'MrQ1'))>0 then
+        call StartAbilityCooldown(GetUnitAbility(n000, 'MrQ1'), GetAbilityRemainingCooldown(GetUnitAbility(caster, 'MrQ1')))
+    endif
+
+    if GetAbilityCooldown(GetUnitAbility(caster, 'MrW1'))>0 then
+        call StartAbilityCooldown(GetUnitAbility(n000, 'MrW1'), GetAbilityRemainingCooldown(GetUnitAbility(caster, 'MrW1')))
+    endif
+
+    if GetAbilityCooldown(GetUnitAbility(caster, 'MrE1'))>0 then
+        call StartAbilityCooldown(GetUnitAbility(n000, 'MrE1'), GetAbilityRemainingCooldown(GetUnitAbility(caster, 'MrE1')))
+    endif
+
+    if GetAbilityCooldown(GetUnitAbility(caster, 'MrR1'))>0 then
+        call StartAbilityCooldown(GetUnitAbility(n000, 'MrR1'), GetAbilityRemainingCooldown(GetUnitAbility(caster, 'MrR1')))
+    endif
+    // if GetAbilityCooldown(GetUnitAbility(caster, 'ASR1'))>0 then
+    //     call StartAbilityCooldown(GetUnitAbility(n000, 'ASR1'), GetAbilityRemainingCooldown(GetUnitAbility(caster, 'ASR1')))
+    // endif
+
+    // if GetAbilityCooldown(GetUnitAbility(caster, 'ASF1'))>0 then
+    //     call StartAbilityCooldown(GetUnitAbility(n000, 'ASF1'), GetAbilityRemainingCooldown(GetUnitAbility(caster, 'ASF1')))
+    // endif
+
+    // if GetAbilityCooldown(GetUnitAbility(caster, 'ASG1'))>0 then
+    //     call StartAbilityCooldown(GetUnitAbility(n000, 'ASG1'), GetAbilityRemainingCooldown(GetUnitAbility(caster, 'ASG1')))
+    // endif
+    call SetUnitState(n000,UNIT_STATE_LIFE,GetUnitState(caster,UNIT_STATE_LIFE))
+    call SetUnitState(n000,UNIT_STATE_MANA,GetUnitState(caster,UNIT_STATE_MANA))
+    set n000=null
+    set caster=null
+endfunction
+function MoriaF1Cast2 takes nothing returns nothing
+local timer t=GetExpiredTimer()
+local integer id=GetHandleId(t)
+local unit u=LoadUnitHandle(h,id,0)
+local real x=GetUnitX(u)
+local real y=GetUnitY(u)
+local player p=GetOwningPlayer(u)
+local integer i=0
+local integer idp=GetPlayerId(p)+1
+// call SetUnitLifeRegen(udg_DM[GetPlayerId(GetOwningPlayer(u))+1],GetUnitLifeRegen(u)*2)
+call SetUnitState(udg_DM[idp],UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA))
+call SetHeroAgi(udg_DM[idp],GetHeroAgi(u,false),true)
+call SetHeroStr(udg_DM[idp],GetHeroStr(u,false),true)
+call SetHeroInt(udg_DM[idp],GetHeroInt(u,false),true)
+if LoadBoolean(HH,GetHandleId(udg_DM[idp]),'ItCh')==true then
+    if GetUnitAbilityLevel(udg_DM[idp],'cbc5')>0 then
+        call EnableUnitAbility2(udg_DM[idp],'AInv',false,true)
+    endif
+    loop
+        exitwhen i>=10
+        call SetItemDroppable(UnitItemInSlot(udg_DM[idp],i),true)
+        call RemoveItem(UnitRemoveItemFromSlot(udg_DM[idp],i))
+        set i=i+1
+    endloop
+    set i=0
+    loop
+        exitwhen i>=10
+        call UnitAddItemToSlotById(udg_DM[idp], GetItemTypeId(UnitItemInSlot(u,i) )  , i)
+        call SetItemDroppable(UnitItemInSlot(udg_DM[idp],i),false)
+        call StartItemCooldown(UnitItemInSlot(udg_DM[idp],i),GetItemRemainingCooldown(UnitItemInSlot(u,i)))
+        set i=i+1
+    endloop
+    if GetUnitAbilityLevel(udg_DM[idp],'cbc5')>0 then
+        call EnableUnitAbility2(udg_DM[idp],'AInv',false,true)
+    endif
+    call SaveBoolean(HH,GetHandleId(udg_DM[idp]),'ItCh',false)
+endif
+if udg_B==false or UnitIsAlive(u)==false or UnitIsAlive(udg_DM[idp])==false then
+    call SaveReal(HH,GetHandleId(udg_DM[idp]),TextTagTimeHash,-0.03)
+    call SaveReal(HH,GetHandleId(udg_DM[idp]),TextTagHealTimeHash,-0.03)
+    call MyRemoveUnit(udg_DM[idp],0.5)
+    //call FlushChildHashtable(HH,GetHandleId(udg_DM[idp]))
+    if udg_B and UnitIsAlive(u)==true then
+        if LoadBoolean(HH,GetHandleId(u),'MrGR')==false and LoadBoolean(HH,GetHandleId(u),'MrTR')==false then
+            if GetUnitState(u,UNIT_STATE_LIFE)>GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.3 + 300 then
+                call SetUnitState(u,UNIT_STATE_LIFE,GetUnitState(u,UNIT_STATE_LIFE)-(GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.3 + 300))
+            else
+                call SetUnitState(u,UNIT_STATE_LIFE,1)
+            endif
+            call SetControlToUnit(u,u,5,"doom")
+            call Essence(u,u,5)
+            call DestroyEffect(AddSpecialEffect("war3mapImported\\Death Release.mdx",x,y))
+            call StartAbilityCooldown(GetUnitAbility(u,'MrF1'),40)
+        else
+            call SaveBoolean(HH,GetHandleId(u),'MrGR',false)
+            call StartAbilityCooldown(GetUnitAbility(u,'MrF1'),10)
+        endif
+    endif
+    call UnitRemoveAbility(u,'MrF2')
+    call ShowAbility2('MrF1',true)
+    call PauseTimer(t)
+    call DestroyTimer(t)
+    call FlushChildHashtable(h,id)
+endif
+set u=null
+set p=null
+set t=null
+endfunction
+function MoriaF1Cast takes unit u returns nothing
+local real x=GetUnitX(u)
+local real y=GetUnitY(u)
+local player p=GetOwningPlayer(u)
+local timer t=CreateTimer()
+local integer uid=GetHandleId(t)
+// local integer lvl=GetUnitAbilityLevel(u,'MrF1')
+local integer id=GetPlayerId(p)+1
+if udg_DM[id]!=null then
+call RemoveUnit(udg_DM[id])
+endif
+// if lvl==1 then
+set udg_DM[id]=CreateUnit(p,'H00Q',x,y,GetUnitFacing(u))
+// elseif lvl==2 then
+// set udg_DM[id]=CreateUnit(p,'h00R',x,y,GetUnitFacing(u))
+// elseif lvl==3 then
+// set udg_DM[id]=CreateUnit(p,'h00S',x,y,GetUnitFacing(u))
+// elseif lvl==4 then
+// set udg_DM[id]=CreateUnit(p,'h00T',x,y,GetUnitFacing(u))
+// elseif lvl==5 then
+// set udg_DM[id]=CreateUnit(p,'h00U',x,y,GetUnitFacing(u))
+// endif
+call UnitInventorySetSize(udg_DM[id],10)
+call UnitEnableInventoryCustom(udg_DM[id],false,false)
+call CloneAddCDMoria(u,udg_DM[id])
+call ShowAbility2('MrF1',false)
+call UnitAddAbility(u,'MrF2')
+call UnitMakeAbilityPermanent(u,true,'MrF2')
+call SaveUnitHandle(h,uid,0,u)
+call UnitApplyTimedLife(CreateUnit(p,'e025',x,y,GetRandomReal(0,359)),'BTLF',2)
+call UnitApplyTimedLife(CreateUnit(p,'e026',x,y,GetRandomReal(0,359)),'BTLF',2)
+call DestroyEffect(AddSpecialEffect("war3mapImported\\Death Release.mdx",x,y))
+set soundplay=CreateSound("Sound\\Music\\mp3Music\\Doppelman.mp3",false,false,true,12700,12700,"")
+call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
+call TimerStart(t,0.33,true,function MoriaF1Cast2)
+set u=null
+set t=null
+set p=null
+endfunction
+
+function SlashBrickBat2 takes nothing returns nothing
+local timer t=GetExpiredTimer()
+local integer id=GetHandleId(t)
+local unit l__d=LoadUnitHandle(h,id,0)
+local player p=GetOwningPlayer(l__d)
+local unit u=Hero[GetPlayerId(p)]
+local real speed=LoadReal(h,id,1)
+local real x=LoadReal(h,id,3)
+local real y=LoadReal(h,id,4)
+local real x1=GetUnitX(l__d)
+local real y1=GetUnitY(l__d)
+local real f=GetUnitFacing(l__d)
+local real a=LoadReal(h,id,2)
+local real Range=LoadReal(h,id,9)
+if Range>0 then
+    call SetUnitXY_1(l__d,x1+speed*Cos(a),y1+speed*Sin(a), false)
+    call SaveReal(h,id,9,Range-speed)
+    call SetUnitFacingInstant(l__d,a*bj_RADTODEG)
+    if LoadUnitHandle(h,id,10)!=null then
+        if LoadUnitHandle(h,GetHandleId(LoadUnitHandle(h,id,10)),'mrqt')!=null and LoadUnitHandle(h,id,11)==null then
+            call SaveUnitHandle(h,id,11,LoadUnitHandle(h,GetHandleId(LoadUnitHandle(h,id,10)),'mrqt'))
+            call SaveReal(h,id,2,Atan2(GetUnitY(LoadUnitHandle(h,id,11))-y1,GetUnitX(LoadUnitHandle(h,id,11))-x1))
+        elseif LoadUnitHandle(h,id,11)!=null then
+            if SquareRootUnit(LoadUnitHandle(h,id,11),l__d)<100 then   
+                call SaveReal(h,id,9,0)
+                call UnitApplyTimedLife(l__d,'BTLF',0.1)
+            endif
+        endif
+    endif
+else
+    if IsUnitAlive(l__d) then
+        call UnitApplyTimedLife(l__d,'BTLF',0.1)
+    endif
+    call FlushChildHashtable(h,id)
+    call PauseTimer(t)
+    call DestroyTimer(t)
+endif
+set u=null
+set p=null
+set t=null
+set l__d=null
+endfunction
+function SlashBrickBat takes unit l__d,real speed,real angle,real range, unit orig returns nothing
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+call SaveUnitHandle(h,id,0,l__d)
+call SaveReal(h,id,1,speed)
+call SaveReal(h,id,2,angle)
+call SaveReal(h,id,3,GetUnitX(l__d))
+call SaveReal(h,id,4,GetUnitY(l__d))
+call SaveReal(h,id,9,range)
+if orig!=null then
+call SaveUnitHandle(h,id,10,orig)
+endif
+call TimerStart(t,0.03,true,function SlashBrickBat2)
+set t=null
+endfunction
+function MoriaQCast3 takes nothing returns nothing
+    local timer t=GetExpiredTimer()
+    local integer id=GetHandleId(t)
+    local unit u=LoadUnitHandle(h,id,0)
+    local unit l__d=LoadUnitHandle(h,id,7)
+    local real a=LoadReal(h,id,11)
+    local real dist=LoadReal(h,id,2)
+    local real x=GetUnitX(l__d)+65*Cos(a)
+    local real y=GetUnitY(l__d)+65*Sin(a)
+    local real x1=LoadReal(h,id,22)
+    local real y1=LoadReal(h,id,23)
+    local real dmg=LoadReal(h,id,4)
+    local player p=GetOwningPlayer(u)
+    local group g=LoadGroupHandle(h,id,12)
+    local real s1=LoadReal(h,id,10)
+    local real time=LoadReal(h,id,15)
+    if dist>0 and RectContainsUnit(GetWorldBounds(),l__d)and UnitIsAlive(l__d)then
+        if dist>900 then
+            call SlashBrickBat(CreateUnit(p,'e027',x1+100*Cos(a)+GetRandomReal(-150,150)*Cos(GetRandomReal(0,359)*bj_DEGTORAD),y1+100*Sin(a)+GetRandomReal(-150,150)*Sin(GetRandomReal(0,359)*bj_DEGTORAD),0),40,a,1200,l__d)
+            call SlashBrickBat(CreateUnit(p,'e027',x1+100*Cos(a)+GetRandomReal(-150,150)*Cos(GetRandomReal(0,359)*bj_DEGTORAD),y1+100*Sin(a)+GetRandomReal(-150,150)*Sin(GetRandomReal(0,359)*bj_DEGTORAD),0),40,a,1200,l__d)
+        endif
+        if GetUnitTypeId(u)=='H00Q' then
+            call PauseUnit(u,true)
+            call SetUnitInvulnerable(u,true)
+        endif
+        call SetUnitXY_1(l__d,x,y, false)
+        call SetUnitXY_1(u,GetUnitX(l__d),GetUnitY(l__d), false)
+        call GroupEnumUnitsInRange(g,x,y,200,Base)
+        set idg=GetHandleId(g)
+        call SaveReal(h,id,2,dist-65)
+        loop
+            set E=FirstOfGroup(g)
+            set ide=GetHandleId(E)
+            if Condition_Base(p,E)and LoadUnitHandle(h,idg,ide)!=E then
+                if IsUnitInvulnerable(E)==false then
+                    call myCustomDamage(u,E,dmg,false,false,null,null,null)
+                    call UnitAddAbility(E,'Ao53')
+                    call UnitRemoveAbilityTimedPause(E,'Ao53',2)
+                    call UnitAddAbility(E,'Ao3Z')
+                    call UnitRemoveAbilityTimedPause(E,'Ao3Z',2)
+                    call SetControlToUnit(u,E,2,"silence")
+                    call RemoveEffect(AddSpecialEffectTarget("war3mapImported\\bat.mdl", E, "chest"), 2, true, CreateTimer())
+                    call RemoveEffect(AddSpecialEffectTarget("war3mapImported\\bat.mdl", E, "head"), 2, true, CreateTimer())
+                    call RemoveEffect(AddSpecialEffectTarget("war3mapImported\\bat.mdl", E, "weapon"), 2, true, CreateTimer())
+                    call RemoveEffect(AddSpecialEffectTarget("war3mapImported\\bat.mdl", E, "left hand"), 2, true, CreateTimer())
+                    call RemoveEffect(AddSpecialEffectTarget("war3mapImported\\bat.mdl", E, "right hand"), 2, true, CreateTimer())
+                    // if GetUnitTypeId(u)=='H00Q' then
+                    //     call SetControlToUnit(u,E,1,"stun")
+                        call SetUnitXY_1(u,GetUnitX(E)+100*Cos(a),GetUnitY(E)+100*Cos(a), false)
+                        call SetUnitFacingInstant(u,Atan2(GetUnitY(u)-GetUnitY(E),GetUnitX(u)-GetUnitX(E))*bj_RADTODEG)
+                    // endif
+                    call SaveReal(h,id,2,0)
+                    call SaveUnitHandle(h,GetHandleId(l__d),'mrqt',E)
+                endif
+                call SaveUnitHandle(h,idg,ide,E)
+            endif
+            call GroupRemoveUnit(g,E)
+            exitwhen E==null
+        endloop
+    else
+        call SaveReal(h,id,15,time+0.05)
+        if time<0.4 then
+                call RemoveEffect(AddSpecialEffectTarget("by_wood_effect_yuzhiboyou_unusual_fenshendabaopo_1.mdx", u, "chest"), 0.2, true, CreateTimer())
+            // if GetUnitTypeId(u)=='H00Q' then
+                if LoadUnitHandle(h,GetHandleId(l__d),'mrqt')==null and time==0.05 then
+                    call SetUnitXY_1(u,GetUnitX(l__d),GetUnitY(l__d), false)
+                endif
+                call SetUnitVertexColor(u,0+R2I(time*70),0+R2I(time*70),0+R2I(time*70),0+R2I(time*70))
+                if time==0.2 then
+                    call PauseUnit(u,false)
+                    call SetUnitInvulnerable(u,false)
+                    call UnitRemoveAbility(u,'A0QL')
+                endif
+            // endif
+        else
+            // if GetUnitTypeId(u)=='H00Q' then
+                call SetUnitVertexColor(u,255,255,255,255)
+            // endif
+            call SetUnitTimeScale(u,1)
+            call FlushChildHashtable(h,GetHandleId(l__d))
+            call RemoveUnit(l__d)
+            call FlushChildHashtable(h,GetHandleId(g))
+            call DestroyGroup(g)
+            call PauseTimer(t)
+            call DestroyTimer(t)
+            call FlushChildHashtable(h,id)
+        endif
+    endif
+    set g=null
+    set u=null
+    set t=null
+    set l__d=null
+    set p=null
+endfunction
+function MoriaQCast2 takes nothing returns nothing
+    local timer t=GetExpiredTimer()
+    local integer id=GetHandleId(t)
+    local unit u=LoadUnitHandle(h,id,0)
+    local unit l__d=LoadUnitHandle(h,id,7)
+    local real x=GetUnitX(u)
+    local real y=GetUnitY(u)
+    local real x1=LoadReal(h,id,5)
+    local real y1=LoadReal(h,id,6)
+    local real a=Atan2(y1-y,x1-x)
+    local player p=GetOwningPlayer(u)
+    local real dmg=LoadReal(h,id,4)
+    local real dist=LoadReal(h,id,2)
+    local real scale=LoadReal(h,id,10)
+    local real time=LoadReal(h,id,17)
+    if time<0.4 then
+        call SaveReal(h,id,17,time+0.1)
+        set n=CreateUnit(p,'e1K9',x,y,GetRandomReal(0,359))
+        call UnitApplyTimedLife(n,'BTLF',0.01)
+        call SetUnitScale(n,0.65,0.65,0.65)
+        call SetUnitVertexColor(n,155,100,200,250)
+        set n=CreateUnit(p,'e1K9',x,y,GetRandomReal(0,359))
+        call UnitApplyTimedLife(n,'BTLF',0.01)
+        call SetUnitScale(n,1,1,1)
+        call SetUnitVertexColor(n,155,100,200,250)
+        call SetUnitInvulnerable(u,true)
+        call PauseUnit(u,true)
+        if time==0.1 then
+            if GetUnitTypeId(u)=='H00P' then
+                call SetUnitAnimationByIndex(u,7)
+            elseif GetUnitTypeId(u)=='H00V' then
+                call SetUnitAnimation(u,"attack")
+            else 
+                call SetUnitAnimation(u,"spell one")
+            endif
+        endif
+        call SetUnitVertexColor(u,255-R2I(time*600),255-R2I(time*600),255-R2I(time*600),255-R2I(time*600))
+    else
+        call SaveReal(h,id,5,x)
+        call SaveReal(h,id,6,y)
+        // if GetUnitTypeId(u)=='H00Q' then
+            call SetUnitVertexColor(u,0,0,0,0)
+            call SetUnitInvulnerable(u,true)
+            call PauseUnit(u,true)
+            call UnitAddAbility(u,'A0QL')
+        // else
+        //     call PauseUnit(u,false)
+        //     call SetUnitInvulnerable(u,false)
+        // endif
+        call SetUnitTimeScale(u,3)
+        call RemoveUnit(l__d)
+        call SaveUnitHandle(h,id,7,CreateUnit(p,'e1VS',x+45*Cos(a),y+45*Sin(a),a*bj_RADTODEG))
+        set n=CreateUnit(p,'e1VI',x+75*Cos(a),y+75*Sin(a),a*bj_RADTODEG)
+        call UnitApplyTimedLife(n,'BTLF',1.5)
+        call SetUnitTimeScale(n,2)
+        call PauseTimer(t)
+        call TimerStart(t,0.05,true,function MoriaQCast3)
+    endif
+    set l__d=null
+    set p=null
+    set u=null
+    set t=null
+endfunction
+function MoriaQCast takes unit u, real x1, real y1 returns nothing
+    local timer t=CreateTimer()
+    local integer id=GetHandleId(t)
+    local player p=GetOwningPlayer(u)
+    local real x=GetUnitX(u)
+    local real y=GetUnitY(u)
+    local real a=Atan2(y1-y,x1-x)
+    call SaveUnitHandle(h,id,0,u)
+    call SaveReal(h,id,5,x1)
+    call SaveReal(h,id,6,y1)
+    call SaveReal(h,id,10,0.05)
+    call SaveReal(h,id,13,0.4)
+    call SaveReal(h,id,14,100)
+    call SaveReal(h,id,15,0)
+    call SaveReal(h,id,11,a)
+    call SetUnitTimeScale(u,0)
+    call SaveReal(h,id,18,6)
+    call SetUnitInvulnerable(u,true)
+    call PauseUnit(u,true)
+    call SaveGroupHandle(h,id,12,CreateGroup())
+    call SetUnitTimeScale(u,0.4)
+    set bjLCE=AddSpecialEffect("Keyesdevilslamita.mdl",x,y)
+    call SetSpecialEffectScale(bjLCE,2)
+    call SetSpecialEffectVertexColour(bjLCE,255,200,200,200)
+    call RemoveEffect(bjLCE,1,true,CreateTimer())
+    // set bjLCE=AddSpecialEffect("nanohacast123.mdl",x+65*Cos(a),y+65*Sin(a))
+    // call SetSpecialEffectZ(bjLCE,150)
+    // //call SetSpecialEffectOrientation(bjLCE , a* bj_RADTODEG,90,0)
+    // call SetSpecialEffectScale(bjLCE,1)
+    // call DestroyEffect(bjLCE)
+    // set bjLCE=AddSpecialEffect("shadowtrap-ny.mdl",x+75*Cos(a),y+75*Sin(a))
+    // call SetSpecialEffectZ(bjLCE,100)
+    // call SetSpecialEffectScale(bjLCE,0.25)
+    // call RemoveEffect(bjLCE,1,true,CreateTimer())
+    set bjLCE=AddSpecialEffect("[spell]hakkestart.mdl",x,y)
+    call SetSpecialEffectScale(bjLCE,1.5)
+    call SetSpecialEffectAlpha(bjLCE,50)
+    call SetSpecialEffectZ(bjLCE,20)
+    call RemoveEffect(bjLCE,1,true,CreateTimer())
+    set bjLCE=AddSpecialEffect("AZ_anyemoW_R.mdx",x,y)
+    call SetSpecialEffectScale(bjLCE,0.3)
+    call SetSpecialEffectZ(bjLCE,60)
+    call RemoveEffect(bjLCE,1,true,CreateTimer())
+    // set bjLCE=AddSpecialEffect("effect_mythic_VoidRiftPurple.mdl",x+95*Cos(a),y+95*Sin(a))
+    // call SetSpecialEffectScale(bjLCE,1.15)
+    // call SetSpecialEffectZ(bjLCE,100)
+    // call SetSpecialEffectOrientation(bjLCE , a* bj_RADTODEG,90,0)
+    // call SetSpecialEffectTimeScale(bjLCE,0.65)
+    // call RemoveEffect(bjLCE,1,true,CreateTimer())
+    call SaveReal(h,id,17,0)
+    call SaveReal(h,id,4,(2+GetUnitAbilityLevel(u,'MrQ1'))*GetHeroInt(u,true))
+    call SaveReal(h,id,22,GetUnitX(u))
+    call SaveReal(h,id,23,GetUnitY(u))
+    call SaveReal(h,id,2,1200)
+    set soundplay=CreateSound("Sound\\Music\\mp3Music\\MoriaQ.mp3",false,false,true,12700,12700,"")
+    call StartSound(soundplay)
+    call KillSoundWhenDone(soundplay)
+    call TimerStart(t,0.1,true,function MoriaQCast2)
+    set u=null
+    set p=null
+    set t=null
+endfunction
+
+function MoriaQSelfCast3 takes nothing returns nothing
+    local timer t=GetExpiredTimer()
+    local integer id=GetHandleId(t)
+    local unit u=LoadUnitHandle(h,id,0)
+    local real maxdist=LoadReal(h,id,2)
+    local real dist=LoadReal(h,id,3)
+    local real x1=LoadReal(h,id,22)
+    local real y1=LoadReal(h,id,23)
+    local real dmg=LoadReal(h,id,4)
+    local player p=GetOwningPlayer(u)
+    local group g=LoadGroupHandle(h,id,12)
+    local real s1=LoadReal(h,id,10)
+    local real time=LoadReal(h,id,15)
+    if dist<maxdist then
+        if dist<500 then
+            call SlashBrickBat(CreateUnit(p,'e027',x1+GetRandomReal(-100,100),y1+GetRandomReal(-100,100),0),65,GetRandomReal(0,359)*bj_DEGTORAD,560,null)
+            call SlashBrickBat(CreateUnit(p,'e027',x1+GetRandomReal(-100,100),y1+GetRandomReal(-100,100),0),65,GetRandomReal(0,359)*bj_DEGTORAD,560,null)
+            call SlashBrickBat(CreateUnit(p,'e027',x1+GetRandomReal(-100,100),y1+GetRandomReal(-100,100),0),65,GetRandomReal(0,359)*bj_DEGTORAD,560,null)
+            call SlashBrickBat(CreateUnit(p,'e027',x1+GetRandomReal(-100,100),y1+GetRandomReal(-100,100),0),65,GetRandomReal(0,359)*bj_DEGTORAD,560,null)
+            call SlashBrickBat(CreateUnit(p,'e027',x1,y1,0),65,GetRandomReal(0,359)*bj_DEGTORAD,560,null)
+            call SlashBrickBat(CreateUnit(p,'e027',x1,y1,0),65,GetRandomReal(0,359)*bj_DEGTORAD,560,null)
+            call SlashBrickBat(CreateUnit(p,'e1VS',x1+GetRandomReal(-100,100),y1+GetRandomReal(-100,100),0),65,GetRandomReal(0,359)*bj_DEGTORAD,560,null)
+            call SlashBrickBat(CreateUnit(p,'e1VS',x1+GetRandomReal(-100,100),y1+GetRandomReal(-100,100),0),65,GetRandomReal(0,359)*bj_DEGTORAD,560,null)
+            call SlashBrickBat(CreateUnit(p,'e1VS',x1,y1,0),65,GetRandomReal(0,359)*bj_DEGTORAD,560,null)
+        endif
+        call GroupEnumUnitsInRange(g,x1,y1,dist,Base)
+        set idg=GetHandleId(g)
+        call SaveReal(h,id,3,dist+65)
+        loop
+            set E=FirstOfGroup(g)
+            set ide=GetHandleId(E)
+            if Condition_Base(p,E)and LoadUnitHandle(h,idg,ide)!=E then
+                if IsUnitInvulnerable(E)==false then
+                    call myCustomDamage(u,E,dmg,false,false,null,null,null)
+                    call UnitAddAbility(E,'Ao53')
+                    call UnitRemoveAbilityTimedPause(E,'Ao53',2)
+                    call UnitAddAbility(E,'Ao3Z')
+                    call UnitRemoveAbilityTimedPause(E,'Ao3Z',2)
+                    call RemoveEffect(AddSpecialEffectTarget("war3mapImported\\bat.mdl", E, "chest"), 2, true, CreateTimer())
+                    call RemoveEffect(AddSpecialEffectTarget("war3mapImported\\bat.mdl", E, "head"), 2, true, CreateTimer())
+                    call RemoveEffect(AddSpecialEffectTarget("war3mapImported\\bat.mdl", E, "weapon"), 2, true, CreateTimer())
+                    call RemoveEffect(AddSpecialEffectTarget("war3mapImported\\bat.mdl", E, "left hand"), 2, true, CreateTimer())
+                    call RemoveEffect(AddSpecialEffectTarget("war3mapImported\\bat.mdl", E, "right hand"), 2, true, CreateTimer())
+                endif
+                call SaveUnitHandle(h,idg,ide,E)
+            endif
+            call GroupRemoveUnit(g,E)
+            exitwhen E==null
+        endloop
+    else
+        call SetUnitInvulnerable(u,false)
+        call PauseUnit(u,false)
+        call SetUnitTimeScale(u,1)
+        call FlushChildHashtable(h,GetHandleId(g))
+        call DestroyGroup(g)
+        call PauseTimer(t)
+        call DestroyTimer(t)
+        call FlushChildHashtable(h,id)
+    endif
+    set g=null
+    set u=null
+    set t=null
+    set p=null
+endfunction
+function MoriaQSelfCast2 takes nothing returns nothing
+    local timer t=GetExpiredTimer()
+    local integer id=GetHandleId(t)
+    local unit u=LoadUnitHandle(h,id,0)
+    local real x=GetUnitX(u)
+    local real y=GetUnitY(u)
+    local player p=GetOwningPlayer(u)
+    local real dmg=LoadReal(h,id,4)
+    local real dist=LoadReal(h,id,2)
+    local real scale=LoadReal(h,id,10)
+    local real time=LoadReal(h,id,17)
+    if time<0.2 then
+        call SaveReal(h,id,17,time+0.1)
+        set n=CreateUnit(p,'e1K9',x,y,GetRandomReal(0,359))
+        call UnitApplyTimedLife(n,'BTLF',0.01)
+        call SetUnitScale(n,0.65,0.65,0.65)
+        call SetUnitVertexColor(n,155,100,200,250)
+        set n=CreateUnit(p,'e1K9',x,y,GetRandomReal(0,359))
+        call UnitApplyTimedLife(n,'BTLF',0.01)
+        call SetUnitScale(n,1,1,1)
+        call SetUnitVertexColor(n,155,100,200,250)
+        call SetUnitInvulnerable(u,true)
+        call PauseUnit(u,true)
+        if time==0.1 then
+            if GetUnitTypeId(u)=='H00P' then
+                call SetUnitAnimationByIndex(u,11)
+            elseif GetUnitTypeId(u)=='H00V' then
+                call SetUnitAnimation(u,"attack")
+            else 
+                call SetUnitAnimation(u,"spell one")
+            endif
+        endif
+        // call SetUnitVertexColor(u,255-R2I(time*60),255-R2I(time*60),255-R2I(time*60),255-R2I(time*60))
+    else
+        // if GetUnitTypeId(u)=='H00Q' then
+        // else
+        //     call PauseUnit(u,false)
+        //     call SetUnitInvulnerable(u,false)
+        // endif
+        set bjLCE=AddSpecialEffect("AZ_anyemoW_R.mdl",x,y)
+        call SetSpecialEffectScale(bjLCE,0.85)
+        call SetSpecialEffectZ(bjLCE,10)
+        call SetSpecialEffectTimeScale(bjLCE,0.65)
+        call RemoveEffect(bjLCE,1,true,CreateTimer())
+        call SetUnitTimeScale(u,3)
+        // call SaveUnitHandle(h,id,7,CreateUnit(p,'e1VS',x+45*Cos(a),y+45*Sin(a),a*bj_RADTODEG))
+        call PauseTimer(t)
+        call TimerStart(t,0.05,true,function MoriaQSelfCast3)
+    endif
+    set p=null
+    set u=null
+    set t=null
+endfunction
+function MoriaQSelfCast takes unit u returns nothing
+    local timer t=CreateTimer()
+    local integer id=GetHandleId(t)
+    local player p=GetOwningPlayer(u)
+    local real x=GetUnitX(u)
+    local real y=GetUnitY(u)
+    call SaveUnitHandle(h,id,0,u)
+    call SaveReal(h,id,3,0)
+    call SaveReal(h,id,10,0.05)
+    call SaveReal(h,id,13,0.4)
+    call SaveReal(h,id,14,100)
+    call SaveReal(h,id,15,0)
+    call SetUnitTimeScale(u,0)
+    call SaveReal(h,id,18,6)
+    call SetUnitInvulnerable(u,true)
+    call PauseUnit(u,true)
+    call SaveGroupHandle(h,id,12,CreateGroup())
+    call SetUnitTimeScale(u,0.4)
+    set bjLCE=AddSpecialEffect("Keyesdevilslamita.mdl",x,y)
+    call SetSpecialEffectScale(bjLCE,2.5)
+    call SetSpecialEffectVertexColour(bjLCE,255,200,200,200)
+    call RemoveEffect(bjLCE,1,true,CreateTimer())
+    // set bjLCE=AddSpecialEffect("nanohacast123.mdl",x+65*Cos(a),y+65*Sin(a))
+    // call SetSpecialEffectZ(bjLCE,150)
+    // //call SetSpecialEffectOrientation(bjLCE , a* bj_RADTODEG,90,0)
+    // call SetSpecialEffectScale(bjLCE,1)
+    // call DestroyEffect(bjLCE)
+    // set bjLCE=AddSpecialEffect("shadowtrap-ny.mdl",x+75*Cos(a),y+75*Sin(a))
+    // call SetSpecialEffectZ(bjLCE,100)
+    // call SetSpecialEffectScale(bjLCE,0.25)
+    // call RemoveEffect(bjLCE,1,true,CreateTimer())
+    set bjLCE=AddSpecialEffect("[spell]hakkestart.mdl",x,y)
+    call SetSpecialEffectScale(bjLCE,1.5)
+    call SetSpecialEffectAlpha(bjLCE,50)
+    call SetSpecialEffectZ(bjLCE,20)
+    call RemoveEffect(bjLCE,1,true,CreateTimer())
+    call SaveReal(h,id,17,0)
+    call SaveReal(h,id,4,GetUnitAbilityLevel(u,'MrQ1')*GetHeroInt(u,true) + 60)
+    call SaveReal(h,id,22,GetUnitX(u))
+    call SaveReal(h,id,23,GetUnitY(u))
+    call SaveReal(h,id,2,750)
+    set soundplay=CreateSound("Sound\\Music\\mp3Music\\MoriaQSelf.mp3",false,false,true,12700,12700,"")
+    call StartSound(soundplay)
+    call KillSoundWhenDone(soundplay)
+    call TimerStart(t,0.1,true,function MoriaQSelfCast2)
+    set u=null
+    set p=null
+    set t=null
+endfunction
+
+function MoriaW1Cast2 takes nothing returns nothing
+    local timer t=GetExpiredTimer()
+    local integer id=GetHandleId(t)
+    local unit u=LoadUnitHandle(HH,id,0)
+    local real time=LoadReal(HH,id,1)
+    local player p=GetOwningPlayer(u)
+    local real x1=LoadReal(HH,id,2)
+    local real y1=LoadReal(HH,id,3)
+    if time>0 and LoadBoolean(HH,GetHandleId(u),'MrTR')==false then
+        call SaveReal(HH,id,1,time-0.25)
+        set n=CreateUnit(p,'h15T',x1+GetRandomReal(-350,350),y1+GetRandomReal(-350,350),GetRandomReal(0,359))
+        call MyRemoveZombie(n,5)
+        call SetUnitMoveSpeed(n, 350+GetHeroAgi(u,true)) 
+        call SetUnitBaseDamageByIndex(n,0,30+R2I(GetHeroInt(u,true)*(0.25+0.05*GetUnitAbilityLevel(u,'MrW1'))))
+        call MissleMoveMoria(CreateUnit(p,'e22D',GetUnitX(u),GetUnitY(u),GetRandomReal(0,359)),90,Atan2(GetUnitY(n)-GetUnitY(u),GetUnitX(n)-GetUnitX(u)),n)
+        set bjLCE=AddSpecialEffect("shadowtrap-ny.mdl",GetUnitX(n),GetUnitY(n))
+        call SetSpecialEffectZ(bjLCE,50)
+        call SetSpecialEffectScale(bjLCE,0.25)
+        call RemoveEffect(bjLCE,1,true,CreateTimer())
+    else
+        call PauseTimer(t)
+        call DestroyTimer(t)
+        call FlushChildHashtable(HH,id)
+    endif
+    set p=null
+    set u=null
+    set t=null
+endfunction
+function MoriaW1Cast takes unit u, real x1, real y1 returns nothing
+    local timer t=CreateTimer()
+    local integer id=GetHandleId(t)
+    local player p=GetOwningPlayer(u)
+    local real x=GetUnitX(u)
+    local real y=GetUnitY(u)
+    call SaveUnitHandle(HH,id,0,u)
+    call SaveReal(HH,id,1,0.5+GetUnitAbilityLevel(u,'MrW1')*0.5)
+    call DestroyEffect(AddSpecialEffect("war3mapImported\\DarkNova.mdx",x1,y1))
+    call DestroyEffect(AddSpecialEffect("war3mapImported\\Death Release.mdx",x1,y1))
+    set EFF=AddSpecialEffect("BrolyExplosion2.mdl", x1,y1)
+    call SetSpecialEffectScale(EFF , 1.3)
+    call DestroyEffect(EFF)
+    call SaveReal(HH,id,2,x1)
+    call SaveReal(HH,id,3,y1)
+    set soundplay=CreateSound("Sound\\Music\\mp3Music\\MoriaW1.mp3",false,false,true,12700,12700,"")
+    call StartSound(soundplay)
+    call KillSoundWhenDone(soundplay)
+    call TimerStart(t,0.25,true,function MoriaW1Cast2)
+    set u=null
+    set p=null
+    set t=null
+endfunction
+
+function MoriaW1SelfCast2 takes nothing returns nothing
+    local timer t=GetExpiredTimer()
+    local integer id=GetHandleId(t)
+    local unit u=LoadUnitHandle(HH,id,0)
+    local unit l__d=LoadUnitHandle(HH,id,1)
+    local player p=GetOwningPlayer(u)
+    local real x=GetUnitX(u)
+    local real y=GetUnitY(u)
+    local integer idp=GetHandleId(p)
+    local integer j=LoadInteger(HH,id,2)
+    local real r
+    local real f
+    local real x1
+    local real y1
+    if UnitIsAlive(u) and udg_B and DU2 and LoadUnitHandle(HH,idp,'ShNT'+j)==l__d then
+        set x1=GetUnitX(l__d)
+        set y1=GetUnitY(l__d)
+        if RectContainsUnit(gg_rct_UBW2,u)==true then
+            call UnitAddAbility(l__d,'A0IH')
+        else
+            call UnitRemoveAbility(l__d,'A0IH')
+        endif
+        if SR(x,y,x1,y1)<1500 and IsUnitPaused(l__d)==false then
+            if GetUnitCurrentOrder(l__d)!=OrderId("attack")then
+                set f=GetRandomReal(0,6.3)
+                set r=GetRandomReal(-1400,1400)
+                if GetUnitCurrentOrder(u)==OrderId("attack")then
+                    call SetUnitX(l__d,x+50*Cos(GetUnitFacing(u)*bj_DEGTORAD))
+                    call SetUnitY(l__d,y+50*Sin(GetUnitFacing(u)*bj_DEGTORAD))
+                    call SetUnitFacingInstant(l__d,GetUnitFacing(u)*bj_DEGTORAD)
+                    call IssuePointOrder(l__d,"attack",x+50*Cos(GetUnitFacing(u)*bj_DEGTORAD),y+50*Sin(GetUnitFacing(u)*bj_DEGTORAD))
+                else
+                    call IssuePointOrder(l__d,"attack",x+r*Cos(f),y+r*Sin(f))
+                endif
+            endif
+        elseif GetUnitCurrentOrder(l__d)!=OrderId("move")then
+            set f=GetRandomReal(0,6.3)
+            set r=GetRandomReal(-1400,1400)
+            call IssuePointOrder(l__d,"move",x+r*Cos(f),y+r*Sin(f))
+        endif
+    else
+        call UnitApplyTimedLife(l__d,'BTLF',0.05)
+        // call SaveStr(HH,idp,'ShNP'+j,"Nowhere")
+        call PauseTimer(t)
+        call DestroyTimer(t)
+        call FlushChildHashtable(HH,id)
+    endif
+    set p=null
+    set u=null
+    set l__d=null
+    set t=null
+endfunction
+function MoriaW1SelfCast takes unit u returns nothing
+    local timer t=CreateTimer()
+    local integer id=GetHandleId(t)
+    local player p=GetOwningPlayer(u)
+    local real x=GetUnitX(u)
+    local real y=GetUnitY(u)
+    local integer idp=GetHandleId(p)
+    local integer j=LoadInteger(HH,idp,VariationGHash)
+    local unit l__d=LoadUnitHandle(HH,idp,'ShNT'+j)
+    local integer idl__d=GetHandleId(l__d)
+    // call SaveBoolean(HH,GetHandleId(c),'ShGv',true)
+    call SaveUnitHandle(HH,id,0,u)
+    call SaveInteger(HH,id,2,j)
+    set soundplay=CreateSound("Sound\\Music\\mp3Music\\MoriaW1Self.mp3",false,false,true,12700,12700,"")
+    call StartSound(soundplay)
+    call KillSoundWhenDone(soundplay)
+    set n=CreateUnit(p,'h25T',x+GetRandomReal(-350,350),y+GetRandomReal(-350,350),GetRandomReal(0,359))
+    call SetUnitMoveSpeed(n, 400+GetHeroAgi(u,true)) 
+    call SetUnitBaseDamageByIndex(n,0,60+(3+GetUnitAbilityLevel(u,'MrW1'))*(LoadInteger(HH,idp,'ShSA'+j)+LoadInteger(HH,idp,'ShAA'+j)+LoadInteger(HH,idp,'ShIA'+j)))
+    if LoadUnitHandle(HH,idp,'ShNT'+j)!=null then
+        call SetHeroStr(l__d,GetHeroStr(l__d,false)-LoadInteger(HH,idp,'ShSA'+j),true)
+        call SetHeroAgi(l__d,GetHeroAgi(l__d,false)-LoadInteger(HH,idp,'ShAA'+j),true)
+        call SetHeroInt(l__d,GetHeroInt(l__d,false)-LoadInteger(HH,idp,'ShIA'+j),true)
+        call SaveInteger(HH,idl__d,'SSG+',LoadInteger(HH,idl__d,'SSG+')-LoadInteger(HH,idp,'ShSA'+j))
+        call SaveInteger(HH,idl__d,'SAG+',LoadInteger(HH,idl__d,'SAG+')-LoadInteger(HH,idp,'ShAA'+j))
+        call SaveInteger(HH,idl__d,'SIG+',LoadInteger(HH,idl__d,'SIG+')-LoadInteger(HH,idp,'ShIA'+j))
+        call MissleMoveMoria(CreateUnit(p,'e22D',GetUnitX(l__d),GetUnitY(l__d),GetRandomReal(0,359)),90,Atan2(GetUnitY(n)-GetUnitY(l__d),GetUnitX(n)-GetUnitX(l__d)),n)
+    endif
+    call SaveUnitHandle(HH,id,1,n)
+    call SaveUnitHandle(HH,idp,'ShNT'+j,n)
+    call SaveStr(HH,idp,'ShNP'+j,"Zombie. DMG: "+I2S(60+(3+GetUnitAbilityLevel(u,'MrW1'))*(LoadInteger(HH,idp,'ShSA'+j)+LoadInteger(HH,idp,'ShAA'+j)+LoadInteger(HH,idp,'ShIA'+j))))
+    call DestroyEffect(AddSpecialEffect("war3mapImported\\DarkNova.mdx",GetUnitX(n),GetUnitY(n)))
+    call DestroyEffect(AddSpecialEffect("war3mapImported\\Death Release.mdx",GetUnitX(n),GetUnitY(n)))
+    call TimerStart(t,0.15,true,function MoriaW1SelfCast2)
+    set u=null
+    set l__d=null
+    set p=null
+    set t=null
+endfunction
+
+
+function MoriaECast2 takes nothing returns nothing
+    local timer t=GetExpiredTimer()
+    local integer id=GetHandleId(t)
+    local unit u=LoadUnitHandle(HH,id,0)
+    local unit c=LoadUnitHandle(HH,id,1)
+    local real x=GetUnitX(u)
+    local real y=GetUnitY(u)
+    local real x1=GetUnitX(c)
+    local real y1=GetUnitY(c)
+    local real a=Atan2(y1-y,x1-x)
+    local real time=LoadReal(HH,id,2)-0.1
+    local player p=GetOwningPlayer(u)
+    local integer i=0
+    local integer l__s=0
+    local integer ls=0
+    local real dmg=(2+GetUnitAbilityLevel(u,'MrE1'))*(GetHeroInt(u,true)+50)
+    local group g=LoadGroupHandle(HH,id,6)
+    call SaveReal(HH,id,2,time)
+    if time==0.9 then
+        if GetUnitTypeId(u)=='H00P' then
+            call SetUnitAnimationByIndex(u,11)
+        elseif GetUnitTypeId(u)=='H00V' then
+            call SetUnitAnimation(u,"Spell one")
+        else 
+            call SetUnitAnimation(u,"spell one")
+        endif
+    endif
+    if time>0 then
+        if ModuloReal(time,0.5)<0.1 then
+            call DestroyEffect(AddSpecialEffectTarget("AZ_anyemoW2_R.mdx",c,"chest"))
+            set EFF=AddSpecialEffect("war3mapImported\\wind3.mdl",x1,y1)
+            call SetSpecialEffectScale(EFF,0.8)
+            call SetSpecialEffectVertexColour(EFF,235,100,235,190)
+            call SetSpecialEffectTimeScale(EFF,1.2)
+            call SetSpecialEffectFacing(EFF,GetRandomReal(0,359))
+            call DestroyEffect(EFF)
+        endif
+    elseif time==0 then
+        set n=CreateUnit(p,'e1EW',x1,y1,0)
+        call UnitApplyTimedLife(n,'BTLF',3)
+        if GetUnitTypeId(u)=='H00V' then
+            call SetUnitScale(n,0.75,0.75,0.75)
+            call GroupEnumUnitsInRange(g,x1,y1,350,Base)
+            loop
+                set E=FirstOfGroup(g)
+                exitwhen E==null
+                if Condition_Base(p,E)then
+                    call myCustomDamage(u,E,dmg,false,false,null,null,null)
+                    call SetControlToUnit(u,E, 3, "shortsight")
+                    call SetControlToUnit(u,E, 3, "ensnare")
+                endif
+                call GroupRemoveUnit(g,E)
+            endloop
+            call SaveReal(HH,id,8,0.85)
+        else
+            call myCustomDamage(u,c,dmg,false,false,null,null,null)
+            call SetControlToUnit(u,c, 3, "shortsight")
+            call SetControlToUnit(u,c, 3, "ensnare")
+            call SaveReal(HH,id,8,0.2)
+        endif
+        call UnitApplyTimedLife(CreateUnit(p,'e0EY',x1,y1,0),'BTLF',3)
+        call SaveReal(HH,id,4,x1)
+        call SaveReal(HH,id,5,y1)
+    elseif time==-2.2 then
+        set EFF=AddSpecialEffect("AZ_anyemoW_R.mdx",LoadReal(HH,id,4),LoadReal(HH,id,5))
+        call SetSpecialEffectScale(EFF,LoadReal(HH,id,8))
+        call SetSpecialEffectZ(EFF,50)
+        call DestroyEffect(EFF)
+        call DestroyGroup(g)
+        call DestroyTimer(t)
+        call FlushChildHashtable(HH,id)
+    endif
+    set p=null
+    set c=null
+    set g=null
+    set u=null
+    set t=null
+endfunction
+function MoriaECast takes unit u, unit c returns nothing
+    local timer t=CreateTimer()
+    local integer id=GetHandleId(t)
+    local real x=GetUnitX(u)
+    local real y=GetUnitY(u)
+    local real x1=GetUnitX(c)
+    local real y1=GetUnitY(c)
+    local real a=Atan2(y1-y,x1-x)
+    local player p=GetOwningPlayer(u)
+    call SaveUnitHandle(HH,id,0,u)
+    call SaveUnitHandle(HH,id,1,c)
+    set soundplay=CreateSound("Sound\\Music\\mp3Music\\MoriaE.mp3",false,false,true,12700,12700,"")
+    call StartSound(soundplay)
+    call KillSoundWhenDone(soundplay)
+    call SaveReal(HH,id,2,1)
+    call SaveGroupHandle(HH,id,6,CreateGroup())
+    set EFF=AddSpecialEffectTarget("AZ_anyemoW2_R.mdx",c,"chest")
+    if GetUnitTypeId(u)=='H00V' then
+        call SetSpecialEffectScale(EFF,2)
+    endif
+    call DestroyEffect(EFF)
+    call TimerStart(t,0.1,true,function MoriaECast2)
+    set u=null
+    set t=null
+    set c=null
+    set p=null
+endfunction
+
+function MissleMoveMoriaR_NonPause2 takes nothing returns nothing
+local timer t=GetExpiredTimer()
+local integer id=GetHandleId(t)
+local unit l__d=LoadUnitHandle(h,id,0)
+local unit u=LoadUnitHandle(h,id,7)
+local real speed=LoadReal(h,id,1)
+local real angle=LoadReal(h,id,2)
+local real x=GetUnitX(l__d)
+local real y=GetUnitY(l__d)
+local real x1=LoadReal(h,id,3)
+local real y1=LoadReal(h,id,4)
+local real a=Atan2(y1-y,x1-x)+angle
+local real dist=LoadReal(h,id,6)
+local real time=LoadReal(h,id,8)
+local real mh=LoadReal(h,id,5)
+local real rd=SR(x,y,x1,y1)
+local player p=GetOwningPlayer(u)
+local integer idu=GetPlayerId(p)
+if rd>5+speed and udg_B==true and rd<601 and GetUnitAbilityLevel(l__d,'A1BL')==0 and time<3 then
+call SetUnitXY_1(l__d,x+speed*Cos(a),y+speed*Sin(a), false)
+call SetUnitFacing(l__d,a*bj_RADTODEG)
+if rd>25+speed then
+    call SetUnitFlyHeight(l__d,ParabolaZ(mh,dist*1.1,rd),0)
+else
+    call SetUnitFlyHeight(l__d,ParabolaZ(mh,dist,rd),0)
+endif
+call SaveReal(h,id,8,time+0.03)
+//call PauseUnit(l__d,true)
+//call SaveBoolean(HH,GetHandleId(l__d),TARGET_ABILITY,true)
+else
+if GetUnitAbilityLevel(l__d,'A1BL')==0 then
+call SetUnitFlyHeight(l__d,0,0)
+endif
+call SetUnitPathing(l__d,true)
+//call PauseUnit(l__d,false)
+//call SaveBoolean(HH,GetHandleId(l__d),TARGET_ABILITY,false)
+call PauseTimer(t)
+call DestroyTimer(t)
+call FlushChildHashtable(h,id)
+endif
+set u=null
+set p=null
+set l__d=null
+set t=null
+endfunction
+function MissleMoveMoriaR_NonPause takes unit l__d,real speed,real angle,real x,real y,real mh,unit u returns nothing
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+call SaveUnitHandle(h,id,0,l__d)
+call SetUnitPathing(l__d,false)
+//call PauseUnit(l__d,true)
+//call SaveBoolean(HH,GetHandleId(l__d),TARGET_ABILITY,true)
+call SaveReal(h,id,1,speed)
+call SaveReal(h,id,2,angle*bj_DEGTORAD)
+call SaveReal(h,id,3,x)
+call SaveReal(h,id,4,y)
+call SaveReal(h,id,5,mh)
+call SaveReal(h,id,6,SR(x,y,GetUnitX(l__d),GetUnitY(l__d)))
+call SaveUnitHandle(h,id,7,u)
+call SaveReal(h,id,8,0)
+call TimerStart(t,0.03,true,function MissleMoveMoriaR_NonPause2)
+set t=null
+endfunction
+
+function MoriaRCast2 takes nothing returns nothing
+    local timer t=GetExpiredTimer()
+    local integer id=GetHandleId(t)
+    local unit u=LoadUnitHandle(h,id,0)
+    local real x=LoadReal(h,id,3)
+    local real y=LoadReal(h,id,4)
+    local real dmg=(4+GetUnitAbilityLevel(u,'MrR1'))*GetHeroInt(u,true)
+    local player p=GetOwningPlayer(u)
+    local group g=LoadGroupHandle(h,id,6)
+    local real x1=0
+    local real y1=0
+    local real a1=0
+    local real time=LoadReal(h,id,7)
+    if time==0.05 then
+        if GetUnitTypeId(u)=='H00P' then
+            call SetUnitAnimationByIndex(u,9)
+        elseif GetUnitTypeId(u)=='H00V' then
+            call SetUnitAnimation(u,"attack")
+        else 
+            call SetUnitAnimation(u,"spell one")
+        endif
+    endif
+    call SaveReal(h,id,7,time+0.05)
+    if time==0.5 then
+        call GroupEnumUnitsInRange(g,x,y,250,Base)
+        call UnitApplyTimedLife(CreateUnit(p,'e0MP',x,y,GetRandomReal(0,359)),'BTLF',2)
+        call UnitApplyTimedLife(CreateUnit(p,'e1MP',x,y,GetRandomReal(0,359)),'BTLF',2)
+        call UnitApplyTimedLife(CreateUnit(p,'e1WJ',x,y,GetRandomReal(0,359)),'BTLF',2)
+        // call UnitApplyTimedLife(CreateUnit(p,'e0MP',x,y,GetRandomReal(0,359)),'BTLF',2)
+        // call UnitApplyTimedLife(CreateUnit(p,'e0MQ',x,y,GetRandomReal(0,359)),'BTLF',2)
+        // call UnitApplyTimedLife(CreateUnit(p,'e0MR',x,y,GetRandomReal(0,359)),'BTLF',2)
+        // call UnitApplyTimedLife(CreateUnit(p,'e0MT',x,y,GetRandomReal(0,359)),'BTLF',2)
+        // call UnitApplyTimedLife(CreateUnit(p,'e0MU',x,y,GetRandomReal(0,359)),'BTLF',2)
+        // call UnitApplyTimedLife(CreateUnit(p,'e0MV',x,y,GetRandomReal(0,359)),'BTLF',2)
+        loop
+            set E=FirstOfGroup(g)
+            exitwhen E==null
+            if Condition_Base(p,E)then
+                set x1=GetUnitX(E)
+                set y1=GetUnitY(E)
+                set a1=Atan2(y1-y,x1-x)
+                if GetUnitAbilityLevel(E, 'CBC1')==0 and GetUnitAbilityLevel(E, 'cbc6')==0 then
+                    call myCustomDamage(u,E,dmg,false,false,null,null,null)
+                    call MissleMoveMoriaR_NonPause(E,1,0,x1+50*Cos(a1),y1+50*Sin(a1),1000,u)
+                else
+                    call myCustomDamage(u,E,dmg*1.2,false,false,null,null,null)
+                endif
+                call SetControlToUnit(E,E, 3, "stun")
+            endif
+            call GroupRemoveUnit(g,E)
+        endloop
+        call DestroyGroup(g)
+    endif
+    if time==1 then
+        set EFF=AddSpecialEffect("by_wood_effect_yuzhiboyou_unusual_fenshendabaopo_1.mdx",x,y)
+        call SetSpecialEffectScale(EFF,0.6)
+        call SetSpecialEffectZ(EFF,800)
+        call DestroyEffect(EFF)
+        set EFF=AddSpecialEffect("by_wood_effect_yuzhiboyou_unusual_fenshendabaopo_1.mdx",x,y)
+        call SetSpecialEffectScale(EFF,0.6)
+        call SetSpecialEffectZ(EFF,960)
+        call DestroyEffect(EFF)
+    elseif time==1.05 then
+        set EFF=AddSpecialEffect("by_wood_effect_yuzhiboyou_unusual_fenshendabaopo_1.mdx",x,y)
+        call SetSpecialEffectScale(EFF,0.6)
+        call SetSpecialEffectZ(EFF,480)
+        call DestroyEffect(EFF)
+        set EFF=AddSpecialEffect("by_wood_effect_yuzhiboyou_unusual_fenshendabaopo_1.mdx",x,y)
+        call SetSpecialEffectScale(EFF,0.6)
+        call SetSpecialEffectZ(EFF,640)
+        call DestroyEffect(EFF)
+    elseif time==1.1 then
+        set EFF=AddSpecialEffect("by_wood_effect_yuzhiboyou_unusual_fenshendabaopo_1.mdx",x,y)
+        call SetSpecialEffectScale(EFF,0.6)
+        call SetSpecialEffectZ(EFF,160)
+        call DestroyEffect(EFF)
+        set EFF=AddSpecialEffect("by_wood_effect_yuzhiboyou_unusual_fenshendabaopo_1.mdx",x,y)
+        call SetSpecialEffectScale(EFF,0.6)
+        call SetSpecialEffectZ(EFF,320)
+        call DestroyEffect(EFF)
+        call PauseTimer(t)
+        call DestroyTimer(t)
+        call FlushChildHashtable(h,id)
+    endif
+    set p=null
+    set u=null
+    set g=null
+    set t=null
+endfunction
+function MoriaRCast takes unit u, real x, real y returns nothing
+    local timer t=CreateTimer()
+    local integer id=GetHandleId(t)
+    local real x1=0
+    local real y1=0
+    local real r=0
+    local player p=GetOwningPlayer(u)
+    call SaveUnitHandle(h,id,0,u)
+    call SaveReal(h,id,3,x)
+    call SaveReal(h,id,4,y)
+    call SaveGroupHandle(h,id,6,CreateGroup())
+    set n=CreateUnit(p,'e0RV',x,y,0)
+    call UnitApplyTimedLife(n,'BTLF',3)
+    call SetUnitScale(n,0.35,0.35,0.35)
+    call SetUnitTimeScale(n,0.5)
+    set soundplay=CreateSound("Sound\\Music\\mp3Music\\MoriaR.mp3",false,false,true,12700,12700,"")
+    call StartSound(soundplay)
+    call KillSoundWhenDone(soundplay)
+    call TimerStart(t,0.05,true,function MoriaRCast2)
+    set u=null
+    set p=null
+    set t=null
+endfunction
+
+function MoriaTCast2 takes nothing returns nothing
+    local timer t=GetExpiredTimer()
+    local integer id=GetHandleId(t)
+    local unit u=LoadUnitHandle(HH,id,0)
+    local real x=GetUnitX(u)
+    local real y=GetUnitY(u)
+    local player p=GetOwningPlayer(u)
+    local real time=LoadReal(HH,id,1)-0.05
+    local integer j=0
+    local integer idp=GetHandleId(p)
+    local integer idu=GetHandleId(u)
+    local unit l__d
+    local integer idl__d
+    call SaveReal(HH,id,1,time)
+    if time>0 and udg_B and DU2 then
+        call SetUnitInvulnerable(u,true)
+        call PauseUnit(u,true)
+        if time==4.5 then
+            call SetUnitAnimationByIndex(u, 10)
+            set bjLCE=AddSpecialEffect("Light_cwdullahan_f222.mdl",x,y)
+            call SetSpecialEffectScale(bjLCE,1.35)
+            call SetSpecialEffectZ(bjLCE,10)
+            call SetSpecialEffectTimeScale(bjLCE,0.65)
+            call RemoveEffect(bjLCE,1,true,CreateTimer())
+        endif
+        if time==2 then
+            loop
+                if LoadUnitHandle(HH,idp,'ShNT'+j)!=null and LoadUnitHandle(HH,idp,'ShNT'+j)!=u then
+                    set l__d=LoadUnitHandle(HH,idp,'ShNT'+j)
+                    set idl__d=GetHandleId(l__d)
+                    call SetHeroStr(l__d,GetHeroStr(l__d,false)-LoadInteger(HH,idp,'ShSA'+j),true)
+                    call SetHeroAgi(l__d,GetHeroAgi(l__d,false)-LoadInteger(HH,idp,'ShAA'+j),true)
+                    call SetHeroInt(l__d,GetHeroInt(l__d,false)-LoadInteger(HH,idp,'ShIA'+j),true)
+                    call SaveInteger(HH,idl__d,'SSG+',LoadInteger(HH,idl__d,'SSG+')-LoadInteger(HH,idp,'ShSA'+j))
+                    call SaveInteger(HH,idl__d,'SAG+',LoadInteger(HH,idl__d,'SAG+')-LoadInteger(HH,idp,'ShAA'+j))
+                    call SaveInteger(HH,idl__d,'SIG+',LoadInteger(HH,idl__d,'SIG+')-LoadInteger(HH,idp,'ShIA'+j))
+                    call MissleMoveMoria(CreateUnit(p,'e22D',GetUnitX(l__d),GetUnitY(l__d),GetRandomReal(0,359)),90,Atan2(GetUnitY(u)-GetUnitY(l__d),GetUnitX(u)-GetUnitX(l__d)),u)
+                endif
+                call SaveInteger(HH,idu,'SSG+',LoadInteger(HH,idu,'SSG+')+LoadInteger(HH,idp,'ShSA'+j))
+                call SaveInteger(HH,idu,'SAG+',LoadInteger(HH,idu,'SAG+')+LoadInteger(HH,idp,'ShAA'+j))
+                call SaveInteger(HH,idu,'SIG+',LoadInteger(HH,idu,'SIG+')+LoadInteger(HH,idp,'ShIA'+j))
+                call SaveUnitHandle(HH,idp,'ShNT'+j,u)
+                call SaveStr(HH,idp,'ShNP'+j,GetUnitName(u))
+                call SetHeroStr(u,GetHeroStr(u,false)+LoadInteger(HH,idp,'ShSA'+j),true)
+                call SetHeroAgi(u,GetHeroAgi(u,false)+LoadInteger(HH,idp,'ShAA'+j),true)
+                call SetHeroInt(u,GetHeroInt(u,false)+LoadInteger(HH,idp,'ShIA'+j),true)
+                exitwhen j==10
+                set j=j+1
+            endloop
+        endif
+        if time<2 and time>1 then
+            call SetUnitVertexColor(u,255-R2I((2-time)*250),255-R2I((2-time)*250),255-R2I((2-time)*250),255)
+            call SetUnitScale(u,GetUnitScale(u)+0.02,GetUnitScale(u)+0.02,GetUnitScale(u)+0.02)
+        endif
+        if time==1.1 then
+            set bjLCE=AddSpecialEffect("AZ_anyemoW_R.mdl",x,y)
+            call SetSpecialEffectScale(bjLCE,0.85)
+            call SetSpecialEffectZ(bjLCE,10)
+            call SetSpecialEffectTimeScale(bjLCE,0.65)
+            call RemoveEffect(bjLCE,1,true,CreateTimer())
+            call TransformationStart(u)
+            set n=CreateUnit(p, 'dR43', x, y, GetRandomInt(0, 359))
+            call SetUnitScale(n, 0.4, 0.4, 0.4)
+            call UnitApplyTimedLife(n,'BTLF', 0.3)
+            call MyRemoveUnit(n, 1)
+        endif
+        if time==1 then
+            call PauseUnit(u,false)
+        endif
+        if time==0.95 then
+            call SetUnitScale(u,0.9,0.9,0.9)
+            call SetUnitAnimation(u,"stand")
+        endif
+        if time>0.45 and time<0.95 then
+            call SetUnitScale(u,GetUnitScale(u)+0.03,GetUnitScale(u)+0.03,GetUnitScale(u)+0.03)
+        endif
+        if time<0.95 then
+            call SetUnitVertexColor(u,5+R2I((1-time)*250),5+R2I((1-time)*250),5+R2I((1-time)*250),255)
+        endif
+    else
+        call SaveBoolean(HH,GetHandleId(u),'MrTR',false)
+        if GetUnitTypeId(u)!='H00P' then
+            call SetUnitScale(u,1.2,1.2,1.2)
+        endif
+        call SetUnitTimeScale(u,1)
+        call SetUnitInvulnerable(u,false)
+        call PauseUnit(u,false)
+        call PauseTimer(t)
+        call DestroyTimer(t)
+        call FlushChildHashtable(HH,id)
+    endif
+    set p=null
+    set l__d=null
+    set u=null
+    set t=null
+endfunction
+function MoriaTCast takes unit u returns nothing
+    local real x=GetUnitX(u)
+    local real y=GetUnitY(u)
+    local player p=GetOwningPlayer(u)
+    local timer t=CreateTimer()
+    local integer uid=GetHandleId(t)
+    local integer id=GetPlayerId(p)+1
+    if udg_DM[id]!=null then
+        call RemoveEffect(AddSpecialEffectTarget("by_wood_effect_yuzhiboyou_unusual_fenshendabaopo_1.mdx", udg_DM[id], "chest"), 0.2, true, CreateTimer())
+        call PauseUnit(udg_DM[id],true)
+        call SetUnitInvulnerable(udg_DM[id],true)
+        call ShikiCloneEffect(udg_DM[id],0.5,1.05,1.25,250)
+    endif
+    call SaveBoolean(HH,GetHandleId(u),'MrTR',true)
+    set soundplay=CreateSound("Sound\\Music\\mp3Music\\MoriaT.mp3",false,false,true,12700,12700,"")
+    call StartSound(soundplay)
+    call KillSoundWhenDone(soundplay)
+    call SaveUnitHandle(HH,uid,0,u)
+    call SaveReal(HH,uid,1,4.55)
+    call SetUnitInvulnerable(u,true)
+    call PauseUnit(u,true)
+    call SetUnitTimeScale(u,1.4)
+    set n=CreateUnit(p,'e0RV',x,y,0)
+    call UnitApplyTimedLife(n,'BTLF',4)
+    call SetUnitScale(n,1.45,1.45,1.45)
+    call SetUnitTimeScale(n,0.3)
+    set bjLCE=AddSpecialEffect("war3mapImported\\DarkBrith.MDX",x,y)
+    call SetSpecialEffectScale(bjLCE,2.85)
+    call SetSpecialEffectZ(bjLCE,10)
+    call SetSpecialEffectTimeScale(bjLCE,0.65)
+    call RemoveEffect(bjLCE,1.5,true,CreateTimer())
+    call TimerStart(t,0.05,true,function MoriaTCast2)
+    set u=null
+    set t=null
+    set p=null
+endfunction
+
+function MoriaW2Cast2 takes nothing returns nothing
+    local timer t=GetExpiredTimer()
+    local integer id=GetHandleId(t)
+    local unit u=LoadUnitHandle(h,id,0)
+    local real x=GetUnitX(u)
+    local real y=GetUnitY(u)
+    local real x1=LoadReal(h,id,2)
+    local real y1=LoadReal(h,id,3)
+    local real f=GetUnitFacing(u)
+    local player p=GetOwningPlayer(u)
+    local real dmg=LoadReal(h, id, 5)
+    local real dist=SquareRootPoint(x,y,x1,y1)
+    local real a=Atan2(y1-y,x1-x)
+    local real he=0
+    local real dist2=LoadReal(h,id,100)
+    if dist2>40.00 and udg_B==true and GetUnitAbilityLevel(u,'A1BL')==0 then
+        call SaveReal(h,id,100,dist2-35)
+        call SetUnitXY_1(u,x+35*Cos(a),y+35*Sin(a), true)
+        call SetUnitFacing(u,a*bj_RADTODEG)
+        set he=ParabolaZ(300,LoadReal(h,id,4),dist)
+        call SetUnitFlyHeight(u,he,0)
+    else
+        call SetUnitAnimation(u,"attack")
+        call ShakeCamera(0.1, 10)
+        set bjLCG=LoadGroupHandle(h, id, 99)
+        call GroupEnumUnitsInRange(bjLCG,x1,y1,400,Base)
+        loop
+        set E=FirstOfGroup(bjLCG)
+        exitwhen E==null
+        if Condition_Base(p,E)then
+            call UnitAddAbility(E, 'Arav')
+            call UnitRemoveAbility(E, 'Arav')
+            //call Push(E,30,Atan2(GetUnitY(E)-y1,GetUnitX(E)-x1),300)
+            call myCustomDamage(u,E,dmg,false,false,null,null,null)
+            call SetControlToUnit(u,E, 2, "stun")
+            call MissleMoveParabola(E,12,0,GetUnitX(E)+500*Cos(Atan2(GetUnitY(E)-y,GetUnitX(E)-x)),GetUnitY(E)+500*Sin(Atan2(GetUnitY(E)-y,GetUnitX(E)-x)),400,u)
+        endif
+        call GroupRemoveUnit(bjLCG,E)
+        endloop
+        call DestroyGroup(LoadGroupHandle(h, id, 99))
+        call PauseUnit(u,false)
+        call SetUnitInvulnerable(u,false)
+        call SetUnitFlyHeight(u,0,0)
+        call SetUnitTimeScale(u,1)
+        set n=CreateUnit(p, 'dR43', x1, y1, GetRandomInt(0, 359))
+        call SetUnitScale(n, 0.6, 0.6, 0.6)
+        call UnitApplyTimedLife(n,'BTLF', 0.7)
+        call MyRemoveUnit(n, 1.5)
+        call DestroyEffect(AddSpecialEffect("war3mapImported\\Slam.mdl",x1,y1))
+        // set n=CreateUnit(p, 'd001', x1,y1, GetRandomInt(0, 360))
+        // call SetUnitScale(n, 1.5, 1.5, 1.5)
+        // call SetUnitFlyHeight(n, 20, 0)
+        // call MyRemoveUnit(n, 1.5)
+        set n=CreateUnit(p, 'd003', x1,y1, GetRandomInt(0, 360))
+        call SetUnitScale(n, 2, 2, 2)
+        call MyRemoveUnit(n, 1.5)
+        set n=CreateUnit(p, 'd003', x1,y1, GetRandomInt(0, 360))
+        call SetUnitScale(n, 2, 2, 2)
+        call MyRemoveUnit(n, 1.5)
+        set n=CreateUnit(p, 'd032', x1,y1, GetRandomInt(0, 360))
+        call SetUnitScale(n, 2.5, 2.5, 2.5)
+        call SetUnitFlyHeight(n, 200, 0)
+        call MyRemoveUnit(n, 1.5)
+        
+        // set n=CreateUnit(p, 'd033', x1,y1, GetRandomInt(0, 360))
+        // call SetUnitModel(n,GetUnitModel(u))
+        // call UnitScale(n, 0.5, 1.2, 0.2)
+        // call SetUnitFlyHeight(n, 5, 0)
+        // call UnitApplyTimedLife(n,'BTLF', 1.5)
+        // call MyRemoveUnit(n, 2.5)
+        call DestroyEffect(LoadEffectHandle(h, id, 97))
+        call DestroyEffect(LoadEffectHandle(h, id, 98))
+        call FlushChildHashtable(h,id)
+        call PauseTimer(t)
+        call DestroyTimer(t)
+    endif
+    set u=null
+    set t=null
+    set p=null
+endfunction
+
+function MoriaW2Cast takes unit u, real x2, real y2 returns nothing
+    local timer newTimer=CreateTimer()
+    local integer id=GetHandleId(newTimer)
+    local real f=GetUnitFacing(u)
+    local real x=GetUnitX(u)
+    local real y=GetUnitY(u)
+    local real x1=x2
+    local real y1=y2
+    local real damage=GetHeroStr(u,true)*8
+    set soundplay=CreateSound("Sound\\Music\\mp3Music\\MoriaW2.mp3", false, false, true, 12700, 12700, "")
+    call StartSound(soundplay)
+    call KillSoundWhenDone(soundplay)
+                
+    // call DestroyEffect(AddSpecialEffect("war3mapImported\\TealSlam.mdl",x,y))
+    set n=CreateUnit(GetOwningPlayer(u), 'dM30', x, y, GetRandomInt(0, 360))
+    call SetUnitScale(n, 2.2, 2.2, 2.2)
+    call MyRemoveUnit(n, 1.5)
+    set n=CreateUnit(GetOwningPlayer(u), 'dM29', x, y, GetRandomInt(0, 360))
+    call SetUnitScale(n, 3, 3, 3)
+    call MyRemoveUnit(n, 1.5)
+    set n=CreateUnit(GetOwningPlayer(u), 'dM29', x, y, GetRandomInt(0, 360))
+    call MyRemoveUnit(n, 1.5)
+    
+    call SetUnitTimeScale(u,4)
+    call PauseUnit(u,true)
+    call UnitAddAbility(u,'Arav')
+    call UnitRemoveAbility(u,'Arav')
+    call SaveUnitHandle(h,id,0,u)
+    call SetUnitInvulnerable(u,true)
+    call SaveReal(h,id,2,x2)
+    call SaveReal(h,id,3,y2)
+    call SaveReal(h,id,4,SquareRootPoint(x,y,x2,y2))
+    call SaveReal(h,id,5,damage)
+    call SaveEffectHandle(h, id, 97, AddSpecialEffectTarget("Abilities\\Weapons\\AvengerMissile\\AvengerMissile.mdl", u, "hand right"))
+    call SaveEffectHandle(h, id, 98, AddSpecialEffectTarget("Abilities\\Weapons\\AvengerMissile\\AvengerMissile.mdl", u, "hand left"))
+    call SaveGroupHandle(h, id, 99, CreateGroup())
+    call SaveReal(h,id,100,SquareRootPoint(x,y,x2,y2))
+    call TimerStart(newTimer,0.02,true,function MoriaW2Cast2)
+    set u=null
+    set newTimer=null
+endfunction
+
+function Moria_Cond takes nothing returns boolean
+    local boolean cond1=GetSpellAbilityId()=='MrQ1' or GetSpellAbilityId()=='MrW1'  or GetSpellAbilityId()=='MrW2' or GetSpellAbilityId()=='MrE1' or GetSpellAbilityId()=='MrR1'  or GetSpellAbilityId()=='MrT1' or GetSpellAbilityId()=='MrF1' or GetSpellAbilityId()=='MrF2' or GetSpellAbilityId()=='MrG1' or GetSpellAbilityId()=='MrG2'
+    if cond1 then
+        return true
+    else
+        return false
+    endif
+endfunction
+
+function Moria_Cast takes nothing returns nothing
+    local unit u=GetSpellAbilityUnit()
+    local unit c=GetSpellTargetUnit()
+    local real x=GetSpellTargetX()
+    local real y=GetSpellTargetY()
+    if GetSpellAbilityId() == 'MrF1' then
+		call MoriaF1Cast(u)
+    endif
+    if GetSpellAbilityId() == 'MrF2' then
+		call MoriaF2Cast(u)
+    endif
+    if GetSpellAbilityId() == 'MrG1' then
+        if IsUnitEnemy(c,GetOwningPlayer(u)) then
+            if LoadBoolean(HH,GetHandleId(c),'ShSt')==false then
+                call MoriaG1Cast(u,c)
+            else
+                call IssueImmediateOrder(u, "stop")
+                call SetWidgetMana(u, GetWidgetMana(u)+GetAbilityIntegerLevelField(GetUnitAbility(u,'MrG1'),ABILITY_ILF_MANA_COST,GetUnitAbilityLevel(u,'MrG1')-1))
+                call StartAbilityCooldown(GetUnitAbility(u , 'MrG1' ), 0.5)
+                call DisplayTimedWarningMessage(GetOwningPlayer(u),10,"У героя уже нет тени.")
+            endif
+        else
+            if LoadInteger(HH,GetHandleId(GetOwningPlayer(u)),'ShSn')>0 then
+                if c==Hero[GetPlayerId(GetOwningPlayer(c))] then
+                    call MoriaG1AllyCast(u,c)
+                else
+                    call IssueImmediateOrder(u, "stop")
+                    call SetWidgetMana(u, GetWidgetMana(u)+GetAbilityIntegerLevelField(GetUnitAbility(u,'MrG1'),ABILITY_ILF_MANA_COST,GetUnitAbilityLevel(u,'MrG1')-1))
+                    call StartAbilityCooldown(GetUnitAbility(u , 'MrG1' ), 0.5)
+                    call DisplayTimedWarningMessage(GetOwningPlayer(u),10,"Нельзя передать тень этой цели.")
+                endif
+            else
+                call IssueImmediateOrder(u, "stop")
+                call SetWidgetMana(u, GetWidgetMana(u)+GetAbilityIntegerLevelField(GetUnitAbility(u,'MrG1'),ABILITY_ILF_MANA_COST,GetUnitAbilityLevel(u,'MrG1')-1))
+                call StartAbilityCooldown(GetUnitAbility(u , 'MrG1' ), 0.5)
+                call DisplayTimedWarningMessage(GetOwningPlayer(u),10,"Отсутствуют тени для передачи.")
+            endif
+        endif
+    endif
+    if GetSpellAbilityId() == 'MrG2' then
+		call MoriaG2Cast(u)
+    endif
+    if GetSpellAbilityId() == 'MrQ1' then
+        if c==u then
+            call MoriaQSelfCast(u)
+        else
+		    call MoriaQCast(u,x,y)
+        endif
+    endif
+	if GetSpellAbilityId() == 'MrW1' then
+		if c==u and LoadInteger(HH,GetHandleId(GetOwningPlayer(u)),'ShSn')>0 and GetUnitTypeId(u)!='H00Q' then
+            call MoriaW1SelfCast(u)
+        else
+		    call MoriaW1Cast(u,x,y)
+        endif
+    endif
+    if GetSpellAbilityId() == 'MrW2' then
+        call MoriaW2Cast(u,x,y)
+    endif
+	if GetSpellAbilityId() == 'MrE1' then
+        call MoriaECast(u,c)
+    endif
+    if GetSpellAbilityId() == 'MrR1' then
+        call MoriaRCast(u,x,y)
+    endif
+	if GetSpellAbilityId() == 'MrT1' then
+		call MoriaTCast(u)
+    endif
+    set u=null
+    set c=null
+endfunction
+
+function InitTrig_MoriaInt takes nothing returns nothing
+    local trigger trig= CreateTrigger()
+    local integer index= 0
+    loop
+        call TriggerRegisterPlayerUnitEvent(trig, Player(index), EVENT_PLAYER_UNIT_SPELL_EFFECT, null)
+        set index=index + 1
+        exitwhen index == bj_MAX_PLAYER_SLOTS
+    endloop
+    call TriggerAddAction(trig, function Moria_Cast)
+    call TriggerAddCondition(trig, Condition(function Moria_Cond))
+    set trig=null
+endfunction
 
 function InitTrig_KiritoInt takes nothing returns nothing
 local trigger t
@@ -206597,10 +208741,17 @@ function Karna_ModifAttack takes unit newCaster, unit newTarget, real attack_fac
                     call SetHeroAgi(newCaster,GetHeroAgi(newCaster,false)+3,true)
                     call SetHeroStr(newCaster,GetHeroStr(newCaster,false)+3,true)
                     call SetHeroInt(newCaster,GetHeroInt(newCaster,false)+3,true)
-                    call SetHeroAgi(newTarget,GetHeroAgi(newTarget,false)-3,true)
-                    call SetHeroStr(newTarget,GetHeroStr(newTarget,false)-3,true)
-                    call SetHeroInt(newTarget,GetHeroInt(newTarget,false)-3,true)
-                    call SaveUnitHandle(h,GetHandleId(bjLCT), 0, newTarget)
+                    if GetUnitTypeId(newTarget)=='H00Q' then
+                        call SetHeroAgi(Hero[GetPlayerId(GetOwningPlayer(newTarget))],GetHeroAgi(Hero[GetPlayerId(GetOwningPlayer(newTarget))],false)-3,true)
+                        call SetHeroStr(Hero[GetPlayerId(GetOwningPlayer(newTarget))],GetHeroStr(Hero[GetPlayerId(GetOwningPlayer(newTarget))],false)-3,true)
+                        call SetHeroInt(Hero[GetPlayerId(GetOwningPlayer(newTarget))],GetHeroInt(Hero[GetPlayerId(GetOwningPlayer(newTarget))],false)-3,true)
+                        call SaveUnitHandle(h,GetHandleId(bjLCT), 0, newTarget)
+                    else
+                        call SetHeroAgi(newTarget,GetHeroAgi(newTarget,false)-3,true)
+                        call SetHeroStr(newTarget,GetHeroStr(newTarget,false)-3,true)
+                        call SetHeroInt(newTarget,GetHeroInt(newTarget,false)-3,true)
+                        call SaveUnitHandle(h,GetHandleId(bjLCT), 0, newTarget)
+                    endif
                     call SaveUnitHandle(h,GetHandleId(bjLCT), 1, newCaster)
                     call TimerStart(bjLCT, 5, false, function VergilPatriot_ModifEnd)
                 set bjLCT=null
@@ -206936,10 +209087,17 @@ function Sinon_ModifAttack takes unit newCaster, unit newTarget, real attack_fac
 				call SetHeroAgi(newCaster,GetHeroAgi(newCaster,false)+3,true)
 				call SetHeroStr(newCaster,GetHeroStr(newCaster,false)+3,true)
 				call SetHeroInt(newCaster,GetHeroInt(newCaster,false)+3,true)
-				call SetHeroAgi(newTarget,GetHeroAgi(newTarget,false)-3,true)
-				call SetHeroStr(newTarget,GetHeroStr(newTarget,false)-3,true)
-				call SetHeroInt(newTarget,GetHeroInt(newTarget,false)-3,true)
-				call SaveUnitHandle(h,GetHandleId(bjLCT), 0, newTarget)
+				if GetUnitTypeId(newTarget)=='H00Q' then
+                    call SetHeroAgi(Hero[GetPlayerId(GetOwningPlayer(newTarget))],GetHeroAgi(Hero[GetPlayerId(GetOwningPlayer(newTarget))],false)-3,true)
+                    call SetHeroStr(Hero[GetPlayerId(GetOwningPlayer(newTarget))],GetHeroStr(Hero[GetPlayerId(GetOwningPlayer(newTarget))],false)-3,true)
+                    call SetHeroInt(Hero[GetPlayerId(GetOwningPlayer(newTarget))],GetHeroInt(Hero[GetPlayerId(GetOwningPlayer(newTarget))],false)-3,true)
+                    call SaveUnitHandle(h,GetHandleId(bjLCT), 0, newTarget)
+                else
+                    call SetHeroAgi(newTarget,GetHeroAgi(newTarget,false)-3,true)
+                    call SetHeroStr(newTarget,GetHeroStr(newTarget,false)-3,true)
+                    call SetHeroInt(newTarget,GetHeroInt(newTarget,false)-3,true)
+                    call SaveUnitHandle(h,GetHandleId(bjLCT), 0, newTarget)
+                endif
 				call SaveUnitHandle(h,GetHandleId(bjLCT), 1, newCaster)
 				call TimerStart(bjLCT, 5*modif_factor, false, function VergilPatriot_ModifEnd)
 			set bjLCT=null
@@ -221334,32 +223492,24 @@ call TriggerAddAction(t,function Trig_RyuseiDamag_Actions)
 elseif ty=='H00P' then
 set t=CreateTrigger()
 call TriggerRegisterPlayerUnitEvent(t,p,EVENT_PLAYER_UNIT_SPELL_EFFECT,null)
-call TriggerAddCondition(t,Condition(function Trig_Doppleman_Conditions))
-call TriggerAddAction(t,function Trig_Doppleman_Actions)
-set t=CreateTrigger()
-call TriggerRegisterPlayerUnitEvent(t,p,EVENT_PLAYER_UNIT_SPELL_EFFECT,null)
-call TriggerAddCondition(t,Condition(function Trig_Swap_Conditions))
-call TriggerAddAction(t,function Trig_Swap_Actions)
-set t=CreateTrigger()
-call TriggerRegisterPlayerUnitEvent(t,p,EVENT_PLAYER_UNIT_SPELL_EFFECT,null)
 call TriggerAddCondition(t,Condition(function Trig_SwapC_Conditions))
 call TriggerAddAction(t,function Trig_SwapC_Actions)
 set t=CreateTrigger()
 call TriggerRegisterPlayerUnitEvent(t,p,EVENT_PLAYER_UNIT_DEATH,null)
 call TriggerAddCondition(t,Condition(function Trig_die7_Conditions))
 call TriggerAddAction(t,function Trig_die7_Actions)
-set t=CreateTrigger()
-call TriggerRegisterPlayerUnitEvent(t,p,EVENT_PLAYER_UNIT_SPELL_EFFECT,null)
-call TriggerAddCondition(t,Condition(function Trig_Black_Box_Conditions))
-call TriggerAddAction(t,function Trig_Black_Box_Actions)
-set t=CreateTrigger()
-call TriggerRegisterPlayerUnitEvent(t,p,EVENT_PLAYER_UNIT_SPELL_EFFECT,null)
-call TriggerAddCondition(t,Condition(function Trig_Steal_Shadow_Conditions))
-call TriggerAddAction(t,function Trig_Steal_Shadow_Actions)
-set t=CreateTrigger()
-call TriggerRegisterPlayerUnitEvent(t,p,EVENT_PLAYER_UNIT_SPELL_EFFECT,null)
-call TriggerAddCondition(t,Condition(function Trig_Shadows_Conditions))
-call TriggerAddAction(t,function Trig_Shadows_Actions)
+// set t=CreateTrigger()
+// call TriggerRegisterPlayerUnitEvent(t,p,EVENT_PLAYER_UNIT_SPELL_EFFECT,null)
+// call TriggerAddCondition(t,Condition(function Trig_Black_Box_Conditions))
+// call TriggerAddAction(t,function Trig_Black_Box_Actions)
+// set t=CreateTrigger()
+// call TriggerRegisterPlayerUnitEvent(t,p,EVENT_PLAYER_UNIT_SPELL_EFFECT,null)
+// call TriggerAddCondition(t,Condition(function Trig_Steal_Shadow_Conditions))
+// call TriggerAddAction(t,function Trig_Steal_Shadow_Actions)
+// set t=CreateTrigger()
+// call TriggerRegisterPlayerUnitEvent(t,p,EVENT_PLAYER_UNIT_SPELL_EFFECT,null)
+// call TriggerAddCondition(t,Condition(function Trig_Shadows_Conditions))
+// call TriggerAddAction(t,function Trig_Shadows_Actions)
 elseif ty=='H05R' then
 set t=CreateTrigger()
 call TriggerRegisterPlayerUnitEvent(t,p,EVENT_PLAYER_UNIT_DEATH,null)
@@ -224891,6 +227041,7 @@ call InitTrig_TobiramaInt()
 call InitTrig_StigmataInt()
 call InitTrig_VergilInt()
 call InitTrig_JirenInt()
+call InitTrig_MoriaInt()
 call InitTrig_KiritoInt()
 //call InitTrig_NanayaPick()
 call InitTrig_Text_Damage()
