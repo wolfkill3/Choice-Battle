@@ -3855,10 +3855,10 @@ function MUIHandle takes nothing returns integer
 		if GetUnitAbilityLevel(target,'A0U8')>1 then	// Gon R
 			set time=time*0.6
 		endif
-		if GetUnitAbilityLevel(target,'JNF2')>1 then	// Jiren F
+		if GetUnitAbilityLevel(target,'JNF2')>0 then	// Jiren F
 			set time=time*0.7
 		endif
-		if GetUnitAbilityLevel(target,'A5WT')>1 then	// Kurapika W INT
+		if GetUnitAbilityLevel(target,'A5WT')>0 then	// Kurapika W INT
 			set time=time*0.75
 		endif
         if GetUnitAbilityLevel(target,'AtE1')>0 then	// Atalanta E
@@ -28155,6 +28155,7 @@ if GetUnitTypeId(u) == 'H00V' then
     call UnitAddAbility(u, 'S301')
     call IssueImmediateOrder(u, "bearform")
     call UnitRemoveAbility(u, 'S301')
+    call UnitRemoveAbility(u, 'MrW2')
     call ShowAbility2('MrF1',true)
     call ShowAbility2('MrG1',true)
     call ShowAbility2('MrW1',true)
@@ -72969,7 +72970,7 @@ if time<0.630 and GetAbilityIntegerLevelField(GetUnitAbility(u,'GKR1'), ABILITY_
     endif
     if time<0 then
         call SetUnitFacingInstant(u,a*bj_RADTODEG)
-        if not(GetUnitState(u,UNIT_STATE_LIFE)>0.405 and IsUnitPaused(u)==false and GetUnitAbilityLevel(u,'CBC2')==0 and GetUnitAbilityLevel(u,'cbc3')==0  and GetUnitAbilityLevel(u,'cbc5')==0  and GetUnitAbilityLevel(u, 'cbc7')==0 and GetUnitAbilityLevel(u, 'cbc8')==0 and GetUnitAbilityLevel(u, 'cbc9')==0 and UnitIsAlive(u) and udg_B and DU2 and timeEnd<2) then
+        if not(GetUnitState(u,UNIT_STATE_LIFE)>0.405 and IsUnitPaused(u)==false and GetUnitAbilityLevel(u,'CBC2')==0 and GetUnitAbilityLevel(u,'cbc3')==0  and GetUnitAbilityLevel(u,'cbc5')==0  and GetUnitAbilityLevel(u, 'cbc7')==0 and GetUnitAbilityLevel(u, 'cbc8')==0 and GetUnitAbilityLevel(u, 'cbc9')==0 and UnitIsAlive(u) and udg_B and DU2 and timeEnd<1) then
             call SaveReal(h,id,5,20)
             call SetUnitAcquireRange(u,600)
         endif
@@ -73022,7 +73023,7 @@ if time<0.630 and GetAbilityIntegerLevelField(GetUnitAbility(u,'GKR1'), ABILITY_
                 call SetUnitTimeScale(u,1)
                 if IsUnitInvulnerable(c)==false then
                     call myCustomDamage(u,c,dmg,false,false,null,null,null)
-                    call SetControlToUnit(u,c, 1, "stun")
+                    call SetControlToUnit(u,c, 0.5, "stun")
                     call Push9(c,55,a,1100)
                 endif
                 set EFF=AddSpecialEffect("chushou_by_wood_effect_earth_sandycrack_fag.mdl",x3,y3)
@@ -73100,7 +73101,7 @@ if time<0.630 and GetAbilityIntegerLevelField(GetUnitAbility(u,'GKR1'), ABILITY_
         endif
     endif
 else
-    if GetAbilityIntegerLevelField(GetUnitAbility(u,'GKR1'), ABILITY_ILF_TARGET_TYPE,GetUnitAbilityLevel(u,'GKR1')-1)!=1 and timeEnd<2 then
+    if GetAbilityIntegerLevelField(GetUnitAbility(u,'GKR1'), ABILITY_ILF_TARGET_TYPE,GetUnitAbilityLevel(u,'GKR1')-1)!=1 and timeEnd<1 then
         call SetAbilityRemainingCooldown(GetUnitAbility(u,'GKR1'),GetAbilityBaseRealLevelFieldById('GKR1',ABILITY_RLF_COOLDOWN,GetUnitAbilityLevel(u,'GKR1')-1))
         if LoadBoolean(HH,GetHandleId(u),ITRangeHash) then
             if GetUnitState(u,UNIT_STATE_MANA)>GetUnitState(u,UNIT_STATE_MAX_MANA)*0.05 then
@@ -99084,7 +99085,7 @@ if time<2.21 and GetAbilityIntegerLevelField(GetUnitAbility(u,'A0RI'), ABILITY_I
     endif
     if time<0 then
         call SetUnitFacingInstant(u,a*bj_RADTODEG)
-        if not(GetUnitState(u,UNIT_STATE_LIFE)>0.405 and IsUnitPaused(u)==false and GetUnitAbilityLevel(u,'CBC2')==0 and GetUnitAbilityLevel(u,'cbc3')==0  and GetUnitAbilityLevel(u,'cbc5')==0  and GetUnitAbilityLevel(u, 'cbc7')==0 and GetUnitAbilityLevel(u, 'cbc8')==0 and GetUnitAbilityLevel(u, 'cbc9')==0 and UnitIsAlive(u) and udg_B and DU2 and timeEnd<2) then
+        if not(GetUnitState(u,UNIT_STATE_LIFE)>0.405 and IsUnitPaused(u)==false and GetUnitAbilityLevel(u,'CBC2')==0 and GetUnitAbilityLevel(u,'cbc3')==0  and GetUnitAbilityLevel(u,'cbc5')==0  and GetUnitAbilityLevel(u, 'cbc7')==0 and GetUnitAbilityLevel(u, 'cbc8')==0 and GetUnitAbilityLevel(u, 'cbc9')==0 and UnitIsAlive(u) and udg_B and DU2 and timeEnd<1) then
             call SaveReal(h,id,5,20)
             call SetUnitAcquireRange(u,600)
         endif
@@ -99266,7 +99267,7 @@ if time<2.21 and GetAbilityIntegerLevelField(GetUnitAbility(u,'A0RI'), ABILITY_I
         endif
     endif
 else
-    if GetAbilityIntegerLevelField(GetUnitAbility(u,'A0RI'), ABILITY_ILF_TARGET_TYPE,GetUnitAbilityLevel(u,'A0RI')-1)!=1 and timeEnd<2 then
+    if GetAbilityIntegerLevelField(GetUnitAbility(u,'A0RI'), ABILITY_ILF_TARGET_TYPE,GetUnitAbilityLevel(u,'A0RI')-1)!=1 and timeEnd<1 then
         call SetAbilityRemainingCooldown(GetUnitAbility(u,'A0RI'),GetAbilityBaseRealLevelFieldById('A0RI',ABILITY_RLF_COOLDOWN,GetUnitAbilityLevel(u,'A0RI')-1))
         if LoadBoolean(HH,GetHandleId(u),ITRangeHash) then
             if GetUnitState(u,UNIT_STATE_MANA)>GetUnitState(u,UNIT_STATE_MAX_MANA)*0.05 then
@@ -165400,6 +165401,8 @@ if time > 0 and time2!=0 and GetWidgetLife(u) > 0.405 and udg_B==true and DU2==t
             call ShowAbility2('MrF1',false)
             call ShowAbility2('MrG1',false)
             call ShowAbility2('MrW1',false)
+            call UnitAddAbility(u, 'MrW2')
+            call UnitMakeAbilityPermanent(u,true,'MrW2')  
         endif
         if GetUnitTypeId(u)=='H02Y' then
             set soundplay=CreateSound("Sound\\Music\\mp3Music\\GenkshiT.mp3",false,false,true,12700,12700,"")
@@ -165742,6 +165745,7 @@ else
             call UnitAddAbility(u, 'S301')
             call IssueImmediateOrder(u, "bearform")
             call UnitRemoveAbility(u, 'S301')
+            call UnitRemoveAbility(u, 'MrW2')
             call ShowAbility2('MrF1',true)
             call ShowAbility2('MrG1',true)
             call ShowAbility2('MrW1',true)
@@ -177265,7 +177269,7 @@ function MoriaW1SelfCast2 takes nothing returns nothing
         endif
     else
         call UnitApplyTimedLife(l__d,'BTLF',0.05)
-        call SaveStr(HH,idp,'ShNP'+j,"Nowhere")
+        // call SaveStr(HH,idp,'ShNP'+j,"Nowhere")
         call PauseTimer(t)
         call DestroyTimer(t)
         call FlushChildHashtable(HH,id)
@@ -177357,7 +177361,7 @@ function MoriaECast2 takes nothing returns nothing
         set n=CreateUnit(p,'e1EW',x1,y1,0)
         call UnitApplyTimedLife(n,'BTLF',3)
         if GetUnitTypeId(u)=='H00V' then
-            call SetUnitScale(n,0.85,0.85,0.85)
+            call SetUnitScale(n,0.75,0.75,0.75)
             call GroupEnumUnitsInRange(g,x1,y1,350,Base)
             loop
                 set E=FirstOfGroup(g)
@@ -177618,6 +177622,11 @@ function MoriaTCast2 takes nothing returns nothing
         call PauseUnit(u,true)
         if time==4.5 then
             call SetUnitAnimationByIndex(u, 10)
+            set bjLCE=AddSpecialEffect("Light_cwdullahan_f222.mdl",x,y)
+            call SetSpecialEffectScale(bjLCE,1.35)
+            call SetSpecialEffectZ(bjLCE,10)
+            call SetSpecialEffectTimeScale(bjLCE,0.65)
+            call RemoveEffect(bjLCE,1,true,CreateTimer())
         endif
         if time==2 then
             loop
@@ -177631,15 +177640,15 @@ function MoriaTCast2 takes nothing returns nothing
                     call SaveInteger(HH,idl__d,'SAG+',LoadInteger(HH,idl__d,'SAG+')-LoadInteger(HH,idp,'ShAA'+j))
                     call SaveInteger(HH,idl__d,'SIG+',LoadInteger(HH,idl__d,'SIG+')-LoadInteger(HH,idp,'ShIA'+j))
                     call MissleMoveMoria(CreateUnit(p,'e22D',GetUnitX(l__d),GetUnitY(l__d),GetRandomReal(0,359)),90,Atan2(GetUnitY(u)-GetUnitY(l__d),GetUnitX(u)-GetUnitX(l__d)),u)
-                    call SaveInteger(HH,idu,'SSG+',LoadInteger(HH,idu,'SSG+')+LoadInteger(HH,idp,'ShSA'+j))
-                    call SaveInteger(HH,idu,'SAG+',LoadInteger(HH,idu,'SAG+')+LoadInteger(HH,idp,'ShAA'+j))
-                    call SaveInteger(HH,idu,'SIG+',LoadInteger(HH,idu,'SIG+')+LoadInteger(HH,idp,'ShIA'+j))
-                    call SaveUnitHandle(HH,idp,'ShNT'+j,u)
-                    call SaveStr(HH,idp,'ShNP'+j,GetUnitName(u))
-                    call SetHeroStr(u,GetHeroStr(u,false)+LoadInteger(HH,idp,'ShSA'+j),true)
-                    call SetHeroAgi(u,GetHeroAgi(u,false)+LoadInteger(HH,idp,'ShAA'+j),true)
-                    call SetHeroInt(u,GetHeroInt(u,false)+LoadInteger(HH,idp,'ShIA'+j),true)
                 endif
+                call SaveInteger(HH,idu,'SSG+',LoadInteger(HH,idu,'SSG+')+LoadInteger(HH,idp,'ShSA'+j))
+                call SaveInteger(HH,idu,'SAG+',LoadInteger(HH,idu,'SAG+')+LoadInteger(HH,idp,'ShAA'+j))
+                call SaveInteger(HH,idu,'SIG+',LoadInteger(HH,idu,'SIG+')+LoadInteger(HH,idp,'ShIA'+j))
+                call SaveUnitHandle(HH,idp,'ShNT'+j,u)
+                call SaveStr(HH,idp,'ShNP'+j,GetUnitName(u))
+                call SetHeroStr(u,GetHeroStr(u,false)+LoadInteger(HH,idp,'ShSA'+j),true)
+                call SetHeroAgi(u,GetHeroAgi(u,false)+LoadInteger(HH,idp,'ShAA'+j),true)
+                call SetHeroInt(u,GetHeroInt(u,false)+LoadInteger(HH,idp,'ShIA'+j),true)
                 exitwhen j==10
                 set j=j+1
             endloop
@@ -177656,7 +177665,7 @@ function MoriaTCast2 takes nothing returns nothing
             call RemoveEffect(bjLCE,1,true,CreateTimer())
             call TransformationStart(u)
             set n=CreateUnit(p, 'dR43', x, y, GetRandomInt(0, 359))
-            call SetUnitScale(n, 0.3, 0.3, 0.3)
+            call SetUnitScale(n, 0.4, 0.4, 0.4)
             call UnitApplyTimedLife(n,'BTLF', 0.3)
             call MyRemoveUnit(n, 1)
         endif
@@ -177714,10 +177723,10 @@ function MoriaTCast takes unit u returns nothing
     call SetUnitTimeScale(u,1.4)
     set n=CreateUnit(p,'e0RV',x,y,0)
     call UnitApplyTimedLife(n,'BTLF',4)
-    call SetUnitScale(n,0.85,0.85,0.85)
+    call SetUnitScale(n,1.45,1.45,1.45)
     call SetUnitTimeScale(n,0.3)
     set bjLCE=AddSpecialEffect("war3mapImported\\DarkBrith.MDX",x,y)
-    call SetSpecialEffectScale(bjLCE,1.85)
+    call SetSpecialEffectScale(bjLCE,2.85)
     call SetSpecialEffectZ(bjLCE,10)
     call SetSpecialEffectTimeScale(bjLCE,0.65)
     call RemoveEffect(bjLCE,1.5,true,CreateTimer())
@@ -177727,8 +177736,131 @@ function MoriaTCast takes unit u returns nothing
     set p=null
 endfunction
 
+function MoriaW2Cast2 takes nothing returns nothing
+    local timer t=GetExpiredTimer()
+    local integer id=GetHandleId(t)
+    local unit u=LoadUnitHandle(h,id,0)
+    local real x=GetUnitX(u)
+    local real y=GetUnitY(u)
+    local real x1=LoadReal(h,id,2)
+    local real y1=LoadReal(h,id,3)
+    local real f=GetUnitFacing(u)
+    local player p=GetOwningPlayer(u)
+    local real dmg=LoadReal(h, id, 5)
+    local real dist=SquareRootPoint(x,y,x1,y1)
+    local real a=Atan2(y1-y,x1-x)
+    local real he=0
+    local real dist2=LoadReal(h,id,100)
+    if dist2>40.00 and udg_B==true and GetUnitAbilityLevel(u,'A1BL')==0 then
+        call SaveReal(h,id,100,dist2-35)
+        call SetUnitXY_1(u,x+35*Cos(a),y+35*Sin(a), true)
+        call SetUnitFacing(u,a*bj_RADTODEG)
+        set he=ParabolaZ(300,LoadReal(h,id,4),dist)
+        call SetUnitFlyHeight(u,he,0)
+    else
+        call SetUnitAnimation(u,"attack")
+        call ShakeCamera(0.1, 10)
+        set bjLCG=LoadGroupHandle(h, id, 99)
+        call GroupEnumUnitsInRange(bjLCG,x1,y1,400,Base)
+        loop
+        set E=FirstOfGroup(bjLCG)
+        exitwhen E==null
+        if Condition_Base(p,E)then
+            call UnitAddAbility(E, 'Arav')
+            call UnitRemoveAbility(E, 'Arav')
+            //call Push(E,30,Atan2(GetUnitY(E)-y1,GetUnitX(E)-x1),300)
+            call myCustomDamage(u,E,dmg,false,false,null,null,null)
+            call SetControlToUnit(u,E, 2, "stun")
+            call MissleMoveParabola(E,12,0,GetUnitX(E)+500*Cos(Atan2(GetUnitY(E)-y,GetUnitX(E)-x)),GetUnitY(E)+500*Sin(Atan2(GetUnitY(E)-y,GetUnitX(E)-x)),400,u)
+        endif
+        call GroupRemoveUnit(bjLCG,E)
+        endloop
+        call DestroyGroup(LoadGroupHandle(h, id, 99))
+        call PauseUnit(u,false)
+        call SetUnitInvulnerable(u,false)
+        call SetUnitFlyHeight(u,0,0)
+        call SetUnitTimeScale(u,1)
+        set n=CreateUnit(p, 'dR43', x1, y1, GetRandomInt(0, 359))
+        call SetUnitScale(n, 0.6, 0.6, 0.6)
+        call UnitApplyTimedLife(n,'BTLF', 0.7)
+        call MyRemoveUnit(n, 1.5)
+        call DestroyEffect(AddSpecialEffect("war3mapImported\\Slam.mdl",x1,y1))
+        // set n=CreateUnit(p, 'd001', x1,y1, GetRandomInt(0, 360))
+        // call SetUnitScale(n, 1.5, 1.5, 1.5)
+        // call SetUnitFlyHeight(n, 20, 0)
+        // call MyRemoveUnit(n, 1.5)
+        set n=CreateUnit(p, 'd003', x1,y1, GetRandomInt(0, 360))
+        call SetUnitScale(n, 2, 2, 2)
+        call MyRemoveUnit(n, 1.5)
+        set n=CreateUnit(p, 'd003', x1,y1, GetRandomInt(0, 360))
+        call SetUnitScale(n, 2, 2, 2)
+        call MyRemoveUnit(n, 1.5)
+        set n=CreateUnit(p, 'd032', x1,y1, GetRandomInt(0, 360))
+        call SetUnitScale(n, 2.5, 2.5, 2.5)
+        call SetUnitFlyHeight(n, 200, 0)
+        call MyRemoveUnit(n, 1.5)
+        
+        // set n=CreateUnit(p, 'd033', x1,y1, GetRandomInt(0, 360))
+        // call SetUnitModel(n,GetUnitModel(u))
+        // call UnitScale(n, 0.5, 1.2, 0.2)
+        // call SetUnitFlyHeight(n, 5, 0)
+        // call UnitApplyTimedLife(n,'BTLF', 1.5)
+        // call MyRemoveUnit(n, 2.5)
+        call DestroyEffect(LoadEffectHandle(h, id, 97))
+        call DestroyEffect(LoadEffectHandle(h, id, 98))
+        call FlushChildHashtable(h,id)
+        call PauseTimer(t)
+        call DestroyTimer(t)
+    endif
+    set u=null
+    set t=null
+    set p=null
+endfunction
+
+function MoriaW2Cast takes unit u, real x2, real y2 returns nothing
+    local timer newTimer=CreateTimer()
+    local integer id=GetHandleId(newTimer)
+    local real f=GetUnitFacing(u)
+    local real x=GetUnitX(u)
+    local real y=GetUnitY(u)
+    local real x1=x2
+    local real y1=y2
+    local real damage=GetHeroStr(u,true)*8
+    set soundplay=CreateSound("Sound\\Music\\mp3Music\\MoriaW2.mp3", false, false, true, 12700, 12700, "")
+    call StartSound(soundplay)
+    call KillSoundWhenDone(soundplay)
+                
+    // call DestroyEffect(AddSpecialEffect("war3mapImported\\TealSlam.mdl",x,y))
+    set n=CreateUnit(GetOwningPlayer(u), 'dM30', x, y, GetRandomInt(0, 360))
+    call SetUnitScale(n, 2.2, 2.2, 2.2)
+    call MyRemoveUnit(n, 1.5)
+    set n=CreateUnit(GetOwningPlayer(u), 'dM29', x, y, GetRandomInt(0, 360))
+    call SetUnitScale(n, 3, 3, 3)
+    call MyRemoveUnit(n, 1.5)
+    set n=CreateUnit(GetOwningPlayer(u), 'dM29', x, y, GetRandomInt(0, 360))
+    call MyRemoveUnit(n, 1.5)
+    
+    call SetUnitTimeScale(u,4)
+    call PauseUnit(u,true)
+    call UnitAddAbility(u,'Arav')
+    call UnitRemoveAbility(u,'Arav')
+    call SaveUnitHandle(h,id,0,u)
+    call SetUnitInvulnerable(u,true)
+    call SaveReal(h,id,2,x2)
+    call SaveReal(h,id,3,y2)
+    call SaveReal(h,id,4,SquareRootPoint(x,y,x2,y2))
+    call SaveReal(h,id,5,damage)
+    call SaveEffectHandle(h, id, 97, AddSpecialEffectTarget("Abilities\\Weapons\\AvengerMissile\\AvengerMissile.mdl", u, "hand right"))
+    call SaveEffectHandle(h, id, 98, AddSpecialEffectTarget("Abilities\\Weapons\\AvengerMissile\\AvengerMissile.mdl", u, "hand left"))
+    call SaveGroupHandle(h, id, 99, CreateGroup())
+    call SaveReal(h,id,100,SquareRootPoint(x,y,x2,y2))
+    call TimerStart(newTimer,0.02,true,function MoriaW2Cast2)
+    set u=null
+    set newTimer=null
+endfunction
+
 function Moria_Cond takes nothing returns boolean
-    local boolean cond1=GetSpellAbilityId()=='MrQ1' or GetSpellAbilityId()=='MrW1' or GetSpellAbilityId()=='MrE1' or GetSpellAbilityId()=='MrR1'  or GetSpellAbilityId()=='MrT1' or GetSpellAbilityId()=='MrF1' or GetSpellAbilityId()=='MrF2' or GetSpellAbilityId()=='MrG1' or GetSpellAbilityId()=='MrG2'
+    local boolean cond1=GetSpellAbilityId()=='MrQ1' or GetSpellAbilityId()=='MrW1'  or GetSpellAbilityId()=='MrW2' or GetSpellAbilityId()=='MrE1' or GetSpellAbilityId()=='MrR1'  or GetSpellAbilityId()=='MrT1' or GetSpellAbilityId()=='MrF1' or GetSpellAbilityId()=='MrF2' or GetSpellAbilityId()=='MrG1' or GetSpellAbilityId()=='MrG2'
     if cond1 then
         return true
     else
@@ -177791,6 +177923,9 @@ function Moria_Cast takes nothing returns nothing
         else
 		    call MoriaW1Cast(u,x,y)
         endif
+    endif
+    if GetSpellAbilityId() == 'MrW2' then
+        call MoriaW2Cast(u,x,y)
     endif
 	if GetSpellAbilityId() == 'MrE1' then
         call MoriaECast(u,c)
