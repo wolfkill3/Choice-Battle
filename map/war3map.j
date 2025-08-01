@@ -8828,17 +8828,31 @@ set soundStr[134]=CreateSound("Sound\\Music\\mp3Music\\VegitoG0.mp3",false,false
 set soundStr[135]=CreateSound("Sound\\Music\\mp3Music\\Vegitto\\VegitoG0-jap.mp3",false,false,true,12700,12700,"")
 set soundStr[136]=CreateSound("Sound\\Music\\mp3Music\\RyougiF1.mp3",false,false,true,12700,12700,"")
 set soundStr[137]=CreateSound("Sound\\Music\\mp3Music\\RyougiF2.mp3",false,false,true,12700,12700,"")
+set soundStr[138]=CreateSound("Sound\\Music\\mp3Music\\MoriaQ.mp3",false,false,true,12700,12700,"")
+set soundStr[139]=CreateSound("Sound\\Music\\mp3Music\\MoriaQT.mp3",false,false,true,12700,12700,"")
+set soundStr[140]=CreateSound("Sound\\Music\\mp3Music\\MoriaQSelf.mp3",false,false,true,12700,12700,"")
+set soundStr[141]=CreateSound("Sound\\Music\\mp3Music\\MoriaW1.mp3",false,false,true,12700,12700,"")
+set soundStr[142]=CreateSound("Sound\\Music\\mp3Music\\MoriaW2.mp3",false,false,true,12700,12700,"")
+set soundStr[143]=CreateSound("Sound\\Music\\mp3Music\\MoriaW21.mp3",false,false,true,12700,12700,"")
+set soundStr[144]=CreateSound("Sound\\Music\\mp3Music\\MoriaW22.mp3",false,false,true,12700,12700,"")
+set soundStr[145]=CreateSound("Sound\\Music\\mp3Music\\MoriaE.mp3",false,false,true,12700,12700,"")
+set soundStr[146]=CreateSound("Sound\\Music\\mp3Music\\MoriaET.mp3",false,false,true,12700,12700,"")
+set soundStr[147]=CreateSound("Sound\\Music\\mp3Music\\MoriaR.mp3",false,false,true,12700,12700,"")
+set soundStr[148]=CreateSound("Sound\\Music\\mp3Music\\MoriaRT.mp3",false,false,true,12700,12700,"")
+set soundStr[149]=CreateSound("Sound\\Music\\mp3Music\\MoriaT.mp3",false,false,true,12700,12700,"")
+set soundStr[150]=CreateSound("Sound\\Music\\mp3Music\\MoriaG.mp3",false,false,true,12700,12700,"")
+set soundStr[151]=CreateSound("Sound\\Music\\mp3Music\\MoriaG2.mp3",false,false,true,12700,12700,"")
 loop
 set i=i+1
 call StartSound(soundStr[i])
-exitwhen i>137
+exitwhen i>151
 endloop
 call TriggerSleepAction(0)
 set i=0
 loop
 set i=i+1
 call StopSound(soundStr[i],false,false)
-exitwhen i>137
+exitwhen i>151
 endloop
 endfunction
 function InitTrig_VoicePreload takes nothing returns nothing
@@ -176541,9 +176555,7 @@ if IsUnitHidden(c)==false and GetUnitAbilityLevel(u, 'CBC2')==0 and GetUnitAbili
         call SetSpecialEffectVertexColour(LoadEffectHandle(HH,id,7),0,0,0,0)
         call RemoveEffect(LoadEffectHandle(HH,id,7), 0.1, false, CreateTimer())
         call PauseUnit(u,false)
-        set soundplay=CreateSound("Sound\\Music\\mp3Music\\MoriaG2.mp3",false,false,true,12700,12700,"")
-        call StartSound(soundplay)
-        call KillSoundWhenDone(soundplay)
+        call StartSound(soundStr[151])
         if IsUnitType(c, UNIT_TYPE_HERO) and c==Hero[GetPlayerId(GetOwningPlayer(c))] and LoadBoolean(HH,GetHandleId(c),'ShSt')==false and IsUnitIllusion(c)==false and GetUnitTypeId(c)!='H007' and GetUnitTypeId(c)!='Ho13' and GetUnitTypeId(c)!='H34X' and GetUnitTypeId(c)!='H14F' then
             call SaveBoolean(HH,GetHandleId(c),'ShSt',true)
             call SaveInteger(HH,GetHandleId(c),'ShSA',R2I(GetHeroStr(c,false)*0.10)+3)
@@ -176606,9 +176618,7 @@ local player p=GetOwningPlayer(u)
 call SaveUnitHandle(HH,id,0,u)
 call SaveUnitHandle(HH,id,1,c)
 call PauseUnit(u,true)
-set soundplay=CreateSound("Sound\\Music\\mp3Music\\MoriaG.mp3",false,false,true,12700,12700,"")
-call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+call StartSound(soundStr[150])
 call SaveReal(HH,id,2,1.5)
 call SetUnitTimeScale(u,4)
 call SaveBoolean(HH,GetHandleId(u),ChannelHash,true)
@@ -177105,12 +177115,10 @@ function MoriaQCast takes unit u, real x1, real y1 returns nothing
     call SaveReal(h,id,23,GetUnitY(u))
     call SaveReal(h,id,2,1200)
     if GetUnitTypeId(u)=='H00V' then
-        set soundplay=CreateSound("Sound\\Music\\mp3Music\\MoriaQT.mp3",false,false,true,12700,12700,"")
+        call StartSound(soundStr[139])
     else
-        set soundplay=CreateSound("Sound\\Music\\mp3Music\\MoriaQ.mp3",false,false,true,12700,12700,"")
+        call StartSound(soundStr[138])
     endif
-    call StartSound(soundplay)
-    call KillSoundWhenDone(soundplay)
     call TimerStart(t,0.1,true,function MoriaQCast2)
     set u=null
     set p=null
@@ -177276,12 +177284,10 @@ function MoriaQSelfCast takes unit u returns nothing
     call SaveReal(h,id,23,GetUnitY(u))
     call SaveReal(h,id,2,750)
     if GetUnitTypeId(u)=='H00V' then
-        set soundplay=CreateSound("Sound\\Music\\mp3Music\\MoriaQT.mp3",false,false,true,12700,12700,"")
+        call StartSound(soundStr[139])
     else
-        set soundplay=CreateSound("Sound\\Music\\mp3Music\\MoriaQSelf.mp3",false,false,true,12700,12700,"")
+        call StartSound(soundStr[140])
     endif
-    call StartSound(soundplay)
-    call KillSoundWhenDone(soundplay)
     call TimerStart(t,0.1,true,function MoriaQSelfCast2)
     set u=null
     set p=null
@@ -177332,9 +177338,9 @@ function MoriaW1Cast takes unit u, real x1, real y1 returns nothing
     call SaveReal(HH,id,2,x1)
     call SaveReal(HH,id,3,y1)
     if GetRandomInt(0,1)==1 then
-        set soundplay=CreateSound("Sound\\Music\\mp3Music\\MoriaW1.mp3",false,false,true,12700,12700,"")
+        call StartSound(soundStr[141])
     else
-        set soundplay=CreateSound("Sound\\Music\\mp3Music\\MoriaW2.mp3",false,false,true,12700,12700,"")
+        call StartSound(soundStr[142])
     endif
     call StartSound(soundplay)
     call KillSoundWhenDone(soundplay)
@@ -177524,12 +177530,10 @@ function MoriaECast takes unit u, unit c returns nothing
     call SaveUnitHandle(HH,id,0,u)
     call SaveUnitHandle(HH,id,1,c)
     if GetUnitTypeId(u)=='H00V' then
-        set soundplay=CreateSound("Sound\\Music\\mp3Music\\MoriaET.mp3",false,false,true,12700,12700,"")
+        call StartSound(soundStr[145])
     else
-        set soundplay=CreateSound("Sound\\Music\\mp3Music\\MoriaE.mp3",false,false,true,12700,12700,"")
+        call StartSound(soundStr[146])
     endif
-    call StartSound(soundplay)
-    call KillSoundWhenDone(soundplay)
     call SaveReal(HH,id,2,1)
     call SaveGroupHandle(HH,id,6,CreateGroup())
     set EFF=AddSpecialEffectTarget("AZ_anyemoW2_R.mdx",c,"chest")
@@ -177713,9 +177717,9 @@ function MoriaRCast takes unit u, real x, real y returns nothing
     call SetUnitScale(n,0.35,0.35,0.35)
     call SetUnitTimeScale(n,0.5)
     if GetUnitTypeId(u)=='H00V' then
-        set soundplay=CreateSound("Sound\\Music\\mp3Music\\MoriaRT.mp3",false,false,true,12700,12700,"")
+        call StartSound(soundStr[147])
     else
-        set soundplay=CreateSound("Sound\\Music\\mp3Music\\MoriaR.mp3",false,false,true,12700,12700,"")
+        call StartSound(soundStr[148])
     endif
     call StartSound(soundplay)
     call KillSoundWhenDone(soundplay)
@@ -177835,9 +177839,7 @@ function MoriaTCast takes unit u returns nothing
         call ShikiCloneEffect(udg_DM[id],0.5,1.05,1.25,250)
     endif
     call SaveBoolean(HH,GetHandleId(u),'MrTR',true)
-    set soundplay=CreateSound("Sound\\Music\\mp3Music\\MoriaT.mp3",false,false,true,12700,12700,"")
-    call StartSound(soundplay)
-    call KillSoundWhenDone(soundplay)
+    call StartSound(soundStr[149])
     call SaveUnitHandle(HH,uid,0,u)
     call SaveReal(HH,uid,1,4.55)
     call SetUnitInvulnerable(u,true)
@@ -177928,9 +177930,7 @@ function MoriaW2Cast2 takes nothing returns nothing
         // call SetUnitFlyHeight(n, 5, 0)
         // call UnitApplyTimedLife(n,'BTLF', 1.5)
         // call MyRemoveUnit(n, 2.5)
-        set soundplay=CreateSound("Sound\\Music\\mp3Music\\MoriaW22.mp3", false, false, true, 12700, 12700, "")
-        call StartSound(soundplay)
-        call KillSoundWhenDone(soundplay)
+        call StartSound(soundStr[144])
         call DestroyEffect(LoadEffectHandle(h, id, 97))
         call DestroyEffect(LoadEffectHandle(h, id, 98))
         call FlushChildHashtable(h,id)
@@ -177951,9 +177951,7 @@ function MoriaW2Cast takes unit u, real x2, real y2 returns nothing
     local real x1=x2
     local real y1=y2
     local real damage=GetHeroStr(u,true)*8
-    set soundplay=CreateSound("Sound\\Music\\mp3Music\\MoriaW21.mp3", false, false, true, 12700, 12700, "")
-    call StartSound(soundplay)
-    call KillSoundWhenDone(soundplay)
+    call StartSound(soundStr[143])
                 
     // call DestroyEffect(AddSpecialEffect("war3mapImported\\TealSlam.mdl",x,y))
     set n=CreateUnit(GetOwningPlayer(u), 'dM30', x, y, GetRandomInt(0, 360))
