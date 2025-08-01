@@ -173359,6 +173359,8 @@ local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
 local unit u=LoadUnitHandle(HH,id,0)
 local real time=LoadReal(HH,id,1)
+// call ConsolePrint(I2S(GetUnitControlCount(u,9)))
+// call ConsolePrint(B2S(LoadBoolean(HH,GetHandleId(u),TARGET_ABILITY)))
 if LoadBoolean(HH,GetHandleId(u),TARGET_ABILITY)==false or time==2 then
     call SaveReal(HH,id,1,time+0.05)
 endif
@@ -177530,9 +177532,9 @@ function MoriaECast takes unit u, unit c returns nothing
     call SaveUnitHandle(HH,id,0,u)
     call SaveUnitHandle(HH,id,1,c)
     if GetUnitTypeId(u)=='H00V' then
-        call StartSound(soundStr[145])
-    else
         call StartSound(soundStr[146])
+    else
+        call StartSound(soundStr[145])
     endif
     call SaveReal(HH,id,2,1)
     call SaveGroupHandle(HH,id,6,CreateGroup())
@@ -177717,9 +177719,9 @@ function MoriaRCast takes unit u, real x, real y returns nothing
     call SetUnitScale(n,0.35,0.35,0.35)
     call SetUnitTimeScale(n,0.5)
     if GetUnitTypeId(u)=='H00V' then
-        call StartSound(soundStr[147])
-    else
         call StartSound(soundStr[148])
+    else
+        call StartSound(soundStr[147])
     endif
     call StartSound(soundplay)
     call KillSoundWhenDone(soundplay)
@@ -194028,7 +194030,7 @@ set time=time+0.02
 call SaveReal(HH,id,5,time)
 if time>0.1 and(SR(x0,y0,x1,y1)<=50 or time>10)then
 call EffectCreateAndMove(true,"BlackGoku\\Singularity II Purple.mdl",facing,1,1.75,0.75,100,100,100,0,100-GetUnitFlyHeight(target),target,0,facing)
-if GetUnitAbilityLevel(target,'Avul')>0 then
+if IsUnitInvulnerable(target)==true then
 set targinv=true
 call SetUnitInvulnerable(target,false)
 endif
