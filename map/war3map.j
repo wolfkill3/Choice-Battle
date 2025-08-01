@@ -6646,7 +6646,7 @@ function Condition_RecipeString takes integer id returns boolean
 return id=='I00E' or id=='I01P' or id=='I01R' or id=='I01T' or id=='I01V' or id=='I02U' or id=='I02X' or id=='I02Z' or id=='I045' or id=='I047' or id=='I04Y' or id=='I04U' or id=='I04X' or id=='I04Z' or id=='I051' or id=='I14R' or id=='IGDr' or id=='IPar' or id=='IHYr' or id=='ISTr' or id=='IBSR' or id=='I052' or id=='I053' or id=='I055' or id=='I06P' or id=='I06S' or id=='I06T' or id=='IPRR'
 endfunction
 function Condition_AbilityString2 takes integer id returns boolean
-return id=='A0YX' or id=='A0Z0' or id=='KkR1' or id=='KkR2' or id=='BRRS' or id=='BRSS' or id=='IcF2' or id=='IcF5' or id=='GKF1' or id=='VGF1' or id=='GKG1' or id=='GKBS' or id=='GKSS' or id=='GKS2' or id=='GKS3' or id=='GKS4' or id=='GKSR' or id=='GKSB' or id=='GKUI' or id=='GKMI' or id=='GKQ1' or id=='GKW1' or id=='GKE1' or id=='GKT1' or id=='JNF1' or id=='JNF4' or id=='GSQ1' or id=='GSQ2' or id=='GSE1' or id=='GSE2' or id=='GST1' or id=='GST3' or id=='GSF1' or id=='GSF2'
+return id=='A0YX' or id=='A0Z0' or id=='KkR1' or id=='KkR2' or id=='BRRS' or id=='BRSS' or id=='IcF2' or id=='IcF5' or id=='GKF1' or id=='VGF1' or id=='GKG1' or id=='GKBS' or id=='GKSS' or id=='GKS2' or id=='GKS3' or id=='GKS4' or id=='GKSR' or id=='GKSB' or id=='GKUI' or id=='GKMI' or id=='GKQ1' or id=='GKW1' or id=='GKE1' or id=='GKT1' or id=='JNF1' or id=='JNF4' or id=='GSQ1' or id=='GSQ2' or id=='GSE1' or id=='GSE2' or id=='GST1' or id=='GST3' or id=='GSF1' or id=='GSF2' or id=='GSF2' or id=='MrF1' or id=='MrG2' or id=='MrT1'
 endfunction
 function Condition_AbilityString takes integer id returns boolean
 return Condition_AbilityString2(id) or id=='SaW1' or id=='SaE1' or id=='SaR1' or id=='SaT1' or id=='TMW0' or id=='A0P6' or id=='A1D7' or id=='HSW1' or id=='HST1' or id=='KHG1' or id=='A2DJ' or id=='IcQ1' or id=='IcT1' or id=='MadF' or id=='A0N1' or id=='A2CZ' or id=='A0CZ' or id=='DSW1' or id=='Ad02' or id=='BGW1' or id=='KaA6' or id=='KaAF' or id=='BGG1' or id=='ASQ1' or id=='ASW1' or id=='ASE1' or id=='AST1' or id=='A1BO' or id=='A1BT' or id=='A1BW' or id=='A085' or id=='A08J' or id=='MiQ1' or id=='MiE1' or id=='MiR1' or id=='A0FN' or id=='WE03' or id=='WE06' or id=='A1AJ' or id=='A1ER' or id=='A0QK' or id=='A1HO' or id=='AlFS' or id=='OM13' or id=='A17D' or id=='A177' or id=='A172' or id=='A16U' or id=='A0TN'
@@ -8828,17 +8828,31 @@ set soundStr[134]=CreateSound("Sound\\Music\\mp3Music\\VegitoG0.mp3",false,false
 set soundStr[135]=CreateSound("Sound\\Music\\mp3Music\\Vegitto\\VegitoG0-jap.mp3",false,false,true,12700,12700,"")
 set soundStr[136]=CreateSound("Sound\\Music\\mp3Music\\RyougiF1.mp3",false,false,true,12700,12700,"")
 set soundStr[137]=CreateSound("Sound\\Music\\mp3Music\\RyougiF2.mp3",false,false,true,12700,12700,"")
+set soundStr[138]=CreateSound("Sound\\Music\\mp3Music\\MoriaQ.mp3",false,false,true,12700,12700,"")
+set soundStr[139]=CreateSound("Sound\\Music\\mp3Music\\MoriaQT.mp3",false,false,true,12700,12700,"")
+set soundStr[140]=CreateSound("Sound\\Music\\mp3Music\\MoriaQSelf.mp3",false,false,true,12700,12700,"")
+set soundStr[141]=CreateSound("Sound\\Music\\mp3Music\\MoriaW1.mp3",false,false,true,12700,12700,"")
+set soundStr[142]=CreateSound("Sound\\Music\\mp3Music\\MoriaW2.mp3",false,false,true,12700,12700,"")
+set soundStr[143]=CreateSound("Sound\\Music\\mp3Music\\MoriaW21.mp3",false,false,true,12700,12700,"")
+set soundStr[144]=CreateSound("Sound\\Music\\mp3Music\\MoriaW22.mp3",false,false,true,12700,12700,"")
+set soundStr[145]=CreateSound("Sound\\Music\\mp3Music\\MoriaE.mp3",false,false,true,12700,12700,"")
+set soundStr[146]=CreateSound("Sound\\Music\\mp3Music\\MoriaET.mp3",false,false,true,12700,12700,"")
+set soundStr[147]=CreateSound("Sound\\Music\\mp3Music\\MoriaR.mp3",false,false,true,12700,12700,"")
+set soundStr[148]=CreateSound("Sound\\Music\\mp3Music\\MoriaRT.mp3",false,false,true,12700,12700,"")
+set soundStr[149]=CreateSound("Sound\\Music\\mp3Music\\MoriaT.mp3",false,false,true,12700,12700,"")
+set soundStr[150]=CreateSound("Sound\\Music\\mp3Music\\MoriaG.mp3",false,false,true,12700,12700,"")
+set soundStr[151]=CreateSound("Sound\\Music\\mp3Music\\MoriaG2.mp3",false,false,true,12700,12700,"")
 loop
 set i=i+1
 call StartSound(soundStr[i])
-exitwhen i>137
+exitwhen i>151
 endloop
 call TriggerSleepAction(0)
 set i=0
 loop
 set i=i+1
 call StopSound(soundStr[i],false,false)
-exitwhen i>137
+exitwhen i>151
 endloop
 endfunction
 function InitTrig_VoicePreload takes nothing returns nothing
@@ -14439,6 +14453,103 @@ function OnButtonAddonAbility takes nothing returns nothing
                 set j=j+1
                 exitwhen j>35
                 endloop
+
+            elseif GetFrameTexture(but,0)==GetAbilityBaseStringFieldById('MrF1',ABILITY_SF_ICON_NORMAL) and IsFrameVisible(GetFrameByName("TavernBarAdditionalAbilityList",0))==false and i==GetFrameContext(but) then
+                call ShowFrame( InfoTavernText, false )
+                call ShowFrame( GetFrameByName("TavernBarAdditionalAbilityList",0), true )
+                set j=0
+                loop
+                call ShowFrame( GetFrameByName("TavernAdditionalAbilityTooltip",j), false )
+                call ShowFrame( GetFrameByName("TavernAdditionalAbilityBorderOpenable",j), false )
+                if (j>=0 and j<5) or j>6 then
+                call ShowFrame(GetFrameByName("TavernAdditionalAbility",j),false)
+                else
+                call SetFrameText( GetFrameByName("TavernAdditionalAbilityTooltipText",j), "     " )
+                endif
+                set j=j+1
+                exitwhen j>35
+                endloop
+                set j=0
+                loop
+                    call AddFrameText( GetFrameByName("TavernAdditionalAbilityTooltipText",5), "|cffffcc00"+I2S(GetAbilityBaseIntegerLevelFieldById( String2Id( "MrF2" ), ABILITY_ILF_MANA_COST, j ))+"|r")
+                    exitwhen j==GetAbilityBaseIntegerFieldById(String2Id( "MrF2" ), ABILITY_IF_LEVELS)-1
+                    call AddFrameText( GetFrameByName("TavernAdditionalAbilityTooltipText",5), "/")
+                    set j=j+1
+                endloop
+                set j=0
+                loop
+                    call AddFrameText( GetFrameByName("TavernAdditionalAbilityTooltipText",6), "|cffffcc00"+I2S(GetAbilityBaseIntegerLevelFieldById( String2Id( "MrG2" ), ABILITY_ILF_MANA_COST, j ))+"|r")
+                    exitwhen j==GetAbilityBaseIntegerFieldById(String2Id( "MrG2" ), ABILITY_IF_LEVELS)-1
+                    call AddFrameText( GetFrameByName("TavernAdditionalAbilityTooltipText",6), "/")
+                    set j=j+1
+                endloop
+                call SetFrameTexture( GetFrameByName("TavernAdditionalAbility",5), GetAbilityBaseStringFieldById( String2Id( "MrF2" ), ABILITY_SF_ICON_NORMAL ), 0, true )
+                call SetFrameTexture( GetFrameByName("TavernAdditionalAbility",5), GetAbilityBaseStringFieldById( String2Id( "MrF2" ), ABILITY_SF_ICON_NORMAL ), 1, true )
+                call SetFrameTexture( GetFrameByName("TavernAdditionalAbility",5), GetAbilityBaseStringFieldById( String2Id( "MrF2" ), ABILITY_SF_ICON_NORMAL ), 2, true )
+                call SetFrameTexture( GetFrameByName("TavernAdditionalAbility",6), GetAbilityBaseStringFieldById( String2Id( "MrG2" ), ABILITY_SF_ICON_NORMAL ), 0, true )
+                call SetFrameTexture( GetFrameByName("TavernAdditionalAbility",6), GetAbilityBaseStringFieldById( String2Id( "MrG2" ), ABILITY_SF_ICON_NORMAL ), 1, true )
+                call SetFrameTexture( GetFrameByName("TavernAdditionalAbility",6), GetAbilityBaseStringFieldById( String2Id( "MrG2" ), ABILITY_SF_ICON_NORMAL ), 2, true )
+                call AddFrameText( GetFrameByName("TavernAdditionalAbilityTooltipText",5), "\n\n"+GetAbilityBaseStringFieldById( String2Id( "MrF2" ), ABILITY_SF_NAME )+"\n\n"+GetAbilityBaseStringFieldById( String2Id( "MrF2" ), ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED ))
+                call AddFrameText( GetFrameByName("TavernAdditionalAbilityTooltipText",6), "\n\n"+GetAbilityBaseStringFieldById( String2Id( "MrG2" ), ABILITY_SF_NAME )+"\n\n"+GetAbilityBaseStringFieldById( String2Id( "MrG2" ), ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED ))
+                call SetFrameSize( GetFrameByName("TavernAdditionalAbilityTooltip",5), .26, GetFrameHeight( GetFrameByName("TavernAdditionalAbilityTooltipText",5))+0.03)
+                call SetFrameSize( GetFrameByName("TavernAdditionalAbilityTooltip",6), .26, GetFrameHeight( GetFrameByName("TavernAdditionalAbilityTooltipText",6))+0.03)
+                set j=0
+                loop
+                    call SetFrameTextAlignment( GetFrameByName("TavernAdditionalAbilityTooltipText",j), TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_LEFT )
+                    call SetFrameRelativePoint( GetFrameByName("TavernAdditionalAbilityTooltip",j), FRAMEPOINT_CENTER, GetFrameByName("TavernAdditionalAbility",j), FRAMEPOINT_CENTER,  .13, (-0.5*GetFrameHeight( GetFrameByName("TavernAdditionalAbilityTooltipText",j)))-.02  )
+                    exitwhen j>35
+                    set j=j+1
+                endloop
+            elseif GetFrameTexture(but,0)==GetAbilityBaseStringFieldById('MrF1',ABILITY_SF_ICON_NORMAL) and IsFrameVisible(GetFrameByName("TavernBarAdditionalAbilityList",0))==true and i==GetFrameContext(but) then
+                call ShowFrame( GetFrameByName("TavernBarAdditionalAbilityList",0), false )
+                call ShowFrame( InfoTavernText, true )
+                set j=0
+                loop
+                call ShowFrame( GetFrameByName("TavernAdditionalAbilityBorderOpenable",j), false )
+                if j>=7 then
+                call ShowFrame(GetFrameByName("TavernAdditionalAbility",j),false)
+                endif
+                set j=j+1
+                exitwhen j>35
+                endloop
+
+
+            elseif GetFrameTexture(but,0)==GetAbilityBaseStringFieldById('MrT1',ABILITY_SF_ICON_NORMAL) and GetFrameTexture(GetFrameByName("TavernAbility",1),0)==GetAbilityBaseStringFieldById('MrW1',ABILITY_SF_ICON_NORMAL) then
+                call ShowFrame( GetFrameByName("TavernBarAdditionalAbilityList",0), false )
+                call ShowFrame( InfoTavernText, true )
+                call ShowFrame( GetFrameByName("TavernAbilityBorderOpenable",5), false )
+                call ShowFrame( GetFrameByName("TavernAbility",5), false )
+                call ShowFrame( GetFrameByName("TavernAbility",6), false )
+                call SetFrameText( GetFrameByName("TavernAbilityTooltipText",1), "     " )
+                call SetFrameTexture( GetFrameByName("TavernAbility",1), GetAbilityBaseStringFieldById( String2Id( "MrW2" ), ABILITY_SF_ICON_NORMAL ), 0, true )
+                call SetFrameTexture( GetFrameByName("TavernAbility",1), GetAbilityBaseStringFieldById( String2Id( "MrW2" ), ABILITY_SF_ICON_NORMAL ), 1, true )
+                call SetFrameTexture( GetFrameByName("TavernAbility",1), GetAbilityBaseStringFieldById( String2Id( "MrW2" ), ABILITY_SF_ICON_NORMAL ), 2, true ) 
+                set j=0
+                loop
+                    call AddFrameText( GetFrameByName("TavernAbilityTooltipText",1), "|cffffcc00"+I2S(GetAbilityBaseIntegerLevelFieldById( String2Id( "MrW2" ), ABILITY_ILF_MANA_COST, j ))+"|r")
+                    exitwhen j==GetAbilityBaseIntegerFieldById(String2Id( "MrW2" ), ABILITY_IF_LEVELS)-1
+                    call AddFrameText( GetFrameByName("TavernAbilityTooltipText",1), "/")
+                    set j=j+1
+                endloop
+                call AddFrameText( GetFrameByName("TavernAbilityTooltipText",1), "\n\n"+GetAbilityBaseStringFieldById( String2Id( "MrW2" ), ABILITY_SF_NAME )+", (|cffffcc00R|r)\n\n"+GetAbilityBaseStringFieldById( String2Id( "MrW2" ), ABILITY_SLF_TOOLTIP_LEARN_EXTENDED ))
+            elseif GetFrameTexture(but,0)==GetAbilityBaseStringFieldById('MrT1',ABILITY_SF_ICON_NORMAL) and GetFrameTexture(GetFrameByName("TavernAbility",1),0)==GetAbilityBaseStringFieldById('MrW2',ABILITY_SF_ICON_NORMAL) then
+                call ShowFrame( GetFrameByName("TavernBarAdditionalAbilityList",0), false )
+                call ShowFrame( InfoTavernText, true )
+                call ShowFrame( GetFrameByName("TavernAbilityBorderOpenable",5), true )
+                call ShowFrame( GetFrameByName("TavernAbility",5), true )
+                call ShowFrame( GetFrameByName("TavernAbility",6), true )
+                call SetFrameText( GetFrameByName("TavernAbilityTooltipText",1), "     " )
+                call SetFrameTexture( GetFrameByName("TavernAbility",1), GetAbilityBaseStringFieldById( String2Id( "MrW1" ), ABILITY_SF_ICON_NORMAL ), 0, true )
+                call SetFrameTexture( GetFrameByName("TavernAbility",1), GetAbilityBaseStringFieldById( String2Id( "MrW1" ), ABILITY_SF_ICON_NORMAL ), 1, true )
+                call SetFrameTexture( GetFrameByName("TavernAbility",1), GetAbilityBaseStringFieldById( String2Id( "MrW1" ), ABILITY_SF_ICON_NORMAL ), 2, true ) 
+                set j=0
+                loop
+                    call AddFrameText( GetFrameByName("TavernAbilityTooltipText",1), "|cffffcc00"+I2S(GetAbilityBaseIntegerLevelFieldById( String2Id( "MrW1" ), ABILITY_ILF_MANA_COST, j ))+"|r")
+                    exitwhen j==GetAbilityBaseIntegerFieldById(String2Id( "MrW1" ), ABILITY_IF_LEVELS)-1
+                    call AddFrameText( GetFrameByName("TavernAbilityTooltipText",1), "/")
+                    set j=j+1
+                endloop
+                call AddFrameText( GetFrameByName("TavernAbilityTooltipText",1), "\n\n"+GetAbilityBaseStringFieldById( String2Id( "MrW1" ), ABILITY_SF_NAME )+", (|cffffcc00R|r)\n\n"+GetAbilityBaseStringFieldById( String2Id( "MrW1" ), ABILITY_SLF_TOOLTIP_LEARN_EXTENDED ))
 
             elseif GetFrameTexture(but,0)==GetAbilityBaseStringFieldById('VGF1',ABILITY_SF_ICON_NORMAL) and IsFrameVisible(GetFrameByName("TavernBarAdditionalAbilityList",0))==false and i==GetFrameContext(but) then
                 call ShowFrame( InfoTavernText, false )
@@ -22797,6 +22908,9 @@ function Trig_Killer_Actions takes nothing returns nothing
                     if GetUnitAbilityLevel(Hero[i],'A1F3')>0 then
                         call SetPlayerState(Player(i),PLAYER_STATE_RESOURCE_GOLD,GetPlayerState(Player(i),PLAYER_STATE_RESOURCE_GOLD)+20)
                     endif
+                    if GetUnitAbilityLevel(Hero[i],'A105')>0 then
+                        call SetHeroInt(Hero[i],GetHeroInt(Hero[i],false)+1,true)
+                    endif
                     if GetUnitTypeId(Hero[i])=='HYuj' then //old 'H049'
                         set yuji4[i]=yuji4[i]+1
                         call UnitAddAbility(Hero[i],'A0T8')
@@ -29915,7 +30029,7 @@ set p=null
 endfunction
 function GrayRFHCond takes nothing returns boolean
 set P=GetTriggerPlayer()
-return udg_B==false and(GetPlayerName(P)=="Sylphiette" or GetPlayerName(P)=="2thedevile2" or GetPlayerName(P)=="chu" or GetPlayerName(P)=="Slaikee" or GetPlayerName(P)=="Antitilt" or GetPlayerName(P)=="Annieh" or GetPlayerName(P)=="zld6334" or GetPlayerName(P)=="Magistor" or GetPlayerName(P)=="Hermaeus" or GetPlayerName(P)=="No_Dust"  or GetPlayerName(P)=="TheDunwich525" or GetPlayerName(P)=="pro100master999" or GetPlayerName(P)=="UJustDeadWeight" or GetPlayerName(P)=="PinkieNecro" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="NecromanseR_RuS" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="Saske981" or GetPlayerName(P)=="Wolfkill" or GetPlayerName(P)=="Famouzy" or GetPlayerName(P)=="Uriska" or GetPlayerName(P)=="ROC4IK" or GetPlayerName(P)=="Provokatop935" or GetPlayerName(P)=="xxNu-13xx" or GetPlayerName(P)=="DeekeR_ANTEC" or GetPlayerName(P)=="Sasaki..Haise" or GetPlayerName(P)=="f.a.r.a.o.n." or GetPlayerName(P)=="neketEXE" or GetPlayerName(P)=="KickSuckem" or GetPlayerName(P)=="Denamesh" or GetPlayerName(P)=="Black_XeSHTeG" or GetPlayerName(P)=="I_Arioh" or GetPlayerName(P)=="KamaBr" or GetPlayerName(P)=="[OSV] Kama" or  BaseSkinCond(P))
+return udg_B==false and(GetPlayerName(P)=="Sylphiette" or GetPlayerName(P)=="2thedevile2" or GetPlayerName(P)=="M0tTayCheTroi" or GetPlayerName(P)=="chu" or GetPlayerName(P)=="Slaikee" or GetPlayerName(P)=="Antitilt" or GetPlayerName(P)=="Annieh" or GetPlayerName(P)=="zld6334" or GetPlayerName(P)=="Magistor" or GetPlayerName(P)=="Hermaeus" or GetPlayerName(P)=="No_Dust"  or GetPlayerName(P)=="TheDunwich525" or GetPlayerName(P)=="pro100master999" or GetPlayerName(P)=="UJustDeadWeight" or GetPlayerName(P)=="PinkieNecro" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="NecromanseR_RuS" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="Saske981" or GetPlayerName(P)=="Wolfkill" or GetPlayerName(P)=="Famouzy" or GetPlayerName(P)=="Uriska" or GetPlayerName(P)=="ROC4IK" or GetPlayerName(P)=="Provokatop935" or GetPlayerName(P)=="xxNu-13xx" or GetPlayerName(P)=="DeekeR_ANTEC" or GetPlayerName(P)=="Sasaki..Haise" or GetPlayerName(P)=="f.a.r.a.o.n." or GetPlayerName(P)=="neketEXE" or GetPlayerName(P)=="KickSuckem" or GetPlayerName(P)=="Denamesh" or GetPlayerName(P)=="Black_XeSHTeG" or GetPlayerName(P)=="I_Arioh" or GetPlayerName(P)=="KamaBr" or GetPlayerName(P)=="[OSV] Kama" or  BaseSkinCond(P))
 endfunction
 function GrayRFHCast takes nothing returns nothing
 local integer ip=GetPlayerId(GetTriggerPlayer())
@@ -31107,7 +31221,7 @@ set p=null
 endfunction
 function SRFHCond takes nothing returns boolean
 set P=GetTriggerPlayer()
-return udg_B==false and(GetPlayerName(P)=="Anwa_Abdul" or GetPlayerName(P)=="Renex" or GetPlayerName(P)=="KamaBr" or GetPlayerName(P)=="[OSV] Kama" or GetPlayerName(P)=="Daiya_Torasuto" or GetPlayerName(P)=="Uriska" or GetPlayerName(P)=="Annieh" or GetPlayerName(P)=="zld6334" or GetPlayerName(P)=="Alastart" or GetPlayerName(P)=="Sekaiyo" or GetPlayerName(P)=="Cermia" or GetPlayerName(P)=="Shiki.SS" or GetPlayerName(P)=="Anwa_Abdul" or GetPlayerName(P)=="antonpoganui" or GetPlayerName(P)=="dessar383" or GetPlayerName(P)=="pro100master999" or GetPlayerName(P)=="Sylphiette" or GetPlayerName(P)=="54Dzangetsu75" or GetPlayerName(P)=="PinkieNecro" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="NecromanseR_RuS" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="Wolfkill" or GetPlayerName(P)=="msseva16" or GetPlayerName(P)=="Famouzy" or GetPlayerName(P)=="Famousy" or GetPlayerName(P)=="xxNu-13xx" or GetPlayerName(P)=="Sasaki..Haise" or GetPlayerName(P)=="Fatal-_-Err0r" or GetPlayerName(P)=="Denamesh" or GetPlayerName(P)=="Neo_Hirai" or GetPlayerName(P)=="Reisen_Udongeib" or GetPlayerName(P)=="X53Arcan" or GetPlayerName(P)=="akama001" or GetPlayerName(P)=="Qwerty291097" or   GetPlayerName(P)=="Awenger93" or  GetPlayerName(P)=="Gun62rus" or GetPlayerName(P)=="zelim9" or GetPlayerName(P)=="Kirito.Yagatami" or GetPlayerName(P)=="RevanRespect" or GetPlayerName(P)=="MoonX3" or GetPlayerName(P)=="MilediEsdeath" or GetPlayerName(P)=="hrUd" or GetPlayerName(P)=="Kuzeyuta" or GetPlayerName(P)=="Kirito.Yagatami" or GetPlayerName(P)=="[E]moLove" or GetPlayerName(P)=="[Nirvash][Neo]" or GetPlayerName(P)=="Kiznas69" or GetPlayerName(P)=="Semko157" or GetPlayerName(P)=="-[I]Chi[C]o-" or GetPlayerName(P)=="zelim9" or GetPlayerName(P)=="EastRyd" or GetPlayerName(P)=="Andhel_corr" or GetPlayerName(P)=="Ameru_Z" or GetPlayerName(P)=="KazuneReyes" or GetPlayerName(P)=="99smail99" or GetPlayerName(P)=="tenevo" or GetPlayerName(P)=="Wishnt" or GetPlayerName(P)=="Starheart" or GetPlayerName(P)=="Avenger2109" or GetPlayerName(P)=="sergeyh2" or GetPlayerName(P)=="HeavyRainFall" or GetPlayerName(P)=="Starheart" or GetPlayerName(P)=="tenevo" or GetPlayerName(P)=="Hermaeus" or GetPlayerName(P)=="No_Dust" or GetPlayerName(P)=="TheDunwich525" or GetPlayerName(P)=="klint_istvud" or GetPlayerName(P)=="BERKUNT" or GetPlayerName(P)=="Odi" or GetPlayerName(P)=="Vladz0" or BaseSkinCond(P))
+return udg_B==false and(GetPlayerName(P)=="Anwa_Abdul" or GetPlayerName(P)=="Renex" or GetPlayerName(P)=="Magistor" or GetPlayerName(P)=="KamaBr" or GetPlayerName(P)=="[OSV] Kama" or GetPlayerName(P)=="Daiya_Torasuto" or GetPlayerName(P)=="Uriska" or GetPlayerName(P)=="Annieh" or GetPlayerName(P)=="zld6334" or GetPlayerName(P)=="Alastart" or GetPlayerName(P)=="Sekaiyo" or GetPlayerName(P)=="Cermia" or GetPlayerName(P)=="Shiki.SS" or GetPlayerName(P)=="Anwa_Abdul" or GetPlayerName(P)=="antonpoganui" or GetPlayerName(P)=="dessar383" or GetPlayerName(P)=="pro100master999" or GetPlayerName(P)=="Sylphiette" or GetPlayerName(P)=="54Dzangetsu75" or GetPlayerName(P)=="PinkieNecro" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="NecromanseR_RuS" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="Wolfkill" or GetPlayerName(P)=="msseva16" or GetPlayerName(P)=="Famouzy" or GetPlayerName(P)=="Famousy" or GetPlayerName(P)=="xxNu-13xx" or GetPlayerName(P)=="Sasaki..Haise" or GetPlayerName(P)=="Fatal-_-Err0r" or GetPlayerName(P)=="Denamesh" or GetPlayerName(P)=="Neo_Hirai" or GetPlayerName(P)=="Reisen_Udongeib" or GetPlayerName(P)=="X53Arcan" or GetPlayerName(P)=="akama001" or GetPlayerName(P)=="Qwerty291097" or   GetPlayerName(P)=="Awenger93" or  GetPlayerName(P)=="Gun62rus" or GetPlayerName(P)=="zelim9" or GetPlayerName(P)=="Kirito.Yagatami" or GetPlayerName(P)=="RevanRespect" or GetPlayerName(P)=="MoonX3" or GetPlayerName(P)=="MilediEsdeath" or GetPlayerName(P)=="hrUd" or GetPlayerName(P)=="Kuzeyuta" or GetPlayerName(P)=="Kirito.Yagatami" or GetPlayerName(P)=="[E]moLove" or GetPlayerName(P)=="[Nirvash][Neo]" or GetPlayerName(P)=="Kiznas69" or GetPlayerName(P)=="Semko157" or GetPlayerName(P)=="-[I]Chi[C]o-" or GetPlayerName(P)=="zelim9" or GetPlayerName(P)=="EastRyd" or GetPlayerName(P)=="Andhel_corr" or GetPlayerName(P)=="Ameru_Z" or GetPlayerName(P)=="KazuneReyes" or GetPlayerName(P)=="99smail99" or GetPlayerName(P)=="tenevo" or GetPlayerName(P)=="Wishnt" or GetPlayerName(P)=="Starheart" or GetPlayerName(P)=="Avenger2109" or GetPlayerName(P)=="sergeyh2" or GetPlayerName(P)=="HeavyRainFall" or GetPlayerName(P)=="Starheart" or GetPlayerName(P)=="tenevo" or GetPlayerName(P)=="Hermaeus" or GetPlayerName(P)=="No_Dust" or GetPlayerName(P)=="TheDunwich525" or GetPlayerName(P)=="klint_istvud" or GetPlayerName(P)=="BERKUNT" or GetPlayerName(P)=="Odi" or GetPlayerName(P)=="Vladz0" or BaseSkinCond(P))
 endfunction
 function SRFHCast takes nothing returns nothing
 local integer ip=GetPlayerId(GetTriggerPlayer())
@@ -34115,6 +34229,7 @@ call SaveReal(HH,GetHandleId(t),3,GetUnitX(Hero[GetPlayerId(GetTriggerPlayer())]
 call SaveReal(HH,GetHandleId(t),4,GetUnitY(Hero[GetPlayerId(GetTriggerPlayer())]))
 call SaveBoolean(HH,GetHandleId(Hero[GetPlayerId(GetTriggerPlayer())]),TARGET_ABILITY,false)
 call SetControlToUnit(Hero[GetPlayerId(GetTriggerPlayer())],Hero[GetPlayerId(GetTriggerPlayer())],1,"stun")
+// call SetControlToUnit(Hero[GetPlayerId(GetTriggerPlayer())],Hero[GetPlayerId(GetTriggerPlayer())],15,"heavystun")
 call SetControlToUnit(Hero[GetPlayerId(GetTriggerPlayer())],Hero[GetPlayerId(GetTriggerPlayer())],1,"ensnare")
 call SetControlToUnit(Hero[GetPlayerId(GetTriggerPlayer())],Hero[GetPlayerId(GetTriggerPlayer())],1,"root")
 call SetControlToUnit(Hero[GetPlayerId(GetTriggerPlayer())],Hero[GetPlayerId(GetTriggerPlayer())],1,"doom")
@@ -46582,7 +46697,7 @@ set t2=null
 endfunction
 function BlinkWindCond takes nothing returns boolean
 set n=GetTriggerUnit()
-return GetSpellAbilityId()=='A0HJ' and GetHeroLevel(n)>=6 and GetUnitTypeId(n)!='H007' and GetUnitAbilityLevel(n,'A1BU')==0 and GetUnitAbilityLevel(n,'A0BV')==0 and GetUnitAbilityLevel(n,'A09M')==0 and GetUnitAbilityLevel(n,'A0PE')==0 and GetUnitAbilityLevel(n,'A07P')==0 and GetUnitAbilityLevel(n,'A13V')==0 and GetUnitAbilityLevel(n,'A23V')==0 and GetUnitAbilityLevel(n,'A08X')==0 and GetUnitAbilityLevel(n,'A0I6')==0 and GetUnitAbilityLevel(n,'A1FU')==0 and GetUnitAbilityLevel(n, 'AlDl')==0 and GetUnitAbilityLevel(n, 'LCF1')==0
+return GetSpellAbilityId()=='A0HJ'
 endfunction
 function BlinkWindCast takes nothing returns nothing
 local unit u=GetTriggerUnit()
@@ -83539,7 +83654,8 @@ call SetUnitInvulnerable(u,false)
 call PauseUnit(c,false)
 call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,false)
 call SetUnitInvulnerable(c,false)
-call myCustomDamage(u,c,10*GetHeroStr(u,true),false,false,null,null,null)
+call myCustomDamage(u,c,11*GetHeroStr(u,true),false,false,null,null,null)
+call SetControlToUnit(u,c,1, "stun")
 call PauseTimer(t)
 call DestroyTimer(t)
 call FlushChildHashtable(h,id)
@@ -173241,6 +173357,8 @@ local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
 local unit u=LoadUnitHandle(HH,id,0)
 local real time=LoadReal(HH,id,1)
+// call ConsolePrint(I2S(GetUnitControlCount(u,9)))
+// call ConsolePrint(B2S(LoadBoolean(HH,GetHandleId(u),TARGET_ABILITY)))
 if LoadBoolean(HH,GetHandleId(u),TARGET_ABILITY)==false or time==2 then
     call SaveReal(HH,id,1,time+0.05)
 endif
@@ -176437,9 +176555,7 @@ if IsUnitHidden(c)==false and GetUnitAbilityLevel(u, 'CBC2')==0 and GetUnitAbili
         call SetSpecialEffectVertexColour(LoadEffectHandle(HH,id,7),0,0,0,0)
         call RemoveEffect(LoadEffectHandle(HH,id,7), 0.1, false, CreateTimer())
         call PauseUnit(u,false)
-        set soundplay=CreateSound("Sound\\Music\\mp3Music\\MoriaG2.mp3",false,false,true,12700,12700,"")
-        call StartSound(soundplay)
-        call KillSoundWhenDone(soundplay)
+        call StartSound(soundStr[151])
         if IsUnitType(c, UNIT_TYPE_HERO) and c==Hero[GetPlayerId(GetOwningPlayer(c))] and LoadBoolean(HH,GetHandleId(c),'ShSt')==false and IsUnitIllusion(c)==false and GetUnitTypeId(c)!='H007' and GetUnitTypeId(c)!='Ho13' and GetUnitTypeId(c)!='H34X' and GetUnitTypeId(c)!='H14F' then
             call SaveBoolean(HH,GetHandleId(c),'ShSt',true)
             call SaveInteger(HH,GetHandleId(c),'ShSA',R2I(GetHeroStr(c,false)*0.10)+3)
@@ -176502,9 +176618,7 @@ local player p=GetOwningPlayer(u)
 call SaveUnitHandle(HH,id,0,u)
 call SaveUnitHandle(HH,id,1,c)
 call PauseUnit(u,true)
-set soundplay=CreateSound("Sound\\Music\\mp3Music\\MoriaG.mp3",false,false,true,12700,12700,"")
-call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+call StartSound(soundStr[150])
 call SaveReal(HH,id,2,1.5)
 call SetUnitTimeScale(u,4)
 call SaveBoolean(HH,GetHandleId(u),ChannelHash,true)
@@ -177001,12 +177115,10 @@ function MoriaQCast takes unit u, real x1, real y1 returns nothing
     call SaveReal(h,id,23,GetUnitY(u))
     call SaveReal(h,id,2,1200)
     if GetUnitTypeId(u)=='H00V' then
-        set soundplay=CreateSound("Sound\\Music\\mp3Music\\MoriaQT.mp3",false,false,true,12700,12700,"")
+        call StartSound(soundStr[139])
     else
-        set soundplay=CreateSound("Sound\\Music\\mp3Music\\MoriaQ.mp3",false,false,true,12700,12700,"")
+        call StartSound(soundStr[138])
     endif
-    call StartSound(soundplay)
-    call KillSoundWhenDone(soundplay)
     call TimerStart(t,0.1,true,function MoriaQCast2)
     set u=null
     set p=null
@@ -177172,12 +177284,10 @@ function MoriaQSelfCast takes unit u returns nothing
     call SaveReal(h,id,23,GetUnitY(u))
     call SaveReal(h,id,2,750)
     if GetUnitTypeId(u)=='H00V' then
-        set soundplay=CreateSound("Sound\\Music\\mp3Music\\MoriaQT.mp3",false,false,true,12700,12700,"")
+        call StartSound(soundStr[139])
     else
-        set soundplay=CreateSound("Sound\\Music\\mp3Music\\MoriaQSelf.mp3",false,false,true,12700,12700,"")
+        call StartSound(soundStr[140])
     endif
-    call StartSound(soundplay)
-    call KillSoundWhenDone(soundplay)
     call TimerStart(t,0.1,true,function MoriaQSelfCast2)
     set u=null
     set p=null
@@ -177228,9 +177338,9 @@ function MoriaW1Cast takes unit u, real x1, real y1 returns nothing
     call SaveReal(HH,id,2,x1)
     call SaveReal(HH,id,3,y1)
     if GetRandomInt(0,1)==1 then
-        set soundplay=CreateSound("Sound\\Music\\mp3Music\\MoriaW1.mp3",false,false,true,12700,12700,"")
+        call StartSound(soundStr[141])
     else
-        set soundplay=CreateSound("Sound\\Music\\mp3Music\\MoriaW2.mp3",false,false,true,12700,12700,"")
+        call StartSound(soundStr[142])
     endif
     call StartSound(soundplay)
     call KillSoundWhenDone(soundplay)
@@ -177420,12 +177530,10 @@ function MoriaECast takes unit u, unit c returns nothing
     call SaveUnitHandle(HH,id,0,u)
     call SaveUnitHandle(HH,id,1,c)
     if GetUnitTypeId(u)=='H00V' then
-        set soundplay=CreateSound("Sound\\Music\\mp3Music\\MoriaET.mp3",false,false,true,12700,12700,"")
+        call StartSound(soundStr[146])
     else
-        set soundplay=CreateSound("Sound\\Music\\mp3Music\\MoriaE.mp3",false,false,true,12700,12700,"")
+        call StartSound(soundStr[145])
     endif
-    call StartSound(soundplay)
-    call KillSoundWhenDone(soundplay)
     call SaveReal(HH,id,2,1)
     call SaveGroupHandle(HH,id,6,CreateGroup())
     set EFF=AddSpecialEffectTarget("AZ_anyemoW2_R.mdx",c,"chest")
@@ -177609,9 +177717,9 @@ function MoriaRCast takes unit u, real x, real y returns nothing
     call SetUnitScale(n,0.35,0.35,0.35)
     call SetUnitTimeScale(n,0.5)
     if GetUnitTypeId(u)=='H00V' then
-        set soundplay=CreateSound("Sound\\Music\\mp3Music\\MoriaRT.mp3",false,false,true,12700,12700,"")
+        call StartSound(soundStr[148])
     else
-        set soundplay=CreateSound("Sound\\Music\\mp3Music\\MoriaR.mp3",false,false,true,12700,12700,"")
+        call StartSound(soundStr[147])
     endif
     call StartSound(soundplay)
     call KillSoundWhenDone(soundplay)
@@ -177731,9 +177839,7 @@ function MoriaTCast takes unit u returns nothing
         call ShikiCloneEffect(udg_DM[id],0.5,1.05,1.25,250)
     endif
     call SaveBoolean(HH,GetHandleId(u),'MrTR',true)
-    set soundplay=CreateSound("Sound\\Music\\mp3Music\\MoriaT.mp3",false,false,true,12700,12700,"")
-    call StartSound(soundplay)
-    call KillSoundWhenDone(soundplay)
+    call StartSound(soundStr[149])
     call SaveUnitHandle(HH,uid,0,u)
     call SaveReal(HH,uid,1,4.55)
     call SetUnitInvulnerable(u,true)
@@ -177824,9 +177930,7 @@ function MoriaW2Cast2 takes nothing returns nothing
         // call SetUnitFlyHeight(n, 5, 0)
         // call UnitApplyTimedLife(n,'BTLF', 1.5)
         // call MyRemoveUnit(n, 2.5)
-        set soundplay=CreateSound("Sound\\Music\\mp3Music\\MoriaW22.mp3", false, false, true, 12700, 12700, "")
-        call StartSound(soundplay)
-        call KillSoundWhenDone(soundplay)
+        call StartSound(soundStr[144])
         call DestroyEffect(LoadEffectHandle(h, id, 97))
         call DestroyEffect(LoadEffectHandle(h, id, 98))
         call FlushChildHashtable(h,id)
@@ -177847,9 +177951,7 @@ function MoriaW2Cast takes unit u, real x2, real y2 returns nothing
     local real x1=x2
     local real y1=y2
     local real damage=GetHeroStr(u,true)*8
-    set soundplay=CreateSound("Sound\\Music\\mp3Music\\MoriaW21.mp3", false, false, true, 12700, 12700, "")
-    call StartSound(soundplay)
-    call KillSoundWhenDone(soundplay)
+    call StartSound(soundStr[143])
                 
     // call DestroyEffect(AddSpecialEffect("war3mapImported\\TealSlam.mdl",x,y))
     set n=CreateUnit(GetOwningPlayer(u), 'dM30', x, y, GetRandomInt(0, 360))
@@ -193926,7 +194028,7 @@ set time=time+0.02
 call SaveReal(HH,id,5,time)
 if time>0.1 and(SR(x0,y0,x1,y1)<=50 or time>10)then
 call EffectCreateAndMove(true,"BlackGoku\\Singularity II Purple.mdl",facing,1,1.75,0.75,100,100,100,0,100-GetUnitFlyHeight(target),target,0,facing)
-if GetUnitAbilityLevel(target,'Avul')>0 then
+if IsUnitInvulnerable(target)==true then
 set targinv=true
 call SetUnitInvulnerable(target,false)
 endif
