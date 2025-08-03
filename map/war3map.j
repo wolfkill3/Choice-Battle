@@ -23334,6 +23334,13 @@ if GetItemPlayer(it)==p and udg_test==false and (udg_B==false or DU2==false) the
     call SaveUnitHandle(HH,id,0,u)
     call SaveItemHandle(HH,id,1,it)
     call TimerStart(t,0.02,false,function Trig_DropItem_Actions2)
+    if (GetItemTypeId(it) ==  'ISPB' or GetItemTypeId(it) ==  'IPRB') and count==1 then
+        // call BJDebugMsg(I2S(LoadInteger(HH,GetHandleId(it),'slot')))
+        if LoadInteger(HH,GetHandleId(it),'slot')<6 then
+            call SetUnitAcquireRange(u, GetUnitAcquireRange(u)-GetUnitBaseRealFieldById(GetUnitTypeId(u),UNIT_RF_ACQUISITION_RANGE)*0.3-50)
+            call SetUnitAttackRangeByIndex(u, 0, GetUnitAttackRangeByIndex(u,0)-GetUnitBaseWeaponRealFieldById(GetUnitTypeId(u),UNIT_WEAPON_RF_ATTACK_RANGE,0)*0.3-50)
+        endif
+    endif
     //
 elseif GetItemPlayer(it)==p then
     if (GetItemTypeId(it) ==  'ISPB' or GetItemTypeId(it) ==  'IPRB') and count==1 then
@@ -177309,7 +177316,7 @@ function MoriaW1Cast2 takes nothing returns nothing
         set n=CreateUnit(p,'h15T',x1+GetRandomReal(-350,350),y1+GetRandomReal(-350,350),GetRandomReal(0,359))
         call MyRemoveZombie(n,5)
         call SetUnitMoveSpeed(n, 350+GetHeroAgi(u,true)) 
-        call SetUnitBaseDamageByIndex(n,0,30+R2I(GetHeroInt(u,true)*(0.25+0.05*GetUnitAbilityLevel(u,'MrW1'))))
+        call SetUnitBaseDamageByIndex(n,0,15+R2I(GetHeroInt(u,true)*(0.25+0.05*GetUnitAbilityLevel(u,'MrW1'))))
         call MissleMoveMoria(CreateUnit(p,'e22D',GetUnitX(u),GetUnitY(u),GetRandomReal(0,359)),90,Atan2(GetUnitY(n)-GetUnitY(u),GetUnitX(n)-GetUnitX(u)),n)
         set bjLCE=AddSpecialEffect("shadowtrap-ny.mdl",GetUnitX(n),GetUnitY(n))
         call SetSpecialEffectZ(bjLCE,50)
