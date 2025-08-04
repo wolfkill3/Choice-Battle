@@ -66662,9 +66662,9 @@ local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
 local unit u=LoadUnitHandle(h,id,0)
 local unit c=LoadUnitHandle(h,id,1)
-local real heal=(LoadReal(h,id,2)*(1+GetUnitAbilityLevel(u,'A1A3')*0.5))/13
+local real heal=(LoadReal(h,id,2)*(1+GetUnitAbilityLevel(u,'A1A3')*0.5))/10
 local integer i=LoadInteger(h,id,3)
-if i<13 then
+if i<10 then
 call HealTextTag(u,c,heal*myCustomHeal2(c,1),"HealthRes")
 call SetUnitState(c,UNIT_STATE_LIFE,GetWidgetLife(c)+heal)
 call SaveInteger(h,id,3,i+1)
@@ -83283,7 +83283,7 @@ local unit u=LoadUnitHandle(h,id,0)
 local real x=GetUnitX(u)
 local real y=GetUnitY(u)
 local player p=GetOwningPlayer(u)
-local real dmg=GetHeroStr(u,true)*0.425
+local real dmg=GetHeroStr(u,true)*0.385
 local real time=LoadReal(h,id,1)+0.15
 if time<4 then
 call SetUnitInvulnerable(u,true)
