@@ -1019,6 +1019,7 @@ real AX
 real AY
 unit oreha
 unit Goku=null
+unit Moria=null
 unit GenkiDama
 boolean array GenkiUsed
 //sabrac1
@@ -12299,14 +12300,22 @@ function OnButtonChangeAbilityMode takes nothing returns nothing
     //         endif
     //     endif
     // endif
-    if GetUnitTypeId(GetUnitSelected(p))=='H00P' and (p==GetOwningPlayer(GetUnitSelected(p)) or GetPlayerAlliance(GetOwningPlayer(GetUnitSelected(p)),p,ALLIANCE_SHARED_CONTROL)) and but==GetFrameByName( "AbilityVarBarIcon", 6 ) and IsUnitPaused(GetUnitSelected(p))==false and GetUnitAbilityLevel(GetUnitSelected(p),'Pet1')==0 then
-        set pHid=GetHandleId(GetOwningPlayer(GetUnitSelected(p)))
+    if GetUnitTypeId(GetUnitSelected(p))=='H00P' and (p==GetOwningPlayer(Moria) or GetPlayerAlliance(GetOwningPlayer(Moria),p,ALLIANCE_SHARED_CONTROL)) and but==GetFrameByName( "AbilityVarBarIcon", 6 ) and IsUnitPaused(Moria)==false and GetUnitAbilityLevel(Moria,'Pet1')==0 then
+        set pHid=GetHandleId(GetOwningPlayer(Moria))
         if LoadInteger(HH,pHid,'ShSn')!=0 then
             if LoadInteger(HH,pHid,VariationGHash)<LoadInteger(HH,pHid,'ShSn') then
                 call SaveInteger(HH,pHid,VariationGHash,LoadInteger(HH,pHid,VariationGHash)+1)
+                call SyncSavedInteger(HH, pHid, VariationGHash)
             else
                 call SaveInteger(HH,pHid,VariationGHash,1)
+                call SyncSavedInteger(HH, pHid, VariationGHash)
             endif
+        endif
+        if GetAbilityRemainingCooldown(GetUnitAbility(Moria, 'MrG1'))<0.2 then
+            call StartAbilityCooldown(GetUnitAbility(Moria, 'MrG1'), 0.2)
+        endif
+        if GetAbilityRemainingCooldown(GetUnitAbility(Moria, 'MrW1'))<0.2 then
+            call StartAbilityCooldown(GetUnitAbility(Moria, 'MrW1'), 0.2)
         endif
     endif
     set p = null
@@ -26470,23 +26479,25 @@ if Goku!=null then
         endif
     endif
 endif
-if GetUnitTypeId(GetUnitSelected(GetLocalPlayer()))=='H00P' and (GetLocalPlayer()==GetOwningPlayer(GetUnitSelected(GetLocalPlayer())) or GetPlayerAlliance(GetOwningPlayer(GetUnitSelected(GetLocalPlayer())),GetLocalPlayer(),ALLIANCE_SHARED_CONTROL)) then
-    if IsAbilityVisible(GetUnitAbility(GetUnitSelected(GetLocalPlayer()),'MrG1')) and (GetLocalPlayer()==GetOwningPlayer(GetUnitSelected(GetLocalPlayer())) or GetPlayerAlliance(GetOwningPlayer(GetUnitSelected(GetLocalPlayer())),GetLocalPlayer(),ALLIANCE_SHARED_CONTROL)) and (GetFrameTexture(GetOriginFrame(ORIGIN_FRAME_COMMAND_BUTTON,11),1)!="ReplaceableTextures\\CommandButtons\\BTNCancel.blp" or (GetFrameTexture(GetOriginFrame(ORIGIN_FRAME_COMMAND_BUTTON,0),1)=="war3mapImported\\BTNMove.blp" and IsFrameVisible(GetOriginFrame(ORIGIN_FRAME_COMMAND_BUTTON,0)))) and LoadInteger(HH,GetHandleId(GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))),'ShSn')>0 then 
-        call ShowFrame(GetFrameByName( "AbilityVarBarIcon", 6 ),true)
-        if LoadBoolean(HH,GetHandleId(GetFrameByName( "AbilityVarBarIcon", 6 )),BUTTONHOVER)==false then
-            call ShowFrame(GetFrameByName( "AbilityVarBarTooltip", 6 ),false)
+if Moria!=null then
+    if GetUnitSelected(GetLocalPlayer())==Moria and (GetLocalPlayer()==GetOwningPlayer(Moria) or GetPlayerAlliance(GetOwningPlayer(Moria),GetLocalPlayer(),ALLIANCE_SHARED_CONTROL)) then
+        if IsAbilityVisible(GetUnitAbility(Moria,'MrG1')) and (GetLocalPlayer()==GetOwningPlayer(Moria) or GetPlayerAlliance(GetOwningPlayer(Moria),GetLocalPlayer(),ALLIANCE_SHARED_CONTROL)) and (GetFrameTexture(GetOriginFrame(ORIGIN_FRAME_COMMAND_BUTTON,11),1)!="ReplaceableTextures\\CommandButtons\\BTNCancel.blp" or (GetFrameTexture(GetOriginFrame(ORIGIN_FRAME_COMMAND_BUTTON,0),1)=="war3mapImported\\BTNMove.blp" and IsFrameVisible(GetOriginFrame(ORIGIN_FRAME_COMMAND_BUTTON,0)))) and LoadInteger(HH,GetHandleId(GetOwningPlayer(Moria)),'ShSn')>0 then 
+            call ShowFrame(GetFrameByName( "AbilityVarBarIcon", 6 ),true)
+            if LoadBoolean(HH,GetHandleId(GetFrameByName( "AbilityVarBarIcon", 6 )),BUTTONHOVER)==false then
+                call ShowFrame(GetFrameByName( "AbilityVarBarTooltip", 6 ),false)
+            else
+                call ShowFrame(GetFrameByName( "AbilityVarBarTooltip", 6 ),true)
+            endif
+            call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 6 ), GetUnitStringField(LoadUnitHandle(HH,GetHandleId(GetOwningPlayer(Moria)),'ShPS'+LoadInteger(HH,GetHandleId(GetOwningPlayer(Moria)),VariationGHash)),UNIT_SF_ICON_NORMAL), 0, true )
+            call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 6 ), GetUnitStringField(LoadUnitHandle(HH,GetHandleId(GetOwningPlayer(Moria)),'ShPS'+LoadInteger(HH,GetHandleId(GetOwningPlayer(Moria)),VariationGHash)),UNIT_SF_ICON_NORMAL), 1, true )
+            call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 6 ), GetUnitStringField(LoadUnitHandle(HH,GetHandleId(GetOwningPlayer(Moria)),'ShPS'+LoadInteger(HH,GetHandleId(GetOwningPlayer(Moria)),VariationGHash)),UNIT_SF_ICON_NORMAL), 2, true )
+            call SetFrameText( GetFrameByName("AbilityVarBarTooltipText",6), GetUnitStringField( LoadUnitHandle(HH,GetHandleId(GetOwningPlayer(Moria)),'ShPS'+LoadInteger(HH,GetHandleId(GetOwningPlayer(Moria)),VariationGHash)), UNIT_SF_NAME )+"'s Shadow, (|cffffcc00Ctrl+G|r)\n\nStats:\n|c00FF5555STR|r: "+I2S(LoadInteger(HH,GetHandleId(GetOwningPlayer(Moria)),'ShSA'+LoadInteger(HH,GetHandleId(GetOwningPlayer(Moria)),VariationGHash)))+"\n|c003CFF3CAGI|r: "+I2S(LoadInteger(HH,GetHandleId(GetOwningPlayer(Moria)),'ShAA'+LoadInteger(HH,GetHandleId(GetOwningPlayer(Moria)),VariationGHash)))+"\n|c0077FFFFINT|r: "+I2S(LoadInteger(HH,GetHandleId(GetOwningPlayer(Moria)),'ShIA'+LoadInteger(HH,GetHandleId(GetOwningPlayer(Moria)),VariationGHash)))+"\nImplanted: "+LoadStr(HH,GetHandleId(GetOwningPlayer(Moria)),'ShNP'+LoadInteger(HH,GetHandleId(GetOwningPlayer(Moria)),VariationGHash)))
+            call SetFrameSize( GetFrameByName("AbilityVarBarTooltip",6), .24, GetFrameHeight( GetFrameByName("AbilityVarBarTooltipText",6))+0.03)
+            call SetFrameTextAlignment( GetFrameByName("AbilityVarBarTooltipText",6), TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_LEFT )
+            call SetFrameRelativePoint( GetFrameByName("AbilityVarBarTooltip",6), FRAMEPOINT_CENTER, GetFrameByName("AbilityVarBarIcon",6), FRAMEPOINT_CENTER,  -.06, (0.5*GetFrameHeight( GetFrameByName("AbilityVarBarTooltipText",6)))+.02  )
         else
-            call ShowFrame(GetFrameByName( "AbilityVarBarTooltip", 6 ),true)
+            call ShowFrame(GetFrameByName( "AbilityVarBarIcon", 6 ),false)
         endif
-        call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 6 ), GetUnitStringField(LoadUnitHandle(HH,GetHandleId(GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))),'ShPS'+LoadInteger(HH,GetHandleId(GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))),VariationGHash)),UNIT_SF_ICON_NORMAL), 0, true )
-        call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 6 ), GetUnitStringField(LoadUnitHandle(HH,GetHandleId(GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))),'ShPS'+LoadInteger(HH,GetHandleId(GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))),VariationGHash)),UNIT_SF_ICON_NORMAL), 1, true )
-        call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 6 ), GetUnitStringField(LoadUnitHandle(HH,GetHandleId(GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))),'ShPS'+LoadInteger(HH,GetHandleId(GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))),VariationGHash)),UNIT_SF_ICON_NORMAL), 2, true )
-        call SetFrameText( GetFrameByName("AbilityVarBarTooltipText",6), GetUnitStringField( LoadUnitHandle(HH,GetHandleId(GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))),'ShPS'+LoadInteger(HH,GetHandleId(GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))),VariationGHash)), UNIT_SF_NAME )+"'s Shadow, (|cffffcc00Ctrl+G|r)\n\nStats:\n|c00FF5555STR|r: "+I2S(LoadInteger(HH,GetHandleId(GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))),'ShSA'+LoadInteger(HH,GetHandleId(GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))),VariationGHash)))+"\n|c003CFF3CAGI|r: "+I2S(LoadInteger(HH,GetHandleId(GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))),'ShAA'+LoadInteger(HH,GetHandleId(GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))),VariationGHash)))+"\n|c0077FFFFINT|r: "+I2S(LoadInteger(HH,GetHandleId(GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))),'ShIA'+LoadInteger(HH,GetHandleId(GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))),VariationGHash)))+"\nImplanted: "+LoadStr(HH,GetHandleId(GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))),'ShNP'+LoadInteger(HH,GetHandleId(GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))),VariationGHash)))
-        call SetFrameSize( GetFrameByName("AbilityVarBarTooltip",6), .24, GetFrameHeight( GetFrameByName("AbilityVarBarTooltipText",6))+0.03)
-        call SetFrameTextAlignment( GetFrameByName("AbilityVarBarTooltipText",6), TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_LEFT )
-        call SetFrameRelativePoint( GetFrameByName("AbilityVarBarTooltip",6), FRAMEPOINT_CENTER, GetFrameByName("AbilityVarBarIcon",6), FRAMEPOINT_CENTER,  -.06, (0.5*GetFrameHeight( GetFrameByName("AbilityVarBarTooltipText",6)))+.02  )
-    else
-        call ShowFrame(GetFrameByName( "AbilityVarBarIcon", 6 ),false)
     endif
 endif
 if GenkiUsed[GetPlayerId(GetLocalPlayer())]==true and GetOwningPlayer(Goku)!=GetLocalPlayer() then
@@ -26908,6 +26919,9 @@ if cmb!=true then
         endif
         if GetUnitTypeId(u)=='H02H' then
             set Goku=u
+        endif
+        if GetUnitTypeId(u)=='H00P' then
+            set Moria=u
         endif
         set nowpick=1
         if FFAMode==false then
@@ -31826,6 +31840,9 @@ endif
 if GetUnitTypeId(Hero[ip])=='H02H' then
     set Goku=Hero[ip]
 endif
+if GetUnitTypeId(Hero[ip])=='H00P' then
+    set Moria=Hero[ip]
+endif
 //call AddUnitMaxLife(Hero[ip],(round-1)*150)
 call SetHeroInt(Hero[ip],GetHeroInt(Hero[ip],false)+((round-1)-GetPlayerState(p,PLAYER_STATE_RESOURCE_LUMBER))*3,true)
 call SetHeroAgi(Hero[ip],GetHeroAgi(Hero[ip],false)+((round-1)-GetPlayerState(p,PLAYER_STATE_RESOURCE_LUMBER))*3,true)
@@ -34426,6 +34443,9 @@ set oreha=Hero[ip]
 endif
 if GetUnitTypeId(Hero[ip])=='H02H' then
 set Goku=Hero[ip]
+endif
+if GetUnitTypeId(Hero[ip])=='H00P' then
+set Moria=Hero[ip]
 endif
 //call AddUnitMaxLife(Hero[ip],(round-1)*150)
 call SetHeroInt(Hero[ip],GetHeroInt(Hero[ip],false)+((round-1)-GetPlayerState(p,PLAYER_STATE_RESOURCE_LUMBER))*3,true)
