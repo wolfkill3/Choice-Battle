@@ -26481,7 +26481,7 @@ if Goku!=null then
 endif
 if Moria!=null then
     if GetUnitSelected(GetLocalPlayer())==Moria and (GetLocalPlayer()==GetOwningPlayer(Moria) or GetPlayerAlliance(GetOwningPlayer(Moria),GetLocalPlayer(),ALLIANCE_SHARED_CONTROL)) then
-        if IsAbilityVisible(GetUnitAbility(Moria,'MrG1')) and (GetLocalPlayer()==GetOwningPlayer(Moria) or GetPlayerAlliance(GetOwningPlayer(Moria),GetLocalPlayer(),ALLIANCE_SHARED_CONTROL)) and (GetFrameTexture(GetOriginFrame(ORIGIN_FRAME_COMMAND_BUTTON,11),1)!="ReplaceableTextures\\CommandButtons\\BTNCancel.blp" or (GetFrameTexture(GetOriginFrame(ORIGIN_FRAME_COMMAND_BUTTON,0),1)=="war3mapImported\\BTNMove.blp" and IsFrameVisible(GetOriginFrame(ORIGIN_FRAME_COMMAND_BUTTON,0)))) and LoadInteger(HH,GetHandleId(GetOwningPlayer(Moria)),'ShSn')>0 then 
+        if IsAbilityVisible(GetUnitAbility(Moria,'MrG1')) and GetUnitTypeId(Moria)=='H00P' and (GetLocalPlayer()==GetOwningPlayer(Moria) or GetPlayerAlliance(GetOwningPlayer(Moria),GetLocalPlayer(),ALLIANCE_SHARED_CONTROL)) and (GetFrameTexture(GetOriginFrame(ORIGIN_FRAME_COMMAND_BUTTON,11),1)!="ReplaceableTextures\\CommandButtons\\BTNCancel.blp" or (GetFrameTexture(GetOriginFrame(ORIGIN_FRAME_COMMAND_BUTTON,0),1)=="war3mapImported\\BTNMove.blp" and IsFrameVisible(GetOriginFrame(ORIGIN_FRAME_COMMAND_BUTTON,0)))) and LoadInteger(HH,GetHandleId(GetOwningPlayer(Moria)),'ShSn')>0 then 
             call ShowFrame(GetFrameByName( "AbilityVarBarIcon", 6 ),true)
             if LoadBoolean(HH,GetHandleId(GetFrameByName( "AbilityVarBarIcon", 6 )),BUTTONHOVER)==false then
                 call ShowFrame(GetFrameByName( "AbilityVarBarTooltip", 6 ),false)
@@ -28280,11 +28280,23 @@ if GetUnitTypeId(u) == 'H013' then
     call UnitAddAbility(u, 'S101')
     call IssueImmediateOrder(u, "bearform")
     call UnitRemoveAbility(u, 'S101')
+    call SetHeroStr(u, GetHeroStr(u, false)-LoadInteger(HH,GetHandleId(u),'SASB'), true)
+    call SetHeroAgi(u, GetHeroAgi(u, false)-LoadInteger(HH,GetHandleId(u),'SAAB'), true)
+    call SetHeroInt(u, GetHeroInt(u, false)-LoadInteger(HH,GetHandleId(u),'SAIB'), true)
+    call SaveInteger(HH,GetHandleId(u),'SASB',0)
+    call SaveInteger(HH,GetHandleId(u),'SAAB',0)
+    call SaveInteger(HH,GetHandleId(u),'SAIB',0)
 endif
 if GetUnitTypeId(u) == 'H06E' then
     call UnitAddAbility(u, 'S201')
     call IssueImmediateOrder(u, "bearform")
     call UnitRemoveAbility(u, 'S201')
+    call SetHeroStr(u, GetHeroStr(u, false)-LoadInteger(HH,GetHandleId(u),'SASB'), true)
+    call SetHeroAgi(u, GetHeroAgi(u, false)-LoadInteger(HH,GetHandleId(u),'SAAB'), true)
+    call SetHeroInt(u, GetHeroInt(u, false)-LoadInteger(HH,GetHandleId(u),'SAIB'), true)
+    call SaveInteger(HH,GetHandleId(u),'SASB',0)
+    call SaveInteger(HH,GetHandleId(u),'SAAB',0)
+    call SaveInteger(HH,GetHandleId(u),'SAIB',0)
 endif
 if GetUnitTypeId(u) == 'H00V' then
     call UnitAddAbility(u, 'S301')
@@ -165513,6 +165525,12 @@ if time > 0 and time2!=0 and GetWidgetLife(u) > 0.405 and udg_B==true and DU2==t
             set soundplay=CreateSound("Sound\\Music\\mp3Music\\HichigoT.mp3",false,false,true,12700,12700,"")
             call StartSound(soundplay)
             call KillSoundWhenDone(soundplay)
+            call SaveInteger(HH,GetHandleId(u),'SASB',R2I(GetHeroStr(u,true)*0.10))
+            call SaveInteger(HH,GetHandleId(u),'SAAB',R2I(GetHeroAgi(u,true)*0.10))
+            call SaveInteger(HH,GetHandleId(u),'SAIB',R2I(GetHeroInt(u,true)*0.10))
+            call SetHeroStr(u, GetHeroStr(u, false)+LoadInteger(HH,GetHandleId(u),'SASB'), true)
+            call SetHeroAgi(u, GetHeroAgi(u, false)+LoadInteger(HH,GetHandleId(u),'SAAB'), true)
+            call SetHeroInt(u, GetHeroInt(u, false)+LoadInteger(HH,GetHandleId(u),'SAIB'), true)
             call CreateModeIndicatorWithPauseForm(u, "war3mapImported\\BTNHollowHichigo.blp", 25)
             call UnitAddAbility(u, 'S102')
             call IssueImmediateOrder(u, "bearform")
@@ -165523,6 +165541,12 @@ if time > 0 and time2!=0 and GetWidgetLife(u) > 0.405 and udg_B==true and DU2==t
             set soundplay=CreateSound("Sound\\Music\\mp3Music\\Alterl_T.mp3",false,false,true,12700,12700,"")
             call StartSound(soundplay)
             call KillSoundWhenDone(soundplay)
+            call SaveInteger(HH,GetHandleId(u),'SASB',R2I(GetHeroStr(u,true)*0.10))
+            call SaveInteger(HH,GetHandleId(u),'SAAB',R2I(GetHeroAgi(u,true)*0.10))
+            call SaveInteger(HH,GetHandleId(u),'SAIB',R2I(GetHeroInt(u,true)*0.10))
+            call SetHeroStr(u, GetHeroStr(u, false)+LoadInteger(HH,GetHandleId(u),'SASB'), true)
+            call SetHeroAgi(u, GetHeroAgi(u, false)+LoadInteger(HH,GetHandleId(u),'SAAB'), true)
+            call SetHeroInt(u, GetHeroInt(u, false)+LoadInteger(HH,GetHandleId(u),'SAIB'), true)
             call CreateModeIndicatorWithPauseForm(u, "ReplaceableTextures\\CommandButtons\\BTNSaberAlterArmoured.blp", 25)
             call UnitAddAbility(u, 'S202')
             call IssueImmediateOrder(u, "bearform")
@@ -165530,9 +165554,9 @@ if time > 0 and time2!=0 and GetWidgetLife(u) > 0.405 and udg_B==true and DU2==t
             call SaveInteger(HH,id,StringHash("ID"), 2)
         endif
         if GetUnitTypeId(u)=='H00P' then
-            call SaveInteger(HH,GetHandleId(u),'SASB',R2I(GetHeroStr(u,true)*0.2))
-            call SaveInteger(HH,GetHandleId(u),'SAAB',R2I(GetHeroAgi(u,true)*0.2))
-            call SaveInteger(HH,GetHandleId(u),'SAIB',R2I(GetHeroInt(u,true)*0.2))
+            call SaveInteger(HH,GetHandleId(u),'SASB',R2I(GetHeroStr(u,true)*0.15))
+            call SaveInteger(HH,GetHandleId(u),'SAAB',R2I(GetHeroAgi(u,true)*0.15))
+            call SaveInteger(HH,GetHandleId(u),'SAIB',R2I(GetHeroInt(u,true)*0.15))
             call SetHeroStr(u, GetHeroStr(u, false)+LoadInteger(HH,GetHandleId(u),'SASB'), true)
             call SetHeroAgi(u, GetHeroAgi(u, false)+LoadInteger(HH,GetHandleId(u),'SAAB'), true)
             call SetHeroInt(u, GetHeroInt(u, false)+LoadInteger(HH,GetHandleId(u),'SAIB'), true)
@@ -165878,11 +165902,23 @@ else
             call UnitAddAbility(u, 'S101')
             call IssueImmediateOrder(u, "bearform")
             call UnitRemoveAbility(u, 'S101')
+            call SetHeroStr(u, GetHeroStr(u, false)-LoadInteger(HH,GetHandleId(u),'SASB'), true)
+            call SetHeroAgi(u, GetHeroAgi(u, false)-LoadInteger(HH,GetHandleId(u),'SAAB'), true)
+            call SetHeroInt(u, GetHeroInt(u, false)-LoadInteger(HH,GetHandleId(u),'SAIB'), true)
+            call SaveInteger(HH,GetHandleId(u),'SASB',0)
+            call SaveInteger(HH,GetHandleId(u),'SAAB',0)
+            call SaveInteger(HH,GetHandleId(u),'SAIB',0)
         endif
         if TransfID==2 then
             call UnitAddAbility(u, 'S201')
             call IssueImmediateOrder(u, "bearform")
             call UnitRemoveAbility(u, 'S201')
+            call SetHeroStr(u, GetHeroStr(u, false)-LoadInteger(HH,GetHandleId(u),'SASB'), true)
+            call SetHeroAgi(u, GetHeroAgi(u, false)-LoadInteger(HH,GetHandleId(u),'SAAB'), true)
+            call SetHeroInt(u, GetHeroInt(u, false)-LoadInteger(HH,GetHandleId(u),'SAIB'), true)
+            call SaveInteger(HH,GetHandleId(u),'SASB',0)
+            call SaveInteger(HH,GetHandleId(u),'SAAB',0)
+            call SaveInteger(HH,GetHandleId(u),'SAIB',0)
         endif
         if TransfID==3 then
             call UnitAddAbility(u, 'S301')
