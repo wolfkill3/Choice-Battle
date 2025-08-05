@@ -37618,7 +37618,7 @@ call TriggerAddCondition(t,Condition(function CondLevelUP))
 set t=null
 endfunction
 function Trig_Text_Damage_Conditions takes nothing returns boolean
-return GetEventDamage()>=1.00 and GetUnitState(GetTriggerUnit(),UNIT_STATE_LIFE)>0.5 and GetUnitAbilityLevel(GetTriggerUnit(),'A0WR')==0 and GetUnitAbilityLevel(GetTriggerUnit(),'Aloc')==0 and(IsUnitType(GetTriggerUnit(),UNIT_TYPE_HERO) or GetUnitTypeId(GetTriggerUnit())=='ogru' or GetUnitTypeId(GetTriggerUnit())=='h02Q'  or GetUnitTypeId(GetTriggerUnit())=='h00Q'  or GetUnitTypeId(GetTriggerUnit())=='h00R' or GetUnitTypeId(GetTriggerUnit())=='h00S' or GetUnitTypeId(GetTriggerUnit())=='h00T' or GetUnitTypeId(GetTriggerUnit())=='h00U' or GetUnitTypeId(GetTriggerUnit())=='hkni' or GetUnitTypeId(GetTriggerUnit())=='uabo')and IsUnitIllusion(GetTriggerUnit())==false and IsUnitInvulnerable(GetTriggerUnit())==false 
+return GetEventDamage()>=1.00 and GetUnitState(GetTriggerUnit(),UNIT_STATE_LIFE)>0.5 and GetUnitAbilityLevel(GetTriggerUnit(),'A0WR')==0 and GetUnitAbilityLevel(GetTriggerUnit(),'Aloc')==0 and(IsUnitType(GetTriggerUnit(),UNIT_TYPE_HERO) or GetUnitTypeId(GetTriggerUnit())=='ogru' or GetUnitTypeId(GetTriggerUnit())=='h02Q'  or GetUnitTypeId(GetTriggerUnit())=='h00Q'  or GetUnitTypeId(GetTriggerUnit())=='h00R' or GetUnitTypeId(GetTriggerUnit())=='h00S' or GetUnitTypeId(GetTriggerUnit())=='h00T' or GetUnitTypeId(GetTriggerUnit())=='h00U' or GetUnitTypeId(GetTriggerUnit())=='hkni' or GetUnitTypeId(GetTriggerUnit())=='uabo') and (IsUnitIllusion(GetTriggerUnit())==false or GetUnitAbilityLevel(GetTriggerUnit(),'B02A')>0) and IsUnitInvulnerable(GetTriggerUnit())==false 
 endfunction
 function FinalExplosionCast3 takes nothing returns nothing
 local timer t=GetExpiredTimer()
@@ -59942,7 +59942,7 @@ call SetUnitInvulnerable(u,false)
 call PauseUnit(c,false)
 call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,false)
 call PauseUnit(u,false)
-call myCustomDamage(u,c,(5+GetUnitAbilityLevel(u,'A0C3'))*GetHeroStr(u,true),false,false,null,null,null)
+call myCustomDamage(u,c,(4+GetUnitAbilityLevel(u,'A0C3'))*GetHeroStr(u,true),false,false,null,null,null)
 call PauseTimer(t)
 call DestroyTimer(t)
 call FlushChildHashtable(h,id)
