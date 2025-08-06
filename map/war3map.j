@@ -36514,6 +36514,18 @@ if udg_RH[id]!=0 then
     else
         call GroupAddUnit(udg_CG[4],u[i+1])
     endif
+    if GetPlayerState(Player(i),PLAYER_STATE_RESOURCE_GOLD)>= 1000 then
+        call SetPlayerState(Player(i),PLAYER_STATE_RESOURCE_GOLD,GetPlayerState(Player(i),PLAYER_STATE_RESOURCE_GOLD)-1000)
+        call UnitAddItemById(u[i+1],'I01F')
+    endif
+    if GetPlayerState(Player(i),PLAYER_STATE_RESOURCE_GOLD)>= 900 then
+        call SetPlayerState(Player(i),PLAYER_STATE_RESOURCE_GOLD,GetPlayerState(Player(i),PLAYER_STATE_RESOURCE_GOLD)-900)
+        call UnitAddItemById(u[i+1],'I01M')
+    endif
+    if GetPlayerState(Player(i),PLAYER_STATE_RESOURCE_GOLD)>= 900 then
+        call SetPlayerState(Player(i),PLAYER_STATE_RESOURCE_GOLD,GetPlayerState(Player(i),PLAYER_STATE_RESOURCE_GOLD)-900)
+        call UnitAddItemById(u[i+1],'I01M')
+    endif
 endif
 exitwhen u[i+1]!=null
 endloop
@@ -45818,11 +45830,12 @@ local integer id=GetHandleId(t)
 if (GetSpellAbilityId()=='MaE1' and GetUnitAbilityLevel(GetSpellTargetUnit(), 'Wome')>0 and ((IsUnitAlly(GetSpellTargetUnit(), GetOwningPlayer(u))==false and GetWidgetLife(GetSpellTargetUnit()) > GetWidgetMaxLife(GetSpellTargetUnit()) * 0.3) or GetUnitAbilityLevel(GetSpellTargetUnit(), 'MaE3')>0)) or (GetSpellAbilityId()=='BoPA' and (u==GetSpellTargetUnit() or GetSpellTargetItem()==GetAbilityOwningItem(GetTriggerAbility()))) then
     call DestroyTimer(t)
 else
-    call SaveUnitHandle(h,id,0,u)
     if u==udg_DM[GetPlayerId(GetOwningPlayer(u))+1] then
         call SetHeroInt(Hero[GetPlayerId(GetOwningPlayer(u))],GetHeroInt(Hero[GetPlayerId(GetOwningPlayer(u))],false)+8,true)
+        call SaveUnitHandle(h,id,0,Hero[GetPlayerId(GetOwningPlayer(u))])
     else
         call SetHeroInt(u,GetHeroInt(u,false)+8,true)
+        call SaveUnitHandle(h,id,0,u)
     endif
     call TimerStart(t,10,false,function AkatsukiSetCast2)
 endif
@@ -205023,118 +205036,110 @@ set time=LoadReal(HH,id,5)
 set time=time+0.02
 call SaveReal(HH,id,5,time)
 if time==12 then
-call GroupClear(LoadGroupHandle(HH,id,4))
-call DestroyGroup(LoadGroupHandle(HH,id,4))
-call UnitSpeed(n0,1)
-call UnitSpeed(caster,1)
-call SetUnitFlyHeight(caster,0,0)
-call PauseUnit(caster,false)
-call SetUnitInvulnerable(caster,false)
-call SaveBoolean(HH,GetHandleId(caster),StringHash("JirTS"),false)
-call RemoveUnit(LoadUnitHandle(HH,id,20))
-call PauseTimer(t)
-call DestroyTimer(t)
-call FlushChildHashtable(HH,id)
+    call GroupClear(LoadGroupHandle(HH,id,4))
+    call DestroyGroup(LoadGroupHandle(HH,id,4))
+    call UnitSpeed(n0,1)
+    call UnitSpeed(caster,1)
+    call SetUnitFlyHeight(caster,0,0)
+    call PauseUnit(caster,false)
+    call SetUnitInvulnerable(caster,false)
+    call SaveBoolean(HH,GetHandleId(caster),StringHash("JirTS"),false)
+    call RemoveUnit(LoadUnitHandle(HH,id,20))
+    call PauseTimer(t)
+    call DestroyTimer(t)
+    call FlushChildHashtable(HH,id)
 else
-call PauseUnit(caster,true)
-call SetUnitInvulnerable(caster,true)
-call SetUnitFacing(caster,facing)
-if time==0.02 then
-call SaveGroupHandle(HH,id,4,CreateGroup())
-set soundplay=CreateSound("Sound\\Music\\mp3Music\\JirayaTQ.mp3",false,false,true,12700,12700,"")
-call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
-call SetUnitAnimationByIndex(caster,9)
-call SetUnitAnimationByIndex(n0,5)
-call EffectCreateAndMove(true,"Madara\\HakenSaber2.mdl",GetRandomReal(0,360),1,0.5,0.4,100,100,100,40,0,caster,0,GetRandomReal(0,360))
-call EffectCreateAndMove(true,"Madara\\BlackBlink1.mdl",GetRandomReal(0,360),1,1.5,0.4,100,100,100,0,0,caster,0,GetRandomReal(0,360))
-call UnitAddAbility(caster,'Amrf')
-call UnitRemoveAbility(caster,'Amrf')
-call SetUnitFlyHeight(caster,450,0)
-set facing=Angle2(GetUnitX(n0),GetUnitY(n0),LoadReal(HH,id,11),LoadReal(HH,id,12))
-if SR(GetUnitX(n0),GetUnitY(n0),LoadReal(HH,id,11),LoadReal(HH,id,12))<400 then
-call SetUnitX(n0,PolX(LoadReal(HH,id,11),-400,facing))
-call SetUnitY(n0,PolY(LoadReal(HH,id,12),-400,facing))
-endif
-set facing=Angle2(GetUnitX(n0),GetUnitY(n0),LoadReal(HH,id,11),LoadReal(HH,id,12))
-call SaveReal(HH,id,3,facing)
-call SetUnitFacingInstant(n0,facing)
-call MoveUnit(n0,caster,100,facing)
-call SetUnitFacing(caster,facing)
-call UnitSpeed(n0,3.5)
-call UnitSpeed(caster,1.75)
-endif
-if time==0.3 then
-call UnitSpeed(n0,0)
-call UnitSpeed(caster,0)
-set soundplay=CreateSound("Sound\\Music\\mp3Music\\JirayaTQ1.mp3",false,false,true,12700,12700,"")
-call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
-set n=CreateUnit(GetOwningPlayer(caster),'e200',GetUnitX(n0),GetUnitY(n0),facing)
-call SaveUnitHandle(HH,id,20,n)
-call SetUnitFlyHeight(n,400,0)
-call MoveUnit(n,n,200,facing)
-call SaveReal(HH,id,16,400/SR(GetUnitX(n),GetUnitY(n),LoadReal(HH,id,11),LoadReal(HH,id,12))/30)
-call EffectCreateAndMove(true,"Madara\\[A]File00002800.mdl",facing,2.7,2,1.5,100,100,100,0,50,caster,120,facing)
-call EffectCreateAndMove(true,"Madara\\fire collection.mdl",facing,2.7,0.35,1,100,100,100,0,50,caster,120,facing)
-endif
-if time>=0.3 and time<10 then
-set Dummy=LoadUnitHandle(HH,id,20)
+    call PauseUnit(caster,true)
+    call SetUnitInvulnerable(caster,true)
+    call SetUnitFacing(caster,facing)
+    if time==0.02 then
+        call SaveGroupHandle(HH,id,4,CreateGroup())
+        set soundplay=CreateSound("Sound\\Music\\mp3Music\\JirayaTQ.mp3",false,false,true,12700,12700,"")
+        call StartSound(soundplay)
+        call KillSoundWhenDone(soundplay)
+        call SetUnitAnimationByIndex(caster,9)
+        call SetUnitAnimationByIndex(n0,5)
+        call EffectCreateAndMove(true,"Madara\\HakenSaber2.mdl",GetRandomReal(0,360),1,0.5,0.4,100,100,100,40,0,caster,0,GetRandomReal(0,360))
+        call EffectCreateAndMove(true,"Madara\\BlackBlink1.mdl",GetRandomReal(0,360),1,1.5,0.4,100,100,100,0,0,caster,0,GetRandomReal(0,360))
+        call UnitAddAbility(caster,'Amrf')
+        call UnitRemoveAbility(caster,'Amrf')
+        call SetUnitFlyHeight(caster,450,0)
+        set facing=Angle2(GetUnitX(n0),GetUnitY(n0),LoadReal(HH,id,11),LoadReal(HH,id,12))
+        if SR(GetUnitX(n0),GetUnitY(n0),LoadReal(HH,id,11),LoadReal(HH,id,12))<400 then
+            call SetUnitX(n0,PolX(LoadReal(HH,id,11),-400,facing))
+            call SetUnitY(n0,PolY(LoadReal(HH,id,12),-400,facing))
+        endif
+        set facing=Angle2(GetUnitX(n0),GetUnitY(n0),LoadReal(HH,id,11),LoadReal(HH,id,12))
+        call SaveReal(HH,id,3,facing)
+        call SetUnitFacingInstant(n0,facing)
+        call MoveUnit(n0,caster,100,facing)
+        call SetUnitFacing(caster,facing)
+        call UnitSpeed(n0,3.5)
+        call UnitSpeed(caster,1.75)
+    endif
+    if time==0.3 then
+        call UnitSpeed(n0,0)
+        call UnitSpeed(caster,0)
+        set soundplay=CreateSound("Sound\\Music\\mp3Music\\JirayaTQ1.mp3",false,false,true,12700,12700,"")
+        call StartSound(soundplay)
+        call KillSoundWhenDone(soundplay)
+        set n=CreateUnit(GetOwningPlayer(caster),'e200',GetUnitX(n0),GetUnitY(n0),facing)
+        call SaveUnitHandle(HH,id,20,n)
+        call SetUnitFlyHeight(n,400,0)
+        call MoveUnit(n,n,200,facing)
+        call SaveReal(HH,id,16,400/SR(GetUnitX(n),GetUnitY(n),LoadReal(HH,id,11),LoadReal(HH,id,12))/30)
+        call EffectCreateAndMove(true,"Madara\\[A]File00002800.mdl",facing,2.7,2,1.5,100,100,100,0,50,caster,120,facing)
+        call EffectCreateAndMove(true,"Madara\\fire collection.mdl",facing,2.7,0.35,1,100,100,100,0,50,caster,120,facing)
+    endif
+    if time>=0.3 and time<10 then
+        set Dummy=LoadUnitHandle(HH,id,20)
 
-set facing=Angle2(GetUnitX(Dummy),GetUnitY(Dummy),LoadReal(HH,id,11),LoadReal(HH,id,12))
-call SetUnitFacingInstant(Dummy,facing)
-
-
-if SR(GetUnitX(Dummy),GetUnitY(Dummy),LoadReal(HH,id,11),LoadReal(HH,id,12))>50 then
-call MoveUnit(Dummy,Dummy,35,facing)
-call SetUnitFlyHeight(Dummy,GetUnitFlyHeight(Dummy)-LoadReal(HH,id,16),0)
+        set facing=Angle2(GetUnitX(Dummy),GetUnitY(Dummy),LoadReal(HH,id,11),LoadReal(HH,id,12))
+        call SetUnitFacingInstant(Dummy,facing)
 
 
+        if SR(GetUnitX(Dummy),GetUnitY(Dummy),LoadReal(HH,id,11),LoadReal(HH,id,12))>50 then
+            call MoveUnit(Dummy,Dummy,35,facing)
+            call SetUnitFlyHeight(Dummy,GetUnitFlyHeight(Dummy)-LoadReal(HH,id,16),0)
 
+            call DamageAoeOneTime(caster,GetUnitX(Dummy),GetUnitY(Dummy),200+time*100,GetHeroStr(caster,true)*2+150,LoadGroupHandle(HH,id,4))
 
-call DamageAoeOneTime(caster,GetUnitX(Dummy),GetUnitY(Dummy),200+time*100,1.5*(GetHeroStr(caster,true)*7+150),LoadGroupHandle(HH,id,4))
+            set time1=LoadReal(HH,id,6)
+            set time1=time1+0.02
+            if time1==0.04 or time1==0.08 then
+                //jiraya need pitch -90
+                call EffectCreateAndMove2(true,"Madara\\BY_Wood_Effect_ShuiYing_Unusual_RongDun_2_31.mdl",facing,3.5-time,1+time*1.9,GetRandomReal(1,1.8),100,100,100,30,-150,Dummy,0,facing)
+            endif
+            if time1==0.1 then
+                set time1=0
+                //jiraya need pitch -90
+                call EffectCreateAndMove2(true,"Madara\\[A]AceFireShockRun.mdl",facing,3.5-time,0.8+time*0.8,GetRandomReal(1,1.8),100,100,100,60,50,Dummy,0,facing)
+            endif
+            call SaveReal(HH,id,6,time1)
+        else
+            call SaveReal(HH,id,5,10)
+            call DamageAoeOneTime(caster,GetUnitX(Dummy),GetUnitY(Dummy),500,GetHeroStr(caster,true)*2+150,LoadGroupHandle(HH,id,4))
 
+            call SaveReal(HH,id,6,0.28)
+        endif
+        set Dummy=null
+    endif
+    if time>10 then
+        set Dummy=LoadUnitHandle(HH,id,20)
+        set time1=LoadReal(HH,id,6)
+        set time1=time1+0.02
+        if time1==0.1 or time1==0.2 or time1==0.3 then
+            call DamageAoeOneTimeJirayaQ(caster,GetUnitX(Dummy),GetUnitY(Dummy),500,GetHeroStr(caster,true)*0.8)
+            set n=null
 
-
-
-
-
-set time1=LoadReal(HH,id,6)
-set time1=time1+0.02
-if time1==0.04 or time1==0.08 then
-//jiraya need pitch -90
-call EffectCreateAndMove2(true,"Madara\\BY_Wood_Effect_ShuiYing_Unusual_RongDun_2_31.mdl",facing,3.5-time,1+time*1.9,GetRandomReal(1,1.8),100,100,100,30,-150,Dummy,0,facing)
-endif
-if time1==0.1 then
-set time1=0
-//jiraya need pitch -90
-call EffectCreateAndMove2(true,"Madara\\[A]AceFireShockRun.mdl",facing,3.5-time,0.8+time*0.8,GetRandomReal(1,1.8),100,100,100,60,50,Dummy,0,facing)
-endif
-call SaveReal(HH,id,6,time1)
-else
-call SaveReal(HH,id,5,10)
-call DamageAoeOneTime(caster,GetUnitX(Dummy),GetUnitY(Dummy),400+time*100,1.5*(GetHeroStr(caster,true)*7+150),LoadGroupHandle(HH,id,4))
-
-call SaveReal(HH,id,6,0.28)
-endif
-set Dummy=null
-endif
-if time>10 then
-set Dummy=LoadUnitHandle(HH,id,20)
-set time1=LoadReal(HH,id,6)
-set time1=time1+0.02
-if time1==0.1 or time1==0.2 or time1==0.3 then
-call DamageAoeOneTimeJirayaQ(caster,GetUnitX(Dummy),GetUnitY(Dummy),450,GetHeroStr(caster,true)*0.3)
-set n=null
-
-endif
-if time1==0.3 then
-set time1=0
-call EffectCreateAndMove(true,"Madara\\[A]BY_Wood_Flame_explosion_2.mdl",facing,1,2,1,100,100,100,30,0,Dummy,0,facing)
-endif
-call SaveReal(HH,id,6,time1)
-set Dummy=null
-endif
+        endif
+        if time1==0.3 then
+            set time1=0
+            call EffectCreateAndMove(true,"Madara\\[A]BY_Wood_Flame_explosion_2.mdl",facing,1,2,1,100,100,100,30,0,Dummy,0,facing)
+        endif
+        call SaveReal(HH,id,6,time1)
+        set Dummy=null
+    endif
 endif
 set caster=null
 set n0=null
@@ -205218,7 +205223,7 @@ call EffectCreateAndMove(true,"Madara\\BY_Wood_GongChengSiPai_1-90.mdl",GetRando
 call EffectCreateAndMove(true,"Madara\\WindCircleFaster.mdl",facing,1,1.75,1.55,100,100,100,0,50,n0,0,facing)
 call EffectCreateAndMove(true,"Madara\\wind3.mdl",GetRandomReal(0,360),1.5,2,1.5,100,100,100,30,50,n0,0,facing)
 
-call DamageAoeAndStun(caster,LoadReal(HH,id,11),LoadReal(HH,id,12),550,GetHeroStr(caster,true)*10,2)
+call DamageAoeAndStun(caster,LoadReal(HH,id,11),LoadReal(HH,id,12),550,GetHeroStr(caster,true)*9,2)
 
 
 
