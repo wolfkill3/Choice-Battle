@@ -46951,6 +46951,10 @@ endif
 call GroupRemoveUnit(DG,E)
 endloop
 elseif ids=='A18G' then
+if GetUnitTypeId(u)=='H00Q' then
+set u=Hero[GetPlayerId(GetOwningPlayer(u))]
+call SaveUnitHandle(h,id,1,u)
+endif
 call SaveInteger(h,id,2,R2I(GetHeroAgi(u,true)*0.20))
 call SaveInteger(h,id,3,R2I(GetHeroStr(u,true)*0.20))
 call SaveReal(h,id,4,0)
