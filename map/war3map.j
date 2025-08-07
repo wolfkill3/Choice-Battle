@@ -43441,7 +43441,7 @@ if cond==0 then
         //call SetEventDamage(nb+GetHeroInt(c,true)*myCustomDamage2(u,1))
         set nb=nb+GetHeroInt(c,true)*myCustomDamage2(u,1)
     endif
-    if (UnitHasItemOfTypeBJ(c,'I031') or GetUnitAbilityLevel(c,'KIG8')>0) and CurrentEventAttack and nb>0 and IsUnitType(c,UNIT_TYPE_SUMMONED)==false and c==Hero[idc] and GetUnitAbilityLevel(c,'A3WR')==0 then
+    if (UnitHasItemOfTypeBJ(c,'I031') or GetUnitAbilityLevel(c,'KIG8')>0) and CurrentEventAttack and nb>0 and IsUnitType(c,UNIT_TYPE_SUMMONED)==false and GetUnitAbilityLevel(c,'A3WR')==0 then
         set cjlocgn_00000000=CreateTimer() //patriot
         if GetUnitTypeId(c)=='H00Q' then
             call SetHeroAgi(Hero[idc],GetHeroAgi(Hero[idc],false)+3,true)
