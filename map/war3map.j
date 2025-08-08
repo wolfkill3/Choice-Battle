@@ -22766,6 +22766,9 @@ function Trig_Killer_Actions takes nothing returns nothing
         local group g=CreateGroup()
         local integer i2=0
         //sabrac5start
+        if GetUnitControlCount( c, 11 )<1 then
+            call SetUnitControlCount(c, 11,1)
+        endif
         if UnitIsAlive(Hero[iu])==true and GetUnitTypeId(Hero[iu])=='HSab' and GetUnitAbilityLevel(Hero[ic],'A1EA')>0 then
             set i=1
             if GetUnitTypeId(c)=='H06M' or GetUnitTypeId(c)=='H017' or GetUnitTypeId(c)=='H06W' or  GetUnitTypeId(c)=='H02F' or  GetUnitTypeId(c)=='H05Y' or  GetUnitTypeId(c)=='H03R' or  GetUnitTypeId(c)=='H064' then
@@ -34850,6 +34853,7 @@ local timer t=CreateTimer()
 //call DisplayTextToPlayer(Player(0),0,0,"0")
 if udg_B==false then
 call ReviveHero(udg_Hero[i],GetRectCenterX(gg_rct_Resp7),GetRectCenterY(gg_rct_Resp7),true)
+call SetUnitControlCount(udg_Hero[i], 11,0)
 call SaveInteger(h,GetHandleId(t),0,i)
 call SetUnitInvulnerable(udg_Hero[i],true)
 call ShowUnit(udg_Hero[i],false)
@@ -35115,6 +35119,7 @@ loop
 exitwhen i>9
 if UnitIsAlive(Hero[i])==false then
     call ReviveHero(Hero[i],RX,RY,false)
+    call SetUnitControlCount(Hero[i], 11,0)
 endif
 if GetUnitTypeId(Hero[i])=='Ho11' then//
     call SetHeroStr(Hero[i],GetHeroStr(Hero[i],false)-LoadInteger(HH,GetHandleId(Hero[i]),StringHash("BonusSTR")),true)
@@ -35380,6 +35385,7 @@ function EndOfChoiceAct takes nothing returns nothing
         endif
         if UnitIsAlive(Hero[i])==false then
             call ReviveHero(Hero[i],RX,RY,false)
+            call SetUnitControlCount(Hero[i], 11,0)
         endif
         if GetUnitTypeId(Hero[i]) == 'H069' then
             call SaveReal(HH,GetHandleId(GetOwningPlayer(Hero[i])),StringHash("CE"),0)
@@ -35898,6 +35904,7 @@ call RemoveTransformation(fi[1])
 call RemoveTransformation(fi[2])
 call SetUnitPosition(c,RX,RY)
 call ReviveHero(u,RX,RY,false)
+call SetUnitControlCount(u, 11,0)
 call PauseTimer(TD2)
 set passedTime=-8
 call DisableTrigger(gg_trg_KingOfHill_Enter)
@@ -36083,6 +36090,7 @@ call UnitRemoveAbility(Hero[i],'A0QL')
 call SetUnitFlyHeight(Hero[i],0,0)
 if UnitIsAlive(Hero[i])==false then
 call ReviveHero(Hero[i],RX,RY,false)
+call SetUnitControlCount(Hero[i], 11,0)
 endif
 call SetHeroLevel(Hero[i],GetHeroLevel(Hero[i])+3,true)
 call SetUnitMoveSpeed(Hero[i], GetUnitDefaultMoveSpeed(Hero[i]))
@@ -39058,6 +39066,7 @@ function MadokaF3_Periodic takes nothing returns nothing
         call MyRemoveUnit(LoadUnitHandle(h, id, StringHash("Dummy4")) , 1.5)
                 if UnitIsAlive(caster)==false then
                         call ReviveHero(caster, GetUnitX(caster),GetUnitY(caster), false)
+                        call SetUnitControlCount(caster, 11,0)
                 endif
         call PauseUnit(caster, false)
         call SetUnitInvulnerable(caster, false)
@@ -39158,6 +39167,7 @@ function MadokaF4_Periodic takes nothing returns nothing
         call StartSound(soundplay)
         call KillSoundWhenDone(soundplay)
         call ReviveHero(target, GetUnitX(target), GetUnitY(target), true)
+        call SetUnitControlCount(target, 11,0)
         call UnitRemoveBuffs(target, false, true)
         call SetUnitState(target,UNIT_STATE_LIFE,1)
         call SetUnitState(target,UNIT_STATE_MANA,1)
@@ -46949,6 +46959,10 @@ endif
 call GroupRemoveUnit(DG,E)
 endloop
 elseif ids=='A18G' then
+if GetUnitTypeId(u)=='H00Q' then
+set u=Hero[GetPlayerId(GetOwningPlayer(u))]
+call SaveUnitHandle(h,id,1,u)
+endif
 call SaveInteger(h,id,2,R2I(GetHeroAgi(u,true)*0.20))
 call SaveInteger(h,id,3,R2I(GetHeroStr(u,true)*0.20))
 call SaveReal(h,id,4,0)
@@ -89024,6 +89038,7 @@ endfunction
 function Trig_die4_Actions takes nothing returns nothing
 local unit u=GetTriggerUnit()
 call ReviveHero(u,0,0,false)
+call SetUnitControlCount(u, 11,0)
 call RemoveUnit(u)
 set u=null
 endfunction
@@ -95907,6 +95922,7 @@ if time>11.8 and FFAMode==false then
         set random_i=GetRandomInt(0, 4)
         if Hero[random_i]!=u and UnitIsAlive(Hero[random_i])==false and Hero[random_i]!=null and ingame[random_i] then
             call ReviveHero(Hero[random_i],x-200*Cos(f),y-200*Sin(f),true)
+            call SetUnitControlCount(Hero[random_i], 11,0)
             call SaveInteger(HH,GetHandleId(Hero[random_i]),StringHash("VegetaDeath"),1)
             call SetUnitState(Hero[random_i],UNIT_STATE_LIFE,1)
             call SetUnitState(Hero[random_i],UNIT_STATE_MANA,1)
@@ -95929,6 +95945,7 @@ if time>11.8 and FFAMode==false then
         set random_i=GetRandomInt(5, 9)
         if Hero[random_i]!=u and UnitIsAlive(Hero[random_i])==false and Hero[random_i]!=null and ingame[random_i] then
             call ReviveHero(Hero[random_i],x-200*Cos(f),y-200*Sin(f),true)
+            call SetUnitControlCount(Hero[random_i], 11,0)
             call SaveInteger(HH,GetHandleId(Hero[random_i]),StringHash("VegetaDeath"),1)
             call SetUnitState(Hero[random_i],UNIT_STATE_LIFE,1)
             call SetUnitState(Hero[random_i],UNIT_STATE_MANA,1)
@@ -101682,6 +101699,7 @@ function OrehimeT_IchigoVaster takes unit u, unit newCaster returns nothing
         if UnitIsAlive(newCaster)==false then
                 call SaveBoolean(h, id, 10, true)
                 call ReviveHero(newCaster, caster_x, caster_y, false)
+                call SetUnitControlCount(newCaster, 11,0)
         else
                 call SaveBoolean(h, id, 10, false)
         endif
@@ -115749,6 +115767,7 @@ function Trig_die3_Actions takes nothing returns nothing
 local unit u=GetTriggerUnit()
 call DestroyEffect(AddSpecialEffect("war3mapImported\\FeatherCrow.MDX",GetUnitX(u),GetUnitY(u)))
 call ReviveHero(u,0,0,false)
+call SetUnitControlCount(u, 11,0)
 call RemoveUnit(u)
 set u=null
 endfunction
@@ -145866,6 +145885,7 @@ call TimerStart(t,0.5,true,function LucyBlizCast2)
 else
 if UnitIsAlive(Lucy[ip])==false then
 call ReviveHero(Lucy[ip],x+155*Cos(a),y+155*Sin(a),false)
+call SetUnitControlCount(Lucy[ip], 11,0)
 call SetHeroLevel(Lucy[ip],GetHeroLevel(u),false)
 call SetHeroAgi(Lucy[ip],R2I(GetHeroAgi(LUcy[ip],true)*1.8),false)
 call SetHeroStr(Lucy[ip],R2I(GetHeroStr(LUcy[ip],true)*1.25),false)
@@ -145917,6 +145937,7 @@ call UnitApplyTimedLife(n,'BTLF',1.5)
 call SetUnitTimeScale(n,0.8)
 else
 call ReviveHero(LUcy[ip],x+155*Cos(a),y+155*Sin(a),false)
+call SetUnitControlCount(LUcy[ip], 11,0)
 call SetUnitState(LUcy[ip],UNIT_STATE_LIFE,1)
 call SetUnitState(LUcy[ip],UNIT_STATE_MANA,1)
 call HealTextTag(LUcy[ip],LUcy[ip],GetUnitState(LUcy[ip],UNIT_STATE_MAX_LIFE)*myCustomHeal2(LUcy[ip],1),"HealthRes")
@@ -150028,6 +150049,7 @@ if UnitIsAlive(l__d)and UnitIsAlive(u)==false and udg_B==true and DU2==true then
 else
     if udg_B==true then
         call ReviveHero(u,x,y,false)
+        call SetUnitControlCount(u, 11,0)
         call SetUnitState(u,UNIT_STATE_LIFE,1)
         call SetUnitState(u,UNIT_STATE_MANA,1)
         call HealTextTag(u,u,GetUnitState(u,UNIT_STATE_MAX_LIFE)*myCustomHeal2(u,1),"HealthRes")
@@ -151101,6 +151123,7 @@ function OrihimeTCast2 takes nothing returns nothing
     call StopMusic(false)
     call PlayMusic("Sound\\Music\\mp3Music\\Vasto Lord Theme.mp3")
         call ReviveHero(u,x,y,false)
+        call SetUnitControlCount(u, 11,0)
         call SetUnitState(u,UNIT_STATE_LIFE,GetUnitState(u,UNIT_STATE_MAX_LIFE))
         call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MAX_MANA))
         call UnitResetCooldown(u)
@@ -151125,6 +151148,7 @@ set n=LoadUnitHandle(h,GetHandleId(c),0)
         call StartSound(soundplay)
         call KillSoundWhenDone(soundplay)
         call ReviveHero(n,x,y,false)
+        call SetUnitControlCount(n, 11,0)
         call SetUnitTargetable(n,true)
         call SetUnitState(n,UNIT_STATE_LIFE,1)
         call SetUnitState(n,UNIT_STATE_MANA,1)
@@ -221093,6 +221117,7 @@ function OrochimaruF4Cast3 takes nothing returns nothing
     endif
     if UnitIsAlive(u)and time<0 then
     call ReviveHero(udg_Hero[ip+1],x,y,false)
+    call SetUnitControlCount(udg_Hero[ip+1], 11,0)
     call SetUnitX(udg_Hero[ip+1],x)
     call SetUnitY(udg_Hero[ip+1],y)
     call SetUnitFacing(udg_Hero[ip+1],GetUnitFacing(u))
