@@ -72799,7 +72799,7 @@ function KiBlastCast2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
 local unit u=LoadUnitHandle(HH,id,0)
-local real dmg=GetHeroStr(u,true)*(1.5+GetUnitAbilityLevel(u,'GKE5')*0.5)
+local real dmg=GetHeroStr(u,true)*(2.5+GetUnitAbilityLevel(u,'GKE5')*0.5)
 local integer an=LoadInteger(HH,id,5)
 local player p=GetOwningPlayer(u)
 local real time=LoadReal(HH,id,7)
@@ -165591,9 +165591,9 @@ if time > 0 and time2!=0 and GetWidgetLife(u) > 0.405 and udg_B==true and DU2==t
             call SaveInteger(HH,id,StringHash("ID"), 2)
         endif
         if GetUnitTypeId(u)=='H00P' then
-            call SaveInteger(HH,GetHandleId(u),'SASB',R2I(GetHeroStr(u,true)*0.15))
-            call SaveInteger(HH,GetHandleId(u),'SAAB',R2I(GetHeroAgi(u,true)*0.15))
-            call SaveInteger(HH,GetHandleId(u),'SAIB',R2I(GetHeroInt(u,true)*0.15))
+            call SaveInteger(HH,GetHandleId(u),'SASB',R2I(GetHeroStr(u,true)*0.25))
+            call SaveInteger(HH,GetHandleId(u),'SAAB',R2I(GetHeroAgi(u,true)*0.25))
+            call SaveInteger(HH,GetHandleId(u),'SAIB',R2I(GetHeroInt(u,true)*0.25))
             call SetHeroStr(u, GetHeroStr(u, false)+LoadInteger(HH,GetHandleId(u),'SASB'), true)
             call SetHeroAgi(u, GetHeroAgi(u, false)+LoadInteger(HH,GetHandleId(u),'SAAB'), true)
             call SetHeroInt(u, GetHeroInt(u, false)+LoadInteger(HH,GetHandleId(u),'SAIB'), true)
