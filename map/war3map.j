@@ -34808,23 +34808,32 @@ function GameLeftAct takes nothing returns nothing
 local player p=GetTriggerPlayer()
 local integer i=GetPlayerId(p)
 local integer x=0
+local integer ip=0
 call DisplayChatMessageEx(null,CHAT_RECIPIENT_UNKNOWN,10,true,Color[i]+GetPlayerName(Player(i))+" вышел из игры")
-call SetPlayerName(GetTriggerPlayer(),GetPlayerName(GetTriggerPlayer())+"|cFFB4B4B7 (Leaver)|r")
 loop
-exitwhen x>9
-if UnitItemInSlot(Hero[i],x)!=null then
-call SetFrameTexture( GetFrameByName("StatsHeroInventoryIcon",i*10+x), GetItemStringField(UnitItemInSlot(Hero[i],x),ITEM_SF_ICON), 0, true )
-call SetFrameTexture( GetFrameByName("StatsHeroInventoryIcon",i*10+x), GetItemStringField(UnitItemInSlot(Hero[i],x),ITEM_SF_ICON), 1, true )
-call SetFrameTexture( GetFrameByName("StatsHeroInventoryIcon",i*10+x), GetItemStringField(UnitItemInSlot(Hero[i],x),ITEM_SF_ICON), 2, true )
+if IsPlayerAlly(Player(ip),p) then
+call SetPlayerAlliance(p,Player(ip), ALLIANCE_SHARED_VISION, true )
+call SetPlayerAlliance(p,Player(ip), ALLIANCE_SHARED_CONTROL, true )
 endif
-set x=x+1
+set ip=ip+1
+exitwhen ip=10
 endloop
-set nick[i]="|cFFB4B4B7"+nick[i]+"|r"
-if GetUnitTypeId(Hero[i])=='H06T' then
-call RemoveUnit(Lucy[GetPlayerId(p)])
-endif
-call KillUnit(Hero[i])
-call RemoveUnit(Hero[i])
+// call SetPlayerName(GetTriggerPlayer(),GetPlayerName(GetTriggerPlayer())+"|cFFB4B4B7 (Leaver)|r")
+// loop
+// exitwhen x>9
+// if UnitItemInSlot(Hero[i],x)!=null then
+// call SetFrameTexture( GetFrameByName("StatsHeroInventoryIcon",i*10+x), GetItemStringField(UnitItemInSlot(Hero[i],x),ITEM_SF_ICON), 0, true )
+// call SetFrameTexture( GetFrameByName("StatsHeroInventoryIcon",i*10+x), GetItemStringField(UnitItemInSlot(Hero[i],x),ITEM_SF_ICON), 1, true )
+// call SetFrameTexture( GetFrameByName("StatsHeroInventoryIcon",i*10+x), GetItemStringField(UnitItemInSlot(Hero[i],x),ITEM_SF_ICON), 2, true )
+// endif
+// set x=x+1
+// endloop
+// set nick[i]="|cFFB4B4B7"+nick[i]+"|r"
+// if GetUnitTypeId(Hero[i])=='H06T' then
+// call RemoveUnit(Lucy[GetPlayerId(p)])
+// endif
+// call KillUnit(Hero[i])
+// call RemoveUnit(Hero[i])
 set p=null
 endfunction
 function GameLeftInit takes nothing returns nothing
@@ -45485,7 +45494,7 @@ local unit u=GetTriggerUnit()
 local timer t=CreateTimer()
 local player p=GetOwningPlayer(u)
 local integer id=GetHandleId(t)
-local integer i=0
+local integer i=GetPlayerId(GetTriggerPlayer())
 call SaveUnitHandle(HH,id,0,u)
 call SaveReal(HH,id,1,0)
 call UnitAddAbility(u,'A15H')
@@ -153834,6 +153843,7 @@ if dist>0 then
 call SaveReal(h,id,8,dist-800)
 set x=x+800*Cos(a)
 set y=y+800*Sin(a)
+call Essence(c,c,0.06)
 call SetUnitXY_1(u,x,y, false)
 call SetUnitInvulnerable(c,true)
 call SetUnitInvulnerable(u,true)
@@ -176883,13 +176893,13 @@ if udg_B==false or UnitIsAlive(u)==false or UnitIsAlive(udg_DM[idp])==false then
     //call FlushChildHashtable(HH,GetHandleId(udg_DM[idp]))
     if udg_B and UnitIsAlive(u)==true then
         if LoadBoolean(HH,GetHandleId(u),'MrGR')==false and LoadBoolean(HH,GetHandleId(u),'MrTR')==false then
-            if GetUnitState(u,UNIT_STATE_LIFE)>GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.3 + 300 then
-                call SetUnitState(u,UNIT_STATE_LIFE,GetUnitState(u,UNIT_STATE_LIFE)-(GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.3 + 300))
+            if GetUnitState(u,UNIT_STATE_LIFE)>GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.25 + 300 then
+                call SetUnitState(u,UNIT_STATE_LIFE,GetUnitState(u,UNIT_STATE_LIFE)-(GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.25 + 300))
             else
                 call SetUnitState(u,UNIT_STATE_LIFE,1)
             endif
-            call SetControlToUnit(u,u,5,"doom")
-            call Essence(u,u,5)
+            call SetControlToUnit(u,u,4,"doom")
+            call Essence(u,u,4)
             call DestroyEffect(AddSpecialEffect("war3mapImported\\Death Release.mdx",x,y))
             call StartAbilityCooldown(GetUnitAbility(u,'MrF1'),40)
         else
@@ -177868,15 +177878,15 @@ function MoriaTCast2 takes nothing returns nothing
                     call SaveInteger(HH,idl__d,'SAG+',LoadInteger(HH,idl__d,'SAG+')-LoadInteger(HH,idp,'ShAA'+j))
                     call SaveInteger(HH,idl__d,'SIG+',LoadInteger(HH,idl__d,'SIG+')-LoadInteger(HH,idp,'ShIA'+j))
                     call MissleMoveMoria(CreateUnit(p,'e22D',GetUnitX(l__d),GetUnitY(l__d),GetRandomReal(0,359)),90,Atan2(GetUnitY(u)-GetUnitY(l__d),GetUnitX(u)-GetUnitX(l__d)),u)
+                    call SaveInteger(HH,idu,'SSG+',LoadInteger(HH,idu,'SSG+')+LoadInteger(HH,idp,'ShSA'+j))
+                    call SaveInteger(HH,idu,'SAG+',LoadInteger(HH,idu,'SAG+')+LoadInteger(HH,idp,'ShAA'+j))
+                    call SaveInteger(HH,idu,'SIG+',LoadInteger(HH,idu,'SIG+')+LoadInteger(HH,idp,'ShIA'+j))
+                    call SaveUnitHandle(HH,idp,'ShNT'+j,u)
+                    call SaveStr(HH,idp,'ShNP'+j,GetUnitName(u))
+                    call SetHeroStr(u,GetHeroStr(u,false)+LoadInteger(HH,idp,'ShSA'+j),true)
+                    call SetHeroAgi(u,GetHeroAgi(u,false)+LoadInteger(HH,idp,'ShAA'+j),true)
+                    call SetHeroInt(u,GetHeroInt(u,false)+LoadInteger(HH,idp,'ShIA'+j),true)
                 endif
-                call SaveInteger(HH,idu,'SSG+',LoadInteger(HH,idu,'SSG+')+LoadInteger(HH,idp,'ShSA'+j))
-                call SaveInteger(HH,idu,'SAG+',LoadInteger(HH,idu,'SAG+')+LoadInteger(HH,idp,'ShAA'+j))
-                call SaveInteger(HH,idu,'SIG+',LoadInteger(HH,idu,'SIG+')+LoadInteger(HH,idp,'ShIA'+j))
-                call SaveUnitHandle(HH,idp,'ShNT'+j,u)
-                call SaveStr(HH,idp,'ShNP'+j,GetUnitName(u))
-                call SetHeroStr(u,GetHeroStr(u,false)+LoadInteger(HH,idp,'ShSA'+j),true)
-                call SetHeroAgi(u,GetHeroAgi(u,false)+LoadInteger(HH,idp,'ShAA'+j),true)
-                call SetHeroInt(u,GetHeroInt(u,false)+LoadInteger(HH,idp,'ShIA'+j),true)
                 exitwhen j==10
                 set j=j+1
             endloop
