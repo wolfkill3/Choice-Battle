@@ -34816,7 +34816,7 @@ call SetPlayerAlliance(p,Player(ip), ALLIANCE_SHARED_VISION, true )
 call SetPlayerAlliance(p,Player(ip), ALLIANCE_SHARED_CONTROL, true )
 endif
 set ip=ip+1
-exitwhen ip=10
+exitwhen ip==10
 endloop
 // call SetPlayerName(GetTriggerPlayer(),GetPlayerName(GetTriggerPlayer())+"|cFFB4B4B7 (Leaver)|r")
 // loop
@@ -112641,7 +112641,7 @@ function InstantSpell_Action takes nothing returns nothing
         call SetAbilityRemainingCooldown(GetUnitAbility(Hero[GetPlayerId(p)],GetAbilityTypeId(GetTriggerAbility())),GetAbilityBaseRealLevelFieldById(GetAbilityTypeId(GetTriggerAbility()),ABILITY_RLF_COOLDOWN,GetUnitAbilityLevel(Hero[GetPlayerId(p)],GetAbilityTypeId(GetTriggerAbility()))-1))    
         call SetUnitState(Hero[GetPlayerId(p)],UNIT_STATE_MANA,GetUnitState(Hero[GetPlayerId(p)],UNIT_STATE_MANA)-GetAbilityBaseIntegerLevelFieldById(GetAbilityTypeId(GetTriggerAbility()),ABILITY_ILF_MANA_COST,GetUnitAbilityLevel(Hero[GetPlayerId(p)],GetAbilityTypeId(GetTriggerAbility()))-1))
         // call BJDebugMsg("test1")
-    elseif GetUnitTypeId(u)!='H00Q' and udg_DM[GetPlayerId(p)+1]!=null then
+    elseif GetUnitTypeId(u)!='H00Q' and udg_DM[GetPlayerId(p)+1]!=null and GetSpellAbilityId()!='IMDs' then
         call SetAbilityRemainingCooldown(GetUnitAbility(udg_DM[GetPlayerId(p)+1],GetAbilityTypeId(GetTriggerAbility())),GetAbilityBaseRealLevelFieldById(GetAbilityTypeId(GetTriggerAbility()),ABILITY_RLF_COOLDOWN,GetUnitAbilityLevel(Hero[GetPlayerId(p)],GetAbilityTypeId(GetTriggerAbility()))-1))
         // call BJDebugMsg("test2")
     endif
