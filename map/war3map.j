@@ -45777,7 +45777,12 @@ endloop
 if fast_cd then
     loop
         if GetItemTypeId(UnitItemInSlot(u, i)) ==  'I044' then
-            call SetItemRemainingCooldown(UnitItemInSlot(u, i),GetItemRemainingCooldown(UnitItemInSlot(u, i))-4)
+            if GetUnitTypeId(u)=='H00Q' or GetUnitTypeId(u)!='H00Q' and udg_DM[GetPlayerId(p)+1]!=null then
+                call SetItemRemainingCooldown(UnitItemInSlot(Hero[GetPlayerId(p)], i),GetItemRemainingCooldown(UnitItemInSlot(Hero[GetPlayerId(p)], i))-4)
+                call SetItemRemainingCooldown(UnitItemInSlot(udg_DM[GetPlayerId(p)+1], i),GetItemRemainingCooldown(UnitItemInSlot(udg_DM[GetPlayerId(p)+1], i))-4)
+            else
+                call SetItemRemainingCooldown(UnitItemInSlot(u, i),GetItemRemainingCooldown(UnitItemInSlot(u, i))-4)
+            endif
         endif
     exitwhen i == 0
     set i=i - 1
