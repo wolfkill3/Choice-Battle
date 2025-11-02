@@ -45779,7 +45779,12 @@ endloop
 if fast_cd then
     loop
         if GetItemTypeId(UnitItemInSlot(u, i)) ==  'I044' then
-            call SetItemRemainingCooldown(UnitItemInSlot(u, i),GetItemRemainingCooldown(UnitItemInSlot(u, i))-4)
+            if GetUnitTypeId(u)=='H00Q' or GetUnitTypeId(u)!='H00Q' and udg_DM[GetPlayerId(p)+1]!=null then
+                call SetItemRemainingCooldown(UnitItemInSlot(Hero[GetPlayerId(p)], i),GetItemRemainingCooldown(UnitItemInSlot(Hero[GetPlayerId(p)], i))-4)
+                call SetItemRemainingCooldown(UnitItemInSlot(udg_DM[GetPlayerId(p)+1], i),GetItemRemainingCooldown(UnitItemInSlot(udg_DM[GetPlayerId(p)+1], i))-4)
+            else
+                call SetItemRemainingCooldown(UnitItemInSlot(u, i),GetItemRemainingCooldown(UnitItemInSlot(u, i))-4)
+            endif
         endif
     exitwhen i == 0
     set i=i - 1
@@ -112639,7 +112644,7 @@ function InstantSpell_Action takes nothing returns nothing
         call SetAbilityRemainingCooldown(GetUnitAbility(Hero[GetPlayerId(p)],GetAbilityTypeId(GetTriggerAbility())),GetAbilityBaseRealLevelFieldById(GetAbilityTypeId(GetTriggerAbility()),ABILITY_RLF_COOLDOWN,GetUnitAbilityLevel(Hero[GetPlayerId(p)],GetAbilityTypeId(GetTriggerAbility()))-1))    
         call SetUnitState(Hero[GetPlayerId(p)],UNIT_STATE_MANA,GetUnitState(Hero[GetPlayerId(p)],UNIT_STATE_MANA)-GetAbilityBaseIntegerLevelFieldById(GetAbilityTypeId(GetTriggerAbility()),ABILITY_ILF_MANA_COST,GetUnitAbilityLevel(Hero[GetPlayerId(p)],GetAbilityTypeId(GetTriggerAbility()))-1))
         // call BJDebugMsg("test1")
-    elseif GetUnitTypeId(u)!='H00Q' and udg_DM[GetPlayerId(p)+1]!=null then
+    elseif GetUnitTypeId(u)!='H00Q' and udg_DM[GetPlayerId(p)+1]!=null and GetSpellAbilityId()!='IMDs' then
         call SetAbilityRemainingCooldown(GetUnitAbility(udg_DM[GetPlayerId(p)+1],GetAbilityTypeId(GetTriggerAbility())),GetAbilityBaseRealLevelFieldById(GetAbilityTypeId(GetTriggerAbility()),ABILITY_RLF_COOLDOWN,GetUnitAbilityLevel(Hero[GetPlayerId(p)],GetAbilityTypeId(GetTriggerAbility()))-1))
         // call BJDebugMsg("test2")
     endif
