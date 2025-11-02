@@ -34816,7 +34816,7 @@ call SetPlayerAlliance(p,Player(ip), ALLIANCE_SHARED_VISION, true )
 call SetPlayerAlliance(p,Player(ip), ALLIANCE_SHARED_CONTROL, true )
 endif
 set ip=ip+1
-exitwhen ip=10
+exitwhen ip==10
 endloop
 // call SetPlayerName(GetTriggerPlayer(),GetPlayerName(GetTriggerPlayer())+"|cFFB4B4B7 (Leaver)|r")
 // loop
@@ -59764,10 +59764,8 @@ exitwhen i>=2+GetUnitAbilityLevel(u,'A0C4')
 set n=CreateIllusionFromUnit(u)
 call SetUnitFacingInstant(n,GetUnitFacing(u))
 call UnitCancelTimedLife(n)
-call RemoveBuff(GetUnitBuff(n,'BIil'))
 call SetUnitCurrentSight(n,600)
 call SetUnitUseFood(n,true)
-call UnitAddBuffById(n,'B02A')
 call UnitApplyTimedLife(n,'B02A',15)
 call SetIllusionDamageDealt(n,0.1)
 call SetIllusionDamageReceived(n,3.5)
