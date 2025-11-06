@@ -44234,8 +44234,8 @@ if cond==0 then
         call DestroyEffect(AddSpecialEffect("war3mapImported\\BlinkCaster.mdx",GetUnitX(c),GetUnitY(c)))
     endif
     if nb>6 and (UnitHasItemOfTypeBJ(c, 'ISlA') or GetUnitAbilityLevel(c, 'KI1G')>0) then
-        call HealTextTag(c,c,nb*0.15*myCustomMana2(c,1),"ManaRes")
-        call SetWidgetMana(c, GetWidgetMana(c)+ nb*0.15)
+        call HealTextTag(c,c,nb*0.10*myCustomMana2(c,1),"ManaRes")
+        call SetWidgetMana(c, GetWidgetMana(c)+ nb*0.10)
     endif
     if nb>0 and LoadReal(HH,GetHandleId(c),StringHash("yamato"))==1 and CurrentEventAttack then
         call SaveReal(HH,GetHandleId(c),StringHash("yamato"),0) //Yamato
