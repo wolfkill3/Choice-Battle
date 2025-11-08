@@ -172125,6 +172125,7 @@ function RengokuT_Act3 takes nothing returns nothing
         call SetUnitTimeScale(target, 1)
         call FlushChildHashtable(h, id)
         call DestroyTimer(GetExpiredTimer())
+        call StartAbilityCooldown(GetUnitAbility(caster, 'RenT'), 35)
     endif
     set caster=null
     set target=null
@@ -172247,6 +172248,7 @@ function RengokuT_Act2 takes nothing returns nothing
                 call SetUnitInvulnerable(caster,false)
                 call FlushChildHashtable(h,id)
                 call DestroyTimer(GetExpiredTimer())
+                call StartAbilityCooldown(GetUnitAbility(caster, 'RenT'), 35)
             endif
         endif
     else
@@ -175991,7 +175993,7 @@ function JirenESelf_Cast2 takes nothing returns nothing
         call SetUnitAnimationByIndex(u,42)
         call StartSound(soundStr[115])
     endif
-    if time<2 and c==null then
+    if time<1 and c==null then
         call PauseUnit(u,true)
         if ModuloReal(time,0.32)==0.04 then
             call SaveReal(HH,id,2,time+0.04)
@@ -176476,7 +176478,7 @@ function JirenQSelf_Cast3 takes nothing returns nothing
     local real rollp=LoadReal(HH,id,10)
     local integer i=1
     local real dmg=GetHeroStr(u,true)*(1+GetUnitAbilityLevel(u,'JNQ1'))+50
-    if time<2 then
+    if time<1 then
         call SaveReal(HH,id,2,time+0.02)
         call PauseUnit(u,true)
         call PauseUnit(c,true)
@@ -219812,7 +219814,7 @@ if time>1 and(GetUnitAbilityLevel(caster,'BGSG')==0 or GetUnitState(caster,UNIT_
 call EffectCreateAndMove(true,EffectID[572],GetRandomReal(0,360),1,2,1,100,100,100,60,100,caster,0,facing)
 call EffectCreateAndMove(true,EffectID[768],facing,1.5,0.75,1.5,100,100,100,80,0,caster,0,facing)
 call EffectCreateAndMove(true,EffectID[23],facing,1.5,1,0.5,60,60,100,0,0,caster,0,facing)
-call AbilityCD(caster,'GSG1',5)
+call AbilityCD(caster,'GSG1',10)
 call UnitRemoveAbility(caster,'BGSG')
 call StopSound(LoadSoundHandle(HH,id,25),true,false)
 set soundplay=CreateSound("Sound\\Gojo\\G_OFF.mp3",false,false,true,12700,12700,"")
