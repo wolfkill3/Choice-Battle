@@ -4063,6 +4063,10 @@ function MUIHandle takes nothing returns integer
             set order = "frostbite"
             set BuffId = 'BNC2'
         endif
+        if c_type == "disarm" then
+            set order = "disarm"
+            set BuffId = 'BNC3'
+        endif
 
         if c_type == "combo" then
             set checker = true
@@ -4110,10 +4114,9 @@ function MUIHandle takes nothing returns integer
             endif
         endif
         set data = GetUnitData( target, c_type )
-        if (c_type=="stun" or c_type == "silence" or c_type == "doom" or c_type == "root" or c_type == "ensnare" or c_type == "slow" or c_type == "sleep" or c_type == "blind" or c_type == "shortsight" or c_type == "weakness" or c_type == "miss") and checker2==false then
+        if (c_type=="stun" or c_type == "silence" or c_type == "doom" or c_type == "root" or c_type == "ensnare" or c_type == "slow" or c_type == "sleep" or c_type == "blind" or c_type == "shortsight" or c_type == "weakness" or c_type == "miss" or c_type == "disarm" or ( c_type == "combo4" and percent==4)) and checker2==false then
             
             set time=CalculateControlResist(target, time)
-            
             if checker==true and (c_type == "silence" or c_type == "doom") and time<0.25 then
                 set time=0.25
             endif
@@ -4218,6 +4221,11 @@ function MUIHandle takes nothing returns integer
                         endif
                         if BuffId=='CBC1' then
                             call SetBuffRealField(buf,ABILITY_RLF_DAMAGE_PER_SECOND_EER1,0)
+                        endif
+                        if BuffId=='BNC3' then
+                            call SetBuffRealField(buf,ABILITY_RLF_AREA_OF_EFFECT,0)
+                            call SetBuffIntegerField(buf,ABILITY_ILF_ATTACKS_PREVENTED,3)
+                            call SetBuffRealField(buf,ABILITY_RLF_CHANCE_TO_MISS_PERCENT,0)
                         endif
                         if c_type == "slow" then
                             call SetBuffRealField(buf,ABILITY_RLF_MOVEMENT_SPEED_FACTOR_SLO1,slowMS)
@@ -4334,6 +4342,8 @@ function MUIHandle takes nothing returns integer
         elseif types == "necrosis" then
             call CC_UnitEx( b, a, 0., time, types, false, "", "", 0,0 )
         elseif types == "frostbite" then
+            call CC_UnitEx( b, a, 0., time, types, false, "", "", 0,0 )
+        elseif types == "disarm" then
             call CC_UnitEx( b, a, 0., time, types, false, "", "", 0,0 )
         endif
     endfunction
@@ -43937,7 +43947,7 @@ if cond==0 then
         call GroupRemoveUnit(clv,clvu)
         endloop
     endif
-    if CurrentEventAttack and GetUnitAbilityLevel(c,'A1WT') > 0 and GetUnitAbilityLevel(c,'A2WT') == 0 and GetUnitAttackRangeByIndex(c,0)<250 then
+    if CurrentEventAttack and GetUnitAbilityLevel(c,'A1WT') > 0 and GetUnitAbilityLevel(c,'A2WT') == 0 and GetUnitAttackRangeByIndex(c,0)<250 and (c==Hero[idc] or c==udg_DM[idc+1]) then
         call UnitAddAbility(c,'A2WT')
         call UnitAttackRestart(c)
         call IssueTargetOrder(c,"attack",u)
@@ -43949,12 +43959,12 @@ if cond==0 then
         call DestroyEffect(AddSpecialEffect("Abilities\\Spells\\Other\\Doom\\DoomDeath.mdl",x,y))
         call SetUnitAnimation(LoadUnitHandle(h,GetHandleId(c),SusanoCnst),"attack")
     endif
-    if CurrentEventAttack and (UnitHasItemOfTypeBJ(c,'I03B') or UnitHasItemOfTypeBJ(c,'I03F') or GetUnitAbilityLevel(c,'KII6')>0 or GetUnitAbilityLevel(c,'KIJ4')>0) and GetUnitAbilityLevel(c,'A3WR')==0 and c==Hero[idc] and c!=UltimateDamage then
+    if CurrentEventAttack and (UnitHasItemOfTypeBJ(c,'I03B') or UnitHasItemOfTypeBJ(c,'I03F') or GetUnitAbilityLevel(c,'KII6')>0 or GetUnitAbilityLevel(c,'KIJ4')>0) and GetUnitAbilityLevel(c,'A3WR')==0 and (c==Hero[idc] or c==udg_DM[idc+1]) and c!=UltimateDamage then
         call DestroyEffect(AddSpecialEffect("war3mapImported\\Cleave.mdx",GetUnitX(u),GetUnitY(u)))      
         //call SetEventDamage(nb+55)
         set nb=nb+55
     endif
-    if CurrentEventAttack and (UnitHasItemOfTypeBJ(c,'I050')==true or GetUnitAbilityLevel(c,'KIQ0')>0) and c==Hero[idc]and nb>0 and c!=UltimateDamage and GetUnitAbilityLevel(c,'A3WR')==0 then
+    if CurrentEventAttack and (UnitHasItemOfTypeBJ(c,'I050')==true or GetUnitAbilityLevel(c,'KIQ0')>0) and (c==Hero[idc] or c==udg_DM[idc+1]) and nb>0 and c!=UltimateDamage and GetUnitAbilityLevel(c,'A3WR')==0 then
         //call SetEventDamage(nb+80)
         set nb=nb+80
     endif
@@ -47152,6 +47162,7 @@ set t=null
 set u=null
 endfunction
 function Trig_Dark_Candels_Actions takes nothing returns nothing
+local unit u=GetTriggerUnit()
 local unit c=GetSpellTargetUnit()
 local real x=GetSpellTargetX()
 local real y=GetSpellTargetY()
@@ -47165,6 +47176,9 @@ if GetUnitAbilityLevel(c,'A15H')==0 then
     set bj_lastCreatedLightning=AddLightningEx("FORK",false,x,y,50.,x1,y1,GetUnitZ10(c)+50.)
     call SetLightningColor(bj_lastCreatedLightning,127,0,130,100)
     call ComboChecker(c,4,6, false )
+    if IsUnitEnemy(u,GetOwningPlayer(c))==true then
+        call SetControlToUnit(u,c,6,"disarm")
+    endif
     call SaveReal(h,id,0,x1)
     call SaveReal(h,id,1,y1)
     call SaveUnitHandle(h,id,2,c)
@@ -47175,6 +47189,7 @@ else
     call IssueImmediateOrder(GetTriggerUnit(),"stop")
 endif
 set t=null
+set u=null
 set c=null
 endfunction
 function InitTrig_Dark_Candels takes nothing returns nothing
@@ -61305,7 +61320,12 @@ if GetUnitState(u,UNIT_STATE_MAX_MANA)*0.04>GetUnitState(u,UNIT_STATE_MANA) or L
 call SaveBoolean(HH,GetHandleId(u),SS,false)
 call SaveBoolean(HH,GetHandleId(u),SST,false)
 call SetUnitVertexColor(u,255,255,255,255)
-call UnitRemoveAbility(u,'A28U')
+call SetHeroStr(u, GetHeroStr(u, false)-LoadInteger(HH,GetHandleId(u),'SASB'), true)
+call SetHeroAgi(u, GetHeroAgi(u, false)-LoadInteger(HH,GetHandleId(u),'SAAB'), true)
+call SetHeroInt(u, GetHeroInt(u, false)-LoadInteger(HH,GetHandleId(u),'SAIB'), true)
+call SaveInteger(HH,GetHandleId(u),'SASB',0)
+call SaveInteger(HH,GetHandleId(u),'SAAB',0)
+call SaveInteger(HH,GetHandleId(u),'SAIB',0)
 if GetUnitTypeId(u)=='H21M' then //ss
     call ShowAbility2('A2DM',false)
     call ShowAbility2('A2CZ',false)
@@ -61432,7 +61452,12 @@ function DevilTriggerCast takes nothing returns nothing //dt
     set soundplay=CreateSound("Sound\\Music\\mp3Music\\EffectDT(ON).mp3",false,false,true,12700,12700,"")
     call StartSound(soundplay)
     call KillSoundWhenDone(soundplay)
-    call UnitAddAbility(u,'A28U')
+    call SaveInteger(HH,GetHandleId(u),'SASB',R2I(GetHeroStr(u,true)*0.15))
+    call SaveInteger(HH,GetHandleId(u),'SAAB',R2I(GetHeroAgi(u,true)*0.15))
+    call SaveInteger(HH,GetHandleId(u),'SAIB',R2I(GetHeroInt(u,true)*0.15))
+    call SetHeroStr(u, GetHeroStr(u, false)+LoadInteger(HH,GetHandleId(u),'SASB'), true)
+    call SetHeroAgi(u, GetHeroAgi(u, false)+LoadInteger(HH,GetHandleId(u),'SAAB'), true)
+    call SetHeroInt(u, GetHeroInt(u, false)+LoadInteger(HH,GetHandleId(u),'SAIB'), true)
     call UnitMakeAbilityPermanent(u, true, 'A28U')
     call DestroyEffect(AddSpecialEffect("AZ_BNPF_V_yellow.mdl", x, y))
     call DestroyEffect(AddSpecialEffect("war3mapImported\\Holy_Fire_Slam2.mdx", x, y))
@@ -127694,13 +127719,13 @@ call TriggerAddCondition(gg_trg_Parasite,Condition(function ParasiteCond))
 call TriggerAddAction(gg_trg_Parasite,function ParasiteCast)
 endfunction
 function TentacleCond takes nothing returns boolean
-return GetSpellAbilityId()==0x4131414F
+return GetSpellAbilityId()=='A1AO'
 endfunction
 function TentacleCast2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
 local unit u=LoadUnitHandle(h,id,0)
-local real dmg=GetHeroInt(u,true)*(3+GetUnitAbilityLevel(u,0x4131414F))
+local real dmg=GetHeroInt(u,true)*(3+GetUnitAbilityLevel(u,'A1AO'))
 local real x1=LoadReal(h,id,2)
 local real y1=LoadReal(h,id,3)
 local player p=GetOwningPlayer(u)
@@ -127829,8 +127854,8 @@ call SaveUnitHandle(h,l__idg,ide,E)
 if GetUnitAbilityLevel(E,'A1AH')>0 then
 call myCustomDamage(u,E,dmg*1.25,false,false,null,null,null)
 set n=CreateUnit(p,'h019',x,y,a*bj_RADTODEG)
-call UnitAddAbility(n,0x4131414D)
-call SetUnitAbilityLevel(n,0x4131414D,1)
+call UnitAddAbility(n,'A1AM')
+call SetUnitAbilityLevel(n,'A1AM',1)
 call UnitApplyTimedLife(n,'BHwe',1)
 call IssueTargetOrder(n,"drunkenhaze",E)
 else
@@ -176857,7 +176882,7 @@ call SetUnitState(udg_DM[idp],UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA))
 call SetHeroAgi(udg_DM[idp],GetHeroAgi(u,false),true)
 call SetHeroStr(udg_DM[idp],GetHeroStr(u,false),true)
 call SetHeroInt(udg_DM[idp],GetHeroInt(u,false),true)
-if LoadBoolean(HH,GetHandleId(udg_DM[idp]),'ItCh')==true then
+if LoadBoolean(HH,GetHandleId(udg_DM[idp]),'ItCh')==true and UnitIsAlive(udg_DM[idp])==true then
     if GetUnitAbilityLevel(udg_DM[idp],'cbc5')>0 then
         call EnableUnitAbility2(udg_DM[idp],'AInv',false,true)
     endif
