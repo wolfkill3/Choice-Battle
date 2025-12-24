@@ -1795,6 +1795,10 @@ function myCustomDamage takes unit whichUnit, unit target, real amount, boolean 
     if GetUnitState(target,UNIT_STATE_LIFE)==GetUnitState(target,UNIT_STATE_MAX_LIFE) and IsUnitType(target,UNIT_TYPE_HERO) then
         call SetUnitState(target,UNIT_STATE_LIFE,GetUnitState(target,UNIT_STATE_LIFE)-1)
     endif
+    if attackType != ATTACK_TYPE_HERO and damageType!=DAMAGE_TYPE_UNIVERSAL and (IsItemInInventory(whichUnit, 'IASS') > 0 or IsItemInInventory(whichUnit, 'IASA') > 0 or IsItemInInventory(whichUnit, 'IASI') > 0) then
+        set attackType=ATTACK_TYPE_HERO
+        set damageType=DAMAGE_TYPE_NORMAL
+    endif
     if attackType != ATTACK_TYPE_HERO and damageType!=DAMAGE_TYPE_UNIVERSAL then
     //~ Увеличение НЕ хаос урона
         if passedTime < 0 then
@@ -1818,6 +1822,9 @@ function myCustomDamage takes unit whichUnit, unit target, real amount, boolean 
         endif
         if GetUnitAbilityLevel(whichUnit,'A171') > 0 then
             set currentDmg = currentDmg * 1.10
+        endif  
+        if (IsItemInInventory(target, 'IASS') > 0 or IsItemInInventory(target, 'IASA') > 0 or IsItemInInventory(target, 'IASI') > 0) then
+            set currentDmg = currentDmg * 1.15
         endif  
 		//if GetUnitAbilityLevel(whichUnit,'A176') > 0 then
         //    set currentDmg = currentDmg * 1.05
@@ -1988,6 +1995,9 @@ function myCustomDamage2 takes unit target, real amount returns real
         if GetUnitAbilityLevel(target,'B072') > 0 then
             set currentDmg = currentDmg * 1.15
         endif
+        if (IsItemInInventory(target, 'IASS') > 0 or IsItemInInventory(target, 'IASA') > 0 or IsItemInInventory(target, 'IASI') > 0) then
+            set currentDmg = currentDmg * 1.15
+        endif  
                 // T Gin уменьшение маг реза -> увеличение урона по нему
         if GetUnitAbilityLevel(target,'BGiT') > 0 then
             set currentDmg = currentDmg + amount*(I2R(GetUnitAbilityLevel(target, 'BGiT'))*0.05)
@@ -2135,6 +2145,9 @@ function myCustomDamage2_dec takes unit target, real amount returns real
         if GetUnitAbilityLevel(target,'B072') > 0 then
             set currentDmg = currentDmg * 1.15
         endif
+        if (IsItemInInventory(target, 'IASS') > 0 or IsItemInInventory(target, 'IASA') > 0 or IsItemInInventory(target, 'IASI') > 0) then
+            set currentDmg = currentDmg * 1.15
+        endif  
                 // T Gin уменьшение маг реза -> увеличение урона по нему
         if GetUnitAbilityLevel(target,'BGiT') > 0 then
             set currentDmg = currentDmg + amount*(I2R(GetUnitAbilityLevel(target, 'BGiT'))*0.05)
@@ -8944,7 +8957,7 @@ set l__s="GokuderaPick.mp3"
 elseif id=='H067' then
 set l__s="Tamamo.mp3"
 endif
-if id=='H06Z' then
+if id=='H06Z' or id=='H16Z' then
 set l__s="Scathachsummon.mp3"
 elseif id=='H059' then
 set l__s="GilgameshSummon.mp3"
@@ -10884,7 +10897,7 @@ if id=='H06X' then
 set retUnitId='H05D'
 elseif id=='H06V' then
 set retUnitId='H04L'
-elseif id=='H06Z' then
+elseif id=='H06Z' or id=='H16Z' then
 set retUnitId='H06Y'
 elseif id=='H05C' or id=='H05E' or id=='H15C' then
 set retUnitId='H06P'
@@ -22582,6 +22595,31 @@ set i=0
 set count=0
 loop
 exitwhen i>=10
+if (GetItemPlayer(UnitItemInSlot(u,i))==Player(15) or GetItemPlayer(UnitItemInSlot(u,i))==GetOwningPlayer(GetTriggerUnit())) and (GetItemTypeId(UnitItemInSlot(u,i))=='IAS0' or GetItemTypeId(UnitItemInSlot(u,i))=='IASS' or GetItemTypeId(UnitItemInSlot(u,i))=='IASA' or GetItemTypeId(UnitItemInSlot(u,i))=='IASI') then
+set count=count+1
+endif
+set i=i+1
+endloop
+if count>1 then
+call RemoveItem(it)
+call SetPlayerState(Player(id),PLAYER_STATE_RESOURCE_GOLD,GetPlayerState(Player(id),PLAYER_STATE_RESOURCE_GOLD)+4000)
+call DisplayTextToPlayer(Player(id),0,0,"Нельзя иметь больше одного такого предмета!")
+endif
+if count==1 and GetItemTypeId(it)=='IAS0' then
+    call UnitRemoveItem(u,it)
+    call RemoveItem(it)
+    if GetHeroPrimaryAttribute(u)==HERO_ATTRIBUTE_INT then
+    call UnitAddItemById(u,'IASI')
+    elseif GetHeroPrimaryAttribute(u)==HERO_ATTRIBUTE_STR then
+    call UnitAddItemById(u,'IASS')
+    elseif GetHeroPrimaryAttribute(u)==HERO_ATTRIBUTE_AGI then
+    call UnitAddItemById(u,'IASA')
+    endif
+endif
+set i=0
+set count=0
+loop
+exitwhen i>=10
 if (GetItemPlayer(UnitItemInSlot(u,i))==Player(15) or GetItemPlayer(UnitItemInSlot(u,i))==GetOwningPlayer(GetTriggerUnit())) and (GetItemTypeId(UnitItemInSlot(u,i))=='I03N' or GetItemTypeId(UnitItemInSlot(u,i))=='I03O') then
 set count=count+1
 endif
@@ -26883,6 +26921,7 @@ if cmb!=true then
         call IH('H06T',u,"ReplaceableTextures\\CommandButtons\\BTNLucy.blp")
         call IH('H06Y',u,"ReplaceableTextures\\CommandButtons\\BTNScathach.blp")
         call IH('H06Z',u,"ReplaceableTextures\\CommandButtons\\BTNScatach2.blp")
+        call IH('H16Z',u,"ReplaceableTextures\\CommandButtons\\BTNScatach3.blp")
         call IH('H072',u,"ReplaceableTextures\\CommandButtons\\BTNArchetype.blp")
         call IH('H073',u,"ReplaceableTextures\\CommandButtons\\BTNRin.blp")
         call IH('H074',u,"ReplaceableTextures\\CommandButtons\\BTNOrihime_Inoue.blp")
@@ -30149,9 +30188,82 @@ endif
 set u=null
 set p=null
 endfunction
+function BunnyRFHCond takes nothing returns boolean
+set P=GetTriggerPlayer()
+return udg_B==false and(udg_test or GetPlayerName(P)=="Scathach_" or GetPlayerName(P)=="PinkieNecro" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="NecromanseR_RuS")
+endfunction
+function BunnyRFHCast takes nothing returns nothing
+local integer ip=GetPlayerId(GetTriggerPlayer())
+local unit u=Hero[ip]
+local item array it
+local integer i=0
+local player p=GetOwningPlayer(u)
+local integer id=GetUnitTypeId(u)
+if id=='H06Y' or id=='H06Z' then
+set rfhpick=false
+set n=CreateUnit(p,'H16Z',GetRectCenterX(gg_rct_Rect1),GetRectCenterY(gg_rct_Rect1),0)
+call UnitInventorySetSize(n,10)
+set rfhpick=true
+set Hero[ip]=n
+set udg_Hero[ip+1]=n
+if GetHeroLevel(u)>1 then
+call SetHeroLevel(n,GetHeroLevel(u),false)
+endif
+// set soundplay=CreateSound("Voice\\"+InitVoice(GetUnitTypeId(n)),false,false,true,12700,12700,"")
+// if GetLocalPlayer()==p then
+// call StartSound(soundplay)
+// call KillSoundWhenDone(soundplay)
+// endif
+// call KillSoundWhenDone(soundplay)
+loop
+exitwhen i>=10
+set it[i]=UnitItemInSlot(u,i)
+set i=i+1
+endloop
+if FFAMode==false then
+if ip<5 then
+call GroupAddUnit(udg_CG[1],n)
+elseif ip>=5 and ip<10 then
+call GroupAddUnit(udg_CG[2],n)
+endif
+else
+call GroupAddUnit(udg_CG[4],n)
+endif
+set i=0
+loop
+exitwhen i>=10
+call UnitAddItemById(n,GetItemTypeId(it[i]))
+set i=i+1
+endloop
+if GetUnitTypeId(u)=='H069' then
+call RemoveUnit(LoadUnitHandle(HH,GetHandleId(GetOwningPlayer(u)),ComboBarHash))
+call UnitRemoveAbility(u,'A1BN')
+endif
+call FlushChildHashtable(HH,GetHandleId(u))
+call RemoveUnit(u)
+if GetLocalPlayer()==p then
+call ClearSelection()
+call SelectUnit(n,true)
+endif
+if GetUnitTypeId(Hero[ip])=='H052' then
+call SetHeroInt(Hero[ip],GetHeroInt(Hero[ip],false)+udg_kill[ip]+udg_assist[ip],true)
+call SetHeroStr(Hero[ip],GetHeroStr(Hero[ip],false)+udg_kill[ip],true)
+call SetHeroAgi(Hero[ip],GetHeroAgi(Hero[ip],false)+udg_kill[ip],true)
+endif
+//call AddUnitMaxLife(Hero[ip],(round-1)*150)
+call SetHeroInt(Hero[ip],GetHeroInt(Hero[ip],false)+((round-1)-GetPlayerState(p,PLAYER_STATE_RESOURCE_LUMBER))*3,true)
+call SetHeroAgi(Hero[ip],GetHeroAgi(Hero[ip],false)+((round-1)-GetPlayerState(p,PLAYER_STATE_RESOURCE_LUMBER))*3,true)
+call SetHeroStr(Hero[ip],GetHeroStr(Hero[ip],false)+((round-1)-GetPlayerState(p,PLAYER_STATE_RESOURCE_LUMBER))*3,true)
+call SetHeroInt(Hero[ip],GetHeroInt(Hero[ip],false)+hibari[ip]*2,true)
+call SetHeroAgi(Hero[ip],GetHeroAgi(Hero[ip],false)+hibari[ip]*2,true)
+call SetHeroStr(Hero[ip],GetHeroStr(Hero[ip],false)+hibari[ip]*2,true)
+endif
+set u=null
+set p=null
+endfunction
 function ScathachRFHCond takes nothing returns boolean
 set P=GetTriggerPlayer()
-return udg_B==false and(GetPlayerName(P)=="Shunova" or GetPlayerName(P)=="roshidere" or GetPlayerName(P)=="who?ch1sen" or GetPlayerName(P)=="Annieh" or GetPlayerName(P)=="KamaBr" or GetPlayerName(P)=="[OSV] Kama" or GetPlayerName(P)=="zld6334" or GetPlayerName(P)=="Abylai142536" or GetPlayerName(P)=="DarkSonic1" or GetPlayerName(P)=="Beerus_Sama" or GetPlayerName(P)=="54Dzangetsu75" or GetPlayerName(P)=="Sylphiette" or GetPlayerName(P)=="I_Arioh*" or GetPlayerName(P)=="PinkieNecro" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="NecromanseR_RuS" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="msseva16" or GetPlayerName(P)=="Shunova" or GetPlayerName(P)=="Wolfkill" or GetPlayerName(P)=="Famouzy" or GetPlayerName(P)=="Semko157" or GetPlayerName(P)=="xxNu-13xx" or GetPlayerName(P)=="pro100master999" or GetPlayerName(P)=="I_Arioh" or GetPlayerName(P)=="3Deviant" or GetPlayerName(P)=="Denamesh" or GetPlayerName(P)=="Renex" or BaseSkinCond(P))
+return udg_B==false and(GetPlayerName(P)=="Shunova" or GetPlayerName(P)=="Scathach_" or GetPlayerName(P)=="who?ch1sen" or GetPlayerName(P)=="Annieh" or GetPlayerName(P)=="KamaBr" or GetPlayerName(P)=="[OSV] Kama" or GetPlayerName(P)=="zld6334" or GetPlayerName(P)=="Abylai142536" or GetPlayerName(P)=="DarkSonic1" or GetPlayerName(P)=="Beerus_Sama" or GetPlayerName(P)=="54Dzangetsu75" or GetPlayerName(P)=="Sylphiette" or GetPlayerName(P)=="I_Arioh*" or GetPlayerName(P)=="PinkieNecro" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="NecromanseR_RuS" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="msseva16" or GetPlayerName(P)=="Shunova" or GetPlayerName(P)=="Wolfkill" or GetPlayerName(P)=="Famouzy" or GetPlayerName(P)=="Semko157" or GetPlayerName(P)=="xxNu-13xx" or GetPlayerName(P)=="pro100master999" or GetPlayerName(P)=="I_Arioh" or GetPlayerName(P)=="3Deviant" or GetPlayerName(P)=="Denamesh" or GetPlayerName(P)=="Renex" or BaseSkinCond(P))
 endfunction
 function ScathachRFHCast takes nothing returns nothing
 local integer ip=GetPlayerId(GetTriggerPlayer())
@@ -30160,7 +30272,7 @@ local item array it
 local integer i=0
 local player p=GetOwningPlayer(u)
 local integer id=GetUnitTypeId(u)
-if id=='H06Y' then
+if id=='H06Y' or id=='H16Z' then
 set rfhpick=false
 set n=CreateUnit(p,'H06Z',GetRectCenterX(gg_rct_Rect1),GetRectCenterY(gg_rct_Rect1),0)
 call UnitInventorySetSize(n,10)
@@ -30170,12 +30282,12 @@ set udg_Hero[ip+1]=n
 if GetHeroLevel(u)>1 then
 call SetHeroLevel(n,GetHeroLevel(u),false)
 endif
-set soundplay=CreateSound("Voice\\"+InitVoice(GetUnitTypeId(n)),false,false,true,12700,12700,"")
-if GetLocalPlayer()==p then
-call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
-endif
-call KillSoundWhenDone(soundplay)
+// set soundplay=CreateSound("Voice\\"+InitVoice(GetUnitTypeId(n)),false,false,true,12700,12700,"")
+// if GetLocalPlayer()==p then
+// call StartSound(soundplay)
+// call KillSoundWhenDone(soundplay)
+// endif
+// call KillSoundWhenDone(soundplay)
 loop
 exitwhen i>=10
 set it[i]=UnitItemInSlot(u,i)
@@ -31197,7 +31309,7 @@ set p=null
 endfunction
 function AlterRFHCond takes nothing returns boolean
 set P=GetTriggerPlayer()
-return udg_B==false and(GetPlayerName(P)=="Sylphiette" or GetPlayerName(P)=="Ratti" or GetPlayerName(P)=="ti123vn00" or GetPlayerName(P)=="roshidere" or GetPlayerName(P)=="who?ch1sen" or GetPlayerName(P)=="Принц" or GetPlayerName(P)=="Hermaeus" or GetPlayerName(P)=="KamaBr" or GetPlayerName(P)=="[OSV] Kama" or GetPlayerName(P)=="Antitilt" or GetPlayerName(P)=="No_Dust" or GetPlayerName(P)=="Luna000" or GetPlayerName(P)=="TheDunwich525" or GetPlayerName(P)=="KuroNico" or GetPlayerName(P)=="Annieh" or GetPlayerName(P)=="zld6334" or GetPlayerName(P)=="WamPIRok" or GetPlayerName(P)=="Cermia" or GetPlayerName(P)=="Jaunty_D-Mai" or GetPlayerName(P)=="Sekaiyo" or GetPlayerName(P)=="SAOkirito1121" or GetPlayerName(P)=="PinkieNecro" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="NecromanseR_RuS" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="Wolfkill" or GetPlayerName(P)=="Famouzy" or GetPlayerName(P)=="Famousy" or GetPlayerName(P)=="Anwa_Abdul" or GetPlayerName(P)=="antonpoganui" or GetPlayerName(P)=="xxNu-13xx" or GetPlayerName(P)=="f.a.r.a.o.n." or GetPlayerName(P)=="Denamesh" or  GetPlayerName(P)=="Sheogarath57" or GetPlayerName(P)=="Awenger93" or  GetPlayerName(P)=="Gun62rus" or GetPlayerName(P)=="XDragon_FrostX" or GetPlayerName(P)=="Odi" or GetPlayerName(P)=="ROC4ik" or GetPlayerName(P)=="zelim9" or GetPlayerName(P)=="tenevo" or GetPlayerName(P)=="MoonX3" or GetPlayerName(P)=="Gin_-_Ichimaru" or GetPlayerName(P)=="CFA-Kirito" or GetPlayerName(P)=="Uriska" or GetPlayerName(P)=="hrUd" or GetPlayerName(P)=="Kuzeyuta" or GetPlayerName(P)=="FT.Lancer" or GetPlayerName(P)=="Maryana.Ro" or GetPlayerName(P)=="Neo_Hirai" or GetPlayerName(P)=="msseva16" or GetPlayerName(P)=="Blaze_drago_x" or GetPlayerName(P)=="adara3" or GetPlayerName(P)=="Shunova" or GetPlayerName(P)=="Renex" or GetPlayerName(P)=="Chevalier" or GetPlayerName(P)=="knowyourplace" or BaseSkinCond(P))
+return udg_B==false and(GetPlayerName(P)=="Sylphiette" or GetPlayerName(P)=="Ratti" or GetPlayerName(P)=="ti123vn00" or GetPlayerName(P)=="Scathach_" or GetPlayerName(P)=="who?ch1sen" or GetPlayerName(P)=="Принц" or GetPlayerName(P)=="Hermaeus" or GetPlayerName(P)=="KamaBr" or GetPlayerName(P)=="[OSV] Kama" or GetPlayerName(P)=="Antitilt" or GetPlayerName(P)=="No_Dust" or GetPlayerName(P)=="Luna000" or GetPlayerName(P)=="TheDunwich525" or GetPlayerName(P)=="KuroNico" or GetPlayerName(P)=="Annieh" or GetPlayerName(P)=="zld6334" or GetPlayerName(P)=="WamPIRok" or GetPlayerName(P)=="Cermia" or GetPlayerName(P)=="Jaunty_D-Mai" or GetPlayerName(P)=="Sekaiyo" or GetPlayerName(P)=="SAOkirito1121" or GetPlayerName(P)=="PinkieNecro" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="NecromanseR_RuS" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="Wolfkill" or GetPlayerName(P)=="Famouzy" or GetPlayerName(P)=="Famousy" or GetPlayerName(P)=="Anwa_Abdul" or GetPlayerName(P)=="antonpoganui" or GetPlayerName(P)=="xxNu-13xx" or GetPlayerName(P)=="f.a.r.a.o.n." or GetPlayerName(P)=="Denamesh" or  GetPlayerName(P)=="Sheogarath57" or GetPlayerName(P)=="Awenger93" or  GetPlayerName(P)=="Gun62rus" or GetPlayerName(P)=="XDragon_FrostX" or GetPlayerName(P)=="Odi" or GetPlayerName(P)=="ROC4ik" or GetPlayerName(P)=="zelim9" or GetPlayerName(P)=="tenevo" or GetPlayerName(P)=="MoonX3" or GetPlayerName(P)=="Gin_-_Ichimaru" or GetPlayerName(P)=="CFA-Kirito" or GetPlayerName(P)=="Uriska" or GetPlayerName(P)=="hrUd" or GetPlayerName(P)=="Kuzeyuta" or GetPlayerName(P)=="FT.Lancer" or GetPlayerName(P)=="Maryana.Ro" or GetPlayerName(P)=="Neo_Hirai" or GetPlayerName(P)=="msseva16" or GetPlayerName(P)=="Blaze_drago_x" or GetPlayerName(P)=="adara3" or GetPlayerName(P)=="Shunova" or GetPlayerName(P)=="Renex" or GetPlayerName(P)=="Chevalier" or GetPlayerName(P)=="knowyourplace" or BaseSkinCond(P))
 endfunction
 function AlterRFHCast takes nothing returns nothing
 local integer ip=GetPlayerId(GetTriggerPlayer())
@@ -31562,7 +31674,7 @@ set p=null
 endfunction
 function ArthurRFHCond takes nothing returns boolean
 set P=GetTriggerPlayer()
-return udg_B==false and(GetPlayerName(P)=="UJustDeadWeight" or GetPlayerName(P)=="Magistor" or GetPlayerName(P)=="roshidere" or GetPlayerName(P)=="who?ch1sen" or GetPlayerName(P)=="ShikiNanaya" or GetPlayerName(P)=="Slaikee" or GetPlayerName(P)=="Renex" or GetPlayerName(P)=="Antitilt" or GetPlayerName(P)=="Annieh" or GetPlayerName(P)=="KamaBr" or GetPlayerName(P)=="[OSV] Kama" or GetPlayerName(P)=="zld6334" or BaseSkinCond(P))
+return udg_B==false and(GetPlayerName(P)=="UJustDeadWeight" or GetPlayerName(P)=="Magistor" or GetPlayerName(P)=="Scathach_" or GetPlayerName(P)=="who?ch1sen" or GetPlayerName(P)=="ShikiNanaya" or GetPlayerName(P)=="Slaikee" or GetPlayerName(P)=="Renex" or GetPlayerName(P)=="Antitilt" or GetPlayerName(P)=="Annieh" or GetPlayerName(P)=="KamaBr" or GetPlayerName(P)=="[OSV] Kama" or GetPlayerName(P)=="zld6334" or BaseSkinCond(P))
 endfunction
 function ArthurRFHCast takes nothing returns nothing
 local integer ip=GetPlayerId(GetTriggerPlayer())
@@ -45792,7 +45904,12 @@ endloop
 if fast_cd then
     loop
         if GetItemTypeId(UnitItemInSlot(u, i)) ==  'I044' then
-            call SetItemRemainingCooldown(UnitItemInSlot(u, i),GetItemRemainingCooldown(UnitItemInSlot(u, i))-4)
+            if GetUnitTypeId(u)=='H00Q' or GetUnitTypeId(u)!='H00Q' and udg_DM[GetPlayerId(p)+1]!=null then
+                call SetItemRemainingCooldown(UnitItemInSlot(Hero[GetPlayerId(p)], i),GetItemRemainingCooldown(UnitItemInSlot(Hero[GetPlayerId(p)], i))-4)
+                call SetItemRemainingCooldown(UnitItemInSlot(udg_DM[GetPlayerId(p)+1], i),GetItemRemainingCooldown(UnitItemInSlot(udg_DM[GetPlayerId(p)+1], i))-4)
+            else
+                call SetItemRemainingCooldown(UnitItemInSlot(u, i),GetItemRemainingCooldown(UnitItemInSlot(u, i))-4)
+            endif
         endif
     exitwhen i == 0
     set i=i - 1
@@ -45843,7 +45960,7 @@ call TriggerAddCondition(gg_trg_SunStrike,Condition(function SunStrikeCond))
 call TriggerAddAction(gg_trg_SunStrike,function SunStrikeCast)
 endfunction
 function AkatsukiSetCond takes nothing returns boolean
-return GetHeroPrimaryAttribute(GetTriggerUnit())==HERO_ATTRIBUTE_INT and  GetSpellAbilityId()!='ASGG' and GetSpellAbilityId()!='A1I3' and GetSpellAbilityId()!='A11G' and GetSpellAbilityId()!='A1G2' and GetSpellAbilityId()!='A1G1' and GetSpellAbilityId()!='A16E' and GetSpellAbilityId()!='A1AA' and GetSpellAbilityId()!='A1AB' and GetSpellAbilityId()!='A11E' and GetSpellAbilityId()!='A11D' and GetSpellAbilityId()!='A11F' and UnitHasItemOfTypeBJ(GetTriggerUnit(),'I040')and GetSpellAbilityId()!='A0N1' and GetSpellAbilityId()!='A0N2' and GetSpellAbilityId()!='A0A2' and GetSpellAbilityId()!='A0EH' and GetSpellAbilityId()!='A0UG' and GetSpellAbilityId()!='A1I3' and GetSpellAbilityId()!='A0X6'  and GetSpellAbilityId()!='A0B3' and GetSpellAbilityId()!='A0N0' and GetSpellAbilityId()!='A40C' and GetSpellAbilityId()!='A30C' and GetSpellAbilityId()!='MadD' and GetSpellAbilityId()!='TMF0' and GetSpellAbilityId()!='TMF2' and GetSpellAbilityId()!='A06J' and GetSpellAbilityId()!='A0VQ' and GetSpellAbilityId()!='A0HX' and GetSpellAbilityId()!='A2HX' and GetSpellAbilityId()!='A14T' and GetSpellAbilityId()!='A19O' and GetSpellAbilityId()!='MrF2' and GetSpellAbilityId()!='MrG1' and GetSpellAbilityId()!='MrG2' and udg_B==true
+return GetHeroPrimaryAttribute(GetTriggerUnit())==HERO_ATTRIBUTE_INT and  GetSpellAbilityId()!='ASGG' and GetSpellAbilityId()!='A1I3' and GetSpellAbilityId()!='A11G' and GetSpellAbilityId()!='A1G2' and GetSpellAbilityId()!='A1G1' and GetSpellAbilityId()!='A16E' and GetSpellAbilityId()!='A1AA' and GetSpellAbilityId()!='A1AB' and GetSpellAbilityId()!='A11E' and GetSpellAbilityId()!='A11D' and GetSpellAbilityId()!='A11F' and UnitHasItemOfTypeBJ(GetTriggerUnit(),'I040')and GetSpellAbilityId()!='A0N1' and GetSpellAbilityId()!='A0N2' and GetSpellAbilityId()!='A0A2' and GetSpellAbilityId()!='A0EH' and GetSpellAbilityId()!='A0UG' and GetSpellAbilityId()!='AaS0' and GetSpellAbilityId()!='A1I3' and GetSpellAbilityId()!='A0X6'  and GetSpellAbilityId()!='A0B3' and GetSpellAbilityId()!='A0N0' and GetSpellAbilityId()!='A40C' and GetSpellAbilityId()!='A30C' and GetSpellAbilityId()!='MadD' and GetSpellAbilityId()!='TMF0' and GetSpellAbilityId()!='TMF2' and GetSpellAbilityId()!='A06J' and GetSpellAbilityId()!='A0VQ' and GetSpellAbilityId()!='A0HX' and GetSpellAbilityId()!='A2HX' and GetSpellAbilityId()!='A14T' and GetSpellAbilityId()!='A19O' and GetSpellAbilityId()!='MrF2' and GetSpellAbilityId()!='MrG1' and GetSpellAbilityId()!='MrG2' and udg_B==true
 endfunction
 function AkatsukiSetCast2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
@@ -45881,7 +45998,7 @@ call TriggerAddCondition(gg_trg_AkatsukiSet,Condition(function AkatsukiSetCond))
 call TriggerAddAction(gg_trg_AkatsukiSet,function AkatsukiSetCast)
 endfunction
 function SaiyanSetCond takes nothing returns boolean
-return GetHeroPrimaryAttribute(GetTriggerUnit())==HERO_ATTRIBUTE_STR and GetSpellAbilityId()!='VTBB' and GetSpellAbilityId()!='VTSG' and GetSpellAbilityId()!='VTSS' and GetSpellAbilityId()!='VTBS' and GetSpellAbilityId()!='GGBB' and GetSpellAbilityId()!='GGSG' and GetSpellAbilityId()!='GGS4' and GetSpellAbilityId()!='GGSS' and GetSpellAbilityId()!='GGBS' and GetSpellAbilityId()!='A11G' and GetSpellAbilityId()!='A16E' and GetSpellAbilityId()!='A1AA' and GetSpellAbilityId()!='A1AB' and GetSpellAbilityId()!='A11E' and GetSpellAbilityId()!='A11D' and GetSpellAbilityId()!='A11F' and UnitHasItemOfTypeBJ(GetTriggerUnit(),'I06E')and GetSpellAbilityId()!='A0N1' and GetSpellAbilityId()!='A0N2' and GetSpellAbilityId()!='A0A2' and GetSpellAbilityId()!='A0EH' and GetSpellAbilityId()!='A0UG' and GetSpellAbilityId()!='A06J' and GetSpellAbilityId()!='A0VQ' and GetSpellAbilityId()!='A1I3'  and GetSpellAbilityId()!='A0X6'  and GetSpellAbilityId()!='A0B3' and GetSpellAbilityId()!='IcF2' and GetSpellAbilityId()!='IcFS' and GetSpellAbilityId()!='IcD3' and GetSpellAbilityId()!='A14T' and GetSpellAbilityId()!='GKBS' and GetSpellAbilityId()!='GKBB' and GetSpellAbilityId()!='GKBI' and GetSpellAbilityId()!='GKSS' and GetSpellAbilityId()!='GKS2' and GetSpellAbilityId()!='GKS3' and GetSpellAbilityId()!='GKS4' and GetSpellAbilityId()!='GKSR' and GetSpellAbilityId()!='GKSB' and GetSpellAbilityId()!='GKUI' and GetSpellAbilityId()!='GKMI' and GetSpellAbilityId()!='VGBS' and GetSpellAbilityId()!='VGBB' and GetSpellAbilityId()!='VGSS' and GetSpellAbilityId()!='VGS2' and GetSpellAbilityId()!='VGS3' and GetSpellAbilityId()!='VGS4' and GetSpellAbilityId()!='VGSR' and GetSpellAbilityId()!='VGSB' and RectContainsUnit(gg_rct_HibariFight,GetTriggerUnit())==false
+return GetHeroPrimaryAttribute(GetTriggerUnit())==HERO_ATTRIBUTE_STR and GetSpellAbilityId()!='VTBB' and GetSpellAbilityId()!='VTSG' and GetSpellAbilityId()!='VTSS' and GetSpellAbilityId()!='VTBS' and GetSpellAbilityId()!='GGBB' and GetSpellAbilityId()!='GGSG' and GetSpellAbilityId()!='GGS4' and GetSpellAbilityId()!='GGSS' and GetSpellAbilityId()!='GGBS' and GetSpellAbilityId()!='A11G' and GetSpellAbilityId()!='A16E' and GetSpellAbilityId()!='A1AA' and GetSpellAbilityId()!='A1AB' and GetSpellAbilityId()!='A11E' and GetSpellAbilityId()!='A11D' and GetSpellAbilityId()!='A11F' and UnitHasItemOfTypeBJ(GetTriggerUnit(),'I06E')and GetSpellAbilityId()!='A0N1' and GetSpellAbilityId()!='A0N2' and GetSpellAbilityId()!='A0A2' and GetSpellAbilityId()!='A0EH' and GetSpellAbilityId()!='A0UG' and GetSpellAbilityId()!='AaS0' and GetSpellAbilityId()!='A06J' and GetSpellAbilityId()!='A0VQ' and GetSpellAbilityId()!='A1I3'  and GetSpellAbilityId()!='A0X6'  and GetSpellAbilityId()!='A0B3' and GetSpellAbilityId()!='IcF2' and GetSpellAbilityId()!='IcFS' and GetSpellAbilityId()!='IcD3' and GetSpellAbilityId()!='A14T' and GetSpellAbilityId()!='GKBS' and GetSpellAbilityId()!='GKBB' and GetSpellAbilityId()!='GKBI' and GetSpellAbilityId()!='GKSS' and GetSpellAbilityId()!='GKS2' and GetSpellAbilityId()!='GKS3' and GetSpellAbilityId()!='GKS4' and GetSpellAbilityId()!='GKSR' and GetSpellAbilityId()!='GKSB' and GetSpellAbilityId()!='GKUI' and GetSpellAbilityId()!='GKMI' and GetSpellAbilityId()!='VGBS' and GetSpellAbilityId()!='VGBB' and GetSpellAbilityId()!='VGSS' and GetSpellAbilityId()!='VGS2' and GetSpellAbilityId()!='VGS3' and GetSpellAbilityId()!='VGS4' and GetSpellAbilityId()!='VGSR' and GetSpellAbilityId()!='VGSB' and RectContainsUnit(gg_rct_HibariFight,GetTriggerUnit())==false
 endfunction
 function SaiyanSetCast takes nothing returns nothing
 local unit u=GetTriggerUnit()
@@ -47101,6 +47218,34 @@ set gg_trg_ChangeSamehadaMod=CreateTrigger()
 call TriggerRegisterAnyUnitEventBJ(gg_trg_ChangeSamehadaMod,EVENT_PLAYER_UNIT_USE_ITEM)
 call TriggerAddCondition(gg_trg_ChangeSamehadaMod,Condition(function ChangeSamehadaModCond))
 call TriggerAddAction(gg_trg_ChangeSamehadaMod,function ChangeSamehadaModCast)
+endfunction
+function ChangeAlchemySealModCond takes nothing returns boolean
+return (GetItemTypeId(GetManipulatedItem())=='IASS' or GetItemTypeId(GetManipulatedItem())=='IASA' or GetItemTypeId(GetManipulatedItem())=='IASI') and GetUnitTypeId(GetTriggerUnit())!='H007'
+endfunction
+function ChangeAlchemySealModCast takes nothing returns nothing
+local unit u=GetTriggerUnit()
+local item it=GetManipulatedItem()
+if GetItemTypeId(it)=='IASS' then
+call UnitRemoveItem(u,it)
+call RemoveItem(it)
+call UnitAddItemById(u,'IASA')
+elseif GetItemTypeId(it)=='IASA' then
+call UnitRemoveItem(u,it)
+call RemoveItem(it)
+call UnitAddItemById(u,'IASI')
+elseif GetItemTypeId(it)=='IASI' then
+call UnitRemoveItem(u,it)
+call RemoveItem(it)
+call UnitAddItemById(u,'IASS')
+endif
+set it=null
+set u=null
+endfunction
+function InitTrig_ChangeAlchemySealMod takes nothing returns nothing
+    local trigger t=CreateTrigger()
+    call TriggerRegisterAnyUnitEventBJ(t,EVENT_PLAYER_UNIT_USE_ITEM)
+    call TriggerAddCondition(t,Condition(function ChangeAlchemySealModCond))
+    call TriggerAddAction(t,function ChangeAlchemySealModCast)
 endfunction
 function CondRandomBlink takes nothing returns boolean
 return GetItemTypeId(GetManipulatedItem())=='I027' and GetUnitTypeId(GetTriggerUnit())!='n008' and GetUnitTypeId(GetTriggerUnit())!='H007'
@@ -148381,11 +148526,8 @@ if SR(x,y,x1,y1)>200 then
         call SaveReal(h,id,8,0)
     endif
     call SetUnitFacing(l__d,a*bj_RADTODEG)
-    if GetUnitTypeId(u)=='H06Y' then
-        set n=CreateUnit(p,'e154',x,y,a*bj_RADTODEG)
-    else
-        set n=CreateUnit(p,'e15M',x,y,a*bj_RADTODEG)
-    endif
+    set n=CreateUnit(p,'e154',x,y,a*bj_RADTODEG)
+    call SetUnitModel(n,GetUnitModel(u))
     call SetUnitVertexColor(n,255,255,255,50)
     call UnitApplyTimedLife(n,'BTLF',0.15)
     call SetUnitAnimation(n,"Spell One")
@@ -148488,11 +148630,8 @@ call SaveUnitHandle(h,id,0,u)
 call SaveUnitHandle(h,id,1,c)
 call UnitAddAbility(c,'Arav')
 call UnitRemoveAbility(c,'Arav')
-if GetUnitTypeId(u)=='H06Y' then
 set n=CreateUnit(p,'e154',x,y,a*bj_RADTODEG)
-else
-set n=CreateUnit(p,'e15M',x,y,a*bj_RADTODEG)
-endif
+call SetUnitModel(n,GetUnitModel(u))
 call SaveUnitHandle(h,id,2,n)
 call UnitAddAbility(n,'A1F7')
 call SetUnitAnimation(n,"Spell Four")
@@ -148674,11 +148813,8 @@ call SaveReal(h,id,7,y)
 call PauseUnit(u,true)
 call ShowUnit(u,false)
 call SetUnitInvulnerable(u,true)
-if GetUnitTypeId(u)=='H06Y' then
 set n=CreateUnit(p,'e154',x,y,a*bj_RADTODEG)
-else
-set n=CreateUnit(p,'e15M',x,y,a*bj_RADTODEG)
-endif
+call SetUnitModel(n,GetUnitModel(u))
 call SetUnitAnimation(n,"spell slam")
 call SetUnitTimeScale(n,1.25)
 call SaveUnitHandle(h,id,9,n)
@@ -172014,6 +172150,7 @@ function RengokuT_Act3 takes nothing returns nothing
         call SetUnitTimeScale(target, 1)
         call FlushChildHashtable(h, id)
         call DestroyTimer(GetExpiredTimer())
+        call StartAbilityCooldown(GetUnitAbility(caster, 'RenT'), 35)
     endif
     set caster=null
     set target=null
@@ -172136,6 +172273,7 @@ function RengokuT_Act2 takes nothing returns nothing
                 call SetUnitInvulnerable(caster,false)
                 call FlushChildHashtable(h,id)
                 call DestroyTimer(GetExpiredTimer())
+                call StartAbilityCooldown(GetUnitAbility(caster, 'RenT'), 35)
             endif
         endif
     else
@@ -175880,7 +176018,7 @@ function JirenESelf_Cast2 takes nothing returns nothing
         call SetUnitAnimationByIndex(u,42)
         call StartSound(soundStr[115])
     endif
-    if time<2 and c==null then
+    if time<1 and c==null then
         call PauseUnit(u,true)
         if ModuloReal(time,0.32)==0.04 then
             call SaveReal(HH,id,2,time+0.04)
@@ -176365,7 +176503,7 @@ function JirenQSelf_Cast3 takes nothing returns nothing
     local real rollp=LoadReal(HH,id,10)
     local integer i=1
     local real dmg=GetHeroStr(u,true)*(1+GetUnitAbilityLevel(u,'JNQ1'))+50
-    if time<2 then
+    if time<1 then
         call SaveReal(HH,id,2,time+0.02)
         call PauseUnit(u,true)
         call PauseUnit(c,true)
@@ -219701,7 +219839,7 @@ if time>1 and(GetUnitAbilityLevel(caster,'BGSG')==0 or GetUnitState(caster,UNIT_
 call EffectCreateAndMove(true,EffectID[572],GetRandomReal(0,360),1,2,1,100,100,100,60,100,caster,0,facing)
 call EffectCreateAndMove(true,EffectID[768],facing,1.5,0.75,1.5,100,100,100,80,0,caster,0,facing)
 call EffectCreateAndMove(true,EffectID[23],facing,1.5,1,0.5,60,60,100,0,0,caster,0,facing)
-call AbilityCD(caster,'GSG1',5)
+call AbilityCD(caster,'GSG1',10)
 call UnitRemoveAbility(caster,'BGSG')
 call StopSound(LoadSoundHandle(HH,id,25),true,false)
 set soundplay=CreateSound("Sound\\Gojo\\G_OFF.mp3",false,false,true,12700,12700,"")
@@ -221349,7 +221487,7 @@ function InitTrig_OrochimaruF3 takes nothing returns nothing
     call TriggerAddAction(gg_trg_OrochimaruF3,function OrochimaruF3Cast)
 endfunction
 function OrochimaruF2Cond takes nothing returns boolean
-    return GetUnitAbilityLevel(GetTriggerUnit(),'ore3')>0 and GetSpellAbilityId()!='A16E' and GetSpellAbilityId()!='A1AA' and GetSpellAbilityId()!='A1AB' and GetSpellAbilityId()!='A11E' and GetSpellAbilityId()!='A11D' and GetSpellAbilityId()!='A11F' and GetSpellAbilityId()!='A0N1' and GetSpellAbilityId()!='A0N2' and GetSpellAbilityId()!='A0A2' and GetSpellAbilityId()!='A0EH' and GetSpellAbilityId()!='A0UG' and GetSpellAbilityId()!='A1I3'  and GetSpellAbilityId()!='A0X6'  and GetSpellAbilityId()!='A0B3'
+    return GetUnitAbilityLevel(GetTriggerUnit(),'ore3')>0 and GetSpellAbilityId()!='A16E' and GetSpellAbilityId()!='A1AA' and GetSpellAbilityId()!='A1AB' and GetSpellAbilityId()!='A11E' and GetSpellAbilityId()!='A11D' and GetSpellAbilityId()!='A11F' and GetSpellAbilityId()!='A0N1' and GetSpellAbilityId()!='A0N2' and GetSpellAbilityId()!='A0A2' and GetSpellAbilityId()!='A0EH' and GetSpellAbilityId()!='A0UG' and GetSpellAbilityId()!='AaS0' and GetSpellAbilityId()!='A1I3'  and GetSpellAbilityId()!='A0X6'  and GetSpellAbilityId()!='A0B3'
 endfunction
 function OrochimaruF2Cast takes nothing returns nothing
     local unit u=GetTriggerUnit()
@@ -225602,6 +225740,15 @@ set i=0
 set t=CreateTrigger()
 loop
 exitwhen i>=11
+call TriggerRegisterPlayerChatEvent(t,Player(i),"-Bunny",true)
+set i=i+1
+endloop
+call TriggerAddCondition(t,Condition(function BunnyRFHCond))
+call TriggerAddAction(t,function BunnyRFHCast)
+set i=0
+set t=CreateTrigger()
+loop
+exitwhen i>=11
 call TriggerRegisterPlayerChatEvent(t,Player(i),"-Shana",true)
 set i=i+1
 endloop
@@ -226557,6 +226704,7 @@ call InitTrig_HellRing()
 call InitTrig_SoundsHeroes()
 call InitTrig_GrimorePrelaty()
 call InitTrig_ChangeSamehadaMod()
+call InitTrig_ChangeAlchemySealMod()
 call InitTrig_MoveHeroes()
 call InitTrig_KingOfHill_Enter()
 call InitTrig_Tower_Enter()
