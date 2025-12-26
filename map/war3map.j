@@ -32387,6 +32387,8 @@ set udg_Hero[i]=u2
 set udg_Hero[udg_SwapId[i]]=u1
 set udg_Swap[udg_SwapId[i]]=false
 set udg_Swap[i]=false
+call W3MMD_Lite_Set_Integer(Player(udg_SwapId[i]-1),"Picked_hero",HeroSkin(udg_Hero[i]))
+call W3MMD_Lite_Set_Integer(Player(i-1),"Picked_hero",HeroSkin(udg_Hero[udg_SwapId[i]]))
 call ShowAbility2Timed('A10B',true,0.13)
 call ShowAbility2Timed('A20B',false,0.12)
 call ShowAbility2Timed('A30B',false,0.12)
