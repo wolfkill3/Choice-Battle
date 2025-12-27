@@ -19,7 +19,6 @@ hashtable GameHashTable = InitHashtable()
 gamecache W3MMD_Lite_Cache = null
 boolean array W3MMD_Lite_Is_Player_Initialized
 integer pW3XGlobalClass=0
-        
 unit array udg_Hero
 force PlayerH
 integer udg_move=0
@@ -1061,7 +1060,6 @@ unit array fi
 force array all
 lightning v
 boolean damage
-gamecache gc
 integer array win
 integer win2
 lightning L
@@ -9891,7 +9889,6 @@ set DG=CreateGroup()
 set JG=CreateGroup()
 set GJ=CreateGroup()
 set lrg=CreateGroup()
-set gc=InitGameCache("MyCopm.txt")
 set TC=false
 set Theaternero=false
 set archR=false
@@ -32385,6 +32382,8 @@ set udg_Hero[i]=u2
 set udg_Hero[udg_SwapId[i]]=u1
 set udg_Swap[udg_SwapId[i]]=false
 set udg_Swap[i]=false
+call W3MMD_Lite_Set_Integer(Player(udg_SwapId[i]-1),"Picked_hero",HeroSkin(udg_Hero[i]))
+call W3MMD_Lite_Set_Integer(Player(i-1),"Picked_hero",HeroSkin(udg_Hero[udg_SwapId[i]]))
 call ShowAbility2Timed('A10B',true,0.13)
 call ShowAbility2Timed('A20B',false,0.12)
 call ShowAbility2Timed('A30B',false,0.12)
@@ -61661,9 +61660,10 @@ function RoyalGuardCast2 takes nothing returns nothing
         set time=time+0.05
         call SaveReal(HH,id,2,time)
     endif
-    if time<0.1 and c==null then
+    if time<0.25 and c==null then
         call PauseUnit(u,true)
     else
+        call SaveBoolean(HH,idu,ANTITARGET_ABILITY,false)
         if c!=null then
             call StartSound(soundStr[152])
             set EFF=AddSpecialEffect("war3mapImported\\wind3.mdl",x,y)
@@ -61675,27 +61675,32 @@ function RoyalGuardCast2 takes nothing returns nothing
             call UnitRemoveAbility(u,'ADG2')
             call UnitRemoveBuffs(u,false,true)
             call SetUnitTimeScale(u,1)
-            call SaveBoolean(HH,idu,ANTITARGET_ABILITY,false)
-            call SaveUnitHandle(HH,id,1,c)
+            call SetUnitFacingInstant(u,Atan2(GetUnitY(c)-y,GetUnitX(c)-x)* bj_RADTODEG)
             call RemoveSavedHandle(HH,idu,REVERSE_TARGET)
             call PauseTimer(t)
             call SetUnitFlyHeight(c, 0, 0)
             call SetUnitPathing(u,true)
             call PauseUnit(u,false)
             call SetUnitInvulnerable(u,false)
+            call PauseUnit(c,false)
+            call SetUnitInvulnerable(c,false)
+            if SR(x,y,GetUnitX(c),GetUnitY(c))<300 then
+                call SetControlToUnit(u,c,0.5,"stun")
+            endif
+            call StartAbilityCooldown(GetUnitAbility(u,'ADG1'),3)
             call SetUnitAnimation(c,"stand")
             call PauseTimer(t)
             call DestroyTimer(t)
             call SetUnitTimeScale(u,1)
             call FlushChildHashtable(HH,id)
         else
-            if time==0.15 then
+            if time==0.3 then
                 call UnitMakeAbilityPermanent(u,false,'ADG2')
                 call UnitRemoveAbility(u,'ADG2')
                 call UnitRemoveBuffs(u,false,true)
                 call PauseUnit(u,false)
             endif
-            if time>0.6 then
+            if time>1 then
                 call UnitMakeAbilityPermanent(u,false,'ADG3')
                 call UnitRemoveAbility(u,'ADG3')
                 call PauseTimer(t)
@@ -62248,8 +62253,9 @@ function MillionStabCast3 takes nothing returns nothing
             call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,false)
             call SetUnitInvulnerable(u,false)
             call PauseUnit(u,false)
-            call Push(c,50,a,150)
+            call Push(c,50,a,100)
             call myCustomDamage(u,c,dmg,false,false,null,null,null)
+            call SetControlToUnit(E,E, 0.5, "stun")
             call PauseTimer(t)
             call DestroyTimer(t)
             call FlushChildHashtable(h,id)
