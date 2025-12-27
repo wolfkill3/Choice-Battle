@@ -62257,7 +62257,7 @@ function MillionStabCast3 takes nothing returns nothing
             call PauseUnit(u,false)
             call Push(c,50,a,100)
             call myCustomDamage(u,c,dmg,false,false,null,null,null)
-            call SetControlToUnit(E,E, 0.5, "stun")
+            call SetControlToUnit(u,c, 0.5, "stun")
             call PauseTimer(t)
             call DestroyTimer(t)
             call FlushChildHashtable(h,id)
