@@ -19,7 +19,6 @@ hashtable GameHashTable = InitHashtable()
 gamecache W3MMD_Lite_Cache = null
 boolean array W3MMD_Lite_Is_Player_Initialized
 integer pW3XGlobalClass=0
-        
 unit array udg_Hero
 force PlayerH
 integer udg_move=0
@@ -1061,7 +1060,6 @@ unit array fi
 force array all
 lightning v
 boolean damage
-gamecache gc
 integer array win
 integer win2
 lightning L
@@ -9891,7 +9889,6 @@ set DG=CreateGroup()
 set JG=CreateGroup()
 set GJ=CreateGroup()
 set lrg=CreateGroup()
-set gc=InitGameCache("MyCopm.txt")
 set TC=false
 set Theaternero=false
 set archR=false
