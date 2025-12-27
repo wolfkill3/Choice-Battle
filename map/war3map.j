@@ -61662,9 +61662,10 @@ function RoyalGuardCast2 takes nothing returns nothing
         set time=time+0.05
         call SaveReal(HH,id,2,time)
     endif
-    if time<0.1 and c==null then
+    if time<0.25 and c==null then
         call PauseUnit(u,true)
     else
+        call SaveBoolean(HH,idu,ANTITARGET_ABILITY,false)
         if c!=null then
             call StartSound(soundStr[152])
             set EFF=AddSpecialEffect("war3mapImported\\wind3.mdl",x,y)
@@ -61676,27 +61677,32 @@ function RoyalGuardCast2 takes nothing returns nothing
             call UnitRemoveAbility(u,'ADG2')
             call UnitRemoveBuffs(u,false,true)
             call SetUnitTimeScale(u,1)
-            call SaveBoolean(HH,idu,ANTITARGET_ABILITY,false)
-            call SaveUnitHandle(HH,id,1,c)
+            call SetUnitFacingInstant(u,Atan2(GetUnitY(c)-y,GetUnitX(c)-x)* bj_RADTODEG)
             call RemoveSavedHandle(HH,idu,REVERSE_TARGET)
             call PauseTimer(t)
             call SetUnitFlyHeight(c, 0, 0)
             call SetUnitPathing(u,true)
             call PauseUnit(u,false)
             call SetUnitInvulnerable(u,false)
+            call PauseUnit(c,false)
+            call SetUnitInvulnerable(c,false)
+            if SR(x,y,GetUnitX(c),GetUnitY(c))<300 then
+                call SetControlToUnit(u,c,0.5,"stun")
+            endif
+            call StartAbilityCooldown(GetUnitAbility(u,'ADG1'),3)
             call SetUnitAnimation(c,"stand")
             call PauseTimer(t)
             call DestroyTimer(t)
             call SetUnitTimeScale(u,1)
             call FlushChildHashtable(HH,id)
         else
-            if time==0.15 then
+            if time==0.3 then
                 call UnitMakeAbilityPermanent(u,false,'ADG2')
                 call UnitRemoveAbility(u,'ADG2')
                 call UnitRemoveBuffs(u,false,true)
                 call PauseUnit(u,false)
             endif
-            if time>0.6 then
+            if time>1 then
                 call UnitMakeAbilityPermanent(u,false,'ADG3')
                 call UnitRemoveAbility(u,'ADG3')
                 call PauseTimer(t)
@@ -62249,8 +62255,9 @@ function MillionStabCast3 takes nothing returns nothing
             call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,false)
             call SetUnitInvulnerable(u,false)
             call PauseUnit(u,false)
-            call Push(c,50,a,150)
+            call Push(c,50,a,100)
             call myCustomDamage(u,c,dmg,false,false,null,null,null)
+            call SetControlToUnit(E,E, 0.5, "stun")
             call PauseTimer(t)
             call DestroyTimer(t)
             call FlushChildHashtable(h,id)
