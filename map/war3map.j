@@ -35604,6 +35604,7 @@ function EndOfChoiceAct takes nothing returns nothing
         endif
         call SaveBoolean(HH,GetHandleId(Hero[i]),SS,false)
         call SaveBoolean(HH,GetHandleId(Hero[i]),SST,false)
+        call SaveInteger(HH,GetHandleId(Hero[i]),ROYAL_GUARD_STACKS,0)
         call SetUnitVertexColor(Hero[i],255,255,255,255)
         call UnitRemoveAbility(Hero[i],'A28U')
         if GetUnitTypeId(Hero[i])=='H21M' then 
@@ -36925,6 +36926,7 @@ exitwhen i>=10
     call SaveInteger(HH,GetHandleId(Hero[i]),StringHash("cold3"),1)
     call SaveBoolean(HH,GetHandleId(Hero[i]),SS,false)
     call SaveBoolean(HH,GetHandleId(Hero[i]),SST,false)
+    call SaveInteger(HH,GetHandleId(Hero[i]),ROYAL_GUARD_STACKS,0)
     call UnitRemoveAbility(Hero[i],'A26F')
     call UnitRemoveAbility(Hero[i],'A25F')
     call SetUnitState(Hero[i],UNIT_STATE_MANA,GetUnitState(Hero[i],UNIT_STATE_MAX_MANA))
