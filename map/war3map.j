@@ -61668,7 +61668,7 @@ function RoyalGuardCast2 takes nothing returns nothing
         set time=time+0.05
         call SaveReal(HH,id,2,time)
     endif
-    if time<0.25 and c==null then
+    if time<0.15 and c==null then
         call PauseUnit(u,true)
     else
         call SaveBoolean(HH,idu,ANTITARGET_ABILITY,false)
@@ -61707,7 +61707,7 @@ function RoyalGuardCast2 takes nothing returns nothing
             call SetUnitTimeScale(u,1)
             call FlushChildHashtable(HH,id)
         else
-            if time==0.3 then
+            if time==0.2 then
                 call UnitMakeAbilityPermanent(u,false,'ADG2')
                 call UnitRemoveAbility(u,'ADG2')
                 call UnitRemoveBuffs(u,false,true)
