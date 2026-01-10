@@ -25767,8 +25767,8 @@ local real dmg=0
 if GetWidgetLife(u)>0 and IsUnitAlive(udg_DM[GetPlayerId(GetOwningPlayer(u))+1]) and udg_B==true and DU2==true then
     if life2>life then
         set dmg=GetWidgetMana(u)-LoadReal(h,id,0)
-        // call SaveReal(h,id,3,LoadReal(h,id,3)+(dmg*(0.95-0.01*GetHeroLevel(u))))
-        call SetWidgetMana(u, GetWidgetMana(u)-dmg*(0.95-0.01*GetHeroLevel(u))) //+MathRealFloor(LoadReal(h,id,3))))
+        // call SaveReal(h,id,3,LoadReal(h,id,3)+(dmg*(0.80-0.01*GetHeroLevel(u))))
+        call SetWidgetMana(u, GetWidgetMana(u)-dmg*(0.80-0.01*GetHeroLevel(u))) //+MathRealFloor(LoadReal(h,id,3))))
         // if LoadReal(h,id,3)>1 then
         //     call SaveReal(h,id,3,LoadReal(h,id,3)-MathRealFloor(LoadReal(h,id,3)))
         // endif
