@@ -165,6 +165,7 @@ constant integer TIMER_MAX_COUNT_HASH = StringHash( "TimerMaximumCount" )
 constant integer TIMER_STARTED_HASH   = StringHash( "TimerStarted" )
 constant integer TARGET_ABILITY       = StringHash( "TARGET_ABILITY" )
 constant integer ANTITARGET_ABILITY   = StringHash( "ANTITARGET_ABILITY" )
+constant integer ROYAL_GUARD_STACKS   = StringHash( "ROYAL_GUARD_STACKS" )
 constant integer DASH_USER            = StringHash( "DASH_USER" )
 constant integer REVERSE_TARGET       = StringHash( "REVERSE_TARGET" )
 constant integer SOUND_LANGUAGE       = StringHash("SOUND_LANGUAGE")
@@ -25765,8 +25766,8 @@ local real dmg=0
 if GetWidgetLife(u)>0 and IsUnitAlive(udg_DM[GetPlayerId(GetOwningPlayer(u))+1]) and udg_B==true and DU2==true then
     if life2>life then
         set dmg=GetWidgetMana(u)-LoadReal(h,id,0)
-        // call SaveReal(h,id,3,LoadReal(h,id,3)+(dmg*(0.95-0.01*GetHeroLevel(u))))
-        call SetWidgetMana(u, GetWidgetMana(u)-dmg*(0.95-0.01*GetHeroLevel(u))) //+MathRealFloor(LoadReal(h,id,3))))
+        // call SaveReal(h,id,3,LoadReal(h,id,3)+(dmg*(0.80-0.01*GetHeroLevel(u))))
+        call SetWidgetMana(u, GetWidgetMana(u)-dmg*(0.80-0.01*GetHeroLevel(u))) //+MathRealFloor(LoadReal(h,id,3))))
         // if LoadReal(h,id,3)>1 then
         //     call SaveReal(h,id,3,LoadReal(h,id,3)-MathRealFloor(LoadReal(h,id,3)))
         // endif
@@ -30042,7 +30043,7 @@ set t=null
 endfunction
 function TsunadeRFHCond takes nothing returns boolean
 set P=GetTriggerPlayer()
-return udg_B==false //and(GetPlayerName(P)=="Sylphiette" or GetPlayerName(P)=="Antitilt" or GetPlayerName(P)=="TvoyHazyin" or GetPlayerName(P)=="tenros" or GetPlayerName(P)=="Uriska" or GetPlayerName(P)=="Annieh" or GetPlayerName(P)=="zld6334" or GetPlayerName(P)=="Sasaki..Haise" or GetPlayerName(P)=="PinkieNecro" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="NecromanseR_RuS" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="Wolfkill" or GetPlayerName(P)=="Famouzy" or GetPlayerName(P)=="xxNu-13xx" or GetPlayerName(P)=="ROC4IK" or GetPlayerName(P)=="pro100master999" or GetPlayerName(P)=="SAOkirito1121" or GetPlayerName(P)=="I_Arioh*" or GetPlayerName(P)=="I_Arioh" or GetPlayerName(P)=="Denamesh" or GetPlayerName(P)=="KamaBr" or GetPlayerName(P)=="[OSV] Kama" or BaseSkinCond(P))
+return udg_B==false and(GetPlayerName(P)=="Sylphiette" or GetPlayerName(P)=="Antitilt" or GetPlayerName(P)=="TvoyHazyin" or GetPlayerName(P)=="tenros" or GetPlayerName(P)=="Uriska" or GetPlayerName(P)=="Annieh" or GetPlayerName(P)=="zld6334" or GetPlayerName(P)=="Sasaki..Haise" or GetPlayerName(P)=="PinkieNecro" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="NecromanseR_RuS" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="Wolfkill" or GetPlayerName(P)=="Famouzy" or GetPlayerName(P)=="xxNu-13xx" or GetPlayerName(P)=="ROC4IK" or GetPlayerName(P)=="pro100master999" or GetPlayerName(P)=="SAOkirito1121" or GetPlayerName(P)=="I_Arioh*" or GetPlayerName(P)=="I_Arioh" or GetPlayerName(P)=="Denamesh" or GetPlayerName(P)=="KamaBr" or GetPlayerName(P)=="[OSV] Kama" or BaseSkinCond(P))
 endfunction
 function TsunadeRFHCast takes nothing returns nothing
 local integer ip=GetPlayerId(GetTriggerPlayer())
@@ -30115,7 +30116,7 @@ set p=null
 endfunction
 function GrayRFHCond takes nothing returns boolean
 set P=GetTriggerPlayer()
-return udg_B==false //and(GetPlayerName(P)=="Sylphiette" or GetPlayerName(P)=="2thedevile2" or GetPlayerName(P)=="M0tTayCheTroi" or GetPlayerName(P)=="chu" or GetPlayerName(P)=="Slaikee" or GetPlayerName(P)=="Antitilt" or GetPlayerName(P)=="Annieh" or GetPlayerName(P)=="zld6334" or GetPlayerName(P)=="Magistor" or GetPlayerName(P)=="Hermaeus" or GetPlayerName(P)=="No_Dust"  or GetPlayerName(P)=="TheDunwich525" or GetPlayerName(P)=="pro100master999" or GetPlayerName(P)=="UJustDeadWeight" or GetPlayerName(P)=="PinkieNecro" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="NecromanseR_RuS" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="Saske981" or GetPlayerName(P)=="Wolfkill" or GetPlayerName(P)=="Famouzy" or GetPlayerName(P)=="Uriska" or GetPlayerName(P)=="ROC4IK" or GetPlayerName(P)=="Provokatop935" or GetPlayerName(P)=="xxNu-13xx" or GetPlayerName(P)=="DeekeR_ANTEC" or GetPlayerName(P)=="Sasaki..Haise" or GetPlayerName(P)=="f.a.r.a.o.n." or GetPlayerName(P)=="neketEXE" or GetPlayerName(P)=="KickSuckem" or GetPlayerName(P)=="Denamesh" or GetPlayerName(P)=="Black_XeSHTeG" or GetPlayerName(P)=="I_Arioh" or GetPlayerName(P)=="KamaBr" or GetPlayerName(P)=="[OSV] Kama" or  BaseSkinCond(P))
+return udg_B==false and(GetPlayerName(P)=="Sylphiette" or GetPlayerName(P)=="2thedevile2" or GetPlayerName(P)=="M0tTayCheTroi" or GetPlayerName(P)=="chu" or GetPlayerName(P)=="Slaikee" or GetPlayerName(P)=="Antitilt" or GetPlayerName(P)=="Annieh" or GetPlayerName(P)=="zld6334" or GetPlayerName(P)=="Magistor" or GetPlayerName(P)=="Hermaeus" or GetPlayerName(P)=="No_Dust"  or GetPlayerName(P)=="TheDunwich525" or GetPlayerName(P)=="pro100master999" or GetPlayerName(P)=="UJustDeadWeight" or GetPlayerName(P)=="PinkieNecro" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="NecromanseR_RuS" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="Saske981" or GetPlayerName(P)=="Wolfkill" or GetPlayerName(P)=="Famouzy" or GetPlayerName(P)=="Uriska" or GetPlayerName(P)=="ROC4IK" or GetPlayerName(P)=="Provokatop935" or GetPlayerName(P)=="xxNu-13xx" or GetPlayerName(P)=="DeekeR_ANTEC" or GetPlayerName(P)=="Sasaki..Haise" or GetPlayerName(P)=="f.a.r.a.o.n." or GetPlayerName(P)=="neketEXE" or GetPlayerName(P)=="KickSuckem" or GetPlayerName(P)=="Denamesh" or GetPlayerName(P)=="Black_XeSHTeG" or GetPlayerName(P)=="I_Arioh" or GetPlayerName(P)=="KamaBr" or GetPlayerName(P)=="[OSV] Kama" or  BaseSkinCond(P))
 endfunction
 function GrayRFHCast takes nothing returns nothing
 local integer ip=GetPlayerId(GetTriggerPlayer())
@@ -30188,7 +30189,7 @@ set p=null
 endfunction
 function BunnyRFHCond takes nothing returns boolean
 set P=GetTriggerPlayer()
-return udg_B==false //and(udg_test or GetPlayerName(P)=="Scathach_" or GetPlayerName(P)=="PinkieNecro" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="NecromanseR_RuS")
+return udg_B==false and(udg_test or GetPlayerName(P)=="Scathach_" or GetPlayerName(P)=="PinkieNecro" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="NecromanseR_RuS")
 endfunction
 function BunnyRFHCast takes nothing returns nothing
 local integer ip=GetPlayerId(GetTriggerPlayer())
@@ -30261,7 +30262,7 @@ set p=null
 endfunction
 function ScathachRFHCond takes nothing returns boolean
 set P=GetTriggerPlayer()
-return udg_B==false //and(GetPlayerName(P)=="Shunova" or GetPlayerName(P)=="Scathach_" or GetPlayerName(P)=="who?ch1sen" or GetPlayerName(P)=="Annieh" or GetPlayerName(P)=="KamaBr" or GetPlayerName(P)=="[OSV] Kama" or GetPlayerName(P)=="zld6334" or GetPlayerName(P)=="Abylai142536" or GetPlayerName(P)=="DarkSonic1" or GetPlayerName(P)=="Beerus_Sama" or GetPlayerName(P)=="54Dzangetsu75" or GetPlayerName(P)=="Sylphiette" or GetPlayerName(P)=="I_Arioh*" or GetPlayerName(P)=="PinkieNecro" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="NecromanseR_RuS" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="msseva16" or GetPlayerName(P)=="Shunova" or GetPlayerName(P)=="Wolfkill" or GetPlayerName(P)=="Famouzy" or GetPlayerName(P)=="Semko157" or GetPlayerName(P)=="xxNu-13xx" or GetPlayerName(P)=="pro100master999" or GetPlayerName(P)=="I_Arioh" or GetPlayerName(P)=="3Deviant" or GetPlayerName(P)=="Denamesh" or GetPlayerName(P)=="Renex" or BaseSkinCond(P))
+return udg_B==false and(GetPlayerName(P)=="Shunova" or GetPlayerName(P)=="Scathach_" or GetPlayerName(P)=="who?ch1sen" or GetPlayerName(P)=="Annieh" or GetPlayerName(P)=="KamaBr" or GetPlayerName(P)=="[OSV] Kama" or GetPlayerName(P)=="zld6334" or GetPlayerName(P)=="Abylai142536" or GetPlayerName(P)=="DarkSonic1" or GetPlayerName(P)=="Beerus_Sama" or GetPlayerName(P)=="54Dzangetsu75" or GetPlayerName(P)=="Sylphiette" or GetPlayerName(P)=="I_Arioh*" or GetPlayerName(P)=="PinkieNecro" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="NecromanseR_RuS" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="msseva16" or GetPlayerName(P)=="Shunova" or GetPlayerName(P)=="Wolfkill" or GetPlayerName(P)=="Famouzy" or GetPlayerName(P)=="Semko157" or GetPlayerName(P)=="xxNu-13xx" or GetPlayerName(P)=="pro100master999" or GetPlayerName(P)=="I_Arioh" or GetPlayerName(P)=="3Deviant" or GetPlayerName(P)=="Denamesh" or GetPlayerName(P)=="Renex" or BaseSkinCond(P))
 endfunction
 function ScathachRFHCast takes nothing returns nothing
 local integer ip=GetPlayerId(GetTriggerPlayer())
@@ -30334,7 +30335,7 @@ set p=null
 endfunction
 function ShanaFHCond takes nothing returns boolean
 set P=GetTriggerPlayer()
-return udg_B==false //and(GetPlayerName(P)=="Sylphiette" or GetPlayerName(P)=="Ratti" or GetPlayerName(P)=="Annieh" or GetPlayerName(P)=="zld6334" or GetPlayerName(P)=="Jaunty_D-Mai" or GetPlayerName(P)=="Hermaeus" or GetPlayerName(P)=="No_Dust"  or GetPlayerName(P)=="TheDunwich525" or GetPlayerName(P)=="Cermia" or GetPlayerName(P)=="3Deviant" or GetPlayerName(P)=="Shiki.SS" or GetPlayerName(P)=="SAOkirito1121" or GetPlayerName(P)=="PinkieNecro" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="NecromanseR_RuS" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="msseva16" or GetPlayerName(P)=="Wolfkill" or GetPlayerName(P)=="Famouzy" or GetPlayerName(P)=="Uriska" or GetPlayerName(P)=="Semko157" or GetPlayerName(P)=="xxNu-13xx" or GetPlayerName(P)=="ROC4ik" or GetPlayerName(P)=="Black_Shana" or GetPlayerName(P)=="Denamesh" or GetPlayerName(P)=="I_Arioh" or  BaseSkinCond(P))
+return udg_B==false and(GetPlayerName(P)=="Sylphiette" or GetPlayerName(P)=="Ratti" or GetPlayerName(P)=="Annieh" or GetPlayerName(P)=="zld6334" or GetPlayerName(P)=="Jaunty_D-Mai" or GetPlayerName(P)=="Hermaeus" or GetPlayerName(P)=="No_Dust"  or GetPlayerName(P)=="TheDunwich525" or GetPlayerName(P)=="Cermia" or GetPlayerName(P)=="3Deviant" or GetPlayerName(P)=="Shiki.SS" or GetPlayerName(P)=="SAOkirito1121" or GetPlayerName(P)=="PinkieNecro" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="NecromanseR_RuS" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="msseva16" or GetPlayerName(P)=="Wolfkill" or GetPlayerName(P)=="Famouzy" or GetPlayerName(P)=="Uriska" or GetPlayerName(P)=="Semko157" or GetPlayerName(P)=="xxNu-13xx" or GetPlayerName(P)=="ROC4ik" or GetPlayerName(P)=="Black_Shana" or GetPlayerName(P)=="Denamesh" or GetPlayerName(P)=="I_Arioh" or  BaseSkinCond(P))
 endfunction
 function ShanaFHCast takes nothing returns nothing
 local integer ip=GetPlayerId(GetTriggerPlayer())
@@ -30407,7 +30408,7 @@ set p=null
 endfunction
 function MasterRFHCond takes nothing returns boolean
 set P=GetTriggerPlayer()
-return udg_B==false //and(GetPlayerName(P)=="Sylphiette" or GetPlayerName(P)=="shibaketerayo" or GetPlayerName(P)=="Daiya_Torasuto" or GetPlayerName(P)=="Annieh" or GetPlayerName(P)=="KamaBr" or GetPlayerName(P)=="[OSV] Kama" or GetPlayerName(P)=="zld6334" or GetPlayerName(P)=="Uriska" or GetPlayerName(P)=="Sasaki..Haise" or GetPlayerName(P)=="aiurc" or GetPlayerName(P)=="PinkieNecro" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="NecromanseR_RuS" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="Wolfkill" or GetPlayerName(P)=="Famouzy" or GetPlayerName(P)=="xxNu-13xx" or GetPlayerName(P)=="Abylai142536" or GetPlayerName(P)=="Denamesh" or GetPlayerName(P)=="I_Arioh" or GetPlayerName(P)=="LastAvatarKorra" or  GetPlayerName(P)=="Neo_Hirai" or GetPlayerName(P)=="Reisen_Udongeib" or  GetPlayerName(P)=="Gun62rus" or GetPlayerName(P)=="omen78" or GetPlayerName(P)=="Nagisa--Shiota" or  GetPlayerName(P)=="Awenger93" or GetPlayerName(P)=="dessar383" or GetPlayerName(P)=="AkazaThree" or GetPlayerName(P)=="Kojou" or BaseSkinCond(P))
+return udg_B==false and(GetPlayerName(P)=="Sylphiette" or GetPlayerName(P)=="shibaketerayo" or GetPlayerName(P)=="Daiya_Torasuto" or GetPlayerName(P)=="Annieh" or GetPlayerName(P)=="KamaBr" or GetPlayerName(P)=="[OSV] Kama" or GetPlayerName(P)=="zld6334" or GetPlayerName(P)=="Uriska" or GetPlayerName(P)=="Sasaki..Haise" or GetPlayerName(P)=="aiurc" or GetPlayerName(P)=="PinkieNecro" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="NecromanseR_RuS" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="Wolfkill" or GetPlayerName(P)=="Famouzy" or GetPlayerName(P)=="xxNu-13xx" or GetPlayerName(P)=="Abylai142536" or GetPlayerName(P)=="Denamesh" or GetPlayerName(P)=="I_Arioh" or GetPlayerName(P)=="LastAvatarKorra" or  GetPlayerName(P)=="Neo_Hirai" or GetPlayerName(P)=="Reisen_Udongeib" or  GetPlayerName(P)=="Gun62rus" or GetPlayerName(P)=="omen78" or GetPlayerName(P)=="Nagisa--Shiota" or  GetPlayerName(P)=="Awenger93" or GetPlayerName(P)=="dessar383" or GetPlayerName(P)=="AkazaThree" or GetPlayerName(P)=="Kojou" or BaseSkinCond(P))
 endfunction
 function MasterRFHCast takes nothing returns nothing
 local integer ip=GetPlayerId(GetTriggerPlayer())
@@ -30480,7 +30481,7 @@ set p=null
 endfunction
 function MisakaRFHCond takes nothing returns boolean
 set P=GetTriggerPlayer()
-return udg_B==false //and(GetPlayerName(P)=="Valenint_228" or GetPlayerName(P)=="Sylphiette" or GetPlayerName(P)=="Annieh" or GetPlayerName(P)=="KamaBr" or GetPlayerName(P)=="[OSV] Kama" or GetPlayerName(P)=="zld6334" or GetPlayerName(P)=="Annieh" or GetPlayerName(P)=="zld6334" or GetPlayerName(P)=="Alastart" or GetPlayerName(P)=="3Deviant" or GetPlayerName(P)=="SAOkirito1121" or GetPlayerName(P)=="PinkieNecro" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="NecromanseR_RuS" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="Wolfkill" or GetPlayerName(P)=="Shunova" or GetPlayerName(P)=="Famouzy" or GetPlayerName(P)=="xxNu-13xx" or GetPlayerName(P)=="54Dzangetsu75" or GetPlayerName(P)=="Semko157" or GetPlayerName(P)=="Denamesh" or GetPlayerName(P)=="LastAvatarKorra" or GetPlayerName(P)=="Reisen_Udongeib" or GetPlayerName(P)=="X53Arcan" or GetPlayerName(P)=="Uriska" or GetPlayerName(P)=="AkazaThree" or GetPlayerName(P)=="Sheogarath57" or GetPlayerName(P)=="YoshitsuguOtani" or  GetPlayerName(P)=="Awenger93" or  GetPlayerName(P)=="Gun62rus" or GetPlayerName(P)=="Kid&Mikoto" or GetPlayerName(P)=="Hermaeus" or GetPlayerName(P)=="No_Dust"  or GetPlayerName(P)=="TheDunwich525" or GetPlayerName(P)=="Chevalier" or GetPlayerName(P)=="Black_Shana" or GetPlayerName(P)=="Renex" or GetPlayerName(P)=="Odi" or BaseSkinCond(P))
+return udg_B==false and(GetPlayerName(P)=="Valenint_228" or GetPlayerName(P)=="Sylphiette" or GetPlayerName(P)=="Annieh" or GetPlayerName(P)=="KamaBr" or GetPlayerName(P)=="[OSV] Kama" or GetPlayerName(P)=="zld6334" or GetPlayerName(P)=="Annieh" or GetPlayerName(P)=="zld6334" or GetPlayerName(P)=="Alastart" or GetPlayerName(P)=="3Deviant" or GetPlayerName(P)=="SAOkirito1121" or GetPlayerName(P)=="PinkieNecro" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="NecromanseR_RuS" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="Wolfkill" or GetPlayerName(P)=="Shunova" or GetPlayerName(P)=="Famouzy" or GetPlayerName(P)=="xxNu-13xx" or GetPlayerName(P)=="54Dzangetsu75" or GetPlayerName(P)=="Semko157" or GetPlayerName(P)=="Denamesh" or GetPlayerName(P)=="LastAvatarKorra" or GetPlayerName(P)=="Reisen_Udongeib" or GetPlayerName(P)=="X53Arcan" or GetPlayerName(P)=="Uriska" or GetPlayerName(P)=="AkazaThree" or GetPlayerName(P)=="Sheogarath57" or GetPlayerName(P)=="YoshitsuguOtani" or  GetPlayerName(P)=="Awenger93" or  GetPlayerName(P)=="Gun62rus" or GetPlayerName(P)=="Kid&Mikoto" or GetPlayerName(P)=="Hermaeus" or GetPlayerName(P)=="No_Dust"  or GetPlayerName(P)=="TheDunwich525" or GetPlayerName(P)=="Chevalier" or GetPlayerName(P)=="Black_Shana" or GetPlayerName(P)=="Renex" or GetPlayerName(P)=="Odi" or BaseSkinCond(P))
 endfunction
 function MisakaRFHCast takes nothing returns nothing
 local integer ip=GetPlayerId(GetTriggerPlayer())
@@ -30553,7 +30554,7 @@ set p=null
 endfunction
 function BrideRFHCond takes nothing returns boolean
 set P=GetTriggerPlayer()
-return udg_B==false //and(GetPlayerName(P)=="PinkieNecro" or GetPlayerName(P)=="Magistor" or GetPlayerName(P)=="No_Dust" or GetPlayerName(P)=="KamaBr" or GetPlayerName(P)=="[OSV] Kama" or GetPlayerName(P)=="SasukeMV" or GetPlayerName(P)=="SoloOfTheBest" or GetPlayerName(P)=="Renex" or GetPlayerName(P)=="Annieh" or GetPlayerName(P)=="zld6334" or GetPlayerName(P)=="WorldEdit" or GetPlayerName(P)=="UJustDeadWeight" or GetPlayerName(P)=="No_Dust" or GetPlayerName(P)=="Chevalier" or GetPlayerName(P)=="Antitilt" or GetPlayerName(P)=="dadadacer777" or GetPlayerName(P)=="belugaa" or GetPlayerName(P)=="IIIafep" or BaseSkinCond(P))
+return udg_B==false and(GetPlayerName(P)=="PinkieNecro" or GetPlayerName(P)=="Sokanish" or GetPlayerName(P)=="Magistor" or GetPlayerName(P)=="No_Dust" or GetPlayerName(P)=="KamaBr" or GetPlayerName(P)=="[OSV] Kama" or GetPlayerName(P)=="SasukeMV" or GetPlayerName(P)=="SoloOfTheBest" or GetPlayerName(P)=="Renex" or GetPlayerName(P)=="Annieh" or GetPlayerName(P)=="zld6334" or GetPlayerName(P)=="WorldEdit" or GetPlayerName(P)=="UJustDeadWeight" or GetPlayerName(P)=="No_Dust" or GetPlayerName(P)=="Chevalier" or GetPlayerName(P)=="Antitilt" or GetPlayerName(P)=="dadadacer777" or GetPlayerName(P)=="belugaa" or GetPlayerName(P)=="IIIafep" or BaseSkinCond(P))
 endfunction
 function BrideRFHCast takes nothing returns nothing
 local integer ip=GetPlayerId(GetTriggerPlayer())
@@ -30645,7 +30646,7 @@ set p=null
 endfunction
 function PadoruRFHCond takes nothing returns boolean
 set P=GetTriggerPlayer()
-return udg_B==false //and(GetPlayerName(P)=="PinkieNecro" or GetPlayerName(P)=="Suzu" or GetPlayerName(P)=="KamaBr" or GetPlayerName(P)=="[OSV] Kama" or GetPlayerName(P)=="AkazaThree" or GetPlayerName(P)=="zld6334" or GetPlayerName(P)=="Abylai142536" or GetPlayerName(P)=="UJustDeadWeight" or GetPlayerName(P)=="TraskiusLT" or GetPlayerName(P)=="Cermia" or GetPlayerName(P)=="No1re" or GetPlayerName(P)=="TheStalkerCraft" or GetPlayerName(P)=="Hagane" or GetPlayerName(P)=="antonpoganui" or GetPlayerName(P)=="KekkaiGenkai" or GetPlayerName(P)=="yatsufusa"  or GetPlayerName(P)=="Dark_soul3484" or GetPlayerName(P)=="Wolfkill" or GetPlayerName(P)=="Famouzy" or GetPlayerName(P)=="Anwa_Abdul" or GetPlayerName(P)=="WorldEdit" or GetPlayerName(P)=="Fantastic_Gear" or GetPlayerName(P)=="Beerus_Sama" or GetPlayerName(P)=="Offstay" or GetPlayerName(P)=="Chevalier" or GetPlayerName(P)=="DarkSonic1" or GetPlayerName(P)=="dessar383" or GetPlayerName(P)=="Sylphiette")
+return udg_B==false and(GetPlayerName(P)=="PinkieNecro" or GetPlayerName(P)=="Suzu" or GetPlayerName(P)=="KamaBr" or GetPlayerName(P)=="[OSV] Kama" or GetPlayerName(P)=="AkazaThree" or GetPlayerName(P)=="zld6334" or GetPlayerName(P)=="Abylai142536" or GetPlayerName(P)=="UJustDeadWeight" or GetPlayerName(P)=="TraskiusLT" or GetPlayerName(P)=="Cermia" or GetPlayerName(P)=="No1re" or GetPlayerName(P)=="TheStalkerCraft" or GetPlayerName(P)=="Hagane" or GetPlayerName(P)=="antonpoganui" or GetPlayerName(P)=="KekkaiGenkai" or GetPlayerName(P)=="yatsufusa"  or GetPlayerName(P)=="Dark_soul3484" or GetPlayerName(P)=="Wolfkill" or GetPlayerName(P)=="Famouzy" or GetPlayerName(P)=="Anwa_Abdul" or GetPlayerName(P)=="WorldEdit" or GetPlayerName(P)=="Fantastic_Gear" or GetPlayerName(P)=="Beerus_Sama" or GetPlayerName(P)=="Offstay" or GetPlayerName(P)=="Chevalier" or GetPlayerName(P)=="DarkSonic1" or GetPlayerName(P)=="dessar383" or GetPlayerName(P)=="Sylphiette")
 endfunction
 function PadoruRFHCast takes nothing returns nothing
 local integer ip=GetPlayerId(GetTriggerPlayer())
@@ -30718,7 +30719,7 @@ set p=null
 endfunction
 function AizenRFHCond takes nothing returns boolean
 set P=GetTriggerPlayer()
-return udg_B==false //and (GetPlayerName(P)=="roket67rus" or GetPlayerName(P)=="Ratti" or GetPlayerName(P)=="2thedevile2" or GetPlayerName(P)=="No_Dust" or GetPlayerName(P)=="ShikiNanaya" or GetPlayerName(P)=="Renex" or GetPlayerName(P)=="KamaBr" or GetPlayerName(P)=="[OSV] Kama" or GetPlayerName(P)=="Annieh" or GetPlayerName(P)=="Chevalier" or GetPlayerName(P)=="ShikiNanaya" or GetPlayerName(P)=="Antitilt" or GetPlayerName(P)=="dadadacer777" or GetPlayerName(P)=="belugaa" or GetPlayerName(P)=="IIIafep" or BaseSkinCond(P))
+return udg_B==false and (GetPlayerName(P)=="roket67rus" or GetPlayerName(P)=="Ratti" or GetPlayerName(P)=="2thedevile2" or GetPlayerName(P)=="No_Dust" or GetPlayerName(P)=="ShikiNanaya" or GetPlayerName(P)=="Renex" or GetPlayerName(P)=="KamaBr" or GetPlayerName(P)=="[OSV] Kama" or GetPlayerName(P)=="Annieh" or GetPlayerName(P)=="Chevalier" or GetPlayerName(P)=="ShikiNanaya" or GetPlayerName(P)=="Antitilt" or GetPlayerName(P)=="dadadacer777" or GetPlayerName(P)=="belugaa" or GetPlayerName(P)=="IIIafep" or BaseSkinCond(P))
 endfunction
 function AizenRFHCast takes nothing returns nothing
 local integer ip=GetPlayerId(GetTriggerPlayer())
@@ -30791,7 +30792,7 @@ set p=null
 endfunction
 function MidoRFHCond takes nothing returns boolean
 set P=GetTriggerPlayer()
-return udg_B==false //and (GetPlayerName(P)=="Sylphiette" or GetPlayerName(P)=="TvoyHazyin" or GetPlayerName(P)=="KamaBr" or GetPlayerName(P)=="[OSV] Kama" or GetPlayerName(P)=="ShikiNanaya" or GetPlayerName(P)=="dadadacer777" or GetPlayerName(P)=="Antitilt" or GetPlayerName(P)=="Annieh" or GetPlayerName(P)=="zld6334" or GetPlayerName(P)=="Denamesh" or GetPlayerName(P)=="Jaunty_D-Mai" or GetPlayerName(P)=="Magistor" or GetPlayerName(P)=="Chevalier" or GetPlayerName(P)=="PinkieNecro" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="NecromanseR_RuS" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="Uriska" or GetPlayerName(P)=="PIROMANI9K" or GetPlayerName(P)=="WorldEdit" or GetPlayerName(P)=="Wolfkill" or GetPlayerName(P)=="Famouzy" or GetPlayerName(P)=="TheStalkerCraft" or GetPlayerName(P)=="MrNarkoman.2013" or GetPlayerName(P)=="Faimon" or GetPlayerName(P)=="Renex" or GetPlayerName(P)=="knowyourplace" or BaseSkinCond(P))
+return udg_B==false and (GetPlayerName(P)=="Sylphiette" or GetPlayerName(P)=="TvoyHazyin" or GetPlayerName(P)=="KamaBr" or GetPlayerName(P)=="[OSV] Kama" or GetPlayerName(P)=="ShikiNanaya" or GetPlayerName(P)=="dadadacer777" or GetPlayerName(P)=="Antitilt" or GetPlayerName(P)=="Annieh" or GetPlayerName(P)=="zld6334" or GetPlayerName(P)=="Denamesh" or GetPlayerName(P)=="Jaunty_D-Mai" or GetPlayerName(P)=="Magistor" or GetPlayerName(P)=="Chevalier" or GetPlayerName(P)=="PinkieNecro" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="NecromanseR_RuS" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="Uriska" or GetPlayerName(P)=="PIROMANI9K" or GetPlayerName(P)=="WorldEdit" or GetPlayerName(P)=="Wolfkill" or GetPlayerName(P)=="Famouzy" or GetPlayerName(P)=="TheStalkerCraft" or GetPlayerName(P)=="MrNarkoman.2013" or GetPlayerName(P)=="Faimon" or GetPlayerName(P)=="Renex" or GetPlayerName(P)=="knowyourplace" or BaseSkinCond(P))
 endfunction
 function MidoRFHCast takes nothing returns nothing
 local integer ip=GetPlayerId(GetTriggerPlayer())
@@ -30864,7 +30865,7 @@ set p=null
 endfunction
 function GilRFHCond takes nothing returns boolean
 set P=GetTriggerPlayer()
-return udg_B==false //and(GetPlayerName(P)=="Sylphiette" or GetPlayerName(P)=="Ratti" or GetPlayerName(P)=="riringan" or GetPlayerName(P)=="Ice_Flower" or GetPlayerName(P)=="Принц" or GetPlayerName(P)=="KamaBr" or GetPlayerName(P)=="[OSV] Kama" or GetPlayerName(P)=="Daiya_Torasuto" or GetPlayerName(P)=="Annieh" or GetPlayerName(P)=="zld6334" or GetPlayerName(P)=="Gantyl" or GetPlayerName(P)=="Mirele" or GetPlayerName(P)=="Kanato" or GetPlayerName(P)=="antonpoganui" or GetPlayerName(P)=="KepachiNewMeta" or GetPlayerName(P)=="Sekaiyo" or GetPlayerName(P)=="PinkieNecro" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="NecromanseR_RuS" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="Artagonist" or GetPlayerName(P)=="Blaze_drago_x" or GetPlayerName(P)=="Hilanera" or GetPlayerName(P)=="Wolfkill" or GetPlayerName(P)=="Famouzy" or GetPlayerName(P)=="xxNu-13xx" or GetPlayerName(P)=="Semko157" or GetPlayerName(P)=="54Dzangetsu75" or GetPlayerName(P)=="SAOkirito1121" or GetPlayerName(P)=="Denamesh" or GetPlayerName(P)=="Neo_Hirai" or GetPlayerName(P)=="LastAvatarKorra" or GetPlayerName(P)=="Uriska" or GetPlayerName(P)=="AkazaThree" or GetPlayerName(P)=="Sheogarath57" or GetPlayerName(P)=="MisterPlysovii" or  GetPlayerName(P)=="Kirito.Yagatami" or GetPlayerName(P)=="5Dark_Demon5" or GetPlayerName(P)=="Mr.Friman15" or GetPlayerName(P)=="hrUd" or GetPlayerName(P)=="AngraMainyu" or GetPlayerName(P)=="Renex" or GetPlayerName(P)=="knowyourplace" or BaseSkinCond(P))
+return udg_B==false and(GetPlayerName(P)=="Sylphiette" or GetPlayerName(P)=="Ratti" or GetPlayerName(P)=="riringan" or GetPlayerName(P)=="Ice_Flower" or GetPlayerName(P)=="Принц" or GetPlayerName(P)=="KamaBr" or GetPlayerName(P)=="[OSV] Kama" or GetPlayerName(P)=="Daiya_Torasuto" or GetPlayerName(P)=="Annieh" or GetPlayerName(P)=="zld6334" or GetPlayerName(P)=="Gantyl" or GetPlayerName(P)=="Mirele" or GetPlayerName(P)=="Kanato" or GetPlayerName(P)=="antonpoganui" or GetPlayerName(P)=="KepachiNewMeta" or GetPlayerName(P)=="Sekaiyo" or GetPlayerName(P)=="PinkieNecro" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="NecromanseR_RuS" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="Artagonist" or GetPlayerName(P)=="Blaze_drago_x" or GetPlayerName(P)=="Hilanera" or GetPlayerName(P)=="Wolfkill" or GetPlayerName(P)=="Famouzy" or GetPlayerName(P)=="xxNu-13xx" or GetPlayerName(P)=="Semko157" or GetPlayerName(P)=="54Dzangetsu75" or GetPlayerName(P)=="SAOkirito1121" or GetPlayerName(P)=="Denamesh" or GetPlayerName(P)=="Neo_Hirai" or GetPlayerName(P)=="LastAvatarKorra" or GetPlayerName(P)=="Uriska" or GetPlayerName(P)=="AkazaThree" or GetPlayerName(P)=="Sheogarath57" or GetPlayerName(P)=="MisterPlysovii" or  GetPlayerName(P)=="Kirito.Yagatami" or GetPlayerName(P)=="5Dark_Demon5" or GetPlayerName(P)=="Mr.Friman15" or GetPlayerName(P)=="hrUd" or GetPlayerName(P)=="AngraMainyu" or GetPlayerName(P)=="Renex" or GetPlayerName(P)=="knowyourplace" or BaseSkinCond(P))
 endfunction
 function GilRFHCast takes nothing returns nothing
 local integer ip=GetPlayerId(GetTriggerPlayer())
@@ -30937,7 +30938,7 @@ set p=null
 endfunction
 function Gil2RFHCond takes nothing returns boolean
 set P=GetTriggerPlayer()
-return udg_B==false //and(GetPlayerName(P)=="roket67rus" or GetPlayerName(P)=="Sylphiette" or GetPlayerName(P)=="Luna000" or GetPlayerName(P)=="KamaBr" or GetPlayerName(P)=="[OSV] Kama" or GetPlayerName(P)=="ShikiNanaya" or GetPlayerName(P)=="Annieh" or GetPlayerName(P)=="zld6334" or GetPlayerName(P)=="Magistor" or GetPlayerName(P)=="Alastart" or GetPlayerName(P)=="aiurc" or GetPlayerName(P)=="udfett" or GetPlayerName(P)=="pro100master999" or GetPlayerName(P)=="PinkieNecro" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="NecromanseR_RuS" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="Wolfkill" or GetPlayerName(P)=="Famouzy" or GetPlayerName(P)=="Uriska" or GetPlayerName(P)=="Semko157" or GetPlayerName(P)=="xxNu-13xx" or GetPlayerName(P)=="King-Gilgamesh" or GetPlayerName(P)=="I_Arioh*" or GetPlayerName(P)=="I_Arioh" or GetPlayerName(P)=="Denamesh" or GetPlayerName(P)=="Renex" or GetPlayerName(P)=="knowyourplace" or BaseSkinCond(P))
+return udg_B==false and(GetPlayerName(P)=="roket67rus" or GetPlayerName(P)=="Sylphiette" or GetPlayerName(P)=="Luna000" or GetPlayerName(P)=="KamaBr" or GetPlayerName(P)=="[OSV] Kama" or GetPlayerName(P)=="ShikiNanaya" or GetPlayerName(P)=="Annieh" or GetPlayerName(P)=="zld6334" or GetPlayerName(P)=="Magistor" or GetPlayerName(P)=="Alastart" or GetPlayerName(P)=="aiurc" or GetPlayerName(P)=="udfett" or GetPlayerName(P)=="pro100master999" or GetPlayerName(P)=="PinkieNecro" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="NecromanseR_RuS" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="Wolfkill" or GetPlayerName(P)=="Famouzy" or GetPlayerName(P)=="Uriska" or GetPlayerName(P)=="Semko157" or GetPlayerName(P)=="xxNu-13xx" or GetPlayerName(P)=="King-Gilgamesh" or GetPlayerName(P)=="I_Arioh*" or GetPlayerName(P)=="I_Arioh" or GetPlayerName(P)=="Denamesh" or GetPlayerName(P)=="Renex" or GetPlayerName(P)=="knowyourplace" or BaseSkinCond(P))
 endfunction
 function Gil2RFHCast takes nothing returns nothing
 local integer ip=GetPlayerId(GetTriggerPlayer())
@@ -31010,7 +31011,7 @@ set p=null
 endfunction
 function MomoRFHCond takes nothing returns boolean
 set P=GetTriggerPlayer()
-return udg_B==false //and(GetPlayerName(P)=="Sylphiette" or GetPlayerName(P)=="Magistor" or GetPlayerName(P)=="IIIafep" or GetPlayerName(P)=="Nezoke" or GetPlayerName(P)=="KamaBr" or GetPlayerName(P)=="[OSV] Kama" or GetPlayerName(P)=="Luna000" or GetPlayerName(P)=="Uriska" or GetPlayerName(P)=="Jaunty_D-Mai" or GetPlayerName(P)=="Yin-Ying" or GetPlayerName(P)=="Annieh" or GetPlayerName(P)=="zld6334" or GetPlayerName(P)=="pro100master999" or GetPlayerName(P)=="Falaminator" or GetPlayerName(P)=="PinkieNecro" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="NecromanseR_RuS" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="Blaze_drago_x" or GetPlayerName(P)=="xXLarsikXx" or GetPlayerName(P)=="Wolfkill" or GetPlayerName(P)=="Famouzy" or GetPlayerName(P)=="falaminator" or GetPlayerName(P)=="xxNu-13xx" or GetPlayerName(P)=="Denamesh" or GetPlayerName(P)=="Rey_Calabaza" or GetPlayerName(P)=="akama001" or GetPlayerName(P)=="AkazaThree" or GetPlayerName(P)=="ZOIBERG_SVS" or GetPlayerName(P)=="neketEXE" or GetPlayerName(P)=="KickSuckem" or GetPlayerName(P)=="Renex" or GetPlayerName(P)=="knowyourplace" or BaseSkinCond(P))
+return udg_B==false and(GetPlayerName(P)=="Sylphiette" or GetPlayerName(P)=="Magistor" or GetPlayerName(P)=="IIIafep" or GetPlayerName(P)=="Nezoke" or GetPlayerName(P)=="KamaBr" or GetPlayerName(P)=="[OSV] Kama" or GetPlayerName(P)=="Luna000" or GetPlayerName(P)=="Uriska" or GetPlayerName(P)=="Jaunty_D-Mai" or GetPlayerName(P)=="Yin-Ying" or GetPlayerName(P)=="Annieh" or GetPlayerName(P)=="zld6334" or GetPlayerName(P)=="pro100master999" or GetPlayerName(P)=="Falaminator" or GetPlayerName(P)=="PinkieNecro" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="NecromanseR_RuS" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="Blaze_drago_x" or GetPlayerName(P)=="xXLarsikXx" or GetPlayerName(P)=="Wolfkill" or GetPlayerName(P)=="Famouzy" or GetPlayerName(P)=="falaminator" or GetPlayerName(P)=="xxNu-13xx" or GetPlayerName(P)=="Denamesh" or GetPlayerName(P)=="Rey_Calabaza" or GetPlayerName(P)=="akama001" or GetPlayerName(P)=="AkazaThree" or GetPlayerName(P)=="ZOIBERG_SVS" or GetPlayerName(P)=="neketEXE" or GetPlayerName(P)=="KickSuckem" or GetPlayerName(P)=="Renex" or GetPlayerName(P)=="knowyourplace" or BaseSkinCond(P))
 endfunction
 function MomoRFHCast takes nothing returns nothing
 local integer ip=GetPlayerId(GetTriggerPlayer())
@@ -31083,7 +31084,7 @@ set p=null
 endfunction
 function MystoganRFHCond takes nothing returns boolean
 set P=GetTriggerPlayer()
-return udg_B==false //and(GetPlayerName(P)=="Black_XeSHTeG" or GetPlayerName(P)=="ShikiNanaya" or GetPlayerName(P)=="Magistor" or GetPlayerName(P)=="IIIafep" or GetPlayerName(P)=="Ratti" or GetPlayerName(P)=="PinkieNecro" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="NecromanseR_RuS" or GetPlayerName(P)=="knowyourplace" or BaseSkinCond(P))
+return udg_B==false and(GetPlayerName(P)=="Black_XeSHTeG" or GetPlayerName(P)=="ShikiNanaya" or GetPlayerName(P)=="Magistor" or GetPlayerName(P)=="IIIafep" or GetPlayerName(P)=="Ratti" or GetPlayerName(P)=="PinkieNecro" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="NecromanseR_RuS" or GetPlayerName(P)=="knowyourplace" or BaseSkinCond(P))
 endfunction
 function MystoganRFHCast takes nothing returns nothing
 local integer ip=GetPlayerId(GetTriggerPlayer())
@@ -31156,7 +31157,7 @@ set p=null
 endfunction
 function DrakeRFHCond takes nothing returns boolean
 set P=GetTriggerPlayer()
-return udg_B==false //and(GetPlayerName(P)=="-tilek" or GetPlayerName(P)=="Sylphiette" or GetPlayerName(P)=="vashtwaa" or GetPlayerName(P)=="N1rvana_Flame" or GetPlayerName(P)=="Magistor" or GetPlayerName(P)=="KamaBr" or GetPlayerName(P)=="[OSV] Kama" or GetPlayerName(P)=="Antitilt" or GetPlayerName(P)=="Annieh" or GetPlayerName(P)=="zld6334" or GetPlayerName(P)=="Uriska" or GetPlayerName(P)=="Semko157" or GetPlayerName(P)=="Chevalier" or GetPlayerName(P)=="PinkieNecro" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="NecromanseR_RuS" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="Wolfkill" or GetPlayerName(P)=="Famouzy" or GetPlayerName(P)=="Famousy" or GetPlayerName(P)=="xxNu-13xx" or GetPlayerName(P)=="Denamesh" or GetPlayerName(P)=="Fenix98" or GetPlayerName(P)=="akama001" or GetPlayerName(P)=="Kid&Mikoto" or GetPlayerName(P)=="KickSuckem" or GetPlayerName(P)=="Tendo_The_Boch" or GetPlayerName(P)=="belugaa" or GetPlayerName(P)=="IIIafep" or GetPlayerName(P)=="Renex" or BaseSkinCond(P))
+return udg_B==false and(GetPlayerName(P)=="-tilek" or GetPlayerName(P)=="Sylphiette" or GetPlayerName(P)=="vashtwaa" or GetPlayerName(P)=="N1rvana_Flame" or GetPlayerName(P)=="Magistor" or GetPlayerName(P)=="KamaBr" or GetPlayerName(P)=="[OSV] Kama" or GetPlayerName(P)=="Antitilt" or GetPlayerName(P)=="Annieh" or GetPlayerName(P)=="zld6334" or GetPlayerName(P)=="Uriska" or GetPlayerName(P)=="Semko157" or GetPlayerName(P)=="Chevalier" or GetPlayerName(P)=="PinkieNecro" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="NecromanseR_RuS" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="Wolfkill" or GetPlayerName(P)=="Famouzy" or GetPlayerName(P)=="Famousy" or GetPlayerName(P)=="xxNu-13xx" or GetPlayerName(P)=="Denamesh" or GetPlayerName(P)=="Fenix98" or GetPlayerName(P)=="akama001" or GetPlayerName(P)=="Kid&Mikoto" or GetPlayerName(P)=="KickSuckem" or GetPlayerName(P)=="Tendo_The_Boch" or GetPlayerName(P)=="belugaa" or GetPlayerName(P)=="IIIafep" or GetPlayerName(P)=="Renex" or BaseSkinCond(P))
 endfunction
 function DrakeRFHCast takes nothing returns nothing
 local integer ip=GetPlayerId(GetTriggerPlayer())
@@ -31307,7 +31308,7 @@ set p=null
 endfunction
 function AlterRFHCond takes nothing returns boolean
 set P=GetTriggerPlayer()
-return udg_B==false //and(GetPlayerName(P)=="Sylphiette" or GetPlayerName(P)=="Ratti" or GetPlayerName(P)=="ti123vn00" or GetPlayerName(P)=="Scathach_" or GetPlayerName(P)=="who?ch1sen" or GetPlayerName(P)=="Принц" or GetPlayerName(P)=="Hermaeus" or GetPlayerName(P)=="KamaBr" or GetPlayerName(P)=="[OSV] Kama" or GetPlayerName(P)=="Antitilt" or GetPlayerName(P)=="No_Dust" or GetPlayerName(P)=="Luna000" or GetPlayerName(P)=="TheDunwich525" or GetPlayerName(P)=="KuroNico" or GetPlayerName(P)=="Annieh" or GetPlayerName(P)=="zld6334" or GetPlayerName(P)=="WamPIRok" or GetPlayerName(P)=="Cermia" or GetPlayerName(P)=="Jaunty_D-Mai" or GetPlayerName(P)=="Sekaiyo" or GetPlayerName(P)=="SAOkirito1121" or GetPlayerName(P)=="PinkieNecro" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="NecromanseR_RuS" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="Wolfkill" or GetPlayerName(P)=="Famouzy" or GetPlayerName(P)=="Famousy" or GetPlayerName(P)=="Anwa_Abdul" or GetPlayerName(P)=="antonpoganui" or GetPlayerName(P)=="xxNu-13xx" or GetPlayerName(P)=="f.a.r.a.o.n." or GetPlayerName(P)=="Denamesh" or  GetPlayerName(P)=="Sheogarath57" or GetPlayerName(P)=="Awenger93" or  GetPlayerName(P)=="Gun62rus" or GetPlayerName(P)=="XDragon_FrostX" or GetPlayerName(P)=="Odi" or GetPlayerName(P)=="ROC4ik" or GetPlayerName(P)=="zelim9" or GetPlayerName(P)=="tenevo" or GetPlayerName(P)=="MoonX3" or GetPlayerName(P)=="Gin_-_Ichimaru" or GetPlayerName(P)=="CFA-Kirito" or GetPlayerName(P)=="Uriska" or GetPlayerName(P)=="hrUd" or GetPlayerName(P)=="Kuzeyuta" or GetPlayerName(P)=="FT.Lancer" or GetPlayerName(P)=="Maryana.Ro" or GetPlayerName(P)=="Neo_Hirai" or GetPlayerName(P)=="msseva16" or GetPlayerName(P)=="Blaze_drago_x" or GetPlayerName(P)=="adara3" or GetPlayerName(P)=="Shunova" or GetPlayerName(P)=="Renex" or GetPlayerName(P)=="Chevalier" or GetPlayerName(P)=="knowyourplace" or BaseSkinCond(P))
+return udg_B==false and(GetPlayerName(P)=="Sylphiette" or GetPlayerName(P)=="Ratti" or GetPlayerName(P)=="ti123vn00" or GetPlayerName(P)=="Scathach_" or GetPlayerName(P)=="who?ch1sen" or GetPlayerName(P)=="Принц" or GetPlayerName(P)=="Hermaeus" or GetPlayerName(P)=="KamaBr" or GetPlayerName(P)=="[OSV] Kama" or GetPlayerName(P)=="Antitilt" or GetPlayerName(P)=="No_Dust" or GetPlayerName(P)=="Luna000" or GetPlayerName(P)=="TheDunwich525" or GetPlayerName(P)=="KuroNico" or GetPlayerName(P)=="Annieh" or GetPlayerName(P)=="zld6334" or GetPlayerName(P)=="WamPIRok" or GetPlayerName(P)=="Cermia" or GetPlayerName(P)=="Jaunty_D-Mai" or GetPlayerName(P)=="Sekaiyo" or GetPlayerName(P)=="SAOkirito1121" or GetPlayerName(P)=="PinkieNecro" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="NecromanseR_RuS" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="Wolfkill" or GetPlayerName(P)=="Famouzy" or GetPlayerName(P)=="Famousy" or GetPlayerName(P)=="Anwa_Abdul" or GetPlayerName(P)=="antonpoganui" or GetPlayerName(P)=="xxNu-13xx" or GetPlayerName(P)=="f.a.r.a.o.n." or GetPlayerName(P)=="Denamesh" or  GetPlayerName(P)=="Sheogarath57" or GetPlayerName(P)=="Awenger93" or  GetPlayerName(P)=="Gun62rus" or GetPlayerName(P)=="XDragon_FrostX" or GetPlayerName(P)=="Odi" or GetPlayerName(P)=="ROC4ik" or GetPlayerName(P)=="zelim9" or GetPlayerName(P)=="tenevo" or GetPlayerName(P)=="MoonX3" or GetPlayerName(P)=="Gin_-_Ichimaru" or GetPlayerName(P)=="CFA-Kirito" or GetPlayerName(P)=="Uriska" or GetPlayerName(P)=="hrUd" or GetPlayerName(P)=="Kuzeyuta" or GetPlayerName(P)=="FT.Lancer" or GetPlayerName(P)=="Maryana.Ro" or GetPlayerName(P)=="Neo_Hirai" or GetPlayerName(P)=="msseva16" or GetPlayerName(P)=="Blaze_drago_x" or GetPlayerName(P)=="adara3" or GetPlayerName(P)=="Shunova" or GetPlayerName(P)=="Renex" or GetPlayerName(P)=="Chevalier" or GetPlayerName(P)=="knowyourplace" or BaseSkinCond(P))
 endfunction
 function AlterRFHCast takes nothing returns nothing
 local integer ip=GetPlayerId(GetTriggerPlayer())
@@ -31380,7 +31381,7 @@ set p=null
 endfunction
 function SRFHCond takes nothing returns boolean
 set P=GetTriggerPlayer()
-return udg_B==false //and(GetPlayerName(P)=="Anwa_Abdul" or GetPlayerName(P)=="Renex" or GetPlayerName(P)=="Magistor" or GetPlayerName(P)=="KamaBr" or GetPlayerName(P)=="[OSV] Kama" or GetPlayerName(P)=="Daiya_Torasuto" or GetPlayerName(P)=="Uriska" or GetPlayerName(P)=="Annieh" or GetPlayerName(P)=="zld6334" or GetPlayerName(P)=="Alastart" or GetPlayerName(P)=="Sekaiyo" or GetPlayerName(P)=="Cermia" or GetPlayerName(P)=="Shiki.SS" or GetPlayerName(P)=="Anwa_Abdul" or GetPlayerName(P)=="antonpoganui" or GetPlayerName(P)=="dessar383" or GetPlayerName(P)=="pro100master999" or GetPlayerName(P)=="Sylphiette" or GetPlayerName(P)=="54Dzangetsu75" or GetPlayerName(P)=="PinkieNecro" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="NecromanseR_RuS" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="Wolfkill" or GetPlayerName(P)=="msseva16" or GetPlayerName(P)=="Famouzy" or GetPlayerName(P)=="Famousy" or GetPlayerName(P)=="xxNu-13xx" or GetPlayerName(P)=="Sasaki..Haise" or GetPlayerName(P)=="Fatal-_-Err0r" or GetPlayerName(P)=="Denamesh" or GetPlayerName(P)=="Neo_Hirai" or GetPlayerName(P)=="Reisen_Udongeib" or GetPlayerName(P)=="X53Arcan" or GetPlayerName(P)=="akama001" or GetPlayerName(P)=="Qwerty291097" or   GetPlayerName(P)=="Awenger93" or  GetPlayerName(P)=="Gun62rus" or GetPlayerName(P)=="zelim9" or GetPlayerName(P)=="Kirito.Yagatami" or GetPlayerName(P)=="RevanRespect" or GetPlayerName(P)=="MoonX3" or GetPlayerName(P)=="MilediEsdeath" or GetPlayerName(P)=="hrUd" or GetPlayerName(P)=="Kuzeyuta" or GetPlayerName(P)=="Kirito.Yagatami" or GetPlayerName(P)=="[E]moLove" or GetPlayerName(P)=="[Nirvash][Neo]" or GetPlayerName(P)=="Kiznas69" or GetPlayerName(P)=="Semko157" or GetPlayerName(P)=="-[I]Chi[C]o-" or GetPlayerName(P)=="zelim9" or GetPlayerName(P)=="EastRyd" or GetPlayerName(P)=="Andhel_corr" or GetPlayerName(P)=="Ameru_Z" or GetPlayerName(P)=="KazuneReyes" or GetPlayerName(P)=="99smail99" or GetPlayerName(P)=="tenevo" or GetPlayerName(P)=="Wishnt" or GetPlayerName(P)=="Starheart" or GetPlayerName(P)=="Avenger2109" or GetPlayerName(P)=="sergeyh2" or GetPlayerName(P)=="HeavyRainFall" or GetPlayerName(P)=="Starheart" or GetPlayerName(P)=="tenevo" or GetPlayerName(P)=="Hermaeus" or GetPlayerName(P)=="No_Dust" or GetPlayerName(P)=="TheDunwich525" or GetPlayerName(P)=="klint_istvud" or GetPlayerName(P)=="BERKUNT" or GetPlayerName(P)=="Odi" or GetPlayerName(P)=="Vladz0" or BaseSkinCond(P))
+return udg_B==false and(GetPlayerName(P)=="Anwa_Abdul" or GetPlayerName(P)=="Renex" or GetPlayerName(P)=="Magistor" or GetPlayerName(P)=="KamaBr" or GetPlayerName(P)=="[OSV] Kama" or GetPlayerName(P)=="Daiya_Torasuto" or GetPlayerName(P)=="Uriska" or GetPlayerName(P)=="Annieh" or GetPlayerName(P)=="zld6334" or GetPlayerName(P)=="Alastart" or GetPlayerName(P)=="Sekaiyo" or GetPlayerName(P)=="Cermia" or GetPlayerName(P)=="Shiki.SS" or GetPlayerName(P)=="Anwa_Abdul" or GetPlayerName(P)=="antonpoganui" or GetPlayerName(P)=="dessar383" or GetPlayerName(P)=="pro100master999" or GetPlayerName(P)=="Sylphiette" or GetPlayerName(P)=="54Dzangetsu75" or GetPlayerName(P)=="PinkieNecro" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="NecromanseR_RuS" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="Wolfkill" or GetPlayerName(P)=="msseva16" or GetPlayerName(P)=="Famouzy" or GetPlayerName(P)=="Famousy" or GetPlayerName(P)=="xxNu-13xx" or GetPlayerName(P)=="Sasaki..Haise" or GetPlayerName(P)=="Fatal-_-Err0r" or GetPlayerName(P)=="Denamesh" or GetPlayerName(P)=="Neo_Hirai" or GetPlayerName(P)=="Reisen_Udongeib" or GetPlayerName(P)=="X53Arcan" or GetPlayerName(P)=="akama001" or GetPlayerName(P)=="Qwerty291097" or   GetPlayerName(P)=="Awenger93" or  GetPlayerName(P)=="Gun62rus" or GetPlayerName(P)=="zelim9" or GetPlayerName(P)=="Kirito.Yagatami" or GetPlayerName(P)=="RevanRespect" or GetPlayerName(P)=="MoonX3" or GetPlayerName(P)=="MilediEsdeath" or GetPlayerName(P)=="hrUd" or GetPlayerName(P)=="Kuzeyuta" or GetPlayerName(P)=="Kirito.Yagatami" or GetPlayerName(P)=="[E]moLove" or GetPlayerName(P)=="[Nirvash][Neo]" or GetPlayerName(P)=="Kiznas69" or GetPlayerName(P)=="Semko157" or GetPlayerName(P)=="-[I]Chi[C]o-" or GetPlayerName(P)=="zelim9" or GetPlayerName(P)=="EastRyd" or GetPlayerName(P)=="Andhel_corr" or GetPlayerName(P)=="Ameru_Z" or GetPlayerName(P)=="KazuneReyes" or GetPlayerName(P)=="99smail99" or GetPlayerName(P)=="tenevo" or GetPlayerName(P)=="Wishnt" or GetPlayerName(P)=="Starheart" or GetPlayerName(P)=="Avenger2109" or GetPlayerName(P)=="sergeyh2" or GetPlayerName(P)=="HeavyRainFall" or GetPlayerName(P)=="Starheart" or GetPlayerName(P)=="tenevo" or GetPlayerName(P)=="Hermaeus" or GetPlayerName(P)=="No_Dust" or GetPlayerName(P)=="TheDunwich525" or GetPlayerName(P)=="klint_istvud" or GetPlayerName(P)=="BERKUNT" or GetPlayerName(P)=="Odi" or GetPlayerName(P)=="Vladz0" or BaseSkinCond(P))
 endfunction
 function SRFHCast takes nothing returns nothing
 local integer ip=GetPlayerId(GetTriggerPlayer())
@@ -31526,7 +31527,7 @@ set p=null
 endfunction
 function ArcRFHCond takes nothing returns boolean
 set P=GetTriggerPlayer()
-return udg_B==false //and(GetPlayerName(P)=="Shunova" or GetPlayerName(P)=="shibaketerayo" or GetPlayerName(P)=="chu" or GetPlayerName(P)=="Daiya_Torasuto" or GetPlayerName(P)=="Annieh" or GetPlayerName(P)=="KamaBr" or GetPlayerName(P)=="[OSV] Kama" or GetPlayerName(P)=="zld6334" or GetPlayerName(P)=="Jaunty_D-Mai" or GetPlayerName(P)=="Magistor" or GetPlayerName(P)=="Alastart" or GetPlayerName(P)=="Hermaeus" or GetPlayerName(P)=="No_Dust"  or GetPlayerName(P)=="TheDunwich525" or GetPlayerName(P)=="Uriska" or GetPlayerName(P)=="Chevalier" or GetPlayerName(P)=="Hagane" or GetPlayerName(P)=="Cermia" or GetPlayerName(P)=="WamPIRok" or GetPlayerName(P)=="3Deviant" or GetPlayerName(P)=="Sylphiette" or GetPlayerName(P)=="5Dark_Demon5" or GetPlayerName(P)=="PinkieNecro" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="NecromanseR_RuS" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="Wolfkill" or GetPlayerName(P)=="Famouzy" or GetPlayerName(P)=="Famousy" or GetPlayerName(P)=="Anwa_Abdul" or GetPlayerName(P)=="antonpoganui" or GetPlayerName(P)=="Sekaiyo" or GetPlayerName(P)=="xxNu-13xx" or GetPlayerName(P)=="Starheart" or GetPlayerName(P)=="Sasaki..Haise" or GetPlayerName(P)=="SAOkirito1121" or GetPlayerName(P)=="sasuke72rus" or GetPlayerName(P)=="Denamesh" or GetPlayerName(P)=="akama001" or GetPlayerName(P)=="Qwerty291097" or   GetPlayerName(P)=="Gun62rus" or  GetPlayerName(P)=="Awenger93" or GetPlayerName(P)=="zelim9" or GetPlayerName(P)=="MoonX3" or GetPlayerName(P)=="Kuzeyuta" or GetPlayerName(P)=="[E]moLove" or GetPlayerName(P)=="[Nirvash][Neo]" or GetPlayerName(P)=="Obito_Uchihsa" or GetPlayerName(P)=="-[I]Chi[C]o-" or GetPlayerName(P)=="zelim9" or GetPlayerName(P)=="klint_istvud" or GetPlayerName(P)=="Andhel_corr" or GetPlayerName(P)=="Ameru_Z" or GetPlayerName(P)=="KazuneReyes" or GetPlayerName(P)=="Kirito._100" or GetPlayerName(P)=="EscapedSoul" or GetPlayerName(P)=="99smail99" or GetPlayerName(P)=="Wishnt" or GetPlayerName(P)=="Monkbreaker" or GetPlayerName(P)=="skaors" or GetPlayerName(P)=="Avenger2109" or GetPlayerName(P)=="Space_GlobalTM" or GetPlayerName(P)=="B.e.t.a.TesTer" or GetPlayerName(P)=="MinionX12" or GetPlayerName(P)=="tenevo" or GetPlayerName(P)=="tutayanova" or GetPlayerName(P)=="BERKUNT" or GetPlayerName(P)=="Fantastic_Gear" or GetPlayerName(P)=="Beerus_Sama" or GetPlayerName(P)=="Renex" or GetPlayerName(P)=="knowyourplace" or GetPlayerName(P)=="Antitilt" or BaseSkinCond(P))
+return udg_B==false and(GetPlayerName(P)=="Shunova" or GetPlayerName(P)=="shibaketerayo" or GetPlayerName(P)=="chu" or GetPlayerName(P)=="Daiya_Torasuto" or GetPlayerName(P)=="Annieh" or GetPlayerName(P)=="KamaBr" or GetPlayerName(P)=="[OSV] Kama" or GetPlayerName(P)=="zld6334" or GetPlayerName(P)=="Jaunty_D-Mai" or GetPlayerName(P)=="Magistor" or GetPlayerName(P)=="Alastart" or GetPlayerName(P)=="Hermaeus" or GetPlayerName(P)=="No_Dust"  or GetPlayerName(P)=="TheDunwich525" or GetPlayerName(P)=="Uriska" or GetPlayerName(P)=="Chevalier" or GetPlayerName(P)=="Hagane" or GetPlayerName(P)=="Cermia" or GetPlayerName(P)=="WamPIRok" or GetPlayerName(P)=="3Deviant" or GetPlayerName(P)=="Sylphiette" or GetPlayerName(P)=="5Dark_Demon5" or GetPlayerName(P)=="PinkieNecro" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="NecromanseR_RuS" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="Wolfkill" or GetPlayerName(P)=="Famouzy" or GetPlayerName(P)=="Famousy" or GetPlayerName(P)=="Anwa_Abdul" or GetPlayerName(P)=="antonpoganui" or GetPlayerName(P)=="Sekaiyo" or GetPlayerName(P)=="xxNu-13xx" or GetPlayerName(P)=="Starheart" or GetPlayerName(P)=="Sasaki..Haise" or GetPlayerName(P)=="SAOkirito1121" or GetPlayerName(P)=="sasuke72rus" or GetPlayerName(P)=="Denamesh" or GetPlayerName(P)=="akama001" or GetPlayerName(P)=="Qwerty291097" or   GetPlayerName(P)=="Gun62rus" or  GetPlayerName(P)=="Awenger93" or GetPlayerName(P)=="zelim9" or GetPlayerName(P)=="MoonX3" or GetPlayerName(P)=="Kuzeyuta" or GetPlayerName(P)=="[E]moLove" or GetPlayerName(P)=="[Nirvash][Neo]" or GetPlayerName(P)=="Obito_Uchihsa" or GetPlayerName(P)=="-[I]Chi[C]o-" or GetPlayerName(P)=="zelim9" or GetPlayerName(P)=="klint_istvud" or GetPlayerName(P)=="Andhel_corr" or GetPlayerName(P)=="Ameru_Z" or GetPlayerName(P)=="KazuneReyes" or GetPlayerName(P)=="Kirito._100" or GetPlayerName(P)=="EscapedSoul" or GetPlayerName(P)=="99smail99" or GetPlayerName(P)=="Wishnt" or GetPlayerName(P)=="Monkbreaker" or GetPlayerName(P)=="skaors" or GetPlayerName(P)=="Avenger2109" or GetPlayerName(P)=="Space_GlobalTM" or GetPlayerName(P)=="B.e.t.a.TesTer" or GetPlayerName(P)=="MinionX12" or GetPlayerName(P)=="tenevo" or GetPlayerName(P)=="tutayanova" or GetPlayerName(P)=="BERKUNT" or GetPlayerName(P)=="Fantastic_Gear" or GetPlayerName(P)=="Beerus_Sama" or GetPlayerName(P)=="Renex" or GetPlayerName(P)=="knowyourplace" or GetPlayerName(P)=="Antitilt" or BaseSkinCond(P))
 endfunction
 function ArcRFHCast takes nothing returns nothing
 local integer ip=GetPlayerId(GetTriggerPlayer())
@@ -31599,7 +31600,7 @@ set p=null
 endfunction
 function LilyRFHCond takes nothing returns boolean
 set P=GetTriggerPlayer()
-return udg_B==false //and(GetPlayerName(P)=="PrOvOKaToP935" or GetPlayerName(P)=="Annieh" or GetPlayerName(P)=="KamaBr" or GetPlayerName(P)=="[OSV] Kama" or GetPlayerName(P)=="zld6334" or GetPlayerName(P)=="Jaunty_D-Mai" or GetPlayerName(P)=="Kanato" or GetPlayerName(P)=="Alastart" or GetPlayerName(P)=="Sekaiyo" or GetPlayerName(P)=="KepachiNewMeta" or GetPlayerName(P)=="Sokanish" or GetPlayerName(P)=="54Dzangetsu75" or GetPlayerName(P)=="aiurc" or GetPlayerName(P)=="Sylphiette" or GetPlayerName(P)=="SAOkirito1121" or GetPlayerName(P)=="Kiznas69" or GetPlayerName(P)=="PinkieNecro" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="NecromanseR_RuS" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="Wolfkill" or GetPlayerName(P)=="Famouzy" or GetPlayerName(P)=="Famousy" or GetPlayerName(P)=="Semko157" or GetPlayerName(P)=="GinIchimaru" or GetPlayerName(P)=="pro100master999" or GetPlayerName(P)=="xxNu-13xx" or GetPlayerName(P)=="f.a.r.a.o.n." or GetPlayerName(P)=="Denamesh" or GetPlayerName(P)=="X53Arcan" or GetPlayerName(P)=="I_Arioh" or  GetPlayerName(P)=="akama001" or  GetPlayerName(P)=="Awenger93" or  GetPlayerName(P)=="Gun62rus" or GetPlayerName(P)=="zelim9" or GetPlayerName(P)=="Uriska" or GetPlayerName(P)=="MoonX3" or GetPlayerName(P)=="Kuzeyuta" or GetPlayerName(P)=="Neokasder" or GetPlayerName(P)=="[Nirvash][Neo]" or GetPlayerName(P)=="KozatoEnma56" or GetPlayerName(P)=="-[I]Chi[C]o-" or GetPlayerName(P)=="zelim9" or GetPlayerName(P)=="EastRyd" or GetPlayerName(P)=="Ameru_Z" or GetPlayerName(P)=="KazuneReyes" or GetPlayerName(P)=="99smail99" or GetPlayerName(P)=="Wishnt" or GetPlayerName(P)=="Avenger2109" or GetPlayerName(P)=="Starheart" or GetPlayerName(P)=="Starheart" or GetPlayerName(P)=="D.Ornstein" or GetPlayerName(P)=="Starheart" or GetPlayerName(P)=="tenevo" or GetPlayerName(P)=="tutayanova" or GetPlayerName(P)=="x53arcan" or  GetPlayerName(P)=="msseva16" or GetPlayerName(P)=="BERKUNT" or GetPlayerName(P)=="Lord_Orochimaru" or GetPlayerName(P)=="dessar383" or GetPlayerName(P)=="LaKeiP" or GetPlayerName(P)=="Renex" or GetPlayerName(P)=="Odi" or BaseSkinCond(P))
+return udg_B==false and(GetPlayerName(P)=="PrOvOKaToP935" or GetPlayerName(P)=="Annieh" or GetPlayerName(P)=="KamaBr" or GetPlayerName(P)=="[OSV] Kama" or GetPlayerName(P)=="zld6334" or GetPlayerName(P)=="Jaunty_D-Mai" or GetPlayerName(P)=="Kanato" or GetPlayerName(P)=="Alastart" or GetPlayerName(P)=="Sekaiyo" or GetPlayerName(P)=="KepachiNewMeta" or GetPlayerName(P)=="Sokanish" or GetPlayerName(P)=="54Dzangetsu75" or GetPlayerName(P)=="aiurc" or GetPlayerName(P)=="Sylphiette" or GetPlayerName(P)=="SAOkirito1121" or GetPlayerName(P)=="Kiznas69" or GetPlayerName(P)=="PinkieNecro" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="NecromanseR_RuS" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="Wolfkill" or GetPlayerName(P)=="Famouzy" or GetPlayerName(P)=="Famousy" or GetPlayerName(P)=="Semko157" or GetPlayerName(P)=="GinIchimaru" or GetPlayerName(P)=="pro100master999" or GetPlayerName(P)=="xxNu-13xx" or GetPlayerName(P)=="f.a.r.a.o.n." or GetPlayerName(P)=="Denamesh" or GetPlayerName(P)=="X53Arcan" or GetPlayerName(P)=="I_Arioh" or  GetPlayerName(P)=="akama001" or  GetPlayerName(P)=="Awenger93" or  GetPlayerName(P)=="Gun62rus" or GetPlayerName(P)=="zelim9" or GetPlayerName(P)=="Uriska" or GetPlayerName(P)=="MoonX3" or GetPlayerName(P)=="Kuzeyuta" or GetPlayerName(P)=="Neokasder" or GetPlayerName(P)=="[Nirvash][Neo]" or GetPlayerName(P)=="KozatoEnma56" or GetPlayerName(P)=="-[I]Chi[C]o-" or GetPlayerName(P)=="zelim9" or GetPlayerName(P)=="EastRyd" or GetPlayerName(P)=="Ameru_Z" or GetPlayerName(P)=="KazuneReyes" or GetPlayerName(P)=="99smail99" or GetPlayerName(P)=="Wishnt" or GetPlayerName(P)=="Avenger2109" or GetPlayerName(P)=="Starheart" or GetPlayerName(P)=="Starheart" or GetPlayerName(P)=="D.Ornstein" or GetPlayerName(P)=="Starheart" or GetPlayerName(P)=="tenevo" or GetPlayerName(P)=="tutayanova" or GetPlayerName(P)=="x53arcan" or  GetPlayerName(P)=="msseva16" or GetPlayerName(P)=="BERKUNT" or GetPlayerName(P)=="Lord_Orochimaru" or GetPlayerName(P)=="dessar383" or GetPlayerName(P)=="LaKeiP" or GetPlayerName(P)=="Renex" or GetPlayerName(P)=="Odi" or BaseSkinCond(P))
 endfunction
 function LilyRFHCast takes nothing returns nothing
 local integer ip=GetPlayerId(GetTriggerPlayer())
@@ -31672,7 +31673,7 @@ set p=null
 endfunction
 function ArthurRFHCond takes nothing returns boolean
 set P=GetTriggerPlayer()
-return udg_B==false //and(GetPlayerName(P)=="UJustDeadWeight" or GetPlayerName(P)=="Magistor" or GetPlayerName(P)=="Scathach_" or GetPlayerName(P)=="who?ch1sen" or GetPlayerName(P)=="ShikiNanaya" or GetPlayerName(P)=="Slaikee" or GetPlayerName(P)=="Renex" or GetPlayerName(P)=="Antitilt" or GetPlayerName(P)=="Annieh" or GetPlayerName(P)=="KamaBr" or GetPlayerName(P)=="[OSV] Kama" or GetPlayerName(P)=="zld6334" or BaseSkinCond(P))
+return udg_B==false and(GetPlayerName(P)=="UJustDeadWeight" or GetPlayerName(P)=="Magistor" or GetPlayerName(P)=="Scathach_" or GetPlayerName(P)=="who?ch1sen" or GetPlayerName(P)=="ShikiNanaya" or GetPlayerName(P)=="Slaikee" or GetPlayerName(P)=="Renex" or GetPlayerName(P)=="Antitilt" or GetPlayerName(P)=="Annieh" or GetPlayerName(P)=="KamaBr" or GetPlayerName(P)=="[OSV] Kama" or GetPlayerName(P)=="zld6334" or BaseSkinCond(P))
 endfunction
 function ArthurRFHCast takes nothing returns nothing
 local integer ip=GetPlayerId(GetTriggerPlayer())
@@ -31745,7 +31746,7 @@ set p=null
 endfunction
 function KuzanRFHCond takes nothing returns boolean
 set P=GetTriggerPlayer()
-return udg_B==false //and(GetPlayerName(P)=="Sylphiette" or GetPlayerName(P)=="ShikiNanaya" or GetPlayerName(P)=="Slaikee" or GetPlayerName(P)=="KamaBr" or GetPlayerName(P)=="[OSV] Kama" or GetPlayerName(P)=="Morpheus" or GetPlayerName(P)=="Annieh" or GetPlayerName(P)=="zld6334" or  GetPlayerName(P)=="PinkieNecro" or GetPlayerName(P)=="Wolfkill" or GetPlayerName(P)=="Famouzy" or GetPlayerName(P)=="Famousy" or GetPlayerName(P)=="xxNu-13xx" or GetPlayerName(P)=="I_Arioh" or GetPlayerName(P)=="Denamesh" or GetPlayerName(P)=="klint_istvud" or GetPlayerName(P)=="akama001" or GetPlayerName(P)=="KickSuckem" or GetPlayerName(P)=="hrUd" or GetPlayerName(P)=="zelim9" or GetPlayerName(P)=="MoonX3" or GetPlayerName(P)=="Kuzeyuta" or GetPlayerName(P)=="[Nirvash][Neo]" or GetPlayerName(P)=="ROC4ik" or GetPlayerName(P)=="-[I]Chi[C]o-" or GetPlayerName(P)=="zelim9" or GetPlayerName(P)=="KazuneReyes" or GetPlayerName(P)=="VelzyBB" or GetPlayerName(P)=="99smail99" or GetPlayerName(P)=="Wishnt" or GetPlayerName(P)=="Starheart" or GetPlayerName(P)=="Amagiri_Ayato" or GetPlayerName(P)=="kisame-h" or GetPlayerName(P)=="Gr1meZ" or GetPlayerName(P)=="Glimmry" or GetPlayerName(P)=="D.Ornstein" or GetPlayerName(P)=="X53Arcan" or GetPlayerName(P)=="Avenger2109" or  GetPlayerName(P)=="msseva16" or GetPlayerName(P)=="BERKUNT" or GetPlayerName(P)=="Lord_Orochimaru" or GetPlayerName(P)=="UJustDeadWeight" or BaseSkinCond(P))
+return udg_B==false and(GetPlayerName(P)=="Sylphiette" or GetPlayerName(P)=="ShikiNanaya" or GetPlayerName(P)=="Slaikee" or GetPlayerName(P)=="KamaBr" or GetPlayerName(P)=="[OSV] Kama" or GetPlayerName(P)=="Morpheus" or GetPlayerName(P)=="Annieh" or GetPlayerName(P)=="zld6334" or  GetPlayerName(P)=="PinkieNecro" or GetPlayerName(P)=="Wolfkill" or GetPlayerName(P)=="Famouzy" or GetPlayerName(P)=="Famousy" or GetPlayerName(P)=="xxNu-13xx" or GetPlayerName(P)=="I_Arioh" or GetPlayerName(P)=="Denamesh" or GetPlayerName(P)=="klint_istvud" or GetPlayerName(P)=="akama001" or GetPlayerName(P)=="KickSuckem" or GetPlayerName(P)=="hrUd" or GetPlayerName(P)=="zelim9" or GetPlayerName(P)=="MoonX3" or GetPlayerName(P)=="Kuzeyuta" or GetPlayerName(P)=="[Nirvash][Neo]" or GetPlayerName(P)=="ROC4ik" or GetPlayerName(P)=="-[I]Chi[C]o-" or GetPlayerName(P)=="zelim9" or GetPlayerName(P)=="KazuneReyes" or GetPlayerName(P)=="VelzyBB" or GetPlayerName(P)=="99smail99" or GetPlayerName(P)=="Wishnt" or GetPlayerName(P)=="Starheart" or GetPlayerName(P)=="Amagiri_Ayato" or GetPlayerName(P)=="kisame-h" or GetPlayerName(P)=="Gr1meZ" or GetPlayerName(P)=="Glimmry" or GetPlayerName(P)=="D.Ornstein" or GetPlayerName(P)=="X53Arcan" or GetPlayerName(P)=="Avenger2109" or  GetPlayerName(P)=="msseva16" or GetPlayerName(P)=="BERKUNT" or GetPlayerName(P)=="Lord_Orochimaru" or GetPlayerName(P)=="UJustDeadWeight" or BaseSkinCond(P))
 endfunction
 function KuzanRFHCast takes nothing returns nothing
 local integer ip=GetPlayerId(GetTriggerPlayer())
@@ -31812,7 +31813,7 @@ set p=null
 endfunction
 function KiritoRFHCond takes nothing returns boolean
 set P=GetTriggerPlayer()
-return udg_B==false //and(GetPlayerName(P)=="Sylphiette" or GetPlayerName(P)=="ShikiNanaya" or GetPlayerName(P)=="Nezoke" or GetPlayerName(P)=="Ratti" or GetPlayerName(P)=="Slaikee" or GetPlayerName(P)=="Annieh" or GetPlayerName(P)=="KamaBr" or GetPlayerName(P)=="[OSV] Kama" or GetPlayerName(P)=="zld6334" or GetPlayerName(P)=="eske525" or GetPlayerName(P)=="UJustDeadWeight" or GetPlayerName(P)=="Doubleutf01" or GetPlayerName(P)=="3Deviant" or GetPlayerName(P)=="Starheart" or GetPlayerName(P)=="SAOkirito1121" or GetPlayerName(P)=="TheStalkerCraft" or GetPlayerName(P)=="PinkieNecro" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="NecromanseR_RuS" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="Wolfkill" or GetPlayerName(P)=="SuicideBoy69" or GetPlayerName(P)=="Saske981" or GetPlayerName(P)=="Famousy" or GetPlayerName(P)=="xxNu-13xx" or GetPlayerName(P)=="f.a.r.a.o.n." or GetPlayerName(P)=="Denamesh" or GetPlayerName(P)=="Uriska" or GetPlayerName(P)=="Qwerty291097" or  GetPlayerName(P)=="zelim9" or GetPlayerName(P)=="MoonX3" or GetPlayerName(P)=="Blaze_drago_x" or GetPlayerName(P)=="Kuzeyuta" or GetPlayerName(P)=="Kirito.Yagatami" or GetPlayerName(P)=="[E]moLove" or GetPlayerName(P)=="SuicideBoy69" or GetPlayerName(P)=="Saske981" or GetPlayerName(P)=="[Nirvash][Neo]" or GetPlayerName(P)=="Semko157" or GetPlayerName(P)=="-[I]Chi[C]o-" or GetPlayerName(P)=="EastRyd" or GetPlayerName(P)=="KazuneReyes" or GetPlayerName(P)=="Kirito._100" or GetPlayerName(P)=="Gr1meZ" or GetPlayerName(P)=="DeekeR_ANTEC" or GetPlayerName(P)=="99smail99" or GetPlayerName(P)=="Wishnt" or GetPlayerName(P)=="FunnySlayer777" or GetPlayerName(P)=="Danone_XDD" or GetPlayerName(P)=="NS.Night_Onix" or GetPlayerName(P)=="D.Ornstein" or GetPlayerName(P)=="[NS]Night_Onix" or GetPlayerName(P)=="X53Arcan" or GetPlayerName(P)=="Avenger2109" or  GetPlayerName(P)=="msseva16" or GetPlayerName(P)=="BERKUNT" or GetPlayerName(P)=="Lord_Orochimaru" or GetPlayerName(P)=="Renex" or GetPlayerName(P)=="belugaa" or GetPlayerName(P)=="IIIafep" or BaseSkinCond(P))
+return udg_B==false and(GetPlayerName(P)=="Sylphiette" or GetPlayerName(P)=="ShikiNanaya" or GetPlayerName(P)=="Nezoke" or GetPlayerName(P)=="Ratti" or GetPlayerName(P)=="Slaikee" or GetPlayerName(P)=="Annieh" or GetPlayerName(P)=="KamaBr" or GetPlayerName(P)=="[OSV] Kama" or GetPlayerName(P)=="zld6334" or GetPlayerName(P)=="eske525" or GetPlayerName(P)=="UJustDeadWeight" or GetPlayerName(P)=="Doubleutf01" or GetPlayerName(P)=="3Deviant" or GetPlayerName(P)=="Starheart" or GetPlayerName(P)=="SAOkirito1121" or GetPlayerName(P)=="TheStalkerCraft" or GetPlayerName(P)=="PinkieNecro" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="NecromanseR_RuS" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="Wolfkill" or GetPlayerName(P)=="SuicideBoy69" or GetPlayerName(P)=="Saske981" or GetPlayerName(P)=="Famousy" or GetPlayerName(P)=="xxNu-13xx" or GetPlayerName(P)=="f.a.r.a.o.n." or GetPlayerName(P)=="Denamesh" or GetPlayerName(P)=="Uriska" or GetPlayerName(P)=="Qwerty291097" or  GetPlayerName(P)=="zelim9" or GetPlayerName(P)=="MoonX3" or GetPlayerName(P)=="Blaze_drago_x" or GetPlayerName(P)=="Kuzeyuta" or GetPlayerName(P)=="Kirito.Yagatami" or GetPlayerName(P)=="[E]moLove" or GetPlayerName(P)=="SuicideBoy69" or GetPlayerName(P)=="Saske981" or GetPlayerName(P)=="[Nirvash][Neo]" or GetPlayerName(P)=="Semko157" or GetPlayerName(P)=="-[I]Chi[C]o-" or GetPlayerName(P)=="EastRyd" or GetPlayerName(P)=="KazuneReyes" or GetPlayerName(P)=="Kirito._100" or GetPlayerName(P)=="Gr1meZ" or GetPlayerName(P)=="DeekeR_ANTEC" or GetPlayerName(P)=="99smail99" or GetPlayerName(P)=="Wishnt" or GetPlayerName(P)=="FunnySlayer777" or GetPlayerName(P)=="Danone_XDD" or GetPlayerName(P)=="NS.Night_Onix" or GetPlayerName(P)=="D.Ornstein" or GetPlayerName(P)=="[NS]Night_Onix" or GetPlayerName(P)=="X53Arcan" or GetPlayerName(P)=="Avenger2109" or  GetPlayerName(P)=="msseva16" or GetPlayerName(P)=="BERKUNT" or GetPlayerName(P)=="Lord_Orochimaru" or GetPlayerName(P)=="Renex" or GetPlayerName(P)=="belugaa" or GetPlayerName(P)=="IIIafep" or BaseSkinCond(P))
 endfunction
 function KiritoRFHCast takes nothing returns nothing
 local integer ip=GetPlayerId(GetTriggerPlayer())
@@ -35601,6 +35602,7 @@ function EndOfChoiceAct takes nothing returns nothing
         endif
         call SaveBoolean(HH,GetHandleId(Hero[i]),SS,false)
         call SaveBoolean(HH,GetHandleId(Hero[i]),SST,false)
+        call SaveInteger(HH,GetHandleId(Hero[i]),ROYAL_GUARD_STACKS,0)
         call SetUnitVertexColor(Hero[i],255,255,255,255)
         call UnitRemoveAbility(Hero[i],'A28U')
         if GetUnitTypeId(Hero[i])=='H21M' then 
@@ -36922,6 +36924,7 @@ exitwhen i>=10
     call SaveInteger(HH,GetHandleId(Hero[i]),StringHash("cold3"),1)
     call SaveBoolean(HH,GetHandleId(Hero[i]),SS,false)
     call SaveBoolean(HH,GetHandleId(Hero[i]),SST,false)
+    call SaveInteger(HH,GetHandleId(Hero[i]),ROYAL_GUARD_STACKS,0)
     call UnitRemoveAbility(Hero[i],'A26F')
     call UnitRemoveAbility(Hero[i],'A25F')
     call SetUnitState(Hero[i],UNIT_STATE_MANA,GetUnitState(Hero[i],UNIT_STATE_MAX_MANA))
@@ -42983,7 +42986,8 @@ if cond==0 then
         if GetUnitAbilityLevel(u,'ADG3')>0 and nb>0 then
 
             //call SetEventDamage(nb*0.3)
-
+            call UnitMakeAbilityPermanent(u,false,'ADG3')
+            call UnitRemoveAbility(u,'ADG3')
             set nb=nb*0.3
         endif
         if GetUnitAbilityLevel(u,'B05Y')>0 and nb>0 then        
@@ -61264,7 +61268,7 @@ local real y1=GetUnitY(c)
 local real a=Atan2(y1-y,x1-x)
 local player p=GetOwningPlayer(u)
 local real l__d=GetRandomReal(-250,250)
-local real dmg=(0.25+(0.25*GetUnitAbilityLevel(u,'A0DI')))*GetHeroStr(u,true)
+local real dmg=LoadReal(h,id,11)
 // if GetUnitAbilityLevel(u,'A28U')>0 and GetUnitState(u,UNIT_STATE_LIFE)<=GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.25 then
 // set dmg=dmg+dmg*.2
 // else
@@ -61283,6 +61287,7 @@ call PauseTimer(t)
 call DestroyTimer(t)
 call RemoveUnit(LoadUnitHandle(h,id,2))
 call FlushChildHashtable(h,id)
+call SaveInteger(HH,GetHandleId(u),ROYAL_GUARD_STACKS,0)
 endif
 set c=null
 set p=null
@@ -61304,6 +61309,7 @@ call SetUnitTimeScale(n,0.2)
 call SaveGroupHandle(h,id,3,CreateGroup())
 call SetUnitAnimationByIndex(u,2)
 call SetUnitTimeScale(u,0.7)
+call SaveReal(h,id,11,(0.25+(0.25*GetUnitAbilityLevel(u,'A0DI')))*GetHeroStr(u,true)*(1+0.1*LoadInteger(HH,GetHandleId(u),ROYAL_GUARD_STACKS)))
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\EffectWW.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
 call KillSoundWhenDone(soundplay)
@@ -61660,7 +61666,7 @@ function RoyalGuardCast2 takes nothing returns nothing
         set time=time+0.05
         call SaveReal(HH,id,2,time)
     endif
-    if time<0.25 and c==null then
+    if time<0.15 and c==null then
         call PauseUnit(u,true)
     else
         call SaveBoolean(HH,idu,ANTITARGET_ABILITY,false)
@@ -61673,6 +61679,11 @@ function RoyalGuardCast2 takes nothing returns nothing
             call DestroyEffect(EFF)
             call UnitMakeAbilityPermanent(u,false,'ADG2')
             call UnitRemoveAbility(u,'ADG2')
+            call UnitMakeAbilityPermanent(u,false,'ADG3')
+            call UnitRemoveAbility(u,'ADG3')
+            if LoadInteger(HH,idu,ROYAL_GUARD_STACKS)<5 then
+                call SaveInteger(HH,idu,ROYAL_GUARD_STACKS,LoadInteger(HH,idu,ROYAL_GUARD_STACKS)+1)
+            endif
             call UnitRemoveBuffs(u,false,true)
             call SetUnitTimeScale(u,1)
             call SetUnitFacingInstant(u,Atan2(GetUnitY(c)-y,GetUnitX(c)-x)* bj_RADTODEG)
@@ -61694,13 +61705,13 @@ function RoyalGuardCast2 takes nothing returns nothing
             call SetUnitTimeScale(u,1)
             call FlushChildHashtable(HH,id)
         else
-            if time==0.3 then
+            if time==0.2 then
                 call UnitMakeAbilityPermanent(u,false,'ADG2')
                 call UnitRemoveAbility(u,'ADG2')
                 call UnitRemoveBuffs(u,false,true)
                 call PauseUnit(u,false)
             endif
-            if time>1 then
+            if time>0.5 then
                 call UnitMakeAbilityPermanent(u,false,'ADG3')
                 call UnitRemoveAbility(u,'ADG3')
                 call PauseTimer(t)
@@ -61769,7 +61780,7 @@ local real angle=(GetUnitFacing(u)+90)*bj_DEGTORAD
 local real a=Atan2(y1-y,x1-x)
 local player p=GetOwningPlayer(u)
 local integer time=LoadInteger(h,id,5)
-local real dmg=GetHeroStr(u,true)*(0.25+0.05*GetUnitAbilityLevel(u,'A0DF'))
+local real dmg=LoadReal(h,id,11)
 // if GetUnitAbilityLevel(u,'A28U')>0 and GetUnitState(u,UNIT_STATE_LIFE)<=GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.25 then
 // set dmg=dmg+dmg*.2
 // else
@@ -61789,6 +61800,7 @@ call KillSoundWhenDone(soundplay)
 call SetUnitInvulnerable(u,false)
 call AddUnitAnimationProperties(u,"alternate",true)
 call RemoveUnit(LoadUnitHandle(h,id,10))
+call SaveInteger(HH,GetHandleId(u),ROYAL_GUARD_STACKS,0)
 call PauseTimer(t)
 call DestroyTimer(t)
 call FlushChildHashtable(h,id)
@@ -61811,6 +61823,7 @@ call SaveUnitHandle(h,id,10,CreateUnit(GetOwningPlayer(u),'h01T',GetUnitX(u)+100
 call SetUnitInvulnerable(u,true)
 call SaveReal(h,id,2,x1)
 call SaveReal(h,id,3,y1)
+call SaveReal(h,id,11,GetHeroStr(u,true)*(0.25+0.05*GetUnitAbilityLevel(u,'A0DF'))*(1+0.1*LoadInteger(HH,GetHandleId(u),ROYAL_GUARD_STACKS)))
 call SetUnitAnimationByIndex(u,9)
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\EffectQQ.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
@@ -62217,7 +62230,7 @@ function MillionStabCast3 takes nothing returns nothing
         local real a=Atan2(y1-y,x1-x)
         local real l__d=GetRandomReal(-30,30)
         local player p=GetOwningPlayer(u)
-        local real dmg=100+GetHeroStr(u,true)*(1+GetUnitAbilityLevel(u,'A0DA'))
+        local real dmg=LoadReal(h,id,11)
         local boolean b=LoadBoolean(h,id,7)
         // if GetUnitAbilityLevel(u,'A28U')>0 and GetUnitState(u,UNIT_STATE_LIFE)<=GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.25 then
                 // set dmg=dmg+dmg*.2
@@ -62261,6 +62274,7 @@ function MillionStabCast3 takes nothing returns nothing
             call FlushChildHashtable(h,id)
             call SetUnitTimeScale(u,1)
             call UnitRemoveAbility(u,'A0DB')
+            call SaveInteger(HH,GetHandleId(u),ROYAL_GUARD_STACKS,0)
         endif
         set p=null
         set u=null
@@ -62282,7 +62296,7 @@ local real r=LoadReal(h,id,2)
 local real a=Atan2(y1-y,x1-x)
 local real l__d=GetRandomReal(-30,30)
 local player p=GetOwningPlayer(u)
-local real dmg=100+GetHeroStr(u,true)*(2+GetUnitAbilityLevel(u,'A0DA'))
+local real dmg=LoadReal(h,id,11)
 local boolean b=LoadBoolean(h,id,7)
 // if GetUnitAbilityLevel(u,'A28U')>0 and GetUnitState(u,UNIT_STATE_LIFE)<=GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.25 then
 // set dmg=dmg+dmg*.2
@@ -62315,6 +62329,7 @@ call DestroyTimer(t)
 call FlushChildHashtable(h,id)
 call SetUnitTimeScale(u,1)
 call UnitRemoveAbility(u,'A0DB')
+call SaveInteger(HH,GetHandleId(u),ROYAL_GUARD_STACKS,0)
 endif
 endif
 set p=null
@@ -62332,6 +62347,7 @@ call SetUnitTimeScale(u,2)
 call SaveUnitHandle(h,id,0,u)
 call SaveUnitHandle(h,id,1,c)
 call SaveBoolean(h,id,7,false)
+call SaveReal(h,id,11,(100+GetHeroStr(u,true)*(2+GetUnitAbilityLevel(u,'A0DA')))*(1+0.1*(LoadInteger(HH,GetHandleId(u),ROYAL_GUARD_STACKS))))
 call UnitAddAbility(u,'A0DB')
 call SetUnitInvulnerable(u,true)
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\EffectW.mp3",false,false,true,12700,12700,"")
@@ -62409,8 +62425,7 @@ local real y2=LoadReal(h,id,5)
 local real a=LoadReal(h,id,1)
 local group g=LoadGroupHandle(h,id,3)
 local integer l__idg=GetHandleId(g)
-local integer lvl=GetUnitAbilityLevel(u,'A0D8')
-local real dmg=50*lvl+GetHeroStr(u,true)*(lvl+2)
+local real dmg=LoadReal(h,id,11)
 local player p=GetOwningPlayer(u)
 local integer l__ide
 local real dist=LoadReal(h,id,100)
@@ -62453,6 +62468,7 @@ call FlushChildHashtable(h,l__idg)
 call DestroyTimer(t)
 call DestroyGroup(g)
 call SetUnitInvulnerable(u,false)
+call SaveInteger(HH,GetHandleId(u),ROYAL_GUARD_STACKS,0)
 endif
 set u=null
 set p=null
@@ -62463,11 +62479,14 @@ function CastStinger takes nothing returns nothing
 local unit u=GetTriggerUnit()
 local timer t=CreateTimer()
 local integer id=GetHandleId(t)
+local integer lvl=GetUnitAbilityLevel(u,'A0D8')
+local real dmg=50*lvl+GetHeroStr(u,true)*(lvl+2)*(1+0.1*(LoadInteger(HH,GetHandleId(u),ROYAL_GUARD_STACKS)))
 call SaveUnitHandle(h,id,0,u)
 call SaveReal(h,id,4,GetUnitX(u))
 call SaveReal(h,id,5,GetUnitY(u))
 call SaveReal(h,id,1,Atan2(GetSpellTargetY()-GetUnitY(u),GetSpellTargetX()-GetUnitX(u)))
 call SaveGroupHandle(h,id,3,CreateGroup())
+call SaveReal(h,id,11,dmg)
 call SetUnitInvulnerable(u,true)
 call UnitAddAbility(u,'A0D9')
 call SaveBoolean(HH,GetHandleId(u),DASH_USER,true)
