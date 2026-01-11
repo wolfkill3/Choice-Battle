@@ -1822,9 +1822,9 @@ function myCustomDamage takes unit whichUnit, unit target, real amount, boolean 
         if GetUnitAbilityLevel(whichUnit,'A171') > 0 then
             set currentDmg = currentDmg * 1.10
         endif  
-        if (IsItemInInventory(target, 'IASS') > 0 or IsItemInInventory(target, 'IASA') > 0 or IsItemInInventory(target, 'IASI') > 0) then
-            set currentDmg = currentDmg * 1.15
-        endif  
+        // if (IsItemInInventory(target, 'IASS') > 0 or IsItemInInventory(target, 'IASA') > 0 or IsItemInInventory(target, 'IASI') > 0) then
+        //     set currentDmg = currentDmg * 1.15
+        // endif  
 		//if GetUnitAbilityLevel(whichUnit,'A176') > 0 then
         //    set currentDmg = currentDmg * 1.05
         //endif  
@@ -1994,9 +1994,9 @@ function myCustomDamage2 takes unit target, real amount returns real
         if GetUnitAbilityLevel(target,'B072') > 0 then
             set currentDmg = currentDmg * 1.15
         endif
-        if (IsItemInInventory(target, 'IASS') > 0 or IsItemInInventory(target, 'IASA') > 0 or IsItemInInventory(target, 'IASI') > 0) then
-            set currentDmg = currentDmg * 1.15
-        endif  
+        // if (IsItemInInventory(target, 'IASS') > 0 or IsItemInInventory(target, 'IASA') > 0 or IsItemInInventory(target, 'IASI') > 0) then
+        //     set currentDmg = currentDmg * 1.15
+        // endif  
                 // T Gin уменьшение маг реза -> увеличение урона по нему
         if GetUnitAbilityLevel(target,'BGiT') > 0 then
             set currentDmg = currentDmg + amount*(I2R(GetUnitAbilityLevel(target, 'BGiT'))*0.05)
@@ -2144,9 +2144,9 @@ function myCustomDamage2_dec takes unit target, real amount returns real
         if GetUnitAbilityLevel(target,'B072') > 0 then
             set currentDmg = currentDmg * 1.15
         endif
-        if (IsItemInInventory(target, 'IASS') > 0 or IsItemInInventory(target, 'IASA') > 0 or IsItemInInventory(target, 'IASI') > 0) then
-            set currentDmg = currentDmg * 1.15
-        endif  
+        // if (IsItemInInventory(target, 'IASS') > 0 or IsItemInInventory(target, 'IASA') > 0 or IsItemInInventory(target, 'IASI') > 0) then
+        //     set currentDmg = currentDmg * 1.15
+        // endif  
                 // T Gin уменьшение маг реза -> увеличение урона по нему
         if GetUnitAbilityLevel(target,'BGiT') > 0 then
             set currentDmg = currentDmg + amount*(I2R(GetUnitAbilityLevel(target, 'BGiT'))*0.05)
