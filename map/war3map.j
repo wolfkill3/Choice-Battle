@@ -22935,10 +22935,10 @@ function Trig_Killer_Actions takes nothing returns nothing
             call SaveUnitHandle(h,GetHandleId(t),1,u)
             call TimerStart(t,7.5+GetUnitAbilityLevel(u,'A065')*2.5,false,function KageKageAction2)
         endif
-        if u!=null and GetUnitTypeId(u)!='H02A' and GetUnitAbilityLevel(u,'A105')>0 then
-            call HealTextTag(u,u,GetUnitState(c,UNIT_STATE_MAX_LIFE)*(0.07+0.03*GetUnitAbilityLevel(u,'A105'))*myCustomHeal2(u,1),"HealthRes")
-            call SetUnitState(u,UNIT_STATE_LIFE,GetWidgetLife(u)+GetUnitState(c,UNIT_STATE_MAX_LIFE)*(0.07+0.03*GetUnitAbilityLevel(u,'A105')))
-            //call SetUnitState(u,UNIT_STATE_MANA,GetWidgetMana(u)+GetUnitState(c,UNIT_STATE_MAX_MANA)*(0.07+0.03*GetUnitAbilityLevel(u,'A105')))
+        if u!=null and GetUnitTypeId(u)!='H02A' and GetUnitAbilityLevel(u,'CelF')>0 then
+            call HealTextTag(u,u,GetUnitState(c,UNIT_STATE_MAX_LIFE)*(0.07+0.03*GetUnitAbilityLevel(u,'CelF'))*myCustomHeal2(u,1),"HealthRes")
+            call SetUnitState(u,UNIT_STATE_LIFE,GetWidgetLife(u)+GetUnitState(c,UNIT_STATE_MAX_LIFE)*(0.07+0.03*GetUnitAbilityLevel(u,'CelF')))
+            //call SetUnitState(u,UNIT_STATE_MANA,GetWidgetMana(u)+GetUnitState(c,UNIT_STATE_MAX_MANA)*(0.07+0.03*GetUnitAbilityLevel(u,'CelF')))
             call SetHeroAgi(u,GetHeroAgi(u,false)+1,true)
             call SetHeroStr(u,GetHeroStr(u,false)+1,true)
             call SetHeroInt(u,GetHeroInt(u,false)+1,true)
@@ -22971,7 +22971,7 @@ function Trig_Killer_Actions takes nothing returns nothing
                     if GetUnitAbilityLevel(Hero[i],'A1F3')>0 then
                         call SetPlayerState(Player(i),PLAYER_STATE_RESOURCE_GOLD,GetPlayerState(Player(i),PLAYER_STATE_RESOURCE_GOLD)+20)
                     endif
-                    if GetUnitAbilityLevel(Hero[i],'A105')>0 then
+                    if GetUnitAbilityLevel(Hero[i],'CelF')>0 then
                         call SetHeroInt(Hero[i],GetHeroInt(Hero[i],false)+1,true)
                     endif
                     if GetUnitTypeId(Hero[i])=='HYuj' then //old 'H049'
@@ -23870,8 +23870,8 @@ local unit u=LoadUnitHandle(HH,GetHandleId(t),0)
 local real ml=GetUnitState(u,UNIT_STATE_MAX_LIFE)
 local real l=GetWidgetLife(u)
 if GetHeroLevel(u)>=6 and IsUnitAlive(u) then
-call HealTextTag(u,u,ml*(0.005+(GetUnitAbilityLevel(u,'A105')*0.005))*0.01*myCustomHeal2(u,1),"HealthRes")
-call SetUnitState(u,UNIT_STATE_LIFE,l+ml*(0.005+(GetUnitAbilityLevel(u,'A105')*0.005))*0.01)
+call HealTextTag(u,u,ml*(0.005+(GetUnitAbilityLevel(u,'CelF')*0.005))*0.01*myCustomHeal2(u,1),"HealthRes")
+call SetUnitState(u,UNIT_STATE_LIFE,l+ml*(0.005+(GetUnitAbilityLevel(u,'CelF')*0.005))*0.01)
 endif
 set t=null
 set u=null
@@ -24027,7 +24027,10 @@ call SetUnitAbilityLevel(u,'A0X8',(GetHeroLevel(u)-2)/4)
 endif
 if GetUnitTypeId(u)=='H052' then
     if GetHeroLevel(u)>=6 then
-        call SetUnitAbilityLevel(u,'A105',(GetHeroLevel(u)-2)/4)
+        call SetUnitAbilityLevel(u,'CelF',(GetHeroLevel(u)-2)/4)
+    endif
+    if GetHeroLevel(u)>=12 then
+        call SetUnitAbilityLevel(u,'CelG',(GetHeroLevel(u)-2)/3)
     endif
     if LoadInteger(HH,idu,StringHash("ABS"))!=1 then
         set cjlocgn_00000000=CreateTimer()
@@ -111044,6 +111047,312 @@ call SaveUnitHandle(h,id,1,c)
 call TimerStart(t,0.025,true,function EnchantedFistCast2)
 set c=null
 set u=null
+set t=null
+endfunction
+function Condition_Base_Random takes unit caster000,unit target000 returns boolean
+return UnitIsAlive(target000)and IsUnitEnemy(target000,GetOwningPlayer(caster000))==true and IsUnitType(target000,UNIT_TYPE_STRUCTURE)==false and GetUnitAbilityLevel(target000,'Avul')==0
+endfunction
+function Cell_G_Act2 takes nothing returns nothing
+local integer id=GetHandleId(GetExpiredTimer())
+local unit caster=LoadUnitHandle(HH,id,1)
+local unit Dummy=LoadUnitHandle(HH,id,20)
+local real facing=LoadReal(HH,id,3)
+local group gr=LoadGroupHandle(HH,id,4)
+local real time=LoadReal(HH,id,5)
+local real time1=LoadReal(HH,id,6)
+local real x0=GetUnitX(Dummy)
+local real y0=GetUnitY(Dummy)
+local real x1=LoadReal(HH,id,11)
+local real y1=LoadReal(HH,id,12)
+local real damage=LoadReal(HH,id,15)
+
+local integer rand22=GetRandomInt(1,10)
+local integer rand33=GetRandomInt(1,2)
+set time=time+0.02
+call SaveReal(HH,id,5,time)
+if time>0.5 then
+call GroupClear(gr)
+call DestroyGroup(gr)
+call RemoveUnit(Dummy)
+call PauseTimer(GetExpiredTimer())
+call FlushChildHashtable(HH,id)
+call DestroyTimer(GetExpiredTimer())
+else
+if time==0.02 then
+
+
+if LoadBoolean(HH,GetHandleId(GetLocalPlayer()), SOUND_LANGUAGE )==true then
+set soundplay=CreateSound("Sound\\Music\\mp3Music\\Cell_G_ENG.mp3",false,false,true,12700,12700,"")
+call SetSoundVolume(soundplay,370)
+else
+
+if rand22==1 then
+set soundplay=CreateSound("Sound\\Music\\mp3Music\\Perfect Cell\\Cell_G3.mp3",false,false,true,12700,12700,"")
+
+else
+
+if rand33==1 then
+set soundplay=CreateSound("Sound\\Music\\mp3Music\\Perfect Cell\\Cell_G2.mp3",false,false,true,12700,12700,"")
+else
+set soundplay=CreateSound("Sound\\Music\\mp3Music\\Perfect Cell\\Cell_G.mp3",false,false,true,12700,12700,"")
+endif
+
+endif
+
+call SetSoundVolume(soundplay,200)
+endif
+
+
+
+
+
+call StartSound(soundplay)
+////call KillSoundWhenDone(soundplay)
+
+
+
+
+
+
+
+call EffectCreateAndMove(true,EffectID[23],facing,1.5,1,0.5,100,60,30,50,0,caster,0,facing)
+if LoadInteger(HH,id,25)==1 then
+call EffectCreateAndMove(true,EffectID[720],facing,1.5,1.75,0.4,100,60,30,0,75,caster,50,facing)
+else
+call EffectCreateAndMove(true,EffectID[719],facing,1.5,1.75,0.4,100,60,30,0,75,caster,50,facing)
+endif
+set n0=CreateUnit(GetOwningPlayer(caster),'e000',x1,y1,facing)
+//call SetUnitModel(n0,EffectID[214])
+if LoadInteger(HH,id,25)==1 then
+call SetUnitAnimationByIndex(caster,3)
+call UnitSpeed(caster,1.25)
+call MoveUnit(n0,n0,600,facing+135)
+else
+call SetUnitAnimationByIndex(caster,17)
+call UnitSpeed(caster,1.25)
+call MoveUnit(n0,n0,600,facing-135)
+endif
+call UnitSize(n0,2,1,1)
+call SetUnitFlyHeight(n0,0,0)
+call UnitColor(n0,100,100,100,60)
+call UnitSpeed(n0,1)
+call SaveUnitHandle(HH,id,20,n0)
+set n0=null
+call UnitSpeed(caster,1)
+endif
+if time>0.02 then
+if LoadInteger(HH,id,25)==1 then
+set facing=facing-time*360
+else
+set facing=facing+time*360
+endif
+call MoveUnit(Dummy,Dummy,70,facing)
+set time1=time1+.02
+if time1>=0.04 then
+call EffectCreateAndMove(true,EffectID[1896],GetRandomReal(0,360),1.5,1.75,2.5,100,100,100,40,0,Dummy,0,facing)
+call EffectCreateAndMoveAn(true,EffectID[24],GetRandomReal(0,360),1.5,0.8,1.5,100,100,100,30,100,Dummy,0,facing,2)
+call EffectCreateAndMove(true,EffectID[529],GetRandomReal(0,360),1.5,1.5,2,100,100,100,60,0,Dummy,0,facing)
+set time1=0
+endif
+call SaveReal(HH,id,6,time1)
+call GroupClear(G)
+call GroupEnumUnitsInRange(G,x0,y0,200,null)
+loop
+set n0=FirstOfGroup(G)
+exitwhen n0==null
+if IsUnitInGroup(n0,gr)==false and Condition_Base_Random(caster,n0)then
+call GroupAddUnit(gr,n0)
+call DamageU(false,caster,n0,damage)
+endif
+call GroupRemoveUnit(G,n0)
+endloop
+call SaveGroupHandle(HH,id,4,gr)
+call GroupClear(G)
+endif
+endif
+set caster=null
+set gr=null
+set Dummy=null
+endfunction
+function Cell_G_Act takes unit caster,real x1,real y1 returns nothing
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+local real x0=GetUnitX(caster)
+local real y0=GetUnitY(caster)
+local real facing=Angle2(x0,y0,x1,y1)
+local real damage=100+GetHeroInt(caster,true)*(2.5+GetUnitAbilityLevel(caster,'CelG')*0.5)
+call SaveUnitHandle(HH,id,1,caster)
+call SaveReal(HH,id,3,facing)
+call SaveGroupHandle(HH,id,4,CreateGroup())
+call SaveReal(HH,id,11,x1)
+call SaveReal(HH,id,12,y1)
+call SaveReal(HH,id,15,damage)
+call SaveInteger(HH,id,25,GetRandomInt(1,2))
+call TimerStart(t,0.02,true,function Cell_G_Act2)
+set t=null
+endfunction
+function Cell_F_Act2 takes nothing returns nothing
+local integer id=GetHandleId(GetExpiredTimer())
+local unit caster=LoadUnitHandle(HH,id,1)
+local unit target=LoadUnitHandle(HH,id,2)
+local real time=LoadReal(HH,id,5)
+local real damage=LoadReal(HH,id,15)
+local real x0=GetUnitX(caster)
+local real y0=GetUnitY(caster)
+local real x1=GetUnitX(target)
+local real y1=GetUnitY(target)
+local real facing=LoadReal(HH,id,3)
+local real dist=LoadReal(HH,id,8)
+set time=time+0.02
+call SaveReal(HH,id,5,time)
+if dist<0 then
+call DestroyEffect(LoadEffectHandle(HH,id,21))
+call DestroyEffect(LoadEffectHandle(HH,id,22))
+call UnitSpeed(caster,1)
+call PauseUnit(caster,false)
+call SetUnitInvulnerable(caster,false)
+call SetUnitPathing(caster,true)
+call SetUnitPathing(target,true)
+call PauseTimer(GetExpiredTimer())
+call FlushChildHashtable(HH,id)
+call DestroyTimer(GetExpiredTimer())
+else
+if time<5.2 then
+call PauseUnit(caster,true)
+call SetUnitInvulnerable(caster,true)
+call SetUnitPathing(caster,false)
+call SetUnitFacing(caster,facing)
+endif
+if time==0.02 then
+call EffectCreateAndMove(true,EffectID[15],facing,1,1,1.5,100,100,100,0,0,caster,50,facing)
+call EffectCreateAndMove90(true,EffectID[20],facing,1,1,1.5,100,100,100,0,50,caster,50,facing)
+call SaveEffectHandle(HH,id,21,AddSpecialEffectTarget(EffectID[2063],caster,"hand right"))
+call SaveEffectHandle(HH,id,22,AddSpecialEffectTarget(EffectID[2063],caster,"hand left"))
+call SetUnitAnimationByIndex(caster,18)
+call UnitSpeed(caster,1.5)
+set soundplay=CreateSound("war3mapImported\\Cell_F.mp3",false,false,true,12700,12700,"")
+
+call StartSound(soundplay)
+
+
+if LoadBoolean(HH,GetHandleId(GetLocalPlayer()), SOUND_LANGUAGE )==true then
+set soundplay=CreateSound("Sound\\Music\\mp3Music\\Cell_F_Eng.mp3",false,false,true,12700,12700,"")
+else
+set soundplay=CreateSound("Sound\\Music\\mp3Music\\Perfect Cell\\Cell_F.mp3",false,false,true,12700,12700,"")
+endif
+call SetSoundVolume(soundplay,370)
+call StartSound(soundplay)
+////call KillSoundWhenDone(soundplay)
+
+
+
+
+set n0=CreateUnit(GetOwningPlayer(caster),'e000',GetUnitX(caster),GetUnitY(caster),0)
+call SetUnitModel(n0,EffectID[768])
+call SetUnitFlyHeight(n0,100,0)
+call UnitColor(n0,0,0,0,100)
+call UnitSize(n0,1,1,1)
+call UnitSpeed(n0,1)
+call MyRemoveUnit(n0,1)
+call SaveUnitHandle(HH,id,20,n0)
+endif
+if time==0.02 or time==0.1 or time==0.2 or time==0.3 or time==0.4 then
+call EffectCreateAndMove(true,EffectID[6],facing,1,GetRandomReal(0.3,0.5),GetRandomReal(0.5,0.7),100,100,100,40,100,caster,50,facing)
+call EffectCreateAndMove(true,EffectID[854],facing,1,GetRandomReal(1.25,1.5),0.7,100,100,100,20,0,caster,50,facing)
+endif
+if time>0.02 and time<1 then
+if time>0.1 then
+call MoveUnit(caster,LoadUnitHandle(HH,id,20),0,facing)
+endif
+call MoveUnit(caster,caster,35,facing)
+call SaveReal(HH,id,8,dist-35)
+set x0=PolX(x0,150,facing)
+set y0=PolY(y0,150,facing)
+call GroupClear(G)
+call GroupEnumUnitsInRange(G,x0,y0,150,Base)
+loop
+set n0=FirstOfGroup(G)
+exitwhen n0==null
+if Condition_Base(GetOwningPlayer(caster),n0)and GetUnitAbilityLevel(n0,'Avul')==0 then
+call SaveUnitHandle(HH,id,2,n0)
+call SaveReal(HH,id,5,5)
+call UnitSpeed(caster,0)
+call DamageU(false,caster,n0,damage*0.5)
+call SetControlToUnit(n0,n0,1,"stun")
+call EffectCreateAndMove(true,EffectID[74],GetRandomReal(0,360),1.5,1.5,0.8,100,100,100,0,100,n0,0,facing)
+call EffectCreateAndMove(true,EffectID[205],facing+45,1,1.25,1,100,100,100,0,100,n0,0,facing)
+call EffectCreateAndMove(true,EffectID[205],facing-45,1,1.25,1,100,100,100,0,100,n0,0,facing)
+call EffectCreateAndMove(true,EffectID[425],GetRandomReal(0,360),1.5,1.5,0.75,100,100,100,0,100,n0,0,facing)
+call EffectCreateAndMove45(true,EffectID[207],facing+45,1.5,1,1,100,100,100,30,200,n0,0,facing)
+call EffectCreateAndMove45(true,EffectID[207],facing-45,1.5,1,1,100,100,100,30,200,n0,0,facing)
+call PauseUnit(n0,true)
+call SaveBoolean(HH,GetHandleId(n0),TARGET_ABILITY,true)
+call SetUnitPathing(n0,false)
+call SaveReal(HH,id,8,1000)
+exitwhen true
+endif
+call GroupRemoveUnit(G,n0)
+endloop
+call GroupClear(G)
+endif
+if time>5 then
+if time==5.02 then
+call SetUnitAnimationByIndex(caster,23)
+call UnitSpeed(caster,1.5)
+set soundplay=CreateSound("Sound\\Others\\NatsuT_Hit.mp3",false,false,true,12700,12700,"")
+call SetSoundVolume(soundplay,370)
+call StartSound(soundplay)
+endif
+if time<5.3 then
+call MoveUnit(target,target,2,facing)
+call MoveUnit(target,caster,-150,facing)
+call PauseUnit(target,true)
+call SetUnitPathing(target,false)
+endif
+if time==5.3 then
+call SetUnitAnimationByIndex(caster,2)
+call EffectCreateAndMove(true,EffectID[425],GetRandomReal(0,360),1.5,1.75,0.75,100,100,100,0,100,target,0,facing)
+call EffectCreateAndMove(true,EffectID[193],facing-60,1.5,2.5,1,100,100,100,70,150,target,0,facing)
+call EffectCreateAndMove(true,EffectID[193],facing+60,1.5,2.5,1,100,100,100,70,150,target,0,facing)
+call EffectCreateAndMove(true,EffectID[40],GetRandomReal(0,360),1.5,2.5,1,100,100,100,0,100,n0,0,facing)
+call EffectCreateAndMove90(true,EffectID[20],facing+60,1,1,1.5,100,100,100,40,150,target,0,facing)
+call EffectCreateAndMove90(true,EffectID[20],facing-60,1,1,1.5,100,100,100,40,150,target,0,facing)
+call EffectCreateAndMove(true,EffectID[768],facing,1.5,1.25,1.5,100,100,100,60,0,target,0,facing)
+call EffectCreateAndMove(true,EffectID[210],facing+60+180,1.5,1.5,0.75,100,100,100,0,100,target,0,facing)
+call EffectCreateAndMove(true,EffectID[210],facing-60+180,1.5,1.5,0.75,100,100,100,0,100,target,0,facing)
+call EffectCreateAndMove(true,EffectID[20],facing,1,1.5,1.5,100,100,100,40,0,target,0,facing)
+call EffectCreateAndMove(true,EffectID[64],facing+60,1.5,1.25,2,100,100,100,0,100,target,0,facing)
+call EffectCreateAndMove(true,EffectID[64],facing-60,1.5,0.75,1.5,100,100,100,0,100,target,0,facing)
+call SetUnitAnimation(target,"stand")
+call UnitSpeed(target,1)
+call PauseUnit(target,false)
+call SetUnitPathing(target,true)
+call DamageU(false,caster,target,damage*0.5)
+call SetControlToUnit(target,target,1,"stun")
+call SaveBoolean(HH,GetHandleId(target),TARGET_ABILITY,false)
+call SaveReal(HH,id,8,-100)
+endif
+endif
+endif
+set caster=null
+set target=null
+endfunction
+function Cell_F_Act takes unit caster,real x1,real y1 returns nothing
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+local real x0=GetUnitX(caster)
+local real y0=GetUnitY(caster)
+local real facing=Angle2(x0,y0,x1,y1)
+local real damage=50+(GetUnitAbilityLevel(caster,'CelF')*0.5+2.5)*GetHeroInt(caster,true)
+local real dist=SR(x0,y0,x1,y1)
+call SaveUnitHandle(HH,id,1,caster)
+call SaveReal(HH,id,3,facing)
+set dist=800
+call SaveReal(HH,id,8,dist)
+call PauseUnit(caster,true)
+call SetUnitInvulnerable(caster,true)
+call SaveReal(HH,id,15,damage)
+call TimerStart(t,0.02,true,function Cell_F_Act2)
 set t=null
 endfunction
 function DestructoDiskCond takes nothing returns boolean
@@ -221243,7 +221552,7 @@ endfunction
 
 ///ини абилок
 function AbilitiesForChoice_Cond takes nothing returns boolean
-    local boolean cond1=GetSpellAbilityId()=='GSQ1' or GetSpellAbilityId()=='GSQ2' or GetSpellAbilityId()=='GSW1' or GetSpellAbilityId()=='GSE1' or GetSpellAbilityId()=='GSE2' or GetSpellAbilityId()=='GSF1' or GetSpellAbilityId()=='GSF2' or GetSpellAbilityId()=='GSG1' or GetSpellAbilityId()=='GSR1' or GetSpellAbilityId()=='GST1' or GetSpellAbilityId()=='GST2' or GetSpellAbilityId()=='GST3' or GetSpellAbilityId()=='SHG1'
+    local boolean cond1=GetSpellAbilityId()=='GSQ1' or GetSpellAbilityId()=='GSQ2' or GetSpellAbilityId()=='GSW1' or GetSpellAbilityId()=='GSE1' or GetSpellAbilityId()=='GSE2' or GetSpellAbilityId()=='GSF1' or GetSpellAbilityId()=='GSF2' or GetSpellAbilityId()=='GSG1' or GetSpellAbilityId()=='GSR1' or GetSpellAbilityId()=='GST1' or GetSpellAbilityId()=='GST2' or GetSpellAbilityId()=='GST3' or GetSpellAbilityId()=='SHG1' or GetSpellAbilityId()=='CelF' or GetSpellAbilityId()=='CelG'
     if cond1 then
         return true
     else
@@ -221314,6 +221623,14 @@ function AbilitiesForChoice_Act takes nothing returns nothing//моя функц
 
         call Sakura_G_Act(caster,x1,y1)
 
+    endif
+
+    if GetSpellAbilityId()=='CelG' then
+        call Cell_G_Act(caster,x1,y1)
+    endif
+
+    if GetSpellAbilityId()=='CelF' then
+        call Cell_F_Act(caster,x1,y1)
     endif
 
     set caster=null
