@@ -35933,6 +35933,36 @@ function ClearGroupBelfegorMark takes unit newCaster returns nothing
         set bjLCG=null
 endfunction
 
+function DamageAoeAndStunTmadara takes unit caster0,real x00,real y00,real range0,real damage,real duration0,real hp0 returns nothing
+call GroupClear(G)
+call GroupEnumUnitsInRange(G,x00,y00,range0,Base)
+loop
+set n0=FirstOfGroup(G)
+exitwhen n0==null
+if  Condition_Base(GetOwningPlayer(caster0),n0)  then
+//call UnitStop(n0)
+call myCustomDamage(caster0,n0,damage+GetUnitState(n0,UNIT_STATE_MAX_LIFE)*hp0,false,false,null,null,null)
+call SetControlToUnit(caster0,n0, duration0, "stun")
+endif
+call GroupRemoveUnit(G,n0)
+endloop
+set caster0=null
+endfunction
+function DamageAoeAndStun takes unit caster0,real x00,real y00,real range0,real damage,real duration0 returns nothing
+call GroupClear(G)
+call GroupEnumUnitsInRange(G,x00,y00,range0,Base)
+loop
+set n0=FirstOfGroup(G)
+exitwhen n0==null
+if  Condition_Base(GetOwningPlayer(caster0),n0)  then
+//call UnitStop(n0)
+call myCustomDamage(caster0,n0,damage,false,false,null,null,null)
+call SetControlToUnit(caster0,n0, duration0, "stun")
+endif
+call GroupRemoveUnit(G,n0)
+endloop
+set caster0=null
+endfunction
 
 //aizen5start
 
@@ -41140,6 +41170,29 @@ endfunction
 
 
 function EffectCreateAndMove21 takes boolean SetSpecialEffectVisibilitybool,string name01,real d101,real life01,real size01,real speed01,integer red01,integer green01,integer blue01,real visible01,real high01,unit a201,real distance01,real d201 returns nothing
+set n=CreateUnit(GetOwningPlayer(a201),'e290',GetUnitX(a201),GetUnitY(a201),d101)
+call SetUnitModel(n,name01)
+call UnitAddAbility(n,'Amrf')
+call UnitRemoveAbility(n,'Amrf')
+call SetUnitFlyHeight(n,GetUnitFlyHeight(a201)+high01,0)
+call MoveUnit(a201,n,distance01,d201)
+call UnitSize(n,size01,size01,size01)
+call UnitSpeed(n,speed01)
+call UnitColor(n,red01,green01,blue01,visible01)
+call MyRemoveUnit(n,life01)
+set a201=null
+endfunction
+
+function MoveAoe1 takes real x00,real y00,unit u1,real distance,real l__degrees returns nothing
+local real x0=PolX(x00,distance,l__degrees)
+local real y0=PolY(y00,distance,l__degrees)
+if IsTerrainPathable(x0,y0,PATHING_TYPE_FLYABILITY)==false then
+call SetUnitX(u1,x0)
+call SetUnitY(u1,y0)
+endif
+set u1=null
+endfunction
+function EffectCreateAndMove2 takes boolean SetSpecialEffectVisibilitybool,string name01,real d101,real life01,real size01,real speed01,integer red01,integer green01,integer blue01,real visible01,real high01,unit a201,real distance01,real d201 returns nothing
 set n=CreateUnit(GetOwningPlayer(a201),'e290',GetUnitX(a201),GetUnitY(a201),d101)
 call SetUnitModel(n,name01)
 call UnitAddAbility(n,'Amrf')
@@ -111927,7 +111980,7 @@ call EffectCreateAndMove(true,EffectID[1080],facing,4,3,0.5,100,100,100,0,0,cast
 call EffectCreateAndMove(true,EffectID[1923],facing,4,2,1.75,100,100,100,0,50,caster,0,facing)
 
 
-if LoadBoolean(HH,GetHandleId(GetLocalPlayer()), DBSoundEngHash )==true then
+if LoadBoolean(HH,GetHandleId(GetLocalPlayer()), SOUND_LANGUAGE )==true then
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\PerfectBarrier.mp3",false,false,true,12700,12700,"")
 else
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\Perfect Cell\\PerfectBarrier-jap.mp3",false,false,true,12700,12700,"")
@@ -186874,28 +186927,7 @@ endfunction
 //==============================================================================
 //========= Madara Start
 //==============================================================================
-function MoveAoe1 takes real x00,real y00,unit u1,real distance,real l__degrees returns nothing
-local real x0=PolX(x00,distance,l__degrees)
-local real y0=PolY(y00,distance,l__degrees)
-if IsTerrainPathable(x0,y0,PATHING_TYPE_FLYABILITY)==false then
-call SetUnitX(u1,x0)
-call SetUnitY(u1,y0)
-endif
-set u1=null
-endfunction
-function EffectCreateAndMove2 takes boolean SetSpecialEffectVisibilitybool,string name01,real d101,real life01,real size01,real speed01,integer red01,integer green01,integer blue01,real visible01,real high01,unit a201,real distance01,real d201 returns nothing
-set n=CreateUnit(GetOwningPlayer(a201),'e290',GetUnitX(a201),GetUnitY(a201),d101)
-call SetUnitModel(n,name01)
-call UnitAddAbility(n,'Amrf')
-call UnitRemoveAbility(n,'Amrf')
-call SetUnitFlyHeight(n,GetUnitFlyHeight(a201)+high01,0)
-call MoveUnit(a201,n,distance01,d201)
-call UnitSize(n,size01,size01,size01)
-call UnitSpeed(n,speed01)
-call UnitColor(n,red01,green01,blue01,visible01)
-call MyRemoveUnit(n,life01)
-set a201=null
-endfunction
+
 
 // сусано формы
 
@@ -187174,36 +187206,6 @@ endif
 set t=null
 endfunction
 
-function DamageAoeAndStunTmadara takes unit caster0,real x00,real y00,real range0,real damage,real duration0,real hp0 returns nothing
-call GroupClear(G)
-call GroupEnumUnitsInRange(G,x00,y00,range0,Base)
-loop
-set n0=FirstOfGroup(G)
-exitwhen n0==null
-if  Condition_Base(GetOwningPlayer(caster0),n0)  then
-//call UnitStop(n0)
-call myCustomDamage(caster0,n0,damage+GetUnitState(n0,UNIT_STATE_MAX_LIFE)*hp0,false,false,null,null,null)
-call SetControlToUnit(caster0,n0, duration0, "stun")
-endif
-call GroupRemoveUnit(G,n0)
-endloop
-set caster0=null
-endfunction
-function DamageAoeAndStun takes unit caster0,real x00,real y00,real range0,real damage,real duration0 returns nothing
-call GroupClear(G)
-call GroupEnumUnitsInRange(G,x00,y00,range0,Base)
-loop
-set n0=FirstOfGroup(G)
-exitwhen n0==null
-if  Condition_Base(GetOwningPlayer(caster0),n0)  then
-//call UnitStop(n0)
-call myCustomDamage(caster0,n0,damage,false,false,null,null,null)
-call SetControlToUnit(caster0,n0, duration0, "stun")
-endif
-call GroupRemoveUnit(G,n0)
-endloop
-set caster0=null
-endfunction
 function RemoveUnitGroup takes nothing returns nothing
 if GetEnumUnit()!=null then
 call RemoveUnit(GetEnumUnit())
