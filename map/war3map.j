@@ -2638,220 +2638,6 @@ endloop
 set udg_LR=CreateGroup()
 set udg_rou=15.00
 
-
-set EffectID[0]="Izayoi\\BY_Wood_GongChengSiPai_1.mdl"
-set EffectID[1]="Madara\\EffecthPush.mdl"
-set EffectID[2]="Others\\[A]BladeBeamFinalLarger.mdl"
-set EffectID[3]="Others\\HakenSaber2.mdl"
-set EffectID[4]="Aizen\\AZ_LCDark_W2_buff.mdl"
-set EffectID[5]="Others\\BlackBlink1.mdl"
-set EffectID[6]="Signum\\CF2.mdl"
-set EffectID[8]="war3mapImported\\az-slash-red.mdl" //эффект есть он у лучи
-set EffectID[9]="Others\\File00003933.mdl"
-set EffectID[10]="Others\\File00000827.mdl"
-set EffectID[12]="Others\\wind3.mdl"//эффект есть 
-set EffectID[15]="Signum\\DustWindFaster3.mdl"//не надо
-set EffectID[19]="Others\\WindNewFaw4.mdl"
-set EffectID[20]="Others\\WindCirclefaster.mdl"//не надо
-set EffectID[23]="Others\\[A]az_axe_ef1.mdl"
-set EffectID[24]="Signum\\tx_haohuoqiu.mdl"//не надо
-set EffectID[25]="Others\\[A]hit-white-guangxiao.mdl"
-set EffectID[27]="Izayoi\\az_pafeathermoon_b.mdl"//не надо
-set EffectID[28]="war3mapImported\\AuraCheck.mdl"
-set EffectID[33]="Guts\\[A]FireEruption2.mdl"//не надо
-set EffectID[35]="Others\\[A]BladeBeamFinalLarger-90.mdl"
-set EffectID[37]="BlackGoku\\ChuShou_BY_Wood_Effect_Unusual_ChongSheng11.mdl"
-set EffectID[38]="BlackGoku\\File00007390.mdl"
-set EffectID[39]="Others\\az_slb.mdl"
-set EffectID[41]="Madara\\az_siwen2.mdl"
-set EffectID[42]="Guts\\az-zidan.mdl"//не надо
-set EffectID[48]="Madara\\blue-blink.mdl"//не надо
-set EffectID[49]="Madara\\[DoFT]az_pafeathermoon_b.mdl"//не надо
-set EffectID[75]="Guts\\AfbRedCharge.mdl"
-set EffectID[78]="Others\\[a]Red-zhendi.mdl"
-set EffectID[79]="Others\\red-zhendi-shanguang.mdl"
-set EffectID[82]="Others\\windExploreEffect(Bigger).mdl"
-set EffectID[105]="Madara\\kaizokusfxbyvalk4.mdl"
-set EffectID[119]="BlackGoku\\[A]Hongse_Yellow.mdl"
-set EffectID[136]="Others\\ChuShou_Effect_Earth1.mdl"
-set EffectID[210]="Others\\AZ_hit-red.mdl"
-set EffectID[214]="Madara\\AOE2m.mdl"
-set EffectID[225]="Others\\Rb3.mdl" //нужен
-set EffectID[227]="Others\\red-lizi-shunjian.mdl"
-set EffectID[237]="Others\\[A]Explodeorange.mdl"
-set EffectID[240]="Guts\\[A]BY_Wood_XianHuo_2.mdl"
-set EffectID[265]="Signum\\dustwaveanimate2.mdl"
-set EffectID[295]="Kisame\\red-lizi-zhendi-fast.mdl"
-set EffectID[348]="Aizen\\File00001721.mdl"
-set EffectID[386]="Others\\File00000532.mdl"//нужен
-set EffectID[394]="Others\\hit-nl-star.mdl"
-set EffectID[417]="Others\\WindWeak(Thicker).mdl"
-set EffectID[425]="Others\\hit-juhuang-lizi.mdl"
-set EffectID[460]="Aizen\\red-smoke1.mdl"
-set EffectID[495]="Others\\blue-guangzhu-linghun.mdl"
-set EffectID[515]="Others\\[doft]Void4.mdl"//нужен
-set EffectID[525]="Others\\file00000676.mdl"//нужен
-set EffectID[526]="Others\\[doft]Void.mdl"//нужен
-set EffectID[616]="Others\\az-red-guangzhao1.mdl"//нужен
-set EffectID[623]="Madara\\Shana-12.mdl"
-set EffectID[684]="Others\\tsubaki-41.mdl"
-set EffectID[711]="Sabrac\\LXY_tx-shqy10-E.mdl"
-set EffectID[739]="Others\\[DoFT]e_slashred.mdl"//нужен
-set EffectID[752]="Others\\az_fireringblue.mdl"
-set EffectID[764]="Others\\blink-yellow2.mdl"
-set EffectID[768]="Others\\HakkeStart2.mdl"
-set EffectID[784]="Others\\[A]ExplodeorangeBlueBlackGoku.mdl"
-set EffectID[785]="Others\\aZ_siwenBlackGoku.mdl"
-set EffectID[823]="Aizen\\QQQQQyellow.mdl"
-set EffectID[854]="Aizen\\File0000 (644).mdl"
-set EffectID[910]="Others\\FSAEff (10).mdl"//нужен
-set EffectID[927]="Others\\FSAEff (27).mdl"
-set EffectID[940]="Others\\FSAEff (40).mdl"//нужен
-set EffectID[956]="Izayoi\\FSAeff (56).mdl"//нужен
-set EffectID[957]="Others\\FSAEff (57).mdl"//нужен
-set EffectID[967]="Others\\FSAEff (67).mdl"//нужен
-set EffectID[1031]="Others\\FSAeff (131).mdl"//нужен
-set EffectID[1039]="Others\\FSAeff (139).mdl"//нужен
-set EffectID[1073]="Others\\FSAeff (173).mdl"//нужен
-set EffectID[1077]="Signum\\FSAeff (177).mdl"
-set EffectID[1078]="Others\\FSAeff (178).mdl"//нужен
-set EffectID[1081]="Others\\FSAeff (181).mdl"//нужен
-set EffectID[1144]="Others\\LightningSlamRed3.mdl"
-set EffectID[1328]="Others\\File00000008.mdl"//нужен
-set EffectID[1329]="Others\\File00000009.mdl"//нужен
-set EffectID[1330]="Others\\buff_fire_Sonic.mdl"//нужен
-set EffectID[1331]="Others\\File00000007New_New.mdl"//нужен
-set EffectID[1350]="Others\\by_wood_effect_shuiying_smoke_feidun_1_1_2.mdl"
-set EffectID[1351]="Others\\[A]BladeBeamFinalLarger45.mdl"
-set EffectID[1352]="Others\\[A]BladeBeamFinalLarger-45.mdl"
-set EffectID[1353]="Others\\AFB (2556).mdl"
-set EffectID[104]="Others\\[a]LightStrikeArray3.mdl"
-set EffectID[328]="Others\\CloudEfYellow.mdl"
-set EffectID[44]="Others\\az_siwen.mdl"
-set EffectID[45]="Guts\\az_siwen3.mdl"
-set EffectID[170]="BlackGoku\\by_wood_bashenan_juqi_2.mdl"
-set EffectID[172]="Others\\AFB_hudie.mdl"
-set EffectID[173]="BlackGoku\\CarolAFBTohka-R.mdl"
-set EffectID[226]="Others\\File00002500.mdl"
-set EffectID[280]="Others\\A(BlackPurple).mdl"
-set EffectID[341]="Madara\\[A]RinRfire1.mdl"
-set EffectID[364]="Others\\Singularity I Red.mdl"
-set EffectID[368]="BlackGoku\\Singularity II Purple.mdl"
-set EffectID[371]="Aizen\\fire-boom-new-red.mdl"
-set EffectID[390]="BlackGoku\\[A]fense-lizi-toushewu.mdl"
-set EffectID[397]="BlackGoku\\[DoFT]purple-shoot.mdl"
-set EffectID[490]="Guts\\bymutou-hongse3.mdl"
-set EffectID[572]="Gojo\\By_Wood_K_BaoZha.mdl"
-set EffectID[539]="Izayoi\\File00001831.mdl"
-set EffectID[999]="Izayoi\\FSAeff (99).mdl"
-set EffectID[863]="Others\\flowerMoonEff (52).mdl"
-set EffectID[925]="Others\\FSAEff (25).mdl"
-set EffectID[875]="Aizen\\HitToumaAFB.mdl"
-set EffectID[855]="Aizen\\[A]GrassPisses.mdl"
-set EffectID[287]="Gojo\\[A]AsumaEXP4.mdl"
-set EffectID[523]="Gojo\\ChuShou_by_wood_Effect_Glow_guiPaiQiGong_XuliBlue.mdl"
-set EffectID[581]="Gojo\\[a]Boom-red-zhendi.mdl"
-set EffectID[717]="Gojo\\t_KL_fx.mdl"
-set EffectID[923]="Gojo\\FSAEff (23).mdl"
-set EffectID[949]="Gojo\\FSAEff (49).mdl"
-set EffectID[951]="Gojo\\FSAEff (51).mdl"
-set EffectID[985]="Gojo\\FSAEff (85).mdl"
-set EffectID[992]="Gojo\\FSAEff (92).mdl"
-set EffectID[1038]="Gojo\\FSAeff (138).mdl"
-set EffectID[1049]="Gojo\\FSAeff (149).mdl"
-set EffectID[1056]="Gojo\\FSAeff (156).mdl"
-set EffectID[1057]="Gojo\\FSAeff (157).mdl"
-set EffectID[1071]="Gojo\\FSAeff (171).mdl"
-set EffectID[1076]="Gojo\\FSAeff (176).mdl"
-set EffectID[1080]="Gojo\\FSAeff (180).mdl"
-set EffectID[1097]="Gojo\\FSAeff (197).mdl"
-set EffectID[1105]="Gojo\\FSAeff (205).mdl"
-set EffectID[1310]="Gojo\\RT(WhiteBirth).mdl"
-set EffectID[1311]="Gojo\\BF (1154)13mask.mdl"
-set EffectID[1314]="Gojo\\GojoG11.mdl"
-set EffectID[1315]="Gojo\\[A]NucleExp1Anim4.mdl"
-set EffectID[1317]="Gojo\\3yifu_2 2.mdl"
-set EffectID[1318]="Gojo\\3yifu_2 3.mdl"
-set EffectID[1319]="Gojo\\3yifu_2 01.mdl"
-set EffectID[1320]="Gojo\\FawEffects (11).mdl"
-set EffectID[1332]="Gojo\\XJCSMblBYQ.mdl"
-set EffectID[1334]="Gojo\\[Gojo]JeanneDark1mt_baozha1.mdl"
-set EffectID[1335]="Gojo\\Gojo_AZ_Alleria_R3.mdl"
-set EffectID[1336]="Gojo\\Red2.mdl"
-set EffectID[1337]="Gojo\\blue.mdl"
-set EffectID[1339]="Gojo\\AZ_BNPF_FF1Red.mdl"
-set EffectID[1340]="Gojo\\AZ_BNPF_FF1BLUE.mdl"
-set EffectID[1341]="Gojo\\az_fenghuang01_d3_rblue.mdx"
-set EffectID[1342]="Gojo\\az_fenghuang01_d3_red.mdx"
-set EffectID[1343]="Gojo\\m2 (573).mdl"
-set EffectID[1344]="Gojo\\[A]fense-lizi-toushewuGojo.mdl"
-set EffectID[1345]="Gojo\\Aizen-37.mdl"
-set EffectID[1346]="Gojo\\CarolLightning2Gojo.mdl"
-set EffectID[1347]="Gojo\\FSAeff (167)Gojo.mdl"
-set EffectID[1348]="Gojo\\BubbleCamera.mdl"
-set EffectID[1349]="Gojo\\Bubbles2.mdl"
-set EffectID[1354]="Gojo\\es78.mdl"
-set EffectID[1355]="Gojo\\RT(PurpleBirth).mdl"
-set EffectID[1356]="Gojo\\blinkcaster.mdl"
-set EffectID[48]="Madara\\blue-blink.mdl"
-set EffectID[49]="Madara\\[DoFT]az_pafeathermoon_b.mdl"
-set EffectID[1358]="Izayoi\\Kamijo-10.mdl"
-set EffectID[1371]="Signum\\[A]AceFireShockRun.mdl"
-set EffectID[1374]="Signum\\[Signum]AceFireShockRun.mdl"
-set EffectID[32]="Signum\\FireEffectOrange.mdl"
-set EffectID[99]="Madara\\[A]BY_Wood_Flame_explosion_2.mdl"
-set EffectID[100]="Others\\[A]BY_Wood_FenShenDaBaoPo_2.mdl"
-set EffectID[137]="Ace\\[a]File00001271.mdl"
-set EffectID[196]="Ace\\buff_fire.mdl"
-set EffectID[235]="Ace\\[A]BY_Wood_huoquan.mdl"
-set EffectID[236]="Ace\\[A]Holy_Fire_Slam3.mdl"
-set EffectID[239]="Others\\[A]BY_Wood_Kong.mdl"
-set EffectID[246]="Ace\\[A]Natsu roar 3.mdl"
-set EffectID[247]="Madara\\[A]File00002800.mdl"
-set EffectID[250]="Ace\\[A]AceBall.mdl"
-set EffectID[251]="Ace\\ZeroPinkGreen.mdl"
-set EffectID[256]="Ace\\[A]RedHarvest.mdl"
-set EffectID[258]="Ace\\[A]FireShockRun(fire).mdl"
-set EffectID[1050]="Ace\\FSAeff (150).mdl"
-set EffectID[1053]="Signum\\FSAeff (153).mdl"
-set EffectID[1136]="Ace\\Tsubaki-49.mdl"
-set EffectID[1258]="Ace\\op (1032).mdl"
-set EffectID[1260]="Ace\\op (1137).mdl"
-set EffectID[1363]="Ace\\[A]AceFist.mdl"
-set EffectID[1364]="Ace\\AceRef_new.mdl"
-set EffectID[1366]="Ace\\AceRef_new3.mdl"
-set EffectID[1367]="Ace\\chushou_by_wood_effect_unusual_kof_caoti_huozhu.mdl"
-set EffectID[1368]="Ace\\EscanorCruelSunExpAfb.mdl"
-set EffectID[1369]="Ace\\EscanorCruelSunExpAfb1.mdl"
-set EffectID[1370]="Ace\\Op (749)_new.mdl"
-set EffectID[1372]="Signum\\[A]Natsu ef roar.mdl"
-set EffectID[1373]="Others\\file00004805.mdl"
-set EffectID[1361]="Others\\T_coarse slash black.mdl"
-set EffectID[1362]="Others\\SilverBolts.mdx"
-set EffectID[73]="Madara\\BY_Wood_GongChengSiPai_6.mdl"
-set EffectID[290]="Madara\\[DoFT]az_hit-blue-blade.mdl"
-set EffectID[292]="Madara\\[A]n3s_o_target.mdl"
-set EffectID[1357]="Others\\Reapers Claws Blue.mdl"
-set EffectID[1359]="Others\\TealSlam2.mdl"
-set EffectID[92]="Others\\File00003583.mdl"
-set EffectID[401]="Others\\blue_fire_explosion.mdl"
-set EffectID[34]="Aizen\\flowerMoonEff (49).mdl"
-set EffectID[1375]="Others\\KiyohimeBell.mdl"
-set EffectID[1376]="Others\\by_wood_eff_ord_dange_geo_suolian_3_2-Gray.mdl"
-set EffectID[719]="Others\\tg_animeslashfinal_2.mdl"
-set EffectID[720]="Others\\tg_animeslashfinal_1.mdl"
-set EffectID[292]="Madara\\[A]n3s_o_target.mdl"
-set EffectID[291]="Madara\\blue-slash-more.mdl"
-set EffectID[293]="Others\\CloudSpark.mdl"
-set EffectID[1398]="Others\\[A]Stomp.mdl"
-set EffectID[1399]="Others\\[A]ShivasWrathTransparent.mdl"
-set EffectID[1402]="Others\\[A]Vertical Square.mdl"
-set EffectID[1403]="Others\\[A]valkkame3.mdl"
-set EffectID[1405]="Others\\FreezingRing.mdl"
-set EffectID[1409]="Others\\[A]Shockwave(Blue).mdl"
-set EffectID[1401]="Others\\[A]earthdom(nocolor)_new.mdl"
-set EffectID[205]="Kisame\\az_hitheavy.mdl"
-
 set EmoteList[0]="Emotes\\Yes.blp"
 set EmoteList[1]="Emotes\\No.blp"
 set EmoteList[2]="Emotes\\Attack.blp"
@@ -25566,6 +25352,1026 @@ set gg_trg_StatusBar=CreateTrigger()
 call TriggerRegisterTimerEventSingle(gg_trg_StatusBar,1.0)
 call TriggerAddAction(gg_trg_StatusBar,function Trig_StatusBar_Actions)
 endfunction
+
+////////////////////////
+function Effect_Ini_1 takes nothing returns nothing
+
+set EffectID[0]="Izayoi\\BY_Wood_GongChengSiPai_1.mdl"
+set EffectID[1]="Madara\\EffecthPush.mdl"
+
+set EffectID[2]="Others\\[A]BladeBeamFinalLarger.mdl"
+
+set EffectID[3]="Others\\HakenSaber2.mdl"
+
+set EffectID[4]="Aizen\\AZ_LCDark_W2_buff.mdl"
+
+
+set EffectID[5]="Others\\BlackBlink1.mdl"
+set EffectID[6]="Signum\\CF2.mdl"
+set EffectID[8]="war3mapImported\\az-slash-red.mdl" //эффект есть он у лучи
+set EffectID[9]="Others\\File00003933.mdl"
+
+set EffectID[10]="Others\\File00000827.mdl"
+set EffectID[11]="Others\\wind4.mdl"//эффект есть 
+set EffectID[12]="Others\\wind3.mdl"//эффект есть 
+set EffectID[15]="Signum\\DustWindFaster3.mdl"//не надо
+set EffectID[19]="Others\\WindNewFaw4.mdl"
+set EffectID[20]="Others\\WindCirclefaster.mdl"//не надо
+set EffectID[23]="Others\\[A]az_axe_ef1.mdl"
+
+set EffectID[24]="Signum\\tx_haohuoqiu.mdl"//не надо
+set EffectID[25]="Others\\[A]hit-white-guangxiao.mdl"
+set EffectID[27]="Izayoi\\az_pafeathermoon_b.mdl"//не надо
+set EffectID[28]="war3mapImported\\AuraCheck.mdl"
+
+
+set EffectID[33]="Guts\\[A]FireEruption2.mdl"//не надо
+set EffectID[35]="Others\\[A]BladeBeamFinalLarger-90.mdl"
+
+set EffectID[37]="BlackGoku\\ChuShou_BY_Wood_Effect_Unusual_ChongSheng11.mdl"
+set EffectID[38]="BlackGoku\\File00007390.mdl"
+
+set EffectID[39]="Others\\az_slb.mdl"
+set EffectID[41]="Madara\\az_siwen2.mdl"
+
+set EffectID[42]="Guts\\az-zidan.mdl"//не надо
+set EffectID[48]="Madara\\blue-blink.mdl"//не надо
+set EffectID[49]="Madara\\[DoFT]az_pafeathermoon_b.mdl"//не надо
+
+
+set EffectID[74]="Kisame\\afbcronoseffect1.mdl"
+
+set EffectID[75]="Guts\\AfbRedCharge.mdl"
+set EffectID[78]="Others\\[a]Red-zhendi.mdl"
+set EffectID[79]="Others\\red-zhendi-shanguang.mdl"
+set EffectID[82]="Others\\windExploreEffect(Bigger).mdl"
+set EffectID[105]="Madara\\kaizokusfxbyvalk4.mdl"
+
+set EffectID[119]="BlackGoku\\[A]Hongse_Yellow.mdl"
+set EffectID[136]="Others\\ChuShou_Effect_Earth1.mdl"
+
+set EffectID[210]="Others\\AZ_hit-red.mdl"
+set EffectID[214]="Madara\\AOE2m.mdl"
+
+set EffectID[225]="Others\\Rb3.mdl" //нужен
+
+
+set EffectID[227]="Others\\red-lizi-shunjian.mdl"
+set EffectID[237]="Others\\[A]Explodeorange.mdl"
+set EffectID[240]="Guts\\[A]BY_Wood_XianHuo_2.mdl"
+set EffectID[265]="Signum\\dustwaveanimate2.mdl"
+set EffectID[295]="Kisame\\red-lizi-zhendi-fast.mdl"
+
+
+set EffectID[348]="Aizen\\File00001721.mdl"
+
+set EffectID[386]="Others\\File00000532.mdl"//нужен
+
+set EffectID[394]="Others\\hit-nl-star.mdl"
+
+set EffectID[417]="Others\\WindWeak(Thicker).mdl"
+set EffectID[425]="Others\\hit-juhuang-lizi.mdl"
+set EffectID[460]="Aizen\\red-smoke1.mdl"
+set EffectID[495]="Others\\blue-guangzhu-linghun.mdl"
+
+
+set EffectID[515]="Others\\[doft]Void4.mdl"//нужен
+set EffectID[525]="Others\\file00000676.mdl"//нужен
+set EffectID[526]="Others\\[doft]Void.mdl"//нужен
+set EffectID[616]="Others\\az-red-guangzhao1.mdl"//нужен
+
+set EffectID[623]="Madara\\Shana-12.mdl"
+
+set EffectID[684]="Others\\tsubaki-41.mdl"
+
+set EffectID[711]="Sabrac\\LXY_tx-shqy10-E.mdl"
+
+
+set EffectID[739]="Others\\[DoFT]e_slashred.mdl"//нужен
+
+
+set EffectID[752]="Others\\az_fireringblue.mdl"
+set EffectID[764]="Others\\blink-yellow2.mdl"
+set EffectID[768]="Others\\HakkeStart2.mdl"
+
+
+set EffectID[784]="Others\\[A]ExplodeorangeBlueBlackGoku.mdl"
+set EffectID[785]="Others\\aZ_siwenBlackGoku.mdl"
+
+set EffectID[823]="Aizen\\QQQQQyellow.mdl"
+
+set EffectID[854]="Aizen\\File0000 (644).mdl"
+set EffectID[910]="Others\\FSAEff (10).mdl"//нужен
+
+set EffectID[927]="Others\\FSAEff (27).mdl"
+
+set EffectID[940]="Others\\FSAEff (40).mdl"//нужен
+
+set EffectID[956]="Izayoi\\FSAeff (56).mdl"//нужен
+set EffectID[957]="Others\\FSAEff (57).mdl"//нужен
+set EffectID[967]="Others\\FSAEff (67).mdl"//нужен
+set EffectID[1031]="Others\\FSAeff (131).mdl"//нужен
+set EffectID[1039]="Others\\FSAeff (139).mdl"//нужен
+set EffectID[1073]="Others\\FSAeff (173).mdl"//нужен
+
+set EffectID[1077]="Signum\\FSAeff (177).mdl"
+
+set EffectID[1078]="Others\\FSAeff (178).mdl"//нужен
+set EffectID[1081]="Others\\FSAeff (181).mdl"//нужен
+
+set EffectID[1144]="Others\\LightningSlamRed3.mdl"
+
+
+set EffectID[1328]="Others\\File00000008.mdl"//нужен
+set EffectID[1329]="Others\\File00000009.mdl"//нужен
+set EffectID[1330]="Others\\buff_fire_Sonic.mdl"//нужен
+set EffectID[1331]="Others\\File00000007New_New.mdl"//нужен
+
+set EffectID[1350]="Others\\by_wood_effect_shuiying_smoke_feidun_1_1_2.mdl"
+
+set EffectID[1351]="Others\\[A]BladeBeamFinalLarger45.mdl"
+set EffectID[1352]="Others\\[A]BladeBeamFinalLarger-45.mdl"
+
+
+
+
+set EffectID[1353]="Others\\AFB (2556).mdl"
+
+
+
+set EffectID[104]="Others\\[a]LightStrikeArray3.mdl"
+set EffectID[328]="Others\\CloudEfYellow.mdl"
+
+
+
+set EffectID[4]="Aizen\\AZ_LCDark_W2_buff.mdl"
+set EffectID[44]="Others\\az_siwen.mdl"
+set EffectID[45]="Guts\\az_siwen3.mdl"
+set EffectID[170]="BlackGoku\\by_wood_bashenan_juqi_2.mdl"
+set EffectID[172]="Others\\AFB_hudie.mdl"
+set EffectID[173]="BlackGoku\\CarolAFBTohka-R.mdl"
+set EffectID[226]="Others\\File00002500.mdl"
+set EffectID[280]="Others\\A(BlackPurple).mdl"
+set EffectID[341]="Madara\\[A]RinRfire1.mdl"
+set EffectID[364]="Others\\Singularity I Red.mdl"
+set EffectID[368]="BlackGoku\\Singularity II Purple.mdl"
+set EffectID[371]="Aizen\\fire-boom-new-red.mdl"
+set EffectID[390]="BlackGoku\\[A]fense-lizi-toushewu.mdl"
+set EffectID[397]="BlackGoku\\[DoFT]purple-shoot.mdl"
+
+
+endfunction
+
+
+
+
+function Effect_Ini_2 takes nothing returns nothing
+set EffectID[490]="Guts\\bymutou-hongse3.mdl"
+set EffectID[572]="Gojo\\By_Wood_K_BaoZha.mdl"
+set EffectID[539]="Izayoi\\File00001831.mdl"
+set EffectID[999]="Izayoi\\FSAeff (99).mdl"
+set EffectID[863]="Others\\flowerMoonEff (52).mdl"
+set EffectID[925]="Others\\FSAEff (25).mdl"
+set EffectID[875]="Aizen\\HitToumaAFB.mdl"
+set EffectID[855]="Aizen\\[A]GrassPisses.mdl"
+set EffectID[287]="Gojo\\[A]AsumaEXP4.mdl"
+set EffectID[523]="Gojo\\ChuShou_by_wood_Effect_Glow_guiPaiQiGong_XuliBlue.mdl"
+set EffectID[581]="Gojo\\[a]Boom-red-zhendi.mdl"
+set EffectID[717]="Gojo\\t_KL_fx.mdl"
+set EffectID[923]="Gojo\\FSAEff (23).mdl"
+set EffectID[949]="Gojo\\FSAEff (49).mdl"
+set EffectID[951]="Gojo\\FSAEff (51).mdl"
+set EffectID[985]="Gojo\\FSAEff (85).mdl"
+set EffectID[992]="Gojo\\FSAEff (92).mdl"
+set EffectID[1038]="Gojo\\FSAeff (138).mdl"
+set EffectID[1049]="Gojo\\FSAeff (149).mdl"
+set EffectID[1056]="Gojo\\FSAeff (156).mdl"
+set EffectID[1057]="Gojo\\FSAeff (157).mdl"
+set EffectID[1071]="Gojo\\FSAeff (171).mdl"
+set EffectID[1076]="Gojo\\FSAeff (176).mdl"
+set EffectID[1080]="Gojo\\FSAeff (180).mdl"
+set EffectID[1097]="Gojo\\FSAeff (197).mdl"
+set EffectID[1105]="Gojo\\FSAeff (205).mdl"
+set EffectID[1310]="Gojo\\RT(WhiteBirth).mdl"
+set EffectID[1311]="Gojo\\BF (1154)13mask.mdl"
+set EffectID[1314]="Gojo\\GojoG11.mdl"
+set EffectID[1315]="Gojo\\[A]NucleExp1Anim4.mdl"
+set EffectID[1317]="Gojo\\3yifu_2 2.mdl"
+set EffectID[1318]="Gojo\\3yifu_2 3.mdl"
+set EffectID[1319]="Gojo\\3yifu_2 01.mdl"
+set EffectID[1320]="Gojo\\FawEffects (11).mdl"
+set EffectID[1332]="Gojo\\XJCSMblBYQ.mdl"
+set EffectID[1334]="Gojo\\[Gojo]JeanneDark1mt_baozha1.mdl"
+set EffectID[1335]="Gojo\\Gojo_AZ_Alleria_R3.mdl"
+set EffectID[1336]="Gojo\\Red2.mdl"
+set EffectID[1337]="Gojo\\blue.mdl"
+set EffectID[1339]="Gojo\\AZ_BNPF_FF1Red.mdl"
+set EffectID[1340]="Gojo\\AZ_BNPF_FF1BLUE.mdl"
+set EffectID[1341]="Gojo\\az_fenghuang01_d3_rblue.mdx"
+set EffectID[1342]="Gojo\\az_fenghuang01_d3_red.mdx"
+set EffectID[1343]="Gojo\\m2 (573).mdl"
+set EffectID[1344]="Gojo\\[A]fense-lizi-toushewuGojo.mdl"
+set EffectID[1345]="Gojo\\Aizen-37.mdl"
+set EffectID[1346]="Gojo\\CarolLightning2Gojo.mdl"
+set EffectID[1347]="Gojo\\FSAeff (167)Gojo.mdl"
+set EffectID[1348]="Gojo\\BubbleCamera.mdl"
+set EffectID[1349]="Gojo\\Bubbles2.mdl"
+set EffectID[1354]="Gojo\\es78.mdl"
+set EffectID[1355]="Gojo\\RT(PurpleBirth).mdl"
+set EffectID[1356]="Gojo\\blinkcaster.mdl"
+set EffectID[48]="Madara\\blue-blink.mdl"
+set EffectID[49]="Madara\\[DoFT]az_pafeathermoon_b.mdl"
+
+
+
+
+set EffectID[1358]="Izayoi\\Kamijo-10.mdl"
+
+set EffectID[1371]="Signum\\[A]AceFireShockRun.mdl"
+set EffectID[1374]="Signum\\[Signum]AceFireShockRun.mdl"
+
+
+set EffectID[32]="Signum\\FireEffectOrange.mdl"
+set EffectID[99]="Madara\\[A]BY_Wood_Flame_explosion_2.mdl"
+set EffectID[100]="Others\\[A]BY_Wood_FenShenDaBaoPo_2.mdl"
+set EffectID[137]="Ace\\[a]File00001271.mdl"
+set EffectID[196]="Ace\\buff_fire.mdl"
+set EffectID[235]="Ace\\[A]BY_Wood_huoquan.mdl"
+set EffectID[236]="Ace\\[A]Holy_Fire_Slam3.mdl"
+set EffectID[239]="Others\\[A]BY_Wood_Kong.mdl"
+set EffectID[246]="Ace\\[A]Natsu roar 3.mdl"
+set EffectID[247]="Madara\\[A]File00002800.mdl"
+set EffectID[250]="Ace\\[A]AceBall.mdl"
+set EffectID[251]="Ace\\ZeroPinkGreen.mdl"
+set EffectID[256]="Ace\\[A]RedHarvest.mdl"
+set EffectID[258]="Ace\\[A]FireShockRun(fire).mdl"
+set EffectID[1050]="Ace\\FSAeff (150).mdl"
+set EffectID[1053]="Signum\\FSAeff (153).mdl"
+set EffectID[1136]="Ace\\Tsubaki-49.mdl"
+set EffectID[1258]="Ace\\op (1032).mdl"
+set EffectID[1260]="Ace\\op (1137).mdl"
+set EffectID[1363]="Ace\\[A]AceFist.mdl"
+set EffectID[1364]="Ace\\AceRef_new.mdl"
+set EffectID[1366]="Ace\\AceRef_new3.mdl"
+set EffectID[1367]="Ace\\chushou_by_wood_effect_unusual_kof_caoti_huozhu.mdl"
+set EffectID[1368]="Ace\\EscanorCruelSunExpAfb.mdl"
+set EffectID[1369]="Ace\\EscanorCruelSunExpAfb1.mdl"
+set EffectID[1370]="Ace\\Op (749)_new.mdl"
+set EffectID[1372]="Signum\\[A]Natsu ef roar.mdl"
+set EffectID[1373]="Others\\file00004805.mdl"
+set EffectID[1361]="Others\\T_coarse slash black.mdl"
+set EffectID[1362]="Others\\SilverBolts.mdx"
+set EffectID[73]="Madara\\BY_Wood_GongChengSiPai_6.mdl"
+set EffectID[290]="Madara\\[DoFT]az_hit-blue-blade.mdl"
+set EffectID[292]="Madara\\[A]n3s_o_target.mdl"
+set EffectID[1357]="Others\\Reapers Claws Blue.mdl"
+set EffectID[1359]="Others\\TealSlam2.mdl"
+set EffectID[92]="Others\\File00003583.mdl"
+
+
+
+set EffectID[401]="Others\\blue_fire_explosion.mdl"
+
+set EffectID[34]="Aizen\\flowerMoonEff (49).mdl"
+
+set EffectID[1375]="Others\\KiyohimeBell.mdl"
+set EffectID[1376]="Others\\by_wood_eff_ord_dange_geo_suolian_3_2-Gray.mdl"
+
+
+
+set EffectID[719]="Others\\tg_animeslashfinal_2.mdl"
+set EffectID[720]="Others\\tg_animeslashfinal_1.mdl"
+set EffectID[292]="Madara\\[A]n3s_o_target.mdl"
+set EffectID[291]="Madara\\blue-slash-more.mdl"
+set EffectID[293]="Others\\CloudSpark.mdl"
+
+set EffectID[1398]="Others\\[A]Stomp.mdl"
+set EffectID[1399]="Others\\[A]ShivasWrathTransparent.mdl"
+
+set EffectID[1402]="Others\\[A]Vertical Square.mdl"
+set EffectID[1403]="Others\\[A]valkkame3.mdl"
+
+set EffectID[1405]="Others\\FreezingRing.mdl"
+
+set EffectID[1409]="Others\\[A]Shockwave(Blue).mdl"
+
+
+set EffectID[1401]="Others\\[A]earthdom(nocolor)_new.mdl"
+set EffectID[1410]="Others\\[A]earthdom(nocolor)_new.mdl"
+set EffectID[205]="Kisame\\az_hitheavy.mdl"
+
+
+set EffectID[47]="Others\\ChongFeng2.mdl"
+set EffectID[66]="BlackGoku\\satomiwind.mdl"
+set EffectID[118]="Signum\\[a]fire-Zhendi-guangzhu.mdl"
+
+set EffectID[120]="Guts\\[A]red-shoot-big.mdl"
+set EffectID[213]="BlackGoku\\BY_Wood_GongChengSiPai_5.mdl"
+
+
+
+set EffectID[248]="Others\\[A]fire-boom-new.mdl"// Нада не пашет()
+set EffectID[432]="Others\\MeteorGlow.mdl"//нада
+
+
+set EffectID[320]="rasengan_eff4.mdl"
+
+
+set EffectID[351]="Others\\lighwave1.mdl" //нада
+
+set EffectID[354]="Others\\File0000 (388).mdl" //нада
+
+set EffectID[436]="Others\\[a]supershinythingygon.mdl" //нада
+set EffectID[467]="Others\\shandian-xiaoshi-man-2.mdl"//нада
+set EffectID[469]="Others\\shandian-wave-xiao.mdl"//нада
+set EffectID[470]="Others\\file00002954.mdl"//нада
+set EffectID[471]="Others\\file00002953.mdl"//нада
+
+
+set EffectID[474]="Others\\file0000 (531).mdl"//нада не пашет(
+
+
+set EffectID[465]="Others\\az_goods_dagon_target(3).mdl"//нада не пашет(
+set EffectID[357]="Others\\File0000 (71).mdl"//нада не пашет(
+  
+
+
+
+set EffectID[53]="Izayoi\\star-magic.mdl"
+set EffectID[1428]="war3mapImported\\az_jingzi_jiansheng01_e1_blue.mdl"
+set EffectID[1560]="Others\\EffectCheck (60).mdl"
+
+
+
+endfunction
+
+
+function Effect_Ini_3  takes nothing returns nothing
+
+
+set EffectID[40]="Kisame\\qqqqqr.mdl"
+
+
+set EffectID[67]="Others\\KarenAijoYellowCircle.mdl"
+set EffectID[108]="Others\\almagest.mdl"//ef15
+set EffectID[193]="Others\\file00001833.mdl"//e045
+
+set EffectID[207]="Guts\\[a]wavejojo.mdl"//просто перенести
+
+set EffectID[442]="BlackGoku\\[A]MeliodasBlast.mdl"//просто перенести
+set EffectID[619]="Madara\\narutopuff.mdl"//просто перенести
+set EffectID[740]="Madara\\[DoFT]az_pafeathermoon_b.mdl"//не надо
+
+
+set EffectID[700]="Others\\FBT-dilie2-noCrack.mdl"
+
+
+set EffectID[753]="Others\\by_wood_effect_qigongbo_lan.mdl"//
+set EffectID[955]="Others\\FSAEff (55).mdl"
+set EffectID[1046]="Others\\FSAeff (146).mdl"
+set EffectID[1110]="Others\\JeanneDark1mt_baozha1.mdl"//просто перенести
+
+set EffectID[1377]="Others\\(By XeSHTeG)Naruto_SENIN.mdx"
+set EffectID[1379]="Others\\Kurama.mdl"
+set EffectID[1380]="Others\\Kurama3Head.mdl"
+set EffectID[1381]="Others\\NarutoRikudo.mdl"
+set EffectID[1382]="Others\\Rasengan1.mdl"   
+set EffectID[1383]="Others\\Rasengan2.mdl"
+set EffectID[1385]="Others\\RasenganJiton2.mdl"
+set EffectID[1386]="Others\\RasenShurikenBase.mdl"
+set EffectID[1389]="Others\\RasenShurikenKurama1.mdl"
+set EffectID[1390]="Others\\RasenShurikenKurama2.mdl"
+set EffectID[1391]="Others\\RasenShurikenYoton.mdl"
+set EffectID[1391]="Others\\RasenShurikenYoton.mdl"
+set EffectID[1393]="Others\\Rasengan1-ChoOdama.mdl"
+set EffectID[1394]="Others\\Rasengan1-ChoOdama2.mdl"
+set EffectID[1395]="Others\\Rasengan2-Odama.mdl"
+set EffectID[1414]="Others\\EffectCheck (58)new.mdl"//
+set EffectID[1415]="Others\\NarutoFile00000820.mdl"//
+set EffectID[1416]="Izayoi\\JeanneDark1mt_baozha1.mdl"//просто перенести
+set EffectID[1417]="Others\\SmokeFuzzy1.mdl"//просто перенести
+
+
+set EffectID[1418]="Signum\\[a]fire-Zhendi-guangzhu.mdl"//просто перенести
+
+
+set EffectID[1419]="Signum\\[A]Flame Burst2.mdl"//просто перенести
+
+set EffectID[1420]="TX_shanguang5.mdl"//просто перенести
+
+set EffectID[1421]="TX_shanguang5_1.mdl"//просто перенести
+
+set EffectID[1422]="Others\\Gamakichi_Elder.mdx"
+
+
+
+set EffectID[1423]="Others\\BidjuDamaAfb.mdl"
+set EffectID[1424]="Others\\[A]NucleExp1Anim1.mdl"
+
+set EffectID[1425]="chushou_by_wood_effect_earth_sandycrack_fag.mdl"//просто перенести
+
+set EffectID[1426]="Signum\\[Signum]JeanneDark1mt_baozha1.mdl"//просто перенести
+set EffectID[1437]="Others\\File00003647.mdl"//просто перенести
+set EffectID[1439]="Others\\EffectCheck (58)newLava.mdl"
+set EffectID[1440]="Others\\[A]boom-blue-zhendi-new.mdl"
+set EffectID[1441]="Madara\\BY_Wood_Effect_ShuiYing_Unusual_RongDun_2_31.mdl"
+set EffectID[1535]="Others\\EffectCheck (35).mdl"//
+
+
+
+//Энель
+
+
+set EffectID[338]="Madara\\[A]blue--zhendi3.mdl"
+
+
+set EffectID[1718]=EffectID[351]
+set EffectID[1724]=EffectID[357]
+set EffectID[1728]=EffectID[465]
+set EffectID[1721]=EffectID[354]
+set EffectID[1730]=EffectID[467]
+
+set EffectID[1731]=EffectID[469]
+set EffectID[1734]=EffectID[474]
+
+
+set EffectID[1765]="IchigoEXD_W.mdl"
+
+
+
+set EffectID[109]="Enel\\almagest1.mdl"
+
+
+set EffectID[352]="Enel\\by_wood_effect_yubanmeiqin_lightning_chaodiancipao_xuli.mdl"//aiQ0 +
+set EffectID[353]="Enel\\by_wood_effect_yubanmeiqin_lightning_diancilichang.mdl"//aiQ5 +
+set EffectID[461]="Enel\\KiluaLightning.mdl"//ef52 +
+set EffectID[890]="Enel\\white-shandian-qiquan-blue.mdl"// +
+set EffectID[1011]="Enel\\FSAeff (111).mdl"// +
+set EffectID[1026]="Enel\\FSAeff (126).mdl" //+
+set EffectID[1554]="Enel\\EffectCheck (54).mdl"//+
+set EffectID[1581]="Enel\\Effect_A (14).mdl"//+
+set EffectID[1613]="Enel\\SonicMap (13).mdl"//+
+
+
+set EffectID[1756]=EffectID[1613]
+set EffectID[1585]="Enel\\Effect_A (18).mdl"//+
+set EffectID[1588]="Enel\\Effect_A (21).mdl"//+
+set EffectID[1590]="Enel\\Effect_A (23).mdl"//+
+
+set EffectID[1623]="Enel\\SonicMap (23).mdl"// +
+
+set EffectID[1625]="Enel\\SonicMap (25).mdl"// +
+
+
+set EffectID[1638]="Enel\\SonicMap (38).mdl"//+
+
+
+
+
+set EffectID[1701]="Enel\\3yifu_5 (1).mdl"//EffectID[735] +
+set EffectID[1702]="Enel\\3huajie_4.mdl"//+
+set EffectID[1704]=EffectID[890]  
+set EffectID[1706]=EffectID[1011]
+
+set EffectID[1707]=EffectID[1026]
+set EffectID[1715]="Enel\\By_wood_leiTingYiji.mdl"//+
+set EffectID[1716]="Enel\\by_wood_thundergodwrath_1_3.mdl"//+
+set EffectID[1717]="Enel\\by_wood_leiqie1.mdl"//+
+
+
+set EffectID[1719]=EffectID[352]
+set EffectID[1720]=EffectID[353]
+
+set EffectID[1726]=EffectID[461]
+
+set EffectID[1736]=EffectID[338]
+set EffectID[1738]=EffectID[1554]
+
+
+
+set EffectID[1742]="Enel\\enel (3).mdl"//+
+
+set EffectID[1743]="Enel\\enel (4).mdl"//+
+set EffectID[1744]="Enel\\enel (5).mdl"//+
+set EffectID[1749]=EffectID[1581]
+set EffectID[1750]=EffectID[1590]
+set EffectID[1753]="Enel\\LightningDragon.mdl"//+
+set EffectID[1755]="Enel\\LighthningEffectOpd.mdl"//+
+set EffectID[1757]="Enel\\roarthunder.mdl"//есть в патче
+set EffectID[1758]="Enel\\ZoroDragon.mdl"//+
+
+set EffectID[1759]="Enel\\Raigo.mdl"//+
+
+set EffectID[1769]="Enel\\Q[NL] KirinEff2.mdl"// есть в патче
+set EffectID[1771]="Enel\\[ADD].mdl"// есть в патче
+
+
+//kenshiro
+set EffectID[1773]="Kenshiro\\7Stars.mdx"
+set EffectID[1774]="Guts\\By_wood_eff_ord_dange_Wid_chongFengQiLiu.mdl"
+set EffectID[1775]="Kenshiro\\AZ_Jugg_E2.mdl"
+
+
+
+
+
+
+set EffectID[1776]=EffectID[210]
+set EffectID[1777]="Guts\\WindWeak2.mdl"
+set EffectID[1778]=EffectID[348]
+set EffectID[1779]="war3mapImported\\hero_juggernaut_n4s_e_line.mdl"//все что выше есть в патче
+set EffectID[1780]="Kenshiro\\Kira-zhendi-yellow-qiquan.mdl"
+set EffectID[1781]="Kenshiro\\effect1.mdl"
+set EffectID[1782]="Others\\blood-rou.mdl"
+set EffectID[1783]="Aizen\\red-blood-ball.mdl"
+set EffectID[1784]="Others\\jin xia.mdl"
+set EffectID[1785]="Sabrac\\hit-blood-special.mdl"
+set EffectID[1786]="war3mapImported\\BY_Wood_GongChengSiPai_2.mdl"
+set EffectID[1787]="Aizen\\bloodP1.mdl"
+set EffectID[1788]="Others\\lb_hdg.mdl"
+set EffectID[1789]="Others\\bloodex1.mdl"
+
+
+set EffectID[1790]="Kenshiro\\by_wood_huoyanchongji_2_2.mdl"
+set EffectID[1791]="Kenshiro\\AZ_Alleria_R4.mdl"
+
+
+
+
+//akame
+set EffectID[275]="Kisame\\StampedeMissileDeath.mdl"
+set EffectID[296]="Sabrac\\red-yumao-zhendiLord.mdl"
+set EffectID[305]="Guts\\red-qiquan.mdl"
+set EffectID[683]="Akame\\scarlet-3.mdl"
+set EffectID[710]="Akame\\lxy-zk_bm_red Knife Shine4-2.mdl"
+set EffectID[711]="Sabrac\\LXY_tx-shqy10-E.mdl"
+set EffectID[874]="Aizen\\hero_skeletonking_n2s_e_star.mdl"
+set EffectID[930]="Akame\\FSAEff (30).mdl"
+set EffectID[961]="Akame\\FSAEff (61).mdl"
+set EffectID[970]="Akame\\FSAeff (70).mdl"
+set EffectID[973]="Akame\\FSAEff (73).mdl"
+set EffectID[1112]="Akame\\file00000006.mdl"
+set EffectID[1303]="Izayoi\\BY_Wood_Sand_YueKongJi.mdl"
+set EffectID[1800]="Akame\\TX-58.mdl"
+set EffectID[1801]="Akame\\ZK-SM_XL8.mdl"
+set EffectID[1802]="Akame\\LXY_tx-shqy10-E_new.mdl"
+set EffectID[1803]="Guts\\File00000002.mdl"
+set EffectID[1804]="Models\\AkameModel.mdl"
+set EffectID[1805]="Kisame\\file00002360.mdl"
+set EffectID[1807]="Danzo\\[A]DevilSlamDark.mdl"
+set EffectID[1808]="Danzo\\file00000972.mdl"
+set EffectID[1809]="Guts\\AZ_jingzi_jiansheng01_E1.mdl"
+set EffectID[1810]="Akame\\Akame_F.mdl"
+set EffectID[1811]="war3mapImported\\Dummy.mdl"
+set EffectID[1812]="Akame\\FSAEff (53).mdl"
+//set EffectID[4]="Aizen\\AZ_LCDark_W2_buff.mdl"
+set EffectID[1813]="Akame\\AZ_LCDark_W2_buff1.mdl"
+
+
+//Ichibei
+set EffectID[376]="Ichibei\\[A]ama boom.mdl" // -
+set EffectID[377]="Ichibei\\[A]SuperBigExplosionBlack.mdl"
+set EffectID[611]="war3mapImported\\[A]ZoroEf3.mdl" //в чойсе у лучи
+
+set EffectID[159]="Ichibei\\CarolBallExp.mdl"
+
+set EffectID[1807]="Danzo\\[A]DevilSlamDark.mdl"
+set EffectID[1808]="Danzo\\file00000972.mdl"
+
+
+
+set EffectID[1814]="Ichibei\\Ichibei.mdl"
+set EffectID[1815]="Ichibei\\IchibeiShikai.mdl"
+set EffectID[1816]="Ichibei\\IchibeiSenri.mdl"
+set EffectID[1817]="Ichibei\\IchibeiSeal2.mdl"
+set EffectID[1818]="Ichibei\\IchibeiSeal1.mdl"
+set EffectID[1819]="Ichibei\\IchibeiInk3.mdl"
+set EffectID[1820]="Ichibei\\IchibeiInk2.mdl"
+set EffectID[1821]="Ichibei\\IchibeiInk.mdl"
+set EffectID[1822]="Ichibei\\IchibeiFuten.mdl"
+set EffectID[1823]="Ichibei\\IchibeiCircle.mdl"
+set EffectID[1824]="Ichibei\\IchibeiBankaiMark.mdl"
+set EffectID[1825]="Ichibei\\IchibeiSlash.mdl"
+
+
+set EffectID[1826]="Ichibei\\IchibeiSenri.mdl"
+set EffectID[1827]="Danzo\\BloodySplat_Missile.mdl"
+
+set EffectID[1828]="Danzo\\file00001541.mdl"
+set EffectID[1829]="Danzo\\file00001536.mdl"
+set EffectID[1830]="Others\\xtyball3yellow.mdl"
+set EffectID[1831]="Ichibei\\Effect_A (10)new.mdl"
+set EffectID[1130]="Ichibei\\ExpWhiteFaw.mdl"// - сломан
+set EffectID[1005]="Ichibei\\FSAEff (105).mdl"
+
+
+
+
+
+
+
+
+
+endfunction
+
+
+
+
+
+function Effect_Ini_4  takes nothing returns nothing
+
+
+set EffectID[1833]="Hidan\\HidanScythe.mdl"
+set EffectID[1835]="Kakuzu\\MonsterFuton.mdl"
+set EffectID[1836]="Kakuzu\\MonsterKaton.mdl"
+set EffectID[1837]="Kakuzu\\MonsterRaiton.mdl"
+
+set EffectID[1838]="Hidan\\HidanCircle.mdl"
+
+set EffectID[1841]="Kakuzu\\Shana-12-New.mdl"
+set EffectID[1842]="Others\\az_alleria_e1.mdl"
+
+set EffectID[1843]="Guts\\az_alleria_e1_Guts.mdl"
+
+set EffectID[1844]="Kakuzu\\KakuzuHeart.mdl"
+
+set EffectID[162]="Danzo\\rasenganimpact1.mdl"
+set EffectID[211]="Others\\UltiZoro.mdl"
+set EffectID[212]="Guts\\AZ_PA_C.mdl"
+
+
+set EffectID[380]="Kakuzu\\bymutou_huozhu_siwang.mdl"//
+set EffectID[384]="Kakuzu\\buff_hei.mdl"//
+set EffectID[464]="Kakuzu\\file00001488.mdl"//ef59 heart
+set EffectID[620]="Madara\\fire collection.mdl"//не над
+set EffectID[622]="Kakuzu\\Madara-huitu-7.mdl"//
+
+set EffectID[680]="Hidan\\gilgamesh-9.mdl"//
+
+set EffectID[848]="Hidan\\DingZhi_By_Wood_Effect_Blood_BiaoXue_2.mdl"//
+set EffectID[867]="Kakuzu\\flowerMoonEff (72).mdl"//
+
+
+set EffectID[1213]="Kakuzu\\File00004814.mdl"//
+
+set EffectID[1433]="Hidan\\zk_thunder chopper_zuo.mdl"
+
+set EffectID[1741]="Kakuzu\\enel (2).mdl"
+set EffectID[1754]="Kakuzu\\Lightning2Afb.mdl"
+
+
+//BuuG
+
+set EffectID[540]="Others\\PinkBomb2.mdl"
+
+set EffectID[672]="Signum\\flowerMoonEff (83).mdl"
+set EffectID[678]="Others\\byakuya-7.mdl"
+set EffectID[546]="Signum\\models (1172).mdl"
+set EffectID[535]="Others\\ZeroPinkPink.mdl"
+set EffectID[536]="Signum\\pink-Target.mdl"
+
+
+set EffectID[1851]="Others\\Dofla7.mdl"
+
+//hassan
+set EffectID[342]="Others\\[A]RinRfire2.mdl"
+set EffectID[344]="Others\\File00002268.mdl"
+set EffectID[1852]="Madara\\File00002270.mdl"//+
+set EffectID[1854]="Others\\huoyantuci.mdl"
+set EffectID[1856]="Others\\afb_hudie22.mdl"
+set EffectID[1857]="Others\\afbHassanFireStolb.mdl"
+set EffectID[1858]="war3mapImported\\KHFire3.mdl"//+
+
+//Raoh
+set EffectID[36]="Raoh\\ChargeYellow.mdl"
+
+set EffectID[68]="Sabrac\\fanty (86).mdl"
+
+
+set EffectID[160]="Others\\ChuShou_BY_Wood_yellow_XuLi.mdl"
+set EffectID[161]="Raoh\\slam09.mdl"
+
+
+
+
+
+
+set EffectID[563]="Raoh\\Ember Red.mdl"
+set EffectID[624]="Ace\\Tsubaki-49.mdl"
+
+set EffectID[699]="Raoh\\e_az_Z046.mdl"
+set EffectID[755]="Raoh\\ChuShou_BY_Wood_Effect_Glow_GuiPaiQiGong_XuLiRed.mdl"
+set EffectID[871]="Raoh\\flowerMoonEff (82).mdl"
+set EffectID[904]="Raoh\\FSAEff (4).mdl"
+
+set EffectID[955]="Others\\FSAEff (55).mdl"//ненад
+
+
+set EffectID[996]="Raoh\\FSAEff (96).mdl"
+set EffectID[1040]="Raoh\\FSAeff (140).mdl"
+
+
+
+set EffectID[1302]="Raoh\\file00003573.mdl"
+set EffectID[1566]="Raoh\\EffectCheck (66).mdl"
+
+set EffectID[1783]="Aizen\\red-blood-ball.mdl"//ненад
+set EffectID[1785]="Sabrac\\hit-blood-special.mdl"//ненад
+
+set EffectID[1859]="Raoh\\Sword of the Divine Justice.mdl"
+set EffectID[1860]="Raoh\\BloodySplat Missile.mdl"
+
+
+set EffectID[1864]="Raoh\\corpse explosion.mdl"
+set EffectID[1865]="Raoh\\[A]BloodSplashes.mdl"
+set EffectID[1866]="Raoh\\kuriyamaq.mdl"
+set EffectID[1867]="Raoh\\EffectCheck (52)New.mdl"
+set EffectID[1868]="Sabrac\\afb_aura_smoke_red.mdl"
+set EffectID[1869]="Raoh\\Raoh.mdl"
+
+
+
+
+//Zoro3Start
+set EffectID[87]="Zoro\\shoc2.mdl"
+set EffectID[168]="Signum\\fadespearpurple.mdl"
+set EffectID[169]="Others\\[doft]purpleaz-hit.mdl"
+set EffectID[330]="Others\\CloudEfBlue.mdl"
+
+set EffectID[331]="Others\\CloudEf1.mdl"
+
+set EffectID[340]="Zoro\\File0000 (80).mdl"
+set EffectID[916]="Zoro\\FSAEff (16).mdl"
+set EffectID[952]="Zoro\\FSAEff (52).mdl"
+set EffectID[959]="Zoro\\FSAEff (59).mdl"
+set EffectID[960]="Zoro\\FSAEff (60).mdl"
+set EffectID[1070]="Zoro\\FSAeff (170).mdl"
+set EffectID[1072]="Zoro\\FSAeff (172).mdl"
+set EffectID[1627]="Zoro\\SonicMap (27).mdl"
+set EffectID[1870]="Zoro\\[A]ZoroEf0.mdl"
+set EffectID[1871]="Zoro\\slash_red_glow1a.mdl"
+set EffectID[1872]="Zoro\\az_red-xuanwo.mdl"
+set EffectID[1873]="Zoro\\[A]RedGlow.mdl"
+set EffectID[1874]="Zoro\\PredatorMark.mdl"
+set EffectID[1875]="Zoro\\t_hit_p.mdl"
+set EffectID[1876]="Zoro\\AZ_Axe_E1.mdl"
+set EffectID[1877]="Zoro\\AZ_Slark_N2.mdl"
+set EffectID[1878]="Kisame\\dash sfx.mdl"
+set EffectID[1879]="Others\\az_fireringblue.mdl"
+set EffectID[1880]="Zoro\\afbgreencharge.mdl"
+set EffectID[1881]="Zoro\\BY_Wood_Effect_Order_DanGe_LiangYiShi_ZhiSiZhiMoYanZhanJi.mdl"
+set EffectID[1882]="Zoro\\[DoFT]ZoroRedSlashold.mdl"
+set EffectID[1883]="Zoro\\GD_moon_texiao_yaoyefeidan_01_e_Q_F.mdl"
+set EffectID[1884]="Madara\\[A]ZoroEf7.mdl"
+set EffectID[1885]="Madara\\[A]Sand2.mdl"
+set EffectID[1886]="Madara\\[A]Sand3.mdl"
+set EffectID[1887]="Zoro\\t_hit_p.mdl"
+set EffectID[1888]="Zoro\\airpalm.mdl"
+set EffectID[1889]="Zoro\\[A]ZoroEf.mdl"
+set EffectID[1890]="Zoro\\az_magina[2]_b.mdl"
+set EffectID[1891]="Zoro\\hiteffect07bluea.mdl"
+set EffectID[1892]="Zoro\\[A]ZoroEf9.mdl"
+set EffectID[1893]="Zoro\\newvalkdust.mdl"
+set EffectID[1894]="Zoro\\blue-zise-shousuo.mdl"
+set EffectID[1895]="Zoro\\az_slb1.mdl"
+set EffectID[1896]="Zoro\\az_slb2.mdl"
+set EffectID[1897]="Zoro\\glowlinepurple.mdl"
+set EffectID[1898]="Zoro\\[A]TohkaExp.mdl"
+set EffectID[1899]="Signum\\az_zise-Xuanwo.mdl"
+set EffectID[1900]="Zoro\\AsuraD.mdl"
+set EffectID[1901]="Zoro\\[A]ZoroEf0.mdl"
+set EffectID[1902]="Zoro\\[A]Zoro.mdl"
+set EffectID[1903]="Zoro\\[A]blue-qiliu-daoguang.mdl"
+set EffectID[1904]="Madara\\[DoFT]az_pafeathermoon_b.mdl"
+set EffectID[1905]="Zoro\\AZ_Goods_Phase Shoes(Green).mdl"
+set EffectID[1906]="Zoro\\az_alleria_w2.mdl"
+set EffectID[1907]="Zoro\\AZ_HYSBD.mdl"
+set EffectID[1908]="Zoro\\[DoFT]ZoroGreenSlashold.mdl"
+set EffectID[1909]="Zoro\\[A]Tornado22.mdl"
+set EffectID[1910]="Zoro\\AZ_Goods_Blink(Green).mdl"
+set EffectID[1911]="Zoro\\[A]SasukeExp.mdl"
+set EffectID[1912]="Zoro\\[A]ZoroEf8.mdl"
+set EffectID[1913]="Others\\az-blue-lizi-shangsheng.mdl"
+set EffectID[1914]="Zoro\\[A]GongChengBlueZoro.mdl"
+set EffectID[1915]="Zoro\\ZoroPower.mdl"
+set EffectID[1916]="Zoro\\[A]GongChengBlue.mdl"
+set EffectID[1917]="Zoro\\hero_dwarvensniper_n3s_o_target.mdl"
+set EffectID[1918]="Zoro\\[A]blue-shoot.mdl"
+set EffectID[1919]="Zoro\\AZ_DG01.mdl"
+set EffectID[1920]="Others\\[A]Zoro-blue-daoguang.mdl"
+set EffectID[1921]="Zoro\\blue-daoguang-new.mdl"
+set EffectID[1922]="Zoro\\[A]BladeBeamFinalLarger-90.mdl"
+
+//Zoro3End
+
+//KireiG
+set EffectID[827]="Others\\chushou_by_wood_effect_unusual_kof_caoti_huozhu_2.mdl"
+set EffectID[1630]="Others\\SonicMap (30).mdl"
+
+set EffectID[1923]="Aizen\\file00001326.mdl"
+set EffectID[1924]="Aizen\\buff_zi.mdl"
+set EffectID[1925]="Aizen\\az_cocoguanyu_t2_death_purple.mdl"
+set EffectID[1926]="Aizen\\beamdarkpurple.mdl"
+set EffectID[1927]="Aizen\\TohkaEf4.mdl"
+//
+
+
+
+endfunction
+
+
+
+
+function Effect_Ini_5  takes nothing returns nothing
+//Аказа
+set EffectID[50]="Akaza\\[A]AZ_chongci-blue.mdl"
+set EffectID[327]="Akaza\\BY_Wood_Effect_KOF_K_ReBanJi_YiZhiDan_2.mdl"
+set EffectID[422]="Akaza\\WindNewFaw3.mdl"
+set EffectID[573]="Akaza\\fire-boom-new-blue.mdl"
+
+set EffectID[870]="Akaza\\flowerMoonEff (81).mdl"
+set EffectID[1051]="Akaza\\FSAeff (151).mdl"
+set EffectID[1054]="Akaza\\FSAeff (154).mdl"
+set EffectID[1094]="Akaza\\FSAeff (194).mdl"
+set EffectID[1143]="Others\\Lamboaz-zidan.mdl"
+set EffectID[1505]="Akaza\\EffectCheck (5).mdl"
+
+//set EffectID[2001]="Akaza\\Akaza_model (1).mdl"
+set EffectID[2001]="ryoheii_squished.mdl"
+
+
+set EffectID[2002]="Akaza\\Akaza_model (2).mdl"
+set EffectID[2006]="Akaza\\Akaza_model (6).mdl"
+set EffectID[2012]="Madara\\[A]RinRfire.mdl"
+set EffectID[298]=EffectID[265]
+//транкс
+set EffectID[307]="Akaza\\StarSlashNew.mdl"
+set EffectID[824]="Aizen\\white-shandian-qiquan-yellow.mdl"//+
+set EffectID[825]="Aizen\\LaxusRoar(afb).mdl"//+
+set EffectID[1603]="Akaza\\SonicMap (3).mdl"
+set EffectID[1604]="Akaza\\SonicMap (4).mdl"
+//бьякуран
+set EffectID[427]="Akaza\\dragon-daoguang.mdl"
+
+set EffectID[603]="Akaza\\FileFBT (1).mdl"
+set EffectID[607]="Akaza\\ByakuranMiniDragon.mdl"
+set EffectID[609]="Akaza\\[A]WhiteNova.mdl"
+set EffectID[615]="Akaza\\a(whiteblue).mdl"
+
+//данте
+set EffectID[77]="Others\\Black-Red-dash.mdl"//+
+
+///Roshi
+set EffectID[64]="Roshi\\Kamijo-2.mdl"
+set EffectID[171]="Roshi\\glowlinepurple.mdl"
+set EffectID[420]="Roshi\\[A]star-zhendi.mdl"
+set EffectID[451]="Roshi\\TenAura.mdx"
+set EffectID[512]="Roshi\\az_goods_lvlup(green).mdl"
+set EffectID[513]="Roshi\\Heal Green.mdl"
+set EffectID[555]="Roshi\\Nanoha2PurpleNebula.mdl"
+set EffectID[565]="Roshi\\NewSolarBall.mdl"
+set EffectID[571]="Roshi\\By_Wood_Effect_Order_Dange_DaoGuang_BaoZha_1_2_2.mdl"
+set EffectID[608]="Roshi\\File00002446.mdl"
+set EffectID[821]="Roshi\\NatsuLightning.mdl"
+set EffectID[1092]="Roshi\\FSAeff (192).mdl"
+set EffectID[1400]="Roshi\\[A]BlueCharge3.mdl"
+set EffectID[2014]="Roshi\\az_gpqg31.mdl"
+set EffectID[2015]="Roshi\\AZ_GPQG3.mdl"
+set EffectID[2019]="war3mapImported\\Ball2.mdx"
+set EffectID[2020]="Roshi\\LighWave3.mdl"
+set EffectID[2021]="Roshi\\[By XeSHTeG]RoshiBase_DBS.mdl"
+set EffectID[2029]="Roshi\\RoshiKamehaStack.mdl"
+set EffectID[2030]="Roshi\\Dark hand travels in line.mdl"
+set EffectID[2031]="Roshi\\Roshi_T.mdl"
+set EffectID[2032]="Roshi\\Kamehameha_Roshi1.mdl"
+set EffectID[2033]="Roshi\\Kamehameha_Roshi2.mdl"
+set EffectID[2034]="Roshi\\Kamehameha_Roshi_3.mdl"
+set EffectID[2035]="Roshi\\Kamehameha_Roshi4.mdl"
+set EffectID[2040]="Roshi\\Muten RoshiColb_By XeSHTeG.mdl"
+
+
+//natsu
+set EffectID[2061]="Others\\[A]HolyPhoenixMissle1.mdl"
+set EffectID[2062]="Others\\EffecktNatsuHand1.mdl"
+set EffectID[2063]="Signum\\TrailPhoenix_Missile_mini.mdl"//+
+set EffectID[2064]="Others\\fire-boom-new.mdl"
+set EffectID[2065]="Others\\[A]Misaka light.mdl"
+set EffectID[423]="Others\\[A]LightStrikeArray4.mdl"
+
+//jellal
+set EffectID[873]="Others\\flowerMoonEff (84).mdl"
+set EffectID[550]="Others\\es77Pink.mdx"
+
+//cell
+set EffectID[2108]="Others\\Effect_B (8).mdl"
+set EffectID[2067]="Others\\Cell_lightning.mdl"
+set EffectID[529]="Others\\conflagrate.mdl"
+
+
+
+//Akainu
+set EffectID[1214]="Others\\File00003647.mdl"
+//set EffectID[1364]="Ace\\AceRef_new.mdl"
+//set EffectID[1366]="Ace\\AceRef_new3.mdl"
+set EffectID[2069]="Others\\BY_Wood_Effect_ShuiYing_Unusual_RongDun_1_3.mdl"
+set EffectID[2070]="Others\\BY_Wood_Effect_ShuiYing_Unusual_RongDun_1_1.mdl"
+set EffectID[2071]="Others\\AZ_Kaer_D2.mdl"
+//set EffectID[1053]="Signum\\FSAeff (153).mdl"
+set EffectID[1137]="Signum\\[A]Natsu ef roar.mdl"
+
+
+//Vergil
+set EffectID[2130]="Others\\Effect_B (30).mdl"
+set EffectID[2068]="Others\\[A]VergilEf0.mdl"
+
+//Katsura
+set EffectID[294]="Others\\daoguang-blue-hengsao.mdl"
+
+//Youmu Whitebeard Ryougi 
+
+
+set EffectID[1066]="Others\\FSAeff (166).mdl"
+set EffectID[1088]="Others\\FSAeff (188).mdl"
+set EffectID[224]="Others\\[A]Re2.mdl"
+set EffectID[1266]="Others\\op (649).mdl"
+set EffectID[2075]="Others\\arcdirve02bbb.mdl"
+set EffectID[2078]="Others\\blue-daoguagn2.mdl"
+set EffectID[2079]="Others\\blue-daoguagn3.mdl"
+set EffectID[2080]="Others\\blue-daoguagn4.mdl"
+set EffectID[2081]="ryougi shiki.mdl"
+set EffectID[2082]="Abilities\\Spells\\Human\\Thunderclap\\ThunderClapCaster.mdl"
+set EffectID[2083]="Others\\tx.mdl"
+set EffectID[2084]="Others\\ubercloud2.mdl"
+
+set EffectID[786]="Signum\\aZ_siwen_Pink.mdl"
+set EffectID[2073]="Others\\FSAeff (60)Pink.mdl"
+set EffectID[2135]="Others\\Effect_B (35).mdl"
+set EffectID[2136]="Others\\Effect_B (36).mdl"
+set EffectID[2144]="Others\\Effect_B (44).mdl"
+set EffectID[2147]="Others\\Effect_B (47).mdl"
+set EffectID[2149]="Others\\Effect_B (49).mdl"
+set EffectID[2154]="Others\\Effect_B (54).mdl"
+set EffectID[2155]="Others\\Effect_B (55).mdl"
+set EffectID[2157]="Others\\Effect_B (57).mdl"
+set EffectID[2158]="Others\\Effect_B (58).mdl"
+
+set EffectID[2160]="Others\\Effect_B (60).mdl"
+set EffectID[2161]="Others\\Effect_B (61).mdl"
+set EffectID[2164]="Others\\Effect_B (64).mdl"
+set EffectID[2165]="Others\\Effect_B (65).mdl"
+
+
+
+
+endfunction
+
+
+function Ini_effects_random_Act takes nothing returns nothing
+local integer id=GetHandleId(GetExpiredTimer())
+
+local integer time=LoadInteger(HH,id,5)
+
+set time=time+1
+call SaveInteger(HH,id,5,time)
+
+
+if time==1 then
+call Effect_Ini_1()
+endif
+
+if time==2 then
+call Effect_Ini_2()
+endif
+
+if time==3 then
+call Effect_Ini_3()
+endif
+
+if time==4 then
+call Effect_Ini_4()
+endif
+
+
+if time==5 then
+call Effect_Ini_5()
+endif
+
+
+
+if time>=5 then
+
+call PauseTimer(GetExpiredTimer())
+call FlushChildHashtable(HH,id)
+call DestroyTimer(GetExpiredTimer())
+endif
+
+endfunction
+function Ini_effects_random takes nothing returns nothing
+local timer t=CreateTimer()
+call TimerStart(t,1,true,function Ini_effects_random_Act)
+set t=null
+endfunction
+
 function Trig_mult_Actions takes nothing returns nothing
 local multiboarditem mbitem
 local integer y=0
@@ -25684,6 +26490,8 @@ call MultiboardMinimize(mbg,true)
 call MultiboardMinimize(mbg,false)
 set mbitem=null
 call UpdateMultiboard()
+
+call Ini_effects_random()
 endfunction
 function InitTrig_mult takes nothing returns nothing
 set gg_trg_mult=CreateTrigger()
@@ -38467,7 +39275,7 @@ local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
 local unit u=LoadUnitHandle(HH,id,0)
 if IsUnitAlive(u)==true and u!=null then
-call SetUnitArmour(u,GetUnitArmour(u)+4)
+call SetUnitArmour(u,GetUnitArmour(u)+3)
 call PauseTimer(t)
 call DestroyTimer(t)
 call FlushChildHashtable(HH,id)
@@ -38483,7 +39291,7 @@ local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
 local unit u=LoadUnitHandle(HH,id,0)
 if IsUnitAlive(u)==true then
-call SetUnitArmour(u,GetUnitArmour(u)+4)
+call SetUnitArmour(u,GetUnitArmour(u)+3)
 call PauseTimer(t)
 call DestroyTimer(t)
 call FlushChildHashtable(HH,id)
@@ -43625,7 +44433,7 @@ if cond==0 then
     endif
     if (UnitHasItemOfTypeBJ(c,'I04F') or GetUnitAbilityLevel(c,'KIN6')>0) and CurrentEventAttack and nb>0 and IsUnitType(c,UNIT_TYPE_SUMMONED)==false and c==Hero[idc] then
         set cjlocgn_00000000=CreateTimer()
-        call SetUnitArmour(u,GetUnitArmour(u)-4)
+        call SetUnitArmour(u,GetUnitArmour(u)-3)
         call SaveUnitHandle(HH,GetHandleId(cjlocgn_00000000),0,u)
         call TimerStart(cjlocgn_00000000,10,false,function ExcAction)
         set cjlocgn_00000000=null
@@ -44849,7 +45657,7 @@ local real y=LoadReal(h,id,51)
 local unit u
 local real dist
 local real modif_factor=LoadReal(h, id, 100)
-local real dmg=GetHeroAgi(c,true)*2 *modif_factor
+local real dmg=GetHeroAgi(c,true)*1.5 *modif_factor
 local integer l__idg=GetHandleId(ng)
 loop
 exitwhen i>10
@@ -111052,6 +111860,294 @@ endfunction
 function Condition_Base_Random takes unit caster000,unit target000 returns boolean
 return UnitIsAlive(target000)and IsUnitEnemy(target000,GetOwningPlayer(caster000))==true and IsUnitType(target000,UNIT_TYPE_STRUCTURE)==false and GetUnitAbilityLevel(target000,'Avul')==0
 endfunction
+//Cell2Start
+function Cell_T_Act2 takes nothing returns nothing
+local integer id=GetHandleId(GetExpiredTimer())
+local unit caster=LoadUnitHandle(HH,id,1)
+local unit Dummy=LoadUnitHandle(HH,id,20)
+local real facing=LoadReal(HH,id,3)
+local group gr=LoadGroupHandle(HH,id,4)
+local real time=LoadReal(HH,id,5)
+local real time1=LoadReal(HH,id,6)
+local real time2=LoadReal(HH,id,18)
+local real x0=GetUnitX(Dummy)
+local real y0=GetUnitY(Dummy)
+local real x1=LoadReal(HH,id,11)
+local real y1=LoadReal(HH,id,12)
+local real damage=LoadReal(HH,id,15)
+set time=time+0.02
+call SaveReal(HH,id,5,time)
+if time>3.52 then
+
+
+
+
+
+        call GroupEnumUnitsInRange(G,x0,y0,999999,null)
+        loop
+        set E=FirstOfGroup(G)
+        exitwhen E==null
+
+        //if IsUnitType(E,UNIT_TYPE_HERO)==true and GetUnitAbilityLevel(E,'AHSF')>0 then
+                call UnitRemoveAbility(E,'AHSF')
+                call UnitRemoveAbility(E,'BHSF')
+        //endif        
+                call GroupRemoveUnit(G,E)
+        endloop
+
+
+
+
+
+
+
+
+
+call PauseUnit(caster,false)
+call SetUnitInvulnerable(caster,false)
+call SetUnitPathing(caster,true)
+call GroupClear(gr)
+call DestroyGroup(gr)
+call MyRemoveUnit(Dummy,0.5)
+call MyRemoveUnit(LoadUnitHandle(HH,id,21),0.5)
+call MyRemoveUnit(LoadUnitHandle(HH,id,22),0.5)
+call MyRemoveUnit(LoadUnitHandle(HH,id,23),0.5)
+call SetUnitAnimationByIndex(LoadUnitHandle(HH,id,22),2)
+call UnitSpeed(caster,1)
+call PauseTimer(GetExpiredTimer())
+call FlushChildHashtable(HH,id)
+call DestroyTimer(GetExpiredTimer())
+else
+call MoveAoe1(x1,y1,caster,0,facing)
+call PauseUnit(caster,true)
+call SetUnitInvulnerable(caster,true)
+call SetUnitPathing(caster,false)
+if time==0.02 then
+call EffectCreateAndMove(true,EffectID[1080],facing,4,3,0.5,100,100,100,0,0,caster,0,facing)
+call EffectCreateAndMove(true,EffectID[1923],facing,4,2,1.75,100,100,100,0,50,caster,0,facing)
+
+
+if LoadBoolean(HH,GetHandleId(GetLocalPlayer()), DBSoundEngHash )==true then
+set soundplay=CreateSound("Sound\\Music\\mp3Music\\PerfectBarrier.mp3",false,false,true,12700,12700,"")
+else
+set soundplay=CreateSound("Sound\\Music\\mp3Music\\Perfect Cell\\PerfectBarrier-jap.mp3",false,false,true,12700,12700,"")
+endif
+call StartSound(soundplay)
+////call KillSoundWhenDone(soundplay)
+
+
+
+
+
+call EffectCreateAndMove(true,EffectID[952],facing,4,1.5,0.75,100,100,100,0,0,caster,0,facing)
+set n0=CreateUnit(GetOwningPlayer(caster),'e000',GetUnitX(caster),GetUnitY(caster),facing)
+call SetUnitModel(n0,EffectID[2108])
+call UnitSize(n0,0.1,1,1)
+call SetUnitFlyHeight(n0,0,0)
+call UnitColor(n0,100,100,100,0)
+call UnitSpeed(n0,1)
+call SaveUnitHandle(HH,id,20,n0)
+set n0=null
+set n0=CreateUnit(GetOwningPlayer(caster),'e000',GetUnitX(caster),GetUnitY(caster),facing)
+call UnitSize(n0,3,1,1)
+call SetUnitFlyHeight(n0,0,0)
+call UnitColor(n0,100,100,100,80)
+call UnitSpeed(n0,1)
+call SaveUnitHandle(HH,id,21,n0)
+set n0=null
+set n0=CreateUnit(GetOwningPlayer(caster),'e000',GetUnitX(caster),GetUnitY(caster),facing)
+call SetUnitModel(n0,EffectID[2067])
+call UnitSize(n0,0.1,1,1)
+call SetUnitFlyHeight(n0,150,0)
+call UnitColor(n0,100,100,100,80)
+call UnitSpeed(n0,1)
+call SaveUnitHandle(HH,id,22,n0)
+set n0=null
+set n0=CreateUnit(GetOwningPlayer(caster),'e000',GetUnitX(caster),GetUnitY(caster),facing+90)
+call SetUnitModel(n0,EffectID[2067])
+call UnitSize(n0,0.1,1,1)
+call SetUnitFlyHeight(n0,150,0)
+call UnitColor(n0,100,100,100,80)
+call UnitSpeed(n0,1)
+call SaveUnitHandle(HH,id,23,n0)
+set n0=null
+call SetUnitAnimationByIndex(caster,7)
+call UnitSpeed(caster,1)
+endif
+if time==0.5 then
+call EffectCreateAndMove(true,EffectID[1927],facing,4,1.5,0.5,100,100,100,0,0,caster,0,facing)
+call EffectCreateAndMove(true,EffectID[1925],facing,4,1,1.5,100,100,100,0,0,caster,0,facing)
+endif
+if time==1 or time==1.5 or time==2 or time==2.5 or time==3 then
+call UnitSpeed(caster,0)
+call EffectCreateAndMove45(true,EffectID[1925],GetRandomReal(0,360),1.5,2.5,1,100,100,100,0,0,caster,0,facing)
+call EffectCreateAndMove(true,EffectID[952],GetRandomReal(0,360),1.5,2.5,0.75,100,100,100,0,0,caster,0,facing)
+endif
+if time>0.02 then
+set time1=time1+0.02
+call GroupClear(G)
+if time<0.5 then
+call UnitSize(LoadUnitHandle(HH,id,20),0.1+time*4,1,1)
+call UnitSize(LoadUnitHandle(HH,id,21),3+time*14,1,1)
+call UnitSize(LoadUnitHandle(HH,id,22),0.1+time*6,1,1)
+call UnitSize(LoadUnitHandle(HH,id,23),0.1+time*4,1,1)
+call GroupEnumUnitsInRange(G,x0,y0,300+time*1400,Base)
+else
+call GroupEnumUnitsInRange(G,x0,y0,1000,Base)
+endif
+loop
+set n0=FirstOfGroup(G)
+exitwhen n0==null
+if Condition_Base_Random(caster,n0)then
+
+if IsUnitInGroup(n0,gr)==false then
+call GroupAddUnit(gr,n0)
+endif
+if time<0.5 then
+if SR(x0,y0,GetUnitX(n0),GetUnitY(n0))<300+time*1400 then
+set facing=Angle2(x0,y0,GetUnitX(n0),GetUnitY(n0))
+call MoveUnit(n0,n0,30,facing)
+endif
+else
+if SR(x0,y0,GetUnitX(n0),GetUnitY(n0))<1000 then
+set facing=Angle2(x0,y0,GetUnitX(n0),GetUnitY(n0))
+call MoveUnit(Dummy,n0,1000,facing)
+endif
+endif
+endif
+
+call GroupRemoveUnit(G,n0)
+endloop
+
+
+call SaveGroupHandle(HH,id,4,gr)
+call GroupClear(G)
+
+
+
+/////
+
+
+
+call GroupClear(G)
+
+
+
+call GroupEnumUnitsInRange(G,x0,y0,10000,null)
+
+
+loop
+set n0=FirstOfGroup(G)
+exitwhen n0==null
+if IsUnitAlly(n0,GetOwningPlayer(caster))==true and IsUnitType(n0,UNIT_TYPE_HERO)==true then
+
+
+if time<0.5 then
+
+
+
+if SR(x0,y0,GetUnitX(n0),GetUnitY(n0))<400+time*1400 then
+
+
+
+if GetUnitAbilityLevel(n0,'AHSF')==0 then
+call UnitAddAbility(n0,'AHSF')
+endif
+
+
+else
+
+if GetUnitAbilityLevel(n0,'AHSF')>0 then
+call UnitRemoveAbility(n0,'AHSF')
+call UnitRemoveAbility(n0,'BHSF')
+endif
+
+endif
+
+else
+
+if SR(x0,y0,GetUnitX(n0),GetUnitY(n0))<1100 then
+
+
+//call SaveBoolean(h, GetHandleId(n0), StringHash("MeiT_Shield"), true)
+if GetUnitAbilityLevel(n0,'AHSF')==0 then
+call UnitAddAbility(n0,'AHSF')
+endif
+
+else
+
+if GetUnitAbilityLevel(n0,'AHSF')>0 then
+call UnitRemoveAbility(n0,'AHSF')
+call UnitRemoveAbility(n0,'BHSF')
+endif
+
+
+
+endif
+
+endif
+endif
+
+
+
+
+
+
+
+
+call GroupRemoveUnit(G,n0)
+endloop
+
+
+call GroupClear(G)
+
+
+
+
+
+
+
+
+
+
+
+
+
+if time1==0.2 or time==0.02 then
+if time<0.5 then
+call DamageAoeAndStun(caster,GetUnitX(caster),GetUnitY(caster),400+time*1400,damage*0.07,1)
+else
+call DamageAoeAndStun(caster,GetUnitX(caster),GetUnitY(caster),1200,damage*0.07,1)
+endif
+endif
+if time==0.02 or time1>=0.2 then
+set time1=0
+endif
+call SaveReal(HH,id,6,time1)
+endif
+endif
+set caster=null
+set gr=null
+set Dummy=null
+endfunction
+function Cell_T_Act takes unit caster returns nothing
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+local real x0=GetUnitX(caster)
+local real y0=GetUnitY(caster)
+local real facing=GetUnitFacing(caster)
+local real damage=GetHeroInt(caster,true)*12
+call SaveUnitHandle(HH,id,1,caster)
+call SaveReal(HH,id,3,facing)
+call PauseUnit(caster,true)
+call SetUnitInvulnerable(caster,true)
+call SaveGroupHandle(HH,id,4,CreateGroup())
+call SaveReal(HH,id,11,x0)
+call SaveReal(HH,id,12,y0)
+call SaveReal(HH,id,15,damage)
+call TimerStart(t,0.02,true,function Cell_T_Act2)
+set t=null
+endfunction
 function Cell_G_Act2 takes nothing returns nothing
 local integer id=GetHandleId(GetExpiredTimer())
 local unit caster=LoadUnitHandle(HH,id,1)
@@ -111501,7 +112597,7 @@ set E=FirstOfGroup(G)
 exitwhen E==null
 if Condition_Base(p,E)then
 call myCustomDamage(Hero[idu],E,dmg,false,false,null,null,null)
-call SlowUnit(Hero[idu],E,0.5,0,5,0,false)
+call SlowUnit(Hero[idu],E,0.5,0,4,0,false)
 endif
 call GroupRemoveUnit(G,E)
 endloop
@@ -111546,7 +112642,7 @@ local real y1=LoadReal(h,id,3)
 local real time=LoadReal(h,id,4)
 local real a=Atan2(y1-y,x1-x)
 local player p=GetOwningPlayer(u)
-local real dmg=(1.25+0.15*GetUnitAbilityLevel(u,'A109'))*GetHeroInt(u,true)
+local real dmg=(1.0+0.1*GetUnitAbilityLevel(u,'A109'))*GetHeroInt(u,true)
 if time<0.51 then
 call SaveReal(h,id,4,time+0.1)
 set n=CreateUnit(p,'e0M1',x,y,a*bj_RADTODEG)
@@ -221631,6 +222727,10 @@ function AbilitiesForChoice_Act takes nothing returns nothing//моя функц
 
     if GetSpellAbilityId()=='CelF' then
         call Cell_F_Act(caster,x1,y1)
+    endif
+
+    if GetSpellAbilityId()=='CelT' then
+        call Cell_T_Act(caster)
     endif
 
     set caster=null
