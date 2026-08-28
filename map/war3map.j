@@ -222650,7 +222650,7 @@ endfunction
 
 ///ини абилок
 function AbilitiesForChoice_Cond takes nothing returns boolean
-    local boolean cond1=GetSpellAbilityId()=='GSQ1' or GetSpellAbilityId()=='GSQ2' or GetSpellAbilityId()=='GSW1' or GetSpellAbilityId()=='GSE1' or GetSpellAbilityId()=='GSE2' or GetSpellAbilityId()=='GSF1' or GetSpellAbilityId()=='GSF2' or GetSpellAbilityId()=='GSG1' or GetSpellAbilityId()=='GSR1' or GetSpellAbilityId()=='GST1' or GetSpellAbilityId()=='GST2' or GetSpellAbilityId()=='GST3' or GetSpellAbilityId()=='SHG1' or GetSpellAbilityId()=='CelF' or GetSpellAbilityId()=='CelG'
+    local boolean cond1=GetSpellAbilityId()=='GSQ1' or GetSpellAbilityId()=='GSQ2' or GetSpellAbilityId()=='GSW1' or GetSpellAbilityId()=='GSE1' or GetSpellAbilityId()=='GSE2' or GetSpellAbilityId()=='GSF1' or GetSpellAbilityId()=='GSF2' or GetSpellAbilityId()=='GSG1' or GetSpellAbilityId()=='GSR1' or GetSpellAbilityId()=='GST1' or GetSpellAbilityId()=='GST2' or GetSpellAbilityId()=='GST3' or GetSpellAbilityId()=='SHG1' or GetSpellAbilityId()=='CelF' or GetSpellAbilityId()=='CelG' or GetSpellAbilityId()=='CelT'
     if cond1 then
         return true
     else
