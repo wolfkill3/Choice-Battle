@@ -112407,133 +112407,142 @@ local real dist=LoadReal(HH,id,8)
 set time=time+0.02
 call SaveReal(HH,id,5,time)
 if dist<0 then
-call DestroyEffect(LoadEffectHandle(HH,id,21))
-call DestroyEffect(LoadEffectHandle(HH,id,22))
-call UnitSpeed(caster,1)
-call PauseUnit(caster,false)
-call SetUnitInvulnerable(caster,false)
-call SetUnitPathing(caster,true)
-call SetUnitPathing(target,true)
-call PauseTimer(GetExpiredTimer())
-call FlushChildHashtable(HH,id)
-call DestroyTimer(GetExpiredTimer())
+    call DestroyEffect(LoadEffectHandle(HH,id,21))
+    call DestroyEffect(LoadEffectHandle(HH,id,22))
+    call UnitSpeed(caster,1)
+    call PauseUnit(caster,false)
+    call SetUnitInvulnerable(caster,false)
+    call SetUnitPathing(caster,true)
+    call SetUnitPathing(target,true)
+    call PauseTimer(GetExpiredTimer())
+    call FlushChildHashtable(HH,id)
+    call DestroyTimer(GetExpiredTimer())
 else
-if time<5.2 then
-call PauseUnit(caster,true)
-call SetUnitInvulnerable(caster,true)
-call SetUnitPathing(caster,false)
-call SetUnitFacing(caster,facing)
-endif
-if time==0.02 then
-call EffectCreateAndMove(true,EffectID[15],facing,1,1,1.5,100,100,100,0,0,caster,50,facing)
-call EffectCreateAndMove90(true,EffectID[20],facing,1,1,1.5,100,100,100,0,50,caster,50,facing)
-call SaveEffectHandle(HH,id,21,AddSpecialEffectTarget(EffectID[2063],caster,"hand right"))
-call SaveEffectHandle(HH,id,22,AddSpecialEffectTarget(EffectID[2063],caster,"hand left"))
-call SetUnitAnimationByIndex(caster,18)
-call UnitSpeed(caster,1.5)
-set soundplay=CreateSound("war3mapImported\\Cell_F.mp3",false,false,true,12700,12700,"")
+    if time<5.2 then
+        call PauseUnit(caster,true)
+        call SetUnitInvulnerable(caster,true)
+        call SetUnitPathing(caster,false)
+        call SetUnitFacing(caster,facing)
+    endif
+    if time==0.02 then
+        call EffectCreateAndMove(true,EffectID[15],facing,1,1,1.5,100,100,100,0,0,caster,50,facing)
+        call EffectCreateAndMove90(true,EffectID[20],facing,1,1,1.5,100,100,100,0,50,caster,50,facing)
+        call SaveEffectHandle(HH,id,21,AddSpecialEffectTarget(EffectID[2063],caster,"hand right"))
+        call SaveEffectHandle(HH,id,22,AddSpecialEffectTarget(EffectID[2063],caster,"hand left"))
+        call SetUnitAnimationByIndex(caster,18)
+        call UnitSpeed(caster,1.5)
+        set soundplay=CreateSound("war3mapImported\\Cell_F.mp3",false,false,true,12700,12700,"")
 
-call StartSound(soundplay)
-
-
-if LoadBoolean(HH,GetHandleId(GetLocalPlayer()), SOUND_LANGUAGE )==true then
-set soundplay=CreateSound("Sound\\Music\\mp3Music\\Cell_F_Eng.mp3",false,false,true,12700,12700,"")
-else
-set soundplay=CreateSound("Sound\\Music\\mp3Music\\Perfect Cell\\Cell_F.mp3",false,false,true,12700,12700,"")
-endif
-call SetSoundVolume(soundplay,370)
-call StartSound(soundplay)
-////call KillSoundWhenDone(soundplay)
+        call StartSound(soundplay)
 
 
+        if LoadBoolean(HH,GetHandleId(GetLocalPlayer()), SOUND_LANGUAGE )==true then
+            set soundplay=CreateSound("Sound\\Music\\mp3Music\\Cell_F_Eng.mp3",false,false,true,12700,12700,"")
+        else
+            set soundplay=CreateSound("Sound\\Music\\mp3Music\\Perfect Cell\\Cell_F.mp3",false,false,true,12700,12700,"")
+        endif
+        call SetSoundVolume(soundplay,370)
+        call StartSound(soundplay)
+        ////call KillSoundWhenDone(soundplay)
 
 
-set n0=CreateUnit(GetOwningPlayer(caster),'e000',GetUnitX(caster),GetUnitY(caster),0)
-call SetUnitModel(n0,EffectID[768])
-call SetUnitFlyHeight(n0,100,0)
-call UnitColor(n0,0,0,0,100)
-call UnitSize(n0,1,1,1)
-call UnitSpeed(n0,1)
-call MyRemoveUnit(n0,1)
-call SaveUnitHandle(HH,id,20,n0)
-endif
-if time==0.02 or time==0.1 or time==0.2 or time==0.3 or time==0.4 then
-call EffectCreateAndMove(true,EffectID[6],facing,1,GetRandomReal(0.3,0.5),GetRandomReal(0.5,0.7),100,100,100,40,100,caster,50,facing)
-call EffectCreateAndMove(true,EffectID[854],facing,1,GetRandomReal(1.25,1.5),0.7,100,100,100,20,0,caster,50,facing)
-endif
-if time>0.02 and time<1 then
-if time>0.1 then
-call MoveUnit(caster,LoadUnitHandle(HH,id,20),0,facing)
-endif
-call MoveUnit(caster,caster,35,facing)
-call SaveReal(HH,id,8,dist-35)
-set x0=PolX(x0,150,facing)
-set y0=PolY(y0,150,facing)
-call GroupClear(G)
-call GroupEnumUnitsInRange(G,x0,y0,150,Base)
-loop
-set n0=FirstOfGroup(G)
-exitwhen n0==null
-if Condition_Base(GetOwningPlayer(caster),n0)and GetUnitAbilityLevel(n0,'Avul')==0 then
-call SaveUnitHandle(HH,id,2,n0)
-call SaveReal(HH,id,5,5)
-call UnitSpeed(caster,0)
-call DamageU(false,caster,n0,damage*0.5)
-call SetControlToUnit(n0,n0,1,"stun")
-call EffectCreateAndMove(true,EffectID[74],GetRandomReal(0,360),1.5,1.5,0.8,100,100,100,0,100,n0,0,facing)
-call EffectCreateAndMove(true,EffectID[205],facing+45,1,1.25,1,100,100,100,0,100,n0,0,facing)
-call EffectCreateAndMove(true,EffectID[205],facing-45,1,1.25,1,100,100,100,0,100,n0,0,facing)
-call EffectCreateAndMove(true,EffectID[425],GetRandomReal(0,360),1.5,1.5,0.75,100,100,100,0,100,n0,0,facing)
-call EffectCreateAndMove45(true,EffectID[207],facing+45,1.5,1,1,100,100,100,30,200,n0,0,facing)
-call EffectCreateAndMove45(true,EffectID[207],facing-45,1.5,1,1,100,100,100,30,200,n0,0,facing)
-call PauseUnit(n0,true)
-call SaveBoolean(HH,GetHandleId(n0),TARGET_ABILITY,true)
-call SetUnitPathing(n0,false)
-call SaveReal(HH,id,8,1000)
-exitwhen true
-endif
-call GroupRemoveUnit(G,n0)
-endloop
-call GroupClear(G)
-endif
-if time>5 then
-if time==5.02 then
-call SetUnitAnimationByIndex(caster,23)
-call UnitSpeed(caster,1.5)
-set soundplay=CreateSound("Sound\\Others\\NatsuT_Hit.mp3",false,false,true,12700,12700,"")
-call SetSoundVolume(soundplay,370)
-call StartSound(soundplay)
-endif
-if time<5.3 then
-call MoveUnit(target,target,2,facing)
-call MoveUnit(target,caster,-150,facing)
-call PauseUnit(target,true)
-call SetUnitPathing(target,false)
-endif
-if time==5.3 then
-call SetUnitAnimationByIndex(caster,2)
-call EffectCreateAndMove(true,EffectID[425],GetRandomReal(0,360),1.5,1.75,0.75,100,100,100,0,100,target,0,facing)
-call EffectCreateAndMove(true,EffectID[193],facing-60,1.5,2.5,1,100,100,100,70,150,target,0,facing)
-call EffectCreateAndMove(true,EffectID[193],facing+60,1.5,2.5,1,100,100,100,70,150,target,0,facing)
-call EffectCreateAndMove(true,EffectID[40],GetRandomReal(0,360),1.5,2.5,1,100,100,100,0,100,n0,0,facing)
-call EffectCreateAndMove90(true,EffectID[20],facing+60,1,1,1.5,100,100,100,40,150,target,0,facing)
-call EffectCreateAndMove90(true,EffectID[20],facing-60,1,1,1.5,100,100,100,40,150,target,0,facing)
-call EffectCreateAndMove(true,EffectID[768],facing,1.5,1.25,1.5,100,100,100,60,0,target,0,facing)
-call EffectCreateAndMove(true,EffectID[210],facing+60+180,1.5,1.5,0.75,100,100,100,0,100,target,0,facing)
-call EffectCreateAndMove(true,EffectID[210],facing-60+180,1.5,1.5,0.75,100,100,100,0,100,target,0,facing)
-call EffectCreateAndMove(true,EffectID[20],facing,1,1.5,1.5,100,100,100,40,0,target,0,facing)
-call EffectCreateAndMove(true,EffectID[64],facing+60,1.5,1.25,2,100,100,100,0,100,target,0,facing)
-call EffectCreateAndMove(true,EffectID[64],facing-60,1.5,0.75,1.5,100,100,100,0,100,target,0,facing)
-call SetUnitAnimation(target,"stand")
-call UnitSpeed(target,1)
-call PauseUnit(target,false)
-call SetUnitPathing(target,true)
-call DamageU(false,caster,target,damage*0.5)
-call SetControlToUnit(target,target,1,"stun")
-call SaveBoolean(HH,GetHandleId(target),TARGET_ABILITY,false)
-call SaveReal(HH,id,8,-100)
-endif
-endif
+
+
+        set n0=CreateUnit(GetOwningPlayer(caster),'e000',GetUnitX(caster),GetUnitY(caster),0)
+        call SetUnitModel(n0,EffectID[768])
+        call SetUnitFlyHeight(n0,100,0)
+        call UnitColor(n0,0,0,0,100)
+        call UnitSize(n0,1,1,1)
+        call UnitSpeed(n0,1)
+        call MyRemoveUnit(n0,1)
+        call SaveUnitHandle(HH,id,20,n0)
+    endif
+    if time==0.02 or time==0.1 or time==0.2 or time==0.3 or time==0.4 then
+        call EffectCreateAndMove(true,EffectID[6],facing,1,GetRandomReal(0.3,0.5),GetRandomReal(0.5,0.7),100,100,100,40,100,caster,50,facing)
+        call EffectCreateAndMove(true,EffectID[854],facing,1,GetRandomReal(1.25,1.5),0.7,100,100,100,20,0,caster,50,facing)
+    endif
+    if time>0.02 and time<1 then
+        if time>0.1 then
+            call MoveUnit(caster,LoadUnitHandle(HH,id,20),0,facing)
+        endif
+        call MoveUnit(caster,caster,35,facing)
+        call SaveReal(HH,id,8,dist-35)
+        set x0=PolX(x0,150,facing)
+        set y0=PolY(y0,150,facing)
+        call GroupClear(G)
+        call GroupEnumUnitsInRange(G,x0,y0,150,Base)
+        loop
+            set n0=FirstOfGroup(G)
+            exitwhen n0==null
+            if Condition_Base(GetOwningPlayer(caster),n0)and GetUnitAbilityLevel(n0,'Avul')==0 then
+                call SaveUnitHandle(HH,id,2,n0)
+                call SaveReal(HH,id,5,5)
+                if LoadBoolean(HH,GetHandleId(target),ANTITARGET_ABILITY)==false then
+                    call UnitSpeed(caster,0)
+                    call DamageU(false,caster,n0,damage*0.5)
+                    call SetControlToUnit(n0,n0,1,"stun")
+                    call EffectCreateAndMove(true,EffectID[74],GetRandomReal(0,360),1.5,1.5,0.8,100,100,100,0,100,n0,0,facing)
+                    call EffectCreateAndMove(true,EffectID[205],facing+45,1,1.25,1,100,100,100,0,100,n0,0,facing)
+                    call EffectCreateAndMove(true,EffectID[205],facing-45,1,1.25,1,100,100,100,0,100,n0,0,facing)
+                    call EffectCreateAndMove(true,EffectID[425],GetRandomReal(0,360),1.5,1.5,0.75,100,100,100,0,100,n0,0,facing)
+                    call EffectCreateAndMove45(true,EffectID[207],facing+45,1.5,1,1,100,100,100,30,200,n0,0,facing)
+                    call EffectCreateAndMove45(true,EffectID[207],facing-45,1.5,1,1,100,100,100,30,200,n0,0,facing)
+                    call PauseUnit(n0,true)
+                    call SaveBoolean(HH,GetHandleId(n0),TARGET_ABILITY,true)
+                    call SetUnitPathing(n0,false)
+                endif
+                call SaveReal(HH,id,8,1000)
+                exitwhen true
+            endif
+            call GroupRemoveUnit(G,n0)
+        endloop
+        call GroupClear(G)
+    endif
+    if time>5 then
+        if LoadBoolean(HH,GetHandleId(target),ANTITARGET_ABILITY)==false then
+            if time==5.02 then
+                call SetUnitAnimationByIndex(caster,23)
+                call UnitSpeed(caster,1.5)
+                set soundplay=CreateSound("Sound\\Others\\NatsuT_Hit.mp3",false,false,true,12700,12700,"")
+                call SetSoundVolume(soundplay,370)
+                call StartSound(soundplay)
+            endif
+            if time<5.3 then
+                call MoveUnit(target,target,2,facing)
+                call MoveUnit(target,caster,-150,facing)
+                call PauseUnit(target,true)
+                call SetUnitPathing(target,false)
+            endif
+            if time==5.3 then
+                call SetUnitAnimationByIndex(caster,2)
+                call EffectCreateAndMove(true,EffectID[425],GetRandomReal(0,360),1.5,1.75,0.75,100,100,100,0,100,target,0,facing)
+                call EffectCreateAndMove(true,EffectID[193],facing-60,1.5,2.5,1,100,100,100,70,150,target,0,facing)
+                call EffectCreateAndMove(true,EffectID[193],facing+60,1.5,2.5,1,100,100,100,70,150,target,0,facing)
+                call EffectCreateAndMove(true,EffectID[40],GetRandomReal(0,360),1.5,2.5,1,100,100,100,0,100,n0,0,facing)
+                call EffectCreateAndMove90(true,EffectID[20],facing+60,1,1,1.5,100,100,100,40,150,target,0,facing)
+                call EffectCreateAndMove90(true,EffectID[20],facing-60,1,1,1.5,100,100,100,40,150,target,0,facing)
+                call EffectCreateAndMove(true,EffectID[768],facing,1.5,1.25,1.5,100,100,100,60,0,target,0,facing)
+                call EffectCreateAndMove(true,EffectID[210],facing+60+180,1.5,1.5,0.75,100,100,100,0,100,target,0,facing)
+                call EffectCreateAndMove(true,EffectID[210],facing-60+180,1.5,1.5,0.75,100,100,100,0,100,target,0,facing)
+                call EffectCreateAndMove(true,EffectID[20],facing,1,1.5,1.5,100,100,100,40,0,target,0,facing)
+                call EffectCreateAndMove(true,EffectID[64],facing+60,1.5,1.25,2,100,100,100,0,100,target,0,facing)
+                call EffectCreateAndMove(true,EffectID[64],facing-60,1.5,0.75,1.5,100,100,100,0,100,target,0,facing)
+                call SetUnitAnimation(target,"stand")
+                call UnitSpeed(target,1)
+                call PauseUnit(target,false)
+                call SetUnitPathing(target,true)
+                call DamageU(false,caster,target,damage*0.5)
+                call SetControlToUnit(target,target,1,"stun")
+                call SaveBoolean(HH,GetHandleId(target),TARGET_ABILITY,false)
+                call SaveReal(HH,id,8,-100)
+            endif
+        else
+            call SaveUnitHandle(HH,GetHandleId(target),REVERSE_TARGET,caster)
+            call PauseUnit(caster,false)
+            call SetUnitInvulnerable(caster,false)
+            call SaveReal(HH,id,8,-100)
+        endif
+    endif
 endif
 set caster=null
 set target=null
