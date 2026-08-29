@@ -59417,6 +59417,18 @@ set p=null
 set u=null
 set t=null
 endfunction
+//UraharaDmgStart вЂ” РїРµСЂРµРЅРµСЃРµРЅРѕ РёР· Choice Random 4.5
+function Urahara_DMG takes unit u,real k returns real
+if GetUnitAbilityLevel(u,'UKD3')>0 then
+return k*I2R(GetHeroInt(u,true))
+endif
+//else
+return 0.0
+//endif
+
+endfunction
+//UraharaDmgEnd
+
 function ShintenRaihoCast takes nothing returns nothing
 local unit u=GetTriggerUnit()
 local timer t=CreateTimer()
@@ -59431,7 +59443,7 @@ local real ang=150*bj_DEGTORAD
 call SaveUnitHandle(h,id,0,u)
 call SaveReal(h,id,5,x1)
 call SaveReal(h,id,6,y1)
-call SaveReal(h,id,4,(GetUnitAbilityLevel(u,'A0ZM')+3)*GetHeroInt(u,true)+100)
+call SaveReal(h,id,4,(GetUnitAbilityLevel(u,'A0ZM')+3)*GetHeroInt(u,true)+100+Urahara_DMG(u,1)  )
 call SaveReal(h,id,2,2700)
 call SaveReal(h,id,10,1.25)
 call SaveReal(h,id,11,a)
@@ -59467,7 +59479,7 @@ local real a=Atan2(LoadReal(h,id,4)-y,LoadReal(h,id,3)-x)
 local real l__d=LoadReal(h,id,5)
 local group g=LoadGroupHandle(h,id,6)
 local player p=GetOwningPlayer(u)
-local real dmg=75*GetUnitAbilityLevel(u,'A0BE')+(GetUnitAbilityLevel(u,'A0BE')+1)*GetHeroInt(u,true)
+local real dmg=75*GetUnitAbilityLevel(u,'A0BE')+(GetUnitAbilityLevel(u,'A0BE')+1)*GetHeroInt(u,true)+Urahara_DMG(u,1)
 if l__d<2000 then
 set x=x+l__d*Cos(a)
 set y=y+l__d*Sin(a)
@@ -59490,7 +59502,7 @@ endif
 call GroupRemoveUnit(g,E)
 endloop
 else
-call UnitApplyTimedLife(LoadUnitHandle(h, id, 10), 'BTLF', 0.1)
+call UnitApplyTimedLife(LoadUnitHandle(h, id, 10),'BTLF', 0.1)
 call MyRemoveUnit(LoadUnitHandle(h, id, 10), 2.5)
 set idg=GetHandleId(g)
 call PauseTimer(t)
@@ -59642,10 +59654,14 @@ local real r=GetRandomReal(0,7)
 local real l__d=GetRandomReal(-200,200)
 local real l__s=GetRandomReal(75,200)
 local group g=LoadGroupHandle(h,id,3)
-local real dmg=GetHeroInt(u,true)
+local real dmg=GetHeroInt(u,true)+Urahara_DMG(u,0.1)
 local real time=LoadReal(h,id,4)
-call SaveReal(h,id,4,time+0.21)
-if time<2.5 then
+call SaveReal(h,id,4,time+0.18)
+if time<2.5 and GetUnitCurrentOrder(u)==OrderId("channel") then 
+
+call SetUnitInvulnerable(u,true)
+
+
 set n=CreateUnit(p,'e05H',x+l__d*Cos(r),y+l__d*Sin(r),a*bj_RADTODEG)
 call SetUnitFlyHeight(n,l__s,0)
 call GroupAddUnit(g,n)
@@ -59653,11 +59669,11 @@ else
 loop
 set E=FirstOfGroup(g)
 exitwhen E==null
-call MissleMoveSF(u,c,E,GetRandomReal(45,70),GetRandomReal(-0.7,0.7),dmg)
+call MissleMoveSF(u,c,E,60,GetRandomReal(-0.7,0.7),dmg)
 call GroupRemoveUnit(g,E)
 endloop
 call SetUnitTimeScale(u,1)
-call PauseUnit(u,false)
+//call PauseUnit(u,false)
 call SetUnitInvulnerable(u,false)
 call PauseTimer(t)
 call DestroyTimer(t)
@@ -59677,16 +59693,16 @@ local timer t=CreateTimer()
 local integer id=GetHandleId(t)
 call SaveUnitHandle(h,id,0,u)
 call SaveUnitHandle(h,id,1,GetSpellTargetUnit())
-call SaveUnitHandle(h,id,2,CreateUnit(GetOwningPlayer(u),0x65303550,GetUnitX(u),GetUnitY(u),0))
+call SaveUnitHandle(h,id,2,CreateUnit(GetOwningPlayer(u),'e05P',GetUnitX(u),GetUnitY(u),0))
 call SaveGroupHandle(h,id,3,CreateGroup())
 call SaveReal(h,id,4,0)
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\SenjuKotenTaiho.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
 call KillSoundWhenDone(soundplay)
-call PauseUnit(u,true)
+//call PauseUnit(u,true)
 call SetUnitInvulnerable(u,true)
 call SetUnitAnimationByIndex(u, 7)
-call TimerStart(t,0.21,true,function SFCast2)
+call TimerStart(t,0.18,true,function SFCast2)
 set u=null
 set t=null
 endfunction
@@ -59702,7 +59718,7 @@ local unit u=LoadUnitHandle(h,id,0)
 local group g=LoadGroupHandle(h,id,2)
 local real x=LoadReal(h,id,3)
 local real y=LoadReal(h,id,4)
-local real dmg=12*GetHeroInt(u,true)
+local real dmg=12*GetHeroInt(u,true)+Urahara_DMG(u,1)
 local player p=GetOwningPlayer(u)
 call ForGroup(g,function KillGroup)
 call GroupEnumUnitsInRange(g,x,y,900,Base)
@@ -59782,7 +59798,7 @@ local real a=Atan2(y1-y,x1-x)
 local real l__d=LoadReal(h,id,8)
 local player p=GetOwningPlayer(u)
 local group g=LoadGroupHandle(h,id,6)
-local real dmg=(2+GetUnitAbilityLevel(u,'A0BF'))*GetHeroInt(u,true)
+local real dmg=(2+GetUnitAbilityLevel(u,'A0BF'))*GetHeroInt(u,true)+Urahara_DMG(u,1)
 if SR(x,y,x1,y1)>32 and LoadBoolean(h,id,7)==false then
 set x=x+60*Cos(a)
 set y=y+60*Sin(a)
@@ -59799,6 +59815,9 @@ set E=FirstOfGroup(g)
 set ide=GetHandleId(E)
 if Condition_Base(p,E)and LoadUnitHandle(h,idg,ide)!=E then
 call myCustomDamage(u,E,dmg,false,false,null,null,null)
+
+call SetControlToUnit(E,E,1.5,"stun")
+
 call UnitApplyTimedLife(CreateUnit(p,'e05T',x,y,(a*bj_RADTODEG)),'BTLF',1)
 call SaveUnitHandle(h,idg,ide,E)
 endif
@@ -59826,13 +59845,16 @@ set E=FirstOfGroup(g)
 set ide=GetHandleId(E)
 if Condition_Base(p,E)and LoadUnitHandle(h,idg,ide)!=E then
 call myCustomDamage(u,E,dmg,false,false,null,null,null)
+
+call SetControlToUnit(E,E,1.5,"stun")
+
 call UnitApplyTimedLife(CreateUnit(p,'e05T',x,y,(a*bj_RADTODEG)),'BTLF',1)
 call SaveUnitHandle(h,idg,ide,E)
 endif
 call GroupRemoveUnit(g,E)
 exitwhen E==null
 endloop
-call SaveReal(h,id,8,l__d+50)
+call SaveReal(h,id,8,l__d+60)
 elseif LoadBoolean(h,id,7)==true then
 call FlushChildHashtable(h,GetHandleId(g))
 call DestroyGroup(g)
@@ -80084,6 +80106,7 @@ if Condition_Base(p,E)and LoadUnitHandle(h,idg,ide)!=E then
 //call UnitAddAbilityTimed(caster,30,'BuuK')
 call UnitAddAbility(E,'BuuK')
 call UnitAddAbilityTimed(E,3,'BuuC')
+call UnitMakeAbilityPermanent(E,true,'BuuC')
 call myCustomDamage(u,E,dmg,false,false,null,null,null)
 
 
@@ -80118,6 +80141,7 @@ call myCustomDamage(u,E,dmg,false,false,null,null,null)
 
 
 call UnitAddAbilityTimed(E,3,'BuuC')
+call UnitMakeAbilityPermanent(E,true,'BuuC')
 
 endif
 call GroupRemoveUnit(g,E)
@@ -94848,7 +94872,7 @@ function VergilQ_ModifAttack takes unit newCaster, unit newTarget, boolean b_clo
                 endif
         endif
         
-        if UnitHasItemOfTypeBJ(newCaster, 'I03B') then                          // Меч Анбу
+        if (UnitHasItemOfTypeBJ(newCaster, 'I03B') or UnitHasItemOfTypeBJ(newCaster, 'I03F')) then                          // Меч Анбу
                 set bonus_damage=55
                 if GetWidgetLife(newTarget)>bonus_damage then
                         call SetWidgetLife(newTarget, GetWidgetLife(newTarget)-bonus_damage)
@@ -94959,11 +94983,19 @@ endif
         endif
         
         if heal>0.0 then
-                set A= heal*myCustomHeal2(newCaster,1)
-                call TextTagFull3("+" + I2S(R2I( A )) , newCaster , 25 , 255 , 25 , 255 , GetOwningPlayer(newCaster) , 0.03)
+call HealTextTag(newCaster,newCaster,heal*myCustomHeal2(newCaster,1),"HealthRes")
         endif
         
-        if fatal_damage==false then
+            if (UnitHasItemOfTypeBJ(newTarget,'IAoF') or GetUnitAbilityLevel(newTarget,'KI1A')>0) then                                                                                                          // Комплект Анбу у таргета
+        set vgDmg=vgDmg-(60+5*round)
+    endif
+    if (UnitHasItemOfTypeBJ(newTarget,'I03Z')or GetUnitAbilityLevel(newTarget,'KIL2')>0) then
+        set vgDmg=vgDmg-15
+    endif
+    if (UnitHasItemOfTypeBJ(newTarget,'I040')or GetUnitAbilityLevel(newTarget,'KIL4')>0) then
+        set vgDmg=vgDmg-20
+    endif
+if fatal_damage==false then
                 if vgDmg>0 then
                         call myCustomDamage(newCaster,newTarget,vgDmg,false,false,ATTACK_TYPE_HERO,DAMAGE_TYPE_NORMAL,null)
                 endif
@@ -176441,7 +176473,7 @@ set soundplay=CreateSound("Sound\\Others\\Vergil_G1.mp3",false,false,true,12700,
 endif
 call StartSound(soundplay)
 call SetSoundVolume(soundplay,370)
-set n0=CreateUnit(GetOwningPlayer(caster),'e000',GetUnitX(caster),GetUnitY(caster),facing)
+set n0=CreateUnit(GetOwningPlayer(caster),'e200',GetUnitX(caster),GetUnitY(caster),facing)
 call SetUnitModel(n0,EffectID[768])
 call UnitSize(n0,2,1,1)
 call SetUnitFlyHeight(n0,0,0)
@@ -176449,7 +176481,7 @@ call UnitColor(n0,100,100,100,60)
 call UnitSpeed(n0,1)
 call SaveUnitHandle(HH,id,20,n0)
 set n0=null
-set n0=CreateUnit(GetOwningPlayer(caster),'e000',GetUnitX(caster),GetUnitY(caster),facing)
+set n0=CreateUnit(GetOwningPlayer(caster),'e200',GetUnitX(caster),GetUnitY(caster),facing)
 call UnitSize(n0,10,1,1)
 call SetUnitFlyHeight(n0,0,0)
 call UnitColor(n0,100,100,100,80)
@@ -176475,7 +176507,7 @@ call SetSoundVolume(soundplay,370)
 call DestroyEffect(AddSpecialEffectTarget(EffectID[292],caster,"hand right"))
 call SetUnitAnimationByIndex(caster,19)
 call UnitSpeed(caster,0.5)
-set n0=CreateUnit(GetOwningPlayer(caster),'e000',GetUnitX(caster),GetUnitY(caster),facing)
+set n0=CreateUnit(GetOwningPlayer(caster),'e200',GetUnitX(caster),GetUnitY(caster),facing)
 call SetUnitModel(n0,EffectID[2130])
 call UnitSize(n0,1.25,1,1)
 call SetUnitFlyHeight(n0,0,0)
@@ -219882,6 +219914,342 @@ call TimerStart(t,0.1,true,function AbilAdd2Paused)
 set t=null
 endfunction
 
+//UraharaDStart вЂ” РїРµСЂРµРЅРµСЃРµРЅРѕ РёР· Choice Random 4.5
+function sound_play takes string sound_name,integer sound_volume returns nothing
+set soundplay=CreateSound(sound_name,false,false,true,12700,12700,"")
+call StartSound(soundplay)
+call SetSoundVolume(soundplay,sound_volume)
+endfunction
+function IsUnitTrueHero takes unit caster0 returns boolean
+
+if GetUnitTypeId(caster0)=='H007'  or GetUnitTypeId(caster0)=='H03Y'  or GetUnitTypeId(caster0)=='Ho13'  or GetUnitTypeId(caster0)=='H34X'  or GetUnitTypeId(caster0)=='HASC' or GetUnitTypeId(caster0)=='HSaC'  then
+
+return false
+
+else
+
+return true
+
+endif
+
+
+endfunction
+function CreateModeIndicatorWithPauseForm_PeriodicAbility takes nothing returns nothing
+    local timer t               =GetExpiredTimer()
+    local integer id            =GetHandleId(t)
+    local unit caster           =LoadUnitHandle(HH, id, c_CASTER)
+    local player p              =GetOwningPlayer(caster)
+    local integer idp           =GetHandleId(p)
+    local string mode_name      =LoadStr(HH, id, c_NAME)
+    local framehandle NewFrame  =LoadFrameHandle(HH, idp,StringHash(mode_name))
+    local real duration         =LoadReal(HH, GetHandleId(NewFrame), c_DURATION)-0.05
+    local integer position         =LoadInteger(HH, id, c_POSITION)
+
+    if position>0 then
+        if LoadBoolean(HH,idp,position-1)==false then
+        call SaveBoolean(HH,idp,position-1,true)
+        call SaveBoolean(HH,idp,position,false)
+        call SaveInteger(HH, id, c_POSITION,position-1)
+        set position=position-1
+        endif
+    endif
+
+
+    if GetUnitAbilityLevel(caster,'Avul')==0 and IsUnitPaused(caster)==false and IsUnitHidden(caster)==false and GetUnitAbilityLevel(caster,'Pet1')==0 and GetUnitAbilityLevel(caster,'Pet3')==0 then
+        call SaveReal           (HH, GetHandleId(NewFrame), c_DURATION, duration)
+        call SetFrameText( LoadFrameHandle(HH, idp,StringHash(mode_name+"2")), R2SW(duration,2, 1) )
+    endif
+
+    call SetFrameRelativePoint( NewFrame, FRAMEPOINT_CENTER, StatusBarFrame, FRAMEPOINT_LEFT, 0.017+position*0.025, 0.005 )
+    if  IsUnitTrueHero(caster)==false  or IsUnitIllusion(caster)==true or duration<=0 or udg_B==false or DU2==false or UnitIsAlive(caster)==false or GetUnitAbilityLevel(caster,LoadInteger(HH,id,10))==0  then
+        call ShowFrame( NewFrame, false )
+        call SaveReal(HH, GetHandleId(NewFrame), c_DURATION, 0)
+        call SaveBoolean(HH,idp,position,false)
+        call FlushChildHashtable(HH, id)
+        call DestroyTimer(t)
+    endif
+    set t=null
+    set caster=null
+    set mode_name=null
+    set NewFrame=null
+    set p=null
+endfunction
+function CreateModeIndicatorWithPauseFormAbility takes unit newCaster, string newString, real newDur,integer abil_Code returns nothing
+        local timer newTimer        = null
+        local integer id            = 0
+
+
+
+    local framehandle NewFrame  = null
+    local framehandle NewFrameText  = null
+    local player p              =GetOwningPlayer(newCaster)
+    local integer idp           =GetHandleId(p)
+    local framehandle consoleUI
+    local integer i=9
+    local integer j=0
+
+
+
+    if IsUnitIllusion(newCaster)==false then
+
+     set newTimer        = CreateTimer()
+     set id            = GetHandleId(newTimer)
+     set consoleUI=GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 )
+    if LoadFrameHandle(HH, idp,StringHash(newString))==null then    
+        set NewFrame = CreateFrameByType( "SIMPLEBUTTON", newString, StatusBarFrame, "", 0 )
+        call ClearFrameAllPoints( NewFrame )
+        call SetFrameTexture( NewFrame, newString, 0, true )
+        call SetFrameTexture( NewFrame, newString, 1, true )
+        call SetFrameTexture( NewFrame, newString, 2, true )
+        call SetFrameSize( NewFrame, .0237, .0237 )
+        call SetFramePriority( NewFrame, 7 )
+        call HandleListAddHandle(StatusBarFrameList[GetPlayerId(p)],NewFrame)
+        call SetFrameParent(NewFrame,StatusBarFrame)
+        if GetOwningPlayer(newCaster)!=GetLocalPlayer()then
+            call ShowFrame( NewFrame, false)
+        else
+            call ShowFrame( NewFrame, true)
+        endif
+        call SaveFrameHandle(HH,idp,StringHash(newString),NewFrame)
+        //call SaveReal               (HH, GetHandleId(NewFrame), c_DURATION, 2)
+        
+        set NewFrameText=CreateFrameByType( "SIMPLETEXT", newString+"1", NewFrame, "", 0 )
+        call ClearFrameAllPoints( NewFrameText )
+        call SetFramePriority( NewFrameText, 2 )
+        call SetFrameFont( NewFrameText, "Fonts\\FRIZQT__.TTF", .008, 0 )
+        call SetFrameTextAlignment( NewFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_LEFT )
+        call SetFrameText( NewFrameText, R2SW(newDur,2, 1) )
+        call SetFrameTextColour( NewFrameText, 0xFFFFA500 )
+        //call HandleListAddHandle(StatusBarFrameList[GetPlayerId(p)],NewFrameText)
+        if GetOwningPlayer(newCaster)!=GetLocalPlayer()then
+            call ShowFrame( NewFrameText, false)
+        else
+            call ShowFrame( NewFrameText, true)
+        endif
+        call SaveFrameHandle(HH,idp,StringHash(newString+"2"),NewFrameText)
+    else
+        set NewFrame=LoadFrameHandle(HH, idp,StringHash(newString))
+        set NewFrameText=LoadFrameHandle(HH, idp,StringHash(newString+"2"))
+        call SetFrameText( NewFrameText, R2SW(newDur,2, 1) )
+        if GetOwningPlayer(newCaster)!=GetLocalPlayer()then
+            call ShowFrame( NewFrame, false)
+        else
+            call ShowFrame( NewFrame, true)
+        endif
+    endif
+    if LoadReal(HH, GetHandleId(NewFrame), c_DURATION)<=0 then
+        loop
+            exitwhen i==0
+            if LoadBoolean(HH,idp,i)==false then
+            call SaveBoolean(HH,idp,i,true)
+            call SaveBoolean(HH,idp,i+1,false)
+            set j=i
+            endif
+            set i=i-1
+        endloop
+        call SetFrameRelativePoint( NewFrame, FRAMEPOINT_CENTER, StatusBarFrame, FRAMEPOINT_LEFT, 0.017+j*0.025, 0.005 )
+        call SetFrameRelativePoint( NewFrameText, FRAMEPOINT_BOTTOM, NewFrame, FRAMEPOINT_BOTTOM, .0, -.01 )
+        call SaveUnitHandle         (HH, id, c_CASTER, newCaster)
+        call SaveReal               (HH, GetHandleId(NewFrame), c_DURATION, newDur)
+        call SaveInteger            (HH, id, c_POSITION, j)
+        call SaveStr                (HH, id, c_NAME, newString)
+        call SaveInteger            (HH, id, 10, abil_Code)
+        call TimerStart             (newTimer, 0.05, true, function CreateModeIndicatorWithPauseForm_PeriodicAbility)
+    else
+        call SaveReal           (HH, GetHandleId(NewFrame), c_DURATION, newDur)
+    endif
+
+     endif
+    set consoleUI=null
+    set newTimer=null
+    set p=null
+    set NewFrame=null
+    set NewFrameText=null
+endfunction
+function Urahara_D_Act2 takes nothing returns nothing
+local timer t=GetExpiredTimer()
+local integer id=GetHandleId(t)
+local unit caster=LoadUnitHandle(HH,id,1)
+local unit Dummy=LoadUnitHandle(HH,id,20)
+local group gr=LoadGroupHandle(HH,id,4)
+local real time=LoadReal(HH,id,5)
+local real time1=LoadReal(HH,id,6)
+local real time2=LoadReal(HH,id,8)
+local real x0=GetUnitX(Dummy)
+local real y0=GetUnitY(Dummy)
+//local player player_ID=GetOwningPlayer(caster) лучше не использовать переменные типа player лучше через id 
+local real heal=I2R(GetHeroInt(caster,true))
+
+
+
+if time1<=0 then// ФАЗА 0 — высвобождение (реальное время, звук идёт); лечение УЖЕ работает
+call SaveReal(HH,id,5,time+0.02)
+if UnitIsAlive(caster)==false  or  udg_B==false then
+call PauseUnit(caster,false)
+call SetUnitInvulnerable(caster,false)
+call DestroyEffect(LoadEffectHandle(HH,id,10))     // снять ауру каста
+//call UkBkEnd(caster,e,gr,t,id)
+
+
+
+call SetUnitAbilityLevel(caster,'UKD2',1)
+
+//call UnitRemoveAbility(caster,'UkBs')                  // снять +30 статов
+call UnitRemoveAbility(caster,'UKD3')                  // снять макс. скорость
+
+call SetAbilityCooldown(GetUnitAbility(caster,'A07P'),10.0)          // вернуть Sonido КД
+call SetAbilityRemainingCooldown(GetUnitAbility(caster,'UKD1'),40.0) // КД нормализуется до 40 c ПОСЛЕ формы (базовый Cool=65 держал скилл в откате всю форму)
+//call MyRemoveUnit(Dummy,0)   //незачем использовать тут таймер можно просто удалить                         // убрать фигуру
+
+call RemoveUnit(Dummy)
+
+call DestroyGroup(gr)
+call PauseTimer(t)
+call DestroyTimer(t)
+call FlushChildHashtable(HH,id)
+
+else
+
+//call SetWidgetLife(caster, GetWidgetLife(caster)+0.25*heal)     // хил 0.5*INT/сек уже в высвобождении (пауза не мешает SetUnitState)
+
+
+if time>=4 then                                     // 7.5 c -> каст окончен, ВКЛЮЧАЕМ бафф
+call DestroyEffect(LoadEffectHandle(HH,id,10))     // снять ауру каста
+call PauseUnit(caster,false)
+call SetUnitInvulnerable(caster,false)
+
+call SetUnitAbilityLevel(caster,'UKD2',4)
+//call UnitAddAbility(caster,'UkBs')                      // +30 все статы (item-abil, не сеттер!)
+//call UnitAddAbility(caster,'UKD3')                      // макс. скорость (900)
+
+
+call UnitAddAbilityTimedPaused(caster,25,'UKD3')
+
+
+
+call CreateModeIndicatorWithPauseFormAbility(caster,"ReplaceableTextures\\CommandButtons\\BTNUraharaD.blp",25,'UKD3')  // индикатор формы в UjAPI-панели
+call SetAbilityRemainingCooldown(GetUnitAbility(caster,'A07P'),0.01) // сбросить Sonido
+call SetAbilityCooldown(GetUnitAbility(caster,'A07P'),2.0)           // и на время формы = 2 c
+call SaveReal(HH,id,6,1)
+
+call SaveReal(HH,id,5,0)                         // сброс счётчика на фазу баффа
+endif
+
+endif
+
+else
+// ФАЗА 1 — бафф активен 25 c; ЗАМИРАЕТ на паузе/скрытии
+if UnitIsAlive(caster)==false or GetUnitAbilityLevel(caster,'UKD3')==0 or  udg_B==false then
+//call UkBkEnd(caster,e,gr,t,id) незачем так завершать скил
+
+//call UnitRemoveAbility(caster,'UKD2')                  // снять +30 статов
+call UnitRemoveAbility(caster,'UKD3')                  // снять макс. скорость
+call SetUnitAbilityLevel(caster,'UKD2',1)
+call SetAbilityCooldown(GetUnitAbility(caster,'A07P'),10.0)          // вернуть Sonido КД
+call SetAbilityRemainingCooldown(GetUnitAbility(caster,'UKD1'),40.0) // КД нормализуется до 40 c ПОСЛЕ формы (базовый Cool=65 держал скилл в откате всю форму)
+
+//call MyRemoveUnit(Dummy,0)   незачем использовать тут таймер можно просто удалить                         // убрать фигуру
+
+call RemoveUnit(Dummy)                        
+
+
+call DestroyGroup(gr)
+call PauseTimer(t)
+call DestroyTimer(t)
+call FlushChildHashtable(HH,id)
+
+
+
+
+
+
+else
+
+if IsUnitPaused(caster)==false and IsUnitHidden(caster)==false then
+call SaveReal(HH,id,5,time+0.02)
+
+set time2=time2+0.02
+
+if time2>=0 then
+
+set time2=-1
+
+call SetWidgetLife(caster, GetWidgetLife(caster)+0.5*heal)    // хил 0.25*INT/тик = 0.5*INT/сек
+
+endif
+
+call SaveReal(HH,id,8,time2)
+
+call GroupEnumUnitsInRange(G,x0,y0,2000,Base)       // урон ПО ВХОДУ в зону, 1 раз на цель
+
+loop
+set n0=FirstOfGroup(G) //лучше вместо E использовать n0 для изменения в случае чего
+exitwhen n0==null
+if Condition_Base( GetOwningPlayer(caster) ,n0)and IsUnitInGroup(n0,gr)==false then
+call myCustomDamage(caster,n0,3*heal,false,false,null,null,null)          // 3*INT
+
+set EFF=AddSpecialEffectTarget("Others\\blood pack (12).mdx",n0,"origin")  // эффект попадания
+call SetSpecialEffectTimeScale(EFF,4.0)          // 4x скорость: Death-анимация 1.1c -> ~0.27c ("попал и сразу пропал")
+call DestroyEffect(EFF)
+
+call GroupAddUnit(gr,n0)
+endif
+call GroupRemoveUnit(G,n0)
+
+
+endloop
+endif
+
+endif
+endif
+
+
+
+set caster=null
+set Dummy=null
+set gr=null
+//set p=null
+set t=null
+
+endfunction
+function Urahara_D_Act takes unit caster returns nothing
+//вместо u лучше использовать caster для удобной замены
+local real facing=GetUnitFacing(caster)//вместо f лучше полное слово facing ( так как проще заменять в случае чего)
+local real ang=facing+180.0
+local real x0=PolX(GetUnitX(caster),120.0,ang) //bx by лучше просто x0 y0 (используется в большинстве скилов)
+local real y0=PolY(GetUnitY(caster),120.0,ang)
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+
+set n0=CreateUnit(GetOwningPlayer(caster),'e200',x0,y0,facing)
+//вместо юнита e лучше использовать глобального n0
+call SetUnitModel(n0,"Others\\Kannonbiraki Benihime Aratame.mdx")
+//call UnitAddAbility(n0,'Amrf')                     // не нужно т.к. есть у дамика
+//call UnitRemoveAbility(n0,'Amrf')
+call SetUnitFlyHeight(n0,-620.0,0)                 // спрятать под землю...
+call SetUnitFlyHeight(n0,0.0,320.0)                // ...и поднять = вылезает
+call UnitScale(n0,0.5,4.2,2.2)                     // масштаб 4.2, растёт из 0.5
+call SaveUnitHandle(HH,id,20,n0)
+
+call PauseUnit(caster,true)
+call SetUnitInvulnerable(caster,true)
+call SaveUnitHandle(HH,id,1,caster)
+
+//call SaveInteger(HH,id,2,0) //незачем сохранять 0 ибо изначально всегда 0
+//call SaveInteger(HH,id,4,0)                        // фаза 0 
+call SaveGroupHandle(HH,id,4,CreateGroup())//группы лучше сохранять под айди 4 а не 3 т.к. я всегда использую 4 и 41 для групп
+call SaveEffectHandle(HH,id,10,AddSpecialEffectTarget("Others\\ars2 (1172).mdl",caster,"origin"))  // лучше использовать 10 для єффектов на героях тоже использую 10 15 25-30           пафосная аура на время каста (снимается в конце фазы 0)
+call TimerStart(t,0.02,true,function Urahara_D_Act2)//лучше использовать меньше таймеры для удобных периодиков с эффектами
+
+call sound_play("Sound\\Others\\Urahara_D.mp3",127)
+
+//call KillSoundWhenDone(soundplay) нет смысла использовать т.к. ибо первый раз не будет звука
+set caster=null
+set n0=null 
+set t=null
+endfunction
+//UraharaDEnd
+
 
 function Gojo_Q2_Self_Act2 takes nothing returns nothing
 local integer id=GetHandleId(GetExpiredTimer())
@@ -222912,7 +223280,7 @@ endfunction
 
 ///ини абилок
 function AbilitiesForChoice_Cond takes nothing returns boolean
-    local boolean cond1=GetSpellAbilityId()=='BuuG' or GetSpellAbilityId()=='GSQ1' or GetSpellAbilityId()=='GSQ2' or GetSpellAbilityId()=='GSW1' or GetSpellAbilityId()=='GSE1' or GetSpellAbilityId()=='GSE2' or GetSpellAbilityId()=='GSF1' or GetSpellAbilityId()=='GSF2' or GetSpellAbilityId()=='GSG1' or GetSpellAbilityId()=='GSR1' or GetSpellAbilityId()=='GST1' or GetSpellAbilityId()=='GST2' or GetSpellAbilityId()=='GST3' or GetSpellAbilityId()=='SHG1' or GetSpellAbilityId()=='CelF' or GetSpellAbilityId()=='CelG' or GetSpellAbilityId()=='CelT'
+    local boolean cond1=GetSpellAbilityId()=='UKD1' or GetSpellAbilityId()=='BuuG' or GetSpellAbilityId()=='GSQ1' or GetSpellAbilityId()=='GSQ2' or GetSpellAbilityId()=='GSW1' or GetSpellAbilityId()=='GSE1' or GetSpellAbilityId()=='GSE2' or GetSpellAbilityId()=='GSF1' or GetSpellAbilityId()=='GSF2' or GetSpellAbilityId()=='GSG1' or GetSpellAbilityId()=='GSR1' or GetSpellAbilityId()=='GST1' or GetSpellAbilityId()=='GST2' or GetSpellAbilityId()=='GST3' or GetSpellAbilityId()=='SHG1' or GetSpellAbilityId()=='CelF' or GetSpellAbilityId()=='CelG' or GetSpellAbilityId()=='CelT'
     if cond1 then
         return true
     else
@@ -222997,7 +223365,7 @@ local real buuDmg=GetHeroStr(caster,true)
 call SaveUnitHandle(HH,id,1,caster)
 call SaveUnitHandle(HH,id,2,target)
 call SaveReal(HH,id,3,facing)
-set n0=CreateUnit(GetOwningPlayer(caster),'e000',x1,y1,facing)
+set n0=CreateUnit(GetOwningPlayer(caster),'e200',x1,y1,facing)
 call SetUnitModel(n0,EffectID[535])
 call UnitSize(n0,1,1,1)
 call SetUnitFlyHeight(n0,150,0)
@@ -223005,7 +223373,7 @@ call UnitSpeed(n0,0.5)
 call UnitColor(n0,100,100,100,40)
 call SaveUnitHandle(HH,id,20,n0)
 set n0=null
-set n0=CreateUnit(GetOwningPlayer(caster),'e000',x1,y1,facing)
+set n0=CreateUnit(GetOwningPlayer(caster),'e200',x1,y1,facing)
 call SetUnitFlyHeight(n0,150,0)
 call SetUnitModel(n0,EffectID[536])
 call UnitSize(n0,1.5,1,1)
@@ -223126,7 +223494,7 @@ call UnitSize(LoadUnitHandle(HH,id,20),2.5,1,1)
 
 set soundplay=CreateSound("Sound\\Others\\BuuG-Hit.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+//call KillSoundWhenDone(soundplay) // хэндл живёт до StopSound, повторное освобождение роняет игру
 call SaveSoundHandle(HH,id,25,soundplay)
 
 
@@ -223185,7 +223553,7 @@ call SaveUnitHandle(HH,id,1,caster)
 call SaveUnitHandle(HH,id,2,target)
 call SaveReal(HH,id,3,facing)
 call SaveBoolean(HH,id,19,false)
-set n0=CreateUnit(GetOwningPlayer(caster),'e000',x0,y0,facing)
+set n0=CreateUnit(GetOwningPlayer(caster),'e200',x0,y0,facing)
 call SetUnitModel(n0,EffectID[535])
 call UnitSize(n0,0.5,1,1)
 call SetUnitFlyHeight(n0,150,0)
@@ -223193,7 +223561,7 @@ call UnitSpeed(n0,0.5)
 call UnitColor(n0,100,100,100,40)
 call SaveUnitHandle(HH,id,20,n0)
 set n0=null
-set n0=CreateUnit(GetOwningPlayer(caster),'e000',x0,y0,facing)
+set n0=CreateUnit(GetOwningPlayer(caster),'e200',x0,y0,facing)
 call SetUnitFlyHeight(n0,150,0)
 call SetUnitModel(n0,EffectID[536])
 call UnitSize(n0,1,1,1)
@@ -223287,6 +223655,9 @@ function AbilitiesForChoice_Act takes nothing returns nothing//моя функц
     if GetSpellAbilityId()=='BuuG' then
 call Buu_G_Act(caster,target)
 endif
+if GetSpellAbilityId()=='UKD1' then
+call Urahara_D_Act(caster)
+endif
 set caster=null
     set target=null
 endfunction
@@ -223308,7 +223679,7 @@ endfunction
 
 
 function AbilitiesForChoiceLearn_Cond takes nothing returns boolean
-return GetLearnedSkill()=='GSE1' or GetLearnedSkill()=='A0K4'
+return GetLearnedSkill()=='GSE1' or GetLearnedSkill()=='A0BG' or GetLearnedSkill()=='A0K4'
 endfunction
 
 function AbilitiesForChoiceLearn_Act takes nothing returns nothing//моя прокачка абилок для всех героев разберешься
@@ -223331,6 +223702,10 @@ call SetUnitAbilityLevel(caster,'BuuG',GetUnitAbilityLevel(caster,lvl))
 if GetUnitAbilityLevel(caster,lvl)==1 then
 call DisplayTextToPlayer(skillPlayer,0,0,"Вы теперь Буу")
 endif
+endif
+set lvl='A0BG'
+if GetLearnedSkill()==lvl then
+call SetUnitAbilityLevel(caster,'A0BF',GetUnitAbilityLevel(caster,lvl))
 endif
 set caster=null
 set skillPlayer=null
