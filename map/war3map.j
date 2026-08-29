@@ -17201,7 +17201,7 @@ function OnButtonSelectHero takes nothing returns nothing
                         call AddFrameText( GetFrameByName("TavernAbilityTooltipText",5), "/")
                         set j=j+1
                         endloop   
-                        if String2Id( s )=='A105' or String2Id( s )=='A0RS' or String2Id( s )=='A0IR' then
+                        if String2Id( s )=='A105' or String2Id( s )=='A0RS' or String2Id( s )=='A0IR' or String2Id( s )=='CelF' then
                             call AddFrameText( GetFrameByName("TavernAbilityTooltipText",5), "\n\n"+GetAbilityBaseStringFieldById( String2Id( s ), ABILITY_SF_NAME )+", (|cffffcc00"+IntToChar(GetAbilityBaseIntegerFieldById( String2Id( s ), ABILITY_IF_BUTTON_HOTKEY_NORMAL ))+"|r)\n\n"+GetAbilityBaseStringFieldById( String2Id( s ), ABILITY_SLF_TOOLTIP_LEARN_EXTENDED )) 
                         else                  
                             call AddFrameText( GetFrameByName("TavernAbilityTooltipText",5), "\n\n"+GetAbilityBaseStringFieldById( String2Id( s ), ABILITY_SF_NAME )+", (|cffffcc00"+IntToChar(GetAbilityBaseIntegerFieldById( String2Id( s ), ABILITY_IF_BUTTON_HOTKEY_NORMAL ))+"|r)\n\n"+GetAbilityBaseStringFieldById( String2Id( s ), ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED ))
@@ -17219,7 +17219,7 @@ function OnButtonSelectHero takes nothing returns nothing
                         call AddFrameText( GetFrameByName("TavernAbilityTooltipText",6), "/")
                         set j=j+1
                         endloop                        
-                        if String2Id( s )=='A105' or String2Id( s )=='A0RS' or String2Id( s )=='A0IR' then
+                        if String2Id( s )=='A105' or String2Id( s )=='A0RS' or String2Id( s )=='A0IR' or String2Id( s )=='CelG' then
                             call AddFrameText( GetFrameByName("TavernAbilityTooltipText",6), "\n\n"+GetAbilityBaseStringFieldById( String2Id( s ), ABILITY_SF_NAME )+", (|cffffcc00"+IntToChar(GetAbilityBaseIntegerFieldById( String2Id( s ), ABILITY_IF_BUTTON_HOTKEY_NORMAL ))+"|r)\n\n"+GetAbilityBaseStringFieldById( String2Id( s ), ABILITY_SLF_TOOLTIP_LEARN_EXTENDED )) 
                         else                  
                             call AddFrameText( GetFrameByName("TavernAbilityTooltipText",6), "\n\n"+GetAbilityBaseStringFieldById( String2Id( s ), ABILITY_SF_NAME )+", (|cffffcc00"+IntToChar(GetAbilityBaseIntegerFieldById( String2Id( s ), ABILITY_IF_BUTTON_HOTKEY_NORMAL ))+"|r)\n\n"+GetAbilityBaseStringFieldById( String2Id( s ), ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED ))
@@ -33807,7 +33807,7 @@ function Trig_test_Actions takes nothing returns nothing
     call SetFrameSize( CloseIdButton, .165, .025 )
     call SetFrameParent( CloseIdButton, IdHeroFrame )
     call ShowFrame( CloseIdButton, true )
-    call SetFramePriority( CloseIdButton, 5 )
+    call SetFramePriority( CloseIdButton, 6 )
     call SetFrameRelativePoint( CloseIdButton, FRAMEPOINT_CENTER, IdHeroFrame, FRAMEPOINT_TOP, 0, -.006 )
     
     set CloseIdButtonText=CreateFrameByType( "SIMPLETEXT", "TestBarCloseText", CloseIdButton, "", 0 )
@@ -33854,7 +33854,7 @@ function Trig_test_Actions takes nothing returns nothing
     call SetFrameTexture( OpenIdButton, "checkbox-depressed2.blp", 2, true )
     call SetFrameSize( OpenIdButton, .165, .025 )
     call ShowFrame( OpenIdButton, false )
-    call SetFramePriority( OpenIdButton, 5 )
+    call SetFramePriority( OpenIdButton, 6 )
     call SetFrameRelativePoint( OpenIdButton, FRAMEPOINT_CENTER, CloseIdButton, FRAMEPOINT_CENTER, 0, 0 )
     
     set OpenIdButtonText=CreateFrameByType( "SIMPLETEXT", "TestBarOpenText", OpenIdButton, "", x )
@@ -112477,7 +112477,7 @@ else
             if Condition_Base(GetOwningPlayer(caster),n0)and GetUnitAbilityLevel(n0,'Avul')==0 then
                 call SaveUnitHandle(HH,id,2,n0)
                 call SaveReal(HH,id,5,5)
-                if LoadBoolean(HH,GetHandleId(target),ANTITARGET_ABILITY)==false then
+                if LoadBoolean(HH,GetHandleId(n0),ANTITARGET_ABILITY)==false then
                     call UnitSpeed(caster,0)
                     call DamageU(false,caster,n0,damage*0.5)
                     call SetControlToUnit(n0,n0,1,"stun")
@@ -112537,6 +112537,7 @@ else
                 call SaveReal(HH,id,8,-100)
             endif
         else
+            call SaveBoolean(HH,GetHandleId(target),TARGET_ABILITY,false)
             call SaveUnitHandle(HH,GetHandleId(target),REVERSE_TARGET,caster)
             call PauseUnit(caster,false)
             call SetUnitInvulnerable(caster,false)
