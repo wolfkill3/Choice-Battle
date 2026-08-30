@@ -14514,6 +14514,7 @@ function OnButtonAddonAbility takes nothing returns nothing
                 call SetFrameText( GetFrameByName("TavernAdditionalAbilityTooltipText",4), "     " )
                 call SetFrameText( GetFrameByName("TavernAdditionalAbilityTooltipText",5), "     " )
                 call SetFrameText( GetFrameByName("TavernAdditionalAbilityTooltipText",6), "     " )
+                call SetFrameText( GetFrameByName("TavernAdditionalAbilityTooltipText",7), "     " )
                 set j=0
                 loop
                     call AddFrameText( GetFrameByName("TavernAdditionalAbilityTooltipText",0), "|cffffcc00"+I2S(GetAbilityBaseIntegerLevelFieldById( String2Id( "A1ES" ), ABILITY_ILF_MANA_COST, j ))+"|r")
@@ -17015,6 +17016,7 @@ function OnButtonAddonAbility takes nothing returns nothing
         call SetFrameTextAlignment( GetFrameByName("TavernAbilityTooltipText",4), TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_LEFT )
         call SetFrameTextAlignment( GetFrameByName("TavernAbilityTooltipText",5), TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_LEFT )
         call SetFrameTextAlignment( GetFrameByName("TavernAbilityTooltipText",6), TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_LEFT )
+        call SetFrameTextAlignment( GetFrameByName("TavernAbilityTooltipText",7), TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_LEFT )
         call SetFrameRelativePoint( GetFrameByName("TavernAbilityTooltip",0), FRAMEPOINT_CENTER, GetFrameByName("TavernAbility",0), FRAMEPOINT_CENTER,  .13, (-0.5*GetFrameHeight( GetFrameByName("TavernAbilityTooltipText",0)))-.02  )
         call SetFrameRelativePoint( GetFrameByName("TavernAbilityTooltip",1), FRAMEPOINT_CENTER, GetFrameByName("TavernAbility",1), FRAMEPOINT_CENTER,  .13, (-0.5*GetFrameHeight( GetFrameByName("TavernAbilityTooltipText",1)))-.02  )
         call SetFrameRelativePoint( GetFrameByName("TavernAbilityTooltip",2), FRAMEPOINT_CENTER, GetFrameByName("TavernAbility",2), FRAMEPOINT_CENTER,  .13, (-0.5*GetFrameHeight( GetFrameByName("TavernAbilityTooltipText",2)))-.02  )
@@ -17022,6 +17024,7 @@ function OnButtonAddonAbility takes nothing returns nothing
         call SetFrameRelativePoint( GetFrameByName("TavernAbilityTooltip",4), FRAMEPOINT_CENTER, GetFrameByName("TavernAbility",4), FRAMEPOINT_CENTER,  .13, (-0.5*GetFrameHeight( GetFrameByName("TavernAbilityTooltipText",4)))-.02  )
         call SetFrameRelativePoint( GetFrameByName("TavernAbilityTooltip",5), FRAMEPOINT_CENTER, GetFrameByName("TavernAbility",5), FRAMEPOINT_CENTER,  .13, (-0.5*GetFrameHeight( GetFrameByName("TavernAbilityTooltipText",5)))-.02  )
         call SetFrameRelativePoint( GetFrameByName("TavernAbilityTooltip",6), FRAMEPOINT_CENTER, GetFrameByName("TavernAbility",6), FRAMEPOINT_CENTER,  .13, (-0.5*GetFrameHeight( GetFrameByName("TavernAbilityTooltipText",6)))-.02  )     
+        call SetFrameRelativePoint( GetFrameByName("TavernAbilityTooltip",7), FRAMEPOINT_CENTER, GetFrameByName("TavernAbility",7), FRAMEPOINT_CENTER,  .13, (-0.5*GetFrameHeight( GetFrameByName("TavernAbilityTooltipText",7)))-.02  )     
         call SetFrameSize( GetFrameByName("TavernAbilityTooltip",0), .26, GetFrameHeight( GetFrameByName("TavernAbilityTooltipText",0))+0.03)
         call SetFrameSize( GetFrameByName("TavernAbilityTooltip",1), .26, GetFrameHeight( GetFrameByName("TavernAbilityTooltipText",1))+0.03)
         call SetFrameSize( GetFrameByName("TavernAbilityTooltip",2), .26, GetFrameHeight( GetFrameByName("TavernAbilityTooltipText",2))+0.03)
@@ -17029,6 +17032,7 @@ function OnButtonAddonAbility takes nothing returns nothing
         call SetFrameSize( GetFrameByName("TavernAbilityTooltip",4), .26, GetFrameHeight( GetFrameByName("TavernAbilityTooltipText",4))+0.03)
         call SetFrameSize( GetFrameByName("TavernAbilityTooltip",5), .26, GetFrameHeight( GetFrameByName("TavernAbilityTooltipText",5))+0.03)
         call SetFrameSize( GetFrameByName("TavernAbilityTooltip",6), .26, GetFrameHeight( GetFrameByName("TavernAbilityTooltipText",6))+0.03)
+        call SetFrameSize( GetFrameByName("TavernAbilityTooltip",7), .26, GetFrameHeight( GetFrameByName("TavernAbilityTooltipText",7))+0.03)
     endif
     set p = null
     set but = null
@@ -17068,6 +17072,7 @@ function OnButtonSelectHero takes nothing returns nothing
         call ShowFrame( GetFrameByName("TavernAbilityBorderOpenable",4), false )
         call ShowFrame( GetFrameByName("TavernAbilityBorderOpenable",5), false )
         call ShowFrame( GetFrameByName("TavernAbilityBorderOpenable",6), false )
+        call ShowFrame( GetFrameByName("TavernAbilityBorderOpenable",7), false )
         set j=0
         loop
         call ShowFrame( GetFrameByName("TavernAdditionalAbilityBorderOpenable",j), false )
@@ -17103,7 +17108,7 @@ function OnButtonSelectHero takes nothing returns nothing
             call AddFrameText( InfoTavernText, "DEF: " + R2SW( MathRound( GetUnitBaseRealFieldById( RH_Force[GetFrameContext(but)], UNIT_RF_DEFENSE )),0,1 ) +"\n" )
             call AddFrameText( InfoTavernText, "Cast Time: " + R2SW( GetUnitBaseRealFieldById( RH_Force[GetFrameContext(but)], UNIT_RF_CAST_POINT ),1,2 ) +"   Backswing Cast Time: "+R2SW( GetUnitBaseRealFieldById( RH_Force[GetFrameContext(but)], UNIT_RF_CAST_BACK_SWING ),1,0 )+"\n")
             call SetFrameSpriteModel( TavernHeroPortrait, GetUnitBaseStringFieldById(RH_Force[GetFrameContext(but)],UNIT_SF_PORTRAIT) )
-            if GetFrameContext(but)!=7 then
+            if GetFrameContext(but)!=8 then
                 call SetFrameText( GetFrameByName("TavernAbilityTooltipText",0), "     " )
                 call SetFrameText( GetFrameByName("TavernAbilityTooltipText",1), "     " )
                 call SetFrameText( GetFrameByName("TavernAbilityTooltipText",2), "     " )
@@ -17111,6 +17116,7 @@ function OnButtonSelectHero takes nothing returns nothing
                 call SetFrameText( GetFrameByName("TavernAbilityTooltipText",4), "     " )
                 call ShowFrame(GetFrameByName("TavernAbility",5),true)
                 call ShowFrame(GetFrameByName("TavernAbility",6),true)
+                call ShowFrame(GetFrameByName("TavernAbility",7),true)
                 loop
                 exitwhen i>=5 //TavernHeroAbilityIcon
                     set s = SubString( abilList, i * 4, i * 4 + 4 )
@@ -17188,12 +17194,14 @@ function OnButtonSelectHero takes nothing returns nothing
                 call SetFrameTexture( GetFrameByName("TavernAbility",6), "UI\\Widgets\\Console\\Human\\human-inventory-slotfiller.blp", 0, true )
                 call SetFrameTexture( GetFrameByName("TavernAbility",6), "UI\\Widgets\\Console\\Human\\human-inventory-slotfiller.blp", 1, true )
                 call SetFrameTexture( GetFrameByName("TavernAbility",6), "UI\\Widgets\\Console\\Human\\human-inventory-slotfiller.blp", 2, true )
-
+                call SetFrameTexture( GetFrameByName("TavernAbility",7), "UI\\Widgets\\Console\\Human\\human-inventory-slotfiller.blp", 0, true )
+                call SetFrameTexture( GetFrameByName("TavernAbility",7), "UI\\Widgets\\Console\\Human\\human-inventory-slotfiller.blp", 1, true )
+                call SetFrameTexture( GetFrameByName("TavernAbility",7), "UI\\Widgets\\Console\\Human\\human-inventory-slotfiller.blp", 2, true )
                 set i=0
                 loop
                 exitwhen i * 4 >= len //TavernHeroAbilityIcon
                     set s = SubString( abilList2, i * 4, i * 4 + 4 )
-                    if (GetAbilityBaseIntegerFieldById( String2Id( s ), ABILITY_IF_BUTTON_POSITION_NORMAL_X )==1 or GetAbilityBaseIntegerFieldById( String2Id( s ), ABILITY_IF_BUTTON_POSITION_NORMAL_X )==0) and GetAbilityBaseIntegerFieldById( String2Id( s ), ABILITY_IF_BUTTON_POSITION_NORMAL_Y )==1 then
+                    if GetAbilityBaseIntegerFieldById( String2Id( s ), ABILITY_IF_BUTTON_POSITION_NORMAL_X )==1 and GetAbilityBaseIntegerFieldById( String2Id( s ), ABILITY_IF_BUTTON_POSITION_NORMAL_Y )==1 then
                         call SetFrameText( GetFrameByName("TavernAbilityTooltipText",5), "     " )
                         call SetFrameTexture( GetFrameByName("TavernAbility",5), GetAbilityBaseStringFieldById( String2Id( s ), ABILITY_SF_ICON_NORMAL ), 0, true )
                         call SetFrameTexture( GetFrameByName("TavernAbility",5), GetAbilityBaseStringFieldById( String2Id( s ), ABILITY_SF_ICON_NORMAL ), 1, true )
@@ -17229,6 +17237,24 @@ function OnButtonSelectHero takes nothing returns nothing
                         else                  
                             call AddFrameText( GetFrameByName("TavernAbilityTooltipText",6), "\n\n"+GetAbilityBaseStringFieldById( String2Id( s ), ABILITY_SF_NAME )+", (|cffffcc00"+IntToChar(GetAbilityBaseIntegerFieldById( String2Id( s ), ABILITY_IF_BUTTON_HOTKEY_NORMAL ))+"|r)\n\n"+GetAbilityBaseStringFieldById( String2Id( s ), ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED ))
                         endif
+                    elseif GetAbilityBaseIntegerFieldById( String2Id( s ), ABILITY_IF_BUTTON_POSITION_NORMAL_X )==0 and GetAbilityBaseIntegerFieldById( String2Id( s ), ABILITY_IF_BUTTON_POSITION_NORMAL_Y )==1 then
+                        call SetFrameText( GetFrameByName("TavernAbilityTooltipText",7), "     " )
+                        call SetFrameTexture( GetFrameByName("TavernAbility",7), GetAbilityBaseStringFieldById( String2Id( s ), ABILITY_SF_ICON_NORMAL ), 0, true )
+                        call SetFrameTexture( GetFrameByName("TavernAbility",7), GetAbilityBaseStringFieldById( String2Id( s ), ABILITY_SF_ICON_NORMAL ), 1, true )
+                        call SetFrameTexture( GetFrameByName("TavernAbility",7), GetAbilityBaseStringFieldById( String2Id( s ), ABILITY_SF_ICON_NORMAL ), 2, true )
+                        call ShowFrame( GetFrameByName("TavernAbilityBorderOpenable",7), Condition_AbilityString(String2Id( s )) )
+                        set j=0
+                        loop
+                        call AddFrameText( GetFrameByName("TavernAbilityTooltipText",7), "|cffffcc00"+I2S(GetAbilityBaseIntegerLevelFieldById( String2Id( s ), ABILITY_ILF_MANA_COST, j ))+"|r")
+                        exitwhen j==GetAbilityBaseIntegerFieldById(String2Id( s ), ABILITY_IF_LEVELS)-1
+                        call AddFrameText( GetFrameByName("TavernAbilityTooltipText",7), "/")
+                        set j=j+1
+                        endloop                        
+                        if String2Id( s )=='A105' or String2Id( s )=='A0RS' or String2Id( s )=='A0IR' or String2Id( s )=='CelF' or String2Id( s )=='CelG' or String2Id( s )=='BuuG' then
+                            call AddFrameText( GetFrameByName("TavernAbilityTooltipText",7), "\n\n"+GetAbilityBaseStringFieldById( String2Id( s ), ABILITY_SF_NAME )+", (|cffffcc00"+IntToChar(GetAbilityBaseIntegerFieldById( String2Id( s ), ABILITY_IF_BUTTON_HOTKEY_NORMAL ))+"|r)\n\n"+GetAbilityBaseStringFieldById( String2Id( s ), ABILITY_SLF_TOOLTIP_LEARN_EXTENDED )) 
+                        else                  
+                            call AddFrameText( GetFrameByName("TavernAbilityTooltipText",7), "\n\n"+GetAbilityBaseStringFieldById( String2Id( s ), ABILITY_SF_NAME )+", (|cffffcc00"+IntToChar(GetAbilityBaseIntegerFieldById( String2Id( s ), ABILITY_IF_BUTTON_HOTKEY_NORMAL ))+"|r)\n\n"+GetAbilityBaseStringFieldById( String2Id( s ), ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED ))
+                        endif
                     endif
                     set i=i+1
                 endloop
@@ -17239,6 +17265,7 @@ function OnButtonSelectHero takes nothing returns nothing
                 call SetFrameSize( GetFrameByName("TavernAbilityTooltip",4), .26, GetFrameHeight( GetFrameByName("TavernAbilityTooltipText",4))+0.03)
                 call SetFrameSize( GetFrameByName("TavernAbilityTooltip",5), .26, GetFrameHeight( GetFrameByName("TavernAbilityTooltipText",5))+0.03)
                 call SetFrameSize( GetFrameByName("TavernAbilityTooltip",6), .26, GetFrameHeight( GetFrameByName("TavernAbilityTooltipText",6))+0.03)
+                call SetFrameSize( GetFrameByName("TavernAbilityTooltip",7), .26, GetFrameHeight( GetFrameByName("TavernAbilityTooltipText",7))+0.03)
                 if GetFrameTexture( GetFrameByName("TavernAbility",5),0)=="UI\\Widgets\\Console\\Human\\human-inventory-slotfiller.blp" then
                     call ShowFrame(GetFrameByName("TavernAbility",5),false)
                 else
@@ -17250,6 +17277,12 @@ function OnButtonSelectHero takes nothing returns nothing
                 else
                     call ShowFrame(GetFrameByName("TavernAbility",6),true)
                     call ShowFrame( GetFrameByName("TavernAbilityTooltip",6), false )
+                endif
+                if GetFrameTexture( GetFrameByName("TavernAbility",7),0)=="UI\\Widgets\\Console\\Human\\human-inventory-slotfiller.blp" then
+                    call ShowFrame(GetFrameByName("TavernAbility",7),false)
+                else
+                    call ShowFrame(GetFrameByName("TavernAbility",7),true)
+                    call ShowFrame( GetFrameByName("TavernAbilityTooltip",7), false )
                 endif
             else
                 if RH_Force[GetFrameContext(but)]=='H01A' then
@@ -17339,13 +17372,14 @@ function OnButtonSelectHero takes nothing returns nothing
                     call SetFrameSize( GetFrameByName("TavernAbilityTooltip",5), .26, GetFrameHeight( GetFrameByName("TavernAbilityTooltipText",5))+0.03)
                     call SetFrameSize( GetFrameByName("TavernAbilityTooltip",6), .26, GetFrameHeight( GetFrameByName("TavernAbilityTooltipText",6))+0.03)
                     call ShowFrame(GetFrameByName("TavernAbility",6),false)
+                    call ShowFrame(GetFrameByName("TavernAbility",7),false)
                 endif
             endif
             set j=0
             loop
                 call SetFrameTextAlignment( GetFrameByName("TavernAbilityTooltipText",j), TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_LEFT )
                 call SetFrameRelativePoint( GetFrameByName("TavernAbilityTooltip",j), FRAMEPOINT_CENTER, GetFrameByName("TavernAbility",j), FRAMEPOINT_CENTER,  .13, (-0.5*GetFrameHeight( GetFrameByName("TavernAbilityTooltipText",j)))-.02  )
-                exitwhen j>7
+                exitwhen j>8
                 set j=j+1
             endloop
         endif
@@ -17667,7 +17701,7 @@ if udg_test==false then
 
     set TavernHeroAbilityGrid=CreateFrameByType("SIMPLEGRID", "TavernBarAbilityList", TavernHeroFrame, "", 0)
     call ClearFrameAllPoints( TavernHeroAbilityGrid )
-    call SetFrameRelativePoint( TavernHeroAbilityGrid, FRAMEPOINT_TOPLEFT, TavernHeroFrame, FRAMEPOINT_TOPLEFT,  .015, -.135  )
+    call SetFrameRelativePoint( TavernHeroAbilityGrid, FRAMEPOINT_TOPLEFT, TavernHeroFrame, FRAMEPOINT_TOPLEFT,  .015, -.132  )
     call SetFrameGridSize( TavernHeroAbilityGrid, 1, 9 )
     call SetFrameSize( TavernHeroAbilityGrid, .190, .012)
     call SetFramePriority( TavernHeroAbilityGrid, 5 )
