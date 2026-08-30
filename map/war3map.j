@@ -219979,138 +219979,7 @@ endif
 
 
 endfunction
-function CreateModeIndicatorWithPauseForm_PeriodicAbility takes nothing returns nothing
-    local timer t               =GetExpiredTimer()
-    local integer id            =GetHandleId(t)
-    local unit caster           =LoadUnitHandle(HH, id, c_CASTER)
-    local player p              =GetOwningPlayer(caster)
-    local integer idp           =GetHandleId(p)
-    local string mode_name      =LoadStr(HH, id, c_NAME)
-    local framehandle NewFrame  =LoadFrameHandle(HH, idp,StringHash(mode_name))
-    local real duration         =LoadReal(HH, GetHandleId(NewFrame), c_DURATION)-0.05
-    local integer position         =LoadInteger(HH, id, c_POSITION)
 
-    if position>0 then
-        if LoadBoolean(HH,idp,position-1)==false then
-        call SaveBoolean(HH,idp,position-1,true)
-        call SaveBoolean(HH,idp,position,false)
-        call SaveInteger(HH, id, c_POSITION,position-1)
-        set position=position-1
-        endif
-    endif
-
-
-    if GetUnitAbilityLevel(caster,'Avul')==0 and IsUnitPaused(caster)==false and IsUnitHidden(caster)==false and GetUnitAbilityLevel(caster,'Pet1')==0 and GetUnitAbilityLevel(caster,'Pet3')==0 then
-        call SaveReal           (HH, GetHandleId(NewFrame), c_DURATION, duration)
-        call SetFrameText( LoadFrameHandle(HH, idp,StringHash(mode_name+"2")), R2SW(duration,2, 1) )
-    endif
-
-    call SetFrameRelativePoint( NewFrame, FRAMEPOINT_CENTER, StatusBarFrame, FRAMEPOINT_LEFT, 0.017+position*0.025, 0.005 )
-    if  IsUnitTrueHero(caster)==false  or IsUnitIllusion(caster)==true or duration<=0 or udg_B==false or DU2==false or UnitIsAlive(caster)==false or GetUnitAbilityLevel(caster,LoadInteger(HH,id,10))==0  then
-        call ShowFrame( NewFrame, false )
-        call SaveReal(HH, GetHandleId(NewFrame), c_DURATION, 0)
-        call SaveBoolean(HH,idp,position,false)
-        call FlushChildHashtable(HH, id)
-        call DestroyTimer(t)
-    endif
-    set t=null
-    set caster=null
-    set mode_name=null
-    set NewFrame=null
-    set p=null
-endfunction
-function CreateModeIndicatorWithPauseFormAbility takes unit newCaster, string newString, real newDur,integer abil_Code returns nothing
-        local timer newTimer        = null
-        local integer id            = 0
-
-
-
-    local framehandle NewFrame  = null
-    local framehandle NewFrameText  = null
-    local player p              =GetOwningPlayer(newCaster)
-    local integer idp           =GetHandleId(p)
-    local framehandle consoleUI
-    local integer i=9
-    local integer j=0
-
-
-
-    if IsUnitIllusion(newCaster)==false then
-
-     set newTimer        = CreateTimer()
-     set id            = GetHandleId(newTimer)
-     set consoleUI=GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 )
-    if LoadFrameHandle(HH, idp,StringHash(newString))==null then    
-        set NewFrame = CreateFrameByType( "SIMPLEBUTTON", newString, StatusBarFrame, "", 0 )
-        call ClearFrameAllPoints( NewFrame )
-        call SetFrameTexture( NewFrame, newString, 0, true )
-        call SetFrameTexture( NewFrame, newString, 1, true )
-        call SetFrameTexture( NewFrame, newString, 2, true )
-        call SetFrameSize( NewFrame, .0237, .0237 )
-        call SetFramePriority( NewFrame, 7 )
-        call HandleListAddHandle(StatusBarFrameList[GetPlayerId(p)],NewFrame)
-        call SetFrameParent(NewFrame,StatusBarFrame)
-        if GetOwningPlayer(newCaster)!=GetLocalPlayer()then
-            call ShowFrame( NewFrame, false)
-        else
-            call ShowFrame( NewFrame, true)
-        endif
-        call SaveFrameHandle(HH,idp,StringHash(newString),NewFrame)
-        //call SaveReal               (HH, GetHandleId(NewFrame), c_DURATION, 2)
-        
-        set NewFrameText=CreateFrameByType( "SIMPLETEXT", newString+"1", NewFrame, "", 0 )
-        call ClearFrameAllPoints( NewFrameText )
-        call SetFramePriority( NewFrameText, 2 )
-        call SetFrameFont( NewFrameText, "Fonts\\FRIZQT__.TTF", .008, 0 )
-        call SetFrameTextAlignment( NewFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_LEFT )
-        call SetFrameText( NewFrameText, R2SW(newDur,2, 1) )
-        call SetFrameTextColour( NewFrameText, 0xFFFFA500 )
-        //call HandleListAddHandle(StatusBarFrameList[GetPlayerId(p)],NewFrameText)
-        if GetOwningPlayer(newCaster)!=GetLocalPlayer()then
-            call ShowFrame( NewFrameText, false)
-        else
-            call ShowFrame( NewFrameText, true)
-        endif
-        call SaveFrameHandle(HH,idp,StringHash(newString+"2"),NewFrameText)
-    else
-        set NewFrame=LoadFrameHandle(HH, idp,StringHash(newString))
-        set NewFrameText=LoadFrameHandle(HH, idp,StringHash(newString+"2"))
-        call SetFrameText( NewFrameText, R2SW(newDur,2, 1) )
-        if GetOwningPlayer(newCaster)!=GetLocalPlayer()then
-            call ShowFrame( NewFrame, false)
-        else
-            call ShowFrame( NewFrame, true)
-        endif
-    endif
-    if LoadReal(HH, GetHandleId(NewFrame), c_DURATION)<=0 then
-        loop
-            exitwhen i==0
-            if LoadBoolean(HH,idp,i)==false then
-            call SaveBoolean(HH,idp,i,true)
-            call SaveBoolean(HH,idp,i+1,false)
-            set j=i
-            endif
-            set i=i-1
-        endloop
-        call SetFrameRelativePoint( NewFrame, FRAMEPOINT_CENTER, StatusBarFrame, FRAMEPOINT_LEFT, 0.017+j*0.025, 0.005 )
-        call SetFrameRelativePoint( NewFrameText, FRAMEPOINT_BOTTOM, NewFrame, FRAMEPOINT_BOTTOM, .0, -.01 )
-        call SaveUnitHandle         (HH, id, c_CASTER, newCaster)
-        call SaveReal               (HH, GetHandleId(NewFrame), c_DURATION, newDur)
-        call SaveInteger            (HH, id, c_POSITION, j)
-        call SaveStr                (HH, id, c_NAME, newString)
-        call SaveInteger            (HH, id, 10, abil_Code)
-        call TimerStart             (newTimer, 0.05, true, function CreateModeIndicatorWithPauseForm_PeriodicAbility)
-    else
-        call SaveReal           (HH, GetHandleId(NewFrame), c_DURATION, newDur)
-    endif
-
-     endif
-    set consoleUI=null
-    set newTimer=null
-    set p=null
-    set NewFrame=null
-    set NewFrameText=null
-endfunction
 function Urahara_D_Act2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
@@ -220163,18 +220032,18 @@ call DestroyEffect(LoadEffectHandle(HH,id,10))     // снять ауру кас
 call PauseUnit(caster,false)
 call SetUnitInvulnerable(caster,false)
 
-call SetUnitAbilityLevel(caster,'UKD2',4)
+call SetUnitAbilityLevel(caster,'UKD2',3)
 //call UnitAddAbility(caster,'UkBs')                      // +30 все статы (item-abil, не сеттер!)
 //call UnitAddAbility(caster,'UKD3')                      // макс. скорость (900)
 
 
-call UnitAddAbilityTimedPaused(caster,25,'UKD3')
+call UnitAddAbilityTimedPaused(caster,15,'UKD3')
 
 
 
 call CreateModeIndicatorForm(caster,"ReplaceableTextures\\CommandButtons\\BTNUraharaD.blp",25)  // индикатор формы в UjAPI-панели
 call SetAbilityRemainingCooldown(GetUnitAbility(caster,'A07P'),0.01) // сбросить Sonido
-call SetAbilityCooldown(GetUnitAbility(caster,'A07P'),2.0)           // и на время формы = 2 c
+call SetAbilityCooldown(GetUnitAbility(caster,'A07P'),6.0)           // и на время формы = 2 c
 call SaveReal(HH,id,6,1)
 
 call SaveReal(HH,id,5,0)                         // сброс счётчика на фазу баффа
@@ -220219,7 +220088,7 @@ if time2>=0 then
 
 set time2=-1
 
-call SetWidgetLife(caster, GetWidgetLife(caster)+0.5*heal)    // хил 0.25*INT/тик = 0.5*INT/сек
+call SetWidgetLife(caster, GetWidgetLife(caster)+0.3*heal)    // хил 0.25*INT/тик = 0.5*INT/сек
 
 endif
 
