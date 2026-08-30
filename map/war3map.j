@@ -17205,7 +17205,7 @@ function OnButtonSelectHero takes nothing returns nothing
                         call AddFrameText( GetFrameByName("TavernAbilityTooltipText",5), "/")
                         set j=j+1
                         endloop   
-                        if String2Id( s )=='A105' or String2Id( s )=='A0RS' or String2Id( s )=='A0IR' or String2Id( s )=='CelF' then
+                        if String2Id( s )=='A105' or String2Id( s )=='A0RS' or String2Id( s )=='A0IR' or String2Id( s )=='CelF' or String2Id( s )=='CelG' or String2Id( s )=='BuuG' then
                             call AddFrameText( GetFrameByName("TavernAbilityTooltipText",5), "\n\n"+GetAbilityBaseStringFieldById( String2Id( s ), ABILITY_SF_NAME )+", (|cffffcc00"+IntToChar(GetAbilityBaseIntegerFieldById( String2Id( s ), ABILITY_IF_BUTTON_HOTKEY_NORMAL ))+"|r)\n\n"+GetAbilityBaseStringFieldById( String2Id( s ), ABILITY_SLF_TOOLTIP_LEARN_EXTENDED )) 
                         else                  
                             call AddFrameText( GetFrameByName("TavernAbilityTooltipText",5), "\n\n"+GetAbilityBaseStringFieldById( String2Id( s ), ABILITY_SF_NAME )+", (|cffffcc00"+IntToChar(GetAbilityBaseIntegerFieldById( String2Id( s ), ABILITY_IF_BUTTON_HOTKEY_NORMAL ))+"|r)\n\n"+GetAbilityBaseStringFieldById( String2Id( s ), ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED ))
@@ -17223,7 +17223,7 @@ function OnButtonSelectHero takes nothing returns nothing
                         call AddFrameText( GetFrameByName("TavernAbilityTooltipText",6), "/")
                         set j=j+1
                         endloop                        
-                        if String2Id( s )=='A105' or String2Id( s )=='A0RS' or String2Id( s )=='A0IR' or String2Id( s )=='CelG' then
+                        if String2Id( s )=='A105' or String2Id( s )=='A0RS' or String2Id( s )=='A0IR' or String2Id( s )=='CelF' or String2Id( s )=='CelG' or String2Id( s )=='BuuG' then
                             call AddFrameText( GetFrameByName("TavernAbilityTooltipText",6), "\n\n"+GetAbilityBaseStringFieldById( String2Id( s ), ABILITY_SF_NAME )+", (|cffffcc00"+IntToChar(GetAbilityBaseIntegerFieldById( String2Id( s ), ABILITY_IF_BUTTON_HOTKEY_NORMAL ))+"|r)\n\n"+GetAbilityBaseStringFieldById( String2Id( s ), ABILITY_SLF_TOOLTIP_LEARN_EXTENDED )) 
                         else                  
                             call AddFrameText( GetFrameByName("TavernAbilityTooltipText",6), "\n\n"+GetAbilityBaseStringFieldById( String2Id( s ), ABILITY_SF_NAME )+", (|cffffcc00"+IntToChar(GetAbilityBaseIntegerFieldById( String2Id( s ), ABILITY_IF_BUTTON_HOTKEY_NORMAL ))+"|r)\n\n"+GetAbilityBaseStringFieldById( String2Id( s ), ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED ))
