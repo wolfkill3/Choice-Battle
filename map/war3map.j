@@ -10963,7 +10963,7 @@ function OnButtonHover takes nothing returns nothing
         call SetFrameSpriteColour( cursor, 0xFF00FF00 )
         call SetFrameSpriteModel( GetCFrameByName( "HeroPickSelector", 0 ), " " )
         loop
-        exitwhen i>=35
+        exitwhen i>=40
             call SetFrameSpriteModel( GetCFrameByName( "TavernAdditionalAbilityBorderOpenable", i ), " " )
             set i=i+1
         endloop
@@ -10980,7 +10980,7 @@ function OnButtonUnHover takes nothing returns nothing
         call SetFrameSpriteColour( cursor, 0xFFFFFFFF )
         call SetFrameSpriteModel( GetCFrameByName( "HeroPickSelector", 0 ), "UI\\Feedback\\Autocast\\UI-ModalButtonOn.mdl" )
         loop
-        exitwhen i>=35
+        exitwhen i>=40
             call SetFrameSpriteModel( GetCFrameByName( "TavernAdditionalAbilityBorderOpenable", i ), "lastprismrainbow.mdl" )
             set i=i+1
         endloop
@@ -12214,12 +12214,13 @@ function OnButtonCloseTavern takes nothing returns nothing
         call ShowFrame( GetFrameByName("TavernAbilityBorderOpenable",4), false )
         call ShowFrame( GetFrameByName("TavernAbilityBorderOpenable",5), false )
         call ShowFrame( GetFrameByName("TavernAbilityBorderOpenable",6), false )
+        call ShowFrame( GetFrameByName("TavernAbilityBorderOpenable",6), false )
         call ClickFrame(OpenStatusButton)
         set j=0
         loop
         call ShowFrame( GetFrameByName("TavernAdditionalAbilityBorderOpenable",j), false )
         set j=j+1
-        exitwhen j>35
+        exitwhen j>40
         endloop
         call EditBlackBorders( -.02, .13 ) // -.02, .13 | to return to default 
         call HideOriginFrames( false )
@@ -12273,7 +12274,7 @@ function OnButtonOpenTavern takes nothing returns nothing
         endloop
         set i=0
         loop
-        exitwhen i>=35 //TavernHeroAbilityIcon
+        exitwhen i>=40 //TavernHeroAbilityIcon
             call SetFrameTexture( GetFrameByName("TavernAdditionalAbility",i), "UI\\Widgets\\Console\\Human\\human-inventory-slotfiller.blp", 0, true )
             call SetFrameTexture( GetFrameByName("TavernAdditionalAbility",i), "UI\\Widgets\\Console\\Human\\human-inventory-slotfiller.blp", 1, true )
             call SetFrameTexture( GetFrameByName("TavernAdditionalAbility",i), "UI\\Widgets\\Console\\Human\\human-inventory-slotfiller.blp", 2, true )
@@ -12358,7 +12359,7 @@ function ToggleOpenTavern takes nothing returns nothing
                 endloop
                 set i=0
                 loop
-                exitwhen i>=35 //TavernHeroAbilityIcon
+                exitwhen i>=40 //TavernHeroAbilityIcon
                     call SetFrameTexture( GetFrameByName("TavernAdditionalAbility",i), "UI\\Widgets\\Console\\Human\\human-inventory-slotfiller.blp", 0, true )
                     call SetFrameTexture( GetFrameByName("TavernAdditionalAbility",i), "UI\\Widgets\\Console\\Human\\human-inventory-slotfiller.blp", 1, true )
                     call SetFrameTexture( GetFrameByName("TavernAdditionalAbility",i), "UI\\Widgets\\Console\\Human\\human-inventory-slotfiller.blp", 2, true )
@@ -12445,7 +12446,7 @@ function ToggleOpenTavern takes nothing returns nothing
                 loop
                 call ShowFrame( GetFrameByName("TavernAdditionalAbilityBorderOpenable",j), false )
                 set j=j+1
-                exitwhen j>35
+                exitwhen j>40
                 endloop
             endif
         endif
@@ -12838,7 +12839,7 @@ function OnButtonAddonAbility takes nothing returns nothing
     endif
     if p==GetLocalPlayer() then
         loop
-        exitwhen i>=35
+        exitwhen i>=40
         
             if GetFrameTexture(but,0)==GetAbilityBaseStringFieldById('A1HO',ABILITY_SF_ICON_NORMAL) and IsFrameVisible(GetFrameByName("TavernBarAdditionalAbilityList",0))==false and i==GetFrameContext(but) then
                 call ShowFrame( InfoTavernText, false )
@@ -12851,7 +12852,7 @@ function OnButtonAddonAbility takes nothing returns nothing
                 call ShowFrame(GetFrameByName("TavernAdditionalAbility",j),false)
                 endif
                 set j=j+1
-                exitwhen j>35
+                exitwhen j>40
                 endloop
                 call SetFrameText( GetFrameByName("TavernAdditionalAbilityTooltipText",0), "     " )
                 call SetFrameText( GetFrameByName("TavernAdditionalAbilityTooltipText",1), "     " )
@@ -12896,7 +12897,7 @@ function OnButtonAddonAbility takes nothing returns nothing
                 loop
                     call SetFrameTextAlignment( GetFrameByName("TavernAdditionalAbilityTooltipText",j), TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_LEFT )
                     call SetFrameRelativePoint( GetFrameByName("TavernAdditionalAbilityTooltip",j), FRAMEPOINT_CENTER, GetFrameByName("TavernAdditionalAbility",j), FRAMEPOINT_CENTER,  .13, (-0.5*GetFrameHeight( GetFrameByName("TavernAdditionalAbilityTooltipText",j)))-.02  )
-                    exitwhen j>35
+                    exitwhen j>40
                     set j=j+1
                 endloop
             elseif GetFrameTexture(but,0)==GetAbilityBaseStringFieldById('A1HO',ABILITY_SF_ICON_NORMAL) and IsFrameVisible(GetFrameByName("TavernBarAdditionalAbilityList",0))==true and i==GetFrameContext(but) then
@@ -12905,11 +12906,11 @@ function OnButtonAddonAbility takes nothing returns nothing
                 set j=0
                 loop
                 call ShowFrame( GetFrameByName("TavernAdditionalAbilityBorderOpenable",j), false )
-                if j>=7 then
+                if j>=8 then
                 call ShowFrame(GetFrameByName("TavernAdditionalAbility",j),false)
                 endif
                 set j=j+1
-                exitwhen j>35
+                exitwhen j>40
                 endloop
 
             elseif GetFrameTexture(but,0)==GetAbilityBaseStringFieldById('AlFS',ABILITY_SF_ICON_NORMAL) and IsFrameVisible(GetFrameByName("TavernBarAdditionalAbilityList",0))==false and i==GetFrameContext(but) then
@@ -12923,7 +12924,7 @@ function OnButtonAddonAbility takes nothing returns nothing
                 call ShowFrame(GetFrameByName("TavernAdditionalAbility",j),false)
                 endif
                 set j=j+1
-                exitwhen j>35
+                exitwhen j>40
                 endloop
                 call SetFrameText( GetFrameByName("TavernAdditionalAbilityTooltipText",0), "     " )
                 call SetFrameText( GetFrameByName("TavernAdditionalAbilityTooltipText",1), "     " )
@@ -12968,7 +12969,7 @@ function OnButtonAddonAbility takes nothing returns nothing
                 loop
                     call SetFrameTextAlignment( GetFrameByName("TavernAdditionalAbilityTooltipText",j), TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_LEFT )
                     call SetFrameRelativePoint( GetFrameByName("TavernAdditionalAbilityTooltip",j), FRAMEPOINT_CENTER, GetFrameByName("TavernAdditionalAbility",j), FRAMEPOINT_CENTER,  .13, (-0.5*GetFrameHeight( GetFrameByName("TavernAdditionalAbilityTooltipText",j)))-.02  )
-                    exitwhen j>35
+                    exitwhen j>40
                     set j=j+1
                 endloop
             elseif GetFrameTexture(but,0)==GetAbilityBaseStringFieldById('AlFS',ABILITY_SF_ICON_NORMAL) and IsFrameVisible(GetFrameByName("TavernBarAdditionalAbilityList",0))==true and i==GetFrameContext(but) then
@@ -12977,11 +12978,11 @@ function OnButtonAddonAbility takes nothing returns nothing
                 set j=0
                 loop
                 call ShowFrame( GetFrameByName("TavernAdditionalAbilityBorderOpenable",j), false )
-                if j>=7 then
+                if j>=8 then
                 call ShowFrame(GetFrameByName("TavernAdditionalAbility",j),false)
                 endif
                 set j=j+1
-                exitwhen j>35
+                exitwhen j>40
                 endloop
 
             elseif GetFrameTexture(but,0)==GetAbilityBaseStringFieldById('OM13',ABILITY_SF_ICON_NORMAL) and IsFrameVisible(GetFrameByName("TavernBarAdditionalAbilityList",0))==false and i==GetFrameContext(but) then
@@ -12995,7 +12996,7 @@ function OnButtonAddonAbility takes nothing returns nothing
                 call ShowFrame(GetFrameByName("TavernAdditionalAbility",j),false)
                 endif
                 set j=j+1
-                exitwhen j>35
+                exitwhen j>40
                 endloop
                 call SetFrameText( GetFrameByName("TavernAdditionalAbilityTooltipText",0), "     " )
                 call SetFrameText( GetFrameByName("TavernAdditionalAbilityTooltipText",1), "     " )
@@ -13027,7 +13028,7 @@ function OnButtonAddonAbility takes nothing returns nothing
                 loop
                     call SetFrameTextAlignment( GetFrameByName("TavernAdditionalAbilityTooltipText",j), TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_LEFT )
                     call SetFrameRelativePoint( GetFrameByName("TavernAdditionalAbilityTooltip",j), FRAMEPOINT_CENTER, GetFrameByName("TavernAdditionalAbility",j), FRAMEPOINT_CENTER,  .13, (-0.5*GetFrameHeight( GetFrameByName("TavernAdditionalAbilityTooltipText",j)))-.02  )
-                    exitwhen j>35
+                    exitwhen j>40
                     set j=j+1
                 endloop
             elseif GetFrameTexture(but,0)==GetAbilityBaseStringFieldById('OM13',ABILITY_SF_ICON_NORMAL) and IsFrameVisible(GetFrameByName("TavernBarAdditionalAbilityList",0))==true and i==GetFrameContext(but) then
@@ -13036,11 +13037,11 @@ function OnButtonAddonAbility takes nothing returns nothing
                 set j=0
                 loop
                 call ShowFrame( GetFrameByName("TavernAdditionalAbilityBorderOpenable",j), false )
-                if j>=7 then
+                if j>=8 then
                 call ShowFrame(GetFrameByName("TavernAdditionalAbility",j),false)
                 endif
                 set j=j+1
-                exitwhen j>35
+                exitwhen j>40
                 endloop
 
             elseif GetFrameTexture(but,0)==GetAbilityBaseStringFieldById('A17D',ABILITY_SF_ICON_NORMAL) and IsFrameVisible(GetFrameByName("TavernBarAdditionalAbilityList",0))==false and i==GetFrameContext(but) then
@@ -13054,7 +13055,7 @@ function OnButtonAddonAbility takes nothing returns nothing
                 call ShowFrame(GetFrameByName("TavernAdditionalAbility",j),false)
                 endif
                 set j=j+1
-                exitwhen j>35
+                exitwhen j>40
                 endloop
                 call SetFrameText( GetFrameByName("TavernAdditionalAbilityTooltipText",0), "     " )
                 call SetFrameText( GetFrameByName("TavernAdditionalAbilityTooltipText",1), "     " )
@@ -13099,7 +13100,7 @@ function OnButtonAddonAbility takes nothing returns nothing
                 loop
                     call SetFrameTextAlignment( GetFrameByName("TavernAdditionalAbilityTooltipText",j), TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_LEFT )
                     call SetFrameRelativePoint( GetFrameByName("TavernAdditionalAbilityTooltip",j), FRAMEPOINT_CENTER, GetFrameByName("TavernAdditionalAbility",j), FRAMEPOINT_CENTER,  .13, (-0.5*GetFrameHeight( GetFrameByName("TavernAdditionalAbilityTooltipText",j)))-.02  )
-                    exitwhen j>35
+                    exitwhen j>40
                     set j=j+1
                 endloop
             elseif GetFrameTexture(but,0)==GetAbilityBaseStringFieldById('A17D',ABILITY_SF_ICON_NORMAL) and IsFrameVisible(GetFrameByName("TavernBarAdditionalAbilityList",0))==true and i==GetFrameContext(but) then
@@ -13108,11 +13109,11 @@ function OnButtonAddonAbility takes nothing returns nothing
                 set j=0
                 loop
                 call ShowFrame( GetFrameByName("TavernAdditionalAbilityBorderOpenable",j), false )
-                if j>=7 then
+                if j>=8 then
                 call ShowFrame(GetFrameByName("TavernAdditionalAbility",j),false)
                 endif
                 set j=j+1
-                exitwhen j>35
+                exitwhen j>40
                 endloop
 
             elseif GetFrameTexture(but,0)==GetAbilityBaseStringFieldById('A177',ABILITY_SF_ICON_NORMAL) and IsFrameVisible(GetFrameByName("TavernBarAdditionalAbilityList",0))==false and i==GetFrameContext(but) then
@@ -13126,7 +13127,7 @@ function OnButtonAddonAbility takes nothing returns nothing
                 call ShowFrame(GetFrameByName("TavernAdditionalAbility",j),false)
                 endif
                 set j=j+1
-                exitwhen j>35
+                exitwhen j>40
                 endloop
                 call SetFrameText( GetFrameByName("TavernAdditionalAbilityTooltipText",0), "     " )
                 call SetFrameText( GetFrameByName("TavernAdditionalAbilityTooltipText",1), "     " )
@@ -13171,7 +13172,7 @@ function OnButtonAddonAbility takes nothing returns nothing
                 loop
                     call SetFrameTextAlignment( GetFrameByName("TavernAdditionalAbilityTooltipText",j), TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_LEFT )
                     call SetFrameRelativePoint( GetFrameByName("TavernAdditionalAbilityTooltip",j), FRAMEPOINT_CENTER, GetFrameByName("TavernAdditionalAbility",j), FRAMEPOINT_CENTER,  .13, (-0.5*GetFrameHeight( GetFrameByName("TavernAdditionalAbilityTooltipText",j)))-.02  )
-                    exitwhen j>35
+                    exitwhen j>40
                     set j=j+1
                 endloop
             elseif GetFrameTexture(but,0)==GetAbilityBaseStringFieldById('A177',ABILITY_SF_ICON_NORMAL) and IsFrameVisible(GetFrameByName("TavernBarAdditionalAbilityList",0))==true and i==GetFrameContext(but) then
@@ -13180,11 +13181,11 @@ function OnButtonAddonAbility takes nothing returns nothing
                 set j=0
                 loop
                 call ShowFrame( GetFrameByName("TavernAdditionalAbilityBorderOpenable",j), false )
-                if j>=7 then
+                if j>=8 then
                 call ShowFrame(GetFrameByName("TavernAdditionalAbility",j),false)
                 endif
                 set j=j+1
-                exitwhen j>35
+                exitwhen j>40
                 endloop
 
 
@@ -13199,7 +13200,7 @@ function OnButtonAddonAbility takes nothing returns nothing
                 call ShowFrame(GetFrameByName("TavernAdditionalAbility",j),false)
                 endif
                 set j=j+1
-                exitwhen j>35
+                exitwhen j>40
                 endloop
                 call SetFrameText( GetFrameByName("TavernAdditionalAbilityTooltipText",0), "     " )
                 call SetFrameText( GetFrameByName("TavernAdditionalAbilityTooltipText",1), "     " )
@@ -13245,7 +13246,7 @@ function OnButtonAddonAbility takes nothing returns nothing
                 loop
                     call SetFrameTextAlignment( GetFrameByName("TavernAdditionalAbilityTooltipText",j), TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_LEFT )
                     call SetFrameRelativePoint( GetFrameByName("TavernAdditionalAbilityTooltip",j), FRAMEPOINT_CENTER, GetFrameByName("TavernAdditionalAbility",j), FRAMEPOINT_CENTER,  .13, (-0.5*GetFrameHeight( GetFrameByName("TavernAdditionalAbilityTooltipText",j)))-.02  )
-                    exitwhen j>35
+                    exitwhen j>40
                     set j=j+1
                 endloop
             elseif GetFrameTexture(but,0)==GetAbilityBaseStringFieldById('A0TN',ABILITY_SF_ICON_NORMAL) and IsFrameVisible(GetFrameByName("TavernBarAdditionalAbilityList",0))==true and i==GetFrameContext(but) then
@@ -13254,11 +13255,11 @@ function OnButtonAddonAbility takes nothing returns nothing
                 set j=0
                 loop
                 call ShowFrame( GetFrameByName("TavernAdditionalAbilityBorderOpenable",j), false )
-                if j>=7 then
+                if j>=8 then
                 call ShowFrame(GetFrameByName("TavernAdditionalAbility",j),false)
                 endif
                 set j=j+1
-                exitwhen j>35
+                exitwhen j>40
                 endloop
 
             elseif GetFrameTexture(but,0)==GetAbilityBaseStringFieldById('A172',ABILITY_SF_ICON_NORMAL) and IsFrameVisible(GetFrameByName("TavernBarAdditionalAbilityList",0))==false and i==GetFrameContext(but) then
@@ -13272,7 +13273,7 @@ function OnButtonAddonAbility takes nothing returns nothing
                 call ShowFrame(GetFrameByName("TavernAdditionalAbility",j),false)
                 endif
                 set j=j+1
-                exitwhen j>35
+                exitwhen j>40
                 endloop
                 call SetFrameText( GetFrameByName("TavernAdditionalAbilityTooltipText",0), "     " )
                 call SetFrameText( GetFrameByName("TavernAdditionalAbilityTooltipText",1), "     " )
@@ -13330,7 +13331,7 @@ function OnButtonAddonAbility takes nothing returns nothing
                 loop
                     call SetFrameTextAlignment( GetFrameByName("TavernAdditionalAbilityTooltipText",j), TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_LEFT )
                     call SetFrameRelativePoint( GetFrameByName("TavernAdditionalAbilityTooltip",j), FRAMEPOINT_CENTER, GetFrameByName("TavernAdditionalAbility",j), FRAMEPOINT_CENTER,  .13, (-0.5*GetFrameHeight( GetFrameByName("TavernAdditionalAbilityTooltipText",j)))-.02  )
-                    exitwhen j>35
+                    exitwhen j>40
                     set j=j+1
                 endloop
             elseif GetFrameTexture(but,0)==GetAbilityBaseStringFieldById('A172',ABILITY_SF_ICON_NORMAL) and IsFrameVisible(GetFrameByName("TavernBarAdditionalAbilityList",0))==true and i==GetFrameContext(but) then
@@ -13339,11 +13340,11 @@ function OnButtonAddonAbility takes nothing returns nothing
                 set j=0
                 loop
                 call ShowFrame( GetFrameByName("TavernAdditionalAbilityBorderOpenable",j), false )
-                if j>=7 then
+                if j>=8 then
                 call ShowFrame(GetFrameByName("TavernAdditionalAbility",j),false)
                 endif
                 set j=j+1
-                exitwhen j>35
+                exitwhen j>40
                 endloop
 
             elseif GetFrameTexture(but,0)==GetAbilityBaseStringFieldById('A16U',ABILITY_SF_ICON_NORMAL) and IsFrameVisible(GetFrameByName("TavernBarAdditionalAbilityList",0))==false and i==GetFrameContext(but) then
@@ -13357,7 +13358,7 @@ function OnButtonAddonAbility takes nothing returns nothing
                 call ShowFrame(GetFrameByName("TavernAdditionalAbility",j),false)
                 endif
                 set j=j+1
-                exitwhen j>35
+                exitwhen j>40
                 endloop
                 call SetFrameText( GetFrameByName("TavernAdditionalAbilityTooltipText",0), "     " )
                 call SetFrameText( GetFrameByName("TavernAdditionalAbilityTooltipText",1), "     " )
@@ -13415,7 +13416,7 @@ function OnButtonAddonAbility takes nothing returns nothing
                 loop
                     call SetFrameTextAlignment( GetFrameByName("TavernAdditionalAbilityTooltipText",j), TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_LEFT )
                     call SetFrameRelativePoint( GetFrameByName("TavernAdditionalAbilityTooltip",j), FRAMEPOINT_CENTER, GetFrameByName("TavernAdditionalAbility",j), FRAMEPOINT_CENTER,  .13, (-0.5*GetFrameHeight( GetFrameByName("TavernAdditionalAbilityTooltipText",j)))-.02  )
-                    exitwhen j>35
+                    exitwhen j>40
                     set j=j+1
                 endloop
             elseif GetFrameTexture(but,0)==GetAbilityBaseStringFieldById('A16U',ABILITY_SF_ICON_NORMAL) and IsFrameVisible(GetFrameByName("TavernBarAdditionalAbilityList",0))==true and i==GetFrameContext(but) then
@@ -13424,11 +13425,11 @@ function OnButtonAddonAbility takes nothing returns nothing
                 set j=0
                 loop
                 call ShowFrame( GetFrameByName("TavernAdditionalAbilityBorderOpenable",j), false )
-                if j>=7 then
+                if j>=8 then
                 call ShowFrame(GetFrameByName("TavernAdditionalAbility",j),false)
                 endif
                 set j=j+1
-                exitwhen j>35
+                exitwhen j>40
                 endloop
 
             elseif GetFrameTexture(but,0)==GetAbilityBaseStringFieldById('A0QK',ABILITY_SF_ICON_NORMAL) and IsFrameVisible(GetFrameByName("TavernBarAdditionalAbilityList",0))==false and i==GetFrameContext(but) then
@@ -13444,7 +13445,7 @@ function OnButtonAddonAbility takes nothing returns nothing
                 call SetFrameText( GetFrameByName("TavernAdditionalAbilityTooltipText",j), "     " )
                 endif
                 set j=j+1
-                exitwhen j>35
+                exitwhen j>40
                 endloop
                 set j=0
                 loop
@@ -13582,7 +13583,7 @@ function OnButtonAddonAbility takes nothing returns nothing
                 loop
                     call SetFrameTextAlignment( GetFrameByName("TavernAdditionalAbilityTooltipText",j), TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_LEFT )
                     call SetFrameRelativePoint( GetFrameByName("TavernAdditionalAbilityTooltip",j), FRAMEPOINT_CENTER, GetFrameByName("TavernAdditionalAbility",j), FRAMEPOINT_CENTER,  .13, (-0.5*GetFrameHeight( GetFrameByName("TavernAdditionalAbilityTooltipText",j)))-.02  )
-                    exitwhen j>35
+                    exitwhen j>40
                     set j=j+1
                 endloop
             elseif GetFrameTexture(but,0)==GetAbilityBaseStringFieldById('A0QK',ABILITY_SF_ICON_NORMAL) and IsFrameVisible(GetFrameByName("TavernBarAdditionalAbilityList",0))==true and i==GetFrameContext(but) and but!=GetFrameByName("TavernAdditionalAbility",3) then
@@ -13591,11 +13592,11 @@ function OnButtonAddonAbility takes nothing returns nothing
                 set j=0
                 loop
                 call ShowFrame( GetFrameByName("TavernAdditionalAbilityBorderOpenable",j), false )
-                if j>=7 then
+                if j>=8 then
                 call ShowFrame(GetFrameByName("TavernAdditionalAbility",j),false)
                 endif
                 set j=j+1
-                exitwhen j>35
+                exitwhen j>40
                 endloop
             endif
 
@@ -13612,7 +13613,7 @@ function OnButtonAddonAbility takes nothing returns nothing
                 call SetFrameText( GetFrameByName("TavernAdditionalAbilityTooltipText",j), "     " )
                 endif
                 set j=j+1
-                exitwhen j>35
+                exitwhen j>40
                 endloop
                 set j=0
                 loop
@@ -13654,7 +13655,7 @@ function OnButtonAddonAbility takes nothing returns nothing
                 loop
                     call SetFrameTextAlignment( GetFrameByName("TavernAdditionalAbilityTooltipText",j), TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_LEFT )
                     call SetFrameRelativePoint( GetFrameByName("TavernAdditionalAbilityTooltip",j), FRAMEPOINT_CENTER, GetFrameByName("TavernAdditionalAbility",j), FRAMEPOINT_CENTER,  .13, (-0.5*GetFrameHeight( GetFrameByName("TavernAdditionalAbilityTooltipText",j)))-.02  )
-                    exitwhen j>35
+                    exitwhen j>40
                     set j=j+1
                 endloop
             elseif GetFrameTexture(but,0)==GetAbilityBaseStringFieldById('GKG1',ABILITY_SF_ICON_NORMAL) and IsFrameVisible(GetFrameByName("TavernBarAdditionalAbilityList",0))==true and i==GetFrameContext(but) then
@@ -13663,11 +13664,11 @@ function OnButtonAddonAbility takes nothing returns nothing
                 set j=0
                 loop
                 call ShowFrame( GetFrameByName("TavernAdditionalAbilityBorderOpenable",j), false )
-                if j>=7 then
+                if j>=8 then
                 call ShowFrame(GetFrameByName("TavernAdditionalAbility",j),false)
                 endif
                 set j=j+1
-                exitwhen j>35
+                exitwhen j>40
                 endloop
             
             elseif GetFrameTexture(but,0)==GetAbilityBaseStringFieldById('GKF1',ABILITY_SF_ICON_NORMAL) and IsFrameVisible(GetFrameByName("TavernBarAdditionalAbilityList",0))==false and i==GetFrameContext(but) then
@@ -13684,7 +13685,7 @@ function OnButtonAddonAbility takes nothing returns nothing
                 call SetFrameText( GetFrameByName("TavernAdditionalAbilityTooltipText",j), "     " )
                 endif
                 set j=j+1
-                exitwhen j>35
+                exitwhen j>40
                 endloop
                 set j=0
                 loop
@@ -13798,7 +13799,7 @@ function OnButtonAddonAbility takes nothing returns nothing
                 loop
                     call SetFrameTextAlignment( GetFrameByName("TavernAdditionalAbilityTooltipText",j), TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_LEFT )
                     call SetFrameRelativePoint( GetFrameByName("TavernAdditionalAbilityTooltip",j), FRAMEPOINT_CENTER, GetFrameByName("TavernAdditionalAbility",j), FRAMEPOINT_CENTER,  .13, (-0.5*GetFrameHeight( GetFrameByName("TavernAdditionalAbilityTooltipText",j)))-.02  )
-                    exitwhen j>35
+                    exitwhen j>40
                     set j=j+1
                 endloop
             elseif (GetFrameTexture(but,0)==GetAbilityBaseStringFieldById('GKF1',ABILITY_SF_ICON_NORMAL) or GetFrameTexture(but,0)==GetAbilityBaseStringFieldById('GKBS',ABILITY_SF_ICON_NORMAL) or GetFrameTexture(but,0)==GetAbilityBaseStringFieldById('GKSS',ABILITY_SF_ICON_NORMAL) or GetFrameTexture(but,0)==GetAbilityBaseStringFieldById('GKS2',ABILITY_SF_ICON_NORMAL) or GetFrameTexture(but,0)==GetAbilityBaseStringFieldById('GKS3',ABILITY_SF_ICON_NORMAL) or GetFrameTexture(but,0)==GetAbilityBaseStringFieldById('GKS4',ABILITY_SF_ICON_NORMAL) or GetFrameTexture(but,0)==GetAbilityBaseStringFieldById('GKSR',ABILITY_SF_ICON_NORMAL) or GetFrameTexture(but,0)==GetAbilityBaseStringFieldById('GKSB',ABILITY_SF_ICON_NORMAL) or GetFrameTexture(but,0)==GetAbilityBaseStringFieldById('GKUI',ABILITY_SF_ICON_NORMAL) or GetFrameTexture(but,0)==GetAbilityBaseStringFieldById('GKMI',ABILITY_SF_ICON_NORMAL)) and IsFrameVisible(GetFrameByName("TavernBarAdditionalAbilityList",0))==true and i==GetFrameContext(but) then
@@ -13892,11 +13893,11 @@ function OnButtonAddonAbility takes nothing returns nothing
                 set j=0
                 loop
                 call ShowFrame( GetFrameByName("TavernAdditionalAbilityBorderOpenable",j), false )
-                if j>=7 then
+                if j>=8 then
                 call ShowFrame(GetFrameByName("TavernAdditionalAbility",j),false)
                 endif
                 set j=j+1
-                exitwhen j>35
+                exitwhen j>40
                 endloop
 
             elseif GetFrameTexture(but,0)==GetAbilityBaseStringFieldById('GKQ1',ABILITY_SF_ICON_NORMAL) and IsFrameVisible(GetFrameByName("TavernBarAdditionalAbilityList",0))==false and i==GetFrameContext(but) then
@@ -13912,7 +13913,7 @@ function OnButtonAddonAbility takes nothing returns nothing
                 call SetFrameText( GetFrameByName("TavernAdditionalAbilityTooltipText",j), "     " )
                 endif
                 set j=j+1
-                exitwhen j>35
+                exitwhen j>40
                 endloop
                 set j=0
                 loop
@@ -13978,7 +13979,7 @@ function OnButtonAddonAbility takes nothing returns nothing
                 loop
                     call SetFrameTextAlignment( GetFrameByName("TavernAdditionalAbilityTooltipText",j), TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_LEFT )
                     call SetFrameRelativePoint( GetFrameByName("TavernAdditionalAbilityTooltip",j), FRAMEPOINT_CENTER, GetFrameByName("TavernAdditionalAbility",j), FRAMEPOINT_CENTER,  .13, (-0.5*GetFrameHeight( GetFrameByName("TavernAdditionalAbilityTooltipText",j)))-.02  )
-                    exitwhen j>35
+                    exitwhen j>40
                     set j=j+1
                 endloop
             elseif GetFrameTexture(but,0)==GetAbilityBaseStringFieldById('GKQ1',ABILITY_SF_ICON_NORMAL) and IsFrameVisible(GetFrameByName("TavernBarAdditionalAbilityList",0))==true and i==GetFrameContext(but) then
@@ -13987,11 +13988,11 @@ function OnButtonAddonAbility takes nothing returns nothing
                 set j=0
                 loop
                 call ShowFrame( GetFrameByName("TavernAdditionalAbilityBorderOpenable",j), false )
-                if j>=7 then
+                if j>=8 then
                 call ShowFrame(GetFrameByName("TavernAdditionalAbility",j),false)
                 endif
                 set j=j+1
-                exitwhen j>35
+                exitwhen j>40
                 endloop
 
             elseif GetFrameTexture(but,0)==GetAbilityBaseStringFieldById('GKW1',ABILITY_SF_ICON_NORMAL) and IsFrameVisible(GetFrameByName("TavernBarAdditionalAbilityList",0))==false and i==GetFrameContext(but) then
@@ -14007,7 +14008,7 @@ function OnButtonAddonAbility takes nothing returns nothing
                 call SetFrameText( GetFrameByName("TavernAdditionalAbilityTooltipText",j), "     " )
                 endif
                 set j=j+1
-                exitwhen j>35
+                exitwhen j>40
                 endloop
                 set j=0
                 loop
@@ -14049,7 +14050,7 @@ function OnButtonAddonAbility takes nothing returns nothing
                 loop
                     call SetFrameTextAlignment( GetFrameByName("TavernAdditionalAbilityTooltipText",j), TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_LEFT )
                     call SetFrameRelativePoint( GetFrameByName("TavernAdditionalAbilityTooltip",j), FRAMEPOINT_CENTER, GetFrameByName("TavernAdditionalAbility",j), FRAMEPOINT_CENTER,  .13, (-0.5*GetFrameHeight( GetFrameByName("TavernAdditionalAbilityTooltipText",j)))-.02  )
-                    exitwhen j>35
+                    exitwhen j>40
                     set j=j+1
                 endloop
             elseif GetFrameTexture(but,0)==GetAbilityBaseStringFieldById('GKW1',ABILITY_SF_ICON_NORMAL) and IsFrameVisible(GetFrameByName("TavernBarAdditionalAbilityList",0))==true and i==GetFrameContext(but) then
@@ -14058,11 +14059,11 @@ function OnButtonAddonAbility takes nothing returns nothing
                 set j=0
                 loop
                 call ShowFrame( GetFrameByName("TavernAdditionalAbilityBorderOpenable",j), false )
-                if j>=7 then
+                if j>=8 then
                 call ShowFrame(GetFrameByName("TavernAdditionalAbility",j),false)
                 endif
                 set j=j+1
-                exitwhen j>35
+                exitwhen j>40
                 endloop
 
             elseif GetFrameTexture(but,0)==GetAbilityBaseStringFieldById('GKW5',ABILITY_SF_ICON_NORMAL) and IsFrameVisible(GetFrameByName("TavernBarAdditionalAbilityList",0))==false and i==GetFrameContext(but) then
@@ -14078,7 +14079,7 @@ function OnButtonAddonAbility takes nothing returns nothing
                 call SetFrameText( GetFrameByName("TavernAdditionalAbilityTooltipText",j), "     " )
                 endif
                 set j=j+1
-                exitwhen j>35
+                exitwhen j>40
                 endloop
                 set j=0
                 loop
@@ -14108,7 +14109,7 @@ function OnButtonAddonAbility takes nothing returns nothing
                 loop
                     call SetFrameTextAlignment( GetFrameByName("TavernAdditionalAbilityTooltipText",j), TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_LEFT )
                     call SetFrameRelativePoint( GetFrameByName("TavernAdditionalAbilityTooltip",j), FRAMEPOINT_CENTER, GetFrameByName("TavernAdditionalAbility",j), FRAMEPOINT_CENTER,  .13, (-0.5*GetFrameHeight( GetFrameByName("TavernAdditionalAbilityTooltipText",j)))-.02  )
-                    exitwhen j>35
+                    exitwhen j>40
                     set j=j+1
                 endloop
             elseif GetFrameTexture(but,0)==GetAbilityBaseStringFieldById('GKW5',ABILITY_SF_ICON_NORMAL) and IsFrameVisible(GetFrameByName("TavernBarAdditionalAbilityList",0))==true and i==GetFrameContext(but) then
@@ -14117,11 +14118,11 @@ function OnButtonAddonAbility takes nothing returns nothing
                 set j=0
                 loop
                 call ShowFrame( GetFrameByName("TavernAdditionalAbilityBorderOpenable",j), false )
-                if j>=7 then
+                if j>=8 then
                 call ShowFrame(GetFrameByName("TavernAdditionalAbility",j),false)
                 endif
                 set j=j+1
-                exitwhen j>35
+                exitwhen j>40
                 endloop
 
             elseif GetFrameTexture(but,0)==GetAbilityBaseStringFieldById('GKE1',ABILITY_SF_ICON_NORMAL) and IsFrameVisible(GetFrameByName("TavernBarAdditionalAbilityList",0))==false and i==GetFrameContext(but) then
@@ -14137,7 +14138,7 @@ function OnButtonAddonAbility takes nothing returns nothing
                 call SetFrameText( GetFrameByName("TavernAdditionalAbilityTooltipText",j), "     " )
                 endif
                 set j=j+1
-                exitwhen j>35
+                exitwhen j>40
                 endloop
                 set j=0
                 loop
@@ -14203,7 +14204,7 @@ function OnButtonAddonAbility takes nothing returns nothing
                 loop
                     call SetFrameTextAlignment( GetFrameByName("TavernAdditionalAbilityTooltipText",j), TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_LEFT )
                     call SetFrameRelativePoint( GetFrameByName("TavernAdditionalAbilityTooltip",j), FRAMEPOINT_CENTER, GetFrameByName("TavernAdditionalAbility",j), FRAMEPOINT_CENTER,  .13, (-0.5*GetFrameHeight( GetFrameByName("TavernAdditionalAbilityTooltipText",j)))-.02  )
-                    exitwhen j>35
+                    exitwhen j>40
                     set j=j+1
                 endloop
             elseif GetFrameTexture(but,0)==GetAbilityBaseStringFieldById('GKE1',ABILITY_SF_ICON_NORMAL) and IsFrameVisible(GetFrameByName("TavernBarAdditionalAbilityList",0))==true and i==GetFrameContext(but) then
@@ -14212,11 +14213,11 @@ function OnButtonAddonAbility takes nothing returns nothing
                 set j=0
                 loop
                 call ShowFrame( GetFrameByName("TavernAdditionalAbilityBorderOpenable",j), false )
-                if j>=7 then
+                if j>=8 then
                 call ShowFrame(GetFrameByName("TavernAdditionalAbility",j),false)
                 endif
                 set j=j+1
-                exitwhen j>35
+                exitwhen j>40
                 endloop
 
             elseif GetFrameTexture(but,0)==GetAbilityBaseStringFieldById('GKT1',ABILITY_SF_ICON_NORMAL) and IsFrameVisible(GetFrameByName("TavernBarAdditionalAbilityList",0))==false and i==GetFrameContext(but) then
@@ -14232,7 +14233,7 @@ function OnButtonAddonAbility takes nothing returns nothing
                 call SetFrameText( GetFrameByName("TavernAdditionalAbilityTooltipText",j), "     " )
                 endif
                 set j=j+1
-                exitwhen j>35
+                exitwhen j>40
                 endloop
                 set j=0
                 loop
@@ -14262,7 +14263,7 @@ function OnButtonAddonAbility takes nothing returns nothing
                 loop
                     call SetFrameTextAlignment( GetFrameByName("TavernAdditionalAbilityTooltipText",j), TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_LEFT )
                     call SetFrameRelativePoint( GetFrameByName("TavernAdditionalAbilityTooltip",j), FRAMEPOINT_CENTER, GetFrameByName("TavernAdditionalAbility",j), FRAMEPOINT_CENTER,  .13, (-0.5*GetFrameHeight( GetFrameByName("TavernAdditionalAbilityTooltipText",j)))-.02  )
-                    exitwhen j>35
+                    exitwhen j>40
                     set j=j+1
                 endloop
             elseif GetFrameTexture(but,0)==GetAbilityBaseStringFieldById('GKT1',ABILITY_SF_ICON_NORMAL) and IsFrameVisible(GetFrameByName("TavernBarAdditionalAbilityList",0))==true and i==GetFrameContext(but) then
@@ -14271,11 +14272,11 @@ function OnButtonAddonAbility takes nothing returns nothing
                 set j=0
                 loop
                 call ShowFrame( GetFrameByName("TavernAdditionalAbilityBorderOpenable",j), false )
-                if j>=7 then
+                if j>=8 then
                 call ShowFrame(GetFrameByName("TavernAdditionalAbility",j),false)
                 endif
                 set j=j+1
-                exitwhen j>35
+                exitwhen j>40
                 endloop
 
             elseif GetFrameTexture(but,0)==GetAbilityBaseStringFieldById('MrF1',ABILITY_SF_ICON_NORMAL) and IsFrameVisible(GetFrameByName("TavernBarAdditionalAbilityList",0))==false and i==GetFrameContext(but) then
@@ -14291,7 +14292,7 @@ function OnButtonAddonAbility takes nothing returns nothing
                 call SetFrameText( GetFrameByName("TavernAdditionalAbilityTooltipText",j), "     " )
                 endif
                 set j=j+1
-                exitwhen j>35
+                exitwhen j>40
                 endloop
                 set j=0
                 loop
@@ -14321,7 +14322,7 @@ function OnButtonAddonAbility takes nothing returns nothing
                 loop
                     call SetFrameTextAlignment( GetFrameByName("TavernAdditionalAbilityTooltipText",j), TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_LEFT )
                     call SetFrameRelativePoint( GetFrameByName("TavernAdditionalAbilityTooltip",j), FRAMEPOINT_CENTER, GetFrameByName("TavernAdditionalAbility",j), FRAMEPOINT_CENTER,  .13, (-0.5*GetFrameHeight( GetFrameByName("TavernAdditionalAbilityTooltipText",j)))-.02  )
-                    exitwhen j>35
+                    exitwhen j>40
                     set j=j+1
                 endloop
             elseif GetFrameTexture(but,0)==GetAbilityBaseStringFieldById('MrF1',ABILITY_SF_ICON_NORMAL) and IsFrameVisible(GetFrameByName("TavernBarAdditionalAbilityList",0))==true and i==GetFrameContext(but) then
@@ -14330,11 +14331,11 @@ function OnButtonAddonAbility takes nothing returns nothing
                 set j=0
                 loop
                 call ShowFrame( GetFrameByName("TavernAdditionalAbilityBorderOpenable",j), false )
-                if j>=7 then
+                if j>=8 then
                 call ShowFrame(GetFrameByName("TavernAdditionalAbility",j),false)
                 endif
                 set j=j+1
-                exitwhen j>35
+                exitwhen j>40
                 endloop
 
 
@@ -14389,7 +14390,7 @@ function OnButtonAddonAbility takes nothing returns nothing
                 call SetFrameText( GetFrameByName("TavernAdditionalAbilityTooltipText",j), "     " )
                 endif
                 set j=j+1
-                exitwhen j>35
+                exitwhen j>40
                 endloop
                 set j=0
                 loop
@@ -14479,7 +14480,7 @@ function OnButtonAddonAbility takes nothing returns nothing
                 loop
                     call SetFrameTextAlignment( GetFrameByName("TavernAdditionalAbilityTooltipText",j), TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_LEFT )
                     call SetFrameRelativePoint( GetFrameByName("TavernAdditionalAbilityTooltip",j), FRAMEPOINT_CENTER, GetFrameByName("TavernAdditionalAbility",j), FRAMEPOINT_CENTER,  .13, (-0.5*GetFrameHeight( GetFrameByName("TavernAdditionalAbilityTooltipText",j)))-.02  )
-                    exitwhen j>35
+                    exitwhen j>40
                     set j=j+1
                 endloop
             elseif GetFrameTexture(but,0)==GetAbilityBaseStringFieldById('VGF1',ABILITY_SF_ICON_NORMAL) and IsFrameVisible(GetFrameByName("TavernBarAdditionalAbilityList",0))==true and i==GetFrameContext(but) then
@@ -14489,7 +14490,7 @@ function OnButtonAddonAbility takes nothing returns nothing
                 loop
                 call ShowFrame( GetFrameByName("TavernAdditionalAbilityBorderOpenable",j), false )
                 set j=j+1
-                exitwhen j>35
+                exitwhen j>40
                 endloop              
 
             elseif GetFrameTexture(but,0)==GetAbilityBaseStringFieldById('A1ER',ABILITY_SF_ICON_NORMAL) and IsFrameVisible(GetFrameByName("TavernBarAdditionalAbilityList",0))==false and i==GetFrameContext(but) then
@@ -14499,11 +14500,11 @@ function OnButtonAddonAbility takes nothing returns nothing
                 loop
                 call ShowFrame( GetFrameByName("TavernAdditionalAbilityTooltip",j), false )
                 call ShowFrame( GetFrameByName("TavernAdditionalAbilityBorderOpenable",j), false )
-                if j>=7 then
+                if j>=8 then
                 call ShowFrame(GetFrameByName("TavernAdditionalAbility",j),false)
                 endif
                 set j=j+1
-                exitwhen j>35
+                exitwhen j>40
                 endloop
                 call ShowFrame( GetFrameByName("TavernAdditionalAbilityBorderOpenable",4), true )
                 call SetFrameText( GetFrameByName("TavernAdditionalAbilityTooltipText",0), "     " )
@@ -14601,7 +14602,7 @@ function OnButtonAddonAbility takes nothing returns nothing
                 loop
                     call SetFrameTextAlignment( GetFrameByName("TavernAdditionalAbilityTooltipText",j), TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_LEFT )
                     call SetFrameRelativePoint( GetFrameByName("TavernAdditionalAbilityTooltip",j), FRAMEPOINT_CENTER, GetFrameByName("TavernAdditionalAbility",j), FRAMEPOINT_CENTER,  .13, (-0.5*GetFrameHeight( GetFrameByName("TavernAdditionalAbilityTooltipText",j)))-.02  )
-                    exitwhen j>35
+                    exitwhen j>40
                     set j=j+1
                 endloop
             elseif GetFrameTexture(but,0)==GetAbilityBaseStringFieldById('A1ER',ABILITY_SF_ICON_NORMAL) and IsFrameVisible(GetFrameByName("TavernBarAdditionalAbilityList",0))==true and i==GetFrameContext(but) then
@@ -14611,7 +14612,7 @@ function OnButtonAddonAbility takes nothing returns nothing
                 loop
                 call ShowFrame( GetFrameByName("TavernAdditionalAbilityBorderOpenable",j), false )
                 set j=j+1
-                exitwhen j>35
+                exitwhen j>40
                 endloop
 
 
@@ -17071,7 +17072,7 @@ function OnButtonSelectHero takes nothing returns nothing
         loop
         call ShowFrame( GetFrameByName("TavernAdditionalAbilityBorderOpenable",j), false )
         set j=j+1
-        exitwhen j>35
+        exitwhen j>40
         endloop
         if Condition_AbilityString(String2Id( s )) then
         endif
@@ -17666,20 +17667,20 @@ if udg_test==false then
 
     set TavernHeroAbilityGrid=CreateFrameByType("SIMPLEGRID", "TavernBarAbilityList", TavernHeroFrame, "", 0)
     call ClearFrameAllPoints( TavernHeroAbilityGrid )
-    call SetFrameRelativePoint( TavernHeroAbilityGrid, FRAMEPOINT_TOPLEFT, TavernHeroFrame, FRAMEPOINT_TOPLEFT,  .015, -.13  )
-    call SetFrameGridSize( TavernHeroAbilityGrid, 1, 8 )
+    call SetFrameRelativePoint( TavernHeroAbilityGrid, FRAMEPOINT_TOPLEFT, TavernHeroFrame, FRAMEPOINT_TOPLEFT,  .015, -.135  )
+    call SetFrameGridSize( TavernHeroAbilityGrid, 1, 9 )
     call SetFrameSize( TavernHeroAbilityGrid, .190, .012)
     call SetFramePriority( TavernHeroAbilityGrid, 5 )
 
     set x=0
     loop 
-    exitwhen x>=7 
+    exitwhen x>=8 
     set TavernHeroAbilityIcon=CreateFrameByType( "SIMPLEBUTTON", "TavernAbility", TavernHeroAbilityGrid, "", x )
     call ClearFrameAllPoints( TavernHeroAbilityIcon )
     call SetFrameTexture( TavernHeroAbilityIcon, "UI\\Widgets\\Console\\Human\\human-inventory-slotfiller.blp", 0, true )
     call SetFrameTexture( TavernHeroAbilityIcon, "UI\\Widgets\\Console\\Human\\human-inventory-slotfiller.blp", 1, true )
     call SetFrameTexture( TavernHeroAbilityIcon, "UI\\Widgets\\Console\\Human\\human-inventory-slotfiller.blp", 2, true )
-    call SetFrameSize( TavernHeroAbilityIcon, .0217, .0217 )
+    call SetFrameSize( TavernHeroAbilityIcon, .0198, .0198 )
     call ShowFrame( TavernHeroAbilityIcon, true )
     call SetFramePriority( TavernHeroAbilityIcon, 4 )
     call SetFrameGridFrame( TavernHeroAbilityGrid, 0, x, TavernHeroAbilityIcon )
@@ -17690,7 +17691,7 @@ if udg_test==false then
     call SetFrameSize( HeroTavernIconOpenable, .00001, .00001 )
     call SetFrameSpriteModel( HeroTavernIconOpenable, "lastprismrainbow.mdx" )
     call SetFrameSpriteOrientation( HeroTavernIconOpenable, 0., 0, 0. )
-    call SetFrameSpriteScale( HeroTavernIconOpenable, 0.235)
+    call SetFrameSpriteScale( HeroTavernIconOpenable, 0.215)
     call ShowFrame( HeroTavernIconOpenable, false )
 
     set TavernHeroAbilityTooltip=CreateFrameByType("SIMPLEFRAME", "TavernAbilityTooltip", TavernHeroAbilityIcon, "", x)
@@ -17756,7 +17757,7 @@ if udg_test==false then
     set TavernHeroAdditionalAbilityGrid=CreateFrameByType("SIMPLEGRID", "TavernBarAdditionalAbilityList", TavernHeroFrame, "", 0)
     call ClearFrameAllPoints( TavernHeroAdditionalAbilityGrid )
     call SetFrameRelativePoint( TavernHeroAdditionalAbilityGrid, FRAMEPOINT_TOPLEFT, TavernHeroFrame, FRAMEPOINT_TOPLEFT,  .0155, -.18  )
-    call SetFrameGridSize( TavernHeroAdditionalAbilityGrid, 6, 7 )
+    call SetFrameGridSize( TavernHeroAdditionalAbilityGrid, 6, 8 )
     call SetFrameSize( TavernHeroAdditionalAbilityGrid, .170, .170)
     call SetFramePriority( TavernHeroAdditionalAbilityGrid, 5 )
 
@@ -17764,13 +17765,13 @@ if udg_test==false then
     set GrY=0
     set GrX=0
     loop 
-    exitwhen x>=35
+    exitwhen x>=40
     set TavernHeroAdditionalAbilityIcon=CreateFrameByType( "SIMPLEBUTTON", "TavernAdditionalAbility", TavernHeroAdditionalAbilityGrid, "", x )
     call ClearFrameAllPoints( TavernHeroAdditionalAbilityIcon )
     call SetFrameTexture( TavernHeroAdditionalAbilityIcon, "UI\\Widgets\\Console\\Human\\human-inventory-slotfiller.blp", 0, true )
     call SetFrameTexture( TavernHeroAdditionalAbilityIcon, "UI\\Widgets\\Console\\Human\\human-inventory-slotfiller.blp", 1, true )
     call SetFrameTexture( TavernHeroAdditionalAbilityIcon, "UI\\Widgets\\Console\\Human\\human-inventory-slotfiller.blp", 2, true )
-    call SetFrameSize( TavernHeroAdditionalAbilityIcon, .0217, .0217 )
+    call SetFrameSize( TavernHeroAdditionalAbilityIcon, .0198, .0198  )
     call ShowFrame( TavernHeroAdditionalAbilityIcon, true )
     call SetFramePriority( TavernHeroAdditionalAbilityIcon, 4 )
     call SetFrameGridFrame( TavernHeroAdditionalAbilityGrid, GrX, GrY, TavernHeroAdditionalAbilityIcon )
@@ -17781,7 +17782,7 @@ if udg_test==false then
     call SetFrameSize( HeroTavernIconOpenable, .00001, .00001 )
     call SetFrameSpriteModel( HeroTavernIconOpenable, "lastprismrainbow.mdx" )
     call SetFrameSpriteOrientation( HeroTavernIconOpenable, 0., 0, 0. )
-    call SetFrameSpriteScale( HeroTavernIconOpenable, 0.235)
+    call SetFrameSpriteScale( HeroTavernIconOpenable, 0.215)
     call ShowFrame( HeroTavernIconOpenable, false )
 
     set TavernHeroAdditionalAbilityTooltip=CreateFrameByType("SIMPLEFRAME", "TavernAdditionalAbilityTooltip", TavernHeroAdditionalAbilityIcon, "", x)
