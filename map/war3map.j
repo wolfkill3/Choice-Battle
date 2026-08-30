@@ -94809,279 +94809,257 @@ function SinonExcalibur_ModifEnd takes nothing returns nothing
     set c=null
     set t=null
 endfunction
-
 function VergilDarkExcalibur_ModifEnd takes nothing returns nothing
-        local timer t=GetExpiredTimer()
-        local integer id=GetHandleId(t)
-        local unit u=LoadUnitHandle(h,id,0)
-        local integer id_caster=GetHandleId(u)
-        call UnitRemoveAbility(u, 'A26R')
-        call FlushChildHashtable(h,id)
-        call DestroyTimer(t)
-        call SaveBoolean(h, id_caster, StringHash("ItemDarkExc_CD"), true)
-        set bjLCT=CreateTimer()
-        call SaveUnitHandle(h, GetHandleId(bjLCT), CasterHash, u)
-        call TimerStart(bjLCT, 4, false, function DarkExcalibur_CD)
-        set bjLCT=null
-        set u=null
-        set t=null
+	local timer t=GetExpiredTimer()
+	local integer id=GetHandleId(t)
+	local unit u=LoadUnitHandle(h,id,0)
+	local integer id_caster=GetHandleId(u)
+	call UnitRemoveAbility(u, 'A26R')
+	call FlushChildHashtable(h,id)
+	call DestroyTimer(t)
+	call SaveBoolean(h, id_caster, StringHash("ItemDarkExc_CD"), true)
+	set bjLCT=CreateTimer()
+	call SaveUnitHandle(h, GetHandleId(bjLCT), CasterHash, u)
+	call TimerStart(bjLCT, 9, false, function DarkExcalibur_CD)
+	set bjLCT=null
+	set u=null
+	set t=null
 endfunction
 
 function VergilQ_ModifAttack takes unit newCaster, unit newTarget, boolean b_clone returns boolean
-        local real vgDmg=GetUnitTotalDamage(newCaster)
-        local real bonus_damage=0.0
-        local real currect_damage = vgDmg
-        local boolean fatal_damage=false
-        local boolean miss=false
-        local real heal = 0.0
-        
-        if b_clone then
-                set vgDmg = vgDmg * 1.6
-                set currect_damage = vgDmg
-        endif
-        
-        if IsUnitType(newCaster,UNIT_TYPE_HERO) and IsUnitIllusion(newCaster)==false and miss==false then
-        
-        if UnitHasItemOfTypeBJ(newCaster, 'I01J') and GetRandomIntMem(0,100)<15 then    // Меч C ранга
-                set vgDmg=vgDmg*0.5
-        endif
-        if UnitHasItemOfTypeBJ(newCaster, 'I01I') and GetRandomIntMem(0,100)<15 then    // Меч B ранга
-                set vgDmg=vgDmg*0.75
-        endif
-        if UnitHasItemOfTypeBJ(newCaster, 'I01K') and GetRandomIntMem(0,100)<15 then    // Меч A ранга
-                set vgDmg=vgDmg*1.0
-        endif
-        if UnitHasItemOfTypeBJ(newCaster, 'I01L') and GetRandomIntMem(0,100)<15 then    // Закаленный меч
-                set vgDmg=vgDmg*1.0
-        endif
-        if (UnitHasItemOfTypeBJ(newCaster, 'I01O') or UnitHasItemOfTypeBJ(newCaster, 'I01Q') or UnitHasItemOfTypeBJ(newCaster, 'I01U'))  and GetRandomIntMem(0,100)<20 then     // Сандай Китецу, Сюсуй, Фэнг
-                set vgDmg=vgDmg*1
-        endif
-        if UnitHasItemOfTypeBJ(newCaster, 'I01S') and GetRandomIntMem(0,100)<30 then    // Темный Экскалибур
-                set vgDmg=vgDmg*1
-        endif
-        
-        if UnitHasItemOfTypeBJ(newCaster, 'I02V') then  // Ямато
-                call Essence(newCaster,newTarget,1)
-                if (LoadReal(HH,GetHandleId(newCaster),StringHash("yamato"))==1 or GetRandomIntMem(0,100)<15) then
-                        set vgDmg=vgDmg*2
-                        call DestroyEffect(AddSpecialEffectTarget("war3mapImported\\BloodEX.mdx",newTarget,"chest"))
-                        call SaveReal(HH,GetHandleId(newCaster),StringHash("yamato"),0)
-                        call AllTextTag("|c000080FFYAMATO!|r" , newCaster)
-                endif
-        endif
-        
-        if currect_damage*2 < vgDmg then
-                set vgDmg = currect_damage*2
-        endif
-        
-        if UnitHasItemOfTypeBJ(newCaster, 'I031') and IsUnitType(newTarget,UNIT_TYPE_HERO) and IsUnitIllusion(newTarget)==false then    // Патриот
-                set bjLCT=CreateTimer()
-                        call SetHeroAgi(newCaster,GetHeroAgi(newCaster,false)+3,true)
-                        call SetHeroStr(newCaster,GetHeroStr(newCaster,false)+3,true)
-                        call SetHeroInt(newCaster,GetHeroInt(newCaster,false)+3,true)
-                        call SetHeroAgi(newTarget,GetHeroAgi(newTarget,false)-3,true)
-                        call SetHeroStr(newTarget,GetHeroStr(newTarget,false)-3,true)
-                        call SetHeroInt(newTarget,GetHeroInt(newTarget,false)-3,true)
-                        call SaveUnitHandle(h,GetHandleId(bjLCT), 0, newTarget)
-                        call SaveUnitHandle(h,GetHandleId(bjLCT), 1, newCaster)
-                        call TimerStart(bjLCT, 5, false, function VergilPatriot_ModifEnd)
-                set bjLCT=null
-                set vgDmg=vgDmg-vgDmg*0.3
-        endif
-        
-        if UnitHasItemOfTypeBJ(newCaster, 'I04F') then                          // Экскалибур
-                call SetWidgetLife(newCaster, GetWidgetLife(newCaster)+CalculatePhysDamage(newTarget, vgDmg*0.2))
-                set heal = heal + CalculatePhysDamage(newTarget, vgDmg*0.2)
-                set bjLCT=CreateTimer()
-                        call SetUnitArmour(newTarget, GetUnitArmour(newTarget)-3)
-                        call SaveUnitHandle(h,GetHandleId(bjLCT), 0, newTarget)
-                        call SaveUnitHandle(h,GetHandleId(bjLCT), 1, newCaster)
-                        call TimerStart(bjLCT, 10, false, function VergilExcalibur_ModifEnd)
-                set bjLCT=null
-        endif
-        
-        if UnitHasItemOfTypeBJ(newCaster, 'I01S') and GetRandomInt(0, 9)<=2 then                                // Темный Экскалибур
-                if LoadBoolean(h, GetHandleId(newCaster), StringHash("ItemDarkExc_CD"))==false then
-                        set bjLCT=CreateTimer()
-                        call SaveBoolean(h, GetHandleId(newCaster), StringHash("ItemDarkExc_CD"), true)
-                        call UnitRemoveAbility(newCaster, 'A26R')
-                        call UnitAddAbility(newCaster,'A26R')
-                        call SaveUnitHandle(h,GetHandleId(bjLCT),0,newCaster)
-                        call TimerStart(bjLCT,3,false,function VergilDarkExcalibur_ModifEnd)
-                        set bjLCT=null
-                endif
-        endif
-        
-        if GetUnitAbilityLevel(newCaster, 'A26R')>0 then                                                                                // Темный Экскалибур Хилл
-                call SetWidgetLife(newCaster, GetWidgetLife(newCaster)+CalculatePhysDamage(newTarget, vgDmg*0.6))
-                set heal = heal + CalculatePhysDamage(newTarget, vgDmg*0.6)
-        endif
-        
-        if GetUnitAbilityLevel(newCaster, 'B06N')>0 then                                                                                // Жанна Альтер Хилл
-              //  call SetWidgetLife(newCaster, GetWidgetLife(newCaster)+CalculatePhysDamage(newTarget, vgDmg*0.4)  )
-
-
-             call SetWidgetLife(newCaster, GetWidgetLife(newCaster)+CalculatePhysDamage(newTarget, vgDmg*0.2))
-                set heal = heal + CalculatePhysDamage(newTarget, vgDmg*0.2)
-        endif
-        
-        if UnitHasItemOfTypeBJ(newCaster, 'I03O') then                          // Самехада: Чистый Урон
-
-
-
-
-
-
-
-
-                set bonus_damage=50+GetUnitTotalDamage(newCaster)*0.4
-                if GetWidgetLife(newTarget)>bonus_damage then
-                        call SetWidgetLife(newTarget, GetWidgetLife(newTarget)-bonus_damage)
-
-                else
-                        set fatal_damage=true
-                endif
-        endif
-        
-        if (UnitHasItemOfTypeBJ(newCaster, 'I03B') or UnitHasItemOfTypeBJ(newCaster, 'I03F')) then                          // Меч Анбу
-                set bonus_damage=55
-                if GetWidgetLife(newTarget)>bonus_damage then
-                        call SetWidgetLife(newTarget, GetWidgetLife(newTarget)-bonus_damage)
-                else
-                        set fatal_damage=true
-                endif
-        endif
-        
-        if UnitHasItemOfTypeBJ(newCaster, 'I050') then                          // Гегецебури
-                set bonus_damage=100
-                if GetWidgetLife(newTarget)>bonus_damage then
-                        call SetWidgetLife(newTarget, GetWidgetLife(newTarget)-bonus_damage)
-                else
-                        set fatal_damage=true
-                endif
-                call DestroyEffect(AddSpecialEffect("war3mapImported\\Cleave.mdx",GetUnitX(newTarget),GetUnitY(newTarget)))
-                call SetControlToUnit(newTarget, newTarget, 1.0, "stun")
-        endif
-        
-        if GetUnitAbilityLevel(newCaster,'WAE4')==0 and GetUnitAbilityLevel(newCaster,'WAE1')>0 then
+	local real damage=GetUnitTotalDamage(newCaster)
+	local real bonus_damage=0.0
+	local real currect_damage = damage
+	local boolean fatal_damage=false
+	local boolean miss=false
+	local real heal = 0.0
+	
+	if b_clone then
+		set damage = damage * 1.6
+		set currect_damage = damage
+	endif
+	
+	if IsUnitType(newCaster,UNIT_TYPE_HERO) and IsUnitIllusion(newCaster)==false and miss==false then
+	
+	if UnitHasItemOfTypeBJ(newCaster, 'I01J') and GetRandomIntMem(0,100)<15 then	// Меч C ранга
+		set damage=damage*1.5
+	endif
+	if UnitHasItemOfTypeBJ(newCaster, 'I01I') and GetRandomIntMem(0,100)<15 then	// Меч B ранга
+		set damage=damage*1.75
+	endif
+	if UnitHasItemOfTypeBJ(newCaster, 'I01K') and GetRandomIntMem(0,100)<15 then	// Меч A ранга
+		set damage=damage*2.0
+	endif
+	if UnitHasItemOfTypeBJ(newCaster, 'I01L') and GetRandomIntMem(0,100)<15 then	// Закаленный меч
+		set damage=damage*2.0
+	endif
+	if (UnitHasItemOfTypeBJ(newCaster, 'I01O') or UnitHasItemOfTypeBJ(newCaster, 'I01Q') or UnitHasItemOfTypeBJ(newCaster, 'I01U'))  and GetRandomIntMem(0,100)<20 then	// Сандай Китецу, Сюсуй, Фэнг
+		set damage=damage*2.5
+	endif
+	if UnitHasItemOfTypeBJ(newCaster, 'I01S') and GetRandomIntMem(0,100)<30 then	// Темный Экскалибур
+		set damage=damage*2.5
+	endif
+	
+	if UnitHasItemOfTypeBJ(newCaster, 'I02V') then	// Ямато
+		call Essence(newCaster,newTarget,1)
+		if (LoadReal(HH,GetHandleId(newCaster),StringHash("yamato"))==1 or GetRandomIntMem(0,100)<15) then
+			set damage=damage*4.5
+			call DestroyEffect(AddSpecialEffectTarget("war3mapImported\\BloodEX.mdx",newTarget,"chest"))
+			call SaveReal(HH,GetHandleId(newCaster),StringHash("yamato"),0)
+			call AllTextTag("|c000080FFYAMATO!|r" , newCaster)
+		endif
+	endif
+	
+	if currect_damage*2 < damage then
+		set damage = currect_damage*2
+	endif
+	
+	if UnitHasItemOfTypeBJ(newCaster, 'I031') and IsUnitType(newTarget,UNIT_TYPE_HERO) and IsUnitIllusion(newTarget)==false then 	// Патриот
+		set bjLCT=CreateTimer()
+			call SetHeroAgi(newCaster,GetHeroAgi(newCaster,false)+3,true)
+			call SetHeroStr(newCaster,GetHeroStr(newCaster,false)+3,true)
+			call SetHeroInt(newCaster,GetHeroInt(newCaster,false)+3,true)
+			call SetHeroAgi(newTarget,GetHeroAgi(newTarget,false)-3,true)
+			call SetHeroStr(newTarget,GetHeroStr(newTarget,false)-3,true)
+			call SetHeroInt(newTarget,GetHeroInt(newTarget,false)-3,true)
+            if GetUnitTypeId(newTarget)=='H00Q' then
+                call SetHeroAgi(Hero[GetPlayerId(GetOwningPlayer(newTarget))],GetHeroAgi(Hero[GetPlayerId(GetOwningPlayer(newTarget))],false)-3,true)
+                call SetHeroStr(Hero[GetPlayerId(GetOwningPlayer(newTarget))],GetHeroStr(Hero[GetPlayerId(GetOwningPlayer(newTarget))],false)-3,true)
+                call SetHeroInt(Hero[GetPlayerId(GetOwningPlayer(newTarget))],GetHeroInt(Hero[GetPlayerId(GetOwningPlayer(newTarget))],false)-3,true)
+                call SaveUnitHandle(h,GetHandleId(bjLCT), 0, newTarget)
+            else
+                call SetHeroAgi(newTarget,GetHeroAgi(newTarget,false)-3,true)
+                call SetHeroStr(newTarget,GetHeroStr(newTarget,false)-3,true)
+                call SetHeroInt(newTarget,GetHeroInt(newTarget,false)-3,true)
+                call SaveUnitHandle(h,GetHandleId(bjLCT), 0, newTarget)
+            endif
+			call SaveUnitHandle(h,GetHandleId(bjLCT), 1, newCaster)
+			call TimerStart(bjLCT, 5, false, function VergilPatriot_ModifEnd)
+		set bjLCT=null
+		//set damage=damage-damage*0.3
+	endif
+	
+	if UnitHasItemOfTypeBJ(newCaster, 'I04F') then 				// Экскалибур
+		call SetWidgetLife(newCaster, GetWidgetLife(newCaster)+CalculatePhysDamage(newTarget, damage*0.2))
+		set heal = heal + CalculatePhysDamage(newTarget, damage*0.2)
+		set bjLCT=CreateTimer()
+			call SetUnitArmour(newTarget, GetUnitArmour(newTarget)-4)
+			call SaveUnitHandle(h,GetHandleId(bjLCT), 0, newTarget)
+			call TimerStart(bjLCT, 10, false, function VergilExcalibur_ModifEnd)
+		set bjLCT=null
+	endif
+	
+	if UnitHasItemOfTypeBJ(newCaster, 'I01S') and GetRandomInt(0, 9)<=3 then 				// Темный Экскалибур
+		if LoadBoolean(h, GetHandleId(newCaster), StringHash("ItemDarkExc_CD"))==false then
+			set bjLCT=CreateTimer()
+			call SaveBoolean(h, GetHandleId(newCaster), StringHash("ItemDarkExc_CD"), true)
+			call UnitRemoveAbility(newCaster, 'A26R')
+			call UnitAddAbility(newCaster,'A26R')
+			call SaveUnitHandle(h,GetHandleId(bjLCT),0,newCaster)
+			call TimerStart(bjLCT,3,false,function VergilDarkExcalibur_ModifEnd)
+			set bjLCT=null
+		endif
+	endif
+	
+	if GetUnitAbilityLevel(newCaster, 'A26R')>0 then										// Темный Экскалибур Хилл
+		call SetWidgetLife(newCaster, GetWidgetLife(newCaster)+CalculatePhysDamage(newTarget, damage*0.5))
+		set heal = heal + CalculatePhysDamage(newTarget, damage*0.5)
+	endif
+	
+	if GetUnitAbilityLevel(newCaster, 'B06N')>0 then										// Жанна Альтер Хилл
+		call SetWidgetLife(newCaster, GetWidgetLife(newCaster)+CalculatePhysDamage(newTarget, damage*0.4))
+		set heal = heal + CalculatePhysDamage(newTarget, damage*0.2)
+	endif
+	
+	if UnitHasItemOfTypeBJ(newCaster, 'I03O') then 				// Самехада: Чистый Урон
+		set bonus_damage=150+GetUnitTotalDamage(newCaster)*0.4
+		if GetWidgetLife(newTarget)>bonus_damage then
+			call SetWidgetLife(newTarget, GetWidgetLife(newTarget)-bonus_damage)
+		else
+			set fatal_damage=true
+		endif
+	endif
+	
+	if UnitHasItemOfTypeBJ(newCaster, 'I03B') or UnitHasItemOfTypeBJ(newCaster, 'I03F') then				// Меч Анбу
+		set bonus_damage=55
+		if GetWidgetLife(newTarget)>bonus_damage then
+			call SetWidgetLife(newTarget, GetWidgetLife(newTarget)-bonus_damage)
+		else
+			set fatal_damage=true
+		endif
+	endif
+	
+	if UnitHasItemOfTypeBJ(newCaster, 'I050') then				// Гегецебури
+		set bonus_damage=100
+		if GetWidgetLife(newTarget)>bonus_damage then
+			call SetWidgetLife(newTarget, GetWidgetLife(newTarget)-bonus_damage)
+		else
+			set fatal_damage=true
+		endif
+		call DestroyEffect(AddSpecialEffect("war3mapImported\\Cleave.mdx",GetUnitX(newTarget),GetUnitY(newTarget)))
+		call SetControlToUnit(newTarget, newTarget, 1.0, "stun")
+	endif
+	
+	if GetUnitAbilityLevel(newCaster,'WAE4')==0 and GetUnitAbilityLevel(newCaster,'WAE1')>0 then
         call SetControlToUnit(newTarget,newTarget, 0.3, "stun")
         call UnitAddAbility(newCaster,'WAE4')
         call UnitRemoveAbilityTimed(newCaster,'WAE4',0.7)
         call myCustomDamage(newCaster,newTarget,GetHeroInt(newCaster,true),false,false,null,null,null)
-                set vgDmg = vgDmg * 1.5
+                set damage = damage * 1.5
     endif
         
-        if UnitHasItemOfTypeBJ(newCaster, 'I03N') then                          // Самехада: Манажор
-                call DestroyEffect(AddSpecialEffectTarget("Abilities\\Spells\\Human\\Feedback\\ArcaneTowerAttack.mdl", newTarget,"origin"))
+    if UnitHasItemOfTypeBJ(newCaster, 'I03N') then                          // Самехада: Манажор
+        call DestroyEffect(AddSpecialEffectTarget("Abilities\\Spells\\Human\\Feedback\\ArcaneTowerAttack.mdl", newTarget,"origin"))
         call DestroyEffect(AddSpecialEffectTarget("Abilities\\Spells\\Undead\\AbsorbMana\\AbsorbManaBirthMissile.mdl", newTarget,"chest"))
-                if GetWidgetMana(newTarget)>0 then
-                       // call SetWidgetLife(newCaster, GetWidgetLife(newCaster)+GetWidgetMana(newTarget)*0.16)
-
-                   call SetWidgetLife(newCaster, GetWidgetLife(newCaster)+GetWidgetMana(newTarget)*0.16)
+        if GetWidgetMana(newTarget)>0 then
+            call SetWidgetLife(newCaster, GetWidgetLife(newCaster)+GetWidgetMana(newTarget)*0.16)
         endif
-                set heal = heal + GetWidgetMana(newTarget)*0.16
-                call SetWidgetMana(newTarget, GetWidgetMana(newTarget)-GetWidgetMana(newTarget)*0.08)
-        endif
-        
-        if UnitHasItemOfTypeBJ(newCaster, 'I01U') and (GetRandomIntMem(0,100)<=30 or GetUnitAbilityLevel(newCaster,'AI41')==0 ) then           // Feng
-
-
-
-                call PoisonDamage5(newCaster,newTarget,3*GetHeroInt(newCaster,true),3,"Abilities\\Weapons\\PoisonSting\\PoisonStingTarget.mdl","chest")
-            set n=CreateUnit(GetOwningPlayer(newTarget),'h019',GetUnitX(newTarget),GetUnitY(newTarget),0)
-        call UnitAddAbility(n,'A2CW')
-        call SetUnitAbilityLevel(n,'A2CW',1)
-        call UnitApplyTimedLife(n,'BHwe',1)
-        call IssueTargetOrder(n,"cripple",newTarget)
-
-
-if GetUnitAbilityLevel(newCaster,'AI41')==0 then
-call UnitAddAbilityTimed(newCaster,3,'AI41')
-endif
-
-
+		set heal = heal + GetWidgetMana(newTarget)*0.16
+		call SetWidgetMana(newTarget, GetWidgetMana(newTarget)-GetWidgetMana(newTarget)*0.08)
+	endif
+	
+	if UnitHasItemOfTypeBJ(newCaster, 'I01U') and GetRandomInt(1, 100)<=45 then 		// Feng
+		call PoisonDamage5(newCaster,newTarget,2.5*GetHeroInt(newCaster,true),6,"Abilities\\Weapons\\PoisonSting\\PoisonStingTarget.mdl","chest")
+        call SlowUnit(newCaster,newTarget,0.5,0.,1,1,false)
     endif
-        if UnitHasItemOfTypeBJ(newCaster, 'I01Q') and (     GetRandomIntMem(0,100)<=25 or GetUnitAbilityLevel(newCaster,'AI42')==0  or GetUnitAbilityLevel(newCaster,'A06K')>0) then                // Сюсуй
-                call Shusui_Cast(newCaster, 1.0)
-        endif
-
-
-
-
-//(GetRandomIntMem(0,100)<=25 or GetUnitAbilityLevel(newCaster,'AI42')==0 )
-
-
-
-        
-        if UnitHasItemOfTypeBJ(newTarget, 'I03C') and UnitHasItemOfTypeBJ(newTarget, 'I03F')==false then        // Жилет Анбу у таргета
-                call SetWidgetLife(newTarget, GetWidgetLife(newTarget)+35)
-                call DestroyEffect(AddSpecialEffectTarget("Abilities\\Spells\\Human\\Heal\\HealTarget.mdl", newTarget,"origin"))
-        endif
-        
-        if UnitHasItemOfTypeBJ(newTarget, 'I03F') then                                                                                                          // Комплект Анбу у таргета
-                call SetWidgetLife(newTarget, GetWidgetLife(newTarget)+50)
-                call DestroyEffect(AddSpecialEffectTarget("Abilities\\Spells\\Human\\Heal\\HealTarget.mdl", newTarget,"origin"))
-        endif
-        
-        if UnitHasItemOfTypeBJ(newTarget, 'I060') then                                                                                                          // Облако Маре D ранг
-                set vgDmg=vgDmg-30
-        endif
-        
-        if UnitHasItemOfTypeBJ(newTarget, 'I061') then                                                                                                          // Облако Маре C ранг
-                set vgDmg=vgDmg-50
-        endif
-        
-        if UnitHasItemOfTypeBJ(newTarget, 'I062') then                                                                                                          // Облако Маре B ранг
-                set vgDmg=vgDmg-70
-        endif
-        
-        if UnitHasItemOfTypeBJ(newTarget, 'I063') then                                                                                                          // Облако Маре A ранг
-                set vgDmg=vgDmg-90
-        endif
-                
-        if UnitHasItemOfTypeBJ(newTarget, 'I064') then                                                                                                          // Облако Маре Фальшивое
-                set vgDmg=vgDmg-110
-        endif
-        
-        if UnitHasItemOfTypeBJ(newTarget, 'I065') then                                                                                                          // Облако Маре Истинное
-                set vgDmg=vgDmg-130
-        endif
-        
-        endif
-        
-        if miss then
-                call AllTextTag("|c00C0C0C0Miss!|r" , newTarget)
-        endif
-        
-        if heal>0.0 then
-call HealTextTag(newCaster,newCaster,heal*myCustomHeal2(newCaster,1),"HealthRes")
-        endif
-        
-            if (UnitHasItemOfTypeBJ(newTarget,'IAoF') or GetUnitAbilityLevel(newTarget,'KI1A')>0) then                                                                                                          // Комплект Анбу у таргета
-        set vgDmg=vgDmg-(60+5*round)
+	if UnitHasItemOfTypeBJ(newCaster, 'I01Q') and (GetRandomInt(1, 100)<=20 or GetUnitAbilityLevel(newCaster,'A06K')>0) then 		// Сюсуй
+		call Shusui_Cast(newCaster,1)
+	endif
+	
+	if UnitHasItemOfTypeBJ(newTarget, 'I03C') and UnitHasItemOfTypeBJ(newTarget, 'I03F')==false then	// Жилет Анбу у таргета
+        set damage=damage-25
+		call DestroyEffect(AddSpecialEffectTarget("Abilities\\Spells\\Human\\Heal\\HealTarget.mdl", newTarget,"origin"))
     endif
+	
+	if UnitHasItemOfTypeBJ(newTarget, 'I03F') then														// Комплект Анбу у таргета
+		set damage=damage-50
+		call DestroyEffect(AddSpecialEffectTarget("Abilities\\Spells\\Human\\Heal\\HealTarget.mdl", newTarget,"origin"))
+	endif
+	
+    if (UnitHasItemOfTypeBJ(newTarget,'IAoF') or GetUnitAbilityLevel(newTarget,'KI1A')>0) then                                                                                                          // Комплект Анбу у таргета
+        set damage=damage-(60+5*round)
+    endif
+
     if (UnitHasItemOfTypeBJ(newTarget,'I03Z')or GetUnitAbilityLevel(newTarget,'KIL2')>0) then
-        set vgDmg=vgDmg-15
+        set damage=damage-15
     endif
+
     if (UnitHasItemOfTypeBJ(newTarget,'I040')or GetUnitAbilityLevel(newTarget,'KIL4')>0) then
-        set vgDmg=vgDmg-20
+        set damage=damage-20
     endif
-if fatal_damage==false then
-                if vgDmg>0 then
-                        call myCustomDamage(newCaster,newTarget,vgDmg,false,false,ATTACK_TYPE_HERO,DAMAGE_TYPE_NORMAL,null)
-                endif
-        else
-                call UnitRemoveBuffs(newTarget,true,true)
-                call UnitAddAbility(newTarget,'A0WR')
-        call DamageIndicatorFunction(newCaster,newTarget,vgDmg)
+
+	if UnitHasItemOfTypeBJ(newTarget, 'I060') then														// Облако Маре D ранг
+		set damage=damage-20
+	endif
+	
+	if UnitHasItemOfTypeBJ(newTarget, 'I061') then														// Облако Маре C ранг
+		set damage=damage-40
+	endif
+	
+	if UnitHasItemOfTypeBJ(newTarget, 'I062') then														// Облако Маре B ранг
+		set damage=damage-60
+	endif
+	
+	if UnitHasItemOfTypeBJ(newTarget, 'I063') then														// Облако Маре A ранг
+		set damage=damage-80
+	endif
+		
+	if UnitHasItemOfTypeBJ(newTarget, 'I064') then														// Облако Маре Фальшивое
+		set damage=damage-100
+	endif
+	
+	if UnitHasItemOfTypeBJ(newTarget, 'I065') then														// Облако Маре Истинное
+		set damage=damage-120
+	endif
+
+	endif
+	
+	if miss then
+		call AllTextTag("|c00C0C0C0Miss!|r" , newTarget)
+	endif
+	
+	if heal>0.0 then
+		call HealTextTag(newCaster,newCaster,heal*myCustomHeal2(newCaster,1),"HealthRes")
+	endif
+	
+	if fatal_damage==false then
+		if damage>0 then
+			call myCustomDamage(newCaster,newTarget,damage,false,false,ATTACK_TYPE_HERO,DAMAGE_TYPE_NORMAL,null)
+		else
+            if miss==false then
+                call myCustomDamage(newCaster,newTarget,10,false,false,ATTACK_TYPE_HERO,DAMAGE_TYPE_NORMAL,null)
+            endif
+        endif
+	else
+		call UnitRemoveBuffs(newTarget,true,true)
+		call UnitAddAbility(newTarget,'A0WR')
+        call DamageIndicatorFunction(newCaster,newTarget,damage)
                 call myCustomDamage(newCaster, newTarget, GetWidgetMaxLife(newTarget),false,false,null,null,null)
                 call UnitRemoveAbility(newTarget,'A0WR')
                 call AllTextTag("|c000080FFSCUM!|r" , newTarget)
         endif   
         return miss
 endfunction
-
 
 function VergilQ_CutAction takes nothing returns nothing
     local integer id    = GetHandleId(GetExpiredTimer())
@@ -95168,6 +95146,7 @@ function VergilQ_Cut takes unit newCaster, real point_x, real point_y, boolean b
 		endif
 		call GroupRemoveUnit(bjLCG, E)
 	endloop
+    call DestroyGroup(bjLCG)
 	
 	call SaveUnitHandle(h, id, 0, newCaster)
 	call SaveReal(h, id, 2, point_x)
@@ -95236,8 +95215,8 @@ function VergilQ_Periodic takes nothing returns nothing
 		set n=LoadUnitHandle(h,GetHandleId(caster),StringHash("clone"))
 		if n!=null then
 			set angle = AU(n, caster)
-			call VergilQ_Cut(caster, GetUnitX(dummy)+200*Cos(angle), GetUnitY(dummy)+200*Sin(angle), true, LoadGroupHandle(h, id, 4))
-			call VergilQ_Cut(caster, GetUnitX(dummy)-200*Cos(angle), GetUnitY(dummy)-200*Sin(angle), true, LoadGroupHandle(h, id, 4))
+			call VergilQ_Cut(caster, GetUnitX(dummy)+150*Cos(angle), GetUnitY(dummy)+150*Sin(angle), true, LoadGroupHandle(h, id, 4))
+			call VergilQ_Cut(caster, GetUnitX(dummy)-150*Cos(angle), GetUnitY(dummy)-150*Sin(angle), true, LoadGroupHandle(h, id, 4))
 			set soundplay=CreateSound("Sound\\war3mapImported\\VergilQ_Sound2.mp3",false,false,true,12700,12700,"")
 		else
 			call VergilQ_Cut(caster, GetUnitX(dummy), GetUnitY(dummy), false, LoadGroupHandle(h, id, 4))
@@ -114482,7 +114461,7 @@ function VergilD_Tricker takes unit newCaster, real point_x, real point_y return
 	local real caster_x  = GetUnitX(newCaster)
 	local real caster_y  = GetUnitY(newCaster)
 	local real angle     = AtanPoint(caster_x, caster_y, point_x, point_y)
-	local real distance  = 600
+	local real distance  = 500
 	local real cooldown  = GetAbilityCooldown(GetUnitAbility(newCaster, 'A0PI'))
 //	local boolean fast_cd = false
 	
@@ -114532,7 +114511,7 @@ function VergilD_Tricker takes unit newCaster, real point_x, real point_y return
 	
 	call RemoveEffect(AddSpecialEffectTarget("war3mapImported\\AZ_LCDark_W2_buff.mdl", newCaster, "right hand"), 1.0, true, CreateTimer())
 	call RemoveEffect(AddSpecialEffectTarget("war3mapImported\\AZ_LCDark_W2_buff.mdl", newCaster, "left hand"), 1.0, true, CreateTimer())
-	if SquareRootPoint(caster_x, caster_y, point_x, point_y)<=600 then
+	if SquareRootPoint(caster_x, caster_y, point_x, point_y)<=500 then
 		set distance = SquareRootPoint(caster_x, caster_y, point_x, point_y)
 	endif
 	call UnitRemoveAbility(newCaster, 'AP04')
@@ -176302,7 +176281,7 @@ function VergilW_TargetPeriodic takes nothing returns nothing
                 call GroupRemoveUnit(bjLCG, E)
             endloop
             call DestroyGroup(bjLCG)
-            if duration>0.0 then
+            if duration>0.5 then
                 if LoadReal(h, id, 3)>=0.1 then
                     call VergilW_SingleSwordTarget(caster, target)
                     call SaveReal(h, id, 3, 0)
