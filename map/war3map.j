@@ -22554,8 +22554,8 @@ call StartSound(soundplay)
 call KillSoundWhenDone(soundplay)
 endif
 if GetUnitAbilityLevel(Hero[id2],'BuuK')>0 and GetUnitAbilityLevel(Hero[id],'BuuG')>0 then
-set GutsStr[GetPlayerId(GetOwningPlayer(Hero[id]))]=GutsStr[GetPlayerId(GetOwningPlayer(Hero[id]))]+2
-call SetHeroStr(Hero[id],GetHeroStr(Hero[id],false)+2,true)
+set GutsStr[GetPlayerId(GetOwningPlayer(Hero[id]))]=GutsStr[GetPlayerId(GetOwningPlayer(Hero[id]))]+1
+call SetHeroStr(Hero[id],GetHeroStr(Hero[id],false)+1,true)
 endif
 endfunction
 function KageKageAction2 takes nothing returns nothing
@@ -79655,10 +79655,7 @@ else
 call ShakeCamera(3,50)
 call SetUnitFlyHeight(l__d,0,0)
 call StopSound(LoadSoundHandle(h,id,16),true,true)
-set soundplay=CreateSound("Sound\\Music\\mp3Music\\Hit.wav",false,false,true,12700,12700,"")
-call SetSoundVolume(soundplay,70)
-call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+call StartSound(soundStr[47])
 call GroupEnumUnitsInRange(DG,x1,y1,1200,Base)
 loop
 set E=FirstOfGroup(DG)
@@ -79701,7 +79698,7 @@ call SaveReal(h,id,7,y)
 call SaveReal(h,id,8,mh)
 call SaveReal(h,id,9,dist)
 call SaveBoolean(h,id,11,false)
-call TimerStart(t,0.02,true,function MissleMovePlanetBurst2)
+call TimerStart(t,0.03,true,function MissleMovePlanetBurst2)
 set t=null
 endfunction
 function PlanetBurstCond takes nothing returns boolean
@@ -80225,10 +80222,7 @@ call UnitApplyTimedLife(CreateUnit(p,'e0DF',x,y,(a*bj_RADTODEG)),'BTLF',3)
 call UnitApplyTimedLife(CreateUnit(p,'e0DE',x,y,(a*bj_RADTODEG)),'BTLF',3)
 call UnitApplyTimedLife(CreateUnit(p,'e0DD',x,y,(a*bj_RADTODEG)),'BTLF',3)
 call UnitApplyTimedLife(CreateUnit(p,'e0C7',x,y,(a*bj_RADTODEG)),'BTLF',6)
-set soundplay=CreateSound("Sound\\Music\\mp3Music\\Hit.wav",false,false,true,12700,12700,"")
-call SetSoundVolume(soundplay,70)
-call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+call StartSound(soundStr[47])
 call RemoveUnit(l__d)
 call FlushChildHashtable(h,GetHandleId(g))
 call DestroyGroup(g)
@@ -223362,8 +223356,8 @@ if time>=5 then
 
 
 if LoadBoolean(HH,id,19)==true then
-set GutsStr[GetPlayerId( GetOwningPlayer(caster) )]=GutsStr[GetPlayerId( GetOwningPlayer(caster) )]+2
-call SetHeroStr(caster,GetHeroStr(caster,false)+2,true)
+set GutsStr[GetPlayerId( GetOwningPlayer(caster) )]=GutsStr[GetPlayerId( GetOwningPlayer(caster) )]+1
+call SetHeroStr(caster,GetHeroStr(caster,false)+1,true)
 else
 
 
