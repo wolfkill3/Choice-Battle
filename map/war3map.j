@@ -176456,7 +176456,7 @@ local real vgDmg=LoadReal(HH,id,15)
 local integer kill_vergil=0
 set time=time+0.02
 call SaveReal(HH,id,5,time)
-if time>3 then
+if time>3.5 then
 call UnitRemoveAbility(caster,'GST4')
 call PauseUnit(caster,false)
 call SetUnitInvulnerable(caster,false)
@@ -176536,13 +176536,13 @@ set n0=null
 call SetUnitAnimationByIndex(caster,18)
 call UnitSpeed(caster,1)
 endif
-if time==0.02 or time==0.4 or time==0.8 or time==1.2 or time==1.6 or time==2 then
+if time==0.02 or time==0.8 or time==1.2 or time==1.6 or time==2 or time==2.4 then
 call EffectCreateAndMove(true,EffectID[23],GetRandomReal(0,360),1.25,2,0.5,60,60,100,40,0,caster,0,facing)
 endif
 if time>0.02 then
 call MoveUnit(Dummy,caster,0,0)
 endif
-if time==0.5 then
+if time==1 then
 
 
 set soundplay=CreateSound("Sound\\Others\\Vergil_G2.mp3",false,false,true,12700,12700,"")
@@ -176564,10 +176564,10 @@ set n0=null
 
 call UnitSpeed(Dummy,0)
 endif
-if time==1.5 then
+if time==2 then
 call UnitSpeed(caster,1)
 endif
-if time==2 then
+if time==2.5 then
 
 
 
@@ -176578,7 +176578,7 @@ call EffectCreateAndMove(true,EffectID[48],facing,1.5,2,0.5,100,100,100,0,0,cast
 call EffectCreateAndMove(true,EffectID[949],facing,1.5,2.5,0.75,100,100,100,0,0,caster,0,facing)
 call UnitSpeed(caster,1)
 endif
-if time>0.5 then
+if time>1 then
 call GroupClear(G)
 call GroupEnumUnitsInRange(G,x0,y0,1000,Base)
 loop
