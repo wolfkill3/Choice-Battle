@@ -42008,7 +42008,7 @@ call SetUnitPosition(caster,PolX(GetUnitX(target),140.0,ang+180.0),PolY(GetUnitY
 call SetUnitFacing(caster,ang)
 call SetUnitAnimationByIndex(caster,9)
 endif
-call EffectCreateAndMove(true,"war3mapImported\\Garp_HandsFX.mdx",Angle2(GetUnitX(caster),GetUnitY(caster),GetUnitX(target),GetUnitY(target)),0.8,1.3,1.0,100,100,100,0,0,target,0,GetUnitFacing(target))
+call EffectCreateAndMove(true,"war3mapImported\\Garp\\Garp_HandsFX.mdx",Angle2(GetUnitX(caster),GetUnitY(caster),GetUnitX(target),GetUnitY(target)),0.8,1.3,1.0,100,100,100,0,0,target,0,GetUnitFacing(target))
 call myCustomDamage(caster,target,dmg,false,false,null,null,null)
 endif
 call PauseTimer(t)
@@ -223558,13 +223558,13 @@ local timer t=CreateTimer()
 local integer id=GetHandleId(t)
 // У модели Garp.mdx точка привязки ТОЛЬКО "hand right" (Hand Right Ref).
 // "hand left" не существует — эффект по такой строке молча уезжает в origin, под ноги.
-call SaveEffectHandle(HH,id,10,AddSpecialEffectTarget("war3mapImported\\Garp_HandsFX.mdx",caster,"hand right"))
+call SaveEffectHandle(HH,id,10,AddSpecialEffectTarget("war3mapImported\\Garp\\Garp_HandsFX.mdx",caster,"hand right"))
 call SetSpecialEffectScale(LoadEffectHandle(HH,id,10),0.1)
 call TimerStart(t,dur,false,function Garp_Hands_End)
 // ⚠️ Ауру НЕЛЬЗЯ вешать эффектом: у Garp_Aura.mdx одна секвенция Stand и нет Death,
 // поэтому DestroyEffect её не снимает и она висит на герое вечно (проверено).
 // Единственный надёжный способ убрать такую модель — дамми и RemoveUnit.
-call EffectCreateAndMove(true,"war3mapImported\\Garp_Aura.mdx",GetUnitFacing(caster),0.6,2.0,1.0,100,100,100,0,0,caster,0,GetUnitFacing(caster))
+call EffectCreateAndMove(true,"war3mapImported\\Garp\\Garp_Aura.mdx",GetUnitFacing(caster),0.6,2.0,1.0,100,100,100,0,0,caster,0,GetUnitFacing(caster))
 set t=null
 endfunction
 function Garp_Sound takes string path returns nothing
@@ -223613,7 +223613,7 @@ call FlushChildHashtable(HH,id)
 else
 call SaveReal(HH,id,17,dist-46.4)
 call MoveUnit(caster,caster,46.4,facing)
-call EffectCreateAndMoveAn(true,"war3mapImported\\Garp_QDash.mdx",facing+180,0.6,1.0,0.8,100,100,100,0,0,caster,0,facing,0)
+call EffectCreateAndMoveAn(true,"war3mapImported\\Garp\\Garp_QDash.mdx",facing+180,0.6,1.0,0.8,100,100,100,0,0,caster,0,facing,0)
 set n0=First_Target_Skill(caster,null,PolX(GetUnitX(caster),120,facing),PolY(GetUnitY(caster),120,facing),150)
 if n0!=null then
 // ПОПАЛ -> хватаем врага, прыгаем высоко, слэм
@@ -223621,7 +223621,7 @@ call SetUnitX(caster,GetUnitX(n0))
 call SetUnitY(caster,GetUnitY(n0))
 call SaveReal(HH,id,11,GetUnitX(caster))
 call SaveReal(HH,id,12,GetUnitY(caster))
-call EffectCreateAndMoveAn(true,"war3mapImported\\Garp_QAir.mdx",GetRandomReal(0,360),2.0,1.0,1.0,100,100,100,0,0,caster,0,facing,0)
+call EffectCreateAndMoveAn(true,"war3mapImported\\Garp\\Garp_QAir.mdx",GetRandomReal(0,360),2.0,1.0,1.0,100,100,100,0,0,caster,0,facing,0)
 call UnitAddAbility(caster,'Amrf')
 call UnitRemoveAbility(caster,'Amrf')
 call UnitAddAbility(n0,'Amrf')
@@ -223710,10 +223710,12 @@ call ShakeCamera(0.5,7)
 //   AddSpecialEffectTarget на враге — рисуется, но едет за ним, когда тот встаёт.
 // Поэтому: НЕВИДИМЫЙ дамми-якорь в точке падения (модель ему НЕ меняем) и эффект на него.
 set n0=CreateUnit(GetOwningPlayer(caster),'e200',x0,y0,GetRandomReal(0,360))
+// у e200 в данных высота полёта 200 — без этого эффект висит над землёй
+call SetUnitFlyHeight(n0,0,0)
 // Рисуется ТОЛЬКО так (перебор ещё в 4.5): дамми с этой моделью
 // (SetUnitModel, он же EffectCreateAndMove) и AddSpecialEffect по
 // координате её не показывают — только эффект на невидимом якоре.
-set EFF=AddSpecialEffectTarget("war3mapImported\\Garp_QImpact.mdx",n0,"origin")
+set EFF=AddSpecialEffectTarget("war3mapImported\\Garp\\Garp_QImpact.mdx",n0,"origin")
 if EFF!=null then
 call SetSpecialEffectScale(EFF,0.7)
 call RemoveEffect(EFF,2.5,true,CreateTimer())
@@ -223749,7 +223751,7 @@ call MoveUnit(caster,caster,LoadReal(HH,id,13),LoadReal(HH,id,14))
 // завершение через >=, а не ==: при лимите операций поток может пропустить точный тик
 if time1>=3 and high<=12.0 then
 // ГАРП ПРИЗЕМЛИЛСЯ (враг уже слэмнут) -> завершение
-call EffectCreateAndMoveAn(true,"war3mapImported\\Garp_QAir.mdx",GetRandomReal(0,360),2.0,1.0,1.0,100,100,100,0,0,caster,0,facing,0)
+call EffectCreateAndMoveAn(true,"war3mapImported\\Garp\\Garp_QAir.mdx",GetRandomReal(0,360),2.0,1.0,1.0,100,100,100,0,0,caster,0,facing,0)
 call PauseUnit(caster,false)
 call SetUnitInvulnerable(caster,false)
 call SetUnitPathing(caster,true)
@@ -223839,13 +223841,13 @@ endif
 call EffectCreateAndMoveAn(true,"az_hitheavy.mdl",facing,1.0,1.8,1.0,100,100,100,0,125,target,0,facing,0)
 // Хаки-вспышка на враге в момент каждого удара. У модели есть Stand, поэтому
 // обычного помощника хватает, номер анимации не нужен.
-call EffectCreateAndMove(true,"war3mapImported\\Garp_WHit.mdx",facing,1.0,1.0,1.0,100,100,100,0,110,target,0,facing)
+call EffectCreateAndMove(true,"war3mapImported\\Garp\\Garp_WHit.mdx",facing,1.0,1.0,1.0,100,100,100,0,110,target,0,facing)
 // nitu — полупрозрачные, 60 = прозрачность в процентах (альфа считается как 100-visible)
 call EffectCreateAndMoveAn(true,"nitu.mdl",facing+220,1.0,2.0,1.0,100,100,100,60,0,target,150,facing+30,0)
 call EffectCreateAndMoveAn(true,"nitu.mdl",facing+140,1.0,2.0,1.0,100,100,100,60,0,target,150,facing-30,0)
 // хаки на удар — та же модель, что на руках, но крупнее
-call EffectCreateAndMove(true,"war3mapImported\\Garp_HandsFX.mdx",facing,1.0,0.6,1.0,100,100,100,0,110,target,0,facing)
-call EffectCreateAndMove(true,"war3mapImported\\Garp_HandsFX.mdx",facing,1.0,0.45,1.0,100,100,100,0,130,target,60,facing+180)
+call EffectCreateAndMove(true,"war3mapImported\\Garp\\Garp_HandsFX.mdx",facing,1.0,0.6,1.0,100,100,100,0,110,target,0,facing)
+call EffectCreateAndMove(true,"war3mapImported\\Garp\\Garp_HandsFX.mdx",facing,1.0,0.45,1.0,100,100,100,0,130,target,60,facing+180)
 // Голос на КАЖДЫЙ удар. Клип 2.94 c, а удары идут через 0.27 c — поэтому
 // предыдущий экземпляр глушим, и фраза начинается заново с каждым панчем.
 if LoadSoundHandle(HH,id,30)!=null then
@@ -223861,8 +223863,8 @@ call PushTimed(target,facing,10,12)
 else
 // ФИНАЛЬНЫЙ УДАР: оглушение + крупное хаки + кратер + сильный отброс
 call SetControlToUnit(caster,target,0.75,"stun")
-call EffectCreateAndMove(true,"war3mapImported\\Garp_HandsFX.mdx",facing,1.0,1.0,1.0,100,100,100,0,110,target,0,facing)
-call EffectCreateAndMoveAn(true,"war3mapImported\\Garp_WCrater.mdx",GetRandomReal(0,360),2.0,0.5,1.0,100,100,100,0,0,target,0,facing,0)
+call EffectCreateAndMove(true,"war3mapImported\\Garp\\Garp_HandsFX.mdx",facing,1.0,1.0,1.0,100,100,100,0,110,target,0,facing)
+call EffectCreateAndMoveAn(true,"war3mapImported\\Garp\\Garp_WCrater.mdx",GetRandomReal(0,360),2.0,0.5,1.0,100,100,100,0,0,target,0,facing,0)
 call ShakeCamera(0.3,10)
 call PushTimed(target,facing,14,20)
 call PauseUnit(target,false)
@@ -223952,10 +223954,12 @@ else
 // EffectCreateAndMove180 = дамми '180e', перевёрнутый на 180 — взрыв смотрит в землю.
 // Тот же удар об землю и тем же способом, что у Q: невидимый дамми-якорь + эффект.
 set n0=CreateUnit(GetOwningPlayer(caster),'e200',x0,y0,GetRandomReal(0,360))
+// у e200 в данных высота полёта 200 — без этого эффект висит над землёй
+call SetUnitFlyHeight(n0,0,0)
 // Рисуется ТОЛЬКО так (перебор ещё в 4.5): дамми с этой моделью
 // (SetUnitModel, он же EffectCreateAndMove) и AddSpecialEffect по
 // координате её не показывают — только эффект на невидимом якоре.
-set EFF=AddSpecialEffectTarget("war3mapImported\\Garp_QImpact.mdx",n0,"origin")
+set EFF=AddSpecialEffectTarget("war3mapImported\\Garp\\Garp_QImpact.mdx",n0,"origin")
 if EFF!=null then
 call SetSpecialEffectScale(EFF,0.9)
 call RemoveEffect(EFF,2.5,true,CreateTimer())
@@ -224001,18 +224005,18 @@ call SaveReal(HH,id,14,facing)
 // ядро на цепи появляется ЗА СПИНОЙ и вылезает из-под земли (приём разраба:
 // посадить под землю и поднимать). Модель: шар впереди, цепь тянется назад.
 set n0=CreateUnit(GetOwningPlayer(caster),'e200',PolX(GetUnitX(caster),260,facing+180),PolY(GetUnitY(caster),260,facing+180),facing+180)
-call SetUnitModel(n0,"war3mapImported\\Garp_Ball.mdx")
+call SetUnitModel(n0,"war3mapImported\\Garp\\Garp_Ball.mdx")
 call UnitSize(n0,0.25,0.25,0.25)
 call SetUnitFlyHeight(n0,-400,0)
 call SaveUnitHandle(HH,id,20,n0)
 // пыль в месте, откуда выдёргивает
-call EffectCreateAndMoveAn(true,"war3mapImported\\Garp_QAir.mdx",GetRandomReal(0,360),1.5,0.8,1.0,100,100,100,0,0,n0,0,facing,0)
+call EffectCreateAndMoveAn(true,"war3mapImported\\Garp\\Garp_QAir.mdx",GetRandomReal(0,360),1.5,0.8,1.0,100,100,100,0,0,n0,0,facing,0)
 set n0=null
 // Молнии вокруг Гарпа: 6 штук в случайных точках радиусом до 500
 set i=0
 loop
 exitwhen i>5
-call EffectCreateAndMove(true,"war3mapImported\\Garp_BlueHoleFX.mdx",GetRandomReal(0,360),1.5,GetRandomReal(0.35,0.6),1.0,100,100,100,0,0,caster,GetRandomReal(120,500),GetRandomReal(0,360))
+call EffectCreateAndMove(true,"war3mapImported\\Garp\\Garp_BlueHoleFX.mdx",GetRandomReal(0,360),1.5,GetRandomReal(0.35,0.6),1.0,100,100,100,0,0,caster,GetRandomReal(120,500),GetRandomReal(0,360))
 set i=i+1
 endloop
 call Garp_Hands(caster,1.2)
@@ -224065,14 +224069,14 @@ call CreateModeIndicatorForm(caster,"ReplaceableTextures\\CommandButtons\\BTNGar
 set i=0
 loop
 exitwhen i>5
-call EffectCreateAndMove(true,"war3mapImported\\Garp_BlueHoleFX.mdx",GetRandomReal(0,360),1.5,GetRandomReal(0.35,0.6),1.0,100,100,100,0,0,caster,GetRandomReal(120,500),GetRandomReal(0,360))
+call EffectCreateAndMove(true,"war3mapImported\\Garp\\Garp_BlueHoleFX.mdx",GetRandomReal(0,360),1.5,GetRandomReal(0.35,0.6),1.0,100,100,100,0,0,caster,GetRandomReal(120,500),GetRandomReal(0,360))
 set i=i+1
 endloop
 call Garp_Hands(caster,1.0)
 call Garp_Sound("Sound\\Music\\mp3Music\\Garp_F_Cast.mp3")
 call SetUnitAnimation(caster,"spell")
 call PauseUnit(caster,true)
-call EffectCreateAndMoveAn(true,"war3mapImported\\Garp_EBurst.mdx",GetRandomReal(0,360),2.0,0.2,1.0,100,100,100,0,0,caster,0,GetUnitFacing(caster),0)
+call EffectCreateAndMoveAn(true,"war3mapImported\\Garp\\Garp_EBurst.mdx",GetRandomReal(0,360),2.0,0.2,1.0,100,100,100,0,0,caster,0,GetUnitFacing(caster),0)
 call TimerStart(t,0.5,true,function Garp_F_Act2)
 set caster=null
 set t=null
@@ -224138,7 +224142,7 @@ call SaveReal(HH,id,9,0)
 set i=0
 loop
 exitwhen i>1
-call EffectCreateAndMove(true,"war3mapImported\\Garp_BlueHoleFX.mdx",GetRandomReal(0,360),1.5,GetRandomReal(0.35,0.6),1.0,100,100,100,0,0,caster,GetRandomReal(120,500),GetRandomReal(0,360))
+call EffectCreateAndMove(true,"war3mapImported\\Garp\\Garp_BlueHoleFX.mdx",GetRandomReal(0,360),1.5,GetRandomReal(0.35,0.6),1.0,100,100,100,0,0,caster,GetRandomReal(120,500),GetRandomReal(0,360))
 set i=i+1
 endloop
 endif
@@ -224157,7 +224161,7 @@ set gr=LoadGroupHandle(HH,id,4)
 set i=0
 loop
 exitwhen i>5
-call EffectCreateAndMove(true,"war3mapImported\\Garp_HandsFX.mdx",facing,0.6,GetRandomReal(0.8,1.5),1.0,100,100,100,0,GetRandomReal(0,220),caster,GetRandomReal(150,3500)*power,facing+GetRandomReal(-7,7))
+call EffectCreateAndMove(true,"war3mapImported\\Garp\\Garp_HandsFX.mdx",facing,0.6,GetRandomReal(0.8,1.5),1.0,100,100,100,0,GetRandomReal(0,220),caster,GetRandomReal(150,3500)*power,facing+GetRandomReal(-7,7))
 set i=i+1
 endloop
 // ПРОХОД 1: собрать всех под лучом (12 точек, радиус 300 под ширину волны)
@@ -224265,13 +224269,13 @@ call Garp_Sound("Sound\\Music\\mp3Music\\Garp_R_Hit.mp3")
 // собственный красный модели. 100/20/20 = явный красный.
 // Готовый эффект карты (Madara\\kaizokusfxbyvalk4) на самом Гарпе в момент удара
 call EffectCreateAndMove(true,EffectID[105],GetRandomReal(0,360),1.5,1.2,1.0,100,100,100,50,0,caster,0,facing)
-call EffectCreateAndMove(true,"war3mapImported\\Garp_RBeam.mdx",facing+180,5.0,2.3*power,1.0,100,20,20,0,40,caster,100,facing)
+call EffectCreateAndMove(true,"war3mapImported\\Garp\\Garp_RBeam.mdx",facing+180,5.0,2.3*power,1.0,100,20,20,0,40,caster,100,facing)
 // Хаки густо по всей длине луча: 30 искр с шагом 115 (150..3485), у каждой свои
 // высота, размер и отклонение вбок — чтобы читалось как излучение от волны, а не ниточка.
 set i=0
 loop
 exitwhen i>49
-call EffectCreateAndMove(true,"war3mapImported\\Garp_HandsFX.mdx",facing,0.8,GetRandomReal(0.9,1.7),1.0,100,100,100,0,GetRandomReal(0,220),caster,(150.0+I2R(i)*70.0)*power,facing+GetRandomReal(-7,7))
+call EffectCreateAndMove(true,"war3mapImported\\Garp\\Garp_HandsFX.mdx",facing,0.8,GetRandomReal(0.9,1.7),1.0,100,100,100,0,GetRandomReal(0,220),caster,(150.0+I2R(i)*70.0)*power,facing+GetRandomReal(-7,7))
 set i=i+1
 endloop
 // вижн вдоль ВСЕЙ длины волны (в 3.2 "глаз" — это e200: обзор 800,
@@ -224312,7 +224316,7 @@ call SetUnitAnimationByIndex(caster,7)
 // озвучка длится 8.38 c: первые 4 c — замах, дальше отыгрыш удара. Под это и выставлена зарядка.
 call Garp_Sound("Sound\\Music\\mp3Music\\Garp_R_Cast.mp3")
 call SaveSoundHandle(HH,id,30,soundplay)
-call SaveEffectHandle(HH,id,10,AddSpecialEffectTarget("war3mapImported\\Garp_RCharge.mdx",caster,"hand right"))
+call SaveEffectHandle(HH,id,10,AddSpecialEffectTarget("war3mapImported\\Garp\\Garp_RCharge.mdx",caster,"hand right"))
 call SetSpecialEffectScale(LoadEffectHandle(HH,id,10),0.175)
 call TimerStart(t,0.02,true,function Garp_R_Act2)
 set caster=null
@@ -224364,8 +224368,8 @@ call SetUnitY(caster,y0)
 // МОЛНИИ идут всю способность: по 2 штуки каждые 0.3 c.
 // Было 4 штуки каждые 0.15 — за 4 секунды скила это под сотню дамми,
 // слишком густо и лишняя нагрузка.
-// high01 = 0 -> бьют НА ВЫСОТЕ ГАРПА (помощник считает высоту от кастера),
-// то есть поднимаются вместе с ним, а не остаются лежать на земле.
+// high01 гасит высоту кастера, иначе молнии висят на высоте Гарпа
+// и поднимаются вместе с ним — помощник считает высоту от носителя.
 // Пока он на земле — тесно вокруг него, после взлёта — по всей зоне урона.
 call SaveReal(HH,id,9,time3)
 if time3>=0.30 then
@@ -224378,7 +224382,7 @@ set rad=GetRandomReal(150,600)
 else
 set rad=GetRandomReal(200,2500)
 endif
-call EffectCreateAndMove(true,"war3mapImported\\Garp_BlueHoleFX.mdx",GetRandomReal(0,360),1.5,GetRandomReal(0.5,1.1),1.0,100,100,100,0,0,caster,rad,GetRandomReal(0,360))
+call EffectCreateAndMove(true,"war3mapImported\\Garp\\Garp_BlueHoleFX.mdx",GetRandomReal(0,360),1.5,GetRandomReal(0.5,1.1),1.0,100,100,100,0,-GetUnitFlyHeight(caster),caster,rad,GetRandomReal(0,360))
 set i=i+1
 endloop
 endif
@@ -224395,7 +224399,7 @@ call Garp_Sound("Sound\\Music\\mp3Music\\Garp_T_Cast.mp3")
 // неуязвим, пока висит в воздухе; снимается на приземлении
 call SetUnitInvulnerable(caster,true)
 set n0=CreateUnit(GetOwningPlayer(caster),'e200',x0,y0,GetRandomReal(0,360))
-call SetUnitModel(n0,"war3mapImported\\Garp_TField.mdx")
+call SetUnitModel(n0,"war3mapImported\\Garp\\Garp_TField.mdx")
 call UnitScale(n0,0.02,0.74,1.2)
 call MyRemoveUnit(n0,4.0)
 set n0=null
@@ -224410,7 +224414,7 @@ set high=800.0
 // КОСМОС ВСПЫХИВАЕТ НА САМОМ ГАРПЕ.
 // У модели ЕДИНСТВЕННАЯ секвенция birth, а дамми по умолчанию играет Stand —
 // без принудительного индекса анимации не было бы видно ничего.
-call EffectCreateAndMoveAn(true,"war3mapImported\\Garp_TCosmos.mdx",GetRandomReal(0,360),2.0,1.2,1.0,100,100,100,0,0,caster,0,facing,0)
+call EffectCreateAndMoveAn(true,"war3mapImported\\Garp\\Garp_TCosmos.mdx",GetRandomReal(0,360),2.0,1.2,1.0,100,100,100,0,0,caster,0,facing,0)
 call SaveReal(HH,id,6,2)
 call SaveReal(HH,id,5,0)
 endif
@@ -224431,7 +224435,7 @@ if time>=1.3 then
 call SetUnitAnimationByIndex(caster,9)
 // реплика на светящейся руке (3.11 c) — до самого удара об землю
 call Garp_Sound("Sound\\Music\\mp3Music\\Garp_T_Hand.mp3")
-set EFF=AddSpecialEffectTarget("war3mapImported\\Garp_TStar.mdx",caster,"hand right")
+set EFF=AddSpecialEffectTarget("war3mapImported\\Garp\\Garp_TStar.mdx",caster,"hand right")
 call SetSpecialEffectScale(EFF,2.0)
 call RemoveEffect(EFF,0.02,true,CreateTimer())
 call SaveReal(HH,id,6,3)
@@ -224447,7 +224451,7 @@ if time>=1.8 then
 // У наклонных дамми в abilList только Aloc,Avul,Arav — Amrf надо добавить
 // руками, иначе SetUnitFlyHeight по ним молча не сработает.
 set n0=CreateUnit(GetOwningPlayer(caster),'270e',x0,y0,facing)
-call SetUnitModel(n0,"war3mapImported\\Garp_TShot.mdx")
+call SetUnitModel(n0,"war3mapImported\\Garp\\Garp_TShot.mdx")
 call UnitAddAbility(n0,'Amrf')
 call UnitRemoveAbility(n0,'Amrf')
 call UnitSize(n0,2.0,2.0,2.0)
@@ -224487,7 +224491,9 @@ call Garp_Sound("Sound\\Music\\mp3Music\\Garp_T_Hit.mp3")
 // Рисуется ТОЛЬКО так (перебор ещё в 4.5): дамми с этой моделью
 // (SetUnitModel, он же EffectCreateAndMove) и AddSpecialEffect по
 // координате её не показывают — только эффект на невидимом якоре.
-set EFF=AddSpecialEffectTarget("war3mapImported\\Garp_QImpact.mdx",n0,"origin")
+// у e200 в данных высота полёта 200 — без этого удар висит над землёй
+call SetUnitFlyHeight(n0,0,0)
+set EFF=AddSpecialEffectTarget("war3mapImported\\Garp\\Garp_QImpact.mdx",n0,"origin")
 if EFF!=null then
 call SetSpecialEffectScale(EFF,4.2)
 call RemoveEffect(EFF,3.0,true,CreateTimer())
@@ -224499,7 +224505,7 @@ set i=0
 loop
 exitwhen i>23
 set ang=I2R(i)*45.0
-call EffectCreateAndMoveAn(true,"war3mapImported\\Garp_WCrater.mdx",ang,2.0,0.7+0.35*I2R(i/8),1.0,100,100,100,0,-high,caster,800.0+800.0*I2R(i/8),ang,0)
+call EffectCreateAndMoveAn(true,"war3mapImported\\Garp\\Garp_WCrater.mdx",ang,2.0,0.7+0.35*I2R(i/8),1.0,100,100,100,0,-GetUnitFlyHeight(caster),caster,800.0+800.0*I2R(i/8),ang,0)
 set i=i+1
 endloop
 call ShakeCamera(1.2,10)
@@ -224570,7 +224576,7 @@ call UnitRemoveAbilityTimedPause(caster,'GrGs',2.0)
 // Гарп срывался с места и продолжал бежать.
 call UnitAddAbilityTimed(caster,2.0,'A1FU')
 call SetUnitAnimationByIndex(caster,1)
-call EffectCreateAndMove(true,"war3mapImported\\Garp_HandsFX.mdx",GetUnitFacing(caster),1.2,1.4,1.0,100,100,100,0,0,caster,0,GetUnitFacing(caster))
+call EffectCreateAndMove(true,"war3mapImported\\Garp\\Garp_HandsFX.mdx",GetUnitFacing(caster),1.2,1.4,1.0,100,100,100,0,0,caster,0,GetUnitFacing(caster))
 endfunction
 function Garp_T_Act takes unit caster returns nothing
 local timer t=CreateTimer()
