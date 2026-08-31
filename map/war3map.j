@@ -220075,7 +220075,7 @@ call UnitAddAbilityTimedPaused(caster,15,'UKD3')
 
 
 
-call CreateModeIndicatorForm(caster,"ReplaceableTextures\\CommandButtons\\BTNUraharaD.blp",25)  // индикатор формы в UjAPI-панели
+call CreateModeIndicatorWithPauseForm(caster,"ReplaceableTextures\\CommandButtons\\BTNUraharaD.blp",15)  // индикатор формы в UjAPI-панели
 call SetAbilityRemainingCooldown(GetUnitAbility(caster,'A07P'),0.01) // сбросить Sonido
 call SetAbilityCooldown(GetUnitAbility(caster,'A07P'),6.0)           // и на время формы = 2 c
 call SaveReal(HH,id,6,1)
@@ -220122,7 +220122,9 @@ if time2>=0 then
 
 set time2=-1
 
-call SetWidgetLife(caster, GetWidgetLife(caster)+0.3*heal)    // хил 0.25*INT/тик = 0.5*INT/сек
+// хил 0.25*INT/тик = 0.5*INT/сек
+call HealTextTag(caster,caster,0.3*heal*myCustomHeal2(caster,1),"HealthRes")
+call SetUnitState(caster,UNIT_STATE_LIFE, GetUnitState(caster,UNIT_STATE_LIFE)+0.3*heal)
 
 endif
 
