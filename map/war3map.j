@@ -27641,7 +27641,7 @@ if cmb!=true then
                 set udg_RH[i]=0
             endif
             set i=i+1
-            exitwhen i>=136
+            exitwhen i>=137
             endloop
             call RemoveUnit(u)
             call SetPlayerStateBJ(GetOwningPlayer(u),PLAYER_STATE_FOOD_CAP_CEILING,0)
@@ -27865,7 +27865,7 @@ if cmb!=true then
                     set udg_RH[i]=0
                 endif
                 set i=i+1
-                exitwhen i>=136
+                exitwhen i>=137
             endloop
         endif
         call SaveInteger(h,GetHandleId(u),'A1GS',0)
@@ -27888,7 +27888,7 @@ if IsUnitType(u,UNIT_TYPE_HERO) and CPTModeON and cmb==true then
         call RemoveUnit(u)
         set i=0
         loop
-        exitwhen i>=136
+        exitwhen i>=137
             if GetUnitTypeId(u)==udg_RH[i] then
                 set udg_RH[i]=0
             endif
@@ -34401,7 +34401,7 @@ function Trig_idNew_Actions takes nothing returns nothing
     exitwhen bj_forLoopAIndex>bj_forLoopAIndexEnd
     call DisplayTextToPlayer(GetLocalPlayer(),0,0,I2S(bj_forLoopAIndex)+"-"+udg_RH2[bj_forLoopAIndex]+"; "+I2S(bj_forLoopAIndex+1)+"-"+udg_RH2[bj_forLoopAIndex+1]+"; "+I2S(bj_forLoopAIndex+2)+"-"+udg_RH2[bj_forLoopAIndex+2]+"; "+I2S(bj_forLoopAIndex+3)+"-"+udg_RH2[bj_forLoopAIndex+3]+"; "+I2S(bj_forLoopAIndex+4)+"-"+udg_RH2[bj_forLoopAIndex+4]+"; ")
     //udg_RH[bj_forLoopAIndex]    
-    if bj_forLoopAIndex>=136 and bj_forLoopAIndex<190 then
+    if bj_forLoopAIndex>=137 and bj_forLoopAIndex<190 then
     set bj_forLoopAIndex=200
     else
     set bj_forLoopAIndex=bj_forLoopAIndex+5
@@ -34427,7 +34427,7 @@ function Trig_id_Actions takes nothing returns nothing
     exitwhen bj_forLoopAIndex>bj_forLoopAIndexEnd
     call DisplayTextToPlayer(GetLocalPlayer(),0,0,I2S(bj_forLoopAIndex)+"-"+udg_RH2[bj_forLoopAIndex]+"; "+I2S(bj_forLoopAIndex+1)+"-"+udg_RH2[bj_forLoopAIndex+1]+"; "+I2S(bj_forLoopAIndex+2)+"-"+udg_RH2[bj_forLoopAIndex+2]+"; "+I2S(bj_forLoopAIndex+3)+"-"+udg_RH2[bj_forLoopAIndex+3]+"; "+I2S(bj_forLoopAIndex+4)+"-"+udg_RH2[bj_forLoopAIndex+4]+"; ")
     //udg_RH[bj_forLoopAIndex]    
-    if bj_forLoopAIndex>=136 and bj_forLoopAIndex<190 then
+    if bj_forLoopAIndex>=137 and bj_forLoopAIndex<190 then
     set bj_forLoopAIndex=200
     else
     set bj_forLoopAIndex=bj_forLoopAIndex+5
@@ -142355,7 +142355,7 @@ call SetControlToUnit(u,c,1,"stun")
 endif
 endif
 if i>=120 and i<=160 then
-if i==125 or i==136 or i==145 or i==155 then
+if i==125 or i==135 or i==145 or i==155 then
 //war3mapImported\icytouch.mdl
 call UnitCreateAndMove(u,'e2WK',c,d2,1,1.5,1,100,100,100,30,100,c,0,d2)
 endif
@@ -162519,7 +162519,7 @@ call KireiQMissles(n,75,a,1800+dist,0.05,dmg,u,tr)
 set rd=0
 set x1=x+rd*Cos(a+deg90)
 set y1=y+rd*Sin(a+deg90)
-set rd=136
+set rd=135
 set x1=x1+rd*Cos(a)
 set y1=y1+rd*Sin(a)
 set n=CreateUnit(p,'eo70',x1,y1,a*bj_RADTODEG)
@@ -227492,7 +227492,7 @@ if cmb!=true and u!=null then
             set udg_RH[i2]=0
         endif
         set i2=i2+1
-        exitwhen i2==136
+        exitwhen i2==137
         endloop
         call SetUnitPosition(u,GetRectCenterX(gg_rct_Resp7),GetRectCenterY(gg_rct_Resp7))
         set p=GetOwningPlayer(u)
