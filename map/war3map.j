@@ -7873,7 +7873,10 @@ else
 call SaveBoolean(HH,idu,StringHash("bloodbool"),false)
 call PauseTimer(t)
 call DestroyTimer(t)
+if LoadEffectHandle(HH,id,0)!=null then
 call DestroyEffect(LoadEffectHandle(HH,id,0))
+call SaveEffectHandle(HH,id,0,null)
+endif
 call FlushChildHashtable(HH,id)
 endif
 set c=null
@@ -41162,7 +41165,10 @@ endfunction
 function EffectLifeTime1 takes nothing returns nothing
 local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
+if LoadEffectHandle(HH,id,10)!=null then
 call DestroyEffect(LoadEffectHandle(HH,id,10))
+call SaveEffectHandle(HH,id,10,null)
+endif
 call FlushChildHashtable(HH,id)
 call PauseTimer(t)
 call DestroyTimer(t)
@@ -71871,8 +71877,14 @@ if LoadBoolean(HH,GetHandleId(u),TARGET_ABILITY)==false then
 call SaveReal(HH,id,2,time+0.04)
 endif
 else
+if LoadEffectHandle(HH,id,7)!=null then
 call DestroyEffect(LoadEffectHandle(HH,id,7))
+call SaveEffectHandle(HH,id,7,null)
+endif
+if LoadEffectHandle(HH,id,8)!=null then
 call DestroyEffect(LoadEffectHandle(HH,id,8))
+call SaveEffectHandle(HH,id,8,null)
+endif
 call UnitMakeAbilityPermanent(u,false,'A24J')
 call UnitRemoveAbility(u,'A24J')
 call UnitRemoveBuffs(u,false,true)
@@ -95748,7 +95760,10 @@ call SaveReal(HH,id,4,i+0.25)
 else
 call PauseTimer(t)
 call DestroyTimer(t)
+if LoadEffectHandle(HH,id,0)!=null then
 call DestroyEffect(LoadEffectHandle(HH,id,0))
+call SaveEffectHandle(HH,id,0,null)
+endif
 call FlushChildHashtable(HH,id)
 endif
 set c=null
@@ -112518,8 +112533,14 @@ local real dist=LoadReal(HH,id,8)
 set time=time+0.02
 call SaveReal(HH,id,5,time)
 if dist<0 then
+    if LoadEffectHandle(HH,id,21)!=null then
     call DestroyEffect(LoadEffectHandle(HH,id,21))
+    call SaveEffectHandle(HH,id,21,null)
+    endif
+    if LoadEffectHandle(HH,id,22)!=null then
     call DestroyEffect(LoadEffectHandle(HH,id,22))
+    call SaveEffectHandle(HH,id,22,null)
+    endif
     call UnitSpeed(caster,1)
     call PauseUnit(caster,false)
     call SetUnitInvulnerable(caster,false)
@@ -121282,9 +121303,18 @@ local real dist=LoadReal(HH,id,8)
 set time=time+0.02
 call SaveReal(HH,id,5,time)
 if dist<0 then
+if LoadEffectHandle(HH,id,25)!=null then
 call DestroyEffect(LoadEffectHandle(HH,id,25))
+call SaveEffectHandle(HH,id,25,null)
+endif
+if LoadEffectHandle(HH,id,26)!=null then
 call DestroyEffect(LoadEffectHandle(HH,id,26))
+call SaveEffectHandle(HH,id,26,null)
+endif
+if LoadEffectHandle(HH,id,27)!=null then
 call DestroyEffect(LoadEffectHandle(HH,id,27))
+call SaveEffectHandle(HH,id,27,null)
+endif
 call UnitSpeed(caster,1)
 call PauseUnit(caster,false)
 call SetUnitInvulnerable(caster,false)
@@ -142135,10 +142165,22 @@ call SetUnitFacing(c,d2+180)
 call MoveUnit(c,c,5,d2)
 call MoveUnit(c,u,-120,d2)
 else
+if LoadEffectHandle(HH,id,25)!=null then
 call DestroyEffect(LoadEffectHandle(HH,id,25))
+call SaveEffectHandle(HH,id,25,null)
+endif
+if LoadEffectHandle(HH,id,26)!=null then
 call DestroyEffect(LoadEffectHandle(HH,id,26))
+call SaveEffectHandle(HH,id,26,null)
+endif
+if LoadEffectHandle(HH,id,27)!=null then
 call DestroyEffect(LoadEffectHandle(HH,id,27))
+call SaveEffectHandle(HH,id,27,null)
+endif
+if LoadEffectHandle(HH,id,28)!=null then
 call DestroyEffect(LoadEffectHandle(HH,id,28))
+call SaveEffectHandle(HH,id,28,null)
+endif
 call UnitSpeed(u,1)
 call UnitSpeed(c,1)
 call SetUnitPathing(c,true)
@@ -142192,10 +142234,22 @@ call PauseUnit(u,true)
 endif
 endif
 if i==175 then
+if LoadEffectHandle(HH,id,25)!=null then
 call DestroyEffect(LoadEffectHandle(HH,id,25))
+call SaveEffectHandle(HH,id,25,null)
+endif
+if LoadEffectHandle(HH,id,26)!=null then
 call DestroyEffect(LoadEffectHandle(HH,id,26))
+call SaveEffectHandle(HH,id,26,null)
+endif
+if LoadEffectHandle(HH,id,27)!=null then
 call DestroyEffect(LoadEffectHandle(HH,id,27))
+call SaveEffectHandle(HH,id,27,null)
+endif
+if LoadEffectHandle(HH,id,28)!=null then
 call DestroyEffect(LoadEffectHandle(HH,id,28))
+call SaveEffectHandle(HH,id,28,null)
+endif
 call UnitSpeed(u,1)
 call UnitSpeed(c,1)
 call SetUnitPathing(c,true)
@@ -142437,7 +142491,10 @@ call MoveUnit(u,u,10+SR(GetUnitX(u),GetUnitY(u),GetLocationX(LoadLocationHandle(
 endif
 endif
 if(i==40)then
+if LoadEffectHandle(HH,id,10)!=null then
 call DestroyEffect(LoadEffectHandle(HH,id,10))
+call SaveEffectHandle(HH,id,10,null)
+endif
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\GajeelT1.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
 call KillSoundWhenDone(soundplay)
@@ -145818,7 +145875,10 @@ call SaveReal(HH,id,8,dist+40)
 call DamageAoeOneTimeHeroine(caster,x1,y1,250,damage,LoadGroupHandle(HH,id,4))
 endif
 if dist>=2500+LoadReal(HH,id,17)then
+if LoadGroupHandle(HH,id,4)!=null then
 call DestroyGroup(LoadGroupHandle(HH,id,4))
+call SaveGroupHandle(HH,id,4,null)
+endif
 call RemoveUnit(LoadUnitHandle(HH,id,20))
 call RemoveUnit(LoadUnitHandle(HH,id,21))
 call PauseTimer(GetExpiredTimer())
@@ -145855,7 +145915,10 @@ call EffectCreateAndMove(true,"Others\\[A]n3s_o_target.mdl",90,1,1.5,1,100,100,1
 call EffectCreateAndMove(true,"Others\\[A]n3s_o_target.mdl",0,1,1.5,1,100,100,100,0,100,target,0,facing)
 call EffectCreateAndMove(true,"Others\\[DoFT]az_hit-blue-blade.mdl",facing,1.5,1.5,0.5,100,100,100,0,100,target,0,facing)
 call SetUnitFlyHeight(caster,0,0)
+if LoadEffectHandle(HH,id,22)!=null then
 call DestroyEffect(LoadEffectHandle(HH,id,22))
+call SaveEffectHandle(HH,id,22,null)
+endif
 call SetUnitAnimation(target,"stand")
 call UnitSpeed(caster,1)
 call UnitSpeed(target,1)
@@ -145943,7 +146006,10 @@ if damage_plus>0 then
 call SaveUnitHandle(HH,GetHandleId(caster),StringHash("HerFU"),target)
 endif
 call SetUnitFlyHeight(caster,0,0)
+if LoadEffectHandle(HH,id,22)!=null then
 call DestroyEffect(LoadEffectHandle(HH,id,22))
+call SaveEffectHandle(HH,id,22,null)
+endif
 call SetUnitAnimation(target,"stand")
 call UnitSpeed(caster,1)
 call UnitSpeed(target,1)
@@ -146059,7 +146125,10 @@ if dist<120 then
         call SetUnitPathing(target,true)
         call SaveBoolean(HH,GetHandleId(target),TARGET_ABILITY,false)
         call SetUnitFlyHeight(caster,0,0)
+        if LoadEffectHandle(HH,id,22)!=null then
         call DestroyEffect(LoadEffectHandle(HH,id,22))
+        call SaveEffectHandle(HH,id,22,null)
+        endif
         call SetUnitAnimation(target,"stand")
         call UnitSpeed(caster,1)
         call UnitSpeed(target,1)
@@ -146872,7 +146941,10 @@ local real time=LoadReal(HH,id,5)
 set time=time+0.02
 call SaveReal(HH,id,5,time)
 if distance>=2000 then
+if LoadGroupHandle(HH,id,4)!=null then
 call DestroyGroup(LoadGroupHandle(HH,id,4))
+call SaveGroupHandle(HH,id,4,null)
+endif
 call SetUnitAnimationByIndex(LoadUnitHandle(HH,id,20),2)
 call UnitColor(LoadUnitHandle(HH,id,20),0,0,0,100)
 call MyRemoveUnit(LoadUnitHandle(HH,id,20),2)
@@ -186064,9 +186136,18 @@ function RobLucciQ1Move takes nothing returns nothing
                         set cjlocgn_00000001=null
                 endif
                 if time==1.3 then
+                        if LoadEffectHandle(HH,id,21)!=null then
                         call DestroyEffect(LoadEffectHandle(HH,id,21))
+                        call SaveEffectHandle(HH,id,21,null)
+                        endif
+                        if LoadEffectHandle(HH,id,22)!=null then
                         call DestroyEffect(LoadEffectHandle(HH,id,22))
+                        call SaveEffectHandle(HH,id,22,null)
+                        endif
+                        if LoadEffectHandle(HH,id,23)!=null then
                         call DestroyEffect(LoadEffectHandle(HH,id,23))
+                        call SaveEffectHandle(HH,id,23,null)
+                        endif
                         call RemoveUnit(LoadUnitHandle(HH,id,24))
                         call RemoveUnit(LoadUnitHandle(HH,id,25))
                 endif
@@ -186157,9 +186238,18 @@ function RobLucciQ1Move takes nothing returns nothing
                         set cjlocgn_00000001=null
                 endif
                 if time==1.2 then
+                        if LoadEffectHandle(HH,id,21)!=null then
                         call DestroyEffect(LoadEffectHandle(HH,id,21))
+                        call SaveEffectHandle(HH,id,21,null)
+                        endif
+                        if LoadEffectHandle(HH,id,22)!=null then
                         call DestroyEffect(LoadEffectHandle(HH,id,22))
+                        call SaveEffectHandle(HH,id,22,null)
+                        endif
+                        if LoadEffectHandle(HH,id,23)!=null then
                         call DestroyEffect(LoadEffectHandle(HH,id,23))
+                        call SaveEffectHandle(HH,id,23,null)
+                        endif
                         call RemoveUnit(LoadUnitHandle(HH,id,24))
                         call RemoveUnit(LoadUnitHandle(HH,id,25))
                 endif
@@ -186393,7 +186483,10 @@ function RobLucciRBaseMove takes nothing returns nothing
                         call ShakeCamera(0.2, 10)
                         call myCustomDamage(u,c,(GetUnitAbilityLevel(u,'LCR1')+4)*GetHeroAgi(u,true),false,false,null,null,null)
                         call SetUnitAnimation(c,"death")
+                        if LoadEffectHandle(HH,id,21)!=null then
                         call DestroyEffect(LoadEffectHandle(HH,id,21))
+                        call SaveEffectHandle(HH,id,21,null)
+                        endif
                         set EFF=AddSpecialEffect("war3mapImported\\File00003993.mdl",GetUnitX(c),GetUnitY(c))
                         call SetSpecialEffectFacing(EFF,LoadReal(HH,id,3))
                         call SetSpecialEffectScale(EFF,1.5)
@@ -186475,7 +186568,10 @@ function RobLucciRBaseMove takes nothing returns nothing
                         call EffectCreateAndMove1(false,"war3mapImported\\wind3.mdl",LoadReal(HH,id,3),1,1.25,1.25,100,100,100,20,100,0,c,0,LoadReal(HH,id,3))
                         call EffectCreateAndMove1(false,"war3mapImported\\[A]az_axe_ef1.mdl",GetRandomReal(0,360),1,0.7,0.5,100,100,100,30,50,0,c,0,LoadReal(HH,id,3))
                         call EffectCreateAndMove1(false,"war3mapImported\\HakenSaber2.mdl",GetRandomReal(0,360),1,0.5,0.8,100,100,100,20,0,0,c,0,GetRandomReal(0,360))
+                        if LoadEffectHandle(HH,id,21)!=null then
                         call DestroyEffect(LoadEffectHandle(HH,id,21))
+                        call SaveEffectHandle(HH,id,21,null)
+                        endif
                         set soundplay=CreateSound("Sound\\Music\\mp3Music\\TobuShiganBachiHit.mp3",false,false,true,12700,12700,"")
                         call StartSound(soundplay)
                         call KillSoundWhenDone(soundplay)
@@ -186860,7 +186956,10 @@ function RobLucciTMove takes nothing returns nothing
                         set cjlocgn_00000001=null
                 endif
                 if time==3.6 then
+                        if LoadEffectHandle(HH,id,23)!=null then
                         call DestroyEffect(LoadEffectHandle(HH,id,23))
+                        call SaveEffectHandle(HH,id,23,null)
+                        endif
                 endif
                 if time==4.1 then
                         call RemoveUnit(LoadUnitHandle(HH,id,20))
@@ -187815,7 +187914,10 @@ local real time1
 set time=time+0.02
 call SaveReal(HH,id,5,time)
 if distance==2000 then
+if LoadGroupHandle(HH,id,4)!=null then
 call DestroyGroup(LoadGroupHandle(HH,id,4))
+call SaveGroupHandle(HH,id,4,null)
+endif
 if LoadUnitHandle(HH,id,20)!=null and UnitIsAlive(LoadUnitHandle(HH,id,20))==true then
 call RemoveUnit(LoadUnitHandle(HH,id,20))
 endif
@@ -188153,7 +188255,10 @@ endif
 
 
     if distance==1600 then
+if LoadGroupHandle(HH,id,4)!=null then
 call DestroyGroup(LoadGroupHandle(HH,id,4))
+call SaveGroupHandle(HH,id,4,null)
+endif
 call RemoveUnit(LoadUnitHandle(HH,id,20))
 call RemoveUnit(LoadUnitHandle(HH,id,21))
 call RemoveUnit(LoadUnitHandle(HH,id,22))
@@ -188395,8 +188500,14 @@ local real time1
 set time=time+0.02
 call SaveReal(HH,id,5,time)
 if distance==1600 then
+if LoadGroupHandle(HH,id,4)!=null then
 call DestroyGroup(LoadGroupHandle(HH,id,4))
+call SaveGroupHandle(HH,id,4,null)
+endif
+if LoadGroupHandle(HH,id,40)!=null then
 call DestroyGroup(LoadGroupHandle(HH,id,40))
+call SaveGroupHandle(HH,id,40,null)
+endif
 call MyRemoveUnit(LoadUnitHandle(HH,id,20),1)
 call MyRemoveUnit(LoadUnitHandle(HH,id,21),1)
 call MyRemoveUnit(LoadUnitHandle(HH,id,22),1)
@@ -188514,7 +188625,10 @@ if distance==2000+LoadInteger(HH,id,30) then
         call FlushChildHashtable(HH,GetHandleId(LoadGroupHandle(HH,id,4)))
         call PauseTimer(t)
         call DestroyTimer(t)
+        if LoadGroupHandle(HH,id,4)!=null then
         call DestroyGroup(LoadGroupHandle(HH,id,4))
+        call SaveGroupHandle(HH,id,4,null)
+        endif
         call RemoveUnit(b1)
     //call MyRemoveUnit(b1,1.5)
 else
@@ -188905,7 +189019,10 @@ local real damage= GetUnitState(caster,UNIT_STATE_MAX_MANA)*0.7
 set time=time+0.02
 call SaveReal(HH,id,5,time)
 if distance>6000 then
+if LoadGroupHandle(HH,id,4)!=null then
 call DestroyGroup(LoadGroupHandle(HH,id,4))
+call SaveGroupHandle(HH,id,4,null)
+endif
 call MyRemoveUnit(LoadUnitHandle(HH,id,20),3)
 call UnitColor(LoadUnitHandle(HH,id,20),100,100,100,100)
 call PauseTimer(t)
@@ -189424,13 +189541,22 @@ if time==5.02 then
 call SetUnitInvulnerable(caster,false)
 endif
 if time==10 then
+if LoadGroupHandle(HH,id,4)!=null then
 call DestroyGroup(LoadGroupHandle(HH,id,4))
+call SaveGroupHandle(HH,id,4,null)
+endif
+if LoadGroupHandle(HH,id,41)!=null then
 call DestroyGroup(LoadGroupHandle(HH,id,41))
+call SaveGroupHandle(HH,id,41,null)
+endif
 if LoadBoolean(HH,id,45)==true then
 call RemoveUnit(LoadUnitHandle(HH,id,50))
 endif
 call ForGroup(LoadGroupHandle(HH,id,40),function HashiramaQClear)
+if LoadGroupHandle(HH,id,40)!=null then
 call DestroyGroup(LoadGroupHandle(HH,id,40))
+call SaveGroupHandle(HH,id,40,null)
+endif
 call PauseTimer(t)
 call DestroyTimer(t)
 call FlushChildHashtable(HH,id)
@@ -189560,15 +189686,24 @@ call RemoveUnit(LoadUnitHandle(HH,id,23))
 call RemoveUnit(LoadUnitHandle(HH,id,24))
 endif
 if time==10 then
+if LoadGroupHandle(HH,id,4)!=null then
 call DestroyGroup(LoadGroupHandle(HH,id,4))
+call SaveGroupHandle(HH,id,4,null)
+endif
+if LoadGroupHandle(HH,id,41)!=null then
 call DestroyGroup(LoadGroupHandle(HH,id,41))
+call SaveGroupHandle(HH,id,41,null)
+endif
 if LoadBoolean(HH,id,45)==true then
 call RemoveUnit(LoadUnitHandle(HH,id,50))
 call RemoveUnit(LoadUnitHandle(HH,id,51))
 call RemoveUnit(LoadUnitHandle(HH,id,52))
 endif
 call ForGroup(LoadGroupHandle(HH,id,40),function HashiramaQClear)
+if LoadGroupHandle(HH,id,40)!=null then
 call DestroyGroup(LoadGroupHandle(HH,id,40))
+call SaveGroupHandle(HH,id,40,null)
+endif
 call PauseTimer(t)
 call DestroyTimer(t)
 call FlushChildHashtable(HH,id)
@@ -189888,7 +190023,10 @@ call UnitRemoveAbility(n0,'AHSF')
 call UnitRemoveAbility(n0,'BHSF')
 call GroupRemoveUnit(gr,n0)
 endloop
+if LoadGroupHandle(HH,id,4)!=null then
 call DestroyGroup(LoadGroupHandle(HH,id,4))
+call SaveGroupHandle(HH,id,4,null)
+endif
 call SetUnitAnimationByIndex(LoadUnitHandle(HH,id,20),2)
 call MyRemoveUnit(LoadUnitHandle(HH,id,20),2)
 call PauseTimer(t)
@@ -190439,7 +190577,10 @@ local real time=LoadReal(HH,id,5)
 set time=time+0.02
 call SaveReal(HH,id,5,time)
 if time==5 then
+if LoadGroupHandle(HH,id,4)!=null then
 call DestroyGroup(LoadGroupHandle(HH,id,4))
+call SaveGroupHandle(HH,id,4,null)
+endif
 call MyRemoveUnit(LoadUnitHandle(HH,id,20),2)
 call MyRemoveUnit(LoadUnitHandle(HH,id,21),2)
 call MyRemoveUnit(LoadUnitHandle(HH,id,22),2)
@@ -190605,7 +190746,10 @@ local real y0=0
 set time=time+0.02
 call SaveReal(HH,id,5,time)
 if time==3.1+LoadReal(HH,id,31)then
+if LoadGroupHandle(HH,id,4)!=null then
 call DestroyGroup(LoadGroupHandle(HH,id,4))
+call SaveGroupHandle(HH,id,4,null)
+endif
 call SetUnitAnimationByIndex(LoadUnitHandle(HH,id,20),1)
 call SetUnitAnimationByIndex(LoadUnitHandle(HH,id,21),1)
 call SetUnitAnimationByIndex(LoadUnitHandle(HH,id,22),1)
@@ -190923,8 +191067,14 @@ if time<=1 then
 call MoveUnit(caster,caster,LoadReal(HH,id,16)*0.02,facing)
 endif
 if time==1 then
+if LoadEffectHandle(HH,id,25)!=null then
 call DestroyEffect(LoadEffectHandle(HH,id,25))
+call SaveEffectHandle(HH,id,25,null)
+endif
+if LoadEffectHandle(HH,id,26)!=null then
 call DestroyEffect(LoadEffectHandle(HH,id,26))
+call SaveEffectHandle(HH,id,26,null)
+endif
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\HashiramaT2.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
 call KillSoundWhenDone(soundplay)
@@ -191065,7 +191215,10 @@ call SetUnitFlyHeight(caster,GetUnitFlyHeight(caster)-48,0)
 endif
 
 if time==7 or udg_B==false or DU2==false then
+if LoadGroupHandle(HH,id,4)!=null then
 call DestroyGroup(LoadGroupHandle(HH,id,4))
+call SaveGroupHandle(HH,id,4,null)
+endif
 call RemoveUnit(LoadUnitHandle(HH,id,20))
 call PauseTimer(t)
 call DestroyTimer(t)
@@ -191446,7 +191599,10 @@ call RemoveUnit(LoadUnitHandle(HH,id,24))
 call RemoveUnit(LoadUnitHandle(HH,id,25))
 call RemoveUnit(LoadUnitHandle(HH,id,26))
 call RemoveUnit(LoadUnitHandle(HH,id,27))
+if LoadGroupHandle(HH,id,4)!=null then
 call DestroyGroup(LoadGroupHandle(HH,id,4))
+call SaveGroupHandle(HH,id,4,null)
+endif
 call PauseTimer(t)
 call DestroyTimer(t)
 call FlushChildHashtable(HH,id)
@@ -191936,7 +192092,10 @@ set time=time+0.02
 set distance=LoadReal(HH,id,8)
 call SaveReal(HH,id,5,time)
 if distance==2000 then
+if LoadGroupHandle(HH,id,4)!=null then
 call DestroyGroup(LoadGroupHandle(HH,id,4))
+call SaveGroupHandle(HH,id,4,null)
+endif
 call UnitColor(LoadUnitHandle(HH,id,20),100,100,100,100)
 call MyRemoveUnit(LoadUnitHandle(HH,id,20),3)
 call RemoveUnit(LoadUnitHandle(HH,id,21))
@@ -192021,7 +192180,10 @@ set time=time+0.02
 set distance=LoadReal(HH,id,8)
 call SaveReal(HH,id,5,time)
 if distance==4020 then
+if LoadGroupHandle(HH,id,4)!=null then
 call DestroyGroup(LoadGroupHandle(HH,id,4))
+call SaveGroupHandle(HH,id,4,null)
+endif
 call UnitColor(LoadUnitHandle(HH,id,20),0,0,0,100)
 call MyRemoveUnit(LoadUnitHandle(HH,id,20),3)
 call RemoveUnit(LoadUnitHandle(HH,id,21))
@@ -192262,8 +192424,14 @@ if time==20.34 then
             call SetControlToUnit(caster,target, 2, "stun")
         endif
 
+        if LoadEffectHandle(HH,id,21)!=null then
         call DestroyEffect(LoadEffectHandle(HH,id,21))
+        call SaveEffectHandle(HH,id,21,null)
+        endif
+        if LoadEffectHandle(HH,id,22)!=null then
         call DestroyEffect(LoadEffectHandle(HH,id,22))
+        call SaveEffectHandle(HH,id,22,null)
+        endif
         call PauseTimer(t)
         call DestroyTimer(t)
         call FlushChildHashtable(HH,id)
@@ -192274,8 +192442,14 @@ if time==20.34 then
         call SetUnitInvulnerable(caster,false)
         call PauseUnit(target,false)
         call SaveBoolean(HH,GetHandleId(target),TARGET_ABILITY,false)
+        if LoadEffectHandle(HH,id,21)!=null then
         call DestroyEffect(LoadEffectHandle(HH,id,21))
+        call SaveEffectHandle(HH,id,21,null)
+        endif
+        if LoadEffectHandle(HH,id,22)!=null then
         call DestroyEffect(LoadEffectHandle(HH,id,22))
+        call SaveEffectHandle(HH,id,22,null)
+        endif
         call PauseTimer(t)
         call DestroyTimer(t)
         call FlushChildHashtable(HH,id)
@@ -192358,7 +192532,10 @@ local real time=LoadReal(HH,id,5)
 set time=time+0.02
 call SaveReal(HH,id,5,time)
 if distance>=2000 then
+if LoadGroupHandle(HH,id,4)!=null then
 call DestroyGroup(LoadGroupHandle(HH,id,4))
+call SaveGroupHandle(HH,id,4,null)
+endif
 call SetUnitAnimationByIndex(LoadUnitHandle(HH,id,20),2)
 call UnitColor(LoadUnitHandle(HH,id,20),0,0,0,100)
 call MyRemoveUnit(LoadUnitHandle(HH,id,20),2)
@@ -192637,7 +192814,10 @@ endif
 if time==7.05 then
 
 call RemoveUnit(LoadUnitHandle(HH,id,21))
+if LoadGroupHandle(HH,id,4)!=null then
 call DestroyGroup(LoadGroupHandle(HH,id,4))
+call SaveGroupHandle(HH,id,4,null)
+endif
 
 endif
 if time<7.05 then
@@ -193707,7 +193887,10 @@ set distance=LoadReal(HH,id,8)
 call SaveReal(HH,id,5,time)
 if distance==1600 then
 call SaveBoolean(HH,GetHandleId(caster),StringHash("ZamasuSpell"),false)
+if LoadGroupHandle(HH,id,4)!=null then
 call DestroyGroup(LoadGroupHandle(HH,id,4))
+call SaveGroupHandle(HH,id,4,null)
+endif
 call UnitColor(LoadUnitHandle(HH,id,20),100,100,100,100)
 call MyRemoveUnit(LoadUnitHandle(HH,id,20),3)
 call PauseTimer(GetExpiredTimer())
@@ -194427,7 +194610,10 @@ local real damage=LoadReal(HH,id,15)
 set time=time+0.02
 call SaveReal(HH,id,5,time)
 if dist==800 then
+if LoadGroupHandle(HH,id,4)!=null then
 call DestroyGroup(LoadGroupHandle(HH,id,4))
+call SaveGroupHandle(HH,id,4,null)
+endif
 call UnitColor(LoadUnitHandle(HH,id,20),100,100,100,100)
 call MyRemoveUnit(LoadUnitHandle(HH,id,20),3)
 call PauseTimer(GetExpiredTimer())
@@ -195541,7 +195727,10 @@ call EffectCreateAndMove(true,"BlackGoku\\e_az_Z046.mdl",facing,1,0.5,0.5,100,10
 call EffectCreateAndMove(true,"BlackGoku\\BY_Wood_GongChengSiPai_1.mdl",facing+180,1,3,0.5,100,100,100,0,150,caster,150,facing)
 call EffectCreateAndMove(true,"BlackGoku\\BY_Wood_GongChengSiPai_1.mdl",facing,1,2,0.5,100,100,100,0,150,caster,150,facing)
 call EffectCreateAndMove90(true,"BlackGoku\\wind4.mdl",facing+180,1,1.5,0.5,100,100,100,0,150,caster,400,facing)
+if LoadEffectHandle(HH,id,21)!=null then
 call DestroyEffect(LoadEffectHandle(HH,id,21))
+call SaveEffectHandle(HH,id,21,null)
+endif
 call RemoveUnit(LoadUnitHandle(HH,id,23))
 call PauseUnit(Dummy1,true)
 call StopSound(LoadSoundHandle(HH,id,24),true,false)
@@ -195867,7 +196056,10 @@ else
                 set time=20
                 call SaveReal(HH,id,5,time)
             else
+                if LoadEffectHandle(HH,id,30)!=null then
                 call DestroyEffect(LoadEffectHandle(HH,id,30))
+                call SaveEffectHandle(HH,id,30,null)
+                endif
                 call SaveUnitHandle(HH,GetHandleId(target),REVERSE_TARGET,caster)
                 call SetUnitPathing(caster,true)
                 call PauseUnit(caster,false)
@@ -196099,7 +196291,10 @@ else
 
     endif
     if time==20.3 then
+        if LoadEffectHandle(HH,id,30)!=null then
         call DestroyEffect(LoadEffectHandle(HH,id,30))
+        call SaveEffectHandle(HH,id,30,null)
+        endif
         if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
             set soundplay=CreateSound("Sound\\Music\\mp3Music\\SoundEng\\BlackGokuE2-1eng.mp3",false,false,true,12700,12700,"")
             call StartSound(soundplay)
@@ -196655,7 +196850,10 @@ call EffectCreateAndMove(true,"BlackGoku\\[A]Hongse_Yellow.mdl",facing,1.5,1.35,
 
 call DamageAoeOneTime0(caster,x0,y0,500,damage*0.4)
 
+if LoadGroupHandle(HH,id,4)!=null then
 call DestroyGroup(LoadGroupHandle(HH,id,4))
+call SaveGroupHandle(HH,id,4,null)
+endif
 call UnitColor(LoadUnitHandle(HH,id,20),0,0,0,100)
 call MyRemoveUnit(LoadUnitHandle(HH,id,20),3)
 call PauseTimer(GetExpiredTimer())
@@ -197962,7 +198160,10 @@ call SabracStackOneTime(caster,GetUnitX(LoadUnitHandle(HH,id,20)),GetUnitY(LoadU
 call DamageAoeOneTime(caster,GetUnitX(LoadUnitHandle(HH,id,20)),GetUnitY(LoadUnitHandle(HH,id,20)),KnifeAoe*3,damage*1.2,LoadGroupHandle(HH,id,4))
 endif
 endif
+if LoadGroupHandle(HH,id,4)!=null then
 call DestroyGroup(LoadGroupHandle(HH,id,4))
+call SaveGroupHandle(HH,id,4,null)
+endif
 call RemoveUnit(LoadUnitHandle(HH,id,20))
 call PauseTimer(GetExpiredTimer())
 call FlushChildHashtable(HH,id)
@@ -199183,7 +199384,10 @@ call SaveReal(HH,id,6,time1)
 endif
 if time==2.02 then
 call SetUnitAnimationByIndex(caster,8)
+if LoadGroupHandle(HH,id,4)!=null then
 call DestroyGroup(LoadGroupHandle(HH,id,4))
+call SaveGroupHandle(HH,id,4,null)
+endif
 call UnitSpeed(caster,1)
 call PauseUnit(caster,false)
 call SetUnitInvulnerable(caster,false)
@@ -200508,10 +200712,22 @@ call myCustomDamage(caster,LoadUnitHandle(HH,id,2),damage,false,false,null,null,
 
 
 call UnitSpeed(caster,1)
+if LoadEffectHandle(HH,id,21)!=null then
 call DestroyEffect(LoadEffectHandle(HH,id,21))
+call SaveEffectHandle(HH,id,21,null)
+endif
+if LoadEffectHandle(HH,id,22)!=null then
 call DestroyEffect(LoadEffectHandle(HH,id,22))
+call SaveEffectHandle(HH,id,22,null)
+endif
+if LoadEffectHandle(HH,id,23)!=null then
 call DestroyEffect(LoadEffectHandle(HH,id,23))
+call SaveEffectHandle(HH,id,23,null)
+endif
+if LoadEffectHandle(HH,id,24)!=null then
 call DestroyEffect(LoadEffectHandle(HH,id,24))
+call SaveEffectHandle(HH,id,24,null)
+endif
 call PauseTimer(GetExpiredTimer())
 call FlushChildHashtable(HH,id)
 call DestroyTimer(GetExpiredTimer())
@@ -200552,10 +200768,22 @@ call UnitSpeed(caster,1)
 call PauseUnit(caster,false)
 call SetUnitInvulnerable(caster,false)
 call PauseTimer(GetExpiredTimer())
+if LoadEffectHandle(HH,id,21)!=null then
 call DestroyEffect(LoadEffectHandle(HH,id,21))
+call SaveEffectHandle(HH,id,21,null)
+endif
+if LoadEffectHandle(HH,id,22)!=null then
 call DestroyEffect(LoadEffectHandle(HH,id,22))
+call SaveEffectHandle(HH,id,22,null)
+endif
+if LoadEffectHandle(HH,id,23)!=null then
 call DestroyEffect(LoadEffectHandle(HH,id,23))
+call SaveEffectHandle(HH,id,23,null)
+endif
+if LoadEffectHandle(HH,id,24)!=null then
 call DestroyEffect(LoadEffectHandle(HH,id,24))
+call SaveEffectHandle(HH,id,24,null)
+endif
 call FlushChildHashtable(HH,id)
 call DestroyTimer(GetExpiredTimer())
 call SaveBoolean(HH,GetHandleId(caster),DASH_USER,false)
@@ -200754,14 +200982,20 @@ set time=time+0.02
 call SaveReal(HH,id,5,time)
 
 if time==6.4+LoadReal(HH,id,14) or LoadInteger(HH,GetHandleId(aizen),StringHash("AizenGI"))<=0 or udg_B==false then
+if LoadEffectHandle(HH,id,24)!=null then
 call DestroyEffect(LoadEffectHandle(HH,id,24))
+call SaveEffectHandle(HH,id,24,null)
+endif
 call SaveReal(HH,id,5,11)
 call ForGroup(gr,function AizenGCheckGroup)
 call SetUnitAnimationByIndex(LoadUnitHandle(HH,id,20),2)
 call MyRemoveUnit(LoadUnitHandle(HH,id,20),2)
 call RemoveUnit(LoadUnitHandle(HH,id,21))
 call RemoveUnit(LoadUnitHandle(HH,id,22))
+if LoadGroupHandle(HH,id,4)!=null then
 call DestroyGroup(LoadGroupHandle(HH,id,4))
+call SaveGroupHandle(HH,id,4,null)
+endif
 call PauseTimer(GetExpiredTimer())
 call FlushChildHashtable(HH,id)
 call DestroyTimer(GetExpiredTimer())
@@ -200978,7 +201212,10 @@ local real damage=LoadReal(HH,id,15)
 set time=time+0.02
 call SaveReal(HH,id,5,time)
 if distance>=2200 then
+if LoadGroupHandle(HH,id,4)!=null then
 call DestroyGroup(LoadGroupHandle(HH,id,4))
+call SaveGroupHandle(HH,id,4,null)
+endif
 call UnitSpeed(caster,1)
 call RemoveUnit(Dummy)
 call PauseTimer(GetExpiredTimer())
@@ -201129,7 +201366,10 @@ local boolean HogiokuQuest=LoadBoolean(HH,id,19)
 set time=time+0.02
 call SaveReal(HH,id,5,time)
 if (time==2.3 and HogiokuQuest==false ) or (time==4.3 and HogiokuQuest==true) or GetUnitAbilityLevel(target,'B05G')>0 then
+if LoadEffectHandle(HH,id,24)!=null then
 call DestroyEffect(LoadEffectHandle(HH,id,24))
+call SaveEffectHandle(HH,id,24,null)
+endif
 call RemoveUnit(Dummy)
 call PauseTimer(GetExpiredTimer())
 call FlushChildHashtable(HH,id)
@@ -201217,7 +201457,10 @@ call GroupClear(G)
 call SaveUnitHandle(HH,id,2,target)
 
 if target==null then
+if LoadEffectHandle(HH,id,24)!=null then
 call DestroyEffect(LoadEffectHandle(HH,id,24))
+call SaveEffectHandle(HH,id,24,null)
+endif
 call RemoveUnit(Dummy)
 call PauseTimer(GetExpiredTimer())
 call FlushChildHashtable(HH,id)
@@ -201269,7 +201512,10 @@ local group gr=null
 set time=time+0.02
 call SaveReal(HH,id,5,time)
 if time==6.3 then
+if LoadGroupHandle(HH,id,4)!=null then
 call DestroyGroup(LoadGroupHandle(HH,id,4))
+call SaveGroupHandle(HH,id,4,null)
+endif
 call RemoveUnit(LoadUnitHandle(HH,id,20))
 call RemoveUnit(LoadUnitHandle(HH,id,21))
 call PauseTimer(GetExpiredTimer())
@@ -201564,8 +201810,14 @@ call StartAbilityCooldown(GetUnitAbility(caster, 'ASR1'), 34.1 )
 call EffectCreateAndMove(true,"BlackGoku\\WindCircleFaster.mdl",facing,1.5,2.5+Hado90Buff*0.1,1.5,100,100,100,0,0,Dummy,0,facing)
 call EffectCreateAndMove(true,"Aizen\\TohkaEf4.mdl",facing,3,1.2+Hado90Buff*0.15,0.5,100,100,100,0,0,Dummy,0,facing)
 call EffectCreateAndMove(true,"Aizen\\chushou_by_wood_huozhu_black.mdl",facing,3,1.5+Hado90Buff*0.3,1,100,100,100,60,0,Dummy,0,facing)
+if LoadEffectHandle(HH,id,23)!=null then
 call DestroyEffect(LoadEffectHandle(HH,id,23))
+call SaveEffectHandle(HH,id,23,null)
+endif
+if LoadEffectHandle(HH,id,24)!=null then
 call DestroyEffect(LoadEffectHandle(HH,id,24))
+call SaveEffectHandle(HH,id,24,null)
+endif
 call PauseUnit(caster,false)
 
 if LoadBoolean(HH,id,35)==true then
@@ -201727,8 +201979,14 @@ endif
 if time==20 then
 call RemoveUnit(LoadUnitHandle(HH,id,25))
 call RemoveUnit(LoadUnitHandle(HH,id,27))
+if LoadEffectHandle(HH,id,28)!=null then
 call DestroyEffect(LoadEffectHandle(HH,id,28))
+call SaveEffectHandle(HH,id,28,null)
+endif
+if LoadEffectHandle(HH,id,29)!=null then
 call DestroyEffect(LoadEffectHandle(HH,id,29))
+call SaveEffectHandle(HH,id,29,null)
+endif
 //if(GetLocalPlayer()==GetOwningPlayer(caster))then
 //call DisplayTextToPlayer(GetLocalPlayer(),0,0,"time left"+R2S(time1))
 //endif
@@ -201811,8 +202069,14 @@ call EffectCreateAndMove(true,"BlackGoku\\aZ_siwenBlackGoku.mdl",facing,1.5,1.75
 call EffectCreateAndMove(true,"BlackGoku\\aZ_siwenBlackGoku.mdl",facing,1.5,1.75,0.5,60,0,100,0,600,Dummy,0,facing)
 call EffectCreateAndMove(true,"BlackGoku\\aZ_siwenBlackGoku.mdl",facing,1.5,1.75,0.5,60,0,100,0,900,Dummy,0,facing)
 call EffectCreateAndMove(true,"BlackGoku\\aZ_siwenBlackGoku.mdl",facing,1.5,1.75,0.5,60,0,100,0,1200,Dummy,0,facing)
+if LoadEffectHandle(HH,id,23)!=null then
 call DestroyEffect(LoadEffectHandle(HH,id,23))
+call SaveEffectHandle(HH,id,23,null)
+endif
+if LoadEffectHandle(HH,id,24)!=null then
 call DestroyEffect(LoadEffectHandle(HH,id,24))
+call SaveEffectHandle(HH,id,24,null)
+endif
 call EffectCreateAndMove(true,"BlackGoku\\WindCircleFaster.mdl",facing,1.5,2.5,1.5,100,100,100,0,0,Dummy,0,facing)
 call PauseUnit(caster,false)
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\AizenRSFX.mp3",false,false,true,12700,12700,"")
@@ -204897,7 +205161,10 @@ exitwhen n0==null
 call SaveBoolean(HH,GetHandleId(n0),StringHash("GaaraTshield"),false)
 call GroupRemoveUnit(gr,n0)
 endloop
+if LoadGroupHandle(HH,id,4)!=null then
 call DestroyGroup(LoadGroupHandle(HH,id,4))
+call SaveGroupHandle(HH,id,4,null)
+endif
 call UnitSpeed(Dummy,2)
 call SetUnitAnimationByIndex(Dummy,1)
 call RemoveUnit(Dummy)
@@ -205234,7 +205501,10 @@ local real damage=LoadReal(HH,id,15)
 set time=time+0.02
 call SaveReal(HH,id,5,time)
 if dist==2040 then
+if LoadGroupHandle(HH,id,4)!=null then
 call DestroyGroup(LoadGroupHandle(HH,id,4))
+call SaveGroupHandle(HH,id,4,null)
+endif
 call UnitSpeed(Dummy,1)
 call UnitSize(Dummy,0.75,1,1)
 call MoveUnit(Dummy,Dummy,-300,facing)
@@ -206167,8 +206437,14 @@ set time=LoadReal(HH,id,5)
 set time=time+0.02
 call SaveReal(HH,id,5,time)
 if time==1 then
+if LoadEffectHandle(HH,id,23)!=null then
 call DestroyEffect(LoadEffectHandle(HH,id,23))
+call SaveEffectHandle(HH,id,23,null)
+endif
+if LoadEffectHandle(HH,id,24)!=null then
 call DestroyEffect(LoadEffectHandle(HH,id,24))
+call SaveEffectHandle(HH,id,24,null)
+endif
 call PauseTimer(t)
 call DestroyTimer(t)
 call FlushChildHashtable(HH,id)
@@ -206242,8 +206518,14 @@ endif
 //endif
 if time==0.76 then
 call UnitSpeed(caster,1)
+if LoadEffectHandle(HH,id,23)!=null then
 call DestroyEffect(LoadEffectHandle(HH,id,23))
+call SaveEffectHandle(HH,id,23,null)
+endif
+if LoadEffectHandle(HH,id,24)!=null then
 call DestroyEffect(LoadEffectHandle(HH,id,24))
+call SaveEffectHandle(HH,id,24,null)
+endif
 call SetUnitFlyHeight(caster,0,600)
 call PauseUnit(caster,false)
 call SetUnitInvulnerable(caster,false)
@@ -206578,7 +206860,10 @@ call UnitColor(LoadUnitHandle(HH,id,26),100,100,100,60)
 call UnitColor(LoadUnitHandle(HH,id,27),100,100,100,60)
 call UnitColor(LoadUnitHandle(HH,id,28),100,100,100,60)
 call UnitColor(LoadUnitHandle(HH,id,29),100,100,100,60)
+if LoadGroupHandle(HH,id,4)!=null then
 call DestroyGroup(LoadGroupHandle(HH,id,4))
+call SaveGroupHandle(HH,id,4,null)
+endif
 call SetUnitAnimationByIndex(caster,6)
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\ArchetypeTtheme.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
@@ -206779,7 +207064,10 @@ set time=time+0.02
 call SaveReal(HH,id,5,time)
 if time==5  then
 call RemoveUnit(LoadUnitHandle(HH,id,20))
+if LoadGroupHandle(HH,id,4)!=null then
 call DestroyGroup(LoadGroupHandle(HH,id,4))
+call SaveGroupHandle(HH,id,4,null)
+endif
 call PauseTimer(GetExpiredTimer())
 call FlushChildHashtable(HH,id)
 call DestroyTimer(GetExpiredTimer())
@@ -207158,7 +207446,10 @@ set time=time+0.02
 call SaveReal(HH,id,5,time)
 if time==12 then
     call GroupClear(LoadGroupHandle(HH,id,4))
+    if LoadGroupHandle(HH,id,4)!=null then
     call DestroyGroup(LoadGroupHandle(HH,id,4))
+    call SaveGroupHandle(HH,id,4,null)
+    endif
     call UnitSpeed(n0,1)
     call UnitSpeed(caster,1)
     call SetUnitFlyHeight(caster,0,0)
@@ -220636,8 +220927,14 @@ local integer GojoRandInt=LoadInteger(HH,id,25)
 set time=time+0.02
 call SaveReal(HH,id,5,time)
 if time>=1.5 then
+if LoadEffectHandle(HH,id,26)!=null then
 call DestroyEffect(LoadEffectHandle(HH,id,26))
+call SaveEffectHandle(HH,id,26,null)
+endif
+if LoadEffectHandle(HH,id,27)!=null then
 call DestroyEffect(LoadEffectHandle(HH,id,27))
+call SaveEffectHandle(HH,id,27,null)
+endif
 call UnitSpeed(caster,1)
 call PauseUnit(caster,false)
 call SetUnitInvulnerable(caster,false)
@@ -220751,8 +221048,14 @@ local integer GojoRandInt=LoadInteger(HH,id,25)
 set time=time+0.02
 call SaveReal(HH,id,5,time)
 if time>=1.2 then
+if LoadEffectHandle(HH,id,26)!=null then
 call DestroyEffect(LoadEffectHandle(HH,id,26))
+call SaveEffectHandle(HH,id,26,null)
+endif
+if LoadEffectHandle(HH,id,27)!=null then
 call DestroyEffect(LoadEffectHandle(HH,id,27))
+call SaveEffectHandle(HH,id,27,null)
+endif
 call AbilityCD(caster,'GSW1',25)
 call EffectCreateAndMove(true,EffectID[863],facing,1.5,1,0.7,100,100,100,0,0,Dummy,0,facing)
 call EffectCreateAndMove(true,EffectID[768],facing,1.5,1.25,0.5,100,100,100,80,-200,Dummy,0,facing)
@@ -220888,8 +221191,14 @@ local integer GojoRandInt=LoadInteger(HH,id,25)
 set time=time+0.02
 call SaveReal(HH,id,5,time)
 if time>=1.2 then
+if LoadEffectHandle(HH,id,26)!=null then
 call DestroyEffect(LoadEffectHandle(HH,id,26))
+call SaveEffectHandle(HH,id,26,null)
+endif
+if LoadEffectHandle(HH,id,27)!=null then
 call DestroyEffect(LoadEffectHandle(HH,id,27))
+call SaveEffectHandle(HH,id,27,null)
+endif
 call AbilityCD(caster,'GSW1',25)
 call SetUnitModel(Dummy,EffectID[1318])
 call UnitSpeed(Dummy,0.5)
@@ -221492,8 +221801,14 @@ local real dist_New=LoadReal(HH,id,18)
 set time=time+0.02
 call SaveReal(HH,id,5,time)
 if dist<0 then
+if LoadEffectHandle(HH,id,26)!=null then
 call DestroyEffect(LoadEffectHandle(HH,id,26))
+call SaveEffectHandle(HH,id,26,null)
+endif
+if LoadEffectHandle(HH,id,27)!=null then
 call DestroyEffect(LoadEffectHandle(HH,id,27))
+call SaveEffectHandle(HH,id,27,null)
+endif
 call RemoveUnit(LoadUnitHandle(HH,GetHandleId(caster),StringHash("GojoEU")))
 call RemoveSavedHandle(HH,GetHandleId(caster),StringHash("GojoEU"))
 call SaveBoolean(HH,GetHandleId(caster),StringHash("GojoE2act"),true)
@@ -221588,8 +221903,14 @@ local real dist_New=LoadReal(HH,id,18)
 set time=time+0.02
 call SaveReal(HH,id,5,time)
 if dist<0 then
+if LoadEffectHandle(HH,id,26)!=null then
 call DestroyEffect(LoadEffectHandle(HH,id,26))
+call SaveEffectHandle(HH,id,26,null)
+endif
+if LoadEffectHandle(HH,id,27)!=null then
 call DestroyEffect(LoadEffectHandle(HH,id,27))
+call SaveEffectHandle(HH,id,27,null)
+endif
 call RemoveUnit(LoadUnitHandle(HH,GetHandleId(caster),StringHash("GojoQU")))
 call RemoveSavedHandle(HH,GetHandleId(caster),StringHash("GojoQU"))
 call SaveBoolean(HH,GetHandleId(caster),StringHash("GojoQ2act"),true)
