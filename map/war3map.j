@@ -9450,10 +9450,6 @@ set udg_RH[87]='H05N'
 set udg_RH[88]='H05Q'
 set udg_RH[89]='H05R'
 set udg_RH[208]='H05Z'
-//Garp1start
-set udg_RH[153]='HGrp'//Garp
-set udg_RH2[153]="Garp"
-//Garp1end
 set udg_RH[91]='H060'
 set udg_RH[92]='H061'
 set udg_RH[93]='H063'
@@ -9500,7 +9496,9 @@ set udg_RH[133]='HBGN'//Black Goku надо 133
 set udg_RH[134]='HSab'//sabrac
 set udg_RH[135]='HJi1'//Jiren
 set udg_RH[136]='HGoj'//Gojo
-
+//Garp1start
+set udg_RH[137]='HGrp'//Garp
+//Garp1end
 
 //set udg_RH[127]='HIc3'
 loop
@@ -9650,6 +9648,7 @@ set udg_RH2[133]="Goku Black"
 set udg_RH2[134]="Sabrac"
 set udg_RH2[135]="Jiren"
 set udg_RH2[136]="Gojo"
+set udg_RH2[137]="Garp"
 call DestroyTrigger(GetTriggeringTrigger())
 endfunction
 function InitTrig_Init takes nothing returns nothing
@@ -17108,7 +17107,7 @@ function OnButtonSelectHero takes nothing returns nothing
             call AddFrameText( InfoTavernText, "DEF: " + R2SW( MathRound( GetUnitBaseRealFieldById( RH_Force[GetFrameContext(but)], UNIT_RF_DEFENSE )),0,1 ) +"\n" )
             call AddFrameText( InfoTavernText, "Cast Time: " + R2SW( GetUnitBaseRealFieldById( RH_Force[GetFrameContext(but)], UNIT_RF_CAST_POINT ),1,2 ) +"   Backswing Cast Time: "+R2SW( GetUnitBaseRealFieldById( RH_Force[GetFrameContext(but)], UNIT_RF_CAST_BACK_SWING ),1,0 )+"\n")
             call SetFrameSpriteModel( TavernHeroPortrait, GetUnitBaseStringFieldById(RH_Force[GetFrameContext(but)],UNIT_SF_PORTRAIT) )
-            if GetFrameContext(but)!=8 then
+            if GetFrameContext(but)!=7 then
                 call SetFrameText( GetFrameByName("TavernAbilityTooltipText",0), "     " )
                 call SetFrameText( GetFrameByName("TavernAbilityTooltipText",1), "     " )
                 call SetFrameText( GetFrameByName("TavernAbilityTooltipText",2), "     " )
@@ -18094,7 +18093,7 @@ if udg_test==false then
     set GrX=0
     loop 
     exitwhen x>=220
-    if RH_Force[x]!=0 and GetUnitBaseIntegerFieldById(RH_Force[x],UNIT_IF_PRIMARY_ATTRIBUTE)==1 and x!=200 and x!=208 then
+    if RH_Force[x]!=0 and GetUnitBaseIntegerFieldById(RH_Force[x],UNIT_IF_PRIMARY_ATTRIBUTE)==1 and x!=200 then //and x!=208 
     set HeroTavernIcon=CreateFrameByType( "SIMPLEBUTTON", "TavernBarHero", TavernHeroGrid, "", x )
     call ClearFrameAllPoints( HeroTavernIcon )
     call SetFrameTexture( HeroTavernIcon, GetUnitBaseStringFieldById(RH_Force[x],UNIT_SF_ICON_NORMAL), 0, true )
@@ -18178,7 +18177,7 @@ if udg_test==false then
     set GrX=0
     loop 
     exitwhen x>=220
-    if RH_Force[x]!=0 and GetUnitBaseIntegerFieldById(RH_Force[x],UNIT_IF_PRIMARY_ATTRIBUTE)==3 and x!=200 and x!=208 then
+    if RH_Force[x]!=0 and GetUnitBaseIntegerFieldById(RH_Force[x],UNIT_IF_PRIMARY_ATTRIBUTE)==3 and x!=200 then //and x!=208 
     set HeroTavernIcon=CreateFrameByType( "SIMPLEBUTTON", "TavernBarHero", TavernHeroGrid, "", x )
     call ClearFrameAllPoints( HeroTavernIcon )
     call SetFrameTexture( HeroTavernIcon, GetUnitBaseStringFieldById(RH_Force[x],UNIT_SF_ICON_NORMAL), 0, true )
@@ -18262,7 +18261,7 @@ if udg_test==false then
     set GrX=0
     loop 
     exitwhen x>=220
-    if RH_Force[x]!=0 and GetUnitBaseIntegerFieldById(RH_Force[x],UNIT_IF_PRIMARY_ATTRIBUTE)==2 and x!=200 and x!=208 then
+    if RH_Force[x]!=0 and GetUnitBaseIntegerFieldById(RH_Force[x],UNIT_IF_PRIMARY_ATTRIBUTE)==2 and x!=200 then //and x!=208 
     set HeroTavernIcon=CreateFrameByType( "SIMPLEBUTTON", "TavernBarHero", TavernHeroGrid, "", x )
     call ClearFrameAllPoints( HeroTavernIcon )
     call SetFrameTexture( HeroTavernIcon, GetUnitBaseStringFieldById(RH_Force[x],UNIT_SF_ICON_NORMAL), 0, true )
@@ -18356,7 +18355,7 @@ if udg_test==false then
     set GrX=0
     loop 
     exitwhen x>=220
-    if RH_Force[x]!=0 and StringContains(GetUnitBaseStringFieldById(RH_Force[x],UNIT_SF_ABILITY_LIST),"AT01",false)==true and x!=200 and x!=208 then
+    if RH_Force[x]!=0 and StringContains(GetUnitBaseStringFieldById(RH_Force[x],UNIT_SF_ABILITY_LIST),"AT01",false)==true and x!=200 then //and x!=208 
     set HeroTavernIcon=CreateFrameByType( "SIMPLEBUTTON", "TavernBarHeroTitle", TavernHeroGrid, "", x )
     call ClearFrameAllPoints( HeroTavernIcon )
     call SetFrameTexture( HeroTavernIcon, GetUnitBaseStringFieldById(RH_Force[x],UNIT_SF_ICON_NORMAL), 0, true )
@@ -18464,7 +18463,7 @@ if udg_test==false then
     set GrX=0
     loop 
     exitwhen x>=220
-    if RH_Force[x]!=0 and StringContains(GetUnitBaseStringFieldById(RH_Force[x],UNIT_SF_ABILITY_LIST),"AT02",false)==true and x!=200 and x!=208 then
+    if RH_Force[x]!=0 and StringContains(GetUnitBaseStringFieldById(RH_Force[x],UNIT_SF_ABILITY_LIST),"AT02",false)==true and x!=200 then //and x!=208 
     set HeroTavernIcon=CreateFrameByType( "SIMPLEBUTTON", "TavernBarHeroTitle", TavernHeroGrid, "", x )
     call ClearFrameAllPoints( HeroTavernIcon )
     call SetFrameTexture( HeroTavernIcon, GetUnitBaseStringFieldById(RH_Force[x],UNIT_SF_ICON_NORMAL), 0, true )
@@ -18572,7 +18571,7 @@ if udg_test==false then
     set GrX=0
     loop 
     exitwhen x>=220
-    if RH_Force[x]!=0 and StringContains(GetUnitBaseStringFieldById(RH_Force[x],UNIT_SF_ABILITY_LIST),"AT03",false)==true and x!=200 and x!=208 then  //Nami and x!=200
+    if RH_Force[x]!=0 and StringContains(GetUnitBaseStringFieldById(RH_Force[x],UNIT_SF_ABILITY_LIST),"AT03",false)==true and x!=200 then //and x!=208   //Nami and x!=200
     set HeroTavernIcon=CreateFrameByType( "SIMPLEBUTTON", "TavernBarHeroTitle", TavernHeroGrid, "", x )
     call ClearFrameAllPoints( HeroTavernIcon )
     call SetFrameTexture( HeroTavernIcon, GetUnitBaseStringFieldById(RH_Force[x],UNIT_SF_ICON_NORMAL), 0, true )
@@ -18679,7 +18678,7 @@ if udg_test==false then
     set GrX=0
     loop 
     exitwhen x>=220
-    if RH_Force[x]!=0 and StringContains(GetUnitBaseStringFieldById(RH_Force[x],UNIT_SF_ABILITY_LIST),"AT04",false)==true and x!=200 and x!=208 then  //Nami and x!=200
+    if RH_Force[x]!=0 and StringContains(GetUnitBaseStringFieldById(RH_Force[x],UNIT_SF_ABILITY_LIST),"AT04",false)==true and x!=200 then //and x!=208   //Nami and x!=200
     set HeroTavernIcon=CreateFrameByType( "SIMPLEBUTTON", "TavernBarHeroTitle", TavernHeroGrid, "", x )
     call ClearFrameAllPoints( HeroTavernIcon )
     call SetFrameTexture( HeroTavernIcon, GetUnitBaseStringFieldById(RH_Force[x],UNIT_SF_ICON_NORMAL), 0, true )
@@ -18786,7 +18785,7 @@ if udg_test==false then
     set GrX=0
     loop 
     exitwhen x>=220
-    if RH_Force[x]!=0 and StringContains(GetUnitBaseStringFieldById(RH_Force[x],UNIT_SF_ABILITY_LIST),"AT05",false)==true and x!=200 and x!=208 then
+    if RH_Force[x]!=0 and StringContains(GetUnitBaseStringFieldById(RH_Force[x],UNIT_SF_ABILITY_LIST),"AT05",false)==true and x!=200 then //and x!=208 
     set HeroTavernIcon=CreateFrameByType( "SIMPLEBUTTON", "TavernBarHeroTitle", TavernHeroGrid, "", x )
     call ClearFrameAllPoints( HeroTavernIcon )
     call SetFrameTexture( HeroTavernIcon, GetUnitBaseStringFieldById(RH_Force[x],UNIT_SF_ICON_NORMAL), 0, true )
@@ -18894,7 +18893,7 @@ if udg_test==false then
     set GrX=0
     loop 
     exitwhen x>=220
-    if RH_Force[x]!=0 and StringContains(GetUnitBaseStringFieldById(RH_Force[x],UNIT_SF_ABILITY_LIST),"AT06",false)==true and x!=200 and x!=208 then
+    if RH_Force[x]!=0 and StringContains(GetUnitBaseStringFieldById(RH_Force[x],UNIT_SF_ABILITY_LIST),"AT06",false)==true and x!=200 then //and x!=208 
     set HeroTavernIcon=CreateFrameByType( "SIMPLEBUTTON", "TavernBarHeroTitle", TavernHeroGrid, "", x )
     call ClearFrameAllPoints( HeroTavernIcon )
     call SetFrameTexture( HeroTavernIcon, GetUnitBaseStringFieldById(RH_Force[x],UNIT_SF_ICON_NORMAL), 0, true )
@@ -19002,7 +19001,7 @@ if udg_test==false then
     set GrX=0
     loop 
     exitwhen x>=220
-    if RH_Force[x]!=0 and StringContains(GetUnitBaseStringFieldById(RH_Force[x],UNIT_SF_ABILITY_LIST),"AT07",false)==true and x!=200 and x!=208 then  //Nami and x!=200
+    if RH_Force[x]!=0 and StringContains(GetUnitBaseStringFieldById(RH_Force[x],UNIT_SF_ABILITY_LIST),"AT07",false)==true and x!=200 then //and x!=208   //Nami and x!=200
     set HeroTavernIcon=CreateFrameByType( "SIMPLEBUTTON", "TavernBarHeroTitle", TavernHeroGrid, "", x )
     call ClearFrameAllPoints( HeroTavernIcon )
     call SetFrameTexture( HeroTavernIcon, GetUnitBaseStringFieldById(RH_Force[x],UNIT_SF_ICON_NORMAL), 0, true )
@@ -19109,7 +19108,7 @@ if udg_test==false then
     set GrX=0
     loop 
     exitwhen x>=220
-    if RH_Force[x]!=0 and StringContains(GetUnitBaseStringFieldById(RH_Force[x],UNIT_SF_ABILITY_LIST),"AT08",false)==true and x!=200 and x!=208 then  //Nami and x!=200
+    if RH_Force[x]!=0 and StringContains(GetUnitBaseStringFieldById(RH_Force[x],UNIT_SF_ABILITY_LIST),"AT08",false)==true and x!=200 then //and x!=208   //Nami and x!=200
     set HeroTavernIcon=CreateFrameByType( "SIMPLEBUTTON", "TavernBarHeroTitle", TavernHeroGrid, "", x )
     call ClearFrameAllPoints( HeroTavernIcon )
     call SetFrameTexture( HeroTavernIcon, GetUnitBaseStringFieldById(RH_Force[x],UNIT_SF_ICON_NORMAL), 0, true )
@@ -19216,7 +19215,7 @@ if udg_test==false then
     set GrX=0
     loop 
     exitwhen x>=220
-    if RH_Force[x]!=0 and StringContains(GetUnitBaseStringFieldById(RH_Force[x],UNIT_SF_ABILITY_LIST),"AT12",false)==true and x!=200 and x!=208 then  //Nami and x!=200
+    if RH_Force[x]!=0 and StringContains(GetUnitBaseStringFieldById(RH_Force[x],UNIT_SF_ABILITY_LIST),"AT12",false)==true and x!=200 then //and x!=208   //Nami and x!=200
     set HeroTavernIcon=CreateFrameByType( "SIMPLEBUTTON", "TavernBarHeroTitle", TavernHeroGrid, "", x )
     call ClearFrameAllPoints( HeroTavernIcon )
     call SetFrameTexture( HeroTavernIcon, GetUnitBaseStringFieldById(RH_Force[x],UNIT_SF_ICON_NORMAL), 0, true )
@@ -94027,19 +94026,19 @@ function ImmitadeBodyCast takes nothing returns nothing
     // Q Vergil
 	call UnitAddAbility(n, 'A0PI')
 	call SetUnitAbilityLevel(n,'A0PI',GetUnitAbilityLevel(u,'A0PI'))
-    call SetAbilityIntegerLevelField(GetUnitAbility(u,'A0PI'), ABILITY_ILF_MANA_COST,GetUnitAbilityLevel(u,'A0PI')-1,R2I(GetAbilityIntegerLevelField(GetUnitAbility(u,'A0PI'),ABILITY_ILF_MANA_COST,GetUnitAbilityLevel(u,'A0PI')-1)*1.60))
+    call SetAbilityIntegerLevelField(GetUnitAbility(u,'A0PI'), ABILITY_ILF_MANA_COST,GetUnitAbilityLevel(u,'A0PI')-1,R2I(GetAbilityIntegerLevelField(GetUnitAbility(u,'A0PI'),ABILITY_ILF_MANA_COST,GetUnitAbilityLevel(u,'A0PI')-1)*2))
     // W Vergil
 	call UnitAddAbility(n, 'VerW')
 	call SetUnitAbilityLevel(n, 'VerW', GetUnitAbilityLevel(u, 'VerW'))
-    call SetAbilityIntegerLevelField(GetUnitAbility(u,'VerW'), ABILITY_ILF_MANA_COST,GetUnitAbilityLevel(u,'VerW')-1,R2I(GetAbilityIntegerLevelField(GetUnitAbility(u,'VerW'),ABILITY_ILF_MANA_COST,GetUnitAbilityLevel(u,'VerW')-1)*1.60))
+    call SetAbilityIntegerLevelField(GetUnitAbility(u,'VerW'), ABILITY_ILF_MANA_COST,GetUnitAbilityLevel(u,'VerW')-1,R2I(GetAbilityIntegerLevelField(GetUnitAbility(u,'VerW'),ABILITY_ILF_MANA_COST,GetUnitAbilityLevel(u,'VerW')-1)*2))
     // E Vergil
 	call UnitAddAbility(n, 'A0PM')
 	call SetUnitAbilityLevel(n,'A0PM',GetUnitAbilityLevel(u,'A0PM'))
-    call SetAbilityIntegerLevelField(GetUnitAbility(u,'A0PM'), ABILITY_ILF_MANA_COST,GetUnitAbilityLevel(u,'A0PM')-1,R2I(GetAbilityIntegerLevelField(GetUnitAbility(u,'A0PM'),ABILITY_ILF_MANA_COST,GetUnitAbilityLevel(u,'A0PM')-1)*1.60))
+    call SetAbilityIntegerLevelField(GetUnitAbility(u,'A0PM'), ABILITY_ILF_MANA_COST,GetUnitAbilityLevel(u,'A0PM')-1,R2I(GetAbilityIntegerLevelField(GetUnitAbility(u,'A0PM'),ABILITY_ILF_MANA_COST,GetUnitAbilityLevel(u,'A0PM')-1)*2))
     // R Vergil
 	call UnitAddAbility(n, 'A0PN')
 	call SetUnitAbilityLevel(n, 'A0PN', GetUnitAbilityLevel(u, 'A0PN'))
-    call SetAbilityIntegerLevelField(GetUnitAbility(u,'A0PN'), ABILITY_ILF_MANA_COST,GetUnitAbilityLevel(u,'A0PN')-1,R2I(GetAbilityIntegerLevelField(GetUnitAbility(u,'A0PN'),ABILITY_ILF_MANA_COST,GetUnitAbilityLevel(u,'A0PN')-1)*1.60))
+    call SetAbilityIntegerLevelField(GetUnitAbility(u,'A0PN'), ABILITY_ILF_MANA_COST,GetUnitAbilityLevel(u,'A0PN')-1,R2I(GetAbilityIntegerLevelField(GetUnitAbility(u,'A0PN'),ABILITY_ILF_MANA_COST,GetUnitAbilityLevel(u,'A0PN')-1)*2))
     // T Vergil
 	call UnitAddAbility(n, 'A0PJ')
 
@@ -94281,7 +94280,7 @@ call SetUnitFacing(l__d,a*bj_RADTODEG)
 call SetUnitFlyHeight(l__d,mh*cof,0)
 else
 if GetUnitTypeId(l__d)=='H03N' then
-        set dmg=(GetUnitAbilityLevel(l__d,'A0PM')+3)*GetHeroAgi(l__d,true)
+        set dmg=(GetUnitAbilityLevel(l__d,'A0PM')+2)*GetHeroAgi(l__d,true)
         set n=LoadUnitHandle(h,GetHandleId(l__d),StringHash("clone"))
         if n!=null then
                 set dmg=dmg*1.6
@@ -176466,7 +176465,7 @@ call PauseUnit(GetEnumUnit(),true)
 
 call SaveBoolean(HH,GetHandleId(GetEnumUnit()),TARGET_ABILITY,true)
 
-if time>3 then
+if time>3.5 then
 
 
 
