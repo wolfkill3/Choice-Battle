@@ -223912,7 +223912,7 @@ local real high=LoadReal(HH,id,18)
 local real high2=LoadReal(HH,id,19)
 local real x0
 local real y0
-local real dmg=80.0*I2R(GetUnitAbilityLevel(caster,'GrQ1'))+6.0*I2R(GetHeroStr(caster,true))
+local real dmg=40.0*I2R(GetUnitAbilityLevel(caster,'GrQ1'))+(1.0+I2R(GetUnitAbilityLevel(caster,'GrQ1')))*I2R(GetHeroStr(caster,true))
 call SaveReal(HH,id,5,time)
 if UnitIsAlive(caster)==false or udg_B==false then
 call PauseUnit(caster,false)
@@ -224051,7 +224051,7 @@ set n0=FirstOfGroup(G)
 exitwhen n0==null
 call GroupRemoveUnit(G,n0)
 if n0!=target and Condition_Base(GetOwningPlayer(caster),n0) and GetUnitAbilityLevel(n0,'Avul')==0 then
-call SlowUnit(caster,n0,0.4,0.4,3.0,2,false)
+call SlowUnit(caster,n0,0.4,0.4,3.0,0,false)
 endif
 endloop
 call GroupClear(G)
