@@ -42031,12 +42031,12 @@ set caster=null
 set target=null
 set t=null
 endfunction
-function Garp_G_Block takes unit u,unit c,real dmg returns nothing
+function Garp_G_Block takes unit u,unit c returns nothing
 local timer t=CreateTimer()
 local integer id=GetHandleId(t)
 call SaveUnitHandle(HH,id,1,u)
 call SaveUnitHandle(HH,id,2,c)
-call SaveReal(HH,id,3,dmg+3.0*I2R(GetHeroStr(u,true)))
+call SaveReal(HH,id,3,(1.75+0.15*GetHeroLevel(u))*I2R(GetHeroStr(u,true)))
 call TimerStart(t,0.03,false,function Garp_G_Counter)
 set t=null
 endfunction
@@ -42335,7 +42335,15 @@ endif
 if GetUnitAbilityLevel(u,'GrGs')>0 and (nb>200 or CurrentEventAttack) then
     call UnitRemoveAbility(u,'GrGs')
     call SaveUnitHandle(HH,uid,REVERSE_TARGET,c)
-    call Garp_G_Block(u,c,nb)
+    call Garp_G_Block(u,c)
+    set nb=0
+endif
+if nb>0 and GetUnitAbilityLevel(u, 'IcQ2')>0 and CurrentEventAttack and GetUnitTypeId(c)!='H15O' and GetUnitTypeId(c)!='H05O'  then
+    call IchigoShikaiQ_Counter(u, c, GetEventDamage())
+    set nb=0
+endif
+if nb>100 and GetUnitAbilityLevel(u, 'IcB1')>0 and GetUnitTypeId(c)!='H15O' and GetUnitTypeId(c)!='H05O' then           // Ichigo Bankai W Counter
+    call IchigoBankaiW_Counter(u, c)
     set nb=0
 endif
 //if LoadBoolean(HH,uid,StringHash("DanzoFBool"))==true and nb>0 and not(GetUnitAbilityLevel(c,'A1WT')==0 and GetUnitAbilityLevel(c,'A3WR')==0 and  (GetUnitAbilityLevel(c,'CB01')==0 or (GetUnitAbilityLevel(c,'CB01')>0 and CurrentEventAttack==true)) and GetUnitAbilityLevel(c,'B059')==0 and GetUnitAbilityLevel(u,'Bwul')==0 and(LoadInteger(HH,cid,StringHash("AlbedoEPassive"))<4 and (GetUnitAbilityLevel(u,'B017')==0 or GetUnitAbilityLevel(u,'B019')==0))) then
@@ -42757,14 +42765,6 @@ if cond==0 then
         //==============================================================================
 
         // Ichigo Shikai Q Counter
-        if nb>0 and GetUnitAbilityLevel(u, 'IcQ2')>0 and CurrentEventAttack and GetUnitTypeId(c)!='H15O' and GetUnitTypeId(c)!='H05O'  then
-            call IchigoShikaiQ_Counter(u, c, GetEventDamage())
-            set nb=0
-        endif
-        if nb>100 and GetUnitAbilityLevel(u, 'IcB1')>0 and GetUnitTypeId(c)!='H15O' and GetUnitTypeId(c)!='H05O' then           // Ichigo Bankai W Counter
-            call IchigoBankaiW_Counter(u, c)
-            set nb=0
-        endif
         if nb>0 and GetUnitAbilityLevel(u,'A3DF')>0 and nb<GetUnitState(u,UNIT_STATE_MAX_LIFE)*(0.02*GetUnitAbilityLevel(u,'A3DF')+0.05) then //waver E
             //call SetEventDamage(0.05)
             set nb=0
@@ -86980,7 +86980,7 @@ function SetUnitAnimationPerTime takes unit u,real time,string l__s,real sp retu
     set t=null
 endfunction
 function Trig_M100_Conditions takes nothing returns boolean
-return GetSpellAbilityId()==0x41303156 and udg_B==true
+return GetSpellAbilityId()=='A01V' and udg_B==true
 endfunction
 
 function EnelE_FastCD_Periodic takes nothing returns nothing
@@ -86989,10 +86989,10 @@ function EnelE_FastCD_Periodic takes nothing returns nothing
         local real time=LoadReal(HH, id, 2)+0.01
         
         if UnitIsAlive(LoadUnitHandle(HH, id, 1))==false then
-                call StartAbilityCooldown(GetUnitAbility(caster, 0x41303156), 0.1)
+                call StartAbilityCooldown(GetUnitAbility(caster, 'A01V'), 0.1)
         endif
         
-        if time>=0.5 or UnitIsAlive(LoadUnitHandle(HH, id, 1))==false or GetAbilityRemainingCooldown(GetUnitAbility(caster, 0x41303156))<5 then
+        if time>=0.5 or UnitIsAlive(LoadUnitHandle(HH, id, 1))==false or GetAbilityRemainingCooldown(GetUnitAbility(caster, 'A01V'))<5 then
                 call FlushChildHashtable(HH, id)
                 call PauseTimer(GetExpiredTimer())
                 call DestroyTimer(GetExpiredTimer())
@@ -87016,7 +87016,7 @@ local real x=GetSpellTargetX()
 local real y=GetSpellTargetY()
 local player p=GetOwningPlayer(u)
 local integer i=0
-local real dmg=(3+GetUnitAbilityLevel(u,0x41303156))*GetHeroInt(u,true)
+local real dmg=(3+GetUnitAbilityLevel(u,'A01V'))*GetHeroInt(u,true)
 call DestroyEffect(AddSpecialEffect("war3mapImported\\LightningWrath.mdx",x,y))
 call DestroyEffect(AddSpecialEffect(" ",x,y))
 call GroupEnumUnitsInRange(DG,x,y,400,Base)
@@ -224925,6 +224925,10 @@ function Garp_G_Act2 takes nothing returns nothing
             call SetUnitVertexColor(n, 255, 255, 255, 140)
             call MyRemoveUnit(n, 1.5)
         endif
+        if LoadUnitHandle(HH,GetHandleId(caster),REVERSE_TARGET)!=null then
+            call Garp_G_Block(caster,LoadUnitHandle(HH,GetHandleId(caster),REVERSE_TARGET))
+            call RemoveSavedHandle(HH,GetHandleId(caster),REVERSE_TARGET)
+        endif
     else
         if LoadBoolean(HH,GetHandleId(caster),ANTITARGET_ABILITY)==true then
             call SetControlToUnit(caster , caster , 0.5 , "doomdebug")
@@ -224934,6 +224938,7 @@ function Garp_G_Act2 takes nothing returns nothing
         call SaveBoolean(HH,GetHandleId(caster),ANTITARGET_ABILITY,false)
         call PauseUnit(caster, false)
         call UnitRemoveAbility(caster, 'GrGs')
+        call StartAbilityCooldown(GetUnitAbility(Hero[i],'GrG2'),25-I2R(GetHeroLevel(caster))/7)
         call FlushChildHashtable(h, id)
         call PauseTimer(GetExpiredTimer())
         call DestroyTimer(GetExpiredTimer())
