@@ -6456,7 +6456,7 @@ function Condition_RecipeString takes integer id returns boolean
 return id=='I00E' or id=='I01P' or id=='I01R' or id=='I01T' or id=='I01V' or id=='I02U' or id=='I02X' or id=='I02Z' or id=='I045' or id=='I047' or id=='I04Y' or id=='I04U' or id=='I04X' or id=='I04Z' or id=='I051' or id=='I14R' or id=='IGDr' or id=='IPar' or id=='IHYr' or id=='ISTr' or id=='IBSR' or id=='I052' or id=='I053' or id=='I055' or id=='I06P' or id=='I06S' or id=='I06T' or id=='IPRR'
 endfunction
 function Condition_AbilityString2 takes integer id returns boolean
-return id=='A0YX' or id=='A0Z0' or id=='KkR1' or id=='KkR2' or id=='BRRS' or id=='BRSS' or id=='IcF2' or id=='IcF5' or id=='GKF1' or id=='VGF1' or id=='GKG1' or id=='GKBS' or id=='GKSS' or id=='GKS2' or id=='GKS3' or id=='GKS4' or id=='GKSR' or id=='GKSB' or id=='GKUI' or id=='GKMI' or id=='GKQ1' or id=='GKW1' or id=='GKE1' or id=='GKT1' or id=='JNF1' or id=='JNF4' or id=='GSQ1' or id=='GSQ2' or id=='GSE1' or id=='GSE2' or id=='GST1' or id=='GST3' or id=='GSF1' or id=='GSF2' or id=='GSF2' or id=='MrF1' or id=='MrG2' or id=='MrT1'
+return id=='A0YX' or id=='A0Z0' or id=='KkR1' or id=='KkR2' or id=='BRRS' or id=='BRSS' or id=='IcF2' or id=='IcF5' or id=='GKF1' or id=='VGF1' or id=='GKG1' or id=='GKBS' or id=='GKSS' or id=='GKS2' or id=='GKS3' or id=='GKS4' or id=='GKSR' or id=='GKSB' or id=='GKUI' or id=='GKMI' or id=='GKQ1' or id=='GKW1' or id=='GKE1' or id=='GKT1' or id=='JNF1' or id=='JNF4' or id=='GSQ1' or id=='GSQ2' or id=='GSE1' or id=='GSE2' or id=='GST1' or id=='GST3' or id=='GSF1' or id=='GSF2' or id=='GSF2' or id=='MrF1' or id=='MrT1' or id=='MrG2'
 endfunction
 function Condition_AbilityString takes integer id returns boolean
 return Condition_AbilityString2(id) or id=='SaW1' or id=='SaE1' or id=='SaR1' or id=='SaT1' or id=='TMW0' or id=='A0P6' or id=='A1D7' or id=='HSW1' or id=='HST1' or id=='KHG1' or id=='A2DJ' or id=='IcQ1' or id=='IcT1' or id=='MadF' or id=='A0N1' or id=='A2CZ' or id=='A0CZ' or id=='DSW1' or id=='Ad02' or id=='BGW1' or id=='KaA6' or id=='KaAF' or id=='BGG1' or id=='ASQ1' or id=='ASW1' or id=='ASE1' or id=='AST1' or id=='A1BO' or id=='A1BT' or id=='A1BW' or id=='A085' or id=='A08J' or id=='MiQ1' or id=='MiE1' or id=='MiR1' or id=='A0FN' or id=='WE03' or id=='WE06' or id=='A1AJ' or id=='A1ER' or id=='A0QK' or id=='A1HO' or id=='AlFS' or id=='OM13' or id=='A17D' or id=='A177' or id=='A172' or id=='A16U' or id=='A0TN'
@@ -14341,12 +14341,13 @@ function OnButtonAddonAbility takes nothing returns nothing
                 endloop
 
 
-            elseif GetFrameTexture(but,0)==GetAbilityBaseStringFieldById('MrT1',ABILITY_SF_ICON_NORMAL) and GetFrameTexture(GetFrameByName("TavernAbility",1),0)==GetAbilityBaseStringFieldById('MrW1',ABILITY_SF_ICON_NORMAL) then
+            elseif GetFrameTexture(but,0)==GetAbilityBaseStringFieldById('MrT1',ABILITY_SF_ICON_NORMAL) and GetFrameTexture(GetFrameByName("TavernAbility",1),0)==GetAbilityBaseStringFieldById('MrW1',ABILITY_SF_ICON_NORMAL) and i==GetFrameContext(but) then
                 call ShowFrame( GetFrameByName("TavernBarAdditionalAbilityList",0), false )
                 call ShowFrame( InfoTavernText, true )
                 call ShowFrame( GetFrameByName("TavernAbilityBorderOpenable",5), false )
                 call ShowFrame( GetFrameByName("TavernAbility",5), false )
                 call ShowFrame( GetFrameByName("TavernAbility",6), false )
+                call ShowFrame( GetFrameByName("TavernAbility",7), false )
                 call SetFrameText( GetFrameByName("TavernAbilityTooltipText",1), "     " )
                 call SetFrameTexture( GetFrameByName("TavernAbility",1), GetAbilityBaseStringFieldById( String2Id( "MrW2" ), ABILITY_SF_ICON_NORMAL ), 0, true )
                 call SetFrameTexture( GetFrameByName("TavernAbility",1), GetAbilityBaseStringFieldById( String2Id( "MrW2" ), ABILITY_SF_ICON_NORMAL ), 1, true )
@@ -14358,8 +14359,8 @@ function OnButtonAddonAbility takes nothing returns nothing
                     call AddFrameText( GetFrameByName("TavernAbilityTooltipText",1), "/")
                     set j=j+1
                 endloop
-                call AddFrameText( GetFrameByName("TavernAbilityTooltipText",1), "\n\n"+GetAbilityBaseStringFieldById( String2Id( "MrW2" ), ABILITY_SF_NAME )+", (|cffffcc00R|r)\n\n"+GetAbilityBaseStringFieldById( String2Id( "MrW2" ), ABILITY_SLF_TOOLTIP_LEARN_EXTENDED ))
-            elseif GetFrameTexture(but,0)==GetAbilityBaseStringFieldById('MrT1',ABILITY_SF_ICON_NORMAL) and GetFrameTexture(GetFrameByName("TavernAbility",1),0)==GetAbilityBaseStringFieldById('MrW2',ABILITY_SF_ICON_NORMAL) then
+                call AddFrameText( GetFrameByName("TavernAbilityTooltipText",1), "\n\n"+GetAbilityBaseStringFieldById( String2Id( "MrW2" ), ABILITY_SF_NAME )+", (|cffffcc00W|r)\n\n"+GetAbilityBaseStringFieldById( String2Id( "MrW2" ), ABILITY_SLF_TOOLTIP_LEARN_EXTENDED ))
+            elseif GetFrameTexture(but,0)==GetAbilityBaseStringFieldById('MrT1',ABILITY_SF_ICON_NORMAL) and GetFrameTexture(GetFrameByName("TavernAbility",1),0)==GetAbilityBaseStringFieldById('MrW2',ABILITY_SF_ICON_NORMAL) and i==GetFrameContext(but) then
                 call ShowFrame( GetFrameByName("TavernBarAdditionalAbilityList",0), false )
                 call ShowFrame( InfoTavernText, true )
                 call ShowFrame( GetFrameByName("TavernAbilityBorderOpenable",5), true )
@@ -14376,7 +14377,7 @@ function OnButtonAddonAbility takes nothing returns nothing
                     call AddFrameText( GetFrameByName("TavernAbilityTooltipText",1), "/")
                     set j=j+1
                 endloop
-                call AddFrameText( GetFrameByName("TavernAbilityTooltipText",1), "\n\n"+GetAbilityBaseStringFieldById( String2Id( "MrW1" ), ABILITY_SF_NAME )+", (|cffffcc00R|r)\n\n"+GetAbilityBaseStringFieldById( String2Id( "MrW1" ), ABILITY_SLF_TOOLTIP_LEARN_EXTENDED ))
+                call AddFrameText( GetFrameByName("TavernAbilityTooltipText",1), "\n\n"+GetAbilityBaseStringFieldById( String2Id( "MrW1" ), ABILITY_SF_NAME )+", (|cffffcc00W|r)\n\n"+GetAbilityBaseStringFieldById( String2Id( "MrW1" ), ABILITY_SLF_TOOLTIP_LEARN_EXTENDED ))
 
             elseif GetFrameTexture(but,0)==GetAbilityBaseStringFieldById('VGF1',ABILITY_SF_ICON_NORMAL) and IsFrameVisible(GetFrameByName("TavernBarAdditionalAbilityList",0))==false and i==GetFrameContext(but) then
                 call ShowFrame( InfoTavernText, false )
@@ -28953,6 +28954,10 @@ endif
 if GetUnitAbilityLevel(target,'A14J')>0  then
 set haveShield=true
 endif
+//Сейбер Р
+if GetUnitAbilityLevel(target,'GrGs')>0  then
+set haveShield=true
+endif
 //Гоку G
 if GetUnitAbilityLevel(target,'A24J')>0 or GetUnitAbilityLevel(target,'A34J')>0 then
 set haveShield=true
@@ -42003,6 +42008,7 @@ local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
 local unit caster=LoadUnitHandle(HH,id,1)
 local unit target=LoadUnitHandle(HH,id,2)
+local integer idu=GetHandleId(caster)
 local real dmg=LoadReal(HH,id,3)
 local real ang=0.0
 if caster!=null and target!=null and UnitIsAlive(caster) and UnitIsAlive(target) then
@@ -42014,6 +42020,7 @@ call SetUnitPosition(caster,PolX(GetUnitX(target),140.0,ang+180.0),PolY(GetUnitY
 call SetUnitFacing(caster,ang)
 call SetUnitAnimationByIndex(caster,9)
 endif
+call SaveBoolean(HH,idu,ANTITARGET_ABILITY,false)
 call EffectCreateAndMove(true,"Garp\\Garp_HandsFX.mdx",Angle2(GetUnitX(caster),GetUnitY(caster),GetUnitX(target),GetUnitY(target)),0.8,1.3,1.0,100,100,100,0,0,target,0,GetUnitFacing(target))
 call myCustomDamage(caster,target,dmg,false,false,null,null,null)
 endif
@@ -42127,6 +42134,11 @@ if GetUnitAbilityLevel(u,'BHXR')>0 and nb>0 then
     call SetEventDamage(nb*1.15) 
     set b=GetEventDamage()
     set nb=b                       
+endif
+if GetUnitAbilityLevel(c,'GrEa')>0 and nb>0 then
+    call SetEventDamage(nb*1.15) 
+    set b=GetEventDamage()
+    set nb=b
 endif
 if GetUnitAbilityLevel(c,'KkR3')>0 and nb>0 then //курапика цепи уменьшение наносимого урона цели
 //call SetUnitState(GetTriggerUnit(),UNIT_STATE_LIFE,GetWidgetLife(GetTriggerUnit())+nb*0.4)
@@ -42318,6 +42330,12 @@ if nb>50 and GetUnitAbilityLevel(u,'A19B')>0 then
     call SetUnitInvulnerable(u,true)
     call SaveUnitHandle(HH,uid,REVERSE_TARGET,c)
     call SakuraSlashDamage(u,c)
+    set nb=0
+endif
+if GetUnitAbilityLevel(u,'GrGs')>0 and (nb>200 or CurrentEventAttack) then
+    call UnitRemoveAbility(u,'GrGs')
+    call SaveUnitHandle(HH,uid,REVERSE_TARGET,c)
+    call Garp_G_Block(u,c,nb)
     set nb=0
 endif
 //if LoadBoolean(HH,uid,StringHash("DanzoFBool"))==true and nb>0 and not(GetUnitAbilityLevel(c,'A1WT')==0 and GetUnitAbilityLevel(c,'A3WR')==0 and  (GetUnitAbilityLevel(c,'CB01')==0 or (GetUnitAbilityLevel(c,'CB01')>0 and CurrentEventAttack==true)) and GetUnitAbilityLevel(c,'B059')==0 and GetUnitAbilityLevel(u,'Bwul')==0 and(LoadInteger(HH,cid,StringHash("AlbedoEPassive"))<4 and (GetUnitAbilityLevel(u,'B017')==0 or GetUnitAbilityLevel(u,'B019')==0))) then
@@ -42572,32 +42590,11 @@ if cond==0 then
 
 
      //Garp1start
-      // Воля Наблюдения / Королевская: -25% получаемого урона.
-      // Считается ПОСЛЕ брони, поэтому обычное пробитие брони это не обходит,
-      // НО пробивается теми же маркерами, что и щиты карты:  облако
-      // ('A1WT'), Cloud for 1 attack ('Pure'), Heart2 ('A3WR'), 'CB02', 'B059'.
-      // Просто -15% получаемого урона. Пробивание чужой защиты больше не
-      // учитываем: воля стала обычным бафом без исключений.
-      if GetUnitAbilityLevel(u,'GrEs')>0 and nb>0 then
-       set nb=nb*0.85
-      endif
-      // Воля Вооружения / Королевская: +15% наносимого урона
-      if GetUnitAbilityLevel(c,'GrEa')>0 and nb>0 then
-       set nb=nb*1.15
-       set b=b*1.15
-      endif
+
 
       // G «Встречный»: первый пришедший урон гасится целиком, ответ
       // считается от поглощённого и уходит таймером (см. Garp_G_Block).
-      if GetUnitAbilityLevel(u,'GrGs')>0 and nb>0 then
-       call newBlockDamage(u)
-       call UnitRemoveAbility(u,'GrGs')
-       // вместе с ударом сбрасываем контроль: система карты вешает стан
-       // баффом, поэтому чистим тем же способом, что и БКБ
-       call UnitRemoveBuffs(u,false,true)
-       call Garp_G_Block(u,c,nb)
-       set nb=0
-      endif
+
       //Garp1end
 //aizen6end
      //==============================================================================
@@ -44027,6 +44024,9 @@ if cond==0 then
             //call SetEventDamage(nb*0.88)
 
             set nb=nb*0.88
+        endif
+        if GetUnitAbilityLevel(u,'GrEs')>0 and nb>0 then
+            set nb=nb*0.85
         endif
         if GetUnitAbilityLevel(u,'A0U5')>0 and nb>0 then
 
@@ -178311,8 +178311,8 @@ function JirenW_Cast takes unit u,real x1,real y1 returns nothing
     local real distance = SquareRootPoint(x,y,x1,y1)
     //local real damage = GetHeroAgi(u,true)*3
         
-    if distance>700 then
-        set distance=700
+    if distance>750 then
+        set distance=750
     endif
 		
     if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
@@ -223934,10 +223934,16 @@ call FlushChildHashtable(HH,id)
 else
 call SaveReal(HH,id,17,dist-46.4)
 call MoveUnit(caster,caster,46.4,facing)
-call EffectCreateAndMoveAn(true,"Garp\\Garp_QDash.mdx",facing+180,0.6,1.0,0.8,100,100,100,0,0,caster,0,facing,0)
+if ModuloReal(time,0.08)<0.02 then
+call EffectCreateAndMoveAn(true,"Garp\\Garp_QDash.mdx",facing+180,0.6,1.0,2.5,100,100,100,0,0,caster,0,facing,0)
+endif
+if ModuloReal(time,0.16)<0.02 then
+call EffectCreateAndMoveAn(true,"WindVectorPush.mdx",facing+180,0.6,1.0,1.3,100,100,100,0,0,caster,0,facing,0)
+endif
 set n0=First_Target_Skill(caster,null,PolX(GetUnitX(caster),120,facing),PolY(GetUnitY(caster),120,facing),150)
 if n0!=null then
 // ПОПАЛ -> хватаем врага, прыгаем высоко, слэм
+if LoadBoolean(HH,GetHandleId(n0),ANTITARGET_ABILITY)==false then
 call SetUnitX(caster,GetUnitX(n0))
 call SetUnitY(caster,GetUnitY(n0))
 call SaveReal(HH,id,11,GetUnitX(caster))
@@ -223956,6 +223962,17 @@ call SetUnitAnimationByIndex(caster,11)
 call SetUnitFacingInstant(n0,facing+180)
 call SaveUnitHandle(HH,id,2,n0)
 call SaveReal(HH,id,5,0)
+else
+call SaveUnitHandle(HH,GetHandleId(n0),REVERSE_TARGET,caster)
+call SetUnitPathing(caster,true)
+call PauseUnit(caster,false)
+call SetUnitInvulnerable(caster,false)
+call UnitSpeed(caster,1)
+call SaveBoolean(HH,GetHandleId(n0),TARGET_ABILITY,false)
+call PauseTimer(t)
+call DestroyTimer(t)
+call FlushChildHashtable(HH,id)
+endif
 endif
 set n0=null
 endif
@@ -223993,7 +224010,9 @@ call SetUnitY(target,PolY(GetUnitY(caster),80,facing))
 if time>=0.15 then
 // ШВЫРОК ВНИЗ: враг обмякает (death) в момент падения + вжух
 call SetUnitAnimation(target,"death")
+if ModuloReal(time,0.12)<0.02 then
 call EffectCreateAndMoveAn(true,"Izayoi\\wind3.mdl",facing,0.8,1.2,1.0,100,100,100,0,0,target,0,facing,0)
+endif
 // возврат Гарпа по диагонали ровно в точку взлёта (шаг = дистанция / число тиков спуска)
 call SaveReal(HH,id,14,Angle2(GetUnitX(caster),GetUnitY(caster),LoadReal(HH,id,11),LoadReal(HH,id,12)))
 call SaveReal(HH,id,13,SR(GetUnitX(caster),GetUnitY(caster),LoadReal(HH,id,11),LoadReal(HH,id,12))/(high/28.0))
@@ -224030,19 +224049,14 @@ call ShakeCamera(0.5,7)
 //   AddSpecialEffect по координате — не рисуется;
 //   AddSpecialEffectTarget на враге — рисуется, но едет за ним, когда тот встаёт.
 // Поэтому: НЕВИДИМЫЙ дамми-якорь в точке падения (модель ему НЕ меняем) и эффект на него.
-set n0=CreateUnit(GetOwningPlayer(caster),'e200',x0,y0,GetRandomReal(0,360))
-// у e200 в данных высота полёта 200 — без этого эффект висит над землёй
-call SetUnitFlyHeight(n0,0,0)
-// Рисуется ТОЛЬКО так (перебор ещё в 4.5): дамми с этой моделью
-// (SetUnitModel, он же EffectCreateAndMove) и AddSpecialEffect по
-// координате её не показывают — только эффект на невидимом якоре.
-set EFF=AddSpecialEffectTarget("Garp\\Garp_QImpact.mdx",n0,"origin")
-if EFF!=null then
-call SetSpecialEffectScale(EFF,0.7)
-call RemoveEffect(EFF,2.5,true,CreateTimer())
-endif
-call MyRemoveUnit(n0,2.6)
-set n0=null
+set EFF=AddSpecialEffect("Garp\\Garp_QImpact.mdx",x0,y0)
+call SetSpecialEffectScale(EFF ,     0.4)
+call SetSpecialEffectZ(EFF,50)
+call RemoveEffect(EFF,1.5,false,CreateTimer())
+set EFF=AddSpecialEffect("chushou_by_wood_effect_earth_sandycrack_fag.mdl",x0,y0)
+call SetSpecialEffectZ(EFF,115)
+call SetSpecialEffectScale(EFF ,     0.9)
+call RemoveEffect(EFF,1.5,false,CreateTimer())
 // AoE замедление вокруг места падения (кроме брошенной цели)
 call GroupClear(G)
 call GroupEnumUnitsInRange(G,x0,y0,300,Base)
@@ -224058,7 +224072,9 @@ call GroupClear(G)
 set n0=null
 else
 // шлейф пыли за падающим врагом
+if ModuloReal(time,0.12)<0.02 then
 call EffectCreateAndMoveAn(true,"Izayoi\\wind3.mdl",facing,0.4,0.6,1.0,100,100,100,40,0,target,0,facing,0)
+endif
 endif
 endif
 // спуск 28/тик (1400/с) по своей переменной высоты
@@ -224116,9 +224132,9 @@ local real time=LoadReal(HH,id,5)+0.02
 local real time1=LoadReal(HH,id,6)
 local real time2=LoadReal(HH,id,8)
 local real facing
-local real dmg=30.0*I2R(GetUnitAbilityLevel(caster,'GrW1'))+2.0*I2R(GetHeroStr(caster,true))
+local real dmg=30.0*I2R(GetUnitAbilityLevel(caster,'GrW1'))+(0.75+0.25*GetUnitAbilityLevel(caster,'GrW1'))*I2R(GetHeroStr(caster,true))
 call SaveReal(HH,id,5,time)
-if UnitIsAlive(caster)==false or target==null or UnitIsAlive(target)==false or udg_B==false then
+if UnitIsAlive(caster)==false or target==null or UnitIsAlive(target)==false or udg_B==false or time>4 then
 if target!=null then
 call PauseUnit(target,false)
 call SaveBoolean(HH,GetHandleId(target),TARGET_ABILITY,false)
@@ -224135,11 +224151,23 @@ call SetUnitFacingInstant(caster,facing)
 if SR(GetUnitX(caster),GetUnitY(caster),GetUnitX(target),GetUnitY(target))>130 and time<1.2 then
 call MoveUnit(caster,caster,40,facing)
 else
+if LoadBoolean(HH,GetHandleId(target),ANTITARGET_ABILITY)==false then
 call SaveReal(HH,id,3,facing)
 call PauseUnit(target,true)
 call SaveBoolean(HH,GetHandleId(target),TARGET_ABILITY,true)
 call SaveReal(HH,id,6,1)
 call SaveReal(HH,id,5,0)
+else
+call SaveUnitHandle(HH,GetHandleId(target),REVERSE_TARGET,caster)
+call UnitSpeed(caster,1)
+call PauseUnit(caster,false)
+call SetUnitInvulnerable(caster,false)
+call SetUnitPathing(caster,true)
+call SetUnitPathing(target,true)
+call PauseTimer(t)
+call DestroyTimer(t)
+call FlushChildHashtable(HH,id)
+endif
 endif
 else
 // СЕРИЯ ИЗ 3 УДАРОВ (по образцу W Альбедо: импакт на груди + тряска + отлёт цели, Гарп догоняет)
@@ -224185,7 +224213,10 @@ else
 // ФИНАЛЬНЫЙ УДАР: оглушение + крупное хаки + кратер + сильный отброс
 call SetControlToUnit(caster,target,0.75,"stun")
 call EffectCreateAndMove(true,"Garp\\Garp_HandsFX.mdx",facing,1.0,1.0,1.0,100,100,100,0,110,target,0,facing)
-call EffectCreateAndMoveAn(true,"Garp\\Garp_WCrater.mdx",GetRandomReal(0,360),2.0,0.5,1.0,100,100,100,0,0,target,0,facing,0)
+set EFF=AddSpecialEffect("chushou_by_wood_effect_earth_sandycrack_fag.mdl",GetUnitX(target),GetUnitY(target))
+call SetSpecialEffectZ(EFF,115)
+call SetSpecialEffectScale(EFF ,     0.7)
+call RemoveEffect(EFF,1.5,false,CreateTimer())
 call ShakeCamera(0.3,10)
 call PushTimed(target,facing,14,20)
 call PauseUnit(target,false)
@@ -224204,9 +224235,6 @@ endfunction
 function Garp_W_Act takes unit caster,unit target returns nothing
 local timer t
 local integer id
-if target==null then
-return
-endif
 set t=CreateTimer()
 set id=GetHandleId(t)
 call SaveUnitHandle(HH,id,1,caster)
@@ -224215,7 +224243,6 @@ call Garp_Hands(caster,1.2)
 call SetUnitPathing(caster,false)
 // откат ставим руками: подбег обрывает каст, и игра его не начисляет.
 // 12/11/10/9/8 по уровню — как в Cool у GrW1.
-call StartAbilityCooldown(GetUnitAbility(caster,'GrW1'),13.0-I2R(GetUnitAbilityLevel(caster,'GrW1')))
 call TimerStart(t,0.02,true,function Garp_W_Act2)
 set t=null
 endfunction
@@ -224233,7 +224260,7 @@ local real x0=LoadReal(HH,id,11)
 local real y0=LoadReal(HH,id,12)
 local real facing=LoadReal(HH,id,14)
 local real tt
-local real dmg=90.0*I2R(GetUnitAbilityLevel(caster,'GrE1'))+5.0*I2R(GetHeroStr(caster,true))
+local real dmg=(100+100.0*I2R(GetUnitAbilityLevel(caster,'GrE1')))+(2.0+I2R(GetUnitAbilityLevel(caster,'GrE1')))*I2R(GetHeroStr(caster,true))
 call SaveReal(HH,id,5,time)
 if UnitIsAlive(caster)==false or udg_B==false then
 call RemoveUnit(ball)
@@ -224274,19 +224301,13 @@ else
 // эффекты вешаем на ядро ДО его удаления — оно и стоит в точке падения.
 // EffectCreateAndMove180 = дамми '180e', перевёрнутый на 180 — взрыв смотрит в землю.
 // Тот же удар об землю и тем же способом, что у Q: невидимый дамми-якорь + эффект.
-set n0=CreateUnit(GetOwningPlayer(caster),'e200',x0,y0,GetRandomReal(0,360))
-// у e200 в данных высота полёта 200 — без этого эффект висит над землёй
-call SetUnitFlyHeight(n0,0,0)
-// Рисуется ТОЛЬКО так (перебор ещё в 4.5): дамми с этой моделью
-// (SetUnitModel, он же EffectCreateAndMove) и AddSpecialEffect по
-// координате её не показывают — только эффект на невидимом якоре.
-set EFF=AddSpecialEffectTarget("Garp\\Garp_QImpact.mdx",n0,"origin")
-if EFF!=null then
-call SetSpecialEffectScale(EFF,0.9)
-call RemoveEffect(EFF,2.5,true,CreateTimer())
-endif
-call MyRemoveUnit(n0,2.6)
-set n0=null
+set EFF=AddSpecialEffect("Garp\\Garp_QImpact.mdx",x0,y0)
+call SetSpecialEffectScale(EFF ,     0.8)
+call SetSpecialEffectZ(EFF,50)
+call RemoveEffect(EFF,1.5,false,CreateTimer())
+set EFF=AddSpecialEffect("war3mapImported\\CF2.mdl", x0,y0)
+call SetSpecialEffectScale(EFF , 1.1)
+call DestroyEffect(EFF)
 call RemoveUnit(ball)
 call ShakeCamera(0.4,14)
 call GroupClear(G)
@@ -224887,17 +224908,55 @@ set shot=null
 set g2=null
 set t=null
 endfunction
+function Garp_G_Act2 takes nothing returns nothing
+    local integer id  = GetHandleId(GetExpiredTimer())
+    local unit caster = LoadUnitHandle(HH, id, 0)
+    local real caster_x = GetUnitX(caster)
+    local real caster_y = GetUnitY(caster)
+    local real time     = LoadReal(HH, id, 1)
+    if time>0 and UnitIsAlive(caster) and GetUnitAbilityLevel(caster, 'GrGs')>0 then
+        call PauseUnit(caster, true)
+        if LoadBoolean(HH,GetHandleId(caster),TARGET_ABILITY)==false then
+            call SaveReal(HH, id, 1, time-0.05)
+        endif
+        if ModuloReal(time,0.2)<0.05 then
+            set n=CreateUnit(GetOwningPlayer(caster), 'dM05', caster_x, caster_y, GetRandomInt(0, 360))
+            call SetUnitScale(n, 0.5, 0.5, 0.5)
+            call SetUnitVertexColor(n, 255, 255, 255, 140)
+            call MyRemoveUnit(n, 1.5)
+        endif
+    else
+        if LoadBoolean(HH,GetHandleId(caster),ANTITARGET_ABILITY)==true then
+            call SetControlToUnit(caster , caster , 0.5 , "doomdebug")
+        endif
+        call DestroyEffect(LoadEffectHandle(h, id, 3))
+        call DestroyEffect(LoadEffectHandle(h, id, 4))
+        call SaveBoolean(HH,GetHandleId(caster),ANTITARGET_ABILITY,false)
+        call PauseUnit(caster, false)
+        call UnitRemoveAbility(caster, 'GrGs')
+        call FlushChildHashtable(h, id)
+        call PauseTimer(GetExpiredTimer())
+        call DestroyTimer(GetExpiredTimer())
+    endif
+    set caster=null
+endfunction
 function Garp_G_Act takes unit caster returns nothing
+local timer newTimer = CreateTimer()
+local integer id     = GetHandleId(newTimer)
 // стойка: щит вешаем маркером на 2 c, как F вешает Pure
 call Garp_Sound("Sound\\Music\\mp3Music\\Garp_G_Cast.mp3")
 call UnitAddAbility(caster,'GrGs')
 call UnitMakeAbilityPermanent(caster,true,'GrGs')
-call UnitRemoveAbilityTimedPause(caster,'GrGs',2.0)
+call SaveReal(HH, id, 1, 2.0)
 // стойку держим рутом на те же 2 c: на канал полагаться нельзя,
 // Гарп срывался с места и продолжал бежать.
-call UnitAddAbilityTimed(caster,2.0,'A1FU')
 call SetUnitAnimationByIndex(caster,1)
+call SaveBoolean(HH,GetHandleId(caster),ANTITARGET_ABILITY,true)
+call PauseUnit(caster,true)
+call SaveUnitHandle(HH, id, 0, caster)
 call EffectCreateAndMove(true,"Garp\\Garp_HandsFX.mdx",GetUnitFacing(caster),1.2,1.4,1.0,100,100,100,0,0,caster,0,GetUnitFacing(caster))
+call TimerStart(newTimer, 0.05, true, function Garp_G_Act2)
+set newTimer=null
 endfunction
 function Garp_T_Act takes unit caster returns nothing
 local timer t=CreateTimer()
