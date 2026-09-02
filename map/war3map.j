@@ -224938,7 +224938,7 @@ function Garp_G_Act2 takes nothing returns nothing
         call SaveBoolean(HH,GetHandleId(caster),ANTITARGET_ABILITY,false)
         call PauseUnit(caster, false)
         call UnitRemoveAbility(caster, 'GrGs')
-        call StartAbilityCooldown(GetUnitAbility(Hero[i],'GrG2'),25-I2R(GetHeroLevel(caster))/7)
+        call StartAbilityCooldown(GetUnitAbility(caster,'GrG2'),25-I2R(GetHeroLevel(caster))/7)
         call FlushChildHashtable(h, id)
         call PauseTimer(GetExpiredTimer())
         call DestroyTimer(GetExpiredTimer())
