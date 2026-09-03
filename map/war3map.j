@@ -42058,17 +42058,14 @@ else
     call Push5(c,40,a,400,"")
     call PauseTimer(t)
     call DestroyTimer(t)
-    call UnitRemoveAbility(caster, 'GrGs')
+    call UnitRemoveAbility(u, 'GrGs')
     call SetUnitTimeScale(u,1)
-    call FlushChildHashtable(HH,GetHandleId(g))
-    call DestroyGroup(g)
     call SetUnitPathing(u,true)
     call FlushChildHashtable(HH,id)
 endif
 set p=null
 set u=null
 set c=null
-set g=null
 set t=null
 endfunction
 function Garp_G_Counter takes nothing returns nothing
@@ -42096,8 +42093,8 @@ if caster!=null and target!=null and UnitIsAlive(caster) and UnitIsAlive(target)
         call SetSpecialEffectTimeScale(EFF , 3)
         call SetSpecialEffectVertexColour(EFF,255,255,255,120)
         call DestroyEffect(EFF)
-        call SetUnitXY_1(caster,x+245*Cos(ang),y+245*Sin(ang), false)
-        call SetUnitFacingInstant(caster,a2*bj_RADTODEG)
+        call SetUnitXY_1(caster,GetUnitX(caster)+245*Cos(ang),GetUnitX(caster)+245*Sin(ang), false)
+        call SetUnitFacingInstant(caster,ang*bj_RADTODEG)
         set EFF=AddSpecialEffect("war3mapImported\\BlackBlink.mdx", GetUnitX(caster), GetUnitY(caster))
         call SetSpecialEffectZ(EFF, GetUnitFlyHeight(caster))
         call SetSpecialEffectTimeScale(EFF , 3)
@@ -42116,7 +42113,7 @@ if caster!=null and target!=null and UnitIsAlive(caster) and UnitIsAlive(target)
         call StartAbilityCooldown(GetUnitAbility(caster,'GrG2'),25-I2R(GetHeroLevel(caster))/7)
         call PauseTimer(t)
         call DestroyTimer(t)
-        call SetUnitTimeScale(u,1)
+        call SetUnitTimeScale(caster,1)
         call SetUnitPathing(caster,true)
         call PauseUnit(caster,false)
         call RemoveSavedHandle(HH,idu,REVERSE_TARGET)
@@ -224479,7 +224476,7 @@ local real dur=LoadReal(HH,id,6)
 // ⚠️ Период 0.5, а НЕ 0.02: воля отслеживает всего два момента — снять паузу
 // и снять маркеры в конце. Тик 0.02 здесь только грузил бы игру впустую.
 // Обзор сюда не относится: он вписан в общий цикл обзора карты (ветка с GrEs).
-if IsUnitPaused(u)==false then
+if IsUnitPaused(caster)==false then
 call SaveReal(HH,id,5,time)
 endif
 if time==1.0 then
