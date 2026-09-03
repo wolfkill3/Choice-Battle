@@ -28954,7 +28954,7 @@ endif
 if GetUnitAbilityLevel(target,'A14J')>0  then
 set haveShield=true
 endif
-//Сейбер Р
+//Garp G
 if GetUnitAbilityLevel(target,'GrGs')>0  then
 set haveShield=true
 endif
@@ -42003,6 +42003,74 @@ function JirenF2_Cast takes unit u returns nothing
 endfunction
 
 //Garp1start — перенесено из Choice Random 4.5
+function Garp_G_Counter2 takes nothing returns nothing
+local timer t=GetExpiredTimer()
+local integer id=GetHandleId(t)
+local unit u=LoadUnitHandle(HH,id,1)
+local unit c=LoadUnitHandle(HH,id,2)
+local real dmg=LoadReal(HH,id,3)
+local real time=LoadReal(HH,id,4)
+local real x=GetUnitX(u)
+local real y=GetUnitY(u)
+local real x1=GetUnitX(c)
+local real y1=GetUnitY(c)
+local real a=Atan2(y1-y,x1-x)
+local player p=GetOwningPlayer(u)
+local integer i=1
+call SaveReal(HH,id,4,time+0.02)
+if time<1 then
+    call SetUnitFacingInstant(u,a*bj_RADTODEG)
+    call PauseUnit(u,true)
+    call SetUnitInvulnerable(u,true)
+    if time<0.4 and ModuloReal(time,0.06)<0.02 then
+        set EFF=AddSpecialEffect("blinknew4.mdl", x1+GetRandomReal(-25,25),y1+GetRandomReal(-25,25))
+        call SetSpecialEffectFacing(EFF , a* bj_RADTODEG)
+        call SetSpecialEffectZ(EFF, GetUnitFlyHeight(c)+GetRandomReal(35,65))
+        call SetSpecialEffectScale(EFF , 0.3)
+        call RemoveEffect(EFF,0.2,false,CreateTimer())
+    endif
+    if time>0.4 and ModuloReal(time,0.06)<0.02 then
+        call SetUnitXY_1(c,x1+5*Cos(a),y1+5*Sin(a), false)
+        set EFF=AddSpecialEffect("Minato-37.mdx", x1+GetRandomReal(-15,15),y1+GetRandomReal(-15,15))
+        call SetSpecialEffectFacing(EFF , a* bj_RADTODEG)
+        call SetSpecialEffectZ(EFF, GetUnitFlyHeight(c)+GetRandomReal(45,65))
+        call SetSpecialEffectScale(EFF , 1.5)
+        call DestroyEffect(EFF)
+        set EFF=AddSpecialEffect("coarse slash blue.mdl", x1+70*Cos(a)+GetRandomReal(-10,10),y1+70*Sin(a)+GetRandomReal(-10,10))
+        call SetSpecialEffectOrientation(EFF,a*bj_RADTODEG+GetRandomReal(-25,25),GetRandomReal(-45,-15),0)
+        call SetSpecialEffectZ(EFF, GetUnitFlyHeight(c)+GetRandomReal(45,65))
+        call SetSpecialEffectScale(EFF , 0.75)
+        call DestroyEffect(EFF)
+    endif
+    if time==0.8 then
+        set EFF=AddSpecialEffect("RoundSlashesBlue.mdx", x1,y1)
+        call SetSpecialEffectFacing(EFF , a* bj_RADTODEG)
+        call SetSpecialEffectZ(EFF, 10)
+        call SetSpecialEffectScale(EFF , 1.5)
+        call RemoveEffect(EFF,0.5,true,CreateTimer())
+    endif
+else
+    call PauseUnit(u,false)
+    call SetUnitInvulnerable(u,false)
+    call PauseUnit(c,false)
+    call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,false)
+    call myCustomDamage(u,c,dmg,false,false,null,null,null)
+    call Push5(c,40,a,400,"")
+    call PauseTimer(t)
+    call DestroyTimer(t)
+    call UnitRemoveAbility(caster, 'GrGs')
+    call SetUnitTimeScale(u,1)
+    call FlushChildHashtable(HH,GetHandleId(g))
+    call DestroyGroup(g)
+    call SetUnitPathing(u,true)
+    call FlushChildHashtable(HH,id)
+endif
+set p=null
+set u=null
+set c=null
+set g=null
+set t=null
+endfunction
 function Garp_G_Counter takes nothing returns nothing
 local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
@@ -42011,22 +42079,55 @@ local unit target=LoadUnitHandle(HH,id,2)
 local integer idu=GetHandleId(caster)
 local real dmg=LoadReal(HH,id,3)
 local real ang=0.0
+local integer ran=GetRandomInt(1,2)
 if caster!=null and target!=null and UnitIsAlive(caster) and UnitIsAlive(target) then
-// рывок вплотную к атакующему: до 1200, дальше не прыгаем — иначе
-// Гарпа утащит через пол-карты за случайным стрелком
-set ang=Angle2(GetUnitX(caster),GetUnitY(caster),GetUnitX(target),GetUnitY(target))
-if SR(GetUnitX(caster),GetUnitY(caster),GetUnitX(target),GetUnitY(target))<=1200 then
-call SetUnitPosition(caster,PolX(GetUnitX(target),140.0,ang+180.0),PolY(GetUnitY(target),140.0,ang+180.0))
-call SetUnitFacing(caster,ang)
-call SetUnitAnimationByIndex(caster,9)
-endif
-call SaveBoolean(HH,idu,ANTITARGET_ABILITY,false)
-call EffectCreateAndMove(true,"Garp\\Garp_HandsFX.mdx",Angle2(GetUnitX(caster),GetUnitY(caster),GetUnitX(target),GetUnitY(target)),0.8,1.3,1.0,100,100,100,0,0,target,0,GetUnitFacing(target))
-call myCustomDamage(caster,target,dmg,false,false,null,null,null)
-endif
+    // рывок вплотную к атакующему: до 1200, дальше не прыгаем — иначе
+    // Гарпа утащит через пол-карты за случайным стрелком
+    set ang=Angle2(GetUnitX(caster),GetUnitY(caster),GetUnitX(target),GetUnitY(target))
+    if SR(GetUnitX(caster),GetUnitY(caster),GetUnitX(target),GetUnitY(target))<=600 then
+        call SetUnitAnimationByIndex(caster,9)
+        call PauseTimer(t)
+        call PauseUnit(caster,true)
+        call SetUnitInvulnerable(caster,true)
+        call PauseUnit(target,true)
+        call SaveBoolean(HH,GetHandleId(target),TARGET_ABILITY,true)
+        set EFF=AddSpecialEffect("war3mapImported\\BlackBlink.mdx", GetUnitX(caster), GetUnitY(caster))
+        call SetSpecialEffectZ(EFF, GetUnitFlyHeight(caster))
+        call SetSpecialEffectTimeScale(EFF , 3)
+        call SetSpecialEffectVertexColour(EFF,255,255,255,120)
+        call DestroyEffect(EFF)
+        call SetUnitXY_1(caster,x+245*Cos(ang),y+245*Sin(ang), false)
+        call SetUnitFacingInstant(caster,a2*bj_RADTODEG)
+        set EFF=AddSpecialEffect("war3mapImported\\BlackBlink.mdx", GetUnitX(caster), GetUnitY(caster))
+        call SetSpecialEffectZ(EFF, GetUnitFlyHeight(caster))
+        call SetSpecialEffectTimeScale(EFF , 3)
+        call SetSpecialEffectVertexColour(EFF,255,255,255,120)
+        call DestroyEffect(EFF)
+        call Push5(caster,5,ang+180*bj_DEGTORAD,100,"")
+        call EffectCreateAndMove(true,"Garp\\Garp_HandsFX.mdx",Angle2(GetUnitX(caster),GetUnitY(caster),GetUnitX(target),GetUnitY(target)),0.8,1.3,1.0,100,100,100,0,0,target,0,GetUnitFacing(target))
+        call TimerStart(t,0.02,true,function Garp_G_Counter2)
+    else
+        if ran==1 then
+            call Push5(caster,30,ang+90*bj_DEGTORAD,300,"")
+        elseif ran==2 then
+            call Push5(caster,30,ang-90*bj_DEGTORAD,300,"")
+        endif
+        call UnitRemoveAbility(caster, 'GrGs')
+        call StartAbilityCooldown(GetUnitAbility(caster,'GrG2'),25-I2R(GetHeroLevel(caster))/7)
+        call PauseTimer(t)
+        call DestroyTimer(t)
+        call SetUnitTimeScale(u,1)
+        call SetUnitPathing(caster,true)
+        call PauseUnit(caster,false)
+        call RemoveSavedHandle(HH,idu,REVERSE_TARGET)
+        call FlushChildHashtable(HH,id)
+        call SetUnitInvulnerable(caster,false)
+    endif
+else
 call PauseTimer(t)
 call DestroyTimer(t)
 call FlushChildHashtable(HH,id)
+endif
 set caster=null
 set target=null
 set t=null
@@ -42034,8 +42135,11 @@ endfunction
 function Garp_G_Block takes unit u,unit c returns nothing
 local timer t=CreateTimer()
 local integer id=GetHandleId(t)
+local integer idu=GetHandleId(u)
 call SaveUnitHandle(HH,id,1,u)
 call SaveUnitHandle(HH,id,2,c)
+call PauseUnit(u,true)
+call SetUnitInvulnerable(u,true)
 call SaveReal(HH,id,3,(1.75+0.15*GetHeroLevel(u))*I2R(GetHeroStr(u,true)))
 call TimerStart(t,0.03,false,function Garp_G_Counter)
 set t=null
@@ -42333,9 +42437,9 @@ if nb>50 and GetUnitAbilityLevel(u,'A19B')>0 then
     set nb=0
 endif
 if GetUnitAbilityLevel(u,'GrGs')>0 and (nb>200 or CurrentEventAttack) then
-    call UnitRemoveAbility(u,'GrGs')
     call SaveUnitHandle(HH,uid,REVERSE_TARGET,c)
     call Garp_G_Block(u,c)
+
     set nb=0
 endif
 if nb>0 and GetUnitAbilityLevel(u, 'IcQ2')>0 and CurrentEventAttack and GetUnitTypeId(c)!='H15O' and GetUnitTypeId(c)!='H05O'  then
@@ -224370,13 +224474,15 @@ function Garp_F_Act2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
 local unit caster=LoadUnitHandle(HH,id,1)
-local real time=LoadReal(HH,id,5)+0.5
+local real time=LoadReal(HH,id,5)+0.1
 local real dur=LoadReal(HH,id,6)
 // ⚠️ Период 0.5, а НЕ 0.02: воля отслеживает всего два момента — снять паузу
 // и снять маркеры в конце. Тик 0.02 здесь только грузил бы игру впустую.
 // Обзор сюда не относится: он вписан в общий цикл обзора карты (ветка с GrEs).
+if IsUnitPaused(u)==false then
 call SaveReal(HH,id,5,time)
-if time>=1.0 and time<1.5 then
+endif
+if time==1.0 then
 // пауза была только на отыгрыш касты, дальше герой свободен
 call PauseUnit(caster,false)
 endif
@@ -224384,6 +224490,7 @@ if time>=dur or UnitIsAlive(caster)==false or udg_B==false then
 call PauseUnit(caster,false)
 call UnitRemoveAbility(caster,'GrEs')
 call UnitRemoveAbility(caster,'GrEa')
+call StartAbilityCooldown(GetUnitAbility(caster,'GrF1'),20)
 call PauseTimer(t)
 call DestroyTimer(t)
 call FlushChildHashtable(HH,id)
@@ -224403,10 +224510,10 @@ call UnitRemoveAbility(caster,'GrEa')
 call UnitAddAbility(caster,'GrEa')
 call UnitAddAbility(caster,'GrEs')
 call SaveUnitHandle(HH,id,1,caster)
-call SaveReal(HH,id,6,14.0)
+call SaveReal(HH,id,6,10.0)
 // Длительность воли на панели UjAPI, как у Урахары: иконка с обратным отсчётом
 // привязывается к маркеру GrEa, который висит ровно столько же.
-call CreateModeIndicatorForm(caster,"ReplaceableTextures\\CommandButtons\\BTNGarpF.blp",14.0)
+call CreateModeIndicatorWithPauseForm(caster,"ReplaceableTextures\\CommandButtons\\BTNGarpF.blp", 10)
 // Молнии вокруг Гарпа: 6 штук в случайных точках радиусом до 500
 set i=0
 loop
@@ -224419,7 +224526,7 @@ call Garp_Sound("Sound\\Music\\mp3Music\\Garp_F_Cast.mp3")
 call SetUnitAnimation(caster,"spell")
 call PauseUnit(caster,true)
 call EffectCreateAndMoveAn(true,"Garp\\Garp_EBurst.mdx",GetRandomReal(0,360),2.0,0.2,1.0,100,100,100,0,0,caster,0,GetUnitFacing(caster),0)
-call TimerStart(t,0.5,true,function Garp_F_Act2)
+call TimerStart(t,0.1,true,function Garp_F_Act2)
 set caster=null
 set t=null
 endfunction
@@ -224931,15 +225038,13 @@ function Garp_G_Act2 takes nothing returns nothing
         endif
     else
         if LoadBoolean(HH,GetHandleId(caster),ANTITARGET_ABILITY)==true then
+            call SaveBoolean(HH,GetHandleId(caster),ANTITARGET_ABILITY,false)
+            call PauseUnit(caster, false)
             call SetControlToUnit(caster , caster , 0.5 , "doomdebug")
+            call UnitRemoveAbility(caster, 'GrGs')
+            call StartAbilityCooldown(GetUnitAbility(caster,'GrG2'),25-I2R(GetHeroLevel(caster))/7)
         endif
-        call DestroyEffect(LoadEffectHandle(h, id, 3))
-        call DestroyEffect(LoadEffectHandle(h, id, 4))
-        call SaveBoolean(HH,GetHandleId(caster),ANTITARGET_ABILITY,false)
-        call PauseUnit(caster, false)
-        call UnitRemoveAbility(caster, 'GrGs')
-        call StartAbilityCooldown(GetUnitAbility(caster,'GrG2'),25-I2R(GetHeroLevel(caster))/7)
-        call FlushChildHashtable(h, id)
+        call FlushChildHashtable(HH, id)
         call PauseTimer(GetExpiredTimer())
         call DestroyTimer(GetExpiredTimer())
     endif
@@ -225065,33 +225170,33 @@ function AbilitiesForChoice_Act takes nothing returns nothing//моя функц
     endif
 
     if GetSpellAbilityId()=='BuuG' then
-call Buu_G_Act(caster,target)
-endif
-if GetSpellAbilityId()=='UKD1' then
-call Urahara_D_Act(caster)
-endif
-//Garp1start
-if GetSpellAbilityId()=='GrQ1' then
-call Garp_Q_Act(caster,x1,y1)
-endif
-if GetSpellAbilityId()=='GrW1' then
-call Garp_W_Act(caster,target)
-endif
-if GetSpellAbilityId()=='GrE1' then
-call Garp_E_Act(caster,x1,y1)
-endif
-if GetSpellAbilityId()=='GrR1' then
-call Garp_R_Act(caster,x1,y1)
-endif
-if GetSpellAbilityId()=='GrG2' then
-call Garp_G_Act(caster)
-endif
-if GetSpellAbilityId()=='GrF1' then
-call Garp_F_Act(caster)
-endif
-if GetSpellAbilityId()=='GrT1' then
-call Garp_T_Act(caster)
-endif
+        call Buu_G_Act(caster,target)
+    endif
+    if GetSpellAbilityId()=='UKD1' then
+        call Urahara_D_Act(caster)
+    endif
+    //Garp1start
+    if GetSpellAbilityId()=='GrQ1' then
+        call Garp_Q_Act(caster,x1,y1)
+    endif
+    if GetSpellAbilityId()=='GrW1' then
+        call Garp_W_Act(caster,target)
+    endif
+    if GetSpellAbilityId()=='GrE1' then
+        call Garp_E_Act(caster,x1,y1)
+    endif
+    if GetSpellAbilityId()=='GrR1' then
+        call Garp_R_Act(caster,x1,y1)
+    endif
+    if GetSpellAbilityId()=='GrG2' then
+        call Garp_G_Act(caster)
+    endif
+    if GetSpellAbilityId()=='GrF1' then
+        call Garp_F_Act(caster)
+    endif
+    if GetSpellAbilityId()=='GrT1' then
+        call Garp_T_Act(caster)
+    endif
 //Garp1end
 set caster=null
     set target=null
