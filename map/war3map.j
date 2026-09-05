@@ -21610,6 +21610,17 @@ call SaveUnitHandle(HH,GetHandleId(cjlocgn_00000000),0,u)
 call TimerStart(cjlocgn_00000000,8,true,function RecoveryCast2)
 set cjlocgn_00000000=null
 endif
+//Roshi_start — видимой держим первую кнопку каждой цепочки
+call SetPlayerAbilityAvailable(GetOwningPlayer(u),'RsQ2',false)
+call SetPlayerAbilityAvailable(GetOwningPlayer(u),'RsW2',false)
+call SetPlayerAbilityAvailable(GetOwningPlayer(u),'RsR2',false)
+call SetPlayerAbilityAvailable(GetOwningPlayer(u),'RsQ1',true)
+call SetPlayerAbilityAvailable(GetOwningPlayer(u),'RsW1',true)
+call SetPlayerAbilityAvailable(GetOwningPlayer(u),'RsR1',true)
+call SetPlayerAbilityAvailable(GetOwningPlayer(u),'RsD2',false)
+call SetPlayerAbilityAvailable(GetOwningPlayer(u),'RsD3',false)
+call SetPlayerAbilityAvailable(GetOwningPlayer(u),'RsD1',true)
+//Roshi_end
 set u=null
 endfunction
 function InitTrig_Set_Ability takes nothing returns nothing
@@ -29441,6 +29452,17 @@ if GetUnitTypeId(u) == 'H248' then
     call SetPlayerAbilityAvailable(GetOwningPlayer(u), 'AFUP', true)
 endif
 call CheckUnitBonusRange(u)
+//Roshi_start — видимой держим первую кнопку каждой цепочки
+call SetPlayerAbilityAvailable(GetOwningPlayer(u),'RsQ2',false)
+call SetPlayerAbilityAvailable(GetOwningPlayer(u),'RsW2',false)
+call SetPlayerAbilityAvailable(GetOwningPlayer(u),'RsR2',false)
+call SetPlayerAbilityAvailable(GetOwningPlayer(u),'RsQ1',true)
+call SetPlayerAbilityAvailable(GetOwningPlayer(u),'RsW1',true)
+call SetPlayerAbilityAvailable(GetOwningPlayer(u),'RsR1',true)
+call SetPlayerAbilityAvailable(GetOwningPlayer(u),'RsD2',false)
+call SetPlayerAbilityAvailable(GetOwningPlayer(u),'RsD3',false)
+call SetPlayerAbilityAvailable(GetOwningPlayer(u),'RsD1',true)
+//Roshi_end
 endfunction
 function EndGameCond takes nothing returns boolean
 set P=GetTriggerPlayer()
@@ -223619,7 +223641,7 @@ endfunction
 
 ///ини абилок
 function AbilitiesForChoice_Cond takes nothing returns boolean
-    local boolean cond1=GetSpellAbilityId()=='MRQ1' or GetSpellAbilityId()=='MRQ2' or GetSpellAbilityId()=='MRQ3' or GetSpellAbilityId()=='MRW1' or GetSpellAbilityId()=='MRW2' or GetSpellAbilityId()=='MRE1' or GetSpellAbilityId()=='MRR1' or GetSpellAbilityId()=='MRR2' or GetSpellAbilityId()=='MRT1' or GetSpellAbilityId()=='MRD1' or GetSpellAbilityId()=='MRD2' or GetSpellAbilityId()=='MRD3' or GetSpellAbilityId()=='MRF1' or GetSpellAbilityId()=='MRF2' or GetSpellAbilityId()=='MRF3' or GetSpellAbilityId()=='MRG1' or GetSpellAbilityId()=='GinG' or GetSpellAbilityId()=='LamF' or GetSpellAbilityId()=='SiD1' or GetSpellAbilityId()=='AKQ1' or GetSpellAbilityId()=='AKW1' or GetSpellAbilityId()=='AKE1' or GetSpellAbilityId()=='AKR1' or GetSpellAbilityId()=='AKT1' or GetSpellAbilityId()=='AKF1' or GetSpellAbilityId()=='AKG1' or GetSpellAbilityId()=='GrQ1' or GetSpellAbilityId()=='GrW1' or GetSpellAbilityId()=='GrE1' or GetSpellAbilityId()=='GrR1' or GetSpellAbilityId()=='GrT1' or GetSpellAbilityId()=='GrF1' or GetSpellAbilityId()=='GrG2' or GetSpellAbilityId()=='UKD1' or GetSpellAbilityId()=='BuuG' or GetSpellAbilityId()=='GSQ1' or GetSpellAbilityId()=='GSQ2' or GetSpellAbilityId()=='GSW1' or GetSpellAbilityId()=='GSE1' or GetSpellAbilityId()=='GSE2' or GetSpellAbilityId()=='GSF1' or GetSpellAbilityId()=='GSF2' or GetSpellAbilityId()=='GSG1' or GetSpellAbilityId()=='GSR1' or GetSpellAbilityId()=='GST1' or GetSpellAbilityId()=='GST2' or GetSpellAbilityId()=='GST3' or GetSpellAbilityId()=='SHG1' or GetSpellAbilityId()=='CelF' or GetSpellAbilityId()=='CelG' or GetSpellAbilityId()=='CelT'
+    local boolean cond1=GetSpellAbilityId()=='RsQ1' or GetSpellAbilityId()=='RsQ2' or GetSpellAbilityId()=='RsQ3' or GetSpellAbilityId()=='RsW1' or GetSpellAbilityId()=='RsW2' or GetSpellAbilityId()=='RsE1' or GetSpellAbilityId()=='RsR1' or GetSpellAbilityId()=='RsR2' or GetSpellAbilityId()=='RsT1' or GetSpellAbilityId()=='RsD1' or GetSpellAbilityId()=='RsD2' or GetSpellAbilityId()=='RsD3' or GetSpellAbilityId()=='RsF1' or GetSpellAbilityId()=='RsF2' or GetSpellAbilityId()=='RsF3' or GetSpellAbilityId()=='RsG1' or GetSpellAbilityId()=='GinG' or GetSpellAbilityId()=='LamF' or GetSpellAbilityId()=='SiD1' or GetSpellAbilityId()=='AKQ1' or GetSpellAbilityId()=='AKW1' or GetSpellAbilityId()=='AKE1' or GetSpellAbilityId()=='AKR1' or GetSpellAbilityId()=='AKT1' or GetSpellAbilityId()=='AKF1' or GetSpellAbilityId()=='AKG1' or GetSpellAbilityId()=='GrQ1' or GetSpellAbilityId()=='GrW1' or GetSpellAbilityId()=='GrE1' or GetSpellAbilityId()=='GrR1' or GetSpellAbilityId()=='GrT1' or GetSpellAbilityId()=='GrF1' or GetSpellAbilityId()=='GrG2' or GetSpellAbilityId()=='UKD1' or GetSpellAbilityId()=='BuuG' or GetSpellAbilityId()=='GSQ1' or GetSpellAbilityId()=='GSQ2' or GetSpellAbilityId()=='GSW1' or GetSpellAbilityId()=='GSE1' or GetSpellAbilityId()=='GSE2' or GetSpellAbilityId()=='GSF1' or GetSpellAbilityId()=='GSF2' or GetSpellAbilityId()=='GSG1' or GetSpellAbilityId()=='GSR1' or GetSpellAbilityId()=='GST1' or GetSpellAbilityId()=='GST2' or GetSpellAbilityId()=='GST3' or GetSpellAbilityId()=='SHG1' or GetSpellAbilityId()=='CelF' or GetSpellAbilityId()=='CelG' or GetSpellAbilityId()=='CelT'
     if cond1 then
         return true
     else
@@ -230039,7 +230061,7 @@ endif
 if duration>30 then
 call SaveReal(HH,GetHandleId(GetOwningPlayer(caster)),StringHash("KimiFormDur"),30)
 endif
-if GetUnitAbilityLevel(caster,'MRT1')==0 then
+if GetUnitAbilityLevel(caster,'RsT1')==0 then
 if(GetLocalPlayer()==GetOwningPlayer(caster))then
 call DisplayTextToPlayer(GetLocalPlayer(),0,0,"Вы больше не Роши!!!")
 endif
@@ -230132,7 +230154,7 @@ call SetUnitFlyHeight(Heart1,GetUnitFlyHeight(caster)+6000,0)
 call SetUnitFlyHeight(Heart2,GetUnitFlyHeight(caster)+6000,0)
 call SetUnitFlyHeight(Heart3,GetUnitFlyHeight(caster)+6000,0)
 endif
-if GetUnitAbilityLevel(caster,'MRE1')==0 then
+if GetUnitAbilityLevel(caster,'RsE1')==0 then
 
 if(GetLocalPlayer()==GetOwningPlayer(caster))then
 call DisplayTextToPlayer(GetLocalPlayer(),0,0,"Вы больше не Роши!!!")
@@ -230265,7 +230287,7 @@ local real y2=GetUnitY(Dummy)
 local real facing=LoadReal(HH,id,3)
 set time=time+0.02
 call SaveReal(HH,id,5,time)
-if time>11 or(time>1 and(UnitIsAlive(Dummy)==false or GetUnitAbilityLevel(Dummy,'MRF3')==0))then
+if time>11 or(time>1 and(UnitIsAlive(Dummy)==false or GetUnitAbilityLevel(Dummy,'RsF3')==0))then
 call SetPlayerAbilityAvailable(GetOwningPlayer(Dummy),'AI34',true)
 
 
@@ -230357,8 +230379,8 @@ call SetPlayerAbilityAvailable(GetOwningPlayer(Dummy),'AI34',false)
 
 
 
-call UnitAddAbility(Dummy,'MRF2')
-call UnitAddAbility(Dummy,'MRF3')
+call UnitAddAbility(Dummy,'RsF2')
+call UnitAddAbility(Dummy,'RsF3')
 call UnitSpeed(caster,1)
 call EffectCreateAndMove(true,EffectID[23],GetRandomReal(0,360),1.5,1,0.5,60,100,60,20,0,target,0,facing)
 call EffectCreateAndMove(true,EffectID[20],GetRandomReal(0,360),1.5,1,1.5,100,100,100,40,0,target,0,facing)
@@ -230839,24 +230861,24 @@ endif
 
 call SetUnitFlyHeight(LoadUnitHandle(HH,id,20),GetUnitFlyHeight(caster),0)
 endif
-if time>0.02 and(Roshi_T_time<=0 or UnitIsAlive(caster)==false or udg_B==false or GetUnitAbilityLevel(caster,'MRT4')==0)then
-call UnitRemoveAbility(caster,'MRT4')
+if time>0.02 and(Roshi_T_time<=0 or UnitIsAlive(caster)==false or udg_B==false or GetUnitAbilityLevel(caster,'RsT4')==0)then
+call UnitRemoveAbility(caster,'RsT4')
 if Roshi_T_time<=0 then
 call SaveReal(HH,GetHandleId(GetOwningPlayer(caster)),StringHash("KimiFormDur"),0)
 endif
 call RemoveUnit(LoadUnitHandle(HH,id,20))
 call PauseUnit(caster,false)
 if GetUnitTypeId(caster)=='RosF' then
-call UnitAddAbility(caster,'MRT3')
+call UnitAddAbility(caster,'RsT3')
 call IssueImmediateOrder(caster,"bearform")
-call UnitRemoveAbility(caster,'MRT3')
+call UnitRemoveAbility(caster,'RsT3')
 endif
-call SetPlayerAbilityAvailable(GetOwningPlayer(caster),'MRQ2',false)
-call SetPlayerAbilityAvailable(GetOwningPlayer(caster),'MRQ1',true)
-call SetPlayerAbilityAvailable(GetOwningPlayer(caster),'MRW2',false)
-call SetPlayerAbilityAvailable(GetOwningPlayer(caster),'MRW1',true)
-call SetPlayerAbilityAvailable(GetOwningPlayer(caster),'MRR2',false)
-call SetPlayerAbilityAvailable(GetOwningPlayer(caster),'MRR1',true)
+call SetPlayerAbilityAvailable(GetOwningPlayer(caster),'RsQ2',false)
+call SetPlayerAbilityAvailable(GetOwningPlayer(caster),'RsQ1',true)
+call SetPlayerAbilityAvailable(GetOwningPlayer(caster),'RsW2',false)
+call SetPlayerAbilityAvailable(GetOwningPlayer(caster),'RsW1',true)
+call SetPlayerAbilityAvailable(GetOwningPlayer(caster),'RsR2',false)
+call SetPlayerAbilityAvailable(GetOwningPlayer(caster),'RsR1',true)
 call EffectCreateAndMove(true,EffectID[608],GetRandomReal(0,360),1.5,1,1,100,100,100,0,0,caster,0,facing)
 call EffectCreateAndMove(true,EffectID[41],GetRandomReal(0,360),1.5,1,0.5,100,100,100,0,100,caster,0,facing)
 call EffectCreateAndMove(true,EffectID[23],GetRandomReal(0,360),1.5,1,0.5,100,100,100,40,0,caster,0,facing)
@@ -230871,19 +230893,19 @@ function Roshi_T_Act takes unit caster returns nothing
 local timer t=CreateTimer()
 local integer id=GetHandleId(t)
 call SaveUnitHandle(HH,id,1,caster)
-call UnitAddAbility(caster,'MRT4')
-call UnitMakeAbilityPermanent(caster,true,'MRT4')
+call UnitAddAbility(caster,'RsT4')
+call UnitMakeAbilityPermanent(caster,true,'RsT4')
 call PauseUnit(caster,false)
-call UnitAddAbility(caster,'MRT2')
+call UnitAddAbility(caster,'RsT2')
 call IssueImmediateOrder(caster,"bearform")
-call UnitRemoveAbility(caster,'MRT2')
+call UnitRemoveAbility(caster,'RsT2')
 call SetUnitAnimationByIndex(caster,18)
-call SetPlayerAbilityAvailable(GetOwningPlayer(caster),'MRQ1',false)
-call SetPlayerAbilityAvailable(GetOwningPlayer(caster),'MRQ2',true)
-call SetPlayerAbilityAvailable(GetOwningPlayer(caster),'MRW1',false)
-call SetPlayerAbilityAvailable(GetOwningPlayer(caster),'MRW2',true)
-call SetPlayerAbilityAvailable(GetOwningPlayer(caster),'MRR1',false)
-call SetPlayerAbilityAvailable(GetOwningPlayer(caster),'MRR2',true)
+call SetPlayerAbilityAvailable(GetOwningPlayer(caster),'RsQ1',false)
+call SetPlayerAbilityAvailable(GetOwningPlayer(caster),'RsQ2',true)
+call SetPlayerAbilityAvailable(GetOwningPlayer(caster),'RsW1',false)
+call SetPlayerAbilityAvailable(GetOwningPlayer(caster),'RsW2',true)
+call SetPlayerAbilityAvailable(GetOwningPlayer(caster),'RsR1',false)
+call SetPlayerAbilityAvailable(GetOwningPlayer(caster),'RsR2',true)
 call TimerStart(t,0.02,true,function Roshi_T_Act2)
 set t=null
 endfunction
@@ -231163,7 +231185,7 @@ local real y0=GetUnitY(caster)
 local real x1=GetUnitX(target)
 local real y1=GetUnitY(target)
 local real facing=Angle2(x0,y0,x1,y1)
-local real damage=(5+GetUnitAbilityLevel(caster,'MRR1'))*GetHeroInt(caster,true)
+local real damage=(5+GetUnitAbilityLevel(caster,'RsR1'))*GetHeroInt(caster,true)
 call SaveUnitHandle(HH,id,1,caster)
 call SaveUnitHandle(HH,id,2,target)
 call PauseUnit(caster,true)
@@ -231322,7 +231344,7 @@ set time=time+0.02
 call SaveReal(HH,id,5,time)
 if time>2 then
 call DestroyEffect(LoadEffectHandle(HH,id,10))
-call UnitRemoveAbility(caster,'MRT4')
+call UnitRemoveAbility(caster,'RsT4')
 call SaveReal(HH,GetHandleId(GetOwningPlayer(caster)),StringHash("KimiFormDur"),0)
 call SetUnitAnimationByIndex(LoadUnitHandle(HH,id,20),2)
 call MyRemoveUnit(LoadUnitHandle(HH,id,20),1)
@@ -231449,7 +231471,7 @@ local timer t=CreateTimer()
 local integer id=GetHandleId(t)
 local real x0=GetUnitX(caster)
 local real y0=GetUnitY(caster)
-local real damage=GetHeroInt(caster,true)*(1+GetUnitAbilityLevel(caster,'MRQ1'))
+local real damage=GetHeroInt(caster,true)*(1+GetUnitAbilityLevel(caster,'RsQ1'))
 local real damage1=GetHeroInt(caster,true)*1
 local real dist=2000
 call SaveUnitHandle(HH,id,1,caster)
@@ -231557,7 +231579,7 @@ call SetUnitFacing(caster,facing)
 call SaveReal(HH,id,3,facing)
 endif
 if time>2 then
-if Roshi_Q3==false and GetUnitAbilityLevel(Dummy,'MRQ3')==0 then
+if Roshi_Q3==false and GetUnitAbilityLevel(Dummy,'RsQ3')==0 then
 call SaveBoolean(HH,id,19,true)
 call UnitColor(LoadUnitHandle(HH,id,21),0,0,0,100)
 call Roshi_Q3_Act(caster,facing)
@@ -231588,7 +231610,7 @@ call CreateModeIndicatorForm(caster, "ReplaceableTextures\\CommandButtons\\BTNRo
 
 
 
-call UnitAddAbility(Dummy,'MRQ3')
+call UnitAddAbility(Dummy,'RsQ3')
 set soundplay=CreateSound("Sound\\Roshi\\Roshi_Q2.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
 call EffectCreateAndMove(true,EffectID[1403],facing+180,2,3.25,2,100,100,100,0,100,caster,150,facing)
@@ -231955,7 +231977,7 @@ local real y0=GetUnitY(caster)
 local real x1=GetUnitX(target)
 local real y1=GetUnitY(target)
 local real facing=Angle2(x0,y0,x1,y1)
-local real damage=(3+GetUnitAbilityLevel(caster,'MRR1'))*GetHeroInt(caster,true)
+local real damage=(3+GetUnitAbilityLevel(caster,'RsR1'))*GetHeroInt(caster,true)
 call SaveUnitHandle(HH,id,1,caster)
 call SaveUnitHandle(HH,id,2,target)
 call PauseUnit(caster,true)
@@ -232239,7 +232261,7 @@ local real y0=GetUnitY(caster)
 local real x1=GetUnitX(target)
 local real y1=GetUnitY(target)
 local real facing=Angle2(x0,y0,x1,y1)
-local real damage=(GetUnitAbilityLevel(caster,'MRE1')+1)*GetHeroInt(caster,true)
+local real damage=(GetUnitAbilityLevel(caster,'RsE1')+1)*GetHeroInt(caster,true)
 call SetUnitFacing(caster,facing)
 call PauseUnit(caster,true)
 call SetUnitInvulnerable(caster,true)
@@ -232553,7 +232575,7 @@ local real y0=GetUnitY(caster)
 local real x1=GetUnitX(target)
 local real y1=GetUnitY(target)
 local real facing=GetUnitFacing(target)
-local real damage=50+(1+GetUnitAbilityLevel(caster,'MRW1'))*GetHeroInt(caster,true)
+local real damage=50+(1+GetUnitAbilityLevel(caster,'RsW1'))*GetHeroInt(caster,true)
 call SaveUnitHandle(HH,id,1,caster)
 call SaveUnitHandle(HH,id,2,target)
 call SaveReal(HH,id,3,facing)
@@ -232754,7 +232776,7 @@ local integer id=GetHandleId(t)
 local real x0=GetUnitX(caster)
 local real y0=GetUnitY(caster)
 local real facing=Angle2(x0,y0,x1,y1)
-local real damage=GetHeroInt(caster,true)*(2.5+0.5*GetUnitAbilityLevel(caster,'MRQ1'))
+local real damage=GetHeroInt(caster,true)*(2.5+0.5*GetUnitAbilityLevel(caster,'RsQ1'))
 local real damage1=GetHeroInt(caster,true)*0.8
 local real dist=SR(x0,y0,x1,y1)
 call SaveUnitHandle(HH,id,1,caster)
@@ -233028,18 +233050,18 @@ set n0=FirstOfGroup(G)
 exitwhen n0==null
 if IsUnitInGroup(n0,gr)==false and Condition_Base_Random(caster,n0)then
 call GroupAddUnit(gr,n0)
-if GetUnitAbilityLevel(n0,'MRG2')==0 then
+if GetUnitAbilityLevel(n0,'RsG2')==0 then
 
         if  IsUnitPaused(n0)==false then
                 set n=CreateUnit(GetOwningPlayer(caster),'h019',GetUnitX(n0),GetUnitY(n0),0)
                 call UnitAddAbility(n,'A0CP')
-                call SetUnitAbilityLevel(n,'A0CP',GetUnitAbilityLevel(caster,'MRG1'))
+                call SetUnitAbilityLevel(n,'A0CP',GetUnitAbilityLevel(caster,'RsG1'))
                 call UnitApplyTimedLife(n,'BHwe',1)
                 call IssueTargetOrder(n,"sleep",n0)
               //  call SetUnitAnimation(E,"Death")
         endif
 
-call UnitAddDebuffTimed(n0,'MRG2','BMRG',5)
+call UnitAddDebuffTimed(n0,'RsG2','BMRG',5)
 
 
 endif
@@ -233311,76 +233333,76 @@ endif
 if GetSpellAbilityId()=='GinG' then
 call Gintoki_G_Act(caster,target)
 endif
-if GetSpellAbilityId()=='MRQ1' then
+if GetSpellAbilityId()=='RsQ1' then
 call Roshi_Q1_Act(caster,x1,y1)
 endif
-if GetSpellAbilityId()=='MRQ2' then
+if GetSpellAbilityId()=='RsQ2' then
 call Roshi_T_Q_Act(caster,x1,y1)
 endif
-if GetSpellAbilityId()=='MRQ3' then
-call UnitRemoveAbility(caster,'MRQ3')
+if GetSpellAbilityId()=='RsQ3' then
+call UnitRemoveAbility(caster,'RsQ3')
 endif
-if GetSpellAbilityId()=='MRW1' then
+if GetSpellAbilityId()=='RsW1' then
 call Roshi_W_Act(caster,target)
 endif
-if GetSpellAbilityId()=='MRW2' then
+if GetSpellAbilityId()=='RsW2' then
 call Roshi_T_W_Act(caster,x1,y1)
 endif
-if GetSpellAbilityId()=='MRE1' then
+if GetSpellAbilityId()=='RsE1' then
 call Roshi_E1_Act(caster,target)
 endif
-if GetSpellAbilityId()=='MRR1' then
+if GetSpellAbilityId()=='RsR1' then
 call Roshi_R_Act(caster,target)
 endif
-if GetSpellAbilityId()=='MRR2' then
+if GetSpellAbilityId()=='RsR2' then
 call Roshi_T_R_Act(caster,target)
 endif
-if GetSpellAbilityId()=='MRT1' then
+if GetSpellAbilityId()=='RsT1' then
 if target==caster then
 call Roshi_T_Self_Act(caster)
 else
-if GetUnitAbilityLevel(caster,'MRT4')==0 and LoadReal(HH,GetHandleId(GetOwningPlayer(caster)),StringHash("KimiFormDur"))>=10 then
+if GetUnitAbilityLevel(caster,'RsT4')==0 and LoadReal(HH,GetHandleId(GetOwningPlayer(caster)),StringHash("KimiFormDur"))>=10 then
 call Roshi_T_Act(caster)
 else
-call UnitRemoveAbility(caster,'MRT4')
+call UnitRemoveAbility(caster,'RsT4')
 endif
 endif
 endif
-if GetSpellAbilityId()=='MRD1' then
+if GetSpellAbilityId()=='RsD1' then
 call Roshi_D_Act(caster,x1,y1)
 if GetHeroLevel(caster)>=12 then
-call SetPlayerAbilityAvailable(GetOwningPlayer(caster),'MRD1',false)
-call SetPlayerAbilityAvailable(GetOwningPlayer(caster),'MRD2',true)
+call SetPlayerAbilityAvailable(GetOwningPlayer(caster),'RsD1',false)
+call SetPlayerAbilityAvailable(GetOwningPlayer(caster),'RsD2',true)
 endif
 call Roshi_D_CD_Act(caster,1)
 endif
-if GetSpellAbilityId()=='MRD2' then
+if GetSpellAbilityId()=='RsD2' then
 call Roshi_D_Act(caster,x1,y1)
 if GetHeroLevel(caster)>=18 then
-call SetPlayerAbilityAvailable(GetOwningPlayer(caster),'MRD2',false)
-call SetPlayerAbilityAvailable(GetOwningPlayer(caster),'MRD3',true)
+call SetPlayerAbilityAvailable(GetOwningPlayer(caster),'RsD2',false)
+call SetPlayerAbilityAvailable(GetOwningPlayer(caster),'RsD3',true)
 else
-call SetPlayerAbilityAvailable(GetOwningPlayer(caster),'MRD2',false)
-call SetPlayerAbilityAvailable(GetOwningPlayer(caster),'MRD1',true)
+call SetPlayerAbilityAvailable(GetOwningPlayer(caster),'RsD2',false)
+call SetPlayerAbilityAvailable(GetOwningPlayer(caster),'RsD1',true)
 endif
 call Roshi_D_CD_Act(caster,2)
 endif
-if GetSpellAbilityId()=='MRD3' then
+if GetSpellAbilityId()=='RsD3' then
 call Roshi_D_Act(caster,x1,y1)
-call SetPlayerAbilityAvailable(GetOwningPlayer(caster),'MRD3',false)
-call SetPlayerAbilityAvailable(GetOwningPlayer(caster),'MRD1',true)
+call SetPlayerAbilityAvailable(GetOwningPlayer(caster),'RsD3',false)
+call SetPlayerAbilityAvailable(GetOwningPlayer(caster),'RsD1',true)
 call Roshi_D_CD_Act(caster,3)
 endif
-if GetSpellAbilityId()=='MRF1' then
+if GetSpellAbilityId()=='RsF1' then
 call Roshi_F_Act(caster,target)
 endif
-if GetSpellAbilityId()=='MRF2' then
+if GetSpellAbilityId()=='RsF2' then
 call Roshi_F2_Act(caster,x1,y1)
 endif
-if GetSpellAbilityId()=='MRF3' then
-call UnitRemoveAbility(caster,'MRF3')
+if GetSpellAbilityId()=='RsF3' then
+call UnitRemoveAbility(caster,'RsF3')
 endif
-if GetSpellAbilityId()=='MRG1' then
+if GetSpellAbilityId()=='RsG1' then
 call Roshi_G_Act(caster,x1,y1)
 endif
 set caster=null
