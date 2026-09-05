@@ -9511,7 +9511,6 @@ set udg_RH[137]='HGrp'//Garp
 
 //set udg_RH[127]='HIc3'
 set udg_RH[138]='HSig'//Signum
-set udg_RH2[138]="Signum"
 loop
 exitwhen i>=210
         if udg_RH[i]!=0 then
@@ -9660,6 +9659,7 @@ set udg_RH2[134]="Sabrac"
 set udg_RH2[135]="Jiren"
 set udg_RH2[136]="Gojo"
 set udg_RH2[137]="Garp"
+set udg_RH2[138]="Signum"
 call DestroyTrigger(GetTriggeringTrigger())
 endfunction
 function InitTrig_Init takes nothing returns nothing
@@ -27653,7 +27653,7 @@ if cmb!=true then
                 set udg_RH[i]=0
             endif
             set i=i+1
-            exitwhen i>=137
+            exitwhen i>=139
             endloop
             call RemoveUnit(u)
             call SetPlayerStateBJ(GetOwningPlayer(u),PLAYER_STATE_FOOD_CAP_CEILING,0)
@@ -27878,7 +27878,7 @@ if cmb!=true then
                     set udg_RH[i]=0
                 endif
                 set i=i+1
-                exitwhen i>=137
+                exitwhen i>=139
             endloop
         endif
         call SaveInteger(h,GetHandleId(u),'A1GS',0)
@@ -27901,7 +27901,7 @@ if IsUnitType(u,UNIT_TYPE_HERO) and CPTModeON and cmb==true then
         call RemoveUnit(u)
         set i=0
         loop
-        exitwhen i>=137
+        exitwhen i>=139
             if GetUnitTypeId(u)==udg_RH[i] then
                 set udg_RH[i]=0
             endif
@@ -34413,7 +34413,7 @@ function Trig_idNew_Actions takes nothing returns nothing
     exitwhen bj_forLoopAIndex>bj_forLoopAIndexEnd
     call DisplayTextToPlayer(GetLocalPlayer(),0,0,I2S(bj_forLoopAIndex)+"-"+udg_RH2[bj_forLoopAIndex]+"; "+I2S(bj_forLoopAIndex+1)+"-"+udg_RH2[bj_forLoopAIndex+1]+"; "+I2S(bj_forLoopAIndex+2)+"-"+udg_RH2[bj_forLoopAIndex+2]+"; "+I2S(bj_forLoopAIndex+3)+"-"+udg_RH2[bj_forLoopAIndex+3]+"; "+I2S(bj_forLoopAIndex+4)+"-"+udg_RH2[bj_forLoopAIndex+4]+"; ")
     //udg_RH[bj_forLoopAIndex]    
-    if bj_forLoopAIndex>=137 and bj_forLoopAIndex<190 then
+    if bj_forLoopAIndex>=139 and bj_forLoopAIndex<190 then
     set bj_forLoopAIndex=200
     else
     set bj_forLoopAIndex=bj_forLoopAIndex+5
@@ -34439,7 +34439,7 @@ function Trig_id_Actions takes nothing returns nothing
     exitwhen bj_forLoopAIndex>bj_forLoopAIndexEnd
     call DisplayTextToPlayer(GetLocalPlayer(),0,0,I2S(bj_forLoopAIndex)+"-"+udg_RH2[bj_forLoopAIndex]+"; "+I2S(bj_forLoopAIndex+1)+"-"+udg_RH2[bj_forLoopAIndex+1]+"; "+I2S(bj_forLoopAIndex+2)+"-"+udg_RH2[bj_forLoopAIndex+2]+"; "+I2S(bj_forLoopAIndex+3)+"-"+udg_RH2[bj_forLoopAIndex+3]+"; "+I2S(bj_forLoopAIndex+4)+"-"+udg_RH2[bj_forLoopAIndex+4]+"; ")
     //udg_RH[bj_forLoopAIndex]    
-    if bj_forLoopAIndex>=137 and bj_forLoopAIndex<190 then
+    if bj_forLoopAIndex>=139 and bj_forLoopAIndex<190 then
     set bj_forLoopAIndex=200
     else
     set bj_forLoopAIndex=bj_forLoopAIndex+5
@@ -232712,7 +232712,7 @@ if cmb!=true and u!=null then
             set udg_RH[i2]=0
         endif
         set i2=i2+1
-        exitwhen i2==137
+        exitwhen i2==139
         endloop
         call SetUnitPosition(u,GetRectCenterX(gg_rct_Resp7),GetRectCenterY(gg_rct_Resp7))
         set p=GetOwningPlayer(u)
