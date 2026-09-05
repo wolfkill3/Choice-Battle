@@ -226091,9 +226091,15 @@ set time=time+0.02
 call SaveReal(HH,id,5,time)
 if time>=10 then
 //call StartUnitAbilityCooldown(caster,'AKR1',30)
+if LoadLightningHandle(HH,id,17)!=null then
 call DestroyLightning(LoadLightningHandle(HH,id,17))
+call SaveLightningHandle(HH,id,17,null)
+endif
 call RemoveUnit(Dummy)
+if LoadEffectHandle(HH,id,21)!=null then
 call DestroyEffect(LoadEffectHandle(HH,id,21))
+call SaveEffectHandle(HH,id,21,null)
+endif
 set soundplay=CreateSound("Sound\\Others\\KimimaroR-hit.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
 ////call KillSoundWhenDone(soundplay)
@@ -226625,8 +226631,14 @@ set time=time+1
 call SaveReal(HH,id,5,time)
 endif
 if time==15 then
+if LoadEffectHandle(HH,id,18)!=null then
 call DestroyEffect(LoadEffectHandle(HH,id,18))
+call SaveEffectHandle(HH,id,18,null)
+endif
+if LoadEffectHandle(HH,id,17)!=null then
 call DestroyEffect(LoadEffectHandle(HH,id,17))
+call SaveEffectHandle(HH,id,17,null)
+endif
 call UnitRemoveAbility(caster,'SiG2')
 call UnitRemoveAbility(caster,'BSiG')
 call PauseTimer(GetExpiredTimer())
@@ -226650,8 +226662,14 @@ local real distMax=LoadReal(HH,id,19)
 set time=time+0.02
 call SaveReal(HH,id,5,time)
 if distance>=distMax then
+if LoadGroupHandle(HH,id,4)!=null then
 call DestroyGroup(LoadGroupHandle(HH,id,4))
+call SaveGroupHandle(HH,id,4,null)
+endif
+if LoadEffectHandle(HH,id,21)!=null then
 call DestroyEffect(LoadEffectHandle(HH,id,21))
+call SaveEffectHandle(HH,id,21,null)
+endif
 call SetUnitAnimationByIndex(Dummy,1)
 call MyRemoveUnit(Dummy,2)
 call PauseTimer(GetExpiredTimer())
@@ -226948,8 +226966,14 @@ call UnitColor(n0,100,100,100,0)
 call SetUnitFlyHeight(n0,0,0)
 call MyRemoveUnit(n0,2)
 set n0=null
+if LoadEffectHandle(HH,id,18)!=null then
 call DestroyEffect(LoadEffectHandle(HH,id,18))
+call SaveEffectHandle(HH,id,18,null)
+endif
+if LoadEffectHandle(HH,id,19)!=null then
 call DestroyEffect(LoadEffectHandle(HH,id,19))
+call SaveEffectHandle(HH,id,19,null)
+endif
 else
 call EffectCreateAndMove(true,"Signum\\[a]fire-Zhendi-guangzhu.mdl",GetRandomReal(0,360),1.5,1.75,1.25,100,80,30,40,0,caster,150,facing)
 call EffectCreateAndMove(true,"Signum\\WindCircleFaster.mdl",facing,1.5,1.5,1.5,100,100,100,0,0,caster,150,facing)
@@ -227098,8 +227122,14 @@ call EffectCreateAndMove(true,"Others\\HakkeStart2.mdl",GetRandomReal(0,360),1.5
 call EffectCreateAndMove(true,"Signum\\WindCircleFaster.mdl",GetRandomReal(0,360),1.5,1.25,1.5,100,100,100,0,0,target,0,facing)
 endif
 if time>=10.3 then
+if LoadEffectHandle(HH,id,18)!=null then
 call DestroyEffect(LoadEffectHandle(HH,id,18))
+call SaveEffectHandle(HH,id,18,null)
+endif
+if LoadEffectHandle(HH,id,19)!=null then
 call DestroyEffect(LoadEffectHandle(HH,id,19))
+call SaveEffectHandle(HH,id,19,null)
+endif
 call UnitRemoveAbility(caster,'SiE3')
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\SignumESelfHit.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
@@ -227136,7 +227166,10 @@ local real time=LoadReal(HH,id,5)
 set time=time+0.02
 call SaveReal(HH,id,5,time)
 if time==10 or GetUnitAbilityLevel(caster,'SiE3')==0 then
+if LoadEffectHandle(HH,id,18)!=null then
 call DestroyEffect(LoadEffectHandle(HH,id,18))
+call SaveEffectHandle(HH,id,18,null)
+endif
 call PauseTimer(GetExpiredTimer())
 call FlushChildHashtable(HH,id)
 call DestroyTimer(GetExpiredTimer())
@@ -227242,7 +227275,10 @@ endif
 call SetUnitInvulnerable(caster,false)
 call RemoveUnit(Dummy)
 call UnitSpeed(caster,1)
+if LoadGroupHandle(HH,id,4)!=null then
 call DestroyGroup(LoadGroupHandle(HH,id,4))
+call SaveGroupHandle(HH,id,4,null)
+endif
 call PauseTimer(GetExpiredTimer())
 call FlushChildHashtable(HH,id)
 call DestroyTimer(GetExpiredTimer())
@@ -227544,7 +227580,10 @@ call EffectCreateAndMove(true,"Others\\HakkeStart2.mdl",GetRandomReal(0,360),2,1
 
 call RemoveUnit(LoadUnitHandle(HH,id,26))
 call RemoveUnit(LoadUnitHandle(HH,id,27))
+if LoadGroupHandle(HH,id,4)!=null then
 call DestroyGroup(LoadGroupHandle(HH,id,4))
+call SaveGroupHandle(HH,id,4,null)
+endif
 call RemoveUnit(Dummy)
 call PauseTimer(GetExpiredTimer())
 call FlushChildHashtable(HH,id)
@@ -228059,7 +228098,10 @@ call EffectCreateAndMove(true,"Signum\\WindNewFaw4.mdl",GetRandomReal(0,360),1.5
 call EffectCreateAndMove(true,"Signum\\wind4.mdl",GetRandomReal(0,360),1.5,1.5,0.5,100,60,40,30,20,caster,0,facing)
 endif
 if time>=3.3 then
+if LoadGroupHandle(HH,id,4)!=null then
 call DestroyGroup(LoadGroupHandle(HH,id,4))
+call SaveGroupHandle(HH,id,4,null)
+endif
 call MyRemoveUnit(LoadUnitHandle(HH,id,20),0.5)
 call MyRemoveUnit(LoadUnitHandle(HH,id,21),0.5)
 call MyRemoveUnit(LoadUnitHandle(HH,id,22),0.5)
@@ -228186,7 +228228,10 @@ local real damage=LoadReal(HH,id,15)
 set time=time+0.02
 call SaveReal(HH,id,5,time)
 if distance>=6000 then
+if LoadGroupHandle(HH,id,4)!=null then
 call DestroyGroup(LoadGroupHandle(HH,id,4))
+call SaveGroupHandle(HH,id,4,null)
+endif
 call SetUnitAnimationByIndex(Dummy,1)
 call MyRemoveUnit(Dummy,2)
 call PauseTimer(GetExpiredTimer())
@@ -229230,7 +229275,10 @@ call UnitSpeed(caster,1)
 call SetUnitPathing(caster,true)
 call PauseUnit(caster,false)
 call SetUnitInvulnerable(caster,false)
+if LoadGroupHandle(HH,id,4)!=null then
 call DestroyGroup(LoadGroupHandle(HH,id,4))
+call SaveGroupHandle(HH,id,4,null)
+endif
 call PauseTimer(GetExpiredTimer())
 call FlushChildHashtable(HH,id)
 call DestroyTimer(GetExpiredTimer())
@@ -229348,7 +229396,10 @@ endif
 if HitCount==0 or time>=30 or target==null then
 call RemoveUnit(Dummy)
 call RemoveUnit(LoadUnitHandle(HH,id,21))
+if LoadGroupHandle(HH,id,4)!=null then
 call DestroyGroup(LoadGroupHandle(HH,id,4))
+call SaveGroupHandle(HH,id,4,null)
+endif
 call PauseTimer(GetExpiredTimer())
 call FlushChildHashtable(HH,id)
 call DestroyTimer(GetExpiredTimer())
