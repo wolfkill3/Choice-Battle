@@ -42229,7 +42229,7 @@ if (not((GetUnitAbilityLevel(u,'A0IH')==0 and GetUnitAbilityLevel(c,'A0IH')==0) 
 //call SetEventDamage(0.05)
 set nb=0
 endif
-if (GetUnitAbilityLevel(u,'A14J')>0  and (nb>200 or CurrentEventAttack)) or (GetUnitAbilityLevel(u,'A24J')>0 and (nb>200 or CurrentEventAttack)) or (GetUnitAbilityLevel(u,'A34J')>0 and (nb>200 or CurrentEventAttack)) or (GetUnitAbilityLevel(u,'JNQ2')>0 and CurrentEventAttack and SquareRootUnit(c,u)<350) or (GetUnitAbilityLevel(u,'JNE2')>0 and (nb>200 or CurrentEventAttack)) or (GetUnitAbilityLevel(u,'ADG2')>0 and (nb>100 or CurrentEventAttack) or (GetUnitAbilityLevel(u,'GrGs')>0 and (nb>200 or CurrentEventAttack))) then
+if (GetUnitAbilityLevel(u,'A14J')>0  and (nb>200 or CurrentEventAttack)) or (GetUnitAbilityLevel(u,'A24J')>0 and (nb>200 or CurrentEventAttack)) or (GetUnitAbilityLevel(u,'A34J')>0 and (nb>200 or CurrentEventAttack)) or (GetUnitAbilityLevel(u,'JNQ2')>0 and CurrentEventAttack and SquareRootUnit(c,u)<350) or (GetUnitAbilityLevel(u,'JNE2')>0 and (nb>200 or CurrentEventAttack)) or (GetUnitAbilityLevel(u,'ADG2')>0 and (nb>100 or CurrentEventAttack)) or (GetUnitAbilityLevel(u,'GrGs')>0 and (nb>200 or CurrentEventAttack)) then
     if GetUnitAbilityLevel(u,'A34J')>0 then
         if GetHeroLevel(u)>=35 and LoadBoolean(HH,GetHandleId(GetOwningPlayer(u)),MUIAvailableHash)==false then
             call SaveInteger(HH,GetHandleId(GetOwningPlayer(u)),MUIDodgeCountHash,LoadInteger(HH,GetHandleId(GetOwningPlayer(u)),MUIDodgeCountHash)+1)
@@ -224945,7 +224945,7 @@ if time<0.5 then
     call PauseUnit(u,true)
     call SetUnitInvulnerable(u,true)
     if time<0.2 and ModuloReal(time,0.06)<0.02 then
-        call SetUnitXY_1(u,x+5*Cos(a),y+5*Sin(a), false)
+        call SetUnitXY_1(u,x+6*Cos(a),y+6*Sin(a), false)
     endif
     if time>0.2 and ModuloReal(time,0.06)<0.02 then
         set EFF=AddSpecialEffect("Minato-37.mdl",x1,y1)
@@ -224953,8 +224953,8 @@ if time<0.5 then
         call SetSpecialEffectZ(EFF,70)
         call SetSpecialEffectVertexColour(EFF,235,225,235,250)
         call DestroyEffect(EFF)
-        call SetUnitXY_1(u,x+3*Cos(a),y+3*Sin(a), false)
-        call SetUnitXY_1(c,x1+5*Cos(a),y1+5*Sin(a), false)
+        call SetUnitXY_1(u,x+2*Cos(a),y+2*Sin(a), false)
+        call SetUnitXY_1(c,x1+4*Cos(a),y1+4*Sin(a), false)
     endif
     if time==0.5 then
         set EFF=AddSpecialEffect("Minato-37.mdl",x1,y1)
@@ -225038,7 +225038,7 @@ else
             call SetSpecialEffectTimeScale(EFF , 3)
             call SetSpecialEffectVertexColour(EFF,255,255,255,120)
             call DestroyEffect(EFF)
-            call SetUnitXY_1(u,x+205*Cos(a),y+205*Sin(a), false)
+            call SetUnitXY_1(u,GetUnitX(c)+205*Cos(a),GetUnitY(c)+205*Sin(a), false)
             call SetUnitFacingInstant(u,a*bj_RADTODEG-180)
             set EFF=AddSpecialEffect("war3mapImported\\BlackBlink.mdx", GetUnitX(u), GetUnitY(u))
             call SetSpecialEffectZ(EFF, GetUnitFlyHeight(u))
