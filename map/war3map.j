@@ -37878,6 +37878,18 @@ exitwhen i>=10
             call DisableUnitAbility2(Hero[i],'AInv',false,true)
         endif
     endif
+if GetUnitTypeId( Hero[i] )=='Rosh' then
+call SaveReal(HH,GetHandleId(GetOwningPlayer( Hero[i] )),StringHash("KimiFormDur"),30)
+
+call SetUnitAnimationByIndex( LoadUnitHandle(HH,GetHandleId(GetOwningPlayer( Hero[i] )),StringHash("Roshi_S1")) ,0)
+
+call SetUnitAnimationByIndex( LoadUnitHandle(HH,GetHandleId(GetOwningPlayer( Hero[i] )),StringHash("Roshi_S2")) ,0)
+
+call SetUnitAnimationByIndex( LoadUnitHandle(HH,GetHandleId(GetOwningPlayer( Hero[i] )),StringHash("Roshi_S3")) ,0)
+
+
+
+endif
     if GetUnitTypeId(Hero[i])=='H04A' then
         set Gon=Hero[i]
     endif
@@ -233426,7 +233438,7 @@ endfunction
 
 
 function AbilitiesForChoiceLearn_Cond takes nothing returns boolean
-return GetLearnedSkill()=='GSE1' or GetLearnedSkill()=='A0BG' or GetLearnedSkill()=='A0K4'
+return GetLearnedSkill()=='RsT1' or GetLearnedSkill()=='RsR1' or GetLearnedSkill()=='RsE1' or GetLearnedSkill()=='GSE1' or GetLearnedSkill()=='A0BG' or GetLearnedSkill()=='A0K4'
 endfunction
 
 function AbilitiesForChoiceLearn_Act takes nothing returns nothing//моя прокачка абилок для всех героев разберешься
@@ -233454,6 +233466,27 @@ set lvl='A0BG'
 if GetLearnedSkill()==lvl then
 call SetUnitAbilityLevel(caster,'A0BF',GetUnitAbilityLevel(caster,lvl))
 endif
+//Roshi5Start
+
+set lvl='RsT1'
+if GetLearnedSkill()==lvl then
+call Roshi_T_Board(caster)
+endif
+
+set lvl='RsR1'
+if GetLearnedSkill()==lvl then
+call SetUnitAbilityLevel(caster,'RsG1',GetUnitAbilityLevel(caster,lvl))
+endif
+
+set lvl='RsE1'
+if GetLearnedSkill()==lvl and GetUnitAbilityLevel(caster,lvl)==1 then
+call DisplayTextToPlayer(skillPlayer,0,0,"Roshi E Learned")
+call Roshi_D_Stack(caster)
+endif
+
+
+
+//Roshi5End
 set caster=null
 set skillPlayer=null
 endfunction
