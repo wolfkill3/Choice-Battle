@@ -159,6 +159,7 @@ constant integer Doom_Debuff           = 1353 // Debuff Doom
 constant integer Root_Debuff           = 1354 // Debuff Root
 constant integer Ensnare_Debuff        = 1355 // Debuff Ensnare
 constant integer Sleep_Debuff          = 1356 // Debuff Sleep
+constant integer VegitoT_Circle        = 1357 // Юнит-круг для Vegito Т
 constant integer TIME_HASH            = StringHash( "Time" )
 constant integer TIMER_ITERATOR_HASH  = StringHash( "TimerIterator" )
 constant integer TIMER_MAX_COUNT_HASH = StringHash( "TimerMaximumCount" )
@@ -75130,6 +75131,85 @@ endfunction
 function FinalKamehamehaCond takes nothing returns boolean
 return GetSpellAbilityId()=='A0IV'
 endfunction
+function FinalKamehamehaCircle2 takes nothing returns nothing
+local timer t=GetExpiredTimer()
+local integer id=GetHandleId(t)
+local unit u=LoadUnitHandle(HH,id,0)
+local integer idu=GetHandleId(u)
+local unit uHero=LoadUnitHandle(HH,id,1)
+local real x=GetUnitX(u)
+local real y=GetUnitY(u)
+local real x1=LoadReal(HH,idu,3)
+local real y1=LoadReal(HH,idu,4)
+local real a=Atan2(y1-y,x1-x)
+if LoadReal(HH,idu,TIME_HASH)<1.5 then
+    if SquareRootPoint(x,y,x1,y1)>85 then
+        call IssueImmediateOrder(u,"stop")
+        call SetUnitXY_1(u,x+80*Cos(a),y+80*Sin(a),false)
+    else
+        call SetUnitXY_1(u,x1,y1,false)
+        call SaveBoolean(HH,idu,2,false)
+        call PauseTimer(t)
+        call DestroyTimer(t)
+        call FlushChildHashtable(HH,id)
+    endif
+else
+    call SaveBoolean(HH,idu,2,false)
+    call PauseTimer(t)
+    call DestroyTimer(t)
+    call FlushChildHashtable(HH,id)
+endif
+set t=null
+set u=null
+set uHero=null
+endfunction
+function FinalKamehamehaCircle takes nothing returns nothing
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+local unit u=GetTriggerUnit()
+local integer idu=GetHandleId(u)
+local unit uHero=LoadUnitHandle(HH,idu,VegitoT_Circle)
+local real time=LoadReal(HH,idu,TIME_HASH)
+if time<1.5 then
+    if LoadBoolean(HH,idu,2)==false then
+        call SaveBoolean(HH,idu,2,true)
+        call SaveUnitHandle(HH,id,0,u)
+        call SaveUnitHandle(HH,id,1,uHero)
+        if GetOrderTargetUnit()==null then
+            call SaveReal(HH,idu,3,GetOrderPointX())
+            call SaveReal(HH,idu,4,GetOrderPointY())
+        else
+            call SaveReal(HH,idu,3,GetUnitX(GetOrderTargetUnit()))
+            call SaveReal(HH,idu,4,GetUnitY(GetOrderTargetUnit()))
+        endif
+        if SquareRootPoint(GetUnitX(uHero), GetUnitY(uHero), LoadReal(HH,idu,3), LoadReal(HH,idu,4))>1100 then
+            call SaveReal(HH,idu,3,GetUnitX(uHero)+1100*Cos(AP(GetUnitX(uHero), GetUnitY(uHero), LoadReal(HH,idu,3), LoadReal(HH,idu,4))))
+            call SaveReal(HH,idu,4,GetUnitY(uHero)+1100*Sin(AP(GetUnitX(uHero), GetUnitY(uHero), LoadReal(HH,idu,3), LoadReal(HH,idu,4))))
+        endif
+        call TimerStart(t,0.05,true,function FinalKamehamehaCircle2)
+    else
+        if GetOrderTargetUnit()==null then
+            call SaveReal(HH,idu,3,GetOrderPointX())
+            call SaveReal(HH,idu,4,GetOrderPointY())
+        else
+            call SaveReal(HH,idu,3,GetUnitX(GetOrderTargetUnit()))
+            call SaveReal(HH,idu,4,GetUnitY(GetOrderTargetUnit()))
+        endif
+        if SquareRootPoint(GetUnitX(uHero), GetUnitY(uHero), LoadReal(HH,idu,3), LoadReal(HH,idu,4))>1100 then
+            call SaveReal(HH,idu,3,GetUnitX(uHero)+1100*Cos(AP(GetUnitX(uHero), GetUnitY(uHero), LoadReal(HH,idu,3), LoadReal(HH,idu,4))))
+            call SaveReal(HH,idu,4,GetUnitY(uHero)+1100*Sin(AP(GetUnitX(uHero), GetUnitY(uHero), LoadReal(HH,idu,3), LoadReal(HH,idu,4))))
+        endif
+        call DestroyTimer(t)
+    endif
+else
+    call SaveReal(HH,idu,3,GetUnitX(u))
+    call SaveReal(HH,idu,4,GetUnitY(u))
+    call DestroyTimer(t)
+endif
+set t=null
+set u=null
+set uHero=null
+endfunction
 function FinalKamehamehaCast3 takes nothing returns nothing
 local timer t2=GetExpiredTimer()
 local integer id1=GetHandleId(t2)
@@ -75153,8 +75233,9 @@ local player p=GetOwningPlayer(u)
 local real x=GetUnitX(u)
 local real y=GetUnitY(u)
 local real z=GetUnitZCustom(u)
-local real x1=LoadReal(h,id,1)
-local real y1=LoadReal(h,id,2)
+local unit l__d=LoadUnitHandle(h,id,2)
+local real x1=GetUnitX(l__d)
+local real y1=GetUnitY(l__d)
 local real dist=SR3D(x,y,z,x1,y1,0)
 local real dist2=SR(x,y,x1,y1)
 local real PitchA=Atan2(dist,z)
@@ -75163,8 +75244,15 @@ local real ig=30*bj_DEGTORAD
 local real a=Atan2(y1-y,x1-x)
 local real dmg=11*GetHeroStr(u,true)
 local real time=LoadReal(h,id,3)
+local trigger tt=LoadTriggerHandle(h,id,11)
 if time<2 then
 call SaveReal(h,id,3,time+0.05)
+call SaveReal(HH,GetHandleId(l__d),TIME_HASH,time+0.05)
+if (GetLocalPlayer()==p or GetPlayerAlliance(p,GetLocalPlayer(),ALLIANCE_SHARED_CONTROL)) and GetUnitSelected(GetLocalPlayer())==u and time<1.5 then
+    call ClearSelection()
+    call SelectUnit(l__d,true)
+endif
+call SetUnitFacing(u, a*bj_RADTODEG)
 if time==0.05 then
 call SetUnitAnimationByIndex(u,36)
 set bjLCE=AddSpecialEffect("[spell]hakkestart.mdl",x,y)
@@ -75177,6 +75265,12 @@ if time==0.15 then
     set soundplay=CreateSound("Sound\\Music\\mp3Music\\VegitoTBG1.mp3",false,false,true,12700,12700,"")
     call StartSound(soundplay)
     call KillSoundWhenDone(soundplay)
+endif
+if time==1.5 then
+    if (GetLocalPlayer()==p or GetPlayerAlliance(p,GetLocalPlayer(),ALLIANCE_SHARED_CONTROL)) and GetUnitSelected(GetLocalPlayer())==l__d then
+        call ClearSelection()
+        call SelectUnit(u,true)
+    endif
 endif
 if time==1.2 then
 call RemoveEffect(AddSpecialEffectTarget("war3mapImported\\Ball2.mdx", u, "hand left"), 2, true, CreateTimer())
@@ -75241,6 +75335,9 @@ call myCustomDamage(u,E,dmg,false,false,null,null,null)
 endif
 endloop
 call SaveUnitHandle(h,id1,0,u)
+call RemoveUnit(l__d)
+call TriggerClearActions(tt)
+call DestroyTrigger(tt)
 call TimerStart(t2,0.7,false,function FinalKamehamehaCast3)
 call DestroyTimer(t)
 call FlushChildHashtable(h,id)
@@ -75248,6 +75345,8 @@ endif
 set u=null
 set p=null
 set t=null
+set l__d=null
+set tt=null
 endfunction
 function FinalKamehamehaCast takes nothing returns nothing
 local unit u=GetTriggerUnit()
@@ -75261,9 +75360,8 @@ local real x1=GetSpellTargetX()
 local real y1=GetSpellTargetY()
 local real dist=SR(x,y,x1,y1)
 local real a=Atan2(y1-y,x1-x)
+local trigger tt=CreateTrigger()
 call SaveUnitHandle(h,id,0,u)
-call SaveReal(h,id,1,x1)
-call SaveReal(h,id,2,y1)
 call SetUnitTimeScale(u,1.85)
 call RemoveEffect(AddSpecialEffectTarget("war3mapImported\\LightningblastVegito.mdx", u, "hand right"), 0.3, true, CreateTimer())
 call RemoveEffect(AddSpecialEffectTarget("war3mapImported\\LightningblastVegito.mdx", u, "hand left"), 0.3, true, CreateTimer())
@@ -75276,6 +75374,17 @@ call SetUnitTimeScale(n,1.8)
 call PauseUnit(u,true)
 call SetUnitInvulnerable(u,true)
 call UnitEnableAutoOrientation(u,false)
+set n = CreateUnit(p, 'd222', x1, y1, 0)
+call SetUnitStringField(n,UNIT_SF_NAME,"Final Kamehameha")
+call UnitScale(n, 3, 5.0, 0.5)
+call SaveUnitHandle(h,id,2,n)
+call SaveUnitHandle(HH,GetHandleId(n),VegitoT_Circle,u)
+call SaveReal(HH,GetHandleId(n),TIME_HASH,0)
+call SaveBoolean(HH,GetHandleId(n),2,false)
+call TriggerRegisterUnitEvent(tt,n,EVENT_UNIT_ISSUED_TARGET_ORDER)
+call TriggerRegisterUnitEvent(tt,n,EVENT_UNIT_ISSUED_POINT_ORDER)
+call TriggerAddAction(tt,function FinalKamehamehaCircle)
+call SaveTriggerHandle(h,id,11,tt)
 if GetRandomInt(0,100) < 50 then
     if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
         set soundplay=CreateSound("Sound\\Music\\mp3Music\\FinalKamehameha2-2.mp3",false,false,true,12700,12700,"")
@@ -75295,6 +75404,7 @@ call TimerStart(t,0.05,true,function FinalKamehamehaCast2)
 set u=null
 set t=null
 set p=null
+set tt=null
 endfunction
 function FinalKamehamehaInit takes nothing returns nothing
 local trigger t=CreateTrigger()
@@ -82211,13 +82321,10 @@ if (GetLocalPlayer()==p or GetPlayerAlliance(p,GetLocalPlayer(),ALLIANCE_SHARED_
     call ClearSelection()
     call SelectUnit(u,true)
 endif
-call FlushChildHashtable(HH,GetHandleId(n))
 call RemoveUnit(l__d)
 call SetUnitFlyHeight(u,0,400)
 call SetUnitInvulnerable(u,false)
 call PauseUnit(u,false)
-call UnitRemoveAbility(n,'A0KM')
-call UnitRemoveAbility(n,'A0KN')
 call TriggerClearActions(tt)
 call DestroyTrigger(tt)
 call PauseTimer(t)
