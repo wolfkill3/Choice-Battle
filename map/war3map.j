@@ -9508,6 +9508,8 @@ set udg_RH[137]='HGrp'//Garp
 //Garp1end
 
 //set udg_RH[127]='HIc3'
+set udg_RH[138]='HSig'//Signum
+set udg_RH2[138]="Signum"
 loop
 exitwhen i>=210
         if udg_RH[i]!=0 then
@@ -27835,6 +27837,7 @@ if cmb!=true then
         call IH('HKar',u,"ReplaceableTextures\\CommandButtons\\BTNKarnaP.blp")
         call IH('HJi1',u,"ReplaceableTextures\\CommandButtons\\BTNJiren.blp")
         call IH('HGoj',u,"ReplaceableTextures\\CommandButtons\\BTNGojoIcon.blp")
+        call IH('HSig',u,"ReplaceableTextures\\CommandButtons\\BTNSignumIcon.blp")
         set hero[id]=u
         if GetUnitTypeId(u)=='H074' then
             set oreha=u
@@ -223510,7 +223513,7 @@ endfunction
 
 ///ини абилок
 function AbilitiesForChoice_Cond takes nothing returns boolean
-    local boolean cond1=GetSpellAbilityId()=='AKQ1' or GetSpellAbilityId()=='AKW1' or GetSpellAbilityId()=='AKE1' or GetSpellAbilityId()=='AKR1' or GetSpellAbilityId()=='AKT1' or GetSpellAbilityId()=='AKF1' or GetSpellAbilityId()=='AKG1' or GetSpellAbilityId()=='GrQ1' or GetSpellAbilityId()=='GrW1' or GetSpellAbilityId()=='GrE1' or GetSpellAbilityId()=='GrR1' or GetSpellAbilityId()=='GrT1' or GetSpellAbilityId()=='GrF1' or GetSpellAbilityId()=='GrG2' or GetSpellAbilityId()=='UKD1' or GetSpellAbilityId()=='BuuG' or GetSpellAbilityId()=='GSQ1' or GetSpellAbilityId()=='GSQ2' or GetSpellAbilityId()=='GSW1' or GetSpellAbilityId()=='GSE1' or GetSpellAbilityId()=='GSE2' or GetSpellAbilityId()=='GSF1' or GetSpellAbilityId()=='GSF2' or GetSpellAbilityId()=='GSG1' or GetSpellAbilityId()=='GSR1' or GetSpellAbilityId()=='GST1' or GetSpellAbilityId()=='GST2' or GetSpellAbilityId()=='GST3' or GetSpellAbilityId()=='SHG1' or GetSpellAbilityId()=='CelF' or GetSpellAbilityId()=='CelG' or GetSpellAbilityId()=='CelT'
+    local boolean cond1=GetSpellAbilityId()=='SiD1' or GetSpellAbilityId()=='AKQ1' or GetSpellAbilityId()=='AKW1' or GetSpellAbilityId()=='AKE1' or GetSpellAbilityId()=='AKR1' or GetSpellAbilityId()=='AKT1' or GetSpellAbilityId()=='AKF1' or GetSpellAbilityId()=='AKG1' or GetSpellAbilityId()=='GrQ1' or GetSpellAbilityId()=='GrW1' or GetSpellAbilityId()=='GrE1' or GetSpellAbilityId()=='GrR1' or GetSpellAbilityId()=='GrT1' or GetSpellAbilityId()=='GrF1' or GetSpellAbilityId()=='GrG2' or GetSpellAbilityId()=='UKD1' or GetSpellAbilityId()=='BuuG' or GetSpellAbilityId()=='GSQ1' or GetSpellAbilityId()=='GSQ2' or GetSpellAbilityId()=='GSW1' or GetSpellAbilityId()=='GSE1' or GetSpellAbilityId()=='GSE2' or GetSpellAbilityId()=='GSF1' or GetSpellAbilityId()=='GSF2' or GetSpellAbilityId()=='GSG1' or GetSpellAbilityId()=='GSR1' or GetSpellAbilityId()=='GST1' or GetSpellAbilityId()=='GST2' or GetSpellAbilityId()=='GST3' or GetSpellAbilityId()=='SHG1' or GetSpellAbilityId()=='CelF' or GetSpellAbilityId()=='CelG' or GetSpellAbilityId()=='CelT'
     if cond1 then
         return true
     else
@@ -226457,6 +226460,2324 @@ call TimerStart(t,0.02,true,function KimimaroT_Act2)
 set t=null
 endfunction
 //Kimimaroend
+//Signumstart — перенесено из Choice Random 4.5
+function GutsPingCD takes nothing returns nothing
+local integer id=GetHandleId(GetExpiredTimer())
+local unit caster=LoadUnitHandle(HH,id,1)
+
+
+if(GetLocalPlayer()==GetOwningPlayer(caster))then
+call DisplayTextToPlayer(GetLocalPlayer(),0,0,"Ping: Ready")
+endif
+
+//call SaveBoolean(HH,GetHandleId(caster),StringHash("SignumCD"),false)
+call PauseTimer(GetExpiredTimer())
+call FlushChildHashtable(HH,id)
+call DestroyTimer(GetExpiredTimer())
+
+set caster=null
+endfunction
+function GutsPingDummyAct takes nothing returns nothing
+local timer t=GetExpiredTimer()
+local integer id=GetHandleId(t)
+local real time=LoadReal(HH,id,5)
+set time=time+0.02
+call SaveReal(HH,id,5,time)
+call MoveUnit(LoadUnitHandle(HH,id,2),LoadUnitHandle(HH,id,20),0,0)
+
+if time>=7 then
+call RemoveUnit(LoadUnitHandle(HH,id,20))
+call PauseTimer(t)
+call DestroyTimer(t)
+call FlushChildHashtable(HH,id)
+endif
+
+set t=null
+endfunction
+function Unit_Check_Have_Control takes unit u returns boolean
+
+return LoadBoolean(HH, GetHandleId(u), StringHash("StaffofDarkness"))==false and GetUnitAbilityLevel( u ,'A1VJ')==0 and  GetUnitAbilityLevel( u ,'B01L')==0  and GetUnitAbilityLevel( u ,'Bsl1')==0 and GetUnitAbilityLevel( u ,'CBC1')==0 and GetUnitAbilityLevel( u ,'CBC2')==0 and GetUnitAbilityLevel( u ,'cbc3')==0 and GetUnitAbilityLevel( u ,'cbc4')==0 and GetUnitAbilityLevel( u ,'cbc5')==0 and GetUnitAbilityLevel( u ,'cbc6')==0
+
+endfunction
+function  GutsPingDummy takes unit caster1,unit target1 returns nothing
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+//call SaveUnitHandle(HH,id,1,caster1)
+call SaveUnitHandle(HH,id,2,target1)
+set n=CreateUnit(GetOwningPlayer(caster1),'e300',GetUnitX(target1),GetUnitY(target1),0)
+call SaveUnitHandle(HH,id,20,n)
+set n=null
+call TimerStart(t,0.02,true,function GutsPingDummyAct)
+set caster1=null
+set target1=null
+set t=null
+endfunction
+function SignumGAct takes nothing returns nothing
+local integer id=GetHandleId(GetExpiredTimer())
+local unit caster=LoadUnitHandle(HH,id,1)
+local real facing=LoadReal(HH,id,3)
+local real time=LoadReal(HH,id,5)
+if IsUnitPaused(caster)==false and  GetUnitAbilityLevel(caster,'Avul')==0 or  udg_B==false or DU2==false then
+set time=time+1
+call SaveReal(HH,id,5,time)
+endif
+if time==15 then
+call DestroyEffect(LoadEffectHandle(HH,id,18))
+call DestroyEffect(LoadEffectHandle(HH,id,17))
+call UnitRemoveAbility(caster,'SiG2')
+call UnitRemoveAbility(caster,'BSiG')
+call PauseTimer(GetExpiredTimer())
+call FlushChildHashtable(HH,id)
+call DestroyTimer(GetExpiredTimer())
+endif
+set caster=null
+endfunction
+function SignumQAct takes nothing returns nothing
+local integer id=GetHandleId(GetExpiredTimer())
+local unit caster=LoadUnitHandle(HH,id,1)
+local unit Dummy=LoadUnitHandle(HH,id,20)
+local real facing=LoadReal(HH,id,3)
+local real time=LoadReal(HH,id,5)
+local real time1=LoadReal(HH,id,6)
+local real distance=LoadReal(HH,id,8)
+local real x1=GetUnitX(Dummy)
+local real y1=GetUnitY(Dummy)
+local real damage=LoadReal(HH,id,15)
+local real distMax=LoadReal(HH,id,19)
+set time=time+0.02
+call SaveReal(HH,id,5,time)
+if distance>=distMax then
+call DestroyGroup(LoadGroupHandle(HH,id,4))
+call DestroyEffect(LoadEffectHandle(HH,id,21))
+call SetUnitAnimationByIndex(Dummy,1)
+call MyRemoveUnit(Dummy,2)
+call PauseTimer(GetExpiredTimer())
+call FlushChildHashtable(HH,id)
+call DestroyTimer(GetExpiredTimer())
+else
+if time==0.02 then
+set soundplay=CreateSound("Sound\\Music\\mp3Music\\SignumQ.mp3",false,false,true,12700,12700,"")
+call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
+set soundplay=CreateSound("Sound\\Music\\mp3Music\\SignumQ2.mp3",false,false,true,12700,12700,"")
+call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
+set n0=CreateUnit(GetOwningPlayer(caster),'e200',GetUnitX(caster),GetUnitY(caster),facing)
+call MoveUnit(n0,n0,200,facing)
+call SetUnitAnimationByIndex(n0,0)
+call UnitSize(n0,0.5,1,1)
+call UnitSpeed(n0,1)
+call UnitColor(n0,100,100,100,0)
+call SetUnitFlyHeight(n0,200,0)
+call SaveUnitHandle(HH,id,20,n0)
+call SaveGroupHandle(HH,id,4,CreateGroup())
+set n0=CreateUnit(GetOwningPlayer(caster),'e200',GetUnitX(caster),GetUnitY(caster),facing)
+call AddSpecialEffectTarget("Signum\\[A]FireEruption2.mdl",n0,"origin")
+call UnitSize(n0,1,1,1)
+call UnitSpeed(n0,1)
+call UnitColor(n0,100,100,100,0)
+call SetUnitFlyHeight(n0,0,0)
+call MyRemoveUnit(n0,1)
+set n0=null
+call EffectCreateAndMove(true,"Signum\\[A]az_axe_ef1.mdl",facing,1.5,0.8,0.5,100,60,40,0,0,caster,0,facing)
+call EffectCreateAndMove(true,"Signum\\File0000 (84).mdl",facing,1.5,1,1,100,100,100,0,100,caster,100,facing)
+call EffectCreateAndMove(true,"Others\\HakkeStart2.mdl",facing,1.5,1,1,100,100,100,60,0,caster,0,facing)
+call UnitSpeed(caster,3)
+call SetUnitAnimationByIndex(caster,2)
+endif
+if time==0.2 then
+call SetUnitModel(Dummy,"Signum\\File0000 (83).mdl")
+call SetUnitModel(LoadUnitHandle(HH,id,21),"Signum\\File0000 (83).mdl")
+call PauseUnit(caster,false)
+call UnitSpeed(caster,1)
+endif
+if time>0.2 then
+set time1=time1+0.02
+if time1==0.04 or time==0.22 then
+set time1=0
+call EffectCreateAndMove(true,"Signum\\FSAeff (132).mdl",facing,1,0.5+distance*0.0015,2,100,100,100,0,0,Dummy,200,facing)
+endif
+call SaveReal(HH,id,6,time1)
+call MoveUnit(Dummy,Dummy,45,facing)
+call UnitSize(Dummy,0.5+distance*0.00075,1,1)
+call DamageAoeOneTime(caster,GetUnitX(Dummy),GetUnitY(Dummy),230+distance*0.075,damage,LoadGroupHandle(HH,id,4))
+call SaveReal(HH,id,8,distance+45)
+endif
+endif
+set caster=null
+set Dummy=null
+endfunction
+function SignumWAct takes nothing returns nothing
+local integer id=GetHandleId(GetExpiredTimer())
+local unit caster=LoadUnitHandle(HH,id,1)
+local unit target=LoadUnitHandle(HH,id,2)
+local real time=LoadReal(HH,id,5)
+local real damage=LoadReal(HH,id,15)
+local real x0=GetUnitX(caster)
+local real y0=GetUnitY(caster)
+local real x1=GetUnitX(target)
+local real y1=GetUnitY(target)
+local real facing=LoadReal(HH,id,3)
+local boolean SignumGBuff=LoadBoolean(HH,id,16)
+set time=time+0.02
+call SaveReal(HH,id,5,time)
+if time>=2 then
+if SignumGBuff==true then
+call EffectCreateAndMove(true,"Signum\\WindCircleFaster.mdl",facing,1.5,2,1.5,100,100,100,0,0,target,0,facing)
+call EffectCreateAndMove(true,"Signum\\az_slb.mdl",facing,1.5,2,1,100,100,100,0,0,target,0,facing)
+call EffectCreateAndMove(true,"Others\\HakkeStart2.mdl",GetRandomReal(0,360),1.5,1.5,1.5,100,100,10,60,0,target,0,facing)
+call EffectCreateAndMove(true,"Signum\\hit-juhuang-lizi.mdl",facing,1.5,2,0.75,100,100,100,0,0,target,0,facing)
+call EffectCreateAndMove(true,"Signum\\ChuShou_by_wood_effect_flame_explosion_2.mdl",facing,1.5,2,1.25,100,100,100,0,0,target,0,facing)
+call GroupClear(G)
+call GroupEnumUnitsInRange(G,GetUnitX(target),GetUnitY(target),400,Base)
+loop
+set n0=FirstOfGroup(G)
+exitwhen n0==null
+if n0!=target and Condition_Base(GetOwningPlayer(caster),n0) and GetUnitAbilityLevel(n0,'Avul')==0 then
+
+
+
+call myCustomDamage(caster,n0,damage*1.3,false,false,null,null,null)
+
+
+
+
+
+
+call SetControlToUnit(caster, n0, 1.5, "stun")
+
+
+
+endif
+call GroupRemoveUnit(G,n0)
+endloop
+call GroupClear(G)
+else
+call EffectCreateAndMove(true,"Signum\\WindCircleFaster.mdl",facing,1.5,1.25,1.5,100,100,100,0,0,target,0,facing)
+call EffectCreateAndMove(true,"Signum\\az_slb.mdl",facing,1.5,1.5,1,100,100,100,0,0,target,0,facing)
+call EffectCreateAndMove(true,"Others\\HakkeStart2.mdl",GetRandomReal(0,360),1.5,1,1.5,100,100,10,60,0,target,0,facing)
+endif
+set soundplay=CreateSound("Sound\\Music\\mp3Music\\SignumW3.mp3",false,false,true,12700,12700,"")
+call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
+call PauseTimer(GetExpiredTimer())
+call FlushChildHashtable(HH,id)
+call DestroyTimer(GetExpiredTimer())
+else
+if time<1.6 then
+call PauseUnit(caster,true)
+call SetUnitInvulnerable(caster,true)
+call SetUnitPathing(caster,false)
+if time>0.2 then
+//Проверка на паузу
+
+call PauseUnit(target,true)
+call SaveBoolean(HH,GetHandleId( target ),TARGET_ABILITY,true)
+
+//Проверка на паузу
+call SetUnitInvulnerable(target,true)
+call SetUnitPathing(target,false)
+endif
+if time<1.4 then
+call SetUnitFacing(caster,facing)
+endif
+endif
+if time==0.02 then
+call EffectCreateAndMove(true,"Signum\\[A]Explodeorange.mdl",GetRandomReal(0,360),1,1,2,100,100,100,0,100,caster,0,facing)
+call EffectCreateAndMove(true,"Signum\\Tsubaki-48.mdl",GetRandomReal(0,360),1,2.5,0.75,100,100,100,0,100,caster,0,facing)
+call UnitSpeed(caster,1)
+call SetUnitAnimationByIndex(caster,1)
+endif
+if time==0.02 or time==0.8 or time==1.5 or time==1.62 then
+call EffectCreateAndMove(true,"Others\\HakkeStart2.mdl",GetRandomReal(0,360),1.5,1.2,1.5,100,100,10,60,0,caster,0,facing)
+call EffectCreateAndMove(true,"Signum\\wind4.mdl",GetRandomReal(0,360),1.5,1,1,100,60,10,0,0,caster,0,facing)
+endif
+if time==0.2 or time==0.9 then
+call EffectCreateAndMove(true,"Signum\\GawainSlash0.mdl",facing,1.5,1.25,1.25,100,100,100,0,0,target,-100,facing)
+call EffectCreateAndMove(true,"Signum\\hit-juhuang-lizi.mdl",facing,1.5,1.55,0.75,100,100,100,0,100,target,50,facing)
+if SignumGBuff==true then
+call EffectCreateAndMove(true,"Signum\\FantasyBattle (1650).mdl",facing,1.5,1.85,0.75,100,100,100,0,100,target,50,facing)
+endif
+set n0=CreateUnit(GetOwningPlayer(caster),'e200',GetUnitX(target),GetUnitY(target),facing)
+call AddSpecialEffectTarget("Signum\\[A]FireEruption2.mdl",n0,"origin")
+call UnitSize(n0,1.35,1,1)
+call UnitSpeed(n0,0.5)
+call UnitColor(n0,100,100,100,0)
+call SetUnitFlyHeight(n0,0,0)
+call MyRemoveUnit(n0,2)
+set n0=null
+endif
+if time==0.2 or time==0.8 then
+call EffectCreateAndMove(true,"Signum\\CF2.mdl",facing,1,0.4,0.5,100,60,10,20,100,caster,50,facing)
+endif
+if time==1.6 then
+call EffectCreateAndMove(true,"Signum\\GawainSlash1.mdl",facing+180,1,1.75,1.25,100,100,100,0,150,target,200,facing)
+call EffectCreateAndMove(true,"Signum\\hit-juhuang-lizi.mdl",facing,1.5,1.55,0.75,100,100,100,0,-100,target,-150,facing)
+if SignumGBuff==true then
+call EffectCreateAndMove(true,"Signum\\FantasyBattle (1650).mdl",facing,1.5,2.5,0.75,100,100,100,0,-50,target,-150,facing)
+endif
+endif
+if time==0.2 then
+call UnitAddAbility(caster,'Amrf')
+call UnitRemoveAbility(caster,'Amrf')
+call UnitAddAbility(target,'Amrf')
+call UnitRemoveAbility(target,'Amrf')
+call UnitSpeed(caster,1.5)
+call SetUnitAnimationByIndex(caster,3)
+call MoveUnit(target,caster,-150,facing)
+endif
+if time>0.3 and time<1 then
+call MoveUnit(target,target,15,facing)
+endif
+if time>0.3 and time<0.65 then
+call SetUnitFlyHeight(target,GetUnitFlyHeight(target)+12,0)
+endif
+if time>=0.65 and time<=1 then
+call SetUnitFlyHeight(target,GetUnitFlyHeight(target)-12,0)
+endif
+if time>1 and time<1.6 then
+call MoveUnit(target,target,20,facing)
+call SetUnitFlyHeight(target,GetUnitFlyHeight(target)+20,0)
+endif
+if time>0.8 and time<1 then
+call MoveUnit(caster,caster,52,facing)
+endif
+if time==0.9 then
+call UnitSpeed(caster,1.5)
+call SetUnitAnimationByIndex(caster,2)
+endif
+if time==1.4 then
+call SetUnitFacing(caster,facing+180)
+endif
+if time==0.3 or time==1 or time==1.6 then
+call SetUnitAnimation(target,"death")
+call UnitSpeed(target,0.5)
+endif
+if time==1.5 then
+set soundplay=CreateSound("Sound\\Music\\mp3Music\\SignumW2.mp3",false,false,true,12700,12700,"")
+call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
+call UnitSpeed(caster,1.5)
+call SetUnitAnimationByIndex(caster,12)
+endif
+if time==1.6 then
+call SetUnitFlyHeight(caster,GetUnitFlyHeight(target)+100,0)
+call MoveUnit(target,caster,150,facing)
+endif
+if time>1.6 then
+call SetUnitFlyHeight(target,GetUnitFlyHeight(target)-30,0)
+call MoveUnit(target,target,-20,facing)
+endif
+if time==1.8 then
+call SetUnitFlyHeight(caster,0,600)
+endif
+if time==1.6 then
+call UnitSpeed(target,1)
+call UnitSpeed(caster,1)
+call PauseUnit(caster,false)
+call SetUnitInvulnerable(caster,false)
+call SetUnitPathing(caster,true)
+//Проверка на паузу
+
+call PauseUnit(target,false)
+call SaveBoolean(HH,GetHandleId( target ),TARGET_ABILITY,false)
+
+//Проверка на паузу
+call SetUnitInvulnerable(target,false)
+call SetUnitPathing(target,true)
+if SignumGBuff==true then
+
+
+
+call myCustomDamage(caster,target,damage*1.3,false,false,null,null,null)
+call SetControlToUnit(caster, target, 2, "stun")
+
+
+
+else
+
+
+
+call myCustomDamage(caster,target,damage,false,false,null,null,null)
+call SetControlToUnit(caster, target, 1.5, "stun")
+
+
+endif
+endif
+if(time==1.64 or time==1.7 or time==1.76 or time==1.82 or time==1.88 or time==1.94)and SignumGBuff==true then
+call EffectCreateAndMove(true,"Signum\\FSAeff (132).mdl",facing,1,0.5,2,100,100,100,0,100,target,50,facing)
+endif
+endif
+set caster=null
+set target=null
+endfunction
+function SignumEAct takes nothing returns nothing
+local integer id=GetHandleId(GetExpiredTimer())
+local unit caster=LoadUnitHandle(HH,id,1)
+local real facing=LoadReal(HH,id,3)
+local real time=LoadReal(HH,id,5)
+local real damage=LoadReal(HH,id,15)
+local real dist=LoadReal(HH,id,8)
+local real dist2=LoadReal(HH,id,9)
+local real x0=GetUnitX(caster)
+local real y0=GetUnitY(caster)
+local boolean SignumGBuff=LoadBoolean(HH,id,16)
+set time=time+0.02
+call SaveReal(HH,id,5,time)
+call PauseUnit(caster,true)
+call SetUnitInvulnerable(caster,true)
+call SetUnitPathing(caster,false)
+if time>=10.04 then
+call SetUnitFlyHeight(caster,0,0)
+if SignumGBuff==true then
+call EffectCreateAndMove(true,"Signum\\[a]fire-Zhendi-guangzhu.mdl",GetRandomReal(0,360),1.5,2.5,1.25,100,80,30,40,0,caster,150,facing)
+call EffectCreateAndMove(true,"Signum\\WindCircleFaster.mdl",facing,1.5,2.5,1.5,100,100,100,0,0,caster,150,facing)
+call EffectCreateAndMove(true,"Signum\\az_slb.mdl",GetRandomReal(0,360),1.5,2.5,1.25,100,100,100,40,0,caster,150,facing)
+call EffectCreateAndMove(true,"Signum\\hit-juhuang-lizi.mdl",facing,1.5,2.5,0.5,100,100,100,0,150,caster,150,facing)
+call EffectCreateAndMove(true,"Others\\HakkeStart2.mdl",GetRandomReal(0,360),1.5,1.5,1.5,100,100,10,60,0,caster,150,facing)
+call EffectCreateAndMove(true,"Signum\\FireEffectOrange.mdl",facing,1.5,1.5,1.5,100,100,100,0,0,caster,150,facing)
+set n0=CreateUnit(GetOwningPlayer(caster),'e200',GetUnitX(caster),GetUnitY(caster),facing)
+call AddSpecialEffectTarget("Signum\\[A]FireEruption2.mdl",n0,"origin")
+call MoveUnit(n0,n0,100,facing)
+call UnitSize(n0,2.5,1,1)
+call UnitSpeed(n0,1.5)
+call UnitColor(n0,100,100,100,0)
+call SetUnitFlyHeight(n0,0,0)
+call MyRemoveUnit(n0,2)
+set n0=null
+call DestroyEffect(LoadEffectHandle(HH,id,18))
+call DestroyEffect(LoadEffectHandle(HH,id,19))
+else
+call EffectCreateAndMove(true,"Signum\\[a]fire-Zhendi-guangzhu.mdl",GetRandomReal(0,360),1.5,1.75,1.25,100,80,30,40,0,caster,150,facing)
+call EffectCreateAndMove(true,"Signum\\WindCircleFaster.mdl",facing,1.5,1.5,1.5,100,100,100,0,0,caster,150,facing)
+call EffectCreateAndMove(true,"Signum\\az_slb.mdl",GetRandomReal(0,360),1.5,1.5,1.25,100,100,100,40,0,caster,150,facing)
+call EffectCreateAndMove(true,"Signum\\hit-juhuang-lizi.mdl",facing,1.5,2.5,0.5,100,100,100,0,150,caster,150,facing)
+call EffectCreateAndMove(true,"Others\\HakkeStart2.mdl",GetRandomReal(0,360),1.5,1.25,1.5,100,100,10,60,0,caster,150,facing)
+set n0=CreateUnit(GetOwningPlayer(caster),'e200',GetUnitX(caster),GetUnitY(caster),facing)
+call AddSpecialEffectTarget("Signum\\[A]FireEruption2.mdl",n0,"origin")
+call MoveUnit(n0,n0,100,facing)
+call UnitSize(n0,2,1,1)
+call UnitSpeed(n0,1.5)
+call UnitColor(n0,100,100,100,0)
+call SetUnitFlyHeight(n0,0,0)
+call MyRemoveUnit(n0,2)
+set n0=null
+endif
+call SetUnitPathing(caster,true)
+set soundplay=CreateSound("Sound\\Music\\mp3Music\\SignumEexp.mp3",false,false,true,12700,12700,"")
+call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
+call UnitSpeed(caster,1)
+call PauseUnit(caster,false)
+call SetUnitInvulnerable(caster,false)
+call SetUnitPathing(caster,true)
+set x0=PolX(GetUnitX(caster),150,facing)
+set y0=PolY(GetUnitY(caster),150,facing)
+if SignumGBuff==true then
+call DamageAoeOneTime0(caster,x0,y0,600,damage)
+else
+call DamageAoeOneTime0(caster,x0,y0,400,damage)
+endif
+call StunAoeOneTime(caster,x0,y0,400,1.5)
+call PauseTimer(GetExpiredTimer())
+call FlushChildHashtable(HH,id)
+call DestroyTimer(GetExpiredTimer())
+else
+if time==0.02 then
+call EffectCreateAndMove(true,"Signum\\hit-juhuang-lizi.mdl",facing,1.5,1.25,0.5,100,100,100,0,150,caster,150,facing)
+call EffectCreateAndMove(true,"Signum\\WindCircleFaster.mdl",GetRandomReal(0,360),1.5,1,1.5,100,100,100,20,0,caster,0,facing)
+endif
+if time==0.06 then
+set n0=CreateUnit(GetOwningPlayer(caster),'e200',GetUnitX(caster),GetUnitY(caster),facing)
+call SetUnitModel(n0,"Signum\\GawainSlash1.mdl")
+call MyRemoveUnit(n0,1.5)
+call SetUnitAnimationByIndex(n0,0)
+call UnitSize(n0,1.5,1,1)
+call UnitSpeed(n0,2.5-dist*0.002)
+call SetUnitFlyHeight(n0,0,0)
+call SaveUnitHandle(HH,id,20,n0)
+endif
+if time==0.02 and SignumGBuff==true then
+call SaveEffectHandle(HH,id,18,AddSpecialEffectTarget("Signum\\[A]AceFireShockRun.mdl",caster,"chest"))
+call SaveEffectHandle(HH,id,19,AddSpecialEffectTarget("Signum\\[A]AceFireShockRun.mdl",caster,"origin"))
+endif
+if time>0.06 and time<10 then
+call MoveUnit(caster,caster,35,facing)
+call SaveReal(HH,id,9,dist2-35)
+call SetUnitFlyHeight(caster,ParabolaZ(600,dist,dist2),0)
+call SetUnitFlyHeight(LoadUnitHandle(HH,id,20),GetUnitFlyHeight(caster),0)
+call MoveUnit(caster,LoadUnitHandle(HH,id,20),0,facing)
+if dist2<=50.00 or time==5 or IsTerrainPathable(PolX(GetUnitX(caster),60,facing),PolY(GetUnitY(caster),60,facing),PATHING_TYPE_FLYABILITY)==true then
+call SaveReal(HH,id,5,10)
+endif
+endif
+endif
+set caster=null
+endfunction
+function SignumESelfTargetAct takes nothing returns nothing
+local integer id=GetHandleId(GetExpiredTimer())
+local unit caster=LoadUnitHandle(HH,id,1)
+local unit target=LoadUnitHandle(HH,id,2)
+local real time=LoadReal(HH,id,5)
+local real time1=LoadReal(HH,id,6)
+local real damage=LoadReal(HH,id,15)
+local real x0=GetUnitX(caster)
+local real y0=GetUnitY(caster)
+local real x1=GetUnitX(target)
+local real y1=GetUnitY(target)
+local real facing=LoadReal(HH,id,3)
+set time=time+0.02
+call SaveReal(HH,id,5,time)
+set time1=time1+0.02
+if time==0.02 then
+call SaveEffectHandle(HH,id,18,AddSpecialEffectTarget("Signum\\[A]AceFireShockRun.mdl",caster,"chest"))
+call SaveEffectHandle(HH,id,19,AddSpecialEffectTarget("Signum\\[A]AceFireShockRun.mdl",caster,"origin"))
+endif
+if time1==0.2 or time==0.02 then
+call EffectCreateAndMove(true,"Signum\\File0000 (644).mdl",facing,1.5,0.75,1,100,100,100,0,0,caster,0,facing)
+call EffectCreateAndMove(true,"Signum\\CF2.mdl",facing,1,0.4,0.5,100,100,100,0,50,caster,0,facing)
+set time1=0
+endif
+call SaveReal(HH,id,6,time1)
+if time<10.3 then
+call PauseUnit(caster,true)
+call SetUnitInvulnerable(caster,true)
+call SetUnitPathing(caster,false)
+if time<10 then
+call SaveReal(HH,id,3,Angle2(x0,y0,x1,y1))
+call MoveUnit(caster,caster,30+SR(x0,y0,x1,y1)*0.01,facing)
+endif
+if SR(x0,y0,x1,y1)<250 and time<10 then
+call SaveReal(HH,id,5,10)
+endif
+endif
+if time==10.02 then
+call SaveReal(HH,id,8,SR(x0,y0,x1,y1))
+call SetUnitAnimationByIndex(caster,2)
+call UnitSpeed(caster,2)
+endif
+if time>10 then
+if time<10.2 and SR(x0,y0,x1,y1)<200 then
+call MoveUnit(caster,caster,10,facing)
+else
+call MoveUnit(target,caster,-200,facing)
+endif
+//Проверка на паузу
+
+call PauseUnit(target,true)
+call SaveBoolean(HH,GetHandleId( target ),TARGET_ABILITY,true)
+
+//Проверка на паузу
+call SetUnitPathing(target,false)
+endif
+if time==10.1 then
+call EffectCreateAndMove(true,"Signum\\File0000 (84).mdl",facing+30,1.5,2.5,1,100,100,100,0,100,target,-200,facing)
+call EffectCreateAndMove(true,"Signum\\File0000 (84).mdl",facing+30,1.5,2,1,100,100,100,0,100,target,-200,facing)
+call EffectCreateAndMove(true,"Signum\\File0000 (84).mdl",facing+30,1.5,1.5,1,100,100,100,0,100,target,-200,facing)
+call EffectCreateAndMove(true,"Signum\\File0000 (84).mdl",facing+30,1.5,1,1,100,100,100,0,100,target,-200,facing)
+endif
+if time==10.16 then
+set n0=CreateUnit(GetOwningPlayer(caster),'e200',GetUnitX(target),GetUnitY(target),facing)
+call AddSpecialEffectTarget("Signum\\[A]FireEruption2.mdl",n0,"origin")
+call MoveUnit(n0,n0,100,facing)
+call UnitSize(n0,1.5,1,1)
+call UnitSpeed(n0,1.5)
+call UnitColor(n0,100,100,100,0)
+call SetUnitFlyHeight(n0,0,0)
+call MyRemoveUnit(n0,2)
+set n0=null
+call EffectCreateAndMove(true,"Others\\HakkeStart2.mdl",GetRandomReal(0,360),1.5,1.5,1.5,100,100,100,60,0,target,0,facing)
+call EffectCreateAndMove(true,"Signum\\qqqqqr.mdl",GetRandomReal(0,360),1.5,2,0.5,100,100,100,0,100,target,0,facing)
+call EffectCreateAndMoveAn(true,"Signum\\az-zidan.mdl",facing,1.5,2,0.5,100,100,100,0,100,target,0,facing,1)
+call EffectCreateAndMove(true,"Signum\\Tsubaki-48.mdl",GetRandomReal(0,360),1,3,0.5,100,100,100,0,100,target,0,facing)
+call EffectCreateAndMove(true,"Signum\\hit-juhuang-lizi.mdl",GetRandomReal(0,360),1.5,1.5,0.75,100,100,100,0,100,target,0,facing)
+call EffectCreateAndMove(true,"Others\\HakkeStart2.mdl",GetRandomReal(0,360),1.5,1.25,1.5,100,100,100,60,0,target,0,facing)
+call EffectCreateAndMove(true,"Signum\\WindCircleFaster.mdl",GetRandomReal(0,360),1.5,1.25,1.5,100,100,100,0,0,target,0,facing)
+endif
+if time>=10.3 then
+call DestroyEffect(LoadEffectHandle(HH,id,18))
+call DestroyEffect(LoadEffectHandle(HH,id,19))
+call UnitRemoveAbility(caster,'SiE3')
+set soundplay=CreateSound("Sound\\Music\\mp3Music\\SignumESelfHit.mp3",false,false,true,12700,12700,"")
+call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
+call UnitSpeed(caster,1)
+call PauseUnit(caster,false)
+call SetUnitInvulnerable(caster,false)
+call SetUnitPathing(caster,true)
+//Проверка на паузу
+
+call PauseUnit(target,false)
+call SaveBoolean(HH,GetHandleId( target ),TARGET_ABILITY,false)
+
+//Проверка на паузу
+call SetUnitPathing(target,true)
+
+
+
+call myCustomDamage(caster,target,damage,false,false,null,null,null)
+call SetControlToUnit(caster, target, 2, "stun")
+
+call PauseTimer(GetExpiredTimer())
+call FlushChildHashtable(HH,id)
+call DestroyTimer(GetExpiredTimer())
+endif
+set caster=null
+set target=null
+endfunction
+function SignumESelf takes nothing returns nothing
+local integer id=GetHandleId(GetExpiredTimer())
+local unit caster=LoadUnitHandle(HH,id,1)
+local real facing=LoadReal(HH,id,3)
+local real time=LoadReal(HH,id,5)
+set time=time+0.02
+call SaveReal(HH,id,5,time)
+if time==10 or GetUnitAbilityLevel(caster,'SiE3')==0 then
+call DestroyEffect(LoadEffectHandle(HH,id,18))
+call PauseTimer(GetExpiredTimer())
+call FlushChildHashtable(HH,id)
+call DestroyTimer(GetExpiredTimer())
+else
+if time==0.02 then
+call SaveEffectHandle(HH,id,18,AddSpecialEffectTarget("Signum\\[Signum]AceFireShockRun.mdl",caster,"hand right"))
+call EffectCreateAndMove(true,"Signum\\Tsubaki-48.mdl",GetRandomReal(0,360),1,3,0.75,100,100,100,0,100,caster,0,facing)
+call EffectCreateAndMove(true,"Signum\\hit-juhuang-lizi.mdl",GetRandomReal(0,360),1.5,1.55,0.75,100,100,100,0,100,caster,50,facing)
+call EffectCreateAndMove(true,"Signum\\[A]Flame Burst2.mdl",GetRandomReal(0,360),1.5,1.5,1,100,100,100,0,0,caster,0,facing)
+call EffectCreateAndMove(true,"Others\\HakkeStart2.mdl",GetRandomReal(0,360),1.5,1.25,1.5,100,100,100,60,0,caster,0,facing)
+call EffectCreateAndMove(true,"Signum\\WindCircleFaster.mdl",GetRandomReal(0,360),1.5,1.25,1.5,100,100,100,0,0,caster,0,facing)
+endif
+endif
+set caster=null
+endfunction
+function SignumFQAct takes nothing returns nothing
+local integer id=GetHandleId(GetExpiredTimer())
+local unit caster=LoadUnitHandle(HH,id,1)
+local unit Dummy=LoadUnitHandle(HH,id,20)
+local real facing=LoadReal(HH,id,3)
+local real time=LoadReal(HH,id,5)
+local real distance=LoadReal(HH,id,8)
+local real x1=GetUnitX(Dummy)
+local real y1=GetUnitY(Dummy)
+local real damage=LoadReal(HH,id,15)
+local boolean SignumGBuff=LoadBoolean(HH,id,16)
+set time=time+0.02
+call SaveReal(HH,id,5,time)
+if time==0.3 then
+//call SetUnitInvulnerable(caster,false)
+call PauseUnit(caster,false)
+if SignumGBuff==true then
+call EffectCreateAndMove(true,"Signum\\az_slb.mdl",facing,1.5,2.2,1.5,100,100,100,0,0,Dummy,0,facing)
+call EffectCreateAndMove(true,"Signum\\WindCircleFaster.mdl",facing,1.5,2.2,1.25,100,100,100,0,0,Dummy,0,facing)
+call EffectCreateAndMove(true,"Signum\\[A]Sand2.mdl",facing,1.5,1.85,1.5,100,100,100,0,0,Dummy,0,facing)
+call EffectCreateAndMove(true,"Others\\HakkeStart2.mdl",facing,1.5,1.2,1.5,100,100,100,60,0,Dummy,0,facing)
+call DamageAoeOneTime0(caster,x1,y1,500,damage)
+call StunAoeOneTime(caster,x1,y1,500,2)
+else
+call EffectCreateAndMove(true,"Signum\\az_slb.mdl",facing,1.5,2,1.5,100,100,100,0,0,Dummy,0,facing)
+call EffectCreateAndMove(true,"Signum\\WindCircleFaster.mdl",facing,1.5,2,1.25,100,100,100,0,0,Dummy,0,facing)
+call EffectCreateAndMove(true,"Signum\\[A]Sand2.mdl",facing,1.5,1.75,1.5,100,100,100,0,0,Dummy,0,facing)
+call EffectCreateAndMove(true,"Others\\HakkeStart2.mdl",facing,1.5,1,1.5,100,100,100,60,0,Dummy,0,facing)
+call DamageAoeOneTime0(caster,x1,y1,400,damage)
+call StunAoeOneTime(caster,x1,y1,400,1.5)
+endif
+call UnitSpeed(caster,1)
+call MyRemoveUnit(Dummy,2)
+call PauseTimer(GetExpiredTimer())
+call FlushChildHashtable(HH,id)
+call DestroyTimer(GetExpiredTimer())
+else
+if time<0.3 then
+//call SetUnitInvulnerable(caster,true)
+call PauseUnit(caster,true)
+endif
+if time==0.02 then
+call EffectCreateAndMove(true,"Signum\\WindCircleFaster.mdl",facing,1.5,1.5,1.25,100,100,100,0,0,caster,0,facing)
+call EffectCreateAndMove(true,"Signum\\DustWindFaster3.mdl",facing,1.5,0.8,1.5,100,100,100,0,100,caster,0,facing)
+call UnitSpeed(caster,1.5)
+call SetUnitAnimationByIndex(caster,8)
+endif
+endif
+set caster=null
+set Dummy=null
+endfunction
+function SignumFWAct takes nothing returns nothing
+local integer id=GetHandleId(GetExpiredTimer())
+local unit caster=LoadUnitHandle(HH,id,1)
+local unit Dummy=LoadUnitHandle(HH,id,20)
+local real facing=LoadReal(HH,id,3)
+local real time=LoadReal(HH,id,5)
+local real time0=LoadReal(HH,id,6)
+local real time1=LoadReal(HH,id,9)
+local real time2=LoadReal(HH,id,10)
+local real distance=LoadReal(HH,id,8)
+local real x1=GetUnitX(Dummy)
+local real y1=GetUnitY(Dummy)
+local real damage=LoadReal(HH,id,15)
+local real range=300+distance*0.02
+local boolean SignumGBuff=LoadBoolean(HH,id,16)
+call SaveReal(HH,id,6,time0+0.02)
+
+
+
+
+
+if OrderId2String(GetUnitCurrentOrder(caster))!="channel"then
+
+if SignumGBuff==true then
+call StunAoeOneTime(caster,x1,y1,range+50,1)
+else
+
+call StunAoeOneTime(caster,x1,y1,range+50,0.5)
+
+
+endif
+
+
+
+
+
+call SetUnitInvulnerable(caster,false)
+call RemoveUnit(Dummy)
+call UnitSpeed(caster,1)
+call DestroyGroup(LoadGroupHandle(HH,id,4))
+call PauseTimer(GetExpiredTimer())
+call FlushChildHashtable(HH,id)
+call DestroyTimer(GetExpiredTimer())
+else
+
+call SetUnitInvulnerable(caster,true)
+call DamageAoeOneTime(caster,x1,y1,range,damage*0.5,LoadGroupHandle(HH,id,4))
+call MoveUnit(caster,Dummy,0,facing)
+call UnitSize(Dummy,0.75+distance*0.0008,1,1)
+set time=time+0.02
+set time1=time1+0.02
+set time2=time2+0.02
+call SaveReal(HH,id,10,time2)
+
+if time1==0.1 or time==0.02 then
+set time1=0
+call EffectCreateAndMove(true,"Signum\\WindNewFaw4.mdl",GetRandomReal(0,360),1.5,GetRandomReal(0.5,1)+time2*0.2,GetRandomReal(1,1.5),100,60,100,GetRandomReal(30,60),0,caster,0,facing)
+call EffectCreateAndMove90(true,"Signum\\windExploreEffect(Bigger).mdl",GetRandomReal(0,360),1,GetRandomReal(1,1.5)+time2*0.3,GetRandomReal(2,3),100,60,100,GetRandomReal(10,20),300,caster,0,facing)
+endif
+call SaveReal(HH,id,9,time1)
+if time==0.02 then
+call DamageAoeOneTime0(caster,x1,y1,range,damage*0.02)
+set time=-0.22
+call StunAoeOneTime(caster,x1,y1,range+50,0.25)
+endif
+call SaveReal(HH,id,5,time)
+call GroupClear(G)
+call GroupEnumUnitsInRange(G,x1,y1,300+distance*0.02,Base)
+
+loop
+set n0=FirstOfGroup(G)
+exitwhen n0==null
+if SR(x1,y1,GetUnitX(n0),GetUnitY(n0))<200+distance*0.02 and Condition_Base(GetOwningPlayer(caster),n0 ) then
+set facing=Angle2(x1,y1,GetUnitX(n0),GetUnitY(n0))
+call MoveUnit(n0,n0,5,facing)
+endif
+call GroupRemoveUnit(G,n0)
+endloop
+call GroupClear(G)
+
+if distance<2000 then
+call SaveReal(HH,id,8,distance+20)
+endif
+
+
+
+endif
+
+set caster=null
+set Dummy=null
+endfunction
+function SignumFEAct takes nothing returns nothing
+local integer id=GetHandleId(GetExpiredTimer())
+local unit caster=LoadUnitHandle(HH,id,1)
+local unit target=LoadUnitHandle(HH,id,2)
+local unit Dummy=LoadUnitHandle(HH,id,20)
+local real time=LoadReal(HH,id,5)
+local real x0=GetUnitX(target)
+local real y0=GetUnitY(target)
+local real x1=GetUnitX(Dummy)
+local real y1=GetUnitY(Dummy)
+local real distance=SR(x1,y1,x0,y0)
+local real facing=Angle2(x1,y1,x0,y0)
+local real damage=LoadReal(HH,id,15)
+local lightning l=LoadLightningHandle(HH,id,17)
+set time=time+0.02
+call SaveReal(HH,id,5,time)
+
+if time>=25 then
+call EffectCreateAndMove(true,"Signum\\fadespearpurple.mdl",facing,1.5,1.7,0.8,100,100,100,0,100,target,0,facing)
+call EffectCreateAndMove(true,"Signum\\az_slb.mdl",facing,1.5,2,1,100,100,100,0,100,target,0,facing)
+call EffectCreateAndMove(true,"Signum\\WindCircleFaster.mdl",facing,1.5,1.5,1.25,100,100,100,0,0,target,0,facing)
+call EffectCreateAndMove(true,"Signum\\aZ_siwen_Pink.mdl",facing,1.5,1.25,0.5,100,100,100,0,100,target,0,facing)
+call EffectCreateAndMove(true,"Others\\HakkeStart2.mdl",facing,1.5,1,1,100,100,100,60,0,target,0,facing)
+call UnitSpeed(caster,1)
+call SetUnitInvulnerable(caster,false)
+call PauseUnit(caster,false)
+call SetUnitInvulnerable(target,false)
+//Проверка на паузу
+
+call PauseUnit(target,false)
+call SaveBoolean(HH,GetHandleId( target ),TARGET_ABILITY,false)
+
+//Проверка на паузу
+
+if LoadBoolean(HH,id,26)==false then
+
+call myCustomDamage(caster,target,damage,false,false,null,null,null)
+call SetControlToUnit(caster, target,1.5, "stun")
+endif
+
+call DestroyLightning(l)
+call RemoveUnit(Dummy)
+call PauseTimer(GetExpiredTimer())
+call FlushChildHashtable(HH,id)
+call DestroyTimer(GetExpiredTimer())
+else
+if time<25 then
+
+if time<20 then
+call SetUnitFacing(caster,facing)
+endif
+
+call SetUnitInvulnerable(caster,true)
+call PauseUnit(caster,true)
+if time>20 then
+set x1=LoadReal(HH,id,11)
+set y1=LoadReal(HH,id,12)
+set facing=Angle2(x1,y1,x0,y0)
+call SetUnitFacing(caster,Angle2(GetUnitX(caster),GetUnitY(caster),x1,y1))
+if time>20.2 then
+call MoveUnit(target,target,-45,facing)
+call MoveUnit(target,Dummy,0,facing)
+set distance=SR(x1,y1,x0,y0)
+if distance<=50 then
+call SaveReal(HH,id,5,25)
+endif
+endif
+call SetUnitInvulnerable(target,true)
+//Проверка на паузу
+
+call PauseUnit(target,true)
+call SaveBoolean(HH,GetHandleId( target ),TARGET_ABILITY,true)
+
+//Проверка на паузу
+endif
+endif
+if time==0.02 then
+call EffectCreateAndMoveAn(true,"Signum\\flowerMoonEff (83).mdl",facing,1.5,1.5,0.8,100,100,100,0,0,caster,0,facing,2)
+call EffectCreateAndMove(true,"Signum\\WindCircleFaster.mdl",facing,1.5,1,1.25,100,100,100,0,0,caster,0,facing)
+call EffectCreateAndMove(true,"Signum\\wind4.mdl",facing,1.5,1,0.7,100,60,80,0,0,caster,0,facing)
+call EffectCreateAndMove(true,"Others\\HakkeStart2.mdl",facing,1.5,1,0.5,100,100,100,60,0,caster,0,facing)
+call UnitSpeed(caster,1)
+call SetUnitAnimationByIndex(caster,0)
+endif
+if time==0.7 then
+call SetUnitAnimationByIndex(caster,30)
+endif
+if time==0.8 then
+call EffectCreateAndMove(true,"Signum\\[AB]PurpleAz-hit.mdl",facing,1.5,1,0.8,100,100,100,0,100,caster,50,facing)
+call EffectCreateAndMove(true,"Signum\\WindNewFaw4.mdl",facing,1.5,1,0.8,100,60,80,0,100,caster,0,facing)
+call SaveLightningHandle(HH,id,17,AddLightningEx("LEAS",true,GetUnitX(caster),GetUnitY(caster),GetUnitFlyHeight(caster)+75,GetUnitX(caster),GetUnitY(caster),GetUnitFlyHeight(caster)+75))
+endif
+
+if time>0.8 then
+call MoveLightningEx(l,true,GetUnitX(caster),GetUnitY(caster),GetUnitFlyHeight(caster)+75,GetUnitX(Dummy),GetUnitY(Dummy),GetUnitFlyHeight(target)+75)
+endif
+
+if time>0.8 and time<20 then
+call MoveUnit(Dummy,Dummy,45,facing)
+
+
+
+
+if distance<=50 or SR(GetUnitX( caster ),GetUnitY( caster ),x0,y0)>=4000 then
+
+
+
+
+
+if GetUnitAbilityLevel(target,'Avul')==0 then
+call SaveBoolean(HH,id,26,false)
+else
+call SaveBoolean(HH,id,26,true)
+endif
+
+
+
+
+
+
+call EffectCreateAndMoveAn(true,"Signum\\FSAeff (177).mdl",facing,1,1,0.8,100,100,100,0,100,target,0,facing,1)
+call EffectCreateAndMove(true,"Others\\HakkeStart2.mdl",facing,1.5,0.8,1,100,100,100,60,0,target,0,facing)
+call SetUnitModel(Dummy,"Signum\\SignumSnakeEff.mdl")
+call UnitSize(Dummy,0.8,1,1)
+call SetUnitFlyHeight(Dummy,0,0)
+call SetUnitAnimationByIndex(caster,32)
+set soundplay=CreateSound("Sound\\Music\\mp3Music\\SignumFEHit.mp3",false,false,true,12700,12700,"")
+call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
+if GetRandomInt(1,2)==1 then
+call SaveReal(HH,id,11,PolX(GetUnitX(caster),GetRandomReal(350,500),GetUnitFacing(caster)+GetRandomReal(20,40)))
+call SaveReal(HH,id,12,PolY(GetUnitY(caster),GetRandomReal(350,500),GetUnitFacing(caster)+GetRandomReal(20,40)))
+else
+call SaveReal(HH,id,11,PolX(GetUnitX(caster),GetRandomReal(350,500),GetUnitFacing(caster)+GetRandomReal(-40,-20)))
+call SaveReal(HH,id,12,PolY(GetUnitY(caster),GetRandomReal(350,500),GetUnitFacing(caster)+GetRandomReal(-40,-20)))
+endif
+
+call SaveReal(HH,id,5,20)
+
+
+
+if SR(GetUnitX( caster ),GetUnitY( caster ),x0,y0)>=4000 then
+call SaveReal(HH,id,5,25)
+endif
+
+
+
+
+
+
+
+
+endif
+endif
+endif
+set caster=null
+set target=null
+set Dummy=null
+set l=null
+endfunction
+function SignumRAct takes nothing returns nothing
+local integer id=GetHandleId(GetExpiredTimer())
+local unit caster=LoadUnitHandle(HH,id,1)
+local unit Dummy=LoadUnitHandle(HH,id,20)
+local unit DummyCast=LoadUnitHandle(HH,id,2)
+local real facing=LoadReal(HH,id,3)
+local real time=LoadReal(HH,id,5)
+local real time1=LoadReal(HH,id,6)
+local real time2=LoadReal(HH,id,7)
+local real x1=GetUnitX(Dummy)
+local real y1=GetUnitY(Dummy)
+local real damage=LoadReal(HH,id,15)
+local real damage200=GetHeroAgi(caster,true)
+local real totaldamage00=damage*damage200
+local real speed=LoadReal(HH,id,21)
+local real distance=LoadReal(HH,id,8)
+local real range=LoadReal(HH,id,9)
+local boolean SignumGBuff=LoadBoolean(HH,id,16)
+
+local real facing_new=LoadReal(HH, GetHandleId( (GetOwningPlayer( caster )) ), StringHash("DummyFacing") )
+
+if time==1 then
+call EffectCreateAndMove(true,"Signum\\[AB]NanohaExp1.mdl",GetRandomReal(0,360),1,0.5,1,100,100,100,0,150,caster,0,facing)
+endif
+
+if time==1.8 then
+set n0=CreateUnit(GetOwningPlayer(caster),'e200',GetUnitX(caster),GetUnitY(caster),facing)
+call SetUnitModel(n0,"Signum\\[Signum]fanty (86)2.mdl")
+call UnitSize(n0,2,1,1)
+call UnitSpeed(n0,1)
+call SetUnitAnimationByIndex(n0,1)
+call UnitColor(n0,100,100,100,0)
+call SetUnitFlyHeight(n0,100,0)
+call SaveUnitHandle(HH,id,25,n0)
+set n0=null
+endif
+
+if time==3 or time==4 or time==5 or time==6 or time==7 or time==8 or time==9 or time==10 then
+call SetUnitAnimationByIndex(LoadUnitHandle(HH,id,25),1)
+endif
+
+if time==0.02 then
+call EffectCreateAndMove(true,"Signum\\FSAeff (199).mdl",GetRandomReal(0,360),1,1.5,0.5,100,100,100,50,0,caster,0,facing)
+call EffectCreateAndMove(true,"Signum\\FSAeff (147).mdl",GetRandomReal(0,360),1,0.65,1,100,100,100,50,0,caster,0,facing)
+call EffectCreateAndMove(true,"Signum\\FSAeff (203).mdl",GetRandomReal(0,360),1.5,1.5,0.5,100,100,100,0,0,caster,0,facing)
+set n0=CreateUnit(GetOwningPlayer(caster),'e200',GetUnitX(caster),GetUnitY(caster),facing)
+call SetUnitModel(n0,"Signum\\berka_purp.mdl")
+call UnitSize(n0,2.5,1,1)
+call UnitSpeed(n0,1.5)
+call UnitColor(n0,100,100,100,0)
+call SetUnitFlyHeight(n0,0,0)
+call SaveUnitHandle(HH,id,21,n0)
+set n0=null
+set n0=CreateUnit(GetOwningPlayer(caster),'e200',GetUnitX(caster),GetUnitY(caster),facing)
+call SetUnitModel(n0,"Others\\HakkeStart2.mdl")
+call UnitSize(n0,1.5,1,1)
+call UnitSpeed(n0,1.5)
+call UnitColor(n0,100,100,100,60)
+call SetUnitFlyHeight(n0,0,0)
+call SaveUnitHandle(HH,id,22,n0)
+set n0=null
+set n0=CreateUnit(GetOwningPlayer(caster),'e200',GetUnitX(caster),GetUnitY(caster),facing)
+call SetUnitModel(n0,"Signum\\models (1172).mdl")
+call UnitSize(n0,1,1,1)
+call UnitSpeed(n0,1)
+call UnitColor(n0,100,100,100,0)
+call SetUnitFlyHeight(n0,100,0)
+call SaveUnitHandle(HH,id,24,n0)
+set n0=null
+endif
+
+if time==0.2 then
+call UnitSpeed(LoadUnitHandle(HH,id,22),0)
+endif
+
+set time2=time2+0.02
+if(time2==0.2 or time==0.02)and time<21 then
+set time2=0
+call EffectCreateAndMove(true,"Signum\\[A]az_axe_ef1.mdl",GetRandomReal(0,360),1,GetRandomReal(1,1.5),GetRandomReal(0.5,0.75),100,60,100,GetRandomReal(30,40),0,caster,0,facing)
+endif
+call SaveReal(HH,id,7,time2)
+set time=time+0.02
+call SaveReal(HH,id,5,time)
+if distance<=0 then
+
+
+call EffectCreateAndMove(true,"Others\\HakkeStart2.mdl",GetRandomReal(0,360),2,1,1,100,100,100,100,0,Dummy,0,facing)
+
+call RemoveUnit(LoadUnitHandle(HH,id,26))
+call RemoveUnit(LoadUnitHandle(HH,id,27))
+call DestroyGroup(LoadGroupHandle(HH,id,4))
+call RemoveUnit(Dummy)
+call PauseTimer(GetExpiredTimer())
+call FlushChildHashtable(HH,id)
+call DestroyTimer(GetExpiredTimer())
+else
+if time==0.02 then
+call SaveGroupHandle(HH,id,4,CreateGroup())
+set soundplay=CreateSound("Sound\\Music\\mp3Music\\SignumRCharge.mp3",false,false,true,12700,12700,"")
+call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
+set soundplay=CreateSound("Sound\\Music\\mp3Music\\SignumRCharge1.mp3",false,false,true,12700,12700,"")
+call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
+call UnitSpeed(caster,1)
+call SetUnitAnimationByIndex(caster,16)
+endif
+if time<21 then
+call MoveUnit(caster,LoadUnitHandle(HH,id,21),0,facing)
+call MoveUnit(caster,LoadUnitHandle(HH,id,22),0,facing)
+call MoveUnit(caster,LoadUnitHandle(HH,id,24),150,facing)
+call SetUnitFacing(LoadUnitHandle(HH,id,24),facing)
+call MoveUnit(caster,LoadUnitHandle(HH,id,25),0,facing)
+call SetUnitFacing(LoadUnitHandle(HH,id,25),facing)
+
+if time==20 then
+call SaveReal(HH,id,3,facing_new)
+endif
+
+
+if time<20 then
+
+
+call SetUnitFacing(caster,facing_new)
+
+call SaveReal(HH,id,3,GetUnitFacing(caster))
+//call SaveReal(HH,id,3,GetUnitFacing(DummyCast))
+//call SetUnitFacing(caster,GetUnitFacing(DummyCast))
+call MoveUnit(caster,DummyCast,50,GetUnitFacing(caster))
+
+
+
+set time1=time1+0.02
+if time1==0.5 then
+
+if GetLocalPlayer()==GetOwningPlayer(caster)then
+call ClearSelection()
+call SelectUnit(DummyCast,true)
+endif
+
+set time1=0
+endif
+call SaveReal(HH,id,6,time1)
+if SignumGBuff==true then
+call SaveReal(HH,id,21,speed+0.2)
+call SaveReal(HH,id,8,distance+20)
+call SaveReal(HH,id,9,range+0.6)
+call SaveReal(HH,id,15,damage+0.04)
+else
+call SaveReal(HH,id,21,speed+0.1)
+call SaveReal(HH,id,8,distance+10)
+call SaveReal(HH,id,9,range+0.3)
+call SaveReal(HH,id,15,damage+0.02)
+endif
+endif
+
+
+if time>20 then
+call SetUnitInvulnerable(caster,true)
+endif
+
+call PauseUnit(caster,true)
+endif
+if time==21 then
+call EffectCreateAndMove(true,"Signum\\WindCircleFaster.mdl",facing,1.5,2.5,1.25,100,100,100,0,0,caster,0,facing)
+call EffectCreateAndMove90(true,"Signum\\WindCircleFaster.mdl",facing,1.5,2,1.25,100,100,100,0,150,caster,150,facing)
+call EffectCreateAndMove(true,"Signum\\DustWindFaster3.mdl",facing,1.5,1.25,1.5,100,100,100,0,100,caster,0,facing)
+call EffectCreateAndMove90(true,"Signum\\FSAeff (203).mdl",facing,1.5,1.5,1,100,100,100,0,150,caster,150,facing)
+call EffectCreateAndMove(true,"Signum\\BY_Wood_GongChengSiPai_1.mdl",facing,1,2,0.75,100,100,100,0,150,caster,150,facing)
+call EffectCreateAndMove(true,"Signum\\BY_Wood_GongChengSiPai_1.mdl",facing+180,1,3,0.75,100,100,100,0,150,caster,150,facing)
+call RemoveUnit(LoadUnitHandle(HH,id,21))
+call RemoveUnit(LoadUnitHandle(HH,id,22))
+call RemoveUnit(LoadUnitHandle(HH,id,24))
+if LoadUnitHandle(HH,id,25)!=null then
+call RemoveUnit(LoadUnitHandle(HH,id,25))
+endif
+call UnitSpeed(caster,1)
+call SetUnitInvulnerable(caster,false)
+call PauseUnit(caster,false)
+endif
+
+if time==20.02 then
+call SetUnitFacing(caster,facing)
+call SaveUnitHandle(HH,id,20,CreateUnit(GetOwningPlayer(caster),'e200',GetUnitX(caster),GetUnitY(caster),facing))
+call SaveUnitHandle(HH,id,26,CreateUnit(GetOwningPlayer(caster),'e200',GetUnitX(caster),GetUnitY(caster),facing))
+call SaveUnitHandle(HH,id,27,CreateUnit(GetOwningPlayer(caster),'e200',GetUnitX(caster),GetUnitY(caster),facing))
+if GetLocalPlayer()==GetOwningPlayer(caster)then
+call ClearSelection()
+call SelectUnit(caster,true)
+endif
+call RemoveUnit(DummyCast)
+if(GetLocalPlayer()==GetOwningPlayer(caster))then
+call DisplayTextToPlayer(GetLocalPlayer(),0,0,"Distance: "+R2S(distance))
+endif
+if(GetLocalPlayer()==GetOwningPlayer(caster))then
+call DisplayTextToPlayer(GetLocalPlayer(),0,0,"Aoe: "+R2S(range))
+endif
+if(GetLocalPlayer()==GetOwningPlayer(caster))then
+call DisplayTextToPlayer(GetLocalPlayer(),0,0,"Speed: "+R2S(speed))
+endif
+if(GetLocalPlayer()==GetOwningPlayer(caster))then
+call DisplayTextToPlayer(GetLocalPlayer(),0,0,"Damage: Agi* "+R2S(damage)+"Damage: "+R2S(totaldamage00*0.5))
+endif
+set soundplay=CreateSound("Sound\\Music\\mp3Music\\SignumRShoot.mp3",false,false,true,12700,12700,"")
+call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
+endif
+if time==20.5 then
+call UnitSpeed(caster,1)
+call SetUnitAnimationByIndex(caster,17)
+endif
+if time==1.8 then
+set soundplay=CreateSound("Sound\\Music\\mp3Music\\SignumRShootCharge.mp3",false,false,true,12700,12700,"")
+call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
+endif
+
+
+
+if time==21 then
+call EffectCreateAndMove(true,"Signum\\[AB]NanohaExp1.mdl",facing,1,0.5,1,100,100,100,0,150,caster,150,facing)
+call MoveUnit(caster,Dummy,150,facing)
+set soundplay=CreateSound("Sound\\Music\\mp3Music\\SignumRShootFly.mp3",false,false,true,12700,12700,"")
+call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
+call SetUnitModel(Dummy,"Signum\\FSAeff (177).mdl")
+call UnitSize(Dummy,5+(range-100)*0.03,1,1)
+call SetUnitModel(LoadUnitHandle(HH,id,26),"Signum\\[Signum]TZJQ2.mdl")
+call SetUnitModel(LoadUnitHandle(HH,id,27),"Signum\\pink-Target.mdl")
+call UnitSize(LoadUnitHandle(HH,id,27),1+(range-100)*0.02,1,1)
+call UnitSize(LoadUnitHandle(HH,id,26),0.5+(range-100)*0.02,1,1)
+call SetUnitFlyHeight(LoadUnitHandle(HH,id,26),0,0)
+endif
+
+if LoadBoolean(HH,GetHandleId(LoadUnitHandle(HH,id,2)),StringHash("SignumRBool"))==true and time<20 then
+
+call SaveReal(HH,id,3,LoadReal(HH,GetHandleId(LoadUnitHandle(HH,id,2)),StringHash("SignumRReal")))
+call SaveReal(HH,GetHandleId(LoadUnitHandle(HH,id,2)),StringHash("SignumRReal"),0)
+call SaveBoolean(HH,GetHandleId(LoadUnitHandle(HH,id,2)),StringHash("SignumRBool"),false)
+call SaveReal(HH,id,5,20)
+endif
+
+if(time>10 and time<20)or(SignumGBuff==true and time>5 and time<20)then
+call SaveReal(HH,id,5,20)
+endif
+if time>21 then
+call MoveUnit(Dummy,Dummy,speed,facing)
+
+call EffectCreateAndMove(true,"Signum\\Dummy.mdl",facing,4,1,1,100,100,100,0,0,Dummy,100,facing)
+
+
+call MoveUnit(Dummy,LoadUnitHandle(HH,id,26),0,facing)
+call MoveUnit(Dummy,LoadUnitHandle(HH,id,27),0,facing)
+call DamageAoeOneTime(caster,GetUnitX(Dummy),GetUnitY(Dummy),range+35,totaldamage00,LoadGroupHandle(HH,id,4))
+call SaveReal(HH,id,8,distance-speed)
+endif
+endif
+set caster=null
+set Dummy=null
+set DummyCast=null
+endfunction
+function SignumFRAct takes nothing returns nothing
+local integer id=GetHandleId(GetExpiredTimer())
+local unit caster=LoadUnitHandle(HH,id,1)
+local unit Dummy=LoadUnitHandle(HH,id,20)
+local unit DummyCast=LoadUnitHandle(HH,id,2)
+local real facing=LoadReal(HH,id,3)
+local real time=LoadReal(HH,id,5)
+local real time1=LoadReal(HH,id,6)
+local real time2=LoadReal(HH,id,7)
+local real x1=GetUnitX(Dummy)
+local real y1=GetUnitY(Dummy)
+local real damage=LoadReal(HH,id,15)
+local real damage200=GetHeroAgi(caster,true)
+local real totaldamage00=damage*damage200
+local real speed=LoadReal(HH,id,21)
+local real distance=LoadReal(HH,id,8)
+local real range=LoadReal(HH,id,9)
+local boolean SignumGBuff=LoadBoolean(HH,id,16)
+
+local real facing_new=LoadReal(HH, GetHandleId( (GetOwningPlayer( caster )) ), StringHash("DummyFacing") )
+
+if time==1 then
+call EffectCreateAndMove(true,"Signum\\[AB]NanohaExp1.mdl",GetRandomReal(0,360),1,0.5,1,100,100,100,0,150,caster,0,facing)
+endif
+if time==1.8 then
+set n0=CreateUnit(GetOwningPlayer(caster),'e200',GetUnitX(caster),GetUnitY(caster),facing)
+call SetUnitModel(n0,"Signum\\[Signum]fanty (86)2.mdl")
+call UnitSize(n0,2,1,1)
+call UnitSpeed(n0,1)
+call SetUnitAnimationByIndex(n0,1)
+call UnitColor(n0,100,100,100,0)
+call SetUnitFlyHeight(n0,100,0)
+call SaveUnitHandle(HH,id,25,n0)
+set n0=null
+endif
+
+if time==3 or time==4 or time==5 or time==6 or time==7 or time==8 or time==9 or time==10 then
+call SetUnitAnimationByIndex(LoadUnitHandle(HH,id,25),1)
+endif
+
+if time==0.02 then
+call EffectCreateAndMove(true,"Signum\\FSAeff (199).mdl",GetRandomReal(0,360),1,1.5,0.5,100,100,100,50,0,caster,0,facing)
+call EffectCreateAndMove(true,"Signum\\FSAeff (147).mdl",GetRandomReal(0,360),1,0.65,1,100,100,100,50,0,caster,0,facing)
+call EffectCreateAndMove(true,"Signum\\FSAeff (203).mdl",GetRandomReal(0,360),1.5,1.5,0.5,100,100,100,0,0,caster,0,facing)
+set n0=CreateUnit(GetOwningPlayer(caster),'e200',GetUnitX(caster),GetUnitY(caster),facing)
+call SetUnitModel(n0,"Signum\\berka_purp.mdl")
+call UnitSize(n0,2.5,1,1)
+call UnitSpeed(n0,1.5)
+call UnitColor(n0,100,100,100,0)
+call SetUnitFlyHeight(n0,0,0)
+call SaveUnitHandle(HH,id,21,n0)
+set n0=null
+set n0=CreateUnit(GetOwningPlayer(caster),'e200',GetUnitX(caster),GetUnitY(caster),facing)
+call SetUnitModel(n0,"Others\\HakkeStart2.mdl")
+call UnitSize(n0,1.5,1,1)
+call UnitSpeed(n0,1.5)
+call UnitColor(n0,100,100,100,60)
+call SetUnitFlyHeight(n0,0,0)
+call SaveUnitHandle(HH,id,22,n0)
+set n0=null
+set n0=CreateUnit(GetOwningPlayer(caster),'e200',GetUnitX(caster),GetUnitY(caster),facing)
+call SetUnitModel(n0,"Signum\\models (1172).mdl")
+call UnitSize(n0,1,1,1)
+call UnitSpeed(n0,1)
+call UnitColor(n0,100,100,100,0)
+call SetUnitFlyHeight(n0,100,0)
+call SaveUnitHandle(HH,id,24,n0)
+set n0=null
+endif
+
+if time==0.2 then
+call UnitSpeed(LoadUnitHandle(HH,id,22),0)
+endif
+
+set time2=time2+0.02
+if(time2==0.2 or time==0.02)and time<21 then
+set time2=0
+call EffectCreateAndMove(true,"Signum\\wind4.mdl",GetRandomReal(0,360),1,GetRandomReal(1,1.5),GetRandomReal(0.5,0.75),100,60,100,GetRandomReal(30,40),0,caster,0,facing)
+endif
+call SaveReal(HH,id,7,time2)
+set time=time+0.02
+call SaveReal(HH,id,5,time)
+
+
+
+
+if distance<=0 then
+call EffectCreateAndMove(true,"Signum\\[A]AZ_TormentedSoul_T1.mdl",facing,2,(0.75+(range-150)*0.0055)*2,1,100,100,100,0,-100,Dummy,0,facing)
+call EffectCreateAndMoveAn(true,"Signum\\tx_haohuoqiu.mdl",facing,2,(1+(range-150)*0.003)*2,1.5,100,100,100,0,100,Dummy,0,facing,2)
+call EffectCreateAndMove(true,"Others\\HakkeStart2.mdl",facing,2,(0.25+(range-150)*0.005)*2,1.5,100,100,100,60,-100,Dummy,0,facing)
+call EffectCreateAndMove(true,"Signum\\[Signum]JeanneDark1mt_baozha1.mdl",GetRandomReal(0,360),1.5,(0.45+(range-150)*0.004)*2,0.7,100,60,10,0,-100,Dummy,0,facing)
+call EffectCreateAndMove(true,"Signum\\[Signum]JeanneDark1mt_baozha1.mdl",GetRandomReal(0,360),1.5,(0.35+(range-150)*0.004)*1.5,1,100,60,10,0,-100,Dummy,0,facing)
+call DamageAoeOneTime0(caster,GetUnitX(Dummy),GetUnitY(Dummy),range*2+50,totaldamage00)
+set soundplay=CreateSound("Sound\\Music\\mp3Music\\SignumFRExp.mp3",false,false,true,12700,12700,"")
+call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
+call RemoveUnit(Dummy)
+call PauseTimer(GetExpiredTimer())
+call FlushChildHashtable(HH,id)
+call DestroyTimer(GetExpiredTimer())
+else
+
+
+
+
+
+
+
+
+if time==0.02 then
+set soundplay=CreateSound("Sound\\Music\\mp3Music\\SignumFR.mp3",false,false,true,12700,12700,"")
+call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
+call UnitSpeed(caster,1)
+call SetUnitAnimationByIndex(caster,16)
+endif
+
+if time<21 then
+call MoveUnit(caster,LoadUnitHandle(HH,id,21),0,facing)
+call MoveUnit(caster,LoadUnitHandle(HH,id,22),0,facing)
+call MoveUnit(caster,LoadUnitHandle(HH,id,24),150,facing)
+call SetUnitFacing(LoadUnitHandle(HH,id,24),facing)
+call MoveUnit(caster,LoadUnitHandle(HH,id,25),0,facing)
+call SetUnitFacing(LoadUnitHandle(HH,id,25),facing)
+
+if time==20 then
+call SaveReal(HH,id,3,facing_new)
+endif
+
+if time<20 then
+
+
+call SetUnitFacing(caster,facing_new)
+
+call SaveReal(HH,id,3,GetUnitFacing(caster))
+//call SaveReal(HH,id,3,GetUnitFacing(DummyCast))
+//call SetUnitFacing(caster,GetUnitFacing(DummyCast))
+call MoveUnit(caster,DummyCast,50,GetUnitFacing(caster))
+
+
+set time1=time1+0.02
+
+if time1==0.5 then
+if GetLocalPlayer()==GetOwningPlayer(caster)then
+call ClearSelection()
+call SelectUnit(DummyCast,true)
+endif
+set time1=0
+endif
+
+call SaveReal(HH,id,6,time1)
+
+if SignumGBuff==true then
+call SaveReal(HH,id,21,speed+0.2)
+call SaveReal(HH,id,8,distance+20)
+call SaveReal(HH,id,9,range+0.8)
+call SaveReal(HH,id,15,damage+0.04)
+else
+call SaveReal(HH,id,21,speed+0.1)
+call SaveReal(HH,id,8,distance+10)
+call SaveReal(HH,id,9,range+0.4)
+call SaveReal(HH,id,15,damage+0.02)
+endif
+
+
+endif
+
+if time>20 then
+call SetUnitInvulnerable(caster,true)
+endif
+
+
+
+call PauseUnit(caster,true)
+endif
+
+
+
+
+if time==21 then
+call EffectCreateAndMove(true,"Signum\\WindCircleFaster.mdl",facing,1.5,2.5,1.25,100,100,100,0,0,caster,0,facing)
+call EffectCreateAndMove90(true,"Signum\\WindCircleFaster.mdl",facing,1.5,2,1.25,100,100,100,0,150,caster,150,facing)
+call EffectCreateAndMove(true,"Signum\\DustWindFaster3.mdl",facing,1.5,1.25,1.5,100,100,100,0,100,caster,0,facing)
+call EffectCreateAndMove90(true,"Signum\\FSAeff (203).mdl",facing,1.5,1.5,1,100,100,100,0,150,caster,150,facing)
+call EffectCreateAndMove(true,"Signum\\BY_Wood_GongChengSiPai_1.mdl",facing,1,2,0.75,100,100,100,0,150,caster,150,facing)
+call EffectCreateAndMove(true,"Signum\\BY_Wood_GongChengSiPai_1.mdl",facing+180,1,3,0.75,100,100,100,0,150,caster,150,facing)
+call RemoveUnit(LoadUnitHandle(HH,id,21))
+call RemoveUnit(LoadUnitHandle(HH,id,22))
+call RemoveUnit(LoadUnitHandle(HH,id,24))
+if LoadUnitHandle(HH,id,25)!=null then
+call RemoveUnit(LoadUnitHandle(HH,id,25))
+endif
+call UnitSpeed(caster,1)
+call SetUnitInvulnerable(caster,false)
+call PauseUnit(caster,false)
+endif
+if time==20.02 then
+call SetUnitFacing(caster,facing)
+call SaveUnitHandle(HH,id,20,CreateUnit(GetOwningPlayer(caster),'e200',GetUnitX(caster),GetUnitY(caster),facing))
+if GetLocalPlayer()==GetOwningPlayer(caster)then
+call ClearSelection()
+call SelectUnit(caster,true)
+endif
+call RemoveUnit(DummyCast)
+if(GetLocalPlayer()==GetOwningPlayer(caster))then
+call DisplayTextToPlayer(GetLocalPlayer(),0,0,"Distance: "+R2S(distance))
+endif
+if(GetLocalPlayer()==GetOwningPlayer(caster))then
+call DisplayTextToPlayer(GetLocalPlayer(),0,0,"Aoe: "+R2S(range)+"Aoe Exp: "+R2S(range*2))
+endif
+if(GetLocalPlayer()==GetOwningPlayer(caster))then
+call DisplayTextToPlayer(GetLocalPlayer(),0,0,"Speed: "+R2S(speed))
+endif
+if(GetLocalPlayer()==GetOwningPlayer(caster))then
+call DisplayTextToPlayer(GetLocalPlayer(),0,0,"Damage: Agi* "+R2S(damage)+"Damage: "+R2S(totaldamage00*0.5))
+endif
+set soundplay=CreateSound("Sound\\Music\\mp3Music\\SignumFR2.mp3",false,false,true,12700,12700,"")
+call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
+endif
+if time==20.5 then
+call UnitSpeed(caster,1)
+call SetUnitAnimationByIndex(caster,17)
+endif
+if time==2 then
+set soundplay=CreateSound("Sound\\Music\\mp3Music\\SignumFR2Charge.mp3",false,false,true,12700,12700,"")
+call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
+endif
+
+
+
+
+if time==21 then
+call EffectCreateAndMove90(true,"Signum\\FireEffectOrange.mdl",facing,1.5,1.25,1.5,100,100,100,0,150,caster,150,facing)
+call MoveUnit(caster,Dummy,150,facing)
+set soundplay=CreateSound("Sound\\Music\\mp3Music\\SignumFRShoot.mp3",false,false,true,12700,12700,"")
+call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
+call SetUnitModel(Dummy,"Signum\\FSAEff (69).mdl")
+call UnitSize(Dummy,0.85+(range-150)*0.01,1,1)
+endif
+if LoadBoolean(HH,GetHandleId(LoadUnitHandle(HH,id,2)),StringHash("SignumRBool"))==true and time<20 then
+call SaveReal(HH,id,3,LoadReal(HH,GetHandleId(LoadUnitHandle(HH,id,2)),StringHash("SignumRReal")))
+call SaveReal(HH,GetHandleId(LoadUnitHandle(HH,id,2)),StringHash("SignumRReal"),0)
+call SaveBoolean(HH,GetHandleId(LoadUnitHandle(HH,id,2)),StringHash("SignumRBool"),false)
+call SaveReal(HH,id,5,20)
+endif
+
+
+if(time>10 and time<20)or(SignumGBuff==true and time>5 and time<20)then
+call SaveReal(HH,id,5,20)
+endif
+
+
+
+
+
+if time>21 then
+call MoveUnit(Dummy,Dummy,speed,facing)
+call EffectCreateAndMove(true,"Signum\\Dummy.mdl",facing,4,1,1,100,100,100,0,0,Dummy,100,facing)
+
+
+
+call GroupClear(G)
+call GroupEnumUnitsInRange(G,GetUnitX(Dummy),GetUnitY(Dummy),range,Base)
+loop
+set n0=FirstOfGroup(G)
+exitwhen n0==null
+if Condition_Base(GetOwningPlayer(caster),n0) and GetUnitAbilityLevel(n0,'Avul')==0 then
+set distance=0
+call GroupClear(G)
+endif
+call GroupRemoveUnit(G,n0)
+endloop
+call GroupClear(G)
+call SaveReal(HH,id,8,distance-speed)
+endif
+
+
+
+
+
+
+
+endif
+
+
+set caster=null
+set Dummy=null
+set DummyCast=null
+endfunction
+function SignumTSelfActEff takes nothing returns nothing
+local integer id=GetHandleId(GetExpiredTimer())
+local unit caster=LoadUnitHandle(HH,id,1)
+local unit Dummy=LoadUnitHandle(HH,id,20)
+local real facing=LoadReal(HH,id,3)
+local real time=LoadReal(HH,id,5)
+local real distance=LoadReal(HH,id,8)
+local real x1=GetUnitX(Dummy)
+local real y1=GetUnitY(Dummy)
+local real damage=LoadReal(HH,id,15)
+set time=time+0.02
+call SaveReal(HH,id,5,time)
+if time==0.02 then
+set n0=CreateUnit(GetOwningPlayer(caster),'e200',GetUnitX(caster),GetUnitY(caster),facing)
+call SetUnitModel(n0,"Others\\HakkeStart2.mdl")
+call UnitSize(n0,1.5,1,1)
+call UnitSpeed(n0,1.5)
+call UnitColor(n0,100,100,100,60)
+call SetUnitFlyHeight(n0,0,0)
+call SaveUnitHandle(HH,id,25,n0)
+set n0=CreateUnit(GetOwningPlayer(caster),'e200',GetUnitX(caster),GetUnitY(caster),facing)
+call SetUnitModel(n0,"Signum\\[A]AceFireShockRun.mdl")
+call UnitSize(n0,2,1,1)
+call UnitSpeed(n0,1.5)
+call UnitColor(n0,100,100,100,0)
+call SetUnitFlyHeight(n0,0,0)
+call SaveUnitHandle(HH,id,26,n0)
+set n0=null
+endif
+if time==0.5 then
+
+call StartAbilityCooldown(GetUnitAbility(caster, 'SiT1'), 44.5)
+
+call UnitSpeed(LoadUnitHandle(HH,id,25),0)
+
+endif
+if time==0.02 or time==1.8 then
+call EffectCreateAndMove(true,"Signum\\hit-juhuang-lizi.mdl",GetRandomReal(0,360),1.5,2.25,0.5,100,100,100,0,100,caster,0,facing)
+set n0=CreateUnit(GetOwningPlayer(caster),'e200',GetUnitX(caster),GetUnitY(caster),facing)
+call AddSpecialEffectTarget("Signum\\[A]FireEruption2.mdl",n0,"origin")
+call UnitSize(n0,1.5,1,1)
+call UnitSpeed(n0,0.5)
+call UnitColor(n0,100,100,100,0)
+call SetUnitFlyHeight(n0,0,0)
+call MyRemoveUnit(n0,1)
+set n0=null
+endif
+if time==0.02 or time==0.5 or time==1 or time==1.5 or time==2 then
+call EffectCreateAndMove(true,"Signum\\WindNewFaw4.mdl",GetRandomReal(0,360),1.5,1.5,0.5,100,60,40,30,20,caster,0,facing)
+call EffectCreateAndMove(true,"Signum\\wind4.mdl",GetRandomReal(0,360),1.5,1.5,0.5,100,60,40,30,20,caster,0,facing)
+endif
+if time>=3.3 then
+call DestroyGroup(LoadGroupHandle(HH,id,4))
+call MyRemoveUnit(LoadUnitHandle(HH,id,20),0.5)
+call MyRemoveUnit(LoadUnitHandle(HH,id,21),0.5)
+call MyRemoveUnit(LoadUnitHandle(HH,id,22),0.5)
+call MyRemoveUnit(LoadUnitHandle(HH,id,23),0.5)
+call MyRemoveUnit(LoadUnitHandle(HH,id,24),0.5)
+call MyRemoveUnit(LoadUnitHandle(HH,id,25),0.5)
+call RemoveUnit(LoadUnitHandle(HH,id,26))
+
+call SetUnitAnimationByIndex(LoadUnitHandle(HH,id,20),1)
+call SetUnitAnimationByIndex(LoadUnitHandle(HH,id,21),1)
+call SetUnitAnimationByIndex(LoadUnitHandle(HH,id,22),1)
+call SetUnitAnimationByIndex(LoadUnitHandle(HH,id,23),1)
+call SetUnitAnimationByIndex(LoadUnitHandle(HH,id,24),1)
+call UnitSpeed(caster,1)
+call PauseUnit(caster,false)
+call SetUnitInvulnerable(caster,false)
+call PauseTimer(GetExpiredTimer())
+call FlushChildHashtable(HH,id)
+call DestroyTimer(GetExpiredTimer())
+else
+if time==0.02 then
+call SaveGroupHandle(HH,id,4,CreateGroup())
+set soundplay=CreateSound("Sound\\Music\\mp3Music\\SignumGTCharge.mp3",false,false,true,12700,12700,"")
+call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
+call SaveGroupHandle(HH,id,4,CreateGroup())
+call UnitSpeed(caster,0.8)
+call SetUnitAnimationByIndex(caster,11)
+endif
+if time==1.8 then
+call EffectCreateAndMove(true,"Signum\\[A]Natsu ef roar.mdl",facing,1.5,1.5,0.75,100,100,100,0,0,caster,0,facing)
+call UnitSpeed(caster,1.5)
+call SetUnitAnimationByIndex(caster,14)
+set soundplay=CreateSound("Sound\\Music\\mp3Music\\SignumGT1.mp3",false,false,true,12700,12700,"")
+call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
+endif
+if time<3.3 then
+call PauseUnit(caster,true)
+call SetUnitInvulnerable(caster,true)
+endif
+if time==2.5 then
+set soundplay=CreateSound("Sound\\Music\\mp3Music\\SignumGTSlash.mp3",false,false,true,12700,12700,"")
+call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
+endif
+if time==2.8 then
+call EffectCreateAndMove(true,"Signum\\WindCircleFaster.mdl",facing,1.5,2.5,1.25,100,100,100,0,0,caster,0,facing)
+call SetUnitAnimationByIndex(caster,15)
+call UnitSpeed(caster,0.35)
+set soundplay=CreateSound("Sound\\Music\\mp3Music\\SignumGT2.mp3",false,false,true,12700,12700,"")
+call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
+set n0=CreateUnit(GetOwningPlayer(caster),'e200',GetUnitX(caster),GetUnitY(caster),facing)
+call SetUnitModel(n0,"Signum\\[Signum]FireShockRunfire.mdl")
+call UnitSize(n0,3,1,1)
+call UnitSpeed(n0,3)
+call SetUnitFlyHeight(n0,0,0)
+call SaveUnitHandle(HH,id,20,n0)
+set n0=CreateUnit(GetOwningPlayer(caster),'e200',GetUnitX(caster),GetUnitY(caster),facing)
+call SetUnitModel(n0,"Signum\\[Signum]FireShockRunfire.mdl")
+call UnitSize(n0,3,1,1)
+call UnitSpeed(n0,3)
+call SetUnitFlyHeight(n0,0,0)
+call SaveUnitHandle(HH,id,21,n0)
+set n0=CreateUnit(GetOwningPlayer(caster),'e200',GetUnitX(caster),GetUnitY(caster),facing)
+call SetUnitModel(n0,"Signum\\[Signum]FireShockRunfire.mdl")
+call UnitSize(n0,3,1,1)
+call UnitSpeed(n0,3)
+call SetUnitFlyHeight(n0,0,0)
+call SaveUnitHandle(HH,id,22,n0)
+set n0=CreateUnit(GetOwningPlayer(caster),'e200',GetUnitX(caster),GetUnitY(caster),facing)
+call SetUnitModel(n0,"Signum\\[Signum]FireShockRunfire.mdl")
+call UnitSize(n0,3,1,1)
+call UnitSpeed(n0,3)
+call SetUnitFlyHeight(n0,0,0)
+call SaveUnitHandle(HH,id,23,n0)
+set n0=null
+set n0=CreateUnit(GetOwningPlayer(caster),'e200',GetUnitX(caster),GetUnitY(caster),facing)
+call SetUnitModel(n0,"Signum\\[Signum]FireShockRunfire.mdl")
+call UnitSize(n0,3,1,1)
+call UnitSpeed(n0,3)
+call SetUnitFlyHeight(n0,0,0)
+call SaveUnitHandle(HH,id,24,n0)
+set n0=null
+endif
+
+//if time==2.82 then
+//call SetUnitModel(LoadUnitHandle(HH,id,20),"Signum\\[Signum]FireShockRunfire.mdl")
+//call SetUnitModel(LoadUnitHandle(HH,id,21),"Signum\\[Signum]FireShockRunfire.mdl")
+//call SetUnitModel(LoadUnitHandle(HH,id,22),"Signum\\[Signum]FireShockRunfire.mdl")
+//call SetUnitModel(LoadUnitHandle(HH,id,23),"Signum\\[Signum]FireShockRunfire.mdl")
+//call SetUnitModel(LoadUnitHandle(HH,id,24),"Signum\\[Signum]FireShockRunfire.mdl")
+//endif
+
+if time>2.8 then
+call MoveUnit(caster,LoadUnitHandle(HH,id,20),300,90+facing-(time-2.8)*360)
+call MoveUnit(caster,LoadUnitHandle(HH,id,21),600,90+facing-(time-2.8)*360)
+call MoveUnit(caster,LoadUnitHandle(HH,id,22),900,90+facing-(time-2.8)*360)
+call MoveUnit(caster,LoadUnitHandle(HH,id,23),1200,90+facing-(time-2.8)*360)
+call MoveUnit(caster,LoadUnitHandle(HH,id,24),1500,90+facing-(time-2.8)*360)
+call DamageAoeOneTime(caster,GetUnitX(LoadUnitHandle(HH,id,20)),GetUnitY(LoadUnitHandle(HH,id,20)),300,damage,LoadGroupHandle(HH,id,4))
+call DamageAoeOneTime(caster,GetUnitX(LoadUnitHandle(HH,id,21)),GetUnitY(LoadUnitHandle(HH,id,21)),300,damage,LoadGroupHandle(HH,id,4))
+call DamageAoeOneTime(caster,GetUnitX(LoadUnitHandle(HH,id,22)),GetUnitY(LoadUnitHandle(HH,id,22)),300,damage,LoadGroupHandle(HH,id,4))
+call DamageAoeOneTime(caster,GetUnitX(LoadUnitHandle(HH,id,23)),GetUnitY(LoadUnitHandle(HH,id,23)),300,damage,LoadGroupHandle(HH,id,4))
+call DamageAoeOneTime(caster,GetUnitX(LoadUnitHandle(HH,id,24)),GetUnitY(LoadUnitHandle(HH,id,24)),300,damage,LoadGroupHandle(HH,id,4))
+endif
+endif
+
+set caster=null
+set Dummy=null
+endfunction
+function SignumTAct takes nothing returns nothing
+local integer id=GetHandleId(GetExpiredTimer())
+local unit caster=LoadUnitHandle(HH,id,1)
+local unit Dummy=LoadUnitHandle(HH,id,20)
+local real facing=LoadReal(HH,id,3)
+local real time=LoadReal(HH,id,5)
+local real time1=LoadReal(HH,id,6)
+local real distance=LoadReal(HH,id,8)
+local real x1=GetUnitX(Dummy)
+local real y1=GetUnitY(Dummy)
+local real damage=LoadReal(HH,id,15)
+set time=time+0.02
+call SaveReal(HH,id,5,time)
+if distance>=6000 then
+call DestroyGroup(LoadGroupHandle(HH,id,4))
+call SetUnitAnimationByIndex(Dummy,1)
+call MyRemoveUnit(Dummy,2)
+call PauseTimer(GetExpiredTimer())
+call FlushChildHashtable(HH,id)
+call DestroyTimer(GetExpiredTimer())
+else
+if time==0.02 or time==0.1 or time==0.2 or time==0.3 or time==0.4 or time==0.5 or time==0.6 or time==0.7 or time==0.8 or time==0.9 or time==1 or time==1.1 then
+call EffectCreateAndMove(true,"Signum\\wind4.mdl",GetRandomReal(0,360),1,GetRandomReal(1.,1.35),GetRandomReal(0.5,0.8),100,60,100,GetRandomReal(60,80),0,caster,0,facing)
+call EffectCreateAndMove(true,"Signum\\dustwaveanimate2.mdl",GetRandomReal(0,360),1,GetRandomReal(2,2.75),GetRandomReal(0.75,1.25),100,60,100,GetRandomReal(60,90),0,caster,0,facing)
+endif
+if time==0.02 then
+call EffectCreateAndMove(true,"Signum\\FSAeff (200).mdl",facing,1.2,2,1,100,100,100,0,0,caster,0,facing)
+call EffectCreateAndMove(true,"Others\\HakkeStart2.mdl",facing,1.2,1,1,100,100,100,60,0,caster,0,facing)
+call EffectCreateAndMove(true,"Signum\\az_zise-Xuanwo.mdl",facing,1.2,2,1,100,100,100,0,0,caster,0,facing)
+set n0=CreateUnit(GetOwningPlayer(caster),'e200',GetUnitX(caster),GetUnitY(caster),facing)
+call MoveUnit(n0,n0,200,facing)
+call SetUnitAnimationByIndex(n0,0)
+call UnitSize(n0,0.5,1,1)
+call UnitSpeed(n0,1)
+call UnitColor(n0,100,100,100,0)
+call SetUnitFlyHeight(n0,200,0)
+call SaveUnitHandle(HH,id,20,n0)
+set n0=null
+set n0=CreateUnit(GetOwningPlayer(caster),'e200',GetUnitX(caster),GetUnitY(caster),facing)
+call SetUnitModel(n0,"Signum\\berka_purp.mdl")
+call UnitSize(n0,2.5,1,1)
+call UnitSpeed(n0,1.5)
+call UnitColor(n0,100,100,100,0)
+call SetUnitFlyHeight(n0,0,0)
+call MyRemoveUnit(n0,1.2)
+call SaveUnitHandle(HH,id,21,n0)
+set n0=null
+set soundplay=CreateSound("Sound\\Music\\mp3Music\\SignumT.mp3",false,false,true,12700,12700,"")
+call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
+set soundplay=CreateSound("Sound\\Music\\mp3Music\\SignumT1.mp3",false,false,true,12700,12700,"")
+call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
+call SaveGroupHandle(HH,id,4,CreateGroup())
+call UnitSpeed(caster,2)
+call SetUnitAnimationByIndex(caster,5)
+endif
+if time<1.2 then
+call MoveUnit(caster,LoadUnitHandle(HH,id,21),0,facing)
+call PauseUnit(caster,true)
+call SetUnitInvulnerable(caster,true)
+endif
+if time==0.8 then
+set soundplay=CreateSound("Sound\\Music\\mp3Music\\SignumT2.mp3",false,false,true,12700,12700,"")
+call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
+endif
+if time==1 then
+call EffectCreateAndMove(true,"Signum\\TG_animeslashfinal_1.mdl",facing,1.5,2.5,0.75,100,60,100,40,100,caster,250,facing)
+call EffectCreateAndMove(true,"Signum\\TG_animeslashfinal_1.mdl",facing,1.5,2.5,0.75,100,60,100,40,100,caster,150,facing)
+call EffectCreateAndMove(true,"Signum\\TG_animeslashfinal_1.mdl",facing,1.5,2.5,0.75,100,60,100,40,100,caster,100,facing)
+call SetUnitAnimationByIndex(caster,6)
+call UnitSpeed(caster,0.6)
+call MoveUnit(caster,Dummy,200,facing)
+endif
+if time==1.2 then
+call UnitSpeed(caster,1)
+call PauseUnit(caster,false)
+call SetUnitInvulnerable(caster,false)
+endif
+if time>1 then
+call MoveUnit(Dummy,Dummy,60,facing)
+set time1=time1+0.02
+if time1==0.4 or time1==0.6 or time1==0.1 or time==1.22 then
+call EffectCreateAndMove90(true,"Signum\\wind3.mdl",facing,1.5,2,1.5,100,60,100,60,100,Dummy,100,facing)
+endif
+if time1==0.1 or time==1.22 then
+set time1=0
+call EffectCreateAndMove(true,"Signum\\az_yinenosmoke_DarkBlue.mdl",facing,1,1.5,2,100,60,100,0,0,Dummy,100,facing)
+call EffectCreateAndMove(true,"Signum\\NDEarthWave.mdl",facing,1.25,1.35,1.25,100,100,100,0,0,Dummy,100,facing)
+endif
+call SaveReal(HH,id,6,time1)
+call DamageAoeOneTime(caster,GetUnitX(Dummy),GetUnitY(Dummy),300,damage,LoadGroupHandle(HH,id,4))
+call SaveReal(HH,id,8,distance+50)
+endif
+endif
+set caster=null
+set Dummy=null
+endfunction
+function SignumChoice_Act takes nothing returns nothing
+
+
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+local unit caster=GetTriggerUnit()
+local unit target=GetSpellTargetUnit()
+local real x0=GetUnitX(caster)
+local real y0=GetUnitY(caster)
+local real x1=GetSpellTargetX()
+local real y1=GetSpellTargetY()
+local boolean SignumGBuff=false
+local real facing=Angle2(x0,y0,x1,y1)
+call SaveUnitHandle(HH,id,1,caster)
+call SaveReal(HH,id,11,x1)
+call SaveReal(HH,id,12,y1)
+call SaveReal(HH,id,3,facing)
+
+if GetUnitAbilityLevel(caster,'SiG2')>0 then
+set SignumGBuff=true
+endif
+
+call SaveBoolean(HH,id,16,SignumGBuff)
+
+
+if GetSpellAbilityId()=='SiF1' then
+
+if GetLocalPlayer()==GetOwningPlayer(caster)then
+call ClearSelection()
+call SelectUnit(caster,true)
+endif
+
+call AddUnitAnimationProperties(caster,"Alternate",true)
+if GetUnitAbilityLevel(caster,'SiE3')>0 then
+call UnitRemoveAbility(caster,'SiE3')
+endif
+
+call SetPlayerAbilityAvailable(GetOwningPlayer(caster),'SiE2',true)
+call SaveBoolean(HH,GetHandleId(caster),StringHash("SignumFBool"),false)
+
+
+call SetUnitAttackRangeByIndex(caster, 0, 600)
+//call SetUnitWeaponTypeByIndex(caster, 0, ConvertWeaponType(5))
+
+call SetUnitWeaponTypeByIndex(caster, 0, ConvertWeaponType(1))
+call SetPlayerAbilityAvailable(GetOwningPlayer(caster),'SiF1',false)
+call SetPlayerAbilityAvailable(GetOwningPlayer(caster),'SiF2',true)
+set soundplay=CreateSound("Sound\\Music\\mp3Music\\SignumFSnake.mp3",false,false,true,12700,12700,"")
+call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
+call SetUnitAbilityLevel(caster,'SiC1',2)
+call DestroyEffect(AddSpecialEffectTarget("Signum\\[A]LotusStar.mdl",caster,"hand right"))
+call EffectCreateAndMove(true,"Signum\\[A]az_axe_ef1.mdl",GetRandomReal(0,360),1.5,1,0.5,100,60,100,0,0,caster,0,facing)
+call EffectCreateAndMove(true,"Others\\HakkeStart2.mdl",GetRandomReal(0,360),1,0.75,2,100,100,100,60,0,caster,0,facing)
+call TimerStart(t,0.02,false,function SabracGnull)
+endif
+
+if GetSpellAbilityId()=='SiF2' then
+
+if GetLocalPlayer()==GetOwningPlayer(caster)then
+call ClearSelection()
+call SelectUnit(caster,true)
+endif
+
+call AddUnitAnimationProperties(caster,"Alternate",false)
+call SetPlayerAbilityAvailable(GetOwningPlayer(caster),'SiE1',true)
+call SaveBoolean(HH,GetHandleId(caster),StringHash("SignumFBool"),true)
+
+
+call SetUnitAttackRangeByIndex(caster, 0, 150)
+call SetUnitWeaponTypeByIndex(caster, 0, ConvertWeaponType(1))
+
+call SetPlayerAbilityAvailable(GetOwningPlayer(caster),'SiF2',false)
+call SetPlayerAbilityAvailable(GetOwningPlayer(caster),'SiF1',true)
+set soundplay=CreateSound("Sound\\Music\\mp3Music\\SignumFSword.mp3",false,false,true,12700,12700,"")
+call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
+call SetUnitAbilityLevel(caster,'SiC1',1)
+call DestroyEffect(AddSpecialEffectTarget("Signum\\[a]supershinythingygon.mdl",caster,"hand right"))
+call EffectCreateAndMove(true,"Signum\\[A]az_axe_ef1.mdl",GetRandomReal(0,360),1.5,1,0.5,100,60,10,0,0,caster,0,facing)
+call EffectCreateAndMove(true,"Others\\HakkeStart2.mdl",GetRandomReal(0,360),1,0.75,2,100,100,100,60,0,caster,0,facing)
+call TimerStart(t,0.02,false,function SabracGnull)
+endif
+
+if GetSpellAbilityId()=='SiG1' then
+call UnitAddAbility(caster,'SiG2')
+set soundplay=CreateSound("Sound\\Music\\mp3Music\\SignumG.mp3",false,false,true,12700,12700,"")
+call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
+call SetUnitAnimationByIndex(caster,27)
+call DestroyEffect(AddSpecialEffectTarget("Signum\\[A]Natsu ef roar.mdl",caster,"chest"))
+call EffectCreateAndMove(true,"Others\\HakkeStart2.mdl",GetRandomReal(0,360),1,0.75,2,100,100,100,60,0,caster,0,facing)
+call DestroyEffect(AddSpecialEffectTarget("Signum\\FSAeff (153).mdl",caster,"origin"))
+call SaveEffectHandle(HH,id,18,AddSpecialEffectTarget("Signum\\TrailPhoenix_Missile_mini.mdl",caster,"hand right"))
+call SaveEffectHandle(HH,id,17,AddSpecialEffectTarget("Signum\\[Signum]AceFireShockRun.mdl",caster,"hand right"))
+
+
+call CreateModeIndicatorWithPauseForm(caster, "ReplaceableTextures\\CommandButtons\\BTNSignumG.blp", 15)
+
+
+
+call TimerStart(t,1,true,function SignumGAct)
+endif
+
+
+if GetSpellAbilityId()=='SiQ1' then
+call PauseUnit(caster,true)
+if SignumGBuff then
+call SaveReal(HH,id,19,3300)
+call SaveReal(HH,id,15,75+(1+GetUnitAbilityLevel(caster,'SiQ1'))*GetHeroAgi(caster,true)+2*( GetUnitBaseDamageByIndex( caster ,0)+GetUnitBonusDamageByIndex( caster ,0) )   )
+else
+call SaveReal(HH,id,15,75+(1+GetUnitAbilityLevel(caster,'SiQ1'))*GetHeroAgi(caster,true))
+call SaveReal(HH,id,19,2300)
+endif
+
+call TimerStart(t,0.02,true,function SignumQAct)
+endif
+
+if GetSpellAbilityId()=='SiW1' then
+call SaveUnitHandle(HH,id,2,target)
+set soundplay=CreateSound("Sound\\Music\\mp3Music\\SignumW.mp3",false,false,true,12700,12700,"")
+call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
+call PauseUnit(caster,true)
+call SetUnitInvulnerable(caster,true)
+//Проверка на паузу
+
+call PauseUnit(target,true)
+call SaveBoolean(HH,GetHandleId( target ),TARGET_ABILITY,true)
+
+//Проверка на паузу
+call SetUnitInvulnerable(target,true)
+call SaveReal(HH,id,15,(2+GetUnitAbilityLevel(caster,'SiW1'))*GetHeroAgi(caster,true))
+call TimerStart(t,0.02,true,function SignumWAct)
+endif
+
+if GetSpellAbilityId()=='SiE1' then
+call SaveReal(HH,id,8,SR(x0,y0,x1,y1))
+if caster==target then
+set soundplay=CreateSound("Sound\\Music\\mp3Music\\SignumESelf.mp3",false,false,true,12700,12700,"")
+call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
+call ChangeAbilityTime(caster,10,'SiE1','SiE3')
+call ChangeAbilityTime(caster,10,'SiE2','SiE3')
+call SetUnitAbilityLevel(caster,'SiE3',GetUnitAbilityLevel(caster,'SiE1'))
+
+if SignumGBuff==true then
+call SetUnitAbilityLevel(caster,'SiE3',GetUnitAbilityLevel(caster,'SiE3')+1)
+endif
+
+call TimerStart(t,0.02,true,function SignumESelf)
+
+else
+call SaveReal(HH,id,9,SR(x0,y0,x1,y1))
+call UnitAddAbility(caster,'Amrf')
+call UnitRemoveAbility(caster,'Amrf')
+set soundplay=CreateSound("Sound\\Music\\mp3Music\\SignumE.mp3",false,false,true,12700,12700,"")
+call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
+call PauseUnit(caster,true)
+call SetUnitInvulnerable(caster,true)
+call SetUnitAnimationByIndex(caster,12)
+call UnitSpeed(caster,2-SR(x0,y0,x1,y1)*0.0015)
+call SaveReal(HH,id,15,(2+GetUnitAbilityLevel(caster,'SiE1'))*GetHeroAgi(caster,true))
+call TimerStart(t,0.02,true,function SignumEAct)
+endif
+
+endif
+
+if GetSpellAbilityId()=='SiE3' then
+
+if SignumGBuff==true then
+call SaveReal(HH,id,15,2*( GetUnitBaseDamageByIndex( caster ,0)+GetUnitBonusDamageByIndex( caster ,0) )+(3+GetUnitAbilityLevel(caster,'SiE3'))*GetHeroAgi(caster,true))
+else
+call SaveReal(HH,id,15,(3+GetUnitAbilityLevel(caster,'SiE3'))*GetHeroAgi(caster,true))
+endif
+
+
+
+
+call SaveUnitHandle(HH,id,2,target)
+call SetPlayerAbilityAvailable(GetOwningPlayer(caster),'SiE1',true)
+call SetPlayerAbilityAvailable(GetOwningPlayer(caster),'SiE2',true)
+set soundplay=CreateSound("Sound\\Music\\mp3Music\\SignumESelf2.mp3",false,false,true,12700,12700,"")
+call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
+call PauseUnit(caster,true)
+call SetUnitInvulnerable(caster,true)
+call SetUnitAnimationByIndex(caster,5)
+call UnitSpeed(caster,0.5)
+
+
+call TimerStart(t,0.02,true,function SignumESelfTargetAct)
+
+endif
+
+if GetSpellAbilityId()=='SiQ2' then
+
+if SignumGBuff then
+call SaveReal(HH,id,19,3300)
+call SaveReal(HH,id,15,(2+GetUnitAbilityLevel(caster,'SiQ2'))*GetHeroAgi(caster,true)+1.5*( GetUnitBaseDamageByIndex( caster ,0)+GetUnitBonusDamageByIndex( caster ,0) ))
+else
+call SaveReal(HH,id,15,(2+GetUnitAbilityLevel(caster,'SiQ2'))*GetHeroAgi(caster,true))
+call SaveReal(HH,id,19,2300)
+endif
+
+
+
+if SR(x0,y0,x1,y1)<700 then
+call EffectCreateAndMove(true,"Others\\BlackBlink1.mdl",facing,1,1,1,100,100,100,0,0,caster,0,facing)
+call MoveAoe1(x1,y1,caster,-800,facing)
+endif
+
+
+set soundplay=CreateSound("Sound\\Music\\mp3Music\\SignumFQ.mp3",false,false,true,12700,12700,"")
+call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
+call SaveUnitHandle(HH,id,20,CreateUnit(GetOwningPlayer(caster),'e200',x1,y1,facing))
+
+
+
+//call SetUnitInvulnerable(caster,true)
+call PauseUnit(caster,true)
+
+
+
+call TimerStart(t,0.02,true,function SignumFQAct)
+
+endif
+
+if GetSpellAbilityId()=='SiW2' then
+
+
+if SignumGBuff==true then
+call SaveReal(HH,id,15,(5+GetUnitAbilityLevel(caster,'SiW2'))*GetHeroAgi(caster,true)+1.5*( GetUnitBaseDamageByIndex( caster ,0)+GetUnitBonusDamageByIndex( caster ,0) ))
+else
+call SaveReal(HH,id,15,(5+GetUnitAbilityLevel(caster,'SiW2'))*GetHeroAgi(caster,true))
+endif
+
+call SaveGroupHandle(HH,id,4,CreateGroup())
+call SetUnitAnimationByIndex(caster,31)
+call SetUnitInvulnerable(caster,true)
+set n0=CreateUnit(GetOwningPlayer(caster),'e200',GetUnitX(caster),GetUnitY(caster),facing)
+call SetUnitModel(n0,"Signum\\SignumSnakeEff.mdl")
+call UnitSize(n0,0.75,1,1)
+call UnitSpeed(n0,1)
+call UnitColor(n0,100,100,100,0)
+call SetUnitFlyHeight(n0,0,0)
+call SaveUnitHandle(HH,id,20,n0)
+set n0=null
+set soundplay=CreateSound("Sound\\Music\\mp3Music\\SignumFW.mp3",false,false,true,12700,12700,"")
+call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
+call TimerStart(t,0.02,true,function SignumFWAct)
+
+endif
+
+if GetSpellAbilityId()=='SiE2' then
+call SaveUnitHandle(HH,id,2,target)
+call SetUnitAnimationByIndex(caster,30)
+call SetUnitInvulnerable(caster,true)
+set soundplay=CreateSound("Sound\\Music\\mp3Music\\SignumFE.mp3",false,false,true,12700,12700,"")
+call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
+if SignumGBuff then
+call SaveReal(HH,id,15,(4+GetUnitAbilityLevel(caster,'SiE2'))*GetHeroAgi(caster,true))
+else
+call SaveReal(HH,id,15,(3+GetUnitAbilityLevel(caster,'SiE2'))*GetHeroAgi(caster,true))
+endif
+
+call SaveUnitHandle(HH,id,20,CreateUnit(GetOwningPlayer(caster),'e200',x0,y0,facing))
+call TimerStart(t,0.02,true,function SignumFEAct)
+
+endif
+
+if GetSpellAbilityId()=='SiR1' then
+//call SetUnitInvulnerable(caster,true)
+call SaveReal(HH, GetHandleId( (GetOwningPlayer( caster )) ), StringHash("DummyFacing"), facing )
+call PauseUnit(caster,true)
+set n0=CreateUnit(GetOwningPlayer(caster),'gbRd',GetUnitX(caster),GetUnitY(caster),facing)
+call UnitAddAbility(n0,'Pet2')
+call UnitSize(n0,1,1,1)
+call MoveUnit(n0,n0,50,facing)
+call SetUnitFlyHeight(n0,100,0)
+call SaveUnitHandle(HH,id,2,n0)
+call UnitAddAbility(n0,'SiR2')
+
+if GetLocalPlayer()==GetOwningPlayer(caster)then
+call ClearSelection()
+call SelectUnit(n0,true)
+endif
+set n0=null
+
+if LoadBoolean(HH,GetHandleId(caster),StringHash("SignumFBool"))==true then
+call SaveReal(HH,id,21,40)
+call SaveReal(HH,id,8,2500)
+call SaveReal(HH,id,9,100)
+call SaveReal(HH,id,15,2+GetUnitAbilityLevel(caster,'SiR1'))
+call TimerStart(t,0.02,true,function SignumRAct)
+endif
+
+if LoadBoolean(HH,GetHandleId(caster),StringHash("SignumFBool"))==false then
+call SaveReal(HH,id,21,35)
+call SaveReal(HH,id,8,1500)
+call SaveReal(HH,id,9,250)
+call SaveReal(HH,id,15,GetUnitAbilityLevel(caster,'SiR1')-1)
+
+call TimerStart(t,0.02,true,function SignumFRAct)
+endif
+
+endif
+
+if GetSpellAbilityId()=='SiR2' then
+call SaveBoolean(HH,GetHandleId(caster),StringHash("SignumRBool"),true)
+call SaveReal(HH,GetHandleId(caster),StringHash("SignumRReal"),facing)
+call TimerStart(t,0.02,false,function SabracGnull)
+endif
+
+if GetSpellAbilityId()=='SiT1' then
+
+if caster==target then
+
+if SignumGBuff==true then
+call PauseUnit(caster,true)
+call SetUnitInvulnerable(caster,true)
+set n0=CreateUnit(GetOwningPlayer(caster),'e200',x0,y0,GetUnitFacing(caster))
+call SetUnitAnimationByIndex(n0,0)
+call UnitSize(n0,0.5,1,1)
+call UnitSpeed(n0,1)
+call UnitColor(n0,100,100,100,0)
+call SetUnitFlyHeight(n0,200,0)
+call SaveUnitHandle(HH,id,20,n0)
+call MyRemoveUnit(n0,5)
+
+set n0=null
+call SaveReal(HH,id,3,GetUnitFacing(caster))
+call SaveReal(HH,id,15,15*GetHeroAgi(caster,true))
+call TimerStart(t,0.02,true,function SignumTSelfActEff)
+
+else
+call UnitStop(caster)
+call TimerStart(t,0.02,false,function SabracGnull)
+endif
+
+else
+call PauseUnit(caster,true)
+call SetUnitInvulnerable(caster,true)
+call SaveReal(HH,id,15,11*GetHeroAgi(caster,true))
+call TimerStart(t,0.02,true,function SignumTAct)
+
+endif
+
+endif
+
+
+
+
+
+set t=null
+set caster=null
+set target=null
+
+endfunction
+function SignumChoice_Cond takes nothing returns boolean
+if GetSpellAbilityId()=='SiF1' or GetSpellAbilityId()=='SiF2' or GetSpellAbilityId()=='SiG1' or GetSpellAbilityId()=='SiQ1' or GetSpellAbilityId()=='SiQ2' or GetSpellAbilityId()=='SiW1' or GetSpellAbilityId()=='SiW2' or GetSpellAbilityId()=='SiE1' or GetSpellAbilityId()=='SiE2' or GetSpellAbilityId()=='SiE3' or GetSpellAbilityId()=='SiR1' or GetSpellAbilityId()=='SiR2' or GetSpellAbilityId()=='SiT1' then
+return true
+else
+return false
+endif
+endfunction
+function SignumTankSpiritCond takes nothing returns boolean
+if ( GetUnitTypeId(GetTriggerUnit())=='HSig' or  GetUnitTypeId(GetTriggerUnit())=='HGuN' or  GetUnitTypeId(GetTriggerUnit())=='HGuB' ) and GetHeroLevel( GetTriggerUnit() )>=12 and LoadBoolean(HH,GetHandleId(GetTriggerUnit()),StringHash("SignumCD"))==false and(OrderId2String(GetUnitCurrentOrder(GetTriggerUnit()))=="patrol") and Unit_Check_Have_Control(GetTriggerUnit())    then
+return true
+else
+return false
+endif
+endfunction
+function SignumAA_Conditions takes nothing returns boolean
+        return GetUnitTypeId(GetAttacker())=='HSig' and udg_B==true //and IsUnitEnemy(GetTriggerUnit(),GetOwningPlayer(GetAttacker()))
+endfunction
+function SignumAA_Actions takes nothing returns nothing
+        local unit caster=GetAttacker()
+        local unit target=GetTriggerUnit()
+        local integer id_caster = GetHandleId(caster)
+        local real damage= 0.5*GetUnitAbilityLevel(caster,'SiG2')*GetHeroAgi(caster,true)  //GetUnitTotalDamage(u)
+        //call SetEventDamage(0)
+        //call UnitRemoveAbility(target, 'B017')
+        //call UnitRemoveAbility(target, 'B019')
+        //call newBlockDamage(target)
+
+        if LoadBoolean(HH,GetHandleId( caster ),StringHash("SignumFBool"))==true then
+
+
+
+           if IsUnitEnemy( target ,GetOwningPlayer( caster) )==true or (IsUnitAlly( target ,GetOwningPlayer( caster))==true and GetUnitState( target ,UNIT_STATE_LIFE)<GetUnitState( target ,UNIT_STATE_MAX_LIFE)*0.1) then
+             call DestroyEffect(AddSpecialEffectTarget("Signum\\Tsubaki-48.mdl",target,"chest"))
+             if Karna_ModifAttack(caster , target , 1.5, damage, 1, true) then
+             endif
+           endif
+        
+
+        else
+
+        call DestroyEffect(AddSpecialEffectTarget("Signum\\[AB]PurpleAz-hit.mdl",target,"chest"))
+        
+        if IsUnitEnemy( target ,GetOwningPlayer( caster) )==true or (IsUnitAlly( target ,GetOwningPlayer( caster))==true and GetUnitState( target ,UNIT_STATE_LIFE)<GetUnitState( target ,UNIT_STATE_MAX_LIFE)*0.1) then
+           
+          if Karna_ModifAttack(caster , target , 1, damage, 1, true) then
+          endif
+
+        endif
+
+        call GroupEnumUnitsInRange(G,GetUnitX(target),GetUnitY(target),400,Base)
+        loop
+        set n0=FirstOfGroup(G)
+        exitwhen n0==null
+
+          if  n0!=target and Condition_Base(GetOwningPlayer(caster),n0) and GetUnitAbilityLevel(n0,'Avul')==0 then
+
+
+            if Karna_ModifAttack(caster , n0 , 1, damage, 1, true) then
+            endif
+            call DestroyEffect(AddSpecialEffectTarget("Signum\\[AB]PurpleAz-hit.mdl",n0,"chest"))
+          endif
+          call GroupRemoveUnit(G,n0)
+        endloop
+
+       endif
+
+        
+
+
+
+        set caster=null
+        set target=null
+endfunction
+function SignumTankSpiritCD takes nothing returns nothing
+local integer id=GetHandleId(GetExpiredTimer())
+local unit caster=LoadUnitHandle(HH,id,1)
+local real time=LoadReal(HH,id,5)
+local real time1=LoadReal(HH,id,6)
+set time=time+0.02
+call SaveReal(HH,id,5,time)
+
+if IsUnitPaused(caster)==false then
+set time1=time1+0.02
+call SaveReal(HH,id,6,time1)
+endif
+
+if time1<8 then
+call SetUnitFlyHeight(n0,GetUnitFlyHeight(caster),0)
+call MoveUnit(caster,LoadUnitHandle(HH,id,20),0,GetUnitFacing(caster))
+endif
+
+if GetUnitAbilityLevel(caster,'SiTS')==0 and time1<8 then
+call RemoveUnit(LoadUnitHandle(HH,id,20))
+call SaveReal(HH,id,6,8.02)
+call UnitRemoveAbility(caster,'BSiT')
+endif
+
+if time1>=8 then
+call SaveReal(HH,id,6,8.02)
+call RemoveUnit(LoadUnitHandle(HH,id,20))
+
+if GetUnitAbilityLevel(caster,'SiTS')>0 then
+call UnitRemoveAbility(caster,'SiTS')
+call UnitRemoveAbility(caster,'BSiT')
+endif
+
+
+call AbilityCD(caster,'SiD1',30)
+//endif
+//if time>=30 and time1>=8 then
+
+
+//if(GetLocalPlayer()==GetOwningPlayer(caster))then
+//call DisplayTextToPlayer(GetLocalPlayer(),0,0,"Tank Spirit: Ready")
+//endif
+//call SaveBoolean(HH,GetHandleId(caster),StringHash("SignumCD"),false)
+call PauseTimer(GetExpiredTimer())
+call FlushChildHashtable(HH,id)
+call DestroyTimer(GetExpiredTimer())
+endif
+
+set caster=null
+endfunction
+function SignumTankSpiritAct takes unit caster returns nothing
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+///local unit caster=GetTriggerUnit()
+local real facing=GetUnitFacing(caster)
+
+local real MpMax=GetUnitState(caster,UNIT_STATE_MAX_MANA)
+local real MpBase=GetUnitState(caster,UNIT_STATE_MANA)
+
+//call SaveBoolean(HH,GetHandleId(caster),StringHash("SignumCD"),true)
+
+ if  GetUnitTypeId(caster)=='HGuB' or GetUnitTypeId(caster)=='HGuN' then
+call SaveUnitHandle(HH,id,1,caster)
+//call TimerStart(t,15,false,function GutsPingCD)
+
+call TimerStart(t,0.02,false,function SabracGnull)
+
+
+set soundplay=CreateSound("Sound\\Guts\\Ping.mp3",false,false,true,12700,12700,"")
+call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
+call EffectCreateAndMove(true,"Signum\\[A]az_axe_ef1.mdl",GetRandomReal(0,360),1.5,1,0.5,100,80,80,0,0,caster,0,facing)
+call EffectCreateAndMove(true,"Others\\HakkeStart2.mdl",GetRandomReal(0,360),1,0.75,2,100,100,100,60,0,caster,0,facing)
+//call EffectCreateAndMove(true,"Guts\\hit-juhuang-lizi.mdl",facing,1,2,0.5,100,100,100,40,150,caster,0,facing)
+//call EffectCreateAndMove(true,"Gaara\\File00003933.mdl",facing,1,0.5,1,100,100,100,0,50,caster,0,facing)
+//call EffectCreateAndMove(true,"Others\\red-lizi-shunjian.mdl",GetRandomReal(0,360),1,1,0.5,100,100,100,0,200,caster,15,facing)
+
+call EffectCreateAndMove(true,"Others\\red-lizi-shunjian.mdl",GetRandomReal(0,360),1,2,0.5,100,100,100,0,0,caster,0,facing)
+call DestroyEffect(AddSpecialEffectTarget("Guts\\red-zhendi-shanguang.mdl",caster,"chest"))
+call DestroyEffect(AddSpecialEffectTarget("Others\\red-lizi-shunjian.mdl",caster,"chest"))
+call DestroyEffect(AddSpecialEffectTarget("Gaara\\File00003933.mdl",caster,"chest"))
+
+
+
+
+call GroupClear(G)
+call GroupEnumUnitsInRange(G,GetUnitX(caster),GetUnitY(caster),15000,Base)
+loop
+set n0=FirstOfGroup(G)
+exitwhen n0==null
+if IsUnitEnemy(n0,GetOwningPlayer(caster))==true and IsUnitType(n0,UNIT_TYPE_STRUCTURE)==false  then
+
+call GutsPingDummy(caster,n0)
+//call DestroyEffect(AddSpecialEffectTarget("Gaara\\File00003933.mdl",n0,"chest"))
+call DestroyEffect(AddSpecialEffectTarget("Others\\red-lizi-shunjian.mdl",n0,"chest"))
+endif
+call GroupRemoveUnit(G,n0)
+endloop
+
+call GroupClear(G)
+
+
+
+
+
+endif
+
+ if  GetUnitTypeId(caster)=='HSig' then
+set n0=CreateUnit(GetOwningPlayer(caster),'e200',GetUnitX(caster),GetUnitY(caster),facing)
+call SetUnitModel(n0,"Signum\\TohkaEnergy.mdl")
+call UnitSize(n0,0.75,1,1)
+call SetUnitFlyHeight(n0,0,0)
+call SaveUnitHandle(HH,id,20,n0)
+set n0=null
+
+call SetUnitState(caster,UNIT_STATE_MANA,MpBase-MpMax*0.15)
+
+call EffectCreateAndMove(true,"Signum\\FSAeff (200).mdl",facing,1.5,1.5,1,100,100,100,0,0,caster,0,facing)
+call EffectCreateAndMove(true,"Signum\\FSAeff (203).mdl",facing,1.5,2,0.5,100,100,100,0,0,caster,0,facing)
+call EffectCreateAndMove(true,"Signum\\FSAeff (208).mdl",facing,1.5,1.5,0.5,100,100,100,0,0,caster,0,facing)
+call EffectCreateAndMove(true,"Signum\\[A]az_axe_ef1.mdl",GetRandomReal(0,360),1.5,1,0.5,100,60,100,30,0,caster,0,facing)
+call EffectCreateAndMove(true,"Others\\HakkeStart2.mdl",GetRandomReal(0,360),1.5,1.2,1.5,100,100,100,60,0,caster,0,facing)
+call UnitAddAbility(caster,'SiTS')
+set soundplay=CreateSound("Sound\\Music\\mp3Music\\SignumTankSpirit.mp3",false,false,true,12700,12700,"")
+call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
+set soundplay=CreateSound("Sound\\Music\\mp3Music\\SignumTankSpirit1.mp3",false,false,true,12700,12700,"")
+call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
+//if(GetLocalPlayer()==GetOwningPlayer(caster))then
+//call DisplayTextToPlayer(GetLocalPlayer(),0,0,"Tank Spirit")
+//endif
+
+call SaveUnitHandle(HH,id,1,caster)
+
+//call CreateModeIndicatorWithPauseForm(caster, "ReplaceableTextures\\CommandButtons\\BTNSignumIcon.blp", 8)
+call CreateModeIndicatorForm(caster,"ReplaceableTextures\\CommandButtons\\BTNSignumD.blp",8)
+
+
+
+call TimerStart(t,0.02,true,function SignumTankSpiritCD)
+
+
+endif
+
+set t=null
+set caster=null
+
+
+
+
+endfunction
+function InitTrig_SignumChoice takes nothing returns nothing
+local trigger SignumChoice=CreateTrigger()
+local integer index
+set index=0
+loop
+call TriggerRegisterPlayerUnitEvent(SignumChoice,Player(index),EVENT_PLAYER_UNIT_SPELL_EFFECT,null)
+set index=index+1
+exitwhen index==bj_MAX_PLAYER_SLOTS
+endloop
+call TriggerAddCondition(SignumChoice,Condition(function SignumChoice_Cond))
+call TriggerAddAction(SignumChoice,function SignumChoice_Act)
+set SignumChoice=null
+set index=0
+endfunction
+function InitTrig_SignumnAA takes nothing returns nothing
+        local trigger trig=CreateTrigger()
+        call TriggerRegisterAnyUnitEventBJ(trig,EVENT_PLAYER_UNIT_ATTACKED)
+        call TriggerAddCondition(trig,Condition(function SignumAA_Conditions))
+        call TriggerAddAction(trig,function SignumAA_Actions)
+        set trig=null
+endfunction
+//Signumend
 function AbilitiesForChoice_Act takes nothing returns nothing//моя функция для всех абилок в чоус
     local unit caster=GetSpellAbilityUnit()//замени на каких-то юнитов
     local unit target=GetSpellTargetUnit()//
@@ -226583,6 +228904,9 @@ call KimimaroFMorph_Act(caster)
 endif
 if GetSpellAbilityId()=='AKG1' then
 call KimimaroG_Act(caster,x1,y1)
+endif
+if GetSpellAbilityId()=='SiD1' then
+call SignumTankSpiritAct(caster)
 endif
 set caster=null
     set target=null
@@ -232025,6 +234349,8 @@ call TriggerAddAction(t,function Trig_Execute_Actions2)
 set t=null
 endfunction
 function InitCustomTriggers takes nothing returns nothing
+call InitTrig_SignumnAA()
+call InitTrig_SignumChoice()
 call InitTrig_Quests()
 call InitTrig_VoicePreload()
 call InitTrig_Init()
