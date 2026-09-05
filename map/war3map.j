@@ -1161,6 +1161,7 @@ integer array kazu
 //JASSHelper struct globals:
 
 integer array GutsStr //Buu: накопленная сила Кушу
+unit array UArray//буфер под выбор случайной цели, из переносов 4.5
 endglobals
 native MergeUnits       takes integer qty, integer a, integer b, integer make returns boolean   // reserved native for call 4 integer function and return BOOLEAN value
 native ConvertUnits takes integer qty, integer id returns boolean                                                       // reserved native for call 2 integer function and return BOOLEAN value (can be converted to int!)
@@ -30117,7 +30118,7 @@ set t=null
 endfunction
 function LamboChibiCond takes nothing returns boolean
 set P=GetTriggerPlayer()
-return BaseSkinPetCond(P) or GetPlayerName(P)=="KamaBr" or GetPlayerName(P)=="[OSV] Kama" or GetPlayerName(P)=="Ratti" or GetPlayerName(P)=="Annieh" or GetPlayerName(P)=="zld6334" or GetPlayerName(P)=="Denamesh" or GetPlayerName(P)=="xxNu-13xx" or GetPlayerName(P)=="PinkieNecro" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="NecromanseR_RuS" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="zelim9" or GetPlayerName(P)=="MoonX3" or GetPlayerName(P)=="Kuzeyuta" or GetPlayerName(P)=="[Nirvash][Neo]" or GetPlayerName(P)=="X53Arcan" or GetPlayerName(P)=="Lord_Orochimaru" or GetPlayerName(P)=="BERKUNT" or GetPlayerName(P)=="Oma_Kurotsu"
+return BaseSkinPetCond(P) or GetPlayerName(P)=="Annieh" or GetPlayerName(P)=="zld6334" or GetPlayerName(P)=="Denamesh"or GetPlayerName(P)=="xxNu-13xx"or GetPlayerName(P)=="PinkieNecro" or GetPlayerName(P)=="NecromanseR_RuS"or GetPlayerName(P)=="zelim9"or GetPlayerName(P)=="MoonX3"or GetPlayerName(P)=="Kuzeyuta"or GetPlayerName(P)=="[Nirvash][Neo]"or GetPlayerName(P)=="X53Arcan"or GetPlayerName(P)=="Lord_Orochimaru"or GetPlayerName(P)=="BERKUNT"or GetPlayerName(P)=="Oma_Kurotsu"
 endfunction
 function LamboChibi2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
@@ -30130,11 +30131,6 @@ local real x1=GetUnitX(l__d)
 local real y1=GetUnitY(l__d)
 local real time=LoadReal(HH,id,2)
 call SaveReal(HH,id,2,time+0.1)
-if CheckUnitInvisible(Hero[ip]) then
-    call UnitAddAbility(l__d,'Ao7S')
-else
-    call UnitRemoveAbility(l__d,'Ao7S')
-endif
 if UnitIsAlive(l__d)then
 if SR(x,y,x1,y1)>400 then
 call IssuePointOrder(l__d,"move",x+GetRandomReal(-300,300),y+GetRandomReal(-300,300))
@@ -30163,7 +30159,7 @@ local unit l__d=LoadUnitHandle(HH,StringHash(I2S(ip)),1)
 if l__d==null then
 call SaveInteger(HH,id,0,ip)
 call SaveReal(HH,id,2,0)
-call SaveUnitHandle(HH,StringHash(I2S(ip)),1,CreateUnit(GetOwningPlayer(Hero[ip]),'e0W8',GetUnitX(Hero[ip])+GetRandomReal(-100,100),GetUnitY(Hero[ip])+GetRandomReal(-100,100),GetRandomReal(6.28,0)))
+call SaveUnitHandle(HH,StringHash(I2S(ip)),1,CreateUnit(GetOwningPlayer(Hero[ip]),0x65305738,GetUnitX(Hero[ip])+GetRandomReal(-100,100),GetUnitY(Hero[ip])+GetRandomReal(-100,100),GetRandomReal(6.28,0)))
 call TimerStart(t,0.1,true,function LamboChibi2)
 else
 call KillUnit(l__d)
@@ -223620,7 +223616,7 @@ endfunction
 
 ///ини абилок
 function AbilitiesForChoice_Cond takes nothing returns boolean
-    local boolean cond1=GetSpellAbilityId()=='SiD1' or GetSpellAbilityId()=='AKQ1' or GetSpellAbilityId()=='AKW1' or GetSpellAbilityId()=='AKE1' or GetSpellAbilityId()=='AKR1' or GetSpellAbilityId()=='AKT1' or GetSpellAbilityId()=='AKF1' or GetSpellAbilityId()=='AKG1' or GetSpellAbilityId()=='GrQ1' or GetSpellAbilityId()=='GrW1' or GetSpellAbilityId()=='GrE1' or GetSpellAbilityId()=='GrR1' or GetSpellAbilityId()=='GrT1' or GetSpellAbilityId()=='GrF1' or GetSpellAbilityId()=='GrG2' or GetSpellAbilityId()=='UKD1' or GetSpellAbilityId()=='BuuG' or GetSpellAbilityId()=='GSQ1' or GetSpellAbilityId()=='GSQ2' or GetSpellAbilityId()=='GSW1' or GetSpellAbilityId()=='GSE1' or GetSpellAbilityId()=='GSE2' or GetSpellAbilityId()=='GSF1' or GetSpellAbilityId()=='GSF2' or GetSpellAbilityId()=='GSG1' or GetSpellAbilityId()=='GSR1' or GetSpellAbilityId()=='GST1' or GetSpellAbilityId()=='GST2' or GetSpellAbilityId()=='GST3' or GetSpellAbilityId()=='SHG1' or GetSpellAbilityId()=='CelF' or GetSpellAbilityId()=='CelG' or GetSpellAbilityId()=='CelT'
+    local boolean cond1=GetSpellAbilityId()=='LamF' or GetSpellAbilityId()=='SiD1' or GetSpellAbilityId()=='AKQ1' or GetSpellAbilityId()=='AKW1' or GetSpellAbilityId()=='AKE1' or GetSpellAbilityId()=='AKR1' or GetSpellAbilityId()=='AKT1' or GetSpellAbilityId()=='AKF1' or GetSpellAbilityId()=='AKG1' or GetSpellAbilityId()=='GrQ1' or GetSpellAbilityId()=='GrW1' or GetSpellAbilityId()=='GrE1' or GetSpellAbilityId()=='GrR1' or GetSpellAbilityId()=='GrT1' or GetSpellAbilityId()=='GrF1' or GetSpellAbilityId()=='GrG2' or GetSpellAbilityId()=='UKD1' or GetSpellAbilityId()=='BuuG' or GetSpellAbilityId()=='GSQ1' or GetSpellAbilityId()=='GSQ2' or GetSpellAbilityId()=='GSW1' or GetSpellAbilityId()=='GSE1' or GetSpellAbilityId()=='GSE2' or GetSpellAbilityId()=='GSF1' or GetSpellAbilityId()=='GSF2' or GetSpellAbilityId()=='GSG1' or GetSpellAbilityId()=='GSR1' or GetSpellAbilityId()=='GST1' or GetSpellAbilityId()=='GST2' or GetSpellAbilityId()=='GST3' or GetSpellAbilityId()=='SHG1' or GetSpellAbilityId()=='CelF' or GetSpellAbilityId()=='CelG' or GetSpellAbilityId()=='CelT'
     if cond1 then
         return true
     else
@@ -228885,6 +228881,860 @@ function InitTrig_SignumnAA takes nothing returns nothing
         set trig=null
 endfunction
 //Signumend
+//Lambostart — перенесено из Choice Random 4.5
+function PushTimedNew1 takes nothing returns nothing
+local integer id=GetHandleId(GetExpiredTimer())
+local unit target=LoadUnitHandle(HH,id,2)
+local real facing=LoadReal(HH,id,3)
+local real speed=LoadReal(HH,id,5)
+local real dist=LoadReal(HH,id,8)
+call SaveReal(HH,id,8,dist-speed)
+if dist>0 then
+if speed-speed*0.02>0 then
+call SaveReal(HH,id,5,speed-speed*0.02)
+endif
+call MoveUnit(target,target,speed,facing)
+else
+call PauseTimer(GetExpiredTimer())
+call FlushChildHashtable(HH,id)
+call DestroyTimer(GetExpiredTimer())
+endif
+set target=null
+endfunction
+function PushTimedNew takes unit target0,real speed0,real dist0,real facing0 returns nothing
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+call SaveUnitHandle(HH,id,2,target0)
+call SaveReal(HH,id,3,facing0)
+call SaveReal(HH,id,5,speed0)
+call SaveReal(HH,id,8,dist0-speed0)
+call MoveUnit(target0,target0,speed0,facing0)
+call TimerStart(t,0.02,true,function PushTimedNew1)
+set target0=null
+set t=null
+endfunction
+function LamboGAct takes nothing returns nothing
+local integer id=GetHandleId(GetExpiredTimer())
+local unit caster=LoadUnitHandle(HH,id,1)
+local real facing=LoadReal(HH,id,3)
+local real time=LoadReal(HH,id,5)
+if time==0.02 or time==0.3 or time==0.6 then
+call EffectCreateAndMove(true,"Others\\white-shandian-qiquan-red.mdl",facing,1,0.5,1,100,100,100,0,150,caster,0,facing)
+call EffectCreateAndMove(true,"Others\\[A]az_axe_ef1.mdl",facing,1.5,1,0.65,100,60,60,0,0,caster,0,facing)
+call EffectCreateAndMove(true,"Others\\HakkeStart2.mdl",facing,1.5,1,1.5,100,100,100,80,0,caster,0,facing)
+endif
+if (IsUnitPaused(caster)==false and  GetUnitAbilityLevel(caster,'Avul')==0)  or time<1 then 
+set time=time+0.02
+call SaveReal(HH,id,5,time)
+endif
+if time<1 then
+call PauseUnit(caster,true)
+endif
+if time==1 then
+ call CreateModeIndicatorWithPauseForm(caster, "ReplaceableTextures\\CommandButtons\\BTNLamboG.blp", 15)
+
+if GetUnitAbilityLevel(caster,'LamG')==1 then
+call UnitAddAbility(caster,'LmE2')
+endif
+
+if GetUnitAbilityLevel(caster,'LamG')==2 then
+call UnitAddAbility(caster,'LmE3')
+endif
+
+if GetUnitAbilityLevel(caster,'LamG')==3 then
+call UnitAddAbility(caster,'LmE4')
+endif
+
+if GetUnitAbilityLevel(caster,'LamG')==4 then
+call UnitAddAbility(caster,'LmE5')
+endif
+
+if GetUnitAbilityLevel(caster,'LamG')==5 then
+call UnitAddAbility(caster,'LmE6')
+endif
+
+
+call EffectCreateAndMove(true,"Others\\HakkeStart2.mdl",facing,1.5,1,1.5,100,100,100,80,0,caster,0,facing)
+call EffectCreateAndMove(true,"Others\\WindCirclefaster.mdl",facing,1.5,1.5,1.5,100,100,100,40,0,caster,0,facing)
+call EffectCreateAndMove(true,"Others\\FSAEff (34).mdl",facing,1.5,1.5,1.5,100,100,100,0,0,caster,0,facing)
+call EffectCreateAndMove(true,"Others\\FSAEff (34).mdl",facing,1.5,1,1.5,100,100,100,0,0,caster,150,facing+45)
+call EffectCreateAndMove(true,"Others\\FSAEff (34).mdl",facing,1.5,1,1.5,100,100,100,0,0,caster,150,facing-45)
+call EffectCreateAndMove(true,"Others\\FSAEff (34).mdl",facing,1.5,1,1.5,100,100,100,0,0,caster,150,facing+135)
+call EffectCreateAndMove(true,"Others\\FSAEff (34).mdl",facing,1.5,1,1.5,100,100,100,0,0,caster,150,facing-135)
+call EffectCreateAndMove(true,"Others\\LightningSlamRed3.mdl",facing,1.5,1,1,100,100,100,0,0,caster,150,facing+45)
+call EffectCreateAndMove(true,"Others\\LightningSlamRed3.mdl",facing,1.5,1,1,100,100,100,0,0,caster,150,facing-45)
+call EffectCreateAndMove(true,"Others\\LightningSlamRed3.mdl",facing,1.5,1,1,100,100,100,0,0,caster,150,facing+135)
+call EffectCreateAndMove(true,"Others\\LightningSlamRed3.mdl",facing,1.5,1,1,100,100,100,0,0,caster,150,facing-135)
+call UnitSpeed(caster,1)
+call UnitAddAbility(caster,'LamS')
+call UnitMakeAbilityPermanent(caster,true,'LamS')
+call PauseUnit(caster,false)
+set n0=CreateUnit(GetOwningPlayer(caster),'e200',GetUnitX(caster),GetUnitY(caster),LoadReal(HH,id,3))
+call SetUnitModel(n0,"Others\\LamboLightningRed2.mdl")
+call UnitSize(n0,1,1,1)
+call UnitSpeed(n0,1)
+call UnitColor(n0,100,100,100,0)
+call SetUnitFlyHeight(n0,0,0)
+call SaveUnitHandle(HH,id,20,n0)
+set n0=null
+endif
+if time>1 then
+call MoveUnit(caster,LoadUnitHandle(HH,id,20),0,GetUnitFacing(caster))
+call SetUnitFlyHeight(LoadUnitHandle(HH,id,20),GetUnitFlyHeight(caster),0)
+endif
+if time>=16.4 then
+call UnitRemoveAbility(caster,'LmE2')
+call UnitRemoveAbility(caster,'LmE3')
+call UnitRemoveAbility(caster,'LmE4')
+call UnitRemoveAbility(caster,'LmE5')
+call UnitRemoveAbility(caster,'LmE6')
+
+call UnitMakeAbilityPermanent(caster,false,'LamS')
+call UnitRemoveAbility(caster,'LamS')
+call UnitRemoveAbility(caster,'BLam')
+call RemoveUnit(LoadUnitHandle(HH,id,20))
+call PauseTimer(GetExpiredTimer())
+call FlushChildHashtable(HH,id)
+call DestroyTimer(GetExpiredTimer())
+endif
+set caster=null
+endfunction
+function LamboQAct takes nothing returns nothing
+local integer id=GetHandleId(GetExpiredTimer())
+local unit caster=LoadUnitHandle(HH,id,1)
+local real facing=LoadReal(HH,id,3)
+local real time=LoadReal(HH,id,5)
+local real time0
+local real x0=GetUnitX(caster)
+local real y0=GetUnitY(caster)
+local real damage=LoadReal(HH,id,15)
+local boolean LamboSet=LoadBoolean(HH,id,16)
+set time=time+0.02
+call SaveReal(HH,id,5,time)
+if time==0.2 then
+if LamboSet then
+call EffectCreateAndMove(true,"Others\\FSAEff (34).mdl",facing,1.5,1,2,100,100,100,60,0,caster,0,facing)
+else
+call EffectCreateAndMove(true,"Others\\FSAEff (34)-green.mdl",facing,1.5,1,2,100,100,100,60,0,caster,0,facing)
+endif
+set time0=0
+loop
+if LamboSet then
+call EffectCreateAndMove(true,"Others\\FSAEff (34).mdl",facing+time0*36,1.5,1,2,100,100,100,60,0,caster,150,facing+time0*36)
+call EffectCreateAndMove(true,"Others\\FSAEff (34).mdl",facing+time0*36,1.5,1,2,100,100,100,60,0,caster,280,facing+time0*36)
+else
+call EffectCreateAndMove(true,"Others\\FSAEff (34)-green.mdl",facing+time0*36,1.5,1,2,100,100,100,60,0,caster,150,facing+time0*36)
+call EffectCreateAndMove(true,"Others\\FSAEff (34)-green.mdl",facing+time0*36,1.5,1,2,100,100,100,60,0,caster,280,facing+time0*36)
+endif
+set time0=time0+1
+exitwhen time0==10
+endloop
+endif
+if time==0.3 then
+call PauseUnit(caster,false)
+if LamboSet then
+call EffectCreateAndMove(true,"Others\\FSAEff (34).mdl",facing,1.5,1,2,100,100,100,0,0,caster,0,facing)
+call EffectCreateAndMove(true,"Others\\FSAEff (33).mdl",facing,1.5,1.5,2,100,100,100,0,0,caster,0,facing)
+else
+call EffectCreateAndMove(true,"Others\\FSAEff (34)-green.mdl",facing,1.5,1,2,100,100,100,0,0,caster,0,facing)
+call EffectCreateAndMove(true,"Others\\FSAEff (33)-green.mdl",facing,1.5,1.5,2,100,100,100,0,0,caster,0,facing)
+endif
+set time0=0
+loop
+if LamboSet then
+call EffectCreateAndMove(true,"Others\\FSAEff (33).mdl",facing+time0*24,1.5,1.5,2,100,100,100,0,0,caster,250,facing+time0*24)
+else
+call EffectCreateAndMove(true,"Others\\FSAEff (33)-green.mdl",facing+time0*24,1.5,1.5,2,100,100,100,0,0,caster,250,facing+time0*24)
+endif
+set time0=time0+1
+exitwhen time0==15
+endloop
+call UnitSpeed(caster,1)
+
+if GetUnitAbilityLevel(caster,'LamS')>0 then
+call DamageAoeOneTime0(caster,x0,y0,400,damage*1.3)
+else
+call DamageAoeOneTime0(caster,x0,y0,400,damage)
+endif
+call StunAoeOneTime(caster,x0,y0,400,2)
+call PauseTimer(GetExpiredTimer())
+call FlushChildHashtable(HH,id)
+call DestroyTimer(GetExpiredTimer())
+else
+call PauseUnit(caster,true)
+if time==0.02 then
+if LamboSet then
+call EffectCreateAndMove(true,"Others\\white-shandian-qiquan-red.mdl",facing,1.5,1.5,0.5,100,100,100,0,100,caster,0,facing)
+call EffectCreateAndMove(true,"Others\\[A]az_axe_ef1.mdl",facing,1.5,1,0.65,100,60,60,0,0,caster,0,facing)
+else
+call EffectCreateAndMove(true,"Others\\white-shandian-qiquan-green.mdl",facing,1.5,1.5,0.5,100,100,100,0,100,caster,0,facing)
+call EffectCreateAndMove(true,"Others\\[A]az_axe_ef1.mdl",facing,1.5,1,0.65,60,100,60,0,0,caster,0,facing)
+endif
+call EffectCreateAndMove(true,"Others\\HakkeStart2.mdl",facing,1.5,1,1.5,100,100,100,80,0,caster,0,facing)
+call SetUnitAnimationByIndex(caster,3)
+call UnitSpeed(caster,1.5)
+endif
+endif
+set caster=null
+endfunction
+function LamboWAct takes nothing returns nothing
+local integer id=GetHandleId(GetExpiredTimer())
+local unit caster=LoadUnitHandle(HH,id,1)
+local unit target=LoadUnitHandle(HH,id,2)
+local real facing=LoadReal(HH,id,3)
+local real time=LoadReal(HH,id,5)
+local real time1=LoadReal(HH,id,6)
+local real x0=GetUnitX(caster)
+local real y0=GetUnitY(caster)
+local real x1=GetUnitX(target)
+local real y1=GetUnitY(target)
+local real dist=SR(x0,y0,x1,y1)
+local real damage=LoadReal(HH,id,15)
+local boolean LamboSet=LoadBoolean(HH,id,16)
+set time=time+0.02
+call SaveReal(HH,id,5,time)
+if time>=20.5 then
+call EffectCreateAndMove(true,"Others\\HakkeStart2.mdl",facing,1.5,1,1.5,100,100,100,80,0,target,0,facing)
+call EffectCreateAndMove(true,"Others\\WindCirclefaster.mdl",facing,1.5,1.5,1.5,100,100,100,40,0,target,0,facing)
+if LamboSet then
+call EffectCreateAndMove(true,"Others\\white-shandian-qiquan-red.mdl",facing,1.5,3,0.5,100,100,100,0,100,target,0,facing)
+call EffectCreateAndMove(true,"Others\\FSAEff (32).mdl",facing,1.5,0.5,1,100,100,100,0,0,target,0,facing)
+call EffectCreateAndMove(true,"Others\\FSAEff (34).mdl",facing,1.5,1,1.5,100,100,100,0,0,target,0,facing)
+else
+call EffectCreateAndMove(true,"Others\\white-shandian-qiquan-green.mdl",facing,1.5,3,0.5,100,100,100,0,100,target,0,facing)
+call EffectCreateAndMove(true,"Others\\FSAEff (32)-green.mdl",facing,1.5,0.5,1,100,100,100,0,0,target,0,facing)
+call EffectCreateAndMove(true,"Others\\FSAEff (34)-green.mdl",facing,1.5,1,1.5,100,100,100,0,0,target,0,facing)
+endif
+call UnitSpeed(caster,1)
+call SetUnitPathing(caster,true)
+call PauseUnit(caster,false)
+call SetUnitInvulnerable(caster,false)
+call SetUnitPathing(target,true)
+//Проверка на паузу
+
+call PauseUnit(target,false)
+call SaveBoolean(HH,GetHandleId( target ),TARGET_ABILITY,false)
+
+//Проверка на паузу
+
+if GetUnitAbilityLevel(caster,'LamS')>0 then
+call DamageAoeOneTime0(caster,x1,y1,250,damage*1.3)
+else
+call DamageAoeOneTime0(caster,x1,y1,250,damage)
+endif
+call StunAoeOneTime(caster,x1,y1,250,1)
+call PauseTimer(GetExpiredTimer())
+call FlushChildHashtable(HH,id)
+call DestroyTimer(GetExpiredTimer())
+else
+if time==0.02 then
+if LamboSet then
+call SetUnitAnimationByIndex(caster,8)
+call EffectCreateAndMove(true,"Others\\white-shandian-qiquan-red.mdl",facing,1,2,1,100,100,100,0,50,caster,0,facing)
+call EffectCreateAndMove(true,"Others\\wind4.mdl",facing,1,1,0.8,100,60,60,30,0,caster,0,facing)
+else
+call SetUnitAnimationByIndex(caster,1)
+call EffectCreateAndMove(true,"Others\\white-shandian-qiquan-green.mdl",facing,1,2,1,100,100,100,0,50,caster,0,facing)
+call EffectCreateAndMove(true,"Others\\wind4.mdl",facing,1,1,0.8,60,100,60,30,0,caster,0,facing)
+endif
+call UnitSpeed(caster,1.5)
+endif
+if time==0.3 and LamboSet==false then
+call SetUnitAnimationByIndex(caster,4)
+endif
+if time<20.5 then
+set time1=time1+0.02
+call SetUnitPathing(caster,false)
+call PauseUnit(caster,true)
+call SetUnitInvulnerable(caster,true)
+call SetUnitFacing(caster,facing)
+if time>0.3 then
+if time1==0.1 or time==0.02 then
+if time>20 then
+if LamboSet then
+call EffectCreateAndMoveAn(true,"Others\\Lamboaz-zidan.mdl",facing,1.5,1.75,0.75,100,100,100,0,100,target,0,facing,1)
+else
+call EffectCreateAndMoveAn(true,"Others\\Lamboaz-zidan-green.mdl",facing,1.5,1.75,0.75,100,100,100,0,100,target,0,facing,1)
+endif
+endif
+if LamboSet then
+call EffectCreateAndMove(true,"Others\\white-shandian-qiquan-red2.mdl",facing,1,1.5,1,100,100,100,0,50,caster,50,facing)
+else
+call EffectCreateAndMove(true,"Others\\white-shandian-qiquan-green2.mdl",facing,1,1.5,1,100,100,100,0,50,caster,50,facing)
+endif
+set time1=0
+endif
+call SaveReal(HH,id,6,time1)
+endif
+if time>20 then
+call SetUnitFacing(caster,facing)
+call SetUnitFacing(target,facing+180)
+//Проверка на паузу
+
+call PauseUnit(target,true)
+call SaveBoolean(HH,GetHandleId( target ),TARGET_ABILITY,true)
+
+//Проверка на паузу
+call SetUnitPathing(target,false)
+call GroupClear(G)
+call GroupEnumUnitsInRange(G,x1,y1,200,Base)
+loop
+set n0=FirstOfGroup(G)
+exitwhen n0==null
+if Condition_Base(GetOwningPlayer(caster),n0) then
+call MoveUnit(n0,n0,12,facing)
+endif
+call GroupRemoveUnit(G,n0)
+endloop
+call GroupClear(G)
+call MoveUnit(target,caster,-120,facing)
+endif
+endif
+if time>0.3 and time<20 then
+set facing=Angle2(x0,y0,x1,y1)
+call SaveReal(HH,id,3,facing)
+call MoveUnit(caster,caster,30,facing)
+if dist<120 then
+if LamboSet then
+call EffectCreateAndMoveAn(true,"Others\\Lamboaz-zidan.mdl",facing,1.5,3,0.3,100,100,100,0,100,target,0,facing,1)
+call EffectCreateAndMove(true,"Others\\white-shandian-qiquan-red.mdl",facing,1.5,2,0.5,100,100,100,0,100,target,0,facing)
+else
+call EffectCreateAndMoveAn(true,"Others\\Lamboaz-zidan-green.mdl",facing,1.5,3,0.3,100,100,100,0,100,target,0,facing,1)
+call EffectCreateAndMove(true,"Others\\white-shandian-qiquan-green.mdl",facing,1.5,2,0.5,100,100,100,0,100,target,0,facing)
+endif
+set time=20
+call SaveReal(HH,id,5,20)
+endif
+endif
+endif
+set caster=null
+set target=null
+endfunction
+function LamboEAct takes nothing returns nothing
+local integer id=GetHandleId(GetExpiredTimer())
+local unit caster=LoadUnitHandle(HH,id,1)
+local real facing=LoadReal(HH,id,3)
+local real time=LoadReal(HH,id,5)
+local real time1=LoadReal(HH,id,6)
+local real x0=GetUnitX(caster)
+local real y0=GetUnitY(caster)
+local real dist=LoadReal(HH,id,8)
+local real damage=LoadReal(HH,id,15)
+local boolean LamboSet=LoadBoolean(HH,id,16)
+set time=time+0.02
+call SaveReal(HH,id,5,time)
+if dist<=0 then
+call RemoveUnit(LoadUnitHandle(HH,id,20))
+call RemoveUnit(LoadUnitHandle(HH,id,21))
+call UnitSpeed(caster,1)
+call SetUnitPathing(caster,true)
+call PauseUnit(caster,false)
+call SetUnitInvulnerable(caster,false)
+call DestroyGroup(LoadGroupHandle(HH,id,4))
+call PauseTimer(GetExpiredTimer())
+call FlushChildHashtable(HH,id)
+call DestroyTimer(GetExpiredTimer())
+else
+call SetUnitPathing(caster,false)
+call PauseUnit(caster,true)
+call SetUnitInvulnerable(caster,true)
+call SetUnitFacing(caster,facing)
+if time==0.02 then
+set n0=CreateUnit(GetOwningPlayer(caster),'e200',x0,y0,facing)
+if LamboSet then
+call SetUnitModel(n0,"Others\\Black-Red-dash.mdl")
+call SetUnitAnimationByIndex(caster,9)
+else
+call SetUnitModel(n0,"Others\\Black-Green-dash.mdl")
+call SetUnitAnimationByIndex(caster,4)
+endif
+call UnitSize(n0,1.25,1,1)
+call UnitSpeed(n0,1)
+call UnitColor(n0,100,100,100,0)
+call SetUnitFlyHeight(n0,100,0)
+call SaveUnitHandle(HH,id,20,n0)
+set n0=CreateUnit(GetOwningPlayer(caster),'e200',x0,y0,facing)
+if LamboSet then
+call SetUnitModel(n0,"Others\\white-shandian-qiquan-red.mdl")
+else
+call SetUnitModel(n0,"Others\\white-shandian-qiquan-green.mdl")
+endif
+call UnitSize(n0,1,1,1)
+call UnitSpeed(n0,0.5)
+call UnitColor(n0,100,100,100,0)
+call SetUnitFlyHeight(n0,100,0)
+call SaveUnitHandle(HH,id,21,n0)
+set n0=null
+call EffectCreateAndMove(true,"Others\\HakkeStart2.mdl",facing,1.5,1,1.5,100,100,100,80,0,caster,0,facing)
+if LamboSet then
+call EffectCreateAndMove(true,"Others\\WindNewFaw4.mdl",facing,1.5,1,0.65,100,60,60,0,0,caster,0,facing)
+else
+call EffectCreateAndMove(true,"Others\\WindNewFaw4.mdl",facing,1.5,1,0.65,60,100,60,0,0,caster,0,facing)
+endif
+set soundplay=CreateSound("Sound\\Music\\mp3Music\\LamboW2.mp3",false,false,true,12700,12700,"")
+call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
+call UnitSpeed(caster,2)
+endif
+if time>0.1 then
+call MoveUnit(caster,caster,30+3*damage,facing)
+call MoveUnit(caster,LoadUnitHandle(HH,id,20),50,facing)
+call MoveUnit(caster,LoadUnitHandle(HH,id,21),50,facing)
+call SetUnitFlyHeight(LoadUnitHandle(HH,id,20),GetUnitFlyHeight(caster)+75,0)
+call SetUnitFlyHeight(LoadUnitHandle(HH,id,21),GetUnitFlyHeight(caster)+100,0)
+call SaveReal(HH,id,8,dist-(30+3*damage))
+set time1=time1+0.02
+if LamboSet then
+call EffectCreateAndMove(true,"Others\\white-shandian-qiquan-red.mdl",facing,1,0.75,1.5,100,100,100,0,100,caster,50,facing)
+else
+call EffectCreateAndMove(true,"Others\\white-shandian-qiquan-green.mdl",facing,1,0.75,1.5,100,100,100,0,100,caster,50,facing)
+endif
+if time1==0.1 or time==0.12 then
+set time1=0
+call EffectCreateAndMove(true,"Others\\File0000 (644).mdl",facing,1,1,0.8,100,100,100,0,0,caster,0,facing)
+endif
+call SaveReal(HH,id,6,time1)
+call GroupClear(G)
+call GroupEnumUnitsInRange(G,PolX(x0,100,facing),PolY(y0,100,facing),200,Base)
+loop
+set n0=FirstOfGroup(G)
+exitwhen n0==null
+if IsUnitInGroup(n0,LoadGroupHandle(HH,id,4))==false and Condition_Base(GetOwningPlayer(caster),n0) then
+if GetUnitAbilityLevel(caster,'LamS')>0 then
+
+call myCustomDamage(caster,n0,50*damage*1.3+GetUnitState(n0,UNIT_STATE_MAX_LIFE)*0.05*damage*1.3,false,false,null,null,null)
+else
+
+
+
+call myCustomDamage(caster,n0,50*damage+GetUnitState(n0,UNIT_STATE_MAX_LIFE)*0.05*damage,false,false,null,null,null)
+
+
+
+endif
+call GroupAddUnit(LoadGroupHandle(HH,id,4),n0)
+endif
+call GroupRemoveUnit(G,n0)
+endloop
+call SaveGroupHandle(HH,id,4,LoadGroupHandle(HH,id,4))
+call GroupClear(G)
+endif
+endif
+set caster=null
+endfunction
+function LamboRAct takes nothing returns nothing
+local integer id=GetHandleId(GetExpiredTimer())
+local unit caster=LoadUnitHandle(HH,id,1)
+local unit target=LoadUnitHandle(HH,id,2)
+local unit Dummy=LoadUnitHandle(HH,id,20)
+local real time=LoadReal(HH,id,5)
+local real time1=LoadReal(HH,id,7)
+local real speed=LoadReal(HH,id,6)
+local real x0=GetUnitX(target)
+local real y0=GetUnitY(target)
+local real x1=GetUnitX(Dummy)
+local real y1=GetUnitY(Dummy)
+local real facing=Angle2(x1,y1,x0,y0)
+local real damage=GetHeroStr(caster,true)*1.5
+local integer HitCount=LoadInteger(HH,id,18)
+local real dist=SR(x1,y1,x0,y0)
+local integer icount=0
+local boolean LamboSet=LoadBoolean(HH,id,16)
+set time=time+0.02
+call SaveReal(HH,id,5,time)
+if GetUnitAbilityLevel(caster,'LamS')>0 then
+set damage=damage*1.3
+endif
+if HitCount==0 or time>=30 or target==null then
+call RemoveUnit(Dummy)
+call RemoveUnit(LoadUnitHandle(HH,id,21))
+call DestroyGroup(LoadGroupHandle(HH,id,4))
+call PauseTimer(GetExpiredTimer())
+call FlushChildHashtable(HH,id)
+call DestroyTimer(GetExpiredTimer())
+else
+if time==0.02 then
+set facing=LoadReal(HH,id,3)
+if LamboSet then
+call EffectCreateAndMove(true,"Others\\FSAEff (27).mdl",facing,1.5,1.25,1,100,100,100,60,0,caster,150,facing)
+call EffectCreateAndMove(true,"Others\\white-shandian-qiquan-red.mdl",facing,1,1.55,1.5,100,100,100,0,100,caster,100,facing)
+else
+call EffectCreateAndMove(true,"Others\\FSAeff (27)-green.mdl",facing,1.5,1.25,1,100,100,100,60,0,caster,150,facing)
+call EffectCreateAndMove(true,"Others\\white-shandian-qiquan-green.mdl",facing,1,1.55,1.5,100,100,100,0,100,caster,100,facing)
+endif
+call EffectCreateAndMove(true,"Others\\HakkeStart2.mdl",facing,1.5,1,1.5,100,100,100,60,0,caster,150,facing)
+call EffectCreateAndMove(true,"Others\\WindCirclefaster.mdl",facing,1.5,1,1.5,100,100,100,60,0,caster,150,facing)
+call SaveGroupHandle(HH,id,4,CreateGroup())
+set n0=CreateUnit(GetOwningPlayer(caster),'e200',GetUnitX(caster),GetUnitY(caster),LoadReal(HH,id,3))
+call SetUnitModel(n0,"Lambo\\gyuudo.mdl")
+call MoveUnit(n0,n0,150,LoadReal(HH,id,3))
+call UnitSize(n0,1.5,1,1)
+call UnitSpeed(n0,1)
+call UnitColor(n0,100,100,100,0)
+call SetUnitFlyHeight(n0,100,0)
+call SaveUnitHandle(HH,id,20,n0)
+set n0=CreateUnit(GetOwningPlayer(caster),'e200',GetUnitX(caster),GetUnitY(caster),LoadReal(HH,id,3))
+if LamboSet then
+call EffectCreateAndMove(true,"Others\\white-shandian-qiquan-red.mdl",facing,1,1.25,1.5,100,100,100,0,100,Dummy,50,facing)
+else
+call EffectCreateAndMove(true,"Others\\white-shandian-qiquan-green.mdl",facing,1,1.25,1.5,100,100,100,0,100,Dummy,50,facing)
+endif
+call MoveUnit(n0,n0,100,LoadReal(HH,id,3))
+call UnitSize(n0,1.5,1,1)
+call UnitSpeed(n0,1)
+call UnitColor(n0,100,100,100,0)
+call SetUnitFlyHeight(n0,50,0)
+call SaveUnitHandle(HH,id,21,n0)
+call SetUnitAnimationByIndex(caster,3)
+set n0=null
+endif
+if time>0.5 then
+set speed=speed+0.02
+if dist>speed+50 then
+set time1=time1+0.02
+if time1==0.06 then
+if LamboSet then
+call EffectCreateAndMove(true,"Others\\white-shandian-qiquan-red2.mdl",facing,1,1.25,1.5,100,100,100,0,50,Dummy,50,facing)
+else
+call EffectCreateAndMove(true,"Others\\white-shandian-qiquan-green2.mdl",facing,1,1.25,1.5,100,100,100,0,50,Dummy,50,facing)
+endif
+set time1=0
+endif
+call SaveReal(HH,id,7,time1)
+call MoveUnit(Dummy,Dummy,15+speed*20,facing)
+call MoveUnit(Dummy,LoadUnitHandle(HH,id,21),0,facing)
+call SetUnitFacing(Dummy,facing)
+else
+call SaveInteger(HH,id,18,HitCount-1)
+call PushTimedNew(target,35+speed*10,300+speed*10,facing)
+if LamboSet then
+call EffectCreateAndMoveAn(true,"Others\\qqqqqrRed.mdl",facing,0.75,2,0.5,100,100,100,0,150,target,120,facing,1)
+call EffectCreateAndMoveAn(true,"Others\\Lamboaz-zidan.mdl",facing,0.75,2,0.5,100,100,100,0,150,target,120,facing,1)
+call EffectCreateAndMove90(true,"Others\\[a]Red-zhendi.mdl",facing,1,1,1.25,100,100,100,80,0,target,120,facing)
+call EffectCreateAndMove(true,"Others\\LightningSlamRed3.mdl",facing,1,1,1,100,100,100,0,0,target,120,facing)
+else
+call EffectCreateAndMoveAn(true,"Others\\qqqqqrGreen.mdl",facing,0.75,2,0.5,100,100,100,0,150,target,150,facing,1)
+call EffectCreateAndMoveAn(true,"Others\\Lamboaz-zidan-green.mdl",facing,0.75,2,0.5,100,100,100,0,150,target,150,facing,1)
+call EffectCreateAndMove90(true,"Others\\[a]Green-zhendi.mdl",facing,1,1,1.25,100,100,100,80,0,target,150,facing)
+call EffectCreateAndMove(true,"Others\\LightningSlamGreen3.mdl",facing,1,1,1,100,100,100,0,0,target,150,facing)
+endif
+
+
+
+        if IsUnitPaused(target)==true then
+            //Проверка на паузу
+
+call PauseUnit(target,false)
+//call SaveBoolean(HH,GetHandleId( target ),TARGET_ABILITY,false)
+
+//Проверка на паузу
+            call myCustomDamage(caster,target,damage,false,false,null,null,null)
+            //Проверка на паузу
+
+call PauseUnit(target,true)
+//call SaveBoolean(HH,GetHandleId( target ),TARGET_ABILITY,true)
+
+//Проверка на паузу
+        else
+          call myCustomDamage(caster,target,damage,false,false,null,null,null)
+        endif
+
+
+ call SetControlToUnit(caster,target, 2, "stun")
+
+//call DisplayTextToPlayer(Player(0),0,0,"Hit:"+I2S(HitCount))
+call GroupClear(G)
+call GroupEnumUnitsInRange(G,x1,y1,1000,Base)
+loop
+set n0=FirstOfGroup(G)
+exitwhen n0==null
+if Condition_Base(GetOwningPlayer(caster),n0) and GetUnitAbilityLevel(n0,'Avul')==0 then
+set icount=icount+1
+set UArray[icount]=n0
+endif
+call GroupRemoveUnit(G,n0)
+endloop
+call GroupClear(G)
+set n0=UArray[GetRandomInt(1,icount)]
+call SaveUnitHandle(HH,id,2,n0)
+set n0=null
+if icount>0 then
+loop
+exitwhen icount==0
+set UArray[icount]=null
+set icount=icount-1
+endloop
+endif
+
+
+set speed=0
+
+
+endif
+call SaveReal(HH,id,6,speed)
+endif
+endif
+set caster=null
+set target=null
+set Dummy=null
+endfunction
+function LamboChoice_Act takes nothing returns nothing
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+local unit caster=GetTriggerUnit()
+local unit target=GetSpellTargetUnit()
+local real x0=GetUnitX(caster)
+local real y0=GetUnitY(caster)
+local real x1=GetSpellTargetX()
+local real y1=GetSpellTargetY()
+local real facing=Angle2(x0,y0,x1,y1)
+
+call SaveUnitHandle(HH,id,1,caster)
+call SaveReal(HH,id,11,x1)
+call SaveReal(HH,id,12,y1)
+call SaveReal(HH,id,3,facing)
+
+if GetUnitAbilityLevel(caster,'LamS')>0 then
+call SaveBoolean(HH,id,16,true)
+else
+call SaveBoolean(HH,id,16,false)
+endif
+
+if GetSpellAbilityId()=='LamQ' then
+call PauseUnit(caster,true)
+set soundplay=CreateSound("Sound\\Music\\mp3Music\\ElectoricoReverse.mp3",false,false,true,12700,12700,"")
+call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
+call SaveReal(HH,id,15,75+(GetUnitAbilityLevel(caster,'LamQ')+1)*GetHeroStr(caster,true)+LoadReal(HH,GetHandleId(caster),StringHash("LamboQReal")) )
+
+
+call SaveReal(HH,GetHandleId(caster),StringHash("LamboQReal"),0)
+
+call TimerStart(t,0.02,true,function LamboQAct)
+endif
+ 
+
+if GetSpellAbilityId()=='LamW' then
+set soundplay=CreateSound("Sound\\Music\\mp3Music\\LaboElectorikoKornata.mp3",false,false,true,12700,12700,"")
+call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
+call PauseUnit(caster,true)
+call SetUnitInvulnerable(caster,true)
+call SetUnitAnimationByIndex(caster,2)
+call UnitSpeed(caster,0.5)
+call SaveReal(HH,id,15,(GetUnitAbilityLevel(caster,'LamW')+2)*GetHeroStr(caster,true))
+call SaveUnitHandle(HH,id,2,target)
+call TimerStart(t,0.02,true,function LamboWAct)
+endif
+
+if GetSpellAbilityId()=='LamE' then
+call SaveGroupHandle(HH,id,4,CreateGroup())
+call PauseUnit(caster,true)
+call SetUnitInvulnerable(caster,true)
+call SetUnitAnimationByIndex(caster,2)
+call UnitSpeed(caster,0.5)
+call SaveReal(HH,id,15,GetUnitAbilityLevel(caster,'LamE'))
+call SaveReal(HH,id,8,800+GetHeroStr(caster,true)*2)//R2I((5+GetUnitAbilityLevel(caster,'LamE'))*0.4))
+call TimerStart(t,0.02,true,function LamboEAct)
+endif
+
+
+
+
+if GetSpellAbilityId()=='LamR' then
+set soundplay=CreateSound("Sound\\Music\\mp3Music\\LamboW.mp3",false,false,true,12700,12700,"")
+call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
+call SetUnitAnimationByIndex(caster,5)
+call UnitSpeed(caster,1)
+
+
+
+call SaveInteger(HH,id,18,GetUnitAbilityLevel(caster,'LamR')+3)
+call SaveUnitHandle(HH,id,2,target)
+call TimerStart(t,0.02,true,function LamboRAct)
+endif
+
+
+
+
+
+
+
+if GetSpellAbilityId()=='LamG' then
+set soundplay=CreateSound("Sound\\Music\\mp3Music\\LamboThunderSet.mp3",false,false,true,12700,12700,"")
+call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
+call PauseUnit(caster,true)
+call SetUnitAnimationByIndex(caster,3)
+call UnitSpeed(caster,0.5)
+call TimerStart(t,0.02,true,function LamboGAct)
+endif
+
+
+
+
+set t=null
+set caster=null
+set target=null
+endfunction
+function LamboChoice_Cond takes nothing returns boolean
+if GetSpellAbilityId()=='LamQ' or GetSpellAbilityId()=='LamW' or GetSpellAbilityId()=='LamE' or GetSpellAbilityId()=='LamR' or GetSpellAbilityId()=='LamG' then
+return true
+else
+return false
+endif
+endfunction
+function LamboLearnE_Cond takes nothing returns boolean
+if ( GetLearnedSkill()=='LamR' or GetLearnedSkill()=='LCQ1' )   and IsUnitIllusion(GetTriggerUnit())==false then 
+return true
+else
+return false
+endif
+endfunction
+function LamboLearnE_Act takes nothing returns nothing
+local unit caster=GetTriggerUnit()
+
+
+
+
+if GetUnitAbilityLevel(caster,'LamG')<5 then
+    call SetUnitAbilityLevel(caster,'LamG',GetUnitAbilityLevel(caster,'LamR'))
+endif    
+
+
+if GetUnitAbilityLevel(caster,'LCG1')<5 then
+    call SetUnitAbilityLevel(caster,'LCG1',GetUnitAbilityLevel(caster,'LCQ1'))
+endif    
+
+
+
+set caster=null
+
+
+endfunction
+function Lambo_F_Remove_Ability takes nothing returns nothing
+local integer id=GetHandleId(GetExpiredTimer())
+local integer Abil_Lvl=LoadInteger(HH,id,15)
+local integer count_int=0
+call UnitRemoveAbility(GetEnumUnit(),'LamD')
+if Abil_Lvl>0 then
+set count_int=Abil_Lvl
+loop
+exitwhen count_int<=0
+call UnitAddAbility(GetEnumUnit(),'HSHR')
+call SetUnitAbilityLevel(GetEnumUnit(),'HSHR',2)
+call UnitRemoveAbility(GetEnumUnit(),'HSHR')
+set count_int=count_int-1
+endloop
+endif
+endfunction
+function Lambo_F_Act2 takes nothing returns nothing
+local integer id=GetHandleId(GetExpiredTimer())
+local unit caster=LoadUnitHandle(HH,id,1)
+local real facing=LoadReal(HH,id,3)
+local group gr=LoadGroupHandle(HH,id,4)
+local real time=LoadReal(HH,id,5)
+local real x0=GetUnitX(caster)
+local real y0=GetUnitY(caster)
+local integer Abil_Lvl=LoadInteger(HH,id,15)
+local integer count_int=0
+if time<0.5 or(time>0.5 and IsUnitPaused(caster)==false and GetUnitAbilityLevel(caster,0x4176756C)==0)then
+set time=time+0.02
+call SaveReal(HH,id,5,time)
+endif
+if time>0.5 and (time>15.5 or udg_B==false) then
+call ForGroup(gr,function Lambo_F_Remove_Ability)
+call DestroyGroup(gr)
+//call DisplayTextToPlayer(GetLocalPlayer(),0,0,"Decrease HP")
+call PauseTimer(GetExpiredTimer())
+call FlushChildHashtable(HH,id)
+call DestroyTimer(GetExpiredTimer())
+else
+if time==0.02 then
+call EffectCreateAndMove(true,"Others\\white-shandian-qiquan-green3.mdl",facing,1.5,1.5,0.5,100,100,100,0,100,caster,0,facing)
+call EffectCreateAndMove(true,"Others\\[A]az_axe_ef1.mdl",facing,1.5,1,0.65,60,100,60,0,0,caster,0,facing)
+call EffectCreateAndMove(true,"Others\\HakkeStart2.mdl",facing,1.5,1,1.5,100,100,100,80,0,caster,0,facing)
+set soundplay=CreateSound("Sound\\Others\\LamboF.mp3",false,false,true,12700,12700,"")
+call StartSound(soundplay)
+call SetSoundVolume(soundplay,127)
+call SetUnitAnimationByIndex(caster,6)
+call UnitSpeed(caster,2)
+endif
+if time<0.5 then
+call PauseUnit(caster,true)
+endif
+if time==0.5 then
+call GroupClear(G)
+call GroupEnumUnitsInRange(G,x0,y0,1000,Base)
+loop
+set n0=FirstOfGroup(G)
+exitwhen n0==null
+if IsUnitInGroup(n0,gr)==false and IsUnitAlly(n0,GetOwningPlayer(caster))==true then
+call GroupAddUnit(gr,n0)
+call EffectCreateAndMove(true,"Others\\FSAEff (34)-green.mdl",facing,1.5,1.5,1.5,100,100,100,40,0,n0,0,facing)
+call UnitAddAbility(n0,'LamD')
+call SetUnitAbilityLevel(n0,'LamD',Abil_Lvl+1)
+if Abil_Lvl>0 then
+set count_int=Abil_Lvl
+loop
+exitwhen count_int<=0
+call UnitAddAbility(n0,'HSHP')
+call SetUnitAbilityLevel(n0,'HSHP',2)
+call UnitRemoveAbility(n0,'HSHP')
+set count_int=count_int-1
+endloop
+endif
+endif
+call GroupRemoveUnit(G,n0)
+endloop
+call SaveGroupHandle(HH,id,4,gr)
+call GroupClear(G)
+call PauseUnit(caster,false)
+call UnitSpeed(caster,1)
+call SetUnitAnimationByIndex(caster,0)
+endif
+endif
+set caster=null
+set gr=null
+endfunction
+function Lambo_F_Act takes unit caster returns nothing
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+local real x0=GetUnitX(caster)
+local real y0=GetUnitY(caster)
+local real facing=GetUnitFacing(caster)
+local integer damage=GetUnitAbilityLevel(caster,'LamF')-1
+call SaveUnitHandle(HH,id,1,caster)
+call SaveReal(HH,id,3,facing)
+call PauseUnit(caster,true)
+call SaveGroupHandle(HH,id,4,CreateGroup())
+call SaveInteger(HH,id,15,damage)
+call TimerStart(t,0.02,true,function Lambo_F_Act2)
+set t=null
+endfunction
+function InitTrig_LamboChoice takes nothing returns nothing
+local trigger t=CreateTrigger()
+local integer index
+set index=0
+loop
+call TriggerRegisterPlayerUnitEvent(t,Player(index),EVENT_PLAYER_UNIT_SPELL_EFFECT,null)
+set index=index+1
+exitwhen index==bj_MAX_PLAYER_SLOTS
+endloop
+call TriggerAddCondition(t,Condition(function LamboChoice_Cond))
+call TriggerAddAction(t,function LamboChoice_Act)
+set t=null
+
+endfunction
+function InitTrig_LamboLearnE takes nothing returns nothing
+local trigger trig=CreateTrigger()
+call TriggerRegisterAnyUnitEventBJ(trig,EVENT_PLAYER_HERO_SKILL)
+call TriggerAddCondition(trig,Condition(function LamboLearnE_Cond))
+call TriggerAddAction(trig,function LamboLearnE_Act)
+set trig=null
+endfunction
+//Lamboend
 function AbilitiesForChoice_Act takes nothing returns nothing//моя функция для всех абилок в чоус
     local unit caster=GetSpellAbilityUnit()//замени на каких-то юнитов
     local unit target=GetSpellTargetUnit()//
@@ -229014,6 +229864,10 @@ call KimimaroG_Act(caster,x1,y1)
 endif
 if GetSpellAbilityId()=='SiD1' then
 call SignumTankSpiritAct(caster)
+endif
+if GetSpellAbilityId()=='LamF' then
+//call SetUnitAbilityLevel(caster,'LamF',GetUnitAbilityLevel(caster,'LamF')+1)
+call Lambo_F_Act(caster)
 endif
 set caster=null
     set target=null
@@ -234456,6 +235310,8 @@ call TriggerAddAction(t,function Trig_Execute_Actions2)
 set t=null
 endfunction
 function InitCustomTriggers takes nothing returns nothing
+call InitTrig_LamboLearnE()
+call InitTrig_LamboChoice()
 call InitTrig_SignumnAA()
 call InitTrig_SignumChoice()
 call InitTrig_Quests()
