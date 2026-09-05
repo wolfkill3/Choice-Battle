@@ -225082,8 +225082,7 @@ set u=null
 set p=null
 set t=null
 endfunction
-function Garp_G_Act takes nothing returns nothing
-local unit u=GetTriggerUnit()
+function Garp_G_Act takes unit u returns nothing
 local timer t=CreateTimer()
 local real x=GetUnitX(u)
 local real y=GetUnitY(u)
@@ -225095,10 +225094,9 @@ call UnitAddAbility(u,'GrGs')
 call UnitMakeAbilityPermanent(u,true,'GrGs')
 call PauseUnit(u,true)
 call Garp_Sound("Sound\\Music\\mp3Music\\Garp_G_Cast.mp3")
-call EffectCreateAndMove(true,"Garp\\Garp_HandsFX.mdx",GetUnitFacing(caster),1.2,1.4,1.0,100,100,100,0,0,caster,0,GetUnitFacing(caster))
+call EffectCreateAndMove(true,"Garp\\Garp_HandsFX.mdx",GetUnitFacing(u),1.2,1.4,1.0,100,100,100,0,0,u,0,GetUnitFacing(u))
 call SaveBoolean(HH,GetHandleId(u),ANTITARGET_ABILITY,true)
 call TimerStart(t,0.04,true,function Garp_G_Act2)
-set u=null
 set p=null
 set t=null
 endfunction
