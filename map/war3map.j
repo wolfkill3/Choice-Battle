@@ -42229,7 +42229,7 @@ if (not((GetUnitAbilityLevel(u,'A0IH')==0 and GetUnitAbilityLevel(c,'A0IH')==0) 
 //call SetEventDamage(0.05)
 set nb=0
 endif
-if (GetUnitAbilityLevel(u,'A14J')>0  and (nb>200 or CurrentEventAttack)) or (GetUnitAbilityLevel(u,'A24J')>0 and (nb>200 or CurrentEventAttack)) or (GetUnitAbilityLevel(u,'A34J')>0 and (nb>200 or CurrentEventAttack)) or (GetUnitAbilityLevel(u,'JNQ2')>0 and CurrentEventAttack and SquareRootUnit(c,u)<350) or (GetUnitAbilityLevel(u,'JNE2')>0 and (nb>200 or CurrentEventAttack)) or (GetUnitAbilityLevel(u,'ADG2')>0 and (nb>100 or CurrentEventAttack) or (GetUnitAbilityLevel(u,'GrGs')>0 and (nb>200 or CurrentEventAttack)) then
+if (GetUnitAbilityLevel(u,'A14J')>0  and (nb>200 or CurrentEventAttack)) or (GetUnitAbilityLevel(u,'A24J')>0 and (nb>200 or CurrentEventAttack)) or (GetUnitAbilityLevel(u,'A34J')>0 and (nb>200 or CurrentEventAttack)) or (GetUnitAbilityLevel(u,'JNQ2')>0 and CurrentEventAttack and SquareRootUnit(c,u)<350) or (GetUnitAbilityLevel(u,'JNE2')>0 and (nb>200 or CurrentEventAttack)) or (GetUnitAbilityLevel(u,'ADG2')>0 and (nb>100 or CurrentEventAttack) or (GetUnitAbilityLevel(u,'GrGs')>0 and (nb>200 or CurrentEventAttack))) then
     if GetUnitAbilityLevel(u,'A34J')>0 then
         if GetHeroLevel(u)>=35 and LoadBoolean(HH,GetHandleId(GetOwningPlayer(u)),MUIAvailableHash)==false then
             call SaveInteger(HH,GetHandleId(GetOwningPlayer(u)),MUIDodgeCountHash,LoadInteger(HH,GetHandleId(GetOwningPlayer(u)),MUIDodgeCountHash)+1)
@@ -224334,7 +224334,7 @@ local real dur=LoadReal(HH,id,6)
 // ⚠️ Период 0.5, а НЕ 0.02: воля отслеживает всего два момента — снять паузу
 // и снять маркеры в конце. Тик 0.02 здесь только грузил бы игру впустую.
 // Обзор сюда не относится: он вписан в общий цикл обзора карты (ветка с GrEs).
-if IsUnitPaused(caster)==false then
+if (IsUnitPaused(caster)==false and time>1) or time<=1 then
 call SaveReal(HH,id,5,time)
 endif
 if time==1.0 then
@@ -224870,58 +224870,58 @@ set shot=null
 set g2=null
 set t=null
 endfunction
-function Garp_G_Act2 takes nothing returns nothing
-    local integer id  = GetHandleId(GetExpiredTimer())
-    local unit caster = LoadUnitHandle(HH, id, 0)
-    local real caster_x = GetUnitX(caster)
-    local real caster_y = GetUnitY(caster)
-    local real time     = LoadReal(HH, id, 1)
-    if time>0 and UnitIsAlive(caster) and GetUnitAbilityLevel(caster, 'GrGs')>0 then
-        call PauseUnit(caster, true)
-        if LoadBoolean(HH,GetHandleId(caster),TARGET_ABILITY)==false then
-            call SaveReal(HH, id, 1, time-0.05)
-        endif
-        if ModuloReal(time,0.2)<0.05 then
-            set n=CreateUnit(GetOwningPlayer(caster), 'dM05', caster_x, caster_y, GetRandomInt(0, 360))
-            call SetUnitScale(n, 0.5, 0.5, 0.5)
-            call SetUnitVertexColor(n, 255, 255, 255, 140)
-            call MyRemoveUnit(n, 1.5)
-        endif
-        if LoadUnitHandle(HH,GetHandleId(caster),REVERSE_TARGET)!=null then
-            call Garp_G_Block(caster,LoadUnitHandle(HH,GetHandleId(caster),REVERSE_TARGET))
-            call RemoveSavedHandle(HH,GetHandleId(caster),REVERSE_TARGET)
-        endif
-    else
-        if LoadBoolean(HH,GetHandleId(caster),ANTITARGET_ABILITY)==true then
-            call SaveBoolean(HH,GetHandleId(caster),ANTITARGET_ABILITY,false)
-            call PauseUnit(caster, false)
-            call SetControlToUnit(caster , caster , 0.5 , "doomdebug")
-            call UnitRemoveAbility(caster, 'GrGs')
+// function Garp_G_Act2 takes nothing returns nothing
+//     local integer id  = GetHandleId(GetExpiredTimer())
+//     local unit caster = LoadUnitHandle(HH, id, 0)
+//     local real caster_x = GetUnitX(caster)
+//     local real caster_y = GetUnitY(caster)
+//     local real time     = LoadReal(HH, id, 1)
+//     if time>0 and UnitIsAlive(caster) and GetUnitAbilityLevel(caster, 'GrGs')>0 then
+//         call PauseUnit(caster, true)
+//         if LoadBoolean(HH,GetHandleId(caster),TARGET_ABILITY)==false then
+//             call SaveReal(HH, id, 1, time-0.05)
+//         endif
+//         if ModuloReal(time,0.2)<0.05 then
+//             set n=CreateUnit(GetOwningPlayer(caster), 'dM05', caster_x, caster_y, GetRandomInt(0, 360))
+//             call SetUnitScale(n, 0.5, 0.5, 0.5)
+//             call SetUnitVertexColor(n, 255, 255, 255, 140)
+//             call MyRemoveUnit(n, 1.5)
+//         endif
+//         if LoadUnitHandle(HH,GetHandleId(caster),REVERSE_TARGET)!=null then
+//             //call Garp_G_Block(caster,LoadUnitHandle(HH,GetHandleId(caster),REVERSE_TARGET))
+//             call RemoveSavedHandle(HH,GetHandleId(caster),REVERSE_TARGET)
+//         endif
+//     else
+//         if LoadBoolean(HH,GetHandleId(caster),ANTITARGET_ABILITY)==true then
+//             call SaveBoolean(HH,GetHandleId(caster),ANTITARGET_ABILITY,false)
+//             call PauseUnit(caster, false)
+//             call SetControlToUnit(caster , caster , 0.5 , "doomdebug")
+//             call UnitRemoveAbility(caster, 'GrGs')
             
-        endif
-        call FlushChildHashtable(HH, id)
-        call PauseTimer(GetExpiredTimer())
-        call DestroyTimer(GetExpiredTimer())
-    endif
-    set caster=null
-endfunction
-function Garp_G_Act takes unit caster returns nothing
-local timer newTimer = CreateTimer()
-local integer id     = GetHandleId(newTimer)
-// стойка: щит вешаем маркером на 2 c, как F вешает Pure
-call Garp_Sound("Sound\\Music\\mp3Music\\Garp_G_Cast.mp3")
-call UnitAddAbility(caster,'GrGs')
-call UnitMakeAbilityPermanent(caster,true,'GrGs')
-call SaveReal(HH, id, 1, 2.0)
-// стойку держим рутом на те же 2 c: на канал полагаться нельзя,
-// Гарп срывался с места и продолжал бежать.
-call SetUnitAnimationByIndex(caster,1)
-call SaveBoolean(HH,GetHandleId(caster),ANTITARGET_ABILITY,true)
-call PauseUnit(caster,true)
-call SaveUnitHandle(HH, id, 0, caster)
-call TimerStart(newTimer, 0.05, true, function Garp_G_Act2)
-set newTimer=null
-endfunction
+//         endif
+//         call FlushChildHashtable(HH, id)
+//         call PauseTimer(GetExpiredTimer())
+//         call DestroyTimer(GetExpiredTimer())
+//     endif
+//     set caster=null
+// endfunction
+// function Garp_G_Act takes unit caster returns nothing
+// local timer newTimer = CreateTimer()
+// local integer id     = GetHandleId(newTimer)
+// // стойка: щит вешаем маркером на 2 c, как F вешает Pure
+// call Garp_Sound("Sound\\Music\\mp3Music\\Garp_G_Cast.mp3")
+// call UnitAddAbility(caster,'GrGs')
+// call UnitMakeAbilityPermanent(caster,true,'GrGs')
+// call SaveReal(HH, id, 1, 2.0)
+// // стойку держим рутом на те же 2 c: на канал полагаться нельзя,
+// // Гарп срывался с места и продолжал бежать.
+// call SetUnitAnimationByIndex(caster,1)
+// call SaveBoolean(HH,GetHandleId(caster),ANTITARGET_ABILITY,true)
+// call PauseUnit(caster,true)
+// call SaveUnitHandle(HH, id, 0, caster)
+// call TimerStart(newTimer, 0.05, true, function Garp_G_Act2)
+// set newTimer=null
+// endfunction
 function Garp_G_Act3 takes nothing returns nothing
 local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
