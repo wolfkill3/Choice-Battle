@@ -225411,10 +225411,10 @@ endif
 if time==0.02 then
 set soundplay=CreateSound("Sound\\Others\\KimimaroRG.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+////call KillSoundWhenDone(soundplay)
 set soundplay=CreateSound("Sound\\Others\\KimimaroForm.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+////call KillSoundWhenDone(soundplay)
 call PauseUnit(caster,false)
 call UnitAddAbility(caster,'AKF2')
 call IssueImmediateOrder(caster,"bearform")
@@ -225529,7 +225529,7 @@ call SaveUnitHandle(HH,id,20,n0)
 set n0=null
 set soundplay=CreateSound("Sound\\Others\\KimimaroG.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+////call KillSoundWhenDone(soundplay)
 endif
 if time==0.2 then
 call UnitSpeed(LoadUnitHandle(HH,id,20),0)
@@ -225726,7 +225726,7 @@ call SetUnitAnimationByIndex(caster,6)
 endif
 set soundplay=CreateSound("Sound\\Others\\KimimaroQ.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+////call KillSoundWhenDone(soundplay)
 endif
 if time==0.02 then
 set randBullet=GetRandomInt(1,3)
@@ -225864,7 +225864,7 @@ call SetUnitAnimationByIndex(caster,3)
 endif
 set soundplay=CreateSound("Sound\\Others\\KimimaroW.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+////call KillSoundWhenDone(soundplay)
 endif
 if time==0.2 then
 call UnitSpeed(LoadUnitHandle(HH,id,20),0)
@@ -225993,7 +225993,7 @@ call SaveUnitHandle(HH,id,20,n0)
 set n0=null
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\KimimaroE.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+////call KillSoundWhenDone(soundplay)
 endif
 call MoveUnit(caster,LoadUnitHandle(HH,id,20),0,facing)
 if time==0.2 then
@@ -226096,7 +226096,7 @@ call RemoveUnit(Dummy)
 call DestroyEffect(LoadEffectHandle(HH,id,21))
 set soundplay=CreateSound("Sound\\Others\\KimimaroR-hit.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+////call KillSoundWhenDone(soundplay)
 call UnitSpeed(caster,1)
 call PauseUnit(caster,false)
 call SetUnitInvulnerable(caster,false)
@@ -226133,7 +226133,7 @@ call SaveUnitHandle(HH,id,20,n0)
 call SaveLightningHandle(HH,id,17,AddLightningEx("LEAS",true,GetUnitX(caster),GetUnitY(caster),GetUnitFlyHeight(caster)+75,GetUnitX(caster),GetUnitY(caster),GetUnitFlyHeight(caster)+75))
 set soundplay=CreateSound("Sound\\Others\\KimimaroF.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+////call KillSoundWhenDone(soundplay)
 call SetUnitAnimationByIndex(caster,17)
 endif
 if time<0.3 then
@@ -226147,7 +226147,7 @@ endif
 if time==9.82 then
 set soundplay=CreateSound("Sound\\Others\\KimimaroR.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+////call KillSoundWhenDone(soundplay)
 call SetUnitAnimationByIndex(caster,16)
 call UnitSpeed(caster,2)
 endif
@@ -226191,7 +226191,7 @@ call SaveReal(HH,id,5,time)
 if time>=10 then
 set soundplay=CreateSound("Sound\\Others\\KimimaroR-hit.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+////call KillSoundWhenDone(soundplay)
 call UnitSpeed(caster,1)
 call PauseUnit(caster,false)
 call SetUnitInvulnerable(caster,false)
@@ -226223,7 +226223,7 @@ call SetUnitFacing(caster,facing)
 if time==0.02 then
 set soundplay=CreateSound("Sound\\Others\\KimimaroR.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+////call KillSoundWhenDone(soundplay)
 call EffectCreateAndMove(true,"Others\\WindCirclefaster.mdl",facing,1,1.25,1.5,100,100,100,40,0,caster,0,facing)
 call EffectCreateAndMove(true,"Others\\HakkeStart2.mdl",facing,1.5,0.75,1.5,100,100,100,60,0,caster,0,facing)
 endif
@@ -226369,7 +226369,7 @@ call SetUnitAnimationByIndex(caster,7)
 endif
 set soundplay=CreateSound("Sound\\Others\\KimimaroT.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+////call KillSoundWhenDone(soundplay)
 endif
 if time==0.02 or time==0.2 then
 call EffectCreateAndMove(true,"Others\\WindNewFaw4.mdl",GetRandomInt(0,360),1.5,GetRandomReal(1,1.5),GetRandomReal(0.5,1),100,100,100,40,0,caster,0,facing)
@@ -226661,10 +226661,10 @@ else
 if time==0.02 then
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\SignumQ.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+////call KillSoundWhenDone(soundplay)
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\SignumQ2.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+////call KillSoundWhenDone(soundplay)
 set n0=CreateUnit(GetOwningPlayer(caster),'e200',GetUnitX(caster),GetUnitY(caster),facing)
 call MoveUnit(n0,n0,200,facing)
 call SetUnitAnimationByIndex(n0,0)
@@ -226762,7 +226762,7 @@ call EffectCreateAndMove(true,"Others\\HakkeStart2.mdl",GetRandomReal(0,360),1.5
 endif
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\SignumW3.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+////call KillSoundWhenDone(soundplay)
 call PauseTimer(GetExpiredTimer())
 call FlushChildHashtable(HH,id)
 call DestroyTimer(GetExpiredTimer())
@@ -226859,7 +226859,7 @@ endif
 if time==1.5 then
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\SignumW2.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+////call KillSoundWhenDone(soundplay)
 call UnitSpeed(caster,1.5)
 call SetUnitAnimationByIndex(caster,12)
 endif
@@ -226969,7 +226969,7 @@ endif
 call SetUnitPathing(caster,true)
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\SignumEexp.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+////call KillSoundWhenDone(soundplay)
 call UnitSpeed(caster,1)
 call PauseUnit(caster,false)
 call SetUnitInvulnerable(caster,false)
@@ -227103,7 +227103,7 @@ call DestroyEffect(LoadEffectHandle(HH,id,19))
 call UnitRemoveAbility(caster,'SiE3')
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\SignumESelfHit.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+////call KillSoundWhenDone(soundplay)
 call UnitSpeed(caster,1)
 call PauseUnit(caster,false)
 call SetUnitInvulnerable(caster,false)
@@ -227422,7 +227422,7 @@ call SetUnitFlyHeight(Dummy,0,0)
 call SetUnitAnimationByIndex(caster,32)
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\SignumFEHit.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+////call KillSoundWhenDone(soundplay)
 if GetRandomInt(1,2)==1 then
 call SaveReal(HH,id,11,PolX(GetUnitX(caster),GetRandomReal(350,500),GetUnitFacing(caster)+GetRandomReal(20,40)))
 call SaveReal(HH,id,12,PolY(GetUnitY(caster),GetRandomReal(350,500),GetUnitFacing(caster)+GetRandomReal(20,40)))
@@ -227554,10 +227554,10 @@ if time==0.02 then
 call SaveGroupHandle(HH,id,4,CreateGroup())
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\SignumRCharge.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+////call KillSoundWhenDone(soundplay)
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\SignumRCharge1.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+////call KillSoundWhenDone(soundplay)
 call UnitSpeed(caster,1)
 call SetUnitAnimationByIndex(caster,16)
 endif
@@ -227659,7 +227659,7 @@ call DisplayTextToPlayer(GetLocalPlayer(),0,0,"Damage: Agi* "+R2S(damage)+"Damag
 endif
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\SignumRShoot.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+////call KillSoundWhenDone(soundplay)
 endif
 if time==20.5 then
 call UnitSpeed(caster,1)
@@ -227668,7 +227668,7 @@ endif
 if time==1.8 then
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\SignumRShootCharge.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+////call KillSoundWhenDone(soundplay)
 endif
 
 
@@ -227678,7 +227678,7 @@ call EffectCreateAndMove(true,"Signum\\[AB]NanohaExp1.mdl",facing,1,0.5,1,100,10
 call MoveUnit(caster,Dummy,150,facing)
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\SignumRShootFly.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+////call KillSoundWhenDone(soundplay)
 call SetUnitModel(Dummy,"Signum\\FSAeff (177).mdl")
 call UnitSize(Dummy,5+(range-100)*0.03,1,1)
 call SetUnitModel(LoadUnitHandle(HH,id,26),"Signum\\[Signum]TZJQ2.mdl")
@@ -227810,7 +227810,7 @@ call EffectCreateAndMove(true,"Signum\\[Signum]JeanneDark1mt_baozha1.mdl",GetRan
 call DamageAoeOneTime0(caster,GetUnitX(Dummy),GetUnitY(Dummy),range*2+50,totaldamage00)
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\SignumFRExp.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+////call KillSoundWhenDone(soundplay)
 call RemoveUnit(Dummy)
 call PauseTimer(GetExpiredTimer())
 call FlushChildHashtable(HH,id)
@@ -227827,7 +227827,7 @@ else
 if time==0.02 then
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\SignumFR.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+////call KillSoundWhenDone(soundplay)
 call UnitSpeed(caster,1)
 call SetUnitAnimationByIndex(caster,16)
 endif
@@ -227933,7 +227933,7 @@ call DisplayTextToPlayer(GetLocalPlayer(),0,0,"Damage: Agi* "+R2S(damage)+"Damag
 endif
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\SignumFR2.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+////call KillSoundWhenDone(soundplay)
 endif
 if time==20.5 then
 call UnitSpeed(caster,1)
@@ -227942,7 +227942,7 @@ endif
 if time==2 then
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\SignumFR2Charge.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+////call KillSoundWhenDone(soundplay)
 endif
 
 
@@ -227953,7 +227953,7 @@ call EffectCreateAndMove90(true,"Signum\\FireEffectOrange.mdl",facing,1.5,1.25,1
 call MoveUnit(caster,Dummy,150,facing)
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\SignumFRShoot.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+////call KillSoundWhenDone(soundplay)
 call SetUnitModel(Dummy,"Signum\\FSAEff (69).mdl")
 call UnitSize(Dummy,0.85+(range-150)*0.01,1,1)
 endif
@@ -228084,7 +228084,7 @@ if time==0.02 then
 call SaveGroupHandle(HH,id,4,CreateGroup())
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\SignumGTCharge.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+////call KillSoundWhenDone(soundplay)
 call SaveGroupHandle(HH,id,4,CreateGroup())
 call UnitSpeed(caster,0.8)
 call SetUnitAnimationByIndex(caster,11)
@@ -228095,7 +228095,7 @@ call UnitSpeed(caster,1.5)
 call SetUnitAnimationByIndex(caster,14)
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\SignumGT1.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+////call KillSoundWhenDone(soundplay)
 endif
 if time<3.3 then
 call PauseUnit(caster,true)
@@ -228104,7 +228104,7 @@ endif
 if time==2.5 then
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\SignumGTSlash.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+////call KillSoundWhenDone(soundplay)
 endif
 if time==2.8 then
 call EffectCreateAndMove(true,"Signum\\WindCircleFaster.mdl",facing,1.5,2.5,1.25,100,100,100,0,0,caster,0,facing)
@@ -228112,7 +228112,7 @@ call SetUnitAnimationByIndex(caster,15)
 call UnitSpeed(caster,0.35)
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\SignumGT2.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+////call KillSoundWhenDone(soundplay)
 set n0=CreateUnit(GetOwningPlayer(caster),'e200',GetUnitX(caster),GetUnitY(caster),facing)
 call SetUnitModel(n0,"Signum\\[Signum]FireShockRunfire.mdl")
 call UnitSize(n0,3,1,1)
@@ -228221,10 +228221,10 @@ call SaveUnitHandle(HH,id,21,n0)
 set n0=null
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\SignumT.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+////call KillSoundWhenDone(soundplay)
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\SignumT1.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+////call KillSoundWhenDone(soundplay)
 call SaveGroupHandle(HH,id,4,CreateGroup())
 call UnitSpeed(caster,2)
 call SetUnitAnimationByIndex(caster,5)
@@ -228237,7 +228237,7 @@ endif
 if time==0.8 then
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\SignumT2.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+////call KillSoundWhenDone(soundplay)
 endif
 if time==1 then
 call EffectCreateAndMove(true,"Signum\\TG_animeslashfinal_1.mdl",facing,1.5,2.5,0.75,100,60,100,40,100,caster,250,facing)
@@ -228320,7 +228320,7 @@ call SetPlayerAbilityAvailable(GetOwningPlayer(caster),'SiF1',false)
 call SetPlayerAbilityAvailable(GetOwningPlayer(caster),'SiF2',true)
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\SignumFSnake.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+////call KillSoundWhenDone(soundplay)
 call SetUnitAbilityLevel(caster,'SiC1',2)
 call DestroyEffect(AddSpecialEffectTarget("Signum\\[A]LotusStar.mdl",caster,"hand right"))
 call EffectCreateAndMove(true,"Signum\\[A]az_axe_ef1.mdl",GetRandomReal(0,360),1.5,1,0.5,100,60,100,0,0,caster,0,facing)
@@ -228347,7 +228347,7 @@ call SetPlayerAbilityAvailable(GetOwningPlayer(caster),'SiF2',false)
 call SetPlayerAbilityAvailable(GetOwningPlayer(caster),'SiF1',true)
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\SignumFSword.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+////call KillSoundWhenDone(soundplay)
 call SetUnitAbilityLevel(caster,'SiC1',1)
 call DestroyEffect(AddSpecialEffectTarget("Signum\\[a]supershinythingygon.mdl",caster,"hand right"))
 call EffectCreateAndMove(true,"Signum\\[A]az_axe_ef1.mdl",GetRandomReal(0,360),1.5,1,0.5,100,60,10,0,0,caster,0,facing)
@@ -228359,7 +228359,7 @@ if GetSpellAbilityId()=='SiG1' then
 call UnitAddAbility(caster,'SiG2')
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\SignumG.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+////call KillSoundWhenDone(soundplay)
 call SetUnitAnimationByIndex(caster,27)
 call DestroyEffect(AddSpecialEffectTarget("Signum\\[A]Natsu ef roar.mdl",caster,"chest"))
 call EffectCreateAndMove(true,"Others\\HakkeStart2.mdl",GetRandomReal(0,360),1,0.75,2,100,100,100,60,0,caster,0,facing)
@@ -228393,7 +228393,7 @@ if GetSpellAbilityId()=='SiW1' then
 call SaveUnitHandle(HH,id,2,target)
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\SignumW.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+////call KillSoundWhenDone(soundplay)
 call PauseUnit(caster,true)
 call SetUnitInvulnerable(caster,true)
 //Проверка на паузу
@@ -228412,7 +228412,7 @@ call SaveReal(HH,id,8,SR(x0,y0,x1,y1))
 if caster==target then
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\SignumESelf.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+////call KillSoundWhenDone(soundplay)
 call ChangeAbilityTime(caster,10,'SiE1','SiE3')
 call ChangeAbilityTime(caster,10,'SiE2','SiE3')
 call SetUnitAbilityLevel(caster,'SiE3',GetUnitAbilityLevel(caster,'SiE1'))
@@ -228429,7 +228429,7 @@ call UnitAddAbility(caster,'Amrf')
 call UnitRemoveAbility(caster,'Amrf')
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\SignumE.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+////call KillSoundWhenDone(soundplay)
 call PauseUnit(caster,true)
 call SetUnitInvulnerable(caster,true)
 call SetUnitAnimationByIndex(caster,12)
@@ -228456,7 +228456,7 @@ call SetPlayerAbilityAvailable(GetOwningPlayer(caster),'SiE1',true)
 call SetPlayerAbilityAvailable(GetOwningPlayer(caster),'SiE2',true)
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\SignumESelf2.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+////call KillSoundWhenDone(soundplay)
 call PauseUnit(caster,true)
 call SetUnitInvulnerable(caster,true)
 call SetUnitAnimationByIndex(caster,5)
@@ -228487,7 +228487,7 @@ endif
 
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\SignumFQ.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+////call KillSoundWhenDone(soundplay)
 call SaveUnitHandle(HH,id,20,CreateUnit(GetOwningPlayer(caster),'e200',x1,y1,facing))
 
 
@@ -228523,7 +228523,7 @@ call SaveUnitHandle(HH,id,20,n0)
 set n0=null
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\SignumFW.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+////call KillSoundWhenDone(soundplay)
 call TimerStart(t,0.02,true,function SignumFWAct)
 
 endif
@@ -228534,7 +228534,7 @@ call SetUnitAnimationByIndex(caster,30)
 call SetUnitInvulnerable(caster,true)
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\SignumFE.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+////call KillSoundWhenDone(soundplay)
 if SignumGBuff then
 call SaveReal(HH,id,15,(4+GetUnitAbilityLevel(caster,'SiE2'))*GetHeroAgi(caster,true))
 else
@@ -228777,7 +228777,7 @@ call TimerStart(t,0.02,false,function SabracGnull)
 
 set soundplay=CreateSound("Sound\\Guts\\Ping.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+////call KillSoundWhenDone(soundplay)
 call EffectCreateAndMove(true,"Signum\\[A]az_axe_ef1.mdl",GetRandomReal(0,360),1.5,1,0.5,100,80,80,0,0,caster,0,facing)
 call EffectCreateAndMove(true,"Others\\HakkeStart2.mdl",GetRandomReal(0,360),1,0.75,2,100,100,100,60,0,caster,0,facing)
 //call EffectCreateAndMove(true,"Guts\\hit-juhuang-lizi.mdl",facing,1,2,0.5,100,100,100,40,150,caster,0,facing)
@@ -228832,10 +228832,10 @@ call EffectCreateAndMove(true,"Others\\HakkeStart2.mdl",GetRandomReal(0,360),1.5
 call UnitAddAbility(caster,'SiTS')
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\SignumTankSpirit.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+////call KillSoundWhenDone(soundplay)
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\SignumTankSpirit1.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+////call KillSoundWhenDone(soundplay)
 //if(GetLocalPlayer()==GetOwningPlayer(caster))then
 //call DisplayTextToPlayer(GetLocalPlayer(),0,0,"Tank Spirit")
 //endif
@@ -229273,7 +229273,7 @@ call EffectCreateAndMove(true,"Others\\WindNewFaw4.mdl",facing,1.5,1,0.65,60,100
 endif
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\LamboW2.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+////call KillSoundWhenDone(soundplay)
 call UnitSpeed(caster,2)
 endif
 if time>0.1 then
@@ -229504,7 +229504,7 @@ if GetSpellAbilityId()=='LamQ' then
 call PauseUnit(caster,true)
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\ElectoricoReverse.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+////call KillSoundWhenDone(soundplay)
 call SaveReal(HH,id,15,75+(GetUnitAbilityLevel(caster,'LamQ')+1)*GetHeroStr(caster,true)+LoadReal(HH,GetHandleId(caster),StringHash("LamboQReal")) )
 
 
@@ -229517,7 +229517,7 @@ endif
 if GetSpellAbilityId()=='LamW' then
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\LaboElectorikoKornata.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+////call KillSoundWhenDone(soundplay)
 call PauseUnit(caster,true)
 call SetUnitInvulnerable(caster,true)
 call SetUnitAnimationByIndex(caster,2)
@@ -229544,7 +229544,7 @@ endif
 if GetSpellAbilityId()=='LamR' then
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\LamboW.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+////call KillSoundWhenDone(soundplay)
 call SetUnitAnimationByIndex(caster,5)
 call UnitSpeed(caster,1)
 
@@ -229564,7 +229564,7 @@ endif
 if GetSpellAbilityId()=='LamG' then
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\LamboThunderSet.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+////call KillSoundWhenDone(soundplay)
 call PauseUnit(caster,true)
 call SetUnitAnimationByIndex(caster,3)
 call UnitSpeed(caster,0.5)
