@@ -223617,7 +223617,7 @@ endfunction
 
 ///ини абилок
 function AbilitiesForChoice_Cond takes nothing returns boolean
-    local boolean cond1=GetSpellAbilityId()=='GrQ1' or GetSpellAbilityId()=='GrW1' or GetSpellAbilityId()=='GrE1' or GetSpellAbilityId()=='GrR1' or GetSpellAbilityId()=='GrT1' or GetSpellAbilityId()=='GrF1' or GetSpellAbilityId()=='GrG2' or GetSpellAbilityId()=='UKD1' or GetSpellAbilityId()=='BuuG' or GetSpellAbilityId()=='GSQ1' or GetSpellAbilityId()=='GSQ2' or GetSpellAbilityId()=='GSW1' or GetSpellAbilityId()=='GSE1' or GetSpellAbilityId()=='GSE2' or GetSpellAbilityId()=='GSF1' or GetSpellAbilityId()=='GSF2' or GetSpellAbilityId()=='GSG1' or GetSpellAbilityId()=='GSR1' or GetSpellAbilityId()=='GST1' or GetSpellAbilityId()=='GST2' or GetSpellAbilityId()=='GST3' or GetSpellAbilityId()=='SHG1' or GetSpellAbilityId()=='CelF' or GetSpellAbilityId()=='CelG' or GetSpellAbilityId()=='CelT'
+    local boolean cond1=GetSpellAbilityId()=='AKQ1' or GetSpellAbilityId()=='AKW1' or GetSpellAbilityId()=='AKE1' or GetSpellAbilityId()=='AKR1' or GetSpellAbilityId()=='AKT1' or GetSpellAbilityId()=='AKF1' or GetSpellAbilityId()=='AKG1' or GetSpellAbilityId()=='GrQ1' or GetSpellAbilityId()=='GrW1' or GetSpellAbilityId()=='GrE1' or GetSpellAbilityId()=='GrR1' or GetSpellAbilityId()=='GrT1' or GetSpellAbilityId()=='GrF1' or GetSpellAbilityId()=='GrG2' or GetSpellAbilityId()=='UKD1' or GetSpellAbilityId()=='BuuG' or GetSpellAbilityId()=='GSQ1' or GetSpellAbilityId()=='GSQ2' or GetSpellAbilityId()=='GSW1' or GetSpellAbilityId()=='GSE1' or GetSpellAbilityId()=='GSE2' or GetSpellAbilityId()=='GSF1' or GetSpellAbilityId()=='GSF2' or GetSpellAbilityId()=='GSG1' or GetSpellAbilityId()=='GSR1' or GetSpellAbilityId()=='GST1' or GetSpellAbilityId()=='GST2' or GetSpellAbilityId()=='GST3' or GetSpellAbilityId()=='SHG1' or GetSpellAbilityId()=='CelF' or GetSpellAbilityId()=='CelG' or GetSpellAbilityId()=='CelT'
     if cond1 then
         return true
     else
@@ -225231,6 +225231,1339 @@ set caster=null
 set t=null
 endfunction
 //Garp1end
+//Kimimarostart — перенесено из Choice Random 4.5
+function UnitAddDebuffTimed_Act takes nothing returns nothing
+local integer id=GetHandleId(GetExpiredTimer())
+local unit target=LoadUnitHandle(HH,id,2)
+local real time=LoadReal(HH,id,5)
+if IsUnitPaused(target)==false then
+set time=time-0.02
+call SaveReal(HH,id,5,time)
+endif
+
+
+//if GetUnitAbilityLevel(target,LoadInteger(HH,id,10))==0 and GetUnitAbilityLevel(target,LoadInteger(HH,id,11))==0 then
+//call PauseTimer(GetExpiredTimer())
+//call FlushChildHashtable(HH,id)
+//call DestroyTimer(GetExpiredTimer())
+//endif
+if time<=0 or GetUnitAbilityLevel(target,'CE04')>0 or GetUnitAbilityLevel(target,'B05G')>0 or GetUnitAbilityLevel(target,'ISWC')==0  then
+call UnitRemoveAbility(target,LoadInteger(HH,id,10))
+call UnitRemoveAbility(target,LoadInteger(HH,id,11))
+call PauseTimer(GetExpiredTimer())
+call FlushChildHashtable(HH,id)
+call DestroyTimer(GetExpiredTimer())
+endif
+set target=null
+endfunction
+function UnitAddDebuffTimed takes unit target0,integer Abil_ID1,integer Abil_ID2,real time_Duration returns nothing
+
+
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+
+
+if GetUnitAbilityLevel(target0,'B05G')==0 and GetUnitAbilityLevel(target0,'ISWC')==0  and GetUnitAbilityLevel(target0,'CE04')==0 then
+//set time_Duration=CalculateControlResist(target0, time_Duration)
+
+
+call UnitAddAbility(target0,Abil_ID1)
+call SaveUnitHandle(HH,id,2,target0)
+call SaveInteger(HH,id,10,Abil_ID1)
+call SaveInteger(HH,id,11,Abil_ID2)
+
+
+set time_Duration=CalculateControlResist(target0,time_Duration)
+
+
+
+call SaveReal(HH,id,5,time_Duration)
+
+
+call TimerStart(t,0.02,true,function UnitAddDebuffTimed_Act)
+
+else
+
+call DestroyTimer(t)
+endif
+
+set t=null
+endfunction
+function KimimaroChoiceInit takes nothing returns nothing
+//set gg_trg_KimimaroChoice=CreateTrigger()
+//call TriggerRegisterAnyUnitEventBJ(gg_trg_KimimaroChoice,EVENT_PLAYER_UNIT_SPELL_EFFECT)
+//call TriggerAddCondition(gg_trg_LightningPencil,Condition(function LightningPencilCond))
+//call TriggerAddAction(gg_trg_LightningPencil,function LightningPencilCast)
+endfunction
+function KimimaroHeal_Act takes nothing returns nothing
+local integer id=GetHandleId(GetExpiredTimer())
+local unit caster=Hero[LoadInteger(HH,id,16)]//LoadUnitHandle(HH,id,1)
+local real current_hp=GetUnitState(caster,UNIT_STATE_LIFE)
+local real increase_hp=GetHeroStr(caster,true)*0.4
+//local integer morph=LoadInteger(HH,GetHandleId(  caster  ),StringHash("KimiFormDur"))
+local integer morph=LoadInteger(HH,GetHandleId( GetOwningPlayer( caster ) ),StringHash("KimiFormDur"))
+
+//call LeaderboardSetItemValue(LoadLeaderboardHandle(HH,GetHandleId(caster),StringHash("KimimaroFboard")),0,morph)
+call LeaderboardSetItemValue(LoadLeaderboardHandle(HH,GetHandleId( GetOwningPlayer( caster ) ),StringHash("KimimaroFboard")),0,morph)
+if GetUnitTypeId(caster)=='H00E' then
+
+if current_hp>100 then
+//call SetUnitState(caster,UNIT_STATE_LIFE,current_hp-20)
+
+call HealIndicatorFunction(caster,TSH_INDICATOR,-20)
+
+endif
+
+
+
+call LeaderboardSetLabel( LoadLeaderboardHandle(HH,GetHandleId( GetOwningPlayer( caster ) ),StringHash("KimimaroFboard")) , "Kekkei Genkai: Heal - "+I2S( R2I(increase_hp)-20) )
+
+
+
+//call LeaderboardSetLabel( LoadLeaderboardHandle(HH,GetHandleId(caster),StringHash("KimimaroFboard")) , "Kekkei Genkai: Heal - "+I2S( R2I(increase_hp)-20) )
+
+else
+
+//call LeaderboardSetLabel(LoadLeaderboardHandle(HH,GetHandleId(caster),StringHash("KimimaroFboard")) , "Kekkei Genkai: Heal - "+I2S( R2I(increase_hp)  ))
+call LeaderboardSetLabel(LoadLeaderboardHandle(HH,GetHandleId( GetOwningPlayer( caster ) ),StringHash("KimimaroFboard")) , "Kekkei Genkai: Heal - "+I2S( R2I(increase_hp)  ))
+
+endif
+
+
+
+if GetHeroLevel(caster)>12 then
+//call SetUnitState(caster,UNIT_STATE_LIFE,current_hp+increase_hp)
+
+call HealIndicatorFunction(caster,TSH_INDICATOR,increase_hp)
+
+
+endif
+
+
+if GetUnitTypeId( caster )!='H00F' and GetUnitTypeId( caster )!='H00E' then
+
+//if GetUnitTypeId(Hero[GetPlayerId(  GetOwningPlayer( caster )   )])!='H00F' and GetUnitTypeId(Hero[GetPlayerId(  GetOwningPlayer( caster ) )])!='H00E' then
+//call LeaderboardDisplay(LoadLeaderboardHandle(HH,GetHandleId( GetOwningPlayer( caster ) ),StringHash("KimimaroFboard")),false)
+//call DestroyLeaderboard(LoadLeaderboardHandle(HH,GetHandleId( GetOwningPlayer( caster ) ),StringHash("KimimaroFboard")))
+
+
+//call LeaderboardDisplay(LoadLeaderboardHandle(HH,GetHandleId(  caster  ),StringHash("KimimaroFboard")),false)
+//call DestroyLeaderboard(LoadLeaderboardHandle(HH,GetHandleId(  caster  ),StringHash("KimimaroFboard")))
+if(GetLocalPlayer()==GetOwningPlayer(caster))then
+call DisplayTextToPlayer(GetLocalPlayer(),0,0,"Вы больше не Кимимаро!!!")
+endif
+
+call LeaderboardDisplay(LoadLeaderboardHandle(HH,GetHandleId( GetOwningPlayer( caster ) ),StringHash("KimimaroFboard")),false)
+call DestroyLeaderboard(LoadLeaderboardHandle(HH,GetHandleId( GetOwningPlayer( caster ) ),StringHash("KimimaroFboard")))
+
+
+call PauseTimer(GetExpiredTimer())
+call FlushChildHashtable(HH,id)
+call DestroyTimer(GetExpiredTimer())
+endif
+set caster=null
+endfunction
+function KimimaroHeal takes unit caster0 returns nothing
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+local leaderboard leadb=null
+call SaveUnitHandle(HH,id,1,caster0)
+call SaveInteger(HH,id,16,GetPlayerId(GetOwningPlayer(caster0)))
+
+//call SaveLeaderboardHandle(HH,GetHandleId( caster0 ),StringHash("KimimaroFboard"),CreateLeaderboardBJ(bj_FORCE_PLAYER[GetPlayerId(GetOwningPlayer(caster0))],"Kekkei Genkai:"))
+
+call SaveLeaderboardHandle(HH,GetHandleId( GetOwningPlayer( caster0 ) ),StringHash("KimimaroFboard"),CreateLeaderboardBJ(bj_FORCE_PLAYER[GetPlayerId(GetOwningPlayer(caster0))],"Kekkei Genkai:"))
+
+//call LeaderboardSetLabel(LoadLeaderboardHandle(HH,GetHandleId( caster0 ),StringHash("KimimaroFboard")),"Heal - 0 Morph: -  0")
+
+
+//call SaveReal(HH,GetHandleId(caster),StringHash("KisameGC"),GetHeroInt(caster,true)*8)
+
+//set leadb=LoadLeaderboardHandle(HH,GetHandleId(caster0),StringHash("KimimaroFboard"))
+
+set leadb=LoadLeaderboardHandle(HH,GetHandleId( GetOwningPlayer( caster0 ) ),StringHash("KimimaroFboard"))
+call LeaderboardAddItem(leadb,"  |cffff8affMorph: |r\n",0,Player(GetPlayerId(GetOwningPlayer(caster0))))
+call LeaderboardSetSizeByItemCount(leadb,1)
+
+
+
+
+
+call TimerStart(t,1,true,function KimimaroHeal_Act)
+set t=null
+set leadb=null
+endfunction
+function KimimaroFMorph_Act2 takes nothing returns nothing
+local integer id=GetHandleId(GetExpiredTimer())
+local unit caster=LoadUnitHandle(HH,id,1)
+local real facing=GetUnitFacing(caster)
+local real time=LoadReal(HH,id,5)
+
+if ( IsUnitPaused(caster)==false and GetUnitAbilityLevel(caster,'Avul')==0  or udg_B==false )or time<0.5 then
+set time=time+0.02
+call SaveReal(HH,id,5,time)
+if time>0.5 then
+//call SaveInteger(HH,GetHandleId(  caster  ),StringHash("KimiFormDur"),20-R2I(time))
+call SaveInteger(HH,GetHandleId( GetOwningPlayer( caster ) ),StringHash("KimiFormDur"),20-R2I(time))
+endif
+
+endif
+
+if time==0.02 then
+set soundplay=CreateSound("Sound\\Others\\KimimaroRG.mp3",false,false,true,12700,12700,"")
+call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
+set soundplay=CreateSound("Sound\\Others\\KimimaroForm.mp3",false,false,true,12700,12700,"")
+call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
+call PauseUnit(caster,false)
+call UnitAddAbility(caster,'AKF2')
+call IssueImmediateOrder(caster,"bearform")
+call UnitRemoveAbility(caster,'AKF2')
+call EffectCreateAndMove(true,"Others\\HakkeStart2.mdl",GetRandomInt(0,360),1,1.5,1,100,100,100,80,0,caster,0,facing)
+call EffectCreateAndMove(true,"Others\\A(BlackPurple).mdl",GetRandomInt(0,360),1,0.5,1,100,100,100,40,50,caster,0,facing)
+call UnitSpeed(caster,2)
+call SetUnitAnimationByIndex(caster,18)
+endif
+
+if time==0.02 or time==0.3 or time==0.5 then
+call EffectCreateAndMove(true,"Others\\darkpillar.mdl",GetRandomInt(0,360),1,2,1,100,100,100,40,0,caster,0,facing)
+call EffectCreateAndMove(true,"Others\\[A]az_axe_ef1.mdl",GetRandomInt(0,360),1,1.5,0.75,60,40,100,0,0,caster,0,facing)
+endif
+if time<0.5 then
+call PauseUnit(caster,true)
+endif
+
+if time==0.5 then
+call SetUnitState(caster,UNIT_STATE_MANA,GetUnitState(caster,UNIT_STATE_MANA)*0.7)
+set n0=CreateUnit(GetOwningPlayer(caster),'e200',GetUnitX(caster),GetUnitY(caster),facing)
+call SetUnitModel(n0,"Others\\BYmutou_huozhu_zise1.mdl")
+call UnitSpeed(n0,1)
+call UnitSize(n0,0.65,1,1)
+call UnitColor(n0,100,100,100,40)
+call SetUnitFlyHeight(n0,0,0)
+call SaveUnitHandle(HH,id,20,n0)
+set n0=null
+call UnitSpeed(caster,1)
+call PauseUnit(caster,false)
+
+
+
+
+
+endif
+
+if time>0.5 then
+call MoveUnit(caster,LoadUnitHandle(HH,id,20),0,facing)
+call SetUnitFlyHeight(LoadUnitHandle(HH,id,20),GetUnitFlyHeight(caster),0)
+endif
+
+if time>=20.5 or UnitIsAlive(caster)==false or udg_B==false  then
+call RemoveUnit(LoadUnitHandle(HH,id,20))
+
+call SaveInteger(HH,GetHandleId(  caster  ),StringHash("KimiFormDur"),0)
+if GetUnitAbilityLevel(caster,'OM17')==0 then
+call StartAbilityCooldown(GetUnitAbility(caster,'AKF1'), 20)
+else
+call StartAbilityCooldown(GetUnitAbility(caster,'AKF1'), 0.1)
+endif
+call PauseUnit(caster,false)
+
+
+if  GetUnitTypeId(caster)=='H00F' then
+call UnitAddAbility(caster,'AKF3')
+call IssueImmediateOrder(caster,"bearform")
+call UnitRemoveAbility(caster,'AKF3')
+endif
+
+call PauseTimer(GetExpiredTimer())
+call FlushChildHashtable(HH,id)
+call DestroyTimer(GetExpiredTimer())
+endif
+
+
+
+set caster=null
+endfunction
+function KimimaroFMorph_Act takes unit caster returns nothing
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+call SaveUnitHandle(HH,id,1,caster)
+call TimerStart(t,0.02,true,function KimimaroFMorph_Act2)
+set t=null
+endfunction
+function KimimaroG_Act2 takes nothing returns nothing
+local integer id=GetHandleId(GetExpiredTimer())
+local unit caster=LoadUnitHandle(HH,id,1)
+local real facing=LoadReal(HH,id,3)
+local real time=LoadReal(HH,id,5)
+local real time1=LoadReal(HH,id,6)
+local real x1=GetUnitX(caster)
+local real y1=GetUnitY(caster)
+local real x0=0
+local real y0=0
+local real damage=LoadReal(HH,id,15)
+local real rand_facing=0
+set time=time+0.02
+call SaveReal(HH,id,5,time)
+if time>2 then
+call RemoveUnit(LoadUnitHandle(HH,id,20))
+call UnitSpeed(caster,1)
+call PauseUnit(caster,false)
+call SetUnitInvulnerable(caster,false)
+call SetUnitPathing(caster,true)
+call PauseTimer(GetExpiredTimer())
+call FlushChildHashtable(HH,id)
+call DestroyTimer(GetExpiredTimer())
+else
+call SetUnitPathing(caster,false)
+call PauseUnit(caster,true)
+call SetUnitInvulnerable(caster,true)
+if time==0.02 then
+set n0=CreateUnit(GetOwningPlayer(caster),'e200',GetUnitX(caster),GetUnitY(caster),facing)
+call SetUnitModel(n0,"Others\\HakkeStart2.mdl")
+call UnitSpeed(n0,1)
+call UnitSize(n0,1,1,1)
+call UnitColor(n0,100,100,100,80)
+call SetUnitFlyHeight(n0,0,0)
+call SaveUnitHandle(HH,id,20,n0)
+set n0=null
+set soundplay=CreateSound("Sound\\Others\\KimimaroG.mp3",false,false,true,12700,12700,"")
+call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
+endif
+if time==0.2 then
+call UnitSpeed(LoadUnitHandle(HH,id,20),0)
+endif
+call MoveUnit(caster,LoadUnitHandle(HH,id,20),0,facing)
+set time1=time1+0.02
+set x0=PolX(x1,200,facing)
+set y0=PolY(y1,200,facing)
+if time1==0.04 or time1==0.8 or time1==0.1 or time1==0.12 or time1==0.14 or time1==0.16 or time1==0.20 then
+set rand_facing=GetRandomInt(1,3)
+if rand_facing==1 then
+set rand_facing=GetRandomReal(-35,-15)
+endif
+if rand_facing==2 then
+set rand_facing=GetRandomReal(15,35)
+endif
+if rand_facing==3 then
+set rand_facing=GetRandomReal(-15,15)
+endif
+call EffectCreateAndMove(true,"Others\\ZC_coarse slash whitepuple.mdl",facing+rand_facing,1,GetRandomReal(0.4,0.7),GetRandomReal(1,1.5),100,100,100,20,GetRandomReal(75,150),caster,200,facing+rand_facing)
+endif
+if time1==0.1 or time1==0.2 then
+if GetUnitTypeId(caster)=='H00F' then
+if GetRandomInt(1,2)==1 then
+call EffectCreateAndMoveAn(true,"Others\\jml.mdl",facing+rand_facing,0.3,1,2,100,100,100,70,0,caster,75,facing+rand_facing,16)
+else
+call EffectCreateAndMoveAn(true,"Others\\jml.mdl",facing+rand_facing,0.3,1,2,100,100,100,70,0,caster,75,facing+rand_facing,17)
+endif
+else
+call EffectCreateAndMoveAn(true,"Others\\jml.mdl",facing+rand_facing,0.3,1,2,100,100,100,70,0,caster,75,facing+rand_facing,6)
+endif
+endif
+if time1==0.2 then
+call EffectCreateAndMove(true,"Others\\HakenSaber2.mdl",GetRandomInt(0,360),0.5,GetRandomReal(0.5,1),GetRandomReal(0.2,0.5),100,100,100,60,0,caster,100,facing)
+set time1=0
+call DamageAoeAndStun(caster,x0,y0,200,damage*0.1,1)
+call UnitSpeed(caster,2)
+if GetUnitTypeId(caster)=='H00F' then
+if GetRandomInt(1,2)==1 then
+call SetUnitAnimationByIndex(caster,16)
+else
+call SetUnitAnimationByIndex(caster,17)
+endif
+else
+call SetUnitAnimationByIndex(caster,6)
+endif
+endif
+call SaveReal(HH,id,6,time1)
+call MoveUnit(caster,caster,5,facing)
+call GroupClear(G)
+call GroupEnumUnitsInRange(G,x0,y0,200,Base)
+loop
+set n0=FirstOfGroup(G)
+exitwhen n0==null
+if Condition_Base(GetOwningPlayer(caster),n0) and UnitIsAlive(n0) then
+call MoveUnit(n0,n0,5,facing)
+endif
+call GroupRemoveUnit(G,n0)
+endloop
+call GroupClear(G)
+endif
+set caster=null
+endfunction
+function KimimaroG_Act takes unit caster,real x1,real y1 returns nothing
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+local real x0=GetUnitX(caster)
+local real y0=GetUnitY(caster)
+local real facing=Angle2(x0,y0,x1,y1)
+local real current_hp=GetUnitState(caster,UNIT_STATE_LIFE)
+local real decrease_hp=GetUnitState(caster,UNIT_STATE_LIFE)*0.15
+local real decrease_hp1=GetUnitState(caster,UNIT_STATE_LIFE)*0.15
+local real damage=200+GetHeroAgi(caster,true)*5
+
+
+        if passedTime < 0 then
+            set decrease_hp1 = decrease_hp1*(1.00+(0.05*passedTime))
+        endif
+
+
+call SaveUnitHandle(HH,id,1,caster)
+call SaveReal(HH,id,3,facing)
+call PauseUnit(caster,true)
+call SetUnitInvulnerable(caster,true)
+call SetUnitState(caster,UNIT_STATE_LIFE,current_hp-decrease_hp1)
+set damage=damage+decrease_hp*0.5
+call SaveReal(HH,id,15,damage)
+call TimerStart(t,0.02,true,function KimimaroG_Act2)
+set t=null
+endfunction
+function KimimaroQ_Bullet_Act takes nothing returns nothing
+local integer id=GetHandleId(GetExpiredTimer())
+local unit caster=LoadUnitHandle(HH,id,1)
+local unit Dummy=LoadUnitHandle(HH,id,20)
+local real facing=LoadReal(HH,id,3)
+local group gr=LoadGroupHandle(HH,id,4)
+local real x1=GetUnitX(Dummy)
+local real y1=GetUnitY(Dummy)
+local real time=LoadReal(HH,id,5)
+local real dist=LoadReal(HH,id,8)
+local real damage=LoadReal(HH,id,15)
+if dist>1700 then
+call RemoveUnit(Dummy)
+call DestroyGroup(gr)
+call PauseTimer(GetExpiredTimer())
+call FlushChildHashtable(HH,id)
+call DestroyTimer(GetExpiredTimer())
+else
+call MoveUnit(Dummy,Dummy,50,facing)
+call SaveReal(HH,id,8,dist+50)
+if dist<1500 then
+call EffectCreateAndMove90(true,"Others\\wind3.mdl",facing,0.35,0.25,2.5,100,100,100,0,0,Dummy,50,facing)
+endif
+call GroupClear(G)
+call GroupEnumUnitsInRange(G,x1,y1,250,Base)
+loop
+set n0=FirstOfGroup(G)
+exitwhen n0==null
+if Condition_Base(GetOwningPlayer(caster),n0) and  IsUnitInGroup(n0,gr)==false and UnitIsAlive(n0)    and GetUnitAbilityLevel(n0,'Avul')==0 then
+
+
+call myCustomDamage(caster,n0,damage,false,false,null,null,null)
+
+if GetUnitAbilityLevel(n0,'AKQ2')==0 then
+call UnitAddDebuffTimed(n0,'AKQ2','BKQ2',2+GetUnitAbilityLevel(caster,'AKQ1')*0.6)
+endif
+call GroupAddUnit(gr,n0)
+endif
+call GroupRemoveUnit(G,n0)
+endloop
+call SaveGroupHandle(HH,id,4,gr)
+call GroupClear(G)
+endif
+set caster=null
+set Dummy=null
+set gr=null
+endfunction
+function KimimaroQ_Bullet takes unit caster0,real facing0,real damage0,integer bullet_facing returns nothing
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+call SaveUnitHandle(HH,id,1,caster0)
+call SaveReal(HH,id,3,facing0)
+call SaveGroupHandle(HH,id,4,CreateGroup())
+call SaveReal(HH,id,15,damage0)
+set n0=CreateUnit(GetOwningPlayer(caster0),'e200',GetUnitX(caster0),GetUnitY(caster0),facing0)
+call SetUnitModel(n0,"s_bones.mdl")
+call SetUnitFlyHeight(n0,GetRandomInt(100,250),0)
+if bullet_facing==1 then
+call MoveUnit(n0,n0,GetRandomInt(150,300),facing0+GetRandomReal(15,30))
+elseif bullet_facing==2 then
+call MoveUnit(n0,n0,GetRandomInt(150,300),facing0+GetRandomReal(-30,-15))
+else
+call MoveUnit(n0,n0,GetRandomInt(150,300),facing0+GetRandomReal(-10,-10))
+endif
+call EffectCreateAndMove90(true,"Others\\[A]wavejojo.mdl",facing0,1,0.5,1,100,100,100,0,100,n0,0,facing0)
+call UnitSize(n0,0.3,1,1)
+call UnitSpeed(n0,1)
+call UnitColor(n0,100,100,100,0)
+call SaveUnitHandle(HH,id,20,n0)
+call TimerStart(t,0.02,true,function KimimaroQ_Bullet_Act)
+set t=null
+endfunction
+function KimimaroQ_Act2 takes nothing returns nothing
+local integer id=GetHandleId(GetExpiredTimer())
+local unit caster=LoadUnitHandle(HH,id,1)
+local real facing=LoadReal(HH,id,3)
+local real time=LoadReal(HH,id,5)
+local real damage=LoadReal(HH,id,15)
+local integer randBullet=LoadInteger(HH,id,21)
+local integer randBullet_one=LoadInteger(HH,id,22)
+local integer randBullet_two=LoadInteger(HH,id,23)
+set time=time+0.02
+call SaveReal(HH,id,5,time)
+if time>0.14 then
+call UnitSpeed(caster,1)
+call PauseUnit(caster,false)
+call PauseTimer(GetExpiredTimer())
+call FlushChildHashtable(HH,id)
+call DestroyTimer(GetExpiredTimer())
+else
+call PauseUnit(caster,true)
+if time==0.02 then
+call EffectCreateAndMove(true,"Others\\[A]az_axe_ef1.mdl",GetRandomInt(0,360),1,1,0.5,100,100,100,40,0,caster,0,facing)
+call EffectCreateAndMove(true,"Others\\HakkeStart2.mdl",GetRandomInt(0,360),1,1,1,100,100,100,80,0,caster,0,facing)
+call UnitSpeed(caster,2)
+if GetUnitTypeId(caster)=='H00F' then
+if GetRandomInt(1,2)==1 then
+call SetUnitAnimationByIndex(caster,16)
+else
+call SetUnitAnimationByIndex(caster,17)
+endif
+else
+call SetUnitAnimationByIndex(caster,6)
+endif
+set soundplay=CreateSound("Sound\\Others\\KimimaroQ.mp3",false,false,true,12700,12700,"")
+call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
+endif
+if time==0.02 then
+set randBullet=GetRandomInt(1,3)
+call SaveInteger(HH,id,21,randBullet)
+call SaveInteger(HH,id,22,randBullet)
+call KimimaroQ_Bullet(caster,facing,damage*0.5,randBullet)
+endif
+if time==0.06 then
+set randBullet_two=randBullet
+if randBullet_one==1 then
+set randBullet=GetRandomInt(2,3)
+else
+if randBullet_one==2 then
+if GetRandomInt(1,2)==1 then
+set randBullet=1
+else
+set randBullet=3
+endif
+else
+set randBullet=GetRandomInt(1,2)
+endif
+endif
+call SaveInteger(HH,id,23,randBullet)
+call KimimaroQ_Bullet(caster,facing,damage*0.5,randBullet)
+endif
+if(GetUnitLevel(caster)>=35 and time==0.12)then
+if(randBullet_one==1 and randBullet_two==2)or(randBullet_one==2 and randBullet_two==1)then
+set randBullet=3
+endif
+if(randBullet_one==1 and randBullet_two==3)or(randBullet_one==3 and randBullet_two==1)then
+set randBullet=2
+endif
+if(randBullet_one==2 and randBullet_two==3)or(randBullet_one==3 and randBullet_two==2)then
+set randBullet=1
+endif
+call KimimaroQ_Bullet(caster,facing,damage*0.5,randBullet)
+endif
+endif
+set caster=null
+endfunction
+function KimimaroQ_Act takes unit caster,real x1,real y1 returns nothing
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+local real x0=GetUnitX(caster)
+local real y0=GetUnitY(caster)
+local real facing=Angle2(x0,y0,x1,y1)
+local real current_hp=GetUnitState(caster,UNIT_STATE_LIFE)
+local real decrease_hp=GetUnitState(caster,UNIT_STATE_LIFE)*0.15
+local real decrease_hp1=GetUnitState(caster,UNIT_STATE_LIFE)*0.15
+local real damage=(50+GetHeroAgi(caster,true))*GetUnitAbilityLevel(caster,'AKQ1')
+
+
+
+        if passedTime < 0 then
+            set decrease_hp1 = decrease_hp1*(1.00+(0.05*passedTime))
+        endif
+
+
+
+
+call SaveUnitHandle(HH,id,1,caster)
+call SaveReal(HH,id,3,facing)
+call PauseUnit(caster,true)
+if GetHeroLevel(caster)>12 then
+call SetUnitState(caster,UNIT_STATE_LIFE,current_hp-decrease_hp1)
+
+
+if GetUnitLevel(caster)>=35 then
+set damage=damage+decrease_hp*0.5/3
+else
+set damage=damage+decrease_hp*0.5*0.5
+endif
+
+endif
+call SaveReal(HH,id,15,damage)
+call TimerStart(t,0.02,true,function KimimaroQ_Act2)
+set t=null
+endfunction
+function KimimaroW_Act2 takes nothing returns nothing
+local integer id=GetHandleId(GetExpiredTimer())
+local unit caster=LoadUnitHandle(HH,id,1)
+local real facing=LoadReal(HH,id,3)
+local real time=LoadReal(HH,id,5)
+local real time1=LoadReal(HH,id,6)
+local real time2=LoadReal(HH,id,8)
+local real x0=GetUnitX(caster)
+local real y0=GetUnitY(caster)
+local real damage=LoadReal(HH,id,15)
+set time=time+0.02
+call SaveReal(HH,id,5,time)
+if GetUnitCurrentOrder(caster)!=OrderId("channel")then
+call RemoveUnit(LoadUnitHandle(HH,id,20))
+call GroupClear(G)
+call GroupEnumUnitsInRange(G,x0,y0,350,Base)
+loop
+set n0=FirstOfGroup(G)
+exitwhen n0==null
+if Condition_Base(GetOwningPlayer(caster),n0) and UnitIsAlive(n0)    and GetUnitAbilityLevel(n0,'Avul')==0 then
+set facing=Angle2(x0,y0,GetUnitX(n0),GetUnitY(n0))
+
+
+call myCustomDamage(caster,n0,GetHeroAgi(caster,true)*2,false,false,null,null,null)
+
+
+call PushTimed(n0,facing,10,20)
+endif
+call GroupRemoveUnit(G,n0)
+endloop
+call GroupClear(G)
+call EffectCreateAndMove(true,"Others\\lb_hdg.mdl",GetRandomInt(0,360),0.75,1.5,1.25,100,100,100,60,150,caster,0,facing)
+call EffectCreateAndMove(true,"Others\\lb_hdg.mdl",GetRandomInt(0,360),0.75,1.35,1,100,100,100,60,150,caster,0,facing)
+call EffectCreateAndMove(true,"Others\\[A]az_axe_ef1.mdl",GetRandomInt(0,360),1,1.5,0.5,100,100,100,60,0,caster,0,facing)
+call UnitSpeed(caster,1)
+call SetUnitInvulnerable(caster,false)
+call SetUnitPathing(caster,true)
+call PauseTimer(GetExpiredTimer())
+call FlushChildHashtable(HH,id)
+call DestroyTimer(GetExpiredTimer())
+else
+call SetUnitPathing(caster,false)
+call SetUnitInvulnerable(caster,true)
+if time==0.02 then
+set n0=CreateUnit(GetOwningPlayer(caster),'e200',GetUnitX(caster),GetUnitY(caster),facing)
+call SetUnitModel(n0,"Others\\HakkeStart2.mdl")
+call UnitSpeed(n0,1)
+call UnitSize(n0,1.25,1,1)
+call UnitColor(n0,100,100,100,80)
+call SetUnitFlyHeight(n0,0,0)
+call SaveUnitHandle(HH,id,20,n0)
+set n0=null
+if GetUnitTypeId(caster)=='H00F' then
+call SetUnitAnimationByIndex(caster,11)
+else
+call SetUnitAnimationByIndex(caster,3)
+endif
+set soundplay=CreateSound("Sound\\Others\\KimimaroW.mp3",false,false,true,12700,12700,"")
+call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
+endif
+if time==0.2 then
+call UnitSpeed(LoadUnitHandle(HH,id,20),0)
+endif
+call MoveUnit(caster,LoadUnitHandle(HH,id,20),0,facing)
+set time2=time2+0.02
+if time2==0.04 or time2==0.08 or time2==0.12 or time2==0.16 or time2==0.2 then
+call EffectCreateAndMove(true,"Others\\lb_hdg.mdl",GetRandomInt(0,360),0.75,GetRandomReal(0.75,0.9),GetRandomReal(1,1.25),100,100,100,60,GetRandomReal(100,250),caster,0,facing)
+endif
+if time2==0.1 or time2==0.2 then
+call EffectCreateAndMove(true,"Others\\HakenSaber2.mdl",GetRandomInt(0,360),0.5,GetRandomReal(0.85,1.5),GetRandomReal(0.2,0.5),100,100,100,80,GetRandomReal(0,75),caster,0,facing)
+endif
+if time==0.02 or time2==0.2 then
+set time2=0
+call EffectCreateAndMove(true,"Others\\[A]az_axe_ef1.mdl",GetRandomInt(0,360),1,GetRandomReal(0.75,1.25),GetRandomReal(0.4,0.75),100,100,100,60,0,caster,0,facing)
+endif
+call SaveReal(HH,id,8,time2)
+set time1=time1+0.02
+if time1==0.1 then
+set time1=0
+call DamageAoeOneTime0(caster,x0,y0,350,damage*0.1)
+call StopAoeOneTime(caster,x0,y0,350)
+endif
+call SaveReal(HH,id,6,time1)
+call GroupClear(G)
+call GroupEnumUnitsInRange(G,x0,y0,300,Base)
+loop
+set n0=FirstOfGroup(G)
+exitwhen n0==null
+if Condition_Base(GetOwningPlayer(caster),n0) and UnitIsAlive(n0) then
+set facing=Angle2(x0,y0,GetUnitX(n0),GetUnitY(n0))
+call MoveUnit(n0,n0,5,facing)
+endif
+call GroupRemoveUnit(G,n0)
+endloop
+call GroupClear(G)
+endif
+set caster=null
+endfunction
+function KimimaroW_Act takes unit caster,real x1,real y1 returns nothing
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+local real x0=GetUnitX(caster)
+local real y0=GetUnitY(caster)
+local real facing=Angle2(x0,y0,x1,y1)
+local real current_hp=GetUnitState(caster,UNIT_STATE_LIFE)
+local real decrease_hp=GetUnitState(caster,UNIT_STATE_LIFE)*0.15
+local real decrease_hp1=GetUnitState(caster,UNIT_STATE_LIFE)*0.15
+local real damage=50+GetHeroAgi(caster,true)
+
+        if passedTime < 0 then
+            set decrease_hp1 = decrease_hp1*(1.00+(0.05*passedTime))
+        endif
+
+
+call SaveUnitHandle(HH,id,1,caster)
+call SaveReal(HH,id,3,facing)
+call SetUnitInvulnerable(caster,true)
+if GetHeroLevel(caster)>12 then
+call SetUnitState(caster,UNIT_STATE_LIFE,current_hp-decrease_hp1)
+set damage=damage+decrease_hp*0.25*0.5
+endif
+call SaveReal(HH,id,15,damage)
+call TimerStart(t,0.02,true,function KimimaroW_Act2)
+set t=null
+endfunction
+function KimimaroE_Act2 takes nothing returns nothing
+local integer id=GetHandleId(GetExpiredTimer())
+local unit caster=LoadUnitHandle(HH,id,1)
+local unit target=LoadUnitHandle(HH,id,2)
+local real facing=LoadReal(HH,id,3)
+local real time=LoadReal(HH,id,5)
+local real time1=LoadReal(HH,id,6)
+local real x1=GetUnitX(caster)
+local real y1=GetUnitY(caster)
+local real damage=LoadReal(HH,id,15)
+local real dist=LoadReal(HH,id,8)
+set time=time+0.02
+call SaveReal(HH,id,5,time)
+if dist>1300 then
+if target!=null then
+call EffectCreateAndMove90(true,"Others\\WindCirclefaster.mdl",facing,1,1.25,1.5,100,100,100,40,100,target,0,facing)
+call EffectCreateAndMove(true,"Others\\File00003933.mdl",facing,1.25,1.75,1.25,100,100,100,0,100,target,50,facing)
+call EffectCreateAndMove(true,"Others\\hit-juhuang-lizi.mdl",facing,1.5,2.5,1,100,100,100,0,100,target,50,facing)
+call EffectCreateAndMove(true,"Others\\AZ_hit-red.mdl",facing,1.5,1,0.55,100,100,100,0,100,target,50,facing)
+call EffectCreateAndMove(true,"Others\\HakkeStart2.mdl",facing,1,1.5,1.5,100,100,100,80,0,target,50,facing)
+call DestroyEffect(AddSpecialEffectTarget("Others\\jin xia.mdl",target,"chest"))
+call DestroyEffect(AddSpecialEffectTarget("Kisame\\StampedeMissileDeath.mdl",target,"chest"))
+call PauseUnit(target,false)
+
+
+//Проверка на паузу
+
+call SaveBoolean(HH,GetHandleId( target ),TARGET_ABILITY,false)
+
+call myCustomDamage(caster,target,damage,false,false,null,null,null)
+
+
+call PushTimed(target,facing,20,25)
+endif
+call UnitSpeed(caster,1)
+call RemoveUnit(LoadUnitHandle(HH,id,20))
+call PauseUnit(caster,false)
+call SetUnitInvulnerable(caster,false)
+call SetUnitPathing(caster,true)
+call PauseTimer(GetExpiredTimer())
+call FlushChildHashtable(HH,id)
+call DestroyTimer(GetExpiredTimer())
+else
+call SetUnitPathing(caster,false)
+call PauseUnit(caster,true)
+call SetUnitInvulnerable(caster,true)
+if time==0.02 then
+if GetUnitTypeId(caster)=='H00F' then
+call SetUnitAnimationByIndex(caster,8)
+else
+call SetUnitAnimationByIndex(caster,0)
+endif
+set n0=CreateUnit(GetOwningPlayer(caster),'e200',GetUnitX(caster),GetUnitY(caster),facing)
+call SetUnitModel(n0,"Others\\HakkeStart2.mdl")
+call UnitSpeed(n0,1)
+call UnitSize(n0,1,1,1)
+call UnitColor(n0,100,100,100,80)
+call SetUnitFlyHeight(n0,0,0)
+call SaveUnitHandle(HH,id,20,n0)
+set n0=null
+set soundplay=CreateSound("Sound\\Music\\mp3Music\\KimimaroE.mp3",false,false,true,12700,12700,"")
+call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
+endif
+call MoveUnit(caster,LoadUnitHandle(HH,id,20),0,facing)
+if time==0.2 then
+if GetUnitTypeId(caster)=='H00F' then
+call SetUnitAnimationByIndex(caster,9)
+else
+call SetUnitAnimationByIndex(caster,1)
+endif
+call UnitSpeed(LoadUnitHandle(HH,id,20),0)
+endif
+if time==0.2 or time==0.4 or time==0.6 or time==0.8 then
+call EffectCreateAndMove(true,"Others\\CF2.mdl",facing,1,GetRandomReal(0.3,0.5),GetRandomReal(0.5,0.7),100,100,100,40,100,caster,50,facing)
+call EffectCreateAndMove(true,"Others\\ChongFeng2.mdl",facing,1,GetRandomReal(0.75,1),GetRandomReal(0.6,0.8),100,100,100,20,0,caster,50,facing)
+call EffectCreateAndMove(true,"Others\\File0000 (644).mdl",facing,1,GetRandomReal(0.75,1),GetRandomReal(0.6,0.8),100,100,100,20,0,caster,50,facing)
+endif
+call SaveReal(HH,id,8,dist+30)
+if time>0.2 then
+if target==null then
+call MoveUnit(caster,caster,30,facing)
+else
+call MoveUnit(target,target,30,facing)
+call MoveUnit(target,caster,-150,facing)
+call PauseUnit(target,true)
+endif
+if target==null then
+set x1=PolX(x1,150,facing)
+set y1=PolY(y1,150,facing)
+call GroupClear(G)
+call GroupEnumUnitsInRange(G,x1,y1,150,Base)
+loop
+set n0=FirstOfGroup(G)
+exitwhen n0==null
+if Condition_Base(GetOwningPlayer(caster),n0) and UnitIsAlive(n0)    and GetUnitAbilityLevel(n0,'Avul')==0 then
+if GetUnitTypeId(caster)=='H00F' then
+call SetUnitAnimationByIndex(caster,16)
+else
+call SetUnitAnimationByIndex(caster,6)
+endif
+call UnitSpeed(caster,0.4+dist*0.0005)
+call SaveBoolean(HH,GetHandleId( n0 ),TARGET_ABILITY,true)
+call SaveUnitHandle(HH,id,2,n0)
+call GroupClear(G)
+endif
+call GroupRemoveUnit(G,n0)
+endloop
+call GroupClear(G)
+endif
+endif
+endif
+set caster=null
+set target=null
+endfunction
+function KimimaroE_Act takes unit caster,real x1,real y1 returns nothing
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+local real x0=GetUnitX(caster)
+local real y0=GetUnitY(caster)
+local real facing=Angle2(x0,y0,x1,y1)
+local real current_hp=GetUnitState(caster,UNIT_STATE_LIFE)
+local real decrease_hp=GetUnitState(caster,UNIT_STATE_LIFE)*0.15
+local real decrease_hp1=GetUnitState(caster,UNIT_STATE_LIFE)*0.15
+local real damage=75+(GetUnitAbilityLevel(caster,'AKE1')+2)*GetHeroAgi(caster,true)
+
+
+        if passedTime < 0 then
+            set decrease_hp1 = decrease_hp1*(1.00+(0.05*passedTime))
+        endif
+
+
+call SaveUnitHandle(HH,id,1,caster)
+call SaveReal(HH,id,3,facing)
+call PauseUnit(caster,true)
+call SetUnitInvulnerable(caster,true)
+if GetHeroLevel(caster)>12 then
+call SetUnitState(caster,UNIT_STATE_LIFE,current_hp-decrease_hp1)
+set damage=damage+decrease_hp*0.5
+endif
+call SaveReal(HH,id,15,damage)
+call TimerStart(t,0.02,true,function KimimaroE_Act2)
+set t=null
+endfunction
+function KimimaroRMorph_Act2 takes nothing returns nothing
+local integer id=GetHandleId(GetExpiredTimer())
+local unit caster=LoadUnitHandle(HH,id,1)
+local unit target=LoadUnitHandle(HH,id,2)
+local unit Dummy=LoadUnitHandle(HH,id,20)
+local real time=LoadReal(HH,id,5)
+local real damage=LoadReal(HH,id,15)
+local real x0=GetUnitX(caster)
+local real y0=GetUnitY(caster)
+local real x1=GetUnitX(target)
+local real y1=GetUnitY(target)
+local real facing=LoadReal(HH,id,3)
+set time=time+0.02
+call SaveReal(HH,id,5,time)
+if time>=10 then
+//call StartUnitAbilityCooldown(caster,'AKR1',30)
+call DestroyLightning(LoadLightningHandle(HH,id,17))
+call RemoveUnit(Dummy)
+call DestroyEffect(LoadEffectHandle(HH,id,21))
+set soundplay=CreateSound("Sound\\Others\\KimimaroR-hit.mp3",false,false,true,12700,12700,"")
+call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
+call UnitSpeed(caster,1)
+call PauseUnit(caster,false)
+call SetUnitInvulnerable(caster,false)
+call SetUnitPathing(caster,true)
+call PauseUnit(target,false)
+call SetUnitPathing(target,true)
+call myCustomDamage(caster,target,damage,false,false,null,null,null)
+
+call SetControlToUnit(target,target,2,"stun")
+call EffectCreateAndMove90(true,"Others\\WindCirclefaster.mdl",facing,1,1.5,1.5,100,100,100,40,100,target,0,facing)
+call EffectCreateAndMove(true,"Others\\WindCirclefaster.mdl",facing,1,1.75,1.5,100,100,100,40,0,target,0,facing)
+call EffectCreateAndMove(true,"Others\\File00003933.mdl",facing,1.5,2,1.25,100,100,100,0,150,target,0,facing)
+call EffectCreateAndMove(true,"Others\\HakkeStart2.mdl",facing,1.5,1.25,1.5,100,100,100,60,0,target,0,facing)
+call EffectCreateAndMove90(true,"Others\\blood-rou.mdl",facing,1.5,1.25,1.75,100,100,100,0,150,target,0,facing)
+call PauseTimer(GetExpiredTimer())
+call FlushChildHashtable(HH,id)
+call DestroyTimer(GetExpiredTimer())
+
+
+
+else
+call PauseUnit(caster,true)
+call SetUnitInvulnerable(caster,true)
+call SetUnitPathing(caster,false)
+call SetUnitFacing(caster,facing)
+if time==0.02 then
+call EffectCreateAndMove90(true,"Others\\WindCirclefaster.mdl",facing,1,1,1.5,100,100,100,40,100,caster,0,facing)
+call EffectCreateAndMove(true,"Others\\WindCirclefaster.mdl",facing,1,1.25,1.5,100,100,100,40,0,caster,0,facing)
+call EffectCreateAndMove(true,"Others\\CF2.mdl",facing,1.5,0.4,0.5,100,100,100,40,150,caster,0,facing)
+call EffectCreateAndMove(true,"Others\\HakkeStart2.mdl",facing,1.5,0.75,1.5,100,100,100,60,0,caster,0,facing)
+set n0=CreateUnit(GetOwningPlayer(caster),'e200',GetUnitX(caster),GetUnitY(caster),facing)
+call SetUnitFlyHeight(n0,75,0)
+call SaveUnitHandle(HH,id,20,n0)
+call SaveLightningHandle(HH,id,17,AddLightningEx("LEAS",true,GetUnitX(caster),GetUnitY(caster),GetUnitFlyHeight(caster)+75,GetUnitX(caster),GetUnitY(caster),GetUnitFlyHeight(caster)+75))
+set soundplay=CreateSound("Sound\\Others\\KimimaroF.mp3",false,false,true,12700,12700,"")
+call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
+call SetUnitAnimationByIndex(caster,17)
+endif
+if time<0.3 then
+if SR(GetUnitX(Dummy),GetUnitY(Dummy),x1,y1)>150 then
+call MoveUnit(Dummy,Dummy,40+SR(x0,y0,x1,y1)*0.05,Angle2(GetUnitX(Dummy),GetUnitY(Dummy),x1,y1))
+endif
+endif
+if time>0.3 then
+call MoveUnit(target,Dummy,0,facing)
+endif
+if time==9.82 then
+set soundplay=CreateSound("Sound\\Others\\KimimaroR.mp3",false,false,true,12700,12700,"")
+call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
+call SetUnitAnimationByIndex(caster,16)
+call UnitSpeed(caster,2)
+endif
+if time>9.8 then
+call PauseUnit(target,true)
+if SR(x0,y0,x1,y1)>150 then
+call MoveUnit(target,target,-30,facing)
+endif
+endif
+if time>0.02 then
+call MoveLightningEx(LoadLightningHandle(HH,id,17),true,GetUnitX(caster),GetUnitY(caster),GetUnitFlyHeight(caster)+75,GetUnitX(Dummy),GetUnitY(Dummy),GetUnitFlyHeight(target)+75)
+endif
+if time>0.3 and time<9.8 then
+set facing=Angle2(x0,y0,x1,y1)
+call SaveReal(HH,id,3,facing)
+call MoveUnit(target,target,-(35+SR(x0,y0,x1,y1)*0.02),facing)
+if SR(x0,y0,x1,y1)<500 and time<9.8 then
+call SaveReal(HH,id,5,9.8)
+call SaveEffectHandle(HH,id,21,AddSpecialEffectTarget("Others\\ArrowSqwirl.mdl",caster,"hand right"))
+endif
+endif
+endif
+set caster=null
+set target=null
+set Dummy=null
+endfunction
+function KimimaroR_Act2 takes nothing returns nothing
+local integer id=GetHandleId(GetExpiredTimer())
+local unit caster=LoadUnitHandle(HH,id,1)
+local unit target=LoadUnitHandle(HH,id,2)
+local real time=LoadReal(HH,id,5)
+local real time1=LoadReal(HH,id,6)
+local real damage=LoadReal(HH,id,15)
+local real x0=GetUnitX(caster)
+local real y0=GetUnitY(caster)
+local real x1=GetUnitX(target)
+local real y1=GetUnitY(target)
+local real facing=LoadReal(HH,id,3)
+set time=time+0.02
+call SaveReal(HH,id,5,time)
+if time>=10 then
+set soundplay=CreateSound("Sound\\Others\\KimimaroR-hit.mp3",false,false,true,12700,12700,"")
+call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
+call UnitSpeed(caster,1)
+call PauseUnit(caster,false)
+call SetUnitInvulnerable(caster,false)
+call SetUnitPathing(caster,true)
+call PauseUnit(target,false)
+call SetUnitPathing(target,true)
+
+
+call myCustomDamage(caster,target,damage,false,false,null,null,null)
+
+
+call SetControlToUnit(target,target,2,"stun")
+call EffectCreateAndMove(true,"Others\\UltiZoro.mdl",facing,1.5,2,3,100,100,100,0,100,target,0,facing)
+call EffectCreateAndMove(true,"Others\\red-blood-ball.mdl",facing,1.5,2,2,100,100,100,0,100,target,0,facing)
+call EffectCreateAndMove(true,"Others\\bloodex1.mdl",facing,1.5,2,1.25,100,100,100,0,100,target,0,facing)
+call EffectCreateAndMove90(true,"Others\\WindCirclefaster.mdl",facing,1,1.5,1.5,100,100,100,40,100,target,0,facing)
+call EffectCreateAndMove(true,"Others\\WindCirclefaster.mdl",facing,1,1.75,1.5,100,100,100,40,0,target,0,facing)
+call EffectCreateAndMove(true,"Others\\File00003933.mdl",facing,1.5,2,1.25,100,100,100,0,150,target,0,facing)
+call EffectCreateAndMove(true,"Others\\HakkeStart2.mdl",facing,1.5,1.25,1.5,100,100,100,60,0,target,0,facing)
+call RemoveUnit(LoadUnitHandle(HH,id,20))
+call PauseTimer(GetExpiredTimer())
+call FlushChildHashtable(HH,id)
+call DestroyTimer(GetExpiredTimer())
+else
+call PauseUnit(caster,true)
+call SetUnitInvulnerable(caster,true)
+call SetUnitPathing(caster,false)
+call SetUnitFacing(caster,facing)
+if time==0.02 then
+set soundplay=CreateSound("Sound\\Others\\KimimaroR.mp3",false,false,true,12700,12700,"")
+call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
+call EffectCreateAndMove(true,"Others\\WindCirclefaster.mdl",facing,1,1.25,1.5,100,100,100,40,0,caster,0,facing)
+call EffectCreateAndMove(true,"Others\\HakkeStart2.mdl",facing,1.5,0.75,1.5,100,100,100,60,0,caster,0,facing)
+endif
+if time>9.8 then
+call PauseUnit(target,true)
+call MoveUnit(caster,caster,35,facing)
+call MoveUnit(caster,LoadUnitHandle(HH,id,20),150,facing)
+call SetUnitFacing(LoadUnitHandle(HH,id,20),facing)
+endif
+if time==0.3 then
+set n0=CreateUnit(GetOwningPlayer(caster),'e200',GetUnitX(caster),GetUnitY(caster),facing)
+call SetUnitModel(n0,"Others\\ArrowSqwirl.mdl")
+call UnitSize(n0,1.25,1,1)
+call SetUnitFlyHeight(n0,150,0)
+call UnitColor(n0,100,100,100,20)
+call SaveUnitHandle(HH,id,20,n0)
+call MoveUnit(n0,n0,150,facing)
+set n0=null
+call SetUnitAnimationByIndex(caster,2)
+call EffectCreateAndMove90(true,"Others\\WindCirclefaster.mdl",facing,1,1,1.5,100,100,100,40,100,caster,0,facing)
+call EffectCreateAndMove(true,"Others\\CF2.mdl",facing,1.5,0.4,0.5,100,100,100,40,150,caster,0,facing)
+endif
+if time>0.3 and time<9.8 then
+set facing=Angle2(x0,y0,x1,y1)
+call SaveReal(HH,id,3,facing)
+call MoveUnit(caster,caster,35+SR(x0,y0,x1,y1)*0.02,facing)
+call MoveUnit(caster,LoadUnitHandle(HH,id,20),150,facing)
+call SetUnitFacing(LoadUnitHandle(HH,id,20),facing)
+if SR(x0,y0,x1,y1)<250 and time<9.8 then
+call SaveReal(HH,id,5,9.8)
+endif
+set time1=time1+0.02
+if time==0.32 or time1==0.1 then
+set time1=0
+call EffectCreateAndMove(true,"Others\\CF2.mdl",facing,1,GetRandomReal(0.3,0.5),GetRandomReal(0.5,0.7),100,100,100,40,100,caster,50,facing)
+call EffectCreateAndMove(true,"Others\\ChongFeng2.mdl",facing,1,GetRandomReal(0.75,1),GetRandomReal(0.6,0.8),100,100,100,20,0,caster,50,facing)
+call EffectCreateAndMove(true,"Others\\File0000 (644).mdl",facing,1,GetRandomReal(0.75,1),GetRandomReal(0.6,0.8),100,100,100,20,0,caster,50,facing)
+call EffectCreateAndMove90(true,"Others\\wind3.mdl",facing,1,GetRandomReal(1,1.25),GetRandomReal(1.25,1.5),100,100,100,40,150,caster,50,facing)
+endif
+call SaveReal(HH,id,6,time1)
+endif
+endif
+set caster=null
+set target=null
+endfunction
+function KimimaroR_Act takes unit caster,unit target returns nothing
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+local real x0=GetUnitX(caster)
+local real y0=GetUnitY(caster)
+local real x1=GetUnitX(target)
+local real y1=GetUnitY(target)
+local real facing=Angle2(x0,y0,x1,y1)
+local real current_hp=GetUnitState(caster,UNIT_STATE_LIFE)
+local real decrease_hp=GetUnitState(caster,UNIT_STATE_LIFE)*0.15
+local real decrease_hp1=GetUnitState(caster,UNIT_STATE_LIFE)*0.15
+local real damage=150+(GetUnitAbilityLevel(caster,'AKR1')+3)*GetHeroAgi(caster,true)
+call SaveUnitHandle(HH,id,1,caster)
+call SaveUnitHandle(HH,id,2,target)
+call SaveReal(HH,id,3,facing)
+call PauseUnit(caster,true)
+call SetUnitInvulnerable(caster,true)
+
+
+
+        if passedTime < 0 then
+            set decrease_hp1 = decrease_hp1*(1.00+(0.05*passedTime))
+        endif
+
+call SetUnitState(caster,UNIT_STATE_LIFE,current_hp-decrease_hp1)
+
+if GetUnitTypeId(caster)=='H00F' then
+set damage=(GetUnitAbilityLevel(caster,'AKR1')+4)*GetHeroAgi(caster,true)+decrease_hp*0.5
+call SaveReal(HH,id,15,damage)
+call TimerStart(t,0.02,true,function KimimaroRMorph_Act2)
+else
+set damage=damage+decrease_hp*0.5
+call SaveReal(HH,id,15,damage)
+call TimerStart(t,0.02,true,function KimimaroR_Act2)
+endif
+set t=null
+endfunction
+function KimimaroT_Act2 takes nothing returns nothing
+local integer id=GetHandleId(GetExpiredTimer())
+local unit caster=LoadUnitHandle(HH,id,1)
+local real facing=LoadReal(HH,id,3)
+local real time=LoadReal(HH,id,5)
+local real time1=LoadReal(HH,id,6)
+local real time2=LoadReal(HH,id,8)
+local real x0=LoadReal(HH,id,11)
+local real y0=LoadReal(HH,id,12)
+local real x1=0
+local real y1=0
+local real damage=LoadReal(HH,id,15)
+local group gr=LoadGroupHandle(HH,id,4)
+local group gr1=LoadGroupHandle(HH,id,40)
+local real dist=LoadReal(HH,id,8)
+set time=time+0.02
+call SaveReal(HH,id,5,time)
+if dist>=1000 then
+call GroupClear(gr)
+call DestroyGroup(gr)
+call RemoveUnit(LoadUnitHandle(HH,id,20))
+call GroupClear(G)
+
+loop
+set n0=FirstOfGroup(gr1)
+exitwhen n0==null
+call MyRemoveUnit(n0,1)
+call UnitSpeed(n0,0.5)
+call SetUnitAnimationByIndex(n0,2)
+call GroupRemoveUnit(gr1,n0)
+endloop
+
+
+call GroupClear(G)
+call GroupClear(gr1)
+call DestroyGroup(gr1)
+call UnitSpeed(caster,1)
+call PauseUnit(caster,false)
+call SetUnitInvulnerable(caster,false)
+call SetUnitPathing(caster,true)
+call PauseTimer(GetExpiredTimer())
+call FlushChildHashtable(HH,id)
+call DestroyTimer(GetExpiredTimer())
+else
+call PauseUnit(caster,true)
+call SetUnitPathing(caster,false)
+call SetUnitInvulnerable(caster,true)
+if time==0.02 then
+set n0=CreateUnit(GetOwningPlayer(caster),'e200',GetUnitX(caster),GetUnitY(caster),facing)
+call SetUnitModel(n0,"Others\\HakkeStart2.mdl")
+call UnitSpeed(n0,1)
+call UnitSize(n0,3,1,1)
+call UnitColor(n0,100,100,100,80)
+call SetUnitFlyHeight(n0,0,0)
+call SaveUnitHandle(HH,id,20,n0)
+set n0=null
+if GetUnitTypeId(caster)=='H00F' then
+call SetUnitAnimationByIndex(caster,15)
+else
+call SetUnitAnimationByIndex(caster,7)
+endif
+set soundplay=CreateSound("Sound\\Others\\KimimaroT.mp3",false,false,true,12700,12700,"")
+call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
+endif
+if time==0.02 or time==0.2 then
+call EffectCreateAndMove(true,"Others\\WindNewFaw4.mdl",GetRandomInt(0,360),1.5,GetRandomReal(1,1.5),GetRandomReal(0.5,1),100,100,100,40,0,caster,0,facing)
+call EffectCreateAndMove(true,"Others\\[A]az_axe_ef1.mdl",GetRandomInt(0,360),1.5,GetRandomReal(1,1.25),GetRandomReal(0.5,1),100,100,100,40,0,caster,0,facing)
+endif
+if time==0.2 then
+call EffectCreateAndMove(true,"Others\\WindCirclefaster.mdl",GetRandomInt(0,360),1.5,1.5,1.5,100,100,100,40,0,caster,0,facing)
+call UnitSpeed(LoadUnitHandle(HH,id,20),0)
+endif
+if time>0.2 then
+set dist=dist+40
+call SaveReal(HH,id,8,dist)
+call GroupClear(G)
+call GroupEnumUnitsInRange(G,x0,y0,dist,Base)
+loop
+set n0=FirstOfGroup(G)
+exitwhen n0==null
+if Condition_Base(GetOwningPlayer(caster),n0) and IsUnitInGroup(n0,gr)==false and UnitIsAlive(n0)    and GetUnitAbilityLevel(n0,'Avul')==0 then
+call GroupAddUnit(gr,n0)
+
+call myCustomDamage(caster,n0,damage,false,false,null,null,null)
+
+call SetControlToUnit(n0,n0,2,"stun")
+endif
+call GroupRemoveUnit(G,n0)
+endloop
+call SaveGroupHandle(HH,id,4,gr)
+call GroupClear(G)
+if dist>700 then
+set dist=701
+endif
+set x1=PolX(x0,dist,GetRandomReal(0,360))
+set y1=PolY(y0,dist,GetRandomReal(0,360))
+set facing=Angle2(x0,y0,x1,y1)+GetRandomReal(-60,60)
+set n0=CreateUnit(GetOwningPlayer(caster),'e200',x1,y1,facing)
+call GroupAddUnit(gr1,n0)
+call SetUnitModel(n0,"BonesKimimaro.mdl")
+call UnitSpeed(n0,GetRandomReal(2,3))
+call UnitSize(n0,GetRandomReal(2,3),1,1)
+call UnitColor(n0,100,100,100,0)
+call SetUnitFlyHeight(n0,0,0)
+call SetUnitAnimationByIndex(n0,1)
+set n0=null
+if dist>300 then
+set x1=PolX(x0,dist,GetRandomReal(0,360))
+set y1=PolY(y0,dist,GetRandomReal(0,360))
+set facing=Angle2(x0,y0,x1,y1)+GetRandomReal(-60,60)
+set n0=CreateUnit(GetOwningPlayer(caster),'e200',x1,y1,facing)
+call GroupAddUnit(gr1,n0)
+call SetUnitModel(n0,"BonesKimimaro.mdl")
+call UnitSpeed(n0,GetRandomReal(2,3))
+call UnitSize(n0,GetRandomReal(2,3),1,1)
+call UnitColor(n0,100,100,100,0)
+call SetUnitFlyHeight(n0,0,0)
+call SetUnitAnimationByIndex(n0,1)
+set n0=null
+endif
+if dist>500 then
+set x1=PolX(x0,dist,GetRandomReal(0,360))
+set y1=PolY(y0,dist,GetRandomReal(0,360))
+set facing=Angle2(x0,y0,x1,y1)+GetRandomReal(-60,60)
+set n0=CreateUnit(GetOwningPlayer(caster),'e200',x1,y1,facing)
+call GroupAddUnit(gr1,n0)
+call SetUnitModel(n0,"BonesKimimaro.mdl")
+call UnitSpeed(n0,GetRandomReal(2,3))
+call UnitSize(n0,GetRandomReal(2,3),1,1)
+call UnitColor(n0,100,100,100,0)
+call SetUnitFlyHeight(n0,0,0)
+call SetUnitAnimationByIndex(n0,1)
+set n0=null
+set x1=PolX(x0,dist,GetRandomReal(0,360))
+set y1=PolY(y0,dist,GetRandomReal(0,360))
+set facing=Angle2(x0,y0,x1,y1)+GetRandomReal(-60,60)
+set n0=CreateUnit(GetOwningPlayer(caster),'015e',x1,y1,facing)
+call GroupAddUnit(gr1,n0)
+call SetUnitModel(n0,"BonesKimimaro.mdl")
+call UnitSpeed(n0,GetRandomReal(2,3))
+call UnitSize(n0,GetRandomReal(2,3),1,1)
+call UnitColor(n0,100,100,100,0)
+call SetUnitFlyHeight(n0,0,0)
+call SetUnitAnimationByIndex(n0,1)
+set n0=null
+endif
+if dist>700 then
+set x1=PolX(x0,dist,GetRandomReal(0,360))
+set y1=PolY(y0,dist,GetRandomReal(0,360))
+set facing=Angle2(x0,y0,x1,y1)+GetRandomReal(-60,60)
+set n0=CreateUnit(GetOwningPlayer(caster),'e200',x1,y1,facing)
+call GroupAddUnit(gr1,n0)
+call SetUnitModel(n0,"BonesKimimaro.mdl")
+call UnitSpeed(n0,GetRandomReal(2,3))
+call UnitSize(n0,GetRandomReal(2,3),1,1)
+call UnitColor(n0,100,100,100,0)
+call SetUnitFlyHeight(n0,0,0)
+call SetUnitAnimationByIndex(n0,1)
+set n0=null
+set x1=PolX(x0,dist,GetRandomReal(0,360))
+set y1=PolY(y0,dist,GetRandomReal(0,360))
+set facing=Angle2(x0,y0,x1,y1)+GetRandomReal(-60,60)
+set n0=CreateUnit(GetOwningPlayer(caster),'015e',x1,y1,facing)
+call GroupAddUnit(gr1,n0)
+call SetUnitModel(n0,"BonesKimimaro.mdl")
+call UnitSpeed(n0,GetRandomReal(2,3))
+call UnitSize(n0,GetRandomReal(2,3),1,1)
+call UnitColor(n0,100,100,100,0)
+call SetUnitFlyHeight(n0,0,0)
+call SetUnitAnimationByIndex(n0,1)
+set n0=null
+set x1=PolX(x0,dist,GetRandomReal(0,360))
+set y1=PolY(y0,dist,GetRandomReal(0,360))
+set facing=Angle2(x0,y0,x1,y1)+GetRandomReal(-60,60)
+set n0=CreateUnit(GetOwningPlayer(caster),'015e',x1,y1,facing)
+call GroupAddUnit(gr1,n0)
+call SetUnitModel(n0,"BonesKimimaro.mdl")
+call UnitSpeed(n0,GetRandomReal(2,3))
+call UnitSize(n0,GetRandomReal(2,3),1,1)
+call UnitColor(n0,100,100,100,0)
+call SetUnitFlyHeight(n0,0,0)
+call SetUnitAnimationByIndex(n0,1)
+set n0=null
+set x1=PolX(x0,dist,GetRandomReal(0,360))
+set y1=PolY(y0,dist,GetRandomReal(0,360))
+set facing=Angle2(x0,y0,x1,y1)+GetRandomReal(-60,60)
+set n0=CreateUnit(GetOwningPlayer(caster),'015e',x1,y1,facing)
+call GroupAddUnit(gr1,n0)
+call SetUnitModel(n0,"BonesKimimaro.mdl")
+call UnitSpeed(n0,GetRandomReal(2,3))
+call UnitSize(n0,GetRandomReal(2,3),1,1)
+call UnitColor(n0,100,100,100,0)
+call SetUnitFlyHeight(n0,0,0)
+call SetUnitAnimationByIndex(n0,1)
+set n0=null
+set x1=PolX(x0,dist,GetRandomReal(0,360))
+set y1=PolY(y0,dist,GetRandomReal(0,360))
+set facing=Angle2(x0,y0,x1,y1)+GetRandomReal(-60,60)
+set n0=CreateUnit(GetOwningPlayer(caster),'e200',x1,y1,facing)
+call GroupAddUnit(gr1,n0)
+call SetUnitModel(n0,"BonesKimimaro.mdl")
+call UnitSpeed(n0,GetRandomReal(2,3))
+call UnitSize(n0,GetRandomReal(2,3),1,1)
+call UnitColor(n0,100,100,100,0)
+call SetUnitFlyHeight(n0,0,0)
+call SetUnitAnimationByIndex(n0,1)
+set n0=null
+set x1=PolX(x0,dist,GetRandomReal(0,360))
+set y1=PolY(y0,dist,GetRandomReal(0,360))
+set facing=Angle2(x0,y0,x1,y1)+GetRandomReal(-60,60)
+set n0=CreateUnit(GetOwningPlayer(caster),'e200',x1,y1,facing)
+call GroupAddUnit(gr1,n0)
+call SetUnitModel(n0,"BonesKimimaro.mdl")
+call UnitSpeed(n0,GetRandomReal(2,3))
+call UnitSize(n0,GetRandomReal(2,3),1,1)
+call UnitColor(n0,100,100,100,0)
+call SetUnitFlyHeight(n0,0,0)
+call SetUnitAnimationByIndex(n0,1)
+set n0=null
+endif
+endif
+endif
+set caster=null
+set gr=null
+set gr1=null
+endfunction
+function KimimaroT_Act takes unit caster,real x1,real y1 returns nothing
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+local real x0=GetUnitX(caster)
+local real y0=GetUnitY(caster)
+local real facing=Angle2(x0,y0,x1,y1)
+local real current_hp=GetUnitState(caster,UNIT_STATE_LIFE)
+local real decrease_hp=GetUnitState(caster,UNIT_STATE_LIFE)*0.15
+local real decrease_hp1=GetUnitState(caster,UNIT_STATE_LIFE)*0.15
+local real damage=10*GetHeroAgi(caster,true)
+
+
+        if passedTime < 0 then
+            set decrease_hp1 = decrease_hp1*(1.00+(0.05*passedTime))
+        endif
+
+call SaveUnitHandle(HH,id,1,caster)
+call SaveReal(HH,id,3,facing)
+call SaveGroupHandle(HH,id,4,CreateGroup())
+call SaveGroupHandle(HH,id,40,CreateGroup())
+call SaveReal(HH,id,11,x0)
+call SaveReal(HH,id,12,y0)
+call SaveReal(HH,id,8,200)
+call SetUnitState(caster,UNIT_STATE_LIFE,current_hp-decrease_hp1)
+set damage=damage+decrease_hp*0.5
+call SaveReal(HH,id,15,damage)
+call TimerStart(t,0.02,true,function KimimaroT_Act2)
+set t=null
+endfunction
+//Kimimaroend
 function AbilitiesForChoice_Act takes nothing returns nothing//моя функция для всех абилок в чоус
     local unit caster=GetSpellAbilityUnit()//замени на каких-то юнитов
     local unit target=GetSpellTargetUnit()//
@@ -225337,6 +226670,27 @@ function AbilitiesForChoice_Act takes nothing returns nothing//моя функц
         call Garp_T_Act(caster)
     endif
 //Garp1end
+if GetSpellAbilityId()=='AKQ1' then
+call KimimaroQ_Act(caster,x1,y1)
+endif
+if GetSpellAbilityId()=='AKW1' then
+call KimimaroW_Act(caster,x1,y1)
+endif
+if GetSpellAbilityId()=='AKE1' then
+call KimimaroE_Act(caster,x1,y1)
+endif
+if GetSpellAbilityId()=='AKR1' then
+call KimimaroR_Act(caster,target)
+endif
+if GetSpellAbilityId()=='AKT1' then
+call KimimaroT_Act(caster,x1,y1)
+endif
+if GetSpellAbilityId()=='AKF1' then
+call KimimaroFMorph_Act(caster)
+endif
+if GetSpellAbilityId()=='AKG1' then
+call KimimaroG_Act(caster,x1,y1)
+endif
 set caster=null
     set target=null
 endfunction
