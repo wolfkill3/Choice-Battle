@@ -9512,7 +9512,6 @@ set udg_RH[137]='HGrp'//Garp
 //set udg_RH[127]='HIc3'
 set udg_RH[138]='HSig'//Signum
 set udg_RH[139]='Rosh'//Мутен Роши
-set udg_RH2[139]="Мутен Роши"
 loop
 exitwhen i>=210
         if udg_RH[i]!=0 then
@@ -9662,6 +9661,7 @@ set udg_RH2[135]="Jiren"
 set udg_RH2[136]="Gojo"
 set udg_RH2[137]="Garp"
 set udg_RH2[138]="Signum"
+set udg_RH2[139]="Muten Roshi"
 call DestroyTrigger(GetTriggeringTrigger())
 endfunction
 function InitTrig_Init takes nothing returns nothing
