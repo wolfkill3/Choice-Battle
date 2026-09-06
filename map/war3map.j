@@ -25876,11 +25876,9 @@ set EffectID[109]="Enel\\almagest1.mdl"
 set EffectID[352]="Enel\\by_wood_effect_yubanmeiqin_lightning_chaodiancipao_xuli.mdl"//aiQ0 +
 set EffectID[353]="Enel\\by_wood_effect_yubanmeiqin_lightning_diancilichang.mdl"//aiQ5 +
 set EffectID[461]="Enel\\KiluaLightning.mdl"//ef52 +
-set EffectID[890]="Enel\\white-shandian-qiquan-blue.mdl"
-// три строки под T Веджито: в 3.2 этих индексов не было
+set EffectID[890]="Enel\\white-shandian-qiquan-blue.mdl"// +
+// строка под взрыв T Веджито: этого индекса в 3.2 не было
 set EffectID[574]="Aizen\\[A]ExplodeorangeBlue.mdl"
-set EffectID[1482]="Others\\Final_Kameha2.mdx"
-set EffectID[1704]=EffectID[890]// +
 set EffectID[1011]="Enel\\FSAeff (111).mdl"// +
 set EffectID[1026]="Enel\\FSAeff (126).mdl" //+
 set EffectID[1554]="Enel\\EffectCheck (54).mdl"//+
@@ -75171,10 +75169,7 @@ call TriggerAddCondition(t,Condition(function PowerUpVegetaCond))
 set t=null
 endfunction
 function FinalKamehamehaCond takes nothing returns boolean
-// T Веджито переехал на Vegitto_T_Act (эффекты из 4.5), старый луч
-// оставлен целиком: чтобы вернуть, снять false и убрать ветку A0IV
-// из AbilitiesForChoice_Act.
-return false and GetSpellAbilityId()=='A0IV'
+return GetSpellAbilityId()=='A0IV'
 endfunction
 function FinalKamehamehaCircle2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
@@ -75348,28 +75343,22 @@ call SetSpecialEffectScale(EFF , 0.3)
 call SetSpecialEffectZ(EFF,z+40-PitchA*bj_RADTODEG*0.25)
 call SetSpecialEffectTimeScale(EFF,2)
 call RemoveEffect(EFF,0.5,true,CreateTimer())
-set EFF=AddSpecialEffect("tx_huoyandaji_blue.mdl",x1,y1)
-call SetSpecialEffectScale(EFF , 2.5)
-call RemoveEffect(EFF,0.6,true,CreateTimer())
-set EFF=AddSpecialEffect("tx_huoyandaji_blue.mdl",x1,y1)
-call SetSpecialEffectScale(EFF , 2.5)
-call SetSpecialEffectZ(EFF , 250)
-call RemoveEffect(EFF,0.6,true,CreateTimer())
-set EFF=AddSpecialEffect("ExplosionVegittoT.mdx",x1,y1)
-call SetSpecialEffectScale(EFF , 0.5)
-call RemoveEffect(EFF,0.6,true,CreateTimer())
-set n=CreateUnit(p,'e168',x1,y1,GetRandomReal(0,359))
-call SetUnitModel(n,"Others\\JeanneDark1mt_baozha1.mdl")
-call UnitApplyTimedLife(n,'BTLF',0.03)
-call SetUnitScale(n,2.5,2.5,2.5)
-call SetUnitVertexColor(n,255,255,255,165)
-call SetUnitTimeScale(n,1.6)
-set n=CreateUnit(p,'e168',x1,y1,GetRandomReal(0,359))
-call UnitApplyTimedLife(n,'BTLF',0.01)
-call SetUnitFlyHeight(n,0,220)
-call SetUnitScale(n,4,4,4)
-call SetUnitVertexColor(n,255,255,255,165)
-call SetUnitTimeScale(n,3)
+// ВЗРЫВ из 4.5 (Vegitto_T_Act2): восемь слоёв на невидимом якоре.
+// EffectCreateAndMove вешает эффект на юнит, поэтому в точке попадания
+// ставим такой же якорь e000, как там: размер 2.5, высота 150.
+set n=CreateUnit(p,'e000',x1,y1,a*bj_RADTODEG)
+call UnitSize(n,2.5,1,1)
+call SetUnitFlyHeight(n,150,0)
+call UnitColor(n,100,100,100,0)
+call EffectCreateAndMove(true,EffectID[48],GetRandomReal(0,360),1,5,1,100,100,100,40,50,n,0,a*bj_RADTODEG)
+call EffectCreateAndMove(true,EffectID[44],GetRandomReal(0,360),1,3.25,1,100,100,100,40,0,n,0,a*bj_RADTODEG)
+call EffectCreateAndMove(true,EffectID[23],GetRandomReal(0,360),1,2,1,60,60,100,20,0,n,0,a*bj_RADTODEG)
+call EffectCreateAndMove(true,EffectID[292],GetRandomReal(0,360),1,6,0.8,100,100,100,0,150,n,0,a*bj_RADTODEG)
+call EffectCreateAndMoveAn(true,EffectID[870],GetRandomReal(0,360),1.5,5,1,100,100,100,100,0,n,0,a*bj_RADTODEG,2)
+call EffectCreateAndMoveAn(true,EffectID[753],a*bj_RADTODEG,1,4.5,0.5,100,100,100,70,150,n,0,a*bj_RADTODEG,1)
+call EffectCreateAndMove(true,EffectID[1416],a*bj_RADTODEG,1,2,0.75,80,80,100,60,0,n,0,a*bj_RADTODEG)
+call EffectCreateAndMove(true,EffectID[574],GetRandomInt(0,360),1,4,2,100,100,100,60,150,n,0,GetRandomInt(0,360))
+call MyRemoveUnit(n,2)
 call GroupEnumUnitsInRange(DG,x1,y1,700,Base)
 loop
 set E=FirstOfGroup(DG)
@@ -223868,175 +223857,8 @@ call TimerStart(t,0.02,true,function Accelerator_G_Act2)
 set t=null
 endfunction
 //AcceleratorDG_End
-//VegittoT_Start
-function Vegitto_T_Act2 takes nothing returns nothing
-local integer id=GetHandleId(GetExpiredTimer())
-local unit caster=LoadUnitHandle(HH,id,1)
-local unit Dummy=LoadUnitHandle(HH,id,20)
-local real facing=LoadReal(HH,id,3)
-local group gr=LoadGroupHandle(HH,id,4)
-local real time=LoadReal(HH,id,5)
-local real time1=LoadReal(HH,id,6)
-local real time2=LoadReal(HH,id,18)
-local real x0=GetUnitX(caster)
-local real y0=GetUnitY(caster)
-local real x1=LoadReal(HH,id,11)
-local real y1=LoadReal(HH,id,12)
-local real damage=LoadReal(HH,id,15)
-local real dist=SR(x0,y0,x1,y1)
-set time=time+0.02
-call SaveReal(HH,id,5,time)
-if time>2.5 then
-call SetUnitFlyHeight(caster,0,GetUnitFlyHeight(caster))
-call PauseUnit(caster,false)
-call SetUnitPathing(caster,true)
-call SetUnitInvulnerable(caster,false)
-call UnitSpeed(caster,1)
-call GroupClear(gr)
-call DestroyGroup(gr)
-if LoadUnitHandle(HH,id,20)!=null then
-call RemoveUnit(LoadUnitHandle(HH,id,20))
-call SaveUnitHandle(HH,id,20,null)
-endif
-call PauseTimer(GetExpiredTimer())
-call FlushChildHashtable(HH,id)
-call DestroyTimer(GetExpiredTimer())
-else
-if time<1.5 then
-call PauseUnit(caster,true)
-call SetUnitPathing(caster,false)
-call SetUnitInvulnerable(caster,true)
-endif
-if time==0.02 then
-call SaveEffectHandle(HH,id,10,AddSpecialEffectTarget(EffectID[523],caster,"hand right"))
-call UnitAddAbility(caster,'Amrf')
-call UnitRemoveAbility(caster,'Amrf')
-
-
-if GetRandomInt(0,100) < 50 then
-    if LoadBoolean(HH,GetHandleId(GetLocalPlayer()), SOUND_LANGUAGE )==true then
-        set soundplay=CreateSound("Sound\\Music\\mp3Music\\FinalKamehameha2-2.mp3",false,false,true,12700,12700,"")
-    else
-        set soundplay=CreateSound("Sound\\Music\\mp3Music\\Vegitto\\FinalKamehameha2-2-jap.mp3",false,false,true,12700,12700,"")
-    endif
-else
-    if LoadBoolean(HH,GetHandleId(GetLocalPlayer()), SOUND_LANGUAGE )==true then
-        set soundplay=CreateSound("Sound\\Music\\mp3Music\\FinalKamehameha2-1.mp3",false,false,true,12700,12700,"")
-    else
-        set soundplay=CreateSound("Sound\\Music\\mp3Music\\Vegitto\\FinalKamehameha2-1-jap.mp3",false,false,true,12700,12700,"")
-    endif
-endif
-call StartSound(soundplay)
-////call KillSoundWhenDone(soundplay)
-
-
-call DestroyEffect(AddSpecialEffectTarget(EffectID[82],caster,"hand right"))
-call SetUnitAnimationByIndex(caster,4)
-call UnitSpeed(caster,0.5)
-endif
-if time==0.02 or time==0.2 or time==0.4 or time==0.6 or time==0.8 or time==1 or time==1.2 or time==1.4 or time==1.6 or time==1.8 or time==2 or time==2.2 then
-call EffectCreateAndMove(true,EffectID[23],facing,1,1.25,0.4,60,60,100,20,0,caster,0,facing)
-call EffectCreateAndMove90(true,EffectID[82],GetRandomReal(0,360),1,1.25,1.5,100,100,100,80,100,caster,0,facing)
-call EffectCreateAndMove90(true,EffectID[82],GetRandomReal(0,360),1,1.25,1.5,100,100,100,80,100,caster,0,facing)
-call EffectCreateAndMove(true,EffectID[1704],GetRandomReal(0,360),1.5,1.5,1,100,100,100,0,100,caster,0,facing)
-call EffectCreateAndMove90(true,EffectID[1716],facing+180,1,3,0.75,100,100,100,0,150,caster,0,facing)
-endif
-if time<0.5 then
-call SetUnitFlyHeight(caster,GetUnitFlyHeight(caster)+32,0)
-if dist<1000 then
-call MoveUnit(caster,caster,-60,facing)
-endif
-endif
-if time==0.9 then
-call SetUnitFlyHeight(caster,800,0)
-set n0=CreateUnit(GetOwningPlayer(caster),'045e',GetUnitX(caster),GetUnitY(caster),facing)
-call SetUnitModel(n0,EffectID[1482])
-call UnitSize(n0,0.3,1,1)
-call SetUnitFlyHeight(n0,850,0)
-call UnitColor(n0,100,100,100,0)
-call UnitSpeed(n0,0.8)
-call MoveUnit(caster,n0,100,facing)
-call SaveUnitHandle(HH,id,21,n0)
-call MyRemoveUnit(n0,2)
-set n0=null
-endif
-if time==1 then
-if LoadEffectHandle(HH,id,10)!=null then
-call DestroyEffect(LoadEffectHandle(HH,id,10))
-call SaveEffectHandle(HH,id,10,null)
-endif
-call EffectCreateAndMove45(true,EffectID[15],facing,1.5,1.25,1.5,100,100,100,20,0,caster,100,facing)
-set n0=CreateUnit(GetOwningPlayer(caster),'e000',x1,y1,facing)
-call UnitSize(n0,2.5,1,1)
-call SetUnitFlyHeight(n0,150,0)
-call UnitColor(n0,100,100,100,0)
-call UnitSpeed(n0,1)
-call SaveUnitHandle(HH,id,20,n0)
-set n0=null
-endif
-if time>1 then
-set time1=time1+0.02
-if time1==0.02 or time1==0.04 or time1==0.06 or time1==0.08 or time1==0.1 or time==0.12 or time1==0.14 or time1==0.16 or time1==0.2 then
-call EffectCreateAndMove90(true,EffectID[82],GetRandomReal(0,360),1.5,GetRandomReal(4,4.5),GetRandomReal(1,2),100,100,100,GetRandomReal(80,90),200,Dummy,-50,facing)
-endif
-if time1>=0.2 or time==1.02 then
-call EffectCreateAndMove(true,EffectID[48],GetRandomReal(0,360),1,5,1,100,100,100,40,50,Dummy,0,facing)
-call EffectCreateAndMove(true,EffectID[44],GetRandomReal(0,360),1,3.25,1,100,100,100,40,0,Dummy,0,facing)
-call EffectCreateAndMove(true,EffectID[23],GetRandomReal(0,360),1,2,1,60,60,100,20,0,Dummy,0,facing)
-call EffectCreateAndMove(true,EffectID[292],GetRandomReal(0,360),1,6,0.8,100,100,100,0,150,Dummy,0,facing)
-call EffectCreateAndMoveAn(true,EffectID[870],GetRandomReal(0,360),1.5,5,1,100,100,100,100,0,Dummy,0,facing,2)
-call EffectCreateAndMoveAn(true,EffectID[753],facing,1,4.5,0.5,100,100,100,70,150,Dummy,0,facing,1)
-call EffectCreateAndMove(true,EffectID[1416],facing,1,2,0.75,80,80,100,60,0,Dummy,0,facing)
-call EffectCreateAndMove(true,EffectID[574],GetRandomInt(0,360),1,4,2,100,100,100,60,150,Dummy,0,GetRandomInt(0,360))
-set time1=0
-endif
-call SaveReal(HH,id,6,time1)
-call GroupClear(G)
-call GroupEnumUnitsInRange(G,x1,y1,700,Base)
-loop
-set n0=FirstOfGroup(G)
-exitwhen n0==null
-if IsUnitInGroup(n0,gr)==false and Condition_Base_Random(caster,n0)then
-call GroupAddUnit(gr,n0)
-call DamageU(false,caster,n0,damage)
-endif
-call GroupRemoveUnit(G,n0)
-endloop
-call SaveGroupHandle(HH,id,4,gr)
-call GroupClear(G)
-endif
-endif
-set caster=null
-set gr=null
-set Dummy=null
-endfunction
-function Vegitto_T_Act takes unit caster,real x1,real y1 returns nothing
-local timer t=CreateTimer()
-local integer id=GetHandleId(t)
-local real x0=GetUnitX(caster)
-local real y0=GetUnitY(caster)
-local real facing=Angle2(x0,y0,x1,y1)
-local real damage=GetHeroAgi(caster,true)*10
-local real dist=SR(x0,y0,x1,y1)
-call SaveUnitHandle(HH,id,1,caster)
-call SaveReal(HH,id,3,facing)
-call PauseUnit(caster,true)
-if dist>1000 then
-set x1=PolX(x0,1000,facing)
-set y1=PolY(y0,1000,facing)
-endif
-call SaveGroupHandle(HH,id,4,CreateGroup())
-call SaveInteger(HH,id,25,GetRandomInt(1,2))
-call SaveReal(HH,id,11,x1)
-call SaveReal(HH,id,12,y1)
-call SaveReal(HH,id,8,dist)
-call SaveReal(HH,id,15,damage)
-call TimerStart(t,0.02,true,function Vegitto_T_Act2)
-set t=null
-endfunction
-//VegittoT_End
 function AbilitiesForChoice_Cond takes nothing returns boolean
-    local boolean cond1=GetSpellAbilityId()=='RsQ1' or GetSpellAbilityId()=='RsQ2' or GetSpellAbilityId()=='RsQ3' or GetSpellAbilityId()=='RsW1' or GetSpellAbilityId()=='RsW2' or GetSpellAbilityId()=='RsE1' or GetSpellAbilityId()=='RsR1' or GetSpellAbilityId()=='RsR2' or GetSpellAbilityId()=='RsT1' or GetSpellAbilityId()=='RsD1' or GetSpellAbilityId()=='RsD2' or GetSpellAbilityId()=='RsD3' or GetSpellAbilityId()=='RsF1' or GetSpellAbilityId()=='RsF2' or GetSpellAbilityId()=='RsF3' or GetSpellAbilityId()=='RsG1' or GetSpellAbilityId()=='GinG' or GetSpellAbilityId()=='LamF' or GetSpellAbilityId()=='SiD1' or GetSpellAbilityId()=='AKQ1' or GetSpellAbilityId()=='AKW1' or GetSpellAbilityId()=='AKE1' or GetSpellAbilityId()=='AKR1' or GetSpellAbilityId()=='AKT1' or GetSpellAbilityId()=='AKF1' or GetSpellAbilityId()=='AKG1' or GetSpellAbilityId()=='GrQ1' or GetSpellAbilityId()=='GrW1' or GetSpellAbilityId()=='GrE1' or GetSpellAbilityId()=='GrR1' or GetSpellAbilityId()=='GrT1' or GetSpellAbilityId()=='GrF1' or GetSpellAbilityId()=='GrG2' or GetSpellAbilityId()=='UKD1' or GetSpellAbilityId()=='BuuG' or GetSpellAbilityId()=='GSQ1' or GetSpellAbilityId()=='GSQ2' or GetSpellAbilityId()=='GSW1' or GetSpellAbilityId()=='GSE1' or GetSpellAbilityId()=='GSE2' or GetSpellAbilityId()=='GSF1' or GetSpellAbilityId()=='GSF2' or GetSpellAbilityId()=='GSG1' or GetSpellAbilityId()=='GSR1' or GetSpellAbilityId()=='GST1' or GetSpellAbilityId()=='GST2' or GetSpellAbilityId()=='GST3' or GetSpellAbilityId()=='SHG1' or GetSpellAbilityId()=='CelF' or GetSpellAbilityId()=='CelG' or GetSpellAbilityId()=='CelT' or GetSpellAbilityId()=='AccD' or GetSpellAbilityId()=='AccG' or GetSpellAbilityId()=='A0IV'
+    local boolean cond1=GetSpellAbilityId()=='RsQ1' or GetSpellAbilityId()=='RsQ2' or GetSpellAbilityId()=='RsQ3' or GetSpellAbilityId()=='RsW1' or GetSpellAbilityId()=='RsW2' or GetSpellAbilityId()=='RsE1' or GetSpellAbilityId()=='RsR1' or GetSpellAbilityId()=='RsR2' or GetSpellAbilityId()=='RsT1' or GetSpellAbilityId()=='RsD1' or GetSpellAbilityId()=='RsD2' or GetSpellAbilityId()=='RsD3' or GetSpellAbilityId()=='RsF1' or GetSpellAbilityId()=='RsF2' or GetSpellAbilityId()=='RsF3' or GetSpellAbilityId()=='RsG1' or GetSpellAbilityId()=='GinG' or GetSpellAbilityId()=='LamF' or GetSpellAbilityId()=='SiD1' or GetSpellAbilityId()=='AKQ1' or GetSpellAbilityId()=='AKW1' or GetSpellAbilityId()=='AKE1' or GetSpellAbilityId()=='AKR1' or GetSpellAbilityId()=='AKT1' or GetSpellAbilityId()=='AKF1' or GetSpellAbilityId()=='AKG1' or GetSpellAbilityId()=='GrQ1' or GetSpellAbilityId()=='GrW1' or GetSpellAbilityId()=='GrE1' or GetSpellAbilityId()=='GrR1' or GetSpellAbilityId()=='GrT1' or GetSpellAbilityId()=='GrF1' or GetSpellAbilityId()=='GrG2' or GetSpellAbilityId()=='UKD1' or GetSpellAbilityId()=='BuuG' or GetSpellAbilityId()=='GSQ1' or GetSpellAbilityId()=='GSQ2' or GetSpellAbilityId()=='GSW1' or GetSpellAbilityId()=='GSE1' or GetSpellAbilityId()=='GSE2' or GetSpellAbilityId()=='GSF1' or GetSpellAbilityId()=='GSF2' or GetSpellAbilityId()=='GSG1' or GetSpellAbilityId()=='GSR1' or GetSpellAbilityId()=='GST1' or GetSpellAbilityId()=='GST2' or GetSpellAbilityId()=='GST3' or GetSpellAbilityId()=='SHG1' or GetSpellAbilityId()=='CelF' or GetSpellAbilityId()=='CelG' or GetSpellAbilityId()=='CelT' or GetSpellAbilityId()=='AccD' or GetSpellAbilityId()=='AccG'
     if cond1 then
         return true
     else
@@ -233933,9 +233755,6 @@ call Accelerator_G_Act(caster)
 endif
 if GetSpellAbilityId()=='AccD' then
 call Accelerator_D_Act(caster,x1,y1)
-endif
-if GetSpellAbilityId()=='A0IV' then
-call Vegitto_T_Act(caster,x1,y1)
 endif
 set caster=null
     set target=null
