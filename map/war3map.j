@@ -6470,7 +6470,7 @@ function Condition_BaseUBW takes player p,unit e returns boolean
 return IsUnitEnemy(e,p) and IsUnitType(e,UNIT_TYPE_DEAD)==false and IsUnitType(e,UNIT_TYPE_STRUCTURE)==false and 'dumm'!=GetUnitTypeId(e) and 'cdm1'!=GetUnitTypeId(e) and 'e16T'!=GetUnitTypeId(e) and 'h071'!=GetUnitTypeId(e) and UltimateDamage!=e and GetUnitTypeId(e)!='dM02'
 endfunction
 function BoolFrenda takes nothing returns boolean
-return(GetUnitTypeId(GetFilterUnit())=='e0ZY' or GetUnitTypeId(GetFilterUnit())=='e0ZV')and GetUnitAbilityLevel(GetFilterUnit(),'B06J')==0 and IsUnitType(GetFilterUnit(),UNIT_TYPE_STRUCTURE)==false and GetUnitAbilityLevel(GetFilterUnit(),'A1C3')==0
+return(GetUnitTypeId(GetFilterUnit())=='FSDL' or GetUnitTypeId(GetFilterUnit())=='e0ZY' or GetUnitTypeId(GetFilterUnit())=='e0ZV')and GetUnitAbilityLevel(GetFilterUnit(),'B06J')==0 and IsUnitType(GetFilterUnit(),UNIT_TYPE_STRUCTURE)==false and GetUnitAbilityLevel(GetFilterUnit(),'A1C3')==0
 endfunction
 function BoolBugged takes nothing returns boolean
 return 'e12W'!=GetUnitTypeId(GetFilterUnit()) and 'n00G'!=GetUnitTypeId(GetFilterUnit()) and GetUnitTypeId(GetFilterUnit())!='h03J' and GetUnitTypeId(GetFilterUnit())!='h068' and GetUnitTypeId(GetFilterUnit())!='h04K' and GetUnitTypeId(GetFilterUnit())!='h046' and GetUnitTypeId(GetFilterUnit())!='h146' and GetUnitTypeId(GetFilterUnit())!='h246' and GetUnitTypeId(GetFilterUnit())!='h346' and GetUnitTypeId(GetFilterUnit())!='h446' and GetUnitTypeId(GetFilterUnit())!='h546' and GetUnitAbilityLevel(GetFilterUnit(),'Aloc')>0 and GetUnitAbilityLevel(GetFilterUnit(),'Pet0')==0 and GetUnitTypeId(GetFilterUnit())!='e11G'  and GetUnitTypeId(GetFilterUnit())!='h101' and GetUnitTypeId(GetFilterUnit())!='h102' and GetUnitTypeId(GetFilterUnit())!='h103' and GetUnitTypeId(GetFilterUnit())!='h104' and GetUnitTypeId(GetFilterUnit())!='h105' and GetUnitTypeId(GetFilterUnit())!='h106' and GetUnitTypeId(GetFilterUnit())!='h107' and GetUnitTypeId(GetFilterUnit())!='h108' and GetUnitTypeId(GetFilterUnit())!='h109'
@@ -26392,6 +26392,22 @@ set EffectID[2160]="Others\\Effect_B (60).mdl"
 set EffectID[2161]="Others\\Effect_B (61).mdl"
 set EffectID[2164]="Others\\Effect_B (64).mdl"
 set EffectID[2165]="Others\\Effect_B (65).mdl"
+// модели под G Гинтоки: этих индексов в 3.2 не было, массив отдавал
+// пустую строку, и SetUnitModel внутри EffectCreateAndMove ронял игру
+set EffectID[457]="Guts\\WindWeak2.mdl"
+set EffectID[575]="Others\\OPDef (404).mdl"
+// модели под F «Grenade» и G «Ignis» Френды: этих индексов в 3.2 не было
+set EffectID[252]="others\\ChuShou_BY_Wood_Effect_Fire_Flamecrack.mdl"
+set EffectID[450]="Madara\\[a]superBigExplosion2.mdl"
+set EffectID[510]="Others\\[A]Boom.mdl"
+set EffectID[2092]="Others\\ChuShou_BY_Wood_Effect_Fire_Flamecrack.mdl"
+set EffectID[2094]="Others\\[A]BY_Wood_FenShenDaBaoPo_12.mdl"
+set EffectID[2430]="Others\\Effect_D (30).mdl"
+set EffectID[2600]="Others\\Effect_E (0).mdl"
+set EffectID[2601]="Others\\Effect_E (1).mdl"
+set EffectID[2617]="Others\\Effect_E (17).mdl"
+set EffectID[2627]="Others\\Effect_E (27).mdl"
+set EffectID[2630]="Others\\Effect_E (30).mdl"
 
 
 
@@ -128446,7 +128462,7 @@ call TriggerAddCondition(gg_trg_Fatality,Condition(function FatalityCond))
 call TriggerAddAction(gg_trg_Fatality,function FatalityCast)
 endfunction
 function Trig_Lines_Conditions takes nothing returns boolean
-return GetUnitTypeId(GetTriggerUnit())=='e0ZV' or GetUnitTypeId(GetTriggerUnit())=='e0ZY'
+return GetUnitTypeId(GetTriggerUnit())=='e0ZV' or GetUnitTypeId(GetTriggerUnit())=='e0ZY' or GetUnitTypeId(GetTriggerUnit())=='FSDL'
 endfunction
 function Trig_Lines_Actions takes nothing returns nothing
 call IssueImmediateOrder(GetTriggerUnit(),"stop")
@@ -128511,7 +128527,7 @@ call GroupEnumUnitsInRange(g,x,y,400,BaseFrenda)
 loop
 set E=FirstOfGroup(g)
 exitwhen E==null
-if(GetUnitTypeId(E)=='e0ZY' or GetUnitTypeId(E)=='e0ZV')and GetUnitAbilityLevel(E,'A1C3')==0 then
+if(GetUnitTypeId(E)=='FSDL' or GetUnitTypeId(E)=='e0ZY' or GetUnitTypeId(E)=='e0ZV')and GetUnitAbilityLevel(E,'A1C3')==0 then
 call UnitAddAbility(E,'A1C3')
 call UnitApplyTimedLife(E,'BTLF',0.06)
 endif
@@ -128719,7 +128735,7 @@ call GroupEnumUnitsInRange(g,x1,y1,rad,BaseFrenda)
 loop
 set E=FirstOfGroup(g)
 exitwhen E==null
-if(GetUnitTypeId(E)=='e0ZY' or GetUnitTypeId(E)=='e0ZV')and GetUnitAbilityLevel(E,'A1C3')==0 then
+if(GetUnitTypeId(E)=='FSDL' or GetUnitTypeId(E)=='e0ZY' or GetUnitTypeId(E)=='e0ZV')and GetUnitAbilityLevel(E,'A1C3')==0 then
 call UnitAddAbility(E,'A1C3')
 call UnitApplyTimedLife(E,'BTLF',0.06)
 endif
@@ -129087,7 +129103,7 @@ call DestroyEffect(AddSpecialEffect("war3mapImported\\NewGroundEX.mdx",x,y))
 loop
 set E=FirstOfGroup(g)
 exitwhen E==null
-if(GetUnitTypeId(E)=='e0ZY' or GetUnitTypeId(E)=='e0ZV')and GetUnitAbilityLevel(E,'A1C3')==0 then
+if(GetUnitTypeId(E)=='FSDL' or GetUnitTypeId(E)=='e0ZY' or GetUnitTypeId(E)=='e0ZV')and GetUnitAbilityLevel(E,'A1C3')==0 then
 call UnitAddAbility(E,'A1C3')
 call UnitApplyTimedLife(E,'BTLF',0.06)
 endif
@@ -129122,7 +129138,7 @@ call DestroyEffect(AddSpecialEffect("Abilities\\Weapons\\GyroCopter\\GyroCopterM
 loop
 set E=FirstOfGroup(g)
 exitwhen E==null
-if(GetUnitTypeId(E)=='e0ZY' or GetUnitTypeId(E)=='e0ZV')and GetUnitAbilityLevel(E,'A1C3')==0 then
+if(GetUnitTypeId(E)=='FSDL' or GetUnitTypeId(E)=='e0ZY' or GetUnitTypeId(E)=='e0ZV')and GetUnitAbilityLevel(E,'A1C3')==0 then
 call UnitAddAbility(E,'A1C3')
 call UnitApplyTimedLife(E,'BTLF',0.06)
 endif
@@ -223857,8 +223873,442 @@ call TimerStart(t,0.02,true,function Accelerator_G_Act2)
 set t=null
 endfunction
 //AcceleratorDG_End
+//FrendaFG_Start
+function Frenda_First_Target_Skill takes unit caster_0,unit target_0,real pos_X,real pos_Y,real Aoe_0 returns unit
+call GroupClear(G)
+call GroupEnumUnitsInRange(G,pos_X,pos_Y,Aoe_0,BaseFrenda)
+loop
+set n0=FirstOfGroup(G)
+exitwhen n0==null
+if(GetUnitAbilityLevel(n0,'A1C3')==0 and GetUnitTypeId(n0)=='FSDL' or GetUnitTypeId(n0)=='e0ZY' or GetUnitTypeId(n0)=='e0ZV')or(UnitIsAlive(n0)and IsUnitEnemy(caster_0,GetOwningPlayer(n0))and GetUnitAbilityLevel(n0,'Avul')==0)then
+set target_0=n0
+call GroupClear(G)
+endif
+call GroupRemoveUnit(G,n0)
+endloop
+call GroupClear(G)
+return target_0
+endfunction
+function Frenda_F_Act2 takes nothing returns nothing
+local integer id=GetHandleId(GetExpiredTimer())
+local unit caster=LoadUnitHandle(HH,id,1)
+local unit Dummy=LoadUnitHandle(HH,id,20)
+local real facing=LoadReal(HH,id,3)
+local real time=LoadReal(HH,id,5)
+local real x0=GetUnitX(caster)
+local real y0=GetUnitY(caster)
+local real x1=GetUnitX(Dummy)
+local real y1=GetUnitY(Dummy)
+local real damage=LoadReal(HH,id,15)
+local real dist=LoadReal(HH,id,8)
+set time=time+0.02
+call SaveReal(HH,id,5,time)
+if dist<=0 and time>0.1 then
+set soundplay=CreateSound("Sound\\Others\\Frenda_F_Exp.mp3",false,false,true,12700,12700,"")
+call SetSoundVolume(soundplay,200)
+call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
+set x0=GetUnitX(Dummy)
+set y0=GetUnitY(Dummy)
+call UnitSpeed(caster,1)
+call EffectCreateAndMove(true,EffectID[2430],facing,1.5,2,1.25,100,100,100,0,0,Dummy,0,facing)
+call EffectCreateAndMove(true,EffectID[450],facing,1.5,2,1,100,100,100,80,0,Dummy,0,facing)
+call EffectCreateAndMove(true,EffectID[510],facing,1.5,2.5,1,100,100,100,0,0,Dummy,0,facing)
+call EffectCreateAndMove(true,EffectID[2092],facing,1.5,2.5,0.75,100,100,100,60,0,Dummy,0,facing)
+call EffectCreateAndMove(true,EffectID[768],facing,1.5,1.25,1,100,100,100,60,0,Dummy,0,facing)
+call EffectCreateAndMove(true,EffectID[20],facing,1.5,2.25,1.5,100,100,100,60,0,Dummy,0,facing)
+call GroupClear(G)
+call GroupEnumUnitsInRange(G,x0,y0,500,BaseFrenda)
+loop
+set n0=FirstOfGroup(G)
+exitwhen n0==null
+if Dummy!=n0 and(GetUnitTypeId(n0)=='FSDL' or GetUnitTypeId(n0)=='e0ZY' or GetUnitTypeId(n0)=='e0ZV')and GetUnitAbilityLevel(n0,'A1C3')==0 then
+call UnitAddAbility(n0,'A1C3')
+call UnitApplyTimedLife(n0,'BTLF',0.06)
+//if GetUnitTypeId(n0)=='FSDL' then
+//call KillUnit(n0)
+//endif
+endif
+if UnitIsAlive(n0)and IsUnitEnemy(n0,GetOwningPlayer(caster))==true and IsUnitType(n0,UNIT_TYPE_STRUCTURE)==false and GetUnitAbilityLevel(n0,'Avul')==0 then
+call DamageU(false,caster,n0,damage)
+endif
+call GroupRemoveUnit(G,n0)
+endloop
+call GroupClear(G)
+if LoadUnitHandle(HH,id,20)!=null then
+call RemoveUnit(LoadUnitHandle(HH,id,20))
+call SaveUnitHandle(HH,id,20,null)
+endif
+call PauseTimer(GetExpiredTimer())
+call FlushChildHashtable(HH,id)
+call DestroyTimer(GetExpiredTimer())
+else
+if time==0.02 then
+call sound_play("Sound\\Others\\Frenda_F.mp3",220)
+call EffectCreateAndMove(true,EffectID[768],facing,1,1,1.5,100,100,100,60,0,caster,0,facing)
+call SetUnitAnimationByIndex(caster,6)
+call UnitSpeed(caster,1)
+call EffectCreateAndMove(true,EffectID[20],facing,1.5,1,0.5,100,100,100,40,0,caster,0,facing)
+endif
+if time==0.1 then
+call EffectCreateAndMove90(true,EffectID[12],facing,1,0.8,1.5,100,100,100,60,150,caster,50,facing)
+call EffectCreateAndMove(true,EffectID[6],facing,1,0.4,0.4,100,100,100,40,100,caster,50,facing)
+call EffectCreateAndMove90(true,EffectID[320],facing+180,1,0.8,1,100,100,100,60,150,caster,150,facing)
+set n0=CreateUnit(GetOwningPlayer(caster),'e000',x0,y0,facing)
+call SetUnitModel(n0,EffectID[2630])
+call MoveUnit(n0,n0,100,facing)
+call SetUnitFlyHeight(n0,200,0)
+call UnitSize(n0,1.5,1,1)
+call SaveUnitHandle(HH,id,20,n0)
+set n0=null
+endif
+if time>0.1 then
+if Frenda_First_Target_Skill(caster,null,x1,y1,200)!=null then
+set dist=0
+endif
+call SaveReal(HH,id,8,dist-40)
+call MoveUnit(Dummy,Dummy,40,facing)
+endif
+endif
+set caster=null
+set Dummy=null
+endfunction
+function Frenda_F_Act takes unit caster,real x1,real y1 returns nothing
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+local real x0=GetUnitX(caster)
+local real y0=GetUnitY(caster)
+local real facing=Angle2(x0,y0,x1,y1)
+local real damage=150+(GetUnitAbilityLevel(caster,'FSF1'))*GetHeroInt(caster,true)
+local real dist=SR(x0,y0,x1,y1)
+call SaveUnitHandle(HH,id,1,caster)
+call SaveReal(HH,id,3,facing)
+set dist=1000+200*GetUnitAbilityLevel(caster,'FSF1')
+//call SetUnitAbilityLevel(caster,'FSF1',5)
+//call SetUnitAbilityLevel(caster,'FSG1',5)
+call SaveReal(HH,id,8,dist)
+call SaveReal(HH,id,9,dist)
+call SaveReal(HH,id,15,damage)
+call TimerStart(t,0.02,true,function Frenda_F_Act2)
+set t=null
+endfunction
+function Frenda_G_Act2 takes nothing returns nothing
+local integer id=GetHandleId(GetExpiredTimer())
+local unit caster=LoadUnitHandle(HH,id,1)
+local unit Dummy=LoadUnitHandle(HH,id,20)
+local real facing=LoadReal(HH,id,3)
+local real time=LoadReal(HH,id,5)
+local real time1=LoadReal(HH,id,6)
+local real x0=GetUnitX(Dummy)
+local real y0=GetUnitY(Dummy)
+local real damage=LoadReal(HH,id,15)
+local real dist=LoadReal(HH,id,8)
+local real dist_Base=LoadReal(HH,id,9)
+set time=time+0.02
+call SaveReal(HH,id,5,time)
+
+if time1>600 or (time>0.02 and (UnitIsAlive(Dummy)==false or  udg_B==false)  ) then
+        //GetUnitState(Dummy,UNIT_STATE_LIFE)<=0)then
+if UnitIsAlive(Dummy)==false then
+//GetUnitState(Dummy,UNIT_STATE_LIFE)<=0 then
+set Dummy=LoadUnitHandle(HH,id,21)
+
+call SetUnitFlyHeight(Dummy,200,0)
+
+set x0=GetUnitX(Dummy)
+set y0=GetUnitY(Dummy)
+set soundplay=CreateSound("Sound\\Others\\Frenda_G_Exp.mp3",false,false,true,12700,12700,"")
+call SetSoundVolume(soundplay,200)
+call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
+
+
+
+
+call EffectCreateAndMove(true,EffectID[2627],facing,1.5,2,1,100,100,100,30,0,Dummy,0,facing)
+call EffectCreateAndMove(true,EffectID[2094],facing,1.5,2,1,100,100,100,30,0,Dummy,0,facing)
+call EffectCreateAndMove(true,EffectID[768],facing,1.5,1.75,1,100,100,100,60,0,Dummy,0,facing)
+call EffectCreateAndMove(true,EffectID[252],GetRandomInt(0,360),1,3.25,1,100,100,100,0,0,Dummy,0,facing)
+call EffectCreateAndMove(true,EffectID[240],GetRandomInt(0,360),1,7,0.5,100,100,100,0,150,Dummy,0,facing)
+call GroupClear(G)
+call GroupEnumUnitsInRange(G,x0,y0,700,BaseFrenda)
+loop
+set n0=FirstOfGroup(G)
+exitwhen n0==null
+
+
+
+if Dummy!=n0 and(GetUnitTypeId(n0)=='FSDL' or GetUnitTypeId(n0)=='e0ZY' or GetUnitTypeId(n0)=='e0ZV')and GetUnitAbilityLevel(n0,'A1C3')==0 then
+call UnitAddAbility(n0,'A1C3')
+call UnitApplyTimedLife(n0,'BTLF',0.06)
+//if GetUnitTypeId(n0)=='FSDL' then
+//call KillUnit(n0)
+//endif
+endif
+
+
+
+if IsUnitEnemy(n0,GetOwningPlayer(caster))==true and GetUnitAbilityLevel(n0,'Avul')==0 then
+call DamageU(false,caster,n0,damage)
+endif
+call GroupRemoveUnit(G,n0)
+endloop
+call GroupClear(G)
+endif
+if LoadUnitHandle(HH,id,20)!=null then
+call MyRemoveUnit(LoadUnitHandle(HH,id,20),0.1)
+call SaveUnitHandle(HH,id,20,null)
+endif
+if LoadUnitHandle(HH,id,21)!=null then
+call MyRemoveUnit(LoadUnitHandle(HH,id,21),0.1)
+call SaveUnitHandle(HH,id,21,null)
+endif
+if LoadUnitHandle(HH,id,22)!=null then
+call MyRemoveUnit(LoadUnitHandle(HH,id,22),0.1)
+call SaveUnitHandle(HH,id,22,null)
+endif
+if LoadUnitHandle(HH,id,23)!=null then
+call MyRemoveUnit(LoadUnitHandle(HH,id,23),0.1)
+call SaveUnitHandle(HH,id,23,null)
+endif
+if LoadUnitHandle(HH,id,24)!=null then
+call MyRemoveUnit(LoadUnitHandle(HH,id,24),0.1)
+call SaveUnitHandle(HH,id,24,null)
+endif
+call PauseTimer(GetExpiredTimer())
+call FlushChildHashtable(HH,id)
+call DestroyTimer(GetExpiredTimer())
+else
+if time==0.02 then
+call sound_play("Sound\\Others\\Frenda_G.mp3",280)
+call EffectCreateAndMove(true,EffectID[19],GetRandomReal(0,360),1,1,0.6,100,100,100,60,0,caster,0,facing)
+call EffectCreateAndMove(true,EffectID[768],facing,1,1,1,100,100,100,60,0,caster,0,facing)
+call SetUnitAnimationByIndex(caster,5)
+call UnitSpeed(caster,1)
+call EffectCreateAndMove90(true,EffectID[12],facing,1,0.8,1.5,100,100,100,60,150,caster,50,facing)
+call EffectCreateAndMove(true,EffectID[6],facing,1,0.4,0.4,100,100,100,40,100,caster,50,facing)
+call EffectCreateAndMove90(true,EffectID[320],facing+180,1,0.8,1,100,100,100,60,150,caster,150,facing)
+call UnitSpeed(caster,1)
+call PauseUnit(caster,false)
+set x0=PolX(GetUnitX(caster),100,facing)
+set y0=PolY(GetUnitY(caster),100,facing)
+set n0=CreateUnit(GetOwningPlayer(caster),'FSDL',x0,y0,facing)
+call UnitAddAbility(n0,'A1C3')
+call SetUnitModel(n0,EffectID[2617])
+call UnitSpeed(n0,1)
+call UnitSize(n0,2.5,1,1)
+call UnitColor(n0,100,100,100,0)
+call SaveUnitHandle(HH,id,20,n0)
+set n0=null
+endif
+if time>0.02 and dist>0 then
+
+       // call SetUnitMoveSpeed(Dummy,0)
+
+
+
+call SaveReal(HH,id,8,dist-35)
+call MoveUnit(Dummy,Dummy,35,facing)
+call SetUnitFlyHeight(Dummy,ParabolaZ(400,dist_Base,dist),0)
+endif
+if dist<=0 then
+call SaveReal(HH,id,6,time1+0.02)
+if time1==0.1 then
+set n0=CreateUnit(GetOwningPlayer(caster),'e000',x0,y0,facing)
+call SetUnitModel(n0,EffectID[1417])
+call UnitSize(n0,1,1,1)
+call UnitSpeed(n0,1.5)
+call SetUnitFlyHeight(n0,150,0)
+call UnitColor(n0,100,100,100,0)
+call SaveUnitHandle(HH,id,24,n0)
+endif
+if time1==0.2 then
+set n0=LoadUnitHandle(HH,id,24)
+
+
+call UnitSpeed(n0,0.1)
+if(GetLocalPlayer()==GetOwningPlayer(caster))then
+call UnitSpeed(n0,0.0)
+endif
+
+
+endif
+if LoadBoolean(HH,id,19)==false and time1==0.4 then
+call SaveBoolean(HH,id,19,true)
+call UnitRemoveAbility(Dummy,'A1C3')
+call UnitColor(Dummy,0,0,0,100)
+
+//call UnitColor(n0,100,20,20,100)
+
+call UnitSize(Dummy,0.01,0.01,0.01)
+
+
+call UnitAddAbility(Dummy,'A0QL')
+call SetUnitInvulnerable(Dummy,true)
+call UnitAddAbility(Dummy,'Avul')
+call ShowUnit(Dummy,false)
+//call UnitAddAbility(Dummy,'Aloc')
+//call UnitRemoveAbility(Dummy,'Aloc')
+call ShowUnit(Dummy,true)
+call PauseUnit(Dummy,true)
+call IssueImmediateOrder(Dummy,"stop")
+call PauseUnit(Dummy,false)
+call SetUnitTurnSpeed(Dummy,0)
+call SetUnitMoveSpeed(Dummy,0)
+
+call UnitAddAbility(Dummy,'Apiv')
+
+set n0=CreateUnit(GetOwningPlayer(caster),'e000',x0,y0,facing)
+
+
+
+//call UnitAddAbility(n0,'A0QL')
+//call SetUnitInvulnerable(n0,true)
+//call UnitAddAbility(n0,'Avul')
+//call ShowUnit(n0,false)
+//call UnitAddAbility(Dummy,'Aloc')
+//call UnitRemoveAbility(Dummy,'Aloc')
+//call ShowUnit(n0,true)
+//call PauseUnit(n0,true)
+//call IssueImmediateOrder(n0,"stop")
+//call PauseUnit(n0,false)
+//call SetUnitTurnSpeed(n0,0)
+//call SetUnitMoveSpeed(n0,0)
+
+
+call UnitAddAbility(n0,'Apiv')
+
+call SetUnitModel(n0,EffectID[2600])
+
+
+call UnitSpeed(n0,3)
+
+call UnitAddAbility(n0,'Apiv')
+
+call SaveUnitHandle(HH,id,21,n0)
+call UnitColor(n0,100,100,100,60)
+//call UnitColor(n0,0,0,0,100)
+
+call UnitSize(n0,0.01,0.01,0.01)
+call SetUnitFlyHeight(n0,5000,0)
+if(GetLocalPlayer()==GetOwningPlayer(caster))then
+call UnitSize(n0,0.2,0.2,0.2)
+call SetUnitFlyHeight(n0,200,0)
+//call UnitColor(n0,100,100,100,60)
+endif
+
+
+set n0=CreateUnit(GetOwningPlayer(caster),'e000',x0,y0,facing)
+
+//call UnitAddAbility(n0,'A0QL')
+//call SetUnitInvulnerable(n0,true)
+//call UnitAddAbility(n0,'Avul')
+//call ShowUnit(n0,false)
+//call UnitAddAbility(Dummy,'Aloc')
+//call UnitRemoveAbility(Dummy,'Aloc')
+//call ShowUnit(n0,true)
+//call PauseUnit(n0,true)
+//call IssueImmediateOrder(n0,"stop")
+//call PauseUnit(n0,false)
+//call SetUnitTurnSpeed(n0,0)
+//call SetUnitMoveSpeed(n0,0)
+
+call UnitAddAbility(n0,'Apiv')
+
+call SetUnitModel(n0,EffectID[2601])
+
+
+
+call SaveUnitHandle(HH,id,22,n0)
+
+
+
+call UnitColor(n0,70,70,70,60)
+call UnitSize(n0,0.01,0.01,0.01)
+call SetUnitFlyHeight(n0,5000,0)
+if(GetLocalPlayer()==GetOwningPlayer(caster))then
+call UnitSize(n0,0.25,0.25,0.25)
+call SetUnitFlyHeight(n0,200,0)
+//call UnitColor(n0,100,100,100,60)
+endif
+
+
+
+set n0=CreateUnit(GetOwningPlayer(caster),'e000',x0,y0,facing+90)
+
+//call UnitAddAbility(n0,'A0QL')
+//call SetUnitInvulnerable(n0,true)
+//call UnitAddAbility(n0,'Avul')
+//call ShowUnit(n0,false)
+//call UnitAddAbility(Dummy,'Aloc')
+//call UnitRemoveAbility(Dummy,'Aloc')
+//call ShowUnit(n0,true)
+//call PauseUnit(n0,true)
+//call IssueImmediateOrder(n0,"stop")
+//call PauseUnit(n0,false)
+//call SetUnitTurnSpeed(n0,0)
+//call SetUnitMoveSpeed(n0,0)
+
+call UnitAddAbility(n0,'Apiv')
+
+
+call SetUnitModel(n0,EffectID[2601])
+
+
+
+call SaveUnitHandle(HH,id,23,n0)
+
+
+
+call UnitColor(n0,70,70,70,60)
+call UnitSize(n0,0.01,0.01,0.01)
+call SetUnitFlyHeight(n0,5000,0)
+if(GetLocalPlayer()==GetOwningPlayer(caster))then
+call UnitSize(n0,0.25,0.25,0.25)
+call SetUnitFlyHeight(n0,200,0)
+//call UnitColor(n0,100,100,100,60)
+endif
+
+
+//call UnitAddAbility(LoadUnitHandle(HH,id,20),'Apiv')
+//call UnitAddAbility(LoadUnitHandle(HH,id,21),'Apiv')
+//call UnitAddAbility(LoadUnitHandle(HH,id,22),'Apiv')
+//call UnitAddAbility(LoadUnitHandle(HH,id,23),'Apiv')
+//call UnitAddAbility(LoadUnitHandle(HH,id,24),'Apiv')
+set n0=LoadUnitHandle(HH,id,24)
+call UnitColor(n0,100,100,100,100)
+if(GetLocalPlayer()==GetOwningPlayer(caster))then
+call UnitColor(n0,70,70,70,60)
+
+endif
+
+
+
+endif
+endif
+endif
+set caster=null
+set Dummy=null
+endfunction
+function Frenda_G_Act takes unit caster,real x1,real y1 returns nothing
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+local real x0=GetUnitX(caster)
+local real y0=GetUnitY(caster)
+local real facing=Angle2(x0,y0,x1,y1)
+local real damage=(GetUnitAbilityLevel(caster,'FSG1')+4)*GetHeroInt(caster,true)
+call SaveUnitHandle(HH,id,1,caster)
+call SaveReal(HH,id,3,facing)
+call SaveBoolean(HH,id,19,false)
+call SaveReal(HH,id,8,SR(x0,y0,x1,y1))
+call SaveReal(HH,id,9,SR(x0,y0,x1,y1))
+call SaveReal(HH,id,15,damage)
+call TimerStart(t,0.02,true,function Frenda_G_Act2)
+set t=null
+endfunction
+//FrendaFG_End
 function AbilitiesForChoice_Cond takes nothing returns boolean
-    local boolean cond1=GetSpellAbilityId()=='RsQ1' or GetSpellAbilityId()=='RsQ2' or GetSpellAbilityId()=='RsQ3' or GetSpellAbilityId()=='RsW1' or GetSpellAbilityId()=='RsW2' or GetSpellAbilityId()=='RsE1' or GetSpellAbilityId()=='RsR1' or GetSpellAbilityId()=='RsR2' or GetSpellAbilityId()=='RsT1' or GetSpellAbilityId()=='RsD1' or GetSpellAbilityId()=='RsD2' or GetSpellAbilityId()=='RsD3' or GetSpellAbilityId()=='RsF1' or GetSpellAbilityId()=='RsF2' or GetSpellAbilityId()=='RsF3' or GetSpellAbilityId()=='RsG1' or GetSpellAbilityId()=='GinG' or GetSpellAbilityId()=='LamF' or GetSpellAbilityId()=='SiD1' or GetSpellAbilityId()=='AKQ1' or GetSpellAbilityId()=='AKW1' or GetSpellAbilityId()=='AKE1' or GetSpellAbilityId()=='AKR1' or GetSpellAbilityId()=='AKT1' or GetSpellAbilityId()=='AKF1' or GetSpellAbilityId()=='AKG1' or GetSpellAbilityId()=='GrQ1' or GetSpellAbilityId()=='GrW1' or GetSpellAbilityId()=='GrE1' or GetSpellAbilityId()=='GrR1' or GetSpellAbilityId()=='GrT1' or GetSpellAbilityId()=='GrF1' or GetSpellAbilityId()=='GrG2' or GetSpellAbilityId()=='UKD1' or GetSpellAbilityId()=='BuuG' or GetSpellAbilityId()=='GSQ1' or GetSpellAbilityId()=='GSQ2' or GetSpellAbilityId()=='GSW1' or GetSpellAbilityId()=='GSE1' or GetSpellAbilityId()=='GSE2' or GetSpellAbilityId()=='GSF1' or GetSpellAbilityId()=='GSF2' or GetSpellAbilityId()=='GSG1' or GetSpellAbilityId()=='GSR1' or GetSpellAbilityId()=='GST1' or GetSpellAbilityId()=='GST2' or GetSpellAbilityId()=='GST3' or GetSpellAbilityId()=='SHG1' or GetSpellAbilityId()=='CelF' or GetSpellAbilityId()=='CelG' or GetSpellAbilityId()=='CelT' or GetSpellAbilityId()=='AccD' or GetSpellAbilityId()=='AccG'
+    local boolean cond1=GetSpellAbilityId()=='RsQ1' or GetSpellAbilityId()=='RsQ2' or GetSpellAbilityId()=='RsQ3' or GetSpellAbilityId()=='RsW1' or GetSpellAbilityId()=='RsW2' or GetSpellAbilityId()=='RsE1' or GetSpellAbilityId()=='RsR1' or GetSpellAbilityId()=='RsR2' or GetSpellAbilityId()=='RsT1' or GetSpellAbilityId()=='RsD1' or GetSpellAbilityId()=='RsD2' or GetSpellAbilityId()=='RsD3' or GetSpellAbilityId()=='RsF1' or GetSpellAbilityId()=='RsF2' or GetSpellAbilityId()=='RsF3' or GetSpellAbilityId()=='RsG1' or GetSpellAbilityId()=='GinG' or GetSpellAbilityId()=='LamF' or GetSpellAbilityId()=='SiD1' or GetSpellAbilityId()=='AKQ1' or GetSpellAbilityId()=='AKW1' or GetSpellAbilityId()=='AKE1' or GetSpellAbilityId()=='AKR1' or GetSpellAbilityId()=='AKT1' or GetSpellAbilityId()=='AKF1' or GetSpellAbilityId()=='AKG1' or GetSpellAbilityId()=='GrQ1' or GetSpellAbilityId()=='GrW1' or GetSpellAbilityId()=='GrE1' or GetSpellAbilityId()=='GrR1' or GetSpellAbilityId()=='GrT1' or GetSpellAbilityId()=='GrF1' or GetSpellAbilityId()=='GrG2' or GetSpellAbilityId()=='UKD1' or GetSpellAbilityId()=='BuuG' or GetSpellAbilityId()=='GSQ1' or GetSpellAbilityId()=='GSQ2' or GetSpellAbilityId()=='GSW1' or GetSpellAbilityId()=='GSE1' or GetSpellAbilityId()=='GSE2' or GetSpellAbilityId()=='GSF1' or GetSpellAbilityId()=='GSF2' or GetSpellAbilityId()=='GSG1' or GetSpellAbilityId()=='GSR1' or GetSpellAbilityId()=='GST1' or GetSpellAbilityId()=='GST2' or GetSpellAbilityId()=='GST3' or GetSpellAbilityId()=='SHG1' or GetSpellAbilityId()=='CelF' or GetSpellAbilityId()=='CelG' or GetSpellAbilityId()=='CelT' or GetSpellAbilityId()=='AccD' or GetSpellAbilityId()=='AccG' or GetSpellAbilityId()=='FSF1' or GetSpellAbilityId()=='FSG1'
     if cond1 then
         return true
     else
@@ -233756,6 +234206,12 @@ endif
 if GetSpellAbilityId()=='AccD' then
 call Accelerator_D_Act(caster,x1,y1)
 endif
+if GetSpellAbilityId()=='FSF1' then
+call Frenda_F_Act(caster,x1,y1)
+endif
+if GetSpellAbilityId()=='FSG1' then
+call Frenda_G_Act(caster,x1,y1)
+endif
 set caster=null
     set target=null
 endfunction
@@ -233777,7 +234233,7 @@ endfunction
 
 
 function AbilitiesForChoiceLearn_Cond takes nothing returns boolean
-return GetLearnedSkill()=='A0QU' or GetLearnedSkill()=='RsT1' or GetLearnedSkill()=='RsR1' or GetLearnedSkill()=='RsE1' or GetLearnedSkill()=='GSE1' or GetLearnedSkill()=='A0BG' or GetLearnedSkill()=='A0K4'
+return GetLearnedSkill()=='A19R' or GetLearnedSkill()=='A19S' or GetLearnedSkill()=='A0QU' or GetLearnedSkill()=='RsT1' or GetLearnedSkill()=='RsR1' or GetLearnedSkill()=='RsE1' or GetLearnedSkill()=='GSE1' or GetLearnedSkill()=='A0BG' or GetLearnedSkill()=='A0K4'
 endfunction
 
 function AbilitiesForChoiceLearn_Act takes nothing returns nothing//моя прокачка абилок для всех героев разберешься
@@ -233832,6 +234288,16 @@ if GetLearnedSkill()== lvl then
 call SetUnitAbilityLevel(caster,'AccG',GetUnitAbilityLevel(caster,lvl))
 endif
 //Accelerator5End
+//Frenda5start
+set lvl='A19R'
+if GetLearnedSkill()== lvl then
+call SetUnitAbilityLevel(caster,'FSF1',GetUnitAbilityLevel(caster,lvl))
+endif
+set lvl='A19S'
+if GetLearnedSkill()== lvl then
+call SetUnitAbilityLevel(caster,'FSG1',GetUnitAbilityLevel(caster,lvl))
+endif
+//Frenda5End
 set caster=null
 set skillPlayer=null
 endfunction
