@@ -25876,7 +25876,11 @@ set EffectID[109]="Enel\\almagest1.mdl"
 set EffectID[352]="Enel\\by_wood_effect_yubanmeiqin_lightning_chaodiancipao_xuli.mdl"//aiQ0 +
 set EffectID[353]="Enel\\by_wood_effect_yubanmeiqin_lightning_diancilichang.mdl"//aiQ5 +
 set EffectID[461]="Enel\\KiluaLightning.mdl"//ef52 +
-set EffectID[890]="Enel\\white-shandian-qiquan-blue.mdl"// +
+set EffectID[890]="Enel\\white-shandian-qiquan-blue.mdl"
+// три строки под T Веджито: в 3.2 этих индексов не было
+set EffectID[574]="Aizen\\[A]ExplodeorangeBlue.mdl"
+set EffectID[1482]="Others\\Final_Kameha2.mdx"
+set EffectID[1704]=EffectID[890]// +
 set EffectID[1011]="Enel\\FSAeff (111).mdl"// +
 set EffectID[1026]="Enel\\FSAeff (126).mdl" //+
 set EffectID[1554]="Enel\\EffectCheck (54).mdl"//+
@@ -29014,7 +29018,9 @@ if GetUnitAbilityLevel(caster,'A1WT')==0 and GetUnitAbilityLevel(caster,'A3WR')=
     endif
 
     //Акселератор G пассива
-    if GetUnitAbilityLevel(target,'A0G9')>0 and GetRandomInt(0,100)<20 then// and GetHeroLevel(u)>5
+    // Пассивка переехала на саму G: в 4.5 отдельной A0G9 нет, иначе в панели
+// висят две одинаковые «Redirection». Acc0 — метка режима, там блок всегда.
+if (GetUnitAbilityLevel(target,'AccG')>0 and GetRandomInt(0,100)<20) or GetUnitAbilityLevel(target,'Acc0')>0 then// and GetHeroLevel(u)>5
     set haveShield=true
     endif
 
@@ -43044,7 +43050,7 @@ if cond==0 then
             //call SetEventDamage(0.05)
             set nb=0
         endif
-        if nb>0 and GetUnitAbilityLevel(u,'A0G9')>0 and GetRandomInt(0,100)<20 and m>nb*0.5 and GetHeroLevel(u)>5 then
+        if nb>0 and m>nb*0.5 and ((GetUnitAbilityLevel(u,'AccG')>0 and GetRandomInt(0,100)<20 and GetHeroLevel(u)>5) or GetUnitAbilityLevel(u,'Acc0')>0) then
             call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-nb*0.5)
             if nb>30 then
                 set soundplay=CreateSound("Sound\\Music\\mp3Music\\AcceleratorPassive.mp3",false,false,true,12700,12700,"")
@@ -75165,7 +75171,10 @@ call TriggerAddCondition(t,Condition(function PowerUpVegetaCond))
 set t=null
 endfunction
 function FinalKamehamehaCond takes nothing returns boolean
-return GetSpellAbilityId()=='A0IV'
+// T Веджито переехал на Vegitto_T_Act (эффекты из 4.5), старый луч
+// оставлен целиком: чтобы вернуть, снять false и убрать ветку A0IV
+// из AbilitiesForChoice_Act.
+return false and GetSpellAbilityId()=='A0IV'
 endfunction
 function FinalKamehamehaCircle2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
@@ -223652,8 +223661,382 @@ endfunction
 
 
 ///ини абилок
+//AcceleratorDG_Start
+function Accelerator_D_Act2 takes nothing returns nothing
+local timer t=GetExpiredTimer()
+local integer id=GetHandleId(t)
+local unit u=LoadUnitHandle(h,id,0)
+local real x=LoadReal(h,id,1)
+local real y=LoadReal(h,id,2)
+local real time=LoadReal(h,id,3)
+local real dmg=0.2*GetHeroAgi(u,true)
+local player p=GetOwningPlayer(u)
+
+if time<4.0 then
+
+
+call EffectCreateAndMove(true,"Others\\[A]az_axe_ef1.mdl",GetRandomReal(0,360),1.5,GetRandomReal(1,1.2),GetRandomReal(0.5,0.75),100,100,100,GetRandomReal(30,60),0,LoadUnitHandle(h,id,4),0,0)
+
+
+
+call SaveReal(h,id,3,time+0.1)
+
+
+call GroupEnumUnitsInRange(G,x,y,500,Base)
+loop
+set n0=FirstOfGroup(G)
+exitwhen n0==null
+if Condition_Base(p,n0) then
+call myCustomDamage(u,n0,dmg,false,false,null,null,null)
+if SR(x,y,GetUnitX(n0),GetUnitY(n0))>150 then
+call MoveUnit(n0,n0,-30,Angle2(x,y,GetUnitX(n0),GetUnitY(n0)))
+endif
+endif
+call GroupRemoveUnit(G,n0)
+endloop
+call GroupClear(G)
+
+
+else
+if LoadUnitHandle(h,id,4)!=null then
+call RemoveUnit(LoadUnitHandle(h,id,4))
+call SaveUnitHandle(h,id,4,null)
+endif
+call PauseTimer(t)
+call DestroyTimer(t)
+call FlushChildHashtable(h,id)
+endif
+set u=null
+set p=null
+set t=null
+endfunction
+function Accelerator_D_Act takes unit u,real x ,real y returns nothing
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+
+local player p=GetOwningPlayer(u)
+
+set n0=CreateUnit(p,'e000',x,y,0)
+
+call SetUnitModel(n0,"Others\\SmerchTornado.mdx")
+call SetUnitScale(n0,2.0,2.0,2.0)
+call SaveUnitHandle(h,id,0,u)
+call SaveReal(h,id,1,x)
+call SaveReal(h,id,2,y)
+call SaveUnitHandle(h,id,4,n0)
+
+set soundplay=CreateSound("Sound\\Others\\Accelerator_F1.mp3",false,false,true,12700,12700,"")
+call StartSound(soundplay)
+call SetSoundVolume(soundplay,300)
+
+
+
+set soundplay=CreateSound("Sound\\Others\\Accelerator_F2.mp3",false,false,true,12700,12700,"")
+call StartSound(soundplay)
+call SetSoundVolume(soundplay,350)
+
+call TimerStart(t,0.1,true,function Accelerator_D_Act2)
+
+set t=null
+
+endfunction
+function Accelerator_G_Act2 takes nothing returns nothing
+local integer id=GetHandleId(GetExpiredTimer())
+local unit caster=LoadUnitHandle(HH,id,1)
+local unit Dummy=LoadUnitHandle(HH,id,20)
+local real time=LoadReal(HH,id,5)
+local real time2=LoadReal(HH,id,8)
+
+local real facing=GetUnitFacing(caster)
+set time=time+0.02
+
+
+if time<=0.04 or (IsUnitPaused(caster)==false and GetUnitAbilityLevel(caster,'Avul')==0)  or udg_B==false   then
+call SaveReal(HH,id,5,time)
+endif
+
+
+
+if time>time2 or (time>0.02 and GetUnitAbilityLevel(caster,'Acc0')==0 or  udg_B==false) then
+call UnitRemoveAbility(caster,'Acc0')
+if LoadUnitHandle(HH,id,20)!=null then
+call RemoveUnit(LoadUnitHandle(HH,id,20))
+call SaveUnitHandle(HH,id,20,null)
+endif
+call AbilityCD(caster,'AccG',30)
+call PauseTimer(GetExpiredTimer())
+call FlushChildHashtable(HH,id)
+call DestroyTimer(GetExpiredTimer())
+else
+
+
+
+if time==0.02 then
+
+
+// В 3.2 своя функция индикатора: наша WithPauseFormAbility там роняет игру.
+call CreateModeIndicatorForm(caster,"ReplaceableTextures\\CommandButtons\\BTNAcceleratorG.blp",time2)
+
+
+
+
+//call SetUnitMoveSpeed(caster,GetUnitDefaultMoveSpeed(caster)+100)
+call UnitAddAbility(caster,'Acc0')
+call UnitMakeAbilityPermanent(caster,true,'Acc0')
+
+
+set n0=CreateUnit(GetOwningPlayer(caster),'e000',GetUnitX(caster),GetUnitY(caster),facing)
+call SetUnitModel(n0,"Others\\Accelerator_G.mdl")
+
+call UnitSize(n0,2.2,1,1)
+call UnitColor(n0,100,100,100,0)
+call UnitAddAbility(n0,'Amrf')
+call UnitRemoveAbility(n0,'Amrf')
+call SetUnitFlyHeight(n0,0,0)
+call SaveUnitHandle(HH,id,20,n0)
+set n0=null
+
+
+set soundplay=CreateSound("Sound\\Others\\Accelerator_G1.mp3",false,false,true,12700,12700,"")
+call StartSound(soundplay)
+call SetSoundVolume(soundplay,300)
+
+
+
+set soundplay=CreateSound("Sound\\Others\\Accelerator_G2.mp3",false,false,true,12700,12700,"")
+call StartSound(soundplay)
+call SetSoundVolume(soundplay,300)
+
+call SetUnitAnimationByIndex(caster,5)
+call UnitSpeed(caster,1)
+
+call EffectCreateAndMove(true,EffectID[23],GetRandomReal(0,360),1.5,0.8,0.5,100,100,100,60,0,caster,0,facing)
+call EffectCreateAndMove90(true,EffectID[82],GetRandomInt(0,360),1.5,1.5,1,100,100,100,60,100,caster,0,facing)
+call EffectCreateAndMove90(true,EffectID[82],GetRandomInt(0,360),1.5,1.5,1,100,100,100,60,100,caster,0,facing)
+
+
+call EffectCreateAndMove90(true,EffectID[82],GetRandomInt(0,360),1.5,2,1.5,100,100,100,60,100,caster,0,facing)
+call EffectCreateAndMove90(true,EffectID[82],GetRandomInt(0,360),1.5,2,1.5,100,100,100,60,100,caster,0,facing)
+
+
+
+
+//call EffectCreateAndMove(true,EffectID[1401],GetRandomReal(0,360),1.5,2.5,0.6,100,100,100,40,0,n0,0,facing)
+call EffectCreateAndMove(true,EffectID[1046],GetRandomReal(0,360),1.25,1,1,100,100,100,80,0,caster,0,facing)
+//call EffectCreateAndMove(true,EffectID[207],GetRandomReal(0,360),1.5,2,1,100,100,100,40,0,n0,0,facing)
+call EffectCreateAndMove(true,EffectID[28],GetRandomReal(0,360),1.5,1.25,0.5,60,60,100,0,50,caster,0,facing)
+
+
+
+
+
+endif
+
+if time>0.02 then
+call MoveUnit(caster,LoadUnitHandle(HH,id,20),0,facing)
+call SetUnitFlyHeight(Dummy,GetUnitFlyHeight(caster),0)
+
+
+
+if CheckUnitInvisible(caster)==true then
+if GetUnitAbilityLevel(LoadUnitHandle(HH,id,20),'A0A1')==0 then
+call UnitAddAbility(LoadUnitHandle(HH,id,20),'A0A1')
+endif
+else
+if GetUnitAbilityLevel(LoadUnitHandle(HH,id,20),'A0A1')==1 then
+call UnitRemoveAbility(LoadUnitHandle(HH,id,20),'A0A1')
+endif
+endif
+endif
+
+endif
+
+set caster=null
+set Dummy=null
+endfunction
+function Accelerator_G_Act takes unit caster returns nothing
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+local real x0=GetUnitX(caster)
+local real y0=GetUnitY(caster)
+
+call SaveUnitHandle(HH,id,1,caster)
+
+call SaveReal(HH,id,8,GetUnitAbilityLevel(caster,'AccG')*0.5+4.5)
+
+call TimerStart(t,0.02,true,function Accelerator_G_Act2)
+set t=null
+endfunction
+//AcceleratorDG_End
+//VegittoT_Start
+function Vegitto_T_Act2 takes nothing returns nothing
+local integer id=GetHandleId(GetExpiredTimer())
+local unit caster=LoadUnitHandle(HH,id,1)
+local unit Dummy=LoadUnitHandle(HH,id,20)
+local real facing=LoadReal(HH,id,3)
+local group gr=LoadGroupHandle(HH,id,4)
+local real time=LoadReal(HH,id,5)
+local real time1=LoadReal(HH,id,6)
+local real time2=LoadReal(HH,id,18)
+local real x0=GetUnitX(caster)
+local real y0=GetUnitY(caster)
+local real x1=LoadReal(HH,id,11)
+local real y1=LoadReal(HH,id,12)
+local real damage=LoadReal(HH,id,15)
+local real dist=SR(x0,y0,x1,y1)
+set time=time+0.02
+call SaveReal(HH,id,5,time)
+if time>2.5 then
+call SetUnitFlyHeight(caster,0,GetUnitFlyHeight(caster))
+call PauseUnit(caster,false)
+call SetUnitPathing(caster,true)
+call SetUnitInvulnerable(caster,false)
+call UnitSpeed(caster,1)
+call GroupClear(gr)
+call DestroyGroup(gr)
+if LoadUnitHandle(HH,id,20)!=null then
+call RemoveUnit(LoadUnitHandle(HH,id,20))
+call SaveUnitHandle(HH,id,20,null)
+endif
+call PauseTimer(GetExpiredTimer())
+call FlushChildHashtable(HH,id)
+call DestroyTimer(GetExpiredTimer())
+else
+if time<1.5 then
+call PauseUnit(caster,true)
+call SetUnitPathing(caster,false)
+call SetUnitInvulnerable(caster,true)
+endif
+if time==0.02 then
+call SaveEffectHandle(HH,id,10,AddSpecialEffectTarget(EffectID[523],caster,"hand right"))
+call UnitAddAbility(caster,'Amrf')
+call UnitRemoveAbility(caster,'Amrf')
+
+
+if GetRandomInt(0,100) < 50 then
+    if LoadBoolean(HH,GetHandleId(GetLocalPlayer()), SOUND_LANGUAGE )==true then
+        set soundplay=CreateSound("Sound\\Music\\mp3Music\\FinalKamehameha2-2.mp3",false,false,true,12700,12700,"")
+    else
+        set soundplay=CreateSound("Sound\\Music\\mp3Music\\Vegitto\\FinalKamehameha2-2-jap.mp3",false,false,true,12700,12700,"")
+    endif
+else
+    if LoadBoolean(HH,GetHandleId(GetLocalPlayer()), SOUND_LANGUAGE )==true then
+        set soundplay=CreateSound("Sound\\Music\\mp3Music\\FinalKamehameha2-1.mp3",false,false,true,12700,12700,"")
+    else
+        set soundplay=CreateSound("Sound\\Music\\mp3Music\\Vegitto\\FinalKamehameha2-1-jap.mp3",false,false,true,12700,12700,"")
+    endif
+endif
+call StartSound(soundplay)
+////call KillSoundWhenDone(soundplay)
+
+
+call DestroyEffect(AddSpecialEffectTarget(EffectID[82],caster,"hand right"))
+call SetUnitAnimationByIndex(caster,4)
+call UnitSpeed(caster,0.5)
+endif
+if time==0.02 or time==0.2 or time==0.4 or time==0.6 or time==0.8 or time==1 or time==1.2 or time==1.4 or time==1.6 or time==1.8 or time==2 or time==2.2 then
+call EffectCreateAndMove(true,EffectID[23],facing,1,1.25,0.4,60,60,100,20,0,caster,0,facing)
+call EffectCreateAndMove90(true,EffectID[82],GetRandomReal(0,360),1,1.25,1.5,100,100,100,80,100,caster,0,facing)
+call EffectCreateAndMove90(true,EffectID[82],GetRandomReal(0,360),1,1.25,1.5,100,100,100,80,100,caster,0,facing)
+call EffectCreateAndMove(true,EffectID[1704],GetRandomReal(0,360),1.5,1.5,1,100,100,100,0,100,caster,0,facing)
+call EffectCreateAndMove90(true,EffectID[1716],facing+180,1,3,0.75,100,100,100,0,150,caster,0,facing)
+endif
+if time<0.5 then
+call SetUnitFlyHeight(caster,GetUnitFlyHeight(caster)+32,0)
+if dist<1000 then
+call MoveUnit(caster,caster,-60,facing)
+endif
+endif
+if time==0.9 then
+call SetUnitFlyHeight(caster,800,0)
+set n0=CreateUnit(GetOwningPlayer(caster),'045e',GetUnitX(caster),GetUnitY(caster),facing)
+call SetUnitModel(n0,EffectID[1482])
+call UnitSize(n0,0.3,1,1)
+call SetUnitFlyHeight(n0,850,0)
+call UnitColor(n0,100,100,100,0)
+call UnitSpeed(n0,0.8)
+call MoveUnit(caster,n0,100,facing)
+call SaveUnitHandle(HH,id,21,n0)
+call MyRemoveUnit(n0,2)
+set n0=null
+endif
+if time==1 then
+if LoadEffectHandle(HH,id,10)!=null then
+call DestroyEffect(LoadEffectHandle(HH,id,10))
+call SaveEffectHandle(HH,id,10,null)
+endif
+call EffectCreateAndMove45(true,EffectID[15],facing,1.5,1.25,1.5,100,100,100,20,0,caster,100,facing)
+set n0=CreateUnit(GetOwningPlayer(caster),'e000',x1,y1,facing)
+call UnitSize(n0,2.5,1,1)
+call SetUnitFlyHeight(n0,150,0)
+call UnitColor(n0,100,100,100,0)
+call UnitSpeed(n0,1)
+call SaveUnitHandle(HH,id,20,n0)
+set n0=null
+endif
+if time>1 then
+set time1=time1+0.02
+if time1==0.02 or time1==0.04 or time1==0.06 or time1==0.08 or time1==0.1 or time==0.12 or time1==0.14 or time1==0.16 or time1==0.2 then
+call EffectCreateAndMove90(true,EffectID[82],GetRandomReal(0,360),1.5,GetRandomReal(4,4.5),GetRandomReal(1,2),100,100,100,GetRandomReal(80,90),200,Dummy,-50,facing)
+endif
+if time1>=0.2 or time==1.02 then
+call EffectCreateAndMove(true,EffectID[48],GetRandomReal(0,360),1,5,1,100,100,100,40,50,Dummy,0,facing)
+call EffectCreateAndMove(true,EffectID[44],GetRandomReal(0,360),1,3.25,1,100,100,100,40,0,Dummy,0,facing)
+call EffectCreateAndMove(true,EffectID[23],GetRandomReal(0,360),1,2,1,60,60,100,20,0,Dummy,0,facing)
+call EffectCreateAndMove(true,EffectID[292],GetRandomReal(0,360),1,6,0.8,100,100,100,0,150,Dummy,0,facing)
+call EffectCreateAndMoveAn(true,EffectID[870],GetRandomReal(0,360),1.5,5,1,100,100,100,100,0,Dummy,0,facing,2)
+call EffectCreateAndMoveAn(true,EffectID[753],facing,1,4.5,0.5,100,100,100,70,150,Dummy,0,facing,1)
+call EffectCreateAndMove(true,EffectID[1416],facing,1,2,0.75,80,80,100,60,0,Dummy,0,facing)
+call EffectCreateAndMove(true,EffectID[574],GetRandomInt(0,360),1,4,2,100,100,100,60,150,Dummy,0,GetRandomInt(0,360))
+set time1=0
+endif
+call SaveReal(HH,id,6,time1)
+call GroupClear(G)
+call GroupEnumUnitsInRange(G,x1,y1,700,Base)
+loop
+set n0=FirstOfGroup(G)
+exitwhen n0==null
+if IsUnitInGroup(n0,gr)==false and Condition_Base_Random(caster,n0)then
+call GroupAddUnit(gr,n0)
+call DamageU(false,caster,n0,damage)
+endif
+call GroupRemoveUnit(G,n0)
+endloop
+call SaveGroupHandle(HH,id,4,gr)
+call GroupClear(G)
+endif
+endif
+set caster=null
+set gr=null
+set Dummy=null
+endfunction
+function Vegitto_T_Act takes unit caster,real x1,real y1 returns nothing
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+local real x0=GetUnitX(caster)
+local real y0=GetUnitY(caster)
+local real facing=Angle2(x0,y0,x1,y1)
+local real damage=GetHeroAgi(caster,true)*10
+local real dist=SR(x0,y0,x1,y1)
+call SaveUnitHandle(HH,id,1,caster)
+call SaveReal(HH,id,3,facing)
+call PauseUnit(caster,true)
+if dist>1000 then
+set x1=PolX(x0,1000,facing)
+set y1=PolY(y0,1000,facing)
+endif
+call SaveGroupHandle(HH,id,4,CreateGroup())
+call SaveInteger(HH,id,25,GetRandomInt(1,2))
+call SaveReal(HH,id,11,x1)
+call SaveReal(HH,id,12,y1)
+call SaveReal(HH,id,8,dist)
+call SaveReal(HH,id,15,damage)
+call TimerStart(t,0.02,true,function Vegitto_T_Act2)
+set t=null
+endfunction
+//VegittoT_End
 function AbilitiesForChoice_Cond takes nothing returns boolean
-    local boolean cond1=GetSpellAbilityId()=='RsQ1' or GetSpellAbilityId()=='RsQ2' or GetSpellAbilityId()=='RsQ3' or GetSpellAbilityId()=='RsW1' or GetSpellAbilityId()=='RsW2' or GetSpellAbilityId()=='RsE1' or GetSpellAbilityId()=='RsR1' or GetSpellAbilityId()=='RsR2' or GetSpellAbilityId()=='RsT1' or GetSpellAbilityId()=='RsD1' or GetSpellAbilityId()=='RsD2' or GetSpellAbilityId()=='RsD3' or GetSpellAbilityId()=='RsF1' or GetSpellAbilityId()=='RsF2' or GetSpellAbilityId()=='RsF3' or GetSpellAbilityId()=='RsG1' or GetSpellAbilityId()=='GinG' or GetSpellAbilityId()=='LamF' or GetSpellAbilityId()=='SiD1' or GetSpellAbilityId()=='AKQ1' or GetSpellAbilityId()=='AKW1' or GetSpellAbilityId()=='AKE1' or GetSpellAbilityId()=='AKR1' or GetSpellAbilityId()=='AKT1' or GetSpellAbilityId()=='AKF1' or GetSpellAbilityId()=='AKG1' or GetSpellAbilityId()=='GrQ1' or GetSpellAbilityId()=='GrW1' or GetSpellAbilityId()=='GrE1' or GetSpellAbilityId()=='GrR1' or GetSpellAbilityId()=='GrT1' or GetSpellAbilityId()=='GrF1' or GetSpellAbilityId()=='GrG2' or GetSpellAbilityId()=='UKD1' or GetSpellAbilityId()=='BuuG' or GetSpellAbilityId()=='GSQ1' or GetSpellAbilityId()=='GSQ2' or GetSpellAbilityId()=='GSW1' or GetSpellAbilityId()=='GSE1' or GetSpellAbilityId()=='GSE2' or GetSpellAbilityId()=='GSF1' or GetSpellAbilityId()=='GSF2' or GetSpellAbilityId()=='GSG1' or GetSpellAbilityId()=='GSR1' or GetSpellAbilityId()=='GST1' or GetSpellAbilityId()=='GST2' or GetSpellAbilityId()=='GST3' or GetSpellAbilityId()=='SHG1' or GetSpellAbilityId()=='CelF' or GetSpellAbilityId()=='CelG' or GetSpellAbilityId()=='CelT'
+    local boolean cond1=GetSpellAbilityId()=='RsQ1' or GetSpellAbilityId()=='RsQ2' or GetSpellAbilityId()=='RsQ3' or GetSpellAbilityId()=='RsW1' or GetSpellAbilityId()=='RsW2' or GetSpellAbilityId()=='RsE1' or GetSpellAbilityId()=='RsR1' or GetSpellAbilityId()=='RsR2' or GetSpellAbilityId()=='RsT1' or GetSpellAbilityId()=='RsD1' or GetSpellAbilityId()=='RsD2' or GetSpellAbilityId()=='RsD3' or GetSpellAbilityId()=='RsF1' or GetSpellAbilityId()=='RsF2' or GetSpellAbilityId()=='RsF3' or GetSpellAbilityId()=='RsG1' or GetSpellAbilityId()=='GinG' or GetSpellAbilityId()=='LamF' or GetSpellAbilityId()=='SiD1' or GetSpellAbilityId()=='AKQ1' or GetSpellAbilityId()=='AKW1' or GetSpellAbilityId()=='AKE1' or GetSpellAbilityId()=='AKR1' or GetSpellAbilityId()=='AKT1' or GetSpellAbilityId()=='AKF1' or GetSpellAbilityId()=='AKG1' or GetSpellAbilityId()=='GrQ1' or GetSpellAbilityId()=='GrW1' or GetSpellAbilityId()=='GrE1' or GetSpellAbilityId()=='GrR1' or GetSpellAbilityId()=='GrT1' or GetSpellAbilityId()=='GrF1' or GetSpellAbilityId()=='GrG2' or GetSpellAbilityId()=='UKD1' or GetSpellAbilityId()=='BuuG' or GetSpellAbilityId()=='GSQ1' or GetSpellAbilityId()=='GSQ2' or GetSpellAbilityId()=='GSW1' or GetSpellAbilityId()=='GSE1' or GetSpellAbilityId()=='GSE2' or GetSpellAbilityId()=='GSF1' or GetSpellAbilityId()=='GSF2' or GetSpellAbilityId()=='GSG1' or GetSpellAbilityId()=='GSR1' or GetSpellAbilityId()=='GST1' or GetSpellAbilityId()=='GST2' or GetSpellAbilityId()=='GST3' or GetSpellAbilityId()=='SHG1' or GetSpellAbilityId()=='CelF' or GetSpellAbilityId()=='CelG' or GetSpellAbilityId()=='CelT' or GetSpellAbilityId()=='AccD' or GetSpellAbilityId()=='AccG' or GetSpellAbilityId()=='A0IV'
     if cond1 then
         return true
     else
@@ -233545,6 +233928,15 @@ endif
 if GetSpellAbilityId()=='RsG1' then
 call Roshi_G_Act(caster,x1,y1)
 endif
+if GetSpellAbilityId()=='AccG' then
+call Accelerator_G_Act(caster)
+endif
+if GetSpellAbilityId()=='AccD' then
+call Accelerator_D_Act(caster,x1,y1)
+endif
+if GetSpellAbilityId()=='A0IV' then
+call Vegitto_T_Act(caster,x1,y1)
+endif
 set caster=null
     set target=null
 endfunction
@@ -233566,7 +233958,7 @@ endfunction
 
 
 function AbilitiesForChoiceLearn_Cond takes nothing returns boolean
-return GetLearnedSkill()=='RsT1' or GetLearnedSkill()=='RsR1' or GetLearnedSkill()=='RsE1' or GetLearnedSkill()=='GSE1' or GetLearnedSkill()=='A0BG' or GetLearnedSkill()=='A0K4'
+return GetLearnedSkill()=='A0QU' or GetLearnedSkill()=='RsT1' or GetLearnedSkill()=='RsR1' or GetLearnedSkill()=='RsE1' or GetLearnedSkill()=='GSE1' or GetLearnedSkill()=='A0BG' or GetLearnedSkill()=='A0K4'
 endfunction
 
 function AbilitiesForChoiceLearn_Act takes nothing returns nothing//моя прокачка абилок для всех героев разберешься
@@ -233615,6 +234007,12 @@ endif
 
 
 //Roshi5End
+//accelerator5Start
+set lvl='A0QU'
+if GetLearnedSkill()== lvl then
+call SetUnitAbilityLevel(caster,'AccG',GetUnitAbilityLevel(caster,lvl))
+endif
+//Accelerator5End
 set caster=null
 set skillPlayer=null
 endfunction
