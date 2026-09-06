@@ -228916,14 +228916,23 @@ call MoveUnit(caster,LoadUnitHandle(HH,id,20),0,GetUnitFacing(caster))
 endif
 
 if GetUnitAbilityLevel(caster,'SiTS')==0 and time1<8 then
+// Дух убираем только если он ещё жив, и сразу гасим ключ. Эта ветка ставит
+// time1=8.02, поэтому следующим тиком сюда приходит ветка time1>=8 и раньше
+// делала второй RemoveUnit по мёртвому хэндлу — это и есть FATAL при выходе.
+if LoadUnitHandle(HH,id,20)!=null then
 call RemoveUnit(LoadUnitHandle(HH,id,20))
+call SaveUnitHandle(HH,id,20,null)
+endif
 call SaveReal(HH,id,6,8.02)
 call UnitRemoveAbility(caster,'BSiT')
 endif
 
 if time1>=8 then
 call SaveReal(HH,id,6,8.02)
+if LoadUnitHandle(HH,id,20)!=null then
 call RemoveUnit(LoadUnitHandle(HH,id,20))
+call SaveUnitHandle(HH,id,20,null)
+endif
 
 if GetUnitAbilityLevel(caster,'SiTS')>0 then
 call UnitRemoveAbility(caster,'SiTS')
@@ -232957,7 +232966,10 @@ call SaveReal(HH,id,5,time)
 if dist>1000 then
 call UnitSpeed(LoadUnitHandle(HH,id,20),1)
 call SetUnitAnimationByIndex(LoadUnitHandle(HH,id,20),2)
+if LoadUnitHandle(HH,id,22)!=null then
 call RemoveUnit(LoadUnitHandle(HH,id,22))
+call SaveUnitHandle(HH,id,22,null)
+endif
 call GroupClear(gr)
 call DestroyGroup(gr)
 call PauseUnit(caster,false)
@@ -233068,7 +233080,10 @@ call SaveBoolean(HH,GetHandleId(target),TARGET_ABILITY,true)
 call PauseUnit(target,true)
 endif
 if time>5.1 then
+if LoadUnitHandle(HH,id,22)!=null then
 call RemoveUnit(LoadUnitHandle(HH,id,22))
+call SaveUnitHandle(HH,id,22,null)
+endif
 call UnitSpeed(LoadUnitHandle(HH,id,20),1)
 call SetUnitAnimationByIndex(LoadUnitHandle(HH,id,20),2)
 call EffectCreateAndMove(true,EffectID[40],GetRandomReal(0,360),1,1.5,1,100,100,100,0,100,target,0,facing)
