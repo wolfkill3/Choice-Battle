@@ -224773,28 +224773,28 @@ function Garp_T_Act2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
 local unit caster=LoadUnitHandle(HH,id,1)
-local unit shot=LoadUnitHandle(HH,id,20)
+local trigger tt=LoadTriggerHandle(HH,id,StringHash("GarpAim"))
 local real time=LoadReal(HH,id,5)+0.02
 local real time1=LoadReal(HH,id,6)
 // у молний свой ритм, поэтому отдельный счётчик (ключ 9)
 local real time3=LoadReal(HH,id,9)+0.02
-// СВОИ высоты (ключи 18 и 19): у юнита её не спрашиваем, чужая способность
-// может подкрутить полётную высоту и фаза сломается
+// СВОЯ высота (ключ 18): у юнита её не спрашиваем, чужая способность
+// может подкрутить полётную и фаза сломается
 local real high=LoadReal(HH,id,18)
-local real high2=LoadReal(HH,id,19)
 local real x0=LoadReal(HH,id,11)
 local real y0=LoadReal(HH,id,12)
+// точка удара: обновляется, пока идёт заряд
+local real tx=LoadReal(HH,id,21)
+local real ty=LoadReal(HH,id,22)
 local real facing=LoadReal(HH,id,3)
 local group g2
 local integer i=0
 local real ang=0
 local real rad=0
+local real step=0
 local real dmg=11.0*I2R(GetHeroStr(caster,true))
 call SaveReal(HH,id,5,time)
 if UnitIsAlive(caster)==false or udg_B==false then
-if shot!=null then
-call RemoveUnit(shot)
-endif
 call SetUnitInvulnerable(caster,false)
 call UnitRemoveAbility(caster,'A1FU')
 call UnitRemoveAbility(caster,'B00A')
@@ -224804,20 +224804,17 @@ if LoadFogModifierHandle(HH,id,25)!=null then
 call DestroyFogModifier(LoadFogModifierHandle(HH,id,25))
 call SaveFogModifierHandle(HH,id,25,null)
 endif
+// триггер наводки живёт ровно столько, сколько каст
+if LoadTriggerHandle(HH,id,StringHash("GarpAim"))!=null then
+call DestroyTrigger(LoadTriggerHandle(HH,id,StringHash("GarpAim")))
+call SaveTriggerHandle(HH,id,StringHash("GarpAim"),null)
+endif
 call PauseTimer(t)
 call DestroyTimer(t)
 call FlushChildHashtable(HH,id)
 else
-// Место держим жёстко: Гарп не в паузе (иначе не отыграет анимацию удара),
-// а рут A1FU не мешает приказу шагнуть до того, как он сработает.
-call SetUnitX(caster,x0)
-call SetUnitY(caster,y0)
 // МОЛНИИ идут всю способность: по 2 штуки каждые 0.3 c.
-// Было 4 штуки каждые 0.15 — за 4 секунды скила это под сотню дамми,
-// слишком густо и лишняя нагрузка.
-// high01 гасит высоту кастера, иначе молнии висят на высоте Гарпа
-// и поднимаются вместе с ним — помощник считает высоту от носителя.
-// Пока он на земле — тесно вокруг него, после взлёта — по всей зоне урона.
+// high01 гасит высоту кастера, иначе они висят на его высоте.
 call SaveReal(HH,id,9,time3)
 if time3>=0.30 then
 call SaveReal(HH,id,9,0)
@@ -224834,14 +224831,11 @@ set i=i+1
 endloop
 endif
 if time1<=0 then
-// 0) ПОДГОТОВКА: 0.5 c стоит на земле, вокруг бьют молнии
+// 0) ПОДГОТОВКА: 0.5 c на земле, вокруг бьют молнии
+call SetUnitX(caster,x0)
+call SetUnitY(caster,y0)
 if time>=0.5 then
-// КОСМОС расстилается под ним и РАСТЁТ до зоны урона за время взлёта.
-// Рост даёт UnitScale(u,начало,конец,время) — это анимированный рост
-// собственным таймером, а не масштаб по осям (тот — UnitSize).
-// Поэтому дамми делаем руками: помощник ставит размер разом через UnitSize.
-// Меш модели ±3376, значит 0.74 = ровно 2500.
-// реплика на прыжке (3.08 c) — играет весь взлёт и горение космоса
+// КОСМОС расстилается под ним и растёт до зоны урона за время взлёта.
 call Garp_Sound("Sound\\Music\\mp3Music\\Garp_T_Cast.mp3")
 // неуязвим, пока висит в воздухе; снимается на приземлении
 call SetUnitInvulnerable(caster,true)
@@ -224854,78 +224848,70 @@ call SaveReal(HH,id,6,1)
 call SaveReal(HH,id,5,0)
 endif
 elseif time1<=1 then
-// 1) ВЗЛЁТ: 800 за 1.2 c — ровно столько же растёт космос под ним
+// 1) ВЗЛЁТ: 800 за 1.2 c
+call SetUnitX(caster,x0)
+call SetUnitY(caster,y0)
 set high=high+13.34
 if high>=800.0 then
 set high=800.0
-// КОСМОС ВСПЫХИВАЕТ НА САМОМ ГАРПЕ.
-// У модели ЕДИНСТВЕННАЯ секвенция birth, а дамми по умолчанию играет Stand —
-// без принудительного индекса анимации не было бы видно ничего.
 call EffectCreateAndMoveAn(true,"Garp\\Garp_TCosmos.mdx",GetRandomReal(0,360),2.0,1.2,1.0,100,100,100,0,0,caster,0,facing,0)
+// реплика на светящейся руке — играет весь заряд
+call Garp_Sound("Sound\\Music\\mp3Music\\Garp_T_Hand.mp3")
+call SetUnitAnimationByIndex(caster,9)
 call SaveReal(HH,id,6,2)
 call SaveReal(HH,id,5,0)
 endif
 call SaveReal(HH,id,18,high)
 call SetUnitFlyHeight(caster,high,0)
 elseif time1<=2 then
-// 2) КОСМОС ГОРИТ НА НЁМ 1.3 c — вместе со взлётом (1.2) это ровно
-// длина реплики прыжка, иначе её обрывает реплика руки
+// 2) ЗАРЯД 3 c: висит и целится. Точку перечитываем каждый тик —
+// игрок крутит её приказами, как у R Целла.
+call SetUnitX(caster,x0)
+call SetUnitY(caster,y0)
 call SetUnitFlyHeight(caster,high,0)
-if time>=1.3 then
-// ЗВЕЗДА НА РУКЕ. У модели ТОЛЬКО Death: она играет в момент уничтожения,
-// поэтому вешаем на руку и тут же снимаем — иначе не покажется вообще.
-// Индекс 11 у Garp.mdx — безымянная секвенция '0', это замах ВВЕРХ.
-// Берём 9 ('spell four') — то же движение, которым Q швыряет врага ВНИЗ.
-// Секвенции модели: 0 Stand, 1 Stand Ready, 2 Attack, 3 Spell One,
-// 4 Walk First, 5 Death, 6 Walk Second, 7 spell two, 8 spell three,
-// 9 spell four, 10 spell, далее 11..18 — безымянные '0'..'7'.
-call SetUnitAnimationByIndex(caster,9)
-// реплика на светящейся руке (3.11 c) — до самого удара об землю
-call Garp_Sound("Sound\\Music\\mp3Music\\Garp_T_Hand.mp3")
+if tt!=null then
+set tx=LoadReal(h,GetHandleId(tt),StringHash("PointX"))
+set ty=LoadReal(h,GetHandleId(tt),StringHash("PointY"))
+call SaveReal(HH,id,21,tx)
+call SaveReal(HH,id,22,ty)
+endif
+set facing=Angle2(x0,y0,tx,ty)
+call SaveReal(HH,id,3,facing)
+call SetUnitFacing(caster,facing)
+// звезда на руке: у модели только Death, поэтому вешаем и сразу снимаем
+if time3>=0.28 then
 set EFF=AddSpecialEffectTarget("Garp\\Garp_TStar.mdx",caster,"hand right")
+if EFF!=null then
 call SetSpecialEffectScale(EFF,2.0)
 call RemoveEffect(EFF,0.02,true,CreateTimer())
+endif
+endif
+if time>=3.0 then
+// точка выбрана окончательно: дальше ныряем именно в неё
 call SaveReal(HH,id,6,3)
 call SaveReal(HH,id,5,0)
+call SetUnitAnimationByIndex(caster,9)
 endif
 elseif time1<=3 then
-// 3) ЗАМАХ СО ЗВЕЗДОЙ 1.8 c — вместе с выстрелом (0.4) это длина
-// реплики про руку
-call SetUnitFlyHeight(caster,high,0)
-if time>=1.8 then
-// звук R здесь глушил бы реплику руки — убран
-// ВЫСТРЕЛ УХОДИТ В ЗЕМЛЮ. Дамми '270e' (maxPitch -270) смотрит носом ВНИЗ.
-// У наклонных дамми в abilList только Aloc,Avul,Arav — Amrf надо добавить
-// руками, иначе SetUnitFlyHeight по ним молча не сработает.
-set n0=CreateUnit(GetOwningPlayer(caster),'270e',x0,y0,facing)
-call SetUnitModel(n0,"Garp\\Garp_TShot.mdx")
-call UnitAddAbility(n0,'Amrf')
-call UnitRemoveAbility(n0,'Amrf')
-call UnitSize(n0,2.0,2.0,2.0)
-call SetUnitFlyHeight(n0,high,0)
-call SetUnitPathing(n0,false)
-call SaveUnitHandle(HH,id,20,n0)
-set n0=null
-call SaveReal(HH,id,19,high)
-call SaveReal(HH,id,6,4)
-call SaveReal(HH,id,5,0)
+// 3) НЫРОК: сам Гарп летит в выбранную точку за 0.45 c
+set step=time/0.45
+if step>1.0 then
+set step=1.0
 endif
-elseif time1<=4 then
-// 4) ПАДЕНИЕ: выстрел и сам Гарп идут вниз ОДНОВРЕМЕННО и с одной скоростью,
-// поэтому он приземляется ровно в момент удара, а не спускается отдельно после.
-// 55 за тик вместо 40: с 800 это ~0.29 c.
-set high=high-55.0
-if high<0.0 then
-set high=0.0
-endif
+call SetUnitX(caster,x0+(tx-x0)*step)
+call SetUnitY(caster,y0+(ty-y0)*step)
+set high=800.0*(1.0-step)
 call SaveReal(HH,id,18,high)
 call SetUnitFlyHeight(caster,high,0)
-set high2=high2-55.0
-if high2<=12.0 then
-set high2=0.0
-set high=0.0
-call SaveReal(HH,id,18,0.0)
+call EffectCreateAndMove(true,"Garp\\Garp_QAir.mdx",facing,0.6,1.4,1.0,100,100,100,0,0,caster,0,facing)
+if step>=1.0 then
+// бьём в точке падения, а не в точке взлёта
+set x0=tx
+set y0=ty
+call SaveReal(HH,id,11,x0)
+call SaveReal(HH,id,12,y0)
 call SetUnitFlyHeight(caster,0.0,0)
+call SaveReal(HH,id,18,0.0)
 call SetUnitInvulnerable(caster,false)
 // ===== ИМПАКТ: урон по всей зоне 2500 =====
 call EffectCreateAndMove(true,EffectID[105],GetRandomReal(0,360),1.5,1.1,1.0,100,100,100,50,0,caster,0,facing)
@@ -224980,19 +224966,14 @@ call PushTimed(n0,ang,14,20)
 endloop
 call DestroyGroup(g2)
 set n0=null
-call SaveReal(HH,id,6,5)
+call SaveReal(HH,id,6,4)
 call SaveReal(HH,id,5,0)
 endif
-call SaveReal(HH,id,19,high2)
-call SetUnitFlyHeight(shot,high2,0)
 else
-// 5) ОТЫГРЫШ: Гарп уже на земле, держим 0.3 c, чтобы удар прочитался
-set high=0.0
-call SetUnitFlyHeight(caster,0.0,0)
-if time1>=5 and time>=0.30 then
-if shot!=null then
-call RemoveUnit(shot)
-endif
+// 4) ОТЫГРЫШ: держим 0.3 c, чтобы удар прочитался
+call SetUnitX(caster,x0)
+call SetUnitY(caster,y0)
+if time>=0.3 then
 call SetUnitInvulnerable(caster,false)
 call UnitRemoveAbility(caster,'A1FU')
 call UnitRemoveAbility(caster,'B00A')
@@ -225002,6 +224983,11 @@ if LoadFogModifierHandle(HH,id,25)!=null then
 call DestroyFogModifier(LoadFogModifierHandle(HH,id,25))
 call SaveFogModifierHandle(HH,id,25,null)
 endif
+// триггер наводки живёт ровно столько, сколько каст
+if LoadTriggerHandle(HH,id,StringHash("GarpAim"))!=null then
+call DestroyTrigger(LoadTriggerHandle(HH,id,StringHash("GarpAim")))
+call SaveTriggerHandle(HH,id,StringHash("GarpAim"),null)
+endif
 call PauseTimer(t)
 call DestroyTimer(t)
 call FlushChildHashtable(HH,id)
@@ -225009,7 +224995,7 @@ endif
 endif
 endif
 set caster=null
-set shot=null
+set tt=null
 set g2=null
 set t=null
 endfunction
@@ -225243,10 +225229,11 @@ call TimerStart(t,0.04,true,function Garp_G_Act2)
 set p=null
 set t=null
 endfunction
-function Garp_T_Act takes unit caster returns nothing
+function Garp_T_Act takes unit caster,real x1,real y1 returns nothing
 local timer t=CreateTimer()
 local integer id=GetHandleId(t)
-local real facing=GetUnitFacing(caster)
+local trigger tt=CreateTrigger()
+local real facing=Angle2(GetUnitX(caster),GetUnitY(caster),x1,y1)
 call SaveUnitHandle(HH,id,1,caster)
 call SaveReal(HH,id,3,facing)
 call SaveReal(HH,id,11,GetUnitX(caster))
@@ -225262,8 +225249,20 @@ call Garp_Sound("Sound\\Music\\mp3Music\\Garp_F_Cast.mp3")
 // вижн на всю зону, пока идёт удар
 call SaveFogModifierHandle(HH,id,25,CreateFogModifierRadius(GetOwningPlayer(caster),FOG_OF_WAR_VISIBLE,GetUnitX(caster),GetUnitY(caster),2500,true,true))
 call FogModifierStart(LoadFogModifierHandle(HH,id,25))
+// НАВОДКА, как у R Целла: приказы игрока пишут точку в PointX/PointY,
+// тик заряда её перечитывает. Обработчик чужой, но универсальный —
+// он же ограничивает дальность 2000 от Гарпа.
+call SaveTriggerHandle(HH,id,StringHash("GarpAim"),tt)
+call SaveReal(h,GetHandleId(tt),StringHash("PointX"),x1)
+call SaveReal(h,GetHandleId(tt),StringHash("PointY"),y1)
+call SaveReal(HH,id,21,x1)
+call SaveReal(HH,id,22,y1)
+call TriggerRegisterUnitEvent(tt,caster,EVENT_UNIT_ISSUED_TARGET_ORDER)
+call TriggerRegisterUnitEvent(tt,caster,EVENT_UNIT_ISSUED_POINT_ORDER)
+call TriggerAddAction(tt,function CellKamehamehaStopOrders)
 call TimerStart(t,0.02,true,function Garp_T_Act2)
 set caster=null
+set tt=null
 set t=null
 endfunction
 //Garp1end
@@ -233311,7 +233310,7 @@ function AbilitiesForChoice_Act takes nothing returns nothing//моя функц
         call Garp_F_Act(caster)
     endif
     if GetSpellAbilityId()=='GrT1' then
-        call Garp_T_Act(caster)
+        call Garp_T_Act(caster,x1,y1)
     endif
 //Garp1end
 if GetSpellAbilityId()=='AKQ1' then
