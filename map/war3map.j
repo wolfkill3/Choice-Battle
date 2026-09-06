@@ -224829,17 +224829,17 @@ exitwhen i>1
 if time1<=0 then
 set rad=GetRandomReal(150,600)
 else
-set rad=GetRandomReal(200,2500)
+set rad=GetRandomReal(200,1500)
 endif
 call EffectCreateAndMove(true,"Garp\\Garp_BlueHoleFX.mdx",GetRandomReal(0,360),1.5,GetRandomReal(0.5,1.1),1.0,100,100,100,0,-GetUnitFlyHeight(caster),caster,rad,GetRandomReal(0,360))
 set i=i+1
 endloop
 endif
 if time1<=0 then
-// 0) ПОДГОТОВКА: 0.5 c на земле, вокруг бьют молнии
+// 0) ПОДГОТОВКА: 0.2 c на земле, вокруг бьют молнии
 call SetUnitX(caster,x0)
 call SetUnitY(caster,y0)
-if time>=0.5 then
+if time>=0.2 then
 // КОСМОС расстилается под ним и растёт до зоны урона за время взлёта.
 call Garp_Sound("Sound\\Music\\mp3Music\\Garp_T_Cast.mp3")
 // неуязвим, пока висит в воздухе; снимается на приземлении
@@ -224869,7 +224869,7 @@ endif
 call SaveReal(HH,id,18,high)
 call SetUnitFlyHeight(caster,high,0)
 elseif time1<=2 then
-// 2) ЗАРЯД 3 c: висит и целится. Точку перечитываем каждый тик —
+// 2) ЗАРЯД 2.2 c: висит и целится. Точку перечитываем каждый тик —
 // игрок крутит её приказами, как у R Целла.
 call SetUnitX(caster,x0)
 call SetUnitY(caster,y0)
@@ -224891,11 +224891,19 @@ call SetSpecialEffectScale(EFF,2.0)
 call RemoveEffect(EFF,0.02,true,CreateTimer())
 endif
 endif
-if time>=3.0 then
+if time>=2.2 then
 // точка выбрана окончательно: дальше ныряем именно в неё.
 call SaveReal(HH,id,6,3)
 call SaveReal(HH,id,5,0)
 call SetUnitAnimationByIndex(caster,9)
+// Рывок вниз начинается со вспышки на самом Гарпе (как у T Джирена).
+// Держим 0.8 c по таймеру — хэндл нигде не храним, второго удаления нет.
+set EFF=AddSpecialEffectTarget("GokuAuraBurstRed.mdl",caster,"origin")
+if EFF!=null then
+call SetSpecialEffectScale(EFF,2.2)
+call SetSpecialEffectVertexColour(EFF,120,170,255,255)
+call RemoveEffect(EFF,0.8,true,CreateTimer())
+endif
 endif
 elseif time1<=3 then
 // 3) НЫРОК: сам Гарп летит в выбранную точку за 0.45 c
@@ -224908,7 +224916,21 @@ call SetUnitY(caster,y0+(ty-y0)*step)
 set high=800.0*(1.0-step)
 call SaveReal(HH,id,18,high)
 call SetUnitFlyHeight(caster,high,0)
-call EffectCreateAndMove(true,"Garp\\Garp_QAir.mdx",facing,0.6,1.4,1.0,100,100,100,0,0,caster,0,facing)
+// Шлейф: кольца ударной волны прямо в воздухе, каждые 0.06 c (ключ 50
+// свободен во всём коде Гарпа). Раньше тут сыпался Garp_QAir — дев сказал,
+// что полёт выглядит плохо.
+set rad=LoadReal(HH,id,50)+0.02
+call SaveReal(HH,id,50,rad)
+if rad>=0.06 then
+call SaveReal(HH,id,50,0)
+set EFF=AddSpecialEffect("JirenShock2.mdl",GetUnitX(caster),GetUnitY(caster))
+if EFF!=null then
+call SetSpecialEffectScale(EFF,1.5)
+call SetSpecialEffectZ(EFF,GetUnitZCustom(caster)+high)
+call SetSpecialEffectVertexColour(EFF,120,170,255,255)
+call DestroyEffect(EFF)
+endif
+endif
 if step>=1.0 then
 // бьём в точке падения, а не в точке взлёта
 set x0=tx
@@ -224923,7 +224945,7 @@ call SetUnitInvulnerable(caster,false)
 call PauseUnit(caster,true)
 // «Импакто» — ровно на касании земли
 call Garp_Sound("Sound\\Music\\mp3Music\\Garp_T_Hand.mp3")
-// ===== ИМПАКТ: урон по всей зоне 2500 =====
+// ===== ИМПАКТ: урон по всей зоне 1500 =====
 call EffectCreateAndMove(true,EffectID[105],GetRandomReal(0,360),1.5,1.1,1.0,100,100,100,50,0,caster,0,facing)
 // Удар об землю. Модель не встаёт ни на дамми с моделью, ни на точку —
 // работает только якорный e200 + эффект на нём (проверено на Q).
@@ -224937,55 +224959,63 @@ set n0=CreateUnit(GetOwningPlayer(caster),'e200',x0,y0,GetRandomReal(0,360))
 call SetUnitFlyHeight(n0,0,0)
 set EFF=AddSpecialEffectTarget("Garp\\Garp_QImpact.mdx",n0,"origin")
 if EFF!=null then
-call SetSpecialEffectScale(EFF,4.2)
+call SetSpecialEffectScale(EFF,8.4)
 call RemoveEffect(EFF,3.0,true,CreateTimer())
 endif
 call MyRemoveUnit(n0,3.1)
 set n0=null
-// Три кольца воронок — 800 / 1600 / 2400, по 8 штук: зона урона видна целиком
+// Три кольца воронок — 500 / 1000 / 1500, по 8 штук: зона урона видна целиком
 set i=0
 loop
 exitwhen i>23
 set ang=I2R(i)*45.0
-call EffectCreateAndMoveAn(true,"Garp\\Garp_WCrater.mdx",ang,2.0,0.7+0.35*I2R(i/8),1.0,100,100,100,0,-GetUnitFlyHeight(caster),caster,800.0+800.0*I2R(i/8),ang,0)
+call EffectCreateAndMoveAn(true,"Garp\\Garp_WCrater.mdx",ang,2.0,0.7+0.35*I2R(i/8),1.0,100,100,100,0,-GetUnitFlyHeight(caster),caster,500.0+500.0*I2R(i/8),ang,0)
 set i=i+1
 endloop
-// ВТОРАЯ ВОЛНА, как во втором взрыве T Карны: расходящееся кольцо
-// вокруг точки падения. Рецепт взят из KarnaT2_Pillar_WaitTime.
-set n0=CreateUnit(GetOwningPlayer(caster),'dM32',x0,y0,facing)
-call UnitScale(n0,0.5,10.0,0.5)
-call UnitApplyTimedLife(n0,'BTLF',2.5)
-// MyRemoveUnit не нужен: юнита уже убил таймер жизни,
-// второе удаление бьёт по мёртвому хэндлу и роняет игру
-set n0=CreateUnit(GetOwningPlayer(caster),'dR41',x0,y0,facing)
-call SetUnitScale(n0,1.8,1.8,1.8)
-call SetUnitTimeScale(n0,0.7)
-call MyRemoveUnit(n0,5.0)
-set n0=CreateUnit(GetOwningPlayer(caster),'d128',x0,y0,facing)
-call SetUnitScale(n0,2.5,2.5,2.5)
-call UnitApplyTimedLife(n0,'BTLF',2.5)
-// MyRemoveUnit не нужен: юнита уже убил таймер жизни,
-// второе удаление бьёт по мёртвому хэндлу и роняет игру
-set n0=CreateUnit(GetOwningPlayer(caster),'d129',x0,y0,facing)
-call SetUnitScale(n0,2.2,2.2,2.2)
-call MyRemoveUnit(n0,3.0)
-set i=0
-loop
-exitwhen i>2
-set n0=CreateUnit(GetOwningPlayer(caster),'d127',x0,y0,I2R(GetRandomInt(0,360)))
-call SetUnitScale(n0,2.2+1.5*I2R(i),2.2+1.5*I2R(i),2.2+1.5*I2R(i))
-call SetUnitVertexColor(n0,255,150,0,255)
-call UnitApplyTimedLife(n0,'BTLF',2.5)
-// MyRemoveUnit не нужен: юнита уже убил таймер жизни,
-// второе удаление бьёт по мёртвому хэндлу и роняет игру
-set i=i+1
-endloop
+// ВЗРЫВ. Собран по T Джирена (JirenT_Fly2): эффекты ставятся по
+// координате и сразу отпускаются — ни дамми, ни хранимых хэндлов,
+// поэтому второго удаления тут быть не может.
+call UnitApplyTimedLife(CreateUnit(GetOwningPlayer(caster),'e0KO',x0,y0,GetRandomReal(0,360)),'BHwe',3)
+set EFF=AddSpecialEffect("JirenShock2.mdl",x0,y0)
+if EFF!=null then
+call SetSpecialEffectScale(EFF,10.0)
+call SetSpecialEffectVertexColour(EFF,120,170,255,255)
+call DestroyEffect(EFF)
+endif
+set EFF=AddSpecialEffect("[choice]JirenEarthBlast.mdl",x0,y0)
+if EFF!=null then
+call SetSpecialEffectScale(EFF,7.0)
+call DestroyEffect(EFF)
+endif
+set EFF=AddSpecialEffect("JirenExplosion2.mdl",x0,y0)
+if EFF!=null then
+call SetSpecialEffectScale(EFF,4.4)
+call DestroyEffect(EFF)
+endif
+set EFF=AddSpecialEffect("JirenTExplosion.mdl",x0,y0)
+if EFF!=null then
+call SetSpecialEffectScale(EFF,3.2)
+call SetSpecialEffectTimeScale(EFF,1.4)
+call DestroyEffect(EFF)
+endif
+set EFF=AddSpecialEffect("GokuAuraBurstRed.mdl",x0,y0)
+if EFF!=null then
+call SetSpecialEffectScale(EFF,5.0)
+call SetSpecialEffectVertexColour(EFF,120,170,255,255)
+call RemoveEffect(EFF,0.8,true,CreateTimer())
+endif
+// Дымовой гриб из R Дейдары: 'eo9N' = Effect-Smoke1 на высоте 150.
+// Только таймер жизни, MyRemoveUnit не вешаем.
+set n0=CreateUnit(GetOwningPlayer(caster),'eo9N',x0,y0,GetRandomReal(0,360))
+call SetUnitFlyHeight(n0,250,0)
+call SetUnitScale(n0,8.0,8.0,8.0)
+call UnitApplyTimedLife(n0,'BTLF',1)
 set n0=null
-call ShakeCamera(2.0,15)
+call ShakeCamera(2.5,25)
 // ПРОХОД 1: собрать цели, ПРОХОД 2: урон — чтобы чужие функции не сбили перебор
 set g2=CreateGroup()
 call GroupClear(G)
-call GroupEnumUnitsInRange(G,x0,y0,2500,Base)
+call GroupEnumUnitsInRange(G,x0,y0,1500,Base)
 loop
 set n0=FirstOfGroup(G)
 exitwhen n0==null
