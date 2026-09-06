@@ -224795,6 +224795,7 @@ local real step=0
 local real dmg=11.0*I2R(GetHeroStr(caster,true))
 call SaveReal(HH,id,5,time)
 if UnitIsAlive(caster)==false or udg_B==false then
+call PauseUnit(caster,false)
 call SetUnitInvulnerable(caster,false)
 call UnitRemoveAbility(caster,'A1FU')
 call UnitRemoveAbility(caster,'B00A')
@@ -224804,8 +224805,12 @@ if LoadFogModifierHandle(HH,id,25)!=null then
 call DestroyFogModifier(LoadFogModifierHandle(HH,id,25))
 call SaveFogModifierHandle(HH,id,25,null)
 endif
-// триггер наводки живёт ровно столько, сколько каст
+// Триггер наводки живёт ровно столько, сколько каст. Порядок важен и
+// взят у Целла: сперва чистим его ветку хэштейбла, потом снимаем
+// действия и только затем уничтожаем — иначе фатал.
 if LoadTriggerHandle(HH,id,StringHash("GarpAim"))!=null then
+call FlushChildHashtable(h,GetHandleId(LoadTriggerHandle(HH,id,StringHash("GarpAim"))))
+call TriggerClearActions(LoadTriggerHandle(HH,id,StringHash("GarpAim")))
 call DestroyTrigger(LoadTriggerHandle(HH,id,StringHash("GarpAim")))
 call SaveTriggerHandle(HH,id,StringHash("GarpAim"),null)
 endif
@@ -224855,8 +224860,8 @@ set high=high+13.34
 if high>=800.0 then
 set high=800.0
 call EffectCreateAndMoveAn(true,"Garp\\Garp_TCosmos.mdx",GetRandomReal(0,360),2.0,1.2,1.0,100,100,100,0,0,caster,0,facing,0)
-// реплика на светящейся руке — играет весь заряд
-call Garp_Sound("Sound\\Music\\mp3Music\\Garp_T_Hand.mp3")
+// реплика на КРАСНУЮ РУКУ — звучит весь заряд
+call Garp_Sound("Sound\\Music\\mp3Music\\Garp_T_Hit.mp3")
 call SetUnitAnimationByIndex(caster,9)
 call SaveReal(HH,id,6,2)
 call SaveReal(HH,id,5,0)
@@ -224887,7 +224892,7 @@ call RemoveEffect(EFF,0.02,true,CreateTimer())
 endif
 endif
 if time>=3.0 then
-// точка выбрана окончательно: дальше ныряем именно в неё
+// точка выбрана окончательно: дальше ныряем именно в неё.
 call SaveReal(HH,id,6,3)
 call SaveReal(HH,id,5,0)
 call SetUnitAnimationByIndex(caster,9)
@@ -224913,6 +224918,11 @@ call SaveReal(HH,id,12,y0)
 call SetUnitFlyHeight(caster,0.0,0)
 call SaveReal(HH,id,18,0.0)
 call SetUnitInvulnerable(caster,false)
+// На земле держим паузой: рут не мешает развернуть героя приказом,
+// а он должен стоять, пока доигрывают эффекты.
+call PauseUnit(caster,true)
+// «Импакто» — ровно на касании земли
+call Garp_Sound("Sound\\Music\\mp3Music\\Garp_T_Hand.mp3")
 // ===== ИМПАКТ: урон по всей зоне 2500 =====
 call EffectCreateAndMove(true,EffectID[105],GetRandomReal(0,360),1.5,1.1,1.0,100,100,100,50,0,caster,0,facing)
 // Удар об землю. Модель не встаёт ни на дамми с моделью, ни на точку —
@@ -224920,7 +224930,6 @@ call EffectCreateAndMove(true,EffectID[105],GetRandomReal(0,360),1.5,1.1,1.0,100
 // Масштаб 6.0: на 2.5 пользователь сказал «слишком маленький».
 set n0=CreateUnit(GetOwningPlayer(caster),'e200',x0,y0,GetRandomReal(0,360))
 // реплика на ударе об землю (3.40 c) — доигрывает после способности
-call Garp_Sound("Sound\\Music\\mp3Music\\Garp_T_Hit.mp3")
 // Рисуется ТОЛЬКО так (перебор ещё в 4.5): дамми с этой моделью
 // (SetUnitModel, он же EffectCreateAndMove) и AddSpecialEffect по
 // координате её не показывают — только эффект на невидимом якоре.
@@ -224941,7 +224950,38 @@ set ang=I2R(i)*45.0
 call EffectCreateAndMoveAn(true,"Garp\\Garp_WCrater.mdx",ang,2.0,0.7+0.35*I2R(i/8),1.0,100,100,100,0,-GetUnitFlyHeight(caster),caster,800.0+800.0*I2R(i/8),ang,0)
 set i=i+1
 endloop
-call ShakeCamera(1.2,10)
+// ВТОРАЯ ВОЛНА, как во втором взрыве T Карны: расходящееся кольцо
+// вокруг точки падения. Рецепт взят из KarnaT2_Pillar_WaitTime.
+set n0=CreateUnit(GetOwningPlayer(caster),'dM32',x0,y0,facing)
+call UnitScale(n0,0.5,10.0,0.5)
+call UnitApplyTimedLife(n0,'BTLF',2.5)
+// MyRemoveUnit не нужен: юнита уже убил таймер жизни,
+// второе удаление бьёт по мёртвому хэндлу и роняет игру
+set n0=CreateUnit(GetOwningPlayer(caster),'dR41',x0,y0,facing)
+call SetUnitScale(n0,1.8,1.8,1.8)
+call SetUnitTimeScale(n0,0.7)
+call MyRemoveUnit(n0,5.0)
+set n0=CreateUnit(GetOwningPlayer(caster),'d128',x0,y0,facing)
+call SetUnitScale(n0,2.5,2.5,2.5)
+call UnitApplyTimedLife(n0,'BTLF',2.5)
+// MyRemoveUnit не нужен: юнита уже убил таймер жизни,
+// второе удаление бьёт по мёртвому хэндлу и роняет игру
+set n0=CreateUnit(GetOwningPlayer(caster),'d129',x0,y0,facing)
+call SetUnitScale(n0,2.2,2.2,2.2)
+call MyRemoveUnit(n0,3.0)
+set i=0
+loop
+exitwhen i>2
+set n0=CreateUnit(GetOwningPlayer(caster),'d127',x0,y0,I2R(GetRandomInt(0,360)))
+call SetUnitScale(n0,2.2+1.5*I2R(i),2.2+1.5*I2R(i),2.2+1.5*I2R(i))
+call SetUnitVertexColor(n0,255,150,0,255)
+call UnitApplyTimedLife(n0,'BTLF',2.5)
+// MyRemoveUnit не нужен: юнита уже убил таймер жизни,
+// второе удаление бьёт по мёртвому хэндлу и роняет игру
+set i=i+1
+endloop
+set n0=null
+call ShakeCamera(2.0,15)
 // ПРОХОД 1: собрать цели, ПРОХОД 2: урон — чтобы чужие функции не сбили перебор
 set g2=CreateGroup()
 call GroupClear(G)
@@ -224970,10 +225010,13 @@ call SaveReal(HH,id,6,4)
 call SaveReal(HH,id,5,0)
 endif
 else
-// 4) ОТЫГРЫШ: держим 0.3 c, чтобы удар прочитался
+// 4) ОТЫГРЫШ: стоит на месте 2.5 c — столько доигрывают эффекты
+// взрыва (кольцо растёт полсекунды, вспышки живут 2.5).
 call SetUnitX(caster,x0)
 call SetUnitY(caster,y0)
-if time>=0.3 then
+call SetUnitFlyHeight(caster,0.0,0)
+if time>=2.5 then
+call PauseUnit(caster,false)
 call SetUnitInvulnerable(caster,false)
 call UnitRemoveAbility(caster,'A1FU')
 call UnitRemoveAbility(caster,'B00A')
@@ -224983,8 +225026,12 @@ if LoadFogModifierHandle(HH,id,25)!=null then
 call DestroyFogModifier(LoadFogModifierHandle(HH,id,25))
 call SaveFogModifierHandle(HH,id,25,null)
 endif
-// триггер наводки живёт ровно столько, сколько каст
+// Триггер наводки живёт ровно столько, сколько каст. Порядок важен и
+// взят у Целла: сперва чистим его ветку хэштейбла, потом снимаем
+// действия и только затем уничтожаем — иначе фатал.
 if LoadTriggerHandle(HH,id,StringHash("GarpAim"))!=null then
+call FlushChildHashtable(h,GetHandleId(LoadTriggerHandle(HH,id,StringHash("GarpAim"))))
+call TriggerClearActions(LoadTriggerHandle(HH,id,StringHash("GarpAim")))
 call DestroyTrigger(LoadTriggerHandle(HH,id,StringHash("GarpAim")))
 call SaveTriggerHandle(HH,id,StringHash("GarpAim"),null)
 endif
@@ -225229,6 +225276,41 @@ call TimerStart(t,0.04,true,function Garp_G_Act2)
 set p=null
 set t=null
 endfunction
+function Garp_T_Aim2 takes nothing returns nothing
+local timer t=GetExpiredTimer()
+local integer id=GetHandleId(t)
+local unit u=LoadUnitHandle(h,id,0)
+if u!=null and UnitIsAlive(u) then
+call IssueImmediateOrder(u,"stop")
+call SetUnitAnimationByIndex(u,9)
+call SetUnitFacing(u,Atan2(LoadReal(h,id,1)-GetUnitY(u),LoadReal(h,id,2)-GetUnitX(u))*bj_RADTODEG)
+endif
+call FlushChildHashtable(h,id)
+call DestroyTimer(t)
+set u=null
+set t=null
+endfunction
+
+// Наводка Гарпа. Отличие от обработчика Целла одно: у него дальность
+// зажата 2000 от кастера, а Гарп должен прыгать в любую точку карты.
+function Garp_T_Aim takes nothing returns nothing
+local unit u=GetOrderedUnit()
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+call SaveUnitHandle(h,id,0,u)
+if GetOrderTargetUnit()==null then
+call SaveReal(h,id,2,GetOrderPointX())
+call SaveReal(h,id,1,GetOrderPointY())
+else
+call SaveReal(h,id,2,GetUnitX(GetOrderTargetUnit()))
+call SaveReal(h,id,1,GetUnitY(GetOrderTargetUnit()))
+endif
+call SaveReal(h,GetHandleId(GetTriggeringTrigger()),StringHash("PointX"),LoadReal(h,id,2))
+call SaveReal(h,GetHandleId(GetTriggeringTrigger()),StringHash("PointY"),LoadReal(h,id,1))
+call TimerStart(t,0.001,false,function Garp_T_Aim2)
+set u=null
+set t=null
+endfunction
 function Garp_T_Act takes unit caster,real x1,real y1 returns nothing
 local timer t=CreateTimer()
 local integer id=GetHandleId(t)
@@ -225259,7 +225341,7 @@ call SaveReal(HH,id,21,x1)
 call SaveReal(HH,id,22,y1)
 call TriggerRegisterUnitEvent(tt,caster,EVENT_UNIT_ISSUED_TARGET_ORDER)
 call TriggerRegisterUnitEvent(tt,caster,EVENT_UNIT_ISSUED_POINT_ORDER)
-call TriggerAddAction(tt,function CellKamehamehaStopOrders)
+call TriggerAddAction(tt,function Garp_T_Aim)
 call TimerStart(t,0.02,true,function Garp_T_Act2)
 set caster=null
 set tt=null
