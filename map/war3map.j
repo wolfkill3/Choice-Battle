@@ -228540,7 +228540,7 @@ if GetSpellAbilityId()=='SiQ1' then
 call PauseUnit(caster,true)
 if SignumGBuff then
 call SaveReal(HH,id,19,3300)
-call SaveReal(HH,id,15,75+(1+GetUnitAbilityLevel(caster,'SiQ1'))*GetHeroAgi(caster,true)+2*( GetUnitBaseDamageByIndex( caster ,0)+GetUnitBonusDamageByIndex( caster ,0) )   )
+call SaveReal(HH,id,15,75+(1+GetUnitAbilityLevel(caster,'SiQ1'))*GetHeroAgi(caster,true)+1.5*( GetUnitBaseDamageByIndex( caster ,0)+GetUnitBonusDamageByIndex( caster ,0) )   )
 else
 call SaveReal(HH,id,15,75+(1+GetUnitAbilityLevel(caster,'SiQ1'))*GetHeroAgi(caster,true))
 call SaveReal(HH,id,19,2300)
@@ -228631,7 +228631,7 @@ if GetSpellAbilityId()=='SiQ2' then
 
 if SignumGBuff then
 call SaveReal(HH,id,19,3300)
-call SaveReal(HH,id,15,(2+GetUnitAbilityLevel(caster,'SiQ2'))*GetHeroAgi(caster,true)+1.5*( GetUnitBaseDamageByIndex( caster ,0)+GetUnitBonusDamageByIndex( caster ,0) ))
+call SaveReal(HH,id,15,(2+GetUnitAbilityLevel(caster,'SiQ2'))*GetHeroAgi(caster,true)+1*( GetUnitBaseDamageByIndex( caster ,0)+GetUnitBonusDamageByIndex( caster ,0) ))
 else
 call SaveReal(HH,id,15,(2+GetUnitAbilityLevel(caster,'SiQ2'))*GetHeroAgi(caster,true))
 call SaveReal(HH,id,19,2300)
