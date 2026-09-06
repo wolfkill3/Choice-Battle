@@ -75342,7 +75342,7 @@ call SetSpecialEffectOrientation(EFF,a*bj_RADTODEG,(PitchA*0.9*bj_RADTODEG)-90,0
 call SetSpecialEffectScale(EFF , 0.3)
 call SetSpecialEffectZ(EFF,z+40-PitchA*bj_RADTODEG*0.25)
 call SetSpecialEffectTimeScale(EFF,2)
-call RemoveEffect(EFF,0.5,true,CreateTimer())
+call RemoveEffect(EFF,0.7,true,CreateTimer())
 // ВЗРЫВ из 4.5 (Vegitto_T_Act2): восемь слоёв на невидимом якоре.
 // EffectCreateAndMove вешает эффект на юнит, поэтому в точке попадания
 // ставим такой же якорь e000, как там: размер 2.5, высота 150.
@@ -75350,7 +75350,7 @@ set n=CreateUnit(p,'e000',x1,y1,a*bj_RADTODEG)
 call UnitSize(n,2.5,1,1)
 call SetUnitFlyHeight(n,150,0)
 call UnitColor(n,100,100,100,0)
-call MyRemoveUnit(n,2)
+call MyRemoveUnit(n,1.3)
 call EffectCreateAndMove(true,EffectID[48],GetRandomReal(0,360),1,5,1,100,100,100,40,50,n,0,a*bj_RADTODEG)
 call EffectCreateAndMove(true,EffectID[44],GetRandomReal(0,360),1,3.25,1,100,100,100,40,0,n,0,a*bj_RADTODEG)
 call EffectCreateAndMove(true,EffectID[23],GetRandomReal(0,360),1,2,1,60,60,100,20,0,n,0,a*bj_RADTODEG)
