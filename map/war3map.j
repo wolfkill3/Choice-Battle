@@ -225800,10 +225800,7 @@ if Condition_Base(GetOwningPlayer(caster),n0) and  IsUnitInGroup(n0,gr)==false a
 
 
 call myCustomDamage(caster,n0,damage,false,false,null,null,null)
-
-if GetUnitAbilityLevel(n0,'AKQ2')==0 then
-call UnitAddDebuffTimed(n0,'AKQ2','BKQ2',2+GetUnitAbilityLevel(caster,'AKQ1')*0.6)
-endif
+call SlowUnit(caster,n0,0.5,0.5,2+GetUnitAbilityLevel(caster,'AKQ1')*0.6,2,false)
 call GroupAddUnit(gr,n0)
 endif
 call GroupRemoveUnit(G,n0)
