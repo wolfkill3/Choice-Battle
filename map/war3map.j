@@ -225031,7 +225031,6 @@ exitwhen n0==null
 call GroupRemoveUnit(g2,n0)
 set ang=Angle2(x0,y0,GetUnitX(n0),GetUnitY(n0))
 call myCustomDamage(caster,n0,dmg,false,false,null,null,null)
-call SetControlToUnit(caster,n0,1.5,"stun")
 call PushTimed(n0,ang,14,20)
 endloop
 call DestroyGroup(g2)
@@ -225331,12 +225330,18 @@ call SaveUnitHandle(h,id,0,u)
 if GetOrderTargetUnit()==null then
 call SaveReal(h,id,2,GetOrderPointX())
 call SaveReal(h,id,1,GetOrderPointY())
+call SaveReal(h,GetHandleId(GetTriggeringTrigger()), StringHash("PointX"), GetOrderPointX())
+call SaveReal(h,GetHandleId(GetTriggeringTrigger()), StringHash("PointY"), GetOrderPointY())
 else
 call SaveReal(h,id,2,GetUnitX(GetOrderTargetUnit()))
 call SaveReal(h,id,1,GetUnitY(GetOrderTargetUnit()))
+call SaveReal(h,GetHandleId(GetTriggeringTrigger()), StringHash("PointX"), GetUnitX(GetOrderTargetUnit()))
+call SaveReal(h,GetHandleId(GetTriggeringTrigger()), StringHash("PointY"), GetUnitY(GetOrderTargetUnit()))
 endif
-call SaveReal(h,GetHandleId(GetTriggeringTrigger()),StringHash("PointX"),LoadReal(h,id,2))
-call SaveReal(h,GetHandleId(GetTriggeringTrigger()),StringHash("PointY"),LoadReal(h,id,1))
+if SquareRootPoint(GetUnitX(u), GetUnitY(u), LoadReal(h,id,2), LoadReal(h,id,1))>3000 then
+    call SaveReal(h,GetHandleId(GetTriggeringTrigger()), StringHash("PointX"), GetUnitX(u)+3000*Cos(AP(GetUnitX(u), GetUnitY(u), LoadReal(h,id,2), LoadReal(h,id,1))))
+    call SaveReal(h,GetHandleId(GetTriggeringTrigger()), StringHash("PointY"), GetUnitY(u)+3000*Sin(AP(GetUnitX(u), GetUnitY(u), LoadReal(h,id,2), LoadReal(h,id,1))))
+endif
 call TimerStart(t,0.001,false,function Garp_T_Aim2)
 set u=null
 set t=null
@@ -228570,7 +228575,7 @@ if GetSpellAbilityId()=='SiQ1' then
 call PauseUnit(caster,true)
 if SignumGBuff then
 call SaveReal(HH,id,19,3300)
-call SaveReal(HH,id,15,75+(1+GetUnitAbilityLevel(caster,'SiQ1'))*GetHeroAgi(caster,true)+2*( GetUnitBaseDamageByIndex( caster ,0)+GetUnitBonusDamageByIndex( caster ,0) )   )
+call SaveReal(HH,id,15,75+(1+GetUnitAbilityLevel(caster,'SiQ1'))*GetHeroAgi(caster,true)+1.5*( GetUnitBaseDamageByIndex( caster ,0)+GetUnitBonusDamageByIndex( caster ,0) )   )
 else
 call SaveReal(HH,id,15,75+(1+GetUnitAbilityLevel(caster,'SiQ1'))*GetHeroAgi(caster,true))
 call SaveReal(HH,id,19,2300)
@@ -228661,7 +228666,7 @@ if GetSpellAbilityId()=='SiQ2' then
 
 if SignumGBuff then
 call SaveReal(HH,id,19,3300)
-call SaveReal(HH,id,15,(2+GetUnitAbilityLevel(caster,'SiQ2'))*GetHeroAgi(caster,true)+1.5*( GetUnitBaseDamageByIndex( caster ,0)+GetUnitBonusDamageByIndex( caster ,0) ))
+call SaveReal(HH,id,15,(2+GetUnitAbilityLevel(caster,'SiQ2'))*GetHeroAgi(caster,true)+1*( GetUnitBaseDamageByIndex( caster ,0)+GetUnitBonusDamageByIndex( caster ,0) ))
 else
 call SaveReal(HH,id,15,(2+GetUnitAbilityLevel(caster,'SiQ2'))*GetHeroAgi(caster,true))
 call SaveReal(HH,id,19,2300)
