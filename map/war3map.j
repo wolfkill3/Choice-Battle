@@ -223983,7 +223983,7 @@ local real damage=150+(GetUnitAbilityLevel(caster,'FSF1'))*GetHeroInt(caster,tru
 local real dist=SR(x0,y0,x1,y1)
 call SaveUnitHandle(HH,id,1,caster)
 call SaveReal(HH,id,3,facing)
-set dist=1000+200*GetUnitAbilityLevel(caster,'FSF1')
+set dist=1200//1000+200*GetUnitAbilityLevel(caster,'FSF1')
 //call SetUnitAbilityLevel(caster,'FSF1',5)
 //call SetUnitAbilityLevel(caster,'FSG1',5)
 call SaveReal(HH,id,8,dist)
