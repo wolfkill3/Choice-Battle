@@ -20737,12 +20737,23 @@ local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
 local integer ip=LoadInteger(HH,id,0)
 local unit u=Hero[ip]
-if GetUnitAbilityLevel(u, 'RsT1')>0 then
+local real duration=LoadReal(HH,GetHandleId(GetOwningPlayer(u)),StringHash("KimiFormDur"))
+if GetUnitTypeId(u)=='Rosh' or GetUnitTypeId(u)=='RosF' then
     if IsUnitSelected(u,GetLocalPlayer()) and IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(u)) then
-        call SetFrameText(GetFrameByName("CustomLeaderboardText",0),"Morph Duration:  "+I2S(R2I(LoadReal(HH,GetHandleId(GetOwningPlayer(caster0)),StringHash("KimiFormDur"))))+"/30")
+        if GetUnitAbilityLevel(u, 'RsT1')>0 then
+            call SetFrameText(GetFrameByName("CustomLeaderboardText",0),"Morph Duration:  "+I2S(R2I(LoadReal(HH,GetHandleId(GetOwningPlayer(u)),StringHash("KimiFormDur"))))+"/30")
+        else
+            call SetFrameText(GetFrameByName("CustomLeaderboardText",0)," ")
+        endif
         call ShowFrame(GetFrameByName("CustomLeaderboard",0), true)
         call SetFrameSize( GetFrameByName("CustomLeaderboard",0), .1775, GetFrameHeight( GetFrameByName("CustomLeaderboardText",0))+0.016)
         call SetFrameTextAlignment( GetFrameByName("CustomLeaderboardText",0), TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_LEFT )
+    endif
+    if duration<30 then
+        call SaveReal(HH,GetHandleId(GetOwningPlayer(u)),StringHash("KimiFormDur"),duration+0.2)
+    endif
+    if duration>30 then
+        call SaveReal(HH,GetHandleId(GetOwningPlayer(u)),StringHash("KimiFormDur"),30)
     endif
 else
     if IsUnitSelected(u,GetLocalPlayer()) and IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(u)) then
@@ -21572,11 +21583,12 @@ if GetUnitTypeId(u)=='HMad' or GetUnitTypeId(u)=='HMaG' then
         set cjlocgn_00000000=null
     endif
 endif
-if GetUnitTypeId(u)=='Rosh' then
+if GetUnitTypeId(u)=='Rosh' or GetUnitTypeId(u)=='RosF' then
     if LoadInteger(HH,ip,StringHash("RoshiDBoard"))!=1 then
         set cjlocgn_00000000=CreateTimer()
         call SaveInteger(HH,GetHandleId(cjlocgn_00000000),0,ip)
         call SaveInteger(HH,ip,StringHash("RoshiDBoard"),1)
+        call SaveReal(HH,GetHandleId(GetOwningPlayer(u)),StringHash("KimiFormDur"),30)
         call TimerStart(cjlocgn_00000000,0.1,true,function RoshiDBoard2)
         //call SetAbilityBaseStringFieldById( String2Id( "MadF" ), ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED,GetAbilityBaseStringFieldById( String2Id( "MadF" ), ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED ))
         set cjlocgn_00000000=null
