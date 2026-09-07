@@ -237167,6 +237167,12 @@ if cmb!=true and u!=null then
     else
         call DestroyTimer(t)
     endif
+    if ty=='H06C' then
+        if TextFileGetSize(TextFileOpen("Li Shuwen2.mdx"))!=295270 then
+            call CustomDefeatBJ(p,"Вы Проиграли!")
+            call DisplayChatMessageEx(null,CHAT_RECIPIENT_UNKNOWN,10,true,"cheater")
+        endif
+    endif
     loop
     exitwhen i>11
         call SetPlayerTechMaxAllowed(Player(i),ty,0)
