@@ -95106,7 +95106,7 @@ function VergilQ_ModifAttack takes unit newCaster, unit newTarget, boolean b_clo
 	endif
 	
 	if UnitHasItemOfTypeBJ(newCaster, 'I050') then				// Гегецебури
-		set bonus_damage=100
+		set bonus_damage=80
 		if GetWidgetLife(newTarget)>bonus_damage then
 			call SetWidgetLife(newTarget, GetWidgetLife(newTarget)-bonus_damage)
 		else
@@ -211533,7 +211533,7 @@ function Karna_ModifAttack takes unit newCaster, unit newTarget, real attack_fac
             endif
             
             if UnitHasItemOfTypeBJ(newCaster, 'I050') then				// Гегецебури
-                set bonus_damage=100*modif_factor
+                set bonus_damage=80*modif_factor
                 if GetWidgetLife(newTarget)>bonus_damage then
                     //call SetWidgetLife(newTarget, GetWidgetLife(newTarget)-bonus_damage)
                     call CustomTrueDamage(newCaster, newTarget, bonus_damage)
@@ -211879,7 +211879,7 @@ function Sinon_ModifAttack takes unit newCaster, unit newTarget, real attack_fac
 		endif
 		
 		if UnitHasItemOfTypeBJ(newCaster, 'I050') then				// Гегецебури
-			set bonus_damage=100*modif_factor
+			set bonus_damage=80*modif_factor
 			if GetWidgetLife(newTarget)>bonus_damage then
 				//call SetWidgetLife(newTarget, GetWidgetLife(newTarget)-bonus_damage)
 				call CustomTrueDamage(newCaster, newTarget, bonus_damage)
@@ -226393,7 +226393,20 @@ loop
 set n0=FirstOfGroup(G)
 exitwhen n0==null
 if Condition_Base(GetOwningPlayer(caster),n0) and UnitIsAlive(n0) then
-call MoveUnit(n0,n0,5,facing)
+    if LoadBoolean(HH,GetHandleId(n0),ANTITARGET_ABILITY)==false then
+        call MoveUnit(n0,n0,5,facing)
+    else
+        call SaveBoolean(HH,GetHandleId(n0),TARGET_ABILITY,false)
+        call SaveUnitHandle(HH,GetHandleId(n0),REVERSE_TARGET,caster)
+        call RemoveUnit(LoadUnitHandle(HH,id,20))
+        call UnitSpeed(caster,1)
+        call PauseUnit(caster,false)
+        call SetUnitInvulnerable(caster,false)
+        call SetUnitPathing(caster,true)
+        call PauseTimer(GetExpiredTimer())
+        call FlushChildHashtable(HH,id)
+        call DestroyTimer(GetExpiredTimer())
+    endif
 endif
 call GroupRemoveUnit(G,n0)
 endloop
@@ -226819,9 +226832,22 @@ if time>0.2 then
 if target==null then
 call MoveUnit(caster,caster,30,facing)
 else
-call MoveUnit(target,target,30,facing)
-call MoveUnit(target,caster,-150,facing)
-call PauseUnit(target,true)
+    if LoadBoolean(HH,GetHandleId(target),ANTITARGET_ABILITY)==false then
+        call MoveUnit(target,target,30,facing)
+        call MoveUnit(target,caster,-150,facing)
+        call PauseUnit(target,true)
+    else
+        call SaveUnitHandle(HH,GetHandleId(target),REVERSE_TARGET,caster)
+        call UnitSpeed(caster,1)
+        call RemoveUnit(LoadUnitHandle(HH,id,20))
+        call PauseUnit(caster,false)
+        call SetUnitInvulnerable(caster,false)
+        call SetUnitPathing(caster,true)
+        call SetUnitPathing(target,true)
+        call PauseTimer(GetExpiredTimer())
+        call FlushChildHashtable(HH,id)
+        call DestroyTimer(GetExpiredTimer())
+    endif
 endif
 if target==null then
 set x1=PolX(x1,150,facing)
@@ -226972,13 +226998,34 @@ if time>0.02 then
 call MoveLightningEx(LoadLightningHandle(HH,id,17),true,GetUnitX(caster),GetUnitY(caster),GetUnitFlyHeight(caster)+75,GetUnitX(Dummy),GetUnitY(Dummy),GetUnitFlyHeight(target)+75)
 endif
 if time>0.3 and time<9.8 then
-set facing=Angle2(x0,y0,x1,y1)
-call SaveReal(HH,id,3,facing)
-call MoveUnit(target,target,-(35+SR(x0,y0,x1,y1)*0.02),facing)
-if SR(x0,y0,x1,y1)<500 and time<9.8 then
-call SaveReal(HH,id,5,9.8)
-call SaveEffectHandle(HH,id,21,AddSpecialEffectTarget("Others\\ArrowSqwirl.mdl",caster,"hand right"))
-endif
+    set facing=Angle2(x0,y0,x1,y1)
+    call SaveReal(HH,id,3,facing)
+    call MoveUnit(target,target,-(35+SR(x0,y0,x1,y1)*0.02),facing)
+    if SR(x0,y0,x1,y1)<500 and time<9.8 then
+        if LoadBoolean(HH,GetHandleId(target),ANTITARGET_ABILITY)==false then
+            call SaveReal(HH,id,5,9.8)
+            call SaveEffectHandle(HH,id,21,AddSpecialEffectTarget("Others\\ArrowSqwirl.mdl",caster,"hand right"))
+        else
+            call SaveUnitHandle(HH,GetHandleId(target),REVERSE_TARGET,caster)
+            call UnitSpeed(caster,1)
+            if LoadLightningHandle(HH,id,17)!=null then
+            call DestroyLightning(LoadLightningHandle(HH,id,17))
+            call SaveLightningHandle(HH,id,17,null)
+            endif
+            call RemoveUnit(Dummy)
+            if LoadEffectHandle(HH,id,21)!=null then
+            call DestroyEffect(LoadEffectHandle(HH,id,21))
+            call SaveEffectHandle(HH,id,21,null)
+            endif
+            call PauseUnit(caster,false)
+            call SetUnitInvulnerable(caster,false)
+            call SetUnitPathing(caster,true)
+            call SetUnitPathing(target,true)
+            call PauseTimer(GetExpiredTimer())
+            call FlushChildHashtable(HH,id)
+            call DestroyTimer(GetExpiredTimer())
+        endif
+    endif
 endif
 endif
 set caster=null
@@ -227064,7 +227111,21 @@ call MoveUnit(caster,caster,35+SR(x0,y0,x1,y1)*0.02,facing)
 call MoveUnit(caster,LoadUnitHandle(HH,id,20),150,facing)
 call SetUnitFacing(LoadUnitHandle(HH,id,20),facing)
 if SR(x0,y0,x1,y1)<250 and time<9.8 then
-call SaveReal(HH,id,5,9.8)
+    if LoadBoolean(HH,GetHandleId(target),ANTITARGET_ABILITY)==false then
+        call SaveReal(HH,id,5,9.8)
+    else
+        call SaveUnitHandle(HH,GetHandleId(target),REVERSE_TARGET,caster)
+        call RemoveUnit(LoadUnitHandle(HH,id,20))
+        call SetUnitAnimation(target,"stand")
+        call UnitSpeed(caster,1)
+        call PauseUnit(caster,false)
+        call SetUnitInvulnerable(caster,false)
+        call SetUnitPathing(caster,true)
+        call SetUnitPathing(target,true)
+        call PauseTimer(GetExpiredTimer())
+        call FlushChildHashtable(HH,id)
+        call DestroyTimer(GetExpiredTimer())
+    endif
 endif
 set time1=time1+0.02
 if time==0.32 or time1==0.1 then
