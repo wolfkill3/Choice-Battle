@@ -100895,7 +100895,7 @@ if time<2.21 and GetAbilityIntegerLevelField(GetUnitAbility(u,'A0RI'), ABILITY_I
                 set dmg=dmg+1*GetHeroStr(u,true)
             endif
             call myCustomDamage(u,c,dmg,false,false,null,null,null)
-            call SetControlToUnit(u,c, 1, "stun")
+            call SetControlToUnit(u,c, 0.75, "stun")
             call SetUnitTimeScale(u,1)
             call SetUnitFlyHeight(u,0,2500)
             call SetUnitInvulnerable(u,false)
