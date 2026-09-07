@@ -20749,7 +20749,7 @@ if GetUnitTypeId(u)=='Rosh' or GetUnitTypeId(u)=='RosF' then
         call SetFrameSize( GetFrameByName("CustomLeaderboard",0), .1775, GetFrameHeight( GetFrameByName("CustomLeaderboardText",0))+0.016)
         call SetFrameTextAlignment( GetFrameByName("CustomLeaderboardText",0), TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_LEFT )
     endif
-    if duration<30 then
+    if duration<30 and GetUnitTypeId(u)=='Rosh' then
         call SaveReal(HH,GetHandleId(GetOwningPlayer(u)),StringHash("KimiFormDur"),duration+0.2)
     endif
     if duration>30 then
@@ -234176,14 +234176,14 @@ if GetSpellAbilityId()=='RsR2' then
 call Roshi_T_R_Act(caster,target)
 endif
 if GetSpellAbilityId()=='RsT1' then
-if target==caster then
-call Roshi_T_Self_Act(caster)
-else
-if GetUnitAbilityLevel(caster,'RsT4')==0 and LoadReal(HH,GetHandleId(GetOwningPlayer(caster)),StringHash("KimiFormDur"))>=10 then
-call Roshi_T_Act(caster)
-else
-call UnitRemoveAbility(caster,'RsT4')
-endif
+    if target==caster then
+        call Roshi_T_Self_Act(caster)
+    else
+        if GetUnitAbilityLevel(caster,'RsT4')==0 and LoadReal(HH,GetHandleId(GetOwningPlayer(caster)),StringHash("KimiFormDur"))>=10 then
+            call Roshi_T_Act(caster)
+        else
+            call UnitRemoveAbility(caster,'RsT4')
+        endif
 endif
 endif
 if GetSpellAbilityId()=='RsD1' then
