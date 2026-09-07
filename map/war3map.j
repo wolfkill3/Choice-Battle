@@ -29454,6 +29454,11 @@ if GetUnitTypeId(u) == 'HHSG' then
     call IssueImmediateOrder(u,"bearform") 
     call UnitRemoveAbility(u, 'HST4')
 endif
+if GetUnitTypeId(u)=='H00E' then
+    Call UnitAddAbility(u, 'AKF3')
+    call IssueImmediateOrder(u, "bearform")
+    call UnitRemoveAbility(u, 'AKF3')
+endif
 if GetUnitTypeId(u) == 'H248' then
     call UnitAddAbility(u, 'SS01')
     call IssueImmediateOrder(u, "bearform")
@@ -168027,9 +168032,16 @@ if time > 0 and time2!=0 and GetWidgetLife(u) > 0.405 and udg_B==true and DU2==t
             call ShowAbility2('A168', false)
             call SaveInteger(HH,id,StringHash("ID"), 25)
         endif
+        if GetUnitTypeId(u)=='H00E' then
+            call UnitAddAbility(u,'AKF2')
+            call IssueImmediateOrder(u,"bearform")
+            call UnitRemoveAbility(u,'AKF2')
+            call CreateModeIndicatorWithPauseForm(u, "war3mapImported\\BTNKimiCursedSeal.blp", 20)
+            call SaveInteger(HH,id,StringHash("ID"), 26)
+        endif
         call CheckUnitBonusRange(u)
     endif
-    if not(TransfID==1 or TransfID==2 or TransfID==3 or TransfID==4 or TransfID==5 or TransfID==6 or TransfID==7 or TransfID==8 or TransfID==9 or TransfID==10 or TransfID==11 or TransfID==12 or TransfID==13 or TransfID==14 or TransfID==15 or TransfID==16 or TransfID==17 or TransfID==18 or TransfID==19 or TransfID==20 or TransfID==21 or TransfID==22 or TransfID==23 or TransfID==24 or TransfID==25) then
+    if not(TransfID==1 or TransfID==2 or TransfID==3 or TransfID==4 or TransfID==5 or TransfID==6 or TransfID==7 or TransfID==8 or TransfID==9 or TransfID==10 or TransfID==11 or TransfID==12 or TransfID==13 or TransfID==14 or TransfID==15 or TransfID==16 or TransfID==17 or TransfID==18 or TransfID==19 or TransfID==20 or TransfID==21 or TransfID==22 or TransfID==23 or TransfID==24 or TransfID==25 or TransfID==26) then
         call SaveInteger(HH,id,TIME_HASH, 0)
     endif
     if TransfID==5 then
@@ -168252,6 +168264,11 @@ else
             call UnitRemoveAbility(u,'B05Y')
             call ShowAbility2('A168', true)
         endif
+        if TransfID==26 then
+            call UnitAddAbility(u, 'AKF3')
+            call IssueImmediateOrder(u, "bearform")
+            call UnitRemoveAbility(u, 'AKF3')
+        endif
         call CheckUnitBonusRange(u)
     endif
     call Clear(id)
@@ -168285,7 +168302,7 @@ else
                     call SaveInteger(HH,id,StringHash("Time2"), 120)
                     call SaveInteger(HH,id,TIME_HASH, 120)
                 else
-                    if GetUnitTypeId(a)=='H04L' or GetUnitTypeId(a)=='H06V' then
+                    if GetUnitTypeId(a)=='H04L' or GetUnitTypeId(a)=='H06V' or GetUnitTypeId(a)=='H00E' then
                         call SaveInteger(HH,id,StringHash("Time2"), 200)
                         call SaveInteger(HH,id,TIME_HASH, 200)
                     else
@@ -223756,7 +223773,7 @@ local real facing=GetUnitFacing(caster)
 set time=time+0.02
 
 
-if time<=0.04 or (IsUnitPaused(caster)==false and GetUnitAbilityLevel(caster,'Avul')==0)  or udg_B==false   then
+if time<=0.04 or IsUnitPaused(caster)==false or udg_B==false   then
 call SaveReal(HH,id,5,time)
 endif
 
@@ -226102,111 +226119,13 @@ function KimimaroChoiceInit takes nothing returns nothing
 //call TriggerAddCondition(gg_trg_LightningPencil,Condition(function LightningPencilCond))
 //call TriggerAddAction(gg_trg_LightningPencil,function LightningPencilCast)
 endfunction
-function KimimaroHeal_Act takes nothing returns nothing
-local integer id=GetHandleId(GetExpiredTimer())
-local unit caster=Hero[LoadInteger(HH,id,16)]//LoadUnitHandle(HH,id,1)
-local real current_hp=GetUnitState(caster,UNIT_STATE_LIFE)
-local real increase_hp=GetHeroStr(caster,true)*0.4
-//local integer morph=LoadInteger(HH,GetHandleId(  caster  ),StringHash("KimiFormDur"))
-local integer morph=LoadInteger(HH,GetHandleId( GetOwningPlayer( caster ) ),StringHash("KimiFormDur"))
-
-//call LeaderboardSetItemValue(LoadLeaderboardHandle(HH,GetHandleId(caster),StringHash("KimimaroFboard")),0,morph)
-call LeaderboardSetItemValue(LoadLeaderboardHandle(HH,GetHandleId( GetOwningPlayer( caster ) ),StringHash("KimimaroFboard")),0,morph)
-if GetUnitTypeId(caster)=='H00E' then
-
-if current_hp>100 then
-//call SetUnitState(caster,UNIT_STATE_LIFE,current_hp-20)
-
-call HealIndicatorFunction(caster,TSH_INDICATOR,-20)
-
-endif
-
-
-
-call LeaderboardSetLabel( LoadLeaderboardHandle(HH,GetHandleId( GetOwningPlayer( caster ) ),StringHash("KimimaroFboard")) , "Kekkei Genkai: Heal - "+I2S( R2I(increase_hp)-20) )
-
-
-
-//call LeaderboardSetLabel( LoadLeaderboardHandle(HH,GetHandleId(caster),StringHash("KimimaroFboard")) , "Kekkei Genkai: Heal - "+I2S( R2I(increase_hp)-20) )
-
-else
-
-//call LeaderboardSetLabel(LoadLeaderboardHandle(HH,GetHandleId(caster),StringHash("KimimaroFboard")) , "Kekkei Genkai: Heal - "+I2S( R2I(increase_hp)  ))
-call LeaderboardSetLabel(LoadLeaderboardHandle(HH,GetHandleId( GetOwningPlayer( caster ) ),StringHash("KimimaroFboard")) , "Kekkei Genkai: Heal - "+I2S( R2I(increase_hp)  ))
-
-endif
-
-
-
-if GetHeroLevel(caster)>12 then
-//call SetUnitState(caster,UNIT_STATE_LIFE,current_hp+increase_hp)
-
-call HealIndicatorFunction(caster,TSH_INDICATOR,increase_hp)
-
-
-endif
-
-
-if GetUnitTypeId( caster )!='H00F' and GetUnitTypeId( caster )!='H00E' then
-
-//if GetUnitTypeId(Hero[GetPlayerId(  GetOwningPlayer( caster )   )])!='H00F' and GetUnitTypeId(Hero[GetPlayerId(  GetOwningPlayer( caster ) )])!='H00E' then
-//call LeaderboardDisplay(LoadLeaderboardHandle(HH,GetHandleId( GetOwningPlayer( caster ) ),StringHash("KimimaroFboard")),false)
-//call DestroyLeaderboard(LoadLeaderboardHandle(HH,GetHandleId( GetOwningPlayer( caster ) ),StringHash("KimimaroFboard")))
-
-
-//call LeaderboardDisplay(LoadLeaderboardHandle(HH,GetHandleId(  caster  ),StringHash("KimimaroFboard")),false)
-//call DestroyLeaderboard(LoadLeaderboardHandle(HH,GetHandleId(  caster  ),StringHash("KimimaroFboard")))
-if(GetLocalPlayer()==GetOwningPlayer(caster))then
-call DisplayTextToPlayer(GetLocalPlayer(),0,0,"Вы больше не Кимимаро!!!")
-endif
-
-call LeaderboardDisplay(LoadLeaderboardHandle(HH,GetHandleId( GetOwningPlayer( caster ) ),StringHash("KimimaroFboard")),false)
-call DestroyLeaderboard(LoadLeaderboardHandle(HH,GetHandleId( GetOwningPlayer( caster ) ),StringHash("KimimaroFboard")))
-
-
-call PauseTimer(GetExpiredTimer())
-call FlushChildHashtable(HH,id)
-call DestroyTimer(GetExpiredTimer())
-endif
-set caster=null
-endfunction
-function KimimaroHeal takes unit caster0 returns nothing
-local timer t=CreateTimer()
-local integer id=GetHandleId(t)
-local leaderboard leadb=null
-call SaveUnitHandle(HH,id,1,caster0)
-call SaveInteger(HH,id,16,GetPlayerId(GetOwningPlayer(caster0)))
-
-//call SaveLeaderboardHandle(HH,GetHandleId( caster0 ),StringHash("KimimaroFboard"),CreateLeaderboardBJ(bj_FORCE_PLAYER[GetPlayerId(GetOwningPlayer(caster0))],"Kekkei Genkai:"))
-
-call SaveLeaderboardHandle(HH,GetHandleId( GetOwningPlayer( caster0 ) ),StringHash("KimimaroFboard"),CreateLeaderboardBJ(bj_FORCE_PLAYER[GetPlayerId(GetOwningPlayer(caster0))],"Kekkei Genkai:"))
-
-//call LeaderboardSetLabel(LoadLeaderboardHandle(HH,GetHandleId( caster0 ),StringHash("KimimaroFboard")),"Heal - 0 Morph: -  0")
-
-
-//call SaveReal(HH,GetHandleId(caster),StringHash("KisameGC"),GetHeroInt(caster,true)*8)
-
-//set leadb=LoadLeaderboardHandle(HH,GetHandleId(caster0),StringHash("KimimaroFboard"))
-
-set leadb=LoadLeaderboardHandle(HH,GetHandleId( GetOwningPlayer( caster0 ) ),StringHash("KimimaroFboard"))
-call LeaderboardAddItem(leadb,"  |cffff8affMorph: |r\n",0,Player(GetPlayerId(GetOwningPlayer(caster0))))
-call LeaderboardSetSizeByItemCount(leadb,1)
-
-
-
-
-
-call TimerStart(t,1,true,function KimimaroHeal_Act)
-set t=null
-set leadb=null
-endfunction
 function KimimaroFMorph_Act2 takes nothing returns nothing
 local integer id=GetHandleId(GetExpiredTimer())
 local unit caster=LoadUnitHandle(HH,id,1)
 local real facing=GetUnitFacing(caster)
 local real time=LoadReal(HH,id,5)
 
-if ( IsUnitPaused(caster)==false and GetUnitAbilityLevel(caster,'Avul')==0  or udg_B==false )or time<0.5 then
+if (IsUnitPaused(caster)==false and IsUnitHidden(caster)==false and GetUnitAbilityLevel(caster,'Pet1')==0) or time<0.5 then
 set time=time+0.02
 call SaveReal(HH,id,5,time)
 if time>0.5 then
@@ -226224,9 +226143,7 @@ set soundplay=CreateSound("Sound\\Others\\KimimaroForm.mp3",false,false,true,127
 call StartSound(soundplay)
 ////call KillSoundWhenDone(soundplay)
 call PauseUnit(caster,false)
-call UnitAddAbility(caster,'AKF2')
-call IssueImmediateOrder(caster,"bearform")
-call UnitRemoveAbility(caster,'AKF2')
+call TransformationStart(caster)
 call EffectCreateAndMove(true,"Others\\HakkeStart2.mdl",GetRandomInt(0,360),1,1.5,1,100,100,100,80,0,caster,0,facing)
 call EffectCreateAndMove(true,"Others\\A(BlackPurple).mdl",GetRandomInt(0,360),1,0.5,1,100,100,100,40,50,caster,0,facing)
 call UnitSpeed(caster,2)
@@ -226276,12 +226193,6 @@ call StartAbilityCooldown(GetUnitAbility(caster,'AKF1'), 0.1)
 endif
 call PauseUnit(caster,false)
 
-
-if  GetUnitTypeId(caster)=='H00F' then
-call UnitAddAbility(caster,'AKF3')
-call IssueImmediateOrder(caster,"bearform")
-call UnitRemoveAbility(caster,'AKF3')
-endif
 
 call PauseTimer(GetExpiredTimer())
 call FlushChildHashtable(HH,id)
@@ -227492,7 +227403,7 @@ local integer id=GetHandleId(GetExpiredTimer())
 local unit caster=LoadUnitHandle(HH,id,1)
 local real facing=LoadReal(HH,id,3)
 local real time=LoadReal(HH,id,5)
-if IsUnitPaused(caster)==false and  GetUnitAbilityLevel(caster,'Avul')==0 or  udg_B==false or DU2==false then
+if IsUnitPaused(caster)==false  or  udg_B==false or DU2==false then
 set time=time+1
 call SaveReal(HH,id,5,time)
 endif
@@ -229843,7 +229754,7 @@ call EffectCreateAndMove(true,"Others\\white-shandian-qiquan-red.mdl",facing,1,0
 call EffectCreateAndMove(true,"Others\\[A]az_axe_ef1.mdl",facing,1.5,1,0.65,100,60,60,0,0,caster,0,facing)
 call EffectCreateAndMove(true,"Others\\HakkeStart2.mdl",facing,1.5,1,1.5,100,100,100,80,0,caster,0,facing)
 endif
-if (IsUnitPaused(caster)==false and  GetUnitAbilityLevel(caster,'Avul')==0)  or time<1 then 
+if IsUnitPaused(caster)==false  or time<1 then 
 set time=time+0.02
 call SaveReal(HH,id,5,time)
 endif
@@ -231649,7 +231560,7 @@ local unit caster=LoadUnitHandle(HH,id,1)
 local real facing=GetUnitFacing(caster)
 local real time=LoadReal(HH,id,5)
 local real Roshi_T_time=LoadReal(HH,GetHandleId(GetOwningPlayer(caster)),StringHash("KimiFormDur"))
-if(IsUnitPaused(caster)==false and GetUnitAbilityLevel(caster,'Avul')==0 or udg_B==false)or time<0.02 then
+if IsUnitPaused(caster)==false or udg_B==false)or time<0.02 then
 set time=time+0.02
 call SaveReal(HH,id,5,time)
 if time>0.02 then
