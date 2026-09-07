@@ -29455,7 +29455,7 @@ if GetUnitTypeId(u) == 'HHSG' then
     call UnitRemoveAbility(u, 'HST4')
 endif
 if GetUnitTypeId(u)=='H00E' then
-    Call UnitAddAbility(u, 'AKF3')
+    call UnitAddAbility(u, 'AKF3')
     call IssueImmediateOrder(u, "bearform")
     call UnitRemoveAbility(u, 'AKF3')
 endif
@@ -231560,7 +231560,7 @@ local unit caster=LoadUnitHandle(HH,id,1)
 local real facing=GetUnitFacing(caster)
 local real time=LoadReal(HH,id,5)
 local real Roshi_T_time=LoadReal(HH,GetHandleId(GetOwningPlayer(caster)),StringHash("KimiFormDur"))
-if IsUnitPaused(caster)==false or udg_B==false)or time<0.02 then
+if (IsUnitPaused(caster)==false and IsUnitHidden(caster)==false and GetUnitAbilityLevel(caster,'Pet1')==0)or time<0.02 then
 set time=time+0.02
 call SaveReal(HH,id,5,time)
 if time>0.02 then
