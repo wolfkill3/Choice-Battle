@@ -20732,6 +20732,33 @@ set u=null
 set t=null
 endfunction
 
+function RoshiDBoard2 takes nothing returns nothing
+local timer t=GetExpiredTimer()
+local integer id=GetHandleId(t)
+local integer ip=LoadInteger(HH,id,0)
+local unit u=Hero[ip]
+if GetUnitAbilityLevel(u, 'RsT1')>0 then
+    if IsUnitSelected(u,GetLocalPlayer()) and IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(u)) then
+        call SetFrameText(GetFrameByName("CustomLeaderboardText",0),"Morph Duration:  "+I2S(R2I(LoadReal(HH,GetHandleId(GetOwningPlayer(caster0)),StringHash("KimiFormDur"))))+"/30")
+        call ShowFrame(GetFrameByName("CustomLeaderboard",0), true)
+        call SetFrameSize( GetFrameByName("CustomLeaderboard",0), .1775, GetFrameHeight( GetFrameByName("CustomLeaderboardText",0))+0.016)
+        call SetFrameTextAlignment( GetFrameByName("CustomLeaderboardText",0), TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_LEFT )
+    endif
+else
+    if IsUnitSelected(u,GetLocalPlayer()) and IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(u)) then
+        call SetFrameText(GetFrameByName("CustomLeaderboardText",0)," ")
+        call ShowFrame(GetFrameByName("CustomLeaderboard",0),false)
+    endif
+    call SaveInteger(HH,ip,StringHash("RoshiDBoard"),0)
+    call RemoveSavedInteger(HH,ip,StringHash("RoshiDBoard"))
+    call PauseTimer(t)
+    call DestroyTimer(t)
+    call FlushChildHashtable(HH,id)
+endif
+set u=null
+set t=null
+endfunction
+
 function HeroineDBoard2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
@@ -21541,6 +21568,16 @@ if GetUnitTypeId(u)=='HMad' or GetUnitTypeId(u)=='HMaG' then
         call SaveInteger(HH,GetHandleId(cjlocgn_00000000),0,ip)
         call SaveInteger(HH,ip,StringHash("MadokaDBoard"),1)
         call TimerStart(cjlocgn_00000000,0.1,true,function MadokaDBoard2)
+        //call SetAbilityBaseStringFieldById( String2Id( "MadF" ), ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED,GetAbilityBaseStringFieldById( String2Id( "MadF" ), ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED ))
+        set cjlocgn_00000000=null
+    endif
+endif
+if GetUnitTypeId(u)=='Rosh' then
+    if LoadInteger(HH,ip,StringHash("RoshiDBoard"))!=1 then
+        set cjlocgn_00000000=CreateTimer()
+        call SaveInteger(HH,GetHandleId(cjlocgn_00000000),0,ip)
+        call SaveInteger(HH,ip,StringHash("RoshiDBoard"),1)
+        call TimerStart(cjlocgn_00000000,0.1,true,function RoshiDBoard2)
         //call SetAbilityBaseStringFieldById( String2Id( "MadF" ), ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED,GetAbilityBaseStringFieldById( String2Id( "MadF" ), ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED ))
         set cjlocgn_00000000=null
     endif
@@ -234237,10 +234274,10 @@ call SetUnitAbilityLevel(caster,'A0BF',GetUnitAbilityLevel(caster,lvl))
 endif
 //Roshi5Start
 
-set lvl='RsT1'
-if GetLearnedSkill()==lvl then
-call Roshi_T_Board(caster)
-endif
+// set lvl='RsT1'
+// if GetLearnedSkill()==lvl then
+// call Roshi_T_Board(caster)
+// endif
 
 set lvl='RsR1'
 if GetLearnedSkill()==lvl then
