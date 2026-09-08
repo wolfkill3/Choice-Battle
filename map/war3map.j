@@ -36142,7 +36142,7 @@ set time=time+1
 call SaveInteger(HH,id,5,time)
 
 
-//if(GetLocalPlayer()==GetOwningPlayer(caster))then
+//if((GetLocalPlayer()==GetOwningPlayer(caster) or GetPlayerAlliance(GetOwningPlayer(caster),GetLocalPlayer(),ALLIANCE_SHARED_CONTROL)) and GetUnitSelected(GetLocalPlayer())==caster )then
 //call DisplayTextToPlayer(GetLocalPlayer(),0,0,"time left"+R2S(time))
 //endif
 
@@ -41104,40 +41104,7 @@ function IchigoBankaiW_Counter takes unit newCaster, unit newTarget returns noth
         call TimerStart(newTimer, 0.02, true, function IchigoBankaiW_CounterPeriodic)
         set newTimer=null
 endfunction
-//function AnimeRandom
-function CheckAngleDummyCond takes nothing returns boolean
-return GetUnitAbilityLevel(GetTriggerUnit(),'Pet2')>0 and GetIssuedOrderId()==OrderId("smart")
-endfunction
 
-function CheckAngleDummyCast takes nothing returns nothing
-local unit u=GetTriggerUnit()
-local real x=GetOrderPointX()
-local real y=GetOrderPointY()
-local real x1=GetUnitX(u)
-local real y1=GetUnitY(u)
-local integer idu=GetHandleId( (GetOwningPlayer( u )) )
-local real facing=Angle2(x1,y1,x,y)
-
-call SaveReal(HH,idu,StringHash("DummyFacing"),facing)
-//call DisplayTextToPlayer(GetLocalPlayer(),0,0,"facing:"+R2S( facing ))
-
-set u=null
-
-endfunction
-
-
-function CheckAngleDummyInit takes nothing returns nothing
-local trigger t=CreateTrigger()
-local integer i=0
-loop
-call TriggerRegisterPlayerUnitEvent(t,Player(i),EVENT_PLAYER_UNIT_ISSUED_POINT_ORDER,null)
-set i=i+1
-exitwhen i==bj_MAX_PLAYER_SLOTS
-endloop
-call TriggerAddAction(t,function CheckAngleDummyCast)
-call TriggerAddCondition(t,Condition(function CheckAngleDummyCond))
-set t=null
-endfunction
 
 function PolX takes real px,real distance,real l__a returns real
 return px+distance*Cos(l__a*bj_DEGTORAD)
@@ -41378,6 +41345,73 @@ call UnitSpeed(n,speed01)
 call UnitColor(n,red01,green01,blue01,visible01)
 call MyRemoveUnit(n,life01)
 set a201=null
+endfunction
+
+//function AnimeRandom
+function CheckAngleDummyCond takes nothing returns boolean
+return GetUnitAbilityLevel(GetTriggerUnit(),'Pet2')>0 and GetIssuedOrderId()==OrderId("smart")
+endfunction
+
+function CheckAngleDummyCast takes nothing returns nothing
+local unit u=GetTriggerUnit()
+local real x=GetOrderPointX()
+local real y=GetOrderPointY()
+local real x1=GetUnitX(u)
+local real y1=GetUnitY(u)
+local integer idu=GetHandleId( (GetOwningPlayer( u )) )
+local real facing=Angle2(x1,y1,x,y)
+
+call SaveReal(HH,idu,StringHash("DummyFacing"),facing)
+
+
+
+if GetUnitTypeId( Hero[GetPlayerId( GetOwningPlayer( u  )  ) ]    )=='Rosh'  then
+
+//call DisplayTextToPlayer(GetLocalPlayer(),0,0,"facing:"+R2S(facing))
+//call DisplayTextToPlayer(GetLocalPlayer(),0,0,"X:"+R2S(x))
+//call DisplayTextToPlayer(GetLocalPlayer(),0,0,"Y:"+R2S(y))
+
+
+call GroupClear(G)
+call GroupEnumUnitsInRange(G,x,y,400,null)
+loop
+set n0=FirstOfGroup(G)
+exitwhen n0==null
+if GetOwningPlayer(n0)==GetOwningPlayer(u)and GetUnitTypeId(n0)=='gbRd' and GetUnitAbilityLevel(n0,'Pet2')==0 then
+call MoveUnit(n0,Hero[GetPlayerId(GetOwningPlayer(u))],0,0)
+endif
+call GroupRemoveUnit(G,n0)
+endloop
+call GroupClear(G)
+
+
+endif
+if GetUnitTypeId( Hero[GetPlayerId( GetOwningPlayer( u  )  ) ]    )=='HNUB'  then
+//call SaveReal(HH,idu,StringHash("DummyFacing"),facing)
+call SaveReal(HH,idu,StringHash("DummyX"),x)
+call SaveReal(HH,idu,StringHash("DummyY"),y)
+//call DisplayTextToPlayer(GetLocalPlayer(),0,0,"facing:"+R2S(facing))
+//call DisplayTextToPlayer(GetLocalPlayer(),0,0,"X:"+R2S(x))
+//call DisplayTextToPlayer(GetLocalPlayer(),0,0,"Y:"+R2S(y))
+endif
+
+//call DisplayTextToPlayer(GetLocalPlayer(),0,0,"facing:"+R2S( facing ))
+
+set u=null
+
+endfunction
+
+function CheckAngleDummyInit takes nothing returns nothing
+local trigger t=CreateTrigger()
+local integer i=0
+loop
+call TriggerRegisterPlayerUnitEvent(t,Player(i),EVENT_PLAYER_UNIT_ISSUED_POINT_ORDER,null)
+set i=i+1
+exitwhen i==bj_MAX_PLAYER_SLOTS
+endloop
+call TriggerAddAction(t,function CheckAngleDummyCast)
+call TriggerAddCondition(t,Condition(function CheckAngleDummyCond))
+set t=null
 endfunction
 
 // толчок для E в риннегане
@@ -187607,7 +187641,7 @@ if time1==1 then
 set time1=0
 call SaveReal(HH,GetHandleId(caster),StringHash("MadaraSusDur"),LoadReal(HH,GetHandleId(caster),StringHash("MadaraSusDur"))-1)
 call SetUnitState(caster,UNIT_STATE_MANA,GetUnitState(caster,UNIT_STATE_MANA)-GetUnitState(caster,UNIT_STATE_MAX_MANA)*0.01)
-//if(GetLocalPlayer()==GetOwningPlayer(caster))then
+//if((GetLocalPlayer()==GetOwningPlayer(caster) or GetPlayerAlliance(GetOwningPlayer(caster),GetLocalPlayer(),ALLIANCE_SHARED_CONTROL)) and GetUnitSelected(GetLocalPlayer())==caster )then
 //call DisplayTextToPlayer(GetLocalPlayer(),0,0,"Susano Duration: "+R2S(LoadReal(HH,GetHandleId(caster),StringHash("MadaraSusDur")))+" Second ")
 //endif
 endif
@@ -187650,7 +187684,7 @@ if time1==1 then
 set time1=0
 call SaveReal(HH,GetHandleId(caster),StringHash("MadaraSusDur"),LoadReal(HH,GetHandleId(caster),StringHash("MadaraSusDur"))-1)
 call SetUnitState(caster,UNIT_STATE_MANA,GetUnitState(caster,UNIT_STATE_MANA)-GetUnitState(caster,UNIT_STATE_MAX_MANA)*0.015)
-//if(GetLocalPlayer()==GetOwningPlayer(caster))then
+//if((GetLocalPlayer()==GetOwningPlayer(caster) or GetPlayerAlliance(GetOwningPlayer(caster),GetLocalPlayer(),ALLIANCE_SHARED_CONTROL)) and GetUnitSelected(GetLocalPlayer())==caster )then
 //call DisplayTextToPlayer(GetLocalPlayer(),0,0,"Susano Duration: "+R2S(LoadReal(HH,GetHandleId(caster),StringHash("MadaraSusDur")))+" Second ")
 //endif
 endif
@@ -187699,7 +187733,7 @@ if time1==1 then
 set time1=0
 call SaveReal(HH,GetHandleId(caster),StringHash("MadaraSusDur"),LoadReal(HH,GetHandleId(caster),StringHash("MadaraSusDur"))-1)
 call SetUnitState(caster,UNIT_STATE_MANA,GetUnitState(caster,UNIT_STATE_MANA)-GetUnitState(caster,UNIT_STATE_MAX_MANA)*0.015)
-//if(GetLocalPlayer()==GetOwningPlayer(caster))then
+//if((GetLocalPlayer()==GetOwningPlayer(caster) or GetPlayerAlliance(GetOwningPlayer(caster),GetLocalPlayer(),ALLIANCE_SHARED_CONTROL)) and GetUnitSelected(GetLocalPlayer())==caster )then
 //call DisplayTextToPlayer(GetLocalPlayer(),0,0,"Susano Duration: "+R2S(LoadReal(HH,GetHandleId(caster),StringHash("MadaraSusDur")))+" Second ")
 //endif
 endif
@@ -195958,7 +195992,7 @@ endif
 call MoveUnit(n0,n0,150,facing)
 call SaveUnitHandle(HH,id,20,n0)
 
-if GetLocalPlayer()==GetOwningPlayer(caster)then
+if (GetLocalPlayer()==GetOwningPlayer(caster) or GetPlayerAlliance(GetOwningPlayer(caster),GetLocalPlayer(),ALLIANCE_SHARED_CONTROL)) and GetUnitSelected(GetLocalPlayer())==Dummy1 then
 call ClearSelection()
 call SelectUnit(caster,true)
 endif
@@ -197746,7 +197780,7 @@ endif
 if IsUnitPaused(target)==false then
 if time1==1 then
 set time1=0
-//if(GetLocalPlayer()==GetOwningPlayer(caster))then
+//if((GetLocalPlayer()==GetOwningPlayer(caster) or GetPlayerAlliance(GetOwningPlayer(caster),GetLocalPlayer(),ALLIANCE_SHARED_CONTROL)) and GetUnitSelected(GetLocalPlayer())==caster )then
 //call DisplayTextToPlayer(GetLocalPlayer(),0,0,"time left"+I2S(R2I(time)))
 //endif
 endif
@@ -197787,7 +197821,7 @@ local integer AbilLvl=0
 if GetHeroLevel(caster)>=6 then 
 call SaveReal(HH,GetHandleId(target),StringHash("SabracEtime"),30)
 if GetUnitAbilityLevel(target,'SaP5')>0 then
-//if(GetLocalPlayer()==GetOwningPlayer(caster))then
+//if((GetLocalPlayer()==GetOwningPlayer(caster) or GetPlayerAlliance(GetOwningPlayer(caster),GetLocalPlayer(),ALLIANCE_SHARED_CONTROL)) and GetUnitSelected(GetLocalPlayer())==caster )then
 //call DisplayTextToPlayer(GetLocalPlayer(),0,0,"lvl 5")
 //endif
 endif
@@ -197799,7 +197833,7 @@ call UnitMakeAbilityPermanent(target,false,'SaP4')
 call UnitRemoveAbility(target,'SaP4')
 call UnitAddAbility(target,'SaP5')
 call UnitMakeAbilityPermanent(target,true,'SaP5')
-//if(GetLocalPlayer()==GetOwningPlayer(caster))then
+//if((GetLocalPlayer()==GetOwningPlayer(caster) or GetPlayerAlliance(GetOwningPlayer(caster),GetLocalPlayer(),ALLIANCE_SHARED_CONTROL)) and GetUnitSelected(GetLocalPlayer())==caster )then
 //call DisplayTextToPlayer(GetLocalPlayer(),0,0,"lvl 5")
 //endif
 call UnitRemoveAbility(target,'BSa4')
@@ -197809,7 +197843,7 @@ call UnitMakeAbilityPermanent(target,false,'SaP3')
 call UnitRemoveAbility(target,'SaP3')
 call UnitAddAbility(target,'SaP4')
 call UnitMakeAbilityPermanent(target,true,'SaP4')
-//if(GetLocalPlayer()==GetOwningPlayer(caster))then
+//if((GetLocalPlayer()==GetOwningPlayer(caster) or GetPlayerAlliance(GetOwningPlayer(caster),GetLocalPlayer(),ALLIANCE_SHARED_CONTROL)) and GetUnitSelected(GetLocalPlayer())==caster )then
 //call DisplayTextToPlayer(GetLocalPlayer(),0,0,"lvl 4")
 //endif
 call UnitRemoveAbility(target,'BSa3')
@@ -197819,7 +197853,7 @@ call UnitMakeAbilityPermanent(target,false,'SaP2')
 call UnitRemoveAbility(target,'SaP2')
 call UnitAddAbility(target,'SaP3')
 call UnitMakeAbilityPermanent(target,true,'SaP3')
-//if(GetLocalPlayer()==GetOwningPlayer(caster))then
+//if((GetLocalPlayer()==GetOwningPlayer(caster) or GetPlayerAlliance(GetOwningPlayer(caster),GetLocalPlayer(),ALLIANCE_SHARED_CONTROL)) and GetUnitSelected(GetLocalPlayer())==caster )then
 //call DisplayTextToPlayer(GetLocalPlayer(),0,0,"lvl 3")
 //endif
 call UnitRemoveAbility(target,'BSa2')
@@ -197829,7 +197863,7 @@ call UnitMakeAbilityPermanent(target,false,'SaP1')
 call UnitRemoveAbility(target,'SaP1')
 call UnitAddAbility(target,'SaP2')
 call UnitMakeAbilityPermanent(target,true,'SaP2')
-//if(GetLocalPlayer()==GetOwningPlayer(caster))then
+//if((GetLocalPlayer()==GetOwningPlayer(caster) or GetPlayerAlliance(GetOwningPlayer(caster),GetLocalPlayer(),ALLIANCE_SHARED_CONTROL)) and GetUnitSelected(GetLocalPlayer())==caster )then
 //call DisplayTextToPlayer(GetLocalPlayer(),0,0,"lvl 2")
 //endif
 call UnitRemoveAbility(target,'BSa1')
@@ -198900,7 +198934,7 @@ call RemoveSavedHandle(HH,GetHandleId(caster),REVERSE_TARGET)
 call SaveBoolean(HH,GetHandleId(caster),StringHash("SabracEReverse"),false)
 endif
 if GetUnitAbilityLevel(caster,'BSaR')==0 or (time>0.02 and  udg_B==false) or UnitIsAlive(caster)==false then
-//if(GetLocalPlayer()==GetOwningPlayer(caster))then
+//if((GetLocalPlayer()==GetOwningPlayer(caster) or GetPlayerAlliance(GetOwningPlayer(caster),GetLocalPlayer(),ALLIANCE_SHARED_CONTROL)) and GetUnitSelected(GetLocalPlayer())==caster )then
 //call DisplayTextToPlayer(GetLocalPlayer(),0,0,"Reverse end")
 //endif
 call SaveBoolean(HH,GetHandleId(caster),ANTITARGET_ABILITY,false)
@@ -199560,7 +199594,7 @@ set x0=PolX(x0,350,facing)
 set y0=PolY(y0,350,facing)
 call DamageAoeOneTime(casterOriginal,x0,y0,aoe,damage,LoadGroupHandle(HH,id,4))
 endif
-//if(GetLocalPlayer()==GetOwningPlayer(caster))then
+//if((GetLocalPlayer()==GetOwningPlayer(caster) or GetPlayerAlliance(GetOwningPlayer(caster),GetLocalPlayer(),ALLIANCE_SHARED_CONTROL)) and GetUnitSelected(GetLocalPlayer())==caster )then
 //call DisplayTextToPlayer(GetLocalPlayer(),0,0,"time left"+R2S(time))
 //endif
 if time==0.42 then
@@ -200330,11 +200364,11 @@ call SaveInteger(HH,GetHandleId( (GetOwningPlayer( caster )) ),SabracSwordsHash,
 call SetUnitBaseDamageByIndex(caster,0,GetHeroStr(caster,false)+swords*3)
 
 
-//if(GetLocalPlayer()==GetOwningPlayer(caster))then
+//if((GetLocalPlayer()==GetOwningPlayer(caster) or GetPlayerAlliance(GetOwningPlayer(caster),GetLocalPlayer(),ALLIANCE_SHARED_CONTROL)) and GetUnitSelected(GetLocalPlayer())==caster )then
 //call DisplayTextToPlayer(GetLocalPlayer(),0,0,"Swords take")
 //endif
 
-//if(GetLocalPlayer()==GetOwningPlayer(caster))then
+//if((GetLocalPlayer()==GetOwningPlayer(caster) or GetPlayerAlliance(GetOwningPlayer(caster),GetLocalPlayer(),ALLIANCE_SHARED_CONTROL)) and GetUnitSelected(GetLocalPlayer())==caster )then
 //call DisplayTextToPlayer(GetLocalPlayer(),0,0,"Swords "+I2S(swords))
 //endif
 
@@ -202175,7 +202209,7 @@ if LoadEffectHandle(HH,id,29)!=null then
 call DestroyEffect(LoadEffectHandle(HH,id,29))
 call SaveEffectHandle(HH,id,29,null)
 endif
-//if(GetLocalPlayer()==GetOwningPlayer(caster))then
+//if((GetLocalPlayer()==GetOwningPlayer(caster) or GetPlayerAlliance(GetOwningPlayer(caster),GetLocalPlayer(),ALLIANCE_SHARED_CONTROL)) and GetUnitSelected(GetLocalPlayer())==caster )then
 //call DisplayTextToPlayer(GetLocalPlayer(),0,0,"time left"+R2S(time1))
 //endif
 call SaveReal(HH,GetHandleId(casterOriginal),StringHash("AizenR"),time1)
@@ -202348,7 +202382,7 @@ call RemoveSavedHandle(HH,GetHandleId(Dummy),TextTagTargetHash)
 call RemoveUnit(Dummy)
 
 
-if GetLocalPlayer()==GetOwningPlayer(caster)then
+if (GetLocalPlayer()==GetOwningPlayer(caster) or GetPlayerAlliance(GetOwningPlayer(caster),GetLocalPlayer(),ALLIANCE_SHARED_CONTROL)) and GetUnitSelected(GetLocalPlayer())==Dummy then
 call ClearSelection()
 call SelectUnit(caster,true)
 endif
@@ -202502,7 +202536,7 @@ call StartSound(soundplay)
 call KillSoundWhenDone(soundplay)
 endif
 call KillSoundWhenDone(soundplay)
-if GetLocalPlayer()==GetOwningPlayer(caster)then
+if (GetLocalPlayer()==GetOwningPlayer(caster) or GetPlayerAlliance(GetOwningPlayer(caster),GetLocalPlayer(),ALLIANCE_SHARED_CONTROL)) and GetUnitSelected(GetLocalPlayer())==caster then
 call ClearSelection()
 call SelectUnit(Dummy,true)
 endif
@@ -202513,7 +202547,7 @@ call SaveReal(HH,GetHandleId(Dummy),StringHash("AizenTR"),0)
 call PauseUnit(caster,false)
 call SetUnitInvulnerable(caster,false)
 call ShowUnit(caster,true)
-if GetLocalPlayer()==GetOwningPlayer(caster)then
+if (GetLocalPlayer()==GetOwningPlayer(caster) or GetPlayerAlliance(GetOwningPlayer(caster),GetLocalPlayer(),ALLIANCE_SHARED_CONTROL)) and GetUnitSelected(GetLocalPlayer())==Dummy then
 call ClearSelection()
 call SelectUnit(caster,true)
 endif
@@ -202633,7 +202667,7 @@ if LoadBoolean(HH,GetHandleId(caster),StringHash("AizenTAct"))==false then
 call RemoveUnit(LoadUnitHandle(HH,id,21))
 call SaveReal(HH,GetHandleId(Dummy),StringHash("AizenTR"),0)
 //Потом удалить
-//if(GetLocalPlayer()==GetOwningPlayer(caster))then
+//if((GetLocalPlayer()==GetOwningPlayer(caster) or GetPlayerAlliance(GetOwningPlayer(caster),GetLocalPlayer(),ALLIANCE_SHARED_CONTROL)) and GetUnitSelected(GetLocalPlayer())==caster )then
 //call DisplayTextToPlayer(GetLocalPlayer(),0,0,"T off")
 //endif
 //Потом удалить
@@ -203014,7 +203048,7 @@ if GetUnitState(caster,UNIT_STATE_MAX_LIFE)>4000 then
     call SaveReal(HH,GetHandleId(n000),StringHash("AizenTR"),6000)
     
     if(GetLocalPlayer()==GetOwningPlayer(caster))then
-      call DisplayTextToPlayer(GetLocalPlayer(),0,0,"T Up")
+        call DisplayTextToPlayer(GetLocalPlayer(),0,0,"T Up")
     endif
 
   else
@@ -203626,7 +203660,7 @@ if LoadReal(HH, GetHandleId(GetOwningPlayer(casterOriginal)) , TD_INDICATOR)>100
 call SaveBoolean(HH,id,16,true)
 
 if(GetLocalPlayer()==GetOwningPlayer(caster))then
-call DisplayTextToPlayer(GetLocalPlayer(),0,0,"R Up")
+    call DisplayTextToPlayer(GetLocalPlayer(),0,0,"R Up")
 endif
 
 endif
@@ -223828,7 +223862,7 @@ local real facing=GetUnitFacing(caster)
 set time=time+0.02
 
 
-if time<=0.04 or IsUnitPaused(caster)==false or udg_B==false   then
+if time<=0.04 or IsUnitPaused(caster)==false or udg_B==false or DU2==false   then
 call SaveReal(HH,id,5,time)
 endif
 
@@ -224531,7 +224565,7 @@ local real y2=GetUnitY(Dummy)
 local real facing=LoadReal(HH,id,3)
 set time=time+0.02
 call SaveReal(HH,id,5,time)
-if time>10 or udg_B==false then
+if time>10 or udg_B==false or DU2==false then
 //call SetUnitMoveSpeed(target,GetUnitDefaultMoveSpeed(target))
 call SetUnitAnimation(target,"stand")
 call UnitSpeed(caster,1)
@@ -224743,7 +224777,7 @@ local real x0
 local real y0
 local real dmg=40.0*I2R(GetUnitAbilityLevel(caster,'GrQ1'))+(1.0+I2R(GetUnitAbilityLevel(caster,'GrQ1')))*I2R(GetHeroStr(caster,true))
 call SaveReal(HH,id,5,time)
-if UnitIsAlive(caster)==false or udg_B==false then
+if UnitIsAlive(caster)==false or udg_B==false or DU2==false then
 call PauseUnit(caster,false)
 call SetUnitInvulnerable(caster,false)
 call SetUnitPathing(caster,true)
@@ -224963,7 +224997,7 @@ local real time2=LoadReal(HH,id,8)
 local real facing
 local real dmg=30.0*I2R(GetUnitAbilityLevel(caster,'GrW1'))+(0.75+0.25*GetUnitAbilityLevel(caster,'GrW1'))*I2R(GetHeroStr(caster,true))
 call SaveReal(HH,id,5,time)
-if UnitIsAlive(caster)==false or target==null or UnitIsAlive(target)==false or udg_B==false or time>4 then
+if UnitIsAlive(caster)==false or target==null or UnitIsAlive(target)==false or udg_B==false or DU2==false or time>4 then
 if target!=null then
 call PauseUnit(target,false)
 call SaveBoolean(HH,GetHandleId(target),TARGET_ABILITY,false)
@@ -225091,7 +225125,7 @@ local real facing=LoadReal(HH,id,14)
 local real tt
 local real dmg=(100+100.0*I2R(GetUnitAbilityLevel(caster,'GrE1')))+(2.0+I2R(GetUnitAbilityLevel(caster,'GrE1')))*I2R(GetHeroStr(caster,true))
 call SaveReal(HH,id,5,time)
-if UnitIsAlive(caster)==false or udg_B==false then
+if UnitIsAlive(caster)==false or udg_B==false or DU2==false then
 call RemoveUnit(ball)
 call PauseUnit(caster,false)
 call PauseTimer(t)
@@ -225211,7 +225245,7 @@ if time==1.0 then
 // пауза была только на отыгрыш касты, дальше герой свободен
 call PauseUnit(caster,false)
 endif
-if time>=dur or UnitIsAlive(caster)==false or udg_B==false then
+if time>=dur or UnitIsAlive(caster)==false or udg_B==false or DU2==false then
 call PauseUnit(caster,false)
 call UnitRemoveAbility(caster,'GrEs')
 call UnitRemoveAbility(caster,'GrEa')
@@ -225277,7 +225311,7 @@ local real px
 local real py
 local real dmg=120.0*I2R(GetUnitAbilityLevel(caster,'GrR1'))+7.0*I2R(GetHeroStr(caster,true))
 call SaveReal(HH,id,5,time)
-if UnitIsAlive(caster)==false or udg_B==false then
+if UnitIsAlive(caster)==false or udg_B==false or DU2==false then
 if LoadEffectHandle(HH,id,10)!=null then
 call DestroyEffect(LoadEffectHandle(HH,id,10))
 call SaveEffectHandle(HH,id,10,null)
@@ -225521,7 +225555,7 @@ local real rad=0
 local real step=0
 local real dmg=11.0*I2R(GetHeroStr(caster,true))
 call SaveReal(HH,id,5,time)
-if UnitIsAlive(caster)==false or udg_B==false then
+if UnitIsAlive(caster)==false or udg_B==false or DU2==false then
 call PauseUnit(caster,false)
 call SetUnitInvulnerable(caster,false)
 call UnitRemoveAbility(caster,'A1FU')
@@ -226237,7 +226271,7 @@ call MoveUnit(caster,LoadUnitHandle(HH,id,20),0,facing)
 call SetUnitFlyHeight(LoadUnitHandle(HH,id,20),GetUnitFlyHeight(caster),0)
 endif
 
-if time>=20.5 or UnitIsAlive(caster)==false or udg_B==false  then
+if time>=20.5 or UnitIsAlive(caster)==false or udg_B==false or DU2==false  then
 call RemoveUnit(LoadUnitHandle(HH,id,20))
 
 call SaveInteger(HH,GetHandleId(  caster  ),StringHash("KimiFormDur"),0)
@@ -228460,7 +228494,7 @@ call MoveUnit(caster,DummyCast,50,GetUnitFacing(caster))
 set time1=time1+0.02
 if time1==0.5 then
 
-if GetLocalPlayer()==GetOwningPlayer(caster)then
+if (GetLocalPlayer()==GetOwningPlayer(caster) or GetPlayerAlliance(GetOwningPlayer(caster),GetLocalPlayer(),ALLIANCE_SHARED_CONTROL)) and GetUnitSelected(GetLocalPlayer())==caster then
 call ClearSelection()
 call SelectUnit(DummyCast,true)
 endif
@@ -228511,7 +228545,7 @@ call SetUnitFacing(caster,facing)
 call SaveUnitHandle(HH,id,20,CreateUnit(GetOwningPlayer(caster),'e200',GetUnitX(caster),GetUnitY(caster),facing))
 call SaveUnitHandle(HH,id,26,CreateUnit(GetOwningPlayer(caster),'e200',GetUnitX(caster),GetUnitY(caster),facing))
 call SaveUnitHandle(HH,id,27,CreateUnit(GetOwningPlayer(caster),'e200',GetUnitX(caster),GetUnitY(caster),facing))
-if GetLocalPlayer()==GetOwningPlayer(caster)then
+if (GetLocalPlayer()==GetOwningPlayer(caster) or GetPlayerAlliance(GetOwningPlayer(caster),GetLocalPlayer(),ALLIANCE_SHARED_CONTROL)) and GetUnitSelected(GetLocalPlayer())==DummyCast then
 call ClearSelection()
 call SelectUnit(caster,true)
 endif
@@ -228729,7 +228763,7 @@ call MoveUnit(caster,DummyCast,50,GetUnitFacing(caster))
 set time1=time1+0.02
 
 if time1==0.5 then
-if GetLocalPlayer()==GetOwningPlayer(caster)then
+if (GetLocalPlayer()==GetOwningPlayer(caster) or GetPlayerAlliance(GetOwningPlayer(caster),GetLocalPlayer(),ALLIANCE_SHARED_CONTROL)) and GetUnitSelected(GetLocalPlayer())==caster then
 call ClearSelection()
 call SelectUnit(DummyCast,true)
 endif
@@ -228785,7 +228819,7 @@ endif
 if time==20.02 then
 call SetUnitFacing(caster,facing)
 call SaveUnitHandle(HH,id,20,CreateUnit(GetOwningPlayer(caster),'e200',GetUnitX(caster),GetUnitY(caster),facing))
-if GetLocalPlayer()==GetOwningPlayer(caster)then
+if (GetLocalPlayer()==GetOwningPlayer(caster) or GetPlayerAlliance(GetOwningPlayer(caster),GetLocalPlayer(),ALLIANCE_SHARED_CONTROL)) and GetUnitSelected(GetLocalPlayer())==DummyCast then
 call ClearSelection()
 call SelectUnit(caster,true)
 endif
@@ -229632,7 +229666,7 @@ call AbilityCD(caster,'SiD1',30)
 //if time>=30 and time1>=8 then
 
 
-//if(GetLocalPlayer()==GetOwningPlayer(caster))then
+//if((GetLocalPlayer()==GetOwningPlayer(caster) or GetPlayerAlliance(GetOwningPlayer(caster),GetLocalPlayer(),ALLIANCE_SHARED_CONTROL)) and GetUnitSelected(GetLocalPlayer())==caster )then
 //call DisplayTextToPlayer(GetLocalPlayer(),0,0,"Tank Spirit: Ready")
 //endif
 //call SaveBoolean(HH,GetHandleId(caster),StringHash("SignumCD"),false)
@@ -229722,7 +229756,7 @@ call StartSound(soundplay)
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\SignumTankSpirit1.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
 ////call KillSoundWhenDone(soundplay)
-//if(GetLocalPlayer()==GetOwningPlayer(caster))then
+//if((GetLocalPlayer()==GetOwningPlayer(caster) or GetPlayerAlliance(GetOwningPlayer(caster),GetLocalPlayer(),ALLIANCE_SHARED_CONTROL)) and GetUnitSelected(GetLocalPlayer())==caster )then
 //call DisplayTextToPlayer(GetLocalPlayer(),0,0,"Tank Spirit")
 //endif
 
@@ -230535,7 +230569,7 @@ if time<0.5 or(time>0.5 and IsUnitPaused(caster)==false and GetUnitAbilityLevel(
 set time=time+0.02
 call SaveReal(HH,id,5,time)
 endif
-if time>0.5 and (time>15.5 or udg_B==false) then
+if time>0.5 and (time>15.5 or udg_B==false or DU2==false) then
 call ForGroup(gr,function Lambo_F_Remove_Ability)
 call DestroyGroup(gr)
 //call DisplayTextToPlayer(GetLocalPlayer(),0,0,"Decrease HP")
@@ -230878,9 +230912,6 @@ if duration>30 then
 call SaveReal(HH,GetHandleId(GetOwningPlayer(caster)),StringHash("KimiFormDur"),30)
 endif
 if GetUnitAbilityLevel(caster,'RsT1')==0 then
-if(GetLocalPlayer()==GetOwningPlayer(caster))then
-call DisplayTextToPlayer(GetLocalPlayer(),0,0,"Вы больше не Роши!!!")
-endif
 call LeaderboardDisplay(LoadLeaderboardHandle(HH,GetHandleId(GetOwningPlayer(caster)),StringHash("KimimaroFboard")),false)
 call DestroyLeaderboard(LoadLeaderboardHandle(HH,GetHandleId(GetOwningPlayer(caster)),StringHash("KimimaroFboard")))
 call RemoveSavedHandle(HH,GetHandleId(GetOwningPlayer(caster)),StringHash("KimiFormDur"))
@@ -230972,7 +231003,7 @@ call SetUnitFlyHeight(Heart3,GetUnitFlyHeight(caster)+6000,0)
 endif
 if GetUnitAbilityLevel(caster,'RsE1')==0 then
 
-// if(GetLocalPlayer()==GetOwningPlayer(caster))then
+// if((GetLocalPlayer()==GetOwningPlayer(caster) or GetPlayerAlliance(GetOwningPlayer(caster),GetLocalPlayer(),ALLIANCE_SHARED_CONTROL)) and GetUnitSelected(GetLocalPlayer())==caster )then
 // call DisplayTextToPlayer(GetLocalPlayer(),0,0,"Вы больше не Роши!!!")
 // endif
 
@@ -231296,7 +231327,7 @@ if time>2.52 and UnitIsAlive(target)==false or time>12.5 then
 call SetUnitFlyHeight(target,0,GetUnitFlyHeight(target))
 
 
-//if GetLocalPlayer()==GetOwningPlayer(caster)then
+//if (GetLocalPlayer()==GetOwningPlayer(caster) or GetPlayerAlliance(GetOwningPlayer(caster),GetLocalPlayer(),ALLIANCE_SHARED_CONTROL)) and GetUnitSelected(GetLocalPlayer())==caster then
 //call ClearSelection()
 //call SelectUnit(caster,true)
 //endif
@@ -231677,7 +231708,7 @@ endif
 
 call SetUnitFlyHeight(LoadUnitHandle(HH,id,20),GetUnitFlyHeight(caster),0)
 endif
-if time>0.02 and(Roshi_T_time<=0 or UnitIsAlive(caster)==false or udg_B==false or GetUnitAbilityLevel(caster,'RsT4')==0)then
+if time>0.02 and(Roshi_T_time<=0 or GetUnitTypeId(caster)!='RosF' or UnitIsAlive(caster)==false or udg_B==false or DU2==false or GetUnitAbilityLevel(caster,'RsT4')==0)then
 call UnitRemoveAbility(caster,'RsT4')
 if Roshi_T_time<=0 then
 call SaveReal(HH,GetHandleId(GetOwningPlayer(caster)),StringHash("KimiFormDur"),0)
@@ -231812,16 +231843,41 @@ endif
 call SaveReal(HH,id,6,time1)
 call MoveUnit(caster,caster,25+SR(x0,y0,x1,y1)*0.01,facing)
 if SR(x0,y0,x1,y1)<400 and time<5 then
-call SaveReal(HH,id,5,5)
-set soundplay=CreateSound("Sound\\Roshi\\Roshi_T_R_TP.mp3",false,false,true,12700,12700,"")
-call StartSound(soundplay)
-//call SetSoundVolume(soundplay,250)
-call UnitAddAbility(target,'Amrf')
-call UnitRemoveAbility(target,'Amrf')
-call UnitAddAbility(caster,'Amrf')
-call UnitRemoveAbility(caster,'Amrf')
-call UnitSpeed(caster,1.25)
-call SetUnitAnimationByIndex(caster,17)
+    if LoadBoolean(HH,GetHandleId(target),ANTITARGET_ABILITY)==false then
+        call SaveReal(HH,id,5,5)
+        set soundplay=CreateSound("Sound\\Roshi\\Roshi_T_R_TP.mp3",false,false,true,12700,12700,"")
+        call StartSound(soundplay)
+        //call SetSoundVolume(soundplay,250)
+        call UnitAddAbility(target,'Amrf')
+        call UnitRemoveAbility(target,'Amrf')
+        call UnitAddAbility(caster,'Amrf')
+        call UnitRemoveAbility(caster,'Amrf')
+        call UnitSpeed(caster,1.25)
+        call SetUnitAnimationByIndex(caster,17)
+    else
+        call SaveBoolean(HH,GetHandleId(target),TARGET_ABILITY,false)
+        call SaveUnitHandle(HH,GetHandleId(target),REVERSE_TARGET,caster)
+        // call DestroyEffect(LoadEffectHandle(HH,id,30))
+        call SetUnitFlyHeight(target,0,GetUnitFlyHeight(target))
+        call PauseUnit(target,true)
+        call SetUnitInvulnerable(target,true)
+        call SetUnitPathing(target,false)
+        call DestroyEffect(LoadEffectHandle(HH,id,10))
+        call SetUnitFlyHeight(target,0,0)
+        call SetUnitFlyHeight(caster,0,0)
+        call SetUnitAnimation(target,"stand")
+        call UnitSpeed(caster,1)
+        call UnitSpeed(target,1)
+        call PauseUnit(caster,false)
+        call SetUnitInvulnerable(caster,false)
+        call SetUnitPathing(caster,true)
+        call PauseUnit(target,false)
+        call SetUnitInvulnerable(target,false)
+        call SetUnitPathing(target,true)
+        call PauseTimer(GetExpiredTimer())
+        call FlushChildHashtable(HH,id)
+        call DestroyTimer(GetExpiredTimer())
+    endif
 endif
 endif
 if time==5.6 then
@@ -232639,9 +232695,36 @@ endif
 call SaveReal(HH,id,6,time1)
 call MoveUnit(caster,caster,25+SR(x0,y0,x1,y1)*0.01,facing)
 if SR(x0,y0,x1,y1)<400 and time<5 then
-call SaveReal(HH,id,5,5)
-call UnitSpeed(caster,1.25)
-call SetUnitAnimationByIndex(caster,17)
+    if LoadBoolean(HH,GetHandleId(target),ANTITARGET_ABILITY)==false then
+        call SaveReal(HH,id,5,5)
+        call UnitSpeed(caster,1.25)
+        call SetUnitAnimationByIndex(caster,17)
+    else
+        call SaveBoolean(HH,GetHandleId(target),TARGET_ABILITY,false)
+        call SaveUnitHandle(HH,GetHandleId(target),REVERSE_TARGET,caster)
+        // call DestroyEffect(LoadEffectHandle(HH,id,30))
+        call SetUnitFlyHeight(target,0,GetUnitFlyHeight(target))
+        call PauseUnit(target,true)
+        call SetUnitInvulnerable(target,true)
+        call SetUnitPathing(target,false)
+        call DestroyEffect(LoadEffectHandle(HH,id,10))
+        call SetUnitFlyHeight(target,0,0)
+        call SetUnitFlyHeight(caster,0,0)
+        call SetUnitAnimation(target,"stand")
+        call UnitSpeed(caster,1)
+        call UnitSpeed(target,1)
+        call PauseUnit(caster,false)
+        call SetUnitInvulnerable(caster,false)
+        call SetUnitPathing(caster,true)
+        call PauseUnit(target,false)
+        call SetUnitInvulnerable(target,false)
+        call SetUnitPathing(target,true)
+        // call GroupClear(gr)
+        // call DestroyGroup(gr)
+        call PauseTimer(GetExpiredTimer())
+        call FlushChildHashtable(HH,id)
+        call DestroyTimer(GetExpiredTimer())
+    endif
 endif
 endif
 if time>5 and time<5.2 then
@@ -232860,7 +232943,7 @@ call EffectCreateAndMove(true,EffectID[1896],GetRandomReal(0,360),1.5,1,1,100,10
 call EffectCreateAndMove(true,EffectID[1896],GetRandomReal(0,360),1.5,1,1,100,100,100,0,0,target,200,facing2+180)
 call EffectCreateAndMove(true,EffectID[1896],GetRandomReal(0,360),1.5,1,1,100,100,100,0,0,target,200,facing2)
 call EffectCreateAndMove(true,EffectID[20],GetRandomReal(0,360),1.5,1.5,2,100,100,100,0,60,target,0,facing2)
-if GetLocalPlayer()==GetOwningPlayer(caster)then
+if (GetLocalPlayer()==GetOwningPlayer(caster) or GetPlayerAlliance(GetOwningPlayer(caster),GetLocalPlayer(),ALLIANCE_SHARED_CONTROL)) and GetUnitSelected(GetLocalPlayer())==Dummy then
 call ClearSelection()
 call SelectUnit(caster,true)
 endif
@@ -233057,7 +233140,7 @@ call EffectCreateAndMove(true,EffectID[23],GetRandomReal(0,360),1.5,1,0.5,100,10
 call SetUnitAnimationByIndex(LoadUnitHandle(HH,id,22),0)
 call EffectCreateAndMove(true,EffectID[824],GetRandomReal(0,360),1.5,1.5,1,100,100,100,0,100,target,0,facing2)
 call EffectCreateAndMove(true,EffectID[823],GetRandomReal(0,360),1.5,2,0.8,100,100,100,0,100,target,0,facing2)
-if GetLocalPlayer()==GetOwningPlayer(caster)then
+if (GetLocalPlayer()==GetOwningPlayer(caster) or GetPlayerAlliance(GetOwningPlayer(caster),GetLocalPlayer(),ALLIANCE_SHARED_CONTROL)) and GetUnitSelected(GetLocalPlayer())==caster then
 call ClearSelection()
 call SelectUnit(Dummy,true)
 endif
@@ -233158,261 +233241,294 @@ local group gr=null
 set time=time+0.02
 call SaveReal(HH,id,5,time)
 if time>=1.8 then
-call RemoveUnit(LoadUnitHandle(HH,id,20))
-call RemoveUnit(LoadUnitHandle(HH,id,21))
-call RemoveUnit(LoadUnitHandle(HH,id,22))
-call RemoveUnit(LoadUnitHandle(HH,id,23))
-call RemoveUnit(LoadUnitHandle(HH,id,24))
-call ShowUnit(caster,true)
-call SetUnitAnimation(target,"stand")
-call UnitSpeed(caster,1)
-call UnitSpeed(target,1)
-call PauseUnit(caster,false)
-call SetUnitInvulnerable(caster,false)
-call SetUnitPathing(caster,true)
-call SetUnitPathing(target,true)
-call PauseUnit(target,false)
-call SetUnitInvulnerable(target,false)
-call DamageU(false,caster,target,damage)
-call SetControlToUnit(target,target,2,"stun")
-if(GetLocalPlayer()==GetOwningPlayer(caster))then
-call ClearSelection()
-call SelectUnit(caster,true)
-endif
-call PauseTimer(GetExpiredTimer())
-call FlushChildHashtable(HH,id)
-call DestroyTimer(GetExpiredTimer())
+    call RemoveUnit(LoadUnitHandle(HH,id,20))
+    call RemoveUnit(LoadUnitHandle(HH,id,21))
+    call RemoveUnit(LoadUnitHandle(HH,id,22))
+    call RemoveUnit(LoadUnitHandle(HH,id,23))
+    call RemoveUnit(LoadUnitHandle(HH,id,24))
+    call ShowUnit(caster,true)
+    call SetUnitAnimation(target,"stand")
+    call UnitSpeed(caster,1)
+    call UnitSpeed(target,1)
+    call PauseUnit(caster,false)
+    call SetUnitInvulnerable(caster,false)
+    call SetUnitPathing(caster,true)
+    call SetUnitPathing(target,true)
+    call PauseUnit(target,false)
+    call SetUnitInvulnerable(target,false)
+    call DamageU(false,caster,target,damage)
+    call SetControlToUnit(target,target,2,"stun")
+    if((GetLocalPlayer()==GetOwningPlayer(caster) or GetPlayerAlliance(GetOwningPlayer(caster),GetLocalPlayer(),ALLIANCE_SHARED_CONTROL)) and GetUnitSelected(GetLocalPlayer())==LoadUnitHandle(HH,id,20) )then
+        call ClearSelection()
+        call SelectUnit(caster,true)
+    endif
+    call PauseTimer(GetExpiredTimer())
+    call FlushChildHashtable(HH,id)
+    call DestroyTimer(GetExpiredTimer())
 else
-if time<2 then
-if time>0.3 then
-call MoveUnit(target,LoadUnitHandle(HH,id,20),0,0)
-if(GetLocalPlayer()==GetOwningPlayer(caster))then
-call ClearSelection()
-call SelectUnit(LoadUnitHandle(HH,id,20),true)
-endif
-endif
-call PauseUnit(caster,true)
-call SetUnitInvulnerable(caster,true)
-call PauseUnit(target,true)
-call SetUnitInvulnerable(target,true)
-call SetUnitPathing(caster,false)
-call SetUnitFacing(caster,Angle2(x0,y0,x1,y1))
-endif
-if time==0.02 then
-set soundplay=CreateSound("Sound\\Roshi\\Roshi_W0.mp3",false,false,true,12700,12700,"")
-//call SetSoundVolume(soundplay,370)
-call StartSound(soundplay)
-set n0=CreateUnit(GetOwningPlayer(caster),'gbRd',x1,y1,0)
-call UnitAddAbility(n0,'Pet2')
-call UnitSize(n0,0.01,1,1)
-call UnitSpeed(n0,1)
-call UnitColor(n0,100,100,100,0)
-call SetUnitFlyHeight(n0,0,0)
-call SetUnitAnimationByIndex(n0,0)
-call SaveUnitHandle(HH,id,20,n0)
-call EffectCreateAndMove(true,EffectID[20],facing,1,1,1.5,100,100,100,40,0,caster,0,facing)
-call EffectCreateAndMove(true,EffectID[5],facing,1,1,1,100,100,100,0,0,caster,0,facing)
-call EffectCreateAndMove(true,EffectID[3],facing,1,0.5,0.5,100,100,100,0,0,caster,0,facing)
-call MoveUnit(target,caster,-150,facing)
-call EffectCreateAndMove(true,EffectID[20],facing,1,1,1.5,100,100,100,40,0,caster,0,facing)
-call EffectCreateAndMove(true,EffectID[3],facing,1,0.5,0.5,100,100,100,0,0,caster,0,facing)
-call UnitSpeed(caster,1)
-call SetUnitAnimationByIndex(caster,27)
-set n0=CreateUnit(GetOwningPlayer(caster),'gbRd',x1,y1,0)
-call MoveUnit(n0,n0,750,facing+45)
-call UnitSize(n0,0.01,1,1)
-call UnitColor(n0,100,100,100,0)
-call SetUnitFlyHeight(n0,0,0)
-call MyRemoveUnit(n0,2)
-set n0=CreateUnit(GetOwningPlayer(caster),'gbRd',x1,y1,0)
-call MoveUnit(n0,n0,750,facing-45)
-call UnitSize(n0,0.01,1,1)
-call UnitColor(n0,100,100,100,0)
-call SetUnitFlyHeight(n0,0,0)
-call MyRemoveUnit(n0,2)
-set n0=CreateUnit(GetOwningPlayer(caster),'gbRd',x1,y1,0)
-call MoveUnit(n0,n0,750,facing+135)
-call UnitSize(n0,0.01,1,1)
-call UnitColor(n0,100,100,100,0)
-call SetUnitFlyHeight(n0,0,0)
-call MyRemoveUnit(n0,2)
-set n0=CreateUnit(GetOwningPlayer(caster),'gbRd',x1,y1,0)
-call MoveUnit(n0,n0,750,facing-135)
-call UnitSize(n0,0.01,1,1)
-call UnitColor(n0,100,100,100,0)
-call SetUnitFlyHeight(n0,0,0)
-call MyRemoveUnit(n0,2)
-endif
-if time==0.3 then
-set soundplay=CreateSound("Sound\\Roshi\\Roshi_W_Hit.mp3",false,false,true,12700,12700,"")
-//call SetSoundVolume(soundplay,370)
-call StartSound(soundplay)
-call EffectCreateAndMove(true,EffectID[205],GetRandomReal(0,360),1,1,1,100,100,100,0,100,target,0,facing)
-call EffectCreateAndMove(true,EffectID[40],GetRandomReal(0,360),1.5,1.5,1,100,100,100,0,100,target,0,facing)
-call EffectCreateAndMove(true,EffectID[425],GetRandomReal(0,360),1.5,1.5,1,100,100,100,0,100,target,0,facing)
-call EffectCreateAndMove(true,EffectID[23],GetRandomReal(0,360),1.5,1,0.6,100,100,100,60,0,target,0,facing)
-call EffectCreateAndMove(true,EffectID[20],GetRandomReal(0,360),1.5,1,1.75,100,100,100,60,0,target,0,facing)
-call EffectCreateAndMove45(true,EffectID[207],facing+60,1.5,1,1.5,100,100,100,30,150,target,0,facing)
-call EffectCreateAndMove45(true,EffectID[207],facing-60,1.5,1,1.5,100,100,100,30,150,target,0,facing)
-call UnitSpeed(target,0.5)
-call SetUnitAnimation(target,"death")
-call ShowUnit(caster,false)
-call GroupClear(G)
-set gr=CreateGroup()
-set n0=CreateUnit(GetOwningPlayer(caster),'e000',x1,y1,facing+45+180)
-call SetUnitModel(n0,EffectID[2021])
-call AddSpecialEffectTarget(EffectID[4],n0,"hand right")
-call UnitSize(n0,1,1,1)
-call SetUnitFlyHeight(n0,0,0)
-call UnitColor(n0,100,100,100,0)
-call UnitSpeed(n0,1.5)
-call SetUnitAnimationByIndex(n0,1)
-call GroupAddUnit(gr,n0)
-set n0=null
-set n0=CreateUnit(GetOwningPlayer(caster),'e000',x1,y1,facing-45+180)
-call SetUnitModel(n0,EffectID[2021])
-call AddSpecialEffectTarget(EffectID[4],n0,"hand right")
-call UnitSize(n0,1,1,1)
-call SetUnitFlyHeight(n0,0,0)
-call UnitColor(n0,100,100,100,0)
-call UnitSpeed(n0,1.5)
-call SetUnitAnimationByIndex(n0,1)
-call GroupAddUnit(gr,n0)
-set n0=null
-set n0=CreateUnit(GetOwningPlayer(caster),'e000',x1,y1,facing+135+180)
-call SetUnitModel(n0,EffectID[2021])
-call AddSpecialEffectTarget(EffectID[4],n0,"hand right")
-call UnitSize(n0,1,1,1)
-call SetUnitFlyHeight(n0,0,0)
-call UnitColor(n0,100,100,100,0)
-call UnitSpeed(n0,1.5)
-call SetUnitAnimationByIndex(n0,1)
-call GroupAddUnit(gr,n0)
-set n0=null
-set n0=CreateUnit(GetOwningPlayer(caster),'e000',x1,y1,facing-135+180)
-call SetUnitModel(n0,EffectID[2021])
-call AddSpecialEffectTarget(EffectID[4],n0,"hand right")
-call UnitSize(n0,1,1,1)
-call SetUnitFlyHeight(n0,0,0)
-call UnitColor(n0,100,100,100,0)
-call UnitSpeed(n0,1.5)
-call SetUnitAnimationByIndex(n0,1)
-call GroupAddUnit(gr,n0)
-set n0=null
-call GroupClear(G)
-call ForGroup(gr,function Roshi_W_Add_G)
-set n0=Roshi_Random_Clone()
-call SaveUnitHandle(HH,id,21,n0)
-call GroupRemoveUnit(gr,n0)
-call GroupClear(G)
-call ForGroup(gr,function Roshi_W_Add_G)
-set n0=Roshi_Random_Clone()
-call SaveUnitHandle(HH,id,22,n0)
-call GroupRemoveUnit(gr,n0)
-call GroupClear(G)
-call ForGroup(gr,function Roshi_W_Add_G)
-set n0=Roshi_Random_Clone()
-call SaveUnitHandle(HH,id,23,n0)
-call GroupRemoveUnit(gr,n0)
-call GroupClear(G)
-call ForGroup(gr,function Roshi_W_Add_G)
-set n0=Roshi_Random_Clone()
-call SaveUnitHandle(HH,id,24,n0)
-call GroupRemoveUnit(gr,n0)
-call DestroyGroup(gr)
-call PushTimed(LoadUnitHandle(HH,id,21),GetUnitFacing(LoadUnitHandle(HH,id,21))-180,30,25)
-call PushTimed(LoadUnitHandle(HH,id,22),GetUnitFacing(LoadUnitHandle(HH,id,22))-180,30,25)
-call PushTimed(LoadUnitHandle(HH,id,23),GetUnitFacing(LoadUnitHandle(HH,id,23))-180,30,25)
-call PushTimed(LoadUnitHandle(HH,id,24),GetUnitFacing(LoadUnitHandle(HH,id,24))-180,30,25)
-endif
-if time==0.8 then
-call SetUnitAnimationByIndex(LoadUnitHandle(HH,id,21),31)
-endif
-if time==0.9 then
-call SetUnitAnimationByIndex(LoadUnitHandle(HH,id,22),31)
-endif
-if time==1 then
-call SetUnitAnimationByIndex(LoadUnitHandle(HH,id,23),31)
-endif
-if time==1.1 then
-call SetUnitAnimationByIndex(LoadUnitHandle(HH,id,24),31)
-endif
-if time==1 then
-call UnitSpeed(target,0)
-endif
-if time==1 then
-call PushTimed(LoadUnitHandle(HH,id,21),GetUnitFacing(LoadUnitHandle(HH,id,21)),25,60)
-call EffectCreateAndMove(true,EffectID[6],GetUnitFacing(LoadUnitHandle(HH,id,21)),1,0.45,0.5,100,100,100,0,100,LoadUnitHandle(HH,id,21),0,facing)
-call EffectCreateAndMove(true,EffectID[15],GetUnitFacing(LoadUnitHandle(HH,id,21)),1,1,2.5,100,100,100,0,100,LoadUnitHandle(HH,id,21),0,facing)
-endif
-if time==1.1 then
-call SetUnitAnimationByIndex(LoadUnitHandle(HH,id,21),32)
-call PushTimed(LoadUnitHandle(HH,id,22),GetUnitFacing(LoadUnitHandle(HH,id,22)),25,60)
-call EffectCreateAndMove(true,EffectID[6],GetUnitFacing(LoadUnitHandle(HH,id,22)),1,0.45,0.5,100,100,100,0,100,LoadUnitHandle(HH,id,22),0,facing)
-call EffectCreateAndMove(true,EffectID[15],GetUnitFacing(LoadUnitHandle(HH,id,22)),1,1,2.5,100,100,100,0,100,LoadUnitHandle(HH,id,22),0,facing)
-endif
-if time==1.2 then
-call SetUnitAnimationByIndex(LoadUnitHandle(HH,id,22),32)
-call PushTimed(LoadUnitHandle(HH,id,23),GetUnitFacing(LoadUnitHandle(HH,id,23)),25,60)
-call EffectCreateAndMove(true,EffectID[6],GetUnitFacing(LoadUnitHandle(HH,id,23)),1,0.45,0.5,100,100,100,0,100,LoadUnitHandle(HH,id,23),0,facing)
-call EffectCreateAndMove(true,EffectID[15],GetUnitFacing(LoadUnitHandle(HH,id,23)),1,1,2.5,100,100,100,0,100,LoadUnitHandle(HH,id,23),0,facing)
-endif
-if time==1.3 then
-call SetUnitAnimationByIndex(LoadUnitHandle(HH,id,23),32)
-call PushTimed(LoadUnitHandle(HH,id,24),GetUnitFacing(LoadUnitHandle(HH,id,24)),25,60)
-call EffectCreateAndMove(true,EffectID[6],GetUnitFacing(LoadUnitHandle(HH,id,24)),1,0.45,0.5,100,100,100,0,100,LoadUnitHandle(HH,id,24),0,facing)
-call EffectCreateAndMove(true,EffectID[15],GetUnitFacing(LoadUnitHandle(HH,id,24)),1,1,2.5,100,100,100,0,100,LoadUnitHandle(HH,id,24),0,facing)
-endif
-if time==1.4 then
-call SetUnitAnimationByIndex(LoadUnitHandle(HH,id,21),32)
-endif
-if time==1.1 then
-set soundplay=CreateSound("Sound\\Roshi\\Roshi_W2.mp3",false,false,true,12700,12700,"")
-//call SetSoundVolume(soundplay,370)
-call StartSound(soundplay)
-endif
-if time==1.2 then
-call EffectCreateAndMove(true,EffectID[1775],GetUnitFacing(LoadUnitHandle(HH,id,21)),1.25,1.25,0.75,100,100,100,0,100,target,200,GetUnitFacing(LoadUnitHandle(HH,id,21))+180)
-endif
-if time==1.3 then
-call EffectCreateAndMove(true,EffectID[1775],GetUnitFacing(LoadUnitHandle(HH,id,22)),1.25,1.25,0.75,100,100,100,0,100,target,200,GetUnitFacing(LoadUnitHandle(HH,id,22))+180)
-endif
-if time==1.4 then
-call EffectCreateAndMove(true,EffectID[1775],GetUnitFacing(LoadUnitHandle(HH,id,23)),1.25,1.25,0.75,100,100,100,0,100,target,200,GetUnitFacing(LoadUnitHandle(HH,id,23))+180)
-endif
-if time==1.5 then
-call EffectCreateAndMove(true,EffectID[1775],GetUnitFacing(LoadUnitHandle(HH,id,24)),1.25,1.25,0.75,100,100,100,0,100,target,200,GetUnitFacing(LoadUnitHandle(HH,id,24))+180)
-endif
-if time==1.26 or time==1.36 or time==1.46 or time==1.56 then
-call EffectCreateAndMove(true,EffectID[40],GetRandomReal(0,360),1.5,1.75,1,100,100,100,0,100,target,0,facing)
-call EffectCreateAndMove(true,EffectID[40],GetRandomReal(0,360),1.5,1.55,0.75,100,100,100,0,100,target,0,facing)
-call EffectCreateAndMove(true,EffectID[40],GetRandomReal(0,360),1.5,1.25,0.5,100,100,100,0,100,target,0,facing)
-call EffectCreateAndMove(true,EffectID[74],GetRandomReal(0,360),1.5,1,0.8,100,100,100,0,100,target,0,facing)
-call EffectCreateAndMove(true,EffectID[64],GetRandomReal(0,360),1.5,1.25,2,100,100,100,0,100,target,0,facing)
-call EffectCreateAndMove(true,EffectID[205],GetRandomReal(0,360),1,1.25,1,100,100,100,0,100,target,0,facing)
-call EffectCreateAndMove(true,EffectID[425],GetRandomReal(0,360),1.5,1.5,1,100,100,100,0,100,target,0,facing)
-call EffectCreateAndMove(true,EffectID[425],GetRandomReal(0,360),1.5,1.5,1,100,100,100,0,100,target,0,facing)
-call EffectCreateAndMove(true,EffectID[425],GetRandomReal(0,360),1.5,1.5,1,100,100,100,0,100,target,0,facing)
-call EffectCreateAndMove(true,EffectID[23],GetRandomReal(0,360),1.5,1,0.6,100,100,100,80,0,target,0,facing)
-call EffectCreateAndMove(true,EffectID[20],GetRandomReal(0,360),1.5,1,1.75,100,100,100,80,0,target,0,facing)
-call EffectCreateAndMove45(true,EffectID[207],GetRandomReal(0,360),1.5,1.25,1.5,100,100,100,30,150,target,0,facing)
-call EffectCreateAndMove45(true,EffectID[207],GetRandomReal(0,360),1.5,1.25,1.5,100,100,100,30,150,target,0,facing)
+    if time<2 then
+        if time>0.3 then
+            call MoveUnit(target,LoadUnitHandle(HH,id,20),0,0)
+            if((GetLocalPlayer()==GetOwningPlayer(caster) or GetPlayerAlliance(GetOwningPlayer(caster),GetLocalPlayer(),ALLIANCE_SHARED_CONTROL)) and GetUnitSelected(GetLocalPlayer())==caster )then
+                call ClearSelection()
+                call SelectUnit(LoadUnitHandle(HH,id,20),true)
+            endif
+        endif
+        call PauseUnit(caster,true)
+        call SetUnitInvulnerable(caster,true)
+        call PauseUnit(target,true)
+        call SetUnitInvulnerable(target,true)
+        call SetUnitPathing(caster,false)
+        call SetUnitFacing(caster,Angle2(x0,y0,x1,y1))
+    endif
+    if time==0.02 then
+        set soundplay=CreateSound("Sound\\Roshi\\Roshi_W0.mp3",false,false,true,12700,12700,"")
+        //call SetSoundVolume(soundplay,370)
+        call StartSound(soundplay)
+        set n0=CreateUnit(GetOwningPlayer(caster),'gbRd',x1,y1,0)
+        call UnitAddAbility(n0,'Pet2')
+        call UnitSize(n0,0.01,1,1)
+        call UnitSpeed(n0,1)
+        call UnitColor(n0,100,100,100,0)
+        call SetUnitFlyHeight(n0,0,0)
+        call SetUnitAnimationByIndex(n0,0)
+        call SaveUnitHandle(HH,id,20,n0)
+        call EffectCreateAndMove(true,EffectID[20],facing,1,1,1.5,100,100,100,40,0,caster,0,facing)
+        call EffectCreateAndMove(true,EffectID[5],facing,1,1,1,100,100,100,0,0,caster,0,facing)
+        call EffectCreateAndMove(true,EffectID[3],facing,1,0.5,0.5,100,100,100,0,0,caster,0,facing)
+        call MoveUnit(target,caster,-150,facing)
+        call EffectCreateAndMove(true,EffectID[20],facing,1,1,1.5,100,100,100,40,0,caster,0,facing)
+        call EffectCreateAndMove(true,EffectID[3],facing,1,0.5,0.5,100,100,100,0,0,caster,0,facing)
+        call UnitSpeed(caster,1)
+        call SetUnitAnimationByIndex(caster,27)
+        set n0=CreateUnit(GetOwningPlayer(caster),'gbRd',x1,y1,0)
+        call MoveUnit(n0,n0,750,facing+45)
+        call UnitSize(n0,0.01,1,1)
+        call UnitColor(n0,100,100,100,0)
+        call SetUnitFlyHeight(n0,0,0)
+        call MyRemoveUnit(n0,2)
+        set n0=CreateUnit(GetOwningPlayer(caster),'gbRd',x1,y1,0)
+        call MoveUnit(n0,n0,750,facing-45)
+        call UnitSize(n0,0.01,1,1)
+        call UnitColor(n0,100,100,100,0)
+        call SetUnitFlyHeight(n0,0,0)
+        call MyRemoveUnit(n0,2)
+        set n0=CreateUnit(GetOwningPlayer(caster),'gbRd',x1,y1,0)
+        call MoveUnit(n0,n0,750,facing+135)
+        call UnitSize(n0,0.01,1,1)
+        call UnitColor(n0,100,100,100,0)
+        call SetUnitFlyHeight(n0,0,0)
+        call MyRemoveUnit(n0,2)
+        set n0=CreateUnit(GetOwningPlayer(caster),'gbRd',x1,y1,0)
+        call MoveUnit(n0,n0,750,facing-135)
+        call UnitSize(n0,0.01,1,1)
+        call UnitColor(n0,100,100,100,0)
+        call SetUnitFlyHeight(n0,0,0)
+        call MyRemoveUnit(n0,2)
+    endif
+    if time==0.3 then
+        set soundplay=CreateSound("Sound\\Roshi\\Roshi_W_Hit.mp3",false,false,true,12700,12700,"")
+        //call SetSoundVolume(soundplay,370)
+        call StartSound(soundplay)
+        call EffectCreateAndMove(true,EffectID[205],GetRandomReal(0,360),1,1,1,100,100,100,0,100,target,0,facing)
+        call EffectCreateAndMove(true,EffectID[40],GetRandomReal(0,360),1.5,1.5,1,100,100,100,0,100,target,0,facing)
+        call EffectCreateAndMove(true,EffectID[425],GetRandomReal(0,360),1.5,1.5,1,100,100,100,0,100,target,0,facing)
+        call EffectCreateAndMove(true,EffectID[23],GetRandomReal(0,360),1.5,1,0.6,100,100,100,60,0,target,0,facing)
+        call EffectCreateAndMove(true,EffectID[20],GetRandomReal(0,360),1.5,1,1.75,100,100,100,60,0,target,0,facing)
+        call EffectCreateAndMove45(true,EffectID[207],facing+60,1.5,1,1.5,100,100,100,30,150,target,0,facing)
+        call EffectCreateAndMove45(true,EffectID[207],facing-60,1.5,1,1.5,100,100,100,30,150,target,0,facing)
+        call UnitSpeed(target,0.5)
+        call SetUnitAnimation(target,"death")
+        call ShowUnit(caster,false)
+        call GroupClear(G)
+        set gr=CreateGroup()
+        set n0=CreateUnit(GetOwningPlayer(caster),'e000',x1,y1,facing+45+180)
+        call SetUnitModel(n0,EffectID[2021])
+        call AddSpecialEffectTarget(EffectID[4],n0,"hand right")
+        call UnitSize(n0,1,1,1)
+        call SetUnitFlyHeight(n0,0,0)
+        call UnitColor(n0,100,100,100,0)
+        call UnitSpeed(n0,1.5)
+        call SetUnitAnimationByIndex(n0,1)
+        call GroupAddUnit(gr,n0)
+        set n0=null
+        set n0=CreateUnit(GetOwningPlayer(caster),'e000',x1,y1,facing-45+180)
+        call SetUnitModel(n0,EffectID[2021])
+        call AddSpecialEffectTarget(EffectID[4],n0,"hand right")
+        call UnitSize(n0,1,1,1)
+        call SetUnitFlyHeight(n0,0,0)
+        call UnitColor(n0,100,100,100,0)
+        call UnitSpeed(n0,1.5)
+        call SetUnitAnimationByIndex(n0,1)
+        call GroupAddUnit(gr,n0)
+        set n0=null
+        set n0=CreateUnit(GetOwningPlayer(caster),'e000',x1,y1,facing+135+180)
+        call SetUnitModel(n0,EffectID[2021])
+        call AddSpecialEffectTarget(EffectID[4],n0,"hand right")
+        call UnitSize(n0,1,1,1)
+        call SetUnitFlyHeight(n0,0,0)
+        call UnitColor(n0,100,100,100,0)
+        call UnitSpeed(n0,1.5)
+        call SetUnitAnimationByIndex(n0,1)
+        call GroupAddUnit(gr,n0)
+        set n0=null
+        set n0=CreateUnit(GetOwningPlayer(caster),'e000',x1,y1,facing-135+180)
+        call SetUnitModel(n0,EffectID[2021])
+        call AddSpecialEffectTarget(EffectID[4],n0,"hand right")
+        call UnitSize(n0,1,1,1)
+        call SetUnitFlyHeight(n0,0,0)
+        call UnitColor(n0,100,100,100,0)
+        call UnitSpeed(n0,1.5)
+        call SetUnitAnimationByIndex(n0,1)
+        call GroupAddUnit(gr,n0)
+        set n0=null
+        call GroupClear(G)
+        call ForGroup(gr,function Roshi_W_Add_G)
+        set n0=Roshi_Random_Clone()
+        call SaveUnitHandle(HH,id,21,n0)
+        call GroupRemoveUnit(gr,n0)
+        call GroupClear(G)
+        call ForGroup(gr,function Roshi_W_Add_G)
+        set n0=Roshi_Random_Clone()
+        call SaveUnitHandle(HH,id,22,n0)
+        call GroupRemoveUnit(gr,n0)
+        call GroupClear(G)
+        call ForGroup(gr,function Roshi_W_Add_G)
+        set n0=Roshi_Random_Clone()
+        call SaveUnitHandle(HH,id,23,n0)
+        call GroupRemoveUnit(gr,n0)
+        call GroupClear(G)
+        call ForGroup(gr,function Roshi_W_Add_G)
+        set n0=Roshi_Random_Clone()
+        call SaveUnitHandle(HH,id,24,n0)
+        call GroupRemoveUnit(gr,n0)
+        call DestroyGroup(gr)
+        if LoadBoolean(HH,GetHandleId(target),ANTITARGET_ABILITY)==false then
+            call PushTimed(LoadUnitHandle(HH,id,21),GetUnitFacing(LoadUnitHandle(HH,id,21))-180,30,25)
+            call PushTimed(LoadUnitHandle(HH,id,22),GetUnitFacing(LoadUnitHandle(HH,id,22))-180,30,25)
+            call PushTimed(LoadUnitHandle(HH,id,23),GetUnitFacing(LoadUnitHandle(HH,id,23))-180,30,25)
+            call PushTimed(LoadUnitHandle(HH,id,24),GetUnitFacing(LoadUnitHandle(HH,id,24))-180,30,25)
+        else
+            call PushTimed(LoadUnitHandle(HH,id,21),GetUnitFacing(LoadUnitHandle(HH,id,21))-180,15,25)
+            call PushTimed(LoadUnitHandle(HH,id,22),GetUnitFacing(LoadUnitHandle(HH,id,22))-180,15,25)
+            call PushTimed(LoadUnitHandle(HH,id,23),GetUnitFacing(LoadUnitHandle(HH,id,23))-180,15,25)
+            call PushTimed(LoadUnitHandle(HH,id,24),GetUnitFacing(LoadUnitHandle(HH,id,24))-180,15,25)
+        endif
+    endif
+    if time==0.8 then
+        call SetUnitAnimationByIndex(LoadUnitHandle(HH,id,21),31)
+    endif
+    if time==0.9 then
+        call SetUnitAnimationByIndex(LoadUnitHandle(HH,id,22),31)
+    endif
+    if time==1 then
+        call SetUnitAnimationByIndex(LoadUnitHandle(HH,id,23),31)
+    endif
+    if time==1.1 then
+        call SetUnitAnimationByIndex(LoadUnitHandle(HH,id,24),31)
+    endif
+    if time==1 then
+        call UnitSpeed(target,0)
+    endif
+    if time==1 then
+        call PushTimed(LoadUnitHandle(HH,id,21),GetUnitFacing(LoadUnitHandle(HH,id,21)),25,60)
+        call EffectCreateAndMove(true,EffectID[6],GetUnitFacing(LoadUnitHandle(HH,id,21)),1,0.45,0.5,100,100,100,0,100,LoadUnitHandle(HH,id,21),0,facing)
+        call EffectCreateAndMove(true,EffectID[15],GetUnitFacing(LoadUnitHandle(HH,id,21)),1,1,2.5,100,100,100,0,100,LoadUnitHandle(HH,id,21),0,facing)
+    endif
+    if time==1.1 then
+        call SetUnitAnimationByIndex(LoadUnitHandle(HH,id,21),32)
+        call PushTimed(LoadUnitHandle(HH,id,22),GetUnitFacing(LoadUnitHandle(HH,id,22)),25,60)
+        call EffectCreateAndMove(true,EffectID[6],GetUnitFacing(LoadUnitHandle(HH,id,22)),1,0.45,0.5,100,100,100,0,100,LoadUnitHandle(HH,id,22),0,facing)
+        call EffectCreateAndMove(true,EffectID[15],GetUnitFacing(LoadUnitHandle(HH,id,22)),1,1,2.5,100,100,100,0,100,LoadUnitHandle(HH,id,22),0,facing)
+    endif
+    if time==1.2 then
+        call SetUnitAnimationByIndex(LoadUnitHandle(HH,id,22),32)
+        call PushTimed(LoadUnitHandle(HH,id,23),GetUnitFacing(LoadUnitHandle(HH,id,23)),25,60)
+        call EffectCreateAndMove(true,EffectID[6],GetUnitFacing(LoadUnitHandle(HH,id,23)),1,0.45,0.5,100,100,100,0,100,LoadUnitHandle(HH,id,23),0,facing)
+        call EffectCreateAndMove(true,EffectID[15],GetUnitFacing(LoadUnitHandle(HH,id,23)),1,1,2.5,100,100,100,0,100,LoadUnitHandle(HH,id,23),0,facing)
+    endif
+    if time==1.3 then
+        call SetUnitAnimationByIndex(LoadUnitHandle(HH,id,23),32)
+        call PushTimed(LoadUnitHandle(HH,id,24),GetUnitFacing(LoadUnitHandle(HH,id,24)),25,60)
+        call EffectCreateAndMove(true,EffectID[6],GetUnitFacing(LoadUnitHandle(HH,id,24)),1,0.45,0.5,100,100,100,0,100,LoadUnitHandle(HH,id,24),0,facing)
+        call EffectCreateAndMove(true,EffectID[15],GetUnitFacing(LoadUnitHandle(HH,id,24)),1,1,2.5,100,100,100,0,100,LoadUnitHandle(HH,id,24),0,facing)
+    endif
+    if time==1.4 then
+        call SetUnitAnimationByIndex(LoadUnitHandle(HH,id,21),32)
+    endif
+    if time==1.1 then
+        set soundplay=CreateSound("Sound\\Roshi\\Roshi_W2.mp3",false,false,true,12700,12700,"")
+        //call SetSoundVolume(soundplay,370)
+        call StartSound(soundplay)
+    endif
+    if time==1.2 then
+        call EffectCreateAndMove(true,EffectID[1775],GetUnitFacing(LoadUnitHandle(HH,id,21)),1.25,1.25,0.75,100,100,100,0,100,target,200,GetUnitFacing(LoadUnitHandle(HH,id,21))+180)
+    endif
+    if time==1.3 then
+        call EffectCreateAndMove(true,EffectID[1775],GetUnitFacing(LoadUnitHandle(HH,id,22)),1.25,1.25,0.75,100,100,100,0,100,target,200,GetUnitFacing(LoadUnitHandle(HH,id,22))+180)
+    endif
+    if time==1.4 then
+        call EffectCreateAndMove(true,EffectID[1775],GetUnitFacing(LoadUnitHandle(HH,id,23)),1.25,1.25,0.75,100,100,100,0,100,target,200,GetUnitFacing(LoadUnitHandle(HH,id,23))+180)
+    endif
+    if time==1.5 then
+        call EffectCreateAndMove(true,EffectID[1775],GetUnitFacing(LoadUnitHandle(HH,id,24)),1.25,1.25,0.75,100,100,100,0,100,target,200,GetUnitFacing(LoadUnitHandle(HH,id,24))+180)
+    endif
+    if time>1.16 and LoadBoolean(HH,GetHandleId(target),ANTITARGET_ABILITY)==false then
+        if time==1.26 or time==1.36 or time==1.46 or time==1.56 then
+            call EffectCreateAndMove(true,EffectID[40],GetRandomReal(0,360),1.5,1.75,1,100,100,100,0,100,target,0,facing)
+            call EffectCreateAndMove(true,EffectID[40],GetRandomReal(0,360),1.5,1.55,0.75,100,100,100,0,100,target,0,facing)
+            call EffectCreateAndMove(true,EffectID[40],GetRandomReal(0,360),1.5,1.25,0.5,100,100,100,0,100,target,0,facing)
+            call EffectCreateAndMove(true,EffectID[74],GetRandomReal(0,360),1.5,1,0.8,100,100,100,0,100,target,0,facing)
+            call EffectCreateAndMove(true,EffectID[64],GetRandomReal(0,360),1.5,1.25,2,100,100,100,0,100,target,0,facing)
+            call EffectCreateAndMove(true,EffectID[205],GetRandomReal(0,360),1,1.25,1,100,100,100,0,100,target,0,facing)
+            call EffectCreateAndMove(true,EffectID[425],GetRandomReal(0,360),1.5,1.5,1,100,100,100,0,100,target,0,facing)
+            call EffectCreateAndMove(true,EffectID[425],GetRandomReal(0,360),1.5,1.5,1,100,100,100,0,100,target,0,facing)
+            call EffectCreateAndMove(true,EffectID[425],GetRandomReal(0,360),1.5,1.5,1,100,100,100,0,100,target,0,facing)
+            call EffectCreateAndMove(true,EffectID[23],GetRandomReal(0,360),1.5,1,0.6,100,100,100,80,0,target,0,facing)
+            call EffectCreateAndMove(true,EffectID[20],GetRandomReal(0,360),1.5,1,1.75,100,100,100,80,0,target,0,facing)
+            call EffectCreateAndMove45(true,EffectID[207],GetRandomReal(0,360),1.5,1.25,1.5,100,100,100,30,150,target,0,facing)
+            call EffectCreateAndMove45(true,EffectID[207],GetRandomReal(0,360),1.5,1.25,1.5,100,100,100,30,150,target,0,facing)
 
 
-if GetRandomInt(1,2)==1 then
-set soundplay=CreateSound("Sound\\Roshi\\Roshi_W_Hit2.mp3",false,false,true,12700,12700,"")
-call StartSound(soundplay)
-//call SetSoundVolume(soundplay,370)
-call KillSoundWhenDone(soundplay)
-else
-set soundplay=CreateSound("Sound\\Roshi\\Roshi_W_Hit3.mp3",false,false,true,12700,12700,"")
-call StartSound(soundplay)
-//call SetSoundVolume(soundplay,370)
-call KillSoundWhenDone(soundplay)
-endif
+            if GetRandomInt(1,2)==1 then
+                set soundplay=CreateSound("Sound\\Roshi\\Roshi_W_Hit2.mp3",false,false,true,12700,12700,"")
+                call StartSound(soundplay)
+                //call SetSoundVolume(soundplay,370)
+                call KillSoundWhenDone(soundplay)
+            else
+                set soundplay=CreateSound("Sound\\Roshi\\Roshi_W_Hit3.mp3",false,false,true,12700,12700,"")
+                call StartSound(soundplay)
+                //call SetSoundVolume(soundplay,370)
+                call KillSoundWhenDone(soundplay)
+            endif
 
 
-endif
+        endif
+    else
+        if LoadBoolean(HH,GetHandleId(target),ANTITARGET_ABILITY)==true then
+            call RemoveUnit(LoadUnitHandle(HH,id,20))
+            call RemoveUnit(LoadUnitHandle(HH,id,21))
+            call RemoveUnit(LoadUnitHandle(HH,id,22))
+            call RemoveUnit(LoadUnitHandle(HH,id,23))
+            call RemoveUnit(LoadUnitHandle(HH,id,24))
+            call ShowUnit(caster,true)
+            call SetUnitAnimation(target,"stand")
+            call PauseUnit(caster,false)
+            call SetUnitInvulnerable(target,false)
+            call SetUnitInvulnerable(caster,false)
+            if((GetLocalPlayer()==GetOwningPlayer(caster) or GetPlayerAlliance(GetOwningPlayer(caster),GetLocalPlayer(),ALLIANCE_SHARED_CONTROL)) and GetUnitSelected(GetLocalPlayer())==caster )then
+                call ClearSelection()
+                call SelectUnit(caster,true)
+            endif
+            call PauseUnit(target,false)
+            call SaveBoolean(HH,GetHandleId(target),TARGET_ABILITY,false)
+            call SaveUnitHandle(HH,GetHandleId(target),REVERSE_TARGET,caster)
+            call PauseTimer(GetExpiredTimer())
+            call FlushChildHashtable(HH,id)
+            call DestroyTimer(GetExpiredTimer())
+            call SetUnitVertexColor(caster,255,255,255,255)
+        endif
+    endif
 endif
 set caster=null
 set target=null
@@ -233427,6 +233543,7 @@ local real x1=GetUnitX(target)
 local real y1=GetUnitY(target)
 local real facing=GetUnitFacing(target)
 local real damage=50+(1+GetUnitAbilityLevel(caster,'RsW1'))*GetHeroInt(caster,true)
+
 call SaveUnitHandle(HH,id,1,caster)
 call SaveUnitHandle(HH,id,2,target)
 call SaveReal(HH,id,3,facing)
@@ -233434,6 +233551,7 @@ call PauseUnit(caster,true)
 call SetUnitInvulnerable(caster,true)
 call SaveReal(HH,id,15,damage)
 call TimerStart(t,0.02,true,function Roshi_W_Act2)
+
 set t=null
 endfunction
 function Roshi_Q1_Act2 takes nothing returns nothing
