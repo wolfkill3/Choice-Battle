@@ -1954,8 +1954,7 @@ function myCustomDamage takes unit whichUnit, unit target, real amount, boolean 
             set currentDmg=currentDmg * 0.8
         endif
             //=======
-        //endif
-                
+        //endif     
     //~ конец модификации уменьшения урона
     endif
     call UnitDamageTarget(whichUnit,target,currentDmg,attack,ranged,attackType,damageType,weaponType)
@@ -2495,7 +2494,7 @@ function myCustomMana3 takes unit target, real amount returns real
     endif
 
     if GetUnitAbilityLevel(target,'A15F')>0 then // IceBoots Active
-        set currentHeal = currentHeal * 0.5
+        set currentHeal = currentHeal * 0.45
     endif
 
     if UnitHasItemOfTypeBJ(target,'I02S') or GetUnitAbilityLevel(target,'KIG0')>0 then // IceSphere
@@ -44111,6 +44110,9 @@ if cond==0 then
 
             set nb=nb-b*newdmg
         endif
+        if GetUnitAbilityLevel(u,'AKF1')>0 and nb>0 and (CurrentEventAttack or GetEventAttackType()==ATTACK_TYPE_HERO) and GetHeroLevel(u)>=12 then
+            set nb=nb*0.6
+        endif
         if GetUnitAbilityLevel(u,'A0UT')>0 and nb>0 then
             if GetUnitState(u,UNIT_STATE_LIFE)>nb then
             call SaveReal(HH,idu,StringHash("st"),LoadReal(HH,idu,StringHash("st"))+nb*0.25)
@@ -48423,27 +48425,29 @@ local real life2=GetWidgetLife(u)
 local real dmg=0
 local lightning l=LoadLightningHandle(h,id,3)
 if GetUnitAbilityLevel(u,'BNC2')>0 and GetWidgetLife(u)>0 and udg_B==true and DU2==true and LoadInteger(HH,GetHandleId(u),StringHash("cold"))!=1 then
-if IsUnitPaused(u)==false and IsUnitHidden(u)==false and GetUnitAbilityLevel(u,'Pet1')==0 then
-call SaveReal(h,id,5,time2+0.01)
-endif
-if life2>life then
-set dmg=life2-life
-if dmg<life2 then
-call SetUnitState(u,UNIT_STATE_LIFE,life2-dmg)
+    if IsUnitPaused(u)==false and IsUnitHidden(u)==false and GetUnitAbilityLevel(u,'Pet1')==0 then
+        call SaveReal(h,id,5,time2+0.01)
+    endif
+    if life2>life then
+        set dmg=life2-life
+        if dmg<life2 then
+            call SetUnitState(u,UNIT_STATE_LIFE,life2-dmg)
+        else
+            call SetUnitState(u,UNIT_STATE_LIFE,50)
+        endif
+    endif
+    if time2>0.25 then
+        if (GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.0075)-40>0 then
+            call myCustomDamage(c,u,(GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.0075)-40,false,false,null,null,null)
+        endif
+        call SaveReal(h,id,5,0)
+    endif
+    call SaveReal(h,id,0,GetWidgetLife(u))
 else
-call SetUnitState(u,UNIT_STATE_LIFE,50)
-endif
-endif
-if time2>0.25 then
-call myCustomDamage(c,u,GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.0025,false,false,null,null,null)
-call SaveReal(h,id,5,0)
-endif
-call SaveReal(h,id,0,GetWidgetLife(u))
-else
-call UnitRemoveAbility(u,'BNC2')
-call SaveInteger(HH,GetHandleId(u),StringHash("cold"),0)
-call DestroyTimer(t)
-call FlushChildHashtable(h,id)
+    call UnitRemoveAbility(u,'BNC2')
+    call SaveInteger(HH,GetHandleId(u),StringHash("cold"),0)
+    call DestroyTimer(t)
+    call FlushChildHashtable(h,id)
 endif
 set c=null
 set l=null
@@ -48505,7 +48509,7 @@ if GetUnitAbilityLevel(u,'A25F')>0 then
 call SaveReal(h,id,4,0)
 endif
 if life2<life then
-call SetUnitState(u,UNIT_STATE_MANA,life-(life-life2)*0.5)
+call SetUnitState(u,UNIT_STATE_MANA,life-(life-life2)*0.45)
 endif
 call SaveReal(h,id,0,GetUnitState(u,UNIT_STATE_MANA))
 else
@@ -230968,9 +230972,9 @@ call SetUnitFlyHeight(Heart3,GetUnitFlyHeight(caster)+6000,0)
 endif
 if GetUnitAbilityLevel(caster,'RsE1')==0 then
 
-if(GetLocalPlayer()==GetOwningPlayer(caster))then
-call DisplayTextToPlayer(GetLocalPlayer(),0,0,"Вы больше не Роши!!!")
-endif
+// if(GetLocalPlayer()==GetOwningPlayer(caster))then
+// call DisplayTextToPlayer(GetLocalPlayer(),0,0,"Вы больше не Роши!!!")
+// endif
 
 
 call RemoveUnit(Heart1)
@@ -231687,10 +231691,13 @@ call UnitRemoveAbility(caster,'RsT3')
 endif
 call SetPlayerAbilityAvailable(GetOwningPlayer(caster),'RsQ2',false)
 call SetPlayerAbilityAvailable(GetOwningPlayer(caster),'RsQ1',true)
+// call StartAbilityCooldown(GetUnitAbility(caster,'RsQ1'),GetAbilityRemainingCooldown(GetUnitAbility(caster,'RsQ2')))
 call SetPlayerAbilityAvailable(GetOwningPlayer(caster),'RsW2',false)
 call SetPlayerAbilityAvailable(GetOwningPlayer(caster),'RsW1',true)
+// call StartAbilityCooldown(GetUnitAbility(caster,'RsW1'),GetAbilityRemainingCooldown(GetUnitAbility(caster,'RsW2')))
 call SetPlayerAbilityAvailable(GetOwningPlayer(caster),'RsR2',false)
 call SetPlayerAbilityAvailable(GetOwningPlayer(caster),'RsR1',true)
+// call StartAbilityCooldown(GetUnitAbility(caster,'RsR1'),GetAbilityRemainingCooldown(GetUnitAbility(caster,'RsR2')))
 call EffectCreateAndMove(true,EffectID[608],GetRandomReal(0,360),1.5,1,1,100,100,100,0,0,caster,0,facing)
 call EffectCreateAndMove(true,EffectID[41],GetRandomReal(0,360),1.5,1,0.5,100,100,100,0,100,caster,0,facing)
 call EffectCreateAndMove(true,EffectID[23],GetRandomReal(0,360),1.5,1,0.5,100,100,100,40,0,caster,0,facing)
@@ -231714,10 +231721,13 @@ call UnitRemoveAbility(caster,'RsT2')
 call SetUnitAnimationByIndex(caster,18)
 call SetPlayerAbilityAvailable(GetOwningPlayer(caster),'RsQ1',false)
 call SetPlayerAbilityAvailable(GetOwningPlayer(caster),'RsQ2',true)
+// call StartAbilityCooldown(GetUnitAbility(caster,'RsQ2'),GetAbilityRemainingCooldown(GetUnitAbility(caster,'RsQ1'))-GetAbilityCooldown(GetUnitAbility(caster,'RsQ1')) / 2)
 call SetPlayerAbilityAvailable(GetOwningPlayer(caster),'RsW1',false)
 call SetPlayerAbilityAvailable(GetOwningPlayer(caster),'RsW2',true)
+// call StartAbilityCooldown(GetUnitAbility(caster,'RsW2'),GetAbilityRemainingCooldown(GetUnitAbility(caster,'RsW1'))-GetAbilityCooldown(GetUnitAbility(caster,'RsW1')) / 2)
 call SetPlayerAbilityAvailable(GetOwningPlayer(caster),'RsR1',false)
 call SetPlayerAbilityAvailable(GetOwningPlayer(caster),'RsR2',true)
+// call StartAbilityCooldown(GetUnitAbility(caster,'RsR2'),GetAbilityRemainingCooldown(GetUnitAbility(caster,'RsR1'))-GetAbilityCooldown(GetUnitAbility(caster,'RsR1')) / 2)
 call TimerStart(t,0.02,true,function Roshi_T_Act2)
 set t=null
 endfunction
@@ -232010,7 +232020,6 @@ endfunction
 function Roshi_T_W_Act2 takes nothing returns nothing
 local integer id=GetHandleId(GetExpiredTimer())
 local unit caster=LoadUnitHandle(HH,id,1)
-local unit target=LoadUnitHandle(HH,id,2)
 local real time=LoadReal(HH,id,5)
 local real time1=LoadReal(HH,id,6)
 local real damage=LoadReal(HH,id,15)
@@ -232022,7 +232031,6 @@ local real dist=LoadReal(HH,id,8)
 set time=time+0.02
 call SaveReal(HH,id,5,time)
 if time>1 then
-call SaveBoolean(HH,GetHandleId(target),TARGET_ABILITY,false)
 call SaveReal(HH,id,8,-100)
 call DestroyEffect(LoadEffectHandle(HH,id,21))
 call DestroyEffect(LoadEffectHandle(HH,id,22))
@@ -232032,7 +232040,6 @@ call UnitSpeed(caster,1)
 call PauseUnit(caster,false)
 call SetUnitInvulnerable(caster,false)
 call SetUnitPathing(caster,true)
-call SetUnitPathing(target,true)
 call ForGroup(gr,function Akaza_W_pathing_on)
 call GroupClear(gr)
 call DestroyGroup(gr)
@@ -232065,17 +232072,37 @@ call GroupEnumUnitsInRange(G,x0,y0,250,Base)
 loop
 set n0=FirstOfGroup(G)
 exitwhen n0==null
-if n0!=target and UnitIsAlive(n0)and IsUnitEnemy(n0,GetOwningPlayer(caster))==true and IsUnitType(n0,UNIT_TYPE_STRUCTURE)==false then
-call SetUnitPathing(n0,false)
-if IsUnitInGroup(n0,gr)==false then
-call GroupAddUnit(gr,n0)
-endif
-if SR(x0,y0,GetUnitX(n0),GetUnitY(n0))>150 then
-call MoveUnit(n0,n0,7,facing)
-else
-call MoveUnit(n0,n0,9,facing)
-endif
-call UnitStop(n0)
+if UnitIsAlive(n0)and IsUnitEnemy(n0,GetOwningPlayer(caster))==true and IsUnitType(n0,UNIT_TYPE_STRUCTURE)==false then
+    if LoadBoolean(HH,GetHandleId(n0),ANTITARGET_ABILITY)==false then
+        call SetUnitPathing(n0,false)
+        if IsUnitInGroup(n0,gr)==false then
+            call GroupAddUnit(gr,n0)
+        endif
+        if SR(x0,y0,GetUnitX(n0),GetUnitY(n0))>150 then
+            call MoveUnit(n0,n0,7,facing)
+        else
+            call MoveUnit(n0,n0,9,facing)
+        endif
+        call UnitStop(n0)
+    else
+        call SaveBoolean(HH,GetHandleId(n0),TARGET_ABILITY,false)
+        call SaveUnitHandle(HH,GetHandleId(n0),REVERSE_TARGET,caster)
+        call SaveReal(HH,id,8,-100)
+        call DestroyEffect(LoadEffectHandle(HH,id,21))
+        call DestroyEffect(LoadEffectHandle(HH,id,22))
+        call DestroyEffect(LoadEffectHandle(HH,id,23))
+        call DestroyEffect(LoadEffectHandle(HH,id,24))
+        call ForGroup(gr,function Akaza_W_pathing_on)
+        call GroupClear(gr)
+        call DestroyGroup(gr)
+        call UnitSpeed(caster,1)
+        call PauseUnit(caster,false)
+        call SetUnitInvulnerable(caster,false)
+        call SetUnitPathing(caster,true)
+        call PauseTimer(GetExpiredTimer())
+        call FlushChildHashtable(HH,id)
+        call DestroyTimer(GetExpiredTimer())
+    endif
 endif
 call GroupRemoveUnit(G,n0)
 endloop
@@ -232118,7 +232145,6 @@ endif
 endif
 set caster=null
 set gr=null
-set target=null
 endfunction
 function Roshi_T_W_Act takes unit caster,real x1,real y1 returns nothing
 local timer t=CreateTimer()
@@ -232284,7 +232310,7 @@ local integer id=GetHandleId(t)
 local real x0=GetUnitX(caster)
 local real y0=GetUnitY(caster)
 local real damage=GetHeroInt(caster,true)*(1+GetUnitAbilityLevel(caster,'RsQ1'))
-local real damage1=GetHeroInt(caster,true)*1
+local real damage1=GetHeroInt(caster,true)*0.8
 local real dist=2000
 call SaveUnitHandle(HH,id,1,caster)
 call SaveReal(HH,id,3,facing0)
@@ -232457,7 +232483,7 @@ if time>2 then
 if dist>0 then
 call SaveReal(HH,id,18,dist-100)
 call MoveUnit(Dummy,Dummy,100,facing)
-call DamageAoeOneTime41(caster,x1,y1,300,damage*6,LoadGroupHandle(HH,id,41))
+call DamageAoeOneTime41(caster,x1,y1,300,damage*5,LoadGroupHandle(HH,id,41))
 call EffectCreateAndMove(true,EffectID[565],facing,4-(time),0.8,1,100,100,100,50,100,Dummy,0,facing)
 call EffectCreateAndMove(true,EffectID[1400],facing,4-(time),2.3,3,100,100,100,50,100,Dummy,0,facing)
 endif
@@ -232519,7 +232545,7 @@ local integer id=GetHandleId(t)
 local real x0=GetUnitX(caster)
 local real y0=GetUnitY(caster)
 local real facing=Angle2(x0,y0,x1,y1)
-local real damage=1*GetHeroInt(caster,true)
+local real damage=0.8*GetHeroInt(caster,true)
 call SaveReal(HH,GetHandleId((GetOwningPlayer(caster))),StringHash("DummyFacing"),facing)
 call SaveUnitHandle(HH,id,1,caster)
 call SaveReal(HH,id,3,facing)
@@ -232824,7 +232850,7 @@ local real facing2=Angle2(x0,y0,x1,y1)
 set time=time+0.02
 call SaveReal(HH,id,5,time)
 if time>0.02 and UnitIsAlive(target)==false or time>8 then
-call DamageAoeAndStun(caster,x1,y1,300,GetHeroInt(caster,true)*4,0.5)
+call DamageAoeAndStun(caster,x1,y1,300,GetHeroInt(caster,true)*3,0.5)
 call EffectCreateAndMove(true,EffectID[1886],GetRandomReal(0,360),1.5,1.25,1,100,100,100,40,0,target,0,facing2)
 call EffectCreateAndMove(true,EffectID[1896],GetRandomReal(0,360),1.5,1,1,100,100,100,0,0,target,0,facing2)
 call EffectCreateAndMove(true,EffectID[1896],GetRandomReal(0,360),1.5,1,1,100,100,100,0,0,target,200,facing2+60)
@@ -233074,13 +233100,26 @@ local real x1=GetUnitX(target)
 local real y1=GetUnitY(target)
 local real facing=Angle2(x0,y0,x1,y1)
 local real damage=(GetUnitAbilityLevel(caster,'RsE1')+1)*GetHeroInt(caster,true)
-call SetUnitFacing(caster,facing)
-call PauseUnit(caster,true)
-call SetUnitInvulnerable(caster,true)
-call SaveUnitHandle(HH,id,1,caster)
-call SaveUnitHandle(HH,id,2,target)
-call SaveReal(HH,id,15,damage)
-call TimerStart(t,0.02,true,function Roshi_E1_Act2)
+if LoadBoolean(HH,GetHandleId(target),ANTITARGET_ABILITY)==false then
+    call SetUnitFacing(caster,facing)
+    call PauseUnit(caster,true)
+    call SetUnitInvulnerable(caster,true)
+    call SaveUnitHandle(HH,id,1,caster)
+    call SaveUnitHandle(HH,id,2,target)
+    call SaveReal(HH,id,15,damage)
+    call TimerStart(t,0.02,true,function Roshi_E1_Act2)
+else
+    call PauseUnit(caster,false)
+    call SetUnitInvulnerable(caster,false)
+    call SetUnitAnimation(caster,"Spell Channel")
+    call PauseUnit(target,false)
+    call SaveBoolean(HH,GetHandleId(target),TARGET_ABILITY,false)
+    call SaveUnitHandle(HH,GetHandleId(target),REVERSE_TARGET,caster)
+    call PauseTimer(t)
+    call DestroyTimer(t)
+    call SetUnitVertexColor(caster,255,255,255,255)
+    call FlushChildHashtable(HH,id)
+endif
 set t=null
 endfunction
 function Roshi_W_Add_G takes nothing returns nothing
@@ -233588,7 +233627,7 @@ local integer id=GetHandleId(t)
 local real x0=GetUnitX(caster)
 local real y0=GetUnitY(caster)
 local real facing=Angle2(x0,y0,x1,y1)
-local real damage=GetHeroInt(caster,true)*(2.5+0.5*GetUnitAbilityLevel(caster,'RsQ1'))
+local real damage=GetHeroInt(caster,true)*(1.5+0.5*GetUnitAbilityLevel(caster,'RsQ1'))
 local real damage1=GetHeroInt(caster,true)*0.8
 local real dist=SR(x0,y0,x1,y1)
 call SaveUnitHandle(HH,id,1,caster)
@@ -233607,27 +233646,37 @@ endfunction
 function Roshi_D_CD_Act2 takes nothing returns nothing
 local integer id=GetHandleId(GetExpiredTimer())
 local unit Dummy=LoadUnitHandle(HH,id,20)
-call SetUnitAnimationByIndex(Dummy,0)
-call PauseTimer(GetExpiredTimer())
-call FlushChildHashtable(HH,id)
-call DestroyTimer(GetExpiredTimer())
+local unit caster=LoadUnitHandle(HH,id,2)
+if not(Dummy!=null and IsAbilityOnCooldown(GetUnitAbility(caster,LoadInteger(HH,id,3)))) then
+    if Dummy!=null then
+    call SetUnitAnimationByIndex(Dummy,0)
+    endif
+    call PauseTimer(GetExpiredTimer())
+    call FlushChildHashtable(HH,id)
+    call DestroyTimer(GetExpiredTimer())
+endif
 set Dummy=null
+set caster=null
 endfunction
 function Roshi_D_CD_Act takes unit caster,integer roshi_d_cd returns nothing
 local timer t=CreateTimer()
 local integer id=GetHandleId(t)
 if roshi_d_cd==1 then
 set n0=LoadUnitHandle(HH,GetHandleId(GetOwningPlayer(caster)),StringHash("Roshi_S1"))
+call SaveInteger(HH,id,3,'RsD1')
 endif
 if roshi_d_cd==2 then
 set n0=LoadUnitHandle(HH,GetHandleId(GetOwningPlayer(caster)),StringHash("Roshi_S2"))
+call SaveInteger(HH,id,3,'RsD2')
 endif
 if roshi_d_cd==3 then
 set n0=LoadUnitHandle(HH,GetHandleId(GetOwningPlayer(caster)),StringHash("Roshi_S3"))
+call SaveInteger(HH,id,3,'RsD3')
 endif
 call SaveUnitHandle(HH,id,20,n0)
+call SaveUnitHandle(HH,id,2,caster)
 call SetUnitAnimationByIndex(n0,1)
-call TimerStart(t,20,false,function Roshi_D_CD_Act2)
+call TimerStart(t,0.1,true,function Roshi_D_CD_Act2)
 set t=null
 endfunction
 function Roshi_D_Act2 takes nothing returns nothing
@@ -233724,20 +233773,20 @@ endif
 if time>0.02 and time<5 then
 set x0=PolX(x0,-200,facing)
 set y0=PolY(y0,-200,facing)
-call DamageAoeOneTime(caster,x0,y0,200,damage*2,LoadGroupHandle(HH,id,4))
+call DamageAoeOneTime(caster,x0,y0,200,damage*3,LoadGroupHandle(HH,id,4))
 set x0=PolX(x0,-200,facing)
 set y0=PolY(y0,-200,facing)
-call DamageAoeOneTime(caster,x0,y0,200,damage*2,LoadGroupHandle(HH,id,4))
+call DamageAoeOneTime(caster,x0,y0,200,damage*3,LoadGroupHandle(HH,id,4))
 set x0=PolX(x0,-200,facing)
 set y0=PolY(y0,-200,facing)
-call DamageAoeOneTime(caster,x0,y0,200,damage*2,LoadGroupHandle(HH,id,4))
+call DamageAoeOneTime(caster,x0,y0,200,damage*3,LoadGroupHandle(HH,id,4))
 set x0=PolX(x0,-200,facing)
 set y0=PolY(y0,-200,facing)
-call DamageAoeOneTime(caster,x0,y0,200,damage*2,LoadGroupHandle(HH,id,4))
+call DamageAoeOneTime(caster,x0,y0,200,damage*3,LoadGroupHandle(HH,id,4))
 if time>0.06 then
 set x0=PolX(x0,-200,facing)
 set y0=PolY(y0,-200,facing)
-call DamageAoeOneTime(caster,x0,y0,200,damage*2,LoadGroupHandle(HH,id,4))
+call DamageAoeOneTime(caster,x0,y0,200,damage*3,LoadGroupHandle(HH,id,4))
 endif
 call MoveUnit(caster,LoadUnitHandle(HH,id,20),-50,facing)
 call MoveUnit(caster,LoadUnitHandle(HH,id,21),-50,facing)
@@ -233745,14 +233794,38 @@ call MoveUnit(caster,LoadUnitHandle(HH,id,22),-50,facing)
 call MoveUnit(caster,caster,80,facing)
 call SaveReal(HH,id,8,dist+80)
 if target==null then
-set x0=PolX(GetUnitX(caster),100,facing)
-set y0=PolY(GetUnitY(caster),100,facing)
-set target=First_Target_Skill(caster,null,x0,y0,200)
-if target!=null then
-call SaveReal(HH,id,5,5)
-call SaveUnitHandle(HH,id,2,target)
-call MoveUnit(target,caster,-200,facing)
-endif
+    set x0=PolX(GetUnitX(caster),100,facing)
+    set y0=PolY(GetUnitY(caster),100,facing)
+    set target=First_Target_Skill(caster,null,x0,y0,200)
+    if target!=null then
+        call SaveReal(HH,id,5,5)
+        if LoadBoolean(HH,GetHandleId(target),ANTITARGET_ABILITY)==false then
+            call SaveUnitHandle(HH,id,2,target)
+            call MoveUnit(target,caster,-200,facing)
+        else
+            call UnitSpeed(LoadUnitHandle(HH,id,20),1)
+            call SetUnitAnimationByIndex(LoadUnitHandle(HH,id,20),2)
+            if LoadUnitHandle(HH,id,22)!=null then
+            call RemoveUnit(LoadUnitHandle(HH,id,22))
+            call SaveUnitHandle(HH,id,22,null)
+            endif
+            call GroupClear(gr)
+            call DestroyGroup(gr)
+            call PauseUnit(caster,false)
+            call SetUnitInvulnerable(caster,false)
+            call SetUnitPathing(caster,true)
+            call PauseTimer(GetExpiredTimer())
+            call DestroyTimer(GetExpiredTimer())
+            call PauseUnit(caster,false)
+            call SetUnitInvulnerable(caster,false)
+            call SetUnitAnimation(caster,"Spell Channel")
+            call PauseUnit(target,false)
+            call SaveBoolean(HH,GetHandleId(target),TARGET_ABILITY,false)
+            call SaveUnitHandle(HH,GetHandleId(target),REVERSE_TARGET,caster)
+            call SetUnitVertexColor(caster,255,255,255,255)
+            call FlushChildHashtable(HH,id)
+        endif
+    endif
 endif
 endif
 if time>5 then
@@ -233804,7 +233877,7 @@ local integer id=GetHandleId(t)
 local real x0=GetUnitX(caster)
 local real y0=GetUnitY(caster)
 local real facing=Angle2(x0,y0,x1,y1)
-local real damage=2*GetHeroInt(caster,true)
+local real damage=1*GetHeroInt(caster,true)
 call SetUnitState(caster,UNIT_STATE_MANA,GetUnitState(caster,UNIT_STATE_MANA)-GetUnitState(caster,UNIT_STATE_MAX_MANA)*0.05)
 call SaveUnitHandle(HH,id,1,caster)
 call SaveReal(HH,id,3,facing)
@@ -234184,7 +234257,7 @@ if GetSpellAbilityId()=='RsT1' then
         else
             call UnitRemoveAbility(caster,'RsT4')
         endif
-endif
+    endif
 endif
 if GetSpellAbilityId()=='RsD1' then
 call Roshi_D_Act(caster,x1,y1)
@@ -234276,9 +234349,9 @@ endif
 set lvl='A0K4'
 if GetLearnedSkill()==lvl then
 call SetUnitAbilityLevel(caster,'BuuG',GetUnitAbilityLevel(caster,lvl))
-if GetUnitAbilityLevel(caster,lvl)==1 then
-call DisplayTextToPlayer(skillPlayer,0,0,"Вы теперь Буу")
-endif
+// if GetUnitAbilityLevel(caster,lvl)==1 then
+// call DisplayTextToPlayer(skillPlayer,0,0,"Вы теперь Буу")
+// endif
 endif
 set lvl='A0BG'
 if GetLearnedSkill()==lvl then
@@ -234298,7 +234371,7 @@ endif
 
 set lvl='RsE1'
 if GetLearnedSkill()==lvl and GetUnitAbilityLevel(caster,lvl)==1 then
-call DisplayTextToPlayer(skillPlayer,0,0,"Roshi E Learned")
+// call DisplayTextToPlayer(skillPlayer,0,0,"Roshi E Learned")
 call Roshi_D_Stack(caster)
 endif
 
