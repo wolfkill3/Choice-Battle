@@ -112729,9 +112729,9 @@ call GroupClear(G)
 
 if time1==0.2 or time==0.02 then
 if time<0.5 then
-call DamageAoeAndStun(caster,GetUnitX(caster),GetUnitY(caster),400+time*1400,damage*0.07,1)
+call DamageAoeAndStun(caster,GetUnitX(caster),GetUnitY(caster),400+time*1400,damage*0.07,0.5)
 else
-call DamageAoeAndStun(caster,GetUnitX(caster),GetUnitY(caster),1200,damage*0.07,1)
+call DamageAoeAndStun(caster,GetUnitX(caster),GetUnitY(caster),1200,damage*0.07,0.5)
 endif
 endif
 if time==0.02 or time1>=0.2 then
@@ -112750,7 +112750,7 @@ local integer id=GetHandleId(t)
 local real x0=GetUnitX(caster)
 local real y0=GetUnitY(caster)
 local real facing=GetUnitFacing(caster)
-local real damage=GetHeroInt(caster,true)*12
+local real damage=GetHeroInt(caster,true)*10
 call SaveUnitHandle(HH,id,1,caster)
 call SaveReal(HH,id,3,facing)
 call PauseUnit(caster,true)
@@ -170357,7 +170357,7 @@ function BelfT_Periodic takes nothing returns nothing
 		set bjLCU=FirstOfGroup(bjLCG)
 		exitwhen bjLCU==null
 			if Condition_Base(GetOwningPlayer(caster),bjLCU)==true then
-				call BelfegorStormDamage(caster,bjLCU,(GetHeroInt(caster,true)*3))
+				call BelfegorStormDamage(caster,bjLCU,(GetHeroInt(caster,true)*1))
 				//call UnitAddBelfegorMark(caster,bjLCU)
 			endif
 		call GroupRemoveUnit(bjLCG,bjLCU)
