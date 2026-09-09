@@ -8521,6 +8521,7 @@ call PreloadSound("Voice\\KarnaSummon.mp3")
 call PreloadSound("Voice\\JirenSummon.mp3")
 call PreloadSound("Voice\\JirenSummon-jap.mp3")
 call PreloadSound("Voice\\GojoSummon.mp3")
+call PreloadSound("Voice\\RoshiSummon.mp3")
 set soundStr[1]=CreateSound("Sound\\Music\\mp3Music\\BrolyFirstLSSTransform.mp3",false,false,true,12700,12700,"")
 set soundStr[2]=CreateSound("Sound\\Music\\mp3Music\\BrolyFirstLSSTransformGoku.mp3",false,false,true,12700,12700,"")
 set soundStr[3]=CreateSound("Sound\\Music\\mp3Music\\BrolyLSSTransform.mp3",false,false,true,12700,12700,"")
@@ -9043,6 +9044,14 @@ set l__s="GojoSummon.mp3"
 
 elseif id=='HGrp' then
 set l__s="GarpSummon.mp3"
+
+elseif id=='HSig' then
+set l__s="SignumSummon.mp3"
+
+//Roshi1Start
+elseif id=='Rosh' then
+set l__s="RoshiSummon.mp3"
+//Roshi1End
 
 endif
 return l__s
@@ -226592,14 +226601,9 @@ local real x0=GetUnitX(caster)
 local real y0=GetUnitY(caster)
 local real facing=Angle2(x0,y0,x1,y1)
 local real current_hp=GetUnitState(caster,UNIT_STATE_LIFE)
-local real decrease_hp=GetUnitState(caster,UNIT_STATE_LIFE)*0.15
-local real decrease_hp1=GetUnitState(caster,UNIT_STATE_LIFE)*0.15
+local real decrease_hp=GetUnitState(caster,UNIT_STATE_LIFE)*0.1
+local real decrease_hp1=GetUnitState(caster,UNIT_STATE_LIFE)*0.1
 local real damage=200+GetHeroAgi(caster,true)*5
-
-
-        if passedTime < 0 then
-            set decrease_hp1 = decrease_hp1*(1.00+(0.05*passedTime))
-        endif
 
 
 call SaveUnitHandle(HH,id,1,caster)
@@ -226763,15 +226767,11 @@ local real x0=GetUnitX(caster)
 local real y0=GetUnitY(caster)
 local real facing=Angle2(x0,y0,x1,y1)
 local real current_hp=GetUnitState(caster,UNIT_STATE_LIFE)
-local real decrease_hp=GetUnitState(caster,UNIT_STATE_LIFE)*0.15
-local real decrease_hp1=GetUnitState(caster,UNIT_STATE_LIFE)*0.15
+local real decrease_hp=GetUnitState(caster,UNIT_STATE_LIFE)*0.1
+local real decrease_hp1=GetUnitState(caster,UNIT_STATE_LIFE)*0.1
 local real damage=(50+GetHeroAgi(caster,true))*GetUnitAbilityLevel(caster,'AKQ1')
 
 
-
-        if passedTime < 0 then
-            set decrease_hp1 = decrease_hp1*(1.00+(0.05*passedTime))
-        endif
 
 
 
@@ -226900,13 +226900,10 @@ local real x0=GetUnitX(caster)
 local real y0=GetUnitY(caster)
 local real facing=Angle2(x0,y0,x1,y1)
 local real current_hp=GetUnitState(caster,UNIT_STATE_LIFE)
-local real decrease_hp=GetUnitState(caster,UNIT_STATE_LIFE)*0.15
-local real decrease_hp1=GetUnitState(caster,UNIT_STATE_LIFE)*0.15
+local real decrease_hp=GetUnitState(caster,UNIT_STATE_LIFE)*0.1
+local real decrease_hp1=GetUnitState(caster,UNIT_STATE_LIFE)*0.1
 local real damage=50+GetHeroAgi(caster,true)
 
-        if passedTime < 0 then
-            set decrease_hp1 = decrease_hp1*(1.00+(0.05*passedTime))
-        endif
 
 
 call SaveUnitHandle(HH,id,1,caster)
@@ -227055,14 +227052,10 @@ local real x0=GetUnitX(caster)
 local real y0=GetUnitY(caster)
 local real facing=Angle2(x0,y0,x1,y1)
 local real current_hp=GetUnitState(caster,UNIT_STATE_LIFE)
-local real decrease_hp=GetUnitState(caster,UNIT_STATE_LIFE)*0.15
-local real decrease_hp1=GetUnitState(caster,UNIT_STATE_LIFE)*0.15
+local real decrease_hp=GetUnitState(caster,UNIT_STATE_LIFE)*0.1
+local real decrease_hp1=GetUnitState(caster,UNIT_STATE_LIFE)*0.1
 local real damage=75+(GetUnitAbilityLevel(caster,'AKE1')+2)*GetHeroAgi(caster,true)
 
-
-        if passedTime < 0 then
-            set decrease_hp1 = decrease_hp1*(1.00+(0.05*passedTime))
-        endif
 
 
 call SaveUnitHandle(HH,id,1,caster)
@@ -227321,8 +227314,8 @@ local real x1=GetUnitX(target)
 local real y1=GetUnitY(target)
 local real facing=Angle2(x0,y0,x1,y1)
 local real current_hp=GetUnitState(caster,UNIT_STATE_LIFE)
-local real decrease_hp=GetUnitState(caster,UNIT_STATE_LIFE)*0.15
-local real decrease_hp1=GetUnitState(caster,UNIT_STATE_LIFE)*0.15
+local real decrease_hp=GetUnitState(caster,UNIT_STATE_LIFE)*0.1
+local real decrease_hp1=GetUnitState(caster,UNIT_STATE_LIFE)*0.1
 local real damage=150+(GetUnitAbilityLevel(caster,'AKR1')+3)*GetHeroAgi(caster,true)
 call SaveUnitHandle(HH,id,1,caster)
 call SaveUnitHandle(HH,id,2,target)
@@ -227331,10 +227324,6 @@ call PauseUnit(caster,true)
 call SetUnitInvulnerable(caster,true)
 
 
-
-        if passedTime < 0 then
-            set decrease_hp1 = decrease_hp1*(1.00+(0.05*passedTime))
-        endif
 
 call SetUnitState(caster,UNIT_STATE_LIFE,current_hp-decrease_hp1)
 
@@ -227583,14 +227572,10 @@ local real x0=GetUnitX(caster)
 local real y0=GetUnitY(caster)
 local real facing=Angle2(x0,y0,x1,y1)
 local real current_hp=GetUnitState(caster,UNIT_STATE_LIFE)
-local real decrease_hp=GetUnitState(caster,UNIT_STATE_LIFE)*0.15
-local real decrease_hp1=GetUnitState(caster,UNIT_STATE_LIFE)*0.15
+local real decrease_hp=GetUnitState(caster,UNIT_STATE_LIFE)*0.1
+local real decrease_hp1=GetUnitState(caster,UNIT_STATE_LIFE)*0.1
 local real damage=10*GetHeroAgi(caster,true)
 
-
-        if passedTime < 0 then
-            set decrease_hp1 = decrease_hp1*(1.00+(0.05*passedTime))
-        endif
 
 call SaveUnitHandle(HH,id,1,caster)
 call SaveReal(HH,id,3,facing)
