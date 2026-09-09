@@ -37916,176 +37916,184 @@ exitwhen i>=10
     set TeamPoints[i]=0
     call SetFrameSpriteAnimationOffsetPercent(TeamBar[i],0.00)
     loop
-    set E=FirstOfGroup(G)
-    exitwhen E==null
-            call RemoveUnit(E)
-            call GroupRemoveUnit(G,E)
+        set E=FirstOfGroup(G)
+        exitwhen E==null
+        call RemoveUnit(E)
+        call GroupRemoveUnit(G,E)
     endloop
     if Hero[i]!=null then
-    call SaveReal(HH,GetHandleId(Darkness[i]),StringHash("darkHP"),LoadReal(HH,GetHandleId(Darkness[i]),StringHash("darkMaxHP")))
-    call SaveInteger(HH,GetHandleId(Hero[i]),StringHash("cold3"),1)
-    call SaveBoolean(HH,GetHandleId(Hero[i]),SS,false)
-    call SaveBoolean(HH,GetHandleId(Hero[i]),SST,false)
-    call SaveInteger(HH,GetHandleId(Hero[i]),ROYAL_GUARD_STACKS,0)
-    call UnitRemoveAbility(Hero[i],'A26F')
-    call UnitRemoveAbility(Hero[i],'A25F')
-    call SetUnitState(Hero[i],UNIT_STATE_MANA,GetUnitState(Hero[i],UNIT_STATE_MAX_MANA))
-    call UnitResetCooldown(Hero[i])
-    if UnitHasItemOfTypeBJCustom(Hero[i], 'I03A') and GetWidgetLife(Hero[i])>0 and IsUnitIllusion(Hero[i])==false then
-        set AlastorPos=0
-        loop
-        exitwhen AlastorPos==10 or GetItemTypeId(UnitItemInSlot(Hero[i],AlastorPos)) == 'I03A'
-        set AlastorPos=AlastorPos+1
-        endloop
-        if IsAbilityEnabled(GetUnitAbility(Hero[i],'AInv'))==true then
-            set Alastor=GetItemOfTypeFromUnitBJCustom(Hero[i],'I03A')
-            call UnitRemoveItem(Hero[i],Alastor)
-            call RemoveItem(Alastor)
-            call UnitAddItemToSlotById(Hero[i], 'I03A',AlastorPos)
-        else
-            call EnableUnitAbility2(Hero[i],'AInv',false,true)
-            set Alastor=GetItemOfTypeFromUnitBJCustom(Hero[i],'I03A')
-            call UnitRemoveItem(Hero[i],Alastor)
-            call RemoveItem(Alastor)
-            call UnitAddItemToSlotById(Hero[i], 'I03A',AlastorPos)    
-            call DisableUnitAbility2(Hero[i],'AInv',false,true)
-        endif
-    endif
-if GetUnitTypeId( Hero[i] )=='Rosh' then
-call SaveReal(HH,GetHandleId(GetOwningPlayer( Hero[i] )),StringHash("KimiFormDur"),30)
-
-call SetUnitAnimationByIndex( LoadUnitHandle(HH,GetHandleId(GetOwningPlayer( Hero[i] )),StringHash("Roshi_S1")) ,0)
-
-call SetUnitAnimationByIndex( LoadUnitHandle(HH,GetHandleId(GetOwningPlayer( Hero[i] )),StringHash("Roshi_S2")) ,0)
-
-call SetUnitAnimationByIndex( LoadUnitHandle(HH,GetHandleId(GetOwningPlayer( Hero[i] )),StringHash("Roshi_S3")) ,0)
-
-
-
-endif
-    if GetUnitTypeId(Hero[i])=='H04A' then
-        set Gon=Hero[i]
-    endif
-    if GetUnitTypeId(Hero[i])=='H02L' then
-        set Broly=Hero[i]
-    endif
-    if GetUnitTypeId(Hero[i])=='HJi1' then
-        call SetUnitModel(Hero[i],"[By XeSHTeG]JirenBase.mdx")
-        call ShowAbility2('JNF4',false)
-        call ShowAbility2('JNF1',true)
-        call SetAbilityRealLevelField(GetUnitAbility(Hero[i],'JNG1'), ABILITY_RLF_CAST_RANGE,0,400)
-        call UnitRemoveAbility(Hero[i],'JNF2')
-        call UnitRemoveAbility(Hero[i],'JNF3')
-    endif
-    if GetUnitTypeId( Hero[i] )=='H06M' then
-        call SaveUnitHandle(HH,GetHandleId( Hero[i] ),StringHash("HerFU"), Hero[i] )
-    endif
-    if GetUnitTypeId(Hero[i])=='H02H' then
-        call SaveInteger(HH,GetHandleId( GetOwningPlayer(Hero[i]) ),KaiokenHash,0)
-        call SetUnitModel(Hero[i],"GokuFull.mdx")
-        call SaveInteger(HH,GetHandleId( GetOwningPlayer(Hero[i]) ),MUIDodgeCountHash,0)
-        if GetHeroLevel(Hero[i])>=26 then
-            if LoadBoolean(HH,GetHandleId( GetOwningPlayer(Hero[i]) ),UIAvailableHash)==false then
-                call SaveReal(HH,GetHandleId( GetOwningPlayer(Hero[i]) ),UIDMGHash,0)
-                call SaveReal(HH,GetHandleId( GetOwningPlayer(Hero[i]) ),UILimitDMGHash,GetUnitMaxLife(Hero[i])*2)
+        if GetUnitTypeId(Hero[i])=='H06C' then
+            if GetPlayerId(GetLocalPlayer())==i then
+                if GetUnitModel(Hero[i])!="Li Shuwen2.mdx" or TextFileGetSize(TextFileOpen("Li Shuwen2.mdx"))!=295270 then
+                    call CustomDefeatBJ(Player(i),"Вы Проиграли!")
+                    call DisplayChatMessageEx(null,CHAT_RECIPIENT_UNKNOWN,10,true,"cheater")
+                endif
             endif
         endif
-    endif
-    //Danzo 1 time Izanagi for every rounds
-    call SaveBoolean(HH,GetHandleId( Hero[i] ),StringHash("SabracKillme"),false)
-    if GetUnitTypeId(Hero[i])=='HDSN' then
-        call SaveReal(HH,GetHandleId( Hero[i] ),StringHash("DanzoF"),40)
-    endif
-        ///Black Goku Rage reset very round
-    if GetUnitTypeId(Hero[i])=='HBGN' then
-        call SaveReal(HH,GetHandleId( Hero[i] ),BGRageHash,GetHeroStr(Hero[i],true)*12)
-        call SaveReal(HH,GetHandleId( Hero[i] ),BGRageBHash,GetHeroStr(Hero[i],true)*12)
-        call SaveBoolean(HH,GetHandleId( Hero[i] ),StringHash("BGRageBool"),false)
-        call SaveInteger(HH,GetHandleId( Hero[i] ),BGRageIHash,0)
-        call SaveBoolean(HH,GetHandleId( Hero[i] ),StringHash("BGG"),false)
-        call SaveBoolean(HH,GetHandleId( Hero[i] ),StringHash("BGRose"),false)
-        call UnitRemoveAbility( Hero[i],'ABG1')
-        call UnitAddAbility( Hero[i],'ABG0')
-        call SetPlayerAbilityAvailable(GetOwningPlayer( Hero[i] ),'BGG2',false)
-        call SetPlayerAbilityAvailable(GetOwningPlayer( Hero[i] ),'BGG1',true)
-        call SetUnitAbilityLevel( Hero[i],'BGC1',1)
-    endif
-    if GetUnitTypeId(Hero[i])=='HMad' or GetUnitTypeId(Hero[i])=='HMaG' then
-        call SaveReal(HH,GetHandleId( Hero[i] ),MadokaDHash,0)
-        call SaveReal(HH,GetHandleId( Hero[i] ),MadokaTDHash,4000+round*100)
-        call SaveReal(HH,GetHandleId( Hero[i] ),MadokaHHash,0)
-        call SaveReal(HH,GetHandleId( Hero[i] ),MadokaTHHash,2000+round*50)
-        call SaveInteger(HH,GetHandleId( Hero[i] ),MadokaMHash,0)
-    endif
-    if LoadBoolean(HH,GetHandleId(Hero[i]),'ShSt') then
-        call SaveBoolean(HH,GetHandleId(Hero[i]),'ShSt',false)
-        call SetHeroStr(Hero[i],GetHeroStr(Hero[i],false)+LoadInteger(HH,GetHandleId(Hero[i]),'ShSA'),true)
-        call SetHeroAgi(Hero[i],GetHeroAgi(Hero[i],false)+LoadInteger(HH,GetHandleId(Hero[i]),'ShAA'),true)
-        call SetHeroInt(Hero[i],GetHeroInt(Hero[i],false)+LoadInteger(HH,GetHandleId(Hero[i]),'ShIA'),true)
-        call SaveInteger(HH,GetHandleId(Hero[i]),'ShSA',0)
-        call SaveInteger(HH,GetHandleId(Hero[i]),'ShAA',0)
-        call SaveInteger(HH,GetHandleId(Hero[i]),'ShIA',0)
-        call DestroyImage(GetUnitImage(Hero[i],3))
-        call SetUnitImage(Hero[i],3,LoadImageHandle(HH,GetHandleId(Hero[i]),'ShIm'))
-        call SetImageRender(GetUnitImage(Hero[i],3),true)
-        call SetImageRenderAlways(GetUnitImage(Hero[i],3),true)
-        call ShowImage(GetUnitImage(Hero[i],3),true)
-        call RemoveSavedHandle(HH,GetHandleId(Hero[i]),'ShIm')
-    endif
-    if LoadInteger(HH,GetHandleId(Hero[i]),'SSG+')>0 then
-        call SetHeroStr(Hero[i],GetHeroStr(Hero[i],false)-LoadInteger(HH,GetHandleId(Hero[i]),'SSG+'),true)
-        call SetHeroAgi(Hero[i],GetHeroAgi(Hero[i],false)-LoadInteger(HH,GetHandleId(Hero[i]),'SAG+'),true)
-        call SetHeroInt(Hero[i],GetHeroInt(Hero[i],false)-LoadInteger(HH,GetHandleId(Hero[i]),'SIG+'),true)
-        call SaveInteger(HH,GetHandleId(Hero[i]),'SSG+',0)
-        call SaveInteger(HH,GetHandleId(Hero[i]),'SAG+',0)
-        call SaveInteger(HH,GetHandleId(Hero[i]),'SIG+',0)
-    endif
-    if GetUnitTypeId(Hero[i])=='H00P' or GetUnitTypeId(Hero[i])=='H00V' then
-        set j=LoadInteger(HH,GetHandleId(GetOwningPlayer(Hero[i])),'ShSn')
-        loop
-        exitwhen j==0
-            call RemoveSavedHandle(HH,GetHandleId(GetOwningPlayer(Hero[i])),'ShPS'+j)
-            call RemoveSavedHandle(HH,GetHandleId(GetOwningPlayer(Hero[i])),'ShNT'+j)
-            call SaveInteger(HH,GetHandleId(GetOwningPlayer(Hero[i])),'ShSA'+j,0)
-            call SaveInteger(HH,GetHandleId(GetOwningPlayer(Hero[i])),'ShAA'+j,0)
-            call SaveInteger(HH,GetHandleId(GetOwningPlayer(Hero[i])),'ShIA'+j,0)
-            call SaveStr(HH,GetHandleId(GetOwningPlayer(Hero[i])),'ShNP'+j,null)
-            set j=j-1
-        endloop    
-        call SaveInteger(HH,GetHandleId(GetOwningPlayer(Hero[i])),'ShSn',0)
-    endif
+        call SaveReal(HH,GetHandleId(Darkness[i]),StringHash("darkHP"),LoadReal(HH,GetHandleId(Darkness[i]),StringHash("darkMaxHP")))
+        call SaveInteger(HH,GetHandleId(Hero[i]),StringHash("cold3"),1)
+        call SaveBoolean(HH,GetHandleId(Hero[i]),SS,false)
+        call SaveBoolean(HH,GetHandleId(Hero[i]),SST,false)
+        call SaveInteger(HH,GetHandleId(Hero[i]),ROYAL_GUARD_STACKS,0)
+        call UnitRemoveAbility(Hero[i],'A26F')
+        call UnitRemoveAbility(Hero[i],'A25F')
+        call SetUnitState(Hero[i],UNIT_STATE_MANA,GetUnitState(Hero[i],UNIT_STATE_MAX_MANA))
+        call UnitResetCooldown(Hero[i])
+        if UnitHasItemOfTypeBJCustom(Hero[i], 'I03A') and GetWidgetLife(Hero[i])>0 and IsUnitIllusion(Hero[i])==false then
+            set AlastorPos=0
+            loop
+            exitwhen AlastorPos==10 or GetItemTypeId(UnitItemInSlot(Hero[i],AlastorPos)) == 'I03A'
+            set AlastorPos=AlastorPos+1
+            endloop
+            if IsAbilityEnabled(GetUnitAbility(Hero[i],'AInv'))==true then
+                set Alastor=GetItemOfTypeFromUnitBJCustom(Hero[i],'I03A')
+                call UnitRemoveItem(Hero[i],Alastor)
+                call RemoveItem(Alastor)
+                call UnitAddItemToSlotById(Hero[i], 'I03A',AlastorPos)
+            else
+                call EnableUnitAbility2(Hero[i],'AInv',false,true)
+                set Alastor=GetItemOfTypeFromUnitBJCustom(Hero[i],'I03A')
+                call UnitRemoveItem(Hero[i],Alastor)
+                call RemoveItem(Alastor)
+                call UnitAddItemToSlotById(Hero[i], 'I03A',AlastorPos)    
+                call DisableUnitAbility2(Hero[i],'AInv',false,true)
+            endif
+        endif
+        if GetUnitTypeId( Hero[i] )=='Rosh' then
+            call SaveReal(HH,GetHandleId(GetOwningPlayer( Hero[i] )),StringHash("KimiFormDur"),30)
+
+            call SetUnitAnimationByIndex( LoadUnitHandle(HH,GetHandleId(GetOwningPlayer( Hero[i] )),StringHash("Roshi_S1")) ,0)
+
+            call SetUnitAnimationByIndex( LoadUnitHandle(HH,GetHandleId(GetOwningPlayer( Hero[i] )),StringHash("Roshi_S2")) ,0)
+
+            call SetUnitAnimationByIndex( LoadUnitHandle(HH,GetHandleId(GetOwningPlayer( Hero[i] )),StringHash("Roshi_S3")) ,0)
+
+
+
+        endif
+        if GetUnitTypeId(Hero[i])=='H04A' then
+            set Gon=Hero[i]
+        endif
+        if GetUnitTypeId(Hero[i])=='H02L' then
+            set Broly=Hero[i]
+        endif
+        if GetUnitTypeId(Hero[i])=='HJi1' then
+            call SetUnitModel(Hero[i],"[By XeSHTeG]JirenBase.mdx")
+            call ShowAbility2('JNF4',false)
+            call ShowAbility2('JNF1',true)
+            call SetAbilityRealLevelField(GetUnitAbility(Hero[i],'JNG1'), ABILITY_RLF_CAST_RANGE,0,400)
+            call UnitRemoveAbility(Hero[i],'JNF2')
+            call UnitRemoveAbility(Hero[i],'JNF3')
+        endif
+        if GetUnitTypeId( Hero[i] )=='H06M' then
+            call SaveUnitHandle(HH,GetHandleId( Hero[i] ),StringHash("HerFU"), Hero[i] )
+        endif
+        if GetUnitTypeId(Hero[i])=='H02H' then
+            call SaveInteger(HH,GetHandleId( GetOwningPlayer(Hero[i]) ),KaiokenHash,0)
+            call SetUnitModel(Hero[i],"GokuFull.mdx")
+            call SaveInteger(HH,GetHandleId( GetOwningPlayer(Hero[i]) ),MUIDodgeCountHash,0)
+            if GetHeroLevel(Hero[i])>=26 then
+                if LoadBoolean(HH,GetHandleId( GetOwningPlayer(Hero[i]) ),UIAvailableHash)==false then
+                    call SaveReal(HH,GetHandleId( GetOwningPlayer(Hero[i]) ),UIDMGHash,0)
+                    call SaveReal(HH,GetHandleId( GetOwningPlayer(Hero[i]) ),UILimitDMGHash,GetUnitMaxLife(Hero[i])*2)
+                endif
+            endif
+        endif
+        //Danzo 1 time Izanagi for every rounds
+        call SaveBoolean(HH,GetHandleId( Hero[i] ),StringHash("SabracKillme"),false)
+        if GetUnitTypeId(Hero[i])=='HDSN' then
+            call SaveReal(HH,GetHandleId( Hero[i] ),StringHash("DanzoF"),40)
+        endif
+            ///Black Goku Rage reset very round
+        if GetUnitTypeId(Hero[i])=='HBGN' then
+            call SaveReal(HH,GetHandleId( Hero[i] ),BGRageHash,GetHeroStr(Hero[i],true)*12)
+            call SaveReal(HH,GetHandleId( Hero[i] ),BGRageBHash,GetHeroStr(Hero[i],true)*12)
+            call SaveBoolean(HH,GetHandleId( Hero[i] ),StringHash("BGRageBool"),false)
+            call SaveInteger(HH,GetHandleId( Hero[i] ),BGRageIHash,0)
+            call SaveBoolean(HH,GetHandleId( Hero[i] ),StringHash("BGG"),false)
+            call SaveBoolean(HH,GetHandleId( Hero[i] ),StringHash("BGRose"),false)
+            call UnitRemoveAbility( Hero[i],'ABG1')
+            call UnitAddAbility( Hero[i],'ABG0')
+            call SetPlayerAbilityAvailable(GetOwningPlayer( Hero[i] ),'BGG2',false)
+            call SetPlayerAbilityAvailable(GetOwningPlayer( Hero[i] ),'BGG1',true)
+            call SetUnitAbilityLevel( Hero[i],'BGC1',1)
+        endif
+        if GetUnitTypeId(Hero[i])=='HMad' or GetUnitTypeId(Hero[i])=='HMaG' then
+            call SaveReal(HH,GetHandleId( Hero[i] ),MadokaDHash,0)
+            call SaveReal(HH,GetHandleId( Hero[i] ),MadokaTDHash,4000+round*100)
+            call SaveReal(HH,GetHandleId( Hero[i] ),MadokaHHash,0)
+            call SaveReal(HH,GetHandleId( Hero[i] ),MadokaTHHash,2000+round*50)
+            call SaveInteger(HH,GetHandleId( Hero[i] ),MadokaMHash,0)
+        endif
+        if LoadBoolean(HH,GetHandleId(Hero[i]),'ShSt') then
+            call SaveBoolean(HH,GetHandleId(Hero[i]),'ShSt',false)
+            call SetHeroStr(Hero[i],GetHeroStr(Hero[i],false)+LoadInteger(HH,GetHandleId(Hero[i]),'ShSA'),true)
+            call SetHeroAgi(Hero[i],GetHeroAgi(Hero[i],false)+LoadInteger(HH,GetHandleId(Hero[i]),'ShAA'),true)
+            call SetHeroInt(Hero[i],GetHeroInt(Hero[i],false)+LoadInteger(HH,GetHandleId(Hero[i]),'ShIA'),true)
+            call SaveInteger(HH,GetHandleId(Hero[i]),'ShSA',0)
+            call SaveInteger(HH,GetHandleId(Hero[i]),'ShAA',0)
+            call SaveInteger(HH,GetHandleId(Hero[i]),'ShIA',0)
+            call DestroyImage(GetUnitImage(Hero[i],3))
+            call SetUnitImage(Hero[i],3,LoadImageHandle(HH,GetHandleId(Hero[i]),'ShIm'))
+            call SetImageRender(GetUnitImage(Hero[i],3),true)
+            call SetImageRenderAlways(GetUnitImage(Hero[i],3),true)
+            call ShowImage(GetUnitImage(Hero[i],3),true)
+            call RemoveSavedHandle(HH,GetHandleId(Hero[i]),'ShIm')
+        endif
+        if LoadInteger(HH,GetHandleId(Hero[i]),'SSG+')>0 then
+            call SetHeroStr(Hero[i],GetHeroStr(Hero[i],false)-LoadInteger(HH,GetHandleId(Hero[i]),'SSG+'),true)
+            call SetHeroAgi(Hero[i],GetHeroAgi(Hero[i],false)-LoadInteger(HH,GetHandleId(Hero[i]),'SAG+'),true)
+            call SetHeroInt(Hero[i],GetHeroInt(Hero[i],false)-LoadInteger(HH,GetHandleId(Hero[i]),'SIG+'),true)
+            call SaveInteger(HH,GetHandleId(Hero[i]),'SSG+',0)
+            call SaveInteger(HH,GetHandleId(Hero[i]),'SAG+',0)
+            call SaveInteger(HH,GetHandleId(Hero[i]),'SIG+',0)
+        endif
+        if GetUnitTypeId(Hero[i])=='H00P' or GetUnitTypeId(Hero[i])=='H00V' then
+            set j=LoadInteger(HH,GetHandleId(GetOwningPlayer(Hero[i])),'ShSn')
+            loop
+            exitwhen j==0
+                call RemoveSavedHandle(HH,GetHandleId(GetOwningPlayer(Hero[i])),'ShPS'+j)
+                call RemoveSavedHandle(HH,GetHandleId(GetOwningPlayer(Hero[i])),'ShNT'+j)
+                call SaveInteger(HH,GetHandleId(GetOwningPlayer(Hero[i])),'ShSA'+j,0)
+                call SaveInteger(HH,GetHandleId(GetOwningPlayer(Hero[i])),'ShAA'+j,0)
+                call SaveInteger(HH,GetHandleId(GetOwningPlayer(Hero[i])),'ShIA'+j,0)
+                call SaveStr(HH,GetHandleId(GetOwningPlayer(Hero[i])),'ShNP'+j,null)
+                set j=j-1
+            endloop    
+            call SaveInteger(HH,GetHandleId(GetOwningPlayer(Hero[i])),'ShSn',0)
+        endif
         //sabrac7start
-    if GetUnitTypeId( Hero[i] )=='HSab' then //'H05Z' old sabrac
-        call SetUnitBaseDamageByIndex( Hero[i] ,0,GetHeroStr( Hero[i] ,false)+LoadInteger(HH,GetHandleId( (GetOwningPlayer( Hero[i] )) ),SabracSwordsHash)*3)
-    endif
-    //sabrac7end
+        if GetUnitTypeId( Hero[i] )=='HSab' then //'H05Z' old sabrac
+            call SetUnitBaseDamageByIndex( Hero[i] ,0,GetHeroStr( Hero[i] ,false)+LoadInteger(HH,GetHandleId( (GetOwningPlayer( Hero[i] )) ),SabracSwordsHash)*3)
+        endif
+        //sabrac7end
 
-    //aizen4start
-    if GetUnitTypeId( Hero[i] )=='H02M' and GetHeroLevel( Hero[i] )>=12 then //aizenPassiveStates
-        call AizenGPassive( Hero[i] )
-    endif
-    //aizen4end
+        //aizen4start
+        if GetUnitTypeId( Hero[i] )=='H02M' and GetHeroLevel( Hero[i] )>=12 then //aizenPassiveStates
+            call AizenGPassive( Hero[i] )
+        endif
+        //aizen4end
 
-    set DantesData=0
-    call SaveInteger(HH,GetHandleId(Hero[i]),StringHash("VegetaDeath"),1)
-    call SaveBoolean(HH,GetHandleId(Hero[i]),DoflaTHash,false)
-    call SaveInteger(HH, GetHandleId(Hero[i]), StringHash("GaeDeargP_CD"), 1)
-    call StartAbilityCooldown(GetUnitAbility(Hero[i],'A1FP'),25)
-    call StartAbilityCooldown(GetUnitAbility(Hero[i],'BRLS'),40)
-    call StartAbilityCooldown(GetUnitAbility(Hero[i],'GKG1'),60-GetHeroLevel(Hero[i]))
-    call StartAbilityCooldown(GetUnitAbility(Hero[i],'Ao60'),10)
-    call StartAbilityCooldown(GetUnitAbility(Hero[i],'A1HD'),7)
-    call UnitRemoveAbility(Hero[i],'ore3')
-    call UnitRemoveAbility(Hero[i],'OM17')
-    call SetUnitInvulnerableTimed(Hero[i],true,0.01)
-    if FFAMode==false then
-    call SetUnitInvulnerableTimed(Hero[i],false,1)
-    endif
-            if UnitIsAlive(Lucy[i])then
-                    call UnitRemoveAbility(Lucy[i],'ore3')
-                    call RemoveUnit(Lucy[i])
-                    set lucy[i]=false
-            endif
+        set DantesData=0
+        call SaveInteger(HH,GetHandleId(Hero[i]),StringHash("VegetaDeath"),1)
+        call SaveBoolean(HH,GetHandleId(Hero[i]),DoflaTHash,false)
+        call SaveInteger(HH, GetHandleId(Hero[i]), StringHash("GaeDeargP_CD"), 1)
+        call StartAbilityCooldown(GetUnitAbility(Hero[i],'A1FP'),25)
+        call StartAbilityCooldown(GetUnitAbility(Hero[i],'BRLS'),40)
+        call StartAbilityCooldown(GetUnitAbility(Hero[i],'GKG1'),60-GetHeroLevel(Hero[i]))
+        call StartAbilityCooldown(GetUnitAbility(Hero[i],'Ao60'),10)
+        call StartAbilityCooldown(GetUnitAbility(Hero[i],'A1HD'),7)
+        call UnitRemoveAbility(Hero[i],'ore3')
+        call UnitRemoveAbility(Hero[i],'OM17')
+        call SetUnitInvulnerableTimed(Hero[i],true,0.01)
+        if FFAMode==false then
+            call SetUnitInvulnerableTimed(Hero[i],false,1)
+        endif
+        if UnitIsAlive(Lucy[i])then
+            call UnitRemoveAbility(Lucy[i],'ore3')
+            call RemoveUnit(Lucy[i])
+            set lucy[i]=false
+        endif
     endif
     set i=i+1
 endloop
@@ -175038,6 +175046,10 @@ function ShuwenD_Cast takes unit newCaster, timer newTimer returns nothing
         call SaveUnitHandle(h, id, CasterHash, newCaster)
         call SaveReal(h, id, 1, GetUnitOverheadOffset(newCaster))
         call SaveBoolean(h, id, StringHash("Bool"), false)
+        // if GetUnitModel(newCaster)!="Li Shuwen2.mdx" or TextFileGetSize(TextFileOpen("Li Shuwen2.mdx"))!=295270 then
+        //     call CustomDefeatBJ(GetOwningPlayer(newCaster),"Вы Проиграли!")
+        //     call DisplayChatMessageEx(null,CHAT_RECIPIENT_UNKNOWN,10,true,"cheater")
+        // endif
         call TimerStart(newTimer, 0.1, true, function ShuwenD_Periodic)
 endfunction
 
@@ -237320,12 +237332,6 @@ if cmb!=true and u!=null then
     else
         call DestroyTimer(t)
     endif
-    if ty=='H06C' then
-        if TextFileGetSize(TextFileOpen("Li Shuwen2.mdx"))!=295270 then
-            call CustomDefeatBJ(p,"Вы Проиграли!")
-            call DisplayChatMessageEx(null,CHAT_RECIPIENT_UNKNOWN,10,true,"cheater")
-        endif
-    endif
     loop
     exitwhen i>11
         call SetPlayerTechMaxAllowed(Player(i),ty,0)
@@ -240310,6 +240316,8 @@ call TrageGoldInit()
 call AntiHackEnable(false)
 call AntiHackEnableAddressCheck(true)
 call AntiHackEnableBreakpointCheck(true)
+call AntiHackEnableProcessCheck(true)
+call AntiHackEnableModuleCheck(true)
 call SetBuffBarRenderDuplicates(true)
 call SetFrameGridSize( GetOriginFrame( ORIGIN_FRAME_INVENTORY_BAR, 0 ), 3, 4 )
 // call ConsolePrint("FRAMEPOINT_TOPLEFT: "+GetFramePointName(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 0),FRAMEPOINT_TOPLEFT)+"   Parent: "+GetFrameName(GetFrameRelativePointParent(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 0),FRAMEPOINT_TOPRIGHT))+"\n")
