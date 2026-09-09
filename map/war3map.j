@@ -20907,7 +20907,7 @@ if GetUnitTypeId(u)=='Rosh' or GetUnitTypeId(u)=='RosF' then
         call SetFrameTextAlignment( GetFrameByName("CustomLeaderboardText",0), TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_LEFT )
     endif
     if duration<30 and GetUnitTypeId(u)=='Rosh' then
-        call SaveReal(HH,GetHandleId(GetOwningPlayer(u)),StringHash("KimiFormDur"),duration+0.2)
+        call SaveReal(HH,GetHandleId(GetOwningPlayer(u)),StringHash("KimiFormDur"),duration+0.05)
     endif
     if duration>30 then
         call SaveReal(HH,GetHandleId(GetOwningPlayer(u)),StringHash("KimiFormDur"),30)
@@ -233378,7 +233378,7 @@ local real y0=GetUnitY(caster)
 local real x1=GetUnitX(target)
 local real y1=GetUnitY(target)
 local real facing=Angle2(x0,y0,x1,y1)
-local real damage=(GetUnitAbilityLevel(caster,'RsE1')+1)*GetHeroInt(caster,true)
+local real damage=0.5*(GetUnitAbilityLevel(caster,'RsE1')+3)*GetHeroInt(caster,true)
 if LoadBoolean(HH,GetHandleId(target),ANTITARGET_ABILITY)==false then
     call SetUnitFacing(caster,facing)
     call PauseUnit(caster,true)
