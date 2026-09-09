@@ -1888,7 +1888,13 @@ function myCustomDamage takes unit whichUnit, unit target, real amount, boolean 
 		if GetUnitAbilityLevel(target, 'AP01') > 0 then
 			set currentDmg=currentDmg * 1.2
 		endif
-		
+        if GetUnitAbilityLevel(whichUnit, 'RsG2') > 0  then//DMG: -40%
+            set currentDmg=currentDmg * 0.7        
+        endif
+
+        if GetUnitAbilityLevel(target, 'RsG2') > 0 then//DMG: +40%
+            set currentDmg=currentDmg * 1.3
+        endif
         // Увеличение урона от прошедшего времени после 6ой минуты.
         if passedTime > 0 then
             set currentDmg = currentDmg*(1.00+(0.05*passedTime))
@@ -2115,6 +2121,9 @@ function myCustomDamage2_inc takes unit whichUnit, real amount returns real
     if GetUnitAbilityLevel(whichUnit, 'AP01') > 0 then
         set currentDmg=currentDmg * 0.8
     endif
+    if GetUnitAbilityLevel(whichUnit, 'RsG2') > 0  then//DMG: -40%
+        set currentDmg=currentDmg * 0.7 
+    endif
     return currentDmg
     //~ конец модификации уменьшения урона
 
@@ -2145,6 +2154,9 @@ function myCustomDamage2_dec takes unit target, real amount returns real
         // Калейдожезл Руби
         if GetUnitAbilityLevel(target,'B072') > 0 then
             set currentDmg = currentDmg * 1.15
+        endif
+        if GetUnitAbilityLevel(target, 'RsG2') > 0 then//DMG: +40%
+            set currentDmg=currentDmg * 1.3
         endif
         // if (IsItemInInventory(target, 'IASS') > 0 or IsItemInInventory(target, 'IASA') > 0 or IsItemInInventory(target, 'IASI') > 0) then
         //     set currentDmg = currentDmg * 1.15
@@ -75462,7 +75474,7 @@ call RemoveEffect(EFF,0.7,true,CreateTimer())
 // ВЗРЫВ из 4.5 (Vegitto_T_Act2): восемь слоёв на невидимом якоре.
 // EffectCreateAndMove вешает эффект на юнит, поэтому в точке попадания
 // ставим такой же якорь e000, как там: размер 2.5, высота 150.
-set n=CreateUnit(p,'e000',x1,y1,a*bj_RADTODEG)
+set n=CreateUnit(p,'e200',x1,y1,a*bj_RADTODEG)
 call UnitSize(n,2.5,1,1)
 call SetUnitFlyHeight(n,150,0)
 call UnitColor(n,100,100,100,0)
@@ -112387,7 +112399,7 @@ call StartSound(soundplay)
 
 
 call EffectCreateAndMove(true,EffectID[952],facing,4,1.5,0.75,100,100,100,0,0,caster,0,facing)
-set n0=CreateUnit(GetOwningPlayer(caster),'e000',GetUnitX(caster),GetUnitY(caster),facing)
+set n0=CreateUnit(GetOwningPlayer(caster),'e200',GetUnitX(caster),GetUnitY(caster),facing)
 call SetUnitModel(n0,EffectID[2108])
 call UnitSize(n0,0.1,1,1)
 call SetUnitFlyHeight(n0,0,0)
@@ -112395,14 +112407,14 @@ call UnitColor(n0,100,100,100,0)
 call UnitSpeed(n0,1)
 call SaveUnitHandle(HH,id,20,n0)
 set n0=null
-set n0=CreateUnit(GetOwningPlayer(caster),'e000',GetUnitX(caster),GetUnitY(caster),facing)
+set n0=CreateUnit(GetOwningPlayer(caster),'e200',GetUnitX(caster),GetUnitY(caster),facing)
 call UnitSize(n0,3,1,1)
 call SetUnitFlyHeight(n0,0,0)
 call UnitColor(n0,100,100,100,80)
 call UnitSpeed(n0,1)
 call SaveUnitHandle(HH,id,21,n0)
 set n0=null
-set n0=CreateUnit(GetOwningPlayer(caster),'e000',GetUnitX(caster),GetUnitY(caster),facing)
+set n0=CreateUnit(GetOwningPlayer(caster),'e200',GetUnitX(caster),GetUnitY(caster),facing)
 call SetUnitModel(n0,EffectID[2067])
 call UnitSize(n0,0.1,1,1)
 call SetUnitFlyHeight(n0,150,0)
@@ -112410,7 +112422,7 @@ call UnitColor(n0,100,100,100,80)
 call UnitSpeed(n0,1)
 call SaveUnitHandle(HH,id,22,n0)
 set n0=null
-set n0=CreateUnit(GetOwningPlayer(caster),'e000',GetUnitX(caster),GetUnitY(caster),facing+90)
+set n0=CreateUnit(GetOwningPlayer(caster),'e200',GetUnitX(caster),GetUnitY(caster),facing+90)
 call SetUnitModel(n0,EffectID[2067])
 call UnitSize(n0,0.1,1,1)
 call SetUnitFlyHeight(n0,150,0)
@@ -112664,7 +112676,7 @@ call EffectCreateAndMove(true,EffectID[720],facing,1.5,1.75,0.4,100,60,30,0,75,c
 else
 call EffectCreateAndMove(true,EffectID[719],facing,1.5,1.75,0.4,100,60,30,0,75,caster,50,facing)
 endif
-set n0=CreateUnit(GetOwningPlayer(caster),'e000',x1,y1,facing)
+set n0=CreateUnit(GetOwningPlayer(caster),'e200',x1,y1,facing)
 //call SetUnitModel(n0,EffectID[214])
 if LoadInteger(HH,id,25)==1 then
 call SetUnitAnimationByIndex(caster,3)
@@ -112796,7 +112808,7 @@ else
 
 
 
-        set n0=CreateUnit(GetOwningPlayer(caster),'e000',GetUnitX(caster),GetUnitY(caster),0)
+        set n0=CreateUnit(GetOwningPlayer(caster),'e200',GetUnitX(caster),GetUnitY(caster),0)
         call SetUnitModel(n0,EffectID[768])
         call SetUnitFlyHeight(n0,100,0)
         call UnitColor(n0,0,0,0,100)
@@ -197136,7 +197148,7 @@ call UnitSpeed(caster,1)
 call SaveGroupHandle(HH,id,4,CreateGroup())
 call PauseUnit(caster,false)
 call SetUnitInvulnerable(caster,false)
-set n0=CreateUnit(GetOwningPlayer(caster),'e000',GetUnitX(caster),GetUnitY(caster),facing)
+set n0=CreateUnit(GetOwningPlayer(caster),'e200',GetUnitX(caster),GetUnitY(caster),facing)
 call SetUnitModel(n0,"BlackGoku\\3gesila_4.mdl")
 call UnitSize(n0,1,1,1)
 call MoveUnit(n0,n0,150,facing)
@@ -197885,7 +197897,7 @@ set t=CreateTimer()
 set id=GetHandleId(t)
 call UnitAddAbility(target,'SaP1')
 call UnitMakeAbilityPermanent(target,true,'SaP1')
-set n0=CreateUnit(GetOwningPlayer(target),'e000',GetUnitX(target),GetUnitY(target),GetUnitFacing(target))
+set n0=CreateUnit(GetOwningPlayer(target),'e200',GetUnitX(target),GetUnitY(target),GetUnitFacing(target))
 call SetUnitModel(n0,"Sabrac\\az_lumiya_smoke03.mdl")
 call UnitSize(n0,2,1,1)
 call UnitSpeed(n0,1)
@@ -198088,7 +198100,7 @@ call SaveBoolean(HH,GetHandleId(target),TARGET_ABILITY,true)
 call SetUnitInvulnerable(target,true)
 call SaveUnitHandle(HH,id,2,target)
 call SaveBoolean(HH,GetHandleId(caster),StringHash("SabracTBool"),false)
-set n0=CreateUnit(GetOwningPlayer(caster),'e000',GetUnitX(caster),GetUnitY(caster),facing)
+set n0=CreateUnit(GetOwningPlayer(caster),'e200',GetUnitX(caster),GetUnitY(caster),facing)
 call SetUnitModel(n0,"Sabrac\\buffeffectRed.mdl")
 call UnitAddAbility(n0,'Amrf')
 call UnitRemoveAbility(n0,'Amrf')
@@ -198486,7 +198498,7 @@ call SaveReal(HH,id,22,100)
 else
 call SaveReal(HH,id,22,135)
 endif
-set n0=CreateUnit(GetOwningPlayer(caster1),'e000',x0,y0,facing0)
+set n0=CreateUnit(GetOwningPlayer(caster1),'e200',x0,y0,facing0)
 call SetUnitModel(n0,"Sabrac\\SabracKnife.mdl")
 call UnitAddAbility(n0,'Amrf')
 call UnitRemoveAbility(n0,'Amrf')
@@ -198841,7 +198853,7 @@ local real time=LoadReal(HH,id,5)
 set time=time+0.02
 call SaveReal(HH,id,5,time)
 if time==0.02 then
-set n0=CreateUnit(GetOwningPlayer(caster),'e000',GetUnitX(caster),GetUnitY(caster),facing)
+set n0=CreateUnit(GetOwningPlayer(caster),'e200',GetUnitX(caster),GetUnitY(caster),facing)
 call SetUnitModel(n0,"Sabrac\\t_shio_op_noelle_W-1.mdl")
 call UnitSize(n0,1.5,1,1)
 call UnitColor(n0,100,30,30,0)
@@ -198897,7 +198909,7 @@ if time==0.02 then
 call EffectCreateAndMove(true,"Sabrac\\red-lizi-zhendi-fast.mdl",facing,1,1.5,0.5,100,100,100,40,0,caster,0,facing)
 call EffectCreateAndMove(true,"Sabrac\\WindNewFaw4.mdl",facing,1,1,0.6,100,40,40,40,0,caster,0,facing)
 call EffectCreateAndMove(true,"Sabrac\\HakkeStart2.mdl",facing,1,0.75,1,100,100,100,60,0,caster,0,facing)
-set n0=CreateUnit(GetOwningPlayer(caster),'e000',GetUnitX(caster),GetUnitY(caster),facing)
+set n0=CreateUnit(GetOwningPlayer(caster),'e200',GetUnitX(caster),GetUnitY(caster),facing)
 call SetUnitModel(n0,"Sabrac\\afb_aura_smoke_red.mdl")
 call UnitSize(n0,0.7,1,1)
 call UnitColor(n0,100,100,100,0)
@@ -199044,7 +199056,7 @@ call KillSoundWhenDone(soundplay)
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\SabracG.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
 call KillSoundWhenDone(soundplay)
-set n0=CreateUnit(GetOwningPlayer(caster0),'e000',x00,y00,GetUnitFacing(caster0))
+set n0=CreateUnit(GetOwningPlayer(caster0),'e200',x00,y00,GetUnitFacing(caster0))
 call SetUnitModel(n0,"Sabrac\\file00004747.mdl")
 call UnitSize(n0,9,1,1)
 call MyRemoveUnit(n0,5)
@@ -199293,7 +199305,7 @@ call EffectCreateAndMove(true,"Sabrac\\HakkeStart2.mdl",facing,2,aoe*0.002,0.5,1
 call UnitSpeed(caster,1)
 call SabracStackOneTime(casterOriginal,x0,y0,aoe)
 call GroupClear(G)
-set n0=CreateUnit(GetOwningPlayer(caster),'e000',x0,y0,GetUnitFacing(caster))
+set n0=CreateUnit(GetOwningPlayer(caster),'e200',x0,y0,GetUnitFacing(caster))
 call SetUnitModel(n0,"Sabrac\\AOE2m.mdl")
 call UnitSize(n0,aoe*0.0095,1,1)
 call UnitSpeed(n0,1)
@@ -199302,7 +199314,7 @@ call SetUnitFlyHeight(n0,0,0)
 call SaveUnitHandle(HH,id,20,n0)
 call MyRemoveUnit(n0,2)
 set n0=null
-set n0=CreateUnit(GetOwningPlayer(caster),'e000',x0,y0,GetUnitFacing(caster))
+set n0=CreateUnit(GetOwningPlayer(caster),'e200',x0,y0,GetUnitFacing(caster))
 call SetUnitModel(n0,"Sabrac\\AFB (2697).mdl")
 call UnitSize(n0,aoe*0.0132,1,1)
 call UnitSpeed(n0,1)
@@ -199369,11 +199381,11 @@ call UnitAddAbility(Dummy0,'SaWB')
 call UnitAddAbility(Dummy0,'SaW2')
 call PauseUnit(Dummy0,true)
 call SetUnitInvulnerable(Dummy0,true)
-set n0=CreateUnit(GetOwningPlayer(caster0),'e000',GetUnitX(Dummy0),GetUnitY(Dummy0),GetUnitFacing(Dummy0))
+set n0=CreateUnit(GetOwningPlayer(caster0),'e200',GetUnitX(Dummy0),GetUnitY(Dummy0),GetUnitFacing(Dummy0))
 call SetUnitModel(n0,"Sabrac\\File00003601.mdl")
 call SaveUnitHandle(HH,id,20,n0)
 call UnitSize(n0,2,1,1)
-set n0=CreateUnit(GetOwningPlayer(caster0),'e000',GetUnitX(Dummy0),GetUnitY(Dummy0),GetUnitFacing(Dummy0))
+set n0=CreateUnit(GetOwningPlayer(caster0),'e200',GetUnitX(Dummy0),GetUnitY(Dummy0),GetUnitFacing(Dummy0))
 call SetUnitModel(n0,"Sabrac\\az_cocoguanyu_t2_death.mdl")
 call SaveUnitHandle(HH,id,21,n0)
 call UnitSize(n0,0.5,1,1)
@@ -199423,7 +199435,7 @@ call SaveReal(HH,id,12,y0)
 call SaveUnitHandle(HH,id,1,caster1)
 set x0=PolX(x0,GetRandomReal(-aoe1*0.8,aoe1*0.8),GetRandomReal(0,360))
 set y0=PolY(y0,GetRandomReal(-aoe1*0.8,aoe1*0.8),GetRandomReal(0,360))
-set n0=CreateUnit(GetOwningPlayer(caster1),'e000',x0,y0,facing0)
+set n0=CreateUnit(GetOwningPlayer(caster1),'e200',x0,y0,facing0)
 call SetUnitModel(n0,"Sabrac\\SabracKnife.mdl")
 call UnitAddAbility(n0,'Amrf')
 call UnitRemoveAbility(n0,'Amrf')
@@ -223839,7 +223851,7 @@ local integer id=GetHandleId(t)
 
 local player p=GetOwningPlayer(u)
 
-set n0=CreateUnit(p,'e000',x,y,0)
+set n0=CreateUnit(p,'e200',x,y,0)
 
 call SetUnitModel(n0,"Others\\SmerchTornado.mdx")
 call SetUnitScale(n0,2.0,2.0,2.0)
@@ -223908,7 +223920,7 @@ call UnitAddAbility(caster,'Acc0')
 call UnitMakeAbilityPermanent(caster,true,'Acc0')
 
 
-set n0=CreateUnit(GetOwningPlayer(caster),'e000',GetUnitX(caster),GetUnitY(caster),facing)
+set n0=CreateUnit(GetOwningPlayer(caster),'e200',GetUnitX(caster),GetUnitY(caster),facing)
 call SetUnitModel(n0,"Others\\Accelerator_G.mdl")
 
 call UnitSize(n0,2.2,1,1)
@@ -224072,7 +224084,7 @@ if time==0.1 then
 call EffectCreateAndMove90(true,EffectID[12],facing,1,0.8,1.5,100,100,100,60,150,caster,50,facing)
 call EffectCreateAndMove(true,EffectID[6],facing,1,0.4,0.4,100,100,100,40,100,caster,50,facing)
 call EffectCreateAndMove90(true,EffectID[320],facing+180,1,0.8,1,100,100,100,60,150,caster,150,facing)
-set n0=CreateUnit(GetOwningPlayer(caster),'e000',x0,y0,facing)
+set n0=CreateUnit(GetOwningPlayer(caster),'e200',x0,y0,facing)
 call SetUnitModel(n0,EffectID[2630])
 call MoveUnit(n0,n0,100,facing)
 call SetUnitFlyHeight(n0,200,0)
@@ -224232,7 +224244,7 @@ endif
 if dist<=0 then
 call SaveReal(HH,id,6,time1+0.02)
 if time1==0.1 then
-set n0=CreateUnit(GetOwningPlayer(caster),'e000',x0,y0,facing)
+set n0=CreateUnit(GetOwningPlayer(caster),'e200',x0,y0,facing)
 call SetUnitModel(n0,EffectID[1417])
 call UnitSize(n0,1,1,1)
 call UnitSpeed(n0,1.5)
@@ -224276,7 +224288,7 @@ call SetUnitMoveSpeed(Dummy,0)
 
 call UnitAddAbility(Dummy,'Apiv')
 
-set n0=CreateUnit(GetOwningPlayer(caster),'e000',x0,y0,facing)
+set n0=CreateUnit(GetOwningPlayer(caster),'e200',x0,y0,facing)
 
 
 
@@ -224316,7 +224328,7 @@ call SetUnitFlyHeight(n0,200,0)
 endif
 
 
-set n0=CreateUnit(GetOwningPlayer(caster),'e000',x0,y0,facing)
+set n0=CreateUnit(GetOwningPlayer(caster),'e200',x0,y0,facing)
 
 //call UnitAddAbility(n0,'A0QL')
 //call SetUnitInvulnerable(n0,true)
@@ -224352,7 +224364,7 @@ endif
 
 
 
-set n0=CreateUnit(GetOwningPlayer(caster),'e000',x0,y0,facing+90)
+set n0=CreateUnit(GetOwningPlayer(caster),'e200',x0,y0,facing+90)
 
 //call UnitAddAbility(n0,'A0QL')
 //call SetUnitInvulnerable(n0,true)
@@ -226172,7 +226184,8 @@ endif
 //call FlushChildHashtable(HH,id)
 //call DestroyTimer(GetExpiredTimer())
 //endif
-if time<=0 or GetUnitAbilityLevel(target,'CE04')>0 or GetUnitAbilityLevel(target,'B05G')>0 or GetUnitAbilityLevel(target,'ISWC')==0  then
+
+if time<=0 or GetUnitAbilityLevel(target,'CE04')>0 or GetUnitAbilityLevel(target,'B05G')>0 or GetUnitAbilityLevel(target,'ISWC')>0  then
 call UnitRemoveAbility(target,LoadInteger(HH,id,10))
 call UnitRemoveAbility(target,LoadInteger(HH,id,11))
 call PauseTimer(GetExpiredTimer())
@@ -231369,7 +231382,7 @@ call SetUnitFacing(caster,facing2)
 call PauseUnit(caster,true)
 call SetUnitInvulnerable(caster,true)
 if time==0.02 then
-set n0=CreateUnit(GetOwningPlayer(caster),'h020',x0,y0,facing2)
+set n0=CreateUnit(GetOwningPlayer(caster),'h120',x0,y0,facing2)
 call SetUnitModel(n0,EffectID[2040])
 
 call SetUnitInvulnerable(n0,true)
@@ -231392,7 +231405,7 @@ call UnitSize(n0,3,1,1)
 call UnitColor(n0,100,100,100,0)
 call SaveUnitHandle(HH,id,21,n0)
 set n0=null
-set n0=CreateUnit(GetOwningPlayer(caster),'e000',x0,y0,facing2)
+set n0=CreateUnit(GetOwningPlayer(caster),'e600',x0,y0,facing2)
 call MoveUnit(LoadUnitHandle(HH,id,21),n0,0,0)
 call SetUnitFlyHeight(n0,20,0)
 call UnitSize(n0,3,1,1)
@@ -231479,7 +231492,7 @@ call SaveInteger(HH,id,9,count+1)
 
 call SaveGroupHandle(HH,id,4,gr)
 set n0=null
-set n0=CreateUnit(GetOwningPlayer(caster),'e000',x2,y2,facing)
+set n0=CreateUnit(GetOwningPlayer(caster),'e200',x2,y2,facing)
 call SetUnitModel(n0,EffectID[1905])
 call SetUnitFlyHeight(n0,0,0)
 call UnitSize(n0,5,1,1)
@@ -231640,7 +231653,7 @@ function Roshi_T_Self_Act takes unit caster returns nothing
 local timer t=CreateTimer()
 local integer id=GetHandleId(t)
 call SaveUnitHandle(HH,id,1,caster)
-set n0=CreateUnit(GetOwningPlayer(caster),'e000',GetUnitX(caster),GetUnitY(caster),GetUnitFacing(caster))
+set n0=CreateUnit(GetOwningPlayer(caster),'e200',GetUnitX(caster),GetUnitY(caster),GetUnitFacing(caster))
 call SetUnitModel(n0,EffectID[451])
 call UnitSpeed(n0,1)
 call UnitSize(n0,3,1,1)
@@ -231684,7 +231697,7 @@ call EffectCreateAndMove(true,EffectID[608],GetRandomReal(0,360),1.5,1.5,1,100,1
 call EffectCreateAndMove(true,EffectID[41],GetRandomReal(0,360),1.5,1.5,0.5,100,100,100,0,100,caster,0,facing)
 call EffectCreateAndMove(true,EffectID[23],GetRandomReal(0,360),1.5,1.5,0.5,100,100,100,40,0,caster,0,facing)
 call EffectCreateAndMove(true,EffectID[20],GetRandomReal(0,360),1.5,2,1.25,100,100,100,40,0,caster,0,facing)
-set n0=CreateUnit(GetOwningPlayer(caster),'e000',GetUnitX(caster),GetUnitY(caster),facing)
+set n0=CreateUnit(GetOwningPlayer(caster),'e200',GetUnitX(caster),GetUnitY(caster),facing)
 call SetUnitModel(n0,EffectID[451])
 call UnitSpeed(n0,1)
 call UnitSize(n0,2,1,1)
@@ -232024,7 +232037,7 @@ call UnitSpeed(n0,0.5)
 call SetUnitAnimationByIndex(n0,0)
 call MyRemoveUnit(n0,1.5)
 set n0=null
-set n0=CreateUnit(GetOwningPlayer(caster),'e000',GetUnitX(target),GetUnitY(target),0)
+set n0=CreateUnit(GetOwningPlayer(caster),'e200',GetUnitX(target),GetUnitY(target),0)
 call SetUnitModel(n0,EffectID[2034])
 call UnitSize(n0,1,1,1)
 call SetUnitFlyHeight(n0,GetUnitFlyHeight(target),0)
@@ -232034,7 +232047,7 @@ call SetUnitAnimationByIndex(n0,1)
 call MyRemoveUnit(n0,2)
 call SaveUnitHandle(HH,id,20,n0)
 set n0=null
-set n0=CreateUnit(GetOwningPlayer(caster),'e000',GetUnitX(target),GetUnitY(target),0)
+set n0=CreateUnit(GetOwningPlayer(caster),'e200',GetUnitX(target),GetUnitY(target),0)
 call SetUnitModel(n0,EffectID[2035])
 call UnitSize(n0,1.25,1,1)
 call SetUnitFlyHeight(n0,GetUnitFlyHeight(target),0)
@@ -232292,7 +232305,7 @@ call SetSoundVolume(soundplay,200)
 endif
 call EffectCreateAndMove(true,EffectID[1403],facing+180,2,4,2,100,100,100,0,100,caster,150,facing)
 call UnitSpeed(caster,1)
-set n0=CreateUnit(GetOwningPlayer(caster),'e000',GetUnitX(caster),GetUnitY(caster),facing)
+set n0=CreateUnit(GetOwningPlayer(caster),'e200',GetUnitX(caster),GetUnitY(caster),facing)
 call SetUnitModel(n0,EffectID[2033])
 call MoveUnit(n0,n0,250,facing)
 call MoveUnit(n0,n0,50,facing)
@@ -232303,7 +232316,7 @@ call UnitSpeed(n0,1)
 call SetUnitAnimationByIndex(n0,0)
 call SaveUnitHandle(HH,id,20,n0)
 set n0=null
-set n0=CreateUnit(GetOwningPlayer(caster),'e000',GetUnitX(caster),GetUnitY(caster),facing)
+set n0=CreateUnit(GetOwningPlayer(caster),'e200',GetUnitX(caster),GetUnitY(caster),facing)
 call SetUnitModel(n0,EffectID[2014])
 call MoveUnit(n0,n0,250,facing)
 call UnitSize(n0,1,1,1)
@@ -232520,7 +232533,7 @@ call UnitAddAbility(Dummy,'RsQ3')
 set soundplay=CreateSound("Sound\\Roshi\\Roshi_Q2.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
 call EffectCreateAndMove(true,EffectID[1403],facing+180,2,3.25,2,100,100,100,0,100,caster,150,facing)
-set n0=CreateUnit(GetOwningPlayer(caster),'e000',x0,y0,facing)
+set n0=CreateUnit(GetOwningPlayer(caster),'e200',x0,y0,facing)
 call SetUnitModel(n0,EffectID[2032])
 call MoveUnit(n0,n0,250,facing)
 call UnitSize(n0,1,1,1)
@@ -232529,7 +232542,7 @@ call SetUnitAnimationByIndex(n0,1)
 call UnitSpeed(n0,1)
 call SaveUnitHandle(HH,id,21,n0)
 set n0=null
-set n0=CreateUnit(GetOwningPlayer(caster),'e000',x0,y0,facing)
+set n0=CreateUnit(GetOwningPlayer(caster),'e200',x0,y0,facing)
 call SetUnitModel(n0,EffectID[2014])
 call MoveUnit(n0,n0,250,facing)
 call UnitSize(n0,1,1,1)
@@ -232999,7 +233012,7 @@ call EffectCreateAndMove(true,EffectID[23],GetRandomReal(0,360),1.5,1,0.5,100,10
 call SaveLightningHandle(HH,id,16,AddLightningEx("AFOD",true,x0,y0,GetUnitFlyHeight(caster)+100,x0,y0,GetUnitFlyHeight(caster)+100))
 call SaveLightningHandle(HH,id,17,AddLightningEx("AFOD",true,x0,y0,GetUnitFlyHeight(caster)+100,x0,y0,GetUnitFlyHeight(caster)+100))
 call SaveLightningHandle(HH,id,18,AddLightningEx("AFOD",true,x0,y0,GetUnitFlyHeight(caster)+100,x0,y0,GetUnitFlyHeight(caster)+100))
-set n0=CreateUnit(GetOwningPlayer(caster),'e000',x0,y0,facing)
+set n0=CreateUnit(GetOwningPlayer(caster),'e200',x0,y0,facing)
 call SetUnitFlyHeight(n0,0,0)
 call UnitSize(n0,1.5,1,1)
 call SaveUnitHandle(HH,id,20,n0)
@@ -233042,42 +233055,42 @@ call SaveUnitHandle(HH,id,20,n0)
 set n0=null
 call EffectCreateAndMove(true,EffectID[824],GetRandomReal(0,360),1.5,1,1,100,100,100,0,100,target,0,facing2)
 call EffectCreateAndMove(true,EffectID[823],GetRandomReal(0,360),1.5,2,0.8,100,100,100,0,100,target,0,facing2)
-set n0=CreateUnit(GetOwningPlayer(caster),'e000',x1,y1,facing)
+set n0=CreateUnit(GetOwningPlayer(caster),'e200',x1,y1,facing)
 call SetUnitModel(n0,EffectID[821])
 call SetUnitFlyHeight(n0,100,0)
 call UnitSize(n0,2,1,1)
 call UnitColor(n0,100,100,100,0)
 call SaveUnitHandle(HH,id,21,n0)
 set n0=null
-set n0=CreateUnit(GetOwningPlayer(caster),'e000',x1,y1,facing)
+set n0=CreateUnit(GetOwningPlayer(caster),'e200',x1,y1,facing)
 call SetUnitModel(n0,EffectID[825])
 call SetUnitFlyHeight(n0,100,0)
 call UnitSize(n0,1.5,1,1)
 call UnitColor(n0,100,100,100,0)
 call SaveUnitHandle(HH,id,22,n0)
 set n0=null
-set n0=CreateUnit(GetOwningPlayer(caster),'e000',x1,y1,facing+90)
+set n0=CreateUnit(GetOwningPlayer(caster),'e200',x1,y1,facing+90)
 call SetUnitModel(n0,EffectID[821])
 call SetUnitFlyHeight(n0,100,0)
 call UnitSize(n0,1.5,1,1)
 call UnitColor(n0,100,100,100,0)
 call SaveUnitHandle(HH,id,23,n0)
 set n0=null
-set n0=CreateUnit(GetOwningPlayer(caster),'e000',x1,y1,facing-90)
+set n0=CreateUnit(GetOwningPlayer(caster),'e200',x1,y1,facing-90)
 call SetUnitModel(n0,EffectID[821])
 call SetUnitFlyHeight(n0,100,0)
 call UnitSize(n0,1.5,1,1)
 call UnitColor(n0,100,100,100,0)
 call SaveUnitHandle(HH,id,24,n0)
 set n0=null
-set n0=CreateUnit(GetOwningPlayer(caster),'e000',x1,y1,facing+90)
+set n0=CreateUnit(GetOwningPlayer(caster),'e200',x1,y1,facing+90)
 call SetUnitModel(n0,EffectID[821])
 call SetUnitFlyHeight(n0,100,0)
 call UnitSize(n0,1.5,1,1)
 call UnitColor(n0,100,100,100,0)
 call SaveUnitHandle(HH,id,25,n0)
 set n0=null
-set n0=CreateUnit(GetOwningPlayer(caster),'e000',x1,y1,facing-90)
+set n0=CreateUnit(GetOwningPlayer(caster),'e200',x1,y1,facing-90)
 call SetUnitModel(n0,EffectID[821])
 call SetUnitFlyHeight(n0,100,0)
 call UnitSize(n0,1.5,1,1)
@@ -233354,7 +233367,7 @@ else
         call ShowUnit(caster,false)
         call GroupClear(G)
         set gr=CreateGroup()
-        set n0=CreateUnit(GetOwningPlayer(caster),'e000',x1,y1,facing+45+180)
+        set n0=CreateUnit(GetOwningPlayer(caster),'e200',x1,y1,facing+45+180)
         call SetUnitModel(n0,EffectID[2021])
         call AddSpecialEffectTarget(EffectID[4],n0,"hand right")
         call UnitSize(n0,1,1,1)
@@ -233364,7 +233377,7 @@ else
         call SetUnitAnimationByIndex(n0,1)
         call GroupAddUnit(gr,n0)
         set n0=null
-        set n0=CreateUnit(GetOwningPlayer(caster),'e000',x1,y1,facing-45+180)
+        set n0=CreateUnit(GetOwningPlayer(caster),'e200',x1,y1,facing-45+180)
         call SetUnitModel(n0,EffectID[2021])
         call AddSpecialEffectTarget(EffectID[4],n0,"hand right")
         call UnitSize(n0,1,1,1)
@@ -233374,7 +233387,7 @@ else
         call SetUnitAnimationByIndex(n0,1)
         call GroupAddUnit(gr,n0)
         set n0=null
-        set n0=CreateUnit(GetOwningPlayer(caster),'e000',x1,y1,facing+135+180)
+        set n0=CreateUnit(GetOwningPlayer(caster),'e200',x1,y1,facing+135+180)
         call SetUnitModel(n0,EffectID[2021])
         call AddSpecialEffectTarget(EffectID[4],n0,"hand right")
         call UnitSize(n0,1,1,1)
@@ -233384,7 +233397,7 @@ else
         call SetUnitAnimationByIndex(n0,1)
         call GroupAddUnit(gr,n0)
         set n0=null
-        set n0=CreateUnit(GetOwningPlayer(caster),'e000',x1,y1,facing-135+180)
+        set n0=CreateUnit(GetOwningPlayer(caster),'e200',x1,y1,facing-135+180)
         call SetUnitModel(n0,EffectID[2021])
         call AddSpecialEffectTarget(EffectID[4],n0,"hand right")
         call UnitSize(n0,1,1,1)
@@ -233625,7 +233638,7 @@ call EffectCreateAndMove90(true,EffectID[48],facing,2,2.5,0.5,100,100,100,0,100,
 call EffectCreateAndMove90(true,EffectID[49],facing,2,2.5,0.5,100,100,100,0,100,caster,100,facing)
 call EffectCreateAndMove(true,EffectID[1403],facing+180,1.2,3.25,2,100,100,100,0,100,caster,100,facing)
 call UnitSpeed(caster,1)
-set n0=CreateUnit(GetOwningPlayer(caster),'e000',GetUnitX(caster),GetUnitY(caster),facing)
+set n0=CreateUnit(GetOwningPlayer(caster),'e200',GetUnitX(caster),GetUnitY(caster),facing)
 //call SetUnitModel(n0,EffectID[214])
 call MoveUnit(n0,n0,150,facing)
 call UnitSize(n0,2,1,1)
@@ -233634,7 +233647,7 @@ call UnitColor(n0,100,100,100,60)
 call UnitSpeed(n0,1)
 call SaveUnitHandle(HH,id,20,n0)
 set n0=null
-set n0=CreateUnit(GetOwningPlayer(caster),'e000',GetUnitX(caster),GetUnitY(caster),facing)
+set n0=CreateUnit(GetOwningPlayer(caster),'e200',GetUnitX(caster),GetUnitY(caster),facing)
 call SetUnitModel(n0,EffectID[2014])
 call MoveUnit(n0,n0,50,facing)
 call UnitSize(n0,1.25,1,1)
@@ -233736,7 +233749,7 @@ call SaveReal(HH,id,6,time1)
 endif
 endif
 if time==0.8 then
-set n0=CreateUnit(GetOwningPlayer(caster),'e000',GetUnitX(Dummy),GetUnitY(Dummy),facing)
+set n0=CreateUnit(GetOwningPlayer(caster),'e200',GetUnitX(Dummy),GetUnitY(Dummy),facing)
 call UnitSize(n0,1,1,1)
 call SetUnitFlyHeight(n0,100,0)
 call SetUnitModel(n0,EffectID[565])
@@ -233867,7 +233880,7 @@ call EffectCreateAndMove(true,EffectID[23],GetRandomReal(0,360),1.5,1,0.6,100,10
 call EffectCreateAndMove(true,EffectID[20],GetRandomReal(0,360),1.5,1,1.5,100,100,100,80,0,caster,0,facing)
 call EffectCreateAndMove90(true,EffectID[20],facing,1.5,1,1.5,100,100,100,60,150,caster,0,facing)
 call EffectCreateAndMove(true,EffectID[15],facing,1.5,0.5,1.5,100,100,100,0,0,caster,50,facing)
-set n0=CreateUnit(GetOwningPlayer(caster),'e000',GetUnitX(caster),GetUnitY(caster),facing+180)
+set n0=CreateUnit(GetOwningPlayer(caster),'e200',GetUnitX(caster),GetUnitY(caster),facing+180)
 call SetUnitModel(n0,EffectID[2015])
 call AddSpecialEffectTarget(EffectID[1914],n0,"origin")
 call UnitSize(n0,1,1,1)
@@ -233878,7 +233891,7 @@ call SetUnitAnimationByIndex(n0,0)
 call SaveUnitHandle(HH,id,20,n0)
 call MoveUnit(n0,n0,-150,facing)
 call MyRemoveUnit(n0,2)
-set n0=CreateUnit(GetOwningPlayer(caster),'e000',GetUnitX(caster),GetUnitY(caster),facing+180)
+set n0=CreateUnit(GetOwningPlayer(caster),'e200',GetUnitX(caster),GetUnitY(caster),facing+180)
 call SetUnitModel(n0,EffectID[1914])
 call UnitSize(n0,1.25,1,1)
 call UnitSpeed(n0,1)
@@ -233888,7 +233901,7 @@ call SetUnitAnimationByIndex(n0,0)
 call SaveUnitHandle(HH,id,21,n0)
 call MoveUnit(n0,n0,-150,facing)
 call MyRemoveUnit(n0,2)
-set n0=CreateUnit(GetOwningPlayer(caster),'e000',GetUnitX(caster),GetUnitY(caster),facing+180)
+set n0=CreateUnit(GetOwningPlayer(caster),'e200',GetUnitX(caster),GetUnitY(caster),facing+180)
 call SetUnitModel(n0,EffectID[565])
 call UnitSize(n0,0.5,1,1)
 call UnitSpeed(n0,1)
@@ -234072,15 +234085,7 @@ exitwhen n0==null
 if IsUnitInGroup(n0,gr)==false and Condition_Base_Random(caster,n0)then
 call GroupAddUnit(gr,n0)
 if GetUnitAbilityLevel(n0,'RsG2')==0 then
-
-        if  IsUnitPaused(n0)==false then
-                set n=CreateUnit(GetOwningPlayer(caster),'h019',GetUnitX(n0),GetUnitY(n0),0)
-                call UnitAddAbility(n,'A0CP')
-                call SetUnitAbilityLevel(n,'A0CP',GetUnitAbilityLevel(caster,'RsG1'))
-                call UnitApplyTimedLife(n,'BHwe',1)
-                call IssueTargetOrder(n,"sleep",n0)
-              //  call SetUnitAnimation(E,"Death")
-        endif
+call SetControlToUnit(caster,n0,GetUnitAbilityLevel(caster,'RsG1'), "sleep")
 
 call UnitAddDebuffTimed(n0,'RsG2','BMRG',5)
 
@@ -234109,20 +234114,20 @@ set x0=PolX(x0,100,facing+90)
 set y0=PolY(y0,100,facing+90)
 endif
 call SaveUnitHandle(HH,id,1,caster)
-set n0=CreateUnit(GetOwningPlayer(caster),'e000',x0,y0,facing)
+set n0=CreateUnit(GetOwningPlayer(caster),'e200',x0,y0,facing)
 call SetUnitModel(n0,EffectID[555])
 call UnitSize(n0,2,1,1)
 call UnitSpeed(n0,1)
 call SetUnitFlyHeight(n0,0,0)
 call EffectCreateAndMove90(true,EffectID[999],facing,1.5,0.5,1,100,50,100,30,100,n0,100,facing)
 call SaveUnitHandle(HH,id,20,n0)
-set n0=CreateUnit(GetOwningPlayer(caster),'e000',x0,y0,facing)
+set n0=CreateUnit(GetOwningPlayer(caster),'e200',x0,y0,facing)
 call SetUnitModel(n0,EffectID[2030])
 call UnitSize(n0,1,1,1)
 call UnitSpeed(n0,0.5)
 call SaveUnitHandle(HH,id,21,n0)
 call SetUnitFlyHeight(n0,0,0)
-set n0=CreateUnit(GetOwningPlayer(caster),'e000',x0,y0,facing)
+set n0=CreateUnit(GetOwningPlayer(caster),'e200',x0,y0,facing)
 call SetUnitModel(n0,EffectID[172])
 call SetUnitFlyHeight(n0,200,0)
 call UnitSize(n0,1.5,1,1)
