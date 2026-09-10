@@ -224671,6 +224671,46 @@ call TimerStart(t,0.02,true,function Frenda_G_Act2)
 set t=null
 endfunction
 //FrendaFG_End
+//KimimaroRegen_Start
+// Пассивка F Кимимаро: каждую секунду -20 HP в базовой форме, а с 13 уровня
+// (уровень > 12) сверху +0.4*Сила. Подсказка способности это обещает.
+// В нашей 4.5 система звалась KimimaroHeal и рисовала лидерборд; здесь табло
+// не нужно — у дева свои фреймы, а лидербордов в 3.2 нет вовсе.
+function KimimaroHeal_Act takes nothing returns nothing
+local timer t=GetExpiredTimer()
+local integer id=GetHandleId(t)
+local unit caster=Hero[LoadInteger(HH,id,16)]
+local integer uid=GetUnitTypeId(caster)
+local real hp=GetWidgetLife(caster)
+if uid!='H00F' and uid!='H00E' then
+// герой перестал быть Кимимаро — систему сворачиваем
+call PauseTimer(t)
+call FlushChildHashtable(HH,id)
+call DestroyTimer(t)
+else
+if UnitIsAlive(caster) then
+if uid=='H00E' and hp>100 then
+set hp=hp-20
+call SetWidgetLife(caster,hp)
+endif
+if GetHeroLevel(caster)>12 then
+call SetWidgetLife(caster,hp+GetHeroStr(caster,true)*0.4)
+endif
+endif
+endif
+set caster=null
+set t=null
+endfunction
+
+function KimimaroHeal takes unit caster0 returns nothing
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+call SaveUnitHandle(HH,id,1,caster0)
+call SaveInteger(HH,id,16,GetPlayerId(GetOwningPlayer(caster0)))
+call TimerStart(t,1,true,function KimimaroHeal_Act)
+set t=null
+endfunction
+//KimimaroRegen_End
 function AbilitiesForChoice_Cond takes nothing returns boolean
     local boolean cond1=GetSpellAbilityId()=='RsQ1' or GetSpellAbilityId()=='RsQ2' or GetSpellAbilityId()=='RsQ3' or GetSpellAbilityId()=='RsW1' or GetSpellAbilityId()=='RsW2' or GetSpellAbilityId()=='RsE1' or GetSpellAbilityId()=='RsR1' or GetSpellAbilityId()=='RsR2' or GetSpellAbilityId()=='RsT1' or GetSpellAbilityId()=='RsD1' or GetSpellAbilityId()=='RsD2' or GetSpellAbilityId()=='RsD3' or GetSpellAbilityId()=='RsF1' or GetSpellAbilityId()=='RsF2' or GetSpellAbilityId()=='RsF3' or GetSpellAbilityId()=='RsG1' or GetSpellAbilityId()=='GinG' or GetSpellAbilityId()=='LamF' or GetSpellAbilityId()=='SiD1' or GetSpellAbilityId()=='AKQ1' or GetSpellAbilityId()=='AKW1' or GetSpellAbilityId()=='AKE1' or GetSpellAbilityId()=='AKR1' or GetSpellAbilityId()=='AKT1' or GetSpellAbilityId()=='AKF1' or GetSpellAbilityId()=='AKG1' or GetSpellAbilityId()=='GrQ1' or GetSpellAbilityId()=='GrW1' or GetSpellAbilityId()=='GrE1' or GetSpellAbilityId()=='GrR1' or GetSpellAbilityId()=='GrT1' or GetSpellAbilityId()=='GrF1' or GetSpellAbilityId()=='GrG2' or GetSpellAbilityId()=='UKD1' or GetSpellAbilityId()=='BuuG' or GetSpellAbilityId()=='GSQ1' or GetSpellAbilityId()=='GSQ2' or GetSpellAbilityId()=='GSW1' or GetSpellAbilityId()=='GSE1' or GetSpellAbilityId()=='GSE2' or GetSpellAbilityId()=='GSF1' or GetSpellAbilityId()=='GSF2' or GetSpellAbilityId()=='GSG1' or GetSpellAbilityId()=='GSR1' or GetSpellAbilityId()=='GST1' or GetSpellAbilityId()=='GST2' or GetSpellAbilityId()=='GST3' or GetSpellAbilityId()=='SHG1' or GetSpellAbilityId()=='CelF' or GetSpellAbilityId()=='CelG' or GetSpellAbilityId()=='CelT' or GetSpellAbilityId()=='AccD' or GetSpellAbilityId()=='AccG' or GetSpellAbilityId()=='FSF1' or GetSpellAbilityId()=='FSG1'
     if cond1 then
@@ -227893,8 +227933,15 @@ call SetUnitPathing(caster,false)
 if time>0.2 then
 //Проверка на паузу
 
+if LoadBoolean(HH,GetHandleId(target),ANTITARGET_ABILITY)==false then
 call PauseUnit(target,true)
 call SaveBoolean(HH,GetHandleId( target ),TARGET_ABILITY,true)
+else
+// Цель разворачивает чужие умения: отдаём ей себя и сворачиваемся
+// через штатную ветку завершения (время -> конечное).
+call SaveUnitHandle(HH,GetHandleId(target),REVERSE_TARGET,caster)
+call SaveReal(HH,id,5,2)
+endif
 
 //Проверка на паузу
 call SetUnitInvulnerable(target,true)
@@ -228192,8 +228239,15 @@ call MoveUnit(target,caster,-200,facing)
 endif
 //Проверка на паузу
 
+if LoadBoolean(HH,GetHandleId(target),ANTITARGET_ABILITY)==false then
 call PauseUnit(target,true)
 call SaveBoolean(HH,GetHandleId( target ),TARGET_ABILITY,true)
+else
+// Цель разворачивает чужие умения: отдаём ей себя и сворачиваемся
+// через штатную ветку завершения (время -> конечное).
+call SaveUnitHandle(HH,GetHandleId(target),REVERSE_TARGET,caster)
+call SaveReal(HH,id,5,10)
+endif
 
 //Проверка на паузу
 call SetUnitPathing(target,false)
@@ -228501,8 +228555,15 @@ endif
 call SetUnitInvulnerable(target,true)
 //Проверка на паузу
 
+if LoadBoolean(HH,GetHandleId(target),ANTITARGET_ABILITY)==false then
 call PauseUnit(target,true)
 call SaveBoolean(HH,GetHandleId( target ),TARGET_ABILITY,true)
+else
+// Цель разворачивает чужие умения: отдаём ей себя и сворачиваемся
+// через штатную ветку завершения (время -> конечное).
+call SaveUnitHandle(HH,GetHandleId(target),REVERSE_TARGET,caster)
+call SaveReal(HH,id,5,25)
+endif
 
 //Проверка на паузу
 endif
@@ -230326,8 +230387,15 @@ call SetUnitFacing(caster,facing)
 call SetUnitFacing(target,facing+180)
 //Проверка на паузу
 
+if LoadBoolean(HH,GetHandleId(target),ANTITARGET_ABILITY)==false then
 call PauseUnit(target,true)
 call SaveBoolean(HH,GetHandleId( target ),TARGET_ABILITY,true)
+else
+// Цель разворачивает чужие умения: отдаём ей себя и сворачиваемся
+// через штатную ветку завершения (время -> конечное).
+call SaveUnitHandle(HH,GetHandleId(target),REVERSE_TARGET,caster)
+call SaveReal(HH,id,5,20.5)
+endif
 
 //Проверка на паузу
 call SetUnitPathing(target,false)
@@ -230582,6 +230650,7 @@ endif
 
 
 
+if LoadBoolean(HH,GetHandleId(target),ANTITARGET_ABILITY)==false then
         if IsUnitPaused(target)==true then
             //Проверка на паузу
 
@@ -230599,6 +230668,12 @@ call PauseUnit(target,true)
         else
           call myCustomDamage(caster,target,damage,false,false,null,null,null)
         endif
+else
+// Цель разворачивает чужие умения: отдаём ей себя и сворачиваемся
+// через штатное завершение (HitCount==0 or time>=30).
+call SaveUnitHandle(HH,GetHandleId(target),REVERSE_TARGET,caster)
+call SaveReal(HH,id,5,30)
+endif
 
 
  call SetControlToUnit(caster,target, 2, "stun")
@@ -234699,7 +234774,7 @@ endfunction
 
 
 function AbilitiesForChoiceLearn_Cond takes nothing returns boolean
-return GetLearnedSkill()=='A19R' or GetLearnedSkill()=='A19S' or GetLearnedSkill()=='A0QU' or GetLearnedSkill()=='RsT1' or GetLearnedSkill()=='RsR1' or GetLearnedSkill()=='RsE1' or GetLearnedSkill()=='GSE1' or GetLearnedSkill()=='A0BG' or GetLearnedSkill()=='A0K4'
+return GetLearnedSkill()=='AKR1' or GetLearnedSkill()=='A19R' or GetLearnedSkill()=='A19S' or GetLearnedSkill()=='A0QU' or GetLearnedSkill()=='RsT1' or GetLearnedSkill()=='RsR1' or GetLearnedSkill()=='RsE1' or GetLearnedSkill()=='GSE1' or GetLearnedSkill()=='A0BG' or GetLearnedSkill()=='A0K4'
 endfunction
 
 function AbilitiesForChoiceLearn_Act takes nothing returns nothing//моя прокачка абилок для всех героев разберешься
@@ -234764,6 +234839,11 @@ if GetLearnedSkill()== lvl then
 call SetUnitAbilityLevel(caster,'FSG1',GetUnitAbilityLevel(caster,lvl))
 endif
 //Frenda5End
+//Kimimaro GPass
+set lvl='AKR1'
+if GetLearnedSkill()==lvl and GetUnitAbilityLevel(caster,lvl)==1 then
+call KimimaroHeal(caster)
+endif
 set caster=null
 set skillPlayer=null
 endfunction
