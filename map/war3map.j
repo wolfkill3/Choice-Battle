@@ -21887,13 +21887,6 @@ endif
 
 
 
-
-
-
-
-
-
-
 if  (udg_B==false  or  UnitIsAlive(caster)==false or not(caster==Hero[GetPlayerId(GetOwningPlayer(caster))] or caster==udg_DM[GetPlayerId(GetOwningPlayer(caster))+1])) or UnitHasAlastor(caster)==false then
 //call UnitRemoveAbility(caster,'ASG3')
 call SaveBoolean(HH,GetHandleId(caster),AlastorHash,true)
@@ -21902,21 +21895,9 @@ call FlushChildHashtable(HH,id)
 call DestroyTimer(GetExpiredTimer())
 endif
 
-
-
-
-
 set caster=null
 set g=null
 endfunction
-
-
-
-
-
-
-
-
 
 function Alastor_Passive takes unit caster0 returns nothing
 local timer t=CreateTimer()
@@ -38236,9 +38217,6 @@ exitwhen i>=10
         endif
         if GetUnitTypeId(Hero[i])=='H02L' then
             set Broly=Hero[i]
-        endif
-        if UnitHasItemOfTypeBJ( Hero[i] ,'I03A') then //alastor passive
-            call Alastor_Passive( Hero[i] )
         endif
 
 
