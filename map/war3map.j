@@ -65572,7 +65572,7 @@ function InitTrig_Transmission takes nothing returns nothing
 local integer i=0
 endfunction
 function Trig_Blood_Conditions takes nothing returns boolean
-return GetSpellAbilityId()==0x41305154 and udg_B==true
+return GetSpellAbilityId()=='A0QT' and udg_B==true
 endfunction
 function Trig_Blood_Actions takes nothing returns nothing
 local unit u=GetTriggerUnit()
@@ -65584,17 +65584,17 @@ local real y=GetUnitY(u)
 local player p=GetOwningPlayer(u)
 local real l=GetWidgetLife(c)
 local real lm=GetUnitState(c,UNIT_STATE_MAX_LIFE)
-local real perc=(100-(l/lm*100))*(0.08+0.02*GetUnitAbilityLevel(u,0x41305154))
+local real perc=(100-(l/lm*100))*(0.08+0.02*GetUnitAbilityLevel(u,'A0QT'))
 local real chance=GetRandomReal(0,100)
 if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
 if perc>chance and GetUnitTypeId(c)!='H075' then
-call myCustomDamage(u,c,(3+GetUnitAbilityLevel(u,0x41305154))*GetHeroAgi(u,true),false,false,null,null,null)
+call myCustomDamage(u,c,(3+GetUnitAbilityLevel(u,'A0QT'))*GetHeroAgi(u,true),false,false,null,null,null)
 call myCustomDamage(u,c,0.2*GetWidgetMaxLife(c),false,false,null,DAMAGE_TYPE_UNIVERSAL,null)
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\AcceleratorLaughs3.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
 call KillSoundWhenDone(soundplay)
 else
-call myCustomDamage(u,c,(3+GetUnitAbilityLevel(u,0x41305154))*GetHeroAgi(u,true),false,false,null,null,null)
+call myCustomDamage(u,c,(3+GetUnitAbilityLevel(u,'A0QT'))*GetHeroAgi(u,true),false,false,null,null,null)
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\AcceleratorLaughs2.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
 call KillSoundWhenDone(soundplay)
@@ -213946,16 +213946,16 @@ function KarnaR_Periodic takes nothing returns nothing
 		set E=FirstOfGroup(DG)
 		exitwhen E==null
 			if Condition_Base(p,E)then
-                if GetWidgetLife(E)/GetWidgetMaxLife(E) < GetWidgetLife(u)/GetWidgetMaxLife(u) then
-                    set dmg = GetWidgetMaxLife(E) * (GetWidgetLife(u)/GetWidgetMaxLife(u) - GetWidgetLife(E)/GetWidgetMaxLife(E))
-                    set dmg = dmg * (0.10*GetUnitAbilityLevel(u, 'KaAA'))
+                // if GetWidgetLife(E) < GetWidgetMaxLife(E) then
+                    set dmg =  GetWidgetLife(E)- (GetWidgetLife(E)/GetWidgetMaxLife(E))*100 
+                    set dmg = dmg * (0.075+0.025*GetUnitAbilityLevel(u, 'KaAA'))
                     //call UnitAddAbility(E,'A0WR')
                     //call DamageIndicatorFunction(u, E, dmg)
-                    call myCustomDamage(u,E, GetHeroAgi(u, true)*5+dmg, false,false,null,null,null)
+                    call myCustomDamage(u,E, GetHeroAgi(u, true)*(3+GetUnitAbilityLevel(u, 'KaAA'))+dmg, false,false,null,null,null)
                     //call UnitRemoveAbility(E,'A0WR')
-                else
-                    call myCustomDamage(u,E, GetHeroAgi(u, true)*5, false,false,null,null,null)
-                endif
+                // else
+                //     call myCustomDamage(u,E, GetHeroAgi(u, true)*(3+GetUnitAbilityLevel(u, 'KaAA')), false,false,null,null,null)
+                // endif
 			endif
 		call GroupRemoveUnit(DG,E)
 		endloop
@@ -232243,7 +232243,7 @@ local real y0=GetUnitY(caster)
 local real x1=GetUnitX(target)
 local real y1=GetUnitY(target)
 local real facing=Angle2(x0,y0,x1,y1)
-local real damage=(5+GetUnitAbilityLevel(caster,'RsR1'))*GetHeroInt(caster,true)
+local real damage=9*GetHeroInt(caster,true)
 call SaveUnitHandle(HH,id,1,caster)
 call SaveUnitHandle(HH,id,2,target)
 call PauseUnit(caster,true)
