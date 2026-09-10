@@ -169772,7 +169772,7 @@ function BelfE_Act2_Periodic takes nothing returns nothing
         call DestroyTimer(GetExpiredTimer())
     endif
 endfunction
-function BelfE_Act2 takes unit newCaster,unit newTarget,real newDMG,timer newT returns nothing
+function BelfE_Act2 takes unit newCaster,unit newTarget,timer newT returns nothing
 local integer id=GetHandleId(newT)
 local real x=GetUnitX(newCaster)
 local real y=GetUnitY(newCaster)
