@@ -231,6 +231,7 @@ constant integer VariationRHash       = StringHash("VariationR")
 constant integer VariationTHash       = StringHash("VariationT")
 constant integer VariationFHash       = StringHash("VariationF")
 constant integer VariationGHash       = StringHash("VariationG")
+constant integer VariationDHash       = StringHash("VariationD")
 constant integer WarpKamehamehaHash   = StringHash("WarpKamehameha")
 constant integer WarpKamehamehaTargetHash   = StringHash("WarpKamehamehaTarget")
 constant integer GokuEDMGHash         = StringHash("GokuEDMG")
@@ -238,6 +239,7 @@ constant integer GokuUIDingHash       = StringHash("GokuUIDing")
 constant integer GokuUIMusicHash      = StringHash("GokuUIMusic")
 constant integer SpecUIHash           = StringHash("SpecUI")
 constant integer ChannelHash          = StringHash("Channel")
+constant integer AlastorHash          = StringHash("Alastor")
 constant integer NIWHash              = StringHash("NIW")
 boolean NANAYA_CONDITION          = true // Возможность пика Нанаи
 //== Следующие переменные предназначены ТОЛЬКО для системных функций/методов
@@ -1246,6 +1248,9 @@ function UnitHasItemOfTypeBJCustom takes unit whichUnit, integer itemId returns 
 endfunction
 function UnitHasBow takes unit whichUnit returns boolean
     return GetItemOfTypeFromUnitBJ(whichUnit, 'ISPB') != null or GetUnitAbilityLevel(whichUnit,'KI1C')>0 or GetItemOfTypeFromUnitBJ(whichUnit, 'IPRB') != null or GetUnitAbilityLevel(whichUnit,'KI1E')>0
+endfunction
+function UnitHasAlastor takes unit whichUnit returns boolean
+    return GetItemOfTypeFromUnitBJ(whichUnit, 'I03A') != null or GetUnitAbilityLevel(whichUnit,'KII4')>0
 endfunction
 function CheckUnitBonusRange2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
@@ -21844,6 +21849,88 @@ call TriggerRegisterEnterRectSimple(gg_trg_Set_Ability,GetEntireMapRect())
 call TriggerAddCondition(gg_trg_Set_Ability,Condition(function Trig_Set_Ability_Conditions))
 call TriggerAddAction(gg_trg_Set_Ability,function Trig_Set_Ability_Actions)
 endfunction
+
+//alastor passive start
+function Alastor_Passive_Act takes nothing returns nothing
+local integer id=GetHandleId(GetExpiredTimer())
+local unit caster=LoadUnitHandle(HH,id,1)
+local real damage0= 50+GetHeroLevel(caster)*10
+local group g=CreateGroup()
+local real x0=GetUnitX(caster)
+local real y0=GetUnitY(caster)
+//call SetUnitState(caster,UNIT_STATE_LIFE,  GetUnitState(caster,UNIT_STATE_MAX_LIFE)  )
+
+
+//call SetUnitState(caster,UNIT_STATE_LIFE, GetUnitState(caster,UNIT_STATE_LIFE) + damage0*0.2 )
+
+// call HealIndicatorFunction(caster,caster,damage0*0.2)
+
+
+// set damage0=( GetHeroStr(caster,true)+GetHeroInt(caster,true)+GetHeroAgi(caster,true) )*0.4
+
+//call DamageAoeOneTime0(caster,GetUnitX(caster),GetUnitY(caster),700,damage0*0.2)
+
+// call GroupClear(G)
+if UnitHasItemOfTypeBJ( caster ,'I1S4')==false and GetUnitAbilityLevel(caster, 'KI0Q')==0 and UnitIsAlive(caster)==true then
+call GroupEnumUnitsInRange(g,x0,y0,700,Base)
+loop
+set n0=FirstOfGroup(g)
+exitwhen n0==null
+if  Condition_Base(GetOwningPlayer( caster ),n0) and GetUnitAbilityLevel(n0,'Avul')==0 and GetUnitTypeId(caster)!='H069' then
+call myCustomDamage(caster,n0,damage0*0.2,false,false,null,null,null)
+endif
+call GroupRemoveUnit(g,n0)
+endloop
+call GroupClear(g)
+call DestroyGroup(g)
+endif
+
+
+
+
+
+
+
+
+
+
+if  (udg_B==false  or  UnitIsAlive(caster)==false or not(caster==Hero[GetPlayerId(GetOwningPlayer(caster))] or caster==udg_DM[GetPlayerId(GetOwningPlayer(caster))+1])) or UnitHasAlastor(caster)==false then
+//call UnitRemoveAbility(caster,'ASG3')
+call SaveBoolean(HH,GetHandleId(caster),AlastorHash,true)
+call PauseTimer(GetExpiredTimer())
+call FlushChildHashtable(HH,id)
+call DestroyTimer(GetExpiredTimer())
+endif
+
+
+
+
+
+set caster=null
+set g=null
+endfunction
+
+
+
+
+
+
+
+
+
+function Alastor_Passive takes unit caster0 returns nothing
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+if LoadBoolean(HH,GetHandleId(caster0),AlastorHash)==false then
+call SaveUnitHandle(HH,id,1,caster0)
+call SaveBoolean(HH,GetHandleId(caster0),AlastorHash,true)
+call TimerStart(t,0.2,true,function Alastor_Passive_Act)
+else
+call DestroyTimer(t)
+endif
+set t=null
+endfunction
+
 function Trig_UltimateItems_Conditions takes nothing returns boolean
 return (GetItemPlayer(GetManipulatedItem())==Player(15) or GetItemPlayer(GetManipulatedItem())==GetOwningPlayer(GetTriggerUnit())) and (UnitHasItemOfTypeBJCustom(GetTriggerUnit(),'I06X')or UnitHasItemOfTypeBJCustom(GetTriggerUnit(),'I06W')or UnitHasItemOfTypeBJCustom(GetTriggerUnit(),'I06Z')or UnitHasItemOfTypeBJCustom(GetTriggerUnit(),'I01F')or UnitHasItemOfTypeBJCustom(GetTriggerUnit(),'I02V')or UnitHasItemOfTypeBJCustom(GetTriggerUnit(),'I03Y')or UnitHasItemOfTypeBJCustom(GetTriggerUnit(),'I05H') or UnitHasItemOfTypeBJCustom(GetTriggerUnit(),'I04V')or UnitHasItemOfTypeBJCustom(GetTriggerUnit(),'I043')or UnitHasItemOfTypeBJCustom(GetTriggerUnit(),'I049')or UnitHasItemOfTypeBJCustom(GetTriggerUnit(),'I04E')or UnitHasItemOfTypeBJCustom(GetTriggerUnit(),'I02V')or UnitHasItemOfTypeBJCustom(GetTriggerUnit(),'I03A')or UnitHasItemOfTypeBJCustom(GetTriggerUnit(),'I01F')or UnitHasItemOfTypeBJCustom(GetTriggerUnit(),'I04T')or UnitHasItemOfTypeBJCustom(GetTriggerUnit(),'I00D')or UnitHasItemOfTypeBJCustom(GetTriggerUnit(),'I06M') or UnitHasItemOfTypeBJCustom(GetTriggerUnit(),'I066') or UnitHasItemOfTypeBJCustom(GetTriggerUnit(),'I01M') or UnitHasItemOfTypeBJCustom(GetTriggerUnit(),'I04F')or UnitHasItemOfTypeBJCustom(GetTriggerUnit(),'I02T')or UnitHasItemOfTypeBJCustom(GetTriggerUnit(),'I02S')or UnitHasItemOfTypeBJCustom(GetTriggerUnit(),'I02R')or UnitHasItemOfTypeBJCustom(GetTriggerUnit(),'I046')or UnitHasItemOfTypeBJCustom(GetTriggerUnit(),'I042')or UnitHasItemOfTypeBJCustom(GetTriggerUnit(),'I040')or UnitHasItemOfTypeBJCustom(GetTriggerUnit(),'I03Q')or UnitHasItemOfTypeBJCustom(GetTriggerUnit(),'I03P')or UnitHasItemOfTypeBJCustom(GetTriggerUnit(),'I03R')or UnitHasItemOfTypeBJCustom(GetTriggerUnit(),'I13R')or UnitHasItemOfTypeBJCustom(GetTriggerUnit(),'I03L') or UnitHasItemOfTypeBJCustom(GetTriggerUnit(),'I02K')or UnitHasItemOfTypeBJCustom(GetTriggerUnit(),'I02J')or UnitHasItemOfTypeBJCustom(GetTriggerUnit(),'I018')or UnitHasItemOfTypeBJCustom(GetTriggerUnit(),'I03A')or UnitHasItemOfTypeBJCustom(GetTriggerUnit(),'I037')or UnitHasItemOfTypeBJCustom(GetTriggerUnit(),'ISDi')or UnitHasItemOfTypeBJCustom(GetTriggerUnit(),'I02W')or UnitHasItemOfTypeBJCustom(GetTriggerUnit(),'I031')or UnitHasItemOfTypeBJCustom(GetTriggerUnit(),'I036')or UnitHasItemOfTypeBJCustom(GetTriggerUnit(),'I050')or UnitHasItemOfTypeBJCustom(GetTriggerUnit(),'IGDi')or UnitHasItemOfTypeBJCustom(GetTriggerUnit(),'I01S')or UnitHasItemOfTypeBJCustom(GetTriggerUnit(),'I03F')or UnitHasItemOfTypeBJCustom(GetTriggerUnit(),'IMDi')or UnitHasItemOfTypeBJCustom(GetTriggerUnit(),'ISTi') or UnitHasItemOfTypeBJCustom(GetTriggerUnit(),'I1S4') or UnitHasItemOfTypeBJCustom(GetTriggerUnit(),'IHYi') or UnitHasItemOfTypeBJCustom(GetTriggerUnit(),'IHnR'))
 endfunction
@@ -23555,6 +23642,9 @@ if GetItemPlayer(it)==Player(15) or GetItemPlayer(it)==p or udg_test==true then
             endif
         endif
     endif
+    if GetItemTypeId(it) ==  'I03A' then
+        call Alastor_Passive( u )
+    endif
     if GetItemTypeId(it) ==  'I04V' or GetItemTypeId(it) ==  'I13R' or GetItemTypeId(it) ==  'I13S' or GetItemTypeId(it) ==  'IMDi' then
         if UnitItemInSlot(u,0)==it or UnitItemInSlot(u,1)==it or UnitItemInSlot(u,2)==it or UnitItemInSlot(u,3)==it or UnitItemInSlot(u,4)==it or UnitItemInSlot(u,5)==it or UnitItemInSlot(u,6)==it or UnitItemInSlot(u,7)==it or UnitItemInSlot(u,8)==it then
             set f=CreateItem(GetItemTypeId(it),GetUnitX(u),GetUnitY(u))
@@ -23777,6 +23867,9 @@ else
     endif
     if itemId ==  'I04V' or itemId ==  'I13R' or itemId ==  'I13S' or itemId ==  'IMDi' or ittargId ==  'I04V' or ittargId ==  'I13R' or ittargId ==  'I13S' or ittargId ==  'IMDi' or slotTarget==9 then
         call SetTriggerItemAllowMoveSlot(false)
+    endif
+    if itemId ==  'I03A' then
+        call Alastor_Passive( u )
     endif
 endif
 if udg_DM[GetPlayerId(p)+1]!=null then
@@ -38144,6 +38237,12 @@ exitwhen i>=10
         if GetUnitTypeId(Hero[i])=='H02L' then
             set Broly=Hero[i]
         endif
+        if UnitHasItemOfTypeBJ( Hero[i] ,'I03A') then //alastor passive
+            call Alastor_Passive( Hero[i] )
+        endif
+
+
+        call SetUnitTargetable( Hero[i] ,true)
         if GetUnitTypeId(Hero[i])=='HJi1' then
             call SetUnitModel(Hero[i],"[By XeSHTeG]JirenBase.mdx")
             call ShowAbility2('JNF4',false)
@@ -42605,9 +42704,6 @@ if nb>500 and GetUnitAbilityLevel( u ,'BSaR')>0 then
 endif
 if (CurrentEventAttack and nb>0) or nb>50 then
     call UnitRemoveAbility(u,'cbc7')
-    if GetUnitTypeId(u)=='H34X' or GetUnitTypeId(u)=='H14F' then
-        call KillUnit(u)
-    endif
 endif
 if nb>50 and GetUnitAbilityLevel(u,'A19B')>0 then
     //call SetEventDamage(0.05)
@@ -45909,6 +46005,11 @@ endif
 if nb>0 then
     if CurrentEventAttack then
         call SaveReal(HH,cid,'AAcd',10)
+    endif
+    if GetUnitTypeId(u)=='H34X' or GetUnitTypeId(u)=='H14F' then
+        call SetEventDamage(nb*10)
+    else
+        call SetEventDamage(nb)
     endif
     call SetEventDamage(nb)
     if GetUnitAbilityLevel(u,'A4DF')>0 then
@@ -165315,6 +165416,7 @@ function FKazumaList takes unit u, integer id returns nothing
         call UnitRemoveAbilityTimed(u,'KII4',10)
         call UnitAddAbility(u,'KII5')
         call UnitRemoveAbilityTimed(u,'KII5',10)
+        call Alastor_Passive(u)
     endif
     if id=='I03B' then //Меч Анбу
         call UnitAddAbility(u,'KII6')
