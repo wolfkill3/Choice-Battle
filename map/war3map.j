@@ -168777,8 +168777,8 @@ endfunction
 function BelfegorStormDamage_Periodic takes nothing returns nothing
         local integer id=GetHandleId(GetExpiredTimer())
         local integer time=LoadInteger(h,id,3)
-        if time<=6 and GetWidgetLife(LoadUnitHandle(h,id,1))>1 then
-                call myCustomDamage(LoadUnitHandle(h,id,0),LoadUnitHandle(h,id,1),(LoadReal(h,id,2)*0.5),false,false,null,null,null)
+        if time<6 and GetWidgetLife(LoadUnitHandle(h,id,1))>1 then
+                call myCustomDamage(LoadUnitHandle(h,id,0),LoadUnitHandle(h,id,1),(LoadReal(h,id,2) / 6),false,false,null,null,null)
                 call SaveInteger(h,id,3,time+1)
         else
                 call RemoveEffect(LoadEffectHandle(h,id,4),0,false,CreateTimer())
@@ -168892,8 +168892,7 @@ function Belf_CritDamage takes unit newCaster,unit newTarget,unit newKnife,real 
         local boolean bBelfegorMark=UnitHaveBelfegorMark(newCaster,newTarget,true)
         set newDamage=newDamage+GetWidgetMaxLife(newTarget)*0.04
         if LoadBoolean(h,GetHandleId(newCaster),StringHash("BelfStormVaria"))==true then
-                set newDamage=newDamage+GetWidgetMaxLife(newTarget)*0.03
-                call BelfegorStormDamage(newCaster,newTarget,newDamage*0.20)
+            call BelfegorStormDamage(newCaster,newTarget,newDamage*0.40+GetWidgetMaxLife(newTarget)*0.08)
         endif
         call MyRemoveUnit(CreateUnit(GetOwningPlayer(newCaster), 'dAlb', x, y, 0), 1.2)
         set n=CreateUnit(GetOwningPlayer(newCaster), 'dH09', x, y, a+170)
@@ -169094,7 +169093,7 @@ loop
 set bjLCU=FirstOfGroup(bjLCG)
 exitwhen bjLCU==null
 if Condition_Base(GetOwningPlayer(LoadUnitHandle(h,id,CasterHash)),bjLCU)==true then
-call BelfegorStormDamage(LoadUnitHandle(h,id,CasterHash),bjLCU,(full_s-TShield+5)/6)
+call BelfegorStormDamage(LoadUnitHandle(h,id,CasterHash),bjLCU,(full_s-TShield+5))
 endif
 call GroupRemoveUnit(bjLCG,bjLCU)
 endloop
@@ -169177,7 +169176,7 @@ function BelfQ_Damage takes unit newCaster,unit newTarget,unit newKnife,real new
         call SetSpecialEffectFacing(bjLCE,a)
         call DestroyEffect(bjLCE)
         if stormvaria then
-            call BelfegorStormDamage(newCaster,newTarget,newDamage*0.10)
+            call BelfegorStormDamage(newCaster,newTarget,newDamage*0.2)
         endif
         call myCustomDamage(newCaster,newTarget,newDamage,false,false,null,null,null)
     endif
@@ -169538,7 +169537,7 @@ function BelfW_Periodic takes nothing returns nothing
                 call myCustomDamage(LoadUnitHandle(h,id,CasterHash),bjLCU,dmg,false,false,null,null,null)
                 call UnitAddBelfegorMark(LoadUnitHandle(h,id,CasterHash),bjLCU)
                 if stormvaria then
-                    set dmg=GetHeroInt(LoadUnitHandle(h,id,CasterHash), true)*2
+                    set dmg=GetHeroInt(LoadUnitHandle(h,id,CasterHash), true)*4
                     call BelfegorStormDamage(LoadUnitHandle(h,id,CasterHash),bjLCU,dmg)
                 endif
                 call DestroyEffect(AddSpecialEffectTarget("Abilities\\Spells\\Other\\Stampede\\StampedeMissileDeath.mdl",bjLCU,"chest"))
@@ -169761,7 +169760,7 @@ function BelfE_Act2_Periodic takes nothing returns nothing
             call myCustomDamage(LoadUnitHandle(h,id,CasterHash),LoadUnitHandle(h,id,TargetHash),dmg/2,false,false,null,null,null)
             call SetControlToUnit(LoadUnitHandle(h,id,CasterHash),LoadUnitHandle(h,id,TargetHash),2,"stun")
             if stormvaria then
-                call BelfegorStormDamage(LoadUnitHandle(h,id,CasterHash),LoadUnitHandle(h,id,TargetHash),dmg*0.1)
+                call BelfegorStormDamage(LoadUnitHandle(h,id,CasterHash),LoadUnitHandle(h,id,TargetHash),dmg*0.2)
             endif
             call SaveInteger(h,id,StringHash("Act"),3)
         endif
@@ -169847,7 +169846,7 @@ if act==0 then
                 call SetUnitFlyHeight(n,55,0)
                 call UnitApplyTimedLife(n,'BTLF',2)
                 call Push(bjLCU,50,a,500)
-                call BelfE_Act2(LoadUnitHandle(h,id,CasterHash),bjLCU,dmg/2,CreateTimer())
+                call BelfE_Act2(LoadUnitHandle(h,id,CasterHash),bjLCU,CreateTimer())
                 call SaveInteger(h,id,StringHash("Act"),1)
                 call GroupClear(bjLCG)
             else
@@ -169927,7 +169926,7 @@ function BelfR_Periodic takes nothing returns nothing
 	if time==0 then
         call DisableUnitAbility2(LoadUnitHandle(h,id,CasterHash),'BelR',false,true)
     endif
-    if time<(4+lvl*2)*100 and GetWidgetLife(LoadUnitHandle(h,id,CasterHash))>0.1 and udg_B and DU2 then
+    if time<(9+lvl)*100 and GetWidgetLife(LoadUnitHandle(h,id,CasterHash))>0.1 and udg_B and DU2 then
         if CheckUnitInvisible(LoadUnitHandle(h,id,CasterHash)) then
             call UnitAddAbility(LoadUnitHandle(h,id,Effect1Hash),'Ao7S')
         else
@@ -169938,7 +169937,7 @@ function BelfR_Periodic takes nothing returns nothing
                 set newY=GetUnitY(LoadUnitHandle(h,id,CasterHash))
                 call SetUnitX(bjLCU,newX)
                 call SetUnitY(bjLCU,newY)
-        call SaveBoolean(h,GetHandleId(LoadUnitHandle(h,id,CasterHash)),StringHash("BelfStormVaria"),true)
+                call SaveBoolean(h,GetHandleId(LoadUnitHandle(h,id,CasterHash)),StringHash("BelfStormVaria"),true)
                 call SetUnitFlyHeight(bjLCU,GetUnitFlyHeight(LoadUnitHandle(h,id,CasterHash))+70,0)
                 if GetUnitAbilityLevel(LoadUnitHandle(h,id,CasterHash),'Binv')!=0 then
                         if GetUnitAbilityLevel(bjLCU,'A0A1')==0 then
@@ -169985,7 +169984,7 @@ function BelfR_Cast takes unit newCaster returns nothing
         call SetSpecialEffectZ(bjLCE,170)
         call DestroyEffect(bjLCE)
         call SaveBoolean(h,GetHandleId(newCaster),StringHash("BelfStormVaria"),true)
-    call CreateModeIndicatorWithPauseForm(newCaster, "ReplaceableTextures\\CommandButtons\\BTNBelfR.blp", 4+GetUnitAbilityLevel(newCaster,'BelR')*2)
+        call CreateModeIndicatorWithPauseForm(newCaster, "ReplaceableTextures\\CommandButtons\\BTNBelfR.blp", 9+GetUnitAbilityLevel(newCaster,'BelR'))
         set bjLCU=CreateUnit(GetOwningPlayer(newCaster),'dH69',x,y,0)
         call SetUnitScale(bjLCU,0.25,0.25,0.25)
         call SaveUnitHandle(h,id,Effect1Hash,bjLCU)
@@ -170357,7 +170356,7 @@ function BelfT_Periodic takes nothing returns nothing
 		set bjLCU=FirstOfGroup(bjLCG)
 		exitwhen bjLCU==null
 			if Condition_Base(GetOwningPlayer(caster),bjLCU)==true then
-				call BelfegorStormDamage(caster,bjLCU,(GetHeroInt(caster,true)*1))
+				call BelfegorStormDamage(caster,bjLCU,(GetHeroInt(caster,true)*3))
 				//call UnitAddBelfegorMark(caster,bjLCU)
 			endif
 		call GroupRemoveUnit(bjLCG,bjLCU)
