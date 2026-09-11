@@ -227937,10 +227937,21 @@ if LoadBoolean(HH,GetHandleId(target),ANTITARGET_ABILITY)==false then
 call PauseUnit(target,true)
 call SaveBoolean(HH,GetHandleId( target ),TARGET_ABILITY,true)
 else
-// Цель разворачивает чужие умения: отдаём ей себя и сворачиваемся
-// через штатную ветку завершения (время -> конечное).
+// Цель разворачивает чужие умения (ANTITARGET_ABILITY): отдаём ей себя
+// и сразу сворачиваемся по хвосту завершения этой же способности,
+// но без урона и стана — так сделано у Roshi_R_Act2.
+call SaveBoolean(HH,GetHandleId( target ),TARGET_ABILITY,false)
 call SaveUnitHandle(HH,GetHandleId(target),REVERSE_TARGET,caster)
-call SaveReal(HH,id,5,2)
+call UnitSpeed(caster,1)
+call PauseUnit(caster,false)
+call SetUnitInvulnerable(caster,false)
+call SetUnitPathing(caster,true)
+call PauseUnit(target,false)
+call SetUnitInvulnerable(target,false)
+call SetUnitPathing(target,true)
+call PauseTimer(GetExpiredTimer())
+call FlushChildHashtable(HH,id)
+call DestroyTimer(GetExpiredTimer())
 endif
 
 //Проверка на паузу
@@ -228243,10 +228254,29 @@ if LoadBoolean(HH,GetHandleId(target),ANTITARGET_ABILITY)==false then
 call PauseUnit(target,true)
 call SaveBoolean(HH,GetHandleId( target ),TARGET_ABILITY,true)
 else
-// Цель разворачивает чужие умения: отдаём ей себя и сворачиваемся
-// через штатную ветку завершения (время -> конечное).
+// Цель разворачивает чужие умения (ANTITARGET_ABILITY): отдаём ей себя
+// и сразу сворачиваемся по хвосту завершения этой же способности,
+// но без урона и стана — так сделано у Roshi_R_Act2.
+call SaveBoolean(HH,GetHandleId( target ),TARGET_ABILITY,false)
 call SaveUnitHandle(HH,GetHandleId(target),REVERSE_TARGET,caster)
-call SaveReal(HH,id,5,10)
+if LoadEffectHandle(HH,id,18)!=null then
+call DestroyEffect(LoadEffectHandle(HH,id,18))
+call SaveEffectHandle(HH,id,18,null)
+endif
+if LoadEffectHandle(HH,id,19)!=null then
+call DestroyEffect(LoadEffectHandle(HH,id,19))
+call SaveEffectHandle(HH,id,19,null)
+endif
+call UnitRemoveAbility(caster,'SiE3')
+call UnitSpeed(caster,1)
+call PauseUnit(caster,false)
+call SetUnitInvulnerable(caster,false)
+call SetUnitPathing(caster,true)
+call PauseUnit(target,false)
+call SetUnitPathing(target,true)
+call PauseTimer(GetExpiredTimer())
+call FlushChildHashtable(HH,id)
+call DestroyTimer(GetExpiredTimer())
 endif
 
 //Проверка на паузу
@@ -228559,10 +228589,21 @@ if LoadBoolean(HH,GetHandleId(target),ANTITARGET_ABILITY)==false then
 call PauseUnit(target,true)
 call SaveBoolean(HH,GetHandleId( target ),TARGET_ABILITY,true)
 else
-// Цель разворачивает чужие умения: отдаём ей себя и сворачиваемся
-// через штатную ветку завершения (время -> конечное).
+// Цель разворачивает чужие умения (ANTITARGET_ABILITY): отдаём ей себя
+// и сразу сворачиваемся по хвосту завершения этой же способности,
+// но без урона и стана — так сделано у Roshi_R_Act2.
+call SaveBoolean(HH,GetHandleId( target ),TARGET_ABILITY,false)
 call SaveUnitHandle(HH,GetHandleId(target),REVERSE_TARGET,caster)
-call SaveReal(HH,id,5,25)
+call UnitSpeed(caster,1)
+call SetUnitInvulnerable(caster,false)
+call PauseUnit(caster,false)
+call SetUnitInvulnerable(target,false)
+call PauseUnit(target,false)
+call DestroyLightning(l)
+call RemoveUnit(Dummy)
+call PauseTimer(GetExpiredTimer())
+call FlushChildHashtable(HH,id)
+call DestroyTimer(GetExpiredTimer())
 endif
 
 //Проверка на паузу
@@ -230391,10 +230432,20 @@ if LoadBoolean(HH,GetHandleId(target),ANTITARGET_ABILITY)==false then
 call PauseUnit(target,true)
 call SaveBoolean(HH,GetHandleId( target ),TARGET_ABILITY,true)
 else
-// Цель разворачивает чужие умения: отдаём ей себя и сворачиваемся
-// через штатную ветку завершения (время -> конечное).
+// Цель разворачивает чужие умения (ANTITARGET_ABILITY): отдаём ей себя
+// и сразу сворачиваемся по хвосту завершения этой же способности,
+// но без урона и стана — так сделано у Roshi_R_Act2.
+call SaveBoolean(HH,GetHandleId( target ),TARGET_ABILITY,false)
 call SaveUnitHandle(HH,GetHandleId(target),REVERSE_TARGET,caster)
-call SaveReal(HH,id,5,20.5)
+call UnitSpeed(caster,1)
+call SetUnitPathing(caster,true)
+call PauseUnit(caster,false)
+call SetUnitInvulnerable(caster,false)
+call SetUnitPathing(target,true)
+call PauseUnit(target,false)
+call PauseTimer(GetExpiredTimer())
+call FlushChildHashtable(HH,id)
+call DestroyTimer(GetExpiredTimer())
 endif
 
 //Проверка на паузу
@@ -230669,10 +230720,21 @@ call PauseUnit(target,true)
           call myCustomDamage(caster,target,damage,false,false,null,null,null)
         endif
 else
-// Цель разворачивает чужие умения: отдаём ей себя и сворачиваемся
-// через штатное завершение (HitCount==0 or time>=30).
+// Цель разворачивает чужие умения (ANTITARGET_ABILITY): отдаём ей себя
+// и сразу сворачиваемся по хвосту завершения этой же способности,
+// но без урона и стана — так сделано у Roshi_R_Act2.
+call SaveBoolean(HH,GetHandleId( target ),TARGET_ABILITY,false)
 call SaveUnitHandle(HH,GetHandleId(target),REVERSE_TARGET,caster)
-call SaveReal(HH,id,5,30)
+call PauseUnit(target,false)
+call RemoveUnit(Dummy)
+call RemoveUnit(LoadUnitHandle(HH,id,21))
+if LoadGroupHandle(HH,id,4)!=null then
+call DestroyGroup(LoadGroupHandle(HH,id,4))
+call SaveGroupHandle(HH,id,4,null)
+endif
+call PauseTimer(GetExpiredTimer())
+call FlushChildHashtable(HH,id)
+call DestroyTimer(GetExpiredTimer())
 endif
 
 
