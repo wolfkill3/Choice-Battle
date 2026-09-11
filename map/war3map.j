@@ -225403,7 +225403,11 @@ call SaveUnitHandle(HH,id,2,target)
 call Garp_Hands(caster,1.2)
 call SetUnitPathing(caster,false)
 // откат ставим руками: подбег обрывает каст, и игра его не начисляет.
-// 12/11/10/9/8 по уровню — как в Cool у GrW1.
+// 22 c — как в Cool у GrW1 после правки дева (02b2637); ручная строка тогда
+// выпала вместе с ней, и W ушла без отката.
+if GetUnitAbilityLevel(caster,'GrW1')>0 then
+call StartAbilityCooldown(GetUnitAbility(caster,'GrW1'),22.0)
+endif
 call TimerStart(t,0.02,true,function Garp_W_Act2)
 set t=null
 endfunction
@@ -225547,7 +225551,9 @@ if time>=dur or UnitIsAlive(caster)==false or udg_B==false or DU2==false then
 call PauseUnit(caster,false)
 call UnitRemoveAbility(caster,'GrEs')
 call UnitRemoveAbility(caster,'GrEa')
+if GetUnitAbilityLevel(caster,'GrF1')>0 then
 call StartAbilityCooldown(GetUnitAbility(caster,'GrF1'),20)
+endif
 call PauseTimer(t)
 call DestroyTimer(t)
 call FlushChildHashtable(HH,id)
@@ -226336,7 +226342,9 @@ else
     call FlushChildHashtable(HH,GetHandleId(g))
     call DestroyGroup(g)
     call SetUnitPathing(u,true)
+    if GetUnitAbilityLevel(u,'GrG2')>0 then
     call StartAbilityCooldown(GetUnitAbility(u,'GrG2'),25-I2R(GetHeroLevel(u))/7)
+    endif
     call FlushChildHashtable(HH,id)
 endif
 set p=null
@@ -226414,7 +226422,9 @@ else
             call SetUnitTimeScale(u,1)
             call SetUnitPathing(u,true)
             call PauseUnit(u,false)
+            if GetUnitAbilityLevel(u,'GrG2')>0 then
             call StartAbilityCooldown(GetUnitAbility(u,'GrG2'),25-I2R(GetHeroLevel(u))/7)
+            endif
             call FlushChildHashtable(HH,id)
             call SetUnitInvulnerable(u,false)
         endif
@@ -226422,7 +226432,9 @@ else
     else
         call SetControlToUnit(u , u , 0.5 , "doomdebug")
         call SetUnitAnimation(u,"stand")
+        if GetUnitAbilityLevel(u,'GrG2')>0 then
         call StartAbilityCooldown(GetUnitAbility(u,'GrG2'),25-I2R(GetHeroLevel(u))/7)
+        endif
         call PauseUnit(u,false)
         call PauseTimer(t)
         call DestroyTimer(t)
@@ -226663,9 +226675,13 @@ call RemoveUnit(LoadUnitHandle(HH,id,20))
 
 call SaveInteger(HH,GetHandleId(  caster  ),StringHash("KimiFormDur"),0)
 if GetUnitAbilityLevel(caster,'OM17')==0 then
+if GetUnitAbilityLevel(caster,'AKF1')>0 then
 call StartAbilityCooldown(GetUnitAbility(caster,'AKF1'), 20)
+endif
 else
+if GetUnitAbilityLevel(caster,'AKF1')>0 then
 call StartAbilityCooldown(GetUnitAbility(caster,'AKF1'), 0.1)
+endif
 endif
 call PauseUnit(caster,false)
 
@@ -229386,7 +229402,9 @@ set n0=null
 endif
 if time==0.5 then
 
+if GetUnitAbilityLevel(caster,'SiT1')>0 then
 call StartAbilityCooldown(GetUnitAbility(caster, 'SiT1'), 44.5)
+endif
 
 call UnitSpeed(LoadUnitHandle(HH,id,25),0)
 
