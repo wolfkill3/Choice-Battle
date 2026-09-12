@@ -580,12 +580,12 @@ C;X2;K"Magic Leash"
 C;X3;K"ReplaceableTextures\Weather"
 C;X4;K"lariatCaught.blp"
 C;X5;K50
-C;X6;K80
+C;X6;K10
 C;X7;K255
 C;X8;K255
 C;X9;K255
 C;X10;K255
-C;X11;K0.01
+C;X11;K0
 C;X12;K0
 C;X13;K2
 C;X14;K1
