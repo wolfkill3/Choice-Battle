@@ -2329,8 +2329,8 @@ function myCustomDamage3_targ takes unit u, real amount returns real
         set nb=nb*0.8
     endif
 
-    if GetUnitAbilityLevel(u,'B05Y')>0 and nb>0 then        
-        set nb=nb*(1-(0.12+0.03*GetUnitAbilityLevel(u,'A168')))
+    if GetUnitAbilityLevel(u,'LamS')>0 and nb>0 then        
+        set nb=nb*(1-(0.12+0.03*GetUnitAbilityLevel(u,'LamG')))
     endif
 
     if GetUnitAbilityLevel(u,'LAE1')>0 and nb>0 then // Laxus F - Резисты 
@@ -17555,7 +17555,7 @@ function OnButtonSelectHero takes nothing returns nothing
                         call AddFrameText( GetFrameByName("TavernAbilityTooltipText",5), "/")
                         set j=j+1
                         endloop   
-                        if String2Id( s )=='A105' or String2Id( s )=='A0RS' or String2Id( s )=='A0IR' or String2Id( s )=='CelF' or String2Id( s )=='CelG' or String2Id( s )=='BuuG' or String2Id( s )=='LamF' then
+                        if String2Id( s )=='A105' or String2Id( s )=='A0RS' or String2Id( s )=='A0IR' or String2Id( s )=='CelF' or String2Id( s )=='CelG' or String2Id( s )=='BuuG' or String2Id( s )=='LamF' or String2Id( s )=='LamG' then
                             call AddFrameText( GetFrameByName("TavernAbilityTooltipText",5), "\n\n"+GetAbilityBaseStringFieldById( String2Id( s ), ABILITY_SF_NAME )+", (|cffffcc00"+IntToChar(GetAbilityBaseIntegerFieldById( String2Id( s ), ABILITY_IF_BUTTON_HOTKEY_NORMAL ))+"|r)\n\n"+GetAbilityBaseStringFieldById( String2Id( s ), ABILITY_SLF_TOOLTIP_LEARN_EXTENDED )) 
                         else                  
                             call AddFrameText( GetFrameByName("TavernAbilityTooltipText",5), "\n\n"+GetAbilityBaseStringFieldById( String2Id( s ), ABILITY_SF_NAME )+", (|cffffcc00"+IntToChar(GetAbilityBaseIntegerFieldById( String2Id( s ), ABILITY_IF_BUTTON_HOTKEY_NORMAL ))+"|r)\n\n"+GetAbilityBaseStringFieldById( String2Id( s ), ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED ))
@@ -17573,7 +17573,7 @@ function OnButtonSelectHero takes nothing returns nothing
                         call AddFrameText( GetFrameByName("TavernAbilityTooltipText",6), "/")
                         set j=j+1
                         endloop                        
-                        if String2Id( s )=='A105' or String2Id( s )=='A0RS' or String2Id( s )=='A0IR' or String2Id( s )=='CelF' or String2Id( s )=='CelG' or String2Id( s )=='BuuG' or String2Id( s )=='LamF' then
+                        if String2Id( s )=='A105' or String2Id( s )=='A0RS' or String2Id( s )=='A0IR' or String2Id( s )=='CelF' or String2Id( s )=='CelG' or String2Id( s )=='BuuG' or String2Id( s )=='LamF' or String2Id( s )=='LamG' then
                             call AddFrameText( GetFrameByName("TavernAbilityTooltipText",6), "\n\n"+GetAbilityBaseStringFieldById( String2Id( s ), ABILITY_SF_NAME )+", (|cffffcc00"+IntToChar(GetAbilityBaseIntegerFieldById( String2Id( s ), ABILITY_IF_BUTTON_HOTKEY_NORMAL ))+"|r)\n\n"+GetAbilityBaseStringFieldById( String2Id( s ), ABILITY_SLF_TOOLTIP_LEARN_EXTENDED )) 
                         else                  
                             call AddFrameText( GetFrameByName("TavernAbilityTooltipText",6), "\n\n"+GetAbilityBaseStringFieldById( String2Id( s ), ABILITY_SF_NAME )+", (|cffffcc00"+IntToChar(GetAbilityBaseIntegerFieldById( String2Id( s ), ABILITY_IF_BUTTON_HOTKEY_NORMAL ))+"|r)\n\n"+GetAbilityBaseStringFieldById( String2Id( s ), ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED ))
@@ -17591,7 +17591,7 @@ function OnButtonSelectHero takes nothing returns nothing
                         call AddFrameText( GetFrameByName("TavernAbilityTooltipText",7), "/")
                         set j=j+1
                         endloop                        
-                        if String2Id( s )=='A105' or String2Id( s )=='A0RS' or String2Id( s )=='A0IR' or String2Id( s )=='CelF' or String2Id( s )=='CelG' or String2Id( s )=='BuuG' or String2Id( s )=='LamF' then
+                        if String2Id( s )=='A105' or String2Id( s )=='A0RS' or String2Id( s )=='A0IR' or String2Id( s )=='CelF' or String2Id( s )=='CelG' or String2Id( s )=='BuuG' or String2Id( s )=='LamF' or String2Id( s )=='LamG' then
                             call AddFrameText( GetFrameByName("TavernAbilityTooltipText",7), "\n\n"+GetAbilityBaseStringFieldById( String2Id( s ), ABILITY_SF_NAME )+", (|cffffcc00"+IntToChar(GetAbilityBaseIntegerFieldById( String2Id( s ), ABILITY_IF_BUTTON_HOTKEY_NORMAL ))+"|r)\n\n"+GetAbilityBaseStringFieldById( String2Id( s ), ABILITY_SLF_TOOLTIP_LEARN_EXTENDED )) 
                         else                  
                             call AddFrameText( GetFrameByName("TavernAbilityTooltipText",7), "\n\n"+GetAbilityBaseStringFieldById( String2Id( s ), ABILITY_SF_NAME )+", (|cffffcc00"+IntToChar(GetAbilityBaseIntegerFieldById( String2Id( s ), ABILITY_IF_BUTTON_HOTKEY_NORMAL ))+"|r)\n\n"+GetAbilityBaseStringFieldById( String2Id( s ), ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED ))
@@ -29884,7 +29884,7 @@ if GetUnitTypeId(u) == 'H00A' then
     call UnitRemoveAbility(u,'LmE4')
     call UnitRemoveAbility(u,'LmE5')
     call UnitRemoveAbility(u,'LmE6')
-    call UnitRemoveAbility(u,'B05Y')
+    call UnitRemoveAbility(u,'LamS')
     call ShowAbility2('A168', true)
 endif
 if GetUnitTypeId(u) == 'H018' then
@@ -43955,9 +43955,10 @@ if cond==0 then
         if GetUnitAbilityLevel(u,'LamF')>0 and udg_B==true and GetUnitAbilityLevel(u,'B00Y')==0 and LoadBoolean(h,uid,pb)==false and nb>50 then
             if GetRandomIntMem(0,100)<=30 then
                 //call SetEventDamage(nb*0.8)
+                call SaveReal(HH,GetHandleId(u),StringHash("LamboQReal"),LoadReal(HH,GetHandleId(u),StringHash("LamboQReal"))+nb*0.2)
                 set dmg=b*0.4
-                if GetUnitAbilityLevel(u,'B05Y')>0 then
-                    set dmg=1.45*dmg
+                if GetUnitAbilityLevel(u,'LamS')>0 then
+                    set dmg=1.30*dmg
                 endif
                 call SaveReal(HH,uid,'Lrvd',dmg)
                 set nb=nb*0.8
@@ -44506,11 +44507,11 @@ if cond==0 then
             call UnitRemoveAbility(u,'ADG3')
             set nb=nb*0.3
         endif
-        if GetUnitAbilityLevel(u,'B05Y')>0 and nb>0 then        
+        if GetUnitAbilityLevel(u,'LamS')>0 and nb>0 then        
 
-            //call SetEventDamage(nb*(1-(0.12+0.03*GetUnitAbilityLevel(u,'A168'))))
+            //call SetEventDamage(nb*(1-(0.15+0.03*GetUnitAbilityLevel(u,'LamG'))))
 
-            set nb=nb*(1-(0.12+0.03*GetUnitAbilityLevel(u,'A168')))
+            set nb=nb*(1-(0.15+0.03*GetUnitAbilityLevel(u,'LamG')))
         endif
                         
         //сусано R уменьшает входящий урон на 3-15% от макс маны (как Е вивера)
@@ -50143,7 +50144,7 @@ local real l__s=LoadReal(HH,id,4)
 local real dmg=1.5*GetHeroStr(u,true)
 local integer count=LoadInteger(HH,id,6)
 local boolean b=false
-if GetUnitAbilityLevel(u,'B05Y')>0 then
+if GetUnitAbilityLevel(u,'LamS')>0 then
 set dmg=1.45*dmg
 endif
 if SR1(x,y,x1,y1)>l__s+44.00 and UnitIsAlive(c)then
@@ -50240,7 +50241,7 @@ local real x=GetUnitX(u)
 local real y=GetUnitY(u)
 local player p=GetOwningPlayer(u)
 local real dmg=GetHeroStr(u,true)*0.5
-if GetUnitAbilityLevel(u,'B05Y')>0 then
+if GetUnitAbilityLevel(u,'LamS')>0 then
 set dmg=1.45*dmg
 endif
 if GetUnitCurrentOrder(u)==OrderId("channel")then
@@ -50308,7 +50309,7 @@ local integer l__idg=GetHandleId(g)
 local real f
 local player p=GetOwningPlayer(u)
 local integer l__ide
-if GetUnitAbilityLevel(u,'B05Y')>0 then
+if GetUnitAbilityLevel(u,'LamS')>0 then
 set dmg=dmg*1.45
 endif
 loop
@@ -50388,7 +50389,7 @@ local integer l__idg=GetHandleId(g)
 local real dmg=50*GetUnitAbilityLevel(u,'A00P')
 local integer l__ide
 local player p=GetOwningPlayer(u)
-if GetUnitAbilityLevel(u,'B05Y')>0 then
+if GetUnitAbilityLevel(u,'LamS')>0 then
 set dmg=dmg*1.45
 endif
 if SR(x,y,x1,y1)>50 and udg_B==true and dist<2 and LoadBoolean(HH,GetHandleId(u),DASH_USER)==true then
@@ -50404,7 +50405,7 @@ set l__ide=GetHandleId(E)
 exitwhen E==null
 if Condition_Base(p,E)and E!=LoadUnitHandle(h,l__idg,l__ide)then
 if LoadBoolean(HH,l__ide,ANTITARGET_ABILITY)==false then
-if GetUnitAbilityLevel(u,'B05Y')>0 then
+if GetUnitAbilityLevel(u,'LamS')>0 then
 call myCustomDamage(u,E,1.45*GetUnitState(E,UNIT_STATE_MAX_LIFE)*0.05*GetUnitAbilityLevel(u,'A00P')+dmg,false,false,null,null,null)
 else
 call myCustomDamage(u,E,GetUnitState(E,UNIT_STATE_MAX_LIFE)*0.05*GetUnitAbilityLevel(u,'A00P')+dmg,false,false,null,null,null)
@@ -168797,7 +168798,7 @@ else
             call UnitRemoveAbility(u,'LmE4')
             call UnitRemoveAbility(u,'LmE5')
             call UnitRemoveAbility(u,'LmE6')
-            call UnitRemoveAbility(u,'B05Y')
+            call UnitRemoveAbility(u,'LamS')
             call ShowAbility2('A168', true)
         endif
         if TransfID==26 then
@@ -230607,7 +230608,7 @@ if time<1 then
 call PauseUnit(caster,true)
 endif
 if time==1 then
- call CreateModeIndicatorWithPauseForm(caster, "ReplaceableTextures\\CommandButtons\\BTNLamboG.blp", 15)
+call CreateModeIndicatorWithPauseForm(caster, "ReplaceableTextures\\CommandButtons\\BTNLamboG.blp", 15)
 
 if GetUnitAbilityLevel(caster,'LamG')==1 then
 call UnitAddAbility(caster,'LmE2')
@@ -231008,19 +231009,30 @@ loop
 set n0=FirstOfGroup(G)
 exitwhen n0==null
 if IsUnitInGroup(n0,LoadGroupHandle(HH,id,4))==false and Condition_Base(GetOwningPlayer(caster),n0) then
-if GetUnitAbilityLevel(caster,'LamS')>0 then
-
-call myCustomDamage(caster,n0,50*damage*1.3+GetUnitState(n0,UNIT_STATE_MAX_LIFE)*0.05*damage*1.3,false,false,null,null,null)
-else
-
-
-
-call myCustomDamage(caster,n0,50*damage+GetUnitState(n0,UNIT_STATE_MAX_LIFE)*0.05*damage,false,false,null,null,null)
-
-
-
-endif
-call GroupAddUnit(LoadGroupHandle(HH,id,4),n0)
+    if LoadBoolean(HH,GetHandleId(n0),ANTITARGET_ABILITY)==false then
+        if GetUnitAbilityLevel(caster,'LamS')>0 then
+            call myCustomDamage(caster,n0,50*damage*1.3+GetUnitState(n0,UNIT_STATE_MAX_LIFE)*0.05*damage*1.3,false,false,null,null,null)
+        else
+            call myCustomDamage(caster,n0,50*damage+GetUnitState(n0,UNIT_STATE_MAX_LIFE)*0.05*damage,false,false,null,null,null)
+        endif
+    else
+        if LoadGroupHandle(HH,id,4)!=null then
+        call DestroyGroup(LoadGroupHandle(HH,id,4))
+        call SaveGroupHandle(HH,id,4,null)
+        endif
+        call RemoveUnit(LoadUnitHandle(HH,id,20))
+        call RemoveUnit(LoadUnitHandle(HH,id,21))
+        call SaveBoolean(HH,GetHandleId(n0),TARGET_ABILITY,false)
+        call SaveUnitHandle(HH,GetHandleId(n0),REVERSE_TARGET,caster)
+        call UnitSpeed(caster,1)
+        call PauseUnit(caster,false)
+        call SetUnitInvulnerable(caster,false)
+        call SetUnitPathing(caster,true)
+        call PauseTimer(GetExpiredTimer())
+        call FlushChildHashtable(HH,id)
+        call DestroyTimer(GetExpiredTimer())
+    endif
+    call GroupAddUnit(LoadGroupHandle(HH,id,4),n0)
 endif
 call GroupRemoveUnit(G,n0)
 endloop
