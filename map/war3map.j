@@ -225918,7 +225918,7 @@ local real px
 local real py
 local real rad
 local real dist
-local real dmg=120.0*I2R(GetUnitAbilityLevel(caster,'GrR1'))+7.0*I2R(GetHeroStr(caster,true))
+local real dmg=(4+I2R(GetUnitAbilityLevel(caster,'GrR1')))*I2R(GetHeroStr(caster,true))
 call SaveReal(HH,id,5,time)
 call SaveReal(HH,id,49,total)
 if UnitIsAlive(caster)==false or udg_B==false or DU2==false then
@@ -226213,6 +226213,7 @@ call SetSpecialEffectScale(LoadEffectHandle(HH,id,10),0.175)
 call Garp_Sound("Sound\\Music\\mp3Music\\Garp_R_CastStart.mp3")
 call SaveSoundHandle(HH,id,30,soundplay)
 call SaveReal(HH,id,49,0)
+call SetUnitInvulnerable(caster,true)
 call TimerStart(t,0.02,true,function Garp_R_Act2)
 set caster=null
 set t=null
