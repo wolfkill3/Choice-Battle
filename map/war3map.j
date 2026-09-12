@@ -21777,6 +21777,8 @@ call SetPlayerAbilityAvailable(GetOwningPlayer( u ),'SiF1',true)
 call SetPlayerAbilityAvailable(GetOwningPlayer( u ),'SiF2',false)
 call SaveBoolean(HH,GetHandleId( u ),StringHash("SignumFBool"),true)
 //call SaveBoolean(HH,GetHandleId( u ),StringHash("SignumCD"),false)
+// endif добавлен: блок HSig пришёл из 10e39b6 без закрытия, карта не собиралась
+endif
 
 if GetUnitTypeId(u)=='HGoj' then
 call SetPlayerAbilityAvailable(GetOwningPlayer(u),'GSQ2',false)
@@ -225696,15 +225698,95 @@ endfunction
 // хэндл снимается только живым и ключ гасится.
 // Уборка волны R Гарпа: голова e0WZ и группа прохода. Зовётся из обеих веток
 // завершения, хэндлы снимаются только живыми и ключи гасятся.
-function Garp_R_Laser_Off takes unit caster,integer id returns nothing
-if LoadUnitHandle(HH,id,40)!=null then
-call RemoveUnit(LoadUnitHandle(HH,id,40))
-call SaveUnitHandle(HH,id,40,null)
+// Прицел R Гарпа: после приказа сразу «стоп», чтобы не сходил с места, и замах.
+function Garp_R_Aim2 takes nothing returns nothing
+local timer t=GetExpiredTimer()
+local unit u=LoadUnitHandle(h,GetHandleId(t),0)
+call IssueImmediateOrder(u,"stop")
+call SetUnitAnimationByIndex(u,7)
+call FlushChildHashtable(h,GetHandleId(t))
+call DestroyTimer(t)
+set u=null
+set t=null
+endfunction
+// Приказ во время прицела: точку (или юнита) пишем в хэш триггера, как у R Целла.
+function Garp_R_Aim takes nothing returns nothing
+local unit u=GetOrderedUnit()
+local timer t=CreateTimer()
+if GetOrderTargetUnit()==null then
+call SaveReal(h,GetHandleId(GetTriggeringTrigger()),StringHash("PointX"),GetOrderPointX())
+call SaveReal(h,GetHandleId(GetTriggeringTrigger()),StringHash("PointY"),GetOrderPointY())
+else
+call SaveReal(h,GetHandleId(GetTriggeringTrigger()),StringHash("PointX"),GetUnitX(GetOrderTargetUnit()))
+call SaveReal(h,GetHandleId(GetTriggeringTrigger()),StringHash("PointY"),GetUnitY(GetOrderTargetUnit()))
+endif
+call SaveUnitHandle(h,GetHandleId(t),0,u)
+call TimerStart(t,0.001,false,function Garp_R_Aim2)
+set u=null
+set t=null
+endfunction
+// Уборка R Гарпа: зовётся из обеих веток. Триггер прицела — в порядке Целла
+// (Flush -> ClearActions -> Destroy), схваченных отпускаем, каждый хэндл снимается
+// только живым и ключ гасится.
+// Уборка R Гарпа: зовётся из обеих веток. Триггер прицела — в порядке Целла
+// (Flush -> ClearActions -> Destroy), схваченных отпускаем, каждый хэндл снимается
+// только живым и ключ гасится.
+// Уборка R Гарпа: зовётся из обеих веток. Триггер прицела — в порядке Целла
+// (Flush -> ClearActions -> Destroy), схваченных отпускаем, каждый хэндл снимается
+// только живым и ключ гасится.
+// Уборка R Гарпа: зовётся из обеих веток. Триггер прицела — в порядке Целла
+// (Flush -> ClearActions -> Destroy), схваченных отпускаем, каждый хэндл снимается
+// только живым и ключ гасится.
+function Garp_R_Off takes unit caster,integer id returns nothing
+local group gr=LoadGroupHandle(HH,id,4)
+if LoadTriggerHandle(HH,id,45)!=null then
+call FlushChildHashtable(h,GetHandleId(LoadTriggerHandle(HH,id,45)))
+call TriggerClearActions(LoadTriggerHandle(HH,id,45))
+call DestroyTrigger(LoadTriggerHandle(HH,id,45))
+call SaveTriggerHandle(HH,id,45,null)
+endif
+if LoadEffectHandle(HH,id,10)!=null then
+call DestroyEffect(LoadEffectHandle(HH,id,10))
+call SaveEffectHandle(HH,id,10,null)
+endif
+if gr!=null then
+loop
+set n0=FirstOfGroup(gr)
+exitwhen n0==null
+call GroupRemoveUnit(gr,n0)
+call SaveBoolean(HH,GetHandleId(n0),TARGET_ABILITY,false)
+endloop
+call DestroyGroup(gr)
+call SaveGroupHandle(HH,id,4,null)
 endif
 if LoadGroupHandle(HH,id,7)!=null then
 call DestroyGroup(LoadGroupHandle(HH,id,7))
 call SaveGroupHandle(HH,id,7,null)
 endif
+if LoadGroupHandle(HH,id,8)!=null then
+call DestroyGroup(LoadGroupHandle(HH,id,8))
+call SaveGroupHandle(HH,id,8,null)
+endif
+if LoadUnitHandle(HH,id,40)!=null then
+call RemoveUnit(LoadUnitHandle(HH,id,40))
+call SaveUnitHandle(HH,id,40,null)
+endif
+if LoadFogModifierHandle(HH,id,25)!=null then
+call DestroyFogModifier(LoadFogModifierHandle(HH,id,25))
+call SaveFogModifierHandle(HH,id,25,null)
+endif
+if LoadSoundHandle(HH,id,30)!=null then
+call StopSound(LoadSoundHandle(HH,id,30),false,true)
+call SaveSoundHandle(HH,id,30,null)
+endif
+call UnitRemoveAbility(caster,'A1FU')
+call UnitRemoveAbility(caster,'B00A')
+call PauseUnit(caster,false)
+call UnitSpeed(caster,1)
+call SetUnitInvulnerable(caster,false)
+call SetUnitPathing(caster,true)
+set n0=null
+set gr=null
 endfunction
 function Garp_R_Act2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
@@ -225712,270 +225794,288 @@ local integer id=GetHandleId(t)
 local unit caster=LoadUnitHandle(HH,id,1)
 local real time=LoadReal(HH,id,5)+0.02
 local real time1=LoadReal(HH,id,6)
-// общее время от каста (ключ 49) — по нему идут обе реплики и конец луча
+// общее время от каста (ключ 49): луч стоит до конца реплики CastFinish
 local real total=LoadReal(HH,id,49)+0.02
-// молнии вокруг Гарпа идут своим ритмом 0.4 (ключ 9)
-local real time3=LoadReal(HH,id,9)+0.02
-local integer i
 local real facing=LoadReal(HH,id,3)
 local real x0=LoadReal(HH,id,11)
 local real y0=LoadReal(HH,id,12)
-// волна: рост головы (ключ 46) и пройденный путь (ключ 48)
+local real tx=LoadReal(HH,id,21)
+local real ty=LoadReal(HH,id,22)
+// звезда на руке — свой ритм 0.28 (ключ 9); молнии — тот же счётчик, ритм 0.4
+local real time3=LoadReal(HH,id,9)+0.02
+// волна: рост головы (ключ 46) и пройденный путь (ключ 43; 48 занят концом рывка)
 local real s1=LoadReal(HH,id,46)
-local real gone=LoadReal(HH,id,48)
+local real gone=LoadReal(HH,id,43)
+local integer i
 local unit head=LoadUnitHandle(HH,id,40)
-local unit d=null
-local group gr
+local trigger tt=LoadTriggerHandle(HH,id,45)
+local group gr=LoadGroupHandle(HH,id,4)
 local group gp
+local group gh
+local group g2
+local boolean rev=false
 local real px
 local real py
 local real rad
+local real dist
 local real dmg=120.0*I2R(GetUnitAbilityLevel(caster,'GrR1'))+7.0*I2R(GetHeroStr(caster,true))
 call SaveReal(HH,id,5,time)
 call SaveReal(HH,id,49,total)
 if UnitIsAlive(caster)==false or udg_B==false or DU2==false then
-    call Garp_R_Laser_Off(caster,id)
-    if LoadEffectHandle(HH,id,10)!=null then
-        call DestroyEffect(LoadEffectHandle(HH,id,10))
-        call SaveEffectHandle(HH,id,10,null)
-    endif
-    call PauseUnit(caster,false)
-    call UnitSpeed(caster,1)
-    call SetUnitInvulnerable(caster,false)
-    call SetUnitPathing(caster,true)
-    call UnitRemoveAbility(caster,'A1FU')
-    call UnitRemoveAbility(caster,'B00A')
-    if LoadGroupHandle(HH,id,4)!=null then
-        call DestroyGroup(LoadGroupHandle(HH,id,4))
-        call SaveGroupHandle(HH,id,4,null)
-    endif
-    if LoadFogModifierHandle(HH,id,25)!=null then
-        call DestroyFogModifier(LoadFogModifierHandle(HH,id,25))
-        call SaveFogModifierHandle(HH,id,25,null)
-    endif
-    if LoadSoundHandle(HH,id,30)!=null then
-        call StopSound(LoadSoundHandle(HH,id,30),false,true)
-        call SaveSoundHandle(HH,id,30,null)
-    endif
-    if LoadSoundHandle(HH,id,31)!=null then
-        call StopSound(LoadSoundHandle(HH,id,31),false,true)
-        call SaveSoundHandle(HH,id,31,null)
-    endif
-    call PauseTimer(t)
-    call DestroyTimer(t)
-    call FlushChildHashtable(HH,id)
+call Garp_R_Off(caster,id)
+call PauseTimer(t)
+call DestroyTimer(t)
+call FlushChildHashtable(HH,id)
 elseif time1>=2 then
-    // ЛУЧ = волны Экскалибура одна за другой (ExcaliburCast3 Сейбер), пока идёт
-    // реплика удара. Голова e0WZ идёт 60 за тик на 1600.0 и растёт, за ней
-    // каждый тик e0XZ + e0Y2 с набором высоты и масштаба. Дошла — новая волна.
-    call SetUnitX(caster,x0)
-    call SetUnitY(caster,y0)
-    call SetUnitFacingInstant(caster,facing)
-    // Молнии вокруг Гарпа, пока стоит луч: по 2 штуки каждые 0.4 c
-    call SaveReal(HH,id,9,time3)
-    if time3>=0.4 then
-        call SaveReal(HH,id,9,0)
-        set i=0
-        loop
-            exitwhen i>1
-            call EffectCreateAndMove(true,"Garp\\Garp_BlueHoleFX.mdx",GetRandomReal(0,360),1.5,GetRandomReal(0.35,0.6),1.0,100,100,100,0,0,caster,GetRandomReal(120,500),GetRandomReal(0,360))
-            set i=i+1
-        endloop
-    endif
-    if time>=0.36 and time<0.4 then
-        // рука уже выброшена вперёд -> стопорим кадр
-        call UnitSpeed(caster,0)
-        call PauseUnit(caster,true)
-    endif
-    if head!=null then
-        if gone>=1600.0 then
-            // волна дошла — следующая с начала, группа прохода новая
-            call SetUnitXY_1(head,PolX(x0,45,facing),PolY(y0,45,facing),false)
-            call SetUnitScale(head,0.10,0.10,0.10)
-            call SaveReal(HH,id,46,0)
-            call SaveReal(HH,id,48,0)
-            set s1=0
-            set gone=0
-            if LoadGroupHandle(HH,id,7)!=null then
-                call DestroyGroup(LoadGroupHandle(HH,id,7))
-            endif
-            call SaveGroupHandle(HH,id,7,CreateGroup())
-        endif
-        set px=PolX(GetUnitX(head),60,facing)
-        set py=PolY(GetUnitY(head),60,facing)
-        call SetUnitXY_1(head,px,py,false)
-        call SetUnitScale(head,0.10+s1,0.10+s1,0.10+s1)
-        call SaveReal(HH,id,46,s1+0.11)
-        call SaveReal(HH,id,48,gone+60)
-        set n0=CreateUnit(GetOwningPlayer(caster),'e0XZ',px,py,facing)
-        call UnitApplyTimedLife(n0,'BTLF',1.75)
-        call SetUnitTimeScale(n0,1)
-        call SetUnitFlyHeight(n0,85+s1*40,0)
-        call SetUnitScale(n0,1+s1,1+s1,1+s1)
-        call SetUnitVertexColor(n0,255,255,255,150)
-        set n0=CreateUnit(GetOwningPlayer(caster),'e0Y2',px,py,facing)
-        call UnitApplyTimedLife(n0,'BTLF',1.75)
-        call SetUnitTimeScale(n0,1)
-        call SetUnitFlyHeight(n0,85+s1*40,0)
-        call SetUnitScale(n0,0.5+s1,0.5+s1,0.5+s1)
-        call SetUnitVertexColor(n0,255,255,255,255)
-        // УРОН: ширина растёт вместе с волной. За проход волны — 0.25 базового,
-        // каждого раз за проход (gp); стан и отброс — только при первом касании (gr).
-        set rad=150.0+gone*0.125
-        set gr=LoadGroupHandle(HH,id,4)
-        set gp=LoadGroupHandle(HH,id,7)
-        call GroupClear(G)
-        call GroupEnumUnitsInRange(G,px,py,rad,Base)
-        loop
-            set n0=FirstOfGroup(G)
-            exitwhen n0==null
-            call GroupRemoveUnit(G,n0)
-            if gr!=null and gp!=null and Condition_Base(GetOwningPlayer(caster),n0) and GetUnitAbilityLevel(n0,'Avul')==0 and IsUnitInGroup(n0,gp)==false then
-                call GroupAddUnit(gp,n0)
-                call myCustomDamage(caster,n0,dmg*0.25,false,false,null,null,null)
-                if IsUnitInGroup(n0,gr)==false then
-                    call GroupAddUnit(gr,n0)
-                    call SetControlToUnit(caster,n0,0.5,"stun")
-                    call PushTimed(n0,facing,14,20)
-                endif
-            endif
-        endloop
-        call GroupClear(G)
-        set n0=null
-    endif
-    // реплика удара доиграла — конец (длина в ключе 52, от старта луча)
-    if time>=LoadReal(HH,id,52) then
-        call Garp_R_Laser_Off(caster,id)
-        call PauseUnit(caster,false)
-        call UnitSpeed(caster,1)
-        call SetUnitInvulnerable(caster,false)
-        call SetUnitPathing(caster,true)
-        call UnitRemoveAbility(caster,'A1FU')
-        call UnitRemoveAbility(caster,'B00A')
-        if LoadGroupHandle(HH,id,4)!=null then
-            call DestroyGroup(LoadGroupHandle(HH,id,4))
-            call SaveGroupHandle(HH,id,4,null)
-        endif
-        if LoadFogModifierHandle(HH,id,25)!=null then
-            call DestroyFogModifier(LoadFogModifierHandle(HH,id,25))
-            call SaveFogModifierHandle(HH,id,25,null)
-        endif
-        if LoadSoundHandle(HH,id,31)!=null then
-            call StopSound(LoadSoundHandle(HH,id,31),false,true)
-            call SaveSoundHandle(HH,id,31,null)
-        endif
-        call PauseTimer(t)
-        call DestroyTimer(t)
-        call FlushChildHashtable(HH,id)
-    endif
-elseif time<1 then
-    if LoadSoundHandle(HH,id,30)!=null then
-        call StopSound(LoadSoundHandle(HH,id,30),false,true)
-        call SaveSoundHandle(HH,id,30,null)
-    endif
-    call Garp_Sound("Sound\\Music\\mp3Music\\Garp_R_CastFinish.mp3")
-elseif time1>1 and time1<1.5 then
-    // РЫВОК: 75 за тик (3750/с) по земле, до 1000.0, рисуется как Q. Враг в 150 — стоп, бонус-урон и
-    // стан, дальше луч; никого — до точки (ключ 15), дальше луч. Ключ 6 = 0.5.
-    set px=PolX(GetUnitX(caster),75,facing)
-    set py=PolY(GetUnitY(caster),75,facing)
-    call SetUnitX(caster,px)
-    call SetUnitY(caster,py)
-    call SaveReal(HH,id,14,LoadReal(HH,id,14)+75)
-    call EffectCreateAndMoveAn(true,"Garp\\Garp_QDash.mdx",facing+180,0.6,1.0,2.5,100,100,100,0,0,caster,0,facing,0)
-    call EffectCreateAndMoveAn(true,"WindVectorPush.mdx",facing+180,0.6,1.0,1.3,100,100,100,0,0,caster,0,facing,0)
-    set d=null
-    call GroupClear(G)
-    call GroupEnumUnitsInRange(G,px,py,150,Base)
-    loop
-        set n0=FirstOfGroup(G)
-        exitwhen n0==null
-        call GroupRemoveUnit(G,n0)
-        if d==null and Condition_Base(GetOwningPlayer(caster),n0) and GetUnitAbilityLevel(n0,'Avul')==0 then
-            set d=n0
-        endif
-    endloop
-    call GroupClear(G)
-    set n0=null
-    if d!=null then
-        // бонус-урон за попадание рывком — базовый урон R целиком
-        call myCustomDamage(caster,d,dmg,false,false,null,null,null)
-        call SetControlToUnit(caster,d,0.5,"stun")
-    endif
-    if d!=null or LoadReal(HH,id,14)>=LoadReal(HH,id,15) then
-        // рывок кончился: СТОЙКА до конца реплики каста, Гарп в паузе (иначе во время
-        // стойки уходили другие кнопки). Приём дева: снять паузу -> запустить анимацию
-        // (и её скорость) -> поставить паузу. Тогда анимация идёт и под паузой;
-        // замирает она только если менять её у УЖЕ запаузенного юнита.
-        // Замах 7 на скорости 0.015 — как в исходной зарядке. Эффект каста — на корпусе.
-        call SaveReal(HH,id,11,GetUnitX(caster))
-        call SaveReal(HH,id,12,GetUnitY(caster))
-        call SetUnitInvulnerable(caster,false)
-        call PauseUnit(caster,false)
-        call SetUnitAnimationByIndex(caster,7)
-        call UnitSpeed(caster,0.015)
-        call PauseUnit(caster,true)
-        call SaveEffectHandle(HH,id,10,AddSpecialEffectTarget("Garp\\Garp_RCharge.mdx",caster,"chest"))
-        call SetSpecialEffectScale(LoadEffectHandle(HH,id,10),0.175)
-        call SaveReal(HH,id,5,0)
-        call SaveReal(HH,id,6,0.5)
-    endif
-elseif time>1.5 and time1<1.75 then
-    // ЗАМАХ: держим место и лицо, эффект на руке сжимается к удару (как было в зарядке),
-    // ждём конца реплики каста (длина в ключе 51).
-    call SetUnitX(caster,x0)
-    call SetUnitY(caster,y0)
-    call SetUnitFacingInstant(caster,facing)
-    if LoadEffectHandle(HH,id,10)!=null then
-        call SetSpecialEffectScale(LoadEffectHandle(HH,id,10),0.10-0.085*time/4.0)
-    endif
-    // звезда на руке из T: у модели только Death, вешаем и сразу снимаем, 1.5 вместо 2.0
-    call SaveReal(HH,id,9,time3)
-    if time3>=0.28 then
-        call SaveReal(HH,id,9,0)
-        set EFF=AddSpecialEffectTarget("Garp\\Garp_TStar.mdx",caster,"hand right")
-        if EFF!=null then
-            call SetSpecialEffectScale(EFF,1.5)
-            call RemoveEffect(EFF,0.02,true,CreateTimer())
-        endif
-    endif
-    if total>=LoadReal(HH,id,51) then
-        call SaveReal(HH,id,6,0.75)
-    endif
+// ЛУЧ = волны Экскалибура одна за другой, пока идёт реплика CastFinish. Гарп на месте.
+call SetUnitX(caster,x0)
+call SetUnitY(caster,y0)
+call SetUnitFacingInstant(caster,facing)
+// Молнии вокруг Гарпа, пока стоит луч: по 2 штуки каждые 0.4 c
+call SaveReal(HH,id,9,time3)
+if time3>=0.4 then
+call SaveReal(HH,id,9,0)
+set i=0
+loop
+exitwhen i>1
+call EffectCreateAndMove(true,"Garp\\Garp_BlueHoleFX.mdx",GetRandomReal(0,360),1.5,GetRandomReal(0.35,0.6),1.0,100,100,100,0,0,caster,GetRandomReal(120,500),GetRandomReal(0,360))
+set i=i+1
+endloop
+endif
+if time>=0.36 and time<0.4 then
+// рука уже выброшена вперёд -> стопорим кадр
+call UnitSpeed(caster,0)
+call PauseUnit(caster,true)
+endif
+if head!=null then
+if gone>=1600.0 then
+// волна дошла — следующая с начала, группа прохода новая
+call SetUnitXY_1(head,PolX(x0,45,facing),PolY(y0,45,facing),false)
+call SetUnitScale(head,0.10,0.10,0.10)
+call SaveReal(HH,id,46,0)
+call SaveReal(HH,id,43,0)
+set s1=0
+set gone=0
+if LoadGroupHandle(HH,id,7)!=null then
+call DestroyGroup(LoadGroupHandle(HH,id,7))
+endif
+call SaveGroupHandle(HH,id,7,CreateGroup())
+endif
+set px=PolX(GetUnitX(head),60,facing)
+set py=PolY(GetUnitY(head),60,facing)
+call SetUnitXY_1(head,px,py,false)
+call SetUnitScale(head,0.10+s1,0.10+s1,0.10+s1)
+call SaveReal(HH,id,46,s1+0.11)
+call SaveReal(HH,id,43,gone+60)
+set n0=CreateUnit(GetOwningPlayer(caster),'e0XZ',px,py,facing)
+call UnitApplyTimedLife(n0,'BTLF',1.75)
+call SetUnitTimeScale(n0,1)
+call SetUnitFlyHeight(n0,85+s1*40,0)
+call SetUnitScale(n0,1+s1,1+s1,1+s1)
+call SetUnitVertexColor(n0,255,255,255,150)
+set n0=CreateUnit(GetOwningPlayer(caster),'e0Y2',px,py,facing)
+call UnitApplyTimedLife(n0,'BTLF',1.75)
+call SetUnitTimeScale(n0,1)
+call SetUnitFlyHeight(n0,85+s1*40,0)
+call SetUnitScale(n0,0.5+s1,0.5+s1,0.5+s1)
+call SetUnitVertexColor(n0,255,255,255,255)
+// УРОН: ширина растёт вместе с волной. За проход волны — 0.25 базового,
+// каждого раз за проход (gp); стан и отброс — только при первом касании (gh).
+set rad=150.0+gone*0.125
+set gp=LoadGroupHandle(HH,id,7)
+set gh=LoadGroupHandle(HH,id,8)
+call GroupClear(G)
+call GroupEnumUnitsInRange(G,px,py,rad,Base)
+loop
+set n0=FirstOfGroup(G)
+exitwhen n0==null
+call GroupRemoveUnit(G,n0)
+if gp!=null and gh!=null and Condition_Base(GetOwningPlayer(caster),n0) and GetUnitAbilityLevel(n0,'Avul')==0 and IsUnitInGroup(n0,gp)==false then
+call GroupAddUnit(gp,n0)
+call myCustomDamage(caster,n0,dmg*0.25,false,false,null,null,null)
+if IsUnitInGroup(n0,gh)==false then
+call GroupAddUnit(gh,n0)
+call SetControlToUnit(caster,n0,0.5,"stun")
+call PushTimed(n0,facing,14,20)
+endif
+endif
+endloop
+call GroupClear(G)
+set n0=null
+endif
+// реплика CastFinish доиграла — конец луча
+if total>=3.16 then
+call Garp_R_Off(caster,id)
+call PauseTimer(t)
+call DestroyTimer(t)
+call FlushChildHashtable(HH,id)
+endif
+elseif time1<1 then
+// ПРИЦЕЛ 1.5 c: стоим на месте, лицом к точке, которую игрок правит приказами
+call SetUnitX(caster,x0)
+call SetUnitY(caster,y0)
+if tt!=null then
+set tx=LoadReal(h,GetHandleId(tt),StringHash("PointX"))
+set ty=LoadReal(h,GetHandleId(tt),StringHash("PointY"))
+call SaveReal(HH,id,21,tx)
+call SaveReal(HH,id,22,ty)
+endif
+set facing=Angle2(x0,y0,tx,ty)
+call SaveReal(HH,id,3,facing)
+call SetUnitFacingInstant(caster,facing)
+if LoadEffectHandle(HH,id,10)!=null then
+call SetSpecialEffectScale(LoadEffectHandle(HH,id,10),0.10-0.085*time/1.5)
+endif
+// звезда на руке из T: у модели только Death, вешаем и сразу снимаем
+call SaveReal(HH,id,9,time3)
+if time3>=0.28 then
+call SaveReal(HH,id,9,0)
+set EFF=AddSpecialEffectTarget("Garp\\Garp_TStar.mdx",caster,"hand right")
+if EFF!=null then
+call SetSpecialEffectScale(EFF,1.5)
+call RemoveEffect(EFF,0.02,true,CreateTimer())
+endif
+endif
+if time>=1.5 then
+// направление выбрано — РЫВОК. Точка не дальше 1000.0.
+set dist=SR(x0,y0,tx,ty)
+if dist>1000.0 then
+set dist=1000.0
+endif
+call SaveReal(HH,id,15,dist)
+call SaveReal(HH,id,14,0)
+call SaveReal(HH,id,47,PolX(x0,dist,facing))
+call SaveReal(HH,id,48,PolY(y0,dist,facing))
+if tt!=null then
+call FlushChildHashtable(h,GetHandleId(tt))
+call TriggerClearActions(tt)
+call DestroyTrigger(tt)
+call SaveTriggerHandle(HH,id,45,null)
+endif
+if LoadEffectHandle(HH,id,10)!=null then
+call DestroyEffect(LoadEffectHandle(HH,id,10))
+call SaveEffectHandle(HH,id,10,null)
+endif
+if LoadSoundHandle(HH,id,30)!=null then
+call StopSound(LoadSoundHandle(HH,id,30),false,true)
+call SaveSoundHandle(HH,id,30,null)
+endif
+call Garp_Sound("Sound\\Music\\mp3Music\\Garp_R_CastFinish.mp3")
+call SaveSoundHandle(HH,id,30,soundplay)
+// как у Акселя: пауза, неуязвимость, без проходимости; анимацию ставим до паузы
+call UnitRemoveAbility(caster,'A1FU')
+call PauseUnit(caster,false)
+call UnitSpeed(caster,1)
+call SetUnitAnimation(caster,"walk")
+call PauseUnit(caster,true)
+call SetUnitInvulnerable(caster,true)
+call SetUnitPathing(caster,false)
+call SaveReal(HH,id,6,1)
+call SaveReal(HH,id,5,0)
+endif
 else
-    // СТАРТ ЛУЧА из точки, где Гарп остановился. Реплики идут по общему времени (ключ 49).
-    set x0=GetUnitX(caster)
-    set y0=GetUnitY(caster)
-    call SaveReal(HH,id,11,x0)
-    call SaveReal(HH,id,12,y0)
-    call SaveGroupHandle(HH,id,4,CreateGroup())
-    call SaveGroupHandle(HH,id,7,CreateGroup())
-    if LoadEffectHandle(HH,id,10)!=null then
-        call DestroyEffect(LoadEffectHandle(HH,id,10))
-        call SaveEffectHandle(HH,id,10,null)
-    endif
-    call UnitRemoveAbility(caster,'A1FU')
-    call SetUnitInvulnerable(caster,false)
-    call PauseUnit(caster,false)
-    call UnitSpeed(caster,1)
-    call SetUnitAnimationByIndex(caster,11)
-    call SaveReal(HH,id,6,1)
-    call SaveReal(HH,id,5,0)
-    // реплика удара стартует вместе с лучом и луч стоит её длину
-    call Garp_Sound("Sound\\Music\\mp3Music\\Garp_R_Hit.mp3")
-    call SaveSoundHandle(HH,id,31,soundplay)
-    // голова волны в +45 перед Гарпом, как у Сейбер
-    set n0=CreateUnit(GetOwningPlayer(caster),'e0WZ',PolX(x0,45,facing),PolY(y0,45,facing),facing)
-    call SaveUnitHandle(HH,id,40,n0)
-    call SaveReal(HH,id,46,0)
-    call SaveReal(HH,id,48,0)
-    set n0=null
+// РЫВОК как W Акселя: 75 за тик к точке, задетые летят с Гарпом.
+set px=PolX(GetUnitX(caster),75,facing)
+set py=PolY(GetUnitY(caster),75,facing)
+call SetUnitX(caster,px)
+call SetUnitY(caster,py)
+call SaveReal(HH,id,14,LoadReal(HH,id,14)+75)
+// полёт рисуется как Q: след рывка + ветер (жёлтые эффекты из T Веджиты сняты)
+call EffectCreateAndMoveAn(true,"Garp\\Garp_QDash.mdx",facing+180,0.6,1.0,2.5,100,100,100,0,0,caster,0,facing,0)
+call EffectCreateAndMoveAn(true,"WindVectorPush.mdx",facing+180,0.6,1.0,1.3,100,100,100,0,0,caster,0,facing,0)
+// захват: кто попал под рывок — стан, метка TARGET_ABILITY и полёт с Гарпом
+if gr!=null then
+call GroupClear(G)
+call GroupEnumUnitsInRange(G,px,py,150,Base)
+loop
+set n0=FirstOfGroup(G)
+exitwhen n0==null
+call GroupRemoveUnit(G,n0)
+if IsUnitInGroup(n0,gr)==false and Condition_Base(GetOwningPlayer(caster),n0) and GetUnitAbilityLevel(n0,'Avul')==0 then
+if LoadBoolean(HH,GetHandleId(n0),ANTITARGET_ABILITY)==false then
+call GroupAddUnit(gr,n0)
+call SaveBoolean(HH,GetHandleId(n0),TARGET_ABILITY,true)
+call SetControlToUnit(caster,n0,1.5,"stun")
+else
+// цель разворачивает чужие умения — отдаём ей себя и сворачиваемся без урона
+call SaveUnitHandle(HH,GetHandleId(n0),REVERSE_TARGET,caster)
+set rev=true
+endif
+endif
+endloop
+call GroupClear(G)
+// схваченные летят перед Гарпом
+set g2=CreateGroup()
+loop
+set n0=FirstOfGroup(gr)
+exitwhen n0==null
+call GroupRemoveUnit(gr,n0)
+call GroupAddUnit(g2,n0)
+call SetUnitXY_1(n0,PolX(px,80,facing),PolY(py,80,facing),false)
+endloop
+loop
+set n0=FirstOfGroup(g2)
+exitwhen n0==null
+call GroupRemoveUnit(g2,n0)
+call GroupAddUnit(gr,n0)
+endloop
+call DestroyGroup(g2)
+set n0=null
+endif
+if rev then
+call Garp_R_Off(caster,id)
+call PauseTimer(t)
+call DestroyTimer(t)
+call FlushChildHashtable(HH,id)
+elseif LoadReal(HH,id,14)>=LoadReal(HH,id,15) then
+// ДОБЕЖАЛИ — СТАРТ ЛУЧА из точки остановки, стоит до конца CastFinish. Схваченные
+// получают базовый урон разово (мгновенный удар из спецификации) и остаются под лучом.
+call SetUnitX(caster,LoadReal(HH,id,47))
+call SetUnitY(caster,LoadReal(HH,id,48))
+set x0=GetUnitX(caster)
+set y0=GetUnitY(caster)
+call SaveReal(HH,id,11,x0)
+call SaveReal(HH,id,12,y0)
+if gr!=null then
+set g2=CreateGroup()
+loop
+set n0=FirstOfGroup(gr)
+exitwhen n0==null
+call GroupRemoveUnit(gr,n0)
+call GroupAddUnit(g2,n0)
+call SaveBoolean(HH,GetHandleId(n0),TARGET_ABILITY,false)
+call myCustomDamage(caster,n0,dmg,false,false,null,null,null)
+call SetControlToUnit(caster,n0,1.0,"stun")
+endloop
+call DestroyGroup(g2)
+set n0=null
+endif
+call SaveGroupHandle(HH,id,7,CreateGroup())
+call SaveGroupHandle(HH,id,8,CreateGroup())
+// удар: замах 11 по трюку дева (снять паузу -> анимация -> пауза), кадр стопорится на 0.36
+call SetUnitInvulnerable(caster,false)
+call PauseUnit(caster,false)
+call UnitSpeed(caster,1)
+call SetUnitAnimationByIndex(caster,11)
+call PauseUnit(caster,true)
+call SaveReal(HH,id,6,2)
+call SaveReal(HH,id,5,0)
+call SaveReal(HH,id,9,0)
+// голова волны в +45 перед Гарпом, как у Сейбер
+set n0=CreateUnit(GetOwningPlayer(caster),'e0WZ',PolX(x0,45,facing),PolY(y0,45,facing),facing)
+call SaveUnitHandle(HH,id,40,n0)
+call SaveReal(HH,id,46,0)
+call SaveReal(HH,id,43,0)
+set n0=null
+endif
 endif
 set caster=null
 set head=null
+set tt=null
 set gr=null
 set gp=null
-set d=null
+set gh=null
+set g2=null
 set t=null
 endfunction
 function Garp_R_Act takes unit caster,real x0,real y0 returns nothing
@@ -225984,41 +226084,39 @@ local integer id=GetHandleId(t)
 local real cx=GetUnitX(caster)
 local real cy=GetUnitY(caster)
 local real facing=Angle2(cx,cy,x0,y0)
-local real dist=SR(cx,cy,x0,y0)
-// РЫВОК к точке, не дальше дальности кнопки (2000). Встретил врага — стоп и луч.
-if dist>1000.0 then
-set dist=1000.0
-endif
+local trigger tt=CreateTrigger()
 call SaveUnitHandle(HH,id,1,caster)
 call SaveReal(HH,id,3,facing)
 call SaveReal(HH,id,11,cx)
 call SaveReal(HH,id,12,cy)
-call SaveReal(HH,id,15,dist)
-call SaveReal(HH,id,14,0)
-// вижн на всю дальность каста сразу (чтобы целиться и видеть луч в тумане)
+// начальная точка прицела — куда кликнул; дальше игрок правит её приказами
+call SaveReal(HH,id,21,x0)
+call SaveReal(HH,id,22,y0)
+call SaveGroupHandle(HH,id,4,CreateGroup())
+// вижн на всю дальность (чтобы целиться в тумане)
 call SaveFogModifierHandle(HH,id,25,CreateFogModifierRadius(GetOwningPlayer(caster),FOG_OF_WAR_VISIBLE,cx,cy,2200,true,true))
 call FogModifierStart(LoadFogModifierHandle(HH,id,25))
+// ПРИЦЕЛ: триггер приказов как у R Целла; сам стоит на руте A1FU (не ломает замах)
+call SaveReal(h,GetHandleId(tt),StringHash("PointX"),x0)
+call SaveReal(h,GetHandleId(tt),StringHash("PointY"),y0)
+call TriggerRegisterUnitEvent(tt,caster,EVENT_UNIT_ISSUED_POINT_ORDER)
+call TriggerRegisterUnitEvent(tt,caster,EVENT_UNIT_ISSUED_TARGET_ORDER)
+call TriggerAddAction(tt,function Garp_R_Aim)
+call SaveTriggerHandle(HH,id,45,tt)
 call SetUnitFacingInstant(caster,facing)
-// Как D Роши: пауза + неуязвимость + без проходимости, ходьба выставлена до паузы.
+call UnitAddAbility(caster,'A1FU')
 call Garp_Hands(caster,2.0)
-call SetUnitAnimation(caster,"walk")
-call PauseUnit(caster,true)
-call SetUnitInvulnerable(caster,true)
-call SetUnitPathing(caster,false)
-// ОБЕ РЕПЛИКИ ПОДРЯД: каст со старта (4.31 c), по её концу — удар (4.68 c),
-// луч стоит до конца второй: 8.99 c от каста (ключ 49 — общее время).
+call SetUnitAnimationByIndex(caster,7)
+call UnitSpeed(caster,0.015)
+call SaveEffectHandle(HH,id,10,AddSpecialEffectTarget("Garp\\Garp_RCharge.mdx",caster,"chest"))
+call SetSpecialEffectScale(LoadEffectHandle(HH,id,10),0.175)
 call Garp_Sound("Sound\\Music\\mp3Music\\Garp_R_CastStart.mp3")
 call SaveSoundHandle(HH,id,30,soundplay)
 call SaveReal(HH,id,49,0)
-// Длины реплик — замер по MPEG-кадрам: Cast 4.31 c, Hit 4.68 c. GetSoundFileDuration
-// тут НЕ годится: файлы VBR, а движок считает по битрейту первого кадра и
-// завышает ~на 2 c — Гарп стоял и махал уже после конца реплики.
-call SaveReal(HH,id,51,4.31)
-call SaveReal(HH,id,52,4.68)
-call SaveBoolean(HH,id,50,false)
 call TimerStart(t,0.02,true,function Garp_R_Act2)
 set caster=null
 set t=null
+set tt=null
 endfunction
 function Garp_T_Act2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
