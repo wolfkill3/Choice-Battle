@@ -14565,7 +14565,7 @@ function OnButtonAddonAbility takes nothing returns nothing
                 call ShowFrame( GetFrameByName("TavernBarAdditionalAbilityList",0), false )
                 call ShowFrame( InfoTavernText, true )
                 //call ShowFrame( GetFrameByName("TavernAbilityBorderOpenable",5), false )
-                call ShowFrame( GetFrameByName("TavernAdditionalAbilityBorderOpenable",2), true )
+                call ShowFrame( GetFrameByName("TavernAbilityBorderOpenable",2), true )
 
                 call SetFrameText( GetFrameByName("TavernAbilityTooltipText",0), "     " )
                 call SetFrameText( GetFrameByName("TavernAbilityTooltipText",1), "     " )
@@ -14619,7 +14619,7 @@ function OnButtonAddonAbility takes nothing returns nothing
             elseif GetFrameTexture(but,0)==GetAbilityBaseStringFieldById('SiF2',ABILITY_SF_ICON_NORMAL) and i==GetFrameContext(but) then
                 call ShowFrame( GetFrameByName("TavernBarAdditionalAbilityList",0), false )
                 call ShowFrame( InfoTavernText, true )
-                call ShowFrame( GetFrameByName("TavernAdditionalAbilityBorderOpenable",2), false )
+                call ShowFrame( GetFrameByName("TavernAbilityBorderOpenable",2), false )
                 //call ShowFrame( GetFrameByName("TavernAbilityBorderOpenable",5), true )
 
                 call SetFrameText( GetFrameByName("TavernAbilityTooltipText",0), "     " )
