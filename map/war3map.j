@@ -14569,6 +14569,7 @@ function OnButtonAddonAbility takes nothing returns nothing
                 call SetFrameText( GetFrameByName("TavernAbilityTooltipText",0), "     " )
                 call SetFrameText( GetFrameByName("TavernAbilityTooltipText",1), "     " )
                 call SetFrameText( GetFrameByName("TavernAbilityTooltipText",2), "     " )
+                call SetFrameText( GetFrameByName("TavernAbilityTooltipText",5), "     " )
                 call SetFrameTexture( GetFrameByName("TavernAbility",0), GetAbilityBaseStringFieldById( String2Id( "SiQ2" ), ABILITY_SF_ICON_NORMAL ), 0, true )
                 call SetFrameTexture( GetFrameByName("TavernAbility",0), GetAbilityBaseStringFieldById( String2Id( "SiQ2" ), ABILITY_SF_ICON_NORMAL ), 1, true )
                 call SetFrameTexture( GetFrameByName("TavernAbility",0), GetAbilityBaseStringFieldById( String2Id( "SiQ2" ), ABILITY_SF_ICON_NORMAL ), 2, true ) 
@@ -14578,7 +14579,10 @@ function OnButtonAddonAbility takes nothing returns nothing
                 call SetFrameTexture( GetFrameByName("TavernAbility",2), GetAbilityBaseStringFieldById( String2Id( "SiE2" ), ABILITY_SF_ICON_NORMAL ), 0, true )
                 call SetFrameTexture( GetFrameByName("TavernAbility",2), GetAbilityBaseStringFieldById( String2Id( "SiE2" ), ABILITY_SF_ICON_NORMAL ), 1, true )
                 call SetFrameTexture( GetFrameByName("TavernAbility",2), GetAbilityBaseStringFieldById( String2Id( "SiE2" ), ABILITY_SF_ICON_NORMAL ), 2, true ) 
-                
+                call SetFrameTexture( GetFrameByName("TavernAbility",5), GetAbilityBaseStringFieldById( String2Id( "SiF2" ), ABILITY_SF_ICON_NORMAL ), 0, true )
+                call SetFrameTexture( GetFrameByName("TavernAbility",5), GetAbilityBaseStringFieldById( String2Id( "SiF2" ), ABILITY_SF_ICON_NORMAL ), 1, true )
+                call SetFrameTexture( GetFrameByName("TavernAbility",5), GetAbilityBaseStringFieldById( String2Id( "SiF2" ), ABILITY_SF_ICON_NORMAL ), 2, true )
+
                 set j=0
                 loop
                     call AddFrameText( GetFrameByName("TavernAbilityTooltipText",0), "|cffffcc00"+I2S(GetAbilityBaseIntegerLevelFieldById( String2Id( "SiQ2" ), ABILITY_ILF_MANA_COST, j ))+"|r")
@@ -14600,9 +14604,17 @@ function OnButtonAddonAbility takes nothing returns nothing
                     call AddFrameText( GetFrameByName("TavernAbilityTooltipText",2), "/")
                     set j=j+1
                 endloop
-                call AddFrameText( GetFrameByName("TavernAbilityTooltipText",0), "\n\n"+GetAbilityBaseStringFieldById( String2Id( "SiQ2" ), ABILITY_SF_NAME )+", (|cffffcc00Q|r)\n\n"+GetAbilityBaseStringFieldById( String2Id( "SiQ2" ), ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED ))
-                call AddFrameText( GetFrameByName("TavernAbilityTooltipText",1), "\n\n"+GetAbilityBaseStringFieldById( String2Id( "SiW2" ), ABILITY_SF_NAME )+", (|cffffcc00W|r)\n\n"+GetAbilityBaseStringFieldById( String2Id( "SiW2" ), ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED ))
-                call AddFrameText( GetFrameByName("TavernAbilityTooltipText",2), "\n\n"+GetAbilityBaseStringFieldById( String2Id( "SiE2" ), ABILITY_SF_NAME )+", (|cffffcc00E|r)\n\n"+GetAbilityBaseStringFieldById( String2Id( "SiE2" ), ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED ))
+                set j=0
+                loop
+                    call AddFrameText( GetFrameByName("TavernAbilityTooltipText",5), "|cffffcc00"+I2S(GetAbilityBaseIntegerLevelFieldById( String2Id( "SiF2" ), ABILITY_ILF_MANA_COST, j ))+"|r")
+                    exitwhen j==GetAbilityBaseIntegerFieldById(String2Id( "SiF2" ), ABILITY_IF_LEVELS)-1
+                    call AddFrameText( GetFrameByName("TavernAbilityTooltipText",5), "/")
+                    set j=j+1
+                endloop
+                call AddFrameText( GetFrameByName("TavernAbilityTooltipText",0), "\n\n"+GetAbilityBaseStringFieldById( String2Id( "SiQ2" ), ABILITY_SF_NAME )+", (|cffffcc00Q|r)\n\n"+GetAbilityBaseStringFieldById( String2Id( "SiQ2" ), ABILITY_SLF_TOOLTIP_LEARN_EXTENDED ))
+                call AddFrameText( GetFrameByName("TavernAbilityTooltipText",1), "\n\n"+GetAbilityBaseStringFieldById( String2Id( "SiW2" ), ABILITY_SF_NAME )+", (|cffffcc00W|r)\n\n"+GetAbilityBaseStringFieldById( String2Id( "SiW2" ), ABILITY_SLF_TOOLTIP_LEARN_EXTENDED ))
+                call AddFrameText( GetFrameByName("TavernAbilityTooltipText",2), "\n\n"+GetAbilityBaseStringFieldById( String2Id( "SiE2" ), ABILITY_SF_NAME )+", (|cffffcc00E|r)\n\n"+GetAbilityBaseStringFieldById( String2Id( "SiE2" ), ABILITY_SLF_TOOLTIP_LEARN_EXTENDED ))
+                call AddFrameText( GetFrameByName("TavernAbilityTooltipText",5), "\n\n"+GetAbilityBaseStringFieldById( String2Id( "SiF2" ), ABILITY_SF_NAME )+", (|cffffcc00F|r)\n\n"+GetAbilityBaseStringFieldById( String2Id( "SiF2" ), ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED ))
             elseif GetFrameTexture(but,0)==GetAbilityBaseStringFieldById('SiF2',ABILITY_SF_ICON_NORMAL) and i==GetFrameContext(but) then
                 call ShowFrame( GetFrameByName("TavernBarAdditionalAbilityList",0), false )
                 call ShowFrame( InfoTavernText, true )
@@ -14611,6 +14623,7 @@ function OnButtonAddonAbility takes nothing returns nothing
                 call SetFrameText( GetFrameByName("TavernAbilityTooltipText",0), "     " )
                 call SetFrameText( GetFrameByName("TavernAbilityTooltipText",1), "     " )
                 call SetFrameText( GetFrameByName("TavernAbilityTooltipText",2), "     " )
+                call SetFrameText( GetFrameByName("TavernAbilityTooltipText",5), "     " )
                 call SetFrameTexture( GetFrameByName("TavernAbility",0), GetAbilityBaseStringFieldById( String2Id( "SiQ1" ), ABILITY_SF_ICON_NORMAL ), 0, true )
                 call SetFrameTexture( GetFrameByName("TavernAbility",0), GetAbilityBaseStringFieldById( String2Id( "SiQ1" ), ABILITY_SF_ICON_NORMAL ), 1, true )
                 call SetFrameTexture( GetFrameByName("TavernAbility",0), GetAbilityBaseStringFieldById( String2Id( "SiQ1" ), ABILITY_SF_ICON_NORMAL ), 2, true ) 
@@ -14620,6 +14633,10 @@ function OnButtonAddonAbility takes nothing returns nothing
                 call SetFrameTexture( GetFrameByName("TavernAbility",2), GetAbilityBaseStringFieldById( String2Id( "SiE1" ), ABILITY_SF_ICON_NORMAL ), 0, true )
                 call SetFrameTexture( GetFrameByName("TavernAbility",2), GetAbilityBaseStringFieldById( String2Id( "SiE1" ), ABILITY_SF_ICON_NORMAL ), 1, true )
                 call SetFrameTexture( GetFrameByName("TavernAbility",2), GetAbilityBaseStringFieldById( String2Id( "SiE1" ), ABILITY_SF_ICON_NORMAL ), 2, true ) 
+                call SetFrameTexture( GetFrameByName("TavernAbility",5), GetAbilityBaseStringFieldById( String2Id( "SiF1" ), ABILITY_SF_ICON_NORMAL ), 0, true )
+                call SetFrameTexture( GetFrameByName("TavernAbility",5), GetAbilityBaseStringFieldById( String2Id( "SiF1" ), ABILITY_SF_ICON_NORMAL ), 1, true )
+                call SetFrameTexture( GetFrameByName("TavernAbility",5), GetAbilityBaseStringFieldById( String2Id( "SiF1" ), ABILITY_SF_ICON_NORMAL ), 2, true )
+
                 set j=0
                 loop
                     call AddFrameText( GetFrameByName("TavernAbilityTooltipText",0), "|cffffcc00"+I2S(GetAbilityBaseIntegerLevelFieldById( String2Id( "SiQ1" ), ABILITY_ILF_MANA_COST, j ))+"|r")
@@ -14641,9 +14658,17 @@ function OnButtonAddonAbility takes nothing returns nothing
                     call AddFrameText( GetFrameByName("TavernAbilityTooltipText",2), "/")
                     set j=j+1
                 endloop
+                set j=0
+                loop
+                    call AddFrameText( GetFrameByName("TavernAbilityTooltipText",5), "|cffffcc00"+I2S(GetAbilityBaseIntegerLevelFieldById( String2Id( "SiF1" ), ABILITY_ILF_MANA_COST, j ))+"|r")
+                    exitwhen j==GetAbilityBaseIntegerFieldById(String2Id( "SiF1" ), ABILITY_IF_LEVELS)-1
+                    call AddFrameText( GetFrameByName("TavernAbilityTooltipText",5), "/")
+                    set j=j+1
+                endloop
                 call AddFrameText( GetFrameByName("TavernAbilityTooltipText",0), "\n\n"+GetAbilityBaseStringFieldById( String2Id( "SiQ1" ), ABILITY_SF_NAME )+", (|cffffcc00Q|r)\n\n"+GetAbilityBaseStringFieldById( String2Id( "SiQ1" ), ABILITY_SLF_TOOLTIP_LEARN_EXTENDED ))
                 call AddFrameText( GetFrameByName("TavernAbilityTooltipText",1), "\n\n"+GetAbilityBaseStringFieldById( String2Id( "SiW1" ), ABILITY_SF_NAME )+", (|cffffcc00W|r)\n\n"+GetAbilityBaseStringFieldById( String2Id( "SiW1" ), ABILITY_SLF_TOOLTIP_LEARN_EXTENDED ))
                 call AddFrameText( GetFrameByName("TavernAbilityTooltipText",2), "\n\n"+GetAbilityBaseStringFieldById( String2Id( "SiE1" ), ABILITY_SF_NAME )+", (|cffffcc00E|r)\n\n"+GetAbilityBaseStringFieldById( String2Id( "SiE1" ), ABILITY_SLF_TOOLTIP_LEARN_EXTENDED ))
+                call AddFrameText( GetFrameByName("TavernAbilityTooltipText",5), "\n\n"+GetAbilityBaseStringFieldById( String2Id( "SiF1" ), ABILITY_SF_NAME )+", (|cffffcc00F|r)\n\n"+GetAbilityBaseStringFieldById( String2Id( "SiF1" ), ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED ))
 
             elseif GetFrameTexture(but,0)==GetAbilityBaseStringFieldById('VGF1',ABILITY_SF_ICON_NORMAL) and IsFrameVisible(GetFrameByName("TavernBarAdditionalAbilityList",0))==false and i==GetFrameContext(but) then
                 call ShowFrame( InfoTavernText, false )
