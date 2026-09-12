@@ -6474,7 +6474,7 @@ function Condition_RecipeString takes integer id returns boolean
 return id=='I00E' or id=='I01P' or id=='I01R' or id=='I01T' or id=='I01V' or id=='I02U' or id=='I02X' or id=='I02Z' or id=='I045' or id=='I047' or id=='I04Y' or id=='I04U' or id=='I04X' or id=='I04Z' or id=='I051' or id=='I14R' or id=='IGDr' or id=='IPar' or id=='IHYr' or id=='ISTr' or id=='IBSR' or id=='I052' or id=='I053' or id=='I055' or id=='I06P' or id=='I06S' or id=='I06T' or id=='IPRR'
 endfunction
 function Condition_AbilityString3 takes integer id returns boolean
-return id=='OM13' or id=='A17D' or id=='A177' or id=='A172' or id=='A16U' or id=='A0TN'  or id=='MrF1' or id=='MrT1' or id=='MrG2' or id=='RsT1' or id=='RsF1' or id=='SiF1' or id=='SiF2' or id=='SiE2'
+return id=='OM13' or id=='A17D' or id=='A177' or id=='A172' or id=='A16U' or id=='A0TN'  or id=='MrF1' or id=='MrT1' or id=='MrG2' or id=='RsT1' or id=='RsF1' or id=='SiF1' or id=='SiF2' or id=='SiE1' or id=='SiE2'
 endfunction
 function Condition_AbilityString2 takes integer id returns boolean
 return id=='A0YX' or id=='A0Z0' or id=='KkR1' or id=='KkR2' or id=='BRRS' or id=='BRSS' or id=='IcF2' or id=='IcF5' or id=='GKF1' or id=='VGF1' or id=='GKG1' or id=='GKBS' or id=='GKSS' or id=='GKS2' or id=='GKS3' or id=='GKS4' or id=='GKSR' or id=='GKSB' or id=='GKUI' or id=='GKMI' or id=='GKQ1' or id=='GKW1' or id=='GKE1' or id=='GKT1' or id=='JNF1' or id=='JNF4' or id=='GSQ1' or id=='GSQ2' or id=='GSE1' or id=='GSE2' or id=='GST1' or id=='GST3' or id=='GSF1' or id=='GSF2' or id=='GSF2'
@@ -14565,7 +14565,7 @@ function OnButtonAddonAbility takes nothing returns nothing
                 call ShowFrame( GetFrameByName("TavernBarAdditionalAbilityList",0), false )
                 call ShowFrame( InfoTavernText, true )
                 //call ShowFrame( GetFrameByName("TavernAbilityBorderOpenable",5), false )
-                call ShowFrame( GetFrameByName("TavernAbilityBorderOpenable",2), true )
+                // call ShowFrame( GetFrameByName("TavernAbilityBorderOpenable",2), true )
 
                 call SetFrameText( GetFrameByName("TavernAbilityTooltipText",0), "     " )
                 call SetFrameText( GetFrameByName("TavernAbilityTooltipText",1), "     " )
@@ -14619,7 +14619,7 @@ function OnButtonAddonAbility takes nothing returns nothing
             elseif GetFrameTexture(but,0)==GetAbilityBaseStringFieldById('SiF2',ABILITY_SF_ICON_NORMAL) and i==GetFrameContext(but) then
                 call ShowFrame( GetFrameByName("TavernBarAdditionalAbilityList",0), false )
                 call ShowFrame( InfoTavernText, true )
-                call ShowFrame( GetFrameByName("TavernAbilityBorderOpenable",2), false )
+                // call ShowFrame( GetFrameByName("TavernAbilityBorderOpenable",2), false )
                 //call ShowFrame( GetFrameByName("TavernAbilityBorderOpenable",5), true )
 
                 call SetFrameText( GetFrameByName("TavernAbilityTooltipText",0), "     " )
@@ -14673,7 +14673,7 @@ function OnButtonAddonAbility takes nothing returns nothing
                 call AddFrameText( GetFrameByName("TavernAbilityTooltipText",5), "\n\n"+GetAbilityBaseStringFieldById( String2Id( "SiF1" ), ABILITY_SF_NAME )+", (|cffffcc00F|r)\n\n"+GetAbilityBaseStringFieldById( String2Id( "SiF1" ), ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED ))
 
 
-            elseif GetFrameTexture(but,0)==GetAbilityBaseStringFieldById('SiE2',ABILITY_SF_ICON_NORMAL) and i==GetFrameContext(but) then
+            elseif GetFrameTexture(but,0)==GetAbilityBaseStringFieldById('SiE2',ABILITY_SF_ICON_NORMAL) or GetFrameTexture(but,0)==GetAbilityBaseStringFieldById('SiE1',ABILITY_SF_ICON_NORMAL) and i==GetFrameContext(but) then
                 call SetFrameText( GetFrameByName("TavernAbilityTooltipText",i), "     " )
                 call SetFrameTexture( GetFrameByName("TavernAbility",i), GetAbilityBaseStringFieldById( 'SiE3', ABILITY_SF_ICON_NORMAL ), 0, true )
                 call SetFrameTexture( GetFrameByName("TavernAbility",i), GetAbilityBaseStringFieldById( 'SiE3', ABILITY_SF_ICON_NORMAL ), 1, true )
@@ -14689,19 +14689,33 @@ function OnButtonAddonAbility takes nothing returns nothing
                 call SetFrameSize( GetFrameByName("TavernAbilityTooltip",i), .26, GetFrameHeight( GetFrameByName("TavernAbilityTooltipText",i))+0.03)
             elseif GetFrameTexture(but,0)==GetAbilityBaseStringFieldById('SiE3',ABILITY_SF_ICON_NORMAL) and i==GetFrameContext(but) then
                 call SetFrameText( GetFrameByName("TavernAbilityTooltipText",i), "     " )
-                call SetFrameTexture( GetFrameByName("TavernAbility",i), GetAbilityBaseStringFieldById( 'SiE2', ABILITY_SF_ICON_NORMAL ), 0, true )
-                call SetFrameTexture( GetFrameByName("TavernAbility",i), GetAbilityBaseStringFieldById( 'SiE2', ABILITY_SF_ICON_NORMAL ), 1, true )
-                call SetFrameTexture( GetFrameByName("TavernAbility",i), GetAbilityBaseStringFieldById( 'SiE2', ABILITY_SF_ICON_NORMAL ), 2, true )
-                set j=0
-                loop
-                    call AddFrameText( GetFrameByName("TavernAbilityTooltipText",i), "|cffffcc00"+I2S(GetAbilityBaseIntegerLevelFieldById( 'SiE2', ABILITY_ILF_MANA_COST, j ))+"|r")
-                    exitwhen j==GetAbilityBaseIntegerFieldById('SiE2', ABILITY_IF_LEVELS)-1
-                    call AddFrameText( GetFrameByName("TavernAbilityTooltipText",i), "/")
-                    set j=j+1
-                endloop                        
-                call AddFrameText( GetFrameByName("TavernAbilityTooltipText",i), "\n\n"+GetAbilityBaseStringFieldById( 'SiE2', ABILITY_SF_NAME )+", (|cffffcc00"+IntToChar(GetAbilityBaseIntegerFieldById( 'SiE2', ABILITY_IF_BUTTON_HOTKEY_RESEARCH ))+"|r)\n\n"+GetAbilityBaseStringFieldById( 'SiE2', ABILITY_SLF_TOOLTIP_LEARN_EXTENDED ))
-                call SetFrameSize( GetFrameByName("TavernAbilityTooltip",i), .26, GetFrameHeight( GetFrameByName("TavernAbilityTooltipText",i))+0.03)
-
+                if GetFrameTexture(GetFrameByName("TavernAbility",5),0)==GetAbilityBaseStringFieldById('SiF2',ABILITY_SF_ICON_NORMAL) then
+                    call SetFrameTexture( GetFrameByName("TavernAbility",i), GetAbilityBaseStringFieldById( 'SiE2', ABILITY_SF_ICON_NORMAL ), 0, true )
+                    call SetFrameTexture( GetFrameByName("TavernAbility",i), GetAbilityBaseStringFieldById( 'SiE2', ABILITY_SF_ICON_NORMAL ), 1, true )
+                    call SetFrameTexture( GetFrameByName("TavernAbility",i), GetAbilityBaseStringFieldById( 'SiE2', ABILITY_SF_ICON_NORMAL ), 2, true )
+                    set j=0
+                    loop
+                        call AddFrameText( GetFrameByName("TavernAbilityTooltipText",i), "|cffffcc00"+I2S(GetAbilityBaseIntegerLevelFieldById( 'SiE2', ABILITY_ILF_MANA_COST, j ))+"|r")
+                        exitwhen j==GetAbilityBaseIntegerFieldById('SiE2', ABILITY_IF_LEVELS)-1
+                        call AddFrameText( GetFrameByName("TavernAbilityTooltipText",i), "/")
+                        set j=j+1
+                    endloop                        
+                    call AddFrameText( GetFrameByName("TavernAbilityTooltipText",i), "\n\n"+GetAbilityBaseStringFieldById( 'SiE2', ABILITY_SF_NAME )+", (|cffffcc00"+IntToChar(GetAbilityBaseIntegerFieldById( 'SiE2', ABILITY_IF_BUTTON_HOTKEY_RESEARCH ))+"|r)\n\n"+GetAbilityBaseStringFieldById( 'SiE2', ABILITY_SLF_TOOLTIP_LEARN_EXTENDED ))
+                    call SetFrameSize( GetFrameByName("TavernAbilityTooltip",i), .26, GetFrameHeight( GetFrameByName("TavernAbilityTooltipText",i))+0.03)
+                else
+                    call SetFrameTexture( GetFrameByName("TavernAbility",i), GetAbilityBaseStringFieldById( 'SiE1', ABILITY_SF_ICON_NORMAL ), 0, true )
+                    call SetFrameTexture( GetFrameByName("TavernAbility",i), GetAbilityBaseStringFieldById( 'SiE1', ABILITY_SF_ICON_NORMAL ), 1, true )
+                    call SetFrameTexture( GetFrameByName("TavernAbility",i), GetAbilityBaseStringFieldById( 'SiE1', ABILITY_SF_ICON_NORMAL ), 2, true )
+                    set j=0
+                    loop
+                        call AddFrameText( GetFrameByName("TavernAbilityTooltipText",i), "|cffffcc00"+I2S(GetAbilityBaseIntegerLevelFieldById( 'SiE1', ABILITY_ILF_MANA_COST, j ))+"|r")
+                        exitwhen j==GetAbilityBaseIntegerFieldById('SiE1', ABILITY_IF_LEVELS)-1
+                        call AddFrameText( GetFrameByName("TavernAbilityTooltipText",i), "/")
+                        set j=j+1
+                    endloop                        
+                    call AddFrameText( GetFrameByName("TavernAbilityTooltipText",i), "\n\n"+GetAbilityBaseStringFieldById( 'SiE1', ABILITY_SF_NAME )+", (|cffffcc00"+IntToChar(GetAbilityBaseIntegerFieldById( 'SiE1', ABILITY_IF_BUTTON_HOTKEY_RESEARCH ))+"|r)\n\n"+GetAbilityBaseStringFieldById( 'SiE1', ABILITY_SLF_TOOLTIP_LEARN_EXTENDED ))
+                    call SetFrameSize( GetFrameByName("TavernAbilityTooltip",i), .26, GetFrameHeight( GetFrameByName("TavernAbilityTooltipText",i))+0.03)
+                endif
 
             elseif GetFrameTexture(but,0)==GetAbilityBaseStringFieldById('VGF1',ABILITY_SF_ICON_NORMAL) and IsFrameVisible(GetFrameByName("TavernBarAdditionalAbilityList",0))==false and i==GetFrameContext(but) then
                 call ShowFrame( InfoTavernText, false )
@@ -17541,7 +17555,7 @@ function OnButtonSelectHero takes nothing returns nothing
                         call AddFrameText( GetFrameByName("TavernAbilityTooltipText",5), "/")
                         set j=j+1
                         endloop   
-                        if String2Id( s )=='A105' or String2Id( s )=='A0RS' or String2Id( s )=='A0IR' or String2Id( s )=='CelF' or String2Id( s )=='CelG' or String2Id( s )=='BuuG' then
+                        if String2Id( s )=='A105' or String2Id( s )=='A0RS' or String2Id( s )=='A0IR' or String2Id( s )=='CelF' or String2Id( s )=='CelG' or String2Id( s )=='BuuG' or String2Id( s )=='LamF' then
                             call AddFrameText( GetFrameByName("TavernAbilityTooltipText",5), "\n\n"+GetAbilityBaseStringFieldById( String2Id( s ), ABILITY_SF_NAME )+", (|cffffcc00"+IntToChar(GetAbilityBaseIntegerFieldById( String2Id( s ), ABILITY_IF_BUTTON_HOTKEY_NORMAL ))+"|r)\n\n"+GetAbilityBaseStringFieldById( String2Id( s ), ABILITY_SLF_TOOLTIP_LEARN_EXTENDED )) 
                         else                  
                             call AddFrameText( GetFrameByName("TavernAbilityTooltipText",5), "\n\n"+GetAbilityBaseStringFieldById( String2Id( s ), ABILITY_SF_NAME )+", (|cffffcc00"+IntToChar(GetAbilityBaseIntegerFieldById( String2Id( s ), ABILITY_IF_BUTTON_HOTKEY_NORMAL ))+"|r)\n\n"+GetAbilityBaseStringFieldById( String2Id( s ), ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED ))
@@ -17559,7 +17573,7 @@ function OnButtonSelectHero takes nothing returns nothing
                         call AddFrameText( GetFrameByName("TavernAbilityTooltipText",6), "/")
                         set j=j+1
                         endloop                        
-                        if String2Id( s )=='A105' or String2Id( s )=='A0RS' or String2Id( s )=='A0IR' or String2Id( s )=='CelF' or String2Id( s )=='CelG' or String2Id( s )=='BuuG' then
+                        if String2Id( s )=='A105' or String2Id( s )=='A0RS' or String2Id( s )=='A0IR' or String2Id( s )=='CelF' or String2Id( s )=='CelG' or String2Id( s )=='BuuG' or String2Id( s )=='LamF' then
                             call AddFrameText( GetFrameByName("TavernAbilityTooltipText",6), "\n\n"+GetAbilityBaseStringFieldById( String2Id( s ), ABILITY_SF_NAME )+", (|cffffcc00"+IntToChar(GetAbilityBaseIntegerFieldById( String2Id( s ), ABILITY_IF_BUTTON_HOTKEY_NORMAL ))+"|r)\n\n"+GetAbilityBaseStringFieldById( String2Id( s ), ABILITY_SLF_TOOLTIP_LEARN_EXTENDED )) 
                         else                  
                             call AddFrameText( GetFrameByName("TavernAbilityTooltipText",6), "\n\n"+GetAbilityBaseStringFieldById( String2Id( s ), ABILITY_SF_NAME )+", (|cffffcc00"+IntToChar(GetAbilityBaseIntegerFieldById( String2Id( s ), ABILITY_IF_BUTTON_HOTKEY_NORMAL ))+"|r)\n\n"+GetAbilityBaseStringFieldById( String2Id( s ), ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED ))
@@ -17577,7 +17591,7 @@ function OnButtonSelectHero takes nothing returns nothing
                         call AddFrameText( GetFrameByName("TavernAbilityTooltipText",7), "/")
                         set j=j+1
                         endloop                        
-                        if String2Id( s )=='A105' or String2Id( s )=='A0RS' or String2Id( s )=='A0IR' or String2Id( s )=='CelF' or String2Id( s )=='CelG' or String2Id( s )=='BuuG' then
+                        if String2Id( s )=='A105' or String2Id( s )=='A0RS' or String2Id( s )=='A0IR' or String2Id( s )=='CelF' or String2Id( s )=='CelG' or String2Id( s )=='BuuG' or String2Id( s )=='LamF' then
                             call AddFrameText( GetFrameByName("TavernAbilityTooltipText",7), "\n\n"+GetAbilityBaseStringFieldById( String2Id( s ), ABILITY_SF_NAME )+", (|cffffcc00"+IntToChar(GetAbilityBaseIntegerFieldById( String2Id( s ), ABILITY_IF_BUTTON_HOTKEY_NORMAL ))+"|r)\n\n"+GetAbilityBaseStringFieldById( String2Id( s ), ABILITY_SLF_TOOLTIP_LEARN_EXTENDED )) 
                         else                  
                             call AddFrameText( GetFrameByName("TavernAbilityTooltipText",7), "\n\n"+GetAbilityBaseStringFieldById( String2Id( s ), ABILITY_SF_NAME )+", (|cffffcc00"+IntToChar(GetAbilityBaseIntegerFieldById( String2Id( s ), ABILITY_IF_BUTTON_HOTKEY_NORMAL ))+"|r)\n\n"+GetAbilityBaseStringFieldById( String2Id( s ), ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED ))
@@ -29580,9 +29594,9 @@ if (GetUnitAbilityLevel(target,'AccG')>0 and GetRandomInt(0,100)<20) or GetUnitA
     set haveShield=true
     endif
     // Щит P Сигнум Tank Spirit
-    // if GetUnitAbilityLevel(target,'SiTS')>0  then
-    // set haveShield=true
-    // endif
+    if GetUnitAbilityLevel(target,'SiTS')>0  then
+    set haveShield=true
+    endif
     // щит вивера
     if GetUnitAbilityLevel(target,'A3DF')>0 and damage<GetUnitState(target,UNIT_STATE_MAX_LIFE)*(0.02*GetUnitAbilityLevel(target,'A3DF')+0.05) then
     set haveShield=true
@@ -42673,6 +42687,10 @@ if GetUnitAbilityLevel(c,'KkR4')>0 and nb>0 then //курапика увелич
     set b=GetEventDamage()
     set nb=b  
 endif
+if GetUnitTypeId(c)=='HSig' and CurrentEventAttack then  //and (GetUnitAbilityLevel(u,'B017')>0 or GetUnitAbilityLevel(u,'B019')>0) then //and CurrentEventAttack==true   then
+    call SetEventDamage(0.05)
+    set nb=0
+endif
 if CurrentEventAttack and GetUnitAbilityLevel(c,'A1F5')>0 then        // Гильгамеш блок обычных автух
     call SetEventDamage(0.05)
     set nb=0
@@ -42839,6 +42857,9 @@ if nb>500 and GetUnitAbilityLevel( u ,'BSaR')>0 then
     //call SetEventDamage(0.05)
     set nb=0
     call SaveBoolean(HH,GetHandleId(u),StringHash("SabracEReverse"),true)
+endif
+if GetUnitAbilityLevel( u ,'SiTS')>0 and nb<GetHeroAgi(u,true)*2 and nb>0 then
+    set nb=0
 endif
 if (CurrentEventAttack and nb>0) or nb>50 then
     call UnitRemoveAbility(u,'cbc7')
@@ -43931,8 +43952,8 @@ if cond==0 then
         //     call TimerStart(tres,0,false,function Resist_Damage)
         //     set tres=null
         // endif
-        if GetUnitAbilityLevel(u,'A00Q')>0 and udg_B==true and GetUnitAbilityLevel(u,'B00Y')==0 and LoadBoolean(h,uid,pb)==false and nb>50 then
-            if GetRandomIntMem(0,100)<=50 then
+        if GetUnitAbilityLevel(u,'LamF')>0 and udg_B==true and GetUnitAbilityLevel(u,'B00Y')==0 and LoadBoolean(h,uid,pb)==false and nb>50 then
+            if GetRandomIntMem(0,100)<=30 then
                 //call SetEventDamage(nb*0.8)
                 set dmg=b*0.4
                 if GetUnitAbilityLevel(u,'B05Y')>0 then
@@ -46868,6 +46889,9 @@ if GetUnitAbilityLevel(u, 'MgT1')>=1 then                 // T Magnus
     call ShowAbility2('A42C',false)
     call ShowAbility2('A15C',true)
     call UnitRemoveAbility(u,'MgT1')
+endif
+if GetUnitAbilityLevel(u,'SiTS')>=1 then                 // Щит P Сигнум Tank Spirit
+    call UnitRemoveAbility(u,'SiTS')
 endif
 if bPaused then
     call PauseUnit(u, true)
@@ -124629,6 +124653,9 @@ if GetUnitAbilityLevel(c, 'MgT1')>=1 then                 // T Magnus
     call ShowAbility2('A15C',true)
     call UnitRemoveAbility(c,'MgT1')
 endif
+if GetUnitAbilityLevel(c,'SiTS')>=1 then                 // Щит P Сигнум Tank Spirit
+    call UnitRemoveAbility(c,'SiTS')
+endif
 if bPaused then
     call PauseUnit(c,true)
 endif
@@ -124782,6 +124809,9 @@ if GetUnitAbilityLevel(c, 'MgT1')>=1 then                 // T Magnus
     call ShowAbility2('A42C',false)
     call ShowAbility2('A15C',true)
     call UnitRemoveAbility(c,'MgT1')
+endif
+if GetUnitAbilityLevel(c,'SiTS')>=1 then                 // Щит P Сигнум Tank Spirit
+    call UnitRemoveAbility(c,'SiTS')
 endif
 if bPaused then
     call PauseUnit(c,true)
@@ -146237,7 +146267,9 @@ if GetUnitAbilityLevel(E, 'MgT1')>=1 then                 // T Magnus
     call ShowAbility2('A15C',true)
     call UnitRemoveAbility(E,'MgT1')
 endif
-
+if GetUnitAbilityLevel(E,'SiTS')>=1 then                 // Щит P Сигнум Tank Spirit
+    call UnitRemoveAbility(E,'SiTS')
+endif
 
 
 
@@ -157965,6 +157997,9 @@ if GetUnitAbilityLevel(c, 'MgT1')>=1 then                 // T Magnus
     call ShowAbility2('A15C',true)
     call UnitRemoveAbility(c,'MgT1')
 endif
+if GetUnitAbilityLevel(c,'SiTS')>=1 then                 // Щит P Сигнум Tank Spirit
+    call UnitRemoveAbility(c,'SiTS')
+endif
 if bPaused then
     call PauseUnit(c,true)
 endif
@@ -168795,7 +168830,7 @@ else
             call SaveInteger(HH,id,StringHash("Time2"), 300)
             call SaveInteger(HH,id,TIME_HASH, 300)
         else
-            if GetUnitTypeId(a)=='H02B' or GetUnitTypeId(a)=='H04C' or GetUnitTypeId(a)=='H02K' or GetUnitTypeId(a)=='H00A' then
+            if GetUnitTypeId(a)=='H02B' or GetUnitTypeId(a)=='H04C' or GetUnitTypeId(a)=='H02K' then //or GetUnitTypeId(a)=='H00A'
                 call SaveInteger(HH,id,StringHash("Time2"), 150)
                 call SaveInteger(HH,id,TIME_HASH, 150)
             else
@@ -175925,6 +175960,10 @@ function GaeDearg_Active takes unit newCaster, unit newTarget, real newAngle, ti
         endif
         if GetUnitAbilityLevel(newTarget, 'A3DF')>0 then                  // Щит Waver
             call UnitRemoveAbility(newTarget, 'A3DF')
+        endif
+        
+        if GetUnitAbilityLevel(newTarget,'SiTS')>=1 then                 // Щит P Сигнум Tank Spirit
+            call UnitRemoveAbility(newTarget,'SiTS')
         endif
         if GetUnitAbilityLevel(newTarget, 'A1H1')>=1 then                 // Щит от Ульты Жанны Рулер
                 call SetUnitInvulnerable(newTarget, false)
@@ -228909,7 +228948,6 @@ local real damage=LoadReal(HH,id,15)
 local lightning l=LoadLightningHandle(HH,id,17)
 set time=time+0.02
 call SaveReal(HH,id,5,time)
-
 if time>=25 then
 call EffectCreateAndMove(true,"Signum\\fadespearpurple.mdl",facing,1.5,1.7,0.8,100,100,100,0,100,target,0,facing)
 call EffectCreateAndMove(true,"Signum\\az_slb.mdl",facing,1.5,2,1,100,100,100,0,100,target,0,facing)
@@ -228941,71 +228979,53 @@ call DestroyTimer(GetExpiredTimer())
 else
 if time<25 then
 
-if time<20 then
-call SetUnitFacing(caster,facing)
-endif
+    if time<20 then
+        call SetUnitFacing(caster,facing)
+    endif
 
-call SetUnitInvulnerable(caster,true)
-call PauseUnit(caster,true)
-if time>20 then
-set x1=LoadReal(HH,id,11)
-set y1=LoadReal(HH,id,12)
-set facing=Angle2(x1,y1,x0,y0)
-call SetUnitFacing(caster,Angle2(GetUnitX(caster),GetUnitY(caster),x1,y1))
-if time>20.2 then
-call MoveUnit(target,target,-45,facing)
-call MoveUnit(target,Dummy,0,facing)
-set distance=SR(x1,y1,x0,y0)
-if distance<=50 then
-call SaveReal(HH,id,5,25)
-endif
-endif
-call SetUnitInvulnerable(target,true)
-//Проверка на паузу
+    call SetUnitInvulnerable(caster,true)
+    call PauseUnit(caster,true)
+    if time>20 then
+        // call BJDebugMsg("test")
+    //Проверка на паузу
+        set x1=LoadReal(HH,id,11)
+        set y1=LoadReal(HH,id,12)
+        set facing=Angle2(x1,y1,x0,y0)
+        call SetUnitFacing(caster,Angle2(GetUnitX(caster),GetUnitY(caster),x1,y1))
+        if time>20.2 then
+            call MoveUnit(target,target,-45,facing)
+            call MoveUnit(target,Dummy,0,facing)
+            set distance=SR(x1,y1,x0,y0)
+            if distance<=50 then
+                call SaveReal(HH,id,5,25)
+            endif
+        endif
+        call SetUnitInvulnerable(target,true)
+        call PauseUnit(target,true)
+        call SaveBoolean(HH,GetHandleId( target ),TARGET_ABILITY,true)
 
-if LoadBoolean(HH,GetHandleId(target),ANTITARGET_ABILITY)==false then
-call PauseUnit(target,true)
-call SaveBoolean(HH,GetHandleId( target ),TARGET_ABILITY,true)
-else
-// Цель разворачивает чужие умения (ANTITARGET_ABILITY): отдаём ей себя
-// и сразу сворачиваемся по хвосту завершения этой же способности,
-// но без урона и стана — так сделано у Roshi_R_Act2.
-call SaveBoolean(HH,GetHandleId( target ),TARGET_ABILITY,false)
-call SaveUnitHandle(HH,GetHandleId(target),REVERSE_TARGET,caster)
-call UnitSpeed(caster,1)
-call SetUnitInvulnerable(caster,false)
-call PauseUnit(caster,false)
-call SetUnitInvulnerable(target,false)
-call PauseUnit(target,false)
-call DestroyLightning(l)
-call RemoveUnit(Dummy)
-call PauseTimer(GetExpiredTimer())
-call FlushChildHashtable(HH,id)
-call DestroyTimer(GetExpiredTimer())
-endif
-
-//Проверка на паузу
-endif
+    //Проверка на паузу
+    endif
 endif
 if time==0.02 then
-call EffectCreateAndMoveAn(true,"Signum\\flowerMoonEff (83).mdl",facing,1.5,1.5,0.8,100,100,100,0,0,caster,0,facing,2)
-call EffectCreateAndMove(true,"Signum\\WindCircleFaster.mdl",facing,1.5,1,1.25,100,100,100,0,0,caster,0,facing)
-call EffectCreateAndMove(true,"Signum\\wind4.mdl",facing,1.5,1,0.7,100,60,80,0,0,caster,0,facing)
-call EffectCreateAndMove(true,"Others\\HakkeStart2.mdl",facing,1.5,1,0.5,100,100,100,60,0,caster,0,facing)
-call UnitSpeed(caster,1)
-call SetUnitAnimationByIndex(caster,0)
+    call EffectCreateAndMoveAn(true,"Signum\\flowerMoonEff (83).mdl",facing,1.5,1.5,0.8,100,100,100,0,0,caster,0,facing,2)
+    call EffectCreateAndMove(true,"Signum\\WindCircleFaster.mdl",facing,1.5,1,1.25,100,100,100,0,0,caster,0,facing)
+    call EffectCreateAndMove(true,"Signum\\wind4.mdl",facing,1.5,1,0.7,100,60,80,0,0,caster,0,facing)
+    call EffectCreateAndMove(true,"Others\\HakkeStart2.mdl",facing,1.5,1,0.5,100,100,100,60,0,caster,0,facing)
+    call UnitSpeed(caster,1)
+    call SetUnitAnimationByIndex(caster,0)
 endif
 if time==0.7 then
-call SetUnitAnimationByIndex(caster,30)
+    call SetUnitAnimationByIndex(caster,30)
 endif
 if time==0.8 then
-call EffectCreateAndMove(true,"Signum\\[AB]PurpleAz-hit.mdl",facing,1.5,1,0.8,100,100,100,0,100,caster,50,facing)
-call EffectCreateAndMove(true,"Signum\\WindNewFaw4.mdl",facing,1.5,1,0.8,100,60,80,0,100,caster,0,facing)
-call SaveLightningHandle(HH,id,17,AddLightningEx("LEAS",true,GetUnitX(caster),GetUnitY(caster),GetUnitFlyHeight(caster)+75,GetUnitX(caster),GetUnitY(caster),GetUnitFlyHeight(caster)+75))
+    call EffectCreateAndMove(true,"Signum\\[AB]PurpleAz-hit.mdl",facing,1.5,1,0.8,100,100,100,0,100,caster,50,facing)
+    call EffectCreateAndMove(true,"Signum\\WindNewFaw4.mdl",facing,1.5,1,0.8,100,60,80,0,100,caster,0,facing)
+    call SaveLightningHandle(HH,id,17,AddLightningEx("LEAS",true,GetUnitX(caster),GetUnitY(caster),GetUnitFlyHeight(caster)+75,GetUnitX(caster),GetUnitY(caster),GetUnitFlyHeight(caster)+75))
 endif
 
 if time>0.8 then
-call MoveLightningEx(l,true,GetUnitX(caster),GetUnitY(caster),GetUnitFlyHeight(caster)+75,GetUnitX(Dummy),GetUnitY(Dummy),GetUnitFlyHeight(target)+75)
+    call MoveLightningEx(l,true,GetUnitX(caster),GetUnitY(caster),GetUnitFlyHeight(caster)+75,GetUnitX(Dummy),GetUnitY(Dummy),GetUnitFlyHeight(target)+75)
 endif
 
 if time>0.8 and time<20 then
@@ -229017,44 +229037,63 @@ call MoveUnit(Dummy,Dummy,45,facing)
 if distance<=50 or SR(GetUnitX( caster ),GetUnitY( caster ),x0,y0)>=4000 then
 
 
+if LoadBoolean(HH,GetHandleId(target),ANTITARGET_ABILITY)==false then
+    if GetUnitAbilityLevel(target,'Avul')==0 then
+        call SaveBoolean(HH,id,26,false)
+    else
+        call SaveBoolean(HH,id,26,true)
+    endif
 
 
 
-if GetUnitAbilityLevel(target,'Avul')==0 then
-call SaveBoolean(HH,id,26,false)
+
+
+
+    call EffectCreateAndMoveAn(true,"Signum\\FSAeff (177).mdl",facing,1,1,0.8,100,100,100,0,100,target,0,facing,1)
+    call EffectCreateAndMove(true,"Others\\HakkeStart2.mdl",facing,1.5,0.8,1,100,100,100,60,0,target,0,facing)
+    call SetUnitModel(Dummy,"Signum\\SignumSnakeEff.mdl")
+    call UnitSize(Dummy,0.8,1,1)
+    call SetUnitFlyHeight(Dummy,0,0)
+    call SetUnitAnimationByIndex(caster,32)
+    set soundplay=CreateSound("Sound\\Music\\mp3Music\\SignumFEHit.mp3",false,false,true,12700,12700,"")
+    call StartSound(soundplay)
+    ////call KillSoundWhenDone(soundplay)
+    if GetRandomInt(1,2)==1 then
+        call SaveReal(HH,id,11,PolX(GetUnitX(caster),GetRandomReal(350,500),GetUnitFacing(caster)+GetRandomReal(20,40)))
+        call SaveReal(HH,id,12,PolY(GetUnitY(caster),GetRandomReal(350,500),GetUnitFacing(caster)+GetRandomReal(20,40)))
+    else
+        call SaveReal(HH,id,11,PolX(GetUnitX(caster),GetRandomReal(350,500),GetUnitFacing(caster)+GetRandomReal(-40,-20)))
+        call SaveReal(HH,id,12,PolY(GetUnitY(caster),GetRandomReal(350,500),GetUnitFacing(caster)+GetRandomReal(-40,-20)))
+    endif
+
+    call SaveReal(HH,id,5,20)
+
+
+
+    if SR(GetUnitX( caster ),GetUnitY( caster ),x0,y0)>=4000 then
+        call SaveReal(HH,id,5,25)
+    endif
+
 else
-call SaveBoolean(HH,id,26,true)
+    // Цель разворачивает чужие умения (ANTITARGET_ABILITY): отдаём ей себя
+    // и сразу сворачиваемся по хвосту завершения этой же способности,
+    // но без урона и стана — так сделано у Roshi_R_Act2.
+    call SaveBoolean(HH,GetHandleId( target ),TARGET_ABILITY,false)
+    call SaveUnitHandle(HH,GetHandleId(target),REVERSE_TARGET,caster)
+    call DestroyLightning(l)
+    call UnitSpeed(caster,1)
+    call SetUnitInvulnerable(caster,false)
+    call PauseUnit(caster,false)
+    call SetUnitInvulnerable(target,false)
+    call PauseUnit(target,false)
+    call DestroyLightning(l)
+    call RemoveUnit(Dummy)
+    call PauseTimer(GetExpiredTimer())
+    call FlushChildHashtable(HH,id)
+    call DestroyTimer(GetExpiredTimer())
 endif
 
 
-
-
-
-
-call EffectCreateAndMoveAn(true,"Signum\\FSAeff (177).mdl",facing,1,1,0.8,100,100,100,0,100,target,0,facing,1)
-call EffectCreateAndMove(true,"Others\\HakkeStart2.mdl",facing,1.5,0.8,1,100,100,100,60,0,target,0,facing)
-call SetUnitModel(Dummy,"Signum\\SignumSnakeEff.mdl")
-call UnitSize(Dummy,0.8,1,1)
-call SetUnitFlyHeight(Dummy,0,0)
-call SetUnitAnimationByIndex(caster,32)
-set soundplay=CreateSound("Sound\\Music\\mp3Music\\SignumFEHit.mp3",false,false,true,12700,12700,"")
-call StartSound(soundplay)
-////call KillSoundWhenDone(soundplay)
-if GetRandomInt(1,2)==1 then
-call SaveReal(HH,id,11,PolX(GetUnitX(caster),GetRandomReal(350,500),GetUnitFacing(caster)+GetRandomReal(20,40)))
-call SaveReal(HH,id,12,PolY(GetUnitY(caster),GetRandomReal(350,500),GetUnitFacing(caster)+GetRandomReal(20,40)))
-else
-call SaveReal(HH,id,11,PolX(GetUnitX(caster),GetRandomReal(350,500),GetUnitFacing(caster)+GetRandomReal(-40,-20)))
-call SaveReal(HH,id,12,PolY(GetUnitY(caster),GetRandomReal(350,500),GetUnitFacing(caster)+GetRandomReal(-40,-20)))
-endif
-
-call SaveReal(HH,id,5,20)
-
-
-
-if SR(GetUnitX( caster ),GetUnitY( caster ),x0,y0)>=4000 then
-call SaveReal(HH,id,5,25)
-endif
 
 
 
@@ -229940,7 +229979,7 @@ call SetPlayerAbilityAvailable(GetOwningPlayer(caster),'SiE2',true)
 call SaveBoolean(HH,GetHandleId(caster),StringHash("SignumFBool"),false)
 
 
-call SetUnitAttackRangeByIndex(caster, 0, 600)
+call SetUnitAttackRangeByIndex(caster, 0, 600+B2I(UnitHasBow(caster))*(600*0.3+50))
 //call SetUnitWeaponTypeByIndex(caster, 0, ConvertWeaponType(5))
 
 call SetUnitWeaponTypeByIndex(caster, 0, ConvertWeaponType(1))
@@ -229968,7 +230007,7 @@ call SetPlayerAbilityAvailable(GetOwningPlayer(caster),'SiE1',true)
 call SaveBoolean(HH,GetHandleId(caster),StringHash("SignumFBool"),true)
 
 
-call SetUnitAttackRangeByIndex(caster, 0, 150)
+call SetUnitAttackRangeByIndex(caster, 0, 150+B2I(UnitHasBow(caster))*(150*0.3+50))
 call SetUnitWeaponTypeByIndex(caster, 0, ConvertWeaponType(1))
 
 call SetPlayerAbilityAvailable(GetOwningPlayer(caster),'SiF2',false)
@@ -230836,7 +230875,19 @@ loop
 set n0=FirstOfGroup(G)
 exitwhen n0==null
 if Condition_Base(GetOwningPlayer(caster),n0) then
-call MoveUnit(n0,n0,12,facing)
+    if LoadBoolean(HH,GetHandleId(n0),ANTITARGET_ABILITY)==false then
+        call MoveUnit(n0,n0,12,facing)
+    else
+        call SaveBoolean(HH,GetHandleId(n0),TARGET_ABILITY,false)
+        call SaveUnitHandle(HH,GetHandleId(n0),REVERSE_TARGET,caster)
+        call UnitSpeed(caster,1)
+        call PauseUnit(caster,false)
+        call SetUnitInvulnerable(caster,false)
+        call SetUnitPathing(caster,true)
+        call PauseTimer(GetExpiredTimer())
+        call FlushChildHashtable(HH,id)
+        call DestroyTimer(GetExpiredTimer())
+    endif
 endif
 call GroupRemoveUnit(G,n0)
 endloop
