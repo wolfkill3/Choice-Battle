@@ -21777,6 +21777,7 @@ call SetPlayerAbilityAvailable(GetOwningPlayer( u ),'SiF1',true)
 call SetPlayerAbilityAvailable(GetOwningPlayer( u ),'SiF2',false)
 call SaveBoolean(HH,GetHandleId( u ),StringHash("SignumFBool"),true)
 //call SaveBoolean(HH,GetHandleId( u ),StringHash("SignumCD"),false)
+endif
 
 if GetUnitTypeId(u)=='HGoj' then
 call SetPlayerAbilityAvailable(GetOwningPlayer(u),'GSQ2',false)
@@ -21950,7 +21951,7 @@ endfunction
 function Alastor_Passive_Act takes nothing returns nothing
 local integer id=GetHandleId(GetExpiredTimer())
 local unit caster=LoadUnitHandle(HH,id,1)
-local real damage0= 50+GetHeroLevel(caster)*10
+local real damage0= GetHeroLevel(caster)*15
 local group g=CreateGroup()
 local real x0=GetUnitX(caster)
 local real y0=GetUnitY(caster)
@@ -21973,7 +21974,9 @@ loop
 set n0=FirstOfGroup(g)
 exitwhen n0==null
 if  Condition_Base(GetOwningPlayer( caster ),n0) and GetUnitAbilityLevel(n0,'Avul')==0 and GetUnitTypeId(caster)!='H069' then
+call UnitAddAbility(n0,'Alas')
 call myCustomDamage(caster,n0,damage0*0.2,false,false,null,null,null)
+call UnitRemoveAbility(n0,'Alas')
 endif
 call GroupRemoveUnit(g,n0)
 endloop
@@ -21985,7 +21988,7 @@ endif
 
 if  (udg_B==false  or  UnitIsAlive(caster)==false or not(caster==Hero[GetPlayerId(GetOwningPlayer(caster))] or caster==udg_DM[GetPlayerId(GetOwningPlayer(caster))+1])) or UnitHasAlastor(caster)==false then
 //call UnitRemoveAbility(caster,'ASG3')
-call SaveBoolean(HH,GetHandleId(caster),AlastorHash,true)
+call SaveBoolean(HH,GetHandleId(caster),AlastorHash,false)
 call PauseTimer(GetExpiredTimer())
 call FlushChildHashtable(HH,id)
 call DestroyTimer(GetExpiredTimer())
@@ -38315,6 +38318,9 @@ exitwhen i>=10
             set Broly=Hero[i]
         endif
 
+        if UnitHasItemOfTypeBJ( Hero[i] ,'I03A') then //alastor passive
+          call Alastor_Passive( Hero[i] )
+        endif
 
         call SetUnitTargetable( Hero[i] ,true)
         if GetUnitTypeId(Hero[i])=='HJi1' then
@@ -45761,7 +45767,7 @@ if cond==0 then
         set nb=nb+30
         //set nb=nb+30
     endif
-    if nb>30 and (UnitHasItemOfTypeBJ(c, 'I1S4') or GetUnitAbilityLevel(c, 'KI0Q')>0) and GetUnitAbilityLevel(c, 'M1CD')==0 then
+    if nb>30 and GetUnitAbilityLevel(u,'Alas')==0 and (UnitHasItemOfTypeBJ(c, 'I1S4') or GetUnitAbilityLevel(c, 'KI0Q')>0) and GetUnitAbilityLevel(c, 'M1CD')==0 then
         call UnitAddAbility(c, 'M1CD')
         call UnitMakeAbilityPermanent(c, true, 'M1CD')
         if GetUnitAbilityLevel(c,'OniC')==0 then
@@ -46081,9 +46087,7 @@ if nb>0 then
         call SaveReal(HH,cid,'AAcd',10)
     endif
     if GetUnitTypeId(u)=='H34X' or GetUnitTypeId(u)=='H14F' then
-        call SetEventDamage(nb*10)
-    else
-        call SetEventDamage(nb)
+        set nb=nb*12.5
     endif
     call SetEventDamage(nb)
     if GetUnitAbilityLevel(u,'A4DF')>0 then
