@@ -6474,7 +6474,7 @@ function Condition_RecipeString takes integer id returns boolean
 return id=='I00E' or id=='I01P' or id=='I01R' or id=='I01T' or id=='I01V' or id=='I02U' or id=='I02X' or id=='I02Z' or id=='I045' or id=='I047' or id=='I04Y' or id=='I04U' or id=='I04X' or id=='I04Z' or id=='I051' or id=='I14R' or id=='IGDr' or id=='IPar' or id=='IHYr' or id=='ISTr' or id=='IBSR' or id=='I052' or id=='I053' or id=='I055' or id=='I06P' or id=='I06S' or id=='I06T' or id=='IPRR'
 endfunction
 function Condition_AbilityString3 takes integer id returns boolean
-return id=='OM13' or id=='A17D' or id=='A177' or id=='A172' or id=='A16U' or id=='A0TN'  or id=='MrF1' or id=='MrT1' or id=='MrG2' or id=='RsT1' or id=='RsF1' or id=='SiF1'
+return id=='OM13' or id=='A17D' or id=='A177' or id=='A172' or id=='A16U' or id=='A0TN'  or id=='MrF1' or id=='MrT1' or id=='MrG2' or id=='RsT1' or id=='RsF1' or id=='SiF1' or id=='SiF2' or id=='SiE2'
 endfunction
 function Condition_AbilityString2 takes integer id returns boolean
 return id=='A0YX' or id=='A0Z0' or id=='KkR1' or id=='KkR2' or id=='BRRS' or id=='BRSS' or id=='IcF2' or id=='IcF5' or id=='GKF1' or id=='VGF1' or id=='GKG1' or id=='GKBS' or id=='GKSS' or id=='GKS2' or id=='GKS3' or id=='GKS4' or id=='GKSR' or id=='GKSB' or id=='GKUI' or id=='GKMI' or id=='GKQ1' or id=='GKW1' or id=='GKE1' or id=='GKT1' or id=='JNF1' or id=='JNF4' or id=='GSQ1' or id=='GSQ2' or id=='GSE1' or id=='GSE2' or id=='GST1' or id=='GST3' or id=='GSF1' or id=='GSF2' or id=='GSF2'
@@ -14669,6 +14669,37 @@ function OnButtonAddonAbility takes nothing returns nothing
                 call AddFrameText( GetFrameByName("TavernAbilityTooltipText",1), "\n\n"+GetAbilityBaseStringFieldById( String2Id( "SiW1" ), ABILITY_SF_NAME )+", (|cffffcc00W|r)\n\n"+GetAbilityBaseStringFieldById( String2Id( "SiW1" ), ABILITY_SLF_TOOLTIP_LEARN_EXTENDED ))
                 call AddFrameText( GetFrameByName("TavernAbilityTooltipText",2), "\n\n"+GetAbilityBaseStringFieldById( String2Id( "SiE1" ), ABILITY_SF_NAME )+", (|cffffcc00E|r)\n\n"+GetAbilityBaseStringFieldById( String2Id( "SiE1" ), ABILITY_SLF_TOOLTIP_LEARN_EXTENDED ))
                 call AddFrameText( GetFrameByName("TavernAbilityTooltipText",5), "\n\n"+GetAbilityBaseStringFieldById( String2Id( "SiF1" ), ABILITY_SF_NAME )+", (|cffffcc00F|r)\n\n"+GetAbilityBaseStringFieldById( String2Id( "SiF1" ), ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED ))
+
+
+            elseif GetFrameTexture(but,0)==GetAbilityBaseStringFieldById('SiE2',ABILITY_SF_ICON_NORMAL) and i==GetFrameContext(but) then
+                call SetFrameText( GetFrameByName("TavernAbilityTooltipText",i), "     " )
+                call SetFrameTexture( GetFrameByName("TavernAbility",i), GetAbilityBaseStringFieldById( 'SiE3', ABILITY_SF_ICON_NORMAL ), 0, true )
+                call SetFrameTexture( GetFrameByName("TavernAbility",i), GetAbilityBaseStringFieldById( 'SiE3', ABILITY_SF_ICON_NORMAL ), 1, true )
+                call SetFrameTexture( GetFrameByName("TavernAbility",i), GetAbilityBaseStringFieldById( 'SiE3', ABILITY_SF_ICON_NORMAL ), 2, true )
+                set j=0
+                loop
+                    call AddFrameText( GetFrameByName("TavernAbilityTooltipText",i), "|cffffcc00"+I2S(GetAbilityBaseIntegerLevelFieldById( 'SiE3', ABILITY_ILF_MANA_COST, j ))+"|r")
+                    exitwhen j==GetAbilityBaseIntegerFieldById('SiE3', ABILITY_IF_LEVELS)-1
+                    call AddFrameText( GetFrameByName("TavernAbilityTooltipText",i), "/")
+                    set j=j+1
+                endloop                        
+                call AddFrameText( GetFrameByName("TavernAbilityTooltipText",i), "\n\n"+GetAbilityBaseStringFieldById( 'SiE3', ABILITY_SF_NAME )+", (|cffffcc00"+IntToChar(GetAbilityBaseIntegerFieldById( 'SiE3', ABILITY_IF_BUTTON_HOTKEY_RESEARCH ))+"|r)\n\n"+GetAbilityBaseStringFieldById( 'SiE3', ABILITY_SLF_TOOLTIP_LEARN_EXTENDED ))
+                call SetFrameSize( GetFrameByName("TavernAbilityTooltip",i), .26, GetFrameHeight( GetFrameByName("TavernAbilityTooltipText",i))+0.03)
+            elseif GetFrameTexture(but,0)==GetAbilityBaseStringFieldById('SiE3',ABILITY_SF_ICON_NORMAL) and i==GetFrameContext(but) then
+                call SetFrameText( GetFrameByName("TavernAbilityTooltipText",i), "     " )
+                call SetFrameTexture( GetFrameByName("TavernAbility",i), GetAbilityBaseStringFieldById( 'SiE2', ABILITY_SF_ICON_NORMAL ), 0, true )
+                call SetFrameTexture( GetFrameByName("TavernAbility",i), GetAbilityBaseStringFieldById( 'SiE2', ABILITY_SF_ICON_NORMAL ), 1, true )
+                call SetFrameTexture( GetFrameByName("TavernAbility",i), GetAbilityBaseStringFieldById( 'SiE2', ABILITY_SF_ICON_NORMAL ), 2, true )
+                set j=0
+                loop
+                    call AddFrameText( GetFrameByName("TavernAbilityTooltipText",i), "|cffffcc00"+I2S(GetAbilityBaseIntegerLevelFieldById( 'SiE2', ABILITY_ILF_MANA_COST, j ))+"|r")
+                    exitwhen j==GetAbilityBaseIntegerFieldById('SiE2', ABILITY_IF_LEVELS)-1
+                    call AddFrameText( GetFrameByName("TavernAbilityTooltipText",i), "/")
+                    set j=j+1
+                endloop                        
+                call AddFrameText( GetFrameByName("TavernAbilityTooltipText",i), "\n\n"+GetAbilityBaseStringFieldById( 'SiE2', ABILITY_SF_NAME )+", (|cffffcc00"+IntToChar(GetAbilityBaseIntegerFieldById( 'SiE2', ABILITY_IF_BUTTON_HOTKEY_RESEARCH ))+"|r)\n\n"+GetAbilityBaseStringFieldById( 'SiE2', ABILITY_SLF_TOOLTIP_LEARN_EXTENDED ))
+                call SetFrameSize( GetFrameByName("TavernAbilityTooltip",i), .26, GetFrameHeight( GetFrameByName("TavernAbilityTooltipText",i))+0.03)
+
 
             elseif GetFrameTexture(but,0)==GetAbilityBaseStringFieldById('VGF1',ABILITY_SF_ICON_NORMAL) and IsFrameVisible(GetFrameByName("TavernBarAdditionalAbilityList",0))==false and i==GetFrameContext(but) then
                 call ShowFrame( InfoTavernText, false )
@@ -229232,18 +229263,18 @@ call ClearSelection()
 call SelectUnit(caster,true)
 endif
 call RemoveUnit(DummyCast)
-if(GetLocalPlayer()==GetOwningPlayer(caster))then
-call DisplayTextToPlayer(GetLocalPlayer(),0,0,"Distance: "+R2S(distance))
-endif
-if(GetLocalPlayer()==GetOwningPlayer(caster))then
-call DisplayTextToPlayer(GetLocalPlayer(),0,0,"Aoe: "+R2S(range))
-endif
-if(GetLocalPlayer()==GetOwningPlayer(caster))then
-call DisplayTextToPlayer(GetLocalPlayer(),0,0,"Speed: "+R2S(speed))
-endif
-if(GetLocalPlayer()==GetOwningPlayer(caster))then
-call DisplayTextToPlayer(GetLocalPlayer(),0,0,"Damage: Agi* "+R2S(damage)+"Damage: "+R2S(totaldamage00*0.5))
-endif
+// if(GetLocalPlayer()==GetOwningPlayer(caster))then
+// call DisplayTextToPlayer(GetLocalPlayer(),0,0,"Distance: "+R2S(distance))
+// endif
+// if(GetLocalPlayer()==GetOwningPlayer(caster))then
+// call DisplayTextToPlayer(GetLocalPlayer(),0,0,"Aoe: "+R2S(range))
+// endif
+// if(GetLocalPlayer()==GetOwningPlayer(caster))then
+// call DisplayTextToPlayer(GetLocalPlayer(),0,0,"Speed: "+R2S(speed))
+// endif
+// if(GetLocalPlayer()==GetOwningPlayer(caster))then
+// call DisplayTextToPlayer(GetLocalPlayer(),0,0,"Damage: Agi* "+R2S(damage)+"Damage: "+R2S(totaldamage00*0.5))
+// endif
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\SignumRShoot.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
 ////call KillSoundWhenDone(soundplay)
@@ -229506,18 +229537,18 @@ call ClearSelection()
 call SelectUnit(caster,true)
 endif
 call RemoveUnit(DummyCast)
-if(GetLocalPlayer()==GetOwningPlayer(caster))then
-call DisplayTextToPlayer(GetLocalPlayer(),0,0,"Distance: "+R2S(distance))
-endif
-if(GetLocalPlayer()==GetOwningPlayer(caster))then
-call DisplayTextToPlayer(GetLocalPlayer(),0,0,"Aoe: "+R2S(range)+"Aoe Exp: "+R2S(range*2))
-endif
-if(GetLocalPlayer()==GetOwningPlayer(caster))then
-call DisplayTextToPlayer(GetLocalPlayer(),0,0,"Speed: "+R2S(speed))
-endif
-if(GetLocalPlayer()==GetOwningPlayer(caster))then
-call DisplayTextToPlayer(GetLocalPlayer(),0,0,"Damage: Agi* "+R2S(damage)+"Damage: "+R2S(totaldamage00*0.5))
-endif
+// if(GetLocalPlayer()==GetOwningPlayer(caster))then
+// call DisplayTextToPlayer(GetLocalPlayer(),0,0,"Distance: "+R2S(distance))
+// endif
+// if(GetLocalPlayer()==GetOwningPlayer(caster))then
+// call DisplayTextToPlayer(GetLocalPlayer(),0,0,"Aoe: "+R2S(range)+"Aoe Exp: "+R2S(range*2))
+// endif
+// if(GetLocalPlayer()==GetOwningPlayer(caster))then
+// call DisplayTextToPlayer(GetLocalPlayer(),0,0,"Speed: "+R2S(speed))
+// endif
+// if(GetLocalPlayer()==GetOwningPlayer(caster))then
+// call DisplayTextToPlayer(GetLocalPlayer(),0,0,"Damage: Agi* "+R2S(damage)+"Damage: "+R2S(totaldamage00*0.5))
+// endif
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\SignumFR2.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
 ////call KillSoundWhenDone(soundplay)
