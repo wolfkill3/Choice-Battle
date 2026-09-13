@@ -224566,6 +224566,7 @@ local real y0=GetUnitY(Dummy)
 local real damage=LoadReal(HH,id,15)
 local real dist=LoadReal(HH,id,8)
 local real dist_Base=LoadReal(HH,id,9)
+local group gr=LoadGroupHandle(HH,id,30)
 set time=time+0.02
 call SaveReal(HH,id,5,time)
 
@@ -224592,10 +224593,9 @@ call EffectCreateAndMove(true,EffectID[2094],facing,1.5,2,1,100,100,100,30,0,Dum
 call EffectCreateAndMove(true,EffectID[768],facing,1.5,1.75,1,100,100,100,60,0,Dummy,0,facing)
 call EffectCreateAndMove(true,EffectID[252],GetRandomInt(0,360),1,3.25,1,100,100,100,0,0,Dummy,0,facing)
 call EffectCreateAndMove(true,EffectID[240],GetRandomInt(0,360),1,7,0.5,100,100,100,0,150,Dummy,0,facing)
-call GroupClear(G)
-call GroupEnumUnitsInRange(G,x0,y0,700,BaseFrenda)
+call GroupEnumUnitsInRange(gr,x0,y0,700,BaseFrenda)
 loop
-set n0=FirstOfGroup(G)
+set n0=FirstOfGroup(gr)
 exitwhen n0==null
 
 
@@ -224613,9 +224613,9 @@ endif
 if IsUnitEnemy(n0,GetOwningPlayer(caster))==true and GetUnitAbilityLevel(n0,'Avul')==0 then
 call DamageU(false,caster,n0,damage)
 endif
-call GroupRemoveUnit(G,n0)
+call GroupRemoveUnit(gr,n0)
 endloop
-call GroupClear(G)
+call GroupClear(gr)
 endif
 if LoadUnitHandle(HH,id,20)!=null then
 call MyRemoveUnit(LoadUnitHandle(HH,id,20),0.1)
@@ -224851,6 +224851,7 @@ endif
 endif
 set caster=null
 set Dummy=null
+set gr=null
 endfunction
 function Frenda_G_Act takes unit caster,real x1,real y1 returns nothing
 local timer t=CreateTimer()
@@ -224858,13 +224859,14 @@ local integer id=GetHandleId(t)
 local real x0=GetUnitX(caster)
 local real y0=GetUnitY(caster)
 local real facing=Angle2(x0,y0,x1,y1)
-local real damage=(GetUnitAbilityLevel(caster,'FSG1')+4)*GetHeroInt(caster,true)
+local real damage=(GetUnitAbilityLevel(caster,'FSG1')+2)*GetHeroInt(caster,true)
 call SaveUnitHandle(HH,id,1,caster)
 call SaveReal(HH,id,3,facing)
 call SaveBoolean(HH,id,19,false)
 call SaveReal(HH,id,8,SR(x0,y0,x1,y1))
 call SaveReal(HH,id,9,SR(x0,y0,x1,y1))
 call SaveReal(HH,id,15,damage)
+call SaveGroupHandle(HH,id,30,CreateGroup())
 call TimerStart(t,0.02,true,function Frenda_G_Act2)
 set t=null
 endfunction
