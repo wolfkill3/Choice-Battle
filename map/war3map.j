@@ -18175,7 +18175,7 @@ if udg_test==false then
     call SetFrameTextColour( TavernHeroAdditionalAbilityTooltipText, ConvertColour(255,255,255,255) )
     call SetFrameParent( TavernHeroAdditionalAbilityTooltipText, TavernHeroAdditionalAbilityTooltip )
     call SetFrameFont( TavernHeroAdditionalAbilityTooltipText, "Fonts\\FRIZQT__.TTF", .01, 0 )
-    call SetFrameText( TavernHeroAdditionalAbilityTooltipText, "Описание способностей")
+    call SetFrameText( TavernHeroAdditionalAbilityTooltipText, "Ability description")
     call SetFrameTextAlignment( TavernHeroAdditionalAbilityTooltipText, TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_LEFT )
     call SetFrameWidth( TavernHeroAdditionalAbilityTooltipText, .24)
     call SetFrameSize( TavernHeroAdditionalAbilityTooltip, .26, GetFrameHeight(TavernHeroAdditionalAbilityTooltipText)+0.01)
@@ -24551,7 +24551,7 @@ function Trig_StatusBar_Actions takes nothing returns nothing
     call ClearFrameAllPoints( CustomClassTooltipText )
     call SetFrameTextColour( CustomClassTooltipText, ConvertColour(255,255,255,255) )
     call SetFrameParent( CustomClassTooltipText, CustomClassTooltip )
-    call SetFrameText( CustomClassTooltipText, "Описание способностей")
+    call SetFrameText( CustomClassTooltipText, "Ability description")
     call SetFrameFont( CustomClassTooltipText, "Fonts\\FRIZQT__.TTF", .01, 0 )
     call SetFrameTextAlignment( CustomClassTooltipText, TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_LEFT )
     call SetFrameWidth( CustomClassTooltipText, .14)
@@ -24598,7 +24598,7 @@ function Trig_StatusBar_Actions takes nothing returns nothing
     call ClearFrameAllPoints( CustomAbilityVarTooltipText )
     call SetFrameTextColour( CustomAbilityVarTooltipText, ConvertColour(255,255,255,255) )
     call SetFrameParent( CustomAbilityVarTooltipText, CustomAbilityVarTooltip )
-    call SetFrameText( CustomAbilityVarTooltipText, "Описание способностей")
+    call SetFrameText( CustomAbilityVarTooltipText, "Ability description")
     call SetFrameFont( CustomAbilityVarTooltipText, "Fonts\\FRIZQT__.TTF", .01, 0 )
     call SetFrameTextAlignment( CustomAbilityVarTooltipText, TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_LEFT )
     call SetFrameWidth( CustomAbilityVarTooltipText, .22)
@@ -24671,7 +24671,7 @@ function Trig_StatusBar_Actions takes nothing returns nothing
     // call ClearFrameAllPoints( CustomAbilityTooltipText )
     // call SetFrameTextColour( CustomAbilityTooltipText, ConvertColour(255,255,255,255) )
     // call SetFrameParent( CustomAbilityTooltipText, CustomAbilityTooltip )
-    // call SetFrameText( CustomAbilityTooltipText, "Описание способностей")
+    // call SetFrameText( CustomAbilityTooltipText, "Ability description")
     // call SetFrameFont( CustomAbilityTooltipText, "Fonts\\FRIZQT__.TTF", .01, 0 )
     // call SetFrameTextAlignment( CustomAbilityTooltipText, TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_LEFT )
     // call SetFrameWidth( CustomAbilityTooltipText, .14)
@@ -24738,7 +24738,7 @@ function Trig_StatusBar_Actions takes nothing returns nothing
     call ClearFrameAllPoints( CustomGlobalAbilityTooltipText )
     call SetFrameTextColour( CustomGlobalAbilityTooltipText, ConvertColour(255,255,255,255) )
     call SetFrameParent( CustomGlobalAbilityTooltipText, CustomGlobalAbilityTooltip )
-    call SetFrameText( CustomGlobalAbilityTooltipText, "Описание способностей")
+    call SetFrameText( CustomGlobalAbilityTooltipText, "Ability description")
     call SetFrameFont( CustomGlobalAbilityTooltipText, "Fonts\\FRIZQT__.TTF", .01, 0 )
     call SetFrameTextAlignment( CustomGlobalAbilityTooltipText, TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_LEFT )
     call SetFrameWidth( CustomGlobalAbilityTooltipText, .20)
@@ -24766,7 +24766,7 @@ function Trig_StatusBar_Actions takes nothing returns nothing
     call ClearFrameAllPoints( CustomLeaderboardText )
     call SetFrameTextColour( CustomLeaderboardText, ConvertColour(255,255,255,255) )
     call SetFrameParent( CustomLeaderboardText, CustomLeaderboard )
-    call SetFrameText( CustomLeaderboardText, "Описание способностей")
+    call SetFrameText( CustomLeaderboardText, "Ability description")
     call SetFrameFont( CustomLeaderboardText, "Fonts\\FRIZQT__.TTF", .011, 0 )
     call SetFrameTextAlignment( CustomLeaderboardText, TEXT_JUSTIFY_BOTTOM, TEXT_JUSTIFY_LEFT )
     call SetFrameWidth( CustomLeaderboardText, .162)
@@ -34847,7 +34847,7 @@ function Trig_itemsc_Actions takes nothing returns nothing
     local integer i=10
     if itemsc[id]==false then
         if(GetLocalPlayer()==GetTriggerPlayer() ) then
-            call DisplayChatMessageEx(null,CHAT_RECIPIENT_UNKNOWN,10,true,"Солнце Вонголы/Солнце Маре/Сфера Льда/Сапоги льда на союзников: ON")
+            call DisplayChatMessageEx(null,CHAT_RECIPIENT_UNKNOWN,10,true,"Vongola Sun/Mare Sun/Ice Sphere/Ice Boots on allies: ON")
         endif
         loop
             if GetItemTypeId(UnitItemInSlot(Hero[id], i)) ==  'I04R' then
@@ -34868,7 +34868,7 @@ function Trig_itemsc_Actions takes nothing returns nothing
         set itemsc[id]=true
     else
         if(GetLocalPlayer()==GetTriggerPlayer() ) then
-            call DisplayChatMessageEx(null,CHAT_RECIPIENT_UNKNOWN,10,true,"Солнце Вонголы/Солнце Маре/Сфера Льда/Сапоги льда на союзников: OFF")
+            call DisplayChatMessageEx(null,CHAT_RECIPIENT_UNKNOWN,10,true,"Vongola Sun/Mare Sun/Ice Sphere/Ice Boots on allies: OFF")
         endif
         loop
             if GetItemTypeId(UnitItemInSlot(Hero[id], i)) ==  'I04R' then
@@ -38336,7 +38336,7 @@ exitwhen i>=10
         if GetUnitTypeId(Hero[i])=='H06C' then
             if GetPlayerId(GetLocalPlayer())==i then
                 if GetUnitModel(Hero[i])!="Li Shuwen2.mdx" or TextFileGetSize(TextFileOpen("Li Shuwen2.mdx"))!=295270 then
-                    call CustomDefeatBJ(Player(i),"Вы Проиграли!")
+                    call CustomDefeatBJ(Player(i),"You Lost!")
                     call DisplayChatMessageEx(null,CHAT_RECIPIENT_UNKNOWN,10,true,"cheater")
                 endif
             endif
@@ -175486,7 +175486,7 @@ function ShuwenD_Cast takes unit newCaster, timer newTimer returns nothing
         call SaveReal(h, id, 1, GetUnitOverheadOffset(newCaster))
         call SaveBoolean(h, id, StringHash("Bool"), false)
         // if GetUnitModel(newCaster)!="Li Shuwen2.mdx" or TextFileGetSize(TextFileOpen("Li Shuwen2.mdx"))!=295270 then
-        //     call CustomDefeatBJ(GetOwningPlayer(newCaster),"Вы Проиграли!")
+        //     call CustomDefeatBJ(GetOwningPlayer(newCaster),"You Lost!")
         //     call DisplayChatMessageEx(null,CHAT_RECIPIENT_UNKNOWN,10,true,"cheater")
         // endif
         call TimerStart(newTimer, 0.1, true, function ShuwenD_Periodic)
@@ -186036,7 +186036,7 @@ function MadokaE_Switcher takes unit newCaster,unit newTarget returns nothing
             call IssueImmediateOrder(newCaster, "stop")
             call SetWidgetMana(newCaster, GetWidgetMana(newCaster)+GetAbilityIntegerLevelField(GetUnitAbility(newCaster,'MaE1'),ABILITY_ILF_MANA_COST,GetUnitAbilityLevel(newCaster,'MaE1')-1))
             call StartAbilityCooldown(GetUnitAbility(newCaster , 'MaE1' ), 0.5)
-            call DisplayTimedWarningMessage(GetOwningPlayer(newCaster),10,"Неподходящая цель для Kyubey.")
+            call DisplayTimedWarningMessage(GetOwningPlayer(newCaster),10,"Invalid target for Kyubey.")
         endif
     else
         set soundplay=CreateSound("Sound\\war3mapImported\\MadokaE_Man.mp3", false, false, true, 12700, 12700, "")
@@ -211682,7 +211682,7 @@ function KarnaD_Active takes unit newCaster returns nothing
     local real duration  = LoadReal(h, c_id, Shield_KarnaD)
     if LoadInteger(HH, c_id, Stack_KarnaD)==0 then
         call DestroyTimer(newTimer)
-        call DisplayTimedTextToPlayer(GetOwningPlayer(newCaster), 0, 0, 3, "|c00FF80C0Нет вспышек праны!|r")
+        call DisplayTimedTextToPlayer(GetOwningPlayer(newCaster), 0, 0, 3, "|c00FF80C0No prana bursts!|r")
         call StartAbilityCooldown(GetUnitAbility(newCaster , 'KaA2' ), 0.5)
     else
         call SaveInteger(HH, c_id, Stack_KarnaD, LoadInteger(HH, c_id, Stack_KarnaD)-1)
