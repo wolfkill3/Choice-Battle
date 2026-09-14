@@ -22023,7 +22023,7 @@ endfunction
 function Alastor_Passive_Act takes nothing returns nothing
 local integer id=GetHandleId(GetExpiredTimer())
 local unit caster=LoadUnitHandle(HH,id,1)
-local real damage0= GetHeroLevel(caster)*5 + 25
+local real damage0= GetHeroLevel(caster)*10
 local group g=CreateGroup()
 local real x0=GetUnitX(caster)
 local real y0=GetUnitY(caster)
@@ -60082,7 +60082,7 @@ endfunction
 //UraharaDmgStart вЂ” РїРµСЂРµРЅРµСЃРµРЅРѕ РёР· Choice Random 4.5
 function Urahara_DMG takes unit u,real k returns real
 if GetUnitAbilityLevel(u,'UKD3')>0 then
-return k*I2R(GetHeroInt(u,true))
+return k*GetHeroInt(u,true)*0.5
 endif
 //else
 return 0.0
