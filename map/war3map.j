@@ -4214,7 +4214,7 @@ call DisableUnitAbility(whichUnit,abilCode,show,enable)
 endif
 endfunction
 function Tornado_Filter takes nothing returns boolean
-return IsPlayerEnemy(GetOwningPlayer(GetTriggerUnit()),GetOwningPlayer(GetFilterUnit()))and GetWidgetLife(GetFilterUnit())>0.405 and not IsUnitType(GetFilterUnit(),UNIT_TYPE_STRUCTURE)and not IsUnitType(GetFilterUnit(),UNIT_TYPE_FLYING) and GetUnitTypeId(GetFilterUnit())!='e0ZY' and GetUnitTypeId(GetFilterUnit())!='e0ZV'
+return IsPlayerEnemy(GetOwningPlayer(GetTriggerUnit()),GetOwningPlayer(GetFilterUnit()))and GetWidgetLife(GetFilterUnit())>0.405 and not IsUnitType(GetFilterUnit(),UNIT_TYPE_STRUCTURE)and not IsUnitType(GetFilterUnit(),UNIT_TYPE_FLYING) and GetUnitTypeId(GetFilterUnit())!='e0ZY' and GetUnitTypeId(GetFilterUnit())!='e0ZV'  and  GetUnitTypeId(GetFilterUnit())!='fSDL'
 endfunction
 function IH takes integer ui,unit u,string l__s returns nothing
 local multiboarditem mbitem
@@ -6489,7 +6489,7 @@ function Condition_BaseUBW takes player p,unit e returns boolean
 return IsUnitEnemy(e,p) and IsUnitType(e,UNIT_TYPE_DEAD)==false and IsUnitType(e,UNIT_TYPE_STRUCTURE)==false and 'dumm'!=GetUnitTypeId(e) and 'cdm1'!=GetUnitTypeId(e) and 'e16T'!=GetUnitTypeId(e) and 'h071'!=GetUnitTypeId(e) and UltimateDamage!=e and GetUnitTypeId(e)!='dM02'
 endfunction
 function BoolFrenda takes nothing returns boolean
-return(GetUnitTypeId(GetFilterUnit())=='FSDL' or GetUnitTypeId(GetFilterUnit())=='e0ZY' or GetUnitTypeId(GetFilterUnit())=='e0ZV')and GetUnitAbilityLevel(GetFilterUnit(),'B06J')==0 and IsUnitType(GetFilterUnit(),UNIT_TYPE_STRUCTURE)==false and GetUnitAbilityLevel(GetFilterUnit(),'A1C3')==0
+return(GetUnitTypeId(GetFilterUnit())=='fSDL' or GetUnitTypeId(GetFilterUnit())=='e0ZY' or GetUnitTypeId(GetFilterUnit())=='e0ZV')and GetUnitAbilityLevel(GetFilterUnit(),'B06J')==0 and IsUnitType(GetFilterUnit(),UNIT_TYPE_STRUCTURE)==false and GetUnitAbilityLevel(GetFilterUnit(),'A1C3')==0
 endfunction
 function BoolBugged takes nothing returns boolean
 return 'e12W'!=GetUnitTypeId(GetFilterUnit()) and 'n00G'!=GetUnitTypeId(GetFilterUnit()) and GetUnitTypeId(GetFilterUnit())!='h03J' and GetUnitTypeId(GetFilterUnit())!='h068' and GetUnitTypeId(GetFilterUnit())!='h04K' and GetUnitTypeId(GetFilterUnit())!='h046' and GetUnitTypeId(GetFilterUnit())!='h146' and GetUnitTypeId(GetFilterUnit())!='h246' and GetUnitTypeId(GetFilterUnit())!='h346' and GetUnitTypeId(GetFilterUnit())!='h446' and GetUnitTypeId(GetFilterUnit())!='h546' and GetUnitAbilityLevel(GetFilterUnit(),'Aloc')>0 and GetUnitAbilityLevel(GetFilterUnit(),'Pet0')==0 and GetUnitTypeId(GetFilterUnit())!='e11G'  and GetUnitTypeId(GetFilterUnit())!='h101' and GetUnitTypeId(GetFilterUnit())!='h102' and GetUnitTypeId(GetFilterUnit())!='h103' and GetUnitTypeId(GetFilterUnit())!='h104' and GetUnitTypeId(GetFilterUnit())!='h105' and GetUnitTypeId(GetFilterUnit())!='h106' and GetUnitTypeId(GetFilterUnit())!='h107' and GetUnitTypeId(GetFilterUnit())!='h108' and GetUnitTypeId(GetFilterUnit())!='h109'
@@ -6498,19 +6498,19 @@ function BaseFrendaBool takes nothing returns boolean
 return GetUnitAbilityLevel(GetFilterUnit(),'Aloc')==0 and 'dumm'!=GetUnitTypeId(GetFilterUnit()) and 'ewsp'!=GetUnitTypeId(GetFilterUnit()) and UltimateDamage!=GetFilterUnit() and GetUnitAbilityLevel(GetFilterUnit(),'IMDc')==0
 endfunction
 function BaseBoolGyudon takes nothing returns boolean
-return GetUnitAbilityLevel(GetFilterUnit(),'Aloc')==0 and IsUnitType(GetFilterUnit(),UNIT_TYPE_HERO)==true and IsUnitType(GetFilterUnit(),UNIT_TYPE_DEAD)==false and IsUnitType(GetFilterUnit(),UNIT_TYPE_STRUCTURE)==false and GetUnitTypeId(GetFilterUnit())!='e0ZY' and GetUnitTypeId(GetFilterUnit())!='e0ZV' and GetUnitAbilityLevel(GetFilterUnit(),'A0QL')==0 and 'dumm'!=GetUnitTypeId(GetFilterUnit()) and 'ewsp'!=GetUnitTypeId(GetFilterUnit()) and RectContainsUnit(gg_rct_AntiMh,GetFilterUnit())==false and UltimateDamage!=GetFilterUnit() and GetUnitAbilityLevel(GetFilterUnit(),'IMDc')==0
+return GetUnitAbilityLevel(GetFilterUnit(),'Aloc')==0 and IsUnitType(GetFilterUnit(),UNIT_TYPE_HERO)==true and IsUnitType(GetFilterUnit(),UNIT_TYPE_DEAD)==false and IsUnitType(GetFilterUnit(),UNIT_TYPE_STRUCTURE)==false and GetUnitTypeId(GetFilterUnit())!='fSDL' and GetUnitTypeId(GetFilterUnit())!='e0ZY' and GetUnitTypeId(GetFilterUnit())!='e0ZV' and GetUnitAbilityLevel(GetFilterUnit(),'A0QL')==0 and 'dumm'!=GetUnitTypeId(GetFilterUnit()) and 'ewsp'!=GetUnitTypeId(GetFilterUnit()) and RectContainsUnit(gg_rct_AntiMh,GetFilterUnit())==false and UltimateDamage!=GetFilterUnit() and GetUnitAbilityLevel(GetFilterUnit(),'IMDc')==0
 endfunction
 function BaseBool takes nothing returns boolean
-return GetUnitAbilityLevel(GetFilterUnit(),'Aloc')==0 and IsUnitType(GetFilterUnit(),UNIT_TYPE_DEAD)==false and IsUnitType(GetFilterUnit(),UNIT_TYPE_STRUCTURE)==false and GetUnitTypeId(GetFilterUnit())!='e0ZY' and GetUnitTypeId(GetFilterUnit())!='e0ZV' and GetUnitAbilityLevel(GetFilterUnit(),'A0QL')==0 and 'dumm'!=GetUnitTypeId(GetFilterUnit()) and 'ewsp'!=GetUnitTypeId(GetFilterUnit()) and RectContainsUnit(gg_rct_AntiMh,GetFilterUnit())==false and UltimateDamage!=GetFilterUnit() and GetUnitAbilityLevel(GetFilterUnit(),'IMDc')==0
+return GetUnitAbilityLevel(GetFilterUnit(),'Aloc')==0 and IsUnitType(GetFilterUnit(),UNIT_TYPE_DEAD)==false and IsUnitType(GetFilterUnit(),UNIT_TYPE_STRUCTURE)==false and GetUnitTypeId(GetFilterUnit())!='fSDL' and GetUnitTypeId(GetFilterUnit())!='e0ZY' and GetUnitTypeId(GetFilterUnit())!='e0ZV' and GetUnitAbilityLevel(GetFilterUnit(),'A0QL')==0 and 'dumm'!=GetUnitTypeId(GetFilterUnit()) and 'ewsp'!=GetUnitTypeId(GetFilterUnit()) and RectContainsUnit(gg_rct_AntiMh,GetFilterUnit())==false and UltimateDamage!=GetFilterUnit() and GetUnitAbilityLevel(GetFilterUnit(),'IMDc')==0
 endfunction
 function BaseBoolCat takes nothing returns boolean
-return GetUnitAbilityLevel(GetFilterUnit(),'Aloc')==0 and IsUnitType(GetFilterUnit(),UNIT_TYPE_DEAD)==false and IsUnitType(GetFilterUnit(),UNIT_TYPE_STRUCTURE)==false and GetUnitTypeId(GetFilterUnit())!='e0ZY' and GetUnitTypeId(GetFilterUnit())!='e0ZV' and GetUnitAbilityLevel(GetFilterUnit(),'A0QL')==0 and 'dumm'!=GetUnitTypeId(GetFilterUnit()) and 'ewsp'!=GetUnitTypeId(GetFilterUnit()) and 'e16T'!=GetUnitTypeId(GetFilterUnit()) and RectContainsUnit(gg_rct_AntiMh,GetFilterUnit())==false and UltimateDamage!=GetFilterUnit() and GetUnitAbilityLevel(GetFilterUnit(),'IMDc')==0
+return GetUnitAbilityLevel(GetFilterUnit(),'Aloc')==0 and IsUnitType(GetFilterUnit(),UNIT_TYPE_DEAD)==false and IsUnitType(GetFilterUnit(),UNIT_TYPE_STRUCTURE)==false and GetUnitTypeId(GetFilterUnit())!='fSDL' and GetUnitTypeId(GetFilterUnit())!='e0ZY' and GetUnitTypeId(GetFilterUnit())!='e0ZV' and GetUnitAbilityLevel(GetFilterUnit(),'A0QL')==0 and 'dumm'!=GetUnitTypeId(GetFilterUnit()) and 'ewsp'!=GetUnitTypeId(GetFilterUnit()) and 'e16T'!=GetUnitTypeId(GetFilterUnit()) and RectContainsUnit(gg_rct_AntiMh,GetFilterUnit())==false and UltimateDamage!=GetFilterUnit() and GetUnitAbilityLevel(GetFilterUnit(),'IMDc')==0
 endfunction
 function BaseBoolUBW takes nothing returns boolean
-return GetUnitAbilityLevel(GetFilterUnit(),'Aloc')==0 and IsUnitType(GetFilterUnit(),UNIT_TYPE_DEAD)==false and IsUnitType(GetFilterUnit(),UNIT_TYPE_STRUCTURE)==false and GetUnitTypeId(GetFilterUnit())!='e0ZY' and GetUnitTypeId(GetFilterUnit())!='e0ZV' and GetUnitAbilityLevel(GetFilterUnit(),'A0QL')==0 and 'dumm'!=GetUnitTypeId(GetFilterUnit()) and 'h04M'!=GetUnitTypeId(GetFilterUnit()) and UltimateDamage!=GetFilterUnit()
+return GetUnitAbilityLevel(GetFilterUnit(),'Aloc')==0 and IsUnitType(GetFilterUnit(),UNIT_TYPE_DEAD)==false and IsUnitType(GetFilterUnit(),UNIT_TYPE_STRUCTURE)==false and GetUnitTypeId(GetFilterUnit())!='fSDL' and GetUnitTypeId(GetFilterUnit())!='e0ZY' and GetUnitTypeId(GetFilterUnit())!='e0ZV' and GetUnitAbilityLevel(GetFilterUnit(),'A0QL')==0 and 'dumm'!=GetUnitTypeId(GetFilterUnit()) and 'h04M'!=GetUnitTypeId(GetFilterUnit()) and UltimateDamage!=GetFilterUnit()
 endfunction
 function BaseBoolUBW2 takes nothing returns boolean
-return GetUnitAbilityLevel(GetFilterUnit(),'Aloc')==0 and IsUnitType(GetFilterUnit(),UNIT_TYPE_DEAD)==false and IsUnitType(GetFilterUnit(),UNIT_TYPE_STRUCTURE)==false and GetUnitTypeId(GetFilterUnit())!='e0ZY' and GetUnitTypeId(GetFilterUnit())!='e0ZV' and 'dumm'!=GetUnitTypeId(GetFilterUnit()) and 'h04M'!=GetUnitTypeId(GetFilterUnit()) and UltimateDamage!=GetFilterUnit()
+return GetUnitAbilityLevel(GetFilterUnit(),'Aloc')==0 and IsUnitType(GetFilterUnit(),UNIT_TYPE_DEAD)==false and IsUnitType(GetFilterUnit(),UNIT_TYPE_STRUCTURE)==false and GetUnitTypeId(GetFilterUnit())!='fSDL' and GetUnitTypeId(GetFilterUnit())!='e0ZY' and GetUnitTypeId(GetFilterUnit())!='e0ZV' and 'dumm'!=GetUnitTypeId(GetFilterUnit()) and 'h04M'!=GetUnitTypeId(GetFilterUnit()) and UltimateDamage!=GetFilterUnit()
 endfunction
 function LvlBool takes nothing returns boolean
     return GetUnitTypeId(GetFilterUnit())=='h03J' or GetUnitTypeId(GetFilterUnit())=='h068' or GetUnitTypeId(GetFilterUnit())=='h04K' or GetUnitTypeId(GetFilterUnit())=='h046' or GetUnitTypeId(GetFilterUnit())=='h146' or GetUnitTypeId(GetFilterUnit())=='h246' or GetUnitTypeId(GetFilterUnit())=='h346' or GetUnitTypeId(GetFilterUnit())=='h446' or GetUnitTypeId(GetFilterUnit())=='h546'  or GetUnitTypeId(GetFilterUnit())=='h101' or GetUnitTypeId(GetFilterUnit())=='h102' or GetUnitTypeId(GetFilterUnit())=='h103' or GetUnitTypeId(GetFilterUnit())=='h104' or GetUnitTypeId(GetFilterUnit())=='h105' or GetUnitTypeId(GetFilterUnit())=='h106' or GetUnitTypeId(GetFilterUnit())=='h107' or GetUnitTypeId(GetFilterUnit())=='h108' or GetUnitTypeId(GetFilterUnit())=='h109'
@@ -112751,6 +112751,7 @@ local real y0=GetUnitY(Dummy)
 local real x1=LoadReal(HH,id,11)
 local real y1=LoadReal(HH,id,12)
 local real damage=LoadReal(HH,id,15)
+local group g=LoadGroupHandle(HH,id,30)
 set time=time+0.02
 call SaveReal(HH,id,5,time)
 if time>3.52 then
@@ -112789,6 +112790,7 @@ call MyRemoveUnit(LoadUnitHandle(HH,id,21),0.5)
 call MyRemoveUnit(LoadUnitHandle(HH,id,22),0.5)
 call MyRemoveUnit(LoadUnitHandle(HH,id,23),0.5)
 call SetUnitAnimationByIndex(LoadUnitHandle(HH,id,22),2)
+call DestroyGroup(g)
 call UnitSpeed(caster,1)
 call PauseTimer(GetExpiredTimer())
 call FlushChildHashtable(HH,id)
@@ -112905,15 +112907,15 @@ call GroupClear(G)
 
 
 
-call GroupClear(G)
+call GroupClear(g)
 
 
 
-call GroupEnumUnitsInRange(G,x0,y0,10000,null)
+call GroupEnumUnitsInRange(g,x0,y0,10000,null)
 
 
 loop
-set n0=FirstOfGroup(G)
+set n0=FirstOfGroup(g)
 exitwhen n0==null
 if IsUnitAlly(n0,GetOwningPlayer(caster))==true and IsUnitType(n0,UNIT_TYPE_HERO)==true then
 
@@ -112971,11 +112973,11 @@ endif
 
 
 
-call GroupRemoveUnit(G,n0)
+call GroupRemoveUnit(g,n0)
 endloop
 
 
-call GroupClear(G)
+call GroupClear(g)
 
 
 
@@ -112991,9 +112993,9 @@ call GroupClear(G)
 
 if time1==0.2 or time==0.02 then
 if time<0.5 then
-call DamageAoeAndStun(caster,GetUnitX(caster),GetUnitY(caster),400+time*1400,damage*0.07,0.5)
+call DamageAoeAndStun(caster,GetUnitX(caster),GetUnitY(caster),400+time*1400,damage*0.07,0.3)
 else
-call DamageAoeAndStun(caster,GetUnitX(caster),GetUnitY(caster),1200,damage*0.07,0.5)
+call DamageAoeAndStun(caster,GetUnitX(caster),GetUnitY(caster),1200,damage*0.07,0.3)
 endif
 endif
 if time==0.02 or time1>=0.2 then
@@ -113005,6 +113007,7 @@ endif
 set caster=null
 set gr=null
 set Dummy=null
+set g=null
 endfunction
 function Cell_T_Act takes unit caster returns nothing
 local timer t=CreateTimer()
@@ -113021,6 +113024,7 @@ call SaveGroupHandle(HH,id,4,CreateGroup())
 call SaveReal(HH,id,11,x0)
 call SaveReal(HH,id,12,y0)
 call SaveReal(HH,id,15,damage)
+call SaveGroupHandle(HH,id,30,CreateGroup())
 call TimerStart(t,0.02,true,function Cell_T_Act2)
 set t=null
 endfunction
@@ -113152,7 +113156,7 @@ local integer id=GetHandleId(t)
 local real x0=GetUnitX(caster)
 local real y0=GetUnitY(caster)
 local real facing=Angle2(x0,y0,x1,y1)
-local real damage=100+GetHeroInt(caster,true)*(2.5+GetUnitAbilityLevel(caster,'CelG')*0.5)
+local real damage=50+GetHeroInt(caster,true)*(1.25+GetUnitAbilityLevel(caster,'CelG')*0.75)
 call SaveUnitHandle(HH,id,1,caster)
 call SaveReal(HH,id,3,facing)
 call SaveGroupHandle(HH,id,4,CreateGroup())
@@ -113403,7 +113407,7 @@ local timer t=CreateTimer()
 local integer id=GetHandleId(t)
 local player p=GetOwningPlayer(u)
 local real a=Atan2(GetSpellTargetY()-y,GetSpellTargetX()-x)
-local real dmg=GetHeroInt(u,true)*(1.25+GetUnitAbilityLevel(u,'A10A')*0.75)+50
+local real dmg=GetHeroInt(u,true)*(1.5+GetUnitAbilityLevel(u,'A10A')*0.5)+50
 call SaveUnitHandle(h,id,0,u)
 call SaveUnitHandle(h,id,1,CreateUnit(p,'e0QW',x+80*Cos(a),y+80*Sin(a),f))
 call SaveGroupHandle(h,id,4,CreateGroup())
@@ -128997,7 +129001,7 @@ call TriggerAddCondition(gg_trg_Fatality,Condition(function FatalityCond))
 call TriggerAddAction(gg_trg_Fatality,function FatalityCast)
 endfunction
 function Trig_Lines_Conditions takes nothing returns boolean
-return GetUnitTypeId(GetTriggerUnit())=='e0ZV' or GetUnitTypeId(GetTriggerUnit())=='e0ZY' or GetUnitTypeId(GetTriggerUnit())=='FSDL'
+return GetUnitTypeId(GetTriggerUnit())=='e0ZV' or GetUnitTypeId(GetTriggerUnit())=='e0ZY' or GetUnitTypeId(GetTriggerUnit())=='fSDL'
 endfunction
 function Trig_Lines_Actions takes nothing returns nothing
 call IssueImmediateOrder(GetTriggerUnit(),"stop")
@@ -129062,7 +129066,7 @@ call GroupEnumUnitsInRange(g,x,y,400,BaseFrenda)
 loop
 set E=FirstOfGroup(g)
 exitwhen E==null
-if(GetUnitTypeId(E)=='FSDL' or GetUnitTypeId(E)=='e0ZY' or GetUnitTypeId(E)=='e0ZV')and GetUnitAbilityLevel(E,'A1C3')==0 then
+if(GetUnitTypeId(E)=='fSDL' or GetUnitTypeId(E)=='e0ZY' or GetUnitTypeId(E)=='e0ZV')and GetUnitAbilityLevel(E,'A1C3')==0 then
 call UnitAddAbility(E,'A1C3')
 call UnitApplyTimedLife(E,'BTLF',0.06)
 endif
@@ -129270,7 +129274,7 @@ call GroupEnumUnitsInRange(g,x1,y1,rad,BaseFrenda)
 loop
 set E=FirstOfGroup(g)
 exitwhen E==null
-if(GetUnitTypeId(E)=='FSDL' or GetUnitTypeId(E)=='e0ZY' or GetUnitTypeId(E)=='e0ZV')and GetUnitAbilityLevel(E,'A1C3')==0 then
+if(GetUnitTypeId(E)=='fSDL' or GetUnitTypeId(E)=='e0ZY' or GetUnitTypeId(E)=='e0ZV')and GetUnitAbilityLevel(E,'A1C3')==0 then
 call UnitAddAbility(E,'A1C3')
 call UnitApplyTimedLife(E,'BTLF',0.06)
 endif
@@ -129638,7 +129642,7 @@ call DestroyEffect(AddSpecialEffect("war3mapImported\\NewGroundEX.mdx",x,y))
 loop
 set E=FirstOfGroup(g)
 exitwhen E==null
-if(GetUnitTypeId(E)=='FSDL' or GetUnitTypeId(E)=='e0ZY' or GetUnitTypeId(E)=='e0ZV')and GetUnitAbilityLevel(E,'A1C3')==0 then
+if(GetUnitTypeId(E)=='fSDL' or GetUnitTypeId(E)=='e0ZY' or GetUnitTypeId(E)=='e0ZV')and GetUnitAbilityLevel(E,'A1C3')==0 then
 call UnitAddAbility(E,'A1C3')
 call UnitApplyTimedLife(E,'BTLF',0.06)
 endif
@@ -129673,7 +129677,7 @@ call DestroyEffect(AddSpecialEffect("Abilities\\Weapons\\GyroCopter\\GyroCopterM
 loop
 set E=FirstOfGroup(g)
 exitwhen E==null
-if(GetUnitTypeId(E)=='FSDL' or GetUnitTypeId(E)=='e0ZY' or GetUnitTypeId(E)=='e0ZV')and GetUnitAbilityLevel(E,'A1C3')==0 then
+if(GetUnitTypeId(E)=='fSDL' or GetUnitTypeId(E)=='e0ZY' or GetUnitTypeId(E)=='e0ZV')and GetUnitAbilityLevel(E,'A1C3')==0 then
 call UnitAddAbility(E,'A1C3')
 call UnitApplyTimedLife(E,'BTLF',0.06)
 endif
@@ -224442,7 +224446,7 @@ call GroupEnumUnitsInRange(G,pos_X,pos_Y,Aoe_0,BaseFrenda)
 loop
 set n0=FirstOfGroup(G)
 exitwhen n0==null
-if(GetUnitAbilityLevel(n0,'A1C3')==0 and GetUnitTypeId(n0)=='FSDL' or GetUnitTypeId(n0)=='e0ZY' or GetUnitTypeId(n0)=='e0ZV')or(UnitIsAlive(n0)and IsUnitEnemy(caster_0,GetOwningPlayer(n0))and GetUnitAbilityLevel(n0,'Avul')==0)then
+if(GetUnitAbilityLevel(n0,'A1C3')==0 and GetUnitTypeId(n0)=='fSDL' or GetUnitTypeId(n0)=='e0ZY' or GetUnitTypeId(n0)=='e0ZV')or(UnitIsAlive(n0)and IsUnitEnemy(caster_0,GetOwningPlayer(n0))and GetUnitAbilityLevel(n0,'Avul')==0)then
 set target_0=n0
 call GroupClear(G)
 endif
@@ -224484,10 +224488,10 @@ call GroupEnumUnitsInRange(G,x0,y0,500,BaseFrenda)
 loop
 set n0=FirstOfGroup(G)
 exitwhen n0==null
-if Dummy!=n0 and(GetUnitTypeId(n0)=='FSDL' or GetUnitTypeId(n0)=='e0ZY' or GetUnitTypeId(n0)=='e0ZV')and GetUnitAbilityLevel(n0,'A1C3')==0 then
+if Dummy!=n0 and(GetUnitTypeId(n0)=='fSDL' or GetUnitTypeId(n0)=='e0ZY' or GetUnitTypeId(n0)=='e0ZV')and GetUnitAbilityLevel(n0,'A1C3')==0 then
 call UnitAddAbility(n0,'A1C3')
 call UnitApplyTimedLife(n0,'BTLF',0.06)
-//if GetUnitTypeId(n0)=='FSDL' then
+//if GetUnitTypeId(n0)=='fSDL' then
 //call KillUnit(n0)
 //endif
 endif
@@ -224600,10 +224604,10 @@ exitwhen n0==null
 
 
 
-if Dummy!=n0 and(GetUnitTypeId(n0)=='FSDL' or GetUnitTypeId(n0)=='e0ZY' or GetUnitTypeId(n0)=='e0ZV')and GetUnitAbilityLevel(n0,'A1C3')==0 then
+if Dummy!=n0 and(GetUnitTypeId(n0)=='fSDL' or GetUnitTypeId(n0)=='e0ZY' or GetUnitTypeId(n0)=='e0ZV')and GetUnitAbilityLevel(n0,'A1C3')==0 then
 call UnitAddAbility(n0,'A1C3')
 call UnitApplyTimedLife(n0,'BTLF',0.06)
-//if GetUnitTypeId(n0)=='FSDL' then
+//if GetUnitTypeId(n0)=='fSDL' then
 //call KillUnit(n0)
 //endif
 endif
@@ -224654,7 +224658,7 @@ call UnitSpeed(caster,1)
 call PauseUnit(caster,false)
 set x0=PolX(GetUnitX(caster),100,facing)
 set y0=PolY(GetUnitY(caster),100,facing)
-set n0=CreateUnit(GetOwningPlayer(caster),'FSDL',x0,y0,facing)
+set n0=CreateUnit(GetOwningPlayer(caster),'fSDL',x0,y0,facing)
 call UnitAddAbility(n0,'A1C3')
 call SetUnitModel(n0,EffectID[2617])
 call UnitSpeed(n0,1)
