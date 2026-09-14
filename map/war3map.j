@@ -46172,7 +46172,7 @@ if nb>0 then
         call SaveReal(HH,cid,'AAcd',10)
     endif
     if GetUnitTypeId(u)=='H34X' or GetUnitTypeId(u)=='H14F' then
-        set nb=nb*12.5
+        set nb=nb*17.5
     endif
     call SetEventDamage(nb)
     if GetUnitAbilityLevel(u,'A4DF')>0 then
