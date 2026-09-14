@@ -22023,7 +22023,7 @@ endfunction
 function Alastor_Passive_Act takes nothing returns nothing
 local integer id=GetHandleId(GetExpiredTimer())
 local unit caster=LoadUnitHandle(HH,id,1)
-local real damage0= GetHeroLevel(caster)*15
+local real damage0= GetHeroLevel(caster)*5 + 25
 local group g=CreateGroup()
 local real x0=GetUnitX(caster)
 local real y0=GetUnitY(caster)
@@ -38334,14 +38334,6 @@ exitwhen i>=10
         call GroupRemoveUnit(G,E)
     endloop
     if Hero[i]!=null then
-        if GetUnitTypeId(Hero[i])=='H06C' then
-            if GetPlayerId(GetLocalPlayer())==i then
-                if GetUnitModel(Hero[i])!="Li Shuwen2.mdx" or TextFileGetSize(TextFileOpen("Li Shuwen2.mdx"))!=295270 then
-                    call CustomDefeatBJ(Player(i),"Вы Проиграли!")
-                    call DisplayChatMessageEx(null,CHAT_RECIPIENT_UNKNOWN,10,true,"cheater")
-                endif
-            endif
-        endif
         call SaveReal(HH,GetHandleId(Darkness[i]),StringHash("darkHP"),LoadReal(HH,GetHandleId(Darkness[i]),StringHash("darkMaxHP")))
         call SaveInteger(HH,GetHandleId(Hero[i]),StringHash("cold3"),1)
         call SaveBoolean(HH,GetHandleId(Hero[i]),SS,false)
@@ -38479,6 +38471,19 @@ exitwhen i>=10
                 set j=j-1
             endloop    
             call SaveInteger(HH,GetHandleId(GetOwningPlayer(Hero[i])),'ShSn',0)
+        endif
+        set j=12
+        if GetUnitTypeId(Hero[i])=='H06C' then
+            loop
+            exitwhen j==0
+                if GetPlayerId(GetLocalPlayer())==j then
+                    if GetUnitModel(Hero[i])!="Li Shuwen2.mdx" or TextFileGetSize(TextFileOpen("Li Shuwen2.mdx"))!=295270 then
+                        call CustomDefeatBJ(Player(j),"Вы Проиграли!")
+                        call DisplayChatMessageEx(null,CHAT_RECIPIENT_UNKNOWN,10,true,"cheater")
+                    endif
+                endif
+                set j=j-1
+            endloop
         endif
         //sabrac7start
         if GetUnitTypeId( Hero[i] )=='HSab' then //'H05Z' old sabrac
