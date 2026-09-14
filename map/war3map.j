@@ -54724,7 +54724,7 @@ set abgo[id]=gda[ra]
 set u=null
 endfunction
 function Trig_System_CAI_Conditions takes nothing returns boolean
-return GetLearnedSkill()=='A085'
+return GetLearnedSkill()=='A085' and IsUnitIllusion(GetTriggerUnit())==false
 endfunction
 function Trig_System_CAI_Actions takes nothing returns nothing
 local unit u=GetTriggerUnit()
@@ -56050,7 +56050,7 @@ set u=null
 set t=null
 endfunction
 function Trig_System_Yam_Conditions takes nothing returns boolean
-return GetLearnedSkill()=='A08J'
+return GetLearnedSkill()=='A08J' and IsUnitIllusion(GetTriggerUnit())==false
 endfunction
 function Trig_System_Yam_Actions takes nothing returns nothing
 local unit u=GetTriggerUnit()
@@ -56996,7 +56996,7 @@ call TriggerAddCondition(gg_trg_ShanaEnd,Condition(function ShanaEndCond))
 call TriggerAddAction(gg_trg_ShanaEnd,function ShanaEndCast)
 endfunction
 function Trig_Alastor_Flame_Conditions takes nothing returns boolean
-return GetLearnedSkill()==0x41303854
+return GetLearnedSkill()==0x41303854 and IsUnitIllusion(GetTriggerUnit())==false
 endfunction
 function Trig_Alastor_Flame_Actions2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
@@ -67207,7 +67207,7 @@ endfunction
 function PlasmaShotInit takes nothing returns nothing
 endfunction
 function Trig_DubleLearn_Conditions takes nothing returns boolean
-return GetLearnedSkill()=='A0H9'
+return GetLearnedSkill()=='A0H9' and IsUnitIllusion(GetTriggerUnit())==false
 endfunction
 function BattleHealing takes nothing returns nothing
 local timer t=GetExpiredTimer()
@@ -67984,7 +67984,7 @@ endfunction
 function SunshineUppercutInit takes nothing returns nothing
 endfunction
 function CambioEffectCond takes nothing returns boolean
-return GetLearnedSkill()=='A0HC'
+return GetLearnedSkill()=='A0HC' and IsUnitIllusion(GetTriggerUnit())==false
 endfunction
 function CambioEffectAct takes nothing returns nothing
 local timer t=GetExpiredTimer()
@@ -72771,7 +72771,7 @@ call TriggerAddCondition(t,Condition(function AutonomousUICond))
 set t=null
 endfunction
 function LearnKamehamehaCond takes nothing returns boolean
-return GetLearnedSkill()=='GKQ1'
+return GetLearnedSkill()=='GKQ1' and IsUnitIllusion(GetTriggerUnit())==false
 endfunction
 function LearnKamehamehaCast takes nothing returns nothing
     if LoadReal(HH,GetHandleId(GetOwningPlayer(Goku)),VariationQHash)==0 then
@@ -74941,7 +74941,7 @@ call TriggerAddCondition(t,Condition(function SolarFlareCond))
 set t=null
 endfunction
 function LearnKiMasteryCond takes nothing returns boolean
-return GetLearnedSkill()=='GKE1'
+return GetLearnedSkill()=='GKE1' and IsUnitIllusion(GetTriggerUnit())==false
 endfunction
 function LearnKiMasteryCast takes nothing returns nothing
 local unit u=GetTriggerUnit()
@@ -106506,7 +106506,7 @@ set u=null
 set l__d=null
 endfunction
 function AbsorptionOfCrimsonLordCond takes nothing returns boolean
-return GetLearnedSkill()=='A191'
+return GetLearnedSkill()=='A191' and IsUnitIllusion(GetTriggerUnit())==false
 endfunction
 function AbsorptionOfCrimsonLordCast takes nothing returns nothing
 local unit u=GetTriggerUnit()
@@ -109014,7 +109014,7 @@ call TriggerAddCondition(gg_trg_ChangeGodspeed,Condition(function ChangeGodspeed
 call TriggerAddAction(gg_trg_ChangeGodspeed,function ChangeGodspeedCast)
 endfunction
 function Godspeed3Cond takes nothing returns boolean
-return GetLearnedSkill()=='A0UU'
+return GetLearnedSkill()=='A0UU' and IsUnitIllusion(GetTriggerUnit())==false
 endfunction
 function Godspeed3Cast2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
@@ -110634,7 +110634,7 @@ call TriggerAddCondition(gg_trg_PressureCreation,Condition(function PressureCrea
 call TriggerAddAction(gg_trg_PressureCreation,function CastPressureCreation)
 endfunction
 function AuroraGuardCond takes nothing returns boolean
-return GetLearnedSkill()=='A0WF'
+return GetLearnedSkill()=='A0WF' and IsUnitIllusion(GetTriggerUnit())==false
 endfunction
 function AuroraGuardCast takes nothing returns nothing
 local unit u=GetTriggerUnit()
@@ -113445,7 +113445,7 @@ set p=null
 set t=null
 endfunction
 function DestructoLearnCond takes nothing returns boolean
-return GetLearnedSkill()=='A10A'
+return GetLearnedSkill()=='A10A' and IsUnitIllusion(GetTriggerUnit())==false
 endfunction
 function DestructoLearnCast takes nothing returns nothing
 local unit u=GetTriggerUnit()
@@ -192147,7 +192147,7 @@ set t=null
 set caster=null
 endfunction
 function HashiramaLearnE_Cond takes nothing returns boolean
-if GetLearnedSkill()=='HSE1' then
+if GetLearnedSkill()=='HSE1' and IsUnitIllusion(GetTriggerUnit())==false then
 return true
 else
 return false
