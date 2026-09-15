@@ -25781,15 +25781,15 @@ function Trig_StatusBar_Actions takes nothing returns nothing
                 endif
             endif
         endif
-        if StringTrim(GetPlayerName(Player(x)),true)=="Antitilt" or StringTrim(GetPlayerName(Player(x)),true)=="tenros" then
-            if GetPlayerId(GetLocalPlayer())==x then
-                if TextFileExists("Goky1.jpg") and TextFileGetSize(TextFileOpen("Goky1.jpg"))==12021 then
-                else
-                    call CustomDefeatBJ(Player(x),"Use your own nickname, IMPOSTER")
-                    call DisplayChatMessageEx(null,CHAT_RECIPIENT_UNKNOWN,10,true,"IMPOSTER")
-                endif
-            endif
-        endif
+        // if StringTrim(GetPlayerName(Player(x)),true)=="Antitilt" or StringTrim(GetPlayerName(Player(x)),true)=="tenros" then
+        //     if GetPlayerId(GetLocalPlayer())==x then
+        //         if TextFileExists("Goky1.jpg") and TextFileGetSize(TextFileOpen("Goky1.jpg"))==12021 then
+        //         else
+        //             call CustomDefeatBJ(Player(x),"Use your own nickname, IMPOSTER")
+        //             call DisplayChatMessageEx(null,CHAT_RECIPIENT_UNKNOWN,10,true,"IMPOSTER")
+        //         endif
+        //     endif
+        // endif
         if StringTrim(GetPlayerName(Player(x)),true)=="Scorpion_not_de" then
             if GetPlayerId(GetLocalPlayer())==x then
                 if TextFileExists("Scorpion.png") and TextFileGetSize(TextFileOpen("Scorpion.png"))==97579  then
@@ -48607,6 +48607,7 @@ local integer id=GetHandleId(t)
 local integer ids=GetSpellAbilityId()
 local player p=GetOwningPlayer(u)
 local real mana_burn = 0.0
+local real dmg=0
 call SaveUnitHandle(h,id,1,u)
 if ids=='A187' and GetUnitTypeId(GetTriggerUnit())!='H007'  and GetUnitAbilityLevel(GetTriggerUnit(),'GIE1')==0 then
 set n=CreateUnit(p,'e0A5',x,y,GetRandomReal(0,359))
@@ -48701,8 +48702,12 @@ loop
 set E=FirstOfGroup(DG)
 exitwhen E==null
 if Condition_Base(p,E)then
+set dmg=20*(2.5*GetHeroStr(E,true)-(GetHeroAgi(E,true)+GetHeroInt(E,true)))
+if dmg<0 then
+set dmg=0
+endif
 call Push3(E,50,Atan2(GetUnitY(E)-y,GetUnitX(E)-x),400,"Abilities\\Weapons\\AncientProtectorMissile\\AncientProtectorMissile.mdl")
-call myCustomDamage(u,E,GetUnitState(E,UNIT_STATE_MAX_LIFE)*0.35,false,false,null,null,null)
+call myCustomDamage(u,E,500+dmg,false,false,null,null,null)
 endif
 call GroupRemoveUnit(DG,E)
 endloop
@@ -193956,12 +193961,12 @@ call SaveReal(HH,id,3,facing)
 if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\SoundEng\\BlackGokuWGFeng.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+// call KillSoundWhenDone(soundplay)
 
 else
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\SoundJap\\BlackGokuWGF.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+// call KillSoundWhenDone(soundplay)
 
 endif
 call SetUnitAnimationByIndex(caster1,3)
@@ -194131,14 +194136,14 @@ if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
 
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\SoundEng\\BlackGokuEGFeng.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+// call KillSoundWhenDone(soundplay)
 
 else
 
 
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\SoundJap\\BlackGokuEGF.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+// call KillSoundWhenDone(soundplay)
 
 
 endif
@@ -194218,12 +194223,12 @@ if time==0.02 then
 if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\SoundEng\\BlackGokuRFeng.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+// call KillSoundWhenDone(soundplay)
 
 else
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\SoundJap\\BlackGokuRF.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+// call KillSoundWhenDone(soundplay)
 
 endif
 set facing=Angle2(x0,y0,x1,y1)
@@ -194282,12 +194287,12 @@ if time==2 then
 if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\SoundEng\\BlackGokuRF2eng.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+// call KillSoundWhenDone(soundplay)
 
 else
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\SoundJap\\BlackGokuRF2.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+// call KillSoundWhenDone(soundplay)
 
 endif
 call SetUnitAnimationByIndex(Dummy,0)
@@ -194401,12 +194406,12 @@ call SaveReal(HH,id,3,facing)
 if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\SoundEng\\BlackGokuEFeng.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+// call KillSoundWhenDone(soundplay)
 
 else
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\SoundJap\\BlackGokuEF.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+// call KillSoundWhenDone(soundplay)
 
 endif
 call SetUnitAnimationByIndex(caster1,3)
@@ -194490,13 +194495,13 @@ if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
 
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\SoundEng\\BlackGokuWF1-1eng.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+// call KillSoundWhenDone(soundplay)
 
 else
 
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\SoundJap\\BlackGokuWF1-1.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+// call KillSoundWhenDone(soundplay)
 
 endif
 call IssueImmediateOrder(Dummy,"stop")
@@ -194605,21 +194610,21 @@ if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
 
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\SoundEng\\BlackGokuQF-1eng.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+// call KillSoundWhenDone(soundplay)
 
 
 else
 
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\SoundJap\\BlackGokuQF-1.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+// call KillSoundWhenDone(soundplay)
 
 
 endif
 
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\SoundJap\\BlackGokuQF.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+// call KillSoundWhenDone(soundplay)
 
 
 call SetUnitAnimationByIndex(caster1,18)
@@ -194894,11 +194899,11 @@ else
         if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
             set soundplay=CreateSound("Sound\\Music\\mp3Music\\SoundEng\\BlackGokuT1-1eng.mp3",false,false,true,12700,12700,"")
             call StartSound(soundplay)
-            call KillSoundWhenDone(soundplay)
+            // call KillSoundWhenDone(soundplay)
         else
             set soundplay=CreateSound("Sound\\Music\\mp3Music\\SoundJap\\BlackGokuT1-1.mp3",false,false,true,12700,12700,"")
             call StartSound(soundplay)
-            call KillSoundWhenDone(soundplay)
+            // call KillSoundWhenDone(soundplay)
         endif
 
         set n0=CreateUnit(Player(12),GetUnitTypeId(caster),GetUnitX(caster),GetUnitY(caster),LoadReal(HH,id,3))
@@ -195000,16 +195005,16 @@ else
         if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
             set soundplay=CreateSound("Sound\\Music\\mp3Music\\SoundEng\\BlackGokuT2-1eng.mp3",false,false,true,12700,12700,"")
             call StartSound(soundplay)
-            call KillSoundWhenDone(soundplay)
+            // call KillSoundWhenDone(soundplay)
         else
             set soundplay=CreateSound("Sound\\Music\\mp3Music\\SoundJap\\BlackGokuT2-1.mp3",false,false,true,12700,12700,"")
             call StartSound(soundplay)
-            call KillSoundWhenDone(soundplay)
+            // call KillSoundWhenDone(soundplay)
         endif
 
         set soundplay=CreateSound("Sound\\Music\\mp3Music\\SoundJap\\BlackGokuT2.mp3",false,false,true,12700,12700,"")
         call StartSound(soundplay)
-        call KillSoundWhenDone(soundplay)
+        // call KillSoundWhenDone(soundplay)
 
         //call EffectCreateAndMove(true,"BlackGoku\\t_az_pafeathermoon_b_zi.mdl",facing,1,2,0.5,100,100,100,0,0,caster,0,facing)
         set n0=CreateUnit(Player(12),GetUnitTypeId(target),GetUnitX(target),GetUnitY(target),GetUnitFacing(target))
@@ -195082,18 +195087,18 @@ else
         if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
             set soundplay=CreateSound("Sound\\Music\\mp3Music\\SoundEng\\BlackGokuT3-3eng.mp3",false,false,true,12700,12700,"")
             call StartSound(soundplay)
-            call KillSoundWhenDone(soundplay)
+            // call KillSoundWhenDone(soundplay)
         else
             set soundplay=CreateSound("Sound\\Music\\mp3Music\\SoundJap\\BlackGokuT3-3.mp3",false,false,true,12700,12700,"")
             call StartSound(soundplay)
-            call KillSoundWhenDone(soundplay)
+            // call KillSoundWhenDone(soundplay)
         endif
     endif
 
     if time==23.5 then
         set soundplay=CreateSound("Sound\\Music\\mp3Music\\SoundJap\\BlackGokuW1.mp3",false,false,true,12700,12700,"")
         call StartSound(soundplay)
-        call KillSoundWhenDone(soundplay)
+        // call KillSoundWhenDone(soundplay)
 
         call EffectCreateAndMove(true,"BlackGoku\\fadespearpurple.mdl",facing,1,2,0.5,100,100,100,0,0,target,0,facing)
         call EffectCreateAndMove(true,"BlackGoku\\[doft]purpleaz-hit.mdl",facing,1,2,0.5,100,100,100,0,0,target,0,facing)
@@ -195328,7 +195333,7 @@ if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
 
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\SoundEng\\BlackGokuWG2-1eng.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+// call KillSoundWhenDone(soundplay)
 
 
 
@@ -195337,7 +195342,7 @@ else
 
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\SoundJap\\BlackGokuWG2-1.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+// call KillSoundWhenDone(soundplay)
 
 
 endif
@@ -195485,7 +195490,7 @@ endif
 
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\SoundJap\\BlackGokuW1.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+// call KillSoundWhenDone(soundplay)
 
 
 
@@ -195493,13 +195498,13 @@ call KillSoundWhenDone(soundplay)
 if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\SoundEng\\BlackGokuWG-1eng.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+// call KillSoundWhenDone(soundplay)
 
 else
 
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\SoundJap\\BlackGokuWG-1.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+// call KillSoundWhenDone(soundplay)
 
 endif
 call UnitSpeed(caster,1)
@@ -195515,7 +195520,7 @@ call SetUnitAnimation(target,"death")
 call UnitSpeed(target,0.5)
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\SoundJap\\BlackGokuW2.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+// call KillSoundWhenDone(soundplay)
 
 call EffectCreateAndMove(true,"BlackGoku\\BlackBlink1.mdl",facing,1,1,1,100,100,100,0,0,caster,0,facing)
 call EffectCreateAndMove(true,"BlackGoku\\WindCircleFaster.mdl",facing,1,1,1,100,100,100,40,0,caster,0,facing)
@@ -195785,11 +195790,11 @@ else
         if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
             set soundplay=CreateSound("Sound\\Music\\mp3Music\\SoundEng\\BlackGokuEG1-1eng.mp3",false,false,true,12700,12700,"")
             call StartSound(soundplay)
-            call KillSoundWhenDone(soundplay)
+            // call KillSoundWhenDone(soundplay)
         else
             set soundplay=CreateSound("Sound\\Music\\mp3Music\\SoundJap\\BlackGokuEG1-1.mp3",false,false,true,12700,12700,"")
             call StartSound(soundplay)
-            call KillSoundWhenDone(soundplay)
+            // call KillSoundWhenDone(soundplay)
         endif
         set facing=Angle2(GetUnitX(caster),GetUnitY(caster),GetUnitX(target),GetUnitY(target))
         call SaveReal(HH,id,3,facing)
@@ -195803,7 +195808,7 @@ else
         call EffectCreateAndMove90(true,"BlackGoku\\wind41.mdl",facing+180,1,1.25,0.75,100,100,100,0,100,caster,50,facing)
         set soundplay=CreateSound("Sound\\Music\\mp3Music\\SoundJap\\BlackGokuE1.mp3",false,false,true,12700,12700,"")
         call StartSound(soundplay)
-        call KillSoundWhenDone(soundplay)
+        // call KillSoundWhenDone(soundplay)
     endif
     if time==0.3 then
         call UnitSpeed(caster,0)
@@ -195876,11 +195881,11 @@ else
         if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
             set soundplay=CreateSound("Sound\\Music\\mp3Music\\SoundEng\\BlackGokuEG2-1eng.mp3",false,false,true,12700,12700,"")
             call StartSound(soundplay)
-            call KillSoundWhenDone(soundplay)
+            // call KillSoundWhenDone(soundplay)
         else
             set soundplay=CreateSound("Sound\\Music\\mp3Music\\SoundJap\\BlackGokuEG2-1.mp3",false,false,true,12700,12700,"")
             call StartSound(soundplay)
-            call KillSoundWhenDone(soundplay)
+            // call KillSoundWhenDone(soundplay)
         endif
 
     endif
@@ -195888,7 +195893,7 @@ else
     if time==20.6 then
         set soundplay=CreateSound("Sound\\Music\\mp3Music\\SoundJap\\BlackGokuEG4.mp3",false,false,true,12700,12700,"")
         call StartSound(soundplay)
-        call KillSoundWhenDone(soundplay)
+        // call KillSoundWhenDone(soundplay)
     endif
     if time==22 then
         call EffectCreateAndMove(true,"BlackGoku\\tg_az_pafeathermoon_b_bai.mdl",facing,1,1.5,0.75,100,100,100,0,50,caster,0,facing)
@@ -195897,17 +195902,17 @@ else
         call UnitSpeed(caster,1.5)
         set soundplay=CreateSound("Sound\\Music\\mp3Music\\SoundJap\\BlackGokuEG5.mp3",false,false,true,12700,12700,"")
         call StartSound(soundplay)
-        call KillSoundWhenDone(soundplay)
+        // call KillSoundWhenDone(soundplay)
     endif
     if time==22.5 then
         if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
             set soundplay=CreateSound("Sound\\Music\\mp3Music\\SoundEng\\BlackGokuEG6-1eng.mp3",false,false,true,12700,12700,"")
             call StartSound(soundplay)
-            call KillSoundWhenDone(soundplay)
+            // call KillSoundWhenDone(soundplay)
         else
             set soundplay=CreateSound("Sound\\Music\\mp3Music\\SoundJap\\BlackGokuEG6-1.mp3",false,false,true,12700,12700,"")
             call StartSound(soundplay)
-            call KillSoundWhenDone(soundplay)
+            // call KillSoundWhenDone(soundplay)
         endif
     endif
 
@@ -195915,7 +195920,7 @@ else
         call SetUnitAnimation(target,"Death")
         set soundplay=CreateSound("Sound\\Music\\mp3Music\\SoundJap\\BlackGokuEG6.mp3",false,false,true,12700,12700,"")
         call StartSound(soundplay)
-        call KillSoundWhenDone(soundplay)
+        // call KillSoundWhenDone(soundplay)
     endif
     if time>20 and time<20.5 then
         call MoveUnit(target,target,30,facing)
@@ -195989,7 +195994,7 @@ call EffectCreateAndMove(true,"BlackGoku\\az_siwen2.mdl",facing,1.5,1.5,0.6,100,
 
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\SoundJap\\BlackGokuQG2.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+// call KillSoundWhenDone(soundplay)
 
 call GroupClear(G)
 call GroupEnumUnitsInRange(G,x0,y0,500,Base)
@@ -196014,13 +196019,13 @@ if time==0.02 then
 if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\SoundEng\\BlackGokuQG1-1eng.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+// call KillSoundWhenDone(soundplay)
 
 else
 
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\SoundJap\\BlackGokuQG1-1.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+// call KillSoundWhenDone(soundplay)
 
 
 endif
@@ -196155,11 +196160,11 @@ call SetUnitAnimationByIndex(caster1,10)
 if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\SoundEng\\BlackGokuQGF-1eng.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+// call KillSoundWhenDone(soundplay)
 else
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\SoundJap\\BlackGokuQGF-1.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+// call KillSoundWhenDone(soundplay)
 endif
 
 call EffectCreateAndMove(true,"BlackGoku\\BYmutou_huozhu_zise1.mdl",facing,1.5,0.75,1,100,100,100,0,-50,caster1,0,facing)
@@ -196268,7 +196273,7 @@ endif
 
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\SoundJap\\BlackGokuR3.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+// call KillSoundWhenDone(soundplay)
 
 call UnitSpeed(caster,1)
 call DamageAoeOneTime0(caster,x0,y0,500,(LoadReal(HH,id,15)+0.01)*GetHeroAgi(caster,true))
@@ -196431,16 +196436,16 @@ call KillSoundWhenDone(LoadSoundHandle(HH,id,25))
 if LoadBoolean(HH,GetHandleId(GetLocalPlayer()), SOUND_LANGUAGE )==true then
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\SoundEng\\BlackGokuR2-1eng.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+// call KillSoundWhenDone(soundplay)
 else
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\SoundJap\\BlackGokuR2-1.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+// call KillSoundWhenDone(soundplay)
 endif
 
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\SoundJap\\BlackGokuR2.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+// call KillSoundWhenDone(soundplay)
 
 call UnitSpeed(caster,3)
 set n0=CreateUnit(GetOwningPlayer(caster),'e200',GetUnitX(caster),GetUnitY(caster),facing)
@@ -196690,11 +196695,11 @@ else
         if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
             set soundplay=CreateSound("Sound\\Music\\mp3Music\\SoundEng\\BlackGokuE1-1eng.mp3",false,false,true,12700,12700,"")
             call StartSound(soundplay)
-            call KillSoundWhenDone(soundplay)
+            // call KillSoundWhenDone(soundplay)
         else
             set soundplay=CreateSound("Sound\\Music\\mp3Music\\SoundJap\\BlackGokuE1-1.mp3",false,false,true,12700,12700,"")
             call StartSound(soundplay)
-            call KillSoundWhenDone(soundplay)
+            // call KillSoundWhenDone(soundplay)
         endif
         set facing=Angle2(GetUnitX(caster),GetUnitY(caster),GetUnitX(target),GetUnitY(target))
         call SaveReal(HH,id,3,facing)
@@ -196711,7 +196716,7 @@ else
 
         set soundplay=CreateSound("Sound\\Music\\mp3Music\\SoundJap\\BlackGokuE1.mp3",false,false,true,12700,12700,"")
         call StartSound(soundplay)
-        call KillSoundWhenDone(soundplay)
+        // call KillSoundWhenDone(soundplay)
         if GetRandomInt(1,2)==1 then
             call SetUnitAnimationByIndex(caster,42)
         else
@@ -196988,12 +196993,12 @@ else
         if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
             set soundplay=CreateSound("Sound\\Music\\mp3Music\\SoundEng\\BlackGokuE2-1eng.mp3",false,false,true,12700,12700,"")
             call StartSound(soundplay)
-            call KillSoundWhenDone(soundplay)
+            // call KillSoundWhenDone(soundplay)
 
         else
             set soundplay=CreateSound("Sound\\Music\\mp3Music\\SoundJap\\BlackGokuE2-1.mp3",false,false,true,12700,12700,"")
             call StartSound(soundplay)
-            call KillSoundWhenDone(soundplay)
+            // call KillSoundWhenDone(soundplay)
 
         endif
     endif
@@ -197062,7 +197067,7 @@ else
         call UnitSpeed(caster,1.5)
         set soundplay=CreateSound("Sound\\Music\\mp3Music\\SoundJap\\BlackGokuE3.mp3",false,false,true,12700,12700,"")
         call StartSound(soundplay)
-        call KillSoundWhenDone(soundplay)
+        // call KillSoundWhenDone(soundplay)
 
     endif
     if time==21.3 then
@@ -197070,7 +197075,7 @@ else
         call SetUnitAnimationByIndex(caster,43)
         set soundplay=CreateSound("Sound\\Music\\mp3Music\\SoundJap\\BlackGokuE4.mp3",false,false,true,12700,12700,"")
         call StartSound(soundplay)
-        call KillSoundWhenDone(soundplay)
+        // call KillSoundWhenDone(soundplay)
     endif
     if time>21.3 then
         set time1=time1+0.02
@@ -197169,13 +197174,13 @@ call SetUnitPathing(caster,true)
 if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\SoundEng\\BlackGokuW5-1eng.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+// call KillSoundWhenDone(soundplay)
 
 else
 
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\SoundJap\\BlackGokuW5-1.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+// call KillSoundWhenDone(soundplay)
 
 
 endif
@@ -197290,11 +197295,11 @@ call KillSoundWhenDone(soundplay)
 if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\SoundEng\\BlackGokuW1-1eng.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+// call KillSoundWhenDone(soundplay)
 else
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\SoundJap\\BlackGokuW1-1.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+// call KillSoundWhenDone(soundplay)
 endif
 
 call MoveUnit(target,caster,150,GetRandomReal(0,360))
@@ -197322,7 +197327,7 @@ call SetUnitAnimation(target,"death")
 call UnitSpeed(target,0.5)
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\SoundJap\\BlackGokuW2.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+// call KillSoundWhenDone(soundplay)
 
 endif
 if time>0.1 and time<0.8 then
@@ -197337,7 +197342,7 @@ endif
 call UnitSpeed(caster,0.75)
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\SoundJap\\BlackGokuW3.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+// call KillSoundWhenDone(soundplay)
 
 
 endif
@@ -197354,7 +197359,7 @@ if time==0.8 then
 call SaveInteger(HH,id,22,GetRandomInt(1,2))
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\SoundJap\\BlackGokuW4.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+// call KillSoundWhenDone(soundplay)
 
 
 endif
@@ -197557,11 +197562,11 @@ call EffectCreateAndMove(true,"BlackGoku\\WindCircleFaster.mdl",facing,1,1,1,100
 if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\SoundEng\\BlackGokuQ1-1eng.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+// call KillSoundWhenDone(soundplay)
 else
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\SoundJap\\BlackGokuQ1-1.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+// call KillSoundWhenDone(soundplay)
 
 
 endif
@@ -197577,7 +197582,7 @@ if time==0.2 then
 
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\SoundJap\\BlackGokuQ2.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+// call KillSoundWhenDone(soundplay)
 
 
 endif
@@ -197846,14 +197851,14 @@ if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
 
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\SoundEng\\BlackGokuFeng.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+// call KillSoundWhenDone(soundplay)
 
 
 else
 
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\SoundJap\\BlackGokuF.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+// call KillSoundWhenDone(soundplay)
 
 endif
 else
@@ -197861,13 +197866,13 @@ if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
 
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\SoundEng\\BlackGokuF2eng.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+// call KillSoundWhenDone(soundplay)
 
 else
 
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\SoundJap\\BlackGokuF2.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+// call KillSoundWhenDone(soundplay)
 
 endif
 endif
@@ -197892,7 +197897,7 @@ if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
 
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\SoundEng\\BlackGokuGnext_eng.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+// call KillSoundWhenDone(soundplay)
 
 
 
@@ -197900,7 +197905,7 @@ else
 
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\SoundJap\\BlackGokuGnext.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+// call KillSoundWhenDone(soundplay)
 
 
 
@@ -197919,7 +197924,7 @@ if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
 
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\SoundEng\\BlackGokuGfirst_eng.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+// call KillSoundWhenDone(soundplay)
 
 else
 
@@ -197927,7 +197932,7 @@ else
 
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\SoundJap\\BlackGokuGfirst.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+// call KillSoundWhenDone(soundplay)
 
 endif
 call TimerStart(t,0.02,true,function BlackGokuGAct)
@@ -225163,7 +225168,7 @@ call SetUnitFlyHeight(LoadUnitHandle(HH,id,20),GetUnitFlyHeight(target)+150,0)
 
 
 
-if GetUnitState(target,UNIT_STATE_LIFE)<=GetUnitState(target,UNIT_STATE_MAX_LIFE)*(0.1+0.05*GetUnitAbilityLevel(target,'BuuC')) then
+if GetUnitState(target,UNIT_STATE_LIFE)<=GetUnitState(target,UNIT_STATE_MAX_LIFE)*(0.05+0.05*GetUnitAbilityLevel(target,'BuuC')) then
 call SaveReal(HH,id,5,10)
 call SaveBoolean(HH,id,19,true)
 endif
@@ -225192,7 +225197,7 @@ local real y0=GetUnitY(caster)
 local real x1=GetUnitX(target)
 local real y1=GetUnitY(target)
 local real facing=Angle2(x0,y0,x1,y1)
-local real buuDmg=GetHeroStr(caster,true)*(0.5+0.1*GetUnitAbilityLevel(caster,'BuuG'))
+local real buuDmg=GetHeroStr(caster,true)*(0.3+0.1*GetUnitAbilityLevel(caster,'BuuG'))
 call SaveUnitHandle(HH,id,1,caster)
 call SaveUnitHandle(HH,id,2,target)
 call SaveReal(HH,id,3,facing)
