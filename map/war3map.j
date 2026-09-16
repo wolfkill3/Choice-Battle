@@ -70785,7 +70785,7 @@ function PowerDownGoku takes nothing returns nothing
     set p=null
 endfunction
 function PowerUpGokuCond takes nothing returns boolean
-return (GetSpellAbilityId()=='GKBS' or GetSpellAbilityId()=='GKBB' or GetSpellAbilityId()=='GKBI' or GetSpellAbilityId()=='GKSS' or GetSpellAbilityId()=='GKS2' or GetSpellAbilityId()=='GKS3' or GetSpellAbilityId()=='GKS4' or GetSpellAbilityId()=='GKSR' or GetSpellAbilityId()=='GKSB' or GetSpellAbilityId()=='GKUI' or GetSpellAbilityId()=='GKMI') and udg_B==true
+return (GetSpellAbilityId()=='GKBS' or GetSpellAbilityId()=='GKBB' or GetSpellAbilityId()=='GKBI' or GetSpellAbilityId()=='GKSS' or GetSpellAbilityId()=='GKS2' or GetSpellAbilityId()=='GKS3' or GetSpellAbilityId()=='GKS4' or GetSpellAbilityId()=='GKSR' or GetSpellAbilityId()=='GKSB' or GetSpellAbilityId()=='GKUI' or GetSpellAbilityId()=='GKMI') and udg_B==true and IsAbilityEnabled(GetUnitAbility(GetTriggerUnit(),'GKF1'))
 endfunction
 function PowerUpGokuCast2 takes nothing returns nothing
     local timer t=GetExpiredTimer()
