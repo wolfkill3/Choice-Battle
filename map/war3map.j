@@ -6298,6 +6298,51 @@ function LastDamageIndicator takes nothing returns nothing
 	endloop
 endfunction
 
+function W3mmdPlayercheck takes unit u returns nothing
+    local integer i = GetPlayerId(GetOwningPlayer(u))
+    local player p=GetOwningPlayer(u)
+    local integer id = GetHandleId(p)
+    local real total_damage   = LoadReal(HH, id, TD_INDICATOR)
+    local real tanked_damage  = LoadReal(HH, id, TTD_INDICATOR)
+    local real hero_damage    = LoadReal(HH, id, HD_INDICATOR)
+    local real general_resist = LoadReal(HH, id, GR_INDICATOR)
+    local real shield 		   = LoadReal(HH, id, TS_INDICATOR)
+    local real HealSelf    = LoadReal(HH, id, TSH_INDICATOR)
+    local real HealAlly    = LoadReal(HH, id, TAH_INDICATOR)
+    local real MPSelf      = LoadReal(HH, id, TSM_INDICATOR)
+    local real MPAlly      = LoadReal(HH, id, TAM_INDICATOR)
+
+
+
+    call W3MMD_Lite_Set_Integer(p,"Kill",udg_kill[ i ] )
+    call W3MMD_Lite_Set_Integer(p,"Death",udg_death[ i ] )
+    call W3MMD_Lite_Set_Integer(p,"Assist",udg_assist[ i ] )
+
+    call W3MMD_Lite_Set_Integer(p,"Damage",R2I(total_damage) )
+    call W3MMD_Lite_Set_Integer(p,"Tanked",R2I(tanked_damage))
+    call W3MMD_Lite_Set_Integer(p,"Resist",R2I(general_resist))
+    call W3MMD_Lite_Set_Integer(p,"Shield",R2I(shield))
+    call W3MMD_Lite_Set_Integer(p,"HealSelf",R2I(HealSelf))
+    call W3MMD_Lite_Set_Integer(p,"HealAlly",R2I(HealAlly))
+    call W3MMD_Lite_Set_Integer(p,"MPSelf",R2I(MPSelf))
+    call W3MMD_Lite_Set_Integer(p,"MPAlly",R2I(MPAlly))
+
+
+
+    call W3MMD_Lite_Set_Integer(p,"Slot1", GetItemTypeId(UnitItemInSlot(udg_Hero[i+1],0) ))
+    call W3MMD_Lite_Set_Integer(p,"Slot2", GetItemTypeId(UnitItemInSlot(udg_Hero[i+1],1) ))
+    call W3MMD_Lite_Set_Integer(p,"Slot3", GetItemTypeId(UnitItemInSlot(udg_Hero[i+1],2) ))
+    call W3MMD_Lite_Set_Integer(p,"Slot4", GetItemTypeId(UnitItemInSlot(udg_Hero[i+1],3) ))
+    call W3MMD_Lite_Set_Integer(p,"Slot5", GetItemTypeId(UnitItemInSlot(udg_Hero[i+1],4) ))
+    call W3MMD_Lite_Set_Integer(p,"Slot6", GetItemTypeId(UnitItemInSlot(udg_Hero[i+1],5) ))
+    call W3MMD_Lite_Set_Integer(p,"Slot7", GetItemTypeId(UnitItemInSlot(udg_Hero[i+1],6) ))
+    call W3MMD_Lite_Set_Integer(p,"Slot8", GetItemTypeId(UnitItemInSlot(udg_Hero[i+1],7) ))
+    call W3MMD_Lite_Set_Integer(p,"Slot9", GetItemTypeId(UnitItemInSlot(udg_Hero[i+1],8) ))
+    call W3MMD_Lite_Set_Integer(p,"Slot10", GetItemTypeId(UnitItemInSlot(udg_Hero[i+1],9) ))
+
+    set p=null
+endfunction
+
 function DamageIndicatorForAll_Cond takes nothing returns boolean
         return true
 endfunction
@@ -12607,6 +12652,7 @@ function OnButtonPickHeroId takes nothing returns nothing
                 call SetFrameTexture( GetFrameByName("TavernCMHero",Globalpick), GetFrameTexture(TavernPickedHeroFrame[GetPlayerId(p)],0), 2, true )
                 if cmb==false then
                 call DisplayChatMessageEx(null,CHAT_RECIPIENT_UNKNOWN,10,true,GetUnitBaseStringFieldById(RH_Force[TavernHeroId[GetPlayerId(p)]],UNIT_SF_NAME)+" был забанен "+GetPlayerName(p)+"!")
+                call W3MMD_Lite_Set_Integer(p,"Ban_hero", HeroSkin(udg_Hero[GetPlayerId(p)+1]) )
                 else
                 call CreateUnit(Player(GetPlayerId(p)),udg_RH[TavernHeroId[GetPlayerId(p)]],GetRectCenterX(gg_rct_Rect1),GetRectCenterY(gg_rct_Rect1),0)
                 endif
@@ -28181,6 +28227,7 @@ if cmb!=true then
             call SetPlayerStateBJ(GetOwningPlayer(u),PLAYER_STATE_FOOD_CAP_CEILING,0)
             call SetPlayerStateBJ(GetOwningPlayer(u),PLAYER_STATE_RESOURCE_FOOD_CAP,0)
             call DisplayChatMessageEx(null,CHAT_RECIPIENT_UNKNOWN,10,true,GetUnitName(u)+" был забанен "+GetPlayerName(GetOwningPlayer(u))+"!")
+            call W3MMD_Lite_Set_Integer(GetOwningPlayer(u),"Ban_hero", HeroSkin(u) )
             // call AddFrameText(TavernChat,GetUnitName(u)+" был забанен "+GetPlayerName(GetOwningPlayer(u))+"!")
             set bonus_repick[id]=0
         endif
@@ -36887,6 +36934,7 @@ function EndOfChoiceAct takes nothing returns nothing
         endif
         set lucy[i]=false
         call CreateFogModifierRect(Player(i),FOG_OF_WAR_FOGGED,gg_rct_GameZone,true,true)
+        call W3mmdPlayercheck(Hero[i])
         call UnitRemoveAbility(Hero[i],'BOhx')
         call UnitRemoveAbility(Hero[i],'BO3E')
         call UnitRemoveAbility(Hero[i],'A0QL')
@@ -72272,6 +72320,20 @@ else
     endif
     call UnitEnableMovement(u,true,false)
     call UnitEnableAttack(u,true,false)
+    call EnableUnitAbility2(u,'GKW1',false,true)
+    call EnableUnitAbility2(u,'GKW5',false,true)
+    call EnableUnitAbility2(u,'GKE2',false,true)
+    call EnableUnitAbility2(u,'GKE3',false,true)
+    call EnableUnitAbility2(u,'GKE4',false,true)
+    call EnableUnitAbility2(u,'GKE5',false,true)
+    call EnableUnitAbility2(u,'GKE6',false,true)
+    call EnableUnitAbility2(u,'GKR1',false,true)
+    call EnableUnitAbility2(u,'GKT1',false,true)
+    call EnableUnitAbility2(u,'GKF1',false,true)
+    call EnableUnitAbility2(u,'GKG1',false,true)
+    call EnableUnitAbility2(u,'GKG6',false,true)
+    call EnableUnitAbility2(u,'GKG7',false,true)
+    call UnitEnableInventoryCustom(u,true,false )
     call RemoveUnit(dummy)
     call FlushChildHashtable(h,id)
     call PauseTimer(t)
@@ -72336,6 +72398,19 @@ call SetTextTagPosUnit(l__txt,u,700)
 call SetTextTagColor(l__txt,180,180,255,255)
 call SetTextTagPermanent(l__txt,true)
 call SaveTextTagHandle(h,id,12,l__txt)
+call DisableUnitAbility2(u,'GKE2',false,true)
+call DisableUnitAbility2(u,'GKE3',false,true)
+call DisableUnitAbility2(u,'GKE4',false,true)
+call DisableUnitAbility2(u,'GKE5',false,true)
+call DisableUnitAbility2(u,'GKE6',false,true)
+call DisableUnitAbility2(u,'GKW1',false,true)
+call DisableUnitAbility2(u,'GKW5',false,true)
+call DisableUnitAbility2(u,'GKT1',false,true)
+call DisableUnitAbility2(u,'GKF1',false,true)
+call DisableUnitAbility2(u,'GKG1',false,true)
+call DisableUnitAbility2(u,'GKG6',false,true)
+call DisableUnitAbility2(u,'GKG7',false,true)
+call UnitEnableInventoryCustom(u,false,false )
 call TimerStart(t,0.05,true,function SpiritBombCast2)
 set u=null
 set l__txt=null
@@ -239287,7 +239362,39 @@ call CheckAngleDummyInit()
 call W3MMD_Lite_Register_Integer("Picked_hero")
 call W3MMD_Lite_Register_Integer("Rounds_to_win")
 call W3MMD_Lite_Register_Integer("Won_rounds")
+
 call W3MMD_Lite_Register_String("Game_Mode")
+
+
+
+call W3MMD_Lite_Register_Integer("Kill")
+call W3MMD_Lite_Register_Integer("Death")
+call W3MMD_Lite_Register_Integer("Assist")
+
+
+call W3MMD_Lite_Register_Integer("Damage")
+call W3MMD_Lite_Register_Integer("Tanked")
+call W3MMD_Lite_Register_Integer("Resist")
+call W3MMD_Lite_Register_Integer("Shield")
+call W3MMD_Lite_Register_Integer("HealSelf")
+call W3MMD_Lite_Register_Integer("HealAlly")
+call W3MMD_Lite_Register_Integer("MPSelf")
+call W3MMD_Lite_Register_Integer("MPAlly")
+
+
+
+call W3MMD_Lite_Register_Integer("Slot1")
+call W3MMD_Lite_Register_Integer("Slot2")
+call W3MMD_Lite_Register_Integer("Slot3")
+call W3MMD_Lite_Register_Integer("Slot4")
+call W3MMD_Lite_Register_Integer("Slot5")
+call W3MMD_Lite_Register_Integer("Slot6")
+call W3MMD_Lite_Register_Integer("Slot7")
+call W3MMD_Lite_Register_Integer("Slot8")
+call W3MMD_Lite_Register_Integer("Slot9")
+call W3MMD_Lite_Register_Integer("Slot10")
+
+call W3MMD_Lite_Register_Integer("Ban_hero")
 set i=0
 loop
 exitwhen i>9
