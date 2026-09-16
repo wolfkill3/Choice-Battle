@@ -71349,7 +71349,7 @@ local real x1=GetUnitX(c)
 local real y1=GetUnitY(c)
 local real a=Atan2(y1-y,x1-x)
 local real dist=SR(x,y,x1,y1)
-if GetWidgetLife(c)>0 and GetWidgetLife(u)>0 and (time<4 or time2>0) then
+if GetWidgetLife(c)>0 and GetWidgetLife(u)>0 and (time<4 or time2>0) and udg_B and DU2 then
     call SetUnitInvulnerable(u,true)
     call PauseUnit(u,true)
     call SetUnitFacingInstant(u,a*bj_RADTODEG)
