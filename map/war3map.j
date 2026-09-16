@@ -1980,6 +1980,42 @@ function myCustomDamage takes unit whichUnit, unit target, real amount, boolean 
     //      endif
     //endif
 endfunction
+function myCustomDamageTimed2 takes nothing returns nothing
+local timer t=GetExpiredTimer()
+local integer id=GetHandleId(t)
+local unit whichUnit=LoadUnitHandle(HH,id,0)
+local unit target=LoadUnitHandle(HH,id,1)
+local real amount=LoadReal(HH,id,2)
+local boolean attack=LoadBoolean(HH,id,3)
+local boolean ranged=LoadBoolean(HH,id,4)
+local attacktype attackType=LoadAttackTypeHandle(HH,id,5)
+local damagetype damageType=LoadDamageTypeHandle(HH,id,6)
+local weapontype weaponType=LoadWeaponTypeHandle(HH,id,7)
+call myCustomDamage(whichUnit,target,amount,attack,ranged,attackType,damageType,weaponType)
+call PauseTimer(t)
+call DestroyTimer(t)
+call FlushChildHashtable(HH,id)
+set t=null
+set whichUnit=null
+set target=null
+set attackType=null
+set damageType=null
+set weaponType=null
+endfunction
+function myCustomDamageTimed takes unit whichUnit, unit target, real amount, boolean attack, boolean ranged, attacktype attackType, damagetype damageType, weapontype weaponType, real time0 returns nothing
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+call SaveUnitHandle(HH,id,0,whichUnit)
+call SaveUnitHandle(HH,id,1,target)
+call SaveReal(HH,id,2,amount)
+call SaveBoolean(HH,id,3,attack)
+call SaveBoolean(HH,id,4,ranged)
+call SaveAttackTypeHandle(HH,id,5,attackType)
+call SaveDamageTypeHandle(HH,id,6,damageType)
+call SaveWeaponTypeHandle(HH,id,7,weaponType)
+call TimerStart(t,time0,false,function myCustomDamageTimed2)
+set t=null
+endfunction
 function myCustomDamage2 takes unit target, real amount returns real
     local real currentDmg = amount
         local real classic_res = 0.0
@@ -44033,6 +44069,19 @@ if cond==0 then
                     set dmg=1.30*dmg
                 endif
                 call SaveReal(HH,uid,'Lrvd',dmg)
+                if nb*0.8>150 then
+                    set tlambo=CreateTimer()
+                    set v=AddLightningEx("CLPB",false,x,y,75,x1,y1,75)
+                    call SetLightningColor(v,0,100,0,100)
+                    call SaveLightningHandle(h,GetHandleId(tlambo),2,v)
+                    call SaveUnitHandle(h,GetHandleId(tlambo),0,u)
+                    call SaveUnitHandle(h,GetHandleId(tlambo),1,c)
+                    call SaveReal(h,GetHandleId(tlambo),3,100)
+                    call SaveUnitHandle(h,GetHandleId(tlambo),4,CreateUnit(GetOwningPlayer(u),'e00G',x,y,GetRandomReal(0,359)))
+                    call SaveUnitHandle(h,GetHandleId(tlambo),5,CreateUnit(GetOwningPlayer(u),'e00G',x1,y1,GetRandomReal(0,359)))
+                    call TimerStart(tlambo,0.04,true,function Lampo_Damage_Actions)
+                    set tlambo=null
+                endif
                 set nb=nb*0.8
             endif
         endif
@@ -46252,104 +46301,29 @@ if nb>0 then
 else
     call SetEventDamage(0)
 endif
-if GetUnitAbilityLevel(u,'B06T')>0 and c!=UltimateDamage and GetUnitAbilityLevel(c,'A1WR')==0 and nb>0 and u==Hero[idu]and b>60 and GetUnitAbilityLevel(c,'A0WR')==0 and UnitHasItemOfTypeBJCustom(c,'I13R')==false then
-    if IsUnitInvulnerable(c)==true then
-        call SetUnitInvulnerable(c,false)
-        call UnitAddAbility(u,'A1WR')
-        call myCustomDamage(u,c,nb,false,false,null,DAMAGE_TYPE_UNIVERSAL,null)
-        call UnitRemoveAbility(u,'A1WR')
-        call SetControlToUnit(u,c, 1, "stun")
-        call SetUnitInvulnerable(c,true)
-    else
-        call UnitAddAbility(u,'A1WR')
-        call myCustomDamage(u,c,nb,false,false,null,DAMAGE_TYPE_UNIVERSAL,null)
-        call UnitRemoveAbility(u,'A1WR')
-        call SetControlToUnit(u,c, 1, "stun")
-    endif
-endif
-if (UnitHasItemOfTypeBJ(u,'I04T') or GetUnitAbilityLevel(u,'KIP8')>0) and c!=UltimateDamage and GetUnitAbilityLevel(c,'A1WR')==0 and GetUnitAbilityLevel(c,'A0WR')==0 and nb>0 and GetUnitAbilityLevel(u,'YatB')==0 and UnitHasItemOfTypeBJCustom(c,'I13R')==false then
-    if IsUnitInvulnerable(c)==true then
-        call UnitAddAbility(u,'A1WR')
-        call SetUnitInvulnerable(c,false)
-        call myCustomDamage(u,c,nb*0.25,false,false,null,DAMAGE_TYPE_UNIVERSAL,null)
-        call SetUnitInvulnerable(c,true)
-        call UnitRemoveAbility(u,'A1WR')
-    else
-        call UnitAddAbility(u,'A1WR')
-        call myCustomDamage(u,c,nb*0.25,false,false,null,DAMAGE_TYPE_UNIVERSAL,null)
-        call UnitRemoveAbility(u,'A1WR')
-    endif
-endif
-if (UnitHasItemOfTypeBJ(u,'I04T') or GetUnitAbilityLevel(u,'KIP8')>0) and c!=UltimateDamage and GetUnitAbilityLevel(c,'A1WR')==0 and GetUnitAbilityLevel(c,'A0WR')==0 and nb>0 and GetUnitAbilityLevel(u,'YatB')>0 and UnitHasItemOfTypeBJCustom(c,'I13R')==false then
-    if IsUnitInvulnerable(c)==true then
-        call UnitAddAbility(u,'A1WR')
-        call SetUnitInvulnerable(c,false)
-        call myCustomDamage(u,c,nb*0.6,false,false,null,DAMAGE_TYPE_UNIVERSAL,null)
-        call SetUnitInvulnerable(c,true)
-        call UnitRemoveAbility(u,'A1WR')
-    else
-        call UnitAddAbility(u,'A1WR')
-        call myCustomDamage(u,c,nb*0.6,false,false,null,DAMAGE_TYPE_UNIVERSAL,null)
-        call UnitRemoveAbility(u,'A1WR')
-    endif
-endif
-if LoadReal(HH,uid,'MrDd')>0 then
-    if IsUnitInvulnerable(udg_DM[idu+1])==true then
-        call SetUnitInvulnerable(udg_DM[idu+1],false)
-        call UnitAddAbility(c,'A1WR')
-        call myCustomDamage(c,udg_DM[idu+1],LoadReal(HH,uid,'MrDd'),false,false,null,DAMAGE_TYPE_UNIVERSAL,null)
-        call UnitRemoveAbility(c,'A1WR')
-        call SetUnitInvulnerable(udg_DM[idu+1],true)
-    else
-        call UnitAddAbility(c,'A1WR')
-        call myCustomDamage(c,udg_DM[idu+1],LoadReal(HH,uid,'MrDd'),false,false,null,DAMAGE_TYPE_UNIVERSAL,null)
-        call UnitRemoveAbility(c,'A1WR')
-    endif
+if LoadReal(HH,uid,'MrDd')>0 then //udg_DM[idu+1],LoadReal(HH,uid,'MrDd')
+    call SetWidgetLife(udg_DM[idu+1], GetWidgetLife(udg_DM[idu+1])-LoadReal(HH,uid,'MrDd'))
     call RemoveSavedReal(HH,uid,'MrDd')
 endif
+if GetUnitAbilityLevel(u,'B06T')>0 and c!=UltimateDamage and GetUnitAbilityLevel(c,'A1WR')==0 and nb>0 and u==Hero[idu]and b>60 and GetUnitAbilityLevel(c,'A0WR')==0 and UnitHasItemOfTypeBJCustom(c,'I13R')==false then
+    call SaveReal(HH,uid,'ASrs',nb)
+    call SaveReal(HH,uid,'tlrs',LoadReal(HH,uid,'tlrs')+nb)
+endif
+if (UnitHasItemOfTypeBJ(u,'I04T') or GetUnitAbilityLevel(u,'KIP8')>0) and c!=UltimateDamage and GetUnitAbilityLevel(c,'A1WR')==0 and GetUnitAbilityLevel(c,'A0WR')==0 and nb>0 and UnitHasItemOfTypeBJCustom(c,'I13R')==false then
+    if GetUnitAbilityLevel(u,'YatB')==0 then
+        // call SaveReal(HH,uid,'YTrs',nb*0.25)
+        call SaveReal(HH,uid,'tlrs',LoadReal(HH,uid,'tlrs')+nb*0.25)
+    elseif GetUnitAbilityLevel(u,'YatB')>0 then
+        // call SaveReal(HH,uid,'YTrs',nb*0.6)
+        call SaveReal(HH,uid,'tlrs',LoadReal(HH,uid,'tlrs')+nb*0.6)
+    endif
+endif
 if LoadReal(HH,uid,'Lrvd')>0 then
-    if UnitHasItemOfTypeBJCustom(c,'I13R')==false then
-        if IsUnitInvulnerable(c)==true then
-            call SetUnitInvulnerable(c,false)
-            call UnitAddAbility(u,'A1WR')
-            call myCustomDamage(u,c,LoadReal(HH,uid,'Lrvd'),false,false,null,DAMAGE_TYPE_UNIVERSAL,null)
-            call UnitRemoveAbility(u,'A1WR')
-            call SetUnitInvulnerable(c,true)
-        else
-            call UnitAddAbility(u,'A1WR')
-            call myCustomDamage(u,c,LoadReal(HH,uid,'Lrvd'),false,false,null,DAMAGE_TYPE_UNIVERSAL,null)
-            call UnitRemoveAbility(u,'A1WR')
-        endif
-    endif
-    if nb*0.8>150 then
-        set tlambo=CreateTimer()
-        set v=AddLightningEx("CLPB",false,x,y,75,x1,y1,75)
-        call SetLightningColor(v,0,100,0,100)
-        call SaveLightningHandle(h,GetHandleId(tlambo),2,v)
-        call SaveUnitHandle(h,GetHandleId(tlambo),0,u)
-        call SaveUnitHandle(h,GetHandleId(tlambo),1,c)
-        call SaveReal(h,GetHandleId(tlambo),3,100)
-        call SaveUnitHandle(h,GetHandleId(tlambo),4,CreateUnit(GetOwningPlayer(u),'e00G',x,y,GetRandomReal(0,359)))
-        call SaveUnitHandle(h,GetHandleId(tlambo),5,CreateUnit(GetOwningPlayer(u),'e00G',x1,y1,GetRandomReal(0,359)))
-        call TimerStart(tlambo,0.04,true,function Lampo_Damage_Actions)
-        set tlambo=null
-    endif
+    call SaveReal(HH,uid,'tlrs',LoadReal(HH,uid,'tlrs')+LoadReal(HH,uid,'Lrvd'))
     call RemoveSavedReal(HH,uid,'Lrvd')
 endif
 if LoadReal(HH,uid,'Arvd')>0 then
-    if UnitHasItemOfTypeBJCustom(c,'I13R')==false then
-        if IsUnitInvulnerable(c)==true then
-            call SetUnitInvulnerable(c,false)
-            call UnitAddAbility(u,'A1WR')
-            call myCustomDamage(u,c,LoadReal(HH,uid,'Arvd'),false,false,null,DAMAGE_TYPE_UNIVERSAL,null)
-            call UnitRemoveAbility(u,'A1WR')
-            call SetUnitInvulnerable(c,true)
-        else
-            call UnitAddAbility(u,'A1WR')
-            call myCustomDamage(u,c,LoadReal(HH,uid,'Arvd'),false,false,null,DAMAGE_TYPE_UNIVERSAL,null)
-            call UnitRemoveAbility(u,'A1WR')
-        endif
-    endif
+    call SaveReal(HH,uid,'tlrs',LoadReal(HH,uid,'tlrs')+LoadReal(HH,uid,'Arvd'))
     call RemoveSavedReal(HH,uid,'Arvd')
 endif
 if GetUnitTypeId(u)=='H02H' then
@@ -46415,6 +46389,40 @@ if GetUnitTypeId(u)=='HJi1' then
         call SetSpecialEffectTimeScale(EFF , 0.8)
         call SetSpecialEffectScale(EFF , 0.55)
         call RemoveEffect(EFF,1,true,CreateTimer())
+    endif
+endif
+if LoadReal(HH,uid,'tlrs')>0 then
+    if LoadReal(HH,uid,'ASrs')>0 then
+        call RemoveSavedReal(HH,uid,'ASrs')
+        set dmg=LoadReal(HH,uid,'tlrs')
+        call RemoveSavedReal(HH,uid,'tlrs')
+        if IsUnitInvulnerable(c)==true then
+            call UnitAddAbility(u,'A1WR')
+            call SetUnitInvulnerable(c,false)
+            call myCustomDamage(u,c,dmg,false,false,null,DAMAGE_TYPE_UNIVERSAL,null)
+            call SetControlToUnit(u,c, 1, "stun")
+            call SetUnitInvulnerable(c,true)
+            call UnitRemoveAbility(u,'A1WR')
+        else
+            call UnitAddAbility(u,'A1WR')
+            call myCustomDamage(u,c,dmg,false,false,null,DAMAGE_TYPE_UNIVERSAL,null)
+            call SetControlToUnit(u,c, 1, "stun")
+            call UnitRemoveAbility(u,'A1WR')
+        endif
+    else
+        set dmg=LoadReal(HH,uid,'tlrs')
+        call RemoveSavedReal(HH,uid,'tlrs')
+        if IsUnitInvulnerable(c)==true then
+            call UnitAddAbility(u,'A1WR')
+            call SetUnitInvulnerable(c,false)
+            call myCustomDamage(u,c,dmg,false,false,null,DAMAGE_TYPE_UNIVERSAL,null)
+            call SetUnitInvulnerable(c,true)
+            call UnitRemoveAbility(u,'A1WR')
+        else
+            call UnitAddAbility(u,'A1WR')
+            call myCustomDamage(u,c,dmg,false,false,null,DAMAGE_TYPE_UNIVERSAL,null)
+            call UnitRemoveAbility(u,'A1WR')
+        endif
     endif
 endif
 set i=0
@@ -71349,7 +71357,7 @@ local real x1=GetUnitX(c)
 local real y1=GetUnitY(c)
 local real a=Atan2(y1-y,x1-x)
 local real dist=SR(x,y,x1,y1)
-if GetWidgetLife(c)>0 and GetWidgetLife(u)>0 and (time<4 or time2>0) then
+if GetWidgetLife(c)>0 and GetWidgetLife(u)>0 and (time<4 or time2>0) and udg_B and DU2 then
     call SetUnitInvulnerable(u,true)
     call PauseUnit(u,true)
     call SetUnitFacingInstant(u,a*bj_RADTODEG)
