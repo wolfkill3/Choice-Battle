@@ -22023,7 +22023,7 @@ endfunction
 function Alastor_Passive_Act takes nothing returns nothing
 local integer id=GetHandleId(GetExpiredTimer())
 local unit caster=LoadUnitHandle(HH,id,1)
-local real damage0= GetHeroLevel(caster)*10
+local real damage0= GetHeroLevel(caster)*8
 local group g=CreateGroup()
 local real x0=GetUnitX(caster)
 local real y0=GetUnitY(caster)
@@ -22040,7 +22040,7 @@ local real y0=GetUnitY(caster)
 //call DamageAoeOneTime0(caster,GetUnitX(caster),GetUnitY(caster),700,damage0*0.2)
 
 // call GroupClear(G)
-if UnitHasItemOfTypeBJ( caster ,'I1S4')==false and GetUnitAbilityLevel(caster, 'KI0Q')==0 and UnitIsAlive(caster)==true then
+if UnitIsAlive(caster)==true then
 call GroupEnumUnitsInRange(g,x0,y0,700,Base)
 loop
 set n0=FirstOfGroup(g)
@@ -22401,6 +22401,37 @@ call RemoveItem(it)
 call SetPlayerState(Player(id),PLAYER_STATE_RESOURCE_GOLD,GetPlayerState(Player(id),PLAYER_STATE_RESOURCE_GOLD)+4750)
 call DisplayTextToPlayer(Player(id),0,0,"Нельзя иметь больше одного такого предмета!")
 endif
+
+set i=0
+set count=0
+loop
+exitwhen i>=10
+if (GetItemPlayer(UnitItemInSlot(u,i))==Player(15) or GetItemPlayer(UnitItemInSlot(u,i))==GetOwningPlayer(GetTriggerUnit())) and GetItemTypeId(UnitItemInSlot(u,i))=='I00R' then
+set count=count+1
+endif
+set i=i+1
+endloop
+if count>1 then
+call RemoveItem(it)
+call SetPlayerState(Player(id),PLAYER_STATE_RESOURCE_GOLD,GetPlayerState(Player(id),PLAYER_STATE_RESOURCE_GOLD)+500)
+call DisplayTextToPlayer(Player(id),0,0,"Нельзя иметь больше одного такого предмета!")
+endif
+
+set i=0
+set count=0
+loop
+exitwhen i>=10
+if (GetItemPlayer(UnitItemInSlot(u,i))==Player(15) or GetItemPlayer(UnitItemInSlot(u,i))==GetOwningPlayer(GetTriggerUnit())) and GetItemTypeId(UnitItemInSlot(u,i))=='I04I' then
+set count=count+1
+endif
+set i=i+1
+endloop
+if count>1 then
+call RemoveItem(it)
+call SetPlayerState(Player(id),PLAYER_STATE_RESOURCE_GOLD,GetPlayerState(Player(id),PLAYER_STATE_RESOURCE_GOLD)+2350)
+call DisplayTextToPlayer(Player(id),0,0,"Нельзя иметь больше одного такого предмета!")
+endif
+
 set i=0
 set count=0
 loop
@@ -38503,7 +38534,7 @@ exitwhen i>=10
         call SaveInteger(HH, GetHandleId(Hero[i]), StringHash("GaeDeargP_CD"), 1)
         call StartAbilityCooldown(GetUnitAbility(Hero[i],'A1FP'),25)
         call StartAbilityCooldown(GetUnitAbility(Hero[i],'BRLS'),40)
-        call StartAbilityCooldown(GetUnitAbility(Hero[i],'GKG1'),60-GetHeroLevel(Hero[i]))
+        call StartAbilityCooldown(GetUnitAbility(Hero[i],'GKG1'),40-GetHeroLevel(Hero[i]))
         call StartAbilityCooldown(GetUnitAbility(Hero[i],'Ao60'),10)
         call StartAbilityCooldown(GetUnitAbility(Hero[i],'A1HD'),7)
         call UnitRemoveAbility(Hero[i],'ore3')
@@ -41888,7 +41919,7 @@ function PushTimed1 takes nothing returns nothing
 local integer id=GetHandleId(GetExpiredTimer())
 call SaveInteger(HH,id,5,LoadInteger(HH,id,5)+1)
 call MoveUnit(LoadUnitHandle(HH,id,1),LoadUnitHandle(HH,id,1),LoadReal(HH,id,2),LoadReal(HH,id,3))
-if LoadInteger(HH,id,5)==LoadInteger(HH,id,6)then
+if LoadInteger(HH,id,5)==LoadInteger(HH,id,6) or udg_B==false or DU2==false then
 call PauseTimer(GetExpiredTimer())
 call FlushChildHashtable(HH,id)
 call DestroyTimer(GetExpiredTimer())
@@ -43603,26 +43634,10 @@ if cond==0 then
             set n=CreateUnit(GetOwningPlayer(u),'e09P',x,y,A*bj_RADTODEG)
             call UnitApplyTimedLife(n,'BTLF',0.4)
             call SetUnitTimeScale(n,2)
-            if UnitHasItemOfTypeBJCustom(c,'I13R')==false then
-                if IsUnitInvulnerable(c)==true then
-                    call SetUnitInvulnerable(c,false)
-                    call UnitAddAbility(u,'A1WR')
-                    if GetUnitAbilityLevel(c,'SHD1')>0 or GetUnitAbilityLevel(u,'SHD2')>0 then
-                        call myCustomDamage(u,c,nb2*0.5,false,false,null,DAMAGE_TYPE_UNIVERSAL,null)
-                    else
-                        call myCustomDamage(u,c,nb*0.5,false,false,null,DAMAGE_TYPE_UNIVERSAL,null)
-                    endif
-                    call UnitRemoveAbility(u,'A1WR')
-                    call SetUnitInvulnerable(c,true)
-                else
-                    call UnitAddAbility(u,'A1WR')
-                    if GetUnitAbilityLevel(c,'SHD1')>0 or GetUnitAbilityLevel(u,'SHD2')>0 then
-                        call myCustomDamage(u,c,nb2*0.5,false,false,null,DAMAGE_TYPE_UNIVERSAL,null)
-                    else
-                        call myCustomDamage(u,c,nb*0.5,false,false,null,DAMAGE_TYPE_UNIVERSAL,null)
-                    endif
-                    call UnitRemoveAbility(u,'A1WR')
-                endif
+            if GetUnitAbilityLevel(c,'SHD1')>0 or GetUnitAbilityLevel(u,'SHD2')>0 then
+                call SaveReal(HH,uid,'Arvd',nb*0.5)
+            else
+                call SaveReal(HH,uid,'Arvd',nb2*0.5)
             endif
             //call SetEventDamage(0.05)
             set nb=0
@@ -46178,6 +46193,10 @@ if nb>0 then
     if GetUnitTypeId(u)=='H34X' or GetUnitTypeId(u)=='H14F' then
         set nb=nb*17.5
     endif
+    if nb>GetUnitState(u,UNIT_STATE_LIFE) and GetUnitTypeId(u)=='H02H' then
+        call PauseUnit(u, false)
+        call UnitRemoveBuffs(u,true,false)
+    endif
     call SetEventDamage(nb)
     if GetUnitAbilityLevel(u,'A4DF')>0 then
         call IssueImmediateOrder(u,"stop")
@@ -46268,6 +46287,22 @@ if LoadReal(HH,uid,'Lrvd')>0 then
         set tlambo=null
     endif
     call RemoveSavedReal(HH,uid,'Lrvd')
+endif
+if LoadReal(HH,uid,'Arvd')>0 then
+    if UnitHasItemOfTypeBJCustom(c,'I13R')==false then
+        if IsUnitInvulnerable(c)==true then
+            call SetUnitInvulnerable(c,false)
+            call UnitAddAbility(u,'A1WR')
+            call myCustomDamage(u,c,LoadReal(HH,uid,'Arvd'),false,false,null,DAMAGE_TYPE_UNIVERSAL,null)
+            call UnitRemoveAbility(u,'A1WR')
+            call SetUnitInvulnerable(c,true)
+        else
+            call UnitAddAbility(u,'A1WR')
+            call myCustomDamage(u,c,LoadReal(HH,uid,'Arvd'),false,false,null,DAMAGE_TYPE_UNIVERSAL,null)
+            call UnitRemoveAbility(u,'A1WR')
+        endif
+    endif
+    call RemoveSavedReal(HH,uid,'Arvd')
 endif
 if GetUnitTypeId(u)=='H02H' then
     if GetUnitModel(u)=="GokuFull.mdx" and GetUnitState(u,UNIT_STATE_LIFE)<0.6*ll then 
@@ -72083,7 +72118,7 @@ endif
 if GetSpellAbilityId()=='GKG5' then
     call SaveInteger(HH,GetHandleId(GenkiDama),0,1)
     call SetUnitFacing(Goku,a*bj_RADTODEG)
-    call MissleMoveSuperSpiritBomb(Goku,x1,y1,GenkiDama,40,AU(Goku,c),GetUnitFlyHeight(GenkiDama),GetAbilityRealLevelField(GetUnitAbility(u,'GKG5'),ABILITY_RLF_AREA_OF_EFFECT,0) ,50*0.1*GetUnitScale(GenkiDama)*GetHeroStr(Goku,true))
+    call MissleMoveSuperSpiritBomb(Goku,x1,y1,GenkiDama,60,AU(Goku,c),GetUnitFlyHeight(GenkiDama),GetAbilityRealLevelField(GetUnitAbility(u,'GKG5'),ABILITY_RLF_AREA_OF_EFFECT,0) ,50*0.1*GetUnitScale(GenkiDama)*GetHeroStr(Goku,true))
     if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE)==true then
         call StartSound(soundStr[34])
     else
@@ -72229,7 +72264,7 @@ else
             call RemoveUnit(GenkiDama)
         endif
     else
-        call StartAbilityCooldown(GetUnitAbility(u,'GKG1'),60)
+        call StartAbilityCooldown(GetUnitAbility(u,'GKG1'),40)
         if (GetLocalPlayer()==p or GetPlayerAlliance(p,GetLocalPlayer(),ALLIANCE_SHARED_CONTROL)) and GetUnitSelected(GetLocalPlayer())==dummy then
             call ClearSelection()
             call SelectUnit(u,true)
@@ -72431,6 +72466,7 @@ local unit c=LoadUnitHandle(HH,idu,REVERSE_TARGET)
 local player p=GetOwningPlayer(u)
 if time<2 and c==null then
 call PauseUnit(u,true)
+call SetUnitInvulnerable(u,true)
 if LoadBoolean(HH,GetHandleId(u),TARGET_ABILITY)==false then
 call SaveReal(HH,id,2,time+0.04)
 endif
@@ -189779,7 +189815,11 @@ set time1=LoadReal(HH,id,9)
 call SaveReal(HH,id,8,distance+60)
 set dummyUnit=LoadUnitHandle(HH,id,20)
 call MoveUnit(dummyUnit,dummyUnit,60,facing)
+if time<2.8 then
 call DamageAoeOneTime3(caster,GetUnitX(dummyUnit),GetUnitY(dummyUnit),200+(time-2.5)*300,damage,LoadGroupHandle(HH,id,4),R2I((3.9-time)*25+10),40,facing)
+else
+call DamageAoeOneTime3(caster,GetUnitX(dummyUnit),GetUnitY(dummyUnit),200+(time-2.5)*300,damage,LoadGroupHandle(HH,id,4),40,40,facing)
+endif
 set time1=time1+0.02
 call UnitSize(LoadUnitHandle(HH,id,20),1+(time-2.5)*1.5,1,1)
 if time1==0.02 or time==2.52 then
@@ -224908,11 +224948,12 @@ else
 if UnitIsAlive(caster) then
 if uid=='H00E' and hp>100 then
 set hp=hp-20
-call SetWidgetLife(caster,hp)
 endif
 if GetHeroLevel(caster)>12 then
-call SetWidgetLife(caster,hp+GetHeroStr(caster,true)*0.4)
+set hp=hp+GetHeroStr(caster,true)*0.4
+call HealTextTag(caster,caster,GetHeroStr(caster,true)*0.4*myCustomHeal2(caster,1),"HealthRes")
 endif
+call SetWidgetLife(caster,hp)
 endif
 endif
 set caster=null
@@ -225965,6 +226006,7 @@ if time>=0.36 and time<0.4 then
 // рука уже выброшена вперёд -> стопорим кадр
 call UnitSpeed(caster,0)
 call PauseUnit(caster,true)
+call SetUnitInvulnerable(caster,true)
 endif
 if head!=null then
 if gone>=1600.0 then
@@ -226172,11 +226214,11 @@ endif
 call SaveGroupHandle(HH,id,7,CreateGroup())
 call SaveGroupHandle(HH,id,8,CreateGroup())
 // удар: замах 11 по трюку дева (снять паузу -> анимация -> пауза), кадр стопорится на 0.36
-call SetUnitInvulnerable(caster,false)
 call PauseUnit(caster,false)
 call UnitSpeed(caster,1)
 call SetUnitAnimationByIndex(caster,11)
 call PauseUnit(caster,true)
+call SetUnitInvulnerable(caster,true)
 call SaveReal(HH,id,6,2)
 call SaveReal(HH,id,5,0)
 call SaveReal(HH,id,9,0)
@@ -227193,7 +227235,7 @@ if Condition_Base(GetOwningPlayer(caster),n0) and  IsUnitInGroup(n0,gr)==false a
 
 
 call myCustomDamage(caster,n0,damage,false,false,null,null,null)
-call SlowUnit(caster,n0,0.5,0.5,2+GetUnitAbilityLevel(caster,'AKQ1')*0.6,2,false)
+call SlowUnit(caster,n0,0.5,0.5,2+GetUnitAbilityLevel(caster,'AKQ1')*0.6,1,false)
 call GroupAddUnit(gr,n0)
 endif
 call GroupRemoveUnit(G,n0)
@@ -235371,7 +235413,7 @@ endfunction
 
 
 function AbilitiesForChoiceLearn_Cond takes nothing returns boolean
-return GetLearnedSkill()=='AKR1' or GetLearnedSkill()=='A19R' or GetLearnedSkill()=='A19S' or GetLearnedSkill()=='A0QU' or GetLearnedSkill()=='RsT1' or GetLearnedSkill()=='RsR1' or GetLearnedSkill()=='RsE1' or GetLearnedSkill()=='GSE1' or GetLearnedSkill()=='A0BG' or GetLearnedSkill()=='A0K4'
+return (GetLearnedSkill()=='AKR1' or GetLearnedSkill()=='A19R' or GetLearnedSkill()=='A19S' or GetLearnedSkill()=='A0QU' or GetLearnedSkill()=='RsT1' or GetLearnedSkill()=='RsR1' or GetLearnedSkill()=='RsE1' or GetLearnedSkill()=='GSE1' or GetLearnedSkill()=='A0BG' or GetLearnedSkill()=='A0K4') and IsUnitIllusion(GetTriggerUnit())==false
 endfunction
 
 function AbilitiesForChoiceLearn_Act takes nothing returns nothing//моя прокачка абилок для всех героев разберешься
@@ -238364,7 +238406,7 @@ call TriggerAddAction(gg_trg_SelectPlayerStatus,function Trig_SelectPlayerStatus
 endfunction
 function Trig_KingOfHill_Enter_Actions takes nothing returns nothing
 local timer t=GetExpiredTimer()
-local integer id=GetHandleId(t)
+local integer id=GetHandleId(gg_rct_KingOfHillRect)
 local integer TotalPlayerCount=0
 local integer MaxPoints=3000
 local framehandle TeamText=null
