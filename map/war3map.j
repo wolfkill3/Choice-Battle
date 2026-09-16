@@ -71498,6 +71498,11 @@ else
     call DestroyTimer(t)
     call SetUnitInvulnerable(u,false)
     call PauseUnit(u,false)
+    if time2>0 then
+        call SetUnitInvulnerable(c,false)
+        call PauseUnit(c,false)
+        call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,false)
+    endif
     call SetUnitAnimation(u,"stand")
     call SetUnitTimeScale(u,1)
     call FlushChildHashtable(HH,id)
@@ -72360,6 +72365,7 @@ local player p=GetOwningPlayer(u)
 local integer i=0
 local texttag l__txt=CreateTextTag()
 call SaveUnitHandle(h,id,0,u)
+call IssueImmediateOrder(u,"stop")
 call UnitEnableMovement(u,false,false)
 call UnitEnableAttack(u,false,false)
 set GenkiDama=CreateUnit(p,'e0CE',x,y,a*bj_RADTODEG)
