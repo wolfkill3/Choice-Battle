@@ -72466,7 +72466,6 @@ local unit c=LoadUnitHandle(HH,idu,REVERSE_TARGET)
 local player p=GetOwningPlayer(u)
 if time<2 and c==null then
 call PauseUnit(u,true)
-call SetUnitInvulnerable(u,true)
 if LoadBoolean(HH,GetHandleId(u),TARGET_ABILITY)==false then
 call SaveReal(HH,id,2,time+0.04)
 endif
