@@ -3028,6 +3028,8 @@ set u=CreateUnit(p,'n0J2',3136.0, 7296.0, 270.000) //recipes 3
 call SetUnitColor(u,ConvertPlayerColor(0))
 set u=CreateUnit(p,'n003',4416.0, 7424.0, 270.000)
 call SetUnitColor(u,ConvertPlayerColor(0))
+// set u=CreateUnit(p,'n108',4716.0, 7424.0, 270.000)
+// call SetUnitColor(u,ConvertPlayerColor(0))
 set gg_unit_n00J_0036=CreateUnit(p,'n00J',3008.0, 7424.0, 270.000)
 call SetUnitColor(gg_unit_n00J_0036,ConvertPlayerColor(0))
 set u=CreateUnit(p,'n00U',3648.0, 6848.0, 270.000)
