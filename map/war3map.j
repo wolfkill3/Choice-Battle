@@ -2980,33 +2980,33 @@ local unit u
 local integer unitID
 local trigger t
 local real life
-set u=CreateUnit(p,'H00F',13777.5,-5323.3,246.145)
+set u=CreateUnit(p,'H12F',13777.5,-5323.3,246.145)
 call SetUnitState(u,UNIT_STATE_MANA,0)
 set u=CreateUnit(p,'h04P',13950.1,-5548.0,150.620)
 call SetUnitState(u,UNIT_STATE_MANA,0)
-set u=CreateUnit(p,'H00F',13775.5,-5470.8,97.111)
+set u=CreateUnit(p,'H12F',13775.5,-5470.8,97.111)
 call SetUnitState(u,UNIT_STATE_MANA,0)
-set u=CreateUnit(p,'H00F',13792.7,-5580.6,140.432)
+set u=CreateUnit(p,'H12F',13792.7,-5580.6,140.432)
 call SetUnitState(u,UNIT_STATE_MANA,0)
-set u=CreateUnit(p,'H00F',13928.9,-5581.9,354.210)
+set u=CreateUnit(p,'H12F',13928.9,-5581.9,354.210)
 call SetUnitState(u,UNIT_STATE_MANA,0)
-set u=CreateUnit(p,'H00F',14028.9,-5563.3,46.276)
+set u=CreateUnit(p,'H12F',14028.9,-5563.3,46.276)
 call SetUnitState(u,UNIT_STATE_MANA,0)
-set u=CreateUnit(p,'H00F',13988.7,-5369.4,16.139)
+set u=CreateUnit(p,'H12F',13988.7,-5369.4,16.139)
 call SetUnitState(u,UNIT_STATE_MANA,0)
-set u=CreateUnit(p,'H00F',13891.4,-5306.0,129.610)
+set u=CreateUnit(p,'H12F',13891.4,-5306.0,129.610)
 call SetUnitState(u,UNIT_STATE_MANA,0)
-set u=CreateUnit(p,'H00F',13955.9,-5447.9,136.081)
+set u=CreateUnit(p,'H12F',13955.9,-5447.9,136.081)
 call SetUnitState(u,UNIT_STATE_MANA,0)
-set u=CreateUnit(p,'H00F',13844.9,-5470.8,167.876)
+set u=CreateUnit(p,'H12F',13844.9,-5470.8,167.876)
 call SetUnitState(u,UNIT_STATE_MANA,0)
-set u=CreateUnit(p,'H00F',13846.8,-5367.3,246.145)
+set u=CreateUnit(p,'H12F',13846.8,-5367.3,246.145)
 call SetUnitState(u,UNIT_STATE_MANA,0)
-set u=CreateUnit(p,'H00F',13909.7,-5499.4,246.145)
+set u=CreateUnit(p,'H12F',13909.7,-5499.4,246.145)
 call SetUnitState(u,UNIT_STATE_MANA,0)
-set u=CreateUnit(p,'H00F',13845.3,-5601.5,246.145)
+set u=CreateUnit(p,'H12F',13845.3,-5601.5,246.145)
 call SetUnitState(u,UNIT_STATE_MANA,0)
-set u=CreateUnit(p,'H00F',13736.6,-5533.6,246.145)
+set u=CreateUnit(p,'H12F',13736.6,-5533.6,246.145)
 call SetUnitState(u,UNIT_STATE_MANA,0)
 set u=null
 set p=null
@@ -3028,6 +3028,8 @@ set u=CreateUnit(p,'n0J2',3136.0, 7296.0, 270.000) //recipes 3
 call SetUnitColor(u,ConvertPlayerColor(0))
 set u=CreateUnit(p,'n003',4416.0, 7424.0, 270.000)
 call SetUnitColor(u,ConvertPlayerColor(0))
+// set u=CreateUnit(p,'n108',4716.0, 7424.0, 270.000)
+// call SetUnitColor(u,ConvertPlayerColor(0))
 set gg_unit_n00J_0036=CreateUnit(p,'n00J',3008.0, 7424.0, 270.000)
 call SetUnitColor(gg_unit_n00J_0036,ConvertPlayerColor(0))
 set u=CreateUnit(p,'n00U',3648.0, 6848.0, 270.000)
@@ -6567,7 +6569,7 @@ function Condition_Base takes player p,unit e returns boolean
 return IsUnitEnemy(e,p) and IsUnitType(e,UNIT_TYPE_STRUCTURE)==false and 'dumm'!=GetUnitTypeId(e) and 'cdm1'!=GetUnitTypeId(e) and 'e16T'!=GetUnitTypeId(e) and UltimateDamage!=e and GetUnitAbilityLevel(e, 'IMDc')==0 and GetUnitTypeId(e)!='dM02'
 endfunction
 function Condition_BaseUBW takes player p,unit e returns boolean
-return IsUnitEnemy(e,p) and IsUnitType(e,UNIT_TYPE_DEAD)==false and IsUnitType(e,UNIT_TYPE_STRUCTURE)==false and 'dumm'!=GetUnitTypeId(e) and 'cdm1'!=GetUnitTypeId(e) and 'e16T'!=GetUnitTypeId(e) and 'h071'!=GetUnitTypeId(e) and UltimateDamage!=e and GetUnitTypeId(e)!='dM02'
+return IsUnitEnemy(e,p) and IsUnitType(e,UNIT_TYPE_DEAD)==false and IsUnitType(e,UNIT_TYPE_STRUCTURE)==false and 'dumm'!=GetUnitTypeId(e) and 'cdm1'!=GetUnitTypeId(e) and 'e16T'!=GetUnitTypeId(e) and 'h071'!=GetUnitTypeId(e) and UltimateDamage!=e and GetUnitTypeId(e)!='dM02' and GetUnitTypeId(e)!='dM00' and GetUnitTypeId(e)!='gbRd'
 endfunction
 function BoolFrenda takes nothing returns boolean
 return(GetUnitTypeId(GetFilterUnit())=='fSDL' or GetUnitTypeId(GetFilterUnit())=='e0ZY' or GetUnitTypeId(GetFilterUnit())=='e0ZV')and GetUnitAbilityLevel(GetFilterUnit(),'B06J')==0 and IsUnitType(GetFilterUnit(),UNIT_TYPE_STRUCTURE)==false and GetUnitAbilityLevel(GetFilterUnit(),'A1C3')==0
@@ -17637,7 +17639,7 @@ function OnButtonSelectHero takes nothing returns nothing
                         call AddFrameText( GetFrameByName("TavernAbilityTooltipText",5), "/")
                         set j=j+1
                         endloop   
-                        if String2Id( s )=='A105' or String2Id( s )=='A0RS' or String2Id( s )=='A0IR' or String2Id( s )=='CelF' or String2Id( s )=='CelG' or String2Id( s )=='BuuG' or String2Id( s )=='LamF' or String2Id( s )=='LamG' then
+                        if String2Id( s )=='A105' or String2Id( s )=='A0RS' or String2Id( s )=='A0IR' or String2Id( s )=='CelF' or String2Id( s )=='CelG' or String2Id( s )=='BuuG' or String2Id( s )=='LamF' or String2Id( s )=='LamG' or String2Id( s )=='JnD1' then
                             call AddFrameText( GetFrameByName("TavernAbilityTooltipText",5), "\n\n"+GetAbilityBaseStringFieldById( String2Id( s ), ABILITY_SF_NAME )+", (|cffffcc00"+IntToChar(GetAbilityBaseIntegerFieldById( String2Id( s ), ABILITY_IF_BUTTON_HOTKEY_NORMAL ))+"|r)\n\n"+GetAbilityBaseStringFieldById( String2Id( s ), ABILITY_SLF_TOOLTIP_LEARN_EXTENDED )) 
                         else                  
                             call AddFrameText( GetFrameByName("TavernAbilityTooltipText",5), "\n\n"+GetAbilityBaseStringFieldById( String2Id( s ), ABILITY_SF_NAME )+", (|cffffcc00"+IntToChar(GetAbilityBaseIntegerFieldById( String2Id( s ), ABILITY_IF_BUTTON_HOTKEY_NORMAL ))+"|r)\n\n"+GetAbilityBaseStringFieldById( String2Id( s ), ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED ))
@@ -17655,7 +17657,7 @@ function OnButtonSelectHero takes nothing returns nothing
                         call AddFrameText( GetFrameByName("TavernAbilityTooltipText",6), "/")
                         set j=j+1
                         endloop                        
-                        if String2Id( s )=='A105' or String2Id( s )=='A0RS' or String2Id( s )=='A0IR' or String2Id( s )=='CelF' or String2Id( s )=='CelG' or String2Id( s )=='BuuG' or String2Id( s )=='LamF' or String2Id( s )=='LamG' then
+                        if String2Id( s )=='A105' or String2Id( s )=='A0RS' or String2Id( s )=='A0IR' or String2Id( s )=='CelF' or String2Id( s )=='CelG' or String2Id( s )=='BuuG' or String2Id( s )=='LamF' or String2Id( s )=='LamG' or String2Id( s )=='JnD1' then
                             call AddFrameText( GetFrameByName("TavernAbilityTooltipText",6), "\n\n"+GetAbilityBaseStringFieldById( String2Id( s ), ABILITY_SF_NAME )+", (|cffffcc00"+IntToChar(GetAbilityBaseIntegerFieldById( String2Id( s ), ABILITY_IF_BUTTON_HOTKEY_NORMAL ))+"|r)\n\n"+GetAbilityBaseStringFieldById( String2Id( s ), ABILITY_SLF_TOOLTIP_LEARN_EXTENDED )) 
                         else                  
                             call AddFrameText( GetFrameByName("TavernAbilityTooltipText",6), "\n\n"+GetAbilityBaseStringFieldById( String2Id( s ), ABILITY_SF_NAME )+", (|cffffcc00"+IntToChar(GetAbilityBaseIntegerFieldById( String2Id( s ), ABILITY_IF_BUTTON_HOTKEY_NORMAL ))+"|r)\n\n"+GetAbilityBaseStringFieldById( String2Id( s ), ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED ))
@@ -17673,7 +17675,7 @@ function OnButtonSelectHero takes nothing returns nothing
                         call AddFrameText( GetFrameByName("TavernAbilityTooltipText",7), "/")
                         set j=j+1
                         endloop                        
-                        if String2Id( s )=='A105' or String2Id( s )=='A0RS' or String2Id( s )=='A0IR' or String2Id( s )=='CelF' or String2Id( s )=='CelG' or String2Id( s )=='BuuG' or String2Id( s )=='LamF' or String2Id( s )=='LamG' then
+                        if String2Id( s )=='A105' or String2Id( s )=='A0RS' or String2Id( s )=='A0IR' or String2Id( s )=='CelF' or String2Id( s )=='CelG' or String2Id( s )=='BuuG' or String2Id( s )=='LamF' or String2Id( s )=='LamG' or String2Id( s )=='JnD1' then
                             call AddFrameText( GetFrameByName("TavernAbilityTooltipText",7), "\n\n"+GetAbilityBaseStringFieldById( String2Id( s ), ABILITY_SF_NAME )+", (|cffffcc00"+IntToChar(GetAbilityBaseIntegerFieldById( String2Id( s ), ABILITY_IF_BUTTON_HOTKEY_NORMAL ))+"|r)\n\n"+GetAbilityBaseStringFieldById( String2Id( s ), ABILITY_SLF_TOOLTIP_LEARN_EXTENDED )) 
                         else                  
                             call AddFrameText( GetFrameByName("TavernAbilityTooltipText",7), "\n\n"+GetAbilityBaseStringFieldById( String2Id( s ), ABILITY_SF_NAME )+", (|cffffcc00"+IntToChar(GetAbilityBaseIntegerFieldById( String2Id( s ), ABILITY_IF_BUTTON_HOTKEY_NORMAL ))+"|r)\n\n"+GetAbilityBaseStringFieldById( String2Id( s ), ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED ))
@@ -31833,7 +31835,7 @@ set p=null
 endfunction
 function ShanaFHCond takes nothing returns boolean
 set P=GetTriggerPlayer()
-return udg_B==false and(GetPlayerName(P)=="Sylphiette" or GetPlayerName(P)=="Ratti" or GetPlayerName(P)=="Annieh" or GetPlayerName(P)=="zld6334" or GetPlayerName(P)=="Jaunty_D-Mai" or GetPlayerName(P)=="Hermaeus" or GetPlayerName(P)=="No_Dust"  or GetPlayerName(P)=="TheDunwich525" or GetPlayerName(P)=="Cermia" or GetPlayerName(P)=="3Deviant" or GetPlayerName(P)=="Shiki.SS" or GetPlayerName(P)=="SAOkirito1121" or GetPlayerName(P)=="PinkieNecro" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="NecromanseR_RuS" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="msseva16" or GetPlayerName(P)=="Wolfkill" or GetPlayerName(P)=="Famouzy" or GetPlayerName(P)=="Uriska" or GetPlayerName(P)=="Semko157" or GetPlayerName(P)=="xxNu-13xx" or GetPlayerName(P)=="ROC4ik" or GetPlayerName(P)=="Black_Shana" or GetPlayerName(P)=="Denamesh" or GetPlayerName(P)=="I_Arioh" or  BaseSkinCond(P))
+return udg_B==false and(GetPlayerName(P)=="Sylphiette" or GetPlayerName(P)=="Ratti" or GetPlayerName(P)=="Annieh" or GetPlayerName(P)=="zld6334" or GetPlayerName(P)=="Jaunty_D-Mai" or GetPlayerName(P)=="Hermaeus" or GetPlayerName(P)=="No_Dust"  or GetPlayerName(P)=="TheDunwich525" or GetPlayerName(P)=="Tinafish" or GetPlayerName(P)=="3Deviant" or GetPlayerName(P)=="Shiki.SS" or GetPlayerName(P)=="SAOkirito1121" or GetPlayerName(P)=="PinkieNecro" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="NecromanseR_RuS" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="msseva16" or GetPlayerName(P)=="Wolfkill" or GetPlayerName(P)=="Famouzy" or GetPlayerName(P)=="Uriska" or GetPlayerName(P)=="Semko157" or GetPlayerName(P)=="xxNu-13xx" or GetPlayerName(P)=="ROC4ik" or GetPlayerName(P)=="Black_Shana" or GetPlayerName(P)=="Denamesh" or GetPlayerName(P)=="I_Arioh" or  BaseSkinCond(P))
 endfunction
 function ShanaFHCast takes nothing returns nothing
 local integer ip=GetPlayerId(GetTriggerPlayer())
@@ -32144,7 +32146,7 @@ set p=null
 endfunction
 function PadoruRFHCond takes nothing returns boolean
 set P=GetTriggerPlayer()
-return udg_B==false and(GetPlayerName(P)=="PinkieNecro" or GetPlayerName(P)=="Suzu" or GetPlayerName(P)=="KamaBr" or GetPlayerName(P)=="[OSV] Kama" or GetPlayerName(P)=="AkazaThree" or GetPlayerName(P)=="zld6334" or GetPlayerName(P)=="Abylai142536" or GetPlayerName(P)=="UJustDeadWeight" or GetPlayerName(P)=="TraskiusLT" or GetPlayerName(P)=="Cermia" or GetPlayerName(P)=="No1re" or GetPlayerName(P)=="TheStalkerCraft" or GetPlayerName(P)=="Hagane" or GetPlayerName(P)=="antonpoganui" or GetPlayerName(P)=="KekkaiGenkai" or GetPlayerName(P)=="yatsufusa"  or GetPlayerName(P)=="Dark_soul3484" or GetPlayerName(P)=="Wolfkill" or GetPlayerName(P)=="Famouzy" or GetPlayerName(P)=="Anwa_Abdul" or GetPlayerName(P)=="WorldEdit" or GetPlayerName(P)=="Fantastic_Gear" or GetPlayerName(P)=="Beerus_Sama" or GetPlayerName(P)=="Offstay" or GetPlayerName(P)=="Chevalier" or GetPlayerName(P)=="DarkSonic1" or GetPlayerName(P)=="dessar383" or GetPlayerName(P)=="Sylphiette")
+return udg_B==false and(GetPlayerName(P)=="PinkieNecro" or GetPlayerName(P)=="Suzu" or GetPlayerName(P)=="KamaBr" or GetPlayerName(P)=="[OSV] Kama" or GetPlayerName(P)=="AkazaThree" or GetPlayerName(P)=="zld6334" or GetPlayerName(P)=="Abylai142536" or GetPlayerName(P)=="UJustDeadWeight" or GetPlayerName(P)=="TraskiusLT" or GetPlayerName(P)=="Tinafish" or GetPlayerName(P)=="No1re" or GetPlayerName(P)=="TheStalkerCraft" or GetPlayerName(P)=="Hagane" or GetPlayerName(P)=="antonpoganui" or GetPlayerName(P)=="KekkaiGenkai" or GetPlayerName(P)=="yatsufusa"  or GetPlayerName(P)=="Dark_soul3484" or GetPlayerName(P)=="Wolfkill" or GetPlayerName(P)=="Famouzy" or GetPlayerName(P)=="Anwa_Abdul" or GetPlayerName(P)=="WorldEdit" or GetPlayerName(P)=="Fantastic_Gear" or GetPlayerName(P)=="Beerus_Sama" or GetPlayerName(P)=="Offstay" or GetPlayerName(P)=="Chevalier" or GetPlayerName(P)=="DarkSonic1" or GetPlayerName(P)=="dessar383" or GetPlayerName(P)=="Sylphiette")
 endfunction
 function PadoruRFHCast takes nothing returns nothing
 local integer ip=GetPlayerId(GetTriggerPlayer())
@@ -32806,7 +32808,7 @@ set p=null
 endfunction
 function AlterRFHCond takes nothing returns boolean
 set P=GetTriggerPlayer()
-return udg_B==false and(GetPlayerName(P)=="Sylphiette" or GetPlayerName(P)=="Ratti" or GetPlayerName(P)=="ti123vn00" or GetPlayerName(P)=="Scathach_" or GetPlayerName(P)=="who?ch1sen" or GetPlayerName(P)=="Принц" or GetPlayerName(P)=="Hermaeus" or GetPlayerName(P)=="KamaBr" or GetPlayerName(P)=="[OSV] Kama" or GetPlayerName(P)=="Antitilt" or GetPlayerName(P)=="No_Dust" or GetPlayerName(P)=="Luna000" or GetPlayerName(P)=="TheDunwich525" or GetPlayerName(P)=="KuroNico" or GetPlayerName(P)=="Annieh" or GetPlayerName(P)=="zld6334" or GetPlayerName(P)=="WamPIRok" or GetPlayerName(P)=="Cermia" or GetPlayerName(P)=="Jaunty_D-Mai" or GetPlayerName(P)=="Sekaiyo" or GetPlayerName(P)=="SAOkirito1121" or GetPlayerName(P)=="PinkieNecro" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="NecromanseR_RuS" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="Wolfkill" or GetPlayerName(P)=="Famouzy" or GetPlayerName(P)=="Famousy" or GetPlayerName(P)=="Anwa_Abdul" or GetPlayerName(P)=="antonpoganui" or GetPlayerName(P)=="xxNu-13xx" or GetPlayerName(P)=="f.a.r.a.o.n." or GetPlayerName(P)=="Denamesh" or  GetPlayerName(P)=="Sheogarath57" or GetPlayerName(P)=="Awenger93" or  GetPlayerName(P)=="Gun62rus" or GetPlayerName(P)=="XDragon_FrostX" or GetPlayerName(P)=="Odi" or GetPlayerName(P)=="ROC4ik" or GetPlayerName(P)=="zelim9" or GetPlayerName(P)=="tenevo" or GetPlayerName(P)=="MoonX3" or GetPlayerName(P)=="Gin_-_Ichimaru" or GetPlayerName(P)=="CFA-Kirito" or GetPlayerName(P)=="Uriska" or GetPlayerName(P)=="hrUd" or GetPlayerName(P)=="Kuzeyuta" or GetPlayerName(P)=="FT.Lancer" or GetPlayerName(P)=="Maryana.Ro" or GetPlayerName(P)=="Neo_Hirai" or GetPlayerName(P)=="msseva16" or GetPlayerName(P)=="Blaze_drago_x" or GetPlayerName(P)=="adara3" or GetPlayerName(P)=="Shunova" or GetPlayerName(P)=="Renex" or GetPlayerName(P)=="Chevalier" or GetPlayerName(P)=="knowyourplace" or BaseSkinCond(P))
+return udg_B==false and(GetPlayerName(P)=="Sylphiette" or GetPlayerName(P)=="Ratti" or GetPlayerName(P)=="ti123vn00" or GetPlayerName(P)=="Scathach_" or GetPlayerName(P)=="who?ch1sen" or GetPlayerName(P)=="Принц" or GetPlayerName(P)=="Hermaeus" or GetPlayerName(P)=="KamaBr" or GetPlayerName(P)=="[OSV] Kama" or GetPlayerName(P)=="Antitilt" or GetPlayerName(P)=="No_Dust" or GetPlayerName(P)=="Luna000" or GetPlayerName(P)=="TheDunwich525" or GetPlayerName(P)=="KuroNico" or GetPlayerName(P)=="Annieh" or GetPlayerName(P)=="zld6334" or GetPlayerName(P)=="WamPIRok" or GetPlayerName(P)=="Tinafish" or GetPlayerName(P)=="Jaunty_D-Mai" or GetPlayerName(P)=="Sekaiyo" or GetPlayerName(P)=="SAOkirito1121" or GetPlayerName(P)=="PinkieNecro" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="NecromanseR_RuS" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="Wolfkill" or GetPlayerName(P)=="Famouzy" or GetPlayerName(P)=="Famousy" or GetPlayerName(P)=="Anwa_Abdul" or GetPlayerName(P)=="antonpoganui" or GetPlayerName(P)=="xxNu-13xx" or GetPlayerName(P)=="f.a.r.a.o.n." or GetPlayerName(P)=="Denamesh" or  GetPlayerName(P)=="Sheogarath57" or GetPlayerName(P)=="Awenger93" or  GetPlayerName(P)=="Gun62rus" or GetPlayerName(P)=="XDragon_FrostX" or GetPlayerName(P)=="Odi" or GetPlayerName(P)=="ROC4ik" or GetPlayerName(P)=="zelim9" or GetPlayerName(P)=="tenevo" or GetPlayerName(P)=="MoonX3" or GetPlayerName(P)=="Gin_-_Ichimaru" or GetPlayerName(P)=="CFA-Kirito" or GetPlayerName(P)=="Uriska" or GetPlayerName(P)=="hrUd" or GetPlayerName(P)=="Kuzeyuta" or GetPlayerName(P)=="FT.Lancer" or GetPlayerName(P)=="Maryana.Ro" or GetPlayerName(P)=="Neo_Hirai" or GetPlayerName(P)=="msseva16" or GetPlayerName(P)=="Blaze_drago_x" or GetPlayerName(P)=="adara3" or GetPlayerName(P)=="Shunova" or GetPlayerName(P)=="Renex" or GetPlayerName(P)=="Chevalier" or GetPlayerName(P)=="knowyourplace" or BaseSkinCond(P))
 endfunction
 function AlterRFHCast takes nothing returns nothing
 local integer ip=GetPlayerId(GetTriggerPlayer())
@@ -32879,7 +32881,7 @@ set p=null
 endfunction
 function SRFHCond takes nothing returns boolean
 set P=GetTriggerPlayer()
-return udg_B==false and(GetPlayerName(P)=="Anwa_Abdul" or GetPlayerName(P)=="Renex" or GetPlayerName(P)=="Magistor" or GetPlayerName(P)=="KamaBr" or GetPlayerName(P)=="[OSV] Kama" or GetPlayerName(P)=="Daiya_Torasuto" or GetPlayerName(P)=="Uriska" or GetPlayerName(P)=="Annieh" or GetPlayerName(P)=="zld6334" or GetPlayerName(P)=="Alastart" or GetPlayerName(P)=="Sekaiyo" or GetPlayerName(P)=="Cermia" or GetPlayerName(P)=="Shiki.SS" or GetPlayerName(P)=="Anwa_Abdul" or GetPlayerName(P)=="antonpoganui" or GetPlayerName(P)=="dessar383" or GetPlayerName(P)=="pro100master999" or GetPlayerName(P)=="Sylphiette" or GetPlayerName(P)=="54Dzangetsu75" or GetPlayerName(P)=="PinkieNecro" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="NecromanseR_RuS" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="Wolfkill" or GetPlayerName(P)=="msseva16" or GetPlayerName(P)=="Famouzy" or GetPlayerName(P)=="Famousy" or GetPlayerName(P)=="xxNu-13xx" or GetPlayerName(P)=="Sasaki..Haise" or GetPlayerName(P)=="Fatal-_-Err0r" or GetPlayerName(P)=="Denamesh" or GetPlayerName(P)=="Neo_Hirai" or GetPlayerName(P)=="Reisen_Udongeib" or GetPlayerName(P)=="X53Arcan" or GetPlayerName(P)=="akama001" or GetPlayerName(P)=="Qwerty291097" or   GetPlayerName(P)=="Awenger93" or  GetPlayerName(P)=="Gun62rus" or GetPlayerName(P)=="zelim9" or GetPlayerName(P)=="Kirito.Yagatami" or GetPlayerName(P)=="RevanRespect" or GetPlayerName(P)=="MoonX3" or GetPlayerName(P)=="MilediEsdeath" or GetPlayerName(P)=="hrUd" or GetPlayerName(P)=="Kuzeyuta" or GetPlayerName(P)=="Kirito.Yagatami" or GetPlayerName(P)=="[E]moLove" or GetPlayerName(P)=="[Nirvash][Neo]" or GetPlayerName(P)=="Kiznas69" or GetPlayerName(P)=="Semko157" or GetPlayerName(P)=="-[I]Chi[C]o-" or GetPlayerName(P)=="zelim9" or GetPlayerName(P)=="EastRyd" or GetPlayerName(P)=="Andhel_corr" or GetPlayerName(P)=="Ameru_Z" or GetPlayerName(P)=="KazuneReyes" or GetPlayerName(P)=="99smail99" or GetPlayerName(P)=="tenevo" or GetPlayerName(P)=="Wishnt" or GetPlayerName(P)=="Starheart" or GetPlayerName(P)=="Avenger2109" or GetPlayerName(P)=="sergeyh2" or GetPlayerName(P)=="HeavyRainFall" or GetPlayerName(P)=="Starheart" or GetPlayerName(P)=="tenevo" or GetPlayerName(P)=="Hermaeus" or GetPlayerName(P)=="No_Dust" or GetPlayerName(P)=="TheDunwich525" or GetPlayerName(P)=="klint_istvud" or GetPlayerName(P)=="BERKUNT" or GetPlayerName(P)=="Odi" or GetPlayerName(P)=="Vladz0" or BaseSkinCond(P))
+return udg_B==false and(GetPlayerName(P)=="Anwa_Abdul" or GetPlayerName(P)=="Renex" or GetPlayerName(P)=="Magistor" or GetPlayerName(P)=="KamaBr" or GetPlayerName(P)=="[OSV] Kama" or GetPlayerName(P)=="Daiya_Torasuto" or GetPlayerName(P)=="Uriska" or GetPlayerName(P)=="Annieh" or GetPlayerName(P)=="zld6334" or GetPlayerName(P)=="Alastart" or GetPlayerName(P)=="Sekaiyo" or GetPlayerName(P)=="Tinafish" or GetPlayerName(P)=="Shiki.SS" or GetPlayerName(P)=="Anwa_Abdul" or GetPlayerName(P)=="antonpoganui" or GetPlayerName(P)=="dessar383" or GetPlayerName(P)=="pro100master999" or GetPlayerName(P)=="Sylphiette" or GetPlayerName(P)=="54Dzangetsu75" or GetPlayerName(P)=="PinkieNecro" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="NecromanseR_RuS" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="Wolfkill" or GetPlayerName(P)=="msseva16" or GetPlayerName(P)=="Famouzy" or GetPlayerName(P)=="Famousy" or GetPlayerName(P)=="xxNu-13xx" or GetPlayerName(P)=="Sasaki..Haise" or GetPlayerName(P)=="Fatal-_-Err0r" or GetPlayerName(P)=="Denamesh" or GetPlayerName(P)=="Neo_Hirai" or GetPlayerName(P)=="Reisen_Udongeib" or GetPlayerName(P)=="X53Arcan" or GetPlayerName(P)=="akama001" or GetPlayerName(P)=="Qwerty291097" or   GetPlayerName(P)=="Awenger93" or  GetPlayerName(P)=="Gun62rus" or GetPlayerName(P)=="zelim9" or GetPlayerName(P)=="Kirito.Yagatami" or GetPlayerName(P)=="RevanRespect" or GetPlayerName(P)=="MoonX3" or GetPlayerName(P)=="MilediEsdeath" or GetPlayerName(P)=="hrUd" or GetPlayerName(P)=="Kuzeyuta" or GetPlayerName(P)=="Kirito.Yagatami" or GetPlayerName(P)=="[E]moLove" or GetPlayerName(P)=="[Nirvash][Neo]" or GetPlayerName(P)=="Kiznas69" or GetPlayerName(P)=="Semko157" or GetPlayerName(P)=="-[I]Chi[C]o-" or GetPlayerName(P)=="zelim9" or GetPlayerName(P)=="EastRyd" or GetPlayerName(P)=="Andhel_corr" or GetPlayerName(P)=="Ameru_Z" or GetPlayerName(P)=="KazuneReyes" or GetPlayerName(P)=="99smail99" or GetPlayerName(P)=="tenevo" or GetPlayerName(P)=="Wishnt" or GetPlayerName(P)=="Starheart" or GetPlayerName(P)=="Avenger2109" or GetPlayerName(P)=="sergeyh2" or GetPlayerName(P)=="HeavyRainFall" or GetPlayerName(P)=="Starheart" or GetPlayerName(P)=="tenevo" or GetPlayerName(P)=="Hermaeus" or GetPlayerName(P)=="No_Dust" or GetPlayerName(P)=="TheDunwich525" or GetPlayerName(P)=="klint_istvud" or GetPlayerName(P)=="BERKUNT" or GetPlayerName(P)=="Odi" or GetPlayerName(P)=="Vladz0" or BaseSkinCond(P))
 endfunction
 function SRFHCast takes nothing returns nothing
 local integer ip=GetPlayerId(GetTriggerPlayer())
@@ -33025,7 +33027,7 @@ set p=null
 endfunction
 function ArcRFHCond takes nothing returns boolean
 set P=GetTriggerPlayer()
-return udg_B==false and(GetPlayerName(P)=="Shunova" or GetPlayerName(P)=="shibaketerayo" or GetPlayerName(P)=="chu" or GetPlayerName(P)=="Daiya_Torasuto" or GetPlayerName(P)=="Annieh" or GetPlayerName(P)=="KamaBr" or GetPlayerName(P)=="[OSV] Kama" or GetPlayerName(P)=="zld6334" or GetPlayerName(P)=="Jaunty_D-Mai" or GetPlayerName(P)=="Magistor" or GetPlayerName(P)=="Alastart" or GetPlayerName(P)=="Hermaeus" or GetPlayerName(P)=="No_Dust"  or GetPlayerName(P)=="TheDunwich525" or GetPlayerName(P)=="Uriska" or GetPlayerName(P)=="Chevalier" or GetPlayerName(P)=="Hagane" or GetPlayerName(P)=="Cermia" or GetPlayerName(P)=="WamPIRok" or GetPlayerName(P)=="3Deviant" or GetPlayerName(P)=="Sylphiette" or GetPlayerName(P)=="5Dark_Demon5" or GetPlayerName(P)=="PinkieNecro" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="NecromanseR_RuS" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="Wolfkill" or GetPlayerName(P)=="Famouzy" or GetPlayerName(P)=="Famousy" or GetPlayerName(P)=="Anwa_Abdul" or GetPlayerName(P)=="antonpoganui" or GetPlayerName(P)=="Sekaiyo" or GetPlayerName(P)=="xxNu-13xx" or GetPlayerName(P)=="Starheart" or GetPlayerName(P)=="Sasaki..Haise" or GetPlayerName(P)=="SAOkirito1121" or GetPlayerName(P)=="sasuke72rus" or GetPlayerName(P)=="Denamesh" or GetPlayerName(P)=="akama001" or GetPlayerName(P)=="Qwerty291097" or   GetPlayerName(P)=="Gun62rus" or  GetPlayerName(P)=="Awenger93" or GetPlayerName(P)=="zelim9" or GetPlayerName(P)=="MoonX3" or GetPlayerName(P)=="Kuzeyuta" or GetPlayerName(P)=="[E]moLove" or GetPlayerName(P)=="[Nirvash][Neo]" or GetPlayerName(P)=="Obito_Uchihsa" or GetPlayerName(P)=="-[I]Chi[C]o-" or GetPlayerName(P)=="zelim9" or GetPlayerName(P)=="klint_istvud" or GetPlayerName(P)=="Andhel_corr" or GetPlayerName(P)=="Ameru_Z" or GetPlayerName(P)=="KazuneReyes" or GetPlayerName(P)=="Kirito._100" or GetPlayerName(P)=="EscapedSoul" or GetPlayerName(P)=="99smail99" or GetPlayerName(P)=="Wishnt" or GetPlayerName(P)=="Monkbreaker" or GetPlayerName(P)=="skaors" or GetPlayerName(P)=="Avenger2109" or GetPlayerName(P)=="Space_GlobalTM" or GetPlayerName(P)=="B.e.t.a.TesTer" or GetPlayerName(P)=="MinionX12" or GetPlayerName(P)=="tenevo" or GetPlayerName(P)=="tutayanova" or GetPlayerName(P)=="BERKUNT" or GetPlayerName(P)=="Fantastic_Gear" or GetPlayerName(P)=="Beerus_Sama" or GetPlayerName(P)=="Renex" or GetPlayerName(P)=="knowyourplace" or GetPlayerName(P)=="Antitilt" or BaseSkinCond(P))
+return udg_B==false and(GetPlayerName(P)=="Shunova" or GetPlayerName(P)=="shibaketerayo" or GetPlayerName(P)=="chu" or GetPlayerName(P)=="Daiya_Torasuto" or GetPlayerName(P)=="Annieh" or GetPlayerName(P)=="KamaBr" or GetPlayerName(P)=="[OSV] Kama" or GetPlayerName(P)=="zld6334" or GetPlayerName(P)=="Jaunty_D-Mai" or GetPlayerName(P)=="Magistor" or GetPlayerName(P)=="Alastart" or GetPlayerName(P)=="Hermaeus" or GetPlayerName(P)=="No_Dust"  or GetPlayerName(P)=="TheDunwich525" or GetPlayerName(P)=="Uriska" or GetPlayerName(P)=="Chevalier" or GetPlayerName(P)=="Hagane" or GetPlayerName(P)=="Tinafish" or GetPlayerName(P)=="WamPIRok" or GetPlayerName(P)=="3Deviant" or GetPlayerName(P)=="Sylphiette" or GetPlayerName(P)=="5Dark_Demon5" or GetPlayerName(P)=="PinkieNecro" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="NecromanseR_RuS" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="Wolfkill" or GetPlayerName(P)=="Famouzy" or GetPlayerName(P)=="Famousy" or GetPlayerName(P)=="Anwa_Abdul" or GetPlayerName(P)=="antonpoganui" or GetPlayerName(P)=="Sekaiyo" or GetPlayerName(P)=="xxNu-13xx" or GetPlayerName(P)=="Starheart" or GetPlayerName(P)=="Sasaki..Haise" or GetPlayerName(P)=="SAOkirito1121" or GetPlayerName(P)=="sasuke72rus" or GetPlayerName(P)=="Denamesh" or GetPlayerName(P)=="akama001" or GetPlayerName(P)=="Qwerty291097" or   GetPlayerName(P)=="Gun62rus" or  GetPlayerName(P)=="Awenger93" or GetPlayerName(P)=="zelim9" or GetPlayerName(P)=="MoonX3" or GetPlayerName(P)=="Kuzeyuta" or GetPlayerName(P)=="[E]moLove" or GetPlayerName(P)=="[Nirvash][Neo]" or GetPlayerName(P)=="Obito_Uchihsa" or GetPlayerName(P)=="-[I]Chi[C]o-" or GetPlayerName(P)=="zelim9" or GetPlayerName(P)=="klint_istvud" or GetPlayerName(P)=="Andhel_corr" or GetPlayerName(P)=="Ameru_Z" or GetPlayerName(P)=="KazuneReyes" or GetPlayerName(P)=="Kirito._100" or GetPlayerName(P)=="EscapedSoul" or GetPlayerName(P)=="99smail99" or GetPlayerName(P)=="Wishnt" or GetPlayerName(P)=="Monkbreaker" or GetPlayerName(P)=="skaors" or GetPlayerName(P)=="Avenger2109" or GetPlayerName(P)=="Space_GlobalTM" or GetPlayerName(P)=="B.e.t.a.TesTer" or GetPlayerName(P)=="MinionX12" or GetPlayerName(P)=="tenevo" or GetPlayerName(P)=="tutayanova" or GetPlayerName(P)=="BERKUNT" or GetPlayerName(P)=="Fantastic_Gear" or GetPlayerName(P)=="Beerus_Sama" or GetPlayerName(P)=="Renex" or GetPlayerName(P)=="knowyourplace" or GetPlayerName(P)=="Antitilt" or BaseSkinCond(P))
 endfunction
 function ArcRFHCast takes nothing returns nothing
 local integer ip=GetPlayerId(GetTriggerPlayer())
@@ -59237,9 +59239,13 @@ call UnitRemoveAbility(u,'A0AL')
 //call UnitRemoveAbility(u,'A0AC')
 call UnitAddAbility(u,'A0AA')
 endif
+if LoadInteger(h,GetHandleId(u),GokuUIMusicHash)==0 then
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\MukuroEffect.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+// call KillSoundWhenDone(soundplay)
+call SaveInteger(h,GetHandleId(u),GokuUIMusicHash,1)
+call RemoveSaveHashTimed(4,GetHandleId(u),GokuUIMusicHash)
+endif
 call DestroyEffect(AddSpecialEffectTarget("war3mapImported\\WarpDarkCaster.mdx",u,"origin"))
 set u=null
 endfunction
@@ -67126,9 +67132,13 @@ call ShowAbility2Timed('A0GV',false,0.3)
 call ShowAbility2Timed('A41C',true,0.32)
 call UnitAddAbility(u,'GaT1')
 call SaveBoolean(HH,GetHandleId(u),SST,true)
+if LoadInteger(h,GetHandleId(u),GokuUIMusicHash)==0 then
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\Gamma_5.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+// call KillSoundWhenDone(soundplay)
+call SaveInteger(h,GetHandleId(u),GokuUIMusicHash,1)
+call RemoveSaveHashTimed(6,GetHandleId(u),GokuUIMusicHash)
+endif
 else
 call SaveBoolean(HH,GetHandleId(u),SST,false)
 call ShowAbility2('A41C',false)
@@ -70247,9 +70257,13 @@ call ShowAbility2Timed('A2HX',true,0.03)
 call StartAbilityCooldown(GetUnitAbility(u,'A2HX'),1)
 call UnitAddAbility(u,'JlF1')
 call SaveBoolean(HH,GetHandleId(u),SST,true)
+if LoadInteger(h,GetHandleId(u),GokuUIMusicHash)==0 then
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\Meteor.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+// call KillSoundWhenDone(soundplay)
+call SaveInteger(h,GetHandleId(u),GokuUIMusicHash,1)
+call RemoveSaveHashTimed(4,GetHandleId(u),GokuUIMusicHash)
+endif
 else
 call SaveBoolean(HH,GetHandleId(u),SST,false)
 call ShowAbility2Timed('A2HX',false,0.01)
@@ -83883,9 +83897,13 @@ call ShowAbility2Timed('A15C',false,0.3)
 call ShowAbility2Timed('A42C',true,0.32)
 call UnitAddAbility(u,'MgT1')
 call SaveBoolean(HH,GetHandleId(u),SST,true)
+if LoadInteger(h,GetHandleId(u),GokuUIMusicHash)==0 then
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\Innocentius.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
 call KillSoundWhenDone(soundplay)
+call SaveInteger(h,GetHandleId(u),GokuUIMusicHash,1)
+call RemoveSaveHashTimed(10,GetHandleId(u),GokuUIMusicHash)
+endif
 else
 call SaveBoolean(HH,GetHandleId(u),SST,false)
 call ShowAbility2('A42C',false)
@@ -118693,9 +118711,13 @@ call ShowAbility2Timed('A00C',false,0.3)
 call ShowAbility2Timed('A30C',true,0.32)
 call UnitAddAbility(u,'ItV1')
 call SaveBoolean(HH,GetHandleId(u),SST,true)
+if LoadInteger(h,GetHandleId(u),GokuUIMusicHash)==0 then
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\Susano.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+// call KillSoundWhenDone(soundplay)
+call SaveInteger(h,GetHandleId(u),GokuUIMusicHash,1)
+call RemoveSaveHashTimed(10,GetHandleId(u),GokuUIMusicHash)
+endif
 else
 call SaveBoolean(HH,GetHandleId(u),SST,false)
 call ShowAbility2('A30C',false)
@@ -179353,7 +179375,7 @@ function JirenQ_Cast takes unit u, real x1, real y1 returns nothing
     set t=null
 endfunction
 
-function JirenQSelf_Cast3 takes nothing returns nothing
+function JirenD_Cast3 takes nothing returns nothing
     local timer t=GetExpiredTimer()
     local integer id=GetHandleId(t)
     local unit u=LoadUnitHandle(HH,id,0)
@@ -179368,8 +179390,8 @@ function JirenQSelf_Cast3 takes nothing returns nothing
     local real time=LoadReal(HH,id,2)
     local real rollp=LoadReal(HH,id,10)
     local integer i=1
-    local real dmg=GetHeroStr(u,true)*(1+GetUnitAbilityLevel(u,'JNQ1'))+50
-    if time<1 then
+    local real dmg=GetHeroStr(u,true)*(1+GetUnitAbilityLevel(u,'JND1'))+50
+    if time<2 then
         call SaveReal(HH,id,2,time+0.02)
         call PauseUnit(u,true)
         call PauseUnit(c,true)
@@ -179459,7 +179481,7 @@ function JirenQSelf_Cast3 takes nothing returns nothing
     set c=null
     set t=null
 endfunction
-function JirenQSelf_Cast2 takes nothing returns nothing
+function JirenD_Cast2 takes nothing returns nothing
     local timer t=GetExpiredTimer()
     local integer id=GetHandleId(t)
     local unit u=LoadUnitHandle(HH,id,0)
@@ -179469,10 +179491,10 @@ function JirenQSelf_Cast2 takes nothing returns nothing
     local integer idu=GetHandleId(u)
     local unit c=LoadUnitHandle(HH,idu,REVERSE_TARGET)
     if time==0 then
-        call SetAbilityRemainingCooldown(GetUnitAbility(u, 'JNQ1'), 13)
+        call SetAbilityRemainingCooldown(GetUnitAbility(u, 'JND1'), 13)
         call SetUnitAnimationByIndex(u,18)
     endif
-    if time<2 and c==null then
+    if time<1 and c==null then
         call PauseUnit(u,true)
         if ModuloReal(time,0.32)==0.04 then
             call SaveReal(HH,id,2,time+0.04)
@@ -179498,8 +179520,8 @@ function JirenQSelf_Cast2 takes nothing returns nothing
             call PauseTimer(t)
             call SaveReal(HH,id,2,0)
             call StartSound(soundStr[106])
-            call SetAbilityRemainingCooldown(GetUnitAbility(u, 'JNQ1'), GetAbilityRemainingCooldown(GetUnitAbility(u, 'JNQ1'))+7)
-            call TimerStart(t,0.02,true,function JirenQSelf_Cast3)
+            call SetAbilityRemainingCooldown(GetUnitAbility(u, 'JND1'), GetAbilityRemainingCooldown(GetUnitAbility(u, 'JND1'))+7)
+            call TimerStart(t,0.02,true,function JirenD_Cast3)
         else
             call RemoveSavedHandle(HH,idu,REVERSE_TARGET)
             if c==null then
@@ -179515,7 +179537,7 @@ function JirenQSelf_Cast2 takes nothing returns nothing
     set u=null
     set t=null
 endfunction
-function JirenQSelf_Cast takes unit u returns nothing
+function JirenD_Cast takes unit u returns nothing
     local timer t=CreateTimer()
     local real x=GetUnitX(u)
     local real y=GetUnitY(u)
@@ -179532,14 +179554,14 @@ function JirenQSelf_Cast takes unit u returns nothing
     else
         call StartSound(soundStr[105])
     endif
-    call TimerStart(t,0.04,true,function JirenQSelf_Cast2)
+    call TimerStart(t,0.04,true,function JirenD_Cast2)
     set u=null
     set p=null
     set t=null
 endfunction
 
 function Jiren_Cond takes nothing returns boolean
-    local boolean cond1=GetSpellAbilityId()=='JNQ1' or GetSpellAbilityId()=='JNW1' or GetSpellAbilityId()=='JNE1' or GetSpellAbilityId()=='JNR1' or GetSpellAbilityId()=='JNT1' or GetSpellAbilityId()=='JNF1' or GetSpellAbilityId()=='JNF4' or GetSpellAbilityId()=='JNG1'  
+    local boolean cond1=GetSpellAbilityId()=='JNQ1' or GetSpellAbilityId()=='JNW1' or GetSpellAbilityId()=='JNE1' or GetSpellAbilityId()=='JNR1' or GetSpellAbilityId()=='JNT1' or GetSpellAbilityId()=='JNF1' or GetSpellAbilityId()=='JNF4' or GetSpellAbilityId()=='JNG1' or GetSpellAbilityId()=='JND1'  
     if cond1 then
         return true
     else
@@ -179552,6 +179574,9 @@ function Jiren_Cast takes nothing returns nothing
     local unit c=GetSpellTargetUnit()
     local real x=GetSpellTargetX()
     local real y=GetSpellTargetY()
+    if GetSpellAbilityId() == 'JND1' then
+        call JirenD_Cast(u)
+    endif
     if GetSpellAbilityId() == 'JNG1' then
 		call JirenG1_Cast(u,c)
     endif
@@ -179562,11 +179587,7 @@ function Jiren_Cast takes nothing returns nothing
 		call JirenF2_Cast(u)
     endif
     if GetSpellAbilityId() == 'JNQ1' then
-        if c==u then
-            call JirenQSelf_Cast(u)
-        else
-		    call JirenQ_Cast(u,x,y)
-        endif
+		call JirenQ_Cast(u,x,y)
     endif
 	if GetSpellAbilityId() == 'JNW1' then
 		call JirenW_Cast(u,x,y)
@@ -206629,7 +206650,7 @@ call SaveBoolean(HH,GetHandleId(caster),StringHash("GaaraF"),false)
 call AddUnitAnimationProperties(caster,"alternate",false)
 endif
 if time==10.02 then
-call CreateModeIndicatorForm(caster, "war3mapImported\\BTNGaara.blp", 19.98)
+call StartAbilityCooldown(GetUnitAbility(caster, 'ASGD'), 20)
 endif
 if time>30 then
 call SaveBoolean(HH,GetHandleId(caster),StringHash("GaaraFCD"),false)
@@ -206646,33 +206667,6 @@ local integer id=GetHandleId(t)
 call SaveUnitHandle(HH,id,1,caster0)
 call SetUnitPathing(caster0,false)
 call TimerStart(t,0.02,true,function GaaraFlyMove)
-set t=null
-endfunction
-
-function GaaraFlyAct0 takes nothing returns nothing
-local unit caster=GetTriggerUnit()
-
-if LoadBoolean(HH,GetHandleId(caster),StringHash("GaaraFCD"))==false and OrderId2String(GetUnitCurrentOrder(caster))=="patrol" and GetHeroLevel(caster)>=12 and GetUnitAbilityLevel(caster,'CBC2')==0 and GetUnitAbilityLevel(caster,'cbc3')==0  and GetUnitAbilityLevel(caster,'cbc5')==0  and GetUnitAbilityLevel(caster, 'cbc7')==0 and GetUnitAbilityLevel(caster, 'cbc8')==0 and GetUnitAbilityLevel(caster, 'cbc9')==0 then
-call GaaraFlyAct(caster)
-endif
-
-set caster=null
-endfunction
-function GaaraFlyCond0 takes nothing returns boolean
-return  GetUnitTypeId( GetTriggerUnit() )== 'H02R'
-endfunction
-function InitTrig_GaaraFly takes nothing returns nothing
-local trigger t=CreateTrigger()
-local integer i=0
-loop
-call TriggerRegisterPlayerUnitEvent(t,Player(i),EVENT_PLAYER_UNIT_ISSUED_POINT_ORDER,null)
-set i=i+1
-exitwhen i>=bj_MAX_PLAYER_SLOTS
-endloop
-call TriggerAddCondition(t,Condition(function GaaraFlyCond0) )
-call TriggerAddAction(t,function GaaraFlyAct0)
-
-
 set t=null
 endfunction
 
@@ -218531,7 +218525,42 @@ function CustomSpell takes nothing returns nothing
         call GetUnitEvent(CreateTrigger(), EVENT_PLAYER_UNIT_SPELL_EFFECT, function SpellAct)
 endfunction
 
-function YoruichiFCast4 takes nothing returns nothing
+
+function YoruichiDCast4 takes nothing returns nothing
+    local integer id=GetHandleId(GetExpiredTimer())
+    local unit caster = LoadUnitHandle(HH, id, 0)
+    local real time = LoadReal(HH, GetHandleId(caster), 1125)
+    local integer lvl = 0
+    if GetHeroLevel(caster)>5 and GetHeroLevel(caster)<12 then
+        set lvl=1
+    endif
+    if GetHeroLevel(caster)>=12 then
+        set lvl=2
+    endif
+    if IsUnitAlive(caster) then
+        call SaveReal(HH, GetHandleId(caster), 1125, time-0.1)
+    else
+        call SaveReal(HH, GetHandleId(caster), 1125, 0.2)
+    endif
+    if time<0 or GetUnitAbilityLevel(caster, 'YoD0')==0 or LoadInteger(HH, GetHandleId(caster), 1126)>lvl then
+        call UnitRemoveAbility(caster, 'YoD1')
+        call ShowAbility2('YoD0', true)
+        if LoadInteger(HH, GetHandleId(caster), 1126)>lvl then
+        call StartAbilityCooldown(GetUnitAbility(caster, 'YoD0'), 15)
+        endif
+        call SetAbilityIntegerLevelField(GetUnitAbility(caster,'YoD1'),ABILITY_ILF_MANA_COST,0,100)
+        call SetAbilityIntegerLevelField(GetUnitAbility(caster,'YoD0'),ABILITY_ILF_MANA_COST,0,100)
+        call DestroyEffect(LoadEffectHandle(HH, id, 3))
+        call DestroyEffect(LoadEffectHandle(HH, id, 4))
+        call RemoveSavedReal(HH, GetHandleId(caster), 1125)
+        call RemoveSavedInteger(HH, GetHandleId(caster), 1126)
+        call FlushChildHashtable(HH, id)
+        call DestroyTimer(GetExpiredTimer())
+    endif
+    set caster=null
+endfunction
+
+function YoruichiDCast3 takes nothing returns nothing
     local timer t=GetExpiredTimer()
     local integer id = GetHandleId(t)
     local unit u=LoadUnitHandle(HH,id,0)
@@ -218563,7 +218592,7 @@ function YoruichiFCast4 takes nothing returns nothing
             call SaveReal(HH,id,4,0)
             endif
         else
-            if LoadBoolean(HH,GetHandleId(E),ANTITARGET_ABILITY)==false then
+            if LoadBoolean(HH,GetHandleId(E2),ANTITARGET_ABILITY)==false then
                 set n=CreateUnit(p,'e1GZ',x,y,a)
                 call SetUnitModel(n,"Yoruichi.mdl")
                 call SetUnitScale(n, 0.95, 0.95, 0.95)
@@ -218572,7 +218601,7 @@ function YoruichiFCast4 takes nothing returns nothing
                 call SetUnitVertexColor(n,255,255,255,125)
                 call SetUnitTimeScale(n,5)
                 call UnitApplyTimedLife(n,'BHwe',0.3)
-                call myCustomDamage(u,E2, GetHeroAgi(u,true)*2, false, false, null, null, null)
+                call myCustomDamage(u,E2, GetHeroAgi(u,true)*2.5, false, false, null, null, null)
                 call SetControlToUnit(E2,E2,0.1,"stun")
                 set EFF=AddSpecialEffect("HeroBladeMasterpf_E1.mdl", GetUnitX(E2),GetUnitY(E2))
                 call SetSpecialEffectFacing(EFF , a  * bj_RADTODEG)
@@ -218611,7 +218640,7 @@ function YoruichiFCast4 takes nothing returns nothing
     set t=null
 endfunction
 
-function YoruichiFCast3 takes unit u returns nothing
+function YoruichiDCast2 takes unit u returns nothing
     local timer t = CreateTimer()
     local integer id = GetHandleId(t)
     local player p=GetOwningPlayer(u)
@@ -218637,11 +218666,55 @@ function YoruichiFCast3 takes unit u returns nothing
         call StartSound(soundplay)
         call KillSoundWhenDone(soundplay)
     endif
-    call TimerStart(t, 0.02, true, function YoruichiFCast4)
+    call TimerStart(t, 0.02, true, function YoruichiDCast3)
     set p=null
     set g=null
     set t=null
 endfunction
+
+
+function YoruichiDCast takes unit newCaster returns nothing
+    local timer newTimer = CreateTimer()
+    local integer id = GetHandleId(newTimer)
+    call ShowAbility2('YoD0', false)
+    call UnitAddAbility(newCaster, 'YoD1')
+    call UnitMakeAbilityPermanent(newCaster, true, 'YoD1')
+    call StartAbilityCooldown(GetUnitAbility(newCaster, 'YoD1'), 0.3)
+    call SaveUnitHandle(HH, id, 0, newCaster)
+    call SaveReal(HH, GetHandleId(newCaster), 1125, 15)
+    call SaveInteger(HH, GetHandleId(newCaster), 1126, 1)
+    call YoruichiDCast2(newCaster)
+    set soundplay=CreateSound("Sound\\Music\\mp3Music\\YoruichiShunpo.mp3", false, false, true, 12700, 12700, "")
+    call StartSound(soundplay)
+    call KillSoundWhenDone(soundplay)
+    call SetAbilityIntegerLevelField(GetUnitAbility(newCaster,'YoD1'),ABILITY_ILF_MANA_COST,0,110)
+    call SetAbilityIntegerLevelField(GetUnitAbility(newCaster,'YoD0'),ABILITY_ILF_MANA_COST,0,110)
+    call SaveEffectHandle(HH, id, 3, AddSpecialEffectTarget("Abilities\\Weapons\\AvengerMissile\\AvengerMissile.mdl", newCaster, "right foot"))
+    call SaveEffectHandle(HH, id, 4, AddSpecialEffectTarget("Abilities\\Weapons\\AvengerMissile\\AvengerMissile.mdl", newCaster, "left foot"))
+    call TimerStart(newTimer, 0.1, true, function YoruichiDCast4)
+    set newTimer=null
+endfunction
+
+function YoruichiD_CalculateMana takes unit newCaster returns nothing
+    local integer stack = LoadInteger(HH, GetHandleId(newCaster), 1126)
+    local real manacost = 100
+    local real waste = 100
+    local integer i=0
+    loop
+    exitwhen i>=stack+1
+        set waste = waste + 0.15*(waste)
+        set i=i+1
+    endloop
+    call SaveInteger(HH, GetHandleId(newCaster), 1126, stack+1)
+    call YoruichiDCast2(newCaster)
+
+    call SetAbilityIntegerLevelField(GetUnitAbility(newCaster,'YoD1'),ABILITY_ILF_MANA_COST,0,R2I(waste))
+    call SetAbilityIntegerLevelField(GetUnitAbility(newCaster,'YoD0'),ABILITY_ILF_MANA_COST,0,R2I(waste))
+    set soundplay=CreateSound("Sound\\Music\\mp3Music\\YoruichiShunpo.mp3", false, false, true, 12700, 12700, "")
+    call StartSound(soundplay)
+    call KillSoundWhenDone(soundplay)
+endfunction
+
 
 function YoruichiFCast2 takes nothing returns nothing
     local integer id=GetHandleId(GetExpiredTimer())
@@ -218687,21 +218760,18 @@ function YoruichiFCast takes unit newCaster, real point_x, real point_y returns 
     call StartAbilityCooldown(GetUnitAbility(newCaster, 'YoF1'), 0.3)
     call SaveUnitHandle(HH, id, 0, newCaster)
     call SaveReal(HH, GetHandleId(newCaster), 1122, 15)
-    if GetSpellTargetUnit()==newCaster and GetHeroLevel(newCaster)>=12 then
-        call SaveInteger(HH, GetHandleId(newCaster), 1123, 1)
-        call YoruichiFCast3(newCaster)
-    else
-        if SR(GetUnitX(newCaster),GetUnitY(newCaster),point_x,point_y)>500 then
-            set point_x=GetUnitX(newCaster)+500*Cos(a)
-            set point_y=GetUnitY(newCaster)+500*Sin(a)
-        endif
-        call SetAbilityIntegerLevelField(GetUnitAbility(newCaster,'YoF1'),ABILITY_ILF_MANA_COST,0,88)
-        call SetAbilityIntegerLevelField(GetUnitAbility(newCaster,'YoF0'),ABILITY_ILF_MANA_COST,0,88)
-        call DestroyEffect(AddSpecialEffect("war3mapImported\\BlackBlink.mdx",GetUnitX(newCaster),GetUnitY(newCaster)))
-        call SetUnitXY_1(newCaster,point_x,point_y,false)
-        call DestroyEffect(AddSpecialEffect("war3mapImported\\BlackBlink.mdx",point_x,point_y))
-        call SaveInteger(HH, GetHandleId(newCaster), 1123, 1)
+
+    if SR(GetUnitX(newCaster),GetUnitY(newCaster),point_x,point_y)>600 then
+        set point_x=GetUnitX(newCaster)+600*Cos(a)
+        set point_y=GetUnitY(newCaster)+600*Sin(a)
     endif
+    call SetAbilityIntegerLevelField(GetUnitAbility(newCaster,'YoF1'),ABILITY_ILF_MANA_COST,0,88)
+    call SetAbilityIntegerLevelField(GetUnitAbility(newCaster,'YoF0'),ABILITY_ILF_MANA_COST,0,88)
+    call DestroyEffect(AddSpecialEffect("war3mapImported\\BlackBlink.mdx",GetUnitX(newCaster),GetUnitY(newCaster)))
+    call SetUnitXY_1(newCaster,point_x,point_y,false)
+    call DestroyEffect(AddSpecialEffect("war3mapImported\\BlackBlink.mdx",point_x,point_y))
+    call SaveInteger(HH, GetHandleId(newCaster), 1123, 1)
+
     set soundplay=CreateSound("Sound\\Music\\mp3Music\\YoruichiShunpo.mp3", false, false, true, 12700, 12700, "")
     call StartSound(soundplay)
     call KillSoundWhenDone(soundplay)
@@ -218722,21 +218792,16 @@ function YoruichiF_CalculateMana takes unit newCaster, real point_x, real point_
         set waste = waste + 0.10*(waste)
         set i=i+1
     endloop
-    if GetSpellTargetUnit()==newCaster and GetHeroLevel(newCaster)>=12 then
-        call SaveInteger(HH, GetHandleId(newCaster), 1123, stack+1)
-        call YoruichiFCast3(newCaster)
-    else
-        if SR(GetUnitX(newCaster),GetUnitY(newCaster),point_x,point_y)>500 then
+    if SR(GetUnitX(newCaster),GetUnitY(newCaster),point_x,point_y)>500 then
         set point_x=GetUnitX(newCaster)+500*Cos(a)
         set point_y=GetUnitY(newCaster)+500*Sin(a)
-        endif
-        call SetAbilityIntegerLevelField(GetUnitAbility(newCaster,'YoF1'),ABILITY_ILF_MANA_COST,0,R2I(waste))
-        call SetAbilityIntegerLevelField(GetUnitAbility(newCaster,'YoF0'),ABILITY_ILF_MANA_COST,0,R2I(waste))
-        call DestroyEffect(AddSpecialEffect("war3mapImported\\BlackBlink.mdx",GetUnitX(newCaster),GetUnitY(newCaster)))
-        call SetUnitXY_1(newCaster,point_x,point_y,false)
-        call DestroyEffect(AddSpecialEffect("war3mapImported\\BlackBlink.mdx",point_x,point_y))
-        call SaveInteger(HH, GetHandleId(newCaster), 1123, stack+1)
     endif
+    call SetAbilityIntegerLevelField(GetUnitAbility(newCaster,'YoF1'),ABILITY_ILF_MANA_COST,0,R2I(waste))
+    call SetAbilityIntegerLevelField(GetUnitAbility(newCaster,'YoF0'),ABILITY_ILF_MANA_COST,0,R2I(waste))
+    call DestroyEffect(AddSpecialEffect("war3mapImported\\BlackBlink.mdx",GetUnitX(newCaster),GetUnitY(newCaster)))
+    call SetUnitXY_1(newCaster,point_x,point_y,false)
+    call DestroyEffect(AddSpecialEffect("war3mapImported\\BlackBlink.mdx",point_x,point_y))
+    call SaveInteger(HH, GetHandleId(newCaster), 1123, stack+1)
     set soundplay=CreateSound("Sound\\Music\\mp3Music\\YoruichiShunpo.mp3", false, false, true, 12700, 12700, "")
     call StartSound(soundplay)
     call KillSoundWhenDone(soundplay)
@@ -219718,6 +219783,13 @@ function Trig_YoruichiInt_Actions takes nothing returns nothing
     if GetSpellAbilityId()=='YoF1' then
         call SaveReal(HH, GetHandleId(GetSpellAbilityUnit()), 1122, 15)
         call YoruichiF_CalculateMana(GetSpellAbilityUnit(),GetSpellTargetX(), GetSpellTargetY())
+    endif
+    if GetSpellAbilityId()=='YoD0' then
+        call YoruichiDCast(GetSpellAbilityUnit())
+    endif
+    if GetSpellAbilityId()=='YoD1' then
+        call SaveReal(HH, GetHandleId(GetSpellAbilityUnit()), 1125, 15)
+        call YoruichiD_CalculateMana(GetSpellAbilityUnit())
     endif
     if GetSpellAbilityId()=='YoQ0' then
         call YoruichiQCast(GetSpellAbilityUnit(), GetSpellTargetX(), GetSpellTargetY())
@@ -220762,6 +220834,52 @@ function TobiramaTCast takes unit u, real x1, real y1 returns nothing
     set t=null
 endfunction
 
+function TobiramaDCast takes unit u returns nothing
+    local timer t = CreateTimer()
+    local unit c
+    local integer i=0
+    local integer id = GetHandleId(t)
+    local integer idu = GetHandleId(u)
+    local effect ef = null
+    local group g=CreateGroup()
+    set soundplay=CreateSound("Sound\\Music\\mp3Music\\TobiramaFSelf.mp3", false, false, true, 12700, 12700, "")
+    call StartSound(soundplay)
+    call KillSoundWhenDone(soundplay)
+    set n=CreateUnit(GetOwningPlayer(u),'H34X',GetUnitX(u)+125*Cos(GetRandomReal(0,359)*bj_DEGTORAD),GetUnitY(u)+125*Sin(GetRandomReal(0,359)*bj_DEGTORAD),GetRandomReal(0,359))
+    if IsUnitAlly(n,GetLocalPlayer()) then
+        call SetUnitVertexColor(n,155,155,255,255)
+    endif
+    set ef=AddSpecialEffect("war3mapImported\\Poff.mdx",GetUnitX(n),GetUnitY(n))
+    call SetSpecialEffectScale(ef,0.2)
+    call SetSpecialEffectZ(ef,55)
+    call DestroyEffect(ef)
+    call SetHeroLevel(n,GetHeroLevel(u),false)
+    call SetHeroAgi(n,GetHeroAgi(u,false),true)
+    call SetHeroStr(n,GetHeroStr(u,false),true)
+    call SetHeroInt(n,GetHeroInt(u,false),true)
+    call SetUnitCurrentSight(n,600)
+    call SetUnitUseFood(n,true)
+    call UnitInventorySetSize(n,10)
+    loop
+    exitwhen i>=10
+    if GetItemTypeId(UnitItemInSlot(u,i))!='Io39' then
+        set bj_lastCreatedItem=UnitAddItemById(n,GetItemTypeId(UnitItemInSlot(u,i)))
+        call SetItemDroppable(bj_lastCreatedItem,false)
+        //call StartItemCooldown(bj_lastCreatedItem,9999)
+    endif
+    set i=i+1
+    endloop
+    call UnitEnableInventoryCustom(n,false,false)
+    call SetUnitState(n,UNIT_STATE_LIFE,GetWidgetLife(u))
+    call SetUnitState(n,UNIT_STATE_MANA,GetWidgetMana(u))
+    call UnitApplyTimedLife(n,'BTLF',30)
+    set c=null
+    set g=null
+    set t=null
+    set ef=null
+endfunction
+
+
 function TobiramaF2Cast takes unit u, real x1, real y1 returns nothing
     local timer t = CreateTimer()
     local unit c
@@ -220842,93 +220960,58 @@ function TobiramaFCast takes unit u, real x1, real y1 returns nothing
     local integer idu = GetHandleId(u)
     local effect ef = null
     local group g=CreateGroup()
-    if GetSpellTargetUnit()==u and LoadReal(HH, GetHandleId(LoadFrameHandle(HH, GetHandleId(GetOwningPlayer(u)),StringHash("ReplaceableTextures\\CommandButtons\\BTNTobiramaFSelf.blp"))), c_DURATION)==0 and GetHeroLevel(u)>12 then
-        call CreateModeIndicatorForm(u, "ReplaceableTextures\\CommandButtons\\BTNTobiramaFSelf.blp", 20)
-        set soundplay=CreateSound("Sound\\Music\\mp3Music\\TobiramaFSelf.mp3", false, false, true, 12700, 12700, "")
+    call GroupEnumUnitsInRange(G,x1,y1,1000,Base)
+    loop
+        set E=FirstOfGroup(G)
+        exitwhen E==null
+        if (GetUnitAbilityLevel(E,'TMF1')>0 or GetUnitTypeId(E)=='H34X' or GetUnitTypeId(E)=='H34Z') and u!=E and SR(GetUnitX(u),GetUnitY(u),GetUnitX(E),GetUnitY(E))<3000 then
+            call GroupAddUnit(g,E)
+        endif
+        call GroupRemoveUnit(G,E)
+    endloop
+    if LoadUnitHandle(HH,idu,StringHash("TobiramaW_Kunai"))!=null then
+        if SR(x1,y1,GetUnitX(LoadUnitHandle(HH,idu,StringHash("TobiramaW_Kunai"))),GetUnitY(LoadUnitHandle(HH,idu,StringHash("TobiramaW_Kunai"))))<1000 then
+            call GroupAddUnit(g,LoadUnitHandle(HH,idu,StringHash("TobiramaW_Kunai")))
+        endif
+    endif
+    set E=FirstOfGroup(g)
+    if E==null then
+        call DisplayTimedWarningMessage(GetOwningPlayer(u),10,"There is no suitable target for Hiraishin no Jutsu.")
+    else
+        set c=E
+        loop
+        set E=FirstOfGroup(g)
+        exitwhen E==null
+        if SR(x1,y1,GetUnitX(E),GetUnitY(E))<=SR(x1,y1,GetUnitX(c),GetUnitY(c)) then
+            set c=E
+        endif
+        call GroupRemoveUnit(g,E)
+        endloop
+        call DestroyGroup(g)
+        set ef=AddSpecialEffect("TobiramaHiraishin.mdl",GetUnitX(u),GetUnitY(u))
+        call SetSpecialEffectScale(ef,0.57)
+        call SetSpecialEffectZ(ef,115)
+        call DestroyEffect(ef)
+        set ef=AddSpecialEffect("TobiramaHiraishin2.mdl",GetUnitX(u),GetUnitY(u))
+        call SetSpecialEffectScale(ef,1.5)
+        call SetSpecialEffectZ(ef,115)
+        call DestroyEffect(ef)
+        call SetUnitXY_1(u,GetUnitX(c)+65*Cos(GetRandomReal(0,359)*bj_DEGTORAD),GetUnitY(c)+65*Sin(GetRandomReal(0,359)*bj_DEGTORAD),false)
+        set ef=AddSpecialEffect("TobiramaHiraishin.mdl",GetUnitX(u),GetUnitY(u))
+        call SetSpecialEffectScale(ef,0.57)
+        call SetSpecialEffectZ(ef,115)
+        call DestroyEffect(ef)
+        set ef=AddSpecialEffect("TobiramaHiraishin2.mdl",GetUnitX(u),GetUnitY(u))
+        call SetSpecialEffectScale(ef,1.5)
+        call SetSpecialEffectZ(ef,115)
+        call DestroyEffect(ef)
+        if c==LoadUnitHandle(HH,idu,StringHash("TobiramaW_Kunai")) then
+            call SaveBoolean(HH, idu, StringHash("TobiramaW_Blink3"), true)
+        endif
+        call UnitRemoveAbility(c,'TMF1')
+        set soundplay=CreateSound("Sound\\Music\\mp3Music\\TobiramaF.mp3", false, false, true, 12700, 12700, "")
         call StartSound(soundplay)
         call KillSoundWhenDone(soundplay)
-        set n=CreateUnit(GetOwningPlayer(u),'H34X',GetUnitX(u)+125*Cos(GetRandomReal(0,359)*bj_DEGTORAD),GetUnitY(u)+125*Sin(GetRandomReal(0,359)*bj_DEGTORAD),GetRandomReal(0,359))
-        if IsUnitAlly(n,GetLocalPlayer()) then
-            call SetUnitVertexColor(n,155,155,255,255)
-        endif
-        set ef=AddSpecialEffect("war3mapImported\\Poff.mdx",GetUnitX(n),GetUnitY(n))
-        call SetSpecialEffectScale(ef,0.2)
-        call SetSpecialEffectZ(ef,55)
-        call DestroyEffect(ef)
-        call SetHeroLevel(n,GetHeroLevel(u),false)
-        call SetHeroAgi(n,GetHeroAgi(u,false),true)
-        call SetHeroStr(n,GetHeroStr(u,false),true)
-        call SetHeroInt(n,GetHeroInt(u,false),true)
-        call SetUnitCurrentSight(n,600)
-        call SetUnitUseFood(n,true)
-        call UnitInventorySetSize(n,10)
-        loop
-        exitwhen i>=10
-        if GetItemTypeId(UnitItemInSlot(u,i))!='Io39' then
-            set bj_lastCreatedItem=UnitAddItemById(n,GetItemTypeId(UnitItemInSlot(u,i)))
-            call SetItemDroppable(bj_lastCreatedItem,false)
-            //call StartItemCooldown(bj_lastCreatedItem,9999)
-        endif
-        set i=i+1
-        endloop
-        call UnitEnableInventoryCustom(n,false,false)
-        call SetUnitState(n,UNIT_STATE_LIFE,GetWidgetLife(u))
-        call SetUnitState(n,UNIT_STATE_MANA,GetWidgetMana(u))
-        call UnitApplyTimedLife(n,'BTLF',30)
-    else
-        call GroupEnumUnitsInRange(G,x1,y1,1000,Base)
-        loop
-            set E=FirstOfGroup(G)
-            exitwhen E==null
-            if (GetUnitAbilityLevel(E,'TMF1')>0 or GetUnitTypeId(E)=='H34X' or GetUnitTypeId(E)=='H34Z') and u!=E and SR(GetUnitX(u),GetUnitY(u),GetUnitX(E),GetUnitY(E))<3000 then
-                call GroupAddUnit(g,E)
-            endif
-            call GroupRemoveUnit(G,E)
-        endloop
-        if LoadUnitHandle(HH,idu,StringHash("TobiramaW_Kunai"))!=null then
-            if SR(x1,y1,GetUnitX(LoadUnitHandle(HH,idu,StringHash("TobiramaW_Kunai"))),GetUnitY(LoadUnitHandle(HH,idu,StringHash("TobiramaW_Kunai"))))<1000 then
-                call GroupAddUnit(g,LoadUnitHandle(HH,idu,StringHash("TobiramaW_Kunai")))
-            endif
-        endif
-        set E=FirstOfGroup(g)
-        if E==null then
-            call DisplayTimedWarningMessage(GetOwningPlayer(u),10,"There is no suitable target for Hiraishin no Jutsu.")
-        else
-            set c=E
-            loop
-            set E=FirstOfGroup(g)
-            exitwhen E==null
-            if SR(x1,y1,GetUnitX(E),GetUnitY(E))<=SR(x1,y1,GetUnitX(c),GetUnitY(c)) then
-                set c=E
-            endif
-            call GroupRemoveUnit(g,E)
-            endloop
-            call DestroyGroup(g)
-            set ef=AddSpecialEffect("TobiramaHiraishin.mdl",GetUnitX(u),GetUnitY(u))
-            call SetSpecialEffectScale(ef,0.57)
-            call SetSpecialEffectZ(ef,115)
-            call DestroyEffect(ef)
-            set ef=AddSpecialEffect("TobiramaHiraishin2.mdl",GetUnitX(u),GetUnitY(u))
-            call SetSpecialEffectScale(ef,1.5)
-            call SetSpecialEffectZ(ef,115)
-            call DestroyEffect(ef)
-            call SetUnitXY_1(u,GetUnitX(c)+65*Cos(GetRandomReal(0,359)*bj_DEGTORAD),GetUnitY(c)+65*Sin(GetRandomReal(0,359)*bj_DEGTORAD),false)
-            set ef=AddSpecialEffect("TobiramaHiraishin.mdl",GetUnitX(u),GetUnitY(u))
-            call SetSpecialEffectScale(ef,0.57)
-            call SetSpecialEffectZ(ef,115)
-            call DestroyEffect(ef)
-            set ef=AddSpecialEffect("TobiramaHiraishin2.mdl",GetUnitX(u),GetUnitY(u))
-            call SetSpecialEffectScale(ef,1.5)
-            call SetSpecialEffectZ(ef,115)
-            call DestroyEffect(ef)
-            if c==LoadUnitHandle(HH,idu,StringHash("TobiramaW_Kunai")) then
-                call SaveBoolean(HH, idu, StringHash("TobiramaW_Blink3"), true)
-            endif
-            call UnitRemoveAbility(c,'TMF1')
-            set soundplay=CreateSound("Sound\\Music\\mp3Music\\TobiramaF.mp3", false, false, true, 12700, 12700, "")
-            call StartSound(soundplay)
-            call KillSoundWhenDone(soundplay)
-        endif
     endif
     set c=null
     set g=null
@@ -220967,6 +221050,9 @@ function Trig_TobiramaInt_Actions takes nothing returns nothing
     local unit u=GetSpellAbilityUnit()
     local integer idu=GetHandleId(u)
     local real a=0
+    if GetSpellAbilityId()=='TMD0' then
+        call TobiramaDCast(u)
+    endif
     if GetSpellAbilityId()=='TMF0' then
         call TobiramaFCast(u,GetSpellTargetX(), GetSpellTargetY())
     endif
@@ -225061,7 +225147,7 @@ set t=null
 endfunction
 //KimimaroRegen_End
 function AbilitiesForChoice_Cond takes nothing returns boolean
-    local boolean cond1=GetSpellAbilityId()=='RsQ1' or GetSpellAbilityId()=='RsQ2' or GetSpellAbilityId()=='RsQ3' or GetSpellAbilityId()=='RsW1' or GetSpellAbilityId()=='RsW2' or GetSpellAbilityId()=='RsE1' or GetSpellAbilityId()=='RsR1' or GetSpellAbilityId()=='RsR2' or GetSpellAbilityId()=='RsT1' or GetSpellAbilityId()=='RsD1' or GetSpellAbilityId()=='RsD2' or GetSpellAbilityId()=='RsD3' or GetSpellAbilityId()=='RsF1' or GetSpellAbilityId()=='RsF2' or GetSpellAbilityId()=='RsF3' or GetSpellAbilityId()=='RsG1' or GetSpellAbilityId()=='GinG' or GetSpellAbilityId()=='LamF' or GetSpellAbilityId()=='SiD1' or GetSpellAbilityId()=='AKQ1' or GetSpellAbilityId()=='AKW1' or GetSpellAbilityId()=='AKE1' or GetSpellAbilityId()=='AKR1' or GetSpellAbilityId()=='AKT1' or GetSpellAbilityId()=='AKF1' or GetSpellAbilityId()=='AKG1' or GetSpellAbilityId()=='GrQ1' or GetSpellAbilityId()=='GrW1' or GetSpellAbilityId()=='GrE1' or GetSpellAbilityId()=='GrR1' or GetSpellAbilityId()=='GrT1' or GetSpellAbilityId()=='GrF1' or GetSpellAbilityId()=='GrG2' or GetSpellAbilityId()=='UKD1' or GetSpellAbilityId()=='BuuG' or GetSpellAbilityId()=='GSQ1' or GetSpellAbilityId()=='GSQ2' or GetSpellAbilityId()=='GSW1' or GetSpellAbilityId()=='GSE1' or GetSpellAbilityId()=='GSE2' or GetSpellAbilityId()=='GSF1' or GetSpellAbilityId()=='GSF2' or GetSpellAbilityId()=='GSG1' or GetSpellAbilityId()=='GSR1' or GetSpellAbilityId()=='GST1' or GetSpellAbilityId()=='GST2' or GetSpellAbilityId()=='GST3' or GetSpellAbilityId()=='SHG1' or GetSpellAbilityId()=='CelF' or GetSpellAbilityId()=='CelG' or GetSpellAbilityId()=='CelT' or GetSpellAbilityId()=='AccD' or GetSpellAbilityId()=='AccG' or GetSpellAbilityId()=='FSF1' or GetSpellAbilityId()=='FSG1'
+    local boolean cond1=GetSpellAbilityId()=='RsQ1' or GetSpellAbilityId()=='RsQ2' or GetSpellAbilityId()=='RsQ3' or GetSpellAbilityId()=='RsW1' or GetSpellAbilityId()=='RsW2' or GetSpellAbilityId()=='RsE1' or GetSpellAbilityId()=='RsR1' or GetSpellAbilityId()=='RsR2' or GetSpellAbilityId()=='RsT1' or GetSpellAbilityId()=='RsD1' or GetSpellAbilityId()=='RsD2' or GetSpellAbilityId()=='RsD3' or GetSpellAbilityId()=='RsF1' or GetSpellAbilityId()=='RsF2' or GetSpellAbilityId()=='RsF3' or GetSpellAbilityId()=='RsG1' or GetSpellAbilityId()=='GinG' or GetSpellAbilityId()=='LamF' or GetSpellAbilityId()=='SiD1' or GetSpellAbilityId()=='AKQ1' or GetSpellAbilityId()=='AKW1' or GetSpellAbilityId()=='AKE1' or GetSpellAbilityId()=='AKR1' or GetSpellAbilityId()=='AKT1' or GetSpellAbilityId()=='AKF1' or GetSpellAbilityId()=='AKG1' or GetSpellAbilityId()=='GrQ1' or GetSpellAbilityId()=='GrW1' or GetSpellAbilityId()=='GrE1' or GetSpellAbilityId()=='GrR1' or GetSpellAbilityId()=='GrT1' or GetSpellAbilityId()=='GrF1' or GetSpellAbilityId()=='GrG2' or GetSpellAbilityId()=='UKD1' or GetSpellAbilityId()=='BuuG' or GetSpellAbilityId()=='GSQ1' or GetSpellAbilityId()=='GSQ2' or GetSpellAbilityId()=='GSW1' or GetSpellAbilityId()=='GSE1' or GetSpellAbilityId()=='GSE2' or GetSpellAbilityId()=='GSF1' or GetSpellAbilityId()=='GSF2' or GetSpellAbilityId()=='GSG1' or GetSpellAbilityId()=='GSR1' or GetSpellAbilityId()=='GST1' or GetSpellAbilityId()=='GST2' or GetSpellAbilityId()=='GST3' or GetSpellAbilityId()=='SHG1' or GetSpellAbilityId()=='CelF' or GetSpellAbilityId()=='CelG' or GetSpellAbilityId()=='CelT' or GetSpellAbilityId()=='AccD' or GetSpellAbilityId()=='AccG' or GetSpellAbilityId()=='FSF1' or GetSpellAbilityId()=='FSG1' or GetSpellAbilityId()=='ASGD'
     if cond1 then
         return true
     else
@@ -230139,9 +230225,13 @@ call SetUnitAttackRangeByIndex(caster, 0, 600+B2I(UnitHasBow(caster))*(600*0.3+5
 call SetUnitWeaponTypeByIndex(caster, 0, ConvertWeaponType(1))
 call SetPlayerAbilityAvailable(GetOwningPlayer(caster),'SiF1',false)
 call SetPlayerAbilityAvailable(GetOwningPlayer(caster),'SiF2',true)
+if LoadInteger(h,GetHandleId(caster),GokuUIMusicHash)==0 then
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\SignumFSnake.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
 ////call KillSoundWhenDone(soundplay)
+call SaveInteger(h,GetHandleId(caster),GokuUIMusicHash,1)
+call RemoveSaveHashTimed(7,GetHandleId(caster),GokuUIMusicHash)
+endif
 call SetUnitAbilityLevel(caster,'SiC1',2)
 call DestroyEffect(AddSpecialEffectTarget("Signum\\[A]LotusStar.mdl",caster,"hand right"))
 call EffectCreateAndMove(true,"Signum\\[A]az_axe_ef1.mdl",GetRandomReal(0,360),1.5,1,0.5,100,60,100,0,0,caster,0,facing)
@@ -230166,9 +230256,13 @@ call SetUnitWeaponTypeByIndex(caster, 0, ConvertWeaponType(1))
 
 call SetPlayerAbilityAvailable(GetOwningPlayer(caster),'SiF2',false)
 call SetPlayerAbilityAvailable(GetOwningPlayer(caster),'SiF1',true)
+if LoadInteger(h,GetHandleId(caster),GokuUIMusicHash)==0 then
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\SignumFSword.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
 ////call KillSoundWhenDone(soundplay)
+call SaveInteger(h,GetHandleId(caster),GokuUIMusicHash,1)
+call RemoveSaveHashTimed(7,GetHandleId(caster),GokuUIMusicHash)
+endif
 call SetUnitAbilityLevel(caster,'SiC1',1)
 call DestroyEffect(AddSpecialEffectTarget("Signum\\[a]supershinythingygon.mdl",caster,"hand right"))
 call EffectCreateAndMove(true,"Signum\\[A]az_axe_ef1.mdl",GetRandomReal(0,360),1.5,1,0.5,100,60,10,0,0,caster,0,facing)
@@ -235471,6 +235565,9 @@ endif
 if GetSpellAbilityId()=='RsG1' then
 call Roshi_G_Act(caster,x1,y1)
 endif
+if GetSpellAbilityId()=='ASGD' then
+call GaaraFlyAct(caster)
+endif
 if GetSpellAbilityId()=='AccG' then
 call Accelerator_G_Act(caster)
 endif
@@ -235504,7 +235601,7 @@ endfunction
 
 
 function AbilitiesForChoiceLearn_Cond takes nothing returns boolean
-return (GetLearnedSkill()=='AKR1' or GetLearnedSkill()=='A19R' or GetLearnedSkill()=='A19S' or GetLearnedSkill()=='A0QU' or GetLearnedSkill()=='RsT1' or GetLearnedSkill()=='RsR1' or GetLearnedSkill()=='RsE1' or GetLearnedSkill()=='GSE1' or GetLearnedSkill()=='A0BG' or GetLearnedSkill()=='A0K4') and IsUnitIllusion(GetTriggerUnit())==false
+return (GetLearnedSkill()=='AKR1' or GetLearnedSkill()=='A19R' or GetLearnedSkill()=='A19S' or GetLearnedSkill()=='A0QU' or GetLearnedSkill()=='RsT1' or GetLearnedSkill()=='RsR1' or GetLearnedSkill()=='RsE1' or GetLearnedSkill()=='GSE1' or GetLearnedSkill()=='A0BG' or GetLearnedSkill()=='A0K4' or GetLearnedSkill()=='JNQ1') and IsUnitIllusion(GetTriggerUnit())==false
 endfunction
 
 function AbilitiesForChoiceLearn_Act takes nothing returns nothing//моя прокачка абилок для всех героев разберешься
@@ -235528,6 +235625,12 @@ call SetUnitAbilityLevel(caster,'BuuG',GetUnitAbilityLevel(caster,lvl))
 // call DisplayTextToPlayer(skillPlayer,0,0,"Вы теперь Буу")
 // endif
 endif
+
+set lvl='JNQ1'
+if GetLearnedSkill()==lvl then
+call SetUnitAbilityLevel(caster,'JND1',GetUnitAbilityLevel(caster,lvl))
+endif
+
 set lvl='A0BG'
 if GetLearnedSkill()==lvl then
 call SetUnitAbilityLevel(caster,'A0BF',GetUnitAbilityLevel(caster,lvl))
@@ -241818,7 +241921,6 @@ call InitTrig_HibariG()
 call InitTrig_KiyohimeG()
 call InitTrig_KurapikaR()
 call InitTrig_GaaraChoice()
-call InitTrig_GaaraFly()
 call InitTrig_GaaraFlyMove()
 call InitTrig_JeanneAlterG()
 call InitTrig_AokijiE()
