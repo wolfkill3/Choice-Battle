@@ -2980,33 +2980,33 @@ local unit u
 local integer unitID
 local trigger t
 local real life
-set u=CreateUnit(p,'H00F',13777.5,-5323.3,246.145)
+set u=CreateUnit(p,'H12F',13777.5,-5323.3,246.145)
 call SetUnitState(u,UNIT_STATE_MANA,0)
 set u=CreateUnit(p,'h04P',13950.1,-5548.0,150.620)
 call SetUnitState(u,UNIT_STATE_MANA,0)
-set u=CreateUnit(p,'H00F',13775.5,-5470.8,97.111)
+set u=CreateUnit(p,'H12F',13775.5,-5470.8,97.111)
 call SetUnitState(u,UNIT_STATE_MANA,0)
-set u=CreateUnit(p,'H00F',13792.7,-5580.6,140.432)
+set u=CreateUnit(p,'H12F',13792.7,-5580.6,140.432)
 call SetUnitState(u,UNIT_STATE_MANA,0)
-set u=CreateUnit(p,'H00F',13928.9,-5581.9,354.210)
+set u=CreateUnit(p,'H12F',13928.9,-5581.9,354.210)
 call SetUnitState(u,UNIT_STATE_MANA,0)
-set u=CreateUnit(p,'H00F',14028.9,-5563.3,46.276)
+set u=CreateUnit(p,'H12F',14028.9,-5563.3,46.276)
 call SetUnitState(u,UNIT_STATE_MANA,0)
-set u=CreateUnit(p,'H00F',13988.7,-5369.4,16.139)
+set u=CreateUnit(p,'H12F',13988.7,-5369.4,16.139)
 call SetUnitState(u,UNIT_STATE_MANA,0)
-set u=CreateUnit(p,'H00F',13891.4,-5306.0,129.610)
+set u=CreateUnit(p,'H12F',13891.4,-5306.0,129.610)
 call SetUnitState(u,UNIT_STATE_MANA,0)
-set u=CreateUnit(p,'H00F',13955.9,-5447.9,136.081)
+set u=CreateUnit(p,'H12F',13955.9,-5447.9,136.081)
 call SetUnitState(u,UNIT_STATE_MANA,0)
-set u=CreateUnit(p,'H00F',13844.9,-5470.8,167.876)
+set u=CreateUnit(p,'H12F',13844.9,-5470.8,167.876)
 call SetUnitState(u,UNIT_STATE_MANA,0)
-set u=CreateUnit(p,'H00F',13846.8,-5367.3,246.145)
+set u=CreateUnit(p,'H12F',13846.8,-5367.3,246.145)
 call SetUnitState(u,UNIT_STATE_MANA,0)
-set u=CreateUnit(p,'H00F',13909.7,-5499.4,246.145)
+set u=CreateUnit(p,'H12F',13909.7,-5499.4,246.145)
 call SetUnitState(u,UNIT_STATE_MANA,0)
-set u=CreateUnit(p,'H00F',13845.3,-5601.5,246.145)
+set u=CreateUnit(p,'H12F',13845.3,-5601.5,246.145)
 call SetUnitState(u,UNIT_STATE_MANA,0)
-set u=CreateUnit(p,'H00F',13736.6,-5533.6,246.145)
+set u=CreateUnit(p,'H12F',13736.6,-5533.6,246.145)
 call SetUnitState(u,UNIT_STATE_MANA,0)
 set u=null
 set p=null
@@ -6569,7 +6569,7 @@ function Condition_Base takes player p,unit e returns boolean
 return IsUnitEnemy(e,p) and IsUnitType(e,UNIT_TYPE_STRUCTURE)==false and 'dumm'!=GetUnitTypeId(e) and 'cdm1'!=GetUnitTypeId(e) and 'e16T'!=GetUnitTypeId(e) and UltimateDamage!=e and GetUnitAbilityLevel(e, 'IMDc')==0 and GetUnitTypeId(e)!='dM02'
 endfunction
 function Condition_BaseUBW takes player p,unit e returns boolean
-return IsUnitEnemy(e,p) and IsUnitType(e,UNIT_TYPE_DEAD)==false and IsUnitType(e,UNIT_TYPE_STRUCTURE)==false and 'dumm'!=GetUnitTypeId(e) and 'cdm1'!=GetUnitTypeId(e) and 'e16T'!=GetUnitTypeId(e) and 'h071'!=GetUnitTypeId(e) and UltimateDamage!=e and GetUnitTypeId(e)!='dM02'
+return IsUnitEnemy(e,p) and IsUnitType(e,UNIT_TYPE_DEAD)==false and IsUnitType(e,UNIT_TYPE_STRUCTURE)==false and 'dumm'!=GetUnitTypeId(e) and 'cdm1'!=GetUnitTypeId(e) and 'e16T'!=GetUnitTypeId(e) and 'h071'!=GetUnitTypeId(e) and UltimateDamage!=e and GetUnitTypeId(e)!='dM02' and GetUnitTypeId(e)!='dM00' and GetUnitTypeId(e)!='gbRd'
 endfunction
 function BoolFrenda takes nothing returns boolean
 return(GetUnitTypeId(GetFilterUnit())=='fSDL' or GetUnitTypeId(GetFilterUnit())=='e0ZY' or GetUnitTypeId(GetFilterUnit())=='e0ZV')and GetUnitAbilityLevel(GetFilterUnit(),'B06J')==0 and IsUnitType(GetFilterUnit(),UNIT_TYPE_STRUCTURE)==false and GetUnitAbilityLevel(GetFilterUnit(),'A1C3')==0
@@ -59239,9 +59239,13 @@ call UnitRemoveAbility(u,'A0AL')
 //call UnitRemoveAbility(u,'A0AC')
 call UnitAddAbility(u,'A0AA')
 endif
+if LoadInteger(h,GetHandleId(u),GokuUIMusicHash)==0 then
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\MukuroEffect.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+// call KillSoundWhenDone(soundplay)
+call SaveInteger(h,GetHandleId(u),GokuUIMusicHash,1)
+call RemoveSaveHashTimed(4,GetHandleId(u),GokuUIMusicHash)
+endif
 call DestroyEffect(AddSpecialEffectTarget("war3mapImported\\WarpDarkCaster.mdx",u,"origin"))
 set u=null
 endfunction
@@ -67128,9 +67132,13 @@ call ShowAbility2Timed('A0GV',false,0.3)
 call ShowAbility2Timed('A41C',true,0.32)
 call UnitAddAbility(u,'GaT1')
 call SaveBoolean(HH,GetHandleId(u),SST,true)
+if LoadInteger(h,GetHandleId(u),GokuUIMusicHash)==0 then
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\Gamma_5.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+// call KillSoundWhenDone(soundplay)
+call SaveInteger(h,GetHandleId(u),GokuUIMusicHash,1)
+call RemoveSaveHashTimed(6,GetHandleId(u),GokuUIMusicHash)
+endif
 else
 call SaveBoolean(HH,GetHandleId(u),SST,false)
 call ShowAbility2('A41C',false)
@@ -70249,9 +70257,13 @@ call ShowAbility2Timed('A2HX',true,0.03)
 call StartAbilityCooldown(GetUnitAbility(u,'A2HX'),1)
 call UnitAddAbility(u,'JlF1')
 call SaveBoolean(HH,GetHandleId(u),SST,true)
+if LoadInteger(h,GetHandleId(u),GokuUIMusicHash)==0 then
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\Meteor.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+// call KillSoundWhenDone(soundplay)
+call SaveInteger(h,GetHandleId(u),GokuUIMusicHash,1)
+call RemoveSaveHashTimed(4,GetHandleId(u),GokuUIMusicHash)
+endif
 else
 call SaveBoolean(HH,GetHandleId(u),SST,false)
 call ShowAbility2Timed('A2HX',false,0.01)
@@ -83885,9 +83897,13 @@ call ShowAbility2Timed('A15C',false,0.3)
 call ShowAbility2Timed('A42C',true,0.32)
 call UnitAddAbility(u,'MgT1')
 call SaveBoolean(HH,GetHandleId(u),SST,true)
+if LoadInteger(h,GetHandleId(u),GokuUIMusicHash)==0 then
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\Innocentius.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
 call KillSoundWhenDone(soundplay)
+call SaveInteger(h,GetHandleId(u),GokuUIMusicHash,1)
+call RemoveSaveHashTimed(10,GetHandleId(u),GokuUIMusicHash)
+endif
 else
 call SaveBoolean(HH,GetHandleId(u),SST,false)
 call ShowAbility2('A42C',false)
@@ -118695,9 +118711,13 @@ call ShowAbility2Timed('A00C',false,0.3)
 call ShowAbility2Timed('A30C',true,0.32)
 call UnitAddAbility(u,'ItV1')
 call SaveBoolean(HH,GetHandleId(u),SST,true)
+if LoadInteger(h,GetHandleId(u),GokuUIMusicHash)==0 then
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\Susano.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
-call KillSoundWhenDone(soundplay)
+// call KillSoundWhenDone(soundplay)
+call SaveInteger(h,GetHandleId(u),GokuUIMusicHash,1)
+call RemoveSaveHashTimed(10,GetHandleId(u),GokuUIMusicHash)
+endif
 else
 call SaveBoolean(HH,GetHandleId(u),SST,false)
 call ShowAbility2('A30C',false)
@@ -230205,9 +230225,13 @@ call SetUnitAttackRangeByIndex(caster, 0, 600+B2I(UnitHasBow(caster))*(600*0.3+5
 call SetUnitWeaponTypeByIndex(caster, 0, ConvertWeaponType(1))
 call SetPlayerAbilityAvailable(GetOwningPlayer(caster),'SiF1',false)
 call SetPlayerAbilityAvailable(GetOwningPlayer(caster),'SiF2',true)
+if LoadInteger(h,GetHandleId(caster),GokuUIMusicHash)==0 then
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\SignumFSnake.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
 ////call KillSoundWhenDone(soundplay)
+call SaveInteger(h,GetHandleId(caster),GokuUIMusicHash,1)
+call RemoveSaveHashTimed(7,GetHandleId(caster),GokuUIMusicHash)
+endif
 call SetUnitAbilityLevel(caster,'SiC1',2)
 call DestroyEffect(AddSpecialEffectTarget("Signum\\[A]LotusStar.mdl",caster,"hand right"))
 call EffectCreateAndMove(true,"Signum\\[A]az_axe_ef1.mdl",GetRandomReal(0,360),1.5,1,0.5,100,60,100,0,0,caster,0,facing)
@@ -230232,9 +230256,13 @@ call SetUnitWeaponTypeByIndex(caster, 0, ConvertWeaponType(1))
 
 call SetPlayerAbilityAvailable(GetOwningPlayer(caster),'SiF2',false)
 call SetPlayerAbilityAvailable(GetOwningPlayer(caster),'SiF1',true)
+if LoadInteger(h,GetHandleId(caster),GokuUIMusicHash)==0 then
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\SignumFSword.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
 ////call KillSoundWhenDone(soundplay)
+call SaveInteger(h,GetHandleId(caster),GokuUIMusicHash,1)
+call RemoveSaveHashTimed(7,GetHandleId(caster),GokuUIMusicHash)
+endif
 call SetUnitAbilityLevel(caster,'SiC1',1)
 call DestroyEffect(AddSpecialEffectTarget("Signum\\[a]supershinythingygon.mdl",caster,"hand right"))
 call EffectCreateAndMove(true,"Signum\\[A]az_axe_ef1.mdl",GetRandomReal(0,360),1.5,1,0.5,100,60,10,0,0,caster,0,facing)
