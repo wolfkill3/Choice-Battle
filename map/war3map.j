@@ -2880,7 +2880,7 @@ local player p=Player(1)
 local integer unitID
 local trigger t
 local real life
-set Chest[1]=CreateUnit(p,'n008',2624.0, 6912.0, 270.000)
+set Chest[1]=CreateUnit(p,'n008',2624.0, 6848.0, 270.000)
 call UnitInventorySetSize(Chest[1],10)
 call SetUnitColor(Chest[1],ConvertPlayerColor(0))
 set p=null
@@ -2891,7 +2891,7 @@ local player p=Player(2)
 local integer unitID
 local trigger t
 local real life
-set Chest[2]=CreateUnit(p,'n008',2624.0, 6784.0, 270.000)
+set Chest[2]=CreateUnit(p,'n008',2624.0, 6720.0, 270.000)
 call UnitInventorySetSize(Chest[2],10)
 call SetUnitColor(Chest[2],ConvertPlayerColor(0))
 set p=null
@@ -2902,7 +2902,7 @@ local player p=Player(3)
 local integer unitID
 local trigger t
 local real life
-set Chest[3]=CreateUnit(p,'n008',2624.0, 6656.0, 270.000)
+set Chest[3]=CreateUnit(p,'n008',2624.0, 6592.0, 270.000)
 call UnitInventorySetSize(Chest[3],10)
 call SetUnitColor(Chest[3],ConvertPlayerColor(0))
 set p=null
@@ -2913,7 +2913,7 @@ local player p=Player(4)
 local integer unitID
 local trigger t
 local real life
-set Chest[4]=CreateUnit(p,'n008',2624.0, 6528.0, 270.000)
+set Chest[4]=CreateUnit(p,'n008',2624.0, 6464.0, 270.000)
 call UnitInventorySetSize(Chest[4],10)
 call SetUnitColor(Chest[4],ConvertPlayerColor(0))
 set p=null
@@ -2924,7 +2924,7 @@ local player p=Player(5)
 local integer unitID
 local trigger t
 local real life
-set Chest[5]=CreateUnit(p,'n008',4416.0, 7040.0, 270.000)
+set Chest[5]=CreateUnit(p,'n008',4416.0, 6976.0, 270.000)
 call UnitInventorySetSize(Chest[5],10)
 call SetUnitColor(Chest[5],ConvertPlayerColor(0))
 set p=null
@@ -2935,7 +2935,7 @@ local player p=Player(6)
 local integer unitID
 local trigger t
 local real life
-set Chest[6]=CreateUnit(p,'n008',4416.0, 6912.0, 270.000)
+set Chest[6]=CreateUnit(p,'n008',4416.0, 6848.0, 270.000)
 call UnitInventorySetSize(Chest[6],10)
 call SetUnitColor(Chest[6],ConvertPlayerColor(0))
 set p=null
@@ -2946,7 +2946,7 @@ local player p=Player(7)
 local integer unitID
 local trigger t
 local real life
-set Chest[7]=CreateUnit(p,'n008',4416.0, 6784.0, 270.000)
+set Chest[7]=CreateUnit(p,'n008',4416.0, 6720.0, 270.000)
 call UnitInventorySetSize(Chest[7],10)
 call SetUnitColor(Chest[7],ConvertPlayerColor(0))
 set p=null
@@ -2957,7 +2957,7 @@ local player p=Player(8)
 local integer unitID
 local trigger t
 local real life
-set Chest[8]=CreateUnit(p,'n008',4416.0, 6656.0, 270.000)
+set Chest[8]=CreateUnit(p,'n008',4416.0, 6592.0, 270.000)
 call UnitInventorySetSize(Chest[8],10)
 call SetUnitColor(Chest[8],ConvertPlayerColor(0))
 set p=null
@@ -2968,7 +2968,7 @@ local player p=Player(9)
 local integer unitID
 local trigger t
 local real life
-set Chest[9]=CreateUnit(p,'n008',4416.0, 6528.0, 270.000)
+set Chest[9]=CreateUnit(p,'n008',4416.0, 6464.0, 270.000)
 call UnitInventorySetSize(Chest[9],10)
 call SetUnitColor(Chest[9],ConvertPlayerColor(0))
 set p=null
@@ -3018,40 +3018,42 @@ local unit u
 local integer unitID
 local trigger t
 local real life
-set u=CreateUnit(p,'n004',2752.0, 7296.0, 270.000) //karin
-call SetUnitColor(u,ConvertPlayerColor(0))
-set u=CreateUnit(p,'n005',2880.0, 7296.0, 270.000) //recipes
-call SetUnitColor(u,ConvertPlayerColor(0))
-set u=CreateUnit(p,'n015',3008.0, 7296.0, 270.000) //recipes 2
-call SetUnitColor(u,ConvertPlayerColor(0))
-set u=CreateUnit(p,'n0J2',3136.0, 7296.0, 270.000) //recipes 3
-call SetUnitColor(u,ConvertPlayerColor(0))
-set u=CreateUnit(p,'n003',4416.0, 7424.0, 270.000)
-call SetUnitColor(u,ConvertPlayerColor(0))
-// set u=CreateUnit(p,'n108',4716.0, 7424.0, 270.000)
-// call SetUnitColor(u,ConvertPlayerColor(0))
-// set u=CreateUnit(p,'n109',4916.0, 7424.0, 270.000)
-// call SetUnitColor(u,ConvertPlayerColor(0))
-set gg_unit_n00J_0036=CreateUnit(p,'n00J',3008.0, 7424.0, 270.000)
+set u=CreateUnit(p, 'n004', 2496.0, 7232.0, 270.000)
+call SetUnitColor(u, ConvertPlayerColor(0))
+set u=CreateUnit(p, 'n003', 4416.0, 7424.0, 270.000)
+call SetUnitColor(u, ConvertPlayerColor(0))
+set u=CreateUnit(p, 'n005', 2880.0, 7296.0, 270.000)
+call SetUnitColor(u, ConvertPlayerColor(0))
+set u=CreateUnit(p, 'n015', 3008.0, 7296.0, 270.000)
+call SetUnitColor(u, ConvertPlayerColor(0))
+set u=CreateUnit(p, 'n0J2', 3136.0, 7296.0, 270.000)
+call SetUnitColor(u, ConvertPlayerColor(0))
+set u=CreateUnit(p, 'n108', 3264.0, 7296.0, 270.000)
+call SetUnitColor(u, ConvertPlayerColor(0))
+set gg_unit_n00J_0036=CreateUnit(p,'n00J',3264.0, 7424.0, 270.000)
 call SetUnitColor(gg_unit_n00J_0036,ConvertPlayerColor(0))
 set u=CreateUnit(p,'n00U',3648.0, 6848.0, 270.000)
 call SetUnitColor(u,ConvertPlayerColor(0))
-set gg_unit_n00A_0035=CreateUnit(p,'n00A',2624.0, 7424.0, 270.000)
+set u=CreateUnit(p, 'n109', 2624.0, 7232.0, 270.000)
+call SetUnitColor(u, ConvertPlayerColor(0))
+set u=CreateUnit(p, 'n110', 2496.0, 7424.0, 270.000)
+call SetUnitColor(u, ConvertPlayerColor(0))
+set gg_unit_n00A_0035=CreateUnit(p,'n00A',3008.0, 7424.0, 270.000)
 call SetUnitColor(gg_unit_n00A_0035,ConvertPlayerColor(0))
-set u=CreateUnit(p,'n00B',3392.0, 6848.0, 270.000)
-call SetUnitColor(u,ConvertPlayerColor(0))
-set u=CreateUnit(p,'n00C',4544.0, 7424.0, 270.000)
-call SetUnitColor(u,ConvertPlayerColor(0))
-set u=CreateUnit(p,'n00F',3136.0, 7424.0, 270.000)
-call SetUnitColor(u,ConvertPlayerColor(0))
-set u=CreateUnit(p,'n00E',2496.0, 7424.0, 270.000)
-call SetUnitColor(u,ConvertPlayerColor(0))
-set u=CreateUnit(p,'n00I',2880.0, 7424.0, 270.000)
-call SetUnitColor(u,ConvertPlayerColor(0))
-set u=CreateUnit(p,'n00R',4096.0, 7424.0, 270.000) // full mare rings
-call SetUnitColor(u,ConvertPlayerColor(0))
-set u=CreateUnit(p,'n00S',3968.0, 7424.0, 270.000)
-call SetUnitColor(u,ConvertPlayerColor(0))
+set u=CreateUnit(p, 'n00B', 3392.0, 6848.0, 270.000)
+call SetUnitColor(u, ConvertPlayerColor(0))
+set u=CreateUnit(p, 'n00C', 4544.0, 7424.0, 270.000)
+call SetUnitColor(u, ConvertPlayerColor(0))
+set u=CreateUnit(p, 'n00F', 2624.0, 7424.0, 270.000)
+call SetUnitColor(u, ConvertPlayerColor(0))
+set u=CreateUnit(p, 'n00E', 2880.0, 7424.0, 270.000)
+call SetUnitColor(u, ConvertPlayerColor(0))
+set u=CreateUnit(p, 'n00I', 3136.0, 7424.0, 270.000)
+call SetUnitColor(u, ConvertPlayerColor(0))
+set u=CreateUnit(p, 'n00R', 4096.0, 7424.0, 270.000)
+call SetUnitColor(u, ConvertPlayerColor(0))
+set u=CreateUnit(p, 'n00S', 3968.0, 7424.0, 270.000)
+call SetUnitColor(u, ConvertPlayerColor(0))
 set Theater1=CreateUnit(p,'The1',GetRectCenterX(gg_rct_Te2),GetRectCenterY(gg_rct_Te2),270.000)
 call SetUnitColor(Theater1,ConvertPlayerColor(0))
 set u=null
