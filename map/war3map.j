@@ -3036,7 +3036,7 @@ set u=CreateUnit(p,'n00U',3648.0, 6848.0, 270.000)
 call SetUnitColor(u,ConvertPlayerColor(0))
 set u=CreateUnit(p, 'n109', 2624.0, 7232.0, 270.000)
 call SetUnitColor(u, ConvertPlayerColor(0))
-set u=CreateUnit(p, 'n110', 2496.0, 7424.0, 270.000)
+set u=CreateUnit(p, 'n110', 2624.0, 7424.0, 270.000) //weapons 2
 call SetUnitColor(u, ConvertPlayerColor(0))
 set gg_unit_n00A_0035=CreateUnit(p,'n00A',3008.0, 7424.0, 270.000)
 call SetUnitColor(gg_unit_n00A_0035,ConvertPlayerColor(0))
@@ -3044,7 +3044,7 @@ set u=CreateUnit(p, 'n00B', 3392.0, 6848.0, 270.000)
 call SetUnitColor(u, ConvertPlayerColor(0))
 set u=CreateUnit(p, 'n00C', 4544.0, 7424.0, 270.000)
 call SetUnitColor(u, ConvertPlayerColor(0))
-set u=CreateUnit(p, 'n00F', 2624.0, 7424.0, 270.000)
+set u=CreateUnit(p, 'n00F', 2496.0, 7424.0, 270.000) //weapons 1
 call SetUnitColor(u, ConvertPlayerColor(0))
 set u=CreateUnit(p, 'n00E', 2880.0, 7424.0, 270.000)
 call SetUnitColor(u, ConvertPlayerColor(0))
@@ -9208,6 +9208,25 @@ endfunction
 function UBWDood takes nothing returns nothing
 call SetDoodadZ(GetEnumDoodad(),1)
 endfunction
+function DoorsDood takes nothing returns nothing
+if GetDoodadModel(GetEnumDoodad())=="Tilable_Corrugated_Door" or GetDoodadModel(GetEnumDoodad())=="Tileable_Corrugated_Door_Rollup" or GetDoodadModel(GetEnumDoodad())=="Tileable_Corrugated_Wall_Wide_Top_Piece" or GetDoodadModel(GetEnumDoodad())=="Tileable_Corrugated_Wall_Window" or GetDoodadModel(GetEnumDoodad())=="Tileable_Corrugated_Wall_Outer_Corner_01" or GetDoodadModel(GetEnumDoodad())=="Tileable_Corrugated_Wall_Inner_Corner_01" or GetDoodadModel(GetEnumDoodad())=="Tileable_Corrugated_Wall_Inner_Corner_01" or GetDoodadModel(GetEnumDoodad())=="Tileable_Corrugated_Wall_03" or GetDoodadModel(GetEnumDoodad())=="Tileable_Corrugated_Wall_02" or GetDoodadModel(GetEnumDoodad())=="Tileable_Corrugated_Wall_01" or GetDoodadModel(GetEnumDoodad())=="Tileable_Corrugated_Wall_T_Left" or GetDoodadModel(GetEnumDoodad())=="Tileable_Corrugated_Wall_T_Right" then
+    // call BJDebugMsg("test4")
+    if GetDoodadY(GetEnumDoodad())>0 then
+        call SetDoodadPlayerColour(GetEnumDoodad(),ConvertPlayerColor(0))
+        // call BJDebugMsg("test2")
+    else
+        call SetDoodadPlayerColour(GetEnumDoodad(),ConvertPlayerColor(1))
+        // call BJDebugMsg("test3")
+    endif
+    if GetDoodadModel(GetEnumDoodad())=="Tilable_Corrugated_Door" or GetDoodadModel(GetEnumDoodad())=="Tileable_Corrugated_Door_Rollup" then
+        call SetDoodadAnimationEx(GetEnumDoodad(),"death")
+    // call BJDebugMsg("test1")
+    endif
+// else
+//     call BJDebugMsg("test4")
+endif
+// call BJDebugMsg(GetDoodadModel(GetEnumDoodad()))
+endfunction
 function Trig_Init_Actions takes nothing returns nothing
 local integer i=0
 set bj_forLoopAIndex=1
@@ -9877,6 +9896,7 @@ set Cambug=false
 set sh4="heroposhp"
 set sh5="heroposmp"
 call EnumDoodadsInRect(gg_rct_UBW2,null,function UBWDood)
+call EnumDoodadsInRange(0,0,99999999,null,function DoorsDood)
 call GroupEnumUnitsInRect(G,gg_rct_Base,null)
 loop
 set E=FirstOfGroup(G)
@@ -72250,6 +72270,9 @@ if time<100 and GetUnitState(u,UNIT_STATE_LIFE)>0.405 and LoadBoolean(HH,GetHand
     if time==0.05 then
         call SetUnitAnimationByIndex(u,152)
     endif
+    if time>0.05 then
+        call PauseUnit(u,true)
+    endif
     if time==0.1 then
         call SetUnitAnimationOffsetPercent(u,0.4)
     endif
@@ -72349,23 +72372,22 @@ else
             call SelectUnit(u,true)
         endif
     endif
-    call UnitEnableMovement(u,true,false)
-    call UnitEnableAttack(u,true,false)
-    call EnableUnitAbility2(u,'GKQ1',false,true)
-    call EnableUnitAbility2(u,'GKW1',false,true)
-    call EnableUnitAbility2(u,'GKW5',false,true)
-    call EnableUnitAbility2(u,'GKE2',false,true)
-    call EnableUnitAbility2(u,'GKE3',false,true)
-    call EnableUnitAbility2(u,'GKE4',false,true)
-    call EnableUnitAbility2(u,'GKE5',false,true)
-    call EnableUnitAbility2(u,'GKE6',false,true)
-    call EnableUnitAbility2(u,'GKR1',false,true)
-    call EnableUnitAbility2(u,'GKT1',false,true)
-    call EnableUnitAbility2(u,'GKF1',false,true)
-    call EnableUnitAbility2(u,'GKG1',false,true)
-    call EnableUnitAbility2(u,'GKG6',false,true)
-    call EnableUnitAbility2(u,'GKG7',false,true)
-    call UnitEnableInventoryCustom(u,true,false )
+    call PauseUnit(u,false)
+    // call EnableUnitAbility2(u,'GKQ1',false,true)
+    // call EnableUnitAbility2(u,'GKW1',false,true)
+    // call EnableUnitAbility2(u,'GKW5',false,true)
+    // call EnableUnitAbility2(u,'GKE2',false,true)
+    // call EnableUnitAbility2(u,'GKE3',false,true)
+    // call EnableUnitAbility2(u,'GKE4',false,true)
+    // call EnableUnitAbility2(u,'GKE5',false,true)
+    // call EnableUnitAbility2(u,'GKE6',false,true)
+    // call EnableUnitAbility2(u,'GKR1',false,true)
+    // call EnableUnitAbility2(u,'GKT1',false,true)
+    // call EnableUnitAbility2(u,'GKF1',false,true)
+    // call EnableUnitAbility2(u,'GKG1',false,true)
+    // call EnableUnitAbility2(u,'GKG6',false,true)
+    // call EnableUnitAbility2(u,'GKG7',false,true)
+    // call UnitEnableInventoryCustom(u,true,false )
     call RemoveUnit(dummy)
     call FlushChildHashtable(h,id)
     call PauseTimer(t)
@@ -72392,8 +72414,6 @@ local integer i=0
 local texttag l__txt=CreateTextTag()
 call SaveUnitHandle(h,id,0,u)
 call IssueImmediateOrder(u,"stop")
-call UnitEnableMovement(u,false,false)
-call UnitEnableAttack(u,false,false)
 set GenkiDama=CreateUnit(p,'e0CE',x,y,a*bj_RADTODEG)
 call SetUnitVertexColor(GenkiDama, 255, 255, 255, 0)
 call SetUnitFlyHeight(GenkiDama,570,0)
@@ -72431,21 +72451,21 @@ call SetTextTagPosUnit(l__txt,u,700)
 call SetTextTagColor(l__txt,180,180,255,255)
 call SetTextTagPermanent(l__txt,true)
 call SaveTextTagHandle(h,id,12,l__txt)
-call DisableUnitAbility2(u,'GKQ1',false,true)
-call DisableUnitAbility2(u,'GKW1',false,true)
-call DisableUnitAbility2(u,'GKW5',false,true)
-call DisableUnitAbility2(u,'GKE2',false,true)
-call DisableUnitAbility2(u,'GKE3',false,true)
-call DisableUnitAbility2(u,'GKE4',false,true)
-call DisableUnitAbility2(u,'GKE5',false,true)
-call DisableUnitAbility2(u,'GKE6',false,true)
-call DisableUnitAbility2(u,'GKR1',false,true)
-call DisableUnitAbility2(u,'GKT1',false,true)
-call DisableUnitAbility2(u,'GKF1',false,true)
-call DisableUnitAbility2(u,'GKG1',false,true)
-call DisableUnitAbility2(u,'GKG6',false,true)
-call DisableUnitAbility2(u,'GKG7',false,true)
-call UnitEnableInventoryCustom(u,false,false )
+// call DisableUnitAbility2(u,'GKQ1',false,true)
+// call DisableUnitAbility2(u,'GKW1',false,true)
+// call DisableUnitAbility2(u,'GKW5',false,true)
+// call DisableUnitAbility2(u,'GKE2',false,true)
+// call DisableUnitAbility2(u,'GKE3',false,true)
+// call DisableUnitAbility2(u,'GKE4',false,true)
+// call DisableUnitAbility2(u,'GKE5',false,true)
+// call DisableUnitAbility2(u,'GKE6',false,true)
+// call DisableUnitAbility2(u,'GKR1',false,true)
+// call DisableUnitAbility2(u,'GKT1',false,true)
+// call DisableUnitAbility2(u,'GKF1',false,true)
+// call DisableUnitAbility2(u,'GKG1',false,true)
+// call DisableUnitAbility2(u,'GKG6',false,true)
+// call DisableUnitAbility2(u,'GKG7',false,true)
+// call UnitEnableInventoryCustom(u,false,false )
 call TimerStart(t,0.05,true,function SpiritBombCast2)
 set u=null
 set l__txt=null
