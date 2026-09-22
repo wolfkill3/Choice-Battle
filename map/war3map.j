@@ -46130,7 +46130,7 @@ if cond==0 then
         call SetWidgetMana(c, GetWidgetMana(c)+ nb*0.10)
     endif
     if nb>6 and ((UnitHasItemOfTypeBJ(c, 'IGlA') or GetUnitAbilityLevel(c, 'KI1I')>0) or (UnitHasItemOfTypeBJ(c, 'IPlA') or GetUnitAbilityLevel(c, 'KI1K')>0) or (UnitHasItemOfTypeBJ(c,'I043') or GetUnitAbilityLevel(c,'KIL8')>0)) then
-        call HealTextTag(c,c,nb*0.075*SetWidgetLife(c,1),"HealthRes")
+        call HealTextTag(c,c,nb*0.075*myCustomHeal2(c,1),"HealthRes")
         call SetWidgetLife(c, GetWidgetLife(c)+ nb*0.075)
     endif
     if nb>0 and LoadReal(HH,GetHandleId(c),StringHash("yamato"))==1 and CurrentEventAttack then
