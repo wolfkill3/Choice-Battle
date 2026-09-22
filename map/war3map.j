@@ -6558,7 +6558,7 @@ call ForGroup(g,function GroupAddGroupEnum)
 return bj_groupAddGroupDest
 endfunction
 function Condition_RecipeString takes integer id returns boolean
-return id=='I00E' or id=='I01P' or id=='I01R' or id=='I01T' or id=='I01V' or id=='I02U' or id=='I02X' or id=='I02Z' or id=='I045' or id=='I047' or id=='I04Y' or id=='I04U' or id=='I04X' or id=='I04Z' or id=='I051' or id=='I14R' or id=='IGDr' or id=='IPar' or id=='IHYr' or id=='ISTr' or id=='IBSR' or id=='I052' or id=='I053' or id=='I055' or id=='I06P' or id=='I06S' or id=='I06T' or id=='IPRR'
+return id=='I00E' or id=='I01P' or id=='I01R' or id=='I01T' or id=='I01V' or id=='I02U' or id=='I02X' or id=='I02Z' or id=='I045' or id=='I047' or id=='I04Y' or id=='I04U' or id=='I04X' or id=='I04Z' or id=='I051' or id=='I14R' or id=='IGDr' or id=='IPar' or id=='IHYr' or id=='ISTr' or id=='IBSR' or id=='I052' or id=='I053' or id=='I055' or id=='I06P' or id=='I06S' or id=='I06T' or id=='IPRR' or id=='IPlR'
 endfunction
 function Condition_AbilityString3 takes integer id returns boolean
 return id=='OM13' or id=='A17D' or id=='A177' or id=='A172' or id=='A16U' or id=='A0TN'  or id=='MrF1' or id=='MrT1' or id=='MrG2' or id=='RsT1' or id=='RsF1' or id=='SiF1' or id=='SiF2' or id=='SiE1' or id=='SiE2'
@@ -23021,7 +23021,7 @@ set i=i+1
 endloop
 if count>1 then
 call RemoveItem(it)
-call SetPlayerState(Player(id),PLAYER_STATE_RESOURCE_GOLD,GetPlayerState(Player(id),PLAYER_STATE_RESOURCE_GOLD)+4800)
+call SetPlayerState(Player(id),PLAYER_STATE_RESOURCE_GOLD,GetPlayerState(Player(id),PLAYER_STATE_RESOURCE_GOLD)+5200)
 call DisplayTextToPlayer(Player(id),0,0,"Нельзя иметь больше одного такого предмета!")
 endif
 set i=0
@@ -27369,8 +27369,8 @@ local real dmg=0
 if (UnitHasItemOfTypeBJ(u,'I043') or GetUnitAbilityLevel(u,'KIL8')>0) and GetWidgetLife(u)>0 and udg_B==true and DU2==true then
     if life2>life then
         set dmg=GetUnitState(u,UNIT_STATE_MANA)-LoadReal(h,id,0)
-        call SaveReal(h,id,3,LoadReal(h,id,3)+(dmg*0.1))
-        call SetUnitState(u,UNIT_STATE_MANA, GetUnitState(u,UNIT_STATE_MANA)+MathRealFloor(dmg*0.1)+MathRealFloor(LoadReal(h,id,3)))
+        call SaveReal(h,id,3,LoadReal(h,id,3)+(dmg*0.15))
+        call SetUnitState(u,UNIT_STATE_MANA, GetUnitState(u,UNIT_STATE_MANA)+MathRealFloor(dmg*0.15)+MathRealFloor(LoadReal(h,id,3)))
         if LoadReal(h,id,3)>1 then
             call SaveReal(h,id,3,LoadReal(h,id,3)-MathRealFloor(LoadReal(h,id,3)))
         endif
@@ -27391,6 +27391,76 @@ call SaveUnitHandle(h,id,1,u)
 call SaveReal(h,id,0,GetUnitState(u,UNIT_STATE_MANA))
 call SaveInteger(HH,GetHandleId(u),StringHash("BloodSphere"),1)
 call TimerStart(t,0.01,true,function BloodSphereMPRegenCast2)
+set t=null
+set u=null
+endfunction
+function GoldenAmuletMPRegenCast2 takes nothing returns nothing
+local timer t=GetExpiredTimer()
+local integer id=GetHandleId(t)
+local unit u=LoadUnitHandle(h,id,1)
+local real life=LoadReal(h,id,0)
+local real life2=GetUnitState(u,UNIT_STATE_MANA)
+local real dmg=0
+if (UnitHasItemOfTypeBJ(u,'IGlA') or GetUnitAbilityLevel(u,'KI1I')>0) and GetWidgetLife(u)>0 and udg_B==true and DU2==true then
+    if life2>life then
+        set dmg=GetUnitState(u,UNIT_STATE_MANA)-LoadReal(h,id,0)
+        call SaveReal(h,id,3,LoadReal(h,id,3)+(dmg*0.1))
+        call SetUnitState(u,UNIT_STATE_MANA, GetUnitState(u,UNIT_STATE_MANA)+MathRealFloor(dmg*0.1)+MathRealFloor(LoadReal(h,id,3)))
+        if LoadReal(h,id,3)>1 then
+            call SaveReal(h,id,3,LoadReal(h,id,3)-MathRealFloor(LoadReal(h,id,3)))
+        endif
+    endif
+    call SaveReal(h,id,0,GetUnitState(u,UNIT_STATE_MANA))
+else
+    call SaveInteger(HH,GetHandleId(u),StringHash("GoldenAmulet"),0)
+    call DestroyTimer(t)
+    call FlushChildHashtable(h,id)
+endif
+set t=null
+set u=null
+endfunction
+function GoldenAmuletMPRegenCast takes unit u returns nothing
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+call SaveUnitHandle(h,id,1,u)
+call SaveReal(h,id,0,GetUnitState(u,UNIT_STATE_MANA))
+call SaveInteger(HH,GetHandleId(u),StringHash("GoldenAmulet"),1)
+call TimerStart(t,0.01,true,function GoldenAmuletMPRegenCast2)
+set t=null
+set u=null
+endfunction
+function PerfectAmuletMPRegenCast2 takes nothing returns nothing
+local timer t=GetExpiredTimer()
+local integer id=GetHandleId(t)
+local unit u=LoadUnitHandle(h,id,1)
+local real life=LoadReal(h,id,0)
+local real life2=GetUnitState(u,UNIT_STATE_MANA)
+local real dmg=0
+if (UnitHasItemOfTypeBJ(u,'IPlA') or GetUnitAbilityLevel(u,'KI1K')>0) and GetWidgetLife(u)>0 and udg_B==true and DU2==true then
+    if life2>life then
+        set dmg=GetUnitState(u,UNIT_STATE_MANA)-LoadReal(h,id,0)
+        call SaveReal(h,id,3,LoadReal(h,id,3)+(dmg*0.1))
+        call SetUnitState(u,UNIT_STATE_MANA, GetUnitState(u,UNIT_STATE_MANA)+MathRealFloor(dmg*0.1)+MathRealFloor(LoadReal(h,id,3)))
+        if LoadReal(h,id,3)>1 then
+            call SaveReal(h,id,3,LoadReal(h,id,3)-MathRealFloor(LoadReal(h,id,3)))
+        endif
+    endif
+    call SaveReal(h,id,0,GetUnitState(u,UNIT_STATE_MANA))
+else
+    call SaveInteger(HH,GetHandleId(u),StringHash("PerfectAmulet"),0)
+    call DestroyTimer(t)
+    call FlushChildHashtable(h,id)
+endif
+set t=null
+set u=null
+endfunction
+function PerfectAmuletMPRegenCast takes unit u returns nothing
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+call SaveUnitHandle(h,id,1,u)
+call SaveReal(h,id,0,GetUnitState(u,UNIT_STATE_MANA))
+call SaveInteger(HH,GetHandleId(u),StringHash("PerfectAmulet"),1)
+call TimerStart(t,0.01,true,function PerfectAmuletMPRegenCast2)
 set t=null
 set u=null
 endfunction
@@ -27791,6 +27861,12 @@ if ingame[x]==true then
     endif
     if (UnitHasItemOfTypeBJ(Hero[x],'I043') or GetUnitAbilityLevel(Hero[x],'KIL8')>0) and LoadInteger(HH,GetHandleId(Hero[x]),StringHash("BloodSphere"))!=1 then
         call BloodSphereMPRegenCast(Hero[x])
+    endif
+    if (UnitHasItemOfTypeBJ(Hero[x],'IGlA') or GetUnitAbilityLevel(Hero[x],'KI1I')>0) and LoadInteger(HH,GetHandleId(Hero[x]),StringHash("GoldenAmulet"))!=1 then
+        call GoldenAmuletMPRegenCast(Hero[x])
+    endif
+    if (UnitHasItemOfTypeBJ(Hero[x],'IPlA') or GetUnitAbilityLevel(Hero[x],'KI1K')>0) and LoadInteger(HH,GetHandleId(Hero[x]),StringHash("GoldenAmulet"))!=1 then
+        call PerfectAmuletMPRegenCast(Hero[x])
     endif
     if UnitHasItemOfTypeBJ(Hero[x],'I054') and LoadInteger(HH,GetHandleId(Hero[x]),StringHash("IceBoots"))!=1 then
         call IceBootsRegenCast(Hero[x])
@@ -46035,9 +46111,13 @@ if cond==0 then
         call RemoveEffect(AddSpecialEffectTarget("Abilities\\Spells\\Items\\HealingSalve\\HealingSalveTarget.mdl", c, "origin"), 1.0, true, CreateTimer())
         call DestroyEffect(AddSpecialEffect("war3mapImported\\BlinkCaster.mdx",GetUnitX(c),GetUnitY(c)))
     endif
-    if nb>6 and (UnitHasItemOfTypeBJ(c, 'ISlA') or GetUnitAbilityLevel(c, 'KI1G')>0) then
+    if nb>6 and (UnitHasItemOfTypeBJ(c, 'ISlA') or GetUnitAbilityLevel(c, 'KI1G')>0) or (UnitHasItemOfTypeBJ(c, 'IPlA') or GetUnitAbilityLevel(c, 'KI1K')>0) then
         call HealTextTag(c,c,nb*0.10*myCustomMana2(c,1),"ManaRes")
         call SetWidgetMana(c, GetWidgetMana(c)+ nb*0.10)
+    endif
+    if nb>6 and ((UnitHasItemOfTypeBJ(c, 'IGlA') or GetUnitAbilityLevel(c, 'KI1I')>0) or (UnitHasItemOfTypeBJ(c, 'IPlA') or GetUnitAbilityLevel(c, 'KI1K')>0) or (UnitHasItemOfTypeBJ(c,'I043') or GetUnitAbilityLevel(c,'KIL8')>0)) then
+        call HealTextTag(c,c,nb*0.075*SetWidgetLife(c,1),"HealthRes")
+        call SetWidgetLife(c, GetWidgetLife(c)+ nb*0.075)
     endif
     if nb>0 and LoadReal(HH,GetHandleId(c),StringHash("yamato"))==1 and CurrentEventAttack then
         call SaveReal(HH,GetHandleId(c),StringHash("yamato"),0) //Yamato
@@ -166395,8 +166475,8 @@ function FKazumaList takes unit u, integer id returns nothing
         call CheckUnitBonusRange(u)
     endif
     if id=='IPRB' then //Лук жрицы
-        call UnitAddAbility(u,'KI1D')
-        call UnitRemoveAbilityTimed(u,'KI1D',10)
+        call UnitAddAbility(u,'KI1E')
+        call UnitRemoveAbilityTimed(u,'KI1E',10)
         call UnitAddAbility(u,'KI1F')
         call UnitRemoveAbilityTimed(u,'KI1F',10)
         call CheckUnitBonusRange(u)
@@ -166406,6 +166486,18 @@ function FKazumaList takes unit u, integer id returns nothing
         call UnitRemoveAbilityTimed(u,'KI1G',10)
         call UnitAddAbility(u,'KI1H')
         call UnitRemoveAbilityTimed(u,'KI1H',10)
+    endif
+    if id=='IGlA' then //Золотой Амулет
+        call UnitAddAbility(u,'KI1I')
+        call UnitRemoveAbilityTimed(u,'KI1I',10)
+        call UnitAddAbility(u,'KI1J')
+        call UnitRemoveAbilityTimed(u,'KI1J',10)
+    endif
+    if id=='IPlA' then //Совершенный Амулет
+        call UnitAddAbility(u,'KI1K')
+        call UnitRemoveAbilityTimed(u,'KI1K',10)
+        call UnitAddAbility(u,'KI1L')
+        call UnitRemoveAbilityTimed(u,'KI1L',10)
     endif
 endfunction
 function FKazumaCond takes nothing returns boolean
@@ -239664,6 +239756,7 @@ call UIS_RegisterItem('I02Y','ISHk',0,0,0,0,0,0,0,0,0,'IHnK')                   
 call UIS_RegisterItem('I01L','I12R',0,0,0,0,0,0,0,0,'IBSR','IBSI')                                 // Buster Sword
 call UIS_RegisterItem('I03Z','I03C','I060',0,0,0,0,0,0,0,0,'IAoF')                                 // Fafnir
 call UIS_RegisterItem('ISPB','I06K','I01X',0,0,0,0,0,0,0,'IPRR','IPRB')                                 // Лук Жрицы
+call UIS_RegisterItem('ISlA','IGlA',0,0,0,0,0,0,0,0,'IPlR','IPlA')                                 // Совершенный амулет
 call UIS_RegisterItem('IOS3','IOS4','IOS2','IOS1',0,0,0,0,0,0,0,'I1S4')
 call UIS_RegisterItem('I01Z','I02T',0,0,0,0,0,0,0,0,'I052','I04G')
 // call UIS_RegisterItem('I03B','I01I',0,'I053',0,0,'I038') //old Kosa
