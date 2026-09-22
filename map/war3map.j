@@ -48899,12 +48899,17 @@ loop
 set E=FirstOfGroup(DG)
 exitwhen E==null
 if Condition_Base(p,E)then
-set dmg=20*(2.5*GetHeroStr(E,true)-(GetHeroAgi(E,true)+GetHeroInt(E,true)))
+set dmg=15*(2.5*GetHeroStr(E,true)-(GetHeroAgi(E,true)+GetHeroInt(E,true)))
 if dmg<0 then
 set dmg=0
+else
+set dmg=dmg+GetUnitState(E,UNIT_STATE_MAX_LIFE)*0.1
+endif
+if dmg>GetUnitState(E,UNIT_STATE_MAX_LIFE)*0.45 then
+set dmg=GetUnitState(E,UNIT_STATE_MAX_LIFE)*0.45
 endif
 call Push3(E,50,Atan2(GetUnitY(E)-y,GetUnitX(E)-x),400,"Abilities\\Weapons\\AncientProtectorMissile\\AncientProtectorMissile.mdl")
-call myCustomDamage(u,E,500+dmg,false,false,null,null,null)
+call myCustomDamage(u,E,dmg,false,false,null,null,null)
 endif
 call GroupRemoveUnit(DG,E)
 endloop
