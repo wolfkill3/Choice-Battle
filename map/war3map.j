@@ -22604,6 +22604,20 @@ set i=0
 set count=0
 loop
 exitwhen i>=10
+if (GetItemPlayer(UnitItemInSlot(u,i))==Player(15) or GetItemPlayer(UnitItemInSlot(u,i))==GetOwningPlayer(GetTriggerUnit())) and GetItemTypeId(UnitItemInSlot(u,i))=='ISt0' then
+set count=count+1
+endif
+set i=i+1
+endloop
+if count>2 then
+call RemoveItem(it)
+call SetPlayerState(Player(id),PLAYER_STATE_RESOURCE_GOLD,GetPlayerState(Player(id),PLAYER_STATE_RESOURCE_GOLD)+800)
+call DisplayTextToPlayer(Player(id),0,0,"Нельзя иметь больше двух таких предметов!")
+endif
+set i=0
+set count=0
+loop
+exitwhen i>=10
 if (GetItemPlayer(UnitItemInSlot(u,i))==Player(15) or GetItemPlayer(UnitItemInSlot(u,i))==GetOwningPlayer(GetTriggerUnit())) and GetItemTypeId(UnitItemInSlot(u,i))=='I06M' then
 set count=count+1
 endif
