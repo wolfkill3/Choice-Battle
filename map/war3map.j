@@ -166504,6 +166504,12 @@ function FKazumaList takes unit u, integer id returns nothing
         call UnitAddAbility(u,'KI1L')
         call UnitRemoveAbilityTimed(u,'KI1L',10)
     endif
+    if id=='ISt0' then //Талисман души
+        call UnitAddAbility(u,'KI1M')
+        call UnitRemoveAbilityTimed(u,'KI1M',10)
+        call UnitAddAbility(u,'KI1N')
+        call UnitRemoveAbilityTimed(u,'KI1N',10)
+    endif
 endfunction
 function FKazumaCond takes nothing returns boolean
 return GetSpellAbilityId()=='Ao7V'
