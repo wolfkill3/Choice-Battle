@@ -9220,6 +9220,34 @@ set l__s="BarraganSummon.mp3"
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 elseif id=='HSig' then
 set l__s="SignumSummon.mp3"
 
@@ -42914,6 +42942,23 @@ set soundplay=CreateSound(path,false,false,true,12700,1200,"")
 call SetSoundVolume(soundplay,127)
 call StartSound(soundplay)
 endfunction
+// Облако старения. У модели одна анимация Stand на 5 секунд и НЕТ анимации
+// смерти: в 1.26 DestroyEffect такую не снимает, она доигрывает и застывает
+// плоской гранью (это и был «фиолетовый треугольник»). Поэтому держим её на
+// дамми и снимаем RemoveUnit'ом — юнит уходит вместе с моделью.
+// ☠️ CreateUnit может вернуть ничего (лимит юнитов) — без проверки это краш
+// по нулевому указателю, уже проходили.
+function Brg_Cloud takes unit caster,string path,real x,real y,real z,real size,real tscale,real life returns nothing
+local unit u=CreateUnit(GetOwningPlayer(caster),'e200',x,y,GetRandomReal(0,360))
+if u!=null then
+call SetUnitModel(u,path)
+call UnitSize(u,size,size,size)
+call SetUnitFlyHeight(u,z,0)
+call SetUnitTimeScale(u,tscale)
+call MyRemoveUnit(u,life)
+endif
+set u=null
+endfunction
 // эффект в точке: масштаб, скорость, высота; life<=0 — обычный DestroyEffect (играет death)
 function Brg_Fx takes string path,real x,real y,real z,real scale,real tscale,real life returns nothing
 set EFF=AddSpecialEffect(path,x,y)
@@ -42952,6 +42997,20 @@ call DestroyEffect(EFF)
 endif
 endif
 endfunction
+// Неуязвимость на время каста. Отдельно от паузы: пауза не спасает от урона.
+// Снимаем только то, что сами выдали, чтобы не сорвать чужую защиту.
+function Brg_Invul takes unit caster,boolean on returns nothing
+local integer uid=GetHandleId(caster)
+if on then
+if GetUnitAbilityLevel(caster,'Avul')==0 then
+call UnitAddAbility(caster,'Avul')
+call SaveBoolean(HH,uid,StringHash("BrgAvul"),true)
+endif
+elseif LoadBoolean(HH,uid,StringHash("BrgAvul")) then
+call UnitRemoveAbility(caster,'Avul')
+call SaveBoolean(HH,uid,StringHash("BrgAvul"),false)
+endif
+endfunction
 // ЗАМОК НА ВРЕМЯ КАСТА. PauseUnit морозит кадр анимации, а рут 'A1FU' только
 // отнимает скорость — под ним герой спокойно берёт цель и кастует дальше.
 // Идиома карты (так же заперт Гоку на Генки-даме): движение и атака отключаются
@@ -42959,12 +43018,11 @@ endfunction
 function Brg_Lock takes unit caster,boolean on,integer skip returns nothing
 local integer i=0
 local integer a
-if on then
-call UnitEnableMovement(caster,false,true)
-call UnitEnableAttack(caster,false,false)
-else
-call UnitEnableMovement(caster,true,true)
-call UnitEnableAttack(caster,true,false)
+// Владелец просил настоящую паузу и не беспокоиться об анимации:
+// PauseUnit морозит кадр, зато каст не сбивается ничем.
+call PauseUnit(caster,on)
+if on==false then
+call Brg_Invul(caster,false)
 endif
 loop
 exitwhen i>8
@@ -43035,7 +43093,10 @@ call SaveReal(HH,id,6,dur)
 call SaveReal(HH,id,7,per)
 call SaveReal(HH,id,15,total*per/dur)
 if fx!="" then
+// пустой путь означает «без метки»: так проверяем, чья это плоская грань
+if fx!="" then
 call SaveEffectHandle(HH,id,10,AddSpecialEffectTarget(fx,target,"origin"))
+endif
 endif
 call TimerStart(t,per,true,function Brg_Dot_Act)
 set t=null
@@ -43093,6 +43154,10 @@ endfunction
 // ===== Q — Cero: взмах топором, волна летит вперёд и бьёт первую цель =====
 function Brg_Q_Act2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
+local effect eff1
+local unit eye
+local integer i
+local real tx
 local integer id=GetHandleId(t)
 local unit caster=LoadUnitHandle(HH,id,1)
 local real time=LoadReal(HH,id,5)+0.02
@@ -43103,62 +43168,145 @@ local real dist=LoadReal(HH,id,13)
 local real dmg=LoadReal(HH,id,16)
 local real px
 local real py
-local unit hit=null
+local group gr=LoadGroupHandle(HH,id,4)
 call SaveReal(HH,id,5,time)
 if UnitIsAlive(caster)==false or udg_B==false or DU2==false then
+// обрыв: тело волны и вижн-дамми надо убрать, иначе они остаются висеть
+set i=0
+loop
+exitwhen i>3
+if LoadEffectHandle(HH,id,21+i)!=null then
+call DestroyEffect(LoadEffectHandle(HH,id,21+i))
+call SaveEffectHandle(HH,id,21+i,null)
+endif
+set i=i+1
+endloop
+if LoadUnitHandle(HH,id,40)!=null then
+call RemoveUnit(LoadUnitHandle(HH,id,40))
+call SaveUnitHandle(HH,id,40,null)
+endif
+if gr!=null then
+call DestroyGroup(gr)
+endif
 call PauseTimer(t)
 call DestroyTimer(t)
 call FlushChildHashtable(HH,id)
 elseif dist<=0 then
-// ЗАМАХ 0.3 c — анимация Attack 2 играет целиком
-if time>=0.3 then
+// ЗАМАХ 0.1 c (каст-тайм по просьбе владельца)
+if time>=0.1 then
 call Brg_Sound("Sound\\Music\\mp3Music\\Barragan_Q.mp3")
 set x0=PolX(GetUnitX(caster),90,facing)
 set y0=PolY(GetUnitY(caster),90,facing)
 call SaveReal(HH,id,11,x0)
 call SaveReal(HH,id,12,y0)
 call SaveReal(HH,id,13,1)
+// Голова волны — искра, как на E. Чёрное тело BDEF убрано: именно оно
+// давало тёмные пятна, похожие на квадраты.
+// Тело волны — четыре искры друг за другом, чтобы полоса тянулась на всю длину
+set i=0
+loop
+exitwhen i>3
+set EFF=AddSpecialEffect("war3mapImported\\wos_zz-shio_zk_zz_stab2_hy-1.mdx",x0,y0)
+call SetSpecialEffectScale(EFF,0.65)
+call SetSpecialEffectTimeScale(EFF,0.55)
+call SetSpecialEffectZ(EFF,175)
+call SetSpecialEffectFacing(EFF,facing)
+call SaveEffectHandle(HH,id,21+i,EFF)
+set i=i+1
+endloop
+// обзор по ходу волны: в оригинале это VisionTimed, у нас — дамми 'gbRd'
+set n0=CreateUnit(GetOwningPlayer(caster),'gbRd',x0,y0,facing)
+call SaveUnitHandle(HH,id,40,n0)
+set n0=null
 endif
 else
 // ПОЛЁТ ВОЛНЫ: 55 за тик, до 1200, бьёт ПЕРВУЮ задетую цель и гаснет
-set dist=dist+55
+set dist=dist+90
 call SaveReal(HH,id,13,dist)
 set px=PolX(x0,dist,facing)
 set py=PolY(y0,dist,facing)
-call Brg_FxC("war3mapImported\\wos_saberalterqcpurple.mdx",px,py,45,0.9,2.2,0,facing,255,255,255,255)
-if ModuloReal(dist,165)<55 then
-call Brg_FxC("war3mapImported\\wos_zz-shio_zk_zz_stab2_hy-1.mdx",px,py,60,0.6,0.7,0.3,facing,255,255,255,255)
+// четыре тела: голова и три хвоста с отставанием по 150
+set i=0
+loop
+exitwhen i>3
+set eff1=LoadEffectHandle(HH,id,21+i)
+if eff1!=null then
+set tx=dist-150.0*I2R(i)
+if tx<0 then
+set tx=0
 endif
+call SetSpecialEffectPosition(eff1,PolX(x0,tx,facing),PolY(y0,tx,facing))
+call SetSpecialEffectZ(eff1,175)
+endif
+set i=i+1
+endloop
+set eye=LoadUnitHandle(HH,id,40)
+if eye!=null then
+call SetUnitX(eye,px)
+call SetUnitY(eye,py)
+endif
+// облака раз в 0.12 с (90 за тик -> каждые 540 единиц), искры раз в 0.18 с
+// облако рождается у каждого из четырёх тел — отсюда сплошная полоса
+if ModuloReal(dist,540)<90 then
+set i=0
+loop
+exitwhen i>3
+set tx=dist-150.0*I2R(i)
+if tx>=0 then
+call Brg_Cloud(caster,"war3mapImported\\wos_saberalterqcpurple.mdx",PolX(x0,tx,facing),PolY(y0,tx,facing),11,2.75,0.75,1.4)
+endif
+set i=i+1
+endloop
+endif
+// волна проходит НАСКВОЗЬ: каждого врага задевает один раз и летит дальше
 call GroupClear(G)
-call GroupEnumUnitsInRange(G,px,py,140,Base)
+call GroupEnumUnitsInRange(G,px,py,150,Base)
 loop
 set n0=FirstOfGroup(G)
 exitwhen n0==null
 call GroupRemoveUnit(G,n0)
-if hit==null and Condition_Base(GetOwningPlayer(caster),n0) and GetUnitAbilityLevel(n0,'Avul')==0 then
-set hit=n0
+if gr!=null and Condition_Base(GetOwningPlayer(caster),n0) and GetUnitAbilityLevel(n0,'Avul')==0 and IsUnitInGroup(n0,gr)==false then
+call GroupAddUnit(gr,n0)
+call myCustomDamage(caster,n0,dmg,false,false,null,null,null)
+call Brg_Burn(caster,n0)
+if Brg_HasT(caster) then
+call SetControlToUnit(caster,n0,0.5,"stun")
+endif
+call Brg_FxC("war3mapImported\\wos_OPm (513)purple.mdx",GetUnitX(n0),GetUnitY(n0),0,1,1,0,GetRandomReal(0,360),255,255,255,255)
+call Brg_Fx("war3mapImported\\wos_zz-shio_zk_zz_stab2_hy-1.mdx",GetUnitX(n0),GetUnitY(n0),0,2,0.55,0.35)
+set EFF=AddSpecialEffectTarget("war3mapImported\\wos_LDeff (262).mdx",n0,"chest")
+call RemoveEffect(EFF,1.5,false,CreateTimer())
+call ShakeCamera(0.1,3)
 endif
 endloop
 set n0=null
-if hit!=null then
-call myCustomDamage(caster,hit,dmg,false,false,null,null,null)
-call Brg_Burn(caster,hit)
-if Brg_HasT(caster) then
-call SetControlToUnit(caster,hit,0.5,"stun")
+if dist>=1700 then
+set i=0
+loop
+exitwhen i>3
+if LoadEffectHandle(HH,id,21+i)!=null then
+call DestroyEffect(LoadEffectHandle(HH,id,21+i))
+call SaveEffectHandle(HH,id,21+i,null)
 endif
-call Brg_FxC("war3mapImported\\wos_OPm (513)purple.mdx",px,py,0,1,1,0,GetRandomReal(0,360),255,255,255,255)
-call Brg_Fx("war3mapImported\\wos_zz-shio_zk_zz_stab2_hy-1.mdx",px,py,60,0.55,1.2,0.35)
-call DestroyEffect(AddSpecialEffectTarget("war3mapImported\\wos_LDeff (262).mdx",hit,"chest"))
-call ShakeCamera(0.1,3)
+set i=i+1
+endloop
+if LoadUnitHandle(HH,id,40)!=null then
+call RemoveUnit(LoadUnitHandle(HH,id,40))
+call SaveUnitHandle(HH,id,40,null)
 endif
-if hit!=null or dist>=1200 then
+// в точке завершения обзор держится ещё 2 секунды
+set n0=CreateUnit(GetOwningPlayer(caster),'gbRd',px,py,facing)
+call MyRemoveUnit(n0,2.0)
+set n0=null
 call PauseTimer(t)
 call DestroyTimer(t)
 call FlushChildHashtable(HH,id)
 endif
 endif
 set caster=null
-set hit=null
+set gr=null
+set eff1=null
+set eye=null
 set t=null
 endfunction
 function Brg_Q_Act takes unit caster,real x1,real y1 returns nothing
@@ -43173,9 +43321,14 @@ endif
 call SaveUnitHandle(HH,id,1,caster)
 call SaveReal(HH,id,3,facing)
 call SaveReal(HH,id,13,0)
+call SaveGroupHandle(HH,id,4,CreateGroup())
 call SaveReal(HH,id,16,dmg)
 call SetUnitFacingInstant(caster,facing)
 call Brg_Lock(caster,true,'BbQ1')
+// под топором каст идёт в неуязвимости, как в оригинале
+if Brg_HasT(caster) then
+call Brg_Invul(caster,true)
+endif
 call SetUnitTimeScale(caster,1.6)
 call SetUnitAnimationByIndex(caster,9)
 call Brg_Free(caster,0.55)
@@ -43211,12 +43364,16 @@ if e2!=null then
 call DestroyEffect(e2)
 call SaveEffectHandle(HH,id,22,null)
 endif
+if LoadUnitHandle(HH,id,40)!=null then
+call RemoveUnit(LoadUnitHandle(HH,id,40))
+call SaveUnitHandle(HH,id,40,null)
+endif
 call PauseTimer(t)
 call DestroyTimer(t)
 call FlushChildHashtable(HH,id)
 elseif e1==null then
-// ЗАМАХ 0.4 c, потом из-за спины вылетают два шара
-if time>=0.4 then
+// ЗАМАХ 0.1 c, потом из-за спины вылетают два шара
+if time>=0.1 then
 call Brg_Sound("Sound\\Music\\mp3Music\\Barragan_EW.mp3")
 set EFF=AddSpecialEffect("war3mapImported\\wos_zz-fire-ore-hit1-zihei_big4.mdx",PolX(GetUnitX(caster),200,facing+45),PolY(GetUnitY(caster),200,facing+45))
 call SetSpecialEffectScale(EFF,1.0)
@@ -43233,6 +43390,10 @@ set ang=Angle2(GetSpecialEffectX(e1),GetSpecialEffectY(e1),x1,y1)+55.0*(1.0-prog
 call SetSpecialEffectPosition(e1,PolX(GetSpecialEffectX(e1),move,ang),PolY(GetSpecialEffectY(e1),move,ang))
 set ang=Angle2(GetSpecialEffectX(e2),GetSpecialEffectY(e2),x1,y1)-55.0*(1.0-prog)
 call SetSpecialEffectPosition(e2,PolX(GetSpecialEffectX(e2),move,ang),PolY(GetSpecialEffectY(e2),move,ang))
+if LoadUnitHandle(HH,id,40)!=null then
+call SetUnitX(LoadUnitHandle(HH,id,40),GetUnitX(caster)+(x1-GetUnitX(caster))*prog)
+call SetUnitY(LoadUnitHandle(HH,id,40),GetUnitY(caster)+(y1-GetUnitY(caster))*prog)
+endif
 call SetSpecialEffectZ(e1,600.0*4.0*prog*(1.0-prog))
 call SetSpecialEffectZ(e2,600.0*4.0*prog*(1.0-prog))
 else
@@ -43242,10 +43403,17 @@ call SaveEffectHandle(HH,id,21,null)
 call DestroyEffect(e2)
 call SaveEffectHandle(HH,id,22,null)
 call Brg_Sound("Sound\\Music\\mp3Music\\Barragan_EW4.mp3")
-call Brg_Fx("war3mapImported\\wos_zz-shio_zk_zz_stab2_hy-1.mdx",x1,y1,0,0.55,2,0.35)
-call Brg_FxC("war3mapImported\\wos_by_wood_effect_order_dange_yueyun_2withoutpurple3.mdx",x1,y1,0,0.45,1.45,0,GetRandomReal(0,360),255,255,255,255)
+if LoadUnitHandle(HH,id,40)!=null then
+call RemoveUnit(LoadUnitHandle(HH,id,40))
+call SaveUnitHandle(HH,id,40,null)
+endif
+set n0=CreateUnit(GetOwningPlayer(caster),'gbRd',x1,y1,0)
+call MyRemoveUnit(n0,3.0)
+set n0=null
+call Brg_Fx("war3mapImported\\wos_zz-shio_zk_zz_stab2_hy-1.mdx",x1,y1,0,2,0.55,0.35)
+call Brg_FxC("war3mapImported\\wos_saberalterqcpurple.mdx",x1,y1,0,1.45,0.45,0,GetRandomReal(0,360),255,255,255,255)
 call Brg_FxC("war3mapImported\\wos_OPm (513)purple.mdx",x1,y1,0,1,1,0,GetRandomReal(0,360),255,255,255,255)
-call Brg_FxC("war3mapImported\\wos_T_kyaru_skill02purple.mdx",x1,y1,0,1.25,0.9,0,GetRandomReal(0,360),255,255,255,255)
+call Brg_FxC("war3mapImported\\wos_T_kyaru_skill02purple.mdx",x1,y1,0,1.1,1.25,0,GetRandomReal(0,360),255,255,255,255)
 call ShakeCamera(0.2,6)
 call GroupClear(G)
 call GroupEnumUnitsInRange(G,x1,y1,600,Base)
@@ -43288,6 +43456,10 @@ call SetUnitTimeScale(caster,2.4)
 call SetUnitAnimationByIndex(caster,4)
 call Brg_Free(caster,0.95)
 call DestroyEffect(AddSpecialEffectTarget("war3mapImported\\wos_ChuShou_BY_Wood_Effect_Glow_GuiPaiQiGong_XuLiPurple.mdx",caster,"right hand"))
+// обзор летит вместе со снарядом, иначе он уходит в темноту
+set n0=CreateUnit(GetOwningPlayer(caster),'gbRd',GetUnitX(caster),GetUnitY(caster),facing)
+call SaveUnitHandle(HH,id,40,n0)
+set n0=null
 call TimerStart(t,0.02,true,function Brg_W_Act2)
 set caster=null
 set t=null
@@ -43295,6 +43467,9 @@ endfunction
 // ===== E — конус старения перед собой =====
 function Brg_E_Act2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
+local effect eff1
+local real ex
+local real ey
 local integer id=GetHandleId(t)
 local unit caster=LoadUnitHandle(HH,id,1)
 local real time=LoadReal(HH,id,5)+0.02
@@ -43308,6 +43483,15 @@ local integer i
 local real ang
 call SaveReal(HH,id,5,time)
 if UnitIsAlive(caster)==false or udg_B==false or DU2==false then
+set i=0
+loop
+exitwhen i>4
+if LoadEffectHandle(HH,id,41+i)!=null then
+call DestroyEffect(LoadEffectHandle(HH,id,41+i))
+call SaveEffectHandle(HH,id,41+i,null)
+endif
+set i=i+1
+endloop
 if gr!=null then
 call DestroyGroup(gr)
 endif
@@ -43315,10 +43499,27 @@ call PauseTimer(t)
 call DestroyTimer(t)
 call FlushChildHashtable(HH,id)
 elseif dist<=0 then
-// ЗАМАХ 0.4 c
-if time>=0.4 then
+// ЗАМАХ 0.1 c
+if time>=0.1 then
 call Brg_Sound("Sound\\Music\\mp3Music\\Barragan_EQ2.mp3")
 call SaveReal(HH,id,13,1)
+// Как на Q: тело каждого луча — отдельная чёрная модель, она летит,
+// а облака сыплются редко.
+set i=0
+loop
+exitwhen i>4
+set ang=facing-40.0+20.0*I2R(i)
+// Голова луча — искра, как у Q в ресуррексионе. Чёрное тело BDEF тут не
+// годится: в оригинале оно бывает только под топором и в одном экземпляре,
+// а пять таких плит рядом читаются как чёрные квадраты.
+set EFF=AddSpecialEffect("war3mapImported\\wos_zz-shio_zk_zz_stab2_hy-1.mdx",x0,y0)
+call SetSpecialEffectScale(EFF,0.65)
+call SetSpecialEffectTimeScale(EFF,0.55)
+call SetSpecialEffectZ(EFF,175)
+call SetSpecialEffectFacing(EFF,ang)
+call SaveEffectHandle(HH,id,41+i,EFF)
+set i=i+1
+endloop
 endif
 else
 // ВЕЕР ИЗ ВОЛН: тот же разрез, что у Q, только пять лучей на 80° (-40..+40).
@@ -43328,9 +43529,16 @@ set i=0
 loop
 exitwhen i>4
 set ang=facing-40.0+20.0*I2R(i)
-call Brg_FxC("war3mapImported\\wos_saberalterqcpurple.mdx",PolX(x0,dist,ang),PolY(y0,dist,ang),45,0.9,2.2,0,ang,255,255,255,255)
-if ModuloReal(dist,180)<60 then
-call Brg_FxC("war3mapImported\\wos_zz-shio_zk_zz_stab2_hy-1.mdx",PolX(x0,dist,ang),PolY(y0,dist,ang),60,0.6,0.7,0.3,ang,255,255,255,255)
+// точку луча считаем один раз, handle читаем один раз
+set ex=PolX(x0,dist,ang)
+set ey=PolY(y0,dist,ang)
+set eff1=LoadEffectHandle(HH,id,41+i)
+if eff1!=null then
+call SetSpecialEffectPosition(eff1,ex,ey)
+call SetSpecialEffectZ(eff1,175)
+endif
+if ModuloReal(dist,360)<60 then
+call Brg_Cloud(caster,"war3mapImported\\wos_saberalterqcpurple.mdx",ex,ey,11,2.15,0.75,1.4)
 endif
 set i=i+1
 endloop
@@ -43353,12 +43561,21 @@ call GroupAddUnit(gr,n0)
 call myCustomDamage(caster,n0,dmg,false,false,null,null,null)
 call SlowUnit(caster,n0,0.3,0.3,2,2,false)
 call Brg_Burn(caster,n0)
-call Brg_FxC("war3mapImported\\wos_saberalterqcpurple.mdx",GetUnitX(n0),GetUnitY(n0),40,0.8,2.5,0,GetRandomReal(0,360),255,255,255,255)
+call Brg_Cloud(caster,"war3mapImported\\wos_saberalterqcpurple.mdx",GetUnitX(n0),GetUnitY(n0),11,2.15,0.75,1.4)
 endif
 endif
 endloop
 set n0=null
-if dist>=950 then
+if dist>=1200 then
+set i=0
+loop
+exitwhen i>4
+if LoadEffectHandle(HH,id,41+i)!=null then
+call DestroyEffect(LoadEffectHandle(HH,id,41+i))
+call SaveEffectHandle(HH,id,41+i,null)
+endif
+set i=i+1
+endloop
 if gr!=null then
 call DestroyGroup(gr)
 endif
@@ -43369,6 +43586,7 @@ endif
 endif
 set caster=null
 set gr=null
+set eff1=null
 set t=null
 endfunction
 function Brg_E_Act takes unit caster,real x1,real y1 returns nothing
@@ -43443,8 +43661,8 @@ set i=0
 loop
 exitwhen i>6
 set EFF=AddSpecialEffect("war3mapImported\\wos_zz-shio_zk_zz_stab2_hy-1.mdx",PolX(x0,rad,I2R(i)*52),PolY(y0,rad,I2R(i)*52))
-call SetSpecialEffectScale(EFF,0.75)
-call SetSpecialEffectTimeScale(EFF,0.15)
+call SetSpecialEffectScale(EFF,0.15)
+call SetSpecialEffectTimeScale(EFF,0.75)
 call SetSpecialEffectFacing(EFF,GetRandomReal(0,360))
 call SaveEffectHandle(HH,id,30+i,EFF)
 set i=i+1
@@ -43468,7 +43686,7 @@ call SaveReal(HH,id,14,rad)
 call SaveReal(HH,id,18,sc)
 if t4>=0.5 then
 call SaveReal(HH,id,7,0)
-call Brg_FxC("war3mapImported\\wos_T_kyaru_skill02purple.mdx",x0,y0,0,1.25,1.1,0,GetRandomReal(0,360),255,255,255,255)
+call Brg_FxC("war3mapImported\\wos_T_kyaru_skill02purple.mdx",x0,y0,0,1.1,1.25,0,GetRandomReal(0,360),255,255,255,255)
 endif
 if t2>=0.2 then
 call SaveReal(HH,id,8,0)
@@ -43506,15 +43724,22 @@ call SaveGroupHandle(HH,id,4,CreateGroup())
 // гниение (5+ур)*INT за 4 c каждому, кто попал под кольцо
 call SaveReal(HH,id,16,(5.0+I2R(lvl))*I2R(GetHeroInt(caster,true)))
 call Brg_Lock(caster,true,'BbR1')
+call Brg_Invul(caster,true)
 call SetUnitTimeScale(caster,3.4)
 call SetUnitAnimationByIndex(caster,6)
 call Brg_Sound("Sound\\Music\\mp3Music\\Barragan_ER1.mp3")
 call Brg_Sound("Sound\\Music\\mp3Music\\Barragan_ER2.mp3")
 loop
 exitwhen i>3
-call Brg_FxC("war3mapImported\\wos_JY-Shio_Super_Saiyan_JN_Zi.mdx",x0,y0,70,1,9,1.2,GetRandomReal(0,360),255,255,255,255)
+// в ресуррексионе это четыре ФИОЛЕТОВЫХ вспышки; красные ZiRed, OPM red
+// и кольца пыли — набор базовой формы, нам он не нужен
+call Brg_FxC("war3mapImported\\wos_JY-Shio_Super_Saiyan_JN_Zi.mdx",x0,y0,70,9,1,1.2,GetRandomReal(0,360),255,255,255,255)
 set i=i+1
 endloop
+// обзор на всё время каста, как VisionTimed(2000) в оригинале
+set n0=CreateUnit(GetOwningPlayer(caster),'gbRd',x0,y0,GetUnitFacing(caster))
+call MyRemoveUnit(n0,1.3)
+set n0=null
 call TimerStart(t,0.02,true,function Brg_R_Act2)
 set caster=null
 set t=null
@@ -43565,13 +43790,13 @@ call Brg_Free(caster,1.0)
 call Brg_Sound("Sound\\Music\\mp3Music\\Barragan_T.mp3")
 call Brg_Sound("Sound\\Music\\mp3Music\\Barragan_T2.mp3")
 call SaveEffectHandle(HH,id,10,AddSpecialEffectTarget("war3mapImported\\wos_[By XeSHTeG]BarraganAxe.mdx",caster,"right hand"))
-call Brg_FxC("war3mapImported\\wos_JY-Shio_Super_Saiyan_JN_Zi.mdx",x0,y0,70,1,3,1.0,GetRandomReal(0,360),255,255,255,255)
-call Brg_FxC("war3mapImported\\wos_JY-Shio_Super_Saiyan_JN_Zi.mdx",x0,y0,70,1,4,1.0,GetRandomReal(0,360),255,255,255,255)
+call Brg_FxC("war3mapImported\\wos_JY-Shio_Super_Saiyan_JN_Zi.mdx",x0,y0,70,3,1,1.0,GetRandomReal(0,360),255,255,255,255)
+call Brg_FxC("war3mapImported\\wos_JY-Shio_Super_Saiyan_JN_Zi.mdx",x0,y0,70,4,1,1.0,GetRandomReal(0,360),255,255,255,255)
 loop
 exitwhen i>6
-call Brg_FxC("war3mapImported\\wos_dustwave222.mdx",x0,y0,0,0.8,1.55+0.45*I2R(i),0,GetRandomReal(0,360),175,55,205,45)
+call Brg_FxC("war3mapImported\\wos_dustwave222.mdx",x0,y0,0,1.55+0.45*I2R(i),0.8,0,GetRandomReal(0,360),175,55,205,45)
 if i<2 then
-call Brg_FxC("war3mapImported\\wos_T_kyaru_skill02purple.mdx",x0,y0,0,1,0.55,0,GetRandomReal(0,360),255,255,255,255)
+call Brg_FxC("war3mapImported\\wos_T_kyaru_skill02purple.mdx",x0,y0,0,0.55,1,0,GetRandomReal(0,360),255,255,255,255)
 endif
 set i=i+1
 endloop
@@ -43618,8 +43843,8 @@ call PauseTimer(t)
 call DestroyTimer(t)
 call FlushChildHashtable(HH,id)
 elseif time1<=0 then
-// ЗАМАХ 0.5 c
-if time>=0.5 then
+// ЗАМАХ 0.1 c
+if time>=0.1 then
 call Brg_Sound("Sound\\Music\\mp3Music\\Barragan_ET2_2.mp3")
 set x0=PolX(GetUnitX(caster),80,facing)
 set y0=PolY(GetUnitY(caster),80,facing)
@@ -43638,8 +43863,9 @@ call SetSpecialEffectTimeScale(EFF,2.35)
 call SetSpecialEffectFacing(EFF,facing+90)
 call SetSpecialEffectRoll(EFF,-90)
 call SaveEffectHandle(HH,id,22,EFF)
-// дамми вижена летит с топором: видно, куда он ушёл и кого задел
-set n0=CreateUnit(GetOwningPlayer(caster),'e200',x0,y0,facing)
+// дамми вижена летит с топором: видно, куда он ушёл и кого задел.
+// Обзор в карте даёт 'gbRd', у 'e200' его нет — топор улетал в темноту.
+set n0=CreateUnit(GetOwningPlayer(caster),'gbRd',x0,y0,facing)
 call SaveUnitHandle(HH,id,40,n0)
 set n0=null
 // бросок завершает Gran Caida
@@ -43669,9 +43895,9 @@ endif
 call SaveReal(HH,id,9,t3)
 if t3>=0.09 then
 call SaveReal(HH,id,9,0)
-call Brg_FxC("war3mapImported\\wos_zz-shio_zk_zz_stab2_hy-1.mdx",px,py,1,1.85,0.45,0,facing,255,255,255,255)
+call Brg_FxC("war3mapImported\\wos_zz-shio_zk_zz_stab2_hy-1.mdx",px,py,1,0.45,1.85,0,facing,255,255,255,255)
 endif
-call Brg_FxC("war3mapImported\\wos_0233.mdx",px,py,0,1,2.25,0.06,facing,255,255,255,255)
+call Brg_FxC("war3mapImported\\wos_0233.mdx",px,py,0,2.25,1,0.06,facing,255,255,255,255)
 call GroupClear(G)
 call GroupEnumUnitsInRange(G,px,py,400,Base)
 loop
@@ -43687,10 +43913,10 @@ endif
 endloop
 set n0=null
 if dist>=2500 then
-call Brg_Fx("war3mapImported\\wos_zz-shio_zk_zz_stab2_hy-1.mdx",px,py,0,0.55,2,0.35)
-call Brg_FxC("war3mapImported\\wos_by_wood_effect_order_dange_yueyun_2withoutpurple3.mdx",px,py,0,0.65,1.25,0,GetRandomReal(0,360),255,255,255,255)
+call Brg_Fx("war3mapImported\\wos_zz-shio_zk_zz_stab2_hy-1.mdx",px,py,0,2,0.55,0.35)
+call Brg_FxC("war3mapImported\\wos_saberalterqcpurple.mdx",px,py,0,1.25,0.65,0,GetRandomReal(0,360),255,255,255,255)
 call Brg_FxC("war3mapImported\\wos_OPm (513)purple.mdx",px,py,0,1,1,0,GetRandomReal(0,360),255,255,255,255)
-call Brg_FxC("war3mapImported\\wos_fangkuai2.mdx",px,py,0,1,1.65,0,160,255,255,255,255)
+call Brg_FxC("war3mapImported\\wos_fangkuai2.mdx",px,py,0,1.65,1,0,160,255,255,255,255)
 call ShakeCamera(0.3,8)
 if LoadEffectHandle(HH,id,21)!=null then
 call DestroyEffect(LoadEffectHandle(HH,id,21))
@@ -43704,6 +43930,10 @@ if LoadUnitHandle(HH,id,40)!=null then
 call RemoveUnit(LoadUnitHandle(HH,id,40))
 call SaveUnitHandle(HH,id,40,null)
 endif
+// в точке падения обзор держится ещё 3 секунды: видно, во что прилетело
+set n0=CreateUnit(GetOwningPlayer(caster),'gbRd',px,py,facing)
+call MyRemoveUnit(n0,3.0)
+set n0=null
 if gr!=null then
 call DestroyGroup(gr)
 endif
@@ -43728,6 +43958,7 @@ call SaveGroupHandle(HH,id,4,CreateGroup())
 call SaveReal(HH,id,16,10.0*I2R(GetHeroInt(caster,true)))
 call SetUnitFacingInstant(caster,facing)
 call Brg_Lock(caster,true,'BbT2')
+call Brg_Invul(caster,true)
 call SetUnitTimeScale(caster,1.5)
 call SetUnitAnimationByIndex(caster,10)
 call Brg_Free(caster,0.65)
@@ -43748,12 +43979,12 @@ set px=PolX(x0,1100,facing)
 set py=PolY(y0,1100,facing)
 endif
 call SetUnitFacingInstant(caster,facing)
-call Brg_Fx("war3mapImported\\wos_UltimateDarkFlash.mdx",x0,y0,60,1.1,2,0)
-call Brg_FxC("war3mapImported\\wos_saberalterqcpurple.mdx",x0,y0,11,1.4,3,0,GetRandomReal(0,360),255,255,255,255)
+call Brg_Fx("war3mapImported\\wos_UltimateDarkFlash.mdx",x0,y0,90,2,0.7,0.4)
+call Brg_Cloud(caster,"war3mapImported\\wos_saberalterqcpurple.mdx",x0,y0,11,2.74,0.75,1.4)
 call SetUnitX(caster,px)
 call SetUnitY(caster,py)
-call Brg_Fx("war3mapImported\\wos_UltimateDarkFlash.mdx",px,py,60,1.1,2,0)
-call Brg_FxC("war3mapImported\\wos_T_kyaru_skill02purple.mdx",px,py,0,1.1,1.2,0,GetRandomReal(0,360),255,255,255,255)
+call Brg_Fx("war3mapImported\\wos_UltimateDarkFlash.mdx",px,py,90,2,0.7,0.4)
+call Brg_FxC("war3mapImported\\wos_T_kyaru_skill02purple.mdx",px,py,0,1.1,1.25,0,GetRandomReal(0,360),255,255,255,255)
 call Brg_Sound("Sound\\Music\\mp3Music\\Barragan_E2_1.mp3")
 set caster=null
 endfunction
@@ -43780,7 +44011,7 @@ call FlushChildHashtable(HH,id)
 else
 if t2>=0.5 then
 call SaveReal(HH,id,8,0)
-call Brg_FxC("war3mapImported\\wos_dustwave222.mdx",GetUnitX(caster),GetUnitY(caster),0,0.7,2.4,0,GetRandomReal(0,360),175,55,205,55)
+call Brg_FxC("war3mapImported\\wos_dustwave222.mdx",GetUnitX(caster),GetUnitY(caster),0,2.4,0.7,0,GetRandomReal(0,360),175,55,205,55)
 endif
 endif
 set caster=null
@@ -43805,7 +44036,7 @@ call SetUnitTimeScale(caster,1.5)
 call SetUnitAnimationByIndex(caster,0)
 call Brg_Free(caster,0.8)
 call Brg_Sound("Sound\\Music\\mp3Music\\Barragan_E1.mp3")
-call Brg_Fx("war3mapImported\\wos_hakkestart.mdx",GetUnitX(caster),GetUnitY(caster),10,0.8,1.75,0)
+call Brg_Fx("war3mapImported\\wos_hakkestart.mdx",GetUnitX(caster),GetUnitY(caster),10,1.75,0.35,1.5)
 call CreateModeIndicatorForm(caster,"ReplaceableTextures\\CommandButtons\\BTNHero_Barragan_G.blp",10)
 call TimerStart(t,0.1,true,function Brg_G_Act2)
 set caster=null
@@ -43827,6 +44058,10 @@ local real px
 local real py
 call SaveReal(HH,id,5,time)
 if UnitIsAlive(caster)==false or target==null or UnitIsAlive(target)==false or udg_B==false or DU2==false or dist>1400 then
+if LoadEffectHandle(HH,id,21)!=null then
+call DestroyEffect(LoadEffectHandle(HH,id,21))
+call SaveEffectHandle(HH,id,21,null)
+endif
 call PauseTimer(t)
 call DestroyTimer(t)
 call FlushChildHashtable(HH,id)
@@ -43836,12 +44071,38 @@ set dist=dist+70
 call SaveReal(HH,id,13,dist)
 set px=PolX(x0,dist,facing)
 set py=PolY(y0,dist,facing)
-call Brg_FxC("war3mapImported\\wos_zz-shio_zk_zz_stab2_hy-1.mdx",px,py,55,0.45,1.2,0.25,facing,255,255,255,255)
+// тело летит одной моделью, а не копией на каждый тик
+if LoadEffectHandle(HH,id,21)==null then
+set EFF=AddSpecialEffect("war3mapImported\\wos_zz-shio_zk_zz_stab2_hy-1.mdx",px,py)
+call SetSpecialEffectScale(EFF,0.65)
+call SetSpecialEffectTimeScale(EFF,0.55)
+call SetSpecialEffectZ(EFF,55)
+call SetSpecialEffectFacing(EFF,facing)
+call SaveEffectHandle(HH,id,21,EFF)
+else
+call SetSpecialEffectPosition(LoadEffectHandle(HH,id,21),px,py)
+call SetSpecialEffectZ(LoadEffectHandle(HH,id,21),40)
+endif
+// как на E: облака раз в 300 единиц, искры раз в 450
+if ModuloReal(dist,300)<70 then
+call Brg_Cloud(caster,"war3mapImported\\wos_saberalterqcpurple.mdx",px,py,11,1.60,0.75,1.4)
+endif
 if SR(px,py,GetUnitX(target),GetUnitY(target))<130 then
 call myCustomDamage(caster,target,dmg,false,false,null,null,null)
 call Brg_Burn(caster,target)
-call DestroyEffect(AddSpecialEffectTarget("war3mapImported\\wos_LDeff (262).mdx",target,"chest"))
-call Brg_FxC("war3mapImported\\wos_saberalterqcpurple.mdx",GetUnitX(target),GetUnitY(target),40,0.7,2.5,0,GetRandomReal(0,360),255,255,255,255)
+set EFF=AddSpecialEffectTarget("war3mapImported\\wos_LDeff (262).mdx",target,"chest")
+call RemoveEffect(EFF,1.5,false,CreateTimer())
+call Brg_Cloud(caster,"war3mapImported\\wos_saberalterqcpurple.mdx",GetUnitX(target),GetUnitY(target),11,2.74,0.75,1.4)
+call Brg_FxC("war3mapImported\\wos_OPm (513)purple.mdx",GetUnitX(target),GetUnitY(target),0,1,1,0,GetRandomReal(0,360),255,255,255,255)
+// метка гниения на цели — тот же эффект, что вешает пассивка оригинала
+set EFF=AddSpecialEffectTarget("war3mapImported\\wos_zz-fire-ore-hit1-zihei_2.mdx",target,"origin")
+call SetSpecialEffectScale(EFF,2)
+call SetSpecialEffectTimeScale(EFF,1.15)
+call RemoveEffect(EFF,3.0,false,CreateTimer())
+if LoadEffectHandle(HH,id,21)!=null then
+call DestroyEffect(LoadEffectHandle(HH,id,21))
+call SaveEffectHandle(HH,id,21,null)
+endif
 call PauseTimer(t)
 call DestroyTimer(t)
 call FlushChildHashtable(HH,id)
