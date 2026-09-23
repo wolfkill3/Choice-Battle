@@ -120189,6 +120189,12 @@ local boolean success = false
         call UnitRemoveAbilityTimed(u,'KI0Z',duration)
         set success = true 
     endif
+    if id=='INY0' then //Nanatsu Yoru
+        call UnitAddAbility(u,'KI1Q')
+        call UnitRemoveAbilityTimed(u,'KI1Q',10)
+        call UnitAddAbility(u,'KI1R')
+        call UnitRemoveAbilityTimed(u,'KI1R',10)
+    endif
     return success
 endfunction
 function ShiroF_Cond takes nothing returns boolean
@@ -166523,6 +166529,24 @@ function FKazumaList takes unit u, integer id returns nothing
         call UnitRemoveAbilityTimed(u,'KI1M',10)
         call UnitAddAbility(u,'KI1N')
         call UnitRemoveAbilityTimed(u,'KI1N',10)
+    endif
+    if id=='IMT0' then //Майка Мастера
+        call UnitAddAbility(u,'KI1O')
+        call UnitRemoveAbilityTimed(u,'KI1O',10)
+        call UnitAddAbility(u,'KI1P')
+        call UnitRemoveAbilityTimed(u,'KI1P',10)
+    endif
+    if id=='INY0' then //Nanatsu Yoru
+        call UnitAddAbility(u,'KI1Q')
+        call UnitRemoveAbilityTimed(u,'KI1Q',10)
+        call UnitAddAbility(u,'KI1R')
+        call UnitRemoveAbilityTimed(u,'KI1R',10)
+    endif
+    if id=='IMS0' then //Магический посох
+        call UnitAddAbility(u,'KI1S')
+        call UnitRemoveAbilityTimed(u,'KI1S',10)
+        call UnitAddAbility(u,'KI1T')
+        call UnitRemoveAbilityTimed(u,'KI1T',10)
     endif
 endfunction
 function FKazumaCond takes nothing returns boolean
