@@ -36870,7 +36870,7 @@ exitwhen n0==null
 if  Condition_Base(GetOwningPlayer(caster0),n0)  then
 //call UnitStop(n0)
 call myCustomDamage(caster0,n0,damage,false,false,null,null,null)
-call SetControlToUnit(caster0,n0, duration0, "SilenceTE")
+call SetControlToUnit(caster0,n0, duration0, "silenceTE")
 endif
 call GroupRemoveUnit(G,n0)
 endloop
@@ -81396,7 +81396,7 @@ local real y2=LoadReal(HH,id,5)
 local real a=LoadReal(HH,id,1)
 local group g=LoadGroupHandle(HH,id,3)
 local integer l__idg=GetHandleId(g)
-local real dmg=GetHeroStr(u,true)*(0.875+(1.125*(GetUnitAbilityLevel(u,'A0JD'))))
+local real dmg=50+GetHeroStr(u,true)*(0.875+(1.125*(GetUnitAbilityLevel(u,'A0JD'))))
 local player p=GetOwningPlayer(u)
 local integer l__ide
 local real x3=x2+1100*Cos(a)
@@ -227101,7 +227101,7 @@ set id=Sh_PageItem(pid,i)
 if id==0 then
 call BlzFrameSetText(ShItemCost[i],"")
 elseif Sh_Owns(pid,id) then
-call BlzFrameSetText(ShItemCost[i],"|c0066ff66есть|r")
+call BlzFrameSetText(ShItemCost[i],"|c0066ff66Owned|r")
 elseif Sh_Cost(id)>gold then
 call BlzFrameSetText(ShItemCost[i],"|c00ff5555"+I2S(Sh_Cost(id))+"|r")
 else
@@ -227156,7 +227156,7 @@ else
 call BlzFrameSetTexture(ShCraftBack[i],Sh_Icon(id),0,false)
 set c=Sh_RecCnt(k,i)
 if Sh_Owns(pid,id) and c<2 then
-call BlzFrameSetText(ShCraftCost[i],"|c0066ff66есть|r")
+call BlzFrameSetText(ShCraftCost[i],"|c0066ff66Owned|r")
 elseif c>1 then
 call BlzFrameSetText(ShCraftCost[i],"|c00FFFF00"+I2S(Sh_Cost(id)*c)+"|r x"+I2S(c))
 else
