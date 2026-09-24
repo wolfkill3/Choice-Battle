@@ -36886,11 +36886,11 @@ function EndOfChoiceAct2 takes nothing returns nothing
 local integer i=0
 call ShowFrame( KingOfHillIcon, false)
 set TC=false
-set Koef[1]=1+0.07*(win[2]-win[1])
+set Koef[1]=1+0.08*(win[2]-win[1])
 if Koef[1]<=0 then
 set Koef[1]=0.05
 endif
-set Koef[2]=1+0.07*(win[1]-win[2])
+set Koef[2]=1+0.08*(win[1]-win[2])
 if Koef[2]<=0 then
 set Koef[2]=0.05
 endif
@@ -37049,16 +37049,16 @@ function EndOfChoiceAct takes nothing returns nothing
             call DisplayTextToPlayer(GetLocalPlayer(),0,0,"Побеждает "+Color[i]+GetPlayerName(Player(i)))
             set i=0
         endif
-        else
-                call DisplayTextToPlayer(GetLocalPlayer(),0,0,"Ничья.")
-                set win2=0
-        endif
-        set n=GetTriggerUnit()
-        if GetUnitAbilityLevel(n,'A0YT')>0 then
-                call SetUnitOwner(n,LoadPlayerHandle(h,GetHandleId(n),StringHash("CS")),true)
-                call UnitRemoveAbility(n,'A0YT')
-        endif
-        call GroupEnumUnitsInRect(G,bj_mapInitialPlayableArea,FrendaBool)
+    else
+        call DisplayTextToPlayer(GetLocalPlayer(),0,0,"Ничья.")
+        set win2=0
+    endif
+    set n=GetTriggerUnit()
+    if GetUnitAbilityLevel(n,'A0YT')>0 then
+        call SetUnitOwner(n,LoadPlayerHandle(h,GetHandleId(n),StringHash("CS")),true)
+        call UnitRemoveAbility(n,'A0YT')
+    endif
+    call GroupEnumUnitsInRect(G,bj_mapInitialPlayableArea,FrendaBool)
     loop
     set E=FirstOfGroup(G)
     exitwhen E==null
@@ -226897,13 +226897,25 @@ else
 call SetUnitX(caster,x0)
 call SetUnitY(caster,y0)
 call SetUnitFlyHeight(caster,0.0,0)
-if time>=2.5 then
+if time<1 then
+call PauseUnit(caster,true)
+call SetUnitInvulnerable(caster,true)
+endif
+if time==1 then
 call PauseUnit(caster,false)
 call SetUnitInvulnerable(caster,false)
 call UnitRemoveAbility(caster,'A1FU')
 call UnitRemoveAbility(caster,'B00A')
 call SetUnitPathing(caster,true)
 call SetUnitFlyHeight(caster,0.0,0)
+if LoadTriggerHandle(HH,id,StringHash("GarpAim"))!=null then
+call FlushChildHashtable(h,GetHandleId(LoadTriggerHandle(HH,id,StringHash("GarpAim"))))
+call TriggerClearActions(LoadTriggerHandle(HH,id,StringHash("GarpAim")))
+call DestroyTrigger(LoadTriggerHandle(HH,id,StringHash("GarpAim")))
+call SaveTriggerHandle(HH,id,StringHash("GarpAim"),null)
+endif
+endif
+if time>=2.5 then
 if LoadFogModifierHandle(HH,id,25)!=null then
 call DestroyFogModifier(LoadFogModifierHandle(HH,id,25))
 call SaveFogModifierHandle(HH,id,25,null)
@@ -226911,12 +226923,6 @@ endif
 // Триггер наводки живёт ровно столько, сколько каст. Порядок важен и
 // взят у Целла: сперва чистим его ветку хэштейбла, потом снимаем
 // действия и только затем уничтожаем — иначе фатал.
-if LoadTriggerHandle(HH,id,StringHash("GarpAim"))!=null then
-call FlushChildHashtable(h,GetHandleId(LoadTriggerHandle(HH,id,StringHash("GarpAim"))))
-call TriggerClearActions(LoadTriggerHandle(HH,id,StringHash("GarpAim")))
-call DestroyTrigger(LoadTriggerHandle(HH,id,StringHash("GarpAim")))
-call SaveTriggerHandle(HH,id,StringHash("GarpAim"),null)
-endif
 call PauseTimer(t)
 call DestroyTimer(t)
 call FlushChildHashtable(HH,id)
