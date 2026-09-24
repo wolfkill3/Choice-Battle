@@ -35099,7 +35099,7 @@ function Trig_itemsc_Actions takes nothing returns nothing
         set itemsc[id]=true
     else
         if(GetLocalPlayer()==GetTriggerPlayer() ) then
-            call DisplayChatMessageEx(null,CHAT_RECIPIENT_UNKNOWN,10,true,"Солнце Вонголы/Солнце Маре/Сфера Льда/Сапоги льда на союзников: OFF")
+            call DisplayChatMessageEx(null,CHAT_RECIPIENT_UNKNOWN,10,true,"Солнце Вонголы/Небо Маре/Сфера Льда/Сапоги льда на союзников: OFF")
         endif
         loop
             if GetItemTypeId(UnitItemInSlot(Hero[id], i)) ==  'I04R' then
