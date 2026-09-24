@@ -9886,11 +9886,9 @@ set udg_RH2[134]="Sabrac"
 set udg_RH2[135]="Jiren"
 set udg_RH2[136]="Gojo"
 set udg_RH2[137]="Garp"
-//Barragan1start
-set udg_RH2[140]="Baraggan"
-//Barragan1end
 set udg_RH2[138]="Signum"
 set udg_RH2[139]="Muten Roshi"
+set udg_RH2[140]="Baraggan"
 call DestroyTrigger(GetTriggeringTrigger())
 endfunction
 function InitTrig_Init takes nothing returns nothing
@@ -43326,7 +43324,7 @@ endif
 call SetUnitTimeScale(caster,1.6)
 call SetUnitAnimationByIndex(caster,9)
 call Brg_Free(caster,0.55)
-// ⚠️ у wos_m3 (704) есть ribbon-эмиттер: стоя на земле он рисуется прямоугольниками.
+//  у wos_m3 (704) есть ribbon-эмиттер: стоя на земле он рисуется прямоугольниками.
 // На замах вешаем тот же заряд в руке, что у W и E.
 call DestroyEffect(AddSpecialEffectTarget("war3mapImported\\wos_ChuShou_BY_Wood_Effect_Glow_GuiPaiQiGong_XuLiPurple.mdx",caster,"right hand"))
 call TimerStart(t,0.02,true,function Brg_Q_Act2)
@@ -226652,7 +226650,7 @@ endfunction
 //=====================================================================
 // МАГАЗИН ПРЕДМЕТОВ — переписан 29 авг 2026 по образцу карты Anime WOS 2.
 //
-// ⚠️ ПОЧЕМУ ПЕРЕПИСАН. Прошлая версия была собрана на ПРИМИТИВНОМ слое
+//  ПОЧЕМУ ПЕРЕПИСАН. Прошлая версия была собрана на ПРИМИТИВНОМ слое
 // фреймов (SIMPLEFRAME / SIMPLEBUTTON / SIMPLETEXT). У него нет каскада
 // видимости на внуков, игнорируется приоритет, нет подсказок, полос
 // прокрутки и ввода текста — отсюда все те баги, которые ловились неделю.
@@ -226660,7 +226658,7 @@ endfunction
 // SLIDER + шаблоны игры, слои через BlzFrameSetLevel, подсказки через
 // BlzFrameSetTooltip, недоступность через BlzFrameSetEnable.
 //
-// ⚠️ ДАННЫЕ БЕРУТСЯ ИЗ ДВИЖКА, а не из сгенерированных таблиц:
+//  ДАННЫЕ БЕРУТСЯ ИЗ ДВИЖКА, а не из сгенерированных таблиц:
 //   иконка  — BlzGetAbilityIcon(id)
 //   имя     — GetObjectName(id)
 //   цена    — GetBaseItemIntegerFieldById(id, ITEM_IF_GOLD_COST)
@@ -226668,7 +226666,7 @@ endfunction
 // Прошлая версия дублировала это девятьюстами строк таблиц, из-за дырок в
 // которых были зелёные квадраты и нулевые цены.
 //
-// ⚠️ РАССИНХРОН: клики по фреймам ЛОКАЛЬНЫЕ. Они двигают только картинку.
+//  РАССИНХРОН: клики по фреймам ЛОКАЛЬНЫЕ. Они двигают только картинку.
 // Всё, что меняет игру, уходит через SendSyncData и выполняется в общем
 // обработчике одинаково у всех.
 //
@@ -227423,7 +227421,7 @@ set hu=null
 endfunction
 //--------------------- сборка окна ---------------------
 
-// ⚠️ РАЗМЕРЫ. Игровое поле фреймов = 0.8 по X и 0.6 по Y при любом
+//  РАЗМЕРЫ. Игровое поле фреймов = 0.8 по X и 0.6 по Y при любом
 // разрешении. Окно ужато до 0.68 x 0.35 (было 0.76 x 0.41 и выглядело
 // раздутым): панели подогнаны под содержимое, пустоты убраны.
 // Цена подписывается ПОД кнопкой предмета (привязка к её нижней грани),
@@ -228088,7 +228086,7 @@ local integer id=GetHandleId(t)
 call SaveEffectHandle(HH,id,10,AddSpecialEffectTarget("Garp\\Garp_HandsFX.mdx",caster,"hand right"))
 call SetSpecialEffectScale(LoadEffectHandle(HH,id,10),0.1)
 call TimerStart(t,dur,false,function Garp_Hands_End)
-// ⚠️ Ауру НЕЛЬЗЯ вешать эффектом: у Garp_Aura.mdx одна секвенция Stand и нет Death,
+//  Ауру НЕЛЬЗЯ вешать эффектом: у Garp_Aura.mdx одна секвенция Stand и нет Death,
 // поэтому DestroyEffect её не снимает и она висит на герое вечно (проверено).
 // Единственный надёжный способ убрать такую модель — дамми и RemoveUnit.
 call EffectCreateAndMove(true,"Garp\\Garp_Aura.mdx",GetUnitFacing(caster),0.6,2.0,1.0,100,100,100,0,0,caster,0,GetUnitFacing(caster))
@@ -228250,7 +228248,7 @@ call SetUnitPathing(target,true)
 call SetUnitFlyHeight(target,0.0,0)
 call SaveReal(HH,id,6,3)
 call ShakeCamera(0.5,7)
-// ⚠️ Способ подобран перебором, три предыдущих в игре не сработали:
+//  Способ подобран перебором, три предыдущих в игре не сработали:
 //   дамми с этой моделью (SetUnitModel) — не рисуется вовсе;
 //   AddSpecialEffect по координате — не рисуется;
 //   AddSpecialEffectTarget на враге — рисуется, но едет за ним, когда тот встаёт.
@@ -228582,7 +228580,7 @@ local integer id=GetHandleId(t)
 local unit caster=LoadUnitHandle(HH,id,1)
 local real time=LoadReal(HH,id,5)+0.1
 local real dur=LoadReal(HH,id,6)
-// ⚠️ Период 0.5, а НЕ 0.02: воля отслеживает всего два момента — снять паузу
+//  Период 0.5, а НЕ 0.02: воля отслеживает всего два момента — снять паузу
 // и снять маркеры в конце. Тик 0.02 здесь только грузил бы игру впустую.
 // Обзор сюда не относится: он вписан в общий цикл обзора карты (ветка с GrEs).
 if (IsUnitPaused(caster)==false and time>1) or time<=1 then
