@@ -1830,9 +1830,9 @@ function myCustomDamage takes unit whichUnit, unit target, real amount, boolean 
         if GetUnitAbilityLevel(whichUnit,'A171') > 0 then
             set currentDmg = currentDmg * 1.10
         endif  
-        // if (IsItemInInventory(target, 'IASS') > 0 or IsItemInInventory(target, 'IASA') > 0 or IsItemInInventory(target, 'IASI') > 0) then
-        //     set currentDmg = currentDmg * 1.15
-        // endif  
+        if (IsItemInInventory(target, 'IASS') > 0 or IsItemInInventory(target, 'IASA') > 0 or IsItemInInventory(target, 'IASI') > 0) then
+            set currentDmg = currentDmg * 1.1
+        endif  
 		//if GetUnitAbilityLevel(whichUnit,'A176') > 0 then
         //    set currentDmg = currentDmg * 1.05
         //endif  
@@ -2043,9 +2043,9 @@ function myCustomDamage2 takes unit target, real amount returns real
         if GetUnitAbilityLevel(target,'B072') > 0 then
             set currentDmg = currentDmg * 1.15
         endif
-        // if (IsItemInInventory(target, 'IASS') > 0 or IsItemInInventory(target, 'IASA') > 0 or IsItemInInventory(target, 'IASI') > 0) then
-        //     set currentDmg = currentDmg * 1.15
-        // endif  
+        if (IsItemInInventory(target, 'IASS') > 0 or IsItemInInventory(target, 'IASA') > 0 or IsItemInInventory(target, 'IASI') > 0) then
+            set currentDmg = currentDmg * 1.1
+        endif  
                 // T Gin уменьшение маг реза -> увеличение урона по нему
         if GetUnitAbilityLevel(target,'BGiT') > 0 then
             set currentDmg = currentDmg + amount*(I2R(GetUnitAbilityLevel(target, 'BGiT'))*0.05)
@@ -2199,9 +2199,9 @@ function myCustomDamage2_dec takes unit target, real amount returns real
         if GetUnitAbilityLevel(target, 'RsG2') > 0 then//DMG: +40%
             set currentDmg=currentDmg * 1.3
         endif
-        // if (IsItemInInventory(target, 'IASS') > 0 or IsItemInInventory(target, 'IASA') > 0 or IsItemInInventory(target, 'IASI') > 0) then
-        //     set currentDmg = currentDmg * 1.15
-        // endif  
+        if (IsItemInInventory(target, 'IASS') > 0 or IsItemInInventory(target, 'IASA') > 0 or IsItemInInventory(target, 'IASI') > 0) then
+            set currentDmg = currentDmg * 1.1
+        endif  
                 // T Gin уменьшение маг реза -> увеличение урона по нему
         if GetUnitAbilityLevel(target,'BGiT') > 0 then
             set currentDmg = currentDmg + amount*(I2R(GetUnitAbilityLevel(target, 'BGiT'))*0.05)
@@ -2880,7 +2880,7 @@ local player p=Player(1)
 local integer unitID
 local trigger t
 local real life
-set Chest[1]=CreateUnit(p,'n008',2624.0, 6912.0, 270.000)
+set Chest[1]=CreateUnit(p,'n008',2624.0, 6848.0, 270.000)
 call UnitInventorySetSize(Chest[1],10)
 call SetUnitColor(Chest[1],ConvertPlayerColor(0))
 set p=null
@@ -2891,7 +2891,7 @@ local player p=Player(2)
 local integer unitID
 local trigger t
 local real life
-set Chest[2]=CreateUnit(p,'n008',2624.0, 6784.0, 270.000)
+set Chest[2]=CreateUnit(p,'n008',2624.0, 6720.0, 270.000)
 call UnitInventorySetSize(Chest[2],10)
 call SetUnitColor(Chest[2],ConvertPlayerColor(0))
 set p=null
@@ -2902,7 +2902,7 @@ local player p=Player(3)
 local integer unitID
 local trigger t
 local real life
-set Chest[3]=CreateUnit(p,'n008',2624.0, 6656.0, 270.000)
+set Chest[3]=CreateUnit(p,'n008',2624.0, 6592.0, 270.000)
 call UnitInventorySetSize(Chest[3],10)
 call SetUnitColor(Chest[3],ConvertPlayerColor(0))
 set p=null
@@ -2913,7 +2913,7 @@ local player p=Player(4)
 local integer unitID
 local trigger t
 local real life
-set Chest[4]=CreateUnit(p,'n008',2624.0, 6528.0, 270.000)
+set Chest[4]=CreateUnit(p,'n008',2624.0, 6464.0, 270.000)
 call UnitInventorySetSize(Chest[4],10)
 call SetUnitColor(Chest[4],ConvertPlayerColor(0))
 set p=null
@@ -2924,7 +2924,7 @@ local player p=Player(5)
 local integer unitID
 local trigger t
 local real life
-set Chest[5]=CreateUnit(p,'n008',4416.0, 7040.0, 270.000)
+set Chest[5]=CreateUnit(p,'n008',4416.0, 6976.0, 270.000)
 call UnitInventorySetSize(Chest[5],10)
 call SetUnitColor(Chest[5],ConvertPlayerColor(0))
 set p=null
@@ -2935,7 +2935,7 @@ local player p=Player(6)
 local integer unitID
 local trigger t
 local real life
-set Chest[6]=CreateUnit(p,'n008',4416.0, 6912.0, 270.000)
+set Chest[6]=CreateUnit(p,'n008',4416.0, 6848.0, 270.000)
 call UnitInventorySetSize(Chest[6],10)
 call SetUnitColor(Chest[6],ConvertPlayerColor(0))
 set p=null
@@ -2946,7 +2946,7 @@ local player p=Player(7)
 local integer unitID
 local trigger t
 local real life
-set Chest[7]=CreateUnit(p,'n008',4416.0, 6784.0, 270.000)
+set Chest[7]=CreateUnit(p,'n008',4416.0, 6720.0, 270.000)
 call UnitInventorySetSize(Chest[7],10)
 call SetUnitColor(Chest[7],ConvertPlayerColor(0))
 set p=null
@@ -2957,7 +2957,7 @@ local player p=Player(8)
 local integer unitID
 local trigger t
 local real life
-set Chest[8]=CreateUnit(p,'n008',4416.0, 6656.0, 270.000)
+set Chest[8]=CreateUnit(p,'n008',4416.0, 6592.0, 270.000)
 call UnitInventorySetSize(Chest[8],10)
 call SetUnitColor(Chest[8],ConvertPlayerColor(0))
 set p=null
@@ -2968,7 +2968,7 @@ local player p=Player(9)
 local integer unitID
 local trigger t
 local real life
-set Chest[9]=CreateUnit(p,'n008',4416.0, 6528.0, 270.000)
+set Chest[9]=CreateUnit(p,'n008',4416.0, 6464.0, 270.000)
 call UnitInventorySetSize(Chest[9],10)
 call SetUnitColor(Chest[9],ConvertPlayerColor(0))
 set p=null
@@ -3018,38 +3018,42 @@ local unit u
 local integer unitID
 local trigger t
 local real life
-set u=CreateUnit(p,'n004',2752.0, 7296.0, 270.000) //karin
-call SetUnitColor(u,ConvertPlayerColor(0))
-set u=CreateUnit(p,'n005',2880.0, 7296.0, 270.000) //recipes
-call SetUnitColor(u,ConvertPlayerColor(0))
-set u=CreateUnit(p,'n015',3008.0, 7296.0, 270.000) //recipes 2
-call SetUnitColor(u,ConvertPlayerColor(0))
-set u=CreateUnit(p,'n0J2',3136.0, 7296.0, 270.000) //recipes 3
-call SetUnitColor(u,ConvertPlayerColor(0))
-set u=CreateUnit(p,'n003',4416.0, 7424.0, 270.000)
-call SetUnitColor(u,ConvertPlayerColor(0))
-// set u=CreateUnit(p,'n108',4716.0, 7424.0, 270.000)
-// call SetUnitColor(u,ConvertPlayerColor(0))
-set gg_unit_n00J_0036=CreateUnit(p,'n00J',3008.0, 7424.0, 270.000)
+set u=CreateUnit(p, 'n004', 2496.0, 7232.0, 270.000)
+call SetUnitColor(u, ConvertPlayerColor(0))
+set u=CreateUnit(p, 'n003', 4416.0, 7424.0, 270.000)
+call SetUnitColor(u, ConvertPlayerColor(0))
+set u=CreateUnit(p, 'n005', 2880.0, 7232.0, 270.000)
+call SetUnitColor(u, ConvertPlayerColor(0))
+set u=CreateUnit(p, 'n015', 3008.0, 7232.0, 270.000)
+call SetUnitColor(u, ConvertPlayerColor(0))
+set u=CreateUnit(p, 'n0J2', 3136.0, 7232.0, 270.000)
+call SetUnitColor(u, ConvertPlayerColor(0))
+set u=CreateUnit(p, 'n108', 3264.0, 7232.0, 270.000)
+call SetUnitColor(u, ConvertPlayerColor(0))
+set gg_unit_n00J_0036=CreateUnit(p,'n00J',3264.0, 7424.0, 270.000)
 call SetUnitColor(gg_unit_n00J_0036,ConvertPlayerColor(0))
 set u=CreateUnit(p,'n00U',3648.0, 6848.0, 270.000)
 call SetUnitColor(u,ConvertPlayerColor(0))
-set gg_unit_n00A_0035=CreateUnit(p,'n00A',2624.0, 7424.0, 270.000)
+set u=CreateUnit(p, 'n109', 2624.0, 7232.0, 270.000)
+call SetUnitColor(u, ConvertPlayerColor(0))
+set u=CreateUnit(p, 'n110', 2624.0, 7424.0, 270.000) //weapons 2
+call SetUnitColor(u, ConvertPlayerColor(0))
+set gg_unit_n00A_0035=CreateUnit(p,'n00A',3008.0, 7424.0, 270.000)
 call SetUnitColor(gg_unit_n00A_0035,ConvertPlayerColor(0))
-set u=CreateUnit(p,'n00B',3392.0, 6848.0, 270.000)
-call SetUnitColor(u,ConvertPlayerColor(0))
-set u=CreateUnit(p,'n00C',4544.0, 7424.0, 270.000)
-call SetUnitColor(u,ConvertPlayerColor(0))
-set u=CreateUnit(p,'n00F',3136.0, 7424.0, 270.000)
-call SetUnitColor(u,ConvertPlayerColor(0))
-set u=CreateUnit(p,'n00E',2496.0, 7424.0, 270.000)
-call SetUnitColor(u,ConvertPlayerColor(0))
-set u=CreateUnit(p,'n00I',2880.0, 7424.0, 270.000)
-call SetUnitColor(u,ConvertPlayerColor(0))
-set u=CreateUnit(p,'n00R',4096.0, 7424.0, 270.000) // full mare rings
-call SetUnitColor(u,ConvertPlayerColor(0))
-set u=CreateUnit(p,'n00S',3968.0, 7424.0, 270.000)
-call SetUnitColor(u,ConvertPlayerColor(0))
+set u=CreateUnit(p, 'n00B', 3392.0, 6848.0, 270.000)
+call SetUnitColor(u, ConvertPlayerColor(0))
+set u=CreateUnit(p, 'n00C', 4544.0, 7424.0, 270.000)
+call SetUnitColor(u, ConvertPlayerColor(0))
+set u=CreateUnit(p, 'n00F', 2496.0, 7424.0, 270.000) //weapons 1
+call SetUnitColor(u, ConvertPlayerColor(0))
+set u=CreateUnit(p, 'n00E', 2880.0, 7424.0, 270.000)
+call SetUnitColor(u, ConvertPlayerColor(0))
+set u=CreateUnit(p, 'n00I', 3136.0, 7424.0, 270.000)
+call SetUnitColor(u, ConvertPlayerColor(0))
+set u=CreateUnit(p, 'n00R', 4096.0, 7424.0, 270.000)
+call SetUnitColor(u, ConvertPlayerColor(0))
+set u=CreateUnit(p, 'n00S', 3968.0, 7424.0, 270.000)
+call SetUnitColor(u, ConvertPlayerColor(0))
 set Theater1=CreateUnit(p,'The1',GetRectCenterX(gg_rct_Te2),GetRectCenterY(gg_rct_Te2),270.000)
 call SetUnitColor(Theater1,ConvertPlayerColor(0))
 set u=null
@@ -6554,7 +6558,7 @@ call ForGroup(g,function GroupAddGroupEnum)
 return bj_groupAddGroupDest
 endfunction
 function Condition_RecipeString takes integer id returns boolean
-return id=='I00E' or id=='I01P' or id=='I01R' or id=='I01T' or id=='I01V' or id=='I02U' or id=='I02X' or id=='I02Z' or id=='I045' or id=='I047' or id=='I04Y' or id=='I04U' or id=='I04X' or id=='I04Z' or id=='I051' or id=='I14R' or id=='IGDr' or id=='IPar' or id=='IHYr' or id=='ISTr' or id=='IBSR' or id=='I052' or id=='I053' or id=='I055' or id=='I06P' or id=='I06S' or id=='I06T' or id=='IPRR'
+return id=='I00E' or id=='I01P' or id=='I01R' or id=='I01T' or id=='I01V' or id=='I02U' or id=='I02X' or id=='I02Z' or id=='I045' or id=='I047' or id=='I04Y' or id=='I04U' or id=='I04X' or id=='I04Z' or id=='I051' or id=='I14R' or id=='IGDr' or id=='IPar' or id=='IHYr' or id=='ISTr' or id=='IBSR' or id=='I052' or id=='I053' or id=='I055' or id=='I06P' or id=='I06S' or id=='I06T' or id=='IPRR' or id=='IPlR' or id=='IBS1' or id=='IYM0' or id=='IGn0' or id=='IBN0' or id=='IGP0' or id=='IVS0' or id=='ISS0' or id=='ITS0'
 endfunction
 function Condition_AbilityString3 takes integer id returns boolean
 return id=='OM13' or id=='A17D' or id=='A177' or id=='A172' or id=='A16U' or id=='A0TN'  or id=='MrF1' or id=='MrT1' or id=='MrG2' or id=='RsT1' or id=='RsF1' or id=='SiF1' or id=='SiF2' or id=='SiE1' or id=='SiE2'
@@ -9204,6 +9208,25 @@ endfunction
 function UBWDood takes nothing returns nothing
 call SetDoodadZ(GetEnumDoodad(),1)
 endfunction
+function DoorsDood takes nothing returns nothing
+if GetDoodadModel(GetEnumDoodad())=="Tilable_Corrugated_Door" or GetDoodadModel(GetEnumDoodad())=="Tileable_Corrugated_Door_Rollup" or GetDoodadModel(GetEnumDoodad())=="Tileable_Corrugated_Wall_Wide_Top_Piece" or GetDoodadModel(GetEnumDoodad())=="Tileable_Corrugated_Wall_Window" or GetDoodadModel(GetEnumDoodad())=="Tileable_Corrugated_Wall_Outer_Corner_01" or GetDoodadModel(GetEnumDoodad())=="Tileable_Corrugated_Wall_Inner_Corner_01" or GetDoodadModel(GetEnumDoodad())=="Tileable_Corrugated_Wall_Inner_Corner_01" or GetDoodadModel(GetEnumDoodad())=="Tileable_Corrugated_Wall_03" or GetDoodadModel(GetEnumDoodad())=="Tileable_Corrugated_Wall_02" or GetDoodadModel(GetEnumDoodad())=="Tileable_Corrugated_Wall_01" or GetDoodadModel(GetEnumDoodad())=="Tileable_Corrugated_Wall_T_Left" or GetDoodadModel(GetEnumDoodad())=="Tileable_Corrugated_Wall_T_Right" then
+    // call BJDebugMsg("test4")
+    if GetDoodadY(GetEnumDoodad())>0 then
+        call SetDoodadPlayerColour(GetEnumDoodad(),ConvertPlayerColor(0))
+        // call BJDebugMsg("test2")
+    else
+        call SetDoodadPlayerColour(GetEnumDoodad(),ConvertPlayerColor(1))
+        // call BJDebugMsg("test3")
+    endif
+    if GetDoodadModel(GetEnumDoodad())=="Tilable_Corrugated_Door" or GetDoodadModel(GetEnumDoodad())=="Tileable_Corrugated_Door_Rollup" then
+        call SetDoodadAnimationEx(GetEnumDoodad(),"death")
+    // call BJDebugMsg("test1")
+    endif
+// else
+//     call BJDebugMsg("test4")
+endif
+// call BJDebugMsg(GetDoodadModel(GetEnumDoodad()))
+endfunction
 function Trig_Init_Actions takes nothing returns nothing
 local integer i=0
 set bj_forLoopAIndex=1
@@ -9873,6 +9896,7 @@ set Cambug=false
 set sh4="heroposhp"
 set sh5="heroposmp"
 call EnumDoodadsInRect(gg_rct_UBW2,null,function UBWDood)
+call EnumDoodadsInRange(0,0,99999999,null,function DoorsDood)
 call GroupEnumUnitsInRect(G,gg_rct_Base,null)
 loop
 set E=FirstOfGroup(G)
@@ -22580,6 +22604,20 @@ set i=0
 set count=0
 loop
 exitwhen i>=10
+if (GetItemPlayer(UnitItemInSlot(u,i))==Player(15) or GetItemPlayer(UnitItemInSlot(u,i))==GetOwningPlayer(GetTriggerUnit())) and GetItemTypeId(UnitItemInSlot(u,i))=='ISt0' then
+set count=count+1
+endif
+set i=i+1
+endloop
+if count>2 then
+call RemoveItem(it)
+call SetPlayerState(Player(id),PLAYER_STATE_RESOURCE_GOLD,GetPlayerState(Player(id),PLAYER_STATE_RESOURCE_GOLD)+800)
+call DisplayTextToPlayer(Player(id),0,0,"Нельзя иметь больше двух таких предметов!")
+endif
+set i=0
+set count=0
+loop
+exitwhen i>=10
 if (GetItemPlayer(UnitItemInSlot(u,i))==Player(15) or GetItemPlayer(UnitItemInSlot(u,i))==GetOwningPlayer(GetTriggerUnit())) and GetItemTypeId(UnitItemInSlot(u,i))=='I06M' then
 set count=count+1
 endif
@@ -22997,7 +23035,7 @@ set i=i+1
 endloop
 if count>1 then
 call RemoveItem(it)
-call SetPlayerState(Player(id),PLAYER_STATE_RESOURCE_GOLD,GetPlayerState(Player(id),PLAYER_STATE_RESOURCE_GOLD)+4800)
+call SetPlayerState(Player(id),PLAYER_STATE_RESOURCE_GOLD,GetPlayerState(Player(id),PLAYER_STATE_RESOURCE_GOLD)+5200)
 call DisplayTextToPlayer(Player(id),0,0,"You can't have more than one of these items!")
 endif
 set i=0
@@ -23011,7 +23049,7 @@ set i=i+1
 endloop
 if count>1 then
 call RemoveItem(it)
-call SetPlayerState(Player(id),PLAYER_STATE_RESOURCE_GOLD,GetPlayerState(Player(id),PLAYER_STATE_RESOURCE_GOLD)+5000)
+call SetPlayerState(Player(id),PLAYER_STATE_RESOURCE_GOLD,GetPlayerState(Player(id),PLAYER_STATE_RESOURCE_GOLD)+5400)
 call DisplayTextToPlayer(Player(id),0,0,"You can't have more than one of these items!")
 endif
 set i=0
@@ -27345,8 +27383,8 @@ local real dmg=0
 if (UnitHasItemOfTypeBJ(u,'I043') or GetUnitAbilityLevel(u,'KIL8')>0) and GetWidgetLife(u)>0 and udg_B==true and DU2==true then
     if life2>life then
         set dmg=GetUnitState(u,UNIT_STATE_MANA)-LoadReal(h,id,0)
-        call SaveReal(h,id,3,LoadReal(h,id,3)+(dmg*0.1))
-        call SetUnitState(u,UNIT_STATE_MANA, GetUnitState(u,UNIT_STATE_MANA)+MathRealFloor(dmg*0.1)+MathRealFloor(LoadReal(h,id,3)))
+        call SaveReal(h,id,3,LoadReal(h,id,3)+(dmg*0.15))
+        call SetUnitState(u,UNIT_STATE_MANA, GetUnitState(u,UNIT_STATE_MANA)+MathRealFloor(dmg*0.15)+MathRealFloor(LoadReal(h,id,3)))
         if LoadReal(h,id,3)>1 then
             call SaveReal(h,id,3,LoadReal(h,id,3)-MathRealFloor(LoadReal(h,id,3)))
         endif
@@ -27367,6 +27405,76 @@ call SaveUnitHandle(h,id,1,u)
 call SaveReal(h,id,0,GetUnitState(u,UNIT_STATE_MANA))
 call SaveInteger(HH,GetHandleId(u),StringHash("BloodSphere"),1)
 call TimerStart(t,0.01,true,function BloodSphereMPRegenCast2)
+set t=null
+set u=null
+endfunction
+function GoldenAmuletMPRegenCast2 takes nothing returns nothing
+local timer t=GetExpiredTimer()
+local integer id=GetHandleId(t)
+local unit u=LoadUnitHandle(h,id,1)
+local real life=LoadReal(h,id,0)
+local real life2=GetUnitState(u,UNIT_STATE_MANA)
+local real dmg=0
+if (UnitHasItemOfTypeBJ(u,'IGlA') or GetUnitAbilityLevel(u,'KI1I')>0) and GetWidgetLife(u)>0 and udg_B==true and DU2==true then
+    if life2>life then
+        set dmg=GetUnitState(u,UNIT_STATE_MANA)-LoadReal(h,id,0)
+        call SaveReal(h,id,3,LoadReal(h,id,3)+(dmg*0.1))
+        call SetUnitState(u,UNIT_STATE_MANA, GetUnitState(u,UNIT_STATE_MANA)+MathRealFloor(dmg*0.1)+MathRealFloor(LoadReal(h,id,3)))
+        if LoadReal(h,id,3)>1 then
+            call SaveReal(h,id,3,LoadReal(h,id,3)-MathRealFloor(LoadReal(h,id,3)))
+        endif
+    endif
+    call SaveReal(h,id,0,GetUnitState(u,UNIT_STATE_MANA))
+else
+    call SaveInteger(HH,GetHandleId(u),StringHash("GoldenAmulet"),0)
+    call DestroyTimer(t)
+    call FlushChildHashtable(h,id)
+endif
+set t=null
+set u=null
+endfunction
+function GoldenAmuletMPRegenCast takes unit u returns nothing
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+call SaveUnitHandle(h,id,1,u)
+call SaveReal(h,id,0,GetUnitState(u,UNIT_STATE_MANA))
+call SaveInteger(HH,GetHandleId(u),StringHash("GoldenAmulet"),1)
+call TimerStart(t,0.01,true,function GoldenAmuletMPRegenCast2)
+set t=null
+set u=null
+endfunction
+function PerfectAmuletMPRegenCast2 takes nothing returns nothing
+local timer t=GetExpiredTimer()
+local integer id=GetHandleId(t)
+local unit u=LoadUnitHandle(h,id,1)
+local real life=LoadReal(h,id,0)
+local real life2=GetUnitState(u,UNIT_STATE_MANA)
+local real dmg=0
+if (UnitHasItemOfTypeBJ(u,'IPlA') or GetUnitAbilityLevel(u,'KI1K')>0) and GetWidgetLife(u)>0 and udg_B==true and DU2==true then
+    if life2>life then
+        set dmg=GetUnitState(u,UNIT_STATE_MANA)-LoadReal(h,id,0)
+        call SaveReal(h,id,3,LoadReal(h,id,3)+(dmg*0.1))
+        call SetUnitState(u,UNIT_STATE_MANA, GetUnitState(u,UNIT_STATE_MANA)+MathRealFloor(dmg*0.1)+MathRealFloor(LoadReal(h,id,3)))
+        if LoadReal(h,id,3)>1 then
+            call SaveReal(h,id,3,LoadReal(h,id,3)-MathRealFloor(LoadReal(h,id,3)))
+        endif
+    endif
+    call SaveReal(h,id,0,GetUnitState(u,UNIT_STATE_MANA))
+else
+    call SaveInteger(HH,GetHandleId(u),StringHash("PerfectAmulet"),0)
+    call DestroyTimer(t)
+    call FlushChildHashtable(h,id)
+endif
+set t=null
+set u=null
+endfunction
+function PerfectAmuletMPRegenCast takes unit u returns nothing
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+call SaveUnitHandle(h,id,1,u)
+call SaveReal(h,id,0,GetUnitState(u,UNIT_STATE_MANA))
+call SaveInteger(HH,GetHandleId(u),StringHash("PerfectAmulet"),1)
+call TimerStart(t,0.01,true,function PerfectAmuletMPRegenCast2)
 set t=null
 set u=null
 endfunction
@@ -27767,6 +27875,12 @@ if ingame[x]==true then
     endif
     if (UnitHasItemOfTypeBJ(Hero[x],'I043') or GetUnitAbilityLevel(Hero[x],'KIL8')>0) and LoadInteger(HH,GetHandleId(Hero[x]),StringHash("BloodSphere"))!=1 then
         call BloodSphereMPRegenCast(Hero[x])
+    endif
+    if (UnitHasItemOfTypeBJ(Hero[x],'IGlA') or GetUnitAbilityLevel(Hero[x],'KI1I')>0) and LoadInteger(HH,GetHandleId(Hero[x]),StringHash("GoldenAmulet"))!=1 then
+        call GoldenAmuletMPRegenCast(Hero[x])
+    endif
+    if (UnitHasItemOfTypeBJ(Hero[x],'IPlA') or GetUnitAbilityLevel(Hero[x],'KI1K')>0) and LoadInteger(HH,GetHandleId(Hero[x]),StringHash("GoldenAmulet"))!=1 then
+        call PerfectAmuletMPRegenCast(Hero[x])
     endif
     if UnitHasItemOfTypeBJ(Hero[x],'I054') and LoadInteger(HH,GetHandleId(Hero[x]),StringHash("IceBoots"))!=1 then
         call IceBootsRegenCast(Hero[x])
@@ -46011,9 +46125,13 @@ if cond==0 then
         call RemoveEffect(AddSpecialEffectTarget("Abilities\\Spells\\Items\\HealingSalve\\HealingSalveTarget.mdl", c, "origin"), 1.0, true, CreateTimer())
         call DestroyEffect(AddSpecialEffect("war3mapImported\\BlinkCaster.mdx",GetUnitX(c),GetUnitY(c)))
     endif
-    if nb>6 and (UnitHasItemOfTypeBJ(c, 'ISlA') or GetUnitAbilityLevel(c, 'KI1G')>0) then
+    if nb>6 and (UnitHasItemOfTypeBJ(c, 'ISlA') or GetUnitAbilityLevel(c, 'KI1G')>0) or (UnitHasItemOfTypeBJ(c, 'IPlA') or GetUnitAbilityLevel(c, 'KI1K')>0) then
         call HealTextTag(c,c,nb*0.10*myCustomMana2(c,1),"ManaRes")
         call SetWidgetMana(c, GetWidgetMana(c)+ nb*0.10)
+    endif
+    if nb>6 and ((UnitHasItemOfTypeBJ(c, 'IGlA') or GetUnitAbilityLevel(c, 'KI1I')>0) or (UnitHasItemOfTypeBJ(c, 'IPlA') or GetUnitAbilityLevel(c, 'KI1K')>0) or (UnitHasItemOfTypeBJ(c,'I043') or GetUnitAbilityLevel(c,'KIL8')>0)) then
+        call HealTextTag(c,c,nb*0.075*myCustomHeal2(c,1),"HealthRes")
+        call SetWidgetLife(c, GetWidgetLife(c)+ nb*0.075)
     endif
     if nb>0 and LoadReal(HH,GetHandleId(c),StringHash("yamato"))==1 and CurrentEventAttack then
         call SaveReal(HH,GetHandleId(c),StringHash("yamato"),0) //Yamato
@@ -48795,12 +48913,17 @@ loop
 set E=FirstOfGroup(DG)
 exitwhen E==null
 if Condition_Base(p,E)then
-set dmg=20*(2.5*GetHeroStr(E,true)-(GetHeroAgi(E,true)+GetHeroInt(E,true)))
+set dmg=15*(2.5*GetHeroStr(E,true)-(GetHeroAgi(E,true)+GetHeroInt(E,true)))
 if dmg<0 then
 set dmg=0
+else
+set dmg=dmg+GetUnitState(E,UNIT_STATE_MAX_LIFE)*0.1
+endif
+if dmg>GetUnitState(E,UNIT_STATE_MAX_LIFE)*0.45 then
+set dmg=GetUnitState(E,UNIT_STATE_MAX_LIFE)*0.45
 endif
 call Push3(E,50,Atan2(GetUnitY(E)-y,GetUnitX(E)-x),400,"Abilities\\Weapons\\AncientProtectorMissile\\AncientProtectorMissile.mdl")
-call myCustomDamage(u,E,500+dmg,false,false,null,null,null)
+call myCustomDamage(u,E,dmg,false,false,null,null,null)
 endif
 call GroupRemoveUnit(DG,E)
 endloop
@@ -72246,6 +72369,9 @@ if time<100 and GetUnitState(u,UNIT_STATE_LIFE)>0.405 and LoadBoolean(HH,GetHand
     if time==0.05 then
         call SetUnitAnimationByIndex(u,152)
     endif
+    if time>0.05 then
+        call PauseUnit(u,true)
+    endif
     if time==0.1 then
         call SetUnitAnimationOffsetPercent(u,0.4)
     endif
@@ -72345,23 +72471,22 @@ else
             call SelectUnit(u,true)
         endif
     endif
-    call UnitEnableMovement(u,true,false)
-    call UnitEnableAttack(u,true,false)
-    call EnableUnitAbility2(u,'GKQ1',false,true)
-    call EnableUnitAbility2(u,'GKW1',false,true)
-    call EnableUnitAbility2(u,'GKW5',false,true)
-    call EnableUnitAbility2(u,'GKE2',false,true)
-    call EnableUnitAbility2(u,'GKE3',false,true)
-    call EnableUnitAbility2(u,'GKE4',false,true)
-    call EnableUnitAbility2(u,'GKE5',false,true)
-    call EnableUnitAbility2(u,'GKE6',false,true)
-    call EnableUnitAbility2(u,'GKR1',false,true)
-    call EnableUnitAbility2(u,'GKT1',false,true)
-    call EnableUnitAbility2(u,'GKF1',false,true)
-    call EnableUnitAbility2(u,'GKG1',false,true)
-    call EnableUnitAbility2(u,'GKG6',false,true)
-    call EnableUnitAbility2(u,'GKG7',false,true)
-    call UnitEnableInventoryCustom(u,true,false )
+    call PauseUnit(u,false)
+    // call EnableUnitAbility2(u,'GKQ1',false,true)
+    // call EnableUnitAbility2(u,'GKW1',false,true)
+    // call EnableUnitAbility2(u,'GKW5',false,true)
+    // call EnableUnitAbility2(u,'GKE2',false,true)
+    // call EnableUnitAbility2(u,'GKE3',false,true)
+    // call EnableUnitAbility2(u,'GKE4',false,true)
+    // call EnableUnitAbility2(u,'GKE5',false,true)
+    // call EnableUnitAbility2(u,'GKE6',false,true)
+    // call EnableUnitAbility2(u,'GKR1',false,true)
+    // call EnableUnitAbility2(u,'GKT1',false,true)
+    // call EnableUnitAbility2(u,'GKF1',false,true)
+    // call EnableUnitAbility2(u,'GKG1',false,true)
+    // call EnableUnitAbility2(u,'GKG6',false,true)
+    // call EnableUnitAbility2(u,'GKG7',false,true)
+    // call UnitEnableInventoryCustom(u,true,false )
     call RemoveUnit(dummy)
     call FlushChildHashtable(h,id)
     call PauseTimer(t)
@@ -72388,8 +72513,6 @@ local integer i=0
 local texttag l__txt=CreateTextTag()
 call SaveUnitHandle(h,id,0,u)
 call IssueImmediateOrder(u,"stop")
-call UnitEnableMovement(u,false,false)
-call UnitEnableAttack(u,false,false)
 set GenkiDama=CreateUnit(p,'e0CE',x,y,a*bj_RADTODEG)
 call SetUnitVertexColor(GenkiDama, 255, 255, 255, 0)
 call SetUnitFlyHeight(GenkiDama,570,0)
@@ -72427,21 +72550,21 @@ call SetTextTagPosUnit(l__txt,u,700)
 call SetTextTagColor(l__txt,180,180,255,255)
 call SetTextTagPermanent(l__txt,true)
 call SaveTextTagHandle(h,id,12,l__txt)
-call DisableUnitAbility2(u,'GKQ1',false,true)
-call DisableUnitAbility2(u,'GKW1',false,true)
-call DisableUnitAbility2(u,'GKW5',false,true)
-call DisableUnitAbility2(u,'GKE2',false,true)
-call DisableUnitAbility2(u,'GKE3',false,true)
-call DisableUnitAbility2(u,'GKE4',false,true)
-call DisableUnitAbility2(u,'GKE5',false,true)
-call DisableUnitAbility2(u,'GKE6',false,true)
-call DisableUnitAbility2(u,'GKR1',false,true)
-call DisableUnitAbility2(u,'GKT1',false,true)
-call DisableUnitAbility2(u,'GKF1',false,true)
-call DisableUnitAbility2(u,'GKG1',false,true)
-call DisableUnitAbility2(u,'GKG6',false,true)
-call DisableUnitAbility2(u,'GKG7',false,true)
-call UnitEnableInventoryCustom(u,false,false )
+// call DisableUnitAbility2(u,'GKQ1',false,true)
+// call DisableUnitAbility2(u,'GKW1',false,true)
+// call DisableUnitAbility2(u,'GKW5',false,true)
+// call DisableUnitAbility2(u,'GKE2',false,true)
+// call DisableUnitAbility2(u,'GKE3',false,true)
+// call DisableUnitAbility2(u,'GKE4',false,true)
+// call DisableUnitAbility2(u,'GKE5',false,true)
+// call DisableUnitAbility2(u,'GKE6',false,true)
+// call DisableUnitAbility2(u,'GKR1',false,true)
+// call DisableUnitAbility2(u,'GKT1',false,true)
+// call DisableUnitAbility2(u,'GKF1',false,true)
+// call DisableUnitAbility2(u,'GKG1',false,true)
+// call DisableUnitAbility2(u,'GKG6',false,true)
+// call DisableUnitAbility2(u,'GKG7',false,true)
+// call UnitEnableInventoryCustom(u,false,false )
 call TimerStart(t,0.05,true,function SpiritBombCast2)
 set u=null
 set l__txt=null
@@ -120066,6 +120189,12 @@ local boolean success = false
         call UnitRemoveAbilityTimed(u,'KI0Z',duration)
         set success = true 
     endif
+    if id=='INY0' then //Nanatsu Yoru
+        call UnitAddAbility(u,'KI1Q')
+        call UnitRemoveAbilityTimed(u,'KI1Q',10)
+        call UnitAddAbility(u,'KI1R')
+        call UnitRemoveAbilityTimed(u,'KI1R',10)
+    endif
     return success
 endfunction
 function ShiroF_Cond takes nothing returns boolean
@@ -166371,8 +166500,8 @@ function FKazumaList takes unit u, integer id returns nothing
         call CheckUnitBonusRange(u)
     endif
     if id=='IPRB' then //Лук жрицы
-        call UnitAddAbility(u,'KI1D')
-        call UnitRemoveAbilityTimed(u,'KI1D',10)
+        call UnitAddAbility(u,'KI1E')
+        call UnitRemoveAbilityTimed(u,'KI1E',10)
         call UnitAddAbility(u,'KI1F')
         call UnitRemoveAbilityTimed(u,'KI1F',10)
         call CheckUnitBonusRange(u)
@@ -166382,6 +166511,42 @@ function FKazumaList takes unit u, integer id returns nothing
         call UnitRemoveAbilityTimed(u,'KI1G',10)
         call UnitAddAbility(u,'KI1H')
         call UnitRemoveAbilityTimed(u,'KI1H',10)
+    endif
+    if id=='IGlA' then //Золотой Амулет
+        call UnitAddAbility(u,'KI1I')
+        call UnitRemoveAbilityTimed(u,'KI1I',10)
+        call UnitAddAbility(u,'KI1J')
+        call UnitRemoveAbilityTimed(u,'KI1J',10)
+    endif
+    if id=='IPlA' then //Совершенный Амулет
+        call UnitAddAbility(u,'KI1K')
+        call UnitRemoveAbilityTimed(u,'KI1K',10)
+        call UnitAddAbility(u,'KI1L')
+        call UnitRemoveAbilityTimed(u,'KI1L',10)
+    endif
+    if id=='ISt0' then //Талисман души
+        call UnitAddAbility(u,'KI1M')
+        call UnitRemoveAbilityTimed(u,'KI1M',10)
+        call UnitAddAbility(u,'KI1N')
+        call UnitRemoveAbilityTimed(u,'KI1N',10)
+    endif
+    if id=='IMT0' then //Майка Мастера
+        call UnitAddAbility(u,'KI1O')
+        call UnitRemoveAbilityTimed(u,'KI1O',10)
+        call UnitAddAbility(u,'KI1P')
+        call UnitRemoveAbilityTimed(u,'KI1P',10)
+    endif
+    if id=='INY0' then //Nanatsu Yoru
+        call UnitAddAbility(u,'KI1Q')
+        call UnitRemoveAbilityTimed(u,'KI1Q',10)
+        call UnitAddAbility(u,'KI1R')
+        call UnitRemoveAbilityTimed(u,'KI1R',10)
+    endif
+    if id=='IMS0' then //Магический посох
+        call UnitAddAbility(u,'KI1S')
+        call UnitRemoveAbilityTimed(u,'KI1S',10)
+        call UnitAddAbility(u,'KI1T')
+        call UnitRemoveAbilityTimed(u,'KI1T',10)
     endif
 endfunction
 function FKazumaCond takes nothing returns boolean
@@ -218601,7 +218766,7 @@ function YoruichiDCast3 takes nothing returns nothing
                 call SetUnitVertexColor(n,255,255,255,125)
                 call SetUnitTimeScale(n,5)
                 call UnitApplyTimedLife(n,'BHwe',0.3)
-                call myCustomDamage(u,E2, GetHeroAgi(u,true)*2.5, false, false, null, null, null)
+                call myCustomDamage(u,E2, GetHeroAgi(u,true)*2, false, false, null, null, null)
                 call SetControlToUnit(E2,E2,0.1,"stun")
                 set EFF=AddSpecialEffect("HeroBladeMasterpf_E1.mdl", GetUnitX(E2),GetUnitY(E2))
                 call SetSpecialEffectFacing(EFF , a  * bj_RADTODEG)
@@ -218648,7 +218813,7 @@ function YoruichiDCast2 takes unit u returns nothing
     local real x=GetUnitX(u)
     local real y=GetUnitY(u)
     call SaveUnitHandle(HH,id,0,u)
-    call GroupEnumUnitsInRange(g,x,y,700,Base)
+    call GroupEnumUnitsInRange(g,x,y,600,Base)
     call SetUnitVertexColor(u,40,40,40,40)
     call SaveGroupHandle(HH,id,1,g)
     call SaveReal(HH,id,2,x)
@@ -239640,6 +239805,15 @@ call UIS_RegisterItem('I02Y','ISHk',0,0,0,0,0,0,0,0,0,'IHnK')                   
 call UIS_RegisterItem('I01L','I12R',0,0,0,0,0,0,0,0,'IBSR','IBSI')                                 // Buster Sword
 call UIS_RegisterItem('I03Z','I03C','I060',0,0,0,0,0,0,0,0,'IAoF')                                 // Fafnir
 call UIS_RegisterItem('ISPB','I06K','I01X',0,0,0,0,0,0,0,'IPRR','IPRB')                                 // Лук Жрицы
+call UIS_RegisterItem('ISlA','IGlA',0,0,0,0,0,0,0,0,'IPlR','IPlA')                                 // Совершенный амулет
+call UIS_RegisterItem('ISt0','IGlA','ISt0',0,0,0,0,0,0,0,'IBS1','I043')                            // Сфера крови
+call UIS_RegisterItem('IMT0','I06F','IMT0',0,0,0,0,0,0,0,'IGn0','I048')                            // Гунгнир
+call UIS_RegisterItem('I06H','IMT0','INY0','IMS0',0,0,0,0,0,0,'IYM0','I04T')                            // Зеркало ята
+call UIS_RegisterItem('IMS0','ISt0','IMS0',0,0,0,0,0,0,0,'IBN0','I037')                            // Башосен
+call UIS_RegisterItem('IMS0','ISt0','IMS0',0,0,0,0,0,0,0,'IGP0','I06Z')                            // Grimoir
+call UIS_RegisterItem('I01M','INY0','I00F',0,0,0,0,0,0,0,'IVS0','I03R')                            // Сфера пустоты
+call UIS_RegisterItem('I01M','IMS0','I00L',0,0,0,0,0,0,0,'ISS0','I03Q')                            // Сфера Пространства
+call UIS_RegisterItem('I01M','IMT0','I04M',0,0,0,0,0,0,0,'ITS0','I03P')                            // Сфера Времени
 call UIS_RegisterItem('IOS3','IOS4','IOS2','IOS1',0,0,0,0,0,0,0,'I1S4')
 call UIS_RegisterItem('I01Z','I02T',0,0,0,0,0,0,0,0,'I052','I04G')
 // call UIS_RegisterItem('I03B','I01I',0,'I053',0,0,'I038') //old Kosa
