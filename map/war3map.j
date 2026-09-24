@@ -35078,7 +35078,7 @@ function Trig_itemsc_Actions takes nothing returns nothing
     local integer i=10
     if itemsc[id]==false then
         if(GetLocalPlayer()==GetTriggerPlayer() ) then
-            call DisplayChatMessageEx(null,CHAT_RECIPIENT_UNKNOWN,10,true,"Vongola Sun/Mare Sun/Ice Sphere/Ice Boots on allies: ON")
+            call DisplayChatMessageEx(null,CHAT_RECIPIENT_UNKNOWN,10,true,"Vongola Sun/Mare Sky/Ice Sphere/Ice Boots on allies: ON")
         endif
         loop
             if GetItemTypeId(UnitItemInSlot(Hero[id], i)) ==  'I04R' then
@@ -35099,7 +35099,7 @@ function Trig_itemsc_Actions takes nothing returns nothing
         set itemsc[id]=true
     else
         if(GetLocalPlayer()==GetTriggerPlayer() ) then
-            call DisplayChatMessageEx(null,CHAT_RECIPIENT_UNKNOWN,10,true,"Vongola Sun/Mare Sun/Ice Sphere/Ice Boots on allies: OFF")
+            call DisplayChatMessageEx(null,CHAT_RECIPIENT_UNKNOWN,10,true,"Vongola Sun/Mare Sky/Ice Sphere/Ice Boots on allies: OFF")
         endif
         loop
             if GetItemTypeId(UnitItemInSlot(Hero[id], i)) ==  'I04R' then
