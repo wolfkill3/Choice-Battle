@@ -1170,8 +1170,6 @@ framehandle ShList=null
 framehandle ShCraft=null
 framehandle ShDesc=null
 framehandle ShInv=null
-framehandle ShSelector=null
-framehandle ShCraftName=null
 framehandle ShCraftGoldTxt=null
 framehandle ShDescName=null
 framehandle ShDescBody=null
@@ -1179,26 +1177,14 @@ framehandle ShInvName=null
 framehandle ShBuyBtn=null
 framehandle ShSellBtn=null
 framehandle ShUpgBtn=null
-framehandle ShSearchLbl=null
-framehandle ShSearchBox=null
-framehandle ShSearchClear=null
 framehandle ShPrevBtn=null
 framehandle ShPageTxt=null
 framehandle ShNextBtn=null
-framehandle ShAutoBox=null
-framehandle ShAutoTxt=null
 framehandle ShGoldTxt=null
 framehandle array ShSecBtn
-framehandle array ShSecTxt
-framehandle array ShSelLine
-framehandle array ShDeco
-framehandle array ShPlate
 framehandle array ShRim
 framehandle array ShCraftRim
 framehandle array ShInvRim
-framehandle ShBuyTxt=null
-framehandle ShSellTxt=null
-framehandle ShUpgTxt=null
 framehandle array ShItemBtn
 framehandle array ShItemBack
 framehandle array ShItemCost
@@ -1215,25 +1201,17 @@ integer array ShSecCnt
 integer array ShSecItem
 integer ShSecTotal=0
 integer ShTipCtx=9000
-// показ у каждого игрока свой: эти массивы НЕ трогают состояние игры
+// показ у каждого игрока свой: эти переменные НЕ трогают состояние игры
 integer array ShSel
 integer array ShSelSec
 integer array ShPage
 integer array ShInvSel
-integer array ShFound
-integer array ShFoundCnt
-boolean array ShSearchOn
-// общее состояние, меняется только в синхронном обработчике
-boolean array ShAuto
-integer array ShAutoT
+integer ShLastGold=-1
+integer array ShLastInv
 boolean ShBuilt=false
 boolean ShOpened=false
 trigger ShTrgClick=null
-trigger ShTrgSearch=null
 trigger ShTrgSync=null
-trigger ShTrgAuto=null
-trigger ShTrgPress=null
-trigger ShTrgUnpress=null
 //Shop32GlobalsEnd
 endglobals
 native MergeUnits       takes integer qty, integer a, integer b, integer make returns boolean   // reserved native for call 4 integer function and return BOOLEAN value
@@ -226655,7 +226633,7 @@ endfunction
 //
 // Раскладка повторяет образец: слева столбец разделов, каталог 7x5,
 // справа сборка и описание, ещё правее инвентарь с кнопками покупки и
-// продажи, снизу строка поиска.
+// продажи, снизу листание страниц.
 //=====================================================================
 
 function Sh_Key takes nothing returns integer
@@ -226699,6 +226677,11 @@ if id==0 then
 return 0
 endif
 return GetBaseItemIntegerFieldById(id,ITEM_IF_GOLD_COST)
+endfunction
+
+// Продажа по правилу карты: misc.ini, PawnItemRate = 0.8 — как у ларька
+function Sh_Sell takes integer id returns integer
+return R2I(I2R(Sh_Cost(id))*0.8)
 endfunction
 
 //--------------------- рецепты прямо из таблицы карты ---------------------
@@ -226781,50 +226764,6 @@ endif
 return GetUnitX(hu)>=GetRectMinX(gg_rct_Base) and GetUnitX(hu)<=GetRectMaxX(gg_rct_Base) and GetUnitY(hu)>=GetRectMinY(gg_rct_Base) and GetUnitY(hu)<=GetRectMaxY(gg_rct_Base)
 endfunction
 
-// Следующий недостающий кусок на пути к цели. Спускаемся по лестнице вниз.
-function Sh_NextBuy takes integer pid,integer id returns integer
-local integer cur=id
-local integer depth=0
-local integer k
-local integer c
-local integer nxt
-loop
-exitwhen depth==8
-if Sh_Owns(pid,cur) then
-return 0
-endif
-set k=Sh_RecipeOf(cur)
-if k<0 then
-return cur
-endif
-set nxt=0
-set c=0
-loop
-exitwhen c==11
-if nxt==0 and Sh_RecComp(k,c)!=0 and Sh_Owns(pid,Sh_RecComp(k,c))==false and Sh_RecComp(k,c)!='I00E' then
-set nxt=Sh_RecComp(k,c)
-endif
-set c=c+1
-endloop
-if nxt==0 then
-// свиток улучшения берём последним: без предмета, который им улучшают,
-// это выброшенные деньги
-set c=0
-loop
-exitwhen c==11
-if Sh_RecComp(k,c)=='I00E' and Sh_Owns(pid,'I00E')==false then
-return 'I00E'
-endif
-set c=c+1
-endloop
-return 0
-endif
-set cur=nxt
-set depth=depth+1
-endloop
-return cur
-endfunction
-
 // Сколько ещё доплатить до цели
 function Sh_Remain takes integer pid,integer id returns integer
 local integer cur=id
@@ -226867,7 +226806,7 @@ function Sh_SecData takes nothing returns nothing
 // Единственная генерируемая таблица: какой предмет в каком разделе.
 // Остальное (иконка, имя, цена, рецепт) магазин берёт из движка.
 set ShSecName[0]="Base Items"
-set ShSecCnt[0]=17
+set ShSecCnt[0]=15
 set ShSecItem[0]='I01W'
 set ShSecItem[1]='I01H'
 set ShSecItem[2]='I008'
@@ -226876,15 +226815,13 @@ set ShSecItem[4]='I00E'
 set ShSecItem[5]='I01M'
 set ShSecItem[6]='I04H'
 set ShSecItem[7]='I12R'
-set ShSecItem[8]='I04J'
-set ShSecItem[9]='I067'
-set ShSecItem[10]='ISPB'
-set ShSecItem[11]='I02S'
-set ShSecItem[12]='I02R'
-set ShSecItem[13]='I02T'
-set ShSecItem[14]='IGlA'
-set ShSecItem[15]='ISlA'
-set ShSecItem[16]='ISt0'
+set ShSecItem[8]='ISPB'
+set ShSecItem[9]='I02S'
+set ShSecItem[10]='I02R'
+set ShSecItem[11]='I02T'
+set ShSecItem[12]='IGlA'
+set ShSecItem[13]='ISlA'
+set ShSecItem[14]='ISt0'
 set ShSecName[1]="Weapons"
 set ShSecCnt[1]=12
 set ShSecItem[64]='I01O'
@@ -226985,7 +226922,7 @@ set ShSecItem[388]='I05T'
 set ShSecItem[389]='I05Z'
 set ShSecItem[390]='I065'
 set ShSecName[7]="Recipes"
-set ShSecCnt[7]=36
+set ShSecCnt[7]=27
 set ShSecItem[448]='I02X'
 set ShSecItem[449]='I047'
 set ShSecItem[450]='I055'
@@ -226994,34 +226931,25 @@ set ShSecItem[452]='I01R'
 set ShSecItem[453]='I01T'
 set ShSecItem[454]='I01V'
 set ShSecItem[455]='I045'
-set ShSecItem[456]='I03M'
-set ShSecItem[457]='I02Z'
-set ShSecItem[458]='I02U'
-set ShSecItem[459]='IBSR'
-set ShSecItem[460]='IPar'
-set ShSecItem[461]='I04U'
-set ShSecItem[462]='I04X'
-set ShSecItem[463]='I04Y'
-set ShSecItem[464]='I04Z'
-set ShSecItem[465]='I052'
-set ShSecItem[466]='I051'
-set ShSecItem[467]='I053'
-set ShSecItem[468]='IGDr'
-set ShSecItem[469]='I04S'
-set ShSecItem[470]='ISHs'
-set ShSecItem[471]='IHnR'
-set ShSecItem[472]='I06U'
-set ShSecItem[473]='I06P'
-set ShSecItem[474]='IHYr'
-set ShSecItem[475]='I06S'
-set ShSecItem[476]='I06T'
-set ShSecItem[477]='I06V'
-set ShSecItem[478]='IMDr'
-set ShSecItem[479]='I14R'
-set ShSecItem[480]='I04W'
-set ShSecItem[481]='ISTr'
-set ShSecItem[482]='IAFR'
-set ShSecItem[483]='IPRR'
+set ShSecItem[456]='I02Z'
+set ShSecItem[457]='I02U'
+set ShSecItem[458]='IBSR'
+set ShSecItem[459]='IPar'
+set ShSecItem[460]='I04U'
+set ShSecItem[461]='I04X'
+set ShSecItem[462]='I04Y'
+set ShSecItem[463]='I04Z'
+set ShSecItem[464]='I052'
+set ShSecItem[465]='I051'
+set ShSecItem[466]='I053'
+set ShSecItem[467]='IGDr'
+set ShSecItem[468]='I06P'
+set ShSecItem[469]='IHYr'
+set ShSecItem[470]='I06S'
+set ShSecItem[471]='I06T'
+set ShSecItem[472]='I14R'
+set ShSecItem[473]='ISTr'
+set ShSecItem[474]='IPRR'
 set ShSecName[8]="Ultimate Sets"
 set ShSecCnt[8]=24
 set ShSecItem[512]='I06G'
@@ -227097,17 +227025,8 @@ set b=null
 endfunction
 //--------------------- отрисовка ---------------------
 
-// Что показывать в каталоге: либо раздел, либо результаты поиска.
 function Sh_PageItem takes integer pid,integer slot returns integer
-local integer cnt
-if ShSearchOn[pid] then
-set cnt=ShPage[pid]*42+slot
-if cnt>=ShFoundCnt[pid] then
-return 0
-endif
-return ShFound[pid*200+cnt]
-endif
-set cnt=ShPage[pid]*42+slot
+local integer cnt=ShPage[pid]*42+slot
 if cnt>=ShSecCnt[ShSelSec[pid]] then
 return 0
 endif
@@ -227115,32 +227034,41 @@ return ShSecItem[ShSelSec[pid]*64+cnt]
 endfunction
 
 function Sh_PageCount takes integer pid returns integer
-local integer total
-if ShSearchOn[pid] then
-set total=ShFoundCnt[pid]
-else
-set total=ShSecCnt[ShSelSec[pid]]
-endif
-if total<=42 then
-return 1
-endif
-return (total-1)/42+1
+return IMaxBJ(1,(ShSecCnt[ShSelSec[pid]]+41)/42)
 endfunction
 
-// --- скин магазина ---
-function Sh_DrawCatalog takes nothing returns nothing
+// Цены и отметка «есть» — единственное в каталоге, что зависит от золота
+function Sh_DrawPrices takes nothing returns nothing
 local integer pid=GetPlayerId(GetLocalPlayer())
+local integer gold=GetPlayerState(GetLocalPlayer(),PLAYER_STATE_RESOURCE_GOLD)
 local integer i=0
 local integer id
-local integer cost
 loop
 exitwhen i==42
 set id=Sh_PageItem(pid,i)
 if id==0 then
-call BlzFrameSetVisible(ShItemBtn[i],false)
 call BlzFrameSetText(ShItemCost[i],"")
+elseif Sh_Owns(pid,id) then
+call BlzFrameSetText(ShItemCost[i],"|c0066ff66есть|r")
+elseif Sh_Cost(id)>gold then
+call BlzFrameSetText(ShItemCost[i],"|c00ff5555"+I2S(Sh_Cost(id))+"|r")
 else
-call BlzFrameSetVisible(ShItemBtn[i],true)
+call BlzFrameSetText(ShItemCost[i],"|c00FFFF00"+I2S(Sh_Cost(id))+"|r")
+endif
+set i=i+1
+endloop
+call BlzFrameSetText(ShGoldTxt,"|c00FFD700"+I2S(gold)+"|r")
+endfunction
+
+function Sh_DrawCatalog takes nothing returns nothing
+local integer pid=GetPlayerId(GetLocalPlayer())
+local integer i=0
+local integer id
+loop
+exitwhen i==42
+set id=Sh_PageItem(pid,i)
+call BlzFrameSetVisible(ShItemBtn[i],id!=0)
+if id!=0 then
 if id==ShSel[pid] then
 call BlzFrameSetTexture(ShRim[i],"war3mapImported\\shop_slot_glow.tga",0,true)
 else
@@ -227148,18 +227076,11 @@ call BlzFrameSetTexture(ShRim[i],"war3mapImported\\shop_slot.tga",0,true)
 endif
 call BlzFrameSetTexture(ShItemBack[i],Sh_Icon(id),0,false)
 call BlzFrameSetText(ShItemTip[i],"|cff2B1B10"+Sh_Name(id)+"|r")
-set cost=Sh_Cost(id)
-if Sh_Owns(pid,id) then
-call BlzFrameSetText(ShItemCost[i],"|c0066ff66есть|r")
-elseif cost>GetPlayerState(GetLocalPlayer(),PLAYER_STATE_RESOURCE_GOLD) then
-call BlzFrameSetText(ShItemCost[i],"|c00ff5555"+I2S(cost)+"|r")
-else
-call BlzFrameSetText(ShItemCost[i],"|c00FFFF00"+I2S(cost)+"|r")
-endif
 endif
 set i=i+1
 endloop
 call BlzFrameSetText(ShPageTxt,I2S(ShPage[pid]+1)+" / "+I2S(Sh_PageCount(pid)))
+call Sh_DrawPrices()
 endfunction
 
 // Сборка: сверху цепочка улучшения, снизу компоненты, справа общая цена.
@@ -227176,11 +227097,10 @@ set id=0
 if k>=0 then
 set id=Sh_RecComp(k,i)
 endif
+call BlzFrameSetVisible(ShCraftBtn[i],id!=0)
 if id==0 then
-call BlzFrameSetVisible(ShCraftBtn[i],false)
 call BlzFrameSetText(ShCraftCost[i],"")
 else
-call BlzFrameSetVisible(ShCraftBtn[i],true)
 call BlzFrameSetTexture(ShCraftBack[i],Sh_Icon(id),0,false)
 set c=Sh_RecCnt(k,i)
 if Sh_Owns(pid,id) and c<2 then
@@ -227203,8 +227123,7 @@ endif
 endfunction
 
 function Sh_DrawDesc takes nothing returns nothing
-local integer pid=GetPlayerId(GetLocalPlayer())
-local integer sel=ShSel[pid]
+local integer sel=ShSel[GetPlayerId(GetLocalPlayer())]
 local string body
 if sel==0 then
 call BlzFrameSetText(ShDescName,"|c00FFFF00Предмет не выбран|r")
@@ -227221,133 +227140,88 @@ endif
 call BlzFrameSetText(ShDescBody,body)
 endfunction
 
+// Под предметом инвентаря — сколько за него дадут при продаже
 function Sh_DrawInv takes nothing returns nothing
 local integer pid=GetPlayerId(GetLocalPlayer())
 local integer i=0
-local item itm
+local integer id
 loop
 exitwhen i==10
-set itm=null
+set id=0
 if Hero[pid]!=null then
-set itm=UnitItemInSlot(Hero[pid],i)
+set id=GetItemTypeId(UnitItemInSlot(Hero[pid],i))
 endif
-if itm==null then
+if id==0 then
 call BlzFrameSetTexture(ShInvBack[i],"war3mapImported\\shop_none.tga",0,true)
 call BlzFrameSetText(ShInvCost[i],"")
 call BlzFrameSetText(ShInvTip[i],"")
 else
-call BlzFrameSetTexture(ShInvBack[i],Sh_Icon(GetItemTypeId(itm)),0,false)
-call BlzFrameSetText(ShInvCost[i],"|c00FFFF00"+I2S(Sh_Cost(GetItemTypeId(itm)))+"|r")
-call BlzFrameSetText(ShInvTip[i],"|cffffffff"+Sh_Name(GetItemTypeId(itm))+"|r")
+call BlzFrameSetTexture(ShInvBack[i],Sh_Icon(id),0,false)
+call BlzFrameSetText(ShInvCost[i],"|c00FFFF00"+I2S(Sh_Sell(id))+"|r")
+call BlzFrameSetText(ShInvTip[i],"|cffffffff"+Sh_Name(id)+"|r")
 endif
 set i=i+1
 endloop
-set itm=null
-call BlzFrameSetText(ShGoldTxt,"|c00FFD700"+I2S(GetPlayerState(GetLocalPlayer(),PLAYER_STATE_RESOURCE_GOLD))+"|r")
 endfunction
 
+// Перекрашиваем только по клику на раздел: 9 кнопок по 4 подложки
 function Sh_DrawSections takes nothing returns nothing
 local integer pid=GetPlayerId(GetLocalPlayer())
 local integer i=0
 loop
 exitwhen i==ShSecTotal
-if i==ShSelSec[pid] and ShSearchOn[pid]==false then
-call BlzFrameSetText(ShSecTxt[i],"|c00FFF0C0"+ShSecName[i]+"|r")
+if i==ShSelSec[pid] then
+call BlzFrameSetText(ShSecBtn[i],"|c00FFF0C0"+ShSecName[i]+"|r")
 call Sh_Skin(ShSecBtn[i],"war3mapImported\\shop_btn_hover_s.tga",0.095)
 else
-call BlzFrameSetText(ShSecTxt[i],"|c00E8C061"+ShSecName[i]+"|r")
+call BlzFrameSetText(ShSecBtn[i],"|c00E8C061"+ShSecName[i]+"|r")
 call Sh_Skin(ShSecBtn[i],"war3mapImported\\shop_btn_s.tga",0.095)
 endif
 set i=i+1
 endloop
 endfunction
 
-// Галка сама по себе не объясняет, что она собирает. Пишем цель рядом.
-function Sh_DrawAuto takes nothing returns nothing
-local integer pid=GetPlayerId(GetLocalPlayer())
-if ShAutoTxt==null then
-return
-endif
-if ShAuto[pid] then
-if ShAutoT[pid]==0 then
-call BlzFrameSetText(ShAutoTxt,"|c0066ff66Автозакупка:|r |c00888888цель не выбрана|r")
-else
-call BlzFrameSetText(ShAutoTxt,"|c0066ff66Автозакупка:|r "+Sh_Name(ShAutoT[pid]))
-endif
-else
-call BlzFrameSetText(ShAutoTxt,"|c00FFFF00Автозакупка|r |c00888888— собирает выбранный предмет|r")
-endif
-endfunction
-
 function Sh_Redraw takes nothing returns nothing
-call Sh_DrawAuto()
-call Sh_DrawSections()
 call Sh_DrawCatalog()
 call Sh_DrawCraft()
 call Sh_DrawDesc()
 call Sh_DrawInv()
 endfunction
 
-// Золото и инвентарь меняются мимо магазина — освежаем, пока окно открыто
+// Золото и предметы меняются мимо магазина. Раньше окно перерисовывалось
+// целиком каждые 0.4 с и ело кадры: теперь сверяем золото и 16 ячеек героя
+// и сундука, и трогаем только то, что от них зависит.
 function Sh_Tick takes nothing returns nothing
-if ShOpened then
-call Sh_Redraw()
-endif
-endfunction
-
-//--------------------- поиск ---------------------
-
-function Sh_Lower takes string t returns string
-return StringCase(t,false)
-endfunction
-
-function Sh_Contains takes string src,string needle returns boolean
-local integer cnt=StringLength(needle)
-local integer m=StringLength(src)
+local integer pid=GetPlayerId(GetLocalPlayer())
 local integer i=0
-if cnt==0 then
-return true
-endif
-if cnt>m then
-return false
-endif
-loop
-exitwhen i>m-cnt
-if SubString(src,i,i+cnt)==needle then
-return true
-endif
-set i=i+1
-endloop
-return false
-endfunction
-
-function Sh_Search takes integer pid,string q returns nothing
-local integer sec=0
-local integer i
 local integer id
-local string low=Sh_Lower(q)
-set ShFoundCnt[pid]=0
-if StringLength(q)==0 then
-set ShSearchOn[pid]=false
-set ShPage[pid]=0
+local boolean inv=false
+if ShOpened==false then
 return
 endif
-set ShSearchOn[pid]=true
-set ShPage[pid]=0
 loop
-exitwhen sec==ShSecTotal
-set i=0
-loop
-exitwhen i==ShSecCnt[sec]
-set id=ShSecItem[sec*64+i]
-if id!=0 and ShFoundCnt[pid]<200 and Sh_Contains(Sh_Lower(Sh_Name(id)),low) then
-set ShFound[pid*200+ShFoundCnt[pid]]=id
-set ShFoundCnt[pid]=ShFoundCnt[pid]+1
+exitwhen i==16
+set id=0
+if i<10 and Hero[pid]!=null then
+set id=GetItemTypeId(UnitItemInSlot(Hero[pid],i))
+elseif i>=10 and Chest[pid]!=null then
+set id=GetItemTypeId(UnitItemInSlot(Chest[pid],i-10))
+endif
+if id!=ShLastInv[i] then
+set ShLastInv[i]=id
+set inv=true
 endif
 set i=i+1
 endloop
-set sec=sec+1
-endloop
+if inv then
+call Sh_DrawCraft()
+call Sh_DrawInv()
+endif
+set id=GetPlayerState(GetLocalPlayer(),PLAYER_STATE_RESOURCE_GOLD)
+if inv or id!=ShLastGold then
+set ShLastGold=id
+call Sh_DrawPrices()
+endif
 endfunction
 //--------------------- клики: ЛОКАЛЬНЫЕ, игру не трогают ---------------------
 
@@ -227361,11 +227235,8 @@ endif
 if tag>=100 and tag<200 then
 set ShSelSec[pid]=tag-100
 set ShPage[pid]=0
-set ShSearchOn[pid]=false
-if ShSearchBox!=null then
-call BlzFrameSetText(ShSearchBox,"")
-endif
-call Sh_Redraw()
+call Sh_DrawSections()
+call Sh_DrawCatalog()
 elseif tag>=200 and tag<300 then
 set id=Sh_PageItem(pid,tag-200)
 if id!=0 then
@@ -227392,42 +227263,17 @@ call SendSyncData("SHS",I2S(ShInvSel[pid]))
 elseif tag==403 then
 // свиток улучшения: покупается тем же путём, что и всё остальное
 call SendSyncData("SHB",I2S('I00E'))
-elseif tag==400 then
-if ShSearchBox!=null then
-call BlzFrameSetText(ShSearchBox,"")
-endif
-set ShSearchOn[pid]=false
-set ShPage[pid]=0
-call Sh_Redraw()
 elseif tag==401 then
 if ShPage[pid]>0 then
 set ShPage[pid]=ShPage[pid]-1
-call Sh_Redraw()
+call Sh_DrawCatalog()
 endif
 elseif tag==402 then
 if ShPage[pid]+1<Sh_PageCount(pid) then
 set ShPage[pid]=ShPage[pid]+1
-call Sh_Redraw()
+call Sh_DrawCatalog()
 endif
 endif
-endfunction
-
-function Sh_SearchChanged takes nothing returns nothing
-local integer pid=GetPlayerId(GetTriggerPlayer())
-if GetTriggerPlayer()!=GetLocalPlayer() then
-return
-endif
-call Sh_Search(pid,BlzGetTriggerFrameText())
-call Sh_Redraw()
-endfunction
-
-// Цель автозакупки уходит в сеть вместе с переключателем: читать локальный
-// ShSel в синхронном таймере нельзя, это рассинхрон.
-function Sh_AutoCheck takes nothing returns nothing
-if GetTriggerPlayer()!=GetLocalPlayer() then
-return
-endif
-call SendSyncData("SHA",I2S(ShSel[GetPlayerId(GetLocalPlayer())]))
 endfunction
 
 //--------------------- приём: СИНХРОННО у всех ---------------------
@@ -227482,13 +227328,6 @@ local integer val=S2I(GetTriggerSyncData())
 local unit hu=Hero[pid]
 local integer cost
 local item itm
-if pref=="SHA" then
-set ShAuto[pid]=(ShAuto[pid]==false)
-set ShAutoT[pid]=val
-set p=null
-set hu=null
-return
-endif
 if Sh_InZone(hu)==false then
 if GetLocalPlayer()==p then
 call DisplayTextToPlayer(p,0,0,"|cffff5555Только в зоне ожидания.|r")
@@ -227498,11 +227337,11 @@ set hu=null
 return
 endif
 if pref=="SHS" then
-// ПРОДАЖА выбранного слота инвентаря, полный возврат цены
-if val>=0 and val<6 then
+// ПРОДАЖА выбранного слота инвентаря (10 ячеек) за 80% цены
+if val>=0 and val<10 then
 set itm=UnitItemInSlot(hu,val)
 if itm!=null then
-set cost=Sh_Cost(GetItemTypeId(itm))
+set cost=Sh_Sell(GetItemTypeId(itm))
 if GetLocalPlayer()==p then
 call DisplayTextToPlayer(p,0,0,"|c00FFD700Продано: "+Sh_Name(GetItemTypeId(itm))+" за "+I2S(cost)+"|r")
 endif
@@ -227541,31 +227380,6 @@ endif
 set p=null
 set hu=null
 endfunction
-
-// Автозакупка: раз в секунду докупает следующий недостающий кусок цели.
-// Сборку карта делает сама, когда компоненты оказались в инвентаре.
-function Sh_AutoTick takes nothing returns nothing
-local integer pid=0
-local integer id
-local integer cost
-loop
-exitwhen pid==10
-if ShAuto[pid] and ShAutoT[pid]!=0 and Hero[pid]!=null and Sh_InZone(Hero[pid]) then
-set id=Sh_NextBuy(pid,ShAutoT[pid])
-if id!=0 then
-set cost=Sh_Cost(id)
-if cost>0 and GetPlayerState(Player(pid),PLAYER_STATE_RESOURCE_GOLD)>=cost then
-call SetPlayerState(Player(pid),PLAYER_STATE_RESOURCE_GOLD,GetPlayerState(Player(pid),PLAYER_STATE_RESOURCE_GOLD)-cost)
-call Sh_Give(Player(pid),pid,id)
-if GetLocalPlayer()==Player(pid) then
-call DisplayTextToPlayer(Player(pid),0,0,"|c0066ff66Автозакупка: "+Sh_Name(id)+" за "+I2S(cost)+"|r")
-endif
-endif
-endif
-endif
-set pid=pid+1
-endloop
-endfunction
 //--------------------- сборка окна ---------------------
 
 // ⚠️ РАЗМЕРЫ. Игровое поле фреймов = 0.8 по X и 0.6 по Y при любом
@@ -227580,17 +227394,6 @@ function Sh_Deco takes framehandle parent,string tex,integer lvl returns frameha
 local framehandle f=BlzCreateFrameByType("BACKDROP","ShDeco",parent,"",0)
 call BlzFrameSetTexture(f,tex,0,true)
 call BlzFrameSetLevel(f,lvl)
-return f
-endfunction
-
-// Подпись поверх плашки
-function Sh_Label takes framehandle btn,string t,real scale returns framehandle
-local framehandle f=BlzCreateFrameByType("TEXT","ShLabel",btn,"",0)
-call BlzFrameSetAllPoints(f,btn)
-call BlzFrameSetTextAlignment(f,TEXT_JUSTIFY_MIDDLE,TEXT_JUSTIFY_CENTER)
-call BlzFrameSetScale(f,scale)
-call BlzFrameSetText(f,t)
-call BlzFrameSetLevel(f,5)
 return f
 endfunction
 
@@ -227688,15 +227491,13 @@ set ShSecBtn[i]=BlzCreateFrameByType("GLUETEXTBUTTON","ShSecBtn",ShMain,"ScriptD
 call Sh_Tag(ShSecBtn[i],100+i)
 call BlzFrameSetAbsPoint(ShSecBtn[i],FRAMEPOINT_CENTER,0.1165,y)
 call BlzFrameSetSize(ShSecBtn[i],0.1532,0.0416)
-call BlzFrameSetText(ShSecBtn[i],"")
-call Sh_Skin(ShSecBtn[i],"war3mapImported\\shop_btn_s.tga",0.095)
 call BlzFrameSetScale(ShSecBtn[i],0.62)
-call BlzFrameSetText(ShSecBtn[i],ShSecName[i])
-set ShSecTxt[i]=ShSecBtn[i]
 call BlzTriggerRegisterFrameEvent(ShTrgClick,ShSecBtn[i],FRAMEEVENT_CONTROL_CLICK)
 set y=y-0.034
 set i=i+1
 endloop
+// подписи и скин разделов
+call Sh_DrawSections()
 
 // ---- каталог 7 в ряд, 5 рядов ----
 set x=0.012
@@ -227758,7 +227559,7 @@ set k=0
 set y=y-0.056
 endif
 endloop
-set ShCraftName=Sh_Cap(ShCraft,"|c00FFD700Сборка|r")
+call Sh_Cap(ShCraft,"|c00FFD700Сборка|r")
 set ShCraftGoldTxt=BlzCreateFrameByType("TEXT","ShCraftGold",ShCraft,"",0)
 call BlzFrameSetPoint(ShCraftGoldTxt,FRAMEPOINT_BOTTOM,ShCraft,FRAMEPOINT_BOTTOM,0,0.004)
 call BlzFrameSetScale(ShCraftGoldTxt,0.90)
@@ -227820,7 +227621,6 @@ call BlzFrameSetSize(ShBuyBtn,0.105,0.032)
 call BlzFrameSetScale(ShBuyBtn,0.85)
 call Sh_Skin(ShBuyBtn,"war3mapImported\\shop_action_a.tga",0.08925)
 call BlzFrameSetText(ShBuyBtn,"|c0066ff66КУПИТЬ|r")
-set ShBuyTxt=ShBuyBtn
 call BlzTriggerRegisterFrameEvent(ShTrgClick,ShBuyBtn,FRAMEEVENT_CONTROL_CLICK)
 set ShSellBtn=BlzCreateFrameByType("GLUETEXTBUTTON","ShSellBtn",ShInv,"ScriptDialogButton",0)
 call Sh_Tag(ShSellBtn,411)
@@ -227829,7 +227629,6 @@ call BlzFrameSetSize(ShSellBtn,0.105,0.032)
 call BlzFrameSetScale(ShSellBtn,0.85)
 call Sh_Skin(ShSellBtn,"war3mapImported\\shop_action_a.tga",0.08925)
 call BlzFrameSetText(ShSellBtn,"|c00FFD700ПРОДАТЬ|r")
-set ShSellTxt=ShSellBtn
 call BlzTriggerRegisterFrameEvent(ShTrgClick,ShSellBtn,FRAMEEVENT_CONTROL_CLICK)
 // быстрая покупка свитка «Улучшить предмет» (I00E, 750)
 set ShUpgBtn=BlzCreateFrameByType("GLUETEXTBUTTON","ShUpgBtn",ShInv,"ScriptDialogButton",0)
@@ -227839,69 +227638,13 @@ call BlzFrameSetSize(ShUpgBtn,0.105,0.032)
 call Sh_Skin(ShUpgBtn,"war3mapImported\\shop_action_a.tga",0.08925)
 call BlzFrameSetScale(ShUpgBtn,0.85)
 call BlzFrameSetText(ShUpgBtn,"|c00AACCFFУЛУЧШИТЬ 750|r")
-set ShUpgTxt=ShUpgBtn
 call BlzTriggerRegisterFrameEvent(ShTrgClick,ShUpgBtn,FRAMEEVENT_CONTROL_CLICK)
 
 set ShGoldTxt=BlzCreateFrameByType("TEXT","ShGoldTxt",ShMain,"",0)
 call BlzFrameSetAbsPoint(ShGoldTxt,FRAMEPOINT_CENTER,0.170,0.211)
 call BlzFrameSetText(ShGoldTxt,"")
 
-// ---- нижняя строка: поиск и листание ----
-// АВТОЗАКУПКА СКРЫТА: галка не отзывалась на клики. Чтобы вернуть — убрать
-// "false and" ниже; обработчики Sh_AutoCheck / Sh_AutoTick на месте.
-set ShAutoBox=null
-if false then
-set ShAutoBox=BlzCreateFrame("QuestCheckBox2",ShMain,0,0)
-if ShAutoBox!=null then
-call BlzFrameSetAbsPoint(ShAutoBox,FRAMEPOINT_CENTER,0.085,0.226)
-call BlzFrameSetSize(ShAutoBox,0.018,0.018)
-set ShTrgAuto=CreateTrigger()
-call BlzTriggerRegisterFrameEvent(ShTrgAuto,ShAutoBox,FRAMEEVENT_CHECKBOX_CHECKED)
-call BlzTriggerRegisterFrameEvent(ShTrgAuto,ShAutoBox,FRAMEEVENT_CHECKBOX_UNCHECKED)
-call TriggerAddAction(ShTrgAuto,function Sh_AutoCheck)
-endif
-set ShAutoTxt=BlzCreateFrameByType("TEXT","ShAutoTxt",ShMain,"",0)
-call BlzFrameSetAbsPoint(ShAutoTxt,FRAMEPOINT_LEFT,0.097,0.226)
-call BlzFrameSetSize(ShAutoTxt,0.20,0.016)
-call BlzFrameSetScale(ShAutoTxt,0.78)
-call BlzFrameSetText(ShAutoTxt,"|c00FFFF00Автозакупка|r")
-endif
-
-// ---- поиск отключён ----
-if false then
-set ShSearchLbl=BlzCreateFrameByType("TEXT","ShSearchLbl",ShMain,"",0)
-call BlzFrameSetAbsPoint(ShSearchLbl,FRAMEPOINT_RIGHT,0.315,0.211)
-call BlzFrameSetSize(ShSearchLbl,0.045,0.016)
-call BlzFrameSetTextAlignment(ShSearchLbl,TEXT_JUSTIFY_MIDDLE,TEXT_JUSTIFY_RIGHT)
-call BlzFrameSetScale(ShSearchLbl,0.80)
-call BlzFrameSetText(ShSearchLbl,"|c00FFD700Поиск:|r")
-set ShSearchBox=BlzCreateFrame("EscMenuEditBoxTemplate",ShMain,0,0)
-if ShSearchBox!=null then
-// подложка, чтобы поле ввода было видно на тёмном фоне
-set bg=BlzCreateFrameByType("BACKDROP","ShSearchBg",ShMain,"",0)
-call BlzFrameSetAbsPoint(bg,FRAMEPOINT_CENTER,0.400,0.211)
-call BlzFrameSetSize(bg,0.145,0.022)
-call BlzFrameSetTexture(bg,"war3mapImported\\shop_field_a.tga",0,true)
-call SetFrameBackgroundSize(bg,0,0.145)
-set bg=null
-call BlzFrameSetAbsPoint(ShSearchBox,FRAMEPOINT_CENTER,0.415,0.226)
-call BlzFrameSetSize(ShSearchBox,0.145,0.022)
-call BlzFrameSetAlpha(ShSearchBox,220)
-call BlzFrameSetText(ShSearchBox,"")
-call BlzFrameSetTextSizeLimit(ShSearchBox,48)
-set ShTrgSearch=CreateTrigger()
-call BlzTriggerRegisterFrameEvent(ShTrgSearch,ShSearchBox,FRAMEEVENT_EDITBOX_TEXT_CHANGED)
-call TriggerAddAction(ShTrgSearch,function Sh_SearchChanged)
-endif
-set ShSearchClear=BlzCreateFrameByType("GLUETEXTBUTTON","ShSearchClear",ShMain,"ScriptDialogButton",0)
-call Sh_Tag(ShSearchClear,400)
-call BlzFrameSetAbsPoint(ShSearchClear,FRAMEPOINT_CENTER,0.485,0.211)
-call BlzFrameSetSize(ShSearchClear,0.024,0.024)
-call BlzFrameSetScale(ShSearchClear,0.80)
-call Sh_Skin(ShSearchClear,"war3mapImported\\shop_arrow.tga",0.0192)
-call BlzFrameSetText(ShSearchClear,"|c00FFD700X|r")
-call BlzTriggerRegisterFrameEvent(ShTrgClick,ShSearchClear,FRAMEEVENT_CONTROL_CLICK)
-endif
+// ---- листание страниц ----
 set ShPrevBtn=BlzCreateFrameByType("GLUETEXTBUTTON","ShPrevBtn",ShMain,"ScriptDialogButton",0)
 call Sh_Tag(ShPrevBtn,401)
 call BlzFrameSetAbsPoint(ShPrevBtn,FRAMEPOINT_CENTER,0.283,0.211)
@@ -227930,14 +227673,12 @@ loop
 exitwhen i==12
 call BlzTriggerRegisterPlayerSyncEvent(ShTrgSync,Player(i),"SHB",false)
 call BlzTriggerRegisterPlayerSyncEvent(ShTrgSync,Player(i),"SHS",false)
-call BlzTriggerRegisterPlayerSyncEvent(ShTrgSync,Player(i),"SHA",false)
 set i=i+1
 endloop
 call TriggerAddAction(ShTrgSync,function Sh_Sync)
 
 call BlzFrameSetVisible(ShMain,false)
 call TimerStart(CreateTimer(),0.4,true,function Sh_Tick)
-call TimerStart(CreateTimer(),1.0,true,function Sh_AutoTick)
 set gameUI=null
 endfunction
 
