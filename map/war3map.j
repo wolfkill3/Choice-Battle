@@ -1894,11 +1894,11 @@ function myCustomDamage takes unit whichUnit, unit target, real amount, boolean 
 			set currentDmg=currentDmg * 1.2
 		endif
         if GetUnitAbilityLevel(whichUnit, 'RsG2') > 0  then//DMG: -40%
-            set currentDmg=currentDmg * 0.7        
+            set currentDmg=currentDmg * 0.85        
         endif
 
         if GetUnitAbilityLevel(target, 'RsG2') > 0 then//DMG: +40%
-            set currentDmg=currentDmg * 1.3
+            set currentDmg=currentDmg * 1.15
         endif
         // Увеличение урона от прошедшего времени после 6ой минуты.
         if passedTime > 0 then
@@ -2163,7 +2163,7 @@ function myCustomDamage2_inc takes unit whichUnit, real amount returns real
         set currentDmg=currentDmg * 0.8
     endif
     if GetUnitAbilityLevel(whichUnit, 'RsG2') > 0  then//DMG: -40%
-        set currentDmg=currentDmg * 0.7 
+        set currentDmg=currentDmg * 0.85 
     endif
     return currentDmg
     //~ конец модификации уменьшения урона
@@ -2197,7 +2197,7 @@ function myCustomDamage2_dec takes unit target, real amount returns real
             set currentDmg = currentDmg * 1.15
         endif
         if GetUnitAbilityLevel(target, 'RsG2') > 0 then//DMG: +40%
-            set currentDmg=currentDmg * 1.3
+            set currentDmg=currentDmg * 1.15
         endif
         if (IsItemInInventory(target, 'IASS') > 0 or IsItemInInventory(target, 'IASA') > 0 or IsItemInInventory(target, 'IASI') > 0) then
             set currentDmg = currentDmg * 1.1
@@ -17663,7 +17663,7 @@ function OnButtonSelectHero takes nothing returns nothing
                         call AddFrameText( GetFrameByName("TavernAbilityTooltipText",5), "/")
                         set j=j+1
                         endloop   
-                        if String2Id( s )=='A105' or String2Id( s )=='A0RS' or String2Id( s )=='A0IR' or String2Id( s )=='CelF' or String2Id( s )=='CelG' or String2Id( s )=='BuuG' or String2Id( s )=='LamF' or String2Id( s )=='LamG' or String2Id( s )=='JnD1' then
+                        if String2Id( s )=='A105' or String2Id( s )=='A0RS' or String2Id( s )=='A0IR' or String2Id( s )=='CelF' or String2Id( s )=='CelG' or String2Id( s )=='BuuG' or String2Id( s )=='LamF' or String2Id( s )=='LamG' or String2Id( s )=='JnD1' or String2Id( s )=='RsG1' then
                             call AddFrameText( GetFrameByName("TavernAbilityTooltipText",5), "\n\n"+GetAbilityBaseStringFieldById( String2Id( s ), ABILITY_SF_NAME )+", (|cffffcc00"+IntToChar(GetAbilityBaseIntegerFieldById( String2Id( s ), ABILITY_IF_BUTTON_HOTKEY_NORMAL ))+"|r)\n\n"+GetAbilityBaseStringFieldById( String2Id( s ), ABILITY_SLF_TOOLTIP_LEARN_EXTENDED )) 
                         else                  
                             call AddFrameText( GetFrameByName("TavernAbilityTooltipText",5), "\n\n"+GetAbilityBaseStringFieldById( String2Id( s ), ABILITY_SF_NAME )+", (|cffffcc00"+IntToChar(GetAbilityBaseIntegerFieldById( String2Id( s ), ABILITY_IF_BUTTON_HOTKEY_NORMAL ))+"|r)\n\n"+GetAbilityBaseStringFieldById( String2Id( s ), ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED ))
@@ -17681,7 +17681,7 @@ function OnButtonSelectHero takes nothing returns nothing
                         call AddFrameText( GetFrameByName("TavernAbilityTooltipText",6), "/")
                         set j=j+1
                         endloop                        
-                        if String2Id( s )=='A105' or String2Id( s )=='A0RS' or String2Id( s )=='A0IR' or String2Id( s )=='CelF' or String2Id( s )=='CelG' or String2Id( s )=='BuuG' or String2Id( s )=='LamF' or String2Id( s )=='LamG' or String2Id( s )=='JnD1' then
+                        if String2Id( s )=='A105' or String2Id( s )=='A0RS' or String2Id( s )=='A0IR' or String2Id( s )=='CelF' or String2Id( s )=='CelG' or String2Id( s )=='BuuG' or String2Id( s )=='LamF' or String2Id( s )=='LamG' or String2Id( s )=='JnD1' or String2Id( s )=='RsG1' then
                             call AddFrameText( GetFrameByName("TavernAbilityTooltipText",6), "\n\n"+GetAbilityBaseStringFieldById( String2Id( s ), ABILITY_SF_NAME )+", (|cffffcc00"+IntToChar(GetAbilityBaseIntegerFieldById( String2Id( s ), ABILITY_IF_BUTTON_HOTKEY_NORMAL ))+"|r)\n\n"+GetAbilityBaseStringFieldById( String2Id( s ), ABILITY_SLF_TOOLTIP_LEARN_EXTENDED )) 
                         else                  
                             call AddFrameText( GetFrameByName("TavernAbilityTooltipText",6), "\n\n"+GetAbilityBaseStringFieldById( String2Id( s ), ABILITY_SF_NAME )+", (|cffffcc00"+IntToChar(GetAbilityBaseIntegerFieldById( String2Id( s ), ABILITY_IF_BUTTON_HOTKEY_NORMAL ))+"|r)\n\n"+GetAbilityBaseStringFieldById( String2Id( s ), ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED ))
@@ -17699,7 +17699,7 @@ function OnButtonSelectHero takes nothing returns nothing
                         call AddFrameText( GetFrameByName("TavernAbilityTooltipText",7), "/")
                         set j=j+1
                         endloop                        
-                        if String2Id( s )=='A105' or String2Id( s )=='A0RS' or String2Id( s )=='A0IR' or String2Id( s )=='CelF' or String2Id( s )=='CelG' or String2Id( s )=='BuuG' or String2Id( s )=='LamF' or String2Id( s )=='LamG' or String2Id( s )=='JnD1' then
+                        if String2Id( s )=='A105' or String2Id( s )=='A0RS' or String2Id( s )=='A0IR' or String2Id( s )=='CelF' or String2Id( s )=='CelG' or String2Id( s )=='BuuG' or String2Id( s )=='LamF' or String2Id( s )=='LamG' or String2Id( s )=='JnD1' or String2Id( s )=='RsG1' then
                             call AddFrameText( GetFrameByName("TavernAbilityTooltipText",7), "\n\n"+GetAbilityBaseStringFieldById( String2Id( s ), ABILITY_SF_NAME )+", (|cffffcc00"+IntToChar(GetAbilityBaseIntegerFieldById( String2Id( s ), ABILITY_IF_BUTTON_HOTKEY_NORMAL ))+"|r)\n\n"+GetAbilityBaseStringFieldById( String2Id( s ), ABILITY_SLF_TOOLTIP_LEARN_EXTENDED )) 
                         else                  
                             call AddFrameText( GetFrameByName("TavernAbilityTooltipText",7), "\n\n"+GetAbilityBaseStringFieldById( String2Id( s ), ABILITY_SF_NAME )+", (|cffffcc00"+IntToChar(GetAbilityBaseIntegerFieldById( String2Id( s ), ABILITY_IF_BUTTON_HOTKEY_NORMAL ))+"|r)\n\n"+GetAbilityBaseStringFieldById( String2Id( s ), ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED ))
@@ -232587,7 +232587,7 @@ call MoveAoe1(x3,y3,caster,0,facing)
 
 
 
-if time>2.52 and UnitIsAlive(target)==false or time>12.5 then
+if time>2.52 and UnitIsAlive(target)==false or time>7.5 then
 call SetUnitFlyHeight(target,0,GetUnitFlyHeight(target))
 
 
@@ -232635,7 +232635,7 @@ call SetUnitMoveSpeed(n0,0)
 
 
 
-call SetUnitMaxLife(n0,GetUnitState(target,UNIT_STATE_LIFE)*0.7)
+call SetUnitMaxLife(n0,GetUnitState(target,UNIT_STATE_LIFE)*0.5)
 
 call SetUnitState(n0,UNIT_STATE_LIFE,GetUnitState(n0,UNIT_STATE_LIFE)-1)
 
@@ -232699,17 +232699,11 @@ endif
 if time>2.5 then
 
 
-if GetUnitAbilityLevel(target,'A2VJ')>0 then
-
-call SaveReal(HH,id,5,12.5)
-
-endif
-
 
 
 call MoveUnit(Dummy,LoadUnitHandle(HH,id,30),0,facing)
-if time<7.5 then
-if time==7.48 then
+if time<6.5 then
+if time==6.48 then
 call SaveReal(HH,id,5,12.5)
 endif
 call MoveUnit(Dummy,Dummy,30,facing)
@@ -232793,7 +232787,9 @@ endif
 call SaveReal(HH,id,32,time3)
 if dist2<=600 then
 call SaveReal(HH,id,5,12.5)
+if GetUnitAbilityLevel(target,'A2VJ')==0 and GetUnitAbilityLevel(target,'A15H')==0 then
 call SaveBoolean(HH,id,25,true)
+endif
 
 endif
 call MoveUnit(target,Dummy,0,facing)
