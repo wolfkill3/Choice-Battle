@@ -1894,11 +1894,11 @@ function myCustomDamage takes unit whichUnit, unit target, real amount, boolean 
 			set currentDmg=currentDmg * 1.2
 		endif
         if GetUnitAbilityLevel(whichUnit, 'RsG2') > 0  then//DMG: -40%
-            set currentDmg=currentDmg * 0.7        
+            set currentDmg=currentDmg * 0.85        
         endif
 
         if GetUnitAbilityLevel(target, 'RsG2') > 0 then//DMG: +40%
-            set currentDmg=currentDmg * 1.3
+            set currentDmg=currentDmg * 1.15
         endif
         // Увеличение урона от прошедшего времени после 6ой минуты.
         if passedTime > 0 then
@@ -2163,7 +2163,7 @@ function myCustomDamage2_inc takes unit whichUnit, real amount returns real
         set currentDmg=currentDmg * 0.8
     endif
     if GetUnitAbilityLevel(whichUnit, 'RsG2') > 0  then//DMG: -40%
-        set currentDmg=currentDmg * 0.7 
+        set currentDmg=currentDmg * 0.85 
     endif
     return currentDmg
     //~ конец модификации уменьшения урона
@@ -2197,7 +2197,7 @@ function myCustomDamage2_dec takes unit target, real amount returns real
             set currentDmg = currentDmg * 1.15
         endif
         if GetUnitAbilityLevel(target, 'RsG2') > 0 then//DMG: +40%
-            set currentDmg=currentDmg * 1.3
+            set currentDmg=currentDmg * 1.15
         endif
         if (IsItemInInventory(target, 'IASS') > 0 or IsItemInInventory(target, 'IASA') > 0 or IsItemInInventory(target, 'IASI') > 0) then
             set currentDmg = currentDmg * 1.1
@@ -17663,7 +17663,7 @@ function OnButtonSelectHero takes nothing returns nothing
                         call AddFrameText( GetFrameByName("TavernAbilityTooltipText",5), "/")
                         set j=j+1
                         endloop   
-                        if String2Id( s )=='A105' or String2Id( s )=='A0RS' or String2Id( s )=='A0IR' or String2Id( s )=='CelF' or String2Id( s )=='CelG' or String2Id( s )=='BuuG' or String2Id( s )=='LamF' or String2Id( s )=='LamG' or String2Id( s )=='JnD1' then
+                        if String2Id( s )=='A105' or String2Id( s )=='A0RS' or String2Id( s )=='A0IR' or String2Id( s )=='CelF' or String2Id( s )=='CelG' or String2Id( s )=='BuuG' or String2Id( s )=='LamF' or String2Id( s )=='LamG' or String2Id( s )=='JnD1' or String2Id( s )=='RsG1' then
                             call AddFrameText( GetFrameByName("TavernAbilityTooltipText",5), "\n\n"+GetAbilityBaseStringFieldById( String2Id( s ), ABILITY_SF_NAME )+", (|cffffcc00"+IntToChar(GetAbilityBaseIntegerFieldById( String2Id( s ), ABILITY_IF_BUTTON_HOTKEY_NORMAL ))+"|r)\n\n"+GetAbilityBaseStringFieldById( String2Id( s ), ABILITY_SLF_TOOLTIP_LEARN_EXTENDED )) 
                         else                  
                             call AddFrameText( GetFrameByName("TavernAbilityTooltipText",5), "\n\n"+GetAbilityBaseStringFieldById( String2Id( s ), ABILITY_SF_NAME )+", (|cffffcc00"+IntToChar(GetAbilityBaseIntegerFieldById( String2Id( s ), ABILITY_IF_BUTTON_HOTKEY_NORMAL ))+"|r)\n\n"+GetAbilityBaseStringFieldById( String2Id( s ), ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED ))
@@ -17681,7 +17681,7 @@ function OnButtonSelectHero takes nothing returns nothing
                         call AddFrameText( GetFrameByName("TavernAbilityTooltipText",6), "/")
                         set j=j+1
                         endloop                        
-                        if String2Id( s )=='A105' or String2Id( s )=='A0RS' or String2Id( s )=='A0IR' or String2Id( s )=='CelF' or String2Id( s )=='CelG' or String2Id( s )=='BuuG' or String2Id( s )=='LamF' or String2Id( s )=='LamG' or String2Id( s )=='JnD1' then
+                        if String2Id( s )=='A105' or String2Id( s )=='A0RS' or String2Id( s )=='A0IR' or String2Id( s )=='CelF' or String2Id( s )=='CelG' or String2Id( s )=='BuuG' or String2Id( s )=='LamF' or String2Id( s )=='LamG' or String2Id( s )=='JnD1' or String2Id( s )=='RsG1' then
                             call AddFrameText( GetFrameByName("TavernAbilityTooltipText",6), "\n\n"+GetAbilityBaseStringFieldById( String2Id( s ), ABILITY_SF_NAME )+", (|cffffcc00"+IntToChar(GetAbilityBaseIntegerFieldById( String2Id( s ), ABILITY_IF_BUTTON_HOTKEY_NORMAL ))+"|r)\n\n"+GetAbilityBaseStringFieldById( String2Id( s ), ABILITY_SLF_TOOLTIP_LEARN_EXTENDED )) 
                         else                  
                             call AddFrameText( GetFrameByName("TavernAbilityTooltipText",6), "\n\n"+GetAbilityBaseStringFieldById( String2Id( s ), ABILITY_SF_NAME )+", (|cffffcc00"+IntToChar(GetAbilityBaseIntegerFieldById( String2Id( s ), ABILITY_IF_BUTTON_HOTKEY_NORMAL ))+"|r)\n\n"+GetAbilityBaseStringFieldById( String2Id( s ), ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED ))
@@ -17699,7 +17699,7 @@ function OnButtonSelectHero takes nothing returns nothing
                         call AddFrameText( GetFrameByName("TavernAbilityTooltipText",7), "/")
                         set j=j+1
                         endloop                        
-                        if String2Id( s )=='A105' or String2Id( s )=='A0RS' or String2Id( s )=='A0IR' or String2Id( s )=='CelF' or String2Id( s )=='CelG' or String2Id( s )=='BuuG' or String2Id( s )=='LamF' or String2Id( s )=='LamG' or String2Id( s )=='JnD1' then
+                        if String2Id( s )=='A105' or String2Id( s )=='A0RS' or String2Id( s )=='A0IR' or String2Id( s )=='CelF' or String2Id( s )=='CelG' or String2Id( s )=='BuuG' or String2Id( s )=='LamF' or String2Id( s )=='LamG' or String2Id( s )=='JnD1' or String2Id( s )=='RsG1' then
                             call AddFrameText( GetFrameByName("TavernAbilityTooltipText",7), "\n\n"+GetAbilityBaseStringFieldById( String2Id( s ), ABILITY_SF_NAME )+", (|cffffcc00"+IntToChar(GetAbilityBaseIntegerFieldById( String2Id( s ), ABILITY_IF_BUTTON_HOTKEY_NORMAL ))+"|r)\n\n"+GetAbilityBaseStringFieldById( String2Id( s ), ABILITY_SLF_TOOLTIP_LEARN_EXTENDED )) 
                         else                  
                             call AddFrameText( GetFrameByName("TavernAbilityTooltipText",7), "\n\n"+GetAbilityBaseStringFieldById( String2Id( s ), ABILITY_SF_NAME )+", (|cffffcc00"+IntToChar(GetAbilityBaseIntegerFieldById( String2Id( s ), ABILITY_IF_BUTTON_HOTKEY_NORMAL ))+"|r)\n\n"+GetAbilityBaseStringFieldById( String2Id( s ), ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED ))
@@ -36765,6 +36765,22 @@ endloop
 set caster0=null
 endfunction
 
+function DamageAoeAndSilence takes unit caster0,real x00,real y00,real range0,real damage,real duration0 returns nothing
+call GroupClear(G)
+call GroupEnumUnitsInRange(G,x00,y00,range0,Base)
+loop
+set n0=FirstOfGroup(G)
+exitwhen n0==null
+if  Condition_Base(GetOwningPlayer(caster0),n0)  then
+//call UnitStop(n0)
+call myCustomDamage(caster0,n0,damage,false,false,null,null,null)
+call SetControlToUnit(caster0,n0, duration0, "SilenceTE")
+endif
+call GroupRemoveUnit(G,n0)
+endloop
+set caster0=null
+endfunction
+
 //aizen5start
 
 
@@ -47719,7 +47735,7 @@ call TriggerAddCondition(gg_trg_SunStrike,Condition(function SunStrikeCond))
 call TriggerAddAction(gg_trg_SunStrike,function SunStrikeCast)
 endfunction
 function AkatsukiSetCond takes nothing returns boolean
-return GetHeroPrimaryAttribute(GetTriggerUnit())==HERO_ATTRIBUTE_INT and  GetSpellAbilityId()!='ASGG' and GetSpellAbilityId()!='A1I3' and GetSpellAbilityId()!='A11G' and GetSpellAbilityId()!='A1G2' and GetSpellAbilityId()!='A1G1' and GetSpellAbilityId()!='A16E' and GetSpellAbilityId()!='A1AA' and GetSpellAbilityId()!='A1AB' and GetSpellAbilityId()!='A11E' and GetSpellAbilityId()!='A11D' and GetSpellAbilityId()!='A11F' and UnitHasItemOfTypeBJ(GetTriggerUnit(),'I040')and GetSpellAbilityId()!='A0N1' and GetSpellAbilityId()!='A0N2' and GetSpellAbilityId()!='A0A2' and GetSpellAbilityId()!='A0EH' and GetSpellAbilityId()!='A0UG' and GetSpellAbilityId()!='AaS0' and GetSpellAbilityId()!='A1I3' and GetSpellAbilityId()!='A0X6'  and GetSpellAbilityId()!='A0B3' and GetSpellAbilityId()!='A0N0' and GetSpellAbilityId()!='A40C' and GetSpellAbilityId()!='A30C' and GetSpellAbilityId()!='MadD' and GetSpellAbilityId()!='TMF0' and GetSpellAbilityId()!='TMF2' and GetSpellAbilityId()!='A06J' and GetSpellAbilityId()!='A0VQ' and GetSpellAbilityId()!='A0HX' and GetSpellAbilityId()!='A2HX' and GetSpellAbilityId()!='A14T' and GetSpellAbilityId()!='A19O' and GetSpellAbilityId()!='MrF2' and GetSpellAbilityId()!='MrG1' and GetSpellAbilityId()!='MrG2' and udg_B==true
+return GetHeroPrimaryAttribute(GetTriggerUnit())==HERO_ATTRIBUTE_INT and  GetSpellAbilityId()!='ASGG' and GetSpellAbilityId()!='A1I3' and GetSpellAbilityId()!='A11G' and GetSpellAbilityId()!='A1G2' and GetSpellAbilityId()!='A1G1' and GetSpellAbilityId()!='A16E' and GetSpellAbilityId()!='A1AA' and GetSpellAbilityId()!='A1AB' and GetSpellAbilityId()!='A11E' and GetSpellAbilityId()!='A11D' and GetSpellAbilityId()!='A11F' and UnitHasItemOfTypeBJ(GetTriggerUnit(),'I040')and GetSpellAbilityId()!='A0N1' and GetSpellAbilityId()!='A0N2' and GetSpellAbilityId()!='A0A2' and GetSpellAbilityId()!='A0EH' and GetSpellAbilityId()!='A0UG' and GetSpellAbilityId()!='AaS0' and GetSpellAbilityId()!='A1I3' and GetSpellAbilityId()!='A0X6'  and GetSpellAbilityId()!='A0B3' and GetSpellAbilityId()!='A0N0' and GetSpellAbilityId()!='A40C' and GetSpellAbilityId()!='A30C' and GetSpellAbilityId()!='MadD' and GetSpellAbilityId()!='TMF0' and GetSpellAbilityId()!='TMF2' and GetSpellAbilityId()!='A06J' and GetSpellAbilityId()!='A0VQ' and GetSpellAbilityId()!='A0HX' and GetSpellAbilityId()!='A2HX' and GetSpellAbilityId()!='A14T' and GetSpellAbilityId()!='A19O' and GetSpellAbilityId()!='MrF2' and GetSpellAbilityId()!='MrG1' and GetSpellAbilityId()!='MrG2' and udg_B==true // and GetSpellAbilityId()!='LawQ' and GetSpellAbilityId()!='LawW'
 endfunction
 function AkatsukiSetCast2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
@@ -47735,7 +47751,7 @@ function AkatsukiSetCast takes nothing returns nothing
 local timer t=CreateTimer()
 local unit u=GetTriggerUnit()
 local integer id=GetHandleId(t)
-if (GetSpellAbilityId()=='MaE1' and GetUnitAbilityLevel(GetSpellTargetUnit(), 'Wome')>0 and ((IsUnitAlly(GetSpellTargetUnit(), GetOwningPlayer(u))==false and GetWidgetLife(GetSpellTargetUnit()) > GetWidgetMaxLife(GetSpellTargetUnit()) * 0.3) or GetUnitAbilityLevel(GetSpellTargetUnit(), 'MaE3')>0)) or (GetSpellAbilityId()=='BoPA' and (u==GetSpellTargetUnit() or GetSpellTargetItem()==GetAbilityOwningItem(GetTriggerAbility()))) then
+if (GetSpellAbilityId()=='MaE1' and GetUnitAbilityLevel(GetSpellTargetUnit(), 'Wome')>0 and ((IsUnitAlly(GetSpellTargetUnit(), GetOwningPlayer(u))==false and GetWidgetLife(GetSpellTargetUnit()) > GetWidgetMaxLife(GetSpellTargetUnit()) * 0.3) or GetUnitAbilityLevel(GetSpellTargetUnit(), 'MaE3')>0)) or (GetSpellAbilityId()=='BoPA' and (u==GetSpellTargetUnit() or GetSpellTargetItem()==GetAbilityOwningItem(GetTriggerAbility()))) or ((GetSpellAbilityId()=='LawQ' or GetSpellAbilityId()=='LawW' or GetSpellAbilityId()=='A0KB') and LoadBoolean(h, GetHandleId(u), StringHash("MassiveRoomBoolean"))==false and not((SquareRootPoint(GetSpellTargetX(), GetSpellTargetY(), LoadReal(h, GetHandleId(u), StringHash("Room_X")), LoadReal(h, GetHandleId(u), StringHash("Room_Y")))<=1000 and LoadBoolean(h, GetHandleId(u), StringHash("RoomBoolean"))))) then
     call DestroyTimer(t)
 else
     if u==udg_DM[GetPlayerId(GetOwningPlayer(u))+1] then
@@ -113150,37 +113166,37 @@ call UnitSize(LoadUnitHandle(HH,id,20),0.1+time*4,1,1)
 call UnitSize(LoadUnitHandle(HH,id,21),3+time*14,1,1)
 call UnitSize(LoadUnitHandle(HH,id,22),0.1+time*6,1,1)
 call UnitSize(LoadUnitHandle(HH,id,23),0.1+time*4,1,1)
-call GroupEnumUnitsInRange(G,x0,y0,300+time*1400,Base)
-else
-call GroupEnumUnitsInRange(G,x0,y0,1000,Base)
+// call GroupEnumUnitsInRange(G,x0,y0,300+time*1400,Base)
+// else
+// call GroupEnumUnitsInRange(G,x0,y0,1000,Base)
 endif
-loop
-set n0=FirstOfGroup(G)
-exitwhen n0==null
-if Condition_Base_Random(caster,n0)then
+// loop
+// set n0=FirstOfGroup(G)
+// exitwhen n0==null
+// if Condition_Base_Random(caster,n0)then
 
-if IsUnitInGroup(n0,gr)==false then
-call GroupAddUnit(gr,n0)
-endif
-if time<0.5 then
-if SR(x0,y0,GetUnitX(n0),GetUnitY(n0))<300+time*1400 then
-set facing=Angle2(x0,y0,GetUnitX(n0),GetUnitY(n0))
-call MoveUnit(n0,n0,30,facing)
-endif
-else
-if SR(x0,y0,GetUnitX(n0),GetUnitY(n0))<1000 then
-set facing=Angle2(x0,y0,GetUnitX(n0),GetUnitY(n0))
-call MoveUnit(Dummy,n0,1000,facing)
-endif
-endif
-endif
+//     if IsUnitInGroup(n0,gr)==false then
+//         call GroupAddUnit(gr,n0)
+//     endif
+//     if time<0.5 then
+//         if SR(x0,y0,GetUnitX(n0),GetUnitY(n0))<300+time*1400 then
+//             set facing=Angle2(x0,y0,GetUnitX(n0),GetUnitY(n0))
+//             call MoveUnit(n0,n0,30,facing)
+//         endif
+//     else
+//         if SR(x0,y0,GetUnitX(n0),GetUnitY(n0))<1000 then
+//             set facing=Angle2(x0,y0,GetUnitX(n0),GetUnitY(n0))
+//             call MoveUnit(Dummy,n0,1000,facing)
+//         endif
+//     endif
+// endif
 
-call GroupRemoveUnit(G,n0)
-endloop
+// call GroupRemoveUnit(G,n0)
+// endloop
 
 
-call SaveGroupHandle(HH,id,4,gr)
-call GroupClear(G)
+// call SaveGroupHandle(HH,id,4,gr)
+// call GroupClear(G)
 
 
 
@@ -113274,9 +113290,9 @@ call GroupClear(g)
 
 if time1==0.2 or time==0.02 then
 if time<0.5 then
-call DamageAoeAndStun(caster,GetUnitX(caster),GetUnitY(caster),400+time*1400,damage*0.07,0.3)
+call DamageAoeAndSilence(caster,GetUnitX(caster),GetUnitY(caster),400+time*1400,damage*0.07,0.3)
 else
-call DamageAoeAndStun(caster,GetUnitX(caster),GetUnitY(caster),1200,damage*0.07,0.3)
+call DamageAoeAndSilence(caster,GetUnitX(caster),GetUnitY(caster),1200,damage*0.07,0.3)
 endif
 endif
 if time==0.02 or time1>=0.2 then
@@ -175644,6 +175660,7 @@ function LawNewQ_Cast takes unit newCaster, real point_x, real point_y, timer ne
                 call SaveUnitHandle(h, id, CasterHash, newCaster)
                 call SaveGroupHandle(h, id, GroupHash, CreateGroup())
                 call TimerStart(newTimer, 0.01, true, function LawNewQ_Periodic)
+
         else
                 call IssueImmediateOrder(newCaster, "stop")
                 call StartAbilityCooldown(GetUnitAbility(newCaster, 'LawQ'), 3)
@@ -217977,7 +217994,7 @@ endfunction
             endif
             if SquareRoot(( GetUnitX(LoadUnit("Dummy")) - x2 ) * ( GetUnitX(LoadUnit("Dummy")) - x2 ) + ( GetUnitY(LoadUnit("Dummy")) - y2 ) * ( GetUnitY(LoadUnit("Dummy")) - y2 )) > 65 and udg_B==true and DU2==true then
                 call SaveReal(HH, id, StringHash("dist"), dist + 7)
-                call SetUnitXY_1(LoadUnit("Dummy") , GetUnitX(LoadUnit("Dummy")) + 7 * Cos(ang) , GetUnitY(LoadUnit("Dummy")) + 7 * Sin(ang) , false)
+                call SetUnitXY_1(LoadUnit("Dummy") , GetUnitX(LoadUnit("Dummy")) + 10 * Cos(ang) , GetUnitY(LoadUnit("Dummy")) + 10 * Sin(ang) , false)
                 call SetUnitFlyHeight(LoadUnit("Dummy"),ParabolaZ(500,sr-30,sr-30-dist)+150,0)
             elseif time3==0 or udg_B==false then
                 set soundplay=CreateSound("Sound\\Music\\mp3Music\\[ANP]SakataGintokiR02.mp3", false, false, true, 12700, 12700, "")
@@ -218065,7 +218082,7 @@ endfunction
             endloop
         endif
         call SaveReal(HH, id, TIME_HASH, time + 0.01)
-        if time == 1 then
+        if time == 0.7 then
             call SetUnitAnimation(LoadUnitHandle(HH,MUIHandle(),CasterHash),"Stand")
             call PauseUnit(LoadUnitHandle(HH,MUIHandle(),CasterHash), false)
             call GroupClear(LoadGroup("group"))
@@ -232587,7 +232604,7 @@ call MoveAoe1(x3,y3,caster,0,facing)
 
 
 
-if time>2.52 and UnitIsAlive(target)==false or time>12.5 then
+if time>2.52 and UnitIsAlive(target)==false or time>7.5 then
 call SetUnitFlyHeight(target,0,GetUnitFlyHeight(target))
 
 
@@ -232635,7 +232652,7 @@ call SetUnitMoveSpeed(n0,0)
 
 
 
-call SetUnitMaxLife(n0,GetUnitState(target,UNIT_STATE_LIFE)*0.7)
+call SetUnitMaxLife(n0,GetUnitState(target,UNIT_STATE_LIFE)*0.5)
 
 call SetUnitState(n0,UNIT_STATE_LIFE,GetUnitState(n0,UNIT_STATE_LIFE)-1)
 
@@ -232699,17 +232716,11 @@ endif
 if time>2.5 then
 
 
-if GetUnitAbilityLevel(target,'A2VJ')>0 then
-
-call SaveReal(HH,id,5,12.5)
-
-endif
-
 
 
 call MoveUnit(Dummy,LoadUnitHandle(HH,id,30),0,facing)
-if time<7.5 then
-if time==7.48 then
+if time<6.5 then
+if time==6.48 then
 call SaveReal(HH,id,5,12.5)
 endif
 call MoveUnit(Dummy,Dummy,30,facing)
@@ -232793,7 +232804,9 @@ endif
 call SaveReal(HH,id,32,time3)
 if dist2<=600 then
 call SaveReal(HH,id,5,12.5)
+if GetUnitAbilityLevel(target,'A2VJ')==0 and GetUnitAbilityLevel(target,'A15H')==0 then
 call SaveBoolean(HH,id,25,true)
+endif
 
 endif
 call MoveUnit(target,Dummy,0,facing)
