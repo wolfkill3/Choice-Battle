@@ -6558,7 +6558,7 @@ call ForGroup(g,function GroupAddGroupEnum)
 return bj_groupAddGroupDest
 endfunction
 function Condition_RecipeString takes integer id returns boolean
-return id=='I00E' or id=='I01P' or id=='I01R' or id=='I01T' or id=='I01V' or id=='I02U' or id=='I02X' or id=='I02Z' or id=='I045' or id=='I047' or id=='I04Y' or id=='I04U' or id=='I04X' or id=='I04Z' or id=='I051' or id=='I14R' or id=='IGDr' or id=='IPar' or id=='IHYr' or id=='ISTr' or id=='IBSR' or id=='I052' or id=='I053' or id=='I055' or id=='I06P' or id=='I06S' or id=='I06T' or id=='IPRR' or id=='IPlR' or id=='IBS1' or id=='IYM0' or id=='IGn0' or id=='IBN0' or id=='IGP0' or id=='IVS0'
+return id=='I00E' or id=='I01P' or id=='I01R' or id=='I01T' or id=='I01V' or id=='I02U' or id=='I02X' or id=='I02Z' or id=='I045' or id=='I047' or id=='I04Y' or id=='I04U' or id=='I04X' or id=='I04Z' or id=='I051' or id=='I14R' or id=='IGDr' or id=='IPar' or id=='IHYr' or id=='ISTr' or id=='IBSR' or id=='I052' or id=='I053' or id=='I055' or id=='I06P' or id=='I06S' or id=='I06T' or id=='IPRR' or id=='IPlR' or id=='IBS1' or id=='IYM0' or id=='IGn0' or id=='IBN0' or id=='IGP0' or id=='IVS0' or id=='ISS0' or id=='ITS0'
 endfunction
 function Condition_AbilityString3 takes integer id returns boolean
 return id=='OM13' or id=='A17D' or id=='A177' or id=='A172' or id=='A16U' or id=='A0TN'  or id=='MrF1' or id=='MrT1' or id=='MrG2' or id=='RsT1' or id=='RsF1' or id=='SiF1' or id=='SiF2' or id=='SiE1' or id=='SiE2'
@@ -239812,6 +239812,8 @@ call UIS_RegisterItem('I06H','IMT0','INY0','IMS0',0,0,0,0,0,0,'IYM0','I04T')    
 call UIS_RegisterItem('IMS0','ISt0','IMS0',0,0,0,0,0,0,0,'IBN0','I037')                            // Башосен
 call UIS_RegisterItem('IMS0','ISt0','IMS0',0,0,0,0,0,0,0,'IGP0','I06Z')                            // Grimoir
 call UIS_RegisterItem('I01M','INY0','I00F',0,0,0,0,0,0,0,'IVS0','I03R')                            // Сфера пустоты
+call UIS_RegisterItem('I01M','IMS0','I00L',0,0,0,0,0,0,0,'ISS0','I03Q')                            // Сфера Пространства
+call UIS_RegisterItem('I01M','IMT0','I04M',0,0,0,0,0,0,0,'ITS0','I03P')                            // Сфера Времени
 call UIS_RegisterItem('IOS3','IOS4','IOS2','IOS1',0,0,0,0,0,0,0,'I1S4')
 call UIS_RegisterItem('I01Z','I02T',0,0,0,0,0,0,0,0,'I052','I04G')
 // call UIS_RegisterItem('I03B','I01I',0,'I053',0,0,'I038') //old Kosa
