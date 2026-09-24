@@ -1164,6 +1164,55 @@ integer array kazu
 
 integer array GutsStr //Buu: накопленная сила Кушу
 unit array UArray//буфер под выбор случайной цели, из переносов 4.5
+//Shop32Globals
+framehandle ShMain=null
+framehandle ShList=null
+framehandle ShCraft=null
+framehandle ShDesc=null
+framehandle ShInv=null
+framehandle ShCraftGoldTxt=null
+framehandle ShDescName=null
+framehandle ShDescBody=null
+framehandle ShInvName=null
+framehandle ShBuyBtn=null
+framehandle ShSellBtn=null
+framehandle ShUpgBtn=null
+framehandle ShPrevBtn=null
+framehandle ShPageTxt=null
+framehandle ShNextBtn=null
+framehandle ShGoldTxt=null
+framehandle array ShSecBtn
+framehandle array ShRim
+framehandle array ShCraftRim
+framehandle array ShInvRim
+framehandle array ShItemBtn
+framehandle array ShItemBack
+framehandle array ShItemCost
+framehandle array ShItemTip
+framehandle array ShCraftBtn
+framehandle array ShCraftBack
+framehandle array ShCraftCost
+framehandle array ShInvBtn
+framehandle array ShInvBack
+framehandle array ShInvCost
+framehandle array ShInvTip
+string array ShSecName
+integer array ShSecCnt
+integer array ShSecItem
+integer ShSecTotal=0
+integer ShTipCtx=9000
+// показ у каждого игрока свой: эти переменные НЕ трогают состояние игры
+integer array ShSel
+integer array ShSelSec
+integer array ShPage
+integer array ShInvSel
+integer ShLastGold=-1
+integer array ShLastInv
+boolean ShBuilt=false
+boolean ShOpened=false
+trigger ShTrgClick=null
+trigger ShTrgSync=null
+//Shop32GlobalsEnd
 endglobals
 native MergeUnits       takes integer qty, integer a, integer b, integer make returns boolean   // reserved native for call 4 integer function and return BOOLEAN value
 native ConvertUnits takes integer qty, integer id returns boolean                                                       // reserved native for call 2 integer function and return BOOLEAN value (can be converted to int!)
@@ -8489,6 +8538,9 @@ call PreloadSound("Voice\\MisakaSummon.mp3")
 call PreloadSound("Voice\\EdmondDantesSummon.mp3")
 call PreloadSound("Voice\\KireiSummon.mp3")
 call PreloadSound("Voice\\GarpSummon.mp3")
+//Barragan1start
+call PreloadSound("Voice\\BarraganSummon.mp3")
+//Barragan1end
 call PreloadSound("Voice\\OrochimaruSummon.mp3")
 call PreloadSound("Voice\\NeroPadoruPick.mp3")
 call PreloadSound("Voice\\MidoriyaPick.mp3")
@@ -9137,6 +9189,43 @@ set l__s="GojoSummon.mp3"
 elseif id=='HGrp' then
 set l__s="GarpSummon.mp3"
 
+//Barragan1start
+elseif id=='HBrg' then
+set l__s="BarraganSummon.mp3"
+//Barragan1end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 elseif id=='HSig' then
 set l__s="SignumSummon.mp3"
 
@@ -9646,6 +9735,9 @@ set udg_RH[137]='HGrp'//Garp
 //set udg_RH[127]='HIc3'
 set udg_RH[138]='HSig'//Signum
 set udg_RH[139]='Rosh'//Мутен Роши
+//Barragan1start
+// set udg_RH[140]='HBrg'//Baraggan
+//Barragan1end
 loop
 exitwhen i>=210
         if udg_RH[i]!=0 then
@@ -9796,6 +9888,7 @@ set udg_RH2[136]="Gojo"
 set udg_RH2[137]="Garp"
 set udg_RH2[138]="Signum"
 set udg_RH2[139]="Muten Roshi"
+// set udg_RH2[140]="Baraggan"
 call DestroyTrigger(GetTriggeringTrigger())
 endfunction
 function InitTrig_Init takes nothing returns nothing
@@ -28498,6 +28591,9 @@ if cmb!=true then
 //Garp1start
         call IH('HGrp',u,"ReplaceableTextures\\CommandButtons\\BTNGarp.blp")
 //Garp1end
+//Barragan1start
+        call IH('HBrg',u,"ReplaceableTextures\\CommandButtons\\BTNHero_Barragan_Icon.blp")
+//Barragan1end
         call IH('H060',u,"ReplaceableTextures\\CommandButtons\\BTNWhitebeard.blp")
         call IH('H061',u,"ReplaceableTextures\\CommandButtons\\BTNRyougi.blp")
         call IH('H063',u,"ReplaceableTextures\\CommandButtons\\BTNFrenda.blp")
@@ -42828,6 +42924,1214 @@ function JirenF2_Cast takes unit u returns nothing
     set t=null
 endfunction
 
+//Barragan1start — Baraggan Louisenbairn, набор переделан 22 сен 2026: герой ВСЕГДА в Resurreccion
+// (модель wos_Barragan2), превращения нет. Q волна топором до первой цели, W две волны старения,
+// E конус старения, R Respira, T Gran Caida (+T2 бросок), F телепорт, G покров Respira, D метка.
+// На время каста герой заперт (движение/атака/кнопки), но НЕ в паузе — пауза морозит кадр анимации.
+// Анимации модели: 0 Spell Four, 4 Spell Two, 5 Spell Three, 6 Spell One, 8/9/10 Attack 1/2/3.
+function Brg_Sound takes string path returns nothing
+set soundplay=CreateSound(path,false,false,true,12700,1200,"")
+call SetSoundVolume(soundplay,127)
+call StartSound(soundplay)
+endfunction
+// Облако старения. У модели одна анимация Stand на 5 секунд и НЕТ анимации
+// смерти: в 1.26 DestroyEffect такую не снимает, она доигрывает и застывает
+// плоской гранью (это и был «фиолетовый треугольник»). Поэтому держим её на
+// дамми и снимаем RemoveUnit'ом — юнит уходит вместе с моделью.
+// ☠️ CreateUnit может вернуть ничего (лимит юнитов) — без проверки это краш
+// по нулевому указателю, уже проходили.
+function Brg_Cloud takes unit caster,string path,real x,real y,real z,real size,real tscale,real life returns nothing
+local unit u=CreateUnit(GetOwningPlayer(caster),'e200',x,y,GetRandomReal(0,360))
+if u!=null then
+call SetUnitModel(u,path)
+call UnitSize(u,size,size,size)
+call SetUnitFlyHeight(u,z,0)
+call SetUnitTimeScale(u,tscale)
+call MyRemoveUnit(u,life)
+endif
+set u=null
+endfunction
+// эффект в точке: масштаб, скорость, высота; life<=0 — обычный DestroyEffect (играет death)
+function Brg_Fx takes string path,real x,real y,real z,real scale,real tscale,real life returns nothing
+set EFF=AddSpecialEffect(path,x,y)
+if EFF!=null then
+call SetSpecialEffectScale(EFF,scale)
+if z!=0 then
+call SetSpecialEffectZ(EFF,z)
+endif
+if tscale!=1 then
+call SetSpecialEffectTimeScale(EFF,tscale)
+endif
+if life>0 then
+call RemoveEffect(EFF,life,false,CreateTimer())
+else
+call DestroyEffect(EFF)
+endif
+endif
+endfunction
+// то же с поворотом (градусы) и цветом (0..255)
+function Brg_FxC takes string path,real x,real y,real z,real scale,real tscale,real life,real facing,integer r,integer g,integer b,integer alpha returns nothing
+set EFF=AddSpecialEffect(path,x,y)
+if EFF!=null then
+call SetSpecialEffectScale(EFF,scale)
+if z!=0 then
+call SetSpecialEffectZ(EFF,z)
+endif
+if tscale!=1 then
+call SetSpecialEffectTimeScale(EFF,tscale)
+endif
+call SetSpecialEffectFacing(EFF,facing)
+call SetSpecialEffectVertexColour(EFF,r,g,b,alpha)
+if life>0 then
+call RemoveEffect(EFF,life,false,CreateTimer())
+else
+call DestroyEffect(EFF)
+endif
+endif
+endfunction
+// Неуязвимость на время каста. Отдельно от паузы: пауза не спасает от урона.
+// Снимаем только то, что сами выдали, чтобы не сорвать чужую защиту.
+function Brg_Invul takes unit caster,boolean on returns nothing
+local integer uid=GetHandleId(caster)
+if on then
+if GetUnitAbilityLevel(caster,'Avul')==0 then
+call UnitAddAbility(caster,'Avul')
+call SaveBoolean(HH,uid,StringHash("BrgAvul"),true)
+endif
+elseif LoadBoolean(HH,uid,StringHash("BrgAvul")) then
+call UnitRemoveAbility(caster,'Avul')
+call SaveBoolean(HH,uid,StringHash("BrgAvul"),false)
+endif
+endfunction
+// ЗАМОК НА ВРЕМЯ КАСТА. PauseUnit морозит кадр анимации, а рут 'A1FU' только
+// отнимает скорость — под ним герой спокойно берёт цель и кастует дальше.
+// Идиома карты (так же заперт Гоку на Генки-даме): движение и атака отключаются
+// нативами UjAPI, а кнопки умений гасятся DisableUnitAbility2. Анимация при этом играет.
+function Brg_Lock takes unit caster,boolean on,integer skip returns nothing
+local integer i=0
+local integer a
+// Владелец просил настоящую паузу и не беспокоиться об анимации:
+// PauseUnit морозит кадр, зато каст не сбивается ничем.
+call PauseUnit(caster,on)
+if on==false then
+call Brg_Invul(caster,false)
+endif
+loop
+exitwhen i>8
+if i==0 then
+set a='BbQ1'
+elseif i==1 then
+set a='BbW1'
+elseif i==2 then
+set a='BbE1'
+elseif i==3 then
+set a='BbR1'
+elseif i==4 then
+set a='BbT1'
+elseif i==5 then
+set a='BbT2'
+elseif i==6 then
+set a='BbD1'
+elseif i==7 then
+set a='BbF1'
+else
+set a='BbGb'
+endif
+if a!=skip and GetUnitAbilityLevel(caster,a)>0 then
+if on then
+call DisableUnitAbility2(caster,a,false,true)
+else
+call EnableUnitAbility2(caster,a,false,true)
+endif
+endif
+set i=i+1
+endloop
+endfunction
+function Brg_HasT takes unit u returns boolean
+return GetUnitAbilityLevel(u,'BbTm')>0
+endfunction
+function Brg_HasG takes unit u returns boolean
+return GetUnitAbilityLevel(u,'BbGm')>0
+endfunction
+// ===== урон по времени: total за dur с шагом per =====
+function Brg_Dot_Act takes nothing returns nothing
+local timer t=GetExpiredTimer()
+local integer id=GetHandleId(t)
+local unit caster=LoadUnitHandle(HH,id,1)
+local unit target=LoadUnitHandle(HH,id,2)
+local real left=LoadReal(HH,id,6)-LoadReal(HH,id,7)
+call SaveReal(HH,id,6,left)
+if UnitIsAlive(target) and UnitIsAlive(caster) and udg_B and left>-0.01 then
+call myCustomDamage(caster,target,LoadReal(HH,id,15),false,false,null,null,null)
+else
+if LoadEffectHandle(HH,id,10)!=null then
+call DestroyEffect(LoadEffectHandle(HH,id,10))
+call SaveEffectHandle(HH,id,10,null)
+endif
+call PauseTimer(t)
+call DestroyTimer(t)
+call FlushChildHashtable(HH,id)
+endif
+set caster=null
+set target=null
+set t=null
+endfunction
+function Brg_Dot takes unit caster,unit target,real total,real dur,real per,string fx returns nothing
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+call SaveUnitHandle(HH,id,1,caster)
+call SaveUnitHandle(HH,id,2,target)
+call SaveReal(HH,id,6,dur)
+call SaveReal(HH,id,7,per)
+call SaveReal(HH,id,15,total*per/dur)
+if fx!="" then
+// пустой путь означает «без метки»: так проверяем, чья это плоская грань
+if fx!="" then
+call SaveEffectHandle(HH,id,10,AddSpecialEffectTarget(fx,target,"origin"))
+endif
+endif
+call TimerStart(t,per,true,function Brg_Dot_Act)
+set t=null
+endfunction
+// Senescencia — пассивка (живёт в G): 2*INT за 3 c, под покровом G вдвое больнее
+function Brg_Burn takes unit caster,unit target returns nothing
+local real dmg=2.0*I2R(GetHeroInt(caster,true))
+if Brg_HasG(caster) then
+set dmg=dmg*2.0
+endif
+call Brg_Dot(caster,target,dmg,3.0,0.5,"war3mapImported\\wos_zz-fire-ore-hit1-zihei_2.mdx")
+endfunction
+// ===== отложенный удар (бонус атаки при Gran Caida) =====
+function Brg_Delay_Act takes nothing returns nothing
+local timer t=GetExpiredTimer()
+local integer id=GetHandleId(t)
+local unit caster=LoadUnitHandle(HH,id,1)
+local unit target=LoadUnitHandle(HH,id,2)
+if UnitIsAlive(target) and UnitIsAlive(caster) and udg_B then
+call myCustomDamage(caster,target,LoadReal(HH,id,15),false,false,null,null,null)
+endif
+call DestroyTimer(t)
+call FlushChildHashtable(HH,id)
+set caster=null
+set target=null
+set t=null
+endfunction
+function Brg_Delay takes unit caster,unit target,real dmg,real delay returns nothing
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+call SaveUnitHandle(HH,id,1,caster)
+call SaveUnitHandle(HH,id,2,target)
+call SaveReal(HH,id,15,dmg)
+call TimerStart(t,delay,false,function Brg_Delay_Act)
+set t=null
+endfunction
+// снять замок, когда каст доиграл (общий хвост всех умений)
+function Brg_Free_Act takes nothing returns nothing
+local timer t=GetExpiredTimer()
+local integer id=GetHandleId(t)
+local unit caster=LoadUnitHandle(HH,id,1)
+call Brg_Lock(caster,false,0)
+call SetUnitTimeScale(caster,1)
+call DestroyTimer(t)
+call FlushChildHashtable(HH,id)
+set caster=null
+set t=null
+endfunction
+function Brg_Free takes unit caster,real time returns nothing
+local timer t=CreateTimer()
+call SaveUnitHandle(HH,GetHandleId(t),1,caster)
+call TimerStart(t,time,false,function Brg_Free_Act)
+set t=null
+endfunction
+// ===== Q — Cero: взмах топором, волна летит вперёд и бьёт первую цель =====
+function Brg_Q_Act2 takes nothing returns nothing
+local timer t=GetExpiredTimer()
+local effect eff1
+local unit eye
+local integer i
+local real tx
+local integer id=GetHandleId(t)
+local unit caster=LoadUnitHandle(HH,id,1)
+local real time=LoadReal(HH,id,5)+0.02
+local real facing=LoadReal(HH,id,3)
+local real x0=LoadReal(HH,id,11)
+local real y0=LoadReal(HH,id,12)
+local real dist=LoadReal(HH,id,13)
+local real dmg=LoadReal(HH,id,16)
+local real px
+local real py
+local group gr=LoadGroupHandle(HH,id,4)
+call SaveReal(HH,id,5,time)
+if UnitIsAlive(caster)==false or udg_B==false or DU2==false then
+// обрыв: тело волны и вижн-дамми надо убрать, иначе они остаются висеть
+set i=0
+loop
+exitwhen i>3
+if LoadEffectHandle(HH,id,21+i)!=null then
+call DestroyEffect(LoadEffectHandle(HH,id,21+i))
+call SaveEffectHandle(HH,id,21+i,null)
+endif
+set i=i+1
+endloop
+if LoadUnitHandle(HH,id,40)!=null then
+call RemoveUnit(LoadUnitHandle(HH,id,40))
+call SaveUnitHandle(HH,id,40,null)
+endif
+if gr!=null then
+call DestroyGroup(gr)
+endif
+call PauseTimer(t)
+call DestroyTimer(t)
+call FlushChildHashtable(HH,id)
+elseif dist<=0 then
+// ЗАМАХ 0.1 c (каст-тайм по просьбе владельца)
+if time>=0.1 then
+call Brg_Sound("Sound\\Music\\mp3Music\\Barragan_Q.mp3")
+set x0=PolX(GetUnitX(caster),90,facing)
+set y0=PolY(GetUnitY(caster),90,facing)
+call SaveReal(HH,id,11,x0)
+call SaveReal(HH,id,12,y0)
+call SaveReal(HH,id,13,1)
+// Голова волны — искра, как на E. Чёрное тело BDEF убрано: именно оно
+// давало тёмные пятна, похожие на квадраты.
+// Тело волны — четыре искры друг за другом, чтобы полоса тянулась на всю длину
+set i=0
+loop
+exitwhen i>3
+set EFF=AddSpecialEffect("war3mapImported\\wos_zz-shio_zk_zz_stab2_hy-1.mdx",x0,y0)
+call SetSpecialEffectScale(EFF,0.65)
+call SetSpecialEffectTimeScale(EFF,0.55)
+call SetSpecialEffectZ(EFF,175)
+call SetSpecialEffectFacing(EFF,facing)
+call SaveEffectHandle(HH,id,21+i,EFF)
+set i=i+1
+endloop
+// обзор по ходу волны: в оригинале это VisionTimed, у нас — дамми 'gbRd'
+set n0=CreateUnit(GetOwningPlayer(caster),'gbRd',x0,y0,facing)
+call SaveUnitHandle(HH,id,40,n0)
+set n0=null
+endif
+else
+// ПОЛЁТ ВОЛНЫ: 55 за тик, до 1200, бьёт ПЕРВУЮ задетую цель и гаснет
+set dist=dist+90
+call SaveReal(HH,id,13,dist)
+set px=PolX(x0,dist,facing)
+set py=PolY(y0,dist,facing)
+// четыре тела: голова и три хвоста с отставанием по 150
+set i=0
+loop
+exitwhen i>3
+set eff1=LoadEffectHandle(HH,id,21+i)
+if eff1!=null then
+set tx=dist-150.0*I2R(i)
+if tx<0 then
+set tx=0
+endif
+call SetSpecialEffectPosition(eff1,PolX(x0,tx,facing),PolY(y0,tx,facing))
+call SetSpecialEffectZ(eff1,175)
+endif
+set i=i+1
+endloop
+set eye=LoadUnitHandle(HH,id,40)
+if eye!=null then
+call SetUnitX(eye,px)
+call SetUnitY(eye,py)
+endif
+// облака раз в 0.12 с (90 за тик -> каждые 540 единиц), искры раз в 0.18 с
+// облако рождается у каждого из четырёх тел — отсюда сплошная полоса
+if ModuloReal(dist,540)<90 then
+set i=0
+loop
+exitwhen i>3
+set tx=dist-150.0*I2R(i)
+if tx>=0 then
+call Brg_Cloud(caster,"war3mapImported\\wos_saberalterqcpurple.mdx",PolX(x0,tx,facing),PolY(y0,tx,facing),11,2.75,0.75,1.4)
+endif
+set i=i+1
+endloop
+endif
+// волна проходит НАСКВОЗЬ: каждого врага задевает один раз и летит дальше
+call GroupClear(G)
+call GroupEnumUnitsInRange(G,px,py,150,Base)
+loop
+set n0=FirstOfGroup(G)
+exitwhen n0==null
+call GroupRemoveUnit(G,n0)
+if gr!=null and Condition_Base(GetOwningPlayer(caster),n0) and GetUnitAbilityLevel(n0,'Avul')==0 and IsUnitInGroup(n0,gr)==false then
+call GroupAddUnit(gr,n0)
+call myCustomDamage(caster,n0,dmg,false,false,null,null,null)
+call Brg_Burn(caster,n0)
+if Brg_HasT(caster) then
+call SetControlToUnit(caster,n0,0.5,"stun")
+endif
+call Brg_FxC("war3mapImported\\wos_OPm (513)purple.mdx",GetUnitX(n0),GetUnitY(n0),0,1,1,0,GetRandomReal(0,360),255,255,255,255)
+call Brg_Fx("war3mapImported\\wos_zz-shio_zk_zz_stab2_hy-1.mdx",GetUnitX(n0),GetUnitY(n0),0,2,0.55,0.35)
+set EFF=AddSpecialEffectTarget("war3mapImported\\wos_LDeff (262).mdx",n0,"chest")
+call RemoveEffect(EFF,1.5,false,CreateTimer())
+call ShakeCamera(0.1,3)
+endif
+endloop
+set n0=null
+if dist>=1700 then
+set i=0
+loop
+exitwhen i>3
+if LoadEffectHandle(HH,id,21+i)!=null then
+call DestroyEffect(LoadEffectHandle(HH,id,21+i))
+call SaveEffectHandle(HH,id,21+i,null)
+endif
+set i=i+1
+endloop
+if LoadUnitHandle(HH,id,40)!=null then
+call RemoveUnit(LoadUnitHandle(HH,id,40))
+call SaveUnitHandle(HH,id,40,null)
+endif
+// в точке завершения обзор держится ещё 2 секунды
+set n0=CreateUnit(GetOwningPlayer(caster),'gbRd',px,py,facing)
+call MyRemoveUnit(n0,2.0)
+set n0=null
+call PauseTimer(t)
+call DestroyTimer(t)
+call FlushChildHashtable(HH,id)
+endif
+endif
+set caster=null
+set gr=null
+set eff1=null
+set eye=null
+set t=null
+endfunction
+function Brg_Q_Act takes unit caster,real x1,real y1 returns nothing
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+local integer lvl=GetUnitAbilityLevel(caster,'BbQ1')
+local real facing=Angle2(GetUnitX(caster),GetUnitY(caster),x1,y1)
+local real dmg=(2.0+I2R(lvl))*I2R(GetHeroInt(caster,true))
+if Brg_HasT(caster) then
+set dmg=dmg+I2R(GetHeroInt(caster,true))
+endif
+call SaveUnitHandle(HH,id,1,caster)
+call SaveReal(HH,id,3,facing)
+call SaveReal(HH,id,13,0)
+call SaveGroupHandle(HH,id,4,CreateGroup())
+call SaveReal(HH,id,16,dmg)
+call SetUnitFacingInstant(caster,facing)
+call Brg_Lock(caster,true,'BbQ1')
+// под топором каст идёт в неуязвимости, как в оригинале
+if Brg_HasT(caster) then
+call Brg_Invul(caster,true)
+endif
+call SetUnitTimeScale(caster,1.6)
+call SetUnitAnimationByIndex(caster,9)
+call Brg_Free(caster,0.55)
+//  у wos_m3 (704) есть ribbon-эмиттер: стоя на земле он рисуется прямоугольниками.
+// На замах вешаем тот же заряд в руке, что у W и E.
+call DestroyEffect(AddSpecialEffectTarget("war3mapImported\\wos_ChuShou_BY_Wood_Effect_Glow_GuiPaiQiGong_XuLiPurple.mdx",caster,"right hand"))
+call TimerStart(t,0.02,true,function Brg_Q_Act2)
+set caster=null
+set t=null
+endfunction
+// ===== W — две волны старения: летят дугой в точку и взрываются =====
+function Brg_W_Act2 takes nothing returns nothing
+local timer t=GetExpiredTimer()
+local integer id=GetHandleId(t)
+local unit caster=LoadUnitHandle(HH,id,1)
+local real time=LoadReal(HH,id,5)+0.02
+local real facing=LoadReal(HH,id,3)
+local real x1=LoadReal(HH,id,11)
+local real y1=LoadReal(HH,id,12)
+local real dmg=LoadReal(HH,id,16)
+local real move=LoadReal(HH,id,14)
+local real prog
+local real ang
+local effect e1=LoadEffectHandle(HH,id,21)
+local effect e2=LoadEffectHandle(HH,id,22)
+call SaveReal(HH,id,5,time)
+if UnitIsAlive(caster)==false or udg_B==false or DU2==false then
+if e1!=null then
+call DestroyEffect(e1)
+call SaveEffectHandle(HH,id,21,null)
+endif
+if e2!=null then
+call DestroyEffect(e2)
+call SaveEffectHandle(HH,id,22,null)
+endif
+if LoadUnitHandle(HH,id,40)!=null then
+call RemoveUnit(LoadUnitHandle(HH,id,40))
+call SaveUnitHandle(HH,id,40,null)
+endif
+call PauseTimer(t)
+call DestroyTimer(t)
+call FlushChildHashtable(HH,id)
+elseif e1==null then
+// ЗАМАХ 0.1 c, потом из-за спины вылетают два шара
+if time>=0.1 then
+call Brg_Sound("Sound\\Music\\mp3Music\\Barragan_EW.mp3")
+set EFF=AddSpecialEffect("war3mapImported\\wos_zz-fire-ore-hit1-zihei_big4.mdx",PolX(GetUnitX(caster),200,facing+45),PolY(GetUnitY(caster),200,facing+45))
+call SetSpecialEffectScale(EFF,1.0)
+call SaveEffectHandle(HH,id,21,EFF)
+set EFF=AddSpecialEffect("war3mapImported\\wos_zz-fire-ore-hit1-zihei_big4.mdx",PolX(GetUnitX(caster),200,facing-45),PolY(GetUnitY(caster),200,facing-45))
+call SetSpecialEffectScale(EFF,1.0)
+call SaveEffectHandle(HH,id,22,EFF)
+call SaveReal(HH,id,5,0)
+endif
+elseif time<0.52 then
+// ПОЛЁТ ДУГОЙ: расходятся в стороны и сходятся в точке
+set prog=time/0.52
+set ang=Angle2(GetSpecialEffectX(e1),GetSpecialEffectY(e1),x1,y1)+55.0*(1.0-prog)
+call SetSpecialEffectPosition(e1,PolX(GetSpecialEffectX(e1),move,ang),PolY(GetSpecialEffectY(e1),move,ang))
+set ang=Angle2(GetSpecialEffectX(e2),GetSpecialEffectY(e2),x1,y1)-55.0*(1.0-prog)
+call SetSpecialEffectPosition(e2,PolX(GetSpecialEffectX(e2),move,ang),PolY(GetSpecialEffectY(e2),move,ang))
+if LoadUnitHandle(HH,id,40)!=null then
+call SetUnitX(LoadUnitHandle(HH,id,40),GetUnitX(caster)+(x1-GetUnitX(caster))*prog)
+call SetUnitY(LoadUnitHandle(HH,id,40),GetUnitY(caster)+(y1-GetUnitY(caster))*prog)
+endif
+call SetSpecialEffectZ(e1,600.0*4.0*prog*(1.0-prog))
+call SetSpecialEffectZ(e2,600.0*4.0*prog*(1.0-prog))
+else
+// ВЗРЫВ В ТОЧКЕ
+call DestroyEffect(e1)
+call SaveEffectHandle(HH,id,21,null)
+call DestroyEffect(e2)
+call SaveEffectHandle(HH,id,22,null)
+call Brg_Sound("Sound\\Music\\mp3Music\\Barragan_EW4.mp3")
+if LoadUnitHandle(HH,id,40)!=null then
+call RemoveUnit(LoadUnitHandle(HH,id,40))
+call SaveUnitHandle(HH,id,40,null)
+endif
+set n0=CreateUnit(GetOwningPlayer(caster),'gbRd',x1,y1,0)
+call MyRemoveUnit(n0,3.0)
+set n0=null
+call Brg_Fx("war3mapImported\\wos_zz-shio_zk_zz_stab2_hy-1.mdx",x1,y1,0,2,0.55,0.35)
+call Brg_FxC("war3mapImported\\wos_saberalterqcpurple.mdx",x1,y1,0,1.45,0.45,0,GetRandomReal(0,360),255,255,255,255)
+call Brg_FxC("war3mapImported\\wos_OPm (513)purple.mdx",x1,y1,0,1,1,0,GetRandomReal(0,360),255,255,255,255)
+call Brg_FxC("war3mapImported\\wos_T_kyaru_skill02purple.mdx",x1,y1,0,1.1,1.25,0,GetRandomReal(0,360),255,255,255,255)
+call ShakeCamera(0.2,6)
+call GroupClear(G)
+call GroupEnumUnitsInRange(G,x1,y1,600,Base)
+loop
+set n0=FirstOfGroup(G)
+exitwhen n0==null
+call GroupRemoveUnit(G,n0)
+if Condition_Base(GetOwningPlayer(caster),n0) and GetUnitAbilityLevel(n0,'Avul')==0 then
+call myCustomDamage(caster,n0,dmg,false,false,null,null,null)
+call SlowUnit(caster,n0,0.4,0.4,2,2,false)
+call Brg_Burn(caster,n0)
+endif
+endloop
+set n0=null
+call PauseTimer(t)
+call DestroyTimer(t)
+call FlushChildHashtable(HH,id)
+endif
+set caster=null
+set e1=null
+set e2=null
+set t=null
+endfunction
+function Brg_W_Act takes unit caster,real x1,real y1 returns nothing
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+local integer lvl=GetUnitAbilityLevel(caster,'BbW1')
+local real facing=Angle2(GetUnitX(caster),GetUnitY(caster),x1,y1)
+local real dmg=(1.0+I2R(lvl))*I2R(GetHeroInt(caster,true))
+call SaveUnitHandle(HH,id,1,caster)
+call SaveReal(HH,id,3,facing)
+call SaveReal(HH,id,11,x1)
+call SaveReal(HH,id,12,y1)
+call SaveReal(HH,id,16,dmg)
+// шаг шаров: до точки за 0.52 c (26 тиков)
+call SaveReal(HH,id,14,SR(GetUnitX(caster),GetUnitY(caster),x1,y1)/26.0)
+call SetUnitFacingInstant(caster,facing)
+call Brg_Lock(caster,true,'BbW1')
+call SetUnitTimeScale(caster,2.4)
+call SetUnitAnimationByIndex(caster,4)
+call Brg_Free(caster,0.95)
+call DestroyEffect(AddSpecialEffectTarget("war3mapImported\\wos_ChuShou_BY_Wood_Effect_Glow_GuiPaiQiGong_XuLiPurple.mdx",caster,"right hand"))
+// обзор летит вместе со снарядом, иначе он уходит в темноту
+set n0=CreateUnit(GetOwningPlayer(caster),'gbRd',GetUnitX(caster),GetUnitY(caster),facing)
+call SaveUnitHandle(HH,id,40,n0)
+set n0=null
+call TimerStart(t,0.02,true,function Brg_W_Act2)
+set caster=null
+set t=null
+endfunction
+// ===== E — конус старения перед собой =====
+function Brg_E_Act2 takes nothing returns nothing
+local timer t=GetExpiredTimer()
+local effect eff1
+local real ex
+local real ey
+local integer id=GetHandleId(t)
+local unit caster=LoadUnitHandle(HH,id,1)
+local real time=LoadReal(HH,id,5)+0.02
+local real facing=LoadReal(HH,id,3)
+local real x0=LoadReal(HH,id,11)
+local real y0=LoadReal(HH,id,12)
+local real dist=LoadReal(HH,id,13)
+local real dmg=LoadReal(HH,id,16)
+local group gr=LoadGroupHandle(HH,id,4)
+local integer i
+local real ang
+call SaveReal(HH,id,5,time)
+if UnitIsAlive(caster)==false or udg_B==false or DU2==false then
+set i=0
+loop
+exitwhen i>4
+if LoadEffectHandle(HH,id,41+i)!=null then
+call DestroyEffect(LoadEffectHandle(HH,id,41+i))
+call SaveEffectHandle(HH,id,41+i,null)
+endif
+set i=i+1
+endloop
+if gr!=null then
+call DestroyGroup(gr)
+endif
+call PauseTimer(t)
+call DestroyTimer(t)
+call FlushChildHashtable(HH,id)
+elseif dist<=0 then
+// ЗАМАХ 0.1 c
+if time>=0.1 then
+call Brg_Sound("Sound\\Music\\mp3Music\\Barragan_EQ2.mp3")
+call SaveReal(HH,id,13,1)
+// Как на Q: тело каждого луча — отдельная чёрная модель, она летит,
+// а облака сыплются редко.
+set i=0
+loop
+exitwhen i>4
+set ang=facing-40.0+20.0*I2R(i)
+// Голова луча — искра, как у Q в ресуррексионе. Чёрное тело BDEF тут не
+// годится: в оригинале оно бывает только под топором и в одном экземпляре,
+// а пять таких плит рядом читаются как чёрные квадраты.
+set EFF=AddSpecialEffect("war3mapImported\\wos_zz-shio_zk_zz_stab2_hy-1.mdx",x0,y0)
+call SetSpecialEffectScale(EFF,0.65)
+call SetSpecialEffectTimeScale(EFF,0.55)
+call SetSpecialEffectZ(EFF,175)
+call SetSpecialEffectFacing(EFF,ang)
+call SaveEffectHandle(HH,id,41+i,EFF)
+set i=i+1
+endloop
+endif
+else
+// ВЕЕР ИЗ ВОЛН: тот же разрез, что у Q, только пять лучей на 80° (-40..+40).
+set dist=dist+60
+call SaveReal(HH,id,13,dist)
+set i=0
+loop
+exitwhen i>4
+set ang=facing-40.0+20.0*I2R(i)
+// точку луча считаем один раз, handle читаем один раз
+set ex=PolX(x0,dist,ang)
+set ey=PolY(y0,dist,ang)
+set eff1=LoadEffectHandle(HH,id,41+i)
+if eff1!=null then
+call SetSpecialEffectPosition(eff1,ex,ey)
+call SetSpecialEffectZ(eff1,175)
+endif
+if ModuloReal(dist,360)<60 then
+call Brg_Cloud(caster,"war3mapImported\\wos_saberalterqcpurple.mdx",ex,ey,11,2.15,0.75,1.4)
+endif
+set i=i+1
+endloop
+call GroupClear(G)
+call GroupEnumUnitsInRange(G,x0,y0,dist+120,Base)
+loop
+set n0=FirstOfGroup(G)
+exitwhen n0==null
+call GroupRemoveUnit(G,n0)
+if gr!=null and Condition_Base(GetOwningPlayer(caster),n0) and GetUnitAbilityLevel(n0,'Avul')==0 and IsUnitInGroup(n0,gr)==false then
+set ang=Angle2(x0,y0,GetUnitX(n0),GetUnitY(n0))-facing
+if ang>180 then
+set ang=ang-360
+endif
+if ang<-180 then
+set ang=ang+360
+endif
+if ang<40 and ang>-40 and SR(x0,y0,GetUnitX(n0),GetUnitY(n0))<=dist+100 then
+call GroupAddUnit(gr,n0)
+call myCustomDamage(caster,n0,dmg,false,false,null,null,null)
+call SlowUnit(caster,n0,0.3,0.3,2,2,false)
+call Brg_Burn(caster,n0)
+call Brg_Cloud(caster,"war3mapImported\\wos_saberalterqcpurple.mdx",GetUnitX(n0),GetUnitY(n0),11,2.15,0.75,1.4)
+endif
+endif
+endloop
+set n0=null
+if dist>=1200 then
+set i=0
+loop
+exitwhen i>4
+if LoadEffectHandle(HH,id,41+i)!=null then
+call DestroyEffect(LoadEffectHandle(HH,id,41+i))
+call SaveEffectHandle(HH,id,41+i,null)
+endif
+set i=i+1
+endloop
+if gr!=null then
+call DestroyGroup(gr)
+endif
+call PauseTimer(t)
+call DestroyTimer(t)
+call FlushChildHashtable(HH,id)
+endif
+endif
+set caster=null
+set gr=null
+set eff1=null
+set t=null
+endfunction
+function Brg_E_Act takes unit caster,real x1,real y1 returns nothing
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+local integer lvl=GetUnitAbilityLevel(caster,'BbE1')
+local real facing=Angle2(GetUnitX(caster),GetUnitY(caster),x1,y1)
+call SaveUnitHandle(HH,id,1,caster)
+call SaveReal(HH,id,3,facing)
+call SaveReal(HH,id,11,GetUnitX(caster))
+call SaveReal(HH,id,12,GetUnitY(caster))
+call SaveReal(HH,id,13,0)
+call SaveReal(HH,id,16,(1.0+I2R(lvl))*I2R(GetHeroInt(caster,true)))
+call SaveGroupHandle(HH,id,4,CreateGroup())
+call SetUnitFacingInstant(caster,facing)
+call Brg_Lock(caster,true,'BbE1')
+call SetUnitTimeScale(caster,2.2)
+call SetUnitAnimationByIndex(caster,5)
+call Brg_Free(caster,0.95)
+call DestroyEffect(AddSpecialEffectTarget("war3mapImported\\wos_ChuShou_BY_Wood_Effect_Glow_GuiPaiQiGong_XuLiPurple.mdx",caster,"chest"))
+call TimerStart(t,0.02,true,function Brg_E_Act2)
+set caster=null
+set t=null
+endfunction
+// ===== R — Respira: кольцо старения вокруг себя, растёт до 1125 =====
+function Brg_R_Act2 takes nothing returns nothing
+local timer t=GetExpiredTimer()
+local integer id=GetHandleId(t)
+local unit caster=LoadUnitHandle(HH,id,1)
+local real time=LoadReal(HH,id,5)+0.02
+local real x0=GetUnitX(caster)
+local real y0=GetUnitY(caster)
+local real aoe=LoadReal(HH,id,13)
+local real rad=LoadReal(HH,id,14)
+local real sc=LoadReal(HH,id,18)
+local real dmg=LoadReal(HH,id,16)
+local real t2=LoadReal(HH,id,8)+0.02
+local real t4=LoadReal(HH,id,7)+0.02
+local group gr=LoadGroupHandle(HH,id,4)
+local integer i
+call SaveReal(HH,id,5,time)
+call SaveReal(HH,id,8,t2)
+call SaveReal(HH,id,7,t4)
+if UnitIsAlive(caster)==false or udg_B==false or DU2==false or time>=1.2 then
+call Brg_Lock(caster,false,0)
+call SetUnitTimeScale(caster,1)
+set i=0
+loop
+exitwhen i>6
+if LoadEffectHandle(HH,id,30+i)!=null then
+call DestroyEffect(LoadEffectHandle(HH,id,30+i))
+call SaveEffectHandle(HH,id,30+i,null)
+endif
+set i=i+1
+endloop
+if gr!=null then
+call DestroyGroup(gr)
+endif
+call PauseTimer(t)
+call DestroyTimer(t)
+call FlushChildHashtable(HH,id)
+else
+// область растёт, семь клинков расходятся кольцом
+if aoe<1125 then
+set aoe=aoe+40
+call SaveReal(HH,id,13,aoe)
+endif
+if time<0.04 then
+set rad=125
+set sc=0.05
+set i=0
+loop
+exitwhen i>6
+set EFF=AddSpecialEffect("war3mapImported\\wos_zz-shio_zk_zz_stab2_hy-1.mdx",PolX(x0,rad,I2R(i)*52),PolY(y0,rad,I2R(i)*52))
+call SetSpecialEffectScale(EFF,0.15)
+call SetSpecialEffectTimeScale(EFF,0.75)
+call SetSpecialEffectFacing(EFF,GetRandomReal(0,360))
+call SaveEffectHandle(HH,id,30+i,EFF)
+set i=i+1
+endloop
+elseif rad<1025 then
+set rad=rad+16
+if sc<1.25 then
+set sc=sc+0.04
+endif
+set i=0
+loop
+exitwhen i>6
+if LoadEffectHandle(HH,id,30+i)!=null then
+call SetSpecialEffectPosition(LoadEffectHandle(HH,id,30+i),PolX(x0,rad,I2R(i)*52),PolY(y0,rad,I2R(i)*52))
+call SetSpecialEffectScale(LoadEffectHandle(HH,id,30+i),sc)
+endif
+set i=i+1
+endloop
+endif
+call SaveReal(HH,id,14,rad)
+call SaveReal(HH,id,18,sc)
+if t4>=0.5 then
+call SaveReal(HH,id,7,0)
+call Brg_FxC("war3mapImported\\wos_T_kyaru_skill02purple.mdx",x0,y0,0,1.1,1.25,0,GetRandomReal(0,360),255,255,255,255)
+endif
+if t2>=0.2 then
+call SaveReal(HH,id,8,0)
+call GroupClear(G)
+call GroupEnumUnitsInRange(G,x0,y0,aoe,Base)
+loop
+set n0=FirstOfGroup(G)
+exitwhen n0==null
+call GroupRemoveUnit(G,n0)
+if gr!=null and Condition_Base(GetOwningPlayer(caster),n0) and GetUnitAbilityLevel(n0,'Avul')==0 and IsUnitInGroup(n0,gr)==false then
+call GroupAddUnit(gr,n0)
+call Brg_Dot(caster,n0,dmg,4.0,1.0,"war3mapImported\\wos_zz-fire-ore-hit1-zihei_2.mdx")
+call SlowUnit(caster,n0,0.4,0.4,2,2,false)
+call Brg_Burn(caster,n0)
+endif
+endloop
+set n0=null
+endif
+endif
+set caster=null
+set gr=null
+set t=null
+endfunction
+function Brg_R_Act takes unit caster returns nothing
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+local integer lvl=GetUnitAbilityLevel(caster,'BbR1')
+local real x0=GetUnitX(caster)
+local real y0=GetUnitY(caster)
+local integer i=0
+call SaveUnitHandle(HH,id,1,caster)
+call SaveReal(HH,id,8,0.18)
+call SaveReal(HH,id,13,0)
+call SaveGroupHandle(HH,id,4,CreateGroup())
+// гниение (5+ур)*INT за 4 c каждому, кто попал под кольцо
+call SaveReal(HH,id,16,(5.0+I2R(lvl))*I2R(GetHeroInt(caster,true)))
+call Brg_Lock(caster,true,'BbR1')
+call Brg_Invul(caster,true)
+call SetUnitTimeScale(caster,3.4)
+call SetUnitAnimationByIndex(caster,6)
+call Brg_Sound("Sound\\Music\\mp3Music\\Barragan_ER1.mp3")
+call Brg_Sound("Sound\\Music\\mp3Music\\Barragan_ER2.mp3")
+loop
+exitwhen i>3
+// в ресуррексионе это четыре ФИОЛЕТОВЫХ вспышки; красные ZiRed, OPM red
+// и кольца пыли — набор базовой формы, нам он не нужен
+call Brg_FxC("war3mapImported\\wos_JY-Shio_Super_Saiyan_JN_Zi.mdx",x0,y0,70,9,1,1.2,GetRandomReal(0,360),255,255,255,255)
+set i=i+1
+endloop
+// обзор на всё время каста, как VisionTimed(2000) в оригинале
+set n0=CreateUnit(GetOwningPlayer(caster),'gbRd',x0,y0,GetUnitFacing(caster))
+call MyRemoveUnit(n0,1.3)
+set n0=null
+call TimerStart(t,0.02,true,function Brg_R_Act2)
+set caster=null
+set t=null
+endfunction
+// ===== T — Gran Caida: топор на 15 c, открывает T2 =====
+function Brg_T_End takes unit caster,integer id returns nothing
+if LoadEffectHandle(HH,id,10)!=null then
+call DestroyEffect(LoadEffectHandle(HH,id,10))
+call SaveEffectHandle(HH,id,10,null)
+endif
+call UnitMakeAbilityPermanent(caster,false,'BbTm')
+call UnitRemoveAbility(caster,'BbTm')
+call UnitRemoveAbility(caster,'BbT2')
+call SetPlayerAbilityAvailable(GetOwningPlayer(caster),'BbT1',true)
+call SaveInteger(HH,GetHandleId(caster),StringHash("BrgTid"),0)
+endfunction
+function Brg_T_Act2 takes nothing returns nothing
+local timer t=GetExpiredTimer()
+local integer id=GetHandleId(t)
+local unit caster=LoadUnitHandle(HH,id,1)
+local real time=LoadReal(HH,id,5)+0.05
+call SaveReal(HH,id,5,time)
+if UnitIsAlive(caster)==false or udg_B==false or DU2==false or time>=15.0 or LoadBoolean(HH,id,23) then
+call Brg_T_End(caster,id)
+call PauseTimer(t)
+call DestroyTimer(t)
+call FlushChildHashtable(HH,id)
+endif
+set caster=null
+set t=null
+endfunction
+function Brg_T_Act takes unit caster returns nothing
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+local real x0=GetUnitX(caster)
+local real y0=GetUnitY(caster)
+local integer i=0
+call SaveUnitHandle(HH,id,1,caster)
+call SaveInteger(HH,GetHandleId(caster),StringHash("BrgTid"),id)
+call UnitAddAbility(caster,'BbTm')
+call UnitMakeAbilityPermanent(caster,true,'BbTm')
+call UnitAddAbility(caster,'BbT2')
+call SetPlayerAbilityAvailable(GetOwningPlayer(caster),'BbT1',false)
+call Brg_Lock(caster,true,'BbT1')
+call SetUnitTimeScale(caster,1.5)
+call SetUnitAnimationByIndex(caster,0)
+call Brg_Free(caster,1.0)
+call Brg_Sound("Sound\\Music\\mp3Music\\Barragan_T.mp3")
+call Brg_Sound("Sound\\Music\\mp3Music\\Barragan_T2.mp3")
+call SaveEffectHandle(HH,id,10,AddSpecialEffectTarget("war3mapImported\\wos_[By XeSHTeG]BarraganAxe.mdx",caster,"right hand"))
+call Brg_FxC("war3mapImported\\wos_JY-Shio_Super_Saiyan_JN_Zi.mdx",x0,y0,70,3,1,1.0,GetRandomReal(0,360),255,255,255,255)
+call Brg_FxC("war3mapImported\\wos_JY-Shio_Super_Saiyan_JN_Zi.mdx",x0,y0,70,4,1,1.0,GetRandomReal(0,360),255,255,255,255)
+loop
+exitwhen i>6
+call Brg_FxC("war3mapImported\\wos_dustwave222.mdx",x0,y0,0,1.55+0.45*I2R(i),0.8,0,GetRandomReal(0,360),175,55,205,45)
+if i<2 then
+call Brg_FxC("war3mapImported\\wos_T_kyaru_skill02purple.mdx",x0,y0,0,0.55,1,0,GetRandomReal(0,360),255,255,255,255)
+endif
+set i=i+1
+endloop
+call CreateModeIndicatorForm(caster,"ReplaceableTextures\\CommandButtons\\BTNHero_Barragan_T.blp",15)
+call TimerStart(t,0.05,true,function Brg_T_Act2)
+set caster=null
+set t=null
+endfunction
+// ===== T2 — бросок топора: линия 2500, стан 2 c, завершает Gran Caida =====
+function Brg_T2_Act2 takes nothing returns nothing
+local timer t=GetExpiredTimer()
+local integer id=GetHandleId(t)
+local unit caster=LoadUnitHandle(HH,id,1)
+local real time=LoadReal(HH,id,5)+0.02
+local real time1=LoadReal(HH,id,6)
+local real facing=LoadReal(HH,id,3)
+local real x0=LoadReal(HH,id,11)
+local real y0=LoadReal(HH,id,12)
+local real dist=LoadReal(HH,id,13)
+local real dmg=LoadReal(HH,id,16)
+local real t3=LoadReal(HH,id,9)+0.02
+local group gr=LoadGroupHandle(HH,id,4)
+local real px
+local real py
+local integer tid
+call SaveReal(HH,id,5,time)
+if UnitIsAlive(caster)==false or udg_B==false or DU2==false then
+if LoadEffectHandle(HH,id,21)!=null then
+call DestroyEffect(LoadEffectHandle(HH,id,21))
+call SaveEffectHandle(HH,id,21,null)
+endif
+if LoadEffectHandle(HH,id,22)!=null then
+call DestroyEffect(LoadEffectHandle(HH,id,22))
+call SaveEffectHandle(HH,id,22,null)
+endif
+if LoadUnitHandle(HH,id,40)!=null then
+call RemoveUnit(LoadUnitHandle(HH,id,40))
+call SaveUnitHandle(HH,id,40,null)
+endif
+if gr!=null then
+call DestroyGroup(gr)
+endif
+call PauseTimer(t)
+call DestroyTimer(t)
+call FlushChildHashtable(HH,id)
+elseif time1<=0 then
+// ЗАМАХ 0.1 c
+if time>=0.1 then
+call Brg_Sound("Sound\\Music\\mp3Music\\Barragan_ET2_2.mp3")
+set x0=PolX(GetUnitX(caster),80,facing)
+set y0=PolY(GetUnitY(caster),80,facing)
+call SaveReal(HH,id,11,x0)
+call SaveReal(HH,id,12,y0)
+set EFF=AddSpecialEffect("war3mapImported\\wos_[By XeSHTeG]BarraganAxe2.mdx",x0,y0)
+call SetSpecialEffectScale(EFF,2.2)
+call SetSpecialEffectZ(EFF,300)
+call SetSpecialEffectTimeScale(EFF,1.05)
+call SetSpecialEffectFacing(EFF,facing)
+call SaveEffectHandle(HH,id,21,EFF)
+set EFF=AddSpecialEffect("war3mapImported\\wos_AZ_DD029.mdx",PolX(x0,140,facing+90),PolY(y0,140,facing+90))
+call SetSpecialEffectScale(EFF,1.5)
+call SetSpecialEffectZ(EFF,300)
+call SetSpecialEffectTimeScale(EFF,2.35)
+call SetSpecialEffectFacing(EFF,facing+90)
+call SetSpecialEffectRoll(EFF,-90)
+call SaveEffectHandle(HH,id,22,EFF)
+// дамми вижена летит с топором: видно, куда он ушёл и кого задел.
+// Обзор в карте даёт 'gbRd', у 'e200' его нет — топор улетал в темноту.
+set n0=CreateUnit(GetOwningPlayer(caster),'gbRd',x0,y0,facing)
+call SaveUnitHandle(HH,id,40,n0)
+set n0=null
+// бросок завершает Gran Caida
+set tid=LoadInteger(HH,GetHandleId(caster),StringHash("BrgTid"))
+if tid!=0 then
+call SaveBoolean(HH,tid,23,true)
+endif
+call SaveReal(HH,id,6,1)
+call SaveReal(HH,id,5,0)
+endif
+else
+// ПОЛЁТ ТОПОРА: 67 за тик, до 2500
+set dist=dist+67
+call SaveReal(HH,id,13,dist)
+set px=PolX(x0,dist,facing)
+set py=PolY(y0,dist,facing)
+if LoadEffectHandle(HH,id,21)!=null then
+call SetSpecialEffectPosition(LoadEffectHandle(HH,id,21),px,py)
+endif
+if LoadEffectHandle(HH,id,22)!=null then
+call SetSpecialEffectPosition(LoadEffectHandle(HH,id,22),PolX(px,140,facing+90),PolY(py,140,facing+90))
+endif
+if LoadUnitHandle(HH,id,40)!=null then
+call SetUnitX(LoadUnitHandle(HH,id,40),px)
+call SetUnitY(LoadUnitHandle(HH,id,40),py)
+endif
+call SaveReal(HH,id,9,t3)
+if t3>=0.09 then
+call SaveReal(HH,id,9,0)
+call Brg_FxC("war3mapImported\\wos_zz-shio_zk_zz_stab2_hy-1.mdx",px,py,1,0.45,1.85,0,facing,255,255,255,255)
+endif
+call Brg_FxC("war3mapImported\\wos_0233.mdx",px,py,0,2.25,1,0.06,facing,255,255,255,255)
+call GroupClear(G)
+call GroupEnumUnitsInRange(G,px,py,400,Base)
+loop
+set n0=FirstOfGroup(G)
+exitwhen n0==null
+call GroupRemoveUnit(G,n0)
+if gr!=null and Condition_Base(GetOwningPlayer(caster),n0) and GetUnitAbilityLevel(n0,'Avul')==0 and IsUnitInGroup(n0,gr)==false then
+call GroupAddUnit(gr,n0)
+call myCustomDamage(caster,n0,dmg,false,false,null,null,null)
+call SetControlToUnit(caster,n0,2.0,"stun")
+call Brg_Burn(caster,n0)
+endif
+endloop
+set n0=null
+if dist>=2500 then
+call Brg_Fx("war3mapImported\\wos_zz-shio_zk_zz_stab2_hy-1.mdx",px,py,0,2,0.55,0.35)
+call Brg_FxC("war3mapImported\\wos_saberalterqcpurple.mdx",px,py,0,1.25,0.65,0,GetRandomReal(0,360),255,255,255,255)
+call Brg_FxC("war3mapImported\\wos_OPm (513)purple.mdx",px,py,0,1,1,0,GetRandomReal(0,360),255,255,255,255)
+call Brg_FxC("war3mapImported\\wos_fangkuai2.mdx",px,py,0,1.65,1,0,160,255,255,255,255)
+call ShakeCamera(0.3,8)
+if LoadEffectHandle(HH,id,21)!=null then
+call DestroyEffect(LoadEffectHandle(HH,id,21))
+call SaveEffectHandle(HH,id,21,null)
+endif
+if LoadEffectHandle(HH,id,22)!=null then
+call DestroyEffect(LoadEffectHandle(HH,id,22))
+call SaveEffectHandle(HH,id,22,null)
+endif
+if LoadUnitHandle(HH,id,40)!=null then
+call RemoveUnit(LoadUnitHandle(HH,id,40))
+call SaveUnitHandle(HH,id,40,null)
+endif
+// в точке падения обзор держится ещё 3 секунды: видно, во что прилетело
+set n0=CreateUnit(GetOwningPlayer(caster),'gbRd',px,py,facing)
+call MyRemoveUnit(n0,3.0)
+set n0=null
+if gr!=null then
+call DestroyGroup(gr)
+endif
+call PauseTimer(t)
+call DestroyTimer(t)
+call FlushChildHashtable(HH,id)
+endif
+endif
+set caster=null
+set gr=null
+set t=null
+endfunction
+function Brg_T2_Act takes unit caster,real x1,real y1 returns nothing
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+local real facing=Angle2(GetUnitX(caster),GetUnitY(caster),x1,y1)
+call SaveUnitHandle(HH,id,1,caster)
+call SaveReal(HH,id,3,facing)
+call SaveReal(HH,id,6,0)
+call SaveReal(HH,id,13,0)
+call SaveGroupHandle(HH,id,4,CreateGroup())
+call SaveReal(HH,id,16,10.0*I2R(GetHeroInt(caster,true)))
+call SetUnitFacingInstant(caster,facing)
+call Brg_Lock(caster,true,'BbT2')
+call Brg_Invul(caster,true)
+call SetUnitTimeScale(caster,1.5)
+call SetUnitAnimationByIndex(caster,10)
+call Brg_Free(caster,0.65)
+call Brg_Sound("Sound\\Music\\mp3Music\\Barragan_ET2_1.mp3")
+call TimerStart(t,0.02,true,function Brg_T2_Act2)
+set caster=null
+set t=null
+endfunction
+// ===== F — телепорт в точку =====
+function Brg_F_Act takes unit caster,real x1,real y1 returns nothing
+local real x0=GetUnitX(caster)
+local real y0=GetUnitY(caster)
+local real facing=Angle2(x0,y0,x1,y1)
+local real px=x1
+local real py=y1
+if SR(x0,y0,x1,y1)>1100 then
+set px=PolX(x0,1100,facing)
+set py=PolY(y0,1100,facing)
+endif
+call SetUnitFacingInstant(caster,facing)
+call Brg_Fx("war3mapImported\\wos_UltimateDarkFlash.mdx",x0,y0,90,2,0.7,0.4)
+call Brg_Cloud(caster,"war3mapImported\\wos_saberalterqcpurple.mdx",x0,y0,11,2.74,0.75,1.4)
+call SetUnitX(caster,px)
+call SetUnitY(caster,py)
+call Brg_Fx("war3mapImported\\wos_UltimateDarkFlash.mdx",px,py,90,2,0.7,0.4)
+call Brg_FxC("war3mapImported\\wos_T_kyaru_skill02purple.mdx",px,py,0,1.1,1.25,0,GetRandomReal(0,360),255,255,255,255)
+call Brg_Sound("Sound\\Music\\mp3Music\\Barragan_E2_1.mp3")
+set caster=null
+endfunction
+// ===== G — покров Respira: 10 c, пассивка вдвое больнее, 50% резист =====
+function Brg_G_Act2 takes nothing returns nothing
+local timer t=GetExpiredTimer()
+local integer id=GetHandleId(t)
+local unit caster=LoadUnitHandle(HH,id,1)
+local real time=LoadReal(HH,id,5)+0.1
+local real t2=LoadReal(HH,id,8)+0.1
+call SaveReal(HH,id,5,time)
+call SaveReal(HH,id,8,t2)
+if UnitIsAlive(caster)==false or udg_B==false or DU2==false or time>=10.0 then
+call UnitMakeAbilityPermanent(caster,false,'BbGm')
+call UnitRemoveAbility(caster,'BbGm')
+if LoadEffectHandle(HH,id,10)!=null then
+call DestroyEffect(LoadEffectHandle(HH,id,10))
+call SaveEffectHandle(HH,id,10,null)
+endif
+call SaveInteger(HH,GetHandleId(caster),StringHash("BrgGid"),0)
+call PauseTimer(t)
+call DestroyTimer(t)
+call FlushChildHashtable(HH,id)
+else
+if t2>=0.5 then
+call SaveReal(HH,id,8,0)
+call Brg_FxC("war3mapImported\\wos_dustwave222.mdx",GetUnitX(caster),GetUnitY(caster),0,2.4,0.7,0,GetRandomReal(0,360),175,55,205,55)
+endif
+endif
+set caster=null
+set t=null
+endfunction
+function Brg_G_Act takes unit caster returns nothing
+local timer t
+local integer id
+if Brg_HasG(caster) then
+call IssueImmediateOrder(caster,"stop")
+return
+endif
+set t=CreateTimer()
+set id=GetHandleId(t)
+call SaveUnitHandle(HH,id,1,caster)
+call SaveInteger(HH,GetHandleId(caster),StringHash("BrgGid"),id)
+call UnitAddAbility(caster,'BbGm')
+call UnitMakeAbilityPermanent(caster,true,'BbGm')
+call SaveEffectHandle(HH,id,10,AddSpecialEffectTarget("war3mapImported\\wos_JY-Shio_Super_Saiyan_JN_Zi.mdx",caster,"origin"))
+call Brg_Lock(caster,true,'BbGb')
+call SetUnitTimeScale(caster,1.5)
+call SetUnitAnimationByIndex(caster,0)
+call Brg_Free(caster,0.8)
+call Brg_Sound("Sound\\Music\\mp3Music\\Barragan_E1.mp3")
+call Brg_Fx("war3mapImported\\wos_hakkestart.mdx",GetUnitX(caster),GetUnitY(caster),10,1.75,0.35,1.5)
+call CreateModeIndicatorForm(caster,"ReplaceableTextures\\CommandButtons\\BTNHero_Barragan_G.blp",10)
+call TimerStart(t,0.1,true,function Brg_G_Act2)
+set caster=null
+set t=null
+endfunction
+// ===== D — метка старения: малая волна в цель =====
+function Brg_D_Act2 takes nothing returns nothing
+local timer t=GetExpiredTimer()
+local integer id=GetHandleId(t)
+local unit caster=LoadUnitHandle(HH,id,1)
+local unit target=LoadUnitHandle(HH,id,2)
+local real time=LoadReal(HH,id,5)+0.02
+local real dmg=LoadReal(HH,id,16)
+local real dist=LoadReal(HH,id,13)
+local real x0=LoadReal(HH,id,11)
+local real y0=LoadReal(HH,id,12)
+local real facing
+local real px
+local real py
+call SaveReal(HH,id,5,time)
+if UnitIsAlive(caster)==false or target==null or UnitIsAlive(target)==false or udg_B==false or DU2==false or dist>1400 then
+if LoadEffectHandle(HH,id,21)!=null then
+call DestroyEffect(LoadEffectHandle(HH,id,21))
+call SaveEffectHandle(HH,id,21,null)
+endif
+call PauseTimer(t)
+call DestroyTimer(t)
+call FlushChildHashtable(HH,id)
+else
+set facing=Angle2(x0,y0,GetUnitX(target),GetUnitY(target))
+set dist=dist+70
+call SaveReal(HH,id,13,dist)
+set px=PolX(x0,dist,facing)
+set py=PolY(y0,dist,facing)
+// тело летит одной моделью, а не копией на каждый тик
+if LoadEffectHandle(HH,id,21)==null then
+set EFF=AddSpecialEffect("war3mapImported\\wos_zz-shio_zk_zz_stab2_hy-1.mdx",px,py)
+call SetSpecialEffectScale(EFF,0.65)
+call SetSpecialEffectTimeScale(EFF,0.55)
+call SetSpecialEffectZ(EFF,55)
+call SetSpecialEffectFacing(EFF,facing)
+call SaveEffectHandle(HH,id,21,EFF)
+else
+call SetSpecialEffectPosition(LoadEffectHandle(HH,id,21),px,py)
+call SetSpecialEffectZ(LoadEffectHandle(HH,id,21),40)
+endif
+// как на E: облака раз в 300 единиц, искры раз в 450
+if ModuloReal(dist,300)<70 then
+call Brg_Cloud(caster,"war3mapImported\\wos_saberalterqcpurple.mdx",px,py,11,1.60,0.75,1.4)
+endif
+if SR(px,py,GetUnitX(target),GetUnitY(target))<130 then
+call myCustomDamage(caster,target,dmg,false,false,null,null,null)
+call Brg_Burn(caster,target)
+set EFF=AddSpecialEffectTarget("war3mapImported\\wos_LDeff (262).mdx",target,"chest")
+call RemoveEffect(EFF,1.5,false,CreateTimer())
+call Brg_Cloud(caster,"war3mapImported\\wos_saberalterqcpurple.mdx",GetUnitX(target),GetUnitY(target),11,2.74,0.75,1.4)
+call Brg_FxC("war3mapImported\\wos_OPm (513)purple.mdx",GetUnitX(target),GetUnitY(target),0,1,1,0,GetRandomReal(0,360),255,255,255,255)
+// метка гниения на цели — тот же эффект, что вешает пассивка оригинала
+set EFF=AddSpecialEffectTarget("war3mapImported\\wos_zz-fire-ore-hit1-zihei_2.mdx",target,"origin")
+call SetSpecialEffectScale(EFF,2)
+call SetSpecialEffectTimeScale(EFF,1.15)
+call RemoveEffect(EFF,3.0,false,CreateTimer())
+if LoadEffectHandle(HH,id,21)!=null then
+call DestroyEffect(LoadEffectHandle(HH,id,21))
+call SaveEffectHandle(HH,id,21,null)
+endif
+call PauseTimer(t)
+call DestroyTimer(t)
+call FlushChildHashtable(HH,id)
+endif
+endif
+set caster=null
+set target=null
+set t=null
+endfunction
+function Brg_D_Act takes unit caster,unit target returns nothing
+local timer t
+local integer id
+local real facing
+if target==null then
+return
+endif
+set t=CreateTimer()
+set id=GetHandleId(t)
+set facing=Angle2(GetUnitX(caster),GetUnitY(caster),GetUnitX(target),GetUnitY(target))
+call SaveUnitHandle(HH,id,1,caster)
+call SaveUnitHandle(HH,id,2,target)
+call SaveReal(HH,id,11,PolX(GetUnitX(caster),70,facing))
+call SaveReal(HH,id,12,PolY(GetUnitY(caster),70,facing))
+call SaveReal(HH,id,13,0)
+call SaveReal(HH,id,16,1.0*I2R(GetHeroInt(caster,true)))
+call SetUnitFacingInstant(caster,facing)
+call Brg_Lock(caster,true,'BbD1')
+call SetUnitTimeScale(caster,1.8)
+call SetUnitAnimationByIndex(caster,8)
+call Brg_Free(caster,0.45)
+call Brg_Sound("Sound\\Music\\mp3Music\\Barragan_E2_2.mp3")
+call TimerStart(t,0.02,true,function Brg_D_Act2)
+set caster=null
+set target=null
+set t=null
+endfunction
+//Barragan1end
 function Trig_Text_Damage_Actions takes nothing returns nothing
 local real b=GetEventDamage()
 local timer t
@@ -42951,6 +44255,15 @@ if CurrentEventAttack and GetUnitAbilityLevel(c,'A1F5')>0 then        // Гил�
     call SetEventDamage(0.05)
     set nb=0
 endif
+//Barragan1start
+if GetUnitTypeId(c)=='HBrg' and CurrentEventAttack and nb>0 and IsUnitEnemy(u,GetOwningPlayer(c)) then
+    call Brg_Burn(c,u)
+    if GetUnitAbilityLevel(c,'BbTm')>0 then
+        call Brg_Delay(c,u,1.5*I2R(GetHeroInt(c,true)),0.1)
+        call DestroyEffect(AddSpecialEffectTarget("war3mapImported\\wos_LDeff (262).mdx",u,"chest"))
+    endif
+endif
+//Barragan1end
 if (LoadReal(HH,GetHandleId(c),StringHash("yamato"))==1 or GetRandomInt(0,100)<15) and (UnitHasItemOfTypeBJ(c,'I02V') or GetUnitAbilityLevel(c,'KIG4')>0) and CurrentEventAttack and IsUnitType(c, UNIT_TYPE_HERO) and IsUnitIllusion(c)==false and GetUnitAbilityLevel(c,'A3WR')==0 then
     call DestroyEffect(AddSpecialEffectTarget("war3mapImported\\BloodEX.mdx",u,"chest"))
     call SaveReal(HH,GetHandleId(c),StringHash("yamato"),0)
@@ -44821,6 +46134,11 @@ if cond==0 then
 
             set nb=nb-nb*(0.1+0.01*GetUnitAbilityLevel(u,'A0U5'))
         endif
+//Barragan1start
+        if GetUnitAbilityLevel(u,'BbGm')>0 and nb>0 then
+            set nb=nb*0.5
+        endif
+//Barragan1end
         if GetUnitAbilityLevel(u,'A01C')>0 and nb>0 then
 
             set newdmg=GetRandomReal(0.05,0.5)
@@ -225328,9 +226646,1130 @@ call TimerStart(t,1,true,function KimimaroHeal_Act)
 set t=null
 endfunction
 //KimimaroRegen_End
+//Shop32Start
+//=====================================================================
+// МАГАЗИН ПРЕДМЕТОВ — переписан 29 авг 2026 по образцу карты Anime WOS 2.
+//
+//  ПОЧЕМУ ПЕРЕПИСАН. Прошлая версия была собрана на ПРИМИТИВНОМ слое
+// фреймов (SIMPLEFRAME / SIMPLEBUTTON / SIMPLETEXT). У него нет каскада
+// видимости на внуков, игнорируется приоритет, нет подсказок, полос
+// прокрутки и ввода текста — отсюда все те баги, которые ловились неделю.
+// Здесь всё на нормальном слое: BACKDROP / TEXT / BUTTON / GLUETEXTBUTTON /
+// SLIDER + шаблоны игры, слои через BlzFrameSetLevel, подсказки через
+// BlzFrameSetTooltip, недоступность через BlzFrameSetEnable.
+//
+//  ДАННЫЕ БЕРУТСЯ ИЗ ДВИЖКА, а не из сгенерированных таблиц:
+//   иконка  — BlzGetAbilityIcon(id)
+//   имя     — GetObjectName(id)
+//   цена    — GetBaseItemIntegerFieldById(id, ITEM_IF_GOLD_COST)
+//   рецепты — udg_UIS_ItemId[] блоками по 8 (7 компонентов + результат)
+// Прошлая версия дублировала это девятьюстами строк таблиц, из-за дырок в
+// которых были зелёные квадраты и нулевые цены.
+//
+//  РАССИНХРОН: клики по фреймам ЛОКАЛЬНЫЕ. Они двигают только картинку.
+// Всё, что меняет игру, уходит через SendSyncData и выполняется в общем
+// обработчике одинаково у всех.
+//
+// Раскладка повторяет образец: слева столбец разделов, каталог 7x5,
+// справа сборка и описание, ещё правее инвентарь с кнопками покупки и
+// продажи, снизу листание страниц.
+//=====================================================================
+
+function Sh_Key takes nothing returns integer
+return StringHash("ShopFrameId")
+endfunction
+
+// id фрейма кладём в хэш по его хэндлу: один обработчик на все клики,
+// как сделано в образце, вместо перебора массивов
+function Sh_Tag takes framehandle f,integer id returns nothing
+call SaveInteger(HH,Sh_Key(),GetHandleId(f),id)
+endfunction
+
+function Sh_TagOf takes framehandle f returns integer
+return LoadInteger(HH,Sh_Key(),GetHandleId(f))
+endfunction
+
+//--------------------- данные предмета из движка ---------------------
+
+function Sh_Name takes integer id returns string
+if id==0 then
+return ""
+endif
+return GetObjectName(id)
+endfunction
+
+function Sh_Icon takes integer id returns string
+local string ic
+if id==0 then
+return "textures\\black32.blp"
+endif
+set ic=BlzGetAbilityIcon(id)
+// пустой путь движок рисует ЗЕЛЁНЫМ КВАДРАТОМ — лучше чёрная заливка
+if ic=="" then
+return "textures\\black32.blp"
+endif
+return ic
+endfunction
+
+function Sh_Cost takes integer id returns integer
+if id==0 then
+return 0
+endif
+return GetBaseItemIntegerFieldById(id,ITEM_IF_GOLD_COST)
+endfunction
+
+// Продажа по правилу карты: misc.ini, PawnItemRate = 0.8 — как у ларька
+function Sh_Sell takes integer id returns integer
+return R2I(I2R(Sh_Cost(id))*0.8)
+endfunction
+
+//--------------------- рецепты прямо из таблицы карты ---------------------
+
+// Рецепты живут в udg_UIS_ItemId блоками по 12: одиннадцать компонентов и
+// результат последним (UIS_RegisterItem, war3map.j:24268). Отдельная таблица
+// не нужна — читаем оригинал, значит расхождений не будет.
+function Sh_RecipeOf takes integer id returns integer
+local integer k=0
+loop
+exitwhen k>=udg_UIS_Index
+if udg_UIS_ItemId[k+11]==id then
+return k
+endif
+set k=k+12
+endloop
+return -1
+endfunction
+
+// Повторяющийся компонент карта обнуляет, а счётчик копит в udg_UIS_ItemCount
+// у первого вхождения. Поэтому дырки пропускаем: c — номер по порядку среди
+// непустых, а не смещение в блоке.
+function Sh_RecSlot takes integer k,integer c returns integer
+local integer i=0
+local integer n1=0
+if k<0 or c<0 then
+return -1
+endif
+loop
+exitwhen i>10
+if udg_UIS_ItemId[k+i]>0 then
+if n1==c then
+return k+i
+endif
+set n1=n1+1
+endif
+set i=i+1
+endloop
+return -1
+endfunction
+
+function Sh_RecComp takes integer k,integer c returns integer
+local integer sl=Sh_RecSlot(k,c)
+if sl<0 then
+return 0
+endif
+return udg_UIS_ItemId[sl]
+endfunction
+
+// Сколько копий этого компонента нужно
+function Sh_RecCnt takes integer k,integer c returns integer
+local integer sl=Sh_RecSlot(k,c)
+if sl<0 or udg_UIS_ItemCount[sl]<1 then
+return 1
+endif
+return udg_UIS_ItemCount[sl]
+endfunction
+
+function Sh_Owns takes integer pid,integer id returns boolean
+// Своим перебором шести слотов пользоваться нельзя: у героев инвентарь до
+// десяти ячеек, и предметы в 7-10 не находились. Берём функцию карты.
+if id==0 then
+return false
+endif
+if Hero[pid]!=null and UnitHasItemOfTypeBJCustom(Hero[pid],id) then
+return true
+endif
+if Chest[pid]!=null and UnitHasItemOfTypeBJCustom(Chest[pid],id) then
+return true
+endif
+return false
+endfunction
+
+// Покупать и продавать можно только в зоне ожидания: во время раунда
+// героев там нет, значит отдельный флаг фазы не нужен.
+function Sh_InZone takes unit hu returns boolean
+if hu==null or UnitIsAlive(hu)==false then
+return false
+endif
+return GetUnitX(hu)>=GetRectMinX(gg_rct_Base) and GetUnitX(hu)<=GetRectMaxX(gg_rct_Base) and GetUnitY(hu)>=GetRectMinY(gg_rct_Base) and GetUnitY(hu)<=GetRectMaxY(gg_rct_Base)
+endfunction
+
+// Сколько ещё доплатить до цели
+function Sh_Remain takes integer pid,integer id returns integer
+local integer cur=id
+local integer sum=0
+local integer depth=0
+local integer k
+local integer c
+local integer nxt
+loop
+exitwhen depth==8
+if Sh_Owns(pid,cur) then
+return sum
+endif
+set k=Sh_RecipeOf(cur)
+if k<0 then
+return sum+Sh_Cost(cur)
+endif
+set nxt=0
+set c=0
+loop
+exitwhen c==11
+if Sh_RecComp(k,c)!=0 and Sh_Owns(pid,Sh_RecComp(k,c))==false then
+if nxt==0 and Sh_RecipeOf(Sh_RecComp(k,c))>=0 then
+set nxt=Sh_RecComp(k,c)
+else
+set sum=sum+Sh_Cost(Sh_RecComp(k,c))*Sh_RecCnt(k,c)
+endif
+endif
+set c=c+1
+endloop
+if nxt==0 then
+return sum
+endif
+set cur=nxt
+set depth=depth+1
+endloop
+return sum
+endfunction
+function Sh_SecData takes nothing returns nothing
+// Единственная генерируемая таблица: какой предмет в каком разделе.
+// Остальное (иконка, имя, цена, рецепт) магазин берёт из движка.
+set ShSecName[0]="Base Items"
+set ShSecCnt[0]=18
+set ShSecItem[0]='I01W'
+set ShSecItem[1]='I01H'
+set ShSecItem[2]='I008'
+set ShSecItem[3]='I01F'
+set ShSecItem[4]='I00E'
+set ShSecItem[5]='I01M'
+set ShSecItem[6]='I04H'
+set ShSecItem[7]='I12R'
+set ShSecItem[8]='ISPB'
+set ShSecItem[9]='I02S'
+set ShSecItem[10]='I02R'
+set ShSecItem[11]='I02T'
+set ShSecItem[12]='IGlA'
+set ShSecItem[13]='ISlA'
+set ShSecItem[14]='ISt0'
+set ShSecItem[15]='IMT0'
+set ShSecItem[16]='INY0'
+set ShSecItem[17]='IMS0'
+set ShSecName[1]="Weapons"
+set ShSecCnt[1]=13
+set ShSecItem[64]='I01O'
+set ShSecItem[65]='I01Q'
+set ShSecItem[66]='I01S'
+set ShSecItem[67]='I01U'
+set ShSecItem[68]='I02V'
+set ShSecItem[69]='I020'
+set ShSecItem[70]='I04F'
+set ShSecItem[71]='I03N'
+set ShSecItem[72]='I031'
+set ShSecItem[73]='ISDi'
+set ShSecItem[74]='I050'
+set ShSecItem[75]='IBSI'
+set ShSecItem[76]='IPRB'
+set ShSecName[2]="Ultimate Items"
+set ShSecCnt[2]=40
+set ShSecItem[128]='I02Y'
+set ShSecItem[129]='I040'
+set ShSecItem[130]='I042'
+set ShSecItem[131]='I03L'
+set ShSecItem[132]='I03F'
+set ShSecItem[133]='I03A'
+set ShSecItem[134]='I037'
+set ShSecItem[135]='I048'
+set ShSecItem[136]='I04G'
+set ShSecItem[137]='ISHk'
+set ShSecItem[138]='IHnK'
+set ShSecItem[139]='I046'
+set ShSecItem[140]='I054'
+set ShSecItem[141]='I02W'
+set ShSecItem[142]='I044'
+set ShSecItem[143]='I03P'
+set ShSecItem[144]='I03Q'
+set ShSecItem[145]='I03R'
+set ShSecItem[146]='I043'
+set ShSecItem[147]='I04L'
+set ShSecItem[148]='I04T'
+set ShSecItem[149]='I04V'
+set ShSecItem[150]='I06W'
+set ShSecItem[151]='IGDi'
+set ShSecItem[152]='I036'
+set ShSecItem[153]='I13R'
+set ShSecItem[154]='I06E'
+set ShSecItem[155]='I04I'
+set ShSecItem[156]='I066'
+set ShSecItem[157]='IMDi'
+set ShSecItem[158]='IAoF'
+set ShSecItem[159]='IAS0'
+set ShSecItem[160]='I068'
+set ShSecItem[161]='I06O'
+set ShSecItem[162]='IHYi'
+set ShSecItem[163]='I06Q'
+set ShSecItem[164]='I06R'
+set ShSecItem[165]='I06J'
+set ShSecItem[166]='ISTi'
+set ShSecItem[167]='I1S4'
+set ShSecName[3]="Half Vongola Rings"
+set ShSecCnt[3]=10
+set ShSecItem[192]='I02L'
+set ShSecItem[193]='I02E'
+set ShSecItem[194]='I019'
+set ShSecItem[195]='I013'
+set ShSecItem[196]='I00X'
+set ShSecItem[197]='I00R'
+set ShSecItem[198]='I00L'
+set ShSecItem[199]='I00F'
+set ShSecItem[200]='I007'
+set ShSecItem[201]='I049'
+set ShSecName[4]="Mare Rings"
+set ShSecCnt[4]=7
+set ShSecItem[256]='I04M'
+set ShSecItem[257]='I056'
+set ShSecItem[258]='I05C'
+set ShSecItem[259]='I05I'
+set ShSecItem[260]='I05O'
+set ShSecItem[261]='I05U'
+set ShSecItem[262]='I060'
+set ShSecName[5]="Hight-level Vongola Rings"
+set ShSecCnt[5]=10
+set ShSecItem[320]='I018'
+set ShSecItem[321]='I012'
+set ShSecItem[322]='I01E'
+set ShSecItem[323]='I00Q'
+set ShSecItem[324]='I00D'
+set ShSecItem[325]='I00K'
+set ShSecItem[326]='I00W'
+set ShSecItem[327]='I04E'
+set ShSecItem[328]='I02Q'
+set ShSecItem[329]='I02J'
+set ShSecName[6]="Hight-level Mare Rings"
+set ShSecCnt[6]=7
+set ShSecItem[384]='I04R'
+set ShSecItem[385]='I05B'
+set ShSecItem[386]='I05H'
+set ShSecItem[387]='I05N'
+set ShSecItem[388]='I05T'
+set ShSecItem[389]='I05Z'
+set ShSecItem[390]='I065'
+set ShSecName[7]="Recipes"
+set ShSecCnt[7]=36
+set ShSecItem[448]='I02X'
+set ShSecItem[449]='I047'
+set ShSecItem[450]='I055'
+set ShSecItem[451]='I01P'
+set ShSecItem[452]='I01R'
+set ShSecItem[453]='I01T'
+set ShSecItem[454]='I01V'
+set ShSecItem[455]='I045'
+set ShSecItem[456]='I02Z'
+set ShSecItem[457]='I02U'
+set ShSecItem[458]='IBSR'
+set ShSecItem[459]='IPar'
+set ShSecItem[460]='I04U'
+set ShSecItem[461]='I04X'
+set ShSecItem[462]='I04Y'
+set ShSecItem[463]='I04Z'
+set ShSecItem[464]='I052'
+set ShSecItem[465]='I051'
+set ShSecItem[466]='I053'
+set ShSecItem[467]='IGDr'
+set ShSecItem[468]='I06P'
+set ShSecItem[469]='IHYr'
+set ShSecItem[470]='I06S'
+set ShSecItem[471]='I06T'
+set ShSecItem[472]='I14R'
+set ShSecItem[473]='ISTr'
+set ShSecItem[474]='IPRR'
+set ShSecItem[475]='IPlR'
+set ShSecItem[476]='IBN0'
+set ShSecItem[477]='IGn0'
+set ShSecItem[478]='IGP0'
+set ShSecItem[479]='IYM0'
+set ShSecItem[480]='IBS1'
+set ShSecItem[481]='ISS0'
+set ShSecItem[482]='IVS0'
+set ShSecItem[483]='ISS0'
+set ShSecName[8]="Ultimate Sets"
+set ShSecCnt[8]=25
+set ShSecItem[512]='I06G'
+set ShSecItem[513]='I06F'
+set ShSecItem[514]='I06H'
+set ShSecItem[515]='I06I'
+set ShSecItem[516]='I03C'
+set ShSecItem[517]='I03E'
+set ShSecItem[518]='I03B'
+set ShSecItem[519]='I03D'
+set ShSecItem[520]='I03W'
+set ShSecItem[521]='I03X'
+set ShSecItem[522]='I03Z'
+set ShSecItem[523]='I03Y'
+set ShSecItem[524]='I032'
+set ShSecItem[525]='I033'
+set ShSecItem[526]='I035'
+set ShSecItem[527]='I034'
+set ShSecItem[528]='I06K'
+set ShSecItem[529]='I06L'
+set ShSecItem[530]='I06M'
+set ShSecItem[531]='I06N'
+set ShSecItem[532]='IOS1'
+set ShSecItem[533]='IOS2'
+set ShSecItem[534]='IOS3'
+set ShSecItem[535]='IOS4'
+set ShSecItem[536]='IPlA'
+set ShSecTotal=9
+endfunction
+
+
+// Перекраска собственной подложки кнопки: она растягивается, в отличие от
+// своего BACKDROP, который движок мостит плиткой. Заодно меняем подложки всех
+// состояний, чтобы пропала штатная синяя подсветка.
+// Вызов по null-фрейму рвёт весь поток JASS, поэтому проверяем каждую.
+function Sh_Skin takes framehandle btn,string tex,real side returns nothing
+local integer i=0
+local framehandle b
+loop
+exitwhen i>3
+set b=GetFrameBackdrop(btn,i)
+if b!=null then
+call SetFrameTexture(b,tex,0,true)
+call SetFrameBackgroundSize(b,0,side)
+endif
+set i=i+1
+endloop
+set b=null
+endfunction
+
+// Панель: плитка размером с большую сторону, чтобы она была ровно одна
+function Sh_Fit takes framehandle f,real w,real ph returns nothing
+if w>ph then
+call SetFrameBackgroundSize(f,0,w)
+else
+call SetFrameBackgroundSize(f,0,ph)
+endif
+endfunction
+
+// Убрать казённую подсветку, не трогая стили control'а: подложкам состояний
+// ставим пустую текстуру. Гасить стили нельзя — вместе с ними пропадают клики.
+function Sh_NoHi takes framehandle btn returns nothing
+local integer i=1
+local framehandle b
+loop
+exitwhen i>6
+set b=GetFrameBackdrop(btn,i)
+if b!=null then
+call SetFrameTexture(b,"war3mapImported\\shop_none.tga",0,true)
+endif
+set i=i+1
+endloop
+set b=null
+endfunction
+//--------------------- отрисовка ---------------------
+
+function Sh_PageItem takes integer pid,integer slot returns integer
+local integer cnt=ShPage[pid]*42+slot
+if cnt>=ShSecCnt[ShSelSec[pid]] then
+return 0
+endif
+return ShSecItem[ShSelSec[pid]*64+cnt]
+endfunction
+
+function Sh_PageCount takes integer pid returns integer
+return IMaxBJ(1,(ShSecCnt[ShSelSec[pid]]+41)/42)
+endfunction
+
+// Цены и отметка «есть» — единственное в каталоге, что зависит от золота
+function Sh_DrawPrices takes nothing returns nothing
+local integer pid=GetPlayerId(GetLocalPlayer())
+local integer gold=GetPlayerState(GetLocalPlayer(),PLAYER_STATE_RESOURCE_GOLD)
+local integer i=0
+local integer id
+loop
+exitwhen i==42
+set id=Sh_PageItem(pid,i)
+if id==0 then
+call BlzFrameSetText(ShItemCost[i],"")
+elseif Sh_Owns(pid,id) then
+call BlzFrameSetText(ShItemCost[i],"|c0066ff66есть|r")
+elseif Sh_Cost(id)>gold then
+call BlzFrameSetText(ShItemCost[i],"|c00ff5555"+I2S(Sh_Cost(id))+"|r")
+else
+call BlzFrameSetText(ShItemCost[i],"|c00FFFF00"+I2S(Sh_Cost(id))+"|r")
+endif
+set i=i+1
+endloop
+call BlzFrameSetText(ShGoldTxt,"|c00FFD700"+I2S(gold)+"|r")
+endfunction
+
+function Sh_DrawCatalog takes nothing returns nothing
+local integer pid=GetPlayerId(GetLocalPlayer())
+local integer i=0
+local integer id
+loop
+exitwhen i==42
+set id=Sh_PageItem(pid,i)
+call BlzFrameSetVisible(ShItemBtn[i],id!=0)
+if id!=0 then
+if id==ShSel[pid] then
+call BlzFrameSetTexture(ShRim[i],"war3mapImported\\shop_slot_glow.tga",0,true)
+else
+call BlzFrameSetTexture(ShRim[i],"war3mapImported\\shop_slot.tga",0,true)
+endif
+call BlzFrameSetTexture(ShItemBack[i],Sh_Icon(id),0,false)
+call BlzFrameSetText(ShItemTip[i],"|cff2B1B10"+Sh_Name(id)+"|r")
+endif
+set i=i+1
+endloop
+call BlzFrameSetText(ShPageTxt,I2S(ShPage[pid]+1)+" / "+I2S(Sh_PageCount(pid)))
+call Sh_DrawPrices()
+endfunction
+
+// Сборка: сверху цепочка улучшения, снизу компоненты, справа общая цена.
+function Sh_DrawCraft takes nothing returns nothing
+local integer pid=GetPlayerId(GetLocalPlayer())
+local integer sel=ShSel[pid]
+local integer k=Sh_RecipeOf(sel)
+local integer i=0
+local integer c
+local integer id
+loop
+exitwhen i==6
+set id=0
+if k>=0 then
+set id=Sh_RecComp(k,i)
+endif
+call BlzFrameSetVisible(ShCraftBtn[i],id!=0)
+if id==0 then
+call BlzFrameSetText(ShCraftCost[i],"")
+else
+call BlzFrameSetTexture(ShCraftBack[i],Sh_Icon(id),0,false)
+set c=Sh_RecCnt(k,i)
+if Sh_Owns(pid,id) and c<2 then
+call BlzFrameSetText(ShCraftCost[i],"|c0066ff66есть|r")
+elseif c>1 then
+call BlzFrameSetText(ShCraftCost[i],"|c00FFFF00"+I2S(Sh_Cost(id)*c)+"|r x"+I2S(c))
+else
+call BlzFrameSetText(ShCraftCost[i],"|c00FFFF00"+I2S(Sh_Cost(id))+"|r")
+endif
+endif
+set i=i+1
+endloop
+if sel==0 then
+call BlzFrameSetText(ShCraftGoldTxt,"")
+elseif k<0 then
+call BlzFrameSetText(ShCraftGoldTxt,"|c00FFD700"+I2S(Sh_Cost(sel))+"|r")
+else
+call BlzFrameSetText(ShCraftGoldTxt,"|c00FFD700"+I2S(Sh_Remain(pid,sel))+"|r")
+endif
+endfunction
+
+function Sh_DrawDesc takes nothing returns nothing
+local integer sel=ShSel[GetPlayerId(GetLocalPlayer())]
+local string body
+if sel==0 then
+call BlzFrameSetText(ShDescName,"|c00FFFF00Предмет не выбран|r")
+call BlzFrameSetText(ShDescBody,"")
+return
+endif
+call BlzFrameSetText(ShDescName,"|c00FFFF00"+Sh_Name(sel)+"|r")
+set body=BlzGetAbilityExtendedTooltip(sel,0)
+// длинное описание лезет за подложку — обрезаем и закрываем цвет,
+// иначе оборванный |c... красит весь остальной интерфейс
+if StringLength(body)>330 then
+set body=SubString(body,0,330)+"...|r"
+endif
+call BlzFrameSetText(ShDescBody,body)
+endfunction
+
+// Под предметом инвентаря — сколько за него дадут при продаже
+function Sh_DrawInv takes nothing returns nothing
+local integer pid=GetPlayerId(GetLocalPlayer())
+local integer i=0
+local integer id
+loop
+exitwhen i==10
+set id=0
+if Hero[pid]!=null then
+set id=GetItemTypeId(UnitItemInSlot(Hero[pid],i))
+endif
+if id==0 then
+call BlzFrameSetTexture(ShInvBack[i],"war3mapImported\\shop_none.tga",0,true)
+call BlzFrameSetText(ShInvCost[i],"")
+call BlzFrameSetText(ShInvTip[i],"")
+else
+call BlzFrameSetTexture(ShInvBack[i],Sh_Icon(id),0,false)
+call BlzFrameSetText(ShInvCost[i],"|c00FFFF00"+I2S(Sh_Sell(id))+"|r")
+call BlzFrameSetText(ShInvTip[i],"|cffffffff"+Sh_Name(id)+"|r")
+endif
+set i=i+1
+endloop
+endfunction
+
+// Перекрашиваем только по клику на раздел: 9 кнопок по 4 подложки
+function Sh_DrawSections takes nothing returns nothing
+local integer pid=GetPlayerId(GetLocalPlayer())
+local integer i=0
+loop
+exitwhen i==ShSecTotal
+if i==ShSelSec[pid] then
+call BlzFrameSetText(ShSecBtn[i],"|c00FFF0C0"+ShSecName[i]+"|r")
+call Sh_Skin(ShSecBtn[i],"war3mapImported\\shop_btn_hover_s.tga",0.095)
+else
+call BlzFrameSetText(ShSecBtn[i],"|c00E8C061"+ShSecName[i]+"|r")
+call Sh_Skin(ShSecBtn[i],"war3mapImported\\shop_btn_s.tga",0.095)
+endif
+set i=i+1
+endloop
+endfunction
+
+function Sh_Redraw takes nothing returns nothing
+call Sh_DrawCatalog()
+call Sh_DrawCraft()
+call Sh_DrawDesc()
+call Sh_DrawInv()
+endfunction
+
+// Золото и предметы меняются мимо магазина. Раньше окно перерисовывалось
+// целиком каждые 0.4 с и ело кадры: теперь сверяем золото и 16 ячеек героя
+// и сундука, и трогаем только то, что от них зависит.
+function Sh_Tick takes nothing returns nothing
+local integer pid=GetPlayerId(GetLocalPlayer())
+local integer i=0
+local integer id
+local boolean inv=false
+if ShOpened==false then
+return
+endif
+loop
+exitwhen i==16
+set id=0
+if i<10 and Hero[pid]!=null then
+set id=GetItemTypeId(UnitItemInSlot(Hero[pid],i))
+elseif i>=10 and Chest[pid]!=null then
+set id=GetItemTypeId(UnitItemInSlot(Chest[pid],i-10))
+endif
+if id!=ShLastInv[i] then
+set ShLastInv[i]=id
+set inv=true
+endif
+set i=i+1
+endloop
+if inv then
+call Sh_DrawCraft()
+call Sh_DrawInv()
+endif
+set id=GetPlayerState(GetLocalPlayer(),PLAYER_STATE_RESOURCE_GOLD)
+if inv or id!=ShLastGold then
+set ShLastGold=id
+call Sh_DrawPrices()
+endif
+endfunction
+//--------------------- клики: ЛОКАЛЬНЫЕ, игру не трогают ---------------------
+
+function Sh_Click takes nothing returns nothing
+local integer pid=GetPlayerId(GetTriggerPlayer())
+local integer tag=Sh_TagOf(BlzGetTriggerFrame())
+local integer id
+if GetTriggerPlayer()!=GetLocalPlayer() then
+return
+endif
+if tag>=100 and tag<200 then
+set ShSelSec[pid]=tag-100
+set ShPage[pid]=0
+call Sh_DrawSections()
+call Sh_DrawCatalog()
+elseif tag>=200 and tag<300 then
+set id=Sh_PageItem(pid,tag-200)
+if id!=0 then
+set ShSel[pid]=id
+call Sh_Redraw()
+endif
+elseif tag>=500 and tag<600 then
+// клик по компоненту сборки проваливает выбор вглубь
+set id=Sh_RecComp(Sh_RecipeOf(ShSel[pid]),tag-500)
+if id!=0 then
+set ShSel[pid]=id
+call Sh_Redraw()
+endif
+elseif tag>=300 and tag<310 then
+set ShInvSel[pid]=tag-300
+if Hero[pid]!=null and UnitItemInSlot(Hero[pid],tag-300)!=null then
+set ShSel[pid]=GetItemTypeId(UnitItemInSlot(Hero[pid],tag-300))
+endif
+call Sh_Redraw()
+elseif tag==410 then
+call SendSyncData("SHB",I2S(ShSel[pid]))
+elseif tag==411 then
+call SendSyncData("SHS",I2S(ShInvSel[pid]))
+elseif tag==403 then
+// свиток улучшения: покупается тем же путём, что и всё остальное
+call SendSyncData("SHB",I2S('I00E'))
+elseif tag==401 then
+if ShPage[pid]>0 then
+set ShPage[pid]=ShPage[pid]-1
+call Sh_DrawCatalog()
+endif
+elseif tag==402 then
+if ShPage[pid]+1<Sh_PageCount(pid) then
+set ShPage[pid]=ShPage[pid]+1
+call Sh_DrawCatalog()
+endif
+endif
+endfunction
+
+//--------------------- приём: СИНХРОННО у всех ---------------------
+
+function Sh_ItemAllowed takes integer id returns boolean
+local integer sec=0
+local integer i
+loop
+exitwhen sec==ShSecTotal
+set i=0
+loop
+exitwhen i==ShSecCnt[sec]
+if ShSecItem[sec*64+i]==id then
+return true
+endif
+set i=i+1
+endloop
+set sec=sec+1
+endloop
+return false
+endfunction
+
+function Sh_Give takes player p,integer pid,integer id returns nothing
+local integer i=0
+local boolean full=true
+local item itm
+loop
+exitwhen i==10
+if UnitItemInSlot(Hero[pid],i)==null then
+set full=false
+endif
+set i=i+1
+endloop
+if full and Chest[pid]!=null then
+set itm=CreateItem(id,GetUnitX(Chest[pid]),GetUnitY(Chest[pid]))
+call UnitAddItem(Chest[pid],itm)
+if GetLocalPlayer()==p then
+call DisplayTextToPlayer(p,0,0,"|cffffcc00Инвентарь полон — покупка ушла в сундук.|r")
+endif
+else
+set itm=CreateItem(id,GetUnitX(Hero[pid]),GetUnitY(Hero[pid]))
+call UnitAddItem(Hero[pid],itm)
+endif
+set itm=null
+endfunction
+
+function Sh_Sync takes nothing returns nothing
+local player p=GetTriggerSyncPlayer()
+local integer pid=GetPlayerId(p)
+local string pref=GetTriggerSyncPrefix()
+local integer val=S2I(GetTriggerSyncData())
+local unit hu=Hero[pid]
+local integer cost
+local item itm
+if Sh_InZone(hu)==false then
+if GetLocalPlayer()==p then
+call DisplayTextToPlayer(p,0,0,"|cffff5555Только в зоне ожидания.|r")
+endif
+set p=null
+set hu=null
+return
+endif
+if pref=="SHS" then
+// ПРОДАЖА выбранного слота инвентаря (10 ячеек) за 80% цены
+if val>=0 and val<10 then
+set itm=UnitItemInSlot(hu,val)
+if itm!=null then
+set cost=Sh_Sell(GetItemTypeId(itm))
+if GetLocalPlayer()==p then
+call DisplayTextToPlayer(p,0,0,"|c00FFD700Продано: "+Sh_Name(GetItemTypeId(itm))+" за "+I2S(cost)+"|r")
+endif
+call RemoveItem(itm)
+call SetPlayerState(p,PLAYER_STATE_RESOURCE_GOLD,GetPlayerState(p,PLAYER_STATE_RESOURCE_GOLD)+cost)
+set itm=null
+endif
+endif
+set p=null
+set hu=null
+return
+endif
+if pref=="SHB" then
+// ПОКУПКА. Проверки повторены здесь намеренно: клик локальный,
+// интерфейс защитой не считается.
+if val==0 or Sh_ItemAllowed(val)==false then
+set p=null
+set hu=null
+return
+endif
+set cost=Sh_Cost(val)
+if GetPlayerState(p,PLAYER_STATE_RESOURCE_GOLD)<cost then
+if GetLocalPlayer()==p then
+call DisplayTextToPlayer(p,0,0,"|cffff5555Не хватает "+I2S(cost-GetPlayerState(p,PLAYER_STATE_RESOURCE_GOLD))+" золота.|r")
+endif
+set p=null
+set hu=null
+return
+endif
+call SetPlayerState(p,PLAYER_STATE_RESOURCE_GOLD,GetPlayerState(p,PLAYER_STATE_RESOURCE_GOLD)-cost)
+call Sh_Give(p,pid,val)
+if GetLocalPlayer()==p then
+call DisplayTextToPlayer(p,0,0,"|c0066ff66Куплено: "+Sh_Name(val)+" за "+I2S(cost)+"|r")
+endif
+endif
+set p=null
+set hu=null
+endfunction
+//--------------------- сборка окна ---------------------
+
+//  РАЗМЕРЫ. Игровое поле фреймов = 0.8 по X и 0.6 по Y при любом
+// разрешении. Окно ужато до 0.68 x 0.35 (было 0.76 x 0.41 и выглядело
+// раздутым): панели подогнаны под содержимое, пустоты убраны.
+// Цена подписывается ПОД кнопкой предмета (привязка к её нижней грани),
+// иначе текст наезжает на иконку.
+
+// --- скин магазина ---
+// Подложка: обычный BACKDROP, растягивается ровно по своим точкам.
+function Sh_Deco takes framehandle parent,string tex,integer lvl returns framehandle
+local framehandle f=BlzCreateFrameByType("BACKDROP","ShDeco",parent,"",0)
+call BlzFrameSetTexture(f,tex,0,true)
+call BlzFrameSetLevel(f,lvl)
+return f
+endfunction
+
+// Подсказка как в образце: BACKDROP с чёрной текстурой и текстом внутри,
+// привязанная к кнопке через BlzFrameSetTooltip — движок сам её показывает.
+function Sh_MakeTip takes framehandle owner returns framehandle
+local framehandle tip=BlzCreateFrameByType("BACKDROP","ShTip",ShMain,"",ShTipCtx)
+local framehandle tf=BlzCreateFrameByType("TEXT","ShTipText",tip,"",ShTipCtx)
+set ShTipCtx=ShTipCtx+1
+call BlzFrameSetPoint(tip,FRAMEPOINT_TOP,owner,FRAMEPOINT_BOTTOM,0.0,-0.014)
+call BlzFrameSetSize(tip,0.12,0.017)
+call BlzFrameSetTexture(tip,"war3mapImported\\shop_tooltip_a.tga",0,true)
+call SetFrameBackgroundSize(tip,0,0.12)
+call BlzFrameSetLevel(tip,50)
+call BlzFrameSetAllPoints(tf,tip)
+call BlzFrameSetTextAlignment(tf,TEXT_JUSTIFY_MIDDLE,TEXT_JUSTIFY_CENTER)
+call BlzFrameSetScale(tf,0.80)
+call BlzFrameSetText(tf,"")
+call BlzFrameSetVisible(tip,false)
+call BlzFrameSetTooltip(owner,tip)
+set tip=null
+return tf
+endfunction
+
+function Sh_Panel takes real cx,real cy,real w,real ph,string tex returns framehandle
+local framehandle f=BlzCreateFrameByType("BACKDROP","ShPanel",ShMain,"",0)
+call BlzFrameSetAbsPoint(f,FRAMEPOINT_CENTER,cx,cy)
+call BlzFrameSetTexture(f,tex,0,true)
+call BlzFrameSetSize(f,w,ph)
+call Sh_Fit(f,w,ph)
+return f
+endfunction
+
+// Заголовок над панелью
+function Sh_Cap takes framehandle owner,string t returns framehandle
+local framehandle f=BlzCreateFrameByType("TEXT","ShCap",owner,"",0)
+call BlzFrameSetPoint(f,FRAMEPOINT_BOTTOM,owner,FRAMEPOINT_TOP,0,-0.017)
+call BlzFrameSetScale(f,0.90)
+call BlzFrameSetText(f,t)
+return f
+endfunction
+
+// Подпись цены под кнопкой предмета
+function Sh_CostText takes framehandle owner returns framehandle
+local framehandle f=BlzCreateFrameByType("TEXT","ShCost",owner,"",0)
+call BlzFrameSetPoint(f,FRAMEPOINT_TOP,owner,FRAMEPOINT_BOTTOM,0,-0.001)
+call BlzFrameSetSize(f,0.044,0.012)
+call BlzFrameSetTextAlignment(f,TEXT_JUSTIFY_TOP,TEXT_JUSTIFY_CENTER)
+call BlzFrameSetScale(f,0.78)
+call BlzFrameSetText(f,"")
+return f
+endfunction
+
+function Sh_Build takes nothing returns nothing
+local framehandle gameUI=BlzGetOriginFrame(ORIGIN_FRAME_GAME_UI,0)
+local framehandle bg
+local integer i=0
+local integer k=0
+local real x
+local real y
+if ShBuilt then
+return
+endif
+set ShBuilt=true
+call Sh_SecData()
+
+// главная панель: 0.06..0.74 по X, 0.21..0.56 по Y
+set ShMain=BlzCreateFrame("EscMenuBackdrop",gameUI,0,0)
+call BlzFrameSetAbsPoint(ShMain,FRAMEPOINT_CENTER,0.40,0.368)
+call BlzFrameSetSize(ShMain,0.76,0.384)
+
+// ---- фон окна ----
+// Своя текстура только на обычном BACKDROP: на фрейме из шаблона движок
+// режет её на девять кусков и растягивает по экрану.
+set bg=Sh_Deco(ShMain,"war3mapImported\\shop_window.tga",0)
+call SetFrameBackgroundSize(bg,0,0.744)
+call BlzFrameSetPoint(bg,FRAMEPOINT_TOPLEFT,ShMain,FRAMEPOINT_TOPLEFT,0.008,-0.008)
+call BlzFrameSetPoint(bg,FRAMEPOINT_BOTTOMRIGHT,ShMain,FRAMEPOINT_BOTTOMRIGHT,-0.008,0.008)
+set bg=null
+
+set ShList=Sh_Panel(0.318,0.369,0.30,0.30,"war3mapImported\\shop_panel_list.tga")
+set ShCraft=Sh_Panel(0.542,0.439,0.15,0.16,"war3mapImported\\shop_panel_craft.tga")
+set ShDesc=Sh_Panel(0.542,0.279,0.15,0.12,"war3mapImported\\shop_panel_desc.tga")
+set ShInv=Sh_Panel(0.6775,0.363,0.115,0.288,"war3mapImported\\shop_panel_inv.tga")
+
+set ShTrgClick=CreateTrigger()
+call TriggerAddAction(ShTrgClick,function Sh_Click)
+
+// ---- разделы столбцом слева ----
+set y=0.512
+set i=0
+loop
+exitwhen i==ShSecTotal
+set ShSecBtn[i]=BlzCreateFrameByType("GLUETEXTBUTTON","ShSecBtn",ShMain,"ScriptDialogButton",0)
+call Sh_Tag(ShSecBtn[i],100+i)
+call BlzFrameSetAbsPoint(ShSecBtn[i],FRAMEPOINT_CENTER,0.1165,y)
+call BlzFrameSetSize(ShSecBtn[i],0.1532,0.0416)
+call BlzFrameSetScale(ShSecBtn[i],0.62)
+call BlzTriggerRegisterFrameEvent(ShTrgClick,ShSecBtn[i],FRAMEEVENT_CONTROL_CLICK)
+set y=y-0.034
+set i=i+1
+endloop
+// подписи и скин разделов
+call Sh_DrawSections()
+
+// ---- каталог 7 в ряд, 5 рядов ----
+set x=0.012
+set y=-0.028
+set k=0
+set i=0
+loop
+exitwhen i==42
+set ShItemBtn[i]=BlzCreateFrameByType("BUTTON","ShItemBtn",ShList,"ScoreScreenTabButtonTemplate",0)
+call Sh_Tag(ShItemBtn[i],200+i)
+set ShItemBack[i]=BlzCreateFrameByType("BACKDROP","ShItemBack",ShItemBtn[i],"",0)
+call BlzFrameSetAllPoints(ShItemBack[i],ShItemBtn[i])
+call BlzFrameSetPoint(ShItemBtn[i],FRAMEPOINT_LEFT,ShList,FRAMEPOINT_TOPLEFT,x+0.039*I2R(k),y)
+call BlzFrameSetSize(ShItemBtn[i],0.036,0.036)
+call Sh_NoHi(ShItemBtn[i])
+set ShRim[i]=BlzCreateFrameByType("BACKDROP","ShRim",ShItemBtn[i],"",0)
+call BlzFrameSetAllPoints(ShRim[i],ShItemBtn[i])
+call BlzFrameSetTexture(ShRim[i],"war3mapImported\\shop_slot.tga",0,true)
+// размер плитки ровно в ячейку, иначе по краям лезут обрезки соседних гнёзд
+call SetFrameBackgroundSize(ShRim[i],0,0.036)
+call BlzFrameSetLevel(ShRim[i],4)
+set ShItemTip[i]=Sh_MakeTip(ShItemBtn[i])
+set ShItemCost[i]=Sh_CostText(ShItemBtn[i])
+call BlzTriggerRegisterFrameEvent(ShTrgClick,ShItemBtn[i],FRAMEEVENT_CONTROL_CLICK)
+set k=k+1
+set i=i+1
+if k==7 then
+set k=0
+set y=y-0.047
+endif
+endloop
+
+// ---- сборка: 3 в ряд, 2 ряда, снизу общая цена ----
+set x=0.014
+set y=-0.032
+set k=0
+set i=0
+loop
+exitwhen i==6
+set ShCraftBtn[i]=BlzCreateFrameByType("BUTTON","ShCraftBtn",ShCraft,"ScoreScreenTabButtonTemplate",0)
+call Sh_Tag(ShCraftBtn[i],500+i)
+set ShCraftBack[i]=BlzCreateFrameByType("BACKDROP","ShCraftBack",ShCraftBtn[i],"",0)
+call BlzFrameSetAllPoints(ShCraftBack[i],ShCraftBtn[i])
+call BlzFrameSetPoint(ShCraftBtn[i],FRAMEPOINT_LEFT,ShCraft,FRAMEPOINT_TOPLEFT,x+0.042*I2R(k),y)
+call BlzFrameSetSize(ShCraftBtn[i],0.036,0.036)
+call Sh_NoHi(ShCraftBtn[i])
+set ShCraftRim[i]=BlzCreateFrameByType("BACKDROP","ShCraftRim",ShCraftBtn[i],"",0)
+call BlzFrameSetAllPoints(ShCraftRim[i],ShCraftBtn[i])
+call BlzFrameSetTexture(ShCraftRim[i],"war3mapImported\\shop_slot.tga",0,true)
+// размер плитки ровно в ячейку, иначе по краям лезут обрезки соседних гнёзд
+call SetFrameBackgroundSize(ShCraftRim[i],0,0.036)
+call BlzFrameSetLevel(ShCraftRim[i],4)
+set ShCraftCost[i]=Sh_CostText(ShCraftBtn[i])
+call BlzTriggerRegisterFrameEvent(ShTrgClick,ShCraftBtn[i],FRAMEEVENT_CONTROL_CLICK)
+set k=k+1
+set i=i+1
+if k==3 then
+set k=0
+set y=y-0.056
+endif
+endloop
+call Sh_Cap(ShCraft,"|c00FFD700Сборка|r")
+set ShCraftGoldTxt=BlzCreateFrameByType("TEXT","ShCraftGold",ShCraft,"",0)
+call BlzFrameSetPoint(ShCraftGoldTxt,FRAMEPOINT_BOTTOM,ShCraft,FRAMEPOINT_BOTTOM,0,0.004)
+call BlzFrameSetScale(ShCraftGoldTxt,0.90)
+call BlzFrameSetText(ShCraftGoldTxt,"")
+
+// ---- описание ----
+set ShDescName=Sh_Cap(ShDesc,"|c00FFFF00Предмет не выбран|r")
+set ShDescBody=BlzCreateFrameByType("TEXT","ShDescBody",ShDesc,"",0)
+call BlzFrameSetSize(ShDescBody,0.14,0.088)
+call BlzFrameSetPoint(ShDescBody,FRAMEPOINT_TOP,ShDesc,FRAMEPOINT_TOP,0,-0.020)
+call BlzFrameSetScale(ShDescBody,0.78)
+call BlzFrameSetText(ShDescBody,"")
+
+// ---- инвентарь: как игровая панель предметов — один сверху, ниже сетка 3x3 ----
+set ShInvName=Sh_Cap(ShInv,"|c00FFFF00Инвентарь|r")
+call BlzFrameClearAllPoints(ShInvName)
+call BlzFrameSetPoint(ShInvName,FRAMEPOINT_TOP,ShInv,FRAMEPOINT_TOP,0,-0.006)
+// ячейка мельче шести-слотной (0.036 -> 0.032): три в ряд в панель 0.115 иначе не влезают
+set x=0.005
+set y=-0.034
+set k=0
+set i=0
+loop
+exitwhen i==10
+set ShInvBtn[i]=BlzCreateFrameByType("BUTTON","ShInvBtn",ShInv,"ScoreScreenTabButtonTemplate",0)
+call Sh_Tag(ShInvBtn[i],300+i)
+set ShInvBack[i]=BlzCreateFrameByType("BACKDROP","ShInvBack",ShInvBtn[i],"",0)
+call BlzFrameSetAllPoints(ShInvBack[i],ShInvBtn[i])
+// Раскладка повторяет игровую панель предметов (war3map.j ~27674): карта
+// переставляет кнопки так, что слоты идут по столбцам, третий столбец — 7..9,
+// а десятый слот висит один сверху:
+//          (10)
+//     (1) (2) (7)
+//     (3) (4) (8)
+//     (5) (6) (9)
+if i==9 then
+call BlzFrameSetPoint(ShInvBtn[i],FRAMEPOINT_LEFT,ShInv,FRAMEPOINT_TOPLEFT,x+0.0365,-0.034)
+elseif i<6 then
+call BlzFrameSetPoint(ShInvBtn[i],FRAMEPOINT_LEFT,ShInv,FRAMEPOINT_TOPLEFT,x+0.0365*I2R(ModuloInteger(i,2)),-0.078-0.042*I2R(i/2))
+else
+call BlzFrameSetPoint(ShInvBtn[i],FRAMEPOINT_LEFT,ShInv,FRAMEPOINT_TOPLEFT,x+0.073,-0.078-0.042*I2R(i-6))
+endif
+call BlzFrameSetSize(ShInvBtn[i],0.032,0.032)
+call Sh_NoHi(ShInvBtn[i])
+set ShInvRim[i]=BlzCreateFrameByType("BACKDROP","ShInvRim",ShInvBtn[i],"",0)
+call BlzFrameSetAllPoints(ShInvRim[i],ShInvBtn[i])
+call BlzFrameSetTexture(ShInvRim[i],"war3mapImported\\shop_slot.tga",0,true)
+call SetFrameBackgroundSize(ShInvRim[i],0,0.032)
+call BlzFrameSetLevel(ShInvRim[i],4)
+set ShInvTip[i]=Sh_MakeTip(ShInvBtn[i])
+set ShInvCost[i]=Sh_CostText(ShInvBtn[i])
+call BlzTriggerRegisterFrameEvent(ShTrgClick,ShInvBtn[i],FRAMEEVENT_CONTROL_CLICK)
+set i=i+1
+endloop
+set ShBuyBtn=BlzCreateFrameByType("GLUETEXTBUTTON","ShBuyBtn",ShInv,"ScriptDialogButton",0)
+call Sh_Tag(ShBuyBtn,410)
+call BlzFrameSetPoint(ShBuyBtn,FRAMEPOINT_BOTTOM,ShInv,FRAMEPOINT_BOTTOM,0,0.062)
+call BlzFrameSetSize(ShBuyBtn,0.105,0.032)
+call BlzFrameSetScale(ShBuyBtn,0.85)
+call Sh_Skin(ShBuyBtn,"war3mapImported\\shop_action_a.tga",0.08925)
+call BlzFrameSetText(ShBuyBtn,"|c0066ff66КУПИТЬ|r")
+call BlzTriggerRegisterFrameEvent(ShTrgClick,ShBuyBtn,FRAMEEVENT_CONTROL_CLICK)
+set ShSellBtn=BlzCreateFrameByType("GLUETEXTBUTTON","ShSellBtn",ShInv,"ScriptDialogButton",0)
+call Sh_Tag(ShSellBtn,411)
+call BlzFrameSetPoint(ShSellBtn,FRAMEPOINT_BOTTOM,ShInv,FRAMEPOINT_BOTTOM,0,0.034)
+call BlzFrameSetSize(ShSellBtn,0.105,0.032)
+call BlzFrameSetScale(ShSellBtn,0.85)
+call Sh_Skin(ShSellBtn,"war3mapImported\\shop_action_a.tga",0.08925)
+call BlzFrameSetText(ShSellBtn,"|c00FFD700ПРОДАТЬ|r")
+call BlzTriggerRegisterFrameEvent(ShTrgClick,ShSellBtn,FRAMEEVENT_CONTROL_CLICK)
+// быстрая покупка свитка «Улучшить предмет» (I00E, 750)
+set ShUpgBtn=BlzCreateFrameByType("GLUETEXTBUTTON","ShUpgBtn",ShInv,"ScriptDialogButton",0)
+call Sh_Tag(ShUpgBtn,403)
+call BlzFrameSetPoint(ShUpgBtn,FRAMEPOINT_BOTTOM,ShInv,FRAMEPOINT_BOTTOM,0,0.006)
+call BlzFrameSetSize(ShUpgBtn,0.105,0.032)
+call Sh_Skin(ShUpgBtn,"war3mapImported\\shop_action_a.tga",0.08925)
+call BlzFrameSetScale(ShUpgBtn,0.85)
+call BlzFrameSetText(ShUpgBtn,"|c00AACCFFУЛУЧШИТЬ 750|r")
+call BlzTriggerRegisterFrameEvent(ShTrgClick,ShUpgBtn,FRAMEEVENT_CONTROL_CLICK)
+
+set ShGoldTxt=BlzCreateFrameByType("TEXT","ShGoldTxt",ShMain,"",0)
+call BlzFrameSetAbsPoint(ShGoldTxt,FRAMEPOINT_CENTER,0.170,0.211)
+call BlzFrameSetText(ShGoldTxt,"")
+
+// ---- листание страниц ----
+set ShPrevBtn=BlzCreateFrameByType("GLUETEXTBUTTON","ShPrevBtn",ShMain,"ScriptDialogButton",0)
+call Sh_Tag(ShPrevBtn,401)
+call BlzFrameSetAbsPoint(ShPrevBtn,FRAMEPOINT_CENTER,0.283,0.211)
+call BlzFrameSetSize(ShPrevBtn,0.026,0.026)
+call BlzFrameSetScale(ShPrevBtn,0.80)
+call Sh_Skin(ShPrevBtn,"war3mapImported\\shop_arrow_l.tga",0.0208)
+call BlzTriggerRegisterFrameEvent(ShTrgClick,ShPrevBtn,FRAMEEVENT_CONTROL_CLICK)
+set ShPageTxt=BlzCreateFrameByType("TEXT","ShPageTxt",ShMain,"",0)
+call BlzFrameSetAbsPoint(ShPageTxt,FRAMEPOINT_CENTER,0.318,0.211)
+call BlzFrameSetSize(ShPageTxt,0.034,0.016)
+call BlzFrameSetTextAlignment(ShPageTxt,TEXT_JUSTIFY_MIDDLE,TEXT_JUSTIFY_CENTER)
+call BlzFrameSetScale(ShPageTxt,0.80)
+call BlzFrameSetText(ShPageTxt,"1 / 1")
+set ShNextBtn=BlzCreateFrameByType("GLUETEXTBUTTON","ShNextBtn",ShMain,"ScriptDialogButton",0)
+call Sh_Tag(ShNextBtn,402)
+call BlzFrameSetAbsPoint(ShNextBtn,FRAMEPOINT_CENTER,0.353,0.211)
+call BlzFrameSetSize(ShNextBtn,0.026,0.026)
+call BlzFrameSetScale(ShNextBtn,0.80)
+call Sh_Skin(ShNextBtn,"war3mapImported\\shop_arrow.tga",0.0208)
+call BlzTriggerRegisterFrameEvent(ShTrgClick,ShNextBtn,FRAMEEVENT_CONTROL_CLICK)
+
+// приём: один триггер на всех игроков
+set ShTrgSync=CreateTrigger()
+set i=0
+loop
+exitwhen i==12
+call BlzTriggerRegisterPlayerSyncEvent(ShTrgSync,Player(i),"SHB",false)
+call BlzTriggerRegisterPlayerSyncEvent(ShTrgSync,Player(i),"SHS",false)
+set i=i+1
+endloop
+call TriggerAddAction(ShTrgSync,function Sh_Sync)
+
+call BlzFrameSetVisible(ShMain,false)
+call TimerStart(CreateTimer(),0.4,true,function Sh_Tick)
+set gameUI=null
+endfunction
+
+function Sh_Toggle takes nothing returns nothing
+if ShBuilt==false then
+return
+endif
+// Клавиша приходит на ВСЕ машины: показываем только тому, кто нажал.
+if GetTriggerPlayer()==GetLocalPlayer() then
+set ShOpened=(ShOpened==false)
+call BlzFrameSetVisible(ShMain,ShOpened)
+if ShOpened then
+call Sh_Redraw()
+endif
+endif
+endfunction
+
+function Sh_InitBuild takes nothing returns nothing
+call Sh_Build()
+endfunction
+
+function Sh_Init takes nothing returns nothing
+local integer i=0
+local trigger tk
+loop
+exitwhen i==12
+set tk=CreateTrigger()
+call TriggerRegisterPlayerKeyEvent(tk,Player(i),OSKEY_B,0,true)
+call TriggerAddAction(tk,function Sh_Toggle)
+set i=i+1
+endloop
+set tk=null
+call TimerStart(CreateTimer(),0.0,false,function Sh_InitBuild)
+endfunction
+//Shop32End
 function AbilitiesForChoice_Cond takes nothing returns boolean
     local boolean cond1=GetSpellAbilityId()=='RsQ1' or GetSpellAbilityId()=='RsQ2' or GetSpellAbilityId()=='RsQ3' or GetSpellAbilityId()=='RsW1' or GetSpellAbilityId()=='RsW2' or GetSpellAbilityId()=='RsE1' or GetSpellAbilityId()=='RsR1' or GetSpellAbilityId()=='RsR2' or GetSpellAbilityId()=='RsT1' or GetSpellAbilityId()=='RsD1' or GetSpellAbilityId()=='RsD2' or GetSpellAbilityId()=='RsD3' or GetSpellAbilityId()=='RsF1' or GetSpellAbilityId()=='RsF2' or GetSpellAbilityId()=='RsF3' or GetSpellAbilityId()=='RsG1' or GetSpellAbilityId()=='GinG' or GetSpellAbilityId()=='LamF' or GetSpellAbilityId()=='SiD1' or GetSpellAbilityId()=='AKQ1' or GetSpellAbilityId()=='AKW1' or GetSpellAbilityId()=='AKE1' or GetSpellAbilityId()=='AKR1' or GetSpellAbilityId()=='AKT1' or GetSpellAbilityId()=='AKF1' or GetSpellAbilityId()=='AKG1' or GetSpellAbilityId()=='GrQ1' or GetSpellAbilityId()=='GrW1' or GetSpellAbilityId()=='GrE1' or GetSpellAbilityId()=='GrR1' or GetSpellAbilityId()=='GrT1' or GetSpellAbilityId()=='GrF1' or GetSpellAbilityId()=='GrG2' or GetSpellAbilityId()=='UKD1' or GetSpellAbilityId()=='BuuG' or GetSpellAbilityId()=='GSQ1' or GetSpellAbilityId()=='GSQ2' or GetSpellAbilityId()=='GSW1' or GetSpellAbilityId()=='GSE1' or GetSpellAbilityId()=='GSE2' or GetSpellAbilityId()=='GSF1' or GetSpellAbilityId()=='GSF2' or GetSpellAbilityId()=='GSG1' or GetSpellAbilityId()=='GSR1' or GetSpellAbilityId()=='GST1' or GetSpellAbilityId()=='GST2' or GetSpellAbilityId()=='GST3' or GetSpellAbilityId()=='SHG1' or GetSpellAbilityId()=='CelF' or GetSpellAbilityId()=='CelG' or GetSpellAbilityId()=='CelT' or GetSpellAbilityId()=='AccD' or GetSpellAbilityId()=='AccG' or GetSpellAbilityId()=='FSF1' or GetSpellAbilityId()=='FSG1' or GetSpellAbilityId()=='ASGD'
-    if cond1 then
+    local boolean cond2=GetSpellAbilityId()=='BbQ1' or GetSpellAbilityId()=='BbW1' or GetSpellAbilityId()=='BbE1' or GetSpellAbilityId()=='BbR1' or GetSpellAbilityId()=='BbT1' or GetSpellAbilityId()=='BbT2' or GetSpellAbilityId()=='BbD1' or GetSpellAbilityId()=='BbF1' or GetSpellAbilityId()=='BbGb' //Barragan1start//Barragan1end
+    if cond1 or cond2 then
         return true
     else
         return false
@@ -225660,7 +228099,7 @@ local integer id=GetHandleId(t)
 call SaveEffectHandle(HH,id,10,AddSpecialEffectTarget("Garp\\Garp_HandsFX.mdx",caster,"hand right"))
 call SetSpecialEffectScale(LoadEffectHandle(HH,id,10),0.1)
 call TimerStart(t,dur,false,function Garp_Hands_End)
-// ⚠️ Ауру НЕЛЬЗЯ вешать эффектом: у Garp_Aura.mdx одна секвенция Stand и нет Death,
+//  Ауру НЕЛЬЗЯ вешать эффектом: у Garp_Aura.mdx одна секвенция Stand и нет Death,
 // поэтому DestroyEffect её не снимает и она висит на герое вечно (проверено).
 // Единственный надёжный способ убрать такую модель — дамми и RemoveUnit.
 call EffectCreateAndMove(true,"Garp\\Garp_Aura.mdx",GetUnitFacing(caster),0.6,2.0,1.0,100,100,100,0,0,caster,0,GetUnitFacing(caster))
@@ -225822,7 +228261,7 @@ call SetUnitPathing(target,true)
 call SetUnitFlyHeight(target,0.0,0)
 call SaveReal(HH,id,6,3)
 call ShakeCamera(0.5,7)
-// ⚠️ Способ подобран перебором, три предыдущих в игре не сработали:
+//  Способ подобран перебором, три предыдущих в игре не сработали:
 //   дамми с этой моделью (SetUnitModel) — не рисуется вовсе;
 //   AddSpecialEffect по координате — не рисуется;
 //   AddSpecialEffectTarget на враге — рисуется, но едет за ним, когда тот встаёт.
@@ -226154,7 +228593,7 @@ local integer id=GetHandleId(t)
 local unit caster=LoadUnitHandle(HH,id,1)
 local real time=LoadReal(HH,id,5)+0.1
 local real dur=LoadReal(HH,id,6)
-// ⚠️ Период 0.5, а НЕ 0.02: воля отслеживает всего два момента — снять паузу
+//  Период 0.5, а НЕ 0.02: воля отслеживает всего два момента — снять паузу
 // и снять маркеры в конце. Тик 0.02 здесь только грузил бы игру впустую.
 // Обзор сюда не относится: он вписан в общий цикл обзора карты (ветка с GrEs).
 if (IsUnitPaused(caster)==false and time>1) or time<=1 then
@@ -226668,6 +229107,8 @@ if UnitIsAlive(caster)==false or udg_B==false or DU2==false then
 call PauseUnit(caster,false)
 call SetUnitInvulnerable(caster,false)
 call UnitRemoveAbility(caster,'A1FU')
+call UnitRemoveAbility(caster,'Pet1')
+call SetUnitAcquireRange(caster, 500)
 call UnitRemoveAbility(caster,'B00A')
 call SetUnitPathing(caster,true)
 call SetUnitFlyHeight(caster,0.0,0)
@@ -226911,20 +229352,21 @@ endif
 else
 // 4) ОТЫГРЫШ: стоит на месте 2.5 c — столько доигрывают эффекты
 // взрыва (кольцо растёт полсекунды, вспышки живут 2.5).
+if time<0.2 then
 call SetUnitX(caster,x0)
 call SetUnitY(caster,y0)
-call SetUnitFlyHeight(caster,0.0,0)
-if time<1 then
 call PauseUnit(caster,true)
 call SetUnitInvulnerable(caster,true)
 endif
-if time==1 then
+if time==0.2 then
 call PauseUnit(caster,false)
 call SetUnitInvulnerable(caster,false)
-call UnitRemoveAbility(caster,'A1FU')
-call UnitRemoveAbility(caster,'B00A')
 call SetUnitPathing(caster,true)
-call SetUnitFlyHeight(caster,0.0,0)
+call SetUnitAcquireRange(caster, 500)
+call UnitRemoveAbility(caster,'A1FU')
+call UnitRemoveAbility(caster,'Pet1')
+call UnitRemoveAbility(caster,'B00A')
+call SetUnitFlyHeight(caster,0,1000)
 if LoadTriggerHandle(HH,id,StringHash("GarpAim"))!=null then
 call FlushChildHashtable(h,GetHandleId(LoadTriggerHandle(HH,id,StringHash("GarpAim"))))
 call TriggerClearActions(LoadTriggerHandle(HH,id,StringHash("GarpAim")))
@@ -227239,6 +229681,8 @@ call SaveReal(HH,id,11,GetUnitX(caster))
 call SaveReal(HH,id,12,GetUnitY(caster))
 // Рут, а НЕ пауза: пауза морозит анимацию и удара было бы не видно.
 call UnitAddAbility(caster,'A1FU')
+call UnitAddAbility(caster,'Pet1')
+call SetUnitAcquireRange(caster, 51)
 call SetUnitPathing(caster,false)
 call UnitAddAbility(caster,'Amrf')
 call UnitRemoveAbility(caster,'Amrf')
@@ -235646,6 +238090,35 @@ function AbilitiesForChoice_Act takes nothing returns nothing//моя функц
         call Garp_T_Act(caster,x1,y1)
     endif
 //Garp1end
+//Barragan1start
+    if GetSpellAbilityId()=='BbQ1' then
+        call Brg_Q_Act(caster,x1,y1)
+    endif
+    if GetSpellAbilityId()=='BbW1' then
+        call Brg_W_Act(caster,x1,y1)
+    endif
+    if GetSpellAbilityId()=='BbE1' then
+        call Brg_E_Act(caster,x1,y1)
+    endif
+    if GetSpellAbilityId()=='BbR1' then
+        call Brg_R_Act(caster)
+    endif
+    if GetSpellAbilityId()=='BbT1' then
+        call Brg_T_Act(caster)
+    endif
+    if GetSpellAbilityId()=='BbT2' then
+        call Brg_T2_Act(caster,x1,y1)
+    endif
+    if GetSpellAbilityId()=='BbD1' then
+        call Brg_D_Act(caster,target)
+    endif
+    if GetSpellAbilityId()=='BbF1' then
+        call Brg_F_Act(caster,x1,y1)
+    endif
+    if GetSpellAbilityId()=='BbGb' then
+        call Brg_G_Act(caster)
+    endif
+//Barragan1end
 if GetSpellAbilityId()=='AKQ1' then
 call KimimaroQ_Act(caster,x1,y1)
 endif
@@ -241294,6 +243767,7 @@ call TriggerAddAction(t,function Trig_Execute_Actions2)
 set t=null
 endfunction
 function InitCustomTriggers takes nothing returns nothing
+call Sh_Init() //Shop32
 call InitTrig_LamboLearnE()
 call InitTrig_LamboChoice()
 call InitTrig_SignumnAA()
