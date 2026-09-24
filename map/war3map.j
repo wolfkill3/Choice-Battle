@@ -9731,13 +9731,13 @@ set udg_RH[136]='HGoj'//Gojo
 //Garp1start
 set udg_RH[137]='HGrp'//Garp
 //Garp1end
-//Barragan1start
-set udg_RH[140]='HBrg'//Baraggan
-//Barragan1end
 
 //set udg_RH[127]='HIc3'
 set udg_RH[138]='HSig'//Signum
 set udg_RH[139]='Rosh'//Мутен Роши
+//Barragan1start
+// set udg_RH[140]='HBrg'//Baraggan
+//Barragan1end
 loop
 exitwhen i>=210
         if udg_RH[i]!=0 then
@@ -9888,7 +9888,7 @@ set udg_RH2[136]="Gojo"
 set udg_RH2[137]="Garp"
 set udg_RH2[138]="Signum"
 set udg_RH2[139]="Muten Roshi"
-set udg_RH2[140]="Baraggan"
+// set udg_RH2[140]="Baraggan"
 call DestroyTrigger(GetTriggeringTrigger())
 endfunction
 function InitTrig_Init takes nothing returns nothing
@@ -226845,7 +226845,7 @@ function Sh_SecData takes nothing returns nothing
 // Единственная генерируемая таблица: какой предмет в каком разделе.
 // Остальное (иконка, имя, цена, рецепт) магазин берёт из движка.
 set ShSecName[0]="Base Items"
-set ShSecCnt[0]=15
+set ShSecCnt[0]=18
 set ShSecItem[0]='I01W'
 set ShSecItem[1]='I01H'
 set ShSecItem[2]='I008'
@@ -226861,8 +226861,11 @@ set ShSecItem[11]='I02T'
 set ShSecItem[12]='IGlA'
 set ShSecItem[13]='ISlA'
 set ShSecItem[14]='ISt0'
+set ShSecItem[15]='IMT0'
+set ShSecItem[16]='INY0'
+set ShSecItem[17]='IMS0'
 set ShSecName[1]="Weapons"
-set ShSecCnt[1]=12
+set ShSecCnt[1]=13
 set ShSecItem[64]='I01O'
 set ShSecItem[65]='I01Q'
 set ShSecItem[66]='I01S'
@@ -226875,8 +226878,9 @@ set ShSecItem[72]='I031'
 set ShSecItem[73]='ISDi'
 set ShSecItem[74]='I050'
 set ShSecItem[75]='IBSI'
+set ShSecItem[76]='IPRB'
 set ShSecName[2]="Ultimate Items"
-set ShSecCnt[2]=41
+set ShSecCnt[2]=40
 set ShSecItem[128]='I02Y'
 set ShSecItem[129]='I040'
 set ShSecItem[130]='I042'
@@ -226908,7 +226912,7 @@ set ShSecItem[155]='I04I'
 set ShSecItem[156]='I066'
 set ShSecItem[157]='IMDi'
 set ShSecItem[158]='IAoF'
-set ShSecItem[159]='IPRB'
+set ShSecItem[159]='IAS0'
 set ShSecItem[160]='I068'
 set ShSecItem[161]='I06O'
 set ShSecItem[162]='IHYi'
@@ -226917,7 +226921,6 @@ set ShSecItem[164]='I06R'
 set ShSecItem[165]='I06J'
 set ShSecItem[166]='ISTi'
 set ShSecItem[167]='I1S4'
-set ShSecItem[168]='IAS0'
 set ShSecName[3]="Half Vongola Rings"
 set ShSecCnt[3]=10
 set ShSecItem[192]='I02L'
@@ -226961,7 +226964,7 @@ set ShSecItem[388]='I05T'
 set ShSecItem[389]='I05Z'
 set ShSecItem[390]='I065'
 set ShSecName[7]="Recipes"
-set ShSecCnt[7]=27
+set ShSecCnt[7]=36
 set ShSecItem[448]='I02X'
 set ShSecItem[449]='I047'
 set ShSecItem[450]='I055'
@@ -226989,8 +226992,17 @@ set ShSecItem[471]='I06T'
 set ShSecItem[472]='I14R'
 set ShSecItem[473]='ISTr'
 set ShSecItem[474]='IPRR'
+set ShSecItem[475]='IPlR'
+set ShSecItem[476]='IBN0'
+set ShSecItem[477]='IGn0'
+set ShSecItem[478]='IGP0'
+set ShSecItem[479]='IYM0'
+set ShSecItem[480]='IBS1'
+set ShSecItem[481]='ISS0'
+set ShSecItem[482]='IVS0'
+set ShSecItem[483]='ISS0'
 set ShSecName[8]="Ultimate Sets"
-set ShSecCnt[8]=24
+set ShSecCnt[8]=25
 set ShSecItem[512]='I06G'
 set ShSecItem[513]='I06F'
 set ShSecItem[514]='I06H'
@@ -227015,6 +227027,7 @@ set ShSecItem[532]='IOS1'
 set ShSecItem[533]='IOS2'
 set ShSecItem[534]='IOS3'
 set ShSecItem[535]='IOS4'
+set ShSecItem[536]='IPlA'
 set ShSecTotal=9
 endfunction
 
@@ -229094,6 +229107,8 @@ if UnitIsAlive(caster)==false or udg_B==false or DU2==false then
 call PauseUnit(caster,false)
 call SetUnitInvulnerable(caster,false)
 call UnitRemoveAbility(caster,'A1FU')
+call UnitRemoveAbility(caster,'Pet1')
+call SetUnitAcquireRange(caster, 500)
 call UnitRemoveAbility(caster,'B00A')
 call SetUnitPathing(caster,true)
 call SetUnitFlyHeight(caster,0.0,0)
@@ -229337,20 +229352,21 @@ endif
 else
 // 4) ОТЫГРЫШ: стоит на месте 2.5 c — столько доигрывают эффекты
 // взрыва (кольцо растёт полсекунды, вспышки живут 2.5).
+if time<0.2 then
 call SetUnitX(caster,x0)
 call SetUnitY(caster,y0)
-call SetUnitFlyHeight(caster,0.0,0)
-if time<1 then
 call PauseUnit(caster,true)
 call SetUnitInvulnerable(caster,true)
 endif
-if time==1 then
+if time==0.2 then
 call PauseUnit(caster,false)
 call SetUnitInvulnerable(caster,false)
-call UnitRemoveAbility(caster,'A1FU')
-call UnitRemoveAbility(caster,'B00A')
 call SetUnitPathing(caster,true)
-call SetUnitFlyHeight(caster,0.0,0)
+call SetUnitAcquireRange(caster, 500)
+call UnitRemoveAbility(caster,'A1FU')
+call UnitRemoveAbility(caster,'Pet1')
+call UnitRemoveAbility(caster,'B00A')
+call SetUnitFlyHeight(caster,0,1000)
 if LoadTriggerHandle(HH,id,StringHash("GarpAim"))!=null then
 call FlushChildHashtable(h,GetHandleId(LoadTriggerHandle(HH,id,StringHash("GarpAim"))))
 call TriggerClearActions(LoadTriggerHandle(HH,id,StringHash("GarpAim")))
@@ -229665,6 +229681,8 @@ call SaveReal(HH,id,11,GetUnitX(caster))
 call SaveReal(HH,id,12,GetUnitY(caster))
 // Рут, а НЕ пауза: пауза морозит анимацию и удара было бы не видно.
 call UnitAddAbility(caster,'A1FU')
+call UnitAddAbility(caster,'Pet1')
+call SetUnitAcquireRange(caster, 51)
 call SetUnitPathing(caster,false)
 call UnitAddAbility(caster,'Amrf')
 call UnitRemoveAbility(caster,'Amrf')
