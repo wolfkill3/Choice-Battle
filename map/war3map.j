@@ -22615,7 +22615,7 @@ endloop
 if count>1 then
 call RemoveItem(it)
 call SetPlayerState(Player(id),PLAYER_STATE_RESOURCE_GOLD,GetPlayerState(Player(id),PLAYER_STATE_RESOURCE_GOLD)+500)
-call DisplayTextToPlayer(Player(id),0,0,"Нельзя иметь больше одного такого предмета!")
+call DisplayTextToPlayer(Player(id),0,0,"You can't have more than one of these items!")
 endif
 
 set i=0
@@ -22630,7 +22630,7 @@ endloop
 if count>1 then
 call RemoveItem(it)
 call SetPlayerState(Player(id),PLAYER_STATE_RESOURCE_GOLD,GetPlayerState(Player(id),PLAYER_STATE_RESOURCE_GOLD)+2350)
-call DisplayTextToPlayer(Player(id),0,0,"Нельзя иметь больше одного такого предмета!")
+call DisplayTextToPlayer(Player(id),0,0,"You can't have more than one of these items!")
 endif
 
 set i=0
@@ -22705,7 +22705,7 @@ endloop
 if count>2 then
 call RemoveItem(it)
 call SetPlayerState(Player(id),PLAYER_STATE_RESOURCE_GOLD,GetPlayerState(Player(id),PLAYER_STATE_RESOURCE_GOLD)+800)
-call DisplayTextToPlayer(Player(id),0,0,"Нельзя иметь больше двух таких предметов!")
+call DisplayTextToPlayer(Player(id),0,0,"You can't have more than two of these items!")
 endif
 set i=0
 set count=0
@@ -227611,14 +227611,14 @@ set k=0
 set y=y-0.056
 endif
 endloop
-call Sh_Cap(ShCraft,"|c00FFD700Сборка|r")
+call Sh_Cap(ShCraft,"|c00FFD700Assembly|r")
 set ShCraftGoldTxt=BlzCreateFrameByType("TEXT","ShCraftGold",ShCraft,"",0)
 call BlzFrameSetPoint(ShCraftGoldTxt,FRAMEPOINT_BOTTOM,ShCraft,FRAMEPOINT_BOTTOM,0,0.004)
 call BlzFrameSetScale(ShCraftGoldTxt,0.90)
 call BlzFrameSetText(ShCraftGoldTxt,"")
 
 // ---- описание ----
-set ShDescName=Sh_Cap(ShDesc,"|c00FFFF00Предмет не выбран|r")
+set ShDescName=Sh_Cap(ShDesc,"|c00FFFF00Item is not selected|r")
 set ShDescBody=BlzCreateFrameByType("TEXT","ShDescBody",ShDesc,"",0)
 call BlzFrameSetSize(ShDescBody,0.14,0.088)
 call BlzFrameSetPoint(ShDescBody,FRAMEPOINT_TOP,ShDesc,FRAMEPOINT_TOP,0,-0.020)
@@ -227626,7 +227626,7 @@ call BlzFrameSetScale(ShDescBody,0.78)
 call BlzFrameSetText(ShDescBody,"")
 
 // ---- инвентарь: как игровая панель предметов — один сверху, ниже сетка 3x3 ----
-set ShInvName=Sh_Cap(ShInv,"|c00FFFF00Инвентарь|r")
+set ShInvName=Sh_Cap(ShInv,"|c00FFFF00Inventory|r")
 call BlzFrameClearAllPoints(ShInvName)
 call BlzFrameSetPoint(ShInvName,FRAMEPOINT_TOP,ShInv,FRAMEPOINT_TOP,0,-0.006)
 // ячейка мельче шести-слотной (0.036 -> 0.032): три в ряд в панель 0.115 иначе не влезают
