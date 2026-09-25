@@ -43085,10 +43085,7 @@ call SaveReal(HH,id,6,dur)
 call SaveReal(HH,id,7,per)
 call SaveReal(HH,id,15,total*per/dur)
 if fx!="" then
-// пустой путь означает «без метки»: так проверяем, чья это плоская грань
-if fx!="" then
 call SaveEffectHandle(HH,id,10,AddSpecialEffectTarget(fx,target,"origin"))
-endif
 endif
 call TimerStart(t,per,true,function Brg_Dot_Act)
 set t=null
@@ -217210,11 +217207,11 @@ function ShiendoCast2 takes nothing returns nothing // SinonE
             call SaveReal(h,id,100,dist2-(40-he2/19))
             call SetUnitX(u,x+(40-he2/19)*Cos(a))
             call SetUnitY(u,y+(40-he2/19)*Sin(a))
-            set he=ParabolaZ(650,LoadReal(h,id,4),dist)
+            set he=ParabolaZ(650,LoadReal(h,id,4),dist2)
         else
             call SaveReal(h,id,100,dist2-40)
             call SetUnitXY_1(u,x+40*Cos(a),y+40*Sin(a), true)
-            set he=ParabolaZ(650,LoadReal(h,id,4),dist)
+            set he=ParabolaZ(650,LoadReal(h,id,4),dist2)
         endif
         call SetUnitFlyHeight(u,he,0)
         if he>550 and l__s==0 then
