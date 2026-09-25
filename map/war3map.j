@@ -38906,7 +38906,7 @@ call TimerStart(TD2,300,false,function ResistReductionFunction)
 if BonusTimer==true then
 call TimerStart(TD3,20,false,function BonusActivation)
 endif
-call TimerStart(TD4,240,false,function KingOfHillActivation)
+call TimerStart(TD4,120,false,function KingOfHillActivation)
 //call TimerStart(CreateTimer(),360,false,function Arena_Narrowing)
 call DestroyTimerDialog(TG)
 set TG=CreateTimerDialog(TD)
@@ -241259,7 +241259,7 @@ function Trig_KingOfHill_Enter_Actions takes nothing returns nothing
 local timer t=GetExpiredTimer()
 local integer id=GetHandleId(gg_rct_KingOfHillRect)
 local integer TotalPlayerCount=0
-local integer MaxPoints=3000
+local integer MaxPoints=4000
 local framehandle TeamText=null
 local integer i=0
 local integer j=0
