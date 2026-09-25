@@ -43085,10 +43085,7 @@ call SaveReal(HH,id,6,dur)
 call SaveReal(HH,id,7,per)
 call SaveReal(HH,id,15,total*per/dur)
 if fx!="" then
-// пустой путь означает «без метки»: так проверяем, чья это плоская грань
-if fx!="" then
 call SaveEffectHandle(HH,id,10,AddSpecialEffectTarget(fx,target,"origin"))
-endif
 endif
 call TimerStart(t,per,true,function Brg_Dot_Act)
 set t=null
