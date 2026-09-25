@@ -235218,11 +235218,12 @@ call SetUnitPathing(target,false)
 
 
 
-if GetUnitAbilityLevel(target,'A2VJ')==0 and GetUnitAbilityLevel(target,'A15H')==0 then
-set n0=LoadUnitHandle(HH,id,l__s+count-1)
-call MoveUnit(n0,target,0,facing2)
-call SaveInteger(HH,id,9,count-1)
-
+if GetUnitAbilityLevel(target,'A2VJ')==0 and GetUnitAbilityLevel(target,'A15H')==0 and IsUnitHidden(target)==false then
+    set n0=LoadUnitHandle(HH,id,l__s+count-1)
+    call MoveUnit(n0,target,0,facing2)
+    call SaveInteger(HH,id,9,count-1)
+else
+    call SaveReal(HH,id,5,9.5)
 endif
 
 
@@ -235248,7 +235249,7 @@ endif
 call SaveReal(HH,id,32,time3)
 if dist2<=400 then
 call SaveReal(HH,id,5,9.5)
-if GetUnitAbilityLevel(target,'A2VJ')==0 and GetUnitAbilityLevel(target,'A15H')==0 then
+if GetUnitAbilityLevel(target,'A2VJ')==0 and GetUnitAbilityLevel(target,'A15H')==0 and IsUnitHidden(target)==false then
 call SaveBoolean(HH,id,25,true)
 endif
 
