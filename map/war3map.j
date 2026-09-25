@@ -38906,7 +38906,7 @@ call TimerStart(TD2,300,false,function ResistReductionFunction)
 if BonusTimer==true then
 call TimerStart(TD3,20,false,function BonusActivation)
 endif
-call TimerStart(TD4,240,false,function KingOfHillActivation)
+call TimerStart(TD4,120,false,function KingOfHillActivation)
 //call TimerStart(CreateTimer(),360,false,function Arena_Narrowing)
 call DestroyTimerDialog(TG)
 set TG=CreateTimerDialog(TD)
@@ -226703,7 +226703,7 @@ local string ic
 if id==0 then
 return "textures\\black32.blp"
 endif
-set ic=BlzGetAbilityIcon(id)
+set ic=GetBaseItemStringFieldById(id,ITEM_SF_ICON)
 // пустой путь движок рисует ЗЕЛЁНЫМ КВАДРАТОМ — лучше чёрная заливка
 if ic=="" then
 return "textures\\black32.blp"
@@ -235048,7 +235048,7 @@ call MoveAoe1(x3,y3,caster,0,facing)
 
 
 
-if time>2.52 and UnitIsAlive(target)==false or time>7.5 then
+if time>2.52 and UnitIsAlive(target)==false or time>9.5 then
 call SetUnitFlyHeight(target,0,GetUnitFlyHeight(target))
 
 
@@ -235163,9 +235163,9 @@ if time>2.5 then
 
 
 call MoveUnit(Dummy,LoadUnitHandle(HH,id,30),0,facing)
-if time<6.5 then
-if time==6.48 then
-call SaveReal(HH,id,5,12.5)
+if time<6 then
+if time==5.98 then
+call SaveReal(HH,id,5,9.5)
 endif
 call MoveUnit(Dummy,Dummy,30,facing)
 set time2=time2+.02
@@ -235204,7 +235204,7 @@ call StartSound(soundplay)
 call PauseUnit(target,true)
 call SetUnitInvulnerable(target,true)
 call SetUnitPathing(target,false)
-call SaveReal(HH,id,5,7.5)
+call SaveReal(HH,id,5,6)
 call UnitAddAbility(target,'Amrf')
 call UnitRemoveAbility(target,'Amrf')
 endif
@@ -235218,7 +235218,7 @@ call SetUnitPathing(target,false)
 
 
 
-if GetUnitAbilityLevel(target,'A2VJ')==0 then
+if GetUnitAbilityLevel(target,'A2VJ')==0 and GetUnitAbilityLevel(target,'A15H')==0 then
 set n0=LoadUnitHandle(HH,id,l__s+count-1)
 call MoveUnit(n0,target,0,facing2)
 call SaveInteger(HH,id,9,count-1)
@@ -235246,8 +235246,8 @@ if time3>=1 then
 set time3=0
 endif
 call SaveReal(HH,id,32,time3)
-if dist2<=600 then
-call SaveReal(HH,id,5,12.5)
+if dist2<=400 then
+call SaveReal(HH,id,5,9.5)
 if GetUnitAbilityLevel(target,'A2VJ')==0 and GetUnitAbilityLevel(target,'A15H')==0 then
 call SaveBoolean(HH,id,25,true)
 endif
@@ -241259,7 +241259,7 @@ function Trig_KingOfHill_Enter_Actions takes nothing returns nothing
 local timer t=GetExpiredTimer()
 local integer id=GetHandleId(gg_rct_KingOfHillRect)
 local integer TotalPlayerCount=0
-local integer MaxPoints=3000
+local integer MaxPoints=4000
 local framehandle TeamText=null
 local integer i=0
 local integer j=0
