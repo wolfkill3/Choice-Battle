@@ -9736,7 +9736,7 @@ set udg_RH[137]='HGrp'//Garp
 set udg_RH[138]='HSig'//Signum
 set udg_RH[139]='Rosh'//Мутен Роши
 //Barragan1start
-// set udg_RH[140]='HBrg'//Baraggan
+set udg_RH[140]='HBrg'//Baraggan
 //Barragan1end
 loop
 exitwhen i>=210
@@ -9888,7 +9888,7 @@ set udg_RH2[136]="Gojo"
 set udg_RH2[137]="Garp"
 set udg_RH2[138]="Signum"
 set udg_RH2[139]="Muten Roshi"
-// set udg_RH2[140]="Baraggan"
+set udg_RH2[140]="Baraggan"
 call DestroyTrigger(GetTriggeringTrigger())
 endfunction
 function InitTrig_Init takes nothing returns nothing
@@ -27972,7 +27972,7 @@ if ingame[x]==true then
     if (UnitHasItemOfTypeBJ(Hero[x],'IGlA') or GetUnitAbilityLevel(Hero[x],'KI1I')>0) and LoadInteger(HH,GetHandleId(Hero[x]),StringHash("GoldenAmulet"))!=1 then
         call GoldenAmuletMPRegenCast(Hero[x])
     endif
-    if (UnitHasItemOfTypeBJ(Hero[x],'IPlA') or GetUnitAbilityLevel(Hero[x],'KI1K')>0) and LoadInteger(HH,GetHandleId(Hero[x]),StringHash("GoldenAmulet"))!=1 then
+    if (UnitHasItemOfTypeBJ(Hero[x],'IPlA') or GetUnitAbilityLevel(Hero[x],'KI1K')>0) and LoadInteger(HH,GetHandleId(Hero[x]),StringHash("PerfectAmulet"))!=1 then
         call PerfectAmuletMPRegenCast(Hero[x])
     endif
     if UnitHasItemOfTypeBJ(Hero[x],'I054') and LoadInteger(HH,GetHandleId(Hero[x]),StringHash("IceBoots"))!=1 then
@@ -28466,7 +28466,7 @@ if cmb!=true then
                 set udg_RH[i]=0
             endif
             set i=i+1
-            exitwhen i>=139
+            exitwhen i>=140 //139
             endloop
             call RemoveUnit(u)
             call SetPlayerStateBJ(GetOwningPlayer(u),PLAYER_STATE_FOOD_CAP_CEILING,0)
@@ -28696,7 +28696,7 @@ if cmb!=true then
                     set udg_RH[i]=0
                 endif
                 set i=i+1
-                exitwhen i>=139
+                exitwhen i>=140 //139
             endloop
         endif
         call SaveInteger(h,GetHandleId(u),'A1GS',0)
@@ -28719,7 +28719,7 @@ if IsUnitType(u,UNIT_TYPE_HERO) and CPTModeON and cmb==true then
         call RemoveUnit(u)
         set i=0
         loop
-        exitwhen i>=139
+        exitwhen i>=140 //139
             if GetUnitTypeId(u)==udg_RH[i] then
                 set udg_RH[i]=0
             endif
@@ -35249,7 +35249,7 @@ function Trig_idNew_Actions takes nothing returns nothing
     exitwhen bj_forLoopAIndex>bj_forLoopAIndexEnd
     call DisplayTextToPlayer(GetLocalPlayer(),0,0,I2S(bj_forLoopAIndex)+"-"+udg_RH2[bj_forLoopAIndex]+"; "+I2S(bj_forLoopAIndex+1)+"-"+udg_RH2[bj_forLoopAIndex+1]+"; "+I2S(bj_forLoopAIndex+2)+"-"+udg_RH2[bj_forLoopAIndex+2]+"; "+I2S(bj_forLoopAIndex+3)+"-"+udg_RH2[bj_forLoopAIndex+3]+"; "+I2S(bj_forLoopAIndex+4)+"-"+udg_RH2[bj_forLoopAIndex+4]+"; ")
     //udg_RH[bj_forLoopAIndex]    
-    if bj_forLoopAIndex>=139 and bj_forLoopAIndex<190 then
+    if bj_forLoopAIndex>=140 and bj_forLoopAIndex<190 then //139
     set bj_forLoopAIndex=200
     else
     set bj_forLoopAIndex=bj_forLoopAIndex+5
@@ -35275,7 +35275,7 @@ function Trig_id_Actions takes nothing returns nothing
     exitwhen bj_forLoopAIndex>bj_forLoopAIndexEnd
     call DisplayTextToPlayer(GetLocalPlayer(),0,0,I2S(bj_forLoopAIndex)+"-"+udg_RH2[bj_forLoopAIndex]+"; "+I2S(bj_forLoopAIndex+1)+"-"+udg_RH2[bj_forLoopAIndex+1]+"; "+I2S(bj_forLoopAIndex+2)+"-"+udg_RH2[bj_forLoopAIndex+2]+"; "+I2S(bj_forLoopAIndex+3)+"-"+udg_RH2[bj_forLoopAIndex+3]+"; "+I2S(bj_forLoopAIndex+4)+"-"+udg_RH2[bj_forLoopAIndex+4]+"; ")
     //udg_RH[bj_forLoopAIndex]    
-    if bj_forLoopAIndex>=139 and bj_forLoopAIndex<190 then
+    if bj_forLoopAIndex>=140 and bj_forLoopAIndex<190 then //139
     set bj_forLoopAIndex=200
     else
     set bj_forLoopAIndex=bj_forLoopAIndex+5
@@ -241071,7 +241071,7 @@ if cmb!=true and u!=null then
             set udg_RH[i2]=0
         endif
         set i2=i2+1
-        exitwhen i2==139
+        exitwhen i2==140 //139
         endloop
         call SetUnitPosition(u,GetRectCenterX(gg_rct_Resp7),GetRectCenterY(gg_rct_Resp7))
         set p=GetOwningPlayer(u)
