@@ -60076,7 +60076,6 @@ local player p=GetOwningPlayer(u)
 local integer ip=GetPlayerId(p)
 call SaveUnitHandle(h,id,0,u)
 call SaveReal(h,id,2,0)
-call SetTerrainFogEx(0,0,6000,0,0,0,0.5)
 set n=CreateUnit(p,'e05C',x,y,0)
 call SetUnitAnimation(n,"stand")
 call SetUnitTimeScale(n,0)
@@ -80698,7 +80697,7 @@ endif
 endif
 call SaveReal(h,id,5,mh-15)
 else
-call GroupEnumUnitsInRange(DG,x1,y1,750,Base)
+call GroupEnumUnitsInRange(DG,x1,y1,850,Base)
 loop
 set E=FirstOfGroup(DG)
 exitwhen E==null
@@ -80715,13 +80714,13 @@ call UnitApplyTimedLife(CreateUnit(p,'e0EB',x1,y1,GetRandomReal(0,359)),'BHwe',3
 call UnitApplyTimedLife(CreateUnit(p,'e0EN',x1,y1,GetRandomReal(0,359)),'BHwe',3)
 call StartSound(soundStr[47])
 set EFF=AddSpecialEffect("[doft]az_tormentedsoul_t1.mdl", x1,y1)
-call SetSpecialEffectScale(EFF , 2)
+call SetSpecialEffectScale(EFF , 2.1)
 call DestroyEffect(EFF)
 set EFF=AddSpecialEffect("BrolyExplosion2.mdl", x1,y1)
-call SetSpecialEffectScale(EFF , 1.3)
+call SetSpecialEffectScale(EFF , 1.45)
 call DestroyEffect(EFF)
 set EFF=AddSpecialEffect("BrolyTExplosion.mdl", x1,y1)
-call SetSpecialEffectScale(EFF , 0.8)
+call SetSpecialEffectScale(EFF , 0.9)
 call SetSpecialEffectTimeScale(EFF , 1.7)
 call DestroyEffect(EFF)
 call RemoveUnit(l__d)
@@ -80789,7 +80788,7 @@ call DestroyEffect(EFF)
 endif
 endif
 else
-call GroupEnumUnitsInRange(DG,x1,y1,750,Base)
+call GroupEnumUnitsInRange(DG,x1,y1,850,Base)
 loop
 set E=FirstOfGroup(DG)
 exitwhen E==null
@@ -80807,13 +80806,13 @@ call UnitApplyTimedLife(CreateUnit(p,'e0EN',x1,y1,GetRandomReal(0,359)),'BHwe',3
 call StartSound(soundStr[47])
 call RemoveUnit(l__d)
 set EFF=AddSpecialEffect("[doft]az_tormentedsoul_t1.mdl", x1,y1)
-call SetSpecialEffectScale(EFF , 2)
+call SetSpecialEffectScale(EFF , 2.1)
 call DestroyEffect(EFF)
 set EFF=AddSpecialEffect("BrolyExplosion2.mdl", x1,y1)
-call SetSpecialEffectScale(EFF , 1.3)
+call SetSpecialEffectScale(EFF , 1.45)
 call DestroyEffect(EFF)
 set EFF=AddSpecialEffect("BrolyTExplosion.mdl", x1,y1)
-call SetSpecialEffectScale(EFF , 0.8)
+call SetSpecialEffectScale(EFF , 0.9)
 call SetSpecialEffectTimeScale(EFF , 1.7)
 call DestroyEffect(EFF)
 call PauseTimer(t)
@@ -179486,7 +179485,7 @@ endif
 endif
 call SaveReal(h,id,5,mh-35)
 else
-call GroupEnumUnitsInRange(DG,x1,y1,700,Base)
+call GroupEnumUnitsInRange(DG,x1,y1,1000,Base)
 loop
 set E=FirstOfGroup(DG)
 exitwhen E==null
@@ -179504,17 +179503,17 @@ call SetUnitFlyHeight(LoadUnitHandle(h,id,10),0,1000)
 call StartSound(soundStr[47])
 call UnitApplyTimedLife(CreateUnit(p,'e0KO',x1,y1,GetRandomReal(0,359)),'BHwe',3)
 set EFF=AddSpecialEffect("[choice]JirenEarthBlast.mdl", x1,y1)
-call SetSpecialEffectScale(EFF , 2.0)
+call SetSpecialEffectScale(EFF , 2.2)
 call DestroyEffect(EFF)
 set EFF=AddSpecialEffect("JirenExplosion2.mdl", x1,y1)
-call SetSpecialEffectScale(EFF , 1.3)
+call SetSpecialEffectScale(EFF , 1.6)
 call DestroyEffect(EFF)
 set EFF=AddSpecialEffect("JirenTExplosion.mdl", x1,y1)
-call SetSpecialEffectScale(EFF , 0.9)
+call SetSpecialEffectScale(EFF , 1.2)
 call SetSpecialEffectTimeScale(EFF , 1.7)
 call DestroyEffect(EFF)
 set EFF=AddSpecialEffect("GokuAuraBurstRed.mdl", x1, y1)
-call SetSpecialEffectScale(EFF , 1.5)
+call SetSpecialEffectScale(EFF , 1.8)
 call SetSpecialEffectVertexColour(EFF,195,195,195,125)
 call RemoveEffect(EFF,0.8,true,CreateTimer())
 call RemoveUnit(l__d)
@@ -179582,7 +179581,7 @@ call DestroyEffect(EFF)
 endif
 endif
 else
-call GroupEnumUnitsInRange(DG,x1,y1,700,Base)
+call GroupEnumUnitsInRange(DG,x1,y1,1000,Base)
 loop
 set E=FirstOfGroup(DG)
 exitwhen E==null
@@ -179601,17 +179600,17 @@ call StartSound(soundStr[47])
 call RemoveUnit(l__d)
 call UnitApplyTimedLife(CreateUnit(p,'e0KO',x1,y1,GetRandomReal(0,359)),'BHwe',3)
 set EFF=AddSpecialEffect("[choice]JirenEarthBlast.mdl", x1,y1)
-call SetSpecialEffectScale(EFF , 2.0)
+call SetSpecialEffectScale(EFF , 2.2)
 call DestroyEffect(EFF)
 set EFF=AddSpecialEffect("JirenExplosion2.mdl", x1,y1)
-call SetSpecialEffectScale(EFF , 1.3)
+call SetSpecialEffectScale(EFF , 1.6)
 call DestroyEffect(EFF)
 set EFF=AddSpecialEffect("JirenTExplosion.mdl", x1,y1)
-call SetSpecialEffectScale(EFF , 0.9)
+call SetSpecialEffectScale(EFF , 1.2)
 call SetSpecialEffectTimeScale(EFF , 1.7)
 call DestroyEffect(EFF)
 set EFF=AddSpecialEffect("GokuAuraBurstRed.mdl", x1, y1)
-call SetSpecialEffectScale(EFF , 1.5)
+call SetSpecialEffectScale(EFF , 1.8)
 call SetSpecialEffectVertexColour(EFF,195,195,195,125)
 call RemoveEffect(EFF,0.8,true,CreateTimer())
 call PauseTimer(t)
@@ -179638,9 +179637,6 @@ call SaveReal(h,id,9,0.2)
 call SetUnitScale(l__d,0.2,0.2,0.2)
 call TimerStart(t,0.03,true,function JirenT_Fly2)
 set t=null
-endfunction
-function JirenT_Cond takes nothing returns boolean
-return GetSpellAbilityId()=='A0JK' and udg_B==true
 endfunction
 function JirenT_Cast2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
