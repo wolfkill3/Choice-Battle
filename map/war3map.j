@@ -241232,6 +241232,30 @@ call SetFrameTextAlignment( GetFrameByName("ClassBarTooltipText",i), TEXT_JUSTIF
 call SetFrameRelativePoint( GetFrameByName("ClassBarTooltip",i), FRAMEPOINT_CENTER, GetFrameByName("ClassBarIcon",i), FRAMEPOINT_CENTER,  -.08, (0.5*GetFrameHeight( GetFrameByName("TavernAbilityTooltipText",i)))+.04  )
 set i=i+1
 endif
+if GetUnitAbilityLevel(u,'or23')>0 then
+call ShowFrame(GetFrameByName( "ClassBarIcon", i ),true)
+call ShowFrame( GetFrameByName( "ClassBarTooltip", i ), false)
+call SetFrameTexture(GetFrameByName( "ClassBarIcon", i ), "ReplaceableTextures\\CommandButtons\\BTNCursedSeal2.blp",0,false)
+call SetFrameTexture(GetFrameByName( "ClassBarIcon", i ), "ReplaceableTextures\\CommandButtons\\BTNCursedSeal2.blp",1,false)
+call SetFrameTexture(GetFrameByName( "ClassBarIcon", i ), "ReplaceableTextures\\CommandButtons\\BTNCursedSeal2.blp",2,false)
+call SetFrameText( GetFrameByName("ClassBarTooltipText",i), GetAbilityBaseStringFieldById( String2Id( "or23" ), ABILITY_SF_NAME )+", \n\n"+GetAbilityBaseStringFieldById( String2Id( "or23" ), ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED ))
+call SetFrameSize( GetFrameByName("ClassBarTooltip",i), .16, GetFrameHeight( GetFrameByName("ClassBarTooltipText",i))+0.03)
+call SetFrameTextAlignment( GetFrameByName("ClassBarTooltipText",i), TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_LEFT )
+call SetFrameRelativePoint( GetFrameByName("ClassBarTooltip",i), FRAMEPOINT_CENTER, GetFrameByName("ClassBarIcon",i), FRAMEPOINT_CENTER,  -.08, (0.5*GetFrameHeight( GetFrameByName("TavernAbilityTooltipText",i)))+.04  )
+set i=i+1
+endif 
+if GetUnitAbilityLevel(u,'ore3')>0 then
+call ShowFrame(GetFrameByName( "ClassBarIcon", i ),true)
+call ShowFrame( GetFrameByName( "ClassBarTooltip", i ), false)
+call SetFrameTexture(GetFrameByName( "ClassBarIcon", i ), "ReplaceableTextures\\CommandButtons\\BTNCursedSeal.blp",0,false)
+call SetFrameTexture(GetFrameByName( "ClassBarIcon", i ), "ReplaceableTextures\\CommandButtons\\BTNCursedSeal.blp",1,false)
+call SetFrameTexture(GetFrameByName( "ClassBarIcon", i ), "ReplaceableTextures\\CommandButtons\\BTNCursedSeal.blp",2,false)
+call SetFrameText( GetFrameByName("ClassBarTooltipText",i), GetAbilityBaseStringFieldById( String2Id( "ore3" ), ABILITY_SF_NAME )+", \n\n"+GetAbilityBaseStringFieldById( String2Id( "ore3" ), ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED ))
+call SetFrameSize( GetFrameByName("ClassBarTooltip",i), .16, GetFrameHeight( GetFrameByName("ClassBarTooltipText",i))+0.03)
+call SetFrameTextAlignment( GetFrameByName("ClassBarTooltipText",i), TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_LEFT )
+call SetFrameRelativePoint( GetFrameByName("ClassBarTooltip",i), FRAMEPOINT_CENTER, GetFrameByName("ClassBarIcon",i), FRAMEPOINT_CENTER,  -.08, (0.5*GetFrameHeight( GetFrameByName("TavernAbilityTooltipText",i)))+.04  )
+set i=i+1
+endif 
 loop
 call ShowFrame(GetFrameByName( "ClassBarIcon", i ),false)
 call ShowFrame( GetFrameByName( "ClassBarTooltip", i ), false)
