@@ -51555,6 +51555,12 @@ call DestroyEffect(AddSpecialEffectTarget("war3mapImported\\BluefireBolt.mdx",E,
 endif
 call GroupRemoveUnit(G,E)
 endloop
+if heal>3000 then
+    set heal=3000
+endif
+if heal>0.25*GetWidgetMaxLife(u)
+    set heal=0.25*GetWidgetMaxLife(u)
+endif
 call HealTextTag(u,u,heal*myCustomHeal2(u,1),"HealthRes")
 call SetUnitState(u,UNIT_STATE_LIFE,GetWidgetLife(u)+heal)
 set p=null
