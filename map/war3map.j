@@ -24346,7 +24346,92 @@ function ShadowCover_Kazuma takes unit newCaster returns nothing
     endif
     set newTimer = null
 endfunction
+function UpdateClassBar takes unit u returns nothing
+local integer i=0
+if IsUnitSelected(u,GetLocalPlayer()) and IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(u)) then
 
+set i=0
+if GetUnitAbilityLevel(u,'Wome')>0 then
+call ShowFrame(GetFrameByName( "ClassBarIcon", i ),true)
+call ShowFrame( GetFrameByName( "ClassBarTooltip", i ), false)
+call SetFrameTexture(GetFrameByName( "ClassBarIcon", i ), "ReplaceableTextures\\CommandButtons\\BTNLady.blp",0,false)
+call SetFrameTexture(GetFrameByName( "ClassBarIcon", i ), "ReplaceableTextures\\CommandButtons\\BTNLady.blp",1,false)
+call SetFrameTexture(GetFrameByName( "ClassBarIcon", i ), "ReplaceableTextures\\CommandButtons\\BTNLady.blp",2,false)
+call SetFrameText( GetFrameByName("ClassBarTooltipText",i), GetAbilityBaseStringFieldById( String2Id( "Wome" ), ABILITY_SF_NAME )+", \n\n"+GetAbilityBaseStringFieldById( String2Id( "Wome" ), ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED ))
+call SetFrameSize( GetFrameByName("ClassBarTooltip",i), .16, GetFrameHeight( GetFrameByName("ClassBarTooltipText",i))+0.03)
+call SetFrameTextAlignment( GetFrameByName("ClassBarTooltipText",i), TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_LEFT )
+call SetFrameRelativePoint( GetFrameByName("ClassBarTooltip",i), FRAMEPOINT_CENTER, GetFrameByName("ClassBarIcon",i), FRAMEPOINT_CENTER,  -.08, (0.5*GetFrameHeight( GetFrameByName("TavernAbilityTooltipText",i)))+.04  )
+set i=i+1
+endif
+if GetUnitAbilityLevel(u,'Blnd')>0 then
+call ShowFrame(GetFrameByName( "ClassBarIcon", i ),true)
+call ShowFrame( GetFrameByName( "ClassBarTooltip", i ), false)
+call SetFrameTexture(GetFrameByName( "ClassBarIcon", i ), "ReplaceableTextures\\CommandButtons\\BTNBlind.blp",0,false)
+call SetFrameTexture(GetFrameByName( "ClassBarIcon", i ), "ReplaceableTextures\\CommandButtons\\BTNBlind.blp",1,false)
+call SetFrameTexture(GetFrameByName( "ClassBarIcon", i ), "ReplaceableTextures\\CommandButtons\\BTNBlind.blp",2,false)
+call SetFrameText( GetFrameByName("ClassBarTooltipText",i), GetAbilityBaseStringFieldById( String2Id( "Blnd" ), ABILITY_SF_NAME )+", \n\n"+GetAbilityBaseStringFieldById( String2Id( "Blnd" ), ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED ))
+call SetFrameSize( GetFrameByName("ClassBarTooltip",i), .16, GetFrameHeight( GetFrameByName("ClassBarTooltipText",i))+0.03)
+call SetFrameTextAlignment( GetFrameByName("ClassBarTooltipText",i), TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_LEFT )
+call SetFrameRelativePoint( GetFrameByName("ClassBarTooltip",i), FRAMEPOINT_CENTER, GetFrameByName("ClassBarIcon",i), FRAMEPOINT_CENTER,  -.08, (0.5*GetFrameHeight( GetFrameByName("TavernAbilityTooltipText",i)))+.04  )
+set i=i+1
+endif
+if GetUnitAbilityLevel(u,'A1EA')>0 then
+call ShowFrame(GetFrameByName( "ClassBarIcon", i ),true)
+call ShowFrame( GetFrameByName( "ClassBarTooltip", i ), false)
+call SetFrameTexture(GetFrameByName( "ClassBarIcon", i ), "ReplaceableTextures\\CommandButtons\\BTNSwordsman.blp",0,false)
+call SetFrameTexture(GetFrameByName( "ClassBarIcon", i ), "ReplaceableTextures\\CommandButtons\\BTNSwordsman.blp",1,false)
+call SetFrameTexture(GetFrameByName( "ClassBarIcon", i ), "ReplaceableTextures\\CommandButtons\\BTNSwordsman.blp",2,false)
+call SetFrameText( GetFrameByName("ClassBarTooltipText",i), GetAbilityBaseStringFieldById( String2Id( "A1EA" ), ABILITY_SF_NAME )+", \n\n"+GetAbilityBaseStringFieldById( String2Id( "A1EA" ), ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED ))
+call SetFrameSize( GetFrameByName("ClassBarTooltip",i), .16, GetFrameHeight( GetFrameByName("ClassBarTooltipText",i))+0.03)
+call SetFrameTextAlignment( GetFrameByName("ClassBarTooltipText",i), TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_LEFT )
+call SetFrameRelativePoint( GetFrameByName("ClassBarTooltip",i), FRAMEPOINT_CENTER, GetFrameByName("ClassBarIcon",i), FRAMEPOINT_CENTER,  -.08, (0.5*GetFrameHeight( GetFrameByName("TavernAbilityTooltipText",i)))+.04  )
+set i=i+1
+endif
+if GetUnitAbilityLevel(u,'A1EB')>0 then
+call ShowFrame(GetFrameByName( "ClassBarIcon", i ),true)
+call ShowFrame( GetFrameByName( "ClassBarTooltip", i ), false)
+call SetFrameTexture(GetFrameByName( "ClassBarIcon", i ), "ReplaceableTextures\\CommandButtons\\BTNSaberFace.blp",0,false)
+call SetFrameTexture(GetFrameByName( "ClassBarIcon", i ), "ReplaceableTextures\\CommandButtons\\BTNSaberFace.blp",1,false)
+call SetFrameTexture(GetFrameByName( "ClassBarIcon", i ), "ReplaceableTextures\\CommandButtons\\BTNSaberFace.blp",2,false)
+call SetFrameText( GetFrameByName("ClassBarTooltipText",i), GetAbilityBaseStringFieldById( String2Id( "A1EB" ), ABILITY_SF_NAME )+", \n\n"+GetAbilityBaseStringFieldById( String2Id( "A1EB" ), ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED ))
+call SetFrameSize( GetFrameByName("ClassBarTooltip",i), .16, GetFrameHeight( GetFrameByName("ClassBarTooltipText",i))+0.03)
+call SetFrameTextAlignment( GetFrameByName("ClassBarTooltipText",i), TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_LEFT )
+call SetFrameRelativePoint( GetFrameByName("ClassBarTooltip",i), FRAMEPOINT_CENTER, GetFrameByName("ClassBarIcon",i), FRAMEPOINT_CENTER,  -.08, (0.5*GetFrameHeight( GetFrameByName("TavernAbilityTooltipText",i)))+.04  )
+set i=i+1
+endif
+if GetUnitAbilityLevel(u,'or23')>0 then
+call ShowFrame(GetFrameByName( "ClassBarIcon", i ),true)
+call ShowFrame( GetFrameByName( "ClassBarTooltip", i ), false)
+call SetFrameTexture(GetFrameByName( "ClassBarIcon", i ), "ReplaceableTextures\\CommandButtons\\BTNCursedSeal2.blp",0,false)
+call SetFrameTexture(GetFrameByName( "ClassBarIcon", i ), "ReplaceableTextures\\CommandButtons\\BTNCursedSeal2.blp",1,false)
+call SetFrameTexture(GetFrameByName( "ClassBarIcon", i ), "ReplaceableTextures\\CommandButtons\\BTNCursedSeal2.blp",2,false)
+call SetFrameText( GetFrameByName("ClassBarTooltipText",i), GetAbilityBaseStringFieldById( String2Id( "or23" ), ABILITY_SF_NAME )+", \n\n"+GetAbilityBaseStringFieldById( String2Id( "or23" ), ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED ))
+call SetFrameSize( GetFrameByName("ClassBarTooltip",i), .16, GetFrameHeight( GetFrameByName("ClassBarTooltipText",i))+0.03)
+call SetFrameTextAlignment( GetFrameByName("ClassBarTooltipText",i), TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_LEFT )
+call SetFrameRelativePoint( GetFrameByName("ClassBarTooltip",i), FRAMEPOINT_CENTER, GetFrameByName("ClassBarIcon",i), FRAMEPOINT_CENTER,  -.08, (0.5*GetFrameHeight( GetFrameByName("TavernAbilityTooltipText",i)))+.04  )
+set i=i+1
+endif 
+if GetUnitAbilityLevel(u,'ore3')>0 then
+call ShowFrame(GetFrameByName( "ClassBarIcon", i ),true)
+call ShowFrame( GetFrameByName( "ClassBarTooltip", i ), false)
+call SetFrameTexture(GetFrameByName( "ClassBarIcon", i ), "ReplaceableTextures\\CommandButtons\\BTNCursedSeal.blp",0,false)
+call SetFrameTexture(GetFrameByName( "ClassBarIcon", i ), "ReplaceableTextures\\CommandButtons\\BTNCursedSeal.blp",1,false)
+call SetFrameTexture(GetFrameByName( "ClassBarIcon", i ), "ReplaceableTextures\\CommandButtons\\BTNCursedSeal.blp",2,false)
+call SetFrameText( GetFrameByName("ClassBarTooltipText",i), GetAbilityBaseStringFieldById( String2Id( "ore3" ), ABILITY_SF_NAME )+", \n\n"+GetAbilityBaseStringFieldById( String2Id( "ore3" ), ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED ))
+call SetFrameSize( GetFrameByName("ClassBarTooltip",i), .16, GetFrameHeight( GetFrameByName("ClassBarTooltipText",i))+0.03)
+call SetFrameTextAlignment( GetFrameByName("ClassBarTooltipText",i), TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_LEFT )
+call SetFrameRelativePoint( GetFrameByName("ClassBarTooltip",i), FRAMEPOINT_CENTER, GetFrameByName("ClassBarIcon",i), FRAMEPOINT_CENTER,  -.08, (0.5*GetFrameHeight( GetFrameByName("TavernAbilityTooltipText",i)))+.04  )
+set i=i+1
+endif 
+loop
+call ShowFrame(GetFrameByName( "ClassBarIcon", i ),false)
+call ShowFrame( GetFrameByName( "ClassBarTooltip", i ), false)
+set i=i+1
+exitwhen i>6
+endloop
+endif
+set u=null
+endfunction
 function Trig_Set_Ability_Actions takes nothing returns nothing
 local unit u=GetTriggerUnit()
 local integer idu=GetHandleId(u)
@@ -241404,6 +241489,7 @@ function OrochimaruFCast3 takes nothing returns nothing
     call UnitRemoveAbilityTimed(c,'ore4',1.5)
     if GetUnitAbilityLevel(c,'ore3')==0 and IsUnitIllusion(c)==false then
     call UnitAddAbility(c,'ore3')
+    call UpdateClassBar(c)
     call UnitMakeAbilityPermanent(c,true,'ore3')
     endif
     if GetUnitTypeId(c)=='H057' or GetUnitTypeId(c)=='H00E' then
