@@ -241,6 +241,7 @@ constant integer SpecUIHash           = StringHash("SpecUI")
 constant integer ChannelHash          = StringHash("Channel")
 constant integer AlastorHash          = StringHash("Alastor")
 constant integer NIWHash              = StringHash("NIW")
+constant integer HRHash               = StringHash("HR")
 boolean NANAYA_CONDITION          = true // Возможность пика Нанаи
 //== Следующие переменные предназначены ТОЛЬКО для системных функций/методов
 timer sysTimer = null 
@@ -4397,7 +4398,7 @@ call FlushChildHashtable(h,id)
 call DestroyTimer(t)
 set t=null
 endfunction
-function RemoveSaveHashTimed takes integer time,integer id,integer ip returns nothing
+function RemoveSaveHashTimed takes real time,integer id,integer ip returns nothing
 local timer t=CreateTimer()
 local integer idt=GetHandleId(t)
 call SaveInteger(h,idt,1,id)
@@ -29912,10 +29913,12 @@ local real dmg=0
 if GetHeroLevel(u)>5 and GetWidgetLife(u)>0 and udg_B==true and DU2==true then
     if life2>life then
         set dmg=GetWidgetLife(u)-LoadReal(h,id,0)
-        call SaveReal(h,id,3,LoadReal(h,id,3)+(dmg*(0.049+(GetUnitState(u,UNIT_STATE_MANA) / GetUnitState(u,UNIT_STATE_MAX_MANA))*0.201)))
-        call SetWidgetLife(u, GetWidgetLife(u)+MathRealFloor(dmg*(0.049+(GetUnitState(u,UNIT_STATE_MANA) / GetUnitState(u,UNIT_STATE_MAX_MANA))*0.201))+MathRealFloor(LoadReal(h,id,3)))
-        if LoadReal(h,id,3)>1 then
-            call SaveReal(h,id,3,LoadReal(h,id,3)-MathRealFloor(LoadReal(h,id,3)))
+        if LoadInteger(h,GetHandleId(u),HRHash)!=1 then
+            call SaveReal(h,id,3,LoadReal(h,id,3)+(dmg*(0.049+(GetUnitState(u,UNIT_STATE_MANA) / GetUnitState(u,UNIT_STATE_MAX_MANA))*0.201)))
+            call SetWidgetLife(u, GetWidgetLife(u)+MathRealFloor(dmg*(0.049+(GetUnitState(u,UNIT_STATE_MANA) / GetUnitState(u,UNIT_STATE_MAX_MANA))*0.201))+MathRealFloor(LoadReal(h,id,3)))
+            if LoadReal(h,id,3)>1 then
+                call SaveReal(h,id,3,LoadReal(h,id,3)-MathRealFloor(LoadReal(h,id,3)))
+            endif
         endif
     endif
     call SaveReal(h,id,0,GetWidgetLife(u))
@@ -30015,10 +30018,12 @@ local real dmg=0
 if (UnitHasItemOfTypeBJ(u,'I00D') or GetUnitAbilityLevel(u,'KI58')>0) and GetWidgetLife(u)>0 and udg_B==true and DU2==true then
     if life2>life then
         set dmg=GetWidgetLife(u)-LoadReal(h,id,0)
-        call SaveReal(h,id,3,LoadReal(h,id,3)+(dmg*0.15))
-        call SetWidgetLife(u, GetWidgetLife(u)+MathRealFloor(dmg*0.15)+MathRealFloor(LoadReal(h,id,3)))
-        if LoadReal(h,id,3)>1 then
-            call SaveReal(h,id,3,LoadReal(h,id,3)-MathRealFloor(LoadReal(h,id,3)))
+        if LoadInteger(h,GetHandleId(u),HRHash)!=1 then
+            call SaveReal(h,id,3,LoadReal(h,id,3)+(dmg*0.15))
+            call SetWidgetLife(u, GetWidgetLife(u)+MathRealFloor(dmg*0.15)+MathRealFloor(LoadReal(h,id,3)))
+            if LoadReal(h,id,3)>1 then
+                call SaveReal(h,id,3,LoadReal(h,id,3)-MathRealFloor(LoadReal(h,id,3)))
+            endif
         endif
     endif
     call SaveReal(h,id,0,GetWidgetLife(u))
@@ -30050,10 +30055,12 @@ local real dmg=0
 if GetUnitAbilityLevel(u,'B074')>0 and GetWidgetLife(u)>0 and udg_B==true and DU2==true then
     if life2>life then
         set dmg=GetWidgetLife(u)-LoadReal(h,id,0)
-        call SaveReal(h,id,3,LoadReal(h,id,3)+(dmg*0.15))
-        call SetWidgetLife(u, GetWidgetLife(u)+MathRealFloor(dmg*0.15)+MathRealFloor(LoadReal(h,id,3)))
-        if LoadReal(h,id,3)>1 then
-            call SaveReal(h,id,3,LoadReal(h,id,3)-MathRealFloor(LoadReal(h,id,3)))
+        if LoadInteger(h,GetHandleId(u),HRHash)!=1 then
+            call SaveReal(h,id,3,LoadReal(h,id,3)+(dmg*0.15))
+            call SetWidgetLife(u, GetWidgetLife(u)+MathRealFloor(dmg*0.15)+MathRealFloor(LoadReal(h,id,3)))
+            if LoadReal(h,id,3)>1 then
+                call SaveReal(h,id,3,LoadReal(h,id,3)-MathRealFloor(LoadReal(h,id,3)))
+            endif
         endif
     endif
     call SaveReal(h,id,0,GetWidgetLife(u))
@@ -30085,10 +30092,12 @@ local real dmg=0
 if (UnitHasItemOfTypeBJ(u,'I043') or GetUnitAbilityLevel(u,'KIL8')>0) and GetWidgetLife(u)>0 and udg_B==true and DU2==true then
     if life2>life then
         set dmg=GetUnitState(u,UNIT_STATE_MANA)-LoadReal(h,id,0)
-        call SaveReal(h,id,3,LoadReal(h,id,3)+(dmg*0.15))
-        call SetUnitState(u,UNIT_STATE_MANA, GetUnitState(u,UNIT_STATE_MANA)+MathRealFloor(dmg*0.15)+MathRealFloor(LoadReal(h,id,3)))
-        if LoadReal(h,id,3)>1 then
-            call SaveReal(h,id,3,LoadReal(h,id,3)-MathRealFloor(LoadReal(h,id,3)))
+        if LoadInteger(h,GetHandleId(u),HRHash)!=1 then
+            call SaveReal(h,id,3,LoadReal(h,id,3)+(dmg*0.15))
+            call SetUnitState(u,UNIT_STATE_MANA, GetUnitState(u,UNIT_STATE_MANA)+MathRealFloor(dmg*0.15)+MathRealFloor(LoadReal(h,id,3)))
+            if LoadReal(h,id,3)>1 then
+                call SaveReal(h,id,3,LoadReal(h,id,3)-MathRealFloor(LoadReal(h,id,3)))
+            endif
         endif
     endif
     call SaveReal(h,id,0,GetUnitState(u,UNIT_STATE_MANA))
@@ -30120,10 +30129,12 @@ local real dmg=0
 if (UnitHasItemOfTypeBJ(u,'IGlA') or GetUnitAbilityLevel(u,'KI1I')>0) and GetWidgetLife(u)>0 and udg_B==true and DU2==true then
     if life2>life then
         set dmg=GetUnitState(u,UNIT_STATE_MANA)-LoadReal(h,id,0)
-        call SaveReal(h,id,3,LoadReal(h,id,3)+(dmg*0.1))
-        call SetUnitState(u,UNIT_STATE_MANA, GetUnitState(u,UNIT_STATE_MANA)+MathRealFloor(dmg*0.1)+MathRealFloor(LoadReal(h,id,3)))
-        if LoadReal(h,id,3)>1 then
-            call SaveReal(h,id,3,LoadReal(h,id,3)-MathRealFloor(LoadReal(h,id,3)))
+        if LoadInteger(h,GetHandleId(u),HRHash)!=1 then
+            call SaveReal(h,id,3,LoadReal(h,id,3)+(dmg*0.1))
+            call SetUnitState(u,UNIT_STATE_MANA, GetUnitState(u,UNIT_STATE_MANA)+MathRealFloor(dmg*0.1)+MathRealFloor(LoadReal(h,id,3)))
+            if LoadReal(h,id,3)>1 then
+                call SaveReal(h,id,3,LoadReal(h,id,3)-MathRealFloor(LoadReal(h,id,3)))
+            endif
         endif
     endif
     call SaveReal(h,id,0,GetUnitState(u,UNIT_STATE_MANA))
@@ -30155,10 +30166,12 @@ local real dmg=0
 if (UnitHasItemOfTypeBJ(u,'IPlA') or GetUnitAbilityLevel(u,'KI1K')>0) and GetWidgetLife(u)>0 and udg_B==true and DU2==true then
     if life2>life then
         set dmg=GetUnitState(u,UNIT_STATE_MANA)-LoadReal(h,id,0)
-        call SaveReal(h,id,3,LoadReal(h,id,3)+(dmg*0.1))
-        call SetUnitState(u,UNIT_STATE_MANA, GetUnitState(u,UNIT_STATE_MANA)+MathRealFloor(dmg*0.1)+MathRealFloor(LoadReal(h,id,3)))
-        if LoadReal(h,id,3)>1 then
-            call SaveReal(h,id,3,LoadReal(h,id,3)-MathRealFloor(LoadReal(h,id,3)))
+        if LoadInteger(h,GetHandleId(u),HRHash)!=1 then
+            call SaveReal(h,id,3,LoadReal(h,id,3)+(dmg*0.1))
+            call SetUnitState(u,UNIT_STATE_MANA, GetUnitState(u,UNIT_STATE_MANA)+MathRealFloor(dmg*0.1)+MathRealFloor(LoadReal(h,id,3)))
+            if LoadReal(h,id,3)>1 then
+                call SaveReal(h,id,3,LoadReal(h,id,3)-MathRealFloor(LoadReal(h,id,3)))
+            endif
         endif
     endif
     call SaveReal(h,id,0,GetUnitState(u,UNIT_STATE_MANA))
@@ -30189,8 +30202,10 @@ local real life2=GetUnitState(u,UNIT_STATE_MANA)
 local real dmg=0
 if (UnitHasItemOfTypeBJ(u,'I02S') or GetUnitAbilityLevel(u,'KIG0')>0) and udg_B==true and DU2==true then
 if life2<life then
-set dmg=GetUnitState(u,UNIT_STATE_MANA)-LoadReal(h,id,0)
-call SetUnitState(u,UNIT_STATE_MANA,life-(life-life2)*0.90)
+    set dmg=GetUnitState(u,UNIT_STATE_MANA)-LoadReal(h,id,0)
+    if LoadInteger(h,GetHandleId(u),HRHash)!=1 then
+        call SetUnitState(u,UNIT_STATE_MANA,life-(life-life2)*0.90)
+    endif
 endif
 call SaveReal(h,id,0,GetUnitState(u,UNIT_STATE_MANA))
 else
@@ -30220,8 +30235,10 @@ local real life2=GetUnitState(u,UNIT_STATE_MANA)
 local real dmg=0
 if UnitHasItemOfTypeBJ(u,'I054') and udg_B==true and DU2==true then
 if life2<life then
-set dmg=GetUnitState(u,UNIT_STATE_MANA)-LoadReal(h,id,0)
-call SetUnitState(u,UNIT_STATE_MANA,life-(life-life2)*0.75)
+    set dmg=GetUnitState(u,UNIT_STATE_MANA)-LoadReal(h,id,0)
+    if LoadInteger(h,GetHandleId(u),HRHash)!=1 then
+        call SetUnitState(u,UNIT_STATE_MANA,life-(life-life2)*0.75)
+    endif
 endif
 call SaveReal(h,id,0,GetUnitState(u,UNIT_STATE_MANA))
 else
@@ -51558,7 +51575,7 @@ endloop
 if heal>3000 then
     set heal=3000
 endif
-if heal>0.25*GetWidgetMaxLife(u)
+if heal>0.25*GetWidgetMaxLife(u) then
     set heal=0.25*GetWidgetMaxLife(u)
 endif
 call HealTextTag(u,u,heal*myCustomHeal2(u,1),"HealthRes")
@@ -52927,18 +52944,28 @@ endfunction
 function CastChangeRing takes nothing returns nothing
 local unit u=GetTriggerUnit()
 local item it=GetManipulatedItem()
+local item itm
 if GetItemTypeId(it)=='I02J' then
 call UnitRemoveItem(u,it)
 call RemoveItem(it)
-call UnitAddItemById(u,'I02K')
+set itm=CreateItem('I02K',GetUnitX(u),GetUnitY(u))
+call UnitAddItem(u,itm)
 call UnitRemoveAbility(u,'B02N')
+call StartItemCooldown(itm,1)
+call SaveInteger(h,GetHandleId(u),HRHash,1)
+call RemoveSaveHashTimed(0.1,GetHandleId(u),HRHash)
 elseif GetItemTypeId(it)=='I02K' then
 call UnitRemoveItem(u,it)
 call RemoveItem(it)
-call UnitAddItemById(u,'I02J')
+set itm=CreateItem('I02J',GetUnitX(u),GetUnitY(u))
+call UnitAddItem(u,itm)
 call UnitRemoveAbility(u,'B02N')
+call StartItemCooldown(itm,1)
+call SaveInteger(h,GetHandleId(u),HRHash,1)
+call RemoveSaveHashTimed(0.1,GetHandleId(u),HRHash)
 endif
 set it=null
+set itm=null
 set u=null
 endfunction
 function ChangeRingInit takes nothing returns nothing
@@ -52987,14 +53014,20 @@ if GetItemTypeId(it)=='IASS' then
 call UnitRemoveItem(u,it)
 call RemoveItem(it)
 call UnitAddItemById(u,'IASA')
+call SaveInteger(h,GetHandleId(u),HRHash,1)
+call RemoveSaveHashTimed(0.1,GetHandleId(u),HRHash)
 elseif GetItemTypeId(it)=='IASA' then
 call UnitRemoveItem(u,it)
 call RemoveItem(it)
 call UnitAddItemById(u,'IASI')
+call SaveInteger(h,GetHandleId(u),HRHash,1)
+call RemoveSaveHashTimed(0.1,GetHandleId(u),HRHash)
 elseif GetItemTypeId(it)=='IASI' then
 call UnitRemoveItem(u,it)
 call RemoveItem(it)
 call UnitAddItemById(u,'IASS')
+call SaveInteger(h,GetHandleId(u),HRHash,1)
+call RemoveSaveHashTimed(0.1,GetHandleId(u),HRHash)
 endif
 set it=null
 set u=null
@@ -53199,7 +53232,9 @@ if GetUnitAbilityLevel(u,'A25F')>0 then
 call SaveReal(h,id,4,0)
 endif
 if life2<life then
-call SetUnitState(u,UNIT_STATE_MANA,life-(life-life2)*0.45)
+    if LoadInteger(h,GetHandleId(u),HRHash)!=1 then
+        call SetUnitState(u,UNIT_STATE_MANA,life-(life-life2)*0.45)
+    endif
 endif
 call SaveReal(h,id,0,GetUnitState(u,UNIT_STATE_MANA))
 else
@@ -97525,7 +97560,7 @@ function GogetaRCast3 takes nothing returns nothing
 local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
 local unit u=LoadUnitHandle(h,id,0)
-local real dmg=GetHeroStr(u,true)*(3+GetUnitAbilityLevel(u,'A2FF'))*0.1
+local real dmg=GetHeroStr(u,true)*(4+GetUnitAbilityLevel(u,'A2FF'))*0.1
 local unit l__d=LoadUnitHandle(h,id,9)
 local real x=GetUnitX(u)
 local real y=GetUnitY(u)
@@ -97548,50 +97583,50 @@ call SetSpecialEffectZ(EFF , 840)
 call SetSpecialEffectScale(EFF,0.5)
 call DestroyEffect(EFF)
 endif
-set x2=x1+GetRandomReal(-390,-100)*Cos(GetRandomReal(0,6.28))
-set y2=y1+GetRandomReal(-390,-100)*Sin(GetRandomReal(0,6.28))
+set x2=x1+GetRandomReal(-590,-200)*Cos(GetRandomReal(0,6.28))
+set y2=y1+GetRandomReal(-590,-200)*Sin(GetRandomReal(0,6.28))
 set sr2=SR(x2,y2,x,y)
 set n=CreateUnit(p,'e255',x+105*Cos(a),y+105*Sin(a),a*bj_RADTODEG)
 call SetUnitFlyHeight(n,850,0)
 call SetUnitTimeScale(n,2)
 call GogetaRMissles(n,GetRandomReal(12,16)+sr2*0.017,a,x2,y2,u,1)
-set x2=x1+GetRandomReal(-100,100)*Cos(GetRandomReal(0,6.28))
-set y2=y1+GetRandomReal(-100,100)*Sin(GetRandomReal(0,6.28))
+set x2=x1+GetRandomReal(-200,200)*Cos(GetRandomReal(0,6.28))
+set y2=y1+GetRandomReal(-200,200)*Sin(GetRandomReal(0,6.28))
 set sr2=SR(x2,y2,x,y)
 set n=CreateUnit(p,'e255',x+105*Cos(a),y+105*Sin(a),a*bj_RADTODEG)
 call SetUnitFlyHeight(n,850,0)
 call SetUnitTimeScale(n,2)
 call GogetaRMissles(n,GetRandomReal(12,16)+sr2*0.017,a,x2,y2,u,2)
-set x2=x1+GetRandomReal(100,390)*Cos(GetRandomReal(0,6.28))
-set y2=y1+GetRandomReal(100,390)*Sin(GetRandomReal(0,6.28))
+set x2=x1+GetRandomReal(200,590)*Cos(GetRandomReal(0,6.28))
+set y2=y1+GetRandomReal(200,590)*Sin(GetRandomReal(0,6.28))
 set sr2=SR(x2,y2,x,y)
 set n=CreateUnit(p,'e255',x+105*Cos(a),y+105*Sin(a),a*bj_RADTODEG)
 call SetUnitFlyHeight(n,850,0)
 call SetUnitTimeScale(n,2)
 call GogetaRMissles(n,GetRandomReal(12,16)+sr2*0.017,a,x2,y2,u,0)
-set x2=x1+GetRandomReal(-100,100)*Cos(GetRandomReal(0,6.28))
-set y2=y1+GetRandomReal(-100,100)*Sin(GetRandomReal(0,6.28))
+set x2=x1+GetRandomReal(-200,200)*Cos(GetRandomReal(0,6.28))
+set y2=y1+GetRandomReal(-200,200)*Sin(GetRandomReal(0,6.28))
 set sr2=SR(x2,y2,x,y)
 set n=CreateUnit(p,'e255',x+105*Cos(a),y+105*Sin(a),a*bj_RADTODEG)
 call SetUnitFlyHeight(n,850,0)
 call SetUnitTimeScale(n,2)
 call GogetaRMissles(n,GetRandomReal(12,16)+sr2*0.017,a,x2,y2,u,2)
-set x2=x1+GetRandomReal(100,390)*Cos(GetRandomReal(0,6.28))
-set y2=y1+GetRandomReal(100,390)*Sin(GetRandomReal(0,6.28))
+set x2=x1+GetRandomReal(200,590)*Cos(GetRandomReal(0,6.28))
+set y2=y1+GetRandomReal(200,590)*Sin(GetRandomReal(0,6.28))
 set sr2=SR(x2,y2,x,y)
 set n=CreateUnit(p,'e255',x+105*Cos(a),y+105*Sin(a),a*bj_RADTODEG)
 call SetUnitFlyHeight(n,850,0)
 call SetUnitTimeScale(n,2)
 call GogetaRMissles(n,GetRandomReal(12,16)+sr2*0.017,a,x2,y2,u,0)
-set x2=x1+GetRandomReal(-390,-100)*Cos(GetRandomReal(0,6.28))
-set y2=y1+GetRandomReal(-390,-100)*Sin(GetRandomReal(0,6.28))
+set x2=x1+GetRandomReal(-590,-200)*Cos(GetRandomReal(0,6.28))
+set y2=y1+GetRandomReal(-590,-200)*Sin(GetRandomReal(0,6.28))
 set sr2=SR(x2,y2,x,y)
 set n=CreateUnit(p,'e255',x+105*Cos(a),y+105*Sin(a),a*bj_RADTODEG)
 call SetUnitFlyHeight(n,850,0)
 call SetUnitTimeScale(n,2)
 call GogetaRMissles(n,GetRandomReal(12,16)+sr2*0.017,a,x2,y2,u,1)
-set x2=x1+GetRandomReal(-100,100)*Cos(GetRandomReal(0,6.28))
-set y2=y1+GetRandomReal(-100,100)*Sin(GetRandomReal(0,6.28))
+set x2=x1+GetRandomReal(-200,200)*Cos(GetRandomReal(0,6.28))
+set y2=y1+GetRandomReal(-200,200)*Sin(GetRandomReal(0,6.28))
 set sr2=SR(x2,y2,x,y)
 set n=CreateUnit(p,'e255',x+105*Cos(a),y+105*Sin(a),a*bj_RADTODEG)
 call SetUnitFlyHeight(n,850,0)
@@ -97599,7 +97634,7 @@ call SetUnitTimeScale(n,2)
 call GogetaRMissles(n,GetRandomReal(12,16)+sr2*0.017,a,x2,y2,u,2)
 endif
 if dist>0.3 then
-call GroupEnumUnitsInRange(G,x1,y1,450,Base)
+call GroupEnumUnitsInRange(G,x1,y1,650,Base)
 loop
 set E=FirstOfGroup(G)
 exitwhen E==null
