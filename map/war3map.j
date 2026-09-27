@@ -45871,6 +45871,7 @@ exitwhen n0==null
 call GroupRemoveUnit(G,n0)
 if gr!=null and Condition_Base(GetOwningPlayer(caster),n0) and GetUnitAbilityLevel(n0,'Avul')==0 and IsUnitInGroup(n0,gr)==false then
 call GroupAddUnit(gr,n0)
+if LoadBoolean(HH,GetHandleId(n0),ANTITARGET_ABILITY)==false then
 call myCustomDamage(caster,n0,dmg,false,false,null,null,null)
 call Brg_Burn(caster,n0)
 if Brg_HasT(caster) then
@@ -45881,6 +45882,12 @@ call Brg_Fx("war3mapImported\\wos_zz-shio_zk_zz_stab2_hy-1.mdx",GetUnitX(n0),Get
 set EFF=AddSpecialEffectTarget("war3mapImported\\wos_LDeff (262).mdx",n0,"chest")
 call RemoveEffect(EFF,1.5,false,CreateTimer())
 call ShakeCamera(0.1,3)
+else
+// цель разворачивает умения: урона нет, ей отдаём себя (волна летит дальше).
+// Неуязвимость каста снимаем, иначе ответный удар реверсера не пройдёт.
+call SaveUnitHandle(HH,GetHandleId(n0),REVERSE_TARGET,caster)
+call Brg_Invul(caster,false)
+endif
 endif
 endloop
 set n0=null
@@ -45929,10 +45936,8 @@ call SaveGroupHandle(HH,id,4,CreateGroup())
 call SaveReal(HH,id,16,dmg)
 call SetUnitFacingInstant(caster,facing)
 call Brg_Lock(caster,true,'BbQ1')
-// под топором каст идёт в неуязвимости, как в оригинале
-if Brg_HasT(caster) then
+// каст идёт в неуязвимости (снимает Brg_Free через Brg_Lock)
 call Brg_Invul(caster,true)
-endif
 call SetUnitTimeScale(caster,1.6)
 call SetUnitAnimationByIndex(caster,9)
 call Brg_Free(caster,0.55)
@@ -46056,6 +46061,7 @@ call SaveReal(HH,id,16,dmg)
 call SaveReal(HH,id,14,SR(GetUnitX(caster),GetUnitY(caster),x1,y1)/26.0)
 call SetUnitFacingInstant(caster,facing)
 call Brg_Lock(caster,true,'BbW1')
+call Brg_Invul(caster,true)
 call SetUnitTimeScale(caster,2.4)
 call SetUnitAnimationByIndex(caster,4)
 call Brg_Free(caster,0.95)
@@ -46162,10 +46168,16 @@ set ang=ang+360
 endif
 if ang<40 and ang>-40 and SR(x0,y0,GetUnitX(n0),GetUnitY(n0))<=dist+100 then
 call GroupAddUnit(gr,n0)
+if LoadBoolean(HH,GetHandleId(n0),ANTITARGET_ABILITY)==false then
 call myCustomDamage(caster,n0,dmg,false,false,null,null,null)
 call SlowUnit(caster,n0,0.3,0.3,2,2,false)
 call Brg_Burn(caster,n0)
 call Brg_Cloud(caster,"war3mapImported\\wos_saberalterqcpurple.mdx",GetUnitX(n0),GetUnitY(n0),11,2.15,0.75,1.4)
+else
+// цель разворачивает умения: урона нет, ей отдаём себя (лучи летят дальше)
+call SaveUnitHandle(HH,GetHandleId(n0),REVERSE_TARGET,caster)
+call Brg_Invul(caster,false)
+endif
 endif
 endif
 endloop
@@ -46207,6 +46219,7 @@ call SaveReal(HH,id,16,(1.0+I2R(lvl))*I2R(GetHeroInt(caster,true)))
 call SaveGroupHandle(HH,id,4,CreateGroup())
 call SetUnitFacingInstant(caster,facing)
 call Brg_Lock(caster,true,'BbE1')
+call Brg_Invul(caster,true)
 call SetUnitTimeScale(caster,2.2)
 call SetUnitAnimationByIndex(caster,5)
 call Brg_Free(caster,0.95)
@@ -46388,6 +46401,7 @@ call UnitMakeAbilityPermanent(caster,true,'BbTm')
 call UnitAddAbility(caster,'BbT2')
 call SetPlayerAbilityAvailable(GetOwningPlayer(caster),'BbT1',false)
 call Brg_Lock(caster,true,'BbT1')
+call Brg_Invul(caster,true)
 call SetUnitTimeScale(caster,1.5)
 call SetUnitAnimationByIndex(caster,0)
 call Brg_Free(caster,1.0)
@@ -46510,9 +46524,15 @@ exitwhen n0==null
 call GroupRemoveUnit(G,n0)
 if gr!=null and Condition_Base(GetOwningPlayer(caster),n0) and GetUnitAbilityLevel(n0,'Avul')==0 and IsUnitInGroup(n0,gr)==false then
 call GroupAddUnit(gr,n0)
+if LoadBoolean(HH,GetHandleId(n0),ANTITARGET_ABILITY)==false then
 call myCustomDamage(caster,n0,dmg,false,false,null,null,null)
 call SetControlToUnit(caster,n0,2.0,"stun")
 call Brg_Burn(caster,n0)
+else
+// цель разворачивает умения: урона и стана нет, ей отдаём себя (топор летит дальше)
+call SaveUnitHandle(HH,GetHandleId(n0),REVERSE_TARGET,caster)
+call Brg_Invul(caster,false)
+endif
 endif
 endloop
 set n0=null
@@ -46636,6 +46656,7 @@ call UnitAddAbility(caster,'BbGm')
 call UnitMakeAbilityPermanent(caster,true,'BbGm')
 call SaveEffectHandle(HH,id,10,AddSpecialEffectTarget("war3mapImported\\wos_JY-Shio_Super_Saiyan_JN_Zi.mdx",caster,"origin"))
 call Brg_Lock(caster,true,'BbGb')
+call Brg_Invul(caster,true)
 call SetUnitTimeScale(caster,1.5)
 call SetUnitAnimationByIndex(caster,0)
 call Brg_Free(caster,0.8)
@@ -46692,6 +46713,7 @@ if ModuloReal(dist,300)<70 then
 call Brg_Cloud(caster,"war3mapImported\\wos_saberalterqcpurple.mdx",px,py,11,1.60,0.75,1.4)
 endif
 if SR(px,py,GetUnitX(target),GetUnitY(target))<130 then
+if LoadBoolean(HH,GetHandleId(target),ANTITARGET_ABILITY)==false then
 call myCustomDamage(caster,target,dmg,false,false,null,null,null)
 call Brg_Burn(caster,target)
 set EFF=AddSpecialEffectTarget("war3mapImported\\wos_LDeff (262).mdx",target,"chest")
@@ -46703,6 +46725,15 @@ set EFF=AddSpecialEffectTarget("war3mapImported\\wos_zz-fire-ore-hit1-zihei_2.md
 call SetSpecialEffectScale(EFF,2)
 call SetSpecialEffectTimeScale(EFF,1.15)
 call RemoveEffect(EFF,3.0,false,CreateTimer())
+else
+// цель разворачивает умения: урона нет, ей отдаём себя, сами отпускаемся.
+// Хвост завершения (тело волны и таймер) — общий, ниже, в этом же тике.
+call SaveBoolean(HH,GetHandleId(target),TARGET_ABILITY,false)
+call SaveUnitHandle(HH,GetHandleId(target),REVERSE_TARGET,caster)
+call SetUnitTimeScale(caster,1)
+call PauseUnit(caster,false)
+call Brg_Invul(caster,false)
+endif
 if LoadEffectHandle(HH,id,21)!=null then
 call DestroyEffect(LoadEffectHandle(HH,id,21))
 call SaveEffectHandle(HH,id,21,null)
@@ -46734,6 +46765,7 @@ call SaveReal(HH,id,13,0)
 call SaveReal(HH,id,16,1.0*I2R(GetHeroInt(caster,true)))
 call SetUnitFacingInstant(caster,facing)
 call Brg_Lock(caster,true,'BbD1')
+call Brg_Invul(caster,true)
 call SetUnitTimeScale(caster,1.8)
 call SetUnitAnimationByIndex(caster,8)
 call Brg_Free(caster,0.45)
@@ -230867,9 +230899,10 @@ set x0=GetUnitX(target)
 set y0=GetUnitY(target)
 call SetUnitInvulnerable(target,false)
 call SaveBoolean(HH,GetHandleId(target),TARGET_ABILITY,false)
+// сначала снять паузу, потом урон: по юниту в паузе урон режется вдвое
+call PauseUnit(target,false)
 call myCustomDamage(caster,target,dmg,false,false,null,null,null)
 call SetControlToUnit(caster,target,1.25,"stun")
-call PauseUnit(target,false)
 call SetUnitAnimation(target,"stand")
 call SetUnitPathing(target,true)
 call SetUnitFlyHeight(target,0.0,0)
@@ -230971,6 +231004,7 @@ call PauseUnit(target,false)
 call SaveBoolean(HH,GetHandleId(target),TARGET_ABILITY,false)
 endif
 call SetUnitPathing(caster,true)
+call SetUnitInvulnerable(caster,false)
 call PauseTimer(t)
 call DestroyTimer(t)
 call FlushChildHashtable(HH,id)
@@ -231036,7 +231070,10 @@ endif
 call Garp_Sound("Sound\\Music\\mp3Music\\Garp_F_Cast.mp3")
 call SaveSoundHandle(HH,id,30,soundplay)
 call ShakeCamera(0.1,3)
+// цель держим в паузе между ударами: с GST4 у кастера урон по ней полный
+call UnitAddAbility(caster,'GST4')
 call myCustomDamage(caster,target,dmg,false,false,null,null,null)
+call UnitRemoveAbility(caster,'GST4')
 if time2<2 then
 // цель отлетает от каждого удара, иначе не читается попадание
 call PushTimed(target,facing,10,12)
@@ -231053,6 +231090,7 @@ call PushTimed(target,facing,14,20)
 call PauseUnit(target,false)
 call SaveBoolean(HH,GetHandleId(target),TARGET_ABILITY,false)
 call SetUnitPathing(caster,true)
+call SetUnitInvulnerable(caster,false)
 call PauseTimer(t)
 call DestroyTimer(t)
 call FlushChildHashtable(HH,id)
@@ -231072,6 +231110,8 @@ call SaveUnitHandle(HH,id,1,caster)
 call SaveUnitHandle(HH,id,2,target)
 call Garp_Hands(caster,1.2)
 call SetUnitPathing(caster,false)
+// неуязвим всю серию: подбег и три удара; снимается во всех ветках завершения
+call SetUnitInvulnerable(caster,true)
 // откат ставим руками: подбег обрывает каст, и игра его не начисляет.
 // 22 c — как в Cool у GrW1 после правки дева (02b2637); ручная строка тогда
 // выпала вместе с ней, и W ушла без отката.
@@ -231100,6 +231140,7 @@ call SaveReal(HH,id,5,time)
 if UnitIsAlive(caster)==false or udg_B==false or DU2==false then
 call RemoveUnit(ball)
 call PauseUnit(caster,false)
+call SetUnitInvulnerable(caster,false)
 call PauseTimer(t)
 call DestroyTimer(t)
 call FlushChildHashtable(HH,id)
@@ -231116,6 +231157,7 @@ call SaveReal(HH,id,13,SR(GetUnitX(ball),GetUnitY(ball),x0,y0)/25.0)
 call SetUnitFacingInstant(ball,Angle2(GetUnitX(ball),GetUnitY(ball),x0,y0)+180)
 call SaveReal(HH,id,14,Angle2(GetUnitX(ball),GetUnitY(ball),x0,y0))
 call PauseUnit(caster,false)
+call SetUnitInvulnerable(caster,false)
 call SaveReal(HH,id,6,1)
 call SaveReal(HH,id,5,0)
 endif
@@ -231175,6 +231217,7 @@ local real facing=Angle2(GetUnitX(caster),GetUnitY(caster),x0,y0)
 call SetUnitFacingInstant(caster,facing)
 call SetUnitAnimationByIndex(caster,12)
 call PauseUnit(caster,true)
+call SetUnitInvulnerable(caster,true)
 call SaveUnitHandle(HH,id,1,caster)
 call SaveReal(HH,id,11,x0)
 call SaveReal(HH,id,12,y0)
@@ -231216,9 +231259,15 @@ endif
 if time==1.0 then
 // пауза была только на отыгрыш касты, дальше герой свободен
 call PauseUnit(caster,false)
+call SetUnitInvulnerable(caster,false)
 endif
 if time>=dur or UnitIsAlive(caster)==false or udg_B==false or DU2==false then
 call PauseUnit(caster,false)
+// оборвали на отыгрыше — снять и неуязвимость. Позже не трогаем:
+// на 10-й секунде это сняло бы неуязвимость другого умения (R, T)
+if time<=1.0 then
+call SetUnitInvulnerable(caster,false)
+endif
 call UnitRemoveAbility(caster,'GrEs')
 call UnitRemoveAbility(caster,'GrEa')
 if GetUnitAbilityLevel(caster,'GrF1')>0 then
@@ -231258,6 +231307,7 @@ call Garp_Hands(caster,1.0)
 call Garp_Sound("Sound\\Music\\mp3Music\\Garp_F_Cast.mp3")
 call SetUnitAnimation(caster,"spell")
 call PauseUnit(caster,true)
+call SetUnitInvulnerable(caster,true)
 call EffectCreateAndMoveAn(true,"Garp\\Garp_EBurst.mdx",GetRandomReal(0,360),2.0,0.2,1.0,100,100,100,0,0,caster,0,GetUnitFacing(caster),0)
 call TimerStart(t,0.1,true,function Garp_F_Act2)
 set caster=null
@@ -231767,7 +231817,7 @@ call SetUnitY(caster,y0)
 if time>=0.2 then
 // КОСМОС расстилается под ним и растёт до зоны урона за время взлёта.
 call Garp_Sound("Sound\\Music\\mp3Music\\Garp_T_Cast.mp3")
-// неуязвим, пока висит в воздухе; снимается на приземлении
+// неуязвим с начала каста (Garp_T_Act); снимается в конце отыгрыша
 call SetUnitInvulnerable(caster,true)
 set n0=CreateUnit(GetOwningPlayer(caster),'e200',x0,y0,GetRandomReal(0,360))
 call SetUnitModel(n0,"Garp\\Garp_TField.mdx")
@@ -231864,7 +231914,7 @@ call SaveReal(HH,id,11,x0)
 call SaveReal(HH,id,12,y0)
 call SetUnitFlyHeight(caster,0.0,0)
 call SaveReal(HH,id,18,0.0)
-call SetUnitInvulnerable(caster,false)
+// неуязвимость НЕ снимаем: иначе тик удара шёл без неё; снимает отыгрыш через 0.2 c
 // На земле держим паузой: рут не мешает развернуть героя приказом,
 // а он должен стоять, пока доигрывают эффекты.
 call PauseUnit(caster,true)
@@ -232296,6 +232346,8 @@ call SaveReal(HH,id,12,GetUnitY(caster))
 // Рут, а НЕ пауза: пауза морозит анимацию и удара было бы не видно.
 call UnitAddAbility(caster,'A1FU')
 call UnitAddAbility(caster,'Pet1')
+// неуязвим весь каст; снимается в конце отыгрыша (T_Act2, time==0.2) или при обрыве
+call SetUnitInvulnerable(caster,true)
 call SetUnitAcquireRange(caster, 51)
 call SetUnitPathing(caster,false)
 call UnitAddAbility(caster,'Amrf')
