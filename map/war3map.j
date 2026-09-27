@@ -1225,6 +1225,7 @@ group bof_RK=CreateGroup()
 hashtable bof_UD=InitHashtable()
 group bof_Wu
 group bof_RU=CreateGroup()
+integer array bof_Uy
 //BofGlobalsEnd
 endglobals
 native MergeUnits       takes integer qty, integer a, integer b, integer make returns boolean   // reserved native for call 4 integer function and return BOOLEAN value
@@ -6968,6 +6969,2663 @@ return AddSpecialEffect(path,x,y)
 endfunction
 // ===== конец библиотеки bof =====
 //BofLibEnd
+//Remilia1start
+// интеллект для урона кнопки D: урон bof x (0.028);
+// x1000, чтобы не терять дробь в целом (в Bof_Dmg урон делится обратно на 1000)
+function Rem_Int_D takes unit u,boolean b returns integer
+return R2I(I2R(GetHeroInt(u,b))*(0.028)*1000.+0.5)
+endfunction
+// интеллект для урона кнопки E: урон bof x (0.014 + 0.003 x уровень);
+// x1000, чтобы не терять дробь в целом (в Bof_Dmg урон делится обратно на 1000)
+function Rem_Int_E takes unit u,boolean b returns integer
+return R2I(I2R(GetHeroInt(u,b))*(0.014+0.003*I2R(GetUnitAbilityLevel(u,'RmE1')))*1000.+0.5)
+endfunction
+// интеллект для урона кнопки G: урон bof x (0.02);
+// x1000, чтобы не терять дробь в целом (в Bof_Dmg урон делится обратно на 1000)
+function Rem_Int_G takes unit u,boolean b returns integer
+return R2I(I2R(GetHeroInt(u,b))*(0.02)*1000.+0.5)
+endfunction
+// интеллект для урона кнопки Q: урон bof x (0.018 + 0.004 x уровень);
+// x1000, чтобы не терять дробь в целом (в Bof_Dmg урон делится обратно на 1000)
+function Rem_Int_Q takes unit u,boolean b returns integer
+return R2I(I2R(GetHeroInt(u,b))*(0.018+0.004*I2R(GetUnitAbilityLevel(u,'RmQ1')))*1000.+0.5)
+endfunction
+// интеллект для урона кнопки Q2: урон bof x (0.035);
+// x1000, чтобы не терять дробь в целом (в Bof_Dmg урон делится обратно на 1000)
+function Rem_Int_Q2 takes unit u,boolean b returns integer
+return R2I(I2R(GetHeroInt(u,b))*(0.035)*1000.+0.5)
+endfunction
+// интеллект для урона кнопки R: урон bof x (0.01 + 0.002 x уровень);
+// x1000, чтобы не терять дробь в целом (в Bof_Dmg урон делится обратно на 1000)
+function Rem_Int_R takes unit u,boolean b returns integer
+return R2I(I2R(GetHeroInt(u,b))*(0.01+0.002*I2R(GetUnitAbilityLevel(u,'RmR1')))*1000.+0.5)
+endfunction
+// интеллект для урона кнопки W: урон bof x (0.014 + 0.003 x уровень);
+// x1000, чтобы не терять дробь в целом (в Bof_Dmg урон делится обратно на 1000)
+function Rem_Int_W takes unit u,boolean b returns integer
+return R2I(I2R(GetHeroInt(u,b))*(0.014+0.003*I2R(GetUnitAbilityLevel(u,'RmW1')))*1000.+0.5)
+endfunction
+// интеллект для урона кнопки atk: урон bof x (0.0075);
+// x1000, чтобы не терять дробь в целом (в Bof_Dmg урон делится обратно на 1000)
+function Rem_Int_atk takes unit u,boolean b returns integer
+return R2I(I2R(GetHeroInt(u,b))*(0.0075)*1000.+0.5)
+endfunction
+// ===== Ремилия: своё вместо общего кода bof (до функций героя) =====
+// R «Spear the Gungnir»: у bof на 4-м нажатии кнопка становилась «по цели» (уровень 3), 5-е бросало
+// копьё в выбранного врага. У нас R — изучаемая кнопка без цели (уровни — изучение), поэтому копьё
+// летит в ближайшего вражеского героя в 3000, а если героев нет — в ближайшего врага. Никого нет —
+// нажатие не тратится (стадия остаётся 4).
+function Rem_SpearReady takes unit u returns boolean
+local group spG=CreateGroup()
+local unit spE
+local unit spBest=null
+local real spD
+local real spBestD=3001.
+local boolean spHero=false
+call GroupEnumUnitsInRange(spG,GetUnitX(u),GetUnitY(u),3000.,null)
+loop
+set spE=FirstOfGroup(spG)
+exitwhen spE==null
+call GroupRemoveUnit(spG,spE)
+if Condition_Base(GetOwningPlayer(u),spE) and IsUnitAliveBJ(spE) and GetUnitAbilityLevel(spE,'Avul')==0 then
+set spD=SquareRoot(Pow(GetUnitX(spE)-GetUnitX(u),2.)+Pow(GetUnitY(spE)-GetUnitY(u),2.))
+if (IsUnitType(spE,UNIT_TYPE_HERO) and not spHero) or (IsUnitType(spE,UNIT_TYPE_HERO)==spHero and spD<spBestD) then
+set spBest=spE
+set spBestD=spD
+set spHero=IsUnitType(spE,UNIT_TYPE_HERO)
+endif
+endif
+endloop
+call DestroyGroup(spG)
+set spG=null
+set spE=null
+if spBest==null then
+call SaveInteger(bof_M9,GetHandleId(u),$1942313C,4)
+call DisplayTextToPlayer(GetOwningPlayer(u),0,0,"Spear the Gungnir: рядом нет врага для копья")
+return false
+endif
+call SaveUnitHandle(bof_HT,GetHandleId(u),StringHash("RemSpear"),spBest)
+set spBest=null
+return true
+endfunction
+// Heart Break (у bof — кнопка предмета Queen of Midnight, «отнять 20% максимума здоровья цели»):
+// решение владельца 28 сен — без кнопки, срабатывает сам в конце T по той же цели. Функция bof берёт
+// героиню и цель из события заклинания — подсовываем их через хэштейбл и зовём по имени (она ниже).
+function Rem_HeartBreakAt takes unit c,unit t returns nothing
+if c==null or t==null or not IsUnitAliveBJ(t) or not IsUnitAliveBJ(c) then
+return
+endif
+call SaveUnitHandle(bof_HT,0,StringHash("RemHBc"),c)
+call SaveUnitHandle(bof_HT,0,StringHash("RemHBt"),t)
+call ExecuteFunc("Rem_HeartBreak_Act")
+endfunction
+// Вампиризм (пассивка): 20% урона — лечение. У bof перелив лечения (сверх недостающего здоровья)
+// во время боя копился во «временный запас» и поднимал максимум — это делала их общая система
+// лечения. Здесь то же: лечим, перелив — в запас (M9 $E90DB670), максимум = база + прибавка от
+// убийств T ($410023C4) + запас. Через 15 c без урона запас утекает (Rem_DMo).
+function Rem_VampHeal takes unit u,real amt returns nothing
+local integer vhId=GetHandleId(u)
+local real vhA=amt*myCustomHeal2(u,1)
+local real vhMiss=GetUnitState(u,UNIT_STATE_MAX_LIFE)-GetWidgetLife(u)
+local integer vhCap
+if vhA<=0. then
+return
+endif
+call HealTextTag(u,u,vhA,"HealthRes")
+call SetUnitState(u,UNIT_STATE_LIFE,GetWidgetLife(u)+vhA)
+if vhA>vhMiss and LoadBoolean(bof_M9,vhId,$78738D30) and not LoadBoolean(bof_M9,vhId,$84BF70F9) then
+// запас не больше 25% обычного максимума (без надбавок): у bof предела не было — у нас выходило
+// 20 тыс. здоровья у ИНТ-героя (владелец 28 сен: нерф)
+set vhCap=R2I((GetUnitState(u,UNIT_STATE_MAX_LIFE)-I2R(LoadInteger(bof_HT,vhId,StringHash("bofBonus"))))*.25)
+call SaveInteger(bof_M9,vhId,$E90DB670,IMinBJ(vhCap,LoadInteger(bof_M9,vhId,$E90DB670)+R2I(vhA-vhMiss)))
+call Bof_xa(u,0,2,LoadInteger(bof_M9,vhId,$410023C4)+LoadInteger(bof_M9,vhId,$E90DB670))
+endif
+endfunction
+function Rem_t9 takes unit M2,integer Y5,integer Y6,real VE returns boolean
+return Bof_EXSetAbilityState(GetUnitAbility(M2,Y5),Y6,VE)
+endfunction
+function Rem_wr takes unit VQ,unit Ux returns real
+return bj_RADTODEG*Atan2(GetUnitY(Ux)-GetUnitY(VQ),GetUnitX(Ux)-GetUnitX(VQ))
+endfunction
+function Rem_xk takes real Wr,location Ws,boolexpr Wt returns group
+local group Ui=CreateGroup()
+call GroupEnumUnitsInRangeOfLoc(Ui,Ws,Wr,Wt)
+call DestroyBoolExpr(Wt)
+set bof_Wu=Ui
+set Ui=null
+return bof_Wu
+endfunction
+function Rem_xw takes unit Uk,location U4,real U5 returns nothing
+local location U6=GetUnitLoc(Uk)
+call SetUnitFacingTimed(Uk,AngleBetweenPoints(U6,U4),U5)
+call RemoveLocation(U6)
+set U6=null
+endfunction
+function Rem_x5 takes unit Uk,integer Ul returns boolean
+local integer O7=0
+if Ul!=0 then
+loop
+if GetItemTypeId(UnitItemInSlot(Uk,O7))==Ul then
+return true
+endif
+set O7=O7+1
+exitwhen O7>=bj_MAX_INVENTORY
+endloop
+endif
+return false
+endfunction
+function Rem_yt takes unit Uk,unit U4,real U5 returns nothing
+local location U6=GetUnitLoc(U4)
+call Rem_xw(Uk,U6,U5)
+call RemoveLocation(U6)
+set U6=null
+endfunction
+function Rem_zi takes nothing returns nothing
+local timer Nr=GetExpiredTimer()
+local texttag T8=LoadTextTagHandle(bof_UD,GetHandleId(Nr),StringHash("t"))
+call DestroyTextTag(T8)
+call DestroyTimer(Nr)
+set Nr=null
+set T8=null
+endfunction
+function Rem_zj takes string UH,unit UI,real UJ,real UK,real UL,real UM,real Nr,real UN,real M2,real N1,real UO returns nothing
+local string UQ=UH
+local unit UR=UI
+local real US=UJ
+local real UT=UK
+local real UU=UL
+local real UV=UM
+local real UW=Nr
+local real UX=UN
+local real UY=M2
+local real UZ=N1
+local timer UP=CreateTimer()
+local texttag T8=CreateTextTagUnitBJ(UQ,UR,US,UT,UU,UV,UW,UX)
+call SetTextTagVelocityBJ(GetLastCreatedTextTag(),UY,UZ)
+call TimerStart(UP,UO,false,function Rem_zi)
+call SaveTextTagHandle(bof_UD,GetHandleId(UP),StringHash("t"),T8)
+set UR=null
+set UP=null
+endfunction
+function Rem_BBG takes real Up,real Uq,real Ur,real Us returns real
+return SquareRoot((Uq-Us)*(Uq-Us)+(Up-Ur)*(Up-Ur))
+endfunction
+function Rem_BBm takes nothing returns nothing
+local timer UE=GetExpiredTimer()
+local sound UF=LoadSoundHandle(bof_UD,GetHandleId(UE),StringHash("sound"))
+call KillSoundWhenDoneBJ(UF)
+call DestroyTimer(UE)
+set UE=null
+set UF=null
+endfunction
+function Rem_BBn takes string T8,integer T9 returns nothing
+local sound K=CreateSound(T8,false,false,false,10,10,"Default")
+local timer UB=CreateTimer()
+call SaveSoundHandle(bof_UD,GetHandleId(UB),StringHash("sound"),K)
+call StartSound(K)
+call SetSoundVolume(K,T9)
+call TimerStart(UB,1,false,function Rem_BBm)
+set K=null
+set UB=null
+endfunction
+function Rem_BB4 takes nothing returns nothing
+local timer Nr=GetExpiredTimer()
+local boolean Ux=LoadBoolean(bof_UD,GetHandleId(Nr),StringHash("boolean"))
+local unit M2=LoadUnitHandle(bof_UD,GetHandleId(Nr),StringHash("unit"))
+local integer K=LoadInteger(bof_UD,GetHandleId(Nr),StringHash("Integer"))
+local integer UB=LoadInteger(bof_UD,GetHandleId(Nr),StringHash("Integer3"))
+local integer Uz=LoadInteger(bof_UD,GetHandleId(Nr),StringHash("Integer2"))
+local integer U0=Uz+K
+if U0<=UB then
+call SetUnitVertexColor(M2,255,255,255,U0)
+set Uz=U0
+call SaveInteger(bof_UD,GetHandleId(Nr),StringHash("Integer2"),Uz)
+if Ux==true then
+call BJDebugMsg(I2S(U0))
+else
+call DoNothing()
+endif
+else
+call SetUnitVertexColor(M2,255,255,255,UB)
+set M2=null
+call DestroyTimer(Nr)
+set Nr=null
+endif
+endfunction
+function Rem_BB5 takes unit M2,integer K,integer UB,real Uw,boolean Ux returns nothing
+local timer Nr=CreateTimer()
+local integer Uz=bof_Uy[GetPlayerId(GetOwningPlayer(M2))]
+call SaveUnitHandle(bof_UD,GetHandleId(Nr),StringHash("unit"),M2)
+call SaveInteger(bof_UD,GetHandleId(Nr),StringHash("Integer"),K)
+call SaveInteger(bof_UD,GetHandleId(Nr),StringHash("Integer3"),UB)
+call SaveBoolean(bof_UD,GetHandleId(Nr),StringHash("boolean"),Ux)
+call SaveInteger(bof_UD,GetHandleId(Nr),StringHash("Integer2"),Uz)
+call TimerStart(Nr,Uw,true,function Rem_BB4)
+endfunction
+function Rem_DMk takes nothing returns nothing
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$2B0A6845,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2B0A6845)+.01)
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$9733C41A,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$9733C41A)-1.5)
+if LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2B0A6845)<=.1 then
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$A99320FA,GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$458B7DE9)))
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$FDF65382,GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$458B7DE9)))
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$A99320FA,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$A99320FA)+LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$9733C41A)*CosBJ(LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2D345649)))
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$FDF65382,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$FDF65382)+LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$9733C41A)*SinBJ(LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2D345649)))
+call SetUnitPosition(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$458B7DE9),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$A99320FA),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$FDF65382))
+else
+call FlushChildHashtable(bof_OI,GetHandleId(GetExpiredTimer()))
+call DestroyTimer(GetExpiredTimer())
+endif
+endfunction
+function Rem_Attack_Act takes nothing returns nothing
+local timer ST
+local integer SJ=LoadInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$CFDE6C76)
+set SJ=SJ+3
+call SaveInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$CFDE6C76,SJ)
+call SaveInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$ECE825E7,SJ)
+call SaveUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2,GetEventDamageSource())
+call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA,GetUnitX(GetTriggerUnit()))
+call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382,GetUnitY(GetTriggerUnit()))
+call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$41713DA3,GetUnitX(GetEventDamageSource()))
+call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$71CA3531,GetUnitY(GetEventDamageSource()))
+call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2392447A,GetUnitX(GetEventDamageSource()))
+call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$B0897302,GetUnitY(GetEventDamageSource()))
+call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2D345649,Atan2BJ(LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$B0897302)-LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2392447A)-LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA)))
+call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2D345649,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2D345649)+180.)
+call Bof_Dmg(GetEventDamageSource(),GetTriggerUnit(),(I2R(Rem_Int_atk(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),true))*20.*1.)*0.001)
+call SaveEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE,Bof_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),"bof\\Scarlet-44.mdx",GetUnitX(GetTriggerUnit()),GetUnitY(GetTriggerUnit())))
+call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE),GetUnitFlyHeight(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2))+150.)
+call Bof_EXEffectMatRotateY(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE),180.)
+call Bof_EXEffectMatRotateZ(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2D345649)+180.)
+call Bof_EXSetEffectSize(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE),1.)
+call Bof_zU(0.,LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE))
+call SaveEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE,Bof_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),"bof\\Scarlet-72.mdx",GetUnitX(GetTriggerUnit()),GetUnitY(GetTriggerUnit())))
+call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE),GetUnitFlyHeight(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2))+150.)
+call Bof_EXEffectMatRotateY(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE),180.)
+call Bof_EXEffectMatRotateZ(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2D345649)+180.)
+call Bof_EXSetEffectSize(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE),1.)
+call Bof_zU(0.,LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE))
+call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$41713DA3,GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2))+150.*CosBJ(LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2D345649)))
+call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$71CA3531,GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2))+150.*SinBJ(LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2D345649)))
+call SaveEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE,Bof_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),"bof\\Scarlet-67.mdx",LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$41713DA3),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$71CA3531)))
+call Bof_EXEffectMatRotateZ(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE),GetRandomDirectionDeg())
+call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE),150.)
+call Bof_EXSetEffectSize(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE),2.)
+call Bof_zU(0.,LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE))
+call SaveEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE,Bof_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),"bof\\Scarlet-67.mdx",LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$41713DA3),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$71CA3531)))
+call Bof_EXEffectMatRotateZ(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE),GetRandomDirectionDeg())
+call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE),150.)
+call Bof_EXSetEffectSize(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE),2.)
+call Bof_zU(0.,LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE))
+call Rem_BBn("bof\\war3mapImported\\RemiliaScarlet-T-YX3.wav",100)
+if IsUnitPausedBJ(GetTriggerUnit())==false then
+set ST=CreateTimer()
+call SaveReal(bof_OI,GetHandleId(ST),$2B0A6845,0.)
+call SaveReal(bof_OI,GetHandleId(ST),$9733C41A,20.)
+call SaveUnitHandle(bof_OI,GetHandleId(ST),$458B7DE9,GetTriggerUnit())
+call SaveReal(bof_OI,GetHandleId(ST),$2D345649,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2D345649))
+call SaveReal(bof_OI,GetHandleId(ST),$A99320FA,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA))
+call SaveReal(bof_OI,GetHandleId(ST),$FDF65382,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382))
+call TimerStart(ST,.01,true,function Rem_DMk)
+else
+endif
+call FlushChildHashtable(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ)
+set ST=null
+endfunction
+function Rem_DMo takes nothing returns nothing
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$6B54C545,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$6B54C545)+.05)
+if LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$6B54C545)<=600. and LoadInteger(bof_M9,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),$E90DB670)>LoadInteger(bof_OI,GetHandleId(GetExpiredTimer()),$6C8972A3) then
+call SaveInteger(bof_M9,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),$E90DB670,LoadInteger(bof_M9,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),$E90DB670)-LoadInteger(bof_OI,GetHandleId(GetExpiredTimer()),$6C8972A3))
+call Bof_xa(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),0,2,LoadInteger(bof_M9,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),$410023C4)+(LoadInteger(bof_M9,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),$E90DB670)))
+else
+call SaveBoolean(bof_M9,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),$84BF70F9,false)
+call SaveInteger(bof_M9,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),$E90DB670,0)
+call Bof_xa(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),0,2,LoadInteger(bof_M9,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),$410023C4))
+call FlushChildHashtable(bof_OI,GetHandleId(GetExpiredTimer()))
+call DestroyTimer(GetExpiredTimer())
+endif
+endfunction
+function Rem_DMp takes nothing returns nothing
+local timer ST
+call SaveReal(bof_M9,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),$5DECA482,LoadReal(bof_M9,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),$5DECA482)+.05)
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$50BBB8,LoadReal(bof_M9,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),$5DECA482))
+if LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$50BBB8)>=15. or LoadBoolean(bof_M9,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),$78738D30)==false then
+call SaveBoolean(bof_M9,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),$78738D30,false)
+call SaveBoolean(bof_M9,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),$84BF70F9,true)
+call DisplayTextToPlayer(GetOwningPlayer(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),0,0,"Украденная жизнь начинает утекать...")
+set ST=CreateTimer()
+call SaveReal(bof_OI,GetHandleId(ST),$6B54C545,0.)
+call SaveInteger(bof_OI,GetHandleId(ST),$6C8972A3,R2I(GetUnitState(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),UNIT_STATE_MAX_LIFE)*.0031)+1)
+call SaveUnitHandle(bof_OI,GetHandleId(ST),$911D5DC2,LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2))
+call TimerStart(ST,.05,true,function Rem_DMo)
+call FlushChildHashtable(bof_OI,GetHandleId(GetExpiredTimer()))
+call DestroyTimer(GetExpiredTimer())
+else
+endif
+set ST=null
+endfunction
+function Rem_Damage_Act takes nothing returns nothing
+local integer Sn
+local trigger SR
+local timer ST
+local integer SJ=LoadInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$CFDE6C76)
+set SJ=SJ+3
+call SaveInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$CFDE6C76,SJ)
+call SaveInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$ECE825E7,SJ)
+call SaveUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2,GetEventDamageSource())
+call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6DD3A3AB,GetEventDamage())
+if LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6DD3A3AB)<5000000. then
+if GetUnitAbilityLevel(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),'RmT1')>0 then
+call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A534D943,.15)
+else
+call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A534D943,.1)
+endif
+call Rem_VampHeal(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6DD3A3AB)*LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A534D943))
+if LoadBoolean(bof_M9,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)),$84BF70F9)==false then
+if LoadBoolean(bof_M9,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)),$78738D30)==false then
+call SaveBoolean(bof_M9,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)),$78738D30,true)
+call SaveReal(bof_M9,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)),$5DECA482,0.)
+set ST=CreateTimer()
+call SaveUnitHandle(bof_OI,GetHandleId(ST),$911D5DC2,LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2))
+call SaveReal(bof_OI,GetHandleId(ST),$50BBB8,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$50BBB8))
+call TimerStart(ST,.05,true,function Rem_DMp)
+else
+call SaveReal(bof_M9,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)),$5DECA482,0.)
+endif
+else
+endif
+else
+endif
+call FlushChildHashtable(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ)
+set SR=null
+set ST=null
+endfunction
+function Rem_DMu takes nothing returns nothing
+if true then
+call SaveReal(bof_M9,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),$ACCE86E9,1.)
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$B259B269,LoadReal(bof_M9,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),$ACCE86E9))
+call SetUnitTimeScale(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$B259B269))
+call SetUnitAnimationByIndex(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),20)
+else
+endif
+call FlushChildHashtable(bof_OI,GetHandleId(GetExpiredTimer()))
+call DestroyTimer(GetExpiredTimer())
+endfunction
+function Rem_DMv takes nothing returns nothing
+call UnitRemoveAbility(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),'RmQ2')
+call SetPlayerAbilityAvailable(GetOwningPlayer(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),'RmQ1',true)
+call SaveUnitHandle(bof_M9,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),$7960C77A,null)
+call FlushChildHashtable(bof_OI,GetHandleId(GetExpiredTimer()))
+call DestroyTimer(GetExpiredTimer())
+endfunction
+function Rem_DMw takes nothing returns nothing
+call CameraClearNoiseForPlayer(GetOwningPlayer(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)))
+call FlushChildHashtable(bof_OI,GetHandleId(GetExpiredTimer()))
+call DestroyTimer(GetExpiredTimer())
+endfunction
+function Rem_DMx takes nothing returns nothing
+local group TF
+local unit bl_TG
+local integer Sn
+local trigger SR
+if LoadInteger(bof_M9,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$D2A88040)),$10D57C65)==1 then
+call DoNothing()
+else
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$2B0A6845,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2B0A6845)+.01)
+call SaveInteger(bof_OI,GetHandleId(GetExpiredTimer()),$A0136A6F,LoadInteger(bof_OI,GetHandleId(GetExpiredTimer()),$A0136A6F)+1)
+if LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$34D6230E)<=100. then
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$34D6230E,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$34D6230E)+5.)
+else
+endif
+if LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2B0A6845)<=GetRandomReal(.2,.22) and IsUnitAliveBJ(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$D2A88040))==true and LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$DB3DF292)>LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$34D6230E) then
+call SetUnitFlyHeight(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$D2A88040),GetUnitFlyHeight(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$D2A88040))-30.,1000000000.)
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$24F5C392,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$24F5C392)+GetRandomReal(-3.,3.))
+call SetUnitFacingTimed(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$D2A88040),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$24F5C392),0)
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$41713DA3,GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$D2A88040)))
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$71CA3531,GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$D2A88040)))
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$41713DA3,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$41713DA3)+LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$34D6230E)*CosBJ(LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$24F5C392)))
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$71CA3531,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$71CA3531)+LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$34D6230E)*SinBJ(LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$24F5C392)))
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$DB3DF292,Rem_BBG(GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$D2A88040)),GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$D2A88040)),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2392447A),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$B0897302)))
+call SetUnitPosition(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$D2A88040),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$41713DA3),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$71CA3531))
+else
+call SaveEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE,Bof_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),"bof\\Scarlet-54.mdx",LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$41713DA3),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$71CA3531)))
+call Bof_EXEffectMatRotateZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2D345649)+0.)
+call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),50.)
+call Bof_EXSetEffectSize(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),1.5)
+call Bof_zU(0.,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE))
+call SaveEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE,Bof_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),"bof\\Scarlet-27.mdx",LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$41713DA3),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$71CA3531)))
+call Bof_EXEffectMatRotateZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2D345649)+0.)
+call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),50.)
+call Bof_EXSetEffectSize(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),1.5)
+call Bof_zU(0.,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE))
+call SaveEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE,Bof_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),"bof\\Scarlet-37.mdx",LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$41713DA3),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$71CA3531)))
+call Bof_EXEffectMatRotateZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2D345649)+0.)
+call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),50.)
+call Bof_EXSetEffectSize(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),1.5)
+call Bof_zU(0.,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE))
+call SaveEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE,Bof_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),"bof\\Scarlet-75.mdx",LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$41713DA3),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$71CA3531)))
+call Bof_EXEffectMatRotateZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2D345649)+0.)
+call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),50.)
+call Bof_EXSetEffectSize(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),1.)
+call Bof_zU(0.,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE))
+set TF=CreateGroup()
+call GroupEnumUnitsInRange(TF,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$41713DA3),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$71CA3531),350.,null)
+loop
+set bl_TG=FirstOfGroup(TF)
+exitwhen bl_TG==null
+call GroupRemoveUnit(TF,bl_TG)
+if Condition_Base(GetOwningPlayer(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),bl_TG) and true and true and GetUnitAbilityLevel(bl_TG,$4176756C)==0 then
+call SaveUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867,bl_TG)
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$F1DDA59B,GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867)))
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$38D20A1F,GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867)))
+call Bof_Dmg(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867),(I2R(Rem_Int_Q(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),true))*20.*1.)*0.001)
+call SetControlToUnit(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867),2.,"stun")
+else
+endif
+endloop
+call DestroyGroup(TF)
+call RemoveUnit(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$D2A88040))
+call FlushChildHashtable(bof_OI,GetHandleId(GetExpiredTimer()))
+call DestroyTimer(GetExpiredTimer())
+endif
+endif
+set TF=null
+set bl_TG=null
+set SR=null
+endfunction
+function Rem_DMy takes nothing returns nothing
+local timer ST
+if LoadInteger(bof_M9,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),$10D57C65)==1 then
+call DoNothing()
+else
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$6B54C545,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$6B54C545)+.02)
+call SetUnitInvulnerable(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),true)
+call PauseUnit(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),true)
+if LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$6B54C545)==.02 then
+call UnitAddAbility(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),$41726176)
+call UnitRemoveAbility(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),$41726176)
+call GroupAddUnit(bof_RU,LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2))
+call SaveReal(bof_M9,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),$3224C2A2,0.)
+call SaveReal(bof_M9,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),$38344552,20.)
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$64352D9A,.6)
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$2DDF3B2F,600.)
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$1D5480EA,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$64352D9A)/.02)
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$793F19C0,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2DDF3B2F)/I2R(R2I(LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$1D5480EA))))
+if true then
+call Bof_Slide(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2D345649)+180.,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2DDF3B2F),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$64352D9A))
+else
+endif
+else
+endif
+if LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$6B54C545)==.62 then
+call SaveReal(bof_M9,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),$38344552,0.)
+call SaveReal(bof_M9,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),$3224C2A2,0.)
+call CameraSetEQNoiseForPlayer(GetOwningPlayer(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),35.)
+set ST=CreateTimer()
+call SaveUnitHandle(bof_OI,GetHandleId(ST),$911D5DC2,LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2))
+call TimerStart(ST,.4,false,function Rem_DMw)
+call Rem_BBn("bof\\war3mapImported\\RemiliaScarlet-Q-YX1.mp3",100)
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$A99320FA,GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)))
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$FDF65382,GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)))
+call SaveEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE,Bof_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),"bof\\Tsubaki-37.mdx",LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$A99320FA),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$FDF65382)))
+call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),GetUnitFlyHeight(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2))+100.)
+call Bof_EXEffectMatRotateY(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),90.)
+call Bof_EXEffectMatRotateZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2D345649)+0.)
+call Bof_EXSetEffectSize(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),5.)
+call Bof_zU(0.,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE))
+call SaveEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE,Bof_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),"bof\\Saber-17.mdx",LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$A99320FA),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$FDF65382)))
+call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),GetUnitFlyHeight(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2))+50.)
+call Bof_EXSetEffectSize(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),1.5)
+call Bof_EXEffectMatRotateZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2D345649))
+call Bof_zU(0.,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE))
+else
+endif
+if LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$6B54C545)>.62 and LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$6B54C545)<1.02 then
+call SaveInteger(bof_OI,GetHandleId(GetExpiredTimer()),$8B1FFFFC,LoadInteger(bof_OI,GetHandleId(GetExpiredTimer()),$8B1FFFFC)+1)
+if LoadInteger(bof_OI,GetHandleId(GetExpiredTimer()),$8B1FFFFC)==1 or ModuloInteger(LoadInteger(bof_OI,GetHandleId(GetExpiredTimer()),$8B1FFFFC)-1,5)==0 then
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$A99320FA,GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)))
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$FDF65382,GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)))
+call SaveUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$D2A88040,CreateUnit(GetOwningPlayer(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),'eBLP',LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$A99320FA),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$FDF65382),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2D345649)))
+call Bof_DzSetUnitModel(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$D2A88040),"bof\\Scarlet-11.mdx")
+call UnitApplyTimedLife(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$D2A88040),$42487765,5.)
+call SetUnitFlyHeight(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$D2A88040),GetUnitFlyHeight(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2))+100.,1000000000.)
+call SaveBoolean(bof_M9,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$D2A88040)),$68B72DFF,true)
+set ST=CreateTimer()
+call SaveReal(bof_OI,GetHandleId(ST),$2B0A6845,0.)
+call SaveReal(bof_OI,GetHandleId(ST),$34D6230E,40.)
+call SaveReal(bof_OI,GetHandleId(ST),$24F5C392,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2D345649))
+call SaveUnitHandle(bof_OI,GetHandleId(ST),$D2A88040,LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$D2A88040))
+call SaveInteger(bof_OI,GetHandleId(ST),$A0136A6F,0)
+call SaveReal(bof_OI,GetHandleId(ST),$2392447A,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2392447A))
+call SaveReal(bof_OI,GetHandleId(ST),$B0897302,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$B0897302))
+call SaveReal(bof_OI,GetHandleId(ST),$DB3DF292,Rem_BBG(GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$D2A88040)),GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$D2A88040)),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2392447A),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$B0897302)))
+call SaveUnitHandle(bof_OI,GetHandleId(ST),$911D5DC2,LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2))
+call SaveReal(bof_OI,GetHandleId(ST),$2D345649,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2D345649))
+call SaveUnitHandle(bof_OI,GetHandleId(ST),$9B1A6867,LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867))
+call SaveEffectHandle(bof_OI,GetHandleId(ST),$6EAE13FE,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE))
+call SaveReal(bof_OI,GetHandleId(ST),$41713DA3,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$41713DA3))
+call SaveReal(bof_OI,GetHandleId(ST),$71CA3531,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$71CA3531))
+call TimerStart(ST,.02,true,function Rem_DMx)
+else
+endif
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$34D6230E,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$34D6230E)-LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$1CB1890E))
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$1CB1890E,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$1CB1890E)-.1)
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$A99320FA,GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2))+CosBJ(LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2D345649)+180.)*LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$34D6230E))
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$FDF65382,GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2))+SinBJ(LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2D345649)+180.)*LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$34D6230E))
+call SetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$A99320FA))
+call SetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$FDF65382))
+else
+endif
+if LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$6B54C545)==1.02 then
+call GroupAddUnit(bof_RU,LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2))
+call SaveReal(bof_M9,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),$38344552,0.)
+call SaveReal(bof_M9,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),$3224C2A2,2.)
+call SetUnitInvulnerable(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),false)
+call PauseUnit(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),false)
+call SaveReal(bof_M9,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),$ACCE86E9,1.)
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$B259B269,LoadReal(bof_M9,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),$ACCE86E9))
+call SetUnitTimeScale(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$B259B269))
+call FlushChildHashtable(bof_OI,GetHandleId(GetExpiredTimer()))
+call DestroyTimer(GetExpiredTimer())
+else
+endif
+endif
+set ST=null
+endfunction
+function Rem_Q_Act takes nothing returns nothing
+local integer Sn
+local trigger SR
+local timer ST
+local integer SJ=LoadInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$CFDE6C76)
+set SJ=SJ+3
+call SaveInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$CFDE6C76,SJ)
+call SaveInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$ECE825E7,SJ)
+call SaveUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2,GetTriggerUnit())
+call Bof_FloatText(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),"Scarlet Shoot")
+call SavePlayerHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$48656946,GetOwningPlayer(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
+call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA,GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
+call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382,GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
+call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2392447A,GetSpellTargetX())
+call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$B0897302,GetSpellTargetY())
+call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2D345649,Atan2BJ(LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$B0897302)-LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2392447A)-LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA)))
+call SaveEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE,Bof_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),"bof\\Scarlet-4.mdx",LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382)))
+call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE),GetUnitFlyHeight(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2))+0.)
+call Bof_EXEffectMatRotateZ(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2D345649)+0.)
+call Bof_EXSetEffectSize(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE),1.)
+call Bof_zU(0.,LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE))
+call SaveEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE,Bof_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),"bof\\Scarlet-8.mdx",LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382)))
+call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE),GetUnitFlyHeight(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2))+0.)
+call Bof_EXEffectMatRotateZ(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2D345649)+0.)
+call Bof_EXSetEffectSize(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE),1.)
+call Bof_zU(0.,LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE))
+set ST=CreateTimer()
+call SaveUnitHandle(bof_OI,GetHandleId(ST),$911D5DC2,LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2))
+call SaveReal(bof_OI,GetHandleId(ST),$B259B269,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$B259B269))
+call TimerStart(ST,.01,false,function Rem_DMu)
+call Rem_BBn("bof\\war3mapImported\\RemiliaScarlet-Q-YY1.mp3",100)
+call SaveUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$D2A88040,CreateUnit(GetOwningPlayer(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)),'eBLP',LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2392447A),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$B0897302),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2D345649)))
+call Bof_DzSetUnitModel(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$D2A88040),"bof\\Scarlet-6.mdx")
+call SetUnitScale(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$D2A88040),1.5,1.5,1.5)
+call UnitApplyTimedLife(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$D2A88040),$42487765,8.2)
+call SaveUnitHandle(bof_M9,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)),$7960C77A,LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$D2A88040))
+call UnitAddAbility(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),'RmQ2')
+call SetPlayerAbilityAvailable(GetOwningPlayer(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)),'RmQ1',false)
+set ST=CreateTimer()
+call SaveUnitHandle(bof_OI,GetHandleId(ST),$911D5DC2,LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2))
+call TimerStart(ST,8.,false,function Rem_DMv)
+call SetUnitInvulnerable(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),true)
+call PauseUnit(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),true)
+set ST=CreateTimer()
+call SaveReal(bof_OI,GetHandleId(ST),$6B54C545,0.)
+call SaveInteger(bof_OI,GetHandleId(ST),$8B1FFFFC,0)
+call SaveReal(bof_OI,GetHandleId(ST),$34D6230E,80.)
+call SaveReal(bof_OI,GetHandleId(ST),$1CB1890E,5.)
+call SaveReal(bof_OI,GetHandleId(ST),$2392447A,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2392447A))
+call SaveReal(bof_OI,GetHandleId(ST),$B0897302,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$B0897302))
+call SaveUnitHandle(bof_OI,GetHandleId(ST),$911D5DC2,LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2))
+call SaveReal(bof_OI,GetHandleId(ST),$2DDF3B2F,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2DDF3B2F))
+call SaveReal(bof_OI,GetHandleId(ST),$64352D9A,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$64352D9A))
+call SaveReal(bof_OI,GetHandleId(ST),$1D5480EA,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$1D5480EA))
+call SaveUnitHandle(bof_OI,GetHandleId(ST),$D2A88040,LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$D2A88040))
+call SaveReal(bof_OI,GetHandleId(ST),$2D345649,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2D345649))
+call SaveUnitHandle(bof_OI,GetHandleId(ST),$9B1A6867,LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$9B1A6867))
+call SaveReal(bof_OI,GetHandleId(ST),$B259B269,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$B259B269))
+call SaveEffectHandle(bof_OI,GetHandleId(ST),$6EAE13FE,LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE))
+call SaveReal(bof_OI,GetHandleId(ST),$A99320FA,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA))
+call SaveReal(bof_OI,GetHandleId(ST),$41713DA3,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$41713DA3))
+call SaveReal(bof_OI,GetHandleId(ST),$FDF65382,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382))
+call SaveReal(bof_OI,GetHandleId(ST),$71CA3531,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$71CA3531))
+call TimerStart(ST,.02,true,function Rem_DMy)
+call FlushChildHashtable(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ)
+set SR=null
+set ST=null
+endfunction
+function Rem_Q2_Act takes nothing returns nothing
+local integer Sn
+local trigger SR
+local group TF
+local unit bl_TG
+local integer SJ=LoadInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$CFDE6C76)
+set SJ=SJ+3
+call SaveInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$CFDE6C76,SJ)
+call SaveInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$ECE825E7,SJ)
+call SaveUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2,GetTriggerUnit())
+call Bof_FloatText(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),"Bad Lady Scramble")
+call SavePlayerHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$48656946,GetOwningPlayer(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
+call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA,GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
+call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382,GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
+call SaveEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE,Bof_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),"bof\\Scarlet-22.mdx",LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382)))
+call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE),GetUnitFlyHeight(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2))+0.)
+call Bof_EXEffectMatRotateZ(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2D345649)+0.)
+call Bof_EXSetEffectSize(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE),1.)
+call Bof_zU(0.,LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE))
+call SaveEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE,Bof_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),"bof\\Scarlet-36.MDX",LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382)))
+call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE),GetUnitFlyHeight(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2))+0.)
+call Bof_EXEffectMatRotateZ(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2D345649)+0.)
+call Bof_EXSetEffectSize(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE),1.)
+call Bof_zU(0.,LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE))
+call SaveEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE,Bof_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),"bof\\Scarlet-69.mdx",LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382)))
+call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE),GetUnitFlyHeight(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2))+0.)
+call Bof_EXEffectMatRotateZ(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2D345649)+0.)
+call Bof_EXSetEffectSize(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE),1.)
+call Bof_zU(0.,LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE))
+call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2392447A,GetUnitX(LoadUnitHandle(bof_M9,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)),$7960C77A)))
+call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$B0897302,GetUnitY(LoadUnitHandle(bof_M9,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)),$7960C77A)))
+call SetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2392447A))
+call SetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$B0897302))
+call SaveEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE,Bof_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),"bof\\Scarlet-69.mdx",LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2392447A),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$B0897302)))
+call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE),GetUnitFlyHeight(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2))+0.)
+call Bof_EXEffectMatRotateZ(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2D345649)+0.)
+call Bof_EXSetEffectSize(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE),1.)
+call Bof_zU(0.,LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE))
+call SaveEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE,Bof_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),"bof\\Scarlet-4.mdx",LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2392447A),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$B0897302)))
+call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE),GetUnitFlyHeight(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2))+0.)
+call Bof_EXEffectMatRotateZ(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2D345649)+0.)
+call Bof_EXSetEffectSize(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE),1.)
+call Bof_zU(0.,LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE))
+set TF=CreateGroup()
+call GroupEnumUnitsInRange(TF,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2392447A),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$B0897302),350.,null)
+loop
+set bl_TG=FirstOfGroup(TF)
+exitwhen bl_TG==null
+call GroupRemoveUnit(TF,bl_TG)
+if Condition_Base(GetOwningPlayer(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)),bl_TG) and true and true and GetUnitAbilityLevel(bl_TG,$4176756C)==0 then
+call SaveUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$9B1A6867,bl_TG)
+call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$F1DDA59B,GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$9B1A6867)))
+call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$38D20A1F,GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$9B1A6867)))
+call Bof_Dmg(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$9B1A6867),(I2R(Rem_Int_Q2(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),true))*80.*1.)*0.001)
+call SetControlToUnit(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$9B1A6867),3.,"stun")
+else
+endif
+endloop
+call DestroyGroup(TF)
+call Rem_BBn("bof\\war3mapImported\\RemiliaScarlet-Q2-YY1.mp3",120)
+call Rem_BBn("bof\\war3mapImported\\RemiliaScarlet-G-YX1.mp3",100)
+call UnitRemoveAbility(GetTriggerUnit(),'RmQ2')
+call SetPlayerAbilityAvailable(GetOwningPlayer(GetTriggerUnit()),'RmQ1',true)
+call FlushChildHashtable(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ)
+set SR=null
+set TF=null
+set bl_TG=null
+endfunction
+function Rem_DM7 takes nothing returns nothing
+local group TF
+local unit bl_TG
+local integer Sn
+local trigger SR
+if LoadInteger(bof_M9,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),$10D57C65)==1 then
+call DoNothing()
+else
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$6B54C545,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$6B54C545)+.02)
+call SetUnitInvulnerable(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),true)
+call PauseUnit(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),true)
+if LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$6B54C545)==.26 then
+call CameraSetEQNoiseForPlayer(GetOwningPlayer(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),35.)
+call SaveReal(bof_M9,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),$ACCE86E9,1.)
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$B259B269,LoadReal(bof_M9,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),$ACCE86E9))
+call SetUnitTimeScale(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$B259B269))
+call SetUnitAnimationByIndex(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),19)
+call SetUnitPosition(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2392447A),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$B0897302))
+call SaveEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE,Bof_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),"bof\\Scarlet-10.mdx",LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2392447A),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$B0897302)))
+call Bof_EXEffectMatRotateZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2D345649)+0.)
+call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),25.)
+call Bof_EXSetEffectSize(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),1.5)
+call Bof_zU(0.,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE))
+call SaveEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE,Bof_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),"bof\\Scarlet-47.mdx",LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2392447A),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$B0897302)))
+call Bof_EXEffectMatRotateZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2D345649)+0.)
+call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),25.)
+call Bof_EXSetEffectSize(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),1.)
+call Bof_zU(0.,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE))
+call SaveEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE,Bof_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),"bof\\Scarlet-4.mdx",LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2392447A),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$B0897302)))
+call Bof_EXEffectMatRotateZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2D345649)+0.)
+call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),25.)
+call Bof_EXSetEffectSize(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),1.5)
+call Bof_zU(0.,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE))
+call SaveEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE,Bof_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),"bof\\Scarlet-14.mdx",LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2392447A),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$B0897302)))
+call Bof_EXEffectMatRotateZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2D345649)+0.)
+call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),25.)
+call Bof_EXSetEffectSize(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),1.5)
+call Bof_zU(.75,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE))
+call SaveEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE,Bof_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),"bof\\Madara-huitu-22.mdx",LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2392447A),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$B0897302)))
+call Bof_EXEffectMatRotateZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2D345649)+0.)
+call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),25.)
+call Bof_EXSetEffectSize(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),6.)
+call Bof_zU(0.,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE))
+call Rem_BBn("bof\\war3mapImported\\RemiliaScarlet-T-YX7.mp3",110)
+else
+endif
+if LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$6B54C545)>.26 and LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$6B54C545)<1. then
+call SaveInteger(bof_OI,GetHandleId(GetExpiredTimer()),$8B1FFFFC,LoadInteger(bof_OI,GetHandleId(GetExpiredTimer()),$8B1FFFFC)+1)
+if ModuloInteger(LoadInteger(bof_OI,GetHandleId(GetExpiredTimer()),$8B1FFFFC),8)==0 then
+call SaveEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE,Bof_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),"bof\\Scarlet-47.mdx",LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2392447A),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$B0897302)))
+call Bof_EXEffectMatRotateZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2D345649)+0.)
+call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),25.)
+call Bof_EXSetEffectSize(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),1.)
+call Bof_zU(0.,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE))
+set TF=CreateGroup()
+call GroupEnumUnitsInRange(TF,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2392447A),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$B0897302),300.,null)
+loop
+set bl_TG=FirstOfGroup(TF)
+exitwhen bl_TG==null
+call GroupRemoveUnit(TF,bl_TG)
+if Condition_Base(GetOwningPlayer(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),bl_TG) and true and true and GetUnitAbilityLevel(bl_TG,$4176756C)==0 then
+call SaveUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867,bl_TG)
+call Bof_Dmg(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867),(I2R(Rem_Int_W(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),true))*25.*1.)*0.001)
+call SaveEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE,Bof_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),"bof\\Scarlet-26.mdx",GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867)),GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867))))
+call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),GetUnitFlyHeight(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867))+150.)
+call Bof_EXSetEffectSize(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),1.)
+call Bof_zU(0.,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE))
+call SaveEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE,Bof_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),"bof\\Scarlet-52.mdx",GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867)),GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867))))
+call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),GetUnitFlyHeight(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867))+150.)
+call Bof_EXSetEffectSize(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),1.)
+call Bof_zU(0.,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE))
+call UnitAddAbility(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867),$41726176)
+call UnitRemoveAbility(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867),$41726176)
+call GroupAddUnit(bof_RU,LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867))
+call SaveReal(bof_M9,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867)),$3224C2A2,2.)
+call SaveReal(bof_M9,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867)),$38344552,20.)
+call SetControlToUnit(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867),2.,"stun")
+else
+endif
+endloop
+call DestroyGroup(TF)
+else
+endif
+else
+endif
+if LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$6B54C545)==1. then
+set TF=CreateGroup()
+call GroupEnumUnitsInRange(TF,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2392447A),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$B0897302),300.,null)
+loop
+set bl_TG=FirstOfGroup(TF)
+exitwhen bl_TG==null
+call GroupRemoveUnit(TF,bl_TG)
+if Condition_Base(GetOwningPlayer(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),bl_TG) and true and true and GetUnitAbilityLevel(bl_TG,$4176756C)==0 then
+call SaveUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867,bl_TG)
+call Bof_Dmg(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867),(I2R(Rem_Int_W(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),true))*25.*1.)*0.001)
+call UnitAddAbility(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867),$41726176)
+call UnitRemoveAbility(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867),$41726176)
+call GroupAddUnit(bof_RU,LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867))
+call SaveReal(bof_M9,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867)),$3224C2A2,4.)
+call SaveReal(bof_M9,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867)),$38344552,40.)
+else
+endif
+endloop
+call DestroyGroup(TF)
+call CameraClearNoiseForPlayer(GetOwningPlayer(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)))
+call SetUnitInvulnerable(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),false)
+call PauseUnit(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),false)
+call SaveReal(bof_M9,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),$ACCE86E9,1.)
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$B259B269,LoadReal(bof_M9,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),$ACCE86E9))
+call SetUnitTimeScale(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$B259B269))
+call FlushChildHashtable(bof_OI,GetHandleId(GetExpiredTimer()))
+call DestroyTimer(GetExpiredTimer())
+else
+endif
+endif
+set TF=null
+set bl_TG=null
+set SR=null
+endfunction
+function Rem_W_Act takes nothing returns nothing
+local integer Sn
+local trigger SR
+local timer ST
+local integer SJ=LoadInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$CFDE6C76)
+set SJ=SJ+3
+call SaveInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$CFDE6C76,SJ)
+call SaveInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$ECE825E7,SJ)
+call SaveUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2,GetTriggerUnit())
+call Bof_FloatText(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),"Young Demon Lord")
+call SavePlayerHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$48656946,GetOwningPlayer(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
+call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA,GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
+call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382,GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
+call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2392447A,GetSpellTargetX())
+call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$B0897302,GetSpellTargetY())
+call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2D345649,Atan2BJ(LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$B0897302)-LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2392447A)-LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA)))
+call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$38AB9941,Rem_BBG(LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2392447A),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$B0897302)))
+call SaveEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE,Bof_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),"bof\\Scarlet-8.mdx",LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382)))
+call Bof_EXSetEffectSize(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE),1.)
+call Bof_zU(0.,LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE))
+call SaveEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE,Bof_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),"bof\\Tsubaki-33.mdx",LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382)))
+call Bof_EXSetEffectSize(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE),1.)
+call Bof_zU(0.,LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE))
+call SaveEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE,Bof_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),"bof\\Madara-huitu-22.mdx",LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382)))
+call Bof_EXEffectMatRotateZ(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2D345649)+0.)
+call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE),25.)
+call Bof_EXSetEffectSize(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE),4.)
+call Bof_zU(0.,LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE))
+if LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$38AB9941)>1000. then
+call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$38AB9941,1000.)
+else
+endif
+call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2392447A,GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2))+CosBJ(LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2D345649)+0.)*LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$38AB9941))
+call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$B0897302,GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2))+SinBJ(LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2D345649)+0.)*LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$38AB9941))
+call SetUnitInvulnerable(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),true)
+call PauseUnit(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),true)
+call Rem_BBn("bof\\war3mapImported\\RemiliaScarlet-W-YY1.mp3",100)
+set ST=CreateTimer()
+call SaveReal(bof_OI,GetHandleId(ST),$6B54C545,0.)
+call SaveInteger(bof_OI,GetHandleId(ST),$8B1FFFFC,0)
+call SaveReal(bof_OI,GetHandleId(ST),$34D6230E,80.)
+call SaveReal(bof_OI,GetHandleId(ST),$1CB1890E,5.)
+call SaveReal(bof_OI,GetHandleId(ST),$2392447A,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2392447A))
+call SaveReal(bof_OI,GetHandleId(ST),$B0897302,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$B0897302))
+call SaveUnitHandle(bof_OI,GetHandleId(ST),$397C5DE0,LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$397C5DE0))
+call SaveUnitHandle(bof_OI,GetHandleId(ST),$911D5DC2,LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2))
+call SaveReal(bof_OI,GetHandleId(ST),$2D345649,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2D345649))
+call SaveUnitHandle(bof_OI,GetHandleId(ST),$9B1A6867,LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$9B1A6867))
+call SaveReal(bof_OI,GetHandleId(ST),$B259B269,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$B259B269))
+call SaveEffectHandle(bof_OI,GetHandleId(ST),$6EAE13FE,LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE))
+call TimerStart(ST,.02,true,function Rem_DM7)
+call FlushChildHashtable(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ)
+set SR=null
+set ST=null
+endfunction
+function Rem_DND takes nothing returns nothing
+if true then
+call SaveReal(bof_M9,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),$ACCE86E9,1.5)
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$B259B269,LoadReal(bof_M9,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),$ACCE86E9))
+call SetUnitTimeScale(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$B259B269))
+call SetUnitAnimationByIndex(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),7)
+else
+endif
+call FlushChildHashtable(bof_OI,GetHandleId(GetExpiredTimer()))
+call DestroyTimer(GetExpiredTimer())
+endfunction
+function Rem_DNE takes nothing returns nothing
+call CameraClearNoiseForPlayer(LoadPlayerHandle(bof_OI,GetHandleId(GetExpiredTimer()),$48656946))
+call FlushChildHashtable(bof_OI,GetHandleId(GetExpiredTimer()))
+call DestroyTimer(GetExpiredTimer())
+endfunction
+function Rem_DNF takes nothing returns nothing
+local group TF
+local unit bl_TG
+local timer ST
+local integer Sn
+local trigger SR
+if LoadInteger(bof_M9,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),$10D57C65)==1 then
+call DoNothing()
+else
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$34D6230E,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$34D6230E)-LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$1CB1890E))
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$1CB1890E,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$1CB1890E)-.12)
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$6B54C545,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$6B54C545)+.02)
+call SetUnitInvulnerable(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),true)
+call PauseUnit(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),true)
+if LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$6B54C545)>=.02 and LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$6B54C545)<=.42 then
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$A99320FA,GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2))+CosBJ(LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2D345649)+0.)*LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$34D6230E))
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$FDF65382,GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2))+SinBJ(LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2D345649)+0.)*LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$34D6230E))
+call SetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$A99320FA))
+call SetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$FDF65382))
+set TF=CreateGroup()
+call GroupEnumUnitsInRange(TF,GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),220.,null)
+loop
+set bl_TG=FirstOfGroup(TF)
+exitwhen bl_TG==null
+call GroupRemoveUnit(TF,bl_TG)
+if Condition_Base(GetOwningPlayer(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),bl_TG) and true and true and GetUnitAbilityLevel(bl_TG,$4176756C)==0 then
+call SaveUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867,bl_TG)
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$F1DDA59B,GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867)))
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$38D20A1F,GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867)))
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$F1DDA59B,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$F1DDA59B)+LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$34D6230E)*CosBJ(LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2D345649)))
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$38D20A1F,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$38D20A1F)+LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$34D6230E)*SinBJ(LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2D345649)))
+if IsUnitInGroup(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867),bof_RK)!=true then
+call SetUnitPosition(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$F1DDA59B),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$38D20A1F))
+else
+endif
+else
+endif
+endloop
+call DestroyGroup(TF)
+else
+endif
+if LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$6B54C545)==LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$A1614B4D) and LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$6B54C545)<1.62 then
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$A1614B4D,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$A1614B4D)+.3)
+call SaveInteger(bof_OI,GetHandleId(GetExpiredTimer()),$F9472E2C,LoadInteger(bof_OI,GetHandleId(GetExpiredTimer()),$F9472E2C)+1)
+if LoadInteger(bof_OI,GetHandleId(GetExpiredTimer()),$F9472E2C)==1 or ModuloInteger(LoadInteger(bof_OI,GetHandleId(GetExpiredTimer()),$F9472E2C)-1,4)==0 then
+call SetUnitAnimationByIndex(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),3)
+call Rem_BBn("bof\\war3mapImported\\RemiliaScarlet-T-YX3.wav",100)
+call SaveEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE,Bof_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),"bof\\Scarlet-44.mdx",GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2))))
+call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),GetUnitFlyHeight(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2))+150.)
+call Bof_EXEffectMatRotateY(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),180.)
+call Bof_EXEffectMatRotateZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2D345649)+180.)
+call Bof_EXSetEffectSize(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),1.)
+call Bof_zU(0.,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE))
+else
+endif
+if ModuloInteger(LoadInteger(bof_OI,GetHandleId(GetExpiredTimer()),$F9472E2C)-1,4)==1 then
+call SetUnitAnimationByIndex(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),4)
+call Rem_BBn("bof\\war3mapImported\\RemiliaScarlet-T-YX4.wav",100)
+call SaveEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE,Bof_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),"bof\\Scarlet-44.mdx",GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2))))
+call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),GetUnitFlyHeight(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2))+150.)
+call Bof_EXEffectMatRotateZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2D345649))
+call Bof_EXSetEffectSize(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),1.)
+call Bof_zU(0.,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE))
+else
+endif
+if ModuloInteger(LoadInteger(bof_OI,GetHandleId(GetExpiredTimer()),$F9472E2C)-1,4)==2 then
+call SetUnitAnimationByIndex(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),3)
+call Rem_BBn("bof\\war3mapImported\\RemiliaScarlet-T-YX3.wav",100)
+call SaveEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE,Bof_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),"bof\\Scarlet-44.mdx",GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2))))
+call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),GetUnitFlyHeight(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2))+150.)
+call Bof_EXEffectMatRotateY(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),180.)
+call Bof_EXEffectMatRotateZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2D345649)+180.)
+call Bof_EXSetEffectSize(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),1.)
+call Bof_zU(0.,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE))
+else
+endif
+if ModuloInteger(LoadInteger(bof_OI,GetHandleId(GetExpiredTimer()),$F9472E2C)-1,4)==3 then
+call SetUnitAnimationByIndex(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),18)
+call Rem_BBn("bof\\war3mapImported\\RemiliaScarlet-T-YX5.wav",100)
+call SaveEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE,Bof_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),"bof\\Scarlet-44.mdx",GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2))))
+call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),GetUnitFlyHeight(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2))+150.)
+call Bof_EXEffectMatRotateY(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),160.)
+call Bof_EXEffectMatRotateZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2D345649)+180.)
+call Bof_EXSetEffectSize(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),1.75)
+call Bof_zU(0.,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE))
+call SaveEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE,Bof_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),"bof\\Scarlet-72.mdx",GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2))))
+call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),GetUnitFlyHeight(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2))+150.)
+call Bof_EXEffectMatRotateZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2D345649)+0.)
+call Bof_EXSetEffectSize(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),2.5)
+call Bof_zU(0.,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE))
+else
+endif
+call CameraSetEQNoiseForPlayer(LoadPlayerHandle(bof_OI,GetHandleId(GetExpiredTimer()),$48656946),30.)
+set ST=CreateTimer()
+call SavePlayerHandle(bof_OI,GetHandleId(ST),$48656946,LoadPlayerHandle(bof_OI,GetHandleId(GetExpiredTimer()),$48656946))
+call TimerStart(ST,.29,false,function Rem_DNE)
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$41713DA3,GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2))+150.*CosBJ(LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2D345649)))
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$71CA3531,GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2))+150.*SinBJ(LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2D345649)))
+call SaveEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE,Bof_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),"bof\\Scarlet-67.mdx",LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$41713DA3),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$71CA3531)))
+call Bof_EXEffectMatRotateZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),GetRandomDirectionDeg())
+call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),150.)
+call Bof_EXSetEffectSize(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),2.)
+call Bof_zU(0.,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE))
+call SaveEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE,Bof_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),"bof\\Scarlet-67.mdx",LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$41713DA3),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$71CA3531)))
+call Bof_EXEffectMatRotateZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),GetRandomDirectionDeg())
+call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),150.)
+call Bof_EXSetEffectSize(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),2.)
+call Bof_zU(0.,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE))
+set TF=CreateGroup()
+call GroupEnumUnitsInRange(TF,GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),300.,null)
+loop
+set bl_TG=FirstOfGroup(TF)
+exitwhen bl_TG==null
+call GroupRemoveUnit(TF,bl_TG)
+if Condition_Base(GetOwningPlayer(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),bl_TG) and true and true and GetUnitAbilityLevel(bl_TG,$4176756C)==0 then
+call SaveUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867,bl_TG)
+call SaveEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE,Bof_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),"bof\\Scarlet-26.mdx",GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867)),GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867))))
+call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),GetUnitFlyHeight(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867))+150.)
+call Bof_EXSetEffectSize(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),1.)
+call Bof_zU(0.,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE))
+call SaveEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE,Bof_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),"bof\\Scarlet-52.mdx",GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867)),GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867))))
+call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),GetUnitFlyHeight(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867))+150.)
+call Bof_EXSetEffectSize(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),1.)
+call Bof_zU(0.,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE))
+call Bof_Dmg(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867),(I2R(Rem_Int_E(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),true))*25.*1.)*0.001)
+call SetControlToUnit(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867),2.,"stun")
+else
+endif
+endloop
+call DestroyGroup(TF)
+else
+endif
+if LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$6B54C545)==1.82 then
+call SetUnitInvulnerable(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),false)
+call PauseUnit(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),false)
+call SaveReal(bof_M9,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),$ACCE86E9,1.)
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$B259B269,LoadReal(bof_M9,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),$ACCE86E9))
+call SetUnitTimeScale(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$B259B269))
+call FlushChildHashtable(bof_OI,GetHandleId(GetExpiredTimer()))
+call DestroyTimer(GetExpiredTimer())
+else
+endif
+endif
+set TF=null
+set bl_TG=null
+set ST=null
+set SR=null
+endfunction
+function Rem_E_Act takes nothing returns nothing
+local integer Sn
+local trigger SR
+local timer ST
+local integer SJ=LoadInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$CFDE6C76)
+set SJ=SJ+3
+call SaveInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$CFDE6C76,SJ)
+call SaveInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$ECE825E7,SJ)
+call SaveUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2,GetTriggerUnit())
+call Bof_FloatText(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),"Dracula Cradle")
+call SavePlayerHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$48656946,GetOwningPlayer(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
+call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA,GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
+call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382,GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
+call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2392447A,GetSpellTargetX())
+call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$B0897302,GetSpellTargetY())
+call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2D345649,Atan2BJ(LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$B0897302)-LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2392447A)-LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA)))
+call SaveEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE,Bof_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),"bof\\Scarlet-4.mdx",LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382)))
+call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE),GetUnitFlyHeight(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2))+150.)
+call Bof_EXEffectMatRotateZ(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2D345649)+0.)
+call Bof_EXSetEffectSize(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE),1.)
+call Bof_zU(0.,LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE))
+call SaveEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE,Bof_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),"bof\\Scarlet-74.mdx",GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)),GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2))))
+call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE),GetUnitFlyHeight(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2))+150.)
+call Bof_EXEffectMatRotateZ(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2D345649))
+call Bof_EXSetEffectSize(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE),1.)
+call Bof_zU(0.,LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE))
+call Rem_BBn("bof\\war3mapImported\\RemiliaScarlet-T-YX2.wav",120)
+call Bof_zU(.5,AddSpecialEffectTarget("bof\\Scarlet-9.mdx",LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),"chest"))
+call SaveEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE,Bof_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),"bof\\Saber-15.mdx",LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382)))
+call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE),125.)
+call Bof_EXSetEffectSize(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE),1.)
+call Bof_EXEffectMatRotateZ(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2D345649))
+call Bof_zU(0.,LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE))
+call SaveEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE,Bof_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),"bof\\Saber-17.mdx",LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382)))
+call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE),GetUnitFlyHeight(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2))+50.)
+call Bof_EXSetEffectSize(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE),1.5)
+call Bof_EXEffectMatRotateZ(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2D345649))
+call Bof_zU(0.,LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE))
+call SaveEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE,Bof_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),"bof\\Minato-25.mdx",LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382)))
+call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE),GetUnitFlyHeight(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2))+50.)
+call Bof_EXSetEffectSize(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE),1.)
+call Bof_EXEffectMatRotateZ(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2D345649))
+call Bof_zU(0.,LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE))
+call SaveEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE,Bof_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),"bof\\chongfeng2.mdx",LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382)))
+call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE),GetUnitFlyHeight(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2))+50.)
+call Bof_EXSetEffectSize(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE),1.)
+call Bof_EXEffectMatRotateZ(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2D345649))
+call Bof_zU(0.,LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE))
+call Rem_BBn("bof\\war3mapImported\\RemiliaScarlet-E-YY1.mp3",100)
+call SetUnitInvulnerable(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),true)
+call PauseUnit(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),true)
+set ST=CreateTimer()
+call SaveUnitHandle(bof_OI,GetHandleId(ST),$911D5DC2,LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2))
+call SaveReal(bof_OI,GetHandleId(ST),$B259B269,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$B259B269))
+call TimerStart(ST,.01,false,function Rem_DND)
+call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$38AB9941,Rem_BBG(LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2392447A),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$B0897302)))
+set ST=CreateTimer()
+call SaveReal(bof_OI,GetHandleId(ST),$6B54C545,0.)
+call SaveReal(bof_OI,GetHandleId(ST),$34D6230E,100.)
+call SaveReal(bof_OI,GetHandleId(ST),$1CB1890E,6.)
+call SaveReal(bof_OI,GetHandleId(ST),$A1614B4D,.42)
+call SaveUnitHandle(bof_OI,GetHandleId(ST),$911D5DC2,LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2))
+call SaveReal(bof_OI,GetHandleId(ST),$2D345649,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2D345649))
+call SaveUnitHandle(bof_OI,GetHandleId(ST),$9B1A6867,LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$9B1A6867))
+call SaveReal(bof_OI,GetHandleId(ST),$B259B269,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$B259B269))
+call SaveEffectHandle(bof_OI,GetHandleId(ST),$6EAE13FE,LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE))
+call SavePlayerHandle(bof_OI,GetHandleId(ST),$48656946,LoadPlayerHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$48656946))
+call SaveReal(bof_OI,GetHandleId(ST),$A99320FA,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA))
+call SaveReal(bof_OI,GetHandleId(ST),$41713DA3,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$41713DA3))
+call SaveReal(bof_OI,GetHandleId(ST),$F1DDA59B,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$F1DDA59B))
+call SaveReal(bof_OI,GetHandleId(ST),$FDF65382,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382))
+call SaveReal(bof_OI,GetHandleId(ST),$71CA3531,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$71CA3531))
+call SaveReal(bof_OI,GetHandleId(ST),$38D20A1F,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$38D20A1F))
+call SaveInteger(bof_OI,GetHandleId(ST),$F9472E2C,LoadInteger(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$F9472E2C))
+call TimerStart(ST,.02,true,function Rem_DNF)
+call FlushChildHashtable(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ)
+set SR=null
+set ST=null
+endfunction
+function Rem_DNK takes nothing returns nothing
+call SaveReal(bof_M9,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),$95BAA31D,LoadReal(bof_M9,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),$95BAA31D)+.05)
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$50BBB8,LoadReal(bof_M9,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),$95BAA31D))
+if LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$50BBB8)>=5. or LoadBoolean(bof_M9,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),$1D46D4EE)==false then
+call SaveBoolean(bof_M9,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),$1D46D4EE,false)
+call SaveInteger(bof_M9,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),$1942313C,0)
+if LoadBoolean(bof_HT,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),StringHash("RemSpearDone")) then
+else
+call DisplayTextToPlayer(GetOwningPlayer(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),0,0,"Spear the Gungnir прервано!")
+endif
+call Rem_t9(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),'RmR1',1,40.)
+call FlushChildHashtable(bof_OI,GetHandleId(GetExpiredTimer()))
+call DestroyTimer(GetExpiredTimer())
+else
+endif
+endfunction
+function Rem_DNN takes nothing returns nothing
+call SetUnitAnimationByIndex(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),3)
+call FlushChildHashtable(bof_OI,GetHandleId(GetExpiredTimer()))
+call DestroyTimer(GetExpiredTimer())
+endfunction
+function Rem_DNR takes nothing returns nothing
+local timer ST
+set ST=null
+endfunction
+function Rem_DNS takes nothing returns nothing
+call CameraClearNoiseForPlayer(LoadPlayerHandle(bof_OI,GetHandleId(GetExpiredTimer()),$48656946))
+call FlushChildHashtable(bof_OI,GetHandleId(GetExpiredTimer()))
+call DestroyTimer(GetExpiredTimer())
+endfunction
+function Rem_DNT takes nothing returns nothing
+local integer Ub
+local trigger SR
+local timer ST
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$2B0A6845,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2B0A6845)+.01)
+call SaveInteger(bof_OI,GetHandleId(GetExpiredTimer()),$8B1FFFFC,LoadInteger(bof_OI,GetHandleId(GetExpiredTimer()),$8B1FFFFC)+1)
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$A99320FA,GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$D2A88040)))
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$FDF65382,GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$D2A88040)))
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$2392447A,GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391)))
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$B0897302,GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391)))
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$2D345649,Atan2BJ(LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$B0897302)-LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$FDF65382),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2392447A)-LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$A99320FA)))
+call SetUnitFacingTimed(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$D2A88040),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2D345649),0)
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$38AB9941,Rem_BBG(LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$A99320FA),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$FDF65382),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2392447A),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$B0897302)))
+if LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2B0A6845)<=1.33 and LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$38AB9941)>100. and IsUnitAliveBJ(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$D2A88040))==true then
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$2392447A,GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$D2A88040)))
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$B0897302,GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$D2A88040)))
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$2392447A,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2392447A)+LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$34D6230E)*CosBJ(LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2D345649)))
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$B0897302,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$B0897302)+LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$34D6230E)*SinBJ(LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2D345649)))
+call SetUnitPosition(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$D2A88040),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2392447A),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$B0897302))
+if ModuloInteger(LoadInteger(bof_OI,GetHandleId(GetExpiredTimer()),$8B1FFFFC),2)==0 then
+call SaveEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$321957D9,Bof_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),"bof\\Scarlet-55.mdx",LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2392447A),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$B0897302)))
+call Bof_EXSetEffectSize(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$321957D9),1.)
+call Bof_EXEffectMatRotateZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$321957D9),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2D345649)+0.)
+call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$321957D9),150.)
+call Bof_zU(1.,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$321957D9))
+else
+endif
+if ModuloInteger(LoadInteger(bof_OI,GetHandleId(GetExpiredTimer()),$8B1FFFFC),4)==0 then
+call Rem_BBn("bof\\war3mapImported\\RemiliaScarlet-R-YX1.mp3",100)
+set Ub=1
+loop
+exitwhen Ub>2
+call SaveInteger(bof_OI,GetHandleId(GetExpiredTimer()),$190204BA,Ub)
+if LoadInteger(bof_OI,GetHandleId(GetExpiredTimer()),$190204BA)==1 then
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$24F5C392,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2D345649)+90.)
+else
+endif
+if LoadInteger(bof_OI,GetHandleId(GetExpiredTimer()),$190204BA)==2 then
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$24F5C392,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2D345649)-90.)
+else
+endif
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$41713DA3,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2392447A)+LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$D47063CD)*CosBJ(LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$24F5C392)))
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$71CA3531,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$B0897302)+LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$D47063CD)*SinBJ(LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$24F5C392)))
+call SaveEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$321957D9,Bof_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),"bof\\Scarlet-47.mdx",LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$41713DA3),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$71CA3531)))
+call Bof_EXSetEffectSize(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$321957D9),1.)
+call Bof_EXEffectMatRotateY(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$321957D9),30.)
+call Bof_EXEffectMatRotateZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$321957D9),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2D345649))
+call Bof_zU(0.,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$321957D9))
+set Ub=Ub+1
+endloop
+else
+endif
+else
+call CameraClearNoiseForPlayer(LoadPlayerHandle(bof_OI,GetHandleId(GetExpiredTimer()),$48656946))
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$A99320FA,GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$D2A88040)))
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$FDF65382,GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$D2A88040)))
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$2392447A,GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391)))
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$B0897302,GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391)))
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$2D345649,Atan2BJ(LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$B0897302)-LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$FDF65382),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2392447A)-LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$A99320FA)))
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$38AB9941,Rem_BBG(LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$A99320FA),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$FDF65382),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2392447A),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$B0897302)))
+call SetUnitAnimation(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$D2A88040),"Death")
+call Bof_zO(.2,LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$D2A88040))
+if LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$38AB9941)<200. then
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$2392447A,GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391)))
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$B0897302,GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391)))
+if true then
+call SaveUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$C9019304,CreateUnit(GetOwningPlayer(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),'eBMC',LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2392447A),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$B0897302),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2D345649)))
+call SetUnitScale(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$C9019304),5.,1.,1)
+call SetUnitFlyHeight(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$C9019304),GetUnitFlyHeight(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2))+100.,0.)
+call Bof_zU(0.,AddSpecialEffectTarget("bof\\Tsubaki-51.mdx",LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$C9019304),"origin"))
+call SetUnitVertexColor(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$C9019304),255,0,0,255)
+call UnitApplyTimedLife(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$C9019304),$42487765,.01)
+else
+endif
+call SaveEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$321957D9,Bof_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),"bof\\Scarlet-4.mdx",LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2392447A),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$B0897302)))
+call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$321957D9),25.)
+call Bof_EXSetEffectSize(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$321957D9),1.5)
+call Bof_zU(0.,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$321957D9))
+call SaveEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$321957D9,Bof_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),"bof\\Scarlet-29.mdx",LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2392447A),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$B0897302)))
+call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$321957D9),25.)
+call Bof_EXSetEffectSize(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$321957D9),1.)
+call Bof_zU(0.,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$321957D9))
+call SaveEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$321957D9,Bof_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),"bof\\Scarlet-14.mdx",LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2392447A),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$B0897302)))
+call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$321957D9),25.)
+call Bof_EXSetEffectSize(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$321957D9),1.5)
+call Bof_zU(1.,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$321957D9))
+call Rem_BBn("bof\\war3mapImported\\RemiliaScarlet-R-YX2.mp3",100)
+call SaveTriggerHandle(bof_OI,GetHandleId(GetExpiredTimer()),$55017ACF,CreateTrigger())
+set SR=LoadTriggerHandle(bof_OI,GetHandleId(GetExpiredTimer()),$55017ACF)
+call SaveUnitHandle(bof_OI,GetHandleId(SR),$911D5DC2,LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2))
+call SaveUnitHandle(bof_OI,GetHandleId(SR),$A7A19391,LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391))
+call TriggerRegisterUnitEvent(SR,LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391),EVENT_UNIT_DEATH)
+call TriggerAddCondition(SR,Condition(function Rem_DNR))
+if true then
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$6DD3A3AB,I2R(Rem_Int_R(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),true))*240.*0.001)
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$6DD3A3AB,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$6DD3A3AB)+GetUnitState(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),UNIT_STATE_MAX_LIFE)*.1)
+if GetUnitAbilityLevel(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391),$4176756C)==0 then
+call Bof_Dmg(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$6DD3A3AB))
+else
+call SetUnitInvulnerable(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391),false)
+call Bof_Dmg(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$6DD3A3AB)*.5)
+call SetUnitInvulnerable(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391),true)
+endif
+else
+call Bof_Dmg(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391),(I2R(Rem_Int_R(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),true))*240.*1.)*0.001)
+endif
+call DestroyTrigger(LoadTriggerHandle(bof_OI,GetHandleId(GetExpiredTimer()),$55017ACF))
+call CameraClearNoiseForPlayer(LoadPlayerHandle(bof_OI,GetHandleId(GetExpiredTimer()),$48656946))
+call CameraSetEQNoiseForPlayer(LoadPlayerHandle(bof_OI,GetHandleId(GetExpiredTimer()),$48656946),80.)
+set ST=CreateTimer()
+call SavePlayerHandle(bof_OI,GetHandleId(ST),$48656946,LoadPlayerHandle(bof_OI,GetHandleId(GetExpiredTimer()),$48656946))
+call TimerStart(ST,.8,false,function Rem_DNS)
+else
+endif
+call FlushChildHashtable(bof_OI,GetHandleId(GetExpiredTimer()))
+call DestroyTimer(GetExpiredTimer())
+endif
+set SR=null
+set ST=null
+endfunction
+function Rem_DNU takes nothing returns nothing
+local timer ST
+if LoadInteger(bof_M9,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),$10D57C65)==1 then
+call DoNothing()
+else
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$6B54C545,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$6B54C545)+.02)
+call SetUnitInvulnerable(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),true)
+call PauseUnit(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),true)
+if LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$6B54C545)==.36 then
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$A99320FA,GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)))
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$FDF65382,GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)))
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$41713DA3,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$A99320FA)+50.*CosBJ(LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2D345649)))
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$71CA3531,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$FDF65382)+50.*SinBJ(LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2D345649)))
+call CameraSetEQNoiseForPlayer(LoadPlayerHandle(bof_OI,GetHandleId(GetExpiredTimer()),$48656946),50.)
+call Rem_BBn("bof\\war3mapImported\\RemiliaScarlet-R-YX3.mp3",100)
+call SaveUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$D2A88040,CreateUnit(GetOwningPlayer(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),'eBLP',LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$41713DA3),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$71CA3531),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2D345649)))
+call UnitApplyTimedLife(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$D2A88040),$42487765,5.1)
+call SetUnitScale(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$D2A88040),1.,1.,1.)
+call SetUnitFlyHeight(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$D2A88040),150.,1000000000.)
+call Bof_DzSetUnitModel(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$D2A88040),"bof\\Scarlet-16.mdx")
+set ST=CreateTimer()
+call SaveReal(bof_OI,GetHandleId(ST),$2B0A6845,0.)
+call SaveInteger(bof_OI,GetHandleId(ST),$8B1FFFFC,0)
+call SaveReal(bof_OI,GetHandleId(ST),$34D6230E,100.)
+call SaveReal(bof_OI,GetHandleId(ST),$D47063CD,240.)
+call SaveUnitHandle(bof_OI,GetHandleId(ST),$D2A88040,LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$D2A88040))
+call SaveUnitHandle(bof_OI,GetHandleId(ST),$A7A19391,LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391))
+call SavePlayerHandle(bof_OI,GetHandleId(ST),$48656946,LoadPlayerHandle(bof_OI,GetHandleId(GetExpiredTimer()),$48656946))
+call SaveInteger(bof_OI,GetHandleId(ST),$190204BA,LoadInteger(bof_OI,GetHandleId(GetExpiredTimer()),$190204BA))
+call SaveTriggerHandle(bof_OI,GetHandleId(ST),$55017ACF,LoadTriggerHandle(bof_OI,GetHandleId(GetExpiredTimer()),$55017ACF))
+call SaveUnitHandle(bof_OI,GetHandleId(ST),$911D5DC2,LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2))
+call SaveReal(bof_OI,GetHandleId(ST),$2D345649,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2D345649))
+call SaveReal(bof_OI,GetHandleId(ST),$24F5C392,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$24F5C392))
+call SaveReal(bof_OI,GetHandleId(ST),$38AB9941,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$38AB9941))
+call SaveReal(bof_OI,GetHandleId(ST),$6DD3A3AB,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$6DD3A3AB))
+call SaveEffectHandle(bof_OI,GetHandleId(ST),$321957D9,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$321957D9))
+call SaveUnitHandle(bof_OI,GetHandleId(ST),$C9019304,LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$C9019304))
+call SaveReal(bof_OI,GetHandleId(ST),$A99320FA,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$A99320FA))
+call SaveReal(bof_OI,GetHandleId(ST),$2392447A,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2392447A))
+call SaveReal(bof_OI,GetHandleId(ST),$41713DA3,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$41713DA3))
+call SaveReal(bof_OI,GetHandleId(ST),$FDF65382,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$FDF65382))
+call SaveReal(bof_OI,GetHandleId(ST),$B0897302,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$B0897302))
+call SaveReal(bof_OI,GetHandleId(ST),$71CA3531,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$71CA3531))
+call TimerStart(ST,.03,true,function Rem_DNT)
+else
+endif
+if LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$6B54C545)==.46 then
+call SetUnitInvulnerable(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),false)
+call PauseUnit(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),false)
+call SaveReal(bof_M9,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),$ACCE86E9,1.)
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$B259B269,LoadReal(bof_M9,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),$ACCE86E9))
+call SetUnitTimeScale(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$B259B269))
+call FlushChildHashtable(bof_OI,GetHandleId(GetExpiredTimer()))
+call DestroyTimer(GetExpiredTimer())
+else
+endif
+endif
+set ST=null
+endfunction
+function Rem_R_Act takes nothing returns nothing
+local group TF
+local unit bl_TG
+local timer ST
+local integer SJ=LoadInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$CFDE6C76)
+set SJ=SJ+3
+call SaveInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$CFDE6C76,SJ)
+call SaveInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$ECE825E7,SJ)
+call SaveUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2,GetTriggerUnit())
+call SaveUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A7A19391,LoadUnitHandle(bof_HT,GetHandleId(GetTriggerUnit()),StringHash("RemSpear")))
+call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA,GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
+call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382,GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
+call SavePlayerHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$48656946,GetOwningPlayer(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
+call SaveInteger(bof_M9,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)),$1942313C,LoadInteger(bof_M9,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)),$1942313C)+1)
+if LoadInteger(bof_M9,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)),$68033F79)<=4 then
+set TF=CreateGroup()
+call GroupEnumUnitsInRange(TF,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382),800.,null)
+loop
+set bl_TG=FirstOfGroup(TF)
+exitwhen bl_TG==null
+call GroupRemoveUnit(TF,bl_TG)
+if Condition_Base(GetOwningPlayer(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)),bl_TG) and true and true and GetUnitAbilityLevel(bl_TG,$4176756C)==0 then
+call SaveUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$9B1A6867,bl_TG)
+call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$F1DDA59B,GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$9B1A6867)))
+call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$38D20A1F,GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$9B1A6867)))
+call Bof_Dmg(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),bl_TG,(I2R(Rem_Int_R(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),true))*60.*1.)*0.001)
+call SlowUnit(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$9B1A6867),0.5,0,2,2,false)
+else
+endif
+endloop
+call DestroyGroup(TF)
+call SaveReal(bof_M9,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)),$95BAA31D,0.)
+call SaveEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE,Bof_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),"bof\\Scarlet-29.mdx",LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382)))
+call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE),GetUnitFlyHeight(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2))+0.)
+call Bof_EXEffectMatRotateZ(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2D345649)+0.)
+call Bof_EXSetEffectSize(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE),1.)
+call Bof_zU(0.,LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE))
+call SaveEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE,Bof_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),"bof\\Scarlet-14.mdx",LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382)))
+call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE),20.)
+call Bof_EXSetEffectSize(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE),1.)
+call Bof_EXSetEffectSpeed(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE),1.)
+call Bof_zU(1.,LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE))
+call SaveEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE,Bof_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),"bof\\Scarlet-21.mdx",LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382)))
+call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE),GetUnitFlyHeight(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2))+0.)
+call Bof_EXEffectMatRotateZ(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2D345649)+0.)
+call Bof_EXSetEffectSize(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE),2.)
+call Bof_zU(0.,LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE))
+call SaveEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE,Bof_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),"bof\\Scarlet-65.mdx",LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382)))
+call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE),GetUnitFlyHeight(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2))+0.)
+call Bof_EXEffectMatRotateZ(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2D345649)+0.)
+call Bof_EXSetEffectSize(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE),1.)
+call Bof_zU(0.,LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE))
+call SaveEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE,Bof_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),"bof\\Scarlet-4.mdx",LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382)))
+call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE),GetUnitFlyHeight(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2))+0.)
+call Bof_EXEffectMatRotateZ(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2D345649)+0.)
+call Bof_EXSetEffectSize(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE),1.)
+call Bof_zU(0.,LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE))
+else
+endif
+if LoadInteger(bof_M9,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)),$1942313C)==1 then
+call Rem_BBn("bof\\war3mapImported\\RemiliaScarlet-R-YY1.mp3",100)
+call SaveBoolean(bof_HT,GetHandleId(GetTriggerUnit()),StringHash("RemSpearDone"),false)
+call Rem_zj("Высекаю знак благодати",LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),0.,20.,GetRandomPercentageBJ(),GetRandomPercentageBJ(),GetRandomPercentageBJ(),50.,100.,90.,1.)
+if LoadBoolean(bof_M9,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)),$1D46D4EE)==false then
+call SaveBoolean(bof_M9,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)),$1D46D4EE,true)
+call SaveReal(bof_M9,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)),$95BAA31D,0.)
+set ST=CreateTimer()
+call SaveUnitHandle(bof_OI,GetHandleId(ST),$911D5DC2,LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2))
+call SaveReal(bof_OI,GetHandleId(ST),$50BBB8,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$50BBB8))
+call TimerStart(ST,.05,true,function Rem_DNK)
+else
+endif
+else
+endif
+if LoadInteger(bof_M9,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)),$1942313C)==2 then
+call Rem_BBn("bof\\war3mapImported\\RemiliaScarlet-R-YY2.mp3",100)
+call Rem_zj("Судьбой правит «колеблющееся»",LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),0.,20.,GetRandomPercentageBJ(),GetRandomPercentageBJ(),GetRandomPercentageBJ(),50.,100.,90.,1.)
+else
+endif
+if LoadInteger(bof_M9,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)),$1942313C)==3 then
+call Rem_BBn("bof\\war3mapImported\\RemiliaScarlet-R-YY3.mp3",100)
+call Rem_zj("Я — из рода истинных вампиров",LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),0.,20.,GetRandomPercentageBJ(),GetRandomPercentageBJ(),GetRandomPercentageBJ(),50.,100.,90.,1.)
+else
+endif
+if LoadInteger(bof_M9,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)),$1942313C)==4 then
+call Rem_BBn("bof\\war3mapImported\\RemiliaScarlet-R-YY4.mp3",100)
+call Rem_zj("Пронжу тебя",LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),0.,20.,GetRandomPercentageBJ(),GetRandomPercentageBJ(),GetRandomPercentageBJ(),50.,100.,90.,1.)
+else
+endif
+if LoadInteger(bof_M9,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)),$1942313C)==5 and Rem_SpearReady(GetTriggerUnit()) then
+call SaveUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2,GetTriggerUnit())
+call SavePlayerHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$48656946,GetOwningPlayer(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
+call SaveUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A7A19391,LoadUnitHandle(bof_HT,GetHandleId(GetTriggerUnit()),StringHash("RemSpear")))
+call Rem_BBn("bof\\war3mapImported\\RemiliaScarlet-R-YY5.mp3",100)
+call SaveGroupHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$9DD47C14,CreateGroup())
+call GroupAddUnit(LoadGroupHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$9DD47C14),LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2))
+call GroupAddUnit(LoadGroupHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$9DD47C14),LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A7A19391))
+if IsUnitGroupEmptyBJ(LoadGroupHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$9DD47C14))==false then
+else
+endif
+call DestroyGroup(LoadGroupHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$9DD47C14))
+call Rem_zj("Spear the Gungnir",LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),0.,20.,GetRandomPercentageBJ(),GetRandomPercentageBJ(),GetRandomPercentageBJ(),50.,100.,90.,1.)
+call SaveInteger(bof_M9,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)),$1942313C,0)
+call SaveBoolean(bof_HT,GetHandleId(GetTriggerUnit()),StringHash("RemSpearDone"),true)
+call SavePlayerHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$48656946,GetOwningPlayer(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
+call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA,GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
+call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382,GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
+call SavePlayerHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A895BB39,GetOwningPlayer(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A7A19391)))
+call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2392447A,GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A7A19391)))
+call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$B0897302,GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A7A19391)))
+call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2D345649,Atan2BJ(LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$B0897302)-LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2392447A)-LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA)))
+set ST=CreateTimer()
+call SaveUnitHandle(bof_OI,GetHandleId(ST),$911D5DC2,LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2))
+call TimerStart(ST,.01,false,function Rem_DNN)
+call PauseUnit(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),true)
+call SetUnitInvulnerable(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),true)
+call SetUnitPathing(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),false)
+set ST=CreateTimer()
+call SaveReal(bof_OI,GetHandleId(ST),$6B54C545,0.)
+call SaveInteger(bof_OI,GetHandleId(ST),$8B1FFFFC,0)
+call SaveReal(bof_OI,GetHandleId(ST),$34D6230E,80.)
+call SaveReal(bof_OI,GetHandleId(ST),$1CB1890E,5.)
+call SaveReal(bof_OI,GetHandleId(ST),$2392447A,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2392447A))
+call SaveReal(bof_OI,GetHandleId(ST),$B0897302,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$B0897302))
+call SaveUnitHandle(bof_OI,GetHandleId(ST),$A7A19391,LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A7A19391))
+call SavePlayerHandle(bof_OI,GetHandleId(ST),$48656946,LoadPlayerHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$48656946))
+call SaveInteger(bof_OI,GetHandleId(ST),$190204BA,LoadInteger(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$190204BA))
+call SaveTriggerHandle(bof_OI,GetHandleId(ST),$55017ACF,LoadTriggerHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$55017ACF))
+call SaveUnitHandle(bof_OI,GetHandleId(ST),$911D5DC2,LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2))
+call SaveUnitHandle(bof_OI,GetHandleId(ST),$D2A88040,LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$D2A88040))
+call SaveReal(bof_OI,GetHandleId(ST),$2D345649,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2D345649))
+call SaveReal(bof_OI,GetHandleId(ST),$24F5C392,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$24F5C392))
+call SaveReal(bof_OI,GetHandleId(ST),$38AB9941,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$38AB9941))
+call SaveReal(bof_OI,GetHandleId(ST),$6DD3A3AB,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6DD3A3AB))
+call SaveReal(bof_OI,GetHandleId(ST),$B259B269,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$B259B269))
+call SaveEffectHandle(bof_OI,GetHandleId(ST),$321957D9,LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$321957D9))
+call SaveUnitHandle(bof_OI,GetHandleId(ST),$C9019304,LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$C9019304))
+call SaveReal(bof_OI,GetHandleId(ST),$A99320FA,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA))
+call SaveReal(bof_OI,GetHandleId(ST),$41713DA3,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$41713DA3))
+call SaveReal(bof_OI,GetHandleId(ST),$FDF65382,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382))
+call SaveReal(bof_OI,GetHandleId(ST),$71CA3531,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$71CA3531))
+call TimerStart(ST,.02,true,function Rem_DNU)
+else
+endif
+call FlushChildHashtable(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ)
+set TF=null
+set bl_TG=null
+set ST=null
+endfunction
+function Rem_DNZ takes nothing returns boolean
+return true and true and (GetUnitAbilityLevel(GetFilterUnit(),$4176756C)==0 and (IsUnitAliveBJ(GetFilterUnit())==true and Condition_Base(GetOwningPlayer(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),GetFilterUnit())))
+endfunction
+function Rem_DNa takes nothing returns nothing
+local integer Sn
+local trigger SR
+call SaveUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867,GetEnumUnit())
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$F1DDA59B,GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867)))
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$38D20A1F,GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867)))
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$F1DDA59B,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$F1DDA59B)+15.*CosBJ(LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2D345649)))
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$38D20A1F,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$38D20A1F)+15.*SinBJ(LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2D345649)))
+call Bof_Dmg(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867),(I2R(Rem_Int_D(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),true))*3.*1.)*0.001)
+call DestroyEffect(AddSpecialEffectTarget("bof\\Scarlet-52.mdx",LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867),"chest"))
+call SetControlToUnit(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867),1.5,"stun")
+set SR=null
+endfunction
+function Rem_DNb takes nothing returns nothing
+local group TF
+local unit bl_TG
+local trigger SR
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$2B0A6845,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2B0A6845)+.01)
+if LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$34D6230E)<=100. then
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$34D6230E,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$34D6230E)+5.)
+else
+endif
+if LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2B0A6845)<=.12 and IsUnitAliveBJ(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$D2A88040))==true then
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$41713DA3,GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$D2A88040)))
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$71CA3531,GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$D2A88040)))
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$41713DA3,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$41713DA3)+LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$34D6230E)*CosBJ(LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2D345649)))
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$71CA3531,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$71CA3531)+LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$34D6230E)*SinBJ(LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2D345649)))
+call SetUnitPosition(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$D2A88040),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$41713DA3),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$71CA3531))
+call SaveLocationHandle(bof_OI,GetHandleId(GetExpiredTimer()),$B0FD2C34,Location(LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$41713DA3),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$71CA3531)))
+call SaveGroupHandle(bof_OI,GetHandleId(GetExpiredTimer()),$1BF14788,Rem_xk(150.,LoadLocationHandle(bof_OI,GetHandleId(GetExpiredTimer()),$B0FD2C34),Condition(function Rem_DNZ)))
+call RemoveLocation(LoadLocationHandle(bof_OI,GetHandleId(GetExpiredTimer()),$B0FD2C34))
+if IsUnitGroupEmptyBJ(LoadGroupHandle(bof_OI,GetHandleId(GetExpiredTimer()),$1BF14788))==false then
+call RemoveUnit(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$D2A88040))
+call ForGroupBJ(LoadGroupHandle(bof_OI,GetHandleId(GetExpiredTimer()),$1BF14788),function Rem_DNa)
+else
+endif
+call DestroyGroup(LoadGroupHandle(bof_OI,GetHandleId(GetExpiredTimer()),$1BF14788))
+else
+call SetUnitAnimation(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$D2A88040),"Death")
+call UnitApplyTimedLife(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$D2A88040),$42487765,.4)
+call FlushChildHashtable(bof_OI,GetHandleId(GetExpiredTimer()))
+call DestroyTimer(GetExpiredTimer())
+endif
+set TF=null
+set bl_TG=null
+set SR=null
+endfunction
+function Rem_DNc takes nothing returns nothing
+local timer ST
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$1CDCF900,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$1CDCF900)+.01)
+call SaveInteger(bof_OI,GetHandleId(GetExpiredTimer()),$8B1FFFFC,LoadInteger(bof_OI,GetHandleId(GetExpiredTimer()),$8B1FFFFC)+1)
+if ModuloInteger(LoadInteger(bof_OI,GetHandleId(GetExpiredTimer()),$8B1FFFFC),10)==3 then
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$A99320FA,GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)))
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$FDF65382,GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)))
+call Rem_BBn("bof\\war3mapImported\\RemiliaScarlet-D-YX2.mp3",100)
+else
+endif
+if LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$1CDCF900)<=.4 then
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$A7EC5199,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$435C7D7)+GetRandomReal(-250.,250.)*CosBJ(LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2D345649)+90.))
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$B382764,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$CF23DC48)+GetRandomReal(-250.,250.)*SinBJ(LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2D345649)+90.))
+call SaveUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$D2A88040,CreateUnit(GetOwningPlayer(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),'eBLP',LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$A7EC5199),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$B382764),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2D345649)))
+call SetUnitScale(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$D2A88040),.5,.5,.5)
+call Bof_DzSetUnitModel(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$D2A88040),"bof\\Scarlet-16.mdx")
+call UnitApplyTimedLife(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$D2A88040),$42487765,2.)
+call SetUnitVertexColor(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$D2A88040),255,255,255,0)
+call SetUnitFlyHeight(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$D2A88040),GetRandomReal(0,300.),1000000000.)
+call Rem_BB5(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$D2A88040),5,255,.01,false)
+call SaveBoolean(bof_M9,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$D2A88040)),$68B72DFF,true)
+set ST=CreateTimer()
+call SaveReal(bof_OI,GetHandleId(ST),$2B0A6845,0.)
+call SaveReal(bof_OI,GetHandleId(ST),$34D6230E,40.)
+call SaveGroupHandle(bof_OI,GetHandleId(ST),$1BF14788,LoadGroupHandle(bof_OI,GetHandleId(GetExpiredTimer()),$1BF14788))
+call SaveLocationHandle(bof_OI,GetHandleId(ST),$B0FD2C34,LoadLocationHandle(bof_OI,GetHandleId(GetExpiredTimer()),$B0FD2C34))
+call SaveUnitHandle(bof_OI,GetHandleId(ST),$911D5DC2,LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2))
+call SaveUnitHandle(bof_OI,GetHandleId(ST),$D2A88040,LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$D2A88040))
+call SaveReal(bof_OI,GetHandleId(ST),$2D345649,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2D345649))
+call SaveUnitHandle(bof_OI,GetHandleId(ST),$9B1A6867,LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867))
+call SaveReal(bof_OI,GetHandleId(ST),$41713DA3,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$41713DA3))
+call SaveReal(bof_OI,GetHandleId(ST),$F1DDA59B,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$F1DDA59B))
+call SaveReal(bof_OI,GetHandleId(ST),$71CA3531,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$71CA3531))
+call SaveReal(bof_OI,GetHandleId(ST),$38D20A1F,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$38D20A1F))
+call TimerStart(ST,.02,true,function Rem_DNb)
+else
+call FlushChildHashtable(bof_OI,GetHandleId(GetExpiredTimer()))
+call DestroyTimer(GetExpiredTimer())
+endif
+set ST=null
+endfunction
+function Rem_D_Act takes nothing returns nothing
+local integer Sn
+local trigger SR
+local timer ST
+local integer SJ=LoadInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$CFDE6C76)
+set SJ=SJ+3
+call SaveInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$CFDE6C76,SJ)
+call SaveInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$ECE825E7,SJ)
+call SaveUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2,GetTriggerUnit())
+call Bof_FloatText(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),"Vampire Illusion")
+call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA,GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
+call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382,GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
+call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2392447A,GetSpellTargetX())
+call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$B0897302,GetSpellTargetY())
+call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2D345649,Atan2BJ(LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$B0897302)-LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2392447A)-LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA)))
+call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$435C7D7,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA)+150.*CosBJ(LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2D345649)))
+call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$CF23DC48,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382)+150.*SinBJ(LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2D345649)))
+if true then
+call SaveUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$C9019304,CreateUnit(GetOwningPlayer(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)),'eBLU',LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$435C7D7),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$CF23DC48),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2D345649)))
+call SetUnitScale(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$C9019304),2.5,2.5,2.5)
+call SetUnitFlyHeight(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$C9019304),GetUnitFlyHeight(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2))+275.,0.)
+call SetUnitVertexColor(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$C9019304),255,255,255,255)
+call UnitApplyTimedLife(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$C9019304),$42487765,3.)
+call Bof_DzSetUnitModel(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$C9019304),"bof\\Scarlet-76.mdx")
+call Rem_BB5(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$C9019304),3,255,.01,false)
+else
+endif
+call SaveEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE,Bof_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),"bof\\Scarlet-10.mdx",LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382)))
+call Bof_EXEffectMatRotateZ(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2D345649)+0.)
+call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE),25.)
+call Bof_EXSetEffectSize(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE),1.5)
+call Bof_zU(0.,LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE))
+call SaveEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE,Bof_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),"bof\\Scarlet-4.mdx",LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382)))
+call Bof_EXEffectMatRotateZ(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2D345649)+0.)
+call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE),25.)
+call Bof_EXSetEffectSize(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE),1.)
+call Bof_zU(0.,LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE))
+call Rem_BBn("bof\\war3mapImported\\RemiliaScarlet-D-YY1.mp3",100)
+call Rem_BBn("bof\\war3mapImported\\RemiliaScarlet-D-YX1.mp3",100)
+set ST=CreateTimer()
+call SaveReal(bof_OI,GetHandleId(ST),$1CDCF900,0.)
+call SaveInteger(bof_OI,GetHandleId(ST),$8B1FFFFC,0)
+call SaveGroupHandle(bof_OI,GetHandleId(ST),$1BF14788,LoadGroupHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$1BF14788))
+call SaveLocationHandle(bof_OI,GetHandleId(ST),$B0FD2C34,LoadLocationHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$B0FD2C34))
+call SaveUnitHandle(bof_OI,GetHandleId(ST),$911D5DC2,LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2))
+call SaveUnitHandle(bof_OI,GetHandleId(ST),$D2A88040,LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$D2A88040))
+call SaveReal(bof_OI,GetHandleId(ST),$2D345649,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2D345649))
+call SaveUnitHandle(bof_OI,GetHandleId(ST),$9B1A6867,LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$9B1A6867))
+call SaveReal(bof_OI,GetHandleId(ST),$435C7D7,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$435C7D7))
+call SaveReal(bof_OI,GetHandleId(ST),$A7EC5199,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A7EC5199))
+call SaveReal(bof_OI,GetHandleId(ST),$41713DA3,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$41713DA3))
+call SaveReal(bof_OI,GetHandleId(ST),$F1DDA59B,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$F1DDA59B))
+call SaveReal(bof_OI,GetHandleId(ST),$CF23DC48,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$CF23DC48))
+call SaveReal(bof_OI,GetHandleId(ST),$B382764,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$B382764))
+call SaveReal(bof_OI,GetHandleId(ST),$71CA3531,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$71CA3531))
+call SaveReal(bof_OI,GetHandleId(ST),$38D20A1F,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$38D20A1F))
+call TimerStart(ST,.05,true,function Rem_DNc)
+call FlushChildHashtable(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ)
+set SR=null
+set ST=null
+endfunction
+function Rem_DNh takes nothing returns nothing
+call SaveBoolean(bof_M9,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger()),$911D5DC2)),$4D51B8B7,false)
+call DestroyTrigger(LoadTriggerHandle(bof_OI,GetHandleId(GetTriggeringTrigger()),$55017ACF))
+endfunction
+function Rem_DNi takes nothing returns nothing
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$2B0A6845,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2B0A6845)+.05)
+if LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2B0A6845)<=4. then
+call SaveInteger(bof_OI,GetHandleId(GetExpiredTimer()),$8B1FFFFC,LoadInteger(bof_OI,GetHandleId(GetExpiredTimer()),$8B1FFFFC)+1)
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$A99320FA,GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)))
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$FDF65382,GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)))
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$2D345649,GetUnitFacing(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)))
+call SetUnitPosition(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$D2A88040),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$A99320FA),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$FDF65382))
+call SetUnitInvulnerable(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),true)
+if LoadInteger(bof_OI,GetHandleId(GetExpiredTimer()),$8B1FFFFC)==1 or ModuloInteger(LoadInteger(bof_OI,GetHandleId(GetExpiredTimer()),$8B1FFFFC)-1,8)==0 then
+call SaveEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE,Bof_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),"bof\\Scarlet-4.mdx",GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2))))
+call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),25.)
+call Bof_EXEffectMatRotateZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2D345649)+0.)
+call Bof_EXSetEffectSize(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),1.)
+call Bof_zU(0.,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE))
+else
+endif
+if GetUnitState(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),UNIT_STATE_LIFE)>GetUnitState(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),UNIT_STATE_MAX_LIFE)*.093 and LoadBoolean(bof_M9,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),$4D51B8B7)==true then
+call SetUnitState(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),UNIT_STATE_LIFE,GetUnitState(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),UNIT_STATE_LIFE)-GetUnitState(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),UNIT_STATE_MAX_LIFE)*.0047)
+else
+call UnitRemoveAbility(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),'RmF2')
+call SaveBoolean(bof_M9,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),$4D51B8B7,false)
+call SetPlayerAbilityAvailable(GetOwningPlayer(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),'RmF1',true)
+call SetUnitInvulnerable(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),false)
+call DestroyTrigger(LoadTriggerHandle(bof_OI,GetHandleId(GetExpiredTimer()),$55017ACF))
+call FlushChildHashtable(bof_OI,GetHandleId(GetExpiredTimer()))
+call DestroyTimer(GetExpiredTimer())
+endif
+else
+call SaveBoolean(bof_M9,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),$4D51B8B7,false)
+call UnitRemoveAbility(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),'RmF2')
+call SetPlayerAbilityAvailable(GetOwningPlayer(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),'RmF1',true)
+call SetUnitInvulnerable(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),false)
+call DestroyTrigger(LoadTriggerHandle(bof_OI,GetHandleId(GetExpiredTimer()),$55017ACF))
+call FlushChildHashtable(bof_OI,GetHandleId(GetExpiredTimer()))
+call DestroyTimer(GetExpiredTimer())
+endif
+endfunction
+function Rem_F_Act takes nothing returns nothing
+local integer Sn
+local trigger SR
+local timer ST
+local integer SJ=LoadInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$CFDE6C76)
+set SJ=SJ+3
+call SaveInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$CFDE6C76,SJ)
+call SaveInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$ECE825E7,SJ)
+call SaveUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2,GetTriggerUnit())
+call Bof_FloatText(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),"Scarlet Netherworld")
+call SavePlayerHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$48656946,GetOwningPlayer(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
+call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA,GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
+call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382,GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
+call SaveUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$D2A88040,CreateUnit(GetOwningPlayer(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)),'eBLP',LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2D345649)))
+call Bof_DzSetUnitModel(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$D2A88040),"bof\\Scarlet-14.mdx")
+call SetUnitScale(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$D2A88040),1.,1.,1.)
+call UnitApplyTimedLife(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$D2A88040),$42487765,12.)
+call SaveEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE,Bof_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),"bof\\Scarlet-8.mdx",LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382)))
+call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE),GetUnitFlyHeight(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2))+20.)
+call Bof_EXEffectMatRotateZ(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2D345649)+0.)
+call Bof_EXSetEffectSize(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE),1.)
+call Bof_zU(0.,LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE))
+call SaveEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE,Bof_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),"bof\\Scarlet-73.mdx",LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382)))
+call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE),GetUnitFlyHeight(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2))+20.)
+call Bof_EXSetEffectSize(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE),3.)
+call Bof_zU(0.,LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE))
+call Rem_BBn("bof\\war3mapImported\\RemiliaScarlet-F-YY1.mp3",100)
+call SaveBoolean(bof_M9,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)),$4D51B8B7,true)
+call UnitAddAbility(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),'RmF2')
+call SetPlayerAbilityAvailable(GetOwningPlayer(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)),'RmF1',false)
+call SetUnitInvulnerable(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),true)
+call SaveTriggerHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$55017ACF,CreateTrigger())
+set SR=LoadTriggerHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$55017ACF)
+call SaveUnitHandle(bof_OI,GetHandleId(SR),$911D5DC2,LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2))
+call SaveTriggerHandle(bof_OI,GetHandleId(SR),$55017ACF,LoadTriggerHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$55017ACF))
+call TriggerRegisterUnitEvent(SR,LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),EVENT_UNIT_SPELL_EFFECT)
+call TriggerAddCondition(SR,Condition(function Rem_DNh))
+set ST=CreateTimer()
+call SaveReal(bof_OI,GetHandleId(ST),$2B0A6845,0.)
+call SaveInteger(bof_OI,GetHandleId(ST),$8B1FFFFC,0)
+call SaveUnitHandle(bof_OI,GetHandleId(ST),$911D5DC2,LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2))
+call SaveTriggerHandle(bof_OI,GetHandleId(ST),$55017ACF,LoadTriggerHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$55017ACF))
+call SaveUnitHandle(bof_OI,GetHandleId(ST),$D2A88040,LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$D2A88040))
+call SaveReal(bof_OI,GetHandleId(ST),$2D345649,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2D345649))
+call SaveEffectHandle(bof_OI,GetHandleId(ST),$6EAE13FE,LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE))
+call SaveReal(bof_OI,GetHandleId(ST),$A99320FA,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA))
+call SaveReal(bof_OI,GetHandleId(ST),$FDF65382,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382))
+call TimerStart(ST,.05,true,function Rem_DNi)
+call FlushChildHashtable(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ)
+set SR=null
+set ST=null
+endfunction
+function Rem_DNr takes nothing returns nothing
+if LoadInteger(bof_OI,GetHandleId(GetExpiredTimer()),$6C2DED4E)<=0 then
+call RemoveUnit(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$CB7993F3))
+call FlushChildHashtable(bof_OI,GetHandleId(GetExpiredTimer()))
+call DestroyTimer(GetExpiredTimer())
+else
+call SaveInteger(bof_OI,GetHandleId(GetExpiredTimer()),$6C2DED4E,LoadInteger(bof_OI,GetHandleId(GetExpiredTimer()),$6C2DED4E)-5)
+call SetUnitVertexColor(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$CB7993F3),255,255,255,LoadInteger(bof_OI,GetHandleId(GetExpiredTimer()),$6C2DED4E))
+endif
+endfunction
+function Rem_DNv takes nothing returns nothing
+call CameraClearNoiseForPlayer(GetOwningPlayer(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)))
+call CameraClearNoiseForPlayer(GetOwningPlayer(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391)))
+call FlushChildHashtable(bof_OI,GetHandleId(GetExpiredTimer()))
+call DestroyTimer(GetExpiredTimer())
+endfunction
+function Rem_DNw takes nothing returns nothing
+call CameraClearNoiseForPlayer(GetOwningPlayer(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)))
+call CameraClearNoiseForPlayer(GetOwningPlayer(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391)))
+call FlushChildHashtable(bof_OI,GetHandleId(GetExpiredTimer()))
+call DestroyTimer(GetExpiredTimer())
+endfunction
+function Rem_DNx takes nothing returns nothing
+call SaveInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$C2781FCF,R2I(GetUnitState(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger()),$A7A19391),UNIT_STATE_MAX_LIFE)*.04))
+if LoadInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$C2781FCF)>30000 then
+call SaveInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$C2781FCF,30000)
+else
+endif
+call SaveInteger(bof_M9,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger()),$911D5DC2)),$410023C4,LoadInteger(bof_M9,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger()),$911D5DC2)),$410023C4)+LoadInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$C2781FCF))
+call Bof_xa(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger()),$911D5DC2),0,2,LoadInteger(bof_M9,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger()),$911D5DC2)),$410023C4)+(LoadInteger(bof_M9,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger()),$911D5DC2)),$E90DB670)))
+endfunction
+function Rem_DNy takes nothing returns nothing
+local timer ST
+local integer Ub
+local trigger SR
+if LoadInteger(bof_M9,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),$10D57C65)==1 then
+call DoNothing()
+else
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$6B54C545,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$6B54C545)+.02)
+call PauseUnit(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),true)
+call SetUnitInvulnerable(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),true)
+call PauseUnit(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391),true)
+if LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$6B54C545)==3.1 then
+call Rem_BBn("bof\\war3mapImported\\RemiliaScarlet-T-YY2.mp3",100)
+else
+endif
+if LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$6B54C545)==7. then
+call Rem_BBn("bof\\war3mapImported\\RemiliaScarlet-T-YY3.mp3",115)
+else
+endif
+if LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$6B54C545)==.02 then
+call Rem_yt(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391),0)
+call Rem_yt(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391),LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),0)
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$2DC94E6E,Rem_wr(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391)))
+if true then
+call SaveReal(bof_M9,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),$ACCE86E9,1.)
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$B259B269,LoadReal(bof_M9,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),$ACCE86E9))
+call SetUnitTimeScale(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$B259B269))
+call SetUnitAnimationByIndex(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),6)
+call SaveEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE,Bof_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),"bof\\Scarlet-74.mdx",GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2))))
+call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),GetUnitFlyHeight(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2))+150.)
+call Bof_EXEffectMatRotateZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2D345649))
+call Bof_EXSetEffectSize(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),1.)
+call Bof_zU(0.,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE))
+call Rem_BBn("bof\\war3mapImported\\RemiliaScarlet-T-YX2.wav",120)
+call CameraSetEQNoiseForPlayer(GetOwningPlayer(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),35.)
+call CameraSetEQNoiseForPlayer(GetOwningPlayer(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391)),35.)
+set ST=CreateTimer()
+call SaveUnitHandle(bof_OI,GetHandleId(ST),$911D5DC2,LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2))
+call SaveUnitHandle(bof_OI,GetHandleId(ST),$A7A19391,LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391))
+call TimerStart(ST,.4,false,function Rem_DNv)
+else
+endif
+else
+endif
+if LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$6B54C545)==LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$A1614B4D) and LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$6B54C545)<2.82 then
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$A1614B4D,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$A1614B4D)+.6)
+call SaveInteger(bof_OI,GetHandleId(GetExpiredTimer()),$89CBE375,1)
+call SaveInteger(bof_OI,GetHandleId(GetExpiredTimer()),$F9472E2C,LoadInteger(bof_OI,GetHandleId(GetExpiredTimer()),$F9472E2C)+1)
+if LoadInteger(bof_OI,GetHandleId(GetExpiredTimer()),$F9472E2C)==1 or ModuloInteger(LoadInteger(bof_OI,GetHandleId(GetExpiredTimer()),$F9472E2C)-1,4)==0 then
+call SetUnitAnimationByIndex(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),3)
+call Rem_BBn("bof\\war3mapImported\\RemiliaScarlet-T-YX3.wav",100)
+call SaveEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE,Bof_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),"bof\\Scarlet-44.mdx",GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2))))
+call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),GetUnitFlyHeight(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2))+150.)
+call Bof_EXEffectMatRotateY(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),180.)
+call Bof_EXEffectMatRotateZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2D345649)+180.)
+call Bof_EXSetEffectSize(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),1.)
+call Bof_zU(0.,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE))
+else
+endif
+if ModuloInteger(LoadInteger(bof_OI,GetHandleId(GetExpiredTimer()),$F9472E2C)-1,4)==1 then
+call SetUnitAnimationByIndex(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),4)
+call Rem_BBn("bof\\war3mapImported\\RemiliaScarlet-T-YX4.wav",100)
+call SaveEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE,Bof_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),"bof\\Scarlet-44.mdx",GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2))))
+call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),GetUnitFlyHeight(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2))+150.)
+call Bof_EXEffectMatRotateZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2D345649))
+call Bof_EXSetEffectSize(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),1.)
+call Bof_zU(0.,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE))
+else
+endif
+if ModuloInteger(LoadInteger(bof_OI,GetHandleId(GetExpiredTimer()),$F9472E2C)-1,4)==2 then
+call SetUnitAnimationByIndex(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),3)
+call Rem_BBn("bof\\war3mapImported\\RemiliaScarlet-T-YX3.wav",100)
+call SaveEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE,Bof_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),"bof\\Scarlet-44.mdx",GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2))))
+call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),GetUnitFlyHeight(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2))+150.)
+call Bof_EXEffectMatRotateY(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),180.)
+call Bof_EXEffectMatRotateZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2D345649)+180.)
+call Bof_EXSetEffectSize(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),1.)
+call Bof_zU(0.,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE))
+else
+endif
+if ModuloInteger(LoadInteger(bof_OI,GetHandleId(GetExpiredTimer()),$F9472E2C)-1,4)==3 then
+call SetUnitAnimationByIndex(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),18)
+call Rem_BBn("bof\\war3mapImported\\RemiliaScarlet-T-YX5.wav",100)
+call SaveEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE,Bof_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),"bof\\Scarlet-44.mdx",GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2))))
+call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),GetUnitFlyHeight(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2))+150.)
+call Bof_EXEffectMatRotateY(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),160.)
+call Bof_EXEffectMatRotateZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2D345649)+180.)
+call Bof_EXSetEffectSize(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),1.75)
+call Bof_zU(0.,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE))
+call SaveEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE,Bof_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),"bof\\Scarlet-72.mdx",GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2))))
+call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),GetUnitFlyHeight(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2))+150.)
+call Bof_EXEffectMatRotateZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2D345649)+0.)
+call Bof_EXSetEffectSize(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),2.5)
+call Bof_zU(0.,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE))
+else
+endif
+call CameraSetEQNoiseForPlayer(GetOwningPlayer(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),35.)
+call CameraSetEQNoiseForPlayer(GetOwningPlayer(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391)),35.)
+set ST=CreateTimer()
+call SaveUnitHandle(bof_OI,GetHandleId(ST),$911D5DC2,LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2))
+call SaveUnitHandle(bof_OI,GetHandleId(ST),$A7A19391,LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391))
+call TimerStart(ST,.29,false,function Rem_DNw)
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$64352D9A,.3)
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$2DDF3B2F,60.)
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$1D5480EA,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$64352D9A)/.02)
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$793F19C0,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2DDF3B2F)/I2R(R2I(LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$1D5480EA))))
+if true then
+call Bof_Slide(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2D345649),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2DDF3B2F),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$64352D9A))
+else
+endif
+if true then
+call SaveEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE,Bof_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),"bof\\Scarlet-3.mdx",GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391)),GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391))))
+call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),GetUnitFlyHeight(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391))+150.)
+call Bof_EXEffectMatRotateZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),GetRandomDirectionDeg())
+call Bof_EXSetEffectSize(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),3.)
+call Bof_zU(0.,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE))
+call SaveEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE,Bof_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),"bof\\Tsubaki-41.mdx",GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391)),GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391))))
+call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),GetUnitFlyHeight(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391))+150.)
+call Bof_EXEffectMatRotateZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),GetRandomDirectionDeg())
+call Bof_EXSetEffectSize(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),2.)
+call Bof_zU(0.,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE))
+call SaveEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE,Bof_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),"bof\\Scarlet-52.mdx",GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391)),GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391))))
+call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),GetUnitFlyHeight(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391))+150.)
+call Bof_EXEffectMatRotateZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),GetRandomDirectionDeg())
+call Bof_EXSetEffectSize(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),1.)
+call Bof_zU(0.,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE))
+call SaveEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE,Bof_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),"bof\\Scarlet-26.mdx",GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391)),GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391))))
+call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),GetUnitFlyHeight(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391))+150.)
+call Bof_EXEffectMatRotateZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),GetRandomDirectionDeg())
+call Bof_EXSetEffectSize(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),1.)
+call Bof_zU(0.,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE))
+call SaveEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE,Bof_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),"bof\\hongping.mdx",GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391)),GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391))))
+call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),GetUnitFlyHeight(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391))+20.)
+call Bof_EXSetEffectSize(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),1.)
+call Bof_EXSetEffectSpeed(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),.5)
+call Bof_zU(0.,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE))
+else
+endif
+if LoadInteger(bof_OI,GetHandleId(GetExpiredTimer()),$89CBE375)==1 then
+call SaveInteger(bof_OI,GetHandleId(GetExpiredTimer()),$89CBE375,0)
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$64352D9A,.3)
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$2DDF3B2F,60.)
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$1D5480EA,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$64352D9A)/.02)
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$793F19C0,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2DDF3B2F)/I2R(R2I(LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$1D5480EA))))
+if true then
+call Bof_Slide(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2D345649),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2DDF3B2F),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$64352D9A))
+else
+endif
+else
+endif
+else
+endif
+if LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$6B54C545)==3.12 then
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$A99320FA,GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)))
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$FDF65382,GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)))
+call SaveEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE,Bof_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),"bof\\Scarlet-29.mdx",LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$A99320FA),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$FDF65382)))
+call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),GetUnitFlyHeight(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2))+0.)
+call Bof_EXEffectMatRotateZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2D345649)+0.)
+call Bof_EXSetEffectSize(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),1.)
+call Bof_zU(0.,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE))
+call SaveEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE,AddSpecialEffectTarget("bof\\Scarlet-9.mdx",LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),"chest"))
+call Bof_zU(.8,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE))
+call DestroyEffect(AddSpecialEffectTarget("bof\\Scarlet-34.mdx",LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),"chest"))
+call UnitAddAbility(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),$41726176)
+call UnitRemoveAbility(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),$41726176)
+call UnitAddAbility(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391),$41726176)
+call UnitRemoveAbility(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391),$41726176)
+call GroupAddUnit(bof_RU,LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2))
+call GroupAddUnit(bof_RU,LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391))
+call SaveReal(bof_M9,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),$3224C2A2,0.)
+call SaveReal(bof_M9,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),$38344552,20.)
+call SaveReal(bof_M9,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391)),$3224C2A2,0.)
+call SaveReal(bof_M9,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391)),$38344552,20.)
+call SetUnitAnimationByIndex(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),22)
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$64352D9A,1.)
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$2DDF3B2F,400.)
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$1D5480EA,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$64352D9A)/.02)
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$793F19C0,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2DDF3B2F)/I2R(R2I(LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$1D5480EA))))
+if true then
+call Bof_Slide(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2D345649),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2DDF3B2F),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$64352D9A))
+else
+endif
+if true then
+call Bof_Slide(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2D345649),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2DDF3B2F),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$64352D9A))
+else
+endif
+else
+endif
+if LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$6B54C545)>3.12 and LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$6B54C545)<4.12 then
+call SaveInteger(bof_OI,GetHandleId(GetExpiredTimer()),$8B1FFFFC,LoadInteger(bof_OI,GetHandleId(GetExpiredTimer()),$8B1FFFFC)+1)
+call SaveReal(bof_M9,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),$3224C2A2,0.)
+call SaveReal(bof_M9,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),$38344552,20.)
+call SaveReal(bof_M9,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391)),$3224C2A2,0.)
+call SaveReal(bof_M9,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391)),$38344552,20.)
+if LoadInteger(bof_OI,GetHandleId(GetExpiredTimer()),$8B1FFFFC)==1 or ModuloInteger(LoadInteger(bof_OI,GetHandleId(GetExpiredTimer()),$8B1FFFFC)-1,4)==0 then
+call SaveEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE,Bof_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),"bof\\Scarlet-5.mdx",GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391)),GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391))))
+call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),GetUnitFlyHeight(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391))+150.)
+call Bof_EXSetEffectSize(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),1.)
+call Bof_zU(0.,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE))
+else
+endif
+else
+endif
+if LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$6B54C545)==4.12 then
+call CameraSetEQNoiseForPlayer(GetOwningPlayer(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),25.)
+call CameraSetEQNoiseForPlayer(GetOwningPlayer(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391)),25.)
+call SaveInteger(bof_OI,GetHandleId(GetExpiredTimer()),$8B1FFFFC,0)
+call GroupRemoveUnit(bof_RU,LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2))
+call GroupRemoveUnit(bof_RU,LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391))
+if true then
+call SaveReal(bof_M9,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),$ACCE86E9,.25)
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$B259B269,LoadReal(bof_M9,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),$ACCE86E9))
+call SetUnitTimeScale(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$B259B269))
+else
+endif
+call SaveEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE,Bof_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),"bof\\Scarlet-57.MDX",GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391)),GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391))))
+call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),GetUnitFlyHeight(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391))+150.)
+call Bof_EXSetEffectSize(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),1.5)
+call Bof_zU(2.,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE))
+call SaveEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE,Bof_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),"bof\\Scarlet-21.mdx",GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391)),GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391))))
+call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),450.)
+call Bof_EXEffectMatRotateZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2D345649)+0.)
+call Bof_EXSetEffectSize(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),3.)
+call Bof_zU(0.,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE))
+call SaveEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE,Bof_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),"bof\\Scarlet-70.mdx",GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391)),GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391))))
+call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),25.)
+call Bof_EXSetEffectSize(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),2.5)
+call Bof_zU(5.,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE))
+call Rem_BBn("bof\\war3mapImported\\RemiliaScarlet-T-YX10.mp3",100)
+else
+endif
+if LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$6B54C545)>4.12 and LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$6B54C545)<5.12 then
+call SaveInteger(bof_OI,GetHandleId(GetExpiredTimer()),$8B1FFFFC,LoadInteger(bof_OI,GetHandleId(GetExpiredTimer()),$8B1FFFFC)+1)
+if LoadInteger(bof_OI,GetHandleId(GetExpiredTimer()),$8B1FFFFC)==1 or ModuloInteger(LoadInteger(bof_OI,GetHandleId(GetExpiredTimer()),$8B1FFFFC)-1,4)==0 then
+call SaveEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE,Bof_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),"bof\\Scarlet-15.MDX",GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391)),GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391))))
+call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),GetUnitFlyHeight(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391))+150.)
+call Bof_EXSetEffectSize(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),1.)
+call Bof_zU(0.,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE))
+call SaveEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE,Bof_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),"bof\\Scarlet-54.mdx",GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391)),GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391))))
+call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),GetUnitFlyHeight(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391))+150.)
+call Bof_EXSetEffectSize(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),1.)
+call Bof_zU(0.,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE))
+else
+endif
+if LoadInteger(bof_OI,GetHandleId(GetExpiredTimer()),$8B1FFFFC)==1 or ModuloInteger(LoadInteger(bof_OI,GetHandleId(GetExpiredTimer()),$8B1FFFFC)-1,8)==0 then
+if GetRandomInt(1,10)>7 then
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$474C548A,GetRandomReal(LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$BD33F0C8)/1.5,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$BD33F0C8)))
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$41713DA3,GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2))+LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$474C548A)*CosBJ(GetRandomDirectionDeg()))
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$71CA3531,GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2))+LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$474C548A)*SinBJ(GetRandomDirectionDeg()))
+else
+if GetRandomInt(1,10)>4 then
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$474C548A,GetRandomReal(LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$BD33F0C8)/2.5,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$BD33F0C8)/1.5))
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$41713DA3,GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2))+LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$474C548A)*CosBJ(GetRandomDirectionDeg()))
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$71CA3531,GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2))+LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$474C548A)*SinBJ(GetRandomDirectionDeg()))
+else
+if GetRandomInt(1,10)>0 then
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$474C548A,GetRandomReal(0.,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$BD33F0C8)/2.5))
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$41713DA3,GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2))+LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$474C548A)*CosBJ(GetRandomDirectionDeg()))
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$71CA3531,GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2))+LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$474C548A)*SinBJ(GetRandomDirectionDeg()))
+else
+endif
+endif
+endif
+call SaveInteger(bof_OI,GetHandleId(GetExpiredTimer()),$50BBB8,GetRandomInt(1,2))
+if LoadInteger(bof_OI,GetHandleId(GetExpiredTimer()),$50BBB8)==1 then
+call SaveEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE,Bof_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),"bof\\Scarlet-53.mdx",LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$41713DA3),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$71CA3531)))
+call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),25.)
+call Bof_EXSetEffectSize(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),1.25)
+call Bof_zU(0.,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE))
+else
+call SaveEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE,Bof_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),"bof\\Scarlet-47.mdx",LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$41713DA3),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$71CA3531)))
+call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),25.)
+call Bof_EXSetEffectSize(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),1.25)
+call Bof_zU(0.,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE))
+endif
+call Rem_BBn("bof\\war3mapImported\\RemiliaScarlet-T-YX9.mp3",120)
+else
+endif
+else
+endif
+if LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$6B54C545)==5.12 then
+call SaveInteger(bof_OI,GetHandleId(GetExpiredTimer()),$8B1FFFFC,0)
+call Rem_BBn("bof\\war3mapImported\\RemiliaScarlet-T-YX8.mp3",100)
+else
+endif
+if LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$6B54C545)>5.12 and LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$6B54C545)<6.12 then
+call SaveInteger(bof_OI,GetHandleId(GetExpiredTimer()),$8B1FFFFC,LoadInteger(bof_OI,GetHandleId(GetExpiredTimer()),$8B1FFFFC)+1)
+if LoadInteger(bof_OI,GetHandleId(GetExpiredTimer()),$8B1FFFFC)==1 or ModuloInteger(LoadInteger(bof_OI,GetHandleId(GetExpiredTimer()),$8B1FFFFC)-1,8)==0 then
+set Ub=1
+loop
+exitwhen Ub>5
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$3CA6F0CF,I2R(Ub)*72.)
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$41713DA3,GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391))+CosBJ(LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$3CA6F0CF)+0.)*150.)
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$71CA3531,GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391))+SinBJ(LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$3CA6F0CF)+0.)*150.)
+call SaveEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE,Bof_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),"bof\\Scarlet-58.mdx",LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$41713DA3),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$71CA3531)))
+call Bof_EXSetEffectSize(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),1.)
+call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),GetUnitFlyHeight(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391))+100.)
+call Bof_EXEffectMatRotateZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$3CA6F0CF)+180.)
+call Bof_zU(0.,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE))
+set Ub=Ub+1
+endloop
+if GetRandomInt(1,10)>7 then
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$474C548A,GetRandomReal(LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$BD33F0C8)/1.5,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$BD33F0C8)))
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$41713DA3,GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2))+LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$474C548A)*CosBJ(GetRandomDirectionDeg()))
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$71CA3531,GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2))+LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$474C548A)*SinBJ(GetRandomDirectionDeg()))
+else
+if GetRandomInt(1,10)>4 then
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$474C548A,GetRandomReal(LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$BD33F0C8)/2.5,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$BD33F0C8)/1.5))
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$41713DA3,GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2))+LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$474C548A)*CosBJ(GetRandomDirectionDeg()))
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$71CA3531,GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2))+LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$474C548A)*SinBJ(GetRandomDirectionDeg()))
+else
+if GetRandomInt(1,10)>0 then
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$474C548A,GetRandomReal(0.,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$BD33F0C8)/2.5))
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$41713DA3,GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2))+LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$474C548A)*CosBJ(GetRandomDirectionDeg()))
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$71CA3531,GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2))+LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$474C548A)*SinBJ(GetRandomDirectionDeg()))
+else
+endif
+endif
+endif
+call SaveInteger(bof_OI,GetHandleId(GetExpiredTimer()),$50BBB8,GetRandomInt(1,2))
+if LoadInteger(bof_OI,GetHandleId(GetExpiredTimer()),$50BBB8)==1 then
+call SaveEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE,Bof_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),"bof\\Scarlet-53.mdx",LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$41713DA3),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$71CA3531)))
+call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),25.)
+call Bof_EXSetEffectSize(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),1.25)
+call Bof_zU(0.,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE))
+else
+call SaveEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE,Bof_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),"bof\\Scarlet-47.mdx",LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$41713DA3),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$71CA3531)))
+call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),25.)
+call Bof_EXSetEffectSize(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),1.25)
+call Bof_zU(0.,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE))
+endif
+call Rem_BBn("bof\\war3mapImported\\RemiliaScarlet-T-YX9.mp3",120)
+else
+endif
+else
+endif
+if LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$6B54C545)==6.12 then
+call SaveInteger(bof_OI,GetHandleId(GetExpiredTimer()),$8B1FFFFC,0)
+call SaveEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE,Bof_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),"bof\\Scarlet-62.mdx",GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391)),GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391))))
+call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),GetUnitFlyHeight(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391))+150.)
+call Bof_EXSetEffectSize(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),1.)
+call Bof_zU(3.,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE))
+call SaveEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE,Bof_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),"bof\\Scarlet-57.MDX",GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391)),GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391))))
+call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),GetUnitFlyHeight(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391))+150.)
+call Bof_EXSetEffectSize(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),3.)
+call Bof_zU(3.,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE))
+call SaveEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE,Bof_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),"bof\\Scarlet-5.mdx",GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391)),GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391))))
+call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),25.)
+call Bof_EXSetEffectSize(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),15.)
+call Bof_zU(0.,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE))
+if GetLocalPlayer()==GetOwningPlayer(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)) or GetLocalPlayer()==GetOwningPlayer(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391)) then
+call CinematicFilterGenericBJ(0.,BLEND_MODE_BLEND,"bof\\war3mapImported\\TeamColor00.blp",100.,0.,0.,50.,100.,0.,0.,50.)
+else
+endif
+else
+endif
+if LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$6B54C545)==6.2 then
+call CameraClearNoiseForPlayer(GetOwningPlayer(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)))
+call CameraClearNoiseForPlayer(GetOwningPlayer(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391)))
+call CameraSetEQNoiseForPlayer(GetOwningPlayer(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),80.)
+call CameraSetEQNoiseForPlayer(GetOwningPlayer(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391)),80.)
+call Rem_BBn("bof\\war3mapImported\\RemiliaScarlet-T-YX6.mp3",110)
+call SaveEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE,Bof_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),"bof\\hongping.mdx",GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391)),GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391))))
+call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),25.)
+call Bof_EXSetEffectSize(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),2.)
+call Bof_EXSetEffectSpeed(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),.1)
+call Bof_zU(0.,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE))
+else
+endif
+if LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$6B54C545)==7.22 then
+call Rem_BBn("bof\\war3mapImported\\RemiliaScarlet-T-YX7.mp3",110)
+if GetLocalPlayer()==GetOwningPlayer(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)) or GetLocalPlayer()==GetOwningPlayer(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391)) then
+call CinematicFilterGenericBJ(1.,BLEND_MODE_BLEND,"bof\\war3mapImported\\TeamColor00.blp",100.,0.,0.,50.,100.,0.,0.,0.)
+else
+endif
+else
+endif
+if LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$6B54C545)>6.12 and LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$6B54C545)<7.22 then
+call SaveInteger(bof_OI,GetHandleId(GetExpiredTimer()),$8B1FFFFC,LoadInteger(bof_OI,GetHandleId(GetExpiredTimer()),$8B1FFFFC)+1)
+if LoadInteger(bof_OI,GetHandleId(GetExpiredTimer()),$8B1FFFFC)==1 or ModuloInteger(LoadInteger(bof_OI,GetHandleId(GetExpiredTimer()),$8B1FFFFC)-1,4)==0 then
+call SaveEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE,Bof_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),"bof\\Scarlet-47.mdx",GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391)),GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391))))
+call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),25.)
+call Bof_EXSetEffectSize(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),1.5)
+call Bof_zU(0.,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE))
+else
+endif
+if LoadInteger(bof_OI,GetHandleId(GetExpiredTimer()),$8B1FFFFC)==1 or ModuloInteger(LoadInteger(bof_OI,GetHandleId(GetExpiredTimer()),$8B1FFFFC)-1,12)==0 then
+call SaveEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE,Bof_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),"bof\\Scarlet-5.mdx",GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391)),GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391))))
+call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),25.)
+call Bof_EXSetEffectSize(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),15.)
+call Bof_zU(0.,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE))
+call SaveEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE,Bof_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),"bof\\Scarlet-5.mdx",GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2))))
+call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),25.)
+call Bof_EXSetEffectSize(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),8.)
+call Bof_zU(0.,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE))
+else
+endif
+else
+endif
+if LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$6B54C545)==8.72 then
+call GroupAddUnit(bof_RU,LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2))
+call GroupAddUnit(bof_RU,LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391))
+call SaveReal(bof_M9,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),$3224C2A2,2.)
+call SaveReal(bof_M9,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391)),$3224C2A2,2.)
+call PauseUnit(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),false)
+call SetUnitInvulnerable(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),false)
+call PauseUnit(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391),false)
+call SaveReal(bof_M9,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),$ACCE86E9,1.)
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$B259B269,LoadReal(bof_M9,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),$ACCE86E9))
+call SetUnitTimeScale(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$B259B269))
+if GetLocalPlayer()==GetOwningPlayer(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)) or GetLocalPlayer()==GetOwningPlayer(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391)) then
+call CinematicFilterGenericBJ(1.,BLEND_MODE_BLEND,"bof\\war3mapImported\\TeamColor00.blp",100.,0.,0.,0.,100.,0.,0.,100.)
+else
+endif
+call CameraClearNoiseForPlayer(GetOwningPlayer(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)))
+call CameraClearNoiseForPlayer(GetOwningPlayer(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391)))
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$6DD3A3AB,RAbsBJ(GetUnitState(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),UNIT_STATE_LIFE)-GetUnitState(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391),UNIT_STATE_LIFE)))
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$6DD3A3AB,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$6DD3A3AB)*.3)
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$6DD3A3AB,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$6DD3A3AB)+I2R(GetHeroInt(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),true))*160.*0.02)
+call SaveTriggerHandle(bof_OI,GetHandleId(GetExpiredTimer()),$55017ACF,CreateTrigger())
+set SR=LoadTriggerHandle(bof_OI,GetHandleId(GetExpiredTimer()),$55017ACF)
+call SaveUnitHandle(bof_OI,GetHandleId(SR),$911D5DC2,LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2))
+call SaveUnitHandle(bof_OI,GetHandleId(SR),$A7A19391,LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391))
+call SaveInteger(bof_OI,GetHandleId(SR),$C2781FCF,LoadInteger(bof_OI,GetHandleId(GetExpiredTimer()),$C2781FCF))
+call TriggerRegisterUnitEvent(SR,LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391),EVENT_UNIT_DEATH)
+call TriggerAddCondition(SR,Condition(function Rem_DNx))
+call Bof_Dmg(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$6DD3A3AB))
+call Rem_HeartBreakAt(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391))
+call DestroyTrigger(LoadTriggerHandle(bof_OI,GetHandleId(GetExpiredTimer()),$55017ACF))
+call FlushChildHashtable(bof_OI,GetHandleId(GetExpiredTimer()))
+call DestroyTimer(GetExpiredTimer())
+else
+endif
+endif
+set ST=null
+set SR=null
+endfunction
+function Rem_T_Act takes nothing returns nothing
+local integer Sn
+local trigger SR
+local timer ST
+local group TF
+local unit bl_TG
+local integer SJ=LoadInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$CFDE6C76)
+set SJ=SJ+3
+call SaveInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$CFDE6C76,SJ)
+call SaveInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$ECE825E7,SJ)
+call SaveUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2,GetTriggerUnit())
+call Bof_FloatText(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),"Red the Nightless Castle")
+call SaveUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A7A19391,GetSpellTargetUnit())
+call SavePlayerHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$48656946,GetOwningPlayer(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
+call SavePlayerHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A895BB39,GetOwningPlayer(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A7A19391)))
+call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA,GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
+call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382,GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
+call SaveEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE,Bof_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),"bof\\Scarlet-29.mdx",LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382)))
+call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE),GetUnitFlyHeight(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2))+0.)
+call Bof_EXEffectMatRotateZ(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2D345649)+0.)
+call Bof_EXSetEffectSize(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE),1.)
+call Bof_zU(0.,LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE))
+call SaveUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$CB7993F3,CreateUnit(GetOwningPlayer(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)),LoadInteger(bof_M9,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)),$FDEB9EA4),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2D345649)))
+call SetUnitBlendTime(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$CB7993F3),0.)
+call SetUnitVertexColor(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$CB7993F3),255,255,255,150)
+call SetUnitAnimationByIndex(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$CB7993F3),6)
+call SaveEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE,Bof_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),"bof\\Saber-28.mdx",LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382)))
+call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE),25.)
+call Bof_EXSetEffectSize(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE),4.)
+call Bof_EXSetEffectSpeed(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE),.25)
+call Bof_zU(3.,LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE))
+call SaveEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE,Bof_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),"bof\\Scarlet-14.mdx",LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382)))
+call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE),20.)
+call Bof_EXSetEffectSize(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE),1.)
+call Bof_EXSetEffectSpeed(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE),1.)
+call Bof_zU(3.,LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE))
+set ST=CreateTimer()
+call SaveUnitHandle(bof_OI,GetHandleId(ST),$CB7993F3,LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$CB7993F3))
+call SaveInteger(bof_OI,GetHandleId(ST),$6C2DED4E,150)
+call TimerStart(ST,.02,true,function Rem_DNr)
+call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2392447A,GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A7A19391)))
+call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$B0897302,GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A7A19391)))
+call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2D345649,Atan2BJ(LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$B0897302)-LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2392447A)-LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA)))
+call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$24F5C392,Rem_wr(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A7A19391),LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
+call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA,GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A7A19391))+150.*CosBJ(LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$24F5C392)))
+call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382,GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A7A19391))+150.*SinBJ(LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$24F5C392)))
+call SetUnitPosition(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382))
+call SaveEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE,Bof_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),"bof\\Scarlet-21.mdx",LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382)))
+call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE),GetUnitFlyHeight(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2))+0.)
+call Bof_EXEffectMatRotateZ(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2D345649)+0.)
+call Bof_EXSetEffectSize(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE),2.)
+call Bof_zU(0.,LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE))
+call SaveEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE,Bof_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),"bof\\Scarlet-65.mdx",LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382)))
+call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE),GetUnitFlyHeight(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2))+0.)
+call Bof_EXEffectMatRotateZ(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2D345649)+0.)
+call Bof_EXSetEffectSize(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE),1.)
+call Bof_zU(0.,LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE))
+call SaveEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE,Bof_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),"bof\\Scarlet-4.mdx",LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382)))
+call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE),GetUnitFlyHeight(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2))+0.)
+call Bof_EXEffectMatRotateZ(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2D345649)+0.)
+call Bof_EXSetEffectSize(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE),1.)
+call Bof_zU(0.,LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE))
+call PauseUnit(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),true)
+call SetUnitInvulnerable(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),true)
+call PauseUnit(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A7A19391),true)
+call Rem_BBn("bof\\war3mapImported\\RemiliaScarlet-T-YX1.mp3",100)
+call Rem_BBn("bof\\war3mapImported\\RemiliaScarlet-T-YY1.mp3",100)
+call SaveGroupHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$9DD47C14,CreateGroup())
+call GroupAddUnit(LoadGroupHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$9DD47C14),LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2))
+call GroupAddUnit(LoadGroupHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$9DD47C14),LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A7A19391))
+if IsUnitGroupEmptyBJ(LoadGroupHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$9DD47C14))==false then
+else
+endif
+call DestroyGroup(LoadGroupHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$9DD47C14))
+set ST=CreateTimer()
+call SaveReal(bof_OI,GetHandleId(ST),$6B54C545,0.)
+call SaveReal(bof_OI,GetHandleId(ST),$A1614B4D,1.)
+call SaveUnitHandle(bof_OI,GetHandleId(ST),$911D5DC2,LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2))
+call SaveUnitHandle(bof_OI,GetHandleId(ST),$A7A19391,LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A7A19391))
+call SaveInteger(bof_OI,GetHandleId(ST),$F9472E2C,0)
+call SaveInteger(bof_OI,GetHandleId(ST),$8B1FFFFC,0)
+call SaveInteger(bof_OI,GetHandleId(ST),$89CBE375,0)
+call SaveReal(bof_OI,GetHandleId(ST),$BD33F0C8,800.)
+call SaveReal(bof_OI,GetHandleId(ST),$2DDF3B2F,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2DDF3B2F))
+call SaveReal(bof_OI,GetHandleId(ST),$64352D9A,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$64352D9A))
+call SaveReal(bof_OI,GetHandleId(ST),$1D5480EA,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$1D5480EA))
+call SaveTriggerHandle(bof_OI,GetHandleId(ST),$55017ACF,LoadTriggerHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$55017ACF))
+call SaveReal(bof_OI,GetHandleId(ST),$474C548A,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$474C548A))
+call SaveInteger(bof_OI,GetHandleId(ST),$C2781FCF,LoadInteger(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$C2781FCF))
+call SaveReal(bof_OI,GetHandleId(ST),$2D345649,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2D345649))
+call SaveReal(bof_OI,GetHandleId(ST),$6DD3A3AB,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6DD3A3AB))
+call SaveInteger(bof_OI,GetHandleId(ST),$50BBB8,LoadInteger(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$50BBB8))
+call SaveReal(bof_OI,GetHandleId(ST),$B259B269,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$B259B269))
+call SaveEffectHandle(bof_OI,GetHandleId(ST),$6EAE13FE,LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE))
+call SaveReal(bof_OI,GetHandleId(ST),$3CA6F0CF,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$3CA6F0CF))
+call SaveReal(bof_OI,GetHandleId(ST),$A99320FA,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA))
+call SaveReal(bof_OI,GetHandleId(ST),$41713DA3,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$41713DA3))
+call SaveReal(bof_OI,GetHandleId(ST),$FDF65382,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382))
+call SaveReal(bof_OI,GetHandleId(ST),$71CA3531,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$71CA3531))
+call TimerStart(ST,.02,true,function Rem_DNy)
+call FlushChildHashtable(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ)
+set SR=null
+set ST=null
+set TF=null
+set bl_TG=null
+endfunction
+function Rem_DN4 takes nothing returns nothing
+call Rem_BBn("bof\\war3mapImported\\RemiliaScarlet-G-YY3.mp3",120)
+call FlushChildHashtable(bof_OI,GetHandleId(GetExpiredTimer()))
+call DestroyTimer(GetExpiredTimer())
+endfunction
+function Rem_DN5 takes nothing returns nothing
+local timer ST
+call Rem_BBn("bof\\war3mapImported\\RemiliaScarlet-G-YY2.mp3",100)
+set ST=CreateTimer()
+call SaveUnitHandle(bof_OI,GetHandleId(ST),$911D5DC2,LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2))
+call TimerStart(ST,4.1,false,function Rem_DN4)
+call FlushChildHashtable(bof_OI,GetHandleId(GetExpiredTimer()))
+call DestroyTimer(GetExpiredTimer())
+set ST=null
+endfunction
+function Rem_DN6 takes nothing returns nothing
+local group TF
+local unit bl_TG
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$2B0A6845,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2B0A6845)+.05)
+if LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2B0A6845)<=10. then
+call SaveInteger(bof_OI,GetHandleId(GetExpiredTimer()),$8B1FFFFC,LoadInteger(bof_OI,GetHandleId(GetExpiredTimer()),$8B1FFFFC)+1)
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$A99320FA,GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)))
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$FDF65382,GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)))
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$2D345649,GetUnitFacing(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)))
+call SetUnitPosition(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$D2A88040),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$A99320FA),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$FDF65382))
+call SetUnitPosition(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$5B929F8B),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$A99320FA),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$FDF65382))
+if LoadInteger(bof_OI,GetHandleId(GetExpiredTimer()),$8B1FFFFC)==1 or ModuloInteger(LoadInteger(bof_OI,GetHandleId(GetExpiredTimer()),$8B1FFFFC)-1,8)==0 then
+call SaveEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE,Bof_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),"bof\\Scarlet-4.mdx",GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2))))
+call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),25.)
+call Bof_EXEffectMatRotateZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2D345649)+0.)
+call Bof_EXSetEffectSize(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),1.)
+call Bof_zU(0.,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE))
+call SaveEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE,Bof_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),"bof\\Scarlet-29.mdx",LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$A99320FA),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$FDF65382)))
+call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),GetUnitFlyHeight(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2))+0.)
+call Bof_EXEffectMatRotateZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2D345649)+0.)
+call Bof_EXSetEffectSize(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),1.)
+call Bof_zU(0.,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE))
+else
+endif
+if LoadInteger(bof_OI,GetHandleId(GetExpiredTimer()),$8B1FFFFC)==1 or ModuloInteger(LoadInteger(bof_OI,GetHandleId(GetExpiredTimer()),$8B1FFFFC)-1,4)==0 then
+set TF=CreateGroup()
+call GroupEnumUnitsInRange(TF,GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),1200.,null)
+loop
+set bl_TG=FirstOfGroup(TF)
+exitwhen bl_TG==null
+call GroupRemoveUnit(TF,bl_TG)
+if Condition_Base(GetOwningPlayer(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),bl_TG) and true and true then
+call SaveUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867,bl_TG)
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$5E376BA0,GetUnitState(bl_TG,UNIT_STATE_MAX_MANA))
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$AFE79ADE,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$5E376BA0)*.03)
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$C93E0FA1,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$C93E0FA1)+LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$AFE79ADE))
+call SetUnitManaBJ(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867),GetUnitState(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867),UNIT_STATE_MANA)-LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$AFE79ADE))
+if GetUnitState(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867),UNIT_STATE_MANA)<GetUnitState(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867),UNIT_STATE_MAX_MANA)*.2 then
+call Bof_Dmg(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867),(I2R(Rem_Int_G(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),true))*6.*1.)*0.001)
+else
+endif
+else
+endif
+endloop
+call DestroyGroup(TF)
+if GetRandomInt(1,10)>7 then
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$474C548A,GetRandomReal(LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$BD33F0C8)/1.5,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$BD33F0C8)))
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$41713DA3,GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2))+LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$474C548A)*CosBJ(GetRandomDirectionDeg()))
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$71CA3531,GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2))+LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$474C548A)*SinBJ(GetRandomDirectionDeg()))
+else
+if GetRandomInt(1,10)>4 then
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$474C548A,GetRandomReal(LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$BD33F0C8)/2.5,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$BD33F0C8)/1.5))
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$41713DA3,GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2))+LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$474C548A)*CosBJ(GetRandomDirectionDeg()))
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$71CA3531,GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2))+LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$474C548A)*SinBJ(GetRandomDirectionDeg()))
+else
+if GetRandomInt(1,10)>0 then
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$474C548A,GetRandomReal(0.,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$BD33F0C8)/2.5))
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$41713DA3,GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2))+LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$474C548A)*CosBJ(GetRandomDirectionDeg()))
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$71CA3531,GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2))+LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$474C548A)*SinBJ(GetRandomDirectionDeg()))
+else
+endif
+endif
+endif
+call SaveInteger(bof_OI,GetHandleId(GetExpiredTimer()),$50BBB8,GetRandomInt(1,2))
+if LoadInteger(bof_OI,GetHandleId(GetExpiredTimer()),$50BBB8)==1 then
+call SaveEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE,Bof_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),"bof\\Scarlet-53.mdx",LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$41713DA3),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$71CA3531)))
+call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),25.)
+call Bof_EXSetEffectSize(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),1.25)
+call Bof_zU(0.,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE))
+else
+call SaveEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE,Bof_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),"bof\\Scarlet-47.mdx",LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$41713DA3),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$71CA3531)))
+call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),25.)
+call Bof_EXSetEffectSize(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),1.25)
+call Bof_zU(0.,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE))
+endif
+call Rem_BBn("bof\\war3mapImported\\RemiliaScarlet-T-YX9.mp3",90)
+else
+endif
+else
+call FlushChildHashtable(bof_OI,GetHandleId(GetExpiredTimer()))
+call DestroyTimer(GetExpiredTimer())
+endif
+set TF=null
+set bl_TG=null
+endfunction
+function Rem_G_Act takes nothing returns nothing
+local integer Sn
+local trigger SR
+local timer ST
+local integer SJ=LoadInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$CFDE6C76)
+set SJ=SJ+3
+call SaveInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$CFDE6C76,SJ)
+call SaveInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$ECE825E7,SJ)
+call SaveUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2,GetTriggerUnit())
+call Bof_FloatText(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),"Scarlet Destiny")
+call SavePlayerHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$48656946,GetOwningPlayer(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
+call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA,GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
+call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382,GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
+call SaveEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE,Bof_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),"bof\\Scarlet-57.MDX",GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)),GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2))))
+call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE),GetUnitFlyHeight(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A7A19391))+150.)
+call Bof_EXSetEffectSize(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE),1.5)
+call Bof_zU(2.,LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE))
+call SaveEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE,Bof_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),"bof\\Scarlet-21.mdx",GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)),GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2))))
+call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE),25.)
+call Bof_EXEffectMatRotateZ(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2D345649)+0.)
+call Bof_EXSetEffectSize(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE),3.)
+call Bof_zU(0.,LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE))
+call SaveEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE,Bof_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),"bof\\Scarlet-29.mdx",LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382)))
+call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE),GetUnitFlyHeight(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2))+0.)
+call Bof_EXEffectMatRotateZ(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2D345649)+0.)
+call Bof_EXSetEffectSize(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE),1.)
+call Bof_zU(0.,LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE))
+call SaveUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$D2A88040,CreateUnit(GetOwningPlayer(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)),'eBLP',LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2D345649)))
+call Bof_DzSetUnitModel(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$D2A88040),"bof\\Scarlet-70.mdx")
+call SetUnitScale(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$D2A88040),3.,3.,3.)
+call UnitApplyTimedLife(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$D2A88040),$42487765,10.)
+call SaveUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$5B929F8B,CreateUnit(GetOwningPlayer(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)),'eBLP',LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2D345649)))
+call Bof_DzSetUnitModel(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$5B929F8B),"bof\\Scarlet-5.mdx")
+call SetUnitScale(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$5B929F8B),10.,10.,10.)
+call UnitApplyTimedLife(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$5B929F8B),$42487765,3.)
+call Rem_BBn("bof\\war3mapImported\\RemiliaScarlet-G-YY1.mp3",100)
+call Rem_BBn("bof\\war3mapImported\\RemiliaScarlet-G-YX1.mp3",100)
+set ST=CreateTimer()
+call SaveUnitHandle(bof_OI,GetHandleId(ST),$911D5DC2,LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2))
+call TimerStart(ST,3.1,false,function Rem_DN5)
+set ST=CreateTimer()
+call SaveReal(bof_OI,GetHandleId(ST),$2B0A6845,0.)
+call SaveReal(bof_OI,GetHandleId(ST),$BD33F0C8,1200.)
+call SaveInteger(bof_OI,GetHandleId(ST),$8B1FFFFC,0)
+call SaveUnitHandle(bof_OI,GetHandleId(ST),$911D5DC2,LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2))
+call SaveUnitHandle(bof_OI,GetHandleId(ST),$D2A88040,LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$D2A88040))
+call SaveUnitHandle(bof_OI,GetHandleId(ST),$5B929F8B,LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$5B929F8B))
+call SaveReal(bof_OI,GetHandleId(ST),$474C548A,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$474C548A))
+call SaveReal(bof_OI,GetHandleId(ST),$2D345649,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2D345649))
+call SaveUnitHandle(bof_OI,GetHandleId(ST),$9B1A6867,LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$9B1A6867))
+call SaveReal(bof_OI,GetHandleId(ST),$C93E0FA1,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$C93E0FA1))
+call SaveReal(bof_OI,GetHandleId(ST),$5E376BA0,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$5E376BA0))
+call SaveReal(bof_OI,GetHandleId(ST),$AFE79ADE,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$AFE79ADE))
+call SaveInteger(bof_OI,GetHandleId(ST),$50BBB8,LoadInteger(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$50BBB8))
+call SaveEffectHandle(bof_OI,GetHandleId(ST),$6EAE13FE,LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE))
+call SaveReal(bof_OI,GetHandleId(ST),$A99320FA,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA))
+call SaveReal(bof_OI,GetHandleId(ST),$41713DA3,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$41713DA3))
+call SaveReal(bof_OI,GetHandleId(ST),$FDF65382,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382))
+call SaveReal(bof_OI,GetHandleId(ST),$71CA3531,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$71CA3531))
+call TimerStart(ST,.05,true,function Rem_DN6)
+call FlushChildHashtable(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ)
+set SR=null
+set ST=null
+endfunction
+function Rem_DOC takes nothing returns nothing
+if LoadInteger(bof_OI,GetHandleId(GetExpiredTimer()),$6C2DED4E)<=0 then
+call RemoveUnit(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$CB7993F3))
+call FlushChildHashtable(bof_OI,GetHandleId(GetExpiredTimer()))
+call DestroyTimer(GetExpiredTimer())
+else
+call SaveInteger(bof_OI,GetHandleId(GetExpiredTimer()),$6C2DED4E,LoadInteger(bof_OI,GetHandleId(GetExpiredTimer()),$6C2DED4E)-5)
+call SetUnitVertexColor(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$CB7993F3),255,255,255,LoadInteger(bof_OI,GetHandleId(GetExpiredTimer()),$6C2DED4E))
+endif
+endfunction
+function Rem_DOD takes nothing returns nothing
+call CameraClearNoiseForPlayer(LoadPlayerHandle(bof_OI,GetHandleId(GetExpiredTimer()),$48656946))
+call FlushChildHashtable(bof_OI,GetHandleId(GetExpiredTimer()))
+call DestroyTimer(GetExpiredTimer())
+endfunction
+function Rem_DOE takes nothing returns nothing
+local timer ST
+local integer Sn
+local trigger SR
+if LoadInteger(bof_M9,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),$10D57C65)==1 then
+call DoNothing()
+else
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$6B54C545,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$6B54C545)+.02)
+call PauseUnit(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),true)
+call SetUnitInvulnerable(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),true)
+if LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$6B54C545)==.02 then
+if true then
+call SaveReal(bof_M9,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),$ACCE86E9,1.)
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$B259B269,LoadReal(bof_M9,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),$ACCE86E9))
+call SetUnitTimeScale(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$B259B269))
+else
+endif
+call SetUnitAnimationByIndex(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),18)
+else
+endif
+if LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$6B54C545)==.2 then
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$A99320FA,GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)))
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$FDF65382,GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)))
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$2392447A,GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391)))
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$B0897302,GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391)))
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$2D345649,Atan2BJ(LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$B0897302)-LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$FDF65382),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2392447A)-LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$A99320FA)))
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$41713DA3,GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391))+200.*CosBJ(LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2D345649)))
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$71CA3531,GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391))+200.*SinBJ(LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2D345649)))
+call SetUnitPosition(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$41713DA3),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$71CA3531))
+call Rem_BBn("bof\\war3mapImported\\RemiliaScarlet-T-YX5.wav",100)
+call SaveEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE,Bof_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),"bof\\Scarlet-44.mdx",GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2))))
+call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),GetUnitFlyHeight(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2))+150.)
+call Bof_EXEffectMatRotateX(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),45.)
+call Bof_EXEffectMatRotateZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2D345649)+180.)
+call Bof_EXSetEffectSize(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),2.)
+call Bof_zU(0.,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE))
+call SaveEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE,Bof_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),"bof\\Scarlet-72.mdx",GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2))))
+call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),GetUnitFlyHeight(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2))+150.)
+call Bof_EXEffectMatRotateZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2D345649)+180.)
+call Bof_EXSetEffectSize(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),2.5)
+call Bof_zU(0.,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE))
+call SaveEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE,Bof_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),"bof\\Scarlet-61.mdx",GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391)),GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391))))
+call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),GetUnitFlyHeight(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391))+20.)
+call Bof_EXEffectMatRotateZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2D345649)+0.)
+call Bof_EXSetEffectSize(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),4.)
+call Bof_zU(0.,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE))
+call SaveEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE,Bof_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),"bof\\Scarlet-36.MDX",GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391)),GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391))))
+call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),GetUnitFlyHeight(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391))+20.)
+call Bof_EXEffectMatRotateZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2D345649)+0.)
+call Bof_EXSetEffectSize(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),1.)
+call Bof_zU(0.,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE))
+call SaveEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE,Bof_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),"bof\\Scarlet-43.mdx",GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391)),GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391))))
+call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),GetUnitFlyHeight(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391))+150.)
+call Bof_EXEffectMatRotateZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2D345649)+0.)
+call Bof_EXSetEffectSize(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),1.)
+call Bof_zU(0.,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE))
+call SaveEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE,Bof_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),"bof\\Scarlet-52.mdx",GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391)),GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391))))
+call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),GetUnitFlyHeight(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391))+150.)
+call Bof_EXEffectMatRotateZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2D345649)+0.)
+call Bof_EXSetEffectSize(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),1.)
+call Bof_zU(0.,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE))
+call SaveEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE,Bof_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),"bof\\Scarlet-3.mdx",GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391)),GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391))))
+call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),GetUnitFlyHeight(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391))+150.)
+call Bof_EXEffectMatRotateZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),GetRandomDirectionDeg())
+call Bof_EXSetEffectSize(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),8.)
+call Bof_zU(0.,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE))
+call SaveEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE,Bof_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),"bof\\Scarlet-3.mdx",GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391)),GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391))))
+call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),GetUnitFlyHeight(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391))+150.)
+call Bof_EXEffectMatRotateZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),GetRandomDirectionDeg())
+call Bof_EXSetEffectSize(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),8.)
+call Bof_zU(0.,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE))
+call CameraSetEQNoiseForPlayer(LoadPlayerHandle(bof_OI,GetHandleId(GetExpiredTimer()),$48656946),60.)
+set ST=CreateTimer()
+call SavePlayerHandle(bof_OI,GetHandleId(ST),$48656946,LoadPlayerHandle(bof_OI,GetHandleId(GetExpiredTimer()),$48656946))
+call TimerStart(ST,.6,false,function Rem_DOD)
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$6DD3A3AB,GetUnitState(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391),UNIT_STATE_MAX_LIFE)*.2)
+call Bof_Dmg(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$6DD3A3AB))
+call Bof_Heal(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$6DD3A3AB))
+call SetControlToUnit(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391),3.,"stun")
+else
+endif
+if LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$6B54C545)==.8 then
+call PauseUnit(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),false)
+call SetUnitInvulnerable(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),false)
+call SaveReal(bof_M9,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),$ACCE86E9,1.)
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$B259B269,LoadReal(bof_M9,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),$ACCE86E9))
+call FlushChildHashtable(bof_OI,GetHandleId(GetExpiredTimer()))
+call DestroyTimer(GetExpiredTimer())
+else
+endif
+endif
+set ST=null
+set SR=null
+endfunction
+function Rem_HeartBreak_Act takes nothing returns nothing
+local integer Sn
+local trigger SR
+local timer ST
+local integer SJ=LoadInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$CFDE6C76)
+set SJ=SJ+3
+call SaveInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$CFDE6C76,SJ)
+call SaveInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$ECE825E7,SJ)
+call SaveUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2,LoadUnitHandle(bof_HT,0,StringHash("RemHBc")))
+call Bof_FloatText(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),"Heart Break")
+call SaveUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A7A19391,LoadUnitHandle(bof_HT,0,StringHash("RemHBt")))
+call SavePlayerHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$48656946,GetOwningPlayer(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
+call SavePlayerHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A895BB39,GetOwningPlayer(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A7A19391)))
+call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA,GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
+call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382,GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
+call Rem_BBn("bof\\war3mapImported\\RemiliaScarlet-ZS1-YY1.mp3",120)
+call SaveUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$CB7993F3,CreateUnit(GetOwningPlayer(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)),LoadInteger(bof_M9,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)),$FDEB9EA4),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2D345649)))
+call SetUnitBlendTime(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$CB7993F3),0.)
+call SetUnitVertexColor(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$CB7993F3),255,255,255,150)
+call SetUnitAnimationByIndex(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$CB7993F3),6)
+call SaveEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE,Bof_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),"bof\\Scarlet-8.mdx",LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382)))
+call Bof_EXSetEffectSize(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE),1.)
+call Bof_zU(0.,LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE))
+call SaveEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE,Bof_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),"bof\\Scarlet-4.mdx",LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382)))
+call Bof_EXSetEffectSize(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE),1.)
+call Bof_zU(0.,LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE))
+call SaveEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE,Bof_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),"bof\\Tsubaki-33.mdx",LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382)))
+call Bof_EXSetEffectSize(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE),1.)
+call Bof_zU(0.,LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE))
+call SaveEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE,Bof_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),"bof\\Madara-huitu-22.mdx",LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382)))
+call Bof_EXEffectMatRotateZ(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2D345649)+0.)
+call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE),25.)
+call Bof_EXSetEffectSize(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE),4.)
+call Bof_zU(0.,LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE))
+set ST=CreateTimer()
+call SaveUnitHandle(bof_OI,GetHandleId(ST),$CB7993F3,LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$CB7993F3))
+call SaveInteger(bof_OI,GetHandleId(ST),$6C2DED4E,150)
+call TimerStart(ST,.02,true,function Rem_DOC)
+call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2392447A,GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A7A19391)))
+call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$B0897302,GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A7A19391)))
+call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2D345649,Atan2BJ(LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$B0897302)-LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2392447A)-LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA)))
+call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$24F5C392,Rem_wr(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A7A19391),LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
+call SetUnitFacingTimed(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$24F5C392),0)
+call SetUnitFacing(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$24F5C392))
+call SaveEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE,Bof_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),"bof\\Scarlet-4.mdx",LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382)))
+call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE),GetUnitFlyHeight(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2))+0.)
+call Bof_EXEffectMatRotateZ(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2D345649)+0.)
+call Bof_EXSetEffectSize(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE),1.)
+call Bof_zU(0.,LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE))
+call PauseUnit(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),true)
+call SetUnitInvulnerable(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),true)
+set ST=CreateTimer()
+call SaveReal(bof_OI,GetHandleId(ST),$6B54C545,0.)
+call SaveReal(bof_OI,GetHandleId(ST),$A1614B4D,1.)
+call SaveUnitHandle(bof_OI,GetHandleId(ST),$911D5DC2,LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2))
+call SaveUnitHandle(bof_OI,GetHandleId(ST),$A7A19391,LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A7A19391))
+call SaveInteger(bof_OI,GetHandleId(ST),$F9472E2C,0)
+call SaveInteger(bof_OI,GetHandleId(ST),$8B1FFFFC,0)
+call SaveInteger(bof_OI,GetHandleId(ST),$89CBE375,0)
+call SaveReal(bof_OI,GetHandleId(ST),$BD33F0C8,800.)
+call SaveReal(bof_OI,GetHandleId(ST),$2D345649,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2D345649))
+call SaveReal(bof_OI,GetHandleId(ST),$6DD3A3AB,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6DD3A3AB))
+call SaveReal(bof_OI,GetHandleId(ST),$B259B269,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$B259B269))
+call SaveEffectHandle(bof_OI,GetHandleId(ST),$6EAE13FE,LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE))
+call SavePlayerHandle(bof_OI,GetHandleId(ST),$48656946,LoadPlayerHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$48656946))
+call SaveReal(bof_OI,GetHandleId(ST),$A99320FA,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA))
+call SaveReal(bof_OI,GetHandleId(ST),$2392447A,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2392447A))
+call SaveReal(bof_OI,GetHandleId(ST),$41713DA3,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$41713DA3))
+call SaveReal(bof_OI,GetHandleId(ST),$FDF65382,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382))
+call SaveReal(bof_OI,GetHandleId(ST),$B0897302,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$B0897302))
+call SaveReal(bof_OI,GetHandleId(ST),$71CA3531,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$71CA3531))
+call TimerStart(ST,.02,true,function Rem_DOE)
+call FlushChildHashtable(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ)
+set SR=null
+set ST=null
+endfunction
+// ===== Ремилия: своё вместо общего кода bof (после функций героя) =====
+// Появление героя: из DMi bof — стадия R, тип её дамми-копии, временный запас здоровья и прибавка
+// от убийств T. Вступления «особых игроков» bof не переносятся.
+function Rem_OnSpawn takes unit u returns nothing
+if LoadBoolean(bof_HT,GetHandleId(u),StringHash("RemSpawn")) then
+return
+endif
+call SaveBoolean(bof_HT,GetHandleId(u),StringHash("RemSpawn"),true)
+call SaveInteger(bof_M9,GetHandleId(u),$1942313C,0)
+call SaveInteger(bof_M9,GetHandleId(u),$FDEB9EA4,'uB19')
+call SaveInteger(bof_M9,GetHandleId(u),$E90DB670,0)
+call SaveInteger(bof_M9,GetHandleId(u),$8CBA2711,R2I(GetUnitState(u,UNIT_STATE_MAX_LIFE)))
+call SaveInteger(bof_M9,GetHandleId(u),$410023C4,0)
+endfunction
+//Remilia1end
 //Flandre1start
 // интеллект для урона кнопки D: урон bof x (0.035);
 // x1000, чтобы не терять дробь в целом (в Bof_Dmg урон делится обратно на 1000)
@@ -15145,6 +17803,9 @@ set udg_RH[139]='Rosh'//Мутен Роши
 //Barragan1start
 set udg_RH[140]='HBrg'//Baraggan
 //Barragan1end
+//Remilia1start
+set udg_RH[143]='HRem'//Remilia
+//Remilia1end
 //Flandre1start
 set udg_RH[142]='HFla'//Flandre
 //Flandre1end
@@ -34023,6 +36684,12 @@ if cmb!=true then
 //Barragan1start
         call IH('HBrg',u,"ReplaceableTextures\\CommandButtons\\BTNHero_Barragan_Icon.blp")
 //Barragan1end
+//Remilia1start
+        call IH('HRem',u,"bof\\war3mapImported\\RemiliaScarlet-TB-TX.blp")
+        if GetUnitTypeId(u)=='HRem' then
+            call Rem_OnSpawn(u)
+        endif
+//Remilia1end
 //Flandre1start
         call IH('HFla',u,"bof\\war3mapImported\\Flandre Scarlet-TB-TX.blp")
         if GetUnitTypeId(u)=='HFla' then
@@ -49734,6 +52401,14 @@ if GetUnitTypeId(c)=='HBrg' and CurrentEventAttack and nb>0 and IsUnitEnemy(u,Ge
     endif
 endif
 //Barragan1end
+//Remilia1start
+if GetUnitTypeId(c)=='HRem' and CurrentEventAttack and nb>0 and IsUnitEnemy(u,GetOwningPlayer(c)) then
+    call Rem_Attack_Act()
+endif
+if GetUnitTypeId(c)=='HRem' and nb>0 and IsUnitEnemy(u,GetOwningPlayer(c)) then
+    call Rem_Damage_Act()
+endif
+//Remilia1end
 //Flandre1start
 if (GetUnitTypeId(c)=='HFla' or GetUnitTypeId(c)=='hB1W') and CurrentEventAttack and nb>0 and IsUnitEnemy(u,GetOwningPlayer(c)) then
     call Fla_Attack_Act()
@@ -233271,7 +235946,8 @@ function AbilitiesForChoice_Cond takes nothing returns boolean
     local boolean cond2=GetSpellAbilityId()=='BbQ1' or GetSpellAbilityId()=='BbW1' or GetSpellAbilityId()=='BbE1' or GetSpellAbilityId()=='BbR1' or GetSpellAbilityId()=='BbT1' or GetSpellAbilityId()=='BbT2' or GetSpellAbilityId()=='BbD1' or GetSpellAbilityId()=='BbF1' or GetSpellAbilityId()=='BbGb' //Barragan1start//Barragan1end
     local boolean condEscanor=GetSpellAbilityId()=='EsQ1' or GetSpellAbilityId()=='EsW1' or GetSpellAbilityId()=='EsE1' or GetSpellAbilityId()=='EsR1' or GetSpellAbilityId()=='EsD1' or GetSpellAbilityId()=='EsF1' or GetSpellAbilityId()=='EsG1' or GetSpellAbilityId()=='EsT1' //Escanor1start//Escanor1end
     local boolean condFlandre=GetSpellAbilityId()=='FlQ1' or GetSpellAbilityId()=='FlW1' or GetSpellAbilityId()=='FlE1' or GetSpellAbilityId()=='FlR1' or GetSpellAbilityId()=='FlT1' or GetSpellAbilityId()=='FlD1' or GetSpellAbilityId()=='FlF1' or GetSpellAbilityId()=='FlG1' or GetSpellAbilityId()=='FlW2' or GetSpellAbilityId()=='FlG2' //Flandre1start//Flandre1end
-    if cond1 or cond2 or condEscanor or condFlandre then
+    local boolean condRemilia=GetSpellAbilityId()=='RmQ1' or GetSpellAbilityId()=='RmQ2' or GetSpellAbilityId()=='RmW1' or GetSpellAbilityId()=='RmE1' or GetSpellAbilityId()=='RmR1' or GetSpellAbilityId()=='RmT1' or GetSpellAbilityId()=='RmD1' or GetSpellAbilityId()=='RmF1' or GetSpellAbilityId()=='RmG1' //Remilia1start//Remilia1end
+    if cond1 or cond2 or condEscanor or condFlandre or condRemilia then
         return true
     else
         return false
@@ -243642,6 +246318,35 @@ function AbilitiesForChoice_Act takes nothing returns nothing//моя функц
         call Brg_G_Act(caster)
     endif
 //Barragan1end
+//Remilia1start
+    if GetSpellAbilityId()=='RmQ1' then
+        call Rem_Q_Act()
+    endif
+    if GetSpellAbilityId()=='RmQ2' then
+        call Rem_Q2_Act()
+    endif
+    if GetSpellAbilityId()=='RmW1' then
+        call Rem_W_Act()
+    endif
+    if GetSpellAbilityId()=='RmE1' then
+        call Rem_E_Act()
+    endif
+    if GetSpellAbilityId()=='RmR1' then
+        call Rem_R_Act()
+    endif
+    if GetSpellAbilityId()=='RmT1' then
+        call Rem_T_Act()
+    endif
+    if GetSpellAbilityId()=='RmD1' then
+        call Rem_D_Act()
+    endif
+    if GetSpellAbilityId()=='RmF1' then
+        call Rem_F_Act()
+    endif
+    if GetSpellAbilityId()=='RmG1' then
+        call Rem_G_Act()
+    endif
+//Remilia1end
 //Flandre1start
     if GetSpellAbilityId()=='FlQ1' then
         call Fla_Q_Act()
