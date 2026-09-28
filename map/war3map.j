@@ -7197,7 +7197,7 @@ function Condition_AbilityString2 takes integer id returns boolean
 return id=='A0YX' or id=='A0Z0' or id=='KkR1' or id=='KkR2' or id=='BRRS' or id=='BRSS' or id=='IcF2' or id=='IcF5' or id=='GKF1' or id=='VGF1' or id=='GKG1' or id=='GKBS' or id=='GKSS' or id=='GKS2' or id=='GKS3' or id=='GKS4' or id=='GKSR' or id=='GKSB' or id=='GKUI' or id=='GKMI' or id=='GKQ1' or id=='GKW1' or id=='GKE1' or id=='GKT1' or id=='JNF1' or id=='JNF4' or id=='GSQ1' or id=='GSQ2' or id=='GSE1' or id=='GSE2' or id=='GST1' or id=='GST3' or id=='GSF1' or id=='GSF2' or id=='GSF2'
 endfunction
 function Condition_AbilityString takes integer id returns boolean
-return Condition_AbilityString2(id) or Condition_AbilityString3(id) or id=='SaW1' or id=='SaE1' or id=='SaR1' or id=='SaT1' or id=='TMW0' or id=='A0P6' or id=='A1D7' or id=='HSW1' or id=='HST1' or id=='KHG1' or id=='A2DJ' or id=='IcQ1' or id=='IcT1' or id=='MadF' or id=='A0N1' or id=='A2CZ' or id=='A0CZ' or id=='DSW1' or id=='Ad02' or id=='BGW1' or id=='KaA6' or id=='KaAF' or id=='BGG1' or id=='ASQ1' or id=='ASW1' or id=='ASE1' or id=='AST1' or id=='A1BO' or id=='A1BT' or id=='A1BW' or id=='A085' or id=='A08J' or id=='MiQ1' or id=='MiE1' or id=='MiR1' or id=='A0FN' or id=='WE03' or id=='WE06' or id=='A1AJ' or id=='A1ER' or id=='A0QK' or id=='A1HO' or id=='AlFS' 
+return Condition_AbilityString2(id) or Condition_AbilityString3(id) or id=='SaW1' or id=='SaE1' or id=='SaR1' or id=='SaT1' or id=='TMW0' or id=='A0P6' or id=='A1D7' or id=='HSW1' or id=='HST1' or id=='KHG1' or id=='A2DJ' or id=='IcQ1' or id=='IcT1' or id=='MadF' or id=='A0N1' or id=='A2CZ' or id=='A0CZ' or id=='DSW1' or id=='Ad02' or id=='BGW1' or id=='KaA6' or id=='KaAF' or id=='BGG1' or id=='ASQ1' or id=='ASW1' or id=='ASE1' or id=='AST1' or id=='A1BO' or id=='A1BT' or id=='A1BW' or id=='A085' or id=='A08J' or id=='MiQ1' or id=='MiE1' or id=='MiR1' or id=='A0FN' or id=='WE03' or id=='WE06' or id=='A1AJ' or id=='A1ER' or id=='A0QK' or id=='A1HO' or id=='AlFS' or id=='BbT1' 
 endfunction
 function Condition_Base takes player p,unit e returns boolean
 return IsUnitEnemy(e,p) and IsUnitType(e,UNIT_TYPE_STRUCTURE)==false and 'dumm'!=GetUnitTypeId(e) and 'cdm1'!=GetUnitTypeId(e) and 'e16T'!=GetUnitTypeId(e) and UltimateDamage!=e and GetUnitAbilityLevel(e, 'IMDc')==0 and GetUnitTypeId(e)!='dM02'
@@ -18666,6 +18666,36 @@ function OnButtonAddonAbility takes nothing returns nothing
                     set j=j+1
                 endloop                        
                 call AddFrameText( GetFrameByName("TavernAbilityTooltipText",i), "\n\n"+GetAbilityBaseStringFieldById( 'DSW1', ABILITY_SF_NAME )+", (|cffffcc00"+IntToChar(GetAbilityBaseIntegerFieldById( 'DSW1', ABILITY_IF_BUTTON_HOTKEY_RESEARCH ))+"|r)\n\n"+GetAbilityBaseStringFieldById( 'DSW1', ABILITY_SLF_TOOLTIP_LEARN_EXTENDED ))
+                call SetFrameSize( GetFrameByName("TavernAbilityTooltip",i), .26, GetFrameHeight( GetFrameByName("TavernAbilityTooltipText",i))+0.03)
+
+
+            elseif GetFrameTexture(but,0)==GetAbilityBaseStringFieldById('BbT1',ABILITY_SF_ICON_NORMAL) and i==GetFrameContext(but) then
+                call SetFrameText( GetFrameByName("TavernAbilityTooltipText",i), "     " )
+                call SetFrameTexture( GetFrameByName("TavernAbility",i), GetAbilityBaseStringFieldById( 'BbT2', ABILITY_SF_ICON_NORMAL ), 0, true )
+                call SetFrameTexture( GetFrameByName("TavernAbility",i), GetAbilityBaseStringFieldById( 'BbT2', ABILITY_SF_ICON_NORMAL ), 1, true )
+                call SetFrameTexture( GetFrameByName("TavernAbility",i), GetAbilityBaseStringFieldById( 'BbT2', ABILITY_SF_ICON_NORMAL ), 2, true )
+                set j=0
+                loop
+                    call AddFrameText( GetFrameByName("TavernAbilityTooltipText",i), "|cffffcc00"+I2S(GetAbilityBaseIntegerLevelFieldById( 'BbT2', ABILITY_ILF_MANA_COST, j ))+"|r")
+                    exitwhen j==GetAbilityBaseIntegerFieldById('BbT2', ABILITY_IF_LEVELS)-1
+                    call AddFrameText( GetFrameByName("TavernAbilityTooltipText",i), "/")
+                    set j=j+1
+                endloop                        
+                call AddFrameText( GetFrameByName("TavernAbilityTooltipText",i), "\n\n"+GetAbilityBaseStringFieldById( 'BbT2', ABILITY_SF_NAME )+", (|cffffcc00"+IntToChar(GetAbilityBaseIntegerFieldById( 'BbT2', ABILITY_IF_BUTTON_HOTKEY_RESEARCH ))+"|r)\n\n"+GetAbilityBaseStringFieldById( 'BbT2', ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED ))
+                call SetFrameSize( GetFrameByName("TavernAbilityTooltip",i), .26, GetFrameHeight( GetFrameByName("TavernAbilityTooltipText",i))+0.03)
+            elseif GetFrameTexture(but,0)==GetAbilityBaseStringFieldById('BbT2',ABILITY_SF_ICON_NORMAL) and i==GetFrameContext(but) then
+                call SetFrameText( GetFrameByName("TavernAbilityTooltipText",i), "     " )
+                call SetFrameTexture( GetFrameByName("TavernAbility",i), GetAbilityBaseStringFieldById( 'BbT1', ABILITY_SF_ICON_NORMAL ), 0, true )
+                call SetFrameTexture( GetFrameByName("TavernAbility",i), GetAbilityBaseStringFieldById( 'BbT1', ABILITY_SF_ICON_NORMAL ), 1, true )
+                call SetFrameTexture( GetFrameByName("TavernAbility",i), GetAbilityBaseStringFieldById( 'BbT1', ABILITY_SF_ICON_NORMAL ), 2, true )
+                set j=0
+                loop
+                    call AddFrameText( GetFrameByName("TavernAbilityTooltipText",i), "|cffffcc00"+I2S(GetAbilityBaseIntegerLevelFieldById( 'BbT1', ABILITY_ILF_MANA_COST, j ))+"|r")
+                    exitwhen j==GetAbilityBaseIntegerFieldById('BbT1', ABILITY_IF_LEVELS)-1
+                    call AddFrameText( GetFrameByName("TavernAbilityTooltipText",i), "/")
+                    set j=j+1
+                endloop                        
+                call AddFrameText( GetFrameByName("TavernAbilityTooltipText",i), "\n\n"+GetAbilityBaseStringFieldById( 'BbT1', ABILITY_SF_NAME )+", (|cffffcc00"+IntToChar(GetAbilityBaseIntegerFieldById( 'BbT1', ABILITY_IF_BUTTON_HOTKEY_RESEARCH ))+"|r)\n\n"+GetAbilityBaseStringFieldById( 'BbT1', ABILITY_SLF_TOOLTIP_LEARN_EXTENDED ))
                 call SetFrameSize( GetFrameByName("TavernAbilityTooltip",i), .26, GetFrameHeight( GetFrameByName("TavernAbilityTooltipText",i))+0.03)
 
 
