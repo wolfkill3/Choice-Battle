@@ -7345,17 +7345,6 @@ set swT=null
 endfunction
 // Система bof «надпись над юнитом» (триггер bF: юнит и текст в хранилище триггера) — название умения
 // всплывает над героем, цвет случайный, как у bof
-function Bof_FloatText takes unit u,string ftTxt returns nothing
-local texttag ftT=CreateTextTag()
-call SetTextTagPosUnit(ftT,u,0)
-call SetTextTagText(ftT,ftTxt,.05)
-call SetTextTagColorBJ(ftT,GetRandomPercentageBJ(),GetRandomPercentageBJ(),GetRandomPercentageBJ(),50.)
-call SetTextTagPermanent(ftT,false)
-call SetTextTagVelocityBJ(ftT,100.,90)
-call SetTextTagLifespan(ftT,1.)
-call SetTextTagFadepoint(ftT,1.)
-set ftT=null
-endfunction
 // Система bof «лечение» (триггер ZM): у нас — со срезами лечения карты (myCustomHeal2) и учётом
 // в статистике (HealTextTag), как лечат герои 3.2
 function Bof_Heal takes unit src,unit tgt,real amt returns nothing
@@ -7878,7 +7867,6 @@ call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$50BBB8,LoadReal(bof_M9,GetH
 if LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$50BBB8)>=15. or LoadBoolean(bof_M9,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),$78738D30)==false then
 call SaveBoolean(bof_M9,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),$78738D30,false)
 call SaveBoolean(bof_M9,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),$84BF70F9,true)
-call DisplayTextToPlayer(GetOwningPlayer(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),0,0,"Украденная жизнь начинает утекать...")
 set ST=CreateTimer()
 call SaveReal(bof_OI,GetHandleId(ST),$6B54C545,0.)
 call SaveInteger(bof_OI,GetHandleId(ST),$6C8972A3,R2I(GetUnitState(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),UNIT_STATE_MAX_LIFE)*.0031)+1)
@@ -8130,7 +8118,6 @@ set SJ=SJ+3
 call SaveInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$CFDE6C76,SJ)
 call SaveInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$ECE825E7,SJ)
 call SaveUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2,GetTriggerUnit())
-call Bof_FloatText(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),"Scarlet Shoot")
 call SavePlayerHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$48656946,GetOwningPlayer(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
 call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA,GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
 call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382,GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
@@ -8199,7 +8186,6 @@ set SJ=SJ+3
 call SaveInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$CFDE6C76,SJ)
 call SaveInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$ECE825E7,SJ)
 call SaveUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2,GetTriggerUnit())
-call Bof_FloatText(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),"Bad Lady Scramble")
 call SavePlayerHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$48656946,GetOwningPlayer(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
 call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA,GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
 call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382,GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
@@ -8385,7 +8371,6 @@ set SJ=SJ+3
 call SaveInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$CFDE6C76,SJ)
 call SaveInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$ECE825E7,SJ)
 call SaveUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2,GetTriggerUnit())
-call Bof_FloatText(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),"Young Demon Lord")
 call SavePlayerHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$48656946,GetOwningPlayer(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
 call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA,GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
 call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382,GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
@@ -8604,7 +8589,6 @@ set SJ=SJ+3
 call SaveInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$CFDE6C76,SJ)
 call SaveInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$ECE825E7,SJ)
 call SaveUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2,GetTriggerUnit())
-call Bof_FloatText(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),"Dracula Cradle")
 call SavePlayerHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$48656946,GetOwningPlayer(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
 call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA,GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
 call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382,GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
@@ -9132,7 +9116,6 @@ set SJ=SJ+3
 call SaveInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$CFDE6C76,SJ)
 call SaveInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$ECE825E7,SJ)
 call SaveUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2,GetTriggerUnit())
-call Bof_FloatText(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),"Vampire Illusion")
 call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA,GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
 call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382,GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
 call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2392447A,GetSpellTargetX())
@@ -9240,7 +9223,6 @@ set SJ=SJ+3
 call SaveInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$CFDE6C76,SJ)
 call SaveInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$ECE825E7,SJ)
 call SaveUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2,GetTriggerUnit())
-call Bof_FloatText(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),"Scarlet Netherworld")
 call SavePlayerHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$48656946,GetOwningPlayer(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
 call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA,GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
 call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382,GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
@@ -9763,7 +9745,6 @@ set SJ=SJ+3
 call SaveInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$CFDE6C76,SJ)
 call SaveInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$ECE825E7,SJ)
 call SaveUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2,GetTriggerUnit())
-call Bof_FloatText(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),"Red the Nightless Castle")
 call SaveUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A7A19391,GetSpellTargetUnit())
 call SavePlayerHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$48656946,GetOwningPlayer(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
 call SavePlayerHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A895BB39,GetOwningPlayer(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A7A19391)))
@@ -9967,7 +9948,6 @@ set SJ=SJ+3
 call SaveInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$CFDE6C76,SJ)
 call SaveInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$ECE825E7,SJ)
 call SaveUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2,GetTriggerUnit())
-call Bof_FloatText(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),"Scarlet Destiny")
 call SavePlayerHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$48656946,GetOwningPlayer(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
 call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA,GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
 call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382,GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
@@ -10140,7 +10120,6 @@ set SJ=SJ+3
 call SaveInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$CFDE6C76,SJ)
 call SaveInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$ECE825E7,SJ)
 call SaveUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2,LoadUnitHandle(bof_HT,0,StringHash("RemHBc")))
-call Bof_FloatText(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),"Heart Break")
 call SaveUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A7A19391,LoadUnitHandle(bof_HT,0,StringHash("RemHBt")))
 call SavePlayerHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$48656946,GetOwningPlayer(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
 call SavePlayerHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A895BB39,GetOwningPlayer(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A7A19391)))
@@ -11838,7 +11817,6 @@ else
 set flN=LoadInteger(bof_M9,GetHandleId(flC),$40BC10AC)
 if flN<3 then
 call SaveInteger(bof_M9,GetHandleId(flC),$40BC10AC,flN+1)
-call DisplayTextToPlayer(GetOwningPlayer(flC),0,0,"Four of a Kind, зарядов: "+I2S(flN+1)+"/3")
 endif
 endif
 set flC=null
@@ -11859,13 +11837,11 @@ local effect flE
 local trigger SR
 local timer ST
 if flN<=0 then
-call DisplayTextToPlayer(GetOwningPlayer(flC),0,0,"Four of a Kind: зарядов нет")
 set flC=null
 return
 endif
 set flN=flN-1
 call SaveInteger(bof_M9,flId,$40BC10AC,flN)
-call DisplayTextToPlayer(GetOwningPlayer(flC),0,0,"Four of a Kind, зарядов: "+I2S(flN)+"/3")
 set flCl=CreateUnit(GetOwningPlayer(flC),'hB1W',flX,flY,flA)
 call SaveBoolean(bof_M9,GetHandleId(flCl),$AECF1FC8,true)
 call SetUnitPosition(flCl,flX,flY)
@@ -12043,8 +12019,6 @@ call SaveReal(bof_OI,GetHandleId(ST),$2392447A,LoadReal(bof_OI,GetHandleId(GetTr
 call SaveReal(bof_OI,GetHandleId(ST),$FDF65382,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382))
 call SaveReal(bof_OI,GetHandleId(ST),$B0897302,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$B0897302))
 call TimerStart(ST,.02,true,function Fla_DQC)
-else
-call DisplayTextToPlayer(GetOwningPlayer(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)),0,0,"Клон слишком близко или слишком далеко")
 endif
 else
 call DestroyGroup(LoadGroupHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$1BF14788))
@@ -12060,7 +12034,6 @@ return GetIssuedOrderIdBJ()==851983 and GetUnitTypeId(GetTriggerUnit())=='HFla' 
 endfunction
 function Fla_DQH takes nothing returns nothing
 call SaveBoolean(bof_M9,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$458B7DE9)),$287E74F0,true)
-call DisplayTextToPlayer(GetOwningPlayer(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$458B7DE9)),0,0,"Приказ клонам снова готов")
 call FlushChildHashtable(bof_OI,GetHandleId(GetExpiredTimer()))
 call DestroyTimer(GetExpiredTimer())
 endfunction
@@ -13069,23 +13042,10 @@ function Esc_SunshineOff takes unit u returns nothing
 call Esc_BuffOff(u,"EscSun")
 endfunction
 // подсказка владельцу в ключевые часы — иначе не понять, когда жать G и T
-function Esc_ClockText takes unit u,string clkMsg returns nothing
-local texttag escTag=CreateTextTag()
-call SetTextTagText(escTag,clkMsg,0.024)
-call SetTextTagPosUnit(escTag,u,120.)
-call SetTextTagColor(escTag,255,204,0,255)
-call SetTextTagVelocity(escTag,0.,0.03)
-call SetTextTagPermanent(escTag,false)
-call SetTextTagLifespan(escTag,3.)
-call SetTextTagFadepoint(escTag,2.)
-call SetTextTagVisibility(escTag,GetLocalPlayer()==GetOwningPlayer(u))
-set escTag=null
-endfunction
 function Esc_ClockTick takes unit u returns nothing
 local integer clkId=GetHandleId(u)
 local real clkOld=LoadReal(bof_HT,clkId,SH_EscClock)
 local real clkNew=clkOld+0.01
-local integer clkHour
 if LoadBoolean(bof_HT,clkId,SH_EscClockFrozen) then
 call Esc_PanelUpdate(u,clkOld)
 return
@@ -13095,20 +13055,6 @@ set clkNew=clkNew-24.
 endif
 call SaveReal(bof_HT,clkId,SH_EscClock,clkNew)
 call Esc_PanelUpdate(u,clkNew)
-set clkHour=R2I(clkNew)
-if clkHour!=R2I(clkOld) and IsUnitAliveBJ(u) then
-if clkHour==6 then
-call Esc_ClockText(u,"6:00 — рассвет, сила растёт")
-elseif clkHour==9 then
-call Esc_ClockText(u,"9:00 — доступен The One")
-elseif clkHour==12 then
-call Esc_ClockText(u,"12:00 — полдень")
-elseif clkHour==15 then
-call Esc_ClockText(u,"15:00 — The One недоступен")
-elseif clkHour==18 then
-call Esc_ClockText(u,"18:00 — ночь, доступен Sunshine")
-endif
-endif
 endfunction
 function Bof_xk takes real Wr,location Ws,boolexpr Wt returns group
 local group Ui=CreateGroup()
@@ -13142,33 +13088,6 @@ local location U6=GetUnitLoc(U4)
 call Bof_xw(Uk,U6,U5)
 call RemoveLocation(U6)
 set U6=null
-endfunction
-function Bof_zi takes nothing returns nothing
-local timer Nr=GetExpiredTimer()
-local texttag T8=LoadTextTagHandle(bof_UD,GetHandleId(Nr),SH_t)
-call DestroyTextTag(T8)
-call DestroyTimer(Nr)
-set Nr=null
-set T8=null
-endfunction
-function Bof_zj takes string UH,unit UI,real UJ,real UK,real UL,real UM,real Nr,real UN,real M2,real N1,real UO returns nothing
-local string UQ=UH
-local unit UR=UI
-local real US=UJ
-local real UT=UK
-local real UU=UL
-local real UV=UM
-local real UW=Nr
-local real UX=UN
-local real UY=M2
-local real UZ=N1
-local timer UP=CreateTimer()
-local texttag T8=CreateTextTagUnitBJ(UQ,UR,US,UT,UU,UV,UW,UX)
-call SetTextTagVelocityBJ(GetLastCreatedTextTag(),UY,UZ)
-call TimerStart(UP,UO,false,function Bof_zi)
-call SaveTextTagHandle(bof_UD,GetHandleId(UP),SH_t,T8)
-set UR=null
-set UP=null
 endfunction
 function Bof_z5 takes unit M2,integer UB returns nothing
 local integer Wv=GetUnitAbilityLevel(M2,UB)
@@ -14000,7 +13919,6 @@ call SaveInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$CFDE6C76,SJ)
 call SaveInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$ECE825E7,SJ)
 call SaveUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2,GetTriggerUnit())
 call SavePlayerHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$48656946,GetOwningPlayer(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
-call Bof_zj("Pride Flare",LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),0.,15.,GetRandomPercentageBJ(),GetRandomPercentageBJ(),GetRandomPercentageBJ(),50.,100.,90.,1.)
 call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA,GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
 call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382,GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
 call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2392447A,GetSpellTargetX())
@@ -14159,7 +14077,6 @@ call SaveInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$CFDE6C76,SJ)
 call SaveInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$ECE825E7,SJ)
 call SaveUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2,GetTriggerUnit())
 call SavePlayerHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$48656946,GetOwningPlayer(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
-call Bof_zj("Dust Slash",LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),0.,15.,GetRandomPercentageBJ(),GetRandomPercentageBJ(),GetRandomPercentageBJ(),50.,100.,90.,1.)
 call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA,GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
 call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382,GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
 call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2392447A,GetSpellTargetX())
@@ -14344,7 +14261,6 @@ set SJ=SJ+3
 call SaveInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$CFDE6C76,SJ)
 call SaveInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$ECE825E7,SJ)
 call SaveUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2,GetTriggerUnit())
-call Bof_zj("Cruel Sun",LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),0.,15.,GetRandomPercentageBJ(),GetRandomPercentageBJ(),GetRandomPercentageBJ(),50.,100.,90.,1.)
 call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA,GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
 call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382,GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
 call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2392447A,GetSpellTargetX())
@@ -14603,7 +14519,6 @@ set SJ=SJ+3
 call SaveInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$CFDE6C76,SJ)
 call SaveInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$ECE825E7,SJ)
 call SaveUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2,GetTriggerUnit())
-call Bof_zj("Merciless Sun",LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),0.,15.,GetRandomPercentageBJ(),GetRandomPercentageBJ(),GetRandomPercentageBJ(),50.,100.,90.,1.)
 call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$DB3E3D6,300.)
 call SavePlayerHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$48656946,GetOwningPlayer(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
 call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA,GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
@@ -14839,7 +14754,6 @@ call SaveInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$CFDE6C76,SJ)
 call SaveInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$ECE825E7,SJ)
 call SaveUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2,GetTriggerUnit())
 call SavePlayerHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$48656946,GetOwningPlayer(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
-call Bof_zj("Super slash",LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),0.,15.,GetRandomPercentageBJ(),GetRandomPercentageBJ(),GetRandomPercentageBJ(),50.,100.,90.,1.)
 call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA,GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
 call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382,GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
 call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2392447A,GetSpellTargetX())
@@ -14988,7 +14902,6 @@ call SaveInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$ECE825E7,SJ)
 call SaveUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2,GetTriggerUnit())
 call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6B54C545,Esc_Time(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
 if LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6B54C545)>=9. and LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6B54C545)<=15. then
-call Bof_zj("The One",LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),0.,15.,GetRandomPercentageBJ(),GetRandomPercentageBJ(),GetRandomPercentageBJ(),50.,100.,90.,1.)
 call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA,GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
 call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382,GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
 call SaveEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$321957D9,Bof_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),"bof\\Megumin-1.mdx",LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382)))
@@ -15060,7 +14973,6 @@ call SaveReal(bof_OI,GetHandleId(ST),$38D20A1F,LoadReal(bof_OI,GetHandleId(GetTr
 call TimerStart(ST,.25,true,function Bof_CXb)
 else
 call Bof_z5(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),'EsG1')
-call DisplayTextToPlayer(GetOwningPlayer(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)),0,0,"Можно применять только с 9 до 15 часов!")
 endif
 call FlushChildHashtable(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ)
 set SR=null
@@ -15108,8 +15020,6 @@ set ST=CreateTimer()
 call SaveReal(bof_OI,GetHandleId(ST),$6B54C545,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6B54C545))
 call SaveUnitHandle(bof_OI,GetHandleId(ST),$911D5DC2,LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2))
 call TimerStart(ST,20.,false,function Bof_CXg)
-else
-call DisplayTextToPlayer(GetOwningPlayer(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)),0,0,"Можно применять только с 18 до 6 часов!")
 endif
 call FlushChildHashtable(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ)
 set ST=null
@@ -15222,7 +15132,6 @@ call SaveInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$CFDE6C76,SJ)
 call SaveInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$ECE825E7,SJ)
 call SaveUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2,GetTriggerUnit())
 call SavePlayerHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$48656946,GetOwningPlayer(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
-call Bof_zj("Divine Sword Escanor",LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),0.,15.,GetRandomPercentageBJ(),GetRandomPercentageBJ(),GetRandomPercentageBJ(),50.,100.,90.,1.)
 call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA,GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
 call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382,GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
 call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2392447A,GetSpellTargetX())
