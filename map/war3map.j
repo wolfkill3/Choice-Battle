@@ -6970,45 +6970,45 @@ endfunction
 // ===== конец библиотеки bof =====
 //BofLibEnd
 //Remilia1start
-// интеллект для урона кнопки D: урон bof x (0.028);
+// интеллект для урона кнопки D: урон bof x (0.035), бафф 28 сен (было 0.028);
 // x1000, чтобы не терять дробь в целом (в Bof_Dmg урон делится обратно на 1000)
 function Rem_Int_D takes unit u,boolean b returns integer
-return R2I(I2R(GetHeroInt(u,b))*(0.028)*1000.+0.5)
+return R2I(I2R(GetHeroInt(u,b))*(0.035)*1000.+0.5)
 endfunction
-// интеллект для урона кнопки E: урон bof x (0.014 + 0.003 x уровень);
+// интеллект для урона кнопки E: урон bof x (0.018 + 0.004 x уровень), бафф 28 сен (было 0.014 + 0.003);
 // x1000, чтобы не терять дробь в целом (в Bof_Dmg урон делится обратно на 1000)
 function Rem_Int_E takes unit u,boolean b returns integer
-return R2I(I2R(GetHeroInt(u,b))*(0.014+0.003*I2R(GetUnitAbilityLevel(u,'RmE1')))*1000.+0.5)
+return R2I(I2R(GetHeroInt(u,b))*(0.018+0.004*I2R(GetUnitAbilityLevel(u,'RmE1')))*1000.+0.5)
 endfunction
 // интеллект для урона кнопки G: урон bof x (0.02);
 // x1000, чтобы не терять дробь в целом (в Bof_Dmg урон делится обратно на 1000)
 function Rem_Int_G takes unit u,boolean b returns integer
 return R2I(I2R(GetHeroInt(u,b))*(0.02)*1000.+0.5)
 endfunction
-// интеллект для урона кнопки Q: урон bof x (0.018 + 0.004 x уровень);
+// интеллект для урона кнопки Q: урон bof x (0.0225 + 0.005 x уровень), бафф 28 сен (было 0.018 + 0.004);
 // x1000, чтобы не терять дробь в целом (в Bof_Dmg урон делится обратно на 1000)
 function Rem_Int_Q takes unit u,boolean b returns integer
-return R2I(I2R(GetHeroInt(u,b))*(0.018+0.004*I2R(GetUnitAbilityLevel(u,'RmQ1')))*1000.+0.5)
+return R2I(I2R(GetHeroInt(u,b))*(0.0225+0.005*I2R(GetUnitAbilityLevel(u,'RmQ1')))*1000.+0.5)
 endfunction
-// интеллект для урона кнопки Q2: урон bof x (0.035);
+// интеллект для урона кнопки Q2: урон bof x (0.044), бафф 28 сен (было 0.035);
 // x1000, чтобы не терять дробь в целом (в Bof_Dmg урон делится обратно на 1000)
 function Rem_Int_Q2 takes unit u,boolean b returns integer
-return R2I(I2R(GetHeroInt(u,b))*(0.035)*1000.+0.5)
+return R2I(I2R(GetHeroInt(u,b))*(0.044)*1000.+0.5)
 endfunction
-// интеллект для урона кнопки R: урон bof x (0.01 + 0.002 x уровень);
+// интеллект для урона кнопки R: урон bof x (0.0125 + 0.0025 x уровень), бафф 28 сен (было 0.01 + 0.002);
 // x1000, чтобы не терять дробь в целом (в Bof_Dmg урон делится обратно на 1000)
 function Rem_Int_R takes unit u,boolean b returns integer
-return R2I(I2R(GetHeroInt(u,b))*(0.01+0.002*I2R(GetUnitAbilityLevel(u,'RmR1')))*1000.+0.5)
+return R2I(I2R(GetHeroInt(u,b))*(0.0125+0.0025*I2R(GetUnitAbilityLevel(u,'RmR1')))*1000.+0.5)
 endfunction
-// интеллект для урона кнопки W: урон bof x (0.014 + 0.003 x уровень);
+// интеллект для урона кнопки W: урон bof x (0.018 + 0.004 x уровень), бафф 28 сен (было 0.014 + 0.003);
 // x1000, чтобы не терять дробь в целом (в Bof_Dmg урон делится обратно на 1000)
 function Rem_Int_W takes unit u,boolean b returns integer
-return R2I(I2R(GetHeroInt(u,b))*(0.014+0.003*I2R(GetUnitAbilityLevel(u,'RmW1')))*1000.+0.5)
+return R2I(I2R(GetHeroInt(u,b))*(0.018+0.004*I2R(GetUnitAbilityLevel(u,'RmW1')))*1000.+0.5)
 endfunction
-// интеллект для урона кнопки atk: урон bof x (0.0075);
+// интеллект для урона кнопки atk: урон bof x (0.0095), бафф 28 сен (было 0.0075);
 // x1000, чтобы не терять дробь в целом (в Bof_Dmg урон делится обратно на 1000)
 function Rem_Int_atk takes unit u,boolean b returns integer
-return R2I(I2R(GetHeroInt(u,b))*(0.0075)*1000.+0.5)
+return R2I(I2R(GetHeroInt(u,b))*(0.0095)*1000.+0.5)
 endfunction
 // ===== Ремилия: своё вместо общего кода bof (до функций героя) =====
 // R «Spear the Gungnir»: у bof на 4-м нажатии кнопка становилась «по цели» (уровень 3), 5-е бросало
@@ -7080,6 +7080,23 @@ set vhCap=R2I((GetUnitState(u,UNIT_STATE_MAX_LIFE)-I2R(LoadInteger(bof_HT,vhId,S
 call SaveInteger(bof_M9,vhId,$E90DB670,IMinBJ(vhCap,LoadInteger(bof_M9,vhId,$E90DB670)+R2I(vhA-vhMiss)))
 call Bof_xa(u,0,2,LoadInteger(bof_M9,vhId,$410023C4)+LoadInteger(bof_M9,vhId,$E90DB670))
 endif
+endfunction
+// F «Scarlet Netherworld» (владелец 28 сен): в кровавом озере другие кнопки недоступны, выйти
+// можно только повторным F (RmF2). b=true — прячем кнопки на время F, false — возвращаем.
+// Q возвращаем, только если сейчас не висит вторая кнопка Q2 (её вернёт Rem_DMv по таймеру).
+function Rem_FLock takes unit u,boolean b returns nothing
+local player flP=GetOwningPlayer(u)
+call SetPlayerAbilityAvailable(flP,'RmQ2',not b)
+call SetPlayerAbilityAvailable(flP,'RmW1',not b)
+call SetPlayerAbilityAvailable(flP,'RmE1',not b)
+call SetPlayerAbilityAvailable(flP,'RmR1',not b)
+call SetPlayerAbilityAvailable(flP,'RmT1',not b)
+call SetPlayerAbilityAvailable(flP,'RmD1',not b)
+call SetPlayerAbilityAvailable(flP,'RmG1',not b)
+if b or GetUnitAbilityLevel(u,'RmQ2')==0 then
+call SetPlayerAbilityAvailable(flP,'RmQ1',not b)
+endif
+set flP=null
 endfunction
 function Rem_t9 takes unit M2,integer Y5,integer Y6,real VE returns boolean
 return Bof_EXSetAbilityState(GetUnitAbility(M2,Y5),Y6,VE)
@@ -7352,7 +7369,10 @@ call DestroyTimer(GetExpiredTimer())
 endfunction
 function Rem_DMv takes nothing returns nothing
 call UnitRemoveAbility(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),'RmQ2')
+// в F кнопки спрятаны — Q вернёт Rem_FLock на выходе из F
+if not LoadBoolean(bof_M9,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),$4D51B8B7) then
 call SetPlayerAbilityAvailable(GetOwningPlayer(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),'RmQ1',true)
+endif
 call SaveUnitHandle(bof_M9,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),$7960C77A,null)
 call FlushChildHashtable(bof_OI,GetHandleId(GetExpiredTimer()))
 call DestroyTimer(GetExpiredTimer())
@@ -7418,7 +7438,7 @@ call SaveUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867,bl_TG)
 call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$F1DDA59B,GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867)))
 call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$38D20A1F,GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867)))
 call Bof_Dmg(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867),(I2R(Rem_Int_Q(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),true))*20.*1.)*0.001)
-call SetControlToUnit(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867),2.,"stun")
+call SetControlToUnit(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867),1.,"stun")
 else
 endif
 endloop
@@ -7653,7 +7673,7 @@ call SaveUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$9B1A6867,bl_T
 call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$F1DDA59B,GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$9B1A6867)))
 call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$38D20A1F,GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$9B1A6867)))
 call Bof_Dmg(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$9B1A6867),(I2R(Rem_Int_Q2(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),true))*80.*1.)*0.001)
-call SetControlToUnit(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$9B1A6867),3.,"stun")
+call SetControlToUnit(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$9B1A6867),1.5,"stun")
 else
 endif
 endloop
@@ -7743,7 +7763,7 @@ call UnitRemoveAbility(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1
 call GroupAddUnit(bof_RU,LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867))
 call SaveReal(bof_M9,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867)),$3224C2A2,2.)
 call SaveReal(bof_M9,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867)),$38344552,20.)
-call SetControlToUnit(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867),2.,"stun")
+call SetControlToUnit(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867),1.,"stun")
 else
 endif
 endloop
@@ -7982,7 +8002,7 @@ call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6E
 call Bof_EXSetEffectSize(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),1.)
 call Bof_zU(0.,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE))
 call Bof_Dmg(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867),(I2R(Rem_Int_E(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),true))*25.*1.)*0.001)
-call SetControlToUnit(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867),2.,"stun")
+call SetControlToUnit(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867),1.,"stun")
 else
 endif
 endloop
@@ -8455,7 +8475,7 @@ call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$F1DDA59B,LoadReal(bof_OI,Ge
 call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$38D20A1F,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$38D20A1F)+15.*SinBJ(LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2D345649)))
 call Bof_Dmg(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867),(I2R(Rem_Int_D(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),true))*3.*1.)*0.001)
 call DestroyEffect(AddSpecialEffectTarget("bof\\Scarlet-52.mdx",LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867),"chest"))
-call SetControlToUnit(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867),1.5,"stun")
+call SetControlToUnit(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867),.5,"stun")
 set SR=null
 endfunction
 function Rem_DNb takes nothing returns nothing
@@ -8594,9 +8614,12 @@ call FlushChildHashtable(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ)
 set SR=null
 set ST=null
 endfunction
+// Выход из F раньше: только кнопкой RmF2 (раньше F обрывало любое заклинание). Триггер здесь не
+// уничтожаем — его уничтожает таймер F на выходе (раньше уничтожался дважды).
 function Rem_DNh takes nothing returns nothing
+if GetSpellAbilityId()=='RmF2' then
 call SaveBoolean(bof_M9,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger()),$911D5DC2)),$4D51B8B7,false)
-call DestroyTrigger(LoadTriggerHandle(bof_OI,GetHandleId(GetTriggeringTrigger()),$55017ACF))
+endif
 endfunction
 function Rem_DNi takes nothing returns nothing
 call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$2B0A6845,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2B0A6845)+.05)
@@ -8621,6 +8644,7 @@ else
 call UnitRemoveAbility(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),'RmF2')
 call SaveBoolean(bof_M9,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),$4D51B8B7,false)
 call SetPlayerAbilityAvailable(GetOwningPlayer(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),'RmF1',true)
+call Rem_FLock(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),false)
 call SetUnitInvulnerable(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),false)
 call DestroyTrigger(LoadTriggerHandle(bof_OI,GetHandleId(GetExpiredTimer()),$55017ACF))
 call FlushChildHashtable(bof_OI,GetHandleId(GetExpiredTimer()))
@@ -8630,6 +8654,7 @@ else
 call SaveBoolean(bof_M9,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),$4D51B8B7,false)
 call UnitRemoveAbility(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),'RmF2')
 call SetPlayerAbilityAvailable(GetOwningPlayer(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),'RmF1',true)
+call Rem_FLock(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),false)
 call SetUnitInvulnerable(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),false)
 call DestroyTrigger(LoadTriggerHandle(bof_OI,GetHandleId(GetExpiredTimer()),$55017ACF))
 call FlushChildHashtable(bof_OI,GetHandleId(GetExpiredTimer()))
@@ -8666,6 +8691,7 @@ call Rem_BBn("bof\\war3mapImported\\RemiliaScarlet-F-YY1.mp3",100)
 call SaveBoolean(bof_M9,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)),$4D51B8B7,true)
 call UnitAddAbility(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),'RmF2')
 call SetPlayerAbilityAvailable(GetOwningPlayer(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)),'RmF1',false)
+call Rem_FLock(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),true)
 call SetUnitInvulnerable(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),true)
 call SaveTriggerHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$55017ACF,CreateTrigger())
 set SR=LoadTriggerHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$55017ACF)
@@ -9311,7 +9337,7 @@ call GroupRemoveUnit(TF,bl_TG)
 if Condition_Base(GetOwningPlayer(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),bl_TG) and true and true then
 call SaveUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867,bl_TG)
 call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$5E376BA0,GetUnitState(bl_TG,UNIT_STATE_MAX_MANA))
-call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$AFE79ADE,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$5E376BA0)*.03)
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$AFE79ADE,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$5E376BA0)*.01)
 call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$C93E0FA1,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$C93E0FA1)+LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$AFE79ADE))
 call SetUnitManaBJ(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867),GetUnitState(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867),UNIT_STATE_MANA)-LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$AFE79ADE))
 if GetUnitState(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867),UNIT_STATE_MANA)<GetUnitState(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867),UNIT_STATE_MAX_MANA)*.2 then
@@ -9519,7 +9545,7 @@ call TimerStart(ST,.6,false,function Rem_DOD)
 call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$6DD3A3AB,GetUnitState(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391),UNIT_STATE_MAX_LIFE)*.2)
 call Bof_Dmg(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$6DD3A3AB))
 call Bof_Heal(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$6DD3A3AB))
-call SetControlToUnit(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391),3.,"stun")
+call SetControlToUnit(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391),1.5,"stun")
 else
 endif
 if LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$6B54C545)==.8 then
