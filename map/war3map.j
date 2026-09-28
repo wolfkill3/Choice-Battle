@@ -11644,6 +11644,26 @@ call CameraClearNoiseForPlayer(LoadPlayerHandle(bof_OI,GetHandleId(GetExpiredTim
 call FlushChildHashtable(bof_OI,GetHandleId(GetExpiredTimer()))
 call DestroyTimer(GetExpiredTimer())
 endfunction
+// F «And Then Will There Be None?» (владелец 28 сен): пока идёт, остальные кнопки недоступны.
+// b=true — прячем, false — возвращаем. Первые стадии W/G возвращаем, только если сейчас не висит
+// вторая (её вернёт Bof_SwapStage_End по таймеру).
+function Fla_FLock takes unit u,boolean b returns nothing
+local player flP=GetOwningPlayer(u)
+call SetPlayerAbilityAvailable(flP,'FlQ1',not b)
+call SetPlayerAbilityAvailable(flP,'FlE1',not b)
+call SetPlayerAbilityAvailable(flP,'FlR1',not b)
+call SetPlayerAbilityAvailable(flP,'FlT1',not b)
+call SetPlayerAbilityAvailable(flP,'FlD1',not b)
+call SetPlayerAbilityAvailable(flP,'FlW2',not b)
+call SetPlayerAbilityAvailable(flP,'FlG2',not b)
+if b or GetUnitAbilityLevel(u,'FlW2')==0 then
+call SetPlayerAbilityAvailable(flP,'FlW1',not b)
+endif
+if b or GetUnitAbilityLevel(u,'FlG2')==0 then
+call SetPlayerAbilityAvailable(flP,'FlG1',not b)
+endif
+set flP=null
+endfunction
 function Fla_DPo takes nothing returns nothing
 // F Фландре, финал — сам в конце 6 c там, где стоит Фландре (у bof — кнопка на курсоре-дамми,
 // курсора больше нет). Эффекты, звук, тряска экрана, урон и оглушение по 600 — как у bof.
@@ -11709,6 +11729,7 @@ call SaveReal(bof_OI,flK,$2B0A6845,flTime)
 call SaveInteger(bof_OI,flK,$8B1FFFFC,flN)
 if flTime<=3. and IsUnitAliveBJ(flC) then
 if flN==1 or ModuloInteger(flN-1,15)==0 then
+call Fla_FLock(flC,true)
 set flE=Bof_AddEffV(flC,"bof\\Scarlet-4.mdx",flX,flY)
 call Bof_EXSetEffectZ(flE,GetUnitFlyHeight(flC))
 call Bof_zU(0.,flE)
@@ -11734,6 +11755,7 @@ else
 if IsUnitAliveBJ(flC) then
 call Fla_DPo()
 endif
+call Fla_FLock(flC,false)
 call SetUnitInvulnerable(flC,false)
 call FlushChildHashtable(bof_OI,flK)
 call DestroyTimer(GetExpiredTimer())
@@ -11756,6 +11778,7 @@ local real flY=GetUnitY(flC)
 local effect flE
 local timer ST
 call SetUnitInvulnerable(flC,true)
+call Fla_FLock(flC,true)
 // круг и столб на месте каста (6 c, как у bof)
 set flE=Bof_AddEffV(flC,"bof\\Scarlet-83.mdx",flX,flY)
 call Bof_EXSetEffectZ(flE,25.)
@@ -12388,7 +12411,6 @@ endfunction
 function Fla_W2_Act takes nothing returns nothing
 local timer ST
 local integer SJ=LoadInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$CFDE6C76)
-call Bof_SwapBack(GetTriggerUnit(),'FlW1','FlW2')
 set SJ=SJ+3
 call SaveInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$CFDE6C76,SJ)
 call SaveInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$ECE825E7,SJ)
@@ -12425,6 +12447,8 @@ call SaveReal(bof_OI,GetHandleId(ST),$41713DA3,LoadReal(bof_OI,GetHandleId(GetTr
 call SaveReal(bof_OI,GetHandleId(ST),$FDF65382,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382))
 call SaveReal(bof_OI,GetHandleId(ST),$71CA3531,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$71CA3531))
 call TimerStart(ST,.02,true,function Fla_DQS)
+// снять вторую стадию — только после чтения цели каста (до этого она пропадала)
+call Bof_SwapBack(GetTriggerUnit(),'FlW1','FlW2')
 call FlushChildHashtable(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ)
 set ST=null
 endfunction
@@ -12520,7 +12544,6 @@ endfunction
 function Fla_G2_Act takes nothing returns nothing
 local timer ST
 local integer SJ=LoadInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$CFDE6C76)
-call Bof_SwapBack(GetTriggerUnit(),'FlG1','FlG2')
 set SJ=SJ+3
 call SaveInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$CFDE6C76,SJ)
 call SaveInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$ECE825E7,SJ)
@@ -12569,6 +12592,8 @@ call SaveUnitHandle(bof_OI,GetHandleId(ST),$A7A19391,LoadUnitHandle(bof_OI,GetHa
 call SaveReal(bof_OI,GetHandleId(ST),$B259B269,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$B259B269))
 call SaveEffectHandle(bof_OI,GetHandleId(ST),$6EAE13FE,LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE))
 call TimerStart(ST,.02,true,function Fla_DQX)
+// снять вторую стадию — только после чтения цели каста (до этого она пропадала)
+call Bof_SwapBack(GetTriggerUnit(),'FlG1','FlG2')
 call FlushChildHashtable(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ)
 set ST=null
 endfunction
