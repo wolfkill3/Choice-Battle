@@ -7194,7 +7194,7 @@ function Condition_RecipeString takes integer id returns boolean
 return id=='I00E' or id=='I01P' or id=='I01R' or id=='I01T' or id=='I01V' or id=='I02U' or id=='I02X' or id=='I02Z' or id=='I045' or id=='I047' or id=='I04Y' or id=='I04U' or id=='I04X' or id=='I04Z' or id=='I051' or id=='I14R' or id=='IGDr' or id=='IPar' or id=='IHYr' or id=='ISTr' or id=='IBSR' or id=='I052' or id=='I053' or id=='I055' or id=='I06P' or id=='I06S' or id=='I06T' or id=='IPRR' or id=='IPlR' or id=='IBS1' or id=='IYM0' or id=='IGn0' or id=='IBN0' or id=='IGP0' or id=='IVS0' or id=='ISS0' or id=='ITS0'
 endfunction
 function Condition_AbilityString3 takes integer id returns boolean
-return id=='OM13' or id=='A17D' or id=='A177' or id=='A172' or id=='A16U' or id=='A0TN'  or id=='MrF1' or id=='MrT1' or id=='MrG2' or id=='RsT1' or id=='RsF1' or id=='SiF1' or id=='SiF2' or id=='SiE1' or id=='SiE2' or id=='BbT1' or id=='FlW1' or id=='FlG1' or id=='RmQ1' or id=='RmF1'
+return id=='OM13' or id=='A17D' or id=='A177' or id=='A172' or id=='A16U' or id=='A0TN'  or id=='MrF1' or id=='MrT1' or id=='MrG2' or id=='RsT1' or id=='RsF1' or id=='SiF1' or id=='SiF2' or id=='SiE1' or id=='SiE2' or id=='BbT1' or id=='FlW1' or id=='FlG1' or id=='RmQ1'
 endfunction
 function Condition_AbilityString2 takes integer id returns boolean
 return id=='A0YX' or id=='A0Z0' or id=='KkR1' or id=='KkR2' or id=='BRRS' or id=='BRSS' or id=='IcF2' or id=='IcF5' or id=='GKF1' or id=='VGF1' or id=='GKG1' or id=='GKBS' or id=='GKSS' or id=='GKS2' or id=='GKS3' or id=='GKS4' or id=='GKSR' or id=='GKSB' or id=='GKUI' or id=='GKMI' or id=='GKQ1' or id=='GKW1' or id=='GKE1' or id=='GKT1' or id=='JNF1' or id=='JNF4' or id=='GSQ1' or id=='GSQ2' or id=='GSE1' or id=='GSE2' or id=='GST1' or id=='GST3' or id=='GSF1' or id=='GSF2' or id=='GSF2'
@@ -23337,34 +23337,6 @@ function OnButtonAddonAbility takes nothing returns nothing
                     set j=j+1
                 endloop                        
                 call AddFrameText( GetFrameByName("TavernAbilityTooltipText",i), "\n\n"+GetAbilityBaseStringFieldById( 'RmQ1', ABILITY_SF_NAME )+", (|cffffcc00"+IntToChar(GetAbilityBaseIntegerFieldById( 'RmQ1', ABILITY_IF_BUTTON_HOTKEY_RESEARCH ))+"|r)\n\n"+GetAbilityBaseStringFieldById( 'RmQ1', ABILITY_SLF_TOOLTIP_LEARN_EXTENDED ))
-                call SetFrameSize( GetFrameByName("TavernAbilityTooltip",i), .26, GetFrameHeight( GetFrameByName("TavernAbilityTooltipText",i))+0.03)
-            elseif GetFrameTexture(but,0)==GetAbilityBaseStringFieldById('RmF1',ABILITY_SF_ICON_NORMAL) and i==GetFrameContext(but) then
-                call SetFrameText( GetFrameByName("TavernAbilityTooltipText",i), "     " )
-                call SetFrameTexture( GetFrameByName("TavernAbility",i), GetAbilityBaseStringFieldById( 'RmF2', ABILITY_SF_ICON_NORMAL ), 0, true )
-                call SetFrameTexture( GetFrameByName("TavernAbility",i), GetAbilityBaseStringFieldById( 'RmF2', ABILITY_SF_ICON_NORMAL ), 1, true )
-                call SetFrameTexture( GetFrameByName("TavernAbility",i), GetAbilityBaseStringFieldById( 'RmF2', ABILITY_SF_ICON_NORMAL ), 2, true )
-                set j=0
-                loop
-                    call AddFrameText( GetFrameByName("TavernAbilityTooltipText",i), "|cffffcc00"+I2S(GetAbilityBaseIntegerLevelFieldById( 'RmF2', ABILITY_ILF_MANA_COST, j ))+"|r")
-                    exitwhen j==GetAbilityBaseIntegerFieldById('RmF2', ABILITY_IF_LEVELS)-1
-                    call AddFrameText( GetFrameByName("TavernAbilityTooltipText",i), "/")
-                    set j=j+1
-                endloop                        
-                call AddFrameText( GetFrameByName("TavernAbilityTooltipText",i), "\n\n"+GetAbilityBaseStringFieldById( 'RmF2', ABILITY_SF_NAME )+", (|cffffcc00"+IntToChar(GetAbilityBaseIntegerFieldById( 'RmF2', ABILITY_IF_BUTTON_HOTKEY_NORMAL ))+"|r)\n\n"+GetAbilityBaseStringFieldById( 'RmF2', ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED ))
-                call SetFrameSize( GetFrameByName("TavernAbilityTooltip",i), .26, GetFrameHeight( GetFrameByName("TavernAbilityTooltipText",i))+0.03)
-            elseif GetFrameTexture(but,0)==GetAbilityBaseStringFieldById('RmF2',ABILITY_SF_ICON_NORMAL) and i==GetFrameContext(but) then
-                call SetFrameText( GetFrameByName("TavernAbilityTooltipText",i), "     " )
-                call SetFrameTexture( GetFrameByName("TavernAbility",i), GetAbilityBaseStringFieldById( 'RmF1', ABILITY_SF_ICON_NORMAL ), 0, true )
-                call SetFrameTexture( GetFrameByName("TavernAbility",i), GetAbilityBaseStringFieldById( 'RmF1', ABILITY_SF_ICON_NORMAL ), 1, true )
-                call SetFrameTexture( GetFrameByName("TavernAbility",i), GetAbilityBaseStringFieldById( 'RmF1', ABILITY_SF_ICON_NORMAL ), 2, true )
-                set j=0
-                loop
-                    call AddFrameText( GetFrameByName("TavernAbilityTooltipText",i), "|cffffcc00"+I2S(GetAbilityBaseIntegerLevelFieldById( 'RmF1', ABILITY_ILF_MANA_COST, j ))+"|r")
-                    exitwhen j==GetAbilityBaseIntegerFieldById('RmF1', ABILITY_IF_LEVELS)-1
-                    call AddFrameText( GetFrameByName("TavernAbilityTooltipText",i), "/")
-                    set j=j+1
-                endloop                        
-                call AddFrameText( GetFrameByName("TavernAbilityTooltipText",i), "\n\n"+GetAbilityBaseStringFieldById( 'RmF1', ABILITY_SF_NAME )+", (|cffffcc00"+IntToChar(GetAbilityBaseIntegerFieldById( 'RmF1', ABILITY_IF_BUTTON_HOTKEY_NORMAL ))+"|r)\n\n"+GetAbilityBaseStringFieldById( 'RmF1', ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED ))
                 call SetFrameSize( GetFrameByName("TavernAbilityTooltip",i), .26, GetFrameHeight( GetFrameByName("TavernAbilityTooltipText",i))+0.03)
             endif
 
@@ -69005,6 +68977,7 @@ exitwhen E==null
 endloop
 call RemoveSavedReal(h,GetHandleId(Hero[ip]),SH_IMR)
 call RemoveSavedReal(h,GetHandleId(Hero[ip]),SH_IMR+1)
+
 call PauseTimer(t)
 call DestroyGroup(g)
 call DestroyTimer(t)
@@ -69054,7 +69027,7 @@ call SaveReal(h,GetHandleId(Hero[ip]),SH_MCF+1,y)
 call SaveReal(h,id,5,x)
 call SaveReal(h,id,6,y)
 call SaveGroupHandle(h,id,4,g)
-set soundplay=CreateSound("Sound\\Music\\mp3Music\\MukuroKambioForma.wav",false,false,true,12700,12700,"")
+set soundplay=CreateSound("Sound\\Music\\mp3Music\\Mukuro R.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
 call KillSoundWhenDone(soundplay)
 call TimerStart(t,0.15,true,function MCFCast2)
@@ -69619,11 +69592,354 @@ call TriggerAddAction(t,function CastIFW)
 call TriggerAddCondition(t,Condition(function CondIFW))
 set t=null
 endfunction
+// /MukuroCambioStart
+// Cambio Forma Version X (MkCX), same structure as MCFCast/MCFCast2: a timer per cast, data in h under the timer.
+// The hero keeps a link to that timer under StringHash("CambioX") (like StringHash("FMc") for other heroes).
+// The form is active while Mukuro has the +100 MS ability MkMS.
+// Q/W/E of the 6 Realms, index k: Realm = k/3, slot = k-(k/3)*3 (0 Q, 1 W, 2 E)
+function CambioXAbil takes integer k returns integer
+if k==0 then
+return 'A0A3'
+elseif k==1 then
+return 'A01E'
+elseif k==2 then
+return 'A0A6'
+elseif k==3 then
+return 'A0AN'
+elseif k==4 then
+return 'A0AM'
+elseif k==5 then
+return 'A0AO'
+elseif k==6 then
+return 'A0AP'
+elseif k==7 then
+return 'A0AQ'
+elseif k==8 then
+return 'A0AS'
+elseif k==9 then
+return 'A0AZ'
+elseif k==10 then
+return 'A0B0'
+elseif k==11 then
+return 'A0B1'
+elseif k==12 then
+return 'A0B2'
+elseif k==13 then
+return 'A0B3'
+elseif k==14 then
+return 'A0B4'
+elseif k==15 then
+return 'A0B6'
+elseif k==16 then
+return 'A0B7'
+elseif k==17 then
+return 'A02K'
+endif
+return 0
+endfunction
+// during the form every Realm Q/W/E keeps its own cooldown (key = ability code: end time, -code: full cooldown)
+function CambioXRestoreCD takes unit u returns nothing
+local timer t=LoadTimerHandle(h,GetHandleId(u),StringHash("CambioX"))
+local integer id
+local integer k=0
+local integer aid
+local ability ab
+local real rem
+if GetUnitAbilityLevel(u,'MkMS')==0 or t==null then
+set t=null
+return
+endif
+set id=GetHandleId(t)
+loop
+exitwhen k>=18
+set aid=CambioXAbil(k)
+set ab=GetUnitAbility(u,aid)
+if ab!=null then
+set rem=0.0
+if HaveSavedReal(h,id,aid) then
+set rem=LoadReal(h,id,aid)-LoadReal(h,id,2)
+endif
+if rem>0.01 then
+call StartAbilityCooldown(ab,RMaxBJ(LoadReal(h,id,-aid),rem))
+call SetAbilityRemainingCooldown(ab,rem)
+elseif IsAbilityOnCooldown(ab) then
+call SetAbilityRemainingCooldown(ab,0.0)
+endif
+endif
+set k=k+1
+endloop
+set t=null
+set ab=null
+endfunction
+// called from InstantSpell_Action (SPELL_CAST), like SasukeF_Cast / VergilD_Tricker; returns true when the cast is refused
+// Q/W/E: each of Q, W, E at most 2 times per form, on two different Realms; mana cost x2
+function CambioXCastCheck takes unit u, integer aid returns boolean
+local timer t=LoadTimerHandle(h,GetHandleId(u),StringHash("CambioX"))
+local integer id
+local integer k=0
+local integer slot
+local integer cnt
+local integer j
+local integer other
+local integer cost=0
+local real cd
+local ability ab
+if aid=='MkCX' then
+call IssueImmediateOrder(u,"stop")
+set t=null
+return true
+endif
+loop
+exitwhen k>=18 or CambioXAbil(k)==aid
+set k=k+1
+endloop
+if k>=18 or t==null then
+set t=null
+return false
+endif
+set id=GetHandleId(t)
+set slot=k-(k/3)*3
+set cnt=LoadInteger(h,id,50+slot)
+set ab=GetUnitAbility(u,aid)
+if ab!=null then
+set cost=GetAbilityIntegerLevelField(ab,ABILITY_ILF_MANA_COST,GetUnitAbilityLevel(u,aid)-1)
+endif
+if cnt>=2 or (cnt==1 and LoadInteger(h,id,55+slot)==k/3) then
+call IssueImmediateOrder(u,"stop")
+call DisplayTimedTextToPlayer(GetOwningPlayer(u),0,0,3,"|cffffcc00Cambio Forma: Q, W and E - at most 2 times each, on two different Paths.|r")
+set t=null
+set ab=null
+return true
+endif
+if GetUnitState(u,UNIT_STATE_MANA)<2*cost then
+call IssueImmediateOrder(u,"stop")
+call DisplayTimedTextToPlayer(GetOwningPlayer(u),0,0,3,"|cffffcc00Cambio Forma: not enough mana (Q/W/E cost x2).|r")
+set t=null
+set ab=null
+return true
+endif
+// allowed: count it and take the second half of the doubled cost (the game takes the normal cost)
+set cnt=cnt+1
+call SaveInteger(h,id,50+slot,cnt)
+if cnt==1 then
+call SaveInteger(h,id,55+slot,k/3)
+endif
+call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-cost)
+// second use: this Q (W, E) of every other Realm goes on its own cooldown; running cooldowns are kept
+if cnt>=2 then
+set j=slot
+loop
+exitwhen j>=18
+set other=CambioXAbil(j)
+if other!=aid and GetUnitAbility(u,other)==null then
+set cd=GetAbilityBaseRealLevelFieldById(other,ABILITY_RLF_COOLDOWN,IMaxBJ(GetUnitAbilityLevel(u,aid),1)-1)
+if cd>0.01 and (not HaveSavedReal(h,id,other) or LoadReal(h,id,other)<=LoadReal(h,id,2)) then
+call SaveReal(h,id,other,LoadReal(h,id,2)+cd)
+call SaveReal(h,id,-other,cd)
+endif
+endif
+set j=j+3
+endloop
+endif
+set t=null
+set ab=null
+return false
+endfunction
+function CambioXCast2 takes nothing returns nothing
+local timer t=GetExpiredTimer()
+local integer id=GetHandleId(t)
+local unit u=LoadUnitHandle(h,id,0)
+local real time=LoadReal(h,id,1)
+local unit cxDum=LoadUnitHandle(h,id,3)
+local fogmodifier fm
+local ability ab
+// the form time runs only while Mukuro himself is not paused
+if u!=null and GetUnitTypeId(u)!=0 and not IsUnitPaused(u) then
+set time=time-0.05
+call SaveReal(h,id,1,time)
+endif
+if u!=null and GetUnitTypeId(u)!=0 and not IsUnitType(u,UNIT_TYPE_DEAD) and GetWidgetLife(u)>0.405 and time>0.0 then
+call SaveReal(h,id,2,LoadReal(h,id,2)+0.05)
+// the link on the hero is rewritten every tick: MCFCast2 (R) flushes the hero's data in h when it ends
+call SaveTimerHandle(h,GetHandleId(u),StringHash("CambioX"),t)
+if LoadBoolean(h,id,5) then
+call SaveBoolean(h,id,5,false)
+call CambioXRestoreCD(u)
+endif
+// vision 3000 for Mukuro's player only (not through shared vision), moved every 0.1 s
+if LoadInteger(h,id,6)>=1 then
+call SaveInteger(h,id,6,0)
+set fm=CreateFogModifierRadius(GetOwningPlayer(u),FOG_OF_WAR_VISIBLE,GetUnitX(u),GetUnitY(u),3000.0,false,false)
+call FogModifierStart(fm)
+if LoadFogModifierHandle(h,id,4)!=null then
+call FogModifierStop(LoadFogModifierHandle(h,id,4))
+call DestroyFogModifier(LoadFogModifierHandle(h,id,4))
+endif
+call SaveFogModifierHandle(h,id,4,fm)
+else
+call SaveInteger(h,id,6,1)
+endif
+if GetUnitAbilityLevel(u,'MkMS')==0 then
+call UnitAddAbility(u,'MkMS')
+call UnitMakeAbilityPermanent(u,true,'MkMS')
+endif
+// detection 3000: Neutral Passive dummy (Neutral Passive vision is shared only with Mukuro's player)
+if cxDum==null or GetUnitTypeId(cxDum)==0 or GetUnitAbilityLevel(cxDum,'MkDT')==0 then
+if cxDum!=null then
+call RemoveUnit(cxDum)
+endif
+set cxDum=CreateUnit(Player(PLAYER_NEUTRAL_PASSIVE),'dumm',GetUnitX(u),GetUnitY(u),0)
+call UnitAddAbility(cxDum,'MkDT')
+call SaveUnitHandle(h,id,3,cxDum)
+endif
+call SetUnitX(cxDum,GetUnitX(u))
+call SetUnitY(cxDum,GetUnitY(u))
+else
+// end of the form (time is over or Mukuro died)
+set fm=LoadFogModifierHandle(h,id,4)
+if fm!=null then
+call FogModifierStop(fm)
+call DestroyFogModifier(fm)
+endif
+if cxDum!=null then
+call RemoveUnit(cxDum)
+endif
+call SetPlayerAlliance(Player(PLAYER_NEUTRAL_PASSIVE),Player(LoadInteger(h,id,11)),ALLIANCE_SHARED_VISION,LoadBoolean(h,id,7))
+call RemoveEffect(LoadEffectHandle(h,id,8),0.0,false,CreateTimer())
+call RemoveEffect(LoadEffectHandle(h,id,9),0.0,false,CreateTimer())
+if u!=null and GetUnitTypeId(u)!=0 then
+call UnitRemoveAbility(u,'MkMS')
+call RemoveSavedHandle(h,GetHandleId(u),StringHash("CambioX"))
+endif
+call PauseTimer(t)
+call FlushChildHashtable(h,id)
+call DestroyTimer(t)
+endif
+set t=null
+set u=null
+set cxDum=null
+set fm=null
+set ab=null
+endfunction
+// activation, called from CastChangeWay (Mukuro's own trigger) for MkCX
+function CambioXCast takes unit u returns nothing
+local timer t
+local integer id
+local player p=GetOwningPlayer(u)
+local fogmodifier fm
+local unit cxDum
+local effect e
+local integer slot=0
+local integer k
+local ability ab
+local real rem
+local real tot
+if GetUnitAbilityLevel(u,'MkMS')>0 or IsUnitIllusion(u) then
+set p=null
+return
+endif
+set t=CreateTimer()
+set id=GetHandleId(t)
+call SaveUnitHandle(h,id,0,u)
+call SaveReal(h,id,1,20.0)
+call SaveReal(h,id,2,0.0)
+call SaveInteger(h,id,11,GetPlayerId(p))
+call SaveTimerHandle(h,GetHandleId(u),StringHash("CambioX"),t)
+// +100 MS (also marks the form as active)
+call UnitAddAbility(u,'MkMS')
+call UnitMakeAbilityPermanent(u,true,'MkMS')
+// every Realm Q/W/E starts from the current shared Q/W/E cooldown
+loop
+exitwhen slot>=3
+set rem=0.0
+set tot=0.0
+set k=slot
+loop
+exitwhen k>=18
+set ab=GetUnitAbility(u,CambioXAbil(k))
+if ab!=null then
+set rem=GetAbilityRemainingCooldown(ab)
+set tot=RMaxBJ(GetAbilityCooldown(ab),rem)
+endif
+set k=k+3
+endloop
+if rem>0.01 then
+set k=slot
+loop
+exitwhen k>=18
+call SaveReal(h,id,CambioXAbil(k),rem)
+call SaveReal(h,id,-CambioXAbil(k),tot)
+set k=k+3
+endloop
+endif
+set slot=slot+1
+endloop
+// vision 3000 and detection 3000 for Mukuro's player only
+set fm=CreateFogModifierRadius(p,FOG_OF_WAR_VISIBLE,GetUnitX(u),GetUnitY(u),3000.0,false,false)
+call FogModifierStart(fm)
+call SaveFogModifierHandle(h,id,4,fm)
+call SaveBoolean(h,id,7,GetPlayerAlliance(Player(PLAYER_NEUTRAL_PASSIVE),p,ALLIANCE_SHARED_VISION))
+call SetPlayerAlliance(Player(PLAYER_NEUTRAL_PASSIVE),p,ALLIANCE_SHARED_VISION,true)
+set cxDum=CreateUnit(Player(PLAYER_NEUTRAL_PASSIVE),'dumm',GetUnitX(u),GetUnitY(u),0)
+call UnitAddAbility(cxDum,'MkDT')
+call SaveUnitHandle(h,id,3,cxDum)
+// visual auras only
+set e=AddSpecialEffectTarget("war3mapImported\\CFVX_BlackPurupleAura.mdl",u,"origin")
+call SetSpecialEffectScale(e,1.0)
+call SaveEffectHandle(h,id,8,e)
+set e=AddSpecialEffectTarget("war3mapImported\\CFVX_PinkMagicCircles.mdl",u,"origin")
+call SetSpecialEffectScale(e,0.45)
+call SaveEffectHandle(h,id,9,e)
+set soundplay=CreateSound("Sound\\Music\\mp3Music\\Mukuro P.mp3",false,false,true,12700,12700,"")
+call StartSound(soundplay)
+call KillSoundWhenDone(soundplay)
+call TimerStart(t,0.05,true,function CambioXCast2)
+set t=null
+set p=null
+set fm=null
+set cxDum=null
+set e=null
+set ab=null
+endfunction
+// /MukuroCambioEnd
 function CondChangeWay takes nothing returns boolean
-return GetSpellAbilityId()=='A0A2'
+// /MukuroCambioStart
+return GetSpellAbilityId()=='A0A2' or GetSpellAbilityId()=='MkCX'
+// /MukuroCambioEnd
 endfunction
 function CastChangeWay takes nothing returns nothing
 local unit u=GetTriggerUnit()
+// /MukuroCambioStart
+local timer ct=LoadTimerHandle(h,GetHandleId(u),StringHash("CambioX"))
+local integer ctid=0
+local integer k=0
+local ability ab
+local real rem
+if GetSpellAbilityId()=='MkCX' then
+call CambioXCast(u)
+set u=null
+set ct=null
+return
+endif
+if GetUnitAbilityLevel(u,'MkMS')>0 and ct!=null then
+set ctid=GetHandleId(ct)
+loop
+exitwhen k>=18
+set ab=GetUnitAbility(u,CambioXAbil(k))
+if ab!=null then
+set rem=GetAbilityRemainingCooldown(ab)
+if rem>0.01 then
+call SaveReal(h,ctid,CambioXAbil(k),LoadReal(h,ctid,2)+rem)
+call SaveReal(h,ctid,-CambioXAbil(k),RMaxBJ(GetAbilityCooldown(ab),rem))
+else
+call RemoveSavedReal(h,ctid,CambioXAbil(k))
+call RemoveSavedReal(h,ctid,-CambioXAbil(k))
+endif
+endif
+set k=k+1
+endloop
+endif
+// /MukuroCambioEnd
 if GetUnitAbilityLevel(u,'A0AA')>0 then
 call UnitRemoveAbility(u,'A0AA')
 call UnitAddAbility(u,'A0AF')
@@ -69643,6 +69959,13 @@ call UnitRemoveAbility(u,'A0AL')
 //call UnitRemoveAbility(u,'A0AC')
 call UnitAddAbility(u,'A0AA')
 endif
+// /MukuroCambioStart
+// restore now and once more on the next tick of the form
+if ctid!=0 then
+call CambioXRestoreCD(u)
+call SaveBoolean(h,ctid,5,true)
+endif
+// /MukuroCambioEnd
 if LoadInteger(h,GetHandleId(u),GokuUIMusicHash)==0 then
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\MukuroEffect.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
@@ -69652,6 +69975,10 @@ call RemoveSaveHashTimed(4,GetHandleId(u),GokuUIMusicHash)
 endif
 call DestroyEffect(AddSpecialEffectTarget("war3mapImported\\WarpDarkCaster.mdx",u,"origin"))
 set u=null
+// /MukuroCambioStart
+set ct=null
+set ab=null
+// /MukuroCambioEnd
 endfunction
 function ChangeWayInit takes nothing returns nothing
 local trigger t=CreateTrigger()
@@ -125798,6 +126125,15 @@ function InstantSpell_Action takes nothing returns nothing
 	if GetSpellAbilityId()=='AP03' then
 		call VergilD_Tricker(u, GetSpellTargetX(), GetSpellTargetY())
 	endif
+    // /MukuroCambioStart
+    if GetUnitTypeId(u)=='H01A' and GetUnitAbilityLevel(u,'MkMS')>0 then
+        if CambioXCastCheck(u,GetSpellAbilityId()) then
+            set u=null
+            set p=null
+            return
+        endif
+    endif
+    // /MukuroCambioEnd
     
     // Мория и клон
     if GetUnitTypeId(u)=='H00Q' then
