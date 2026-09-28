@@ -7194,7 +7194,7 @@ function Condition_RecipeString takes integer id returns boolean
 return id=='I00E' or id=='I01P' or id=='I01R' or id=='I01T' or id=='I01V' or id=='I02U' or id=='I02X' or id=='I02Z' or id=='I045' or id=='I047' or id=='I04Y' or id=='I04U' or id=='I04X' or id=='I04Z' or id=='I051' or id=='I14R' or id=='IGDr' or id=='IPar' or id=='IHYr' or id=='ISTr' or id=='IBSR' or id=='I052' or id=='I053' or id=='I055' or id=='I06P' or id=='I06S' or id=='I06T' or id=='IPRR' or id=='IPlR' or id=='IBS1' or id=='IYM0' or id=='IGn0' or id=='IBN0' or id=='IGP0' or id=='IVS0' or id=='ISS0' or id=='ITS0'
 endfunction
 function Condition_AbilityString3 takes integer id returns boolean
-return id=='OM13' or id=='A17D' or id=='A177' or id=='A172' or id=='A16U' or id=='A0TN'  or id=='MrF1' or id=='MrT1' or id=='MrG2' or id=='RsT1' or id=='RsF1' or id=='SiF1' or id=='SiF2' or id=='SiE1' or id=='SiE2' or id=='BbT1'
+return id=='OM13' or id=='A17D' or id=='A177' or id=='A172' or id=='A16U' or id=='A0TN'  or id=='MrF1' or id=='MrT1' or id=='MrG2' or id=='RsT1' or id=='RsF1' or id=='SiF1' or id=='SiF2' or id=='SiE1' or id=='SiE2' or id=='BbT1' or id=='FlW1' or id=='FlG1' or id=='RmQ1' or id=='RmF1'
 endfunction
 function Condition_AbilityString2 takes integer id returns boolean
 return id=='A0YX' or id=='A0Z0' or id=='KkR1' or id=='KkR2' or id=='BRRS' or id=='BRSS' or id=='IcF2' or id=='IcF5' or id=='GKF1' or id=='VGF1' or id=='GKG1' or id=='GKBS' or id=='GKSS' or id=='GKS2' or id=='GKS3' or id=='GKS4' or id=='GKSR' or id=='GKSB' or id=='GKUI' or id=='GKMI' or id=='GKQ1' or id=='GKW1' or id=='GKE1' or id=='GKT1' or id=='JNF1' or id=='JNF4' or id=='GSQ1' or id=='GSQ2' or id=='GSE1' or id=='GSE2' or id=='GST1' or id=='GST3' or id=='GSF1' or id=='GSF2' or id=='GSF2'
@@ -7345,17 +7345,6 @@ set swT=null
 endfunction
 // Система bof «надпись над юнитом» (триггер bF: юнит и текст в хранилище триггера) — название умения
 // всплывает над героем, цвет случайный, как у bof
-function Bof_FloatText takes unit u,string ftTxt returns nothing
-local texttag ftT=CreateTextTag()
-call SetTextTagPosUnit(ftT,u,0)
-call SetTextTagText(ftT,ftTxt,.05)
-call SetTextTagColorBJ(ftT,GetRandomPercentageBJ(),GetRandomPercentageBJ(),GetRandomPercentageBJ(),50.)
-call SetTextTagPermanent(ftT,false)
-call SetTextTagVelocityBJ(ftT,100.,90)
-call SetTextTagLifespan(ftT,1.)
-call SetTextTagFadepoint(ftT,1.)
-set ftT=null
-endfunction
 // Система bof «лечение» (триггер ZM): у нас — со срезами лечения карты (myCustomHeal2) и учётом
 // в статистике (HealTextTag), как лечат герои 3.2
 function Bof_Heal takes unit src,unit tgt,real amt returns nothing
@@ -7878,7 +7867,6 @@ call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$50BBB8,LoadReal(bof_M9,GetH
 if LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$50BBB8)>=15. or LoadBoolean(bof_M9,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),$78738D30)==false then
 call SaveBoolean(bof_M9,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),$78738D30,false)
 call SaveBoolean(bof_M9,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),$84BF70F9,true)
-call DisplayTextToPlayer(GetOwningPlayer(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),0,0,"The stolen life begins to drain away...")
 set ST=CreateTimer()
 call SaveReal(bof_OI,GetHandleId(ST),$6B54C545,0.)
 call SaveInteger(bof_OI,GetHandleId(ST),$6C8972A3,R2I(GetUnitState(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),UNIT_STATE_MAX_LIFE)*.0031)+1)
@@ -8130,7 +8118,6 @@ set SJ=SJ+3
 call SaveInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$CFDE6C76,SJ)
 call SaveInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$ECE825E7,SJ)
 call SaveUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2,GetTriggerUnit())
-call Bof_FloatText(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),"Scarlet Shoot")
 call SavePlayerHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$48656946,GetOwningPlayer(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
 call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA,GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
 call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382,GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
@@ -8199,7 +8186,6 @@ set SJ=SJ+3
 call SaveInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$CFDE6C76,SJ)
 call SaveInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$ECE825E7,SJ)
 call SaveUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2,GetTriggerUnit())
-call Bof_FloatText(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),"Bad Lady Scramble")
 call SavePlayerHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$48656946,GetOwningPlayer(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
 call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA,GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
 call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382,GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
@@ -8385,7 +8371,6 @@ set SJ=SJ+3
 call SaveInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$CFDE6C76,SJ)
 call SaveInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$ECE825E7,SJ)
 call SaveUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2,GetTriggerUnit())
-call Bof_FloatText(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),"Young Demon Lord")
 call SavePlayerHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$48656946,GetOwningPlayer(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
 call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA,GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
 call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382,GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
@@ -8604,7 +8589,6 @@ set SJ=SJ+3
 call SaveInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$CFDE6C76,SJ)
 call SaveInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$ECE825E7,SJ)
 call SaveUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2,GetTriggerUnit())
-call Bof_FloatText(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),"Dracula Cradle")
 call SavePlayerHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$48656946,GetOwningPlayer(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
 call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA,GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
 call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382,GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
@@ -9132,7 +9116,6 @@ set SJ=SJ+3
 call SaveInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$CFDE6C76,SJ)
 call SaveInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$ECE825E7,SJ)
 call SaveUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2,GetTriggerUnit())
-call Bof_FloatText(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),"Vampire Illusion")
 call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA,GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
 call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382,GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
 call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2392447A,GetSpellTargetX())
@@ -9240,7 +9223,6 @@ set SJ=SJ+3
 call SaveInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$CFDE6C76,SJ)
 call SaveInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$ECE825E7,SJ)
 call SaveUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2,GetTriggerUnit())
-call Bof_FloatText(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),"Scarlet Netherworld")
 call SavePlayerHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$48656946,GetOwningPlayer(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
 call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA,GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
 call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382,GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
@@ -9763,7 +9745,6 @@ set SJ=SJ+3
 call SaveInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$CFDE6C76,SJ)
 call SaveInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$ECE825E7,SJ)
 call SaveUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2,GetTriggerUnit())
-call Bof_FloatText(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),"Red the Nightless Castle")
 call SaveUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A7A19391,GetSpellTargetUnit())
 call SavePlayerHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$48656946,GetOwningPlayer(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
 call SavePlayerHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A895BB39,GetOwningPlayer(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A7A19391)))
@@ -9967,7 +9948,6 @@ set SJ=SJ+3
 call SaveInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$CFDE6C76,SJ)
 call SaveInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$ECE825E7,SJ)
 call SaveUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2,GetTriggerUnit())
-call Bof_FloatText(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),"Scarlet Destiny")
 call SavePlayerHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$48656946,GetOwningPlayer(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
 call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA,GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
 call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382,GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
@@ -10140,7 +10120,6 @@ set SJ=SJ+3
 call SaveInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$CFDE6C76,SJ)
 call SaveInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$ECE825E7,SJ)
 call SaveUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2,LoadUnitHandle(bof_HT,0,StringHash("RemHBc")))
-call Bof_FloatText(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),"Heart Break")
 call SaveUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A7A19391,LoadUnitHandle(bof_HT,0,StringHash("RemHBt")))
 call SavePlayerHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$48656946,GetOwningPlayer(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
 call SavePlayerHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A895BB39,GetOwningPlayer(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A7A19391)))
@@ -11665,6 +11644,26 @@ call CameraClearNoiseForPlayer(LoadPlayerHandle(bof_OI,GetHandleId(GetExpiredTim
 call FlushChildHashtable(bof_OI,GetHandleId(GetExpiredTimer()))
 call DestroyTimer(GetExpiredTimer())
 endfunction
+// F «And Then Will There Be None?» (владелец 28 сен): пока идёт, остальные кнопки недоступны.
+// b=true — прячем, false — возвращаем. Первые стадии W/G возвращаем, только если сейчас не висит
+// вторая (её вернёт Bof_SwapStage_End по таймеру).
+function Fla_FLock takes unit u,boolean b returns nothing
+local player flP=GetOwningPlayer(u)
+call SetPlayerAbilityAvailable(flP,'FlQ1',not b)
+call SetPlayerAbilityAvailable(flP,'FlE1',not b)
+call SetPlayerAbilityAvailable(flP,'FlR1',not b)
+call SetPlayerAbilityAvailable(flP,'FlT1',not b)
+call SetPlayerAbilityAvailable(flP,'FlD1',not b)
+call SetPlayerAbilityAvailable(flP,'FlW2',not b)
+call SetPlayerAbilityAvailable(flP,'FlG2',not b)
+if b or GetUnitAbilityLevel(u,'FlW2')==0 then
+call SetPlayerAbilityAvailable(flP,'FlW1',not b)
+endif
+if b or GetUnitAbilityLevel(u,'FlG2')==0 then
+call SetPlayerAbilityAvailable(flP,'FlG1',not b)
+endif
+set flP=null
+endfunction
 function Fla_DPo takes nothing returns nothing
 // F Фландре, финал — сам в конце 6 c там, где стоит Фландре (у bof — кнопка на курсоре-дамми,
 // курсора больше нет). Эффекты, звук, тряска экрана, урон и оглушение по 600 — как у bof.
@@ -11730,6 +11729,7 @@ call SaveReal(bof_OI,flK,$2B0A6845,flTime)
 call SaveInteger(bof_OI,flK,$8B1FFFFC,flN)
 if flTime<=3. and IsUnitAliveBJ(flC) then
 if flN==1 or ModuloInteger(flN-1,15)==0 then
+call Fla_FLock(flC,true)
 set flE=Bof_AddEffV(flC,"bof\\Scarlet-4.mdx",flX,flY)
 call Bof_EXSetEffectZ(flE,GetUnitFlyHeight(flC))
 call Bof_zU(0.,flE)
@@ -11755,6 +11755,7 @@ else
 if IsUnitAliveBJ(flC) then
 call Fla_DPo()
 endif
+call Fla_FLock(flC,false)
 call SetUnitInvulnerable(flC,false)
 call FlushChildHashtable(bof_OI,flK)
 call DestroyTimer(GetExpiredTimer())
@@ -11777,6 +11778,7 @@ local real flY=GetUnitY(flC)
 local effect flE
 local timer ST
 call SetUnitInvulnerable(flC,true)
+call Fla_FLock(flC,true)
 // круг и столб на месте каста (6 c, как у bof)
 set flE=Bof_AddEffV(flC,"bof\\Scarlet-83.mdx",flX,flY)
 call Bof_EXSetEffectZ(flE,25.)
@@ -11838,7 +11840,6 @@ else
 set flN=LoadInteger(bof_M9,GetHandleId(flC),$40BC10AC)
 if flN<3 then
 call SaveInteger(bof_M9,GetHandleId(flC),$40BC10AC,flN+1)
-call DisplayTextToPlayer(GetOwningPlayer(flC),0,0,"Four of a Kind, charges: "+I2S(flN+1)+"/3")
 endif
 endif
 set flC=null
@@ -11859,13 +11860,11 @@ local effect flE
 local trigger SR
 local timer ST
 if flN<=0 then
-call DisplayTextToPlayer(GetOwningPlayer(flC),0,0,"Four of a Kind: no charges")
 set flC=null
 return
 endif
 set flN=flN-1
 call SaveInteger(bof_M9,flId,$40BC10AC,flN)
-call DisplayTextToPlayer(GetOwningPlayer(flC),0,0,"Four of a Kind, charges: "+I2S(flN)+"/3")
 set flCl=CreateUnit(GetOwningPlayer(flC),'hB1W',flX,flY,flA)
 call SaveBoolean(bof_M9,GetHandleId(flCl),$AECF1FC8,true)
 call SetUnitPosition(flCl,flX,flY)
@@ -12043,8 +12042,6 @@ call SaveReal(bof_OI,GetHandleId(ST),$2392447A,LoadReal(bof_OI,GetHandleId(GetTr
 call SaveReal(bof_OI,GetHandleId(ST),$FDF65382,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382))
 call SaveReal(bof_OI,GetHandleId(ST),$B0897302,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$B0897302))
 call TimerStart(ST,.02,true,function Fla_DQC)
-else
-call DisplayTextToPlayer(GetOwningPlayer(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)),0,0,"The clone is too close or too far")
 endif
 else
 call DestroyGroup(LoadGroupHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$1BF14788))
@@ -12060,7 +12057,6 @@ return GetIssuedOrderIdBJ()==851983 and GetUnitTypeId(GetTriggerUnit())=='HFla' 
 endfunction
 function Fla_DQH takes nothing returns nothing
 call SaveBoolean(bof_M9,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$458B7DE9)),$287E74F0,true)
-call DisplayTextToPlayer(GetOwningPlayer(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$458B7DE9)),0,0,"Clone order is ready again")
 call FlushChildHashtable(bof_OI,GetHandleId(GetExpiredTimer()))
 call DestroyTimer(GetExpiredTimer())
 endfunction
@@ -12415,7 +12411,6 @@ endfunction
 function Fla_W2_Act takes nothing returns nothing
 local timer ST
 local integer SJ=LoadInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$CFDE6C76)
-call Bof_SwapBack(GetTriggerUnit(),'FlW1','FlW2')
 set SJ=SJ+3
 call SaveInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$CFDE6C76,SJ)
 call SaveInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$ECE825E7,SJ)
@@ -12452,6 +12447,8 @@ call SaveReal(bof_OI,GetHandleId(ST),$41713DA3,LoadReal(bof_OI,GetHandleId(GetTr
 call SaveReal(bof_OI,GetHandleId(ST),$FDF65382,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382))
 call SaveReal(bof_OI,GetHandleId(ST),$71CA3531,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$71CA3531))
 call TimerStart(ST,.02,true,function Fla_DQS)
+// снять вторую стадию — только после чтения цели каста (до этого она пропадала)
+call Bof_SwapBack(GetTriggerUnit(),'FlW1','FlW2')
 call FlushChildHashtable(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ)
 set ST=null
 endfunction
@@ -12547,7 +12544,6 @@ endfunction
 function Fla_G2_Act takes nothing returns nothing
 local timer ST
 local integer SJ=LoadInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$CFDE6C76)
-call Bof_SwapBack(GetTriggerUnit(),'FlG1','FlG2')
 set SJ=SJ+3
 call SaveInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$CFDE6C76,SJ)
 call SaveInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$ECE825E7,SJ)
@@ -12596,6 +12592,8 @@ call SaveUnitHandle(bof_OI,GetHandleId(ST),$A7A19391,LoadUnitHandle(bof_OI,GetHa
 call SaveReal(bof_OI,GetHandleId(ST),$B259B269,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$B259B269))
 call SaveEffectHandle(bof_OI,GetHandleId(ST),$6EAE13FE,LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE))
 call TimerStart(ST,.02,true,function Fla_DQX)
+// снять вторую стадию — только после чтения цели каста (до этого она пропадала)
+call Bof_SwapBack(GetTriggerUnit(),'FlG1','FlG2')
 call FlushChildHashtable(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ)
 set ST=null
 endfunction
@@ -13069,23 +13067,10 @@ function Esc_SunshineOff takes unit u returns nothing
 call Esc_BuffOff(u,"EscSun")
 endfunction
 // подсказка владельцу в ключевые часы — иначе не понять, когда жать G и T
-function Esc_ClockText takes unit u,string clkMsg returns nothing
-local texttag escTag=CreateTextTag()
-call SetTextTagText(escTag,clkMsg,0.024)
-call SetTextTagPosUnit(escTag,u,120.)
-call SetTextTagColor(escTag,255,204,0,255)
-call SetTextTagVelocity(escTag,0.,0.03)
-call SetTextTagPermanent(escTag,false)
-call SetTextTagLifespan(escTag,3.)
-call SetTextTagFadepoint(escTag,2.)
-call SetTextTagVisibility(escTag,GetLocalPlayer()==GetOwningPlayer(u))
-set escTag=null
-endfunction
 function Esc_ClockTick takes unit u returns nothing
 local integer clkId=GetHandleId(u)
 local real clkOld=LoadReal(bof_HT,clkId,SH_EscClock)
 local real clkNew=clkOld+0.01
-local integer clkHour
 if LoadBoolean(bof_HT,clkId,SH_EscClockFrozen) then
 call Esc_PanelUpdate(u,clkOld)
 return
@@ -13095,20 +13080,6 @@ set clkNew=clkNew-24.
 endif
 call SaveReal(bof_HT,clkId,SH_EscClock,clkNew)
 call Esc_PanelUpdate(u,clkNew)
-set clkHour=R2I(clkNew)
-if clkHour!=R2I(clkOld) and IsUnitAliveBJ(u) then
-if clkHour==6 then
-call Esc_ClockText(u,"6:00 — рассвет, сила растёт")
-elseif clkHour==9 then
-call Esc_ClockText(u,"9:00 — доступен The One")
-elseif clkHour==12 then
-call Esc_ClockText(u,"12:00 — полдень")
-elseif clkHour==15 then
-call Esc_ClockText(u,"15:00 — The One недоступен")
-elseif clkHour==18 then
-call Esc_ClockText(u,"18:00 — ночь, доступен Sunshine")
-endif
-endif
 endfunction
 function Bof_xk takes real Wr,location Ws,boolexpr Wt returns group
 local group Ui=CreateGroup()
@@ -13142,33 +13113,6 @@ local location U6=GetUnitLoc(U4)
 call Bof_xw(Uk,U6,U5)
 call RemoveLocation(U6)
 set U6=null
-endfunction
-function Bof_zi takes nothing returns nothing
-local timer Nr=GetExpiredTimer()
-local texttag T8=LoadTextTagHandle(bof_UD,GetHandleId(Nr),SH_t)
-call DestroyTextTag(T8)
-call DestroyTimer(Nr)
-set Nr=null
-set T8=null
-endfunction
-function Bof_zj takes string UH,unit UI,real UJ,real UK,real UL,real UM,real Nr,real UN,real M2,real N1,real UO returns nothing
-local string UQ=UH
-local unit UR=UI
-local real US=UJ
-local real UT=UK
-local real UU=UL
-local real UV=UM
-local real UW=Nr
-local real UX=UN
-local real UY=M2
-local real UZ=N1
-local timer UP=CreateTimer()
-local texttag T8=CreateTextTagUnitBJ(UQ,UR,US,UT,UU,UV,UW,UX)
-call SetTextTagVelocityBJ(GetLastCreatedTextTag(),UY,UZ)
-call TimerStart(UP,UO,false,function Bof_zi)
-call SaveTextTagHandle(bof_UD,GetHandleId(UP),SH_t,T8)
-set UR=null
-set UP=null
 endfunction
 function Bof_z5 takes unit M2,integer UB returns nothing
 local integer Wv=GetUnitAbilityLevel(M2,UB)
@@ -14000,7 +13944,6 @@ call SaveInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$CFDE6C76,SJ)
 call SaveInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$ECE825E7,SJ)
 call SaveUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2,GetTriggerUnit())
 call SavePlayerHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$48656946,GetOwningPlayer(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
-call Bof_zj("Pride Flare",LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),0.,15.,GetRandomPercentageBJ(),GetRandomPercentageBJ(),GetRandomPercentageBJ(),50.,100.,90.,1.)
 call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA,GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
 call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382,GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
 call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2392447A,GetSpellTargetX())
@@ -14159,7 +14102,6 @@ call SaveInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$CFDE6C76,SJ)
 call SaveInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$ECE825E7,SJ)
 call SaveUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2,GetTriggerUnit())
 call SavePlayerHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$48656946,GetOwningPlayer(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
-call Bof_zj("Dust Slash",LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),0.,15.,GetRandomPercentageBJ(),GetRandomPercentageBJ(),GetRandomPercentageBJ(),50.,100.,90.,1.)
 call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA,GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
 call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382,GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
 call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2392447A,GetSpellTargetX())
@@ -14344,7 +14286,6 @@ set SJ=SJ+3
 call SaveInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$CFDE6C76,SJ)
 call SaveInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$ECE825E7,SJ)
 call SaveUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2,GetTriggerUnit())
-call Bof_zj("Cruel Sun",LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),0.,15.,GetRandomPercentageBJ(),GetRandomPercentageBJ(),GetRandomPercentageBJ(),50.,100.,90.,1.)
 call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA,GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
 call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382,GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
 call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2392447A,GetSpellTargetX())
@@ -14603,7 +14544,6 @@ set SJ=SJ+3
 call SaveInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$CFDE6C76,SJ)
 call SaveInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$ECE825E7,SJ)
 call SaveUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2,GetTriggerUnit())
-call Bof_zj("Merciless Sun",LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),0.,15.,GetRandomPercentageBJ(),GetRandomPercentageBJ(),GetRandomPercentageBJ(),50.,100.,90.,1.)
 call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$DB3E3D6,300.)
 call SavePlayerHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$48656946,GetOwningPlayer(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
 call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA,GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
@@ -14839,7 +14779,6 @@ call SaveInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$CFDE6C76,SJ)
 call SaveInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$ECE825E7,SJ)
 call SaveUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2,GetTriggerUnit())
 call SavePlayerHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$48656946,GetOwningPlayer(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
-call Bof_zj("Super slash",LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),0.,15.,GetRandomPercentageBJ(),GetRandomPercentageBJ(),GetRandomPercentageBJ(),50.,100.,90.,1.)
 call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA,GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
 call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382,GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
 call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2392447A,GetSpellTargetX())
@@ -14988,7 +14927,6 @@ call SaveInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$ECE825E7,SJ)
 call SaveUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2,GetTriggerUnit())
 call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6B54C545,Esc_Time(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
 if LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6B54C545)>=9. and LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6B54C545)<=15. then
-call Bof_zj("The One",LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),0.,15.,GetRandomPercentageBJ(),GetRandomPercentageBJ(),GetRandomPercentageBJ(),50.,100.,90.,1.)
 call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA,GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
 call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382,GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
 call SaveEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$321957D9,Bof_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),"bof\\Megumin-1.mdx",LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382)))
@@ -15060,7 +14998,6 @@ call SaveReal(bof_OI,GetHandleId(ST),$38D20A1F,LoadReal(bof_OI,GetHandleId(GetTr
 call TimerStart(ST,.25,true,function Bof_CXb)
 else
 call Bof_z5(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),'EsG1')
-call DisplayTextToPlayer(GetOwningPlayer(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)),0,0,"Можно применять только с 9 до 15 часов!")
 endif
 call FlushChildHashtable(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ)
 set SR=null
@@ -15108,8 +15045,6 @@ set ST=CreateTimer()
 call SaveReal(bof_OI,GetHandleId(ST),$6B54C545,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6B54C545))
 call SaveUnitHandle(bof_OI,GetHandleId(ST),$911D5DC2,LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2))
 call TimerStart(ST,20.,false,function Bof_CXg)
-else
-call DisplayTextToPlayer(GetOwningPlayer(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)),0,0,"Можно применять только с 18 до 6 часов!")
 endif
 call FlushChildHashtable(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ)
 set ST=null
@@ -15222,7 +15157,6 @@ call SaveInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$CFDE6C76,SJ)
 call SaveInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$ECE825E7,SJ)
 call SaveUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2,GetTriggerUnit())
 call SavePlayerHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$48656946,GetOwningPlayer(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
-call Bof_zj("Divine Sword Escanor",LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),0.,15.,GetRandomPercentageBJ(),GetRandomPercentageBJ(),GetRandomPercentageBJ(),50.,100.,90.,1.)
 call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA,GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
 call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382,GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
 call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2392447A,GetSpellTargetX())
@@ -18400,13 +18334,13 @@ set udg_RH[139]='Rosh'//Мутен Роши
 set udg_RH[140]='HBrg'//Baraggan
 //Barragan1end
 //Remilia1start
-set udg_RH[143]='HRem'//Remilia
+set udg_RH[141]='HRem'//Remilia
 //Remilia1end
 //Flandre1start
 set udg_RH[142]='HFla'//Flandre
 //Flandre1end
 //Escanor1start
-set udg_RH[141]='HEsc'//Escanor
+// set udg_RH[143]='HEsc'//Escanor
 //Escanor1end
 loop
 exitwhen i>=210
@@ -18559,6 +18493,9 @@ set udg_RH2[137]="Garp"
 set udg_RH2[138]="Signum"
 set udg_RH2[139]="Muten Roshi"
 set udg_RH2[140]="Baraggan"
+set udg_RH2[141]="Remilia"
+set udg_RH2[142]="Flandre"
+// set udg_RH2[143]="Escanor"
 call DestroyTrigger(GetTriggeringTrigger())
 endfunction
 function InitTrig_Init takes nothing returns nothing
@@ -23314,6 +23251,120 @@ function OnButtonAddonAbility takes nothing returns nothing
                     set j=j+1
                 endloop                        
                 call AddFrameText( GetFrameByName("TavernAbilityTooltipText",i), "\n\n"+GetAbilityBaseStringFieldById( 'BbT1', ABILITY_SF_NAME )+", (|cffffcc00"+IntToChar(GetAbilityBaseIntegerFieldById( 'BbT1', ABILITY_IF_BUTTON_HOTKEY_RESEARCH ))+"|r)\n\n"+GetAbilityBaseStringFieldById( 'BbT1', ABILITY_SLF_TOOLTIP_LEARN_EXTENDED ))
+                call SetFrameSize( GetFrameByName("TavernAbilityTooltip",i), .26, GetFrameHeight( GetFrameByName("TavernAbilityTooltipText",i))+0.03)
+
+            // Flandre / Remilia: second stages (tavern toggle)
+            elseif GetFrameTexture(but,0)==GetAbilityBaseStringFieldById('FlW1',ABILITY_SF_ICON_NORMAL) and i==GetFrameContext(but) then
+                call SetFrameText( GetFrameByName("TavernAbilityTooltipText",i), "     " )
+                call SetFrameTexture( GetFrameByName("TavernAbility",i), GetAbilityBaseStringFieldById( 'FlW2', ABILITY_SF_ICON_NORMAL ), 0, true )
+                call SetFrameTexture( GetFrameByName("TavernAbility",i), GetAbilityBaseStringFieldById( 'FlW2', ABILITY_SF_ICON_NORMAL ), 1, true )
+                call SetFrameTexture( GetFrameByName("TavernAbility",i), GetAbilityBaseStringFieldById( 'FlW2', ABILITY_SF_ICON_NORMAL ), 2, true )
+                set j=0
+                loop
+                    call AddFrameText( GetFrameByName("TavernAbilityTooltipText",i), "|cffffcc00"+I2S(GetAbilityBaseIntegerLevelFieldById( 'FlW2', ABILITY_ILF_MANA_COST, j ))+"|r")
+                    exitwhen j==GetAbilityBaseIntegerFieldById('FlW2', ABILITY_IF_LEVELS)-1
+                    call AddFrameText( GetFrameByName("TavernAbilityTooltipText",i), "/")
+                    set j=j+1
+                endloop                        
+                call AddFrameText( GetFrameByName("TavernAbilityTooltipText",i), "\n\n"+GetAbilityBaseStringFieldById( 'FlW2', ABILITY_SF_NAME )+", (|cffffcc00"+IntToChar(GetAbilityBaseIntegerFieldById( 'FlW2', ABILITY_IF_BUTTON_HOTKEY_NORMAL ))+"|r)\n\n"+GetAbilityBaseStringFieldById( 'FlW2', ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED ))
+                call SetFrameSize( GetFrameByName("TavernAbilityTooltip",i), .26, GetFrameHeight( GetFrameByName("TavernAbilityTooltipText",i))+0.03)
+            elseif GetFrameTexture(but,0)==GetAbilityBaseStringFieldById('FlW2',ABILITY_SF_ICON_NORMAL) and i==GetFrameContext(but) then
+                call SetFrameText( GetFrameByName("TavernAbilityTooltipText",i), "     " )
+                call SetFrameTexture( GetFrameByName("TavernAbility",i), GetAbilityBaseStringFieldById( 'FlW1', ABILITY_SF_ICON_NORMAL ), 0, true )
+                call SetFrameTexture( GetFrameByName("TavernAbility",i), GetAbilityBaseStringFieldById( 'FlW1', ABILITY_SF_ICON_NORMAL ), 1, true )
+                call SetFrameTexture( GetFrameByName("TavernAbility",i), GetAbilityBaseStringFieldById( 'FlW1', ABILITY_SF_ICON_NORMAL ), 2, true )
+                set j=0
+                loop
+                    call AddFrameText( GetFrameByName("TavernAbilityTooltipText",i), "|cffffcc00"+I2S(GetAbilityBaseIntegerLevelFieldById( 'FlW1', ABILITY_ILF_MANA_COST, j ))+"|r")
+                    exitwhen j==GetAbilityBaseIntegerFieldById('FlW1', ABILITY_IF_LEVELS)-1
+                    call AddFrameText( GetFrameByName("TavernAbilityTooltipText",i), "/")
+                    set j=j+1
+                endloop                        
+                call AddFrameText( GetFrameByName("TavernAbilityTooltipText",i), "\n\n"+GetAbilityBaseStringFieldById( 'FlW1', ABILITY_SF_NAME )+", (|cffffcc00"+IntToChar(GetAbilityBaseIntegerFieldById( 'FlW1', ABILITY_IF_BUTTON_HOTKEY_RESEARCH ))+"|r)\n\n"+GetAbilityBaseStringFieldById( 'FlW1', ABILITY_SLF_TOOLTIP_LEARN_EXTENDED ))
+                call SetFrameSize( GetFrameByName("TavernAbilityTooltip",i), .26, GetFrameHeight( GetFrameByName("TavernAbilityTooltipText",i))+0.03)
+            elseif GetFrameTexture(but,0)==GetAbilityBaseStringFieldById('FlG1',ABILITY_SF_ICON_NORMAL) and i==GetFrameContext(but) then
+                call SetFrameText( GetFrameByName("TavernAbilityTooltipText",i), "     " )
+                call SetFrameTexture( GetFrameByName("TavernAbility",i), GetAbilityBaseStringFieldById( 'FlG2', ABILITY_SF_ICON_NORMAL ), 0, true )
+                call SetFrameTexture( GetFrameByName("TavernAbility",i), GetAbilityBaseStringFieldById( 'FlG2', ABILITY_SF_ICON_NORMAL ), 1, true )
+                call SetFrameTexture( GetFrameByName("TavernAbility",i), GetAbilityBaseStringFieldById( 'FlG2', ABILITY_SF_ICON_NORMAL ), 2, true )
+                set j=0
+                loop
+                    call AddFrameText( GetFrameByName("TavernAbilityTooltipText",i), "|cffffcc00"+I2S(GetAbilityBaseIntegerLevelFieldById( 'FlG2', ABILITY_ILF_MANA_COST, j ))+"|r")
+                    exitwhen j==GetAbilityBaseIntegerFieldById('FlG2', ABILITY_IF_LEVELS)-1
+                    call AddFrameText( GetFrameByName("TavernAbilityTooltipText",i), "/")
+                    set j=j+1
+                endloop                        
+                call AddFrameText( GetFrameByName("TavernAbilityTooltipText",i), "\n\n"+GetAbilityBaseStringFieldById( 'FlG2', ABILITY_SF_NAME )+", (|cffffcc00"+IntToChar(GetAbilityBaseIntegerFieldById( 'FlG2', ABILITY_IF_BUTTON_HOTKEY_NORMAL ))+"|r)\n\n"+GetAbilityBaseStringFieldById( 'FlG2', ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED ))
+                call SetFrameSize( GetFrameByName("TavernAbilityTooltip",i), .26, GetFrameHeight( GetFrameByName("TavernAbilityTooltipText",i))+0.03)
+            elseif GetFrameTexture(but,0)==GetAbilityBaseStringFieldById('FlG2',ABILITY_SF_ICON_NORMAL) and i==GetFrameContext(but) then
+                call SetFrameText( GetFrameByName("TavernAbilityTooltipText",i), "     " )
+                call SetFrameTexture( GetFrameByName("TavernAbility",i), GetAbilityBaseStringFieldById( 'FlG1', ABILITY_SF_ICON_NORMAL ), 0, true )
+                call SetFrameTexture( GetFrameByName("TavernAbility",i), GetAbilityBaseStringFieldById( 'FlG1', ABILITY_SF_ICON_NORMAL ), 1, true )
+                call SetFrameTexture( GetFrameByName("TavernAbility",i), GetAbilityBaseStringFieldById( 'FlG1', ABILITY_SF_ICON_NORMAL ), 2, true )
+                set j=0
+                loop
+                    call AddFrameText( GetFrameByName("TavernAbilityTooltipText",i), "|cffffcc00"+I2S(GetAbilityBaseIntegerLevelFieldById( 'FlG1', ABILITY_ILF_MANA_COST, j ))+"|r")
+                    exitwhen j==GetAbilityBaseIntegerFieldById('FlG1', ABILITY_IF_LEVELS)-1
+                    call AddFrameText( GetFrameByName("TavernAbilityTooltipText",i), "/")
+                    set j=j+1
+                endloop                        
+                call AddFrameText( GetFrameByName("TavernAbilityTooltipText",i), "\n\n"+GetAbilityBaseStringFieldById( 'FlG1', ABILITY_SF_NAME )+", (|cffffcc00"+IntToChar(GetAbilityBaseIntegerFieldById( 'FlG1', ABILITY_IF_BUTTON_HOTKEY_NORMAL ))+"|r)\n\n"+GetAbilityBaseStringFieldById( 'FlG1', ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED ))
+                call SetFrameSize( GetFrameByName("TavernAbilityTooltip",i), .26, GetFrameHeight( GetFrameByName("TavernAbilityTooltipText",i))+0.03)
+            elseif GetFrameTexture(but,0)==GetAbilityBaseStringFieldById('RmQ1',ABILITY_SF_ICON_NORMAL) and i==GetFrameContext(but) then
+                call SetFrameText( GetFrameByName("TavernAbilityTooltipText",i), "     " )
+                call SetFrameTexture( GetFrameByName("TavernAbility",i), GetAbilityBaseStringFieldById( 'RmQ2', ABILITY_SF_ICON_NORMAL ), 0, true )
+                call SetFrameTexture( GetFrameByName("TavernAbility",i), GetAbilityBaseStringFieldById( 'RmQ2', ABILITY_SF_ICON_NORMAL ), 1, true )
+                call SetFrameTexture( GetFrameByName("TavernAbility",i), GetAbilityBaseStringFieldById( 'RmQ2', ABILITY_SF_ICON_NORMAL ), 2, true )
+                set j=0
+                loop
+                    call AddFrameText( GetFrameByName("TavernAbilityTooltipText",i), "|cffffcc00"+I2S(GetAbilityBaseIntegerLevelFieldById( 'RmQ2', ABILITY_ILF_MANA_COST, j ))+"|r")
+                    exitwhen j==GetAbilityBaseIntegerFieldById('RmQ2', ABILITY_IF_LEVELS)-1
+                    call AddFrameText( GetFrameByName("TavernAbilityTooltipText",i), "/")
+                    set j=j+1
+                endloop                        
+                call AddFrameText( GetFrameByName("TavernAbilityTooltipText",i), "\n\n"+GetAbilityBaseStringFieldById( 'RmQ2', ABILITY_SF_NAME )+", (|cffffcc00"+IntToChar(GetAbilityBaseIntegerFieldById( 'RmQ2', ABILITY_IF_BUTTON_HOTKEY_NORMAL ))+"|r)\n\n"+GetAbilityBaseStringFieldById( 'RmQ2', ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED ))
+                call SetFrameSize( GetFrameByName("TavernAbilityTooltip",i), .26, GetFrameHeight( GetFrameByName("TavernAbilityTooltipText",i))+0.03)
+            elseif GetFrameTexture(but,0)==GetAbilityBaseStringFieldById('RmQ2',ABILITY_SF_ICON_NORMAL) and i==GetFrameContext(but) then
+                call SetFrameText( GetFrameByName("TavernAbilityTooltipText",i), "     " )
+                call SetFrameTexture( GetFrameByName("TavernAbility",i), GetAbilityBaseStringFieldById( 'RmQ1', ABILITY_SF_ICON_NORMAL ), 0, true )
+                call SetFrameTexture( GetFrameByName("TavernAbility",i), GetAbilityBaseStringFieldById( 'RmQ1', ABILITY_SF_ICON_NORMAL ), 1, true )
+                call SetFrameTexture( GetFrameByName("TavernAbility",i), GetAbilityBaseStringFieldById( 'RmQ1', ABILITY_SF_ICON_NORMAL ), 2, true )
+                set j=0
+                loop
+                    call AddFrameText( GetFrameByName("TavernAbilityTooltipText",i), "|cffffcc00"+I2S(GetAbilityBaseIntegerLevelFieldById( 'RmQ1', ABILITY_ILF_MANA_COST, j ))+"|r")
+                    exitwhen j==GetAbilityBaseIntegerFieldById('RmQ1', ABILITY_IF_LEVELS)-1
+                    call AddFrameText( GetFrameByName("TavernAbilityTooltipText",i), "/")
+                    set j=j+1
+                endloop                        
+                call AddFrameText( GetFrameByName("TavernAbilityTooltipText",i), "\n\n"+GetAbilityBaseStringFieldById( 'RmQ1', ABILITY_SF_NAME )+", (|cffffcc00"+IntToChar(GetAbilityBaseIntegerFieldById( 'RmQ1', ABILITY_IF_BUTTON_HOTKEY_RESEARCH ))+"|r)\n\n"+GetAbilityBaseStringFieldById( 'RmQ1', ABILITY_SLF_TOOLTIP_LEARN_EXTENDED ))
+                call SetFrameSize( GetFrameByName("TavernAbilityTooltip",i), .26, GetFrameHeight( GetFrameByName("TavernAbilityTooltipText",i))+0.03)
+            elseif GetFrameTexture(but,0)==GetAbilityBaseStringFieldById('RmF1',ABILITY_SF_ICON_NORMAL) and i==GetFrameContext(but) then
+                call SetFrameText( GetFrameByName("TavernAbilityTooltipText",i), "     " )
+                call SetFrameTexture( GetFrameByName("TavernAbility",i), GetAbilityBaseStringFieldById( 'RmF2', ABILITY_SF_ICON_NORMAL ), 0, true )
+                call SetFrameTexture( GetFrameByName("TavernAbility",i), GetAbilityBaseStringFieldById( 'RmF2', ABILITY_SF_ICON_NORMAL ), 1, true )
+                call SetFrameTexture( GetFrameByName("TavernAbility",i), GetAbilityBaseStringFieldById( 'RmF2', ABILITY_SF_ICON_NORMAL ), 2, true )
+                set j=0
+                loop
+                    call AddFrameText( GetFrameByName("TavernAbilityTooltipText",i), "|cffffcc00"+I2S(GetAbilityBaseIntegerLevelFieldById( 'RmF2', ABILITY_ILF_MANA_COST, j ))+"|r")
+                    exitwhen j==GetAbilityBaseIntegerFieldById('RmF2', ABILITY_IF_LEVELS)-1
+                    call AddFrameText( GetFrameByName("TavernAbilityTooltipText",i), "/")
+                    set j=j+1
+                endloop                        
+                call AddFrameText( GetFrameByName("TavernAbilityTooltipText",i), "\n\n"+GetAbilityBaseStringFieldById( 'RmF2', ABILITY_SF_NAME )+", (|cffffcc00"+IntToChar(GetAbilityBaseIntegerFieldById( 'RmF2', ABILITY_IF_BUTTON_HOTKEY_NORMAL ))+"|r)\n\n"+GetAbilityBaseStringFieldById( 'RmF2', ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED ))
+                call SetFrameSize( GetFrameByName("TavernAbilityTooltip",i), .26, GetFrameHeight( GetFrameByName("TavernAbilityTooltipText",i))+0.03)
+            elseif GetFrameTexture(but,0)==GetAbilityBaseStringFieldById('RmF2',ABILITY_SF_ICON_NORMAL) and i==GetFrameContext(but) then
+                call SetFrameText( GetFrameByName("TavernAbilityTooltipText",i), "     " )
+                call SetFrameTexture( GetFrameByName("TavernAbility",i), GetAbilityBaseStringFieldById( 'RmF1', ABILITY_SF_ICON_NORMAL ), 0, true )
+                call SetFrameTexture( GetFrameByName("TavernAbility",i), GetAbilityBaseStringFieldById( 'RmF1', ABILITY_SF_ICON_NORMAL ), 1, true )
+                call SetFrameTexture( GetFrameByName("TavernAbility",i), GetAbilityBaseStringFieldById( 'RmF1', ABILITY_SF_ICON_NORMAL ), 2, true )
+                set j=0
+                loop
+                    call AddFrameText( GetFrameByName("TavernAbilityTooltipText",i), "|cffffcc00"+I2S(GetAbilityBaseIntegerLevelFieldById( 'RmF1', ABILITY_ILF_MANA_COST, j ))+"|r")
+                    exitwhen j==GetAbilityBaseIntegerFieldById('RmF1', ABILITY_IF_LEVELS)-1
+                    call AddFrameText( GetFrameByName("TavernAbilityTooltipText",i), "/")
+                    set j=j+1
+                endloop                        
+                call AddFrameText( GetFrameByName("TavernAbilityTooltipText",i), "\n\n"+GetAbilityBaseStringFieldById( 'RmF1', ABILITY_SF_NAME )+", (|cffffcc00"+IntToChar(GetAbilityBaseIntegerFieldById( 'RmF1', ABILITY_IF_BUTTON_HOTKEY_NORMAL ))+"|r)\n\n"+GetAbilityBaseStringFieldById( 'RmF1', ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED ))
                 call SetFrameSize( GetFrameByName("TavernAbilityTooltip",i), .26, GetFrameHeight( GetFrameByName("TavernAbilityTooltipText",i))+0.03)
             endif
 
@@ -37265,7 +37316,7 @@ if cmb!=true then
                 set udg_RH[i]=0
             endif
             set i=i+1
-            exitwhen i>=140 //139
+            exitwhen i>=142 //139
             endloop
             call RemoveUnit(u)
             call SetPlayerStateBJ(GetOwningPlayer(u),PLAYER_STATE_FOOD_CAP_CEILING,0)
@@ -37394,22 +37445,22 @@ if cmb!=true then
         call IH('HBrg',u,"ReplaceableTextures\\CommandButtons\\BTNHero_Barragan_Icon.blp")
 //Barragan1end
 //Remilia1start
-        call IH('HRem',u,"bof\\war3mapImported\\RemiliaScarlet-TB-TX.blp")
-        if GetUnitTypeId(u)=='HRem' then
-            call Rem_OnSpawn(u)
-        endif
+        call IH('HRem',u,"ReplaceableTextures\\CommandButtons\\BTNRemiliaScarletHero.blp")
+        // if GetUnitTypeId(u)=='HRem' then
+        //     call Rem_OnSpawn(u)
+        // endif
 //Remilia1end
 //Flandre1start
-        call IH('HFla',u,"bof\\war3mapImported\\Flandre Scarlet-TB-TX.blp")
-        if GetUnitTypeId(u)=='HFla' then
-            call Fla_OnSpawn(u)
-        endif
+        call IH('HFla',u,"ReplaceableTextures\\CommandButtons\\BTNFlandreScarletHero.blp")
+        // if GetUnitTypeId(u)=='HFla' then
+        //     call Fla_OnSpawn(u)
+        // endif
 //Flandre1end
 //Escanor1start
-        call IH('HEsc',u,"bof\\war3mapImported\\Escanor-TX-TB.blp")
-        if GetUnitTypeId(u)=='HEsc' then
-            call Esc_OnSpawn(u)
-        endif
+        call IH('HEsc',u,"ReplaceableTextures\\CommandButtons\\BTNEscanorHero.blp")
+        // if GetUnitTypeId(u)=='HEsc' then
+        //     call Esc_OnSpawn(u)
+        // endif
 //Escanor1end
         call IH('H060',u,"ReplaceableTextures\\CommandButtons\\BTNWhitebeard.blp")
         call IH('H061',u,"ReplaceableTextures\\CommandButtons\\BTNRyougi.blp")
@@ -37513,7 +37564,7 @@ if cmb!=true then
                     set udg_RH[i]=0
                 endif
                 set i=i+1
-                exitwhen i>=140 //139
+                exitwhen i>=142 //139
             endloop
         endif
         call SaveInteger(h,GetHandleId(u),'A1GS',0)
@@ -37536,7 +37587,7 @@ if IsUnitType(u,UNIT_TYPE_HERO) and CPTModeON and cmb==true then
         call RemoveUnit(u)
         set i=0
         loop
-        exitwhen i>=140 //139
+        exitwhen i>=142 //139
             if GetUnitTypeId(u)==udg_RH[i] then
                 set udg_RH[i]=0
             endif
@@ -44066,7 +44117,7 @@ function Trig_idNew_Actions takes nothing returns nothing
     exitwhen bj_forLoopAIndex>bj_forLoopAIndexEnd
     call DisplayTextToPlayer(GetLocalPlayer(),0,0,I2S(bj_forLoopAIndex)+"-"+udg_RH2[bj_forLoopAIndex]+"; "+I2S(bj_forLoopAIndex+1)+"-"+udg_RH2[bj_forLoopAIndex+1]+"; "+I2S(bj_forLoopAIndex+2)+"-"+udg_RH2[bj_forLoopAIndex+2]+"; "+I2S(bj_forLoopAIndex+3)+"-"+udg_RH2[bj_forLoopAIndex+3]+"; "+I2S(bj_forLoopAIndex+4)+"-"+udg_RH2[bj_forLoopAIndex+4]+"; ")
     //udg_RH[bj_forLoopAIndex]    
-    if bj_forLoopAIndex>=140 and bj_forLoopAIndex<190 then //139
+    if bj_forLoopAIndex>=142 and bj_forLoopAIndex<190 then //139
     set bj_forLoopAIndex=200
     else
     set bj_forLoopAIndex=bj_forLoopAIndex+5
@@ -44092,7 +44143,7 @@ function Trig_id_Actions takes nothing returns nothing
     exitwhen bj_forLoopAIndex>bj_forLoopAIndexEnd
     call DisplayTextToPlayer(GetLocalPlayer(),0,0,I2S(bj_forLoopAIndex)+"-"+udg_RH2[bj_forLoopAIndex]+"; "+I2S(bj_forLoopAIndex+1)+"-"+udg_RH2[bj_forLoopAIndex+1]+"; "+I2S(bj_forLoopAIndex+2)+"-"+udg_RH2[bj_forLoopAIndex+2]+"; "+I2S(bj_forLoopAIndex+3)+"-"+udg_RH2[bj_forLoopAIndex+3]+"; "+I2S(bj_forLoopAIndex+4)+"-"+udg_RH2[bj_forLoopAIndex+4]+"; ")
     //udg_RH[bj_forLoopAIndex]    
-    if bj_forLoopAIndex>=140 and bj_forLoopAIndex<190 then //139
+    if bj_forLoopAIndex>=142 and bj_forLoopAIndex<190 then //139
     set bj_forLoopAIndex=200
     else
     set bj_forLoopAIndex=bj_forLoopAIndex+5
@@ -52022,7 +52073,7 @@ set i=0
 loop
 exitwhen i>3
 set EFF=AddSpecialEffect("war3mapImported\\wos_zz-shio_zk_zz_stab2_hy-1.mdx",x0,y0)
-call SetSpecialEffectScale(EFF,0.65)
+call SetSpecialEffectScale(EFF,0.52)
 call SetSpecialEffectTimeScale(EFF,0.55)
 call SetSpecialEffectZ(EFF,175)
 call SetSpecialEffectFacing(EFF,facing)
@@ -52068,7 +52119,7 @@ loop
 exitwhen i>3
 set tx=dist-150.0*I2R(i)
 if tx>=0 then
-call Brg_Cloud(caster,"war3mapImported\\wos_saberalterqcpurple.mdx",PolX(x0,tx,facing),PolY(y0,tx,facing),11,2.75,0.75,1.4)
+call Brg_Cloud(caster,"war3mapImported\\wos_saberalterqcpurple.mdx",PolX(x0,tx,facing),PolY(y0,tx,facing),11,2.2,0.75,1.4)
 endif
 set i=i+1
 endloop
@@ -52088,8 +52139,8 @@ call Brg_Burn(caster,n0)
 if Brg_HasT(caster) then
 call SetControlToUnit(caster,n0,0.5,"stun")
 endif
-call Brg_FxC("war3mapImported\\wos_OPm (513)purple.mdx",GetUnitX(n0),GetUnitY(n0),0,1,1,0,GetRandomReal(0,360),255,255,255,255)
-call Brg_Fx("war3mapImported\\wos_zz-shio_zk_zz_stab2_hy-1.mdx",GetUnitX(n0),GetUnitY(n0),0,2,0.55,0.35)
+call Brg_FxC("war3mapImported\\wos_OPm (513)purple.mdx",GetUnitX(n0),GetUnitY(n0),0,0.8,1,0,GetRandomReal(0,360),255,255,255,255)
+call Brg_Fx("war3mapImported\\wos_zz-shio_zk_zz_stab2_hy-1.mdx",GetUnitX(n0),GetUnitY(n0),0,1.6,0.55,0.35)
 set EFF=AddSpecialEffectTarget("war3mapImported\\wos_LDeff (262).mdx",n0,"chest")
 call RemoveEffect(EFF,1.5,false,CreateTimer())
 call ShakeCamera(0.1,3)
@@ -52196,10 +52247,10 @@ elseif e1==null then
 if time>=0.1 then
 call Brg_Sound("Sound\\Music\\mp3Music\\Barragan_EW.mp3")
 set EFF=AddSpecialEffect("war3mapImported\\wos_zz-fire-ore-hit1-zihei_big4.mdx",PolX(GetUnitX(caster),200,facing+45),PolY(GetUnitY(caster),200,facing+45))
-call SetSpecialEffectScale(EFF,1.0)
+call SetSpecialEffectScale(EFF,0.8)
 call SaveEffectHandle(HH,id,21,EFF)
 set EFF=AddSpecialEffect("war3mapImported\\wos_zz-fire-ore-hit1-zihei_big4.mdx",PolX(GetUnitX(caster),200,facing-45),PolY(GetUnitY(caster),200,facing-45))
-call SetSpecialEffectScale(EFF,1.0)
+call SetSpecialEffectScale(EFF,0.8)
 call SaveEffectHandle(HH,id,22,EFF)
 call SaveReal(HH,id,5,0)
 endif
@@ -52230,10 +52281,10 @@ endif
 set n0=CreateUnit(GetOwningPlayer(caster),'gbRd',x1,y1,0)
 call MyRemoveUnit(n0,3.0)
 set n0=null
-call Brg_Fx("war3mapImported\\wos_zz-shio_zk_zz_stab2_hy-1.mdx",x1,y1,0,2,0.55,0.35)
-call Brg_FxC("war3mapImported\\wos_saberalterqcpurple.mdx",x1,y1,0,1.45,0.45,0,GetRandomReal(0,360),255,255,255,255)
-call Brg_FxC("war3mapImported\\wos_OPm (513)purple.mdx",x1,y1,0,1,1,0,GetRandomReal(0,360),255,255,255,255)
-call Brg_FxC("war3mapImported\\wos_T_kyaru_skill02purple.mdx",x1,y1,0,1.1,1.25,0,GetRandomReal(0,360),255,255,255,255)
+call Brg_Fx("war3mapImported\\wos_zz-shio_zk_zz_stab2_hy-1.mdx",x1,y1,0,1.6,0.55,0.35)
+call Brg_FxC("war3mapImported\\wos_saberalterqcpurple.mdx",x1,y1,0,1.16,0.45,0,GetRandomReal(0,360),255,255,255,255)
+call Brg_FxC("war3mapImported\\wos_OPm (513)purple.mdx",x1,y1,0,0.8,1,0,GetRandomReal(0,360),255,255,255,255)
+call Brg_FxC("war3mapImported\\wos_T_kyaru_skill02purple.mdx",x1,y1,0,0.88,1.25,0,GetRandomReal(0,360),255,255,255,255)
 call ShakeCamera(0.2,6)
 call GroupClear(G)
 call GroupEnumUnitsInRange(G,x1,y1,600,Base)
@@ -52334,7 +52385,7 @@ set ang=facing-40.0+20.0*I2R(i)
 // годится: в оригинале оно бывает только под топором и в одном экземпляре,
 // а пять таких плит рядом читаются как чёрные квадраты.
 set EFF=AddSpecialEffect("war3mapImported\\wos_zz-shio_zk_zz_stab2_hy-1.mdx",x0,y0)
-call SetSpecialEffectScale(EFF,0.65)
+call SetSpecialEffectScale(EFF,0.52)
 call SetSpecialEffectTimeScale(EFF,0.55)
 call SetSpecialEffectZ(EFF,175)
 call SetSpecialEffectFacing(EFF,ang)
@@ -52359,7 +52410,7 @@ call SetSpecialEffectPosition(eff1,ex,ey)
 call SetSpecialEffectZ(eff1,175)
 endif
 if ModuloReal(dist,360)<60 then
-call Brg_Cloud(caster,"war3mapImported\\wos_saberalterqcpurple.mdx",ex,ey,11,2.15,0.75,1.4)
+call Brg_Cloud(caster,"war3mapImported\\wos_saberalterqcpurple.mdx",ex,ey,11,1.72,0.75,1.4)
 endif
 set i=i+1
 endloop
@@ -52383,7 +52434,7 @@ if LoadBoolean(HH,GetHandleId(n0),ANTITARGET_ABILITY)==false then
 call myCustomDamage(caster,n0,dmg,false,false,null,null,null)
 call SlowUnit(caster,n0,0.3,0.3,2,2,false)
 call Brg_Burn(caster,n0)
-call Brg_Cloud(caster,"war3mapImported\\wos_saberalterqcpurple.mdx",GetUnitX(n0),GetUnitY(n0),11,2.15,0.75,1.4)
+call Brg_Cloud(caster,"war3mapImported\\wos_saberalterqcpurple.mdx",GetUnitX(n0),GetUnitY(n0),11,1.72,0.75,1.4)
 else
 // цель разворачивает умения: урона нет, ей отдаём себя (лучи летят дальше)
 call SaveUnitHandle(HH,GetHandleId(n0),REVERSE_TARGET,caster)
@@ -52484,12 +52535,12 @@ call SaveReal(HH,id,13,aoe)
 endif
 if time<0.04 then
 set rad=125
-set sc=0.05
+set sc=0.04
 set i=0
 loop
 exitwhen i>6
 set EFF=AddSpecialEffect("war3mapImported\\wos_zz-shio_zk_zz_stab2_hy-1.mdx",PolX(x0,rad,I2R(i)*52),PolY(y0,rad,I2R(i)*52))
-call SetSpecialEffectScale(EFF,0.15)
+call SetSpecialEffectScale(EFF,0.12)
 call SetSpecialEffectTimeScale(EFF,0.75)
 call SetSpecialEffectFacing(EFF,GetRandomReal(0,360))
 call SaveEffectHandle(HH,id,30+i,EFF)
@@ -52497,8 +52548,8 @@ set i=i+1
 endloop
 elseif rad<1025 then
 set rad=rad+16
-if sc<1.25 then
-set sc=sc+0.04
+if sc<1.0 then
+set sc=sc+0.032
 endif
 set i=0
 loop
@@ -52514,7 +52565,7 @@ call SaveReal(HH,id,14,rad)
 call SaveReal(HH,id,18,sc)
 if t4>=0.5 then
 call SaveReal(HH,id,7,0)
-call Brg_FxC("war3mapImported\\wos_T_kyaru_skill02purple.mdx",x0,y0,0,1.1,1.25,0,GetRandomReal(0,360),255,255,255,255)
+call Brg_FxC("war3mapImported\\wos_T_kyaru_skill02purple.mdx",x0,y0,0,0.88,1.25,0,GetRandomReal(0,360),255,255,255,255)
 endif
 if t2>=0.2 then
 call SaveReal(HH,id,8,0)
@@ -52561,7 +52612,7 @@ loop
 exitwhen i>3
 // в ресуррексионе это четыре ФИОЛЕТОВЫХ вспышки; красные ZiRed, OPM red
 // и кольца пыли — набор базовой формы, нам он не нужен
-call Brg_FxC("war3mapImported\\wos_JY-Shio_Super_Saiyan_JN_Zi.mdx",x0,y0,70,9,1,1.2,GetRandomReal(0,360),255,255,255,255)
+call Brg_FxC("war3mapImported\\wos_JY-Shio_Super_Saiyan_JN_Zi.mdx",x0,y0,70,7.2,1,1.2,GetRandomReal(0,360),255,255,255,255)
 set i=i+1
 endloop
 // обзор на всё время каста, как VisionTimed(2000) в оригинале
@@ -52619,13 +52670,13 @@ call Brg_Free(caster,1.0)
 call Brg_Sound("Sound\\Music\\mp3Music\\Barragan_T.mp3")
 call Brg_Sound("Sound\\Music\\mp3Music\\Barragan_T2.mp3")
 call SaveEffectHandle(HH,id,10,AddSpecialEffectTarget("war3mapImported\\wos_[By XeSHTeG]BarraganAxe.mdx",caster,"right hand"))
-call Brg_FxC("war3mapImported\\wos_JY-Shio_Super_Saiyan_JN_Zi.mdx",x0,y0,70,3,1,1.0,GetRandomReal(0,360),255,255,255,255)
-call Brg_FxC("war3mapImported\\wos_JY-Shio_Super_Saiyan_JN_Zi.mdx",x0,y0,70,4,1,1.0,GetRandomReal(0,360),255,255,255,255)
+call Brg_FxC("war3mapImported\\wos_JY-Shio_Super_Saiyan_JN_Zi.mdx",x0,y0,70,2.4,1,1.0,GetRandomReal(0,360),255,255,255,255)
+call Brg_FxC("war3mapImported\\wos_JY-Shio_Super_Saiyan_JN_Zi.mdx",x0,y0,70,3.2,1,1.0,GetRandomReal(0,360),255,255,255,255)
 loop
 exitwhen i>6
-call Brg_FxC("war3mapImported\\wos_dustwave222.mdx",x0,y0,0,1.55+0.45*I2R(i),0.8,0,GetRandomReal(0,360),175,55,205,45)
+call Brg_FxC("war3mapImported\\wos_dustwave222.mdx",x0,y0,0,1.24+0.36*I2R(i),0.8,0,GetRandomReal(0,360),175,55,205,45)
 if i<2 then
-call Brg_FxC("war3mapImported\\wos_T_kyaru_skill02purple.mdx",x0,y0,0,0.55,1,0,GetRandomReal(0,360),255,255,255,255)
+call Brg_FxC("war3mapImported\\wos_T_kyaru_skill02purple.mdx",x0,y0,0,0.44,1,0,GetRandomReal(0,360),255,255,255,255)
 endif
 set i=i+1
 endloop
@@ -52680,13 +52731,13 @@ set y0=PolY(GetUnitY(caster),80,facing)
 call SaveReal(HH,id,11,x0)
 call SaveReal(HH,id,12,y0)
 set EFF=AddSpecialEffect("war3mapImported\\wos_[By XeSHTeG]BarraganAxe2.mdx",x0,y0)
-call SetSpecialEffectScale(EFF,2.2)
+call SetSpecialEffectScale(EFF,1.76)
 call SetSpecialEffectZ(EFF,300)
 call SetSpecialEffectTimeScale(EFF,1.05)
 call SetSpecialEffectFacing(EFF,facing)
 call SaveEffectHandle(HH,id,21,EFF)
 set EFF=AddSpecialEffect("war3mapImported\\wos_AZ_DD029.mdx",PolX(x0,140,facing+90),PolY(y0,140,facing+90))
-call SetSpecialEffectScale(EFF,1.5)
+call SetSpecialEffectScale(EFF,1.2)
 call SetSpecialEffectZ(EFF,300)
 call SetSpecialEffectTimeScale(EFF,2.35)
 call SetSpecialEffectFacing(EFF,facing+90)
@@ -52724,9 +52775,9 @@ endif
 call SaveReal(HH,id,9,t3)
 if t3>=0.09 then
 call SaveReal(HH,id,9,0)
-call Brg_FxC("war3mapImported\\wos_zz-shio_zk_zz_stab2_hy-1.mdx",px,py,1,0.45,1.85,0,facing,255,255,255,255)
+call Brg_FxC("war3mapImported\\wos_zz-shio_zk_zz_stab2_hy-1.mdx",px,py,1,0.36,1.85,0,facing,255,255,255,255)
 endif
-call Brg_FxC("war3mapImported\\wos_0233.mdx",px,py,0,2.25,1,0.06,facing,255,255,255,255)
+call Brg_FxC("war3mapImported\\wos_0233.mdx",px,py,0,1.8,1,0.06,facing,255,255,255,255)
 call GroupClear(G)
 call GroupEnumUnitsInRange(G,px,py,400,Base)
 loop
@@ -52748,10 +52799,10 @@ endif
 endloop
 set n0=null
 if dist>=2500 then
-call Brg_Fx("war3mapImported\\wos_zz-shio_zk_zz_stab2_hy-1.mdx",px,py,0,2,0.55,0.35)
-call Brg_FxC("war3mapImported\\wos_saberalterqcpurple.mdx",px,py,0,1.25,0.65,0,GetRandomReal(0,360),255,255,255,255)
-call Brg_FxC("war3mapImported\\wos_OPm (513)purple.mdx",px,py,0,1,1,0,GetRandomReal(0,360),255,255,255,255)
-call Brg_FxC("war3mapImported\\wos_fangkuai2.mdx",px,py,0,1.65,1,0,160,255,255,255,255)
+call Brg_Fx("war3mapImported\\wos_zz-shio_zk_zz_stab2_hy-1.mdx",px,py,0,1.6,0.55,0.35)
+call Brg_FxC("war3mapImported\\wos_saberalterqcpurple.mdx",px,py,0,1.0,0.65,0,GetRandomReal(0,360),255,255,255,255)
+call Brg_FxC("war3mapImported\\wos_OPm (513)purple.mdx",px,py,0,0.8,1,0,GetRandomReal(0,360),255,255,255,255)
+call Brg_FxC("war3mapImported\\wos_fangkuai2.mdx",px,py,0,1.32,1,0,160,255,255,255,255)
 call ShakeCamera(0.3,8)
 if LoadEffectHandle(HH,id,21)!=null then
 call DestroyEffect(LoadEffectHandle(HH,id,21))
@@ -52814,12 +52865,12 @@ set px=PolX(x0,1100,facing)
 set py=PolY(y0,1100,facing)
 endif
 call SetUnitFacingInstant(caster,facing)
-call Brg_Fx("war3mapImported\\wos_UltimateDarkFlash.mdx",x0,y0,90,2,0.7,0.4)
-call Brg_Cloud(caster,"war3mapImported\\wos_saberalterqcpurple.mdx",x0,y0,11,2.74,0.75,1.4)
+call Brg_Fx("war3mapImported\\wos_UltimateDarkFlash.mdx",x0,y0,90,1.6,0.7,0.4)
+call Brg_Cloud(caster,"war3mapImported\\wos_saberalterqcpurple.mdx",x0,y0,11,2.192,0.75,1.4)
 call SetUnitX(caster,px)
 call SetUnitY(caster,py)
-call Brg_Fx("war3mapImported\\wos_UltimateDarkFlash.mdx",px,py,90,2,0.7,0.4)
-call Brg_FxC("war3mapImported\\wos_T_kyaru_skill02purple.mdx",px,py,0,1.1,1.25,0,GetRandomReal(0,360),255,255,255,255)
+call Brg_Fx("war3mapImported\\wos_UltimateDarkFlash.mdx",px,py,90,1.6,0.7,0.4)
+call Brg_FxC("war3mapImported\\wos_T_kyaru_skill02purple.mdx",px,py,0,0.88,1.25,0,GetRandomReal(0,360),255,255,255,255)
 call Brg_Sound("Sound\\Music\\mp3Music\\Barragan_E2_1.mp3")
 set caster=null
 endfunction
@@ -52846,7 +52897,7 @@ call FlushChildHashtable(HH,id)
 else
 if t2>=0.5 then
 call SaveReal(HH,id,8,0)
-call Brg_FxC("war3mapImported\\wos_dustwave222.mdx",GetUnitX(caster),GetUnitY(caster),0,2.4,0.7,0,GetRandomReal(0,360),175,55,205,55)
+call Brg_FxC("war3mapImported\\wos_dustwave222.mdx",GetUnitX(caster),GetUnitY(caster),0,1.92,0.7,0,GetRandomReal(0,360),175,55,205,55)
 endif
 endif
 set caster=null
@@ -52872,7 +52923,7 @@ call SetUnitTimeScale(caster,1.5)
 call SetUnitAnimationByIndex(caster,0)
 call Brg_Free(caster,0.8)
 call Brg_Sound("Sound\\Music\\mp3Music\\Barragan_E1.mp3")
-call Brg_Fx("war3mapImported\\wos_hakkestart.mdx",GetUnitX(caster),GetUnitY(caster),10,1.75,0.35,1.5)
+call Brg_Fx("war3mapImported\\wos_hakkestart.mdx",GetUnitX(caster),GetUnitY(caster),10,1.4,0.35,1.5)
 call CreateModeIndicatorForm(caster,"ReplaceableTextures\\CommandButtons\\BTNHero_Barragan_G.blp",10)
 call TimerStart(t,0.1,true,function Brg_G_Act2)
 set caster=null
@@ -52910,7 +52961,7 @@ set py=PolY(y0,dist,facing)
 // тело летит одной моделью, а не копией на каждый тик
 if LoadEffectHandle(HH,id,21)==null then
 set EFF=AddSpecialEffect("war3mapImported\\wos_zz-shio_zk_zz_stab2_hy-1.mdx",px,py)
-call SetSpecialEffectScale(EFF,0.65)
+call SetSpecialEffectScale(EFF,0.52)
 call SetSpecialEffectTimeScale(EFF,0.55)
 call SetSpecialEffectZ(EFF,55)
 call SetSpecialEffectFacing(EFF,facing)
@@ -52921,7 +52972,7 @@ call SetSpecialEffectZ(LoadEffectHandle(HH,id,21),40)
 endif
 // как на E: облака раз в 300 единиц, искры раз в 450
 if ModuloReal(dist,300)<70 then
-call Brg_Cloud(caster,"war3mapImported\\wos_saberalterqcpurple.mdx",px,py,11,1.60,0.75,1.4)
+call Brg_Cloud(caster,"war3mapImported\\wos_saberalterqcpurple.mdx",px,py,11,1.28,0.75,1.4)
 endif
 if SR(px,py,GetUnitX(target),GetUnitY(target))<130 then
 if LoadBoolean(HH,GetHandleId(target),ANTITARGET_ABILITY)==false then
@@ -52929,11 +52980,11 @@ call myCustomDamage(caster,target,dmg,false,false,null,null,null)
 call Brg_Burn(caster,target)
 set EFF=AddSpecialEffectTarget("war3mapImported\\wos_LDeff (262).mdx",target,"chest")
 call RemoveEffect(EFF,1.5,false,CreateTimer())
-call Brg_Cloud(caster,"war3mapImported\\wos_saberalterqcpurple.mdx",GetUnitX(target),GetUnitY(target),11,2.74,0.75,1.4)
-call Brg_FxC("war3mapImported\\wos_OPm (513)purple.mdx",GetUnitX(target),GetUnitY(target),0,1,1,0,GetRandomReal(0,360),255,255,255,255)
+call Brg_Cloud(caster,"war3mapImported\\wos_saberalterqcpurple.mdx",GetUnitX(target),GetUnitY(target),11,2.192,0.75,1.4)
+call Brg_FxC("war3mapImported\\wos_OPm (513)purple.mdx",GetUnitX(target),GetUnitY(target),0,0.8,1,0,GetRandomReal(0,360),255,255,255,255)
 // метка гниения на цели — тот же эффект, что вешает пассивка оригинала
 set EFF=AddSpecialEffectTarget("war3mapImported\\wos_zz-fire-ore-hit1-zihei_2.mdx",target,"origin")
-call SetSpecialEffectScale(EFF,2)
+call SetSpecialEffectScale(EFF,1.6)
 call SetSpecialEffectTimeScale(EFF,1.15)
 call RemoveEffect(EFF,3.0,false,CreateTimer())
 else
@@ -250083,7 +250134,7 @@ if cmb!=true and u!=null then
             set udg_RH[i2]=0
         endif
         set i2=i2+1
-        exitwhen i2==140 //139
+        exitwhen i2==142 //139
         endloop
         call SetUnitPosition(u,GetRectCenterX(gg_rct_Resp7),GetRectCenterY(gg_rct_Resp7))
         set p=GetOwningPlayer(u)
@@ -251332,7 +251383,7 @@ call UIS_RegisterItem('ISt0','IGlA','ISt0',0,0,0,0,0,0,0,'IBS1','I043')         
 call UIS_RegisterItem('IMT0','I06F','IMT0',0,0,0,0,0,0,0,'IGn0','I048')                            // Гунгнир
 call UIS_RegisterItem('I06H','IMT0','INY0','IMS0',0,0,0,0,0,0,'IYM0','I04T')                            // Зеркало ята
 call UIS_RegisterItem('IMS0','ISt0','IMS0',0,0,0,0,0,0,0,'IBN0','I037')                            // Башосен
-call UIS_RegisterItem('IMS0','ISt0','IMS0',0,0,0,0,0,0,0,'IGP0','I06Z')                            // Grimoir
+call UIS_RegisterItem('I03Y','IMS0','I05C',0,0,0,0,0,0,0,'IGP0','I06Z')                            // Grimoir
 call UIS_RegisterItem('I01M','INY0','I00F',0,0,0,0,0,0,0,'IVS0','I03R')                            // Сфера пустоты
 call UIS_RegisterItem('I01M','IMS0','I00L',0,0,0,0,0,0,0,'ISS0','I03Q')                            // Сфера Пространства
 call UIS_RegisterItem('I01M','IMT0','I04M',0,0,0,0,0,0,0,'ITS0','I03P')                            // Сфера Времени
