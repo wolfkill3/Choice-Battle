@@ -9653,65 +9653,65 @@ call SaveInteger(bof_M9,GetHandleId(u),$410023C4,0)
 endfunction
 //Remilia1end
 //Flandre1start
-// интеллект для урона кнопки D: урон bof x (0.035);
+// интеллект для урона кнопки D: урон bof x (0.04375), бафф 28 сен x1.25 (было 0.035);
 // x1000, чтобы не терять дробь в целом (в Bof_Dmg урон делится обратно на 1000)
 function Fla_Int_D takes unit u,boolean b returns integer
-return R2I(I2R(GetHeroInt(u,b))*(0.035)*1000.+0.5)
+return R2I(I2R(GetHeroInt(u,b))*(0.04375)*1000.+0.5)
 endfunction
-// интеллект для урона кнопки E: урон bof x (0.014 + 0.003 x уровень);
+// интеллект для урона кнопки E: урон bof x (0.0175 + 0.00375 x уровень), бафф 28 сен x1.25 (было 0.014 + 0.003 x уровень);
 // x1000, чтобы не терять дробь в целом (в Bof_Dmg урон делится обратно на 1000)
 function Fla_Int_E takes unit u,boolean b returns integer
-return R2I(I2R(GetHeroInt(u,b))*(0.014+0.003*I2R(GetUnitAbilityLevel(u,'FlE1')))*1000.+0.5)
+return R2I(I2R(GetHeroInt(u,b))*(0.0175+0.00375*I2R(GetUnitAbilityLevel(u,'FlE1')))*1000.+0.5)
 endfunction
-// интеллект для урона кнопки F: урон bof x (0.014);
+// интеллект для урона кнопки F: урон bof x (0.0175), бафф 28 сен x1.25 (было 0.014);
 // x1000, чтобы не терять дробь в целом (в Bof_Dmg урон делится обратно на 1000)
 function Fla_Int_F takes unit u,boolean b returns integer
-return R2I(I2R(GetHeroInt(u,b))*(0.014)*1000.+0.5)
+return R2I(I2R(GetHeroInt(u,b))*(0.0175)*1000.+0.5)
 endfunction
-// интеллект для урона кнопки G: урон bof x (0.04);
+// интеллект для урона кнопки G: урон bof x (0.05), бафф 28 сен x1.25 (было 0.04);
 // x1000, чтобы не терять дробь в целом (в Bof_Dmg урон делится обратно на 1000)
 function Fla_Int_G takes unit u,boolean b returns integer
-return R2I(I2R(GetHeroInt(u,b))*(0.04)*1000.+0.5)
+return R2I(I2R(GetHeroInt(u,b))*(0.05)*1000.+0.5)
 endfunction
-// интеллект для урона кнопки G2: урон bof x (0.02);
+// интеллект для урона кнопки G2: урон bof x (0.025), бафф 28 сен x1.25 (было 0.02);
 // x1000, чтобы не терять дробь в целом (в Bof_Dmg урон делится обратно на 1000)
 function Fla_Int_G2 takes unit u,boolean b returns integer
-return R2I(I2R(GetHeroInt(u,b))*(0.02)*1000.+0.5)
+return R2I(I2R(GetHeroInt(u,b))*(0.025)*1000.+0.5)
 endfunction
-// интеллект для урона кнопки Q: урон bof x (0.018 + 0.004 x уровень);
+// интеллект для урона кнопки Q: урон bof x (0.0225 + 0.005 x уровень), бафф 28 сен x1.25 (было 0.018 + 0.004 x уровень);
 // x1000, чтобы не терять дробь в целом (в Bof_Dmg урон делится обратно на 1000)
 function Fla_Int_Q takes unit u,boolean b returns integer
-return R2I(I2R(GetHeroInt(u,b))*(0.018+0.004*I2R(GetUnitAbilityLevel(u,'FlQ1')))*1000.+0.5)
+return R2I(I2R(GetHeroInt(u,b))*(0.0225+0.005*I2R(GetUnitAbilityLevel(u,'FlQ1')))*1000.+0.5)
 endfunction
-// интеллект для урона кнопки R: урон bof x (0.014 + 0.003 x уровень);
+// интеллект для урона кнопки R: урон bof x (0.0175 + 0.00375 x уровень), бафф 28 сен x1.25 (было 0.014 + 0.003 x уровень);
 // x1000, чтобы не терять дробь в целом (в Bof_Dmg урон делится обратно на 1000)
 function Fla_Int_R takes unit u,boolean b returns integer
-return R2I(I2R(GetHeroInt(u,b))*(0.014+0.003*I2R(GetUnitAbilityLevel(u,'FlR1')))*1000.+0.5)
+return R2I(I2R(GetHeroInt(u,b))*(0.0175+0.00375*I2R(GetUnitAbilityLevel(u,'FlR1')))*1000.+0.5)
 endfunction
-// интеллект для урона кнопки W: урон bof x (0.014 + 0.003 x уровень);
+// интеллект для урона кнопки W: урон bof x (0.0175 + 0.00375 x уровень), бафф 28 сен x1.25 (было 0.014 + 0.003 x уровень);
 // x1000, чтобы не терять дробь в целом (в Bof_Dmg урон делится обратно на 1000)
 function Fla_Int_W takes unit u,boolean b returns integer
-return R2I(I2R(GetHeroInt(u,b))*(0.014+0.003*I2R(GetUnitAbilityLevel(u,'FlW1')))*1000.+0.5)
+return R2I(I2R(GetHeroInt(u,b))*(0.0175+0.00375*I2R(GetUnitAbilityLevel(u,'FlW1')))*1000.+0.5)
 endfunction
-// интеллект для урона кнопки W2: урон bof x (0.02);
+// интеллект для урона кнопки W2: урон bof x (0.025), бафф 28 сен x1.25 (было 0.02);
 // x1000, чтобы не терять дробь в целом (в Bof_Dmg урон делится обратно на 1000)
 function Fla_Int_W2 takes unit u,boolean b returns integer
-return R2I(I2R(GetHeroInt(u,b))*(0.02)*1000.+0.5)
+return R2I(I2R(GetHeroInt(u,b))*(0.025)*1000.+0.5)
 endfunction
-// интеллект для урона кнопки atk: урон bof x (0.0075);
+// интеллект для урона кнопки atk: урон bof x (0.0095), бафф 28 сен (было 0.0075);
 // x1000, чтобы не терять дробь в целом (в Bof_Dmg урон делится обратно на 1000)
 function Fla_Int_atk takes unit u,boolean b returns integer
-return R2I(I2R(GetHeroInt(u,b))*(0.0075)*1000.+0.5)
+return R2I(I2R(GetHeroInt(u,b))*(0.0095)*1000.+0.5)
 endfunction
-// интеллект для урона кнопки ord_atk: урон bof x (0.018);
+// интеллект для урона кнопки ord_atk: урон bof x (0.0225), бафф 28 сен x1.25 (было 0.018);
 // x1000, чтобы не терять дробь в целом (в Bof_Dmg урон делится обратно на 1000)
 function Fla_Int_ord_atk takes unit u,boolean b returns integer
-return R2I(I2R(GetHeroInt(u,b))*(0.018)*1000.+0.5)
+return R2I(I2R(GetHeroInt(u,b))*(0.0225)*1000.+0.5)
 endfunction
-// интеллект для урона кнопки ord_smart: урон bof x (0.018);
+// интеллект для урона кнопки ord_smart: урон bof x (0.0225), бафф 28 сен x1.25 (было 0.018);
 // x1000, чтобы не терять дробь в целом (в Bof_Dmg урон делится обратно на 1000)
 function Fla_Int_ord_smart takes unit u,boolean b returns integer
-return R2I(I2R(GetHeroInt(u,b))*(0.018)*1000.+0.5)
+return R2I(I2R(GetHeroInt(u,b))*(0.0225)*1000.+0.5)
 endfunction
 // ===== Фландре: своё вместо общего кода bof (до функций героя) =====
 // Приказ атаки клонам (A + клик): bof ловил только атаку в точку, а по врагу игроки кликают юнитом
@@ -9962,7 +9962,7 @@ call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$B0897302,GetUnitY(LoadUnitH
 call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$38AB9941,Fla_BBG(LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2392447A),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$B0897302),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$522728F8),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$659CBD77)))
 if LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$38AB9941)<250. then
 call Bof_Dmg(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391),(I2R(Fla_Int_Q(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),true))*120.*1.)*0.001)
-call SetControlToUnit(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391),3.,"stun")
+call SetControlToUnit(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391),1.5,"stun")
 else
 endif
 call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$2392447A,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$522728F8))
@@ -10116,7 +10116,7 @@ call SetUnitPosition(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$C13DC
 else
 call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$2392447A,GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391)))
 call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$B0897302,GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391)))
-call SetControlToUnit(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391),5.,"stun")
+call SetControlToUnit(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391),1.5,"stun")
 call SaveEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$321957D9,Bof_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),"bof\\Scarlet-47.mdx",LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2392447A),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$B0897302)))
 call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$321957D9),25.)
 call Bof_EXSetEffectSize(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$321957D9),2.5)
@@ -10434,7 +10434,7 @@ call GroupAddUnit(bof_RU,LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9
 call SaveReal(bof_M9,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867)),$3224C2A2,2.)
 call SaveReal(bof_M9,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867)),$38344552,20.)
 call Bof_Dmg(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867),(I2R(Fla_Int_E(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),true))*30.*1.)*0.001)
-call SetControlToUnit(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867),2.,"stun")
+call SetControlToUnit(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867),1.,"stun")
 else
 endif
 endloop
@@ -10643,7 +10643,7 @@ call SaveUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867,bl_TG)
 call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$F1DDA59B,GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867)))
 call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$38D20A1F,GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867)))
 call Bof_Dmg(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867),(I2R(Fla_Int_R(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),true))*80.*1.)*0.001)
-call SetControlToUnit(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867),3.,"stun")
+call SetControlToUnit(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867),1.5,"stun")
 else
 endif
 endloop
@@ -11134,7 +11134,7 @@ exitwhen bl_TG==null
 call GroupRemoveUnit(TF,bl_TG)
 if Condition_Base(GetOwningPlayer(flC),bl_TG) and GetUnitAbilityLevel(bl_TG,$4176756C)==0 then
 call Bof_Dmg(flC,bl_TG,(I2R(Fla_Int_F(flC,true))*100.*1.)*0.001)
-call SetControlToUnit(flC,bl_TG,2.,"stun")
+call SetControlToUnit(flC,bl_TG,1.,"stun")
 endif
 endloop
 call DestroyGroup(TF)
@@ -11606,7 +11606,7 @@ call SaveUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867,bl_TG)
 call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$F1DDA59B,GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867)))
 call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$38D20A1F,GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867)))
 call Bof_Dmg(LoadUnitHandle(bof_M9,GetHandleId(GetOwningPlayer(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2))),$E0D5179B),LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867),(I2R(Fla_Int_ord_atk(LoadUnitHandle(bof_M9,GetHandleId(GetOwningPlayer(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2))),$E0D5179B),true))*5.*1.)*0.001)
-call SetControlToUnit(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867),2.,"stun")
+call SetControlToUnit(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867),1.,"stun")
 else
 endif
 endloop
@@ -11825,7 +11825,7 @@ call SaveUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867,bl_TG)
 call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$F1DDA59B,GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867)))
 call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$38D20A1F,GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867)))
 call Bof_Dmg(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867),(I2R(Fla_Int_W2(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),true))*80.*1.)*0.001)
-call SetControlToUnit(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867),3.,"stun")
+call SetControlToUnit(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867),1.5,"stun")
 else
 endif
 endloop
@@ -11955,7 +11955,7 @@ call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6E
 call Bof_EXSetEffectSize(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),1.)
 call Bof_zU(0.,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE))
 call Bof_Dmg(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391),(I2R(Fla_Int_G2(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),true))*120.*1.)*0.001)
-call SetControlToUnit(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391),3.,"stun")
+call SetControlToUnit(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391),1.5,"stun")
 else
 endif
 else
