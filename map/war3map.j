@@ -21610,7 +21610,7 @@ set udg_RH[139]='Rosh'//Мутен Роши
 set udg_RH[140]='HBrg'//Baraggan
 //Barragan1end
 //Suigintou1start
-set udg_RH[144]='HSui'//Suigintou
+// set udg_RH[144]='HSui'//Suigintou
 //Suigintou1end
 //Remilia1start
 set udg_RH[141]='HRem'//Remilia
@@ -21773,7 +21773,7 @@ set udg_RH2[138]="Signum"
 set udg_RH2[139]="Muten Roshi"
 set udg_RH2[140]="Baraggan"
 //Suigintou1start
-set udg_RH2[144]="Suigintou"
+// set udg_RH2[144]="Suigintou"
 //Suigintou1end
 set udg_RH2[141]="Remilia"
 set udg_RH2[142]="Flandre"
