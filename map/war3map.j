@@ -12720,15 +12720,12 @@ call Rem_Noise(GetOwningPlayer(target),50.,.5)
 call Rem_Sound("bof\\war3mapImported\\Flandre Scarlet-Q-YX1.mp3",100)
 endif
 if n==55 then
-set i=0
 loop
-exitwhen i>=BlzGroupGetSize(g)
-set d=BlzGroupUnitAt(g,i)
-if d!=null then
+set d=FirstOfGroup(g)
+exitwhen d==null
+call GroupRemoveUnit(g,d)
 call Rem_Fx(null,"bof\\Scarlet-51.mdx",GetUnitX(d),GetUnitY(d),25.,0.,1.,0.)
 call RemoveUnit(d)
-endif
-set i=i+1
 endloop
 call DestroyGroup(g)
 call FlushChildHashtable(HH,id)
