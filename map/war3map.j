@@ -11945,9 +11945,10 @@ call SetUnitAnimationByIndex(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()
 call FlushChildHashtable(bof_OI,GetHandleId(GetExpiredTimer()))
 call DestroyTimer(GetExpiredTimer())
 endfunction
-function Rem_DNR takes nothing returns nothing
+function Rem_DNR takes nothing returns boolean
 local timer ST
 set ST=null
+return false
 endfunction
 function Rem_DNS takes nothing returns nothing
 call CameraClearNoiseForPlayer(LoadPlayerHandle(bof_OI,GetHandleId(GetExpiredTimer()),$48656946))
@@ -12435,10 +12436,11 @@ set ST=null
 endfunction
 // Выход из F раньше: только кнопкой RmF2 (раньше F обрывало любое заклинание). Триггер здесь не
 // уничтожаем — его уничтожает таймер F на выходе (раньше уничтожался дважды).
-function Rem_DNh takes nothing returns nothing
+function Rem_DNh takes nothing returns boolean
 if GetSpellAbilityId()=='RmF2' then
 call SaveBoolean(bof_M9,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger()),$911D5DC2)),$4D51B8B7,false)
 endif
+return false
 endfunction
 function Rem_DNi takes nothing returns nothing
 call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$2B0A6845,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2B0A6845)+.05)
@@ -12554,7 +12556,7 @@ call CameraClearNoiseForPlayer(GetOwningPlayer(LoadUnitHandle(bof_OI,GetHandleId
 call FlushChildHashtable(bof_OI,GetHandleId(GetExpiredTimer()))
 call DestroyTimer(GetExpiredTimer())
 endfunction
-function Rem_DNx takes nothing returns nothing
+function Rem_DNx takes nothing returns boolean
 call SaveInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$C2781FCF,R2I(GetUnitState(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger()),$A7A19391),UNIT_STATE_MAX_LIFE)*.04))
 if LoadInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$C2781FCF)>30000 then
 call SaveInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$C2781FCF,30000)
@@ -12562,6 +12564,7 @@ else
 endif
 call SaveInteger(bof_M9,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger()),$911D5DC2)),$410023C4,LoadInteger(bof_M9,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger()),$911D5DC2)),$410023C4)+LoadInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$C2781FCF))
 call Bof_xa(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger()),$911D5DC2),0,2,LoadInteger(bof_M9,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger()),$911D5DC2)),$410023C4)+(LoadInteger(bof_M9,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger()),$911D5DC2)),$E90DB670)))
+return false
 endfunction
 function Rem_DNy takes nothing returns nothing
 local timer ST
@@ -15078,10 +15081,11 @@ set flC=null
 set flE=null
 set ST=null
 endfunction
-function Fla_DP5 takes nothing returns nothing
+function Fla_DP5 takes nothing returns boolean
 call GroupRemoveUnit(LoadGroupHandle(bof_M9,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger()),$911D5DC2)),$9DBC7E37),LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger()),$D2A88040))
 call FlushChildHashtable(bof_OI,GetHandleId(GetTriggeringTrigger()))
 call DestroyTrigger(GetTriggeringTrigger())
+return false
 endfunction
 function Fla_DP6 takes nothing returns nothing
 // заряд Four of a Kind: +1 раз в 20 c, не больше 3 (у bof — 22 c, до 4 и сброс кулдауна кнопки)
@@ -229387,7 +229391,6 @@ endfunction
 
 
 function KarnaT2_Laser takes unit newCaster, real x1, real y1 returns nothing
-    local unit newCaster=GetTriggerUnit()
     local real x=GetUnitX(newCaster)
     local real y=GetUnitY(newCaster)
     local real f=Atan2(y1-y,x1-x)
