@@ -1736,6 +1736,7 @@ framehandle ShNextBtn=null
 framehandle ShGoldTxt=null
 framehandle array ShSecBtn
 framehandle array ShRim
+framehandle ShSelGlow=null
 framehandle array ShCraftRim
 framehandle array ShInvRim
 framehandle array ShItemBtn
@@ -1765,6 +1766,8 @@ integer array ShLastInv
 // ключ k+1 — непустые компоненты блока подряд, -1 — их число
 hashtable ShHT=InitHashtable()
 integer ShRecN=0
+integer ShBuyRecN=-1
+integer ShBuySec=-1
 // что было нарисовано под ценой ячейки каталога: 0 пусто, 1 есть, 2 дорого, 3 по карману
 integer array ShCostState
 boolean ShBuilt=false
@@ -21661,10 +21664,10 @@ set udg_RH[140]='HBrg'//Baraggan
 // set udg_RH[144]='HSui'//Suigintou
 //Suigintou1end
 //Remilia1start
-set udg_RH[141]='HRem'//Remilia
+// set udg_RH[141]='HRem'//Remilia
 //Remilia1end
 //Flandre1start
-set udg_RH[142]='HFla'//Flandre
+// set udg_RH[142]='HFla'//Flandre
 //Flandre1end
 //Escanor1start
 // set udg_RH[143]='HEsc'//Escanor
@@ -21823,8 +21826,8 @@ set udg_RH2[140]="Baraggan"
 //Suigintou1start
 // set udg_RH2[144]="Suigintou"
 //Suigintou1end
-set udg_RH2[141]="Remilia"
-set udg_RH2[142]="Flandre"
+// set udg_RH2[141]="Remilia"
+// set udg_RH2[142]="Flandre"
 // set udg_RH2[143]="Escanor"
 call DestroyTrigger(GetTriggeringTrigger())
 endfunction
@@ -38011,24 +38014,24 @@ function Trig_StatusBar_Actions takes nothing returns nothing
     call SetFrameTexture( OpenShopButton, "checkbox-depressed2.blp", 0, true )
     call SetFrameTexture( OpenShopButton, "checkbox-depressed2.blp", 1, true )
     call SetFrameTexture( OpenShopButton, "checkbox-depressed2.blp", 2, true )
-    call SetFrameSize( OpenShopButton, .075, .017 )
+    call SetFrameSize( OpenShopButton, .081, .02 )
     call ShowFrame( OpenShopButton, true )
     call SetFramePriority( OpenShopButton, 7 )
     // Над инвентарём, на месте надписи «Inventory»: сверху по центру стоит десятая
     // ячейка (TimeAct переставляет её над второй), кнопка едет вместе с ней.
     // Вызов с null-фреймом рвёт поток, поэтому проверяем; запасной вариант — под золотом.
     if GetOriginFrame( ORIGIN_FRAME_ITEM_BUTTON, 9 )!=null then
-        call SetFrameRelativePoint( OpenShopButton, FRAMEPOINT_BOTTOM, GetOriginFrame( ORIGIN_FRAME_ITEM_BUTTON, 9 ), FRAMEPOINT_TOP, 0, .003 )
+        call SetFrameRelativePoint( OpenShopButton, FRAMEPOINT_BOTTOM, GetOriginFrame( ORIGIN_FRAME_ITEM_BUTTON, 9 ), FRAMEPOINT_TOP, .001, .003 )
     elseif GetOriginFrame( ORIGIN_FRAME_RESOURCE_BAR_TEXT, 0 )!=null then
-        call SetFrameRelativePoint( OpenShopButton, FRAMEPOINT_TOP, GetOriginFrame( ORIGIN_FRAME_RESOURCE_BAR_TEXT, 0 ), FRAMEPOINT_BOTTOM, 0, -.004 )
+        call SetFrameRelativePoint( OpenShopButton, FRAMEPOINT_TOP, GetOriginFrame( ORIGIN_FRAME_RESOURCE_BAR_TEXT, 0 ), FRAMEPOINT_BOTTOM, .001, -.001 )
     else
-        call SetFrameAbsolutePoint( OpenShopButton, FRAMEPOINT_CENTER, .57, .565 )
+        call SetFrameAbsolutePoint( OpenShopButton, FRAMEPOINT_CENTER, .571, .5665 )
     endif
 
     set OpenShopButtonText=CreateFrameByType( "SIMPLETEXT", "ShopOpenText", OpenShopButton, "", 0 )
     call ClearFrameAllPoints( OpenShopButtonText )
     call SetFrameBlendMode( OpenShopButtonText, 0, BLEND_MODE_BLEND )
-    call SetFrameFont( OpenShopButtonText, "Fonts\\FRIZQT__.TTF", .01, 0 )
+    call SetFrameFont( OpenShopButtonText, "Fonts\\FRIZQT__.TTF", .008, 0 )
     call SetFrameTextAlignment( OpenShopButtonText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
     call SetFrameTextColour( OpenShopButtonText, 0xFFFFA500 )
     call SetFrameParent( OpenShopButtonText, OpenShopButton )
@@ -45957,6 +45960,19 @@ endif
 set u=null
 set c=null
 endfunction
+// Нанайя Шики: полоска комбо хранится на ИГРОКЕ (ComboBarHash по хэндлу игрока),
+// а таймер сброса комбо (ShikiComboStarter) заводится при изучении способности,
+// только если у игрока полоски ещё нет. Если старая полоска осталась (обмен,
+// пересоздание героя, повторный выбор), таймер для нового юнита не стартует,
+// счётчик комбо не обнуляется, и урон T (ловкость x (9 + комбо)) растёт без конца.
+// Поэтому полоску снимаем и запись о ней удаляем.
+function Nanaya_DropComboBar takes player p returns nothing
+if p==null then
+return
+endif
+call RemoveUnit(LoadUnitHandle(HH,GetHandleId(p),ComboBarHash))
+call RemoveSavedHandle(HH,GetHandleId(p),ComboBarHash)
+endfunction
 function CastRFH22 takes nothing returns nothing
 local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
@@ -46019,6 +46035,9 @@ loop
     call UnitAddItemById(n,GetItemTypeId(it[i]))
     set i=i+1
 endloop
+if GetUnitTypeId(u)=='H069' then
+    call Nanaya_DropComboBar(p)
+endif
 call RemoveUnit(u)
 if GetLocalPlayer()==p then
     call ClearSelection()
@@ -46433,6 +46452,11 @@ if LoadUnitHandle(HH,GetHandleId(udg_Hero[i]),SH_Zamasu)!=null then
 elseif LoadUnitHandle(HH,GetHandleId(udg_Hero[udg_SwapId[i]]),SH_Zamasu)!=null then
     call SetUnitOwner(LoadUnitHandle(HH,GetHandleId(udg_Hero[udg_SwapId[i]]),SH_Zamasu),Player(i-1),true)
 endif
+// Нанайя: полоска комбо на прежнем владельце иначе остаётся висеть
+if GetUnitTypeId(udg_Hero[i])=='H069' or GetUnitTypeId(udg_Hero[udg_SwapId[i]])=='H069' then
+    call Nanaya_DropComboBar(Player(i-1))
+    call Nanaya_DropComboBar(Player(udg_SwapId[i]-1))
+endif
 call SetUnitOwner(udg_Hero[i],Player(udg_SwapId[i]-1),true)
 call SetUnitOwner(udg_Hero[udg_SwapId[i]],Player(i-1),true)
 set j=0
@@ -46595,7 +46619,7 @@ exitwhen j==9
 set j=j+1
 endloop
 if GetUnitTypeId(udg_Hero[i])=='H069' then
-call RemoveUnit(LoadUnitHandle(HH,GetHandleId(udg_Hero[i]),ComboBarHash))
+call Nanaya_DropComboBar(p)
 endif
 call FlushChildHashtable(HH,GetHandleId(udg_Hero[i]))
 call FlushChildHashtable(h,GetHandleId(udg_Hero[i]))
@@ -147221,7 +147245,8 @@ local integer idp=GetHandleId(GetOwningPlayer(u))
 local unit c=LoadUnitHandle(HH,idp,ComboBarHash)
 local real ml=GetUnitState(u,UNIT_STATE_MAX_LIFE)
 local real time=LoadReal(HH,idu,ComboTimerHash)
-if u!=null then
+// юнит пересоздан или удалён (обмен, повторный выбор) — этот таймер больше не нужен
+if u!=null and GetUnitTypeId(u)!=0 then
 call SetUnitX(c,GetUnitX(u))
 call SetUnitY(c,GetUnitY(u))
 call SetUnitFlyHeight(c,GetUnitFlyHeight(u)+300,0)
@@ -147264,9 +147289,8 @@ call SetAbilityIntegerLevelField(GetUnitAbility(u,'A1BZ'), ABILITY_ILF_TARGET_TY
 call SetAbilityRealLevelField(GetUnitAbility(u,'A1BZ'), ABILITY_RLF_CAST_RANGE,0,99999)
 endif
 else
-call RemoveUnit(LoadUnitHandle(HH,idp,ComboBarHash))
+// полоску не трогаем: у удалённого юнита владелец уже другой, это была бы чужая полоска
 call DestroyTimer(t)
-call RemoveSavedHandle(HH,idp,ComboBarHash)
 call FlushChildHashtable(HH,id)
 endif
 set c=null
@@ -239991,6 +240015,15 @@ call SetFrameTextColourEx(f,3,0)
 call BlzFrameSetEnable(f,false)
 return f
 endfunction
+
+// Подпись нижних кнопок (купить / продать / улучшить): чуть мельче, чтобы
+// «УЛУЧШИТЬ 750» помещалось в рамку. Масштаб текста абсолютный, не от кнопки (у кнопки 0.70)
+function Sh_ActText takes framehandle btn,string t returns nothing
+local framehandle f=Sh_BtnText(btn)
+call BlzFrameSetText(f,t)
+call BlzFrameSetScale(f,0.60)
+set f=null
+endfunction
 //--------------------- отрисовка ---------------------
 
 // Нижний регистр с кириллицей: StringCase понимает только латиницу. Строки JASS —
@@ -240110,7 +240143,7 @@ set ShCostState[i]=st
 if st==0 then
 call BlzFrameSetText(ShItemCost[i],"")
 elseif st==1 then
-call BlzFrameSetText(ShItemCost[i],"|c0066ff66В наличии|r")
+call BlzFrameSetText(ShItemCost[i],"|c0066ff66Есть|r")
 elseif st==2 then
 call BlzFrameSetText(ShItemCost[i],"|c00ff5555"+I2S(Sh_Cost(id))+"|r")
 else
@@ -240132,6 +240165,10 @@ local real th
 if ShPage[pid]>maxoff then
 set ShPage[pid]=maxoff
 endif
+// подсветка ставится ниже, если выбранный предмет есть на экране
+if ShSelGlow!=null then
+call BlzFrameSetVisible(ShSelGlow,false)
+endif
 loop
 exitwhen i==80
 set id=Sh_PageItem(pid,i)
@@ -240141,8 +240178,20 @@ call BlzFrameSetVisible(ShItemBtn[i],id!=0)
 if id!=0 then
 if id==ShSel[pid] then
 call BlzFrameSetTexture(ShRim[i],"war3mapImported\\shop_slot_glow_blue.tga",0,true)
+call BlzFrameSetVertexColor(ShItemBack[i],BlzConvertColor(255,255,255,255))
+if ShSelGlow!=null then
+call BlzFrameClearAllPoints(ShSelGlow)
+call BlzFrameSetPoint(ShSelGlow,FRAMEPOINT_BOTTOMLEFT,ShItemBtn[i],FRAMEPOINT_BOTTOMLEFT,-0.001,-0.001)
+call BlzFrameSetVisible(ShSelGlow,true)
+endif
 else
 call BlzFrameSetTexture(ShRim[i],"war3mapImported\\shop_slot_blue.tga",0,true)
+// невыбранные чуть темнее, когда что-то выбрано — выбранный выделяется ярче
+if ShSel[pid]!=0 then
+call BlzFrameSetVertexColor(ShItemBack[i],BlzConvertColor(255,140,140,140))
+else
+call BlzFrameSetVertexColor(ShItemBack[i],BlzConvertColor(255,255,255,255))
+endif
 endif
 call BlzFrameSetTexture(ShItemBack[i],Sh_Icon(id),0,false)
 call BlzFrameSetText(ShItemTip[i],"|cffffffff"+Sh_Name(id)+"|r")
@@ -240212,7 +240261,7 @@ else
 call BlzFrameSetTexture(ShCraftBack[i],Sh_Icon(id),0,false)
 set c=Sh_RecCnt(k,i)
 if Sh_Owns(pid,id) and c<2 then
-call BlzFrameSetText(ShCraftCost[i],"|c0066ff66В наличии|r")
+call BlzFrameSetText(ShCraftCost[i],"|c0066ff66Есть|r")
 elseif c>1 then
 call BlzFrameSetText(ShCraftCost[i],"|c00FFFF00"+I2S(Sh_Cost(id)*c)+"|r x"+I2S(c))
 else
@@ -240510,22 +240559,68 @@ endfunction
 
 //--------------------- приём: СИНХРОННО у всех ---------------------
 
-function Sh_ItemAllowed takes integer id returns boolean
+// Что можно купить: всё из каталога и все ступени их рецептов (по первому
+// рецепту — тому, что показывает окно сборки). Промежуточные ступени (ранги
+// колец, мечей, посохов, перчаток) в разделах и поиске не показываются: к ним
+// попадают кликом по компоненту в окне сборки. Их цена в таблице равна сумме
+// компонентов, так что прямая покупка стоит столько же, сколько сборка.
+// ShHT: -8 — разрешено (boolean по id), -9 — стек обхода.
+// Набор строится из одних и тех же данных у всех игроков, поэтому годится
+// для синхронной проверки в Sh_Sync. Перестраивается, если карта дописала
+// рецепты или каталог ещё не был заполнен.
+function Sh_MarkBuyable takes nothing returns nothing
 local integer sec=0
 local integer i
+local integer id
+local integer k
+local integer c
+local integer top=0
+if ShRecN!=udg_UIS_Index then
+call Sh_IndexRecipes()
+endif
+call FlushChildHashtable(ShHT,-8)
+call FlushChildHashtable(ShHT,-9)
 loop
 exitwhen sec==ShSecTotal
 set i=0
 loop
 exitwhen i==ShSecCnt[sec]
-if ShSecItem[sec*64+i]==id then
-return true
+set id=ShSecItem[sec*64+i]
+if id!=0 and LoadBoolean(ShHT,-8,id)==false then
+call SaveBoolean(ShHT,-8,id,true)
+call SaveInteger(ShHT,-9,top,id)
+set top=top+1
 endif
 set i=i+1
 endloop
 set sec=sec+1
 endloop
-return false
+// вглубь по рецептам: каждый компонент попадает в стек один раз
+loop
+exitwhen top==0
+set top=top-1
+set k=Sh_RecipeOf(LoadInteger(ShHT,-9,top))
+set c=0
+loop
+exitwhen k<0 or c>=LoadInteger(ShHT,k+1,-1)
+set id=Sh_RecComp(k,c)
+if id!=0 and LoadBoolean(ShHT,-8,id)==false then
+call SaveBoolean(ShHT,-8,id,true)
+call SaveInteger(ShHT,-9,top,id)
+set top=top+1
+endif
+set c=c+1
+endloop
+endloop
+set ShBuyRecN=udg_UIS_Index
+set ShBuySec=ShSecTotal
+endfunction
+
+function Sh_ItemAllowed takes integer id returns boolean
+if ShBuyRecN!=udg_UIS_Index or ShBuySec!=ShSecTotal then
+call Sh_MarkBuyable()
+endif
+return id!=0 and LoadBoolean(ShHT,-8,id)
 endfunction
 
 // Итог покупки/продажи — строкой в окне магазина (слева внизу), а не текстом на экране.
@@ -240599,6 +240694,9 @@ if pref=="SHB" then
 // ПОКУПКА. Проверки повторены здесь намеренно: клик локальный,
 // интерфейс защитой не считается.
 if val==0 or Sh_ItemAllowed(val)==false then
+if GetLocalPlayer()==p then
+call Sh_Msg("|cffff5555Этот предмет не продаётся.|r")
+endif
 set p=null
 set hu=null
 return
@@ -240866,6 +240964,15 @@ set k=0
 set y=y-0.0355
 endif
 endloop
+// Подсветка выбранного предмета: та же модель и раскладка, что у выбора героя
+// в таверне (SelectTavernHeroCheck) — там кнопки тоже 0.024. Спрайт мышь не
+// перехватывает, поэтому клики по ячейке проходят как раньше.
+set ShSelGlow=BlzCreateFrameByType("SPRITE","ShSelGlow",ShList,"",0)
+call BlzFrameSetSize(ShSelGlow,0.0237,0.0237)
+call SetFrameSpriteModel(ShSelGlow,"UI\\Feedback\\Autocast\\UI-ModalButtonOn.mdl")
+call SetFrameSpriteScale(ShSelGlow,0.63)
+call BlzFrameSetLevel(ShSelGlow,8)
+call BlzFrameSetVisible(ShSelGlow,false)
 // полоса прокрутки каталога: жёлоб, ползунок и половины-кнопки (вверх / вниз)
 set ShCatTrack=BlzCreateFrameByType("BACKDROP","ShCatTrack",ShMain,"",0)
 call BlzFrameSetAbsPoint(ShCatTrack,FRAMEPOINT_CENTER,0.459,0.369)
@@ -240913,6 +241020,8 @@ call BlzFrameSetTexture(ShCraftRim[i],"war3mapImported\\shop_slot_blue.tga",0,tr
 call SetFrameBackgroundSize(ShCraftRim[i],0,0.024)
 call BlzFrameSetLevel(ShCraftRim[i],4)
 set ShCraftCost[i]=Sh_CostText(ShCraftBtn[i])
+// как в каталоге: при 0.78 «В наличии» не входит в ширину, переносится по пробелу, и видно только «В»
+call BlzFrameSetScale(ShCraftCost[i],0.70)
 call BlzTriggerRegisterFrameEvent(ShTrgClick,ShCraftBtn[i],FRAMEEVENT_CONTROL_CLICK)
 set k=k+1
 set i=i+1
@@ -240984,30 +241093,30 @@ endloop
 set ShBuyBtn=BlzCreateFrameByType("GLUETEXTBUTTON","ShBuyBtn",ShInv,"ScriptDialogButton",0)
 call Sh_Tag(ShBuyBtn,410)
 call BlzFrameSetAbsPoint(ShBuyBtn,FRAMEPOINT_CENTER,0.525,0.202)
-call BlzFrameSetSize(ShBuyBtn,0.120,0.042)
+call BlzFrameSetSize(ShBuyBtn,0.128,0.048)
 call BlzFrameSetScale(ShBuyBtn,0.70)
-call Sh_Skin(ShBuyBtn,"war3mapImported\\shop_act_blue.tga",0.084)
+call Sh_Skin(ShBuyBtn,"war3mapImported\\shop_act_blue.tga",0.0896)
 call Sh_NoGlow(ShBuyBtn)
-call BlzFrameSetText(Sh_BtnText(ShBuyBtn),"|cFFFFA500КУПИТЬ|r")
+call Sh_ActText(ShBuyBtn,"|cFFFFA500КУПИТЬ|r")
 call BlzTriggerRegisterFrameEvent(ShTrgClick,ShBuyBtn,FRAMEEVENT_CONTROL_CLICK)
 set ShSellBtn=BlzCreateFrameByType("GLUETEXTBUTTON","ShSellBtn",ShInv,"ScriptDialogButton",0)
 call Sh_Tag(ShSellBtn,411)
 call BlzFrameSetAbsPoint(ShSellBtn,FRAMEPOINT_CENTER,0.6195,0.202)
-call BlzFrameSetSize(ShSellBtn,0.120,0.042)
+call BlzFrameSetSize(ShSellBtn,0.128,0.048)
 call BlzFrameSetScale(ShSellBtn,0.70)
-call Sh_Skin(ShSellBtn,"war3mapImported\\shop_act_blue.tga",0.084)
+call Sh_Skin(ShSellBtn,"war3mapImported\\shop_act_blue.tga",0.0896)
 call Sh_NoGlow(ShSellBtn)
-call BlzFrameSetText(Sh_BtnText(ShSellBtn),"|cFFFFA500ПРОДАТЬ|r")
+call Sh_ActText(ShSellBtn,"|cFFFFA500ПРОДАТЬ|r")
 call BlzTriggerRegisterFrameEvent(ShTrgClick,ShSellBtn,FRAMEEVENT_CONTROL_CLICK)
 // быстрая покупка свитка «Улучшить предмет» (I00E, 750)
 set ShUpgBtn=BlzCreateFrameByType("GLUETEXTBUTTON","ShUpgBtn",ShInv,"ScriptDialogButton",0)
 call Sh_Tag(ShUpgBtn,403)
 call BlzFrameSetAbsPoint(ShUpgBtn,FRAMEPOINT_CENTER,0.714,0.202)
-call BlzFrameSetSize(ShUpgBtn,0.120,0.042)
-call Sh_Skin(ShUpgBtn,"war3mapImported\\shop_act_blue.tga",0.084)
+call BlzFrameSetSize(ShUpgBtn,0.128,0.048)
+call Sh_Skin(ShUpgBtn,"war3mapImported\\shop_act_blue.tga",0.0896)
 call Sh_NoGlow(ShUpgBtn)
 call BlzFrameSetScale(ShUpgBtn,0.70)
-call BlzFrameSetText(Sh_BtnText(ShUpgBtn),"|cFFFFA500УЛУЧШИТЬ 750|r")
+call Sh_ActText(ShUpgBtn,"|cFFFFA500УЛУЧШИТЬ 750|r")
 call BlzTriggerRegisterFrameEvent(ShTrgClick,ShUpgBtn,FRAMEEVENT_CONTROL_CLICK)
 
 // ---- «Собирается в»: до 6 предметов, в которые входит выбранный (2 ряда по 3) ----
@@ -241146,7 +241255,7 @@ endif
 // кнопка под золотом показывает, что сделает нажатие
 if OpenShopButtonText!=null then
 if ShOpened then
-call SetFrameText(OpenShopButtonText,"Закрыть магазин (B)")
+call SetFrameText(OpenShopButtonText,"Закрыть (B)")
 else
 call SetFrameText(OpenShopButtonText,"Магазин (B)")
 endif
