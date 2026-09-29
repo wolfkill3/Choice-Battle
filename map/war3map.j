@@ -240803,7 +240803,6 @@ call Sh_Box(0.7125,0.405,0.105,0.020,0.008)  // заголовок «Инвен�
 call Sh_Box(0.7125,0.306,0.105,0.174,0.008)  // ячейки инвентаря 0.219..0.393
 call Sh_Box(0.6195,0.202,0.300,0.034,0.008)  // купить / продать / улучшить — строкой внизу
 call Sh_Box(0.215,0.202,0.060,0.022,0.008)   // золото: правее колонки разделов, под каталогом
-call Sh_Box(0.087,0.198,0.110,0.026,0.008)   // итог покупки/продажи: под колонкой разделов
 call Sh_Box(0.360,0.202,0.210,0.030,0.008)   // поиск (на месте листания страниц)
 
 // панели остались только для раскладки, своих текстур у них нет
@@ -241063,12 +241062,12 @@ call BlzFrameSetVisible(ShUseThumb,false)
 call BlzFrameSetVisible(ShUseUp,false)
 call BlzFrameSetVisible(ShUseDown,false)
 
-// итог покупки/продажи (Sh_Msg) — в рамке под разделами, в две строки
+// итог покупки/продажи (Sh_Msg) — без рамки, под разделами до рамки золота, в две строки
 set ShMsgTxt=BlzCreateFrameByType("TEXT","ShMsgTxt",ShMain,"",0)
-call BlzFrameSetAbsPoint(ShMsgTxt,FRAMEPOINT_CENTER,0.087,0.198)
-call BlzFrameSetSize(ShMsgTxt,0.104,0.024)
+call BlzFrameSetAbsPoint(ShMsgTxt,FRAMEPOINT_CENTER,0.106,0.198)
+call BlzFrameSetSize(ShMsgTxt,0.146,0.028)
 call BlzFrameSetTextAlignment(ShMsgTxt,TEXT_JUSTIFY_CENTER,TEXT_JUSTIFY_MIDDLE)
-call BlzFrameSetFont(ShMsgTxt,"Fonts\\FRIZQT__.TTF",0.0085,0)
+call BlzFrameSetFont(ShMsgTxt,"Fonts\\FRIZQT__.TTF",0.0105,0)
 call BlzFrameSetEnable(ShMsgTxt,false)
 call BlzFrameSetText(ShMsgTxt,"")
 set ShGoldTxt=BlzCreateFrameByType("TEXT","ShGoldTxt",ShMain,"",0)
