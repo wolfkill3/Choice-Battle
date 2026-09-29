@@ -1761,6 +1761,12 @@ integer array ShPage
 integer array ShInvSel
 integer ShLastGold=-1
 integer array ShLastInv
+// рецепты разложены один раз: ключ 0 — предмет -> блок рецепта,
+// ключ k+1 — непустые компоненты блока подряд, -1 — их число
+hashtable ShHT=InitHashtable()
+integer ShRecN=0
+// что было нарисовано под ценой ячейки каталога: 0 пусто, 1 есть, 2 дорого, 3 по карману
+integer array ShCostState
 boolean ShBuilt=false
 boolean ShOpened=false
 trigger ShTrgClick=null
@@ -24769,7 +24775,7 @@ function OnButtonRandom takes nothing returns nothing
                 set udg_Repick[i+1]=-2
         endif
         loop
-        set id=GetRandomInt(0,136)
+        set id=GetRandomInt(0,142)
         if udg_RH[id]!=0 then
         set u[i+1]=CreateUnit(Player(i),udg_RH[id],GetRectCenterX(gg_rct_Rect1),GetRectCenterY(gg_rct_Rect1),0)
         call UnitInventorySetSize(u[i+1],10)
@@ -32310,7 +32316,7 @@ set rand[i]=true
 set udg_Repick[i+1]=0
 if GetPlayerSlotState(Player(i))==PLAYER_SLOT_STATE_PLAYING and u[i+1]==null then
 loop
-set id=GetRandomInt(0,136)
+set id=GetRandomInt(0,142)
 if udg_RH[id]!=0 then
 set u[i+1]=CreateUnit(Player(i),udg_RH[id],x1,y1,0)
 call UnitInventorySetSize(u[i+1],10)
@@ -46179,7 +46185,7 @@ if bonus_repick[i]==2 then
         set udg_Repick[i+1]=-2
 endif
 loop
-set id=GetRandomInt(0,136)
+set id=GetRandomInt(0,142)
 if udg_RH[id]!=0 then
 set u[i+1]=CreateUnit(Player(i),udg_RH[id],GetRectCenterX(gg_rct_Rect1),GetRectCenterY(gg_rct_Rect1),0)
 call UnitInventorySetSize(u[i+1],10)
@@ -46459,7 +46465,7 @@ if udg_Repick[i]<2 then
         set udg_Repick[i]=udg_Repick[i]+1
 endif
 loop
-set id=GetRandomInt(0,136)
+set id=GetRandomInt(0,142)
 if udg_RH[id]!=0 then
 set udg_Hero[i]=CreateUnit(p,udg_RH[id],GetRectCenterX(gg_rct_Rect1),GetRectCenterY(gg_rct_Rect1),0)
 call UnitInventorySetSize(udg_Hero[i],10)
@@ -50604,7 +50610,7 @@ if bonus_repick[i]==2 then
 	set udg_Repick[i+1]=-2
 endif
 loop
-set id=GetRandomInt(0,136)
+set id=GetRandomInt(0,142)
 if udg_RH[id]!=0 then
     set u[i+1]=CreateUnit(Player(i),udg_RH[id],GetRectCenterX(gg_rct_Rect1),GetRectCenterY(gg_rct_Rect1),0)
     call UnitInventorySetSize(u[i+1],10)
@@ -50712,7 +50718,7 @@ else
     set i=pick1
 endif
 loop
-set id=GetRandomInt(0,136)
+set id=GetRandomInt(0,142)
 if udg_RH[id]!=0 then
 set u=CreateUnit(Player(i),udg_RH[id],GetRectCenterX(gg_rct_Rect1),GetRectCenterY(gg_rct_Rect1),0)
 call UnitInventorySetSize(u,10)
@@ -239395,38 +239401,54 @@ endfunction
 // Рецепты живут в udg_UIS_ItemId блоками по 12: одиннадцать компонентов и
 // результат последним (UIS_RegisterItem, war3map.j:24268). Отдельная таблица
 // не нужна — читаем оригинал, значит расхождений не будет.
-function Sh_RecipeOf takes integer id returns integer
-local integer k=0
+// Раскладываем таблицу в хэш: раньше каждый вызов перебирал все ~150
+// рецептов, а Sh_Remain делала это на каждый компонент каждой ступени.
+// Дописываем только новые блоки — если карта зарегистрирует рецепт позже,
+// он тоже попадёт в индекс.
+// Повторяющийся компонент карта обнуляет, а счётчик копит в udg_UIS_ItemCount
+// у первого вхождения. Поэтому дырки пропускаем: компоненты кладём подряд.
+function Sh_IndexRecipes takes nothing returns nothing
+local integer k=ShRecN
+local integer i
+local integer n
 loop
 exitwhen k>=udg_UIS_Index
-if udg_UIS_ItemId[k+11]==id then
-return k
+// как и прежний перебор, берём первый рецепт предмета
+if HaveSavedInteger(ShHT,0,udg_UIS_ItemId[k+11])==false then
+call SaveInteger(ShHT,0,udg_UIS_ItemId[k+11],k)
 endif
-set k=k+12
-endloop
-return -1
-endfunction
-
-// Повторяющийся компонент карта обнуляет, а счётчик копит в udg_UIS_ItemCount
-// у первого вхождения. Поэтому дырки пропускаем: c — номер по порядку среди
-// непустых, а не смещение в блоке.
-function Sh_RecSlot takes integer k,integer c returns integer
-local integer i=0
-local integer n1=0
-if k<0 or c<0 then
-return -1
-endif
+set n=0
+set i=0
 loop
 exitwhen i>10
 if udg_UIS_ItemId[k+i]>0 then
-if n1==c then
-return k+i
-endif
-set n1=n1+1
+call SaveInteger(ShHT,k+1,n,k+i)
+set n=n+1
 endif
 set i=i+1
 endloop
+call SaveInteger(ShHT,k+1,-1,n)
+set k=k+12
+endloop
+set ShRecN=udg_UIS_Index
+endfunction
+
+function Sh_RecipeOf takes integer id returns integer
+if ShRecN!=udg_UIS_Index then
+call Sh_IndexRecipes()
+endif
+if HaveSavedInteger(ShHT,0,id)==false then
 return -1
+endif
+return LoadInteger(ShHT,0,id)
+endfunction
+
+// c — номер по порядку среди непустых компонентов, а не смещение в блоке
+function Sh_RecSlot takes integer k,integer c returns integer
+if k<0 or c<0 or c>=LoadInteger(ShHT,k+1,-1) then
+return -1
+endif
+return LoadInteger(ShHT,k+1,c)
 endfunction
 
 function Sh_RecComp takes integer k,integer c returns integer
@@ -239446,18 +239468,44 @@ endif
 return udg_UIS_ItemCount[sl]
 endfunction
 
+// Снимок инвентаря: 10 ячеек героя и 10 ячеек сундука (у обоих по десять).
+// Возвращает true, если что-то поменялось с прошлого снимка.
+function Sh_ScanInv takes integer pid returns boolean
+local integer i=0
+local integer id
+local boolean ch=false
+loop
+exitwhen i==20
+set id=0
+if i<10 and Hero[pid]!=null then
+set id=GetItemTypeId(UnitItemInSlot(Hero[pid],i))
+elseif i>=10 and Chest[pid]!=null then
+set id=GetItemTypeId(UnitItemInSlot(Chest[pid],i-10))
+endif
+if id!=ShLastInv[i] then
+set ShLastInv[i]=id
+set ch=true
+endif
+set i=i+1
+endloop
+return ch
+endfunction
+
+// Раньше каждый вызов заново перебирал инвентарь героя и сундука, а
+// каталог спрашивал так 42 раза подряд. Теперь смотрим в снимок Sh_ScanInv.
+// Все вызовы — отрисовка у локального игрока, поэтому снимок у каждого свой.
 function Sh_Owns takes integer pid,integer id returns boolean
-// Своим перебором шести слотов пользоваться нельзя: у героев инвентарь до
-// десяти ячеек, и предметы в 7-10 не находились. Берём функцию карты.
+local integer i=0
 if id==0 then
 return false
 endif
-if Hero[pid]!=null and UnitHasItemOfTypeBJCustom(Hero[pid],id) then
+loop
+exitwhen i==20
+if ShLastInv[i]==id then
 return true
 endif
-if Chest[pid]!=null and UnitHasItemOfTypeBJCustom(Chest[pid],id) then
-return true
-endif
+set i=i+1
+endloop
 return false
 endfunction
 
@@ -239667,7 +239715,7 @@ set ShSecItem[479]='IYM0'
 set ShSecItem[480]='IBS1'
 set ShSecItem[481]='ISS0'
 set ShSecItem[482]='IVS0'
-set ShSecItem[483]='ISS0'
+set ShSecItem[483]='ITS0'
 set ShSecName[8]="Ultimate Sets"
 set ShSecCnt[8]=25
 set ShSecItem[512]='I06G'
@@ -239762,17 +239810,33 @@ local integer pid=GetPlayerId(GetLocalPlayer())
 local integer gold=GetPlayerState(GetLocalPlayer(),PLAYER_STATE_RESOURCE_GOLD)
 local integer i=0
 local integer id
+local integer st
 loop
 exitwhen i==42
 set id=Sh_PageItem(pid,i)
+set st=0
 if id==0 then
-call BlzFrameSetText(ShItemCost[i],"")
+set st=0
 elseif Sh_Owns(pid,id) then
-call BlzFrameSetText(ShItemCost[i],"|c0066ff66Owned|r")
+set st=1
 elseif Sh_Cost(id)>gold then
+set st=2
+else
+set st=3
+endif
+// текст переписываем, только если ячейка сменила вид: при смене золота
+// обычно перекрашиваются две-три цены, а не все 42
+if st!=ShCostState[i] then
+set ShCostState[i]=st
+if st==0 then
+call BlzFrameSetText(ShItemCost[i],"")
+elseif st==1 then
+call BlzFrameSetText(ShItemCost[i],"|c0066ff66Owned|r")
+elseif st==2 then
 call BlzFrameSetText(ShItemCost[i],"|c00ff5555"+I2S(Sh_Cost(id))+"|r")
 else
 call BlzFrameSetText(ShItemCost[i],"|c00FFFF00"+I2S(Sh_Cost(id))+"|r")
+endif
 endif
 set i=i+1
 endloop
@@ -239786,6 +239850,8 @@ local integer id
 loop
 exitwhen i==42
 set id=Sh_PageItem(pid,i)
+// в ячейке другой предмет — цену под ней надо нарисовать заново
+set ShCostState[i]=-1
 call BlzFrameSetVisible(ShItemBtn[i],id!=0)
 if id!=0 then
 if id==ShSel[pid] then
@@ -239844,17 +239910,45 @@ endfunction
 function Sh_DrawDesc takes nothing returns nothing
 local integer sel=ShSel[GetPlayerId(GetLocalPlayer())]
 local string body
+local integer i
+local integer j
 if sel==0 then
-call BlzFrameSetText(ShDescName,"|c00FFFF00Предмет не выбран|r")
+call BlzFrameSetText(ShDescName,"|c00FFFF00Item is not selected|r")
 call BlzFrameSetText(ShDescBody,"")
 return
 endif
 call BlzFrameSetText(ShDescName,"|c00FFFF00"+Sh_Name(sel)+"|r")
+// Описание — поле самого предмета. Раньше его брали функцией способностей
+// (BlzGetAbilityExtendedTooltip): она подгружает строку предмета лениво и на
+// первый запрос отдаёт пусто — отсюда пустое описание с первого клика.
+// Её оставляем запасной, если поле вдруг пустое.
+set body=GetBaseItemStringFieldById(sel,ITEM_SF_TOOLTIP_EXTENDED)
+if body=="" then
 set body=BlzGetAbilityExtendedTooltip(sel,0)
+endif
 // длинное описание лезет за подложку — обрезаем и закрываем цвет,
 // иначе оборванный |c... красит весь остальной интерфейс
 if StringLength(body)>330 then
-set body=SubString(body,0,330)+"...|r"
+// режем по последнему переносу строки перед 330-м символом
+set i=330
+loop
+exitwhen i<=200 or SubString(body,i-1,i)=="\n"
+set i=i-1
+endloop
+if i<=200 then
+set i=330
+endif
+// и не посреди цветового кода |cAARRGGBB (10 символов)
+set j=i-1
+loop
+exitwhen j<i-10 or j<0
+if SubString(body,j,j+2)=="|c" or SubString(body,j,j+2)=="|C" then
+set i=j
+exitwhen true
+endif
+set j=j-1
+endloop
+set body=SubString(body,0,i)+"...|r"
 endif
 call BlzFrameSetText(ShDescBody,body)
 endfunction
@@ -239901,6 +239995,10 @@ endloop
 endfunction
 
 function Sh_Redraw takes nothing returns nothing
+// свежий снимок инвентаря и золота: иначе первый тик после открытия окна
+// видел устаревшие значения и перерисовывал всё ещё раз
+call Sh_ScanInv(GetPlayerId(GetLocalPlayer()))
+set ShLastGold=GetPlayerState(GetLocalPlayer(),PLAYER_STATE_RESOURCE_GOLD)
 call Sh_DrawCatalog()
 call Sh_DrawCraft()
 call Sh_DrawDesc()
@@ -239908,30 +240006,15 @@ call Sh_DrawInv()
 endfunction
 
 // Золото и предметы меняются мимо магазина. Раньше окно перерисовывалось
-// целиком каждые 0.4 с и ело кадры: теперь сверяем золото и 16 ячеек героя
+// целиком каждые 0.4 с и ело кадры: теперь сверяем золото и 20 ячеек героя
 // и сундука, и трогаем только то, что от них зависит.
 function Sh_Tick takes nothing returns nothing
-local integer pid=GetPlayerId(GetLocalPlayer())
-local integer i=0
 local integer id
-local boolean inv=false
+local boolean inv
 if ShOpened==false then
 return
 endif
-loop
-exitwhen i==16
-set id=0
-if i<10 and Hero[pid]!=null then
-set id=GetItemTypeId(UnitItemInSlot(Hero[pid],i))
-elseif i>=10 and Chest[pid]!=null then
-set id=GetItemTypeId(UnitItemInSlot(Chest[pid],i-10))
-endif
-if id!=ShLastInv[i] then
-set ShLastInv[i]=id
-set inv=true
-endif
-set i=i+1
-endloop
+set inv=Sh_ScanInv(GetPlayerId(GetLocalPlayer()))
 if inv then
 call Sh_DrawCraft()
 call Sh_DrawInv()
@@ -240166,6 +240249,32 @@ call BlzFrameSetText(f,"")
 return f
 endfunction
 
+// Движок подгружает строки предмета при первом обращении. Спрашиваем их у
+// всех предметов каталога заранее, пока окно строится, чтобы первый клик по
+// предмету уже находил описание готовым. Заодно раскладываем рецепты.
+function Sh_Preload takes nothing returns nothing
+local integer sec=0
+local integer i
+local integer id
+local string s
+loop
+exitwhen sec==ShSecTotal
+set i=0
+loop
+exitwhen i==ShSecCnt[sec]
+set id=ShSecItem[sec*64+i]
+set s=GetBaseItemStringFieldById(id,ITEM_SF_TOOLTIP_EXTENDED)
+set s=BlzGetAbilityExtendedTooltip(id,0)
+set s=GetObjectName(id)
+set s=Sh_Icon(id)
+set i=i+1
+endloop
+set sec=sec+1
+endloop
+call Sh_IndexRecipes()
+set s=null
+endfunction
+
 function Sh_Build takes nothing returns nothing
 local framehandle gameUI=BlzGetOriginFrame(ORIGIN_FRAME_GAME_UI,0)
 local framehandle bg
@@ -240178,6 +240287,7 @@ return
 endif
 set ShBuilt=true
 call Sh_SecData()
+call Sh_Preload()
 
 // главная панель: 0.06..0.74 по X, 0.21..0.56 по Y
 set ShMain=BlzCreateFrame("EscMenuBackdrop",gameUI,0,0)
@@ -240421,14 +240531,14 @@ endfunction
 
 function Sh_Init takes nothing returns nothing
 local integer i=0
-local trigger tk
+// один триггер на всех: Sh_Toggle всё равно смотрит на GetTriggerPlayer
+local trigger tk=CreateTrigger()
 loop
 exitwhen i==12
-set tk=CreateTrigger()
 call TriggerRegisterPlayerKeyEvent(tk,Player(i),OSKEY_B,0,true)
-call TriggerAddAction(tk,function Sh_Toggle)
 set i=i+1
 endloop
+call TriggerAddAction(tk,function Sh_Toggle)
 set tk=null
 call TimerStart(CreateTimer(),0.0,false,function Sh_InitBuild)
 endfunction
