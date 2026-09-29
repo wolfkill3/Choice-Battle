@@ -44113,6 +44113,19 @@ function TsunadeRFHCond takes nothing returns boolean
 set P=GetTriggerPlayer()
 return udg_B==false and(GetPlayerName(P)=="Sylphiette" or GetPlayerName(P)=="Antitilt" or GetPlayerName(P)=="TvoyHazyin" or GetPlayerName(P)=="tenros" or GetPlayerName(P)=="Uriska" or GetPlayerName(P)=="Annieh" or GetPlayerName(P)=="zld6334" or GetPlayerName(P)=="Sasaki..Haise" or GetPlayerName(P)=="PinkieNecro" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="NecromanseR_RuS" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="Wolfkill" or GetPlayerName(P)=="Famouzy" or GetPlayerName(P)=="xxNu-13xx" or GetPlayerName(P)=="ROC4IK" or GetPlayerName(P)=="pro100master999" or GetPlayerName(P)=="SAOkirito1121" or GetPlayerName(P)=="I_Arioh*" or GetPlayerName(P)=="I_Arioh" or GetPlayerName(P)=="Denamesh" or GetPlayerName(P)=="KamaBr" or GetPlayerName(P)=="[OSV] Kama" or BaseSkinCond(P))
 endfunction
+// Нанайя Шики: полоска комбо хранится на ИГРОКЕ (ComboBarHash по хэндлу игрока),
+// а таймер сброса комбо (ShikiComboStarter) заводится при изучении способности,
+// только если у игрока полоски ещё нет. Если старая полоска осталась (обмен,
+// пересоздание героя, повторный выбор), таймер для нового юнита не стартует,
+// счётчик комбо не обнуляется, и урон T (ловкость x (9 + комбо)) растёт без конца.
+// Поэтому полоску снимаем и запись о ней удаляем.
+function Nanaya_DropComboBar takes player p returns nothing
+if p==null then
+return
+endif
+call RemoveUnit(LoadUnitHandle(HH,GetHandleId(p),ComboBarHash))
+call RemoveSavedHandle(HH,GetHandleId(p),ComboBarHash)
+endfunction
 function TsunadeRFHCast takes nothing returns nothing
 local integer ip=GetPlayerId(GetTriggerPlayer())
 local unit u=Hero[ip]
@@ -44157,7 +44170,7 @@ call UnitAddItemById(n,GetItemTypeId(it[i]))
 set i=i+1
 endloop
 if GetUnitTypeId(u)=='H069' then
-call RemoveUnit(LoadUnitHandle(HH,GetHandleId(GetOwningPlayer(u)),ComboBarHash))
+call Nanaya_DropComboBar(GetOwningPlayer(u))
 call UnitRemoveAbility(u,'A1BN')
 endif
 call FlushChildHashtable(HH,GetHandleId(u))
@@ -44230,7 +44243,7 @@ call UnitAddItemById(n,GetItemTypeId(it[i]))
 set i=i+1
 endloop
 if GetUnitTypeId(u)=='H069' then
-call RemoveUnit(LoadUnitHandle(HH,GetHandleId(GetOwningPlayer(u)),ComboBarHash))
+call Nanaya_DropComboBar(GetOwningPlayer(u))
 call UnitRemoveAbility(u,'A1BN')
 endif
 call FlushChildHashtable(HH,GetHandleId(u))
@@ -44303,7 +44316,7 @@ call UnitAddItemById(n,GetItemTypeId(it[i]))
 set i=i+1
 endloop
 if GetUnitTypeId(u)=='H069' then
-call RemoveUnit(LoadUnitHandle(HH,GetHandleId(GetOwningPlayer(u)),ComboBarHash))
+call Nanaya_DropComboBar(GetOwningPlayer(u))
 call UnitRemoveAbility(u,'A1BN')
 endif
 call FlushChildHashtable(HH,GetHandleId(u))
@@ -44376,7 +44389,7 @@ call UnitAddItemById(n,GetItemTypeId(it[i]))
 set i=i+1
 endloop
 if GetUnitTypeId(u)=='H069' then
-call RemoveUnit(LoadUnitHandle(HH,GetHandleId(GetOwningPlayer(u)),ComboBarHash))
+call Nanaya_DropComboBar(GetOwningPlayer(u))
 call UnitRemoveAbility(u,'A1BN')
 endif
 call FlushChildHashtable(HH,GetHandleId(u))
@@ -44449,7 +44462,7 @@ call UnitAddItemById(n,GetItemTypeId(it[i]))
 set i=i+1
 endloop
 if GetUnitTypeId(u)=='H069' then
-call RemoveUnit(LoadUnitHandle(HH,GetHandleId(GetOwningPlayer(u)),ComboBarHash))
+call Nanaya_DropComboBar(GetOwningPlayer(u))
 call UnitRemoveAbility(u,'A1BN')
 endif
 call FlushChildHashtable(HH,GetHandleId(u))
@@ -44522,7 +44535,7 @@ call UnitAddItemById(n,GetItemTypeId(it[i]))
 set i=i+1
 endloop
 if GetUnitTypeId(u)=='H069' then
-call RemoveUnit(LoadUnitHandle(HH,GetHandleId(GetOwningPlayer(u)),ComboBarHash))
+call Nanaya_DropComboBar(GetOwningPlayer(u))
 call UnitRemoveAbility(u,'A1BN')
 endif
 call FlushChildHashtable(HH,GetHandleId(u))
@@ -44595,7 +44608,7 @@ call UnitAddItemById(n,GetItemTypeId(it[i]))
 set i=i+1
 endloop
 if GetUnitTypeId(u)=='H069' then
-call RemoveUnit(LoadUnitHandle(HH,GetHandleId(GetOwningPlayer(u)),ComboBarHash))
+call Nanaya_DropComboBar(GetOwningPlayer(u))
 call UnitRemoveAbility(u,'A1BN')
 endif
 call FlushChildHashtable(HH,GetHandleId(u))
@@ -44687,7 +44700,7 @@ call UnitAddItemById(n,GetItemTypeId(it[i]))
 set i=i+1
 endloop
 if GetUnitTypeId(u)=='H069' then
-call RemoveUnit(LoadUnitHandle(HH,GetHandleId(GetOwningPlayer(u)),ComboBarHash))
+call Nanaya_DropComboBar(GetOwningPlayer(u))
 call UnitRemoveAbility(u,'A1BN')
 endif
 call FlushChildHashtable(HH,GetHandleId(u))
@@ -44760,7 +44773,7 @@ call UnitAddItemById(n,GetItemTypeId(it[i]))
 set i=i+1
 endloop
 if GetUnitTypeId(u)=='H069' then
-call RemoveUnit(LoadUnitHandle(HH,GetHandleId(GetOwningPlayer(u)),ComboBarHash))
+call Nanaya_DropComboBar(GetOwningPlayer(u))
 call UnitRemoveAbility(u,'A1BN')
 endif
 call FlushChildHashtable(HH,GetHandleId(u))
@@ -44833,7 +44846,7 @@ call UnitAddItemById(n,GetItemTypeId(it[i]))
 set i=i+1
 endloop
 if GetUnitTypeId(u)=='H069' then
-call RemoveUnit(LoadUnitHandle(HH,GetHandleId(GetOwningPlayer(u)),ComboBarHash))
+call Nanaya_DropComboBar(GetOwningPlayer(u))
 call UnitRemoveAbility(u,'A1BN')
 endif
 call FlushChildHashtable(HH,GetHandleId(u))
@@ -44906,7 +44919,7 @@ call UnitAddItemById(n,GetItemTypeId(it[i]))
 set i=i+1
 endloop
 if GetUnitTypeId(u)=='H069' then
-call RemoveUnit(LoadUnitHandle(HH,GetHandleId(GetOwningPlayer(u)),ComboBarHash))
+call Nanaya_DropComboBar(GetOwningPlayer(u))
 call UnitRemoveAbility(u,'A1BN')
 endif
 call FlushChildHashtable(HH,GetHandleId(u))
@@ -44979,7 +44992,7 @@ call UnitAddItemById(n,GetItemTypeId(it[i]))
 set i=i+1
 endloop
 if GetUnitTypeId(u)=='H069' then
-call RemoveUnit(LoadUnitHandle(HH,GetHandleId(GetOwningPlayer(u)),ComboBarHash))
+call Nanaya_DropComboBar(GetOwningPlayer(u))
 call UnitRemoveAbility(u,'A1BN')
 endif
 call FlushChildHashtable(HH,GetHandleId(u))
@@ -45052,7 +45065,7 @@ call UnitAddItemById(n,GetItemTypeId(it[i]))
 set i=i+1
 endloop
 if GetUnitTypeId(u)=='H069' then
-call RemoveUnit(LoadUnitHandle(HH,GetHandleId(GetOwningPlayer(u)),ComboBarHash))
+call Nanaya_DropComboBar(GetOwningPlayer(u))
 call UnitRemoveAbility(u,'A1BN')
 endif
 call FlushChildHashtable(HH,GetHandleId(u))
@@ -45125,7 +45138,7 @@ call UnitAddItemById(n,GetItemTypeId(it[i]))
 set i=i+1
 endloop
 if GetUnitTypeId(u)=='H069' then
-call RemoveUnit(LoadUnitHandle(HH,GetHandleId(GetOwningPlayer(u)),ComboBarHash))
+call Nanaya_DropComboBar(GetOwningPlayer(u))
 call UnitRemoveAbility(u,'A1BN')
 endif
 call FlushChildHashtable(HH,GetHandleId(u))
@@ -45198,7 +45211,7 @@ call UnitAddItemById(n,GetItemTypeId(it[i]))
 set i=i+1
 endloop
 if GetUnitTypeId(u)=='H069' then
-call RemoveUnit(LoadUnitHandle(HH,GetHandleId(GetOwningPlayer(u)),ComboBarHash))
+call Nanaya_DropComboBar(GetOwningPlayer(u))
 call UnitRemoveAbility(u,'A1BN')
 endif
 call FlushChildHashtable(HH,GetHandleId(u))
@@ -45271,7 +45284,7 @@ call UnitAddItemById(n,GetItemTypeId(it[i]))
 set i=i+1
 endloop
 if GetUnitTypeId(u)=='H069' then
-call RemoveUnit(LoadUnitHandle(HH,GetHandleId(GetOwningPlayer(u)),ComboBarHash))
+call Nanaya_DropComboBar(GetOwningPlayer(u))
 call UnitRemoveAbility(u,'A1BN')
 endif
 call FlushChildHashtable(HH,GetHandleId(u))
@@ -45349,7 +45362,7 @@ call UnitAddItemById(n,GetItemTypeId(it[i]))
 set i=i+1
 endloop
 if GetUnitTypeId(u)=='H069' then
-call RemoveUnit(LoadUnitHandle(HH,GetHandleId(GetOwningPlayer(u)),ComboBarHash))
+call Nanaya_DropComboBar(GetOwningPlayer(u))
 call UnitRemoveAbility(u,'A1BN')
 endif
 call FlushChildHashtable(HH,GetHandleId(u))
@@ -45422,7 +45435,7 @@ call UnitAddItemById(n,GetItemTypeId(it[i]))
 set i=i+1
 endloop
 if GetUnitTypeId(u)=='H069' then
-call RemoveUnit(LoadUnitHandle(HH,GetHandleId(GetOwningPlayer(u)),ComboBarHash))
+call Nanaya_DropComboBar(GetOwningPlayer(u))
 call UnitRemoveAbility(u,'A1BN')
 endif
 call FlushChildHashtable(HH,GetHandleId(u))
@@ -45495,7 +45508,7 @@ call UnitAddItemById(n,GetItemTypeId(it[i]))
 set i=i+1
 endloop
 if GetUnitTypeId(u)=='H069' then
-call RemoveUnit(LoadUnitHandle(HH,GetHandleId(GetOwningPlayer(u)),ComboBarHash))
+call Nanaya_DropComboBar(GetOwningPlayer(u))
 call UnitRemoveAbility(u,'A1BN')
 endif
 call FlushChildHashtable(HH,GetHandleId(u))
@@ -45568,7 +45581,7 @@ call UnitAddItemById(n,GetItemTypeId(it[i]))
 set i=i+1
 endloop
 if GetUnitTypeId(u)=='H069' then
-call RemoveUnit(LoadUnitHandle(HH,GetHandleId(GetOwningPlayer(u)),ComboBarHash))
+call Nanaya_DropComboBar(GetOwningPlayer(u))
 call UnitRemoveAbility(u,'A1BN')
 endif
 call FlushChildHashtable(HH,GetHandleId(u))
@@ -45641,7 +45654,7 @@ call UnitAddItemById(n,GetItemTypeId(it[i]))
 set i=i+1
 endloop
 if GetUnitTypeId(u)=='H069' then
-call RemoveUnit(LoadUnitHandle(HH,GetHandleId(GetOwningPlayer(u)),ComboBarHash))
+call Nanaya_DropComboBar(GetOwningPlayer(u))
 call UnitRemoveAbility(u,'A1BN')
 endif
 call FlushChildHashtable(HH,GetHandleId(u))
@@ -45714,7 +45727,7 @@ call UnitAddItemById(n,GetItemTypeId(it[i]))
 set i=i+1
 endloop
 if GetUnitTypeId(u)=='H069' then
-call RemoveUnit(LoadUnitHandle(HH,GetHandleId(GetOwningPlayer(u)),ComboBarHash))
+call Nanaya_DropComboBar(GetOwningPlayer(u))
 call UnitRemoveAbility(u,'A1BN')
 endif
 call FlushChildHashtable(HH,GetHandleId(u))
@@ -45787,7 +45800,7 @@ call UnitAddItemById(n,GetItemTypeId(it[i]))
 set i=i+1
 endloop
 if GetUnitTypeId(u)=='H069' then
-call RemoveUnit(LoadUnitHandle(HH,GetHandleId(GetOwningPlayer(u)),ComboBarHash))
+call Nanaya_DropComboBar(GetOwningPlayer(u))
 call UnitRemoveAbility(u,'A1BN')
 endif
 call FlushChildHashtable(HH,GetHandleId(u))
@@ -45854,7 +45867,7 @@ call UnitAddItemById(n,GetItemTypeId(it[i]))
 set i=i+1
 endloop
 if GetUnitTypeId(u)=='H069' then
-call RemoveUnit(LoadUnitHandle(HH,GetHandleId(GetOwningPlayer(u)),ComboBarHash))
+call Nanaya_DropComboBar(GetOwningPlayer(u))
 call UnitRemoveAbility(u,'A1BN')
 endif
 call FlushChildHashtable(HH,GetHandleId(u))
@@ -45921,7 +45934,7 @@ call UnitAddItemById(n,GetItemTypeId(it[i]))
 set i=i+1
 endloop
 if GetUnitTypeId(u)=='H069' then
-call RemoveUnit(LoadUnitHandle(HH,GetHandleId(GetOwningPlayer(u)),ComboBarHash))
+call Nanaya_DropComboBar(GetOwningPlayer(u))
 call UnitRemoveAbility(u,'A1BN')
 endif
 call FlushChildHashtable(HH,GetHandleId(u))
@@ -45959,19 +45972,6 @@ call IssueImmediateOrder(c,"stop")
 endif
 set u=null
 set c=null
-endfunction
-// Нанайя Шики: полоска комбо хранится на ИГРОКЕ (ComboBarHash по хэндлу игрока),
-// а таймер сброса комбо (ShikiComboStarter) заводится при изучении способности,
-// только если у игрока полоски ещё нет. Если старая полоска осталась (обмен,
-// пересоздание героя, повторный выбор), таймер для нового юнита не стартует,
-// счётчик комбо не обнуляется, и урон T (ловкость x (9 + комбо)) растёт без конца.
-// Поэтому полоску снимаем и запись о ней удаляем.
-function Nanaya_DropComboBar takes player p returns nothing
-if p==null then
-return
-endif
-call RemoveUnit(LoadUnitHandle(HH,GetHandleId(p),ComboBarHash))
-call RemoveSavedHandle(HH,GetHandleId(p),ComboBarHash)
 endfunction
 function CastRFH22 takes nothing returns nothing
 local timer t=GetExpiredTimer()
@@ -48655,7 +48655,7 @@ exitwhen i>=10
         set i=i+1
 endloop
 if GetUnitTypeId(u)=='H069' then
-call RemoveUnit(LoadUnitHandle(HH,GetHandleId(GetOwningPlayer(u)),ComboBarHash))
+call Nanaya_DropComboBar(GetOwningPlayer(u))
 call UnitRemoveAbility(u,'A1BN')
 endif
 call FlushChildHashtable(HH,GetHandleId(u))
@@ -148883,6 +148883,7 @@ local player p=GetOwningPlayer(u)
 local integer idu=GetHandleId(u)
 local integer idp=GetHandleId(p)
 local integer lvl=GetUnitAbilityLevel(u,'A1BT')
+local timer tc
 if lvl==1 and u==Hero[GetPlayerId(p)] then
 call SaveReal(HH,GetHandleId(GetOwningPlayer(u)),SH_CE,0)
 call SaveUnitHandle(HH,id,0,u)
@@ -148904,7 +148905,13 @@ call SetUnitColor(n,PLAYER_COLOR_LIGHT_GRAY)
 call SetUnitTimeScale(n,10000)
 call SaveUnitHandle(HH,idp,ComboBarHash,n)
 call ComboBar(u,-.5)
-call TimerStart(t,0.02,true,function ShikiComboStarter)
+// Отдельный таймер: раньше здесь перезапускался t, и EShikiPause не работал вовсе,
+// если E изучали, пока у игрока нет полоски (первой способностью или после -rfh).
+// Тогда пауза E2 (A1BN) не снималась, и вариация E после 6-й комбы больше не открывалась.
+set tc=CreateTimer()
+call SaveUnitHandle(HH,GetHandleId(tc),0,u)
+call TimerStart(tc,0.02,true,function ShikiComboStarter)
+set tc=null
 endif
 else
 call SetUnitAbilityLevel(u,'A1BU',lvl)
