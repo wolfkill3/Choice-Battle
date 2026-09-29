@@ -849,7 +849,7 @@ framehandle  OpenStatusButtonText
 framehandle  CloseEmoteButton
 framehandle  CloseEmoteButtonText
 handlelist array EmoteFrameList
-framehandle  EmoteBarFrame
+framehandle  EmoteBarFrame=null
 framehandle  EmoteBarFrameText
 framehandle  EmoteBarGridFrame
 framehandle  OpenEmoteButton
@@ -858,7 +858,7 @@ framehandle  OpenEmoteButtonText
 framehandle  CloseStatsButton
 framehandle  CloseStatsButtonText
 //handlelist array StatsFrameList
-framehandle  StatsBarFrame
+framehandle  StatsBarFrame=null
 framehandle  StatsBarFrameText
 framehandle  StatsBarGridFrame
 framehandle  OpenStatsButton
@@ -874,7 +874,7 @@ framehandle  OpenResistButton
 // framehandle  OpenResistButtonText
 
 handlelist array IdHeroFrameList
-framehandle  IdHeroFrame
+framehandle  IdHeroFrame=null
 framehandle  CloseIdButton
 framehandle  CloseIdButtonText
 framehandle  OpenIdButton
@@ -1491,7 +1491,7 @@ unit Theater2=null
 hashtable HH=InitHashtable()
 hashtable HPlayer=InitHashtable()
 hashtable HSYNC=InitHashtable()
-multiboard mbg
+multiboard mbg=null
 integer array row
 string array nick
 unit array Hero
@@ -1775,6 +1775,41 @@ trigger ShTrgSync=null
 framehandle OpenShopButton=null
 framehandle OpenShopButtonText=null
 trigger ShTrgOpen=null
+// окно «Собирается в»: во что входит выбранный предмет (обратный индекс рецептов)
+framehandle array ShUseBtn
+framehandle array ShUseBack
+framehandle array ShUseRim
+framehandle array ShUseTip
+// прокрутка «Собирается в»: сдвиг в рядах (у каждого игрока свой) и полоса справа
+integer array ShUseOff
+integer array ShUseSel
+// идёт выбор режима игры (диалог «Choice Mode» на экране): магазин не открывается
+boolean ShModePick=false
+// каталог 10x8 с прокруткой (ShPage — теперь сдвиг в рядах) и поиск по всем разделам
+framehandle ShCatTrack=null
+framehandle ShCatThumb=null
+framehandle ShCatUp=null
+framehandle ShCatDown=null
+framehandle ShSearch=null
+framehandle ShSearchHint=null
+trigger ShTrgSearch=null
+string ShQuery=""
+// найденное: номера в ShAll (а не сами предметы) — чтобы брать готовые имена из ShAllLow
+integer array ShFound
+integer ShFoundN=0
+integer array ShAll
+string array ShAllLow
+integer ShAllN=0
+// был ли мультиборд виден до открытия магазина (на время магазина прячем)
+boolean ShMbWas=false
+// подписи разделов — свои текстовые фреймы поверх кнопок (у встроенной подписи тень)
+framehandle array ShSecTxt
+// прошлый запрос в нижнем регистре: если новый его содержит, ищем только среди найденного
+string ShLastQry=""
+framehandle ShUseTrack=null
+framehandle ShUseThumb=null
+framehandle ShUseUp=null
+framehandle ShUseDown=null
 //Shop32GlobalsEnd
 //BofGlobalsStart
 hashtable bof_HT=InitHashtable()
@@ -22913,9 +22948,16 @@ call TriggerAddAction(t,function ItemDoubleClickCast)
 set t=null
 endfunction
 
+// Shop32: курсор в поиске магазина — горячие клавиши карты у этого игрока молчат.
+// Значение локальное: проверять только внутри блоков GetLocalPlayer(), где нет
+// изменений состояния игры, иначе будет рассинхрон.
+function Sh_Typing takes nothing returns boolean
+return ShSearch!=null and IsFrameFocused(ShSearch)
+endfunction
+
 function Trig_Sync_Actions takes nothing returns nothing
 local player p=GetTriggerPlayer()
-if GetLocalPlayer() == p then
+if GetLocalPlayer() == p and not Sh_Typing() then
 call SaveReal(HSYNC,GetHandleId(p),c_MOUSE_X,GetMouseWorldX())
 call SaveReal(HSYNC,GetHandleId(p),c_MOUSE_Y,GetMouseWorldY())
 call SyncSavedReal(HSYNC, GetHandleId(p), c_MOUSE_X)
@@ -23324,6 +23366,27 @@ function OnButtonCloseStatusBar takes nothing returns nothing
     set but = null
 endfunction
 
+// Shop32: крупное окно (таверна, эмодзи, статистика, ID героя) закрывает магазин.
+// Вызывается только внутри блока GetLocalPlayer(): меняет лишь показ у этого игрока.
+function Sh_CloseLocal takes nothing returns nothing
+if ShOpened then
+set ShOpened=false
+if ShMbWas then
+set ShMbWas=false
+call ShowFrame(GetOriginFrame(ORIGIN_FRAME_MULTIBOARD,0),true)
+endif
+if ShMain!=null then
+call BlzFrameSetVisible(ShMain,false)
+if ShSearch!=null then
+call BlzFrameSetFocus(ShSearch,false)
+endif
+endif
+if OpenShopButtonText!=null then
+call SetFrameText(OpenShopButtonText,"Shop (B)")
+endif
+endif
+endfunction
+
 function OnButtonOpenStatusBar takes nothing returns nothing
     local player p = GetTriggerPlayer( )
     local integer pHid = GetHandleId( p )
@@ -23360,7 +23423,7 @@ function ToggleOpenStatusBar takes nothing returns nothing
     local player p = GetTriggerPlayer( )
     local integer pHid = GetHandleId( p )
     local integer i=0
-    if p==GetLocalPlayer() then
+    if p==GetLocalPlayer() and not Sh_Typing() then
         if IsFrameVisible(OpenStatusButton)==true then
             call ShowFrame( StatusBarFrame, true )
             call ShowFrame( OpenStatusButton, false )
@@ -23425,6 +23488,7 @@ function OnButtonOpenStatsBar takes nothing returns nothing
     if p==GetLocalPlayer() then
         call SetFramePriority(GetOriginFrame( ORIGIN_FRAME_CHAT_MSG, 0 ),0)
         call ShowFrame( StatsBarFrame, true )
+        call Sh_CloseLocal()
         call ShowFrame( EmoteBarFrame, false )
         call ShowFrame( multbframw, false )
         call ShowFrame( OpenEmoteButton, true )
@@ -23440,10 +23504,11 @@ function ToggleOpenStatsBar takes nothing returns nothing
     local integer pHid = GetHandleId( p )
     local framehandle multbframw=GetOriginFrame( ORIGIN_FRAME_MULTIBOARD, 0 )
     local integer i=0
-    if p==GetLocalPlayer() then
+    if p==GetLocalPlayer() and not Sh_Typing() then
         if IsFrameVisible(OpenStatsButton)==true then
             call SetFramePriority(GetOriginFrame( ORIGIN_FRAME_CHAT_MSG, 0 ),0)
             call ShowFrame( StatsBarFrame, true )
+            call Sh_CloseLocal()
             call ShowFrame( EmoteBarFrame, false )
             call ShowFrame( multbframw, false )
             call ShowFrame( OpenEmoteButton, true )
@@ -23499,6 +23564,7 @@ function OnButtonOpenEmoteBar takes nothing returns nothing
     if p==GetLocalPlayer() then
         call ShowFrame( StatsBarFrame, false )
         call ShowFrame( EmoteBarFrame, true )
+        call Sh_CloseLocal()
         call ShowFrame( multbframw, false )
         call ShowFrame( OpenEmoteButton, false )
         call ShowFrame( OpenStatsButton, true )
@@ -23524,10 +23590,11 @@ function ToggleOpenEmoteBar takes nothing returns nothing
     local integer pHid = GetHandleId( p )
     local framehandle multbframw=GetOriginFrame( ORIGIN_FRAME_MULTIBOARD, 0 )
     local integer i=0
-    if p==GetLocalPlayer() then
+    if p==GetLocalPlayer() and not Sh_Typing() then
         if IsFrameVisible(OpenEmoteButton)==true then
             call ShowFrame( StatsBarFrame, false )
             call ShowFrame( EmoteBarFrame, true )
+            call Sh_CloseLocal()
             call ShowFrame( multbframw, false )
             call ShowFrame( OpenEmoteButton, false )
             call ShowFrame( OpenStatsButton, true )
@@ -23667,6 +23734,7 @@ function OnButtonOpenId takes nothing returns nothing
     endif
     if p==GetLocalPlayer() then
         call ShowFrame( IdHeroFrame, true )
+        call Sh_CloseLocal()
         call ShowFrame( OpenIdButton, false )
     endif
     set P=p
@@ -23686,9 +23754,10 @@ function ToggleOpenId takes nothing returns nothing
     local player p = GetTriggerPlayer( )
     local integer pHid = GetHandleId( p )
     local integer i=0
-    if p==GetLocalPlayer() then
+    if p==GetLocalPlayer() and not Sh_Typing() then
         if IsFrameVisible(OpenIdButton)==true then
             call ShowFrame( IdHeroFrame, true )
+            call Sh_CloseLocal()
             call ShowFrame( OpenIdButton, false )
         else
             call ShowFrame( OpenIdButton, true )
@@ -24391,6 +24460,7 @@ function OnButtonOpenTavern takes nothing returns nothing
     endif
     if p==GetLocalPlayer() then
         call ShowFrame( TavernHeroFrame, true )
+        call Sh_CloseLocal()
         call ShowFrame( TavernHeroPortrait, true )
         call ShowFrame( StatusBarFrame, false)
         call ShowFrame( CloseStatusButton, false)
@@ -24481,9 +24551,10 @@ function ToggleOpenTavern takes nothing returns nothing
     local integer i=0
     local integer j=0
     if udg_test==false then
-        if p==GetLocalPlayer() then
+        if p==GetLocalPlayer() and not Sh_Typing() then
             if IsFrameVisible(OpenTavernButton)==true then
                 call ShowFrame( TavernHeroFrame, true )
+                call Sh_CloseLocal()
                 call ShowFrame( TavernHeroPortrait, true )
                 call ClearFrameAllPoints( GetOriginFrame( ORIGIN_FRAME_CHAT_MSG, 0 ) )
                 call SetFrameRelativePoint( GetOriginFrame( ORIGIN_FRAME_CHAT_MSG, 0 ), FRAMEPOINT_CENTER, TavernHeroFrame, FRAMEPOINT_LEFT, 0.1, -0.105 )
@@ -30056,6 +30127,9 @@ set udg_Button[3]=DialogAddButton(udg_Dialog,"Captain Mode",0)
 endif
 if udg_test==false then
 call DialogDisplay(Player(0),udg_Dialog,true)
+// Shop32: пока выбирается режим, магазин закрыт
+set ShModePick=true
+call Sh_CloseLocal()
 call TriggerRegisterDialogEvent(gg_trg_Dialog2,udg_Dialog)
 call TriggerRegisterDialogEvent(gg_trg_Dialog3,udg_Dialog)
 call DestroyTrigger(GetTriggeringTrigger())
@@ -30096,6 +30170,9 @@ set udg_Button[4]=DialogAddButton(udg_Dialog,"Ban Mode",0)
 set udg_Button[2]=DialogAddButton(udg_Dialog,"Random Mode",0)
 //set udg_Button[3]=DialogAddButton(udg_Dialog,"Captain Mode",0)
 call DialogDisplay(Player(0),udg_Dialog,true)
+// Shop32: пока выбирается режим, магазин закрыт
+set ShModePick=true
+call Sh_CloseLocal()
 call TriggerRegisterDialogEvent(gg_trg_Dialog2,udg_Dialog)
 call TriggerRegisterDialogEvent(gg_trg_Dialog3,udg_Dialog)
 set FFAMode=true
@@ -30112,6 +30189,9 @@ if maxplayers==10 then
 set udg_Button[3]=DialogAddButton(udg_Dialog,"Captain Mode",0)
 endif
 call DialogDisplay(Player(0),udg_Dialog,true)
+// Shop32: пока выбирается режим, магазин закрыт
+set ShModePick=true
+call Sh_CloseLocal()
 call TriggerRegisterDialogEvent(gg_trg_Dialog2,udg_Dialog)
 call TriggerRegisterDialogEvent(gg_trg_Dialog3,udg_Dialog)
 set FFAMode=false
@@ -30176,6 +30256,9 @@ local integer x=0
 local integer y=0
 local integer GrX=0
 local integer GrY=0
+// Shop32: режим выбран — магазин снова можно открыть, открытый закрываем
+set ShModePick=false
+call Sh_CloseLocal()
 
 if udg_test==false then
     call EditBlackBorders( .0, .0 ) // -.02, .13 | to return to default 
@@ -37925,11 +38008,15 @@ function Trig_StatusBar_Actions takes nothing returns nothing
     call SetFrameTexture( OpenShopButton, "checkbox-depressed2.blp", 0, true )
     call SetFrameTexture( OpenShopButton, "checkbox-depressed2.blp", 1, true )
     call SetFrameTexture( OpenShopButton, "checkbox-depressed2.blp", 2, true )
-    call SetFrameSize( OpenShopButton, .09, .02 )
+    call SetFrameSize( OpenShopButton, .075, .017 )
     call ShowFrame( OpenShopButton, true )
     call SetFramePriority( OpenShopButton, 7 )
-    // текст золота на верхней панели; вызов с null-фреймом рвёт поток, поэтому проверяем
-    if GetOriginFrame( ORIGIN_FRAME_RESOURCE_BAR_TEXT, 0 )!=null then
+    // Над инвентарём, на месте надписи «Inventory»: сверху по центру стоит десятая
+    // ячейка (TimeAct переставляет её над второй), кнопка едет вместе с ней.
+    // Вызов с null-фреймом рвёт поток, поэтому проверяем; запасной вариант — под золотом.
+    if GetOriginFrame( ORIGIN_FRAME_ITEM_BUTTON, 9 )!=null then
+        call SetFrameRelativePoint( OpenShopButton, FRAMEPOINT_BOTTOM, GetOriginFrame( ORIGIN_FRAME_ITEM_BUTTON, 9 ), FRAMEPOINT_TOP, 0, .003 )
+    elseif GetOriginFrame( ORIGIN_FRAME_RESOURCE_BAR_TEXT, 0 )!=null then
         call SetFrameRelativePoint( OpenShopButton, FRAMEPOINT_TOP, GetOriginFrame( ORIGIN_FRAME_RESOURCE_BAR_TEXT, 0 ), FRAMEPOINT_BOTTOM, 0, -.004 )
     else
         call SetFrameAbsolutePoint( OpenShopButton, FRAMEPOINT_CENTER, .57, .565 )
@@ -239462,6 +239549,10 @@ function Sh_IndexRecipes takes nothing returns nothing
 local integer k=ShRecN
 local integer i
 local integer cnt
+local integer res
+local integer rc
+local integer pos
+local boolean dup
 loop
 exitwhen k>=udg_UIS_Index
 // как и прежний перебор, берём первый рецепт предмета
@@ -239474,6 +239565,20 @@ loop
 exitwhen i>10
 if udg_UIS_ItemId[k+i]>0 then
 call SaveInteger(ShHT,k+1,cnt,k+i)
+// обратный индекс: ключ — сам компонент, -1 — сколько результатов, 0.. — результаты
+set res=udg_UIS_ItemId[k+11]
+set rc=LoadInteger(ShHT,udg_UIS_ItemId[k+i],-1)
+set dup=false
+set pos=0
+loop
+exitwhen pos>=rc or dup
+set dup=LoadInteger(ShHT,udg_UIS_ItemId[k+i],pos)==res
+set pos=pos+1
+endloop
+if res!=0 and not dup then
+call SaveInteger(ShHT,udg_UIS_ItemId[k+i],rc,res)
+call SaveInteger(ShHT,udg_UIS_ItemId[k+i],-1,rc+1)
+endif
 set cnt=cnt+1
 endif
 set i=i+1
@@ -239639,7 +239744,7 @@ set ShSecItem[67]='I01U'
 set ShSecItem[68]='I02V'
 set ShSecItem[69]='I020'
 set ShSecItem[70]='I04F'
-set ShSecItem[71]='I03N'
+set ShSecItem[71]='I03O'
 set ShSecItem[72]='I031'
 set ShSecItem[73]='ISDi'
 set ShSecItem[74]='I050'
@@ -239841,18 +239946,138 @@ set i=i+1
 endloop
 set b=null
 endfunction
+// Убрать синее свечение ScriptDialogButton при наведении (1) и фокусе (0):
+// подсветкам ставим пустую текстуру, клики и стили кнопки не трогаем.
+function Sh_NoGlow takes framehandle btn returns nothing
+local integer i=0
+loop
+exitwhen i>1
+if GetFrameHighlight(btn,i)!=null then
+call SetFrameHighlightTexture(btn,i,"war3mapImported\\shop_none.tga",BLEND_MODE_BLEND)
+endif
+set i=i+1
+endloop
+endfunction
+
+// Тень у текста кнопки: у текстового фрейма состояние 3 — тень, делаем её прозрачной.
+// Трогаем только детей с текстом, подложки кнопки не задеваем.
+function Sh_NoShadow takes framehandle btn returns nothing
+local integer i=0
+local integer cc=GetFrameChildrenCount(btn)
+local framehandle chf
+loop
+exitwhen i>=cc
+set chf=GetFrameChild(btn,i)
+if chf!=null and GetFrameText(chf)!="" then
+call SetFrameTextColourEx(chf,3,0)
+endif
+set i=i+1
+endloop
+set chf=null
+endfunction
+
+// Подпись кнопки своим текстовым фреймом: у встроенной подписи ScriptDialogButton
+// тень не убирается. Фрейм лежит поверх кнопки, наследует её масштаб, клики не ловит.
+function Sh_BtnText takes framehandle btn returns framehandle
+local framehandle f=BlzCreateFrameByType("TEXT","ShBtnTxt",btn,"",0)
+call BlzFrameSetText(btn,"")
+call BlzFrameSetAllPoints(f,btn)
+call BlzFrameSetTextAlignment(f,TEXT_JUSTIFY_CENTER,TEXT_JUSTIFY_MIDDLE)
+call SetFrameTextColourEx(f,3,0)
+// выключенный текст не ловит мышь: клик проходит к кнопке под ним
+call BlzFrameSetEnable(f,false)
+return f
+endfunction
 //--------------------- отрисовка ---------------------
 
+// Нижний регистр с кириллицей: StringCase понимает только латиницу. Строки JASS —
+// байты UTF-8, русская буква занимает два байта, поэтому ищем её парой байт в алфавите.
+function Sh_Lower takes string src returns string
+// Латиницу приводит StringCase одним вызовом; русские заглавные (по два байта UTF-8)
+// заменяем точечно: StringFind по каждой из 33 букв. Ведущий байт D0 не бывает
+// вторым байтом символа, поэтому совпадение всегда стоит на границе буквы.
+// Так строк создаётся столько, сколько заглавных, а не по строке на каждый символ.
+local string abcup="АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ"
+local string abclo="абвгдеёжзийклмнопрстуфхцчшщъыьэюя"
+local string res=StringCase(src,false)
+local string two
+local integer at=0
+local integer fp
+loop
+exitwhen at>=66
+set two=SubString(abcup,at,at+2)
+set fp=StringFind(res,two,true)
+loop
+exitwhen fp<0
+set res=SubString(res,0,fp)+SubString(abclo,at,at+2)+SubString(res,fp+2,StringLength(res))
+set fp=StringFind(res,two,true)
+endloop
+set at=at+2
+endloop
+return res
+endfunction
+
+// Каталог 10 в ряд, ShPage — сколько рядов прокручено. Если в поиске есть текст,
+// показываем найденное по всем разделам, иначе — выбранный раздел.
+function Sh_ListCount takes integer pid returns integer
+if ShQuery!="" then
+return ShFoundN
+endif
+return ShSecCnt[ShSelSec[pid]]
+endfunction
+
 function Sh_PageItem takes integer pid,integer slot returns integer
-local integer cnt=ShPage[pid]*42+slot
+local integer cnt=ShPage[pid]*10+slot
+if ShQuery!="" then
+if cnt>=ShFoundN then
+return 0
+endif
+return ShAll[ShFound[cnt]]
+endif
 if cnt>=ShSecCnt[ShSelSec[pid]] then
 return 0
 endif
 return ShSecItem[ShSelSec[pid]*64+cnt]
 endfunction
 
+// сколько рядов в списке (для прокрутки)
 function Sh_PageCount takes integer pid returns integer
-return IMaxBJ(1,(ShSecCnt[ShSelSec[pid]]+41)/42)
+return IMaxBJ(1,(Sh_ListCount(pid)+9)/10)
+endfunction
+
+// Отбор по строке поиска: нативный StringFind по заранее приведённым именам
+function Sh_Filter takes nothing returns nothing
+local string qry=Sh_Lower(ShQuery)
+local integer i=0
+local integer cnt=0
+if qry=="" then
+set ShFoundN=0
+set ShLastQry=""
+return
+endif
+// запрос дописали (новый содержит прежний): всё найденное теперь — подмножество
+// прошлого результата, перебираем только его вместо всего каталога
+if ShLastQry!="" and StringFind(qry,ShLastQry,true)>=0 then
+loop
+exitwhen i>=ShFoundN
+if StringFind(ShAllLow[ShFound[i]],qry,true)>=0 then
+set ShFound[cnt]=ShFound[i]
+set cnt=cnt+1
+endif
+set i=i+1
+endloop
+else
+loop
+exitwhen i>=ShAllN
+if StringFind(ShAllLow[i],qry,true)>=0 then
+set ShFound[cnt]=i
+set cnt=cnt+1
+endif
+set i=i+1
+endloop
+endif
+set ShFoundN=cnt
+set ShLastQry=qry
 endfunction
 
 // Цены и отметка «есть» — единственное в каталоге, что зависит от золота
@@ -239863,7 +240088,7 @@ local integer i=0
 local integer id
 local integer st
 loop
-exitwhen i==42
+exitwhen i==80
 set id=Sh_PageItem(pid,i)
 set st=0
 if id==0 then
@@ -239876,7 +240101,7 @@ else
 set st=3
 endif
 // текст переписываем, только если ячейка сменила вид: при смене золота
-// обычно перекрашиваются две-три цены, а не все 42
+// обычно перекрашиваются две-три цены, а не все 80
 if st!=ShCostState[i] then
 set ShCostState[i]=st
 if st==0 then
@@ -239898,25 +240123,69 @@ function Sh_DrawCatalog takes nothing returns nothing
 local integer pid=GetPlayerId(GetLocalPlayer())
 local integer i=0
 local integer id
+local integer rows=Sh_PageCount(pid)
+local integer maxoff=IMaxBJ(0,rows-8)
+local real th
+if ShPage[pid]>maxoff then
+set ShPage[pid]=maxoff
+endif
 loop
-exitwhen i==42
+exitwhen i==80
 set id=Sh_PageItem(pid,i)
 // в ячейке другой предмет — цену под ней надо нарисовать заново
 set ShCostState[i]=-1
 call BlzFrameSetVisible(ShItemBtn[i],id!=0)
 if id!=0 then
 if id==ShSel[pid] then
-call BlzFrameSetTexture(ShRim[i],"war3mapImported\\shop_slot_glow.tga",0,true)
+call BlzFrameSetTexture(ShRim[i],"war3mapImported\\shop_slot_glow_blue.tga",0,true)
 else
-call BlzFrameSetTexture(ShRim[i],"war3mapImported\\shop_slot.tga",0,true)
+call BlzFrameSetTexture(ShRim[i],"war3mapImported\\shop_slot_blue.tga",0,true)
 endif
 call BlzFrameSetTexture(ShItemBack[i],Sh_Icon(id),0,false)
-call BlzFrameSetText(ShItemTip[i],"|cff2B1B10"+Sh_Name(id)+"|r")
+call BlzFrameSetText(ShItemTip[i],"|cffffffff"+Sh_Name(id)+"|r")
 endif
 set i=i+1
 endloop
-call BlzFrameSetText(ShPageTxt,I2S(ShPage[pid]+1)+" / "+I2S(Sh_PageCount(pid)))
+// полоса прокрутки — только когда рядов больше восьми
+call BlzFrameSetVisible(ShCatTrack,maxoff>0)
+call BlzFrameSetVisible(ShCatThumb,maxoff>0)
+call BlzFrameSetVisible(ShCatUp,maxoff>0)
+call BlzFrameSetVisible(ShCatDown,maxoff>0)
+if maxoff>0 then
+set th=0.288*8.0/I2R(rows)
+call BlzFrameSetSize(ShCatThumb,0.006,th)
+call BlzFrameSetAbsPoint(ShCatThumb,FRAMEPOINT_TOP,0.459,0.513-(0.288-th)*I2R(ShPage[pid])/I2R(maxoff))
+endif
 call Sh_DrawPrices()
+endfunction
+
+// Текст в поиске изменился (событие приходит с игроком): отбор только у него
+function Sh_SearchChanged takes nothing returns nothing
+if GetTriggerPlayer()!=GetLocalPlayer() then
+return
+endif
+set ShQuery=BlzGetTriggerFrameText()
+set ShPage[GetPlayerId(GetLocalPlayer())]=0
+call Sh_Filter()
+call BlzFrameSetVisible(ShSearchHint,ShQuery=="")
+call Sh_DrawCatalog()
+endfunction
+
+// В 1.26 событие изменения текста поля не приходит, поэтому, пока магазин открыт,
+// читаем поле сами (раз в 0.1 с). Это только локальный показ, по сети ничего не идёт.
+function Sh_SearchPoll takes nothing returns nothing
+local string qtext
+if ShOpened==false or ShSearch==null then
+return
+endif
+set qtext=BlzFrameGetText(ShSearch)
+if qtext!=ShQuery then
+set ShQuery=qtext
+set ShPage[GetPlayerId(GetLocalPlayer())]=0
+call Sh_Filter()
+call BlzFrameSetVisible(ShSearchHint,ShQuery=="")
+call Sh_DrawCatalog()
+endif
 endfunction
 
 // Сборка: сверху цепочка улучшения, снизу компоненты, справа общая цена.
@@ -239979,15 +240248,15 @@ set body=BlzGetAbilityExtendedTooltip(sel,0)
 endif
 // длинное описание лезет за подложку — обрезаем и закрываем цвет,
 // иначе оборванный |c... красит весь остальной интерфейс
-if StringLength(body)>330 then
-// режем по последнему переносу строки перед 330-м символом
-set i=330
+if StringLength(body)>560 then
+// режем по последнему переносу строки перед 560-м символом
+set i=560
 loop
-exitwhen i<=200 or SubString(body,i-1,i)=="\n"
+exitwhen i<=400 or SubString(body,i-1,i)=="\n"
 set i=i-1
 endloop
-if i<=200 then
-set i=330
+if i<=400 then
+set i=560
 endif
 // и не посреди цветового кода |cAARRGGBB (10 символов)
 set j=i-1
@@ -240035,14 +240304,76 @@ local integer i=0
 loop
 exitwhen i==ShSecTotal
 if i==ShSelSec[pid] then
-call BlzFrameSetText(ShSecBtn[i],"|c00FFF0C0"+ShSecName[i]+"|r")
-call Sh_Skin(ShSecBtn[i],"war3mapImported\\shop_btn_hover_s.tga",0.095)
+call BlzFrameSetText(ShSecTxt[i],"|cffffffff"+ShSecName[i]+"|r")
+call Sh_Skin(ShSecBtn[i],"war3mapImported\\shop_tab_blue.tga",0.1103)
 else
-call BlzFrameSetText(ShSecBtn[i],"|c00E8C061"+ShSecName[i]+"|r")
-call Sh_Skin(ShSecBtn[i],"war3mapImported\\shop_btn_s.tga",0.095)
+call BlzFrameSetText(ShSecTxt[i],"|cFFFFA500"+ShSecName[i]+"|r")
+call Sh_Skin(ShSecBtn[i],"war3mapImported\\shop_tab_blue.tga",0.1103)
 endif
 set i=i+1
 endloop
+endfunction
+
+// Во что собирается предмет: n-й результат из обратного индекса (0 — нет)
+function Sh_UseOf takes integer id,integer i returns integer
+if ShRecN!=udg_UIS_Index then
+call Sh_IndexRecipes()
+endif
+if id==0 or i>=LoadInteger(ShHT,id,-1) then
+return 0
+endif
+return LoadInteger(ShHT,id,i)
+endfunction
+
+function Sh_UseCount takes integer id returns integer
+if ShRecN!=udg_UIS_Index then
+call Sh_IndexRecipes()
+endif
+if id==0 then
+return 0
+endif
+return LoadInteger(ShHT,id,-1)
+endfunction
+
+// Видно 2 ряда по 3; ShUseOff — сколько рядов прокручено. Полоса и ползунок
+// показываются, только когда рядов больше двух.
+function Sh_DrawUses takes nothing returns nothing
+local integer pid=GetPlayerId(GetLocalPlayer())
+local integer sel=ShSel[pid]
+local integer i=0
+local integer id
+local integer rows
+local integer maxoff
+local real th
+if sel!=ShUseSel[pid] then
+set ShUseSel[pid]=sel
+set ShUseOff[pid]=0
+endif
+set rows=(Sh_UseCount(sel)+2)/3
+set maxoff=IMaxBJ(0,rows-2)
+if ShUseOff[pid]>maxoff then
+set ShUseOff[pid]=maxoff
+endif
+loop
+exitwhen i==6
+set id=Sh_UseOf(sel,ShUseOff[pid]*3+i)
+call BlzFrameSetVisible(ShUseBtn[i],id!=0)
+if id!=0 then
+call BlzFrameSetTexture(ShUseBack[i],Sh_Icon(id),0,false)
+call BlzFrameSetText(ShUseTip[i],"|cffffffff"+Sh_Name(id)+"|r")
+endif
+set i=i+1
+endloop
+call BlzFrameSetVisible(ShUseTrack,maxoff>0)
+call BlzFrameSetVisible(ShUseThumb,maxoff>0)
+call BlzFrameSetVisible(ShUseUp,maxoff>0)
+call BlzFrameSetVisible(ShUseDown,maxoff>0)
+if maxoff>0 then
+// ползунок: высота — доля видимых рядов, положение — текущий сдвиг
+set th=0.068*2.0/I2R(rows)
+call BlzFrameSetSize(ShUseThumb,0.006,th)
+call BlzFrameSetAbsPoint(ShUseThumb,FRAMEPOINT_TOP,0.7565,0.493-(0.068-th)*I2R(ShUseOff[pid])/I2R(maxoff))
+endif
 endfunction
 
 function Sh_Redraw takes nothing returns nothing
@@ -240053,6 +240384,7 @@ set ShLastGold=GetPlayerState(GetLocalPlayer(),PLAYER_STATE_RESOURCE_GOLD)
 call Sh_DrawCatalog()
 call Sh_DrawCraft()
 call Sh_DrawDesc()
+call Sh_DrawUses()
 call Sh_DrawInv()
 endfunction
 
@@ -240085,9 +240417,39 @@ local integer id
 if GetTriggerPlayer()!=GetLocalPlayer() then
 return
 endif
+// колесо мыши над «Собирается в» и клики по половинам полосы листают ряды
+if tag>=700 and tag<712 and (BlzGetTriggerFrameEvent()==FRAMEEVENT_MOUSE_WHEEL or tag>=710) then
+if tag==710 or (tag<710 and BlzGetTriggerFrameValue()>0) then
+set ShUseOff[pid]=IMaxBJ(0,ShUseOff[pid]-1)
+else
+set ShUseOff[pid]=ShUseOff[pid]+1
+endif
+call Sh_DrawUses()
+return
+endif
+// колесо над каталогом и клики по половинам его полосы листают ряды
+if (tag>=200 and tag<280 and BlzGetTriggerFrameEvent()==FRAMEEVENT_MOUSE_WHEEL) or tag==720 or tag==721 then
+if tag==720 or (tag<720 and BlzGetTriggerFrameValue()>0) then
+set ShPage[pid]=IMaxBJ(0,ShPage[pid]-1)
+else
+set ShPage[pid]=ShPage[pid]+1
+endif
+call Sh_DrawCatalog()
+return
+endif
 if tag>=100 and tag<200 then
 set ShSelSec[pid]=tag-100
 set ShPage[pid]=0
+// выбор раздела сбрасывает поиск (очистка поля сама перерисует каталог)
+if ShQuery!="" then
+set ShQuery=""
+set ShFoundN=0
+set ShLastQry=""
+// поле держит фокус и старый текст — сначала снимаем фокус, иначе опрос вернёт запрос
+call BlzFrameSetFocus(ShSearch,false)
+call BlzFrameSetText(ShSearch,"")
+call BlzFrameSetVisible(ShSearchHint,true)
+endif
 call Sh_DrawSections()
 call Sh_DrawCatalog()
 elseif tag>=200 and tag<300 then
@@ -240099,6 +240461,13 @@ endif
 elseif tag>=500 and tag<600 then
 // клик по компоненту сборки проваливает выбор вглубь
 set id=Sh_RecComp(Sh_RecipeOf(ShSel[pid]),tag-500)
+if id!=0 then
+set ShSel[pid]=id
+call Sh_Redraw()
+endif
+elseif tag>=700 and tag<706 then
+// клик по «Собирается в» открывает результат сборки
+set id=Sh_UseOf(ShSel[pid],tag-700)
 if id!=0 then
 set ShSel[pid]=id
 call Sh_Redraw()
@@ -240258,7 +240627,8 @@ local framehandle tf=BlzCreateFrameByType("TEXT","ShTipText",tip,"",ShTipCtx)
 set ShTipCtx=ShTipCtx+1
 call BlzFrameSetPoint(tip,FRAMEPOINT_TOP,owner,FRAMEPOINT_BOTTOM,0.0,-0.014)
 call BlzFrameSetSize(tip,0.12,0.017)
-call BlzFrameSetTexture(tip,"war3mapImported\\shop_tooltip_a.tga",0,true)
+// та же полупрозрачная подложка, что и у окна (была коричневая shop_tooltip_a.tga)
+call BlzFrameSetTexture(tip,"TooltipLessVisible.blp",0,true)
 call SetFrameBackgroundSize(tip,0,0.12)
 call BlzFrameSetLevel(tip,50)
 call BlzFrameSetAllPoints(tf,tip)
@@ -240278,6 +240648,31 @@ call BlzFrameSetTexture(f,tex,0,true)
 call BlzFrameSetSize(f,w,ph)
 call Sh_Fit(f,w,ph)
 return f
+endfunction
+
+// Рамка-обводка области: обычный BACKDROP без заливки, только синяя кайма карты
+// (Choice-tooltip-border.blp, как у окна и подсказок таверны). Создаётся раньше
+// панелей, поэтому рисуется под содержимым; клики BACKDROP не перехватывает.
+function Sh_Box takes real cx,real cy,real w,real ph,real edge returns framehandle
+local framehandle f=BlzCreateFrameByType("BACKDROP","ShBox",ShMain,"",0)
+call BlzFrameSetAbsPoint(f,FRAMEPOINT_CENTER,cx,cy)
+call BlzFrameSetSize(f,w,ph)
+call SetFrameBackdropTexture(f,0,"war3mapImported\\shop_none.tga",true,true,"Choice-tooltip-border.blp",BORDER_FLAG_ALL,false)
+call SetFrameBorderEnabled(f,0,true)
+call SetFrameBorderSize(f,0,edge)
+return f
+endfunction
+
+// Знак на стрелке листания: своя надпись на всю кнопку, выровненная по центру.
+// Встроенная подпись ScriptDialogButton смещена под крупные кнопки и съезжала вниз.
+function Sh_ArrowText takes framehandle btn,string t returns nothing
+local framehandle f=BlzCreateFrameByType("TEXT","ShArrowTxt",btn,"",0)
+call BlzFrameSetText(btn,"")
+call BlzFrameSetAllPoints(f,btn)
+call BlzFrameSetTextAlignment(f,TEXT_JUSTIFY_CENTER,TEXT_JUSTIFY_MIDDLE)
+call BlzFrameSetEnable(f,false)
+call BlzFrameSetText(f,"|cFFFFA500"+t+"|r")
+set f=null
 endfunction
 
 // Заголовок над панелью
@@ -240323,6 +240718,24 @@ endloop
 set sec=sec+1
 endloop
 call Sh_IndexRecipes()
+// список для поиска: каждый предмет каталога один раз, имя в нижнем регистре
+set sec=0
+loop
+exitwhen sec==ShSecTotal
+set i=0
+loop
+exitwhen i==ShSecCnt[sec]
+set id=ShSecItem[sec*64+i]
+if id!=0 and LoadBoolean(ShHT,-7,id)==false then
+call SaveBoolean(ShHT,-7,id,true)
+set ShAll[ShAllN]=id
+set ShAllLow[ShAllN]=Sh_Lower(GetObjectName(id))
+set ShAllN=ShAllN+1
+endif
+set i=i+1
+endloop
+set sec=sec+1
+endloop
 set s=null
 endfunction
 
@@ -240333,6 +240746,7 @@ local integer i=0
 local integer k=0
 local real x
 local real y
+local framehandle usecap
 if ShBuilt then
 return
 endif
@@ -240341,23 +240755,42 @@ call Sh_SecData()
 call Sh_Preload()
 
 // главная панель: 0.06..0.74 по X, 0.21..0.56 по Y
-set ShMain=BlzCreateFrame("EscMenuBackdrop",gameUI,0,0)
+// Фон — одна картинка на обычном BACKDROP: полупрозрачная подложка, как у панели
+// сопротивлений. Она однородная, так что плитка движка не даёт стыков.
+// Раньше: рамка EscMenuBackdrop + shop_window.tga + отдельная текстура каждой панели.
+set ShMain=BlzCreateFrameByType("BACKDROP","ShMain",gameUI,"",0)
 call BlzFrameSetAbsPoint(ShMain,FRAMEPOINT_CENTER,0.40,0.368)
 call BlzFrameSetSize(ShMain,0.76,0.384)
+call BlzFrameSetTexture(ShMain,"TooltipLessVisible.blp",0,true)
+// обводка окна — синяя рамка карты, как у подсказок таверны (Choice-tooltip-border.blp)
+call SetFrameBackdropTexture(ShMain,0,"TooltipLessVisible.blp",true,true,"Choice-tooltip-border.blp",BORDER_FLAG_ALL,false)
+call SetFrameBorderEnabled(ShMain,0,true)
+call SetFrameBorderSize(ShMain,0,0.012)
+call SetFrameBackgroundInsets(ShMain,0,0.004,0.004,0.004,0.004)
 
-// ---- фон окна ----
-// Своя текстура только на обычном BACKDROP: на фрейме из шаблона движок
-// режет её на девять кусков и растягивает по экрану.
-set bg=Sh_Deco(ShMain,"war3mapImported\\shop_window.tga",0)
-call SetFrameBackgroundSize(bg,0,0.744)
-call BlzFrameSetPoint(bg,FRAMEPOINT_TOPLEFT,ShMain,FRAMEPOINT_TOPLEFT,0.008,-0.008)
-call BlzFrameSetPoint(bg,FRAMEPOINT_BOTTOMRIGHT,ShMain,FRAMEPOINT_BOTTOMRIGHT,-0.008,0.008)
-set bg=null
+// ---- обводка областей (рамки по разметке на скриншоте) ----
+// Верх всех блоков на одной линии (0.519); у блоков с заголовком полоса заголовка и
+// содержимое — две рамки друг над другом, без наложения краёв. Кайма везде одна: 0.008.
+// Средняя колонка 0.474..0.654: сборка в один ряд и высокое описание.
+// Правая колонка 0.660..0.765: «Собирается в» и инвентарь; кнопки — строкой внизу окна.
+call Sh_Box(0.308,0.369,0.32,0.30,0.008)     // каталог 0.148..0.468 по X, 0.219..0.519 по Y
+call Sh_Box(0.564,0.509,0.18,0.020,0.008)    // заголовок «Сборка» 0.499..0.519
+call Sh_Box(0.564,0.469,0.18,0.056,0.008)    // сборка 0.441..0.497: один ряд до 6 компонентов
+call Sh_Box(0.564,0.429,0.18,0.020,0.008)    // название предмета 0.419..0.439
+call Sh_Box(0.564,0.318,0.18,0.198,0.008)    // описание 0.219..0.417
+call Sh_Box(0.7125,0.509,0.105,0.020,0.008)  // заголовок «Собирается в» 0.499..0.519
+call Sh_Box(0.7125,0.459,0.105,0.076,0.008)  // собирается в 0.421..0.497: 2 ряда по 3
+call Sh_Box(0.7125,0.405,0.105,0.020,0.008)  // заголовок «Инвентарь» 0.395..0.415
+call Sh_Box(0.7125,0.306,0.105,0.174,0.008)  // ячейки инвентаря 0.219..0.393
+call Sh_Box(0.6195,0.202,0.300,0.034,0.008)  // купить / продать / улучшить — строкой внизу
+call Sh_Box(0.215,0.202,0.060,0.022,0.008)   // золото: правее колонки разделов, под каталогом
+call Sh_Box(0.360,0.202,0.210,0.030,0.008)   // поиск (на месте листания страниц)
 
-set ShList=Sh_Panel(0.318,0.369,0.30,0.30,"war3mapImported\\shop_panel_list.tga")
-set ShCraft=Sh_Panel(0.542,0.439,0.15,0.16,"war3mapImported\\shop_panel_craft.tga")
-set ShDesc=Sh_Panel(0.542,0.279,0.15,0.12,"war3mapImported\\shop_panel_desc.tga")
-set ShInv=Sh_Panel(0.6775,0.363,0.115,0.288,"war3mapImported\\shop_panel_inv.tga")
+// панели остались только для раскладки, своих текстур у них нет
+set ShList=Sh_Panel(0.308,0.369,0.32,0.30,"war3mapImported\\shop_none.tga")
+set ShCraft=Sh_Panel(0.564,0.480,0.18,0.078,"war3mapImported\\shop_none.tga")
+set ShDesc=Sh_Panel(0.564,0.329,0.18,0.220,"war3mapImported\\shop_none.tga")
+set ShInv=Sh_Panel(0.7125,0.316,0.105,0.198,"war3mapImported\\shop_none.tga")
 
 set ShTrgClick=CreateTrigger()
 call TriggerAddAction(ShTrgClick,function Sh_Click)
@@ -240368,51 +240801,81 @@ set i=0
 loop
 exitwhen i==ShSecTotal
 set ShSecBtn[i]=BlzCreateFrameByType("GLUETEXTBUTTON","ShSecBtn",ShMain,"ScriptDialogButton",0)
+set ShSecTxt[i]=Sh_BtnText(ShSecBtn[i])
 call Sh_Tag(ShSecBtn[i],100+i)
-call BlzFrameSetAbsPoint(ShSecBtn[i],FRAMEPOINT_CENTER,0.1165,y)
+call BlzFrameSetAbsPoint(ShSecBtn[i],FRAMEPOINT_CENTER,0.087,y)
 call BlzFrameSetSize(ShSecBtn[i],0.1532,0.0416)
-call BlzFrameSetScale(ShSecBtn[i],0.62)
+call BlzFrameSetScale(ShSecBtn[i],0.72)
+call Sh_NoGlow(ShSecBtn[i])
 call BlzTriggerRegisterFrameEvent(ShTrgClick,ShSecBtn[i],FRAMEEVENT_CONTROL_CLICK)
-set y=y-0.034
+set y=y-0.036
 set i=i+1
 endloop
 // подписи и скин разделов
 call Sh_DrawSections()
 
-// ---- каталог 7 в ряд, 5 рядов ----
-set x=0.012
-set y=-0.028
+// ---- каталог 10 в ряд, 8 рядов видно (80 ячеек), иконки 0.024, справа полоса прокрутки ----
+set x=0.008
+set y=-0.022
 set k=0
 set i=0
 loop
-exitwhen i==42
+exitwhen i==80
 set ShItemBtn[i]=BlzCreateFrameByType("BUTTON","ShItemBtn",ShList,"ScoreScreenTabButtonTemplate",0)
 call Sh_Tag(ShItemBtn[i],200+i)
 set ShItemBack[i]=BlzCreateFrameByType("BACKDROP","ShItemBack",ShItemBtn[i],"",0)
 call BlzFrameSetAllPoints(ShItemBack[i],ShItemBtn[i])
-call BlzFrameSetPoint(ShItemBtn[i],FRAMEPOINT_LEFT,ShList,FRAMEPOINT_TOPLEFT,x+0.0015+0.039*I2R(k),y)
-call BlzFrameSetSize(ShItemBtn[i],0.033,0.033)
+call BlzFrameSetPoint(ShItemBtn[i],FRAMEPOINT_LEFT,ShList,FRAMEPOINT_TOPLEFT,x+0.0295*I2R(k),y)
+call BlzFrameSetSize(ShItemBtn[i],0.024,0.024)
 call Sh_NoHi(ShItemBtn[i])
 set ShRim[i]=BlzCreateFrameByType("BACKDROP","ShRim",ShItemBtn[i],"",0)
 call BlzFrameSetAllPoints(ShRim[i],ShItemBtn[i])
-call BlzFrameSetTexture(ShRim[i],"war3mapImported\\shop_slot.tga",0,true)
+call BlzFrameSetTexture(ShRim[i],"war3mapImported\\shop_slot_blue.tga",0,true)
 // размер плитки ровно в ячейку, иначе по краям лезут обрезки соседних гнёзд
-call SetFrameBackgroundSize(ShRim[i],0,0.033)
+call SetFrameBackgroundSize(ShRim[i],0,0.024)
 call BlzFrameSetLevel(ShRim[i],4)
 set ShItemTip[i]=Sh_MakeTip(ShItemBtn[i])
 set ShItemCost[i]=Sh_CostText(ShItemBtn[i])
+// в каталоге подпись мельче, чтобы «В наличии» помещалась в шаг ячейки
+call BlzFrameSetScale(ShItemCost[i],0.70)
 call BlzTriggerRegisterFrameEvent(ShTrgClick,ShItemBtn[i],FRAMEEVENT_CONTROL_CLICK)
+call BlzTriggerRegisterFrameEvent(ShTrgClick,ShItemBtn[i],FRAMEEVENT_MOUSE_WHEEL)
 set k=k+1
 set i=i+1
-if k==7 then
+if k==10 then
 set k=0
-set y=y-0.047
+set y=y-0.0355
 endif
 endloop
+// полоса прокрутки каталога: жёлоб, ползунок и половины-кнопки (вверх / вниз)
+set ShCatTrack=BlzCreateFrameByType("BACKDROP","ShCatTrack",ShMain,"",0)
+call BlzFrameSetAbsPoint(ShCatTrack,FRAMEPOINT_CENTER,0.459,0.369)
+call BlzFrameSetSize(ShCatTrack,0.008,0.288)
+call BlzFrameSetTexture(ShCatTrack,"TooltipLessVisible.blp",0,true)
+set ShCatThumb=BlzCreateFrameByType("BACKDROP","ShCatThumb",ShMain,"",0)
+call BlzFrameSetSize(ShCatThumb,0.006,0.144)
+call BlzFrameSetAbsPoint(ShCatThumb,FRAMEPOINT_TOP,0.459,0.513)
+call BlzFrameSetTexture(ShCatThumb,"war3mapImported\\shop_thumb_blue.tga",0,true)
+set ShCatUp=BlzCreateFrameByType("BUTTON","ShCatUp",ShMain,"ScoreScreenTabButtonTemplate",0)
+call Sh_Tag(ShCatUp,720)
+call BlzFrameSetAbsPoint(ShCatUp,FRAMEPOINT_BOTTOM,0.459,0.369)
+call BlzFrameSetSize(ShCatUp,0.010,0.144)
+call Sh_NoHi(ShCatUp)
+call BlzTriggerRegisterFrameEvent(ShTrgClick,ShCatUp,FRAMEEVENT_CONTROL_CLICK)
+set ShCatDown=BlzCreateFrameByType("BUTTON","ShCatDown",ShMain,"ScoreScreenTabButtonTemplate",0)
+call Sh_Tag(ShCatDown,721)
+call BlzFrameSetAbsPoint(ShCatDown,FRAMEPOINT_TOP,0.459,0.369)
+call BlzFrameSetSize(ShCatDown,0.010,0.144)
+call Sh_NoHi(ShCatDown)
+call BlzTriggerRegisterFrameEvent(ShTrgClick,ShCatDown,FRAMEEVENT_CONTROL_CLICK)
+call BlzFrameSetVisible(ShCatTrack,false)
+call BlzFrameSetVisible(ShCatThumb,false)
+call BlzFrameSetVisible(ShCatUp,false)
+call BlzFrameSetVisible(ShCatDown,false)
 
-// ---- сборка: 3 в ряд, 2 ряда, снизу общая цена ----
-set x=0.014
-set y=-0.032
+// ---- сборка: один ряд до 6 компонентов, иконки 0.024; общая цена справа в полосе заголовка ----
+set x=0.008
+set y=-0.038
 set k=0
 set i=0
 loop
@@ -240421,43 +240884,48 @@ set ShCraftBtn[i]=BlzCreateFrameByType("BUTTON","ShCraftBtn",ShCraft,"ScoreScree
 call Sh_Tag(ShCraftBtn[i],500+i)
 set ShCraftBack[i]=BlzCreateFrameByType("BACKDROP","ShCraftBack",ShCraftBtn[i],"",0)
 call BlzFrameSetAllPoints(ShCraftBack[i],ShCraftBtn[i])
-call BlzFrameSetPoint(ShCraftBtn[i],FRAMEPOINT_LEFT,ShCraft,FRAMEPOINT_TOPLEFT,x+0.0015+0.042*I2R(k),y)
-call BlzFrameSetSize(ShCraftBtn[i],0.033,0.033)
+call BlzFrameSetPoint(ShCraftBtn[i],FRAMEPOINT_LEFT,ShCraft,FRAMEPOINT_TOPLEFT,x+0.0285*I2R(k),y)
+call BlzFrameSetSize(ShCraftBtn[i],0.024,0.024)
 call Sh_NoHi(ShCraftBtn[i])
 set ShCraftRim[i]=BlzCreateFrameByType("BACKDROP","ShCraftRim",ShCraftBtn[i],"",0)
 call BlzFrameSetAllPoints(ShCraftRim[i],ShCraftBtn[i])
-call BlzFrameSetTexture(ShCraftRim[i],"war3mapImported\\shop_slot.tga",0,true)
+call BlzFrameSetTexture(ShCraftRim[i],"war3mapImported\\shop_slot_blue.tga",0,true)
 // размер плитки ровно в ячейку, иначе по краям лезут обрезки соседних гнёзд
-call SetFrameBackgroundSize(ShCraftRim[i],0,0.033)
+call SetFrameBackgroundSize(ShCraftRim[i],0,0.024)
 call BlzFrameSetLevel(ShCraftRim[i],4)
 set ShCraftCost[i]=Sh_CostText(ShCraftBtn[i])
 call BlzTriggerRegisterFrameEvent(ShTrgClick,ShCraftBtn[i],FRAMEEVENT_CONTROL_CLICK)
 set k=k+1
 set i=i+1
-if k==3 then
+if k==6 then
 set k=0
-set y=y-0.056
+set y=y-0.036
 endif
 endloop
 call Sh_Cap(ShCraft,"|c00FFD700Assembly|r")
 set ShCraftGoldTxt=BlzCreateFrameByType("TEXT","ShCraftGold",ShCraft,"",0)
-call BlzFrameSetPoint(ShCraftGoldTxt,FRAMEPOINT_BOTTOM,ShCraft,FRAMEPOINT_BOTTOM,0,0.004)
+call BlzFrameSetPoint(ShCraftGoldTxt,FRAMEPOINT_RIGHT,ShCraft,FRAMEPOINT_TOPRIGHT,-0.006,-0.010)
 call BlzFrameSetScale(ShCraftGoldTxt,0.90)
 call BlzFrameSetText(ShCraftGoldTxt,"")
 
 // ---- описание ----
 set ShDescName=Sh_Cap(ShDesc,"|c00FFFF00Item is not selected|r")
+// название — по центру полосы заголовка описания, а не под ней
+call BlzFrameClearAllPoints(ShDescName)
+call BlzFrameSetPoint(ShDescName,FRAMEPOINT_CENTER,ShDesc,FRAMEPOINT_TOP,0,-0.010)
 set ShDescBody=BlzCreateFrameByType("TEXT","ShDescBody",ShDesc,"",0)
-call BlzFrameSetSize(ShDescBody,0.14,0.088)
-call BlzFrameSetPoint(ShDescBody,FRAMEPOINT_TOP,ShDesc,FRAMEPOINT_TOP,0,-0.020)
-call BlzFrameSetScale(ShDescBody,0.78)
+// текст привязан к краям рамки с отступами; размер шрифта вместо масштаба —
+// масштабированный фрейм съезжал со своих точек на левую кайму
+call BlzFrameSetPoint(ShDescBody,FRAMEPOINT_TOPLEFT,ShDesc,FRAMEPOINT_TOPLEFT,0.007,-0.027)
+call BlzFrameSetPoint(ShDescBody,FRAMEPOINT_BOTTOMRIGHT,ShDesc,FRAMEPOINT_BOTTOMRIGHT,-0.007,0.005)
+call BlzFrameSetFont(ShDescBody,"Fonts\\FRIZQT__.TTF",0.0105,0)
 call BlzFrameSetText(ShDescBody,"")
 
 // ---- инвентарь: как игровая панель предметов — один сверху, ниже сетка 3x3 ----
 set ShInvName=Sh_Cap(ShInv,"|c00FFFF00Inventory|r")
 call BlzFrameClearAllPoints(ShInvName)
-call BlzFrameSetPoint(ShInvName,FRAMEPOINT_TOP,ShInv,FRAMEPOINT_TOP,0,-0.006)
-// ячейка мельче шести-слотной (0.036 -> 0.032): три в ряд в панель 0.115 иначе не влезают
+call BlzFrameSetAbsPoint(ShInvName,FRAMEPOINT_CENTER,0.7125,0.405)
+// ячейки 0.028: три в ряд в колонку 0.105, центры столбцов 0.6785 / 0.7125 / 0.7465
 set x=0.005
 set y=-0.034
 set k=0
@@ -240476,18 +240944,18 @@ call BlzFrameSetAllPoints(ShInvBack[i],ShInvBtn[i])
 //     (3) (4) (8)
 //     (5) (6) (9)
 if i==9 then
-call BlzFrameSetPoint(ShInvBtn[i],FRAMEPOINT_LEFT,ShInv,FRAMEPOINT_TOPLEFT,x+0.0365,-0.034)
+call BlzFrameSetAbsPoint(ShInvBtn[i],FRAMEPOINT_CENTER,0.7125,0.373)
 elseif i<6 then
-call BlzFrameSetPoint(ShInvBtn[i],FRAMEPOINT_LEFT,ShInv,FRAMEPOINT_TOPLEFT,x+0.0365*I2R(ModuloInteger(i,2)),-0.078-0.042*I2R(i/2))
+call BlzFrameSetAbsPoint(ShInvBtn[i],FRAMEPOINT_CENTER,0.6785+0.034*I2R(ModuloInteger(i,2)),0.333-0.040*I2R(i/2))
 else
-call BlzFrameSetPoint(ShInvBtn[i],FRAMEPOINT_LEFT,ShInv,FRAMEPOINT_TOPLEFT,x+0.073,-0.078-0.042*I2R(i-6))
+call BlzFrameSetAbsPoint(ShInvBtn[i],FRAMEPOINT_CENTER,0.7465,0.333-0.040*I2R(i-6))
 endif
-call BlzFrameSetSize(ShInvBtn[i],0.032,0.032)
+call BlzFrameSetSize(ShInvBtn[i],0.028,0.028)
 call Sh_NoHi(ShInvBtn[i])
 set ShInvRim[i]=BlzCreateFrameByType("BACKDROP","ShInvRim",ShInvBtn[i],"",0)
 call BlzFrameSetAllPoints(ShInvRim[i],ShInvBtn[i])
-call BlzFrameSetTexture(ShInvRim[i],"war3mapImported\\shop_slot.tga",0,true)
-call SetFrameBackgroundSize(ShInvRim[i],0,0.032)
+call BlzFrameSetTexture(ShInvRim[i],"war3mapImported\\shop_slot_blue.tga",0,true)
+call SetFrameBackgroundSize(ShInvRim[i],0,0.028)
 call BlzFrameSetLevel(ShInvRim[i],4)
 set ShInvTip[i]=Sh_MakeTip(ShInvBtn[i])
 set ShInvCost[i]=Sh_CostText(ShInvBtn[i])
@@ -240496,55 +240964,106 @@ set i=i+1
 endloop
 set ShBuyBtn=BlzCreateFrameByType("GLUETEXTBUTTON","ShBuyBtn",ShInv,"ScriptDialogButton",0)
 call Sh_Tag(ShBuyBtn,410)
-call BlzFrameSetPoint(ShBuyBtn,FRAMEPOINT_BOTTOM,ShInv,FRAMEPOINT_BOTTOM,0,0.062)
-call BlzFrameSetSize(ShBuyBtn,0.105,0.032)
-call BlzFrameSetScale(ShBuyBtn,0.85)
-call Sh_Skin(ShBuyBtn,"war3mapImported\\shop_action_a.tga",0.08925)
-call BlzFrameSetText(ShBuyBtn,"|c0066ff66BUY|r")
+call BlzFrameSetAbsPoint(ShBuyBtn,FRAMEPOINT_CENTER,0.525,0.202)
+call BlzFrameSetSize(ShBuyBtn,0.120,0.042)
+call BlzFrameSetScale(ShBuyBtn,0.70)
+call Sh_Skin(ShBuyBtn,"war3mapImported\\shop_act_blue.tga",0.084)
+call Sh_NoGlow(ShBuyBtn)
+call BlzFrameSetText(Sh_BtnText(ShBuyBtn),"|cFFFFA500BUY|r")
 call BlzTriggerRegisterFrameEvent(ShTrgClick,ShBuyBtn,FRAMEEVENT_CONTROL_CLICK)
 set ShSellBtn=BlzCreateFrameByType("GLUETEXTBUTTON","ShSellBtn",ShInv,"ScriptDialogButton",0)
 call Sh_Tag(ShSellBtn,411)
-call BlzFrameSetPoint(ShSellBtn,FRAMEPOINT_BOTTOM,ShInv,FRAMEPOINT_BOTTOM,0,0.034)
-call BlzFrameSetSize(ShSellBtn,0.105,0.032)
-call BlzFrameSetScale(ShSellBtn,0.85)
-call Sh_Skin(ShSellBtn,"war3mapImported\\shop_action_a.tga",0.08925)
-call BlzFrameSetText(ShSellBtn,"|c00FFD700SELL|r")
+call BlzFrameSetAbsPoint(ShSellBtn,FRAMEPOINT_CENTER,0.6195,0.202)
+call BlzFrameSetSize(ShSellBtn,0.120,0.042)
+call BlzFrameSetScale(ShSellBtn,0.70)
+call Sh_Skin(ShSellBtn,"war3mapImported\\shop_act_blue.tga",0.084)
+call Sh_NoGlow(ShSellBtn)
+call BlzFrameSetText(Sh_BtnText(ShSellBtn),"|cFFFFA500SELL|r")
 call BlzTriggerRegisterFrameEvent(ShTrgClick,ShSellBtn,FRAMEEVENT_CONTROL_CLICK)
 // быстрая покупка свитка «Улучшить предмет» (I00E, 750)
 set ShUpgBtn=BlzCreateFrameByType("GLUETEXTBUTTON","ShUpgBtn",ShInv,"ScriptDialogButton",0)
 call Sh_Tag(ShUpgBtn,403)
-call BlzFrameSetPoint(ShUpgBtn,FRAMEPOINT_BOTTOM,ShInv,FRAMEPOINT_BOTTOM,0,0.006)
-call BlzFrameSetSize(ShUpgBtn,0.105,0.032)
-call Sh_Skin(ShUpgBtn,"war3mapImported\\shop_action_a.tga",0.08925)
-call BlzFrameSetScale(ShUpgBtn,0.85)
-call BlzFrameSetText(ShUpgBtn,"|c00AACCFFUPGRADE 750|r")
+call BlzFrameSetAbsPoint(ShUpgBtn,FRAMEPOINT_CENTER,0.714,0.202)
+call BlzFrameSetSize(ShUpgBtn,0.120,0.042)
+call Sh_Skin(ShUpgBtn,"war3mapImported\\shop_act_blue.tga",0.084)
+call Sh_NoGlow(ShUpgBtn)
+call BlzFrameSetScale(ShUpgBtn,0.70)
+call BlzFrameSetText(Sh_BtnText(ShUpgBtn),"|cFFFFA500UPGRADE 750|r")
 call BlzTriggerRegisterFrameEvent(ShTrgClick,ShUpgBtn,FRAMEEVENT_CONTROL_CLICK)
 
+// ---- «Собирается в»: до 6 предметов, в которые входит выбранный (2 ряда по 3) ----
+set usecap=BlzCreateFrameByType("TEXT","ShUseCap",ShMain,"",0)
+call BlzFrameSetAbsPoint(usecap,FRAMEPOINT_CENTER,0.7125,0.509)
+call BlzFrameSetScale(usecap,0.90)
+call BlzFrameSetText(usecap,"|c00FFD700Builds into|r")
+set i=0
+loop
+exitwhen i==6
+set ShUseBtn[i]=BlzCreateFrameByType("BUTTON","ShUseBtn",ShMain,"ScoreScreenTabButtonTemplate",0)
+call Sh_Tag(ShUseBtn[i],700+i)
+set ShUseBack[i]=BlzCreateFrameByType("BACKDROP","ShUseBack",ShUseBtn[i],"",0)
+call BlzFrameSetAllPoints(ShUseBack[i],ShUseBtn[i])
+call BlzFrameSetAbsPoint(ShUseBtn[i],FRAMEPOINT_CENTER,0.676+0.028*I2R(ModuloInteger(i,3)),0.474-0.032*I2R(i/3))
+call BlzFrameSetSize(ShUseBtn[i],0.022,0.022)
+call Sh_NoHi(ShUseBtn[i])
+set ShUseRim[i]=BlzCreateFrameByType("BACKDROP","ShUseRim",ShUseBtn[i],"",0)
+call BlzFrameSetAllPoints(ShUseRim[i],ShUseBtn[i])
+call BlzFrameSetTexture(ShUseRim[i],"war3mapImported\\shop_slot_blue.tga",0,true)
+call SetFrameBackgroundSize(ShUseRim[i],0,0.022)
+call BlzFrameSetLevel(ShUseRim[i],4)
+set ShUseTip[i]=Sh_MakeTip(ShUseBtn[i])
+call BlzFrameSetVisible(ShUseBtn[i],false)
+call BlzTriggerRegisterFrameEvent(ShTrgClick,ShUseBtn[i],FRAMEEVENT_CONTROL_CLICK)
+call BlzTriggerRegisterFrameEvent(ShTrgClick,ShUseBtn[i],FRAMEEVENT_MOUSE_WHEEL)
+set i=i+1
+endloop
+// полоса прокрутки: жёлоб, ползунок и две невидимые половины-кнопки (вверх / вниз)
+set ShUseTrack=BlzCreateFrameByType("BACKDROP","ShUseTrack",ShMain,"",0)
+call BlzFrameSetAbsPoint(ShUseTrack,FRAMEPOINT_CENTER,0.7565,0.459)
+call BlzFrameSetSize(ShUseTrack,0.008,0.070)
+call BlzFrameSetTexture(ShUseTrack,"TooltipLessVisible.blp",0,true)
+set ShUseThumb=BlzCreateFrameByType("BACKDROP","ShUseThumb",ShMain,"",0)
+call BlzFrameSetSize(ShUseThumb,0.006,0.034)
+call BlzFrameSetAbsPoint(ShUseThumb,FRAMEPOINT_TOP,0.7565,0.493)
+call BlzFrameSetTexture(ShUseThumb,"war3mapImported\\shop_thumb_blue.tga",0,true)
+set ShUseUp=BlzCreateFrameByType("BUTTON","ShUseUp",ShMain,"ScoreScreenTabButtonTemplate",0)
+call Sh_Tag(ShUseUp,710)
+call BlzFrameSetAbsPoint(ShUseUp,FRAMEPOINT_BOTTOM,0.7565,0.459)
+call BlzFrameSetSize(ShUseUp,0.010,0.035)
+call Sh_NoHi(ShUseUp)
+call BlzTriggerRegisterFrameEvent(ShTrgClick,ShUseUp,FRAMEEVENT_CONTROL_CLICK)
+set ShUseDown=BlzCreateFrameByType("BUTTON","ShUseDown",ShMain,"ScoreScreenTabButtonTemplate",0)
+call Sh_Tag(ShUseDown,711)
+call BlzFrameSetAbsPoint(ShUseDown,FRAMEPOINT_TOP,0.7565,0.459)
+call BlzFrameSetSize(ShUseDown,0.010,0.035)
+call Sh_NoHi(ShUseDown)
+call BlzTriggerRegisterFrameEvent(ShTrgClick,ShUseDown,FRAMEEVENT_CONTROL_CLICK)
+call BlzFrameSetVisible(ShUseTrack,false)
+call BlzFrameSetVisible(ShUseThumb,false)
+call BlzFrameSetVisible(ShUseUp,false)
+call BlzFrameSetVisible(ShUseDown,false)
+
 set ShGoldTxt=BlzCreateFrameByType("TEXT","ShGoldTxt",ShMain,"",0)
-call BlzFrameSetAbsPoint(ShGoldTxt,FRAMEPOINT_CENTER,0.170,0.211)
+call BlzFrameSetAbsPoint(ShGoldTxt,FRAMEPOINT_CENTER,0.215,0.202)
 call BlzFrameSetText(ShGoldTxt,"")
 
-// ---- листание страниц ----
-set ShPrevBtn=BlzCreateFrameByType("GLUETEXTBUTTON","ShPrevBtn",ShMain,"ScriptDialogButton",0)
-call Sh_Tag(ShPrevBtn,401)
-call BlzFrameSetAbsPoint(ShPrevBtn,FRAMEPOINT_CENTER,0.283,0.211)
-call BlzFrameSetSize(ShPrevBtn,0.026,0.026)
-call BlzFrameSetScale(ShPrevBtn,0.80)
-call Sh_Skin(ShPrevBtn,"war3mapImported\\shop_arrow_l.tga",0.0208)
-call BlzTriggerRegisterFrameEvent(ShTrgClick,ShPrevBtn,FRAMEEVENT_CONTROL_CLICK)
-set ShPageTxt=BlzCreateFrameByType("TEXT","ShPageTxt",ShMain,"",0)
-call BlzFrameSetAbsPoint(ShPageTxt,FRAMEPOINT_CENTER,0.318,0.211)
-call BlzFrameSetSize(ShPageTxt,0.034,0.016)
-call BlzFrameSetTextAlignment(ShPageTxt,TEXT_JUSTIFY_CENTER,TEXT_JUSTIFY_MIDDLE)
-call BlzFrameSetScale(ShPageTxt,0.80)
-call BlzFrameSetText(ShPageTxt,"1 / 1")
-set ShNextBtn=BlzCreateFrameByType("GLUETEXTBUTTON","ShNextBtn",ShMain,"ScriptDialogButton",0)
-call Sh_Tag(ShNextBtn,402)
-call BlzFrameSetAbsPoint(ShNextBtn,FRAMEPOINT_CENTER,0.353,0.211)
-call BlzFrameSetSize(ShNextBtn,0.026,0.026)
-call BlzFrameSetScale(ShNextBtn,0.80)
-call Sh_Skin(ShNextBtn,"war3mapImported\\shop_arrow.tga",0.0208)
-call BlzTriggerRegisterFrameEvent(ShTrgClick,ShNextBtn,FRAMEEVENT_CONTROL_CLICK)
+// ---- поиск по всем разделам (вместо листания страниц) ----
+set ShSearch=BlzCreateFrameByType("EDITBOX","ShSearch",ShMain,"EscMenuEditBoxTemplate",0)
+call BlzFrameSetAbsPoint(ShSearch,FRAMEPOINT_CENTER,0.360,0.202)
+call BlzFrameSetSize(ShSearch,0.200,0.024)
+// не больше 40 символов в запросе
+call BlzFrameSetTextSizeLimit(ShSearch,40)
+call BlzFrameSetText(ShSearch,"")
+set ShSearchHint=BlzCreateFrameByType("TEXT","ShSearchHint",ShMain,"",0)
+call BlzFrameSetAbsPoint(ShSearchHint,FRAMEPOINT_LEFT,0.268,0.202)
+call BlzFrameSetScale(ShSearchHint,0.90)
+call BlzFrameSetText(ShSearchHint,"|cff8899aaSearch item...|r")
+// подсказка лежит поверх поля ввода — не должна перехватывать клик
+call BlzFrameSetEnable(ShSearchHint,false)
+set ShTrgSearch=CreateTrigger()
+call BlzTriggerRegisterFrameEvent(ShTrgSearch,ShSearch,FRAMEEVENT_EDITBOX_TEXT_CHANGED)
+call TriggerAddAction(ShTrgSearch,function Sh_SearchChanged)
+call TimerStart(CreateTimer(),0.10,true,function Sh_SearchPoll)
 
 // приём: один триггер на всех игроков
 set ShTrgSync=CreateTrigger()
@@ -240568,8 +241087,35 @@ return
 endif
 // Клавиша приходит на ВСЕ машины: показываем только тому, кто нажал.
 if GetTriggerPlayer()==GetLocalPlayer() then
+// пока курсор в поиске, B — это буква, а не клавиша магазина
+if ShSearch!=null and IsFrameFocused(ShSearch) then
+return
+endif
+// открыть нельзя, пока на экране крупное окно или выбор режима; закрыть — всегда
+if ShOpened==false then
+if ShModePick then
+return
+endif
+if (TavernHeroFrame!=null and IsFrameVisible(TavernHeroFrame)) or (EmoteBarFrame!=null and IsFrameVisible(EmoteBarFrame)) or (StatsBarFrame!=null and IsFrameVisible(StatsBarFrame)) or (IdHeroFrame!=null and IsFrameVisible(IdHeroFrame)) then
+return
+endif
+endif
 set ShOpened=(ShOpened==false)
 call BlzFrameSetVisible(ShMain,ShOpened)
+// мультиборд закрывает магазин: прячем его фрейм так же, как панель эмодзи
+// (таймеры раунда — отдельный фрейм и остаются); при закрытии возвращаем, если был виден
+if GetOriginFrame(ORIGIN_FRAME_MULTIBOARD,0)!=null then
+if ShOpened then
+set ShMbWas=IsFrameVisible(GetOriginFrame(ORIGIN_FRAME_MULTIBOARD,0))
+call ShowFrame(GetOriginFrame(ORIGIN_FRAME_MULTIBOARD,0),false)
+elseif ShMbWas then
+set ShMbWas=false
+call ShowFrame(GetOriginFrame(ORIGIN_FRAME_MULTIBOARD,0),true)
+endif
+endif
+if ShSearch!=null and ShOpened==false then
+call BlzFrameSetFocus(ShSearch,false)
+endif
 // кнопка под золотом показывает, что сделает нажатие
 if OpenShopButtonText!=null then
 if ShOpened then
