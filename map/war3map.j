@@ -1771,6 +1771,10 @@ boolean ShBuilt=false
 boolean ShOpened=false
 trigger ShTrgClick=null
 trigger ShTrgSync=null
+// кнопка открытия рядом с кнопками эмодзи и статистики (как у эмодзи)
+framehandle OpenShopButton=null
+framehandle OpenShopButtonText=null
+trigger ShTrgOpen=null
 //Shop32GlobalsEnd
 //BofGlobalsStart
 hashtable bof_HT=InitHashtable()
@@ -24337,6 +24341,7 @@ function OnButtonCloseTavern takes nothing returns nothing
         call ShowFrame( EmoteBarFrame, false)
         call ShowFrame( CloseEmoteButton, false)
         call ShowFrame( OpenEmoteButton, true)
+        call ShowFrame( OpenShopButton, true)
         call ShowFrame( StatsBarFrame, false)
         call ShowFrame( CloseStatsButton, false)
         call ShowFrame( OpenStatsButton, true)
@@ -24394,6 +24399,7 @@ function OnButtonOpenTavern takes nothing returns nothing
         call ShowFrame( EmoteBarFrame, false)
         call ShowFrame( CloseEmoteButton, false)
         call ShowFrame( OpenEmoteButton, false)
+        call ShowFrame( OpenShopButton, false)
         call ShowFrame( StatsBarFrame, false)
         call ShowFrame( CloseStatsButton, false)
         call ShowFrame( OpenStatsButton, false)
@@ -24512,6 +24518,7 @@ function ToggleOpenTavern takes nothing returns nothing
                 call ShowFrame( EmoteBarFrame, false)
                 call ShowFrame( CloseEmoteButton, false)
                 call ShowFrame( OpenEmoteButton, false)
+                call ShowFrame( OpenShopButton, false)
                 call ShowFrame( StatsBarFrame, false)
                 call ShowFrame( CloseStatsButton, false)
                 call ShowFrame( OpenStatsButton, false)
@@ -24559,6 +24566,7 @@ function ToggleOpenTavern takes nothing returns nothing
                 call ShowFrame( EmoteBarFrame, false)
                 call ShowFrame( CloseEmoteButton, false)
                 call ShowFrame( OpenEmoteButton, true)
+                call ShowFrame( OpenShopButton, true)
                 call ShowFrame( StatsBarFrame, false)
                 call ShowFrame( CloseStatsButton, false)
                 call ShowFrame( OpenStatsButton, true)
@@ -30180,6 +30188,7 @@ if udg_test==false then
     call ShowFrame( EmoteBarFrame, false)
     call ShowFrame( CloseEmoteButton, false)
     call ShowFrame( OpenEmoteButton, false)
+    call ShowFrame( OpenShopButton, false)
     call ShowFrame( StatsBarFrame, false)
     call ShowFrame( CloseStatsButton, false)
     call ShowFrame( OpenStatsButton, false)
@@ -37908,6 +37917,47 @@ function Trig_StatusBar_Actions takes nothing returns nothing
     call TriggerAddAction( tOnPress, function OnButtonPress )
     call TriggerAddAction( tOnUnPress, function OnButtonUnpress )
     call TriggerAddAction( tOnClick, function OnButtonOpenStatsBar )
+
+    //Shop32 кнопка открытия магазина: широкая, как у таверны, под счётчиком золота.
+    // По нажатию меняет подпись на «Закрыть» (Sh_Toggle), как кнопки эмодзи и статистики меняются на X.
+    set OpenShopButton=CreateFrameByType( "SIMPLEBUTTON", "ShopOpen", null, "", 0 )
+    call ClearFrameAllPoints( OpenShopButton )
+    call SetFrameTexture( OpenShopButton, "checkbox-depressed2.blp", 0, true )
+    call SetFrameTexture( OpenShopButton, "checkbox-depressed2.blp", 1, true )
+    call SetFrameTexture( OpenShopButton, "checkbox-depressed2.blp", 2, true )
+    call SetFrameSize( OpenShopButton, .09, .02 )
+    call ShowFrame( OpenShopButton, true )
+    call SetFramePriority( OpenShopButton, 7 )
+    // текст золота на верхней панели; вызов с null-фреймом рвёт поток, поэтому проверяем
+    if GetOriginFrame( ORIGIN_FRAME_RESOURCE_BAR_TEXT, 0 )!=null then
+        call SetFrameRelativePoint( OpenShopButton, FRAMEPOINT_TOP, GetOriginFrame( ORIGIN_FRAME_RESOURCE_BAR_TEXT, 0 ), FRAMEPOINT_BOTTOM, 0, -.004 )
+    else
+        call SetFrameAbsolutePoint( OpenShopButton, FRAMEPOINT_CENTER, .57, .565 )
+    endif
+
+    set OpenShopButtonText=CreateFrameByType( "SIMPLETEXT", "ShopOpenText", OpenShopButton, "", 0 )
+    call ClearFrameAllPoints( OpenShopButtonText )
+    call SetFrameBlendMode( OpenShopButtonText, 0, BLEND_MODE_BLEND )
+    call SetFrameFont( OpenShopButtonText, "Fonts\\FRIZQT__.TTF", .01, 0 )
+    call SetFrameTextAlignment( OpenShopButtonText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
+    call SetFrameTextColour( OpenShopButtonText, 0xFFFFA500 )
+    call SetFrameParent( OpenShopButtonText, OpenShopButton )
+    call SetFrameText( OpenShopButtonText, "Магазин (B)")
+    call ShowFrame( OpenShopButtonText, true )
+    call SetFrameRelativePoint( OpenShopButtonText, FRAMEPOINT_CENTER, OpenShopButton, FRAMEPOINT_CENTER, .00033, .0 )
+
+    set tOnPress = CreateTrigger( )
+    set tOnUnPress = CreateTrigger( )
+    call TriggerRegisterFrameEvent( tOnPress, OpenShopButton, FRAMEEVENT_MOUSE_DOWN )
+    call TriggerRegisterFrameEvent( tOnUnPress, OpenShopButton, FRAMEEVENT_MOUSE_UP )
+    call TriggerAddAction( tOnPress, function OnButtonPress )
+    call TriggerAddAction( tOnUnPress, function OnButtonUnpress )
+    // клик ведёт в Sh_Toggle — она объявлена ниже, поэтому действие вешает Sh_Init;
+    // триггер создаёт тот, кто успеет первым
+    if ShTrgOpen==null then
+        set ShTrgOpen=CreateTrigger( )
+    endif
+    call TriggerRegisterFrameEvent( ShTrgOpen, OpenShopButton, FRAMEEVENT_CONTROL_CLICK )
 
     set ResistBarFrame=CreateFrameByType("SIMPLEFRAME", "ResistBar", null, "", 0)
     call ClearFrameAllPoints( ResistBarFrame )
@@ -46864,6 +46914,7 @@ function Trig_test_Actions takes nothing returns nothing
     call ShowFrame( EmoteBarFrame, false)
     call ShowFrame( CloseEmoteButton, false)
     call ShowFrame( OpenEmoteButton, true)
+    call ShowFrame( OpenShopButton, true)
     call ShowFrame( StatsBarFrame, false)
     call ShowFrame( CloseStatsButton, false)
     call ShowFrame( OpenStatsButton, true)
@@ -239595,7 +239646,7 @@ set ShSecItem[74]='I050'
 set ShSecItem[75]='IBSI'
 set ShSecItem[76]='IPRB'
 set ShSecName[2]="Ultimate Items"
-set ShSecCnt[2]=40
+set ShSecCnt[2]=41
 set ShSecItem[128]='I02Y'
 set ShSecItem[129]='I040'
 set ShSecItem[130]='I042'
@@ -239636,6 +239687,7 @@ set ShSecItem[164]='I06R'
 set ShSecItem[165]='I06J'
 set ShSecItem[166]='ISTi'
 set ShSecItem[167]='I1S4'
+set ShSecItem[168]='IPlA'
 set ShSecName[3]="Half Vongola Rings"
 set ShSecCnt[3]=10
 set ShSecItem[192]='I02L'
@@ -239717,7 +239769,7 @@ set ShSecItem[481]='ISS0'
 set ShSecItem[482]='IVS0'
 set ShSecItem[483]='ITS0'
 set ShSecName[8]="Ultimate Sets"
-set ShSecCnt[8]=25
+set ShSecCnt[8]=24
 set ShSecItem[512]='I06G'
 set ShSecItem[513]='I06F'
 set ShSecItem[514]='I06H'
@@ -239742,7 +239794,6 @@ set ShSecItem[532]='IOS1'
 set ShSecItem[533]='IOS2'
 set ShSecItem[534]='IOS3'
 set ShSecItem[535]='IOS4'
-set ShSecItem[536]='IPlA'
 set ShSecTotal=9
 endfunction
 
@@ -240211,7 +240262,7 @@ call BlzFrameSetTexture(tip,"war3mapImported\\shop_tooltip_a.tga",0,true)
 call SetFrameBackgroundSize(tip,0,0.12)
 call BlzFrameSetLevel(tip,50)
 call BlzFrameSetAllPoints(tf,tip)
-call BlzFrameSetTextAlignment(tf,TEXT_JUSTIFY_MIDDLE,TEXT_JUSTIFY_CENTER)
+call BlzFrameSetTextAlignment(tf,TEXT_JUSTIFY_CENTER,TEXT_JUSTIFY_MIDDLE)
 call BlzFrameSetScale(tf,0.80)
 call BlzFrameSetText(tf,"")
 call BlzFrameSetVisible(tip,false)
@@ -240243,7 +240294,7 @@ function Sh_CostText takes framehandle owner returns framehandle
 local framehandle f=BlzCreateFrameByType("TEXT","ShCost",owner,"",0)
 call BlzFrameSetPoint(f,FRAMEPOINT_TOP,owner,FRAMEPOINT_BOTTOM,0,-0.001)
 call BlzFrameSetSize(f,0.044,0.012)
-call BlzFrameSetTextAlignment(f,TEXT_JUSTIFY_TOP,TEXT_JUSTIFY_CENTER)
+call BlzFrameSetTextAlignment(f,TEXT_JUSTIFY_CENTER,TEXT_JUSTIFY_TOP)
 call BlzFrameSetScale(f,0.78)
 call BlzFrameSetText(f,"")
 return f
@@ -240339,14 +240390,14 @@ set ShItemBtn[i]=BlzCreateFrameByType("BUTTON","ShItemBtn",ShList,"ScoreScreenTa
 call Sh_Tag(ShItemBtn[i],200+i)
 set ShItemBack[i]=BlzCreateFrameByType("BACKDROP","ShItemBack",ShItemBtn[i],"",0)
 call BlzFrameSetAllPoints(ShItemBack[i],ShItemBtn[i])
-call BlzFrameSetPoint(ShItemBtn[i],FRAMEPOINT_LEFT,ShList,FRAMEPOINT_TOPLEFT,x+0.039*I2R(k),y)
-call BlzFrameSetSize(ShItemBtn[i],0.036,0.036)
+call BlzFrameSetPoint(ShItemBtn[i],FRAMEPOINT_LEFT,ShList,FRAMEPOINT_TOPLEFT,x+0.0015+0.039*I2R(k),y)
+call BlzFrameSetSize(ShItemBtn[i],0.033,0.033)
 call Sh_NoHi(ShItemBtn[i])
 set ShRim[i]=BlzCreateFrameByType("BACKDROP","ShRim",ShItemBtn[i],"",0)
 call BlzFrameSetAllPoints(ShRim[i],ShItemBtn[i])
 call BlzFrameSetTexture(ShRim[i],"war3mapImported\\shop_slot.tga",0,true)
 // размер плитки ровно в ячейку, иначе по краям лезут обрезки соседних гнёзд
-call SetFrameBackgroundSize(ShRim[i],0,0.036)
+call SetFrameBackgroundSize(ShRim[i],0,0.033)
 call BlzFrameSetLevel(ShRim[i],4)
 set ShItemTip[i]=Sh_MakeTip(ShItemBtn[i])
 set ShItemCost[i]=Sh_CostText(ShItemBtn[i])
@@ -240370,14 +240421,14 @@ set ShCraftBtn[i]=BlzCreateFrameByType("BUTTON","ShCraftBtn",ShCraft,"ScoreScree
 call Sh_Tag(ShCraftBtn[i],500+i)
 set ShCraftBack[i]=BlzCreateFrameByType("BACKDROP","ShCraftBack",ShCraftBtn[i],"",0)
 call BlzFrameSetAllPoints(ShCraftBack[i],ShCraftBtn[i])
-call BlzFrameSetPoint(ShCraftBtn[i],FRAMEPOINT_LEFT,ShCraft,FRAMEPOINT_TOPLEFT,x+0.042*I2R(k),y)
-call BlzFrameSetSize(ShCraftBtn[i],0.036,0.036)
+call BlzFrameSetPoint(ShCraftBtn[i],FRAMEPOINT_LEFT,ShCraft,FRAMEPOINT_TOPLEFT,x+0.0015+0.042*I2R(k),y)
+call BlzFrameSetSize(ShCraftBtn[i],0.033,0.033)
 call Sh_NoHi(ShCraftBtn[i])
 set ShCraftRim[i]=BlzCreateFrameByType("BACKDROP","ShCraftRim",ShCraftBtn[i],"",0)
 call BlzFrameSetAllPoints(ShCraftRim[i],ShCraftBtn[i])
 call BlzFrameSetTexture(ShCraftRim[i],"war3mapImported\\shop_slot.tga",0,true)
 // размер плитки ровно в ячейку, иначе по краям лезут обрезки соседних гнёзд
-call SetFrameBackgroundSize(ShCraftRim[i],0,0.036)
+call SetFrameBackgroundSize(ShCraftRim[i],0,0.033)
 call BlzFrameSetLevel(ShCraftRim[i],4)
 set ShCraftCost[i]=Sh_CostText(ShCraftBtn[i])
 call BlzTriggerRegisterFrameEvent(ShTrgClick,ShCraftBtn[i],FRAMEEVENT_CONTROL_CLICK)
@@ -240484,7 +240535,7 @@ call BlzTriggerRegisterFrameEvent(ShTrgClick,ShPrevBtn,FRAMEEVENT_CONTROL_CLICK)
 set ShPageTxt=BlzCreateFrameByType("TEXT","ShPageTxt",ShMain,"",0)
 call BlzFrameSetAbsPoint(ShPageTxt,FRAMEPOINT_CENTER,0.318,0.211)
 call BlzFrameSetSize(ShPageTxt,0.034,0.016)
-call BlzFrameSetTextAlignment(ShPageTxt,TEXT_JUSTIFY_MIDDLE,TEXT_JUSTIFY_CENTER)
+call BlzFrameSetTextAlignment(ShPageTxt,TEXT_JUSTIFY_CENTER,TEXT_JUSTIFY_MIDDLE)
 call BlzFrameSetScale(ShPageTxt,0.80)
 call BlzFrameSetText(ShPageTxt,"1 / 1")
 set ShNextBtn=BlzCreateFrameByType("GLUETEXTBUTTON","ShNextBtn",ShMain,"ScriptDialogButton",0)
@@ -240519,6 +240570,14 @@ endif
 if GetTriggerPlayer()==GetLocalPlayer() then
 set ShOpened=(ShOpened==false)
 call BlzFrameSetVisible(ShMain,ShOpened)
+// кнопка под золотом показывает, что сделает нажатие
+if OpenShopButtonText!=null then
+if ShOpened then
+call SetFrameText(OpenShopButtonText,"Закрыть магазин (B)")
+else
+call SetFrameText(OpenShopButtonText,"Магазин (B)")
+endif
+endif
 if ShOpened then
 call Sh_Redraw()
 endif
@@ -240540,6 +240599,11 @@ set i=i+1
 endloop
 call TriggerAddAction(tk,function Sh_Toggle)
 set tk=null
+// кнопка открытия (Trig_StatusBar_Actions) — тот же Sh_Toggle, что и клавиша B
+if ShTrgOpen==null then
+set ShTrgOpen=CreateTrigger()
+endif
+call TriggerAddAction(ShTrgOpen,function Sh_Toggle)
 call TimerStart(CreateTimer(),0.0,false,function Sh_InitBuild)
 endfunction
 //Shop32End
