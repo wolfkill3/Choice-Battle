@@ -239410,24 +239410,24 @@ endfunction
 function Sh_IndexRecipes takes nothing returns nothing
 local integer k=ShRecN
 local integer i
-local integer n
+local integer cnt
 loop
 exitwhen k>=udg_UIS_Index
 // как и прежний перебор, берём первый рецепт предмета
 if HaveSavedInteger(ShHT,0,udg_UIS_ItemId[k+11])==false then
 call SaveInteger(ShHT,0,udg_UIS_ItemId[k+11],k)
 endif
-set n=0
+set cnt=0
 set i=0
 loop
 exitwhen i>10
 if udg_UIS_ItemId[k+i]>0 then
-call SaveInteger(ShHT,k+1,n,k+i)
-set n=n+1
+call SaveInteger(ShHT,k+1,cnt,k+i)
+set cnt=cnt+1
 endif
 set i=i+1
 endloop
-call SaveInteger(ShHT,k+1,-1,n)
+call SaveInteger(ShHT,k+1,-1,cnt)
 set k=k+12
 endloop
 set ShRecN=udg_UIS_Index
