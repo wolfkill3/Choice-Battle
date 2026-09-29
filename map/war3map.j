@@ -1806,6 +1806,9 @@ boolean ShMbWas=false
 framehandle array ShSecTxt
 // прошлый запрос в нижнем регистре: если новый его содержит, ищем только среди найденного
 string ShLastQry=""
+// строка итога покупки/продажи в окне магазина и сколько секунд ей ещё гореть
+framehandle ShMsgTxt=null
+real ShMsgLeft=0.0
 framehandle ShUseTrack=null
 framehandle ShUseThumb=null
 framehandle ShUseUp=null
@@ -240394,6 +240397,13 @@ endfunction
 function Sh_Tick takes nothing returns nothing
 local integer id
 local boolean inv
+// строка итога гаснет через 5 с
+if ShMsgLeft>0.0 then
+set ShMsgLeft=ShMsgLeft-0.4
+if ShMsgLeft<=0.0 and ShMsgTxt!=null then
+call BlzFrameSetText(ShMsgTxt,"")
+endif
+endif
 if ShOpened==false then
 return
 endif
@@ -240518,6 +240528,15 @@ endloop
 return false
 endfunction
 
+// Итог покупки/продажи — строкой в окне магазина (слева внизу), а не текстом на экране.
+// Вызывать только внутри GetLocalPlayer(): это показ у одного игрока. Гаснет через 5 с (Sh_Tick).
+function Sh_Msg takes string t returns nothing
+if ShMsgTxt!=null then
+call BlzFrameSetText(ShMsgTxt,t)
+set ShMsgLeft=5.0
+endif
+endfunction
+
 function Sh_Give takes player p,integer pid,integer id returns nothing
 local integer i=0
 local boolean full=true
@@ -240533,7 +240552,7 @@ if full and Chest[pid]!=null then
 set itm=CreateItem(id,GetUnitX(Chest[pid]),GetUnitY(Chest[pid]))
 call UnitAddItem(Chest[pid],itm)
 if GetLocalPlayer()==p then
-call DisplayTextToPlayer(p,0,0,"|cffffcc00Инвентарь полон — покупка ушла в сундук.|r")
+call Sh_Msg("|cffffcc00Инвентарь полон — покупка ушла в сундук.|r")
 endif
 else
 set itm=CreateItem(id,GetUnitX(Hero[pid]),GetUnitY(Hero[pid]))
@@ -240552,7 +240571,7 @@ local integer cost
 local item itm
 if Sh_InZone(hu)==false then
 if GetLocalPlayer()==p then
-call DisplayTextToPlayer(p,0,0,"|cffff5555Только в зоне ожидания.|r")
+call Sh_Msg("|cffff5555Только в зоне ожидания.|r")
 endif
 set p=null
 set hu=null
@@ -240565,7 +240584,7 @@ set itm=UnitItemInSlot(hu,val)
 if itm!=null then
 set cost=Sh_Sell(GetItemTypeId(itm))
 if GetLocalPlayer()==p then
-call DisplayTextToPlayer(p,0,0,"|c00FFD700Продано: "+Sh_Name(GetItemTypeId(itm))+" за "+I2S(cost)+"|r")
+call Sh_Msg("|c00FFD700Продано: "+Sh_Name(GetItemTypeId(itm))+" за "+I2S(cost)+"|r")
 endif
 call RemoveItem(itm)
 call SetPlayerState(p,PLAYER_STATE_RESOURCE_GOLD,GetPlayerState(p,PLAYER_STATE_RESOURCE_GOLD)+cost)
@@ -240587,7 +240606,7 @@ endif
 set cost=Sh_Cost(val)
 if GetPlayerState(p,PLAYER_STATE_RESOURCE_GOLD)<cost then
 if GetLocalPlayer()==p then
-call DisplayTextToPlayer(p,0,0,"|cffff5555Не хватает "+I2S(cost-GetPlayerState(p,PLAYER_STATE_RESOURCE_GOLD))+" золота.|r")
+call Sh_Msg("|cffff5555Не хватает "+I2S(cost-GetPlayerState(p,PLAYER_STATE_RESOURCE_GOLD))+" золота.|r")
 endif
 set p=null
 set hu=null
@@ -240596,7 +240615,7 @@ endif
 call SetPlayerState(p,PLAYER_STATE_RESOURCE_GOLD,GetPlayerState(p,PLAYER_STATE_RESOURCE_GOLD)-cost)
 call Sh_Give(p,pid,val)
 if GetLocalPlayer()==p then
-call DisplayTextToPlayer(p,0,0,"|c0066ff66Куплено: "+Sh_Name(val)+" за "+I2S(cost)+"|r")
+call Sh_Msg("|c0066ff66Куплено: "+Sh_Name(val)+" за "+I2S(cost)+"|r")
 endif
 endif
 set p=null
@@ -240784,6 +240803,7 @@ call Sh_Box(0.7125,0.405,0.105,0.020,0.008)  // заголовок «Инвен�
 call Sh_Box(0.7125,0.306,0.105,0.174,0.008)  // ячейки инвентаря 0.219..0.393
 call Sh_Box(0.6195,0.202,0.300,0.034,0.008)  // купить / продать / улучшить — строкой внизу
 call Sh_Box(0.215,0.202,0.060,0.022,0.008)   // золото: правее колонки разделов, под каталогом
+call Sh_Box(0.087,0.198,0.110,0.026,0.008)   // итог покупки/продажи: под колонкой разделов
 call Sh_Box(0.360,0.202,0.210,0.030,0.008)   // поиск (на месте листания страниц)
 
 // панели остались только для раскладки, своих текстур у них нет
@@ -240796,7 +240816,7 @@ set ShTrgClick=CreateTrigger()
 call TriggerAddAction(ShTrgClick,function Sh_Click)
 
 // ---- разделы столбцом слева ----
-set y=0.512
+set y=0.518
 set i=0
 loop
 exitwhen i==ShSecTotal
@@ -241043,6 +241063,14 @@ call BlzFrameSetVisible(ShUseThumb,false)
 call BlzFrameSetVisible(ShUseUp,false)
 call BlzFrameSetVisible(ShUseDown,false)
 
+// итог покупки/продажи (Sh_Msg) — в рамке под разделами, в две строки
+set ShMsgTxt=BlzCreateFrameByType("TEXT","ShMsgTxt",ShMain,"",0)
+call BlzFrameSetAbsPoint(ShMsgTxt,FRAMEPOINT_CENTER,0.087,0.198)
+call BlzFrameSetSize(ShMsgTxt,0.104,0.024)
+call BlzFrameSetTextAlignment(ShMsgTxt,TEXT_JUSTIFY_CENTER,TEXT_JUSTIFY_MIDDLE)
+call BlzFrameSetFont(ShMsgTxt,"Fonts\\FRIZQT__.TTF",0.0085,0)
+call BlzFrameSetEnable(ShMsgTxt,false)
+call BlzFrameSetText(ShMsgTxt,"")
 set ShGoldTxt=BlzCreateFrameByType("TEXT","ShGoldTxt",ShMain,"",0)
 call BlzFrameSetAbsPoint(ShGoldTxt,FRAMEPOINT_CENTER,0.215,0.202)
 call BlzFrameSetText(ShGoldTxt,"")
