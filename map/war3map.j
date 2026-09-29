@@ -37942,7 +37942,7 @@ function Trig_StatusBar_Actions takes nothing returns nothing
     call SetFrameTextAlignment( OpenShopButtonText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
     call SetFrameTextColour( OpenShopButtonText, 0xFFFFA500 )
     call SetFrameParent( OpenShopButtonText, OpenShopButton )
-    call SetFrameText( OpenShopButtonText, "Магазин (B)")
+    call SetFrameText( OpenShopButtonText, "Shop (B)")
     call ShowFrame( OpenShopButtonText, true )
     call SetFrameRelativePoint( OpenShopButtonText, FRAMEPOINT_CENTER, OpenShopButton, FRAMEPOINT_CENTER, .00033, .0 )
 
@@ -240573,9 +240573,9 @@ call BlzFrameSetVisible(ShMain,ShOpened)
 // кнопка под золотом показывает, что сделает нажатие
 if OpenShopButtonText!=null then
 if ShOpened then
-call SetFrameText(OpenShopButtonText,"Закрыть магазин (B)")
+call SetFrameText(OpenShopButtonText,"Close shop (B)")
 else
-call SetFrameText(OpenShopButtonText,"Магазин (B)")
+call SetFrameText(OpenShopButtonText,"Shop (B)")
 endif
 endif
 if ShOpened then
