@@ -10931,11 +10931,11 @@ endfunction
 // ----- общие мелочи Ремилии -----
 // Звук умения (громкость 0–127)
 function Rem_Sound takes string path,integer vol returns nothing
-local sound s=CreateSound(path,false,false,false,10,10,"Default")
-call SetSoundVolume(s,vol)
-call StartSound(s)
-call KillSoundWhenDone(s)
-set s=null
+local sound str=CreateSound(path,false,false,false,10,10,"Default")
+call SetSoundVolume(str,vol)
+call StartSound(str)
+call KillSoundWhenDone(str)
+set str=null
 endfunction
 // Эффект bof в точке: с обзором для владельца (Bof_AddEffV), высота z (z<0 — не менять), поворот
 // yaw в градусах, размер sc, удаление через life (0 — на следующем тике, как zU(0) у bof).
@@ -10954,8 +10954,8 @@ endif
 call Bof_zU(life,bj_lastCreatedEffect)
 endfunction
 // Надпись над Ремилией (название стадии R): случайный цвет, всплывает и гаснет за 1 c
-function Rem_Text takes unit u,string s returns nothing
-local texttag tt=CreateTextTagUnitBJ(s,u,0.,20.,GetRandomPercentageBJ(),GetRandomPercentageBJ(),GetRandomPercentageBJ(),50.)
+function Rem_Text takes unit u,string str returns nothing
+local texttag tt=CreateTextTagUnitBJ(str,u,0.,20.,GetRandomPercentageBJ(),GetRandomPercentageBJ(),GetRandomPercentageBJ(),50.)
 call SetTextTagVelocityBJ(tt,100.,90.)
 call SetTextTagPermanent(tt,false)
 call SetTextTagLifespan(tt,1.)
@@ -11035,18 +11035,18 @@ endfunction
 // Случайная точка вокруг центра в радиусе r (кольца как у bof: 30% дальнее, 30% среднее, 40% ближнее).
 // Направления для x и y берутся разные — так было у bof, рисунок брызг тот же.
 function Rem_RandFx takes unit c,real cx,real cy,real r,integer vol returns nothing
-local real d
+local real dmy
 local real x
 local real y
 if GetRandomInt(1,10)>7 then
-set d=GetRandomReal(r/1.5,r)
+set dmy=GetRandomReal(r/1.5,r)
 elseif GetRandomInt(1,10)>4 then
-set d=GetRandomReal(r/2.5,r/1.5)
+set dmy=GetRandomReal(r/2.5,r/1.5)
 else
-set d=GetRandomReal(0.,r/2.5)
+set dmy=GetRandomReal(0.,r/2.5)
 endif
-set x=cx+d*CosBJ(GetRandomDirectionDeg())
-set y=cy+d*SinBJ(GetRandomDirectionDeg())
+set x=cx+dmy*CosBJ(GetRandomDirectionDeg())
+set y=cy+dmy*SinBJ(GetRandomDirectionDeg())
 if GetRandomInt(1,2)==1 then
 call Rem_Fx(c,"bof\\Scarlet-53.mdx",x,y,25.,0.,1.25,0.)
 else
@@ -11170,11 +11170,11 @@ function Rem_KnockAct takes nothing returns nothing
 local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
 local unit u=LoadUnitHandle(HH,id,0)
-local integer n=LoadInteger(HH,id,1)+1
+local integer tk=LoadInteger(HH,id,1)+1
 local real ang=LoadReal(HH,id,2)
-local real speed=20.-1.5*I2R(n)
-call SaveInteger(HH,id,1,n)
-if n<=10 then
+local real speed=20.-1.5*I2R(tk)
+call SaveInteger(HH,id,1,tk)
+if tk<=10 then
 call SetUnitPosition(u,GetUnitX(u)+speed*CosBJ(ang),GetUnitY(u)+speed*SinBJ(ang))
 else
 call FlushChildHashtable(HH,id)
@@ -11228,30 +11228,30 @@ function Rem_Q_Shot takes nothing returns nothing
 local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
 local unit caster=LoadUnitHandle(HH,id,0)
-local unit d=LoadUnitHandle(HH,id,1)
+local unit dmy=LoadUnitHandle(HH,id,1)
 local real tx=LoadReal(HH,id,2)
 local real ty=LoadReal(HH,id,3)
 local real ang=LoadReal(HH,id,4)
 local real dir=LoadReal(HH,id,5)
 local real speed=LoadReal(HH,id,6)
 local real dist=LoadReal(HH,id,7)
-local integer n=LoadInteger(HH,id,8)+1
-local real x=GetUnitX(d)
-local real y=GetUnitY(d)
+local integer tk=LoadInteger(HH,id,8)+1
+local real x=GetUnitX(dmy)
+local real y=GetUnitY(dmy)
 local group g
 local unit e
-call SaveInteger(HH,id,8,n)
+call SaveInteger(HH,id,8,tk)
 if speed<=100. then
 set speed=speed+5.
 call SaveReal(HH,id,6,speed)
 endif
-if I2R(n)*.01<=GetRandomReal(.2,.22) and UnitIsAlive(d) and dist>speed then
-call SetUnitFlyHeight(d,GetUnitFlyHeight(d)-30.,1000000000.)
+if I2R(tk)*.01<=GetRandomReal(.2,.22) and UnitIsAlive(dmy) and dist>speed then
+call SetUnitFlyHeight(dmy,GetUnitFlyHeight(dmy)-30.,1000000000.)
 set dir=dir+GetRandomReal(-3.,3.)
 call SaveReal(HH,id,5,dir)
-call SetUnitFacing(d,dir)
+call SetUnitFacing(dmy,dir)
 call SaveReal(HH,id,7,SRS(x,y,tx,ty))
-call SetUnitPosition(d,x+speed*CosBJ(dir),y+speed*SinBJ(dir))
+call SetUnitPosition(dmy,x+speed*CosBJ(dir),y+speed*SinBJ(dir))
 call SaveReal(HH,id,9,x+speed*CosBJ(dir))
 call SaveReal(HH,id,10,y+speed*SinBJ(dir))
 else
@@ -11273,13 +11273,13 @@ call Bof_Ctrl(caster,e,1.,"stun")
 endif
 endloop
 call DestroyGroup(g)
-call RemoveUnit(d)
+call RemoveUnit(dmy)
 call FlushChildHashtable(HH,id)
 call DestroyTimer(t)
 endif
 set t=null
 set caster=null
-set d=null
+set dmy=null
 set g=null
 set e=null
 endfunction
@@ -11305,15 +11305,15 @@ local unit caster=LoadUnitHandle(HH,id,0)
 local real tx=LoadReal(HH,id,1)
 local real ty=LoadReal(HH,id,2)
 local real ang=LoadReal(HH,id,3)
-local integer n=LoadInteger(HH,id,4)+1
+local integer tk=LoadInteger(HH,id,4)+1
 local integer k
 local real speed
 local real decel
 local real x=GetUnitX(caster)
 local real y=GetUnitY(caster)
-local unit d
+local unit dmy
 local timer t2
-call SaveInteger(HH,id,4,n)
+call SaveInteger(HH,id,4,tk)
 // реверс (цель в стойке развернула умение): как у героев Чейза — умение кончается, кастер отпущен
 if Bof_RevEnd(caster) then
 call FlushChildHashtable(HH,id)
@@ -11324,27 +11324,27 @@ return
 endif
 call SetUnitInvulnerable(caster,true)
 call PauseUnit(caster,true)
-if n==1 then
+if tk==1 then
 call Bof_Slide(caster,ang+180.,600.,.6)
 endif
-if n==31 then
+if tk==31 then
 call Rem_Noise(GetOwningPlayer(caster),35.,.4)
 call Rem_Sound("bof\\war3mapImported\\RemiliaScarlet-Q-YX1.mp3",100)
 call Rem_Fx(caster,"bof\\Tsubaki-37.mdx",x,y,GetUnitFlyHeight(caster)+100.,ang,5.,0.)
 call SetSpecialEffectPitch(bj_lastCreatedEffect,90.)
 call Rem_Fx(caster,"bof\\Saber-17.mdx",x,y,GetUnitFlyHeight(caster)+50.,ang,1.5,0.)
 endif
-if n>=32 and n<=50 then
+if tk>=32 and tk<=50 then
 set k=LoadInteger(HH,id,5)+1
 call SaveInteger(HH,id,5,k)
 if k==1 or ModuloInteger(k-1,5)==0 then
-set d=CreateUnit(GetOwningPlayer(caster),'eBLP',x,y,ang)
-call Bof_DzSetUnitModel(d,"bof\\Scarlet-11.mdx")
-call UnitApplyTimedLife(d,'BHwe',5.)
-call SetUnitFlyHeight(d,GetUnitFlyHeight(caster)+100.,1000000000.)
+set dmy=CreateUnit(GetOwningPlayer(caster),'eBLP',x,y,ang)
+call Bof_DzSetUnitModel(dmy,"bof\\Scarlet-11.mdx")
+call UnitApplyTimedLife(dmy,'BHwe',5.)
+call SetUnitFlyHeight(dmy,GetUnitFlyHeight(caster)+100.,1000000000.)
 set t2=CreateTimer()
 call SaveUnitHandle(HH,GetHandleId(t2),0,caster)
-call SaveUnitHandle(HH,GetHandleId(t2),1,d)
+call SaveUnitHandle(HH,GetHandleId(t2),1,dmy)
 call SaveReal(HH,GetHandleId(t2),2,tx)
 call SaveReal(HH,GetHandleId(t2),3,ty)
 call SaveReal(HH,GetHandleId(t2),4,ang)
@@ -11364,7 +11364,7 @@ call SaveReal(HH,id,7,decel)
 call SetUnitX(caster,x+CosBJ(ang+180.)*speed)
 call SetUnitY(caster,y+SinBJ(ang+180.)*speed)
 endif
-if n==51 then
+if tk==51 then
 call SetUnitInvulnerable(caster,false)
 call PauseUnit(caster,false)
 call SetUnitTimeScale(caster,1.)
@@ -11374,7 +11374,7 @@ endif
 set t=null
 set t2=null
 set caster=null
-set d=null
+set dmy=null
 endfunction
 function Rem_Q_Anim takes nothing returns nothing
 local timer t=GetExpiredTimer()
@@ -11390,7 +11390,7 @@ function Rem_Q_Act takes unit caster,real tx,real ty returns nothing
 local real x=GetUnitX(caster)
 local real y=GetUnitY(caster)
 local real ang=Atan2BJ(ty-y,tx-x)
-local unit d
+local unit dmy
 local timer t
 call SaveBoolean(HH,GetHandleId(caster),SH_bofRevd,false)
 call Rem_Fx(caster,"bof\\Scarlet-4.mdx",x,y,GetUnitFlyHeight(caster),ang,1.,0.)
@@ -11400,11 +11400,11 @@ call SaveUnitHandle(HH,GetHandleId(t),0,caster)
 call TimerStart(t,.01,false,function Rem_Q_Anim)
 call Rem_Sound("bof\\war3mapImported\\RemiliaScarlet-Q-YY1.mp3",100)
 // метка в точке Q: к ней переносит Q2
-set d=CreateUnit(GetOwningPlayer(caster),'eBLP',tx,ty,ang)
-call Bof_DzSetUnitModel(d,"bof\\Scarlet-6.mdx")
-call SetUnitScale(d,1.5,1.5,1.5)
-call UnitApplyTimedLife(d,'BHwe',8.2)
-call SaveUnitHandle(HH,GetHandleId(caster),SH_RemQ2Point,d)
+set dmy=CreateUnit(GetOwningPlayer(caster),'eBLP',tx,ty,ang)
+call Bof_DzSetUnitModel(dmy,"bof\\Scarlet-6.mdx")
+call SetUnitScale(dmy,1.5,1.5,1.5)
+call UnitApplyTimedLife(dmy,'BHwe',8.2)
+call SaveUnitHandle(HH,GetHandleId(caster),SH_RemQ2Point,dmy)
 call UnitAddAbility(caster,'RmQ2')
 call SetPlayerAbilityAvailable(GetOwningPlayer(caster),'RmQ1',false)
 set t=CreateTimer()
@@ -11420,16 +11420,16 @@ call SaveReal(HH,GetHandleId(t),3,ang)
 call SaveReal(HH,GetHandleId(t),6,80.)
 call SaveReal(HH,GetHandleId(t),7,5.)
 call TimerStart(t,.02,true,function Rem_Q_Act2)
-set d=null
+set dmy=null
 set t=null
 endfunction
 // ----- Q2 «Bad Lady Scramble»: перенос к метке Q, удар 350 -----
 function Rem_Q2_Act takes unit caster returns nothing
 local real x=GetUnitX(caster)
 local real y=GetUnitY(caster)
-local unit d=LoadUnitHandle(HH,GetHandleId(caster),SH_RemQ2Point)
-local real tx=GetUnitX(d)
-local real ty=GetUnitY(d)
+local unit dmy=LoadUnitHandle(HH,GetHandleId(caster),SH_RemQ2Point)
+local real tx=GetUnitX(dmy)
+local real ty=GetUnitY(dmy)
 local real z=GetUnitFlyHeight(caster)
 local group g
 local unit e
@@ -11456,7 +11456,7 @@ call Rem_Sound("bof\\war3mapImported\\RemiliaScarlet-Q2-YY1.mp3",120)
 call Rem_Sound("bof\\war3mapImported\\RemiliaScarlet-G-YX1.mp3",100)
 call UnitRemoveAbility(caster,'RmQ2')
 call SetPlayerAbilityAvailable(GetOwningPlayer(caster),'RmQ1',true)
-set d=null
+set dmy=null
 set g=null
 set e=null
 endfunction
@@ -11489,9 +11489,9 @@ local unit caster=LoadUnitHandle(HH,id,0)
 local real tx=LoadReal(HH,id,1)
 local real ty=LoadReal(HH,id,2)
 local real ang=LoadReal(HH,id,3)
-local integer n=LoadInteger(HH,id,4)+1
+local integer tk=LoadInteger(HH,id,4)+1
 local integer k
-call SaveInteger(HH,id,4,n)
+call SaveInteger(HH,id,4,tk)
 // реверс (цель в стойке развернула умение): как у героев Чейза — умение кончается, кастер отпущен
 if Bof_RevEnd(caster) then
 call CameraClearNoiseForPlayer(GetOwningPlayer(caster))
@@ -11503,7 +11503,7 @@ return
 endif
 call SetUnitInvulnerable(caster,true)
 call PauseUnit(caster,true)
-if n==13 then
+if tk==13 then
 call CameraSetEQNoiseForPlayer(GetOwningPlayer(caster),35.)
 call SetUnitTimeScale(caster,1.)
 call SetUnitAnimationByIndex(caster,19)
@@ -11515,7 +11515,7 @@ call Rem_Fx(caster,"bof\\Scarlet-14.mdx",tx,ty,25.,ang,1.5,.75)
 call Rem_Fx(caster,"bof\\Madara-huitu-22.mdx",tx,ty,25.,ang,6.,0.)
 call Rem_Sound("bof\\war3mapImported\\RemiliaScarlet-T-YX7.mp3",110)
 endif
-if n>=14 and n<=49 then
+if tk>=14 and tk<=49 then
 set k=LoadInteger(HH,id,5)+1
 call SaveInteger(HH,id,5,k)
 if ModuloInteger(k,8)==0 then
@@ -11523,7 +11523,7 @@ call Rem_Fx(caster,"bof\\Scarlet-47.mdx",tx,ty,25.,ang,1.,0.)
 call Rem_W_Hit(caster,tx,ty,true)
 endif
 endif
-if n==50 then
+if tk==50 then
 call Rem_W_Hit(caster,tx,ty,false)
 call CameraClearNoiseForPlayer(GetOwningPlayer(caster))
 call SetUnitInvulnerable(caster,false)
@@ -11561,7 +11561,7 @@ local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
 local unit caster=LoadUnitHandle(HH,id,0)
 local real ang=LoadReal(HH,id,1)
-local integer n=LoadInteger(HH,id,2)+1
+local integer tk=LoadInteger(HH,id,2)+1
 local real speed=LoadReal(HH,id,3)-LoadReal(HH,id,4)
 local real decel=LoadReal(HH,id,4)-.12
 local integer hit
@@ -11569,7 +11569,7 @@ local real x
 local real y
 local group g
 local unit e
-call SaveInteger(HH,id,2,n)
+call SaveInteger(HH,id,2,tk)
 // реверс (цель в стойке развернула умение): как у героев Чейза — умение кончается, кастер отпущен
 if Bof_RevEnd(caster) then
 call FlushChildHashtable(HH,id)
@@ -11582,7 +11582,7 @@ call SaveReal(HH,id,3,speed)
 call SaveReal(HH,id,4,decel)
 call SetUnitInvulnerable(caster,true)
 call PauseUnit(caster,true)
-if n<=21 then
+if tk<=21 then
 call SetUnitX(caster,GetUnitX(caster)+CosBJ(ang)*speed)
 call SetUnitY(caster,GetUnitY(caster)+SinBJ(ang)*speed)
 set g=CreateGroup()
@@ -11597,7 +11597,7 @@ endif
 endloop
 call DestroyGroup(g)
 endif
-if n==21 or n==36 or n==51 or n==66 then
+if tk==21 or tk==36 or tk==51 or tk==66 then
 set hit=LoadInteger(HH,id,5)+1
 call SaveInteger(HH,id,5,hit)
 call Rem_Swing(caster,ang,hit)
@@ -11621,7 +11621,7 @@ endif
 endloop
 call DestroyGroup(g)
 endif
-if n==91 then
+if tk==91 then
 call SetUnitInvulnerable(caster,false)
 call PauseUnit(caster,false)
 call SetUnitTimeScale(caster,1.)
@@ -11679,20 +11679,20 @@ function Rem_SpearReady takes unit u returns boolean
 local group g=CreateGroup()
 local unit e
 local unit best=null
-local real d
+local real dmy
 local real bestD=3001.
-local boolean hero=false
+local boolean isHero=false
 call GroupEnumUnitsInRange(g,GetUnitX(u),GetUnitY(u),3000.,null)
 loop
 set e=FirstOfGroup(g)
 exitwhen e==null
 call GroupRemoveUnit(g,e)
 if Condition_Base(GetOwningPlayer(u),e) and UnitIsAlive(e) and GetUnitAbilityLevel(e,'Avul')==0 then
-set d=SRS(GetUnitX(u),GetUnitY(u),GetUnitX(e),GetUnitY(e))
-if (IsUnitType(e,UNIT_TYPE_HERO) and not hero) or (IsUnitType(e,UNIT_TYPE_HERO)==hero and d<bestD) then
+set dmy=SRS(GetUnitX(u),GetUnitY(u),GetUnitX(e),GetUnitY(e))
+if (IsUnitType(e,UNIT_TYPE_HERO) and not isHero) or (IsUnitType(e,UNIT_TYPE_HERO)==isHero and dmy<bestD) then
 set best=e
-set bestD=d
-set hero=IsUnitType(e,UNIT_TYPE_HERO)
+set bestD=dmy
+set isHero=IsUnitType(e,UNIT_TYPE_HERO)
 endif
 endif
 endloop
@@ -11736,26 +11736,26 @@ local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
 local unit caster=LoadUnitHandle(HH,id,0)
 local unit target=LoadUnitHandle(HH,id,1)
-local unit d=LoadUnitHandle(HH,id,2)
-local integer n=LoadInteger(HH,id,3)+1
-local real x=GetUnitX(d)
-local real y=GetUnitY(d)
+local unit dmy=LoadUnitHandle(HH,id,2)
+local integer tk=LoadInteger(HH,id,3)+1
+local real x=GetUnitX(dmy)
+local real y=GetUnitY(dmy)
 local real tx=GetUnitX(target)
 local real ty=GetUnitY(target)
 local real ang=Atan2BJ(ty-y,tx-x)
 local real dist=SRS(x,y,tx,ty)
 local real dmg
 local unit m
-call SaveInteger(HH,id,3,n)
-call SetUnitFacing(d,ang)
-if I2R(n)*.01<=1.33 and dist>100. and UnitIsAlive(d) then
+call SaveInteger(HH,id,3,tk)
+call SetUnitFacing(dmy,ang)
+if I2R(tk)*.01<=1.33 and dist>100. and UnitIsAlive(dmy) then
 set x=x+100.*CosBJ(ang)
 set y=y+100.*SinBJ(ang)
-call SetUnitPosition(d,x,y)
-if ModuloInteger(n,2)==0 then
+call SetUnitPosition(dmy,x,y)
+if ModuloInteger(tk,2)==0 then
 call Rem_Fx(caster,"bof\\Scarlet-55.mdx",x,y,150.,ang,1.,1.)
 endif
-if ModuloInteger(n,4)==0 then
+if ModuloInteger(tk,4)==0 then
 call Rem_Sound("bof\\war3mapImported\\RemiliaScarlet-R-YX1.mp3",100)
 call Rem_Fx(caster,"bof\\Scarlet-47.mdx",x+240.*CosBJ(ang+90.),y+240.*SinBJ(ang+90.),-1.,ang,1.,0.)
 call SetSpecialEffectPitch(bj_lastCreatedEffect,30.)
@@ -11764,8 +11764,8 @@ call SetSpecialEffectPitch(bj_lastCreatedEffect,30.)
 endif
 else
 call CameraClearNoiseForPlayer(GetOwningPlayer(caster))
-call SetUnitAnimation(d,"Death")
-call Bof_zO(.2,d)
+call SetUnitAnimation(dmy,"Death")
+call Bof_zO(.2,dmy)
 if dist<200. then
 set m=CreateUnit(GetOwningPlayer(caster),'eBMC',tx,ty,ang)
 call SetUnitScale(m,5.,1.,1)
@@ -11793,7 +11793,7 @@ endif
 set t=null
 set caster=null
 set target=null
-set d=null
+set dmy=null
 set m=null
 endfunction
 // Бросок: Ремилия зависает 0.46 c, в 0.36 c копьё вылетает
@@ -11803,30 +11803,30 @@ local integer id=GetHandleId(t)
 local unit caster=LoadUnitHandle(HH,id,0)
 local unit target=LoadUnitHandle(HH,id,1)
 local real ang=LoadReal(HH,id,2)
-local integer n=LoadInteger(HH,id,3)+1
+local integer tk=LoadInteger(HH,id,3)+1
 local real x
 local real y
-local unit d
+local unit dmy
 local timer t2
-call SaveInteger(HH,id,3,n)
+call SaveInteger(HH,id,3,tk)
 call SetUnitInvulnerable(caster,true)
 call PauseUnit(caster,true)
-if n==18 then
+if tk==18 then
 set x=GetUnitX(caster)+50.*CosBJ(ang)
 set y=GetUnitY(caster)+50.*SinBJ(ang)
 call CameraSetEQNoiseForPlayer(GetOwningPlayer(caster),50.)
 call Rem_Sound("bof\\war3mapImported\\RemiliaScarlet-R-YX3.mp3",100)
-set d=CreateUnit(GetOwningPlayer(caster),'eBLP',x,y,ang)
-call UnitApplyTimedLife(d,'BHwe',5.1)
-call SetUnitFlyHeight(d,150.,1000000000.)
-call Bof_DzSetUnitModel(d,"bof\\Scarlet-16.mdx")
+set dmy=CreateUnit(GetOwningPlayer(caster),'eBLP',x,y,ang)
+call UnitApplyTimedLife(dmy,'BHwe',5.1)
+call SetUnitFlyHeight(dmy,150.,1000000000.)
+call Bof_DzSetUnitModel(dmy,"bof\\Scarlet-16.mdx")
 set t2=CreateTimer()
 call SaveUnitHandle(HH,GetHandleId(t2),0,caster)
 call SaveUnitHandle(HH,GetHandleId(t2),1,target)
-call SaveUnitHandle(HH,GetHandleId(t2),2,d)
+call SaveUnitHandle(HH,GetHandleId(t2),2,dmy)
 call TimerStart(t2,.03,true,function Rem_R_Spear)
 endif
-if n==23 then
+if tk==23 then
 call SetUnitInvulnerable(caster,false)
 call PauseUnit(caster,false)
 // у bof проходимость после броска не возвращалась — Ремилия навсегда ходила сквозь юнитов
@@ -11839,7 +11839,7 @@ set t=null
 set t2=null
 set caster=null
 set target=null
-set d=null
+set dmy=null
 endfunction
 function Rem_R_Anim takes nothing returns nothing
 local timer t=GetExpiredTimer()
@@ -11926,23 +11926,23 @@ function Rem_D_Chain takes nothing returns nothing
 local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
 local unit caster=LoadUnitHandle(HH,id,0)
-local unit d=LoadUnitHandle(HH,id,1)
+local unit dmy=LoadUnitHandle(HH,id,1)
 local real ang=LoadReal(HH,id,2)
-local integer n=LoadInteger(HH,id,3)+1
+local integer tk=LoadInteger(HH,id,3)+1
 local real speed=LoadReal(HH,id,4)
 local real x
 local real y
 local group g
 local unit e
-call SaveInteger(HH,id,3,n)
+call SaveInteger(HH,id,3,tk)
 if speed<=100. then
 set speed=speed+5.
 call SaveReal(HH,id,4,speed)
 endif
-if n<=12 and UnitIsAlive(d) then
-set x=GetUnitX(d)+speed*CosBJ(ang)
-set y=GetUnitY(d)+speed*SinBJ(ang)
-call SetUnitPosition(d,x,y)
+if tk<=12 and UnitIsAlive(dmy) then
+set x=GetUnitX(dmy)+speed*CosBJ(ang)
+set y=GetUnitY(dmy)+speed*SinBJ(ang)
+call SetUnitPosition(dmy,x,y)
 set g=CreateGroup()
 call GroupEnumUnitsInRange(g,x,y,150.,null)
 loop
@@ -11950,9 +11950,9 @@ set e=FirstOfGroup(g)
 exitwhen e==null
 call GroupRemoveUnit(g,e)
 if GetUnitAbilityLevel(e,'Avul')==0 and UnitIsAlive(e) and Condition_Base(GetOwningPlayer(caster),e) then
-if d!=null then
-call RemoveUnit(d)
-set d=null
+if dmy!=null then
+call RemoveUnit(dmy)
+set dmy=null
 endif
 call Bof_Dmg(caster,e,(I2R(Rem_Int_D(caster,true))*3.)*0.001)
 call DestroyEffect(AddSpecialEffectTarget("bof\\Scarlet-52.mdx",e,"chest"))
@@ -11960,19 +11960,19 @@ call Bof_Ctrl(caster,e,.5,"stun")
 endif
 endloop
 call DestroyGroup(g)
-if d==null then
+if dmy==null then
 call FlushChildHashtable(HH,id)
 call DestroyTimer(t)
 endif
 else
-call SetUnitAnimation(d,"Death")
-call UnitApplyTimedLife(d,'BHwe',.4)
+call SetUnitAnimation(dmy,"Death")
+call UnitApplyTimedLife(dmy,'BHwe',.4)
 call FlushChildHashtable(HH,id)
 call DestroyTimer(t)
 endif
 set t=null
 set caster=null
-set d=null
+set dmy=null
 set g=null
 set e=null
 endfunction
@@ -11983,26 +11983,26 @@ local unit caster=LoadUnitHandle(HH,id,0)
 local real px=LoadReal(HH,id,1)
 local real py=LoadReal(HH,id,2)
 local real ang=LoadReal(HH,id,3)
-local integer n=LoadInteger(HH,id,4)+1
+local integer tk=LoadInteger(HH,id,4)+1
 local real r
-local unit d
+local unit dmy
 local timer t2
-call SaveInteger(HH,id,4,n)
-if ModuloInteger(n,10)==3 then
+call SaveInteger(HH,id,4,tk)
+if ModuloInteger(tk,10)==3 then
 call Rem_Sound("bof\\war3mapImported\\RemiliaScarlet-D-YX2.mp3",100)
 endif
-if n<=40 then
+if tk<=40 then
 set r=GetRandomReal(-250.,250.)
-set d=CreateUnit(GetOwningPlayer(caster),'eBLP',px+r*CosBJ(ang+90.),py+GetRandomReal(-250.,250.)*SinBJ(ang+90.),ang)
-call SetUnitScale(d,.5,.5,.5)
-call Bof_DzSetUnitModel(d,"bof\\Scarlet-16.mdx")
-call UnitApplyTimedLife(d,'BHwe',2.)
-call SetUnitVertexColor(d,255,255,255,0)
-call SetUnitFlyHeight(d,GetRandomReal(0,300.),1000000000.)
-call Rem_FadeIn(d,5)
+set dmy=CreateUnit(GetOwningPlayer(caster),'eBLP',px+r*CosBJ(ang+90.),py+GetRandomReal(-250.,250.)*SinBJ(ang+90.),ang)
+call SetUnitScale(dmy,.5,.5,.5)
+call Bof_DzSetUnitModel(dmy,"bof\\Scarlet-16.mdx")
+call UnitApplyTimedLife(dmy,'BHwe',2.)
+call SetUnitVertexColor(dmy,255,255,255,0)
+call SetUnitFlyHeight(dmy,GetRandomReal(0,300.),1000000000.)
+call Rem_FadeIn(dmy,5)
 set t2=CreateTimer()
 call SaveUnitHandle(HH,GetHandleId(t2),0,caster)
-call SaveUnitHandle(HH,GetHandleId(t2),1,d)
+call SaveUnitHandle(HH,GetHandleId(t2),1,dmy)
 call SaveReal(HH,GetHandleId(t2),2,ang)
 call SaveReal(HH,GetHandleId(t2),4,40.)
 call TimerStart(t2,.02,true,function Rem_D_Chain)
@@ -12013,7 +12013,7 @@ endif
 set t=null
 set t2=null
 set caster=null
-set d=null
+set dmy=null
 endfunction
 function Rem_D_Act takes unit caster,real tx,real ty returns nothing
 local real x=GetUnitX(caster)
@@ -12021,14 +12021,14 @@ local real y=GetUnitY(caster)
 local real ang=Atan2BJ(ty-y,tx-x)
 local real px=x+150.*CosBJ(ang)
 local real py=y+150.*SinBJ(ang)
-local unit d=CreateUnit(GetOwningPlayer(caster),'eBLU',px,py,ang)
+local unit dmy=CreateUnit(GetOwningPlayer(caster),'eBLU',px,py,ang)
 local timer t=CreateTimer()
-call SetUnitScale(d,2.5,2.5,2.5)
-call SetUnitFlyHeight(d,GetUnitFlyHeight(caster)+275.,0.)
-call SetUnitVertexColor(d,255,255,255,255)
-call UnitApplyTimedLife(d,'BHwe',3.)
-call Bof_DzSetUnitModel(d,"bof\\Scarlet-76.mdx")
-call Rem_FadeIn(d,3)
+call SetUnitScale(dmy,2.5,2.5,2.5)
+call SetUnitFlyHeight(dmy,GetUnitFlyHeight(caster)+275.,0.)
+call SetUnitVertexColor(dmy,255,255,255,255)
+call UnitApplyTimedLife(dmy,'BHwe',3.)
+call Bof_DzSetUnitModel(dmy,"bof\\Scarlet-76.mdx")
+call Rem_FadeIn(dmy,3)
 call Rem_Fx(caster,"bof\\Scarlet-10.mdx",x,y,25.,ang,1.5,0.)
 call Rem_Fx(caster,"bof\\Scarlet-4.mdx",x,y,25.,ang,1.,0.)
 call Rem_Sound("bof\\war3mapImported\\RemiliaScarlet-D-YY1.mp3",100)
@@ -12038,7 +12038,7 @@ call SaveReal(HH,GetHandleId(t),1,px)
 call SaveReal(HH,GetHandleId(t),2,py)
 call SaveReal(HH,GetHandleId(t),3,ang)
 call TimerStart(t,.05,true,function Rem_D_Act2)
-set d=null
+set dmy=null
 set t=null
 endfunction
 // ----- F «Scarlet Netherworld»: до 4 c неуязвима, теряет 2% максимума в секунду; выход — RmF2 -----
@@ -12047,13 +12047,13 @@ local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
 local unit caster=LoadUnitHandle(HH,id,0)
 local unit pool=LoadUnitHandle(HH,id,1)
-local integer n=LoadInteger(HH,id,2)+1
-local boolean over=n>80
-call SaveInteger(HH,id,2,n)
+local integer tk=LoadInteger(HH,id,2)+1
+local boolean over=tk>80
+call SaveInteger(HH,id,2,tk)
 if not over then
 call SetUnitPosition(pool,GetUnitX(caster),GetUnitY(caster))
 call SetUnitInvulnerable(caster,true)
-if n==1 or ModuloInteger(n-1,8)==0 then
+if tk==1 or ModuloInteger(tk-1,8)==0 then
 call Rem_Fx(caster,"bof\\Scarlet-4.mdx",GetUnitX(caster),GetUnitY(caster),25.,GetUnitFacing(caster),1.,0.)
 endif
 if GetWidgetLife(caster)>GetUnitState(caster,UNIT_STATE_MAX_LIFE)*.093 and LoadBoolean(HH,GetHandleId(caster),SH_RemFOn) then
@@ -12108,14 +12108,14 @@ local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
 local unit caster=LoadUnitHandle(HH,id,0)
 local unit target=LoadUnitHandle(HH,id,1)
-local integer n=LoadInteger(HH,id,2)+1
+local integer tk=LoadInteger(HH,id,2)+1
 local real ang
 local real x
 local real y
 local real tx
 local real ty
 local real dmg
-call SaveInteger(HH,id,2,n)
+call SaveInteger(HH,id,2,tk)
 // реверс (цель в стойке развернула умение): как у героев Чейза — умение кончается, кастер отпущен
 if Bof_RevEnd(caster) then
 call FlushChildHashtable(HH,id)
@@ -12127,11 +12127,11 @@ return
 endif
 call PauseUnit(caster,true)
 call SetUnitInvulnerable(caster,true)
-if n==1 then
+if tk==1 then
 call SetUnitTimeScale(caster,1.)
 call SetUnitAnimationByIndex(caster,18)
 endif
-if n==10 then
+if tk==10 then
 set tx=GetUnitX(target)
 set ty=GetUnitY(target)
 set ang=Atan2BJ(ty-GetUnitY(caster),tx-GetUnitX(caster))
@@ -12157,7 +12157,7 @@ call Bof_Heal(caster,caster,dmg)
 call Bof_Ctrl(caster,target,1.5,"stun")
 endif
 endif
-if n==40 then
+if tk==40 then
 call PauseUnit(caster,false)
 call SetUnitInvulnerable(caster,false)
 call FlushChildHashtable(HH,id)
@@ -12206,7 +12206,7 @@ local integer id=GetHandleId(t)
 local unit caster=LoadUnitHandle(HH,id,0)
 local unit target=LoadUnitHandle(HH,id,1)
 local real ang=LoadReal(HH,id,2)
-local integer n=LoadInteger(HH,id,3)+1
+local integer tk=LoadInteger(HH,id,3)+1
 local integer k
 local integer i
 local real tx=GetUnitX(target)
@@ -12215,17 +12215,17 @@ local real tz=GetUnitFlyHeight(target)
 local real dmg
 local player p=GetOwningPlayer(caster)
 local player tp=GetOwningPlayer(target)
-call SaveInteger(HH,id,3,n)
+call SaveInteger(HH,id,3,tk)
 call PauseUnit(caster,true)
 call SetUnitInvulnerable(caster,true)
 call PauseUnit(target,true)
-if n==155 then
+if tk==155 then
 call Rem_Sound("bof\\war3mapImported\\RemiliaScarlet-T-YY2.mp3",100)
 endif
-if n==350 then
+if tk==350 then
 call Rem_Sound("bof\\war3mapImported\\RemiliaScarlet-T-YY3.mp3",115)
 endif
-if n==1 then
+if tk==1 then
 call SetUnitFacing(caster,Atan2BJ(ty-GetUnitY(caster),tx-GetUnitX(caster)))
 call SetUnitFacing(target,Atan2BJ(GetUnitY(caster)-ty,GetUnitX(caster)-tx))
 call SetUnitTimeScale(caster,1.)
@@ -12236,7 +12236,7 @@ call Rem_Noise(p,35.,.4)
 call Rem_Noise(tp,35.,.4)
 endif
 // серия: 4 удара (1.0, 1.6, 2.2, 2.8 c), каждый толкает обоих на 60
-if n==50 or n==80 or n==110 or n==140 then
+if tk==50 or tk==80 or tk==110 or tk==140 then
 set k=LoadInteger(HH,id,4)+1
 call SaveInteger(HH,id,4,k)
 call Rem_Swing(caster,ang,k)
@@ -12251,7 +12251,7 @@ call Rem_Fx(caster,"bof\\hongping.mdx",tx,ty,tz+20.,0.,1.,0.)
 call SetSpecialEffectTimeScale(bj_lastCreatedEffect,.5)
 call Bof_Slide(target,ang,60.,.3)
 endif
-if n==156 then
+if tk==156 then
 call Rem_Fx(caster,"bof\\Scarlet-29.mdx",GetUnitX(caster),GetUnitY(caster),GetUnitFlyHeight(caster),ang,1.,0.)
 call Bof_zU(.8,AddSpecialEffectTarget("bof\\Scarlet-9.mdx",caster,"chest"))
 call DestroyEffect(AddSpecialEffectTarget("bof\\Scarlet-34.mdx",caster,"chest"))
@@ -12259,14 +12259,14 @@ call SetUnitAnimationByIndex(caster,22)
 call Bof_Slide(caster,ang,400.,1.)
 call Bof_Slide(target,ang,400.,1.)
 endif
-if n>=157 and n<=205 then
+if tk>=157 and tk<=205 then
 set k=LoadInteger(HH,id,5)+1
 call SaveInteger(HH,id,5,k)
 if k==1 or ModuloInteger(k-1,4)==0 then
 call Rem_Fx(caster,"bof\\Scarlet-5.mdx",tx,ty,tz+150.,0.,1.,0.)
 endif
 endif
-if n==206 then
+if tk==206 then
 call CameraSetEQNoiseForPlayer(p,25.)
 call CameraSetEQNoiseForPlayer(tp,25.)
 call SaveInteger(HH,id,5,0)
@@ -12276,7 +12276,7 @@ call Rem_Fx(caster,"bof\\Scarlet-21.mdx",tx,ty,450.,ang,3.,0.)
 call Rem_Fx(caster,"bof\\Scarlet-70.mdx",tx,ty,25.,0.,2.5,5.)
 call Rem_Sound("bof\\war3mapImported\\RemiliaScarlet-T-YX10.mp3",100)
 endif
-if n>=207 and n<=255 then
+if tk>=207 and tk<=255 then
 set k=LoadInteger(HH,id,5)+1
 call SaveInteger(HH,id,5,k)
 if k==1 or ModuloInteger(k-1,4)==0 then
@@ -12287,11 +12287,11 @@ if k==1 or ModuloInteger(k-1,8)==0 then
 call Rem_RandFx(caster,GetUnitX(caster),GetUnitY(caster),800.,120)
 endif
 endif
-if n==256 then
+if tk==256 then
 call SaveInteger(HH,id,5,0)
 call Rem_Sound("bof\\war3mapImported\\RemiliaScarlet-T-YX8.mp3",100)
 endif
-if n>=257 and n<=305 then
+if tk>=257 and tk<=305 then
 set k=LoadInteger(HH,id,5)+1
 call SaveInteger(HH,id,5,k)
 if k==1 or ModuloInteger(k-1,8)==0 then
@@ -12304,7 +12304,7 @@ endloop
 call Rem_RandFx(caster,GetUnitX(caster),GetUnitY(caster),800.,120)
 endif
 endif
-if n==306 then
+if tk==306 then
 call SaveInteger(HH,id,5,0)
 call Rem_Fx(caster,"bof\\Scarlet-62.mdx",tx,ty,tz+150.,0.,1.,3.)
 call Rem_Fx(caster,"bof\\Scarlet-57.MDX",tx,ty,tz+150.,0.,3.,3.)
@@ -12313,7 +12313,7 @@ if GetLocalPlayer()==p or GetLocalPlayer()==tp then
 call CinematicFilterGenericBJ(0.,BLEND_MODE_BLEND,"bof\\war3mapImported\\TeamColor00.blp",100.,0.,0.,50.,100.,0.,0.,50.)
 endif
 endif
-if n==310 then
+if tk==310 then
 call CameraClearNoiseForPlayer(p)
 call CameraClearNoiseForPlayer(tp)
 call CameraSetEQNoiseForPlayer(p,80.)
@@ -12322,13 +12322,13 @@ call Rem_Sound("bof\\war3mapImported\\RemiliaScarlet-T-YX6.mp3",110)
 call Rem_Fx(caster,"bof\\hongping.mdx",tx,ty,25.,0.,2.,0.)
 call SetSpecialEffectTimeScale(bj_lastCreatedEffect,.1)
 endif
-if n==361 then
+if tk==361 then
 call Rem_Sound("bof\\war3mapImported\\RemiliaScarlet-T-YX7.mp3",110)
 if GetLocalPlayer()==p or GetLocalPlayer()==tp then
 call CinematicFilterGenericBJ(1.,BLEND_MODE_BLEND,"bof\\war3mapImported\\TeamColor00.blp",100.,0.,0.,50.,100.,0.,0.,0.)
 endif
 endif
-if n>=307 and n<=360 then
+if tk>=307 and tk<=360 then
 set k=LoadInteger(HH,id,5)+1
 call SaveInteger(HH,id,5,k)
 if k==1 or ModuloInteger(k-1,4)==0 then
@@ -12339,7 +12339,7 @@ call Rem_Fx(caster,"bof\\Scarlet-5.mdx",tx,ty,25.,0.,15.,0.)
 call Rem_Fx(caster,"bof\\Scarlet-5.mdx",GetUnitX(caster),GetUnitY(caster),25.,0.,8.,0.)
 endif
 endif
-if n==436 then
+if tk==436 then
 call PauseUnit(caster,false)
 call SetUnitInvulnerable(caster,false)
 call PauseUnit(target,false)
@@ -12425,21 +12425,21 @@ local integer id=GetHandleId(t)
 local unit caster=LoadUnitHandle(HH,id,0)
 local unit ring=LoadUnitHandle(HH,id,1)
 local unit wave=LoadUnitHandle(HH,id,2)
-local integer n=LoadInteger(HH,id,3)+1
+local integer tk=LoadInteger(HH,id,3)+1
 local real x=GetUnitX(caster)
 local real y=GetUnitY(caster)
 local real burn
 local group g
 local unit e
-call SaveInteger(HH,id,3,n)
-if n<=200 then
+call SaveInteger(HH,id,3,tk)
+if tk<=200 then
 call SetUnitPosition(ring,x,y)
 call SetUnitPosition(wave,x,y)
-if n==1 or ModuloInteger(n-1,8)==0 then
+if tk==1 or ModuloInteger(tk-1,8)==0 then
 call Rem_Fx(caster,"bof\\Scarlet-4.mdx",x,y,25.,GetUnitFacing(caster),1.,0.)
 call Rem_Fx(caster,"bof\\Scarlet-29.mdx",x,y,GetUnitFlyHeight(caster),GetUnitFacing(caster),1.,0.)
 endif
-if n==1 or ModuloInteger(n-1,4)==0 then
+if tk==1 or ModuloInteger(tk-1,4)==0 then
 set g=CreateGroup()
 call GroupEnumUnitsInRange(g,x,y,1200.,null)
 loop
@@ -12719,20 +12719,20 @@ local unit caster=LoadUnitHandle(HH,id,0)
 local unit target=LoadUnitHandle(HH,id,1)
 local real tx=LoadReal(HH,id,2)
 local real ty=LoadReal(HH,id,3)
-local integer n=LoadInteger(HH,id,4)+1
+local integer tk=LoadInteger(HH,id,4)+1
 local group g=LoadGroupHandle(HH,id,5)
 local integer i
 local real x
 local real y
-local unit d
-call SaveInteger(HH,id,4,n)
+local unit dmy
+call SaveInteger(HH,id,4,tk)
 // реверс (цель в стойке развернула умение): как у героев Чейза — умение кончается, кастер отпущен
 if Bof_RevEnd(caster) then
 loop
-set d=FirstOfGroup(g)
-exitwhen d==null
-call GroupRemoveUnit(g,d)
-call RemoveUnit(d)
+set dmy=FirstOfGroup(g)
+exitwhen dmy==null
+call GroupRemoveUnit(g,dmy)
+call RemoveUnit(dmy)
 endloop
 call DestroyGroup(g)
 call FlushChildHashtable(HH,id)
@@ -12743,11 +12743,11 @@ set target=null
 set g=null
 return
 endif
-if n<=15 then
+if tk<=15 then
 call SetUnitInvulnerable(caster,true)
 call PauseUnit(caster,true)
 endif
-if n==1 then
+if tk==1 then
 set i=1
 loop
 exitwhen i>5
@@ -12757,28 +12757,28 @@ call Rem_Fx(caster,"bof\\Scarlet-54.mdx",x,y,50.,0.,1.5,0.)
 call Rem_Fx(caster,"bof\\Scarlet-27.mdx",x,y,50.,0.,1.5,0.)
 call Rem_Fx(caster,"bof\\Scarlet-37.mdx",x,y,50.,0.,1.5,0.)
 call Rem_Fx(caster,"bof\\Scarlet-75.mdx",x,y,50.,0.,1.,0.)
-set d=CreateUnit(GetOwningPlayer(caster),'eBLP',x,y,0.)
-call SetUnitModel(d,"bof\\Scarlet-11.mdx")
-call UnitApplyTimedLife(d,'BHwe',3.)
-call GroupAddUnit(g,d)
+set dmy=CreateUnit(GetOwningPlayer(caster),'eBLP',x,y,0.)
+call SetUnitModel(dmy,"bof\\Scarlet-11.mdx")
+call UnitApplyTimedLife(dmy,'BHwe',3.)
+call GroupAddUnit(g,dmy)
 set i=i+1
 endloop
 endif
-if n==15 then
+if tk==15 then
 call SetUnitInvulnerable(caster,false)
 call PauseUnit(caster,false)
 call SetUnitTimeScale(caster,1.)
 endif
-if n==25 then
+if tk==25 then
 set i=0
 loop
 exitwhen i>=BlzGroupGetSize(g)
-set d=BlzGroupUnitAt(g,i)
-call Bof_Slide(d,Atan2BJ(GetUnitY(target)-GetUnitY(d),GetUnitX(target)-GetUnitX(d)),900.,.6)
+set dmy=BlzGroupUnitAt(g,i)
+call Bof_Slide(dmy,Atan2BJ(GetUnitY(target)-GetUnitY(dmy),GetUnitX(target)-GetUnitX(dmy)),900.,.6)
 set i=i+1
 endloop
 endif
-if n==40 then
+if tk==40 then
 if SRS(GetUnitX(target),GetUnitY(target),tx,ty)<250. then
 call Bof_Dmg(caster,target,(I2R(Fla_Int_Q(caster,true))*120.)*0.001)
 call Bof_Ctrl(caster,target,1.5,"stun")
@@ -12791,13 +12791,13 @@ call Rem_Noise(GetOwningPlayer(caster),50.,.5)
 call Rem_Noise(GetOwningPlayer(target),50.,.5)
 call Rem_Sound("bof\\war3mapImported\\Flandre Scarlet-Q-YX1.mp3",100)
 endif
-if n==55 then
+if tk==55 then
 loop
-set d=FirstOfGroup(g)
-exitwhen d==null
-call GroupRemoveUnit(g,d)
-call Rem_Fx(null,"bof\\Scarlet-51.mdx",GetUnitX(d),GetUnitY(d),25.,0.,1.,0.)
-call RemoveUnit(d)
+set dmy=FirstOfGroup(g)
+exitwhen dmy==null
+call GroupRemoveUnit(g,dmy)
+call Rem_Fx(null,"bof\\Scarlet-51.mdx",GetUnitX(dmy),GetUnitY(dmy),25.,0.,1.,0.)
+call RemoveUnit(dmy)
 endloop
 call DestroyGroup(g)
 call FlushChildHashtable(HH,id)
@@ -12807,7 +12807,7 @@ set t=null
 set caster=null
 set target=null
 set g=null
-set d=null
+set dmy=null
 endfunction
 function Fla_Q_Act takes unit caster,unit target returns nothing
 local real x=GetUnitX(caster)
@@ -12849,23 +12849,23 @@ local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
 local unit caster=LoadUnitHandle(HH,id,0)
 local unit target=LoadUnitHandle(HH,id,1)
-local unit d=LoadUnitHandle(HH,id,2)
-local integer n=LoadInteger(HH,id,4)+1
-call SaveInteger(HH,id,4,n)
-if n<=100 then
-if n==33 or n==66 then
-set d=CreateUnit(GetOwningPlayer(caster),'eBLP',GetUnitX(target),GetUnitY(target),LoadReal(HH,id,3))
-if n==33 then
-call SetUnitModel(d,"bof\\dawn_2.mdx")
+local unit dmy=LoadUnitHandle(HH,id,2)
+local integer tk=LoadInteger(HH,id,4)+1
+call SaveInteger(HH,id,4,tk)
+if tk<=100 then
+if tk==33 or tk==66 then
+set dmy=CreateUnit(GetOwningPlayer(caster),'eBLP',GetUnitX(target),GetUnitY(target),LoadReal(HH,id,3))
+if tk==33 then
+call SetUnitModel(dmy,"bof\\dawn_2.mdx")
 else
-call SetUnitModel(d,"bof\\dawn_1.mdx")
+call SetUnitModel(dmy,"bof\\dawn_1.mdx")
 endif
-call SetUnitScale(d,3.,3.,3.)
-call UnitApplyTimedLife(d,'BHwe',1.)
-call SetUnitAnimationByIndex(d,2)
-call SaveUnitHandle(HH,id,2,d)
+call SetUnitScale(dmy,3.,3.,3.)
+call UnitApplyTimedLife(dmy,'BHwe',1.)
+call SetUnitAnimationByIndex(dmy,2)
+call SaveUnitHandle(HH,id,2,dmy)
 endif
-call SetUnitPosition(d,GetUnitX(target),GetUnitY(target))
+call SetUnitPosition(dmy,GetUnitX(target),GetUnitY(target))
 else
 call Bof_Ctrl(caster,target,1.5,"stun")
 call Fla_W_Blast(caster,target)
@@ -12875,7 +12875,7 @@ endif
 set t=null
 set caster=null
 set target=null
-set d=null
+set dmy=null
 endfunction
 // Полёт копья, тик 0.03 c: до 50 тиков, пока не ближе 100 к цели
 function Fla_W_Spear takes nothing returns nothing
@@ -12883,39 +12883,39 @@ local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
 local unit caster=LoadUnitHandle(HH,id,0)
 local unit target=LoadUnitHandle(HH,id,1)
-local unit d=LoadUnitHandle(HH,id,2)
-local integer n=LoadInteger(HH,id,3)+1
-local real x=GetUnitX(d)
-local real y=GetUnitY(d)
+local unit dmy=LoadUnitHandle(HH,id,2)
+local integer tk=LoadInteger(HH,id,3)+1
+local real x=GetUnitX(dmy)
+local real y=GetUnitY(dmy)
 local real ang=Atan2BJ(GetUnitY(target)-y,GetUnitX(target)-x)
 local real dist=SRS(x,y,GetUnitX(target),GetUnitY(target))
 local timer t2
-call SaveInteger(HH,id,3,n)
-call SetUnitFacingTimed(d,ang,0)
-if n<=50 and dist>100. and IsUnitAliveBJ(d) then
+call SaveInteger(HH,id,3,tk)
+call SetUnitFacingTimed(dmy,ang,0)
+if tk<=50 and dist>100. and IsUnitAliveBJ(dmy) then
 set x=x+100.*CosBJ(ang)
 set y=y+100.*SinBJ(ang)
-call SetUnitPosition(d,x,y)
-if ModuloInteger(n,4)==0 then
+call SetUnitPosition(dmy,x,y)
+if ModuloInteger(tk,4)==0 then
 call Rem_Fx(caster,"bof\\Scarlet-69.mdx",x,y,150.,ang,.75,0.)
 call Rem_Fx(caster,"bof\\Scarlet-84.mdx",x,y,150.,ang,1.,0.)
 endif
 else
 call CameraClearNoiseForPlayer(GetOwningPlayer(caster))
-call SetUnitAnimation(d,"Death")
-call Bof_zO(.2,d)
+call SetUnitAnimation(dmy,"Death")
+call Bof_zO(.2,dmy)
 if dist<200. then
 call Fla_W_Blast(caster,target)
 call Rem_Noise(GetOwningPlayer(caster),80.,.8)
-set d=CreateUnit(GetOwningPlayer(caster),'eBLP',GetUnitX(target),GetUnitY(target),ang)
-call SetUnitModel(d,"bof\\dawn_3.mdx")
-call SetUnitScale(d,3.,3.,3.)
-call UnitApplyTimedLife(d,'BHwe',1.)
-call SetUnitAnimationByIndex(d,2)
+set dmy=CreateUnit(GetOwningPlayer(caster),'eBLP',GetUnitX(target),GetUnitY(target),ang)
+call SetUnitModel(dmy,"bof\\dawn_3.mdx")
+call SetUnitScale(dmy,3.,3.,3.)
+call UnitApplyTimedLife(dmy,'BHwe',1.)
+call SetUnitAnimationByIndex(dmy,2)
 set t2=CreateTimer()
 call SaveUnitHandle(HH,GetHandleId(t2),0,caster)
 call SaveUnitHandle(HH,GetHandleId(t2),1,target)
-call SaveUnitHandle(HH,GetHandleId(t2),2,d)
+call SaveUnitHandle(HH,GetHandleId(t2),2,dmy)
 call SaveReal(HH,GetHandleId(t2),3,ang)
 call TimerStart(t2,.03,true,function Fla_W_Dawn)
 endif
@@ -12926,7 +12926,7 @@ set t=null
 set t2=null
 set caster=null
 set target=null
-set d=null
+set dmy=null
 endfunction
 // Замах: Фландре в паузе 0.46 c, на 0.36 c — бросок копья
 function Fla_W_Act2 takes nothing returns nothing
@@ -12934,12 +12934,12 @@ local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
 local unit caster=LoadUnitHandle(HH,id,0)
 local real ang=LoadReal(HH,id,2)
-local integer n=LoadInteger(HH,id,3)+1
+local integer tk=LoadInteger(HH,id,3)+1
 local real x
 local real y
-local unit d
+local unit dmy
 local timer t2
-call SaveInteger(HH,id,3,n)
+call SaveInteger(HH,id,3,tk)
 // реверс (цель в стойке развернула умение): как у героев Чейза — умение кончается, кастер отпущен
 if Bof_RevEnd(caster) then
 call FlushChildHashtable(HH,id)
@@ -12950,25 +12950,25 @@ return
 endif
 call SetUnitInvulnerable(caster,true)
 call PauseUnit(caster,true)
-if n==18 then
+if tk==18 then
 set x=GetUnitX(caster)
 set y=GetUnitY(caster)
 call Rem_Fx(caster,"bof\\Tsubaki-33.mdx",x,y,250.,ang,1.,0.)
 call SetSpecialEffectPitch(bj_lastCreatedEffect,90.)
 call CameraSetEQNoiseForPlayer(GetOwningPlayer(caster),50.)
 call Rem_Sound("bof\\war3mapImported\\RemiliaScarlet-R-YX3.mp3",100)
-set d=CreateUnit(GetOwningPlayer(caster),'eBLP',x+50.*CosBJ(ang),y+50.*SinBJ(ang),ang)
-call UnitApplyTimedLife(d,'BHwe',5.1)
-call SetUnitScale(d,1.5,1.,1.)
-call SetUnitFlyHeight(d,150.,1000000000.)
-call SetUnitModel(d,"bof\\Scarlet-71.mdx")
+set dmy=CreateUnit(GetOwningPlayer(caster),'eBLP',x+50.*CosBJ(ang),y+50.*SinBJ(ang),ang)
+call UnitApplyTimedLife(dmy,'BHwe',5.1)
+call SetUnitScale(dmy,1.5,1.,1.)
+call SetUnitFlyHeight(dmy,150.,1000000000.)
+call SetUnitModel(dmy,"bof\\Scarlet-71.mdx")
 set t2=CreateTimer()
 call SaveUnitHandle(HH,GetHandleId(t2),0,caster)
 call SaveUnitHandle(HH,GetHandleId(t2),1,LoadUnitHandle(HH,id,1))
-call SaveUnitHandle(HH,GetHandleId(t2),2,d)
+call SaveUnitHandle(HH,GetHandleId(t2),2,dmy)
 call TimerStart(t2,.03,true,function Fla_W_Spear)
 endif
-if n==23 then
+if tk==23 then
 call SetUnitInvulnerable(caster,false)
 call PauseUnit(caster,false)
 call SetUnitTimeScale(caster,1.)
@@ -12979,7 +12979,7 @@ endif
 set t=null
 set t2=null
 set caster=null
-set d=null
+set dmy=null
 endfunction
 function Fla_W_Act takes unit caster,unit target returns nothing
 local timer t=CreateTimer()
@@ -13003,7 +13003,7 @@ local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
 local unit caster=LoadUnitHandle(HH,id,0)
 local real ang=LoadReal(HH,id,1)
-local integer n=LoadInteger(HH,id,2)+1
+local integer tk=LoadInteger(HH,id,2)+1
 local real x=GetUnitX(caster)
 local real y=GetUnitY(caster)
 local real a
@@ -13012,21 +13012,21 @@ local real py
 local integer i
 local group g
 local unit e
-call SaveInteger(HH,id,2,n)
+call SaveInteger(HH,id,2,tk)
 call SetUnitInvulnerable(caster,true)
 call PauseUnit(caster,true)
-if n<=50 then
+if tk<=50 then
 call CameraSetEQNoiseForPlayer(GetOwningPlayer(caster),25.)
-if ModuloInteger(n,10)==0 then
+if ModuloInteger(tk,10)==0 then
 call Rem_Fx(caster,"bof\\Madara-huitu-22.mdx",x,y,25.,ang,8.,0.)
 endif
-if ModuloInteger(n,20)==0 then
+if ModuloInteger(tk,20)==0 then
 set px=x+CosBJ(GetRandomDirectionDeg())*GetRandomReal(-1000.,1000.)
 set py=y+SinBJ(GetRandomDirectionDeg())*GetRandomReal(-1000.,1000.)
 call Rem_Fx(caster,"bof\\Scarlet-77.mdx",px,py,25.,ang,1.,0.)
 endif
 endif
-if n==50 then
+if tk==50 then
 call Rem_Sound("bof\\war3mapImported\\Madara-huitu-TR-YX2.mp3",90)
 call Rem_Sound("bof\\NL-Q-YX.mp3",110)
 call Rem_Fx(caster,"bof\\Scarlet-82.mdx",x,y,600.,ang+180.,4.,0.)
@@ -13095,11 +13095,11 @@ local unit caster=LoadUnitHandle(HH,id,0)
 local real tx=LoadReal(HH,id,1)
 local real ty=LoadReal(HH,id,2)
 local real ang=LoadReal(HH,id,3)
-local integer n=LoadInteger(HH,id,4)+1
+local integer tk=LoadInteger(HH,id,4)+1
 local integer k
 local group g
 local unit e
-call SaveInteger(HH,id,4,n)
+call SaveInteger(HH,id,4,tk)
 // реверс (цель в стойке развернула умение): как у героев Чейза — умение кончается, кастер отпущен
 if Bof_RevEnd(caster) then
 call CameraClearNoiseForPlayer(GetOwningPlayer(caster))
@@ -13111,11 +13111,11 @@ return
 endif
 call SetUnitInvulnerable(caster,true)
 call PauseUnit(caster,true)
-if n==1 then
+if tk==1 then
 call SetUnitTimeScale(caster,1.)
 call SetUnitAnimationByIndex(caster,3)
 endif
-if n==13 then
+if tk==13 then
 call CameraSetEQNoiseForPlayer(GetOwningPlayer(caster),35.)
 call Rem_Fx(caster,"bof\\Scarlet-10.mdx",tx,ty,25.,ang,1.5,0.)
 call Rem_Fx(caster,"bof\\Scarlet-47.mdx",tx,ty,25.,ang,1.,0.)
@@ -13127,7 +13127,7 @@ call Rem_Sound("bof\\war3mapImported\\Flandre Scarlet-E-YX1.mp3",110)
 call Rem_Fx(caster,"bof\\Scarlet-92.mdx",tx,ty,25.,ang,1.,0.)
 call Rem_Fx(caster,"bof\\Scarlet-95.mdx",tx,ty,25.,ang,2.,0.)
 endif
-if n>=14 and n<=50 then
+if tk>=14 and tk<=50 then
 set k=LoadInteger(HH,id,5)+1
 call SaveInteger(HH,id,5,k)
 if ModuloInteger(k,8)==0 then
@@ -13147,7 +13147,7 @@ endloop
 call DestroyGroup(g)
 endif
 endif
-if n==50 then
+if tk==50 then
 call CameraClearNoiseForPlayer(GetOwningPlayer(caster))
 call SetUnitInvulnerable(caster,false)
 call PauseUnit(caster,false)
@@ -13212,29 +13212,29 @@ function Fla_R_Spear takes nothing returns nothing
 local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
 local unit caster=LoadUnitHandle(HH,id,0)
-local unit d=LoadUnitHandle(HH,id,1)
+local unit dmy=LoadUnitHandle(HH,id,1)
 local real speed=LoadReal(HH,id,2)
 local real ang=LoadReal(HH,id,3)
 local real yaw=LoadReal(HH,id,5)
-local integer n=LoadInteger(HH,id,4)+1
-local real x=GetUnitX(d)
-local real y=GetUnitY(d)
+local integer tk=LoadInteger(HH,id,4)+1
+local real x=GetUnitX(dmy)
+local real y=GetUnitY(dmy)
 local group g
 local unit e
-call SaveInteger(HH,id,4,n)
+call SaveInteger(HH,id,4,tk)
 if speed<=100. then
 set speed=speed+5.
 call SaveReal(HH,id,2,speed)
 endif
-if (n<=12 or I2R(n)*.01<=GetRandomReal(.12,.15)) and IsUnitAliveBJ(d) then
+if (tk<=12 or I2R(tk)*.01<=GetRandomReal(.12,.15)) and IsUnitAliveBJ(dmy) then
 set ang=ang+GetRandomReal(-3.,3.)
 call SaveReal(HH,id,3,ang)
-call SetUnitFacingTimed(d,ang,0)
-call SetUnitPosition(d,x+speed*CosBJ(ang),y+speed*SinBJ(ang))
+call SetUnitFacingTimed(dmy,ang,0)
+call SetUnitPosition(dmy,x+speed*CosBJ(ang),y+speed*SinBJ(ang))
 else
 call Rem_Sound("bof\\war3mapImported\\Flandre Scarlet-Q-YX1.mp3",100)
-call SetUnitAnimation(d,"Death")
-call UnitApplyTimedLife(d,'BHwe',.4)
+call SetUnitAnimation(dmy,"Death")
+call UnitApplyTimedLife(dmy,'BHwe',.4)
 call Rem_Fx(caster,"bof\\Scarlet-85.mdx",x,y,50.,yaw,2.25,.75)
 call Rem_Fx(caster,"bof\\Tsubaki-33.mdx",x,y,50.,yaw,1.,0.)
 call Rem_Fx(caster,"bof\\Scarlet-69.mdx",x,y,50.,yaw,1.,0.)
@@ -13256,7 +13256,7 @@ call DestroyTimer(t)
 endif
 set t=null
 set caster=null
-set d=null
+set dmy=null
 set g=null
 set e=null
 endfunction
@@ -13267,33 +13267,33 @@ local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
 local unit caster=LoadUnitHandle(HH,id,0)
 local integer cnt=LoadInteger(HH,id,1)
-local integer n=LoadInteger(HH,id,2)+1
+local integer tk=LoadInteger(HH,id,2)+1
 local integer i=0
 local unit e
-local unit d
+local unit dmy
 local group g
 local timer t2
-call SaveInteger(HH,id,2,n)
-if n==48 or n==54 or n==60 then
+call SaveInteger(HH,id,2,tk)
+if tk==48 or tk==54 or tk==60 then
 loop
 exitwhen i>=cnt
 set e=LoadUnitHandle(HH,id,10+2*i)
 set g=LoadGroupHandle(HH,id,11+2*i)
-set d=GroupPickRandomUnit(g)
-if d!=null then
-call GroupRemoveUnit(g,d)
+set dmy=GroupPickRandomUnit(g)
+if dmy!=null then
+call GroupRemoveUnit(g,dmy)
 set t2=CreateTimer()
 call SaveUnitHandle(HH,GetHandleId(t2),0,caster)
-call SaveUnitHandle(HH,GetHandleId(t2),1,d)
+call SaveUnitHandle(HH,GetHandleId(t2),1,dmy)
 call SaveReal(HH,GetHandleId(t2),2,40.)
-call SaveReal(HH,GetHandleId(t2),3,Atan2BJ(GetUnitY(e)-GetUnitY(d),GetUnitX(e)-GetUnitX(d)))
+call SaveReal(HH,GetHandleId(t2),3,Atan2BJ(GetUnitY(e)-GetUnitY(dmy),GetUnitX(e)-GetUnitX(dmy)))
 call SaveReal(HH,GetHandleId(t2),5,LoadReal(HH,id,3))
 call TimerStart(t2,.02,true,function Fla_R_Spear)
 endif
 set i=i+1
 endloop
 endif
-if n==61 then
+if tk==61 then
 loop
 exitwhen i>=cnt
 call DestroyGroup(LoadGroupHandle(HH,id,11+2*i))
@@ -13306,7 +13306,7 @@ set t=null
 set t2=null
 set caster=null
 set e=null
-set d=null
+set dmy=null
 set g=null
 endfunction
 function Fla_R_Act takes unit caster returns nothing
@@ -13316,14 +13316,14 @@ local real y=GetUnitY(caster)
 local real z=GetUnitFlyHeight(caster)
 local integer stage=LoadInteger(HH,cid,SH_FlaRStage)+1
 local integer cnt=0
-local integer s
+local integer str
 local real ea=0.
 local real px
 local real py
 local group g
 local group sg
 local unit e
-local unit d
+local unit dmy
 local timer t
 call SaveInteger(HH,cid,SH_FlaRStage,stage)
 // каждое нажатие: удар 800 с замедлением
@@ -13374,20 +13374,20 @@ call GroupRemoveUnit(g,e)
 if Condition_Base(GetOwningPlayer(caster),e) then
 set ea=GetUnitFacing(e)+180.
 set sg=CreateGroup()
-set s=1
+set str=1
 loop
-exitwhen s>3
-set px=x+CosBJ(ea-60.+30.*I2R(s))*1000.
-set py=y+SinBJ(ea-60.+30.*I2R(s))*1000.
+exitwhen str>3
+set px=x+CosBJ(ea-60.+30.*I2R(str))*1000.
+set py=y+SinBJ(ea-60.+30.*I2R(str))*1000.
 call Rem_Fx(null,"bof\\Scarlet-54.mdx",px,py,50.,ea,1.5,0.)
 call Rem_Fx(null,"bof\\Scarlet-27.mdx",px,py,50.,ea,1.5,0.)
 call Rem_Fx(null,"bof\\Scarlet-37.mdx",px,py,50.,ea,1.5,0.)
 call Rem_Fx(null,"bof\\Scarlet-75.mdx",px,py,50.,ea,1.,0.)
-set d=CreateUnit(GetOwningPlayer(caster),'eBLP',px,py,ea)
-call SetUnitModel(d,"bof\\Scarlet-11.mdx")
-call UnitApplyTimedLife(d,'BHwe',2.)
-call GroupAddUnit(sg,d)
-set s=s+1
+set dmy=CreateUnit(GetOwningPlayer(caster),'eBLP',px,py,ea)
+call SetUnitModel(dmy,"bof\\Scarlet-11.mdx")
+call UnitApplyTimedLife(dmy,'BHwe',2.)
+call GroupAddUnit(sg,dmy)
+set str=str+1
 endloop
 call SaveUnitHandle(HH,GetHandleId(t),10+2*cnt,e)
 call SaveGroupHandle(HH,GetHandleId(t),11+2*cnt,sg)
@@ -13404,7 +13404,7 @@ endif
 set g=null
 set sg=null
 set e=null
-set d=null
+set dmy=null
 set t=null
 endfunction
 // ----- T «Four of a Kind»: клон в точке (12 c), стоит заряд; зарядов до 3, +1 раз в 20 c -----
@@ -13470,11 +13470,11 @@ local unit caster=LoadUnitHandle(HH,id,0)
 local real tx=LoadReal(HH,id,1)
 local real ty=LoadReal(HH,id,2)
 local group done=LoadGroupHandle(HH,id,3)
-local integer n=LoadInteger(HH,id,4)+1
+local integer tk=LoadInteger(HH,id,4)+1
 local group g
 local unit e
-call SaveInteger(HH,id,4,n)
-if n<=50 then
+call SaveInteger(HH,id,4,tk)
+if tk<=50 then
 set g=CreateGroup()
 call GroupEnumUnitsInRange(g,tx,ty,600.,null)
 loop
@@ -13512,22 +13512,22 @@ function Fla_D_Fly takes nothing returns nothing
 local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
 local unit caster=LoadUnitHandle(HH,id,0)
-local unit d=LoadUnitHandle(HH,id,1)
+local unit dmy=LoadUnitHandle(HH,id,1)
 local real tx=LoadReal(HH,id,2)
 local real ty=LoadReal(HH,id,3)
 local real ang=LoadReal(HH,id,4)
-local integer n=LoadInteger(HH,id,5)+1
+local integer tk=LoadInteger(HH,id,5)+1
 local timer t2
-call SaveInteger(HH,id,5,n)
-if ModuloInteger(n,6)==0 then
-call Rem_Fx(caster,"bof\\Tsubaki-37.mdx",GetUnitX(d),GetUnitY(d),-1.,ang,4.,0.)
+call SaveInteger(HH,id,5,tk)
+if ModuloInteger(tk,6)==0 then
+call Rem_Fx(caster,"bof\\Tsubaki-37.mdx",GetUnitX(dmy),GetUnitY(dmy),-1.,ang,4.,0.)
 endif
-if n<=40 then
-call SetUnitPosition(d,GetUnitX(d)+40.*CosBJ(ang),GetUnitY(d)+40.*SinBJ(ang))
+if tk<=40 then
+call SetUnitPosition(dmy,GetUnitX(dmy)+40.*CosBJ(ang),GetUnitY(dmy)+40.*SinBJ(ang))
 endif
-if n>=40 or SRS(GetUnitX(d),GetUnitY(d),tx,ty)<=100. then
+if tk>=40 or SRS(GetUnitX(dmy),GetUnitY(dmy),tx,ty)<=100. then
 call Rem_Fx(caster,"bof\\Scarlet-88.mdx",tx,ty,-1.,ang,2.5,5.)
-call KillUnit(d)
+call KillUnit(dmy)
 call Rem_Sound("bof\\war3mapImported\\Flandre Scarlet-D-YX1.mp3",125)
 set t2=CreateTimer()
 call SaveUnitHandle(HH,GetHandleId(t2),0,caster)
@@ -13541,7 +13541,7 @@ endif
 set t=null
 set t2=null
 set caster=null
-set d=null
+set dmy=null
 endfunction
 // Замах: пауза 0.26 c, на 0.22 c — бросок
 function Fla_D_Act2 takes nothing returns nothing
@@ -13549,32 +13549,32 @@ local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
 local unit caster=LoadUnitHandle(HH,id,0)
 local real ang=LoadReal(HH,id,3)
-local integer n=LoadInteger(HH,id,4)+1
+local integer tk=LoadInteger(HH,id,4)+1
 local real x=GetUnitX(caster)
 local real y=GetUnitY(caster)
-local unit d
+local unit dmy
 local timer t2
-call SaveInteger(HH,id,4,n)
+call SaveInteger(HH,id,4,tk)
 call PauseUnit(caster,true)
 call SetUnitInvulnerable(caster,true)
-if n==11 then
+if tk==11 then
 call Rem_Noise(GetOwningPlayer(caster),40.,.14)
 call Rem_Fx(caster,"bof\\Saber-17.mdx",x-100.*CosBJ(ang),y-100.*SinBJ(ang),-1.,ang,1.,0.)
 call Rem_Fx(caster,"bof\\Ryougi Shiki-19.mdx",x-100.*CosBJ(ang),y-100.*SinBJ(ang),-1.,ang,2.,0.)
-set d=CreateUnit(GetOwningPlayer(caster),'eBLP',x+70.*CosBJ(ang),y+70.*SinBJ(ang),ang)
-call SetUnitModel(d,"bof\\Scarlet-89.mdx")
-call SetUnitScale(d,1.5,1.,1.)
-call SetUnitFlyHeight(d,GetUnitFlyHeight(caster)+80.,0.)
-call UnitApplyTimedLife(d,'BHwe',1.)
+set dmy=CreateUnit(GetOwningPlayer(caster),'eBLP',x+70.*CosBJ(ang),y+70.*SinBJ(ang),ang)
+call SetUnitModel(dmy,"bof\\Scarlet-89.mdx")
+call SetUnitScale(dmy,1.5,1.,1.)
+call SetUnitFlyHeight(dmy,GetUnitFlyHeight(caster)+80.,0.)
+call UnitApplyTimedLife(dmy,'BHwe',1.)
 set t2=CreateTimer()
 call SaveUnitHandle(HH,GetHandleId(t2),0,caster)
-call SaveUnitHandle(HH,GetHandleId(t2),1,d)
+call SaveUnitHandle(HH,GetHandleId(t2),1,dmy)
 call SaveReal(HH,GetHandleId(t2),2,LoadReal(HH,id,1))
 call SaveReal(HH,GetHandleId(t2),3,LoadReal(HH,id,2))
 call SaveReal(HH,GetHandleId(t2),4,ang)
 call TimerStart(t2,.02,true,function Fla_D_Fly)
 endif
-if n==13 then
+if tk==13 then
 call Rem_Fx(caster,"bof\\Tsubaki-33.mdx",x,y,250.,ang,1.,0.)
 call SetSpecialEffectPitch(bj_lastCreatedEffect,90.)
 call SetUnitTimeScale(caster,1.)
@@ -13586,7 +13586,7 @@ endif
 set t=null
 set t2=null
 set caster=null
-set d=null
+set dmy=null
 endfunction
 function Fla_D_Act takes unit caster,real tx,real ty returns nothing
 local real x=GetUnitX(caster)
@@ -13639,13 +13639,13 @@ function Fla_F_Act2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
 local unit caster=LoadUnitHandle(HH,id,0)
-local integer n=LoadInteger(HH,id,1)+1
+local integer tk=LoadInteger(HH,id,1)+1
 local real x=GetUnitX(caster)
 local real y=GetUnitY(caster)
 local real z=GetUnitFlyHeight(caster)
 local group g
 local unit e
-call SaveInteger(HH,id,1,n)
+call SaveInteger(HH,id,1,tk)
 // реверс (цель в стойке развернула умение): как у героев Чейза — умение кончается, кастер отпущен
 if Bof_RevEnd(caster) then
 call Fla_FLock(caster,false)
@@ -13655,8 +13655,8 @@ set t=null
 set caster=null
 return
 endif
-if n<=300 and IsUnitAliveBJ(caster) then
-if ModuloInteger(n-1,15)==0 then
+if tk<=300 and IsUnitAliveBJ(caster) then
+if ModuloInteger(tk-1,15)==0 then
 call Fla_FLock(caster,true)
 call Rem_Fx(caster,"bof\\Scarlet-4.mdx",x,y,z,0.,1.,0.)
 call Rem_Fx(caster,"bof\\Scarlet-84.mdx",x,y,z,0.,1.,0.)
@@ -13691,18 +13691,18 @@ function Fla_F_Act takes unit caster returns nothing
 local real x=GetUnitX(caster)
 local real y=GetUnitY(caster)
 local real z=GetUnitFlyHeight(caster)
-local unit d
+local unit dmy
 local timer t=CreateTimer()
 call SaveBoolean(HH,GetHandleId(caster),SH_bofRevd,false)
 call SetUnitInvulnerable(caster,true)
 call Fla_FLock(caster,true)
 // круг и столб на месте каста (6 c)
 call Rem_Fx(caster,"bof\\Scarlet-83.mdx",x,y,25.,0.,1.5,6.)
-set d=CreateUnit(GetOwningPlayer(caster),'eBMC',x,y,270.)
-call SetUnitModel(d,"bof\\Scarlet-78.mdx")
-call SetUnitScale(d,6.,1.,1.)
-call SetUnitFlyHeight(d,25.,0.)
-call Bof_zO(6.,d)
+set dmy=CreateUnit(GetOwningPlayer(caster),'eBMC',x,y,270.)
+call SetUnitModel(dmy,"bof\\Scarlet-78.mdx")
+call SetUnitScale(dmy,6.,1.,1.)
+call SetUnitFlyHeight(dmy,25.,0.)
+call Bof_zO(6.,dmy)
 call Rem_Fx(caster,"bof\\Scarlet-29.mdx",x,y,z,0.,1.,0.)
 call Rem_Fx(caster,"bof\\Scarlet-14.mdx",x,y,20.,0.,1.,1.)
 call Rem_Fx(caster,"bof\\Scarlet-21.mdx",x,y,z,0.,2.,0.)
@@ -13714,7 +13714,7 @@ call Rem_Sound("bof\\war3mapImported\\Flandre Scarlet-F-YY1.mp3",110)
 call Rem_Sound("bof\\war3mapImported\\RemiliaScarlet-G-YX1.mp3",100)
 call SaveUnitHandle(HH,GetHandleId(t),0,caster)
 call TimerStart(t,.02,true,function Fla_F_Act2)
-set d=null
+set dmy=null
 set t=null
 endfunction
 // ----- G: 2.2 c в паузе, с 0.66 c луч вперёд (1400, ширина 260) каждые 5 тиков: урон G x20, стан
@@ -13745,24 +13745,24 @@ local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
 local unit caster=LoadUnitHandle(HH,id,0)
 local real ang=LoadReal(HH,id,1)
-local integer n=LoadInteger(HH,id,2)+1
+local integer tk=LoadInteger(HH,id,2)+1
 local integer k=LoadInteger(HH,id,3)+1
-local unit d=LoadUnitHandle(HH,id,4)
+local unit dmy=LoadUnitHandle(HH,id,4)
 local real x=GetUnitX(caster)
 local real y=GetUnitY(caster)
-call SaveInteger(HH,id,2,n)
+call SaveInteger(HH,id,2,tk)
 // реверс (цель в стойке развернула умение): как у героев Чейза — умение кончается, кастер отпущен
 if Bof_RevEnd(caster) then
-if d!=null then
-call SetUnitAnimationByIndex(d,2)
-call Bof_zO(.48,d)
+if dmy!=null then
+call SetUnitAnimationByIndex(dmy,2)
+call Bof_zO(.48,dmy)
 endif
 call CameraClearNoiseForPlayer(GetOwningPlayer(caster))
 call FlushChildHashtable(HH,id)
 call DestroyTimer(t)
 set t=null
 set caster=null
-set d=null
+set dmy=null
 return
 endif
 call SetUnitInvulnerable(caster,true)
@@ -13773,24 +13773,24 @@ endif
 if ModuloInteger(k,30)==0 then
 call Rem_Fx(caster,"bof\\Minato-41.mdx",x,y,25.,ang,1.5,0.)
 endif
-if n==25 then
-set d=CreateUnit(GetOwningPlayer(caster),'eBLP',x+300.*CosBJ(ang),y+300.*SinBJ(ang),ang)
-call SetUnitModel(d,"bof\\Scarlet-90.mdx")
-call UnitApplyTimedLife(d,'BHwe',3.)
-call SetUnitFlyHeight(d,0.,1000000000.)
-call SetUnitAnimation(d,"Birth")
-call SaveUnitHandle(HH,id,4,d)
+if tk==25 then
+set dmy=CreateUnit(GetOwningPlayer(caster),'eBLP',x+300.*CosBJ(ang),y+300.*SinBJ(ang),ang)
+call SetUnitModel(dmy,"bof\\Scarlet-90.mdx")
+call UnitApplyTimedLife(dmy,'BHwe',3.)
+call SetUnitFlyHeight(dmy,0.,1000000000.)
+call SetUnitAnimation(dmy,"Birth")
+call SaveUnitHandle(HH,id,4,dmy)
 call CameraSetEQNoiseForPlayer(GetOwningPlayer(caster),40.)
 call Rem_Sound("bof\\war3mapImported\\Flandre Scarlet-G-YX2.mp3",200)
 endif
-if n==50 then
+if tk==50 then
 // у bof точка эффекта к этому тику уже перезаписана местом Фландре (эффекты раз в 10 тиков)
 call Rem_Fx(caster,"bof\\Saber-14.mdx",x,y,150.,0.,2.,0.)
-call SetUnitAnimationByIndex(d,1)
+call SetUnitAnimationByIndex(dmy,1)
 set k=0
 endif
 call SaveInteger(HH,id,3,k)
-if n>=34 and n<=110 then
+if tk>=34 and tk<=110 then
 if k==1 or ModuloInteger(k-1,12)==0 then
 call Rem_Fx(caster,"bof\\Tsubaki-33.mdx",x,y,250.,ang,1.,0.)
 call SetSpecialEffectPitch(bj_lastCreatedEffect,90.)
@@ -13801,20 +13801,20 @@ if ModuloInteger(k,5)==0 then
 call Fla_G_Beam(caster,ang)
 endif
 endif
-if n==110 then
+if tk==110 then
 call PauseUnit(caster,false)
 call SetUnitInvulnerable(caster,false)
 call SetUnitPathing(caster,true)
 call SetUnitTimeScale(caster,1.)
-call SetUnitAnimationByIndex(d,2)
-call Bof_zO(.48,d)
+call SetUnitAnimationByIndex(dmy,2)
+call Bof_zO(.48,dmy)
 call CameraClearNoiseForPlayer(GetOwningPlayer(caster))
 call FlushChildHashtable(HH,id)
 call DestroyTimer(t)
 endif
 set t=null
 set caster=null
-set d=null
+set dmy=null
 endfunction
 function Fla_G_Act takes unit caster,real tx,real ty returns nothing
 local real x=GetUnitX(caster)
@@ -13846,9 +13846,9 @@ local unit target=LoadUnitHandle(HH,id,1)
 local real px=LoadReal(HH,id,2)
 local real py=LoadReal(HH,id,3)
 local real ang=LoadReal(HH,id,4)
-local integer n=LoadInteger(HH,id,5)+1
+local integer tk=LoadInteger(HH,id,5)+1
 local integer k
-call SaveInteger(HH,id,5,n)
+call SaveInteger(HH,id,5,tk)
 // реверс (цель в стойке развернула умение): как у героев Чейза — умение кончается, кастер отпущен
 if Bof_RevEnd(caster) then
 call CameraClearNoiseForPlayer(GetOwningPlayer(caster))
@@ -13859,15 +13859,15 @@ set caster=null
 set target=null
 return
 endif
-if n<=40 then
+if tk<=40 then
 call SetUnitInvulnerable(caster,true)
 call PauseUnit(caster,true)
 endif
-if n==1 then
+if tk==1 then
 call SetUnitTimeScale(caster,1.)
 call SetUnitAnimationByIndex(caster,3)
 endif
-if n==13 then
+if tk==13 then
 call CameraSetEQNoiseForPlayer(GetOwningPlayer(caster),35.)
 call Rem_Fx(caster,"bof\\Scarlet-36.MDX",px,py,25.,ang,1.5,0.)
 call Rem_Fx(caster,"bof\\Scarlet-48.mdx",px,py,25.,ang,1.5,2.)
@@ -13875,7 +13875,7 @@ call Rem_Fx(caster,"bof\\Madara-huitu-22.mdx",px,py,25.,ang,15.,0.)
 call Rem_Fx(caster,"bof\\Scarlet-93.mdx",px,py,25.,ang,2.,0.)
 call Rem_Fx(caster,"bof\\Scarlet-94.mdx",px,py,25.,ang,2.,0.)
 endif
-if n>=14 and n<=50 then
+if tk>=14 and tk<=50 then
 set k=LoadInteger(HH,id,6)+1
 call SaveInteger(HH,id,6,k)
 if ModuloInteger(k,16)==0 then
@@ -13887,7 +13887,7 @@ call Bof_Dmg(caster,target,(I2R(Fla_Int_G2(caster,true))*120.)*0.001)
 call Bof_Ctrl(caster,target,1.5,"stun")
 endif
 endif
-if n==50 then
+if tk==50 then
 call CameraClearNoiseForPlayer(GetOwningPlayer(caster))
 call SetUnitInvulnerable(caster,false)
 call PauseUnit(caster,false)
@@ -13929,13 +13929,13 @@ local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
 local unit caster=LoadUnitHandle(HH,id,0)
 local unit cl=LoadUnitHandle(HH,id,1)
-local integer n=LoadInteger(HH,id,2)+1
+local integer tk=LoadInteger(HH,id,2)+1
 local real x=GetUnitX(caster)
 local real y=GetUnitY(caster)
 local real ang=Atan2BJ(GetUnitY(cl)-y,GetUnitX(cl)-x)
 local group g
 local unit e
-call SaveInteger(HH,id,2,n)
+call SaveInteger(HH,id,2,tk)
 // реверс (цель в стойке развернула умение): как у героев Чейза — умение кончается, кастер отпущен
 if Bof_RevEnd(caster) then
 call FlushChildHashtable(HH,id)
@@ -13946,11 +13946,11 @@ set cl=null
 return
 endif
 call SetUnitInvulnerable(caster,true)
-if n<=50 and SRS(x,y,GetUnitX(cl),GetUnitY(cl))>80. then
+if tk<=50 and SRS(x,y,GetUnitX(cl),GetUnitY(cl))>80. then
 set x=x+40.*CosBJ(ang)
 set y=y+40.*SinBJ(ang)
 call SetUnitPosition(caster,x,y)
-if ModuloInteger(n,8)==0 then
+if ModuloInteger(tk,8)==0 then
 set x=GetUnitX(caster)
 set y=GetUnitY(caster)
 call Rem_Fx(caster,"bof\\Scarlet-69.mdx",x,y,150.,ang,.75,0.)
@@ -14035,33 +14035,33 @@ local integer id=GetHandleId(t)
 local unit cl=LoadUnitHandle(HH,id,0)
 local unit fla=LoadUnitHandle(HH,GetHandleId(cl),SH_FlaOwner)
 local real ang=LoadReal(HH,id,1)
-local integer n=LoadInteger(HH,id,2)+1
+local integer tk=LoadInteger(HH,id,2)+1
 local real x=LoadReal(HH,id,3)
 local real y=LoadReal(HH,id,4)
 local real z=GetUnitFlyHeight(cl)
 local integer k
-local unit d
+local unit dmy
 local group g
 local unit e
-call SaveInteger(HH,id,2,n)
+call SaveInteger(HH,id,2,tk)
 call PauseUnit(cl,true)
 call SetUnitInvulnerable(cl,true)
-if n==18 then
+if tk==18 then
 call Rem_Sound("bof\\war3mapImported\\Flandre Scarlet-pingA-YX1.mp3",110)
 call Rem_Fx(cl,"bof\\Saber-15.mdx",x,y,125.,ang,1.,0.)
 call Rem_Fx(cl,"bof\\Saber-17.mdx",x,y,z+50.,ang,1.5,0.)
 call Rem_Fx(cl,"bof\\Minato-25.mdx",x,y,z+50.,ang,1.,0.)
 call Rem_Fx(cl,"bof\\chongfeng2.mdx",x,y,z+50.,ang,1.,0.)
 call SetUnitTimeScale(cl,1.)
-set d=CreateUnit(GetOwningPlayer(cl),'eBLP',GetUnitX(cl),GetUnitY(cl),ang)
-call UnitApplyTimedLife(d,'BHwe',.8)
-call SetUnitScale(d,1.5,1.,1.)
-call SetUnitFlyHeight(d,150.,1000000000.)
-call SetUnitModel(d,"bof\\Scarlet-96.mdx")
+set dmy=CreateUnit(GetOwningPlayer(cl),'eBLP',GetUnitX(cl),GetUnitY(cl),ang)
+call UnitApplyTimedLife(dmy,'BHwe',.8)
+call SetUnitScale(dmy,1.5,1.,1.)
+call SetUnitFlyHeight(dmy,150.,1000000000.)
+call SetUnitModel(dmy,"bof\\Scarlet-96.mdx")
 call Bof_Slide(cl,ang,1600.,.8)
-call Bof_Slide(d,ang,1600.,.8)
+call Bof_Slide(dmy,ang,1600.,.8)
 endif
-if n>=19 and n<=48 then
+if tk>=19 and tk<=48 then
 set k=LoadInteger(HH,id,5)+1
 call SaveInteger(HH,id,5,k)
 if ModuloInteger(k,12)==0 then
@@ -14096,7 +14096,7 @@ endif
 endloop
 call DestroyGroup(g)
 endif
-if n==48 then
+if tk==48 then
 call PauseUnit(cl,false)
 call SetUnitInvulnerable(cl,false)
 call SetUnitTimeScale(cl,1.)
@@ -14106,7 +14106,7 @@ endif
 set t=null
 set cl=null
 set fla=null
-set d=null
+set dmy=null
 set g=null
 set e=null
 endfunction
