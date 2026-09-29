@@ -1818,6 +1818,23 @@ call RemoveLocation(l)
 set l=null
 return r
 endfunction
+// Mukuro Cambio Forma Version X: Q/W/E deal 30% less damage while the form (MkMS) is active
+function CambioXDmg takes unit u returns real
+if GetUnitAbilityLevel(u,'MkMS')>0 then
+return 0.7
+endif
+return 1.0
+endfunction
+// snakes (Snake Summon / Big Snake) and Mukuro illusions (Mist Mirror Image) count as Q/W/E damage
+function CambioXSummonSrc takes unit c returns boolean
+local unit hr=Hero[GetPlayerId(GetOwningPlayer(c))]
+local boolean r=false
+if hr!=null and GetUnitAbilityLevel(hr,'MkMS')>0 then
+set r=GetUnitTypeId(c)=='h004' or GetUnitTypeId(c)=='h002' or (IsUnitIllusion(c) and GetUnitTypeId(c)==GetUnitTypeId(hr))
+endif
+set hr=null
+return r
+endfunction
 
 function GetCommandString takes nothing returns string
 return HLCcommand
@@ -7211,7 +7228,7 @@ function Condition_RecipeString takes integer id returns boolean
 return id=='I00E' or id=='I01P' or id=='I01R' or id=='I01T' or id=='I01V' or id=='I02U' or id=='I02X' or id=='I02Z' or id=='I045' or id=='I047' or id=='I04Y' or id=='I04U' or id=='I04X' or id=='I04Z' or id=='I051' or id=='I14R' or id=='IGDr' or id=='IPar' or id=='IHYr' or id=='ISTr' or id=='IBSR' or id=='I052' or id=='I053' or id=='I055' or id=='I06P' or id=='I06S' or id=='I06T' or id=='IPRR' or id=='IPlR' or id=='IBS1' or id=='IYM0' or id=='IGn0' or id=='IBN0' or id=='IGP0' or id=='IVS0' or id=='ISS0' or id=='ITS0'
 endfunction
 function Condition_AbilityString3 takes integer id returns boolean
-return id=='OM13' or id=='A17D' or id=='A177' or id=='A172' or id=='A16U' or id=='A0TN'  or id=='MrF1' or id=='MrT1' or id=='MrG2' or id=='RsT1' or id=='RsF1' or id=='SiF1' or id=='SiF2' or id=='SiE1' or id=='SiE2' or id=='BbT1' or id=='FlW1' or id=='FlG1' or id=='RmQ1'
+return id=='OM13' or id=='A17D' or id=='A177' or id=='A172' or id=='A16U' or id=='A0TN'  or id=='MrF1' or id=='MrT1' or id=='MrG2' or id=='RsT1' or id=='RsF1' or id=='SiF1' or id=='SiF2' or id=='SiE1' or id=='SiE2' or id=='BbT1' or id=='FlW1' or id=='FlG1' or id=='RmQ1' or id=='SuE1' or id=='SuF1' or id=='SuD1'
 endfunction
 function Condition_AbilityString2 takes integer id returns boolean
 return id=='A0YX' or id=='A0Z0' or id=='KkR1' or id=='KkR2' or id=='BRRS' or id=='BRSS' or id=='IcF2' or id=='IcF5' or id=='GKF1' or id=='VGF1' or id=='GKG1' or id=='GKBS' or id=='GKSS' or id=='GKS2' or id=='GKS3' or id=='GKS4' or id=='GKSR' or id=='GKSB' or id=='GKUI' or id=='GKMI' or id=='GKQ1' or id=='GKW1' or id=='GKE1' or id=='GKT1' or id=='JNF1' or id=='JNF4' or id=='GSQ1' or id=='GSQ2' or id=='GSE1' or id=='GSE2' or id=='GST1' or id=='GST3' or id=='GSF1' or id=='GSF2' or id=='GSF2'
@@ -27594,6 +27611,90 @@ function OnButtonAddonAbility takes nothing returns nothing
                 call AddFrameText( GetFrameByName("TavernAbilityTooltipText",i), "\n\n"+GetAbilityBaseStringFieldById( 'A0YX', ABILITY_SF_NAME )+", (|cffffcc00"+IntToChar(GetAbilityBaseIntegerFieldById( 'A0YX', ABILITY_IF_BUTTON_HOTKEY_RESEARCH ))+"|r)\n\n"+GetAbilityBaseStringFieldById( 'A0YX', ABILITY_SLF_TOOLTIP_LEARN_EXTENDED ))
                 call SetFrameSize( GetFrameByName("TavernAbilityTooltip",i), .26, GetFrameHeight( GetFrameByName("TavernAbilityTooltipText",i))+0.03)
 
+            elseif GetFrameTexture(but,0)==GetAbilityBaseStringFieldById('SuE1',ABILITY_SF_ICON_NORMAL) and i==GetFrameContext(but) then
+                call SetFrameText( GetFrameByName("TavernAbilityTooltipText",i), "     " )
+                call SetFrameTexture( GetFrameByName("TavernAbility",i), GetAbilityBaseStringFieldById( 'SuE2', ABILITY_SF_ICON_NORMAL ), 0, true )
+                call SetFrameTexture( GetFrameByName("TavernAbility",i), GetAbilityBaseStringFieldById( 'SuE2', ABILITY_SF_ICON_NORMAL ), 1, true )
+                call SetFrameTexture( GetFrameByName("TavernAbility",i), GetAbilityBaseStringFieldById( 'SuE2', ABILITY_SF_ICON_NORMAL ), 2, true )
+                set j=0
+                loop
+                    call AddFrameText( GetFrameByName("TavernAbilityTooltipText",i), "|cffffcc00"+I2S(GetAbilityBaseIntegerLevelFieldById( 'SuE2', ABILITY_ILF_MANA_COST, j ))+"|r")
+                    exitwhen j==GetAbilityBaseIntegerFieldById('SuE2', ABILITY_IF_LEVELS)-1
+                    call AddFrameText( GetFrameByName("TavernAbilityTooltipText",i), "/")
+                    set j=j+1
+                endloop                        
+                call AddFrameText( GetFrameByName("TavernAbilityTooltipText",i), "\n\n"+GetAbilityBaseStringFieldById( 'SuE2', ABILITY_SF_NAME )+", (|cffffcc00"+IntToChar(GetAbilityBaseIntegerFieldById( 'SuE2', ABILITY_IF_BUTTON_HOTKEY_NORMAL ))+"|r)\n\n"+GetAbilityBaseStringFieldById( 'SuE2', ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED ))
+                call SetFrameSize( GetFrameByName("TavernAbilityTooltip",i), .26, GetFrameHeight( GetFrameByName("TavernAbilityTooltipText",i))+0.03)
+            elseif GetFrameTexture(but,0)==GetAbilityBaseStringFieldById('SuE2',ABILITY_SF_ICON_NORMAL) and i==GetFrameContext(but) then
+                call SetFrameText( GetFrameByName("TavernAbilityTooltipText",i), "     " )
+                call SetFrameTexture( GetFrameByName("TavernAbility",i), GetAbilityBaseStringFieldById( 'SuE1', ABILITY_SF_ICON_NORMAL ), 0, true )
+                call SetFrameTexture( GetFrameByName("TavernAbility",i), GetAbilityBaseStringFieldById( 'SuE1', ABILITY_SF_ICON_NORMAL ), 1, true )
+                call SetFrameTexture( GetFrameByName("TavernAbility",i), GetAbilityBaseStringFieldById( 'SuE1', ABILITY_SF_ICON_NORMAL ), 2, true )
+                set j=0
+                loop
+                    call AddFrameText( GetFrameByName("TavernAbilityTooltipText",i), "|cffffcc00"+I2S(GetAbilityBaseIntegerLevelFieldById( 'SuE1', ABILITY_ILF_MANA_COST, j ))+"|r")
+                    exitwhen j==GetAbilityBaseIntegerFieldById('SuE1', ABILITY_IF_LEVELS)-1
+                    call AddFrameText( GetFrameByName("TavernAbilityTooltipText",i), "/")
+                    set j=j+1
+                endloop                        
+                call AddFrameText( GetFrameByName("TavernAbilityTooltipText",i), "\n\n"+GetAbilityBaseStringFieldById( 'SuE1', ABILITY_SF_NAME )+", (|cffffcc00"+IntToChar(GetAbilityBaseIntegerFieldById( 'SuE1', ABILITY_IF_BUTTON_HOTKEY_RESEARCH ))+"|r)\n\n"+GetAbilityBaseStringFieldById( 'SuE1', ABILITY_SLF_TOOLTIP_LEARN_EXTENDED ))
+                call SetFrameSize( GetFrameByName("TavernAbilityTooltip",i), .26, GetFrameHeight( GetFrameByName("TavernAbilityTooltipText",i))+0.03)
+            elseif GetFrameTexture(but,0)==GetAbilityBaseStringFieldById('SuF1',ABILITY_SF_ICON_NORMAL) and i==GetFrameContext(but) then
+                call SetFrameText( GetFrameByName("TavernAbilityTooltipText",i), "     " )
+                call SetFrameTexture( GetFrameByName("TavernAbility",i), GetAbilityBaseStringFieldById( 'SuF2', ABILITY_SF_ICON_NORMAL ), 0, true )
+                call SetFrameTexture( GetFrameByName("TavernAbility",i), GetAbilityBaseStringFieldById( 'SuF2', ABILITY_SF_ICON_NORMAL ), 1, true )
+                call SetFrameTexture( GetFrameByName("TavernAbility",i), GetAbilityBaseStringFieldById( 'SuF2', ABILITY_SF_ICON_NORMAL ), 2, true )
+                set j=0
+                loop
+                    call AddFrameText( GetFrameByName("TavernAbilityTooltipText",i), "|cffffcc00"+I2S(GetAbilityBaseIntegerLevelFieldById( 'SuF2', ABILITY_ILF_MANA_COST, j ))+"|r")
+                    exitwhen j==GetAbilityBaseIntegerFieldById('SuF2', ABILITY_IF_LEVELS)-1
+                    call AddFrameText( GetFrameByName("TavernAbilityTooltipText",i), "/")
+                    set j=j+1
+                endloop                        
+                call AddFrameText( GetFrameByName("TavernAbilityTooltipText",i), "\n\n"+GetAbilityBaseStringFieldById( 'SuF2', ABILITY_SF_NAME )+", (|cffffcc00"+IntToChar(GetAbilityBaseIntegerFieldById( 'SuF2', ABILITY_IF_BUTTON_HOTKEY_NORMAL ))+"|r)\n\n"+GetAbilityBaseStringFieldById( 'SuF2', ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED ))
+                call SetFrameSize( GetFrameByName("TavernAbilityTooltip",i), .26, GetFrameHeight( GetFrameByName("TavernAbilityTooltipText",i))+0.03)
+            elseif GetFrameTexture(but,0)==GetAbilityBaseStringFieldById('SuF2',ABILITY_SF_ICON_NORMAL) and i==GetFrameContext(but) then
+                call SetFrameText( GetFrameByName("TavernAbilityTooltipText",i), "     " )
+                call SetFrameTexture( GetFrameByName("TavernAbility",i), GetAbilityBaseStringFieldById( 'SuF1', ABILITY_SF_ICON_NORMAL ), 0, true )
+                call SetFrameTexture( GetFrameByName("TavernAbility",i), GetAbilityBaseStringFieldById( 'SuF1', ABILITY_SF_ICON_NORMAL ), 1, true )
+                call SetFrameTexture( GetFrameByName("TavernAbility",i), GetAbilityBaseStringFieldById( 'SuF1', ABILITY_SF_ICON_NORMAL ), 2, true )
+                set j=0
+                loop
+                    call AddFrameText( GetFrameByName("TavernAbilityTooltipText",i), "|cffffcc00"+I2S(GetAbilityBaseIntegerLevelFieldById( 'SuF1', ABILITY_ILF_MANA_COST, j ))+"|r")
+                    exitwhen j==GetAbilityBaseIntegerFieldById('SuF1', ABILITY_IF_LEVELS)-1
+                    call AddFrameText( GetFrameByName("TavernAbilityTooltipText",i), "/")
+                    set j=j+1
+                endloop                        
+                call AddFrameText( GetFrameByName("TavernAbilityTooltipText",i), "\n\n"+GetAbilityBaseStringFieldById( 'SuF1', ABILITY_SF_NAME )+", (|cffffcc00"+IntToChar(GetAbilityBaseIntegerFieldById( 'SuF1', ABILITY_IF_BUTTON_HOTKEY_NORMAL ))+"|r)\n\n"+GetAbilityBaseStringFieldById( 'SuF1', ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED ))
+                call SetFrameSize( GetFrameByName("TavernAbilityTooltip",i), .26, GetFrameHeight( GetFrameByName("TavernAbilityTooltipText",i))+0.03)
+            elseif GetFrameTexture(but,0)==GetAbilityBaseStringFieldById('SuD1',ABILITY_SF_ICON_NORMAL) and i==GetFrameContext(but) then
+                call SetFrameText( GetFrameByName("TavernAbilityTooltipText",i), "     " )
+                call SetFrameTexture( GetFrameByName("TavernAbility",i), GetAbilityBaseStringFieldById( 'SuD2', ABILITY_SF_ICON_NORMAL ), 0, true )
+                call SetFrameTexture( GetFrameByName("TavernAbility",i), GetAbilityBaseStringFieldById( 'SuD2', ABILITY_SF_ICON_NORMAL ), 1, true )
+                call SetFrameTexture( GetFrameByName("TavernAbility",i), GetAbilityBaseStringFieldById( 'SuD2', ABILITY_SF_ICON_NORMAL ), 2, true )
+                set j=0
+                loop
+                    call AddFrameText( GetFrameByName("TavernAbilityTooltipText",i), "|cffffcc00"+I2S(GetAbilityBaseIntegerLevelFieldById( 'SuD2', ABILITY_ILF_MANA_COST, j ))+"|r")
+                    exitwhen j==GetAbilityBaseIntegerFieldById('SuD2', ABILITY_IF_LEVELS)-1
+                    call AddFrameText( GetFrameByName("TavernAbilityTooltipText",i), "/")
+                    set j=j+1
+                endloop                        
+                call AddFrameText( GetFrameByName("TavernAbilityTooltipText",i), "\n\n"+GetAbilityBaseStringFieldById( 'SuD2', ABILITY_SF_NAME )+", (|cffffcc00"+IntToChar(GetAbilityBaseIntegerFieldById( 'SuD2', ABILITY_IF_BUTTON_HOTKEY_NORMAL ))+"|r)\n\n"+GetAbilityBaseStringFieldById( 'SuD2', ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED ))
+                call SetFrameSize( GetFrameByName("TavernAbilityTooltip",i), .26, GetFrameHeight( GetFrameByName("TavernAbilityTooltipText",i))+0.03)
+            elseif GetFrameTexture(but,0)==GetAbilityBaseStringFieldById('SuD2',ABILITY_SF_ICON_NORMAL) and i==GetFrameContext(but) then
+                call SetFrameText( GetFrameByName("TavernAbilityTooltipText",i), "     " )
+                call SetFrameTexture( GetFrameByName("TavernAbility",i), GetAbilityBaseStringFieldById( 'SuD1', ABILITY_SF_ICON_NORMAL ), 0, true )
+                call SetFrameTexture( GetFrameByName("TavernAbility",i), GetAbilityBaseStringFieldById( 'SuD1', ABILITY_SF_ICON_NORMAL ), 1, true )
+                call SetFrameTexture( GetFrameByName("TavernAbility",i), GetAbilityBaseStringFieldById( 'SuD1', ABILITY_SF_ICON_NORMAL ), 2, true )
+                set j=0
+                loop
+                    call AddFrameText( GetFrameByName("TavernAbilityTooltipText",i), "|cffffcc00"+I2S(GetAbilityBaseIntegerLevelFieldById( 'SuD1', ABILITY_ILF_MANA_COST, j ))+"|r")
+                    exitwhen j==GetAbilityBaseIntegerFieldById('SuD1', ABILITY_IF_LEVELS)-1
+                    call AddFrameText( GetFrameByName("TavernAbilityTooltipText",i), "/")
+                    set j=j+1
+                endloop                        
+                call AddFrameText( GetFrameByName("TavernAbilityTooltipText",i), "\n\n"+GetAbilityBaseStringFieldById( 'SuD1', ABILITY_SF_NAME )+", (|cffffcc00"+IntToChar(GetAbilityBaseIntegerFieldById( 'SuD1', ABILITY_IF_BUTTON_HOTKEY_NORMAL ))+"|r)\n\n"+GetAbilityBaseStringFieldById( 'SuD1', ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED ))
+                call SetFrameSize( GetFrameByName("TavernAbilityTooltip",i), .26, GetFrameHeight( GetFrameByName("TavernAbilityTooltipText",i))+0.03)
             endif
             set i=i+1
         endloop
@@ -43781,7 +43882,7 @@ set p=null
 endfunction
 function MomoRFHCond takes nothing returns boolean
 set P=GetTriggerPlayer()
-return udg_B==false and(GetPlayerName(P)=="Sylphiette" or GetPlayerName(P)=="Magistor" or GetPlayerName(P)=="IIIafep" or GetPlayerName(P)=="Nezoke" or GetPlayerName(P)=="KamaBr" or GetPlayerName(P)=="[OSV] Kama" or GetPlayerName(P)=="Luna000" or GetPlayerName(P)=="Uriska" or GetPlayerName(P)=="Jaunty_D-Mai" or GetPlayerName(P)=="Yin-Ying" or GetPlayerName(P)=="Annieh" or GetPlayerName(P)=="zld6334" or GetPlayerName(P)=="pro100master999" or GetPlayerName(P)=="Falaminator" or GetPlayerName(P)=="PinkieNecro" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="NecromanseR_RuS" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="Blaze_drago_x" or GetPlayerName(P)=="xXLarsikXx" or GetPlayerName(P)=="Wolfkill" or GetPlayerName(P)=="Famouzy" or GetPlayerName(P)=="falaminator" or GetPlayerName(P)=="xxNu-13xx" or GetPlayerName(P)=="Denamesh" or GetPlayerName(P)=="Rey_Calabaza" or GetPlayerName(P)=="akama001" or GetPlayerName(P)=="AkazaThree" or GetPlayerName(P)=="ZOIBERG_SVS" or GetPlayerName(P)=="neketEXE" or GetPlayerName(P)=="KickSuckem" or GetPlayerName(P)=="Renex" or GetPlayerName(P)=="knowyourplace" or BaseSkinCond(P))
+return udg_B==false and(GetPlayerName(P)=="Sylphiette" or GetPlayerName(P)=="Magistor" or GetPlayerName(P)=="IIIafep" or GetPlayerName(P)=="Nezoke" or GetPlayerName(P)=="KamaBr" or GetPlayerName(P)=="[OSV] Kama" or GetPlayerName(P)=="Luna000" or GetPlayerName(P)=="Uriska" or GetPlayerName(P)=="Jaunty_D-Mai" or GetPlayerName(P)=="Yin-Ying" or GetPlayerName(P)=="Annieh" or GetPlayerName(P)=="zld6334" or GetPlayerName(P)=="pro100master999" or GetPlayerName(P)=="Falaminator" or GetPlayerName(P)=="PinkieNecro" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="NecromanseR_RuS" or GetPlayerName(P)=="DBFag" or GetPlayerName(P)=="Blaze_drago_x" or GetPlayerName(P)=="xXLarsikXx" or GetPlayerName(P)=="Wolfkill" or GetPlayerName(P)=="Famouzy" or GetPlayerName(P)=="falaminator" or GetPlayerName(P)=="xxNu-13xx" or GetPlayerName(P)=="Denamesh" or GetPlayerName(P)=="Rey_Calabaza" or GetPlayerName(P)=="akama001" or GetPlayerName(P)=="AkazaThree" or GetPlayerName(P)=="ZOIBERG_SVS" or GetPlayerName(P)=="neketEXE" or GetPlayerName(P)=="KickSuckem" or GetPlayerName(P)=="Renex" or GetPlayerName(P)=="knowyourplace" or GetPlayerName(P)=="Sokanish" or BaseSkinCond(P))
 endfunction
 function MomoRFHCast takes nothing returns nothing
 local integer ip=GetPlayerId(GetTriggerPlayer())
@@ -55302,6 +55403,11 @@ if GetUnitTypeId(c)=='H00Q' and SquareRootUnit(c,Hero[idc])>2500 and nb>0 then
     call SetEventDamage(nb*0.6) 
     set b=GetEventDamage()
     set nb=b               
+endif
+if nb>0 and CambioXSummonSrc(c) then
+    call SetEventDamage(nb*0.7)
+    set b=GetEventDamage()
+    set nb=b
 endif
 if GetUnitAbilityLevel(c,'BAr2')>0 and nb>0 then 
     call SetEventDamage(nb*0.85) 
@@ -71694,7 +71800,7 @@ call SetUnitX(u,x1+100*Cos(f))
 call SetUnitY(u,y1+100*Sin(f))
 call SetUnitFacingInstant(u,Atan2(y1-y,x1-x))
 call IssueTargetOrder(u,"attack",c)
-call myCustomDamage(u,c,0.3*GetHeroInt(u,true),false,false,null,null,null)
+call myCustomDamage(u,c,0.3*GetHeroInt(u,true)*CambioXDmg(u),false,false,null,null,null)
 call SaveInteger(h,id,2,i+1)
 call DestroyEffect(AddSpecialEffect("war3mapImported\\Slam.mdl",x,y))
 call DestroyEffect(AddSpecialEffect("Abilities\\Spells\\Other\\Doom\\DoomDeath.mdl",x,y))
@@ -71763,7 +71869,7 @@ loop
 set E=FirstOfGroup(g)
 set ide=GetHandleId(E)
 if Condition_Base(p,E)and LoadUnitHandle(h,idg,ide)!=E then
-call myCustomDamage(u,E,dmg,false,false,null,null,null)
+call myCustomDamage(u,E,dmg*CambioXDmg(u),false,false,null,null,null)
 set n=CreateUnit(p,'h019',x,y,GetRandomReal(0,359))
 call UnitAddAbility(n,'A0A5')
 call UnitApplyTimedLife(n,'BTLF',2)
@@ -71984,11 +72090,11 @@ local unit cxDum=LoadUnitHandle(h,id,3)
 local fogmodifier fm
 local ability ab
 // the form time runs only while Mukuro himself is not paused
-if u!=null and GetUnitTypeId(u)!=0 and not IsUnitPaused(u) then
+if u!=null and GetUnitTypeId(u)!=0 and not IsUnitPaused(u) and not IsUnitHidden(u) and GetUnitAbilityLevel(u,'Pet1')==0 then
 set time=time-0.05
 call SaveReal(h,id,1,time)
 endif
-if u!=null and GetUnitTypeId(u)!=0 and not IsUnitType(u,UNIT_TYPE_DEAD) and GetWidgetLife(u)>0.405 and time>0.0 then
+if u!=null and GetUnitTypeId(u)!=0 and not IsUnitType(u,UNIT_TYPE_DEAD) and GetWidgetLife(u)>0.405 and time>0.0 and udg_B and DU2 then
 call SaveReal(h,id,2,LoadReal(h,id,2)+0.05)
 // the link on the hero is rewritten every tick: MCFCast2 (R) flushes the hero's data in h when it ends
 call SaveTimerHandle(h,GetHandleId(u),StringHash("CambioX"),t)
@@ -72039,6 +72145,7 @@ call RemoveEffect(LoadEffectHandle(h,id,8),0.0,false,CreateTimer())
 call RemoveEffect(LoadEffectHandle(h,id,9),0.0,false,CreateTimer())
 if u!=null and GetUnitTypeId(u)!=0 then
 call UnitRemoveAbility(u,'MkMS')
+call StartAbilityCooldown(GetUnitAbility(u,'MkCX'),45.0)
 call RemoveSavedHandle(h,GetHandleId(u),StringHash("CambioX"))
 endif
 call PauseTimer(t)
@@ -72071,7 +72178,7 @@ endif
 set t=CreateTimer()
 set id=GetHandleId(t)
 call SaveUnitHandle(h,id,0,u)
-call SaveReal(h,id,1,20.0)
+call SaveReal(h,id,1,15.0)
 call SaveReal(h,id,2,0.0)
 call SaveInteger(h,id,11,GetPlayerId(p))
 call SaveTimerHandle(h,GetHandleId(u),StringHash("CambioX"),t)
@@ -72123,6 +72230,7 @@ call SaveEffectHandle(h,id,9,e)
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\Mukuro P.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
 call KillSoundWhenDone(soundplay)
+call CreateModeIndicatorWithPauseForm(u,"ReplaceableTextures\\CommandButtons\\BTNCambioFormaX.blp",15.0)
 call TimerStart(t,0.05,true,function CambioXCast2)
 set t=null
 set p=null
@@ -72248,7 +72356,7 @@ call GroupEnumUnitsInRange(G,x,y,155,Base)
 loop
 set E=FirstOfGroup(G)
 if Condition_Base(p,E)then
-call myCustomDamage(u,E,dmg,false,false,null,null,null)
+call myCustomDamage(u,E,dmg*CambioXDmg(u),false,false,null,null,null)
 endif
 call GroupRemoveUnit(G,E)
 exitwhen E==null
@@ -72332,7 +72440,7 @@ call DestroyEffect(LoadEffectHandle(h,id,6))
 call DestroyEffect(LoadEffectHandle(h,id,7))
 call PauseUnit(c,false)
 call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,false)
-call myCustomDamage(u,c,GetHeroInt(u,true)*(3+GetUnitAbilityLevel(u,'A0B1')),false,false,null,null,null)
+call myCustomDamage(u,c,GetHeroInt(u,true)*(3+GetUnitAbilityLevel(u,'A0B1'))*CambioXDmg(u),false,false,null,null,null)
 call SetControlToUnit(u,c, 3, "stun")
 call DestroyTimer(t)
 call FlushChildHashtable(h,id)
@@ -72404,7 +72512,7 @@ function CastILC takes nothing returns nothing
 local unit u=GetTriggerUnit()
 local unit c=GetSpellTargetUnit()
 local player p=GetOwningPlayer(u)
-call myCustomDamage(u,c,(3+GetUnitAbilityLevel(u,'A0A6'))*GetHeroInt(u,true),false,false,null,null,null)
+call myCustomDamage(u,c,(3+GetUnitAbilityLevel(u,'A0A6'))*GetHeroInt(u,true)*CambioXDmg(u),false,false,null,null,null)
 if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
 call CC_UnitEx(u, c, 0., 4, "ensnare", false, "Abilities\\Spells\\NightElf\\EntanglingRoots\\EntanglingRootsTarget.mdx", "chest", 0,0 )
 endif
@@ -72597,7 +72705,7 @@ local group g2
 set g2=CopyGroup(l__n)
 loop
 set E=FirstOfGroup(g2)
-call myCustomDamage(u,E,0.2*GetUnitState(E,UNIT_STATE_MAX_LIFE)+GetUnitAbilityLevel(u,'A0AO')*GetHeroInt(u,true),false,false,null,null,null)
+call myCustomDamage(u,E,(0.2*GetUnitState(E,UNIT_STATE_MAX_LIFE)+GetUnitAbilityLevel(u,'A0AO')*GetHeroInt(u,true))*CambioXDmg(u),false,false,null,null,null)
 call DestroyEffect(AddSpecialEffectTarget("Objects\\Spawnmodels\\Human\\HumanBlood\\BloodElfSpellThiefBlood.mdl",E,"chest"))
 call DestroyEffect(AddSpecialEffectTarget("war3mapImported\\BloodEX.mdx",E,"chest"))
 call GroupRemoveUnit(g2,E)
@@ -72722,7 +72830,7 @@ set E=FirstOfGroup(G)
 exitwhen E==null
 if Condition_Base(p,E)then
     set i=0
-    call myCustomDamage(u,E,dmg,false,false,null,null,null)
+    call myCustomDamage(u,E,dmg*CambioXDmg(u),false,false,null,null,null)
     if LoadBoolean(HH,GetHandleId(E),ANTITARGET_ABILITY)==false then
         call CC_UnitEx( E, E, 0., 4, "root", false, "war3mapImported\\amw10000.mdx", "origin", 0,0 )
     endif
@@ -72839,7 +72947,7 @@ call GroupEnumUnitsInRange(G,x1,y1,350,Base)
 loop
 set E=FirstOfGroup(G)
 if Condition_Base(p,E)then
-call myCustomDamage(u,E,dmg,false,false,null,null,null)
+call myCustomDamage(u,E,dmg*CambioXDmg(u),false,false,null,null,null)
 call SetControlToUnit(E,E, 3, "stun")
 endif
 call GroupRemoveUnit(G,E)
@@ -72918,7 +73026,7 @@ call UnitApplyTimedLife(n,'BTLF',0.2)
 call SetUnitTimeScale(n,2)
 call SetUnitAnimation(n,"attack")
 else
-call myCustomDamage(LoadUnitHandle(h,id,6),c,LoadReal(h,id,5),false,false,null,null,null)
+call myCustomDamage(LoadUnitHandle(h,id,6),c,LoadReal(h,id,5)*CambioXDmg(LoadUnitHandle(h,id,6)),false,false,null,null,null)
 call DestroyEffect(AddSpecialEffect("war3mapImported\\BloodEX.mdx",x,y))
 call RemoveUnit(l__d)
 call PauseTimer(t)
@@ -72966,7 +73074,7 @@ call ClearSelection()
 call SelectUnit(u,true)
 endif
 call DestroyEffect(AddSpecialEffectTarget(LoadStr(h,id,3),c,"origin"))
-call myCustomDamage(u,c,(3+GetUnitAbilityLevel(u,'A0B0'))*GetHeroInt(u,true),false,false,null,null,null)
+call myCustomDamage(u,c,(3+GetUnitAbilityLevel(u,'A0B0'))*GetHeroInt(u,true)*CambioXDmg(u),false,false,null,null,null)
 call PauseTimer(t)
 call DestroyTimer(t)
 call FlushChildHashtable(h,id)
