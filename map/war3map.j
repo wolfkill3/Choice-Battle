@@ -7529,40 +7529,40 @@ endfunction
 // ===== конец библиотеки bof =====
 //BofLibEnd
 //Remilia1start
-// интеллект для урона кнопки D: урон bof x (0.035), бафф 28 сен (было 0.028);
+// интеллект для урона кнопки D: 0.2*ИНТ за касание цепи (x3 в вызове); 29 сен, было 0.105;
 // x1000, чтобы не терять дробь в целом (в Bof_Dmg урон делится обратно на 1000)
 function Rem_Int_D takes unit u,boolean b returns integer
-return R2I(I2R(GetHeroInt(u,b))*(0.035)*1000.+0.5)
+return R2I(I2R(GetHeroInt(u,b))*(0.2/3.)*1000.+0.5)
 endfunction
-// интеллект для урона кнопки E: урон bof x (0.018 + 0.004 x уровень), бафф 28 сен (было 0.014 + 0.003);
+// интеллект для урона кнопки E: 1.2..2*ИНТ за удар (x25 в вызове); 29 сен, было 0.55..0.95;
 // x1000, чтобы не терять дробь в целом (в Bof_Dmg урон делится обратно на 1000)
 function Rem_Int_E takes unit u,boolean b returns integer
-return R2I(I2R(GetHeroInt(u,b))*(0.018+0.004*I2R(GetUnitAbilityLevel(u,'RmE1')))*1000.+0.5)
+return R2I(I2R(GetHeroInt(u,b))*(0.04+0.008*I2R(GetUnitAbilityLevel(u,'RmE1')))*1000.+0.5)
 endfunction
 // интеллект для урона кнопки G: урон bof x (0.02);
 // x1000, чтобы не терять дробь в целом (в Bof_Dmg урон делится обратно на 1000)
 function Rem_Int_G takes unit u,boolean b returns integer
 return R2I(I2R(GetHeroInt(u,b))*(0.02)*1000.+0.5)
 endfunction
-// интеллект для урона кнопки Q: урон bof x (0.0225 + 0.005 x уровень), бафф 28 сен (было 0.018 + 0.004);
+// интеллект для урона кнопки Q: 1.2..2*ИНТ за цепь (x20 в вызове, цепей 4); 29 сен, было 0.55..0.95;
 // x1000, чтобы не терять дробь в целом (в Bof_Dmg урон делится обратно на 1000)
 function Rem_Int_Q takes unit u,boolean b returns integer
-return R2I(I2R(GetHeroInt(u,b))*(0.0225+0.005*I2R(GetUnitAbilityLevel(u,'RmQ1')))*1000.+0.5)
+return R2I(I2R(GetHeroInt(u,b))*(0.05+0.01*I2R(GetUnitAbilityLevel(u,'RmQ1')))*1000.+0.5)
 endfunction
-// интеллект для урона кнопки Q2: урон bof x (0.044), бафф 28 сен (было 0.035);
+// интеллект для урона кнопки Q2: 5*ИНТ (x80 в вызове); 29 сен, было 3.52;
 // x1000, чтобы не терять дробь в целом (в Bof_Dmg урон делится обратно на 1000)
 function Rem_Int_Q2 takes unit u,boolean b returns integer
-return R2I(I2R(GetHeroInt(u,b))*(0.044)*1000.+0.5)
+return R2I(I2R(GetHeroInt(u,b))*(0.0625)*1000.+0.5)
 endfunction
-// интеллект для урона кнопки R: урон bof x (0.0125 + 0.0025 x уровень), бафф 28 сен (было 0.01 + 0.002);
+// интеллект для урона кнопки R: нажатие x60 = 1.5..2.5*ИНТ, копьё x240 = 6..10*ИНТ; 29 сен, было 0.9..1.5 и 3.6..6;
 // x1000, чтобы не терять дробь в целом (в Bof_Dmg урон делится обратно на 1000)
 function Rem_Int_R takes unit u,boolean b returns integer
-return R2I(I2R(GetHeroInt(u,b))*(0.0125+0.0025*I2R(GetUnitAbilityLevel(u,'RmR1')))*1000.+0.5)
+return R2I(I2R(GetHeroInt(u,b))*((5.+I2R(GetUnitAbilityLevel(u,'RmR1')))/240.)*1000.+0.5)
 endfunction
-// интеллект для урона кнопки W: урон bof x (0.018 + 0.004 x уровень), бафф 28 сен (было 0.014 + 0.003);
+// интеллект для урона кнопки W: 1..1.8*ИНТ за удар (x25 в вызове, ударов 5); 29 сен, было 0.55..0.95;
 // x1000, чтобы не терять дробь в целом (в Bof_Dmg урон делится обратно на 1000)
 function Rem_Int_W takes unit u,boolean b returns integer
-return R2I(I2R(GetHeroInt(u,b))*(0.018+0.004*I2R(GetUnitAbilityLevel(u,'RmW1')))*1000.+0.5)
+return R2I(I2R(GetHeroInt(u,b))*(0.032+0.008*I2R(GetUnitAbilityLevel(u,'RmW1')))*1000.+0.5)
 endfunction
 // интеллект для урона кнопки atk: урон bof x (0.0095), бафф 28 сен (было 0.0075);
 // x1000, чтобы не терять дробь в целом (в Bof_Dmg урон делится обратно на 1000)
@@ -9192,7 +9192,7 @@ call Bof_zU(0.,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE)
 else
 endif
 if GetUnitState(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),UNIT_STATE_LIFE)>GetUnitState(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),UNIT_STATE_MAX_LIFE)*.093 and LoadBoolean(bof_M9,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),$4D51B8B7)==true then
-call SetUnitState(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),UNIT_STATE_LIFE,GetUnitState(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),UNIT_STATE_LIFE)-GetUnitState(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),UNIT_STATE_MAX_LIFE)*.0047)
+call SetUnitState(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),UNIT_STATE_LIFE,GetUnitState(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),UNIT_STATE_LIFE)-GetUnitState(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),UNIT_STATE_MAX_LIFE)*.001)
 else
 call UnitRemoveAbility(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),'RmF2')
 call SaveBoolean(bof_M9,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),$4D51B8B7,false)
@@ -9715,7 +9715,7 @@ call CameraClearNoiseForPlayer(GetOwningPlayer(LoadUnitHandle(bof_OI,GetHandleId
 call CameraClearNoiseForPlayer(GetOwningPlayer(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391)))
 call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$6DD3A3AB,RAbsBJ(GetUnitState(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),UNIT_STATE_LIFE)-GetUnitState(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391),UNIT_STATE_LIFE)))
 call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$6DD3A3AB,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$6DD3A3AB)*.3)
-call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$6DD3A3AB,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$6DD3A3AB)+I2R(GetHeroInt(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),true))*160.*0.02)
+call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$6DD3A3AB,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$6DD3A3AB)+I2R(GetHeroInt(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),true))*300.*0.02)
 call SaveTriggerHandle(bof_OI,GetHandleId(GetExpiredTimer()),$55017ACF,CreateTrigger())
 set SR=LoadTriggerHandle(bof_OI,GetHandleId(GetExpiredTimer()),$55017ACF)
 call SaveUnitHandle(bof_OI,GetHandleId(SR),$911D5DC2,LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2))
@@ -9755,7 +9755,7 @@ call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger()
 call Bof_EXEffectMatRotateZ(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2D345649)+0.)
 call Bof_EXSetEffectSize(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE),1.)
 call Bof_zU(0.,LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE))
-call SaveUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$CB7993F3,CreateUnit(GetOwningPlayer(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)),LoadInteger(bof_M9,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)),$FDEB9EA4),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2D345649)))
+call SaveUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$CB7993F3,CreateUnit(GetOwningPlayer(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)),'uB19',LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2D345649)))
 call SetUnitBlendTime(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$CB7993F3),0.)
 call SetUnitVertexColor(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$CB7993F3),255,255,255,150)
 call SetUnitAnimationByIndex(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$CB7993F3),6)
@@ -10126,7 +10126,7 @@ call SavePlayerHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A895BB39,Ge
 call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA,GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
 call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382,GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
 call Rem_BBn("bof\\war3mapImported\\RemiliaScarlet-ZS1-YY1.mp3",120)
-call SaveUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$CB7993F3,CreateUnit(GetOwningPlayer(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)),LoadInteger(bof_M9,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)),$FDEB9EA4),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2D345649)))
+call SaveUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$CB7993F3,CreateUnit(GetOwningPlayer(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)),'uB19',LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2D345649)))
 call SetUnitBlendTime(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$CB7993F3),0.)
 call SetUnitVertexColor(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$CB7993F3),255,255,255,150)
 call SetUnitAnimationByIndex(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$CB7993F3),6)
@@ -10189,17 +10189,6 @@ endfunction
 // ===== Ремилия: своё вместо общего кода bof (после функций героя) =====
 // Появление героя: из DMi bof — стадия R, тип её дамми-копии, временный запас здоровья и прибавка
 // от убийств T. Вступления «особых игроков» bof не переносятся.
-function Rem_OnSpawn takes unit u returns nothing
-if LoadBoolean(bof_HT,GetHandleId(u),StringHash("RemSpawn")) then
-return
-endif
-call SaveBoolean(bof_HT,GetHandleId(u),StringHash("RemSpawn"),true)
-call SaveInteger(bof_M9,GetHandleId(u),$1942313C,0)
-call SaveInteger(bof_M9,GetHandleId(u),$FDEB9EA4,'uB19')
-call SaveInteger(bof_M9,GetHandleId(u),$E90DB670,0)
-call SaveInteger(bof_M9,GetHandleId(u),$8CBA2711,R2I(GetUnitState(u,UNIT_STATE_MAX_LIFE)))
-call SaveInteger(bof_M9,GetHandleId(u),$410023C4,0)
-endfunction
 //Remilia1end
 //Flandre1start
 // интеллект для урона кнопки D: урон bof x (0.04375), бафф 28 сен x1.25 (было 0.035);
@@ -11844,6 +11833,58 @@ endif
 endif
 set flC=null
 endfunction
+// Память положений для D («часы, отсчитывающие прошлое»): bof каждые 0.1 c для каждого героя
+// заводил таймер на 6 c (сотни таймеров сразу). Здесь — кольцо на 60 записей на героя; в ключи
+// bof ($8F320FA1/$89F541EE) кладём место, где герой стоял 6 c назад. Один таймер на карту.
+function Fla_PastTick takes nothing returns nothing
+local integer flCur=ModuloInteger(LoadInteger(bof_HT,0,StringHash("FlaPastCur"))+1,60)
+local integer flI=0
+local integer flId
+local integer flOld
+call SaveInteger(bof_HT,0,StringHash("FlaPastCur"),flCur)
+loop
+exitwhen flI>11
+if Hero[flI]!=null then
+set flId=GetHandleId(Hero[flI])
+if not LoadBoolean(bof_HT,flId,StringHash("FlaPastOn")) then
+// новый герой: всё кольцо — текущее место
+call SaveBoolean(bof_HT,flId,StringHash("FlaPastOn"),true)
+set flOld=0
+loop
+exitwhen flOld>59
+call SaveReal(bof_HT,flId,StringHash("FlaPastX")+flOld,GetUnitX(Hero[flI]))
+call SaveReal(bof_HT,flId,StringHash("FlaPastY")+flOld,GetUnitY(Hero[flI]))
+set flOld=flOld+1
+endloop
+endif
+call SaveReal(bof_HT,flId,StringHash("FlaPastX")+flCur,GetUnitX(Hero[flI]))
+call SaveReal(bof_HT,flId,StringHash("FlaPastY")+flCur,GetUnitY(Hero[flI]))
+set flOld=ModuloInteger(flCur+1,60)
+call SaveReal(bof_M9,flId,$8F320FA1,LoadReal(bof_HT,flId,StringHash("FlaPastX")+flOld))
+call SaveReal(bof_M9,flId,$89F541EE,LoadReal(bof_HT,flId,StringHash("FlaPastY")+flOld))
+endif
+set flI=flI+1
+endloop
+endfunction
+// Состояние Фландре (у bof — DOs при появлении): группа клонов, приказ атаки клонов готов, 3 заряда
+// Four of a Kind, ссылка игрок -> Фландре (урон атаки клонов идёт от её ИНТ); часы для D.
+// OnSpawn из Ih разраб снял 28 сен (свечение при выборе героя) — заводим при первом приказе
+// или касте Фландре, один раз на героя.
+function Fla_State takes unit u returns nothing
+local integer flId=GetHandleId(u)
+if LoadBoolean(bof_HT,flId,StringHash("FlaSpawn")) then
+return
+endif
+call SaveBoolean(bof_HT,flId,StringHash("FlaSpawn"),true)
+call SaveGroupHandle(bof_M9,flId,$9DBC7E37,CreateGroup())
+call SaveBoolean(bof_M9,flId,$287E74F0,true)
+call SaveInteger(bof_M9,flId,$40BC10AC,3)
+call SaveUnitHandle(bof_M9,GetHandleId(GetOwningPlayer(u)),$E0D5179B,u)
+if not LoadBoolean(bof_HT,0,StringHash("FlaPastRun")) then
+call SaveBoolean(bof_HT,0,StringHash("FlaPastRun"),true)
+call TimerStart(CreateTimer(),.1,true,function Fla_PastTick)
+endif
+endfunction
 function Fla_T_Act takes nothing returns nothing
 // T Фландре — ЗАРЯДЫ ПЕРЕДЕЛАНЫ (владелец 27 сен: «кд на создание клонов не должно быть; могу сразу
 // заспавнить 3 клона, заряд восстанавливается сам раз в 20 c»). У bof клон создавался всегда, заряды
@@ -11859,6 +11900,8 @@ local unit flCl
 local effect flE
 local trigger SR
 local timer ST
+call Fla_State(flC)
+set flN=LoadInteger(bof_M9,flId,$40BC10AC)
 if flN<=0 then
 set flC=null
 return
@@ -12803,82 +12846,32 @@ set SR=null
 endfunction
 // ===== Фландре: своё вместо общего кода bof (после функций героя) =====
 // Приказы. bof ловил их общими триггерами на ВСЕ юниты карты: атака-приказ в точку («жажда»:
-// клоны бросаются к цели), правый клик у клона (рывок к нему). У нас — один триггер на юниты
-// владельца Фландре, условия и действия — те же функции bof. (Курсора F у нас нет — F водит
+// клоны бросаются к цели), правый клик у клона (рывок к нему). У нас — один триггер на карту
+// (Fla_OrdersInit из main), условия и действия — те же функции bof. (Курсора F у нас нет — F водит
 // саму Фландре.)
+function Fla_Orders_Cond takes nothing returns boolean
+return GetUnitTypeId(GetTriggerUnit())=='HFla'
+endfunction
 function Fla_Orders takes nothing returns nothing
+call Fla_State(GetTriggerUnit())
 if Fla_OrderAttack_Cond() then
 call Fla_OrderAttack()
 elseif GetTriggerEventId()==EVENT_PLAYER_UNIT_ISSUED_POINT_ORDER and Fla_OrderSmart_Cond() then
 call Fla_OrderSmart()
 endif
 endfunction
-// Память положений для D («часы, отсчитывающие прошлое»): bof каждые 0.1 c для каждого героя
-// заводил таймер на 6 c (сотни таймеров сразу). Здесь — кольцо на 60 записей на героя; в ключи
-// bof ($8F320FA1/$89F541EE) кладём место, где герой стоял 6 c назад. Один таймер на карту.
-function Fla_PastTick takes nothing returns nothing
-local integer flCur=ModuloInteger(LoadInteger(bof_HT,0,StringHash("FlaPastCur"))+1,60)
-local integer flI=0
-local integer flId
-local integer flOld
-call SaveInteger(bof_HT,0,StringHash("FlaPastCur"),flCur)
+function Fla_OrdersInit takes nothing returns nothing
+local trigger t=CreateTrigger()
+local integer i=0
 loop
-exitwhen flI>11
-if Hero[flI]!=null then
-set flId=GetHandleId(Hero[flI])
-if not LoadBoolean(bof_HT,flId,StringHash("FlaPastOn")) then
-// новый герой: всё кольцо — текущее место
-call SaveBoolean(bof_HT,flId,StringHash("FlaPastOn"),true)
-set flOld=0
-loop
-exitwhen flOld>59
-call SaveReal(bof_HT,flId,StringHash("FlaPastX")+flOld,GetUnitX(Hero[flI]))
-call SaveReal(bof_HT,flId,StringHash("FlaPastY")+flOld,GetUnitY(Hero[flI]))
-set flOld=flOld+1
+call TriggerRegisterPlayerUnitEvent(t,Player(i),EVENT_PLAYER_UNIT_ISSUED_POINT_ORDER,null)
+call TriggerRegisterPlayerUnitEvent(t,Player(i),EVENT_PLAYER_UNIT_ISSUED_TARGET_ORDER,null)
+set i=i+1
+exitwhen i>=bj_MAX_PLAYER_SLOTS
 endloop
-endif
-call SaveReal(bof_HT,flId,StringHash("FlaPastX")+flCur,GetUnitX(Hero[flI]))
-call SaveReal(bof_HT,flId,StringHash("FlaPastY")+flCur,GetUnitY(Hero[flI]))
-set flOld=ModuloInteger(flCur+1,60)
-call SaveReal(bof_M9,flId,$8F320FA1,LoadReal(bof_HT,flId,StringHash("FlaPastX")+flOld))
-call SaveReal(bof_M9,flId,$89F541EE,LoadReal(bof_HT,flId,StringHash("FlaPastY")+flOld))
-endif
-set flI=flI+1
-endloop
-endfunction
-// Появление героя: из DOs bof — состояние героя, группа клонов, 4 заряда Four of a Kind,
-// ссылка игрок -> Фландре (урон атаки клонов идёт от её ИНТ). Вступления «особых игроков» bof
-// и смена модели для них не переносятся.
-function Fla_OnSpawn takes unit u returns nothing
-local player flP=GetOwningPlayer(u)
-local trigger flTr
-local timer flT
-if LoadBoolean(bof_HT,GetHandleId(u),StringHash("FlaSpawn")) then
-set flP=null
-return
-endif
-call SaveBoolean(bof_HT,GetHandleId(u),StringHash("FlaSpawn"),true)
-call SaveInteger(bof_M9,GetHandleId(u),$F579B0AD,0)
-call SaveGroupHandle(bof_M9,GetHandleId(u),$9DBC7E37,CreateGroup())
-call SaveBoolean(bof_M9,GetHandleId(u),$287E74F0,true)
-call SaveInteger(bof_M9,GetHandleId(u),$40BC10AC,3)
-call SaveUnitHandle(bof_M9,GetHandleId(flP),$E0D5179B,u)
-// триггер приказов — один на игрока, даже если он выберет Фландре снова
-if not LoadBoolean(bof_HT,GetHandleId(flP),StringHash("FlaOrders")) then
-call SaveBoolean(bof_HT,GetHandleId(flP),StringHash("FlaOrders"),true)
-set flTr=CreateTrigger()
-call TriggerRegisterPlayerUnitEvent(flTr,flP,EVENT_PLAYER_UNIT_ISSUED_POINT_ORDER,null)
-call TriggerRegisterPlayerUnitEvent(flTr,flP,EVENT_PLAYER_UNIT_ISSUED_TARGET_ORDER,null)
-call TriggerAddAction(flTr,function Fla_Orders)
-endif
-if not LoadBoolean(bof_HT,0,StringHash("FlaPastRun")) then
-call SaveBoolean(bof_HT,0,StringHash("FlaPastRun"),true)
-set flT=CreateTimer()
-call TimerStart(flT,.1,true,function Fla_PastTick)
-endif
-set flP=null
-set flTr=null
-set flT=null
+call TriggerAddCondition(t,Condition(function Fla_Orders_Cond))
+call TriggerAddAction(t,function Fla_Orders)
+set t=null
 endfunction
 //Flandre1end
 //Escanor1start
@@ -253873,6 +253866,7 @@ call InitYasakaniNoMagatama()
 //call BigBangKamehamehaInit()
 //call SuperExplosionWaveInit()
 call StardustBreakerInit()
+call Fla_OrdersInit()
 call UltimateImpactInit()
 //call BigBangGogetaInit()
 call JSInit()
