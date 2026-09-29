@@ -38,6 +38,7 @@ constant integer SH_bofBonus = StringHash("bofBonus")
 constant integer SH_bofVisX = StringHash("bofVisX")
 constant integer SH_bofVisY = StringHash("bofVisY")
 constant integer SH_bofVis = StringHash("bofVis")
+constant integer SH_bofRevd = StringHash("bofRevd")
 constant integer SH_RemSpear = StringHash("RemSpear")
 constant integer SH_RemSpearStage = StringHash("RemSpearStage")
 constant integer SH_RemSpearOn = StringHash("RemSpearOn")
@@ -7538,7 +7539,21 @@ set rvS=Hero[GetPlayerId(GetOwningPlayer(rvS))]
 endif
 call SaveUnitHandle(HH,GetHandleId(tgt),REVERSE_TARGET,rvS)
 call SetUnitInvulnerable(rvS,false)
+call SaveBoolean(HH,GetHandleId(rvS),SH_bofRevd,true)
 set rvS=null
+return true
+endfunction
+// Умение, которое держит кастера (пауза/неуязвимость), на каждом тике проверяет: был реверс — умение
+// кончается, кастер отпущен (как у героев Чейза), и стойка бьёт его. Флаг гасится при старте умения.
+function Bof_RevEnd takes unit c returns boolean
+if not LoadBoolean(HH,GetHandleId(c),SH_bofRevd) then
+return false
+endif
+call SaveBoolean(HH,GetHandleId(c),SH_bofRevd,false)
+call PauseUnit(c,false)
+call SetUnitInvulnerable(c,false)
+call SetUnitTimeScale(c,1.)
+call SetUnitPathing(c,true)
 return true
 endfunction
 // Стан/контроль и замедление bof-героев: по цели в стойке не проходят (реверс)
@@ -11299,6 +11314,14 @@ local real y=GetUnitY(caster)
 local unit d
 local timer t2
 call SaveInteger(HH,id,4,n)
+// реверс (цель в стойке развернула умение): как у героев Чейза — умение кончается, кастер отпущен
+if Bof_RevEnd(caster) then
+call FlushChildHashtable(HH,id)
+call DestroyTimer(t)
+set t=null
+set caster=null
+return
+endif
 call SetUnitInvulnerable(caster,true)
 call PauseUnit(caster,true)
 if n==1 then
@@ -11369,6 +11392,7 @@ local real y=GetUnitY(caster)
 local real ang=Atan2BJ(ty-y,tx-x)
 local unit d
 local timer t
+call SaveBoolean(HH,GetHandleId(caster),SH_bofRevd,false)
 call Rem_Fx(caster,"bof\\Scarlet-4.mdx",x,y,GetUnitFlyHeight(caster),ang,1.,0.)
 call Rem_Fx(caster,"bof\\Scarlet-8.mdx",x,y,GetUnitFlyHeight(caster),ang,1.,0.)
 set t=CreateTimer()
@@ -11468,6 +11492,15 @@ local real ang=LoadReal(HH,id,3)
 local integer n=LoadInteger(HH,id,4)+1
 local integer k
 call SaveInteger(HH,id,4,n)
+// реверс (цель в стойке развернула умение): как у героев Чейза — умение кончается, кастер отпущен
+if Bof_RevEnd(caster) then
+call CameraClearNoiseForPlayer(GetOwningPlayer(caster))
+call FlushChildHashtable(HH,id)
+call DestroyTimer(t)
+set t=null
+set caster=null
+return
+endif
 call SetUnitInvulnerable(caster,true)
 call PauseUnit(caster,true)
 if n==13 then
@@ -11508,6 +11541,7 @@ local real y=GetUnitY(caster)
 local real ang=Atan2BJ(ty-y,tx-x)
 local real dist=RMinBJ(SRS(x,y,tx,ty),1000.)
 local timer t=CreateTimer()
+call SaveBoolean(HH,GetHandleId(caster),SH_bofRevd,false)
 call Rem_Fx(caster,"bof\\Scarlet-8.mdx",x,y,-1.,0.,1.,0.)
 call Rem_Fx(caster,"bof\\Tsubaki-33.mdx",x,y,-1.,0.,1.,0.)
 call Rem_Fx(caster,"bof\\Madara-huitu-22.mdx",x,y,25.,ang,4.,0.)
@@ -11536,6 +11570,14 @@ local real y
 local group g
 local unit e
 call SaveInteger(HH,id,2,n)
+// реверс (цель в стойке развернула умение): как у героев Чейза — умение кончается, кастер отпущен
+if Bof_RevEnd(caster) then
+call FlushChildHashtable(HH,id)
+call DestroyTimer(t)
+set t=null
+set caster=null
+return
+endif
 call SaveReal(HH,id,3,speed)
 call SaveReal(HH,id,4,decel)
 call SetUnitInvulnerable(caster,true)
@@ -11607,6 +11649,7 @@ local real y=GetUnitY(caster)
 local real ang=Atan2BJ(ty-y,tx-x)
 local real z=GetUnitFlyHeight(caster)
 local timer t
+call SaveBoolean(HH,GetHandleId(caster),SH_bofRevd,false)
 call Rem_Fx(caster,"bof\\Scarlet-4.mdx",x,y,z+150.,ang,1.,0.)
 call Rem_Fx(caster,"bof\\Scarlet-74.mdx",x,y,z+150.,ang,1.,0.)
 call Rem_Sound("bof\\war3mapImported\\RemiliaScarlet-T-YX2.wav",120)
@@ -12025,6 +12068,8 @@ call UnitRemoveAbility(caster,'RmF2')
 call SetPlayerAbilityAvailable(GetOwningPlayer(caster),'RmF1',true)
 call Rem_FLock(caster,false)
 call SetUnitInvulnerable(caster,false)
+// озеро уходит вместе с концом F (у bof лежало до 12 c)
+call KillUnit(pool)
 call FlushChildHashtable(HH,id)
 call DestroyTimer(t)
 endif
@@ -12071,6 +12116,15 @@ local real tx
 local real ty
 local real dmg
 call SaveInteger(HH,id,2,n)
+// реверс (цель в стойке развернула умение): как у героев Чейза — умение кончается, кастер отпущен
+if Bof_RevEnd(caster) then
+call FlushChildHashtable(HH,id)
+call DestroyTimer(t)
+set t=null
+set caster=null
+set target=null
+return
+endif
 call PauseUnit(caster,true)
 call SetUnitInvulnerable(caster,true)
 if n==1 then
@@ -12118,6 +12172,7 @@ local real x=GetUnitX(caster)
 local real y=GetUnitY(caster)
 local real ang=Atan2BJ(GetUnitY(target)-y,GetUnitX(target)-x)
 local timer t
+call SaveBoolean(HH,GetHandleId(caster),SH_bofRevd,false)
 if caster==null or target==null or not UnitIsAlive(target) or not UnitIsAlive(caster) then
 return
 endif
@@ -12671,6 +12726,23 @@ local real x
 local real y
 local unit d
 call SaveInteger(HH,id,4,n)
+// реверс (цель в стойке развернула умение): как у героев Чейза — умение кончается, кастер отпущен
+if Bof_RevEnd(caster) then
+loop
+set d=FirstOfGroup(g)
+exitwhen d==null
+call GroupRemoveUnit(g,d)
+call RemoveUnit(d)
+endloop
+call DestroyGroup(g)
+call FlushChildHashtable(HH,id)
+call DestroyTimer(t)
+set t=null
+set caster=null
+set target=null
+set g=null
+return
+endif
 if n<=15 then
 call SetUnitInvulnerable(caster,true)
 call PauseUnit(caster,true)
@@ -12742,6 +12814,7 @@ local real x=GetUnitX(caster)
 local real y=GetUnitY(caster)
 local real z=GetUnitFlyHeight(caster)
 local timer t=CreateTimer()
+call SaveBoolean(HH,GetHandleId(caster),SH_bofRevd,false)
 call Bof_Slow(caster,target,0.5,0,2,2,false)
 call Rem_Fx(caster,"bof\\Scarlet-4.mdx",x,y,z,0.,1.,0.)
 call Rem_Fx(caster,"bof\\Scarlet-8.mdx",x,y,z,0.,1.,0.)
@@ -12867,6 +12940,14 @@ local real y
 local unit d
 local timer t2
 call SaveInteger(HH,id,3,n)
+// реверс (цель в стойке развернула умение): как у героев Чейза — умение кончается, кастер отпущен
+if Bof_RevEnd(caster) then
+call FlushChildHashtable(HH,id)
+call DestroyTimer(t)
+set t=null
+set caster=null
+return
+endif
 call SetUnitInvulnerable(caster,true)
 call PauseUnit(caster,true)
 if n==18 then
@@ -12902,6 +12983,7 @@ set d=null
 endfunction
 function Fla_W_Act takes unit caster,unit target returns nothing
 local timer t=CreateTimer()
+call SaveBoolean(HH,GetHandleId(caster),SH_bofRevd,false)
 call Bof_SwapStage(caster,'FlW1','FlW2',8.)
 call Rem_Sound("bof\\war3mapImported\\Flandre Scarlet-W-YY1.mp3",100)
 call Rem_Fx(caster,"bof\\Scarlet-21.mdx",GetUnitX(caster),GetUnitY(caster),GetUnitFlyHeight(caster),0.,2.,0.)
@@ -13018,6 +13100,15 @@ local integer k
 local group g
 local unit e
 call SaveInteger(HH,id,4,n)
+// реверс (цель в стойке развернула умение): как у героев Чейза — умение кончается, кастер отпущен
+if Bof_RevEnd(caster) then
+call CameraClearNoiseForPlayer(GetOwningPlayer(caster))
+call FlushChildHashtable(HH,id)
+call DestroyTimer(t)
+set t=null
+set caster=null
+return
+endif
 call SetUnitInvulnerable(caster,true)
 call PauseUnit(caster,true)
 if n==1 then
@@ -13075,6 +13166,7 @@ local real y=GetUnitY(caster)
 local real ang=Atan2BJ(ty-y,tx-x)
 local real dist=RMinBJ(SRS(x,y,tx,ty),1000.)
 local timer t=CreateTimer()
+call SaveBoolean(HH,GetHandleId(caster),SH_bofRevd,false)
 call Rem_Fx(caster,"bof\\Scarlet-8.mdx",x,y,-1.,0.,1.,0.)
 call Rem_Fx(caster,"bof\\Tsubaki-33.mdx",x,y,25.,0.,1.,0.)
 call Rem_Fx(caster,"bof\\Madara-huitu-22.mdx",x,y,25.,ang,4.,0.)
@@ -13554,6 +13646,15 @@ local real z=GetUnitFlyHeight(caster)
 local group g
 local unit e
 call SaveInteger(HH,id,1,n)
+// реверс (цель в стойке развернула умение): как у героев Чейза — умение кончается, кастер отпущен
+if Bof_RevEnd(caster) then
+call Fla_FLock(caster,false)
+call FlushChildHashtable(HH,id)
+call DestroyTimer(t)
+set t=null
+set caster=null
+return
+endif
 if n<=300 and IsUnitAliveBJ(caster) then
 if ModuloInteger(n-1,15)==0 then
 call Fla_FLock(caster,true)
@@ -13592,6 +13693,7 @@ local real y=GetUnitY(caster)
 local real z=GetUnitFlyHeight(caster)
 local unit d
 local timer t=CreateTimer()
+call SaveBoolean(HH,GetHandleId(caster),SH_bofRevd,false)
 call SetUnitInvulnerable(caster,true)
 call Fla_FLock(caster,true)
 // круг и столб на месте каста (6 c)
@@ -13649,6 +13751,20 @@ local unit d=LoadUnitHandle(HH,id,4)
 local real x=GetUnitX(caster)
 local real y=GetUnitY(caster)
 call SaveInteger(HH,id,2,n)
+// реверс (цель в стойке развернула умение): как у героев Чейза — умение кончается, кастер отпущен
+if Bof_RevEnd(caster) then
+if d!=null then
+call SetUnitAnimationByIndex(d,2)
+call Bof_zO(.48,d)
+endif
+call CameraClearNoiseForPlayer(GetOwningPlayer(caster))
+call FlushChildHashtable(HH,id)
+call DestroyTimer(t)
+set t=null
+set caster=null
+set d=null
+return
+endif
 call SetUnitInvulnerable(caster,true)
 call PauseUnit(caster,true)
 if ModuloInteger(k,10)==0 then
@@ -13705,6 +13821,7 @@ local real x=GetUnitX(caster)
 local real y=GetUnitY(caster)
 local real ang=Atan2BJ(ty-y,tx-x)
 local timer t=CreateTimer()
+call SaveBoolean(HH,GetHandleId(caster),SH_bofRevd,false)
 call Bof_SwapStage(caster,'FlG1','FlG2',8.)
 call Rem_Fx(caster,"bof\\Saber-28.mdx",x,y,25.,0.,1.,3.)
 call SetUnitFacingTimed(caster,ang,0)
@@ -13732,6 +13849,16 @@ local real ang=LoadReal(HH,id,4)
 local integer n=LoadInteger(HH,id,5)+1
 local integer k
 call SaveInteger(HH,id,5,n)
+// реверс (цель в стойке развернула умение): как у героев Чейза — умение кончается, кастер отпущен
+if Bof_RevEnd(caster) then
+call CameraClearNoiseForPlayer(GetOwningPlayer(caster))
+call FlushChildHashtable(HH,id)
+call DestroyTimer(t)
+set t=null
+set caster=null
+set target=null
+return
+endif
 if n<=40 then
 call SetUnitInvulnerable(caster,true)
 call PauseUnit(caster,true)
@@ -13778,6 +13905,7 @@ local real y=GetUnitY(caster)
 local real ang=Atan2BJ(GetUnitY(target)-y,GetUnitX(target)-x)
 local real dist=RMinBJ(SRS(x,y,GetUnitX(target),GetUnitY(target)),1600.)
 local timer t=CreateTimer()
+call SaveBoolean(HH,GetHandleId(caster),SH_bofRevd,false)
 call Rem_Fx(caster,"bof\\Scarlet-8.mdx",x,y,-1.,0.,1.,0.)
 call Rem_Fx(caster,"bof\\Tsubaki-33.mdx",x,y,-1.,0.,1.,0.)
 call Rem_Fx(caster,"bof\\Madara-huitu-22.mdx",x,y,25.,ang,4.,0.)
@@ -13808,6 +13936,15 @@ local real ang=Atan2BJ(GetUnitY(cl)-y,GetUnitX(cl)-x)
 local group g
 local unit e
 call SaveInteger(HH,id,2,n)
+// реверс (цель в стойке развернула умение): как у героев Чейза — умение кончается, кастер отпущен
+if Bof_RevEnd(caster) then
+call FlushChildHashtable(HH,id)
+call DestroyTimer(t)
+set t=null
+set caster=null
+set cl=null
+return
+endif
 call SetUnitInvulnerable(caster,true)
 if n<=50 and SRS(x,y,GetUnitX(cl),GetUnitY(cl))>80. then
 set x=x+40.*CosBJ(ang)
@@ -13865,6 +14002,7 @@ endloop
 if FirstOfGroup(sel)!=null and dist<1600. and dist>200. then
 set cl=GroupPickRandomUnit(sel)
 set ang=Atan2BJ(GetUnitY(cl)-y,GetUnitX(cl)-x)
+call SaveBoolean(HH,GetHandleId(caster),SH_bofRevd,false)
 call SetUnitInvulnerable(caster,true)
 call Rem_Fx(caster,"bof\\Saber-15.mdx",x,y,125.,ang,1.,0.)
 call Rem_Fx(caster,"bof\\Saber-17.mdx",x,y,z+50.,ang,1.5,0.)
