@@ -12601,28 +12601,14 @@ return GetUnitY(GetOrderTargetUnit())
 endif
 return GetOrderPointY()
 endfunction
-// Живые клоны Фландре (группа в HH под героем, SH_FlaClones). Умершие и удалённые клоны выкидываем
-// здесь же (у bof это делал отдельный триггер смерти на каждого клона).
-function Fla_Clones takes unit u returns group
-local group old=LoadGroupHandle(HH,GetHandleId(u),SH_FlaClones)
-local group g=CreateGroup()
-local integer i=0
-local unit cl
-if old!=null then
-loop
-exitwhen i>=BlzGroupGetSize(old)
-set cl=BlzGroupUnitAt(old,i)
-if cl!=null and GetUnitTypeId(cl)!=0 and not IsUnitType(cl,UNIT_TYPE_DEAD) then
-call GroupAddUnit(g,cl)
+// Клоны Фландре — 8 ячеек в HH под героем (SH_FlaClones+k, k 0..7). Живой клон в ячейке k — иначе null
+// (умершие и удалённые клоны пропускаем; группы с удалёнными юнитами не держим)
+function Fla_CloneAt takes unit u,integer k returns unit
+set bj_ghoul[0]=LoadUnitHandle(HH,GetHandleId(u),SH_FlaClones+k)
+if bj_ghoul[0]!=null and (GetUnitTypeId(bj_ghoul[0])==0 or IsUnitType(bj_ghoul[0],UNIT_TYPE_DEAD)) then
+set bj_ghoul[0]=null
 endif
-set i=i+1
-endloop
-call DestroyGroup(old)
-endif
-call SaveGroupHandle(HH,GetHandleId(u),SH_FlaClones,g)
-set old=null
-set cl=null
-return g
+return bj_ghoul[0]
 endfunction
 // Память положений для D («часы, отсчитывающие прошлое»): один таймер на карту раз в 0.1 c, у каждого
 // героя кольцо на 60 записей в HH (SH_FlaPastX/SH_FlaPastY + номер записи); номер текущей записи —
@@ -12662,7 +12648,6 @@ if LoadBoolean(HH,id,SH_FlaState) then
 return
 endif
 call SaveBoolean(HH,id,SH_FlaState,true)
-call SaveGroupHandle(HH,id,SH_FlaClones,CreateGroup())
 call SaveBoolean(HH,id,SH_FlaAtkReady,true)
 call SaveInteger(HH,id,SH_FlaCharges,3)
 if not LoadBoolean(HH,SH_FlaPast,1) then
@@ -12720,7 +12705,6 @@ local unit target=LoadUnitHandle(HH,id,1)
 local real tx=LoadReal(HH,id,2)
 local real ty=LoadReal(HH,id,3)
 local integer tk=LoadInteger(HH,id,4)+1
-local group g=LoadGroupHandle(HH,id,5)
 local integer i
 local real x
 local real y
@@ -12728,19 +12712,17 @@ local unit dmy
 call SaveInteger(HH,id,4,tk)
 // реверс (цель в стойке развернула умение): как у героев Чейза — умение кончается, кастер отпущен
 if Bof_RevEnd(caster) then
+set i=1
 loop
-set dmy=FirstOfGroup(g)
-exitwhen dmy==null
-call GroupRemoveUnit(g,dmy)
-call RemoveUnit(dmy)
+exitwhen i>5
+call RemoveUnit(LoadUnitHandle(HH,id,9+i))
+set i=i+1
 endloop
-call DestroyGroup(g)
 call FlushChildHashtable(HH,id)
 call DestroyTimer(t)
 set t=null
 set caster=null
 set target=null
-set g=null
 return
 endif
 if tk<=15 then
@@ -12760,7 +12742,7 @@ call Rem_Fx(caster,"bof\\Scarlet-75.mdx",x,y,50.,0.,1.,0.)
 set dmy=CreateUnit(GetOwningPlayer(caster),'eBLP',x,y,0.)
 call SetUnitModel(dmy,"bof\\Scarlet-11.mdx")
 call UnitApplyTimedLife(dmy,'BHwe',3.)
-call GroupAddUnit(g,dmy)
+call SaveUnitHandle(HH,id,9+i,dmy)
 set i=i+1
 endloop
 endif
@@ -12770,10 +12752,10 @@ call PauseUnit(caster,false)
 call SetUnitTimeScale(caster,1.)
 endif
 if tk==25 then
-set i=0
+set i=1
 loop
-exitwhen i>=BlzGroupGetSize(g)
-set dmy=BlzGroupUnitAt(g,i)
+exitwhen i>5
+set dmy=LoadUnitHandle(HH,id,9+i)
 call Bof_Slide(dmy,Atan2BJ(GetUnitY(target)-GetUnitY(dmy),GetUnitX(target)-GetUnitX(dmy)),900.,.6)
 set i=i+1
 endloop
@@ -12792,21 +12774,20 @@ call Rem_Noise(GetOwningPlayer(target),50.,.5)
 call Rem_Sound("bof\\war3mapImported\\Flandre Scarlet-Q-YX1.mp3",100)
 endif
 if tk==55 then
+set i=1
 loop
-set dmy=FirstOfGroup(g)
-exitwhen dmy==null
-call GroupRemoveUnit(g,dmy)
+exitwhen i>5
+set dmy=LoadUnitHandle(HH,id,9+i)
 call Rem_Fx(null,"bof\\Scarlet-51.mdx",GetUnitX(dmy),GetUnitY(dmy),25.,0.,1.,0.)
 call RemoveUnit(dmy)
+set i=i+1
 endloop
-call DestroyGroup(g)
 call FlushChildHashtable(HH,id)
 call DestroyTimer(t)
 endif
 set t=null
 set caster=null
 set target=null
-set g=null
 set dmy=null
 endfunction
 function Fla_Q_Act takes unit caster,unit target returns nothing
@@ -12826,7 +12807,6 @@ call SaveUnitHandle(HH,GetHandleId(t),0,caster)
 call SaveUnitHandle(HH,GetHandleId(t),1,target)
 call SaveReal(HH,GetHandleId(t),2,GetUnitX(target))
 call SaveReal(HH,GetHandleId(t),3,GetUnitY(target))
-call SaveGroupHandle(HH,GetHandleId(t),5,CreateGroup())
 call TimerStart(t,.02,true,function Fla_Q_Act2)
 set t=null
 endfunction
@@ -13425,11 +13405,17 @@ function Fla_T_Act takes unit caster,real tx,real ty returns nothing
 local integer cid=GetHandleId(caster)
 local real ang=Atan2BJ(ty-GetUnitY(caster),tx-GetUnitX(caster))
 local unit cl
+local integer k=0
 local timer t
 call Fla_State(caster)
 if LoadInteger(HH,cid,SH_FlaCharges)<=0 then
 return
 endif
+// свободная ячейка клона (живых клонов не больше 3 — 3 заряда, +1 раз в 20 c, клон живёт 12 c)
+loop
+exitwhen k>=7 or Fla_CloneAt(caster,k)==null
+set k=k+1
+endloop
 call SaveInteger(HH,cid,SH_FlaCharges,LoadInteger(HH,cid,SH_FlaCharges)-1)
 set cl=CreateUnit(GetOwningPlayer(caster),'hB1W',tx,ty,ang)
 call SaveBoolean(HH,GetHandleId(cl),SH_FlaDash,true)
@@ -13437,7 +13423,7 @@ call SaveUnitHandle(HH,GetHandleId(cl),SH_FlaOwner,caster)
 call SetUnitPosition(cl,tx,ty)
 call UnitApplyTimedLife(cl,'BHwe',12.)
 call SetUnitPathing(cl,false)
-call GroupAddUnit(Fla_Clones(caster),cl)
+call SaveUnitHandle(HH,cid,SH_FlaClones+k,cl)
 call Rem_Sound("bof\\war3mapImported\\RemiliaScarlet-G-YX1.mp3",100)
 call Rem_Fx(caster,"bof\\Scarlet-69.mdx",tx,ty,150.,ang,.75,0.)
 call Rem_Fx(caster,"bof\\Scarlet-84.mdx",tx,ty,150.,ang,1.,0.)
@@ -13983,24 +13969,28 @@ function Fla_OrderSmart takes unit caster,real tx,real ty returns nothing
 local real x=GetUnitX(caster)
 local real y=GetUnitY(caster)
 local real dist=SRS(x,y,tx,ty)
-local group g=Fla_Clones(caster)
-local group sel=CreateGroup()
 local integer i=0
+local integer cnt=0
 local unit cl
+local unit chosen=null
 local real ang
 local real z=GetUnitFlyHeight(caster)
 local timer t
+// клоны у точки клика (300), каждый — один раз; из них случайный (как GroupPickRandomUnit у bof)
 loop
-exitwhen i>=BlzGroupGetSize(g)
-set cl=BlzGroupUnitAt(g,i)
-if IsUnitInRangeXY(cl,tx,ty,300.) and GetUnitTypeId(cl)=='hB1W' and LoadBoolean(HH,GetHandleId(cl),SH_FlaDash) then
-call GroupAddUnit(sel,cl)
+exitwhen i>7
+set cl=Fla_CloneAt(caster,i)
+if cl!=null and IsUnitInRangeXY(cl,tx,ty,300.) and LoadBoolean(HH,GetHandleId(cl),SH_FlaDash) then
 call SaveBoolean(HH,GetHandleId(cl),SH_FlaDash,false)
+set cnt=cnt+1
+if GetRandomInt(1,cnt)==1 then
+set chosen=cl
+endif
 endif
 set i=i+1
 endloop
-if FirstOfGroup(sel)!=null and dist<1600. and dist>200. then
-set cl=GroupPickRandomUnit(sel)
+set cl=chosen
+if cl!=null and dist<1600. and dist>200. then
 set ang=Atan2BJ(GetUnitY(cl)-y,GetUnitX(cl)-x)
 call SaveBoolean(HH,GetHandleId(caster),SH_bofRevd,false)
 call SetUnitInvulnerable(caster,true)
@@ -14013,10 +14003,8 @@ call SaveUnitHandle(HH,GetHandleId(t),0,caster)
 call SaveUnitHandle(HH,GetHandleId(t),1,cl)
 call TimerStart(t,.02,true,function Fla_Smart_Act2)
 endif
-call DestroyGroup(sel)
-set g=null
-set sel=null
 set cl=null
+set chosen=null
 set t=null
 endfunction
 // ----- Приказ атаки клонам (A + клик, раз в 30 c): каждый клон бросается на 1600 за 0.8 c, по пути
@@ -14111,20 +14099,30 @@ set g=null
 set e=null
 endfunction
 function Fla_OrderAttack takes unit caster,real tx,real ty returns nothing
-local group g=Fla_Clones(caster)
 local integer i=0
 local unit cl
 local real x
 local real y
 local real ang
-local timer t=CreateTimer()
+local timer t
+// нет живых клонов — приказ не тратится (как у bof: условие «группа клонов не пуста»)
+loop
+exitwhen i>7 or Fla_CloneAt(caster,i)!=null
+set i=i+1
+endloop
+if i>7 then
+return
+endif
+set t=CreateTimer()
 call SaveBoolean(HH,GetHandleId(caster),SH_FlaAtkReady,false)
 call SaveUnitHandle(HH,GetHandleId(t),0,caster)
 call TimerStart(t,30.,false,function Fla_AtkReadyAct)
 call Rem_Sound("bof\\war3mapImported\\Flandre Scarlet-pingAJN-YY1.mp3",100)
+set i=0
 loop
-exitwhen i>=BlzGroupGetSize(g)
-set cl=BlzGroupUnitAt(g,i)
+exitwhen i>7
+set cl=Fla_CloneAt(caster,i)
+if cl!=null then
 set x=GetUnitX(cl)
 set y=GetUnitY(cl)
 set ang=Atan2BJ(ty-y,tx-x)
@@ -14140,9 +14138,9 @@ call SaveReal(HH,GetHandleId(t),1,ang)
 call SaveReal(HH,GetHandleId(t),3,x)
 call SaveReal(HH,GetHandleId(t),4,y)
 call TimerStart(t,.02,true,function Fla_Rush_Act2)
+endif
 set i=i+1
 endloop
-set g=null
 set cl=null
 set t=null
 endfunction
@@ -14154,7 +14152,7 @@ endfunction
 function Fla_Orders takes nothing returns nothing
 local unit u=GetTriggerUnit()
 call Fla_State(u)
-if GetIssuedOrderId()==851983 and LoadBoolean(HH,GetHandleId(u),SH_FlaAtkReady) and FirstOfGroup(Fla_Clones(u))!=null then
+if GetIssuedOrderId()==851983 and LoadBoolean(HH,GetHandleId(u),SH_FlaAtkReady) then
 call Fla_OrderAttack(u,Fla_OrderX(),Fla_OrderY())
 elseif GetTriggerEventId()==EVENT_PLAYER_UNIT_ISSUED_POINT_ORDER and IsUnitType(u,UNIT_TYPE_HERO) and GetIssuedOrderId()==String2OrderIdBJ("smart") then
 call Fla_OrderSmart(u,GetOrderPointX(),GetOrderPointY())
