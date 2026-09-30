@@ -833,6 +833,26 @@ handlelist bufh
 handlelist array StatusBarFrameList
 framehandle  ClassBarFrame
 framehandle  StatusBarFrame
+// кэш размера консоли для индикаторов статус-бара (локальные значения, только для раскладки фреймов)
+real SB_ConW=0.
+real SB_ConH=0.
+integer SB_Ver=1
+// прокрутка статус-бара (локально у каждого игрока): до 24 индикаторов, на виду 8
+integer SB_Scroll=0
+integer SB_MaxOff=0
+framehandle SB_Track=null
+framehandle SB_Thumb=null
+framehandle SB_BtnL=null
+framehandle SB_BtnR=null
+framehandle SB_Wheel=null
+trigger SB_WheelTrig=null
+trigger SB_HoverTrig=null
+constant integer SB_TIPFR=StringHash("SBTipFrame")
+constant integer SB_TIPTAB=StringHash("SBTipAbil")
+constant integer SB_TIPITEM=StringHash("SBTipItem")
+constant integer SB_POS=StringHash("SBIndPos")
+constant integer SB_VER=StringHash("SBIndVer")
+constant integer SB_TXT=StringHash("SBIndTxt")
 framehandle  CloseStatusButton
 framehandle  CloseStatusButtonText
 framehandle  SpectacleTeamSelect
@@ -869,6 +889,8 @@ framehandle  OpenStatsButtonText
 // handlelist array ResistFrameList
 framehandle  ResistBarFrame
 framehandle  ResistBarFrameText
+// подписи и числа панели сопротивлений (обычные TEXT): чётные — названия, нечётные — значения
+framehandle array ResistTxt
 // framehandle  ResistBarGridFrame
 framehandle  OpenResistButton
 // framehandle  OpenResistButtonText
@@ -5233,6 +5255,323 @@ function UnitRemoveAbilityTimedPause_ExD takes unit u,integer id,real time retur
         set t=null
 endfunction
 
+// ==== Индикаторы статус-бара: размер консоли читается раз в 0.25 сек., иконка переставляется только при смене
+// места или размера консоли, текст переписывается только когда меняется показываемое значение.
+// полоса прокрутки: сколько мест занято у владельца выделенного юнита, размер и положение ползунка
+function StatusIndicatorScrollUpdate takes nothing returns nothing
+    local integer idp=GetHandleId(GetOwningPlayer(GetUnitSelected(GetLocalPlayer())))
+    local integer top=-1
+    local integer k=0
+    local integer mo
+    local real tw
+    local real thw
+    if SB_Track==null then
+        return
+    endif
+    loop
+        exitwhen k>=24
+        if LoadBoolean(HH,idp,k) then
+            set top=k
+        endif
+        set k=k+1
+    endloop
+    set mo=top+1-8
+    if mo<0 then
+        set mo=0
+    endif
+    if SB_Scroll>mo then
+        set SB_Scroll=mo
+        set SB_Ver=SB_Ver+1
+    endif
+    set SB_MaxOff=mo
+    call ShowFrame(SB_Track,mo>0)
+    call ShowFrame(SB_Thumb,mo>0)
+    call ShowFrame(SB_BtnL,mo>0)
+    call ShowFrame(SB_BtnR,mo>0)
+    if mo>0 then
+        set tw=GetFrameWidth(SB_Track)
+        set thw=tw*8./I2R(mo+8)
+        call SetFrameSize(SB_Thumb,thw,0.004)
+        call SetFrameRelativePoint(SB_Thumb,FRAMEPOINT_LEFT,SB_Track,FRAMEPOINT_LEFT,(tw-thw)*I2R(SB_Scroll)/I2R(mo),0.)
+    endif
+endfunction
+function StatusIndicatorScrollBy takes integer sbd returns nothing
+    set SB_Scroll=SB_Scroll+sbd
+    if SB_Scroll>SB_MaxOff then
+        set SB_Scroll=SB_MaxOff
+    endif
+    if SB_Scroll<0 then
+        set SB_Scroll=0
+    endif
+    set SB_Ver=SB_Ver+1
+    call StatusIndicatorScrollUpdate()
+endfunction
+// невидимые кнопки прокрутки: пустая текстура у всех состояний кнопки (как Sh_NoHi у магазина)
+function StatusBarNoHi takes framehandle btn returns nothing
+    local integer i=0
+    local framehandle b
+    loop
+        exitwhen i>6
+        set b=GetFrameBackdrop(btn,i)
+        if b!=null then
+            call SetFrameTexture(b,"war3mapImported\\shop_none.tga",0,true)
+        endif
+        set i=i+1
+    endloop
+    set b=null
+endfunction
+// клик по левой/правой половине полосы — на одну иконку; колесо над статус-баром — тоже
+function StatusBarScrollClick takes nothing returns nothing
+    local framehandle f=BlzGetTriggerFrame()
+    local integer sbd=1
+    if BlzGetTriggerFrameEvent()==FRAMEEVENT_MOUSE_WHEEL then
+        if BlzGetTriggerFrameValue()>0 then
+            set sbd=-1
+        endif
+    elseif f==SB_BtnL then
+        set sbd=-1
+    elseif f!=SB_BtnR then
+        // клик по иконке индикатора: только снять фокус
+        set sbd=0
+    endif
+    if GetTriggerPlayer()==GetLocalPlayer() then
+        if sbd!=0 then
+            call StatusIndicatorScrollBy(sbd)
+        endif
+        // снять фокус с кнопки, чтобы не глушились горячие клавиши
+        call BlzFrameSetEnable(f,false)
+        call BlzFrameSetEnable(f,true)
+    endif
+    set f=null
+endfunction
+// иконка индикатора -> способность (или предмет), чьё название показывается в подсказке.
+// Название берётся из данных объекта во время игры, поэтому в английской версии оно английское.
+function StatusIndicatorTipInit takes nothing returns nothing
+    call SaveInteger(HH,SB_TIPTAB,StringHash("ReplaceableTextures\\CommandButtons\\BTNRengokuF.blp"),'RenF')
+    call SaveInteger(HH,SB_TIPTAB,StringHash("ReplaceableTextures\\CommandButtons\\BTNSabrac3.blp"),'A17X')
+    call SaveInteger(HH,SB_TIPTAB,StringHash("ReplaceableTextures\\CommandButtons\\BTNHero_Barragan_T.blp"),'BbT1')
+    call SaveInteger(HH,SB_TIPTAB,StringHash("ReplaceableTextures\\CommandButtons\\BTNHero_Barragan_G.blp"),'BbGb')
+    call SaveInteger(HH,SB_TIPTAB,StringHash("ReplaceableTextures\\PassiveButtons\\PASTouma0.blp"),'A16G')
+    call SaveInteger(HH,SB_TIPTAB,StringHash("war3mapImported\\BTNAnbuSet.blp"),'KIJ4')
+    call SaveInteger(HH,SB_TIPITEM,StringHash("war3mapImported\\BTNVoidSphere.blp"),'I03R')
+    call SaveInteger(HH,SB_TIPITEM,StringHash("war3mapImported\\BTNBorosArmor.blp"),'I13R')
+    call SaveInteger(HH,SB_TIPITEM,StringHash("war3mapImported\\BTNToaru_Majutsu_no_Index.blp"),'I04V')
+    call SaveInteger(HH,SB_TIPTAB,StringHash("war3mapImported\\BTNXGlovesVerX.blp"),'KI34')
+    call SaveInteger(HH,SB_TIPTAB,StringHash("war3mapImported\\BTN666HellRing.blp"),'KIN4')
+    call SaveInteger(HH,SB_TIPTAB,StringHash("war3mapImported\\BTNEvilEye's.blp"),'KIF6')
+    call SaveInteger(HH,SB_TIPTAB,StringHash("ReplaceableTextures\\CommandButtons\\BTNMare_Rain_Ring.blp"),'KIU8')
+    call SaveInteger(HH,SB_TIPTAB,StringHash("ReplaceableTextures\\CommandButtons\\BTNMare_Sun_Ring.blp"),'KIS4')
+    call SaveInteger(HH,SB_TIPTAB,StringHash("ReplaceableTextures\\CommandButtons\\BTNMare_Mist_Ring.blp"),'KIW0')
+    call SaveInteger(HH,SB_TIPTAB,StringHash("war3mapImported\\BTNCloudRing.blp"),'KI82')
+    call SaveInteger(HH,SB_TIPTAB,StringHash("war3mapImported\\BTNZeropointRevised.blp"),'A00W')
+    call SaveInteger(HH,SB_TIPTAB,StringHash("war3mapImported\\BTNPrimomantle.blp"),'A0IY')
+    call SaveInteger(HH,SB_TIPTAB,StringHash("ReplaceableTextures\\CommandButtons\\BTNViper 5.blp"),'A0A0')
+    call SaveInteger(HH,SB_TIPTAB,StringHash("ReplaceableTextures\\CommandButtons\\BTNCambioFormaX.blp"),'MkCX')
+    call SaveInteger(HH,SB_TIPTAB,StringHash("war3mapImported\\BTNChikasumi no Tate.blp"),'A0BG')
+    call SaveInteger(HH,SB_TIPTAB,StringHash("war3mapImported\\BTNRyoheiCambioForm.blp"),'A0HC')
+    call SaveInteger(HH,SB_TIPTAB,StringHash("ReplaceableTextures\\Commandbuttons\\BTNGokuUI.blp"),'GKBI')
+    call SaveInteger(HH,SB_TIPTAB,StringHash("ReplaceableTextures\\Commandbuttons\\BTNGokuMUI.blp"),'GKMI')
+    call SaveInteger(HH,SB_TIPTAB,StringHash("ReplaceableTextures\\CommandButtons\\BTNUIReverse.blp"),'GKG7')
+    call SaveInteger(HH,SB_TIPTAB,StringHash("war3mapImported\\BTNKudakeroKyokaSuigetsu.blp"),'A0JR')
+    call SaveInteger(HH,SB_TIPTAB,StringHash("ReplaceableTextures\\CommandButtons\\BTNLawR.blp"),'A0KA')
+    call SaveInteger(HH,SB_TIPTAB,StringHash("ReplaceableTextures\\CommandButtons\\BTNTranquility.blp"),'A07H')
+    call SaveInteger(HH,SB_TIPTAB,StringHash("war3mapImported\\BTNSpaceBBLevel100.blp"),'A0OQ')
+    call SaveInteger(HH,SB_TIPTAB,StringHash("war3mapImported\\BTNNell 2.blp"),'A0PB')
+    call SaveInteger(HH,SB_TIPTAB,StringHash("war3mapImported\\BTNSixPathsOfPain.blp"),'A0QK')
+    call SaveInteger(HH,SB_TIPTAB,StringHash("ReplaceableTextures\\CommandButtons\\BTNMisakaF.blp"),'A10N')
+    call SaveInteger(HH,SB_TIPTAB,StringHash("war3mapImported\\BTNHollowIchigo.blp"),'A0M5')
+    call SaveInteger(HH,SB_TIPTAB,StringHash("war3mapImported\\BTNDragonForce.blp"),'A0S1')
+    call SaveInteger(HH,SB_TIPTAB,StringHash("ReplaceableTextures\\CommandButtons\\BTNYujiD.blp"),'YujD')
+    call SaveInteger(HH,SB_TIPTAB,StringHash("ReplaceableTextures\\CommandButtons\\BTNGonG.blp"),'A1U9')
+    call SaveInteger(HH,SB_TIPTAB,StringHash("war3mapImported\\BTNDepartures.blp"),'A0UQ')
+    call SaveInteger(HH,SB_TIPTAB,StringHash("war3mapImported\\BTNLouiseNullField.blp"),'A10F')
+    call SaveInteger(HH,SB_TIPTAB,StringHash("war3mapImported\\BTNSasuke 0.blp"),'A12S')
+    call SaveInteger(HH,SB_TIPTAB,StringHash("war3mapImported\\BTNLightningDragonMod.blp"),'A10T')
+    call SaveInteger(HH,SB_TIPTAB,StringHash("war3mapImported\\BTNSasuke 4.blp"),'A12Q')
+    call SaveInteger(HH,SB_TIPTAB,StringHash("war3mapImported\\BTNShiro5.blp"),'A137')
+    call SaveInteger(HH,SB_TIPTAB,StringHash("ReplaceableTextures\\CommandButtons\\BTNSakura5.blp"),'A141')
+    call SaveInteger(HH,SB_TIPTAB,StringHash("ReplaceableTextures\\CommandButtons\\BTNGajeel0.blp"),'A14W')
+    call SaveInteger(HH,SB_TIPTAB,StringHash("ReplaceableTextures\\CommandButtons\\BTNSabrac5.blp"),'A184')
+    call SaveInteger(HH,SB_TIPTAB,StringHash("ReplaceableTextures\\CommandButtons\\BTNTama4.blp"),'A1B5')
+    call SaveInteger(HH,SB_TIPTAB,StringHash("ReplaceableTextures\\CommandButtons\\BTNNanaya32.blp"),'A1BV')
+    call SaveInteger(HH,SB_TIPTAB,StringHash("ReplaceableTextures\\CommandButtons\\BTNBrolyE1.blp"),'A2DJ')
+    call SaveInteger(HH,SB_TIPTAB,StringHash("ReplaceableTextures\\CommandButtons\\BTNShielderQ.blp"),'A1DJ')
+    call SaveInteger(HH,SB_TIPTAB,StringHash("ReplaceableTextures\\CommandButtons\\BTNOrihimeE.blp"),'A1HB')
+    call SaveInteger(HH,SB_TIPTAB,StringHash("ReplaceableTextures\\CommandButtons\\BTNRinW.blp"),'A1FX')
+    call SaveInteger(HH,SB_TIPTAB,StringHash("ReplaceableTextures\\CommandButtons\\BTNRinQ.blp"),'A1FV')
+    call SaveInteger(HH,SB_TIPTAB,StringHash("ReplaceableTextures\\CommandButtons\\BTNKazumaG.blp"),'Ao8N')
+    call SaveInteger(HH,SB_TIPTAB,StringHash("war3mapImported\\BTNTrue_Golden_Frieza_aura.blp"),'AFUP')
+    call SaveInteger(HH,SB_TIPTAB,StringHash("war3mapImported\\BTNHollowHichigo.blp"),'A07U')
+    call SaveInteger(HH,SB_TIPTAB,StringHash("ReplaceableTextures\\CommandButtons\\BTNSaberAlterArmoured.blp"),'A1D2')
+    call SaveInteger(HH,SB_TIPTAB,StringHash("ReplaceableTextures\\CommandButtons\\BTNMoria5.blp"),'MrT1')
+    call SaveInteger(HH,SB_TIPTAB,StringHash("war3mapImported\\BTNGenkshi_Armatura.blp"),'A0LY')
+    call SaveInteger(HH,SB_TIPTAB,StringHash("BTNSobaMask.blp"),'A1OX')
+    call SaveInteger(HH,SB_TIPTAB,StringHash("war3mapImported\\BTNKillerBeeHachibiForm.blp"),'A0OX')
+    call SaveInteger(HH,SB_TIPTAB,StringHash("war3mapImported\\BTNByakuran Wings.blp"),'A01J')
+    call SaveInteger(HH,SB_TIPTAB,StringHash("war3mapImported\\BTNCambio Forma Pistole Imperatore Animale.blp"),'A119')
+    call SaveInteger(HH,SB_TIPTAB,StringHash("war3mapImported\\BTNBlackMistWings.blp"),'A0GE')
+    call SaveInteger(HH,SB_TIPTAB,StringHash("war3mapImported\\BTNNell 3.blp"),'A0PD')
+    call SaveInteger(HH,SB_TIPTAB,StringHash("war3mapImported\\BTNAma_no_Murakumo.blp"),'A0KP')
+    call SaveInteger(HH,SB_TIPTAB,StringHash("war3mapImported\\BTNJiraiya_Sage_Mode.blp"),'A0CI')
+    call SaveInteger(HH,SB_TIPTAB,StringHash("ReplaceableTextures\\CommandButtons\\BTNRobLucciE.blp"),'LCE1')
+    call SaveInteger(HH,SB_TIPTAB,StringHash("ReplaceableTextures\\CommandButtons\\BTNAtalantaE.blp"),'A1DX')
+    call SaveInteger(HH,SB_TIPTAB,StringHash("war3mapImported\\BTNVirus.blp"),'A0UN')
+    call SaveInteger(HH,SB_TIPTAB,StringHash("ReplaceableTextures\\CommandButtons\\BTNGrayIceDevilSlayer.blp"),'A1EF')
+    call SaveInteger(HH,SB_TIPTAB,StringHash("war3mapImported\\BTNMadnessKid.blp"),'A0C8')
+    call SaveInteger(HH,SB_TIPTAB,StringHash("ReplaceableTextures\\CommandButtons\\BTNFransisDrake.blp"),'A1EG')
+    call SaveInteger(HH,SB_TIPTAB,StringHash("war3mapImported\\BTNsoul_eater_78__black_star__by_shadsonic2-d2zd6p0.blp"),'A0BZ')
+    call SaveInteger(HH,SB_TIPTAB,StringHash("war3mapImported\\BTNBlackBlood.blp"),'A0BT')
+    call SaveInteger(HH,SB_TIPTAB,StringHash("war3mapImported\\BTNElizabeth.blp"),'A0PR')
+    call SaveInteger(HH,SB_TIPTAB,StringHash("war3mapImported\\BTNTosen 3.blp"),'A0JA')
+    call SaveInteger(HH,SB_TIPTAB,StringHash("war3mapImported\\BTNPiercing Sparrow.blp"),'A091')
+    call SaveInteger(HH,SB_TIPTAB,StringHash("war3mapImported\\BTNLuffyGearSecond.blp"),'A01O')
+    call SaveInteger(HH,SB_TIPTAB,StringHash("ReplaceableTextures\\CommandButtons\\BTNLambo 1.blp"),'A168')
+    call SaveInteger(HH,SB_TIPTAB,StringHash("war3mapImported\\BTNKimiCursedSeal.blp"),'A01B')
+    call SaveInteger(HH,SB_TIPTAB,StringHash("ReplaceableTextures\\CommandButtons\\BTNBelfR.blp"),'BelR')
+    call SaveInteger(HH,SB_TIPTAB,StringHash("war3mapImported\\BTNUlquiorra.blp"),'A0WV')
+    call SaveInteger(HH,SB_TIPTAB,StringHash("ReplaceableTextures\\CommandButtons\\BTNYujiE.blp"),'YujE')
+    call SaveInteger(HH,SB_TIPTAB,StringHash("ReplaceableTextures\\CommandButtons\\BTNYujiT.blp"),'YujT')
+    call SaveInteger(HH,SB_TIPTAB,StringHash("ReplaceableTextures\\CommandButtons\\BTNMadaraR.blp"),'AMUR')
+    call SaveInteger(HH,SB_TIPTAB,StringHash("ReplaceableTextures\\CommandButtons\\BTNHashiramaG.blp"),'HSG1')
+    call SaveInteger(HH,SB_TIPTAB,StringHash("ReplaceableTextures\\CommandButtons\\BTNHashiramaT.blp"),'HST1')
+    call SaveInteger(HH,SB_TIPTAB,StringHash("ReplaceableTextures\\CommandButtons\\BTNSabracT.blp"),'SaT1')
+    call SaveInteger(HH,SB_TIPTAB,StringHash("ReplaceableTextures\\CommandButtons\\BTNGaaraP.blp"),'ASGD')
+    call SaveInteger(HH,SB_TIPTAB,StringHash("ReplaceableTextures\\CommandButtons\\BTNKarnaQ_Cast.blp"),'KaA3')
+    call SaveInteger(HH,SB_TIPTAB,StringHash("ReplaceableTextures\\CommandButtons\\BTNKarnaW1.blp"),'KaA6')
+    call SaveInteger(HH,SB_TIPTAB,StringHash("ReplaceableTextures\\CommandButtons\\BTNKarnaT.blp"),'KaAB')
+    call SaveInteger(HH,SB_TIPTAB,StringHash("ReplaceableTextures\\CommandButtons\\BTNKarnaT2.blp"),'KaAG')
+    call SaveInteger(HH,SB_TIPTAB,StringHash("ReplaceableTextures\\CommandButtons\\BTNTobiramaW2.blp"),'TMW1')
+    call SaveInteger(HH,SB_TIPTAB,StringHash("ReplaceableTextures\\CommandButtons\\BTNUraharaD.blp"),'UKD1')
+    call SaveInteger(HH,SB_TIPTAB,StringHash("ReplaceableTextures\\CommandButtons\\BTNGojoQ2.blp"),'GSQ2')
+    call SaveInteger(HH,SB_TIPTAB,StringHash("ReplaceableTextures\\CommandButtons\\BTNGojoE2.blp"),'GSE2')
+    call SaveInteger(HH,SB_TIPTAB,StringHash("ReplaceableTextures\\CommandButtons\\BTNGojoF2.blp"),'GSF2')
+    call SaveInteger(HH,SB_TIPTAB,StringHash("ReplaceableTextures\\CommandButtons\\BTNGojoT.blp"),'GST1')
+    call SaveInteger(HH,SB_TIPTAB,StringHash("ReplaceableTextures\\CommandButtons\\BTNAcceleratorG.blp"),'AccG')
+    call SaveInteger(HH,SB_TIPTAB,StringHash("ReplaceableTextures\\CommandButtons\\BTNGarpF.blp"),'GrF1')
+    call SaveInteger(HH,SB_TIPTAB,StringHash("ReplaceableTextures\\CommandButtons\\BTNSignumG.blp"),'SiG1')
+    call SaveInteger(HH,SB_TIPTAB,StringHash("ReplaceableTextures\\CommandButtons\\BTNSignumD.blp"),'SiD1')
+    call SaveInteger(HH,SB_TIPTAB,StringHash("ReplaceableTextures\\CommandButtons\\BTNLamboG.blp"),'LamG')
+    call SaveInteger(HH,SB_TIPTAB,StringHash("ReplaceableTextures\\CommandButtons\\BTNRoshiTQ.blp"),'RsQ2')
+    // вручную: у этих иконок нет своей способности, привязка к той, частью которой они являются
+    call SaveInteger(HH,SB_TIPTAB,StringHash("ReplaceableTextures\\CommandButtons\\BTNBelfPassive1.blp"),'BelR')
+    call SaveInteger(HH,SB_TIPTAB,StringHash("ReplaceableTextures\\CommandButtons\\BTNBelfPassive2.blp"),'BelR')
+    call SaveInteger(HH,SB_TIPTAB,StringHash("ReplaceableTextures\\CommandButtons\\BTNKamidzeTouma.blp"),'A16M')
+    call SaveInteger(HH,SB_TIPITEM,StringHash("ReplaceableTextures\\CommandButtons\\BTNBorosArmorBroken.blp"),'I13R')
+    call SaveInteger(HH,SB_TIPTAB,StringHash("war3mapImported\\BTNOmegaBlast.blp"),'A1A5')
+endfunction
+// «Название, (|cffffcc00W|r)» -> «Название»: отрезаем хвост с клавишей/уровнем
+function StatusIndicatorTipClean takes string t returns string
+    local integer tn=StringLength(t)
+    local integer i=1
+    local string ch
+    loop
+        exitwhen i>=tn
+        set ch=SubString(t,i,i+1)
+        if (ch=="(" or ch=="[") and SubString(t,i-1,i)==" " then
+            set tn=i-1
+            if tn>0 and SubString(t,tn-1,tn)=="," then
+                set tn=tn-1
+            endif
+            return SubString(t,0,tn)
+        endif
+        set i=i+1
+    endloop
+    return t
+endfunction
+function StatusIndicatorTipText takes string tex returns string
+    local integer id=LoadInteger(HH,SB_TIPTAB,StringHash(tex))
+    if id!=0 then
+        return StatusIndicatorTipClean(BlzGetAbilityTooltip(id,0))
+    endif
+    set id=LoadInteger(HH,SB_TIPITEM,StringHash(tex))
+    if id!=0 then
+        return GetObjectName(id)
+    endif
+    return ""
+endfunction
+// подсказка над иконкой: невидимая кнопка поверх иконки ловит наведение, движок сам показывает подсказку
+function StatusIndicatorTooltip takes framehandle icon, string tex returns nothing
+    local framehandle hb=BlzCreateFrameByType("BUTTON","StatusIndHover",icon,"",0)
+    local framehandle tip
+    local framehandle tx
+    local string t=StatusIndicatorTipText(tex)
+    call BlzFrameSetAllPoints(hb,icon)
+    call StatusBarNoHi(hb)
+    if SB_WheelTrig!=null then
+        call BlzTriggerRegisterFrameEvent(SB_WheelTrig,hb,FRAMEEVENT_MOUSE_WHEEL)
+        call BlzTriggerRegisterFrameEvent(SB_WheelTrig,hb,FRAMEEVENT_CONTROL_CLICK)
+    endif
+    if t!="" then
+        set tip=BlzCreateFrameByType("BACKDROP","StatusIndTip",StatusBarFrame,"",0)
+        set tx=BlzCreateFrameByType("TEXT","StatusIndTipText",tip,"",0)
+        call BlzFrameSetPoint(tx,FRAMEPOINT_BOTTOM,icon,FRAMEPOINT_TOP,0.,0.008)
+        call BlzFrameSetFont(tx,"Fonts\\FRIZQT__.TTF",.009,0)
+        call BlzFrameSetTextAlignment(tx,TEXT_JUSTIFY_CENTER,TEXT_JUSTIFY_MIDDLE)
+        call BlzFrameSetText(tx,t)
+        // подложка по размеру текста, с отступом
+        call BlzFrameSetPoint(tip,FRAMEPOINT_TOPLEFT,tx,FRAMEPOINT_TOPLEFT,-0.004,0.003)
+        call BlzFrameSetPoint(tip,FRAMEPOINT_BOTTOMRIGHT,tx,FRAMEPOINT_BOTTOMRIGHT,0.004,-0.003)
+        call BlzFrameSetTexture(tip,"TooltipLessVisible.blp",0,true)
+        call BlzFrameSetLevel(tip,50)
+        call BlzFrameSetVisible(tip,false)
+        call BlzFrameSetTooltip(hb,tip)
+        // показ вручную по наведению: у кнопки без шаблона BlzFrameSetTooltip может не срабатывать
+        call SaveFrameHandle(HH,GetHandleId(hb),SB_TIPFR,tip)
+        if SB_HoverTrig!=null then
+            call BlzTriggerRegisterFrameEvent(SB_HoverTrig,hb,FRAMEEVENT_MOUSE_ENTER)
+            call BlzTriggerRegisterFrameEvent(SB_HoverTrig,hb,FRAMEEVENT_MOUSE_LEAVE)
+        endif
+    endif
+    set hb=null
+    set tip=null
+    set tx=null
+endfunction
+function StatusIndicatorHover takes nothing returns nothing
+    local framehandle tip=LoadFrameHandle(HH,GetHandleId(BlzGetTriggerFrame()),SB_TIPFR)
+    if tip!=null and GetTriggerPlayer()==GetLocalPlayer() then
+        call BlzFrameSetVisible(tip,BlzGetTriggerFrameEvent()==FRAMEEVENT_MOUSE_ENTER)
+    endif
+    set tip=null
+endfunction
+function StatusIndicatorConsole takes nothing returns nothing
+    local framehandle con=GetFrameChild(GetOriginFrame(ORIGIN_FRAME_CONSOLE_UI,0),1)
+    local real cw=GetFrameWidth(con)
+    local real ch=GetFrameHeight(con)
+    set con=null
+    if cw!=SB_ConW or ch!=SB_ConH then
+        set SB_ConW=cw
+        set SB_ConH=ch
+        set SB_Ver=SB_Ver+1
+    endif
+    call StatusIndicatorScrollUpdate()
+endfunction
+function StatusIndicatorPlace takes framehandle f, integer pos returns nothing
+    local integer fid=GetHandleId(f)
+    local integer rel=pos-SB_Scroll
+    if SB_ConW<=0 then
+        call StatusIndicatorConsole()
+    endif
+    if LoadInteger(HH,fid,SB_POS)==pos+1 and LoadInteger(HH,fid,SB_VER)==SB_Ver then
+        return
+    endif
+    call SaveInteger(HH,fid,SB_POS,pos+1)
+    call SaveInteger(HH,fid,SB_VER,SB_Ver)
+    // вне видимых 8 мест — за нижний край экрана (показ/скрытие по выделению не трогаем)
+    if rel<0 or rel>7 then
+        call SetFrameRelativePoint(f,FRAMEPOINT_CENTER,StatusBarFrame,FRAMEPOINT_LEFT,0.,-1.)
+        return
+    endif
+    // обычные фреймы не растягиваются вместе с консолью (как SIMPLE), поэтому без поправки на ширину консоли
+    call SetFrameSize(f,.0201,.0201)
+    call SetFrameRelativePoint(f,FRAMEPOINT_CENTER,StatusBarFrame,FRAMEPOINT_LEFT,0.017+rel*0.025,0.005)
+endfunction
+function StatusIndicatorText takes framehandle f, integer idp, string mode_name, real duration returns nothing
+    local string st=R2SW(duration,2,1)
+    if st!=LoadStr(HH,GetHandleId(f),SB_TXT) then
+        call SaveStr(HH,GetHandleId(f),SB_TXT,st)
+        call SetFrameText(LoadFrameHandle(HH,idp,StringHash(mode_name+"2")),st)
+    endif
+endfunction
 function CreateModeIndicatorWithPauseFormMadara_Periodic takes nothing returns nothing
     local timer t               =GetExpiredTimer()
     local integer id            =GetHandleId(t)
@@ -5251,20 +5590,15 @@ function CreateModeIndicatorWithPauseFormMadara_Periodic takes nothing returns n
         set position=position-1
         endif
     endif
-    if GetFrameTexture(NewFrame,0)!="ReplaceableTextures\\CommandButtons\\BTNMadaraR.blp" then
+    if mode_name!="ReplaceableTextures\\CommandButtons\\BTNMadaraR.blp" then
         call StartAbilityCooldown(GetUnitAbility(caster, 'MUT2'), 25)
         call StartAbilityCooldown(GetUnitAbility(caster, 'MUT1'), 30)
     endif
     if IsUnitPaused(caster)==false and IsUnitHidden(caster)==false and GetUnitAbilityLevel(caster,'Pet1')==0 then
         call SaveReal           (HH, GetHandleId(NewFrame), c_DURATION, duration)
-        call SetFrameText( LoadFrameHandle(HH, idp,StringHash(mode_name+"2")), R2SW(duration,2, 1) )
+        call StatusIndicatorText(NewFrame, idp, mode_name, duration)
     endif
-    if GetFrameHeight( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 ))==0.132 then
-        call SetFrameSize( NewFrame, .0237*(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505), .0237 *(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505))
-        call SetFrameRelativePoint( NewFrame, FRAMEPOINT_CENTER, StatusBarFrame, FRAMEPOINT_LEFT, 0.017+position*0.025*(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505), 0.005 )
-    else
-        call SetFrameRelativePoint( NewFrame, FRAMEPOINT_CENTER, StatusBarFrame, FRAMEPOINT_LEFT, 0.017+position*0.025, 0.005 )
-    endif
+    call StatusIndicatorPlace(NewFrame, position)
     if duration<=0 or udg_B==false or DU2==false or UnitIsAlive(caster)==false then
         call SaveReal(HH, GetHandleId(LoadFrameHandle(HH, idp,StringHash(mode_name+"2"))), c_DURATION, 0)
         call ShowFrame( NewFrame, false )
@@ -5285,29 +5619,28 @@ function CreateModeIndicatorWithPauseFormMadara takes unit newCaster, string new
     local framehandle NewFrameText  = null
     local player p              =GetOwningPlayer(newCaster)
     local integer idp           =GetHandleId(p)
-    local integer i=9
+    local integer i=23
     local integer j=0
     if LoadFrameHandle(HH, idp,StringHash(newString))==null then    
-        set NewFrame = CreateFrameByType( "SIMPLEBUTTON", newString, StatusBarFrame, "", 0 )
+        set NewFrame = BlzCreateFrameByType( "BACKDROP", newString, StatusBarFrame, "", 0 )
         call ClearFrameAllPoints( NewFrame )
-        call SetFrameTexture( NewFrame, newString, 0, true )
-        call SetFrameTexture( NewFrame, newString, 1, true )
-        call SetFrameTexture( NewFrame, newString, 2, true )
-        call SetFrameSize( NewFrame, .0237, .0237 )
-        call SetFramePriority( NewFrame, 7 )
+        call BlzFrameSetTexture( NewFrame, newString, 0, true )
+        call SetFrameBackgroundSize( NewFrame, 0, .0201 )
+        call SetFrameSize( NewFrame, .0201, .0201 )
+        call BlzFrameSetLevel( NewFrame, 7 )
         call HandleListAddHandle(StatusBarFrameList[GetPlayerId(p)],NewFrame)
         call SetFrameParent(NewFrame,StatusBarFrame)
         call ShowFrame( NewFrame, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
         call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
         call SaveFrameHandle(HH,idp,StringHash(newString),NewFrame)
+        call StatusIndicatorTooltip(NewFrame, newString)
         //call SaveReal               (HH, GetHandleId(NewFrame), c_DURATION, 2)
-        set NewFrameText=CreateFrameByType( "SIMPLETEXT", newString+"1", NewFrame, "", 0 )
+        set NewFrameText=BlzCreateFrameByType( "TEXT", newString+"1", NewFrame, "", 0 )
         call ClearFrameAllPoints( NewFrameText )
-        call SetFrameBlendMode( NewFrameText, 0, BLEND_MODE_BLEND )
-        call SetFrameFont( NewFrameText, "Fonts\\FRIZQT__.TTF", .008, 0 )
-        call SetFrameTextAlignment( NewFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_LEFT )
+        call BlzFrameSetFont( NewFrameText, "Fonts\\FRIZQT__.TTF", .008, 0 )
+        call BlzFrameSetTextAlignment( NewFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
         call SetFrameText( NewFrameText, R2SW(newDur,2, 1) )
-        call SetFrameTextColour( NewFrameText, 0xFFFFA500 )
+        call BlzFrameSetTextColor( NewFrameText, 0xFFFFA500 )
         call HandleListAddHandle(StatusBarFrameList[GetPlayerId(p)],NewFrameText)
         call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
         call SaveFrameHandle(HH,idp,StringHash(newString+"2"),NewFrameText)
@@ -5336,6 +5669,8 @@ function CreateModeIndicatorWithPauseFormMadara takes unit newCaster, string new
     call SaveReal               (HH, GetHandleId(NewFrame), c_DURATION, newDur)
     call SaveReal               (HH, GetHandleId(NewFrameText), c_DURATION, newDur)
     call SaveInteger            (HH, id, c_POSITION, j)
+    call SaveInteger(HH,GetHandleId(NewFrame),SB_POS,0)
+    call RemoveSavedString(HH,GetHandleId(NewFrame),SB_TXT)
     call SaveStr                (HH, idp, c_NAME, newString)
     call TimerStart             (newTimer, 0.05, true, function CreateModeIndicatorWithPauseFormMadara_Periodic)
     set newTimer=null
@@ -5364,14 +5699,9 @@ function CreateModeIndicatorFormLaxus_Periodic takes nothing returns nothing
     endif
     //if IsUnitPaused(caster)==false and IsUnitHidden(caster)==false and GetUnitAbilityLevel(caster,'Pet1')==0 then
     call SaveReal           (HH, GetHandleId(NewFrame), c_DURATION, duration)
-    call SetFrameText( LoadFrameHandle(HH, idp,StringHash(mode_name+"2")), R2SW(duration,2, 1) )
+    call StatusIndicatorText(NewFrame, idp, mode_name, duration)
     //endif
-    if GetFrameHeight( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 ))==0.132 then
-        call SetFrameSize( NewFrame, .0237*(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505), .0237 *(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505))
-        call SetFrameRelativePoint( NewFrame, FRAMEPOINT_CENTER, StatusBarFrame, FRAMEPOINT_LEFT, 0.017+position*0.025*(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505), 0.005 )
-    else
-        call SetFrameRelativePoint( NewFrame, FRAMEPOINT_CENTER, StatusBarFrame, FRAMEPOINT_LEFT, 0.017+position*0.025, 0.005 )
-    endif
+    call StatusIndicatorPlace(NewFrame, position)
     if duration<=0 or GetUnitAbilityLevel(LoadUnitHandle(HH, id, c_CASTER),'LAE1')==0 or udg_B==false then
         call SaveReal(HH, GetHandleId(NewFrame), c_DURATION, 0)
         call SaveReal(HH, GetHandleId(LoadFrameHandle(HH, idp,StringHash(mode_name+"2"))), c_DURATION, 0)
@@ -5393,30 +5723,29 @@ function CreateModeIndicatorFormLaxus takes unit newCaster, string newString, re
     local framehandle NewFrameText  = null
     local player p              =GetOwningPlayer(newCaster)
     local integer idp           =GetHandleId(p)
-    local integer i=9
+    local integer i=23
     local integer j=0
     if LoadFrameHandle(HH, idp,StringHash(newString))==null then    
-        set NewFrame = CreateFrameByType( "SIMPLEBUTTON", newString, StatusBarFrame, "", 0 )
+        set NewFrame = BlzCreateFrameByType( "BACKDROP", newString, StatusBarFrame, "", 0 )
         call ClearFrameAllPoints( NewFrame )
-        call SetFrameTexture( NewFrame, newString, 0, true )
-        call SetFrameTexture( NewFrame, newString, 1, true )
-        call SetFrameTexture( NewFrame, newString, 2, true )
-        call SetFrameSize( NewFrame, .0237, .0237 )
-        call SetFramePriority( NewFrame, 7 )
+        call BlzFrameSetTexture( NewFrame, newString, 0, true )
+        call SetFrameBackgroundSize( NewFrame, 0, .0201 )
+        call SetFrameSize( NewFrame, .0201, .0201 )
+        call BlzFrameSetLevel( NewFrame, 7 )
         call HandleListAddHandle(StatusBarFrameList[GetPlayerId(p)],NewFrame)
         call SetFrameParent(NewFrame,StatusBarFrame)
         call ShowFrame( NewFrame, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
         call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
         call SaveFrameHandle(HH,idp,StringHash(newString),NewFrame)
+        call StatusIndicatorTooltip(NewFrame, newString)
         //call SaveReal               (HH, GetHandleId(NewFrame), c_DURATION, 2)
         
-        set NewFrameText=CreateFrameByType( "SIMPLETEXT", newString+"1", NewFrame, "", 0 )
+        set NewFrameText=BlzCreateFrameByType( "TEXT", newString+"1", NewFrame, "", 0 )
         call ClearFrameAllPoints( NewFrameText )
-        call SetFrameBlendMode( NewFrameText, 0, BLEND_MODE_BLEND )
-        call SetFrameFont( NewFrameText, "Fonts\\FRIZQT__.TTF", .008, 0 )
-        call SetFrameTextAlignment( NewFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_LEFT )
+        call BlzFrameSetFont( NewFrameText, "Fonts\\FRIZQT__.TTF", .008, 0 )
+        call BlzFrameSetTextAlignment( NewFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
         call SetFrameText( NewFrameText, R2SW(newDur,2, 1) )
-        call SetFrameTextColour( NewFrameText, ConvertColour(255,255,30,30) )
+        call BlzFrameSetTextColor( NewFrameText, ConvertColour(255,255,30,30) )
         call HandleListAddHandle(StatusBarFrameList[GetPlayerId(p)],NewFrameText)
         call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
         call SaveFrameHandle(HH,idp,StringHash(newString+"2"),NewFrameText)
@@ -5446,6 +5775,8 @@ function CreateModeIndicatorFormLaxus takes unit newCaster, string newString, re
         call SaveReal               (HH, GetHandleId(NewFrame), c_DURATION, newDur)
         call SaveReal               (HH, GetHandleId(NewFrameText), c_DURATION, newDur)
         call SaveInteger            (HH, id, c_POSITION, j)
+        call SaveInteger(HH,GetHandleId(NewFrame),SB_POS,0)
+        call RemoveSavedString(HH,GetHandleId(NewFrame),SB_TXT)
         call SaveStr                (HH, id, c_NAME, newString)
         call TimerStart             (newTimer, 0.05, true, function CreateModeIndicatorFormLaxus_Periodic)
     else
@@ -5478,14 +5809,9 @@ function CreateModeIndicatorKarnaQ_Periodic takes nothing returns nothing
     endif
     //if IsUnitPaused(caster)==false and IsUnitHidden(caster)==false and GetUnitAbilityLevel(caster,'Pet1')==0 then
     call SaveReal           (HH, GetHandleId(NewFrame), c_DURATION, duration)
-    call SetFrameText( LoadFrameHandle(HH, idp,StringHash(mode_name+"2")), R2SW(duration,2, 1) )
+    call StatusIndicatorText(NewFrame, idp, mode_name, duration)
     //endif
-    if GetFrameHeight( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 ))==0.132 then
-        call SetFrameSize( NewFrame, .0237*(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505), .0237 *(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505))
-        call SetFrameRelativePoint( NewFrame, FRAMEPOINT_CENTER, StatusBarFrame, FRAMEPOINT_LEFT, 0.017+position*0.025*(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505), 0.005 )
-    else
-        call SetFrameRelativePoint( NewFrame, FRAMEPOINT_CENTER, StatusBarFrame, FRAMEPOINT_LEFT, 0.017+position*0.025, 0.005 )
-    endif
+    call StatusIndicatorPlace(NewFrame, position)
     if duration<=0 or (GetUnitAbilityLevel(LoadUnitHandle(HH, id, c_CASTER),'KaA4')==0 and GetUnitAbilityLevel(LoadUnitHandle(HH, id, c_CASTER),'KaA5')==0) or udg_B==false then
         call SaveReal(HH, GetHandleId(NewFrame), c_DURATION, 0)
         call SaveReal(HH, GetHandleId(LoadFrameHandle(HH, idp,StringHash(mode_name+"2"))), c_DURATION, 0)
@@ -5507,30 +5833,29 @@ function CreateModeIndicatorKarnaQ takes unit newCaster, string newString, real 
     local framehandle NewFrameText  = null
     local player p              =GetOwningPlayer(newCaster)
     local integer idp           =GetHandleId(p)
-    local integer i=9
+    local integer i=23
     local integer j=0
     if LoadFrameHandle(HH, idp,StringHash(newString))==null then    
-        set NewFrame = CreateFrameByType( "SIMPLEBUTTON", newString, StatusBarFrame, "", 0 )
+        set NewFrame = BlzCreateFrameByType( "BACKDROP", newString, StatusBarFrame, "", 0 )
         call ClearFrameAllPoints( NewFrame )
-        call SetFrameTexture( NewFrame, newString, 0, true )
-        call SetFrameTexture( NewFrame, newString, 1, true )
-        call SetFrameTexture( NewFrame, newString, 2, true )
-        call SetFrameSize( NewFrame, .0237, .0237 )
-        call SetFramePriority( NewFrame, 7 )
+        call BlzFrameSetTexture( NewFrame, newString, 0, true )
+        call SetFrameBackgroundSize( NewFrame, 0, .0201 )
+        call SetFrameSize( NewFrame, .0201, .0201 )
+        call BlzFrameSetLevel( NewFrame, 7 )
         call HandleListAddHandle(StatusBarFrameList[GetPlayerId(p)],NewFrame)
         call SetFrameParent(NewFrame,StatusBarFrame)
         call ShowFrame( NewFrame, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
         call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
         call SaveFrameHandle(HH,idp,StringHash(newString),NewFrame)
+        call StatusIndicatorTooltip(NewFrame, newString)
         //call SaveReal               (HH, GetHandleId(NewFrame), c_DURATION, 2)
         
-        set NewFrameText=CreateFrameByType( "SIMPLETEXT", newString+"1", NewFrame, "", 0 )
+        set NewFrameText=BlzCreateFrameByType( "TEXT", newString+"1", NewFrame, "", 0 )
         call ClearFrameAllPoints( NewFrameText )
-        call SetFrameBlendMode( NewFrameText, 0, BLEND_MODE_BLEND )
-        call SetFrameFont( NewFrameText, "Fonts\\FRIZQT__.TTF", .008, 0 )
-        call SetFrameTextAlignment( NewFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_LEFT )
+        call BlzFrameSetFont( NewFrameText, "Fonts\\FRIZQT__.TTF", .008, 0 )
+        call BlzFrameSetTextAlignment( NewFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
         call SetFrameText( NewFrameText, R2SW(newDur,2, 1) )
-        call SetFrameTextColour( NewFrameText, ConvertColour(255,255,30,30) )
+        call BlzFrameSetTextColor( NewFrameText, ConvertColour(255,255,30,30) )
         call HandleListAddHandle(StatusBarFrameList[GetPlayerId(p)],NewFrameText)
         call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
         call SaveFrameHandle(HH,idp,StringHash(newString+"2"),NewFrameText)
@@ -5560,6 +5885,8 @@ function CreateModeIndicatorKarnaQ takes unit newCaster, string newString, real 
         call SaveReal               (HH, GetHandleId(NewFrame), c_DURATION, newDur)
         call SaveReal               (HH, GetHandleId(NewFrameText), c_DURATION, newDur)
         call SaveInteger            (HH, id, c_POSITION, j)
+        call SaveInteger(HH,GetHandleId(NewFrame),SB_POS,0)
+        call RemoveSavedString(HH,GetHandleId(NewFrame),SB_TXT)
         call SaveStr                (HH, id, c_NAME, newString)
         call TimerStart             (newTimer, 0.05, true, function CreateModeIndicatorKarnaQ_Periodic)
     else
@@ -5592,14 +5919,9 @@ function CreateModeIndicatorKarnaW_Periodic takes nothing returns nothing
     endif
     //if IsUnitPaused(caster)==false and IsUnitHidden(caster)==false and GetUnitAbilityLevel(caster,'Pet1')==0 then
     call SaveReal           (HH, GetHandleId(NewFrame), c_DURATION, duration)
-    call SetFrameText( LoadFrameHandle(HH, idp,StringHash(mode_name+"2")), R2SW(duration,2, 1) )
+    call StatusIndicatorText(NewFrame, idp, mode_name, duration)
     //endif
-    if GetFrameHeight( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 ))==0.132 then
-        call SetFrameSize( NewFrame, .0237*(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505), .0237 *(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505))
-        call SetFrameRelativePoint( NewFrame, FRAMEPOINT_CENTER, StatusBarFrame, FRAMEPOINT_LEFT, 0.017+position*0.025*(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505), 0.005 )
-    else
-        call SetFrameRelativePoint( NewFrame, FRAMEPOINT_CENTER, StatusBarFrame, FRAMEPOINT_LEFT, 0.017+position*0.025, 0.005 )
-    endif
+    call StatusIndicatorPlace(NewFrame, position)
     if duration<=0 or GetUnitAbilityLevel(LoadUnitHandle(HH, id, c_CASTER),'KaA7')==0 or udg_B==false then
         call SaveReal(HH, GetHandleId(NewFrame), c_DURATION, 0)
         call SaveReal(HH, GetHandleId(LoadFrameHandle(HH, idp,StringHash(mode_name+"2"))), c_DURATION, 0)
@@ -5621,30 +5943,29 @@ function CreateModeIndicatorKarnaW takes unit newCaster, string newString, real 
     local framehandle NewFrameText  = null
     local player p              =GetOwningPlayer(newCaster)
     local integer idp           =GetHandleId(p)
-    local integer i=9
+    local integer i=23
     local integer j=0
     if LoadFrameHandle(HH, idp,StringHash(newString))==null then    
-        set NewFrame = CreateFrameByType( "SIMPLEBUTTON", newString, StatusBarFrame, "", 0 )
+        set NewFrame = BlzCreateFrameByType( "BACKDROP", newString, StatusBarFrame, "", 0 )
         call ClearFrameAllPoints( NewFrame )
-        call SetFrameTexture( NewFrame, newString, 0, true )
-        call SetFrameTexture( NewFrame, newString, 1, true )
-        call SetFrameTexture( NewFrame, newString, 2, true )
-        call SetFrameSize( NewFrame, .0237, .0237 )
-        call SetFramePriority( NewFrame, 7 )
+        call BlzFrameSetTexture( NewFrame, newString, 0, true )
+        call SetFrameBackgroundSize( NewFrame, 0, .0201 )
+        call SetFrameSize( NewFrame, .0201, .0201 )
+        call BlzFrameSetLevel( NewFrame, 7 )
         call HandleListAddHandle(StatusBarFrameList[GetPlayerId(p)],NewFrame)
         call SetFrameParent(NewFrame,StatusBarFrame)
         call ShowFrame( NewFrame, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
         call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
         call SaveFrameHandle(HH,idp,StringHash(newString),NewFrame)
+        call StatusIndicatorTooltip(NewFrame, newString)
         //call SaveReal               (HH, GetHandleId(NewFrame), c_DURATION, 2)
         
-        set NewFrameText=CreateFrameByType( "SIMPLETEXT", newString+"1", NewFrame, "", 0 )
+        set NewFrameText=BlzCreateFrameByType( "TEXT", newString+"1", NewFrame, "", 0 )
         call ClearFrameAllPoints( NewFrameText )
-        call SetFrameBlendMode( NewFrameText, 0, BLEND_MODE_BLEND )
-        call SetFrameFont( NewFrameText, "Fonts\\FRIZQT__.TTF", .008, 0 )
-        call SetFrameTextAlignment( NewFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_LEFT )
+        call BlzFrameSetFont( NewFrameText, "Fonts\\FRIZQT__.TTF", .008, 0 )
+        call BlzFrameSetTextAlignment( NewFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
         call SetFrameText( NewFrameText, R2SW(newDur,2, 1) )
-        call SetFrameTextColour( NewFrameText, ConvertColour(255,255,30,30) )
+        call BlzFrameSetTextColor( NewFrameText, ConvertColour(255,255,30,30) )
         call HandleListAddHandle(StatusBarFrameList[GetPlayerId(p)],NewFrameText)
         call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
         call SaveFrameHandle(HH,idp,StringHash(newString+"2"),NewFrameText)
@@ -5674,6 +5995,8 @@ function CreateModeIndicatorKarnaW takes unit newCaster, string newString, real 
         call SaveReal               (HH, GetHandleId(NewFrame), c_DURATION, newDur)
         call SaveReal               (HH, GetHandleId(NewFrameText), c_DURATION, newDur)
         call SaveInteger            (HH, id, c_POSITION, j)
+        call SaveInteger(HH,GetHandleId(NewFrame),SB_POS,0)
+        call RemoveSavedString(HH,GetHandleId(NewFrame),SB_TXT)
         call SaveStr                (HH, id, c_NAME, newString)
         call TimerStart             (newTimer, 0.05, true, function CreateModeIndicatorKarnaW_Periodic)
     else
@@ -5710,14 +6033,9 @@ function CreateModeIndicatorFormYujiD_Periodic takes nothing returns nothing
     endif
     if IsUnitAlive(caster)==true and udg_B==true and DU2==true and caster!=null then
         call SaveReal           (HH, GetHandleId(NewFrame), c_DURATION, duration)
-        call SetFrameText( LoadFrameHandle(HH, idp,StringHash(mode_name+"2")), R2SW(duration,2, 1) )
+        call StatusIndicatorText(NewFrame, idp, mode_name, duration)
     endif
-    if GetFrameHeight( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 ))==0.132 then
-        call SetFrameSize( NewFrame, .0237*(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505), .0237 *(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505))
-        call SetFrameRelativePoint( NewFrame, FRAMEPOINT_CENTER, StatusBarFrame, FRAMEPOINT_LEFT, 0.017+position*0.025*(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505), 0.005 )
-    else
-        call SetFrameRelativePoint( NewFrame, FRAMEPOINT_CENTER, StatusBarFrame, FRAMEPOINT_LEFT, 0.017+position*0.025, 0.005 )
-    endif
+    call StatusIndicatorPlace(NewFrame, position)
     if duration<=0 and caster!=null and GetUnitAbilityLevel(caster,'YujE')>0 then
         call SaveReal(HH, GetHandleId(NewFrame), c_DURATION, 240)
         if IsUnitAlive(caster) then
@@ -5767,16 +6085,15 @@ function CreateModeIndicatorFormYujiD takes unit newCaster, string newString, re
     local framehandle NewFrameText  = null
     local player p              =GetOwningPlayer(newCaster)
     local integer idp           =GetHandleId(p)
-    local integer i=9
+    local integer i=23
     local integer j=0
     if LoadFrameHandle(HH, idp,StringHash(newString))==null then   
-        set NewFrame = CreateFrameByType( "SIMPLEBUTTON", newString, StatusBarFrame, "", 0 )
+        set NewFrame = BlzCreateFrameByType( "BACKDROP", newString, StatusBarFrame, "", 0 )
         call ClearFrameAllPoints( NewFrame )
-        call SetFrameTexture( NewFrame, newString, 0, true )
-        call SetFrameTexture( NewFrame, newString, 1, true )
-        call SetFrameTexture( NewFrame, newString, 2, true )
-        call SetFrameSize( NewFrame, .0237, .0237 )
-        call SetFramePriority( NewFrame, 7 )
+        call BlzFrameSetTexture( NewFrame, newString, 0, true )
+        call SetFrameBackgroundSize( NewFrame, 0, .0201 )
+        call SetFrameSize( NewFrame, .0201, .0201 )
+        call BlzFrameSetLevel( NewFrame, 7 )
         call HandleListAddHandle(StatusBarFrameList[GetPlayerId(p)],NewFrame)
         call SetFrameParent(NewFrame,StatusBarFrame)
         if p!=GetLocalPlayer()then
@@ -5785,15 +6102,15 @@ function CreateModeIndicatorFormYujiD takes unit newCaster, string newString, re
             call ShowFrame( NewFrame, true)
         endif
         call SaveFrameHandle(HH,idp,StringHash(newString),NewFrame)
+        call StatusIndicatorTooltip(NewFrame, newString)
         //call SaveReal               (HH, GetHandleId(NewFrame), c_DURATION, 2)
         
-        set NewFrameText=CreateFrameByType( "SIMPLETEXT", newString+"1", NewFrame, "", 0 )
+        set NewFrameText=BlzCreateFrameByType( "TEXT", newString+"1", NewFrame, "", 0 )
         call ClearFrameAllPoints( NewFrameText )
-        call SetFrameBlendMode( NewFrameText, 0, BLEND_MODE_BLEND )
-        call SetFrameFont( NewFrameText, "Fonts\\FRIZQT__.TTF", .008, 0 )
-        call SetFrameTextAlignment( NewFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_LEFT )
+        call BlzFrameSetFont( NewFrameText, "Fonts\\FRIZQT__.TTF", .008, 0 )
+        call BlzFrameSetTextAlignment( NewFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
         call SetFrameText( NewFrameText, R2SW(newDur,2, 1) )
-        call SetFrameTextColour( NewFrameText, ConvertColour(255,140,210,255) )
+        call BlzFrameSetTextColor( NewFrameText, ConvertColour(255,140,210,255) )
         call HandleListAddHandle(StatusBarFrameList[GetPlayerId(p)],NewFrameText)
         if p!=GetLocalPlayer()then
             call ShowFrame( NewFrameText, false)
@@ -5830,6 +6147,8 @@ function CreateModeIndicatorFormYujiD takes unit newCaster, string newString, re
         call SaveReal               (HH, GetHandleId(NewFrame), c_DURATION, newDur)
         call SaveReal           (HH, GetHandleId(NewFrameText), c_DURATION, newDur)
         call SaveInteger            (HH, id, c_POSITION, j)
+        call SaveInteger(HH,GetHandleId(NewFrame),SB_POS,0)
+        call RemoveSavedString(HH,GetHandleId(NewFrame),SB_TXT)
         call SaveStr                (HH, id, c_NAME, newString)
         call TimerStart             (newTimer, 0.05, true, function CreateModeIndicatorFormYujiD_Periodic)
     else
@@ -5862,14 +6181,9 @@ function CreateModeIndicatorFormGoku_Periodic takes nothing returns nothing
     endif
     //if IsUnitPaused(caster)==false and IsUnitHidden(caster)==false and GetUnitAbilityLevel(caster,'Pet1')==0 then
     call SaveReal           (HH, GetHandleId(NewFrame), c_DURATION, duration)
-    call SetFrameText( LoadFrameHandle(HH, idp,StringHash(mode_name+"2")), R2SW(duration,2, 1) )
+    call StatusIndicatorText(NewFrame, idp, mode_name, duration)
     //endif
-    if GetFrameHeight( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 ))==0.132 then
-        call SetFrameSize( NewFrame, .0237*(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505), .0237 *(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505))
-        call SetFrameRelativePoint( NewFrame, FRAMEPOINT_CENTER, StatusBarFrame, FRAMEPOINT_LEFT, 0.017+position*0.025*(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505), 0.005 )
-    else
-        call SetFrameRelativePoint( NewFrame, FRAMEPOINT_CENTER, StatusBarFrame, FRAMEPOINT_LEFT, 0.017+position*0.025, 0.005 )
-    endif
+    call StatusIndicatorPlace(NewFrame, position)
     if duration<=0 or udg_B==false or DU2==false or UnitIsAlive(caster)==false then
         call SaveReal(HH, GetHandleId(NewFrame), c_DURATION, 0)
         call SaveReal(HH, GetHandleId(LoadFrameHandle(HH, idp,StringHash(mode_name+"2"))), c_DURATION, 0)
@@ -5892,30 +6206,29 @@ function CreateModeIndicatorFormGoku takes unit newCaster, string newString, rea
     local framehandle NewFrameText  = null
     local player p=GetOwningPlayer(newCaster)
     local integer idp=GetHandleId(p)
-    local integer i=9
+    local integer i=23
     local integer j=0
     if LoadFrameHandle(HH, idp,StringHash(newString))==null then    
-        set NewFrame = CreateFrameByType( "SIMPLEBUTTON", newString, StatusBarFrame, "", 0 )
+        set NewFrame = BlzCreateFrameByType( "BACKDROP", newString, StatusBarFrame, "", 0 )
         call ClearFrameAllPoints( NewFrame )
-        call SetFrameTexture( NewFrame, newString, 0, true )
-        call SetFrameTexture( NewFrame, newString, 1, true )
-        call SetFrameTexture( NewFrame, newString, 2, true )
-        call SetFrameSize( NewFrame, .0237, .0237 )
-        call SetFramePriority( NewFrame, 7 )
+        call BlzFrameSetTexture( NewFrame, newString, 0, true )
+        call SetFrameBackgroundSize( NewFrame, 0, .0201 )
+        call SetFrameSize( NewFrame, .0201, .0201 )
+        call BlzFrameSetLevel( NewFrame, 7 )
         call HandleListAddHandle(StatusBarFrameList[GetPlayerId(p)],NewFrame)
         call SetFrameParent(NewFrame,StatusBarFrame)
         call ShowFrame( NewFrame, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
         call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
         call SaveFrameHandle(HH,idp,StringHash(newString),NewFrame)
+        call StatusIndicatorTooltip(NewFrame, newString)
         //call SaveReal               (HH, GetHandleId(NewFrame), c_DURATION, 2)
         
-        set NewFrameText=CreateFrameByType( "SIMPLETEXT", newString+"1", NewFrame, "", 0 )
+        set NewFrameText=BlzCreateFrameByType( "TEXT", newString+"1", NewFrame, "", 0 )
         call ClearFrameAllPoints( NewFrameText )
-        call SetFrameBlendMode( NewFrameText, 0, BLEND_MODE_BLEND )
-        call SetFrameFont( NewFrameText, "Fonts\\FRIZQT__.TTF", .008, 0 )
-        call SetFrameTextAlignment( NewFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_LEFT )
+        call BlzFrameSetFont( NewFrameText, "Fonts\\FRIZQT__.TTF", .008, 0 )
+        call BlzFrameSetTextAlignment( NewFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
         call SetFrameText( NewFrameText, R2SW(newDur,2, 1) )
-        call SetFrameTextColour( NewFrameText, ConvertColour(255,255,30,30) )
+        call BlzFrameSetTextColor( NewFrameText, ConvertColour(255,255,30,30) )
         call HandleListAddHandle(StatusBarFrameList[GetPlayerId(p)],NewFrameText)
         call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
         call SaveFrameHandle(HH,idp,StringHash(newString+"2"),NewFrameText)
@@ -5945,6 +6258,8 @@ function CreateModeIndicatorFormGoku takes unit newCaster, string newString, rea
         call SaveReal               (HH, GetHandleId(NewFrame), c_DURATION, newDur)
         call SaveReal               (HH, GetHandleId(NewFrameText), c_DURATION, newDur)
         call SaveInteger            (HH, id, c_POSITION, j)
+        call SaveInteger(HH,GetHandleId(NewFrame),SB_POS,0)
+        call RemoveSavedString(HH,GetHandleId(NewFrame),SB_TXT)
         call SaveStr                (HH, id, c_NAME, newString)
         call TimerStart             (newTimer, 0.05, true, function CreateModeIndicatorFormGoku_Periodic)
     else
@@ -5978,14 +6293,9 @@ function CreateModeIndicatorForm_Periodic takes nothing returns nothing
     endif
     //if IsUnitPaused(caster)==false and IsUnitHidden(caster)==false and GetUnitAbilityLevel(caster,'Pet1')==0 then
     call SaveReal           (HH, GetHandleId(NewFrame), c_DURATION, duration)
-    call SetFrameText( LoadFrameHandle(HH, idp,StringHash(mode_name+"2")), R2SW(duration,2, 1) )
+    call StatusIndicatorText(NewFrame, idp, mode_name, duration)
     //endif
-    if GetFrameHeight( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 ))==0.132 then
-        call SetFrameSize( NewFrame, .0237*(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505), .0237 *(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505))
-        call SetFrameRelativePoint( NewFrame, FRAMEPOINT_CENTER, StatusBarFrame, FRAMEPOINT_LEFT, 0.017+position*0.025*(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505), 0.005 )
-    else
-        call SetFrameRelativePoint( NewFrame, FRAMEPOINT_CENTER, StatusBarFrame, FRAMEPOINT_LEFT, 0.017+position*0.025, 0.005 )
-    endif
+    call StatusIndicatorPlace(NewFrame, position)
     if duration<=0 or udg_B==false or DU2==false or UnitIsAlive(caster)==false then
         call SaveReal(HH, GetHandleId(NewFrame), c_DURATION, 0)
         call SaveReal(HH, GetHandleId(LoadFrameHandle(HH, idp,StringHash(mode_name+"2"))), c_DURATION, 0)
@@ -6007,30 +6317,29 @@ function CreateModeIndicatorForm takes unit newCaster, string newString, real ne
     local framehandle NewFrameText  = null
     local player p=GetOwningPlayer(newCaster)
     local integer idp=GetHandleId(p)
-    local integer i=9
+    local integer i=23
     local integer j=0
     if LoadFrameHandle(HH, idp,StringHash(newString))==null then    
-        set NewFrame = CreateFrameByType( "SIMPLEBUTTON", newString, StatusBarFrame, "", 0 )
+        set NewFrame = BlzCreateFrameByType( "BACKDROP", newString, StatusBarFrame, "", 0 )
         call ClearFrameAllPoints( NewFrame )
-        call SetFrameTexture( NewFrame, newString, 0, true )
-        call SetFrameTexture( NewFrame, newString, 1, true )
-        call SetFrameTexture( NewFrame, newString, 2, true )
-        call SetFrameSize( NewFrame, .0237, .0237 )
-        call SetFramePriority( NewFrame, 7 )
+        call BlzFrameSetTexture( NewFrame, newString, 0, true )
+        call SetFrameBackgroundSize( NewFrame, 0, .0201 )
+        call SetFrameSize( NewFrame, .0201, .0201 )
+        call BlzFrameSetLevel( NewFrame, 7 )
         call HandleListAddHandle(StatusBarFrameList[GetPlayerId(p)],NewFrame)
         call SetFrameParent(NewFrame,StatusBarFrame)
         call ShowFrame( NewFrame, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
         call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
         call SaveFrameHandle(HH,idp,StringHash(newString),NewFrame)
+        call StatusIndicatorTooltip(NewFrame, newString)
         //call SaveReal               (HH, GetHandleId(NewFrame), c_DURATION, 2)
         
-        set NewFrameText=CreateFrameByType( "SIMPLETEXT", newString+"1", NewFrame, "", 0 )
+        set NewFrameText=BlzCreateFrameByType( "TEXT", newString+"1", NewFrame, "", 0 )
         call ClearFrameAllPoints( NewFrameText )
-        call SetFrameBlendMode( NewFrameText, 0, BLEND_MODE_BLEND )
-        call SetFrameFont( NewFrameText, "Fonts\\FRIZQT__.TTF", .008, 0 )
-        call SetFrameTextAlignment( NewFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_LEFT )
+        call BlzFrameSetFont( NewFrameText, "Fonts\\FRIZQT__.TTF", .008, 0 )
+        call BlzFrameSetTextAlignment( NewFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
         call SetFrameText( NewFrameText, R2SW(newDur,2, 1) )
-        call SetFrameTextColour( NewFrameText, ConvertColour(255,255,30,30) )
+        call BlzFrameSetTextColor( NewFrameText, ConvertColour(255,255,30,30) )
         call HandleListAddHandle(StatusBarFrameList[GetPlayerId(p)],NewFrameText)
         call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
         call SaveFrameHandle(HH,idp,StringHash(newString+"2"),NewFrameText)
@@ -6060,6 +6369,8 @@ function CreateModeIndicatorForm takes unit newCaster, string newString, real ne
         call SaveReal               (HH, GetHandleId(NewFrame), c_DURATION, newDur)
         call SaveReal               (HH, GetHandleId(NewFrameText), c_DURATION, newDur)
         call SaveInteger            (HH, id, c_POSITION, j)
+        call SaveInteger(HH,GetHandleId(NewFrame),SB_POS,0)
+        call RemoveSavedString(HH,GetHandleId(NewFrame),SB_TXT)
         call SaveStr                (HH, id, c_NAME, newString)
         call TimerStart             (newTimer, 0.05, true, function CreateModeIndicatorForm_Periodic)
     else
@@ -6095,15 +6406,10 @@ function CreateModeIndicatorWithPauseForm_Periodic takes nothing returns nothing
 
     if IsUnitPaused(caster)==false and IsUnitHidden(caster)==false and GetUnitAbilityLevel(caster,'Pet1')==0 then
         call SaveReal           (HH, GetHandleId(NewFrame), c_DURATION, duration)
-        call SetFrameText( LoadFrameHandle(HH, idp,StringHash(mode_name+"2")), R2SW(duration,2, 1) )
+        call StatusIndicatorText(NewFrame, idp, mode_name, duration)
     endif
 
-    if GetFrameHeight( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 ))==0.132 then
-        call SetFrameSize( NewFrame, .0237*(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505), .0237 *(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505))
-        call SetFrameRelativePoint( NewFrame, FRAMEPOINT_CENTER, StatusBarFrame, FRAMEPOINT_LEFT, 0.017+position*0.025*(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505), 0.005 )
-    else
-        call SetFrameRelativePoint( NewFrame, FRAMEPOINT_CENTER, StatusBarFrame, FRAMEPOINT_LEFT, 0.017+position*0.025, 0.005 )
-    endif
+    call StatusIndicatorPlace(NewFrame, position)
     if duration<=0 or udg_B==false or DU2==false or UnitIsAlive(caster)==false  then
         call ShowFrame( NewFrame, false )
         call SaveReal(HH, GetHandleId(NewFrame), c_DURATION, 0)
@@ -6125,30 +6431,29 @@ function CreateModeIndicatorWithPauseForm takes unit newCaster, string newString
     local framehandle NewFrameText  = null
     local player p              =GetOwningPlayer(newCaster)
     local integer idp           =GetHandleId(p)
-    local integer i=9
+    local integer i=23
     local integer j=0
     if LoadFrameHandle(HH, idp,StringHash(newString))==null then    
-        set NewFrame = CreateFrameByType( "SIMPLEBUTTON", newString, StatusBarFrame, "", 0 )
+        set NewFrame = BlzCreateFrameByType( "BACKDROP", newString, StatusBarFrame, "", 0 )
         call ClearFrameAllPoints( NewFrame )
-        call SetFrameTexture( NewFrame, newString, 0, true )
-        call SetFrameTexture( NewFrame, newString, 1, true )
-        call SetFrameTexture( NewFrame, newString, 2, true )
-        call SetFrameSize( NewFrame, .0237, .0237 )
-        call SetFramePriority( NewFrame, 7 )
+        call BlzFrameSetTexture( NewFrame, newString, 0, true )
+        call SetFrameBackgroundSize( NewFrame, 0, .0201 )
+        call SetFrameSize( NewFrame, .0201, .0201 )
+        call BlzFrameSetLevel( NewFrame, 7 )
         call HandleListAddHandle(StatusBarFrameList[GetPlayerId(p)],NewFrame)
         call SetFrameParent(NewFrame,StatusBarFrame)
         call ShowFrame( NewFrame, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
         call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
         call SaveFrameHandle(HH,idp,StringHash(newString),NewFrame)
+        call StatusIndicatorTooltip(NewFrame, newString)
         //call SaveReal               (HH, GetHandleId(NewFrame), c_DURATION, 2)
         
-        set NewFrameText=CreateFrameByType( "SIMPLETEXT", newString+"1", NewFrame, "", 0 )
+        set NewFrameText=BlzCreateFrameByType( "TEXT", newString+"1", NewFrame, "", 0 )
         call ClearFrameAllPoints( NewFrameText )
-        call SetFrameBlendMode( NewFrameText, 0, BLEND_MODE_BLEND )
-        call SetFrameFont( NewFrameText, "Fonts\\FRIZQT__.TTF", .008, 0 )
-        call SetFrameTextAlignment( NewFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_LEFT )
+        call BlzFrameSetFont( NewFrameText, "Fonts\\FRIZQT__.TTF", .008, 0 )
+        call BlzFrameSetTextAlignment( NewFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
         call SetFrameText( NewFrameText, R2SW(newDur,2, 1) )
-        call SetFrameTextColour( NewFrameText, 0xFFFFA500 )
+        call BlzFrameSetTextColor( NewFrameText, 0xFFFFA500 )
         call HandleListAddHandle(StatusBarFrameList[GetPlayerId(p)],NewFrameText)
         call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
         call SaveFrameHandle(HH,idp,StringHash(newString+"2"),NewFrameText)
@@ -6178,6 +6483,8 @@ function CreateModeIndicatorWithPauseForm takes unit newCaster, string newString
         call SaveReal               (HH, GetHandleId(NewFrame), c_DURATION, newDur)
         call SaveReal               (HH, GetHandleId(NewFrameText), c_DURATION, newDur)
         call SaveInteger            (HH, id, c_POSITION, j)
+        call SaveInteger(HH,GetHandleId(NewFrame),SB_POS,0)
+        call RemoveSavedString(HH,GetHandleId(NewFrame),SB_TXT)
         call SaveStr                (HH, id, c_NAME, newString)
         call TimerStart             (newTimer, 0.05, true, function CreateModeIndicatorWithPauseForm_Periodic)
     else
@@ -6212,14 +6519,9 @@ function CreateModeIndicatorFormDispellable_Periodic takes nothing returns nothi
     endif
     //if IsUnitPaused(caster)==false and IsUnitHidden(caster)==false and GetUnitAbilityLevel(caster,'Pet1')==0 then
     call SaveReal           (HH, GetHandleId(NewFrame), c_DURATION, duration)
-    call SetFrameText( LoadFrameHandle(HH, idp,StringHash(mode_name+"2")), R2SW(duration,2, 1) )
+    call StatusIndicatorText(NewFrame, idp, mode_name, duration)
     //endif
-    if GetFrameHeight( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 ))==0.132 then
-        call SetFrameSize( NewFrame, .0237*(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505), .0237 *(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505))
-        call SetFrameRelativePoint( NewFrame, FRAMEPOINT_CENTER, StatusBarFrame, FRAMEPOINT_LEFT, 0.017+position*0.025*(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505), 0.005 )
-    else
-        call SetFrameRelativePoint( NewFrame, FRAMEPOINT_CENTER, StatusBarFrame, FRAMEPOINT_LEFT, 0.017+position*0.025, 0.005 )
-    endif
+    call StatusIndicatorPlace(NewFrame, position)
     if duration<=0 or udg_B==false or DU2==false or UnitIsAlive(caster)==false or GetUnitAbilityLevel(caster,buffId)==0 then
         call SaveReal(HH, GetHandleId(NewFrame), c_DURATION, 0)
         call SaveReal(HH, GetHandleId(LoadFrameHandle(HH, idp,StringHash(mode_name+"2"))), c_DURATION, 0)
@@ -6241,30 +6543,29 @@ function CreateModeIndicatorFormDispellable takes unit newCaster, string newStri
     local framehandle NewFrameText  = null
     local player p=GetOwningPlayer(newCaster)
     local integer idp=GetHandleId(p)
-    local integer i=9
+    local integer i=23
     local integer j=0
     if LoadFrameHandle(HH, idp,StringHash(newString))==null then    
-        set NewFrame = CreateFrameByType( "SIMPLEBUTTON", newString, StatusBarFrame, "", 0 )
+        set NewFrame = BlzCreateFrameByType( "BACKDROP", newString, StatusBarFrame, "", 0 )
         call ClearFrameAllPoints( NewFrame )
-        call SetFrameTexture( NewFrame, newString, 0, true )
-        call SetFrameTexture( NewFrame, newString, 1, true )
-        call SetFrameTexture( NewFrame, newString, 2, true )
-        call SetFrameSize( NewFrame, .0237, .0237 )
-        call SetFramePriority( NewFrame, 7 )
+        call BlzFrameSetTexture( NewFrame, newString, 0, true )
+        call SetFrameBackgroundSize( NewFrame, 0, .0201 )
+        call SetFrameSize( NewFrame, .0201, .0201 )
+        call BlzFrameSetLevel( NewFrame, 7 )
         call HandleListAddHandle(StatusBarFrameList[GetPlayerId(p)],NewFrame)
         call SetFrameParent(NewFrame,StatusBarFrame)
         call ShowFrame( NewFrame, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
         call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
         call SaveFrameHandle(HH,idp,StringHash(newString),NewFrame)
+        call StatusIndicatorTooltip(NewFrame, newString)
         //call SaveReal               (HH, GetHandleId(NewFrame), c_DURATION, 2)
         
-        set NewFrameText=CreateFrameByType( "SIMPLETEXT", newString+"1", NewFrame, "", 0 )
+        set NewFrameText=BlzCreateFrameByType( "TEXT", newString+"1", NewFrame, "", 0 )
         call ClearFrameAllPoints( NewFrameText )
-        call SetFrameBlendMode( NewFrameText, 0, BLEND_MODE_BLEND )
-        call SetFrameFont( NewFrameText, "Fonts\\FRIZQT__.TTF", .008, 0 )
-        call SetFrameTextAlignment( NewFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_LEFT )
+        call BlzFrameSetFont( NewFrameText, "Fonts\\FRIZQT__.TTF", .008, 0 )
+        call BlzFrameSetTextAlignment( NewFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
         call SetFrameText( NewFrameText, R2SW(newDur,2, 1) )
-        call SetFrameTextColour( NewFrameText, ConvertColour(255,255,30,30) )
+        call BlzFrameSetTextColor( NewFrameText, ConvertColour(255,255,30,30) )
         call HandleListAddHandle(StatusBarFrameList[GetPlayerId(p)],NewFrameText)
         call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
         call SaveFrameHandle(HH,idp,StringHash(newString+"2"),NewFrameText)
@@ -6294,6 +6595,8 @@ function CreateModeIndicatorFormDispellable takes unit newCaster, string newStri
         call SaveReal               (HH, GetHandleId(NewFrame), c_DURATION, newDur)
         call SaveReal               (HH, GetHandleId(NewFrameText), c_DURATION, newDur)
         call SaveInteger            (HH, id, c_POSITION, j)
+        call SaveInteger(HH,GetHandleId(NewFrame),SB_POS,0)
+        call RemoveSavedString(HH,GetHandleId(NewFrame),SB_TXT)
         call SaveStr                (HH, id, c_NAME, newString)
         call TimerStart             (newTimer, 0.05, true, function CreateModeIndicatorFormDispellable_Periodic)
     else
@@ -6329,15 +6632,10 @@ function CreateModeIndicatorWithPauseFormDispellable_Periodic takes nothing retu
 
     if IsUnitPaused(caster)==false and IsUnitHidden(caster)==false and GetUnitAbilityLevel(caster,'Pet1')==0 then
         call SaveReal           (HH, GetHandleId(NewFrame), c_DURATION, duration)
-        call SetFrameText( LoadFrameHandle(HH, idp,StringHash(mode_name+"2")), R2SW(duration,2, 1) )
+        call StatusIndicatorText(NewFrame, idp, mode_name, duration)
     endif
 
-    if GetFrameHeight( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 ))==0.132 then
-        call SetFrameSize( NewFrame, .0237*(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505), .0237 *(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505))
-        call SetFrameRelativePoint( NewFrame, FRAMEPOINT_CENTER, StatusBarFrame, FRAMEPOINT_LEFT, 0.017+position*0.025*(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505), 0.005 )
-    else
-        call SetFrameRelativePoint( NewFrame, FRAMEPOINT_CENTER, StatusBarFrame, FRAMEPOINT_LEFT, 0.017+position*0.025, 0.005 )
-    endif
+    call StatusIndicatorPlace(NewFrame, position)
     if duration<=0 or udg_B==false or DU2==false or UnitIsAlive(caster)==false or GetUnitAbilityLevel(caster,buffId)==0 then
         call ShowFrame( NewFrame, false )
         call SaveReal(HH, GetHandleId(NewFrame), c_DURATION, 0)
@@ -6359,30 +6657,29 @@ function CreateModeIndicatorWithPauseFormDispellable takes unit newCaster, strin
     local framehandle NewFrameText  = null
     local player p              =GetOwningPlayer(newCaster)
     local integer idp           =GetHandleId(p)
-    local integer i=9
+    local integer i=23
     local integer j=0
     if LoadFrameHandle(HH, idp,StringHash(newString))==null then    
-        set NewFrame = CreateFrameByType( "SIMPLEBUTTON", newString, StatusBarFrame, "", 0 )
+        set NewFrame = BlzCreateFrameByType( "BACKDROP", newString, StatusBarFrame, "", 0 )
         call ClearFrameAllPoints( NewFrame )
-        call SetFrameTexture( NewFrame, newString, 0, true )
-        call SetFrameTexture( NewFrame, newString, 1, true )
-        call SetFrameTexture( NewFrame, newString, 2, true )
-        call SetFrameSize( NewFrame, .0237, .0237 )
-        call SetFramePriority( NewFrame, 7 )
+        call BlzFrameSetTexture( NewFrame, newString, 0, true )
+        call SetFrameBackgroundSize( NewFrame, 0, .0201 )
+        call SetFrameSize( NewFrame, .0201, .0201 )
+        call BlzFrameSetLevel( NewFrame, 7 )
         call HandleListAddHandle(StatusBarFrameList[GetPlayerId(p)],NewFrame)
         call SetFrameParent(NewFrame,StatusBarFrame)
         call ShowFrame( NewFrame, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
         call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
         call SaveFrameHandle(HH,idp,StringHash(newString),NewFrame)
+        call StatusIndicatorTooltip(NewFrame, newString)
         //call SaveReal               (HH, GetHandleId(NewFrame), c_DURATION, 2)
         
-        set NewFrameText=CreateFrameByType( "SIMPLETEXT", newString+"1", NewFrame, "", 0 )
+        set NewFrameText=BlzCreateFrameByType( "TEXT", newString+"1", NewFrame, "", 0 )
         call ClearFrameAllPoints( NewFrameText )
-        call SetFrameBlendMode( NewFrameText, 0, BLEND_MODE_BLEND )
-        call SetFrameFont( NewFrameText, "Fonts\\FRIZQT__.TTF", .008, 0 )
-        call SetFrameTextAlignment( NewFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_LEFT )
+        call BlzFrameSetFont( NewFrameText, "Fonts\\FRIZQT__.TTF", .008, 0 )
+        call BlzFrameSetTextAlignment( NewFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
         call SetFrameText( NewFrameText, R2SW(newDur,2, 1) )
-        call SetFrameTextColour( NewFrameText, 0xFFFFA500 )
+        call BlzFrameSetTextColor( NewFrameText, 0xFFFFA500 )
         call HandleListAddHandle(StatusBarFrameList[GetPlayerId(p)],NewFrameText)
         call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
         call SaveFrameHandle(HH,idp,StringHash(newString+"2"),NewFrameText)
@@ -6412,6 +6709,8 @@ function CreateModeIndicatorWithPauseFormDispellable takes unit newCaster, strin
         call SaveReal               (HH, GetHandleId(NewFrame), c_DURATION, newDur)
         call SaveReal               (HH, GetHandleId(NewFrameText), c_DURATION, newDur)
         call SaveInteger            (HH, id, c_POSITION, j)
+        call SaveInteger(HH,GetHandleId(NewFrame),SB_POS,0)
+        call RemoveSavedString(HH,GetHandleId(NewFrame),SB_TXT)
         call SaveStr                (HH, id, c_NAME, newString)
         call SaveInteger            (HH, id, c_BUFF, buffId)
         call TimerStart             (newTimer, 0.05, true, function CreateModeIndicatorWithPauseFormDispellable_Periodic)
@@ -6449,15 +6748,10 @@ function CreateModeIndicatorWithPauseFormDispellableHash_Periodic takes nothing 
 
     if IsUnitPaused(caster)==false and IsUnitHidden(caster)==false and GetUnitAbilityLevel(caster,'Pet1')==0 then
         call SaveReal           (HH, GetHandleId(NewFrame), c_DURATION, duration)
-        call SetFrameText( LoadFrameHandle(HH, idp,StringHash(mode_name+"2")), R2SW(duration,2, 1) )
+        call StatusIndicatorText(NewFrame, idp, mode_name, duration)
     endif
 
-    if GetFrameHeight( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 ))==0.132 then
-        call SetFrameSize( NewFrame, .0237*(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505), .0237 *(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505))
-        call SetFrameRelativePoint( NewFrame, FRAMEPOINT_CENTER, StatusBarFrame, FRAMEPOINT_LEFT, 0.017+position*0.025*(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505), 0.005 )
-    else
-        call SetFrameRelativePoint( NewFrame, FRAMEPOINT_CENTER, StatusBarFrame, FRAMEPOINT_LEFT, 0.017+position*0.025, 0.005 )
-    endif
+    call StatusIndicatorPlace(NewFrame, position)
     if duration<=0 or udg_B==false or DU2==false or UnitIsAlive(caster)==false or LoadReal(h,GetHandleId(caster),HashId)==0 then
         call ShowFrame( NewFrame, false )
         call SaveReal(HH, GetHandleId(NewFrame), c_DURATION, 0)
@@ -6479,30 +6773,29 @@ function CreateModeIndicatorWithPauseFormDispellableHash takes unit newCaster, s
     local framehandle NewFrameText  = null
     local player p              =GetOwningPlayer(newCaster)
     local integer idp           =GetHandleId(p)
-    local integer i=9
+    local integer i=23
     local integer j=0
     if LoadFrameHandle(HH, idp,StringHash(newString))==null then    
-        set NewFrame = CreateFrameByType( "SIMPLEBUTTON", newString, StatusBarFrame, "", 0 )
+        set NewFrame = BlzCreateFrameByType( "BACKDROP", newString, StatusBarFrame, "", 0 )
         call ClearFrameAllPoints( NewFrame )
-        call SetFrameTexture( NewFrame, newString, 0, true )
-        call SetFrameTexture( NewFrame, newString, 1, true )
-        call SetFrameTexture( NewFrame, newString, 2, true )
-        call SetFrameSize( NewFrame, .0237, .0237 )
-        call SetFramePriority( NewFrame, 7 )
+        call BlzFrameSetTexture( NewFrame, newString, 0, true )
+        call SetFrameBackgroundSize( NewFrame, 0, .0201 )
+        call SetFrameSize( NewFrame, .0201, .0201 )
+        call BlzFrameSetLevel( NewFrame, 7 )
         call HandleListAddHandle(StatusBarFrameList[GetPlayerId(p)],NewFrame)
         call SetFrameParent(NewFrame,StatusBarFrame)
         call ShowFrame( NewFrame, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
         call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
         call SaveFrameHandle(HH,idp,StringHash(newString),NewFrame)
+        call StatusIndicatorTooltip(NewFrame, newString)
         //call SaveReal               (HH, GetHandleId(NewFrame), c_DURATION, 2)
         
-        set NewFrameText=CreateFrameByType( "SIMPLETEXT", newString+"1", NewFrame, "", 0 )
+        set NewFrameText=BlzCreateFrameByType( "TEXT", newString+"1", NewFrame, "", 0 )
         call ClearFrameAllPoints( NewFrameText )
-        call SetFrameBlendMode( NewFrameText, 0, BLEND_MODE_BLEND )
-        call SetFrameFont( NewFrameText, "Fonts\\FRIZQT__.TTF", .008, 0 )
-        call SetFrameTextAlignment( NewFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_LEFT )
+        call BlzFrameSetFont( NewFrameText, "Fonts\\FRIZQT__.TTF", .008, 0 )
+        call BlzFrameSetTextAlignment( NewFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
         call SetFrameText( NewFrameText, R2SW(newDur,2, 1) )
-        call SetFrameTextColour( NewFrameText, 0xFFFFA500 )
+        call BlzFrameSetTextColor( NewFrameText, 0xFFFFA500 )
         call HandleListAddHandle(StatusBarFrameList[GetPlayerId(p)],NewFrameText)
         call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
         call SaveFrameHandle(HH,idp,StringHash(newString+"2"),NewFrameText)
@@ -6532,6 +6825,8 @@ function CreateModeIndicatorWithPauseFormDispellableHash takes unit newCaster, s
         call SaveReal               (HH, GetHandleId(NewFrame), c_DURATION, newDur)
         call SaveReal               (HH, GetHandleId(NewFrameText), c_DURATION, newDur)
         call SaveInteger            (HH, id, c_POSITION, j)
+        call SaveInteger(HH,GetHandleId(NewFrame),SB_POS,0)
+        call RemoveSavedString(HH,GetHandleId(NewFrame),SB_TXT)
         call SaveStr                (HH, id, c_NAME, newString)
         call SaveInteger            (HH, id, c_BUFF, HashString)
         call TimerStart             (newTimer, 0.05, true, function CreateModeIndicatorWithPauseFormDispellableHash_Periodic)
@@ -23257,6 +23552,9 @@ function OnButtonPressResist takes nothing returns nothing
     local real height = GetFrameHeight( but )
 
     if p == GetLocalPlayer( ) then
+        // снять фокус с кнопки «%», чтобы не глушились горячие клавиши
+        call BlzFrameSetEnable( but, false )
+        call BlzFrameSetEnable( but, true )
         if but != null then
             if not LoadBoolean( HH, bid, 'prs2' ) then
                 call SetFrameSize( but, width - .0015, height - .0015 ) // .024, .0465
@@ -23368,6 +23666,9 @@ function OnButtonCloseStatusBar takes nothing returns nothing
     if p==GetLocalPlayer() then
         call ShowFrame( OpenStatusButton, true )
         call ShowFrame( StatusBarFrame, false )
+        // снять фокус с нажатой кнопки, чтобы не глушились горячие клавиши
+        call BlzFrameSetEnable( BlzGetTriggerFrame(), false )
+        call BlzFrameSetEnable( BlzGetTriggerFrame(), true )
     endif
     set p = null
     set but = null
@@ -23410,6 +23711,11 @@ function OnButtonOpenStatusBar takes nothing returns nothing
     if p==GetLocalPlayer() then
         call ShowFrame( StatusBarFrame, true )
         call ShowFrame( OpenStatusButton, false )
+        // кнопку «закрыть» прячут таверна и диалоги — показываем её вместе со статус-баром
+        call ShowFrame( CloseStatusButton, true )
+        // снять фокус с нажатой кнопки, чтобы не глушились горячие клавиши
+        call BlzFrameSetEnable( BlzGetTriggerFrame(), false )
+        call BlzFrameSetEnable( BlzGetTriggerFrame(), true )
     endif
     loop
     exitwhen i>=12
@@ -23434,6 +23740,8 @@ function ToggleOpenStatusBar takes nothing returns nothing
         if IsFrameVisible(OpenStatusButton)==true then
             call ShowFrame( StatusBarFrame, true )
             call ShowFrame( OpenStatusButton, false )
+            // кнопку «закрыть» прячут таверна и диалоги — показываем её вместе со статус-баром
+            call ShowFrame( CloseStatusButton, true )
         elseif IsFrameVisible(CloseStatusButton)==true then
             call ShowFrame( OpenStatusButton, true )
             call ShowFrame( StatusBarFrame, false )
@@ -33698,14 +34006,9 @@ function ShadowCoverIndicator_Periodic takes nothing returns nothing
     endif
     //if IsUnitPaused(caster)==false and IsUnitHidden(caster)==false and GetUnitAbilityLevel(caster,'Pet1')==0 then
     call SaveReal           (HH, GetHandleId(NewFrame), c_DURATION, duration)
-    call SetFrameText( LoadFrameHandle(HH, idp,StringHash(mode_name+"2")), R2SW(duration,2, 1) )
+    call StatusIndicatorText(NewFrame, idp, mode_name, duration)
     //endif
-if GetFrameHeight( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 ))==0.132 then
-        call SetFrameSize( NewFrame, .0237*(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505), .0237 *(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505))
-        call SetFrameRelativePoint( NewFrame, FRAMEPOINT_CENTER, StatusBarFrame, FRAMEPOINT_LEFT, 0.017+position*0.025*(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505), 0.005 )
-    else
-        call SetFrameRelativePoint( NewFrame, FRAMEPOINT_CENTER, StatusBarFrame, FRAMEPOINT_LEFT, 0.017+position*0.025, 0.005 )
-    endif
+call StatusIndicatorPlace(NewFrame, position)
     if duration<=0 or udg_B==false or DU2==false or UnitIsAlive(caster)==false then
         call SaveReal(HH, GetHandleId(NewFrame), c_DURATION, 0)
         call SaveReal(HH, GetHandleId(LoadFrameHandle(HH, idp,StringHash(mode_name+"2"))), c_DURATION, 0)
@@ -33726,30 +34029,29 @@ function ShadowCoverIndicator takes unit newCaster, string newString, real newDu
     local framehandle NewFrameText  = null
     local player p=GetOwningPlayer(newCaster)
     local integer idp=GetHandleId(p)
-    local integer i=9
+    local integer i=23
     local integer j=0
     if LoadFrameHandle(HH, idp,StringHash(newString))==null then    
-        set NewFrame = CreateFrameByType( "SIMPLEBUTTON", newString, StatusBarFrame, "", 0 )
+        set NewFrame = BlzCreateFrameByType( "BACKDROP", newString, StatusBarFrame, "", 0 )
         call ClearFrameAllPoints( NewFrame )
-        call SetFrameTexture( NewFrame, newString, 0, true )
-        call SetFrameTexture( NewFrame, newString, 1, true )
-        call SetFrameTexture( NewFrame, newString, 2, true )
-        call SetFrameSize( NewFrame, .0237, .0237 )
-        call SetFramePriority( NewFrame, 7 )
+        call BlzFrameSetTexture( NewFrame, newString, 0, true )
+        call SetFrameBackgroundSize( NewFrame, 0, .0201 )
+        call SetFrameSize( NewFrame, .0201, .0201 )
+        call BlzFrameSetLevel( NewFrame, 7 )
         call HandleListAddHandle(StatusBarFrameList[GetPlayerId(p)],NewFrame)
         call SetFrameParent(NewFrame,StatusBarFrame)
         call ShowFrame( NewFrame, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
         call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
         call SaveFrameHandle(HH,idp,StringHash(newString),NewFrame)
+        call StatusIndicatorTooltip(NewFrame, newString)
         //call SaveReal               (HH, GetHandleId(NewFrame), c_DURATION, 2)
         
-        set NewFrameText=CreateFrameByType( "SIMPLETEXT", newString+"1", NewFrame, "", 0 )
+        set NewFrameText=BlzCreateFrameByType( "TEXT", newString+"1", NewFrame, "", 0 )
         call ClearFrameAllPoints( NewFrameText )
-        call SetFrameBlendMode( NewFrameText, 0, BLEND_MODE_BLEND )
-        call SetFrameFont( NewFrameText, "Fonts\\FRIZQT__.TTF", .008, 0 )
-        call SetFrameTextAlignment( NewFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_LEFT )
+        call BlzFrameSetFont( NewFrameText, "Fonts\\FRIZQT__.TTF", .008, 0 )
+        call BlzFrameSetTextAlignment( NewFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
         call SetFrameText( NewFrameText, R2SW(newDur,2, 1) )
-        call SetFrameTextColour( NewFrameText, ConvertColour(255,255,30,30) )
+        call BlzFrameSetTextColor( NewFrameText, ConvertColour(255,255,30,30) )
         call HandleListAddHandle(StatusBarFrameList[GetPlayerId(p)],NewFrameText)
         call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
         call SaveFrameHandle(HH,idp,StringHash(newString+"2"),NewFrameText)
@@ -33779,6 +34081,8 @@ function ShadowCoverIndicator takes unit newCaster, string newString, real newDu
         call SaveReal               (HH, GetHandleId(NewFrame), c_DURATION, newDur)
         call SaveReal               (HH, GetHandleId(NewFrameText), c_DURATION, newDur)
         call SaveInteger            (HH, id, c_POSITION, j)
+        call SaveInteger(HH,GetHandleId(NewFrame),SB_POS,0)
+        call RemoveSavedString(HH,GetHandleId(NewFrame),SB_TXT)
         call SaveStr                (HH, id, c_NAME, newString)
         call TimerStart             (newTimer, 0.05, true, function ShadowCoverIndicator_Periodic)
     else
@@ -36925,6 +37229,24 @@ call TriggerAddCondition(gg_trg_LevelUp,Condition(function Trig_LevelUp_Conditio
 call TriggerAddAction(gg_trg_LevelUp,function Trig_LevelUp_Actions)
 endfunction
 
+// Кнопки статус-бара на обычных фреймах: подложка — текстура галочки, надпись — TEXT, который не ловит мышь
+function StatusBarButtonSkin takes framehandle btn returns nothing
+    local framehandle bg=BlzCreateFrameByType("BACKDROP","StatusBarBtnBg",btn,"",0)
+    call BlzFrameSetAllPoints(bg,btn)
+    call SetFrameBackgroundSize(bg,0,.015)
+    call BlzFrameSetTexture(bg,"UI\\Widgets\\EscMenu\\Human\\checkbox-depressed.blp",0,true)
+    set bg=null
+endfunction
+function StatusBarButtonText takes framehandle btn, string t returns framehandle
+    local framehandle tx=BlzCreateFrameByType("TEXT","StatusBarBtnText",btn,"",0)
+    call BlzFrameSetAllPoints(tx,btn)
+    call BlzFrameSetFont(tx,"Fonts\\FRIZQT__.TTF",.01,0)
+    call BlzFrameSetTextAlignment(tx,TEXT_JUSTIFY_CENTER,TEXT_JUSTIFY_MIDDLE)
+    call BlzFrameSetTextColor(tx,0xFFFFA500)
+    call BlzFrameSetEnable(tx,false)
+    call BlzFrameSetText(tx,"|cFFFFA500"+t+"|r")
+    return tx
+endfunction
 function Trig_StatusBar_Actions takes nothing returns nothing
     local framehandle gameUI=GetOriginFrame( ORIGIN_FRAME_GAME_UI, 0 )
     local framehandle consoleUI=GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 )
@@ -37299,35 +37621,68 @@ function Trig_StatusBar_Actions takes nothing returns nothing
 
     set x=0
 
-    set StatusBarFrame=CreateFrameByType("SIMPLEFRAME", "StatusBar", null, "", 0)
+    // Статус-бар на обычных фреймах: подложка BACKDROP с синей рамкой карты, иконки — BACKDROP, цифры — TEXT
+    set StatusBarFrame=BlzCreateFrameByType("BACKDROP", "StatusBar", gameUI, "", 0)
+    call TimerStart(CreateTimer(),0.25,true,function StatusIndicatorConsole)
+    call StatusIndicatorTipInit()
     call ClearFrameAllPoints( StatusBarFrame )
     call SetFrameRelativePoint( StatusBarFrame, FRAMEPOINT_CENTER, consoleUI, FRAMEPOINT_BOTTOM,  .0013, .1  )
-    call SetFrameSize( StatusBarFrame, .21, .0425)
-    call SetFrameTextureEx(StatusBarFrame, 0, "UI\\widgets\\BattleNet\\bnet-tooltip-background.blp", false, "Choice-tooltip-border.blp", 0)
-    call SetFramePriority( StatusBarFrame, 7 )
+    call SetFrameSize( StatusBarFrame, .21, .05)
+    call SetFrameBackdropTexture(StatusBarFrame, 0, "UI\\widgets\\BattleNet\\bnet-tooltip-background.blp", true, true, "Choice-tooltip-border.blp", BORDER_FLAG_ALL, false)
+    call SetFrameBorderEnabled(StatusBarFrame, 0, true)
+    call SetFrameBorderSize(StatusBarFrame, 0, 0.008)
+    call SetFrameBackgroundInsets(StatusBarFrame, 0, 0.003, 0.003, 0.003, 0.003)
 
-    set CloseStatusButton=CreateFrameByType( "SIMPLEBUTTON", "StatusBarClose", StatusBarFrame, "", 0 )
+    // кнопка «свернуть»: BUTTON с подложкой-галочкой и надписью «V»
+    set CloseStatusButton=BlzCreateFrameByType( "BUTTON", "StatusBarClose", StatusBarFrame, "", 0 )
     call ClearFrameAllPoints( CloseStatusButton )
-    call SetFrameTexture( CloseStatusButton, "UI\\Widgets\\EscMenu\\Human\\checkbox-depressed.blp", 0, true )
-    call SetFrameTexture( CloseStatusButton, "UI\\Widgets\\EscMenu\\Human\\checkbox-depressed.blp", 1, true )
-    call SetFrameTexture( CloseStatusButton, "UI\\Widgets\\EscMenu\\Human\\checkbox-depressed.blp", 2, true )
     call SetFrameSize( CloseStatusButton, .015, .015 )
-    call SetFrameParent( CloseStatusButton, StatusBarFrame )
-    call ShowFrame( CloseStatusButton, true )
-    call SetFramePriority( CloseStatusButton, 7 )
     call SetFrameRelativePoint( CloseStatusButton, FRAMEPOINT_CENTER, StatusBarFrame, FRAMEPOINT_TOPRIGHT, -.003, -.003 )
-    
-    set CloseStatusButtonText=CreateFrameByType( "SIMPLETEXT", "StatusBarCloseText", CloseStatusButton, "", 0 )
-    call ClearFrameAllPoints( CloseStatusButtonText )
-    call SetFrameBlendMode( CloseStatusButtonText, 0, BLEND_MODE_BLEND )
-    call SetFrameFont( CloseStatusButtonText, "Fonts\\FRIZQT__.TTF", .01, 0 )
-    call SetFrameTextAlignment( CloseStatusButtonText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
-    call SetFrameTextColour( CloseStatusButtonText, 0xFFFFA500 )
-    call SetFrameParent( CloseStatusButtonText, CloseStatusButton )
-    call SetFrameText( CloseStatusButtonText, "V")
-    call ShowFrame( CloseStatusButtonText, true )
-    call SetFrameRelativePoint( CloseStatusButtonText, FRAMEPOINT_CENTER, CloseStatusButton, FRAMEPOINT_CENTER, .00011, .0 )
-    
+    call StatusBarButtonSkin( CloseStatusButton )
+    set CloseStatusButtonText=StatusBarButtonText( CloseStatusButton, "V" )
+    call ShowFrame( CloseStatusButton, true )
+    call BlzFrameSetLevel( CloseStatusButton, 5 )
+    call StatusBarNoHi( CloseStatusButton )
+
+    // прокрутка индикаторов: до 24 иконок, на виду 8. Колесо — над иконками и полосой (без кнопки на весь бар:
+    // она перехватывала мышь — клики не проходили сквозь статус-бар, а наведение не доходило до иконок)
+    set SB_Track=BlzCreateFrameByType( "BACKDROP", "StatusBarTrack", StatusBarFrame, "", 0 )
+    call BlzFrameSetPoint( SB_Track, FRAMEPOINT_BOTTOMLEFT, StatusBarFrame, FRAMEPOINT_BOTTOMLEFT, 0.01, 0.004 )
+    call BlzFrameSetPoint( SB_Track, FRAMEPOINT_BOTTOMRIGHT, StatusBarFrame, FRAMEPOINT_BOTTOMRIGHT, -0.01, 0.004 )
+    call BlzFrameSetSize( SB_Track, 0.19, 0.005 )
+    call BlzFrameSetTexture( SB_Track, "TooltipLessVisible.blp", 0, true )
+    call BlzFrameSetLevel( SB_Track, 2 )
+    set SB_Thumb=BlzCreateFrameByType( "BACKDROP", "StatusBarThumb", StatusBarFrame, "", 0 )
+    call BlzFrameSetSize( SB_Thumb, 0.06, 0.004 )
+    call BlzFrameSetPoint( SB_Thumb, FRAMEPOINT_LEFT, SB_Track, FRAMEPOINT_LEFT, 0, 0 )
+    call BlzFrameSetTexture( SB_Thumb, "war3mapImported\\shop_thumb_blue.tga", 0, true )
+    call BlzFrameSetLevel( SB_Thumb, 3 )
+    set SB_BtnL=BlzCreateFrameByType( "BUTTON", "StatusBarScrollL", StatusBarFrame, "", 0 )
+    call BlzFrameSetPoint( SB_BtnL, FRAMEPOINT_LEFT, SB_Track, FRAMEPOINT_LEFT, 0, 0 )
+    call BlzFrameSetPoint( SB_BtnL, FRAMEPOINT_RIGHT, SB_Track, FRAMEPOINT_CENTER, 0, 0 )
+    call BlzFrameSetSize( SB_BtnL, 0.095, 0.012 )
+    call BlzFrameSetLevel( SB_BtnL, 4 )
+    call StatusBarNoHi( SB_BtnL )
+    set SB_BtnR=BlzCreateFrameByType( "BUTTON", "StatusBarScrollR", StatusBarFrame, "", 0 )
+    call BlzFrameSetPoint( SB_BtnR, FRAMEPOINT_LEFT, SB_Track, FRAMEPOINT_CENTER, 0, 0 )
+    call BlzFrameSetPoint( SB_BtnR, FRAMEPOINT_RIGHT, SB_Track, FRAMEPOINT_RIGHT, 0, 0 )
+    call BlzFrameSetSize( SB_BtnR, 0.095, 0.012 )
+    call BlzFrameSetLevel( SB_BtnR, 4 )
+    call StatusBarNoHi( SB_BtnR )
+    set tOnClick = CreateTrigger( )
+    call BlzTriggerRegisterFrameEvent( tOnClick, SB_BtnL, FRAMEEVENT_CONTROL_CLICK )
+    call BlzTriggerRegisterFrameEvent( tOnClick, SB_BtnR, FRAMEEVENT_CONTROL_CLICK )
+    call BlzTriggerRegisterFrameEvent( tOnClick, SB_BtnL, FRAMEEVENT_MOUSE_WHEEL )
+    call BlzTriggerRegisterFrameEvent( tOnClick, SB_BtnR, FRAMEEVENT_MOUSE_WHEEL )
+    call TriggerAddAction( tOnClick, function StatusBarScrollClick )
+    set SB_WheelTrig=tOnClick
+    set SB_HoverTrig=CreateTrigger()
+    call TriggerAddAction( SB_HoverTrig, function StatusIndicatorHover )
+    call ShowFrame( SB_Track, false )
+    call ShowFrame( SB_Thumb, false )
+    call ShowFrame( SB_BtnL, false )
+    call ShowFrame( SB_BtnR, false )
+
     set tOnPress = CreateTrigger( )
     set tOnUnPress = CreateTrigger( )
     set tOnClick = CreateTrigger( )
@@ -37339,27 +37694,15 @@ function Trig_StatusBar_Actions takes nothing returns nothing
     call TriggerAddAction( tOnUnPress, function OnButtonUnpress )
     call TriggerAddAction( tOnClick, function OnButtonCloseStatusBar )
 
-    set OpenStatusButton=CreateFrameByType( "SIMPLEBUTTON", "StatusBarOpen", null, "", 0 )
+    // кнопка «развернуть»: на месте «свернуть», видна, когда статус-бар скрыт
+    set OpenStatusButton=BlzCreateFrameByType( "BUTTON", "StatusBarOpen", gameUI, "", 0 )
     call ClearFrameAllPoints( OpenStatusButton )
-    call SetFrameTexture( OpenStatusButton, "UI\\Widgets\\EscMenu\\Human\\checkbox-depressed.blp", 0, true )
-    call SetFrameTexture( OpenStatusButton, "UI\\Widgets\\EscMenu\\Human\\checkbox-depressed.blp", 1, true )
-    call SetFrameTexture( OpenStatusButton, "UI\\Widgets\\EscMenu\\Human\\checkbox-depressed.blp", 2, true )
     call SetFrameSize( OpenStatusButton, .015, .015 )
+    call SetFrameRelativePoint( OpenStatusButton, FRAMEPOINT_CENTER, StatusBarFrame, FRAMEPOINT_TOPRIGHT, -.003, -.003 )
+    call StatusBarButtonSkin( OpenStatusButton )
+    set OpenStatusButtonText=StatusBarButtonText( OpenStatusButton, "Λ" )
     call ShowFrame( OpenStatusButton, true )
-    call SetFramePriority( OpenStatusButton, 7 )
-    call SetFrameRelativePoint( OpenStatusButton, FRAMEPOINT_CENTER, CloseStatusButton, FRAMEPOINT_CENTER, 0, 0 )
-    
-    set OpenStatusButtonText=CreateFrameByType( "SIMPLETEXT", "StatusBarOpenText", OpenStatusButton, "", 0 )
-    call ClearFrameAllPoints( OpenStatusButtonText )
-    call SetFrameBlendMode( OpenStatusButtonText, 0, BLEND_MODE_BLEND )
-    call SetFrameFont( OpenStatusButtonText, "Fonts\\FRIZQT__.TTF", .01, 0 )
-    call SetFrameTextAlignment( OpenStatusButtonText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
-    call SetFrameTextColour( OpenStatusButtonText, 0xFFFFA500 )
-    call SetFrameParent( OpenStatusButtonText, OpenStatusButton )
-    call SetFrameText( OpenStatusButtonText, "Λ")
-    call ShowFrame( OpenStatusButtonText, true )
-    call SetFrameRelativePoint( OpenStatusButtonText, FRAMEPOINT_CENTER, OpenStatusButton, FRAMEPOINT_CENTER, .00033, .0 )
-    
+
     set tOnPress = CreateTrigger( )
     set tOnUnPress = CreateTrigger( )
     set tOnClick = CreateTrigger( )       
@@ -38053,264 +38396,256 @@ function Trig_StatusBar_Actions takes nothing returns nothing
     endif
     call TriggerRegisterFrameEvent( ShTrgOpen, OpenShopButton, FRAMEEVENT_CONTROL_CLICK )
 
-    set ResistBarFrame=CreateFrameByType("SIMPLEFRAME", "ResistBar", null, "", 0)
+    set ResistBarFrame=BlzCreateFrameByType("BACKDROP", "ResistBar", gameUI, "", 0)
     call ClearFrameAllPoints( ResistBarFrame )
     call SetFrameRelativePoint( ResistBarFrame, FRAMEPOINT_CENTER, GetOriginFrame(ORIGIN_FRAME_PORTRAIT,0), FRAMEPOINT_CENTER,  -.001, -.014  )
     call SetFrameSize( ResistBarFrame, .094, .125)    
     call ShowFrame( ResistBarFrame, false )
-    call SetFrameTextureEx(ResistBarFrame, 0, "TooltipLessVisible.blp", false, "Choice-tooltip-border.blp", 0)
-    call SetFramePriority( ResistBarFrame, 6 )
+    call SetFrameBackdropTexture(ResistBarFrame, 0, "TooltipLessVisible.blp", true, true, "Choice-tooltip-border.blp", BORDER_FLAG_ALL, false)
+    call SetFrameBorderEnabled(ResistBarFrame, 0, true)
+    call SetFrameBorderSize(ResistBarFrame, 0, 0.008)
+    call SetFrameBackgroundInsets(ResistBarFrame, 0, 0.003, 0.003, 0.003, 0.003)
+    // обычный фрейм и так поверх SIMPLE-интерфейса; уровень — выше статус-бара и остальных окон
+    call BlzFrameSetLevel( ResistBarFrame, 100 )
 
-    set ResistBarFrameText=CreateFrameByType( "SIMPLETEXT", "MoveSpeedRoot", ResistBarFrame, "", 0 )
+    set ResistBarFrameText=BlzCreateFrameByType( "TEXT", "MoveSpeedRoot", ResistBarFrame, "", 0 )
+    set ResistTxt[0]=ResistBarFrameText
     call ClearFrameAllPoints( ResistBarFrameText )
-    call SetFrameBlendMode( ResistBarFrameText, 0, BLEND_MODE_BLEND )
-    call SetFrameFont( ResistBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
-    call SetFrameTextAlignment( ResistBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
-    call SetFrameTextColour( ResistBarFrameText, 0xFFFF1010 )
-    call SetFrameParent( ResistBarFrameText, ResistBarFrame )
+    call BlzFrameSetFont( ResistBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+    call BlzFrameSetTextAlignment( ResistBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
+    call BlzFrameSetTextColor( ResistBarFrameText, 0xFFFF1010 )
     call SetFrameText( ResistBarFrameText, "Move Speed")
     call ShowFrame( ResistBarFrameText, true )
     call SetFrameRelativePoint( ResistBarFrameText, FRAMEPOINT_TOPLEFT, ResistBarFrame, FRAMEPOINT_TOPLEFT,  .005, -.008  )
 
-    set ResistBarFrameText=CreateFrameByType( "SIMPLETEXT", "MoveSpeedNumber", ResistBarFrame, "", 0 )
+    set ResistBarFrameText=BlzCreateFrameByType( "TEXT", "MoveSpeedNumber", ResistBarFrame, "", 0 )
+    set ResistTxt[1]=ResistBarFrameText
     call ClearFrameAllPoints( ResistBarFrameText )
-    call SetFrameBlendMode( ResistBarFrameText, 0, BLEND_MODE_BLEND )
-    call SetFrameFont( ResistBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
-    call SetFrameTextAlignment( ResistBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
-    call SetFrameTextColour( ResistBarFrameText, 0xFFFF1010 )
-    call SetFrameParent( ResistBarFrameText, ResistBarFrame )
+    call BlzFrameSetFont( ResistBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+    call BlzFrameSetTextAlignment( ResistBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
+    call BlzFrameSetTextColor( ResistBarFrameText, 0xFFFF1010 )
     call SetFrameText( ResistBarFrameText, "0")
     call ShowFrame( ResistBarFrameText, true )
     call SetFrameRelativePoint( ResistBarFrameText, FRAMEPOINT_TOPRIGHT, ResistBarFrame, FRAMEPOINT_TOPRIGHT,  -.01, -.008  )
 
-    set ResistBarFrameText=CreateFrameByType( "SIMPLETEXT", "AttackSpeedRoot", ResistBarFrame, "", 0 )
+    set ResistBarFrameText=BlzCreateFrameByType( "TEXT", "AttackSpeedRoot", ResistBarFrame, "", 0 )
+    set ResistTxt[2]=ResistBarFrameText
     call ClearFrameAllPoints( ResistBarFrameText )
-    call SetFrameBlendMode( ResistBarFrameText, 0, BLEND_MODE_BLEND )
-    call SetFrameFont( ResistBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
-    call SetFrameTextAlignment( ResistBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
-    call SetFrameTextColour( ResistBarFrameText, 0xFFFF6060 )
-    call SetFrameParent( ResistBarFrameText, ResistBarFrame )
+    call BlzFrameSetFont( ResistBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+    call BlzFrameSetTextAlignment( ResistBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
+    call BlzFrameSetTextColor( ResistBarFrameText, 0xFFFF6060 )
     call SetFrameText( ResistBarFrameText, "Attack Speed")
     call ShowFrame( ResistBarFrameText, true )
-    call SetFrameRelativePoint( ResistBarFrameText, FRAMEPOINT_TOPLEFT, GetFrameByName("MoveSpeedRoot",0), FRAMEPOINT_TOPLEFT,  0, -.01  )
+    call SetFrameRelativePoint( ResistBarFrameText, FRAMEPOINT_TOPLEFT, ResistTxt[0], FRAMEPOINT_TOPLEFT,  0, -.01  )
 
-    set ResistBarFrameText=CreateFrameByType( "SIMPLETEXT", "AttackSpeedNumber", ResistBarFrame, "", 0 )
+    set ResistBarFrameText=BlzCreateFrameByType( "TEXT", "AttackSpeedNumber", ResistBarFrame, "", 0 )
+    set ResistTxt[3]=ResistBarFrameText
     call ClearFrameAllPoints( ResistBarFrameText )
-    call SetFrameBlendMode( ResistBarFrameText, 0, BLEND_MODE_BLEND )
-    call SetFrameFont( ResistBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
-    call SetFrameTextAlignment( ResistBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
-    call SetFrameTextColour( ResistBarFrameText, 0xFFFF6060 )
-    call SetFrameParent( ResistBarFrameText, ResistBarFrame )
+    call BlzFrameSetFont( ResistBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+    call BlzFrameSetTextAlignment( ResistBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
+    call BlzFrameSetTextColor( ResistBarFrameText, 0xFFFF6060 )
     call SetFrameText( ResistBarFrameText, "0")
     call ShowFrame( ResistBarFrameText, true )
     call SetFrameRelativePoint( ResistBarFrameText, FRAMEPOINT_TOPRIGHT, ResistBarFrame, FRAMEPOINT_TOPRIGHT,  -.01, -.018  )
 
-    set ResistBarFrameText=CreateFrameByType( "SIMPLETEXT", "MagicDMGImpRoot", ResistBarFrame, "", 0 )
+    set ResistBarFrameText=BlzCreateFrameByType( "TEXT", "MagicDMGImpRoot", ResistBarFrame, "", 0 )
+    set ResistTxt[4]=ResistBarFrameText
     call ClearFrameAllPoints( ResistBarFrameText )
-    call SetFrameBlendMode( ResistBarFrameText, 0, BLEND_MODE_BLEND )
-    call SetFrameFont( ResistBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
-    call SetFrameTextAlignment( ResistBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
-    call SetFrameTextColour( ResistBarFrameText, 0xFFFF60AA )
-    call SetFrameParent( ResistBarFrameText, ResistBarFrame )
+    call BlzFrameSetFont( ResistBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+    call BlzFrameSetTextAlignment( ResistBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
+    call BlzFrameSetTextColor( ResistBarFrameText, 0xFFFF60AA )
     call SetFrameText( ResistBarFrameText, "Magic DMG Bonus")
     call ShowFrame( ResistBarFrameText, true )
-    call SetFrameRelativePoint( ResistBarFrameText, FRAMEPOINT_TOPLEFT, GetFrameByName("AttackSpeedRoot",0), FRAMEPOINT_TOPLEFT,  0, -.01  )
+    call SetFrameRelativePoint( ResistBarFrameText, FRAMEPOINT_TOPLEFT, ResistTxt[2], FRAMEPOINT_TOPLEFT,  0, -.01  )
 
-    set ResistBarFrameText=CreateFrameByType( "SIMPLETEXT", "MagicDMGImpNumber", ResistBarFrame, "", 0 )
+    set ResistBarFrameText=BlzCreateFrameByType( "TEXT", "MagicDMGImpNumber", ResistBarFrame, "", 0 )
+    set ResistTxt[5]=ResistBarFrameText
     call ClearFrameAllPoints( ResistBarFrameText )
-    call SetFrameBlendMode( ResistBarFrameText, 0, BLEND_MODE_BLEND )
-    call SetFrameFont( ResistBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
-    call SetFrameTextAlignment( ResistBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
-    call SetFrameTextColour( ResistBarFrameText, 0xFFFF60AA )
-    call SetFrameParent( ResistBarFrameText, ResistBarFrame )
+    call BlzFrameSetFont( ResistBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+    call BlzFrameSetTextAlignment( ResistBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
+    call BlzFrameSetTextColor( ResistBarFrameText, 0xFFFF60AA )
     call SetFrameText( ResistBarFrameText, "0%")
     call ShowFrame( ResistBarFrameText, true )
     call SetFrameRelativePoint( ResistBarFrameText, FRAMEPOINT_TOPRIGHT, ResistBarFrame, FRAMEPOINT_TOPRIGHT,  -.01, -.028  )
 
-    set ResistBarFrameText=CreateFrameByType( "SIMPLETEXT", "GeneralDMGImpRoot", ResistBarFrame, "", 0 )
+    set ResistBarFrameText=BlzCreateFrameByType( "TEXT", "GeneralDMGImpRoot", ResistBarFrame, "", 0 )
+    set ResistTxt[6]=ResistBarFrameText
     call ClearFrameAllPoints( ResistBarFrameText )
-    call SetFrameBlendMode( ResistBarFrameText, 0, BLEND_MODE_BLEND )
-    call SetFrameFont( ResistBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
-    call SetFrameTextAlignment( ResistBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
-    call SetFrameTextColour( ResistBarFrameText, 0xFFFFAACC )
-    call SetFrameParent( ResistBarFrameText, ResistBarFrame )
+    call BlzFrameSetFont( ResistBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+    call BlzFrameSetTextAlignment( ResistBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
+    call BlzFrameSetTextColor( ResistBarFrameText, 0xFFFFAACC )
     call SetFrameText( ResistBarFrameText, "Full DMG Bonus")
     call ShowFrame( ResistBarFrameText, true )
-    call SetFrameRelativePoint( ResistBarFrameText, FRAMEPOINT_TOPLEFT, GetFrameByName("MagicDMGImpRoot",0), FRAMEPOINT_TOPLEFT,  0, -.01  )
+    call SetFrameRelativePoint( ResistBarFrameText, FRAMEPOINT_TOPLEFT, ResistTxt[4], FRAMEPOINT_TOPLEFT,  0, -.01  )
 
-    set ResistBarFrameText=CreateFrameByType( "SIMPLETEXT", "GeneralDMGImpNumber", ResistBarFrame, "", 0 )
+    set ResistBarFrameText=BlzCreateFrameByType( "TEXT", "GeneralDMGImpNumber", ResistBarFrame, "", 0 )
+    set ResistTxt[7]=ResistBarFrameText
     call ClearFrameAllPoints( ResistBarFrameText )
-    call SetFrameBlendMode( ResistBarFrameText, 0, BLEND_MODE_BLEND )
-    call SetFrameFont( ResistBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
-    call SetFrameTextAlignment( ResistBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
-    call SetFrameTextColour( ResistBarFrameText, 0xFFFFAACC )
-    call SetFrameParent( ResistBarFrameText, ResistBarFrame )
+    call BlzFrameSetFont( ResistBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+    call BlzFrameSetTextAlignment( ResistBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
+    call BlzFrameSetTextColor( ResistBarFrameText, 0xFFFFAACC )
     call SetFrameText( ResistBarFrameText, "0%")
     call ShowFrame( ResistBarFrameText, true )
     call SetFrameRelativePoint( ResistBarFrameText, FRAMEPOINT_TOPRIGHT, ResistBarFrame, FRAMEPOINT_TOPRIGHT,  -.01, -.038  )
 
-    set ResistBarFrameText=CreateFrameByType( "SIMPLETEXT", "MagicalResistRoot", ResistBarFrame, "", 0 )
+    set ResistBarFrameText=BlzCreateFrameByType( "TEXT", "MagicalResistRoot", ResistBarFrame, "", 0 )
+    set ResistTxt[8]=ResistBarFrameText
     call ClearFrameAllPoints( ResistBarFrameText )
-    call SetFrameBlendMode( ResistBarFrameText, 0, BLEND_MODE_BLEND )
-    call SetFrameFont( ResistBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
-    call SetFrameTextAlignment( ResistBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
-    call SetFrameTextColour( ResistBarFrameText, 0xFFAAAAFF )
-    call SetFrameParent( ResistBarFrameText, ResistBarFrame )
+    call BlzFrameSetFont( ResistBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+    call BlzFrameSetTextAlignment( ResistBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
+    call BlzFrameSetTextColor( ResistBarFrameText, 0xFFAAAAFF )
     call SetFrameText( ResistBarFrameText, "Magic Resist")
     call ShowFrame( ResistBarFrameText, true )
-    call SetFrameRelativePoint( ResistBarFrameText, FRAMEPOINT_TOPLEFT, GetFrameByName("GeneralDMGImpRoot",0), FRAMEPOINT_TOPLEFT,  0, -.01  )
+    call SetFrameRelativePoint( ResistBarFrameText, FRAMEPOINT_TOPLEFT, ResistTxt[6], FRAMEPOINT_TOPLEFT,  0, -.01  )
 
-    set ResistBarFrameText=CreateFrameByType( "SIMPLETEXT", "MagicalResistNumber", ResistBarFrame, "", 0 )
+    set ResistBarFrameText=BlzCreateFrameByType( "TEXT", "MagicalResistNumber", ResistBarFrame, "", 0 )
+    set ResistTxt[9]=ResistBarFrameText
     call ClearFrameAllPoints( ResistBarFrameText )
-    call SetFrameBlendMode( ResistBarFrameText, 0, BLEND_MODE_BLEND )
-    call SetFrameFont( ResistBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
-    call SetFrameTextAlignment( ResistBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
-    call SetFrameTextColour( ResistBarFrameText, 0xFFAAAAFF )
-    call SetFrameParent( ResistBarFrameText, ResistBarFrame )
+    call BlzFrameSetFont( ResistBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+    call BlzFrameSetTextAlignment( ResistBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
+    call BlzFrameSetTextColor( ResistBarFrameText, 0xFFAAAAFF )
     call SetFrameText( ResistBarFrameText, "0%")
     call ShowFrame( ResistBarFrameText, true )
     call SetFrameRelativePoint( ResistBarFrameText, FRAMEPOINT_TOPRIGHT, ResistBarFrame, FRAMEPOINT_TOPRIGHT,  -.01, -.048  )
 
-    set ResistBarFrameText=CreateFrameByType( "SIMPLETEXT", "GeneralResistRoot", ResistBarFrame, "", 0 )
+    set ResistBarFrameText=BlzCreateFrameByType( "TEXT", "GeneralResistRoot", ResistBarFrame, "", 0 )
+    set ResistTxt[10]=ResistBarFrameText
     call ClearFrameAllPoints( ResistBarFrameText )
-    call SetFrameBlendMode( ResistBarFrameText, 0, BLEND_MODE_BLEND )
-    call SetFrameFont( ResistBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
-    call SetFrameTextAlignment( ResistBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
-    call SetFrameTextColour( ResistBarFrameText, 0xFFBBBBBB )
-    call SetFrameParent( ResistBarFrameText, ResistBarFrame )
+    call BlzFrameSetFont( ResistBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+    call BlzFrameSetTextAlignment( ResistBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
+    call BlzFrameSetTextColor( ResistBarFrameText, 0xFFBBBBBB )
     call SetFrameText( ResistBarFrameText, "Full Resist")
     call ShowFrame( ResistBarFrameText, true )
-    call SetFrameRelativePoint( ResistBarFrameText, FRAMEPOINT_TOPLEFT, GetFrameByName("MagicalResistRoot",0), FRAMEPOINT_TOPLEFT,  0, -.01  )
+    call SetFrameRelativePoint( ResistBarFrameText, FRAMEPOINT_TOPLEFT, ResistTxt[8], FRAMEPOINT_TOPLEFT,  0, -.01  )
 
-    set ResistBarFrameText=CreateFrameByType( "SIMPLETEXT", "GeneralResistNumber", ResistBarFrame, "", 0 )
+    set ResistBarFrameText=BlzCreateFrameByType( "TEXT", "GeneralResistNumber", ResistBarFrame, "", 0 )
+    set ResistTxt[11]=ResistBarFrameText
     call ClearFrameAllPoints( ResistBarFrameText )
-    call SetFrameBlendMode( ResistBarFrameText, 0, BLEND_MODE_BLEND )
-    call SetFrameFont( ResistBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
-    call SetFrameTextAlignment( ResistBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
-    call SetFrameTextColour( ResistBarFrameText, 0xFFBBBBBB )
-    call SetFrameParent( ResistBarFrameText, ResistBarFrame )
+    call BlzFrameSetFont( ResistBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+    call BlzFrameSetTextAlignment( ResistBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
+    call BlzFrameSetTextColor( ResistBarFrameText, 0xFFBBBBBB )
     call SetFrameText( ResistBarFrameText, "0%")
     call ShowFrame( ResistBarFrameText, true )
     call SetFrameRelativePoint( ResistBarFrameText, FRAMEPOINT_TOPRIGHT, ResistBarFrame, FRAMEPOINT_TOPRIGHT,  -.01, -.058  )
 
-    set ResistBarFrameText=CreateFrameByType( "SIMPLETEXT", "ResistSummRoot", ResistBarFrame, "", 0 )
+    set ResistBarFrameText=BlzCreateFrameByType( "TEXT", "ResistSummRoot", ResistBarFrame, "", 0 )
+    set ResistTxt[12]=ResistBarFrameText
     call ClearFrameAllPoints( ResistBarFrameText )
-    call SetFrameBlendMode( ResistBarFrameText, 0, BLEND_MODE_BLEND )
-    call SetFrameFont( ResistBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
-    call SetFrameTextAlignment( ResistBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
-    call SetFrameTextColour( ResistBarFrameText, 0xFFDDDDDD )
-    call SetFrameParent( ResistBarFrameText, ResistBarFrame )
+    call BlzFrameSetFont( ResistBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+    call BlzFrameSetTextAlignment( ResistBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
+    call BlzFrameSetTextColor( ResistBarFrameText, 0xFFDDDDDD )
     call SetFrameText( ResistBarFrameText, "Resist Sum")
     call ShowFrame( ResistBarFrameText, true )
-    call SetFrameRelativePoint( ResistBarFrameText, FRAMEPOINT_TOPLEFT, GetFrameByName("GeneralResistRoot",0), FRAMEPOINT_TOPLEFT,  0, -.01  )
+    call SetFrameRelativePoint( ResistBarFrameText, FRAMEPOINT_TOPLEFT, ResistTxt[10], FRAMEPOINT_TOPLEFT,  0, -.01  )
 
-    set ResistBarFrameText=CreateFrameByType( "SIMPLETEXT", "ResistSummNumber", ResistBarFrame, "", 0 )
+    set ResistBarFrameText=BlzCreateFrameByType( "TEXT", "ResistSummNumber", ResistBarFrame, "", 0 )
+    set ResistTxt[13]=ResistBarFrameText
     call ClearFrameAllPoints( ResistBarFrameText )
-    call SetFrameBlendMode( ResistBarFrameText, 0, BLEND_MODE_BLEND )
-    call SetFrameFont( ResistBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
-    call SetFrameTextAlignment( ResistBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
-    call SetFrameTextColour( ResistBarFrameText, 0xFFDDDDDD )
-    call SetFrameParent( ResistBarFrameText, ResistBarFrame )
+    call BlzFrameSetFont( ResistBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+    call BlzFrameSetTextAlignment( ResistBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
+    call BlzFrameSetTextColor( ResistBarFrameText, 0xFFDDDDDD )
     call SetFrameText( ResistBarFrameText, "0%")
     call ShowFrame( ResistBarFrameText, true )
     call SetFrameRelativePoint( ResistBarFrameText, FRAMEPOINT_TOPRIGHT, ResistBarFrame, FRAMEPOINT_TOPRIGHT,  -.01, -.068  )
 
-    set ResistBarFrameText=CreateFrameByType( "SIMPLETEXT", "ControlResistRoot", ResistBarFrame, "", 0 )
+    set ResistBarFrameText=BlzCreateFrameByType( "TEXT", "ControlResistRoot", ResistBarFrame, "", 0 )
+    set ResistTxt[14]=ResistBarFrameText
     call ClearFrameAllPoints( ResistBarFrameText )
-    call SetFrameBlendMode( ResistBarFrameText, 0, BLEND_MODE_BLEND )
-    call SetFrameFont( ResistBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
-    call SetFrameTextAlignment( ResistBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
-    call SetFrameTextColour( ResistBarFrameText, 0xFFFFA500 )
-    call SetFrameParent( ResistBarFrameText, ResistBarFrame )
+    call BlzFrameSetFont( ResistBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+    call BlzFrameSetTextAlignment( ResistBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
+    call BlzFrameSetTextColor( ResistBarFrameText, 0xFFFFA500 )
     call SetFrameText( ResistBarFrameText, "Control Resist")
     call ShowFrame( ResistBarFrameText, true )
-    call SetFrameRelativePoint( ResistBarFrameText, FRAMEPOINT_TOPLEFT, GetFrameByName("ResistSummRoot",0), FRAMEPOINT_TOPLEFT,  0, -.01  )
+    call SetFrameRelativePoint( ResistBarFrameText, FRAMEPOINT_TOPLEFT, ResistTxt[12], FRAMEPOINT_TOPLEFT,  0, -.01  )
 
-    set ResistBarFrameText=CreateFrameByType( "SIMPLETEXT", "ControlResistNumber", ResistBarFrame, "", 0 )
+    set ResistBarFrameText=BlzCreateFrameByType( "TEXT", "ControlResistNumber", ResistBarFrame, "", 0 )
+    set ResistTxt[15]=ResistBarFrameText
     call ClearFrameAllPoints( ResistBarFrameText )
-    call SetFrameBlendMode( ResistBarFrameText, 0, BLEND_MODE_BLEND )
-    call SetFrameFont( ResistBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
-    call SetFrameTextAlignment( ResistBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
-    call SetFrameTextColour( ResistBarFrameText, 0xFFFFA500 )
-    call SetFrameParent( ResistBarFrameText, ResistBarFrame )
+    call BlzFrameSetFont( ResistBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+    call BlzFrameSetTextAlignment( ResistBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
+    call BlzFrameSetTextColor( ResistBarFrameText, 0xFFFFA500 )
     call SetFrameText( ResistBarFrameText, "0%")
     call ShowFrame( ResistBarFrameText, true )
     call SetFrameRelativePoint( ResistBarFrameText, FRAMEPOINT_TOPRIGHT, ResistBarFrame, FRAMEPOINT_TOPRIGHT,  -.01, -.078  )
 
-    set ResistBarFrameText=CreateFrameByType( "SIMPLETEXT", "HPHealEffRoot", ResistBarFrame, "", 0 )
+    set ResistBarFrameText=BlzCreateFrameByType( "TEXT", "HPHealEffRoot", ResistBarFrame, "", 0 )
+    set ResistTxt[16]=ResistBarFrameText
     call ClearFrameAllPoints( ResistBarFrameText )
-    call SetFrameBlendMode( ResistBarFrameText, 0, BLEND_MODE_BLEND )
-    call SetFrameFont( ResistBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
-    call SetFrameTextAlignment( ResistBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
-    call SetFrameTextColour( ResistBarFrameText, 0xFF55FF55 )
-    call SetFrameParent( ResistBarFrameText, ResistBarFrame )
+    call BlzFrameSetFont( ResistBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+    call BlzFrameSetTextAlignment( ResistBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
+    call BlzFrameSetTextColor( ResistBarFrameText, 0xFF55FF55 )
     call SetFrameText( ResistBarFrameText, "HP Heal Eff.")
     call ShowFrame( ResistBarFrameText, true )
-    call SetFrameRelativePoint( ResistBarFrameText, FRAMEPOINT_TOPLEFT, GetFrameByName("ControlResistRoot",0), FRAMEPOINT_TOPLEFT,  0, -.01  )
+    call SetFrameRelativePoint( ResistBarFrameText, FRAMEPOINT_TOPLEFT, ResistTxt[14], FRAMEPOINT_TOPLEFT,  0, -.01  )
 
-    set ResistBarFrameText=CreateFrameByType( "SIMPLETEXT", "HPHealEffNumber", ResistBarFrame, "", 0 )
+    set ResistBarFrameText=BlzCreateFrameByType( "TEXT", "HPHealEffNumber", ResistBarFrame, "", 0 )
+    set ResistTxt[17]=ResistBarFrameText
     call ClearFrameAllPoints( ResistBarFrameText )
-    call SetFrameBlendMode( ResistBarFrameText, 0, BLEND_MODE_BLEND )
-    call SetFrameFont( ResistBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
-    call SetFrameTextAlignment( ResistBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
-    call SetFrameTextColour( ResistBarFrameText, 0xFF55FF55 )
-    call SetFrameParent( ResistBarFrameText, ResistBarFrame )
+    call BlzFrameSetFont( ResistBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+    call BlzFrameSetTextAlignment( ResistBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
+    call BlzFrameSetTextColor( ResistBarFrameText, 0xFF55FF55 )
     call SetFrameText( ResistBarFrameText, "0%")
     call ShowFrame( ResistBarFrameText, true )
     call SetFrameRelativePoint( ResistBarFrameText, FRAMEPOINT_TOPRIGHT, ResistBarFrame, FRAMEPOINT_TOPRIGHT,  -.01, -.088  )
 
-    set ResistBarFrameText=CreateFrameByType( "SIMPLETEXT", "MPHealEffRoot", ResistBarFrame, "", 0 )
+    set ResistBarFrameText=BlzCreateFrameByType( "TEXT", "MPHealEffRoot", ResistBarFrame, "", 0 )
+    set ResistTxt[18]=ResistBarFrameText
     call ClearFrameAllPoints( ResistBarFrameText )
-    call SetFrameBlendMode( ResistBarFrameText, 0, BLEND_MODE_BLEND )
-    call SetFrameFont( ResistBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
-    call SetFrameTextAlignment( ResistBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
-    call SetFrameTextColour( ResistBarFrameText, 0xFF7777FF )
-    call SetFrameParent( ResistBarFrameText, ResistBarFrame )
+    call BlzFrameSetFont( ResistBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+    call BlzFrameSetTextAlignment( ResistBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
+    call BlzFrameSetTextColor( ResistBarFrameText, 0xFF7777FF )
     call SetFrameText( ResistBarFrameText, "MP Heal Eff.")
     call ShowFrame( ResistBarFrameText, true )
-    call SetFrameRelativePoint( ResistBarFrameText, FRAMEPOINT_TOPLEFT, GetFrameByName("HPHealEffRoot",0), FRAMEPOINT_TOPLEFT,  0, -.01  )
+    call SetFrameRelativePoint( ResistBarFrameText, FRAMEPOINT_TOPLEFT, ResistTxt[16], FRAMEPOINT_TOPLEFT,  0, -.01  )
 
-    set ResistBarFrameText=CreateFrameByType( "SIMPLETEXT", "MPHealEffNumber", ResistBarFrame, "", 0 )
+    set ResistBarFrameText=BlzCreateFrameByType( "TEXT", "MPHealEffNumber", ResistBarFrame, "", 0 )
+    set ResistTxt[19]=ResistBarFrameText
     call ClearFrameAllPoints( ResistBarFrameText )
-    call SetFrameBlendMode( ResistBarFrameText, 0, BLEND_MODE_BLEND )
-    call SetFrameFont( ResistBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
-    call SetFrameTextAlignment( ResistBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
-    call SetFrameTextColour( ResistBarFrameText, 0xFF7777FF )
-    call SetFrameParent( ResistBarFrameText, ResistBarFrame )
+    call BlzFrameSetFont( ResistBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+    call BlzFrameSetTextAlignment( ResistBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
+    call BlzFrameSetTextColor( ResistBarFrameText, 0xFF7777FF )
     call SetFrameText( ResistBarFrameText, "0%")
     call ShowFrame( ResistBarFrameText, true )
     call SetFrameRelativePoint( ResistBarFrameText, FRAMEPOINT_TOPRIGHT, ResistBarFrame, FRAMEPOINT_TOPRIGHT,  -.01, -.098  )
 
-    set ResistBarFrameText=CreateFrameByType( "SIMPLETEXT", "MPLossReduceRoot", ResistBarFrame, "", 0 )
+    set ResistBarFrameText=BlzCreateFrameByType( "TEXT", "MPLossReduceRoot", ResistBarFrame, "", 0 )
+    set ResistTxt[20]=ResistBarFrameText
     call ClearFrameAllPoints( ResistBarFrameText )
-    call SetFrameBlendMode( ResistBarFrameText, 0, BLEND_MODE_BLEND )
-    call SetFrameFont( ResistBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
-    call SetFrameTextAlignment( ResistBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
-    call SetFrameTextColour( ResistBarFrameText, 0xFF9999FF )
-    call SetFrameParent( ResistBarFrameText, ResistBarFrame )
+    call BlzFrameSetFont( ResistBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+    call BlzFrameSetTextAlignment( ResistBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
+    call BlzFrameSetTextColor( ResistBarFrameText, 0xFF9999FF )
     call SetFrameText( ResistBarFrameText, "MP Loss Reduce")
     call ShowFrame( ResistBarFrameText, true )
-    call SetFrameRelativePoint( ResistBarFrameText, FRAMEPOINT_TOPLEFT, GetFrameByName("MPHealEffRoot",0), FRAMEPOINT_TOPLEFT,  0, -.01  )
+    call SetFrameRelativePoint( ResistBarFrameText, FRAMEPOINT_TOPLEFT, ResistTxt[18], FRAMEPOINT_TOPLEFT,  0, -.01  )
 
-    set ResistBarFrameText=CreateFrameByType( "SIMPLETEXT", "MPLossReduceNumber", ResistBarFrame, "", 0 )
+    set ResistBarFrameText=BlzCreateFrameByType( "TEXT", "MPLossReduceNumber", ResistBarFrame, "", 0 )
+    set ResistTxt[21]=ResistBarFrameText
     call ClearFrameAllPoints( ResistBarFrameText )
-    call SetFrameBlendMode( ResistBarFrameText, 0, BLEND_MODE_BLEND )
-    call SetFrameFont( ResistBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
-    call SetFrameTextAlignment( ResistBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
-    call SetFrameTextColour( ResistBarFrameText, 0xFF9999FF )
-    call SetFrameParent( ResistBarFrameText, ResistBarFrame )
+    call BlzFrameSetFont( ResistBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+    call BlzFrameSetTextAlignment( ResistBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
+    call BlzFrameSetTextColor( ResistBarFrameText, 0xFF9999FF )
     call SetFrameText( ResistBarFrameText, "0%")
     call ShowFrame( ResistBarFrameText, true )
     call SetFrameRelativePoint( ResistBarFrameText, FRAMEPOINT_TOPRIGHT, ResistBarFrame, FRAMEPOINT_TOPRIGHT,  -.01, -.108  )
+    // скрыть панель уже после настройки текстуры и текстов (раньше скрытие сбрасывалось и окно было открыто со старта)
+    call ShowFrame( ResistBarFrame, false )
 
-    set OpenResistButton=CreateFrameByType( "SIMPLEBUTTON", "ResistBarOpen", null, "", 0 )
+    // кнопка «%»: BUTTON без шаблона (без своих текстур и подсветки), картинка — BACKDROP поверх, уровень выше панели
+    set OpenResistButton=BlzCreateFrameByType( "BUTTON", "ResistBarOpen", gameUI, "", 0 )
     call ClearFrameAllPoints( OpenResistButton )
-    call SetFrameTexture( OpenResistButton, "Emotes\\ResistButton.blp", 0, true )
-    call SetFrameTexture( OpenResistButton, "Emotes\\ResistButton.blp", 1, true )
-    call SetFrameTexture( OpenResistButton, "Emotes\\ResistButton.blp", 2, true )
     call SetFrameSize( OpenResistButton, .017, .017 )
     call ShowFrame( OpenResistButton, true )
-    call SetFramePriority( OpenResistButton, 7 )
+    call BlzFrameSetLevel( OpenResistButton, 101 )
+    set ResistTxt[22]=BlzCreateFrameByType( "BACKDROP", "ResistBarOpenSkin", OpenResistButton, "", 0 )
+    call BlzFrameSetAllPoints( ResistTxt[22], OpenResistButton )
+    call BlzFrameSetTexture( ResistTxt[22], "Emotes\\ResistButton.blp", 0, true )
+    call SetFrameBackgroundSize( ResistTxt[22], 0, .017 )
+    // копия картинки «%» на самой панели: дочерний фрейм рисуется поверх родителя, поэтому
+    // открытое окно не закрывает кнопку (кнопка всё равно ловит мышь — копия клики не берёт)
+    set ResistTxt[23]=BlzCreateFrameByType( "BACKDROP", "ResistBarOpenSkin2", ResistBarFrame, "", 0 )
+    call BlzFrameSetAllPoints( ResistTxt[23], OpenResistButton )
+    call BlzFrameSetTexture( ResistTxt[23], "Emotes\\ResistButton.blp", 0, true )
+    call SetFrameBackgroundSize( ResistTxt[23], 0, .017 )
     call SetFrameRelativePoint( OpenResistButton, FRAMEPOINT_CENTER, ResistBarFrame, FRAMEPOINT_TOPRIGHT, -.003, -.003 )
 
     set tOnPress = CreateTrigger( )
@@ -39977,34 +40312,34 @@ local integer i
 set seconds=seconds+1
 set x=0
 if IsFrameVisible(ResistBarFrame) then
-    call SetFrameText(GetFrameByName("MoveSpeedNumber",0), I2S(R2I(GetUnitMoveSpeed(GetUnitSelected(GetLocalPlayer())))))
-    call SetFrameText(GetFrameByName("AttackSpeedNumber",0), R2SW(GetUnitAttackSpeed(GetUnitSelected(GetLocalPlayer())),1,1))
-    call SetFrameText(GetFrameByName("MagicDMGImpNumber",0), I2S(R2I((MathRealCeil(myCustomDamage2_inc(GetUnitSelected(GetLocalPlayer()),1)*100))))+"%")
-    call SetFrameText(GetFrameByName("GeneralDMGImpNumber",0), I2S(R2I((MathRealCeil(myCustomDamage3_user(GetUnitSelected(GetLocalPlayer()),1)*100))))+"%")
-    call SetFrameText(GetFrameByName("MagicalResistNumber",0), I2S(R2I((MathRealCeil((1-myCustomDamage2_dec(GetUnitSelected(GetLocalPlayer()),1))*100))))+"%")
-    call SetFrameText(GetFrameByName("GeneralResistNumber",0), I2S(R2I((MathRealCeil((1-myCustomDamage3_targ(GetUnitSelected(GetLocalPlayer()),1))*100))))+"%")
-    call SetFrameText(GetFrameByName("ResistSummNumber",0), I2S(R2I((MathRealCeil((1-myCustomDamage2_dec(GetUnitSelected(GetLocalPlayer()),myCustomDamage3_targ(GetUnitSelected(GetLocalPlayer()),1)))*100))))+"%")
-    call SetFrameText(GetFrameByName("ControlResistNumber",0), I2S(R2I(MathRealCeil(((10-CalculateControlResist(GetUnitSelected(GetLocalPlayer()), 10))*10))))+"%")
-    call SetFrameText(GetFrameByName("HPHealEffNumber",0), I2S(R2I(MathRealCeil(myCustomHeal2(GetUnitSelected(GetLocalPlayer()),1)*100)))+"%")
-    call SetFrameText(GetFrameByName("MPHealEffNumber",0), I2S(R2I(MathRealCeil(myCustomMana2(GetUnitSelected(GetLocalPlayer()),1)*100)))+"%")
-    call SetFrameText(GetFrameByName("MPLossReduceNumber",0), I2S(R2I(MathRealCeil(myCustomMana3(GetUnitSelected(GetLocalPlayer()),1)*100)))+"%")
+    call SetFrameText(ResistTxt[1], I2S(R2I(GetUnitMoveSpeed(GetUnitSelected(GetLocalPlayer())))))
+    call SetFrameText(ResistTxt[3], R2SW(GetUnitAttackSpeed(GetUnitSelected(GetLocalPlayer())),1,1))
+    call SetFrameText(ResistTxt[5], I2S(R2I((MathRealCeil(myCustomDamage2_inc(GetUnitSelected(GetLocalPlayer()),1)*100))))+"%")
+    call SetFrameText(ResistTxt[7], I2S(R2I((MathRealCeil(myCustomDamage3_user(GetUnitSelected(GetLocalPlayer()),1)*100))))+"%")
+    call SetFrameText(ResistTxt[9], I2S(R2I((MathRealCeil((1-myCustomDamage2_dec(GetUnitSelected(GetLocalPlayer()),1))*100))))+"%")
+    call SetFrameText(ResistTxt[11], I2S(R2I((MathRealCeil((1-myCustomDamage3_targ(GetUnitSelected(GetLocalPlayer()),1))*100))))+"%")
+    call SetFrameText(ResistTxt[13], I2S(R2I((MathRealCeil((1-myCustomDamage2_dec(GetUnitSelected(GetLocalPlayer()),myCustomDamage3_targ(GetUnitSelected(GetLocalPlayer()),1)))*100))))+"%")
+    call SetFrameText(ResistTxt[15], I2S(R2I(MathRealCeil(((10-CalculateControlResist(GetUnitSelected(GetLocalPlayer()), 10))*10))))+"%")
+    call SetFrameText(ResistTxt[17], I2S(R2I(MathRealCeil(myCustomHeal2(GetUnitSelected(GetLocalPlayer()),1)*100)))+"%")
+    call SetFrameText(ResistTxt[19], I2S(R2I(MathRealCeil(myCustomMana2(GetUnitSelected(GetLocalPlayer()),1)*100)))+"%")
+    call SetFrameText(ResistTxt[21], I2S(R2I(MathRealCeil(myCustomMana3(GetUnitSelected(GetLocalPlayer()),1)*100)))+"%")
 endif
 if ModuloInteger(seconds,10)<1 and GetFrameHeight( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 ))==0.132 then
     //call SetFrameGridSize( GetOriginFrame( ORIGIN_FRAME_INVENTORY_BAR, 0 ), 3, 4 )
     if GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 ))==0.505 then
-        call SetFrameSize( StatusBarFrame, .21*(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505), .0425)
+        call SetFrameSize( StatusBarFrame, .21, .05)
         call SetFrameSize( ResistBarFrame, .094*(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505), .125)
-        call SetFrameText( GetFrameByName("MoveSpeedRoot",0), "Move Speed")
-        call SetFrameText( GetFrameByName("AttackSpeedRoot",0), "Attack Speed")
-        call SetFrameText( GetFrameByName("MagicDMGImpRoot",0), "Magic DMG Bonus")
-        call SetFrameText( GetFrameByName("GeneralDMGImpRoot",0), "Full DMG Bonus")
-        call SetFrameText( GetFrameByName("MagicalResistRoot",0), "Magic Resist")
-        call SetFrameText( GetFrameByName("GeneralResistRoot",0), "Full Resist")
-        call SetFrameText( GetFrameByName("ResistSummRoot",0), "Resist Sum")
-        call SetFrameText( GetFrameByName("ControlResistRoot",0), "Control Resist")
-        call SetFrameText( GetFrameByName("HPHealEffRoot",0), "HP Heal Eff.")
-        call SetFrameText( GetFrameByName("MPHealEffRoot",0), "MP Heal Eff.")
-        call SetFrameText( GetFrameByName("MPLossReduceRoot",0), "MP Loss Reduce")
+        call SetFrameText( ResistTxt[0], "Move Speed")
+        call SetFrameText( ResistTxt[2], "Attack Speed")
+        call SetFrameText( ResistTxt[4], "Magic DMG Bonus")
+        call SetFrameText( ResistTxt[6], "Full DMG Bonus")
+        call SetFrameText( ResistTxt[8], "Magic Resist")
+        call SetFrameText( ResistTxt[10], "Full Resist")
+        call SetFrameText( ResistTxt[12], "Resist Sum")
+        call SetFrameText( ResistTxt[14], "Control Resist")
+        call SetFrameText( ResistTxt[16], "HP Heal Eff.")
+        call SetFrameText( ResistTxt[18], "MP Heal Eff.")
+        call SetFrameText( ResistTxt[20], "MP Loss Reduce")
         call SetFrameRelativePoint(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 0), FRAMEPOINT_TOPLEFT, GetFrameRelativePointParent(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 0),FRAMEPOINT_TOPLEFT),FRAMEPOINT_TOPRIGHT,.0175*(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505), -.0292)
         call SetFrameRelativePoint(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 0), FRAMEPOINT_TOP, GetFrameRelativePointParent(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 0),FRAMEPOINT_TOP),FRAMEPOINT_TOPLEFT,.00, -.0292)
         call SetFrameRelativePoint(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 0), FRAMEPOINT_TOPRIGHT, GetFrameRelativePointParent(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 0),FRAMEPOINT_TOPRIGHT),FRAMEPOINT_TOPLEFT,.00, -.0292)
@@ -40063,19 +40398,19 @@ if ModuloInteger(seconds,10)<1 and GetFrameHeight( GetFrameChild(GetOriginFrame(
         call SetFrameSpriteScale( GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON_COOLDOWN_INDICATOR, 9), 0.65)
         call SetFrameSpriteScale( GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON_AUTOCAST_FRAME, 9), 0.65)
     else
-        call SetFrameSize( StatusBarFrame, .21*(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505), .0425)
+        call SetFrameSize( StatusBarFrame, .21, .05)
         call SetFrameSize( ResistBarFrame, .094*(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505), .125)
-        call SetFrameText( GetFrameByName("MoveSpeedRoot",0), "MS")
-        call SetFrameText( GetFrameByName("AttackSpeedRoot",0), "AS")
-        call SetFrameText( GetFrameByName("MagicDMGImpRoot",0), "M DMG +")
-        call SetFrameText( GetFrameByName("GeneralDMGImpRoot",0), "F DMG +")
-        call SetFrameText( GetFrameByName("MagicalResistRoot",0), "MR")
-        call SetFrameText( GetFrameByName("GeneralResistRoot",0), "FR")
-        call SetFrameText( GetFrameByName("ResistSummRoot",0), "R Sum")
-        call SetFrameText( GetFrameByName("ControlResistRoot",0), "CR")
-        call SetFrameText( GetFrameByName("HPHealEffRoot",0), "HP Eff")
-        call SetFrameText( GetFrameByName("MPHealEffRoot",0), "MP Eff")
-        call SetFrameText( GetFrameByName("MPLossReduceRoot",0), "MP Loss -")
+        call SetFrameText( ResistTxt[0], "MS")
+        call SetFrameText( ResistTxt[2], "AS")
+        call SetFrameText( ResistTxt[4], "M DMG +")
+        call SetFrameText( ResistTxt[6], "F DMG +")
+        call SetFrameText( ResistTxt[8], "MR")
+        call SetFrameText( ResistTxt[10], "FR")
+        call SetFrameText( ResistTxt[12], "R Sum")
+        call SetFrameText( ResistTxt[14], "CR")
+        call SetFrameText( ResistTxt[16], "HP Eff")
+        call SetFrameText( ResistTxt[18], "MP Eff")
+        call SetFrameText( ResistTxt[20], "MP Loss -")
         call SetFrameRelativePoint(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 0), FRAMEPOINT_TOPLEFT, GetFrameRelativePointParent(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 0),FRAMEPOINT_TOPLEFT),FRAMEPOINT_TOPRIGHT,.0175*(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505), -.0292)
         call SetFrameRelativePoint(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 0), FRAMEPOINT_CENTER, GetOriginFrame(ORIGIN_FRAME_CONSOLE_UI, 0),FRAMEPOINT_CENTER,.1255*(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505), -.2268)
         call ClearFrameAllPoints(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 2))
@@ -58296,7 +58631,7 @@ endif
             endif
                 
         endif
-        if nb>0 and (UnitHasItemOfTypeBJ(u,'I03Z')or GetUnitAbilityLevel(u,'KIL2')>0)and CurrentEventAttack then
+        if nb>0 and (UnitHasItemOfTypeBJ(u,'I03Z')or GetUnitAbilityLevel(u,'KIL2')>0)and (CurrentEventAttack or GetEventAttackType()==ATTACK_TYPE_HERO) then
             if nb>15 then
                 set nb=nb-15
             else
@@ -58305,7 +58640,7 @@ endif
                 endif
             endif
         endif
-        if nb>0 and (UnitHasItemOfTypeBJ(u,'I040')or GetUnitAbilityLevel(u,'KIL4')>0)and CurrentEventAttack then
+        if nb>0 and (UnitHasItemOfTypeBJ(u,'I040')or GetUnitAbilityLevel(u,'KIL4')>0)and (CurrentEventAttack or GetEventAttackType()==ATTACK_TYPE_HERO) then
             if nb>20 then
                 set nb=nb-20
             else
@@ -58314,7 +58649,7 @@ endif
                 endif
             endif
         endif
-        if nb>0 and (UnitHasItemOfTypeBJ(u,'I060')or GetUnitAbilityLevel(u,'KIW2')>0)and CurrentEventAttack then
+        if nb>0 and (UnitHasItemOfTypeBJ(u,'I060')or GetUnitAbilityLevel(u,'KIW2')>0)and (CurrentEventAttack or GetEventAttackType()==ATTACK_TYPE_HERO) then
             if nb>20 then
                 set nb=nb-20
             else
@@ -58323,7 +58658,7 @@ endif
                 endif
             endif
         endif
-        if nb>0 and (UnitHasItemOfTypeBJ(u,'I061')or GetUnitAbilityLevel(u,'KIW4')>0)and CurrentEventAttack then
+        if nb>0 and (UnitHasItemOfTypeBJ(u,'I061')or GetUnitAbilityLevel(u,'KIW4')>0)and (CurrentEventAttack or GetEventAttackType()==ATTACK_TYPE_HERO) then
             if nb>40 then
                 set nb=nb-40
             else
@@ -58332,7 +58667,7 @@ endif
                 endif
             endif
         endif
-        if nb>0 and (UnitHasItemOfTypeBJ(u,'I062')or GetUnitAbilityLevel(u,'KIW6')>0)and CurrentEventAttack then
+        if nb>0 and (UnitHasItemOfTypeBJ(u,'I062')or GetUnitAbilityLevel(u,'KIW6')>0)and (CurrentEventAttack or GetEventAttackType()==ATTACK_TYPE_HERO) then
             if nb>60 then
                 set nb=nb-60
             else
@@ -58341,7 +58676,7 @@ endif
                 endif
             endif
         endif
-        if nb>0 and (UnitHasItemOfTypeBJ(u,'I063')or GetUnitAbilityLevel(u,'KIW8')>0)and CurrentEventAttack then
+        if nb>0 and (UnitHasItemOfTypeBJ(u,'I063')or GetUnitAbilityLevel(u,'KIW8')>0)and (CurrentEventAttack or GetEventAttackType()==ATTACK_TYPE_HERO) then
             if nb>80 then
                 set nb=nb-80
             else
@@ -58350,7 +58685,7 @@ endif
                 endif
             endif
         endif
-        if nb>0 and (UnitHasItemOfTypeBJ(u,'I064')or GetUnitAbilityLevel(u,'KIX0')>0)and CurrentEventAttack then
+        if nb>0 and (UnitHasItemOfTypeBJ(u,'I064')or GetUnitAbilityLevel(u,'KIX0')>0)and (CurrentEventAttack or GetEventAttackType()==ATTACK_TYPE_HERO) then
             if nb>100 then
                 set nb=nb-100
             else
@@ -58359,7 +58694,7 @@ endif
                 endif
             endif
         endif
-        if nb>0 and (UnitHasItemOfTypeBJ(u,'I065')or GetUnitAbilityLevel(u,'KIX2')>0)and CurrentEventAttack then
+        if nb>0 and (UnitHasItemOfTypeBJ(u,'I065')or GetUnitAbilityLevel(u,'KIX2')>0)and (CurrentEventAttack or GetEventAttackType()==ATTACK_TYPE_HERO) then
             if nb>120 then
                 set nb=nb-120
             else
@@ -58368,7 +58703,7 @@ endif
                 endif
             endif
         endif
-        if nb>0 and (UnitHasItemOfTypeBJ(u,'IAoF')or GetUnitAbilityLevel(u,'KI1A')>0)and CurrentEventAttack then
+        if nb>0 and (UnitHasItemOfTypeBJ(u,'IAoF')or GetUnitAbilityLevel(u,'KI1A')>0)and (CurrentEventAttack or GetEventAttackType()==ATTACK_TYPE_HERO) then
             if nb>90+10*round then
                 set nb=nb-(60+5*round)
             else
@@ -58377,7 +58712,7 @@ endif
                 endif
             endif
         endif
-        if nb>0 and (UnitHasItemOfTypeBJ(u,'I03C')or GetUnitAbilityLevel(u,'KII8')>0)and CurrentEventAttack then
+        if nb>0 and (UnitHasItemOfTypeBJ(u,'I03C')or GetUnitAbilityLevel(u,'KII8')>0)and (CurrentEventAttack or GetEventAttackType()==ATTACK_TYPE_HERO) then
             call DestroyEffect(AddSpecialEffectTarget("Abilities\\Spells\\Human\\Heal\\HealTarget.mdl",u,"origin"))
             if nb>25 then
                 set nb=nb-25
@@ -58387,7 +58722,7 @@ endif
                 endif
             endif
         endif
-        if nb>0 and (UnitHasItemOfTypeBJ(u,'I03F') or GetUnitAbilityLevel(u,'KIJ4')>0) and CurrentEventAttack then
+        if nb>0 and (UnitHasItemOfTypeBJ(u,'I03F') or GetUnitAbilityLevel(u,'KIJ4')>0) and (CurrentEventAttack or GetEventAttackType()==ATTACK_TYPE_HERO) then
             call DestroyEffect(AddSpecialEffectTarget("Abilities\\Spells\\Human\\Heal\\HealTarget.mdl",u,"origin"))
             if nb>50 then
                 //call SetEventDamage(nb-50)
@@ -118073,14 +118408,9 @@ function IchigoVaster_OvertimeForm_Periodic takes nothing returns nothing
     endif
     if IsUnitPaused(caster)==false and IsUnitHidden(caster)==false and GetUnitAbilityLevel(caster,'Pet1')==0 then
         call SaveReal           (HH, GetHandleId(NewFrame), c_DURATION, duration)
-        call SetFrameText( LoadFrameHandle(HH, idp,StringHash(mode_name+"2")), R2SW(duration,2, 1) )
+        call StatusIndicatorText(NewFrame, idp, mode_name, duration)
     endif
-    if GetFrameHeight( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 ))==0.132 then
-        call SetFrameSize( NewFrame, .0237*(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505), .0237 *(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505))
-        call SetFrameRelativePoint( NewFrame, FRAMEPOINT_CENTER, StatusBarFrame, FRAMEPOINT_LEFT, 0.017+position*0.025*(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505), 0.005 )
-    else
-        call SetFrameRelativePoint( NewFrame, FRAMEPOINT_CENTER, StatusBarFrame, FRAMEPOINT_LEFT, 0.017+position*0.025, 0.005 )
-    endif
+    call StatusIndicatorPlace(NewFrame, position)
     if duration<=0 or udg_B==false or DU2==false or UnitIsAlive(caster)==false then
         if udg_B and UnitIsAlive(caster) then
 			call PauseUnit(caster, false)
@@ -118116,30 +118446,29 @@ function IchigoVaster_OvertimeForm takes unit newCaster, string newString, real 
     local framehandle NewFrameText  = null
     local player p              =GetOwningPlayer(newCaster)
     local integer idp           =GetHandleId(p)    
-    local integer i=9
+    local integer i=23
     local integer j=0
     if LoadFrameHandle(HH, idp,StringHash(newString))==null then    
-        set NewFrame = CreateFrameByType( "SIMPLEBUTTON", newString, StatusBarFrame, "", 0 )
+        set NewFrame = BlzCreateFrameByType( "BACKDROP", newString, StatusBarFrame, "", 0 )
         call ClearFrameAllPoints( NewFrame )
-        call SetFrameTexture( NewFrame, newString, 0, true )
-        call SetFrameTexture( NewFrame, newString, 1, true )
-        call SetFrameTexture( NewFrame, newString, 2, true )
-        call SetFrameSize( NewFrame, .0237, .0237 )
-        call SetFramePriority( NewFrame, 7 )
+        call BlzFrameSetTexture( NewFrame, newString, 0, true )
+        call SetFrameBackgroundSize( NewFrame, 0, .0201 )
+        call SetFrameSize( NewFrame, .0201, .0201 )
+        call BlzFrameSetLevel( NewFrame, 7 )
         call HandleListAddHandle(StatusBarFrameList[GetPlayerId(p)],NewFrame)
         call SetFrameParent(NewFrame,StatusBarFrame)
         call ShowFrame( NewFrame, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
         call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
         call SaveFrameHandle(HH,idp,StringHash(newString),NewFrame)
+        call StatusIndicatorTooltip(NewFrame, newString)
         //call SaveReal               (HH, GetHandleId(NewFrame), c_DURATION, 2)
         
-        set NewFrameText=CreateFrameByType( "SIMPLETEXT", newString+"1", NewFrame, "", 0 )
+        set NewFrameText=BlzCreateFrameByType( "TEXT", newString+"1", NewFrame, "", 0 )
         call ClearFrameAllPoints( NewFrameText )
-        call SetFrameBlendMode( NewFrameText, 0, BLEND_MODE_BLEND )
-        call SetFrameFont( NewFrameText, "Fonts\\FRIZQT__.TTF", .008, 0 )
-        call SetFrameTextAlignment( NewFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_LEFT )
+        call BlzFrameSetFont( NewFrameText, "Fonts\\FRIZQT__.TTF", .008, 0 )
+        call BlzFrameSetTextAlignment( NewFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
         call SetFrameText( NewFrameText, R2SW(newDur,2, 1) )
-        call SetFrameTextColour( NewFrameText, 0xFFFFA500 )
+        call BlzFrameSetTextColor( NewFrameText, 0xFFFFA500 )
         call HandleListAddHandle(StatusBarFrameList[GetPlayerId(p)],NewFrameText)
         call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
         call SaveFrameHandle(HH,idp,StringHash(newString+"2"),NewFrameText)
@@ -118169,6 +118498,8 @@ function IchigoVaster_OvertimeForm takes unit newCaster, string newString, real 
         call SaveReal               (HH, GetHandleId(NewFrame), c_DURATION, newDur)
         call SaveReal               (HH, GetHandleId(NewFrameText), c_DURATION, newDur)
         call SaveInteger            (HH, id, c_POSITION, j)
+        call SaveInteger(HH,GetHandleId(NewFrame),SB_POS,0)
+        call RemoveSavedString(HH,GetHandleId(NewFrame),SB_TXT)
         call SaveStr                (HH, id, c_NAME, newString)
         call TimerStart             (newTimer, 0.05, true, function IchigoVaster_OvertimeForm_Periodic)
     else
@@ -213233,15 +213564,10 @@ function CreateModeIndicatorWithPauseSabrac_Periodic takes nothing returns nothi
 
     if IsUnitPaused(caster)==false and IsUnitHidden(caster)==false and GetUnitAbilityLevel(caster,'Pet1')==0 then
         call SaveReal           (HH, GetHandleId(NewFrame), c_DURATION, duration)
-        call SetFrameText( LoadFrameHandle(HH, idp,StringHash(mode_name+"2")), R2SW(duration,2, 1) )
+        call StatusIndicatorText(NewFrame, idp, mode_name, duration)
     endif
 
-    if GetFrameHeight( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 ))==0.132 then
-        call SetFrameSize( NewFrame, .0237*(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505), .0237 *(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505))
-        call SetFrameRelativePoint( NewFrame, FRAMEPOINT_CENTER, StatusBarFrame, FRAMEPOINT_LEFT, 0.017+position*0.025*(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505), 0.005 )
-    else
-        call SetFrameRelativePoint( NewFrame, FRAMEPOINT_CENTER, StatusBarFrame, FRAMEPOINT_LEFT, 0.017+position*0.025, 0.005 )
-    endif
+    call StatusIndicatorPlace(NewFrame, position)
     if duration<=0 or udg_B==false or DU2==false or UnitIsAlive(caster)==false  or SabracTOn==false then
         call ShowFrame( NewFrame, false )
         call SaveReal(HH, GetHandleId(NewFrame), c_DURATION, 0)
@@ -213264,31 +213590,30 @@ function CreateModeIndicatorWithPauseSabrac takes unit newCasterOwner,unit newCa
     local framehandle NewFrameText  = null
     local player p              =GetOwningPlayer(newCaster)
     local integer idp           =GetHandleId(p)
-    local integer i=9
+    local integer i=23
     local integer j=0
     if LoadFrameHandle(HH, idp,StringHash(newString))==null then    
-        set NewFrame = CreateFrameByType( "SIMPLEBUTTON", newString, StatusBarFrame, "", 0 )
+        set NewFrame = BlzCreateFrameByType( "BACKDROP", newString, StatusBarFrame, "", 0 )
         call ClearFrameAllPoints( NewFrame )
-        call SetFrameTexture( NewFrame, newString, 0, true )
-        call SetFrameTexture( NewFrame, newString, 1, true )
-        call SetFrameTexture( NewFrame, newString, 2, true )
-        call SetFrameSize( NewFrame, .0237, .0237 )
-        call SetFramePriority( NewFrame, 7 )
+        call BlzFrameSetTexture( NewFrame, newString, 0, true )
+        call SetFrameBackgroundSize( NewFrame, 0, .0201 )
+        call SetFrameSize( NewFrame, .0201, .0201 )
+        call BlzFrameSetLevel( NewFrame, 7 )
         call HandleListAddHandle(StatusBarFrameList[GetPlayerId(p)],NewFrame)
         call SetFrameParent(NewFrame,StatusBarFrame)
         //if IsUnitSelected( newCaster, GetLocalPlayer())==false then
         call ShowFrame( NewFrame, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
         call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
         call SaveFrameHandle(HH,idp,StringHash(newString),NewFrame)
+        call StatusIndicatorTooltip(NewFrame, newString)
         //call SaveReal               (HH, GetHandleId(NewFrame), c_DURATION, 2)
         
-        set NewFrameText=CreateFrameByType( "SIMPLETEXT", newString+"1", NewFrame, "", 0 )
+        set NewFrameText=BlzCreateFrameByType( "TEXT", newString+"1", NewFrame, "", 0 )
         call ClearFrameAllPoints( NewFrameText )
-        call SetFrameBlendMode( NewFrameText, 0, BLEND_MODE_BLEND )
-        call SetFrameFont( NewFrameText, "Fonts\\FRIZQT__.TTF", .008, 0 )
-        call SetFrameTextAlignment( NewFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_LEFT )
+        call BlzFrameSetFont( NewFrameText, "Fonts\\FRIZQT__.TTF", .008, 0 )
+        call BlzFrameSetTextAlignment( NewFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
         call SetFrameText( NewFrameText, R2SW(newDur,2, 1) )
-        call SetFrameTextColour( NewFrameText, 0xFFFFA500 )
+        call BlzFrameSetTextColor( NewFrameText, 0xFFFFA500 )
         call HandleListAddHandle(StatusBarFrameList[GetPlayerId(p)],NewFrameText)
         call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
         call SaveFrameHandle(HH,idp,StringHash(newString+"2"),NewFrameText)
@@ -213318,6 +213643,8 @@ function CreateModeIndicatorWithPauseSabrac takes unit newCasterOwner,unit newCa
         call SaveReal               (HH, GetHandleId(NewFrame), c_DURATION, newDur)
         call SaveReal               (HH, GetHandleId(NewFrameText), c_DURATION, newDur)
         call SaveInteger            (HH, id, c_POSITION, j)
+        call SaveInteger(HH,GetHandleId(NewFrame),SB_POS,0)
+        call RemoveSavedString(HH,GetHandleId(NewFrame),SB_TXT)
         call SaveStr                (HH, id, c_NAME, newString)
         call TimerStart             (newTimer, 0.05, true, function CreateModeIndicatorWithPauseSabrac_Periodic)
     else
@@ -218218,15 +218545,10 @@ function CreateModeIndicatorWithPauseAizen_Periodic takes nothing returns nothin
 
     if IsUnitPaused( LoadUnitHandle(HH, id,30) )==false and IsUnitHidden( LoadUnitHandle(HH, id,30))==false and GetUnitAbilityLevel(caster,'Pet1')==0 then
         call SaveReal           (HH, GetHandleId(NewFrame), c_DURATION, duration)
-        call SetFrameText( LoadFrameHandle(HH, idp,StringHash(mode_name+"2")), R2SW(duration,2, 1) )
+        call StatusIndicatorText(NewFrame, idp, mode_name, duration)
     endif
 
-    if GetFrameHeight( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 ))==0.132 then
-        call SetFrameSize( NewFrame, .0237*(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505), .0237 *(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505))
-        call SetFrameRelativePoint( NewFrame, FRAMEPOINT_CENTER, StatusBarFrame, FRAMEPOINT_LEFT, 0.017+position*0.025*(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505), 0.005 )
-    else
-        call SetFrameRelativePoint( NewFrame, FRAMEPOINT_CENTER, StatusBarFrame, FRAMEPOINT_LEFT, 0.017+position*0.025, 0.005 )
-    endif
+    call StatusIndicatorPlace(NewFrame, position)
     
     if duration<=0 or udg_B==false or DU2==false or UnitIsAlive(caster)==false  or SabracTOn==false then
         call ShowFrame( NewFrame, false )
@@ -218251,30 +218573,29 @@ function CreateModeIndicatorWithPauseAizen takes unit newCasterOwner,unit newCas
     local framehandle NewFrameText  = null
     local player p              =GetOwningPlayer(newCaster)
     local integer idp           =GetHandleId(p)
-    local integer i=9
+    local integer i=23
     local integer j=0
     if LoadFrameHandle(HH, idp,StringHash(newString))==null then    
-        set NewFrame = CreateFrameByType( "SIMPLEBUTTON", newString, StatusBarFrame, "", 0 )
+        set NewFrame = BlzCreateFrameByType( "BACKDROP", newString, StatusBarFrame, "", 0 )
         call ClearFrameAllPoints( NewFrame )
-        call SetFrameTexture( NewFrame, newString, 0, true )
-        call SetFrameTexture( NewFrame, newString, 1, true )
-        call SetFrameTexture( NewFrame, newString, 2, true )
-        call SetFrameSize( NewFrame, .0237, .0237 )
-        call SetFramePriority( NewFrame, 7 )
+        call BlzFrameSetTexture( NewFrame, newString, 0, true )
+        call SetFrameBackgroundSize( NewFrame, 0, .0201 )
+        call SetFrameSize( NewFrame, .0201, .0201 )
+        call BlzFrameSetLevel( NewFrame, 7 )
         call HandleListAddHandle(StatusBarFrameList[GetPlayerId(p)],NewFrame)
         call SetFrameParent(NewFrame,StatusBarFrame)
         call ShowFrame( NewFrame, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
         call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
         call SaveFrameHandle(HH,idp,StringHash(newString),NewFrame)
+        call StatusIndicatorTooltip(NewFrame, newString)
         //call SaveReal               (HH, GetHandleId(NewFrame), c_DURATION, 2)
         
-        set NewFrameText=CreateFrameByType( "SIMPLETEXT", newString+"1", NewFrame, "", 0 )
+        set NewFrameText=BlzCreateFrameByType( "TEXT", newString+"1", NewFrame, "", 0 )
         call ClearFrameAllPoints( NewFrameText )
-        call SetFrameBlendMode( NewFrameText, 0, BLEND_MODE_BLEND )
-        call SetFrameFont( NewFrameText, "Fonts\\FRIZQT__.TTF", .008, 0 )
-        call SetFrameTextAlignment( NewFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_LEFT )
+        call BlzFrameSetFont( NewFrameText, "Fonts\\FRIZQT__.TTF", .008, 0 )
+        call BlzFrameSetTextAlignment( NewFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
         call SetFrameText( NewFrameText, R2SW(newDur,2, 1) )
-        call SetFrameTextColour( NewFrameText, 0xFFFFA500 )
+        call BlzFrameSetTextColor( NewFrameText, 0xFFFFA500 )
         call HandleListAddHandle(StatusBarFrameList[GetPlayerId(p)],NewFrameText)
         call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
         call SaveFrameHandle(HH,idp,StringHash(newString+"2"),NewFrameText)
@@ -218304,6 +218625,8 @@ function CreateModeIndicatorWithPauseAizen takes unit newCasterOwner,unit newCas
         call SaveReal               (HH, GetHandleId(NewFrame), c_DURATION, newDur)
         call SaveReal               (HH, GetHandleId(NewFrameText), c_DURATION, newDur)
         call SaveInteger            (HH, id, c_POSITION, j)
+        call SaveInteger(HH,GetHandleId(NewFrame),SB_POS,0)
+        call RemoveSavedString(HH,GetHandleId(NewFrame),SB_TXT)
         call SaveStr                (HH, id, c_NAME, newString)
         call TimerStart             (newTimer, 0.05, true, function CreateModeIndicatorWithPauseAizen_Periodic)
     else
@@ -238575,15 +238898,10 @@ function CreateModeIndicatorGojoT_Periodic takes nothing returns nothing
 
     if GetUnitAbilityLevel(caster,'Avul')==0 and IsUnitHidden(caster)==false and GetUnitAbilityLevel(caster,'Pet1')==0 then
         call SaveReal           (HH, GetHandleId(NewFrame), c_DURATION, duration)
-        call SetFrameText( LoadFrameHandle(HH, idp,StringHash(mode_name+"2")), R2SW(duration,2, 1) )
+        call StatusIndicatorText(NewFrame, idp, mode_name, duration)
     endif
 
-    if GetFrameHeight( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 ))==0.132 then
-        call SetFrameSize( NewFrame, .0237*(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505), .0237 *(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505))
-        call SetFrameRelativePoint( NewFrame, FRAMEPOINT_CENTER, StatusBarFrame, FRAMEPOINT_LEFT, 0.017+position*0.025*(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505), 0.005 )
-    else
-        call SetFrameRelativePoint( NewFrame, FRAMEPOINT_CENTER, StatusBarFrame, FRAMEPOINT_LEFT, 0.017+position*0.025, 0.005 )
-    endif
+    call StatusIndicatorPlace(NewFrame, position)
     if duration<=0 or udg_B==false or DU2==false or UnitIsAlive(caster)==false or GetUnitAbilityLevel(caster,LoadInteger(HH,id,10))==0 then
         call ShowFrame( NewFrame, false )
         call SaveReal(HH, GetHandleId(NewFrame), c_DURATION, 0)
@@ -238606,16 +238924,15 @@ function CreateModeIndicatorGojoT takes unit newCaster, string newString, real n
     local player p              =GetOwningPlayer(newCaster)
     local integer idp           =GetHandleId(p)
     local framehandle consoleUI=GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 )
-    local integer i=9
+    local integer i=23
     local integer j=0
     if LoadFrameHandle(HH, idp,StringHash(newString))==null then    
-        set NewFrame = CreateFrameByType( "SIMPLEBUTTON", newString, StatusBarFrame, "", 0 )
+        set NewFrame = BlzCreateFrameByType( "BACKDROP", newString, StatusBarFrame, "", 0 )
         call ClearFrameAllPoints( NewFrame )
-        call SetFrameTexture( NewFrame, newString, 0, true )
-        call SetFrameTexture( NewFrame, newString, 1, true )
-        call SetFrameTexture( NewFrame, newString, 2, true )
-        call SetFrameSize( NewFrame, .0237, .0237 )
-        call SetFramePriority( NewFrame, 7 )
+        call BlzFrameSetTexture( NewFrame, newString, 0, true )
+        call SetFrameBackgroundSize( NewFrame, 0, .0201 )
+        call SetFrameSize( NewFrame, .0201, .0201 )
+        call BlzFrameSetLevel( NewFrame, 7 )
         call HandleListAddHandle(StatusBarFrameList[GetPlayerId(p)],NewFrame)
         call SetFrameParent(NewFrame,StatusBarFrame)
         if GetOwningPlayer(newCaster)!=GetLocalPlayer()then
@@ -238624,15 +238941,15 @@ function CreateModeIndicatorGojoT takes unit newCaster, string newString, real n
             call ShowFrame( NewFrame, true)
         endif
         call SaveFrameHandle(HH,idp,StringHash(newString),NewFrame)
+        call StatusIndicatorTooltip(NewFrame, newString)
         //call SaveReal               (HH, GetHandleId(NewFrame), c_DURATION, 2)
         
-        set NewFrameText=CreateFrameByType( "SIMPLETEXT", newString+"1", NewFrame, "", 0 )
+        set NewFrameText=BlzCreateFrameByType( "TEXT", newString+"1", NewFrame, "", 0 )
         call ClearFrameAllPoints( NewFrameText )
-        call SetFramePriority( NewFrameText, 2 )
-        call SetFrameFont( NewFrameText, "Fonts\\FRIZQT__.TTF", .008, 0 )
-        call SetFrameTextAlignment( NewFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_LEFT )
+        call BlzFrameSetFont( NewFrameText, "Fonts\\FRIZQT__.TTF", .008, 0 )
+        call BlzFrameSetTextAlignment( NewFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
         call SetFrameText( NewFrameText, R2SW(newDur,2, 1) )
-        call SetFrameTextColour( NewFrameText, 0xFFFFA500 )
+        call BlzFrameSetTextColor( NewFrameText, 0xFFFFA500 )
         //call HandleListAddHandle(StatusBarFrameList[GetPlayerId(p)],NewFrameText)
         if GetOwningPlayer(newCaster)!=GetLocalPlayer()then
             call ShowFrame( NewFrameText, false)
@@ -238665,6 +238982,8 @@ function CreateModeIndicatorGojoT takes unit newCaster, string newString, real n
         call SaveUnitHandle         (HH, id, c_CASTER, newCaster)
         call SaveReal               (HH, GetHandleId(NewFrame), c_DURATION, newDur)
         call SaveInteger            (HH, id, c_POSITION, j)
+        call SaveInteger(HH,GetHandleId(NewFrame),SB_POS,0)
+        call RemoveSavedString(HH,GetHandleId(NewFrame),SB_TXT)
         call SaveStr                (HH, id, c_NAME, newString)
         call SaveInteger            (HH, id, 10, abil_code)
 
