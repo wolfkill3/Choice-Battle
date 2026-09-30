@@ -3192,7 +3192,8 @@ function myCustomHeal2 takes unit target, real amount returns real
         set currentHeal = currentHeal * 1.5
     endif
     if GetUnitTypeId(target)=='H02O' and GetHeroLevel(target)>5 then //Buu Passive
-        set currentHeal = currentHeal * (1.049+(GetUnitState(target,UNIT_STATE_MANA) / GetUnitState(target,UNIT_STATE_MAX_MANA))*0.201)
+        // +1% при пустой мане .. +20% при полной (было +4.9% .. +25%)
+        set currentHeal = currentHeal * (1.01+(GetUnitState(target,UNIT_STATE_MANA) / GetUnitState(target,UNIT_STATE_MAX_MANA))*0.19)
     endif
     if GetUnitAbilityLevel(target,'BNC1') > 0 or GetUnitAbilityLevel(target,'BNC2') > 0 then // эссенс
         set currentHeal=0
@@ -3323,7 +3324,7 @@ set Streak_Counter[i]=0
 set GoldLimit[i]=500
 set GoldTotalLimit[i]=500
 set itemsc[i]=false
-set AutoE[i]=false
+set AutoE[i]=true
 set i=i+1
 endloop
 set TavernPlayerPickAllow[10]=false
@@ -62705,11 +62706,12 @@ set E=FirstOfGroup(DG)
 exitwhen E==null
 if Condition_Base(p,E)then
 set dmg=15*(2.5*GetHeroStr(E,true)-(GetHeroAgi(E,true)+GetHeroInt(E,true)))
+// формула ушла в минус — остаётся только минимум (15% Max HP), как в описании;
+// раньше в этом случае урон обнулялся целиком
 if dmg<0 then
 set dmg=0
-else
-set dmg=dmg+GetUnitState(E,UNIT_STATE_MAX_LIFE)*0.1
 endif
+set dmg=dmg+GetUnitState(E,UNIT_STATE_MAX_LIFE)*0.15
 if dmg>GetUnitState(E,UNIT_STATE_MAX_LIFE)*0.45 then
 set dmg=GetUnitState(E,UNIT_STATE_MAX_LIFE)*0.45
 endif
@@ -84442,10 +84444,17 @@ function LucoraGunCast2 takes nothing returns nothing
     local real a=Atan2(y1-y,x1-x)
     local player p=GetOwningPlayer(u)
     local real r=GetUnitFacing(u)*bj_DEGTORAD
+    local real dmg=GetHeroStr(u,true)*0.4+30
     if GetUnitCurrentOrder(u)==OrderId("channel")and UnitIsAlive(c)then
     call SetUnitFacing(u,a*bj_RADTODEG)
+    // в SSG урон снарядов +10%, в SSGSS +15%
+    if GetUnitAbilityLevel(u,'VGH5')>0 then
+        set dmg=dmg*1.1
+    elseif GetUnitAbilityLevel(u,'VGH6')>0 then
+        set dmg=dmg*1.15
+    endif
     set n=CreateUnit(p,'e0BP',x+GetRandomReal(120,140)*Cos(r),y+GetRandomReal(120,140)*Sin(r),a*bj_RADTODEG)
-    call MissleMoveLucoraGun(u,c,n,80,GetRandomReal(-0.3,0.3),GetHeroStr(u,true)*0.4+30,GetRandomReal(-0.20*SR(x,y,x1,y1),0.20*SR(x,y,x1,y1)),GetRandomReal(-0.20*SR(x,y,x1,y1),0.20*SR(x,y,x1,y1)),GetRandomInt(0,2))
+    call MissleMoveLucoraGun(u,c,n,80,GetRandomReal(-0.3,0.3),dmg,GetRandomReal(-0.20*SR(x,y,x1,y1),0.20*SR(x,y,x1,y1)),GetRandomReal(-0.20*SR(x,y,x1,y1),0.20*SR(x,y,x1,y1)),GetRandomInt(0,2))
     call UnitApplyTimedLife(CreateUnit(p,'e1BQ',x+GetRandomReal(40,90)*Cos(r),y+GetRandomReal(40,90)*Sin(r),a*bj_RADTODEG-180),'BTLF',0.5)
     else
     call SetUnitTimeScale(u,1)
@@ -87265,7 +87274,7 @@ local real x=GetUnitX(l__d)+60*Cos(a)
 local real y=GetUnitY(l__d)+60*Sin(a)
 local real x1=LoadReal(h,id,8)
 local real y1=LoadReal(h,id,9)
-local real dmg=(2+GetUnitAbilityLevel(u,'GKQ1'))*GetHeroStr(u,true)+75
+local real dmg=(2.25+0.75*GetUnitAbilityLevel(u,'GKQ1'))*GetHeroStr(u,true)+75
 local player p=GetOwningPlayer(u)
 local integer idp=GetHandleId(p)
 local group g=LoadGroupHandle(h,id,3)
@@ -87648,7 +87657,7 @@ local real x=GetUnitX(l__d)+40*Cos(a)
 local real y=GetUnitY(l__d)+40*Sin(a)
 local real x1=LoadReal(h,id,8)
 local real y1=LoadReal(h,id,9)
-local real dmg=(1+GetUnitAbilityLevel(u,'GKQ1'))*GetHeroStr(u,true)+75
+local real dmg=(1.25+0.75*GetUnitAbilityLevel(u,'GKQ1'))*GetHeroStr(u,true)+75
 local player p=GetOwningPlayer(u)
 local group g=LoadGroupHandle(h,id,3)
 local group g2=CreateGroup()
@@ -87811,6 +87820,28 @@ set p=null
 set t=null
 set tt=null
 endfunction
+// Гоку Q/W: своя перезарядка у вариаций. Движок при касте ставит перезарядку из данных
+// способности (обычная Q 20 с, W 18 с), поэтому нужную ставим следующим тиком.
+function GokuVariationCooldown2 takes nothing returns nothing
+local timer t=GetExpiredTimer()
+local integer id=GetHandleId(t)
+call StartAbilityCooldown(GetUnitAbility(LoadUnitHandle(h,id,0),LoadInteger(h,id,1)),LoadReal(h,id,2))
+call FlushChildHashtable(h,id)
+call DestroyTimer(t)
+set t=null
+endfunction
+function GokuVariationCooldown takes unit u,integer abil,real cd returns nothing
+local timer t
+if cd<=0 then
+return
+endif
+set t=CreateTimer()
+call SaveUnitHandle(h,GetHandleId(t),0,u)
+call SaveInteger(h,GetHandleId(t),1,abil)
+call SaveReal(h,GetHandleId(t),2,cd)
+call TimerStart(t,0.0,false,function GokuVariationCooldown2)
+set t=null
+endfunction
 function CastKamehameha2 takes nothing returns nothing
 local unit u=GetTriggerUnit()
 local timer t=CreateTimer()
@@ -87823,6 +87854,12 @@ local player p=GetOwningPlayer(u)
 local integer idp=GetHandleId(p)
 local real a=Atan2(y1-y,x1-x)
 local trigger tt=CreateTrigger()
+// перезарядка по вариации: Super и Kamehameha x10 — 27 с, Kaioken и Kaioken x10 — 30 с
+if LoadReal(HH,idp,VariationQHash)==1 or LoadReal(HH,idp,VariationQHash)==4 then
+call GokuVariationCooldown(u,'GKQ1',27.0)
+elseif LoadReal(HH,idp,VariationQHash)==2 or LoadReal(HH,idp,VariationQHash)==3 then
+call GokuVariationCooldown(u,'GKQ1',30.0)
+endif
 call SaveUnitHandle(h,id,0,u)
 call SaveGroupHandle(h,id,3,CreateGroup())
 call SaveReal(h,id,4,a)
@@ -88291,7 +88328,7 @@ if GetWidgetLife(c)>0 and GetWidgetLife(u)>0 and time<4 then
                 call SetSpecialEffectVertexColour(EFF,255,255,255,120)
                 call RemoveEffect(EFF,1,true,CreateTimer())
                 call StartSound(soundStr[60])
-                call TimerStart(t,0.03,true,function MeteorSmashCast3)
+                call TimerStart(t,0.0273,true,function MeteorSmashCast3) // на 10% быстрее
             else
                 call SetUnitFlyHeight(u,0,0)
                 call PauseTimer(t)
@@ -88382,9 +88419,13 @@ elseif LoadReal(HH,idp,VariationWHash)==2 then
 else
     call SetUnitVertexColor(u,255,255,255,255)
 endif
+// Kaioken и Kaioken x10 — перезарядка 20 с (обычная W — 18 с из данных)
+if LoadReal(HH,idp,VariationWHash)==1 or LoadReal(HH,idp,VariationWHash)==2 then
+call GokuVariationCooldown(u,'GKW1',20.0)
+endif
 call SaveUnitHandle(HH,id,0,u)
 call SaveUnitHandle(HH,id,1,c)
-call TimerStart(t,0.03,true,function MeteorSmashCast2)
+call TimerStart(t,0.0273,true,function MeteorSmashCast2) // полёты на 10% быстрее (шаги time прежние, 0.03)
 set u=null
 set c=null
 set p=null
@@ -88449,7 +88490,7 @@ call SaveReal(h,id,4,y)
 call SaveReal(h,id,5,mh)
 call SaveReal(h,id,6,SR(x,y,GetUnitX(l__d),GetUnitY(l__d)))
 call SaveReal(h,id,8,0)
-call TimerStart(t,0.03,true,function MissleMoveAcceleratingBattleSpirit_NonPause2)
+call TimerStart(t,0.0273,true,function MissleMoveAcceleratingBattleSpirit_NonPause2) // отскок на 10% быстрее
 set t=null
 endfunction
 function AcceleratingBattleSpiritCast3 takes nothing returns nothing
@@ -88676,7 +88717,7 @@ if GetWidgetLife(c)>0 and GetWidgetLife(u)>0 and time<4 then
         call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,false)
         if LoadReal(HH,GetHandleId(GetOwningPlayer(u)),VariationWHash)==4 then
             call PauseTimer(t)
-            call TimerStart(t,0.03,true,function AcceleratingBattleSpiritCast3)
+            call TimerStart(t,0.0273,true,function AcceleratingBattleSpiritCast3) // на 10% быстрее
         else
             call SetUnitFlyHeight(u,0,0)
             call DestroyTimer(t)
@@ -88734,6 +88775,10 @@ if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
     call SetUnitFacingInstant(u,a*bj_RADTODEG)
     call SetUnitAnimationByIndex(u,237)
     call StartSound(soundStr[68])
+    // Soaring Fist — перезарядка 20 с (базовый вариант — 18 с из данных)
+    if LoadReal(HH,idp,VariationWHash)==4 then
+        call GokuVariationCooldown(u,'GKW5',20.0)
+    endif
     call SaveUnitHandle(HH,id,0,u)
     call SaveUnitHandle(HH,id,1,c)
     call PauseTimer(t)
@@ -88746,7 +88791,7 @@ if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
     call SetSpecialEffectScale(EFF , 3)
     call DestroyEffect(EFF)
     call SetUnitTimeScale(u,0.9)
-    call TimerStart(t,0.03,true,function AcceleratingBattleSpiritCast2)
+    call TimerStart(t,0.0273,true,function AcceleratingBattleSpiritCast2) // на 10% быстрее (шаги time прежние)
 else
     call SetUnitFlyHeight(u,0,0)
     call PauseTimer(t)
@@ -92411,8 +92456,8 @@ if dist<1780 and GetWidgetLife(l__d)>0 then
     endif
     if dist>770 then
         if IsTerrainPathable(x,y,PATHING_TYPE_FLYABILITY)==false then
-            set x=x+39*Cos(a)
-            set y=y+39*Sin(a)
+            set x=x+33.15*Cos(a) // полёт в конце на 15% короче (было 39)
+            set y=y+33.15*Sin(a)
             call SetUnitXY_1(c,x,y, false)
         endif
     endif
@@ -92587,7 +92632,7 @@ call SaveReal(h,id,13,y)
 call SaveReal(h,id,14,x1)
 call SaveReal(h,id,15,y1)
 call SaveReal(h,id,3,Atan2(y1-y,x1-x))
-call TimerStart(t,0.02,true,function EaraserMeteorCast6)
+call TimerStart(t,0.0182,true,function EaraserMeteorCast6) // R на 10% быстрее (шаги прежние)
 endif
 else
 call PauseUnit(u,false)
@@ -92648,8 +92693,8 @@ call SetSpecialEffectScale(EFF , 0.3)
 call DestroyEffect(EFF)
 endif
 endif
-set x=x+70*(110/dist)*Cos(a)
-set y=y+70*(110/dist)*Sin(a)
+set x=x+63*(110/dist)*Cos(a) // толчок после первого удара на 10% короче (было 70)
+set y=y+63*(110/dist)*Sin(a)
 call SetUnitFacing(u,a*bj_RADTODEG)
 call SetUnitXY_1(l__d,x,y, false)
 if GetUnitFlyHeight(l__d)<10 then
@@ -92668,7 +92713,7 @@ call SetUnitFacing(u,a*bj_RADTODEG)
 call PauseTimer(t)
 call SaveReal(h,id,2,0)
 if GetWidgetLife(l__d)>0 then
-call TimerStart(t,0.02,true,function EaraserMeteorCast5)
+call TimerStart(t,0.0182,true,function EaraserMeteorCast5) // R на 10% быстрее (шаги прежние)
 else
 call PauseUnit(u,false)
 call SetUnitInvulnerable(u,false)
@@ -92697,7 +92742,7 @@ local real a=Atan2(y1-y,x1-x)
 local real dist=LoadReal(h,id,2)
 local player p=GetOwningPlayer(u)
 call PauseTimer(t)
-call TimerStart(t,0.02,true,function EaraserMeteorCast41)
+call TimerStart(t,0.0182,true,function EaraserMeteorCast41) // R на 10% быстрее (шаги прежние)
 set EFF=AddSpecialEffect("war3mapImported\\CF2.mdl", x,y)
 call SetSpecialEffectFacing(EFF , a* bj_RADTODEG)
 call SetSpecialEffectScale(EFF , 1)
@@ -92750,7 +92795,7 @@ call SetSpecialEffectScale(EFF , 3)
 call DestroyEffect(EFF)
 call SetUnitTimeScale(u,2.3)
 if GetWidgetLife(l__d)>0 then
-call TimerStart(t,0.05,false,function EaraserMeteorCast4)
+call TimerStart(t,0.0455,false,function EaraserMeteorCast4) // R на 10% быстрее (шаги прежние)
 else
 call PauseUnit(u,false)
 call SetUnitInvulnerable(u,false)
@@ -92831,7 +92876,7 @@ else
         set n=CreateUnit(p,'e0RV',x1,y1,a*bj_RADTODEG)
         call UnitApplyTimedLife(n,'BTLF',1)
         if GetWidgetLife(l__d)>0 then
-            call TimerStart(t,0.03,true,function EaraserMeteorCast3)
+            call TimerStart(t,0.0273,true,function EaraserMeteorCast3) // R на 10% быстрее (шаги прежние)
         else
             call PauseUnit(u,false)
             call SetUnitInvulnerable(u,false)
@@ -92891,7 +92936,7 @@ call SetUnitAnimationByIndex(u,15)
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\BrolyR1.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
 call KillSoundWhenDone(soundplay)
-call TimerStart(t,0.04,true,function EaraserMeteorCast2)
+call TimerStart(t,0.0364,true,function EaraserMeteorCast2) // R на 10% быстрее (шаги прежние)
 set u=null
 set c=null
 set p=null
@@ -93992,7 +94037,9 @@ if time<time2 then
         //call UnitRemoveAbility(l__d,'A1JE')
         //call UnitAddAbility(l__d,'A0JE')
     endif
-elseif Range<2000 and UnitIsAlive(l__d) and IsTerrainPathable(x1,y1,PATHING_TYPE_FLYABILITY)==false then
+// полёт только без пойманной цели: если враг был перед Броли при пуске (c),
+// снаряд взрывается сразу, а враг сам отлетает на 350 (см. взрыв ниже)
+elseif c==null and Range<2000 and UnitIsAlive(l__d) and IsTerrainPathable(x1,y1,PATHING_TYPE_FLYABILITY)==false then
     set x1=x1+50*Cos(a)
     set y1=y1+50*Sin(a)
     call SetUnitXY_1(l__d,x1,y1, false)
@@ -94021,12 +94068,55 @@ elseif Range<2000 and UnitIsAlive(l__d) and IsTerrainPathable(x1,y1,PATHING_TYPE
     endloop
     call GroupClear(g)
 else
+    if c==null then
     set EFF=AddSpecialEffect("BrolyExplosion1.mdl", x1,y1)
     call SetSpecialEffectScale(EFF , 1)
     call DestroyEffect(EFF)
     call UnitApplyTimedLife(CreateUnit(p,'e0EB',x1,y1,GetRandomReal(0,359)),'BHwe',3)
     call UnitApplyTimedLife(CreateUnit(p,'e0E9',x1,y1,GetRandomReal(0,359)),'BHwe',3)
     call UnitApplyTimedLife(CreateUnit(p,'e0EN',x1,y1,GetRandomReal(0,359)),'BHwe',3)
+    else
+    // взрыв вплотную. Шаровые взрывы — на земле, как у обычного взрыва, но мельче
+    // (x0.2 от масштаба юнитов) и с анимацией в 2 раза быстрее
+    set EFF=AddSpecialEffect("BrolyExplosion1.mdl", x1,y1)
+    call SetSpecialEffectScale(EFF , 0.2)
+    call SetSpecialEffectTimeScale(EFF , 2)
+    call DestroyEffect(EFF)
+    set EFF=AddSpecialEffect("BrolyExplosion3.mdl", x1,y1)
+    call SetSpecialEffectScale(EFF , 0.2)
+    call SetSpecialEffectTimeScale(EFF , 2)
+    call RemoveEffect(EFF,1.5,true,CreateTimer())
+    // пыль. GreenSlam — на земле без поворота, как у обычного взрыва; остальная — к врагу (наклон -90, высота 100)
+    set EFF=AddSpecialEffect("war3mapImported\\GreenSlam.mdl", x1,y1)
+    call SetSpecialEffectScale(EFF , 3.2)
+    call RemoveEffect(EFF,3,true,CreateTimer())
+    set EFF=AddSpecialEffect("war3mapImported\\GreenShockwave.mdl", x1,y1)
+    call SetSpecialEffectOrientation(EFF,Atan2(GetUnitY(c)-y1,GetUnitX(c)-x1)*bj_RADTODEG,-90,0)
+    call SetSpecialEffectZ(EFF , 100)
+    call SetSpecialEffectScale(EFF , 2.4)
+    call RemoveEffect(EFF,3,true,CreateTimer())
+    // пыль из взрыва щита E2 (WarStompCaster), зелёная, к врагу
+    set EFF=AddSpecialEffect("war3mapImported\\WarStompCaster.mdx", x1,y1)
+    call SetSpecialEffectOrientation(EFF,Atan2(GetUnitY(c)-y1,GetUnitX(c)-x1)*bj_RADTODEG,-90,0)
+    call SetSpecialEffectZ(EFF , 100)
+    call SetSpecialEffectScale(EFF , 2)
+    call SetSpecialEffectVertexColour(EFF,90,255,90,255)
+    call DestroyEffect(EFF)
+    // поток на врага, горизонтально (как у ударов Гоку)
+    set EFF=AddSpecialEffect("WindVectorPush.mdx", x1, y1)
+    call SetSpecialEffectOrientation(EFF,Atan2(GetUnitY(c)-y1,GetUnitX(c)-x1)*bj_RADTODEG,0,0)
+    call SetSpecialEffectZ(EFF , 100)
+    call SetSpecialEffectScale(EFF , 0.69)
+    call SetSpecialEffectTimeScale(EFF , 0.75)
+    call SetSpecialEffectVertexColour(EFF,120,255,120,160)
+    call RemoveEffect(EFF,1.35,true,CreateTimer())
+    // ударная волна EffectID[6] (Signum\CF2.mdl) с лёгким зелёным оттенком, на врага
+    set EFF=AddSpecialEffect(EffectID[6], x1, y1)
+    call SetSpecialEffectOrientation(EFF,Atan2(GetUnitY(c)-y1,GetUnitX(c)-x1)*bj_RADTODEG,0,0)
+    call SetSpecialEffectZ(EFF , 60)
+    call SetSpecialEffectVertexColour(EFF,190,255,190,255)
+    call DestroyEffect(EFF)
+    endif
     call GroupEnumUnitsInRange(g,x1,y1,500,Base)
     set idg=GetHandleId(g)
     loop
@@ -94042,6 +94132,8 @@ else
                 call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,false)
                 call myCustomDamage(u,E,dmg*1.1,false,false,null,null,null)
                 call SetControlToUnit(E,E, 3, "stun")
+                // вместо полёта со снарядом — отлёт на 350
+                call Push3(E,50,a,350,"")
             endif
         endif
         call GroupRemoveUnit(g,E)
@@ -156509,6 +156601,31 @@ endfunction
 function BrolyE2Cond takes nothing returns boolean
 return GetSpellAbilityId()=='A3DJ'
 endfunction
+// Эффекты взрыва щита E (и при подрыве повторным нажатием, и когда щит истёк):
+// зелёная шоковая волна и взрыв из финала R с прозрачностью 20%
+function BrolyShieldBurstFx takes player bp,real bx,real by returns nothing
+// зелёная шоковая волна, как у остальных взрывов Броли (e0EN — GreenShockwave x3)
+call UnitApplyTimedLife(CreateUnit(bp,'e0EN',bx,by,GetRandomReal(0,359)),'BHwe',3)
+// взрыв из финала R, прозрачность 20% (альфа 51 из 255)
+set EFF=AddSpecialEffect("BrolyExplosion1.mdl", bx,by)
+call SetSpecialEffectVertexColour(EFF,255,255,255,51)
+call DestroyEffect(EFF)
+set EFF=AddSpecialEffect("war3mapImported\\GreenSlam.mdl", bx,by)
+call SetSpecialEffectVertexColour(EFF,255,255,255,51)
+call DestroyEffect(EFF)
+set EFF=AddSpecialEffect("war3mapImported\\Cherry Blossom Impact.mdx", bx,by)
+call SetSpecialEffectVertexColour(EFF,255,255,255,51)
+call DestroyEffect(EFF)
+set EFF=AddSpecialEffect("war3mapImported\\WarStompCaster.mdx", bx,by)
+call SetSpecialEffectVertexColour(EFF,255,255,255,51)
+call DestroyEffect(EFF)
+set n=CreateUnit(bp,'e0EB',bx,by,GetRandomReal(0,359))
+call SetUnitVertexColor(n,255,255,255,51)
+call UnitApplyTimedLife(n,'BHwe',3)
+set n=CreateUnit(bp,'e0E9',bx,by,GetRandomReal(0,359))
+call SetUnitVertexColor(n,255,255,255,51)
+call UnitApplyTimedLife(n,'BHwe',3)
+endfunction
 function BrolyE2Cast2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
@@ -156535,6 +156652,7 @@ call SetSpecialEffectZ(EFF , -130)
 call SetSpecialEffectScale(EFF , 1.7)
 call SetSpecialEffectTimeScale(EFF , 1)
 call SetSpecialEffectAlphaTimed(EFF , 155 , 255 , 55 , 255 , 2)
+call BrolyShieldBurstFx(p,x,y)
 call GroupClear(G)
 call SaveReal(h,GetHandleId(u),SH_shie1,0)
 call SaveReal(h,GetHandleId(u),SH_shie2,0)
@@ -156598,6 +156716,7 @@ call SetSpecialEffectZ(EFF , -130)
 call SetSpecialEffectScale(EFF , 1.7)
 call SetSpecialEffectTimeScale(EFF , 1)
 call SetSpecialEffectAlphaTimed(EFF , 155 , 255 , 55 , 255 , 2)
+call BrolyShieldBurstFx(p,x,y)
 set u=null
 set p=null
 endfunction
@@ -156631,7 +156750,7 @@ local integer id=GetHandleId(t)
 local unit u=GetTriggerUnit()
 local real x=GetUnitX(u)
 local real y=GetUnitY(u)
-local real pr=100+GetUnitState(u,UNIT_STATE_MAX_LIFE)*(0.20+GetUnitAbilityLevel(u,'A2DJ')*0.05)
+local real pr=100+GetUnitState(u,UNIT_STATE_MAX_LIFE)*(0.15+GetUnitAbilityLevel(u,'A2DJ')*0.05)
 call SaveUnitHandle(h,id,0,u)
 call SaveReal(h,GetHandleId(u),SH_BroEtime,0)
 call UnitAddAbility(u,'A2DF')
