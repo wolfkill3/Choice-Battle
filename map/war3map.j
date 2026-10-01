@@ -6201,7 +6201,7 @@ function HPB_MenuInit takes nothing returns nothing
     call SetFrameFont(hpf,"Fonts\\FRIZQT__.TTF",.0085,0)
     call SetFrameTextAlignment(hpf,TEXT_JUSTIFY_CENTER,TEXT_JUSTIFY_MIDDLE)
     call SetFrameTextColour(hpf,0xFFFFA500)
-    call SetFrameText(hpf,"Цвет полосок HP")
+    call SetFrameText(hpf,"HP bar colour")
     call SetFrameRelativePoint(hpf,FRAMEPOINT_TOP,HPB_Menu,FRAMEPOINT_TOP,0.,-.007)
     set HPB_MClose=CreateFrameByType("SIMPLEBUTTON","HPBarMenuClose",null,"",0)
     call ClearFrameAllPoints(HPB_MClose)
@@ -6240,11 +6240,11 @@ function HPB_MenuInit takes nothing returns nothing
         call SetFrameTextAlignment(hpf,TEXT_JUSTIFY_CENTER,TEXT_JUSTIFY_LEFT)
         call SetFrameTextColour(hpf,0xFFFFFFFF)
         if hps==0 then
-            call SetFrameText(hpf,"Стандартный (зелёный)")
+            call SetFrameText(hpf,"Default (green)")
         elseif hps==1 then
-            call SetFrameText(hpf,"Цвета игроков")
+            call SetFrameText(hpf,"Player colours")
         else
-            call SetFrameText(hpf,"Свой / союзники / враги")
+            call SetFrameText(hpf,"Own / allies / enemies")
         endif
         call SetFrameRelativePoint(hpf,FRAMEPOINT_LEFT,HPB_Menu,FRAMEPOINT_TOPLEFT,.019,-.022-hps*.0135)
         set HPB_MRow[hps]=CreateFrameByType("SIMPLEBUTTON","HPBarMenuRow",null,"",hps)
