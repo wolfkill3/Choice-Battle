@@ -5634,7 +5634,7 @@ function ShieldPortraitUpdate takes nothing returns nothing
     if hsu!=null and IsUnitType(hsu,UNIT_TYPE_DEAD)==false then
         set hsr=ShieldHPTotal(hsu)
         if hsr>=1 then
-            set hst="|cff70b8ffЩит: "+I2S(R2I(hsr))+"|r"
+            set hst="|cff70b8ffShield: "+I2S(R2I(hsr))+"|r"
         endif
     endif
     if hst!=SP_Txt then
@@ -5754,9 +5754,9 @@ function HeroBarShow takes boolean hbv returns nothing
     call ShowFrame(HB_HideFrame,HB_Blocked==false)
     call ShowFrame(HB_HideText,HB_Blocked==false)
     if hbv then
-        call SetFrameText(HB_HideText,"Скрыть")
+        call SetFrameText(HB_HideText,"Hide")
     else
-        call SetFrameText(HB_HideText,"Показать")
+        call SetFrameText(HB_HideText,"Show")
     endif
     call HeroBarBars()
 endfunction
@@ -6074,7 +6074,7 @@ function HeroBarInit takes nothing returns nothing
     call SetFrameFont(HB_HideText,"Fonts\\FRIZQT__.TTF",.009,0)
     call SetFrameTextAlignment(HB_HideText,TEXT_JUSTIFY_CENTER,TEXT_JUSTIFY_LEFT)
     call SetFrameTextColour(HB_HideText,0xFFFFA500)
-    call SetFrameText(HB_HideText,"Скрыть")
+    call SetFrameText(HB_HideText,"Hide")
     call SetFrameRelativePoint(HB_HideText,FRAMEPOINT_LEFT,HB_HideFrame,FRAMEPOINT_LEFT,0.,0.)
     set hbg=CreateTrigger()
     call TriggerRegisterFrameEvent(hbg,HB_HideBtn,FRAMEEVENT_CONTROL_CLICK)
