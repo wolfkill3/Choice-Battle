@@ -855,6 +855,7 @@ constant integer SB_TXT=StringHash("SBIndTxt")
 boolean HB_Inited=false
 boolean HB_Shown=true
 framehandle array HeroBarIcon
+framehandle array HeroBarTip
 framehandle array HeroBarTipText
 framehandle array HeroBarScore
 string array HeroBarTex
@@ -864,6 +865,8 @@ string array HeroBarScoreTxt
 framehandle HB_HideBtn=null
 framehandle HB_HideText=null
 framehandle HB_ScoreFrame=null
+// фрейм multiboard, взятый при создании панели (у всех игроков сразу, не в локальном коде)
+framehandle HB_MbFrame=null
 framehandle HB_ScoreText=null
 string HB_ScoreTxt=""
 constant integer HB_IDX=StringHash("HeroBarIdx")
@@ -5570,8 +5573,9 @@ function StatusIndicatorTipText takes string tex returns string
     endif
     return ""
 endfunction
-// подсказка над иконкой: обычный фрейм-подложка с текстом. SIMPLE-кнопка событий наведения не даёт,
-// поэтому показ — по таймеру через GetFrameUnderCursor (StatusIndicatorHoverPoll), у каждого игрока локально
+// подсказка над иконкой: обычный фрейм-подложка с текстом; показ при наведении — сам движок (SetFrameTooltip).
+// GetFrameUnderCursor не использовать: у каждого игрока под курсором свой фрейм, и обёртка его в handle
+// создаётся асинхронно — рассинхрон (так же было с Гоку в 3.4.1)
 function StatusIndicatorTooltip takes framehandle icon, string tex returns nothing
     local framehandle tip
     local framehandle tx
@@ -5588,28 +5592,10 @@ function StatusIndicatorTooltip takes framehandle icon, string tex returns nothi
         call BlzFrameSetTexture(tip,"TooltipLessVisible.blp",0,true)
         call BlzFrameSetLevel(tip,50)
         call BlzFrameSetVisible(tip,false)
-        call SaveFrameHandle(HH,GetHandleId(icon),SB_TIPFR,tip)
+        call SetFrameTooltip(icon,tip)
     endif
     set tip=null
     set tx=null
-endfunction
-function StatusIndicatorHoverPoll takes nothing returns nothing
-    local framehandle f=GetFrameUnderCursor()
-    local framehandle tip=null
-    if f!=null then
-        set tip=LoadFrameHandle(HH,GetHandleId(f),SB_TIPFR)
-    endif
-    if tip!=SB_TipShown then
-        if SB_TipShown!=null then
-            call BlzFrameSetVisible(SB_TipShown,false)
-        endif
-        if tip!=null then
-            call BlzFrameSetVisible(tip,true)
-        endif
-        set SB_TipShown=tip
-    endif
-    set f=null
-    set tip=null
 endfunction
 // нажатие на иконку героя (локально): анимация, выделение и разовый перевод камеры на героя. Свой и союзники; противник —
 // только между раундами (udg_B==false), иначе по выделению можно отличить настоящего героя от иллюзий; наблюдатели — любые
@@ -5626,13 +5612,11 @@ function HeroBarPress takes integer hbi returns nothing
     endif
     set hbh=null
 endfunction
-// запасной путь через событие клика по фрейму: срабатывает, только если локальный опрос нажатие не поймал
+// клик по иконке героя (событие кнопки); действует только у нажавшего
 function HeroBarClick takes nothing returns nothing
     local integer hbi=LoadInteger(HH,GetHandleId(GetTriggerFrame()),HB_IDX)-1
-    if hbi>=0 and GetTriggerPlayer()==GetLocalPlayer() then
-        if HB_Tick-HB_Hit[hbi]>50 then
-            call HeroBarPress(hbi)
-        endif
+    if hbi>=0 and GetTriggerPlayer()==GetLocalPlayer() and HB_Shown then
+        call HeroBarPress(hbi)
     endif
 endfunction
 // суммарное HP щитов на юните (щиты с запасом прочности)
@@ -5773,7 +5757,7 @@ function HeroBarMbShift takes nothing returns real
     if GetWindowHeight()>0 then
         set hba=I2R(GetWindowWidth())/I2R(GetWindowHeight())
     endif
-    set hbw=GetFrameWidth(GetOriginFrame(ORIGIN_FRAME_MULTIBOARD,0))
+    set hbw=GetFrameWidth(HB_MbFrame)
     if hbw<0.1 or hbw>0.7 then
         set hbw=0.43
     endif
@@ -5800,7 +5784,18 @@ function HPB_ColorOf takes unit hpu returns integer
     if HPB_Mode==1 then
         set hpc=GetHandleId(GetPlayerColor(hpp))
     elseif HPB_Mode==2 then
-        if hpp==GetLocalPlayer() then
+        // судьи (10, 11): цвета команд — первая (0–4) зелёная, вторая (5–9) красная; в FFA — цвета игроков
+        if GetPlayerId(GetLocalPlayer())>=10 and GetPlayerId(hpp)<10 then
+            if FFAMode then
+                set hpc=GetHandleId(GetPlayerColor(hpp))
+            elseif GetPlayerId(hpp)<5 then
+                set hpc=6
+            else
+                set hpc=0
+            endif
+        elseif GetPlayerId(GetLocalPlayer())>=10 and GetPlayerId(hpp)<12 then
+            set hpc=8
+        elseif hpp==GetLocalPlayer() then
             set hpc=6
         elseif GetPlayerId(hpp)>=12 then
             set hpc=8
@@ -6208,28 +6203,27 @@ function HPB_MenuShow takes boolean hpv returns nothing
         set hps=hps+1
     endloop
 endfunction
-// раз в 0.02 с: нажатие левой кнопки мыши над кнопкой «HP», строкой выбора или крестиком (локально, без задержки сети)
-function HPB_MenuPoll takes nothing returns nothing
-    local boolean hpd=IsMouseKeyPressed(MOUSE_BUTTON_TYPE_LEFT)
-    local framehandle hpf
+// клик по кнопке «HP», строке выбора или крестику (событие кнопки); действует только у нажавшего
+function HPB_MenuClick takes nothing returns nothing
+    local framehandle hpf=GetTriggerFrame()
     local integer hpk
-    if hpd and HPB_MDown==false then
-        set hpf=GetFrameUnderCursor()
-        if hpf!=null then
-            if hpf==HPB_MBtn then
-                call HPB_MenuShow(HPB_MOpen==false)
-            elseif hpf==HPB_MClose then
-                call HPB_MenuShow(false)
-            elseif HPB_MOpen then
-                set hpk=LoadInteger(HH,GetHandleId(hpf),HPB_MIDX)-1
-                if hpk>=0 then
-                    call HPB_SetMode(hpk)
-                endif
+    if GetTriggerPlayer()==GetLocalPlayer() then
+        if hpf==HPB_MBtn then
+            call HPB_MenuShow(HPB_MOpen==false)
+        elseif hpf==HPB_MClose then
+            call HPB_MenuShow(false)
+        elseif HPB_MOpen then
+            set hpk=LoadInteger(HH,GetHandleId(hpf),HPB_MIDX)-1
+            if hpk>=0 then
+                call HPB_SetMode(hpk)
             endif
         endif
-        set hpf=null
     endif
-    set HPB_MDown=hpd
+    set hpf=null
+endfunction
+// раз в 0.02 с: показ кнопки «HP» (без GetFrameUnderCursor — см. StatusIndicatorTooltip)
+function HPB_MenuPoll takes nothing returns nothing
+    local integer hpk
     // кнопка видна только после выбора режима и пока не открыто большое окно (развёрнутый multiboard не мешает);
     // окно при этом закрывается
     set HPB_MT=HPB_MT+1
@@ -6252,6 +6246,7 @@ endfunction
 function HPB_MenuInit takes nothing returns nothing
     local integer hps=0
     local framehandle hpf
+    local trigger hpg
     // кнопка над правым краем миникарты: иконка (подложка с надписью «HP» больше не показывается)
     set HPB_MBtn=CreateFrameByType("SIMPLEBUTTON","HPBarMenuButton",null,"",0)
     call ClearFrameAllPoints(HPB_MBtn)
@@ -6346,11 +6341,22 @@ function HPB_MenuInit takes nothing returns nothing
         call SaveInteger(HH,GetHandleId(HPB_MRow[hps]),HPB_MIDX,hps+1)
         set hps=hps+1
     endloop
+    set hpg=CreateTrigger()
+    call TriggerRegisterFrameEvent(hpg,HPB_MBtn,FRAMEEVENT_CONTROL_CLICK)
+    call TriggerRegisterFrameEvent(hpg,HPB_MClose,FRAMEEVENT_CONTROL_CLICK)
+    set hps=0
+    loop
+        exitwhen hps>2
+        call TriggerRegisterFrameEvent(hpg,HPB_MRow[hps],FRAMEEVENT_CONTROL_CLICK)
+        set hps=hps+1
+    endloop
+    call TriggerAddAction(hpg,function HPB_MenuClick)
     call HPB_MenuShow(false)
     call ShowFrame(HPB_MBtn,false)
     set HPB_MBtnVis=2
     call TimerStart(CreateTimer(),0.02,true,function HPB_MenuPoll)
     set hpf=null
+    set hpg=null
 endfunction
 function HPB_Bar takes string hpn, framehandle hpr, integer hps, real hpw, real hph, string hpt, integer hpk returns framehandle
     local framehandle hpf=CreateFrameByType("SIMPLEFRAME",hpn,hpr,"",hps)
@@ -6547,36 +6553,17 @@ function HeroBarPlace takes nothing returns nothing
     call SetFrameRelativePoint(HB_ScoreFrame,FRAMEPOINT_CENTER,GetOriginFrame(ORIGIN_FRAME_GAME_UI,0),FRAMEPOINT_TOP,HB_Shift,-0.09)
 endfunction
 function HeroBarHideClick takes nothing returns nothing
-    if GetTriggerPlayer()==GetLocalPlayer() and HB_Tick-HB_Hit[10]>50 then
-        set HB_Hit[10]=HB_Tick
+    if GetTriggerPlayer()==GetLocalPlayer() then
         call HeroBarShow(HB_Shown==false)
     endif
 endfunction
-// локальный опрос мыши (0.02 с): нажатие левой кнопки над иконкой героя или кнопкой скрытия срабатывает сразу;
-// анимация нажатия: иконка уменьшается и возвращается к прежнему размеру за 0.12 с
+// 0.02 с: анимация нажатия (иконка уменьшается и возвращается за 0.12 с), скрытие при больших окнах, сдвиг под multiboard.
+// Нажатия — только событиями кнопок (HeroBarClick, HeroBarHideClick), без GetFrameUnderCursor
 function HeroBarFast takes nothing returns nothing
-    local boolean hbd=IsMouseKeyPressed(MOUSE_BUTTON_TYPE_LEFT)
-    local framehandle hbf
     local integer hbi
     local integer hbm
     local real hbr
     set HB_Tick=HB_Tick+1
-    if hbd and HB_MouseDown==false then
-        set hbf=GetFrameUnderCursor()
-        if hbf!=null then
-            if hbf==HB_HideBtn or hbf==HB_HideChk then
-                set HB_Hit[10]=HB_Tick
-                call HeroBarShow(HB_Shown==false)
-            elseif HB_Shown then
-                set hbi=LoadInteger(HH,GetHandleId(hbf),HB_IDX)-1
-                if hbi>=0 then
-                    call HeroBarPress(hbi)
-                endif
-            endif
-        endif
-        set hbf=null
-    endif
-    set HB_MouseDown=hbd
     if ModuloInteger(HB_Tick,5)==0 then
         if HB_Blocked!=HeroBarBlockedWindows() then
             set HB_Blocked=HB_Blocked==false
@@ -6649,11 +6636,13 @@ function HeroBarUpdate takes nothing returns nothing
         endif
         if hbn!=HeroBarName[hbi] then
             set HeroBarName[hbi]=hbn
+            // подсказка привязана через SetFrameTooltip; пустая — прозрачная
             if hbn=="" then
-                call RemoveSavedHandle(HH,GetHandleId(HeroBarIcon[hbi]),SB_TIPFR)
+                call BlzFrameSetAlpha(HeroBarTip[hbi],0)
+                call BlzFrameSetText(HeroBarTipText[hbi]," ")
             else
                 call BlzFrameSetText(HeroBarTipText[hbi],hbn)
-                call SaveFrameHandle(HH,GetHandleId(HeroBarIcon[hbi]),SB_TIPFR,BlzFrameGetParent(HeroBarTipText[hbi]))
+                call BlzFrameSetAlpha(HeroBarTip[hbi],255)
             endif
         endif
         set hbn=""
@@ -6689,6 +6678,7 @@ function HeroBarInit takes nothing returns nothing
         return
     endif
     set HB_Inited=true
+    set HB_MbFrame=GetOriginFrame(ORIGIN_FRAME_MULTIBOARD,0)
     loop
         exitwhen hbi>9
         if hbi<5 then
@@ -6790,6 +6780,9 @@ function HeroBarInit takes nothing returns nothing
         call BlzFrameSetTexture(hbt,"TooltipLessVisible.blp",0,true)
         call BlzFrameSetLevel(hbt,50)
         call BlzFrameSetVisible(hbt,false)
+        call BlzFrameSetAlpha(hbt,0)
+        call SetFrameTooltip(hbf,hbt)
+        set HeroBarTip[hbi]=hbt
         set HeroBarTipText[hbi]=hbtx
         set HeroBarTex[hbi]="UI\\Widgets\\Console\\Human\\human-inventory-slotfiller.blp"
         set HeroBarCol[hbi]=0xFFFFFFFF
@@ -38951,10 +38944,9 @@ function Trig_StatusBar_Actions takes nothing returns nothing
     set x=0
 
     // Статус-бар — SIMPLE-фреймы с приоритетом выше 5: с WFE (ISCUSTOMUIDRAW) его SIMPLE-фрейм WFEUIBlackBar
-    // (приоритет 5) забирал мышь у обычных фреймов. Подсказки — по таймеру через GetFrameUnderCursor.
+    // (приоритет 5) забирал мышь у обычных фреймов. Подсказки — SetFrameTooltip на иконке.
     set StatusBarFrame=CreateFrameByType("SIMPLEFRAME", "StatusBar", null, "", 0)
     call TimerStart(CreateTimer(),0.25,true,function StatusIndicatorConsole)
-    call TimerStart(CreateTimer(),0.1,true,function StatusIndicatorHoverPoll)
     call StatusIndicatorTipInit()
     call ShieldPortraitInit()
     call HPB_Init()
