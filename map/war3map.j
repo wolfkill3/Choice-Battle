@@ -887,7 +887,7 @@ framehandle SP_Frame=null
 framehandle SP_Text=null
 string SP_Txt=""
 // собственные полоски HP/MP/щита над юнитами вместо стандартных (EnableStatbar(false)); всё локально у каждого игрока.
-// Места 0..27 — герои и их иллюзии (засечки на каждые 2500 HP, уровень, щит), 28..43 — остальные юниты.
+// Места 0..27 — герои и их иллюзии (засечки на каждые 500 / 2500 HP, уровень, щит), 28..43 — остальные юниты.
 // Позиция на экране — через невидимый эффект HPB_Proj, поставленный над юнитом на высоту его полоски (overhead offset).
 constant integer HPB_HN=28
 constant integer HPB_N=44
@@ -6057,19 +6057,28 @@ function HPB_Update takes nothing returns nothing
                         endif
                     endif
                     if hps<HPB_HN and hpz then
-                        // засечки: каждые 2500 HP (при больших запасах — каждые 25 тысяч)
+                        // засечки: до 5500 HP — каждые 500 (мелкие, на 2500 и 5000 — толстые), дальше — каждые 2500
                         if R2I(hpm)!=HPB_Ticks[hps] then
                             set HPB_Ticks[hps]=R2I(hpm)
                             set hpr=2500.
-                            if hpm>(HPB_TN+1)*2500. then
-                                set hpr=25000.
+                            if hpm<5500. then
+                                set hpr=500.
                             endif
                             set hpk=R2I((hpm-1.)/hpr)
                             set hpj=0
                             loop
                                 exitwhen hpj>=HPB_TN
                                 if hpj<hpk then
-                                    call SetFrameRelativePoint(HPB_Tick[hps*HPB_TN+hpj],FRAMEPOINT_TOPLEFT,HPB_Hp[hps],FRAMEPOINT_TOPLEFT,hbw*(hpj+1)*hpr/hpm,0.)
+                                    // толстая засечка: шаг 2500 или каждая пятая из мелких (2500, 5000)
+                                    if hpr>500. or ModuloInteger(hpj+1,5)==0 then
+                                        set hpo=.0008
+                                        set hpa=hph
+                                    else
+                                        set hpo=.0004
+                                        set hpa=hph*.6
+                                    endif
+                                    call SetFrameSize(HPB_Tick[hps*HPB_TN+hpj],hpo,hpa)
+                                    call SetFrameRelativePoint(HPB_Tick[hps*HPB_TN+hpj],FRAMEPOINT_TOPLEFT,HPB_Hp[hps],FRAMEPOINT_TOPLEFT,hbw*(hpj+1)*hpr/hpm-hpo/2,-(hph-hpa)/2)
                                     call ShowFrame(HPB_Tick[hps*HPB_TN+hpj],true)
                                 else
                                     call ShowFrame(HPB_Tick[hps*HPB_TN+hpj],false)
@@ -6377,7 +6386,7 @@ function HPB_Init takes nothing returns nothing
             call SetFrameText(HPB_LvlTxt[hps]," ")
             call SetFrameRelativePoint(HPB_LvlTxt[hps],FRAMEPOINT_CENTER,HPB_Lvl[hps],FRAMEPOINT_CENTER,0.,0.)
             call ShowFrame(HPB_LvlTxt[hps],true)
-            // засечки на тысячи
+            // засечки (шаг 500 или 2500 HP)
             set hpj=0
             loop
                 exitwhen hpj>=HPB_TN
