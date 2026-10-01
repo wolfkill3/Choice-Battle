@@ -886,6 +886,59 @@ integer array HB_ShVis
 framehandle SP_Frame=null
 framehandle SP_Text=null
 string SP_Txt=""
+// собственные полоски HP/MP/щита над юнитами вместо стандартных (EnableStatbar(false)); всё локально у каждого игрока.
+// Места 0..15 — герои и их иллюзии (засечки на каждую тысячу HP, уровень, щит), 16..55 — остальные юниты.
+// Позиция на экране — через невидимый эффект HPB_Proj, поставленный над юнитом на высоту его полоски (overhead offset).
+constant integer HPB_HN=16
+constant integer HPB_N=56
+constant integer HPB_TN=30
+effect HPB_Proj=null
+group HPB_G=null
+hashtable HPB_HT=null
+integer HPB_Mode=0
+integer HPB_T=0
+boolean HPB_Debug=false
+framehandle array HPB_Root
+framehandle array HPB_Hp
+framehandle array HPB_MpBg
+framehandle array HPB_Mp
+framehandle array HPB_ShBg
+framehandle array HPB_Sh
+framehandle array HPB_Lvl
+framehandle array HPB_LvlTxt
+framehandle array HPB_Tick
+unit array HPB_U
+boolean array HPB_Vis
+real array HPB_HpW
+real array HPB_MpW
+real array HPB_ShW
+integer array HPB_Col
+integer array HPB_Ticks
+integer array HPB_Lv
+integer array HPB_MpOn
+integer array HPB_ShOn
+// размеры: ширина, высота HP / MP / щита; у героев (места 0..15) и остальных юнитов; поля рамки и зазор
+constant real HPB_HW=.04554
+constant real HPB_HH=.004
+constant real HPB_HM=.00242
+constant real HPB_UW=.03289
+constant real HPB_UH=.003
+constant real HPB_UM=.00198
+constant real HPB_SH=.00143
+constant real HPB_PAD=.0006
+constant real HPB_GAP=.0004
+// окно выбора цвета полосок HP (вместо команды -hpcolor): кнопка «HP» над миникартой, клики — локальным опросом мыши
+framehandle HPB_MBtn=null
+framehandle HPB_MBtnFrame=null
+framehandle array HPB_MText
+integer HPB_MBtnVis=0
+framehandle HPB_Menu=null
+framehandle HPB_MClose=null
+framehandle array HPB_MRow
+framehandle array HPB_MChk
+boolean HPB_MOpen=false
+boolean HPB_MDown=false
+constant integer HPB_MIDX=StringHash("HPBMenuIdx")
 // панель прячется, пока открыты большие окна (таверна, магазин, эмоции, статистика, Hero ID) или развёрнут multiboard
 boolean HB_Blocked=false
 framehandle HB_HideChk=null
@@ -5664,11 +5717,637 @@ function ShieldPortraitInit takes nothing returns nothing
     call ShowFrame(SP_Text,false)
     call TimerStart(CreateTimer(),0.1,true,function ShieldPortraitUpdate)
 endfunction
+// открыто ли большое окно (без multiboard) — по нему закрывается окно цвета полосок HP
+function HeroBarBlockedWindows takes nothing returns boolean
+    if TavernHeroFrame!=null and IsFrameVisible(TavernHeroFrame) then
+        return true
+    endif
+    if TavernHeroFrameStats!=null and IsFrameVisible(TavernHeroFrameStats) then
+        return true
+    endif
+    if TavernHeroFrameTitles!=null and IsFrameVisible(TavernHeroFrameTitles) then
+        return true
+    endif
+    if EmoteBarFrame!=null and IsFrameVisible(EmoteBarFrame) then
+        return true
+    endif
+    if StatsBarFrame!=null and IsFrameVisible(StatsBarFrame) then
+        return true
+    endif
+    if IdHeroFrame!=null and IsFrameVisible(IdHeroFrame) then
+        return true
+    endif
+    if ShMain!=null and IsFrameVisible(ShMain) then
+        return true
+    endif
+    return false
+endfunction
+// открыто ли большое окно или развёрнут multiboard (локально) — по нему прячется панель героев
+function HeroBarBlockedNow takes nothing returns boolean
+    if mbg!=null and IsMultiboardDisplayed(mbg) and IsMultiboardMinimized(mbg)==false then
+        return true
+    endif
+    return HeroBarBlockedWindows()
+endfunction
+function HPB_Tex takes integer hpc returns string
+    if hpc<10 then
+        return "ReplaceableTextures\\TeamColor\\TeamColor"+"0"+I2S(hpc)+".blp"
+    endif
+    return "ReplaceableTextures\\TeamColor\\TeamColor"+I2S(hpc)+".blp"
+endfunction
+// цвет полоски HP: 0 — стандартный зелёный, 1 — цвет игрока, 2 — по отношению (свой зелёный, союзник жёлтый, враг красный, нейтрал серый)
+function HPB_ColorOf takes unit hpu returns integer
+    local player hpp=GetOwningPlayer(hpu)
+    local integer hpc=6
+    if HPB_Mode==1 then
+        set hpc=GetHandleId(GetPlayerColor(hpp))
+    elseif HPB_Mode==2 then
+        if hpp==GetLocalPlayer() then
+            set hpc=6
+        elseif GetPlayerId(hpp)>=12 then
+            set hpc=8
+        elseif IsPlayerAlly(hpp,GetLocalPlayer()) then
+            set hpc=4
+        else
+            set hpc=0
+        endif
+    endif
+    set hpp=null
+    return hpc
+endfunction
+// показывать ли полоску: живой, видимый локальному игроку, не саранча; без полосок магазины, сундуки и неуязвимые
+// не-герои (дамми); врагам не показывается полоска, поднятая через SetUnitOverheadOffset (как в D Ли Шувеня)
+function HPB_Eligible takes unit hpu returns boolean
+    if hpu==null or GetUnitTypeId(hpu)==0 or IsUnitType(hpu,UNIT_TYPE_DEAD) or IsUnitHidden(hpu) then
+        return false
+    endif
+    if GetUnitAbilityLevel(hpu,'Aloc')>0 or GetUnitState(hpu,UNIT_STATE_MAX_LIFE)<=0 then
+        return false
+    endif
+    if GetUnitTypeId(hpu)=='H038' or GetUnitTypeId(hpu)=='n008' or GetUnitAbilityLevel(hpu,'Aneu')>0 or GetUnitAbilityLevel(hpu,'Apit')>0 then
+        return false
+    endif
+    if GetUnitAbilityLevel(hpu,'Avul')>0 and IsUnitType(hpu,UNIT_TYPE_HERO)==false then
+        return false
+    endif
+    if IsUnitVisible(hpu,GetLocalPlayer())==false then
+        return false
+    endif
+    if GetUnitOverheadOffset(hpu)>1000 and IsUnitAlly(hpu,GetLocalPlayer())==false and GetPlayerId(GetLocalPlayer())<10 then
+        return false
+    endif
+    return true
+endfunction
+function HPB_Free takes integer hps returns nothing
+    if HPB_U[hps]!=null then
+        call RemoveSavedInteger(HPB_HT,GetHandleId(HPB_U[hps]),0)
+    endif
+    set HPB_U[hps]=null
+    if HPB_Vis[hps] then
+        set HPB_Vis[hps]=false
+        call ShowFrame(HPB_Root[hps],false)
+    endif
+endfunction
+function HPB_Fill takes framehandle hpf, real hpw, real hph returns nothing
+    if hpw<0.0003 then
+        call ShowFrame(hpf,false)
+    else
+        call SetFrameSize(hpf,hpw,hph)
+        call ShowFrame(hpf,true)
+    endif
+endfunction
+// размер чёрной рамки по тому, есть ли MP и щит; щит — под MP (или под HP, если маны нет); окошко уровня — во всю высоту рамки
+function HPB_Layout takes integer hps returns nothing
+    local real hbw=HPB_UW
+    local real hph=HPB_UH
+    local real hpm=HPB_UM
+    local real hpy
+    if hps<HPB_HN then
+        set hbw=HPB_HW
+        set hph=HPB_HH
+        set hpm=HPB_HM
+    endif
+    // сверху вниз: щит (если есть), HP, MP (если есть мана)
+    set hpy=HPB_PAD
+    if hps<HPB_HN then
+        call SetFrameRelativePoint(HPB_Sh[hps],FRAMEPOINT_TOPLEFT,HPB_Root[hps],FRAMEPOINT_TOPLEFT,HPB_PAD,-hpy)
+        if HPB_ShOn[hps]==1 then
+            set hpy=hpy+HPB_SH+HPB_GAP
+        endif
+    endif
+    call SetFrameRelativePoint(HPB_Hp[hps],FRAMEPOINT_TOPLEFT,HPB_Root[hps],FRAMEPOINT_TOPLEFT,HPB_PAD,-hpy)
+    set hpy=hpy+hph
+    call SetFrameRelativePoint(HPB_Mp[hps],FRAMEPOINT_TOPLEFT,HPB_Root[hps],FRAMEPOINT_TOPLEFT,HPB_PAD,-(hpy+HPB_GAP))
+    if HPB_MpOn[hps]==1 then
+        set hpy=hpy+HPB_GAP+hpm
+    endif
+    set hpy=hpy+HPB_PAD
+    call SetFrameSize(HPB_Root[hps],hbw+2*HPB_PAD,hpy)
+    if hps<HPB_HN then
+        call SetFrameSize(HPB_Lvl[hps],.0095,hpy)
+    endif
+endfunction
+// раз в 0.1 с: освободить места ушедших юнитов, раздать места юнитам рядом с камерой
+function HPB_Assign takes nothing returns nothing
+    local unit hpu
+    local integer hps=0
+    local integer hpe
+    local real hpx=GetCameraTargetPositionX()
+    local real hpy=GetCameraTargetPositionY()
+    loop
+        exitwhen hps>=HPB_N
+        set hpu=HPB_U[hps]
+        if hpu!=null then
+            if HPB_Eligible(hpu)==false or (GetUnitX(hpu)-hpx)*(GetUnitX(hpu)-hpx)+(GetUnitY(hpu)-hpy)*(GetUnitY(hpu)-hpy)>2800.*2800. then
+                call HPB_Free(hps)
+            endif
+        endif
+        set hps=hps+1
+    endloop
+    call GroupEnumUnitsInRange(HPB_G,hpx,hpy,2600.,null)
+    loop
+        set hpu=FirstOfGroup(HPB_G)
+        exitwhen hpu==null
+        call GroupRemoveUnit(HPB_G,hpu)
+        if LoadInteger(HPB_HT,GetHandleId(hpu),0)==0 and HPB_Eligible(hpu) then
+            if IsUnitType(hpu,UNIT_TYPE_HERO) then
+                set hps=0
+                set hpe=HPB_HN
+            else
+                set hps=HPB_HN
+                set hpe=HPB_N
+            endif
+            loop
+                exitwhen hps>=hpe
+                exitwhen HPB_U[hps]==null
+                set hps=hps+1
+            endloop
+            if hps<hpe then
+                set HPB_U[hps]=hpu
+                call SaveInteger(HPB_HT,GetHandleId(hpu),0,hps+1)
+                set HPB_HpW[hps]=-1.
+                set HPB_MpW[hps]=-1.
+                set HPB_ShW[hps]=-1.
+                set HPB_Col[hps]=-1
+                set HPB_Ticks[hps]=-1
+                set HPB_Lv[hps]=-1
+                set HPB_MpOn[hps]=0
+                set HPB_ShOn[hps]=0
+            endif
+        endif
+    endloop
+    set hpu=null
+endfunction
+// раз в 0.01 с: перенос полосок за юнитами и заливка; цвет, засечки, уровень и щит — раз в 0.1 с
+function HPB_Update takes nothing returns nothing
+    local integer hps=0
+    local unit hpu
+    local real hpo
+    local real hpx
+    local real hpy
+    local real hpw
+    local real hpm
+    local real hpr
+    local real hbw
+    local real hph
+    local integer hpk
+    local integer hpj
+    local boolean hpz
+    set HPB_T=HPB_T+1
+    loop
+        exitwhen hps>=HPB_N
+        set hpu=HPB_U[hps]
+        if hpu!=null then
+            if IsUnitType(hpu,UNIT_TYPE_DEAD) or GetUnitTypeId(hpu)==0 or IsUnitHidden(hpu) or IsUnitVisible(hpu,GetLocalPlayer())==false then
+                call HPB_Free(hps)
+            else
+                set hpo=GetUnitOverheadOffset(hpu)
+                if hpo>1000 then
+                    set hpo=250.
+                endif
+                call SetSpecialEffectPositionWithZ(HPB_Proj,GetUnitX(hpu),GetUnitY(hpu),GetUnitZ(hpu)+hpo)
+                // по горизонтали — экранная позиция самого юнита (эффект давал сдвиг влево), по вертикали — точка полоски над ним
+                set hpx=GetUnitScreenX(hpu)
+                set hpy=GetSpecialEffectScreenY(HPB_Proj)
+                if hpx<-0.15 or hpx>0.95 or hpy<0.13 or hpy>0.58 then
+                    if HPB_Vis[hps] then
+                        set HPB_Vis[hps]=false
+                        call ShowFrame(HPB_Root[hps],false)
+                    endif
+                else
+                    if HPB_Vis[hps]==false then
+                        set HPB_Vis[hps]=true
+                        call ShowFrame(HPB_Root[hps],true)
+                        // показ корня мог снова показать скрытые части (щит, MP, засечки) — пересчитать всё заново
+                        set HPB_HpW[hps]=-1.
+                        set HPB_MpW[hps]=-1.
+                        set HPB_ShW[hps]=-1.
+                        set HPB_Col[hps]=-1
+                        set HPB_Ticks[hps]=-1
+                        set HPB_MpOn[hps]=0
+                        set HPB_ShOn[hps]=0
+                    endif
+                    // над юнитом; на тестах полоска стояла левее героя на ~0.014 — поправка вправо
+                    call SetFrameAbsolutePoint(HPB_Root[hps],FRAMEPOINT_CENTER,hpx+.014,hpy)
+                    if hps<HPB_HN then
+                        set hbw=HPB_HW
+                        set hph=HPB_HH
+                    else
+                        set hbw=HPB_UW
+                        set hph=HPB_UH
+                    endif
+                    set hpz=HPB_Col[hps]==-1 or ModuloInteger(HPB_T+hps,10)==0
+                    // HP
+                    set hpm=GetUnitState(hpu,UNIT_STATE_MAX_LIFE)
+                    set hpw=hbw*GetWidgetLife(hpu)/hpm
+                    if hpw>hbw then
+                        set hpw=hbw
+                    endif
+                    set hpw=I2R(R2I(hpw*4000.))/4000.
+                    if hpw!=HPB_HpW[hps] then
+                        set HPB_HpW[hps]=hpw
+                        call HPB_Fill(HPB_Hp[hps],hpw,hph)
+                    endif
+                    if hpz then
+                        set hpk=HPB_ColorOf(hpu)
+                        if hpk!=HPB_Col[hps] then
+                            set HPB_Col[hps]=hpk
+                            call SetFrameTextureEx(HPB_Hp[hps],0,HPB_Tex(hpk),false,"",0)
+                        endif
+                    endif
+                    // MP
+                    set hpr=GetUnitState(hpu,UNIT_STATE_MAX_MANA)
+                    set hpk=2
+                    if hpr>0 then
+                        set hpk=1
+                    endif
+                    if hpk!=HPB_MpOn[hps] then
+                        set HPB_MpOn[hps]=hpk
+                        set HPB_MpW[hps]=-1.
+                        if hpk==2 then
+                            call ShowFrame(HPB_Mp[hps],false)
+                        endif
+                        call HPB_Layout(hps)
+                    endif
+                    if hpr>0 then
+                        set hpw=hbw*GetUnitState(hpu,UNIT_STATE_MANA)/hpr
+                        if hpw>hbw then
+                            set hpw=hbw
+                        endif
+                        set hpw=I2R(R2I(hpw*4000.))/4000.
+                        if hpw!=HPB_MpW[hps] then
+                            set HPB_MpW[hps]=hpw
+                            if hps<HPB_HN then
+                                call HPB_Fill(HPB_Mp[hps],hpw,HPB_HM)
+                            else
+                                call HPB_Fill(HPB_Mp[hps],hpw,HPB_UM)
+                            endif
+                        endif
+                    endif
+                    if hps<HPB_HN and hpz then
+                        // засечки: каждая тысяча HP (при больших запасах — каждые 10 тысяч)
+                        if R2I(hpm)!=HPB_Ticks[hps] then
+                            set HPB_Ticks[hps]=R2I(hpm)
+                            set hpr=1000.
+                            if hpm>(HPB_TN+1)*1000. then
+                                set hpr=10000.
+                            endif
+                            set hpk=R2I((hpm-1.)/hpr)
+                            set hpj=0
+                            loop
+                                exitwhen hpj>=HPB_TN
+                                if hpj<hpk then
+                                    call SetFrameRelativePoint(HPB_Tick[hps*HPB_TN+hpj],FRAMEPOINT_TOPLEFT,HPB_Hp[hps],FRAMEPOINT_TOPLEFT,hbw*(hpj+1)*hpr/hpm,0.)
+                                    call ShowFrame(HPB_Tick[hps*HPB_TN+hpj],true)
+                                else
+                                    call ShowFrame(HPB_Tick[hps*HPB_TN+hpj],false)
+                                endif
+                                set hpj=hpj+1
+                            endloop
+                        endif
+                        // уровень
+                        set hpk=GetHeroLevel(hpu)
+                        if hpk!=HPB_Lv[hps] then
+                            set HPB_Lv[hps]=hpk
+                            call SetFrameText(HPB_LvlTxt[hps],I2S(hpk))
+                        endif
+                        // щит: доля от максимума HP; щит без запаса — полоска во всю ширину
+                        set hpr=ShieldHPTotal(hpu)
+                        set hpw=0.
+                        if hpr>0 then
+                            set hpw=hbw*hpr/hpm
+                            if hpw>hbw then
+                                set hpw=hbw
+                            endif
+                        elseif HeroHasShield(hpu) then
+                            set hpw=hbw
+                        endif
+                        set hpw=I2R(R2I(hpw*4000.))/4000.
+                        if hpw!=HPB_ShW[hps] then
+                            set HPB_ShW[hps]=hpw
+                            call HPB_Fill(HPB_Sh[hps],hpw,HPB_SH)
+                            set hpk=2
+                            if hpw>0 then
+                                set hpk=1
+                            endif
+                            if hpk!=HPB_ShOn[hps] then
+                                set HPB_ShOn[hps]=hpk
+                                call HPB_Layout(hps)
+                            endif
+                        endif
+                    endif
+                endif
+            endif
+        endif
+        set hps=hps+1
+    endloop
+    set hpu=null
+endfunction
+// отладка (-hpbdbg): экранные координаты выбранного юнита разными способами
+function HPB_DebugTick takes nothing returns nothing
+    local unit hpu=GetUnitSelected(GetLocalPlayer())
+    local real hpx
+    local real hpy
+    if HPB_Debug and hpu!=null then
+        call SetSpecialEffectPositionWithZ(HPB_Proj,GetUnitX(hpu),GetUnitY(hpu),GetUnitZ(hpu))
+        set hpx=GetSpecialEffectScreenX(HPB_Proj)
+        set hpy=GetSpecialEffectScreenY(HPB_Proj)
+        call DisplayTimedTextToPlayer(GetLocalPlayer(),0,0,1,"unit "+R2SW(GetUnitScreenX(hpu),1,4)+" "+R2SW(GetUnitScreenY(hpu),1,4)+" | eff "+R2SW(hpx,1,4)+" "+R2SW(hpy,1,4)+" | z "+R2SW(GetUnitZ(hpu),1,1)+" over "+R2SW(GetUnitOverheadOffset(hpu),1,1))
+    endif
+    set hpu=null
+endfunction
+// -hpbdbg — отладка позиции полосок (цвет выбирается в окне, кнопка «HP» над миникартой)
+function HPB_Chat takes nothing returns nothing
+    local string hpt=StringCase(GetEventPlayerChatString(),false)
+    if GetTriggerPlayer()!=GetLocalPlayer() then
+        return
+    endif
+    if hpt=="-hpbdbg" then
+        set HPB_Debug=HPB_Debug==false
+        return
+    endif
+endfunction
+function HPB_SetMode takes integer hpk returns nothing
+    local integer hps=0
+    set HPB_Mode=hpk
+    loop
+        exitwhen hps>=HPB_N
+        set HPB_Col[hps]=-1
+        set hps=hps+1
+    endloop
+    set hps=0
+    loop
+        exitwhen hps>2
+        call ShowFrame(HPB_MChk[hps],HPB_MOpen and hps==HPB_Mode)
+        set hps=hps+1
+    endloop
+endfunction
+function HPB_MenuShow takes boolean hpv returns nothing
+    local integer hps=0
+    set HPB_MOpen=hpv
+    call ShowFrame(HPB_Menu,hpv)
+    call ShowFrame(HPB_MClose,hpv)
+    // тексты SIMPLETEXT не появляются вместе с родителем — показывать явно
+    loop
+        exitwhen hps>4
+        call ShowFrame(HPB_MText[hps],hpv)
+        set hps=hps+1
+    endloop
+    set hps=0
+    loop
+        exitwhen hps>2
+        call ShowFrame(HPB_MRow[hps],hpv)
+        call ShowFrame(HPB_MChk[hps],hpv and hps==HPB_Mode)
+        set hps=hps+1
+    endloop
+endfunction
+// раз в 0.02 с: нажатие левой кнопки мыши над кнопкой «HP», строкой выбора или крестиком (локально, без задержки сети)
+function HPB_MenuPoll takes nothing returns nothing
+    local boolean hpd=IsMouseKeyPressed(MOUSE_BUTTON_TYPE_LEFT)
+    local framehandle hpf
+    local integer hpk
+    if hpd and HPB_MDown==false then
+        set hpf=GetFrameUnderCursor()
+        if hpf!=null then
+            if hpf==HPB_MBtn then
+                call HPB_MenuShow(HPB_MOpen==false)
+            elseif hpf==HPB_MClose then
+                call HPB_MenuShow(false)
+            elseif HPB_MOpen then
+                set hpk=LoadInteger(HH,GetHandleId(hpf),HPB_MIDX)-1
+                if hpk>=0 then
+                    call HPB_SetMode(hpk)
+                endif
+            endif
+        endif
+        set hpf=null
+    endif
+    set HPB_MDown=hpd
+    // кнопка видна только после выбора режима и пока не открыто большое окно (развёрнутый multiboard не мешает);
+    // окно при этом закрывается
+    if HB_Inited and HeroBarBlockedWindows()==false then
+        set hpk=1
+    else
+        set hpk=2
+    endif
+    if hpk!=HPB_MBtnVis then
+        set HPB_MBtnVis=hpk
+        call ShowFrame(HPB_MBtn,hpk==1)
+        if hpk==2 and HPB_MOpen then
+            call HPB_MenuShow(false)
+        endif
+    endif
+endfunction
+function HPB_MenuInit takes nothing returns nothing
+    local integer hps=0
+    local framehandle hpf
+    // кнопка над правым краем миникарты: иконка (подложка с надписью «HP» больше не показывается)
+    set HPB_MBtn=CreateFrameByType("SIMPLEBUTTON","HPBarMenuButton",null,"",0)
+    call ClearFrameAllPoints(HPB_MBtn)
+    call SetFrameTexture(HPB_MBtn,"ReplaceableTextures\\CommandButtons\\BTNHealthStone.blp",0,true)
+    call SetFrameTexture(HPB_MBtn,"ReplaceableTextures\\CommandButtons\\BTNHealthStone.blp",1,true)
+    call SetFrameTexture(HPB_MBtn,"ReplaceableTextures\\CommandButtons\\BTNHealthStone.blp",2,true)
+    call SetFrameSize(HPB_MBtn,.02,.02)
+    call SetFrameRelativePoint(HPB_MBtn,FRAMEPOINT_BOTTOMRIGHT,GetOriginFrame(ORIGIN_FRAME_MINIMAP,0),FRAMEPOINT_TOPRIGHT,0.,.012)
+    call SetFramePriority(HPB_MBtn,9)
+    set HPB_MBtnFrame=CreateFrameByType("SIMPLEFRAME","HPBarMenuButtonFrame",null,"",0)
+    call ClearFrameAllPoints(HPB_MBtnFrame)
+    call SetFrameSize(HPB_MBtnFrame,.032,.016)
+    call SetFrameTextureEx(HPB_MBtnFrame,0,"UI\\widgets\\BattleNet\\bnet-tooltip-background.blp",false,"Choice-tooltip-border.blp",0)
+    call SetFrameRelativePoint(HPB_MBtnFrame,FRAMEPOINT_CENTER,HPB_MBtn,FRAMEPOINT_CENTER,0.,0.)
+    call SetFramePriority(HPB_MBtnFrame,7)
+    call ShowFrame(HPB_MBtnFrame,false)
+    set hpf=CreateFrameByType("SIMPLETEXT","HPBarMenuButtonText",HPB_MBtnFrame,"",0)
+    set HPB_MText[5]=hpf
+    call ClearFrameAllPoints(hpf)
+    call SetFrameBlendMode(hpf,0,BLEND_MODE_BLEND)
+    call SetFrameFont(hpf,"Fonts\\FRIZQT__.TTF",.011,0)
+    call SetFrameTextAlignment(hpf,TEXT_JUSTIFY_CENTER,TEXT_JUSTIFY_MIDDLE)
+    call SetFrameTextColour(hpf,0xFFFFA500)
+    call SetFrameText(hpf,"HP")
+    call SetFrameRelativePoint(hpf,FRAMEPOINT_CENTER,HPB_MBtnFrame,FRAMEPOINT_CENTER,0.,0.)
+    call ShowFrame(hpf,false)
+    // окно над кнопкой: заголовок, три строки с галочкой, крестик
+    set HPB_Menu=CreateFrameByType("SIMPLEFRAME","HPBarMenu",null,"",0)
+    call ClearFrameAllPoints(HPB_Menu)
+    call SetFrameSize(HPB_Menu,.112,.062)
+    call SetFrameRelativePoint(HPB_Menu,FRAMEPOINT_BOTTOMLEFT,HPB_MBtn,FRAMEPOINT_TOPLEFT,0.,.003)
+    call SetFrameTextureEx(HPB_Menu,0,"UI\\widgets\\BattleNet\\bnet-tooltip-background.blp",false,"Choice-tooltip-border.blp",0)
+    call SetFramePriority(HPB_Menu,8)
+    set hpf=CreateFrameByType("SIMPLETEXT","HPBarMenuTitle",HPB_Menu,"",0)
+    set HPB_MText[0]=hpf
+    call ClearFrameAllPoints(hpf)
+    call SetFrameBlendMode(hpf,0,BLEND_MODE_BLEND)
+    call SetFrameFont(hpf,"Fonts\\FRIZQT__.TTF",.0085,0)
+    call SetFrameTextAlignment(hpf,TEXT_JUSTIFY_CENTER,TEXT_JUSTIFY_MIDDLE)
+    call SetFrameTextColour(hpf,0xFFFFA500)
+    call SetFrameText(hpf,"Цвет полосок HP")
+    call SetFrameRelativePoint(hpf,FRAMEPOINT_TOP,HPB_Menu,FRAMEPOINT_TOP,0.,-.007)
+    set HPB_MClose=CreateFrameByType("SIMPLEBUTTON","HPBarMenuClose",null,"",0)
+    call ClearFrameAllPoints(HPB_MClose)
+    call SetFrameSize(HPB_MClose,.01,.01)
+    call SetFrameRelativePoint(HPB_MClose,FRAMEPOINT_TOPRIGHT,HPB_Menu,FRAMEPOINT_TOPRIGHT,-.004,-.004)
+    call SetFramePriority(HPB_MClose,9)
+    set hpf=CreateFrameByType("SIMPLETEXT","HPBarMenuCloseText",HPB_Menu,"",0)
+    set HPB_MText[1]=hpf
+    call ClearFrameAllPoints(hpf)
+    call SetFrameBlendMode(hpf,0,BLEND_MODE_BLEND)
+    call SetFrameFont(hpf,"Fonts\\FRIZQT__.TTF",.0085,0)
+    call SetFrameTextAlignment(hpf,TEXT_JUSTIFY_CENTER,TEXT_JUSTIFY_MIDDLE)
+    call SetFrameTextColour(hpf,0xFFFFA500)
+    call SetFrameText(hpf,"X")
+    call SetFrameRelativePoint(hpf,FRAMEPOINT_CENTER,HPB_MClose,FRAMEPOINT_CENTER,0.,0.)
+    loop
+        exitwhen hps>2
+        // фон галочки и подпись — в окне; строка целиком — невидимая кнопка поверх
+        set hpf=CreateFrameByType("SIMPLEFRAME","HPBarMenuBox",HPB_Menu,"",hps)
+        call ClearFrameAllPoints(hpf)
+        call SetFrameSize(hpf,.009,.009)
+        call SetFrameRelativePoint(hpf,FRAMEPOINT_TOPLEFT,HPB_Menu,FRAMEPOINT_TOPLEFT,.007,-.0175-hps*.0135)
+        call SetFrameTextureEx(hpf,0,"UI\\Widgets\\EscMenu\\Human\\checkbox-background.blp",false,"",0)
+        call SetFramePriority(hpf,9)
+        set HPB_MChk[hps]=CreateFrameByType("SIMPLEFRAME","HPBarMenuCheck",null,"",hps)
+        call ClearFrameAllPoints(HPB_MChk[hps])
+        call SetFrameSize(HPB_MChk[hps],.009,.009)
+        call SetFrameRelativePoint(HPB_MChk[hps],FRAMEPOINT_CENTER,hpf,FRAMEPOINT_CENTER,0.,0.)
+        call SetFrameTextureEx(HPB_MChk[hps],0,"UI\\Widgets\\EscMenu\\Human\\checkbox-check.blp",false,"",0)
+        call SetFramePriority(HPB_MChk[hps],10)
+        set hpf=CreateFrameByType("SIMPLETEXT","HPBarMenuLabel",HPB_Menu,"",hps)
+        set HPB_MText[2+hps]=hpf
+        call ClearFrameAllPoints(hpf)
+        call SetFrameBlendMode(hpf,0,BLEND_MODE_BLEND)
+        call SetFrameFont(hpf,"Fonts\\FRIZQT__.TTF",.0075,0)
+        call SetFrameTextAlignment(hpf,TEXT_JUSTIFY_CENTER,TEXT_JUSTIFY_LEFT)
+        call SetFrameTextColour(hpf,0xFFFFFFFF)
+        if hps==0 then
+            call SetFrameText(hpf,"Стандартный (зелёный)")
+        elseif hps==1 then
+            call SetFrameText(hpf,"Цвета игроков")
+        else
+            call SetFrameText(hpf,"Свой / союзники / враги")
+        endif
+        call SetFrameRelativePoint(hpf,FRAMEPOINT_LEFT,HPB_Menu,FRAMEPOINT_TOPLEFT,.019,-.022-hps*.0135)
+        set HPB_MRow[hps]=CreateFrameByType("SIMPLEBUTTON","HPBarMenuRow",null,"",hps)
+        call ClearFrameAllPoints(HPB_MRow[hps])
+        call SetFrameSize(HPB_MRow[hps],.102,.012)
+        call SetFrameRelativePoint(HPB_MRow[hps],FRAMEPOINT_LEFT,HPB_Menu,FRAMEPOINT_TOPLEFT,.005,-.022-hps*.0135)
+        call SetFramePriority(HPB_MRow[hps],11)
+        call SaveInteger(HH,GetHandleId(HPB_MRow[hps]),HPB_MIDX,hps+1)
+        set hps=hps+1
+    endloop
+    call HPB_MenuShow(false)
+    call ShowFrame(HPB_MBtn,false)
+    set HPB_MBtnVis=2
+    call TimerStart(CreateTimer(),0.02,true,function HPB_MenuPoll)
+    set hpf=null
+endfunction
+function HPB_Bar takes string hpn, framehandle hpr, integer hps, real hpw, real hph, string hpt, integer hpk returns framehandle
+    local framehandle hpf=CreateFrameByType("SIMPLEFRAME",hpn,hpr,"",hps)
+    call ClearFrameAllPoints(hpf)
+    call SetFrameSize(hpf,hpw,hph)
+    call SetFrameTextureEx(hpf,0,hpt,false,"",0)
+    call SetFramePriority(hpf,hpk)
+    return hpf
+endfunction
+function HPB_Init takes nothing returns nothing
+    local integer hps=0
+    local integer hpj
+    local real hbw
+    local real hph
+    local real hpm
+    local trigger hpg=CreateTrigger()
+    set HPB_HT=InitHashtable()
+    set HPB_G=CreateGroup()
+    set HPB_Proj=AddSpecialEffect("Abilities\\Spells\\Other\\TalkToMe\\TalkToMe.mdl",0.,0.)
+    call SetSpecialEffectAlpha(HPB_Proj,0)
+    call SetSpecialEffectScale(HPB_Proj,0.01)
+    call EnableStatbar(false)
+    loop
+        exitwhen hps>=HPB_N
+        if hps<HPB_HN then
+            set hbw=HPB_HW
+            set hph=HPB_HH
+            set hpm=HPB_HM
+        else
+            set hbw=HPB_UW
+            set hph=HPB_UH
+            set hpm=HPB_UM
+        endif
+        // корень — чёрная рамка вокруг всей полоски (пустая часть HP/MP тоже чёрная)
+        set HPB_Root[hps]=HPB_Bar("HPBarRoot",null,hps,hbw+2*HPB_PAD,hph+2*HPB_PAD,"Textures\\Black32.blp",1)
+        call SetFrameAbsolutePoint(HPB_Root[hps],FRAMEPOINT_CENTER,0.4,0.3)
+        set HPB_Hp[hps]=HPB_Bar("HPBarHp",HPB_Root[hps],hps,hbw,hph,HPB_Tex(6),2)
+        call SetFrameRelativePoint(HPB_Hp[hps],FRAMEPOINT_TOPLEFT,HPB_Root[hps],FRAMEPOINT_TOPLEFT,HPB_PAD,-HPB_PAD)
+        set HPB_Mp[hps]=HPB_Bar("HPBarMp",HPB_Root[hps],hps,hbw,hpm,HPB_Tex(1),2)
+        call SetFrameRelativePoint(HPB_Mp[hps],FRAMEPOINT_TOPLEFT,HPB_Root[hps],FRAMEPOINT_TOPLEFT,HPB_PAD,-(HPB_PAD+hph+HPB_GAP))
+        call ShowFrame(HPB_Mp[hps],false)
+        if hps<HPB_HN then
+            // щит — тонкая голубая полоска над HP
+            set HPB_Sh[hps]=HPB_Bar("HPBarSh",HPB_Root[hps],hps,hbw,HPB_SH,HPB_Tex(9),2)
+            call ShowFrame(HPB_Sh[hps],false)
+            // окошко уровня слева, во всю высоту рамки: чёрное, белые цифры
+            set HPB_Lvl[hps]=HPB_Bar("HPBarLvl",HPB_Root[hps],hps,.0095,hph+2*HPB_PAD,"Textures\\Black32.blp",1)
+            call SetFrameRelativePoint(HPB_Lvl[hps],FRAMEPOINT_TOPRIGHT,HPB_Root[hps],FRAMEPOINT_TOPLEFT,0.,0.)
+            set HPB_LvlTxt[hps]=CreateFrameByType("SIMPLETEXT","HPBarLvlText",HPB_Lvl[hps],"",hps)
+            call ClearFrameAllPoints(HPB_LvlTxt[hps])
+            call SetFrameBlendMode(HPB_LvlTxt[hps],0,BLEND_MODE_BLEND)
+            call SetFrameFont(HPB_LvlTxt[hps],"Fonts\\FRIZQT__.TTF",.0085,0)
+            call SetFrameTextAlignment(HPB_LvlTxt[hps],TEXT_JUSTIFY_CENTER,TEXT_JUSTIFY_MIDDLE)
+            call SetFrameTextColour(HPB_LvlTxt[hps],0xFFFFFFFF)
+            call SetFrameText(HPB_LvlTxt[hps]," ")
+            call SetFrameRelativePoint(HPB_LvlTxt[hps],FRAMEPOINT_CENTER,HPB_Lvl[hps],FRAMEPOINT_CENTER,0.,0.)
+            call ShowFrame(HPB_LvlTxt[hps],true)
+            // засечки на тысячи
+            set hpj=0
+            loop
+                exitwhen hpj>=HPB_TN
+                set HPB_Tick[hps*HPB_TN+hpj]=HPB_Bar("HPBarTick",HPB_Root[hps],hps*HPB_TN+hpj,.0008,hph,"Textures\\Black32.blp",3)
+                call ShowFrame(HPB_Tick[hps*HPB_TN+hpj],false)
+                set hpj=hpj+1
+            endloop
+        endif
+        call ShowFrame(HPB_Root[hps],false)
+        set HPB_Vis[hps]=false
+        set hps=hps+1
+    endloop
+    set hps=0
+    loop
+        exitwhen hps>11
+        call TriggerRegisterPlayerChatEvent(hpg,Player(hps),"-hpbdbg",true)
+        set hps=hps+1
+    endloop
+    call TriggerAddAction(hpg,function HPB_Chat)
+    call TimerStart(CreateTimer(),0.1,true,function HPB_Assign)
+    call TimerStart(CreateTimer(),0.01,true,function HPB_Update)
+    call TimerStart(CreateTimer(),0.5,true,function HPB_DebugTick)
+    call HPB_MenuInit()
+    set hpg=null
+endfunction
 function HeroBarFill takes framehandle hbf, real hbw returns nothing
     if hbw<0.0005 then
         call ShowFrame(hbf,false)
     else
-        call SetFrameSize(hbf,hbw,.004)
+        call SetFrameSize(hbf,hbw,.0034)
         call ShowFrame(hbf,true)
     endif
 endfunction
@@ -5713,7 +6392,7 @@ function HeroBarBars takes nothing returns nothing
             endif
             set hbw=0.
             if IsUnitType(hbh,UNIT_TYPE_DEAD)==false and GetUnitState(hbh,UNIT_STATE_MAX_LIFE)>0 then
-                set hbw=.032*GetUnitState(hbh,UNIT_STATE_LIFE)/GetUnitState(hbh,UNIT_STATE_MAX_LIFE)
+                set hbw=.0272*GetUnitState(hbh,UNIT_STATE_LIFE)/GetUnitState(hbh,UNIT_STATE_MAX_LIFE)
             endif
             set hbw=I2R(R2I(hbw*2000.))/2000.
             if hbw!=HB_HpW[hbi] then
@@ -5723,7 +6402,7 @@ function HeroBarBars takes nothing returns nothing
             set hbw=0.
             set hbm=GetUnitState(hbh,UNIT_STATE_MAX_MANA)
             if IsUnitType(hbh,UNIT_TYPE_DEAD)==false and hbm>0 then
-                set hbw=.032*GetUnitState(hbh,UNIT_STATE_MANA)/hbm
+                set hbw=.0272*GetUnitState(hbh,UNIT_STATE_MANA)/hbm
             endif
             set hbw=I2R(R2I(hbw*2000.))/2000.
             if hbw!=HB_MpW[hbi] then
@@ -5759,34 +6438,6 @@ function HeroBarShow takes boolean hbv returns nothing
         call SetFrameText(HB_HideText,"Показать")
     endif
     call HeroBarBars()
-endfunction
-// открыто ли большое окно или развёрнут multiboard (локально)
-function HeroBarBlockedNow takes nothing returns boolean
-    if mbg!=null and IsMultiboardDisplayed(mbg) and IsMultiboardMinimized(mbg)==false then
-        return true
-    endif
-    if TavernHeroFrame!=null and IsFrameVisible(TavernHeroFrame) then
-        return true
-    endif
-    if TavernHeroFrameStats!=null and IsFrameVisible(TavernHeroFrameStats) then
-        return true
-    endif
-    if TavernHeroFrameTitles!=null and IsFrameVisible(TavernHeroFrameTitles) then
-        return true
-    endif
-    if EmoteBarFrame!=null and IsFrameVisible(EmoteBarFrame) then
-        return true
-    endif
-    if StatsBarFrame!=null and IsFrameVisible(StatsBarFrame) then
-        return true
-    endif
-    if IdHeroFrame!=null and IsFrameVisible(IdHeroFrame) then
-        return true
-    endif
-    if ShMain!=null and IsFrameVisible(ShMain) then
-        return true
-    endif
-    return false
 endfunction
 function HeroBarHideClick takes nothing returns nothing
     if GetTriggerPlayer()==GetLocalPlayer() and HB_Tick-HB_Hit[10]>50 then
@@ -5831,7 +6482,7 @@ function HeroBarFast takes nothing returns nothing
             if hbm>3 then
                 set hbm=6-hbm
             endif
-            call SetFrameSize(HeroBarIcon[hbi],.032-.0012*hbm,.032-.0012*hbm)
+            call SetFrameSize(HeroBarIcon[hbi],.0272-.00102*hbm,.0272-.00102*hbm)
         endif
         set hbi=hbi+1
     endloop
@@ -5873,7 +6524,7 @@ function HeroBarUpdate takes nothing returns nothing
             call SetFrameTexture(HeroBarIcon[hbi],hbs,0,true)
             call SetFrameTexture(HeroBarIcon[hbi],hbs,1,true)
             call SetFrameTexture(HeroBarIcon[hbi],hbs,2,true)
-            call SetFrameSize(HeroBarIcon[hbi],.032,.032)
+            call SetFrameSize(HeroBarIcon[hbi],.0272,.0272)
         endif
         if hbc!=HeroBarCol[hbi] then
             set HeroBarCol[hbi]=hbc
@@ -5926,9 +6577,9 @@ function HeroBarInit takes nothing returns nothing
     loop
         exitwhen hbi>9
         if hbi<5 then
-            set hbpos=-0.04-(4-hbi)*0.035
+            set hbpos=-0.034-(4-hbi)*0.0315
         else
-            set hbpos=0.04+(hbi-5)*0.035
+            set hbpos=0.034+(hbi-5)*0.0315
         endif
         set hbf=CreateFrameByType("SIMPLEBUTTON","HeroBarIcon",null,"",hbi)
         call ClearFrameAllPoints(hbf)
@@ -5936,7 +6587,7 @@ function HeroBarInit takes nothing returns nothing
         call SetFrameTexture(hbf,"UI\\Widgets\\Console\\Human\\human-inventory-slotfiller.blp",0,true)
         call SetFrameTexture(hbf,"UI\\Widgets\\Console\\Human\\human-inventory-slotfiller.blp",1,true)
         call SetFrameTexture(hbf,"UI\\Widgets\\Console\\Human\\human-inventory-slotfiller.blp",2,true)
-        call SetFrameSize(hbf,.032,.032)
+        call SetFrameSize(hbf,.0272,.0272)
         call SetFramePriority(hbf,7)
         call SaveInteger(HH,GetHandleId(hbf),HB_IDX,hbi+1)
         call TriggerRegisterFrameEvent(hbg,hbf,FRAMEEVENT_CONTROL_CLICK)
@@ -5947,7 +6598,7 @@ function HeroBarInit takes nothing returns nothing
         call SetFrameTexture(HB_ShBg[hbi],"ReplaceableTextures\\TeamColor\\TeamColor09.blp",0,true)
         call SetFrameTexture(HB_ShBg[hbi],"ReplaceableTextures\\TeamColor\\TeamColor09.blp",1,true)
         call SetFrameTexture(HB_ShBg[hbi],"ReplaceableTextures\\TeamColor\\TeamColor09.blp",2,true)
-        call SetFrameSize(HB_ShBg[hbi],.0352,.0117)
+        call SetFrameSize(HB_ShBg[hbi],.02992,.00995)
         call SetFrameRelativePoint(HB_ShBg[hbi],FRAMEPOINT_TOP,hbf,FRAMEPOINT_BOTTOM,0.,.0006)
         call SetFramePriority(HB_ShBg[hbi],6)
         call ShowFrame(HB_ShBg[hbi],false)
@@ -5961,8 +6612,8 @@ function HeroBarInit takes nothing returns nothing
         call SetFrameColourEx(HB_HpBg[hbi],0,0xFFFFFFFF)
         call SetFrameColourEx(HB_HpBg[hbi],1,0xFFFFFFFF)
         call SetFrameColourEx(HB_HpBg[hbi],2,0xFFFFFFFF)
-        call SetFrameSize(HB_HpBg[hbi],.032,.004)
-        call SetFrameRelativePoint(HB_HpBg[hbi],FRAMEPOINT_TOP,hbf,FRAMEPOINT_BOTTOM,0.,-0.001)
+        call SetFrameSize(HB_HpBg[hbi],.0272,.0034)
+        call SetFrameRelativePoint(HB_HpBg[hbi],FRAMEPOINT_TOP,hbf,FRAMEPOINT_BOTTOM,0.,-0.00085)
         call SetFramePriority(HB_HpBg[hbi],7)
         call ShowFrame(HB_HpBg[hbi],false)
         set HB_Hp[hbi]=CreateFrameByType("SIMPLEBUTTON","HeroBarBarFill",null,"",hbi)
@@ -5973,7 +6624,7 @@ function HeroBarInit takes nothing returns nothing
         call SetFrameColourEx(HB_Hp[hbi],0,0xFFFFFFFF)
         call SetFrameColourEx(HB_Hp[hbi],1,0xFFFFFFFF)
         call SetFrameColourEx(HB_Hp[hbi],2,0xFFFFFFFF)
-        call SetFrameSize(HB_Hp[hbi],.032,.004)
+        call SetFrameSize(HB_Hp[hbi],.0272,.0034)
         call SetFrameRelativePoint(HB_Hp[hbi],FRAMEPOINT_LEFT,HB_HpBg[hbi],FRAMEPOINT_LEFT,0.,0.)
         call SetFramePriority(HB_Hp[hbi],8)
         call ShowFrame(HB_Hp[hbi],false)
@@ -5985,8 +6636,8 @@ function HeroBarInit takes nothing returns nothing
         call SetFrameColourEx(HB_MpBg[hbi],0,0xFFFFFFFF)
         call SetFrameColourEx(HB_MpBg[hbi],1,0xFFFFFFFF)
         call SetFrameColourEx(HB_MpBg[hbi],2,0xFFFFFFFF)
-        call SetFrameSize(HB_MpBg[hbi],.032,.004)
-        call SetFrameRelativePoint(HB_MpBg[hbi],FRAMEPOINT_TOP,hbf,FRAMEPOINT_BOTTOM,0.,-0.0055)
+        call SetFrameSize(HB_MpBg[hbi],.0272,.0034)
+        call SetFrameRelativePoint(HB_MpBg[hbi],FRAMEPOINT_TOP,hbf,FRAMEPOINT_BOTTOM,0.,-0.004675)
         call SetFramePriority(HB_MpBg[hbi],7)
         call ShowFrame(HB_MpBg[hbi],false)
         set HB_Mp[hbi]=CreateFrameByType("SIMPLEBUTTON","HeroBarBarFill",null,"",hbi)
@@ -5997,7 +6648,7 @@ function HeroBarInit takes nothing returns nothing
         call SetFrameColourEx(HB_Mp[hbi],0,0xFFFFFFFF)
         call SetFrameColourEx(HB_Mp[hbi],1,0xFFFFFFFF)
         call SetFrameColourEx(HB_Mp[hbi],2,0xFFFFFFFF)
-        call SetFrameSize(HB_Mp[hbi],.032,.004)
+        call SetFrameSize(HB_Mp[hbi],.0272,.0034)
         call SetFrameRelativePoint(HB_Mp[hbi],FRAMEPOINT_LEFT,HB_MpBg[hbi],FRAMEPOINT_LEFT,0.,0.)
         call SetFramePriority(HB_Mp[hbi],8)
         call ShowFrame(HB_Mp[hbi],false)
@@ -38190,6 +38841,7 @@ function Trig_StatusBar_Actions takes nothing returns nothing
     call TimerStart(CreateTimer(),0.1,true,function StatusIndicatorHoverPoll)
     call StatusIndicatorTipInit()
     call ShieldPortraitInit()
+    call HPB_Init()
     call ClearFrameAllPoints( StatusBarFrame )
     // высота 0.04 (было 0.0425), верхний край на прежнем месте (0.1 + 0.02125)
     call SetFrameRelativePoint( StatusBarFrame, FRAMEPOINT_CENTER, consoleUI, FRAMEPOINT_BOTTOM,  .0013, .10125  )
