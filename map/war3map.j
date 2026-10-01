@@ -921,6 +921,18 @@ integer array HPB_ShOn
 real array HPB_PX
 real array HPB_PY
 integer HPB_MT=0
+// пропуск пересчёта позиции: камера и юнит не сдвинулись с прошлого тика — экранные координаты прежние
+real array HPB_UX
+real array HPB_UY
+real array HPB_UZ
+real array HPB_SX
+real array HPB_SY
+real HPB_CamX=0.
+real HPB_CamY=0.
+real HPB_CamZ=0.
+real HPB_CamTX=0.
+real HPB_CamTY=0.
+boolean HPB_CamMoved=true
 // размеры: ширина, высота HP / MP / щита; у героев (места 0..27) и остальных юнитов; поля рамки и зазор
 constant real HPB_HW=.04554
 constant real HPB_HH=.004
@@ -5898,6 +5910,7 @@ function HPB_Assign takes nothing returns nothing
                 set HPB_MpOn[hps]=0
                 set HPB_ShOn[hps]=0
                 set HPB_PX[hps]=-9.
+                set HPB_UX[hps]=-999999.
             endif
         endif
     endloop
@@ -5918,10 +5931,29 @@ function HPB_Update takes nothing returns nothing
     local integer hpk
     local integer hpj
     local boolean hpz
+    local real hpa
+    local real hpb
+    local real hpq
     set HPB_T=HPB_T+1
+    // камера сдвинулась / повернулась / приблизилась?
+    set hpa=GetCameraEyePositionX()
+    set hpb=GetCameraEyePositionY()
+    set hpq=GetCameraEyePositionZ()
+    set HPB_CamMoved=hpa!=HPB_CamX or hpb!=HPB_CamY or hpq!=HPB_CamZ or GetCameraTargetPositionX()!=HPB_CamTX or GetCameraTargetPositionY()!=HPB_CamTY
+    if HPB_CamMoved then
+        set HPB_CamX=hpa
+        set HPB_CamY=hpb
+        set HPB_CamZ=hpq
+        set HPB_CamTX=GetCameraTargetPositionX()
+        set HPB_CamTY=GetCameraTargetPositionY()
+    endif
     loop
         exitwhen hps>=HPB_N
         set hpu=HPB_U[hps]
+        // обычные юниты — через тик (по очереди), герои и иллюзии — каждый тик
+        if hps>=HPB_HN and ModuloInteger(HPB_T+hps,2)!=0 then
+            set hpu=null
+        endif
         if hpu!=null then
             if IsUnitType(hpu,UNIT_TYPE_DEAD) or GetUnitTypeId(hpu)==0 or IsUnitHidden(hpu) or IsUnitVisible(hpu,GetLocalPlayer())==false then
                 call HPB_Free(hps)
@@ -5930,10 +5962,20 @@ function HPB_Update takes nothing returns nothing
                 if hpo>1000 then
                     set hpo=250.
                 endif
-                call SetSpecialEffectPositionWithZ(HPB_Proj,GetUnitX(hpu),GetUnitY(hpu),GetUnitZ(hpu)+hpo)
-                // по горизонтали — экранная позиция самого юнита (эффект давал сдвиг влево), по вертикали — точка полоски над ним
-                set hpx=GetUnitScreenX(hpu)
-                set hpy=GetSpecialEffectScreenY(HPB_Proj)
+                set hpa=GetUnitX(hpu)
+                set hpb=GetUnitY(hpu)
+                set hpq=GetUnitZ(hpu)+hpo
+                if HPB_CamMoved or hpa!=HPB_UX[hps] or hpb!=HPB_UY[hps] or hpq!=HPB_UZ[hps] then
+                    set HPB_UX[hps]=hpa
+                    set HPB_UY[hps]=hpb
+                    set HPB_UZ[hps]=hpq
+                    call SetSpecialEffectPositionWithZ(HPB_Proj,hpa,hpb,hpq)
+                    // по горизонтали — экранная позиция самого юнита (эффект давал сдвиг влево), по вертикали — точка полоски над ним
+                    set HPB_SX[hps]=GetUnitScreenX(hpu)
+                    set HPB_SY[hps]=GetSpecialEffectScreenY(HPB_Proj)
+                endif
+                set hpx=HPB_SX[hps]
+                set hpy=HPB_SY[hps]
                 if hpx<-0.15 or hpx>0.95 or hpy<0.13 or hpy>0.58 then
                     if HPB_Vis[hps] then
                         set HPB_Vis[hps]=false
@@ -6723,7 +6765,7 @@ function HeroBarInit takes nothing returns nothing
     call SetFrameTexture(HB_HideBtn,"UI\\Widgets\\EscMenu\\Human\\checkbox-background.blp",2,true)
     call SetFrameSize(HB_HideBtn,.012,.012)
     // под кнопкой «Chat (F12)» в верхнем меню
-    call SetFrameRelativePoint(HB_HideBtn,FRAMEPOINT_CENTER,GetOriginFrame(ORIGIN_FRAME_GAME_UI,0),FRAMEPOINT_TOPLEFT,.268,-.031)
+    call SetFrameRelativePoint(HB_HideBtn,FRAMEPOINT_CENTER,GetOriginFrame(ORIGIN_FRAME_GAME_UI,0),FRAMEPOINT_TOPLEFT,.268,-.038)
     call SetFramePriority(HB_HideBtn,7)
     set HB_HideChk=CreateFrameByType("SIMPLEBUTTON","HeroBarHideCheck",null,"",0)
     call ClearFrameAllPoints(HB_HideChk)
