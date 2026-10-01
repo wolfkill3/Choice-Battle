@@ -895,7 +895,7 @@ constant integer HPB_TN=30
 effect HPB_Proj=null
 group HPB_G=null
 hashtable HPB_HT=null
-integer HPB_Mode=0
+integer HPB_Mode=2
 integer HPB_T=0
 boolean HPB_Debug=false
 framehandle array HPB_Root
@@ -957,6 +957,8 @@ boolean HPB_MDown=false
 constant integer HPB_MIDX=StringHash("HPBMenuIdx")
 // панель прячется, пока открыты большие окна (таверна, магазин, эмоции, статистика, Hero ID) или развёрнут multiboard
 boolean HB_Blocked=false
+// сдвиг панели героев влево, пока развёрнут multiboard
+real HB_Shift=0.
 framehandle HB_HideChk=null
 framehandle HB_HideFrame=null
 framehandle  CloseStatusButton
@@ -5609,14 +5611,14 @@ function StatusIndicatorHoverPoll takes nothing returns nothing
     set f=null
     set tip=null
 endfunction
-// нажатие на иконку героя (локально): анимация, выделение и разовый перевод камеры на героя. Только свой и союзники
-// (наблюдатели — любые): противника не выбрать, иначе по выделению можно отличить настоящего героя от иллюзий
+// нажатие на иконку героя (локально): анимация, выделение и разовый перевод камеры на героя. Свой и союзники; противник —
+// только между раундами (udg_B==false), иначе по выделению можно отличить настоящего героя от иллюзий; наблюдатели — любые
 function HeroBarPress takes integer hbi returns nothing
     local unit hbh=Hero[hbi]
     set HB_Hit[hbi]=HB_Tick
     set HB_Anim[hbi]=6
     if hbh!=null and GetUnitTypeId(hbh)!=0 and IsUnitType(hbh,UNIT_TYPE_DEAD)==false then
-        if IsUnitAlly(hbh,GetLocalPlayer()) or GetPlayerId(GetLocalPlayer())>=10 then
+        if IsUnitAlly(hbh,GetLocalPlayer()) or GetPlayerId(GetLocalPlayer())>=10 or udg_B==false then
             call ClearSelection()
             call SelectUnit(hbh,true)
             call SetCameraPosition(GetUnitX(hbh),GetUnitY(hbh))
@@ -5758,12 +5760,32 @@ function HeroBarBlockedWindows takes nothing returns boolean
     endif
     return false
 endfunction
-// открыто ли большое окно или развёрнут multiboard (локально) — по нему прячется панель героев
-function HeroBarBlockedNow takes nothing returns boolean
-    if mbg!=null and IsMultiboardDisplayed(mbg) and IsMultiboardMinimized(mbg)==false then
-        return true
+// сдвиг панели героев (локально): пока развёрнут multiboard — влево, чтобы правый край панели был левее него.
+// multiboard прижат к правому краю экрана (0.4+0.3*ширина/высота окна); левый край панели не уходит за экран
+function HeroBarMbShift takes nothing returns real
+    local real hba
+    local real hbw
+    local real hbs
+    if mbg==null or IsMultiboardDisplayed(mbg)==false or IsMultiboardMinimized(mbg) then
+        return 0.
     endif
-    return HeroBarBlockedWindows()
+    set hba=4./3.
+    if GetWindowHeight()>0 then
+        set hba=I2R(GetWindowWidth())/I2R(GetWindowHeight())
+    endif
+    set hbw=GetFrameWidth(GetOriginFrame(ORIGIN_FRAME_MULTIBOARD,0))
+    if hbw<0.1 or hbw>0.7 then
+        set hbw=0.43
+    endif
+    // правый край панели — 0.4+0.1736
+    set hbs=(0.4+0.3*hba-hbw-.035)-0.5736
+    if hbs>0. then
+        return 0.
+    endif
+    if 0.2264+hbs<0.4-0.3*hba+.005 then
+        set hbs=0.4-0.3*hba+.005-0.2264
+    endif
+    return hbs
 endfunction
 function HPB_Tex takes integer hpc returns string
     if hpc<10 then
@@ -5916,7 +5938,7 @@ function HPB_Assign takes nothing returns nothing
     endloop
     set hpu=null
 endfunction
-// раз в 0.01 с: перенос полосок за юнитами и заливка; цвет, засечки, уровень и щит — раз в 0.1 с
+// раз в 0.015 с: перенос полосок за юнитами и заливка; цвет, засечки, уровень и щит — раз в ~0.1 с (каждый 7-й тик)
 function HPB_Update takes nothing returns nothing
     local integer hps=0
     local unit hpu
@@ -6008,7 +6030,7 @@ function HPB_Update takes nothing returns nothing
                         set hbw=HPB_UW
                         set hph=HPB_UH
                     endif
-                    set hpz=HPB_Col[hps]==-1 or ModuloInteger(HPB_T+hps,10)==0
+                    set hpz=HPB_Col[hps]==-1 or ModuloInteger(HPB_T+hps,7)==0
                     // HP
                     set hpm=GetUnitState(hpu,UNIT_STATE_MAX_LIFE)
                     set hpw=hbw*GetWidgetLife(hpu)/hpm
@@ -6407,7 +6429,7 @@ function HPB_Init takes nothing returns nothing
     endloop
     call TriggerAddAction(hpg,function HPB_Chat)
     call TimerStart(CreateTimer(),0.1,true,function HPB_Assign)
-    call TimerStart(CreateTimer(),0.01,true,function HPB_Update)
+    call TimerStart(CreateTimer(),0.015,true,function HPB_Update)
     call TimerStart(CreateTimer(),0.5,true,function HPB_DebugTick)
     call HPB_MenuInit()
     set hpg=null
@@ -6508,6 +6530,22 @@ function HeroBarShow takes boolean hbv returns nothing
     endif
     call HeroBarBars()
 endfunction
+// перенос иконок и счёта 5x5 на HB_Shift (полоски, счёт FFA и подсказки привязаны к иконкам); кнопка скрытия не двигается
+function HeroBarPlace takes nothing returns nothing
+    local integer hbi=0
+    local real hbpos
+    loop
+        exitwhen hbi>9
+        if hbi<5 then
+            set hbpos=-0.034-(4-hbi)*0.0315
+        else
+            set hbpos=0.034+(hbi-5)*0.0315
+        endif
+        call SetFrameRelativePoint(HeroBarIcon[hbi],FRAMEPOINT_CENTER,GetOriginFrame(ORIGIN_FRAME_GAME_UI,0),FRAMEPOINT_TOP,hbpos+HB_Shift,-0.09)
+        set hbi=hbi+1
+    endloop
+    call SetFrameRelativePoint(HB_ScoreFrame,FRAMEPOINT_CENTER,GetOriginFrame(ORIGIN_FRAME_GAME_UI,0),FRAMEPOINT_TOP,HB_Shift,-0.09)
+endfunction
 function HeroBarHideClick takes nothing returns nothing
     if GetTriggerPlayer()==GetLocalPlayer() and HB_Tick-HB_Hit[10]>50 then
         set HB_Hit[10]=HB_Tick
@@ -6521,6 +6559,7 @@ function HeroBarFast takes nothing returns nothing
     local framehandle hbf
     local integer hbi
     local integer hbm
+    local real hbr
     set HB_Tick=HB_Tick+1
     if hbd and HB_MouseDown==false then
         set hbf=GetFrameUnderCursor()
@@ -6538,9 +6577,16 @@ function HeroBarFast takes nothing returns nothing
         set hbf=null
     endif
     set HB_MouseDown=hbd
-    if ModuloInteger(HB_Tick,5)==0 and HB_Blocked!=HeroBarBlockedNow() then
-        set HB_Blocked=HB_Blocked==false
-        call HeroBarShow(HB_Shown)
+    if ModuloInteger(HB_Tick,5)==0 then
+        if HB_Blocked!=HeroBarBlockedWindows() then
+            set HB_Blocked=HB_Blocked==false
+            call HeroBarShow(HB_Shown)
+        endif
+        set hbr=HeroBarMbShift()
+        if RAbsBJ(hbr-HB_Shift)>.0005 then
+            set HB_Shift=hbr
+            call HeroBarPlace()
+        endif
     endif
     set hbi=0
     loop
@@ -255049,7 +255095,7 @@ endfunction
 function KillGroupOrochimaru takes nothing returns nothing
     set E=GetEnumUnit()
     call KillUnit(E)
-    if GetUnitTypeId(E)=='or23' then
+    if GetUnitTypeId(E)=='orT4' then
     call SetUnitTimeScale(E,-1)
     endif
 endfunction
@@ -255498,7 +255544,7 @@ function OrochimaruTCast2 takes nothing returns nothing
     call SetUnitAnimation(n,"Birth")
     set x2=x1+rg*Cos(a+90*bj_DEGTORAD)
     set y2=y1+rg*Sin(a+90*bj_DEGTORAD)
-    set n=CreateUnit(p,'or23',x2,y2,Atan2(y1-y2,x1-x2)*bj_RADTODEG+180)
+    set n=CreateUnit(p,'orT4',x2,y2,Atan2(y1-y2,x1-x2)*bj_RADTODEG+180)
     call SetUnitTimeScale(n,6.6)
     call PauseUnit(n,true)
     call SetUnitFlyHeight(n,0,550)
@@ -255519,7 +255565,7 @@ function OrochimaruTCast2 takes nothing returns nothing
     call UnitApplyTimedLife(n,'BTLF',1.3)
     set x2=x1+rg*Cos(a+330*bj_DEGTORAD)
     set y2=y1+rg*Sin(a+330*bj_DEGTORAD)
-    set n=CreateUnit(p,'or23',x2,y2,Atan2(y1-y2,x1-x2)*bj_RADTODEG+180)
+    set n=CreateUnit(p,'orT4',x2,y2,Atan2(y1-y2,x1-x2)*bj_RADTODEG+180)
     call SetUnitTimeScale(n,6.6)
     call SetUnitFlyHeight(n,0,550)
     call PauseUnit(n,true)
@@ -255540,7 +255586,7 @@ function OrochimaruTCast2 takes nothing returns nothing
     call UnitApplyTimedLife(n,'BTLF',1.3)
     set x2=x1+rg*Cos(a+210*bj_DEGTORAD)
     set y2=y1+rg*Sin(a+210*bj_DEGTORAD)
-    set n=CreateUnit(p,'or23',x2,y2,Atan2(y1-y2,x1-x2)*bj_RADTODEG+180)
+    set n=CreateUnit(p,'orT4',x2,y2,Atan2(y1-y2,x1-x2)*bj_RADTODEG+180)
     call SetUnitTimeScale(n,6.6)
     call SetUnitFlyHeight(n,0,550)
     call PauseUnit(n,true)
