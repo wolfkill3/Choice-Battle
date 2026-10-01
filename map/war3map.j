@@ -887,10 +887,10 @@ framehandle SP_Frame=null
 framehandle SP_Text=null
 string SP_Txt=""
 // собственные полоски HP/MP/щита над юнитами вместо стандартных (EnableStatbar(false)); всё локально у каждого игрока.
-// Места 0..15 — герои и их иллюзии (засечки на каждую тысячу HP, уровень, щит), 16..55 — остальные юниты.
+// Места 0..27 — герои и их иллюзии (засечки на каждые 2500 HP, уровень, щит), 28..43 — остальные юниты.
 // Позиция на экране — через невидимый эффект HPB_Proj, поставленный над юнитом на высоту его полоски (overhead offset).
-constant integer HPB_HN=16
-constant integer HPB_N=56
+constant integer HPB_HN=28
+constant integer HPB_N=44
 constant integer HPB_TN=30
 effect HPB_Proj=null
 group HPB_G=null
@@ -917,7 +917,23 @@ integer array HPB_Ticks
 integer array HPB_Lv
 integer array HPB_MpOn
 integer array HPB_ShOn
-// размеры: ширина, высота HP / MP / щита; у героев (места 0..15) и остальных юнитов; поля рамки и зазор
+// последняя позиция полоски на экране — не двигать фрейм, если юнит и камера стоят
+real array HPB_PX
+real array HPB_PY
+integer HPB_MT=0
+// пропуск пересчёта позиции: камера и юнит не сдвинулись с прошлого тика — экранные координаты прежние
+real array HPB_UX
+real array HPB_UY
+real array HPB_UZ
+real array HPB_SX
+real array HPB_SY
+real HPB_CamX=0.
+real HPB_CamY=0.
+real HPB_CamZ=0.
+real HPB_CamTX=0.
+real HPB_CamTY=0.
+boolean HPB_CamMoved=true
+// размеры: ширина, высота HP / MP / щита; у героев (места 0..27) и остальных юнитов; поля рамки и зазор
 constant real HPB_HW=.04554
 constant real HPB_HH=.004
 constant real HPB_HM=.00242
@@ -5893,6 +5909,8 @@ function HPB_Assign takes nothing returns nothing
                 set HPB_Lv[hps]=-1
                 set HPB_MpOn[hps]=0
                 set HPB_ShOn[hps]=0
+                set HPB_PX[hps]=-9.
+                set HPB_UX[hps]=-999999.
             endif
         endif
     endloop
@@ -5913,10 +5931,29 @@ function HPB_Update takes nothing returns nothing
     local integer hpk
     local integer hpj
     local boolean hpz
+    local real hpa
+    local real hpb
+    local real hpq
     set HPB_T=HPB_T+1
+    // камера сдвинулась / повернулась / приблизилась?
+    set hpa=GetCameraEyePositionX()
+    set hpb=GetCameraEyePositionY()
+    set hpq=GetCameraEyePositionZ()
+    set HPB_CamMoved=hpa!=HPB_CamX or hpb!=HPB_CamY or hpq!=HPB_CamZ or GetCameraTargetPositionX()!=HPB_CamTX or GetCameraTargetPositionY()!=HPB_CamTY
+    if HPB_CamMoved then
+        set HPB_CamX=hpa
+        set HPB_CamY=hpb
+        set HPB_CamZ=hpq
+        set HPB_CamTX=GetCameraTargetPositionX()
+        set HPB_CamTY=GetCameraTargetPositionY()
+    endif
     loop
         exitwhen hps>=HPB_N
         set hpu=HPB_U[hps]
+        // обычные юниты — через тик (по очереди), герои и иллюзии — каждый тик
+        if hps>=HPB_HN and ModuloInteger(HPB_T+hps,2)!=0 then
+            set hpu=null
+        endif
         if hpu!=null then
             if IsUnitType(hpu,UNIT_TYPE_DEAD) or GetUnitTypeId(hpu)==0 or IsUnitHidden(hpu) or IsUnitVisible(hpu,GetLocalPlayer())==false then
                 call HPB_Free(hps)
@@ -5925,10 +5962,20 @@ function HPB_Update takes nothing returns nothing
                 if hpo>1000 then
                     set hpo=250.
                 endif
-                call SetSpecialEffectPositionWithZ(HPB_Proj,GetUnitX(hpu),GetUnitY(hpu),GetUnitZ(hpu)+hpo)
-                // по горизонтали — экранная позиция самого юнита (эффект давал сдвиг влево), по вертикали — точка полоски над ним
-                set hpx=GetUnitScreenX(hpu)
-                set hpy=GetSpecialEffectScreenY(HPB_Proj)
+                set hpa=GetUnitX(hpu)
+                set hpb=GetUnitY(hpu)
+                set hpq=GetUnitZ(hpu)+hpo
+                if HPB_CamMoved or hpa!=HPB_UX[hps] or hpb!=HPB_UY[hps] or hpq!=HPB_UZ[hps] then
+                    set HPB_UX[hps]=hpa
+                    set HPB_UY[hps]=hpb
+                    set HPB_UZ[hps]=hpq
+                    call SetSpecialEffectPositionWithZ(HPB_Proj,hpa,hpb,hpq)
+                    // по горизонтали — экранная позиция самого юнита (эффект давал сдвиг влево), по вертикали — точка полоски над ним
+                    set HPB_SX[hps]=GetUnitScreenX(hpu)
+                    set HPB_SY[hps]=GetSpecialEffectScreenY(HPB_Proj)
+                endif
+                set hpx=HPB_SX[hps]
+                set hpy=HPB_SY[hps]
                 if hpx<-0.15 or hpx>0.95 or hpy<0.13 or hpy>0.58 then
                     if HPB_Vis[hps] then
                         set HPB_Vis[hps]=false
@@ -5946,9 +5993,14 @@ function HPB_Update takes nothing returns nothing
                         set HPB_Ticks[hps]=-1
                         set HPB_MpOn[hps]=0
                         set HPB_ShOn[hps]=0
+                        set HPB_PX[hps]=-9.
                     endif
                     // над юнитом; на тестах полоска стояла левее героя на ~0.014 — поправка вправо
-                    call SetFrameAbsolutePoint(HPB_Root[hps],FRAMEPOINT_CENTER,hpx+.014,hpy)
+                    if RAbsBJ(hpx-HPB_PX[hps])>.0002 or RAbsBJ(hpy-HPB_PY[hps])>.0002 then
+                        set HPB_PX[hps]=hpx
+                        set HPB_PY[hps]=hpy
+                        call SetFrameAbsolutePoint(HPB_Root[hps],FRAMEPOINT_CENTER,hpx+.014,hpy)
+                    endif
                     if hps<HPB_HN then
                         set hbw=HPB_HW
                         set hph=HPB_HH
@@ -6005,12 +6057,12 @@ function HPB_Update takes nothing returns nothing
                         endif
                     endif
                     if hps<HPB_HN and hpz then
-                        // засечки: каждая тысяча HP (при больших запасах — каждые 10 тысяч)
+                        // засечки: каждые 2500 HP (при больших запасах — каждые 25 тысяч)
                         if R2I(hpm)!=HPB_Ticks[hps] then
                             set HPB_Ticks[hps]=R2I(hpm)
-                            set hpr=1000.
-                            if hpm>(HPB_TN+1)*1000. then
-                                set hpr=10000.
+                            set hpr=2500.
+                            if hpm>(HPB_TN+1)*2500. then
+                                set hpr=25000.
                             endif
                             set hpk=R2I((hpm-1.)/hpr)
                             set hpj=0
@@ -6065,9 +6117,13 @@ function HPB_Update takes nothing returns nothing
 endfunction
 // отладка (-hpbdbg): экранные координаты выбранного юнита разными способами
 function HPB_DebugTick takes nothing returns nothing
-    local unit hpu=GetUnitSelected(GetLocalPlayer())
+    local unit hpu
     local real hpx
     local real hpy
+    if HPB_Debug==false then
+        return
+    endif
+    set hpu=GetUnitSelected(GetLocalPlayer())
     if HPB_Debug and hpu!=null then
         call SetSpecialEffectPositionWithZ(HPB_Proj,GetUnitX(hpu),GetUnitY(hpu),GetUnitZ(hpu))
         set hpx=GetSpecialEffectScreenX(HPB_Proj)
@@ -6145,6 +6201,10 @@ function HPB_MenuPoll takes nothing returns nothing
     set HPB_MDown=hpd
     // кнопка видна только после выбора режима и пока не открыто большое окно (развёрнутый multiboard не мешает);
     // окно при этом закрывается
+    set HPB_MT=HPB_MT+1
+    if ModuloInteger(HPB_MT,5)!=0 then
+        return
+    endif
     if HB_Inited and HeroBarBlockedWindows()==false then
         set hpk=1
     else
@@ -6704,7 +6764,8 @@ function HeroBarInit takes nothing returns nothing
     call SetFrameTexture(HB_HideBtn,"UI\\Widgets\\EscMenu\\Human\\checkbox-background.blp",1,true)
     call SetFrameTexture(HB_HideBtn,"UI\\Widgets\\EscMenu\\Human\\checkbox-background.blp",2,true)
     call SetFrameSize(HB_HideBtn,.012,.012)
-    call SetFrameRelativePoint(HB_HideBtn,FRAMEPOINT_CENTER,GetOriginFrame(ORIGIN_FRAME_GAME_UI,0),FRAMEPOINT_TOP,-0.016,-0.065)
+    // под кнопкой «Chat (F12)» в верхнем меню
+    call SetFrameRelativePoint(HB_HideBtn,FRAMEPOINT_CENTER,GetOriginFrame(ORIGIN_FRAME_GAME_UI,0),FRAMEPOINT_TOPLEFT,.268,-.038)
     call SetFramePriority(HB_HideBtn,7)
     set HB_HideChk=CreateFrameByType("SIMPLEBUTTON","HeroBarHideCheck",null,"",0)
     call ClearFrameAllPoints(HB_HideChk)
@@ -48601,6 +48662,8 @@ function Trig_test_Actions takes nothing returns nothing
     local integer GrY=0
     set udg_test=true
     call DisplayTextToPlayer(GetLocalPlayer(),0,0,"TEST MODE ON")
+    // панель героев вверху (и кнопка цвета полосок HP) — если ещё не создана выбором режима
+    call HeroBarInit()
     if TavernHeroFrame!=null then
     call ClearFrameAllPoints( GetOriginFrame( ORIGIN_FRAME_CHAT_MSG, 0 ) )
     call SetFrameSize( GetOriginFrame( ORIGIN_FRAME_CHAT_MSG, 0 ), 1, 2 )
