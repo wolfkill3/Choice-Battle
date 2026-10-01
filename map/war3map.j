@@ -730,6 +730,9 @@ constant integer TextTagTimeHash      = StringHash("TextTagTime")
 constant integer TextTagTargetHash    = StringHash("TextTagTarget")
 constant integer TextTagHealTimeHash  = StringHash("TextTagHealTime")
 constant integer TextTagHealTargetHash= StringHash("TextTagHealTarget")
+// готовая строка текста урона/лечения по юниту — её показывают полоски HP
+constant integer TextDmgStrHash       = StringHash("TextDmgStr")
+constant integer TextHealStrHash      = StringHash("TextHealStr")
 constant integer TextDamageValueHash  = StringHash("TextDamageValue")
 constant integer TextDmgValueTextHash = StringHash("TextDamageValueText")
 constant integer TextHealValueHash    = StringHash("TextHealValue")
@@ -910,6 +913,30 @@ framehandle array HPB_Sh
 framehandle array HPB_Lvl
 framehandle array HPB_LvlTxt
 framehandle array HPB_Tick
+// полоска контроля над полоской HP героя (как в Dota 2): самый неприятный контроль, иконка, название, остаток времени
+framehandle array HPB_Cc
+framehandle array HPB_CcIco
+framehandle array HPB_CcFill
+framehandle array HPB_CcTxt
+framehandle array HPB_CcTop
+// текст урона и лечения над полоской (строки из общего кода, TextDmgStrHash / TextHealStrHash)
+framehandle array HPB_TxtFr
+framehandle array HPB_DmgTxt
+framehandle array HPB_HealTxt
+string array HPB_DmgS
+string array HPB_HealS
+real array HPB_TxtY
+integer array HPB_CcK
+real array HPB_CcW
+// общая (синхронная) часть: приоритет контроля по порядку 1..CCB_N, данные по юниту в CCB_HT: 0 — номер, 1 — остаток, 2 — полная длительность
+constant integer CCB_N=12
+integer array CCB_Buff
+string array CCB_Ico
+string array CCB_Name
+integer array CCB_Col
+hashtable CCB_HT=null
+group CCB_G=null
+boolexpr CCB_Flt=null
 unit array HPB_U
 boolean array HPB_Vis
 real array HPB_HpW
@@ -2313,6 +2340,22 @@ function InitTrig_Remove takes nothing returns nothing
     call TriggerAddCondition(gg_trg_Remove,Condition(function Trig_Remove_Conditions))
     call TriggerAddAction(gg_trg_Remove,function Trig_Remove_Actions)
 endfunction
+// высота текста урона/лечения: над точкой полоски HP (overhead offset; поднятая через SetUnitOverheadOffset — как обычно 250)
+function TextTagZ takes unit u, real add returns real
+    local real o=GetUnitOverheadOffset(u)
+    if o>1000. or o<100. then
+        set o=250.
+    endif
+    return o+add
+endfunction
+// texttag урона/лечения (локально): виден только при «Стандартных полосках HP» — иначе текст рисуют полоски HP (HPB_Update,
+// строки TextDmgStrHash / TextHealStrHash); сами texttag создаются у всех одинаково
+function TextTagHidden takes unit u returns boolean
+    if HPB_Mode!=3 then
+        return true
+    endif
+    return IsUnitInvisible(u, GetLocalPlayer()) or (GetUnitTypeId(u)=='H16C' and IsPlayerEnemy(GetLocalPlayer(),GetOwningPlayer(u)))
+endfunction
 function AllTextTag takes string l__s,unit u returns nothing
         set sysTextTag=CreateTextTag()
         call SetTextTagVisibility(sysTextTag,true)
@@ -2332,14 +2375,19 @@ local integer idu=GetHandleId(u)
 local real time=LoadReal(HH,idu,TextTagTimeHash)
 local texttag textdmg=LoadTextTagHandle(HH,idu,TextTagTargetHash)
 local integer i
-if IsUnitHidden(u)==false and IsUnitPaused(u)==false and GetUnitAbilityLevel(u,'Pet1')==0 then
-call SaveReal(HH,idu,TextTagTimeHash,time-0.03)
+// виден 10 с после последнего урона (отсчёт идёт всегда, и на паузе); после смерти — не дольше 5 с; юнит удалён — сразу
+if GetUnitTypeId(u)==0 then
+    set time=-1.
+elseif IsUnitType(u,UNIT_TYPE_DEAD) and time>5. then
+    set time=5.
 endif
-call SetTextTagPosUnit(LoadTextTagHandle(HH,idu,TextTagTargetHash),u,200)
+set time=time-0.03
+call SaveReal(HH,idu,TextTagTimeHash,time)
+call SetTextTagPosUnit(LoadTextTagHandle(HH,idu,TextTagTargetHash),u,TextTagZ(u,150.))
 //if CheckUnitInvisible(u)==false then
 //call SetTextTagPosUnit(textdmg,u,200)
 //endif
-if IsUnitInvisible(u, GetLocalPlayer()) or (GetUnitTypeId(u)=='H16C' and IsPlayerEnemy(GetLocalPlayer(),GetOwningPlayer(u))) then
+if TextTagHidden(u) then
     call SetTextTagVisibility(LoadTextTagHandle(HH,idu,TextTagTargetHash),false)
 else
     call SetTextTagVisibility(LoadTextTagHandle(HH,idu,TextTagTargetHash),true)
@@ -2352,10 +2400,10 @@ if time<0 or u==null then
     call SaveStr(HH,idu,i+TextDmgValueTextHash,"")
     set i=i+1
     endloop
-    call SetTextTagVelocity(textdmg,0.2*Cos(1.571),0.2*Sin(1.571))
-    call SetTextTagFadepoint(textdmg,0.5)
-    call SetTextTagLifespan(textdmg,0.2)
+    // время вышло — удалить сразу: раньше текст ещё 0.2 с летел вверх с места, отстав от юнита ("висел")
+    call DestroyTextTag(textdmg)
     call RemoveSavedHandle(HH,idu,TextTagTargetHash)
+    call SaveStr(HH,idu,TextDmgStrHash,"")
     call PauseTimer(t)
     call DestroyTimer(t)
     call FlushChildHashtable(HH,id)
@@ -2370,29 +2418,31 @@ function AllTextTag2 takes string l__s,unit u returns nothing
     local timer t
     if LoadTextTagHandle(HH,idu,TextTagTargetHash)==null then
         set textdmg=CreateTextTag()
-        if IsUnitInvisible(u, GetLocalPlayer()) or (GetUnitTypeId(u)=='H16C' and IsPlayerEnemy(GetLocalPlayer(),GetOwningPlayer(u))) then
+        call SaveTextTagHandle(HH,idu,TextTagTargetHash,textdmg)
+        if TextTagHidden(u) then
             call SetTextTagVisibility(LoadTextTagHandle(HH,idu,TextTagTargetHash),false)
         else
             call SetTextTagVisibility(LoadTextTagHandle(HH,idu,TextTagTargetHash),true)
         endif
-        call SaveTextTagHandle(HH,idu,TextTagTargetHash,textdmg)
-        call SaveReal(HH,idu,TextTagTimeHash,4)
+        call SaveReal(HH,idu,TextTagTimeHash,10)
+        call SaveStr(HH,idu,TextDmgStrHash,l__s)
         call SetTextTagText(LoadTextTagHandle(HH,idu,TextTagTargetHash),l__s,0.023)
-        call SetTextTagPosUnit(LoadTextTagHandle(HH,idu,TextTagTargetHash),u,200)
+        call SetTextTagPosUnit(LoadTextTagHandle(HH,idu,TextTagTargetHash),u,TextTagZ(u,150.))
         call SetTextTagPermanent(LoadTextTagHandle(HH,idu,TextTagTargetHash),false)
         set t=CreateTimer()
         call SaveUnitHandle(HH,GetHandleId(t),0,u)
         call TimerStart(t,0.03,true, function AllTextTag3)
     else
         call SetTextTagText(LoadTextTagHandle(HH,idu,TextTagTargetHash),l__s,0.023)
-        call SetTextTagPosUnit(LoadTextTagHandle(HH,idu,TextTagTargetHash),u,200)
+        call SetTextTagPosUnit(LoadTextTagHandle(HH,idu,TextTagTargetHash),u,TextTagZ(u,150.))
         call SetTextTagPermanent(LoadTextTagHandle(HH,idu,TextTagTargetHash),false)
-        if IsUnitInvisible(u, GetLocalPlayer()) or (GetUnitTypeId(u)=='H16C' and IsPlayerEnemy(GetLocalPlayer(),GetOwningPlayer(u))) then
+        if TextTagHidden(u) then
             call SetTextTagVisibility(LoadTextTagHandle(HH,idu,TextTagTargetHash),false)
         else
             call SetTextTagVisibility(LoadTextTagHandle(HH,idu,TextTagTargetHash),true)
         endif
-        call SaveReal(HH,idu,TextTagTimeHash,4)
+        call SaveReal(HH,idu,TextTagTimeHash,10)
+        call SaveStr(HH,idu,TextDmgStrHash,l__s)
     endif
     set t=null
     set textdmg=null
@@ -2456,11 +2506,11 @@ local integer i
 if IsUnitHidden(u)==false and IsUnitPaused(u)==false and GetUnitAbilityLevel(u,'Pet1')==0 then
 call SaveReal(HH,idu,TextTagHealTimeHash,time-0.03)
 endif
-call SetTextTagPosUnit(LoadTextTagHandle(HH,idu,TextTagHealTargetHash),u,300)
+call SetTextTagPosUnit(LoadTextTagHandle(HH,idu,TextTagHealTargetHash),u,TextTagZ(u,230.))
 //if CheckUnitInvisible(u)==false then
 //call SetTextTagPosUnit(textdmg,u,200)
 //endif
-if IsUnitInvisible(u, GetLocalPlayer()) or (GetUnitTypeId(u)=='H16C' and IsPlayerEnemy(GetLocalPlayer(),GetOwningPlayer(u))) then
+if TextTagHidden(u) then
     call SetTextTagVisibility(LoadTextTagHandle(HH,idu,TextTagHealTargetHash),false)
 else
     call SetTextTagVisibility(LoadTextTagHandle(HH,idu,TextTagHealTargetHash),true)
@@ -2477,10 +2527,10 @@ if time<0 or u==null then
     call SaveStr(HH,idu,SH_HealthRes+TextHealValueTextHash,"")
     call SaveInteger(HH,idu,TextHealValueHash+SH_ManaRes,0)
     call SaveStr(HH,idu,SH_ManaRes+TextHealValueTextHash,"")
-    call SetTextTagVelocity(textdmg,0.2*Cos(1.571),0.2*Sin(1.571))
-    call SetTextTagFadepoint(textdmg,0.5)
-    call SetTextTagLifespan(textdmg,0.2)
+    // время вышло — удалить сразу: раньше текст ещё 0.2 с летел вверх с места, отстав от юнита ("висел")
+    call DestroyTextTag(textdmg)
     call RemoveSavedHandle(HH,idu,TextTagHealTargetHash)
+    call SaveStr(HH,idu,TextHealStrHash,"")
     call PauseTimer(t)
     call DestroyTimer(t)
     call FlushChildHashtable(HH,id)
@@ -2495,29 +2545,31 @@ function AllTextTagHeal2 takes string l__s,unit u returns nothing
     local timer t
     if LoadTextTagHandle(HH,idu,TextTagHealTargetHash)==null then
         set textdmg=CreateTextTag()
-        if IsUnitInvisible(u, GetLocalPlayer()) or (GetUnitTypeId(u)=='H16C' and IsPlayerEnemy(GetLocalPlayer(),GetOwningPlayer(u))) then
+        call SaveTextTagHandle(HH,idu,TextTagHealTargetHash,textdmg)
+        if TextTagHidden(u) then
             call SetTextTagVisibility(LoadTextTagHandle(HH,idu,TextTagHealTargetHash),false)
         else
             call SetTextTagVisibility(LoadTextTagHandle(HH,idu,TextTagHealTargetHash),true)
         endif
-        call SaveTextTagHandle(HH,idu,TextTagHealTargetHash,textdmg)
         call SaveReal(HH,idu,TextTagHealTimeHash,2.5)
+        call SaveStr(HH,idu,TextHealStrHash,l__s)
         call SetTextTagText(LoadTextTagHandle(HH,idu,TextTagHealTargetHash),l__s,0.023)
-        call SetTextTagPosUnit(LoadTextTagHandle(HH,idu,TextTagHealTargetHash),u,300)
+        call SetTextTagPosUnit(LoadTextTagHandle(HH,idu,TextTagHealTargetHash),u,TextTagZ(u,230.))
         call SetTextTagPermanent(LoadTextTagHandle(HH,idu,TextTagHealTargetHash),false)
         set t=CreateTimer()
         call SaveUnitHandle(HH,GetHandleId(t),0,u)
         call TimerStart(t,0.03,true, function AllTextTagHeal3)
     else
-        if IsUnitInvisible(u, GetLocalPlayer()) or (GetUnitTypeId(u)=='H16C' and IsPlayerEnemy(GetLocalPlayer(),GetOwningPlayer(u))) then
+        if TextTagHidden(u) then
             call SetTextTagVisibility(LoadTextTagHandle(HH,idu,TextTagHealTargetHash),false)
         else
             call SetTextTagVisibility(LoadTextTagHandle(HH,idu,TextTagHealTargetHash),true)
         endif
         call SetTextTagText(LoadTextTagHandle(HH,idu,TextTagHealTargetHash),l__s,0.023)
-        call SetTextTagPosUnit(LoadTextTagHandle(HH,idu,TextTagHealTargetHash),u,300)
+        call SetTextTagPosUnit(LoadTextTagHandle(HH,idu,TextTagHealTargetHash),u,TextTagZ(u,230.))
         call SetTextTagPermanent(LoadTextTagHandle(HH,idu,TextTagHealTargetHash),false)
         call SaveReal(HH,idu,TextTagHealTimeHash,2.5)
+        call SaveStr(HH,idu,TextHealStrHash,l__s)
     endif
     set t=null
     set textdmg=null
@@ -4840,7 +4892,8 @@ function MUIHandle takes nothing returns integer
             endif
         endif
         if order!="combo" then
-            if time>0 and ((order != ""  and IsUnitInvulnerable(target) == false and LoadBoolean(HH,GetHandleId(target),'dmb+')==false  and GetUnitAbilityLevel(target,'A151') != 1) or (order != "" and checker == true and c_type != "silence") or (order != "" and checker == true and c_type == "silence" and GetUnitAbilityLevel(target,'A151') != 1)) then
+            // frostbite (Эссенция льда) накладывается и на неуязвимых; защита A151 и блок dmb+ по-прежнему действуют
+            if time>0 and ((order != ""  and (IsUnitInvulnerable(target) == false or c_type == "frostbite") and LoadBoolean(HH,GetHandleId(target),'dmb+')==false  and GetUnitAbilityLevel(target,'A151') != 1) or (order != "" and checker == true and c_type != "silence") or (order != "" and checker == true and c_type == "silence" and GetUnitAbilityLevel(target,'A151') != 1)) then
                 if BuffId=='Bsl3' then
                     set buf = CreateBuff( BuffId )
                     set baseModel = GetBuffBaseStringFieldById( BuffId, ABILITY_SLF_TARGET )
@@ -5928,6 +5981,10 @@ function HPB_Assign takes nothing returns nothing
                 set HPB_ShW[hps]=-1.
                 set HPB_Col[hps]=-1
                 set HPB_Ticks[hps]=-1
+                set HPB_CcK[hps]=-1
+                set HPB_TxtY[hps]=-1.
+                set HPB_DmgS[hps]="~"
+                set HPB_HealS[hps]="~"
                 set HPB_Lv[hps]=-1
                 set HPB_MpOn[hps]=0
                 set HPB_ShOn[hps]=0
@@ -5956,6 +6013,7 @@ function HPB_Update takes nothing returns nothing
     local real hpa
     local real hpb
     local real hpq
+    local string hpt
     if HPB_Mode==3 then
         return
     endif
@@ -6016,6 +6074,10 @@ function HPB_Update takes nothing returns nothing
                         set HPB_ShW[hps]=-1.
                         set HPB_Col[hps]=-1
                         set HPB_Ticks[hps]=-1
+                        set HPB_CcK[hps]=-1
+                        set HPB_TxtY[hps]=-1.
+                        set HPB_DmgS[hps]="~"
+                        set HPB_HealS[hps]="~"
                         set HPB_MpOn[hps]=0
                         set HPB_ShOn[hps]=0
                         set HPB_PX[hps]=-9.
@@ -6080,6 +6142,61 @@ function HPB_Update takes nothing returns nothing
                                 call HPB_Fill(HPB_Mp[hps],hpw,HPB_UM)
                             endif
                         endif
+                    endif
+                    if hps<HPB_HN then
+                        // контроль: только чтение данных общего опроса CCB_Scan (GetUnitBuff здесь нельзя — создаёт handle)
+                        set hpk=LoadInteger(CCB_HT,GetHandleId(hpu),0)
+                        if hpk!=HPB_CcK[hps] then
+                            set HPB_CcK[hps]=hpk
+                            set HPB_CcW[hps]=-1.
+                            if hpk>0 then
+                                call SetFrameTextureEx(HPB_CcIco[hps],0,CCB_Ico[hpk],false,"",0)
+                                call SetFrameTextureEx(HPB_CcFill[hps],0,HPB_Tex(CCB_Col[hpk]),false,"",0)
+                                call SetFrameText(HPB_CcTxt[hps],CCB_Name[hpk])
+                            endif
+                            call ShowFrame(HPB_Cc[hps],hpk>0)
+                            call ShowFrame(HPB_CcTxt[hps],hpk>0)
+                        endif
+                        if hpk>0 then
+                            // остаток / полная длительность; бессрочный (100 с и больше) — полоса целиком
+                            set hpr=LoadReal(CCB_HT,GetHandleId(hpu),2)
+                            set hpw=HPB_HW+.0095-.0078
+                            if hpr>0. and hpr<100. then
+                                set hpw=hpw*LoadReal(CCB_HT,GetHandleId(hpu),1)/hpr
+                            endif
+                            set hpw=I2R(R2I(hpw*4000.))/4000.
+                            if hpw!=HPB_CcW[hps] then
+                                set HPB_CcW[hps]=hpw
+                                call HPB_Fill(HPB_CcFill[hps],hpw,.0078-2*HPB_PAD)
+                            endif
+                        endif
+                    endif
+                    // текст урона/лечения: строки из общего кода; над полосой контроля, если она показана, иначе над рамкой
+                    set hpo=.001
+                    if hps<HPB_HN and HPB_CcK[hps]>0 then
+                        set hpo=.0096
+                    endif
+                    if hpo!=HPB_TxtY[hps] then
+                        set HPB_TxtY[hps]=hpo
+                        call SetFrameRelativePoint(HPB_TxtFr[hps],FRAMEPOINT_BOTTOM,HPB_Root[hps],FRAMEPOINT_TOP,0.,hpo)
+                    endif
+                    set hpt=LoadStr(HH,GetHandleId(hpu),TextDmgStrHash)
+                    if hpt==null then
+                        set hpt=""
+                    endif
+                    if hpt!=HPB_DmgS[hps] then
+                        set HPB_DmgS[hps]=hpt
+                        call SetFrameText(HPB_DmgTxt[hps],hpt)
+                        call ShowFrame(HPB_DmgTxt[hps],hpt!="")
+                    endif
+                    set hpt=LoadStr(HH,GetHandleId(hpu),TextHealStrHash)
+                    if hpt==null then
+                        set hpt=""
+                    endif
+                    if hpt!=HPB_HealS[hps] then
+                        set HPB_HealS[hps]=hpt
+                        call SetFrameText(HPB_HealTxt[hps],hpt)
+                        call ShowFrame(HPB_HealTxt[hps],hpt!="")
                     endif
                     if hps<HPB_HN and hpz then
                         // засечки: до 5500 HP — каждые 500 (мелкие, на 2500 и 5000 — толстые), дальше — каждые 2500
@@ -6422,6 +6539,75 @@ function ShuwenModelInit takes nothing returns nothing
     call TriggerAddAction(mgt,function ShuwenModelSync)
     set mgt=null
 endfunction
+// --- полоска контроля: общий опрос (у всех игроков одинаково — GetUnitBuff создаёт handle, локально его вызывать нельзя) ---
+function CCB_Filter takes nothing returns boolean
+    return IsUnitType(GetFilterUnit(),UNIT_TYPE_HERO) and IsUnitType(GetFilterUnit(),UNIT_TYPE_DEAD)==false
+endfunction
+// раз в 0.05 с: у каждого живого героя (и иллюзий) — самый приоритетный контроль и его остаток
+function CCB_Scan takes nothing returns nothing
+    local unit ccu
+    local integer cck
+    local integer cci
+    local buff ccb
+    local real ccr
+    call GroupEnumUnitsInRect(CCB_G,bj_mapInitialPlayableArea,CCB_Flt)
+    loop
+        set ccu=FirstOfGroup(CCB_G)
+        exitwhen ccu==null
+        call GroupRemoveUnit(CCB_G,ccu)
+        set cci=GetHandleId(ccu)
+        set cck=1
+        loop
+            exitwhen cck>CCB_N
+            exitwhen GetUnitAbilityLevel(ccu,CCB_Buff[cck])>0
+            set cck=cck+1
+        endloop
+        if cck>CCB_N then
+            if LoadInteger(CCB_HT,cci,0)!=0 then
+                call SaveInteger(CCB_HT,cci,0,0)
+            endif
+        else
+            set ccb=GetUnitBuff(ccu,CCB_Buff[cck])
+            set ccr=0.
+            if ccb!=null then
+                set ccr=GetBuffRemainingDuration(ccb)
+            endif
+            set ccb=null
+            // новая полная длительность: контроль сменился или продлён
+            if cck!=LoadInteger(CCB_HT,cci,0) or ccr>LoadReal(CCB_HT,cci,2) then
+                call SaveReal(CCB_HT,cci,2,ccr)
+            endif
+            call SaveInteger(CCB_HT,cci,0,cck)
+            call SaveReal(CCB_HT,cci,1,ccr)
+        endif
+    endloop
+    set ccu=null
+endfunction
+function CCB_Set takes integer cck, integer ccb, string cci, string ccn, integer ccc returns nothing
+    set CCB_Buff[cck]=ccb
+    set CCB_Ico[cck]=cci
+    set CCB_Name[cck]=ccn
+    set CCB_Col[cck]=ccc
+endfunction
+// приоритет: чем меньше номер, тем неприятнее; цвет — номер TeamColor (04 жёлтый, 03 фиолетовый, 10 тёмно-зелёный, 05 оранжевый, 09 голубой, 08 серый)
+function CCB_Init takes nothing returns nothing
+    call CCB_Set(1,'cbc8',"ReplaceableTextures\\CommandButtons\\BTNStarfall.blp","Stun",4)
+    call CCB_Set(2,'CBC2',"ReplaceableTextures\\CommandButtons\\BTNDizzy.blp","Stun",4)
+    call CCB_Set(3,'cbc9',"ReplaceableTextures\\CommandButtons\\BTNCyclone.blp","Cyclone",4)
+    call CCB_Set(4,'cbc7',"ReplaceableTextures\\CommandButtons\\BTNSleep.blp","Sleep",4)
+    call CCB_Set(5,'cbc5',"ReplaceableTextures\\CommandButtons\\BTNSoulBurn.blp","Doom",3)
+    call CCB_Set(6,'CBC1',"ReplaceableTextures\\CommandButtons\\BTNEntanglingRoots.blp","Roots",10)
+    call CCB_Set(7,'cbc6',"ReplaceableTextures\\CommandButtons\\BTNEnsnare.blp","Ensnare",10)
+    call CCB_Set(8,'cbc3',"ReplaceableTextures\\CommandButtons\\BTNSilence.blp","Silence",3)
+    call CCB_Set(9,'BNC3',"war3mapImported\\BTN_CW_Magus_Staff.blp","Disarm",5)
+    call CCB_Set(10,'cb10',"ReplaceableTextures\\CommandButtons\\BTNBlind.blp","Blind",5)
+    call CCB_Set(11,'BNC2',"ReplaceableTextures\\CommandButtons\\BTNMoonStone.blp","Frostbite",9)
+    call CCB_Set(12,'BNC1',"ReplaceableTextures\\CommandButtons\\BTNDeathAndDecay.blp","Necrosis",8)
+    set CCB_HT=InitHashtable()
+    set CCB_G=CreateGroup()
+    set CCB_Flt=Condition(function CCB_Filter)
+    call TimerStart(CreateTimer(),0.05,true,function CCB_Scan)
+endfunction
 function HPB_Init takes nothing returns nothing
     local integer hps=0
     local integer hpj
@@ -6478,7 +6664,57 @@ function HPB_Init takes nothing returns nothing
                 call ShowFrame(HPB_Tick[hps*HPB_TN+hpj],false)
                 set hpj=hpj+1
             endloop
+            // контроль: чёрная полоса над рамкой (во всю ширину вместе с окошком уровня), иконка слева, заливка с остатком и название
+            set HPB_Cc[hps]=HPB_Bar("HPBarCc",HPB_Root[hps],hps,hbw+2*HPB_PAD+.0095,.0078,"Textures\\Black32.blp",1)
+            call SetFrameRelativePoint(HPB_Cc[hps],FRAMEPOINT_BOTTOMRIGHT,HPB_Root[hps],FRAMEPOINT_TOPRIGHT,0.,.0008)
+            set HPB_CcIco[hps]=HPB_Bar("HPBarCcIcon",HPB_Cc[hps],hps,.0078,.0078,"ReplaceableTextures\\CommandButtons\\BTNDizzy.blp",3)
+            call SetFrameRelativePoint(HPB_CcIco[hps],FRAMEPOINT_TOPLEFT,HPB_Cc[hps],FRAMEPOINT_TOPLEFT,0.,0.)
+            set HPB_CcFill[hps]=HPB_Bar("HPBarCcFill",HPB_Cc[hps],hps,hbw+2*HPB_PAD+.0095-.0078-2*HPB_PAD,.0078-2*HPB_PAD,HPB_Tex(4),2)
+            call SetFrameRelativePoint(HPB_CcFill[hps],FRAMEPOINT_TOPLEFT,HPB_Cc[hps],FRAMEPOINT_TOPLEFT,.0078+HPB_PAD,-HPB_PAD)
+            // заливка полупрозрачная поверх чёрного (темнее), чтобы белый текст читался; текст — на своём фрейме выше заливки
+            call SetFrameAlpha(HPB_CcFill[hps],150)
+            set HPB_CcTop[hps]=CreateFrameByType("SIMPLEFRAME","HPBarCcTop",HPB_Cc[hps],"",hps)
+            call ClearFrameAllPoints(HPB_CcTop[hps])
+            call SetFrameSize(HPB_CcTop[hps],hbw+2*HPB_PAD+.0095,.0078)
+            call SetFrameRelativePoint(HPB_CcTop[hps],FRAMEPOINT_CENTER,HPB_Cc[hps],FRAMEPOINT_CENTER,0.,0.)
+            call SetFramePriority(HPB_CcTop[hps],4)
+            set HPB_CcTxt[hps]=CreateFrameByType("SIMPLETEXT","HPBarCcText",HPB_CcTop[hps],"",hps)
+            call ClearFrameAllPoints(HPB_CcTxt[hps])
+            call SetFrameBlendMode(HPB_CcTxt[hps],0,BLEND_MODE_BLEND)
+            call SetFrameFont(HPB_CcTxt[hps],"Fonts\\FRIZQT__.TTF",.0062,0)
+            call SetFrameTextAlignment(HPB_CcTxt[hps],TEXT_JUSTIFY_CENTER,TEXT_JUSTIFY_MIDDLE)
+            call SetFrameTextColour(HPB_CcTxt[hps],0xFFFFFFFF)
+            call SetFrameText(HPB_CcTxt[hps]," ")
+            call SetFrameRelativePoint(HPB_CcTxt[hps],FRAMEPOINT_CENTER,HPB_Cc[hps],FRAMEPOINT_CENTER,.0039,0.)
+            call ShowFrame(HPB_CcTxt[hps],true)
+            call ShowFrame(HPB_Cc[hps],false)
+            set HPB_CcK[hps]=0
         endif
+        // текст урона (снизу) и лечения (над ним): свой фрейм выше всех частей полоски
+        set HPB_TxtFr[hps]=CreateFrameByType("SIMPLEFRAME","HPBarTextFrame",HPB_Root[hps],"",hps)
+        call ClearFrameAllPoints(HPB_TxtFr[hps])
+        call SetFrameSize(HPB_TxtFr[hps],.1,.01)
+        call SetFrameRelativePoint(HPB_TxtFr[hps],FRAMEPOINT_BOTTOM,HPB_Root[hps],FRAMEPOINT_TOP,0.,.001)
+        call SetFramePriority(HPB_TxtFr[hps],5)
+        set HPB_DmgTxt[hps]=CreateFrameByType("SIMPLETEXT","HPBarDmgText",HPB_TxtFr[hps],"",hps)
+        call ClearFrameAllPoints(HPB_DmgTxt[hps])
+        call SetFrameBlendMode(HPB_DmgTxt[hps],0,BLEND_MODE_BLEND)
+        call SetFrameFont(HPB_DmgTxt[hps],"Fonts\\FRIZQT__.TTF",.0115,0)
+        call SetFrameTextAlignment(HPB_DmgTxt[hps],TEXT_JUSTIFY_CENTER,TEXT_JUSTIFY_MIDDLE)
+        call SetFrameText(HPB_DmgTxt[hps]," ")
+        call SetFrameRelativePoint(HPB_DmgTxt[hps],FRAMEPOINT_BOTTOM,HPB_TxtFr[hps],FRAMEPOINT_BOTTOM,0.,0.)
+        call ShowFrame(HPB_DmgTxt[hps],false)
+        set HPB_HealTxt[hps]=CreateFrameByType("SIMPLETEXT","HPBarHealText",HPB_TxtFr[hps],"",hps)
+        call ClearFrameAllPoints(HPB_HealTxt[hps])
+        call SetFrameBlendMode(HPB_HealTxt[hps],0,BLEND_MODE_BLEND)
+        call SetFrameFont(HPB_HealTxt[hps],"Fonts\\FRIZQT__.TTF",.0115,0)
+        call SetFrameTextAlignment(HPB_HealTxt[hps],TEXT_JUSTIFY_CENTER,TEXT_JUSTIFY_MIDDLE)
+        call SetFrameText(HPB_HealTxt[hps]," ")
+        call SetFrameRelativePoint(HPB_HealTxt[hps],FRAMEPOINT_BOTTOM,HPB_TxtFr[hps],FRAMEPOINT_BOTTOM,0.,.0145)
+        call ShowFrame(HPB_HealTxt[hps],false)
+        set HPB_DmgS[hps]=""
+        set HPB_HealS[hps]=""
+        set HPB_TxtY[hps]=.001
         call ShowFrame(HPB_Root[hps],false)
         set HPB_Vis[hps]=false
         set hps=hps+1
@@ -6494,6 +6730,7 @@ function HPB_Init takes nothing returns nothing
     call TimerStart(CreateTimer(),0.015,true,function HPB_Update)
     call TimerStart(CreateTimer(),0.5,true,function HPB_DebugTick)
     call HPB_MenuInit()
+    call CCB_Init()
     set hpg=null
 endfunction
 function HeroBarFill takes framehandle hbf, real hbw returns nothing
@@ -64705,7 +64942,8 @@ if GetUnitAbilityLevel(u,'BNC2')>0 and GetWidgetLife(u)>0 and udg_B==true and DU
         endif
     endif
     if time2>0.25 then
-        if (GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.0075)-40>0 then
+        // неуязвимые урона не получают (запрет восстановления HP действует); myCustomDamage снимает 1 HP напрямую у полного HP
+        if (GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.0075)-40>0 and IsUnitInvulnerable(u)==false then
             call myCustomDamage(c,u,(GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.0075)-40,false,false,null,null,null)
         endif
         call SaveReal(h,id,5,0)
@@ -85883,7 +86121,7 @@ local unit l__d=LoadUnitHandle(h,id,1)
 local real x=LoadReal(h,id,2)
 local real y=LoadReal(h,id,3)
 local group g=LoadGroupHandle(h,id,5)
-local group g2=CreateGroup()
+local group g2=LoadGroupHandle(h,id,6)
 local real x1=GetUnitX(l__d)
 local real y1=GetUnitY(l__d)
 local real x2
@@ -85895,6 +86133,8 @@ local real a2
 local player p=GetOwningPlayer(u)
 local real dmg=GetHeroInt(u,true)*0.09
 local real dist=LoadReal(h,id,4)
+// урон раз в 5 тиков (0.35 с) x5 — тот же урон в секунду, но обработчик урона в 5 раз реже (раньше 14 раз в секунду на цель)
+local boolean hit=ModuloInteger(R2I(dist/20.+0.5),5)==0
 if dist<=3000 then
 call SaveReal(h,id,4,dist+20)
 if IsTerrainPathable(x1+20*Cos(a),y1+20*Sin(a),PATHING_TYPE_FLYABILITY)==false then
@@ -85913,7 +86153,9 @@ set E=FirstOfGroup(g2)
 set ip=GetPlayerId(GetOwningPlayer(E))
 exitwhen E==null
 if Condition_Base(p,E) then
-call myCustomDamage(u,E,dmg,false,false,null,null,null)
+if hit then
+call myCustomDamage(u,E,dmg*5.,false,false,null,null,null)
+endif
 if LoadBoolean(HH,GetHandleId(E),DoflaTHash)==false then
 set x2=GetUnitX(E)
 set y2=GetUnitY(E)
@@ -85921,7 +86163,10 @@ set a2=Atan2(y2-y1,x2-x1)+1.35
 call SetUnitX(E,x2-70*Cos(a2))
 call SetUnitY(E,y2-70*Sin(a2))
 endif
+// «стоп» только если у цели есть приказ: каждый приказ запускает все триггеры приказов карты
+if GetUnitCurrentOrder(E)!=0 then
 call IssueImmediateOrder(E,"stop")
+endif
 if GetUnitFlyHeight(E)<500 then
 call SetUnitFlyHeight(E,GetUnitFlyHeight(E)+2.6,0)
 endif
@@ -85934,7 +86179,6 @@ endif
 endif
 call GroupRemoveUnit(g2,E)
 endloop
-call DestroyGroup(g2)
 else
 loop
 set E=FirstOfGroup(g)
@@ -85975,6 +86219,8 @@ call SaveReal(h,id,3,y)
 call SaveReal(h,id,4,0)
 call SaveReal(h,id,5,a)
 call SaveGroupHandle(h,id,5,CreateGroup())
+// группа для поиска целей — одна на всю способность (раньше создавалась каждый тик)
+call SaveGroupHandle(h,id,6,CreateGroup())
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\Altaris.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
 call KillSoundWhenDone(soundplay)
@@ -105008,6 +105254,14 @@ endfunction
 function CondYotonYokaiNoJutsu takes nothing returns boolean
 return GetSpellAbilityId()=='A0MR'
 endfunction
+// союзник из списка T Мей больше не в радиусе 500 (или T закончилась) — снять флаг щита
+function MeiTShieldLeave takes nothing returns nothing
+local integer id=GetHandleId(GetExpiredTimer())
+if LoadReal(h,id,4)<=0 or SR(GetUnitX(GetEnumUnit()),GetUnitY(GetEnumUnit()),LoadReal(h,id,1),LoadReal(h,id,2))>500 then
+call SaveBoolean(h,GetHandleId(GetEnumUnit()),SH_MeiT_Shield,false)
+call GroupRemoveUnit(LoadGroupHandle(h,id,GroupHash),GetEnumUnit())
+endif
+endfunction
 function CastYotonYokaiNoJutsu4 takes nothing returns nothing
 local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
@@ -105025,7 +105279,8 @@ local integer idun=GetHandleId(Hero[idu])
 local integer i=0
 if time>0 then
         call SaveReal(h,id,4,time-0.2)
-        call GroupEnumUnitsInRange(G,x1,y1,999999,Base)
+        // только юниты рядом с зоной (раньше — все юниты карты, радиус 999999, 5 раз в секунду); союзникам в зоне — флаг щита и в список
+        call GroupEnumUnitsInRange(G,x1,y1,600,Base)
         loop
         set E=FirstOfGroup(G)
         exitwhen E==null
@@ -105036,12 +105291,12 @@ if time>0 then
                                 call SlowUnit(u,E,0.85,0.85,0.2,2,false)
                         else
                                 call SaveBoolean(h, GetHandleId(E), SH_MeiT_Shield, true)
+                                call GroupAddUnit(LoadGroupHandle(h, id, GroupHash),E)
                         endif
-                else
-                        call SaveBoolean(h, GetHandleId(E), SH_MeiT_Shield, false)
                 endif
                 call GroupRemoveUnit(G,E)
         endloop
+        call ForGroup(LoadGroupHandle(h, id, GroupHash),function MeiTShieldLeave)
         if SR(x,y,x1,y1)<400 then
                 call SetUnitInvulnerable(u,true)
         else
@@ -105053,13 +105308,8 @@ else
                 call RemoveDestructable(LoadDestructableHandle(h,idun,i))
                 set i=i+1
         endloop
-        call GroupEnumUnitsInRange(G,x1,y1,999999,Base)
-        loop
-        set E=FirstOfGroup(G)
-        exitwhen E==null
-                call SaveBoolean(h, GetHandleId(E), SH_MeiT_Shield, false)
-                call GroupRemoveUnit(G,E)
-        endloop
+        // T закончилась (время <= 0) — снять флаг у всех из списка
+        call ForGroup(LoadGroupHandle(h, id, GroupHash),function MeiTShieldLeave)
         call DestroyGroup(LoadGroupHandle(h, id, GroupHash))
         call SetUnitInvulnerable(u,false)
         call PauseTimer(t)
@@ -108662,7 +108912,8 @@ local integer i=0
 local group g=CreateGroup()
 local real x1
 local real y1
-local real f=(7.2)*bj_DEGTORAD
+// кольцо огня: 25 моделей через 14.4° (раньше 50 через 7.2° — 50 источников частиц), масштаб 5 вместо 4
+local real f=(14.4)*bj_DEGTORAD
 call SaveGroupHandle(h,id,8,g)
 call SaveUnitHandle(h,id,0,u)
 call SaveUnitHandle(h,id,1,c)
@@ -108672,11 +108923,13 @@ call SetUnitInvulnerable(u,true)
 call GroupAddUnit(g,CreateUnit(p,'e0Z1',x,y,0))
 call GroupAddUnit(g,CreateUnit(p,'e0Z2',x,y,0))
 loop
-exitwhen i>=50
+exitwhen i>=25
 set x1=x+1100*Cos((i*f))
 set y1=y+1100*Sin((i*f))
 set a=Atan2(y-y1,x-x1)
-call GroupAddUnit(g,CreateUnit(p,'e0Z0',x1,y1,0))
+set n=CreateUnit(p,'e0Z0',x1,y1,0)
+call SetUnitScale(n,5.,5.,5.)
+call GroupAddUnit(g,n)
 set i=i+1
 endloop
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\Kuuko5.mp3",false,false,true,12700,12700,"")
@@ -125355,8 +125608,16 @@ call TriggerRegisterAnyUnitEventBJ(gg_trg_Godspeed3,EVENT_PLAYER_HERO_SKILL)
 call TriggerAddCondition(gg_trg_Godspeed3,Condition(function Godspeed3Cond))
 call TriggerAddAction(gg_trg_Godspeed3,function Godspeed3Cast)
 endfunction
+// приказы бега Godspeed: move / smart / attack — сравнение номеров приказов (раньше OrderId2String трижды на каждый приказ в игре)
+function GodspeedRunOrder takes integer o returns boolean
+return o==851986 or o==851971 or o==851983
+endfunction
 function Godspeed2Cond takes nothing returns boolean
-return udg_B==true and GetUnitAbilityLevel(GetTriggerUnit(),'B02Z')==0 and(OrderId2String(GetUnitCurrentOrder(GetTriggerUnit()))=="move" or OrderId2String(GetUnitCurrentOrder(GetTriggerUnit()))=="smart" or OrderId2String(GetUnitCurrentOrder(GetTriggerUnit()))=="attack")and GetUnitAbilityLevel(GetTriggerUnit(),'A0UU')>0 and IsUnitIllusion(GetTriggerUnit())==false and GetUnitAbilityLevel(GetTriggerUnit(),'A3A0')>0
+// сначала дешёвые проверки: триггер срабатывает на все приказы всех игроков
+if udg_B==false or GetUnitAbilityLevel(GetTriggerUnit(),'A0UU')==0 or GetUnitAbilityLevel(GetTriggerUnit(),'A3A0')==0 then
+return false
+endif
+return GetUnitAbilityLevel(GetTriggerUnit(),'B02Z')==0 and GodspeedRunOrder(GetUnitCurrentOrder(GetTriggerUnit())) and IsUnitIllusion(GetTriggerUnit())==false
 endfunction
 function Godspeed2Cast2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
@@ -125383,7 +125644,10 @@ local integer l__ide
 local integer l__idg
 local real dmg=GetHeroAgi(u,true)*2
 local real dist10=0
-if(OrderId2String(GetUnitCurrentOrder(u))=="move" or OrderId2String(GetUnitCurrentOrder(u))=="smart" or OrderId2String(GetUnitCurrentOrder(u))=="attack")and SR(x,y,x1,y1)>50+speed*0.001 and speed>30 and GetUnitAbilityLevel(u, 'CBC2')==0 and GetUnitAbilityLevel(u, 'CBC1')==0 and GetUnitAbilityLevel(u, 'cbc4')==0 and GetUnitAbilityLevel(u, 'cbc6')==0 and GetUnitAbilityLevel(u, 'cbc5')==0  and GetUnitAbilityLevel(u, 'cbc7')==0 and GetUnitAbilityLevel(u, 'cbc8')==0 and GetUnitAbilityLevel(u, 'cbc9')==0 and IsUnitPaused(u)==false then
+// шлейф (2 юнита-эффекта) — раз в 3 тика (0.03 с), раньше каждые 0.01 с: 200 юнитов в секунду
+local integer tk=LoadInteger(HH,id,10)+1
+call SaveInteger(HH,id,10,tk)
+if GodspeedRunOrder(GetUnitCurrentOrder(u)) and SR(x,y,x1,y1)>50+speed*0.001 and speed>30 and GetUnitAbilityLevel(u, 'CBC2')==0 and GetUnitAbilityLevel(u, 'CBC1')==0 and GetUnitAbilityLevel(u, 'cbc4')==0 and GetUnitAbilityLevel(u, 'cbc6')==0 and GetUnitAbilityLevel(u, 'cbc5')==0  and GetUnitAbilityLevel(u, 'cbc7')==0 and GetUnitAbilityLevel(u, 'cbc8')==0 and GetUnitAbilityLevel(u, 'cbc9')==0 and IsUnitPaused(u)==false then
 set dist10=speed*0.034
 if dist10<39 then
 set x=x+dist10*(1+SpeedRes*0.01)*Cos(a)
@@ -125396,6 +125660,7 @@ set y=y+dist10*(1+SpeedRes*0.01)*Sin(a)
 call SaveReal(HH,idu,str6,dist2+speed*0.0044)
 endif
 call SetUnitXY_1(u,x,y, false)
+if ModuloInteger(tk,3)==0 then
 set n=CreateUnit(p,0x65305258,x,y,GetRandomReal(0,359))
 call SetUnitTimeScale(n,3)
 call UnitApplyTimedLife(n,'BTLF',0.13)
@@ -125404,6 +125669,7 @@ call UnitApplyTimedLife(n,'BTLF',0.13)
 call SetUnitTimeScale(n,2)
 call SetUnitVertexColor(n,255,255,255,50)
 call SetUnitAnimation(n,"walk")
+endif
 call SetUnitFacing(u,a*bj_RADTODEG)
 call SaveReal(HH,idu,str2,dist+speed)
 call SaveReal(HH,idu,str4,(speed-dist10*0.26)*0.9988)
@@ -125440,8 +125706,8 @@ set u=null
 set t=null
 endfunction
 function Godspeed2Cast takes nothing returns nothing
-local timer t=CreateTimer()
-local integer id=GetHandleId(t)
+// таймер — только при старте бега (раньше создавался на каждый приказ и при уже идущем беге не удалялся)
+local timer t=null
 local unit u=GetTriggerUnit()
 local real x=GetOrderPointX()
 local real y=GetOrderPointY()
@@ -125466,7 +125732,8 @@ if speed>10 then
 call UnitAddAbility(u,'A0UV')
 call UnitAddAbility(u,'A0UW')
 endif
-call SaveUnitHandle(HH,id,0,u)
+set t=CreateTimer()
+call SaveUnitHandle(HH,GetHandleId(t),0,u)
 call SaveBoolean(HH,idu,str3,true)
 call SaveGroupHandle(HH,idu,str5,CreateGroup())
 call TimerStart(t,0.01,true,function Godspeed2Cast2)
@@ -125538,15 +125805,20 @@ local real f=GetUnitFacing(l__d)
 local real a=LoadReal(h,id,2)
 local real dmg=LoadReal(h,id,6)
 local real Range=LoadReal(h,id,9)
+// копия — через тик (0.06 с)
+local integer tk=LoadInteger(h,id,11)+1
+call SaveInteger(h,id,11,tk)
 if SR(x,y,x1,y1)<=Range then
 call SetUnitXY_1(l__d,x1+speed*Cos(a),y1+speed*Sin(a), false)
 call SetUnitFacing(l__d,a*bj_RADTODEG)
 call SetUnitAnimation(l__d,"walk")
+if ModuloInteger(tk,2)==0 then
 set n=CreateUnit(p,'e0RU',x1,y1,f)
 call UnitApplyTimedLife(n,'BTLF',0.1)
 call SetUnitTimeScale(n,2)
 call SetUnitVertexColor(n,255,255,255,50)
 call SetUnitAnimation(n,"walk")
+endif
 else
 call RemoveUnit(l__d)
 call FlushChildHashtable(h,id)
@@ -125598,6 +125870,9 @@ local real dmg=GetHeroAgi(u,true)*(GetUnitAbilityLevel(u,'A0UR')+2)
 local integer l__idg=GetHandleId(g)
 local player p=GetOwningPlayer(u)
 local real speed=LoadReal(h,id,102)
+// копии клонов — через тик (0.08 с), раньше каждые 0.04 с: 150 юнитов в секунду
+local integer tk=LoadInteger(h,id,103)+1
+call SaveInteger(h,id,103,tk)
 loop
 set i=i+1
 exitwhen i>6
@@ -125608,16 +125883,20 @@ set y1=GetUnitY(n)+speed*Sin(f*bj_DEGTORAD)
 call SetUnitFacing(n,f)
 call SetUnitX(n,x1)
 call SetUnitY(n,y1)
+if ModuloInteger(tk,2)==0 then
 set n=CreateUnit(p,'e0RU',x1,y1,f)
 call UnitApplyTimedLife(n,'BTLF',0.15)
 call SetUnitTimeScale(n,2)
 call SetUnitVertexColor(n,255,255,255,50)
 call SetUnitAnimation(n,"walk")
+endif
 endloop
 set n=CreateUnit(p,'e0RW',x,y,f*bj_RADTODEG)
 call UnitApplyTimedLife(n,'BTLF',0.3)
 call SetUnitTimeScale(n,2)
+if GetUnitCurrentOrder(c)!=0 then
 call IssueImmediateOrder(c,"stop")
+endif
 call SaveReal(h,id,101,dist+0.04)
 call SaveReal(h,id,102,speed+0.8)
 if dist>=2 then
@@ -125676,6 +125955,9 @@ local real f=0
 local real dmg=GetHeroAgi(u,true)*(GetUnitAbilityLevel(u,'A0UR')+2)
 local integer l__idg=GetHandleId(g)
 local player p=GetOwningPlayer(u)
+// копии клонов — через тик (0.08 с)
+local integer tk=LoadInteger(h,id,103)+1
+call SaveInteger(h,id,103,tk)
 loop
 set i=i+1
 exitwhen i>6
@@ -125688,11 +125970,13 @@ set y1=y+dist*Sin(f)
 call SetUnitFacing(n,f*bj_RADTODEG)
 call SetUnitX(n,x1)
 call SetUnitY(n,y1)
+if ModuloInteger(tk,2)==0 then
 set n=CreateUnit(p,'e0RU',x1,y1,f*bj_RADTODEG)
 call UnitApplyTimedLife(n,'BTLF',0.12)
 call SetUnitTimeScale(n,2)
 call SetUnitVertexColor(n,255,255,255,50)
 call SetUnitAnimation(n,"walk")
+endif
 endloop
 if dist>=400 then
 call PauseTimer(t)
@@ -125834,13 +126118,14 @@ endif
 call GroupRemoveUnit(G,E)
 endloop
 call UnitApplyTimedLife(CreateUnit(p,'e06V',x1,y1,GetRandomReal(0,359)),'BHwe',1)
-call UnitApplyTimedLife(CreateUnit(p,'e06W',x1,y1,GetRandomReal(0,359)),'BHwe',1)
-call UnitApplyTimedLife(CreateUnit(p,'e06U',x1,y1,GetRandomReal(0,359)),'BHwe',1)
+// эффектов взрыва 4 вместо 7 (22 клона x 7 = 154 юнита разом): убраны мелкие e06W, e06U и ветер e071
+//call UnitApplyTimedLife(CreateUnit(p,'e06W',x1,y1,GetRandomReal(0,359)),'BHwe',1)
+//call UnitApplyTimedLife(CreateUnit(p,'e06U',x1,y1,GetRandomReal(0,359)),'BHwe',1)
 //call UnitApplyTimedLife(CreateUnit(p,'e06Z',x1,y1,GetRandomReal(0,359)),'BHwe',1)
 //call UnitApplyTimedLife(CreateUnit(p,'e06X',x1,y1,GetRandomReal(0,359)),'BHwe',1)
 call UnitApplyTimedLife(CreateUnit(p,'e06Y',x1,y1,GetRandomReal(0,359)),'BHwe',1)
 call UnitApplyTimedLife(CreateUnit(p,'e070',x1,y1,GetRandomReal(0,359)),'BHwe',1)
-call UnitApplyTimedLife(CreateUnit(p,'e071',x1,y1,GetRandomReal(0,359)),'BHwe',1)
+//call UnitApplyTimedLife(CreateUnit(p,'e071',x1,y1,GetRandomReal(0,359)),'BHwe',1)
 call UnitApplyTimedLife(CreateUnit(p,'e07C',x1,y1,GetRandomReal(0,359)),'BHwe',1)
 call RemoveUnit(l__d)
 call PauseTimer(t)
@@ -126334,6 +126619,8 @@ local real dmg=(0.5*GetUnitAbilityLevel(u,'A0VE')+4.5)*GetHeroStr(u,true)
 local group g=LoadGroupHandle(h,id,7)
 local real time=LoadReal(h,id,8)
 local integer l__idg=GetHandleId(g)
+// урон по площади и вспышки — через тик (0.18 с), урон x2: тот же урон в секунду, обработчик урона вдвое реже
+local boolean hit=ModuloInteger(R2I(time/0.09+0.5),2)==0
 if time<2 then
 call SaveReal(h,id,8,time+0.09)
 call GroupEnumUnitsInRange(G,x,y,600,Base)
@@ -126345,8 +126632,8 @@ if Condition_Base(p,E)and LoadUnitHandle(h,l__idg,ide)!=E then
 call myCustomDamage(u,E,dmg*1,false,false,null,null,null)
 call SaveUnitHandle(h,l__idg,ide,E)
 endif
-if Condition_Base(p,E)then
-call myCustomDamage(u,E,dmg*0.045,false,false,null,null,null)
+if hit and Condition_Base(p,E)then
+call myCustomDamage(u,E,dmg*0.09,false,false,null,null,null)
 endif
 call GroupRemoveUnit(G,E)
 endloop
@@ -126355,6 +126642,7 @@ call UnitApplyTimedLife(CreateUnit(p,'e0SI',x,y,GetRandomReal(0,359)),'BTLF',1)
 set n=CreateUnit(p,'e0SO',x,y,GetRandomReal(0,359))
 call UnitApplyTimedLife(n,'BTLF',1)
 call SetUnitTimeScale(n,3)
+if hit then
 set n=CreateUnit(p,'e0K9',x,y,GetRandomReal(0,359))
 call UnitApplyTimedLife(n,'BTLF',0.01)
 call SetUnitScale(n,2.2,2.2,2.2)
@@ -126363,6 +126651,7 @@ set n=CreateUnit(p,'e0K9',x,y,GetRandomReal(0,359))
 call UnitApplyTimedLife(n,'BTLF',0.01)
 call SetUnitScale(n,3.2,3.2,3.2)
 call SetUnitVertexColor(n,150,200,255,30)
+endif
 else
 call KillUnit(l__d)
 call PauseTimer(t)
@@ -129056,17 +129345,7 @@ if time>3.52 then
 
 
 
-        call GroupEnumUnitsInRange(G,x0,y0,999999,null)
-        loop
-        set E=FirstOfGroup(G)
-        exitwhen E==null
-
-        //if IsUnitType(E,UNIT_TYPE_HERO)==true and GetUnitAbilityLevel(E,'AHSF')>0 then
-                call UnitRemoveAbility(E,'AHSF')
-                call UnitRemoveAbility(E,'BHSF')
-        //endif        
-                call GroupRemoveUnit(G,E)
-        endloop
+// барьер союзникам (AHSF — щит F Хаширамы) убран; снятие AHSF со всех юнитов карты в конце тоже убрано — оно срывало щит Хаширамы
 
 
 
@@ -129207,70 +129486,7 @@ call GroupClear(g)
 
 
 
-call GroupEnumUnitsInRange(g,x0,y0,10000,null)
-
-
-loop
-set n0=FirstOfGroup(g)
-exitwhen n0==null
-if IsUnitAlly(n0,GetOwningPlayer(caster))==true and IsUnitType(n0,UNIT_TYPE_HERO)==true then
-
-
-if time<0.5 then
-
-
-
-if SR(x0,y0,GetUnitX(n0),GetUnitY(n0))<400+time*1400 then
-
-
-
-if GetUnitAbilityLevel(n0,'AHSF')==0 then
-call UnitAddAbility(n0,'AHSF')
-endif
-
-
-else
-
-if GetUnitAbilityLevel(n0,'AHSF')>0 then
-call UnitRemoveAbility(n0,'AHSF')
-call UnitRemoveAbility(n0,'BHSF')
-endif
-
-endif
-
-else
-
-if SR(x0,y0,GetUnitX(n0),GetUnitY(n0))<1100 then
-
-
-//call SaveBoolean(h, GetHandleId(n0), StringHash("MeiT_Shield"), true)
-if GetUnitAbilityLevel(n0,'AHSF')==0 then
-call UnitAddAbility(n0,'AHSF')
-endif
-
-else
-
-if GetUnitAbilityLevel(n0,'AHSF')>0 then
-call UnitRemoveAbility(n0,'AHSF')
-call UnitRemoveAbility(n0,'BHSF')
-endif
-
-
-
-endif
-
-endif
-endif
-
-
-
-
-
-
-
-
-call GroupRemoveUnit(g,n0)
-endloop
+// барьер союзникам в радиусе убран
 
 
 call GroupClear(g)
@@ -146919,11 +147135,15 @@ local group g2
 local real time=LoadReal(h,id,4)
 local real dtime=LoadReal(h,id,5)
 local real coef=1-time/5.2
+// урон о стенку клетки — раз в 5 тиков (0.1 с) x5: тот же урон, обработчик урона в 5 раз реже (раньше 50 раз в секунду на цель)
+local boolean hit=ModuloInteger(R2I(time/0.02+0.5),5)==0
 if time>=0.3 and time<0.32 then
 call PauseUnit(u,false)
 endif
 if time<4.8 then
-set g2=CopyGroup(g)
+// копия списка целей — в одну группу на всю способность (раньше каждый тик новая группа + таймер на её удаление)
+set g2=LoadGroupHandle(h,id,6)
+call GroupAddGroupEx(g2,g)
 loop
     set E=FirstOfGroup(g2)
     set x1=GetUnitX(E)
@@ -146933,7 +147153,9 @@ loop
     set a=Atan2(y1-y,x1-x)
     call SetUnitX(E,x+(1975-dtime)*coef*Cos(a))
     call SetUnitY(E,y+(1975-dtime)*coef*Sin(a))
-    call myCustomDamage(u,E,dmg,false,false,null,null,null)
+    if hit then
+    call myCustomDamage(u,E,dmg*5.,false,false,null,null,null)
+    endif
     // call BenchmarkStart()
     call SaveBoolean(HH,GetHandleId(E),DoflaTHash,true)
     // call BenchmarkEnd()
@@ -146967,7 +147189,6 @@ loop
     endif
     call GroupRemoveUnit(g2,E)
 endloop
-call DestroyGroupTimed(g2,3)
 call SaveReal(h,id,4,time+0.02)
 call SaveReal(h,id,5,dtime+5)
 else
@@ -146980,6 +147201,7 @@ endloop
 call RemoveUnit(l__d)
 call GroupClear(g)
 call DestroyGroup(g)
+call DestroyGroup(LoadGroupHandle(h,id,6))
 call PauseTimer(t)
 call DestroyTimer(t)
 call FlushChildHashtable(h,id)
@@ -147001,6 +147223,7 @@ local player p=GetOwningPlayer(u)
 local group g=CreateGroup()
 call SaveUnitHandle(h,id,0,u)
 call SaveGroupHandle(h,id,3,g)
+call SaveGroupHandle(h,id,6,CreateGroup())
 call PauseUnit(u,true)
 call SetUnitAnimation(u,"Spell One")
 call SaveReal(h,id,4,0)
@@ -209843,7 +210066,10 @@ local real y0=LoadReal(HH,id,12)
 local real time=LoadReal(HH,id,5)
 if time<7.05 then
 
-call SlowUnit(GetEnumUnit(),GetEnumUnit(),0.5,0.5,0.055,2,false)
+// замедление — раз в 0.25 с на 0.275 с (то же соотношение, что 0.055 на тик 0.05): общая система контроля в 5 раз реже
+if ModuloInteger(R2I(time/0.05+0.5),5)==0 then
+call SlowUnit(GetEnumUnit(),GetEnumUnit(),0.5,0.5,0.275,2,false)
+endif
 
 if SR(GetUnitX( GetEnumUnit() ),GetUnitY( GetEnumUnit() ),x0,y0)>150 then
 call MoveUnit( GetEnumUnit() , GetEnumUnit() ,30+2000/SR(GetUnitX( GetEnumUnit() ),GetUnitY( GetEnumUnit() ),x0,y0),Angle2(GetUnitX( GetEnumUnit() ),GetUnitY( GetEnumUnit() ),x0,y0))
@@ -224567,11 +224793,15 @@ else
             call MoveUnit(Dummy,Dummy,35,facing)
             call SetUnitFlyHeight(Dummy,GetUnitFlyHeight(Dummy)-LoadReal(HH,id,16),0)
 
+            // урон по площади раз в 3 тика (0.06 с), раньше каждые 0.02 с: каждую цель он бьёт один раз, радиус растёт медленно
+            if ModuloInteger(R2I(time/0.02+0.5),3)==0 then
             call DamageAoeOneTime(caster,GetUnitX(Dummy),GetUnitY(Dummy),200+time*100,GetHeroStr(caster,true)*2+150,LoadGroupHandle(HH,id,4))
+            endif
 
             set time1=LoadReal(HH,id,6)
             set time1=time1+0.02
-            if time1==0.04 or time1==0.08 then
+            // эффект дерева 1 раз в 0.1 с вместо 2 (крупные, живут 3+ с — нагрузка на видеокарту)
+            if time1==0.06 then
                 //jiraya need pitch -90
                 call EffectCreateAndMove2(true,"Madara\\BY_Wood_Effect_ShuiYing_Unusual_RongDun_2_31.mdl",facing,3.5-time,1+time*1.9,GetRandomReal(1,1.8),100,100,100,30,-150,Dummy,0,facing)
             endif
@@ -224812,10 +225042,12 @@ set x1=x+350*Cos(270*bj_DEGTORAD)
 set y1=y+350*Sin(270*bj_DEGTORAD)
 set a=Atan2(y-y1,x-x1)*bj_RADTODEG
 call UnitApplyTimedLife(CreateUnit(p,'e07J',x1,y1,a),'BTLF',5)
+// конец: живым с меткой (и не под циклоном) — телепорт к Джирайе, урон, оглушение; после конца раунда — без этого.
+// Метка A128 снимается со всех из списка (раньше оставалась у погибших и под циклоном — G на них больше не действовала)
 loop
 set E=FirstOfGroup(g)
 exitwhen E==null
-if UnitIsAlive(E)and GetUnitAbilityLevel(E,'A128')>0 then
+if udg_B and UnitIsAlive(E)and GetUnitAbilityLevel(E,'A128')>0 then
 call SetUnitX(E,x)
 call SetUnitY(E,y)
 if IsUnitInvulnerable(E)==true and GetUnitAbilityLevel(E,'cbc9')==0 then
@@ -224830,6 +225062,7 @@ elseif GetUnitAbilityLevel(E,'cbc9')==0 then
     call SetControlToUnit(E,E, 3, "stun")
 endif
 endif
+call UnitRemoveAbility(E,'A128')
 call GroupRemoveUnit(g,E)
 endloop
 call RemoveUnit(l__d)
@@ -224887,12 +225120,17 @@ local real y1=LoadReal(h,id,5)
 local real f=GetUnitFacing(u)
 local player p=GetOwningPlayer(u)
 local real dmg=(4+GetUnitAbilityLevel(u,'A0CL'))*GetHeroStr(u,true)
+// следы (4 юнита на тик, живут 1 с) — через тик: было ~130 одновременно
+local integer tk=LoadInteger(h,id,20)+1
+call SaveInteger(h,id,20,tk)
 if SR(x3,y3,x1,y1)>26.00 and udg_B==true and DU2==true then
 set a=Atan2(y1-y,x1-x)-35*bj_DEGTORAD
 set x=x+47*Cos(a)
 set y=y+47*Sin(a)
 call SetUnitXY_1(l__d,x,y, false)
+if ModuloInteger(tk,2)==0 then
 call UnitApplyTimedLife(CreateUnit(p,'e079',x,y,a*bj_RADTODEG),'BTLF',1)
+endif
 call SetUnitFacing(l__d,a*bj_RADTODEG)
 set a=Atan2(y1-y2,x1-x2)+35*bj_DEGTORAD
 set x2=x2+47*Cos(a)
@@ -224900,17 +225138,21 @@ set y2=y2+47*Sin(a)
 call SetUnitX(d1,x2)
 call SetUnitY(d1,y2)
 call SetUnitFacing(d1,a*bj_RADTODEG)
+if ModuloInteger(tk,2)==0 then
 call UnitApplyTimedLife(CreateUnit(p,'e07A',x2,y2,a*bj_RADTODEG),'BTLF',1)
+endif
 set a=Atan2(y1-y3,x1-x3)
 set x3=x3+47*Cos(a)
 set y3=y3+47*Sin(a)
 call SetUnitX(d2,x3)
 call SetUnitY(d2,y3)
 call SetUnitFacing(d2,a*bj_RADTODEG)
+if ModuloInteger(tk,2)==0 then
 call UnitApplyTimedLife(CreateUnit(p,'e07B',x3,y3,a*bj_RADTODEG),'BTLF',1)
 set n=CreateUnit(p,'e0RJ',x3,y3,a*bj_RADTODEG)
 call UnitApplyTimedLife(n,'BTLF',1)
 call SetUnitTimeScale(n,2)
+endif
 else
 call GroupEnumUnitsInRange(G,x1,y1,600,Base)
 loop
@@ -224986,7 +225228,10 @@ local real y=GetUnitY(u)
 local real y1
 local real a
 local player p=GetOwningPlayer(u)
+// эффект попадания — раз в 3 тика (0.075 с), отталкивание каждый тик
+local integer tk=LoadInteger(h,id,20)+1
 if GetUnitAbilityLevel(u,'B02E')>0 then
+call SaveInteger(h,id,20,tk)
 call SetUnitXY_1(l__d,x,y, false)
 call SetUnitState(l__d,UNIT_STATE_LIFE,5)
 call SetUnitFlyHeight(l__d,GetUnitFlyHeight(u)+25,0)
@@ -225000,7 +225245,9 @@ set y1=GetUnitY(E)
 set a=Atan2(y1-y,x1-x)
 call SetUnitX(E,x1+30*Cos(a))
 call SetUnitY(E,y1+30*Sin(a))
+if ModuloInteger(tk,3)==0 then
 call DestroyEffect(AddSpecialEffect("Abilities\\Weapons\\AncientProtectorMissile\\AncientProtectorMissile.mdl",x1,y1))
+endif
 endif
 call GroupRemoveUnit(G,E)
 endloop
@@ -225056,6 +225303,8 @@ local real r=LoadReal(h,id,9)+0.1
 local player p=GetOwningPlayer(u)
 local group g=LoadGroupHandle(h,id,8)
 local real dmg=((1+GetUnitAbilityLevel(u,'A0CG'))*GetHeroStr(u,true)+150)*0.07
+// урон x2 и замедление — через тик (0.14 с): тот же урон в секунду, обработчик урона и система контроля вдвое реже
+local boolean hit=ModuloInteger(R2I(time/0.07+0.5),2)==0
 set x=x+dist2*Cos(a)
 set y=y+dist2*Sin(a)
 if time<1.5 then
@@ -225076,11 +225325,11 @@ call GroupEnumUnitsInRange(G,x1,y1,400,Base)
 loop
 set E=FirstOfGroup(G)
 exitwhen E==null
-if Condition_Base(p,E)then
+if hit and Condition_Base(p,E)then
 if GetUnitAbilityLevel(E,'B02F')>0 then
-call myCustomDamage(u,E,dmg*1.5,false,false,null,null,null)
+call myCustomDamage(u,E,dmg*3.,false,false,null,null,null)
 else
-call myCustomDamage(u,E,dmg,false,false,null,null,null)
+call myCustomDamage(u,E,dmg*2.,false,false,null,null,null)
 endif
 call SlowUnit(u,E,0.7,0,5,0,false)
 endif
@@ -233017,7 +233266,8 @@ endfunction
         local real dmg= 4*GetHeroInt(LoadUnitHandle(HH,MUIHandle(),CasterHash),true)
         local real ang= LoadFloat("ang")
         local real ang2= LoadFloat("ang2")
-        local group g2=CreateGroup()
+        // группа создаётся только на тике с поиском целей (раньше — каждый тик, и 2 из 3 не удалялись)
+        local group g2=null
         local real ang3= 0
         
         if time == 0. then
@@ -233054,6 +233304,7 @@ endfunction
                 call SetSpecialEffectTimeScale(EFF , GetRandomReal(0.5, 2))
                 call SetSpecialEffectZ(EFF , GetRandomReal(0.5, 400))
                 call SetSpecialEffectAlphaTimed(EFF , 255 , 255 , 255 , 150 , 4)
+                set g2=CreateGroup()
                 call GroupEnumUnitsInRange(g2, x, y, 750, Base)
                 loop
                     set SysUnit=FirstOfGroup(g2)
@@ -233068,7 +233319,9 @@ endfunction
                         endif
                         call myCustomDamage(LoadUnitHandle(HH,MUIHandle(),CasterHash), SysUnit, dmg * 0.092, false, false, null, null, null)
                         if IsUnitInvulnerable(SysUnit)==false then
-                            call IssueImmediateOrder(SysUnit,"stop")
+                            if GetUnitCurrentOrder(SysUnit)!=0 then
+                                call IssueImmediateOrder(SysUnit,"stop")
+                            endif
                             call SetControlToUnit(SysUnit,SysUnit,0.06,"stunbkb")
                         endif
                         if time < 3.5 then
