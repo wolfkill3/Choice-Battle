@@ -960,6 +960,8 @@ boolean HPB_MDown=false
 constant integer HPB_MIDX=StringHash("HPBMenuIdx")
 // панель прячется, пока открыты большие окна (таверна, магазин, эмоции, статистика, Hero ID) или развёрнут multiboard
 boolean HB_Blocked=false
+// проверка модели Ли Шувеня: игрок уже пойман (чтобы не повторять каждый раунд)
+boolean array MG_Caught
 // сдвиг панели героев влево, пока развёрнут multiboard
 real HB_Shift=0.
 framehandle HB_HideChk=null
@@ -5887,6 +5889,9 @@ function HPB_Assign takes nothing returns nothing
     local integer hpe
     local real hpx=GetCameraTargetPositionX()
     local real hpy=GetCameraTargetPositionY()
+    if HPB_Mode==3 then
+        return
+    endif
     loop
         exitwhen hps>=HPB_N
         set hpu=HPB_U[hps]
@@ -5951,6 +5956,9 @@ function HPB_Update takes nothing returns nothing
     local real hpa
     local real hpb
     local real hpq
+    if HPB_Mode==3 then
+        return
+    endif
     set HPB_T=HPB_T+1
     // камера сдвинулась / повернулась / приблизилась?
     set hpa=GetCameraEyePositionX()
@@ -6169,8 +6177,20 @@ function HPB_Chat takes nothing returns nothing
         return
     endif
 endfunction
+// режим 3 — свои полоски выключены (у этого игрока), возвращаются стандартные полоски игры
 function HPB_SetMode takes integer hpk returns nothing
     local integer hps=0
+    if hpk==3 and HPB_Mode!=3 then
+        loop
+            exitwhen hps>=HPB_N
+            call HPB_Free(hps)
+            set hps=hps+1
+        endloop
+        call EnableStatbar(true)
+    elseif hpk!=3 and HPB_Mode==3 then
+        call EnableStatbar(false)
+    endif
+    set hps=0
     set HPB_Mode=hpk
     loop
         exitwhen hps>=HPB_N
@@ -6179,7 +6199,7 @@ function HPB_SetMode takes integer hpk returns nothing
     endloop
     set hps=0
     loop
-        exitwhen hps>2
+        exitwhen hps>3
         call ShowFrame(HPB_MChk[hps],HPB_MOpen and hps==HPB_Mode)
         set hps=hps+1
     endloop
@@ -6191,13 +6211,13 @@ function HPB_MenuShow takes boolean hpv returns nothing
     call ShowFrame(HPB_MClose,hpv)
     // тексты SIMPLETEXT не появляются вместе с родителем — показывать явно
     loop
-        exitwhen hps>4
+        exitwhen hps>5
         call ShowFrame(HPB_MText[hps],hpv)
         set hps=hps+1
     endloop
     set hps=0
     loop
-        exitwhen hps>2
+        exitwhen hps>3
         call ShowFrame(HPB_MRow[hps],hpv)
         call ShowFrame(HPB_MChk[hps],hpv and hps==HPB_Mode)
         set hps=hps+1
@@ -6264,7 +6284,7 @@ function HPB_MenuInit takes nothing returns nothing
     call SetFramePriority(HPB_MBtnFrame,7)
     call ShowFrame(HPB_MBtnFrame,false)
     set hpf=CreateFrameByType("SIMPLETEXT","HPBarMenuButtonText",HPB_MBtnFrame,"",0)
-    set HPB_MText[5]=hpf
+    set HPB_MText[6]=hpf
     call ClearFrameAllPoints(hpf)
     call SetFrameBlendMode(hpf,0,BLEND_MODE_BLEND)
     call SetFrameFont(hpf,"Fonts\\FRIZQT__.TTF",.011,0)
@@ -6276,7 +6296,7 @@ function HPB_MenuInit takes nothing returns nothing
     // окно над кнопкой: заголовок, три строки с галочкой, крестик
     set HPB_Menu=CreateFrameByType("SIMPLEFRAME","HPBarMenu",null,"",0)
     call ClearFrameAllPoints(HPB_Menu)
-    call SetFrameSize(HPB_Menu,.112,.062)
+    call SetFrameSize(HPB_Menu,.112,.0755)
     call SetFrameRelativePoint(HPB_Menu,FRAMEPOINT_BOTTOMLEFT,HPB_MBtn,FRAMEPOINT_TOPLEFT,0.,.003)
     call SetFrameTextureEx(HPB_Menu,0,"UI\\widgets\\BattleNet\\bnet-tooltip-background.blp",false,"Choice-tooltip-border.blp",0)
     call SetFramePriority(HPB_Menu,8)
@@ -6304,7 +6324,7 @@ function HPB_MenuInit takes nothing returns nothing
     call SetFrameText(hpf,"X")
     call SetFrameRelativePoint(hpf,FRAMEPOINT_CENTER,HPB_MClose,FRAMEPOINT_CENTER,0.,0.)
     loop
-        exitwhen hps>2
+        exitwhen hps>3
         // фон галочки и подпись — в окне; строка целиком — невидимая кнопка поверх
         set hpf=CreateFrameByType("SIMPLEFRAME","HPBarMenuBox",HPB_Menu,"",hps)
         call ClearFrameAllPoints(hpf)
@@ -6329,8 +6349,10 @@ function HPB_MenuInit takes nothing returns nothing
             call SetFrameText(hpf,"Default (green)")
         elseif hps==1 then
             call SetFrameText(hpf,"Player colours")
-        else
+        elseif hps==2 then
             call SetFrameText(hpf,"Own / allies / enemies")
+        else
+            call SetFrameText(hpf,"Default HP bars")
         endif
         call SetFrameRelativePoint(hpf,FRAMEPOINT_LEFT,HPB_Menu,FRAMEPOINT_TOPLEFT,.019,-.022-hps*.0135)
         set HPB_MRow[hps]=CreateFrameByType("SIMPLEBUTTON","HPBarMenuRow",null,"",hps)
@@ -6346,7 +6368,7 @@ function HPB_MenuInit takes nothing returns nothing
     call TriggerRegisterFrameEvent(hpg,HPB_MClose,FRAMEEVENT_CONTROL_CLICK)
     set hps=0
     loop
-        exitwhen hps>2
+        exitwhen hps>3
         call TriggerRegisterFrameEvent(hpg,HPB_MRow[hps],FRAMEEVENT_CONTROL_CLICK)
         set hps=hps+1
     endloop
@@ -6365,6 +6387,40 @@ function HPB_Bar takes string hpn, framehandle hpr, integer hps, real hpw, real 
     call SetFrameTextureEx(hpf,0,hpt,false,"",0)
     call SetFramePriority(hpf,hpk)
     return hpf
+endfunction
+// Проверка подмены модели Ли Шувеня (он полупрозрачен для врагов в D — подменённой моделью его можно увидеть).
+// Размер файла у каждого игрока свой, поэтому: файл открывают все одновременно (одинаковые handle у всех),
+// результат уходит через SendSyncData, а поражение — в общем коде по синхронизированному ответу.
+// Ничего не делать с результатом локально: CustomDefeatBJ у одного игрока = рассинхрон.
+function ShuwenModelCheck takes nothing returns nothing
+    local textfilehandle mgf=TextFileOpen("Li Shuwen2.mdx")
+    local integer mgs=TextFileGetSize(mgf)
+    call TextFileClose(mgf)
+    set mgf=null
+    if GetPlayerId(GetLocalPlayer())<10 and MG_Caught[GetPlayerId(GetLocalPlayer())]==false then
+        call SendSyncData("MGSW",I2S(mgs))
+    endif
+endfunction
+function ShuwenModelSync takes nothing returns nothing
+    local player mgp=GetTriggerPlayer()
+    local integer mgi=GetPlayerId(mgp)
+    if mgi<10 and MG_Caught[mgi]==false and S2I(GetTriggerSyncData())!=295270 then
+        set MG_Caught[mgi]=true
+        call DisplayChatMessageEx(null,CHAT_RECIPIENT_UNKNOWN,10,true,GetPlayerName(mgp)+": Li Shuwen model was replaced - defeat")
+        call CustomDefeatBJ(mgp,"You lost!")
+    endif
+    set mgp=null
+endfunction
+function ShuwenModelInit takes nothing returns nothing
+    local trigger mgt=CreateTrigger()
+    local integer mgi=0
+    loop
+        exitwhen mgi>9
+        call BlzTriggerRegisterPlayerSyncEvent(mgt,Player(mgi),"MGSW",false)
+        set mgi=mgi+1
+    endloop
+    call TriggerAddAction(mgt,function ShuwenModelSync)
+    set mgt=null
 endfunction
 function HPB_Init takes nothing returns nothing
     local integer hps=0
@@ -38950,6 +39006,7 @@ function Trig_StatusBar_Actions takes nothing returns nothing
     call StatusIndicatorTipInit()
     call ShieldPortraitInit()
     call HPB_Init()
+    call ShuwenModelInit()
     call ClearFrameAllPoints( StatusBarFrame )
     // высота 0.04 (было 0.0425), верхний край на прежнем месте (0.1 + 0.02125)
     call SetFrameRelativePoint( StatusBarFrame, FRAMEPOINT_CENTER, consoleUI, FRAMEPOINT_BOTTOM,  .0013, .10125  )
@@ -52915,18 +52972,9 @@ exitwhen i>=10
             endloop    
             call SaveInteger(HH,GetHandleId(GetOwningPlayer(Hero[i])),'ShSn',0)
         endif
-        set j=12
+        // Ли Шувень в игре — все проверяют свою модель, ответ через синхронизацию (ShuwenModelCheck)
         if GetUnitTypeId(Hero[i])=='H06C' then
-            loop
-            exitwhen j==0
-                if GetPlayerId(GetLocalPlayer())==j then
-                    if GetUnitModel(Hero[i])!="Li Shuwen2.mdx" or TextFileGetSize(TextFileOpen("Li Shuwen2.mdx"))!=295270 then
-                        call CustomDefeatBJ(Player(j),"You lost!")
-                        call DisplayChatMessageEx(null,CHAT_RECIPIENT_UNKNOWN,10,true,"cheater")
-                    endif
-                endif
-                set j=j-1
-            endloop
+            call ShuwenModelCheck()
         endif
         //sabrac7start
         if GetUnitTypeId( Hero[i] )=='HSab' then //'H05Z' old sabrac
