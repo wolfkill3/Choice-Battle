@@ -729,6 +729,8 @@ constant integer SST                  = StringHash("SST")
 constant integer TextTagTimeHash      = StringHash("TextTagTime")
 constant integer TextTagTargetHash    = StringHash("TextTagTarget")
 constant integer TextTagHealTimeHash  = StringHash("TextTagHealTime")
+constant integer TextTagFrozenHash    = StringHash("TextTagFrozen")
+constant integer TextTagHealFrozenHash= StringHash("TextTagHealFrozen")
 constant integer TextTagHealTargetHash= StringHash("TextTagHealTarget")
 // готовая строка текста урона/лечения по юниту — её показывают полоски HP
 constant integer TextDmgStrHash       = StringHash("TextDmgStr")
@@ -951,6 +953,18 @@ integer array HPB_ShOn
 real array HPB_PX
 real array HPB_PY
 integer HPB_MT=0
+// ассисты: своя память урона по жертве (окно 15 с, вес урона падает вдвое каждые 5 с), контроль, лечение и щиты союзников
+hashtable AST_HT=InitHashtable()
+timer AST_Clock=CreateTimer()
+constant real AST_WIN=15.
+constant real AST_HALF=5.
+constant integer AST_CCK=40
+constant integer AST_HEAL=60
+// проверки ника по файлу (NickFileQueue)
+integer NK_N=0
+integer array NK_P
+string array NK_F
+integer array NK_S
 // пропуск пересчёта позиции: камера и юнит не сдвинулись с прошлого тика — экранные координаты прежние
 real array HPB_UX
 real array HPB_UY
@@ -2367,6 +2381,261 @@ function AllTextTag takes string l__s,unit u returns nothing
         call SetTextTagPermanent(sysTextTag,false)
         set sysTextTag=null
 endfunction
+// стоит ли отсчёт текста урона/лечения: юнит в чужой способности с паузой (TARGET_ABILITY), скрыт или в 'Pet1' —
+// как было раньше; у мёртвого и удалённого отсчёт идёт всегда (флаг TARGET_ABILITY при смерти и удалении не снимается).
+// Простой не дольше 10 с на один текст — на случай, если способность не сняла флаг.
+function TextTagFrozen takes unit u, integer fk returns boolean
+    local integer idu=GetHandleId(u)
+    if GetUnitTypeId(u)==0 or IsUnitType(u,UNIT_TYPE_DEAD) then
+        return false
+    endif
+    if LoadBoolean(HH,idu,TARGET_ABILITY) or IsUnitHidden(u) or GetUnitAbilityLevel(u,'Pet1')>0 then
+        if LoadReal(HH,idu,fk)<10. then
+            call SaveReal(HH,idu,fk,LoadReal(HH,idu,fk)+0.03)
+            return true
+        endif
+    endif
+    return false
+endfunction
+function AST_Now takes nothing returns real
+    return TimerGetElapsed(AST_Clock)
+endfunction
+// урон игрока asp по жертве (handle asi) за последние AST_WIN с, с затуханием
+function AST_Dmg takes integer asp, integer asi returns real
+    local real asn=AST_Now()
+    if asp<0 or asp>9 or LoadReal(AST_HT,asi,asp*3+2)<=0. or asn-LoadReal(AST_HT,asi,asp*3+2)>AST_WIN then
+        return 0.
+    endif
+    return LoadReal(AST_HT,asi,asp*3)*Pow(0.5,(asn-LoadReal(AST_HT,asi,asp*3+1))/AST_HALF)
+endfunction
+function AST_AddDmg takes integer asp, unit asx, real asd returns nothing
+    local integer asi
+    local real asn
+    if asp<0 or asp>9 or asd<=0. or asx==null or IsUnitType(asx,UNIT_TYPE_HERO)==false then
+        return
+    endif
+    set asi=GetHandleId(asx)
+    set asn=AST_Now()
+    call SaveReal(AST_HT,asi,asp*3,AST_Dmg(asp,asi)+asd)
+    call SaveReal(AST_HT,asi,asp*3+1,asn)
+    call SaveReal(AST_HT,asi,asp*3+2,asn)
+endfunction
+// лечение игрока asp юниту (handle asi) за последние AST_WIN с, с затуханием
+function AST_Heal takes integer asp, integer asi returns real
+    local real asn=AST_Now()
+    if asp<0 or asp>9 or LoadReal(AST_HT,asi,AST_HEAL+asp*2+1)<=0. or asn-LoadReal(AST_HT,asi,AST_HEAL+asp*2+1)>AST_WIN then
+        return 0.
+    endif
+    return LoadReal(AST_HT,asi,AST_HEAL+asp*2)*Pow(0.5,(asn-LoadReal(AST_HT,asi,AST_HEAL+asp*2+1))/AST_HALF)
+endfunction
+function AST_AddHeal takes integer asp, unit asx, real asd returns nothing
+    local integer asi
+    if asp<0 or asp>9 or asd<=0. or asx==null or IsUnitType(asx,UNIT_TYPE_HERO)==false then
+        return
+    endif
+    set asi=GetHandleId(asx)
+    call SaveReal(AST_HT,asi,AST_HEAL+asp*2,AST_Heal(asp,asi)+asd)
+    call SaveReal(AST_HT,asi,AST_HEAL+asp*2+1,AST_Now())
+endfunction
+// контроль или дебафф на герое: кто его наложил — держащий способностью (TARGET_ABILITY + REVERSE_TARGET),
+// иначе тот, кто бил героя последним (не раньше 1 с назад)
+function AST_CreditCC takes unit asx returns nothing
+    local integer asi=GetHandleId(asx)
+    local integer asp=-1
+    local integer ask=0
+    local real asn=AST_Now()
+    local real ast=asn-1.
+    local unit asr=LoadUnitHandle(HH,asi,REVERSE_TARGET)
+    if LoadBoolean(HH,asi,TARGET_ABILITY) and asr!=null then
+        set asp=GetPlayerId(GetOwningPlayer(asr))
+    else
+        loop
+            exitwhen ask>9
+            if LoadReal(AST_HT,asi,ask*3+2)>ast then
+                set ast=LoadReal(AST_HT,asi,ask*3+2)
+                set asp=ask
+            endif
+            set ask=ask+1
+        endloop
+    endif
+    if asp>=0 and asp<=9 then
+        if IsPlayerEnemy(Player(asp),GetOwningPlayer(asx)) then
+            call SaveReal(AST_HT,asi,AST_CCK+asp,asn)
+        endif
+    endif
+    set asr=null
+endfunction
+// щиты и поддержка героя Hero[i] на союзнике x (перенесено из Trig_Killer_Actions, где проверялось только на убийце)
+function AST_Support takes integer i, unit x returns boolean
+    if (GetUnitAbilityLevel(x,'A1DF')>0 or GetUnitAbilityLevel(x,'A1DG')>0) and GetUnitTypeId(Hero[i])=='H051' then //Shielder
+        return true
+    endif
+    if (GetUnitAbilityLevel(x,'A1HV')>0 or GetUnitAbilityLevel(x,'A1I2')>0) and GetUnitTypeId(Hero[i])=='H077' then //enkidu
+        return true
+    endif
+    if GetUnitAbilityLevel(x,'A1HG')>0 and GetUnitTypeId(Hero[i])=='H074' then //orihime
+        return true
+    endif
+    if (GetUnitAbilityLevel(x,'A10G')>0 or GetUnitAbilityLevel(x,'B059')>0) and (GetUnitTypeId(Hero[i])=='H053' or GetUnitTypeId(Hero[i])=='H06Q') then //Louise
+        return true
+    endif
+    if LoadReal(h, GetHandleId(x), SH_YujiE_Shield)>0 and GetUnitTypeId(Hero[i])=='HYuj' then //Yuji
+        return true
+    endif
+    if LoadReal(h, GetHandleId(x), SH_ShieldBelfF)>0 and GetUnitTypeId(Hero[i])=='Hbel' then //Belphegor
+        return true
+    endif
+    if LoadBoolean(h,  GetHandleId(x), SH_GaaraTshield)==true and GetUnitTypeId(Hero[i])=='H02R' then //Gaara
+        return true
+    endif
+    if GetUnitAbilityLevel(x,'A1G0')>0 and GetUnitTypeId(Hero[i])=='H073' then //Rin
+        return true
+    endif
+    if LoadBoolean(h, GetHandleId(x), Shield_RengokuE)==true and GetUnitTypeId(Hero[i])=='HRen' then //Rengoku
+        return true
+    endif
+    if (GetUnitAbilityLevel(x,'A3DF')>0 or GetUnitAbilityLevel(x,'WAE1')>0) and (GetUnitTypeId(Hero[i])=='Ho0O' or GetUnitTypeId(Hero[i])=='Ho1O') then //Waver
+        return true
+    endif
+    if GetUnitAbilityLevel(x,'B06I')>0 and GetUnitTypeId(Hero[i])=='H05R' then //Touma
+        return true
+    endif
+    if (GetUnitAbilityLevel(x,'MaE3')>0 or GetUnitAbilityLevel(x,'MaE4')>0) and (GetUnitTypeId(Hero[i])=='HMaG' or GetUnitTypeId(Hero[i])=='HMad') then //Madoka
+        return true
+    endif
+    if GetUnitAbilityLevel(x,'B025')>0 and (GetUnitTypeId(Hero[i])=='H01D' or GetUnitTypeId(Hero[i])=='H01E') then //Maka
+        return true
+    endif
+    if x==DarknessTarget[i] and LoadReal(HH,GetHandleId(Darkness[i]),SH_darkHP)>0 and GetUnitTypeId(Hero[i])=='Ho14' then //Kazuma
+        return true
+    endif
+    if (GetUnitAbilityLevel(x,'A1EO')>0 or GetUnitAbilityLevel(x,'A1F0')>0) and GetUnitTypeId(Hero[i])=='H06T' then //Lucy
+        return true
+    endif
+    if GetUnitAbilityLevel(x,'A1H1')>0 and GetUnitTypeId(Hero[i])=='H076' then //Jeanne
+        return true
+    endif
+    if LoadBoolean(h, GetHandleId(x), SH_MeiT_Shield)==true and GetUnitTypeId(Hero[i])=='H032' then //Mei
+        return true
+    endif
+    if GetUnitAbilityLevel(x,'AHSF')>0 and (GetUnitTypeId(Hero[i])=='HHSN' or GetUnitTypeId(Hero[i])=='HHSG') then //Hashirama
+        return true
+    endif
+    if GetUnitAbilityLevel(x,'aokb')>0 and (GetUnitTypeId(Hero[i])=='H02U' or GetUnitTypeId(Hero[i])=='H05X') then //Aokiji
+        return true
+    endif
+    return false
+endfunction
+// помог ли Hero[i] убить c (убийца u игрока iu; asd — урон команды убийцы по жертве за окно)
+function AST_IsAssist takes integer i, unit c, unit u, integer iu, real asd returns boolean
+    local integer asp=GetPlayerId(GetOwningPlayer(Hero[i]))
+    local integer asi=GetHandleId(c)
+    local integer ask=0
+    local real asn=AST_Now()
+    local real ast
+    if FFAMode==false and IsUnitAlly(Hero[i],Player(iu))==false then
+        return false
+    endif
+    // урон: больше 15% урона команды или 10% Max HP жертвы
+    set ast=AST_Dmg(asp,asi)
+    if ast>0. and (ast>asd*0.15 or ast>=GetUnitState(c,UNIT_STATE_MAX_LIFE)*0.10) then
+        return true
+    endif
+    // контроль / дебафф на жертве за окно
+    if LoadReal(AST_HT,asi,AST_CCK+asp)>0. and asn-LoadReal(AST_HT,asi,AST_CCK+asp)<=AST_WIN then
+        return true
+    endif
+    // лечение (5% Max HP) или щит союзнику, который бил жертву за окно (или убийце)
+    loop
+        exitwhen ask>9
+        if Hero[ask]!=null and Hero[ask]!=Hero[i] and IsUnitAlly(Hero[ask],Player(asp)) then
+            if Hero[ask]==u or AST_Dmg(GetPlayerId(GetOwningPlayer(Hero[ask])),asi)>0. then
+                if AST_Heal(asp,GetHandleId(Hero[ask]))>=GetUnitState(Hero[ask],UNIT_STATE_MAX_LIFE)*0.05 then
+                    return true
+                endif
+                if AST_Support(i,Hero[ask]) then
+                    return true
+                endif
+            endif
+        endif
+        set ask=ask+1
+    endloop
+    return false
+endfunction
+// деление золота за убийство asg: котёл 100%, доли — по урону за окно (AST_Dmg); убийце не меньше 40%,
+// помощнику не меньше 10% (контроль, лечение, щит без урона); без помощников всё убийце. Помощники — в PlayerH.
+function AST_PayKill takes integer iu, unit c, integer asg returns nothing
+    local integer asi=GetHandleId(c)
+    local integer ask=0
+    local integer asn=0
+    local real asd
+    local real ast=AST_Dmg(iu,asi)
+    local real ask2
+    local real asr
+    local real asx
+    local integer asv
+    local string ass=""
+    if asg<=0 then
+        return
+    endif
+    // сумма урона всех участников и число помощников
+    set asd=ast
+    loop
+        exitwhen ask>9
+        if ask!=iu and IsPlayerInForce(Player(ask),PlayerH) then
+            set asn=asn+1
+            set asd=asd+AST_Dmg(ask,asi)
+        endif
+        set ask=ask+1
+    endloop
+    if asn==0 then
+        call SetPlayerState(Player(iu),PLAYER_STATE_RESOURCE_GOLD,GetPlayerState(Player(iu),PLAYER_STATE_RESOURCE_GOLD)+asg)
+        return
+    endif
+    // доля убийцы: по урону, не меньше 40%, но так, чтобы каждому помощнику осталось хотя бы 10%
+    set ask2=0.4
+    if asd>0. and ast/asd>ask2 then
+        set ask2=ast/asd
+    endif
+    if ask2>1.-0.1*asn then
+        set ask2=1.-0.1*asn
+    endif
+    if ask2<0.1 then
+        set ask2=0.1
+    endif
+    // сырые доли помощников (не меньше 10%) и их сумма
+    set asr=0.
+    set ask=0
+    loop
+        exitwhen ask>9
+        if ask!=iu and IsPlayerInForce(Player(ask),PlayerH) then
+            set asx=0.1
+            if asd>0. and AST_Dmg(ask,asi)/asd>asx then
+                set asx=AST_Dmg(ask,asi)/asd
+            endif
+            set asr=asr+asx
+        endif
+        set ask=ask+1
+    endloop
+    // помощники делят остаток (1 - доля убийцы) пропорционально сырым долям
+    set ask=0
+    loop
+        exitwhen ask>9
+        if ask!=iu and IsPlayerInForce(Player(ask),PlayerH) then
+            set asx=0.1
+            if asd>0. and AST_Dmg(ask,asi)/asd>asx then
+                set asx=AST_Dmg(ask,asi)/asd
+            endif
+            set asv=R2I(asg*(1.-ask2)*asx/asr)
+            call SetPlayerState(Player(ask),PLAYER_STATE_RESOURCE_GOLD,GetPlayerState(Player(ask),PLAYER_STATE_RESOURCE_GOLD)+asv)
+            set ass=ass+", "+Color[ask]+GetUnitName(Hero[ask])+"|r +"+I2S(asv)
+        endif
+        set ask=ask+1
+    endloop
+    set asv=R2I(asg*ask2)
+    call SetPlayerState(Player(iu),PLAYER_STATE_RESOURCE_GOLD,GetPlayerState(Player(iu),PLAYER_STATE_RESOURCE_GOLD)+asv)
+    call DisplayTextToPlayer(GetLocalPlayer(),0,0,"Gold: "+Color[iu]+GetUnitName(Hero[iu])+"|r +"+I2S(asv)+ass)
+endfunction
 function AllTextTag3 takes nothing returns nothing
 local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
@@ -2375,13 +2644,13 @@ local integer idu=GetHandleId(u)
 local real time=LoadReal(HH,idu,TextTagTimeHash)
 local texttag textdmg=LoadTextTagHandle(HH,idu,TextTagTargetHash)
 local integer i
-// виден 10 с после последнего урона (отсчёт идёт всегда, и на паузе); после смерти — не дольше 5 с; юнит удалён — сразу
+// виден 4 с после последнего урона, как в 3.7.4; пока юнит в чужой способности, скрыт или в Pet1 — время стоит;
+// у трупа идёт всегда; юнит удалён — сразу
 if GetUnitTypeId(u)==0 then
     set time=-1.
-elseif IsUnitType(u,UNIT_TYPE_DEAD) and time>5. then
-    set time=5.
+elseif TextTagFrozen(u,TextTagFrozenHash)==false then
+    set time=time-0.03
 endif
-set time=time-0.03
 call SaveReal(HH,idu,TextTagTimeHash,time)
 call SetTextTagPosUnit(LoadTextTagHandle(HH,idu,TextTagTargetHash),u,TextTagZ(u,150.))
 //if CheckUnitInvisible(u)==false then
@@ -2424,7 +2693,8 @@ function AllTextTag2 takes string l__s,unit u returns nothing
         else
             call SetTextTagVisibility(LoadTextTagHandle(HH,idu,TextTagTargetHash),true)
         endif
-        call SaveReal(HH,idu,TextTagTimeHash,10)
+        call SaveReal(HH,idu,TextTagTimeHash,4)
+        call SaveReal(HH,idu,TextTagFrozenHash,0.)
         call SaveStr(HH,idu,TextDmgStrHash,l__s)
         call SetTextTagText(LoadTextTagHandle(HH,idu,TextTagTargetHash),l__s,0.023)
         call SetTextTagPosUnit(LoadTextTagHandle(HH,idu,TextTagTargetHash),u,TextTagZ(u,150.))
@@ -2441,7 +2711,8 @@ function AllTextTag2 takes string l__s,unit u returns nothing
         else
             call SetTextTagVisibility(LoadTextTagHandle(HH,idu,TextTagTargetHash),true)
         endif
-        call SaveReal(HH,idu,TextTagTimeHash,10)
+        call SaveReal(HH,idu,TextTagTimeHash,4)
+        call SaveReal(HH,idu,TextTagFrozenHash,0.)
         call SaveStr(HH,idu,TextDmgStrHash,l__s)
     endif
     set t=null
@@ -2456,6 +2727,7 @@ function DamageTextTag takes unit source, unit target, real damage returns nothi
     local integer i = 0
 
     call SaveInteger(HH, t_id, TextDamageValueHash+sp_id, LoadInteger(HH, t_id, TextDamageValueHash+sp_id)+R2I(damage))
+    call AST_AddDmg(sp_id,target,damage)
     if LoadInteger(HH, t_id, TextDamageValueHash+sp_id)==0 then
         call SaveStr(HH, t_id, sp_id+TextDmgValueTextHash,"")
     else
@@ -2503,8 +2775,12 @@ local integer idu=GetHandleId(u)
 local real time=LoadReal(HH,idu,TextTagHealTimeHash)
 local texttag textdmg=LoadTextTagHandle(HH,idu,TextTagHealTargetHash)
 local integer i
-if IsUnitHidden(u)==false and IsUnitPaused(u)==false and GetUnitAbilityLevel(u,'Pet1')==0 then
-call SaveReal(HH,idu,TextTagHealTimeHash,time-0.03)
+// 2.5 с; пока юнит в чужой способности, скрыт или в Pet1 — время стоит; у трупа идёт всегда; юнит удалён — сразу
+if GetUnitTypeId(u)==0 then
+    set time=-1.
+    call SaveReal(HH,idu,TextTagHealTimeHash,time)
+elseif TextTagFrozen(u,TextTagHealFrozenHash)==false then
+    call SaveReal(HH,idu,TextTagHealTimeHash,time-0.03)
 endif
 call SetTextTagPosUnit(LoadTextTagHandle(HH,idu,TextTagHealTargetHash),u,TextTagZ(u,230.))
 //if CheckUnitInvisible(u)==false then
@@ -2552,6 +2828,7 @@ function AllTextTagHeal2 takes string l__s,unit u returns nothing
             call SetTextTagVisibility(LoadTextTagHandle(HH,idu,TextTagHealTargetHash),true)
         endif
         call SaveReal(HH,idu,TextTagHealTimeHash,2.5)
+        call SaveReal(HH,idu,TextTagHealFrozenHash,0.)
         call SaveStr(HH,idu,TextHealStrHash,l__s)
         call SetTextTagText(LoadTextTagHandle(HH,idu,TextTagHealTargetHash),l__s,0.023)
         call SetTextTagPosUnit(LoadTextTagHandle(HH,idu,TextTagHealTargetHash),u,TextTagZ(u,230.))
@@ -2569,6 +2846,7 @@ function AllTextTagHeal2 takes string l__s,unit u returns nothing
         call SetTextTagPosUnit(LoadTextTagHandle(HH,idu,TextTagHealTargetHash),u,TextTagZ(u,230.))
         call SetTextTagPermanent(LoadTextTagHandle(HH,idu,TextTagHealTargetHash),false)
         call SaveReal(HH,idu,TextTagHealTimeHash,2.5)
+        call SaveReal(HH,idu,TextTagHealFrozenHash,0.)
         call SaveStr(HH,idu,TextHealStrHash,l__s)
     endif
     set t=null
@@ -2612,6 +2890,9 @@ function HealTextTag takes unit source, unit target, real damage, string HealTyp
     endif
     if damage>0 then
         call SaveInteger(HH, t_id, TextHealAllyValueHash+sp_id+ap_id, LoadInteger(HH, t_id, TextHealAllyValueHash+sp_id+ap_id)+R2I(damage))
+        if HealType=="HealthRes" and source!=target then
+            call AST_AddHeal(ap_id,target,damage)
+        endif
         call SaveInteger(HH, t_id, TextHealValueHash+sp_id, LoadInteger(HH, t_id, TextHealValueHash+sp_id)+R2I(damage))
         if LoadInteger(HH, t_id, TextHealValueHash+sp_id)==0 then
             call SaveStr(HH, t_id, sp_id+TextHealValueTextHash,"")
@@ -6556,6 +6837,10 @@ function CCB_Scan takes nothing returns nothing
         exitwhen ccu==null
         call GroupRemoveUnit(CCB_G,ccu)
         set cci=GetHandleId(ccu)
+        // держит чужая способность с паузой — тоже контроль (для ассиста)
+        if LoadBoolean(HH,cci,TARGET_ABILITY) then
+            call AST_CreditCC(ccu)
+        endif
         set cck=1
         loop
             exitwhen cck>CCB_N
@@ -6575,6 +6860,7 @@ function CCB_Scan takes nothing returns nothing
             set ccb=null
             // новая полная длительность: контроль сменился или продлён
             if cck!=LoadInteger(CCB_HT,cci,0) or ccr>LoadReal(CCB_HT,cci,2) then
+                call AST_CreditCC(ccu)
                 call SaveReal(CCB_HT,cci,2,ccr)
             endif
             call SaveInteger(CCB_HT,cci,0,cck)
@@ -6603,6 +6889,7 @@ function CCB_Init takes nothing returns nothing
     call CCB_Set(10,'cb10',"ReplaceableTextures\\CommandButtons\\BTNBlind.blp","Ослепление",5)
     call CCB_Set(11,'BNC2',"ReplaceableTextures\\CommandButtons\\BTNMoonStone.blp","Обморожение",9)
     call CCB_Set(12,'BNC1',"ReplaceableTextures\\CommandButtons\\BTNDeathAndDecay.blp","Некроз",8)
+    call TimerStart(AST_Clock,1000000.,false,null)
     set CCB_HT=InitHashtable()
     set CCB_G=CreateGroup()
     set CCB_Flt=Condition(function CCB_Filter)
@@ -37714,135 +38001,37 @@ function Trig_Killer_Actions takes nothing returns nothing
             set udg_kill[iu]=udg_kill[iu]+1
             set udg_death[ic]=udg_death[ic]+1
             call KillerSound(iu,ic)
+            // ассисты (AST_IsAssist): урон за последние 15 с (вес падает вдвое каждые 5 с) — больше 15% урона команды
+            // или 10% Max HP жертвы; контроль/дебафф на жертве; лечение и щиты союзнику, бившему жертву; лечение убийце
+            set totaldamage=0.
             set i=0
             loop
                 exitwhen i>=10
-                if FFAMode then
-                    if LoadInteger(HH,GetHandleId(c),TextDamageValueHash+GetPlayerId(GetOwningPlayer(Hero[i])))>0 then
-                        set totaldamage=totaldamage+LoadInteger(HH,GetHandleId(c),TextDamageValueHash+GetPlayerId(GetOwningPlayer(Hero[i])))
-                    endif
-                else
-                    if LoadInteger(HH,GetHandleId(c),TextDamageValueHash+GetPlayerId(GetOwningPlayer(Hero[i])))>0 and IsUnitAlly(Hero[i],Player(iu)) then
-                        set totaldamage=totaldamage+LoadInteger(HH,GetHandleId(c),TextDamageValueHash+GetPlayerId(GetOwningPlayer(Hero[i])))
-                    endif
+                if Hero[i]!=null and (FFAMode or IsUnitAlly(Hero[i],Player(iu))) then
+                    set totaldamage=totaldamage+AST_Dmg(GetPlayerId(GetOwningPlayer(Hero[i])),GetHandleId(c))
                 endif
                 set i=i+1
             endloop
             set i=0
             loop
                 exitwhen i>=10
-                if (LoadInteger(HH,GetHandleId(c),TextDamageValueHash+GetPlayerId(GetOwningPlayer(Hero[i])))>totaldamage*0.15 or LoadInteger(HH,GetHandleId(u),TextHealAllyValueHash+SH_HealthRes+GetPlayerId(GetOwningPlayer(Hero[i])))>GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.05 or LoadInteger(HH,GetHandleId(u),TextHealAllyValueHash+SH_ManaRes+GetPlayerId(GetOwningPlayer(Hero[i])))>GetUnitState(u,UNIT_STATE_MAX_MANA)*0.05) and Hero[i]!=null and GetOwningPlayer(Hero[i])!=Player(iu) then
-                    set udg_assist[i]=udg_assist[i]+1
-                    set assistnames=assistnames+Color[i]+GetUnitName(Hero[i])+"|r "
-                    call ForceAddPlayer(PlayerH,GetOwningPlayer(Hero[i]))
-                    if GetUnitAbilityLevel(Hero[i],'A1F3')>0 then
-                        call SetPlayerState(Player(i),PLAYER_STATE_RESOURCE_GOLD,GetPlayerState(Player(i),PLAYER_STATE_RESOURCE_GOLD)+20)
-                    endif
-                    if GetUnitAbilityLevel(Hero[i],'CelF')>0 then
-                        call SetHeroInt(Hero[i],GetHeroInt(Hero[i],false)+1,true)
-                    endif
-                    if GetUnitTypeId(Hero[i])=='HYuj' then //old 'H049'
-                        set yuji4[i]=yuji4[i]+1
-                        call UnitAddAbility(Hero[i],'A0T8')
-                        call SetUnitAbilityLevel(Hero[i],'A0T8',2)
-                        call UnitRemoveAbility(Hero[i],'A0T8')
-                    endif
-                endif
-                if IsPlayerInForce(GetOwningPlayer(Hero[i]),PlayerH)==false and Hero[i]!=null and GetOwningPlayer(Hero[i])!=Player(iu) then
-                    if (GetUnitAbilityLevel(u,'A1DF')>0 or GetUnitAbilityLevel(u,'A1DG')>0) and GetUnitTypeId(Hero[i])=='H051' then //Shielder
+                if Hero[i]!=null and GetOwningPlayer(Hero[i])!=Player(iu) then
+                    if AST_IsAssist(i,c,u,iu,totaldamage) or LoadInteger(HH,GetHandleId(u),TextHealAllyValueHash+SH_HealthRes+GetPlayerId(GetOwningPlayer(Hero[i])))>GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.05 or LoadInteger(HH,GetHandleId(u),TextHealAllyValueHash+SH_ManaRes+GetPlayerId(GetOwningPlayer(Hero[i])))>GetUnitState(u,UNIT_STATE_MAX_MANA)*0.05 then
                         set udg_assist[i]=udg_assist[i]+1
                         set assistnames=assistnames+Color[i]+GetUnitName(Hero[i])+"|r "
                         call ForceAddPlayer(PlayerH,GetOwningPlayer(Hero[i]))
-                    endif
-                    if (GetUnitAbilityLevel(u,'A1HV')>0 or GetUnitAbilityLevel(u,'A1I2')>0) and GetUnitTypeId(Hero[i])=='H077' then //enkidu
-                        set udg_assist[i]=udg_assist[i]+1
-                        set assistnames=assistnames+Color[i]+GetUnitName(Hero[i])+"|r "
-                        call ForceAddPlayer(PlayerH,GetOwningPlayer(Hero[i]))
-                    endif
-                    if GetUnitAbilityLevel(u,'A1HG')>0 and GetUnitTypeId(Hero[i])=='H074' then //orihime
-                        set udg_assist[i]=udg_assist[i]+1
-                        set assistnames=assistnames+Color[i]+GetUnitName(Hero[i])+"|r "
-                        call ForceAddPlayer(PlayerH,GetOwningPlayer(Hero[i]))
-                    endif
-                    if (GetUnitAbilityLevel(u,'A10G')>0 or GetUnitAbilityLevel(u,'B059')>0) and (GetUnitTypeId(Hero[i])=='H053' or GetUnitTypeId(Hero[i])=='H06Q') then //Louise
-                        set udg_assist[i]=udg_assist[i]+1
-                        set assistnames=assistnames+Color[i]+GetUnitName(Hero[i])+"|r "
-                        call ForceAddPlayer(PlayerH,GetOwningPlayer(Hero[i]))
-                    endif
-                    if LoadReal(h, GetHandleId(u), SH_YujiE_Shield)>0 and GetUnitTypeId(Hero[i])=='HYuj' then //Yuji
-                        set udg_assist[i]=udg_assist[i]+1
-                        set assistnames=assistnames+Color[i]+GetUnitName(Hero[i])+"|r "
-                        call ForceAddPlayer(PlayerH,GetOwningPlayer(Hero[i]))
-                    endif
-                    if LoadReal(h, GetHandleId(u), SH_ShieldBelfF)>0 and GetUnitTypeId(Hero[i])=='Hbel' then //Belphegor
-                        set udg_assist[i]=udg_assist[i]+1
-                        set assistnames=assistnames+Color[i]+GetUnitName(Hero[i])+"|r "
-                        call ForceAddPlayer(PlayerH,GetOwningPlayer(Hero[i]))
-                    endif
-                    if LoadBoolean(h,  GetHandleId(u), SH_GaaraTshield)==true and GetUnitTypeId(Hero[i])=='H02R' then //Gaara
-                        set udg_assist[i]=udg_assist[i]+1
-                        set assistnames=assistnames+Color[i]+GetUnitName(Hero[i])+"|r "
-                        call ForceAddPlayer(PlayerH,GetOwningPlayer(Hero[i]))
-                    endif
-                    if GetUnitAbilityLevel(u,'A1G0')>0 and GetUnitTypeId(Hero[i])=='H073' then //Rin
-                        set udg_assist[i]=udg_assist[i]+1
-                        set assistnames=assistnames+Color[i]+GetUnitName(Hero[i])+"|r "
-                        call ForceAddPlayer(PlayerH,GetOwningPlayer(Hero[i]))
-                    endif
-                    if LoadBoolean(h, GetHandleId(u), Shield_RengokuE)==true and GetUnitTypeId(Hero[i])=='HRen' then //Rengoku
-                        set udg_assist[i]=udg_assist[i]+1
-                        set assistnames=assistnames+Color[i]+GetUnitName(Hero[i])+"|r "
-                        call ForceAddPlayer(PlayerH,GetOwningPlayer(Hero[i]))
-                    endif
-                    if (GetUnitAbilityLevel(u,'A3DF')>0 or GetUnitAbilityLevel(u,'WAE1')>0) and (GetUnitTypeId(Hero[i])=='Ho0O' or GetUnitTypeId(Hero[i])=='Ho1O') then //Waver
-                        set udg_assist[i]=udg_assist[i]+1
-                        set assistnames=assistnames+Color[i]+GetUnitName(Hero[i])+"|r "
-                        call ForceAddPlayer(PlayerH,GetOwningPlayer(Hero[i]))
-                    endif
-                    if GetUnitAbilityLevel(u,'B06I')>0 and GetUnitTypeId(Hero[i])=='H05R' then //Touma
-                        set udg_assist[i]=udg_assist[i]+1
-                        set assistnames=assistnames+Color[i]+GetUnitName(Hero[i])+"|r "
-                        call ForceAddPlayer(PlayerH,GetOwningPlayer(Hero[i]))
-                    endif
-                    if (GetUnitAbilityLevel(u,'MaE3')>0 or GetUnitAbilityLevel(u,'MaE4')>0) and (GetUnitTypeId(Hero[i])=='HMaG' or GetUnitTypeId(Hero[i])=='HMad') then //Madoka
-                        set udg_assist[i]=udg_assist[i]+1
-                        set assistnames=assistnames+Color[i]+GetUnitName(Hero[i])+"|r "
-                        call ForceAddPlayer(PlayerH,GetOwningPlayer(Hero[i]))
-                    endif
-                    if GetUnitAbilityLevel(u,'B025')>0 and (GetUnitTypeId(Hero[i])=='H01D' or GetUnitTypeId(Hero[i])=='H01E') then //Maka
-                        set udg_assist[i]=udg_assist[i]+1
-                        set assistnames=assistnames+Color[i]+GetUnitName(Hero[i])+"|r "
-                        call ForceAddPlayer(PlayerH,GetOwningPlayer(Hero[i]))
-                    endif
-                    if u==DarknessTarget[i] and LoadReal(HH,GetHandleId(Darkness[i]),SH_darkHP)>0 and GetUnitTypeId(Hero[i])=='Ho14' then //Kazuma
-                        set udg_assist[i]=udg_assist[i]+1
-                        set assistnames=assistnames+Color[i]+GetUnitName(Hero[i])+"|r "
-                        call ForceAddPlayer(PlayerH,GetOwningPlayer(Hero[i]))
-                    endif
-                    if (GetUnitAbilityLevel(u,'A1EO')>0 or GetUnitAbilityLevel(u,'A1F0')>0) and GetUnitTypeId(Hero[i])=='H06T' then //Lucy
-                        set udg_assist[i]=udg_assist[i]+1
-                        set assistnames=assistnames+Color[i]+GetUnitName(Hero[i])+"|r "
-                        call ForceAddPlayer(PlayerH,GetOwningPlayer(Hero[i]))
-                    endif
-                    if GetUnitAbilityLevel(u,'A1H1')>0 and GetUnitTypeId(Hero[i])=='H076' then //Jeanne
-                        set udg_assist[i]=udg_assist[i]+1
-                        set assistnames=assistnames+Color[i]+GetUnitName(Hero[i])+"|r "
-                        call ForceAddPlayer(PlayerH,GetOwningPlayer(Hero[i]))
-                    endif
-                    if LoadBoolean(h, GetHandleId(u), SH_MeiT_Shield)==true and GetUnitTypeId(Hero[i])=='H032' then //Mei
-                        set udg_assist[i]=udg_assist[i]+1
-                        set assistnames=assistnames+Color[i]+GetUnitName(Hero[i])+"|r "
-                        call ForceAddPlayer(PlayerH,GetOwningPlayer(Hero[i]))
-                    endif
-                    if GetUnitAbilityLevel(u,'AHSF')>0 and (GetUnitTypeId(Hero[i])=='HHSN' or GetUnitTypeId(Hero[i])=='HHSG') then //Hashirama
-                        set udg_assist[i]=udg_assist[i]+1
-                        set assistnames=assistnames+Color[i]+GetUnitName(Hero[i])+"|r "
-                        call ForceAddPlayer(PlayerH,GetOwningPlayer(Hero[i]))
-                    endif
-                    if GetUnitAbilityLevel(u,'aokb')>0 and (GetUnitTypeId(Hero[i])=='H02U' or GetUnitTypeId(Hero[i])=='H05X') then //Aokiji
-                        set udg_assist[i]=udg_assist[i]+1
-                        set assistnames=assistnames+Color[i]+GetUnitName(Hero[i])+"|r "
-                        call ForceAddPlayer(PlayerH,GetOwningPlayer(Hero[i]))
+                        if GetUnitAbilityLevel(Hero[i],'A1F3')>0 then
+                            call SetPlayerState(Player(i),PLAYER_STATE_RESOURCE_GOLD,GetPlayerState(Player(i),PLAYER_STATE_RESOURCE_GOLD)+20)
+                        endif
+                        if GetUnitAbilityLevel(Hero[i],'CelF')>0 then
+                            call SetHeroInt(Hero[i],GetHeroInt(Hero[i],false)+1,true)
+                        endif
+                        if GetUnitTypeId(Hero[i])=='HYuj' then //old 'H049'
+                            set yuji4[i]=yuji4[i]+1
+                            call UnitAddAbility(Hero[i],'A0T8')
+                            call SetUnitAbilityLevel(Hero[i],'A0T8',2)
+                            call UnitRemoveAbility(Hero[i],'A0T8')
+                        endif
                     endif
                 endif
                 set i=i+1
@@ -37879,81 +38068,81 @@ function Trig_Killer_Actions takes nothing returns nothing
                 set kf=Koef[1]
             endif
             if CK[iu]==1 then//
-                call DisplayTextToPlayer(GetLocalPlayer(),0,0,Color[iu]+GetUnitName(Hero[iu])+"|r kill's "+Color[ic]+GetUnitName(Hero[ic])+"|r for +"+I2S(R2I(140*kf))+" gold")
-                call SetPlayerState(Player(iu),PLAYER_STATE_RESOURCE_GOLD,GetPlayerState(Player(iu),PLAYER_STATE_RESOURCE_GOLD)+R2I(140*kf))
-                set goldTotal=goldTotal+R2I(140*kf)
+                call DisplayTextToPlayer(GetLocalPlayer(),0,0,Color[iu]+GetUnitName(Hero[iu])+"|r kill's "+Color[ic]+GetUnitName(Hero[ic])+"|r for +"+I2S(R2I(160*kf))+" gold")
+                // золото за убийство делится в конце (AST_PayKill): SetPlayerState(Player(iu),PLAYER_STATE_RESOURCE_GOLD,GetPlayerState(Player(iu),PLAYER_STATE_RESOURCE_GOLD)+R2I(160*kf))
+                set goldTotal=goldTotal+R2I(160*kf)
             elseif CK[iu]==2 then
                 set soundplay=CreateSound("Double_Kill.mp3",false,false,true,12700,12700,"")
                 call StartSound(soundplay)
                 call KillSoundWhenDone(soundplay)
                 call DisplayTextToPlayer(GetLocalPlayer(),0,0,Color[iu]+GetUnitName(Hero[iu])+"|r kill's "+Color[ic]+GetUnitName(Hero[ic])+"|r")
-                call DisplayTextToPlayer(GetLocalPlayer(),0,0,"|cFF00C850Double Kill|r, +"+I2S(R2I(160*kf))+" gold")
-                call SetPlayerState(Player(iu),PLAYER_STATE_RESOURCE_GOLD,GetPlayerState(Player(iu),PLAYER_STATE_RESOURCE_GOLD)+R2I(160*kf))
-                set goldTotal=goldTotal+R2I(160*kf)
+                call DisplayTextToPlayer(GetLocalPlayer(),0,0,"|cFF00C850Double Kill|r, +"+I2S(R2I(185*kf))+" gold")
+                // золото за убийство делится в конце (AST_PayKill): SetPlayerState(Player(iu),PLAYER_STATE_RESOURCE_GOLD,GetPlayerState(Player(iu),PLAYER_STATE_RESOURCE_GOLD)+R2I(185*kf))
+                set goldTotal=goldTotal+R2I(185*kf)
             elseif CK[iu]==3 then
                 set soundplay=CreateSound("triple_kill.mp3",false,false,true,12700,12700,"")
                 call StartSound(soundplay)
                 call KillSoundWhenDone(soundplay)
                 call DisplayTextToPlayer(GetLocalPlayer(),0,0,Color[iu]+GetUnitName(Hero[iu])+"|r kill's "+Color[ic]+GetUnitName(Hero[ic])+"|r")
-                call DisplayTextToPlayer(GetLocalPlayer(),0,0,"|cFFA000FFTripple Kill|r, +"+I2S(R2I(200*kf))+" gold")
-                call SetPlayerState(Player(iu),PLAYER_STATE_RESOURCE_GOLD,GetPlayerState(Player(iu),PLAYER_STATE_RESOURCE_GOLD)+R2I(200*kf))
-                set goldTotal=goldTotal+R2I(200*kf)
+                call DisplayTextToPlayer(GetLocalPlayer(),0,0,"|cFFA000FFTripple Kill|r, +"+I2S(R2I(230*kf))+" gold")
+                // золото за убийство делится в конце (AST_PayKill): SetPlayerState(Player(iu),PLAYER_STATE_RESOURCE_GOLD,GetPlayerState(Player(iu),PLAYER_STATE_RESOURCE_GOLD)+R2I(230*kf))
+                set goldTotal=goldTotal+R2I(230*kf)
             elseif CK[iu]==4 then
                 set soundplay=CreateSound("MegaKill.mp3",false,false,true,12700,12700,"")
                 call StartSound(soundplay)
                 call KillSoundWhenDone(soundplay)
                 call DisplayTextToPlayer(GetLocalPlayer(),0,0,Color[iu]+GetUnitName(Hero[iu])+"|r kill's "+Color[ic]+GetUnitName(Hero[ic])+"|r")
-                call DisplayTextToPlayer(GetLocalPlayer(),0,0,"|cFFA000FFMega Kill|r, +"+I2S(R2I(250*kf))+" gold")
-                call SetPlayerState(Player(iu),PLAYER_STATE_RESOURCE_GOLD,GetPlayerState(Player(iu),PLAYER_STATE_RESOURCE_GOLD)+R2I(250*kf))
-                set goldTotal=goldTotal+R2I(250*kf)
+                call DisplayTextToPlayer(GetLocalPlayer(),0,0,"|cFFA000FFMega Kill|r, +"+I2S(R2I(290*kf))+" gold")
+                // золото за убийство делится в конце (AST_PayKill): SetPlayerState(Player(iu),PLAYER_STATE_RESOURCE_GOLD,GetPlayerState(Player(iu),PLAYER_STATE_RESOURCE_GOLD)+R2I(290*kf))
+                set goldTotal=goldTotal+R2I(290*kf)
             elseif CK[iu]==5 then
                 set soundplay=CreateSound("UltraKill.mp3",false,false,true,12700,12700,"")
                 call StartSound(soundplay)
                 call KillSoundWhenDone(soundplay)
                 call DisplayTextToPlayer(GetLocalPlayer(),0,0,Color[iu]+GetUnitName(Hero[iu])+"|r kill's "+Color[ic]+GetUnitName(Hero[ic])+"|r")
-                call DisplayTextToPlayer(GetLocalPlayer(),0,0,"|cFFFF0000Ultra Kill!|r, +"+I2S(R2I(300*kf))+" gold")
-                call SetPlayerState(Player(iu),PLAYER_STATE_RESOURCE_GOLD,GetPlayerState(Player(iu),PLAYER_STATE_RESOURCE_GOLD)+R2I(300*kf))
-                set goldTotal=goldTotal+R2I(300*kf)
+                call DisplayTextToPlayer(GetLocalPlayer(),0,0,"|cFFFF0000Ultra Kill!|r, +"+I2S(R2I(345*kf))+" gold")
+                // золото за убийство делится в конце (AST_PayKill): SetPlayerState(Player(iu),PLAYER_STATE_RESOURCE_GOLD,GetPlayerState(Player(iu),PLAYER_STATE_RESOURCE_GOLD)+R2I(345*kf))
+                set goldTotal=goldTotal+R2I(345*kf)
             elseif CK[iu]==6 then
                 set soundplay=CreateSound("Rampage.mp3",false,false,true,12700,12700,"")
                 call StartSound(soundplay)
                 call KillSoundWhenDone(soundplay)
                 call DisplayTextToPlayer(GetLocalPlayer(),0,0,Color[iu]+GetUnitName(Hero[iu])+"|r kill's "+Color[ic]+GetUnitName(Hero[ic])+"|r")
-                call DisplayTextToPlayer(GetLocalPlayer(),0,0,"|cFFFF0000RAMPAGE!!!|r, +"+I2S(R2I(500*kf))+" gold")
-                call SetPlayerState(Player(iu),PLAYER_STATE_RESOURCE_GOLD,GetPlayerState(Player(iu),PLAYER_STATE_RESOURCE_GOLD)+R2I(500*kf))
-                set goldTotal=goldTotal+R2I(500*kf)
+                call DisplayTextToPlayer(GetLocalPlayer(),0,0,"|cFFFF0000RAMPAGE!!!|r, +"+I2S(R2I(575*kf))+" gold")
+                // золото за убийство делится в конце (AST_PayKill): SetPlayerState(Player(iu),PLAYER_STATE_RESOURCE_GOLD,GetPlayerState(Player(iu),PLAYER_STATE_RESOURCE_GOLD)+R2I(575*kf))
+                set goldTotal=goldTotal+R2I(575*kf)
             elseif CK[iu]==7 then
                 set soundplay=CreateSound("Ownage.mp3",false,false,true,12700,12700,"")
                 call StartSound(soundplay)
                 call KillSoundWhenDone(soundplay)
                 call DisplayTextToPlayer(GetLocalPlayer(),0,0,Color[iu]+GetUnitName(Hero[iu])+"|r kill's "+Color[ic]+GetUnitName(Hero[ic])+"|r")
-                call DisplayTextToPlayer(GetLocalPlayer(),0,0,"|cFFFFEA00GodLike!|r, +"+I2S(R2I(500*kf))+" gold")
-                call SetPlayerState(Player(iu),PLAYER_STATE_RESOURCE_GOLD,GetPlayerState(Player(iu),PLAYER_STATE_RESOURCE_GOLD)+R2I(500*kf))
-                set goldTotal=goldTotal+R2I(500*kf)
+                call DisplayTextToPlayer(GetLocalPlayer(),0,0,"|cFFFFEA00GodLike!|r, +"+I2S(R2I(575*kf))+" gold")
+                // золото за убийство делится в конце (AST_PayKill): SetPlayerState(Player(iu),PLAYER_STATE_RESOURCE_GOLD,GetPlayerState(Player(iu),PLAYER_STATE_RESOURCE_GOLD)+R2I(575*kf))
+                set goldTotal=goldTotal+R2I(575*kf)
             elseif CK[iu]==8 then
                 set soundplay=CreateSound("GodLike.mp3",false,false,true,12700,12700,"")
                 call StartSound(soundplay)
                 call KillSoundWhenDone(soundplay)
                 call DisplayTextToPlayer(GetLocalPlayer(),0,0,Color[iu]+GetUnitName(Hero[iu])+"|r kill's "+Color[ic]+GetUnitName(Hero[ic])+"|r")
-                call DisplayTextToPlayer(GetLocalPlayer(),0,0,"|cFFFFEA00BEYOND GODLIKE!|r, +"+I2S(R2I(500*kf))+" gold")
-                call SetPlayerState(Player(iu),PLAYER_STATE_RESOURCE_GOLD,GetPlayerState(Player(iu),PLAYER_STATE_RESOURCE_GOLD)+R2I(500*kf))
-                set goldTotal=goldTotal+R2I(500*kf)
+                call DisplayTextToPlayer(GetLocalPlayer(),0,0,"|cFFFFEA00BEYOND GODLIKE!|r, +"+I2S(R2I(575*kf))+" gold")
+                // золото за убийство делится в конце (AST_PayKill): SetPlayerState(Player(iu),PLAYER_STATE_RESOURCE_GOLD,GetPlayerState(Player(iu),PLAYER_STATE_RESOURCE_GOLD)+R2I(575*kf))
+                set goldTotal=goldTotal+R2I(575*kf)
             elseif CK[iu]==9 then
                 set soundplay=CreateSound("HolyShit.mp3",false,false,true,12700,12700,"")
                 call StartSound(soundplay)
                 call KillSoundWhenDone(soundplay)
                 call DisplayTextToPlayer(GetLocalPlayer(),0,0,Color[iu]+GetUnitName(Hero[iu])+"|r kill's "+Color[ic]+GetUnitName(Hero[ic])+"|r")
-                call DisplayTextToPlayer(GetLocalPlayer(),0,0,"|cFFFF0000Have ownd the Gods!|r, +"+I2S(R2I(500*kf))+" gold")
-                call SetPlayerState(Player(iu),PLAYER_STATE_RESOURCE_GOLD,GetPlayerState(Player(iu),PLAYER_STATE_RESOURCE_GOLD)+R2I(500*kf))
-                set goldTotal=goldTotal+R2I(500*kf)
+                call DisplayTextToPlayer(GetLocalPlayer(),0,0,"|cFFFF0000Have ownd the Gods!|r, +"+I2S(R2I(575*kf))+" gold")
+                // золото за убийство делится в конце (AST_PayKill): SetPlayerState(Player(iu),PLAYER_STATE_RESOURCE_GOLD,GetPlayerState(Player(iu),PLAYER_STATE_RESOURCE_GOLD)+R2I(575*kf))
+                set goldTotal=goldTotal+R2I(575*kf)
             elseif CK[iu]>=10 then
                 set soundplay=CreateSound("WhoreCombo.mp3",false,false,true,12700,12700,"")
                 call StartSound(soundplay)
                 call KillSoundWhenDone(soundplay)
                 call DisplayTextToPlayer(GetLocalPlayer(),0,0,Color[iu]+GetUnitName(Hero[iu])+"|r kill's "+Color[ic]+GetUnitName(Hero[ic])+"|r")
-                call DisplayTextToPlayer(GetLocalPlayer(),0,0,"|cFFA000ffYOU did the Impossible, SOMEBODY KILL HIM!|r, +"+I2S(R2I(500*kf))+" gold")
-                call SetPlayerState(Player(iu),PLAYER_STATE_RESOURCE_GOLD,GetPlayerState(Player(iu),PLAYER_STATE_RESOURCE_GOLD)+R2I(500*kf))
-                set goldTotal=goldTotal+R2I(500*kf)
+                call DisplayTextToPlayer(GetLocalPlayer(),0,0,"|cFFA000ffYOU did the Impossible, SOMEBODY KILL HIM!|r, +"+I2S(R2I(575*kf))+" gold")
+                // золото за убийство делится в конце (AST_PayKill): SetPlayerState(Player(iu),PLAYER_STATE_RESOURCE_GOLD,GetPlayerState(Player(iu),PLAYER_STATE_RESOURCE_GOLD)+R2I(575*kf))
+                set goldTotal=goldTotal+R2I(575*kf)
             endif
             call DestroyEffect(AddSpecialEffect("Abilities\\Spells\\Other\\Transmute\\PileofGold.mdl",GetUnitX(u),GetUnitY(u)))
             
@@ -37981,17 +38170,17 @@ function Trig_Killer_Actions takes nothing returns nothing
                         set Streak_Counter[ic]=Streak_Counter[ic]-1
                     endloop
                 endif
-                set goldTotal=goldTotal+Streak[ic]
+                // бонус за сбитую серию — целиком убийце (уже начислен выше), в общий котёл не идёт
                 set Streak_Counter[ic]=0
                 set Streak[ic]=0
             endif
             //=== End Streak System
+            // золото за убийство: убийце и помощникам по урону за последние 15 с (AST_PayKill)
+            call AST_PayKill(iu,c,goldTotal)
             if assistnames!="" then
-                call DisplayTextToPlayer(GetLocalPlayer(),0,0,assistnames+"assisted in the kill and gets +"+I2S(R2I(goldTotal*0.25))+" gold!")
-                call SaveReal(HH,GetHandleId(PlayerH),0,goldTotal*0.25)
-                call ForForce(PlayerH,function PlayerAssistGold)
+                call DisplayTextToPlayer(GetLocalPlayer(),0,0,assistnames+"assisted in the kill")
                 call FlushChildHashtable(HH,GetHandleId(PlayerH))
-                call ForceClear(PlayerH)	
+                call ForceClear(PlayerH)
             endif
                 
         elseif u!=null and GetUnitTypeId(u)!='H02A' and DU==false then
@@ -38026,6 +38215,7 @@ function Trig_Killer_Actions takes nothing returns nothing
                 endif
                 //set stats[ic]=stats[ic]+1
         endif
+        call FlushChildHashtable(AST_HT,GetHandleId(c))
         call UpdateMultiboard()
         set c=null
         set u=null
@@ -38858,6 +39048,50 @@ call TriggerAddCondition(gg_trg_LevelUp,Condition(function Trig_LevelUp_Conditio
 call TriggerAddAction(gg_trg_LevelUp,function Trig_LevelUp_Actions)
 endfunction
 
+// Проверка ника по файлу: размер файла у каждого игрока свой, поэтому проверяет только сам игрок (без handle —
+// TextFileGetSizeByPath), а результат уходит через SendSyncData; поражение — в общем коде по синхронизированному ответу.
+// Раньше CustomDefeatBJ и TextFileOpen вызывались локально у одного игрока — это рассинхрон.
+function NickFileRun takes nothing returns nothing
+    local integer nfi=0
+    loop
+        exitwhen nfi>=NK_N
+        if GetLocalPlayer()==Player(NK_P[nfi]) then
+            if TextFileExists(NK_F[nfi])==false or TextFileGetSizeByPath(NK_F[nfi])!=NK_S[nfi] then
+                call SendSyncData("MGNK","0")
+            endif
+        endif
+        set nfi=nfi+1
+    endloop
+    call DestroyTimer(GetExpiredTimer())
+endfunction
+function NickFileSync takes nothing returns nothing
+    local player nfp=GetTriggerPlayer()
+    if GetTriggerSyncData()=="0" and GetPlayerSlotState(nfp)==PLAYER_SLOT_STATE_PLAYING then
+        call DisplayChatMessageEx(null,CHAT_RECIPIENT_UNKNOWN,10,true,"IMPOSTER")
+        call CustomDefeatBJ(nfp,"Use your own nickname, IMPOSTER")
+    endif
+    set nfp=null
+endfunction
+// запомнить проверку; сами проверки — через 2 с после старта (синхронизация во время загрузки не работает)
+function NickFileQueue takes integer nfi, string nff, integer nfz returns nothing
+    local trigger nft
+    local integer nfk=0
+    if NK_N==0 then
+        set nft=CreateTrigger()
+        loop
+            exitwhen nfk>11
+            call BlzTriggerRegisterPlayerSyncEvent(nft,Player(nfk),"MGNK",false)
+            set nfk=nfk+1
+        endloop
+        call TriggerAddAction(nft,function NickFileSync)
+        call TimerStart(CreateTimer(),2.,false,function NickFileRun)
+        set nft=null
+    endif
+    set NK_P[NK_N]=nfi
+    set NK_F[NK_N]=nff
+    set NK_S[NK_N]=nfz
+    set NK_N=NK_N+1
+endfunction
 function Trig_StatusBar_Actions takes nothing returns nothing
     local framehandle gameUI=GetOriginFrame( ORIGIN_FRAME_GAME_UI, 0 )
     local framehandle consoleUI=GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 )
@@ -40339,13 +40573,7 @@ function Trig_StatusBar_Actions takes nothing returns nothing
         call TriggerRegisterPlayerKeyEvent( toggleStats, Player(x), OSKEY_OEM_1, 0 ,true )
         call TriggerAddAction( toggleStats, function ToggleOpenStatsBar )
         if StringTrim(GetPlayerName(Player(x)),true)=="PinkieNecro" or StringTrim(GetPlayerName(Player(x)),true)=="NecromanseR_RuS" or StringTrim(GetPlayerName(Player(x)),true)=="DBFag" then
-            if GetPlayerId(GetLocalPlayer())==x then
-                if TextFileExists("DBFag.jpg") and TextFileGetSize(TextFileOpen("DBFag.jpg"))==56473 then
-                else
-                    call CustomDefeatBJ(Player(x),"Use your own nickname, IMPOSTER")
-                    call DisplayChatMessageEx(null,CHAT_RECIPIENT_UNKNOWN,10,true,"IMPOSTER")
-                endif
-            endif
+            call NickFileQueue(x,"DBFag.jpg",56473)
         endif
         // if StringTrim(GetPlayerName(Player(x)),true)=="Antitilt" or StringTrim(GetPlayerName(Player(x)),true)=="tenros" then
         //     if GetPlayerId(GetLocalPlayer())==x then
@@ -40357,58 +40585,22 @@ function Trig_StatusBar_Actions takes nothing returns nothing
         //     endif
         // endif
         if StringTrim(GetPlayerName(Player(x)),true)=="Scorpion_not_de" then
-            if GetPlayerId(GetLocalPlayer())==x then
-                if TextFileExists("Scorpion.png") and TextFileGetSize(TextFileOpen("Scorpion.png"))==97579  then
-                else
-                    call CustomDefeatBJ(Player(x),"Use your own nickname, IMPOSTER")
-                    call DisplayChatMessageEx(null,CHAT_RECIPIENT_UNKNOWN,10,true,"IMPOSTER")
-                endif
-            endif
+            call NickFileQueue(x,"Scorpion.png",97579)
         endif
         if StringTrim(GetPlayerName(Player(x)),true)=="Renex" then
-            if GetPlayerId(GetLocalPlayer())==x then
-                if TextFileExists("SodenoShirayuki.png") and TextFileGetSize(TextFileOpen("SodenoShirayuki.png"))==4503  then
-                else
-                    call CustomDefeatBJ(Player(x),"Use your own nickname, IMPOSTER")
-                    call DisplayChatMessageEx(null,CHAT_RECIPIENT_UNKNOWN,10,true,"IMPOSTER")
-                endif
-            endif
+            call NickFileQueue(x,"SodenoShirayuki.png",4503)
         endif
         if StringTrim(GetPlayerName(Player(x)),true)=="Vadik29" then
-            if GetPlayerId(GetLocalPlayer())==x then
-                if TextFileExists("SodenoShirayuki.png") and TextFileGetSize(TextFileOpen("SodenoShirayuki.png"))==4503  then
-                else
-                    call CustomDefeatBJ(Player(x),"Use your own nickname, IMPOSTER")
-                    call DisplayChatMessageEx(null,CHAT_RECIPIENT_UNKNOWN,10,true,"IMPOSTER")
-                endif
-            endif
+            call NickFileQueue(x,"SodenoShirayuki.png",4503)
         endif
         if StringTrim(GetPlayerName(Player(x)),true)=="terin000" then
-            if GetPlayerId(GetLocalPlayer())==x then
-                if TextFileExists("T00.txt") and TextFileGetSize(TextFileOpen("T00.txt"))==3  then
-                else
-                    call CustomDefeatBJ(Player(x),"Use your own nickname, IMPOSTER")
-                    call DisplayChatMessageEx(null,CHAT_RECIPIENT_UNKNOWN,10,true,"IMPOSTER")
-                endif
-            endif
+            call NickFileQueue(x,"T00.txt",3)
         endif
         if GetPlayerName(Player(x))=="Starheart" or GetPlayerName(Player(x))=="knowyourplace" then
-            if GetPlayerId(GetLocalPlayer())==x then
-                if TextFileExists("Starheart.jpg") and TextFileGetSize(TextFileOpen("Starheart.jpg"))==149399  then
-                else
-                    call DisplayChatMessageEx(null,CHAT_RECIPIENT_UNKNOWN,10,true,"IMPOSTER")
-                    call CustomDefeatBJ(Player(x),"Use your own nickname, IMPOSTER")
-                endif
-            endif
+            call NickFileQueue(x,"Starheart.jpg",149399)
         endif
         if GetPlayerName(Player(x))=="KamaBr" or GetPlayerName(Player(x))=="[OSV] Kama" then
-            if GetPlayerId(GetLocalPlayer())==x then
-                if TextFileExists("Zafkiel Archives.txt") and TextFileGetSize(TextFileOpen("Zafkiel Archives.txt"))==0  then
-                else
-                    call DisplayChatMessageEx(null,CHAT_RECIPIENT_UNKNOWN,10,true,"IMPOSTER")
-                    call CustomDefeatBJ(Player(x),"Use your own nickname, IMPOSTER")
-                endif
-            endif
+            call NickFileQueue(x,"Zafkiel Archives.txt",0)
         endif
         set x=x+1
     endloop
@@ -62160,6 +62352,7 @@ endif
     endif
     if nb>0 then
         call SaveInteger(HH,uid,TextDamageValueHash+idc,LoadInteger(HH,uid,TextDamageValueHash+idc)+R2I(nb))
+        call AST_AddDmg(idc,u,nb)
     endif
         //==== Показатель Урона
     if nb>0 and DamageOff==true and c!=UltimateDamage and GetUnitTypeId(u)!='H34X' and GetUnitTypeId(u)!='H14F' then
@@ -65993,6 +66186,7 @@ endif
 call SetUnitState(c,UNIT_STATE_LIFE,GetWidgetLife(c)-dmg)
 endif
 call SaveInteger(HH,GetHandleId(c),TextDamageValueHash+GetPlayerId(GetOwningPlayer(u)),LoadInteger(HH,GetHandleId(c),TextDamageValueHash+GetPlayerId(GetOwningPlayer(u)))+R2I(dmg))
+call AST_AddDmg(GetPlayerId(GetOwningPlayer(u)),c,dmg)
 if LoadInteger(HH,GetHandleId(c),TextDamageValueHash+GetPlayerId(GetOwningPlayer(u)))==0 then
     call SaveStr(HH,GetHandleId(c),GetPlayerId(GetOwningPlayer(u))+TextDmgValueTextHash,"")
 else
