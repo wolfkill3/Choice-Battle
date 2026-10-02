@@ -953,6 +953,14 @@ integer array HPB_ShOn
 real array HPB_PX
 real array HPB_PY
 integer HPB_MT=0
+// кэш предметов для обработчика урона (DmgItemsRefresh)
+hashtable DMG_IHT=InitHashtable()
+// предзагрузка звуков, которые играют периодические способности (иначе файл грузится в бою — подлагивание)
+string array SND_Pre
+integer SND_PreN=0
+integer SND_PreI=0
+// записи дамми в HH / h чистятся через 10 с после смерти
+constant integer DUMMY_FLUSH_U=0
 // ассисты: своя память урона по жертве (окно 15 с, вес урона падает вдвое каждые 5 с), контроль, лечение и щиты союзников
 hashtable AST_HT=InitHashtable()
 timer AST_Clock=CreateTimer()
@@ -2348,11 +2356,45 @@ endfunction
 function Trig_Remove_Actions takes nothing returns nothing
     call RemoveUnit(GetTriggerUnit())
 endfunction
+// записи погибшего не-героя (дамми, саммоны) в HH и h чистятся через 10 с после смерти — иначе хэш-таблицы растут всю игру,
+// а новый юнит с тем же номером получает старые данные. Юнит держится в таймере, поэтому его номер до очистки не освободится.
+function DummyFlushDo takes nothing returns nothing
+    local timer dft=GetExpiredTimer()
+    local unit dfu=LoadUnitHandle(HH,GetHandleId(dft),DUMMY_FLUSH_U)
+    if dfu!=null and IsUnitType(dfu,UNIT_TYPE_HERO)==false and (GetUnitTypeId(dfu)==0 or IsUnitType(dfu,UNIT_TYPE_DEAD)) then
+        call FlushChildHashtable(HH,GetHandleId(dfu))
+        if h!=null then
+            call FlushChildHashtable(h,GetHandleId(dfu))
+        endif
+    endif
+    call FlushChildHashtable(HH,GetHandleId(dft))
+    call DestroyTimer(dft)
+    set dft=null
+    set dfu=null
+endfunction
+function DummyFlushOnDeath takes nothing returns nothing
+    local timer dft
+    if IsUnitType(GetTriggerUnit(),UNIT_TYPE_HERO) then
+        return
+    endif
+    set dft=CreateTimer()
+    call SaveUnitHandle(HH,GetHandleId(dft),DUMMY_FLUSH_U,GetTriggerUnit())
+    call TimerStart(dft,10.,false,function DummyFlushDo)
+    set dft=null
+endfunction
+function DummyFlushInit takes nothing returns nothing
+    local trigger dfg=CreateTrigger()
+    call TriggerRegisterAnyUnitEventBJ(dfg,EVENT_PLAYER_UNIT_DEATH)
+    call TriggerAddAction(dfg,function DummyFlushOnDeath)
+    set dfg=null
+endfunction
 function InitTrig_Remove takes nothing returns nothing
     set gg_trg_Remove=CreateTrigger()
     call TriggerRegisterAnyUnitEventBJ(gg_trg_Remove,EVENT_PLAYER_UNIT_DEATH)
     call TriggerAddCondition(gg_trg_Remove,Condition(function Trig_Remove_Conditions))
     call TriggerAddAction(gg_trg_Remove,function Trig_Remove_Actions)
+    // очистка записей погибших не-героев
+    call DummyFlushInit()
 endfunction
 // высота текста урона/лечения: над точкой полоски HP (overhead offset; поднятая через SetUnitOverheadOffset — как обычно 250)
 function TextTagZ takes unit u, real add returns real
@@ -2652,14 +2694,21 @@ elseif TextTagFrozen(u,TextTagFrozenHash)==false then
     set time=time-0.03
 endif
 call SaveReal(HH,idu,TextTagTimeHash,time)
-call SetTextTagPosUnit(LoadTextTagHandle(HH,idu,TextTagTargetHash),u,TextTagZ(u,150.))
-//if CheckUnitInvisible(u)==false then
-//call SetTextTagPosUnit(textdmg,u,200)
-//endif
-if TextTagHidden(u) then
-    call SetTextTagVisibility(LoadTextTagHandle(HH,idu,TextTagTargetHash),false)
+// texttag виден только при «Стандартных полосках HP» (HPB_Mode 3, у каждого игрока свой) — иначе текст рисуют полоски,
+// а texttag только держится скрытым, без перемещения
+if HPB_Mode==3 then
+    call SetTextTagPosUnit(LoadTextTagHandle(HH,idu,TextTagTargetHash),u,TextTagZ(u,150.))
+    //if CheckUnitInvisible(u)==false then
+    //call SetTextTagPosUnit(textdmg,u,200)
+    //endif
+    if TextTagHidden(u) then
+        call SetTextTagVisibility(LoadTextTagHandle(HH,idu,TextTagTargetHash),false)
+    else
+        call SetTextTagVisibility(LoadTextTagHandle(HH,idu,TextTagTargetHash),true)
+    endif
 else
-    call SetTextTagVisibility(LoadTextTagHandle(HH,idu,TextTagTargetHash),true)
+    // texttag мог снова стать видимым (смена текста при новом уроне) — держать скрытым
+    call SetTextTagVisibility(LoadTextTagHandle(HH,idu,TextTagTargetHash),false)
 endif
 if time<0 or u==null then
     set i=0
@@ -2699,6 +2748,10 @@ function AllTextTag2 takes string l__s,unit u returns nothing
         call SetTextTagText(LoadTextTagHandle(HH,idu,TextTagTargetHash),l__s,0.023)
         call SetTextTagPosUnit(LoadTextTagHandle(HH,idu,TextTagTargetHash),u,TextTagZ(u,150.))
         call SetTextTagPermanent(LoadTextTagHandle(HH,idu,TextTagTargetHash),false)
+        // смена текста и позиции снова показывает texttag — скрыть, если он не должен быть виден
+        if TextTagHidden(u) then
+            call SetTextTagVisibility(LoadTextTagHandle(HH,idu,TextTagTargetHash),false)
+        endif
         set t=CreateTimer()
         call SaveUnitHandle(HH,GetHandleId(t),0,u)
         call TimerStart(t,0.03,true, function AllTextTag3)
@@ -2782,14 +2835,21 @@ if GetUnitTypeId(u)==0 then
 elseif TextTagFrozen(u,TextTagHealFrozenHash)==false then
     call SaveReal(HH,idu,TextTagHealTimeHash,time-0.03)
 endif
-call SetTextTagPosUnit(LoadTextTagHandle(HH,idu,TextTagHealTargetHash),u,TextTagZ(u,230.))
-//if CheckUnitInvisible(u)==false then
-//call SetTextTagPosUnit(textdmg,u,200)
-//endif
-if TextTagHidden(u) then
-    call SetTextTagVisibility(LoadTextTagHandle(HH,idu,TextTagHealTargetHash),false)
+// texttag виден только при «Стандартных полосках HP» (HPB_Mode 3, у каждого игрока свой) — иначе текст рисуют полоски,
+// а texttag только держится скрытым, без перемещения
+if HPB_Mode==3 then
+    call SetTextTagPosUnit(LoadTextTagHandle(HH,idu,TextTagHealTargetHash),u,TextTagZ(u,230.))
+    //if CheckUnitInvisible(u)==false then
+    //call SetTextTagPosUnit(textdmg,u,200)
+    //endif
+    if TextTagHidden(u) then
+        call SetTextTagVisibility(LoadTextTagHandle(HH,idu,TextTagHealTargetHash),false)
+    else
+        call SetTextTagVisibility(LoadTextTagHandle(HH,idu,TextTagHealTargetHash),true)
+    endif
 else
-    call SetTextTagVisibility(LoadTextTagHandle(HH,idu,TextTagHealTargetHash),true)
+    // texttag мог снова стать видимым (смена текста при новом уроне) — держать скрытым
+    call SetTextTagVisibility(LoadTextTagHandle(HH,idu,TextTagHealTargetHash),false)
 endif
 if time<0 or u==null then
     set i=0
@@ -2833,6 +2893,10 @@ function AllTextTagHeal2 takes string l__s,unit u returns nothing
         call SetTextTagText(LoadTextTagHandle(HH,idu,TextTagHealTargetHash),l__s,0.023)
         call SetTextTagPosUnit(LoadTextTagHandle(HH,idu,TextTagHealTargetHash),u,TextTagZ(u,230.))
         call SetTextTagPermanent(LoadTextTagHandle(HH,idu,TextTagHealTargetHash),false)
+        // смена текста и позиции снова показывает texttag — скрыть, если он не должен быть виден
+        if TextTagHidden(u) then
+            call SetTextTagVisibility(LoadTextTagHandle(HH,idu,TextTagHealTargetHash),false)
+        endif
         set t=CreateTimer()
         call SaveUnitHandle(HH,GetHandleId(t),0,u)
         call TimerStart(t,0.03,true, function AllTextTagHeal3)
@@ -2845,6 +2909,9 @@ function AllTextTagHeal2 takes string l__s,unit u returns nothing
         call SetTextTagText(LoadTextTagHandle(HH,idu,TextTagHealTargetHash),l__s,0.023)
         call SetTextTagPosUnit(LoadTextTagHandle(HH,idu,TextTagHealTargetHash),u,TextTagZ(u,230.))
         call SetTextTagPermanent(LoadTextTagHandle(HH,idu,TextTagHealTargetHash),false)
+        if TextTagHidden(u) then
+            call SetTextTagVisibility(LoadTextTagHandle(HH,idu,TextTagHealTargetHash),false)
+        endif
         call SaveReal(HH,idu,TextTagHealTimeHash,2.5)
         call SaveReal(HH,idu,TextTagHealFrozenHash,0.)
         call SaveStr(HH,idu,TextHealStrHash,l__s)
@@ -21493,6 +21560,7 @@ function HourglassYukirin_ReduceHeal takes unit newCaster, unit newTarget return
         local integer id    = 0
         local integer get_stack = GetUnitAbilityLevel(newTarget, 'IHYs')
         local integer lvl       = get_stack+1
+local unit dn=null // свой временный юнит вместо общего n (функция вызывается из обработчика урона)
         //call DisplayTimedTextToPlayer(Player(0),0,0,3, I2S(get_stack))
         
                 
@@ -21514,8 +21582,8 @@ function HourglassYukirin_ReduceHeal takes unit newCaster, unit newTarget return
                 endif
                 
                 if get_stack==2 then            // Эффект 3 стаков
-                        set n=CreateUnit(GetOwningPlayer(newCaster), 'dM75', GetUnitX(newTarget), GetUnitY(newTarget), GetRandomInt(0, 360))
-                        call MyRemoveUnit(n, 1.5)
+                        set dn=CreateUnit(GetOwningPlayer(newCaster), 'dM75', GetUnitX(newTarget), GetUnitY(newTarget), GetRandomInt(0, 360))
+                        call MyRemoveUnit(dn, 1.5)
                 endif
                 
         else
@@ -21532,6 +21600,7 @@ function HourglassYukirin_ReduceHeal takes unit newCaster, unit newTarget return
         call SetUnitAbilityLevel(newTarget,'IHYs', lvl)
         
         set newTimer=null
+set dn=null
 endfunction
 
 
@@ -22567,6 +22636,1188 @@ call SetSoundVolumeBJ(soundplay,0)
 call StartSound(soundplay)
 call KillSoundWhenDone(soundplay)
 endfunction
+function SND_PreList0 takes nothing returns nothing
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\YujiRestore.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\war3mapImported\\YujiT_Restore.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\war3mapImported\\MadokaF1_Sound1.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\war3mapImported\\MadokaF2_Sound.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\war3mapImported\\MadokaF3_Sound"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\war3mapImported\\MadokaF4_Sound1.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\war3mapImported\\IchigoTW2.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\DanzoF_Seal.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\SoundEng\\BlackGokuRage_eng.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\SoundJap\\BlackGokuRage.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\XBurner.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\YamaSound.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\TenpaJyosai.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\EffectQQ2.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\EffectEE.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\DanteEE.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\DTDanteEE.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\KiritoScream1.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\PunchStrike.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\VegitoTBG1.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\VegitoTBG2.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\GalickGun.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\war3mapImported\\GinD_2.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\war3mapImported\\GinW"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\war3mapImported\\GinR2_Sound.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\bzzzz.wav"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\BrolyR5.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\BrolyR4.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\BrolyR3.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\BrolyR2.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\BrolyBeam.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\BrolyHit.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\AizenShikai.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\war3mapImported\\BuuT2.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\ChocolateBeam.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\BuuWExp.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\LawCounterShock.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\GaaraQ2.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\YsakaniNoMagatama.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\KillerBeeLariat.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\NejiT2_1.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\NejiR2_1.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\war3mapImported\\BeeW1.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\war3mapImported\\BeeQ1.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\war3mapImported\\BeeQ2.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\ShishiSonson.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\SwordStrike.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\LightningExplode.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\SharinganEnd.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\SuperBuuvVolleyball4.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\SuperBuuvVolleyball3.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\Gotenks\\SuperBuuvVolleyball3-jap.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\SuperBuuvVolleyball2.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\SuperAttackWave.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\Gotenks\\SuperAttackWave-jap.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\DiableJumble.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\CoulerStrikePart2.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\GogetaR2.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\Gogeta\\GogetaR2-jap.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\GogetaW3.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\GogetaW13.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\GogetaW14.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\NellG.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\VergilT2.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\war3mapImported\\VergilQ_Sound2.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\war3mapImported\\VergilQ1_Sound.wav"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\war3mapImported\\VergilQ_Sound1.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\Trunks T2.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\Trunks\\Trunks T-jap.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\Trunks T.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\Trunks R.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\Trunks\\Trunks R-jap.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\war3mapImported\\TrunksR_Frieza.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\war3mapImported\\TrunksR.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\Trunks\\TrunksR_Frieza-jap.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\Trunks\\TrunksR-jap.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\ThrowBurningAttack.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\FinalFlash.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\Vegeta\\FinalFlash-jap.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\FinalFlash2.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\Vegeta\\FinalFlash2-jap.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\war3mapImported\\Misaka E2.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\war3mapImported\\Misaka Q2.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\LanzaDelRelampagoThrow.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\war3mapImported\\LaxusD_Target"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\FriezaDie!.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\Frieza\\FriezaDie!-jap.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\Ren.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\GonGT1.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\GonT1.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\GonT2.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\GonGR2.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\JajankenRuuu.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\JajankenChiii.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\JajankenPaaa.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\KilluaWKill.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\Rasenrendan.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\RasenShurikenThrow.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\GunhaT2.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\IceMakeCanon.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\PerfectBarrier.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\Perfect Cell\\PerfectBarrier-jap.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\Cell_G_ENG.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\Perfect Cell\\Cell_G3.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\Perfect Cell\\Cell_G2.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\Perfect Cell\\Cell_G.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="war3mapImported\\Cell_F.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\Cell_F_Eng.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\Perfect Cell\\Cell_F.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Others\\NatsuT_Hit.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="war3mapImported\\SasukeT2SFX.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\NineLivesBladeWorks.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\ArcherR.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\ArchersBowExpl.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\SakuraOkasho.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\TsunadeQ.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Others\\SakuraG1.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\TsunadeG1.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Others\\SakuraG2.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\TsunadeG2.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\ArthurT2.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\ExcaliburTwo.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\Sinon0.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\GrenadeExpl.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\GogetaQ2.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\ShikiSlash2.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\Shiki4.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\ShikiSlash.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\FrendaKickR.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\FrendaBoomR.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\TamaQFire.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\TamaQFrost.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\TamaEend.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\TamaNinetella.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\Tamamo Cat Slash.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\Tamamo Cat Phantasm 2.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\NanayaHit.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\NanayaEW.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\Hattenshou.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\HattenshouMini.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\ShikiN5-2.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\AlterJeanneSkill1.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\BlackStarT0.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\BlackStarT1.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\BlackStarR.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\BlackStarRPunch.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\BlackStarRHit.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\GajeelT.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\GajeelT1.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\GajeelTCircle.mp3"
+    set SND_PreN=SND_PreN+1
+endfunction
+function SND_PreList1 takes nothing returns nothing
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\HeroineXNP3.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\HeroineXNP2.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\Heroine_X_attack3.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\HeroineXGsfx.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\HeroineXGhit.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\HeroineXT1_Seiba.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\HeroineXT1.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\HeroineXT2.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\HeroineXT3.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\Einkidou.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\FemGilSkillE.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\Scathach1.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\GogetaE2.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\Gogeta\\GogetaE2-jap.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\GogetaE1.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\Gogeta\\GogetaE1-jap.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\GogetaT2.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\Gogeta\\GogetaT2-jap.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\KingHassanBattleStart1.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\KingHassanSlash.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\JeanneW.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\Enkido T.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\DantesBGR5.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\DantesBGR6.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\DantesR3.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\DantesBGR8.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\DantesBGR4.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\DantesBGR3.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\DantesBGR7.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\DantesR2.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\DantesBGR2.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\war3mapImported\\DeidaraF1.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\war3mapImported\\DeidaraF.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\war3mapImported\\DeidaraT.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\WaverQ1.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\MeloiQ1.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\KazumaR2.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\KazumaQ.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\KazumaE2.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\deathbeams.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\FriezaQ1.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\Frieza\\FriezaQ1-jap.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\FriezaQ2.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\Frieza\\FriezaQ2-jap.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\HichigoT.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\Alterl_T.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\GenkshiT.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\SobaMask.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\war3mapImported\\BeeT.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\Blackwings.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\XanxusUlti.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\AcceleratorT.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\Gamuza.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\AmaNoMurakumo.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\SenninModoJiraya.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\LucciE.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\AtalantaE.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\InoriE.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\GrayG.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\KidMadness.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\DrakeE.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\BlackStarMadness.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\MakaBlackBlood.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\KatsuraE.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\TousenE.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\IshidaT.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\GearSado.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\LamboThunderSet.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\war3mapImported\\Belf_Q2.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\war3mapImported\\Belf_W1.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\war3mapImported\\Belf_W2.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\war3mapImported\\Belf_E1.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\Soru2.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\war3mapImported\\AlbedoQ2.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\war3mapImported\\RengokuQ2.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\war3mapImported\\RengokuQ3.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\war3mapImported\\RengokuE33.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\war3mapImported\\RengokuE1_2.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\war3mapImported\\RengokuT4.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\war3mapImported\\RengokuT3.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\war3mapImported\\RengokuT2.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\war3mapImported\\RengokuT1.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\war3mapImported\\LawF.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\war3mapImported\\LawF_Voice1.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\war3mapImported\\LawQ_Sound1.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\Kizaru Q1 2.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\Kizaru Q1 3.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\AkainuR2.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Others\\Vergil_G3.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Others\\Vergil_G_song.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Others\\Vergil_G11.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Others\\Vergil_G1.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Others\\Vergil_G2.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\JirenR2.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\war3mapImported\\MinatoT_Sound3.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\war3mapImported\\MinatoT_Sound4.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\war3mapImported\\MinatoRWD_Voice3.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\war3mapImported\\Minato_Rasengan_Hit.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\war3mapImported\\MinatoQ_Hit.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\war3mapImported\\Minato_Hiraishin_Sound.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\war3mapImported\\MinatoE_Hit.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\war3mapImported\\Minato_WQElvl2.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\war3mapImported\\Madoka_LaunchArrow1.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\war3mapImported\\MadokaQ2.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\war3mapImported\\MadokaQ3.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\war3mapImported\\MadokaQ3-hit.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\war3mapImported\\MadokaT1_Sound2.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\war3mapImported\\MadokaT1_Sound3.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\war3mapImported\\MadokaT2_Channel.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\war3mapImported\\MadokaT2_Blast.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\war3mapImported\\MadokaE1_DeathSound.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\RankyakuGaichou.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\Rankyaku.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\TekkaiUtsugi.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\Tekkai.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\TobuShiganHibachi1.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\TobuShiganHibachi3.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\TobuShiganHibachi2.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\TobuShiganHibachiHit.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\TobuShiganBachi2.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\TobuShiganBachiHit.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\Madara1.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\Madara2Hit.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\Ouren.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\SaidairinRokougan.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\SaidairinRokougan01.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\SaidairinRokougan02.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\SaidairinRokougan2.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\Rokuougan1.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\Rokuougan2.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\Shigan.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="war3mapimported\\MadaraG.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="war3mapimported\\MadaraG_Boom.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="war3mapimported\\MadaraR.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="war3mapimported\\MadaraT2.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="war3mapimported\\MadaraE2.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="war3mapimported\\MadaraQ2.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="war3mapimported\\MadaraQ.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="war3mapimported\\MadaraWBoom.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="war3mapimported\\MadaraW.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="war3mapimported\\MadaraE_Sound.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="war3mapimported\\MadaraEv1.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="war3mapimported\\MadaraEv2.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="war3mapimported\\MadaraT1.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\HashiramaWGEnd.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\HashiramaWGStart.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\HashiramaT2.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\DanzoF1.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\DanzoFOff.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\DanzoIzanagi.mp3"
+    set SND_PreN=SND_PreN+1
+endfunction
+function SND_PreList2 takes nothing returns nothing
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\DanzoW_Counter.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\DanzoW.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\DanzoW_Start.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\DanzoRHit.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\SoundEng\\BlackGokuWGFeng.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\SoundJap\\BlackGokuWGF.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\SoundEng\\BlackGokuEGFeng.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\SoundJap\\BlackGokuEGF.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\SoundEng\\BlackGokuRFeng.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\SoundJap\\BlackGokuRF.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\SoundEng\\BlackGokuRF2eng.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\SoundJap\\BlackGokuRF2.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\SoundEng\\BlackGokuEFeng.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\SoundJap\\BlackGokuEF.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\SoundEng\\BlackGokuWF1-1eng.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\SoundJap\\BlackGokuWF1-1.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\SoundJap\\BlackGokuWF1.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\SoundEng\\BlackGokuQF-1eng.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\SoundJap\\BlackGokuQF-1.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\SoundJap\\BlackGokuQF.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\SoundEng\\BlackGokuT1-1eng.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\SoundJap\\BlackGokuT1-1.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\SoundJap\\BlackGokuT1.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\SoundEng\\BlackGokuT2-1eng.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\SoundJap\\BlackGokuT2-1.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\SoundJap\\BlackGokuT2.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\SoundJap\\BlackGokuT3.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\SoundEng\\BlackGokuT3-3eng.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\SoundJap\\BlackGokuT3-3.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\SoundJap\\BlackGokuW1.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\SoundEng\\BlackGokuWG2-1eng.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\SoundJap\\BlackGokuWG2-1.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\SoundJap\\BlackGokuWG3.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\SoundEng\\BlackGokuWG-1eng.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\SoundJap\\BlackGokuWG-1.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\SoundJap\\BlackGokuW2.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\SoundJap\\BlackGokuWG.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\SoundEng\\BlackGokuEG1-1eng.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\SoundJap\\BlackGokuEG1-1.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\SoundJap\\BlackGokuE1.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\SoundJap\\BlackGokuE2.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\SoundEng\\BlackGokuEG2-1eng.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\SoundJap\\BlackGokuEG2-1.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\SoundJap\\BlackGokuEG4.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\SoundJap\\BlackGokuEG5.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\SoundEng\\BlackGokuEG6-1eng.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\SoundJap\\BlackGokuEG6-1.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\SoundJap\\BlackGokuEG6.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\SoundJap\\BlackGokuQG2.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\SoundEng\\BlackGokuQG1-1eng.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\SoundJap\\BlackGokuQG1-1.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\SoundJap\\BlackGokuQGF.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\SoundEng\\BlackGokuQGF-1eng.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\SoundJap\\BlackGokuQGF-1.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\SoundJap\\BlackGokuR3.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\SoundEng\\BlackGokuR1-1eng.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\SoundJap\\BlackGokuR1-1.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\SoundJap\\BlackGokuR1.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\SoundEng\\BlackGokuR2-1eng.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\SoundJap\\BlackGokuR2-1.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\SoundJap\\BlackGokuR2.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\SoundEng\\BlackGokuE1-1eng.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\SoundJap\\BlackGokuE1-1.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\SoundEng\\BlackGokuE2-1eng.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\SoundJap\\BlackGokuE2-1.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\SoundJap\\BlackGokuE3.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\SoundJap\\BlackGokuE4.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\SoundEng\\BlackGokuW5-1eng.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\SoundJap\\BlackGokuW5-1.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\SoundEng\\BlackGokuW1-1eng.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\SoundJap\\BlackGokuW1-1.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\SoundJap\\BlackGokuW3.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\SoundJap\\BlackGokuW4.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\SoundJap\\BlackGokuQExp.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\SoundEng\\BlackGokuQ1-1eng.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\SoundJap\\BlackGokuQ1-1.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\SoundJap\\BlackGokuQ2.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\SabracT22.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\SabracQF_Hit.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\SabracEW.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\SabracG_Sword"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\AizenFslash.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\AizenF.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\AizenFself2.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\AizenQHit.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\AizenW2hit.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\AizenE1.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\AizenE3.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\AizenE2.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\AizenR.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\AizenRself.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\AizenR2.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\AizenR1.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\AizenRSFX.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\AizenT2.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\AizenT2Slash.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\AizenTself2.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\AizenTstart.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\AizenTstart2.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\AizenTSelf1.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\KurapikaR2Hit.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\ArcueidR2Hit.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\KurapikaR2Start.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\ArcueidR2Start.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\KurapikaRHit.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\ArcueidRHit.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\KurapikaRStart.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\ArcueidRStart.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\GaaraRG2.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\JeanneAlterGHit.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\JeanneAlterG2.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\AlterJeanneSkill2.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\XanxusG.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\ArchetypeThit.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\ArchetypeTtheme.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\ScathachG.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\GamabuntaTR.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\GamabuntaTW.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\JirayaTQ.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\JirayaTQ1.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\GamabuntaTQ.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\JirayaT.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\JirayaT1.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\war3mapImported\\IchigoE2.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\war3mapImported\\IchigoTE2.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\Hit.wav"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\KarnaE2.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\KarnaR_Blast.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\KarnaT2_Sound.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\SinonWend.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\SinonHit.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\SinonT.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\YoruichiQG2.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\YoruichiQ2.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\YoruichiE2.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\TobiramaF.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\TobiramaE2.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\TobiramaE3.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\TobiramaT2.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Gojo\\Ao_Self_Charge.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Gojo\\Ao_Self_Charge1.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Gojo\\Ao_Self_Ao.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Gojo\\Ao_Self_Ao_Hit.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Gojo\\Ao_Q1.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Gojo\\MadaMada.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Gojo\\MadaMadPunches.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Gojo\\MadaMadKick.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Gojo\\Aka_Target_Aka.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Gojo\\Aka_Target_Exp.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Gojo\\PunchSound2.mp3"
+    set SND_PreN=SND_PreN+1
+endfunction
+function SND_PreList3 takes nothing returns nothing
+    set SND_Pre[SND_PreN]="Sound\\Gojo\\Aka_Target_Speech.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Gojo\\Aka_Target_Charge.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Gojo\\Ao_Target_Push.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Gojo\\PunchJogo.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Gojo\\Ao_Target.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Gojo\\Aka_Self_charge.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Gojo\\Aka_Self_Exp.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Gojo\\Aka_Self_Aka.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Gojo\\Aka_Jamada_Hit.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Gojo\\Aka_Jamada.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Gojo\\Aka_Jamada_Throw.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Gojo\\Aka_E1.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Gojo\\InfinityPush.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Gojo\\SukunaFightSpeech.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Gojo\\GroundSlam.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Gojo\\gojo-g2.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Gojo\\Blink.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Gojo\\Ikuyo.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Gojo\\Punches_Film_2.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Gojo\\G_OFF.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Gojo\\G_Speech.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Gojo\\G_Active.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Gojo\\Murasaki_Fast.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Gojo\\Murasaki_Fast_Throw.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Gojo\\Murasaki_Full_Charge1.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Gojo\\Murasaki_Full_Charge2.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Gojo\\Murasaki_Full_Charge_Ao.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Gojo\\Murasaki_Full_Charge_Aka.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Gojo\\Murasaki_Full_Charge4.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Gojo\\Murasaki_Full_Charge5.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Gojo\\Murasaki_Full_Charge_Throw.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Gojo\\Murasaki_Full_Charge_Throw2.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Gojo\\Murasaki_Full_Charge_Throw3.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Gojo\\GojoTSelfRun.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Gojo\\GojoTend.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Gojo\\GojoTSelf.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Gojo\\GojoTSelfCharge.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Gojo\\GojoTSelf1.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Others\\Accelerator_G1.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Others\\Accelerator_G2.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Others\\Frenda_F_Exp.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Others\\Frenda_G_Exp.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Others\\BuuG-shoot.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Others\\BuuG-Hit.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Others\\KimimaroRG.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Others\\KimimaroForm.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Others\\KimimaroG.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Others\\KimimaroQ.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Others\\KimimaroW.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\KimimaroE.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Others\\KimimaroR-hit.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Others\\KimimaroF.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Others\\KimimaroR.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Others\\KimimaroT.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\SignumQ.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\SignumQ2.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\SignumW3.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\SignumW2.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\SignumEexp.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\SignumESelfHit.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\SignumFEHit.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\SignumRCharge.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\SignumRCharge1.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\SignumRShoot.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\SignumRShootCharge.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\SignumRShootFly.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\SignumFRExp.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\SignumFR.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\SignumFR2.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\SignumFR2Charge.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\SignumFRShoot.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\SignumGTCharge.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\SignumGT1.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\SignumGTSlash.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\SignumGT2.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\SignumT.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\SignumT1.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\SignumT2.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Music\\mp3Music\\LamboW2.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Others\\LamboF.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Others\\Gintoki_G1.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Others\\Kick.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Others\\Gintoki_G2.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Roshi\\Roshi_F_Fuin_End.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Roshi\\Roshi_F_Fuin_Roar.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Roshi\\Roshi_F_Fuin_Roar1.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Roshi\\Roshi_F_Fuin.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Roshi\\Roshi_F1.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Roshi\\Roshi_F2.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Roshi\\Roshi_F_Hit.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Roshi\\Roshi_T_Charge.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Roshi\\Roshi_T.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Roshi\\Roshi_T2.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Roshi\\Roshi_T1.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Roshi\\Roshi_T_R1.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Roshi\\Roshi_T_R_TP.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Roshi\\Roshi_Attack"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Roshi\\Roshi_T_R2.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Roshi\\Roshi_Q1.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Roshi\\Roshi_T_R9.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Roshi\\Roshi_T_R_Fin.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Roshi\\Roshi_Q2.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Roshi\\Roshi_T_W.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Roshi\\Roshi_T_W1.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Roshi\\Roshi_T_Q3.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Roshi\\Roshi_T_Q3_v2.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Roshi\\Roshi_T_Q1.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Roshi\\Roshi_R1.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Roshi\\Roshi_R1_Hit.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Roshi\\Roshi_R1_Hit2.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Roshi\\Roshi_R1_Hit3.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Roshi\\Roshi_R2.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Roshi\\UnlimitedPower.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Roshi\\Roshi_E4.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Roshi\\Roshi_E_Fly.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Roshi\\Roshi_E"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Roshi\\Roshi_E5.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Roshi\\Roshi_W0.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Roshi\\Roshi_W_Hit.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Roshi\\Roshi_W2.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Roshi\\Roshi_W_Hit2.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Roshi\\Roshi_W_Hit3.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Roshi\\Roshi_Q3.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Roshi\\Roshi_D1.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Roshi\\Roshi_D2.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Roshi\\Roshi_G01.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Sound\\Roshi\\Roshi_G0.mp3"
+    set SND_PreN=SND_PreN+1
+endfunction
+// по 15 звуков раз в 0.1 с, чтобы не было рывка при старте
+function SND_PreTick takes nothing returns nothing
+    local integer sni=0
+    loop
+        exitwhen sni>=15 or SND_PreI>=SND_PreN
+        call PreloadSound(SND_Pre[SND_PreI])
+        set SND_PreI=SND_PreI+1
+        set sni=sni+1
+    endloop
+    if SND_PreI>=SND_PreN then
+        call DestroyTimer(GetExpiredTimer())
+    endif
+endfunction
+function SND_PreStart takes nothing returns nothing
+    call SND_PreList0()
+    call SND_PreList1()
+    call SND_PreList2()
+    call SND_PreList3()
+    call TimerStart(CreateTimer(),0.1,true,function SND_PreTick)
+endfunction
 function Trig_VoicePreload_Actions takes nothing returns nothing
 local integer i=0
 call PreloadSound("Sound\\Music\\mp3Music\\UBW1.mp3")
@@ -22976,6 +24227,8 @@ set i=i+1
 call StopSound(soundStr[i],false,false)
 exitwhen i>153
 endloop
+// звуки периодических способностей — постепенно
+call SND_PreStart()
 endfunction
 function InitTrig_VoicePreload takes nothing returns nothing
 set gg_trg_VoicePreload=CreateTrigger()
@@ -54455,12 +55708,13 @@ local real y1=GetUnitY(Hero[idc])
 local timer t2=CreateTimer()
 local real a=Atan2(y1-y,x1-x)
 local integer id=GetHandleId(t2)
-set n=CreateUnit(p,'e0RV',x,y,0)
-call SetUnitFlyHeight(n,1,0)
-call SetUnitVertexColor(n,255,255,255,180)
-call SetUnitTimeScale(n,0.3)
-call SetUnitScale(n,2,2,2)
-call UnitApplyTimedLife(n,'BTLF',4)
+local unit dn=null // свой временный юнит вместо общего n (функция вызывается из обработчика урона)
+set dn=CreateUnit(p,'e0RV',x,y,0)
+call SetUnitFlyHeight(dn,1,0)
+call SetUnitVertexColor(dn,255,255,255,180)
+call SetUnitTimeScale(dn,0.3)
+call SetUnitScale(dn,2,2,2)
+call UnitApplyTimedLife(dn,'BTLF',4)
 call PauseUnit(Hero[idc],true)
 call SaveBoolean(HH,GetHandleId(Hero[idc]),TARGET_ABILITY,true)
 call UnitAddAbility(u,'A295')
@@ -54468,16 +55722,16 @@ call UnitRemoveAbility(u,'A19B')
 call SetUnitInvulnerable(u,true)
 call SaveBoolean(HH,idu,ANTITARGET_ABILITY,false)
 call RemoveSavedHandle(HH,idu,REVERSE_TARGET)
-set n=CreateUnit(p,'e0ZL',x,y,a*bj_RADTODEG)
-call UnitAddAbility(n,'A195')
-call SaveUnitHandle(h,id,2,n)
+set dn=CreateUnit(p,'e0ZL',x,y,a*bj_RADTODEG)
+call UnitAddAbility(dn,'A195')
+call SaveUnitHandle(h,id,2,dn)
 call SaveUnitHandle(h,id,0,u)
 call SaveUnitHandle(h,id,1,Hero[idc])
 call SaveReal(h,id,5,0)
 call SaveReal(h,id,6,a)
 call SaveReal(h,id,7,SR(x,y,x1,y1))
-call SetUnitAnimation(n,"Spell Two")
-call SetUnitTimeScale(n,0.8)
+call SetUnitAnimation(dn,"Spell Two")
+call SetUnitTimeScale(dn,0.8)
 set soundplay=CreateSound("Sound\\Music\\mp3Music\\Shiki5eEnd.mp3",false,false,true,12700,12700,"")
 call StartSound(soundplay)
 call KillSoundWhenDone(soundplay)
@@ -54486,6 +55740,7 @@ set u=null
 set p=null
 set t2=null
 set c=null
+set dn=null
 endfunction
 function Trig_Yamomoto_Damage takes nothing returns nothing
 local timer t=GetExpiredTimer()
@@ -55061,6 +56316,7 @@ function AlbedoEPassive takes unit newSource, unit newTarget, timer newTimer ret
     local integer item_id= 0
     local integer max_iteration= 30
     local integer random_slot= 0
+local unit dn=null // свой временный юнит вместо общего n (функция вызывается из обработчика урона)
     if AlbedoEPassiveCounter >=4 and UnitIsAlive(newTarget) then
         if IsUnitType(newTarget, UNIT_TYPE_HERO) and IsUnitIllusion(newTarget)==false and GetUnitAbilityLevel(newSource, 'AlEp')>0 and GetUnitTypeId(newTarget)!='H007' and GetUnitTypeId(newTarget)!='Ho13' and GetUnitTypeId(newTarget)!='H34X' and GetUnitTypeId(newTarget)!='H14F' then
             if GetUnitTypeId(newTarget)=='H00Q' then
@@ -55135,12 +56391,13 @@ function AlbedoEPassive takes unit newSource, unit newTarget, timer newTimer ret
 		//call myCustomDamage(UltimateDamage, newTarget , new_dmg , false , false , null , null , null)
 		call SaveInteger(HH, GetHandleId(newSource), SH_AlbedoEPassive, 0)
         call SaveInteger(HH, GetHandleId(newSource), BlockPenetrate, 0)
-		set n=CreateUnit(GetOwningPlayer(newSource), 'dH61', GetUnitX(newTarget), GetUnitY(newTarget), GetRandomInt(0, 360))
-		call SetUnitFlyHeight(n, 1, 0)
-		call MyRemoveUnit(n, 1.5)
+		set dn=CreateUnit(GetOwningPlayer(newSource), 'dH61', GetUnitX(newTarget), GetUnitY(newTarget), GetRandomInt(0, 360))
+		call SetUnitFlyHeight(dn, 1, 0)
+		call MyRemoveUnit(dn, 1.5)
 	else
 		call SaveInteger(HH, GetHandleId(newSource), SH_AlbedoEPassive, AlbedoEPassiveCounter + 1)
 	endif
+set dn=null
 endfunction
 
 function RengokuF_Pass_Cooldown takes nothing returns nothing
@@ -55915,6 +57172,7 @@ function Minato_BaseRasengan takes unit newCaster,unit newTarget,real dop_damage
     local integer id_caster= GetHandleId(newCaster)
     local real damage= LoadReal(h, id_caster, SH_MinatoW_Damage) + dop_damage
     local real angle= AU(newCaster , newTarget)
+local unit dn=null // свой временный юнит вместо общего n (функция вызывается из обработчика урона)
     call myCustomDamage(newCaster , newTarget , damage , false , false , null , null , null)
     call SetControlToUnit(newCaster , newTarget , 1.5 , "stun")
     call ShakeCamera(0.2 , 10)
@@ -55924,57 +57182,57 @@ function Minato_BaseRasengan takes unit newCaster,unit newTarget,real dop_damage
     call StartSound(soundplay)
     call KillSoundWhenDone(soundplay)
         
-    set n=CreateUnit(GetOwningPlayer(newCaster), 'dM04', GetUnitX(newCaster), GetUnitY(newCaster), angle * bj_RADTODEG)
-    call SetUnitFlyHeight(n, 150, 0)
-    call SetUnitTimeScale(n, 0.6)
-    call SetUnitVertexColor(n, 255, 255, 255, 185)
-    call MyRemoveUnit(n , 2.5)
-    set n=CreateUnit(GetOwningPlayer(newCaster), 'dM13', GetUnitX(newCaster) + 200 * Cos(angle), GetUnitY(newCaster) + 200 * Sin(angle), GetRandomInt(0, 360))
-    call SetUnitScale(n, 3, 3, 3)
-    call SetUnitTimeScale(n, 0.50)
-    call SetUnitFlyHeight(n, 200, 0)
-    call SetUnitAnimation(n, "Birth")
-        call UnitApplyTimedLife(n,'BTLF', 0.5)
-    call MyRemoveUnit(n , 0.5)
-    set n=CreateUnit(GetOwningPlayer(newCaster), 'dM13', GetUnitX(newCaster) + 200 * Cos(angle), GetUnitY(newCaster) + 200 * Sin(angle), GetRandomInt(0, 360))
-    call SetUnitScale(n, 5, 5, 5)
-    call SetUnitTimeScale(n, 0.50)
-    call SetUnitFlyHeight(n, 200, 0)
-    call SetUnitAnimation(n, "Birth")
-        call UnitApplyTimedLife(n,'BTLF', 0.5)
-    call MyRemoveUnit(n , 0.5)
-    set n=CreateUnit(GetOwningPlayer(newCaster), 'dM13', GetUnitX(newCaster) + 200 * Cos(angle), GetUnitY(newCaster) + 200 * Sin(angle), GetRandomInt(0, 360))
-    call SetUnitScale(n, 12, 12, 12)
-    call SetUnitFlyHeight(n, 130, 0)
-    call SetUnitAnimation(n, "Stand")
-    call SaveUnitHandle(h, GetHandleId(bjLCT), SH_Rasengan, n)
-        call UnitApplyTimedLife(n,'BTLF', 0.5)
-    call MyRemoveUnit(n , 0.5)
+    set dn=CreateUnit(GetOwningPlayer(newCaster), 'dM04', GetUnitX(newCaster), GetUnitY(newCaster), angle * bj_RADTODEG)
+    call SetUnitFlyHeight(dn, 150, 0)
+    call SetUnitTimeScale(dn, 0.6)
+    call SetUnitVertexColor(dn, 255, 255, 255, 185)
+    call MyRemoveUnit(dn , 2.5)
+    set dn=CreateUnit(GetOwningPlayer(newCaster), 'dM13', GetUnitX(newCaster) + 200 * Cos(angle), GetUnitY(newCaster) + 200 * Sin(angle), GetRandomInt(0, 360))
+    call SetUnitScale(dn, 3, 3, 3)
+    call SetUnitTimeScale(dn, 0.50)
+    call SetUnitFlyHeight(dn, 200, 0)
+    call SetUnitAnimation(dn, "Birth")
+        call UnitApplyTimedLife(dn,'BTLF', 0.5)
+    call MyRemoveUnit(dn , 0.5)
+    set dn=CreateUnit(GetOwningPlayer(newCaster), 'dM13', GetUnitX(newCaster) + 200 * Cos(angle), GetUnitY(newCaster) + 200 * Sin(angle), GetRandomInt(0, 360))
+    call SetUnitScale(dn, 5, 5, 5)
+    call SetUnitTimeScale(dn, 0.50)
+    call SetUnitFlyHeight(dn, 200, 0)
+    call SetUnitAnimation(dn, "Birth")
+        call UnitApplyTimedLife(dn,'BTLF', 0.5)
+    call MyRemoveUnit(dn , 0.5)
+    set dn=CreateUnit(GetOwningPlayer(newCaster), 'dM13', GetUnitX(newCaster) + 200 * Cos(angle), GetUnitY(newCaster) + 200 * Sin(angle), GetRandomInt(0, 360))
+    call SetUnitScale(dn, 12, 12, 12)
+    call SetUnitFlyHeight(dn, 130, 0)
+    call SetUnitAnimation(dn, "Stand")
+    call SaveUnitHandle(h, GetHandleId(bjLCT), SH_Rasengan, dn)
+        call UnitApplyTimedLife(dn,'BTLF', 0.5)
+    call MyRemoveUnit(dn , 0.5)
     //set n=CreateUnit(GetOwningPlayer(newCaster), 'dM15', GetUnitX(newCaster)+170*Cos(angle), GetUnitY(newCaster)+170*Sin(angle), angle*bj_RADTODEG)
     //call SetUnitScale(n, 1.4, 1.4, 1.4)
     //call SetUnitFlyHeight(n, 50, 0)
     //call SetUnitVertexColor(n, 255, 255, 255, 150)
     //call MyRemoveUnit(n, 0.65)
-    set n=CreateUnit(GetOwningPlayer(newCaster), 'dM16', GetUnitX(newCaster) + 200 * Cos(angle), GetUnitY(newCaster) + 200 * Sin(angle), angle * bj_RADTODEG)
-    call SetUnitScale(n, 1.5, 1.5, 1.5)
-    call SetUnitFlyHeight(n, 150, 0)
-    call SetUnitTimeScale(n, 0.5)
-    call MyRemoveUnit(n , 1.5)
-    set n=CreateUnit(GetOwningPlayer(newCaster), 'dM17', GetUnitX(newCaster) + 200 * Cos(angle), GetUnitY(newCaster) + 200 * Sin(angle), GetRandomInt(0, 360))
-    call SetUnitScale(n, 5, 5, 5)
-    call SetUnitFlyHeight(n, 120, 0)
-    call SetUnitTimeScale(n, 0.65)
-    call MyRemoveUnit(n , 3.0)
-    set n=CreateUnit(GetOwningPlayer(newCaster), 'dM18', GetUnitX(newCaster) + 170 * Cos(angle), GetUnitY(newCaster) + 170 * Sin(angle), angle * bj_RADTODEG)
-    call SetUnitScale(n, 1.2, 1.2, 1.2)
-    call SetUnitFlyHeight(n, 120, 0)
-    call SetUnitTimeScale(n, 0.6)
-    call MyRemoveUnit(n , 3.0)
-    set n=CreateUnit(GetOwningPlayer(newCaster), 'dM18', GetUnitX(newCaster) + 170 * Cos(angle), GetUnitY(newCaster) + 170 * Sin(angle), angle * bj_RADTODEG)
-    call SetUnitScale(n, 1.2, 1.2, 1.2)
-    call SetUnitFlyHeight(n, 120, 0)
-    call SetUnitTimeScale(n, 0.6)
-    call MyRemoveUnit(n , 3.0)
+    set dn=CreateUnit(GetOwningPlayer(newCaster), 'dM16', GetUnitX(newCaster) + 200 * Cos(angle), GetUnitY(newCaster) + 200 * Sin(angle), angle * bj_RADTODEG)
+    call SetUnitScale(dn, 1.5, 1.5, 1.5)
+    call SetUnitFlyHeight(dn, 150, 0)
+    call SetUnitTimeScale(dn, 0.5)
+    call MyRemoveUnit(dn , 1.5)
+    set dn=CreateUnit(GetOwningPlayer(newCaster), 'dM17', GetUnitX(newCaster) + 200 * Cos(angle), GetUnitY(newCaster) + 200 * Sin(angle), GetRandomInt(0, 360))
+    call SetUnitScale(dn, 5, 5, 5)
+    call SetUnitFlyHeight(dn, 120, 0)
+    call SetUnitTimeScale(dn, 0.65)
+    call MyRemoveUnit(dn , 3.0)
+    set dn=CreateUnit(GetOwningPlayer(newCaster), 'dM18', GetUnitX(newCaster) + 170 * Cos(angle), GetUnitY(newCaster) + 170 * Sin(angle), angle * bj_RADTODEG)
+    call SetUnitScale(dn, 1.2, 1.2, 1.2)
+    call SetUnitFlyHeight(dn, 120, 0)
+    call SetUnitTimeScale(dn, 0.6)
+    call MyRemoveUnit(dn , 3.0)
+    set dn=CreateUnit(GetOwningPlayer(newCaster), 'dM18', GetUnitX(newCaster) + 170 * Cos(angle), GetUnitY(newCaster) + 170 * Sin(angle), angle * bj_RADTODEG)
+    call SetUnitScale(dn, 1.2, 1.2, 1.2)
+    call SetUnitFlyHeight(dn, 120, 0)
+    call SetUnitTimeScale(dn, 0.6)
+    call MyRemoveUnit(dn , 3.0)
     call SaveUnitHandle(h, GetHandleId(bjLCT), TargetHash, newTarget)
     call SaveReal(h, GetHandleId(bjLCT), SH_Speed, speed)
     call SaveReal(h, GetHandleId(bjLCT), SH_Distance, distance)
@@ -55984,6 +57242,7 @@ function Minato_BaseRasengan takes unit newCaster,unit newTarget,real dop_damage
     call MinatoRemoveRasengan(newCaster)
     call DestroyTimer(newTimer)
     set newTimer=null
+set dn=null
 endfunction
 
 function SabrackE_Periodic takes nothing returns nothing
@@ -56031,31 +57290,33 @@ function HibariW_Attack takes unit newSource, unit newTarget, real b returns rea
         local real target_x = GetUnitX(newTarget)
         local real target_y = GetUnitY(newTarget)
         local player p = GetOwningPlayer(newSource)
+local unit dn=null // свой временный юнит вместо общего n (функция вызывается из обработчика урона)
         call UnitRemoveAbility(newSource, 'HiW2')
         call UnitRemoveAbility(newSource, 'ReFa')
         call myCustomDamage(newSource , newTarget , damage , false , false , ATTACK_TYPE_HERO , DAMAGE_TYPE_UNIVERSAL , null)
         //call SetControlToUnit(newTarget, newTarget, 1, "stun")
         //return damage*myCustomDamage2(newTarget, 1)
         
-        set n=CreateUnit(p,'e0CV', target_x, target_y,0)
-        call SetUnitScale(n, 1, 1, 1)
-        call UnitApplyTimedLife(n,'BTLF',3)
-        set n=CreateUnit(p,'e0CX', target_x, target_y,0)
-        call SetUnitScale(n, 1, 1, 1)
-        call UnitApplyTimedLife(n,'BTLF',3)
-        set n=CreateUnit(p,'e0D7', target_x, target_y,0)
-        call SetUnitFlyHeight(n, 5, 0)
-        call UnitApplyTimedLife(n,'BTLF',3)
-        set n=CreateUnit(p,'dR58', target_x, target_y,AU(newSource, newTarget)*bj_RADTODEG)
-        call SetUnitScale(n, 1.5, 1.5, 1.5)
-        call UnitApplyTimedLife(n,'BTLF',3)
-        set n=CreateUnit(p,'e0LF', target_x, target_y,AU(newSource, newTarget)*bj_RADTODEG)
+        set dn=CreateUnit(p,'e0CV', target_x, target_y,0)
+        call SetUnitScale(dn, 1, 1, 1)
+        call UnitApplyTimedLife(dn,'BTLF',3)
+        set dn=CreateUnit(p,'e0CX', target_x, target_y,0)
+        call SetUnitScale(dn, 1, 1, 1)
+        call UnitApplyTimedLife(dn,'BTLF',3)
+        set dn=CreateUnit(p,'e0D7', target_x, target_y,0)
+        call SetUnitFlyHeight(dn, 5, 0)
+        call UnitApplyTimedLife(dn,'BTLF',3)
+        set dn=CreateUnit(p,'dR58', target_x, target_y,AU(newSource, newTarget)*bj_RADTODEG)
+        call SetUnitScale(dn, 1.5, 1.5, 1.5)
+        call UnitApplyTimedLife(dn,'BTLF',3)
+        set dn=CreateUnit(p,'e0LF', target_x, target_y,AU(newSource, newTarget)*bj_RADTODEG)
         //call SetUnitScale(n, 1.5, 1.5, 1.5)
-        call SetUnitVertexColor(n, 255, 155, 255, 255)
-        call UnitApplyTimedLife(n,'BTLF',3)
+        call SetUnitVertexColor(dn, 255, 155, 255, 255)
+        call UnitApplyTimedLife(dn,'BTLF',3)
         
         set p = null
         return CalculatePhysDamage(newTarget, damage)
+set dn=null
 endfunction
 
 
@@ -56182,24 +57443,25 @@ function IchigoShikaiQ_Counter takes unit newCaster, unit newTarget, real newDam
         local real caster_y  = GetUnitY(newCaster)
         local real angle     =  AU(newCaster, newTarget)
         local real damage    = GetHeroStr(newCaster, true)*GetUnitAbilityLevel(newCaster, 'IcQ1') + newDamage*2.5
+local unit dn=null // свой временный юнит вместо общего n (функция вызывается из обработчика урона)
         set soundplay=CreateSound("Sound\\war3mapImported\\IchigoBankaiQ2Reverse.mp3", false, false, true, 12700, 12700, "")
         call StartSound(soundplay)
         call KillSoundWhenDone(soundplay)
-        set n=CreateUnit(GetOwningPlayer(newCaster), 'd001', caster_x, caster_y, GetRandomInt(0, 360))
-        call MyRemoveUnit(n, 1.5)
-        set n=CreateUnit(GetOwningPlayer(newCaster), 'd047', caster_x+200*Cos(angle), caster_y+200*Sin(angle), GetRandomInt(0, 360))
-        call SetUnitScale(n, 3, 3, 3)
-        call SetUnitFlyHeight(n, 100, 0)
-        call MyRemoveUnit(n, 1.5)
-        set n=CreateUnit(GetOwningPlayer(newCaster), 'd032', caster_x+200*Cos(angle), caster_y+200*Sin(angle), GetRandomInt(0, 360))
-        call SetUnitScale(n, 2, 2, 2)
-        call SetUnitFlyHeight(n, 100, 0)
-        call MyRemoveUnit(n, 1.5)
-        set n=CreateUnit(GetOwningPlayer(newCaster), 'd074', caster_x+200*Cos(angle), caster_y+200*Sin(angle), angle*bj_RADTODEG)
-        call SetUnitScale(n, 2, 2, 2)
-        call SetUnitFlyHeight(n, 75, 0)
-        call UnitApplyTimedLife(n,'BTLF', 0.2)
-        call MyRemoveUnit(n, 1.5)
+        set dn=CreateUnit(GetOwningPlayer(newCaster), 'd001', caster_x, caster_y, GetRandomInt(0, 360))
+        call MyRemoveUnit(dn, 1.5)
+        set dn=CreateUnit(GetOwningPlayer(newCaster), 'd047', caster_x+200*Cos(angle), caster_y+200*Sin(angle), GetRandomInt(0, 360))
+        call SetUnitScale(dn, 3, 3, 3)
+        call SetUnitFlyHeight(dn, 100, 0)
+        call MyRemoveUnit(dn, 1.5)
+        set dn=CreateUnit(GetOwningPlayer(newCaster), 'd032', caster_x+200*Cos(angle), caster_y+200*Sin(angle), GetRandomInt(0, 360))
+        call SetUnitScale(dn, 2, 2, 2)
+        call SetUnitFlyHeight(dn, 100, 0)
+        call MyRemoveUnit(dn, 1.5)
+        set dn=CreateUnit(GetOwningPlayer(newCaster), 'd074', caster_x+200*Cos(angle), caster_y+200*Sin(angle), angle*bj_RADTODEG)
+        call SetUnitScale(dn, 2, 2, 2)
+        call SetUnitFlyHeight(dn, 75, 0)
+        call UnitApplyTimedLife(dn,'BTLF', 0.2)
+        call MyRemoveUnit(dn, 1.5)
         
         call UnitRemoveAbility(newCaster, 'IcQ2')
         call PauseUnit(newCaster, true)
@@ -56213,6 +57475,7 @@ function IchigoShikaiQ_Counter takes unit newCaster, unit newTarget, real newDam
         call TimerStart(newTimer, 0.02, true, function IchigoShikaiQ_CounterPeriodic)
         set newTimer=null
 
+set dn=null
 endfunction
 
 function IchigoBankaiW_CounterPeriodic takes nothing returns nothing
@@ -56425,22 +57688,23 @@ function IchigoBankaiW_Counter takes unit newCaster, unit newTarget returns noth
         local real caster_y  = GetUnitY(newCaster)
         local real angle     =  AU(newCaster, newTarget)
         local real damage    = GetHeroStr(newCaster, true)*6
+local unit dn=null // свой временный юнит вместо общего n (функция вызывается из обработчика урона)
         call SaveBoolean(HH,GetHandleId(newCaster),ANTITARGET_ABILITY,false)               
-        set n=CreateUnit(GetOwningPlayer(newCaster), 'd001', caster_x, caster_y, GetRandomInt(0, 360))
-        call MyRemoveUnit(n, 1.5)
-        set n=CreateUnit(GetOwningPlayer(newCaster), 'd047', caster_x+200*Cos(angle), caster_y+200*Sin(angle), GetRandomInt(0, 360))
-        call SetUnitScale(n, 3, 3, 3)
-        call SetUnitFlyHeight(n, 100, 0)
-        call MyRemoveUnit(n, 1.5)
-        set n=CreateUnit(GetOwningPlayer(newCaster), 'd032', caster_x+200*Cos(angle), caster_y+200*Sin(angle), GetRandomInt(0, 360))
-        call SetUnitScale(n, 2, 2, 2)
-        call SetUnitFlyHeight(n, 100, 0)
-        call MyRemoveUnit(n, 1.5)
-        set n=CreateUnit(GetOwningPlayer(newCaster), 'd074', caster_x+200*Cos(angle), caster_y+200*Sin(angle), angle*bj_RADTODEG)
-        call SetUnitScale(n, 2, 2, 2)
-        call SetUnitFlyHeight(n, 75, 0)
-        call UnitApplyTimedLife(n,'BTLF', 0.2)
-        call MyRemoveUnit(n, 1.5)
+        set dn=CreateUnit(GetOwningPlayer(newCaster), 'd001', caster_x, caster_y, GetRandomInt(0, 360))
+        call MyRemoveUnit(dn, 1.5)
+        set dn=CreateUnit(GetOwningPlayer(newCaster), 'd047', caster_x+200*Cos(angle), caster_y+200*Sin(angle), GetRandomInt(0, 360))
+        call SetUnitScale(dn, 3, 3, 3)
+        call SetUnitFlyHeight(dn, 100, 0)
+        call MyRemoveUnit(dn, 1.5)
+        set dn=CreateUnit(GetOwningPlayer(newCaster), 'd032', caster_x+200*Cos(angle), caster_y+200*Sin(angle), GetRandomInt(0, 360))
+        call SetUnitScale(dn, 2, 2, 2)
+        call SetUnitFlyHeight(dn, 100, 0)
+        call MyRemoveUnit(dn, 1.5)
+        set dn=CreateUnit(GetOwningPlayer(newCaster), 'd074', caster_x+200*Cos(angle), caster_y+200*Sin(angle), angle*bj_RADTODEG)
+        call SetUnitScale(dn, 2, 2, 2)
+        call SetUnitFlyHeight(dn, 75, 0)
+        call UnitApplyTimedLife(dn,'BTLF', 0.2)
+        call MyRemoveUnit(dn, 1.5)
         call UnitRemoveAbility(newCaster, 'IcB1')
         call PauseUnit(newCaster, true)
         call SetUnitInvulnerable(newCaster, true)
@@ -56452,6 +57716,7 @@ function IchigoBankaiW_Counter takes unit newCaster, unit newTarget returns noth
         call SaveReal      (h, id, 9, damage)
         call TimerStart(newTimer, 0.02, true, function IchigoBankaiW_CounterPeriodic)
         set newTimer=null
+set dn=null
 endfunction
 
 
@@ -58736,6 +60001,22 @@ set target=null
 set t=null
 endfunction
 //Barragan1end
+// кэш предметов юнита для обработчика урона: DMG_IHT[handle юнита][тип предмета]=true
+function DmgItemsRefresh takes unit diw returns nothing
+    local integer dii=0
+    local integer did=GetHandleId(diw)
+    local item dit
+    call FlushChildHashtable(DMG_IHT,did)
+    loop
+        exitwhen dii>5
+        set dit=UnitItemInSlot(diw,dii)
+        if dit!=null then
+            call SaveBoolean(DMG_IHT,did,GetItemTypeId(dit),true)
+        endif
+        set dii=dii+1
+    endloop
+    set dit=null
+endfunction
 function Trig_Text_Damage_Actions takes nothing returns nothing
 local real b=GetEventDamage()
 local timer t
@@ -58789,6 +60070,16 @@ local real tdamage=0
 local real ragebase=0
 local integer ragecount=0
 local item it
+// свои временные юниты и группа вместо общих n / E / G: обработчик срабатывает посреди способностей,
+// которые сами используют n / E / G (цикл по G с уроном внутри), и не должен их портить
+local unit hn=null
+local unit hE=null
+local group hG=null
+// предметы цели и источника — один раз (кэш по юниту, см. DmgItemsRefresh)
+call DmgItemsRefresh(u)
+if c!=null and c!=u then
+    call DmgItemsRefresh(c)
+endif
 //local boolean fullrage=false
 //
 set nb=b
@@ -58896,7 +60187,7 @@ if GetUnitTypeId(c)=='HEsc' and CurrentEventAttack and nb>0 and IsUnitEnemy(u,Ge
     call Esc_Attack_Act()
 endif
 //Escanor1end
-if (LoadReal(HH,GetHandleId(c),SH_yamato)==1 or GetRandomInt(0,100)<15) and (UnitHasItemOfTypeBJ(c,'I02V') or GetUnitAbilityLevel(c,'KIG4')>0) and CurrentEventAttack and IsUnitType(c, UNIT_TYPE_HERO) and IsUnitIllusion(c)==false and GetUnitAbilityLevel(c,'A3WR')==0 then
+if (LoadReal(HH,GetHandleId(c),SH_yamato)==1 or GetRandomInt(0,100)<15) and (LoadBoolean(DMG_IHT,cid,'I02V') or GetUnitAbilityLevel(c,'KIG4')>0) and CurrentEventAttack and IsUnitType(c, UNIT_TYPE_HERO) and IsUnitIllusion(c)==false and GetUnitAbilityLevel(c,'A3WR')==0 then
     call DestroyEffect(AddSpecialEffectTarget("war3mapImported\\BloodEX.mdx",u,"chest"))
     call SaveReal(HH,GetHandleId(c),SH_yamato,0)
     set critcoef=critcoef+2
@@ -58941,31 +60232,31 @@ if (LoadReal(HH,GetHandleId(c),SH_yamato)==1 or GetRandomInt(0,100)<15) and (Uni
         call SetUnitY(c,y+100*Sin(a2))
     endif
 endif
-if GetRandomInt(0,100)<15 and (UnitHasItemOfTypeBJ(c,'I01J') or GetUnitAbilityLevel(c,'KI06')>0) and CurrentEventAttack and IsUnitType(c, UNIT_TYPE_HERO) and nb>0 and GetUnitAbilityLevel(c,'A3WR')==0 then
+if GetRandomInt(0,100)<15 and (LoadBoolean(DMG_IHT,cid,'I01J') or GetUnitAbilityLevel(c,'KI06')>0) and CurrentEventAttack and IsUnitType(c, UNIT_TYPE_HERO) and nb>0 and GetUnitAbilityLevel(c,'A3WR')==0 then
     set critcoef=critcoef+0.5
 endif
-if GetRandomInt(0,100)<15 and (UnitHasItemOfTypeBJ(c,'I01I') or GetUnitAbilityLevel(c,'KI08')>0) and CurrentEventAttack and IsUnitType(c, UNIT_TYPE_HERO) and nb>0 and GetUnitAbilityLevel(c,'A3WR')==0 then
+if GetRandomInt(0,100)<15 and (LoadBoolean(DMG_IHT,cid,'I01I') or GetUnitAbilityLevel(c,'KI08')>0) and CurrentEventAttack and IsUnitType(c, UNIT_TYPE_HERO) and nb>0 and GetUnitAbilityLevel(c,'A3WR')==0 then
     set critcoef=critcoef+0.75
 endif
-if GetRandomInt(0,100)<15 and (UnitHasItemOfTypeBJ(c,'I01K') or GetUnitAbilityLevel(c,'KI10')>0) and CurrentEventAttack and IsUnitType(c, UNIT_TYPE_HERO) and nb>0 and GetUnitAbilityLevel(c,'A3WR')==0 then
+if GetRandomInt(0,100)<15 and (LoadBoolean(DMG_IHT,cid,'I01K') or GetUnitAbilityLevel(c,'KI10')>0) and CurrentEventAttack and IsUnitType(c, UNIT_TYPE_HERO) and nb>0 and GetUnitAbilityLevel(c,'A3WR')==0 then
     set critcoef=critcoef+1
 endif
-if GetRandomInt(0,100)<15 and (UnitHasItemOfTypeBJ(c,'I01L') or GetUnitAbilityLevel(c,'KI12')>0) and CurrentEventAttack and IsUnitType(c, UNIT_TYPE_HERO) and nb>0 and GetUnitAbilityLevel(c,'A3WR')==0 then
+if GetRandomInt(0,100)<15 and (LoadBoolean(DMG_IHT,cid,'I01L') or GetUnitAbilityLevel(c,'KI12')>0) and CurrentEventAttack and IsUnitType(c, UNIT_TYPE_HERO) and nb>0 and GetUnitAbilityLevel(c,'A3WR')==0 then
     set critcoef=critcoef+1
 endif
-if GetRandomInt(0,100)<20 and (UnitHasItemOfTypeBJ(c,'I01O') or GetUnitAbilityLevel(c,'KI14')>0) and CurrentEventAttack and IsUnitType(c, UNIT_TYPE_HERO) and nb>0 and GetUnitAbilityLevel(c,'A3WR')==0 then
+if GetRandomInt(0,100)<20 and (LoadBoolean(DMG_IHT,cid,'I01O') or GetUnitAbilityLevel(c,'KI14')>0) and CurrentEventAttack and IsUnitType(c, UNIT_TYPE_HERO) and nb>0 and GetUnitAbilityLevel(c,'A3WR')==0 then
     set critcoef=critcoef+1
 endif
-if GetRandomInt(0,100)<20 and (UnitHasItemOfTypeBJ(c,'I01Q') or GetUnitAbilityLevel(c,'KI16')>0) and CurrentEventAttack and IsUnitType(c, UNIT_TYPE_HERO) and nb>0 and GetUnitAbilityLevel(c,'A3WR')==0 then
+if GetRandomInt(0,100)<20 and (LoadBoolean(DMG_IHT,cid,'I01Q') or GetUnitAbilityLevel(c,'KI16')>0) and CurrentEventAttack and IsUnitType(c, UNIT_TYPE_HERO) and nb>0 and GetUnitAbilityLevel(c,'A3WR')==0 then
     set critcoef=critcoef+1
 endif
-if GetRandomInt(0,100)<30 and (UnitHasItemOfTypeBJ(c,'I01S') or GetUnitAbilityLevel(c,'KI18')>0) and CurrentEventAttack and IsUnitType(c, UNIT_TYPE_HERO) and nb>0 and GetUnitAbilityLevel(c,'A3WR')==0 then
+if GetRandomInt(0,100)<30 and (LoadBoolean(DMG_IHT,cid,'I01S') or GetUnitAbilityLevel(c,'KI18')>0) and CurrentEventAttack and IsUnitType(c, UNIT_TYPE_HERO) and nb>0 and GetUnitAbilityLevel(c,'A3WR')==0 then
     set critcoef=critcoef+1
 endif
-if GetRandomInt(0,100)<20 and (UnitHasItemOfTypeBJ(c,'I01U') or GetUnitAbilityLevel(c,'KI20')>0) and CurrentEventAttack and IsUnitType(c, UNIT_TYPE_HERO) and nb>0 and GetUnitAbilityLevel(c,'A3WR')==0 then
+if GetRandomInt(0,100)<20 and (LoadBoolean(DMG_IHT,cid,'I01U') or GetUnitAbilityLevel(c,'KI20')>0) and CurrentEventAttack and IsUnitType(c, UNIT_TYPE_HERO) and nb>0 and GetUnitAbilityLevel(c,'A3WR')==0 then
     set critcoef=critcoef+1
 endif
-if GetRandomInt(0,100)<25 and (UnitHasItemOfTypeBJ(c,'IBSI') or GetUnitAbilityLevel(c,'KI0Y')>0) and CurrentEventAttack and IsUnitType(c, UNIT_TYPE_HERO) and nb>0 and GetUnitAbilityLevel(c,'A3WR')==0 then
+if GetRandomInt(0,100)<25 and (LoadBoolean(DMG_IHT,cid,'IBSI') or GetUnitAbilityLevel(c,'KI0Y')>0) and CurrentEventAttack and IsUnitType(c, UNIT_TYPE_HERO) and nb>0 and GetUnitAbilityLevel(c,'A3WR')==0 then
     set critcoef=critcoef+1
 endif
 if GetRandomInt(0,100)<7.5+3.5*GetUnitAbilityLevel(c,'A0IR') and GetUnitAbilityLevel(c,'A0IR')>0 and CurrentEventAttack and IsUnitType(c, UNIT_TYPE_HERO) and nb>0 and GetUnitAbilityLevel(c,'A3WR')==0 and GetHeroLevel(c)>5 then
@@ -58977,7 +60268,7 @@ endif
 if GetRandomInt(0,100)<30 and GetUnitAbilityLevel(c,'WAE1')>0 and CurrentEventAttack and IsUnitType(c, UNIT_TYPE_HERO) and nb>0 and GetUnitAbilityLevel(c,'A3WR')==0 then
     set critcoef=critcoef+0.5
 endif
-if (UnitHasItemOfTypeBJ(u,'IAoF') or GetUnitAbilityLevel(u,'KI1A')>0) and IsUnitType(c, UNIT_TYPE_HERO) and nb>0 then
+if (LoadBoolean(DMG_IHT,uid,'IAoF') or GetUnitAbilityLevel(u,'KI1A')>0) and IsUnitType(c, UNIT_TYPE_HERO) and nb>0 then
     if critcoef>2 then
         set critcoef=critcoef-1
     else
@@ -58995,9 +60286,9 @@ if nb>l and GetUnitTypeId(u)=='H03T' or GetUnitTypeId(u)=='H03W' or GetUnitTypeI
     call UnitAddAbility(u,'Aeth')
     call PauseUnit(u,true)
     call SetUnitAnimation(u,"Death")
-    set n=CreateUnit(Player(PLAYER_NEUTRAL_AGGRESSIVE),'h019',x,y,GetRandomReal(0,359))
-    call UnitAddAbility(n,'A0VZ')
-    call IssueTargetOrder(n,"magicleash",u)
+    set hn=CreateUnit(Player(PLAYER_NEUTRAL_AGGRESSIVE),'h019',x,y,GetRandomReal(0,359))
+    call UnitAddAbility(hn,'A0VZ')
+    call IssueTargetOrder(hn,"magicleash",u)
     set nb=0
 else
 if (not((GetUnitAbilityLevel(u,'A0IH')==0 and GetUnitAbilityLevel(c,'A0IH')==0) or (GetUnitAbilityLevel(u,'A0IH')>0 and GetUnitAbilityLevel(c,'A0IH')>0)) and GetUnitAbilityLevel(c,'Aloc')==0 and nb>0) or GetUnitAbilityLevel(u,'A295')>0 then
@@ -59577,12 +60868,12 @@ if cond==0 then
             loop
                 exitwhen i>=10
                 if GetUnitTypeId(Hero[i])=='H05R' then
-                    set n=Hero[i]
+                    set hn=Hero[i]
                 endif
                 set i=i+1
             endloop
             set i=0
-            call myCustomDamage(c,n,b,false,false,ATTACK_TYPE_MAGIC,DAMAGE_TYPE_MAGIC,null)
+            call myCustomDamage(c,hn,b,false,false,ATTACK_TYPE_MAGIC,DAMAGE_TYPE_MAGIC,null)
             //call SetEventDamage(0.05)
             set nb=0
         endif
@@ -59660,7 +60951,7 @@ endif
             set basedmg=LoadReal(h,uid,SH_shi2)
             call SaveReal(h,uid,SH_shi1,newdmg-nb)
             if newdmg-nb<=0 then
-                set n=LoadUnitHandle(h,uid,SH_shi2)
+                set hn=LoadUnitHandle(h,uid,SH_shi2)
                 call UnitRemoveAbility(u,'A1DF')
                 //call SetEventDamage(0.05)
                 if l+newdmg>nb then
@@ -59696,7 +60987,7 @@ endif
             set basedmg=LoadReal(h,uid,SH_lnf3)
             call SaveReal(h,uid,SH_lnf1,newdmg-nb)
             if newdmg-nb<=0 then
-                set n=LoadUnitHandle(h,uid,SH_lnf2)
+                set hn=LoadUnitHandle(h,uid,SH_lnf2)
                 call UnitRemoveAbility(u,'A10G')
                 //call SetEventDamage(0.05)
                 if l+newdmg>nb then
@@ -59714,7 +61005,7 @@ endif
             set basedmg=LoadReal(h,uid,SH_ore3)
             call SaveReal(h,uid,SH_ore1,newdmg-nb)
             if newdmg-nb<=0 then
-                set n=LoadUnitHandle(h,uid,SH_ore2)
+                set hn=LoadUnitHandle(h,uid,SH_ore2)
                 call UnitRemoveAbility(u,'A1HG')
                 //call SetEventDamage(0.05)
                 if l+newdmg>nb then
@@ -59732,7 +61023,7 @@ endif
             set basedmg=LoadReal(h,uid,SH_QR3)
             call SaveReal(h,uid,SH_QR1,newdmg-nb)
             if newdmg-nb<=0 then
-                set n=LoadUnitHandle(h,uid,SH_QR2)
+                set hn=LoadUnitHandle(h,uid,SH_QR2)
                 call UnitRemoveAbility(u,'A1G0')
                 //call SetEventDamage(0.05)
                 if l+newdmg>nb then
@@ -59765,15 +61056,15 @@ endif
             call SaveReal(h,GetHandleId(Hero[idu]),SH_FMy,y)
             call SaveUnitHandle(h,GetHandleId(Hero[idu]),SH_FMc,c)
             // call IssueTargetOrderById(n,852274,u)
-            set n=CreateIllusionFromUnit(u)
-            call SetUnitFacingInstant(n,GetUnitFacing(u))
-            call UnitCancelTimedLife(n)
-            call SetUnitCurrentSight(n,600)
-            call SetUnitUseFood(n,true)
-            call UnitApplyTimedLife(n,'B03Q',4)
-            call SetIllusionDamageDealt(n,0.2)
-            call SetIllusionDamageReceived(n,2.5)
-            call SetUnitXY_1(n,x,y,false)
+            set hn=CreateIllusionFromUnit(u)
+            call SetUnitFacingInstant(hn,GetUnitFacing(u))
+            call UnitCancelTimedLife(hn)
+            call SetUnitCurrentSight(hn,600)
+            call SetUnitUseFood(hn,true)
+            call UnitApplyTimedLife(hn,'B03Q',4)
+            call SetIllusionDamageDealt(hn,0.2)
+            call SetIllusionDamageReceived(hn,2.5)
+            call SetUnitXY_1(hn,x,y,false)
             call UnitApplyTimedLife(CreateUnit(GetOwningPlayer(u),'e085',x,y,0),'BTLF',1)
             call myCustomDamage(Hero[idu],c,GetHeroInt(Hero[idu],true),false,false,null,null,null)
             set r=(GetUnitFacing(Hero[idc])+180)*bj_DEGTORAD
@@ -59797,9 +61088,9 @@ endif
                 call SaveSoundHandle(h,idu,118,soundplay)
             endif
             set A=Atan2(y1-y,x1-x)
-            set n=CreateUnit(GetOwningPlayer(u),'e09P',x,y,A*bj_RADTODEG)
-            call UnitApplyTimedLife(n,'BTLF',0.4)
-            call SetUnitTimeScale(n,2)
+            set hn=CreateUnit(GetOwningPlayer(u),'e09P',x,y,A*bj_RADTODEG)
+            call UnitApplyTimedLife(hn,'BTLF',0.4)
+            call SetUnitTimeScale(hn,2)
             if GetUnitAbilityLevel(c,'SHD1')>0 or GetUnitAbilityLevel(u,'SHD2')>0 then
                 call SaveReal(HH,uid,'Arvd',nb*0.5)
             else
@@ -59817,11 +61108,11 @@ endif
 			//endif
 		endif
 
-        if nb>GetWidgetLife(u)and (UnitHasItemOfTypeBJ(u,'I03F') or GetUnitAbilityLevel(u,'KIJ4')>0)and GetUnitAbilityLevel(u,'B01O')==0 and GetHeroPrimaryAttribute(u)==HERO_ATTRIBUTE_AGI and GetUnitAbilityLevel(u,'A0WR')==0 and nb>0 then
+        if nb>GetWidgetLife(u)and (LoadBoolean(DMG_IHT,uid,'I03F') or GetUnitAbilityLevel(u,'KIJ4')>0)and GetUnitAbilityLevel(u,'B01O')==0 and GetHeroPrimaryAttribute(u)==HERO_ATTRIBUTE_AGI and GetUnitAbilityLevel(u,'A0WR')==0 and nb>0 then
 			if LoadInteger(h, uid, SH_AnbuSet_CD)==0 and GetWidgetMana(u)>=GetWidgetMaxMana(u)*0.25 and GetUnitAbilityLevel(u,'A1CE')==0 then
-				set n=CreateUnit(GetOwningPlayer(u),'e0RA',x,y,0)
-				call UnitApplyTimedLife(n,'BTLF',1)
-				call SetUnitAnimation(n,"birth")
+				set hn=CreateUnit(GetOwningPlayer(u),'e0RA',x,y,0)
+				call UnitApplyTimedLife(hn,'BTLF',1)
+				call SetUnitAnimation(hn,"birth")
                 //call SetEventDamage(0.05)
 				set nb=GetWidgetMaxLife(u)*0.15
                 call SetWidgetLife(u, 1)
@@ -59858,7 +61149,7 @@ endif
             set nb=0
             set t=null
         endif
-        if(UnitHasItemOfTypeBJ(u,'I03R')and nb>500) and CurrentEventAttack==false and IsUnitType(u,UNIT_TYPE_SUMMONED)==false and (u==Hero[idu] or u==udg_DM[idu+1]) then
+        if(LoadBoolean(DMG_IHT,uid,'I03R')and nb>500) and CurrentEventAttack==false and IsUnitType(u,UNIT_TYPE_SUMMONED)==false and (u==Hero[idu] or u==udg_DM[idu+1]) then
             if GetUnitTypeId(u)=='H00Q' then
                 if UnitHasItemOfTypeBJ(Hero[idu],'I03R') then
                     set cjlocgn_00000000=CreateTimer()
@@ -59868,6 +61159,7 @@ endif
                         set it=GetItemOfTypeFromUnitBJCustom(Hero[idu],'I03R')
                         call UnitRemoveItem(Hero[idu],it)
                         call RemoveItem(it)
+                        call DmgItemsRefresh(Hero[idu])
                         call UnitAddAbility(u,'A0VV')
                         call UnitRemoveAbility(u,'A0VV')
                         call UnitAddAbility(Hero[idu],'A0VV')
@@ -59877,6 +61169,7 @@ endif
                         call UnitRemoveAbility(Hero[idu],'A0J4')
                         call UnitRemoveAbility(u,'A0J4')
                         set it=UnitAddItemById(Hero[idu],'I03S')
+                        call DmgItemsRefresh(Hero[idu])
                         call SetItemDroppable(it,false)
                         call SaveItemHandle(h,GetHandleId(cjlocgn_00000000),1,it)
                         call TimerStart(cjlocgn_00000000,0.1,true,function LinkenSphere)
@@ -59897,6 +61190,7 @@ endif
                         set it=GetItemOfTypeFromUnitBJCustom(Hero[idu],'I03R')
                         call UnitRemoveItem(Hero[idu],it)
                         call RemoveItem(it)
+                        call DmgItemsRefresh(Hero[idu])
                         call UnitAddAbility(u,'A0VV')
                         call UnitRemoveAbility(u,'A0VV')
                         call UnitAddAbility(Hero[idu],'A0VV')
@@ -59906,6 +61200,7 @@ endif
                         call UnitRemoveAbility(Hero[idu],'A0J4')
                         call UnitRemoveAbility(u,'A0J4')
                         set it=UnitAddItemById(Hero[idu],'I03S')
+                        call DmgItemsRefresh(Hero[idu])
                         call SetItemDroppable(it,false)
                         call SaveItemHandle(h,GetHandleId(cjlocgn_00000000),1,it)
                         call TimerStart(cjlocgn_00000000,0.1,true,function LinkenSphere)
@@ -59934,11 +61229,13 @@ endif
                     set it=GetItemOfTypeFromUnitBJCustom(u,'I03R')
                     call UnitRemoveItem(u,it)
                     call RemoveItem(it)
+                    call DmgItemsRefresh(u)
                     call UnitAddAbility(u,'A0VV')
                     call UnitRemoveAbility(u,'A0VV')
                     call UnitRemoveBuffs(u,false,true)
                     call UnitRemoveAbility(u,'A0J4')
                     set it=UnitAddItemById(u,'I03S')
+                    call DmgItemsRefresh(u)
                     call SetItemDroppable(it,false)
                     call SaveItemHandle(h,GetHandleId(cjlocgn_00000000),1,it)
                     call TimerStart(cjlocgn_00000000,0.1,true,function LinkenSphere)
@@ -59948,11 +61245,13 @@ endif
                     set it=GetItemOfTypeFromUnitBJCustom(u,'I03R')
                     call UnitRemoveItem(u,it)
                     call RemoveItem(it)
+                    call DmgItemsRefresh(u)
                     call UnitAddAbility(u,'A0VV')
                     call UnitRemoveAbility(u,'A0VV')
                     call UnitRemoveBuffs(u,false,true)
                     call UnitRemoveAbility(u,'A0J4')
                     set it=UnitAddItemById(u,'I03S')
+                    call DmgItemsRefresh(u)
                     call SetItemDroppable(it,false)
                     call SaveItemHandle(h,GetHandleId(cjlocgn_00000000),1,it)
                     call TimerStart(cjlocgn_00000000,0.1,true,function LinkenSphere)
@@ -59982,6 +61281,7 @@ endif
                         set it=GetItemOfTypeFromUnitBJCustom(Hero[idu],'I13R')
                         call UnitRemoveItem(Hero[idu],it)
                         call RemoveItem(it)
+                        call DmgItemsRefresh(Hero[idu])
                         call UnitAddAbility(Hero[idu],'A0VV')
                         call UnitRemoveAbilityTimedPause(Hero[idu],'A0VV',6)
                         call UnitAddAbility(Hero[idu],'A28W')
@@ -59995,6 +61295,7 @@ endif
                         call UnitRemoveAbility(Hero[idu],'A0J4')
                         set it=CreateItem('I13S',MathRealFloor(GetUnitX(Hero[idu])),MathRealFloor(GetUnitY(Hero[idu])))
                         call UnitAddItemToSlot(Hero[idu],it,9)
+                        call DmgItemsRefresh(Hero[idu])
                         call SetItemDroppable(it,false)
                         call SaveItemHandle(h,GetHandleId(cjlocgn_00000000),1,it)
                         call TimerStart(cjlocgn_00000000,0.1,true,function LinkenSphere2)
@@ -60004,6 +61305,7 @@ endif
                         set it=GetItemOfTypeFromUnitBJCustom(Hero[idu],'I13R')
                         call UnitRemoveItem(Hero[idu],it)
                         call RemoveItem(it)
+                        call DmgItemsRefresh(Hero[idu])
                         call UnitAddAbility(Hero[idu],'A0VV')
                         call UnitRemoveAbilityTimedPause(Hero[idu],'A0VV',6)
                         call UnitAddAbility(Hero[idu],'A28W')
@@ -60017,6 +61319,7 @@ endif
                         call UnitRemoveAbility(Hero[idu],'A0J4')
                         set it=CreateItem('I13S',MathRealFloor(GetUnitX(Hero[idu])),MathRealFloor(GetUnitY(Hero[idu])))
                         call UnitAddItemToSlot(Hero[idu],it,9)
+                        call DmgItemsRefresh(Hero[idu])
                         call SetItemDroppable(it,false)
                         call SaveItemHandle(h,GetHandleId(cjlocgn_00000000),1,it)
                         call TimerStart(cjlocgn_00000000,0.1,true,function LinkenSphere2)
@@ -60050,6 +61353,7 @@ endif
                     set it=GetItemOfTypeFromUnitBJCustom(u,'I13R')
                     call UnitRemoveItem(u,it)
                     call RemoveItem(it)
+                    call DmgItemsRefresh(u)
                     call UnitAddAbility(u,'A0VV')
                     call UnitRemoveAbilityTimedPause(u,'A0VV',6)
                     call UnitAddAbility(u,'A28W')
@@ -60058,6 +61362,7 @@ endif
                     call UnitRemoveAbility(u,'A0J4')
                     set it=CreateItem('I13S',MathRealFloor(GetUnitX(u)),MathRealFloor(GetUnitY(u)))
                     call UnitAddItemToSlot(u,it,9)
+                    call DmgItemsRefresh(u)
                     call SetItemDroppable(it,false)
                     call SaveItemHandle(h,GetHandleId(cjlocgn_00000000),1,it)
                     call TimerStart(cjlocgn_00000000,0.1,true,function LinkenSphere2)
@@ -60067,6 +61372,7 @@ endif
                     set it=GetItemOfTypeFromUnitBJCustom(u,'I13R')
                     call UnitRemoveItem(u,it)
                     call RemoveItem(it)
+                    call DmgItemsRefresh(u)
                     call UnitAddAbility(u,'A0VV')
                     call UnitRemoveAbilityTimedPause(u,'A0VV',6)
                     call UnitAddAbility(u,'A28W')
@@ -60075,6 +61381,7 @@ endif
                     call UnitRemoveAbility(u,'A0J4')
                     set it=CreateItem('I13S',MathRealFloor(GetUnitX(u)),MathRealFloor(GetUnitY(u)))
                     call UnitAddItemToSlot(u,it,9)
+                    call DmgItemsRefresh(u)
                     call SetItemDroppable(it,false)
                     call SaveItemHandle(h,GetHandleId(cjlocgn_00000000),1,it)
                     call TimerStart(cjlocgn_00000000,0.1,true,function LinkenSphere2)
@@ -60189,7 +61496,7 @@ endif
             //call SetEventDamage(0.05)
             set nb=0
         endif
-        if b>100 and (UnitHasItemOfTypeBJ(u,'I05H') or GetUnitAbilityLevel(u,'KIS4')>0) and nb>100 then
+        if b>100 and (LoadBoolean(DMG_IHT,uid,'I05H') or GetUnitAbilityLevel(u,'KIS4')>0) and nb>100 then
             if GetUnitAbilityLevel(u,'A18B')==0 then
             call HealCast(u,nb*0.1,5)
             else
@@ -60206,15 +61513,15 @@ endif
             call GroupRemoveUnit(LoadGroupHandle(h,uid,SH_katsuya),u)
         endif
         if nb>0 and GetUnitAbilityLevel(u,'B06X')>0 and GetRandomInt(0,100)<10 and b>100 then
-            set n=CreateUnit(GetOwningPlayer(u),'e14F',x,y,0)
-            call UnitApplyTimedLife(n,'BTLF',1)
-            call SetUnitAnimation(n,"birth")
+            set hn=CreateUnit(GetOwningPlayer(u),'e14F',x,y,0)
+            call UnitApplyTimedLife(hn,'BTLF',1)
+            call SetUnitAnimation(hn,"birth")
             call SetUnitX(u,x+300*Cos(GetRandomReal(0,6.28)))
             call SetUnitY(u,y+300*Sin(GetRandomReal(0,6.28)))
             //call SetEventDamage(0.05)
             set nb=0
         endif
-        if nb>0 and (UnitHasItemOfTypeBJ(u,'I02E')or GetUnitAbilityLevel(u,'KID4')>0)and GetRandomIntMem(0,100)<10 and CurrentEventAttack then
+        if nb>0 and (LoadBoolean(DMG_IHT,uid,'I02E')or GetUnitAbilityLevel(u,'KID4')>0)and GetRandomIntMem(0,100)<10 and CurrentEventAttack then
             set n3=CreateUnit(Player(14),GetUnitTypeId(u),x,y,GetUnitFacing(u))
             call UnitAddAbility(n3,'Aloc')
             call UnitApplyTimedLife(n3,'BTLF',0.4)
@@ -60231,7 +61538,7 @@ endif
             call UnitApplyTimedLife(CreateUnit(GetOwningPlayer(u),'e085',x,y,0),'BTLF',1)
             //call SetEventDamage(0.05)
             set nb=0
-        elseif nb>0 and (UnitHasItemOfTypeBJ(u,'I02F')or GetUnitAbilityLevel(u,'KID6')>0)and GetRandomIntMem(0,100)<15 and CurrentEventAttack then
+        elseif nb>0 and (LoadBoolean(DMG_IHT,uid,'I02F')or GetUnitAbilityLevel(u,'KID6')>0)and GetRandomIntMem(0,100)<15 and CurrentEventAttack then
             set n3=CreateUnit(Player(14),GetUnitTypeId(u),x,y,GetUnitFacing(u))
             call UnitAddAbility(n3,'Aloc')
             call UnitApplyTimedLife(n3,'BTLF',0.4)
@@ -60248,7 +61555,7 @@ endif
             call UnitApplyTimedLife(CreateUnit(GetOwningPlayer(u),'e085',x,y,0),'BTLF',1)
             //call SetEventDamage(0.05)
             set nb=0
-        elseif nb>0 and (UnitHasItemOfTypeBJ(u,'I02G')or GetUnitAbilityLevel(u,'KID8')>0)and GetRandomIntMem(0,100)<20 and CurrentEventAttack then
+        elseif nb>0 and (LoadBoolean(DMG_IHT,uid,'I02G')or GetUnitAbilityLevel(u,'KID8')>0)and GetRandomIntMem(0,100)<20 and CurrentEventAttack then
             set n3=CreateUnit(Player(14),GetUnitTypeId(u),x,y,GetUnitFacing(u))
             call UnitAddAbility(n3,'Aloc')
             call UnitApplyTimedLife(n3,'BTLF',0.4)
@@ -60265,7 +61572,7 @@ endif
             call UnitApplyTimedLife(CreateUnit(GetOwningPlayer(u),'e085',x,y,0),'BTLF',1)
             //call SetEventDamage(0.05)
             set nb=0
-        elseif nb>0 and (UnitHasItemOfTypeBJ(u,'I02H')or GetUnitAbilityLevel(u,'KIE0')>0)and GetRandomIntMem(0,100)<25 and CurrentEventAttack then
+        elseif nb>0 and (LoadBoolean(DMG_IHT,uid,'I02H')or GetUnitAbilityLevel(u,'KIE0')>0)and GetRandomIntMem(0,100)<25 and CurrentEventAttack then
             set n3=CreateUnit(Player(14),GetUnitTypeId(u),x,y,GetUnitFacing(u))
             call UnitAddAbility(n3,'Aloc')
             call UnitApplyTimedLife(n3,'BTLF',0.4)
@@ -60282,7 +61589,7 @@ endif
             call UnitApplyTimedLife(CreateUnit(GetOwningPlayer(u),'e085',x,y,0),'BTLF',1)
             //call SetEventDamage(0.05)
             set nb=0
-        elseif nb>0 and (UnitHasItemOfTypeBJ(u,'I02I')or GetUnitAbilityLevel(u,'KIE2')>0)and GetRandomIntMem(0,100)<25 and CurrentEventAttack then
+        elseif nb>0 and (LoadBoolean(DMG_IHT,uid,'I02I')or GetUnitAbilityLevel(u,'KIE2')>0)and GetRandomIntMem(0,100)<25 and CurrentEventAttack then
             set n3=CreateUnit(Player(14),GetUnitTypeId(u),x,y,GetUnitFacing(u))
             call UnitAddAbility(n3,'Aloc')
             call UnitApplyTimedLife(n3,'BTLF',0.4)
@@ -60299,7 +61606,7 @@ endif
             call UnitApplyTimedLife(CreateUnit(GetOwningPlayer(u),'e085',x,y,0),'BTLF',1)
             //call SetEventDamage(0.05)
             set nb=0
-        elseif nb>0 and (UnitHasItemOfTypeBJ(u,'I02J')or GetUnitAbilityLevel(u,'KIE4')>0)and GetRandomIntMem(0,100)<35 and CurrentEventAttack then
+        elseif nb>0 and (LoadBoolean(DMG_IHT,uid,'I02J')or GetUnitAbilityLevel(u,'KIE4')>0)and GetRandomIntMem(0,100)<35 and CurrentEventAttack then
             set n3=CreateUnit(Player(14),GetUnitTypeId(u),x,y,GetUnitFacing(u))
             call UnitAddAbility(n3,'Aloc')
             call UnitApplyTimedLife(n3,'BTLF',0.4)
@@ -60316,7 +61623,7 @@ endif
             call UnitApplyTimedLife(CreateUnit(GetOwningPlayer(u),'e085',x,y,0),'BTLF',1)
             //call SetEventDamage(0.05)
             set nb=0
-        elseif nb>0 and UnitHasItemOfTypeBJ(u,'I02K')and GetRandomIntMem(0,100)<35 and CurrentEventAttack then
+        elseif nb>0 and LoadBoolean(DMG_IHT,uid,'I02K')and GetRandomIntMem(0,100)<35 and CurrentEventAttack then
             set n3=CreateUnit(Player(14),GetUnitTypeId(u),x,y,GetUnitFacing(u))
             call UnitAddAbility(n3,'Aloc')
             call UnitApplyTimedLife(n3,'BTLF',0.4)
@@ -60341,16 +61648,20 @@ endif
         endif
         if nb>0 and GetUnitAbilityLevel(u,'B04Z')>0 and GetRandomIntMem(0,100)<=15 and(CurrentEventAttack==false)and GetUnitAbilityLevel(u,'B02Z')==0 and GetUnitAbilityLevel(u,'A165')==0 then
             //call SetEventDamage(0.05)
-            call GroupEnumUnitsInRange(G,x,y,200,Base)
+            // своя группа обработчика: общая G могла быть занята способностью, во время которой пришёл урон
+            set hG=CreateGroup()
+            call GroupEnumUnitsInRange(hG,x,y,200,Base)
             loop
-            set E=FirstOfGroup(G)
-            exitwhen E==null
-            if Condition_Base(GetOwningPlayer(u),E)then
-                call Push(E,30,Atan2(GetUnitY(E)-y,GetUnitX(E)-x),500)
-                call SetControlToUnit(E,E, 1, "stun")
+            set hE=FirstOfGroup(hG)
+            exitwhen hE==null
+            if Condition_Base(GetOwningPlayer(u),hE)then
+                call Push(hE,30,Atan2(GetUnitY(hE)-y,GetUnitX(hE)-x),500)
+                call SetControlToUnit(hE,hE, 1, "stun")
             endif
-            call GroupRemoveUnit(G,E)
+            call GroupRemoveUnit(hG,hE)
             endloop
+            call DestroyGroup(hG)
+            set hG=null
             call UnitApplyTimedLife(CreateUnit(GetOwningPlayer(u),'e0KR',x+150,y+150,45),'BTLF',0.7)
             call UnitApplyTimedLife(CreateUnit(GetOwningPlayer(u),'e0KR',x-150,y+150,135),'BTLF',0.7)
             call UnitApplyTimedLife(CreateUnit(GetOwningPlayer(u),'e0KR',x-150,y-150,225),'BTLF',0.7)
@@ -60481,7 +61792,7 @@ endif
             endif
                 
         endif
-        if nb>0 and (UnitHasItemOfTypeBJ(u,'I03Z')or GetUnitAbilityLevel(u,'KIL2')>0)and (CurrentEventAttack or GetEventAttackType()==ATTACK_TYPE_HERO) then
+        if nb>0 and (LoadBoolean(DMG_IHT,uid,'I03Z')or GetUnitAbilityLevel(u,'KIL2')>0)and (CurrentEventAttack or GetEventAttackType()==ATTACK_TYPE_HERO) then
             if nb>15 then
                 set nb=nb-15
             else
@@ -60490,7 +61801,7 @@ endif
                 endif
             endif
         endif
-        if nb>0 and (UnitHasItemOfTypeBJ(u,'I040')or GetUnitAbilityLevel(u,'KIL4')>0)and (CurrentEventAttack or GetEventAttackType()==ATTACK_TYPE_HERO) then
+        if nb>0 and (LoadBoolean(DMG_IHT,uid,'I040')or GetUnitAbilityLevel(u,'KIL4')>0)and (CurrentEventAttack or GetEventAttackType()==ATTACK_TYPE_HERO) then
             if nb>20 then
                 set nb=nb-20
             else
@@ -60499,7 +61810,7 @@ endif
                 endif
             endif
         endif
-        if nb>0 and (UnitHasItemOfTypeBJ(u,'I060')or GetUnitAbilityLevel(u,'KIW2')>0)and (CurrentEventAttack or GetEventAttackType()==ATTACK_TYPE_HERO) then
+        if nb>0 and (LoadBoolean(DMG_IHT,uid,'I060')or GetUnitAbilityLevel(u,'KIW2')>0)and (CurrentEventAttack or GetEventAttackType()==ATTACK_TYPE_HERO) then
             if nb>20 then
                 set nb=nb-20
             else
@@ -60508,7 +61819,7 @@ endif
                 endif
             endif
         endif
-        if nb>0 and (UnitHasItemOfTypeBJ(u,'I061')or GetUnitAbilityLevel(u,'KIW4')>0)and (CurrentEventAttack or GetEventAttackType()==ATTACK_TYPE_HERO) then
+        if nb>0 and (LoadBoolean(DMG_IHT,uid,'I061')or GetUnitAbilityLevel(u,'KIW4')>0)and (CurrentEventAttack or GetEventAttackType()==ATTACK_TYPE_HERO) then
             if nb>40 then
                 set nb=nb-40
             else
@@ -60517,7 +61828,7 @@ endif
                 endif
             endif
         endif
-        if nb>0 and (UnitHasItemOfTypeBJ(u,'I062')or GetUnitAbilityLevel(u,'KIW6')>0)and (CurrentEventAttack or GetEventAttackType()==ATTACK_TYPE_HERO) then
+        if nb>0 and (LoadBoolean(DMG_IHT,uid,'I062')or GetUnitAbilityLevel(u,'KIW6')>0)and (CurrentEventAttack or GetEventAttackType()==ATTACK_TYPE_HERO) then
             if nb>60 then
                 set nb=nb-60
             else
@@ -60526,7 +61837,7 @@ endif
                 endif
             endif
         endif
-        if nb>0 and (UnitHasItemOfTypeBJ(u,'I063')or GetUnitAbilityLevel(u,'KIW8')>0)and (CurrentEventAttack or GetEventAttackType()==ATTACK_TYPE_HERO) then
+        if nb>0 and (LoadBoolean(DMG_IHT,uid,'I063')or GetUnitAbilityLevel(u,'KIW8')>0)and (CurrentEventAttack or GetEventAttackType()==ATTACK_TYPE_HERO) then
             if nb>80 then
                 set nb=nb-80
             else
@@ -60535,7 +61846,7 @@ endif
                 endif
             endif
         endif
-        if nb>0 and (UnitHasItemOfTypeBJ(u,'I064')or GetUnitAbilityLevel(u,'KIX0')>0)and (CurrentEventAttack or GetEventAttackType()==ATTACK_TYPE_HERO) then
+        if nb>0 and (LoadBoolean(DMG_IHT,uid,'I064')or GetUnitAbilityLevel(u,'KIX0')>0)and (CurrentEventAttack or GetEventAttackType()==ATTACK_TYPE_HERO) then
             if nb>100 then
                 set nb=nb-100
             else
@@ -60544,7 +61855,7 @@ endif
                 endif
             endif
         endif
-        if nb>0 and (UnitHasItemOfTypeBJ(u,'I065')or GetUnitAbilityLevel(u,'KIX2')>0)and (CurrentEventAttack or GetEventAttackType()==ATTACK_TYPE_HERO) then
+        if nb>0 and (LoadBoolean(DMG_IHT,uid,'I065')or GetUnitAbilityLevel(u,'KIX2')>0)and (CurrentEventAttack or GetEventAttackType()==ATTACK_TYPE_HERO) then
             if nb>120 then
                 set nb=nb-120
             else
@@ -60553,7 +61864,7 @@ endif
                 endif
             endif
         endif
-        if nb>0 and (UnitHasItemOfTypeBJ(u,'IAoF')or GetUnitAbilityLevel(u,'KI1A')>0)and (CurrentEventAttack or GetEventAttackType()==ATTACK_TYPE_HERO) then
+        if nb>0 and (LoadBoolean(DMG_IHT,uid,'IAoF')or GetUnitAbilityLevel(u,'KI1A')>0)and (CurrentEventAttack or GetEventAttackType()==ATTACK_TYPE_HERO) then
             if nb>90+10*round then
                 set nb=nb-(60+5*round)
             else
@@ -60562,7 +61873,7 @@ endif
                 endif
             endif
         endif
-        if nb>0 and (UnitHasItemOfTypeBJ(u,'I03C')or GetUnitAbilityLevel(u,'KII8')>0)and (CurrentEventAttack or GetEventAttackType()==ATTACK_TYPE_HERO) then
+        if nb>0 and (LoadBoolean(DMG_IHT,uid,'I03C')or GetUnitAbilityLevel(u,'KII8')>0)and (CurrentEventAttack or GetEventAttackType()==ATTACK_TYPE_HERO) then
             call DestroyEffect(AddSpecialEffectTarget("Abilities\\Spells\\Human\\Heal\\HealTarget.mdl",u,"origin"))
             if nb>25 then
                 set nb=nb-25
@@ -60572,7 +61883,7 @@ endif
                 endif
             endif
         endif
-        if nb>0 and (UnitHasItemOfTypeBJ(u,'I03F') or GetUnitAbilityLevel(u,'KIJ4')>0) and (CurrentEventAttack or GetEventAttackType()==ATTACK_TYPE_HERO) then
+        if nb>0 and (LoadBoolean(DMG_IHT,uid,'I03F') or GetUnitAbilityLevel(u,'KIJ4')>0) and (CurrentEventAttack or GetEventAttackType()==ATTACK_TYPE_HERO) then
             call DestroyEffect(AddSpecialEffectTarget("Abilities\\Spells\\Human\\Heal\\HealTarget.mdl",u,"origin"))
             if nb>50 then
                 //call SetEventDamage(nb-50)
@@ -60799,32 +62110,32 @@ endif
 
             set nb=nb*0.9
         endif
-        if UnitHasItemOfTypeBJ(u,'I00X')and nb>0 then
+        if LoadBoolean(DMG_IHT,uid,'I00X')and nb>0 then
 
             //call SetEventDamage(nb*0.9)
 
             set nb=nb*0.90
-        elseif UnitHasItemOfTypeBJ(u,'I00Y')and nb>0 then
+        elseif LoadBoolean(DMG_IHT,uid,'I00Y')and nb>0 then
 
             //call SetEventDamage(nb*0.87)
 
             set nb=nb*0.87
-        elseif UnitHasItemOfTypeBJ(u,'I00Z')and nb>0 then
+        elseif LoadBoolean(DMG_IHT,uid,'I00Z')and nb>0 then
 
             //call SetEventDamage(nb*0.84)
 
             set nb=nb*0.84
-        elseif UnitHasItemOfTypeBJ(u,'I010')and nb>0 then
+        elseif LoadBoolean(DMG_IHT,uid,'I010')and nb>0 then
 
             //call SetEventDamage(nb*0.81)
 
             set nb=nb*0.81
-        elseif UnitHasItemOfTypeBJ(u,'I011')and nb>0 then
+        elseif LoadBoolean(DMG_IHT,uid,'I011')and nb>0 then
 
             //call SetEventDamage(nb*0.78)
 
             set nb=nb*0.78
-        elseif UnitHasItemOfTypeBJ(u,'I012')and nb>0 then
+        elseif LoadBoolean(DMG_IHT,uid,'I012')and nb>0 then
 
             //call SetEventDamage(nb*0.75)
 
@@ -60850,7 +62161,7 @@ endif
             call RemoveSavedInteger(HH,uid,SH_AlbedoF_Mod)
         endif
                 
-        if (UnitHasItemOfTypeBJ(u,'ISTi') or GetUnitAbilityLevel(u, 'KI0S')>0 ) and nb>0 then // Stigmata Resist
+        if (LoadBoolean(DMG_IHT,uid,'ISTi') or GetUnitAbilityLevel(u, 'KI0S')>0 ) and nb>0 then // Stigmata Resist
             //call SetEventDamage(nb*0.85)
 
             set nb=nb*0.85
@@ -60864,7 +62175,7 @@ endif
             //call SetEventDamage(nb*0.7)
             set nb=nb*0.7
         endif
-        if (UnitHasItemOfTypeBJ(u,'I065') or GetUnitAbilityLevel(u, 'KIX2')>0 ) and nb>ll*0.05 then
+        if (LoadBoolean(DMG_IHT,uid,'I065') or GetUnitAbilityLevel(u, 'KIX2')>0 ) and nb>ll*0.05 then
             set cjlocgn_00000000=CreateTimer()
             call SetHeroAgi(u,GetHeroAgi(u,false)+R2I(5*(nb/(ll*0.05))),true)
             call SetUnitMaxLife(u,GetWidgetMaxLife(u)+R2I(100*(nb/(ll*0.05))))
@@ -60903,6 +62214,7 @@ endif
             set it=GetItemOfTypeFromUnitBJCustom(u,'I13R')
             call UnitRemoveItem(u,it)
             call RemoveItem(it)
+            call DmgItemsRefresh(u)
             call UnitAddAbility(u,'A0VV')
             call UnitRemoveAbilityTimedPause(u,'A0VV',6)
             call UnitAddAbility(u,'A28W')
@@ -60911,6 +62223,7 @@ endif
             call UnitRemoveAbility(u,'A0J4')
             set it=CreateItem('I13S',GetUnitX(u),GetUnitY(u))
             call UnitAddItemToSlot(u,it,9)
+            call DmgItemsRefresh(u)
             call SetItemDroppable(it,false)
             call SaveItemHandle(h,GetHandleId(cjlocgn_00000000),1,it)
             call TimerStart(cjlocgn_00000000,0.1,true,function LinkenSphere2)
@@ -60920,6 +62233,7 @@ endif
             set it=GetItemOfTypeFromUnitBJCustom(u,'I13R')
             call UnitRemoveItem(u,it)
             call RemoveItem(it)
+            call DmgItemsRefresh(u)
             call UnitAddAbility(u,'A0VV')
             call UnitRemoveAbilityTimedPause(u,'A0VV',6)
             call UnitAddAbility(u,'A28W')
@@ -60928,6 +62242,7 @@ endif
             call UnitRemoveAbility(u,'A0J4')
             set it=CreateItem('I13S',GetUnitX(u),GetUnitY(u))
             call UnitAddItemToSlot(u,it,9)
+            call DmgItemsRefresh(u)
             call SetItemDroppable(it,false)
             call SaveItemHandle(h,GetHandleId(cjlocgn_00000000),1,it)
             call TimerStart(cjlocgn_00000000,0.1,true,function LinkenSphere2)
@@ -60948,7 +62263,7 @@ endif
         set t=null
         set cjlocgn_00000000=null
     endif
-    if (UnitHasItemOfTypeBJ(c,'I02V') or GetUnitAbilityLevel(c,'KIG4')>0) and nb>0 and GetUnitAbilityLevel(c,'A3WR')==0 and CurrentEventAttack and IsUnitType(c, UNIT_TYPE_HERO) and IsUnitIllusion(c)==false then
+    if (LoadBoolean(DMG_IHT,cid,'I02V') or GetUnitAbilityLevel(c,'KIG4')>0) and nb>0 and GetUnitAbilityLevel(c,'A3WR')==0 and CurrentEventAttack and IsUnitType(c, UNIT_TYPE_HERO) and IsUnitIllusion(c)==false then
         call Essence(c,u,1)
     endif
     if(CurrentEventAttack)and nb>0 and GetUnitAbilityLevel(c,'A17K')>0 and GetUnitAbilityLevel(c,'A3WR')==0 then
@@ -60962,10 +62277,10 @@ endif
         call SetUnitAttackRangeByIndex(c,0, 600+B2I(UnitHasBow(c))*(600*0.3+50))
     endif
     if CurrentEventAttack and nb>0 and GetUnitAbilityLevel(c,'A160')>0 and c!=UltimateDamage and GetHeroLevel(c)>=6 and GetRandomReal(0,100)<30 then
-        set n=CreateUnit(GetOwningPlayer(c),'e0F0',x1,y1,a*bj_RADTODEG)
-        call SetUnitScale(n,0.5,0.5,0.5)
-        call SetUnitFlyHeight(n,180,0)
-        call Slash_Dante(n,100,GetHeroAgi(c,true),a,1000,75,x1,y1,0,0,true)
+        set hn=CreateUnit(GetOwningPlayer(c),'e0F0',x1,y1,a*bj_RADTODEG)
+        call SetUnitScale(hn,0.5,0.5,0.5)
+        call SetUnitFlyHeight(hn,180,0)
+        call Slash_Dante(hn,100,GetHeroAgi(c,true),a,1000,75,x1,y1,0,0,true)
     endif
     if CurrentEventAttack and nb>0 and GetUnitAbilityLevel(c,'A3WR')==0 and GetUnitAbilityLevel(c,'B05R')>0 and c!=UltimateDamage then
         set FI=LoadInteger(HH,cid,SH_SA)
@@ -60981,7 +62296,7 @@ endif
             call UnitRemoveAbility(c,'B05R')
         endif
     endif
-    if (UnitHasItemOfTypeBJ(c,'I03N') or GetUnitAbilityLevel(c,'KIJ6')>0) and (GetUnitTypeId(c)!='H059' and GetUnitTypeId(c)!='H06S' and GetUnitTypeId(c)!='H070') and(c==Hero[idc]or GetUnitAbilityLevel(c,'A14Y')>0)and nb>0 and CurrentEventAttack and udg_B==true and DU2==true then
+    if (LoadBoolean(DMG_IHT,cid,'I03N') or GetUnitAbilityLevel(c,'KIJ6')>0) and (GetUnitTypeId(c)!='H059' and GetUnitTypeId(c)!='H06S' and GetUnitTypeId(c)!='H070') and(c==Hero[idc]or GetUnitAbilityLevel(c,'A14Y')>0)and nb>0 and CurrentEventAttack and udg_B==true and DU2==true then
         call DestroyEffect(AddSpecialEffectTarget("Abilities\\Spells\\Human\\Feedback\\ArcaneTowerAttack.mdl",u,"origin"))
         call DestroyEffect(AddSpecialEffectTarget("Abilities\\Spells\\Undead\\AbsorbMana\\AbsorbManaBirthMissile.mdl",u,"chest"))
         if GetUnitState(u,UNIT_STATE_MANA)>0 then
@@ -60999,7 +62314,7 @@ endif
         call UnitAddAbility(c,'A00D')
         //set nb=nb+GetHeroStr(c,true)*0.5*myCustomDamage2(u,1)
     endif
-    if (UnitHasItemOfTypeBJ(c,'I050')==true or GetUnitAbilityLevel(c,'KIQ0')>0) and GetUnitAbilityLevel(c,'GEP1')==0 and IsUnitIllusion(c) == false and nb>0 and (CurrentEventAttack)and (GetRandomIntMem(0,100)<=20 or LoadReal(HH,cid,'AAcd')==0) and (c==Hero[idc] or c==udg_DM[idc+1]) and udg_B==true and DU2==true then //Gegetsu
+    if (LoadBoolean(DMG_IHT,cid,'I050')==true or GetUnitAbilityLevel(c,'KIQ0')>0) and GetUnitAbilityLevel(c,'GEP1')==0 and IsUnitIllusion(c) == false and nb>0 and (CurrentEventAttack)and (GetRandomIntMem(0,100)<=20 or LoadReal(HH,cid,'AAcd')==0) and (c==Hero[idc] or c==udg_DM[idc+1]) and udg_B==true and DU2==true then //Gegetsu
         call UnitAddAbility(c,'GEP1')
         call UnitRemoveAbilityTimed(c,'GEP1',1)
         call SetControlToUnit(c,u, 1,"stun") //"stunbkb"
@@ -61038,10 +62353,10 @@ endif
         set i=0
         loop
         exitwhen i>=3
-        set n=CreateUnit(GetOwningPlayer(c),'e016',x,y,GetRandomReal(0,359))
-        call UnitAddAbility(n,'Arav')
-        call SetUnitTimeScale(n,3)
-        call UnitApplyTimedLife(n,'BTLF',0.1)
+        set hn=CreateUnit(GetOwningPlayer(c),'e016',x,y,GetRandomReal(0,359))
+        call UnitAddAbility(hn,'Arav')
+        call SetUnitTimeScale(hn,3)
+        call UnitApplyTimedLife(hn,'BTLF',0.1)
         set i=i+1
         endloop
         set nb=nb+2*GetHeroAgi(c,true)*myCustomDamage2(u,1)
@@ -61049,29 +62364,33 @@ endif
     if CurrentEventAttack and nb>0 and GetUnitAbilityLevel(c,'A0VB')>0 and GetRandomIntMem(0,100)<=15+GetUnitAbilityLevel(c,'A0VB')then
         set dmg=GetHeroAgi(c,true)+GetHeroStr(c,true)
         
-        call GroupEnumUnitsInRange(G,x+200*Cos(a),y+200*Sin(a),350,Base)
-        set n=CreateUnit(GetOwningPlayer(u),'e0SD',x1,y1,a*bj_RADTODEG)
-        call SetUnitTimeScale(n,3)
-        call UnitApplyTimedLife(n,'BHwe',1)
+        // своя группа обработчика: общая G могла быть занята способностью, во время которой пришёл урон
+        set hG=CreateGroup()
+        call GroupEnumUnitsInRange(hG,x+200*Cos(a),y+200*Sin(a),350,Base)
+        set hn=CreateUnit(GetOwningPlayer(u),'e0SD',x1,y1,a*bj_RADTODEG)
+        call SetUnitTimeScale(hn,3)
+        call UnitApplyTimedLife(hn,'BHwe',1)
         loop
-        set E=FirstOfGroup(G)
-        set x3=GetUnitX(E)
-        set y3=GetUnitY(E)
-        exitwhen E==null
-        if Condition_Base(GetOwningPlayer(c),E)then
+        set hE=FirstOfGroup(hG)
+        set x3=GetUnitX(hE)
+        set y3=GetUnitY(hE)
+        exitwhen hE==null
+        if Condition_Base(GetOwningPlayer(c),hE)then
             //call SetEventDamage(nb+(GetHeroAgi(c,true)+GetHeroStr(c,true))*myCustomDamage2(E,1))
-            call Push(E,20,a,200)
-            set n=CreateUnit(GetOwningPlayer(u),'e0SD',x3,y3,a*bj_RADTODEG)
-            call SetUnitTimeScale(n,3)
-            call UnitApplyTimedLife(n,'BHwe',1)
-            set n=CreateUnit(GetOwningPlayer(u),'e0SK',x1,y1,Atan2(y3-y1,x3-x1)*bj_RADTODEG)
-            call SetUnitTimeScale(n,3)
-            call SetUnitVertexColor(n,55,155,255,50)
-            call UnitApplyTimedLife(n,'BHwe',0.25)
+            call Push(hE,20,a,200)
+            set hn=CreateUnit(GetOwningPlayer(u),'e0SD',x3,y3,a*bj_RADTODEG)
+            call SetUnitTimeScale(hn,3)
+            call UnitApplyTimedLife(hn,'BHwe',1)
+            set hn=CreateUnit(GetOwningPlayer(u),'e0SK',x1,y1,Atan2(y3-y1,x3-x1)*bj_RADTODEG)
+            call SetUnitTimeScale(hn,3)
+            call SetUnitVertexColor(hn,55,155,255,50)
+            call UnitApplyTimedLife(hn,'BHwe',0.25)
         endif
-        call GroupRemoveUnit(G,E)
-        set nb=nb+(GetHeroAgi(c,true)+GetHeroStr(c,true))*myCustomDamage2(E,1)
+        call GroupRemoveUnit(hG,hE)
+        set nb=nb+(GetHeroAgi(c,true)+GetHeroStr(c,true))*myCustomDamage2(hE,1)
         endloop
+        call DestroyGroup(hG)
+        set hG=null
     endif
 
     if nb>0 and  LoadBoolean(HH,GetHandleId( u ),SH_BGRageBool)==false and GetUnitTypeId( u )=='HBGN' and LoadBoolean(HH,GetHandleId( u ),SH_BGG)==false then
@@ -61322,7 +62641,7 @@ endif
         //call SetEventDamage(nb+GetHeroInt(c,true)*myCustomDamage2(u,1))
         set nb=nb+GetHeroInt(c,true)*myCustomDamage2(u,1)
     endif
-    if (UnitHasItemOfTypeBJ(c,'I031') or GetUnitAbilityLevel(c,'KIG8')>0) and CurrentEventAttack and nb>0 and IsUnitType(c,UNIT_TYPE_SUMMONED)==false and GetUnitAbilityLevel(c,'A3WR')==0 then
+    if (LoadBoolean(DMG_IHT,cid,'I031') or GetUnitAbilityLevel(c,'KIG8')>0) and CurrentEventAttack and nb>0 and IsUnitType(c,UNIT_TYPE_SUMMONED)==false and GetUnitAbilityLevel(c,'A3WR')==0 then
         set cjlocgn_00000000=CreateTimer() //patriot
         if GetUnitTypeId(c)=='H00Q' then
             call SetHeroAgi(Hero[idc],GetHeroAgi(Hero[idc],false)+3,true)
@@ -61349,14 +62668,14 @@ endif
         call TimerStart(cjlocgn_00000000,10,false,function PatriotAction)
         set cjlocgn_00000000=null
     endif
-    if (UnitHasItemOfTypeBJ(c,'I04F') or GetUnitAbilityLevel(c,'KIN6')>0) and CurrentEventAttack and nb>0 and IsUnitType(c,UNIT_TYPE_SUMMONED)==false and c==Hero[idc] then
+    if (LoadBoolean(DMG_IHT,cid,'I04F') or GetUnitAbilityLevel(c,'KIN6')>0) and CurrentEventAttack and nb>0 and IsUnitType(c,UNIT_TYPE_SUMMONED)==false and c==Hero[idc] then
         set cjlocgn_00000000=CreateTimer()
         call SetUnitArmour(u,GetUnitArmour(u)-3)
         call SaveUnitHandle(HH,GetHandleId(cjlocgn_00000000),0,u)
         call TimerStart(cjlocgn_00000000,10,false,function ExcAction)
         set cjlocgn_00000000=null
     endif
-    if (UnitHasItemOfTypeBJ(c,'I03O') or GetUnitAbilityLevel(c,'KIJ8')>0) and GetUnitTypeId(c)!='H04E' and(c==Hero[idc]or GetUnitAbilityLevel(c,'A14Y')>0)and nb>0 and CurrentEventAttack and udg_B==true and DU2==true then
+    if (LoadBoolean(DMG_IHT,cid,'I03O') or GetUnitAbilityLevel(c,'KIJ8')>0) and GetUnitTypeId(c)!='H04E' and(c==Hero[idc]or GetUnitAbilityLevel(c,'A14Y')>0)and nb>0 and CurrentEventAttack and udg_B==true and DU2==true then
         call DamageIndicatorFunction(c, u, GetUnitTotalDamage(c)*0.20+150)
         //call SetEventDamage(nb+(GetUnitTotalDamage(c)*0.20+150))
         call DestroyEffect(AddSpecialEffectTarget("war3mapImported\\jiejinmao.mdx",c,"Right Hand"))
@@ -61367,10 +62686,10 @@ endif
         //call SetUnitOwner(UltimateDamage,Player(idc),false)
         //set lkp=idc
         
-        set n=CreateUnit(GetOwningPlayer(c), 'dH65', GetUnitX(u), GetUnitY(u), GetRandomInt(0, 360))
-        call SetUnitFlyHeight(n, 30, 0)
-        call SetUnitScale(n, 1.7, 1.7, 1.7)
-        call MyRemoveUnit(n, 1.0)
+        set hn=CreateUnit(GetOwningPlayer(c), 'dH65', GetUnitX(u), GetUnitY(u), GetRandomInt(0, 360))
+        call SetUnitFlyHeight(hn, 30, 0)
+        call SetUnitScale(hn, 1.7, 1.7, 1.7)
+        call MyRemoveUnit(hn, 1.0)
         //call SetEventDamage(nb+b*0.75)
         set nb=nb+b*0.75
         // if LoadBoolean(h, GetHandleId(c), StringHash("YujiT_Morf")) then
@@ -61415,19 +62734,19 @@ endif
         //call SetUnitFlyHeight(n, 30, 0)
         //call SetUnitScale(n, 1.7, 1.7, 1.7)
         //call MyRemoveUnit(n, 1.0)
-        set n=CreateUnit(GetOwningPlayer(c), 'd052', GetUnitX(u), GetUnitY(u), GetRandomInt(0, 360))
-        call SetUnitScale(n, 5, 5, 5)
-        call SetUnitFlyHeight(n, 150, 0)
-        call MyRemoveUnit(n, 2.5)
-        set n=CreateUnit(GetOwningPlayer(c), 'dR13', GetUnitX(u), GetUnitY(u), GetRandomInt(0, 360))
-        call SetUnitScale(n, 0.5, 0.5, 0.5)
-        call SetUnitFlyHeight(n, 0, 0)
-        call MyRemoveUnit(n, 2.5)
-        set n=CreateUnit(GetOwningPlayer(c), 'd032', GetUnitX(u), GetUnitY(u), GetRandomInt(0, 360))
-        call SetUnitScale(n, 2, 2, 2)
-        call SetUnitVertexColor(n, 255, 150, 100, 0)
-        call SetUnitFlyHeight(n, 100, 0)
-        call MyRemoveUnit(n, 2.5)
+        set hn=CreateUnit(GetOwningPlayer(c), 'd052', GetUnitX(u), GetUnitY(u), GetRandomInt(0, 360))
+        call SetUnitScale(hn, 5, 5, 5)
+        call SetUnitFlyHeight(hn, 150, 0)
+        call MyRemoveUnit(hn, 2.5)
+        set hn=CreateUnit(GetOwningPlayer(c), 'dR13', GetUnitX(u), GetUnitY(u), GetRandomInt(0, 360))
+        call SetUnitScale(hn, 0.5, 0.5, 0.5)
+        call SetUnitFlyHeight(hn, 0, 0)
+        call MyRemoveUnit(hn, 2.5)
+        set hn=CreateUnit(GetOwningPlayer(c), 'd032', GetUnitX(u), GetUnitY(u), GetRandomInt(0, 360))
+        call SetUnitScale(hn, 2, 2, 2)
+        call SetUnitVertexColor(hn, 255, 150, 100, 0)
+        call SetUnitFlyHeight(hn, 100, 0)
+        call MyRemoveUnit(hn, 2.5)
         //call SetEventDamage(nb+GetHeroAgi(c,true)*2*myCustomDamage2(u,1))
         set nb=nb+GetHeroAgi(c,true)*2*myCustomDamage2(u,1)
         call DestroyEffect(AddSpecialEffectTarget("war3mapImported\\jiejinmao.mdx",c,"Right Hand"))
@@ -61500,59 +62819,59 @@ endif
             call UnitApplyTimedLife(CreateUnit(GetOwningPlayer(c),'e0TA',x,y,(a*bj_RADTODEG)),'BTLF',3)
         endif
         call UnitApplyTimedLife(CreateUnit(GetOwningPlayer(c),'e0C7',x,y,(a*bj_RADTODEG)),'BTLF',6)
-        set n=CreateUnit(GetOwningPlayer(c),'e0TD',x,y,GetRandomReal(0,359))
-        call UnitApplyTimedLife(n,'BTLF',4)
-        call SetUnitTimeScale(n,0.3)
+        set hn=CreateUnit(GetOwningPlayer(c),'e0TD',x,y,GetRandomReal(0,359))
+        call UnitApplyTimedLife(hn,'BTLF',4)
+        call SetUnitTimeScale(hn,0.3)
         if GetUnitTypeId(Hero[idc])=='H14H' then
-            call SetUnitVertexColor(n,255,100,100,50)
+            call SetUnitVertexColor(hn,255,100,100,50)
         endif
-        set n=CreateUnit(GetOwningPlayer(c),'e0TD',x,y,GetRandomReal(0,359))
-        call UnitApplyTimedLife(n,'BTLF',4)
-        call SetUnitTimeScale(n,0.3)
+        set hn=CreateUnit(GetOwningPlayer(c),'e0TD',x,y,GetRandomReal(0,359))
+        call UnitApplyTimedLife(hn,'BTLF',4)
+        call SetUnitTimeScale(hn,0.3)
         if GetUnitTypeId(Hero[idc])=='H14H' then
-            call SetUnitVertexColor(n,255,100,100,50)
+            call SetUnitVertexColor(hn,255,100,100,50)
         endif
-        set n=CreateUnit(GetOwningPlayer(c),'e0TD',x,y,GetRandomReal(0,359))
-        call UnitApplyTimedLife(n,'BTLF',4)
-        call SetUnitTimeScale(n,0.3)
+        set hn=CreateUnit(GetOwningPlayer(c),'e0TD',x,y,GetRandomReal(0,359))
+        call UnitApplyTimedLife(hn,'BTLF',4)
+        call SetUnitTimeScale(hn,0.3)
         if GetUnitTypeId(Hero[idc])=='H14H' then
-            call SetUnitVertexColor(n,255,100,100,50)
+            call SetUnitVertexColor(hn,255,100,100,50)
         endif
-        set n=CreateUnit(GetOwningPlayer(c),'e0K9',x,y,GetRandomReal(0,359))
-        call UnitApplyTimedLife(n,'BTLF',0.01)
-        call SetUnitScale(n,1.2,1.2,1.2)
-        call SetUnitTimeScale(n,0.6)
+        set hn=CreateUnit(GetOwningPlayer(c),'e0K9',x,y,GetRandomReal(0,359))
+        call UnitApplyTimedLife(hn,'BTLF',0.01)
+        call SetUnitScale(hn,1.2,1.2,1.2)
+        call SetUnitTimeScale(hn,0.6)
         if GetUnitTypeId(Hero[idc])=='H14H' then
-            call SetUnitVertexColor(n,255,100,100,50)
+            call SetUnitVertexColor(hn,255,100,100,50)
             else
-            call SetUnitVertexColor(n,75,155,255,50)
+            call SetUnitVertexColor(hn,75,155,255,50)
         endif
-        set n=CreateUnit(GetOwningPlayer(c),'e0K9',x,y,GetRandomReal(0,359))
-        call UnitApplyTimedLife(n,'BTLF',0.01)
-        call SetUnitScale(n,1.5,1.5,1.5)
-        call SetUnitTimeScale(n,0.6)
+        set hn=CreateUnit(GetOwningPlayer(c),'e0K9',x,y,GetRandomReal(0,359))
+        call UnitApplyTimedLife(hn,'BTLF',0.01)
+        call SetUnitScale(hn,1.5,1.5,1.5)
+        call SetUnitTimeScale(hn,0.6)
         if GetUnitTypeId(Hero[idc])=='H14H' then
-            call SetUnitVertexColor(n,255,100,100,50)
+            call SetUnitVertexColor(hn,255,100,100,50)
             else
-            call SetUnitVertexColor(n,75,155,255,50)
+            call SetUnitVertexColor(hn,75,155,255,50)
         endif
-        set n=CreateUnit(GetOwningPlayer(c),'e0K9',x,y,GetRandomReal(0,359))
-        call UnitApplyTimedLife(n,'BTLF',0.01)
-        call SetUnitScale(n,1.7,1.7,1.7)
-        call SetUnitTimeScale(n,0.6)
+        set hn=CreateUnit(GetOwningPlayer(c),'e0K9',x,y,GetRandomReal(0,359))
+        call UnitApplyTimedLife(hn,'BTLF',0.01)
+        call SetUnitScale(hn,1.7,1.7,1.7)
+        call SetUnitTimeScale(hn,0.6)
         if GetUnitTypeId(Hero[idc])=='H14H' then
-            call SetUnitVertexColor(n,255,100,100,50)
+            call SetUnitVertexColor(hn,255,100,100,50)
             else
-            call SetUnitVertexColor(n,75,155,255,50)
+            call SetUnitVertexColor(hn,75,155,255,50)
         endif
-        set n=CreateUnit(GetOwningPlayer(c),'e0K9',x,y,GetRandomReal(0,359))
-        call UnitApplyTimedLife(n,'BTLF',0.01)
-        call SetUnitScale(n,1.9,1.9,1.9)
-        call SetUnitTimeScale(n,0.6)
+        set hn=CreateUnit(GetOwningPlayer(c),'e0K9',x,y,GetRandomReal(0,359))
+        call UnitApplyTimedLife(hn,'BTLF',0.01)
+        call SetUnitScale(hn,1.9,1.9,1.9)
+        call SetUnitTimeScale(hn,0.6)
         if GetUnitTypeId(Hero[idc])=='H14H' then
-            call SetUnitVertexColor(n,255,100,100,50)
+            call SetUnitVertexColor(hn,255,100,100,50)
             else
-            call SetUnitVertexColor(n,75,155,255,50)
+            call SetUnitVertexColor(hn,75,155,255,50)
         endif
         if GetUnitTypeId(Hero[idc])=='H14H' then
             call UnitApplyTimedLife(CreateUnit(GetOwningPlayer(c),'e1T6',x1,y1,(a*bj_RADTODEG)),'BTLF',3)
@@ -61593,13 +62912,13 @@ endif
         call DestroyEffect(AddSpecialEffectTarget("war3mapImported\\BloodEX-Special.mdx",u,"chest"))
         call DestroyEffect(AddSpecialEffectTarget("war3mapImported\\Tidal.mdx",u,"head"))
         call DestroyEffect(AddSpecialEffectTarget("war3mapImported\\BloodEX-Special.mdx",u,"head"))
-        set n=CreateUnit(GetOwningPlayer(u),'e164',x,y,GetRandomReal(0,359))
-        call UnitApplyTimedLife(n,'BTLF',0.01)
-        call SetUnitTimeScale(n,0.7)
-        set n=CreateUnit(GetOwningPlayer(u),'e168',x,y,GetRandomReal(0,359))
-        call UnitApplyTimedLife(n,'BTLF',0.8)
-        call SetUnitVertexColor(n,255,255,255,125)
-        call SetUnitTimeScale(n,1)
+        set hn=CreateUnit(GetOwningPlayer(u),'e164',x,y,GetRandomReal(0,359))
+        call UnitApplyTimedLife(hn,'BTLF',0.01)
+        call SetUnitTimeScale(hn,0.7)
+        set hn=CreateUnit(GetOwningPlayer(u),'e168',x,y,GetRandomReal(0,359))
+        call UnitApplyTimedLife(hn,'BTLF',0.8)
+        call SetUnitVertexColor(hn,255,255,255,125)
+        call SetUnitTimeScale(hn,1)
     endif
     if GetUnitAbilityLevel(c,'A065')>0 and nb>0 then
         call HealTextTag(c,c,nb*(0.10+GetUnitAbilityLevel(c,'A065')*0.05)*myCustomHeal2(c,1),"HealthRes")
@@ -61764,17 +63083,17 @@ endif
             call UnitAddAbility(strmu,'STR2')
             call UnitRemoveAbilityTimed(strmu,'STR2',.03)
             call UnitAddAbility(strmu,'A3WR')
-            if UnitHasItemOfTypeBJ(c,'I05N') or GetUnitAbilityLevel(c, 'KIT6')>0 then  
+            if LoadBoolean(DMG_IHT,cid,'I05N') or GetUnitAbilityLevel(c, 'KIT6')>0 then  
             call myCustomDamage(c,strmu,b*0.4,false,false,null,DAMAGE_TYPE_UNIVERSAL,null)
-            elseif UnitHasItemOfTypeBJ(c,'I05M') or GetUnitAbilityLevel(c, 'KIT4')>0 then
+            elseif LoadBoolean(DMG_IHT,cid,'I05M') or GetUnitAbilityLevel(c, 'KIT4')>0 then
             call myCustomDamage(c,strmu,b*0.35,false,false,null,DAMAGE_TYPE_UNIVERSAL,null)
-            elseif UnitHasItemOfTypeBJ(c,'I05L') or GetUnitAbilityLevel(c, 'KIT2')>0 then
+            elseif LoadBoolean(DMG_IHT,cid,'I05L') or GetUnitAbilityLevel(c, 'KIT2')>0 then
             call myCustomDamage(c,strmu,b*0.3,false,false,null,DAMAGE_TYPE_UNIVERSAL,null)
-            elseif UnitHasItemOfTypeBJ(c,'I05K') or GetUnitAbilityLevel(c, 'KIT0')>0 then
+            elseif LoadBoolean(DMG_IHT,cid,'I05K') or GetUnitAbilityLevel(c, 'KIT0')>0 then
             call myCustomDamage(c,strmu,b*0.25,false,false,null,DAMAGE_TYPE_UNIVERSAL,null)
-            elseif UnitHasItemOfTypeBJ(c,'I05J') or GetUnitAbilityLevel(c, 'KIS8')>0 then
+            elseif LoadBoolean(DMG_IHT,cid,'I05J') or GetUnitAbilityLevel(c, 'KIS8')>0 then
             call myCustomDamage(c,strmu,b*0.2,false,false,null,DAMAGE_TYPE_UNIVERSAL,null)
-            elseif UnitHasItemOfTypeBJ(c,'I05I') or GetUnitAbilityLevel(c, 'KIS6')>0 then
+            elseif LoadBoolean(DMG_IHT,cid,'I05I') or GetUnitAbilityLevel(c, 'KIS6')>0 then
             call myCustomDamage(c,strmu,b*0.15,false,false,null,DAMAGE_TYPE_UNIVERSAL,null)
             endif
             call UnitRemoveAbility(strmu,'A3WR')
@@ -61785,7 +63104,7 @@ endif
         call UnitAddAbilityTimed3(c,'STR1',0.02)
         call UnitRemoveAbilityTimed(c,'STR1',2.02)
     endif
-    if CurrentEventAttack and (UnitHasItemOfTypeBJ(c,'ISDi') or GetUnitAbilityLevel(c,'KII2')>0) and nb>5 and c!=UltimateDamage then
+    if CurrentEventAttack and (LoadBoolean(DMG_IHT,cid,'ISDi') or GetUnitAbilityLevel(c,'KII2')>0) and nb>5 and c!=UltimateDamage then
 
         call GroupEnumUnitsInRange(clv,x+500*Cos(a),y+500*Sin(a),600,Base)
         call GroupRemoveUnit(clv,u)
@@ -61812,12 +63131,12 @@ endif
         call DestroyEffect(AddSpecialEffect("Abilities\\Spells\\Other\\Doom\\DoomDeath.mdl",x,y))
         call SetUnitAnimation(LoadUnitHandle(h,GetHandleId(c),SusanoCnst),"attack")
     endif
-    if CurrentEventAttack and (UnitHasItemOfTypeBJ(c,'I03B') or UnitHasItemOfTypeBJ(c,'I03F') or GetUnitAbilityLevel(c,'KII6')>0 or GetUnitAbilityLevel(c,'KIJ4')>0) and GetUnitAbilityLevel(c,'A3WR')==0 and (c==Hero[idc] or c==udg_DM[idc+1]) and c!=UltimateDamage then
+    if CurrentEventAttack and (LoadBoolean(DMG_IHT,cid,'I03B') or LoadBoolean(DMG_IHT,cid,'I03F') or GetUnitAbilityLevel(c,'KII6')>0 or GetUnitAbilityLevel(c,'KIJ4')>0) and GetUnitAbilityLevel(c,'A3WR')==0 and (c==Hero[idc] or c==udg_DM[idc+1]) and c!=UltimateDamage then
         call DestroyEffect(AddSpecialEffect("war3mapImported\\Cleave.mdx",GetUnitX(u),GetUnitY(u)))      
         //call SetEventDamage(nb+55)
         set nb=nb+55
     endif
-    if CurrentEventAttack and (UnitHasItemOfTypeBJ(c,'I050')==true or GetUnitAbilityLevel(c,'KIQ0')>0) and (c==Hero[idc] or c==udg_DM[idc+1]) and nb>0 and c!=UltimateDamage and GetUnitAbilityLevel(c,'A3WR')==0 then
+    if CurrentEventAttack and (LoadBoolean(DMG_IHT,cid,'I050')==true or GetUnitAbilityLevel(c,'KIQ0')>0) and (c==Hero[idc] or c==udg_DM[idc+1]) and nb>0 and c!=UltimateDamage and GetUnitAbilityLevel(c,'A3WR')==0 then
         //call SetEventDamage(nb+80)
         set nb=nb+80
     endif
@@ -62034,15 +63353,15 @@ endif
         call PoisonDamage3(c,u,(0.4+0.2*GetUnitAbilityLevel(c,'Ao7D'))*GetHeroStr(c,true),8+4*GetUnitAbilityLevel(c,'Ao7D'),"war3mapImported\\BluefireBolt.mdx","origin")
     endif
     if (UnitHasItemOfTypeBJ(c, 'IGDi') or GetUnitAbilityLevel(c,'KI96')>0) and IsUnitIllusion(u)==false and nb>GetWidgetMaxLife(u)*0.07 and IsUnitType(u, UNIT_TYPE_HERO)==true and nb>0 and LoadInteger(HH,GetHandleId(c), SH_GaeDeargP_CD)==1 then
-        set n=CreateUnit(GetOwningPlayer(c),'dH63', GetUnitX(u), GetUnitY(u), GetRandomInt(0, 360))
-        call SetUnitScale(n, 1.1, 1.1, 1.1)
-        call SetUnitTimeScale(n, 0.85)
-        call MyRemoveUnit(n, 1.2)
-        set n=CreateUnit(GetOwningPlayer(c),'dH64', GetUnitX(u), GetUnitY(u), GetRandomInt(0, 360))
-        call SetUnitScale(n, 1.1, 1.1, 1.1)
-        call SetUnitTimeScale(n, 0.75)
-        call SetUnitFlyHeight(n, 50, 0)
-        call MyRemoveUnit(n, 1.2)
+        set hn=CreateUnit(GetOwningPlayer(c),'dH63', GetUnitX(u), GetUnitY(u), GetRandomInt(0, 360))
+        call SetUnitScale(hn, 1.1, 1.1, 1.1)
+        call SetUnitTimeScale(hn, 0.85)
+        call MyRemoveUnit(hn, 1.2)
+        set hn=CreateUnit(GetOwningPlayer(c),'dH64', GetUnitX(u), GetUnitY(u), GetRandomInt(0, 360))
+        call SetUnitScale(hn, 1.1, 1.1, 1.1)
+        call SetUnitTimeScale(hn, 0.75)
+        call SetUnitFlyHeight(hn, 50, 0)
+        call MyRemoveUnit(hn, 1.2)
         call SetWidgetMana(u, GetWidgetMana(u)-GetWidgetMaxMana(u)*0.07)
         call SaveInteger(HH, GetHandleId(c), SH_GaeDeargP_CD, 0)
         call GaeDearg_Passive(c)
@@ -62100,7 +63419,7 @@ endif
         call HealTextTag(c,c,nb*0.10*myCustomMana2(c,1),"ManaRes")
         call SetWidgetMana(c, GetWidgetMana(c)+ nb*0.10)
     endif
-    if nb>6 and ((UnitHasItemOfTypeBJ(c, 'IGlA') or GetUnitAbilityLevel(c, 'KI1I')>0) or (UnitHasItemOfTypeBJ(c, 'IPlA') or GetUnitAbilityLevel(c, 'KI1K')>0) or (UnitHasItemOfTypeBJ(c,'I043') or GetUnitAbilityLevel(c,'KIL8')>0)) then
+    if nb>6 and ((UnitHasItemOfTypeBJ(c, 'IGlA') or GetUnitAbilityLevel(c, 'KI1I')>0) or (UnitHasItemOfTypeBJ(c, 'IPlA') or GetUnitAbilityLevel(c, 'KI1K')>0) or (LoadBoolean(DMG_IHT,cid,'I043') or GetUnitAbilityLevel(c,'KIL8')>0)) then
         call HealTextTag(c,c,nb*0.075*myCustomHeal2(c,1),"HealthRes")
         call SetWidgetLife(c, GetWidgetLife(c)+ nb*0.075)
     endif
@@ -62176,11 +63495,11 @@ endif
             endif            
             call StartSound(soundplay)
             call KillSoundWhenDone(soundplay)
-            set n=CreateUnit(GetOwningPlayer(u),'e3E6',x,y,0)
-            call SetUnitFlyHeight(n,0,0)
-            call SetUnitFlyHeight(n,350,350)
-            call SetUnitScale(n,1.5,1.5,1.5)
-            call UnitApplyTimedLife(n,'BTLF',2)
+            set hn=CreateUnit(GetOwningPlayer(u),'e3E6',x,y,0)
+            call SetUnitFlyHeight(hn,0,0)
+            call SetUnitFlyHeight(hn,350,350)
+            call SetUnitScale(hn,1.5,1.5,1.5)
+            call UnitApplyTimedLife(hn,'BTLF',2)
             set EFF = AddSpecialEffect("Hashirama\\SmokeFuzzy.mdl",x,y)
             call SetSpecialEffectScale(EFF, 3.3)
             call SetSpecialEffectTimeScale(EFF , 1.6)
@@ -62289,7 +63608,7 @@ endif
         //call SetEventDamage(nb*1.1)
         set nb=nb*1.1
     endif
-    if (CurrentEventAttack or GetUnitAbilityLevel(c,'A3WR')>0) and (UnitHasItemOfTypeBJ(c,'I04F') or GetUnitAbilityLevel(c,'KIN6')>0) and GetUnitAttackRangeByIndex(c,0)<250+B2I(UnitHasBow(c))*GetUnitAttackRangeByIndex(c,0)*0.3+50  and nb>0 then
+    if (CurrentEventAttack or GetUnitAbilityLevel(c,'A3WR')>0) and (LoadBoolean(DMG_IHT,cid,'I04F') or GetUnitAbilityLevel(c,'KIN6')>0) and GetUnitAttackRangeByIndex(c,0)<250+B2I(UnitHasBow(c))*GetUnitAttackRangeByIndex(c,0)*0.3+50  and nb>0 then
         call HealTextTag(c,c,nb*0.2*myCustomHeal2(c,1),"HealthRes")
         call SetWidgetLife(c, GetWidgetLife(c)+ nb*0.2)
     endif
@@ -62316,7 +63635,7 @@ endif
                 set nb=(GetUnitState(u,UNIT_STATE_LIFE)-ll*0.25)+10
             endif
         endif
-        if (UnitHasItemOfTypeBJ(u,'I05B') or GetUnitAbilityLevel(c,'KIR2')>0)and nb>0.05*ll then
+        if (LoadBoolean(DMG_IHT,uid,'I05B') or GetUnitAbilityLevel(c,'KIR2')>0)and nb>0.05*ll then
 			if IsUnitInvulnerable(c)==true then
 				call SetUnitInvulnerable(c,false)
 				call SetControlToUnit(u,c,0.5,"silenceTE") //"stunbkb"
@@ -62401,7 +63720,7 @@ if GetUnitAbilityLevel(u,'B06T')>0 and c!=UltimateDamage and GetUnitAbilityLevel
     call SaveReal(HH,uid,'ASrs',nb)
     call SaveReal(HH,uid,'tlrs',LoadReal(HH,uid,'tlrs')+nb)
 endif
-if (UnitHasItemOfTypeBJ(u,'I04T') or GetUnitAbilityLevel(u,'KIP8')>0) and c!=UltimateDamage and GetUnitAbilityLevel(c,'A1WR')==0 and GetUnitAbilityLevel(c,'A0WR')==0 and nb>0 and UnitHasItemOfTypeBJCustom(c,'I13R')==false then
+if (LoadBoolean(DMG_IHT,uid,'I04T') or GetUnitAbilityLevel(u,'KIP8')>0) and c!=UltimateDamage and GetUnitAbilityLevel(c,'A1WR')==0 and GetUnitAbilityLevel(c,'A0WR')==0 and nb>0 and UnitHasItemOfTypeBJCustom(c,'I13R')==false then
     if GetUnitAbilityLevel(u,'YatB')==0 then
         // call SaveReal(HH,uid,'YTrs',nb*0.25)
         call SaveReal(HH,uid,'tlrs',LoadReal(HH,uid,'tlrs')+nb*0.25)
@@ -62521,6 +63840,8 @@ set i=0
 set n3=null
 set c=null
 set u=null
+set hn=null
+set hE=null
 set it=null
 endfunction
 function InitTrig_Text_Damage takes nothing returns nothing
@@ -64164,6 +65485,7 @@ call FlushChildHashtable(h,id)
 endif
 set u=null
 set t=null
+    set c=null
 endfunction
 function PatriotCustomCast takes unit u, unit c returns nothing
 local timer t=CreateTimer()
@@ -68247,6 +69569,7 @@ call MoveLightningEx(LoadLightningHandle(h,id,4),true, GetUnitX(c), GetUnitY(c),
 set u=null
 set n=null
 set c=null
+    set g=null
 endfunction
 function ByakuranGhost takes unit u,unit n,unit c, group g returns nothing
 local timer t = CreateTimer()
@@ -71348,6 +72671,7 @@ set d1=null
 set d2=null
 set t=null
 set c=null
+    set e=null
 endfunction
 function Trig_Sun_Shot_Actions takes nothing returns nothing
 local unit u=GetSpellAbilityUnit()
@@ -73499,6 +74823,7 @@ endif
 set p=null
 set u=null
 
+    set t=null
 endfunction
 
 function Trig_Tempa_Josai_Actions2Fast takes nothing returns nothing
@@ -85789,6 +87114,7 @@ set g=null
 set u=null
 set p=null
 set t=null
+    set l__d=null
 endfunction
 function SacredSongStandCast4 takes nothing returns nothing
 local timer t=GetExpiredTimer()
@@ -85824,6 +87150,7 @@ set g=null
 set u=null
 set p=null
 set t=null
+    set l__d=null
 endfunction
 function SacredSongStandCast3 takes nothing returns nothing
 local timer t=GetExpiredTimer()
@@ -85857,6 +87184,7 @@ set g=null
 set u=null
 set p=null
 set t=null
+    set l__d=null
 endfunction
 function SacredSongStandCast2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
@@ -85890,6 +87218,7 @@ set g=null
 set u=null
 set p=null
 set t=null
+    set l__d=null
 endfunction
 function SacredSongStandCast takes nothing returns nothing
 local timer t=GetExpiredTimer()
@@ -85923,6 +87252,7 @@ set g=null
 set u=null
 set p=null
 set t=null
+    set l__d=null
 endfunction
 function SacredSongCast takes nothing returns nothing
 local timer t=CreateTimer()
@@ -86901,6 +88231,7 @@ endif
 set p=null
 set l__d=null
 set t=null
+    set g=null
 endfunction
 function ChariotMissleFly takes unit l__d,real speed,real angle,real x,real y,real mh,real dmg returns nothing
 local timer t=CreateTimer()
@@ -91889,6 +93220,7 @@ set u=null
 set c=null
 set t=null
 set p=null
+    set l__d=null
 endfunction
 function CastInstantTransmissionGoku takes nothing returns nothing
 local unit u=GetTriggerUnit()
@@ -92611,6 +93943,7 @@ set p=null
 set t=null
 set l__d=null
 set tt=null
+    set t2=null
 endfunction
 function FinalKamehamehaCast takes nothing returns nothing
 local unit u=GetTriggerUnit()
@@ -95259,6 +96592,7 @@ endif
 set p=null
 set u=null
 set t=null
+    set c=null
 endfunction
 function PlanetGeyserCast takes unit u returns nothing
 local timer t=CreateTimer()
@@ -96594,6 +97928,7 @@ set u=null
 set p=null
 set t=null
 set g=null
+    set u1=null
 endfunction
 function CastBrolyLariat takes nothing returns nothing
 local unit u=GetTriggerUnit()
@@ -96747,6 +98082,7 @@ call FlushChildHashtable(h,id)
 endif
 set u=null
 set t=null
+    set c=null
 endfunction
 function ShikaiAizenCast takes nothing returns nothing
 local unit u=GetTriggerUnit()
@@ -101827,6 +103163,7 @@ function TorandoBeeLoop takes nothing returns nothing
                 call Clear(id)
         call FlushChildHashtable(h,idg)
         endif
+    set g=null
 endfunction
 
 function TornadoCirculCast takes nothing returns nothing
@@ -102198,6 +103535,7 @@ set u=null
 set t=null
 set l__d=null
 set p=null
+    set l__d2=null
 endfunction
 function LightningPencilCast takes nothing returns nothing
 local unit u=GetTriggerUnit()
@@ -104578,6 +105916,7 @@ set l=null
 set u=null
 set l__d=null
 set p=null
+    set t=null
 endfunction
 function Trig_Raiga_Actions takes nothing returns nothing
 local unit u=GetTriggerUnit()
@@ -113025,6 +114364,7 @@ endif
 set p=null
 set t=null
 set u=null
+    set l__d=null
 endfunction
 function TimedBombCast2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
@@ -113216,6 +114556,7 @@ call FlushChildHashtable(HH,id)
 endif
 set p=null
 set t=null
+    set l__d=null
 endfunction
 function MashStartCast takes nothing returns nothing
 local unit u=GetTriggerUnit()
@@ -114205,6 +115546,7 @@ endif
 set p=null
 set l__d=null
 set t=null
+    set g=null
 endfunction
 function HiraishinMissleFly takes unit l__d,real speed,real angle,real x,real y,real mh,real r,real dmg returns nothing
 local timer t=CreateTimer()
@@ -116229,6 +117571,7 @@ endif
 set p=null
 set t=null
 set u=null
+    set l__d=null
 endfunction
 function PainBirdCast takes nothing returns nothing
 local timer t=CreateTimer()
@@ -116820,6 +118163,7 @@ function HeatDomeAttackCast4 takes nothing returns nothing
     set t=null
     set l__d=null
     set p=null
+    set c=null
 endfunction
 function HeatDomeAttackCast3 takes nothing returns nothing
     local timer t=GetExpiredTimer()
@@ -116873,6 +118217,7 @@ function HeatDomeAttackCast3 takes nothing returns nothing
     set p=null
     set u=null
     set t=null
+    set c=null
 endfunction
 function HeatDomeAttackCast2 takes nothing returns nothing
         local timer t=GetExpiredTimer()
@@ -116923,6 +118268,7 @@ function HeatDomeAttackCast2 takes nothing returns nothing
         set p=null
         set u=null
         set t=null
+    set c=null
 endfunction
 function HeatDomeAttackCast takes nothing returns nothing
     local unit u=GetTriggerUnit()
@@ -118232,6 +119578,7 @@ set u=null
 set c=null
 set t=null
 set p=null
+    set l__d=null
 endfunction
 function InstantTransmissionVegitoCast takes nothing returns nothing
 local unit u=GetTriggerUnit()
@@ -118391,6 +119738,7 @@ set g=null
 set u=null
 set l__d=null
 set p=null
+    set t=null
 endfunction
 function FinalFlashCast3 takes nothing returns nothing
 local timer t=GetExpiredTimer()
@@ -118429,6 +119777,10 @@ call SetUnitY(u,y-55*Sin(a))
 call PauseTimer(t)
 call TimerStart(t,.015,true,function FinalFlashCast4)
 endif
+    set t=null
+    set u=null
+    set l__d=null
+    set g=null
 endfunction
 function FinalFlashCast2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
@@ -118956,6 +120308,7 @@ call FlushChildHashtable(h,id)
 endif
 set p=null
 set t=null
+    set u=null
 endfunction
 function BansheeBlastCast takes nothing returns nothing
 local unit u=GetTriggerUnit()
@@ -121740,6 +123093,7 @@ function DragonForceCast2 takes nothing returns nothing
         endif
         set t=null
         set u=null
+    set dummy=null
 endfunction
 function DragonForceCast takes nothing returns nothing // Laxus_D
         local unit u=GetTriggerUnit()
@@ -130498,6 +131852,7 @@ endif
 set p=null
 set l__d=null
 set t=null
+    set u=null
 endfunction
 function CellKamehamehaStopOrders2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
@@ -133231,6 +134586,7 @@ endif
 set p=null
 set l__d=null
 set t=null
+    set u=null
 endfunction
 function MartelloDiFiammaMissleFly takes unit u,unit l__d,real speed,real angle,real x,real y,real mh,real dmg returns nothing
 local timer t=CreateTimer()
@@ -133804,6 +135160,7 @@ endif
 set p=null
 set t=null
 set u=null
+    set l__d=null
 endfunction
 function CloudBombCast takes nothing returns nothing
 local unit u=GetTriggerUnit()
@@ -133896,6 +135253,7 @@ set p=null
 set t=null
 set g=null
 set l__d=null
+    set c=null
 endfunction
 function DarkCloudTempoCast takes nothing returns nothing
 local unit u=GetTriggerUnit()
@@ -135401,6 +136759,7 @@ set u=null
 set t=null
 set l__d=null
 set p=null
+    set c=null
 endfunction
 function YasakaMagatamaSasukeCast2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
@@ -141032,6 +142391,7 @@ set p=null
 set l__d=null
 set d1=null
 set t=null
+    set u=null
 endfunction
 function DragonBreathCast2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
@@ -146471,7 +147831,7 @@ local real a=Atan2(y1-y,x1-x)
 local real dist=LoadReal(h,id,3)
 local real sr=SR(x,y,x1,y1)
 local player p=GetOwningPlayer(u)
-local group g=CreateGroup()
+local group g=null // группа не используется; раньше создавалась каждый тик и не удалялась (утечка)
 if dist<LoadReal(h,id,6)then
 set x=x+100*Cos(a)
 set y=y+100*Sin(a)
@@ -146514,6 +147874,7 @@ endif
 set u=null
 set p=null
 set t=null
+    set g=null
 endfunction
 function LineCast takes nothing returns nothing
 local timer t=CreateTimer()
@@ -146949,6 +148310,7 @@ set g=null
 set u=null
 set p=null
 set t=null
+    set c=null
 endfunction
 function Parasite2Cast takes nothing returns nothing
 local timer t=CreateTimer()
@@ -149400,6 +150762,7 @@ set l__d=null
 set u=null
 set p=null
 set t=null
+    set c=null
 endfunction
 function TamamoCatCast2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
@@ -151860,6 +153223,7 @@ function EShikiNewTwoCast2 takes nothing returns nothing
     set p=null
     set t=null
     set g1=null
+    set g=null
 endfunction
 function EShikiNewTwoCast takes nothing returns nothing
     local timer t=CreateTimer()
@@ -159692,6 +161056,7 @@ call DestroyTimer(GetExpiredTimer())
 endif
 set u=null
 set c=null
+    set t=null
 endfunction
 function BlackStarWMove takes nothing returns nothing
 local timer t=GetExpiredTimer()
@@ -159851,6 +161216,7 @@ call FlushChildHashtable(HH,id)
 endif
 set u=null
 set c=null
+    set t=null
 endfunction
 function BlackStar_Act takes nothing returns nothing
 local timer t=CreateTimer()
@@ -161880,6 +163246,7 @@ endif
 set t=null
 set p=null
 set u=null
+    set c=null
 endfunction
 function StarBastCast7 takes nothing returns nothing
 local timer t=GetExpiredTimer()
@@ -162369,6 +163736,7 @@ endif
 set t=null
 set p=null
 set u=null
+    set g=null
 endfunction
 function SwitchCast2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
@@ -166096,6 +167464,8 @@ function GilgameshQ1_Periodic takes nothing returns nothing
 		call FlushChildHashtable(h, id)
 		call DestroyTimer		(GetExpiredTimer())
 	endif
+    set caster=null
+    set target=null
 endfunction
 
 function GilgameshQ1_Cast takes unit newCaster, unit newTarget, real point_x, real point_y returns nothing
@@ -170042,6 +171412,7 @@ endif
 set t=null
 set p=null
 set u=null
+    set c=null
 endfunction
 function GogetaTCast7 takes nothing returns nothing
 local timer t=GetExpiredTimer()
@@ -170712,6 +172083,7 @@ set c=null
 set p=null
 set t=null
 set u=null
+    set g=null
 endfunction
 function ROrihimeCast2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
@@ -171282,6 +172654,7 @@ set p=null
 set c=null
 set t=null
 set u=null
+    set g=null
 endfunction
 function QOrihimeCast3 takes nothing returns nothing
 local timer t=GetExpiredTimer()
@@ -173942,6 +175315,7 @@ endif
 set p=null
 set u=null
 set t=null
+    set g=null
 endfunction
 function RulerRCast2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
@@ -178185,6 +179559,7 @@ endif
 set t=null
 set p=null
 set u=null
+    set l__d=null
 endfunction
 function EDeidaraCast3 takes nothing returns nothing
 local timer t=GetExpiredTimer()
@@ -179241,6 +180616,7 @@ endif
 set u=null
 set p=null
 set t=null
+    set c=null
 endfunction
 function KireiWCast3 takes nothing returns nothing
 local timer t=GetExpiredTimer()
@@ -179289,6 +180665,7 @@ set u=null
 set p=null
 set t=null
 set l__d=null
+    set c=null
 endfunction
 function KireiWCast32 takes nothing returns nothing
 local timer t=GetExpiredTimer()
@@ -179581,6 +180958,7 @@ set p=null
 set c=null
 set l__d=null
 set t=null
+    set u=null
 endfunction
 function KireiHassan2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
@@ -183784,6 +185162,7 @@ endif
 set u=null
 set l__d=null
 set t=null
+    set g=null
 endfunction
 function QKiyoMissles takes unit l__d,real speed,real a,real dist,real sct,real sidg, unit u returns nothing
 local timer t=CreateTimer()
@@ -184627,6 +186006,7 @@ endif
 set p=null
 set u=null
 set t=null
+    set c=null
 endfunction
 function TKiyoCast2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
@@ -187459,6 +188839,7 @@ function BelfT_Periodic takes nothing returns nothing
 		call FlushChildHashtable(h,id)
 		call DestroyTimer(GetExpiredTimer())
 	endif
+    set caster=null
 endfunction
 
 function BelfT_Cast takes unit newCaster,real newX,real newY returns nothing
@@ -202963,6 +204344,7 @@ function MadokaR_Periodic takes nothing returns nothing
         set bjLCT=null
     endif
     set caster=null
+    set bjTTT=null
 endfunction
 
 function MadokaR_Cast takes unit newCaster,real point_x,real point_y,timer newTimer returns nothing
@@ -205395,6 +206777,7 @@ endif
 set b1=null
 set t=null
 set caster=null
+    set gr=null
 endfunction
 
 
@@ -229668,6 +231051,7 @@ function KarnaQ1_Periodic2 takes nothing returns nothing
     endif
     set newTimer = null
     set caster   = null
+    set dummy=null
 endfunction
 
 function KarnaQ1_Periodic1 takes nothing returns nothing
@@ -230051,6 +231435,7 @@ function KarnaQ1_LPeriodic2 takes nothing returns nothing
     endif
     set newTimer = null
     set caster   = null
+    set dummy=null
 endfunction
 
 function KarnaQ1_LPeriodic1 takes nothing returns nothing
@@ -232108,6 +233493,8 @@ function KarnaT1_Periodic2 takes nothing returns nothing
 		call FlushChildHashtable(h, id)
 		call DestroyTimer(newTimer)
 	endif
+    set newTimer=null
+    set caster=null
 endfunction
 
 function KarnaT1_Periodic takes nothing returns nothing
@@ -232631,6 +234018,7 @@ function SinonW_Periodic takes nothing returns nothing
     set newTimer = null
     set newTrigger = null
     set caster = null
+    set dummy=null
 endfunction
 
 function SinonW_Order takes nothing returns nothing
@@ -232742,6 +234130,7 @@ function SinonPrefire_Periodic takes nothing returns nothing
 
     set caster = null
     set dummy  = null
+    set newTimer=null
 endfunction
 
 function Sinon_Prefire takes unit newCaster, real newDistance, real newAngle, integer color returns nothing
@@ -236285,7 +237674,7 @@ function YoruichiTCast3 takes nothing returns nothing
     local real time2=LoadReal(h,id,6)
     local real jump=LoadReal(h,id,7)
     local group g=LoadGroupHandle(h,id,9)
-    local group g2=CreateGroup()
+    local group g2=null // группа не используется; раньше создавалась каждый тик и не удалялась (утечка)
     local real dmg=GetHeroAgi(u,true)*2.25
     local player p=GetOwningPlayer(u)
     local real a=Atan2(y2-y,x2-x)
@@ -236364,6 +237753,8 @@ function YoruichiTCast3 takes nothing returns nothing
     set p=null
     set u=null
     set t=null
+    set g=null
+    set g2=null
 endfunction
 
 function YoruichiTCast2 takes nothing returns nothing
@@ -236591,6 +237982,7 @@ function TobiramaQMissles2 takes nothing returns nothing
     set u=null
     set l__d=null
     set t=null
+    set g=null
 endfunction
 
 function TobiramaQMissles takes unit l__d,real speed,real a,real dist,real sct,real sidg, unit u, boolean endWater, boolean stunWater returns nothing
@@ -254882,6 +256274,7 @@ function OrochimaruQCast2 takes nothing returns nothing
     set u=null
     set p=null
     set t=null
+    set g=null
 endfunction
 function OrochimaruQCast takes nothing returns nothing
     local timer t=CreateTimer()
@@ -255156,6 +256549,7 @@ function OrochimaruWCast4 takes nothing returns nothing
     set g=null
     set t=null
     set u=null
+    set g1=null
 endfunction
 function OrochimaruWCast3 takes nothing returns nothing
     local timer t=GetExpiredTimer()
