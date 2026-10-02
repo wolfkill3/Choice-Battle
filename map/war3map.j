@@ -8512,6 +8512,8 @@ function CreateModeIndicatorFormDispellable takes unit newCaster, string newStri
         call SetFrameRelativePoint( NewFrame, FRAMEPOINT_CENTER, StatusBarFrame, FRAMEPOINT_LEFT, 0.017+j*0.025, 0.005 )
         call SetFrameRelativePoint( NewFrameText, FRAMEPOINT_BOTTOM, NewFrame, FRAMEPOINT_BOTTOM, .0, -.01 )
         call SaveUnitHandle         (HH, id, c_CASTER, newCaster)
+        // бафф/способность, по снятию которой индикатор пропадает (раньше не сохранялся — индикатор исчезал на первом тике)
+        call SaveInteger            (HH, id, c_BUFF, buffId)
         call SavePlayerHandle       (HH, id, c_PLAYER, GetOwningPlayer(newCaster))
         call SaveReal               (HH, GetHandleId(NewFrame), c_DURATION, newDur)
         call SaveReal               (HH, GetHandleId(NewFrameText), c_DURATION, newDur)
