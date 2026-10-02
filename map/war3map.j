@@ -41093,7 +41093,7 @@ endif
 
 //===== Комплект Анбу - 'I03F'
 if GetItemTypeId(it)=='I03F' and UnitHasItemOfTypeBJCustom(u,'I05Z') then 
-	call DisplayTextToPlayer(Player(id),0,0,"You can't buy this item with Mist of Mare!")
+	call DisplayTextToPlayer(Player(id),0,0,"You can't buy this item with the Mist Mare Ring!")
 	call RemoveItem(it)
 	call SetPlayerState(Player(id),PLAYER_STATE_RESOURCE_GOLD,GetPlayerState(Player(id),PLAYER_STATE_RESOURCE_GOLD)+4900)
 endif
@@ -53108,7 +53108,7 @@ function Trig_itemsc_Actions takes nothing returns nothing
     local integer i=10
     if itemsc[id]==false then
         if(GetLocalPlayer()==GetTriggerPlayer() ) then
-            call DisplayChatMessageEx(null,CHAT_RECIPIENT_UNKNOWN,10,true,"Vongola Sun/Mare Sky/Ice Sphere/Ice Boots on allies: ON")
+            call DisplayChatMessageEx(null,CHAT_RECIPIENT_UNKNOWN,10,true,"Vongola Sun/Sky Mare/Ice Sphere/Ice Boots on allies: ON")
         endif
         loop
             if GetItemTypeId(UnitItemInSlot(Hero[id], i)) ==  'I04R' then
@@ -53129,7 +53129,7 @@ function Trig_itemsc_Actions takes nothing returns nothing
         set itemsc[id]=true
     else
         if(GetLocalPlayer()==GetTriggerPlayer() ) then
-            call DisplayChatMessageEx(null,CHAT_RECIPIENT_UNKNOWN,10,true,"Vongola Sun/Mare Sky/Ice Sphere/Ice Boots on allies: OFF")
+            call DisplayChatMessageEx(null,CHAT_RECIPIENT_UNKNOWN,10,true,"Vongola Sun/Sky Mare/Ice Sphere/Ice Boots on allies: OFF")
         endif
         loop
             if GetItemTypeId(UnitItemInSlot(Hero[id], i)) ==  'I04R' then
@@ -169758,12 +169758,12 @@ function GilgameshAADetails takes nothing returns nothing
         call DisplayTimedTextToPlayer(GetTriggerPlayer(), 0, 0, 7, "• Anbu Sword: 16.5 true damage")
         call DisplayTimedTextToPlayer(GetTriggerPlayer(), 0, 0, 7, "• Gegetseburi: 30 true damage + probable stun reduced to 0.3 sec")
         call DisplayTimedTextToPlayer(GetTriggerPlayer(), 0, 0, 7, "• Samehada ManaBurn: 2.6% of current MP is burned per sword and 3.6% HP is restored from enemy's current MP.")
-        call DisplayTimedTextToPlayer(GetTriggerPlayer(), 0, 0, 7, "• Mare Cloud, Anbu Vest/Set, Akatsuki Protector, Heart of Fafnir: the block effect works on each of Gilgamesh's swords.")
+        call DisplayTimedTextToPlayer(GetTriggerPlayer(), 0, 0, 7, "• Cloud Mare, Anbu Vest/Set, Akatsuki Protector, Heart of Fafnir: the block effect works on each of Gilgamesh's swords.")
         call DisplayTimedTextToPlayer(GetTriggerPlayer(), 0, 0, 7, "• Patriot: each auto attack takes away 1 Allstat for 5 sec.")
         call DisplayTimedTextToPlayer(GetTriggerPlayer(), 0, 0, 7, "• Excalibur: each auto attack restores 20% of sword damage. Each auto attack reduces armor by 1 for 10 sec.")
         call DisplayTimedTextToPlayer(GetTriggerPlayer(), 0, 0, 7, "• Dark Excalibur: The passive works as expected.")
         call DisplayTimedTextToPlayer(GetTriggerPlayer(), 0, 0, 7, "• Anbu Shoes/Anbu Set: Gilgamesh has a 35% chance to miss.")
-        call DisplayTimedTextToPlayer(GetTriggerPlayer(), 0, 0, 7, "• Demon Eye: Gilgamesh completely misses with swords. Mare's Rain: Works with 100% efficiency.")
+        call DisplayTimedTextToPlayer(GetTriggerPlayer(), 0, 0, 7, "• Demon Eye: Gilgamesh completely misses with swords. Rain Mare: works with 100% efficiency.")
         call DisplayTimedTextToPlayer(GetTriggerPlayer(), 0, 0, 7, "• 666: The active allows Gilgamesh to not miss.")
         call DisplayTimedTextToPlayer(GetTriggerPlayer(), 0, 0, 7, "• Priestess's Bow: Attraction and repulsion power is reduced to 20 units.")
         call DisplayTimedTextToPlayer(GetTriggerPlayer(), 0, 0, 7, "• Shusui, Feng: Work with 30% efficiency, only the duration is affected in slowdown.")
