@@ -23163,10 +23163,6 @@ if GetDoodadModel(GetEnumDoodad())=="Tilable_Corrugated_Door" or GetDoodadModel(
         call SetDoodadPlayerColour(GetEnumDoodad(),ConvertPlayerColor(1))
         // call BJDebugMsg("test3")
     endif
-    if GetDoodadModel(GetEnumDoodad())=="Tilable_Corrugated_Door" or GetDoodadModel(GetEnumDoodad())=="Tileable_Corrugated_Door_Rollup" then
-        call SetDoodadAnimationEx(GetEnumDoodad(),"death")
-    // call BJDebugMsg("test1")
-    endif
 // else
 //     call BJDebugMsg("test4")
 endif
