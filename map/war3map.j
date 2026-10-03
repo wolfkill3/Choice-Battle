@@ -16429,6 +16429,14 @@ local real r
 local unit dmy
 local timer t2
 call SaveInteger(HH,id,4,tk)
+// реверс (цепь попала по стойке): D кончается, Ремилия отпущена (Bof_RevEnd снимает паузу и неуязвимость)
+if Bof_RevEnd(caster) then
+call FlushChildHashtable(HH,id)
+call DestroyTimer(t)
+set t=null
+set caster=null
+return
+endif
 if ModuloInteger(tk,10)==3 then
 call Rem_Sound("bof\\war3mapImported\\RemiliaScarlet-D-YX2.mp3",100)
 endif
@@ -16448,6 +16456,8 @@ call SaveReal(HH,GetHandleId(t2),2,ang)
 call SaveReal(HH,GetHandleId(t2),4,40.)
 call TimerStart(t2,.02,true,function Rem_D_Chain)
 else
+call PauseUnit(caster,false)
+call SetUnitInvulnerable(caster,false)
 call FlushChildHashtable(HH,id)
 call DestroyTimer(t)
 endif
@@ -16470,11 +16480,12 @@ call SetUnitVertexColor(dmy,255,255,255,255)
 call UnitApplyTimedLife(dmy,'BHwe',3.)
 call Bof_DzSetUnitModel(dmy,"bof\\Scarlet-76.mdx")
 call Rem_FadeIn(dmy,3)
-// красный круг в точке каста: анимация модели 6 c, цепи D летят 2 c — круг ускорен втрое, чтобы
-// пропадал вместе с цепями (владелец 3 окт: «на месте каста красный круг лежит пару секунд»)
-call Rem_Fx(caster,"bof\\Scarlet-10.mdx",x,y,25.,ang,1.5,0.)
-call SetSpecialEffectTimeScale(bj_lastCreatedEffect,3.)
+// красного круга bof (Scarlet-10) в точке каста нет: он лежал на земле после D (владелец 3 окт: «убери»)
 call Rem_Fx(caster,"bof\\Scarlet-4.mdx",x,y,25.,ang,1.,0.)
+// пока летят цепи (2 c), Ремилия стоит в паузе и неуязвима (владелец 3 окт)
+call SaveBoolean(HH,GetHandleId(caster),SH_bofRevd,false)
+call PauseUnit(caster,true)
+call SetUnitInvulnerable(caster,true)
 call Rem_Sound("bof\\war3mapImported\\RemiliaScarlet-D-YY1.mp3",100)
 call Rem_Sound("bof\\war3mapImported\\RemiliaScarlet-D-YX1.mp3",100)
 call SaveUnitHandle(HH,GetHandleId(t),0,caster)
