@@ -43194,7 +43194,7 @@ if cmb!=true then
         call IH('HBrg',u,"ReplaceableTextures\\CommandButtons\\BTNHero_Barragan_Icon.blp")
 //Barragan1end
 //Suigintou1start
-        call IH('HSui',u,"bof\\war3mapImported\\Mercury Lamp-TB-TX.blp")
+        call IH('HSui',u,"ReplaceableTextures\\CommandButtons\\BTNSuigintouHero.blp")
 //Suigintou1end
 //Remilia1start
         call IH('HRem',u,"ReplaceableTextures\\CommandButtons\\BTNRemiliaScarletHero.blp")
