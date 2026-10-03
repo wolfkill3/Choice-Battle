@@ -10273,6 +10273,7 @@ call SND_Add(4819,2,"Sound\\Music\\mp3Music\\GogetaR.mp3",12700)
 call SND_Add(4821,2,"Sound\\Music\\mp3Music\\JeanneAlterF.mp3",12700)
 call SND_Add(4823,2,"Sound\\Music\\mp3Music\\KiritoQ.mp3",12700)
 call SND_Add(4825,2,"Sound\\Music\\mp3Music\\KiritoEclipse.mp3",12700)
+call SND_Add(4827,2,"Sound\\Music\\mp3Music\\KiritoG.mp3",12700)
 endfunction
 function SND_ArrInit takes nothing returns nothing
 call ExecuteFunc("SND_Arr0")
@@ -84254,7 +84255,7 @@ endfunction
 function DubleCirculirCond takes nothing returns boolean
 return GetSpellAbilityId()=='A0H9'
 endfunction
-// E — Double Circular (Dual Blades): рывок к точке (до 500) и два круговых удара обоими клинками.
+// E — Double Circular (Dual Blades): рывок к точке (до 400) и два круговых удара обоими клинками.
 // Кирито неуязвим на весь приём. Урон (1+ур)*(STR+75) — поровну на два удара; каждый удар бьёт всех в 350 и расталкивает.
 // HH[id]: 0 Кирито, 1 угол, 2 оставшийся путь рывка, 3 тики после прибытия, 4 урон одного удара
 function DubleCirculirSpin takes unit u,real dmg returns nothing
@@ -84320,13 +84321,15 @@ if k==1 then
 call SetUnitAnimation(u,"attack")
 call QueueUnitAnimation(u,"stand") // после анимации — stand, иначе в паузе встаёт в T-позу
 call DubleCirculirSpin(u,LoadReal(HH,id,4))
-elseif k==10 then
-// второй круговой удар через 0.2 с
+elseif k==15 then
+// второй круговой удар через 0.28 с
 call SetUnitFacing(u,a*bj_RADTODEG+180)
 call SetUnitAnimation(u,"attack")
 call QueueUnitAnimation(u,"stand") // после анимации — stand, иначе в паузе встаёт в T-позу
 call DubleCirculirSpin(u,LoadReal(HH,id,4))
-elseif k>=16 then
+elseif k<26 then
+call SetUnitFacingInstant(u,GetUnitFacing(u)+30)
+elseif k>=26 then
 call PauseUnit(u,false)
 call SetUnitInvulnerable(u,false)
 call SetUnitTimeScale(u,1)
@@ -84348,8 +84351,8 @@ local real y=GetUnitY(u)
 local real x1=GetSpellTargetX()
 local real y1=GetSpellTargetY()
 local real kdist=SR(x,y,x1,y1)
-if kdist>500 then
-set kdist=500
+if kdist>400 then
+set kdist=400
 endif
 call SaveUnitHandle(HH,id,0,u)
 call SaveReal(HH,id,1,Atan2(y1-y,x1-x))
@@ -84811,7 +84814,7 @@ else
 call myCustomDamage(u,c,10*GetHeroStr(u,true),false,false,null,null,null)
 endif
 call SaveInteger(HH,GetHandleId(u),BlockPenetrate,0)
-call KrSB_Push(c,60,a,600,m)
+call KrSB_Push(c,42,a,300,m) // толчок вдвое короче
 endif
 set p=null
 set u=null
@@ -84891,7 +84894,7 @@ else
 // отброс цели и пауза перед рывком за ней
 call SaveInteger(HH,id,9,3)
 call SaveInteger(HH,id,10,R2I(0.8*k/0.035))
-call KrSB_Push(c,75,a,750,m)
+call KrSB_Push(c,53,a,375,m) // отброс вдвое короче
 call PauseUnit(c,true)
 call KrSB_Anim(u,"Spell Five","Spell Four")
 call SetUnitTimeScale(u,1)
@@ -84963,7 +84966,8 @@ endif
 else
 call PauseTimer(t)
 call KrSB_Fx(p,'e10N',GetUnitX(u),GetUnitY(u),LoadReal(HH,id,3)*bj_RADTODEG,KrSB_Sc(m,0.5),3,1,255)
-call KrSB_Anim(u,"Spell Channel One","Spell Two")
+// подлёт — выпад, как у W (Spell Channel One у модели давал T-позу)
+call KrSB_Anim(u,"spell two","spell two")
 call TimerStart(t,0.02,true,function KrSB_Dash)
 endif
 set p=null
@@ -85019,8 +85023,8 @@ set u=null
 endfunction
 function EclipsInit takes nothing returns nothing
 endfunction
-// W — Vorpal Strike: замах 0.4 c, потом выпад вперёд на 700 (50 за тик 0.02 c), бьёт каждого врага на пути (ширина 300) один раз
-// и отбрасывает. Кирито неуязвим во время выпада. Урон (4+0.8*ур)*STR+100.
+// W — Vorpal Strike: замах 0.4 c, потом выпад вперёд на 900 (50 за тик 0.02 c), бьёт каждого врага на пути (ширина 300) один раз
+// и отбрасывает. Кирито неуязвим во время выпада. Урон (3+0.5*ур)*STR+100.
 // HH[id]: 0 Кирито, 1 угол, 2 оставшийся путь, 3 время замаха, 4 урон, 5 группа задетых
 function VStrikeCond takes nothing returns boolean
 return GetSpellAbilityId()=='A0H4' and udg_B==true
@@ -85105,9 +85109,9 @@ local integer id=GetHandleId(t)
 local real a=Atan2(GetSpellTargetY()-GetUnitY(u),GetSpellTargetX()-GetUnitX(u))
 call SaveUnitHandle(HH,id,0,u)
 call SaveReal(HH,id,1,a)
-call SaveReal(HH,id,2,700)
+call SaveReal(HH,id,2,900)
 call SaveReal(HH,id,3,0)
-call SaveReal(HH,id,4,(4+0.8*GetUnitAbilityLevel(u,'A0H4'))*GetHeroStr(u,true)+100)
+call SaveReal(HH,id,4,(3+0.5*GetUnitAbilityLevel(u,'A0H4'))*GetHeroStr(u,true)+100)
 call SaveGroupHandle(HH,id,5,CreateGroup())
 call SetUnitFacing(u,a*bj_RADTODEG)
 call PauseUnit(u,true)
@@ -198813,6 +198817,9 @@ call SaveReal(HH,id,3,0)
 call SetUnitFacing(u,a*bj_RADTODEG)
 call SetUnitAnimation(u,"spell one")
 call QueueUnitAnimation(u,"stand")
+set soundplay=SndN(4827) // Sound\Music\mp3Music\KiritoG.mp3
+call StartSound(soundplay)
+//call KillSoundWhenDone(soundplay) // звук из массива soundStr — не удалять
 call TimerStart(t,0.01,true,function KrShotMove)
 set u=null
 set kd=null
