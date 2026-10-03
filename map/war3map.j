@@ -2068,6 +2068,15 @@ group SlashRaven_G=CreateGroup()
 timer SlashRaven_T=CreateTimer()
 boolean SlashRaven_On=false
 integer SlashRaven_N=0
+// GetWorldBounds() создаёт новый rect при каждом вызове — в тиках снарядов это утечка; WorldBoundsR() отдаёт один общий
+rect WB_Rect=null
+// загрузка тяжёлых моделей заранее (PL_*)
+string array PL_Q
+integer PL_N=0
+integer PL_I=0
+timer PL_T=CreateTimer()
+boolean PL_On=false
+hashtable PL_HT=InitHashtable()
 group Snakes_G=CreateGroup()
 timer Snakes_T=CreateTimer()
 boolean Snakes_On=false
@@ -2659,20 +2668,18 @@ function AST_IsAssist takes integer i, unit c, unit u, integer iu, real asd retu
 endfunction
 // деление золота за убийство asg: котёл 100%, доли — по урону за окно (AST_Dmg); убийце не меньше 40%,
 // помощнику не меньше 10% (контроль, лечение, щит без урона); без помощников всё убийце. Помощники — в PlayerH.
-function AST_PayKill takes integer iu, unit c, integer asg returns nothing
+function AST_PayKill takes integer iu, unit c, integer asg, integer asStreak, string msg returns nothing
     local integer asi=GetHandleId(c)
     local integer ask=0
     local integer asn=0
     local real asd
     local real ast=AST_Dmg(iu,asi)
     local real ask2
+    local real ask3
     local real asr
     local real asx
     local integer asv
     local string ass=""
-    if asg<=0 then
-        return
-    endif
     // сумма урона всех участников и число помощников
     set asd=ast
     loop
@@ -2684,10 +2691,12 @@ function AST_PayKill takes integer iu, unit c, integer asg returns nothing
         set ask=ask+1
     endloop
     if asn==0 then
-        call SetPlayerState(Player(iu),PLAYER_STATE_RESOURCE_GOLD,GetPlayerState(Player(iu),PLAYER_STATE_RESOURCE_GOLD)+asg)
+        set asv=asg+asStreak
+        call SetPlayerState(Player(iu),PLAYER_STATE_RESOURCE_GOLD,GetPlayerState(Player(iu),PLAYER_STATE_RESOURCE_GOLD)+asv)
+        call DisplayTextToPlayer(GetLocalPlayer(),0,0,msg+" |cFFFFCC00+"+I2S(asv)+"|r")
         return
     endif
-    // доля убийцы: по урону, не меньше 40%, но так, чтобы каждому помощнику осталось хотя бы 10%
+    // доля убийцы в золоте за убийство: по урону, не меньше 40%, но так, чтобы каждому помощнику осталось хотя бы 10%
     set ask2=0.4
     if asd>0. and ast/asd>ask2 then
         set ask2=ast/asd
@@ -2697,6 +2706,11 @@ function AST_PayKill takes integer iu, unit c, integer asg returns nothing
     endif
     if ask2<0.1 then
         set ask2=0.1
+    endif
+    // доля убийцы в золоте за сбитую серию — большая: не меньше 70% (или его доля по урону, если она выше)
+    set ask3=0.7
+    if ask2>ask3 then
+        set ask3=ask2
     endif
     // сырые доли помощников (не меньше 10%) и их сумма
     set asr=0.
@@ -2712,7 +2726,7 @@ function AST_PayKill takes integer iu, unit c, integer asg returns nothing
         endif
         set ask=ask+1
     endloop
-    // помощники делят остаток (1 - доля убийцы) пропорционально сырым долям
+    // помощники делят остаток пропорционально сырым долям
     set ask=0
     loop
         exitwhen ask>9
@@ -2721,15 +2735,15 @@ function AST_PayKill takes integer iu, unit c, integer asg returns nothing
             if asd>0. and AST_Dmg(ask,asi)/asd>asx then
                 set asx=AST_Dmg(ask,asi)/asd
             endif
-            set asv=R2I(asg*(1.-ask2)*asx/asr)
+            set asv=R2I(asg*(1.-ask2)*asx/asr+asStreak*(1.-ask3)*asx/asr)
             call SetPlayerState(Player(ask),PLAYER_STATE_RESOURCE_GOLD,GetPlayerState(Player(ask),PLAYER_STATE_RESOURCE_GOLD)+asv)
             set ass=ass+", "+Color[ask]+GetUnitName(Hero[ask])+"|r +"+I2S(asv)
         endif
         set ask=ask+1
     endloop
-    set asv=R2I(asg*ask2)
+    set asv=R2I(asg*ask2+asStreak*ask3)
     call SetPlayerState(Player(iu),PLAYER_STATE_RESOURCE_GOLD,GetPlayerState(Player(iu),PLAYER_STATE_RESOURCE_GOLD)+asv)
-    call DisplayTextToPlayer(GetLocalPlayer(),0,0,"Gold: "+Color[iu]+GetUnitName(Hero[iu])+"|r +"+I2S(asv)+ass)
+    call DisplayTextToPlayer(GetLocalPlayer(),0,0,msg+" |cFFFFCC00|||r "+Color[iu]+GetUnitName(Hero[iu])+"|r +"+I2S(asv)+ass)
 endfunction
 function AllTextTag3 takes nothing returns nothing
 local timer t=GetExpiredTimer()
@@ -5738,6 +5752,82 @@ endfunction
 function SetWidgetMana takes unit newUnit,real newVal returns nothing
     call SetUnitState(newUnit, UNIT_STATE_MANA, newVal)
 endfunction
+function WorldBoundsR takes nothing returns rect
+if WB_Rect==null then
+set WB_Rect=GetWorldBounds()
+endif
+return WB_Rect
+endfunction
+// Загрузка тяжёлых моделей заранее. Без неё модель (и её текстуры) грузится с диска при первом показе — фриз на
+// трансформации/способности/баннере. Очередь: раз в 0.15 с одна модель — невидимый эффект в углу карты, сразу удалить
+// (модель и текстуры остаются в кэше игры). Всё в общем коде, у всех одинаково.
+function PL_Tick takes nothing returns nothing
+local effect e
+if PL_I>=PL_N then
+call PauseTimer(PL_T)
+set PL_On=false
+return
+endif
+set e=AddSpecialEffect(PL_Q[PL_I],GetRectMinX(WorldBoundsR())+64.,GetRectMinY(WorldBoundsR())+64.)
+call SetSpecialEffectAlpha(e,0)
+call DestroyEffect(e)
+set e=null
+set PL_I=PL_I+1
+endfunction
+function PL_Add takes string m returns nothing
+if LoadBoolean(PL_HT,StringHash(m),0) then
+return
+endif
+call SaveBoolean(PL_HT,StringHash(m),0,true)
+set PL_Q[PL_N]=m
+set PL_N=PL_N+1
+if PL_On==false then
+set PL_On=true
+call TimerStart(PL_T,0.15,true,function PL_Tick)
+endif
+endfunction
+// тяжёлые формы и эффекты героя (по размеру модели+текстур, 1.4–8.9 МБ) — ставятся в очередь при выборе героя
+function PL_Hero takes integer ty returns nothing
+if ty=='H02H' then // Son Goku: формы по HP и SS4 (~8.5 МБ каждая), взрыв бомбы, вспышки ауры
+call PL_Add("GokuHalf.mdx")
+call PL_Add("GokuLow.mdx")
+call PL_Add("GokuSS4.mdx")
+call PL_Add("GokuBombExplosion.mdl")
+call PL_Add("GokuAuraBurstYellow.mdl")
+call PL_Add("GokuAuraBurstRed.mdl")
+call PL_Add("GokuAuraBurstOrange.mdl")
+call PL_Add("GokuAuraBurstBlue.mdl")
+elseif ty=='H033' then // Madara: Perfect Susanoo (8.4 МБ) и тяжёлые эффекты
+call PL_Add("Madara_PerfectSusanoo.mdl")
+call PL_Add("Madara\\groundshock1.mdl")
+call PL_Add("Madara\\[A]ZoroEf7.mdl")
+call PL_Add("Madara\\BY_Wood_GongChengSiPai_6.mdl")
+elseif ty=='H04A' then // Gon: взрослая форма (8.4 МБ)
+call PL_Add("Adult Gohan (Piccolo's Clothing).mdl")
+elseif ty=='H01M' then // Dante: Devil Trigger (6.6 МБ)
+call PL_Add("DanteDTMDX.mdl")
+elseif ty=='HJi1' then // Jiren: Full Power (4.4 МБ), взрывы T
+call PL_Add("[By XeSHTeG]JirenFullPower.mdx")
+call PL_Add("JirenTExplosion.mdl")
+call PL_Add("JirenExplosion2.mdl")
+elseif ty=='Rosh' then // Muten Roshi: Full Power (4.8 МБ)
+call PL_Add("Roshi\\Roshi_T.mdl")
+elseif ty=='HBGN' then // Goku Black: тяжёлые эффекты
+call PL_Add("BlackGoku\\chushout_huozhu_2_Pink.mdl")
+call PL_Add("BlackGoku\\groundshock1.mdl")
+call PL_Add("BlackGoku\\op (744).mdl")
+call PL_Add("BlackGoku\\BY_Wood_GongChengSiPai_6.mdl")
+endif
+endfunction
+// победные баннеры тяжелее 1.5 МБ — в начале игры
+function PL_Banners takes nothing returns nothing
+call PL_Add("DurkaBanner.mdx")
+call PL_Add("SBTBanner.mdx")
+call PL_Add("2ndPlaceBanner.mdx")
+call PL_Add("MonawkaBanner.mdx")
+call PL_Add("SuzuBanner.mdx")
+call PL_Add("AltronBanner.mdx")
+endfunction
 function UnitIsAlive takes unit u returns boolean
 return IsUnitType(u,UNIT_TYPE_DEAD)==false and GetUnitTypeId(u)!=0 and GetWidgetLife(u)>0
 endfunction
@@ -7219,6 +7309,7 @@ function HPB_Init takes nothing returns nothing
     call TimerStart(CreateTimer(),0.5,true,function HPB_DebugTick)
     call HPB_MenuInit()
     call CCB_Init()
+    call PL_Banners()
     set hpg=null
 endfunction
 function HeroBarFill takes framehandle hbf, real hbw returns nothing
@@ -38016,6 +38107,8 @@ function Trig_Killer_Actions takes nothing returns nothing
         local real kf//
         local group g=CreateGroup()
         local integer i2=0
+        local string killMsg=""
+        local integer streakGold=0
         //sabrac5start
         if GetUnitControlCount( c, 11 )<1 then
             call SetUnitControlCount(c, 11,1)
@@ -38213,118 +38306,90 @@ function Trig_Killer_Actions takes nothing returns nothing
             else
                 set kf=Koef[1]
             endif
-            if CK[iu]==1 then//
-                call DisplayTextToPlayer(GetLocalPlayer(),0,0,Color[iu]+GetUnitName(Hero[iu])+"|r kill's "+Color[ic]+GetUnitName(Hero[ic])+"|r for +"+I2S(R2I(160*kf))+" gold")
-                // золото за убийство делится в конце (AST_PayKill): SetPlayerState(Player(iu),PLAYER_STATE_RESOURCE_GOLD,GetPlayerState(Player(iu),PLAYER_STATE_RESOURCE_GOLD)+R2I(160*kf))
-                set goldTotal=goldTotal+R2I(160*kf)
+            // одна строка на убийство: кто кого, серия убийств, сбитая серия жертвы и раскладка золота (её печатает AST_PayKill)
+            set killMsg=Color[iu]+GetUnitName(Hero[iu])+"|r killed "+Color[ic]+GetUnitName(Hero[ic])+"|r"
+            if CK[iu]==1 then
+                set goldTotal=goldTotal+R2I(200*kf)
             elseif CK[iu]==2 then
                 set soundplay=SndN(284) // Double_Kill.mp3
                 call StartSound(soundplay)
-                //call KillSoundWhenDone(soundplay) // звук из массива soundStr — не удалять
-                call DisplayTextToPlayer(GetLocalPlayer(),0,0,Color[iu]+GetUnitName(Hero[iu])+"|r kill's "+Color[ic]+GetUnitName(Hero[ic])+"|r")
-                call DisplayTextToPlayer(GetLocalPlayer(),0,0,"|cFF00C850Double Kill|r, +"+I2S(R2I(185*kf))+" gold")
-                // золото за убийство делится в конце (AST_PayKill): SetPlayerState(Player(iu),PLAYER_STATE_RESOURCE_GOLD,GetPlayerState(Player(iu),PLAYER_STATE_RESOURCE_GOLD)+R2I(185*kf))
-                set goldTotal=goldTotal+R2I(185*kf)
+                set killMsg=killMsg+" - |cFF00C850Double Kill|r"
+                set goldTotal=goldTotal+R2I(225*kf)
             elseif CK[iu]==3 then
                 set soundplay=SndN(290) // Triple_Kill.mp3
                 call StartSound(soundplay)
-                //call KillSoundWhenDone(soundplay) // звук из массива soundStr — не удалять
-                call DisplayTextToPlayer(GetLocalPlayer(),0,0,Color[iu]+GetUnitName(Hero[iu])+"|r kill's "+Color[ic]+GetUnitName(Hero[ic])+"|r")
-                call DisplayTextToPlayer(GetLocalPlayer(),0,0,"|cFFA000FFTripple Kill|r, +"+I2S(R2I(230*kf))+" gold")
-                // золото за убийство делится в конце (AST_PayKill): SetPlayerState(Player(iu),PLAYER_STATE_RESOURCE_GOLD,GetPlayerState(Player(iu),PLAYER_STATE_RESOURCE_GOLD)+R2I(230*kf))
-                set goldTotal=goldTotal+R2I(230*kf)
+                set killMsg=killMsg+" - |cFFA000FFTriple Kill|r"
+                set goldTotal=goldTotal+R2I(270*kf)
             elseif CK[iu]==4 then
                 set soundplay=SndN(286) // MegaKill.mp3
                 call StartSound(soundplay)
-                //call KillSoundWhenDone(soundplay) // звук из массива soundStr — не удалять
-                call DisplayTextToPlayer(GetLocalPlayer(),0,0,Color[iu]+GetUnitName(Hero[iu])+"|r kill's "+Color[ic]+GetUnitName(Hero[ic])+"|r")
-                call DisplayTextToPlayer(GetLocalPlayer(),0,0,"|cFFA000FFMega Kill|r, +"+I2S(R2I(290*kf))+" gold")
-                // золото за убийство делится в конце (AST_PayKill): SetPlayerState(Player(iu),PLAYER_STATE_RESOURCE_GOLD,GetPlayerState(Player(iu),PLAYER_STATE_RESOURCE_GOLD)+R2I(290*kf))
-                set goldTotal=goldTotal+R2I(290*kf)
+                set killMsg=killMsg+" - |cFFA000FFMega Kill|r"
+                set goldTotal=goldTotal+R2I(330*kf)
             elseif CK[iu]==5 then
                 set soundplay=SndN(361) // UltraKill.mp3
                 call StartSound(soundplay)
-                //call KillSoundWhenDone(soundplay) // звук из массива soundStr — не удалять
-                call DisplayTextToPlayer(GetLocalPlayer(),0,0,Color[iu]+GetUnitName(Hero[iu])+"|r kill's "+Color[ic]+GetUnitName(Hero[ic])+"|r")
-                call DisplayTextToPlayer(GetLocalPlayer(),0,0,"|cFFFF0000Ultra Kill!|r, +"+I2S(R2I(345*kf))+" gold")
-                // золото за убийство делится в конце (AST_PayKill): SetPlayerState(Player(iu),PLAYER_STATE_RESOURCE_GOLD,GetPlayerState(Player(iu),PLAYER_STATE_RESOURCE_GOLD)+R2I(345*kf))
-                set goldTotal=goldTotal+R2I(345*kf)
+                set killMsg=killMsg+" - |cFFFF0000Ultra Kill!|r"
+                set goldTotal=goldTotal+R2I(385*kf)
             elseif CK[iu]==6 then
                 set soundplay=SndN(288) // Rampage.mp3
                 call StartSound(soundplay)
-                //call KillSoundWhenDone(soundplay) // звук из массива soundStr — не удалять
-                call DisplayTextToPlayer(GetLocalPlayer(),0,0,Color[iu]+GetUnitName(Hero[iu])+"|r kill's "+Color[ic]+GetUnitName(Hero[ic])+"|r")
-                call DisplayTextToPlayer(GetLocalPlayer(),0,0,"|cFFFF0000RAMPAGE!!!|r, +"+I2S(R2I(575*kf))+" gold")
-                // золото за убийство делится в конце (AST_PayKill): SetPlayerState(Player(iu),PLAYER_STATE_RESOURCE_GOLD,GetPlayerState(Player(iu),PLAYER_STATE_RESOURCE_GOLD)+R2I(575*kf))
-                set goldTotal=goldTotal+R2I(575*kf)
+                set killMsg=killMsg+" - |cFFFF0000RAMPAGE!!!|r"
+                set goldTotal=goldTotal+R2I(615*kf)
             elseif CK[iu]==7 then
                 set soundplay=SndN(363) // Ownage.mp3
                 call StartSound(soundplay)
-                //call KillSoundWhenDone(soundplay) // звук из массива soundStr — не удалять
-                call DisplayTextToPlayer(GetLocalPlayer(),0,0,Color[iu]+GetUnitName(Hero[iu])+"|r kill's "+Color[ic]+GetUnitName(Hero[ic])+"|r")
-                call DisplayTextToPlayer(GetLocalPlayer(),0,0,"|cFFFFEA00GodLike!|r, +"+I2S(R2I(575*kf))+" gold")
-                // золото за убийство делится в конце (AST_PayKill): SetPlayerState(Player(iu),PLAYER_STATE_RESOURCE_GOLD,GetPlayerState(Player(iu),PLAYER_STATE_RESOURCE_GOLD)+R2I(575*kf))
-                set goldTotal=goldTotal+R2I(575*kf)
+                set killMsg=killMsg+" - |cFFFFEA00GodLike!|r"
+                set goldTotal=goldTotal+R2I(615*kf)
             elseif CK[iu]==8 then
                 set soundplay=SndN(365) // GodLike.mp3
                 call StartSound(soundplay)
-                //call KillSoundWhenDone(soundplay) // звук из массива soundStr — не удалять
-                call DisplayTextToPlayer(GetLocalPlayer(),0,0,Color[iu]+GetUnitName(Hero[iu])+"|r kill's "+Color[ic]+GetUnitName(Hero[ic])+"|r")
-                call DisplayTextToPlayer(GetLocalPlayer(),0,0,"|cFFFFEA00BEYOND GODLIKE!|r, +"+I2S(R2I(575*kf))+" gold")
-                // золото за убийство делится в конце (AST_PayKill): SetPlayerState(Player(iu),PLAYER_STATE_RESOURCE_GOLD,GetPlayerState(Player(iu),PLAYER_STATE_RESOURCE_GOLD)+R2I(575*kf))
-                set goldTotal=goldTotal+R2I(575*kf)
+                set killMsg=killMsg+" - |cFFFFEA00BEYOND GODLIKE!|r"
+                set goldTotal=goldTotal+R2I(615*kf)
             elseif CK[iu]==9 then
                 set soundplay=SndN(367) // HolyShit.mp3
                 call StartSound(soundplay)
-                //call KillSoundWhenDone(soundplay) // звук из массива soundStr — не удалять
-                call DisplayTextToPlayer(GetLocalPlayer(),0,0,Color[iu]+GetUnitName(Hero[iu])+"|r kill's "+Color[ic]+GetUnitName(Hero[ic])+"|r")
-                call DisplayTextToPlayer(GetLocalPlayer(),0,0,"|cFFFF0000Have ownd the Gods!|r, +"+I2S(R2I(575*kf))+" gold")
-                // золото за убийство делится в конце (AST_PayKill): SetPlayerState(Player(iu),PLAYER_STATE_RESOURCE_GOLD,GetPlayerState(Player(iu),PLAYER_STATE_RESOURCE_GOLD)+R2I(575*kf))
-                set goldTotal=goldTotal+R2I(575*kf)
+                set killMsg=killMsg+" - |cFFFF0000Have owned the Gods!|r"
+                set goldTotal=goldTotal+R2I(615*kf)
             elseif CK[iu]>=10 then
                 set soundplay=SndN(369) // WhoreCombo.mp3
                 call StartSound(soundplay)
-                //call KillSoundWhenDone(soundplay) // звук из массива soundStr — не удалять
-                call DisplayTextToPlayer(GetLocalPlayer(),0,0,Color[iu]+GetUnitName(Hero[iu])+"|r kill's "+Color[ic]+GetUnitName(Hero[ic])+"|r")
-                call DisplayTextToPlayer(GetLocalPlayer(),0,0,"|cFFA000ffYOU did the Impossible, SOMEBODY KILL HIM!|r, +"+I2S(R2I(575*kf))+" gold")
-                // золото за убийство делится в конце (AST_PayKill): SetPlayerState(Player(iu),PLAYER_STATE_RESOURCE_GOLD,GetPlayerState(Player(iu),PLAYER_STATE_RESOURCE_GOLD)+R2I(575*kf))
-                set goldTotal=goldTotal+R2I(575*kf)
+                set killMsg=killMsg+" - |cFFA000ffSOMEBODY KILL HIM!|r"
+                set goldTotal=goldTotal+R2I(615*kf)
             endif
             call DestroyEffect(AddSpecialEffect("Abilities\\Spells\\Other\\Transmute\\PileofGold.mdl",GetUnitX(u),GetUnitY(u)))
-            
+
             //=== Streak System
             set Streak_Counter[iu]=Streak_Counter[iu]+1
-            
-            
+
+
             if Streak_Counter[iu]>2 then
                 set Streak[iu]=R2I(100*(1.3*(Streak_Counter[iu]-2)))
             elseif Streak_Counter[iu]==2 then
                 set Streak[iu]=100
             endif
-            
+
             if IsUnitAlly(Hero[ic], Player(iu))==false then
                 if Streak[ic]>0 then
+                    // бонус за сбитую серию делится: убийце не меньше 70%, остальное помощникам по урону (AST_PayKill)
+                    set streakGold=Streak[ic]
                     if Streak[ic]>500 then
-                        call DisplayTextToPlayer(GetLocalPlayer(),0,0,Color[iu]+GetUnitName(Hero[iu])+"|r KNOCKS DOWN A STREAK "+Color[ic]+GetUnitName(Hero[ic])+"|r AND GETS +"+I2S(Streak[ic])+" GOLD!")
+                        set killMsg=killMsg+", |cFFFFCC00STREAK ENDED|r"
                     else
-                        call DisplayTextToPlayer(GetLocalPlayer(),0,0,Color[iu]+GetUnitName(Hero[iu])+"|r knocks down a streak "+Color[ic]+GetUnitName(Hero[ic])+"|r and gets +"+I2S(Streak[ic])+" gold!")
+                        set killMsg=killMsg+", streak ended"
                     endif
-                    call SetPlayerState(Player(iu),PLAYER_STATE_RESOURCE_GOLD,GetPlayerState(Player(iu),PLAYER_STATE_RESOURCE_GOLD)+Streak[ic])
                     loop
                     exitwhen Streak_Counter[ic]==0
                         call DestroyEffect(AddSpecialEffect("Abilities\\Spells\\Other\\Transmute\\PileofGold.mdl",GetUnitX(u)+GetRandomInt(100, 100),GetUnitY(u)+GetRandomInt(100, 100)))
                         set Streak_Counter[ic]=Streak_Counter[ic]-1
                     endloop
                 endif
-                // бонус за сбитую серию — целиком убийце (уже начислен выше), в общий котёл не идёт
                 set Streak_Counter[ic]=0
                 set Streak[ic]=0
             endif
             //=== End Streak System
-            // золото за убийство: убийце и помощникам по урону за последние 15 с (AST_PayKill)
-            call AST_PayKill(iu,c,goldTotal)
+            // золото за убийство и за серию: убийце и помощникам по урону за последние 15 с; печатает одну строку
+            call AST_PayKill(iu,c,goldTotal,streakGold,killMsg)
             if assistnames!="" then
-                call DisplayTextToPlayer(GetLocalPlayer(),0,0,assistnames+"assisted in the kill")
                 call FlushChildHashtable(HH,GetHandleId(PlayerH))
                 call ForceClear(PlayerH)
             endif
@@ -51727,11 +51792,11 @@ function EndOfChoiceAct2 takes nothing returns nothing
 local integer i=0
 call ShowFrame( KingOfHillIcon, false)
 set TC=false
-set Koef[1]=1+0.08*(win[2]-win[1])
+set Koef[1]=1+0.075*(win[2]-win[1])
 if Koef[1]<=0 then
 set Koef[1]=0.05
 endif
-set Koef[2]=1+0.08*(win[1]-win[2])
+set Koef[2]=1+0.075*(win[1]-win[2])
 if Koef[2]<=0 then
 set Koef[2]=0.05
 endif
@@ -51992,9 +52057,9 @@ function EndOfChoiceAct takes nothing returns nothing
         call SetHeroLevel(Hero[i],GetHeroLevel(Hero[i])+3,true)
         call SetUnitMoveSpeed(Hero[i], GetUnitDefaultMoveSpeed(Hero[i]))
         if round>5 then
-            call SetPlayerState(Player(i),PLAYER_STATE_RESOURCE_GOLD,GetPlayerState(Player(i),PLAYER_STATE_RESOURCE_GOLD)+1000)
+            call SetPlayerState(Player(i),PLAYER_STATE_RESOURCE_GOLD,GetPlayerState(Player(i),PLAYER_STATE_RESOURCE_GOLD)+1250)
         else
-            call SetPlayerState(Player(i),PLAYER_STATE_RESOURCE_GOLD,GetPlayerState(Player(i),PLAYER_STATE_RESOURCE_GOLD)+1150)
+            call SetPlayerState(Player(i),PLAYER_STATE_RESOURCE_GOLD,GetPlayerState(Player(i),PLAYER_STATE_RESOURCE_GOLD)+1000)
         endif
         if noduels==true and ModuloInteger(round,duelround)==0 then
             call SetPlayerState(Player(i),PLAYER_STATE_RESOURCE_GOLD,GetPlayerState(Player(i),PLAYER_STATE_RESOURCE_GOLD)+250)
@@ -54348,6 +54413,7 @@ call myCustomDamage(c,u,50,false,false,null,DAMAGE_TYPE_UNIVERSAL,null)
 call UnitRemoveAbility(c,'A0WR')
 call PauseTimer(t)
 call FlushChildHashtable(h,id)
+call DestroyTimer(t)
 set u=null
 set c=null
 set p=null
@@ -63555,6 +63621,7 @@ call UnitRemoveAbility(u, 'IHYs')
 call UnitRemoveAbility(u, 'IOb3')
 call PauseTimer(t)
 call FlushChildHashtable(HH,id)
+call DestroyTimer(t)
 endif
 set u=null
 set t=null
@@ -69114,7 +69181,7 @@ local real s1=LoadReal(h,id,13)
 local real s2=LoadReal(h,id,10)
 local real s3=LoadReal(h,id,14)
 local real s4=LoadReal(h,id,15)
-if dist>0 and RectContainsUnit(GetWorldBounds(),l__d)and UnitIsAlive(l__d)then
+if dist>0 and RectContainsUnit(WorldBoundsR(),l__d)and UnitIsAlive(l__d)then
 call SetUnitXY_1(l__d,x,y, false)
 call UnitApplyTimedLife(CreateUnit(p,'e046',x,y,a*bj_RADTODEG),'BTLF',1.2)
 call UnitApplyTimedLife(CreateUnit(p,'e0I9',x,y,a*bj_RADTODEG),'BTLF',1.2)
@@ -69172,7 +69239,7 @@ local real s1=LoadReal(h,id,13)
 local real s2=LoadReal(h,id,10)
 local real s3=LoadReal(h,id,14)
 local real s4=LoadReal(h,id,15)
-if dist>0 and RectContainsUnit(GetWorldBounds(),l__d)and UnitIsAlive(l__d)then
+if dist>0 and RectContainsUnit(WorldBoundsR(),l__d)and UnitIsAlive(l__d)then
 call SetUnitXY_1(l__d,x,y, false)
 call UnitApplyTimedLife(CreateUnit(p,'e0RH',x,y,(a*bj_RADTODEG)),'BTLF',3)
 call UnitApplyTimedLife(CreateUnit(p,'e0RK',x,y,(a*bj_RADTODEG)),'BTLF',3)
@@ -70444,7 +70511,7 @@ local real y1=GetUnitY(u)
 local real dmg=LoadReal(h,id,4)
 local player p=GetOwningPlayer(u)
 local group g=LoadGroupHandle(h,id,12)
-if dist>0 and RectContainsUnit(GetWorldBounds(),l__d)and UnitIsAlive(l__d)then
+if dist>0 and RectContainsUnit(WorldBoundsR(),l__d)and UnitIsAlive(l__d)then
 call SetUnitInvulnerable(u,true)
 call SetUnitFacing(u,a*bj_RADTODEG)
 call SetUnitXY_1(l__d,x,y, false)
@@ -75094,7 +75161,7 @@ local player p=GetOwningPlayer(u)
 local group g=LoadGroupHandle(h,id,12)
 local real s1=LoadReal(h,id,10)
 local real time=LoadReal(h,id,15)
-if dist>0 and RectContainsUnit(GetWorldBounds(),l__d)and UnitIsAlive(l__d)then
+if dist>0 and RectContainsUnit(WorldBoundsR(),l__d)and UnitIsAlive(l__d)then
 if dist>1000 then
 call SlashRaven(CreateUnit(p,'e1VS',x1+100*Cos(a)+GetRandomReal(-400,400)*Cos(GetRandomReal(0,359)*bj_DEGTORAD),y1+100*Sin(a)+GetRandomReal(-400,400)*Sin(GetRandomReal(0,359)*bj_DEGTORAD),0),40,a,2000)
 if ModuloInteger(R2I((2000-dist)/65+0.5),2)==0 then
@@ -76837,7 +76904,7 @@ local real y=GetUnitY(l__d)+45*Sin(a)
 local real dmg=LoadReal(h,id,4)
 local player p=GetOwningPlayer(u)
 local group g=LoadGroupHandle(h,id,12)
-if dist>0 and RectContainsUnit(GetWorldBounds(),l__d)and UnitIsAlive(l__d)then
+if dist>0 and RectContainsUnit(WorldBoundsR(),l__d)and UnitIsAlive(l__d)then
 call SetUnitXY_1(l__d,x,y, false)
 set n=CreateUnit(p,'e013',x,y,GetRandomReal(0,359))
 call UnitApplyTimedLife(n,'BTLF',0.55)
@@ -81913,7 +81980,7 @@ set n=CreateUnit(p,'e0RR',x,y,GetRandomReal(0,359))
 call UnitApplyTimedLife(n,'BTLF',0.01)
 call SetUnitVertexColor(n,255,255,255,50)
 if GetUnitCurrentOrder(u)==OrderId("charm")then
-call GroupEnumUnitsInRect(G,GetWorldBounds(),Base)
+call GroupEnumUnitsInRect(G,WorldBoundsR(),Base)
 loop
 set E=FirstOfGroup(G)
 exitwhen E==null
@@ -118655,7 +118722,7 @@ local real temp=LoadReal(h,id,15)
 local group g=LoadGroupHandle(h,id,12)
 local integer idg2=GetHandleId(g)
 local player p=GetOwningPlayer(u)
-if dist>0 and RectContainsUnit(GetWorldBounds(),l__d) and UnitIsAlive(l__d) and udg_B then
+if dist>0 and RectContainsUnit(WorldBoundsR(),l__d) and UnitIsAlive(l__d) and udg_B then
 call SetUnitXY_1(l__d,x,y, false)
 call SetUnitScale(l__d,Cg1*.018,Cg1*.018,Cg1*.018)
 if Cg1*2.9<lvl or 2*Cg1>dist then
@@ -121366,7 +121433,7 @@ local real s1=LoadReal(h,id,13)
 local real s2=LoadReal(h,id,10)
 local real s3=LoadReal(h,id,14)
 local real s4=LoadReal(h,id,15)
-if dist>0 and RectContainsUnit(GetWorldBounds(),l__d)and UnitIsAlive(l__d)then
+if dist>0 and RectContainsUnit(WorldBoundsR(),l__d)and UnitIsAlive(l__d)then
 call SetUnitXY_1(l__d,x,y, false)
 call SetUnitScale(l__d,s2,s2,s2)
 call SaveReal(h,id,10,s2+0.09)
@@ -123158,7 +123225,7 @@ local group g=LoadGroupHandle(h,id,12)
 if GetUnitState(u,UNIT_STATE_LIFE)<=GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.2 then
 set dmg=dmg+dmg*.2
 endif
-if dist>0 and RectContainsUnit(GetWorldBounds(),l__d)and UnitIsAlive(l__d)then
+if dist>0 and RectContainsUnit(WorldBoundsR(),l__d)and UnitIsAlive(l__d)then
 call SetUnitXY_1(l__d,x,y, false)
 set n=CreateUnit(p,0x65305152,x,y,a*bj_RADTODEG)
 call UnitApplyTimedLife(n,'BTLF',1)
@@ -124365,7 +124432,7 @@ local real dmg=LoadReal(h,id,4)
 local player p=GetOwningPlayer(u)
 local group g=LoadGroupHandle(h,id,12)
 local integer idg2=GetHandleId(g)
-if dist>0 and RectContainsUnit(GetWorldBounds(),l__d)and UnitIsAlive(l__d)then
+if dist>0 and RectContainsUnit(WorldBoundsR(),l__d)and UnitIsAlive(l__d)then
 call SetUnitInvulnerable(u,true)
 call PauseUnit(u,true)
 call SetUnitXY_1(u,x,y, false)
@@ -127211,7 +127278,7 @@ local real x=GetUnitX(l__d)+80*Cos(a)
 local real y=GetUnitY(l__d)+80*Sin(a)
 local player p=GetOwningPlayer(u)
 local group g=LoadGroupHandle(h,id,12)
-if dist>0 and RectContainsUnit(GetWorldBounds(),l__d)and UnitIsAlive(l__d)then
+if dist>0 and RectContainsUnit(WorldBoundsR(),l__d)and UnitIsAlive(l__d)then
 call SetUnitXY_1(l__d,x,y, false)
 set n=CreateUnit(p,'e0SN',x,y,GetRandomReal(0,359))
 call UnitApplyTimedLife(n,'BTLF',0.01)
@@ -127784,7 +127851,7 @@ local real y=GetUnitY(u)+45*Sin(a)
 local real dmg=LoadReal(h,id,4)
 local player p=GetOwningPlayer(u)
 local group g=LoadGroupHandle(h,id,12)
-if dist>60 and RectContainsUnit(GetWorldBounds(),u)and UnitIsAlive(u)then
+if dist>60 and RectContainsUnit(WorldBoundsR(),u)and UnitIsAlive(u)then
 call SetUnitXY_1(u,x,y, false)
 call SetUnitX(l__d,x+25*Cos(a-deg90))
 call SetUnitY(l__d,y+25*Sin(a-deg90))
@@ -128474,7 +128541,7 @@ local real y=GetUnitY(l__d)+60*Sin(a)
 local real dmg=LoadReal(h,id,4)
 local player p=GetOwningPlayer(u)
 local group g=LoadGroupHandle(h,id,12)
-if dist>0 and RectContainsUnit(GetWorldBounds(),l__d)and UnitIsAlive(l__d)then
+if dist>0 and RectContainsUnit(WorldBoundsR(),l__d)and UnitIsAlive(l__d)then
 call SetUnitXY_1(l__d,x,y, false)
 set n=CreateUnit(p,'e0K9',x,y,GetRandomReal(0,359))
 call UnitApplyTimedLife(n,'BTLF',0.01)
@@ -132675,7 +132742,7 @@ local player p=GetOwningPlayer(u)
 local group g=LoadGroupHandle(h,id,12)
 local real s1=LoadReal(h,id,10)
 local real time=LoadReal(h,id,15)
-if dist>0 and RectContainsUnit(GetWorldBounds(),l__d)and UnitIsAlive(l__d)then
+if dist>0 and RectContainsUnit(WorldBoundsR(),l__d)and UnitIsAlive(l__d)then
 call SetUnitXY_1(l__d,x,y, false)
 set n=CreateUnit(p,'e0K9',x1,y1,GetRandomReal(0,359))
 call UnitApplyTimedLife(n,'BTLF',0.01)
@@ -132830,7 +132897,7 @@ local player p=GetOwningPlayer(u)
 local group g=LoadGroupHandle(h,id,12)
 local real s1=LoadReal(h,id,10)
 local real time=LoadReal(h,id,15)
-if dist>0 and RectContainsUnit(GetWorldBounds(),l__d)and UnitIsAlive(l__d)then
+if dist>0 and RectContainsUnit(WorldBoundsR(),l__d)and UnitIsAlive(l__d)then
 call SetUnitXY_1(l__d,x,y, false)
 call PauseUnit(u,true)
 call SetUnitScale(l__d,0.10+s1,0.10+s1,0.10+s1)
@@ -133197,7 +133264,7 @@ local player p=GetOwningPlayer(u)
 local group g=LoadGroupHandle(h,id,12)
 local real s1=LoadReal(h,id,10)
 local real time=LoadReal(h,id,15)
-if dist>0 and RectContainsUnit(GetWorldBounds(),l__d)and UnitIsAlive(l__d)then
+if dist>0 and RectContainsUnit(WorldBoundsR(),l__d)and UnitIsAlive(l__d)then
 call SetUnitInvulnerable(u,true)
 call SetUnitXY_1(l__d,x,y, false)
 set n=CreateUnit(p,'e0K9',x1,y1,GetRandomReal(0,359))
@@ -133371,7 +133438,7 @@ local player p=GetOwningPlayer(u)
 local group g=LoadGroupHandle(h,id,12)
 local real s1=LoadReal(h,id,10)
 local real time=LoadReal(h,id,15)
-if dist>0 and RectContainsUnit(GetWorldBounds(),l__d)and UnitIsAlive(l__d)then
+if dist>0 and RectContainsUnit(WorldBoundsR(),l__d)and UnitIsAlive(l__d)then
 call SetUnitXY_1(l__d,x,y, false)
 call SetUnitScale(l__d,0.10+s1,0.10+s1,0.10+s1)
 call SaveReal(h,id,10,s1+0.15)
@@ -138110,7 +138177,7 @@ local real dmg=LoadReal(h,id,4)+dist*(0.07*GetUnitAbilityLevel(u,'A132'))
 local group g=LoadGroupHandle(h,id,12)
 local integer idg2=GetHandleId(g)
 local player p=GetOwningPlayer(u)
-if dist<3700 and RectContainsUnit(GetWorldBounds(),l__d)and UnitIsAlive(l__d)then
+if dist<3700 and RectContainsUnit(WorldBoundsR(),l__d)and UnitIsAlive(l__d)then
         call SetUnitXY_1(l__d,x,y, false)
         set n=CreateUnit(p,0x65305830,x,y,a*bj_RADTODEG)
         call UnitApplyTimedLife(n,'BTLF',1)
@@ -138857,7 +138924,7 @@ local real dmg=LoadReal(h,id,4)
 local player p=GetOwningPlayer(u)
 local integer b=LoadInteger(h,id,9)
 local group g=LoadGroupHandle(h,id,12)
-if dist>0 and RectContainsUnit(GetWorldBounds(),u)and UnitIsAlive(u)and b!=1 then
+if dist>0 and RectContainsUnit(WorldBoundsR(),u)and UnitIsAlive(u)and b!=1 then
 call SetUnitXY_1(u,x,y, false)
 set n=CreateUnit(p,'e0XR',x,y,a*bj_RADTODEG)
 call UnitApplyTimedLife(n,'BTLF',0.5)
@@ -139354,7 +139421,7 @@ local player p=GetOwningPlayer(u)
 local group g=LoadGroupHandle(h,id,12)
 local real s1=LoadReal(h,id,10)
 local real time=LoadReal(h,id,15)
-if dist>0 and RectContainsUnit(GetWorldBounds(),l__d)and UnitIsAlive(l__d)then
+if dist>0 and RectContainsUnit(WorldBoundsR(),l__d)and UnitIsAlive(l__d)then
 call SetUnitXY_1(l__d,x,y, false)
 call SetUnitScale(l__d,0.10+s1,0.10+s1,0.10+s1)
 call SaveReal(h,id,10,s1+0.11)
@@ -140114,7 +140181,7 @@ local group g2
 local real s1=LoadReal(h,id,10)
 local real fl=LoadReal(h,id,20)
 local real time=LoadReal(h,id,15)
-if dist>0 and RectContainsUnit(GetWorldBounds(),l__d)and UnitIsAlive(l__d)then
+if dist>0 and RectContainsUnit(WorldBoundsR(),l__d)and UnitIsAlive(l__d)then
 call SetUnitXY_1(l__d,x,y, false)
 set n=CreateUnit(p,0x65305942,x,y,a*bj_RADTODEG)
 call UnitApplyTimedLife(n,'BTLF',1.5)
@@ -140399,7 +140466,7 @@ local real dmg=LoadReal(h,id,4)
 local player p=GetOwningPlayer(u)
 local integer b=LoadInteger(h,id,9)
 local group g=LoadGroupHandle(h,id,12)
-if dist>0 and RectContainsUnit(GetWorldBounds(),u)and UnitIsAlive(u)and b!=1 then
+if dist>0 and RectContainsUnit(WorldBoundsR(),u)and UnitIsAlive(u)and b!=1 then
 call SetUnitXY_1(u,x,y, false)
 set n=CreateUnit(p,'e0Y8',x,y,a*bj_RADTODEG)
 call UnitApplyTimedLife(n,'BTLF',0.5)
@@ -140626,7 +140693,7 @@ local player p=GetOwningPlayer(u)
 local group g=LoadGroupHandle(h,id,12)
 local real s1=LoadReal(h,id,10)
 local real time=LoadReal(h,id,15)
-if dist>0 and RectContainsUnit(GetWorldBounds(),l__d)and UnitIsAlive(l__d)then
+if dist>0 and RectContainsUnit(WorldBoundsR(),l__d)and UnitIsAlive(l__d)then
 call SetUnitXY_1(l__d,x,y, false)
 call SetUnitScale(l__d,0.10+s1,0.10+s1,0.10+s1)
 call SaveReal(h,id,10,s1+0.15)
@@ -155535,6 +155602,7 @@ if GetLocalPlayer()==pc then
 call PanCameraToTimed(GetUnitX(c),GetUnitY(c),0)
 endif
 call SetUnitState(c,UNIT_STATE_LIFE,LoadReal(h,id,22))
+call SetUnitState(c,UNIT_STATE_MANA,LoadReal(h,id,25))
 call myCustomDamage(u,c,dmg,false,false,null,null,null)
 call DestroyTimer(t)
 call FlushChildHashtable(h,id)
@@ -155651,6 +155719,7 @@ call SetUnitFacingInstant(u,360)
 else
 call SaveUnitHandle(HH,GetHandleId(c),REVERSE_TARGET,u)
 call SetUnitState(c,UNIT_STATE_LIFE,LoadReal(h,id,22))
+call SetUnitState(c,UNIT_STATE_MANA,LoadReal(h,id,25))
 call SetUnitInvulnerable(u,false)
 call SetUnitInvulnerable(c,false)
 call TimerStart(t,0.1,true,function SaberNeroTCast91)
@@ -155977,6 +156046,7 @@ call SaveReal(h,id,4,y)
 call SaveReal(h,id,5,x1)
 call SaveReal(h,id,6,y1)
 call SaveReal(h,id,22,GetWidgetLife(c))
+call SaveReal(h,id,25,GetUnitState(c,UNIT_STATE_MANA))
 call SaveTimerHandle(h,id,23,t2)
 call UnitAddAbility(u,'A0QL')
 call UnitAddAbility(c,'A0QL')
@@ -158505,7 +158575,7 @@ call UnitAddAbility(n,'A2X2')
 // call UnitAddBuffById(n,'B04X')
 call UnitApplyTimedLife(n,'B04X',15)
 call SetUnitXY_1(n,x1+250*Cos((a-rand2*90)*bj_DEGTORAD),y1+250*Sin((a-rand2*90)*bj_DEGTORAD),false)
-call SetIllusionDamageDealt(n,1)
+call SetIllusionDamageDealt(n,0.5)
 call SetIllusionDamageReceived(n,2)
 call DestroyEffect(AddSpecialEffect("Abilities\\Weapons\\SteamTank\\SteamTankImpact.mdl",GetUnitX(n),GetUnitY(n)))
 if p==GetLocalPlayer()then
@@ -171073,6 +171143,7 @@ else
 call KillUnit(c)
 call PauseTimer(t)
 call FlushChildHashtable(h,id)
+call DestroyTimer(t)
 endif
 set c=null
 set p=null
@@ -171644,6 +171715,7 @@ else
 call KillUnit(c)
 call PauseTimer(t)
 call FlushChildHashtable(h,id)
+call DestroyTimer(t)
 endif
 set p=null
 set c=null
@@ -173182,6 +173254,7 @@ call SetUnitVertexColor(n,255,255,255,125)
 call SetUnitTimeScale(n,1)
 call PauseTimer(t)
 call FlushChildHashtable(h,id)
+call DestroyTimer(t)
 endif
 set c=null
 set p=null
@@ -173922,6 +173995,7 @@ call GroupClear(g)
 call DestroyGroup(g)
 call PauseTimer(t)
 call FlushChildHashtable(h,id)
+call DestroyTimer(t)
 endif
 set g=null
 set g2=null
@@ -174610,6 +174684,7 @@ exitwhen i>=per
 endloop
 call PauseTimer(t)
 call FlushChildHashtable(h,id)
+call DestroyTimer(t)
 endif
 set u=null
 set t=null
@@ -174748,6 +174823,7 @@ call SetControlToUnit(u,c,2, "stun")
 call UnitRemoveAbility(c,'A1HU')
 call PauseTimer(t)
 call FlushChildHashtable(h,id)
+call DestroyTimer(t)
 set c=null
 set u=null
 set t=null
@@ -174857,6 +174933,7 @@ call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,false)
 call UnitRemoveAbility(c,'A1HU')
 call PauseTimer(t)
 call FlushChildHashtable(h,id)
+call DestroyTimer(t)
 endif
 endif
 set c=null
@@ -178362,6 +178439,7 @@ call KillUnit(c)
 call SetUnitFlyHeight(u,0,0)
 call PauseTimer(t)
 call FlushChildHashtable(h,id)
+call DestroyTimer(t)
 endif
 set p=null
 set c=null
@@ -179276,7 +179354,7 @@ local real y1=GetUnitY(u)
 local real a=LoadReal(h,id,3)
 local real dist=LoadReal(h,id,2)
 local player p=GetOwningPlayer(u)
-if dist<2500 and RectContainsUnit(GetWorldBounds(),l__d) and GetWidgetLife(l__d)>0 and udg_B and DU2 then
+if dist<2500 and RectContainsUnit(WorldBoundsR(),l__d) and GetWidgetLife(l__d)>0 and udg_B and DU2 then
 set x=x+40*Cos(a)
 set y=y+40*Sin(a)
 call SetUnitXY_1(l__d,x,y, false)
@@ -179468,7 +179546,7 @@ local real a=LoadReal(h,id,3)
 local real dist=LoadReal(h,id,2)
 local player p=GetOwningPlayer(u)
 if dist<300+GetHeroInt(u,true)*4 and GetWidgetLife(l__d)>0 then
-if RectContainsUnit(GetWorldBounds(),l__d) then
+if RectContainsUnit(WorldBoundsR(),l__d) then
 set x=x+55*Cos(a)
 set y=y+55*Sin(a)
 endif
@@ -184878,6 +184956,7 @@ call SetHeroAgi(u,GetHeroAgi(u,false)+5,true)
 endif
 call PauseTimer(t)
 call FlushChildHashtable(h,id)
+call DestroyTimer(t)
 endif
 set p=null
 set u=null
@@ -193381,7 +193460,8 @@ if time==2 then
     call SetWidgetLife(u, LoadReal(HH,id,SH_HP)+GetWidgetMaxLife(u)*0.15)
 endif
 if time>2 then
-    if GetUnitAbilityLevel(u, 'B05G')>0 and u!=null then
+    // очищение после окончания — не дольше 0.1 с (раньше — пока висел бафф B05G)
+    if GetUnitAbilityLevel(u, 'B05G')>0 and u!=null and time<2.09 then
         call UnitRemoveBuffs(u,false,true)
         call UnitRemoveAbility(u,'A15H')
         call UnitRemoveAbility(u,'B039')
@@ -193411,6 +193491,7 @@ if time>2 then
         call UnitRemoveAbility(u, 'A1SV')
         call PauseTimer(t)
         call FlushChildHashtable(HH,id)
+        call DestroyTimer(t)
     endif
 endif
 set u=null
@@ -197121,7 +197202,7 @@ function MoriaQCast3 takes nothing returns nothing
     local group g=LoadGroupHandle(h,id,12)
     local real s1=LoadReal(h,id,10)
     local real time=LoadReal(h,id,15)
-    if dist>0 and RectContainsUnit(GetWorldBounds(),l__d)and UnitIsAlive(l__d)then
+    if dist>0 and RectContainsUnit(WorldBoundsR(),l__d)and UnitIsAlive(l__d)then
         if dist>900 then
             call SlashBrickBat(CreateUnit(p,'e027',x1+100*Cos(a)+GetRandomReal(-150,150)*Cos(GetRandomReal(0,359)*bj_DEGTORAD),y1+100*Sin(a)+GetRandomReal(-150,150)*Sin(GetRandomReal(0,359)*bj_DEGTORAD),0),40,a,1200,l__d)
             call SlashBrickBat(CreateUnit(p,'e027',x1+100*Cos(a)+GetRandomReal(-150,150)*Cos(GetRandomReal(0,359)*bj_DEGTORAD),y1+100*Sin(a)+GetRandomReal(-150,150)*Sin(GetRandomReal(0,359)*bj_DEGTORAD),0),40,a,1200,l__d)
@@ -205084,8 +205165,10 @@ endfunction
 
 function LucciSoruAct takes nothing returns nothing
         local real cjlocgn_00000000
+        local location lsl=null
         if LoadBoolean(HH,GetHandleId(GetTriggerUnit()),SH_LucciSoru)==true and(OrderId2String(GetUnitCurrentOrder(GetTriggerUnit()))=="smart" or OrderId2String(GetUnitCurrentOrder(GetTriggerUnit()))=="move")then
-                call SetUnitFacingInstant(GetTriggerUnit(),Angle2(GetUnitX(GetTriggerUnit()),GetUnitY(GetTriggerUnit()),GetLocationX(GetOrderPointLoc()),GetLocationY(GetOrderPointLoc())))
+                set lsl=GetOrderPointLoc()
+                call SetUnitFacingInstant(GetTriggerUnit(),Angle2(GetUnitX(GetTriggerUnit()),GetUnitY(GetTriggerUnit()),GetLocationX(lsl),GetLocationY(lsl)))
                 if GetUnitTypeId(GetTriggerUnit())!='H10L' then
                         call SetUnitAnimationByIndex(GetTriggerUnit(),0)
                         set soundplay=SndN(697) // Sound\Music\mp3Music\Soru2.mp3
@@ -205097,19 +205180,23 @@ function LucciSoruAct takes nothing returns nothing
                         call StartSound(soundplay)
                         //call KillSoundWhenDone(soundplay) // звук из массива soundStr — не удалять
                 endif
-                if SR(GetUnitX(GetTriggerUnit()),GetUnitY(GetTriggerUnit()),GetLocationX(GetOrderPointLoc()),GetLocationY(GetOrderPointLoc()))>=800 then
-                        set cjlocgn_00000000=Angle2(GetUnitX(GetTriggerUnit()),GetUnitY(GetTriggerUnit()),GetLocationX(GetOrderPointLoc()),GetLocationY(GetOrderPointLoc()))
-                        call MoveUnit(GetTriggerUnit(),GetTriggerUnit(),800,Angle2(GetUnitX(GetTriggerUnit()),GetUnitY(GetTriggerUnit()),GetLocationX(GetOrderPointLoc()),GetLocationY(GetOrderPointLoc())))
+                if SR(GetUnitX(GetTriggerUnit()),GetUnitY(GetTriggerUnit()),GetLocationX(lsl),GetLocationY(lsl))>=800 then
+                        set cjlocgn_00000000=Angle2(GetUnitX(GetTriggerUnit()),GetUnitY(GetTriggerUnit()),GetLocationX(lsl),GetLocationY(lsl))
+                        call MoveUnit(GetTriggerUnit(),GetTriggerUnit(),800,Angle2(GetUnitX(GetTriggerUnit()),GetUnitY(GetTriggerUnit()),GetLocationX(lsl),GetLocationY(lsl)))
                         call EffectCreateAndMove1(false,"war3mapImported\\HakenSaber2.mdl",cjlocgn_00000000,1,0.5,0.8,100,100,100,20,0,0,GetTriggerUnit(),0,cjlocgn_00000000)
                         call SaveBoolean(HH,GetHandleId(GetTriggerUnit()),SH_LucciSoru,false)
                 else
-                        set cjlocgn_00000000=Angle2(GetUnitX(GetTriggerUnit()),GetUnitY(GetTriggerUnit()),GetLocationX(GetOrderPointLoc()),GetLocationY(GetOrderPointLoc()))
+                        set cjlocgn_00000000=Angle2(GetUnitX(GetTriggerUnit()),GetUnitY(GetTriggerUnit()),GetLocationX(lsl),GetLocationY(lsl))
                         call EffectCreateAndMove1(false,"war3mapImported\\HakenSaber2.mdl",cjlocgn_00000000,1,0.5,0.8,100,100,100,20,0,0,GetTriggerUnit(),0,cjlocgn_00000000)
                         call EffectCreateAndMove1(false,"war3mapImported\\BlackBlink1.mdl",cjlocgn_00000000,0.5,1,1,100,100,100,20,0,0,GetTriggerUnit(),0,cjlocgn_00000000)
-                        call MoveAoe(GetOrderPointLoc(),GetTriggerUnit(),0,Angle2(GetUnitX(GetTriggerUnit()),GetUnitY(GetTriggerUnit()),GetLocationX(GetOrderPointLoc()),GetLocationY(GetOrderPointLoc())))
+                        call MoveAoe(lsl,GetTriggerUnit(),0,Angle2(GetUnitX(GetTriggerUnit()),GetUnitY(GetTriggerUnit()),GetLocationX(lsl),GetLocationY(lsl)))
                         call EffectCreateAndMove1(false,"war3mapImported\\HakenSaber2.mdl",cjlocgn_00000000,1,0.5,0.8,100,100,100,20,0,0,GetTriggerUnit(),0,cjlocgn_00000000)
                         call SaveBoolean(HH,GetHandleId(GetTriggerUnit()),SH_LucciSoru,false)
                 endif
+        endif
+        if lsl!=null then
+                call RemoveLocation(lsl)
+                set lsl=null
         endif
 endfunction
 function InitTrig_LucciSoru takes nothing returns nothing
@@ -255046,6 +255133,7 @@ function OrochimaruF3Cast12 takes nothing returns nothing
     call SetUnitInvulnerable(c,false)
     call PauseTimer(t)
     call FlushChildHashtable(h,id)
+    call DestroyTimer(t)
     set t=null
     set c=null
 endfunction
@@ -255896,6 +255984,7 @@ function OrochimaruRCast5 takes nothing returns nothing
     call RemoveUnit(c)
     call PauseTimer(t)
     call FlushChildHashtable(h,id)
+    call DestroyTimer(t)
     set p=null
     set c=null
     set u=null
@@ -256898,6 +256987,7 @@ set i=i+1
 endloop
 if b and LoadInteger(h,ip,ty)!=1 then
 call SaveInteger(h,ip,ty,1)
+call PL_Hero(ty)
 if ty=='H00I' then
 set t=CreateTrigger()
 call TriggerRegisterPlayerUnitEvent(t,p,EVENT_PLAYER_UNIT_SPELL_EFFECT,null)
