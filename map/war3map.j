@@ -898,7 +898,7 @@ string SP_Txt=""
 // Места 0..27 — герои и их иллюзии (засечки на каждые 500 / 2500 HP, уровень, щит), 28..43 — остальные юниты.
 // Позиция на экране — через невидимый эффект HPB_Proj, поставленный над юнитом на высоту его полоски (overhead offset).
 constant integer HPB_HN=28
-constant integer HPB_N=44
+constant integer HPB_N=52
 constant integer HPB_TN=30
 effect HPB_Proj=null
 group HPB_G=null
@@ -985,6 +985,7 @@ real array HPB_UZ
 real array HPB_SX
 real array HPB_SY
 real HPB_CamX=0.
+real HPB_AspK=1.333
 real HPB_CamY=0.
 real HPB_CamZ=0.
 real HPB_CamTX=0.
@@ -992,12 +993,12 @@ real HPB_CamTY=0.
 boolean HPB_CamMoved=true
 // размеры: ширина, высота HP / MP / щита; у героев (места 0..27) и остальных юнитов; поля рамки и зазор
 constant real HPB_HW=.04554
-constant real HPB_HH=.004
-constant real HPB_HM=.00242
+constant real HPB_HH=.0046
+constant real HPB_HM=.0033
 constant real HPB_UW=.03289
-constant real HPB_UH=.003
-constant real HPB_UM=.00198
-constant real HPB_SH=.00143
+constant real HPB_UH=.0034
+constant real HPB_UM=.0027
+constant real HPB_SH=.0021
 constant real HPB_PAD=.0006
 constant real HPB_GAP=.0004
 // окно выбора цвета полосок HP (вместо команды -hpcolor): кнопка «HP» над миникартой, клики — локальным опросом мыши
@@ -1005,6 +1006,7 @@ framehandle HPB_MBtn=null
 framehandle HPB_MBtnFrame=null
 framehandle array HPB_MText
 integer HPB_MBtnVis=0
+boolean HPB_TgtSb=false
 framehandle HPB_Menu=null
 framehandle HPB_MClose=null
 framehandle array HPB_MRow
@@ -2024,6 +2026,16 @@ trigger bof_o8=null
 trigger bof_pB=null
 trigger bof_pD=null
 //BofGlobalsEnd
+// Мукуро: один общий таймер на все летящие юниты T (SlashRaven) и на всех змей (Snakes)
+hashtable MkMove_HT=InitHashtable()
+group SlashRaven_G=CreateGroup()
+timer SlashRaven_T=CreateTimer()
+boolean SlashRaven_On=false
+integer SlashRaven_N=0
+group Snakes_G=CreateGroup()
+timer Snakes_T=CreateTimer()
+boolean Snakes_On=false
+integer Snakes_N=0
 endglobals
 native MergeUnits       takes integer qty, integer a, integer b, integer make returns boolean   // reserved native for call 4 integer function and return BOOLEAN value
 native ConvertUnits takes integer qty, integer id returns boolean                                                       // reserved native for call 2 integer function and return BOOLEAN value (can be converted to int!)
@@ -3100,7 +3112,7 @@ function myCustomDamage takes unit whichUnit, unit target, real amount, boolean 
                 
                 // Брейкер уменьшение наносимого урона
         if GetUnitAbilityLevel(whichUnit,'A15H') > 0 then
-            set currentDmg = currentDmg * 0.9
+            set currentDmg = currentDmg * 0.85
         endif   
                 
                 // T Gin уменьшение маг реза -> увеличение урона по нему
@@ -3155,7 +3167,7 @@ function myCustomDamage takes unit whichUnit, unit target, real amount, boolean 
         //if GetUnitAbilityLevel(target,'RiSV') == 0 and GetUnitAbilityLevel(target,'GDSV') == 0 then
                 
         if GetUnitAbilityLevel(target,'A15H') > 0 then
-            set currentDmg = currentDmg * 0.8
+            set currentDmg = currentDmg * 0.85
         endif                         
         // Калейдожезл Сапфир
         if GetUnitAbilityLevel(target,'B073') > 0 then
@@ -3306,7 +3318,7 @@ function myCustomDamage2 takes unit target, real amount returns real
                 set currentDmg = currentDmg*(1.00+(0.05*passedTime))
             endif
             if GetUnitAbilityLevel(target,'A15H') > 0 then
-                set currentDmg = currentDmg * 0.8
+                set currentDmg = currentDmg * 0.85
             endif 
             // Калейдожезл Сапфир
             if GetUnitAbilityLevel(target,'B073') > 0 then
@@ -3397,7 +3409,7 @@ function myCustomDamage2_inc takes unit whichUnit, real amount returns real
             
     // Брейкер уменьшение наносимого урона
     if GetUnitAbilityLevel(whichUnit,'A15H') > 0 then
-        set currentDmg = currentDmg * 0.9
+        set currentDmg = currentDmg * 0.85
     endif   
     if GetUnitAbilityLevel(whichUnit, 'IcF3') > 0 then
         set currentDmg=currentDmg * 1.2
@@ -3462,7 +3474,7 @@ function myCustomDamage2_dec takes unit target, real amount returns real
                 set currentDmg = currentDmg*(1.00+(0.05*passedTime))
             endif
             if GetUnitAbilityLevel(target,'A15H') > 0 then
-                set currentDmg = currentDmg * 0.8
+                set currentDmg = currentDmg * 0.85
             endif 
             // Калейдожезл Сапфир
             if GetUnitAbilityLevel(target,'B073') > 0 then
@@ -5848,6 +5860,10 @@ function StatusIndicatorTipInit takes nothing returns nothing
     call SaveInteger(HH,SB_TIPITEM,StringHash("war3mapImported\\BTNVoidSphere.blp"),'I03R')
     call SaveInteger(HH,SB_TIPITEM,StringHash("war3mapImported\\BTNBorosArmor.blp"),'I13R')
     call SaveInteger(HH,SB_TIPITEM,StringHash("war3mapImported\\BTNToaru_Majutsu_no_Index.blp"),'I04V')
+    call SaveInteger(HH,SB_TIPITEM,StringHash("war3mapImported\\BTNSusanoo_Yata's_Mirror_.blp"),'I04T')
+    call SaveInteger(HH,SB_TIPITEM,StringHash("ReplaceableTextures\\CommandButtons\\BTNOnizukaSet_5.blp"),'I1S4')
+    call SaveInteger(HH,SB_TIPITEM,StringHash("ReplaceableTextures\\CommandButtons\\BTNINV_Boots_Plate_05.blp"),'I054')
+    call SaveInteger(HH,SB_TIPTAB,StringHash("war3mapImported\\BTNLampos_Shield.blp"),'LamF')
     call SaveInteger(HH,SB_TIPTAB,StringHash("war3mapImported\\BTNXGlovesVerX.blp"),'KI34')
     call SaveInteger(HH,SB_TIPTAB,StringHash("war3mapImported\\BTN666HellRing.blp"),'KIN4')
     call SaveInteger(HH,SB_TIPTAB,StringHash("war3mapImported\\BTNEvilEye's.blp"),'KIF6')
@@ -6177,13 +6193,13 @@ function HeroBarMbShift takes nothing returns real
     if hbw<0.1 or hbw>0.7 then
         set hbw=0.43
     endif
-    // правый край панели — 0.4+0.1736
-    set hbs=(0.4+0.3*hba-hbw-.035)-0.5736
+    // правый край панели — 0.4+0.13888
+    set hbs=(0.4+0.3*hba-hbw-.035)-0.53888
     if hbs>0. then
         return 0.
     endif
-    if 0.2264+hbs<0.4-0.3*hba+.005 then
-        set hbs=0.4-0.3*hba+.005-0.2264
+    if 0.26112+hbs<0.4-0.3*hba+.005 then
+        set hbs=0.4-0.3*hba+.005-0.26112
     endif
     return hbs
 endfunction
@@ -6296,7 +6312,14 @@ function HPB_Layout takes integer hps returns nothing
         call SetFrameSize(HPB_Lvl[hps],.0095,hpy)
     endif
 endfunction
-// раз в 0.1 с: освободить места ушедших юнитов, раздать места юнитам рядом с камерой
+// юнит на экране (с запасом по краям) — экранные координаты, локально, без handle
+function HPB_OnScreen takes unit hpu returns boolean
+    local real hsx=GetUnitScreenX(hpu)
+    local real hsy=GetUnitScreenY(hpu)
+    return hsx>-0.2 and hsx<1.0 and hsy>0.08 and hsy<0.62
+endfunction
+// раз в 0.1 с: освободить места ушедших (дальше 6300 от камеры или за экраном), раздать места юнитам на экране в радиусе 6000
+// (раньше радиус 2600 — на широком экране и с отдалённой камерой по краям полосок не было)
 function HPB_Assign takes nothing returns nothing
     local unit hpu
     local integer hps=0
@@ -6310,18 +6333,18 @@ function HPB_Assign takes nothing returns nothing
         exitwhen hps>=HPB_N
         set hpu=HPB_U[hps]
         if hpu!=null then
-            if HPB_Eligible(hpu)==false or (GetUnitX(hpu)-hpx)*(GetUnitX(hpu)-hpx)+(GetUnitY(hpu)-hpy)*(GetUnitY(hpu)-hpy)>2800.*2800. then
+            if HPB_Eligible(hpu)==false or (GetUnitX(hpu)-hpx)*(GetUnitX(hpu)-hpx)+(GetUnitY(hpu)-hpy)*(GetUnitY(hpu)-hpy)> 6300.*6300. or HPB_OnScreen(hpu)==false then
                 call HPB_Free(hps)
             endif
         endif
         set hps=hps+1
     endloop
-    call GroupEnumUnitsInRange(HPB_G,hpx,hpy,2600.,null)
+    call GroupEnumUnitsInRange(HPB_G,hpx,hpy,6000.,null)
     loop
         set hpu=FirstOfGroup(HPB_G)
         exitwhen hpu==null
         call GroupRemoveUnit(HPB_G,hpu)
-        if LoadInteger(HPB_HT,GetHandleId(hpu),0)==0 and HPB_Eligible(hpu) then
+        if LoadInteger(HPB_HT,GetHandleId(hpu),0)==0 and HPB_Eligible(hpu) and HPB_OnScreen(hpu) then
             if IsUnitType(hpu,UNIT_TYPE_HERO) then
                 set hps=0
                 set hpe=HPB_HN
@@ -6356,7 +6379,7 @@ function HPB_Assign takes nothing returns nothing
     endloop
     set hpu=null
 endfunction
-// раз в 0.015 с: перенос полосок за юнитами и заливка; цвет, засечки, уровень и щит — раз в ~0.1 с (каждый 7-й тик)
+// раз в 0.01 с: перенос полосок за юнитами и заливка (не-герои — через тик); цвет, засечки, уровень и щит — раз в 0.1 с (каждый 10-й тик)
 function HPB_Update takes nothing returns nothing
     local integer hps=0
     local unit hpu
@@ -6375,6 +6398,7 @@ function HPB_Update takes nothing returns nothing
     local real hpb
     local real hpq
     local string hpt
+    local unit hsrc
     if HPB_Mode==3 then
         return
     endif
@@ -6384,6 +6408,15 @@ function HPB_Update takes nothing returns nothing
     set hpb=GetCameraEyePositionY()
     set hpq=GetCameraEyePositionZ()
     set HPB_CamMoved=hpa!=HPB_CamX or hpb!=HPB_CamY or hpq!=HPB_CamZ or GetCameraTargetPositionX()!=HPB_CamTX or GetCameraTargetPositionY()!=HPB_CamTY
+    // растяжение экранной X (0..0.8, сетка 4:3) в координаты фреймов под пропорции окна; окно изменилось — пересчитать всё
+    set hpr=1.333
+    if GetWindowHeight()>0 then
+        set hpr=0.75*I2R(GetWindowWidth())/I2R(GetWindowHeight())
+    endif
+    if hpr!=HPB_AspK then
+        set HPB_AspK=hpr
+        set HPB_CamMoved=true
+    endif
     if HPB_CamMoved then
         set HPB_CamX=hpa
         set HPB_CamY=hpb
@@ -6399,10 +6432,19 @@ function HPB_Update takes nothing returns nothing
             set hpu=null
         endif
         if hpu!=null then
+            // иллюзия героя: мана и щит на полоске — как у настоящего героя этого игрока (того же типа), чтобы их нельзя было отличить
+            set hsrc=hpu
+            if hps<HPB_HN and IsUnitIllusion(hpu) and Hero[GetPlayerId(GetOwningPlayer(hpu))]!=null and GetUnitTypeId(Hero[GetPlayerId(GetOwningPlayer(hpu))])==GetUnitTypeId(hpu) then
+                set hsrc=Hero[GetPlayerId(GetOwningPlayer(hpu))]
+            endif
             if IsUnitType(hpu,UNIT_TYPE_DEAD) or GetUnitTypeId(hpu)==0 or IsUnitHidden(hpu) or IsUnitVisible(hpu,GetLocalPlayer())==false then
                 call HPB_Free(hps)
             else
                 set hpo=GetUnitOverheadOffset(hpu)
+                // у героев стандартная полоска поднята на 15% (CCB_Scan) — наша остаётся на исходной высоте
+                if LoadReal(CCB_HT,GetHandleId(hpu),5)>0. and RAbsBJ(hpo-LoadReal(CCB_HT,GetHandleId(hpu),5))<0.5 then
+                    set hpo=LoadReal(CCB_HT,GetHandleId(hpu),4)
+                endif
                 if hpo>1000 then
                     set hpo=250.
                 endif
@@ -6414,9 +6456,15 @@ function HPB_Update takes nothing returns nothing
                     set HPB_UY[hps]=hpb
                     set HPB_UZ[hps]=hpq
                     call SetSpecialEffectPositionWithZ(HPB_Proj,hpa,hpb,hpq)
-                    // по горизонтали — экранная позиция самого юнита (эффект давал сдвиг влево), по вертикали — точка полоски над ним
-                    set HPB_SX[hps]=GetUnitScreenX(hpu)
+                    // по вертикали — точка полоски над юнитом
                     set HPB_SY[hps]=GetSpecialEffectScreenY(HPB_Proj)
+                    // по горизонтали — где стоит стандартная полоска. Экранная X юнита и координаты фреймов — обе 0..0.8 на всю ширину окна;
+                    // по замерам -hpbdbg (1600x900) центр стандартной полоски = 0.4+1.0935*(unitX-0.3864), ±5 px:
+                    // перспектива ~9% (точка над головой уходит от центра) и постоянный сдвиг ~0.015 вправо
+                    // X — через проекцию эффекта у ног (по отладке равна GetUnitScreenX), а не GetUnitScreenX: экранная позиция
+                    // юнита после мгновенного переноса (SetUnitX — автоатака в T Исиды) обновлялась с задержкой ~0.15 с
+                    call SetSpecialEffectPositionWithZ(HPB_Proj,hpa,hpb,GetUnitZ(hpu))
+                    set HPB_SX[hps]=0.4+1.0935*(GetSpecialEffectScreenX(HPB_Proj)-0.3864)
                 endif
                 set hpx=HPB_SX[hps]
                 set hpy=HPB_SY[hps]
@@ -6443,11 +6491,13 @@ function HPB_Update takes nothing returns nothing
                         set HPB_ShOn[hps]=0
                         set HPB_PX[hps]=-9.
                     endif
-                    // над юнитом; на тестах полоска стояла левее героя на ~0.014 — поправка вправо
+                    // над юнитом (X уже в координатах фреймов, см. выше).
+                    // по вертикали — как у стандартной полоски (подобрано по скриншотам 1600x900): чем выше на экране, тем ниже
+                    // (0 у низа обзора, ~0.014 у верха); по горизонтали перспектива уже в hpx (см. выше)
                     if RAbsBJ(hpx-HPB_PX[hps])>.0002 or RAbsBJ(hpy-HPB_PY[hps])>.0002 then
                         set HPB_PX[hps]=hpx
                         set HPB_PY[hps]=hpy
-                        call SetFrameAbsolutePoint(HPB_Root[hps],FRAMEPOINT_CENTER,hpx+.014,hpy)
+                        call SetFrameAbsolutePoint(HPB_Root[hps],FRAMEPOINT_CENTER,hpx,hpy-0.046*(hpy-0.185))
                     endif
                     if hps<HPB_HN then
                         set hbw=HPB_HW
@@ -6456,7 +6506,7 @@ function HPB_Update takes nothing returns nothing
                         set hbw=HPB_UW
                         set hph=HPB_UH
                     endif
-                    set hpz=HPB_Col[hps]==-1 or ModuloInteger(HPB_T+hps,7)==0
+                    set hpz=HPB_Col[hps]==-1 or ModuloInteger(HPB_T+hps,10)==0
                     // HP
                     set hpm=GetUnitState(hpu,UNIT_STATE_MAX_LIFE)
                     set hpw=hbw*GetWidgetLife(hpu)/hpm
@@ -6476,7 +6526,7 @@ function HPB_Update takes nothing returns nothing
                         endif
                     endif
                     // MP
-                    set hpr=GetUnitState(hpu,UNIT_STATE_MAX_MANA)
+                    set hpr=GetUnitState(hsrc,UNIT_STATE_MAX_MANA)
                     set hpk=2
                     if hpr>0 then
                         set hpk=1
@@ -6490,7 +6540,7 @@ function HPB_Update takes nothing returns nothing
                         call HPB_Layout(hps)
                     endif
                     if hpr>0 then
-                        set hpw=hbw*GetUnitState(hpu,UNIT_STATE_MANA)/hpr
+                        set hpw=hbw*GetUnitState(hsrc,UNIT_STATE_MANA)/hpr
                         if hpw>hbw then
                             set hpw=hbw
                         endif
@@ -6596,14 +6646,14 @@ function HPB_Update takes nothing returns nothing
                             call SetFrameText(HPB_LvlTxt[hps],I2S(hpk))
                         endif
                         // щит: доля от максимума HP; щит без запаса — полоска во всю ширину
-                        set hpr=ShieldHPTotal(hpu)
+                        set hpr=ShieldHPTotal(hsrc)
                         set hpw=0.
                         if hpr>0 then
                             set hpw=hbw*hpr/hpm
                             if hpw>hbw then
                                 set hpw=hbw
                             endif
-                        elseif HeroHasShield(hpu) then
+                        elseif HeroHasShield(hsrc) then
                             set hpw=hbw
                         endif
                         set hpw=I2R(R2I(hpw*4000.))/4000.
@@ -6626,6 +6676,7 @@ function HPB_Update takes nothing returns nothing
         set hps=hps+1
     endloop
     set hpu=null
+    set hsrc=null
 endfunction
 // отладка (-hpbdbg): экранные координаты выбранного юнита разными способами
 function HPB_DebugTick takes nothing returns nothing
@@ -6668,6 +6719,7 @@ function HPB_SetMode takes integer hpk returns nothing
     elseif hpk!=3 and HPB_Mode==3 then
         call EnableStatbar(false)
     endif
+    set HPB_TgtSb=false
     set hps=0
     set HPB_Mode=hpk
     loop
@@ -6722,6 +6774,16 @@ endfunction
 // раз в 0.02 с: показ кнопки «HP» (без GetFrameUnderCursor — см. StatusIndicatorTooltip)
 function HPB_MenuPoll takes nothing returns nothing
     local integer hpk
+    local boolean hpt
+    // прицеливание способностью: нативные полоски HP — часть области клика по юниту (клик над головой попадает в цель),
+    // поэтому на время прицеливания включаем их (только у себя, чисто визуально; наши полоски рисуются поверх)
+    if HPB_Mode!=3 then
+        set hpt=IsCursorInTargetMode()
+        if hpt!=HPB_TgtSb then
+            set HPB_TgtSb=hpt
+            call EnableStatbar(hpt)
+        endif
+    endif
     // кнопка видна только после выбора режима и пока не открыто большое окно (развёрнутый multiboard не мешает);
     // окно при этом закрывается
     set HPB_MT=HPB_MT+1
@@ -6917,6 +6979,23 @@ function CCB_Scan takes nothing returns nothing
         exitwhen ccu==null
         call GroupRemoveUnit(CCB_G,ccu)
         set cci=GetHandleId(ccu)
+        // герой сменил тип (форма через морф) — снова разрешить менять высоту полёта (Arav): иначе способности
+        // с подъёмом в воздух (T Транкса, W Неро и т.п.) на него не действуют. Флаг ставился только при входе на карту.
+        if LoadInteger(CCB_HT,cci,3)!=GetUnitTypeId(ccu) then
+            call SaveInteger(CCB_HT,cci,3,GetUnitTypeId(ccu))
+            if GetUnitAbilityLevel(ccu,'Arav')==0 then
+                call UnitAddAbility(ccu,'Arav')
+                call UnitRemoveAbility(ccu,'Arav')
+            endif
+            // стандартная полоска HP героя — на 15% выше (на высоте нашей); морф сбрасывает высоту, поэтому при каждой смене типа.
+            // Исходная высота (4) — для нашей полоски, она остаётся на прежнем месте
+            // (5) — поставленная нами высота: если морф её не сбросил, не умножать второй раз
+            if RAbsBJ(GetUnitOverheadOffset(ccu)-LoadReal(CCB_HT,cci,5))>0.5 then
+                call SaveReal(CCB_HT,cci,4,GetUnitOverheadOffset(ccu))
+                call SaveReal(CCB_HT,cci,5,LoadReal(CCB_HT,cci,4)*1.15)
+                call SetUnitOverheadOffset(ccu,LoadReal(CCB_HT,cci,5))
+            endif
+        endif
         // держит чужая способность с паузой — тоже контроль (для ассиста)
         if LoadBoolean(HH,cci,TARGET_ABILITY) then
             call AST_CreditCC(ccu)
@@ -7100,7 +7179,7 @@ function HPB_Init takes nothing returns nothing
     endloop
     call TriggerAddAction(hpg,function HPB_Chat)
     call TimerStart(CreateTimer(),0.1,true,function HPB_Assign)
-    call TimerStart(CreateTimer(),0.015,true,function HPB_Update)
+    call TimerStart(CreateTimer(),0.01,true,function HPB_Update)
     call TimerStart(CreateTimer(),0.5,true,function HPB_DebugTick)
     call HPB_MenuInit()
     call CCB_Init()
@@ -7110,7 +7189,7 @@ function HeroBarFill takes framehandle hbf, real hbw returns nothing
     if hbw<0.0005 then
         call ShowFrame(hbf,false)
     else
-        call SetFrameSize(hbf,hbw,.0034)
+        call SetFrameSize(hbf,hbw,.0027)
         call ShowFrame(hbf,true)
     endif
 endfunction
@@ -7155,7 +7234,7 @@ function HeroBarBars takes nothing returns nothing
             endif
             set hbw=0.
             if IsUnitType(hbh,UNIT_TYPE_DEAD)==false and GetUnitState(hbh,UNIT_STATE_MAX_LIFE)>0 then
-                set hbw=.0272*GetUnitState(hbh,UNIT_STATE_LIFE)/GetUnitState(hbh,UNIT_STATE_MAX_LIFE)
+                set hbw=.02176*GetUnitState(hbh,UNIT_STATE_LIFE)/GetUnitState(hbh,UNIT_STATE_MAX_LIFE)
             endif
             set hbw=I2R(R2I(hbw*2000.))/2000.
             if hbw!=HB_HpW[hbi] then
@@ -7165,7 +7244,7 @@ function HeroBarBars takes nothing returns nothing
             set hbw=0.
             set hbm=GetUnitState(hbh,UNIT_STATE_MAX_MANA)
             if IsUnitType(hbh,UNIT_TYPE_DEAD)==false and hbm>0 then
-                set hbw=.0272*GetUnitState(hbh,UNIT_STATE_MANA)/hbm
+                set hbw=.02176*GetUnitState(hbh,UNIT_STATE_MANA)/hbm
             endif
             set hbw=I2R(R2I(hbw*2000.))/2000.
             if hbw!=HB_MpW[hbi] then
@@ -7209,14 +7288,14 @@ function HeroBarPlace takes nothing returns nothing
     loop
         exitwhen hbi>9
         if hbi<5 then
-            set hbpos=-0.034-(4-hbi)*0.0315
+            set hbpos=-0.0272-(4-hbi)*0.0252
         else
-            set hbpos=0.034+(hbi-5)*0.0315
+            set hbpos=0.0272+(hbi-5)*0.0252
         endif
-        call SetFrameRelativePoint(HeroBarIcon[hbi],FRAMEPOINT_CENTER,GetOriginFrame(ORIGIN_FRAME_GAME_UI,0),FRAMEPOINT_TOP,hbpos+HB_Shift,-0.09)
+        call SetFrameRelativePoint(HeroBarIcon[hbi],FRAMEPOINT_CENTER,GetOriginFrame(ORIGIN_FRAME_GAME_UI,0),FRAMEPOINT_TOP,hbpos+HB_Shift,-0.060)
         set hbi=hbi+1
     endloop
-    call SetFrameRelativePoint(HB_ScoreFrame,FRAMEPOINT_CENTER,GetOriginFrame(ORIGIN_FRAME_GAME_UI,0),FRAMEPOINT_TOP,HB_Shift,-0.09)
+    call SetFrameRelativePoint(HB_ScoreFrame,FRAMEPOINT_CENTER,GetOriginFrame(ORIGIN_FRAME_GAME_UI,0),FRAMEPOINT_TOP,HB_Shift,-0.060)
 endfunction
 function HeroBarHideClick takes nothing returns nothing
     if GetTriggerPlayer()==GetLocalPlayer() then
@@ -7250,7 +7329,7 @@ function HeroBarFast takes nothing returns nothing
             if hbm>3 then
                 set hbm=6-hbm
             endif
-            call SetFrameSize(HeroBarIcon[hbi],.0272-.00102*hbm,.0272-.00102*hbm)
+            call SetFrameSize(HeroBarIcon[hbi],.02176-.00082*hbm,.02176-.00082*hbm)
         endif
         set hbi=hbi+1
     endloop
@@ -7292,7 +7371,7 @@ function HeroBarUpdate takes nothing returns nothing
             call SetFrameTexture(HeroBarIcon[hbi],hbs,0,true)
             call SetFrameTexture(HeroBarIcon[hbi],hbs,1,true)
             call SetFrameTexture(HeroBarIcon[hbi],hbs,2,true)
-            call SetFrameSize(HeroBarIcon[hbi],.0272,.0272)
+            call SetFrameSize(HeroBarIcon[hbi],.02176,.02176)
         endif
         if hbc!=HeroBarCol[hbi] then
             set HeroBarCol[hbi]=hbc
@@ -7348,17 +7427,17 @@ function HeroBarInit takes nothing returns nothing
     loop
         exitwhen hbi>9
         if hbi<5 then
-            set hbpos=-0.034-(4-hbi)*0.0315
+            set hbpos=-0.0272-(4-hbi)*0.0252
         else
-            set hbpos=0.034+(hbi-5)*0.0315
+            set hbpos=0.0272+(hbi-5)*0.0252
         endif
         set hbf=CreateFrameByType("SIMPLEBUTTON","HeroBarIcon",null,"",hbi)
         call ClearFrameAllPoints(hbf)
-        call SetFrameRelativePoint(hbf,FRAMEPOINT_CENTER,GetOriginFrame(ORIGIN_FRAME_GAME_UI,0),FRAMEPOINT_TOP,hbpos,-0.09)
+        call SetFrameRelativePoint(hbf,FRAMEPOINT_CENTER,GetOriginFrame(ORIGIN_FRAME_GAME_UI,0),FRAMEPOINT_TOP,hbpos,-0.060)
         call SetFrameTexture(hbf,"UI\\Widgets\\Console\\Human\\human-inventory-slotfiller.blp",0,true)
         call SetFrameTexture(hbf,"UI\\Widgets\\Console\\Human\\human-inventory-slotfiller.blp",1,true)
         call SetFrameTexture(hbf,"UI\\Widgets\\Console\\Human\\human-inventory-slotfiller.blp",2,true)
-        call SetFrameSize(hbf,.0272,.0272)
+        call SetFrameSize(hbf,.02176,.02176)
         call SetFramePriority(hbf,7)
         call SaveInteger(HH,GetHandleId(hbf),HB_IDX,hbi+1)
         call TriggerRegisterFrameEvent(hbg,hbf,FRAMEEVENT_CONTROL_CLICK)
@@ -7369,8 +7448,8 @@ function HeroBarInit takes nothing returns nothing
         call SetFrameTexture(HB_ShBg[hbi],"ReplaceableTextures\\TeamColor\\TeamColor09.blp",0,true)
         call SetFrameTexture(HB_ShBg[hbi],"ReplaceableTextures\\TeamColor\\TeamColor09.blp",1,true)
         call SetFrameTexture(HB_ShBg[hbi],"ReplaceableTextures\\TeamColor\\TeamColor09.blp",2,true)
-        call SetFrameSize(HB_ShBg[hbi],.02992,.00995)
-        call SetFrameRelativePoint(HB_ShBg[hbi],FRAMEPOINT_TOP,hbf,FRAMEPOINT_BOTTOM,0.,.0006)
+        call SetFrameSize(HB_ShBg[hbi],.02394,.00796)
+        call SetFrameRelativePoint(HB_ShBg[hbi],FRAMEPOINT_TOP,hbf,FRAMEPOINT_BOTTOM,0.,.00048)
         call SetFramePriority(HB_ShBg[hbi],6)
         call ShowFrame(HB_ShBg[hbi],false)
         set HB_ShVis[hbi]=0
@@ -7383,8 +7462,8 @@ function HeroBarInit takes nothing returns nothing
         call SetFrameColourEx(HB_HpBg[hbi],0,0xFFFFFFFF)
         call SetFrameColourEx(HB_HpBg[hbi],1,0xFFFFFFFF)
         call SetFrameColourEx(HB_HpBg[hbi],2,0xFFFFFFFF)
-        call SetFrameSize(HB_HpBg[hbi],.0272,.0034)
-        call SetFrameRelativePoint(HB_HpBg[hbi],FRAMEPOINT_TOP,hbf,FRAMEPOINT_BOTTOM,0.,-0.00085)
+        call SetFrameSize(HB_HpBg[hbi],.02176,.0027)
+        call SetFrameRelativePoint(HB_HpBg[hbi],FRAMEPOINT_TOP,hbf,FRAMEPOINT_BOTTOM,0.,-0.00068)
         call SetFramePriority(HB_HpBg[hbi],7)
         call ShowFrame(HB_HpBg[hbi],false)
         set HB_Hp[hbi]=CreateFrameByType("SIMPLEBUTTON","HeroBarBarFill",null,"",hbi)
@@ -7395,7 +7474,7 @@ function HeroBarInit takes nothing returns nothing
         call SetFrameColourEx(HB_Hp[hbi],0,0xFFFFFFFF)
         call SetFrameColourEx(HB_Hp[hbi],1,0xFFFFFFFF)
         call SetFrameColourEx(HB_Hp[hbi],2,0xFFFFFFFF)
-        call SetFrameSize(HB_Hp[hbi],.0272,.0034)
+        call SetFrameSize(HB_Hp[hbi],.02176,.0027)
         call SetFrameRelativePoint(HB_Hp[hbi],FRAMEPOINT_LEFT,HB_HpBg[hbi],FRAMEPOINT_LEFT,0.,0.)
         call SetFramePriority(HB_Hp[hbi],8)
         call ShowFrame(HB_Hp[hbi],false)
@@ -7407,8 +7486,8 @@ function HeroBarInit takes nothing returns nothing
         call SetFrameColourEx(HB_MpBg[hbi],0,0xFFFFFFFF)
         call SetFrameColourEx(HB_MpBg[hbi],1,0xFFFFFFFF)
         call SetFrameColourEx(HB_MpBg[hbi],2,0xFFFFFFFF)
-        call SetFrameSize(HB_MpBg[hbi],.0272,.0034)
-        call SetFrameRelativePoint(HB_MpBg[hbi],FRAMEPOINT_TOP,hbf,FRAMEPOINT_BOTTOM,0.,-0.004675)
+        call SetFrameSize(HB_MpBg[hbi],.02176,.0027)
+        call SetFrameRelativePoint(HB_MpBg[hbi],FRAMEPOINT_TOP,hbf,FRAMEPOINT_BOTTOM,0.,-0.00374)
         call SetFramePriority(HB_MpBg[hbi],7)
         call ShowFrame(HB_MpBg[hbi],false)
         set HB_Mp[hbi]=CreateFrameByType("SIMPLEBUTTON","HeroBarBarFill",null,"",hbi)
@@ -7419,25 +7498,25 @@ function HeroBarInit takes nothing returns nothing
         call SetFrameColourEx(HB_Mp[hbi],0,0xFFFFFFFF)
         call SetFrameColourEx(HB_Mp[hbi],1,0xFFFFFFFF)
         call SetFrameColourEx(HB_Mp[hbi],2,0xFFFFFFFF)
-        call SetFrameSize(HB_Mp[hbi],.0272,.0034)
+        call SetFrameSize(HB_Mp[hbi],.02176,.0027)
         call SetFrameRelativePoint(HB_Mp[hbi],FRAMEPOINT_LEFT,HB_MpBg[hbi],FRAMEPOINT_LEFT,0.,0.)
         call SetFramePriority(HB_Mp[hbi],8)
         call ShowFrame(HB_Mp[hbi],false)
         set HB_BarVis[hbi]=0
-        // счёт FFA над иконкой
+        // счёт FFA под иконкой (под полосками HP/MP)
         set hbt=CreateFrameByType("SIMPLETEXT","HeroBarScore",hbf,"",hbi)
         call ClearFrameAllPoints(hbt)
         call SetFrameBlendMode(hbt,0,BLEND_MODE_BLEND)
         call SetFrameFont(hbt,"Fonts\\FRIZQT__.TTF",.011,0)
         call SetFrameTextAlignment(hbt,TEXT_JUSTIFY_CENTER,TEXT_JUSTIFY_MIDDLE)
         call SetFrameText(hbt,"")
-        call SetFrameRelativePoint(hbt,FRAMEPOINT_CENTER,hbf,FRAMEPOINT_TOP,0.,.008)
+        call SetFrameRelativePoint(hbt,FRAMEPOINT_TOP,hbf,FRAMEPOINT_BOTTOM,0.,-0.0075)
         call ShowFrame(hbt,false)
         set HeroBarScore[hbi]=hbt
         // подсказка с именем под иконкой
         set hbt=BlzCreateFrameByType("BACKDROP","HeroBarTip",GetOriginFrame(ORIGIN_FRAME_GAME_UI,0),"",hbi)
         set hbtx=BlzCreateFrameByType("TEXT","HeroBarTipText",hbt,"",hbi)
-        call BlzFrameSetPoint(hbtx,FRAMEPOINT_TOP,hbf,FRAMEPOINT_BOTTOM,0.,-0.016)
+        call BlzFrameSetPoint(hbtx,FRAMEPOINT_TOP,hbf,FRAMEPOINT_BOTTOM,0.,-0.021)
         call BlzFrameSetFont(hbtx,"Fonts\\FRIZQT__.TTF",.009,0)
         call BlzFrameSetTextAlignment(hbtx,TEXT_JUSTIFY_CENTER,TEXT_JUSTIFY_MIDDLE)
         call BlzFrameSetText(hbtx," ")
@@ -7462,7 +7541,7 @@ function HeroBarInit takes nothing returns nothing
     set HB_ScoreFrame=CreateFrameByType("SIMPLEFRAME","HeroBarScoreFrame",null,"",0)
     call ClearFrameAllPoints(HB_ScoreFrame)
     call SetFrameSize(HB_ScoreFrame,.04,.02)
-    call SetFrameRelativePoint(HB_ScoreFrame,FRAMEPOINT_CENTER,GetOriginFrame(ORIGIN_FRAME_GAME_UI,0),FRAMEPOINT_TOP,0.,-0.09)
+    call SetFrameRelativePoint(HB_ScoreFrame,FRAMEPOINT_CENTER,GetOriginFrame(ORIGIN_FRAME_GAME_UI,0),FRAMEPOINT_TOP,0.,-0.060)
     call SetFramePriority(HB_ScoreFrame,7)
     set HB_ScoreText=CreateFrameByType("SIMPLETEXT","HeroBarScoreText",HB_ScoreFrame,"",0)
     call ClearFrameAllPoints(HB_ScoreText)
@@ -7479,7 +7558,7 @@ function HeroBarInit takes nothing returns nothing
     call SetFrameTexture(HB_HideBtn,"UI\\Widgets\\EscMenu\\Human\\checkbox-background.blp",2,true)
     call SetFrameSize(HB_HideBtn,.012,.012)
     // под кнопкой «Chat (F12)» в верхнем меню
-    call SetFrameRelativePoint(HB_HideBtn,FRAMEPOINT_CENTER,GetOriginFrame(ORIGIN_FRAME_GAME_UI,0),FRAMEPOINT_TOPLEFT,.268,-.038)
+    call SetFrameRelativePoint(HB_HideBtn,FRAMEPOINT_CENTER,GetOriginFrame(ORIGIN_FRAME_GAME_UI,0),FRAMEPOINT_TOPLEFT,.258,-.038)
     call SetFramePriority(HB_HideBtn,7)
     set HB_HideChk=CreateFrameByType("SIMPLEBUTTON","HeroBarHideCheck",null,"",0)
     call ClearFrameAllPoints(HB_HideChk)
@@ -35648,9 +35727,9 @@ function OnButtonSelectHero takes nothing returns nothing
                     call SetFrameTexture( GetFrameByName("TavernAbility",5), GetAbilityBaseStringFieldById( String2Id( "A0A2" ), ABILITY_SF_ICON_NORMAL ), 0, true )
                     call SetFrameTexture( GetFrameByName("TavernAbility",5), GetAbilityBaseStringFieldById( String2Id( "A0A2" ), ABILITY_SF_ICON_NORMAL ), 1, true )
                     call SetFrameTexture( GetFrameByName("TavernAbility",5), GetAbilityBaseStringFieldById( String2Id( "A0A2" ), ABILITY_SF_ICON_NORMAL ), 2, true )
-                    call SetFrameTexture( GetFrameByName("TavernAbility",6), "UI\\Widgets\\Console\\Human\\human-inventory-slotfiller.blp", 0, true )
-                    call SetFrameTexture( GetFrameByName("TavernAbility",6), "UI\\Widgets\\Console\\Human\\human-inventory-slotfiller.blp", 1, true )
-                    call SetFrameTexture( GetFrameByName("TavernAbility",6), "UI\\Widgets\\Console\\Human\\human-inventory-slotfiller.blp", 2, true )
+                    call SetFrameTexture( GetFrameByName("TavernAbility",6), GetAbilityBaseStringFieldById( 'MkCX', ABILITY_SF_ICON_NORMAL ), 0, true )
+                    call SetFrameTexture( GetFrameByName("TavernAbility",6), GetAbilityBaseStringFieldById( 'MkCX', ABILITY_SF_ICON_NORMAL ), 1, true )
+                    call SetFrameTexture( GetFrameByName("TavernAbility",6), GetAbilityBaseStringFieldById( 'MkCX', ABILITY_SF_ICON_NORMAL ), 2, true )
                     call AddFrameText( GetFrameByName("TavernAbilityTooltipText",0), "\n\n"+GetAbilityBaseStringFieldById( String2Id( "A0A3" ), ABILITY_SF_NAME )+", (|cffffcc00Q|r)\n\n"+GetAbilityBaseStringFieldById( String2Id( "A0A3" ), ABILITY_SLF_TOOLTIP_LEARN_EXTENDED ))
                     call AddFrameText( GetFrameByName("TavernAbilityTooltipText",1), "\n\n"+GetAbilityBaseStringFieldById( String2Id( "A01E" ), ABILITY_SF_NAME )+", (|cffffcc00W|r)\n\n"+GetAbilityBaseStringFieldById( String2Id( "A01E" ), ABILITY_SLF_TOOLTIP_LEARN_EXTENDED ))
                     call AddFrameText( GetFrameByName("TavernAbilityTooltipText",2), "\n\n"+GetAbilityBaseStringFieldById( String2Id( "A0A6" ), ABILITY_SF_NAME )+", (|cffffcc00E|r)\n\n"+GetAbilityBaseStringFieldById( String2Id( "A0A6" ), ABILITY_SLF_TOOLTIP_LEARN_EXTENDED ))
@@ -35658,7 +35737,10 @@ function OnButtonSelectHero takes nothing returns nothing
                     call AddFrameText( GetFrameByName("TavernAbilityTooltipText",4), "\n\n"+GetAbilityBaseStringFieldById( String2Id( "A02J" ), ABILITY_SF_NAME )+", (|cffffcc00T|r)\n\n"+GetAbilityBaseStringFieldById( String2Id( "A02J" ), ABILITY_SLF_TOOLTIP_LEARN_EXTENDED ))
                     call AddFrameText( GetFrameByName("TavernAbilityTooltipText",5), "\n\n"+GetAbilityBaseStringFieldById( String2Id( "A0A2" ), ABILITY_SF_NAME )+", (|cffffcc00F|r)\n\n"+GetAbilityBaseStringFieldById( String2Id( "A0A2" ), ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED ))
                     call ShowFrame( GetFrameByName("TavernAbilityBorderOpenable",5), true )
-                    call SetFrameText( GetFrameByName("TavernAbilityTooltipText",6), "Описание способностей" )
+                    // G: Cambio Forma Version X
+                    call SetFrameText( GetFrameByName("TavernAbilityTooltipText",6), "|cffffcc00"+I2S(GetAbilityBaseIntegerLevelFieldById( 'MkCX', ABILITY_ILF_MANA_COST, 0 ))+"|r" )
+                    call AddFrameText( GetFrameByName("TavernAbilityTooltipText",6), "\n\n"+GetAbilityBaseStringFieldById( 'MkCX', ABILITY_SF_NAME )+", (|cffffcc00G|r)\n\n"+GetAbilityBaseStringFieldById( 'MkCX', ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED ))
+                    call ShowFrame( GetFrameByName("TavernAbilityBorderOpenable",6), Condition_AbilityString('MkCX') )
                     call SetFrameSize( GetFrameByName("TavernAbilityTooltip",0), .26, GetFrameHeight( GetFrameByName("TavernAbilityTooltipText",0))+0.03)
                     call SetFrameSize( GetFrameByName("TavernAbilityTooltip",1), .26, GetFrameHeight( GetFrameByName("TavernAbilityTooltipText",1))+0.03)
                     call SetFrameSize( GetFrameByName("TavernAbilityTooltip",2), .26, GetFrameHeight( GetFrameByName("TavernAbilityTooltipText",2))+0.03)
@@ -35666,7 +35748,7 @@ function OnButtonSelectHero takes nothing returns nothing
                     call SetFrameSize( GetFrameByName("TavernAbilityTooltip",4), .26, GetFrameHeight( GetFrameByName("TavernAbilityTooltipText",4))+0.03)
                     call SetFrameSize( GetFrameByName("TavernAbilityTooltip",5), .26, GetFrameHeight( GetFrameByName("TavernAbilityTooltipText",5))+0.03)
                     call SetFrameSize( GetFrameByName("TavernAbilityTooltip",6), .26, GetFrameHeight( GetFrameByName("TavernAbilityTooltipText",6))+0.03)
-                    call ShowFrame(GetFrameByName("TavernAbility",6),false)
+                    call ShowFrame(GetFrameByName("TavernAbility",6),true)
                     call ShowFrame(GetFrameByName("TavernAbility",7),false)
                 endif
             endif
@@ -68661,6 +68743,7 @@ endif
 call SaveReal(h,id,4,8)
 call SaveReal(h,id,5,0)
 call UnitAddAbility(c,'A15F')
+call CreateModeIndicatorForm(c,"ReplaceableTextures\\CommandButtons\\BTNINV_Boots_Plate_05.blp",8)
 call SaveUnitHandle(h,id,1,c)
 call SaveInteger(HH,GetHandleId(c),SH_cold2,0)
 call HealTextTag(u,c,GetUnitState(c,UNIT_STATE_MAX_MANA)*0.15*myCustomMana2(c,1),"ManaRes")
@@ -68907,6 +68990,7 @@ call UnitRemoveAbility(GetTriggerUnit(), 'M1CD')
 call UnitAddAbility(GetTriggerUnit(),'OniC')
 call UnitMakeAbilityPermanent(GetTriggerUnit(),true,'OniC')
 call UnitRemoveAbilityTimedPause(GetTriggerUnit(),'OniC',5)
+call CreateModeIndicatorWithPauseForm(GetTriggerUnit(),"ReplaceableTextures\\CommandButtons\\BTNOnizukaSet_5.blp",5)
 endfunction
 function InitTrig_OnizukaSet takes nothing returns nothing
 set gg_trg_OnizukaSet=CreateTrigger()
@@ -69006,6 +69090,7 @@ function Trig_YataMirror_Actions takes nothing returns nothing
 call UnitAddAbility(GetTriggerUnit(),'YatB')
 call UnitMakeAbilityPermanent(GetTriggerUnit(),true,'YatB')
 call UnitRemoveAbilityTimedPause(GetTriggerUnit(),'YatB',5)
+call CreateModeIndicatorWithPauseForm(GetTriggerUnit(),"war3mapImported\\BTNSusanoo_Yata's_Mirror_.blp",5)
 endfunction
 function InitTrig_YataMirror takes nothing returns nothing
 set gg_trg_YataMirror=CreateTrigger()
@@ -69368,49 +69453,51 @@ call TriggerRegisterAnyUnitEventBJ(gg_trg_Yamato,EVENT_PLAYER_UNIT_SPELL_EFFECT)
 call TriggerAddCondition(gg_trg_Yamato,Condition(function Trig_Yamato_Conditions))
 call TriggerAddAction(gg_trg_Yamato,function Trig_Yamato_Actions)
 endfunction
-function SlashRaven2 takes nothing returns nothing
-local timer t=GetExpiredTimer()
-local integer id=GetHandleId(t)
-local unit l__d=LoadUnitHandle(h,id,0)
-local player p=GetOwningPlayer(l__d)
-local unit u=Hero[GetPlayerId(p)]
-local real speed=LoadReal(h,id,1)
-local real x=LoadReal(h,id,3)
-local real y=LoadReal(h,id,4)
+// летящие юниты T Мукуро: все двигает один общий таймер 0.03 с (раньше — свой таймер на каждый юнит)
+function SlashRaven_Move takes nothing returns nothing
+local unit l__d=GetEnumUnit()
+local integer id=GetHandleId(l__d)
+local real speed=LoadReal(MkMove_HT,id,1)
+local real a=LoadReal(MkMove_HT,id,2)
+local real Range=LoadReal(MkMove_HT,id,9)
 local real x1=GetUnitX(l__d)
 local real y1=GetUnitY(l__d)
-local real f=GetUnitFacing(l__d)
-local real a=LoadReal(h,id,2)
-local real Range=LoadReal(h,id,9)
-if Range>0 then
+if Range>0 and GetUnitTypeId(l__d)!=0 then
 call SetUnitXY_1(l__d,x1+speed*Cos(a),y1+speed*Sin(a), false)
-call SaveReal(h,id,9,Range-speed)
+call SaveReal(MkMove_HT,id,9,Range-speed)
 call SetUnitFacingInstant(l__d,a*bj_RADTODEG)
 if GetRandomInt(1,15)==1 then
 call DestroyEffect(AddSpecialEffect("feathercrow.mdx",x1,y1))
 endif
 else
+call GroupRemoveUnit(SlashRaven_G,l__d)
+set SlashRaven_N=SlashRaven_N-1
+call FlushChildHashtable(MkMove_HT,id)
 call RemoveUnit(l__d)
-call FlushChildHashtable(h,id)
-call PauseTimer(t)
-call DestroyTimer(t)
 endif
-set u=null
-set p=null
-set t=null
 set l__d=null
 endfunction
+function SlashRaven2 takes nothing returns nothing
+call ForGroup(SlashRaven_G,function SlashRaven_Move)
+if SlashRaven_N<=0 then
+set SlashRaven_N=0
+call PauseTimer(SlashRaven_T)
+set SlashRaven_On=false
+endif
+endfunction
 function SlashRaven takes unit l__d,real speed,real angle,real range returns nothing
-local timer t=CreateTimer()
-local integer id=GetHandleId(t)
-call SaveUnitHandle(h,id,0,l__d)
-call SaveReal(h,id,1,speed)
-call SaveReal(h,id,2,angle)
-call SaveReal(h,id,3,GetUnitX(l__d))
-call SaveReal(h,id,4,GetUnitY(l__d))
-call SaveReal(h,id,9,range)
-call TimerStart(t,0.03,true,function SlashRaven2)
-set t=null
+local integer id=GetHandleId(l__d)
+call SaveReal(MkMove_HT,id,1,speed)
+call SaveReal(MkMove_HT,id,2,angle)
+call SaveReal(MkMove_HT,id,9,range)
+if IsUnitInGroup(l__d,SlashRaven_G)==false then
+call GroupAddUnit(SlashRaven_G,l__d)
+set SlashRaven_N=SlashRaven_N+1
+endif
+if SlashRaven_On==false then
+set SlashRaven_On=true
+call TimerStart(SlashRaven_T,0.03,true,function SlashRaven2)
+endif
 endfunction
 function GungnirCond takes nothing returns boolean
 return GetSpellAbilityId()=='A0XX' and GetUnitTypeId(GetTriggerUnit())!='H007'  and GetUnitAbilityLevel(GetTriggerUnit(),'GIE1')==0
@@ -78306,8 +78393,9 @@ local real time=LoadReal(h,id,15)
 if dist>0 and RectContainsUnit(GetWorldBounds(),l__d)and UnitIsAlive(l__d)then
 if dist>1000 then
 call SlashRaven(CreateUnit(p,'e1VS',x1+100*Cos(a)+GetRandomReal(-400,400)*Cos(GetRandomReal(0,359)*bj_DEGTORAD),y1+100*Sin(a)+GetRandomReal(-400,400)*Sin(GetRandomReal(0,359)*bj_DEGTORAD),0),40,a,2000)
+if ModuloInteger(R2I((2000-dist)/65+0.5),2)==0 then
 call SlashRaven(CreateUnit(p,'e2VS',x1+100*Cos(a)+GetRandomReal(-400,400)*Cos(GetRandomReal(0,359)*bj_DEGTORAD),y1+100*Sin(a)+GetRandomReal(-400,400)*Sin(GetRandomReal(0,359)*bj_DEGTORAD),0),40,a,2000)
-call SlashRaven(CreateUnit(p,'e2VS',x1+100*Cos(a)+GetRandomReal(-400,400)*Cos(GetRandomReal(0,359)*bj_DEGTORAD),y1+100*Sin(a)+GetRandomReal(-400,400)*Sin(GetRandomReal(0,359)*bj_DEGTORAD),0),40,a,2000)
+endif
 endif
 call SetUnitXY_1(l__d,x,y, false)
 set EFF=AddSpecialEffect("feathercrow.mdl", x+GetRandomReal(200,300)*Cos(a+deg90),y+GetRandomReal(200,300)*Sin(a+deg90))
@@ -78982,10 +79070,10 @@ if LoadBoolean(h,id,5) then
 call SaveBoolean(h,id,5,false)
 call CambioXRestoreCD(u)
 endif
-// vision 3000 for Mukuro's player only (not through shared vision), moved every 0.1 s
+// vision 2250 for Mukuro's player only (not through shared vision), moved every 0.1 s
 if LoadInteger(h,id,6)>=1 then
 call SaveInteger(h,id,6,0)
-set fm=CreateFogModifierRadius(GetOwningPlayer(u),FOG_OF_WAR_VISIBLE,GetUnitX(u),GetUnitY(u),3000.0,false,false)
+set fm=CreateFogModifierRadius(GetOwningPlayer(u),FOG_OF_WAR_VISIBLE,GetUnitX(u),GetUnitY(u),2250.0,false,false)
 call FogModifierStart(fm)
 if LoadFogModifierHandle(h,id,4)!=null then
 call FogModifierStop(LoadFogModifierHandle(h,id,4))
@@ -78999,7 +79087,7 @@ if GetUnitAbilityLevel(u,'MkMS')==0 then
 call UnitAddAbility(u,'MkMS')
 call UnitMakeAbilityPermanent(u,true,'MkMS')
 endif
-// detection 3000: Neutral Passive dummy (Neutral Passive vision is shared only with Mukuro's player)
+// detection 2250: Neutral Passive dummy (Neutral Passive vision is shared only with Mukuro's player)
 if cxDum==null or GetUnitTypeId(cxDum)==0 or GetUnitAbilityLevel(cxDum,'MkDT')==0 then
 if cxDum!=null then
 call RemoveUnit(cxDum)
@@ -79091,8 +79179,8 @@ endloop
 endif
 set slot=slot+1
 endloop
-// vision 3000 and detection 3000 for Mukuro's player only
-set fm=CreateFogModifierRadius(p,FOG_OF_WAR_VISIBLE,GetUnitX(u),GetUnitY(u),3000.0,false,false)
+// vision 2250 and detection 2250 for Mukuro's player only
+set fm=CreateFogModifierRadius(p,FOG_OF_WAR_VISIBLE,GetUnitX(u),GetUnitY(u),2250.0,false,false)
 call FogModifierStart(fm)
 call SaveFogModifierHandle(h,id,4,fm)
 call SaveBoolean(h,id,7,GetPlayerAlliance(Player(PLAYER_NEUTRAL_PASSIVE),p,ALLIANCE_SHARED_VISION))
@@ -79311,10 +79399,13 @@ call DestroyEffect(AddSpecialEffect("Abilities\\Spells\\Other\\Stampede\\Stamped
 call SetUnitXY_1(u,x1,y1, false)
 call SetUnitFacing(u,a*bj_RADTODEG)
 call SetUnitAnimation(u,"attack")
+// копия Мукуро в шлейф — на каждом 2-м шаге
+if ModuloInteger(R2I(time/0.2+0.5),2)==0 then
 set n=CreateUnit(GetOwningPlayer(u),'e05A',x1,y1,a*bj_RADTODEG)
 call UnitApplyTimedLife(n,'BTLF',0.2)
 call SetUnitTimeScale(n,2)
 call SetUnitAnimation(n,"attack")
+endif
 else
 call DestroyEffect(LoadEffectHandle(h,id,6))
 call DestroyEffect(LoadEffectHandle(h,id,7))
@@ -79613,31 +79704,39 @@ call TriggerAddAction(t,function CastSuside)
 call TriggerAddCondition(t,Condition(function CondSuside))
 set t=null
 endfunction
-function Snakes2 takes nothing returns nothing
-local timer t=GetExpiredTimer()
-local integer id=GetHandleId(t)
-local unit l__d=LoadUnitHandle(h,id,0)
-local unit c=LoadUnitHandle(h,id,1)
-local real x=GetUnitX(c)
-local real y=GetUnitY(c)
-if UnitIsAlive(l__d)then
-call SetUnitXY_1(l__d,x-50*Cos(AU(l__d,c)),y-50*Sin(AU(l__d,c)), false)
+// змеи Мукуро держатся за своей целью: всех двигает один общий таймер 0.04 с (раньше — свой таймер на каждую змею)
+function Snakes_Move takes nothing returns nothing
+local unit l__d=GetEnumUnit()
+local integer id=GetHandleId(l__d)
+local unit c=LoadUnitHandle(MkMove_HT,id,1)
+if UnitIsAlive(l__d) then
+call SetUnitXY_1(l__d,GetUnitX(c)-50*Cos(AU(l__d,c)),GetUnitY(c)-50*Sin(AU(l__d,c)), false)
 else
-call PauseTimer(t)
-call DestroyTimer(t)
-call FlushChildHashtable(h,id)
+call GroupRemoveUnit(Snakes_G,l__d)
+set Snakes_N=Snakes_N-1
+call FlushChildHashtable(MkMove_HT,id)
 endif
 set l__d=null
 set c=null
-set t=null
+endfunction
+function Snakes2 takes nothing returns nothing
+call ForGroup(Snakes_G,function Snakes_Move)
+if Snakes_N<=0 then
+set Snakes_N=0
+call PauseTimer(Snakes_T)
+set Snakes_On=false
+endif
 endfunction
 function Snakes takes unit l__d,unit c returns nothing
-local timer t=CreateTimer()
-local integer id=GetHandleId(t)
-call SaveUnitHandle(h,id,0,l__d)
-call SaveUnitHandle(h,id,1,c)
-call TimerStart(t,0.04,true,function Snakes2)
-set t=null
+call SaveUnitHandle(MkMove_HT,GetHandleId(l__d),1,c)
+if IsUnitInGroup(l__d,Snakes_G)==false then
+call GroupAddUnit(Snakes_G,l__d)
+set Snakes_N=Snakes_N+1
+endif
+if Snakes_On==false then
+set Snakes_On=true
+call TimerStart(Snakes_T,0.04,true,function Snakes2)
+endif
 endfunction
 function CondSAS takes nothing returns boolean
 return GetSpellAbilityId()=='A0AP' and udg_B
@@ -79816,10 +79915,13 @@ call SaveReal(h,id,6,time+0.03)
 call SetUnitXY_1(u,x1+45*Cos(a),y1+45*Sin(a), false)
 call SetUnitFacing(u,a*bj_RADTODEG)
 //call GroupEnumUnitsInRange(g,x1,y1,200,Base)
+// копия Мукуро (12 тыс. треугольников) в шлейф — на каждом 3-м шаге
+if ModuloInteger(R2I(time/0.03+0.5),3)==0 then
 set n=CreateUnit(p,'e05A',x1,y1,a*bj_RADTODEG)
 call UnitApplyTimedLife(n,'BTLF',0.25)
 call SetUnitTimeScale(n,2)
 call SetUnitAnimation(n,"attack")
+endif
 call SetUnitAnimation(u,"attack")
 call DestroyEffect(AddSpecialEffect("Objects\\Spawnmodels\\Undead\\ImpaleTargetDust\\ImpaleTargetDust.mdl",x1,y1))
 else
@@ -79901,10 +80003,14 @@ local real a=Atan2(y1-y,x1-x)+angle
 if SR(x,y,x1,y1)>30 then
 call SetUnitXY_1(l__d,x+speed*Cos(a),y+speed*Sin(a), false)
 call SetUnitFacing(l__d,a*bj_RADTODEG)
+// копия Мукуро в шлейф — на каждом 3-м шаге
+call SaveInteger(h,id,7,LoadInteger(h,id,7)+1)
+if ModuloInteger(LoadInteger(h,id,7),3)==1 then
 set n=CreateUnit(GetOwningPlayer(l__d),'e05A',x,y,a*bj_RADTODEG)
 call UnitApplyTimedLife(n,'BTLF',0.2)
 call SetUnitTimeScale(n,2)
 call SetUnitAnimation(n,"attack")
+endif
 else
 call myCustomDamage(LoadUnitHandle(h,id,6),c,LoadReal(h,id,5)*CambioXDmg(LoadUnitHandle(h,id,6)),false,false,null,null,null)
 call DestroyEffect(AddSpecialEffect("war3mapImported\\BloodEX.mdx",x,y))
@@ -109227,12 +109333,8 @@ function NinpoKirigakureNoJutsuCast2 takes nothing returns nothing
         if dist<7+GetUnitAbilityLevel(u,'A0ML')then
                 call SaveReal(h,id,100,dist+0.1)
                 call UnitApplyTimedLife(CreateUnit(p,0x65304A54,x+GetRandomReal(-1*distan,distan),y+GetRandomReal(-1*distan,distan),0),'BTLF',4)
-                call UnitApplyTimedLife(CreateUnit(p,0x65304A54,x+GetRandomReal(-1*distan,distan),y+GetRandomReal(-1*distan,distan),0),'BTLF',4)
         else
-                call SetUnitFlyHeight(u,0,0)
-                call SetUnitTimeScale(u,1)
                 call DestroyTimer(t)
-                call SetUnitInvulnerable(u,false)
                 call FlushChildHashtable(h,id)
         endif
         set u=null
@@ -183098,9 +183200,13 @@ local real y1=GetUnitY(c)
 local real a=Atan2(y1-y,x1-x)
 local real dist=LoadReal(HH,id,8)
 local player p=GetOwningPlayer(l__d)
+// след рывка — через тик (раньше 2 юнита каждые 0.02 с на каждого шпиона: при 20–30 шпионах сотни юнитов за пару секунд)
+local integer tk=LoadInteger(HH,id,13)+1
+call SaveInteger(HH,id,13,tk)
 if dist>100 then
 if SR(x,y,x1,y1)>speed+20 and LoadInteger(HH,id,9)!=1 then
 call SetUnitXY_1(l__d,x+speed*Cos(a),y+speed*Sin(a), false)
+if ModuloInteger(tk,2)==0 then
 set n=CreateUnit(p,'eo6Z',x,y,a*bj_RADTODEG)
 call UnitApplyTimedLife(n,'BTLF',0.08)
 call SetUnitTimeScale(n,3)
@@ -183109,6 +183215,7 @@ call SetUnitVertexColor(n,255,255,255,75)
 set n=CreateUnit(p,'eo8D',x,y,a*bj_RADTODEG)
 call UnitApplyTimedLife(n,'BTLF',0.5)
 call SetUnitTimeScale(n,1)
+endif
 call SetUnitFacing(l__d,a*bj_RADTODEG)
 call SaveReal(HH,id,10,a)
 else
@@ -183117,6 +183224,7 @@ call SaveInteger(HH,id,9,1)
 endif
 set a=LoadReal(HH,id,10)
 call SetUnitXY_1(l__d,x+speed*Cos(a),y+speed*Sin(a), false)
+if ModuloInteger(tk,2)==0 then
 set n=CreateUnit(p,'eo6Z',x,y,a*bj_RADTODEG)
 call UnitApplyTimedLife(n,'BTLF',0.05)
 call SetUnitTimeScale(n,3)
@@ -183125,6 +183233,7 @@ call SetUnitVertexColor(n,255,255,255,75)
 set n=CreateUnit(p,'eo8D',x,y,a*bj_RADTODEG)
 call UnitApplyTimedLife(n,'BTLF',0.5)
 call SetUnitTimeScale(n,1)
+endif
 call SaveReal(HH,id,8,dist-speed)
 endif
 else
@@ -183227,10 +183336,11 @@ local unit u=GetTriggerUnit()
 local real x=GetUnitX(u)
 local real y=GetUnitY(u)
 local player p=GetOwningPlayer(u)
-set soundplay=SndN(3048) // Sound\war3mapImported\Kirei_F.mp3
-call StartSound(soundplay)
+// озвучка отключена (играла с громкостью 250 при максимуме 127)
+//set soundplay=SndN(3048) // Sound\war3mapImported\Kirei_F.mp3
+//call StartSound(soundplay)
 //call KillSoundWhenDone(soundplay) // звук из массива soundStr — не удалять
-call SetSoundVolume(soundplay,250)
+//call SetSoundVolume(soundplay,250)
 //call KillSoundWhenDone(soundplay) // звук из массива soundStr — не удалять
 set n=CreateUnit(p,'eo89',x,y,GetRandomReal(0,359))
 call UnitApplyTimedLife(n,'BTLF',1)
@@ -183276,7 +183386,7 @@ if UnitIsAlive(c)and UnitIsAlive(u)and UnitIsAlive(l__d)and udg_B==true and DU2=
                 call SetUnitX(l__d,x1+dist*0.8*Cos(r))
                 call SetUnitY(l__d,y1+dist*0.8*Sin(r))
                 elseif sr<dist and GetUnitAbilityLevel(l__d,'Ao62')==0 then
-                call SaveReal(HH,id,5,time+0.1)
+                call SaveReal(HH,id,5,time+0.3)
                 if time>2.5 then
                         if GetUnitCurrentOrder(l__d)!=OrderId("move")then
                                 call IssuePointOrder(l__d,"move",x1+GetRandomReal(-dist,dist),y1+GetRandomReal(-dist,dist))
@@ -183311,7 +183421,8 @@ endif
 //exitwhen is == bj_MAX_PLAYER_SLOTS
 //endloop
 call SetUnitAnimation(l__d,"Spell Two")
-call TimerStart(t,0.1,true,function KireiTSpy3)
+// проверка шпиона раз в 0.3 с (было 0.1): шпионов за раунд много, у каждого свой таймер
+call TimerStart(t,0.3,true,function KireiTSpy3)
 set t=null
 set l__d=null
 endfunction
@@ -245386,8 +245497,8 @@ if uid=='H00E' and hp>100 then
 set hp=hp-20
 endif
 if GetHeroLevel(caster)>12 then
-set hp=hp+GetHeroStr(caster,true)*0.4
-call HealTextTag(caster,caster,GetHeroStr(caster,true)*0.4*myCustomHeal2(caster,1),"HealthRes")
+set hp=hp+GetHeroStr(caster,true)*0.25
+call HealTextTag(caster,caster,GetHeroStr(caster,true)*0.25*myCustomHeal2(caster,1),"HealthRes")
 endif
 call SetWidgetLife(caster,hp)
 endif
@@ -249542,7 +249653,7 @@ call SaveReal(HH,id,3,facing)
 call PauseUnit(caster,true)
 call SetUnitInvulnerable(caster,true)
 call SetUnitState(caster,UNIT_STATE_LIFE,current_hp-decrease_hp1)
-set damage=damage+decrease_hp*0.5
+set damage=damage+decrease_hp*0.35
 call SaveReal(HH,id,15,damage)
 call TimerStart(t,0.02,true,function KimimaroG_Act2)
 set t=null
@@ -249715,9 +249826,9 @@ call SetUnitState(caster,UNIT_STATE_LIFE,current_hp-decrease_hp1)
 
 
 if GetUnitLevel(caster)>=35 then
-set damage=damage+decrease_hp*0.5/3
+set damage=damage+decrease_hp*0.35/3
 else
-set damage=damage+decrease_hp*0.5*0.5
+set damage=damage+decrease_hp*0.35*0.5
 endif
 
 endif
@@ -249842,7 +249953,7 @@ call SaveReal(HH,id,3,facing)
 call SetUnitInvulnerable(caster,true)
 if GetHeroLevel(caster)>12 then
 call SetUnitState(caster,UNIT_STATE_LIFE,current_hp-decrease_hp1)
-set damage=damage+decrease_hp*0.25*0.5
+set damage=damage+decrease_hp*0.25*0.35
 endif
 call SaveReal(HH,id,15,damage)
 call TimerStart(t,0.02,true,function KimimaroW_Act2)
@@ -250001,7 +250112,7 @@ call PauseUnit(caster,true)
 call SetUnitInvulnerable(caster,true)
 if GetHeroLevel(caster)>12 then
 call SetUnitState(caster,UNIT_STATE_LIFE,current_hp-decrease_hp1)
-set damage=damage+decrease_hp*0.5
+set damage=damage+decrease_hp*0.35
 endif
 call SaveReal(HH,id,15,damage)
 call TimerStart(t,0.02,true,function KimimaroE_Act2)
@@ -250259,7 +250370,7 @@ local real facing=Angle2(x0,y0,x1,y1)
 local real current_hp=GetUnitState(caster,UNIT_STATE_LIFE)
 local real decrease_hp=GetUnitState(caster,UNIT_STATE_LIFE)*0.1
 local real decrease_hp1=GetUnitState(caster,UNIT_STATE_LIFE)*0.1
-local real damage=150+(GetUnitAbilityLevel(caster,'AKR1')+3)*GetHeroAgi(caster,true)
+local real damage=150+(GetUnitAbilityLevel(caster,'AKR1')+2)*GetHeroAgi(caster,true)
 call SaveUnitHandle(HH,id,1,caster)
 call SaveUnitHandle(HH,id,2,target)
 call SaveReal(HH,id,3,facing)
@@ -250271,11 +250382,11 @@ call SetUnitInvulnerable(caster,true)
 call SetUnitState(caster,UNIT_STATE_LIFE,current_hp-decrease_hp1)
 
 if GetUnitTypeId(caster)=='H00F' then
-set damage=(GetUnitAbilityLevel(caster,'AKR1')+4)*GetHeroAgi(caster,true)+decrease_hp*0.5
+set damage=(GetUnitAbilityLevel(caster,'AKR1')+3)*GetHeroAgi(caster,true)+decrease_hp*0.35
 call SaveReal(HH,id,15,damage)
 call TimerStart(t,0.02,true,function KimimaroRMorph_Act2)
 else
-set damage=damage+decrease_hp*0.5
+set damage=damage+decrease_hp*0.35
 call SaveReal(HH,id,15,damage)
 call TimerStart(t,0.02,true,function KimimaroR_Act2)
 endif
@@ -250367,7 +250478,7 @@ call GroupAddUnit(gr,n0)
 
 call myCustomDamage(caster,n0,damage,false,false,null,null,null)
 
-call SetControlToUnit(n0,n0,2,"stun")
+call SetControlToUnit(n0,n0,1,"stun")
 endif
 call GroupRemoveUnit(G,n0)
 endloop
@@ -250528,7 +250639,7 @@ call SaveReal(HH,id,11,x0)
 call SaveReal(HH,id,12,y0)
 call SaveReal(HH,id,8,200)
 call SetUnitState(caster,UNIT_STATE_LIFE,current_hp-decrease_hp1)
-set damage=damage+decrease_hp*0.5
+set damage=damage+decrease_hp*0.35
 call SaveReal(HH,id,15,damage)
 call TimerStart(t,0.02,true,function KimimaroT_Act2)
 set t=null
@@ -253747,7 +253858,7 @@ return false
 endif
 endfunction
 function LamboLearnE_Cond takes nothing returns boolean
-if ( GetLearnedSkill()=='LamR' or GetLearnedSkill()=='LCQ1' )   and IsUnitIllusion(GetTriggerUnit())==false then 
+if ( GetLearnedSkill()=='LamR' or GetLearnedSkill()=='LCQ1' or GetLearnedSkill()=='LamE' )   and IsUnitIllusion(GetTriggerUnit())==false then 
 return true
 else
 return false
@@ -253755,24 +253866,19 @@ endif
 endfunction
 function LamboLearnE_Act takes nothing returns nothing
 local unit caster=GetTriggerUnit()
-
-
-
-
-if GetUnitAbilityLevel(caster,'LamG')<5 then
+local integer s=GetLearnedSkill()
+// G растёт вместе с R
+if s=='LamR' and GetUnitAbilityLevel(caster,'LamG')<5 then
     call SetUnitAbilityLevel(caster,'LamG',GetUnitAbilityLevel(caster,'LamR'))
-endif    
-
-
-if GetUnitAbilityLevel(caster,'LCG1')<5 then
+endif
+// F (Lampo Scudo, 5 уровней) растёт вместе с E — раньше уровень F нигде не повышался и всегда был 1
+if s=='LamE' and GetUnitAbilityLevel(caster,'LamF')>0 and GetUnitAbilityLevel(caster,'LamF')<5 then
+    call SetUnitAbilityLevel(caster,'LamF',GetUnitAbilityLevel(caster,'LamE'))
+endif
+if s=='LCQ1' and GetUnitAbilityLevel(caster,'LCG1')<5 then
     call SetUnitAbilityLevel(caster,'LCG1',GetUnitAbilityLevel(caster,'LCQ1'))
-endif    
-
-
-
+endif
 set caster=null
-
-
 endfunction
 function Lambo_F_Remove_Ability takes nothing returns nothing
 local integer id=GetHandleId(GetExpiredTimer())
@@ -253836,6 +253942,7 @@ call GroupAddUnit(gr,n0)
 call EffectCreateAndMove(true,"Others\\FSAEff (34)-green.mdl",facing,1.5,1.5,1.5,100,100,100,40,0,n0,0,facing)
 call UnitAddAbility(n0,'LamD')
 call SetUnitAbilityLevel(n0,'LamD',Abil_Lvl+1)
+call CreateModeIndicatorForm(n0,"war3mapImported\\BTNLampos_Shield.blp",15)
 if Abil_Lvl>0 then
 set count_int=Abil_Lvl
 loop
@@ -254897,6 +255004,15 @@ set n0=null
 call TimerStart(t,0.02,true,function Roshi_T_Self_Act2)
 set t=null
 endfunction
+// T Роши подменяет Q/W/R: общая перезарядка 1:1 — оставшаяся перезарядка спрятанной способности переходит на появившуюся
+function Roshi_CdSwap takes unit caster,integer from,integer to returns nothing
+local real r=GetAbilityRemainingCooldown(GetUnitAbility(caster,from))
+call SetPlayerAbilityAvailable(GetOwningPlayer(caster),from,false)
+call SetPlayerAbilityAvailable(GetOwningPlayer(caster),to,true)
+if r>0.05 then
+call StartAbilityCooldown(GetUnitAbility(caster,to),r)
+endif
+endfunction
 function Roshi_T_Act2 takes nothing returns nothing
 local integer id=GetHandleId(GetExpiredTimer())
 local unit caster=LoadUnitHandle(HH,id,1)
@@ -254977,15 +255093,9 @@ call UnitAddAbility(caster,'RsT3')
 call IssueImmediateOrder(caster,"bearform")
 call UnitRemoveAbility(caster,'RsT3')
 endif
-call SetPlayerAbilityAvailable(GetOwningPlayer(caster),'RsQ2',false)
-call SetPlayerAbilityAvailable(GetOwningPlayer(caster),'RsQ1',true)
-// call StartAbilityCooldown(GetUnitAbility(caster,'RsQ1'),GetAbilityRemainingCooldown(GetUnitAbility(caster,'RsQ2')))
-call SetPlayerAbilityAvailable(GetOwningPlayer(caster),'RsW2',false)
-call SetPlayerAbilityAvailable(GetOwningPlayer(caster),'RsW1',true)
-// call StartAbilityCooldown(GetUnitAbility(caster,'RsW1'),GetAbilityRemainingCooldown(GetUnitAbility(caster,'RsW2')))
-call SetPlayerAbilityAvailable(GetOwningPlayer(caster),'RsR2',false)
-call SetPlayerAbilityAvailable(GetOwningPlayer(caster),'RsR1',true)
-// call StartAbilityCooldown(GetUnitAbility(caster,'RsR1'),GetAbilityRemainingCooldown(GetUnitAbility(caster,'RsR2')))
+call Roshi_CdSwap(caster,'RsQ2','RsQ1')
+call Roshi_CdSwap(caster,'RsW2','RsW1')
+call Roshi_CdSwap(caster,'RsR2','RsR1')
 call EffectCreateAndMove(true,EffectID[608],GetRandomReal(0,360),1.5,1,1,100,100,100,0,0,caster,0,facing)
 call EffectCreateAndMove(true,EffectID[41],GetRandomReal(0,360),1.5,1,0.5,100,100,100,0,100,caster,0,facing)
 call EffectCreateAndMove(true,EffectID[23],GetRandomReal(0,360),1.5,1,0.5,100,100,100,40,0,caster,0,facing)
@@ -255007,15 +255117,9 @@ call UnitAddAbility(caster,'RsT2')
 call IssueImmediateOrder(caster,"bearform")
 call UnitRemoveAbility(caster,'RsT2')
 call SetUnitAnimationByIndex(caster,18)
-call SetPlayerAbilityAvailable(GetOwningPlayer(caster),'RsQ1',false)
-call SetPlayerAbilityAvailable(GetOwningPlayer(caster),'RsQ2',true)
-// call StartAbilityCooldown(GetUnitAbility(caster,'RsQ2'),GetAbilityRemainingCooldown(GetUnitAbility(caster,'RsQ1'))-GetAbilityCooldown(GetUnitAbility(caster,'RsQ1')) / 2)
-call SetPlayerAbilityAvailable(GetOwningPlayer(caster),'RsW1',false)
-call SetPlayerAbilityAvailable(GetOwningPlayer(caster),'RsW2',true)
-// call StartAbilityCooldown(GetUnitAbility(caster,'RsW2'),GetAbilityRemainingCooldown(GetUnitAbility(caster,'RsW1'))-GetAbilityCooldown(GetUnitAbility(caster,'RsW1')) / 2)
-call SetPlayerAbilityAvailable(GetOwningPlayer(caster),'RsR1',false)
-call SetPlayerAbilityAvailable(GetOwningPlayer(caster),'RsR2',true)
-// call StartAbilityCooldown(GetUnitAbility(caster,'RsR2'),GetAbilityRemainingCooldown(GetUnitAbility(caster,'RsR1'))-GetAbilityCooldown(GetUnitAbility(caster,'RsR1')) / 2)
+call Roshi_CdSwap(caster,'RsQ1','RsQ2')
+call Roshi_CdSwap(caster,'RsW1','RsW2')
+call Roshi_CdSwap(caster,'RsR1','RsR2')
 call TimerStart(t,0.02,true,function Roshi_T_Act2)
 set t=null
 endfunction
