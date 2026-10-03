@@ -12996,6 +12996,15 @@ local real y
 local unit dmy
 local timer t2
 call SaveInteger(HH,id,3,tk)
+// реверс (цель в стойке развернула умение): умение кончается, героиня отпущена
+if Bof_RevEnd(caster) then
+call FlushChildHashtable(HH,id)
+call DestroyTimer(t)
+set t=null
+set caster=null
+set target=null
+return
+endif
 call SetUnitInvulnerable(caster,true)
 call PauseUnit(caster,true)
 if tk==18 then
@@ -13417,6 +13426,24 @@ local real dmg
 local player p=GetOwningPlayer(caster)
 local player tp=GetOwningPlayer(target)
 call SaveInteger(HH,id,3,tk)
+// реверс (цель в стойке развернула умение): умение кончается, героиня отпущена
+if Bof_RevEnd(caster) then
+call PauseUnit(target,false)
+call SaveBoolean(HH,GetHandleId(target),TARGET_ABILITY,false)
+call CameraClearNoiseForPlayer(p)
+call CameraClearNoiseForPlayer(tp)
+if tk>306 and (GetLocalPlayer()==p or GetLocalPlayer()==tp) then
+call CinematicFilterGenericBJ(.5,BLEND_MODE_BLEND,"bof\\war3mapImported\\TeamColor00.blp",100.,0.,0.,50.,100.,0.,0.,100.)
+endif
+call FlushChildHashtable(HH,id)
+call DestroyTimer(t)
+set t=null
+set caster=null
+set target=null
+set p=null
+set tp=null
+return
+endif
 call PauseUnit(caster,true)
 call SetUnitInvulnerable(caster,true)
 call PauseUnit(target,true)
@@ -14194,6 +14221,14 @@ local integer i
 local group g
 local unit e
 call SaveInteger(HH,id,2,tk)
+// реверс (цель в стойке развернула умение): умение кончается, героиня отпущена
+if Bof_RevEnd(caster) then
+call FlushChildHashtable(HH,id)
+call DestroyTimer(t)
+set t=null
+set caster=null
+return
+endif
 call SetUnitInvulnerable(caster,true)
 call PauseUnit(caster,true)
 if tk<=50 then
@@ -14742,6 +14777,14 @@ local real y=GetUnitY(caster)
 local unit dmy
 local timer t2
 call SaveInteger(HH,id,4,tk)
+// реверс (цель в стойке развернула умение): умение кончается, героиня отпущена
+if Bof_RevEnd(caster) then
+call FlushChildHashtable(HH,id)
+call DestroyTimer(t)
+set t=null
+set caster=null
+return
+endif
 call PauseUnit(caster,true)
 call SetUnitInvulnerable(caster,true)
 if tk==11 then
@@ -16575,6 +16618,36 @@ function Sui_R_Trail takes unit hr,unit dg,real ang returns nothing
 call Rem_Fx(hr,"bof\\Escanor-4.mdx",GetUnitX(dg),GetUnitY(dg),GetUnitFlyHeight(dg)+150.,ang,1.5,0.)
 call Rem_Fx(hr,"bof\\Mercury Lamp-40.mdx",GetUnitX(dg),GetUnitY(dg),GetUnitFlyHeight(dg)+250.,ang,1.5,0.)
 endfunction
+// цель дракона: ближайший к перу вражеский герой в 3000, а если героев нет — ближайший любой враг в 3000
+// (владелец 3 окт: «при нажатии на перья ничего не происходит» — героя рядом не было, дракон пропадал)
+function Sui_R_Target takes unit hr,real x,real y returns unit
+local group g=CreateGroup()
+local unit e
+local unit best=null
+local real bd=999999.
+local boolean bh=false
+local real dd
+call GroupEnumUnitsInRange(g,x,y,3000.,null)
+loop
+set e=FirstOfGroup(g)
+exitwhen e==null
+call GroupRemoveUnit(g,e)
+if Condition_Base(GetOwningPlayer(hr),e) and GetUnitAbilityLevel(e,'Avul')==0 and GetWidgetLife(e)>.405 then
+set dd=SRS(x,y,GetUnitX(e),GetUnitY(e))
+if (IsUnitType(e,UNIT_TYPE_HERO) and not bh) or (IsUnitType(e,UNIT_TYPE_HERO)==bh and dd<bd) then
+set best=e
+set bd=dd
+set bh=IsUnitType(e,UNIT_TYPE_HERO)
+endif
+endif
+endloop
+call DestroyGroup(g)
+set g=null
+set e=null
+set bj_lastCreatedUnit=best
+set best=null
+return bj_lastCreatedUnit
+endfunction
 function Sui_R_Dragon takes nothing returns nothing
 local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
@@ -16583,14 +16656,31 @@ local unit dg=LoadUnitHandle(HH,id,1)
 local unit e=LoadUnitHandle(HH,id,2)
 local integer tk=LoadInteger(HH,id,3)+1
 local real off=LoadReal(HH,id,4)
-local real dd=SRS(GetUnitX(dg),GetUnitY(dg),GetUnitX(e),GetUnitY(e))
+local real dd=999999.
 local real a2
 call SaveInteger(HH,id,3,tk)
+if e!=null then
+set dd=SRS(GetUnitX(dg),GetUnitY(dg),GetUnitX(e),GetUnitY(e))
+endif
 if off<0. then
 set off=RMinBJ(off+3.,0.)
 call SaveReal(HH,id,4,off)
 endif
-if tk<=166 and dd>=100. and GetWidgetLife(e)>.405 and GetUnitTypeId(dg)!=0 then
+if (e==null or GetWidgetLife(e)<=.405) and ModuloInteger(tk,10)==0 then
+set e=Sui_R_Target(hr,GetUnitX(dg),GetUnitY(dg))
+if e!=null and SRS(GetUnitX(dg),GetUnitY(dg),GetUnitX(e),GetUnitY(e))<=600. then
+call SaveUnitHandle(HH,id,2,e)
+set dd=SRS(GetUnitX(dg),GetUnitY(dg),GetUnitX(e),GetUnitY(e))
+else
+set e=null
+endif
+endif
+if e==null and tk<=166 and GetUnitTypeId(dg)!=0 then
+call Sui_Put(dg,GetUnitX(dg)+50.*CosBJ(GetUnitFacing(dg)),GetUnitY(dg)+50.*SinBJ(GetUnitFacing(dg)))
+if ModuloInteger(tk,6)==0 then
+call Sui_R_Trail(hr,dg,GetUnitFacing(dg))
+endif
+elseif e!=null and tk<=166 and dd>=100. and GetWidgetLife(e)>.405 and GetUnitTypeId(dg)!=0 then
 set a2=Atan2BJ(GetUnitY(e)-GetUnitY(dg),GetUnitX(e)-GetUnitX(dg))+off
 call SetUnitFacingTimed(dg,a2,0)
 call Sui_Put(dg,GetUnitX(dg)+50.*CosBJ(a2),GetUnitY(dg)+50.*SinBJ(a2))
@@ -16598,7 +16688,7 @@ if ModuloInteger(tk,6)==0 then
 call Sui_R_Trail(hr,dg,a2)
 endif
 else
-if GetUnitTypeId(dg)!=0 and dd<=120. and GetWidgetLife(e)>.405 then
+if e!=null and GetUnitTypeId(dg)!=0 and dd<=120. and GetWidgetLife(e)>.405 then
 call Sui_R_Boom(hr,GetUnitX(e),GetUnitY(e),GetUnitFacing(dg))
 call Bof_Dmg(hr,e,I2R(Sui_Agi_R(hr,true))*80.*.001)
 call Bof_Ctrl(hr,e,3.,"stun")
@@ -16671,27 +16761,6 @@ set dg=null
 set g=null
 set e=null
 endfunction
-// ближайший к точке вражеский герой не дальше 3000 от Суйгинто (у bof: живые герои, ближайший)
-function Sui_R_Target takes unit hr,real x,real y returns unit
-local integer i=0
-local unit best=null
-local real bd=999999.
-local real dd
-loop
-exitwhen i>11
-if Hero[i]!=null and GetWidgetLife(Hero[i])>.405 and Condition_Base(GetOwningPlayer(hr),Hero[i]) and SRS(GetUnitX(hr),GetUnitY(hr),GetUnitX(Hero[i]),GetUnitY(Hero[i]))<=3000. then
-set dd=SRS(x,y,GetUnitX(Hero[i]),GetUnitY(Hero[i]))
-if dd<bd then
-set bd=dd
-set best=Hero[i]
-endif
-endif
-set i=i+1
-endloop
-set bj_lastCreatedUnit=best
-set best=null
-return bj_lastCreatedUnit
-endfunction
 function Sui_R_Act takes unit caster,real tx,real ty returns nothing
 local real x=GetUnitX(caster)
 local real y=GetUnitY(caster)
@@ -16742,16 +16811,12 @@ call UnitApplyTimedLife(dg,'BHwe',5.)
 call Rem_Fx(caster,"bof\\Mercury Lamp-22.mdx",fx,fy,z+50.,fa,1.,0.)
 call Rem_Fx(caster,"bof\\Mercury Lamp-27.mdx",fx,fy,z+50.,fa,1.,0.)
 set e=Sui_R_Target(caster,fx,fy)
-if e!=null then
 set t=CreateTimer()
 call SaveUnitHandle(HH,GetHandleId(t),0,caster)
 call SaveUnitHandle(HH,GetHandleId(t),1,dg)
 call SaveUnitHandle(HH,GetHandleId(t),2,e)
 call SaveReal(HH,GetHandleId(t),4,-90.)
 call TimerStart(t,.03,true,function Sui_R_Dragon)
-else
-call RemoveUnit(dg)
-endif
 endif
 set i=i+1
 endloop
