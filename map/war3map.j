@@ -55,6 +55,7 @@ constant integer SH_FlaCharges = StringHash("FlaCharges")
 constant integer SH_FlaClones = StringHash("FlaClones")
 constant integer SH_FlaAtkReady = StringHash("FlaAtkReady")
 constant integer SH_FlaState = StringHash("FlaState")
+constant integer SH_FlaFOn = StringHash("FlaFOn")
 constant integer SH_FlaRecharge = StringHash("FlaRecharge")
 constant integer SH_FlaOwner = StringHash("FlaOwner")
 constant integer SH_FlaDash = StringHash("FlaDash")
@@ -15328,40 +15329,40 @@ endfunction
 // героя (константы SH_Rem...). Время — целыми тиками таймера (n): тики те же, что у bof.
 // Общие вещи bof (эффект с обзором Bof_AddEffV, удаление эффекта Bof_zU, толчок Bof_Slide, урон/
 // стан/замедление с реверсом Bof_Dmg/Bof_Ctrl/Bof_Slow, бонус здоровья Bof_xa) — из библиотеки bof.
-// интеллект для урона кнопки D: урон bof x (0.035), бафф 28 сен (было 0.028);
+// интеллект для урона кнопки D: 0.2*ИНТ за касание цепи (x3 в вызове); 29 сен, было 0.105;
 // x1000, чтобы не терять дробь в целом (в Bof_Dmg урон делится обратно на 1000)
 function Rem_Int_D takes unit u,boolean b returns integer
-return R2I(I2R(GetHeroInt(u,b))*(0.035)*1000.+0.5)
+return R2I(I2R(GetHeroInt(u,b))*(0.2/3.)*1000.+0.5)
 endfunction
-// интеллект для урона кнопки E: урон bof x (0.018 + 0.004 x уровень), бафф 28 сен (было 0.014 + 0.003);
+// интеллект для урона кнопки E: 1.2..2*ИНТ за удар (x25 в вызове); 29 сен, было 0.55..0.95;
 // x1000, чтобы не терять дробь в целом (в Bof_Dmg урон делится обратно на 1000)
 function Rem_Int_E takes unit u,boolean b returns integer
-return R2I(I2R(GetHeroInt(u,b))*(0.018+0.004*I2R(GetUnitAbilityLevel(u,'RmE1')))*1000.+0.5)
+return R2I(I2R(GetHeroInt(u,b))*(0.04+0.008*I2R(GetUnitAbilityLevel(u,'RmE1')))*1000.+0.5)
 endfunction
 // интеллект для урона кнопки G: урон bof x (0.02);
 // x1000, чтобы не терять дробь в целом (в Bof_Dmg урон делится обратно на 1000)
 function Rem_Int_G takes unit u,boolean b returns integer
 return R2I(I2R(GetHeroInt(u,b))*(0.02)*1000.+0.5)
 endfunction
-// интеллект для урона кнопки Q: урон bof x (0.0225 + 0.005 x уровень), бафф 28 сен (было 0.018 + 0.004);
+// интеллект для урона кнопки Q: 1.2..2*ИНТ за цепь (x20 в вызове, цепей 4); 29 сен, было 0.55..0.95;
 // x1000, чтобы не терять дробь в целом (в Bof_Dmg урон делится обратно на 1000)
 function Rem_Int_Q takes unit u,boolean b returns integer
-return R2I(I2R(GetHeroInt(u,b))*(0.0225+0.005*I2R(GetUnitAbilityLevel(u,'RmQ1')))*1000.+0.5)
+return R2I(I2R(GetHeroInt(u,b))*(0.05+0.01*I2R(GetUnitAbilityLevel(u,'RmQ1')))*1000.+0.5)
 endfunction
-// интеллект для урона кнопки Q2: урон bof x (0.044), бафф 28 сен (было 0.035);
+// интеллект для урона кнопки Q2: 5*ИНТ (x80 в вызове); 29 сен, было 3.52;
 // x1000, чтобы не терять дробь в целом (в Bof_Dmg урон делится обратно на 1000)
 function Rem_Int_Q2 takes unit u,boolean b returns integer
-return R2I(I2R(GetHeroInt(u,b))*(0.044)*1000.+0.5)
+return R2I(I2R(GetHeroInt(u,b))*(0.0625)*1000.+0.5)
 endfunction
-// интеллект для урона кнопки R: урон bof x (0.0125 + 0.0025 x уровень), бафф 28 сен (было 0.01 + 0.002);
+// интеллект для урона кнопки R: нажатие x60 = 1.5..2.5*ИНТ, копьё x240 = 6..10*ИНТ; 29 сен, было 0.9..1.5 и 3.6..6;
 // x1000, чтобы не терять дробь в целом (в Bof_Dmg урон делится обратно на 1000)
 function Rem_Int_R takes unit u,boolean b returns integer
-return R2I(I2R(GetHeroInt(u,b))*(0.0125+0.0025*I2R(GetUnitAbilityLevel(u,'RmR1')))*1000.+0.5)
+return R2I(I2R(GetHeroInt(u,b))*((5.+I2R(GetUnitAbilityLevel(u,'RmR1')))/240.)*1000.+0.5)
 endfunction
-// интеллект для урона кнопки W: урон bof x (0.018 + 0.004 x уровень), бафф 28 сен (было 0.014 + 0.003);
+// интеллект для урона кнопки W: 1..1.8*ИНТ за удар (x25 в вызове, ударов 5); 29 сен, было 0.55..0.95;
 // x1000, чтобы не терять дробь в целом (в Bof_Dmg урон делится обратно на 1000)
 function Rem_Int_W takes unit u,boolean b returns integer
-return R2I(I2R(GetHeroInt(u,b))*(0.018+0.004*I2R(GetUnitAbilityLevel(u,'RmW1')))*1000.+0.5)
+return R2I(I2R(GetHeroInt(u,b))*(0.032+0.008*I2R(GetUnitAbilityLevel(u,'RmW1')))*1000.+0.5)
 endfunction
 // интеллект для урона кнопки atk: урон bof x (0.0095), бафф 28 сен (было 0.0075);
 // x1000, чтобы не терять дробь в целом (в Bof_Dmg урон делится обратно на 1000)
@@ -18074,6 +18075,7 @@ local unit e
 call SaveInteger(HH,id,1,tk)
 // реверс (цель в стойке развернула умение): как у героев Чейза — умение кончается, кастер отпущен
 if Bof_RevEnd(caster) then
+call SaveBoolean(HH,GetHandleId(caster),SH_FlaFOn,false)
 call Fla_FLock(caster,false)
 call FlushChildHashtable(HH,id)
 call DestroyTimer(t)
@@ -18082,6 +18084,8 @@ set caster=null
 return
 endif
 if tk<=300 and IsUnitAliveBJ(caster) then
+// неуязвимость F — каждым тиком: её снимают рывок к клону и чужие эффекты (тестер 29 сен)
+call SetUnitInvulnerable(caster,true)
 if ModuloInteger(tk-1,15)==0 then
 call Fla_FLock(caster,true)
 call Rem_Fx(caster,"bof\\Scarlet-4.mdx",x,y,z,0.,1.,0.)
@@ -18103,6 +18107,7 @@ else
 if IsUnitAliveBJ(caster) then
 call Fla_F_End(caster)
 endif
+call SaveBoolean(HH,GetHandleId(caster),SH_FlaFOn,false)
 call Fla_FLock(caster,false)
 call SetUnitInvulnerable(caster,false)
 call FlushChildHashtable(HH,id)
@@ -18120,6 +18125,7 @@ local real z=GetUnitFlyHeight(caster)
 local unit dmy
 local timer t=CreateTimer()
 call SaveBoolean(HH,GetHandleId(caster),SH_bofRevd,false)
+call SaveBoolean(HH,GetHandleId(caster),SH_FlaFOn,true)
 call SetUnitInvulnerable(caster,true)
 call Fla_FLock(caster,true)
 // круг и столб на месте каста (6 c)
@@ -18364,6 +18370,9 @@ local unit e
 call SaveInteger(HH,id,2,tk)
 // реверс (цель в стойке развернула умение): как у героев Чейза — умение кончается, кастер отпущен
 if Bof_RevEnd(caster) then
+if LoadBoolean(HH,GetHandleId(caster),SH_FlaFOn) then
+call SaveBoolean(HH,GetHandleId(caster),SH_bofRevd,true)
+endif
 call FlushChildHashtable(HH,id)
 call DestroyTimer(t)
 set t=null
@@ -18394,7 +18403,9 @@ endloop
 call DestroyGroup(g)
 endif
 else
+if not LoadBoolean(HH,GetHandleId(caster),SH_FlaFOn) then
 call SetUnitInvulnerable(caster,false)
+endif
 call SetUnitTimeScale(caster,1.)
 call FlushChildHashtable(HH,id)
 call DestroyTimer(t)
@@ -25251,10 +25262,10 @@ set udg_RH[140]='HBrg'//Baraggan
 // set udg_RH[144]='HSui'//Suigintou
 //Suigintou1end
 //Remilia1start
-// set udg_RH[141]='HRem'//Remilia
+set udg_RH[141]='HRem'//Remilia
 //Remilia1end
 //Flandre1start
-// set udg_RH[142]='HFla'//Flandre
+set udg_RH[142]='HFla'//Flandre
 //Flandre1end
 //Escanor1start
 // set udg_RH[143]='HEsc'//Escanor
@@ -25413,8 +25424,8 @@ set udg_RH2[140]="Baraggan"
 //Suigintou1start
 // set udg_RH2[144]="Suigintou"
 //Suigintou1end
-// set udg_RH2[141]="Remilia"
-// set udg_RH2[142]="Flandre"
+set udg_RH2[141]="Remilia"
+set udg_RH2[142]="Flandre"
 // set udg_RH2[143]="Escanor"
 call DestroyTrigger(GetTriggeringTrigger())
 endfunction
@@ -44371,7 +44382,7 @@ if cmb!=true then
                 set udg_RH[i]=0
             endif
             set i=i+1
-            exitwhen i>=142 //139
+            exitwhen i>=143 //139
             endloop
             call RemoveUnit(u)
             call SetPlayerStateBJ(GetOwningPlayer(u),PLAYER_STATE_FOOD_CAP_CEILING,0)
@@ -44616,7 +44627,7 @@ if cmb!=true then
                     set udg_RH[i]=0
                 endif
                 set i=i+1
-                exitwhen i>=142 //139
+                exitwhen i>=143 //139
             endloop
         endif
         call SaveInteger(h,GetHandleId(u),'A1GS',0)
@@ -44639,7 +44650,7 @@ if IsUnitType(u,UNIT_TYPE_HERO) and CPTModeON and cmb==true then
         call RemoveUnit(u)
         set i=0
         loop
-        exitwhen i>=142 //139
+        exitwhen i>=143 //139
             if GetUnitTypeId(u)==udg_RH[i] then
                 set udg_RH[i]=0
             endif
