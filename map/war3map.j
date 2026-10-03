@@ -6203,6 +6203,10 @@ function ShieldHPTotal takes unit hsu returns real
     if LoadReal(h,hsi,SH_YujiE_Shield)>0 then
         set hsr=hsr+LoadReal(h,hsi,SH_YujiE_Shield)
     endif
+    // щит T Суйгинто (Sui_ShieldAdd/Sui_ShieldTake)
+    if LoadReal(HH,hsi,SH_SuiShield)>0 then
+        set hsr=hsr+LoadReal(HH,hsi,SH_SuiShield)
+    endif
     return hsr
 endfunction
 // есть ли на юните любой щит (с запасом прочности или без); пассивные блоки с шансом не считаются
@@ -12237,6 +12241,83 @@ endif
 endif
 return AddSpecialEffect(path,x,y)
 endfunction
+function Bof_X takes real x returns real
+local real lo=GetRectMinX(bj_mapInitialPlayableArea)+64.
+local real hi=GetRectMaxX(bj_mapInitialPlayableArea)-64.
+if x<lo then
+return lo
+elseif x>hi then
+return hi
+endif
+return x
+endfunction
+function Bof_Y takes real y returns real
+local real lo=GetRectMinY(bj_mapInitialPlayableArea)+64.
+local real hi=GetRectMaxY(bj_mapInitialPlayableArea)-64.
+if y<lo then
+return lo
+elseif y>hi then
+return hi
+endif
+return y
+endfunction
+// переставить юнита без проверки проходимости, но не за край карты (перья, драконы, рывки сквозь декор)
+function Bof_Put takes unit u,real x,real y returns nothing
+call SetUnitX(u,Bof_X(x))
+call SetUnitY(u,Bof_Y(y))
+endfunction
+// после рывка сквозь декор герой не должен остаться внутри лавки/дерева: ближайшая проходимая точка до 320
+function Bof_Unstick takes unit u returns nothing
+local real x=GetUnitX(u)
+local real y=GetUnitY(u)
+local real r=32.
+local real a
+if not IsTerrainPathable(x,y,PATHING_TYPE_WALKABILITY) then
+return
+endif
+loop
+exitwhen r>320.
+set a=0.
+loop
+exitwhen a>=360.
+if not IsTerrainPathable(Bof_X(x+r*CosBJ(a)),Bof_Y(y+r*SinBJ(a)),PATHING_TYPE_WALKABILITY) then
+call Bof_Put(u,x+r*CosBJ(a),y+r*SinBJ(a))
+return
+endif
+set a=a+45.
+endloop
+set r=r+32.
+endloop
+endfunction
+function Bof_GlideAct takes nothing returns nothing
+local timer t=GetExpiredTimer()
+local integer id=GetHandleId(t)
+local unit u=LoadUnitHandle(HH,id,0)
+local integer left=LoadInteger(HH,id,3)-1
+if left<0 or GetUnitTypeId(u)==0 then
+if left<0 and IsUnitType(u,UNIT_TYPE_HERO) then
+call Bof_Unstick(u)
+endif
+call FlushChildHashtable(HH,id)
+call DestroyTimer(t)
+else
+call SaveInteger(HH,id,3,left)
+call Bof_Put(u,GetUnitX(u)+CosBJ(LoadReal(HH,id,1))*LoadReal(HH,id,2),GetUnitY(u)+SinBJ(LoadReal(HH,id,1))*LoadReal(HH,id,2))
+endif
+set t=null
+set u=null
+endfunction
+// толчок на dist за time c (как Bof_Slide, но сквозь декор); героя в конце ставит на проходимое место
+function Bof_Glide takes unit u,real ang,real dist,real time returns nothing
+local timer t=CreateTimer()
+local integer cnt=IMaxBJ(R2I(time/.02+.5),1)
+call SaveUnitHandle(HH,GetHandleId(t),0,u)
+call SaveReal(HH,GetHandleId(t),1,ang)
+call SaveReal(HH,GetHandleId(t),2,dist/I2R(cnt))
+call SaveInteger(HH,GetHandleId(t),3,cnt)
+call TimerStart(t,.02,true,function Bof_GlideAct)
+set t=null
+endfunction
 // ===== конец библиотеки bof =====
 //BofLibEnd
 //Remilia1start
@@ -13483,6 +13564,16 @@ function Rem_F2_Act takes unit caster returns nothing
 call SaveBoolean(HH,GetHandleId(caster),SH_RemFOn,false)
 endfunction
 // ----- Heart Break (конец T): рывок за спину цели, отнимает 20% её максимума, лечит на столько же -----
+function Rem_T_Kill takes unit caster,unit target returns nothing
+// убила финальным уроном T — навсегда +4% максимума цели (не больше 30000) к своему максимуму
+local integer cid=GetHandleId(caster)
+local integer bonus=IMinBJ(R2I(GetUnitState(target,UNIT_STATE_MAX_LIFE)*.04),30000)
+if not IsUnitType(target,UNIT_TYPE_HERO) or IsUnitIllusion(target) then
+return
+endif
+call SaveInteger(HH,cid,SH_RemKillLife,LoadInteger(HH,cid,SH_RemKillLife)+bonus)
+call Bof_xa(caster,0,2,LoadInteger(HH,cid,SH_RemKillLife)+LoadInteger(HH,cid,SH_RemTmpLife))
+endfunction
 function Rem_HeartBreak_Act2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
@@ -13533,6 +13624,10 @@ call Rem_Noise(GetOwningPlayer(caster),60.,.6)
 if not Bof_Rev(caster,target) then
 set dmg=GetUnitState(target,UNIT_STATE_MAX_LIFE)*.2
 call Bof_Dmg(caster,target,dmg)
+// Heart Break — конец T: добила им — это тоже убийство T (тестер 4 окт: «+4% за килл не пашет»)
+if not UnitIsAlive(target) then
+call Rem_T_Kill(caster,target)
+endif
 call Bof_Heal(caster,caster,dmg)
 call Bof_Ctrl(caster,target,1.5,"stun")
 endif
@@ -13573,13 +13668,6 @@ call TimerStart(t,.02,true,function Rem_HeartBreak_Act2)
 set t=null
 endfunction
 // ----- T «Red the Nightless Castle»: 8.7 c держит цель, серия, вихрь; в конце урон и Heart Break -----
-function Rem_T_Kill takes unit caster,unit target returns nothing
-// убила финальным уроном T — навсегда +4% максимума цели (не больше 30000) к своему максимуму
-local integer cid=GetHandleId(caster)
-local integer bonus=IMinBJ(R2I(GetUnitState(target,UNIT_STATE_MAX_LIFE)*.04),30000)
-call SaveInteger(HH,cid,SH_RemKillLife,LoadInteger(HH,cid,SH_RemKillLife)+bonus)
-call Bof_xa(caster,0,2,LoadInteger(HH,cid,SH_RemKillLife)+LoadInteger(HH,cid,SH_RemTmpLife))
-endfunction
 function Rem_T_Act2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
@@ -15328,6 +15416,7 @@ call Bof_SwapBack(caster,'FlG1','FlG2')
 set t=null
 endfunction
 // ----- Рывок к клону (правый клик по земле у клона, 200–1600 от Фландре): каждый клон — один раз.
+// Летит сквозь декор (Bof_Put), в конце — на ближайшее проходимое место (тестер 4 окт: застревала) -----
 // Летит по 40 до 1 c, каждые 8 тиков урон ord_smart x20 в 320 -----
 function Fla_Smart_Act2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
@@ -15343,6 +15432,7 @@ local unit e
 call SaveInteger(HH,id,2,tk)
 // реверс (цель в стойке развернула умение): как у героев Чейза — умение кончается, кастер отпущен
 if Bof_RevEnd(caster) then
+call Bof_Unstick(caster)
 if LoadBoolean(HH,GetHandleId(caster),SH_FlaFOn) then
 call SaveBoolean(HH,GetHandleId(caster),SH_bofRevd,true)
 endif
@@ -15357,7 +15447,7 @@ call SetUnitInvulnerable(caster,true)
 if tk<=50 and SRS(x,y,GetUnitX(cl),GetUnitY(cl))>80. then
 set x=x+40.*CosBJ(ang)
 set y=y+40.*SinBJ(ang)
-call SetUnitPosition(caster,x,y)
+call Bof_Put(caster,x,y)
 if ModuloInteger(tk,8)==0 then
 set x=GetUnitX(caster)
 set y=GetUnitY(caster)
@@ -15376,6 +15466,7 @@ endloop
 call DestroyGroup(g)
 endif
 else
+call Bof_Unstick(caster)
 if not LoadBoolean(HH,GetHandleId(caster),SH_FlaFOn) then
 call SetUnitInvulnerable(caster,false)
 endif
@@ -15657,58 +15748,7 @@ endfunction
 // на каст, целые тики (0.02 c), параметры из диспетчера, реверс (стойка обрывает умение и отпускает
 // героиню). Исполнители bof (триггеры o8/pB/pD/bT) стали функциями Sui_Q_Do/W_Do/E_Do: зеркало D повторяет
 // удар, вызывая их со своей копией героини. Перья, драконы и цепи двигаются без проходимости — в декоре не
-// застревают (владелец 3 окт), край карты держит Sui_Put. Урон — от героини, даже если бьёт копия.
-function Sui_X takes real x returns real
-local real lo=GetRectMinX(bj_mapInitialPlayableArea)+64.
-local real hi=GetRectMaxX(bj_mapInitialPlayableArea)-64.
-if x<lo then
-return lo
-elseif x>hi then
-return hi
-endif
-return x
-endfunction
-function Sui_Y takes real y returns real
-local real lo=GetRectMinY(bj_mapInitialPlayableArea)+64.
-local real hi=GetRectMaxY(bj_mapInitialPlayableArea)-64.
-if y<lo then
-return lo
-elseif y>hi then
-return hi
-endif
-return y
-endfunction
-// переставить перо/дракона без проверки проходимости, но не за край карты
-function Sui_Put takes unit u,real x,real y returns nothing
-call SetUnitX(u,Sui_X(x))
-call SetUnitY(u,Sui_Y(y))
-endfunction
-function Sui_GlideAct takes nothing returns nothing
-local timer t=GetExpiredTimer()
-local integer id=GetHandleId(t)
-local unit u=LoadUnitHandle(HH,id,0)
-local integer left=LoadInteger(HH,id,3)-1
-if left<0 or GetUnitTypeId(u)==0 then
-call FlushChildHashtable(HH,id)
-call DestroyTimer(t)
-else
-call SaveInteger(HH,id,3,left)
-call Sui_Put(u,GetUnitX(u)+CosBJ(LoadReal(HH,id,1))*LoadReal(HH,id,2),GetUnitY(u)+SinBJ(LoadReal(HH,id,1))*LoadReal(HH,id,2))
-endif
-set t=null
-set u=null
-endfunction
-// толчок пера/дракона на dist за time c (как Bof_Slide, но сквозь декор)
-function Sui_Glide takes unit u,real ang,real dist,real time returns nothing
-local timer t=CreateTimer()
-local integer cnt=IMaxBJ(R2I(time/.02+.5),1)
-call SaveUnitHandle(HH,GetHandleId(t),0,u)
-call SaveReal(HH,GetHandleId(t),1,ang)
-call SaveReal(HH,GetHandleId(t),2,dist/I2R(cnt))
-call SaveInteger(HH,GetHandleId(t),3,cnt)
-call TimerStart(t,.02,true,function Sui_GlideAct)
-set t=null
-endfunction
+// застревают (владелец 3 окт), край карты держит Bof_Put. Урон — от героини, даже если бьёт копия.
 function Sui_GhostAct takes nothing returns nothing
 local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
@@ -15873,7 +15913,7 @@ endif
 call SetUnitInvulnerable(src,true)
 call PauseUnit(src,true)
 if tk==1 then
-call Bof_Slide(src,ang,400.,.4)
+call Bof_Glide(src,ang,400.,.4)
 endif
 if tk<=48 then
 set g=CreateGroup()
@@ -15903,7 +15943,7 @@ endif
 call Rem_Fx(hr,"bof\\Saber-17.mdx",x,y,z+50.,ang,1.5,0.)
 call Rem_Fx(hr,"bof\\Tsubaki-37.mdx",x,y,z+50.,ang,4.,0.)
 call SetSpecialEffectPitch(bj_lastCreatedEffect,90.)
-call Bof_Slide(src,ang,400.,.4)
+call Bof_Glide(src,ang,400.,.4)
 call Sui_Q_Strike(src,hr,300.,40.)
 endif
 if tk==46 then
@@ -15988,7 +16028,7 @@ endif
 if tk<=22 and GetWidgetLife(f)>.405 then
 set x=GetUnitX(f)+sp*CosBJ(ang)
 set y=GetUnitY(f)+sp*SinBJ(ang)
-call Sui_Put(f,x,y)
+call Bof_Put(f,x,y)
 set g=CreateGroup()
 call GroupEnumUnitsInRange(g,GetUnitX(f),GetUnitY(f),200.,null)
 loop
@@ -16106,7 +16146,7 @@ call SetUnitFlyHeight(f,GetUnitFlyHeight(f)-25.,1000000000.)
 call SetUnitFacingTimed(f,fa,0)
 set x=GetUnitX(f)+sp*CosBJ(fa)
 set y=GetUnitY(f)+sp*SinBJ(fa)
-call Sui_Put(f,x,y)
+call Bof_Put(f,x,y)
 set g=CreateGroup()
 call GroupEnumUnitsInRange(g,GetUnitX(f),GetUnitY(f),260.,null)
 loop
@@ -16164,7 +16204,7 @@ endif
 call SetUnitInvulnerable(src,true)
 call PauseUnit(src,true)
 if tk==1 then
-call Bof_Slide(src,ang+180.,600.,.6)
+call Bof_Glide(src,ang+180.,600.,.6)
 endif
 if ModuloInteger(tk-1,20)==0 then
 call DestroyEffect(AddSpecialEffectTarget("bof\\Mercury Lamp-2.mdx",src,"chest"))
@@ -16200,7 +16240,7 @@ call SaveReal(HH,GetHandleId(t2),6,fa)
 call TimerStart(t2,.02,true,function Sui_E_Fly)
 set k=k+1
 endloop
-call Bof_Slide(src,ang+180.,400.,.4)
+call Bof_Glide(src,ang+180.,400.,.4)
 endif
 if tk>=51 then
 call SetUnitInvulnerable(src,false)
@@ -16295,7 +16335,7 @@ call PauseUnit(hr,true)
 if tk==1 then
 call SetUnitAnimationByIndex(hr,1)
 call Rem_Noise(GetOwningPlayer(hr),60.,.6)
-call Bof_Slide(hr,ang,1200.,.6)
+call Bof_Glide(hr,ang,1200.,.6)
 endif
 if ModuloInteger(tk,4)==0 then
 call SaveInteger(HH,id,3,LoadInteger(HH,id,3)+1)
@@ -16469,7 +16509,7 @@ call Rem_Fx(hr,"bof\\Tsubaki-37.mdx",x,y,z+200.,ang,4.,0.)
 call SetSpecialEffectPitch(bj_lastCreatedEffect,90.)
 call SetUnitTimeScale(hr,.75)
 call SetUnitAnimationByIndex(hr,7)
-call Bof_Slide(hr,ang,1200.,.4)
+call Bof_Glide(hr,ang,1200.,.4)
 endif
 if tk<=20 then
 if ModuloInteger(tk,4)==0 then
@@ -16586,7 +16626,7 @@ call SetSpecialEffectPitch(bj_lastCreatedEffect,90.)
 call Rem_Fx(hr,"bof\\Minato-31.mdx",x,y,z+50.,fa,3.,0.)
 call SetSpecialEffectPitch(bj_lastCreatedEffect,90.)
 call Rem_Fx(hr,"bof\\Saber-17.mdx",x,y,z+50.,fa,1.5,0.)
-call Sui_Glide(f,fa,1600.,.6)
+call Bof_Glide(f,fa,1600.,.6)
 endif
 if tk>40 and tk<70 then
 set k=LoadInteger(HH,id,6)+1
@@ -16654,13 +16694,13 @@ else
 set side=ang-90.
 set fa=ang+30.
 endif
-set x=Sui_X(bx+400.*CosBJ(side))
-set y=Sui_Y(by+400.*SinBJ(side))
+set x=Bof_X(bx+400.*CosBJ(side))
+set y=Bof_Y(by+400.*SinBJ(side))
 set f=Sui_Feather(caster,x,y,fa,150.,1.5,12.)
 call SetUnitVertexColor(f,255,255,255,0)
 call Rem_FadeIn(f,5)
 call Rem_Fx(caster,"bof\\Mercury Lamp-23.mdx",x,y,GetUnitFlyHeight(caster)+50.,0.,1.,0.)
-call Sui_Glide(f,fa,200.,.8)
+call Bof_Glide(f,fa,200.,.8)
 set t=CreateTimer()
 call SaveUnitHandle(HH,GetHandleId(t),0,caster)
 call SaveUnitHandle(HH,GetHandleId(t),1,f)
@@ -16846,14 +16886,14 @@ set e=null
 endif
 endif
 if e==null and tk<=166 and GetUnitTypeId(dg)!=0 then
-call Sui_Put(dg,GetUnitX(dg)+50.*CosBJ(GetUnitFacing(dg)),GetUnitY(dg)+50.*SinBJ(GetUnitFacing(dg)))
+call Bof_Put(dg,GetUnitX(dg)+50.*CosBJ(GetUnitFacing(dg)),GetUnitY(dg)+50.*SinBJ(GetUnitFacing(dg)))
 if ModuloInteger(tk,6)==0 then
 call Sui_R_Trail(hr,dg,GetUnitFacing(dg))
 endif
 elseif e!=null and tk<=166 and dd>=100. and GetWidgetLife(e)>.405 and GetUnitTypeId(dg)!=0 then
 set a2=Atan2BJ(GetUnitY(e)-GetUnitY(dg),GetUnitX(e)-GetUnitX(dg))+off
 call SetUnitFacingTimed(dg,a2,0)
-call Sui_Put(dg,GetUnitX(dg)+50.*CosBJ(a2),GetUnitY(dg)+50.*SinBJ(a2))
+call Bof_Put(dg,GetUnitX(dg)+50.*CosBJ(a2),GetUnitY(dg)+50.*SinBJ(a2))
 if ModuloInteger(tk,6)==0 then
 call Sui_R_Trail(hr,dg,a2)
 endif
@@ -16887,7 +16927,7 @@ local unit e
 call SaveInteger(HH,id,3,tk)
 if tk<=100 then
 call SetUnitFacingTimed(dg,ang,0)
-call Sui_Put(dg,GetUnitX(dg)+50.*CosBJ(ang),GetUnitY(dg)+50.*SinBJ(ang))
+call Bof_Put(dg,GetUnitX(dg)+50.*CosBJ(ang),GetUnitY(dg)+50.*SinBJ(ang))
 if ModuloInteger(tk,6)==0 then
 call Sui_R_Trail(hr,dg,ang)
 endif
@@ -17077,7 +17117,7 @@ if tk<=166 and dd>=100. and GetUnitTypeId(f)!=0 then
 set x=GetUnitX(f)+80.*CosBJ(a2)
 set y=GetUnitY(f)+80.*SinBJ(a2)
 call SetUnitFacingTimed(f,a2,0)
-call Sui_Put(f,x,y)
+call Bof_Put(f,x,y)
 if ModuloInteger(tk,10)==0 then
 call Rem_Fx(hr,"bof\\Minato-23.mdx",x,y,GetUnitFlyHeight(hr)+50.,a2,1.,0.)
 endif
@@ -17240,7 +17280,7 @@ set e=FirstOfGroup(g)
 exitwhen e==null
 call GroupRemoveUnit(g,e)
 if Condition_Base(GetOwningPlayer(hr),e) and GetUnitAbilityLevel(e,'Avul')==0 then
-call Bof_Dmg(hr,e,I2R(Sui_Agi_G(hr,true))*20.*.001)
+call Bof_Dmg(hr,e,I2R(Sui_Agi_G(hr,true))*80.*.001)
 call Bof_Ctrl(hr,e,1.2,"stun")
 endif
 endloop
@@ -17287,7 +17327,7 @@ set e=FirstOfGroup(g)
 exitwhen e==null
 call GroupRemoveUnit(g,e)
 if Condition_Base(GetOwningPlayer(hr),e) and GetUnitAbilityLevel(e,'Avul')==0 then
-call Bof_Dmg(hr,e,I2R(Sui_Agi_G(hr,true))*10.*.001)
+call Bof_Dmg(hr,e,I2R(Sui_Agi_G(hr,true))*40.*.001)
 endif
 endloop
 call DestroyGroup(g)
@@ -17311,8 +17351,8 @@ local real zz=GetUnitFlyHeight(hr)+GetRandomReal(-200.,600.)
 local unit dg
 local unit an
 local timer t=CreateTimer()
-set x=Sui_X(x)
-set y=Sui_Y(y)
+set x=Bof_X(x)
+set y=Bof_Y(y)
 set dg=CreateUnit(GetOwningPlayer(hr),'eBLT',x,y,ang)
 call SetUnitPathing(dg,false)
 call SetUnitScale(dg,1.5,1.,1.)
@@ -17345,7 +17385,7 @@ call Bof_DzSetUnitModel(dg,"bof\\Mercury Lamp-29.mdx")
 call UnitApplyTimedLife(dg,'BHwe',2.)
 call TimerStart(t,.02,true,function Sui_G_Rain)
 endif
-call Sui_Glide(dg,ang,LoadReal(HH,id,2)+GetRandomReal(0.,600.),.4)
+call Bof_Glide(dg,ang,LoadReal(HH,id,2)+GetRandomReal(0.,600.),.4)
 set dg=null
 set an=null
 set t=null
