@@ -51744,7 +51744,7 @@ return AC
 endfunction
 // ===== Возврат на арену (GameZone). Раньше: толчок к (0,0) на 150+HardLine без проверки проходимости и только
 // по событию выхода — в углу (деревья, фонарь) герой вставал в декорации или оставался снаружи навсегда.
-// Теперь: точка зажимается внутрь GameZone с запасом 100 и сдвигается к центру, пока не станет проходимой
+// Теперь: точка зажимается внутрь GameZone с запасом 200 и сдвигается к центру, пока не станет проходимой
 // (с учётом деревьев/декораций — проверка предметом). Плюс подстраховка раз в 0.5 c для героев.
 // Не трогает тех, кого способности сами переносят в другие зоны: UBW Широ (A0IH), R Хибари и T Неро (A3IH).
 function ArenaWalkable takes real x,real y returns boolean
@@ -51761,18 +51761,26 @@ set ok=SquareRoot((GetItemX(ArenaChkItem)-x)*(GetItemX(ArenaChkItem)-x)+(GetItem
 call SetItemVisible(ArenaChkItem,false)
 return ok
 endfunction
+// место с запасом под размер героя: сама точка и 4 точки в 40 вокруг (предмет пролезает в щели, куда герой не встанет)
+function ArenaClear takes real x,real y returns boolean
+return ArenaWalkable(x,y) and ArenaWalkable(x+40,y) and ArenaWalkable(x-40,y) and ArenaWalkable(x,y+40) and ArenaWalkable(x,y-40)
+endfunction
+// у края (ближе 250 к границе GameZone)
+function ArenaNearEdge takes real x,real y returns boolean
+return x>GetRectMaxX(gg_rct_GameZone)-250 or x<GetRectMinX(gg_rct_GameZone)+250 or y>GetRectMaxY(gg_rct_GameZone)-250 or y<GetRectMinY(gg_rct_GameZone)+250
+endfunction
 function ArenaSkip takes unit u returns boolean
 return GetUnitAbilityLevel(u,'A0IH')>0 or GetUnitAbilityLevel(u,'A3IH')>0
 endfunction
 function ArenaReturn takes unit u returns nothing
 local real cx=GetRectCenterX(gg_rct_GameZone)
 local real cy=GetRectCenterY(gg_rct_GameZone)
-local real x=RMinBJ(RMaxBJ(GetUnitX(u),GetRectMinX(gg_rct_GameZone)+100),GetRectMaxX(gg_rct_GameZone)-100)
-local real y=RMinBJ(RMaxBJ(GetUnitY(u),GetRectMinY(gg_rct_GameZone)+100),GetRectMaxY(gg_rct_GameZone)-100)
+local real x=RMinBJ(RMaxBJ(GetUnitX(u),GetRectMinX(gg_rct_GameZone)+200),GetRectMaxX(gg_rct_GameZone)-200)
+local real y=RMinBJ(RMaxBJ(GetUnitY(u),GetRectMinY(gg_rct_GameZone)+200),GetRectMaxY(gg_rct_GameZone)-200)
 local real a=Atan2(cy-y,cx-x)
 local integer i=0
 loop
-exitwhen i>=80 or ArenaWalkable(x,y)
+exitwhen i>=100 or ArenaClear(x,y)
 set x=x+50*Cos(a)
 set y=y+50*Sin(a)
 set i=i+1
@@ -51785,7 +51793,7 @@ local integer i=0
 if udg_B==true and DU==true then
 loop
 exitwhen i>=12
-if Hero[i]!=null and UnitIsAlive(Hero[i]) and RectContainsUnit(gg_rct_GameZone,Hero[i])==false and ArenaSkip(Hero[i])==false then
+if Hero[i]!=null and UnitIsAlive(Hero[i]) and ArenaSkip(Hero[i])==false and (RectContainsUnit(gg_rct_GameZone,Hero[i])==false or (ArenaNearEdge(GetUnitX(Hero[i]),GetUnitY(Hero[i])) and ArenaClear(GetUnitX(Hero[i]),GetUnitY(Hero[i]))==false)) then
 call ArenaReturn(Hero[i])
 endif
 set i=i+1
@@ -88298,7 +88306,7 @@ return (GetSpellAbilityId()=='GKBS' or GetSpellAbilityId()=='GKBB' or GetSpellAb
 endfunction
 function PowerUpGokuCast2 takes nothing returns nothing
     local timer t=GetExpiredTimer()
-    local timer tt=CreateTimer()
+    local timer tt=null
     local integer id=GetHandleId(t)
     local unit u=LoadUnitHandle(h,id,0)
     local real x=GetUnitX(u)
@@ -88307,6 +88315,8 @@ function PowerUpGokuCast2 takes nothing returns nothing
     local integer idp=GetHandleId(p)
     local real time=LoadReal(h,id,1)
     local integer i=0
+    // облегчение: фоновые волны/пыль трансформации — каждый 3-й тик (0.075 c), а не каждый
+    local boolean sp=ModuloInteger(R2I(LoadReal(h,id,1)*40.+0.5),3)==0
     if time<6 then
         call PauseUnit(u,true)
         call SaveReal(h,id,1,time+0.025)
@@ -88321,7 +88331,7 @@ function PowerUpGokuCast2 takes nothing returns nothing
                 if time==1 then
                     call StartSound(soundStr[99])
                 endif
-                if time<6 then
+                if time<6 and sp then
                     set EFF=AddSpecialEffect("BY_Wood_Eff_Ord_DanGe_Wav_Kuosan_1_2_0.25s.mdx", x, y)
                     call SetSpecialEffectScale(EFF , GetRandomReal(1.5, 2.5))
                     call SetSpecialEffectTimeScale(EFF , GetRandomReal(0.5, 1.5))
@@ -88405,7 +88415,7 @@ function PowerUpGokuCast2 takes nothing returns nothing
                 endif
             else
                 call SetUnitInvulnerable(u,true)
-                if time<6 then
+                if time<6 and sp then
                     set EFF=AddSpecialEffect("BY_Wood_Eff_Ord_DanGe_Wav_Kuosan_1_2_0.25s.mdx", x, y)
                     call SetSpecialEffectScale(EFF , GetRandomReal(1.5, 2.5))
                     call SetSpecialEffectTimeScale(EFF , GetRandomReal(0.5, 1.5))
@@ -88464,7 +88474,7 @@ function PowerUpGokuCast2 takes nothing returns nothing
             endif
         elseif LoadInteger(h,id,3)==8 then
             call SetUnitInvulnerable(u,true)
-            if time<4 then
+            if time<4 and sp then
                 set EFF=AddSpecialEffect("BY_Wood_Eff_Ord_DanGe_Wav_Kuosan_1_2_0.25s.mdx", x, y)
                 call SetSpecialEffectScale(EFF , GetRandomReal(1.5, 2.5))
                 call SetSpecialEffectTimeScale(EFF , GetRandomReal(0.5, 1.5))
@@ -88726,6 +88736,7 @@ function PowerUpGokuCast2 takes nothing returns nothing
             call StartSound(soundStr[89])
         endif
         if LoadBoolean(HH,GetHandleId(u),SS)==false then
+            set tt=CreateTimer()
             call SaveUnitHandle(h,GetHandleId(tt),0,u)
             call SaveBoolean(HH,GetHandleId(u),SS,true)
             call SaveReal(h,id,1,0)
@@ -89641,6 +89652,7 @@ call PauseUnit(u,true)
 call TimerStart(t,0.03,true,function MissleMoveSpiritBomb2)
 set t=null
 endfunction
+// без UnitEnableAttack/UnitEnableMovement(Goku,true,...): выключение давно закомментировано, а «включение» без него оставляло Гоку без атаки после G (5 окт)
 function GenkiDummyAbilsCast takes nothing returns nothing
 local unit u=GetTriggerUnit()
 local unit c=GetSpellTargetUnit()
@@ -89657,8 +89669,6 @@ if GetSpellAbilityId()=='GKG3' then // Отмена Бомбы Гоку
         call SelectUnit(Goku,true)
     endif
     call RemoveUnit(u)
-    call UnitEnableMovement(Goku,true,true)
-    call UnitEnableAttack(Goku,true,false)
 endif 
 if GetSpellAbilityId()=='GKG4' then
     call SaveInteger(HH,GetHandleId(GenkiDama),0,1)
@@ -89674,8 +89684,6 @@ if GetSpellAbilityId()=='GKG4' then
         call SelectUnit(Goku,true)
     endif
     call RemoveUnit(u)
-    call UnitEnableMovement(Goku,true,true)
-    call UnitEnableAttack(Goku,true,false)
 endif
 if GetSpellAbilityId()=='GKG5' then
     call SaveInteger(HH,GetHandleId(GenkiDama),0,1)
@@ -89693,8 +89701,6 @@ if GetSpellAbilityId()=='GKG5' then
         call SelectUnit(Goku,true)
     endif
     call RemoveUnit(u)
-    call UnitEnableMovement(Goku,true,true)
-    call UnitEnableAttack(Goku,true,false)
 endif
 set u=null
 set c=null
@@ -106741,7 +106747,10 @@ function NinpoKirigakureNoJutsuCast2 takes nothing returns nothing
         local real distan=1000
         if dist<7+GetUnitAbilityLevel(u,'A0ML')then
                 call SaveReal(h,id,100,dist+0.1)
-                call UnitApplyTimedLife(CreateUnit(p,0x65304A54,x+GetRandomReal(-1*distan,distan),y+GetRandomReal(-1*distan,distan),0),'BTLF',4)
+                // облако раз в 0.2 c (было каждые 0.1), живёт 5 c вместо 4 — туман той же плотности, юнитов вдвое меньше
+                if ModuloInteger(R2I(dist*10.+0.5),2)==0 then
+                        call UnitApplyTimedLife(CreateUnit(p,0x65304A54,x+GetRandomReal(-1*distan,distan),y+GetRandomReal(-1*distan,distan),0),'BTLF',5)
+                endif
         else
                 call DestroyTimer(t)
                 call FlushChildHashtable(h,id)
@@ -244904,12 +244913,1124 @@ function AbilitiesForChoice_Cond takes nothing returns boolean
     local boolean condFlandre=GetSpellAbilityId()=='FlQ1' or GetSpellAbilityId()=='FlW1' or GetSpellAbilityId()=='FlE1' or GetSpellAbilityId()=='FlR1' or GetSpellAbilityId()=='FlT1' or GetSpellAbilityId()=='FlD1' or GetSpellAbilityId()=='FlF1' or GetSpellAbilityId()=='FlG1' or GetSpellAbilityId()=='FlW2' or GetSpellAbilityId()=='FlG2' //Flandre1start//Flandre1end
     local boolean condRemilia=GetSpellAbilityId()=='RmQ1' or GetSpellAbilityId()=='RmQ2' or GetSpellAbilityId()=='RmW1' or GetSpellAbilityId()=='RmE1' or GetSpellAbilityId()=='RmR1' or GetSpellAbilityId()=='RmT1' or GetSpellAbilityId()=='RmD1' or GetSpellAbilityId()=='RmF1' or GetSpellAbilityId()=='RmF2' or GetSpellAbilityId()=='RmG1' //Remilia1start//Remilia1end
     local boolean condSuigintou=GetSpellAbilityId()=='SuQ1' or GetSpellAbilityId()=='SuW1' or GetSpellAbilityId()=='SuE1' or GetSpellAbilityId()=='SuE2' or GetSpellAbilityId()=='SuR1' or GetSpellAbilityId()=='SuD1' or GetSpellAbilityId()=='SuD2' or GetSpellAbilityId()=='SuF1' or GetSpellAbilityId()=='SuF2' or GetSpellAbilityId()=='SuG1' or GetSpellAbilityId()=='SuT1' //Suigintou1start//Suigintou1end
-    if cond1 or cond2 or condEscanor or condFlandre or condRemilia or condSuigintou then
+    local boolean condMei=GetSpellAbilityId()=='MeiQ' or GetSpellAbilityId()=='MeiW' or GetSpellAbilityId()=='MeiE' or GetSpellAbilityId()=='MeiR' or GetSpellAbilityId()=='MeiT' or GetSpellAbilityId()=='MeiG'
+    if cond1 or cond2 or condEscanor or condFlandre or condRemilia or condSuigintou or condMei then
         return true
     else
         return false
     endif
 endfunction
+
+function UnitAddDebuffTimed_Act takes nothing returns nothing
+local integer id=GetHandleId(GetExpiredTimer())
+local unit target=LoadUnitHandle(HH,id,2)
+local real time=LoadReal(HH,id,5)
+if IsUnitPaused(target)==false then
+set time=time-0.02
+call SaveReal(HH,id,5,time)
+endif
+
+
+//if GetUnitAbilityLevel(target,LoadInteger(HH,id,10))==0 and GetUnitAbilityLevel(target,LoadInteger(HH,id,11))==0 then
+//call PauseTimer(GetExpiredTimer())
+//call FlushChildHashtable(HH,id)
+//call DestroyTimer(GetExpiredTimer())
+//endif
+
+if time<=0 or GetUnitAbilityLevel(target,'CE04')>0 or GetUnitAbilityLevel(target,'B05G')>0 or GetUnitAbilityLevel(target,'ISWC')>0  then
+call UnitRemoveAbility(target,LoadInteger(HH,id,10))
+call UnitRemoveAbility(target,LoadInteger(HH,id,11))
+call PauseTimer(GetExpiredTimer())
+call FlushChildHashtable(HH,id)
+call DestroyTimer(GetExpiredTimer())
+endif
+set target=null
+endfunction
+function UnitAddDebuffTimed takes unit target0,integer Abil_ID1,integer Abil_ID2,real time_Duration returns nothing
+
+
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+
+
+if GetUnitAbilityLevel(target0,'B05G')==0 and GetUnitAbilityLevel(target0,'ISWC')==0  and GetUnitAbilityLevel(target0,'CE04')==0 then
+//set time_Duration=CalculateControlResist(target0, time_Duration)
+
+
+call UnitAddAbility(target0,Abil_ID1)
+call SaveUnitHandle(HH,id,2,target0)
+call SaveInteger(HH,id,10,Abil_ID1)
+call SaveInteger(HH,id,11,Abil_ID2)
+
+
+set time_Duration=CalculateControlResist(target0,time_Duration)
+
+
+
+call SaveReal(HH,id,5,time_Duration)
+
+
+call TimerStart(t,0.02,true,function UnitAddDebuffTimed_Act)
+
+else
+
+call DestroyTimer(t)
+endif
+
+set t=null
+endfunction
+// ===== Теруми Мей (перенос из Choice Random 5.2): Q/W/E/R/T/G =====
+function Mei_T_Dummy_Move takes nothing returns nothing
+local integer id=GetHandleId(GetExpiredTimer())
+local unit caster=LoadUnitHandle(HH,id,1)
+local unit Dummy=LoadUnitHandle(HH,id,20)
+local real facing=LoadReal(HH,id,3)
+local real time=LoadReal(HH,id,5)
+local real x0=GetUnitX(Dummy)
+local real y0=GetUnitY(Dummy)
+local real dist=LoadReal(HH,id,8)
+local real dist_Base=LoadReal(HH,id,9)
+local integer Mei_T_Count=LoadInteger(HH,GetHandleId(caster),StringHash("MeiTcount"))
+set time=time+0.03
+call SaveReal(HH,id,5,time)
+if dist<=0 or time>5 then
+call SaveInteger(HH,GetHandleId(caster),StringHash("MeiTcount"),Mei_T_Count+1)
+call MyRemoveUnit(Dummy,6)
+call UnitColor(Dummy,50,50,50,60)
+call UnitSize(Dummy,1.25,1,1)
+call UnitSpeed(Dummy,0.25)
+call SetUnitFlyHeight(Dummy,0,0)
+call PauseTimer(GetExpiredTimer())
+call FlushChildHashtable(HH,id)
+call DestroyTimer(GetExpiredTimer())
+else
+call SaveReal(HH,id,8,dist-52.5)
+call MoveUnit(Dummy,Dummy,52.5,facing)
+call SetUnitFlyHeight(Dummy,50+ParabolaZ(600,dist_Base,dist),0)
+endif
+set caster=null
+set Dummy=null
+endfunction
+function Mei_T_Dummy takes unit caster0,real x00,real y00,integer UCount returns nothing
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+local real x0=PolX(x00,600,14.4*UCount)
+local real y0=PolY(y00,600,14.4*UCount)
+local real x1=PolX(GetUnitX(caster0),50,GetUnitFacing(caster0))
+local real y1=PolY(GetUnitY(caster0),50,GetUnitFacing(caster0))
+call SaveReal(HH,id,3,Angle2(x1,y1,x0,y0))
+call SaveReal(HH,id,8,SR(x0,y0,x1,y1))
+call SaveReal(HH,id,9,SR(x0,y0,x1,y1))
+set n0=CreateUnit(GetOwningPlayer(caster0),'e200',x1,y1,18*UCount)
+call SetUnitModel(n0,"Others\\BY_Wood_Effect_ShuiYing_Unusual_RongDun_1_1.mdl")
+call SetUnitPathing(n0,false)
+call SetUnitFlyHeight(n0,400,0)
+call UnitSpeed(n0,1)
+call UnitSize(n0,1.5,1,1)
+call UnitColor(n0,100,100,100,0)
+call SaveUnitHandle(HH,id,20,n0)
+set n0=null
+call TimerStart(t,0.03,true,function Mei_T_Dummy_Move) // облегчено: тик 0.03 (было 0.02), шаг 52.5 (было 35) — скорость та же
+set t=null
+endfunction
+
+function MeiT_Act2 takes nothing returns nothing
+local integer id=GetHandleId(GetExpiredTimer())
+local unit caster=LoadUnitHandle(HH,id,1)
+local real facing=LoadReal(HH,id,3)
+local real time=LoadReal(HH,id,5)
+local real time1=LoadReal(HH,id,6)
+local real time2=LoadReal(HH,id,8)
+local real x0=LoadReal(HH,id,11)
+local real y0=LoadReal(HH,id,12)
+local real x1=GetUnitX(caster)
+local real y1=GetUnitY(caster)
+local real damage=LoadReal(HH,id,15)
+local group gr=LoadGroupHandle(HH,id,4)
+local integer Mei_T_Count=LoadInteger(HH,GetHandleId(caster),StringHash("MeiTcount"))
+set time=time+0.02
+call SaveReal(HH,id,5,time)
+if time2>=6 then
+
+//call GroupEnumUnitsInRange(G,x0,y0,10000,Base)
+//loop
+//set n0=FirstOfGroup(G)
+//exitwhen n0==null
+//if  IsUnitAlly(n0,GetOwningPlayer(caster) )  then
+
+// call SaveBoolean(h, GetHandleId(n0), StringHash("MeiT_Shield"), false)
+//endif
+//call GroupRemoveUnit(G,n0)
+//endloop
+
+//if SR(x0,y0,x1,y1)<=600 then
+//call SetUnitInvulnerable(caster,false)
+//endif
+
+//call SaveInteger(HH,GetHandleId(caster),StringHash("MeiTcount"),0)
+call DestroyGroup(gr)
+call GroupClear(gr)
+call PauseTimer(GetExpiredTimer())
+call FlushChildHashtable(HH,id)
+call DestroyTimer(GetExpiredTimer())
+else
+if time==0.02 then
+call SetUnitAnimationByIndex(caster,2)
+call UnitSpeed(caster,1)
+set soundplay=CreateSound("Sound\\Music\\mp3Music\\YotonYokainoJutsu.mp3",false,false,true,12700,12700,"")
+call StartSound(soundplay)
+//call KillSoundWhenDone(soundplay)
+endif
+if Mei_T_Count<25 then
+call Mei_T_Dummy(caster,x0,y0,Mei_T_Count)
+call SaveInteger(HH,GetHandleId(caster),StringHash("MeiTcount"),Mei_T_Count+1)
+endif
+if Mei_T_Count>=25 then
+set time2=time2+0.02
+call SaveReal(HH,id,8,time2)
+if time2==0.5 then
+set n0=CreateUnit(GetOwningPlayer(caster),'e200',x0,y0,facing)
+call SetUnitModel(n0,"Others\\MeiYotonT.mdl")
+call SetUnitAnimationByIndex(n0,0)
+call UnitSpeed(n0,1)
+call UnitSize(n0,2.35,1,1)
+call UnitColor(n0,100,100,100,0)
+call SetUnitFlyHeight(n0,0,0)
+call MyRemoveUnit(n0,6)
+set n0=null
+set n0=CreateUnit(GetOwningPlayer(caster),'e200',x0,y0,facing)
+call SetUnitModel(n0,"Others\\File00003647.mdl")
+call SetUnitAnimationByIndex(n0,0)
+call UnitSpeed(n0,1)
+call UnitSize(n0,3.5,1,1)
+call UnitColor(n0,100,100,100,0)
+call UnitAddAbility(n0,'Amrf')
+call UnitRemoveAbility(n0,'Amrf')
+call SetUnitFlyHeight(n0,-100,0)
+call MyRemoveUnit(n0,6)
+set n0=null
+
+
+set n0=CreateUnit(GetOwningPlayer(caster),'e200',x0,y0,facing+90)
+call SetUnitModel(n0,"Others\\File00003647.mdl")
+call SetUnitAnimationByIndex(n0,0)
+call UnitSpeed(n0,1)
+call UnitSize(n0,3.5,1,1)
+call UnitColor(n0,100,100,100,0)
+call UnitAddAbility(n0,'Amrf')
+call UnitRemoveAbility(n0,'Amrf')
+call SetUnitFlyHeight(n0,-100,0)
+call MyRemoveUnit(n0,6)
+set n0=null
+
+
+
+
+endif
+set time1=time1+0.02
+
+//if GetHeroLevel(caster)>=35 then
+
+//if SR(x0,y0,x1,y1)<=600 then
+//call SetUnitInvulnerable(caster,true)
+//else
+//call SetUnitInvulnerable(caster,false)
+//endif
+
+//endif
+
+if time1>=0.2 then
+
+
+
+//call GroupEnumUnitsInRange(G,x0,y0,700,Base)
+//loop
+//set n0=FirstOfGroup(G)
+//exitwhen n0==null
+//if  IsUnitAlly(n0,GetOwningPlayer(caster) ) and GetHeroLevel(caster)>=35 then
+
+// call SaveBoolean(h, GetHandleId(n0), StringHash("MeiT_Shield"), true)
+//endif
+//call GroupRemoveUnit(G,n0)
+//endloop
+
+
+call GroupClear(G)
+call GroupEnumUnitsInRange(G,x0,y0,600,Base)
+loop
+set n0=FirstOfGroup(G)
+exitwhen n0==null
+if Condition_Base(GetOwningPlayer(caster),n0) and UnitIsAlive(n0)  then
+
+call SetControlToUnit(n0,n0, 1, "silence")
+
+
+if GetUnitAbilityLevel(n0,'Avul')==0 then
+call myCustomDamage(caster,n0,damage*0.04,false,false,null,null,null)
+endif
+
+
+endif
+call GroupRemoveUnit(G,n0)
+endloop
+call GroupClear(G)
+set time1=0
+endif
+call SaveReal(HH,id,6,time1)
+call GroupClear(G)
+call GroupEnumUnitsInRange(G,x0,y0,600,Base)
+loop
+set n0=FirstOfGroup(G)
+exitwhen n0==null
+set facing=Angle2(x0,y0,GetUnitX(n0),GetUnitY(n0))
+if SR(x0,y0,GetUnitX(n0),GetUnitY(n0))<650 then
+if SR(x0,y0,GetUnitX(n0),GetUnitY(n0))>550 then
+call MoveAoe1(x0,y0,n0,550,facing)
+endif
+endif
+call GroupRemoveUnit(G,n0)
+endloop
+call GroupClear(G)
+call GroupClear(G)
+call GroupEnumUnitsInRange(G,x0,y0,1000,Base)
+loop
+set n0=FirstOfGroup(G)
+exitwhen n0==null
+set facing=Angle2(GetUnitX(n0),GetUnitY(n0),x0,y0)
+if SR(x0,y0,GetUnitX(n0),GetUnitY(n0))<950 then
+if SR(x0,y0,GetUnitX(n0),GetUnitY(n0))>850 then
+call MoveAoe1(x0,y0,n0,-1000,facing)
+endif
+endif
+call GroupRemoveUnit(G,n0)
+endloop
+call GroupClear(G)
+endif
+endif
+set gr=null
+set caster=null
+endfunction
+function MeiT_Act takes unit caster,real x1,real y1 returns nothing
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+local real x0=GetUnitX(caster)
+local real y0=GetUnitY(caster)
+local real facing=Angle2(x0,y0,x1,y1)
+local real damage=GetHeroInt(caster,true)*12
+call SaveUnitHandle(HH,id,1,caster)
+call SaveReal(HH,id,3,facing)
+call SaveInteger(HH,GetHandleId(caster),StringHash("MeiTcount"),0)
+call SaveReal(HH,id,11,x1)
+call SaveReal(HH,id,12,y1)
+call SaveReal(HH,id,15,damage)
+call SaveGroupHandle(HH,id,4,CreateGroup())
+call TimerStart(t,0.02,true,function MeiT_Act2)
+set t=null
+endfunction
+
+
+function MeiG_Act2 takes nothing returns nothing
+local integer id=GetHandleId(GetExpiredTimer())
+local unit caster=LoadUnitHandle(HH,id,1)
+local unit Dummy=LoadUnitHandle(HH,id,20)
+local real facing=LoadReal(HH,id,3)
+local real time=LoadReal(HH,id,5)
+local real x0=GetUnitX(Dummy)
+local real y0=GetUnitY(Dummy)
+local real x1=LoadReal(HH,id,11)
+local real y1=LoadReal(HH,id,12)
+local real damage=LoadReal(HH,id,15)
+local real dist=LoadReal(HH,id,8)
+local real dist_Base=LoadReal(HH,id,9)
+local boolean dist_range=LoadBoolean(HH,id,19)
+local real cjlocgn_00000000
+set time=time+0.02
+call SaveReal(HH,id,5,time)
+if dist<=0 and time>0.52 then
+
+
+set Dummy=CreateUnit(GetOwningPlayer(caster),'136e',x1,y1,facing)
+call MyRemoveUnit(Dummy,0.5)
+
+set soundplay=CreateSound("Sound\\Others\\MeiG-sfx2.mp3",false,false,true,12700,12700,"")
+call StartSound(soundplay)
+//call KillSoundWhenDone(soundplay)
+
+
+
+
+
+call EffectCreateAndMove(true,"Kisame\\File00003556.mdl",facing,1.5,2.5,1,100,100,100,0,0,Dummy,0,facing)
+call EffectCreateAndMove(true,"Kisame\\File00003556.mdl",facing,1.5,2.5,1,100,100,100,0,300,Dummy,0,facing)
+call EffectCreateAndMove(true,"Kisame\\1bing_91.mdl",facing,1.5,1.5,0.75,100,100,100,40,0,Dummy,0,facing)
+call EffectCreateAndMove(true,"Kisame\\1bing_91.mdl",facing,1.5,1.5,0.75,100,100,100,40,500,Dummy,0,facing)
+call EffectCreateAndMove(true,"Kisame\\file00000097.mdl",facing,1.5,2,1,100,100,100,0,0,Dummy,0,facing)
+call EffectCreateAndMove(true,"Kisame\\file00000097.mdl",facing,1.5,2,1,100,100,100,0,4000,Dummy,0,facing)
+call EffectCreateAndMoveAn(true,"Others\\DustWavefx(Water).mdl",GetRandomInt(0,360),1.5,1.75,0.75,100,100,100,60,0,Dummy,0,facing,0)
+call EffectCreateAndMoveAn(true,"Others\\DustWavefx(Water).mdl",GetRandomInt(0,360),1.5,1.5,0.75,100,100,100,60,0,Dummy,0,facing,0)
+call EffectCreateAndMoveAn(true,"Others\\DustWavefx(Water).mdl",GetRandomInt(0,360),1.5,1.25,0.75,100,100,100,60,0,Dummy,0,facing,0)
+call EffectCreateAndMove(true,"Others\\HakkeStart2.mdl",facing,1.5,1.25,1,100,100,100,60,0,Dummy,0,facing)
+call GroupClear(G)
+call GroupEnumUnitsInRange(G,x1,y1,400,Base)
+loop
+set n0=FirstOfGroup(G)
+exitwhen n0==null
+if Condition_Base(GetOwningPlayer(caster),n0) and UnitIsAlive(n0) and GetUnitAbilityLevel(n0,'Avul')==0 then
+
+call myCustomDamage(caster,n0,damage,false,false,null,null,null)
+
+
+
+
+
+call SetControlToUnit(n0,n0,1.5,"stun")
+
+endif
+call GroupRemoveUnit(G,n0)
+endloop
+call GroupClear(G)
+call MyRemoveUnit(LoadUnitHandle(HH,id,20),0.5)
+call PauseTimer(GetExpiredTimer())
+call FlushChildHashtable(HH,id)
+call DestroyTimer(GetExpiredTimer())
+else
+if time<0.5 then
+call PauseUnit(caster,true)
+call SetUnitInvulnerable(caster,true)
+call SetUnitPathing(caster,false)
+endif
+if time==0.02 then
+call SetUnitAnimationByIndex(caster,6)
+call UnitSpeed(caster,3)
+set soundplay=CreateSound("Sound\\Others\\MeiG.mp3",false,false,true,12700,12700,"")
+call StartSound(soundplay)
+//call KillSoundWhenDone(soundplay)
+call EffectCreateAndMoveAn(true,"Others\\DustWavefx(Water).mdl",GetRandomInt(0,360),1.5,1.5,1,100,100,100,60,0,caster,0,facing,0)
+call EffectCreateAndMove(true,"Kisame\\File00003531.mdl",facing,1.5,1,1,100,100,100,0,0,caster,0,facing)
+endif
+if time<0.48 then
+if time==0.02 or time==0.1 or time==0.2 or time==0.3 or time==0.4 then
+call EffectCreateAndMove(true,"Kisame\\File0000 (621).mdl",facing,0.5,0.5,1,100,100,100,0,0,caster,0,facing)
+endif
+if dist_range then
+call MoveUnit(caster,caster,25,facing)
+else
+call MoveUnit(caster,caster,-25,facing)
+endif
+call SetUnitFlyHeight(caster,GetUnitFlyHeight(caster)+25,0)
+endif
+if time==0.5 then
+set x0=PolX(GetUnitX(caster),100,facing)
+set y0=PolY(GetUnitY(caster),100,facing)
+call SaveReal(HH,id,8,SR(x0,y0,x1,y1))
+call SaveReal(HH,id,9,SR(x0,y0,x1,y1))
+set n0=CreateUnit(GetOwningPlayer(caster),'136e',x0,y0,facing)
+call SetUnitModel(n0,"Kisame\\File00003531.mdl")
+call UnitSpeed(n0,1)
+call UnitSize(n0,1,1,1)
+call UnitColor(n0,100,100,100,0)
+call SetUnitFlyHeight(n0,GetUnitFlyHeight(caster),0)
+call MyRemoveUnit(n0,1.5)
+set n0=null
+call PauseUnit(caster,false)
+call SetUnitInvulnerable(caster,false)
+call SetUnitPathing(caster,true)
+call UnitSpeed(caster,1)
+call SetUnitFlyHeight(caster,0,GetUnitFlyHeight(caster))
+set soundplay=CreateSound("Sound\\Others\\MeiG-sfx1.mp3",false,false,true,12700,12700,"")
+call StartSound(soundplay)
+//call KillSoundWhenDone(soundplay)
+set n0=CreateUnit(GetOwningPlayer(caster),'136e',x0,y0,facing+180)
+call SetUnitModel(n0,"Others\\file0000 (622).mdl")
+call UnitSpeed(n0,1)
+call UnitSize(n0,1.5,1,1)
+call UnitColor(n0,100,100,100,0)
+call SetUnitFlyHeight(n0,625,0)
+call SaveUnitHandle(HH,id,20,n0)
+set n0=null
+endif
+if time>0.5 then
+call SaveReal(HH,id,8,dist-35)
+call MoveUnit(Dummy,Dummy,35,facing)
+set cjlocgn_00000000=SR(GetUnitX(Dummy),GetUnitY(Dummy),LoadReal(HH,id,11),LoadReal(HH,id,12))/LoadReal(HH,id,9)
+call SetUnitFlyHeight(Dummy,500*cjlocgn_00000000+50,0)
+endif
+endif
+set caster=null
+set Dummy=null
+endfunction
+function MeiG_Act takes unit caster,real x1,real y1 returns nothing
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+local real x0=GetUnitX(caster)
+local real y0=GetUnitY(caster)
+local real facing=Angle2(x0,y0,x1,y1)
+local real damage=5*GetHeroInt(caster,true)+50
+call SaveUnitHandle(HH,id,1,caster)
+call SaveReal(HH,id,3,facing)
+
+
+
+call SaveReal(HH,id,8,SR(x0,y0,x1,y1))
+call SaveReal(HH,id,9,SR(x0,y0,x1,y1))
+
+
+if SR(x0,y0,x1,y1)>400 and SR(x0,y0,x1,y1)<2000 then
+call SaveReal(HH,id,11,x1)
+call SaveReal(HH,id,12,y1)
+else
+call SaveReal(HH,id,11,GetUnitX(caster))
+call SaveReal(HH,id,12,GetUnitY(caster))
+
+endif
+
+if SR(x0,y0,x1,y1)>900 then
+call SaveBoolean(HH,id,19,true)
+endif
+call PauseUnit(caster,true)
+call SaveReal(HH,id,15,damage)
+call UnitAddAbility(caster,'Amrf')
+call UnitRemoveAbility(caster,'Amrf')
+call TimerStart(t,0.02,true,function MeiG_Act2)
+set t=null
+endfunction
+
+
+function MeiQ_Act2 takes nothing returns nothing
+local integer id=GetHandleId(GetExpiredTimer())
+local unit caster=LoadUnitHandle(HH,id,1)
+local unit Dummy=LoadUnitHandle(HH,id,20)
+local real facing=LoadReal(HH,id,3)
+local real time=LoadReal(HH,id,5)
+local real time1=LoadReal(HH,id,6)
+local real x0=GetUnitX(Dummy)
+local real y0=GetUnitY(Dummy)
+local real damage=LoadReal(HH,id,15)
+local group gr=LoadGroupHandle(HH,id,4)
+set time=time+0.02
+call SaveReal(HH,id,5,time)
+if time>=2.5 then
+loop
+set n0=FirstOfGroup(gr)
+exitwhen n0==null
+call SetUnitFlyHeight(n0,0,GetUnitFlyHeight(n0))
+call GroupRemoveUnit(gr,n0)
+endloop
+call DestroyGroup(gr)
+call GroupClear(gr)
+call RemoveUnit(LoadUnitHandle(HH,id,20))
+call PauseTimer(GetExpiredTimer())
+call FlushChildHashtable(HH,id)
+call DestroyTimer(GetExpiredTimer())
+else
+if time==0.02 then
+call EffectCreateAndMove(true,"Others\\thunderwind3.mdl",facing,1.8,0.75,1,100,100,100,0,0,Dummy,0,facing)
+call EffectCreateAndMove(true,"Kisame\\File00003531.mdl",facing,1,0.5,1,100,100,100,0,0,caster,0,facing)
+call EffectCreateAndMoveAn(true,"Others\\DustWavefx(Water).mdl",GetRandomInt(0,360),1.5,0.75,0.75,100,100,100,60,0,caster,0,facing,0)
+call EffectCreateAndMoveAn(true,"Others\\DustWavefx(Water).mdl",GetRandomInt(0,360),1.5,0.5,0.75,100,100,100,60,0,caster,0,facing,0)
+call EffectCreateAndMoveAn(true,"Others\\DustWavefx(Water).mdl",GetRandomInt(0,360),1.5,0.25,0.75,100,100,100,60,0,caster,0,facing,0)
+call SetUnitAnimationByIndex(caster,2)
+call UnitSpeed(caster,1)
+set soundplay=CreateSound("Sound\\Others\\MeiQ.mp3",false,false,true,12700,12700,"")
+call StartSound(soundplay)
+//call KillSoundWhenDone(soundplay)
+endif
+if time==0.5 then
+//call SaveReal(HH,id,6,0.02)
+
+set soundplay=CreateSound("Sound\\Others\\MeiQ-sfx.mp3",false,false,true,12700,12700,"")
+call StartSound(soundplay)
+//call KillSoundWhenDone(soundplay)
+call EffectCreateAndMove(true,"Others\\AquaWater.mdl",GetRandomInt(0,360),2,3.5,1,100,100,100,0,0,Dummy,0,facing)
+call EffectCreateAndMove(true,"Others\\AquaWater.mdl",GetRandomInt(0,360),2,3.5,1,100,100,100,0,200,Dummy,0,facing)
+call EffectCreateAndMove(true,"Others\\AquaWater.mdl",GetRandomInt(0,360),2,3.5,1,100,100,100,0,400,Dummy,0,facing)
+call EffectCreateAndMove(true,"Others\\AquaWater.mdl",GetRandomInt(0,360),2,3.5,1,100,100,100,0,600,Dummy,0,facing)
+call EffectCreateAndMove(true,"Kisame\\zm(44).mdl",GetRandomInt(0,360),2,2.5,GetRandomReal(0.4,0.6),100,100,100,0,0,Dummy,0,facing)
+call EffectCreateAndMove(true,"Kisame\\zm(44).mdl",GetRandomInt(0,360),2,2.5,GetRandomReal(0.4,0.6),100,100,100,0,300,Dummy,0,facing)
+call EffectCreateAndMove(true,"Kisame\\zm(44).mdl",GetRandomInt(0,360),2,2.5,GetRandomReal(0.4,0.6),100,100,100,0,600,Dummy,0,facing)
+call EffectCreateAndMove(true,"Others\\HakkeStart2.mdl",facing,2,0.5,0.5,100,100,100,60,0,Dummy,0,facing)
+endif
+
+if time>0.5 then
+
+set time1=time1+0.02
+
+if time1>=0.2 or time==0.52 then
+call GroupClear(G)
+call GroupEnumUnitsInRange(G,x0,y0,300,Base)
+
+loop
+set n0=FirstOfGroup(G)
+exitwhen n0==null
+
+if Condition_Base(GetOwningPlayer(caster),n0) and UnitIsAlive(n0)    and GetUnitAbilityLevel(n0,'Avul')==0 then
+
+call myCustomDamage(caster,n0,damage*0.1,false,false,null,null,null)
+
+call SetControlToUnit(n0,n0,1,"stun")
+
+if IsUnitInGroup(n0,gr)==false then
+call GroupAddUnit(gr,n0)
+call UnitAddAbility(n0,'Amrf')
+call UnitRemoveAbility(n0,'Amrf')
+endif
+
+call SetUnitFlyHeight(n0,GetUnitFlyHeight(n0)+10+(3.5-time)*8,0)
+endif
+
+call GroupRemoveUnit(G,n0)
+endloop
+
+call GroupClear(G)
+set time1=0
+endif
+
+call SaveReal(HH,id,6,time1)
+endif
+
+endif
+
+set gr=null
+set caster=null
+set Dummy=null
+endfunction
+function MeiQ_Act takes unit caster,real x1,real y1 returns nothing
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+local real x0=GetUnitX(caster)
+local real y0=GetUnitY(caster)
+local real facing=Angle2(x0,y0,x1,y1)
+local real damage=50+30*GetUnitAbilityLevel(caster,'MeiQ')+(GetUnitAbilityLevel(caster,'MeiQ')+2)*GetHeroInt(caster,true)
+call SaveUnitHandle(HH,id,1,caster)
+call SaveReal(HH,id,3,facing)
+call SaveReal(HH,id,6,0.18)
+set n0=CreateUnit(GetOwningPlayer(caster),'e200',x1,y1,facing)
+call SetUnitModel(n0,"Kisame\\File00003531.mdl")
+
+               
+call UnitSpeed(n0,1)
+call UnitSize(n0,1.35,1,1)
+call UnitColor(n0,100,100,100,0)
+call SaveUnitHandle(HH,id,20,n0)
+set n0=null
+call SaveReal(HH,id,15,damage)
+call SaveGroupHandle(HH,id,4,CreateGroup())
+call TimerStart(t,0.02,true,function MeiQ_Act2)
+set t=null
+endfunction
+
+
+
+function MeiW_Act2 takes nothing returns nothing
+local integer id=GetHandleId(GetExpiredTimer())
+local unit caster=LoadUnitHandle(HH,id,1)
+local unit Dummy=LoadUnitHandle(HH,id,20)
+local real facing=LoadReal(HH,id,3)
+local real time=LoadReal(HH,id,5)
+local real x0=GetUnitX(Dummy)
+local real y0=GetUnitY(Dummy)
+local real damage=LoadReal(HH,id,15)
+local real dist=LoadReal(HH,id,8)
+local real dist_Base=LoadReal(HH,id,9)
+set time=time+0.02
+call SaveReal(HH,id,5,time)
+if dist<=0 and time>0.1 then
+call EffectCreateAndMove(true,"Kisame\\1bing_91.mdl",facing,1.5,1.25,1,100,100,100,40,0,Dummy,0,facing)
+call EffectCreateAndMove(true,"Kisame\\1bing_91.mdl",facing,1.5,1.25,1,100,100,100,40,300,Dummy,0,facing)
+call EffectCreateAndMove(true,"Others\\BloodPWater.mdl",facing,1.5,2,1,100,100,100,0,0,Dummy,0,facing)
+call EffectCreateAndMove(true,"Kisame\\file00000097.mdl",facing,1.5,2,1,100,100,100,0,0,Dummy,0,facing)
+call EffectCreateAndMoveAn(true,"Others\\DustWavefx(Water).mdl",GetRandomInt(0,360),1.5,1.5,0.75,100,100,100,60,0,Dummy,0,facing,0)
+call EffectCreateAndMoveAn(true,"Others\\DustWavefx(Water).mdl",GetRandomInt(0,360),1.5,1.25,0.75,100,100,100,60,0,Dummy,0,facing,0)
+call EffectCreateAndMoveAn(true,"Others\\DustWavefx(Water).mdl",GetRandomInt(0,360),1.5,1,0.75,100,100,100,60,0,Dummy,0,facing,0)
+call EffectCreateAndMove(true,"Others\\HakkeStart2.mdl",facing,1.5,1.25,1,100,100,100,60,0,Dummy,0,facing)
+call GroupClear(G)
+call GroupEnumUnitsInRange(G,x0,y0,400,Base)
+loop
+set n0=FirstOfGroup(G)
+exitwhen n0==null
+if Condition_Base(GetOwningPlayer(caster),n0) and  UnitIsAlive(n0)    and GetUnitAbilityLevel(n0,'Avul')==0 then
+
+
+
+call myCustomDamage(caster,n0,damage,false,false,null,null,null)
+if GetUnitAbilityLevel(n0,'Mei2')==0 then
+call UnitAddDebuffTimed(n0,'Mei2','BMe2',2+(GetUnitAbilityLevel(caster,'MeiW')))
+endif
+endif
+call GroupRemoveUnit(G,n0)
+endloop
+call GroupClear(G)
+call MyRemoveUnit(LoadUnitHandle(HH,id,20),0.5)
+call PauseTimer(GetExpiredTimer())
+call FlushChildHashtable(HH,id)
+call DestroyTimer(GetExpiredTimer())
+else
+if time<0.1 then
+call PauseUnit(caster,true)
+endif
+if time==0.02 then
+call EffectCreateAndMove(true,"Kisame\\File00003531.mdl",facing,1.5,0.5,1,100,100,100,0,0,caster,0,facing)
+call EffectCreateAndMoveAn(true,"Others\\DustWavefx(Water).mdl",GetRandomInt(0,360),1.5,0.5,0.75,100,100,100,60,0,caster,0,facing,0)
+call EffectCreateAndMoveAn(true,"Others\\DustWavefx(Water).mdl",GetRandomInt(0,360),1.5,0.75,0.75,100,100,100,60,0,caster,0,facing,0)
+call EffectCreateAndMoveAn(true,"Others\\DustWavefx(Water).mdl",GetRandomInt(0,360),1.5,1,0.75,100,100,100,60,0,caster,0,facing,0)
+call EffectCreateAndMove(true,"Others\\HakkeStart2.mdl",facing,1,1,1.5,100,100,100,60,0,caster,0,facing)
+call SetUnitAnimationByIndex(caster,6)
+call UnitSpeed(caster,3)
+set soundplay=CreateSound("Sound\\Music\\mp3Music\\SuitonSuijinchu.mp3",false,false,true,12700,12700,"")
+call StartSound(soundplay)
+//call KillSoundWhenDone(soundplay)
+endif
+if time==0.1 then
+call UnitSpeed(caster,1)
+call PauseUnit(caster,false)
+set x0=PolX(GetUnitX(caster),150,facing)
+set y0=PolY(GetUnitY(caster),150,facing)
+set n0=CreateUnit(GetOwningPlayer(caster),'e200',x0,y0,facing)
+call SetUnitModel(n0,"Others\\cascada.mdl")
+call UnitSpeed(n0,1)
+call UnitSize(n0,1,1,1)
+call UnitColor(n0,100,100,100,0)
+call SaveUnitHandle(HH,id,20,n0)
+set n0=null
+endif
+if time>0.2 then
+call SaveReal(HH,id,8,dist-35)
+call MoveUnit(Dummy,Dummy,35,facing)
+call SetUnitFlyHeight(Dummy,ParabolaZ(400,dist_Base,dist),0)
+endif
+endif
+set caster=null
+set Dummy=null
+endfunction
+function MeiW_Act takes unit caster,real x1,real y1 returns nothing
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+local real x0=GetUnitX(caster)
+local real y0=GetUnitY(caster)
+local real facing=Angle2(x0,y0,x1,y1)
+local real damage=150+(GetUnitAbilityLevel(caster,'MeiW')+2)*GetHeroInt(caster,true)
+call SaveUnitHandle(HH,id,1,caster)
+call SaveReal(HH,id,3,facing)
+call SaveReal(HH,id,8,SR(x0,y0,x1,y1))
+call SaveReal(HH,id,9,SR(x0,y0,x1,y1))
+call PauseUnit(caster,true)
+call SaveReal(HH,id,15,damage)
+call TimerStart(t,0.02,true,function MeiW_Act2)
+set t=null
+endfunction
+
+
+
+function MeiRPoisonTarget_Act takes nothing returns nothing
+local integer id=GetHandleId(GetExpiredTimer())
+local unit caster=LoadUnitHandle(HH,id,1)
+local unit target=LoadUnitHandle(HH,id,2)
+local real time=LoadReal(HH,id,5)
+local real time1=LoadReal(HH,id,6)
+local real damage=LoadReal(HH,id,15)
+local boolean MeiCombo=LoadBoolean(HH,id,11)
+if IsUnitPaused(target)==false then
+set time=time+0.02
+call SaveReal(HH,id,5,time)
+endif
+set time1=time1+0.02
+if time1>=0.2 then
+set time1=0
+if GetUnitState(target,UNIT_STATE_LIFE)<GetUnitState(target,UNIT_STATE_MAX_LIFE)*0.02 then
+
+
+call myCustomDamage(caster,target,GetUnitState(target,UNIT_STATE_MAX_LIFE)*0.05,false,false,null,null,null)
+
+else
+if MeiCombo==false then
+call SetUnitState(target,UNIT_STATE_LIFE,GetUnitState(target,UNIT_STATE_LIFE)-GetUnitState(target,UNIT_STATE_LIFE)*0.01)
+call SetUnitState(target,UNIT_STATE_LIFE,GetUnitState(target,UNIT_STATE_LIFE)-(damage*30+15)*0.2)
+
+
+            call DamageIndicatorFunction(caster, target,GetUnitState(target,UNIT_STATE_LIFE)*0.012+(damage*30+15)*0.2)
+            call DamageTextTag(caster,target,GetUnitState(target,UNIT_STATE_LIFE)*0.01+(damage*30+15)*0.2)
+
+
+
+else
+call SetUnitState(target,UNIT_STATE_LIFE,GetUnitState(target,UNIT_STATE_LIFE)-GetUnitState(target,UNIT_STATE_LIFE)*0.015)
+call SetUnitState(target,UNIT_STATE_LIFE,GetUnitState(target,UNIT_STATE_LIFE)-(damage*30+15)*0.3)
+
+
+            call DamageIndicatorFunction(caster, target,GetUnitState(target,UNIT_STATE_LIFE)*0.018+(damage*30+15)*0.3)
+            call DamageTextTag(caster,target,GetUnitState(target,UNIT_STATE_LIFE)*0.015+(damage*30+15)*0.3)
+
+
+endif
+endif
+endif
+call SaveReal(HH,id,6,time1)
+if GetUnitAbilityLevel(target,'JAGd')==0 then
+call UnitAddAbility(target,'JAGd')
+call SetUnitAbilityLevel(target,'JAGd',LoadInteger(HH,id,10))
+endif
+if udg_B==false or LoadBoolean(HH,GetHandleId(caster),StringHash("MeiRB"))==true or time>=LoadReal(HH,id,8) or GetUnitAbilityLevel(target,'ISWC')>0  or  GetUnitAbilityLevel(target,'CE04')>0 or GetUnitAbilityLevel(target,'B05G')>0 then
+call UnitRemoveAbility(target,'Mei4')
+call UnitRemoveAbility(target,'BMe4')
+call UnitRemoveAbility(target,'JAGd')
+call UnitRemoveAbility(target,'BJAd')
+call PauseTimer(GetExpiredTimer())
+call FlushChildHashtable(HH,id)
+call DestroyTimer(GetExpiredTimer())
+endif
+set caster=null
+set target=null
+endfunction
+function MeiRPoisonTarget takes unit caster0,unit target0,real damage0,boolean combo11 returns nothing
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+call SaveUnitHandle(HH,id,1,caster0)
+call SaveUnitHandle(HH,id,2,target0)
+call UnitAddAbility(target0,'Mei4')
+call SaveInteger(HH,id,10,R2I(damage0*3))
+call SaveBoolean(HH,id,11,combo11)
+call SaveReal(HH,id,15,damage0)
+
+
+
+
+call SaveReal(HH,id,8,CalculateControlResist(target0,5))
+
+
+call TimerStart(t,0.02,true,function MeiRPoisonTarget_Act)
+
+set t=null
+endfunction
+function MeiRCombo_Act2 takes nothing returns nothing
+local integer id=GetHandleId(GetExpiredTimer())
+local unit caster=LoadUnitHandle(HH,id,1)
+local real x0=LoadReal(HH,id,11)
+local real y0=LoadReal(HH,id,12)
+call GroupClear(G)
+call GroupEnumUnitsInRange(G,x0,y0,500,Base)
+loop
+set n0=FirstOfGroup(G)
+exitwhen n0==null
+if Condition_Base(GetOwningPlayer(caster),n0) and (GetUnitAbilityLevel(n0,'ISWC')==0 and GetUnitAbilityLevel(n0,'CE04')==0 and GetUnitAbilityLevel(n0,'B05G')==0 ) and UnitIsAlive(n0) then
+call MeiRPoisonTarget(caster,n0,GetUnitAbilityLevel(caster,'MeiR'),true)
+
+
+
+
+
+
+endif
+call GroupRemoveUnit(G,n0)
+endloop
+call GroupClear(G)
+call SaveBoolean(HH,GetHandleId(caster),StringHash("MeiRB"),false)
+call PauseTimer(GetExpiredTimer())
+call FlushChildHashtable(HH,id)
+call DestroyTimer(GetExpiredTimer())
+set caster=null
+endfunction
+function MeiRCombo_Act takes unit caster0,real x00,real y00 returns nothing
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+call SaveUnitHandle(HH,id,1,caster0)
+call SaveReal(HH,id,11,x00)
+call SaveReal(HH,id,12,y00)
+call TimerStart(t,0.02,true,function MeiRCombo_Act2)
+set t=null
+endfunction
+
+function MeiR_Act2 takes nothing returns nothing
+local integer id=GetHandleId(GetExpiredTimer())
+local unit caster=LoadUnitHandle(HH,id,1)
+local unit Dummy=LoadUnitHandle(HH,id,20)
+local real facing=LoadReal(HH,id,3)
+local group gr=LoadGroupHandle(HH,id,4)
+local real time=LoadReal(HH,id,5)
+local real time1=LoadReal(HH,id,6)
+local real DamagePeriod=LoadReal(HH,id,9)
+local real x0=GetUnitX(Dummy)
+local real y0=GetUnitY(Dummy)
+local real damage=LoadReal(HH,id,15)
+local real dist=LoadReal(HH,id,8)
+local boolean MeiRActive=LoadBoolean(HH,id,19)
+local integer MeiRCount=0
+set time=time+0.02
+call SaveReal(HH,id,5,time)
+if time1>5+damage or (udg_B==false and time1>0.02)   or(time1>0.02 and LoadBoolean(HH,GetHandleId(caster),StringHash("MeiRB"))==true)then
+call SaveUnitHandle(HH,GetHandleId(caster),StringHash("MeiRU"),null)
+call RemoveUnit(LoadUnitHandle(HH,id,20))
+call RemoveUnit(LoadUnitHandle(HH,id,21))
+if LoadBoolean(HH,GetHandleId(caster),StringHash("MeiRB"))==true then
+call MeiRCombo_Act(caster,x0,y0)
+endif
+loop
+set n0=FirstOfGroup(gr)
+exitwhen n0==null
+call RemoveUnit(n0)
+call GroupRemoveUnit(gr,n0)
+endloop
+call DestroyGroup(gr)
+call PauseTimer(GetExpiredTimer())
+call FlushChildHashtable(HH,id)
+call DestroyTimer(GetExpiredTimer())
+else
+if time<0.3 then
+call PauseUnit(caster,true)
+endif
+if time==0.02 then
+call EffectCreateAndMoveAn(true,"Others\\BY_Wood_Effect_ShuiYing_Smoke_Feidun_1_2.mdl",facing,1.5,1,0.75,100,100,100,60,0,caster,0,facing,0)
+call EffectCreateAndMoveAn(true,"Others\\WindCirclefaster.mdl",facing,1.5,1,0.75,100,100,100,40,0,caster,0,facing,0)
+call EffectCreateAndMove(true,"Others\\HakkeStart2.mdl",facing,1,0.5,1.5,100,100,100,60,0,caster,0,facing)
+call SetUnitAnimationByIndex(caster,5)
+call UnitSpeed(caster,3)
+set soundplay=CreateSound("Sound\\Music\\mp3Music\\FuttonKoumunoJutsu.mp3",false,false,true,12700,12700,"")
+call StartSound(soundplay)
+//call KillSoundWhenDone(soundplay)
+endif
+if time==0.3 then
+call UnitSpeed(caster,1)
+call PauseUnit(caster,false)
+set x0=PolX(GetUnitX(caster),150,facing)
+set y0=PolY(GetUnitY(caster),150,facing)
+set n0=CreateUnit(GetOwningPlayer(caster),'e200',x0,y0,facing)
+call SetUnitModel(n0,"Others\\BY_Wood_Effect_ShuiYing_Smoke_Feidun_2_2.mdl")
+call UnitSpeed(n0,1)
+call UnitSize(n0,1,1,1)
+call UnitColor(n0,100,100,100,0)
+call SetUnitFlyHeight(n0,0,0)
+call SaveUnitHandle(HH,id,20,n0)
+set n0=null
+set n0=CreateUnit(GetOwningPlayer(caster),'e200',x0,y0,facing)
+call SetUnitModel(n0,"Others\\HakkeStart2.mdl")
+call UnitSpeed(n0,1)
+call UnitSize(n0,0.5,1,1)
+call UnitColor(n0,100,100,100,60)
+call SaveUnitHandle(HH,id,21,n0)
+set n0=null
+endif
+if time>0.2 and MeiRActive==false then
+call SaveReal(HH,id,8,dist-30)
+call MoveUnit(Dummy,Dummy,30,facing)
+call MoveUnit(Dummy,LoadUnitHandle(HH,id,21),0,facing)
+if dist<=0 or time>15 then
+call SaveUnitHandle(HH,GetHandleId(caster),StringHash("MeiRU"),Dummy)
+call UnitSpeed(LoadUnitHandle(HH,id,21),0)
+call SaveBoolean(HH,id,19,true)
+set n0=CreateUnit(GetOwningPlayer(caster),'e200',x0,y0,GetRandomInt(0,360))
+call SetUnitModel(n0,"Others\\EerieFog.mdl")
+call UnitSpeed(n0,2)
+call UnitSize(n0,1.75,1,1)
+call UnitColor(n0,100,100,100,30)
+call GroupAddUnit(gr,n0)
+set n0=null
+loop
+exitwhen MeiRCount>=16
+set x0=PolX(GetUnitX(Dummy),350,MeiRCount*22.5)
+set y0=PolY(GetUnitY(Dummy),350,MeiRCount*22.5)
+set n0=CreateUnit(GetOwningPlayer(caster),'e200',x0,y0,GetRandomInt(0,360))
+call SetUnitModel(n0,"Others\\EerieFog.mdl")
+call UnitSpeed(n0,2)
+call UnitSize(n0,1.75,1,1)
+call UnitColor(n0,100,100,100,30)
+call GroupAddUnit(gr,n0)
+set n0=null
+set MeiRCount=MeiRCount+1
+endloop
+endif
+endif
+if MeiRActive==true then
+call SaveReal(HH,id,6,time1+0.02)
+if time1<0.4 then
+call UnitSize(Dummy,1+time1*1.8,1,1)
+call UnitSize(LoadUnitHandle(HH,id,21),0.5+time1*0.75,1,1)
+endif
+set DamagePeriod=DamagePeriod+0.02
+if DamagePeriod>=0.2 then
+set DamagePeriod=0
+call GroupClear(G)
+call GroupEnumUnitsInRange(G,x0,y0,500,Base)
+loop
+set n0=FirstOfGroup(G)
+exitwhen n0==null
+if Condition_Base(GetOwningPlayer(caster),n0) and  UnitIsAlive(n0) then
+if GetUnitAbilityLevel(n0,'Mei4')==0 and GetUnitAbilityLevel(n0,'ISWC')==0  and GetUnitAbilityLevel(n0,'CE04')==0 and GetUnitAbilityLevel(n0,'B05G')==0 then
+call MeiRPoisonTarget(caster,n0,damage,false)
+endif
+endif
+call GroupRemoveUnit(G,n0)
+endloop
+call GroupClear(G)
+endif
+call SaveReal(HH,id,9,DamagePeriod)
+endif
+endif
+set caster=null
+set Dummy=null
+set gr=null
+endfunction
+function MeiR_Act takes unit caster,real x1,real y1 returns nothing
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+local real x0=GetUnitX(caster)
+local real y0=GetUnitY(caster)
+local real facing=Angle2(x0,y0,x1,y1)
+local real damage=GetUnitAbilityLevel(caster,'MeiR')
+call SaveUnitHandle(HH,id,1,caster)
+call SaveReal(HH,id,3,facing)
+call SaveGroupHandle(HH,id,4,CreateGroup())
+call SaveReal(HH,id,8,SR(x0,y0,x1,y1))
+call PauseUnit(caster,true)
+call SaveReal(HH,id,15,damage)
+call TimerStart(t,0.02,true,function MeiR_Act2)
+set t=null
+endfunction
+
+
+
+function MeiE_Act2 takes nothing returns nothing
+local integer id=GetHandleId(GetExpiredTimer())
+local unit caster=LoadUnitHandle(HH,id,1)
+local unit Dummy=LoadUnitHandle(HH,id,20)
+local unit MeiRDummy=LoadUnitHandle(HH,GetHandleId(caster),StringHash("MeiRU"))
+local real facing=LoadReal(HH,id,3)
+local real time=LoadReal(HH,id,5)
+local real time1=LoadReal(HH,id,6)
+local real x0=GetUnitX(Dummy)
+local real y0=GetUnitY(Dummy)
+local real damage=LoadReal(HH,id,15)
+local real dist=LoadReal(HH,id,8)
+set time=time+0.02
+call SaveReal(HH,id,5,time)
+if dist>2000+GetUnitAbilityLevel(caster,'MeiE')*200 then
+
+if MeiRDummy==null then
+
+set soundplay=CreateSound("Sound\\Others\\MeiE-EXP.mp3",false,false,true,12700,12700,"")
+call StartSound(soundplay)
+//call KillSoundWhenDone(soundplay)
+
+endif
+
+if SR(x0,y0,GetUnitX(MeiRDummy),GetUnitY(MeiRDummy))<400 and MeiRDummy!=null then
+
+
+set soundplay=CreateSound("Sound\\Others\\MeiE-EXP2.mp3",false,false,true,12700,12700,"")
+call StartSound(soundplay)
+//call KillSoundWhenDone(soundplay)
+
+set damage=damage*1.5
+call EffectCreateAndMove(true,"Others\\[A]NUKE2.mdl",GetRandomInt(0,360),4,2,1.5,100,100,100,0,0,Dummy,0,facing)
+call EffectCreateAndMove(true,"Others\\[A]NUKE2.mdl",GetRandomInt(0,360),4,1,1.5,100,100,100,0,0,Dummy,0,facing)
+call EffectCreateAndMove(true,"Others\\[A]Boom.mdl",facing,4,4,0.5,100,100,100,50,50,Dummy,0,facing)
+call EffectCreateAndMove(true,"Others\\[A]t_icesparks.mdl",facing,4,3,1,100,100,100,0,100,Dummy,0,facing)
+call SaveBoolean(HH,GetHandleId(caster),StringHash("MeiRB"),true)
+
+else
+
+call EffectCreateAndMove(true,"Others\\[A]BY_Wood_Kong.mdl",facing,2,1.55,0.5,100,100,100,50,50,Dummy,0,facing)
+
+
+endif
+
+call GroupClear(G)
+call GroupEnumUnitsInRange(G,x0,y0,500,Base)
+loop
+set n0=FirstOfGroup(G)
+exitwhen n0==null
+if Condition_Base(GetOwningPlayer(caster),n0) and  UnitIsAlive(n0)    and GetUnitAbilityLevel(n0,'Avul')==0 then
+
+
+
+call myCustomDamage(caster,n0,damage,false,false,null,null,null)
+endif
+call GroupRemoveUnit(G,n0)
+endloop
+call GroupClear(G)
+call MyRemoveUnit(LoadUnitHandle(HH,id,20),1)
+call MyRemoveUnit(LoadUnitHandle(HH,id,21),1)
+call SetUnitAnimationByIndex(LoadUnitHandle(HH,id,21),2)
+
+call PauseTimer(GetExpiredTimer())
+call FlushChildHashtable(HH,id)
+call DestroyTimer(GetExpiredTimer())
+else
+if time<0.2 then
+call PauseUnit(caster,true)
+endif
+if time==0.02 then
+call EffectCreateAndMove(true,"Others\\WindCirclefaster.mdl",facing,1,0.75,1.5,100,100,100,0,0,caster,0,facing)
+call SetUnitAnimationByIndex(caster,6)
+call UnitSpeed(caster,2.5)
+set soundplay=CreateSound("Sound\\Music\\mp3Music\\YotonYumesu.mp3",false,false,true,12700,12700,"")
+call StartSound(soundplay)
+//call KillSoundWhenDone(soundplay)
+endif
+if time==0.2 then
+call UnitSpeed(caster,1)
+call PauseUnit(caster,false)
+call EffectCreateAndMove(true,"Others\\[A]File00002800.mdl",facing,1,2.5,1.5,100,100,100,0,100,caster,100,facing)
+set x0=PolX(GetUnitX(caster),100,facing)
+set y0=PolY(GetUnitY(caster),100,facing)
+set n0=CreateUnit(GetOwningPlayer(caster),'e200',x0,y0,facing)
+call SetUnitModel(n0,"Others\\BY_Wood_Effect_ShuiYing_Unusual_RongDun_1_1.mdl")
+call UnitSpeed(n0,0.5)
+call UnitSize(n0,1.5,1,1)
+call UnitColor(n0,100,100,100,0)
+call SetUnitFlyHeight(n0,150,0)
+call SaveUnitHandle(HH,id,20,n0)
+set n0=null
+set n0=CreateUnit(GetOwningPlayer(caster),'e200',x0,y0,facing)
+call SetUnitModel(n0,"Others\\AZ_Kaer_D2.mdl")
+call UnitSpeed(n0,1)
+call UnitSize(n0,0.7,1,1)
+call UnitColor(n0,100,100,100,0)
+call SetUnitFlyHeight(n0,100,0)
+call SaveUnitHandle(HH,id,21,n0)
+set n0=null
+endif
+if time>0.2 then
+call SaveReal(HH,id,8,dist+40)
+call MoveUnit(Dummy,Dummy,40,facing)
+call MoveUnit(Dummy,LoadUnitHandle(HH,id,21),0,facing)
+set time1=time1+0.02
+if time1==0.04 then
+call EffectCreateAndMove(true,"Others\\BY_Wood_Effect_ShuiYing_Unusual_RongDun_1_3.mdl",facing,1,1.5,3,100,100,100,0,0,Dummy,100,facing)
+set time1=0
+endif
+call SaveReal(HH,id,6,time1)
+call GroupClear(G)
+call GroupEnumUnitsInRange(G,x0,y0,200,Base)
+loop
+set n0=FirstOfGroup(G)
+exitwhen n0==null
+if Condition_Base(GetOwningPlayer(caster),n0) and UnitIsAlive(n0)    and GetUnitAbilityLevel(n0,'Avul')==0 then
+call GroupClear(G)
+call SaveReal(HH,id,8,5000)
+endif
+call GroupRemoveUnit(G,n0)
+endloop
+call GroupClear(G)
+endif
+endif
+set caster=null
+set Dummy=null
+set MeiRDummy=null
+endfunction
+function MeiE_Act takes unit caster,real x1,real y1 returns nothing
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+local real x0=GetUnitX(caster)
+local real y0=GetUnitY(caster)
+local real facing=Angle2(x0,y0,x1,y1)
+local real damage=50+(GetUnitAbilityLevel(caster,'MeiE')+2)*GetHeroInt(caster,true)
+call SaveUnitHandle(HH,id,1,caster)
+call SaveReal(HH,id,3,facing)
+call PauseUnit(caster,true)
+call SaveReal(HH,id,15,damage)
+call TimerStart(t,0.02,true,function MeiE_Act2)
+set t=null
+endfunction
+
 
 //BuuKushuStart — перенесено из Choice Random 4.5
 function Buu_G_Return_Act takes nothing returns nothing
@@ -246932,64 +248053,6 @@ set t=null
 endfunction
 //Garp1end
 //Kimimarostart — перенесено из Choice Random 4.5
-function UnitAddDebuffTimed_Act takes nothing returns nothing
-local integer id=GetHandleId(GetExpiredTimer())
-local unit target=LoadUnitHandle(HH,id,2)
-local real time=LoadReal(HH,id,5)
-if IsUnitPaused(target)==false then
-set time=time-0.02
-call SaveReal(HH,id,5,time)
-endif
-
-
-//if GetUnitAbilityLevel(target,LoadInteger(HH,id,10))==0 and GetUnitAbilityLevel(target,LoadInteger(HH,id,11))==0 then
-//call PauseTimer(GetExpiredTimer())
-//call FlushChildHashtable(HH,id)
-//call DestroyTimer(GetExpiredTimer())
-//endif
-
-if time<=0 or GetUnitAbilityLevel(target,'CE04')>0 or GetUnitAbilityLevel(target,'B05G')>0 or GetUnitAbilityLevel(target,'ISWC')>0  then
-call UnitRemoveAbility(target,LoadInteger(HH,id,10))
-call UnitRemoveAbility(target,LoadInteger(HH,id,11))
-call PauseTimer(GetExpiredTimer())
-call FlushChildHashtable(HH,id)
-call DestroyTimer(GetExpiredTimer())
-endif
-set target=null
-endfunction
-function UnitAddDebuffTimed takes unit target0,integer Abil_ID1,integer Abil_ID2,real time_Duration returns nothing
-
-
-local timer t=CreateTimer()
-local integer id=GetHandleId(t)
-
-
-if GetUnitAbilityLevel(target0,'B05G')==0 and GetUnitAbilityLevel(target0,'ISWC')==0  and GetUnitAbilityLevel(target0,'CE04')==0 then
-//set time_Duration=CalculateControlResist(target0, time_Duration)
-
-
-call UnitAddAbility(target0,Abil_ID1)
-call SaveUnitHandle(HH,id,2,target0)
-call SaveInteger(HH,id,10,Abil_ID1)
-call SaveInteger(HH,id,11,Abil_ID2)
-
-
-set time_Duration=CalculateControlResist(target0,time_Duration)
-
-
-
-call SaveReal(HH,id,5,time_Duration)
-
-
-call TimerStart(t,0.02,true,function UnitAddDebuffTimed_Act)
-
-else
-
-call DestroyTimer(t)
-endif
-
-set t=null
-endfunction
 function KimimaroChoiceInit takes nothing returns nothing
 //set gg_trg_KimimaroChoice=CreateTrigger()
 //call TriggerRegisterAnyUnitEventBJ(gg_trg_KimimaroChoice,EVENT_PLAYER_UNIT_SPELL_EFFECT)
@@ -255460,6 +256523,24 @@ function AbilitiesForChoice_Act takes nothing returns nothing//моя функц
         call Esc_T_Act()
     endif
 //Escanor1end
+if GetSpellAbilityId()=='MeiT' then
+call MeiT_Act(caster,x1,y1)
+endif
+if GetSpellAbilityId()=='MeiG' then
+call MeiG_Act(caster,x1,y1)
+endif
+if GetSpellAbilityId()=='MeiQ' then
+call MeiQ_Act(caster,x1,y1)
+endif
+if GetSpellAbilityId()=='MeiW' then
+call MeiW_Act(caster,x1,y1)
+endif
+if GetSpellAbilityId()=='MeiR' then
+call MeiR_Act(caster,x1,y1)
+endif
+if GetSpellAbilityId()=='MeiE' then
+call MeiE_Act(caster,x1,y1)
+endif
 if GetSpellAbilityId()=='AKQ1' then
 call KimimaroQ_Act(caster,x1,y1)
 endif
