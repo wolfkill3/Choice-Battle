@@ -13181,7 +13181,8 @@ loop
 set e=FirstOfGroup(g)
 exitwhen e==null
 call GroupRemoveUnit(g,e)
-if Condition_Base(GetOwningPlayer(u),e) and UnitIsAlive(e) and GetUnitAbilityLevel(e,'Avul')==0 then
+// неуязвимого героя тоже можно (половина урона копья проходит сквозь неуязвимость); неуязвимых дамми и сундуки — нет
+if Condition_Base(GetOwningPlayer(u),e) and UnitIsAlive(e) and GetUnitAbilityLevel(e,'Aloc')==0 and (GetUnitAbilityLevel(e,'Avul')==0 or IsUnitType(e,UNIT_TYPE_HERO)) then
 set dmy=SRS(GetUnitX(u),GetUnitY(u),GetUnitX(e),GetUnitY(e))
 if (IsUnitType(e,UNIT_TYPE_HERO) and not isHero) or (IsUnitType(e,UNIT_TYPE_HERO)==isHero and dmy<bestD) then
 set best=e
@@ -13436,6 +13437,9 @@ call Rem_Sound("bof\\war3mapImported\\RemiliaScarlet-R-YY5.mp3",100)
 call Rem_Text(caster,"Spear the Gungnir")
 call SaveInteger(HH,cid,SH_RemSpearStage,0)
 call SaveBoolean(HH,cid,SH_RemSpearDone,true)
+// полное прочтение — R сразу уходит на перезарядку 30 c (раньше — только через 5 c ожидания)
+call SaveBoolean(HH,cid,SH_RemSpearOn,false)
+call SetAbilityRemainingCooldown(GetUnitAbility(caster,'RmR1'),30.)
 set t=CreateTimer()
 call SaveUnitHandle(HH,GetHandleId(t),0,caster)
 call TimerStart(t,.01,false,function Rem_R_Anim)
