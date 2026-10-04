@@ -13223,6 +13223,34 @@ endif
 set t=null
 set caster=null
 endfunction
+// R: цель, пронзённая копьём, поднимается в воздух и висит до конца способности (1.2 c), затем опускается
+function Rem_R_LiftEnd takes nothing returns nothing
+local timer t=GetExpiredTimer()
+local unit u=LoadUnitHandle(HH,GetHandleId(t),0)
+if u!=null then
+call SetUnitFlyHeight(u,GetUnitDefaultFlyHeight(u),1800.)
+endif
+call FlushChildHashtable(HH,GetHandleId(t))
+call DestroyTimer(t)
+set t=null
+set u=null
+endfunction
+function Rem_R_Lift takes unit caster,unit target returns nothing
+local timer t
+if IsUnitType(target,UNIT_TYPE_STRUCTURE) or UnitIsAlive(target)==false then
+return
+endif
+if GetUnitAbilityLevel(target,'Amrf')==0 then
+call UnitAddAbility(target,'Amrf')
+call UnitRemoveAbility(target,'Amrf')
+endif
+call SetUnitFlyHeight(target,450.,1800.)
+call SetControlToUnit(caster,target,1.2,"stun")
+set t=CreateTimer()
+call SaveUnitHandle(HH,GetHandleId(t),0,target)
+call TimerStart(t,1.2,false,function Rem_R_LiftEnd)
+set t=null
+endfunction
 // Полёт копья, тик 0.03 c: до 4 c (133 тика) или пока не долетит (100); попало ближе 200 — урон
 // R x240 + 10% максимума Ремилии (цель с Avul — половина, сквозь неуязвимость)
 function Rem_R_Spear takes nothing returns nothing
@@ -13280,6 +13308,7 @@ call Bof_Dmg(caster,target,dmg*.5)
 call SetUnitInvulnerable(target,true)
 endif
 call Rem_Noise(GetOwningPlayer(caster),80.,.8)
+call Rem_R_Lift(caster,target)
 endif
 call FlushChildHashtable(HH,id)
 call DestroyTimer(t)
@@ -13770,13 +13799,11 @@ call SaveInteger(HH,id,3,tk)
 // реверс (цель в стойке развернула умение): умение кончается, героиня отпущена
 if Bof_RevEnd(caster) then
 call PauseUnit(target,false)
+call SetUnitInvulnerable(target,false)
 call RemoveSavedHandle(HH,GetHandleId(target),SH_RemTBy)
 call SaveBoolean(HH,GetHandleId(target),TARGET_ABILITY,false)
 call CameraClearNoiseForPlayer(p)
 call CameraClearNoiseForPlayer(tp)
-if tk>306 and (GetLocalPlayer()==p or GetLocalPlayer()==tp) then
-call CinematicFilterGenericBJ(.5,BLEND_MODE_BLEND,"bof\\war3mapImported\\TeamColor00.blp",100.,0.,0.,50.,100.,0.,0.,100.)
-endif
 call FlushChildHashtable(HH,id)
 call DestroyTimer(t)
 set t=null
@@ -13789,6 +13816,7 @@ endif
 call PauseUnit(caster,true)
 call SetUnitInvulnerable(caster,true)
 call PauseUnit(target,true)
+call SetUnitInvulnerable(target,true)
 if tk==155 then
 call Rem_Sound("bof\\war3mapImported\\RemiliaScarlet-T-YY2.mp3",100)
 endif
@@ -13879,9 +13907,6 @@ call SaveInteger(HH,id,5,0)
 call Rem_Fx(caster,"bof\\Scarlet-62.mdx",tx,ty,tz+150.,0.,1.,3.)
 call Rem_Fx(caster,"bof\\Scarlet-57.MDX",tx,ty,tz+150.,0.,3.,3.)
 call Rem_Fx(caster,"bof\\Scarlet-5.mdx",tx,ty,25.,0.,15.,0.)
-if GetLocalPlayer()==p or GetLocalPlayer()==tp then
-call CinematicFilterGenericBJ(0.,BLEND_MODE_BLEND,"bof\\war3mapImported\\TeamColor00.blp",100.,0.,0.,50.,100.,0.,0.,50.)
-endif
 endif
 if tk==310 then
 call CameraClearNoiseForPlayer(p)
@@ -13894,9 +13919,6 @@ call SetSpecialEffectTimeScale(bj_lastCreatedEffect,.1)
 endif
 if tk==361 then
 call Rem_Sound("bof\\war3mapImported\\RemiliaScarlet-T-YX7.mp3",110)
-if GetLocalPlayer()==p or GetLocalPlayer()==tp then
-call CinematicFilterGenericBJ(1.,BLEND_MODE_BLEND,"bof\\war3mapImported\\TeamColor00.blp",100.,0.,0.,50.,100.,0.,0.,0.)
-endif
 endif
 if tk>=307 and tk<=360 then
 set k=LoadInteger(HH,id,5)+1
@@ -13909,15 +13931,13 @@ call Rem_Fx(caster,"bof\\Scarlet-5.mdx",tx,ty,25.,0.,15.,0.)
 call Rem_Fx(caster,"bof\\Scarlet-5.mdx",GetUnitX(caster),GetUnitY(caster),25.,0.,8.,0.)
 endif
 endif
-if tk==436 then
+if tk==380 then
 call PauseUnit(caster,false)
 call SetUnitInvulnerable(caster,false)
 call PauseUnit(target,false)
+call SetUnitInvulnerable(target,false)
 call SaveBoolean(HH,GetHandleId(target),TARGET_ABILITY,false)
 call SetUnitTimeScale(caster,1.)
-if GetLocalPlayer()==p or GetLocalPlayer()==tp then
-call CinematicFilterGenericBJ(1.,BLEND_MODE_BLEND,"bof\\war3mapImported\\TeamColor00.blp",100.,0.,0.,0.,100.,0.,0.,100.)
-endif
 call CameraClearNoiseForPlayer(p)
 call CameraClearNoiseForPlayer(tp)
 // урон: 30% разницы здоровья обоих + 6*ИНТ
@@ -13963,6 +13983,7 @@ call Rem_Fx(caster,"bof\\Scarlet-4.mdx",bx,by,GetUnitFlyHeight(caster),ang,1.,0.
 call PauseUnit(caster,true)
 call SetUnitInvulnerable(caster,true)
 call PauseUnit(target,true)
+call SetUnitInvulnerable(target,true) // цель неуязвима на время T (никто не перебивает)
 // цель держат: её стойки и каналы (Спирит Бомб и т.п.) ждут, как при захватах 3.2
 call SaveBoolean(HH,GetHandleId(target),TARGET_ABILITY,true)
 call Rem_Sound("bof\\war3mapImported\\RemiliaScarlet-T-YX1.mp3",100)
@@ -13971,7 +13992,7 @@ set t=CreateTimer()
 call SaveUnitHandle(HH,GetHandleId(t),0,caster)
 call SaveUnitHandle(HH,GetHandleId(t),1,target)
 call SaveReal(HH,GetHandleId(t),2,ang)
-call TimerStart(t,.02,true,function Rem_T_Act2)
+call TimerStart(t,.013,true,function Rem_T_Act2) // T быстрее (было .02), конец на 380-м тике вместо 436 — ~5 c вместо ~8.7
 set t=null
 endfunction
 // ----- G «Scarlet Destiny»: 10 c круг 1200 — жжёт 1% маны раз в 0.2 c, без маны (<20%) — урон -----
