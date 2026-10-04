@@ -12357,25 +12357,25 @@ endfunction
 function Rem_Int_G takes unit u,boolean b returns integer
 return R2I(I2R(GetHeroInt(u,b))*(0.02)*1000.+0.5)
 endfunction
-// интеллект для урона кнопки Q: 1.2..2*ИНТ за цепь (x20 в вызове, цепей 4); 29 сен, было 0.55..0.95;
+// интеллект для урона кнопки Q: 0.5..1*ИНТ за цепь (x20 в вызове, цепей 4), с Q2 — стандарт 4..6 (4 окт; 29 сен было 1.2..2);
 // x1000, чтобы не терять дробь в целом (в Bof_Dmg урон делится обратно на 1000)
 function Rem_Int_Q takes unit u,boolean b returns integer
-return R2I(I2R(GetHeroInt(u,b))*(0.05+0.01*I2R(GetUnitAbilityLevel(u,'RmQ1')))*1000.+0.5)
+return R2I(I2R(GetHeroInt(u,b))*((3.+I2R(GetUnitAbilityLevel(u,'RmQ1')))/160.)*1000.+0.5)
 endfunction
-// интеллект для урона кнопки Q2: 5*ИНТ (x80 в вызове); 29 сен, было 3.52;
+// интеллект для урона кнопки Q2: 2*ИНТ (x80 в вызове); 4 окт, было 5;
 // x1000, чтобы не терять дробь в целом (в Bof_Dmg урон делится обратно на 1000)
 function Rem_Int_Q2 takes unit u,boolean b returns integer
-return R2I(I2R(GetHeroInt(u,b))*(0.0625)*1000.+0.5)
+return R2I(I2R(GetHeroInt(u,b))*(0.025)*1000.+0.5)
 endfunction
-// интеллект для урона кнопки R: нажатие x60 = 1.5..2.5*ИНТ, копьё x240 = 6..10*ИНТ; 29 сен, было 0.9..1.5 и 3.6..6;
+// интеллект для урона кнопки R: нажатие x24 = 0.4..0.8*ИНТ (нажатий 5), копьё x120 = 2..4*ИНТ — стандарт 4..8 (4 окт);
 // x1000, чтобы не терять дробь в целом (в Bof_Dmg урон делится обратно на 1000)
 function Rem_Int_R takes unit u,boolean b returns integer
-return R2I(I2R(GetHeroInt(u,b))*((5.+I2R(GetUnitAbilityLevel(u,'RmR1')))/240.)*1000.+0.5)
+return R2I(I2R(GetHeroInt(u,b))*((3.+I2R(GetUnitAbilityLevel(u,'RmR1')))/240.)*1000.+0.5)
 endfunction
-// интеллект для урона кнопки W: 1..1.8*ИНТ за удар (x25 в вызове, ударов 5); 29 сен, было 0.55..0.95;
+// интеллект для урона кнопки W: 0.5..1.4*ИНТ за удар (x25 в вызове, ударов 5) — стандарт 2.5..7 (4 окт);
 // x1000, чтобы не терять дробь в целом (в Bof_Dmg урон делится обратно на 1000)
 function Rem_Int_W takes unit u,boolean b returns integer
-return R2I(I2R(GetHeroInt(u,b))*(0.032+0.008*I2R(GetUnitAbilityLevel(u,'RmW1')))*1000.+0.5)
+return R2I(I2R(GetHeroInt(u,b))*(0.011+0.009*I2R(GetUnitAbilityLevel(u,'RmW1')))*1000.+0.5)
 endfunction
 // интеллект для урона кнопки atk: урон bof x (0.0095), бафф 28 сен (было 0.0075);
 // x1000, чтобы не терять дробь в целом (в Bof_Dmg урон делится обратно на 1000)
@@ -13175,7 +13175,7 @@ if not LoadBoolean(HH,cid,SH_RemSpearDone) then
 call DisplayTextToPlayer(GetOwningPlayer(caster),0,0,"Spear the Gungnir прервано!")
 endif
 if GetUnitAbilityLevel(caster,'RmR1')>0 then
-call SetAbilityRemainingCooldown(GetUnitAbility(caster,'RmR1'),40.)
+call SetAbilityRemainingCooldown(GetUnitAbility(caster,'RmR1'),30.)
 endif
 call FlushChildHashtable(HH,GetHandleId(t))
 call DestroyTimer(t)
@@ -13231,7 +13231,7 @@ call Rem_Fx(caster,"bof\\Scarlet-4.mdx",tx,ty,25.,0.,1.5,0.)
 call Rem_Fx(caster,"bof\\Scarlet-29.mdx",tx,ty,25.,0.,1.,0.)
 call Rem_Fx(caster,"bof\\Scarlet-14.mdx",tx,ty,25.,0.,1.5,1.)
 call Rem_Sound("bof\\war3mapImported\\RemiliaScarlet-R-YX2.mp3",100)
-set dmg=I2R(Rem_Int_R(caster,true))*240.*0.001+GetUnitState(caster,UNIT_STATE_MAX_LIFE)*.1
+set dmg=I2R(Rem_Int_R(caster,true))*120.*0.001+GetUnitState(caster,UNIT_STATE_MAX_LIFE)*.1
 if GetUnitAbilityLevel(target,'Avul')==0 then
 call Bof_Dmg(caster,target,dmg)
 else
@@ -13330,7 +13330,7 @@ set e=FirstOfGroup(g)
 exitwhen e==null
 call GroupRemoveUnit(g,e)
 if Condition_Base(GetOwningPlayer(caster),e) and GetUnitAbilityLevel(e,'Avul')==0 then
-call Bof_Dmg(caster,e,(I2R(Rem_Int_R(caster,true))*60.)*0.001)
+call Bof_Dmg(caster,e,(I2R(Rem_Int_R(caster,true))*24.)*0.001)
 call Bof_Slow(caster,e,0.5,0,2,2,false)
 endif
 endloop
@@ -14005,27 +14005,27 @@ endfunction
 // героя (константы SH_Fla...). Время — целыми тиками таймера (n): тики те же, что у bof.
 // Звук/эффекты/надпись/тряска — общие с Ремилией (Rem_Sound, Rem_Fx, Rem_Text, Rem_Noise), урон/стан/
 // замедление с реверсом — из библиотеки bof (Bof_Dmg, Bof_Ctrl, Bof_Slow).
-// интеллект для урона кнопки D: урон bof x (0.04375), бафф 28 сен x1.25 (было 0.035);
+// интеллект для урона кнопки D: x (0.05625), x160 = 9 — стандарт T карты (4 окт; 28 сен было 0.04375);
 // x1000, чтобы не терять дробь в целом (в Bof_Dmg урон делится обратно на 1000)
 function Fla_Int_D takes unit u,boolean b returns integer
-return R2I(I2R(GetHeroInt(u,b))*(0.04375)*1000.+0.5)
+return R2I(I2R(GetHeroInt(u,b))*(0.05625)*1000.+0.5)
 endfunction
-// интеллект для урона кнопки E: урон bof x (0.0175 + 0.00375 x уровень), бафф 28 сен x1.25 (было 0.014 + 0.003 x уровень);
+// интеллект для урона кнопки E: x (3 + уровень)/120, x30 = 1..2 за удар, ударов 4 — стандарт карты 4..8 (4 окт);
 // x1000, чтобы не терять дробь в целом (в Bof_Dmg урон делится обратно на 1000)
 function Fla_Int_E takes unit u,boolean b returns integer
-return R2I(I2R(GetHeroInt(u,b))*(0.0175+0.00375*I2R(GetUnitAbilityLevel(u,'FlE1')))*1000.+0.5)
+return R2I(I2R(GetHeroInt(u,b))*((3.+I2R(GetUnitAbilityLevel(u,'FlE1')))/120.)*1000.+0.5)
 endfunction
 // интеллект для урона кнопки F: урон bof x (0.0175), бафф 28 сен x1.25 (было 0.014);
 // x1000, чтобы не терять дробь в целом (в Bof_Dmg урон делится обратно на 1000)
 function Fla_Int_F takes unit u,boolean b returns integer
 return R2I(I2R(GetHeroInt(u,b))*(0.0175)*1000.+0.5)
 endfunction
-// интеллект для урона кнопки G: урон bof x (0.05), бафф 28 сен x1.25 (было 0.04);
+// интеллект для урона кнопки G: x (0.02), x20 = 0.4 за луч, лучей 16 (4 окт; было 0.05 — 16*ИНТ за G);
 // x1000, чтобы не терять дробь в целом (в Bof_Dmg урон делится обратно на 1000)
 function Fla_Int_G takes unit u,boolean b returns integer
-return R2I(I2R(GetHeroInt(u,b))*(0.05)*1000.+0.5)
+return R2I(I2R(GetHeroInt(u,b))*(0.02)*1000.+0.5)
 endfunction
-// интеллект для урона кнопки G2: урон bof x (0.025), бафф 28 сен x1.25 (было 0.02);
+// интеллект для урона кнопки G2: x (0.025), x100 = 2.5 за удар, ударов 2 (4 окт);
 // x1000, чтобы не терять дробь в целом (в Bof_Dmg урон делится обратно на 1000)
 function Fla_Int_G2 takes unit u,boolean b returns integer
 return R2I(I2R(GetHeroInt(u,b))*(0.025)*1000.+0.5)
@@ -14035,20 +14035,20 @@ endfunction
 function Fla_Int_Q takes unit u,boolean b returns integer
 return R2I(I2R(GetHeroInt(u,b))*(0.0225+0.005*I2R(GetUnitAbilityLevel(u,'FlQ1')))*1000.+0.5)
 endfunction
-// интеллект для урона кнопки R: урон bof x (0.0175 + 0.00375 x уровень), бафф 28 сен x1.25 (было 0.014 + 0.003 x уровень);
+// интеллект для урона кнопки R: x (3 + уровень)/480, x80 = 0.67..1.33 за удар (3 нажатия + 3 копья) — стандарт 4..8 (4 окт);
 // x1000, чтобы не терять дробь в целом (в Bof_Dmg урон делится обратно на 1000)
 function Fla_Int_R takes unit u,boolean b returns integer
-return R2I(I2R(GetHeroInt(u,b))*(0.0175+0.00375*I2R(GetUnitAbilityLevel(u,'FlR1')))*1000.+0.5)
+return R2I(I2R(GetHeroInt(u,b))*((3.+I2R(GetUnitAbilityLevel(u,'FlR1')))/480.)*1000.+0.5)
 endfunction
-// интеллект для урона кнопки W: урон bof x (0.0175 + 0.00375 x уровень), бафф 28 сен x1.25 (было 0.014 + 0.003 x уровень);
+// интеллект для урона кнопки W: x (5 + 3 x уровень)/960, x120 = 1..2.5 за удар, ударов 2 (+W2) — стандарт (4 окт);
 // x1000, чтобы не терять дробь в целом (в Bof_Dmg урон делится обратно на 1000)
 function Fla_Int_W takes unit u,boolean b returns integer
-return R2I(I2R(GetHeroInt(u,b))*(0.0175+0.00375*I2R(GetUnitAbilityLevel(u,'FlW1')))*1000.+0.5)
+return R2I(I2R(GetHeroInt(u,b))*((5.+3.*I2R(GetUnitAbilityLevel(u,'FlW1')))/960.)*1000.+0.5)
 endfunction
-// интеллект для урона кнопки W2: урон bof x (0.025), бафф 28 сен x1.25 (было 0.02);
+// интеллект для урона кнопки W2: x (0.0125), x80 = 1 за удар веера (4 окт);
 // x1000, чтобы не терять дробь в целом (в Bof_Dmg урон делится обратно на 1000)
 function Fla_Int_W2 takes unit u,boolean b returns integer
-return R2I(I2R(GetHeroInt(u,b))*(0.025)*1000.+0.5)
+return R2I(I2R(GetHeroInt(u,b))*(0.0125)*1000.+0.5)
 endfunction
 // интеллект для урона кнопки atk: урон bof x (0.0095), бафф 28 сен (было 0.0075);
 // x1000, чтобы не терять дробь в целом (в Bof_Dmg урон делится обратно на 1000)
@@ -14689,7 +14689,7 @@ if not LoadBoolean(HH,cid,SH_FlaRDone) then
 call DisplayTextToPlayer(GetOwningPlayer(caster),0,0,"Песня Kagome, Kagome прервана!")
 endif
 if GetUnitAbilityLevel(caster,'FlR1')>0 then
-call SetAbilityRemainingCooldown(GetUnitAbility(caster,'FlR1'),40.)
+call SetAbilityRemainingCooldown(GetUnitAbility(caster,'FlR1'),30.)
 endif
 call FlushChildHashtable(HH,GetHandleId(t))
 call DestroyTimer(t)
@@ -15392,7 +15392,7 @@ call Rem_Fx(caster,"bof\\Madara-huitu-22.mdx",px,py,25.,ang,15.,0.)
 call Rem_Fx(caster,"bof\\Scarlet-40.mdx",px,py,25.,ang,3.,0.)
 call Rem_Fx(caster,"bof\\Scarlet-54.mdx",GetUnitX(target),GetUnitY(target),150.,0.,1.,0.)
 call Rem_Fx(caster,"bof\\Scarlet-52.mdx",GetUnitX(target),GetUnitY(target),150.,0.,1.,0.)
-call Bof_Dmg(caster,target,(I2R(Fla_Int_G2(caster,true))*120.)*0.001)
+call Bof_Dmg(caster,target,(I2R(Fla_Int_G2(caster,true))*100.)*0.001)
 call Bof_Ctrl(caster,target,1.5,"stun")
 endif
 endif
