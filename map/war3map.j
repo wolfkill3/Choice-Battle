@@ -12257,30 +12257,43 @@ endif
 endif
 return AddSpecialEffect(path,x,y)
 endfunction
-function Bof_X takes real x returns real
-local real lo=GetRectMinX(bj_mapInitialPlayableArea)+64.
-local real hi=GetRectMaxX(bj_mapInitialPlayableArea)-64.
-if x<lo then
-return lo
-elseif x>hi then
-return hi
-endif
-return x
+function Bof_InZone takes rect r,real x,real y,real m returns boolean
+return x>=GetRectMinX(r)-m and x<=GetRectMaxX(r)+m and y>=GetRectMinY(r)-m and y<=GetRectMaxY(r)+m
 endfunction
-function Bof_Y takes real y returns real
-local real lo=GetRectMinY(bj_mapInitialPlayableArea)+64.
-local real hi=GetRectMaxY(bj_mapInitialPlayableArea)-64.
-if y<lo then
-return lo
-elseif y>hi then
-return hi
+// зона боя точки: главная арена, бой Хибари, UBW, театр, дуэльная арена; чуть за краем (до 1000) — та же зона
+// (перо родилось сбоку от героя у стены), дальше — вся карта
+function Bof_Zone takes real x,real y returns rect
+local real m=0.
+loop
+if Bof_InZone(gg_rct_GameZone,x,y,m) then
+return gg_rct_GameZone
+elseif Bof_InZone(gg_rct_HibariFight,x,y,m) then
+return gg_rct_HibariFight
+elseif Bof_InZone(gg_rct_UBW2,x,y,m) then
+return gg_rct_UBW2
+elseif Bof_InZone(gg_rct_OblTeatr,x,y,m) then
+return gg_rct_OblTeatr
+elseif Bof_InZone(gg_rct_Arena,x,y,m) then
+return gg_rct_Arena
 endif
-return y
+exitwhen m>0.
+set m=1000.
+endloop
+return bj_mapInitialPlayableArea
 endfunction
-// переставить юнита без проверки проходимости, но не за край карты (перья, драконы, рывки сквозь декор)
+function Bof_X takes rect r,real x returns real
+return RMinBJ(RMaxBJ(x,GetRectMinX(r)+64.),GetRectMaxX(r)-64.)
+endfunction
+function Bof_Y takes rect r,real y returns real
+return RMinBJ(RMaxBJ(y,GetRectMinY(r)+64.),GetRectMaxY(r)-64.)
+endfunction
+// переставить юнита без проверки проходимости, но не из его зоны боя (перья, драконы, рывки сквозь декор;
+// владелец 4 окт: «драконы и перья не должны улетать за карту»)
 function Bof_Put takes unit u,real x,real y returns nothing
-call SetUnitX(u,Bof_X(x))
-call SetUnitY(u,Bof_Y(y))
+local rect r=Bof_Zone(GetUnitX(u),GetUnitY(u))
+call SetUnitX(u,Bof_X(r,x))
+call SetUnitY(u,Bof_Y(r,y))
+set r=null
 endfunction
 // после рывка сквозь декор герой не должен остаться внутри лавки/дерева: ближайшая проходимая точка до 320
 function Bof_Unstick takes unit u returns nothing
@@ -12288,7 +12301,9 @@ local real x=GetUnitX(u)
 local real y=GetUnitY(u)
 local real r=32.
 local real a
+local rect bz=Bof_Zone(x,y)
 if not IsTerrainPathable(x,y,PATHING_TYPE_WALKABILITY) then
+set bz=null
 return
 endif
 loop
@@ -12296,14 +12311,16 @@ exitwhen r>320.
 set a=0.
 loop
 exitwhen a>=360.
-if not IsTerrainPathable(Bof_X(x+r*CosBJ(a)),Bof_Y(y+r*SinBJ(a)),PATHING_TYPE_WALKABILITY) then
+if not IsTerrainPathable(Bof_X(bz,x+r*CosBJ(a)),Bof_Y(bz,y+r*SinBJ(a)),PATHING_TYPE_WALKABILITY) then
 call Bof_Put(u,x+r*CosBJ(a),y+r*SinBJ(a))
+set bz=null
 return
 endif
 set a=a+45.
 endloop
 set r=r+32.
 endloop
+set bz=null
 endfunction
 function Bof_GlideAct takes nothing returns nothing
 local timer t=GetExpiredTimer()
@@ -15715,10 +15732,10 @@ endfunction
 function Sui_Agi_E2 takes unit u,boolean b returns integer
 return R2I(I2R(GetHeroAgi(u,b))*(0.03)*1000.+0.5)
 endfunction
-// ловкость для урона кнопки E: урон bof x (0.014 + 0.002 x уровень);
+// ловкость для урона кнопки E: x (0.015 + 0.005 x уровень), перо x50 — три пера 3..6 (стандарт карты);
 // x1000, чтобы не терять дробь в целом (в Bof_Dmg урон делится обратно на 1000)
 function Sui_Agi_Ei takes unit u,boolean b returns integer
-return R2I(I2R(GetHeroAgi(u,b))*(0.014+0.002*I2R(GetUnitAbilityLevel(u,'SuE1')))*1000.+0.5)
+return R2I(I2R(GetHeroAgi(u,b))*(0.015+0.005*I2R(GetUnitAbilityLevel(u,'SuE1')))*1000.+0.5)
 endfunction
 // ловкость для урона кнопки F: урон bof x (0.015);
 // x1000, чтобы не терять дробь в целом (в Bof_Dmg урон делится обратно на 1000)
@@ -15730,30 +15747,30 @@ endfunction
 function Sui_Agi_F2 takes unit u,boolean b returns integer
 return R2I(I2R(GetHeroAgi(u,b))*(0.01)*1000.+0.5)
 endfunction
-// ловкость для урона кнопки G: урон bof x (0.02);
+// ловкость для урона кнопки G: x (0.02), цепь x40, перо x20, без среза паузы — ~11 по цели в центре;
 // x1000, чтобы не терять дробь в целом (в Bof_Dmg урон делится обратно на 1000)
 function Sui_Agi_G takes unit u,boolean b returns integer
 return R2I(I2R(GetHeroAgi(u,b))*(0.02)*1000.+0.5)
 endfunction
-// ловкость для урона кнопки Q: урон bof x (0.015 + 0.0027 x уровень);
+// ловкость для урона кнопки Q: x (0.005 + 0.005 x уровень), удары 50+50+100 — серия 2..6 (стандарт карты, 4 окт);
 // x1000, чтобы не терять дробь в целом (в Bof_Dmg урон делится обратно на 1000)
 function Sui_Agi_Qi takes unit u,boolean b returns integer
-return R2I(I2R(GetHeroAgi(u,b))*(0.015+0.0027*I2R(GetUnitAbilityLevel(u,'SuQ1')))*1000.+0.5)
+return R2I(I2R(GetHeroAgi(u,b))*(0.005+0.005*I2R(GetUnitAbilityLevel(u,'SuQ1')))*1000.+0.5)
 endfunction
-// ловкость для урона кнопки R: урон bof x (0.012 + 0.0024 x уровень);
+// ловкость для урона кнопки R: x (0.02 + 0.005 x уровень), большой дракон x200 = 5..9, из пера x50 (стандарт карты);
 // x1000, чтобы не терять дробь в целом (в Bof_Dmg урон делится обратно на 1000)
 function Sui_Agi_R takes unit u,boolean b returns integer
-return R2I(I2R(GetHeroAgi(u,b))*(0.012+0.0024*I2R(GetUnitAbilityLevel(u,'SuR1')))*1000.+0.5)
+return R2I(I2R(GetHeroAgi(u,b))*(0.02+0.005*I2R(GetUnitAbilityLevel(u,'SuR1')))*1000.+0.5)
 endfunction
-// ловкость для урона кнопки T: урон bof x (0.03);
+// ловкость для урона кнопки T: x (0.08), перо x25 = 2 (стандарт карты);
 // x1000, чтобы не терять дробь в целом (в Bof_Dmg урон делится обратно на 1000)
 function Sui_Agi_T takes unit u,boolean b returns integer
-return R2I(I2R(GetHeroAgi(u,b))*(0.03)*1000.+0.5)
+return R2I(I2R(GetHeroAgi(u,b))*(0.08)*1000.+0.5)
 endfunction
-// ловкость для урона кнопки W: урон bof x (0.0167 + 0.0033 x уровень);
+// ловкость для урона кнопки W: x (0.012 + 0.004 x уровень), перо x6 — ~32 пера по цели 3..6 (стандарт карты);
 // x1000, чтобы не терять дробь в целом (в Bof_Dmg урон делится обратно на 1000)
 function Sui_Agi_Wi takes unit u,boolean b returns integer
-return R2I(I2R(GetHeroAgi(u,b))*(0.0167+0.0033*I2R(GetUnitAbilityLevel(u,'SuW1')))*1000.+0.5)
+return R2I(I2R(GetHeroAgi(u,b))*(0.012+0.004*I2R(GetUnitAbilityLevel(u,'SuW1')))*1000.+0.5)
 endfunction
 // ловкость для урона кнопки atk: урон bof x (0.0075);
 // x1000, чтобы не терять дробь в целом (в Bof_Dmg урон делится обратно на 1000)
@@ -15960,7 +15977,7 @@ call Rem_Fx(hr,"bof\\Saber-17.mdx",x,y,z+50.,ang,1.5,0.)
 call Rem_Fx(hr,"bof\\Tsubaki-37.mdx",x,y,z+50.,ang,4.,0.)
 call SetSpecialEffectPitch(bj_lastCreatedEffect,90.)
 call Bof_Glide(src,ang,400.,.4)
-call Sui_Q_Strike(src,hr,300.,40.)
+call Sui_Q_Strike(src,hr,300.,50.)
 endif
 if tk==46 then
 call Rem_Noise(GetOwningPlayer(src),50.,.5)
@@ -15974,7 +15991,7 @@ set a2=a2-15.
 call Rem_Fx(hr,"bof\\Tsubaki-32.mdx",x,y,z+25.,a2+180.,2.,0.)
 set k=k+1
 endloop
-call Sui_Q_Strike(src,hr,450.,60.)
+call Sui_Q_Strike(src,hr,450.,100.)
 endif
 if tk>=56 then
 call SetUnitInvulnerable(src,false)
@@ -16710,8 +16727,8 @@ else
 set side=ang-90.
 set fa=ang+30.
 endif
-set x=Bof_X(bx+400.*CosBJ(side))
-set y=Bof_Y(by+400.*SinBJ(side))
+set x=Bof_X(Bof_Zone(bx,by),bx+400.*CosBJ(side))
+set y=Bof_Y(Bof_Zone(bx,by),by+400.*SinBJ(side))
 set f=Sui_Feather(caster,x,y,fa,150.,1.5,12.)
 call SetUnitVertexColor(f,255,255,255,0)
 call Rem_FadeIn(f,5)
@@ -16825,15 +16842,8 @@ set u=null
 set t=null
 endfunction
 // ----- R «Black Feather Dragon»: перья в области 450 у точки становятся драконами — каждый сам находит
-// ближайшего вражеского героя (не дальше 3000 от Суйгинто), летит по спирали, бьёт (80) и оглушает на 3 c,
-// R перезаряжается 12 c; перьев нет — один большой дракон вперёд, взрыв по области 600 (200, стан 3 c) -----
-function Sui_R_Cd takes nothing returns nothing
-local timer t=GetExpiredTimer()
-call StartAbilityCooldown(GetUnitAbility(LoadUnitHandle(HH,GetHandleId(t),0),'SuR1'),12.)
-call FlushChildHashtable(HH,GetHandleId(t))
-call DestroyTimer(t)
-set t=null
-endfunction
+// ближайшего вражеского героя (не дальше 3000 от Суйгинто), летит по спирали, бьёт (50) и оглушает на 3 c
+// (КД 25 всегда — стандарт карты, 4 окт); перьев нет — один большой дракон вперёд, взрыв по области 600 (200, стан 3 c) -----
 function Sui_R_Boom takes unit hr,real x,real y,real ang returns nothing
 call Rem_Fx(hr,"bof\\Madara-huitu-13.mdx",x,y,25.,0.,1.,0.)
 call Rem_Fx(hr,"bof\\Mercury Lamp-24.mdx",x,y,GetUnitFlyHeight(hr)+50.,ang,2.5,0.)
@@ -16916,7 +16926,7 @@ endif
 else
 if e!=null and GetUnitTypeId(dg)!=0 and dd<=120. and GetWidgetLife(e)>.405 then
 call Sui_R_Boom(hr,GetUnitX(e),GetUnitY(e),GetUnitFacing(dg))
-call Bof_Dmg(hr,e,I2R(Sui_Agi_R(hr,true))*80.*.001)
+call Bof_Dmg(hr,e,I2R(Sui_Agi_R(hr,true))*50.*.001)
 call Bof_Ctrl(hr,e,3.,"stun")
 endif
 call RemoveUnit(dg)
@@ -17048,9 +17058,6 @@ set i=i+1
 endloop
 call Sui_FClean(caster)
 if used>0 then
-set t=CreateTimer()
-call SaveUnitHandle(HH,GetHandleId(t),0,caster)
-call TimerStart(t,.1,false,function Sui_R_Cd)
 call Rem_Fx(caster,"bof\\Mercury Lamp-23.mdx",x,y,z+50.,ang,1.,0.)
 call Rem_Fx(caster,"bof\\Mercury Lamp-22.mdx",x,y,z+50.,ang,1.,0.)
 call Rem_Fx(caster,"bof\\Mercury Lamp-27.mdx",x,y,z+50.,ang,1.,0.)
@@ -17296,7 +17303,7 @@ set e=FirstOfGroup(g)
 exitwhen e==null
 call GroupRemoveUnit(g,e)
 if Condition_Base(GetOwningPlayer(hr),e) and GetUnitAbilityLevel(e,'Avul')==0 then
-call Bof_Dmg(hr,e,I2R(Sui_Agi_G(hr,true))*80.*.001)
+call Bof_DmgFull(hr,e,I2R(Sui_Agi_G(hr,true))*40.*.001)
 call Bof_Ctrl(hr,e,1.2,"stun")
 endif
 endloop
@@ -17343,7 +17350,7 @@ set e=FirstOfGroup(g)
 exitwhen e==null
 call GroupRemoveUnit(g,e)
 if Condition_Base(GetOwningPlayer(hr),e) and GetUnitAbilityLevel(e,'Avul')==0 then
-call Bof_Dmg(hr,e,I2R(Sui_Agi_G(hr,true))*40.*.001)
+call Bof_DmgFull(hr,e,I2R(Sui_Agi_G(hr,true))*20.*.001)
 endif
 endloop
 call DestroyGroup(g)
@@ -17367,8 +17374,8 @@ local real zz=GetUnitFlyHeight(hr)+GetRandomReal(-200.,600.)
 local unit dg
 local unit an
 local timer t=CreateTimer()
-set x=Bof_X(x)
-set y=Bof_Y(y)
+set x=Bof_X(Bof_Zone(GetUnitX(hr),GetUnitY(hr)),x)
+set y=Bof_Y(Bof_Zone(GetUnitX(hr),GetUnitY(hr)),y)
 set dg=CreateUnit(GetOwningPlayer(hr),'eBLT',x,y,ang)
 call SetUnitPathing(dg,false)
 call SetUnitScale(dg,1.5,1.,1.)
