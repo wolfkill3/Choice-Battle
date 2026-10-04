@@ -14829,6 +14829,11 @@ call GroupRemoveUnit(g,e)
 if Condition_Base(GetOwningPlayer(caster),e) and GetUnitAbilityLevel(e,'Avul')==0 then
 call Bof_Dmg(caster,e,(I2R(Fla_Int_R(caster,true))*80.)*0.001)
 call Bof_Ctrl(caster,e,1.5,"stun")
+elseif Condition_Base(GetOwningPlayer(caster),e) and IsUnitType(e,UNIT_TYPE_HERO) and GetUnitAbilityLevel(e,'Aloc')==0 then
+// неуязвимый герой — половина урона сквозь неуязвимость, без оглушения
+call SetUnitInvulnerable(e,false)
+call Bof_Dmg(caster,e,(I2R(Fla_Int_R(caster,true))*80.)*0.001*.5)
+call SetUnitInvulnerable(e,true)
 endif
 endloop
 call DestroyGroup(g)
@@ -14945,6 +14950,9 @@ call Rem_Sound("bof\\war3mapImported\\RemiliaScarlet-G-YX1.mp3",100)
 call Rem_Text(caster,"Kagome, Kagome")
 call SaveInteger(HH,cid,SH_FlaRStage,0)
 call SaveBoolean(HH,cid,SH_FlaRDone,true)
+// полное прочтение — R сразу уходит на перезарядку 30 c (раньше — только через 6 c ожидания)
+call SaveBoolean(HH,cid,SH_FlaROn,false)
+call SetAbilityRemainingCooldown(GetUnitAbility(caster,'FlR1'),30.)
 set t=CreateTimer()
 set g=CreateGroup()
 call GroupEnumUnitsInRange(g,x,y,1600.,null)
@@ -14954,7 +14962,7 @@ exitwhen e==null
 call GroupRemoveUnit(g,e)
 // клетка — только живым уязвимым врагам: иначе копья летели в неуязвимые сундуки в зоне ожидания
 // и в тела мёртвых героев, даже когда врагов рядом нет (владелец 4 окт)
-if Condition_Base(GetOwningPlayer(caster),e) and GetUnitAbilityLevel(e,'Avul')==0 and UnitIsAlive(e) then
+if Condition_Base(GetOwningPlayer(caster),e) and UnitIsAlive(e) and GetUnitAbilityLevel(e,'Aloc')==0 and (GetUnitAbilityLevel(e,'Avul')==0 or IsUnitType(e,UNIT_TYPE_HERO)) then
 set ea=GetUnitFacing(e)+180.
 set sg=CreateGroup()
 set str=1
