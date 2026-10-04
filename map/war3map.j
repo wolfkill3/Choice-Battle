@@ -12669,7 +12669,7 @@ local real ang=LoadReal(HH,id,2)
 local real speed=20.-1.5*I2R(tk)
 call SaveInteger(HH,id,1,tk)
 if tk<=10 then
-call SetUnitPosition(u,GetUnitX(u)+speed*CosBJ(ang),GetUnitY(u)+speed*SinBJ(ang))
+call SetUnitXY_1(u,GetUnitX(u)+speed*CosBJ(ang),GetUnitY(u)+speed*SinBJ(ang), true)
 else
 call FlushChildHashtable(HH,id)
 call DestroyTimer(t)
@@ -12745,7 +12745,7 @@ set dir=dir+GetRandomReal(-3.,3.)
 call SaveReal(HH,id,5,dir)
 call SetUnitFacing(dmy,dir)
 call SaveReal(HH,id,7,SRS(x,y,tx,ty))
-call SetUnitPosition(dmy,x+speed*CosBJ(dir),y+speed*SinBJ(dir))
+call SetUnitXY_1(dmy,x+speed*CosBJ(dir),y+speed*SinBJ(dir), false)
 call SaveReal(HH,id,9,x+speed*CosBJ(dir))
 call SaveReal(HH,id,10,y+speed*SinBJ(dir))
 else
@@ -13001,7 +13001,7 @@ if tk==13 then
 call CameraSetEQNoiseForPlayer(GetOwningPlayer(caster),35.)
 call SetUnitTimeScale(caster,1.)
 call SetUnitAnimationByIndex(caster,19)
-call SetUnitPosition(caster,tx,ty)
+call SetUnitXY_1(caster,tx,ty, true)
 call Rem_Fx(caster,"bof\\Scarlet-10.mdx",tx,ty,25.,ang,1.5,0.)
 call Rem_Fx(caster,"bof\\Scarlet-47.mdx",tx,ty,25.,ang,1.,0.)
 call Rem_Fx(caster,"bof\\Scarlet-4.mdx",tx,ty,25.,ang,1.5,0.)
@@ -13086,7 +13086,7 @@ set e=FirstOfGroup(g)
 exitwhen e==null
 call GroupRemoveUnit(g,e)
 if Condition_Base(GetOwningPlayer(caster),e) and GetUnitAbilityLevel(e,'Avul')==0 then
-call SetUnitPosition(e,GetUnitX(e)+speed*CosBJ(ang),GetUnitY(e)+speed*SinBJ(ang))
+call SetUnitXY_1(e,GetUnitX(e)+speed*CosBJ(ang),GetUnitY(e)+speed*SinBJ(ang), true)
 endif
 endloop
 call DestroyGroup(g)
@@ -13274,7 +13274,8 @@ call SetUnitFacing(dmy,ang)
 if I2R(tk)*.01<=1.33 and dist>100. and UnitIsAlive(dmy) then
 set x=x+100.*CosBJ(ang)
 set y=y+100.*SinBJ(ang)
-call SetUnitPosition(dmy,x,y)
+// SetUnitXY_1 без проверки: SetUnitPosition учитывал проходимость — копьё упиралось в декорации
+call SetUnitXY_1(dmy,x,y, false)
 if ModuloInteger(tk,2)==0 then
 call Rem_Fx(caster,"bof\\Scarlet-55.mdx",x,y,150.,ang,1.,1.)
 endif
@@ -13478,7 +13479,7 @@ endif
 if tk<=12 and UnitIsAlive(dmy) then
 set x=GetUnitX(dmy)+speed*CosBJ(ang)
 set y=GetUnitY(dmy)+speed*SinBJ(ang)
-call SetUnitPosition(dmy,x,y)
+call SetUnitXY_1(dmy,x,y, false)
 set g=CreateGroup()
 call GroupEnumUnitsInRange(g,x,y,150.,null)
 loop
@@ -13603,7 +13604,7 @@ local integer tk=LoadInteger(HH,id,2)+1
 local boolean over=tk>80
 call SaveInteger(HH,id,2,tk)
 if not over then
-call SetUnitPosition(pool,GetUnitX(caster),GetUnitY(caster))
+call SetUnitXY_1(pool,GetUnitX(caster),GetUnitY(caster), false)
 call SetUnitInvulnerable(caster,true)
 if tk==1 or ModuloInteger(tk-1,8)==0 then
 call Rem_Fx(caster,"bof\\Scarlet-4.mdx",GetUnitX(caster),GetUnitY(caster),25.,GetUnitFacing(caster),1.,0.)
@@ -13726,7 +13727,7 @@ if tk==10 then
 set tx=GetUnitX(target)
 set ty=GetUnitY(target)
 set ang=Atan2BJ(ty-GetUnitY(caster),tx-GetUnitX(caster))
-call SetUnitPosition(caster,tx+200.*CosBJ(ang),ty+200.*SinBJ(ang))
+call SetUnitXY_1(caster,tx+200.*CosBJ(ang),ty+200.*SinBJ(ang), true)
 set x=GetUnitX(caster)
 set y=GetUnitY(caster)
 call Rem_Sound("bof\\war3mapImported\\RemiliaScarlet-T-YX5.wav",100)
@@ -13980,7 +13981,7 @@ set ang=Atan2BJ(GetUnitY(target)-y,GetUnitX(target)-x)
 // Ремилия встаёт в 150 перед целью (со стороны, где стояла)
 set bx=GetUnitX(target)+150.*CosBJ(Atan2BJ(y-GetUnitY(target),x-GetUnitX(target)))
 set by=GetUnitY(target)+150.*SinBJ(Atan2BJ(y-GetUnitY(target),x-GetUnitX(target)))
-call SetUnitPosition(caster,bx,by)
+call SetUnitXY_1(caster,bx,by, true)
 call Rem_Fx(caster,"bof\\Scarlet-21.mdx",bx,by,GetUnitFlyHeight(caster),ang,2.,0.)
 call Rem_Fx(caster,"bof\\Scarlet-65.mdx",bx,by,GetUnitFlyHeight(caster),ang,1.,0.)
 call Rem_Fx(caster,"bof\\Scarlet-4.mdx",bx,by,GetUnitFlyHeight(caster),ang,1.,0.)
@@ -14026,8 +14027,8 @@ local group g
 local unit e
 call SaveInteger(HH,id,3,tk)
 if tk<=200 then
-call SetUnitPosition(ring,x,y)
-call SetUnitPosition(wave,x,y)
+call SetUnitXY_1(ring,x,y, false)
+call SetUnitXY_1(wave,x,y, false)
 if tk==1 or ModuloInteger(tk-1,8)==0 then
 call Rem_Fx(caster,"bof\\Scarlet-4.mdx",x,y,25.,GetUnitFacing(caster),1.,0.)
 call Rem_Fx(caster,"bof\\Scarlet-29.mdx",x,y,GetUnitFlyHeight(caster),GetUnitFacing(caster),1.,0.)
@@ -14438,7 +14439,7 @@ call UnitApplyTimedLife(dmy,'BHwe',1.)
 call SetUnitAnimationByIndex(dmy,2)
 call SaveUnitHandle(HH,id,2,dmy)
 endif
-call SetUnitPosition(dmy,GetUnitX(target),GetUnitY(target))
+call SetUnitXY_1(dmy,GetUnitX(target),GetUnitY(target), false)
 else
 call Bof_Ctrl(caster,target,1.5,"stun")
 call Fla_W_Blast(caster,target)
@@ -14468,7 +14469,7 @@ call SetUnitFacingTimed(dmy,ang,0)
 if tk<=50 and dist>100. and IsUnitAliveBJ(dmy) then
 set x=x+100.*CosBJ(ang)
 set y=y+100.*SinBJ(ang)
-call SetUnitPosition(dmy,x,y)
+call SetUnitXY_1(dmy,x,y, false)
 if ModuloInteger(tk,4)==0 then
 call Rem_Fx(caster,"bof\\Scarlet-69.mdx",x,y,150.,ang,.75,0.)
 call Rem_Fx(caster,"bof\\Scarlet-84.mdx",x,y,150.,ang,1.,0.)
@@ -14811,7 +14812,7 @@ if (tk<=12 or I2R(tk)*.01<=GetRandomReal(.12,.15)) and IsUnitAliveBJ(dmy) then
 set ang=ang+GetRandomReal(-3.,3.)
 call SaveReal(HH,id,3,ang)
 call SetUnitFacingTimed(dmy,ang,0)
-call SetUnitPosition(dmy,x+speed*CosBJ(ang),y+speed*SinBJ(ang))
+call SetUnitXY_1(dmy,x+speed*CosBJ(ang),y+speed*SinBJ(ang), false)
 else
 call Rem_Sound("bof\\war3mapImported\\Flandre Scarlet-Q-YX1.mp3",100)
 call SetUnitAnimation(dmy,"Death")
@@ -15028,7 +15029,7 @@ set cl=CreateUnit(GetOwningPlayer(caster),'hB1W',tx,ty,ang)
 call SetUnitBaseDamageByIndex(cl,0,R2I(I2R(GetHeroInt(caster,true))*.5))
 call SaveBoolean(HH,GetHandleId(cl),SH_FlaDash,true)
 call SaveUnitHandle(HH,GetHandleId(cl),SH_FlaOwner,caster)
-call SetUnitPosition(cl,tx,ty)
+call SetUnitXY_1(cl,tx,ty, true)
 call UnitApplyTimedLife(cl,'BHwe',12.)
 call SetUnitPathing(cl,false)
 call SaveUnitHandle(HH,cid,SH_FlaClones+k,cl)
@@ -15053,7 +15054,7 @@ local integer id=GetHandleId(e)
 local integer k=ModuloInteger(LoadInteger(HH,SH_FlaPast,0)+1,60)
 call Rem_Fx(caster,"bof\\Kurumi-1.mdx",GetUnitX(e),GetUnitY(e),25.,0.,1.,0.)
 if LoadBoolean(HH,id,SH_FlaPastOn) then
-call SetUnitPosition(e,LoadReal(HH,id,SH_FlaPastX+k),LoadReal(HH,id,SH_FlaPastY+k))
+call SetUnitXY_1(e,LoadReal(HH,id,SH_FlaPastX+k),LoadReal(HH,id,SH_FlaPastY+k), true)
 endif
 call Rem_Fx(caster,"bof\\Kurumi-1.mdx",GetUnitX(e),GetUnitY(e),25.,0.,1.,0.)
 endfunction
@@ -15117,7 +15118,7 @@ if ModuloInteger(tk,6)==0 then
 call Rem_Fx(caster,"bof\\Tsubaki-37.mdx",GetUnitX(dmy),GetUnitY(dmy),-1.,ang,4.,0.)
 endif
 if tk<=40 then
-call SetUnitPosition(dmy,GetUnitX(dmy)+40.*CosBJ(ang),GetUnitY(dmy)+40.*SinBJ(ang))
+call SetUnitXY_1(dmy,GetUnitX(dmy)+40.*CosBJ(ang),GetUnitY(dmy)+40.*SinBJ(ang), false)
 endif
 if tk>=40 or SRS(GetUnitX(dmy),GetUnitY(dmy),tx,ty)<=100. then
 call Rem_Fx(caster,"bof\\Scarlet-88.mdx",tx,ty,-1.,ang,2.5,5.)
@@ -83631,10 +83632,10 @@ local player p=GetOwningPlayer(u)
 local real r=GetRandomReal(0.,6.283185)
 local integer l__s=SH_block
 local real dist=LoadReal(h,id,100)
-call SetUnitX(u,x+300*Cos(r))
-call SetUnitY(u,y+300*Sin(r))
-call SetUnitFlyHeight(u,GetRandomReal(200,50),0)
-call GroupEnumUnitsInRange(G,x,y,400,Base)
+call SetUnitX(u,x+375*Cos(r))
+call SetUnitY(u,y+375*Sin(r))
+call SetUnitFlyHeight(u,GetRandomReal(250,62.5),0)
+call GroupEnumUnitsInRange(G,x,y,500,Base) // +25% (было 400)
 call SaveReal(h,id,100,dist+0.15)
 call SetUnitAnimation(u,"attack")
 loop
@@ -83688,21 +83689,38 @@ local integer i=1
 local integer l__s=SH_block
 call SaveReal(h,id,2,x)
 call SaveReal(h,id,3,y)
-call UnitApplyTimedLife(CreateUnit(p,'e052',x,y,0),'BTLF',3)
-call UnitApplyTimedLife(CreateUnit(p,'e053',x,y,0),'BTLF',5)
-call UnitApplyTimedLife(CreateUnit(p,'e053',x,y,0),'BTLF',5)
-call UnitApplyTimedLife(CreateUnit(p,'e054',x,y,0),'BTLF',3)
+// T +25%: эффекты, круг зеркал (350->437.5, 250->312.5) и сами зеркала (в том числе по высоте)
+set n=CreateUnit(p,'e052',x,y,0)
+call SetUnitScale(n,1.25,1.25,1.25)
+call UnitApplyTimedLife(n,'BTLF',3)
+set n=CreateUnit(p,'e053',x,y,0)
+call SetUnitScale(n,6.25,6.25,6.25)
+call UnitApplyTimedLife(n,'BTLF',5)
+set n=CreateUnit(p,'e053',x,y,0)
+call SetUnitScale(n,6.25,6.25,6.25)
+call UnitApplyTimedLife(n,'BTLF',5)
+set n=CreateUnit(p,'e054',x,y,0)
+call SetUnitScale(n,2.5,2.5,2.5)
+call UnitApplyTimedLife(n,'BTLF',3)
+set n=null
 loop
 exitwhen i>=19
-set x1=x+350*Cos(i*0.3491)
-set y1=y+350*Sin(i*0.3491)
+set x1=x+437.5*Cos(i*0.3491)
+set y1=y+437.5*Sin(i*0.3491)
 set a=Atan2(y-y1,x-x1)
-call GroupAddUnit(g,CreateUnit(p,'e09V',x1,y1,a*bj_RADTODEG))
-call GroupAddUnit(g,CreateUnit(p,'e09W',x1,y1,a*bj_RADTODEG))
-call SaveDestructableHandle(h,id,l__s+i,CreateDestructable('B003',x1,y1,a*bj_DEGTORAD,1,1))
-set x1=x+250*Cos(i*0.3491)
-set y1=y+250*Sin(i*0.3491)
-call GroupAddUnit(g,CreateUnit(p,'e09Y',x1,y1,a*bj_RADTODEG))
+set n=CreateUnit(p,'e09V',x1,y1,a*bj_RADTODEG)
+call SetUnitScale(n,1.25,1.25,1.25)
+call GroupAddUnit(g,n)
+set n=CreateUnit(p,'e09W',x1,y1,a*bj_RADTODEG)
+call SetUnitScale(n,1.25,1.25,1.25)
+call GroupAddUnit(g,n)
+call SaveDestructableHandle(h,id,l__s+i,CreateDestructable('B003',x1,y1,a*bj_DEGTORAD,1.25,1))
+set x1=x+312.5*Cos(i*0.3491)
+set y1=y+312.5*Sin(i*0.3491)
+set n=CreateUnit(p,'e09Y',x1,y1,a*bj_RADTODEG)
+call SetUnitScale(n,1.25,1.25,1.25)
+call GroupAddUnit(g,n)
+set n=null
 set i=i+1
 endloop
 call UnitAddAbility(u,'A0GN')
@@ -84802,7 +84820,8 @@ exitwhen E==null
 if Condition_Base(p,E) then
 if LoadBoolean(HH,GetHandleId(E),ANTITARGET_ABILITY)==false then
 if dmg>0 then
-call myCustomDamage(u,E,dmg,false,false,null,null,null)
+// цель держится на паузе — обработчик резал бы урон по ней вдвое; Bof_DmgFull отдаёт 100%
+call Bof_DmgFull(u,E,dmg)
 endif
 if fin then
 if E!=c then
@@ -245693,14 +245712,13 @@ endif
 endif
 endif
 call SaveReal(HH,id,6,time1)
-if GetUnitAbilityLevel(target,'JAGd')==0 then
-call UnitAddAbility(target,'JAGd')
-call SetUnitAbilityLevel(target,'JAGd',LoadInteger(HH,id,10))
+if GetUnitAbilityLevel(target,'MeiA')==0 then
+call UnitAddAbility(target,'MeiA') // броня -5 на всех уровнях (было -6..-30 через общую с Жанной JAGd)
 endif
 if udg_B==false or LoadBoolean(HH,GetHandleId(caster),StringHash("MeiRB"))==true or time>=LoadReal(HH,id,8) or GetUnitAbilityLevel(target,'ISWC')>0  or  GetUnitAbilityLevel(target,'CE04')>0 or GetUnitAbilityLevel(target,'B05G')>0 then
 call UnitRemoveAbility(target,'Mei4')
 call UnitRemoveAbility(target,'BMe4')
-call UnitRemoveAbility(target,'JAGd')
+call UnitRemoveAbility(target,'MeiA')
 call UnitRemoveAbility(target,'BJAd')
 call PauseTimer(GetExpiredTimer())
 call FlushChildHashtable(HH,id)
