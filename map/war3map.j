@@ -51,6 +51,7 @@ constant integer SH_RemFightTime = StringHash("RemFightTime")
 constant integer SH_RemLeak = StringHash("RemLeak")
 constant integer SH_RemTmpLife = StringHash("RemTmpLife")
 constant integer SH_RemKillLife = StringHash("RemKillLife")
+constant integer SH_RemTBy = StringHash("RemTBy")
 constant integer SH_FlaCharges = StringHash("FlaCharges")
 constant integer SH_FlaClones = StringHash("FlaClones")
 constant integer SH_FlaAtkReady = StringHash("FlaAtkReady")
@@ -13609,6 +13610,35 @@ endif
 call SaveInteger(HH,cid,SH_RemKillLife,LoadInteger(HH,cid,SH_RemKillLife)+bonus)
 call Bof_xa(caster,0,2,LoadInteger(HH,cid,SH_RemKillLife)+LoadInteger(HH,cid,SH_RemTmpLife))
 endfunction
+// цель T помечена (кто её держит) на T 8.72 c + Heart Break 0.8 c + запас 1.5 c: умрёт за это время — от чего
+// угодно — Ремилии +4% (Rem_OnKill из Trig_Killer_Actions, в момент смерти, до возрождения в конце раунда)
+function Rem_TUnmark takes nothing returns nothing
+local timer t=GetExpiredTimer()
+local unit e=LoadUnitHandle(HH,GetHandleId(t),1)
+if e!=null and LoadUnitHandle(HH,GetHandleId(e),SH_RemTBy)==LoadUnitHandle(HH,GetHandleId(t),0) then
+call RemoveSavedHandle(HH,GetHandleId(e),SH_RemTBy)
+endif
+call FlushChildHashtable(HH,GetHandleId(t))
+call DestroyTimer(t)
+set t=null
+set e=null
+endfunction
+function Rem_TMark takes unit caster,unit target returns nothing
+local timer t=CreateTimer()
+call SaveUnitHandle(HH,GetHandleId(target),SH_RemTBy,caster)
+call SaveUnitHandle(HH,GetHandleId(t),0,caster)
+call SaveUnitHandle(HH,GetHandleId(t),1,target)
+call TimerStart(t,11.,false,function Rem_TUnmark)
+set t=null
+endfunction
+function Rem_OnKill takes unit u returns nothing
+local unit c=LoadUnitHandle(HH,GetHandleId(u),SH_RemTBy)
+if c!=null then
+call RemoveSavedHandle(HH,GetHandleId(u),SH_RemTBy)
+call Rem_T_Kill(c,u)
+endif
+set c=null
+endfunction
 function Rem_HeartBreak_Act2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
@@ -13659,10 +13689,6 @@ call Rem_Noise(GetOwningPlayer(caster),60.,.6)
 if not Bof_Rev(caster,target) then
 set dmg=GetUnitState(target,UNIT_STATE_MAX_LIFE)*.2
 call Bof_Dmg(caster,target,dmg)
-// Heart Break — конец T: добила им — это тоже убийство T (тестер 4 окт: «+4% за килл не пашет»)
-if not UnitIsAlive(target) then
-call Rem_T_Kill(caster,target)
-endif
 call Bof_Heal(caster,caster,dmg)
 call Bof_Ctrl(caster,target,1.5,"stun")
 endif
@@ -13722,6 +13748,7 @@ call SaveInteger(HH,id,3,tk)
 // реверс (цель в стойке развернула умение): умение кончается, героиня отпущена
 if Bof_RevEnd(caster) then
 call PauseUnit(target,false)
+call RemoveSavedHandle(HH,GetHandleId(target),SH_RemTBy)
 call SaveBoolean(HH,GetHandleId(target),TARGET_ABILITY,false)
 call CameraClearNoiseForPlayer(p)
 call CameraClearNoiseForPlayer(tp)
@@ -13875,9 +13902,6 @@ call CameraClearNoiseForPlayer(tp)
 set dmg=RAbsBJ(GetWidgetLife(caster)-GetWidgetLife(target))*.3+I2R(GetHeroInt(caster,true))*300.*0.02
 if UnitIsAlive(target) then
 call Bof_Dmg(caster,target,dmg)
-if not UnitIsAlive(target) then
-call Rem_T_Kill(caster,target)
-endif
 endif
 call Rem_HeartBreak(caster,target)
 call FlushChildHashtable(HH,id)
@@ -13900,6 +13924,7 @@ local timer t
 if Bof_Rev(caster,target) then
 return
 endif
+call Rem_TMark(caster,target)
 call Rem_Fx(caster,"bof\\Scarlet-29.mdx",x,y,GetUnitFlyHeight(caster),0.,1.,0.)
 call Rem_Shadow(caster,x,y)
 call Rem_Fx(caster,"bof\\Saber-28.mdx",x,y,25.,0.,4.,3.)
@@ -38188,6 +38213,8 @@ function Trig_Killer_Actions takes nothing returns nothing
         local integer i2=0
         local string killMsg=""
         local integer streakGold=0
+        // цель T Ремилии умерла во время T — +4% её максимума Ремилии (Rem_TMark)
+        call Rem_OnKill(c)
         //sabrac5start
         if GetUnitControlCount( c, 11 )<1 then
             call SetUnitControlCount(c, 11,1)
