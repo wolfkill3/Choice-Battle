@@ -51,6 +51,7 @@ constant integer SH_RemFightTime = StringHash("RemFightTime")
 constant integer SH_RemLeak = StringHash("RemLeak")
 constant integer SH_RemTmpLife = StringHash("RemTmpLife")
 constant integer SH_RemKillLife = StringHash("RemKillLife")
+constant integer SH_RemTBy = StringHash("RemTBy")
 constant integer SH_FlaCharges = StringHash("FlaCharges")
 constant integer SH_FlaClones = StringHash("FlaClones")
 constant integer SH_FlaAtkReady = StringHash("FlaAtkReady")
@@ -6494,7 +6495,8 @@ function HPB_Assign takes nothing returns nothing
         exitwhen hpu==null
         call GroupRemoveUnit(HPB_G,hpu)
         if LoadInteger(HPB_HT,GetHandleId(hpu),0)==0 and HPB_Eligible(hpu) and HPB_OnScreen(hpu) then
-            if IsUnitType(hpu,UNIT_TYPE_HERO) then
+            // герои, их иллюзии и клоны (Наруто H14F, Тобирама H34X, Итачи H007) — геройская полоска с уровнем и засечками
+            if IsUnitType(hpu,UNIT_TYPE_HERO) or IsUnitIllusion(hpu) or GetUnitTypeId(hpu)=='H14F' or GetUnitTypeId(hpu)=='H34X' or GetUnitTypeId(hpu)=='H007' then
                 set hps=0
                 set hpe=HPB_HN
             else
@@ -6703,8 +6705,8 @@ function HPB_Update takes nothing returns nothing
                             endif
                         endif
                     endif
-                    if hps<HPB_HN then
-                        // контроль: только чтение данных общего опроса CCB_Scan (GetUnitBuff здесь нельзя — создаёт handle)
+                    if true then
+                        // контроль (герои и юниты): только чтение данных общего опроса CCB_Scan (GetUnitBuff здесь нельзя — создаёт handle)
                         set hpk=LoadInteger(CCB_HT,GetHandleId(hpu),0)
                         if hpk!=HPB_CcK[hps] then
                             set HPB_CcK[hps]=hpk
@@ -6720,7 +6722,10 @@ function HPB_Update takes nothing returns nothing
                         if hpk>0 then
                             // остаток / полная длительность; бессрочный (100 с и больше) — полоса целиком
                             set hpr=LoadReal(CCB_HT,GetHandleId(hpu),2)
-                            set hpw=HPB_HW+.0095-.0078
+                            set hpw=HPB_UW+2*HPB_PAD-.0078
+                            if hps<HPB_HN then
+                                set hpw=HPB_HW+.0095-.0078
+                            endif
                             if hpr>0. and hpr<100. then
                                 set hpw=hpw*LoadReal(CCB_HT,GetHandleId(hpu),1)/hpr
                             endif
@@ -6733,7 +6738,7 @@ function HPB_Update takes nothing returns nothing
                     endif
                     // текст урона/лечения: строки из общего кода; над полосой контроля, если она показана, иначе над рамкой
                     set hpo=.001
-                    if hps<HPB_HN and HPB_CcK[hps]>0 then
+                    if HPB_CcK[hps]>0 then
                         set hpo=.0096
                     endif
                     if hpo!=HPB_TxtY[hps] then
@@ -6790,6 +6795,9 @@ function HPB_Update takes nothing returns nothing
                         endif
                         // уровень
                         set hpk=GetHeroLevel(hpu)
+                        if hpk<=0 and Hero[GetPlayerId(GetOwningPlayer(hpu))]!=null then
+                            set hpk=GetHeroLevel(Hero[GetPlayerId(GetOwningPlayer(hpu))])
+                        endif
                         if hpk!=HPB_Lv[hps] then
                             set HPB_Lv[hps]=hpk
                             call SetFrameText(HPB_LvlTxt[hps],I2S(hpk))
@@ -7113,7 +7121,7 @@ function ShuwenModelInit takes nothing returns nothing
 endfunction
 // --- полоска контроля: общий опрос (у всех игроков одинаково — GetUnitBuff создаёт handle, локально его вызывать нельзя) ---
 function CCB_Filter takes nothing returns boolean
-    return IsUnitType(GetFilterUnit(),UNIT_TYPE_HERO) and IsUnitType(GetFilterUnit(),UNIT_TYPE_DEAD)==false
+    return IsUnitType(GetFilterUnit(),UNIT_TYPE_DEAD)==false and (IsUnitType(GetFilterUnit(),UNIT_TYPE_HERO) or (GetUnitAbilityLevel(GetFilterUnit(),'Aloc')==0 and GetUnitState(GetFilterUnit(),UNIT_STATE_MAX_LIFE)>0))
 endfunction
 // раз в 0.05 с: у каждого живого героя (и иллюзий) — самый приоритетный контроль и его остаток
 function CCB_Scan takes nothing returns nothing
@@ -7130,7 +7138,7 @@ function CCB_Scan takes nothing returns nothing
         set cci=GetHandleId(ccu)
         // герой сменил тип (форма через морф) — снова разрешить менять высоту полёта (Arav): иначе способности
         // с подъёмом в воздух (T Транкса, W Неро и т.п.) на него не действуют. Флаг ставился только при входе на карту.
-        if LoadInteger(CCB_HT,cci,3)!=GetUnitTypeId(ccu) then
+        if IsUnitType(ccu,UNIT_TYPE_HERO) and LoadInteger(CCB_HT,cci,3)!=GetUnitTypeId(ccu) then
             call SaveInteger(CCB_HT,cci,3,GetUnitTypeId(ccu))
             if GetUnitAbilityLevel(ccu,'Arav')==0 then
                 call UnitAddAbility(ccu,'Arav')
@@ -7146,7 +7154,7 @@ function CCB_Scan takes nothing returns nothing
             endif
         endif
         // держит чужая способность с паузой — тоже контроль (для ассиста)
-        if LoadBoolean(HH,cci,TARGET_ABILITY) then
+        if LoadBoolean(HH,cci,TARGET_ABILITY) and IsUnitType(ccu,UNIT_TYPE_HERO) then
             call AST_CreditCC(ccu)
         endif
         set cck=1
@@ -7168,7 +7176,9 @@ function CCB_Scan takes nothing returns nothing
             set ccb=null
             // новая полная длительность: контроль сменился или продлён
             if cck!=LoadInteger(CCB_HT,cci,0) or ccr>LoadReal(CCB_HT,cci,2) then
-                call AST_CreditCC(ccu)
+                if IsUnitType(ccu,UNIT_TYPE_HERO) then
+                    call AST_CreditCC(ccu)
+                endif
                 call SaveReal(CCB_HT,cci,2,ccr)
             endif
             // новый контроль короче 0.1 с не показываем — мелькал бы (ассист за него засчитан выше);
@@ -7215,6 +7225,7 @@ function HPB_Init takes nothing returns nothing
     local real hbw
     local real hph
     local real hpm
+    local real hpw2
     local trigger hpg=CreateTrigger()
     set HPB_HT=InitHashtable()
     set HPB_G=CreateGroup()
@@ -7265,32 +7276,36 @@ function HPB_Init takes nothing returns nothing
                 call ShowFrame(HPB_Tick[hps*HPB_TN+hpj],false)
                 set hpj=hpj+1
             endloop
-            // контроль: чёрная полоса над рамкой (во всю ширину вместе с окошком уровня), иконка слева, заливка с остатком и название
-            set HPB_Cc[hps]=HPB_Bar("HPBarCc",HPB_Root[hps],hps,hbw+2*HPB_PAD+.0095,.0078,"Textures\\Black32.blp",1)
-            call SetFrameRelativePoint(HPB_Cc[hps],FRAMEPOINT_BOTTOMRIGHT,HPB_Root[hps],FRAMEPOINT_TOPRIGHT,0.,.0008)
-            set HPB_CcIco[hps]=HPB_Bar("HPBarCcIcon",HPB_Cc[hps],hps,.0078,.0078,"ReplaceableTextures\\CommandButtons\\BTNDizzy.blp",3)
-            call SetFrameRelativePoint(HPB_CcIco[hps],FRAMEPOINT_TOPLEFT,HPB_Cc[hps],FRAMEPOINT_TOPLEFT,0.,0.)
-            set HPB_CcFill[hps]=HPB_Bar("HPBarCcFill",HPB_Cc[hps],hps,hbw+2*HPB_PAD+.0095-.0078-2*HPB_PAD,.0078-2*HPB_PAD,HPB_Tex(4),2)
-            call SetFrameRelativePoint(HPB_CcFill[hps],FRAMEPOINT_TOPLEFT,HPB_Cc[hps],FRAMEPOINT_TOPLEFT,.0078+HPB_PAD,-HPB_PAD)
-            // заливка полупрозрачная поверх чёрного (темнее), чтобы белый текст читался; текст — на своём фрейме выше заливки
-            call SetFrameAlpha(HPB_CcFill[hps],150)
-            set HPB_CcTop[hps]=CreateFrameByType("SIMPLEFRAME","HPBarCcTop",HPB_Cc[hps],"",hps)
-            call ClearFrameAllPoints(HPB_CcTop[hps])
-            call SetFrameSize(HPB_CcTop[hps],hbw+2*HPB_PAD+.0095,.0078)
-            call SetFrameRelativePoint(HPB_CcTop[hps],FRAMEPOINT_CENTER,HPB_Cc[hps],FRAMEPOINT_CENTER,0.,0.)
-            call SetFramePriority(HPB_CcTop[hps],4)
-            set HPB_CcTxt[hps]=CreateFrameByType("SIMPLETEXT","HPBarCcText",HPB_CcTop[hps],"",hps)
-            call ClearFrameAllPoints(HPB_CcTxt[hps])
-            call SetFrameBlendMode(HPB_CcTxt[hps],0,BLEND_MODE_BLEND)
-            call SetFrameFont(HPB_CcTxt[hps],"Fonts\\FRIZQT__.TTF",.0062,0)
-            call SetFrameTextAlignment(HPB_CcTxt[hps],TEXT_JUSTIFY_CENTER,TEXT_JUSTIFY_MIDDLE)
-            call SetFrameTextColour(HPB_CcTxt[hps],0xFFFFFFFF)
-            call SetFrameText(HPB_CcTxt[hps]," ")
-            call SetFrameRelativePoint(HPB_CcTxt[hps],FRAMEPOINT_CENTER,HPB_Cc[hps],FRAMEPOINT_CENTER,.0039,0.)
-            call ShowFrame(HPB_CcTxt[hps],true)
-            call ShowFrame(HPB_Cc[hps],false)
-            set HPB_CcK[hps]=0
         endif
+        // контроль: чёрная полоса над рамкой (у героев — во всю ширину вместе с окошком уровня), иконка слева, заливка с остатком и название
+        set hpw2=hbw+2*HPB_PAD
+        if hps<HPB_HN then
+            set hpw2=hpw2+.0095
+        endif
+        set HPB_Cc[hps]=HPB_Bar("HPBarCc",HPB_Root[hps],hps,hpw2,.0078,"Textures\\Black32.blp",1)
+        call SetFrameRelativePoint(HPB_Cc[hps],FRAMEPOINT_BOTTOMRIGHT,HPB_Root[hps],FRAMEPOINT_TOPRIGHT,0.,.0008)
+        set HPB_CcIco[hps]=HPB_Bar("HPBarCcIcon",HPB_Cc[hps],hps,.0078,.0078,"ReplaceableTextures\\CommandButtons\\BTNDizzy.blp",3)
+        call SetFrameRelativePoint(HPB_CcIco[hps],FRAMEPOINT_TOPLEFT,HPB_Cc[hps],FRAMEPOINT_TOPLEFT,0.,0.)
+        set HPB_CcFill[hps]=HPB_Bar("HPBarCcFill",HPB_Cc[hps],hps,hpw2-.0078-2*HPB_PAD,.0078-2*HPB_PAD,HPB_Tex(4),2)
+        call SetFrameRelativePoint(HPB_CcFill[hps],FRAMEPOINT_TOPLEFT,HPB_Cc[hps],FRAMEPOINT_TOPLEFT,.0078+HPB_PAD,-HPB_PAD)
+        // заливка полупрозрачная поверх чёрного (темнее), чтобы белый текст читался; текст — на своём фрейме выше заливки
+        call SetFrameAlpha(HPB_CcFill[hps],150)
+        set HPB_CcTop[hps]=CreateFrameByType("SIMPLEFRAME","HPBarCcTop",HPB_Cc[hps],"",hps)
+        call ClearFrameAllPoints(HPB_CcTop[hps])
+        call SetFrameSize(HPB_CcTop[hps],hpw2,.0078)
+        call SetFrameRelativePoint(HPB_CcTop[hps],FRAMEPOINT_CENTER,HPB_Cc[hps],FRAMEPOINT_CENTER,0.,0.)
+        call SetFramePriority(HPB_CcTop[hps],4)
+        set HPB_CcTxt[hps]=CreateFrameByType("SIMPLETEXT","HPBarCcText",HPB_CcTop[hps],"",hps)
+        call ClearFrameAllPoints(HPB_CcTxt[hps])
+        call SetFrameBlendMode(HPB_CcTxt[hps],0,BLEND_MODE_BLEND)
+        call SetFrameFont(HPB_CcTxt[hps],"Fonts\\FRIZQT__.TTF",.0062,0)
+        call SetFrameTextAlignment(HPB_CcTxt[hps],TEXT_JUSTIFY_CENTER,TEXT_JUSTIFY_MIDDLE)
+        call SetFrameTextColour(HPB_CcTxt[hps],0xFFFFFFFF)
+        call SetFrameText(HPB_CcTxt[hps]," ")
+        call SetFrameRelativePoint(HPB_CcTxt[hps],FRAMEPOINT_CENTER,HPB_Cc[hps],FRAMEPOINT_CENTER,.0039,0.)
+        call ShowFrame(HPB_CcTxt[hps],true)
+        call ShowFrame(HPB_Cc[hps],false)
+        set HPB_CcK[hps]=0
         // текст урона (снизу) и лечения (над ним): свой фрейм выше всех частей полоски
         set HPB_TxtFr[hps]=CreateFrameByType("SIMPLEFRAME","HPBarTextFrame",HPB_Root[hps],"",hps)
         call ClearFrameAllPoints(HPB_TxtFr[hps])
@@ -13617,6 +13632,35 @@ endif
 call SaveInteger(HH,cid,SH_RemKillLife,LoadInteger(HH,cid,SH_RemKillLife)+bonus)
 call Bof_xa(caster,0,2,LoadInteger(HH,cid,SH_RemKillLife)+LoadInteger(HH,cid,SH_RemTmpLife))
 endfunction
+// цель T помечена (кто её держит) на T 8.72 c + Heart Break 0.8 c + запас 1.5 c: умрёт за это время — от чего
+// угодно — Ремилии +4% (Rem_OnKill из Trig_Killer_Actions, в момент смерти, до возрождения в конце раунда)
+function Rem_TUnmark takes nothing returns nothing
+local timer t=GetExpiredTimer()
+local unit e=LoadUnitHandle(HH,GetHandleId(t),1)
+if e!=null and LoadUnitHandle(HH,GetHandleId(e),SH_RemTBy)==LoadUnitHandle(HH,GetHandleId(t),0) then
+call RemoveSavedHandle(HH,GetHandleId(e),SH_RemTBy)
+endif
+call FlushChildHashtable(HH,GetHandleId(t))
+call DestroyTimer(t)
+set t=null
+set e=null
+endfunction
+function Rem_TMark takes unit caster,unit target returns nothing
+local timer t=CreateTimer()
+call SaveUnitHandle(HH,GetHandleId(target),SH_RemTBy,caster)
+call SaveUnitHandle(HH,GetHandleId(t),0,caster)
+call SaveUnitHandle(HH,GetHandleId(t),1,target)
+call TimerStart(t,11.,false,function Rem_TUnmark)
+set t=null
+endfunction
+function Rem_OnKill takes unit u returns nothing
+local unit c=LoadUnitHandle(HH,GetHandleId(u),SH_RemTBy)
+if c!=null then
+call RemoveSavedHandle(HH,GetHandleId(u),SH_RemTBy)
+call Rem_T_Kill(c,u)
+endif
+set c=null
+endfunction
 function Rem_HeartBreak_Act2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
@@ -13667,10 +13711,6 @@ call Rem_Noise(GetOwningPlayer(caster),60.,.6)
 if not Bof_Rev(caster,target) then
 set dmg=GetUnitState(target,UNIT_STATE_MAX_LIFE)*.2
 call Bof_Dmg(caster,target,dmg)
-// Heart Break — конец T: добила им — это тоже убийство T (тестер 4 окт: «+4% за килл не пашет»)
-if not UnitIsAlive(target) then
-call Rem_T_Kill(caster,target)
-endif
 call Bof_Heal(caster,caster,dmg)
 call Bof_Ctrl(caster,target,1.5,"stun")
 endif
@@ -13730,6 +13770,7 @@ call SaveInteger(HH,id,3,tk)
 // реверс (цель в стойке развернула умение): умение кончается, героиня отпущена
 if Bof_RevEnd(caster) then
 call PauseUnit(target,false)
+call RemoveSavedHandle(HH,GetHandleId(target),SH_RemTBy)
 call SaveBoolean(HH,GetHandleId(target),TARGET_ABILITY,false)
 call CameraClearNoiseForPlayer(p)
 call CameraClearNoiseForPlayer(tp)
@@ -13883,9 +13924,6 @@ call CameraClearNoiseForPlayer(tp)
 set dmg=RAbsBJ(GetWidgetLife(caster)-GetWidgetLife(target))*.3+I2R(GetHeroInt(caster,true))*300.*0.02
 if UnitIsAlive(target) then
 call Bof_Dmg(caster,target,dmg)
-if not UnitIsAlive(target) then
-call Rem_T_Kill(caster,target)
-endif
 endif
 call Rem_HeartBreak(caster,target)
 call FlushChildHashtable(HH,id)
@@ -13908,6 +13946,7 @@ local timer t
 if Bof_Rev(caster,target) then
 return
 endif
+call Rem_TMark(caster,target)
 call Rem_Fx(caster,"bof\\Scarlet-29.mdx",x,y,GetUnitFlyHeight(caster),0.,1.,0.)
 call Rem_Shadow(caster,x,y)
 call Rem_Fx(caster,"bof\\Saber-28.mdx",x,y,25.,0.,4.,3.)
@@ -38196,6 +38235,8 @@ function Trig_Killer_Actions takes nothing returns nothing
         local integer i2=0
         local string killMsg=""
         local integer streakGold=0
+        // цель T Ремилии умерла во время T — +4% её максимума Ремилии (Rem_TMark)
+        call Rem_OnKill(c)
         //sabrac5start
         if GetUnitControlCount( c, 11 )<1 then
             call SetUnitControlCount(c, 11,1)
