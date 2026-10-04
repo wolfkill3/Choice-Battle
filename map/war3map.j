@@ -13446,7 +13446,7 @@ call DestroyTimer(t)
 endif
 else
 call SetUnitAnimation(dmy,"Death")
-call UnitApplyTimedLife(dmy,'BHwe',.4)
+call Bof_zO(.4,dmy)
 call FlushChildHashtable(HH,id)
 call DestroyTimer(t)
 endif
@@ -13516,7 +13516,9 @@ local timer t=CreateTimer()
 call SetUnitScale(dmy,2.5,2.5,2.5)
 call SetUnitFlyHeight(dmy,GetUnitFlyHeight(caster)+275.,0.)
 call SetUnitVertexColor(dmy,255,255,255,255)
-call UnitApplyTimedLife(dmy,'BHwe',3.)
+// у Scarlet-76 нет анимации смерти: умерший по таймеру дамми оставался лежать на земле (владелец 4 окт) —
+// убираем его RemoveUnit через 3 c
+call Bof_zO(3.,dmy)
 call Bof_DzSetUnitModel(dmy,"bof\\Scarlet-76.mdx")
 call Rem_FadeIn(dmy,3)
 // красного круга bof (Scarlet-10) в точке каста нет: он лежал на земле после D (владелец 3 окт: «убери»)
@@ -14878,7 +14880,9 @@ loop
 set e=FirstOfGroup(g)
 exitwhen e==null
 call GroupRemoveUnit(g,e)
-if Condition_Base(GetOwningPlayer(caster),e) then
+// клетка — только живым уязвимым врагам: иначе копья летели в неуязвимые сундуки в зоне ожидания
+// и в тела мёртвых героев, даже когда врагов рядом нет (владелец 4 окт)
+if Condition_Base(GetOwningPlayer(caster),e) and GetUnitAbilityLevel(e,'Avul')==0 and UnitIsAlive(e) then
 set ea=GetUnitFacing(e)+180.
 set sg=CreateGroup()
 set str=1
@@ -14945,6 +14949,8 @@ set k=k+1
 endloop
 call SaveInteger(HH,cid,SH_FlaCharges,LoadInteger(HH,cid,SH_FlaCharges)-1)
 set cl=CreateUnit(GetOwningPlayer(caster),'hB1W',tx,ty,ang)
+// своих статов у клона нет — урон с руки 50% интеллекта Фландре (владелец 4 окт: «без статов ничего не наносят»)
+call SetUnitBaseDamageByIndex(cl,0,R2I(I2R(GetHeroInt(caster,true))*.5))
 call SaveBoolean(HH,GetHandleId(cl),SH_FlaDash,true)
 call SaveUnitHandle(HH,GetHandleId(cl),SH_FlaOwner,caster)
 call SetUnitPosition(cl,tx,ty)
@@ -15148,8 +15154,8 @@ set e=FirstOfGroup(g)
 exitwhen e==null
 call GroupRemoveUnit(g,e)
 if Condition_Base(GetOwningPlayer(caster),e) and GetUnitAbilityLevel(e,'Avul')==0 then
-call Bof_Dmg(caster,e,(I2R(Fla_Int_F(caster,true))*100.)*0.001)
-call Bof_Ctrl(caster,e,1.,"stun")
+call myCustomDamage(caster,e,(I2R(Fla_Int_F(caster,true))*100.)*0.001,false,false,null,null,null)
+call SetControlToUnit(caster,e,1.,"stun")
 endif
 endloop
 call DestroyGroup(g)
@@ -15167,16 +15173,8 @@ local real z=GetUnitFlyHeight(caster)
 local group g
 local unit e
 call SaveInteger(HH,id,1,tk)
-// реверс (цель в стойке развернула умение): как у героев Чейза — умение кончается, кастер отпущен
-if Bof_RevEnd(caster) then
-call SaveBoolean(HH,GetHandleId(caster),SH_FlaFOn,false)
-call Fla_FLock(caster,false)
-call FlushChildHashtable(HH,id)
-call DestroyTimer(t)
-set t=null
-set caster=null
-return
-endif
+// F — кольцо вокруг себя: реверсу не подвергается, как кольца и взрывы у героев разраба (Гарп E/T);
+// урон и стан — напрямую, мимо Bof_Rev, F реверсом не обрывается (владелец 4 окт)
 if tk<=300 and IsUnitAliveBJ(caster) then
 // неуязвимость F — каждым тиком: её снимают рывок к клону и чужие эффекты (тестер 29 сен)
 call SetUnitInvulnerable(caster,true)
@@ -15192,7 +15190,7 @@ set e=FirstOfGroup(g)
 exitwhen e==null
 call GroupRemoveUnit(g,e)
 if Condition_Base(GetOwningPlayer(caster),e) and GetUnitAbilityLevel(e,'Avul')==0 then
-call Bof_Dmg(caster,e,(I2R(Fla_Int_F(caster,true))*20.)*0.001)
+call myCustomDamage(caster,e,(I2R(Fla_Int_F(caster,true))*20.)*0.001,false,false,null,null,null)
 endif
 endloop
 call DestroyGroup(g)
@@ -15466,9 +15464,6 @@ call SaveInteger(HH,id,2,tk)
 // реверс (цель в стойке развернула умение): как у героев Чейза — умение кончается, кастер отпущен
 if Bof_RevEnd(caster) then
 call Bof_Unstick(caster)
-if LoadBoolean(HH,GetHandleId(caster),SH_FlaFOn) then
-call SaveBoolean(HH,GetHandleId(caster),SH_bofRevd,true)
-endif
 call FlushChildHashtable(HH,id)
 call DestroyTimer(t)
 set t=null
@@ -57967,10 +57962,14 @@ local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
 local unit caster=LoadUnitHandle(HH,id,1)
 local unit target=LoadUnitHandle(HH,id,2)
-local real left=LoadReal(HH,id,6)-LoadReal(HH,id,7)
-call SaveReal(HH,id,6,left)
-if UnitIsAlive(target) and UnitIsAlive(caster) and udg_B and left>-0.01 then
+local real left=LoadReal(HH,id,6)
+local real step=LoadReal(HH,id,7)
+if UnitIsAlive(target) and UnitIsAlive(caster) and udg_B and left-step>-0.01 then
+// цель в паузе: яд ждёт — не тикает и не истекает, продолжит после паузы (4 окт)
+if IsUnitPaused(target)==false then
+call SaveReal(HH,id,6,left-step)
 call myCustomDamage(caster,target,LoadReal(HH,id,15),false,false,null,null,null)
+endif
 else
 if LoadEffectHandle(HH,id,10)!=null then
 call DestroyEffect(LoadEffectHandle(HH,id,10))
@@ -58157,7 +58156,8 @@ endloop
 endif
 // волна проходит НАСКВОЗЬ: каждого врага задевает один раз и летит дальше
 call GroupClear(G)
-call GroupEnumUnitsInRange(G,px,py,150,Base)
+// зона под облака волны (4 окт: «эффект с зоной урона не совпадает»): было 150
+call GroupEnumUnitsInRange(G,px,py,300,Base)
 loop
 set n0=FirstOfGroup(G)
 exitwhen n0==null
@@ -58318,7 +58318,8 @@ call Brg_FxC("war3mapImported\\wos_OPm (513)purple.mdx",x1,y1,0,0.8,1,0,GetRando
 call Brg_FxC("war3mapImported\\wos_T_kyaru_skill02purple.mdx",x1,y1,0,0.88,1.25,0,GetRandomReal(0,360),255,255,255,255)
 call ShakeCamera(0.2,6)
 call GroupClear(G)
-call GroupEnumUnitsInRange(G,x1,y1,600,Base)
+// зона под кольца взрыва (4 окт): было 600
+call GroupEnumUnitsInRange(G,x1,y1,800,Base)
 loop
 set n0=FirstOfGroup(G)
 exitwhen n0==null
@@ -58560,10 +58561,6 @@ call DestroyTimer(t)
 call FlushChildHashtable(HH,id)
 else
 // область растёт, семь клинков расходятся кольцом
-if aoe<1125 then
-set aoe=aoe+40
-call SaveReal(HH,id,13,aoe)
-endif
 if time<0.04 then
 set rad=125
 set sc=0.04
@@ -58593,6 +58590,8 @@ set i=i+1
 endloop
 endif
 call SaveReal(HH,id,14,rad)
+// зона урона идёт вместе с кольцом клинков (4 окт: раньше обгоняла картинку)
+set aoe=RMinBJ(rad+100.,1125.)
 call SaveReal(HH,id,18,sc)
 if t4>=0.5 then
 call SaveReal(HH,id,7,0)
@@ -58810,7 +58809,8 @@ call Brg_FxC("war3mapImported\\wos_zz-shio_zk_zz_stab2_hy-1.mdx",px,py,1,0.36,1.
 endif
 call Brg_FxC("war3mapImported\\wos_0233.mdx",px,py,0,1.8,1,0.06,facing,255,255,255,255)
 call GroupClear(G)
-call GroupEnumUnitsInRange(G,px,py,400,Base)
+// зона под топор (4 окт): было 400
+call GroupEnumUnitsInRange(G,px,py,500,Base)
 loop
 set n0=FirstOfGroup(G)
 exitwhen n0==null
