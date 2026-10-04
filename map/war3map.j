@@ -1835,6 +1835,7 @@ boolean randcond
 integer array score
 real array gear
 item ite
+item ArenaChkItem=null
 item Alastor
 integer AlastorPos
 group gf
@@ -5828,6 +5829,11 @@ call PL_Add("war3mapImported\\-!kirito_stbs04!-Y.mdl")
 call PL_Add("war3mapImported\\-!kirito_stbs05!-Y.mdl")
 call PL_Add("war3mapImported\\SlashYellowKojiro.mdl")
 call PL_Add("war3mapImported\\ReiatsuOverFlowYellow.mdl")
+call PL_Add("war3mapImported\\HakkeStartYellow.mdl")
+call PL_Add("BlackGoku\\[AB]AZ_JianCi.mdl")
+call PL_Add("Others\\red-lizi-shunjian.mdl")
+call PL_Add("Others\\daoguang-blue-hengsao.mdl")
+call PL_Add("war3mapImported\\BlueGetsuga2.mdl")
 call PL_Add("war3mapImported\\YellowWave2.mdl")
 call PL_Add("war3mapImported\\windyellow.mdl")
 endif
@@ -6215,6 +6221,10 @@ function ShieldHPTotal takes unit hsu returns real
     endif
     if LoadReal(h,hsi,SH_YujiE_Shield)>0 then
         set hsr=hsr+LoadReal(h,hsi,SH_YujiE_Shield)
+    endif
+    // щит T Суйгинто (Sui_ShieldAdd/Sui_ShieldTake)
+    if LoadReal(HH,hsi,SH_SuiShield)>0 then
+        set hsr=hsr+LoadReal(HH,hsi,SH_SuiShield)
     endif
     return hsr
 endfunction
@@ -8740,12 +8750,12 @@ call SND_Add(1233,2,"Sound\\Music\\mp3Music\\GammaF.mp3",12700)
 call SND_Add(1235,2,"Sound\\Music\\mp3Music\\Gamma_5.mp3",12700)
 call SND_Add(1237,2,"Sound\\Music\\mp3Music\\GammaE.mp3",12700)
 call SND_Add(1239,2,"Sound\\Music\\mp3Music\\GammaQ.mp3",12700)
-call SND_Add(1241,2,"Sound\\Music\\mp3Music\\KiritoE.mp3",12700)
+call SND_Add(1241,2,"Sound\\Music\\mp3Music\\KiritoE1.mp3",12700)
 call SND_Add(1243,2,"Sound\\Music\\mp3Music\\KiritoSwitchTeam.mp3",12700)
 endfunction
 function SND_Arr2 takes nothing returns nothing
-call SND_Add(1245,2,"Sound\\Music\\mp3Music\\KiritoScream2.mp3",12700)
-call SND_Add(1247,2,"Sound\\Music\\mp3Music\\KiritoStarburstStream.mp3",12700)
+call SND_Add(1245,2,"Sound\\Music\\mp3Music\\KiritoR.mp3",12700)
+call SND_Add(1247,2,"Sound\\Music\\mp3Music\\KiritoT1.mp3",12700)
 call SND_Add(1249,3,"Sound\\Music\\mp3Music\\KiritoScream1.mp3",12700)
 call SND_Add(1252,2,"Sound\\Music\\mp3Music\\RyoheiT2.mp3",12700)
 call SND_Add(1254,2,"Sound\\Music\\mp3Music\\MaximumCombination.mp3",12700)
@@ -10272,8 +10282,10 @@ call SND_Add(4817,2,"Sound\\Music\\mp3Music\\IchigoW.mp3",12700)
 call SND_Add(4819,2,"Sound\\Music\\mp3Music\\GogetaR.mp3",12700)
 call SND_Add(4821,2,"Sound\\Music\\mp3Music\\JeanneAlterF.mp3",12700)
 call SND_Add(4823,2,"Sound\\Music\\mp3Music\\KiritoQ.mp3",12700)
-call SND_Add(4825,2,"Sound\\Music\\mp3Music\\KiritoEclipse.mp3",12700)
+call SND_Add(4825,2,"Sound\\Music\\mp3Music\\KiritoT2.mp3",12700)
 call SND_Add(4827,2,"Sound\\Music\\mp3Music\\KiritoG.mp3",12700)
+call SND_Add(4829,2,"Sound\\Music\\mp3Music\\KiritoT1-sfx.mp3",12700)
+call SND_Add(4831,2,"Sound\\Music\\mp3Music\\KiritoT2-sfx.mp3",12700)
 endfunction
 function SND_ArrInit takes nothing returns nothing
 call ExecuteFunc("SND_Arr0")
@@ -12253,6 +12265,100 @@ endif
 endif
 return AddSpecialEffect(path,x,y)
 endfunction
+function Bof_InZone takes rect r,real x,real y,real m returns boolean
+return x>=GetRectMinX(r)-m and x<=GetRectMaxX(r)+m and y>=GetRectMinY(r)-m and y<=GetRectMaxY(r)+m
+endfunction
+// зона боя точки: главная арена, бой Хибари, UBW, театр, дуэльная арена; чуть за краем (до 1000) — та же зона
+// (перо родилось сбоку от героя у стены), дальше — вся карта
+function Bof_Zone takes real x,real y returns rect
+local real m=0.
+loop
+if Bof_InZone(gg_rct_GameZone,x,y,m) then
+return gg_rct_GameZone
+elseif Bof_InZone(gg_rct_HibariFight,x,y,m) then
+return gg_rct_HibariFight
+elseif Bof_InZone(gg_rct_UBW2,x,y,m) then
+return gg_rct_UBW2
+elseif Bof_InZone(gg_rct_OblTeatr,x,y,m) then
+return gg_rct_OblTeatr
+elseif Bof_InZone(gg_rct_Arena,x,y,m) then
+return gg_rct_Arena
+endif
+exitwhen m>0.
+set m=1000.
+endloop
+return bj_mapInitialPlayableArea
+endfunction
+function Bof_X takes rect r,real x returns real
+return RMinBJ(RMaxBJ(x,GetRectMinX(r)+64.),GetRectMaxX(r)-64.)
+endfunction
+function Bof_Y takes rect r,real y returns real
+return RMinBJ(RMaxBJ(y,GetRectMinY(r)+64.),GetRectMaxY(r)-64.)
+endfunction
+// переставить юнита без проверки проходимости, но не из его зоны боя (перья, драконы, рывки сквозь декор;
+// владелец 4 окт: «драконы и перья не должны улетать за карту»)
+function Bof_Put takes unit u,real x,real y returns nothing
+local rect r=Bof_Zone(GetUnitX(u),GetUnitY(u))
+call SetUnitX(u,Bof_X(r,x))
+call SetUnitY(u,Bof_Y(r,y))
+set r=null
+endfunction
+// после рывка сквозь декор герой не должен остаться внутри лавки/дерева: ближайшая проходимая точка до 320
+function Bof_Unstick takes unit u returns nothing
+local real x=GetUnitX(u)
+local real y=GetUnitY(u)
+local real r=32.
+local real a
+local rect bz=Bof_Zone(x,y)
+if not IsTerrainPathable(x,y,PATHING_TYPE_WALKABILITY) then
+set bz=null
+return
+endif
+loop
+exitwhen r>320.
+set a=0.
+loop
+exitwhen a>=360.
+if not IsTerrainPathable(Bof_X(bz,x+r*CosBJ(a)),Bof_Y(bz,y+r*SinBJ(a)),PATHING_TYPE_WALKABILITY) then
+call Bof_Put(u,x+r*CosBJ(a),y+r*SinBJ(a))
+set bz=null
+return
+endif
+set a=a+45.
+endloop
+set r=r+32.
+endloop
+set bz=null
+endfunction
+function Bof_GlideAct takes nothing returns nothing
+local timer t=GetExpiredTimer()
+local integer id=GetHandleId(t)
+local unit u=LoadUnitHandle(HH,id,0)
+local integer left=LoadInteger(HH,id,3)-1
+if left<0 or GetUnitTypeId(u)==0 then
+if left<0 and IsUnitType(u,UNIT_TYPE_HERO) then
+call Bof_Unstick(u)
+endif
+call FlushChildHashtable(HH,id)
+call DestroyTimer(t)
+else
+call SaveInteger(HH,id,3,left)
+call Bof_Put(u,GetUnitX(u)+CosBJ(LoadReal(HH,id,1))*LoadReal(HH,id,2),GetUnitY(u)+SinBJ(LoadReal(HH,id,1))*LoadReal(HH,id,2))
+endif
+set t=null
+set u=null
+endfunction
+// толчок на dist за time c (как Bof_Slide, но сквозь декор); героя в конце ставит на проходимое место
+function Bof_Glide takes unit u,real ang,real dist,real time returns nothing
+local timer t=CreateTimer()
+local integer cnt=IMaxBJ(R2I(time/.02+.5),1)
+call SaveUnitHandle(HH,GetHandleId(t),0,u)
+call SaveReal(HH,GetHandleId(t),1,ang)
+call SaveReal(HH,GetHandleId(t),2,dist/I2R(cnt))
+call SaveInteger(HH,GetHandleId(t),3,cnt)
+call TimerStart(t,.02,true,function Bof_GlideAct)
+set t=null
+endfunction
 // ===== конец библиотеки bof =====
 //BofLibEnd
 //Remilia1start
@@ -12276,25 +12382,25 @@ endfunction
 function Rem_Int_G takes unit u,boolean b returns integer
 return R2I(I2R(GetHeroInt(u,b))*(0.02)*1000.+0.5)
 endfunction
-// интеллект для урона кнопки Q: 1.2..2*ИНТ за цепь (x20 в вызове, цепей 4); 29 сен, было 0.55..0.95;
+// интеллект для урона кнопки Q: 0.5..1*ИНТ за цепь (x20 в вызове, цепей 4), с Q2 — стандарт 4..6 (4 окт; 29 сен было 1.2..2);
 // x1000, чтобы не терять дробь в целом (в Bof_Dmg урон делится обратно на 1000)
 function Rem_Int_Q takes unit u,boolean b returns integer
-return R2I(I2R(GetHeroInt(u,b))*(0.05+0.01*I2R(GetUnitAbilityLevel(u,'RmQ1')))*1000.+0.5)
+return R2I(I2R(GetHeroInt(u,b))*((3.+I2R(GetUnitAbilityLevel(u,'RmQ1')))/160.)*1000.+0.5)
 endfunction
-// интеллект для урона кнопки Q2: 5*ИНТ (x80 в вызове); 29 сен, было 3.52;
+// интеллект для урона кнопки Q2: 2*ИНТ (x80 в вызове); 4 окт, было 5;
 // x1000, чтобы не терять дробь в целом (в Bof_Dmg урон делится обратно на 1000)
 function Rem_Int_Q2 takes unit u,boolean b returns integer
-return R2I(I2R(GetHeroInt(u,b))*(0.0625)*1000.+0.5)
+return R2I(I2R(GetHeroInt(u,b))*(0.025)*1000.+0.5)
 endfunction
-// интеллект для урона кнопки R: нажатие x60 = 1.5..2.5*ИНТ, копьё x240 = 6..10*ИНТ; 29 сен, было 0.9..1.5 и 3.6..6;
+// интеллект для урона кнопки R: нажатие x24 = 0.4..0.8*ИНТ (нажатий 5), копьё x120 = 2..4*ИНТ — стандарт 4..8 (4 окт);
 // x1000, чтобы не терять дробь в целом (в Bof_Dmg урон делится обратно на 1000)
 function Rem_Int_R takes unit u,boolean b returns integer
-return R2I(I2R(GetHeroInt(u,b))*((5.+I2R(GetUnitAbilityLevel(u,'RmR1')))/240.)*1000.+0.5)
+return R2I(I2R(GetHeroInt(u,b))*((3.+I2R(GetUnitAbilityLevel(u,'RmR1')))/240.)*1000.+0.5)
 endfunction
-// интеллект для урона кнопки W: 1..1.8*ИНТ за удар (x25 в вызове, ударов 5); 29 сен, было 0.55..0.95;
+// интеллект для урона кнопки W: 0.5..1.4*ИНТ за удар (x25 в вызове, ударов 5) — стандарт 2.5..7 (4 окт);
 // x1000, чтобы не терять дробь в целом (в Bof_Dmg урон делится обратно на 1000)
 function Rem_Int_W takes unit u,boolean b returns integer
-return R2I(I2R(GetHeroInt(u,b))*(0.032+0.008*I2R(GetUnitAbilityLevel(u,'RmW1')))*1000.+0.5)
+return R2I(I2R(GetHeroInt(u,b))*(0.011+0.009*I2R(GetUnitAbilityLevel(u,'RmW1')))*1000.+0.5)
 endfunction
 // интеллект для урона кнопки atk: урон bof x (0.0095), бафф 28 сен (было 0.0075);
 // x1000, чтобы не терять дробь в целом (в Bof_Dmg урон делится обратно на 1000)
@@ -13094,7 +13200,7 @@ if not LoadBoolean(HH,cid,SH_RemSpearDone) then
 call DisplayTextToPlayer(GetOwningPlayer(caster),0,0,"Spear the Gungnir interrupted!")
 endif
 if GetUnitAbilityLevel(caster,'RmR1')>0 then
-call SetAbilityRemainingCooldown(GetUnitAbility(caster,'RmR1'),40.)
+call SetAbilityRemainingCooldown(GetUnitAbility(caster,'RmR1'),30.)
 endif
 call FlushChildHashtable(HH,GetHandleId(t))
 call DestroyTimer(t)
@@ -13150,7 +13256,7 @@ call Rem_Fx(caster,"bof\\Scarlet-4.mdx",tx,ty,25.,0.,1.5,0.)
 call Rem_Fx(caster,"bof\\Scarlet-29.mdx",tx,ty,25.,0.,1.,0.)
 call Rem_Fx(caster,"bof\\Scarlet-14.mdx",tx,ty,25.,0.,1.5,1.)
 call Rem_Sound("bof\\war3mapImported\\RemiliaScarlet-R-YX2.mp3",100)
-set dmg=I2R(Rem_Int_R(caster,true))*240.*0.001+GetUnitState(caster,UNIT_STATE_MAX_LIFE)*.1
+set dmg=I2R(Rem_Int_R(caster,true))*120.*0.001+GetUnitState(caster,UNIT_STATE_MAX_LIFE)*.1
 if GetUnitAbilityLevel(target,'Avul')==0 then
 call Bof_Dmg(caster,target,dmg)
 else
@@ -13249,7 +13355,7 @@ set e=FirstOfGroup(g)
 exitwhen e==null
 call GroupRemoveUnit(g,e)
 if Condition_Base(GetOwningPlayer(caster),e) and GetUnitAbilityLevel(e,'Avul')==0 then
-call Bof_Dmg(caster,e,(I2R(Rem_Int_R(caster,true))*60.)*0.001)
+call Bof_Dmg(caster,e,(I2R(Rem_Int_R(caster,true))*24.)*0.001)
 call Bof_Slow(caster,e,0.5,0,2,2,false)
 endif
 endloop
@@ -13348,7 +13454,7 @@ call DestroyTimer(t)
 endif
 else
 call SetUnitAnimation(dmy,"Death")
-call UnitApplyTimedLife(dmy,'BHwe',.4)
+call Bof_zO(.4,dmy)
 call FlushChildHashtable(HH,id)
 call DestroyTimer(t)
 endif
@@ -13418,7 +13524,9 @@ local timer t=CreateTimer()
 call SetUnitScale(dmy,2.5,2.5,2.5)
 call SetUnitFlyHeight(dmy,GetUnitFlyHeight(caster)+275.,0.)
 call SetUnitVertexColor(dmy,255,255,255,255)
-call UnitApplyTimedLife(dmy,'BHwe',3.)
+// у Scarlet-76 нет анимации смерти: умерший по таймеру дамми оставался лежать на земле (владелец 4 окт) —
+// убираем его RemoveUnit через 3 c
+call Bof_zO(3.,dmy)
 call Bof_DzSetUnitModel(dmy,"bof\\Scarlet-76.mdx")
 call Rem_FadeIn(dmy,3)
 // красного круга bof (Scarlet-10) в точке каста нет: он лежал на земле после D (владелец 3 окт: «убери»)
@@ -13499,6 +13607,16 @@ function Rem_F2_Act takes unit caster returns nothing
 call SaveBoolean(HH,GetHandleId(caster),SH_RemFOn,false)
 endfunction
 // ----- Heart Break (конец T): рывок за спину цели, отнимает 20% её максимума, лечит на столько же -----
+function Rem_T_Kill takes unit caster,unit target returns nothing
+// убила финальным уроном T — навсегда +4% максимума цели (не больше 30000) к своему максимуму
+local integer cid=GetHandleId(caster)
+local integer bonus=IMinBJ(R2I(GetUnitState(target,UNIT_STATE_MAX_LIFE)*.04),30000)
+if not IsUnitType(target,UNIT_TYPE_HERO) or IsUnitIllusion(target) then
+return
+endif
+call SaveInteger(HH,cid,SH_RemKillLife,LoadInteger(HH,cid,SH_RemKillLife)+bonus)
+call Bof_xa(caster,0,2,LoadInteger(HH,cid,SH_RemKillLife)+LoadInteger(HH,cid,SH_RemTmpLife))
+endfunction
 function Rem_HeartBreak_Act2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
@@ -13549,6 +13667,10 @@ call Rem_Noise(GetOwningPlayer(caster),60.,.6)
 if not Bof_Rev(caster,target) then
 set dmg=GetUnitState(target,UNIT_STATE_MAX_LIFE)*.2
 call Bof_Dmg(caster,target,dmg)
+// Heart Break — конец T: добила им — это тоже убийство T (тестер 4 окт: «+4% за килл не пашет»)
+if not UnitIsAlive(target) then
+call Rem_T_Kill(caster,target)
+endif
 call Bof_Heal(caster,caster,dmg)
 call Bof_Ctrl(caster,target,1.5,"stun")
 endif
@@ -13589,13 +13711,6 @@ call TimerStart(t,.02,true,function Rem_HeartBreak_Act2)
 set t=null
 endfunction
 // ----- T «Red the Nightless Castle»: 8.7 c держит цель, серия, вихрь; в конце урон и Heart Break -----
-function Rem_T_Kill takes unit caster,unit target returns nothing
-// убила финальным уроном T — навсегда +4% максимума цели (не больше 30000) к своему максимуму
-local integer cid=GetHandleId(caster)
-local integer bonus=IMinBJ(R2I(GetUnitState(target,UNIT_STATE_MAX_LIFE)*.04),30000)
-call SaveInteger(HH,cid,SH_RemKillLife,LoadInteger(HH,cid,SH_RemKillLife)+bonus)
-call Bof_xa(caster,0,2,LoadInteger(HH,cid,SH_RemKillLife)+LoadInteger(HH,cid,SH_RemTmpLife))
-endfunction
 function Rem_T_Act2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
@@ -13917,27 +14032,27 @@ endfunction
 // героя (константы SH_Fla...). Время — целыми тиками таймера (n): тики те же, что у bof.
 // Звук/эффекты/надпись/тряска — общие с Ремилией (Rem_Sound, Rem_Fx, Rem_Text, Rem_Noise), урон/стан/
 // замедление с реверсом — из библиотеки bof (Bof_Dmg, Bof_Ctrl, Bof_Slow).
-// интеллект для урона кнопки D: урон bof x (0.04375), бафф 28 сен x1.25 (было 0.035);
+// интеллект для урона кнопки D: x (0.05625), x160 = 9 — стандарт T карты (4 окт; 28 сен было 0.04375);
 // x1000, чтобы не терять дробь в целом (в Bof_Dmg урон делится обратно на 1000)
 function Fla_Int_D takes unit u,boolean b returns integer
-return R2I(I2R(GetHeroInt(u,b))*(0.04375)*1000.+0.5)
+return R2I(I2R(GetHeroInt(u,b))*(0.05625)*1000.+0.5)
 endfunction
-// интеллект для урона кнопки E: урон bof x (0.0175 + 0.00375 x уровень), бафф 28 сен x1.25 (было 0.014 + 0.003 x уровень);
+// интеллект для урона кнопки E: x (3 + уровень)/120, x30 = 1..2 за удар, ударов 4 — стандарт карты 4..8 (4 окт);
 // x1000, чтобы не терять дробь в целом (в Bof_Dmg урон делится обратно на 1000)
 function Fla_Int_E takes unit u,boolean b returns integer
-return R2I(I2R(GetHeroInt(u,b))*(0.0175+0.00375*I2R(GetUnitAbilityLevel(u,'FlE1')))*1000.+0.5)
+return R2I(I2R(GetHeroInt(u,b))*((3.+I2R(GetUnitAbilityLevel(u,'FlE1')))/120.)*1000.+0.5)
 endfunction
 // интеллект для урона кнопки F: урон bof x (0.0175), бафф 28 сен x1.25 (было 0.014);
 // x1000, чтобы не терять дробь в целом (в Bof_Dmg урон делится обратно на 1000)
 function Fla_Int_F takes unit u,boolean b returns integer
 return R2I(I2R(GetHeroInt(u,b))*(0.0175)*1000.+0.5)
 endfunction
-// интеллект для урона кнопки G: урон bof x (0.05), бафф 28 сен x1.25 (было 0.04);
+// интеллект для урона кнопки G: x (0.02), x20 = 0.4 за луч, лучей 16 (4 окт; было 0.05 — 16*ИНТ за G);
 // x1000, чтобы не терять дробь в целом (в Bof_Dmg урон делится обратно на 1000)
 function Fla_Int_G takes unit u,boolean b returns integer
-return R2I(I2R(GetHeroInt(u,b))*(0.05)*1000.+0.5)
+return R2I(I2R(GetHeroInt(u,b))*(0.02)*1000.+0.5)
 endfunction
-// интеллект для урона кнопки G2: урон bof x (0.025), бафф 28 сен x1.25 (было 0.02);
+// интеллект для урона кнопки G2: x (0.025), x100 = 2.5 за удар, ударов 2 (4 окт);
 // x1000, чтобы не терять дробь в целом (в Bof_Dmg урон делится обратно на 1000)
 function Fla_Int_G2 takes unit u,boolean b returns integer
 return R2I(I2R(GetHeroInt(u,b))*(0.025)*1000.+0.5)
@@ -13947,20 +14062,20 @@ endfunction
 function Fla_Int_Q takes unit u,boolean b returns integer
 return R2I(I2R(GetHeroInt(u,b))*(0.0225+0.005*I2R(GetUnitAbilityLevel(u,'FlQ1')))*1000.+0.5)
 endfunction
-// интеллект для урона кнопки R: урон bof x (0.0175 + 0.00375 x уровень), бафф 28 сен x1.25 (было 0.014 + 0.003 x уровень);
+// интеллект для урона кнопки R: x (3 + уровень)/480, x80 = 0.67..1.33 за удар (3 нажатия + 3 копья) — стандарт 4..8 (4 окт);
 // x1000, чтобы не терять дробь в целом (в Bof_Dmg урон делится обратно на 1000)
 function Fla_Int_R takes unit u,boolean b returns integer
-return R2I(I2R(GetHeroInt(u,b))*(0.0175+0.00375*I2R(GetUnitAbilityLevel(u,'FlR1')))*1000.+0.5)
+return R2I(I2R(GetHeroInt(u,b))*((3.+I2R(GetUnitAbilityLevel(u,'FlR1')))/480.)*1000.+0.5)
 endfunction
-// интеллект для урона кнопки W: урон bof x (0.0175 + 0.00375 x уровень), бафф 28 сен x1.25 (было 0.014 + 0.003 x уровень);
+// интеллект для урона кнопки W: x (5 + 3 x уровень)/960, x120 = 1..2.5 за удар, ударов 2 (+W2) — стандарт (4 окт);
 // x1000, чтобы не терять дробь в целом (в Bof_Dmg урон делится обратно на 1000)
 function Fla_Int_W takes unit u,boolean b returns integer
-return R2I(I2R(GetHeroInt(u,b))*(0.0175+0.00375*I2R(GetUnitAbilityLevel(u,'FlW1')))*1000.+0.5)
+return R2I(I2R(GetHeroInt(u,b))*((5.+3.*I2R(GetUnitAbilityLevel(u,'FlW1')))/960.)*1000.+0.5)
 endfunction
-// интеллект для урона кнопки W2: урон bof x (0.025), бафф 28 сен x1.25 (было 0.02);
+// интеллект для урона кнопки W2: x (0.0125), x80 = 1 за удар веера (4 окт);
 // x1000, чтобы не терять дробь в целом (в Bof_Dmg урон делится обратно на 1000)
 function Fla_Int_W2 takes unit u,boolean b returns integer
-return R2I(I2R(GetHeroInt(u,b))*(0.025)*1000.+0.5)
+return R2I(I2R(GetHeroInt(u,b))*(0.0125)*1000.+0.5)
 endfunction
 // интеллект для урона кнопки atk: урон bof x (0.0095), бафф 28 сен (было 0.0075);
 // x1000, чтобы не терять дробь в целом (в Bof_Dmg урон делится обратно на 1000)
@@ -14601,7 +14716,7 @@ if not LoadBoolean(HH,cid,SH_FlaRDone) then
 call DisplayTextToPlayer(GetOwningPlayer(caster),0,0,"The song Kagome, Kagome was interrupted!")
 endif
 if GetUnitAbilityLevel(caster,'FlR1')>0 then
-call SetAbilityRemainingCooldown(GetUnitAbility(caster,'FlR1'),40.)
+call SetAbilityRemainingCooldown(GetUnitAbility(caster,'FlR1'),30.)
 endif
 call FlushChildHashtable(HH,GetHandleId(t))
 call DestroyTimer(t)
@@ -14773,7 +14888,9 @@ loop
 set e=FirstOfGroup(g)
 exitwhen e==null
 call GroupRemoveUnit(g,e)
-if Condition_Base(GetOwningPlayer(caster),e) then
+// клетка — только живым уязвимым врагам: иначе копья летели в неуязвимые сундуки в зоне ожидания
+// и в тела мёртвых героев, даже когда врагов рядом нет (владелец 4 окт)
+if Condition_Base(GetOwningPlayer(caster),e) and GetUnitAbilityLevel(e,'Avul')==0 and UnitIsAlive(e) then
 set ea=GetUnitFacing(e)+180.
 set sg=CreateGroup()
 set str=1
@@ -14840,6 +14957,8 @@ set k=k+1
 endloop
 call SaveInteger(HH,cid,SH_FlaCharges,LoadInteger(HH,cid,SH_FlaCharges)-1)
 set cl=CreateUnit(GetOwningPlayer(caster),'hB1W',tx,ty,ang)
+// своих статов у клона нет — урон с руки 50% интеллекта Фландре (владелец 4 окт: «без статов ничего не наносят»)
+call SetUnitBaseDamageByIndex(cl,0,R2I(I2R(GetHeroInt(caster,true))*.5))
 call SaveBoolean(HH,GetHandleId(cl),SH_FlaDash,true)
 call SaveUnitHandle(HH,GetHandleId(cl),SH_FlaOwner,caster)
 call SetUnitPosition(cl,tx,ty)
@@ -15043,8 +15162,8 @@ set e=FirstOfGroup(g)
 exitwhen e==null
 call GroupRemoveUnit(g,e)
 if Condition_Base(GetOwningPlayer(caster),e) and GetUnitAbilityLevel(e,'Avul')==0 then
-call Bof_Dmg(caster,e,(I2R(Fla_Int_F(caster,true))*100.)*0.001)
-call Bof_Ctrl(caster,e,1.,"stun")
+call myCustomDamage(caster,e,(I2R(Fla_Int_F(caster,true))*100.)*0.001,false,false,null,null,null)
+call SetControlToUnit(caster,e,1.,"stun")
 endif
 endloop
 call DestroyGroup(g)
@@ -15062,16 +15181,8 @@ local real z=GetUnitFlyHeight(caster)
 local group g
 local unit e
 call SaveInteger(HH,id,1,tk)
-// реверс (цель в стойке развернула умение): как у героев Чейза — умение кончается, кастер отпущен
-if Bof_RevEnd(caster) then
-call SaveBoolean(HH,GetHandleId(caster),SH_FlaFOn,false)
-call Fla_FLock(caster,false)
-call FlushChildHashtable(HH,id)
-call DestroyTimer(t)
-set t=null
-set caster=null
-return
-endif
+// F — кольцо вокруг себя: реверсу не подвергается, как кольца и взрывы у героев разраба (Гарп E/T);
+// урон и стан — напрямую, мимо Bof_Rev, F реверсом не обрывается (владелец 4 окт)
 if tk<=300 and IsUnitAliveBJ(caster) then
 // неуязвимость F — каждым тиком: её снимают рывок к клону и чужие эффекты (тестер 29 сен)
 call SetUnitInvulnerable(caster,true)
@@ -15087,7 +15198,7 @@ set e=FirstOfGroup(g)
 exitwhen e==null
 call GroupRemoveUnit(g,e)
 if Condition_Base(GetOwningPlayer(caster),e) and GetUnitAbilityLevel(e,'Avul')==0 then
-call Bof_Dmg(caster,e,(I2R(Fla_Int_F(caster,true))*20.)*0.001)
+call myCustomDamage(caster,e,(I2R(Fla_Int_F(caster,true))*20.)*0.001,false,false,null,null,null)
 endif
 endloop
 call DestroyGroup(g)
@@ -15304,7 +15415,7 @@ call Rem_Fx(caster,"bof\\Madara-huitu-22.mdx",px,py,25.,ang,15.,0.)
 call Rem_Fx(caster,"bof\\Scarlet-40.mdx",px,py,25.,ang,3.,0.)
 call Rem_Fx(caster,"bof\\Scarlet-54.mdx",GetUnitX(target),GetUnitY(target),150.,0.,1.,0.)
 call Rem_Fx(caster,"bof\\Scarlet-52.mdx",GetUnitX(target),GetUnitY(target),150.,0.,1.,0.)
-call Bof_Dmg(caster,target,(I2R(Fla_Int_G2(caster,true))*120.)*0.001)
+call Bof_Dmg(caster,target,(I2R(Fla_Int_G2(caster,true))*100.)*0.001)
 call Bof_Ctrl(caster,target,1.5,"stun")
 endif
 endif
@@ -15344,6 +15455,7 @@ call Bof_SwapBack(caster,'FlG1','FlG2')
 set t=null
 endfunction
 // ----- Рывок к клону (правый клик по земле у клона, 200–1600 от Фландре): каждый клон — один раз.
+// Летит сквозь декор (Bof_Put), в конце — на ближайшее проходимое место (тестер 4 окт: застревала) -----
 // Летит по 40 до 1 c, каждые 8 тиков урон ord_smart x20 в 320 -----
 function Fla_Smart_Act2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
@@ -15359,9 +15471,7 @@ local unit e
 call SaveInteger(HH,id,2,tk)
 // реверс (цель в стойке развернула умение): как у героев Чейза — умение кончается, кастер отпущен
 if Bof_RevEnd(caster) then
-if LoadBoolean(HH,GetHandleId(caster),SH_FlaFOn) then
-call SaveBoolean(HH,GetHandleId(caster),SH_bofRevd,true)
-endif
+call Bof_Unstick(caster)
 call FlushChildHashtable(HH,id)
 call DestroyTimer(t)
 set t=null
@@ -15373,7 +15483,7 @@ call SetUnitInvulnerable(caster,true)
 if tk<=50 and SRS(x,y,GetUnitX(cl),GetUnitY(cl))>80. then
 set x=x+40.*CosBJ(ang)
 set y=y+40.*SinBJ(ang)
-call SetUnitPosition(caster,x,y)
+call Bof_Put(caster,x,y)
 if ModuloInteger(tk,8)==0 then
 set x=GetUnitX(caster)
 set y=GetUnitY(caster)
@@ -15392,6 +15502,7 @@ endloop
 call DestroyGroup(g)
 endif
 else
+call Bof_Unstick(caster)
 if not LoadBoolean(HH,GetHandleId(caster),SH_FlaFOn) then
 call SetUnitInvulnerable(caster,false)
 endif
@@ -15624,10 +15735,10 @@ endfunction
 function Sui_Agi_E2 takes unit u,boolean b returns integer
 return R2I(I2R(GetHeroAgi(u,b))*(0.03)*1000.+0.5)
 endfunction
-// ловкость для урона кнопки E: урон bof x (0.014 + 0.002 x уровень);
+// ловкость для урона кнопки E: x (0.015 + 0.005 x уровень), перо x50 — три пера 3..6 (стандарт карты);
 // x1000, чтобы не терять дробь в целом (в Bof_Dmg урон делится обратно на 1000)
 function Sui_Agi_Ei takes unit u,boolean b returns integer
-return R2I(I2R(GetHeroAgi(u,b))*(0.014+0.002*I2R(GetUnitAbilityLevel(u,'SuE1')))*1000.+0.5)
+return R2I(I2R(GetHeroAgi(u,b))*(0.015+0.005*I2R(GetUnitAbilityLevel(u,'SuE1')))*1000.+0.5)
 endfunction
 // ловкость для урона кнопки F: урон bof x (0.015);
 // x1000, чтобы не терять дробь в целом (в Bof_Dmg урон делится обратно на 1000)
@@ -15639,30 +15750,30 @@ endfunction
 function Sui_Agi_F2 takes unit u,boolean b returns integer
 return R2I(I2R(GetHeroAgi(u,b))*(0.01)*1000.+0.5)
 endfunction
-// ловкость для урона кнопки G: урон bof x (0.02);
+// ловкость для урона кнопки G: x (0.02), цепь x40, перо x20, без среза паузы — ~11 по цели в центре;
 // x1000, чтобы не терять дробь в целом (в Bof_Dmg урон делится обратно на 1000)
 function Sui_Agi_G takes unit u,boolean b returns integer
 return R2I(I2R(GetHeroAgi(u,b))*(0.02)*1000.+0.5)
 endfunction
-// ловкость для урона кнопки Q: урон bof x (0.015 + 0.0027 x уровень);
+// ловкость для урона кнопки Q: x (0.005 + 0.005 x уровень), удары 50+50+100 — серия 2..6 (стандарт карты, 4 окт);
 // x1000, чтобы не терять дробь в целом (в Bof_Dmg урон делится обратно на 1000)
 function Sui_Agi_Qi takes unit u,boolean b returns integer
-return R2I(I2R(GetHeroAgi(u,b))*(0.015+0.0027*I2R(GetUnitAbilityLevel(u,'SuQ1')))*1000.+0.5)
+return R2I(I2R(GetHeroAgi(u,b))*(0.005+0.005*I2R(GetUnitAbilityLevel(u,'SuQ1')))*1000.+0.5)
 endfunction
-// ловкость для урона кнопки R: урон bof x (0.012 + 0.0024 x уровень);
+// ловкость для урона кнопки R: x (0.02 + 0.005 x уровень), большой дракон x200 = 5..9, из пера x50 (стандарт карты);
 // x1000, чтобы не терять дробь в целом (в Bof_Dmg урон делится обратно на 1000)
 function Sui_Agi_R takes unit u,boolean b returns integer
-return R2I(I2R(GetHeroAgi(u,b))*(0.012+0.0024*I2R(GetUnitAbilityLevel(u,'SuR1')))*1000.+0.5)
+return R2I(I2R(GetHeroAgi(u,b))*(0.02+0.005*I2R(GetUnitAbilityLevel(u,'SuR1')))*1000.+0.5)
 endfunction
-// ловкость для урона кнопки T: урон bof x (0.03);
+// ловкость для урона кнопки T: x (0.08), перо x25 = 2 (стандарт карты);
 // x1000, чтобы не терять дробь в целом (в Bof_Dmg урон делится обратно на 1000)
 function Sui_Agi_T takes unit u,boolean b returns integer
-return R2I(I2R(GetHeroAgi(u,b))*(0.03)*1000.+0.5)
+return R2I(I2R(GetHeroAgi(u,b))*(0.08)*1000.+0.5)
 endfunction
-// ловкость для урона кнопки W: урон bof x (0.0167 + 0.0033 x уровень);
+// ловкость для урона кнопки W: x (0.012 + 0.004 x уровень), перо x6 — ~32 пера по цели 3..6 (стандарт карты);
 // x1000, чтобы не терять дробь в целом (в Bof_Dmg урон делится обратно на 1000)
 function Sui_Agi_Wi takes unit u,boolean b returns integer
-return R2I(I2R(GetHeroAgi(u,b))*(0.0167+0.0033*I2R(GetUnitAbilityLevel(u,'SuW1')))*1000.+0.5)
+return R2I(I2R(GetHeroAgi(u,b))*(0.012+0.004*I2R(GetUnitAbilityLevel(u,'SuW1')))*1000.+0.5)
 endfunction
 // ловкость для урона кнопки atk: урон bof x (0.0075);
 // x1000, чтобы не терять дробь в целом (в Bof_Dmg урон делится обратно на 1000)
@@ -15673,58 +15784,7 @@ endfunction
 // на каст, целые тики (0.02 c), параметры из диспетчера, реверс (стойка обрывает умение и отпускает
 // героиню). Исполнители bof (триггеры o8/pB/pD/bT) стали функциями Sui_Q_Do/W_Do/E_Do: зеркало D повторяет
 // удар, вызывая их со своей копией героини. Перья, драконы и цепи двигаются без проходимости — в декоре не
-// застревают (владелец 3 окт), край карты держит Sui_Put. Урон — от героини, даже если бьёт копия.
-function Sui_X takes real x returns real
-local real lo=GetRectMinX(bj_mapInitialPlayableArea)+64.
-local real hi=GetRectMaxX(bj_mapInitialPlayableArea)-64.
-if x<lo then
-return lo
-elseif x>hi then
-return hi
-endif
-return x
-endfunction
-function Sui_Y takes real y returns real
-local real lo=GetRectMinY(bj_mapInitialPlayableArea)+64.
-local real hi=GetRectMaxY(bj_mapInitialPlayableArea)-64.
-if y<lo then
-return lo
-elseif y>hi then
-return hi
-endif
-return y
-endfunction
-// переставить перо/дракона без проверки проходимости, но не за край карты
-function Sui_Put takes unit u,real x,real y returns nothing
-call SetUnitX(u,Sui_X(x))
-call SetUnitY(u,Sui_Y(y))
-endfunction
-function Sui_GlideAct takes nothing returns nothing
-local timer t=GetExpiredTimer()
-local integer id=GetHandleId(t)
-local unit u=LoadUnitHandle(HH,id,0)
-local integer left=LoadInteger(HH,id,3)-1
-if left<0 or GetUnitTypeId(u)==0 then
-call FlushChildHashtable(HH,id)
-call DestroyTimer(t)
-else
-call SaveInteger(HH,id,3,left)
-call Sui_Put(u,GetUnitX(u)+CosBJ(LoadReal(HH,id,1))*LoadReal(HH,id,2),GetUnitY(u)+SinBJ(LoadReal(HH,id,1))*LoadReal(HH,id,2))
-endif
-set t=null
-set u=null
-endfunction
-// толчок пера/дракона на dist за time c (как Bof_Slide, но сквозь декор)
-function Sui_Glide takes unit u,real ang,real dist,real time returns nothing
-local timer t=CreateTimer()
-local integer cnt=IMaxBJ(R2I(time/.02+.5),1)
-call SaveUnitHandle(HH,GetHandleId(t),0,u)
-call SaveReal(HH,GetHandleId(t),1,ang)
-call SaveReal(HH,GetHandleId(t),2,dist/I2R(cnt))
-call SaveInteger(HH,GetHandleId(t),3,cnt)
-call TimerStart(t,.02,true,function Sui_GlideAct)
-set t=null
-endfunction
+// застревают (владелец 3 окт), край карты держит Bof_Put. Урон — от героини, даже если бьёт копия.
 function Sui_GhostAct takes nothing returns nothing
 local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
@@ -15889,7 +15949,7 @@ endif
 call SetUnitInvulnerable(src,true)
 call PauseUnit(src,true)
 if tk==1 then
-call Bof_Slide(src,ang,400.,.4)
+call Bof_Glide(src,ang,400.,.4)
 endif
 if tk<=48 then
 set g=CreateGroup()
@@ -15919,8 +15979,8 @@ endif
 call Rem_Fx(hr,"bof\\Saber-17.mdx",x,y,z+50.,ang,1.5,0.)
 call Rem_Fx(hr,"bof\\Tsubaki-37.mdx",x,y,z+50.,ang,4.,0.)
 call SetSpecialEffectPitch(bj_lastCreatedEffect,90.)
-call Bof_Slide(src,ang,400.,.4)
-call Sui_Q_Strike(src,hr,300.,40.)
+call Bof_Glide(src,ang,400.,.4)
+call Sui_Q_Strike(src,hr,300.,50.)
 endif
 if tk==46 then
 call Rem_Noise(GetOwningPlayer(src),50.,.5)
@@ -15934,7 +15994,7 @@ set a2=a2-15.
 call Rem_Fx(hr,"bof\\Tsubaki-32.mdx",x,y,z+25.,a2+180.,2.,0.)
 set k=k+1
 endloop
-call Sui_Q_Strike(src,hr,450.,60.)
+call Sui_Q_Strike(src,hr,450.,100.)
 endif
 if tk>=56 then
 call SetUnitInvulnerable(src,false)
@@ -16004,7 +16064,7 @@ endif
 if tk<=22 and GetWidgetLife(f)>.405 then
 set x=GetUnitX(f)+sp*CosBJ(ang)
 set y=GetUnitY(f)+sp*SinBJ(ang)
-call Sui_Put(f,x,y)
+call Bof_Put(f,x,y)
 set g=CreateGroup()
 call GroupEnumUnitsInRange(g,GetUnitX(f),GetUnitY(f),200.,null)
 loop
@@ -16122,7 +16182,7 @@ call SetUnitFlyHeight(f,GetUnitFlyHeight(f)-25.,1000000000.)
 call SetUnitFacingTimed(f,fa,0)
 set x=GetUnitX(f)+sp*CosBJ(fa)
 set y=GetUnitY(f)+sp*SinBJ(fa)
-call Sui_Put(f,x,y)
+call Bof_Put(f,x,y)
 set g=CreateGroup()
 call GroupEnumUnitsInRange(g,GetUnitX(f),GetUnitY(f),260.,null)
 loop
@@ -16180,7 +16240,7 @@ endif
 call SetUnitInvulnerable(src,true)
 call PauseUnit(src,true)
 if tk==1 then
-call Bof_Slide(src,ang+180.,600.,.6)
+call Bof_Glide(src,ang+180.,600.,.6)
 endif
 if ModuloInteger(tk-1,20)==0 then
 call DestroyEffect(AddSpecialEffectTarget("bof\\Mercury Lamp-2.mdx",src,"chest"))
@@ -16216,7 +16276,7 @@ call SaveReal(HH,GetHandleId(t2),6,fa)
 call TimerStart(t2,.02,true,function Sui_E_Fly)
 set k=k+1
 endloop
-call Bof_Slide(src,ang+180.,400.,.4)
+call Bof_Glide(src,ang+180.,400.,.4)
 endif
 if tk>=51 then
 call SetUnitInvulnerable(src,false)
@@ -16311,7 +16371,7 @@ call PauseUnit(hr,true)
 if tk==1 then
 call SetUnitAnimationByIndex(hr,1)
 call Rem_Noise(GetOwningPlayer(hr),60.,.6)
-call Bof_Slide(hr,ang,1200.,.6)
+call Bof_Glide(hr,ang,1200.,.6)
 endif
 if ModuloInteger(tk,4)==0 then
 call SaveInteger(HH,id,3,LoadInteger(HH,id,3)+1)
@@ -16485,7 +16545,7 @@ call Rem_Fx(hr,"bof\\Tsubaki-37.mdx",x,y,z+200.,ang,4.,0.)
 call SetSpecialEffectPitch(bj_lastCreatedEffect,90.)
 call SetUnitTimeScale(hr,.75)
 call SetUnitAnimationByIndex(hr,7)
-call Bof_Slide(hr,ang,1200.,.4)
+call Bof_Glide(hr,ang,1200.,.4)
 endif
 if tk<=20 then
 if ModuloInteger(tk,4)==0 then
@@ -16602,7 +16662,7 @@ call SetSpecialEffectPitch(bj_lastCreatedEffect,90.)
 call Rem_Fx(hr,"bof\\Minato-31.mdx",x,y,z+50.,fa,3.,0.)
 call SetSpecialEffectPitch(bj_lastCreatedEffect,90.)
 call Rem_Fx(hr,"bof\\Saber-17.mdx",x,y,z+50.,fa,1.5,0.)
-call Sui_Glide(f,fa,1600.,.6)
+call Bof_Glide(f,fa,1600.,.6)
 endif
 if tk>40 and tk<70 then
 set k=LoadInteger(HH,id,6)+1
@@ -16670,13 +16730,13 @@ else
 set side=ang-90.
 set fa=ang+30.
 endif
-set x=Sui_X(bx+400.*CosBJ(side))
-set y=Sui_Y(by+400.*SinBJ(side))
+set x=Bof_X(Bof_Zone(bx,by),bx+400.*CosBJ(side))
+set y=Bof_Y(Bof_Zone(bx,by),by+400.*SinBJ(side))
 set f=Sui_Feather(caster,x,y,fa,150.,1.5,12.)
 call SetUnitVertexColor(f,255,255,255,0)
 call Rem_FadeIn(f,5)
 call Rem_Fx(caster,"bof\\Mercury Lamp-23.mdx",x,y,GetUnitFlyHeight(caster)+50.,0.,1.,0.)
-call Sui_Glide(f,fa,200.,.8)
+call Bof_Glide(f,fa,200.,.8)
 set t=CreateTimer()
 call SaveUnitHandle(HH,GetHandleId(t),0,caster)
 call SaveUnitHandle(HH,GetHandleId(t),1,f)
@@ -16785,15 +16845,8 @@ set u=null
 set t=null
 endfunction
 // ----- R «Black Feather Dragon»: перья в области 450 у точки становятся драконами — каждый сам находит
-// ближайшего вражеского героя (не дальше 3000 от Суйгинто), летит по спирали, бьёт (80) и оглушает на 3 c,
-// R перезаряжается 12 c; перьев нет — один большой дракон вперёд, взрыв по области 600 (200, стан 3 c) -----
-function Sui_R_Cd takes nothing returns nothing
-local timer t=GetExpiredTimer()
-call StartAbilityCooldown(GetUnitAbility(LoadUnitHandle(HH,GetHandleId(t),0),'SuR1'),12.)
-call FlushChildHashtable(HH,GetHandleId(t))
-call DestroyTimer(t)
-set t=null
-endfunction
+// ближайшего вражеского героя (не дальше 3000 от Суйгинто), летит по спирали, бьёт (50) и оглушает на 3 c
+// (КД 25 всегда — стандарт карты, 4 окт); перьев нет — один большой дракон вперёд, взрыв по области 600 (200, стан 3 c) -----
 function Sui_R_Boom takes unit hr,real x,real y,real ang returns nothing
 call Rem_Fx(hr,"bof\\Madara-huitu-13.mdx",x,y,25.,0.,1.,0.)
 call Rem_Fx(hr,"bof\\Mercury Lamp-24.mdx",x,y,GetUnitFlyHeight(hr)+50.,ang,2.5,0.)
@@ -16862,21 +16915,21 @@ set e=null
 endif
 endif
 if e==null and tk<=166 and GetUnitTypeId(dg)!=0 then
-call Sui_Put(dg,GetUnitX(dg)+50.*CosBJ(GetUnitFacing(dg)),GetUnitY(dg)+50.*SinBJ(GetUnitFacing(dg)))
+call Bof_Put(dg,GetUnitX(dg)+50.*CosBJ(GetUnitFacing(dg)),GetUnitY(dg)+50.*SinBJ(GetUnitFacing(dg)))
 if ModuloInteger(tk,6)==0 then
 call Sui_R_Trail(hr,dg,GetUnitFacing(dg))
 endif
 elseif e!=null and tk<=166 and dd>=100. and GetWidgetLife(e)>.405 and GetUnitTypeId(dg)!=0 then
 set a2=Atan2BJ(GetUnitY(e)-GetUnitY(dg),GetUnitX(e)-GetUnitX(dg))+off
 call SetUnitFacingTimed(dg,a2,0)
-call Sui_Put(dg,GetUnitX(dg)+50.*CosBJ(a2),GetUnitY(dg)+50.*SinBJ(a2))
+call Bof_Put(dg,GetUnitX(dg)+50.*CosBJ(a2),GetUnitY(dg)+50.*SinBJ(a2))
 if ModuloInteger(tk,6)==0 then
 call Sui_R_Trail(hr,dg,a2)
 endif
 else
 if e!=null and GetUnitTypeId(dg)!=0 and dd<=120. and GetWidgetLife(e)>.405 then
 call Sui_R_Boom(hr,GetUnitX(e),GetUnitY(e),GetUnitFacing(dg))
-call Bof_Dmg(hr,e,I2R(Sui_Agi_R(hr,true))*80.*.001)
+call Bof_Dmg(hr,e,I2R(Sui_Agi_R(hr,true))*50.*.001)
 call Bof_Ctrl(hr,e,3.,"stun")
 endif
 call RemoveUnit(dg)
@@ -16903,7 +16956,7 @@ local unit e
 call SaveInteger(HH,id,3,tk)
 if tk<=100 then
 call SetUnitFacingTimed(dg,ang,0)
-call Sui_Put(dg,GetUnitX(dg)+50.*CosBJ(ang),GetUnitY(dg)+50.*SinBJ(ang))
+call Bof_Put(dg,GetUnitX(dg)+50.*CosBJ(ang),GetUnitY(dg)+50.*SinBJ(ang))
 if ModuloInteger(tk,6)==0 then
 call Sui_R_Trail(hr,dg,ang)
 endif
@@ -17008,9 +17061,6 @@ set i=i+1
 endloop
 call Sui_FClean(caster)
 if used>0 then
-set t=CreateTimer()
-call SaveUnitHandle(HH,GetHandleId(t),0,caster)
-call TimerStart(t,.1,false,function Sui_R_Cd)
 call Rem_Fx(caster,"bof\\Mercury Lamp-23.mdx",x,y,z+50.,ang,1.,0.)
 call Rem_Fx(caster,"bof\\Mercury Lamp-22.mdx",x,y,z+50.,ang,1.,0.)
 call Rem_Fx(caster,"bof\\Mercury Lamp-27.mdx",x,y,z+50.,ang,1.,0.)
@@ -17093,7 +17143,7 @@ if tk<=166 and dd>=100. and GetUnitTypeId(f)!=0 then
 set x=GetUnitX(f)+80.*CosBJ(a2)
 set y=GetUnitY(f)+80.*SinBJ(a2)
 call SetUnitFacingTimed(f,a2,0)
-call Sui_Put(f,x,y)
+call Bof_Put(f,x,y)
 if ModuloInteger(tk,10)==0 then
 call Rem_Fx(hr,"bof\\Minato-23.mdx",x,y,GetUnitFlyHeight(hr)+50.,a2,1.,0.)
 endif
@@ -17256,7 +17306,7 @@ set e=FirstOfGroup(g)
 exitwhen e==null
 call GroupRemoveUnit(g,e)
 if Condition_Base(GetOwningPlayer(hr),e) and GetUnitAbilityLevel(e,'Avul')==0 then
-call Bof_Dmg(hr,e,I2R(Sui_Agi_G(hr,true))*20.*.001)
+call Bof_DmgFull(hr,e,I2R(Sui_Agi_G(hr,true))*40.*.001)
 call Bof_Ctrl(hr,e,1.2,"stun")
 endif
 endloop
@@ -17303,7 +17353,7 @@ set e=FirstOfGroup(g)
 exitwhen e==null
 call GroupRemoveUnit(g,e)
 if Condition_Base(GetOwningPlayer(hr),e) and GetUnitAbilityLevel(e,'Avul')==0 then
-call Bof_Dmg(hr,e,I2R(Sui_Agi_G(hr,true))*10.*.001)
+call Bof_DmgFull(hr,e,I2R(Sui_Agi_G(hr,true))*20.*.001)
 endif
 endloop
 call DestroyGroup(g)
@@ -17327,8 +17377,8 @@ local real zz=GetUnitFlyHeight(hr)+GetRandomReal(-200.,600.)
 local unit dg
 local unit an
 local timer t=CreateTimer()
-set x=Sui_X(x)
-set y=Sui_Y(y)
+set x=Bof_X(Bof_Zone(GetUnitX(hr),GetUnitY(hr)),x)
+set y=Bof_Y(Bof_Zone(GetUnitX(hr),GetUnitY(hr)),y)
 set dg=CreateUnit(GetOwningPlayer(hr),'eBLT',x,y,ang)
 call SetUnitPathing(dg,false)
 call SetUnitScale(dg,1.5,1.,1.)
@@ -17361,7 +17411,7 @@ call Bof_DzSetUnitModel(dg,"bof\\Mercury Lamp-29.mdx")
 call UnitApplyTimedLife(dg,'BHwe',2.)
 call TimerStart(t,.02,true,function Sui_G_Rain)
 endif
-call Sui_Glide(dg,ang,LoadReal(HH,id,2)+GetRandomReal(0.,600.),.4)
+call Bof_Glide(dg,ang,LoadReal(HH,id,2)+GetRandomReal(0.,600.),.4)
 set dg=null
 set an=null
 set t=null
@@ -24128,7 +24178,7 @@ set udg_RH[139]='Rosh'//Мутен Роши
 set udg_RH[140]='HBrg'//Baraggan
 //Barragan1end
 //Suigintou1start
-set udg_RH[144]='HSui'//Suigintou
+//set udg_RH[144]='HSui'//Suigintou — не готова, не релизить
 //Suigintou1end
 //Remilia1start
 set udg_RH[141]='HRem'//Remilia
@@ -26548,7 +26598,7 @@ function OnButtonChangeAbilityMode takes nothing returns nothing
     if buttonId == -1 then
         return
     endif
-    // Кирито: Ctrl+T — Starburst Stream (350 маны) / The Eclipse (500 маны, перезарядка 70 c при касте)
+    // Кирито: Ctrl+T — Starburst Stream (350 маны) / The Eclipse (650 маны, перезарядка 70 c при касте)
     if but==GetFrameByName( "AbilityVarBarIcon", 7 ) then
         set freeSlotId=0
         loop
@@ -26557,7 +26607,7 @@ function OnButtonChangeAbilityMode takes nothing returns nothing
                 set butHid=GetHandleId(GetOwningPlayer(Hero[freeSlotId]))
                 if LoadReal(HH,butHid,VariationTHash)==0 then
                     call SaveReal(HH,butHid,VariationTHash,1)
-                    call SetAbilityIntegerLevelField(GetUnitAbility(Hero[freeSlotId],'A0H8'),ABILITY_ILF_MANA_COST,0,500)
+                    call SetAbilityIntegerLevelField(GetUnitAbility(Hero[freeSlotId],'A0H8'),ABILITY_ILF_MANA_COST,0,650)
                 else
                     call SaveReal(HH,butHid,VariationTHash,0)
                     call SetAbilityIntegerLevelField(GetUnitAbility(Hero[freeSlotId],'A0H8'),ABILITY_ILF_MANA_COST,0,350)
@@ -51651,17 +51701,65 @@ endif
 set AC=SquareRoot(AM*AM+AD-SquareRoot((KB*DO/BO)*(KB*DO/BO)-AM*AM))
 return AC
 endfunction
+// ===== Возврат на арену (GameZone). Раньше: толчок к (0,0) на 150+HardLine без проверки проходимости и только
+// по событию выхода — в углу (деревья, фонарь) герой вставал в декорации или оставался снаружи навсегда.
+// Теперь: точка зажимается внутрь GameZone с запасом 100 и сдвигается к центру, пока не станет проходимой
+// (с учётом деревьев/декораций — проверка предметом). Плюс подстраховка раз в 0.5 c для героев.
+// Не трогает тех, кого способности сами переносят в другие зоны: UBW Широ (A0IH), R Хибари и T Неро (A3IH).
+function ArenaWalkable takes real x,real y returns boolean
+local boolean ok
+if IsTerrainPathable(x,y,PATHING_TYPE_WALKABILITY) then
+return false
+endif
+if ArenaChkItem==null then
+set ArenaChkItem=CreateItem('ciri',x,y)
+endif
+call SetItemVisible(ArenaChkItem,true)
+call SetItemPosition(ArenaChkItem,x,y)
+set ok=SquareRoot((GetItemX(ArenaChkItem)-x)*(GetItemX(ArenaChkItem)-x)+(GetItemY(ArenaChkItem)-y)*(GetItemY(ArenaChkItem)-y))<10
+call SetItemVisible(ArenaChkItem,false)
+return ok
+endfunction
+function ArenaSkip takes unit u returns boolean
+return GetUnitAbilityLevel(u,'A0IH')>0 or GetUnitAbilityLevel(u,'A3IH')>0
+endfunction
+function ArenaReturn takes unit u returns nothing
+local real cx=GetRectCenterX(gg_rct_GameZone)
+local real cy=GetRectCenterY(gg_rct_GameZone)
+local real x=RMinBJ(RMaxBJ(GetUnitX(u),GetRectMinX(gg_rct_GameZone)+100),GetRectMaxX(gg_rct_GameZone)-100)
+local real y=RMinBJ(RMaxBJ(GetUnitY(u),GetRectMinY(gg_rct_GameZone)+100),GetRectMaxY(gg_rct_GameZone)-100)
+local real a=Atan2(cy-y,cx-x)
+local integer i=0
+loop
+exitwhen i>=80 or ArenaWalkable(x,y)
+set x=x+50*Cos(a)
+set y=y+50*Sin(a)
+set i=i+1
+endloop
+call SetUnitX(u,x)
+call SetUnitY(u,y)
+endfunction
+function ArenaWatch takes nothing returns nothing
+local integer i=0
+if udg_B==true and DU==true then
+loop
+exitwhen i>=12
+if Hero[i]!=null and UnitIsAlive(Hero[i]) and RectContainsUnit(gg_rct_GameZone,Hero[i])==false and ArenaSkip(Hero[i])==false then
+call ArenaReturn(Hero[i])
+endif
+set i=i+1
+endloop
+endif
+endfunction
 function Trig_LeaveArea1_Actions takes nothing returns nothing
-local real x=GetUnitX(GetTriggerUnit())
-local real y=GetUnitY(GetTriggerUnit())
-local real a=Atan2(-y,-x)
-call SetUnitXY_1(GetTriggerUnit(),x+(150+HardLine(GetTriggerUnit()))*Cos(a),y+(150+HardLine(GetTriggerUnit()))*Sin(a),false)
+call ArenaReturn(GetTriggerUnit())
 endfunction
 function InitTrig_LeaveArea1 takes nothing returns nothing
 set gg_trg_LeaveArea1=CreateTrigger()
 call TriggerRegisterLeaveRectSimple(gg_trg_LeaveArea1,gg_rct_GameZone)
 call TriggerAddCondition(gg_trg_LeaveArea1,Condition(function Trig_LeaveArea1_Conditions))
 call TriggerAddAction(gg_trg_LeaveArea1,function Trig_LeaveArea1_Actions)
+call TimerStart(CreateTimer(),0.5,true,function ArenaWatch)
 endfunction
 function EndOfChoiceCond takes nothing returns boolean
 set n=GetTriggerUnit()
@@ -57920,10 +58018,14 @@ local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
 local unit caster=LoadUnitHandle(HH,id,1)
 local unit target=LoadUnitHandle(HH,id,2)
-local real left=LoadReal(HH,id,6)-LoadReal(HH,id,7)
-call SaveReal(HH,id,6,left)
-if UnitIsAlive(target) and UnitIsAlive(caster) and udg_B and left>-0.01 then
+local real left=LoadReal(HH,id,6)
+local real step=LoadReal(HH,id,7)
+if UnitIsAlive(target) and UnitIsAlive(caster) and udg_B and left-step>-0.01 then
+// цель в паузе: яд ждёт — не тикает и не истекает, продолжит после паузы (4 окт)
+if IsUnitPaused(target)==false then
+call SaveReal(HH,id,6,left-step)
 call myCustomDamage(caster,target,LoadReal(HH,id,15),false,false,null,null,null)
+endif
 else
 if LoadEffectHandle(HH,id,10)!=null then
 call DestroyEffect(LoadEffectHandle(HH,id,10))
@@ -57952,12 +58054,33 @@ call TimerStart(t,per,true,function Brg_Dot_Act)
 set t=null
 endfunction
 // Senescencia — пассивка (живёт в G): 2*INT за 3 c, под покровом G вдвое больнее
+// ===== Старение: пока на враге идёт гниение Senescencia, он наносит на 15% меньше урона.
+// HH[враг]['BrgA'] — число активных гниений; каждое снимается своим таймером через 3 c.
+function Brg_Age_End takes nothing returns nothing
+local timer t=GetExpiredTimer()
+local unit e=LoadUnitHandle(HH,GetHandleId(t),0)
+local integer eid=GetHandleId(e)
+call SaveInteger(HH,eid,'BrgA',IMaxBJ(LoadInteger(HH,eid,'BrgA')-1,0))
+call FlushChildHashtable(HH,GetHandleId(t))
+call DestroyTimer(t)
+set t=null
+set e=null
+endfunction
+function Brg_Age takes unit target returns nothing
+local timer t=CreateTimer()
+local integer eid=GetHandleId(target)
+call SaveInteger(HH,eid,'BrgA',LoadInteger(HH,eid,'BrgA')+1)
+call SaveUnitHandle(HH,GetHandleId(t),0,target)
+call TimerStart(t,3.0,false,function Brg_Age_End)
+set t=null
+endfunction
 function Brg_Burn takes unit caster,unit target returns nothing
 local real dmg=2.0*I2R(GetHeroInt(caster,true))
 if Brg_HasG(caster) then
 set dmg=dmg*2.0
 endif
 call Brg_Dot(caster,target,dmg,3.0,0.5,"war3mapImported\\wos_zz-fire-ore-hit1-zihei_2.mdx")
+call Brg_Age(target)
 endfunction
 // ===== отложенный удар (бонус атаки при Gran Caida) =====
 function Brg_Delay_Act takes nothing returns nothing
@@ -58110,7 +58233,8 @@ endloop
 endif
 // волна проходит НАСКВОЗЬ: каждого врага задевает один раз и летит дальше
 call GroupClear(G)
-call GroupEnumUnitsInRange(G,px,py,150,Base)
+// зона под облака волны (4 окт: «эффект с зоной урона не совпадает»): было 150
+call GroupEnumUnitsInRange(G,px,py,300,Base)
 loop
 set n0=FirstOfGroup(G)
 exitwhen n0==null
@@ -58271,7 +58395,8 @@ call Brg_FxC("war3mapImported\\wos_OPm (513)purple.mdx",x1,y1,0,0.8,1,0,GetRando
 call Brg_FxC("war3mapImported\\wos_T_kyaru_skill02purple.mdx",x1,y1,0,0.88,1.25,0,GetRandomReal(0,360),255,255,255,255)
 call ShakeCamera(0.2,6)
 call GroupClear(G)
-call GroupEnumUnitsInRange(G,x1,y1,600,Base)
+// зона под кольца взрыва (4 окт): было 600
+call GroupEnumUnitsInRange(G,x1,y1,800,Base)
 loop
 set n0=FirstOfGroup(G)
 exitwhen n0==null
@@ -58513,10 +58638,6 @@ call DestroyTimer(t)
 call FlushChildHashtable(HH,id)
 else
 // область растёт, семь клинков расходятся кольцом
-if aoe<1125 then
-set aoe=aoe+40
-call SaveReal(HH,id,13,aoe)
-endif
 if time<0.04 then
 set rad=125
 set sc=0.04
@@ -58546,6 +58667,8 @@ set i=i+1
 endloop
 endif
 call SaveReal(HH,id,14,rad)
+// зона урона идёт вместе с кольцом клинков (4 окт: раньше обгоняла картинку)
+set aoe=RMinBJ(rad+100.,1125.)
 call SaveReal(HH,id,18,sc)
 if t4>=0.5 then
 call SaveReal(HH,id,7,0)
@@ -58763,7 +58886,8 @@ call Brg_FxC("war3mapImported\\wos_zz-shio_zk_zz_stab2_hy-1.mdx",px,py,1,0.36,1.
 endif
 call Brg_FxC("war3mapImported\\wos_0233.mdx",px,py,0,1.8,1,0.06,facing,255,255,255,255)
 call GroupClear(G)
-call GroupEnumUnitsInRange(G,px,py,400,Base)
+// зона под топор (4 окт): было 400
+call GroupEnumUnitsInRange(G,px,py,500,Base)
 loop
 set n0=FirstOfGroup(G)
 exitwhen n0==null
@@ -59191,7 +59315,12 @@ if GetUnitAbilityLevel(c,'KrG1')>0 and CurrentEventAttack and nb>0 and IsUnitEne
     if LoadInteger(HH,cid,'KrDB')>=4 then
         call SaveInteger(HH,cid,'KrDB',0)
         call Brg_Delay(c,u,0.8*I2R(GetHeroStr(c,true)),0.05)
-        call DestroyEffect(AddSpecialEffectTarget("war3mapImported\\SlashBlueKojiro.mdl",u,"chest"))
+        // разрез поперёк удара с креном вбок на 45° (модель вытянута по оси X), уменьшен
+        set bj_lastCreatedEffect=AddSpecialEffect("war3mapImported\\SlashBlueKojiro.mdl",GetUnitX(u),GetUnitY(u))
+        call SetSpecialEffectHeight(bj_lastCreatedEffect,60)
+        call SetSpecialEffectScale(bj_lastCreatedEffect,0.7)
+        call SetSpecialEffectOrientation(bj_lastCreatedEffect,Atan2(GetUnitY(u)-GetUnitY(c),GetUnitX(u)-GetUnitX(c))*bj_RADTODEG+90,45,0)
+        call DestroyEffect(bj_lastCreatedEffect)
     endif
 endif
 //Suigintou1start
@@ -61050,6 +61179,10 @@ endif
             call UnitMakeAbilityPermanent(u,false,'ADG3')
             call UnitRemoveAbility(u,'ADG3')
             set nb=nb*0.3
+        endif
+        // Барраган, старение: враг под гниением Senescencia наносит на 15% меньше урона
+        if nb>0 and c!=null and LoadInteger(HH,GetHandleId(c),'BrgA')>0 then
+            set nb=nb*0.85
         endif
         if GetUnitAbilityLevel(u,'LamS')>0 and nb>0 then        
 
@@ -84258,15 +84391,55 @@ endfunction
 // E — Double Circular (Dual Blades): рывок к точке (до 400) и два круговых удара обоими клинками.
 // Кирито неуязвим на весь приём. Урон (1+ур)*(STR+75) — поровну на два удара; каждый удар бьёт всех в 350 и расталкивает.
 // HH[id]: 0 Кирито, 1 угол, 2 оставшийся путь рывка, 3 тики после прибытия, 4 урон одного удара
-function DubleCirculirSpin takes unit u,real dmg returns nothing
+// подлёт Кирито в стиле Q Йоруичи: веер nitu на старте, шлейф SaberExtra + ветер на каждом шаге
+function KrDashStart takes player p,real x,real y,real a returns nothing
+local integer i=-1
+loop
+exitwhen i>1
+set n=CreateUnit(p,'e0ZH',x,y,a*bj_RADTODEG+45*i)
+call SetUnitVertexColor(n,255,255,255,155)
+call UnitApplyTimedLife(n,'BTLF',0.4)
+call SetUnitTimeScale(n,3)
+set i=i+1
+endloop
+set n=null
+endfunction
+function KrDashFx takes player p,real x,real y,real a returns nothing
+local real sc=GetRandomReal(0.55,1.25)
+set n=CreateUnit(p,'e11T',x,y,a*bj_RADTODEG)
+call SetUnitVertexColor(n,255,255,255,75)
+call UnitApplyTimedLife(n,'BTLF',0.15)
+set n=CreateUnit(p,'e117',x,y,a*bj_RADTODEG)
+call SetUnitVertexColor(n,255,255,255,GetRandomInt(10,45))
+call SetUnitScale(n,sc,sc,sc)
+call UnitApplyTimedLife(n,'BTLF',0.4)
+call SetUnitTimeScale(n,3)
+set n=null
+endfunction
+// E: потоки ветра наружу вокруг Кирито
+function KrSpinWind takes player p,real x,real y returns nothing
+local integer i=0
+local real b=GetRandomReal(0,59)
+loop
+exitwhen i>=6
+set n=CreateUnit(p,'e117',x+120*Cos((b+i*60)*bj_DEGTORAD),y+120*Sin((b+i*60)*bj_DEGTORAD),b+i*60)
+call SetUnitVertexColor(n,255,255,255,90)
+call SetUnitScale(n,1,1,1)
+call UnitApplyTimedLife(n,'BTLF',0.4)
+call SetUnitTimeScale(n,3)
+set i=i+1
+endloop
+set n=null
+endfunction
+function DubleCirculirSpin takes unit u,real dmg,real pd returns nothing
 local real x=GetUnitX(u)
 local real y=GetUnitY(u)
 local player p=GetOwningPlayer(u)
-call UnitApplyTimedLife(CreateUnit(p,'e0AP',x,y,GetRandomReal(0,359)),'BTLF',0.3)
-call UnitApplyTimedLife(CreateUnit(p,'e0AO',x,y,GetRandomReal(0,359)),'BTLF',0.3)
-call UnitApplyTimedLife(CreateUnit(p,0x65304155,x,y,GetRandomReal(0,359)),'BTLF',0.2)
-call UnitApplyTimedLife(CreateUnit(p,0x65304152,x,y,GetRandomReal(0,359)),'BTLF',0.8)
-call UnitApplyTimedLife(CreateUnit(p,0x65304154,x,y,GetRandomReal(0,359)),'BTLF',0.2)
+// два горизонтальных взмаха клинками и кольцо ветра — по размеру AoE 400
+call EffectCreateAndMove(true,"Others\\daoguang-blue-hengsao.mdl",GetUnitFacing(u),0.6,1.1,1.5,100,100,100,0,60,u,0,0)
+call EffectCreateAndMove(true,"Others\\daoguang-blue-hengsao.mdl",GetUnitFacing(u)+180,0.6,1.1,1.5,100,100,100,0,60,u,0,0)
+call EffectCreateAndMove(true,"war3mapImported\\WindCircleFaster.mdl",GetRandomReal(0,359),0.8,3,1,100,100,100,0,0,u,0,0)
+call KrSpinWind(p,x,y)
 set n=CreateUnit(p,'e0AD',x,y,GetUnitFacing(u))
 call UnitApplyTimedLife(n,'BTLF',0.2)
 call SetUnitVertexColor(n,255,255,255,125)
@@ -84274,14 +84447,15 @@ call SetUnitTimeScale(n,4)
 call SetUnitAnimation(n,"attack")
 set n=null
 call GroupClear(G)
-call GroupEnumUnitsInRange(G,x,y,350,Base)
+call GroupEnumUnitsInRange(G,x,y,400,Base)
 loop
 set E=FirstOfGroup(G)
 exitwhen E==null
 if Condition_Base(p,E) then
 if LoadBoolean(HH,GetHandleId(E),ANTITARGET_ABILITY)==false then
 call myCustomDamage(u,E,dmg,false,false,null,null,null)
-call Push(E,40,Atan2(GetUnitY(E)-y,GetUnitX(E)-x),200)
+call SetControlToUnit(u,E,1,"stun")
+call Push(E,40,Atan2(GetUnitY(E)-y,GetUnitX(E)-x),pd)
 else
 call SaveUnitHandle(HH,GetHandleId(E),REVERSE_TARGET,u)
 endif
@@ -84310,9 +84484,7 @@ set st=left
 endif
 call SetUnitXY_1(u,GetUnitX(u)+st*Cos(a),GetUnitY(u)+st*Sin(a),true)
 call SaveReal(HH,id,2,left-st)
-set n=CreateUnit(GetOwningPlayer(u),'e0AF',GetUnitX(u),GetUnitY(u),a*bj_RADTODEG)
-call UnitApplyTimedLife(n,'BTLF',0.01)
-set n=null
+call KrDashFx(GetOwningPlayer(u),GetUnitX(u),GetUnitY(u),a)
 else
 set k=k+1
 call SaveInteger(HH,id,3,k)
@@ -84320,13 +84492,13 @@ if k==1 then
 // первый круговой удар
 call SetUnitAnimation(u,"attack")
 call QueueUnitAnimation(u,"stand") // после анимации — stand, иначе в паузе встаёт в T-позу
-call DubleCirculirSpin(u,LoadReal(HH,id,4))
+call DubleCirculirSpin(u,LoadReal(HH,id,4),60) // первый удар — слабое отталкивание
 elseif k==15 then
 // второй круговой удар через 0.28 с
 call SetUnitFacing(u,a*bj_RADTODEG+180)
 call SetUnitAnimation(u,"attack")
 call QueueUnitAnimation(u,"stand") // после анимации — stand, иначе в паузе встаёт в T-позу
-call DubleCirculirSpin(u,LoadReal(HH,id,4))
+call DubleCirculirSpin(u,LoadReal(HH,id,4),200)
 elseif k<26 then
 call SetUnitFacingInstant(u,GetUnitFacing(u)+30)
 elseif k>=26 then
@@ -84358,14 +84530,15 @@ call SaveUnitHandle(HH,id,0,u)
 call SaveReal(HH,id,1,Atan2(y1-y,x1-x))
 call SaveReal(HH,id,2,kdist)
 call SaveInteger(HH,id,3,0)
-call SaveReal(HH,id,4,0.5*(1+GetUnitAbilityLevel(u,'A0H9'))*(GetHeroStr(u,true)+75))
+call SaveReal(HH,id,4,0.5*(1+GetUnitAbilityLevel(u,'A0H9'))*(GetHeroStr(u,true)+75)+GetHeroStr(u,true))
 call SetUnitFacing(u,Atan2(y1-y,x1-x)*bj_RADTODEG)
 call PauseUnit(u,true)
 call SetUnitInvulnerable(u,true)
 call SetUnitTimeScale(u,3)
+call KrDashStart(GetOwningPlayer(u),x,y,Atan2(y1-y,x1-x))
 call SetUnitAnimation(u,"attack")
 call QueueUnitAnimation(u,"stand") // после анимации — stand, иначе в паузе встаёт в T-позу
-set soundplay=SndN(1241) // Sound\Music\mp3Music\KiritoE.mp3
+set soundplay=SndN(1241) // Sound\Music\mp3Music\KiritoE1.mp3
 call StartSound(soundplay)
 //call KillSoundWhenDone(soundplay) // звук из массива soundStr — не удалять
 call TimerStart(t,0.02,true,function DubleCirculirCast2)
@@ -84412,7 +84585,7 @@ if Condition_Base(p,E)then
 call Push(E,30,Atan2(GetUnitY(E)-y1,GetUnitX(E)-x1),300)
 call myCustomDamage(u,E,dmg,false,false,null,null,null)
 // Sonic Leap: оглушение 1.2 c, источник — Кирито (раньше сама цель: контроль не засчитывался в ассисты)
-call SetControlToUnit(u,E, 1.2, "stun")
+call SetControlToUnit(u,E, 2, "stun")
 endif
 call GroupRemoveUnit(G,E)
 endloop
@@ -84486,8 +84659,14 @@ local real Range=LoadReal(h,id,9)
 if Range>0 then
 call SetUnitXY_1(l__d,x1+speed*Cos(a),y1+speed*Sin(a), false)
 call SaveReal(h,id,9,Range-speed)
-call SetUnitFacing(l__d,a*bj_RADTODEG)
+if Range<120 then
+// затухание на последних 120 пути (цвет волны как в unit.ini: 0,220,255)
+call SetUnitVertexColor(l__d,0,220,255,R2I(255*RMaxBJ(Range-speed,0)/120))
+endif
+call SetUnitFacing(l__d,a*bj_RADTODEG+180) // модель волны развёрнута на 180
+if dmg>0 then
 call GroupEnumUnitsInRange(g,x1,y1,LoadReal(h,id,10),Base)
+endif
 set idg=GetHandleId(g)
 loop
 set E=FirstOfGroup(g)
@@ -84500,7 +84679,7 @@ endif
 call GroupRemoveUnit(g,E)
 endloop
 else
-call RemoveUnit(l__d)
+call RemoveUnit(l__d) // к этому моменту уже прозрачна
 call FlushChildHashtable(h,id)
 call FlushChildHashtable(h,GetHandleId(g))
 call PauseTimer(t)
@@ -84531,50 +84710,93 @@ endfunction
 function HorizontalSquareCond takes nothing returns boolean
 return GetSpellAbilityId()=='A0H7' and udg_B==true
 endfunction
+// R Кирито, Horizontal Square: цель удерживается 1 c, Кирито обходит её по квадрату — 4 удара по сторонам
+// (каждые 0.25 c, урон по области у цели + оглушение 0.5 c), затем общая волна вокруг цели с отталкиванием.
+// h[id]: 0 Кирито, 1 цель, 5 время, 6 угол первой стороны, 7 номер следующего удара
+function HorizontalSquareHit takes unit u,unit c,real r,real dmg,boolean fin returns nothing
+local player p=GetOwningPlayer(u)
+local real x=GetUnitX(c)
+local real y=GetUnitY(c)
+call GroupClear(G)
+call GroupEnumUnitsInRange(G,x,y,r,Base)
+loop
+set E=FirstOfGroup(G)
+exitwhen E==null
+if Condition_Base(p,E) then
+if LoadBoolean(HH,GetHandleId(E),ANTITARGET_ABILITY)==false then
+if dmg>0 then
+call myCustomDamage(u,E,dmg,false,false,null,null,null)
+endif
+if fin then
+if E!=c then
+call Push(E,40,Atan2(GetUnitY(E)-y,GetUnitX(E)-x),200)
+call SetControlToUnit(u,E,0.5,"stun")
+endif
+endif
+else
+call SaveUnitHandle(HH,GetHandleId(E),REVERSE_TARGET,u)
+endif
+endif
+call GroupRemoveUnit(G,E)
+endloop
+call GroupClear(G)
+set p=null
+endfunction
 function HorizontalSquareCast2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
 local unit u=LoadUnitHandle(h,id,0)
 local unit c=LoadUnitHandle(h,id,1)
-local real x=GetUnitX(u)
-local real y=GetUnitY(u)
+local real time=LoadReal(h,id,5)+0.05
+local integer k=LoadInteger(h,id,7)
 local real x1=GetUnitX(c)
 local real y1=GetUnitY(c)
-local real a=Atan2(y1-y,x1-x)+0.5
-// удержание цели ~1.5 c: 1500 по 61 за тик 0.06 c (было по 35 — 2.6 c)
-local real dist=LoadReal(h,id,5)+61
-local real sc=GetRandomReal(1,3)
-local real dmg=(0.75+0.25*GetUnitAbilityLevel(u,'A0H7'))*GetHeroStr(u,true)
+local real b
+local real lvl=GetUnitAbilityLevel(u,'A0H7')
 local player p=GetOwningPlayer(u)
-if dist<1500 then
-call SetUnitXY_1(u,x1,y1, false)
-set x1=x1+50*Cos(a)
-set y1=y1+50*Sin(a)
-call SetUnitXY_1(c,x1,y1, false)
-call PauseUnit(c,true)
-call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,true)
-call PauseUnit(u,true)
-call UnitApplyTimedLife(CreateUnit(p,'e0AP',x1,y1,GetRandomReal(0,359)),'BTLF',0.4)
-call UnitApplyTimedLife(CreateUnit(p,'e0AN',x1,y1,GetRandomReal(0,359)),'BTLF',0.7)
-call UnitApplyTimedLife(CreateUnit(p,'e0AO',x1,y1,GetRandomReal(0,359)),'BTLF',0.4)
-call UnitApplyTimedLife(CreateUnit(p,'e0AQ',x1,y1,GetRandomReal(0,359)),'BTLF',1)
-call UnitApplyTimedLife(CreateUnit(p,0x65304235,x1,y1,GetRandomReal(0,359)),'BTLF',0.8)
-set n=CreateUnit(p,'e0AF',x,y,GetRandomReal(0,359))
+call SaveReal(h,id,5,time)
+if UnitIsAlive(u) and UnitIsAlive(c) and udg_B and time<1 then
+if k<4 and time>=0.05+0.25*k then
+// удар k: Кирито на k-й стороне квадрата, разрез вдоль стороны
+set b=LoadReal(h,id,6)+(k-1)*bj_PI/2
+set n=CreateUnit(p,'e0AD',GetUnitX(u),GetUnitY(u),GetUnitFacing(u))
+call SetUnitVertexColor(n,255,255,255,110)
+call SetUnitTimeScale(n,3)
+call SetUnitAnimation(n,"attack")
+call UnitApplyTimedLife(n,'BTLF',0.3)
+set n=null
+call SetUnitXY_1(u,x1+120*Cos(b),y1+120*Sin(b),false)
+call SetUnitFacingInstant(u,b*bj_RADTODEG+180)
+call SetUnitTimeScale(u,2.5)
+call SetUnitAnimation(u,"attack")
+call QueueUnitAnimation(u,"stand") // после анимации — stand, иначе в паузе встаёт в T-позу
+set bj_lastCreatedEffect=AddSpecialEffect("war3mapImported\\SlashBlueKojiro.mdl",x1+60*Cos(b),y1+60*Sin(b))
+call SetSpecialEffectHeight(bj_lastCreatedEffect,60)
+call SetSpecialEffectScale(bj_lastCreatedEffect,0.45)
+call SetSpecialEffectOrientation(bj_lastCreatedEffect,b*bj_RADTODEG+90,0,0)
+call DestroyEffect(bj_lastCreatedEffect)
+set n=CreateUnit(p,'e0AF',x1,y1,GetRandomReal(0,359))
 call UnitApplyTimedLife(n,'BTLF',0.01)
 call SetUnitVertexColor(n,190,255,255,50)
-call SetUnitFacing(u,a*bj_RADTODEG)
-// атака раз в 4 тика (0.24 c) на скорости x4 — раньше перезапускалась каждый тик
-call SaveInteger(h,id,102,LoadInteger(h,id,102)+1)
-if ModuloInteger(LoadInteger(h,id,102),4)==1 then
-call SetUnitTimeScale(u,4)
-call SetUnitAnimation(u,"attack")
+set n=null
+call HorizontalSquareHit(u,c,200,(0.5+0.25*lvl)*GetHeroStr(u,true),false)
+call SaveInteger(h,id,7,k+1)
 endif
-call SaveReal(h,id,5,dist)
 else
-call SlashHorizontalSquare(CreateUnit(p,'e0AM',x1,y1,0),40,dmg,0,1000,270)
-call SlashHorizontalSquare(CreateUnit(p,'e0AM',x1,y1,90),40,dmg,90*bj_DEGTORAD,1000,270)
-call SlashHorizontalSquare(CreateUnit(p,'e0AM',x1,y1,180),40,dmg,180*bj_DEGTORAD,1000,270)
-call SlashHorizontalSquare(CreateUnit(p,'e0AM',x1,y1,270),40,dmg,270*bj_DEGTORAD,1000,270)
+if UnitIsAlive(u) and UnitIsAlive(c) and udg_B then
+// квадрат вспыхивает: общая волна вокруг цели
+call EffectCreateAndMove(true,"war3mapImported\\WindCircleFaster.mdl",GetRandomReal(0,359),0.8,1.2,1,100,100,100,0,0,c,0,0)
+call UnitApplyTimedLife(CreateUnit(p,'e0B5',x1,y1,GetRandomReal(0,359)),'BTLF',0.8)
+call UnitApplyTimedLife(CreateUnit(p,'e0AN',x1,y1,GetRandomReal(0,359)),'BTLF',0.7)
+call HorizontalSquareHit(u,c,350,GetHeroStr(u,true),true)
+set b=LoadReal(h,id,6)
+set k=0
+loop
+exitwhen k>=4
+call SlashHorizontalSquare(CreateUnit(p,'e0AM',x1+200*Cos(b+k*bj_PI/2),y1+200*Sin(b+k*bj_PI/2),(b+k*bj_PI/2)*bj_RADTODEG+180),8,0,b+k*bj_PI/2,200,0) // волны только визуальные: старт в 200 от цели, полёт 200 за ~0.75 c
+set k=k+1
+endloop
+endif
 call SetUnitInvulnerable(u,false)
 call PauseTimer(t)
 call DestroyTimer(t)
@@ -84582,8 +84804,13 @@ call SetUnitVertexColor(u,255,255,255,255)
 call FlushChildHashtable(h,id)
 call PauseUnit(c,false)
 call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,false)
+if UnitIsAlive(u) and UnitIsAlive(c) and udg_B and time>=1 then
+// цель весь приём на паузе (урон проходит полностью), в конце — короткое оглушение
+call SetControlToUnit(u,c,0.5,"stun")
+endif
 call PauseUnit(u,false)
 call SetUnitTimeScale(u,1)
+call SetUnitAnimation(u,"stand")
 endif
 set p=null
 set u=null
@@ -84607,6 +84834,7 @@ call PauseUnit(u,true)
 call SetUnitInvulnerable(u,true)
 call SaveUnitHandle(h,id,0,u)
 call SaveUnitHandle(h,id,1,c)
+call SaveReal(h,id,6,Atan2(y-y1,x-x1))
 call SetUnitXY_1(u,x1,y1, false)
 call SetUnitVertexColor(u,255,255,255,125)
 call SetUnitTimeScale(u,3)
@@ -84617,10 +84845,10 @@ call UnitApplyTimedLife(CreateUnit(p,'e0AI',x,y,GetRandomReal(0,359)),'BTLF',1)
 call UnitApplyTimedLife(CreateUnit(p,'e0AJ',x,y,GetRandomReal(0,359)),'BTLF',1)
 call UnitApplyTimedLife(CreateUnit(p,'e0AG',x,y,GetRandomReal(0,359)),'BTLF',3)
 call UnitApplyTimedLife(CreateUnit(p,'e0AH',x,y,GetRandomReal(0,359)),'BTLF',1)
-set soundplay=SndN(1245) // Sound\Music\mp3Music\KiritoScream2.mp3
+set soundplay=SndN(1245) // Sound\Music\mp3Music\KiritoR.mp3
 call StartSound(soundplay)
 //call KillSoundWhenDone(soundplay) // звук из массива soundStr — не удалять
-call TimerStart(t,0.06,true,function HorizontalSquareCast2)
+call TimerStart(t,0.05,true,function HorizontalSquareCast2)
 else
 call SetUnitXY_1(u,x1,y1, false)
 call PauseTimer(t)
@@ -84835,12 +85063,19 @@ local real k=LoadReal(HH,id,6)
 local integer step=LoadInteger(HH,id,8)+1
 local integer ph=LoadInteger(HH,id,9)
 local integer w=LoadInteger(HH,id,10)
+local integer ss
+local integer sl
+local integer tot=R2I(1.25*k/0.035)+R2I(1.0*k/0.035)
+local integer cnt=16
 local player p=GetOwningPlayer(u)
 local real x=GetUnitX(u)
 local real y=GetUnitY(u)
 local real x1
 local real y1
 call SaveInteger(HH,id,8,step)
+if m==1 then
+set cnt=27
+endif
 if UnitIsAlive(u)==false or udg_B==false then
 call KrSB_End(t,u,c)
 elseif w>0 then
@@ -84868,6 +85103,13 @@ set x=x+12*Cos(a)
 set y=y+12*Sin(a)
 call SetUnitXY_1(u,x,y,false)
 call SetUnitXY_1(c,x+150*Cos(a),y+150*Sin(a),false)
+endif
+// разрез: ровно cnt штук (16 / 27, как в описании), равномерно по шагам обеих серий
+set ss=LoadInteger(HH,id,13)+1
+set sl=LoadInteger(HH,id,12)
+call SaveInteger(HH,id,13,ss)
+if ss*cnt>=(sl+1)*tot and sl<cnt then
+call SaveInteger(HH,id,12,sl+1)
 if ph==2 then
 call KrSB_Fx(p,'e10N',x,y,a*bj_RADTODEG,KrSB_Sc(m,0.5),2,0.4,125)
 set n=KrSB_Fx(p,'e11L',x+150*Cos(a),y+150*Sin(a),GetRandomReal(0,359),KrSB_Sc(m,GetRandomReal(1.5,3.5)),2.5,0.7,255)
@@ -84927,6 +85169,7 @@ call SetUnitFacing(u,a*bj_RADTODEG)
 call SetUnitXY_1(u,x+40*Cos(a),y+40*Sin(a),false)
 elseif LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY) then
 call SaveUnitHandle(HH,GetHandleId(c),REVERSE_TARGET,u)
+call StopSound(LoadSoundHandle(HH,id,15),false,false) // реверс — озвучка каста обрывается
 call KrSB_End(t,u,null)
 else
 call PauseTimer(t)
@@ -84934,9 +85177,18 @@ call SaveReal(HH,id,3,a)
 call PauseUnit(c,true)
 call SetUnitInvulnerable(c,true)
 call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,true)
-call KrSB_Anim(u,"Spell Slam Three","Spell Slam")
-call SetUnitTimeScale(u,2)
-call KrSB_Fx(p,'e0RV',x,y,a*bj_RADTODEG,KrSB_Sc(m,3.75),0.1,8*LoadReal(HH,id,6),180)
+// попадание (не реверс) — озвучка удара: KiritoT1-sfx / KiritoT2-sfx
+if m==1 then
+set soundplay=SndN(4831) // Sound\Music\mp3Music\KiritoT2-sfx.mp3
+else
+set soundplay=SndN(4829) // Sound\Music\mp3Music\KiritoT1-sfx.mp3
+endif
+call StartSound(soundplay)
+//call KillSoundWhenDone(soundplay) // звук из массива soundStr — не удалять
+// захват: сразу удар (Spell Slam Three у модели давал T-позу до первой атаки серии)
+call SetUnitTimeScale(u,2.6)
+call SetUnitAnimation(u,"attack")
+call KrSB_Fx(p,KrSB_Id(m,'e0RV','eKY9'),x,y,a*bj_RADTODEG,KrSB_Sc(m,3.75),0.1,8*LoadReal(HH,id,6),180)
 call SaveInteger(HH,id,9,1)
 call SaveReal(HH,id,4,R2I(1.25*LoadReal(HH,id,6)/0.035))
 call SaveInteger(HH,id,8,0)
@@ -84995,13 +85247,14 @@ call SetUnitInvulnerable(u,true)
 call KrSB_Anim(u,"Spell Five","Spell Four")
 call KrSB_Fx(p,KrSB_Id(m,'e13M','eKY8'),x,y,GetRandomReal(0,359),KrSB_Sc(m,2),0.5,4*k,255)
 call KrSB_Burst(p,m,x,y)
-call KrSB_Fx(p,'e0RV',x,y,GetUnitFacing(u),KrSB_Sc(m,1.75),0.5,3*k,180)
+call KrSB_Fx(p,KrSB_Id(m,'e0RV','eKY9'),x,y,GetUnitFacing(u),KrSB_Sc(m,1.75),0.5,3*k,180)
 if m==1 then
-set soundplay=SndN(4825) // Sound\Music\mp3Music\KiritoEclipse.mp3 — отрезок 3–8.4 c, последний удар на 5-й секунде
+set soundplay=SndN(4825) // Sound\Music\mp3Music\KiritoT2.mp3 — отрезок 3–8.4 c, последний удар на 5-й секунде
 else
-set soundplay=SndN(1247) // Sound\Music\mp3Music\KiritoStarburstStream.mp3
+set soundplay=SndN(1247) // Sound\Music\mp3Music\KiritoT1.mp3
 endif
 call StartSound(soundplay)
+call SaveSoundHandle(HH,id,15,soundplay) // озвучка каста — реверс её выключает
 //call KillSoundWhenDone(soundplay) // звук из массива soundStr — не удалять
 call TimerStart(t,0.05,true,function KrSB_Windup)
 set t=null
@@ -85013,7 +85266,7 @@ endfunction
 function EclipsCast takes nothing returns nothing
 local unit u=GetTriggerUnit()
 local integer m=0
-// вариация Ctrl+T — The Eclipse: своя перезарядка 70 c (мана 500 ставит переключатель вариации)
+// вариация Ctrl+T — The Eclipse: своя перезарядка 70 c (мана 650 ставит переключатель вариации)
 if LoadReal(HH,GetHandleId(GetOwningPlayer(u)),VariationTHash)==1 then
 set m=1
 call StartAbilityCooldown(GetUnitAbility(u,'A0H8'),70)
@@ -85055,14 +85308,18 @@ call SetUnitFacing(u,a*bj_RADTODEG)
 if time==0.02 or time==0.2 then
 set n=CreateUnit(p,'e0AF',GetUnitX(u),GetUnitY(u),GetRandomReal(0,359))
 call UnitApplyTimedLife(n,'BTLF',0.01)
-call SetUnitVertexColor(n,190,255,255,100)
-call UnitApplyTimedLife(CreateUnit(p,'e0AL',GetUnitX(u),GetUnitY(u),GetRandomReal(0,359)),'BTLF',0.5)
+call SetUnitVertexColor(n,255,190,190,100)
+// красный отблеск клинка на замахе
+call EffectCreateAndMove(true,"Others\\red-lizi-shunjian.mdl",a*bj_RADTODEG,0.6,1,1,100,100,100,0,60,u,0,0)
 set n=null
 endif
 if time>0.39 then
-set soundplay=SndN(1249) // Sound\Music\mp3Music\KiritoScream1.mp3
-call StartSound(soundplay)
-//call KillSoundWhenDone(soundplay) // звук из массива soundStr — не удалять
+// колющий выпад по направлению
+call KrDashStart(p,GetUnitX(u),GetUnitY(u),a)
+set n=CreateUnit(p,'e0AF',GetUnitX(u),GetUnitY(u),a*bj_RADTODEG)
+call UnitApplyTimedLife(n,'BTLF',0.01)
+set n=null
+call EffectCreateAndMove(true,"BlackGoku\\[AB]AZ_JianCi.mdl",a*bj_RADTODEG,0.8,1.2,0.6,100,100,100,0,70,u,0,0)
 call SetUnitInvulnerable(u,true)
 call SetUnitAnimation(u,"spell two")
 call QueueUnitAnimation(u,"stand") // после анимации — stand, иначе в паузе встаёт в T-позу
@@ -85074,9 +85331,7 @@ call SetUnitXY_1(u,GetUnitX(u)+50*Cos(a),GetUnitY(u)+50*Sin(a),true)
 call SaveReal(HH,id,2,left-50)
 set x=GetUnitX(u)
 set y=GetUnitY(u)
-set n=CreateUnit(p,'e0AF',x,y,a*bj_RADTODEG)
-call UnitApplyTimedLife(n,'BTLF',0.01)
-set n=null
+call KrDashFx(p,x,y,a)
 call GroupClear(G)
 call GroupEnumUnitsInRange(G,x,y,150,Base)
 loop
@@ -85085,9 +85340,15 @@ exitwhen E==null
 if Condition_Base(p,E) and IsUnitInGroup(E,gr)==false then
 call GroupAddUnit(gr,E)
 if LoadBoolean(HH,GetHandleId(E),ANTITARGET_ABILITY)==false then
-call UnitApplyTimedLife(CreateUnit(p,'e0AK',GetUnitX(E),GetUnitY(E),a*bj_RADTODEG),'BTLF',1)
-call UnitApplyTimedLife(CreateUnit(p,'e0AH',GetUnitX(E),GetUnitY(E),GetRandomReal(0,359)),'BTLF',1)
+call DestroyEffect(AddSpecialEffectTarget("az_hit-red-blade.mdx",E,"chest"))
+set EFF=AddSpecialEffect("WindVectorPush.mdx",GetUnitX(E),GetUnitY(E))
+call SetSpecialEffectFacing(EFF,a*bj_RADTODEG)
+call SetSpecialEffectZ(EFF,100)
+call SetSpecialEffectScale(EFF,0.6)
+call SetSpecialEffectVertexColour(EFF,255,255,255,120)
+call RemoveEffect(EFF,1,true,CreateTimer())
 call myCustomDamage(u,E,LoadReal(HH,id,4),false,false,null,null,null)
+call SlowUnit(u,E,0.5,0.5,2,2,false)
 call Push3(E,45,a,400,"Abilities\\Weapons\\AncientProtectorMissile\\AncientProtectorMissile.mdl")
 else
 call SaveUnitHandle(HH,GetHandleId(E),REVERSE_TARGET,u)
@@ -85109,15 +85370,18 @@ local integer id=GetHandleId(t)
 local real a=Atan2(GetSpellTargetY()-GetUnitY(u),GetSpellTargetX()-GetUnitX(u))
 call SaveUnitHandle(HH,id,0,u)
 call SaveReal(HH,id,1,a)
-call SaveReal(HH,id,2,900)
+call SaveReal(HH,id,2,1100)
 call SaveReal(HH,id,3,0)
-call SaveReal(HH,id,4,(3+0.5*GetUnitAbilityLevel(u,'A0H4'))*GetHeroStr(u,true)+100)
+call SaveReal(HH,id,4,(1+GetUnitAbilityLevel(u,'A0H4'))*GetHeroStr(u,true)+100)
 call SaveGroupHandle(HH,id,5,CreateGroup())
 call SetUnitFacing(u,a*bj_RADTODEG)
 call PauseUnit(u,true)
-call SetUnitAnimation(u,"spell one")
-call QueueUnitAnimation(u,"stand") // после анимации — stand, иначе в паузе встаёт в T-позу
-call SetUnitTimeScale(u,0.8)
+// замах: Spell Five (у ALO Spell Four) длиннее замаха — короткий Spell One доигрывал на паузе и давал T-позу
+call KrSB_Anim(u,"Spell Five","Spell Four")
+call SetUnitTimeScale(u,1)
+set soundplay=SndN(1249) // Sound\Music\mp3Music\KiritoScream1.mp3
+call StartSound(soundplay)
+//call KillSoundWhenDone(soundplay) // звук из массива soundStr — не удалять
 call TimerStart(t,0.02,true,function VStrikeCast2)
 set u=null
 set t=null
@@ -198707,8 +198971,10 @@ local real x1=GetUnitX(c)
 local real y1=GetUnitY(c)
 if c!=null and c!=u then
 set n=CreateUnit(p,'e0AF',x,y,Atan2(y1-y,x1-x)*bj_RADTODEG)
+call SetUnitScale(n,1,1,1)
 call UnitApplyTimedLife(n,'BTLF',0.01)
 set n=CreateUnit(p,'e0AF',x1,y1,Atan2(y-y1,x-x1)*bj_RADTODEG)
+call SetUnitScale(n,1,1,1)
 call UnitApplyTimedLife(n,'BTLF',0.01)
 set n=null
 call SetUnitX(u,x1)
@@ -198718,7 +198984,9 @@ call SetUnitY(c,y)
 call SetUnitFacing(u,Atan2(y-y1,x-x1)*bj_RADTODEG+180)
 call SetUnitAnimation(u,"attack")
 call QueueUnitAnimation(u,"stand") // после анимации — stand, иначе в паузе встаёт в T-позу
-call DestroyEffect(AddSpecialEffect("war3mapImported\\TealSlam.mdl",x1,y1))
+set bj_lastCreatedEffect=AddSpecialEffect("war3mapImported\\TealSlam.mdl",x1,y1)
+call SetSpecialEffectScale(bj_lastCreatedEffect,0.6)
+call DestroyEffect(bj_lastCreatedEffect)
 set soundplay=SndN(1243) // Sound\Music\mp3Music\KiritoSwitchTeam.mp3
 call StartSound(soundplay)
 //call KillSoundWhenDone(soundplay) // звук из массива soundStr — не удалять
@@ -198729,7 +198997,10 @@ set E=FirstOfGroup(G)
 exitwhen E==null
 if Condition_Base(p,E) and LoadBoolean(HH,GetHandleId(E),ANTITARGET_ABILITY)==false then
 call SetControlToUnit(u,E,0.5,"stun")
-call UnitApplyTimedLife(CreateUnit(p,'e0AH',GetUnitX(E),GetUnitY(E),GetRandomReal(0,359)),'BTLF',1)
+set n=CreateUnit(p,'e0AH',GetUnitX(E),GetUnitY(E),GetRandomReal(0,359))
+call SetUnitScale(n,1.2,1.2,1.2)
+call UnitApplyTimedLife(n,'BTLF',1)
+set n=null
 endif
 call GroupRemoveUnit(G,E)
 endloop
