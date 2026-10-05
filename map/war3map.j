@@ -58168,7 +58168,7 @@ call TimerStart(t,3.0,false,function Brg_Age_End)
 set t=null
 endfunction
 function Brg_Burn takes unit caster,unit target returns nothing
-local real dmg=2.0*I2R(GetHeroInt(caster,true))
+local real dmg=(0.25+0.05*GetHeroLevel(caster))*I2R(GetHeroInt(caster,true))
 if Brg_HasG(caster) then
 set dmg=dmg*2.0
 endif
@@ -58840,8 +58840,10 @@ local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
 local unit caster=LoadUnitHandle(HH,id,1)
 local real time=LoadReal(HH,id,5)+0.05
+if IsUnitPaused(caster)==false and GetUnitAbilityLevel(caster,'Pet1')==0 then
 call SaveReal(HH,id,5,time)
-if UnitIsAlive(caster)==false or udg_B==false or DU2==false or time>=15.0 or LoadBoolean(HH,id,23) then
+endif
+if UnitIsAlive(caster)==false or udg_B==false or DU2==false or time>=12.0 or LoadBoolean(HH,id,23) then
 call Brg_T_End(caster,id)
 call PauseTimer(t)
 call DestroyTimer(t)
@@ -58880,7 +58882,7 @@ call Brg_FxC("war3mapImported\\wos_T_kyaru_skill02purple.mdx",x0,y0,0,0.44,1,0,G
 endif
 set i=i+1
 endloop
-call CreateModeIndicatorForm(caster,"ReplaceableTextures\\CommandButtons\\BTNHero_Barragan_T.blp",15)
+call CreateModeIndicatorWithPauseForm(caster,"ReplaceableTextures\\CommandButtons\\BTNHero_Barragan_T.blp",12)
 call TimerStart(t,0.05,true,function Brg_T_Act2)
 set caster=null
 set t=null
@@ -59082,9 +59084,11 @@ local integer id=GetHandleId(t)
 local unit caster=LoadUnitHandle(HH,id,1)
 local real time=LoadReal(HH,id,5)+0.1
 local real t2=LoadReal(HH,id,8)+0.1
+if IsUnitPaused(caster)==false and GetUnitAbilityLevel(caster,'Pet1')==0 then
 call SaveReal(HH,id,5,time)
+endif
 call SaveReal(HH,id,8,t2)
-if UnitIsAlive(caster)==false or udg_B==false or DU2==false or time>=10.0 then
+if UnitIsAlive(caster)==false or udg_B==false or DU2==false or time>=8.0 then
 call UnitMakeAbilityPermanent(caster,false,'BbGm')
 call UnitRemoveAbility(caster,'BbGm')
 if LoadEffectHandle(HH,id,10)!=null then
@@ -59125,7 +59129,7 @@ call SetUnitAnimationByIndex(caster,0)
 call Brg_Free(caster,0.8)
 call Brg_Sound("Sound\\Music\\mp3Music\\Barragan_E1.mp3")
 call Brg_Fx("war3mapImported\\wos_hakkestart.mdx",GetUnitX(caster),GetUnitY(caster),10,1.4,0.35,1.5)
-call CreateModeIndicatorForm(caster,"ReplaceableTextures\\CommandButtons\\BTNHero_Barragan_G.blp",10)
+call CreateModeIndicatorWithPauseForm(caster,"ReplaceableTextures\\CommandButtons\\BTNHero_Barragan_G.blp",8)
 call TimerStart(t,0.1,true,function Brg_G_Act2)
 set caster=null
 set t=null
