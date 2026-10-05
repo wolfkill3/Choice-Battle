@@ -17709,9 +17709,9 @@ if escBd==null then
 return
 endif
 if hour>=6. and hour<18. then
-set escTxt="|cffffcc00Время: "
+set escTxt="|cffffcc00Time: "
 else
-set escTxt="|cff78aaffВремя: "
+set escTxt="|cff78aaffTime: "
 endif
 set escTxt=escTxt+I2S(escHH)+":"
 if escMM<10 then
