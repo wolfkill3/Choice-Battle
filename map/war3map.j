@@ -10302,6 +10302,20 @@ call SND_Add(4827,2,"Sound\\Music\\mp3Music\\KiritoG.mp3",12700)
 call SND_Add(4829,2,"Sound\\Music\\mp3Music\\KiritoT1-sfx.mp3",12700)
 call SND_Add(4831,2,"Sound\\Music\\mp3Music\\KiritoT2-sfx.mp3",12700)
 endfunction
+// звуки Мей (перенос из Choice Random 5.2) — тоже массивом, как остальные
+function SND_Arr9 takes nothing returns nothing
+call SND_Add(4833,2,"Sound\\Music\\mp3Music\\YotonYokainoJutsu.mp3",12700)
+call SND_Add(4835,2,"Sound\\Others\\MeiG-sfx2.mp3",12700)
+call SND_Add(4837,2,"Sound\\Others\\MeiG.mp3",12700)
+call SND_Add(4839,2,"Sound\\Others\\MeiG-sfx1.mp3",12700)
+call SND_Add(4841,2,"Sound\\Others\\MeiQ.mp3",12700)
+call SND_Add(4843,2,"Sound\\Others\\MeiQ-sfx.mp3",12700)
+call SND_Add(4845,2,"Sound\\Music\\mp3Music\\SuitonSuijinchu.mp3",12700)
+call SND_Add(4847,2,"Sound\\Music\\mp3Music\\FuttonKoumunoJutsu.mp3",12700)
+call SND_Add(4849,2,"Sound\\Others\\MeiE-EXP.mp3",12700)
+call SND_Add(4851,2,"Sound\\Others\\MeiE-EXP2.mp3",12700)
+call SND_Add(4853,2,"Sound\\Music\\mp3Music\\YotonYumesu.mp3",12700)
+endfunction
 function SND_ArrInit takes nothing returns nothing
 call ExecuteFunc("SND_Arr0")
 call ExecuteFunc("SND_Arr1")
@@ -10312,6 +10326,7 @@ call ExecuteFunc("SND_Arr5")
 call ExecuteFunc("SND_Arr6")
 call ExecuteFunc("SND_Arr7")
 call ExecuteFunc("SND_Arr8")
+call ExecuteFunc("SND_Arr9")
 endfunction
 // следующая копия звука по кругу (две одинаковые реплики подряд не обрывают друг друга); громкость — по умолчанию,
 // её могла поменять прошлая точка вызова
@@ -50502,16 +50517,16 @@ function InitTrig_mr takes nothing returns nothing
     //call TriggerRegisterPlayerChatEvent(t,Player(11),"-cr",true)
     call TriggerAddAction(t,function Trig_ControlResist_Actions)
     set t=CreateTrigger()
-	call TriggerRegisterPlayerChatEvent(t,Player(0),"-critchanсe",true)
-    call TriggerRegisterPlayerChatEvent(t,Player(1),"-critchanсe",true)
-    call TriggerRegisterPlayerChatEvent(t,Player(2),"-critchanсe",true)
-    call TriggerRegisterPlayerChatEvent(t,Player(3),"-critchanсe",true)
-    call TriggerRegisterPlayerChatEvent(t,Player(4),"-critchanсe",true)
-    call TriggerRegisterPlayerChatEvent(t,Player(5),"-critchanсe",true)
-    call TriggerRegisterPlayerChatEvent(t,Player(6),"-critchanсe",true)
-    call TriggerRegisterPlayerChatEvent(t,Player(7),"-critchanсe",true)
-    call TriggerRegisterPlayerChatEvent(t,Player(8),"-critchanсe",true)
-    call TriggerRegisterPlayerChatEvent(t,Player(9),"-critchanсe",true)
+	call TriggerRegisterPlayerChatEvent(t,Player(0),"-critchance",true)
+    call TriggerRegisterPlayerChatEvent(t,Player(1),"-critchance",true)
+    call TriggerRegisterPlayerChatEvent(t,Player(2),"-critchance",true)
+    call TriggerRegisterPlayerChatEvent(t,Player(3),"-critchance",true)
+    call TriggerRegisterPlayerChatEvent(t,Player(4),"-critchance",true)
+    call TriggerRegisterPlayerChatEvent(t,Player(5),"-critchance",true)
+    call TriggerRegisterPlayerChatEvent(t,Player(6),"-critchance",true)
+    call TriggerRegisterPlayerChatEvent(t,Player(7),"-critchance",true)
+    call TriggerRegisterPlayerChatEvent(t,Player(8),"-critchance",true)
+    call TriggerRegisterPlayerChatEvent(t,Player(9),"-critchance",true)
     //call TriggerRegisterPlayerChatEvent(t,Player(10),"-critchanсe",true)
     //call TriggerRegisterPlayerChatEvent(t,Player(11),"-critchanсe",true)
     call TriggerAddAction(t,function Trig_CritChange_Actions)
@@ -245124,7 +245139,7 @@ else
 if time==0.02 then
 call SetUnitAnimationByIndex(caster,2)
 call UnitSpeed(caster,1)
-set soundplay=CreateSound("Sound\\Music\\mp3Music\\YotonYokainoJutsu.mp3",false,false,true,12700,12700,"")
+set soundplay=SndN(4833) // Sound\Music\mp3Music\YotonYokainoJutsu.mp3
 call StartSound(soundplay)
 //call KillSoundWhenDone(soundplay)
 endif
@@ -245299,7 +245314,7 @@ if dist<=0 and time>0.52 then
 set Dummy=CreateUnit(GetOwningPlayer(caster),'136e',x1,y1,facing)
 call MyRemoveUnit(Dummy,0.5)
 
-set soundplay=CreateSound("Sound\\Others\\MeiG-sfx2.mp3",false,false,true,12700,12700,"")
+set soundplay=SndN(4835) // Sound\Others\MeiG-sfx2.mp3
 call StartSound(soundplay)
 //call KillSoundWhenDone(soundplay)
 
@@ -245349,7 +245364,7 @@ endif
 if time==0.02 then
 call SetUnitAnimationByIndex(caster,6)
 call UnitSpeed(caster,3)
-set soundplay=CreateSound("Sound\\Others\\MeiG.mp3",false,false,true,12700,12700,"")
+set soundplay=SndN(4837) // Sound\Others\MeiG.mp3
 call StartSound(soundplay)
 //call KillSoundWhenDone(soundplay)
 call EffectCreateAndMoveAn(true,"Others\\DustWavefx(Water).mdl",GetRandomInt(0,360),1.5,1.5,1,100,100,100,60,0,caster,0,facing,0)
@@ -245384,7 +245399,7 @@ call SetUnitInvulnerable(caster,false)
 call SetUnitPathing(caster,true)
 call UnitSpeed(caster,1)
 call SetUnitFlyHeight(caster,0,GetUnitFlyHeight(caster))
-set soundplay=CreateSound("Sound\\Others\\MeiG-sfx1.mp3",false,false,true,12700,12700,"")
+set soundplay=SndN(4839) // Sound\Others\MeiG-sfx1.mp3
 call StartSound(soundplay)
 //call KillSoundWhenDone(soundplay)
 set n0=CreateUnit(GetOwningPlayer(caster),'136e',x0,y0,facing+180)
@@ -245478,14 +245493,14 @@ call EffectCreateAndMoveAn(true,"Others\\DustWavefx(Water).mdl",GetRandomInt(0,3
 call EffectCreateAndMoveAn(true,"Others\\DustWavefx(Water).mdl",GetRandomInt(0,360),1.5,0.25,0.75,100,100,100,60,0,caster,0,facing,0)
 call SetUnitAnimationByIndex(caster,2)
 call UnitSpeed(caster,1)
-set soundplay=CreateSound("Sound\\Others\\MeiQ.mp3",false,false,true,12700,12700,"")
+set soundplay=SndN(4841) // Sound\Others\MeiQ.mp3
 call StartSound(soundplay)
 //call KillSoundWhenDone(soundplay)
 endif
 if time==0.5 then
 //call SaveReal(HH,id,6,0.02)
 
-set soundplay=CreateSound("Sound\\Others\\MeiQ-sfx.mp3",false,false,true,12700,12700,"")
+set soundplay=SndN(4843) // Sound\Others\MeiQ-sfx.mp3
 call StartSound(soundplay)
 //call KillSoundWhenDone(soundplay)
 call EffectCreateAndMove(true,"Others\\AquaWater.mdl",GetRandomInt(0,360),2,3.5,1,100,100,100,0,0,Dummy,0,facing)
@@ -245623,7 +245638,7 @@ call EffectCreateAndMoveAn(true,"Others\\DustWavefx(Water).mdl",GetRandomInt(0,3
 call EffectCreateAndMove(true,"Others\\HakkeStart2.mdl",facing,1,1,1.5,100,100,100,60,0,caster,0,facing)
 call SetUnitAnimationByIndex(caster,6)
 call UnitSpeed(caster,3)
-set soundplay=CreateSound("Sound\\Music\\mp3Music\\SuitonSuijinchu.mp3",false,false,true,12700,12700,"")
+set soundplay=SndN(4845) // Sound\Music\mp3Music\SuitonSuijinchu.mp3
 call StartSound(soundplay)
 //call KillSoundWhenDone(soundplay)
 endif
@@ -245829,7 +245844,7 @@ call EffectCreateAndMoveAn(true,"Others\\WindCirclefaster.mdl",facing,1.5,1,0.75
 call EffectCreateAndMove(true,"Others\\HakkeStart2.mdl",facing,1,0.5,1.5,100,100,100,60,0,caster,0,facing)
 call SetUnitAnimationByIndex(caster,5)
 call UnitSpeed(caster,3)
-set soundplay=CreateSound("Sound\\Music\\mp3Music\\FuttonKoumunoJutsu.mp3",false,false,true,12700,12700,"")
+set soundplay=SndN(4847) // Sound\Music\mp3Music\FuttonKoumunoJutsu.mp3
 call StartSound(soundplay)
 //call KillSoundWhenDone(soundplay)
 endif
@@ -245951,7 +245966,7 @@ if dist>2000+GetUnitAbilityLevel(caster,'MeiE')*200 then
 
 if MeiRDummy==null then
 
-set soundplay=CreateSound("Sound\\Others\\MeiE-EXP.mp3",false,false,true,12700,12700,"")
+set soundplay=SndN(4849) // Sound\Others\MeiE-EXP.mp3
 call StartSound(soundplay)
 //call KillSoundWhenDone(soundplay)
 
@@ -245960,7 +245975,7 @@ endif
 if SR(x0,y0,GetUnitX(MeiRDummy),GetUnitY(MeiRDummy))<400 and MeiRDummy!=null then
 
 
-set soundplay=CreateSound("Sound\\Others\\MeiE-EXP2.mp3",false,false,true,12700,12700,"")
+set soundplay=SndN(4851) // Sound\Others\MeiE-EXP2.mp3
 call StartSound(soundplay)
 //call KillSoundWhenDone(soundplay)
 
@@ -246007,7 +246022,7 @@ if time==0.02 then
 call EffectCreateAndMove(true,"Others\\WindCirclefaster.mdl",facing,1,0.75,1.5,100,100,100,0,0,caster,0,facing)
 call SetUnitAnimationByIndex(caster,6)
 call UnitSpeed(caster,2.5)
-set soundplay=CreateSound("Sound\\Music\\mp3Music\\YotonYumesu.mp3",false,false,true,12700,12700,"")
+set soundplay=SndN(4853) // Sound\Music\mp3Music\YotonYumesu.mp3
 call StartSound(soundplay)
 //call KillSoundWhenDone(soundplay)
 endif
