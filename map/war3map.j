@@ -49017,6 +49017,68 @@ call TriggerRegisterPlayerChatEvent(gg_trg_SwapHeroes,Player(9),"-swap ",false)
 //call TriggerRegisterPlayerChatEvent(gg_trg_SwapHeroes,Player(11),"-swap ",false)
 call TriggerAddAction(gg_trg_SwapHeroes,function Trig_SwapHeroes_Actions)
 endfunction
+// Обмен героями (-ok): прогресс Гоку (UI/MUI, счётчики, уклонения, Kaioken, вариации) хранится по игроку,
+// а не по герою — при обмене он оставался у прежнего владельца, и Гоку получал чужой (например, открытый MUI).
+// Меняем этот прогресс местами вместе с героями, юниты-«технологии» UI/MUI (h110/h111) — тоже.
+function SwapPlayerHeroState takes player pa,player pb returns nothing
+local integer a=GetHandleId(pa)
+local integer b=GetHandleId(pb)
+local integer ia=GetPlayerId(pa)
+local integer ib=GetPlayerId(pb)
+local boolean bv
+local real rv
+local integer iv
+local unit uv
+set bv=LoadBoolean(HH,a,UIAvailableHash)
+call SaveBoolean(HH,a,UIAvailableHash,LoadBoolean(HH,b,UIAvailableHash))
+call SaveBoolean(HH,b,UIAvailableHash,bv)
+set bv=LoadBoolean(HH,a,MUIAvailableHash)
+call SaveBoolean(HH,a,MUIAvailableHash,LoadBoolean(HH,b,MUIAvailableHash))
+call SaveBoolean(HH,b,MUIAvailableHash,bv)
+set rv=LoadReal(HH,a,UIDMGHash)
+call SaveReal(HH,a,UIDMGHash,LoadReal(HH,b,UIDMGHash))
+call SaveReal(HH,b,UIDMGHash,rv)
+set rv=LoadReal(HH,a,UILimitDMGHash)
+call SaveReal(HH,a,UILimitDMGHash,LoadReal(HH,b,UILimitDMGHash))
+call SaveReal(HH,b,UILimitDMGHash,rv)
+set rv=LoadReal(HH,a,VariationWHash)
+call SaveReal(HH,a,VariationWHash,LoadReal(HH,b,VariationWHash))
+call SaveReal(HH,b,VariationWHash,rv)
+set rv=LoadReal(HH,a,VariationQHash)
+call SaveReal(HH,a,VariationQHash,LoadReal(HH,b,VariationQHash))
+call SaveReal(HH,b,VariationQHash,rv)
+set iv=LoadInteger(HH,a,MUIDodgeCountHash)
+call SaveInteger(HH,a,MUIDodgeCountHash,LoadInteger(HH,b,MUIDodgeCountHash))
+call SaveInteger(HH,b,MUIDodgeCountHash,iv)
+set iv=LoadInteger(HH,a,UIDodgeHash)
+call SaveInteger(HH,a,UIDodgeHash,LoadInteger(HH,b,UIDodgeHash))
+call SaveInteger(HH,b,UIDodgeHash,iv)
+set iv=LoadInteger(HH,a,UIMaxDodgeHash)
+call SaveInteger(HH,a,UIMaxDodgeHash,LoadInteger(HH,b,UIMaxDodgeHash))
+call SaveInteger(HH,b,UIMaxDodgeHash,iv)
+set iv=LoadInteger(HH,a,KaiokenHash)
+call SaveInteger(HH,a,KaiokenHash,LoadInteger(HH,b,KaiokenHash))
+call SaveInteger(HH,b,KaiokenHash,iv)
+set uv=UIUnlock[ia]
+set UIUnlock[ia]=UIUnlock[ib]
+set UIUnlock[ib]=uv
+set uv=MUIUnlock[ia]
+set MUIUnlock[ia]=MUIUnlock[ib]
+set MUIUnlock[ib]=uv
+if UIUnlock[ia]!=null then
+call SetUnitOwner(UIUnlock[ia],pa,false)
+endif
+if UIUnlock[ib]!=null then
+call SetUnitOwner(UIUnlock[ib],pb,false)
+endif
+if MUIUnlock[ia]!=null then
+call SetUnitOwner(MUIUnlock[ia],pa,false)
+endif
+if MUIUnlock[ib]!=null then
+call SetUnitOwner(MUIUnlock[ib],pb,false)
+endif
+set uv=null
+endfunction
 function Trig_SwapOk_Actions takes nothing returns nothing //swap
 local player p=GetTriggerPlayer()
 local integer i=GetPlayerId(p)+1
@@ -49044,6 +49106,7 @@ if GetUnitTypeId(udg_Hero[i])=='H069' or GetUnitTypeId(udg_Hero[udg_SwapId[i]])=
 endif
 call SetUnitOwner(udg_Hero[i],Player(udg_SwapId[i]-1),true)
 call SetUnitOwner(udg_Hero[udg_SwapId[i]],Player(i-1),true)
+call SwapPlayerHeroState(Player(i-1),Player(udg_SwapId[i]-1))
 set j=0
 loop
 call UnitAddItemToSlot(udg_Hero[i],t2[j],j)
