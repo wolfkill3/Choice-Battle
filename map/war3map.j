@@ -2129,6 +2129,20 @@ endfunction
 function ValidHLC takes nothing returns boolean
 return GetCommandString()=="a" or GetCommandString()=="b" or GetCommandString()=="c" or GetCommandString()=="d" or GetCommandString()=="e" or GetCommandString()=="f" or GetCommandString()=="g" or GetCommandString()=="h" or GetCommandString()=="i" or GetCommandString()=="j" or GetCommandString()=="k" or GetCommandString()=="l" or GetCommandString()=="m" or GetCommandString()=="n"
 endfunction
+// Выключение предмета своими флагами (9 — блок инвентаря, 25 — слоты 6–8) и включение ТОЛЬКО того, что выключили сами.
+// EnableItem по предмету, который мы не выключали, ломал Doom: кнопка серела, но предмет нажимался хоткеем.
+function ItemDisableOwn takes item it,integer flags returns nothing
+if it!=null and not LoadBoolean(HH,GetHandleId(it),'IDo0'+flags) then
+call DisableItem(it,true,true,flags)
+call SaveBoolean(HH,GetHandleId(it),'IDo0'+flags,true)
+endif
+endfunction
+function ItemEnableOwn takes item it,integer flags returns nothing
+if it!=null and LoadBoolean(HH,GetHandleId(it),'IDo0'+flags) then
+call EnableItem(it,true,true,flags)
+call RemoveSavedBoolean(HH,GetHandleId(it),'IDo0'+flags)
+endif
+endfunction
 function UnitEnableInventoryCustom takes unit whichUnit, boolean enable, boolean ignoreErrorMessages returns nothing
 local integer i=0
 //call UnitEnableInventory(whichUnit,enable,ignoreErrorMessages)
@@ -2136,10 +2150,10 @@ loop
 exitwhen i==10
 if i<6 or i==9 then
     if enable then
-        call EnableItem(UnitItemInSlot(whichUnit, i),true,true,9)
+        call ItemEnableOwn(UnitItemInSlot(whichUnit, i),9)
         call SetItemRemainingCooldown(UnitItemInSlot(whichUnit, i),GetItemRemainingCooldown(UnitItemInSlot(whichUnit, i)))
     else
-        call DisableItem(UnitItemInSlot(whichUnit, i),true,true,9)
+        call ItemDisableOwn(UnitItemInSlot(whichUnit, i),9)
         call SetItemRemainingCooldown(UnitItemInSlot(whichUnit, i),GetItemRemainingCooldown(UnitItemInSlot(whichUnit, i)))
     endif
 endif
@@ -12009,43 +12023,6 @@ call SaveUnitHandle(bof_HT,GetHandleId(t),0,u)
 call TimerStart(t,RMaxBJ(time,0.),false,function Bof_zO_Act)
 set t=null
 endfunction
-// Система bof «толчок/скольжение» (триггер eb с параметрами в глобалах eZ/ea/Rk/Rl): юнит едет
-// под углом (градусы) на дистанцию за время, шаг раз в 0.02 c, в непроходимое не заходит.
-function Bof_Slide_Tick takes nothing returns nothing
-local timer slT=GetExpiredTimer()
-local integer slId=GetHandleId(slT)
-local unit slU=LoadUnitHandle(bof_HT,slId,0)
-local real slLeft=LoadReal(bof_HT,slId,3)-.02
-local real slX
-local real slY
-if slLeft<=.001 or slU==null then
-call FlushChildHashtable(bof_HT,slId)
-call DestroyTimer(slT)
-else
-call SaveReal(bof_HT,slId,3,slLeft)
-set slX=GetUnitX(slU)+CosBJ(LoadReal(bof_HT,slId,1))*LoadReal(bof_HT,slId,2)
-set slY=GetUnitY(slU)+SinBJ(LoadReal(bof_HT,slId,1))*LoadReal(bof_HT,slId,2)
-if not IsTerrainPathable(slX,slY,PATHING_TYPE_WALKABILITY) then
-call SetUnitX(slU,slX)
-call SetUnitY(slU,slY)
-endif
-endif
-set slT=null
-set slU=null
-endfunction
-function Bof_Slide takes unit u,real ang,real dist,real time returns nothing
-local timer slT
-if u==null or time<=0. then
-return
-endif
-set slT=CreateTimer()
-call SaveUnitHandle(bof_HT,GetHandleId(slT),0,u)
-call SaveReal(bof_HT,GetHandleId(slT),1,ang)
-call SaveReal(bof_HT,GetHandleId(slT),2,dist/(time/.02))
-call SaveReal(bof_HT,GetHandleId(slT),3,time)
-call TimerStart(slT,.02,true,function Bof_Slide_Tick)
-set slT=null
-endfunction
 // Вторая стадия кнопки (как Q→Q2 у Ремилии, W→Laevatein у Фландре): первая прячется для игрока,
 // на её место выдаётся вторая; через dur или после каста второй (Bof_SwapBack) — первая обратно
 function Bof_SwapBack takes unit u,integer ab1,integer ab2 returns nothing
@@ -12360,6 +12337,41 @@ set r=r+32.
 endloop
 set bz=null
 endfunction
+// Система bof «толчок/скольжение» (триггер eb с параметрами в глобалах eZ/ea/Rk/Rl): юнит едет
+// под углом (градусы) на дистанцию за время, шаг раз в 0.02 c. Сквозь декор, как у остальных героев
+// (SetUnitXY_1; раньше шаг в непроходимое пропускался — копья, клоны и толчки упирались в декорации),
+// героя в конце ставим на ближайшее проходимое место.
+function Bof_Slide_Tick takes nothing returns nothing
+local timer slT=GetExpiredTimer()
+local integer slId=GetHandleId(slT)
+local unit slU=LoadUnitHandle(bof_HT,slId,0)
+local real slLeft=LoadReal(bof_HT,slId,3)-.02
+if slLeft<=.001 or slU==null or GetUnitTypeId(slU)==0 then
+if slU!=null and GetUnitTypeId(slU)!=0 and IsUnitType(slU,UNIT_TYPE_HERO) then
+call Bof_Unstick(slU)
+endif
+call FlushChildHashtable(bof_HT,slId)
+call DestroyTimer(slT)
+else
+call SaveReal(bof_HT,slId,3,slLeft)
+call SetUnitXY_1(slU,GetUnitX(slU)+CosBJ(LoadReal(bof_HT,slId,1))*LoadReal(bof_HT,slId,2),GetUnitY(slU)+SinBJ(LoadReal(bof_HT,slId,1))*LoadReal(bof_HT,slId,2),true)
+endif
+set slT=null
+set slU=null
+endfunction
+function Bof_Slide takes unit u,real ang,real dist,real time returns nothing
+local timer slT
+if u==null or time<=0. then
+return
+endif
+set slT=CreateTimer()
+call SaveUnitHandle(bof_HT,GetHandleId(slT),0,u)
+call SaveReal(bof_HT,GetHandleId(slT),1,ang)
+call SaveReal(bof_HT,GetHandleId(slT),2,dist/(time/.02))
+call SaveReal(bof_HT,GetHandleId(slT),3,time)
+call TimerStart(slT,.02,true,function Bof_Slide_Tick)
+set slT=null
+endfunction
 function Bof_GlideAct takes nothing returns nothing
 local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
@@ -12586,7 +12598,7 @@ call SetSpecialEffectPitch(bj_lastCreatedEffect,160.)
 call Rem_Fx(c,"bof\\Scarlet-72.mdx",x,y,z,ang,2.5,0.)
 endif
 endfunction
-// Вампиризм (пассивка): 10% урона (15% с T) — лечение. Перелив лечения во время боя копится во
+// Вампиризм (пассивка): 7% урона (10% с T) — лечение. Перелив лечения во время боя копится во
 // временный запас (SH_RemTmpLife) и поднимает максимум: база + прибавка от убийств T (SH_RemKillLife)
 // + запас. Запас не больше 25% обычного максимума (владелец 28 сен). 15 c без урона — запас утекает.
 function Rem_VampHeal takes unit u,real amt returns nothing
@@ -12656,10 +12668,11 @@ local timer t
 if dmg>=5000000. then
 return
 endif
+// нерф 3.7.9: вампиризм 7% (10% с T), было 10% (15%)
 if GetUnitAbilityLevel(c,'RmT1')>0 then
-call Rem_VampHeal(c,dmg*.15)
-else
 call Rem_VampHeal(c,dmg*.1)
+else
+call Rem_VampHeal(c,dmg*.07)
 endif
 if not LoadBoolean(HH,cid,SH_RemLeak) then
 if not LoadBoolean(HH,cid,SH_RemFight) then
@@ -12870,13 +12883,14 @@ set speed=speed-decel
 set decel=decel-.1
 call SaveReal(HH,id,6,speed)
 call SaveReal(HH,id,7,decel)
-call SetUnitX(caster,x+CosBJ(ang+180.)*speed)
-call SetUnitY(caster,y+SinBJ(ang+180.)*speed)
+call Bof_Put(caster,x+CosBJ(ang+180.)*speed,y+SinBJ(ang+180.)*speed)
 endif
 if tk==51 then
 call SetUnitInvulnerable(caster,false)
 call PauseUnit(caster,false)
 call SetUnitTimeScale(caster,1.)
+// после отскока сквозь декор — на ближайшее проходимое место
+call Bof_Unstick(caster)
 call FlushChildHashtable(HH,id)
 call DestroyTimer(t)
 endif
@@ -12937,16 +12951,24 @@ function Rem_Q2_Act takes unit caster returns nothing
 local real x=GetUnitX(caster)
 local real y=GetUnitY(caster)
 local unit dmy=LoadUnitHandle(HH,GetHandleId(caster),SH_RemQ2Point)
-local real tx=GetUnitX(dmy)
-local real ty=GetUnitY(dmy)
+local real tx=x
+local real ty=y
 local real z=GetUnitFlyHeight(caster)
 local group g
 local unit e
+// метка Q пропала (умерла по таймеру) — Q2 бьёт на месте, а не переносит в центр карты
+if dmy!=null and GetUnitTypeId(dmy)!=0 then
+set tx=GetUnitX(dmy)
+set ty=GetUnitY(dmy)
+endif
 call Rem_Fx(caster,"bof\\Scarlet-22.mdx",x,y,z,0.,1.,0.)
 call Rem_Fx(caster,"bof\\Scarlet-36.MDX",x,y,z,0.,1.,0.)
 call Rem_Fx(caster,"bof\\Scarlet-69.mdx",x,y,z,0.,1.,0.)
-call SetUnitX(caster,tx)
-call SetUnitY(caster,ty)
+// метка могла стоять в декоре — после переноса на проходимое место
+call Bof_Put(caster,tx,ty)
+call Bof_Unstick(caster)
+set tx=GetUnitX(caster)
+set ty=GetUnitY(caster)
 call Rem_Fx(caster,"bof\\Scarlet-69.mdx",tx,ty,z,0.,1.,0.)
 call Rem_Fx(caster,"bof\\Scarlet-4.mdx",tx,ty,z,0.,1.,0.)
 set g=CreateGroup()
@@ -13037,6 +13059,7 @@ call Rem_W_Hit(caster,tx,ty,false)
 call CameraClearNoiseForPlayer(GetOwningPlayer(caster))
 call SetUnitInvulnerable(caster,false)
 call PauseUnit(caster,false)
+call Bof_Unstick(caster)
 call SetUnitTimeScale(caster,1.)
 call FlushChildHashtable(HH,id)
 call DestroyTimer(t)
@@ -13092,8 +13115,7 @@ call SaveReal(HH,id,4,decel)
 call SetUnitInvulnerable(caster,true)
 call PauseUnit(caster,true)
 if tk<=21 then
-call SetUnitX(caster,GetUnitX(caster)+CosBJ(ang)*speed)
-call SetUnitY(caster,GetUnitY(caster)+SinBJ(ang)*speed)
+call Bof_Put(caster,GetUnitX(caster)+CosBJ(ang)*speed,GetUnitY(caster)+SinBJ(ang)*speed)
 set g=CreateGroup()
 call GroupEnumUnitsInRange(g,GetUnitX(caster),GetUnitY(caster),220.,null)
 loop
@@ -13134,6 +13156,7 @@ if tk==91 then
 call SetUnitInvulnerable(caster,false)
 call PauseUnit(caster,false)
 call SetUnitTimeScale(caster,1.)
+call Bof_Unstick(caster)
 call FlushChildHashtable(HH,id)
 call DestroyTimer(t)
 endif
@@ -13286,6 +13309,11 @@ local real dmg
 local unit m
 call SaveInteger(HH,id,3,tk)
 call SetUnitFacing(dmy,ang)
+if GetUnitTypeId(target)==0 or not UnitIsAlive(target) then
+// цель умерла или пропала — копьё гаснет на месте
+set dist=99999.
+set tk=999
+endif
 if I2R(tk)*.01<=1.33 and dist>100. and UnitIsAlive(dmy) then
 set x=x+100.*CosBJ(ang)
 set y=y+100.*SinBJ(ang)
@@ -13767,6 +13795,7 @@ endif
 if tk==40 then
 call PauseUnit(caster,false)
 call SetUnitInvulnerable(caster,false)
+call Bof_Unstick(caster)
 call FlushChildHashtable(HH,id)
 call DestroyTimer(t)
 endif
@@ -13818,6 +13847,7 @@ local player tp=GetOwningPlayer(target)
 call SaveInteger(HH,id,3,tk)
 // реверс (цель в стойке развернула умение): умение кончается, героиня отпущена
 if Bof_RevEnd(caster) then
+call Bof_Unstick(caster)
 call PauseUnit(target,false)
 call SetUnitInvulnerable(target,false)
 call RemoveSavedHandle(HH,GetHandleId(target),SH_RemTBy)
@@ -14041,6 +14071,12 @@ local real burn
 local group g
 local unit e
 call SaveInteger(HH,id,3,tk)
+// смерть Ремилии или конец раунда — G кончается (раньше жгла ману и била до 10 c)
+if tk<=200 and (not UnitIsAlive(caster) or udg_B==false) then
+call RemoveUnit(ring)
+call RemoveUnit(wave)
+set tk=201
+endif
 if tk<=200 then
 call SetUnitXY_1(ring,x,y, false)
 call SetUnitXY_1(wave,x,y, false)
@@ -14112,10 +14148,10 @@ endfunction
 // героя (константы SH_Fla...). Время — целыми тиками таймера (n): тики те же, что у bof.
 // Звук/эффекты/надпись/тряска — общие с Ремилией (Rem_Sound, Rem_Fx, Rem_Text, Rem_Noise), урон/стан/
 // замедление с реверсом — из библиотеки bof (Bof_Dmg, Bof_Ctrl, Bof_Slow).
-// интеллект для урона кнопки D: x (0.05625), x160 = 9 — стандарт T карты (4 окт; 28 сен было 0.04375);
+// интеллект для урона кнопки D: x (0.0375), x160 = 6 (нерф 3.7.9; 4 окт было 0.05625 = 9);
 // x1000, чтобы не терять дробь в целом (в Bof_Dmg урон делится обратно на 1000)
 function Fla_Int_D takes unit u,boolean b returns integer
-return R2I(I2R(GetHeroInt(u,b))*(0.05625)*1000.+0.5)
+return R2I(I2R(GetHeroInt(u,b))*(0.0375)*1000.+0.5)
 endfunction
 // интеллект для урона кнопки E: x (3 + уровень)/120, x30 = 1..2 за удар, ударов 4 — стандарт карты 4..8 (4 окт);
 // x1000, чтобы не терять дробь в целом (в Bof_Dmg урон делится обратно на 1000)
@@ -15068,7 +15104,8 @@ function Fla_D_Back takes unit caster,unit e returns nothing
 local integer id=GetHandleId(e)
 local integer k=ModuloInteger(LoadInteger(HH,SH_FlaPast,0)+1,60)
 call Rem_Fx(caster,"bof\\Kurumi-1.mdx",GetUnitX(e),GetUnitY(e),25.,0.,1.,0.)
-if LoadBoolean(HH,id,SH_FlaPastOn) then
+// 6 c назад герой мог быть на базе, в таверне или на другой арене — туда не возвращаем
+if LoadBoolean(HH,id,SH_FlaPastOn) and Bof_Zone(LoadReal(HH,id,SH_FlaPastX+k),LoadReal(HH,id,SH_FlaPastY+k))==Bof_Zone(GetUnitX(e),GetUnitY(e)) then
 call SetUnitXY_1(e,LoadReal(HH,id,SH_FlaPastX+k),LoadReal(HH,id,SH_FlaPastY+k), true)
 endif
 call Rem_Fx(caster,"bof\\Kurumi-1.mdx",GetUnitX(e),GetUnitY(e),25.,0.,1.,0.)
@@ -15266,7 +15303,8 @@ local unit e
 call SaveInteger(HH,id,1,tk)
 // F — кольцо вокруг себя: реверсу не подвергается, как кольца и взрывы у героев разраба (Гарп E/T);
 // урон и стан — напрямую, мимо Bof_Rev, F реверсом не обрывается (владелец 4 окт)
-if tk<=300 and IsUnitAliveBJ(caster) then
+// нерф 3.7.9: F 4 c (200 тиков), было 6 c
+if tk<=200 and IsUnitAliveBJ(caster) then
 // неуязвимость F — каждым тиком: её снимают рывок к клону и чужие эффекты (тестер 29 сен)
 call SetUnitInvulnerable(caster,true)
 if ModuloInteger(tk-1,15)==0 then
@@ -15312,12 +15350,12 @@ call SaveBoolean(HH,GetHandleId(caster),SH_FlaFOn,true)
 call SetUnitInvulnerable(caster,true)
 call Fla_FLock(caster,true)
 // круг и столб на месте каста (6 c)
-call Rem_Fx(caster,"bof\\Scarlet-83.mdx",x,y,25.,0.,1.5,6.)
+call Rem_Fx(caster,"bof\\Scarlet-83.mdx",x,y,25.,0.,1.5,4.)
 set dmy=CreateUnit(GetOwningPlayer(caster),'eBMC',x,y,270.)
 call SetUnitModel(dmy,"bof\\Scarlet-78.mdx")
 call SetUnitScale(dmy,6.,1.,1.)
 call SetUnitFlyHeight(dmy,25.,0.)
-call Bof_zO(6.,dmy)
+call Bof_zO(4.,dmy)
 call Rem_Fx(caster,"bof\\Scarlet-29.mdx",x,y,z,0.,1.,0.)
 call Rem_Fx(caster,"bof\\Scarlet-14.mdx",x,y,20.,0.,1.,1.)
 call Rem_Fx(caster,"bof\\Scarlet-21.mdx",x,y,z,0.,2.,0.)
@@ -26691,9 +26729,11 @@ function OnButtonChangeAbilityMode takes nothing returns nothing
                 if LoadReal(HH,butHid,VariationTHash)==0 then
                     call SaveReal(HH,butHid,VariationTHash,1)
                     call SetAbilityIntegerLevelField(GetUnitAbility(Hero[freeSlotId],'A0H8'),ABILITY_ILF_MANA_COST,0,650)
+                    call SetAbilityRealLevelField(GetUnitAbility(Hero[freeSlotId],'A0H8'),ABILITY_RLF_COOLDOWN,0,70)
                 else
                     call SaveReal(HH,butHid,VariationTHash,0)
                     call SetAbilityIntegerLevelField(GetUnitAbility(Hero[freeSlotId],'A0H8'),ABILITY_ILF_MANA_COST,0,350)
+                    call SetAbilityRealLevelField(GetUnitAbility(Hero[freeSlotId],'A0H8'),ABILITY_RLF_COOLDOWN,0,35)
                 endif
                 set freeSlotId=12
             endif
@@ -38845,7 +38885,7 @@ if GetItemPlayer(it)==Player(15) or GetItemPlayer(it)==p or udg_test==true then
             call UnitAddItemToSlot(u,f,0)
         elseif (UnitItemInSlot(u,6)==it or UnitItemInSlot(u,7)==it or UnitItemInSlot(u,8)==it) then
             if cd<0.1 then
-                call DisableItem(it,true,true,25)
+                call ItemDisableOwn(it,25)
                 call SetItemRemainingCooldown(it,0.1)
             else
                 set f=CreateItem(GetItemTypeId(it),GetUnitX(u),GetUnitY(u))
@@ -38868,7 +38908,7 @@ if GetItemPlayer(it)==Player(15) or GetItemPlayer(it)==p or udg_test==true then
                 endif
             endif
         else
-            call EnableItem(it,true,true,25)
+            call ItemEnableOwn(it,25)
             call SetItemRemainingCooldown(it,cd)
         endif
     endif
@@ -38996,7 +39036,7 @@ else
     if slotSource!=9 and slotTarget!=9 then
         if (slotTarget==6 or slotTarget==7 or slotTarget==8) then 
             if not(slotSource==6 or slotSource==7 or slotSource==8) then 
-                call DisableItem(it,true,true,25)
+                call ItemDisableOwn(it,25)
                 call SetItemRemainingCooldown(it,cd)
                 if (GetItemTypeId(it) ==  'ISPB' or GetItemTypeId(it) ==  'IPRB') and count==1 and GetItemTypeId(ittarg) !=  'ISPB' and GetItemTypeId(ittarg) !=  'IPRB' then
                     call SetUnitAcquireRange(u, GetUnitAcquireRange(u)-GetUnitBaseRealFieldById(GetUnitTypeId(u),UNIT_RF_ACQUISITION_RANGE)*0.3-50)
@@ -39005,7 +39045,7 @@ else
             endif
         else
             if slotSource==6 or slotSource==7 or slotSource==8 then 
-                call EnableItem(it,true,true,25)
+                call ItemEnableOwn(it,25)
                 call SetItemRemainingCooldown(it,5)
                 if (GetItemTypeId(it) ==  'ISPB' or GetItemTypeId(it) ==  'IPRB') and count==0  then
                     call SetUnitAcquireRange(u, GetUnitAcquireRange(u)+GetUnitAttackRangeByIndex(u,0)*0.3+50)
@@ -39016,7 +39056,7 @@ else
         if ittarg!=null then
             if slotSource==6 or slotSource==7 or slotSource==8 then 
                 if not(slotTarget==6 or slotTarget==7 or slotTarget==8) then 
-                    call DisableItem(ittarg,true,true,25)
+                    call ItemDisableOwn(ittarg,25)
                     call SetItemRemainingCooldown(ittarg,cdtar)
                     call SetItemRemainingCooldown(it,5)
                     if (GetItemTypeId(ittarg) ==  'ISPB' or GetItemTypeId(ittarg) ==  'IPRB') and count==1 and GetItemTypeId(it) !=  'ISPB' and GetItemTypeId(it) !=  'IPRB' then
@@ -39026,7 +39066,7 @@ else
                 endif
             else
                 if (slotTarget==6 or slotTarget==7 or slotTarget==8) then
-                    call EnableItem(ittarg,true,true,25)
+                    call ItemEnableOwn(ittarg,25)
                     call SetItemRemainingCooldown(ittarg,5)
                     if (GetItemTypeId(ittarg) ==  'ISPB' or GetItemTypeId(ittarg) ==  'IPRB') and count==0  then
                         call SetUnitAcquireRange(u, GetUnitAcquireRange(u)+GetUnitAttackRangeByIndex(u,0)*0.3+50)
@@ -85163,6 +85203,16 @@ call SaveInteger(HH,id,4,m)
 call TimerStart(t,0.03,true,function KrSB_Push2)
 set t=null
 endfunction
+// Т: каждый тик заново ставим паузу и неуязвимость — чужие снятия паузы/развеивания не прерывают приём
+// (Кирито — с начала каста, цель — с момента захвата)
+function KrSB_Hold takes unit u,unit c returns nothing
+call PauseUnit(u,true)
+call SetUnitInvulnerable(u,true)
+if c!=null then
+call PauseUnit(c,true)
+call SetUnitInvulnerable(c,true)
+endif
+endfunction
 // конец приёма или обрыв: отпустить обоих
 function KrSB_End takes timer t,unit u,unit c returns nothing
 local integer id=GetHandleId(t)
@@ -85193,6 +85243,7 @@ local real a=Atan2(GetUnitY(c)-y,GetUnitX(c)-x)
 local integer k=LoadInteger(HH,id,8)+1
 local real kst
 call SaveInteger(HH,id,8,k)
+call KrSB_Hold(u,c)
 if UnitIsAlive(u)==false or udg_B==false then
 call KrSB_End(t,u,c)
 elseif SR(x,y,GetUnitX(c),GetUnitY(c))>100 and k<30 then
@@ -85251,6 +85302,7 @@ local real y=GetUnitY(u)
 local real x1
 local real y1
 call SaveInteger(HH,id,8,step)
+call KrSB_Hold(u,c)
 if m==1 then
 set cnt=27
 endif
@@ -85336,6 +85388,7 @@ local player p=GetOwningPlayer(u)
 local real x=GetUnitX(u)
 local real y=GetUnitY(u)
 local real a=Atan2(GetUnitY(c)-y,GetUnitX(c)-x)
+call KrSB_Hold(u,null)
 if UnitIsAlive(u)==false or udg_B==false or UnitIsAlive(c)==false then
 call KrSB_End(t,u,null)
 elseif SR(x,y,GetUnitX(c),GetUnitY(c))>100 then
@@ -85387,6 +85440,7 @@ local real k=LoadReal(HH,id,6)
 local real time=LoadReal(HH,id,5)+0.05
 local player p=GetOwningPlayer(u)
 call SaveReal(HH,id,5,time)
+call KrSB_Hold(u,null)
 if UnitIsAlive(u)==false or udg_B==false then
 call KrSB_End(t,u,null)
 elseif time<0.75*k then
@@ -120565,6 +120619,44 @@ set p=null
 set u=null
 set t=null
 endfunction
+// Стоячий вихрь: пойманных (группа g) не выпускаем — кто живой ушёл от центра дальше r, того ставим на край r.
+// Выйти можно только разовым рывком: оказался дальше края больше чем на 300 — пойманный отпущен.
+// Раньше вихрь тянул к центру слабее, чем герой бежит, и из него можно было просто выйти (E Мисаки).
+function VortexHold takes group g,real cx,real cy,real r returns nothing
+local group tmp=CreateGroup()
+local unit e
+local real vhd
+local real vha
+loop
+set e=FirstOfGroup(g)
+exitwhen e==null
+call GroupRemoveUnit(g,e)
+set vhd=SR(cx,cy,GetUnitX(e),GetUnitY(e))
+if UnitIsAlive(e) and vhd>r+300. then
+// выпрыгнул разом далеко (рывок, прыжок, телепорт) — отпускаем совсем: ходьбой за тик так не уйти
+call SetUnitPathing(e,true)
+call SetUnitFlyHeight(e,0,GetUnitFlyHeight(e))
+else
+call GroupAddUnit(tmp,e)
+if UnitIsAlive(e) then
+if vhd>r then
+set vha=Atan2(GetUnitY(e)-cy,GetUnitX(e)-cx)
+call SetUnitX(e,cx+r*Cos(vha))
+call SetUnitY(e,cy+r*Sin(vha))
+endif
+endif
+endif
+endloop
+loop
+set e=FirstOfGroup(tmp)
+exitwhen e==null
+call GroupRemoveUnit(tmp,e)
+call GroupAddUnit(g,e)
+endloop
+call DestroyGroup(tmp)
+set tmp=null
+set e=null
+endfunction
 function IronSand2Cond takes nothing returns boolean
 return GetSpellAbilityId()=='A0RN' and udg_B
 endfunction
@@ -120634,6 +120726,8 @@ endif
 endif
 call GroupRemoveUnit(G,E)
 endloop
+// пойманные не выходят из вихря (радиус 350, держим в 300)
+call VortexHold(g,x1,y1,300)
 elseif time>lvl then
 loop
 set E=FirstOfGroup(g)
@@ -199490,8 +199584,10 @@ function YujiF_Periodic takes nothing returns nothing
                 if LoadBoolean(h, id_caster, SH_YujiF_ForcedCancel) or SquareRootPoint(point_x, point_y, GetUnitX(caster), GetUnitY(caster))>2300 then
                     call SaveInteger(h, id, c_ACT, 3)
                 endif
+                // перебор в 3000 (домен 2000 + запас на вышедших), а не по всей карте — просадки FPS
+                call SaveInteger(h, id, 'YFsl', LoadInteger(h, id, 'YFsl') + 1)
                 set bjLCG=LoadGroupHandle(h, id, c_GROUP1)
-                call GroupEnumUnitsInRange(bjLCG, point_x, point_y, 10000, Base)
+                call GroupEnumUnitsInRange(bjLCG, point_x, point_y, 3000, Base)
                 loop
                 set bjLCU=FirstOfGroup(bjLCG)
                 exitwhen bjLCU == null
@@ -199505,8 +199601,9 @@ function YujiF_Periodic takes nothing returns nothing
                                                         call UnitAddAbility(bjLCU, 'YuFe')
                         endif
                     endif
-                    if bjLCU!=caster and GetUnitAbilityLevel(E, 'CE04')==0 then
-                            call SetControlToUnit(caster, bjLCU, 0.2, "silence")
+                    // немота — раз в 3 тика (0.15 c) на 0.25 c: SetControlToUnit на каждого 20 раз в секунду грузил игру
+                    if bjLCU!=caster and GetUnitAbilityLevel(bjLCU, 'CE04')==0 and ModuloInteger(LoadInteger(h, id, 'YFsl'), 3) == 1 then
+                            call SetControlToUnit(caster, bjLCU, 0.25, "silence")
                     endif
                 endif
                 call GroupRemoveUnit(bjLCG, bjLCU)
@@ -199985,8 +200082,9 @@ function YujiE_AOE_Periodic takes nothing returns nothing
         else
             call SaveInteger(h, id, c_EFFPERIOD, LoadInteger(h, id, c_EFFPERIOD) - 1)
         endif
+        // перебор в 600, а не по всей карте (10000) 50 раз в секунду — просадки FPS
         set bjLCG=LoadGroupHandle(h, id, c_GROUP1)
-        call GroupEnumUnitsInRange(bjLCG, target_x, target_y, 10000, Base)
+        call GroupEnumUnitsInRange(bjLCG, target_x, target_y, 600, Base)
         loop
         set bjLCU=FirstOfGroup(bjLCG)
         exitwhen bjLCU == null
@@ -200010,6 +200108,26 @@ function YujiE_AOE_Periodic takes nothing returns nothing
                 endif
             endif
             call GroupRemoveUnit(bjLCG, bjLCU)
+        endloop
+        // союзники, ушедшие из купола дальше 600 (рывок, телепорт), — снять щит по группе щита
+        set bjLCG=LoadGroupHandle(h, id, c_GROUP2)
+        loop
+        set bjLCU=FirstOfGroup(bjLCG)
+        exitwhen bjLCU == null
+            call GroupRemoveUnit(bjLCG, bjLCU)
+            if SquareRootPoint(target_x , target_y , GetUnitX(bjLCU) , GetUnitY(bjLCU)) > 400 then
+                call SaveBoolean(h, GetHandleId(bjLCU), Shield_YujiE, false)
+                call RemoveSavedBoolean(h, GetHandleId(bjLCU), Shield_YujiE)
+            else
+                call GroupAddUnit(LoadGroupHandle(h, id, c_GROUP1), bjLCU)
+            endif
+        endloop
+        set bjLCG=LoadGroupHandle(h, id, c_GROUP1)
+        loop
+        set bjLCU=FirstOfGroup(bjLCG)
+        exitwhen bjLCU == null
+            call GroupRemoveUnit(bjLCG, bjLCU)
+            call GroupAddUnit(LoadGroupHandle(h, id, c_GROUP2), bjLCU)
         endloop
         else
         set bjLCG=LoadGroupHandle(h, id, c_GROUP2)
@@ -200574,10 +200692,14 @@ function YujiT_Morf_Periodic takes nothing returns nothing
         local unit caster=LoadUnitHandle(h, id, 0)
     local real time= LoadReal(h, id, c_TIME)
     if time < 30 and UnitIsAlive(caster) and udg_B then
-        call HealTextTag(caster,caster,GetWidgetMaxLife(caster)*0.01 *0.02*myCustomHeal2(caster,1),"HealthRes")
-        call HealTextTag(caster,caster,GetWidgetMaxMana(caster)*0.04 *0.02*myCustomMana2(caster,1),"ManaRes")
-        call SetWidgetLife(caster, GetWidgetLife(caster) + GetWidgetMaxLife(caster)*0.01 *0.02)
-        call SetWidgetMana(caster , GetWidgetMana(caster) + GetWidgetMaxMana(caster)*0.04 *0.02)
+        // реген и надписи — раз в 5 тиков (0.1 c) пятикратной порцией: было 100 HealTextTag в секунду (просадки FPS)
+        call SaveInteger(h, id, 'YTrg', LoadInteger(h, id, 'YTrg') + 1)
+        if ModuloInteger(LoadInteger(h, id, 'YTrg'), 5) == 0 then
+            call HealTextTag(caster,caster,GetWidgetMaxLife(caster)*0.01 *0.1*myCustomHeal2(caster,1),"HealthRes")
+            call HealTextTag(caster,caster,GetWidgetMaxMana(caster)*0.04 *0.1*myCustomMana2(caster,1),"ManaRes")
+            call SetWidgetLife(caster, GetWidgetLife(caster) + GetWidgetMaxLife(caster)*0.01 *0.1)
+            call SetWidgetMana(caster , GetWidgetMana(caster) + GetWidgetMaxMana(caster)*0.04 *0.1)
+        endif
         call SetUnitX(LoadUnitHandle(h, id, 1), GetUnitX(caster))
         call SetUnitY(LoadUnitHandle(h, id, 1), GetUnitY(caster))
         call SetUnitFlyHeight(LoadUnitHandle(h, id, 1), GetUnitFlyHeight(caster) - 10, 0)
@@ -244561,11 +244683,304 @@ endfunction
 // Движок подгружает строки предмета при первом обращении. Спрашиваем их у
 // всех предметов каталога заранее, пока окно строится, чтобы первый клик по
 // предмету уже находил описание готовым. Заодно раскладываем рецепты.
+// Английские имена предметов для поиска в магазине (из ветки English-TranslationFull, нижний регистр):
+// поиск находит предмет и по русскому, и по английскому названию
+function Sh_InitEnNames takes nothing returns nothing
+call SaveStr(ShHT,-20,'I000',"gauntlets of power")
+call SaveStr(ShHT,-20,'I002',"bracelets of power")
+call SaveStr(ShHT,-20,'I003',"scholar's robe")
+call SaveStr(ShHT,-20,'I004',"sage robe")
+call SaveStr(ShHT,-20,'I005',"shoes of agility")
+call SaveStr(ShHT,-20,'I006',"boots of agility")
+call SaveStr(ShHT,-20,'I007',"sun ring, rank d")
+call SaveStr(ShHT,-20,'I008',"vongola gloves")
+call SaveStr(ShHT,-20,'I009',"sun ring, rank c")
+call SaveStr(ShHT,-20,'I00A',"sun ring, rank b")
+call SaveStr(ShHT,-20,'I00B',"sun ring, rank a")
+call SaveStr(ShHT,-20,'I00C',"vongola sun ring")
+call SaveStr(ShHT,-20,'I00D',"true vongola sun ring")
+call SaveStr(ShHT,-20,'I00E',"upgrade item")
+call SaveStr(ShHT,-20,'I00F',"mist ring, rank d")
+call SaveStr(ShHT,-20,'I00G',"mist ring, rank c")
+call SaveStr(ShHT,-20,'I00H',"mist ring, rank b")
+call SaveStr(ShHT,-20,'I00I',"mist ring, rank a")
+call SaveStr(ShHT,-20,'I00J',"vongola mist ring")
+call SaveStr(ShHT,-20,'I00K',"true vongola mist ring")
+call SaveStr(ShHT,-20,'I00L',"cloud ring, rank d")
+call SaveStr(ShHT,-20,'I00M',"cloud ring, rank c")
+call SaveStr(ShHT,-20,'I00N',"cloud ring, rank b")
+call SaveStr(ShHT,-20,'I00O',"cloud ring, rank a")
+call SaveStr(ShHT,-20,'I00P',"vongola cloud ring")
+call SaveStr(ShHT,-20,'I00Q',"true vongola cloud ring")
+call SaveStr(ShHT,-20,'I00R',"storm ring, rank d")
+call SaveStr(ShHT,-20,'I00S',"storm ring, rank c")
+call SaveStr(ShHT,-20,'I00T',"storm ring, rank b")
+call SaveStr(ShHT,-20,'I00U',"storm ring, rank a")
+call SaveStr(ShHT,-20,'I00V',"vongola storm ring")
+call SaveStr(ShHT,-20,'I00W',"true vongola storm ring")
+call SaveStr(ShHT,-20,'I00X',"rain ring, rank d")
+call SaveStr(ShHT,-20,'I00Y',"rain ring, rank c")
+call SaveStr(ShHT,-20,'I00Z',"rain ring, rank b")
+call SaveStr(ShHT,-20,'I010',"rain ring, rank a")
+call SaveStr(ShHT,-20,'I011',"vongola rain ring")
+call SaveStr(ShHT,-20,'I012',"true vongola rain ring")
+call SaveStr(ShHT,-20,'I013',"thunder ring, rank d")
+call SaveStr(ShHT,-20,'I014',"thunder ring, rank c")
+call SaveStr(ShHT,-20,'I015',"thunder ring, rank b")
+call SaveStr(ShHT,-20,'I016',"thunder ring, rank a")
+call SaveStr(ShHT,-20,'I017',"vongola thunder ring")
+call SaveStr(ShHT,-20,'I018',"true vongola thunder ring")
+call SaveStr(ShHT,-20,'I019',"sky ring, rank d")
+call SaveStr(ShHT,-20,'I01A',"sky ring, rank c")
+call SaveStr(ShHT,-20,'I01B',"sky ring, rank b")
+call SaveStr(ShHT,-20,'I01C',"sky ring, rank a")
+call SaveStr(ShHT,-20,'I01D',"vongola sky ring")
+call SaveStr(ShHT,-20,'I01E',"true vongola sky ring")
+call SaveStr(ShHT,-20,'I01F',"boots of speed")
+call SaveStr(ShHT,-20,'I01G',"boots of speed (recipe)")
+call SaveStr(ShHT,-20,'I01H',"sword, rank d")
+call SaveStr(ShHT,-20,'I01I',"sword, rank b")
+call SaveStr(ShHT,-20,'I01J',"sword, rank c")
+call SaveStr(ShHT,-20,'I01K',"sword, rank a")
+call SaveStr(ShHT,-20,'I01L',"tempered sword")
+call SaveStr(ShHT,-20,'I01N',"medal of courage (recipe)")
+call SaveStr(ShHT,-20,'I01O',"sandai kitetsu")
+call SaveStr(ShHT,-20,'I01P',"sandai kitetsu (recipe)")
+call SaveStr(ShHT,-20,'I01Q',"shusui")
+call SaveStr(ShHT,-20,'I01R',"shusui (recipe)")
+call SaveStr(ShHT,-20,'I01S',"dark excalibur")
+call SaveStr(ShHT,-20,'I01T',"dark excalibur (recipe)")
+call SaveStr(ShHT,-20,'I01U',"fang")
+call SaveStr(ShHT,-20,'I01V',"fang (recipe)")
+call SaveStr(ShHT,-20,'I01W',"staff of darkness, rank d")
+call SaveStr(ShHT,-20,'I01X',"staff of darkness, rank c")
+call SaveStr(ShHT,-20,'I01Y',"staff of darkness, rank b")
+call SaveStr(ShHT,-20,'I01Z',"staff of darkness, rank a")
+call SaveStr(ShHT,-20,'I020',"true staff of darkness")
+call SaveStr(ShHT,-20,'I021',"gift :)")
+call SaveStr(ShHT,-20,'I022',"gift :)")
+call SaveStr(ShHT,-20,'I023',"gift :)")
+call SaveStr(ShHT,-20,'I024',"gift :)")
+call SaveStr(ShHT,-20,'I025',"gift :)")
+call SaveStr(ShHT,-20,'I026',"gift :)")
+call SaveStr(ShHT,-20,'I027',"gift :)")
+call SaveStr(ShHT,-20,'I028',"gift :)")
+call SaveStr(ShHT,-20,'I029',"gift :)")
+call SaveStr(ShHT,-20,'I02A',"gift :)")
+call SaveStr(ShHT,-20,'I02B',"gift :)")
+call SaveStr(ShHT,-20,'I02C',"gift :)")
+call SaveStr(ShHT,-20,'I02D',"gift :)")
+call SaveStr(ShHT,-20,'I02E',"hell ring: \"soul eater\", rank d")
+call SaveStr(ShHT,-20,'I02F',"hell ring: \"soul eater\", rank c")
+call SaveStr(ShHT,-20,'I02G',"hell ring: \"soul eater\", rank b")
+call SaveStr(ShHT,-20,'I02H',"hell ring: \"soul eater\", rank a")
+call SaveStr(ShHT,-20,'I02I',"sealed hell ring: \"soul eater\"")
+call SaveStr(ShHT,-20,'I02J',"hell ring: \"soul eater\"")
+call SaveStr(ShHT,-20,'I02K',"hell ring: \"soul eater\"")
+call SaveStr(ShHT,-20,'I02L',"hell ring: \"demonic eye\", rank d")
+call SaveStr(ShHT,-20,'I02M',"hell ring: \"demonic eye\", rank c")
+call SaveStr(ShHT,-20,'I02N',"hell ring: \"demonic eye\", rank b")
+call SaveStr(ShHT,-20,'I02O',"hell ring: \"demonic eye\", rank a")
+call SaveStr(ShHT,-20,'I02P',"sealed hell ring: \"demonic eye\"")
+call SaveStr(ShHT,-20,'I02Q',"hell ring: \"demonic eye\"")
+call SaveStr(ShHT,-20,'I02R',"fire sphere")
+call SaveStr(ShHT,-20,'I02S',"ice sphere")
+call SaveStr(ShHT,-20,'I02T',"wind sphere")
+call SaveStr(ShHT,-20,'I02U',"yamato (recipe)")
+call SaveStr(ShHT,-20,'I02V',"yamato")
+call SaveStr(ShHT,-20,'I02W',"fire boots")
+call SaveStr(ShHT,-20,'I02X',"fire boots (recipe)")
+call SaveStr(ShHT,-20,'I02Y',"ice gloves")
+call SaveStr(ShHT,-20,'I02Z',"ice gloves (recipe)")
+call SaveStr(ShHT,-20,'I030',"fallen angel wings")
+call SaveStr(ShHT,-20,'I031',"patriot")
+call SaveStr(ShHT,-20,'I032',"madao's glasses")
+call SaveStr(ShHT,-20,'I033',"madao's hat")
+call SaveStr(ShHT,-20,'I034',"madao's dog")
+call SaveStr(ShHT,-20,'I035',"madao's box")
+call SaveStr(ShHT,-20,'I036',"madao set")
+call SaveStr(ShHT,-20,'I037',"bashosen")
+call SaveStr(ShHT,-20,'I038',"death scythe")
+call SaveStr(ShHT,-20,'I039',"lucky box")
+call SaveStr(ShHT,-20,'I03A',"alastor")
+call SaveStr(ShHT,-20,'I03B',"anbu sword")
+call SaveStr(ShHT,-20,'I03C',"anbu vest")
+call SaveStr(ShHT,-20,'I03D',"anbu mask")
+call SaveStr(ShHT,-20,'I03E',"anbu shoes")
+call SaveStr(ShHT,-20,'I03F',"anbu set")
+call SaveStr(ShHT,-20,'I03G',"vongola gloves level 1")
+call SaveStr(ShHT,-20,'I03H',"vongola gloves level 2")
+call SaveStr(ShHT,-20,'I03I',"vongola gloves level 3")
+call SaveStr(ShHT,-20,'I03J',"vongola gloves level 4")
+call SaveStr(ShHT,-20,'I03K',"vongola gloves level 5")
+call SaveStr(ShHT,-20,'I03L',"vongola gloves ver. x")
+call SaveStr(ShHT,-20,'I03M',"vongola gloves ver. x (recipe)")
+call SaveStr(ShHT,-20,'I03N',"samehada (manaburn)")
+call SaveStr(ShHT,-20,'I03O',"samehada (bleeding)")
+call SaveStr(ShHT,-20,'I03P',"time sphere")
+call SaveStr(ShHT,-20,'I03Q',"space sphere")
+call SaveStr(ShHT,-20,'I03R',"void sphere")
+call SaveStr(ShHT,-20,'I03S',"void sphere")
+call SaveStr(ShHT,-20,'I03V',"void sphere")
+call SaveStr(ShHT,-20,'I03W',"akatsuki ring")
+call SaveStr(ShHT,-20,'I03X',"akatsuki cloak")
+call SaveStr(ShHT,-20,'I03Y',"akatsuki hat")
+call SaveStr(ShHT,-20,'I03Z',"akatsuki protector")
+call SaveStr(ShHT,-20,'I040',"akatsuki set")
+call SaveStr(ShHT,-20,'I042',"captain's set")
+call SaveStr(ShHT,-20,'I043',"blood sphere")
+call SaveStr(ShHT,-20,'I044',"seal of the elements")
+call SaveStr(ShHT,-20,'I045',"seal of the elements (recipe)")
+call SaveStr(ShHT,-20,'I046',"hurricane boots")
+call SaveStr(ShHT,-20,'I047',"hurricane boots (recipe)")
+call SaveStr(ShHT,-20,'I048',"gungnir")
+call SaveStr(ShHT,-20,'I049',"hell ring: \"666\", rank d")
+call SaveStr(ShHT,-20,'I04A',"hell ring: \"666\", rank c")
+call SaveStr(ShHT,-20,'I04B',"hell ring: \"666\", rank b")
+call SaveStr(ShHT,-20,'I04C',"hell ring: \"666\", rank a")
+call SaveStr(ShHT,-20,'I04D',"sealed hell ring: \"666\"")
+call SaveStr(ShHT,-20,'I04E',"hell ring: \"666\"")
+call SaveStr(ShHT,-20,'I04F',"excalibur")
+call SaveStr(ShHT,-20,'I04G',"staff of the west wind")
+call SaveStr(ShHT,-20,'I04H',"security droid")
+call SaveStr(ShHT,-20,'I04I',"security droid mk.ii")
+call SaveStr(ShHT,-20,'I04J',"security droid mk.ii (recipe)")
+call SaveStr(ShHT,-20,'I04L',"ice essence")
+call SaveStr(ShHT,-20,'I04M',"sky mare ring, rank d")
+call SaveStr(ShHT,-20,'I04N',"sky mare ring, rank c")
+call SaveStr(ShHT,-20,'I04O',"sky mare ring, rank b")
+call SaveStr(ShHT,-20,'I04P',"sky mare ring, rank a")
+call SaveStr(ShHT,-20,'I04Q',"fake sky mare ring")
+call SaveStr(ShHT,-20,'I04R',"true sky mare ring")
+call SaveStr(ShHT,-20,'I04S',"ice essence (recipe)")
+call SaveStr(ShHT,-20,'I04T',"yata mirror")
+call SaveStr(ShHT,-20,'I04U',"captain's set (recipe)")
+call SaveStr(ShHT,-20,'I04W',"imagine breaker (recipe)")
+call SaveStr(ShHT,-20,'I04X',"excalibur (recipe)")
+call SaveStr(ShHT,-20,'I04Y',"alastor (recipe)")
+call SaveStr(ShHT,-20,'I04Z',"samehada (recipe)")
+call SaveStr(ShHT,-20,'I050',"gegetsuburi")
+call SaveStr(ShHT,-20,'I051',"gegetsuburi (recipe)")
+call SaveStr(ShHT,-20,'I052',"staff of the west wind (recipe)")
+call SaveStr(ShHT,-20,'I053',"death scythe (recipe)")
+call SaveStr(ShHT,-20,'I054',"ice boots")
+call SaveStr(ShHT,-20,'I055',"ice boots (recipe)")
+call SaveStr(ShHT,-20,'I056',"thunder mare ring, rank d")
+call SaveStr(ShHT,-20,'I057',"thunder mare ring, rank c")
+call SaveStr(ShHT,-20,'I058',"thunder mare ring, rank b")
+call SaveStr(ShHT,-20,'I059',"thunder mare ring, rank a")
+call SaveStr(ShHT,-20,'I05A',"fake thunder mare ring")
+call SaveStr(ShHT,-20,'I05B',"true thunder mare ring")
+call SaveStr(ShHT,-20,'I05C',"sun mare ring, rank d")
+call SaveStr(ShHT,-20,'I05D',"sun mare ring, rank c")
+call SaveStr(ShHT,-20,'I05E',"sun mare ring, rank b")
+call SaveStr(ShHT,-20,'I05F',"sun mare ring, rank a")
+call SaveStr(ShHT,-20,'I05G',"fake sun mare ring")
+call SaveStr(ShHT,-20,'I05H',"true sun mare ring")
+call SaveStr(ShHT,-20,'I05I',"storm mare ring, rank d")
+call SaveStr(ShHT,-20,'I05J',"storm mare ring, rank c")
+call SaveStr(ShHT,-20,'I05K',"storm mare ring, rank b")
+call SaveStr(ShHT,-20,'I05L',"storm mare ring, rank a")
+call SaveStr(ShHT,-20,'I05M',"fake storm mare ring")
+call SaveStr(ShHT,-20,'I05N',"true storm mare ring")
+call SaveStr(ShHT,-20,'I05O',"rain mare ring, rank d")
+call SaveStr(ShHT,-20,'I05P',"rain mare ring, rank c")
+call SaveStr(ShHT,-20,'I05Q',"rain mare ring, rank b")
+call SaveStr(ShHT,-20,'I05R',"rain mare ring, rank a")
+call SaveStr(ShHT,-20,'I05S',"fake rain mare ring")
+call SaveStr(ShHT,-20,'I05T',"true rain mare ring")
+call SaveStr(ShHT,-20,'I05U',"mist mare ring, rank d")
+call SaveStr(ShHT,-20,'I05V',"mist mare ring, rank c")
+call SaveStr(ShHT,-20,'I05W',"mist mare ring, rank b")
+call SaveStr(ShHT,-20,'I05X',"mist mare ring, rank a")
+call SaveStr(ShHT,-20,'I05Y',"fake mist mare ring")
+call SaveStr(ShHT,-20,'I05Z',"true mist mare ring")
+call SaveStr(ShHT,-20,'I060',"cloud mare ring, rank d")
+call SaveStr(ShHT,-20,'I061',"cloud mare ring, rank c")
+call SaveStr(ShHT,-20,'I062',"cloud mare ring, rank b")
+call SaveStr(ShHT,-20,'I063',"cloud mare ring, rank a")
+call SaveStr(ShHT,-20,'I064',"fake cloud mare ring")
+call SaveStr(ShHT,-20,'I065',"true cloud mare ring")
+call SaveStr(ShHT,-20,'I066',"security droid mk.iii")
+call SaveStr(ShHT,-20,'I067',"security droid mk.iii (recipe)")
+call SaveStr(ShHT,-20,'I068',"holy grail")
+call SaveStr(ShHT,-20,'I069',"holy grail (recipe)")
+call SaveStr(ShHT,-20,'I06C',"sealed staff of darkness")
+call SaveStr(ShHT,-20,'I06D',"gift :)")
+call SaveStr(ShHT,-20,'I06E',"saiyan set")
+call SaveStr(ShHT,-20,'I06F',"saiyan gloves")
+call SaveStr(ShHT,-20,'I06G',"saiyan boots")
+call SaveStr(ShHT,-20,'I06H',"saiyan armor")
+call SaveStr(ShHT,-20,'I06I',"scouter")
+call SaveStr(ShHT,-20,'I06J',"quincy set")
+call SaveStr(ShHT,-20,'I06K',"quincy glove")
+call SaveStr(ShHT,-20,'I06L',"quincy cross")
+call SaveStr(ShHT,-20,'I06M',"quincy medallion")
+call SaveStr(ShHT,-20,'I06N',"quincy overcoat")
+call SaveStr(ShHT,-20,'I06O',"dark grail")
+call SaveStr(ShHT,-20,'I06P',"dark grail (recipe)")
+call SaveStr(ShHT,-20,'I06Q',"kaleidoscepter ruby")
+call SaveStr(ShHT,-20,'I06R',"kaleidoscepter sapphire")
+call SaveStr(ShHT,-20,'I06S',"kaleidoscepter ruby (recipe)")
+call SaveStr(ShHT,-20,'I06T',"kaleidoscepter sapphire (recipe)")
+call SaveStr(ShHT,-20,'I06U',"holy grail (recipe)")
+call SaveStr(ShHT,-20,'I06V',"quincy set (recipe)")
+call SaveStr(ShHT,-20,'I06W',"prelati's grimoire")
+call SaveStr(ShHT,-20,'I06X',"prelati's grimoire")
+call SaveStr(ShHT,-20,'I06Z',"prelati's grimoire")
+call SaveStr(ShHT,-20,'I12R',"ribbon")
+call SaveStr(ShHT,-20,'I13R',"boros armor")
+call SaveStr(ShHT,-20,'I13S',"boros armor")
+call SaveStr(ShHT,-20,'I13V',"boros armor")
+call SaveStr(ShHT,-20,'I14R',"boros armor (recipe)")
+call SaveStr(ShHT,-20,'I1S4',"onizuka set")
+call SaveStr(ShHT,-20,'IAFR',"heart of fafnir (recipe)")
+call SaveStr(ShHT,-20,'IAS0',"seal of alchemy")
+call SaveStr(ShHT,-20,'IASA',"seal of alchemy (agi)")
+call SaveStr(ShHT,-20,'IASI',"seal of alchemy (int)")
+call SaveStr(ShHT,-20,'IASS',"seal of alchemy (str)")
+call SaveStr(ShHT,-20,'IAoF',"heart of fafnir")
+call SaveStr(ShHT,-20,'IBN0',"bashosen (recipe)")
+call SaveStr(ShHT,-20,'IBS1',"blood sphere (recipe)")
+call SaveStr(ShHT,-20,'IBSI',"buster sword")
+call SaveStr(ShHT,-20,'IBSR',"buster sword (recipe)")
+call SaveStr(ShHT,-20,'IGDr',"gae dearg (recipe)")
+call SaveStr(ShHT,-20,'IGP0',"prelati's grimoire (recipe)")
+call SaveStr(ShHT,-20,'IGlA',"golden amulet")
+call SaveStr(ShHT,-20,'IGn0',"gungnir (recipe)")
+call SaveStr(ShHT,-20,'IHYi',"yukirin's hourglass")
+call SaveStr(ShHT,-20,'IHYr',"yukirin's hourglass (recipe)")
+call SaveStr(ShHT,-20,'IHnK',"hakka no togame")
+call SaveStr(ShHT,-20,'IHnR',"hakka no togame (recipe)")
+call SaveStr(ShHT,-20,'IMDr',"medusa - dr.stone (recipe)")
+call SaveStr(ShHT,-20,'IMS0',"magic staff")
+call SaveStr(ShHT,-20,'IMT0',"master's tank top")
+call SaveStr(ShHT,-20,'IOS1',"hair mousse")
+call SaveStr(ShHT,-20,'IOS2',"stylish jacket")
+call SaveStr(ShHT,-20,'IOS3',"weighty argument")
+call SaveStr(ShHT,-20,'IOS4',"onizuka's earrings")
+call SaveStr(ShHT,-20,'IPRB',"priestess bow")
+call SaveStr(ShHT,-20,'IPRR',"priestess bow (recipe)")
+call SaveStr(ShHT,-20,'IPar',"patriot (recipe)")
+call SaveStr(ShHT,-20,'IPlA',"perfect amulet")
+call SaveStr(ShHT,-20,'IPlR',"perfect amulet (recipe)")
+call SaveStr(ShHT,-20,'ISDi',"death scythe")
+call SaveStr(ShHT,-20,'ISHs',"sode no shirayuki (recipe)")
+call SaveStr(ShHT,-20,'ISPB',"sports bow")
+call SaveStr(ShHT,-20,'ISS0',"space sphere (recipe)")
+call SaveStr(ShHT,-20,'ISTr',"stigmata tesseract (recipe)")
+call SaveStr(ShHT,-20,'ISlA',"silver amulet")
+call SaveStr(ShHT,-20,'ISt0',"soul talisman")
+call SaveStr(ShHT,-20,'ITS0',"time sphere (recipe)")
+call SaveStr(ShHT,-20,'IVS0',"void sphere (recipe)")
+call SaveStr(ShHT,-20,'IYM0',"yata mirror (recipe)")
+endfunction
 function Sh_Preload takes nothing returns nothing
 local integer sec=0
 local integer i
 local integer id
 local string s
+call Sh_InitEnNames()
 loop
 exitwhen sec==ShSecTotal
 set i=0
@@ -244593,6 +245008,9 @@ if id!=0 and LoadBoolean(ShHT,-7,id)==false then
 call SaveBoolean(ShHT,-7,id,true)
 set ShAll[ShAllN]=id
 set ShAllLow[ShAllN]=Sh_Lower(GetObjectName(id))
+if HaveSavedString(ShHT,-20,id) then
+set ShAllLow[ShAllN]=ShAllLow[ShAllN]+" | "+LoadStr(ShHT,-20,id)
+endif
 set ShAllN=ShAllN+1
 endif
 set i=i+1
@@ -247108,15 +247526,6 @@ endfunction
 // Уборка R Гарпа: зовётся из обеих веток. Триггер прицела — в порядке Целла
 // (Flush -> ClearActions -> Destroy), схваченных отпускаем, каждый хэндл снимается
 // только живым и ключ гасится.
-// Уборка R Гарпа: зовётся из обеих веток. Триггер прицела — в порядке Целла
-// (Flush -> ClearActions -> Destroy), схваченных отпускаем, каждый хэндл снимается
-// только живым и ключ гасится.
-// Уборка R Гарпа: зовётся из обеих веток. Триггер прицела — в порядке Целла
-// (Flush -> ClearActions -> Destroy), схваченных отпускаем, каждый хэндл снимается
-// только живым и ключ гасится.
-// Уборка R Гарпа: зовётся из обеих веток. Триггер прицела — в порядке Целла
-// (Flush -> ClearActions -> Destroy), схваченных отпускаем, каждый хэндл снимается
-// только живым и ключ гасится.
 // Замок кнопок Гарпа на прицел R: под рутом A1FU герой не в паузе и мог нажать Q/W/E/F/G/T посреди R —
 // две способности тянули его в разные стороны. Тот же способ, что у Баррагана (Brg_Lock).
 function Garp_Lock takes unit caster,boolean on returns nothing
@@ -247259,41 +247668,31 @@ call UnitSpeed(caster,0)
 call PauseUnit(caster,true)
 call SetUnitInvulnerable(caster,true)
 endif
+if head!=null and gone>=3000.0 then
+// волна одна: дошла до конца (3000) — голову убираем, след догорает сам
+call RemoveUnit(head)
+call SaveUnitHandle(HH,id,40,null)
+set head=null
+endif
 if head!=null then
-if gone>=1600.0 then
-// волна дошла — следующая с начала, группа прохода новая
-call SetUnitXY_1(head,PolX(x0,45,facing),PolY(y0,45,facing),false)
-call SetUnitScale(head,0.10,0.10,0.10)
-call SaveReal(HH,id,46,0)
-call SaveReal(HH,id,43,0)
-set s1=0
-set gone=0
-if LoadGroupHandle(HH,id,7)!=null then
-call DestroyGroup(LoadGroupHandle(HH,id,7))
-endif
-call SaveGroupHandle(HH,id,7,CreateGroup())
-endif
 set px=PolX(GetUnitX(head),60,facing)
 set py=PolY(GetUnitY(head),60,facing)
 call SetUnitXY_1(head,px,py,false)
-call SetUnitScale(head,0.10+s1,0.10+s1,0.10+s1)
-call SaveReal(HH,id,46,s1+0.11)
 call SaveReal(HH,id,43,gone+60)
-set n0=CreateUnit(GetOwningPlayer(caster),'e0XZ',px,py,facing)
-call UnitApplyTimedLife(n0,'BTLF',1.75)
-call SetUnitTimeScale(n0,1)
-call SetUnitFlyHeight(n0,85+s1*40,0)
-call SetUnitScale(n0,1+s1,1+s1,1+s1)
-call SetUnitVertexColor(n0,255,255,255,150)
-set n0=CreateUnit(GetOwningPlayer(caster),'e0Y2',px,py,facing)
-call UnitApplyTimedLife(n0,'BTLF',1.75)
-call SetUnitTimeScale(n0,1)
-call SetUnitFlyHeight(n0,85+s1*40,0)
-call SetUnitScale(n0,0.5+s1,0.5+s1,0.5+s1)
-call SetUnitVertexColor(n0,255,255,255,255)
-// УРОН: ширина растёт вместе с волной. За проход волны — 0.25 базового,
-// каждого раз за проход (gp); стан и отброс — только при первом касании (gh).
-set rad=150.0+gone*0.125
+// волна как у Final Flash (T Веджиты), без жёлтого окраса; масштаб меньше, чем у Веджиты, по ширине урона
+set rad=150.0+(gone+60)*0.0667
+call SetUnitScale(head,rad*.02,rad*.02,rad*.02)
+set n0=CreateUnit(GetOwningPlayer(caster),'e1PT',px,py,facing+GetRandomReal(-20,20))
+call UnitApplyTimedLife(n0,'BTLF',1.7)
+call SetUnitScale(n0,rad*.008,rad*.008,rad*.008)
+call SetUnitVertexColor(n0,255,255,255,50)
+call SetUnitTimeScale(n0,7)
+set n0=CreateUnit(GetOwningPlayer(caster),'e0PT',px,py,facing+GetRandomReal(-20,20))
+call UnitApplyTimedLife(n0,'BTLF',1.7)
+call SetUnitScale(n0,rad*.02,rad*.02,rad*.02)
+call SetUnitVertexColor(n0,255,255,255,170)
+// УРОН: ширина растёт вместе с волной. Волна одна, урон разовый и одинаковый по всей длине:
+// 0.75 базового каждому врагу один раз (gp), там же стан и отброс.
 set gp=LoadGroupHandle(HH,id,7)
 set gh=LoadGroupHandle(HH,id,8)
 // ПРОХОД 1: собрать цели (как у T), ПРОХОД 2: урон. Урон внутри перебора общей G опасен:
@@ -247315,12 +247714,9 @@ loop
 set n0=FirstOfGroup(g2)
 exitwhen n0==null
 call GroupRemoveUnit(g2,n0)
-call myCustomDamage(caster,n0,dmg*0.25,false,false,null,null,null)
-if IsUnitInGroup(n0,gh)==false then
-call GroupAddUnit(gh,n0)
+call myCustomDamage(caster,n0,dmg*0.75,false,false,null,null,null)
 call SetControlToUnit(caster,n0,0.5,"stun")
 call PushTimed(n0,facing,14,20)
-endif
 endloop
 call DestroyGroup(g2)
 set g2=null
@@ -247471,10 +247867,13 @@ call SaveBoolean(HH,GetHandleId(n0),TARGET_ABILITY,false)
 call myCustomDamage(caster,n0,dmg,false,false,null,null,null)
 call SetControlToUnit(caster,n0,1.0,"stun")
 endloop
-call DestroyGroup(g2)
+// схваченные рывком уже получили 100% — сразу в группу задетых волной (7), волна их не бьёт
+call SaveGroupHandle(HH,id,7,g2)
+set g2=null
 set n0=null
-endif
+else
 call SaveGroupHandle(HH,id,7,CreateGroup())
+endif
 call SaveGroupHandle(HH,id,8,CreateGroup())
 // удар: замах 11 по трюку дева (снять паузу -> анимация -> пауза), кадр стопорится на 0.36
 call PauseUnit(caster,false)
@@ -247485,8 +247884,9 @@ call SetUnitInvulnerable(caster,true)
 call SaveReal(HH,id,6,2)
 call SaveReal(HH,id,5,0)
 call SaveReal(HH,id,9,0)
-// голова волны в +45 перед Гарпом, как у Сейбер
-set n0=CreateUnit(GetOwningPlayer(caster),'e0WZ',PolX(x0,45,facing),PolY(y0,45,facing),facing)
+// голова волны (шар из Final Flash) в +45 перед Гарпом
+set n0=CreateUnit(GetOwningPlayer(caster),'e0PT',PolX(x0,45,facing),PolY(y0,45,facing),facing)
+call SetUnitScale(n0,3.0,3.0,3.0)
 call SaveUnitHandle(HH,id,40,n0)
 call SaveReal(HH,id,46,0)
 call SaveReal(HH,id,43,0)
@@ -259839,10 +260239,14 @@ function Trig_KingOfHill_Enter_Actions takes nothing returns nothing
 local timer t=GetExpiredTimer()
 local integer id=GetHandleId(gg_rct_KingOfHillRect)
 local integer TotalPlayerCount=0
-local integer MaxPoints=4000
+local integer MaxPoints=3000
 local framehandle TeamText=null
 local integer i=0
 local integer j=0
+// царь горы: FFA — 2000 очков, командный режим — 3000
+if FFAMode then
+    set MaxPoints=2000
+endif
 if FFAMode==false then
     set TeamCount[0]=0
     set TeamCount[1]=0
@@ -259938,8 +260342,9 @@ if FFAMode==false then
             endloop
         endif
         if TeamPoints[1]>=MaxPoints and TeamPoints[1]>TeamPoints[0] then
+            set i=0
             loop
-            exitwhen i>5
+            exitwhen i>4
             call KillUnit(Hero[i])
             set i=i+1
             endloop
@@ -260268,8 +260673,9 @@ call UnitAddAbility(gg_unit_n00A_0035,'A0DD')
 call UnitRemoveAbility(gg_unit_n00A_0035,'A0DD')
 call UnitAddAbility(gg_unit_n00A_0035,'A0ZL')
 call UnitRemoveAbility(gg_unit_n00A_0035,'A0ZL')
+// HCL: i–k — тест без FFA, l–n — тест с FFA (e–h — обычные FFA-режимы, без теста)
 if ValidHLC() then
-    if GetCommandString()=="e" or GetCommandString()=="f" or GetCommandString()=="g" or GetCommandString()=="h" or GetCommandString()=="m" or GetCommandString()=="n" then
+    if GetCommandString()=="i" or GetCommandString()=="j" or GetCommandString()=="k" or GetCommandString()=="l" or GetCommandString()=="m" or GetCommandString()=="n" then
         call TriggerExecute(gg_trg_test)
     endif
 endif
