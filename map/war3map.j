@@ -13291,7 +13291,7 @@ call TimerStart(t,1.2,false,function Rem_R_LiftEnd)
 set t=null
 endfunction
 // Полёт копья, тик 0.03 c: до 4 c (133 тика) или пока не долетит (100); попало ближе 200 — урон
-// R x240 + 10% максимума Ремилии (цель с Avul — половина, сквозь неуязвимость)
+// R x240 + 15% максимума Ремилии (цель с Avul — половина, сквозь неуязвимость)
 function Rem_R_Spear takes nothing returns nothing
 local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
@@ -13344,7 +13344,7 @@ call Rem_Fx(caster,"bof\\Scarlet-4.mdx",tx,ty,25.,0.,1.5,0.)
 call Rem_Fx(caster,"bof\\Scarlet-29.mdx",tx,ty,25.,0.,1.,0.)
 call Rem_Fx(caster,"bof\\Scarlet-14.mdx",tx,ty,25.,0.,1.5,1.)
 call Rem_Sound("bof\\war3mapImported\\RemiliaScarlet-R-YX2.mp3",100)
-set dmg=I2R(Rem_Int_R(caster,true))*120.*0.001+GetUnitState(caster,UNIT_STATE_MAX_LIFE)*.1
+set dmg=I2R(Rem_Int_R(caster,true))*120.*0.001+GetUnitState(caster,UNIT_STATE_MAX_LIFE)*.15
 if GetUnitAbilityLevel(target,'Avul')==0 then
 call Bof_Dmg(caster,target,dmg)
 else
@@ -14840,7 +14840,7 @@ endif
 set t=null
 set caster=null
 endfunction
-// Полёт копья в своего врага, тик 0.02 c: 12–15 тиков, разгон 40→105, виляет ±3°; взрыв в 450
+// Полёт копья в своего врага, тик 0.02 c: разгон 40→105, виляет ±3°; взрыв в 450, когда долетело до врага
 function Fla_R_Spear takes nothing returns nothing
 local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
@@ -14849,6 +14849,8 @@ local unit dmy=LoadUnitHandle(HH,id,1)
 local real speed=LoadReal(HH,id,2)
 local real ang=LoadReal(HH,id,3)
 local real yaw=LoadReal(HH,id,5)
+local unit tg=LoadUnitHandle(HH,id,6)
+local boolean hit=false
 local integer tk=LoadInteger(HH,id,4)+1
 local real x=GetUnitX(dmy)
 local real y=GetUnitY(dmy)
@@ -14859,7 +14861,20 @@ if speed<=100. then
 set speed=speed+5.
 call SaveReal(HH,id,2,speed)
 endif
-if (tk<=12 or I2R(tk)*.01<=GetRandomReal(.12,.15)) and IsUnitAliveBJ(dmy) then
+// копьё летит к своему врагу и взрывается, долетев до него (раньше — по таймеру 12–15 тиков, могло пролететь мимо);
+// враг умер или пропал — прежнее поведение. Предел — 60 тиков (1.2 c)
+if tg!=null and GetUnitTypeId(tg)!=0 and UnitIsAlive(tg) then
+set ang=Atan2BJ(GetUnitY(tg)-y,GetUnitX(tg)-x)
+if SRS(x,y,GetUnitX(tg),GetUnitY(tg))<=speed then
+set hit=true
+set x=GetUnitX(tg)
+set y=GetUnitY(tg)
+call SetUnitXY_1(dmy,x,y, false)
+endif
+else
+set tg=null
+endif
+if not hit and tk<=60 and (tg!=null or tk<=12 or I2R(tk)*.01<=GetRandomReal(.12,.15)) and IsUnitAliveBJ(dmy) then
 set ang=ang+GetRandomReal(-3.,3.)
 call SaveReal(HH,id,3,ang)
 call SetUnitFacingTimed(dmy,ang,0)
@@ -14890,6 +14905,7 @@ endif
 set t=null
 set caster=null
 set dmy=null
+set tg=null
 set g=null
 set e=null
 endfunction
@@ -14921,6 +14937,7 @@ call SaveUnitHandle(HH,GetHandleId(t2),1,dmy)
 call SaveReal(HH,GetHandleId(t2),2,40.)
 call SaveReal(HH,GetHandleId(t2),3,Atan2BJ(GetUnitY(e)-GetUnitY(dmy),GetUnitX(e)-GetUnitX(dmy)))
 call SaveReal(HH,GetHandleId(t2),5,LoadReal(HH,id,3))
+call SaveUnitHandle(HH,GetHandleId(t2),6,e)
 call TimerStart(t2,.02,true,function Fla_R_Spear)
 endif
 set i=i+1
@@ -59509,17 +59526,22 @@ if GetUnitTypeId(c)=='HBrg' and CurrentEventAttack and nb>0 and IsUnitEnemy(u,Ge
     endif
 endif
 //Barragan1end
-// Кирито, пассивная часть G (Dual Blades): каждая 4-я атака — удар вторым клинком (+0.8*STR через 0.05 c)
+// Кирито, пассивная часть G (Dual Blades): каждая 4-я атака — удар вторым клинком (+1.5*STR через 0.05 c)
 if GetUnitAbilityLevel(c,'KrG1')>0 and CurrentEventAttack and nb>0 and IsUnitEnemy(u,GetOwningPlayer(c)) then
     call SaveInteger(HH,cid,'KrDB',LoadInteger(HH,cid,'KrDB')+1)
     if LoadInteger(HH,cid,'KrDB')>=4 then
         call SaveInteger(HH,cid,'KrDB',0)
-        call Brg_Delay(c,u,0.8*I2R(GetHeroStr(c,true)),0.05)
-        // разрез поперёк удара с креном вбок на 45° (модель вытянута по оси X), уменьшен
+        call Brg_Delay(c,u,1.5*I2R(GetHeroStr(c,true)),0.05)
+        // два разреза крест-накрест: поперёк удара с креном 45° и зеркальный с креном -45° (модель вытянута по оси X)
         set bj_lastCreatedEffect=AddSpecialEffect("war3mapImported\\SlashBlueKojiro.mdl",GetUnitX(u),GetUnitY(u))
         call SetSpecialEffectHeight(bj_lastCreatedEffect,60)
         call SetSpecialEffectScale(bj_lastCreatedEffect,0.7)
         call SetSpecialEffectOrientation(bj_lastCreatedEffect,Atan2(GetUnitY(u)-GetUnitY(c),GetUnitX(u)-GetUnitX(c))*bj_RADTODEG+90,45,0)
+        call DestroyEffect(bj_lastCreatedEffect)
+        set bj_lastCreatedEffect=AddSpecialEffect("war3mapImported\\SlashBlueKojiro.mdl",GetUnitX(u),GetUnitY(u))
+        call SetSpecialEffectHeight(bj_lastCreatedEffect,60)
+        call SetSpecialEffectScale(bj_lastCreatedEffect,0.7)
+        call SetSpecialEffectOrientation(bj_lastCreatedEffect,Atan2(GetUnitY(u)-GetUnitY(c),GetUnitX(u)-GetUnitX(c))*bj_RADTODEG+90,-45,0)
         call DestroyEffect(bj_lastCreatedEffect)
     endif
 endif
@@ -84606,7 +84628,7 @@ function DubleCirculirCond takes nothing returns boolean
 return GetSpellAbilityId()=='A0H9'
 endfunction
 // E — Double Circular (Dual Blades): рывок к точке (до 400) и два круговых удара обоими клинками.
-// Кирито неуязвим на весь приём. Урон (1+ур)*(STR+75) — поровну на два удара; каждый удар бьёт всех в 350 и расталкивает.
+// Кирито неуязвим на весь приём. Урон (3+ур)*STR — поровну на два удара; каждый удар бьёт всех в 350 и расталкивает.
 // HH[id]: 0 Кирито, 1 угол, 2 оставшийся путь рывка, 3 тики после прибытия, 4 урон одного удара
 // подлёт Кирито в стиле Q Йоруичи: веер nitu на старте, шлейф SaberExtra + ветер на каждом шаге
 function KrDashStart takes player p,real x,real y,real a returns nothing
@@ -84747,7 +84769,7 @@ call SaveUnitHandle(HH,id,0,u)
 call SaveReal(HH,id,1,Atan2(y1-y,x1-x))
 call SaveReal(HH,id,2,kdist)
 call SaveInteger(HH,id,3,0)
-call SaveReal(HH,id,4,0.5*(1+GetUnitAbilityLevel(u,'A0H9'))*(GetHeroStr(u,true)+75)+GetHeroStr(u,true))
+call SaveReal(HH,id,4,0.5*(1+GetUnitAbilityLevel(u,'A0H9'))*GetHeroStr(u,true)+GetHeroStr(u,true))
 call SetUnitFacing(u,Atan2(y1-y,x1-x)*bj_RADTODEG)
 call PauseUnit(u,true)
 call SetUnitInvulnerable(u,true)
@@ -199298,7 +199320,7 @@ local real y=GetUnitY(kd)+60*Sin(a)
 local player p=GetOwningPlayer(u)
 local unit hit=null
 call SaveReal(HH,id,3,path)
-if udg_B==false or path>1200 or IsTerrainPathable(x,y,PATHING_TYPE_FLYABILITY) then
+if udg_B==false or path>1500 or IsTerrainPathable(x,y,PATHING_TYPE_FLYABILITY) then
 call RemoveUnit(kd)
 call PauseTimer(t)
 call DestroyTimer(t)
@@ -247401,6 +247423,7 @@ call SaveReal(HH,id,14,facing)
 // ядро на цепи появляется ЗА СПИНОЙ и вылезает из-под земли (приём разраба:
 // посадить под землю и поднимать). Модель: шар впереди, цепь тянется назад.
 set n0=CreateUnit(GetOwningPlayer(caster),'e200',PolX(GetUnitX(caster),260,facing+180),PolY(GetUnitY(caster),260,facing+180),facing+180)
+call SetUnitRealField(n0,UNIT_RF_SIGHT_RADIUS,300)
 call SetUnitModel(n0,"Garp\\Garp_Ball.mdx")
 call UnitSize(n0,0.25,0.25,0.25)
 call SetUnitFlyHeight(n0,-400,0)
@@ -247683,11 +247706,13 @@ call SaveReal(HH,id,43,gone+60)
 set rad=150.0+(gone+60)*0.0667
 call SetUnitScale(head,rad*.02,rad*.02,rad*.02)
 set n0=CreateUnit(GetOwningPlayer(caster),'e1PT',px,py,facing+GetRandomReal(-20,20))
+call SetUnitRealField(n0,UNIT_RF_SIGHT_RADIUS,300)
 call UnitApplyTimedLife(n0,'BTLF',1.7)
 call SetUnitScale(n0,rad*.008,rad*.008,rad*.008)
 call SetUnitVertexColor(n0,255,255,255,50)
 call SetUnitTimeScale(n0,7)
 set n0=CreateUnit(GetOwningPlayer(caster),'e0PT',px,py,facing+GetRandomReal(-20,20))
+call SetUnitRealField(n0,UNIT_RF_SIGHT_RADIUS,300)
 call UnitApplyTimedLife(n0,'BTLF',1.7)
 call SetUnitScale(n0,rad*.02,rad*.02,rad*.02)
 call SetUnitVertexColor(n0,255,255,255,170)
@@ -247886,6 +247911,7 @@ call SaveReal(HH,id,5,0)
 call SaveReal(HH,id,9,0)
 // голова волны (шар из Final Flash) в +45 перед Гарпом
 set n0=CreateUnit(GetOwningPlayer(caster),'e0PT',PolX(x0,45,facing),PolY(y0,45,facing),facing)
+call SetUnitRealField(n0,UNIT_RF_SIGHT_RADIUS,300)
 call SetUnitScale(n0,3.0,3.0,3.0)
 call SaveUnitHandle(HH,id,40,n0)
 call SaveReal(HH,id,46,0)
@@ -248022,6 +248048,7 @@ call Garp_Sound("Sound\\Music\\mp3Music\\Garp_T_Cast.mp3")
 // неуязвим с начала каста (Garp_T_Act); снимается в конце отыгрыша
 call SetUnitInvulnerable(caster,true)
 set n0=CreateUnit(GetOwningPlayer(caster),'e200',x0,y0,GetRandomReal(0,360))
+call SetUnitRealField(n0,UNIT_RF_SIGHT_RADIUS,300)
 call SetUnitModel(n0,"Garp\\Garp_TField.mdx")
 call UnitScale(n0,0.02,0.74,1.2)
 call MyRemoveUnit(n0,4.0)
@@ -248128,6 +248155,7 @@ call EffectCreateAndMove(true,EffectID[105],GetRandomReal(0,360),1.5,1.1,1.0,100
 // работает только якорный e200 + эффект на нём (проверено на Q).
 // Масштаб 6.0: на 2.5 пользователь сказал «слишком маленький».
 set n0=CreateUnit(GetOwningPlayer(caster),'e200',x0,y0,GetRandomReal(0,360))
+call SetUnitRealField(n0,UNIT_RF_SIGHT_RADIUS,300)
 // реплика на ударе об землю (3.40 c) — доигрывает после способности
 // Рисуется ТОЛЬКО так (перебор ещё в 4.5): дамми с этой моделью
 // (SetUnitModel, он же EffectCreateAndMove) и AddSpecialEffect по
@@ -248184,6 +248212,7 @@ endif
 // Дымовой гриб из R Дейдары: 'eo9N' = Effect-Smoke1 на высоте 150.
 // Только таймер жизни, MyRemoveUnit не вешаем.
 set n0=CreateUnit(GetOwningPlayer(caster),'eo9N',x0,y0,GetRandomReal(0,360))
+call SetUnitRealField(n0,UNIT_RF_SIGHT_RADIUS,300)
 call SetUnitFlyHeight(n0,250,0)
 call SetUnitScale(n0,8.0,8.0,8.0)
 call UnitApplyTimedLife(n0,'BTLF',1)
@@ -248405,6 +248434,7 @@ if time<2 and c==null then
         call SaveReal(HH,id,2,time+0.04)
         if ModuloReal(time,0.2)<0.04 then
             set n=CreateUnit(p, 'dM05', x, y, GetRandomInt(0, 360))
+            call SetUnitRealField(n,UNIT_RF_SIGHT_RADIUS,300)
             call SetUnitScale(n, 0.5, 0.5, 0.5)
             call SetUnitVertexColor(n, 255, 255, 255, 140)
             call MyRemoveUnit(n, 1.5)
