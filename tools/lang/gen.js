@@ -130,7 +130,7 @@ let L = s0.split(/\r?\n/);
 const cut = (b, e) => { const i = L.findIndex(l => l.startsWith(b)); if (i < 0) return; const j = L.findIndex((l, k) => k > i && l.startsWith(e)); L.splice(i, j - i + 1); };
 cut('//LANG_DATA_BEGIN', '//LANG_DATA_END'); cut('//LANG_CORE_BEGIN', '//LANG_CORE_END');
 L = L.filter(l => l !== 'call ExecuteFunc("LANG_Init") // язык (RU / EN) — до всего, что читает тексты');
-L = L.filter(l => !/^(boolean LANG_EN=|hashtable LANG_HT=|integer LANG_N=|integer LANG_I=|group LANG_G=)/.test(l));
+L = L.filter(l => !/^(boolean LANG_EN=|hashtable LANG_HT=|integer LANG_N=|integer LANG_I=|group LANG_G=|boolean LANG_Applied=|boolean LANG_Dirty=|rect LANG_R=|timer LANG_Clock=)/.test(l));
 // diff по тексту без вставок генератора — номера строк совпадают с L и при повторном запуске
 const os = require('os');
 const tmpRu = os.tmpdir() + '/lang_ru.j', tmpEn = os.tmpdir() + '/lang_en.j';
@@ -192,7 +192,7 @@ for (const [ln, s] of edits) L[ln] = s;
   conv.timerTitles = nt; conv.quests = nq;
 }
 // globals into the existing block, core after the last native, data before InitCustomTriggers, init call first in InitCustomTriggers
-const GL = ['boolean LANG_EN=false // язык интерфейса у локального игрока (LANG_Init, -en / -ru)', 'hashtable LANG_HT=InitHashtable()', 'integer LANG_N=0', 'integer LANG_I=0', 'group LANG_G=CreateGroup()'];
+const GL = ['boolean LANG_EN=false // язык интерфейса у локального игрока (LANG_Init, -en / -ru)', 'hashtable LANG_HT=InitHashtable()', 'integer LANG_N=0', 'integer LANG_I=0', 'group LANG_G=CreateGroup()', 'boolean LANG_Applied=false // какой язык сейчас выставлен у локального игрока', 'boolean LANG_Dirty=false', 'rect LANG_R=null', 'timer LANG_Clock=null'];
 L = L.filter(l => !GL.includes(l));
 L.splice(L.indexOf('endglobals'), 0, ...GL);
 let lastNative = -1; L.forEach((l, i) => { if (/^native /.test(l)) lastNative = i; });

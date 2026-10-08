@@ -853,7 +853,7 @@ texttag sysTextTag = null
 //======
 string AdminNickname = "PinkieNecro"//"knowyourplace"
 boolean bkillme = true
-unit n10
+unit n10=null
 integer array bonus_repick
 integer array udg_Repick
 group allUnits
@@ -1754,12 +1754,12 @@ group GCopy
 group DG
 group JG
 destructable de
-unit E
-unit E1
-unit E2
-unit dmgu
-unit n
-unit n0
+unit E=null
+unit E1=null
+unit E2=null
+unit dmgu=null
+unit n=null
+unit n0=null
 integer nd
 integer passedTime=-5
 integer HealRes=0
@@ -1787,8 +1787,8 @@ unit array UIUnlock
 unit array MUIUnlock
 group strm
 group clv
-unit strmu
-unit clvu
+unit strmu=null
+unit clvu=null
 string array Color
 integer array Colour
 boolexpr Base
@@ -1804,30 +1804,30 @@ boolean noduels=true
 boolean rfhpick
 integer ide
 integer idg
-unit UltimateDamage
-unit Broly
+unit UltimateDamage=null
+unit Broly=null
 real RX
 real RY
 real AX
 real AY
-unit oreha
+unit oreha=null
 unit Goku=null
 unit Moria=null
-unit GenkiDama
+unit GenkiDama=null
 boolean array GenkiUsed
 //sabrac1
-unit sabrac
+unit sabrac=null
 //sabrac1
 //Aizen1
-unit aizen
+unit aizen=null
 //Aizen1
-unit ks
+unit ks=null
 doodad dood
 boolean dm
 real A
 boolean timerg
 boolean Rounds
-unit d
+unit d=null
 integer seconds=1
 integer minutes
 integer ours
@@ -1860,7 +1860,7 @@ integer win2
 lightning L
 integer array gda
 integer array gdy
-unit Gon
+unit Gon=null
 boolean start
 boolexpr MH
 boolexpr FrendaBool
@@ -1883,9 +1883,9 @@ boolean Cambug
 boolean Theaternero
 boolean archR
 real MZ
-unit Kurapika
-unit Neji
-unit Shiro
+unit Kurapika=null
+unit Neji=null
+unit Shiro=null
 real RE
 string array abilcode
 integer array acode
@@ -1909,8 +1909,8 @@ integer array stats
 integer array hibari
 player P
 string array zura
-unit CU
-unit nc
+unit CU=null
+unit nc=null
 effect EFF
 unit array Darkness
 unit array DarknessTarget
@@ -1920,8 +1920,8 @@ timer TD
 timer TD2
 timer TD3
 timer TD4
-unit cmu
-unit cmu2
+unit cmu=null
+unit cmu2=null
 timer cmt
 integer cmn
 boolean cmb
@@ -1970,6 +1970,9 @@ framehandle ShInvName=null
 framehandle ShBuyBtn=null
 framehandle ShSellBtn=null
 framehandle ShUpgBtn=null
+framehandle ShBuyTxt=null // надписи кнопок — создаются один раз (Sh_ActText)
+framehandle ShSellTxt=null
+framehandle ShUpgTxt=null
 framehandle ShPrevBtn=null
 framehandle ShPageTxt=null
 framehandle ShNextBtn=null
@@ -2099,6 +2102,10 @@ hashtable LANG_HT=InitHashtable()
 integer LANG_N=0
 integer LANG_I=0
 group LANG_G=CreateGroup()
+boolean LANG_Applied=false // какой язык сейчас выставлен у локального игрока
+boolean LANG_Dirty=false
+rect LANG_R=null
+timer LANG_Clock=null
 endglobals
 native MergeUnits       takes integer qty, integer a, integer b, integer make returns boolean   // reserved native for call 4 integer function and return BOOLEAN value
 native ConvertUnits takes integer qty, integer id returns boolean                                                       // reserved native for call 2 integer function and return BOOLEAN value (can be converted to int!)
@@ -2239,6 +2246,11 @@ local integer lgE=LANG_I+400
 if lgE>LANG_N then
 set lgE=LANG_N
 endif
+// язык этого игрока не менялся — пролистываем порцию вхолостую (число потоков у всех одинаковое)
+if not LANG_Dirty then
+set LANG_I=lgE
+return
+endif
 loop
 exitwhen LANG_I>=lgE
 if LANG_EN then
@@ -2305,12 +2317,15 @@ set lgC=lgC+1
 endloop
 set lgU=null
 endfunction
+// Только у игрока, сменившего язык; хэндлов не создаёт (прямоугольник карты LANG_R — один на всю игру)
 function LANG_Refresh takes nothing returns nothing
-local rect lgR=GetWorldBounds()
 local integer lgWas
-call EnumItemsInRect(lgR,null,function LANG_ItemEnum)
+if not LANG_Dirty then
+return
+endif
+call EnumItemsInRect(LANG_R,null,function LANG_ItemEnum)
 call GroupClear(LANG_G)
-call GroupEnumUnitsInRect(LANG_G,lgR,null)
+call GroupEnumUnitsInRect(LANG_G,LANG_R,null)
 loop
 set lgWas=CountUnitsInGroup(LANG_G)
 exitwhen lgWas==0
@@ -2318,13 +2333,13 @@ call ExecuteFunc("LANG_UnitStep")
 exitwhen CountUnitsInGroup(LANG_G)==lgWas
 endloop
 call GroupClear(LANG_G)
-call RemoveRect(lgR)
-set lgR=null
 endfunction
-// Выполняется у всех игроков (без ExecuteFunc внутри GetLocalPlayer); тексты меняются по своему LANG_EN
+// Выполняется у всех игроков одинаково (без ExecuteFunc внутри GetLocalPlayer). Пропуск работы у тех, чей язык
+// не менялся, давал десинк — поэтому вся работа выполняется у всех
 function LANG_Apply takes nothing returns nothing
 local integer lgWas
 local integer lgF=-20
+set LANG_Dirty=true // всегда: если проходить цикл вхолостую у тех, чей язык не менялся, — десинк (проверено в игре)
 loop
 exitwhen lgF<-41
 call FlushChildHashtable(LANG_HT,lgF)
@@ -2338,6 +2353,7 @@ call ExecuteFunc("LANG_Step")
 exitwhen LANG_I==lgWas
 endloop
 call ExecuteFunc("LANG_Refresh")
+set LANG_Applied=LANG_EN
 endfunction
 // Заголовки таймеров и описания квестов задаются один раз — запоминаем обе версии и при смене языка
 // выставляем заново. Списки: -53 таймер-диалоги (тексты -51 / -52 по хэндлу), -56 квесты (-54 / -55)
@@ -2363,6 +2379,9 @@ endfunction
 function LANG_Retitle takes nothing returns nothing
 local integer lgK=0
 local integer lgH
+if not LANG_Dirty then
+return
+endif
 loop
 exitwhen lgK>=LoadInteger(LANG_HT,-53,-1)
 set lgH=GetHandleId(LoadTimerDialogHandle(LANG_HT,-53,lgK))
@@ -2389,6 +2408,16 @@ endif
 return GetObjectName(lgId)+" | "+LoadStr(LANG_HT,lgN,5)
 endfunction
 function LANG_Chat takes nothing returns nothing
+local integer lgP=GetPlayerId(GetTriggerPlayer())
+local real lgNow=TimerGetElapsed(LANG_Clock)
+// не чаще раза в 10 сек. на игрока: время общее (таймер LANG_Clock), проверка одинакова у всех — отказ тоже у всех
+if HaveSavedReal(LANG_HT,-60,lgP) and lgNow-LoadReal(LANG_HT,-60,lgP)<10. then
+if GetTriggerPlayer()==GetLocalPlayer() then
+call DisplayTimedTextToPlayer(GetLocalPlayer(),0,0,5,Lng("Сменить язык можно через ","You can switch the language again in ")+I2S(R2I(10.-(lgNow-LoadReal(LANG_HT,-60,lgP)))+1)+Lng(" сек."," sec."))
+endif
+return
+endif
+call SaveReal(LANG_HT,-60,lgP,lgNow)
 if GetTriggerPlayer()==GetLocalPlayer() then
 set LANG_EN=GetEventPlayerChatString()=="-en"
 endif
@@ -2403,6 +2432,9 @@ function LANG_Init takes nothing returns nothing
 local trigger lgT=CreateTrigger()
 local integer lgI=0
 set LANG_EN=SubString(GetLocale(),0,2)!="ru"
+set LANG_R=GetWorldBounds()
+set LANG_Clock=CreateTimer()
+call TimerStart(LANG_Clock,999999.,false,null) // общие часы для паузы между сменами языка
 call ExecuteFunc("LANG_DataAll")
 call LANG_Apply()
 loop
@@ -22127,7 +22159,7 @@ call LANG_QuestBJ(bj_QUESTTYPE_REQ_DISCOVERED,"Information","|cFFFFC850Ориг�
 
 //call CreateQuestBJ(bj_QUESTTYPE_REQ_DISCOVERED,"Игровые термины","|cFFFFC850Подробное описание статусов и игровых терминов|r\n\n"+"• |cFFFFC850Недосягаемость|r - статус при котором юнита/героя невозможно выделить таргетными способностями.\n\n"+"• |cFFFFC850Страх|r - тип контроля запрещающий игроку управлять юнитом, сам юнит - разбегается от источника страха. Страх снимается нанесением урона или по окончанию действия.","war3mapImported\\BTNdevil_may_cry3.blp")
 
-call LANG_QuestBJ(bj_QUESTTYPE_OPT_DISCOVERED,"Commands p.1","|cFFFFC850Игровые команды|r:\n\"-test\" - команда вводится красным игроком до начала первого раунда. Активирует тест режим, давая доступ к дополнительным командам.\n\"-debt\" - показывает сколько золота вы должны союзнику и сколько должны вам.\n\"-itemsc\" - включает/выключает использование предметов на себя.\n\"-setmr\" - позволяет установить текуший маг резист.\n\"-cam\" - установить высоту камеры на значение от 100 до 6000.","|cFFFFC850Game commands|r:\n\"-test\" - the command is entered by the red player before the first round. Activates the test mode, giving access to additional commands.\n\"-debt\" - shows how much gold you owe to an ally and how much you owe.\n\"-itemsr\" - enables/disables the use of items on yourself.\n\"-setmr\" - allows you to set the current magic resistance.\n\"-cam\" - set the camera height to a value from 100 to 6000.","ReplaceableTextures\\CommandButtons\\BTNVegetaUE.blp")
+call LANG_QuestBJ(bj_QUESTTYPE_OPT_DISCOVERED,"Commands p.1","|cFFFFC850Игровые команды|r:\n\"-en\" / \"-ru\" - сменить язык карты (английский / русский), меняется только у вас.\n\"-test\" - команда вводится красным игроком до начала первого раунда. Активирует тест режим, давая доступ к дополнительным командам.\n\"-debt\" - показывает сколько золота вы должны союзнику и сколько должны вам.\n\"-itemsc\" - включает/выключает использование предметов на себя.\n\"-setmr\" - позволяет установить текуший маг резист.\n\"-cam\" - установить высоту камеры на значение от 100 до 6000.","|cFFFFC850Game commands|r:\n\"-en\" / \"-ru\" - switch the map language (English / Russian), only for you.\n\"-test\" - the command is entered by the red player before the first round. Activates the test mode, giving access to additional commands.\n\"-debt\" - shows how much gold you owe to an ally and how much you owe.\n\"-itemsc\" - enables/disables the use of items on yourself.\n\"-setmr\" - allows you to set the current magic resistance.\n\"-cam\" - set the camera height to a value from 100 to 6000.","ReplaceableTextures\\CommandButtons\\BTNVegetaUE.blp")
 call LANG_QuestBJ(bj_QUESTTYPE_OPT_DISCOVERED,"Commands p.2","|cFFFFC850Игровые команды|r:\n\"-debug\" - снимает все эффекты, неуязвимости и паузы, если вы 15 секунд не двигалась. Телепортирует в случайную точку не далее 120 ед.\n\"-rfh\" - пересоздает героя, в случае бага, возможно только вне раунда.\n\"-re\" - воскрешает героя, применимо только на базе.\n\"killme\" - убивает героя через 10 сек.\n\"-swap x\" - поменяться персанажем с союзником.","|cFFFFC850Game commands|r:\n\"-debug\" - removes all effects, invulnerabilities and pauses if you have not moved for 15 seconds. Teleports to a random point no further than 120 units.\n\"-rfh\" - recreates the hero, in case of a bug, only possible outside the round.\n\"-re\" - resurrects the hero, only applicable at the base.\n\"killme\" - kills the hero after 10 sec.\n\"-swap x\" - swap characters with an ally.","ReplaceableTextures\\CommandButtons\\BTNOrochimaru.blp")
 call LANG_QuestBJ(bj_QUESTTYPE_OPT_DISCOVERED,"Commands p.3","|cFFFFC850Игровые команды|r:\n\"-mr\" - показывает текущее количество магических резистов у вашего персонажа.\n\"-cr\" - показывает текущее количество резистов к контролю у вашего персонажа.\n\"-damage\" - показывает игроку весь урон, который он нанес за всё время в игре, также количество уменьшенного урона общими резистами (не маг) и также количество урона, которое он заблокировал щитами или другими источниками.\n\"-tdamage\" - показывает всю эту информацию также и про других игроков.\n\"-theal\" - показывает всю информацию по восстановленному себе или союзным героям HP и MP у всех игроков.","|cFFFFC850Game commands|r:\n\"-mr\" - shows the current amount of magic resistances your character has.\n\"-cr\" - shows the current amount of control resistances your character has.\n\"-damage\" - shows the player all the damage he has dealt throughout the entire game, as well as the amount of damage reduced by general resistances (not a mage) and also the amount of damage he has blocked with shields or other sources.\n\"-tdamage\" - shows all this information about other players as well.\n\"-theal\" - shows all the information about HP and MP restored to yourself or allied heroes for all players.","ReplaceableTextures\\CommandButtons\\BTNLaxusExD_Port.blp")
 call LANG_QuestBJ(bj_QUESTTYPE_OPT_DISCOVERED,"Commands p.4","|cFFFFC850Игровые команды|r:\n\"-rounds xx\" - устанавливает кол-во раундов от 2 до 50.\n\"-setduels xx\" - устанавливает разницу между дуэлями, указать можно от 2 до 50. Написать можно лишь в первом раунде.\n\"-noduels\" - включает/выключает дуэли. Так же, после раунда, когда дуэль должна произойти, выдается компенсация. Написать можно лишь в первом раунде.","|cFFFFC850Game commands|r:\n\"-rounds xx\" - sets the number of rounds from 2 to 50.\n\"-setduels xx\" - sets the difference between duels, you can specify from 2 to 50. You can write only in the first round.\n\"-noduels\" - enables/disables duels. Also, after the round, when the duel should take place, compensation is given. You can only write in the first round.","ReplaceableTextures\\CommandButtons\\BTNWendy.blp")
@@ -52197,7 +52229,7 @@ local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
 local integer i=0
 loop
-exitwhen i>=12
+exitwhen i>=24 // 0..11 обзор героев, 12..23 — G Мукуро
 call DestroyFogModifier(LoadFogModifierHandle(HH,id,i))
 set i=i+1
 endloop
@@ -52254,6 +52286,12 @@ elseif GetPlayerSlotState(Player(i))==PLAYER_SLOT_STATE_PLAYING and Hero[i]!=nul
     endif   
     call SaveFogModifierHandle(HH,id,i,f)
     call FogModifierStart(f)
+    // G Мукуро (форма, метка MkMS): обзор 2250 только своему игроку, без общего обзора союзникам
+    if GetUnitAbilityLevel(Hero[i],'MkMS')>0 then
+        set f=CreateFogModifierRadius(Player(i),FOG_OF_WAR_VISIBLE,GetUnitX(Hero[i]),GetUnitY(Hero[i]),2250,false,false)
+        call SaveFogModifierHandle(HH,id,12+i,f)
+        call FogModifierStart(f)
+    endif
 endif
 set i=i+1
 endloop
@@ -52270,7 +52308,7 @@ endif
 // if f!=null then
 call ShowFrame( SpectacleTeamSelect, GetPlayerId(GetLocalPlayer())==10 )
 call ShowFrame( SpectacleTeamSelect1, GetPlayerId(GetLocalPlayer())==11 )
-call TimerStart(t,1,false,function VisibityOfHeroesCast2)
+call TimerStart(t,0.2,false,function VisibityOfHeroesCast2) // было 1 с: 10 модификаторов на игрока одновременно; 0.2 с при шаге 0.1 — по 2, без мигания
 // else
 //     call FlushChildHashtable(HH,id)
 //     call PauseTimer(t)
@@ -76805,19 +76843,7 @@ if LoadBoolean(h,id,5) then
 call SaveBoolean(h,id,5,false)
 call CambioXRestoreCD(u)
 endif
-// vision 2250 for Mukuro's player only (not through shared vision), moved every 0.1 s
-if LoadInteger(h,id,6)>=1 then
-call SaveInteger(h,id,6,0)
-set fm=CreateFogModifierRadius(GetOwningPlayer(u),FOG_OF_WAR_VISIBLE,GetUnitX(u),GetUnitY(u),2250.0,false,false)
-call FogModifierStart(fm)
-if LoadFogModifierHandle(h,id,4)!=null then
-call FogModifierStop(LoadFogModifierHandle(h,id,4))
-call DestroyFogModifier(LoadFogModifierHandle(h,id,4))
-endif
-call SaveFogModifierHandle(h,id,4,fm)
-else
-call SaveInteger(h,id,6,1)
-endif
+// обзор 2250 (только игроку Мукуро) даёт VisibityOfHeroesCast по метке формы MkMS
 if GetUnitAbilityLevel(u,'MkMS')==0 then
 call UnitAddAbility(u,'MkMS')
 call UnitMakeAbilityPermanent(u,true,'MkMS')
@@ -76914,10 +76940,7 @@ endloop
 endif
 set slot=slot+1
 endloop
-// vision 2250 and detection 2250 for Mukuro's player only
-set fm=CreateFogModifierRadius(p,FOG_OF_WAR_VISIBLE,GetUnitX(u),GetUnitY(u),2250.0,false,false)
-call FogModifierStart(fm)
-call SaveFogModifierHandle(h,id,4,fm)
+// обзор 2250 — в VisibityOfHeroesCast (метка MkMS); обнаружение 2250 — только игроку Мукуро
 call SaveBoolean(h,id,7,GetPlayerAlliance(Player(PLAYER_NEUTRAL_PASSIVE),p,ALLIANCE_SHARED_VISION))
 call SetPlayerAlliance(Player(PLAYER_NEUTRAL_PASSIVE),p,ALLIANCE_SHARED_VISION,true)
 set cxDum=CreateUnit(Player(PLAYER_NEUTRAL_PASSIVE),'dumm',GetUnitX(u),GetUnitY(u),0)
@@ -244446,10 +244469,28 @@ endfunction
 
 // Подпись нижних кнопок (купить / продать / улучшить): чуть мельче, чтобы
 // «УЛУЧШИТЬ 750» помещалось в рамку. Масштаб текста абсолютный, не от кнопки (у кнопки 0.70)
+// Надпись кнопки создаётся один раз и потом только меняется (смена языка вызывает это повторно)
 function Sh_ActText takes framehandle btn,string t returns nothing
-local framehandle f=Sh_BtnText(btn)
-call BlzFrameSetText(f,t)
+local framehandle f=null
+if btn==ShBuyBtn then
+set f=ShBuyTxt
+elseif btn==ShSellBtn then
+set f=ShSellTxt
+elseif btn==ShUpgBtn then
+set f=ShUpgTxt
+endif
+if f==null then
+set f=Sh_BtnText(btn)
 call BlzFrameSetScale(f,0.60)
+if btn==ShBuyBtn then
+set ShBuyTxt=f
+elseif btn==ShSellBtn then
+set ShSellTxt=f
+elseif btn==ShUpgBtn then
+set ShUpgTxt=f
+endif
+endif
+call BlzFrameSetText(f,t)
 set f=null
 endfunction
 //--------------------- отрисовка ---------------------
@@ -246032,7 +246073,7 @@ call TimerStart(CreateTimer(),0.0,false,function Sh_InitBuild)
 endfunction
 // Смена языка (-en / -ru): подписи, заданные при загрузке, выставляем заново; остальное — при перерисовке
 function Sh_LangRefresh takes nothing returns nothing
-if ShMain==null then
+if ShMain==null or not LANG_Dirty then
 return
 endif
 call BlzFrameSetText(ShCraftCap,Lng("|c00FFD700Сборка|r","|c00FFD700Assembly|r"))
@@ -248282,19 +248323,19 @@ set px=PolX(GetUnitX(head),60,facing)
 set py=PolY(GetUnitY(head),60,facing)
 call SetUnitXY_1(head,px,py,false)
 call SaveReal(HH,id,43,gone+60)
-// волна как у Final Flash (T Веджиты), без жёлтого окраса; масштаб меньше, чем у Веджиты, по ширине урона
+// волна как у Final Flash (T Веджиты), без жёлтого окраса; масштаб по ширине урона, x1.15 к ней (только вид)
 set rad=150.0+(gone+60)*0.0667
-call SetUnitScale(head,rad*.02,rad*.02,rad*.02)
+call SetUnitScale(head,rad*.023,rad*.023,rad*.023)
 set n0=CreateUnit(GetOwningPlayer(caster),'e1PT',px,py,facing+GetRandomReal(-20,20))
 call SetUnitRealField(n0,UNIT_RF_SIGHT_RADIUS,300)
 call UnitApplyTimedLife(n0,'BTLF',1.7)
-call SetUnitScale(n0,rad*.008,rad*.008,rad*.008)
+call SetUnitScale(n0,rad*.0092,rad*.0092,rad*.0092)
 call SetUnitVertexColor(n0,255,255,255,50)
 call SetUnitTimeScale(n0,7)
 set n0=CreateUnit(GetOwningPlayer(caster),'e0PT',px,py,facing+GetRandomReal(-20,20))
 call SetUnitRealField(n0,UNIT_RF_SIGHT_RADIUS,300)
 call UnitApplyTimedLife(n0,'BTLF',1.7)
-call SetUnitScale(n0,rad*.02,rad*.02,rad*.02)
+call SetUnitScale(n0,rad*.023,rad*.023,rad*.023)
 call SetUnitVertexColor(n0,255,255,255,170)
 // УРОН: ширина растёт вместе с волной. Волна одна, урон разовый и одинаковый по всей длине:
 // 0.75 базового каждому врагу один раз (gp), там же стан и отброс.
@@ -248492,7 +248533,7 @@ call SaveReal(HH,id,9,0)
 // голова волны (шар из Final Flash) в +45 перед Гарпом
 set n0=CreateUnit(GetOwningPlayer(caster),'e0PT',PolX(x0,45,facing),PolY(y0,45,facing),facing)
 call SetUnitRealField(n0,UNIT_RF_SIGHT_RADIUS,300)
-call SetUnitScale(n0,3.0,3.0,3.0)
+call SetUnitScale(n0,3.45,3.45,3.45)
 call SaveUnitHandle(HH,id,40,n0)
 call SaveReal(HH,id,46,0)
 call SaveReal(HH,id,43,0)

@@ -134,6 +134,11 @@ local integer lgE=LANG_I+400
 if lgE>LANG_N then
 set lgE=LANG_N
 endif
+// язык этого игрока не менялся — пролистываем порцию вхолостую (число потоков у всех одинаковое)
+if not LANG_Dirty then
+set LANG_I=lgE
+return
+endif
 loop
 exitwhen LANG_I>=lgE
 if LANG_EN then
@@ -200,12 +205,15 @@ set lgC=lgC+1
 endloop
 set lgU=null
 endfunction
+// Только у игрока, сменившего язык; хэндлов не создаёт (прямоугольник карты LANG_R — один на всю игру)
 function LANG_Refresh takes nothing returns nothing
-local rect lgR=GetWorldBounds()
 local integer lgWas
-call EnumItemsInRect(lgR,null,function LANG_ItemEnum)
+if not LANG_Dirty then
+return
+endif
+call EnumItemsInRect(LANG_R,null,function LANG_ItemEnum)
 call GroupClear(LANG_G)
-call GroupEnumUnitsInRect(LANG_G,lgR,null)
+call GroupEnumUnitsInRect(LANG_G,LANG_R,null)
 loop
 set lgWas=CountUnitsInGroup(LANG_G)
 exitwhen lgWas==0
@@ -213,13 +221,13 @@ call ExecuteFunc("LANG_UnitStep")
 exitwhen CountUnitsInGroup(LANG_G)==lgWas
 endloop
 call GroupClear(LANG_G)
-call RemoveRect(lgR)
-set lgR=null
 endfunction
-// Выполняется у всех игроков (без ExecuteFunc внутри GetLocalPlayer); тексты меняются по своему LANG_EN
+// Выполняется у всех игроков одинаково (без ExecuteFunc внутри GetLocalPlayer). Пропуск работы у тех, чей язык
+// не менялся, давал десинк — поэтому вся работа выполняется у всех
 function LANG_Apply takes nothing returns nothing
 local integer lgWas
 local integer lgF=-20
+set LANG_Dirty=true // всегда: если проходить цикл вхолостую у тех, чей язык не менялся, — десинк (проверено в игре)
 loop
 exitwhen lgF<-41
 call FlushChildHashtable(LANG_HT,lgF)
@@ -233,6 +241,7 @@ call ExecuteFunc("LANG_Step")
 exitwhen LANG_I==lgWas
 endloop
 call ExecuteFunc("LANG_Refresh")
+set LANG_Applied=LANG_EN
 endfunction
 // Заголовки таймеров и описания квестов задаются один раз — запоминаем обе версии и при смене языка
 // выставляем заново. Списки: -53 таймер-диалоги (тексты -51 / -52 по хэндлу), -56 квесты (-54 / -55)
@@ -258,6 +267,9 @@ endfunction
 function LANG_Retitle takes nothing returns nothing
 local integer lgK=0
 local integer lgH
+if not LANG_Dirty then
+return
+endif
 loop
 exitwhen lgK>=LoadInteger(LANG_HT,-53,-1)
 set lgH=GetHandleId(LoadTimerDialogHandle(LANG_HT,-53,lgK))
@@ -284,6 +296,16 @@ endif
 return GetObjectName(lgId)+" | "+LoadStr(LANG_HT,lgN,5)
 endfunction
 function LANG_Chat takes nothing returns nothing
+local integer lgP=GetPlayerId(GetTriggerPlayer())
+local real lgNow=TimerGetElapsed(LANG_Clock)
+// не чаще раза в 10 сек. на игрока: время общее (таймер LANG_Clock), проверка одинакова у всех — отказ тоже у всех
+if HaveSavedReal(LANG_HT,-60,lgP) and lgNow-LoadReal(LANG_HT,-60,lgP)<10. then
+if GetTriggerPlayer()==GetLocalPlayer() then
+call DisplayTimedTextToPlayer(GetLocalPlayer(),0,0,5,Lng("Сменить язык можно через ","You can switch the language again in ")+I2S(R2I(10.-(lgNow-LoadReal(LANG_HT,-60,lgP)))+1)+Lng(" сек."," sec."))
+endif
+return
+endif
+call SaveReal(LANG_HT,-60,lgP,lgNow)
 if GetTriggerPlayer()==GetLocalPlayer() then
 set LANG_EN=GetEventPlayerChatString()=="-en"
 endif
@@ -298,6 +320,9 @@ function LANG_Init takes nothing returns nothing
 local trigger lgT=CreateTrigger()
 local integer lgI=0
 set LANG_EN=SubString(GetLocale(),0,2)!="ru"
+set LANG_R=GetWorldBounds()
+set LANG_Clock=CreateTimer()
+call TimerStart(LANG_Clock,999999.,false,null) // общие часы для паузы между сменами языка
 call ExecuteFunc("LANG_DataAll")
 call LANG_Apply()
 loop
