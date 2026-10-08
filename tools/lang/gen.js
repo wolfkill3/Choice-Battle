@@ -1,11 +1,15 @@
-// Prototype: one map for RU and EN. Usage: node gen.js <repo dir> <EN ref>
-// - object texts (abilities, items, units, buffs, FrameDef from war3mapskin.txt): RU stays in table/*.ini,
-//   EN goes into generated JASS chunks LANG_Data*, applied locally by GetLocale() or -en / -ru
-// - code strings: lines that differ between RU and EN war3map.j only in string literals get L("ru","en")
+// One map for RU and EN. Usage: node gen.js <repo dir> [--code <git ref>]
+// - object texts (abilities, items, units, buffs, FrameDef from war3mapskin.txt): RU in table/*.ini, EN in table/en/*.ini
+//   (+ table/en/war3mapskin.txt); EN goes into generated JASS chunks LANG_Data*, applied locally by GetLocale() or -en / -ru
+// - code strings are written by hand as Lng("ru","en") in war3map.j. --code <ref> is the old one-time conversion:
+//   lines that differ between this war3map.j and the one in <ref> only in string literals get Lng("ru","en")
 const fs = require('fs');
 const cp = require('child_process');
 const R = process.argv[2].replace(/\\/g, '/').replace(/\/$/, '') + '/';
-const REF = process.argv[3] || 'origin/English-TranslationFull';
+const ci = process.argv.indexOf('--code');
+const REF = ci > 0 ? process.argv[ci + 1] : null; // ветка с английским war3map.j — только для --code
+const SRC = 'table/en'; // английские тексты объектов
+const enTable = (p) => fs.readFileSync(R + SRC + '/' + p, 'utf8');
 const OUT = __dirname + '/';
 const git = (args) => cp.execFileSync('git', args, { cwd: R, maxBuffer: 1 << 30, encoding: 'utf8' });
 const enFile = (p) => git(['show', REF + ':' + p]);
@@ -74,7 +78,7 @@ const calls = []; const stat = {};
 const asList = (v) => v === undefined ? [] : Array.isArray(v) ? v : [v];
 for (const k of KINDS) {
   const ru = parseIni(fs.readFileSync(R + 'table/' + k.file + '.ini', 'utf8'));
-  const en = parseIni(enFile('table/' + k.file + '.ini'));
+  const en = parseIni(enTable(k.file + '.ini'));
   let c = 0, onlyEn = 0, cyr = 0;
   for (const [id, es] of en) {
     const rs = ru.get(id); if (!rs) { onlyEn++; continue; }
@@ -105,12 +109,12 @@ for (const k of KINDS) {
 // FrameDef strings from war3mapskin.txt
 {
   const sec = (t) => { const m = new Map(); let inF = false; for (const l of t.split(/\r?\n/)) { if (/^\[/.test(l)) { inF = l.trim() === '[FrameDef]'; continue; } const p = l.indexOf('='); if (inF && p > 0) m.set(l.slice(0, p), l.slice(p + 1)); } return m; };
-  const ru = sec(fs.readFileSync(R + 'map/war3mapskin.txt', 'utf8')), en = sec(enFile('map/war3mapskin.txt'));
+  const ru = sec(fs.readFileSync(R + 'map/war3mapskin.txt', 'utf8')), en = sec(enTable('war3mapskin.txt'));
   let c = 0;
   for (const [key, v] of en) if (ru.has(key) && ru.get(key).trim() !== v.trim() && v.trim() !== '') { calls.push('call LANG_F(' + jstr(key) + ',' + jstr(v) + ')'); c++; }
   stat.framedef = { entries: c };
 }
-const CH = 250; const data = ['//LANG_DATA_BEGIN — сгенерировано tools/lang/gen.js из ' + REF + ', руками не править'];
+const CH = 250; const data = ['//LANG_DATA_BEGIN — сгенерировано tools/lang/gen.js из ' + SRC + ', руками не править'];
 let nch = 0;
 for (let p = 0; p < calls.length; p += CH) {
   data.push('function LANG_Data' + nch + ' takes nothing returns nothing', ...calls.slice(p, p + CH), 'endfunction'); nch++;
@@ -134,7 +138,8 @@ L = L.filter(l => !/^(boolean LANG_EN=|hashtable LANG_HT=|integer LANG_N=|intege
 // diff по тексту без вставок генератора — номера строк совпадают с L и при повторном запуске
 const os = require('os');
 const tmpRu = os.tmpdir() + '/lang_ru.j', tmpEn = os.tmpdir() + '/lang_en.j';
-fs.writeFileSync(tmpRu, L.join('\n')); fs.writeFileSync(tmpEn, enFile('map/war3map.j').replace(/\r/g, ''));
+// без --code сравнивать не с чем: пустой diff, строки кода не трогаются
+fs.writeFileSync(tmpRu, L.join('\n')); fs.writeFileSync(tmpEn, (REF ? enFile('map/war3map.j') : L.join('\n')).replace(/\r/g, ''));
 const diff = cp.spawnSync('git', ['diff', '--no-index', '-U0', '--no-color', tmpEn, tmpRu], { cwd: R, maxBuffer: 1 << 30, encoding: 'utf8' }).stdout
   .replace(/\r/g, '').split('\n');
 // note: diff is "EN -> working tree", so '-' lines are EN, '+' lines are RU (current file)
@@ -210,7 +215,7 @@ L.forEach((l, i) => {
   if (/GetUnitName|GetHeroProperName|GetObjectName|GetItemName|GetAbilityName|StringField(ById)?\(|GetFDFDataString|BlzGetAbility\w*Tooltip/.test(l) &&
       /(==|!=)|StringHash|StringFind|SubString|StringLength|Save\w*\(|Set\w*Field/.test(l) && !/Set\w*StringField\(\s*\w+\s*,\s*(ITEM|UNIT|ABILITY|BUFF)_S\w*ICON/.test(l)) audit.push((i + 1) + ': ' + l.trim().slice(0, 220));
 });
-const rep = ['# LANG prototype report', '', 'EN ref: ' + REF, '', '## Object texts', JSON.stringify(stat, null, 1), 'calls: ' + calls.length + ', chunks: ' + nch, '',
+const rep = ['# LANG report', '', 'EN object texts: ' + SRC + (REF ? ', code strings from ' + REF : ''), '', '## Object texts', JSON.stringify(stat, null, 1), 'calls: ' + calls.length + ', chunks: ' + nch, '',
   '## Code strings', JSON.stringify(conv), 'skipped: ' + skipped.length, ...skipped.map(s => '- [' + s[0] + '] ' + s[1] + ': ' + String(s[2]).trim().slice(0, 200)), '',
   '## Code reading object texts (check for desync / caching)', ...audit.map(a => '- ' + a)];
 fs.writeFileSync(OUT + 'report.md', rep.join('\n'));
