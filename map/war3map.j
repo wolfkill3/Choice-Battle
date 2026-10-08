@@ -2325,11 +2325,50 @@ exitwhen LANG_I==lgWas
 endloop
 call ExecuteFunc("LANG_Refresh")
 endfunction
+// Заголовки таймеров и описания квестов задаются один раз — запоминаем обе версии и при смене языка
+// выставляем заново. Списки: -53 таймер-диалоги (тексты -51 / -52 по хэндлу), -56 квесты (-54 / -55)
+function LANG_TdTitle takes timerdialog lgTd,string lgRu,string lgEn returns nothing
+local integer lgH=GetHandleId(lgTd)
+if not HaveSavedString(LANG_HT,-51,lgH) then
+call SaveTimerDialogHandle(LANG_HT,-53,LoadInteger(LANG_HT,-53,-1),lgTd)
+call SaveInteger(LANG_HT,-53,-1,LoadInteger(LANG_HT,-53,-1)+1)
+endif
+call SaveStr(LANG_HT,-51,lgH,lgRu)
+call SaveStr(LANG_HT,-52,lgH,lgEn)
+call TimerDialogSetTitle(lgTd,Lng(lgRu,lgEn))
+endfunction
+function LANG_QuestBJ takes integer lgType,string lgTitle,string lgRu,string lgEn,string lgIcon returns nothing
+local quest lgQ=CreateQuestBJ(lgType,lgTitle,Lng(lgRu,lgEn),lgIcon)
+local integer lgH=GetHandleId(lgQ)
+call SaveQuestHandle(LANG_HT,-56,LoadInteger(LANG_HT,-56,-1),lgQ)
+call SaveInteger(LANG_HT,-56,-1,LoadInteger(LANG_HT,-56,-1)+1)
+call SaveStr(LANG_HT,-54,lgH,lgRu)
+call SaveStr(LANG_HT,-55,lgH,lgEn)
+set lgQ=null
+endfunction
+function LANG_Retitle takes nothing returns nothing
+local integer lgK=0
+local integer lgH
+loop
+exitwhen lgK>=LoadInteger(LANG_HT,-53,-1)
+set lgH=GetHandleId(LoadTimerDialogHandle(LANG_HT,-53,lgK))
+call TimerDialogSetTitle(LoadTimerDialogHandle(LANG_HT,-53,lgK),Lng(LoadStr(LANG_HT,-51,lgH),LoadStr(LANG_HT,-52,lgH)))
+set lgK=lgK+1
+endloop
+set lgK=0
+loop
+exitwhen lgK>=LoadInteger(LANG_HT,-56,-1)
+set lgH=GetHandleId(LoadQuestHandle(LANG_HT,-56,lgK))
+call QuestSetDescription(LoadQuestHandle(LANG_HT,-56,lgK),Lng(LoadStr(LANG_HT,-54,lgH),LoadStr(LANG_HT,-55,lgH)))
+set lgK=lgK+1
+endloop
+endfunction
 function LANG_Chat takes nothing returns nothing
 if GetTriggerPlayer()==GetLocalPlayer() then
 set LANG_EN=GetEventPlayerChatString()=="-en"
 endif
 call LANG_Apply()
+call LANG_Retitle()
 if GetTriggerPlayer()==GetLocalPlayer() then
 call DisplayTimedTextToPlayer(GetLocalPlayer(),0,0,5,Lng("Язык: русский. Часть уже показанных надписей обновится при следующем выводе.","Language: English. Some texts already on screen update the next time they are shown."))
 endif
@@ -11919,7 +11958,7 @@ if ValidHLC() then
 else
     call DisplayTimedTextToPlayer( GetLocalPlayer( ), 0, 0, 5, Lng("Идёт выбор на включение/отключение команды -ff","There is a choice to enable/disable the command -ff") )
     call SaveTimerDialogHandle( GameHashTable, GetHandleId( GameHashTable ), SH_TimerDialog1, CreateTimerDialog( LoadTimerHandle( GameHashTable, GetHandleId( GameHashTable ), SH_Timer0 ) ) )
-    call TimerDialogSetTitle( LoadTimerDialogHandle( GameHashTable, GetHandleId( GameHashTable ), SH_TimerDialog1 ), Lng("|c00ffff00Время голосования!","|c00ffff00Vote Time!") )
+    call LANG_TdTitle(LoadTimerDialogHandle( GameHashTable, GetHandleId( GameHashTable ), SH_TimerDialog1 ),"|c00ffff00Время голосования!","|c00ffff00Vote Time!")
     call TimerDialogDisplay( LoadTimerDialogHandle( GameHashTable, GetHandleId( GameHashTable ), SH_TimerDialog1 ), true )
     call DialogSetMessage( GetDialog( ), Lng("Включить -ff?","turn on -ff?") )
     call SaveButtonHandle( GameHashTable, GetHandleId( GameHashTable ), SH_Button10, DialogAddButton( GetDialog( ), Lng("Да","Yes"), 0 ) )
@@ -11935,7 +11974,7 @@ function InitForfeit takes nothing returns nothing
     call TriggerRegisterDialogEvent( LocTrigger, GetDialog( ) )
     call TriggerAddAction( LocTrigger, function ModeSelectionFunction2 )
     call SaveTimerHandle( GameHashTable, GetHandleId( GameHashTable), SH_Timer0, CreateTimer( ) )
-    call TimerStart( LoadTimerHandle( GameHashTable, GetHandleId( GameHashTable ), SH_Timer0 ), 1, false, function StartVoting )
+    call TimerStart( LoadTimerHandle( GameHashTable, GetHandleId( GameHashTable ), SH_Timer0 ), 4, false, function StartVoting ) // было 1 с: +3 с на загрузку данных
     set LocTrigger = null
 endfunction
 
@@ -22058,17 +22097,17 @@ call TimerStart(t,time,false,function UnitAddAbilityTimed4)
 set t=null
 endfunction
 function Trig_Quests_Actions takes nothing returns nothing
-call CreateQuestBJ(bj_QUESTTYPE_REQ_DISCOVERED,"Information",Lng("|cFFFFC850Оригинальный Автор|r: |cFFFF0000Vadik29|r\n|cFFFFC850Текущий Автор|r: |cCCCC0000PinkieNecro/DBFag|r\n|cFFFFC850Связь с автором|r: \nDiscord: DB-fag#8183\nhttps://vk.com/opchoice \n\n|cFFFFC850Помощь в создании карты|r: \"Wolkern\",\"MarkSpartak\",\"Hirako321\",\"Amir\",\"Андреич\",\"Infernal\",\"Winter\", \"Diano256\",\"NeikyL\", \"Uchiha.sasuke01\",\"Motorka3\",\"Kurohitsugi\",\"OJIEHb\",\"terin000\",\"kakaroto228\",\"bkmz\",\"madaras0\",\"null\",\"Famouzy\",\"No_Dust\",\"Doubleutf01\",\"Dessar383\",\"Chevalier\",\"AnimeRandom\",\"10th_Crusade\",\"Starheart\",\"Black_XeSHTeG\",\"Beluga\",\"Zanka\", а так же все остальные, кто играет и отправляет мне в личку информацию.\nБольшое вам спасибо!","|cFFFFC850Original Author|r: |cFFFF0000Vadik29|r\n|cFFFFC850Current Author|r: |cCCCC0000PinkieNecro/DBFag|r\n|cFFFFC850Contact Author|r: \nDiscord: DB-fag#8183\nhttps://vk.com/opchoice \n\n|cFFFFC850Help with Map Creation|r: \"Wolkern\",\"MarkSpartak\",\"Hirako321\",\"Amir\",\"Andreich\",\"Infernal\",\"Winter\", \"Diano256\",\"NeikyL\", \"Uchiha.sasuke01\",\"Motorka3\",\"Kurohitsugi\",\"OJIEHb\",\"terin000\",\"kakaroto228\",\"bkmz\",\"madaras0\",\"null\",\"Famouzy\",\"No_Dust\",\"Doubleutf01\",\"Dessar383\",\"Chevalier\",\"AnimeRandom\",\"10th_Crusade\",\"Starheart\",\"Black_XeSHTeG\",\"Beluga\",\"Zanka\", as well as everyone else who plays and sends me information in PM.\nThank you very much!"),"war3mapImported\\BTNdevil_may_cry3.blp")
+call LANG_QuestBJ(bj_QUESTTYPE_REQ_DISCOVERED,"Information","|cFFFFC850Оригинальный Автор|r: |cFFFF0000Vadik29|r\n|cFFFFC850Текущий Автор|r: |cCCCC0000PinkieNecro/DBFag|r\n|cFFFFC850Связь с автором|r: \nDiscord: DB-fag#8183\nhttps://vk.com/opchoice \n\n|cFFFFC850Помощь в создании карты|r: \"Wolkern\",\"MarkSpartak\",\"Hirako321\",\"Amir\",\"Андреич\",\"Infernal\",\"Winter\", \"Diano256\",\"NeikyL\", \"Uchiha.sasuke01\",\"Motorka3\",\"Kurohitsugi\",\"OJIEHb\",\"terin000\",\"kakaroto228\",\"bkmz\",\"madaras0\",\"null\",\"Famouzy\",\"No_Dust\",\"Doubleutf01\",\"Dessar383\",\"Chevalier\",\"AnimeRandom\",\"10th_Crusade\",\"Starheart\",\"Black_XeSHTeG\",\"Beluga\",\"Zanka\", а так же все остальные, кто играет и отправляет мне в личку информацию.\nБольшое вам спасибо!","|cFFFFC850Original Author|r: |cFFFF0000Vadik29|r\n|cFFFFC850Current Author|r: |cCCCC0000PinkieNecro/DBFag|r\n|cFFFFC850Contact Author|r: \nDiscord: DB-fag#8183\nhttps://vk.com/opchoice \n\n|cFFFFC850Help with Map Creation|r: \"Wolkern\",\"MarkSpartak\",\"Hirako321\",\"Amir\",\"Andreich\",\"Infernal\",\"Winter\", \"Diano256\",\"NeikyL\", \"Uchiha.sasuke01\",\"Motorka3\",\"Kurohitsugi\",\"OJIEHb\",\"terin000\",\"kakaroto228\",\"bkmz\",\"madaras0\",\"null\",\"Famouzy\",\"No_Dust\",\"Doubleutf01\",\"Dessar383\",\"Chevalier\",\"AnimeRandom\",\"10th_Crusade\",\"Starheart\",\"Black_XeSHTeG\",\"Beluga\",\"Zanka\", as well as everyone else who plays and sends me information in PM.\nThank you very much!","war3mapImported\\BTNdevil_may_cry3.blp")
 
 //call CreateQuestBJ(bj_QUESTTYPE_REQ_DISCOVERED,"Игровые термины","|cFFFFC850Подробное описание статусов и игровых терминов|r\n\n"+"• |cFFFFC850Недосягаемость|r - статус при котором юнита/героя невозможно выделить таргетными способностями.\n\n"+"• |cFFFFC850Страх|r - тип контроля запрещающий игроку управлять юнитом, сам юнит - разбегается от источника страха. Страх снимается нанесением урона или по окончанию действия.","war3mapImported\\BTNdevil_may_cry3.blp")
 
-call CreateQuestBJ(bj_QUESTTYPE_OPT_DISCOVERED,"Commands p.1",Lng("|cFFFFC850Игровые команды|r:\n\"-test\" - команда вводится красным игроком до начала первого раунда. Активирует тест режим, давая доступ к дополнительным командам.\n\"-debt\" - показывает сколько золота вы должны союзнику и сколько должны вам.\n\"-itemsc\" - включает/выключает использование предметов на себя.\n\"-setmr\" - позволяет установить текуший маг резист.\n\"-cam\" - установить высоту камеры на значение от 100 до 6000.","|cFFFFC850Game commands|r:\n\"-test\" - the command is entered by the red player before the first round. Activates the test mode, giving access to additional commands.\n\"-debt\" - shows how much gold you owe to an ally and how much you owe.\n\"-itemsr\" - enables/disables the use of items on yourself.\n\"-setmr\" - allows you to set the current magic resistance.\n\"-cam\" - set the camera height to a value from 100 to 6000."),"ReplaceableTextures\\CommandButtons\\BTNVegetaUE.blp")
-call CreateQuestBJ(bj_QUESTTYPE_OPT_DISCOVERED,"Commands p.2",Lng("|cFFFFC850Игровые команды|r:\n\"-debug\" - снимает все эффекты, неуязвимости и паузы, если вы 15 секунд не двигалась. Телепортирует в случайную точку не далее 120 ед.\n\"-rfh\" - пересоздает героя, в случае бага, возможно только вне раунда.\n\"-re\" - воскрешает героя, применимо только на базе.\n\"killme\" - убивает героя через 10 сек.\n\"-swap x\" - поменяться персанажем с союзником.","|cFFFFC850Game commands|r:\n\"-debug\" - removes all effects, invulnerabilities and pauses if you have not moved for 15 seconds. Teleports to a random point no further than 120 units.\n\"-rfh\" - recreates the hero, in case of a bug, only possible outside the round.\n\"-re\" - resurrects the hero, only applicable at the base.\n\"killme\" - kills the hero after 10 sec.\n\"-swap x\" - swap characters with an ally."),"ReplaceableTextures\\CommandButtons\\BTNOrochimaru.blp")
-call CreateQuestBJ(bj_QUESTTYPE_OPT_DISCOVERED,"Commands p.3",Lng("|cFFFFC850Игровые команды|r:\n\"-mr\" - показывает текущее количество магических резистов у вашего персонажа.\n\"-cr\" - показывает текущее количество резистов к контролю у вашего персонажа.\n\"-damage\" - показывает игроку весь урон, который он нанес за всё время в игре, также количество уменьшенного урона общими резистами (не маг) и также количество урона, которое он заблокировал щитами или другими источниками.\n\"-tdamage\" - показывает всю эту информацию также и про других игроков.\n\"-theal\" - показывает всю информацию по восстановленному себе или союзным героям HP и MP у всех игроков.","|cFFFFC850Game commands|r:\n\"-mr\" - shows the current amount of magic resistances your character has.\n\"-cr\" - shows the current amount of control resistances your character has.\n\"-damage\" - shows the player all the damage he has dealt throughout the entire game, as well as the amount of damage reduced by general resistances (not a mage) and also the amount of damage he has blocked with shields or other sources.\n\"-tdamage\" - shows all this information about other players as well.\n\"-theal\" - shows all the information about HP and MP restored to yourself or allied heroes for all players."),"ReplaceableTextures\\CommandButtons\\BTNLaxusExD_Port.blp")
-call CreateQuestBJ(bj_QUESTTYPE_OPT_DISCOVERED,"Commands p.4",Lng("|cFFFFC850Игровые команды|r:\n\"-rounds xx\" - устанавливает кол-во раундов от 2 до 50.\n\"-setduels xx\" - устанавливает разницу между дуэлями, указать можно от 2 до 50. Написать можно лишь в первом раунде.\n\"-noduels\" - включает/выключает дуэли. Так же, после раунда, когда дуэль должна произойти, выдается компенсация. Написать можно лишь в первом раунде.","|cFFFFC850Game commands|r:\n\"-rounds xx\" - sets the number of rounds from 2 to 50.\n\"-setduels xx\" - sets the difference between duels, you can specify from 2 to 50. You can write only in the first round.\n\"-noduels\" - enables/disables duels. Also, after the round, when the duel should take place, compensation is given. You can only write in the first round."),"ReplaceableTextures\\CommandButtons\\BTNWendy.blp")
-call CreateQuestBJ(bj_QUESTTYPE_OPT_DISCOVERED,"Commands for Test Mode",Lng("|cFFFFC850Игровые команды|r:\n\"-hero x yyy\" - Создается герой c id yyy для игрока x. Узнать id можно с помощью команды \"-id 1..4 \".\n\"-cd\" - сбрасывает перезарядку у всех героев.\n\"-setmr\" - позволяет установить текуший маг резист.\n\"-heal\" и \"-unheal\" - Восстанавливает/Уменьшает до 1 здоровье и ману всех героев.\n\"-start\" - Начинает раунд спустя 3 сек.\n\"-pause\" - Останавливает любой таймер на экране.\"-amir\" - Дает каждому игроку 99999999 золота.\n\"-lvlamir\" - Дает максимальный уровень всем героям.\n\"-lvl x\" - устанавливает всем игрокам X уровень.\n\"-control x\" - Дает контроль над указанным игроком.\n\"-height x\" - Устанавливает выбранному юниту X высоту.","|cFFFFC850Game commands|r:\n\"-hero x yyy\" - A hero with the id yyy is created for player x. You can find out the id using the command \"-id 1..4 \".\n\"-cd\" - Resets the cooldown for all heroes.\n\"-setmr\" - Allows you to set the current magic resistance.\n\"-heal\" and \"-unheal\" - Restores/Reduces to 1 health and mana for all heroes.\n\"-start\" - Starts the round after 3 sec.\n\"-pause\" - Stops any timer for screen.\"-amir\" - Gives each player 99999999 gold.\n\"-lvlamir\" - Gives the maximum level to all heroes.\n\"-lvl x\" - sets all players to level X.\n\"-control x\" - Gives control over the specified player.\n\"-height x\" - Sets the selected unit's height to X."),"ReplaceableTextures\\CommandButtons\\BTNHourglass_Yukirin.blp")
+call LANG_QuestBJ(bj_QUESTTYPE_OPT_DISCOVERED,"Commands p.1","|cFFFFC850Игровые команды|r:\n\"-test\" - команда вводится красным игроком до начала первого раунда. Активирует тест режим, давая доступ к дополнительным командам.\n\"-debt\" - показывает сколько золота вы должны союзнику и сколько должны вам.\n\"-itemsc\" - включает/выключает использование предметов на себя.\n\"-setmr\" - позволяет установить текуший маг резист.\n\"-cam\" - установить высоту камеры на значение от 100 до 6000.","|cFFFFC850Game commands|r:\n\"-test\" - the command is entered by the red player before the first round. Activates the test mode, giving access to additional commands.\n\"-debt\" - shows how much gold you owe to an ally and how much you owe.\n\"-itemsr\" - enables/disables the use of items on yourself.\n\"-setmr\" - allows you to set the current magic resistance.\n\"-cam\" - set the camera height to a value from 100 to 6000.","ReplaceableTextures\\CommandButtons\\BTNVegetaUE.blp")
+call LANG_QuestBJ(bj_QUESTTYPE_OPT_DISCOVERED,"Commands p.2","|cFFFFC850Игровые команды|r:\n\"-debug\" - снимает все эффекты, неуязвимости и паузы, если вы 15 секунд не двигалась. Телепортирует в случайную точку не далее 120 ед.\n\"-rfh\" - пересоздает героя, в случае бага, возможно только вне раунда.\n\"-re\" - воскрешает героя, применимо только на базе.\n\"killme\" - убивает героя через 10 сек.\n\"-swap x\" - поменяться персанажем с союзником.","|cFFFFC850Game commands|r:\n\"-debug\" - removes all effects, invulnerabilities and pauses if you have not moved for 15 seconds. Teleports to a random point no further than 120 units.\n\"-rfh\" - recreates the hero, in case of a bug, only possible outside the round.\n\"-re\" - resurrects the hero, only applicable at the base.\n\"killme\" - kills the hero after 10 sec.\n\"-swap x\" - swap characters with an ally.","ReplaceableTextures\\CommandButtons\\BTNOrochimaru.blp")
+call LANG_QuestBJ(bj_QUESTTYPE_OPT_DISCOVERED,"Commands p.3","|cFFFFC850Игровые команды|r:\n\"-mr\" - показывает текущее количество магических резистов у вашего персонажа.\n\"-cr\" - показывает текущее количество резистов к контролю у вашего персонажа.\n\"-damage\" - показывает игроку весь урон, который он нанес за всё время в игре, также количество уменьшенного урона общими резистами (не маг) и также количество урона, которое он заблокировал щитами или другими источниками.\n\"-tdamage\" - показывает всю эту информацию также и про других игроков.\n\"-theal\" - показывает всю информацию по восстановленному себе или союзным героям HP и MP у всех игроков.","|cFFFFC850Game commands|r:\n\"-mr\" - shows the current amount of magic resistances your character has.\n\"-cr\" - shows the current amount of control resistances your character has.\n\"-damage\" - shows the player all the damage he has dealt throughout the entire game, as well as the amount of damage reduced by general resistances (not a mage) and also the amount of damage he has blocked with shields or other sources.\n\"-tdamage\" - shows all this information about other players as well.\n\"-theal\" - shows all the information about HP and MP restored to yourself or allied heroes for all players.","ReplaceableTextures\\CommandButtons\\BTNLaxusExD_Port.blp")
+call LANG_QuestBJ(bj_QUESTTYPE_OPT_DISCOVERED,"Commands p.4","|cFFFFC850Игровые команды|r:\n\"-rounds xx\" - устанавливает кол-во раундов от 2 до 50.\n\"-setduels xx\" - устанавливает разницу между дуэлями, указать можно от 2 до 50. Написать можно лишь в первом раунде.\n\"-noduels\" - включает/выключает дуэли. Так же, после раунда, когда дуэль должна произойти, выдается компенсация. Написать можно лишь в первом раунде.","|cFFFFC850Game commands|r:\n\"-rounds xx\" - sets the number of rounds from 2 to 50.\n\"-setduels xx\" - sets the difference between duels, you can specify from 2 to 50. You can write only in the first round.\n\"-noduels\" - enables/disables duels. Also, after the round, when the duel should take place, compensation is given. You can only write in the first round.","ReplaceableTextures\\CommandButtons\\BTNWendy.blp")
+call LANG_QuestBJ(bj_QUESTTYPE_OPT_DISCOVERED,"Commands for Test Mode","|cFFFFC850Игровые команды|r:\n\"-hero x yyy\" - Создается герой c id yyy для игрока x. Узнать id можно с помощью команды \"-id 1..4 \".\n\"-cd\" - сбрасывает перезарядку у всех героев.\n\"-setmr\" - позволяет установить текуший маг резист.\n\"-heal\" и \"-unheal\" - Восстанавливает/Уменьшает до 1 здоровье и ману всех героев.\n\"-start\" - Начинает раунд спустя 3 сек.\n\"-pause\" - Останавливает любой таймер на экране.\"-amir\" - Дает каждому игроку 99999999 золота.\n\"-lvlamir\" - Дает максимальный уровень всем героям.\n\"-lvl x\" - устанавливает всем игрокам X уровень.\n\"-control x\" - Дает контроль над указанным игроком.\n\"-height x\" - Устанавливает выбранному юниту X высоту.","|cFFFFC850Game commands|r:\n\"-hero x yyy\" - A hero with the id yyy is created for player x. You can find out the id using the command \"-id 1..4 \".\n\"-cd\" - Resets the cooldown for all heroes.\n\"-setmr\" - Allows you to set the current magic resistance.\n\"-heal\" and \"-unheal\" - Restores/Reduces to 1 health and mana for all heroes.\n\"-start\" - Starts the round after 3 sec.\n\"-pause\" - Stops any timer for screen.\"-amir\" - Gives each player 99999999 gold.\n\"-lvlamir\" - Gives the maximum level to all heroes.\n\"-lvl x\" - sets all players to level X.\n\"-control x\" - Gives control over the specified player.\n\"-height x\" - Sets the selected unit's height to X.","ReplaceableTextures\\CommandButtons\\BTNHourglass_Yukirin.blp")
 //call CreateQuestBJ(bj_QUESTTYPE_OPT_DISCOVERED,"Sounds and Music!","|cFFFFC850Информация об озвучке в карте:|r:\n\nЧтобы в карте появилась озвучка, вам необходимо:\n\n1)Скачать архив, из паблика Вконтакте, на ХГМ или Нарутоваре.\n2)Выполнить инструкцию написанную в \"ридми\".\n3)Играть :)","ReplaceableTextures\\CommandButtons\\BTNDrum.blp")
-call CreateQuestBJ(bj_QUESTTYPE_OPT_DISCOVERED,"Help!",Lng("|cFFFFC850Что собирать в начале|r:\n1)Сапоги скорости\n2)Медаль храбрости\n3)Медаль храбрости или шинель квинси\nДальше по вашему усмотрению.","|cFFFFC850What to collect at the beginning|r:\n1)Boots of Speed\n2)Medal of Courage\n3)Medal of Courage or Quincy Coat\nThen at your discretion."),"ReplaceableTextures\\CommandButtons\\BTNSelectHeroOff.blp")
+call LANG_QuestBJ(bj_QUESTTYPE_OPT_DISCOVERED,"Help!","|cFFFFC850Что собирать в начале|r:\n1)Сапоги скорости\n2)Медаль храбрости\n3)Медаль храбрости или шинель квинси\nДальше по вашему усмотрению.","|cFFFFC850What to collect at the beginning|r:\n1)Boots of Speed\n2)Medal of Courage\n3)Medal of Courage or Quincy Coat\nThen at your discretion.","ReplaceableTextures\\CommandButtons\\BTNSelectHeroOff.blp")
 //call CreateQuestBJ(bj_QUESTTYPE_OPT_DISCOVERED,"Important Information!","|cFFFFC850Для некоторых героев запрещено использовать.","war3mapImported\\BTNVegili.blp")
 //call CreateQuestBJ(bj_QUESTTYPE_OPT_DISCOVERED,"Authors of Models","|cFFFFC850 hnZiNai |r\nNanaya Shiki, Kirito\n\n|cFFFFC850 EbonyStalioni |r\nDragonball, One Piece\n\n|cFFFFC850 Neilc |r\nNaruto\n\n|cFFFFC850 Toma |r\nIndex, Dragonball\n\n|cFFFFC850 Golden Egg |r\nReborn","ReplaceableTextures\\CommandButtons\\BTNDivineIntervention.blp")
 endfunction
@@ -27975,7 +28014,7 @@ function OnButtonSelectTeam takes nothing returns nothing
     call DestroyTimerDialog(udg_Captain)
     call TimerStart(udg_Timer4,  20,false,null) //Start 
     set udg_Captain=CreateTimerDialog(udg_Timer4)
-    call TimerDialogSetTitle(udg_Captain,Lng("Осталось времени на подготовку:","Time left to prepare:"))
+    call LANG_TdTitle(udg_Captain,"Осталось времени на подготовку:","Time left to prepare:")
     call TimerDialogDisplay(udg_Captain,true)
     if cmp==1 then
         call DisplayChatMessageEx(null,CHAT_RECIPIENT_UNKNOWN,10,true,Lng("Подготовка, начинает первая команда.","Preparations, the first team begins."))
@@ -33103,7 +33142,7 @@ endif
 endfunction
 function InitTrig_Table takes nothing returns nothing
 set gg_trg_Table=CreateTrigger()
-call TriggerRegisterTimerEventSingle(gg_trg_Table,10)
+call TriggerRegisterTimerEventSingle(gg_trg_Table,15) // было 10 с: +5 с на загрузку данных
 if ValidHLC() then
 call TriggerAddAction(gg_trg_Table,function Trig_Table2_Actions)
 else
@@ -35294,7 +35333,7 @@ endif
 call TimerStart(udg_Timer,100.0,false,null) //Start
 call TimerStart(udg_TimerRandom,90.0,false,null) //Start
 set udg_TB=CreateTimerDialog(udg_Timer)
-call TimerDialogSetTitle(udg_TB,Lng("До начала раунда осталось:","Until the start of the round left:"))
+call LANG_TdTitle(udg_TB,"До начала раунда осталось:","Until the start of the round left:")
 call TimerDialogDisplay(udg_TB,true)
 call DisplayChatMessageEx(null,CHAT_RECIPIENT_UNKNOWN,10,true,Lng("Паузы уменьшают урон на 50%","Pauses reduce damage by 50%"))
 call DisplayChatMessageEx(null,CHAT_RECIPIENT_UNKNOWN,10,true,Lng("Красный игрок между раундами может вкл/выкл уменьшение командой -PauseRes","The red player can turn on / off the reduction between rounds with the command -PauseRes"))
@@ -35335,7 +35374,7 @@ elseif bu==udg_Button[4] then
     set cmp=4
     call TimerStart(udg_TimerB,20.0,false,null) //Start
     set udg_Ban=CreateTimerDialog(udg_TimerB)
-    call TimerDialogSetTitle(udg_Ban,Lng("До окончания стадии банов осталось:","Before the end of the ban stage, there are:"))
+    call LANG_TdTitle(udg_Ban,"До окончания стадии банов осталось:","Before the end of the ban stage, there are:")
     call TimerDialogDisplay(udg_Ban,true)
     set randcond=false
 elseif bu==udg_Button[2] then
@@ -35390,7 +35429,7 @@ set i=i+1
 endloop
 call TimerStart(udg_Timer,100.0,false,null)
 set udg_TB=CreateTimerDialog(udg_Timer)
-call TimerDialogSetTitle(udg_TB,Lng("До начала раунда осталось:","Until the start of the round left:"))
+call LANG_TdTitle(udg_TB,"До начала раунда осталось:","Until the start of the round left:")
 call TimerDialogDisplay(udg_TB,true)
 call DisplayChatMessageEx(null,CHAT_RECIPIENT_UNKNOWN,10,true,Lng("Паузы уменьшают урон на 50%","Pauses reduce damage by 50%"))
 call DisplayChatMessageEx(null,CHAT_RECIPIENT_UNKNOWN,10,true,Lng("Красный игрок между раундами может вкл/выкл уменьшение командой -PauseRes","The red player can turn on / off the reduction between rounds with the command -PauseRes"))
@@ -35568,7 +35607,7 @@ elseif bu==udg_Button[3] then
         call TimerStart(udg_Timer4, 60.0,false,null) //Start
         call ShowFrame( GetOriginFrame( ORIGIN_FRAME_MULTIBOARD, 0 ), false ) 
         set udg_Captain=CreateTimerDialog(udg_Timer4)
-        call TimerDialogSetTitle(udg_Captain,Lng("Осталось времени:","Time left:"))
+        call LANG_TdTitle(udg_Captain,"Осталось времени:","Time left:")
         call TimerDialogDisplay(udg_Captain,true)
         call DisplayTopMessage(GetLocalPlayer(),"Captain Mode")
         call DisplayChatMessageEx(null,CHAT_RECIPIENT_UNKNOWN,10,true,Lng("Судьи выбирают команду, которая будет выбирать первой.","The judges choose the team to pick first."))
@@ -35606,7 +35645,7 @@ elseif bu==udg_Button[3] then
         call TimerStart(udg_Timer4,  20,false,null) //Start
         call ShowFrame( GetOriginFrame( ORIGIN_FRAME_MULTIBOARD, 0 ), false ) 
         set udg_Captain=CreateTimerDialog(udg_Timer4)
-        call TimerDialogSetTitle(udg_Captain,Lng("Осталось времени на подготовку:","Time left to prepare:"))
+        call LANG_TdTitle(udg_Captain,"Осталось времени на подготовку:","Time left to prepare:")
         call TimerDialogDisplay(udg_Captain,true)
         call DisplayTopMessage(GetLocalPlayer(),"Captain Mode")
         if cmp==1 then
@@ -44082,7 +44121,7 @@ if CPTModeON==true and nowpick2<playedplayers then
     call DestroyTimerDialog(udg_Ban1)
     call TimerStart(udg_Timer3,  30,false,null) //Start
     set udg_Ban1=CreateTimerDialog(udg_Timer3)
-    call TimerDialogSetTitle(udg_Ban1,Lng("Осталось времени:","Time Left:"))
+    call LANG_TdTitle(udg_Ban1,"Осталось времени:","Time Left:")
     call TimerDialogDisplay(udg_Ban1,true)
     call ShowFrame( GetOriginFrame( ORIGIN_FRAME_MULTIBOARD, 0 ), false ) 
 endif
@@ -44314,7 +44353,7 @@ if cmb!=true and CPTModeON and pick!=0 and pick!=3 and ((Globalpick>=6 and Globa
         call DestroyTimer(udg_Timer3)
         call TimerStart(udg_Timer,50.0,false,null)
         set udg_TB=CreateTimerDialog(udg_Timer)
-        call TimerDialogSetTitle(udg_TB,Lng("До начала раунда:","Before the start of the round:"))
+        call LANG_TdTitle(udg_TB,"До начала раунда:","Before the start of the round:")
         call TimerDialogDisplay(udg_TB,true)
         set TavernPlayerPickAllow[5]=false
         set TavernPlayerPickAllow[0]=false
@@ -51259,7 +51298,7 @@ function StartCast takes nothing returns nothing
     call DestroyTimerDialog(TG)
     call TimerStart(udg_Timer,3,false,null)
     set udg_TB=CreateTimerDialog(udg_Timer)
-    call TimerDialogSetTitle(udg_TB,Lng("До начала раунда осталось:","Until the start of the round left:"))
+    call LANG_TdTitle(udg_TB,"До начала раунда осталось:","Until the start of the round left:")
     call TimerDialogDisplay(udg_TB,true)
     endif
 endfunction
@@ -52929,7 +52968,7 @@ function EndOfChoiceAct takes nothing returns nothing
         endif
         call TimerStart(udg_Timer,40,false,null)
         set udg_TB=CreateTimerDialog(udg_Timer)
-        call TimerDialogSetTitle(udg_TB,Lng("До начала раунда осталось:","Until the start of the round left:"))
+        call LANG_TdTitle(udg_TB,"До начала раунда осталось:","Until the start of the round left:")
         call TimerDialogDisplay(udg_TB,true)
     endif
     call UpdateMultiboard()
@@ -53438,7 +53477,7 @@ call TimerStart(udg_Timer,40,false,null)
 call SetAbilityBaseRealLevelFieldById('Aneu',ABILITY_RLF_CAST_RANGE,0,2000)
 call SetAbilityBaseRealLevelFieldById('Aneu',ABILITY_RLF_ACTIVATION_RADIUS,0,2500)
 set udg_TB=CreateTimerDialog(udg_Timer)
-call TimerDialogSetTitle(udg_TB,Lng("До начала раунда:","Before the start of the round:"))
+call LANG_TdTitle(udg_TB,"До начала раунда:","Before the start of the round:")
 call ResetToGameCamera(1.0)
 call TimerDialogDisplay(udg_TB,true)
 set udg_B=false
@@ -53592,7 +53631,7 @@ function EndroundCast takes nothing returns nothing
     call DestroyTimerDialog(TG)
     call TimerStart(TD,3,false,function EndOfRound)
     set TG=CreateTimerDialog(TD)
-    call TimerDialogSetTitle(TG,Lng("До конца раунда осталось:","Until the end of the round left:"))
+    call LANG_TdTitle(TG,"До конца раунда осталось:","Until the end of the round left:")
     call TimerDialogDisplay(TG,true)
     endif
 endfunction
@@ -53768,7 +53807,7 @@ call SetFrameColourEx( TavernHeroRandom,1, 0xFF404040 )
 call SetFrameColourEx( TavernHeroRandom,2, 0xFF404040 )
 call SetFrameText( TavernHeroPickText, "Select")
 call DisplayChatMessageEx(null,CHAT_RECIPIENT_UNKNOWN,10,true,"Ban stage is over, its time to pick!")
-call TimerDialogSetTitle(udg_TB,Lng("До начала раунда осталось:","Until the start of the round left:"))
+call LANG_TdTitle(udg_TB,"До начала раунда осталось:","Until the start of the round left:")
 call TimerDialogDisplay(udg_TB,true)
 call TimerStart(t,1,false,function Trig_BanEnd_Actions2)
 set t=null
@@ -53880,7 +53919,7 @@ if cmb==false then
     call TimerStart(udg_Timer4,  20,false,null) //Start
     call ShowFrame( GetOriginFrame( ORIGIN_FRAME_MULTIBOARD, 0 ), false ) 
     set udg_Captain=CreateTimerDialog(udg_Timer4)
-    call TimerDialogSetTitle(udg_Captain,Lng("Осталось времени на подготовку:","Time left to prepare:"))
+    call LANG_TdTitle(udg_Captain,"Осталось времени на подготовку:","Time left to prepare:")
     call TimerDialogDisplay(udg_Captain,true)
     if cmp==1 then
         call DisplayChatMessageEx(null,CHAT_RECIPIENT_UNKNOWN,10,true,Lng("Подготовка, начинает первая команда.","Preparations, the first team begins."))
@@ -53900,7 +53939,7 @@ else
     call DestroyTimerDialog(udg_Ban1)
     call TimerStart(udg_Timer3,  30,false,null) //Start
     set udg_Ban1=CreateTimerDialog(udg_Timer3)
-    call TimerDialogSetTitle(udg_Ban1,Lng("Осталось времени:","Time left:"))
+    call LANG_TdTitle(udg_Ban1,"Осталось времени:","Time left:")
     call TimerDialogDisplay(udg_Ban1,true)
 endif
 set u=null
@@ -54331,7 +54370,7 @@ call TimerStart(TD4,120,false,function KingOfHillActivation)
 //call TimerStart(CreateTimer(),360,false,function Arena_Narrowing)
 call DestroyTimerDialog(TG)
 set TG=CreateTimerDialog(TD)
-call TimerDialogSetTitle(TG,Lng("До конца раунда осталось:","Until the end of the round left:"))
+call LANG_TdTitle(TG,"До конца раунда осталось:","Until the end of the round left:")
 call TimerDialogDisplay(TG,true)
 // if round==1 then
 // call AddItemToStock(gg_unit_n00J_0036,'I068',1,1)//Grail

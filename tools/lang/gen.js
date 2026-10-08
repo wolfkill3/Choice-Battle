@@ -130,8 +130,12 @@ let L = s0.split(/\r?\n/);
 const cut = (b, e) => { const i = L.findIndex(l => l.startsWith(b)); if (i < 0) return; const j = L.findIndex((l, k) => k > i && l.startsWith(e)); L.splice(i, j - i + 1); };
 cut('//LANG_DATA_BEGIN', '//LANG_DATA_END'); cut('//LANG_CORE_BEGIN', '//LANG_CORE_END');
 L = L.filter(l => l !== 'call ExecuteFunc("LANG_Init") // язык (RU / EN) — до всего, что читает тексты');
-const head = L.join('\n');
-const diff = cp.execFileSync('git', ['diff', '-U0', '--no-color', REF, '--', 'map/war3map.j'], { cwd: R, maxBuffer: 1 << 30, encoding: 'utf8' })
+L = L.filter(l => !/^(boolean LANG_EN=|hashtable LANG_HT=|integer LANG_N=|integer LANG_I=|group LANG_G=)/.test(l));
+// diff по тексту без вставок генератора — номера строк совпадают с L и при повторном запуске
+const os = require('os');
+const tmpRu = os.tmpdir() + '/lang_ru.j', tmpEn = os.tmpdir() + '/lang_en.j';
+fs.writeFileSync(tmpRu, L.join('\n')); fs.writeFileSync(tmpEn, enFile('map/war3map.j').replace(/\r/g, ''));
+const diff = cp.spawnSync('git', ['diff', '--no-index', '-U0', '--no-color', tmpEn, tmpRu], { cwd: R, maxBuffer: 1 << 30, encoding: 'utf8' }).stdout
   .replace(/\r/g, '').split('\n');
 // note: diff is "EN -> working tree", so '-' lines are EN, '+' lines are RU (current file)
 const LIT = /"(?:[^"\\]|\\.)*"/g;
@@ -149,7 +153,8 @@ for (let k = 0; k < diff.length; k++) {
     const lineNo = +h[3] + q - 1; const ruL = plus[q];
     let w = -1;
     for (let z = from; z < nm; z++) if (!used.has(z) && sk(minus[z]) === sk(ruL)) { w = z; break; }
-    if (w < 0) { if (/"/.test(ruL) && !/^\s*\/\//.test(ruL)) skipped.push(['no EN pair', lineNo + 1, ruL]); continue; }
+    // уже переведённые строки (повторный запуск по готовому скрипту) и вставки генератора — не пропуски
+    if (w < 0) { if (/"/.test(ruL) && !/^\s*\/\//.test(ruL) && !/Lng\(|LANG_|^call LANG_|^\/\/LANG_/.test(ruL)) skipped.push(['no EN pair', lineNo + 1, ruL]); continue; }
     used.add(w); from = w + 1;
     const enL = minus[w]; conv.pairs++;
     const rl = ruL.match(LIT) || [], el = enL.match(LIT) || [];
@@ -173,6 +178,19 @@ for (let k = 0; k < diff.length; k++) {
   }
 }
 for (const [ln, s] of edits) L[ln] = s;
+// заголовки таймеров и квесты: через LANG_TdTitle / LANG_QuestBJ, чтобы обновлялись при смене языка
+{
+  const Q = '("(?:[^"\\\\]|\\\\.)*")';
+  const td = new RegExp('^(\\s*)call TimerDialogSetTitle\\(\\s*(.*?)\\s*,\\s*Lng\\(' + Q + ',' + Q + '\\)\\s*\\)\\s*$');
+  const qb = new RegExp('^(\\s*)call CreateQuestBJ\\(\\s*([\\w.]+)\\s*,\\s*' + Q + '\\s*,\\s*Lng\\(' + Q + ',' + Q + '\\)\\s*,(.*)\\)\\s*$');
+  let nt = 0, nq = 0;
+  L = L.map(l => {
+    let m = td.exec(l); if (m) { nt++; return m[1] + 'call LANG_TdTitle(' + m[2] + ',' + m[3] + ',' + m[4] + ')'; }
+    m = qb.exec(l); if (m) { nq++; return m[1] + 'call LANG_QuestBJ(' + m[2] + ',' + m[3] + ',' + m[4] + ',' + m[5] + ',' + m[6] + ')'; }
+    return l;
+  });
+  conv.timerTitles = nt; conv.quests = nq;
+}
 // globals into the existing block, core after the last native, data before InitCustomTriggers, init call first in InitCustomTriggers
 const GL = ['boolean LANG_EN=false // язык интерфейса у локального игрока (LANG_Init, -en / -ru)', 'hashtable LANG_HT=InitHashtable()', 'integer LANG_N=0', 'integer LANG_I=0', 'group LANG_G=CreateGroup()'];
 L = L.filter(l => !GL.includes(l));

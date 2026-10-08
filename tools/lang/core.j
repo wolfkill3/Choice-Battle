@@ -231,11 +231,50 @@ exitwhen LANG_I==lgWas
 endloop
 call ExecuteFunc("LANG_Refresh")
 endfunction
+// Заголовки таймеров и описания квестов задаются один раз — запоминаем обе версии и при смене языка
+// выставляем заново. Списки: -53 таймер-диалоги (тексты -51 / -52 по хэндлу), -56 квесты (-54 / -55)
+function LANG_TdTitle takes timerdialog lgTd,string lgRu,string lgEn returns nothing
+local integer lgH=GetHandleId(lgTd)
+if not HaveSavedString(LANG_HT,-51,lgH) then
+call SaveTimerDialogHandle(LANG_HT,-53,LoadInteger(LANG_HT,-53,-1),lgTd)
+call SaveInteger(LANG_HT,-53,-1,LoadInteger(LANG_HT,-53,-1)+1)
+endif
+call SaveStr(LANG_HT,-51,lgH,lgRu)
+call SaveStr(LANG_HT,-52,lgH,lgEn)
+call TimerDialogSetTitle(lgTd,Lng(lgRu,lgEn))
+endfunction
+function LANG_QuestBJ takes integer lgType,string lgTitle,string lgRu,string lgEn,string lgIcon returns nothing
+local quest lgQ=CreateQuestBJ(lgType,lgTitle,Lng(lgRu,lgEn),lgIcon)
+local integer lgH=GetHandleId(lgQ)
+call SaveQuestHandle(LANG_HT,-56,LoadInteger(LANG_HT,-56,-1),lgQ)
+call SaveInteger(LANG_HT,-56,-1,LoadInteger(LANG_HT,-56,-1)+1)
+call SaveStr(LANG_HT,-54,lgH,lgRu)
+call SaveStr(LANG_HT,-55,lgH,lgEn)
+set lgQ=null
+endfunction
+function LANG_Retitle takes nothing returns nothing
+local integer lgK=0
+local integer lgH
+loop
+exitwhen lgK>=LoadInteger(LANG_HT,-53,-1)
+set lgH=GetHandleId(LoadTimerDialogHandle(LANG_HT,-53,lgK))
+call TimerDialogSetTitle(LoadTimerDialogHandle(LANG_HT,-53,lgK),Lng(LoadStr(LANG_HT,-51,lgH),LoadStr(LANG_HT,-52,lgH)))
+set lgK=lgK+1
+endloop
+set lgK=0
+loop
+exitwhen lgK>=LoadInteger(LANG_HT,-56,-1)
+set lgH=GetHandleId(LoadQuestHandle(LANG_HT,-56,lgK))
+call QuestSetDescription(LoadQuestHandle(LANG_HT,-56,lgK),Lng(LoadStr(LANG_HT,-54,lgH),LoadStr(LANG_HT,-55,lgH)))
+set lgK=lgK+1
+endloop
+endfunction
 function LANG_Chat takes nothing returns nothing
 if GetTriggerPlayer()==GetLocalPlayer() then
 set LANG_EN=GetEventPlayerChatString()=="-en"
 endif
 call LANG_Apply()
+call LANG_Retitle()
 if GetTriggerPlayer()==GetLocalPlayer() then
 call DisplayTimedTextToPlayer(GetLocalPlayer(),0,0,5,Lng("Язык: русский. Часть уже показанных надписей обновится при следующем выводе.","Language: English. Some texts already on screen update the next time they are shown."))
 endif
