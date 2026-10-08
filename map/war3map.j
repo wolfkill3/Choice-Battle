@@ -106,6 +106,15 @@ constant integer SH_HerKill = StringHash("HerKill")
 constant integer SH_HeroineDBoard = StringHash("HeroineDBoard")
 constant integer SH_SabracDBoard = StringHash("SabracDBoard")
 constant integer SH_BlackGokuDBoard = StringHash("BlackGokuDBoard")
+constant integer SH_LamboDBoard = StringHash("LamboDBoard")
+constant integer SH_BuuDBoard = StringHash("BuuDBoard")
+constant integer SH_BuuNearAgi = StringHash("BuuNearAgi") // Буу: характеристики от смертей врагов рядом (до конца раунда)
+constant integer SH_BuuNearStr = StringHash("BuuNearStr")
+constant integer SH_BuuNearInt = StringHash("BuuNearInt")
+constant integer SH_CellDBoard = StringHash("CellDBoard")
+constant integer SH_RemDBoard = StringHash("RemDBoard")
+constant integer SH_CellKills = StringHash("CellKills") // Селл: убийства и ассисты, за которые получены характеристики
+constant integer SH_CellAssists = StringHash("CellAssists")
 constant integer SH_da = StringHash("da")
 constant integer SH_recall = StringHash("recall")
 constant integer SH_SabracTU = StringHash("SabracTU")
@@ -36262,6 +36271,118 @@ set u=null
 set t=null
 endfunction
 
+function LamboDBoard2 takes nothing returns nothing
+local timer t=GetExpiredTimer()
+local integer id=GetHandleId(t)
+local integer ip=LoadInteger(HH,id,0)
+local unit u=Hero[ip]
+local integer uid=GetHandleId(u)
+if GetUnitTypeId(u)=='H00A' then
+    if IsUnitSelected(u,GetLocalPlayer()) and IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(u)) then
+        call SetFrameText(GetFrameByName("CustomLeaderboardText",0),"|c00FFFF40Q charge|r: +"+I2S(R2I(LoadReal(HH,uid,SH_LamboQReal)))+". |c00FF8080Q damage|r: "+I2S(R2I(75+(GetUnitAbilityLevel(u,'LamQ')+1)*GetHeroStr(u,true)+LoadReal(HH,uid,SH_LamboQReal))))
+        call ShowFrame(GetFrameByName("CustomLeaderboard",0), true)
+        call SetFrameSize( GetFrameByName("CustomLeaderboard",0), .1775, GetFrameHeight( GetFrameByName("CustomLeaderboardText",0))+0.016)
+        call SetFrameTextAlignment( GetFrameByName("CustomLeaderboardText",0), TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_LEFT )
+    endif
+else
+    if IsUnitSelected(u,GetLocalPlayer()) and IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(u)) then
+        call SetFrameText(GetFrameByName("CustomLeaderboardText",0)," ")
+        call ShowFrame(GetFrameByName("CustomLeaderboard",0),false)
+    endif
+    call SaveInteger(HH,ip,SH_LamboDBoard,0)
+    call RemoveSavedInteger(HH,ip,SH_LamboDBoard)
+    call PauseTimer(t)
+    call DestroyTimer(t)
+    call FlushChildHashtable(HH,id)
+endif
+set u=null
+set t=null
+endfunction
+
+function BuuDBoard2 takes nothing returns nothing
+local timer t=GetExpiredTimer()
+local integer id=GetHandleId(t)
+local integer ip=LoadInteger(HH,id,0)
+local unit u=Hero[ip]
+local integer uid=GetHandleId(u)
+if GetUnitTypeId(u)=='H02O' then
+    if IsUnitSelected(u,GetLocalPlayer()) and IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(u)) then
+        call SetFrameText(GetFrameByName("CustomLeaderboardText",0),"|c00FF80C0Absorbed|r |c00FF0000STR|r: +"+I2S(GutsStr[ip])+"|n|c00FF80C0Nearby deaths|r (round): |c00FF0000STR|r +"+I2S(LoadInteger(HH,uid,SH_BuuNearStr))+"  |c003CFF3CAGI|r +"+I2S(LoadInteger(HH,uid,SH_BuuNearAgi))+"  |c000080FFINT|r +"+I2S(LoadInteger(HH,uid,SH_BuuNearInt)))
+        call ShowFrame(GetFrameByName("CustomLeaderboard",0), true)
+        call SetFrameSize( GetFrameByName("CustomLeaderboard",0), .1775, GetFrameHeight( GetFrameByName("CustomLeaderboardText",0))+0.016)
+        call SetFrameTextAlignment( GetFrameByName("CustomLeaderboardText",0), TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_LEFT )
+    endif
+else
+    if IsUnitSelected(u,GetLocalPlayer()) and IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(u)) then
+        call SetFrameText(GetFrameByName("CustomLeaderboardText",0)," ")
+        call ShowFrame(GetFrameByName("CustomLeaderboard",0),false)
+    endif
+    call SaveInteger(HH,ip,SH_BuuDBoard,0)
+    call RemoveSavedInteger(HH,ip,SH_BuuDBoard)
+    call PauseTimer(t)
+    call DestroyTimer(t)
+    call FlushChildHashtable(HH,id)
+endif
+set u=null
+set t=null
+endfunction
+
+function CellDBoard2 takes nothing returns nothing
+local timer t=GetExpiredTimer()
+local integer id=GetHandleId(t)
+local integer ip=LoadInteger(HH,id,0)
+local unit u=Hero[ip]
+local integer uid=GetHandleId(u)
+if GetUnitTypeId(u)=='H052' then
+    if IsUnitSelected(u,GetLocalPlayer()) and IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(u)) then
+        call SetFrameText(GetFrameByName("CustomLeaderboardText",0),"|c0080FF00Earned|r: |c00FF0000STR|r +"+I2S(LoadInteger(HH,uid,SH_CellKills))+"  |c003CFF3CAGI|r +"+I2S(LoadInteger(HH,uid,SH_CellKills))+"  |c000080FFINT|r +"+I2S(LoadInteger(HH,uid,SH_CellKills)+LoadInteger(HH,uid,SH_CellAssists)))
+        call ShowFrame(GetFrameByName("CustomLeaderboard",0), true)
+        call SetFrameSize( GetFrameByName("CustomLeaderboard",0), .1775, GetFrameHeight( GetFrameByName("CustomLeaderboardText",0))+0.016)
+        call SetFrameTextAlignment( GetFrameByName("CustomLeaderboardText",0), TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_LEFT )
+    endif
+else
+    if IsUnitSelected(u,GetLocalPlayer()) and IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(u)) then
+        call SetFrameText(GetFrameByName("CustomLeaderboardText",0)," ")
+        call ShowFrame(GetFrameByName("CustomLeaderboard",0),false)
+    endif
+    call SaveInteger(HH,ip,SH_CellDBoard,0)
+    call RemoveSavedInteger(HH,ip,SH_CellDBoard)
+    call PauseTimer(t)
+    call DestroyTimer(t)
+    call FlushChildHashtable(HH,id)
+endif
+set u=null
+set t=null
+endfunction
+
+function RemDBoard2 takes nothing returns nothing
+local timer t=GetExpiredTimer()
+local integer id=GetHandleId(t)
+local integer ip=LoadInteger(HH,id,0)
+local unit u=Hero[ip]
+local integer uid=GetHandleId(u)
+if GetUnitTypeId(u)=='HRem' then
+    if IsUnitSelected(u,GetLocalPlayer()) and IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(u)) then
+        call SetFrameText(GetFrameByName("CustomLeaderboardText",0),"|c00FF4040Max HP|r: |c00FF8080permanent|r +"+I2S(LoadInteger(HH,uid,SH_RemKillLife))+".  |c00FFB0B0temporary|r +"+I2S(LoadInteger(HH,uid,SH_RemTmpLife))+"/"+I2S(R2I((GetUnitState(u,UNIT_STATE_MAX_LIFE)-I2R(LoadInteger(bof_HT,uid,SH_bofBonus)))*.25)))
+        call ShowFrame(GetFrameByName("CustomLeaderboard",0), true)
+        call SetFrameSize( GetFrameByName("CustomLeaderboard",0), .1775, GetFrameHeight( GetFrameByName("CustomLeaderboardText",0))+0.016)
+        call SetFrameTextAlignment( GetFrameByName("CustomLeaderboardText",0), TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_LEFT )
+    endif
+else
+    if IsUnitSelected(u,GetLocalPlayer()) and IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(u)) then
+        call SetFrameText(GetFrameByName("CustomLeaderboardText",0)," ")
+        call ShowFrame(GetFrameByName("CustomLeaderboard",0),false)
+    endif
+    call SaveInteger(HH,ip,SH_RemDBoard,0)
+    call RemoveSavedInteger(HH,ip,SH_RemDBoard)
+    call PauseTimer(t)
+    call DestroyTimer(t)
+    call FlushChildHashtable(HH,id)
+endif
+set u=null
+set t=null
+endfunction
+
 function SinonAmmo_Periodic takes nothing returns nothing
 	local integer id = GetHandleId(GetExpiredTimer())
     local integer ip_target = LoadInteger(HH, id, 0)
@@ -37147,6 +37268,42 @@ if GetUnitAbilityLevel(u, 'BGF0')>0 then
         call SaveInteger(HH,GetHandleId(cjlocgn_00000000),0,ip)
         call SaveInteger(HH,ip,SH_BlackGokuDBoard,1)
         call TimerStart(cjlocgn_00000000,0.2,true,function BlackGokuDBoard2)
+        set cjlocgn_00000000=null
+    endif
+endif
+if GetUnitTypeId(u)=='H00A' then
+    if LoadInteger(HH,ip,SH_LamboDBoard)!=1 then
+        set cjlocgn_00000000=CreateTimer()
+        call SaveInteger(HH,GetHandleId(cjlocgn_00000000),0,ip)
+        call SaveInteger(HH,ip,SH_LamboDBoard,1)
+        call TimerStart(cjlocgn_00000000,0.2,true,function LamboDBoard2)
+        set cjlocgn_00000000=null
+    endif
+endif
+if GetUnitTypeId(u)=='H02O' then
+    if LoadInteger(HH,ip,SH_BuuDBoard)!=1 then
+        set cjlocgn_00000000=CreateTimer()
+        call SaveInteger(HH,GetHandleId(cjlocgn_00000000),0,ip)
+        call SaveInteger(HH,ip,SH_BuuDBoard,1)
+        call TimerStart(cjlocgn_00000000,0.2,true,function BuuDBoard2)
+        set cjlocgn_00000000=null
+    endif
+endif
+if GetUnitTypeId(u)=='H052' then
+    if LoadInteger(HH,ip,SH_CellDBoard)!=1 then
+        set cjlocgn_00000000=CreateTimer()
+        call SaveInteger(HH,GetHandleId(cjlocgn_00000000),0,ip)
+        call SaveInteger(HH,ip,SH_CellDBoard,1)
+        call TimerStart(cjlocgn_00000000,0.2,true,function CellDBoard2)
+        set cjlocgn_00000000=null
+    endif
+endif
+if GetUnitTypeId(u)=='HRem' then
+    if LoadInteger(HH,ip,SH_RemDBoard)!=1 then
+        set cjlocgn_00000000=CreateTimer()
+        call SaveInteger(HH,GetHandleId(cjlocgn_00000000),0,ip)
+        call SaveInteger(HH,ip,SH_RemDBoard,1)
+        call TimerStart(cjlocgn_00000000,0.2,true,function RemDBoard2)
         set cjlocgn_00000000=null
     endif
 endif
@@ -38297,8 +38454,11 @@ local integer id=GetHandleId(t)
 local unit u=LoadUnitHandle(h,id,1)
 if udg_B==false or DU2==false then
 call SetHeroAgi(u,GetHeroAgi(u,false)-(LoadInteger(h,id,2)+2),true)
+call SaveInteger(HH,GetHandleId(u),SH_BuuNearAgi,LoadInteger(HH,GetHandleId(u),SH_BuuNearAgi)-(LoadInteger(h,id,2)+2))
 call SetHeroStr(u,GetHeroStr(u,false)-(LoadInteger(h,id,3)+2),true)
+call SaveInteger(HH,GetHandleId(u),SH_BuuNearStr,LoadInteger(HH,GetHandleId(u),SH_BuuNearStr)-(LoadInteger(h,id,3)+2))
 call SetHeroInt(u,GetHeroInt(u,false)-(LoadInteger(h,id,4)+2),true)
+call SaveInteger(HH,GetHandleId(u),SH_BuuNearInt,LoadInteger(HH,GetHandleId(u),SH_BuuNearInt)-(LoadInteger(h,id,4)+2))
 call PauseTimer(t)
 call DestroyTimer(t)
 call FlushChildHashtable(h,id)
@@ -38416,12 +38576,15 @@ function Trig_Killer_Actions takes nothing returns nothing
                 set i2=R2I(I2R(GetHeroAgi(Hero[ic],true))*0.05)
                 call SaveInteger(h,GetHandleId(t),2,i2)
                 call SetHeroAgi(E,GetHeroAgi(E,false)+i2+2,true)
+                call SaveInteger(HH,GetHandleId(E),SH_BuuNearAgi,LoadInteger(HH,GetHandleId(E),SH_BuuNearAgi)+i2+2)
                 set i2=R2I(I2R(GetHeroStr(Hero[ic],true))*0.05)
                 call SaveInteger(h,GetHandleId(t),3,i2)
                 call SetHeroStr(E,GetHeroStr(E,false)+i2+2,true)
+                call SaveInteger(HH,GetHandleId(E),SH_BuuNearStr,LoadInteger(HH,GetHandleId(E),SH_BuuNearStr)+i2+2)
                 set i2=R2I(I2R(GetHeroInt(Hero[ic],true))*0.05)
                 call SaveInteger(h,GetHandleId(t),4,i2)
                 call SetHeroInt(E,GetHeroInt(E,false)+i2+2,true)
+                call SaveInteger(HH,GetHandleId(E),SH_BuuNearInt,LoadInteger(HH,GetHandleId(E),SH_BuuNearInt)+i2+2)
                 call SaveUnitHandle(h,GetHandleId(t),1,E)
                 call TimerStart(t,0.1,true,function BuuAbsorbCheck)
             endif
@@ -38464,6 +38627,7 @@ function Trig_Killer_Actions takes nothing returns nothing
             call SetHeroAgi(u,GetHeroAgi(u,false)+1,true)
             call SetHeroStr(u,GetHeroStr(u,false)+1,true)
             call SetHeroInt(u,GetHeroInt(u,false)+1,true)
+            call SaveInteger(HH,GetHandleId(u),SH_CellKills,LoadInteger(HH,GetHandleId(u),SH_CellKills)+1)
         endif
         if u!=null and u!=c and GetUnitTypeId(u)!='H02A' and DU==true and GetUnitTypeId(c)!='H06U' then
             set udg_kill[iu]=udg_kill[iu]+1
@@ -38493,6 +38657,7 @@ function Trig_Killer_Actions takes nothing returns nothing
                         endif
                         if GetUnitAbilityLevel(Hero[i],'CelF')>0 then
                             call SetHeroInt(Hero[i],GetHeroInt(Hero[i],false)+1,true)
+                            call SaveInteger(HH,GetHandleId(Hero[i]),SH_CellAssists,LoadInteger(HH,GetHandleId(Hero[i]),SH_CellAssists)+1)
                         endif
                         if GetUnitTypeId(Hero[i])=='HYuj' then //old 'H049'
                             set yuji4[i]=yuji4[i]+1
@@ -46840,6 +47005,8 @@ if GetUnitTypeId(Hero[ip])=='H052' then
 call SetHeroInt(Hero[ip],GetHeroInt(Hero[ip],false)+udg_kill[ip]+udg_assist[ip],true)
 call SetHeroStr(Hero[ip],GetHeroStr(Hero[ip],false)+udg_kill[ip],true)
 call SetHeroAgi(Hero[ip],GetHeroAgi(Hero[ip],false)+udg_kill[ip],true)
+call SaveInteger(HH,GetHandleId(Hero[ip]),SH_CellKills,LoadInteger(HH,GetHandleId(Hero[ip]),SH_CellKills)+udg_kill[ip])
+call SaveInteger(HH,GetHandleId(Hero[ip]),SH_CellAssists,LoadInteger(HH,GetHandleId(Hero[ip]),SH_CellAssists)+udg_assist[ip])
 endif
 //call AddUnitMaxLife(Hero[ip],(round-1)*150)
 call SetHeroInt(Hero[ip],GetHeroInt(Hero[ip],false)+((round-1)-GetPlayerState(p,PLAYER_STATE_RESOURCE_LUMBER))*3,true)
@@ -46913,6 +47080,8 @@ if GetUnitTypeId(Hero[ip])=='H052' then
 call SetHeroInt(Hero[ip],GetHeroInt(Hero[ip],false)+udg_kill[ip]+udg_assist[ip],true)
 call SetHeroStr(Hero[ip],GetHeroStr(Hero[ip],false)+udg_kill[ip],true)
 call SetHeroAgi(Hero[ip],GetHeroAgi(Hero[ip],false)+udg_kill[ip],true)
+call SaveInteger(HH,GetHandleId(Hero[ip]),SH_CellKills,LoadInteger(HH,GetHandleId(Hero[ip]),SH_CellKills)+udg_kill[ip])
+call SaveInteger(HH,GetHandleId(Hero[ip]),SH_CellAssists,LoadInteger(HH,GetHandleId(Hero[ip]),SH_CellAssists)+udg_assist[ip])
 endif
 //call AddUnitMaxLife(Hero[ip],(round-1)*150)
 call SetHeroInt(Hero[ip],GetHeroInt(Hero[ip],false)+((round-1)-GetPlayerState(p,PLAYER_STATE_RESOURCE_LUMBER))*3,true)
@@ -46986,6 +47155,8 @@ if GetUnitTypeId(Hero[ip])=='H052' then
 call SetHeroInt(Hero[ip],GetHeroInt(Hero[ip],false)+udg_kill[ip]+udg_assist[ip],true)
 call SetHeroStr(Hero[ip],GetHeroStr(Hero[ip],false)+udg_kill[ip],true)
 call SetHeroAgi(Hero[ip],GetHeroAgi(Hero[ip],false)+udg_kill[ip],true)
+call SaveInteger(HH,GetHandleId(Hero[ip]),SH_CellKills,LoadInteger(HH,GetHandleId(Hero[ip]),SH_CellKills)+udg_kill[ip])
+call SaveInteger(HH,GetHandleId(Hero[ip]),SH_CellAssists,LoadInteger(HH,GetHandleId(Hero[ip]),SH_CellAssists)+udg_assist[ip])
 endif
 //call AddUnitMaxLife(Hero[ip],(round-1)*150)
 call SetHeroInt(Hero[ip],GetHeroInt(Hero[ip],false)+((round-1)-GetPlayerState(p,PLAYER_STATE_RESOURCE_LUMBER))*3,true)
@@ -47059,6 +47230,8 @@ if GetUnitTypeId(Hero[ip])=='H052' then
 call SetHeroInt(Hero[ip],GetHeroInt(Hero[ip],false)+udg_kill[ip]+udg_assist[ip],true)
 call SetHeroStr(Hero[ip],GetHeroStr(Hero[ip],false)+udg_kill[ip],true)
 call SetHeroAgi(Hero[ip],GetHeroAgi(Hero[ip],false)+udg_kill[ip],true)
+call SaveInteger(HH,GetHandleId(Hero[ip]),SH_CellKills,LoadInteger(HH,GetHandleId(Hero[ip]),SH_CellKills)+udg_kill[ip])
+call SaveInteger(HH,GetHandleId(Hero[ip]),SH_CellAssists,LoadInteger(HH,GetHandleId(Hero[ip]),SH_CellAssists)+udg_assist[ip])
 endif
 //call AddUnitMaxLife(Hero[ip],(round-1)*150)
 call SetHeroInt(Hero[ip],GetHeroInt(Hero[ip],false)+((round-1)-GetPlayerState(p,PLAYER_STATE_RESOURCE_LUMBER))*3,true)
@@ -47132,6 +47305,8 @@ if GetUnitTypeId(Hero[ip])=='H052' then
 call SetHeroInt(Hero[ip],GetHeroInt(Hero[ip],false)+udg_kill[ip]+udg_assist[ip],true)
 call SetHeroStr(Hero[ip],GetHeroStr(Hero[ip],false)+udg_kill[ip],true)
 call SetHeroAgi(Hero[ip],GetHeroAgi(Hero[ip],false)+udg_kill[ip],true)
+call SaveInteger(HH,GetHandleId(Hero[ip]),SH_CellKills,LoadInteger(HH,GetHandleId(Hero[ip]),SH_CellKills)+udg_kill[ip])
+call SaveInteger(HH,GetHandleId(Hero[ip]),SH_CellAssists,LoadInteger(HH,GetHandleId(Hero[ip]),SH_CellAssists)+udg_assist[ip])
 endif
 //call AddUnitMaxLife(Hero[ip],(round-1)*150)
 call SetHeroInt(Hero[ip],GetHeroInt(Hero[ip],false)+((round-1)-GetPlayerState(p,PLAYER_STATE_RESOURCE_LUMBER))*3,true)
@@ -47205,6 +47380,8 @@ if GetUnitTypeId(Hero[ip])=='H052' then
 call SetHeroInt(Hero[ip],GetHeroInt(Hero[ip],false)+udg_kill[ip]+udg_assist[ip],true)
 call SetHeroStr(Hero[ip],GetHeroStr(Hero[ip],false)+udg_kill[ip],true)
 call SetHeroAgi(Hero[ip],GetHeroAgi(Hero[ip],false)+udg_kill[ip],true)
+call SaveInteger(HH,GetHandleId(Hero[ip]),SH_CellKills,LoadInteger(HH,GetHandleId(Hero[ip]),SH_CellKills)+udg_kill[ip])
+call SaveInteger(HH,GetHandleId(Hero[ip]),SH_CellAssists,LoadInteger(HH,GetHandleId(Hero[ip]),SH_CellAssists)+udg_assist[ip])
 endif
 //call AddUnitMaxLife(Hero[ip],(round-1)*150)
 call SetHeroInt(Hero[ip],GetHeroInt(Hero[ip],false)+((round-1)-GetPlayerState(p,PLAYER_STATE_RESOURCE_LUMBER))*3,true)
@@ -47278,6 +47455,8 @@ if GetUnitTypeId(Hero[ip])=='H052' then
 call SetHeroInt(Hero[ip],GetHeroInt(Hero[ip],false)+udg_kill[ip]+udg_assist[ip],true)
 call SetHeroStr(Hero[ip],GetHeroStr(Hero[ip],false)+udg_kill[ip],true)
 call SetHeroAgi(Hero[ip],GetHeroAgi(Hero[ip],false)+udg_kill[ip],true)
+call SaveInteger(HH,GetHandleId(Hero[ip]),SH_CellKills,LoadInteger(HH,GetHandleId(Hero[ip]),SH_CellKills)+udg_kill[ip])
+call SaveInteger(HH,GetHandleId(Hero[ip]),SH_CellAssists,LoadInteger(HH,GetHandleId(Hero[ip]),SH_CellAssists)+udg_assist[ip])
 endif
 //call AddUnitMaxLife(Hero[ip],(round-1)*150)
 call SetHeroInt(Hero[ip],GetHeroInt(Hero[ip],false)+((round-1)-GetPlayerState(p,PLAYER_STATE_RESOURCE_LUMBER))*3,true)
@@ -47370,6 +47549,8 @@ if GetUnitTypeId(Hero[ip])=='H052' then
 call SetHeroInt(Hero[ip],GetHeroInt(Hero[ip],false)+udg_kill[ip]+udg_assist[ip],true)
 call SetHeroStr(Hero[ip],GetHeroStr(Hero[ip],false)+udg_kill[ip],true)
 call SetHeroAgi(Hero[ip],GetHeroAgi(Hero[ip],false)+udg_kill[ip],true)
+call SaveInteger(HH,GetHandleId(Hero[ip]),SH_CellKills,LoadInteger(HH,GetHandleId(Hero[ip]),SH_CellKills)+udg_kill[ip])
+call SaveInteger(HH,GetHandleId(Hero[ip]),SH_CellAssists,LoadInteger(HH,GetHandleId(Hero[ip]),SH_CellAssists)+udg_assist[ip])
 endif
 //call AddUnitMaxLife(Hero[ip],(round-1)*150)
 call SetHeroInt(Hero[ip],GetHeroInt(Hero[ip],false)+((round-1)-GetPlayerState(p,PLAYER_STATE_RESOURCE_LUMBER))*3,true)
@@ -47443,6 +47624,8 @@ if GetUnitTypeId(Hero[ip])=='H052' then
 call SetHeroInt(Hero[ip],GetHeroInt(Hero[ip],false)+udg_kill[ip]+udg_assist[ip],true)
 call SetHeroStr(Hero[ip],GetHeroStr(Hero[ip],false)+udg_kill[ip],true)
 call SetHeroAgi(Hero[ip],GetHeroAgi(Hero[ip],false)+udg_kill[ip],true)
+call SaveInteger(HH,GetHandleId(Hero[ip]),SH_CellKills,LoadInteger(HH,GetHandleId(Hero[ip]),SH_CellKills)+udg_kill[ip])
+call SaveInteger(HH,GetHandleId(Hero[ip]),SH_CellAssists,LoadInteger(HH,GetHandleId(Hero[ip]),SH_CellAssists)+udg_assist[ip])
 endif
 //call AddUnitMaxLife(Hero[ip],(round-1)*150)
 call SetHeroInt(Hero[ip],GetHeroInt(Hero[ip],false)+((round-1)-GetPlayerState(p,PLAYER_STATE_RESOURCE_LUMBER))*3,true)
@@ -47516,6 +47699,8 @@ if GetUnitTypeId(Hero[ip])=='H052' then
 call SetHeroInt(Hero[ip],GetHeroInt(Hero[ip],false)+udg_kill[ip]+udg_assist[ip],true)
 call SetHeroStr(Hero[ip],GetHeroStr(Hero[ip],false)+udg_kill[ip],true)
 call SetHeroAgi(Hero[ip],GetHeroAgi(Hero[ip],false)+udg_kill[ip],true)
+call SaveInteger(HH,GetHandleId(Hero[ip]),SH_CellKills,LoadInteger(HH,GetHandleId(Hero[ip]),SH_CellKills)+udg_kill[ip])
+call SaveInteger(HH,GetHandleId(Hero[ip]),SH_CellAssists,LoadInteger(HH,GetHandleId(Hero[ip]),SH_CellAssists)+udg_assist[ip])
 endif
 //call AddUnitMaxLife(Hero[ip],(round-1)*150)
 call SetHeroInt(Hero[ip],GetHeroInt(Hero[ip],false)+((round-1)-GetPlayerState(p,PLAYER_STATE_RESOURCE_LUMBER))*3,true)
@@ -47589,6 +47774,8 @@ if GetUnitTypeId(Hero[ip])=='H052' then
 call SetHeroInt(Hero[ip],GetHeroInt(Hero[ip],false)+udg_kill[ip]+udg_assist[ip],true)
 call SetHeroStr(Hero[ip],GetHeroStr(Hero[ip],false)+udg_kill[ip],true)
 call SetHeroAgi(Hero[ip],GetHeroAgi(Hero[ip],false)+udg_kill[ip],true)
+call SaveInteger(HH,GetHandleId(Hero[ip]),SH_CellKills,LoadInteger(HH,GetHandleId(Hero[ip]),SH_CellKills)+udg_kill[ip])
+call SaveInteger(HH,GetHandleId(Hero[ip]),SH_CellAssists,LoadInteger(HH,GetHandleId(Hero[ip]),SH_CellAssists)+udg_assist[ip])
 endif
 //call AddUnitMaxLife(Hero[ip],(round-1)*150)
 call SetHeroInt(Hero[ip],GetHeroInt(Hero[ip],false)+((round-1)-GetPlayerState(p,PLAYER_STATE_RESOURCE_LUMBER))*3,true)
@@ -47662,6 +47849,8 @@ if GetUnitTypeId(Hero[ip])=='H052' then
 call SetHeroInt(Hero[ip],GetHeroInt(Hero[ip],false)+udg_kill[ip]+udg_assist[ip],true)
 call SetHeroStr(Hero[ip],GetHeroStr(Hero[ip],false)+udg_kill[ip],true)
 call SetHeroAgi(Hero[ip],GetHeroAgi(Hero[ip],false)+udg_kill[ip],true)
+call SaveInteger(HH,GetHandleId(Hero[ip]),SH_CellKills,LoadInteger(HH,GetHandleId(Hero[ip]),SH_CellKills)+udg_kill[ip])
+call SaveInteger(HH,GetHandleId(Hero[ip]),SH_CellAssists,LoadInteger(HH,GetHandleId(Hero[ip]),SH_CellAssists)+udg_assist[ip])
 endif
 //call AddUnitMaxLife(Hero[ip],(round-1)*150)
 call SetHeroInt(Hero[ip],GetHeroInt(Hero[ip],false)+((round-1)-GetPlayerState(p,PLAYER_STATE_RESOURCE_LUMBER))*3,true)
@@ -47735,6 +47924,8 @@ if GetUnitTypeId(Hero[ip])=='H052' then
 call SetHeroInt(Hero[ip],GetHeroInt(Hero[ip],false)+udg_kill[ip]+udg_assist[ip],true)
 call SetHeroStr(Hero[ip],GetHeroStr(Hero[ip],false)+udg_kill[ip],true)
 call SetHeroAgi(Hero[ip],GetHeroAgi(Hero[ip],false)+udg_kill[ip],true)
+call SaveInteger(HH,GetHandleId(Hero[ip]),SH_CellKills,LoadInteger(HH,GetHandleId(Hero[ip]),SH_CellKills)+udg_kill[ip])
+call SaveInteger(HH,GetHandleId(Hero[ip]),SH_CellAssists,LoadInteger(HH,GetHandleId(Hero[ip]),SH_CellAssists)+udg_assist[ip])
 endif
 //call AddUnitMaxLife(Hero[ip],(round-1)*150)
 call SetHeroInt(Hero[ip],GetHeroInt(Hero[ip],false)+((round-1)-GetPlayerState(p,PLAYER_STATE_RESOURCE_LUMBER))*3,true)
@@ -47808,6 +47999,8 @@ if GetUnitTypeId(Hero[ip])=='H052' then
 call SetHeroInt(Hero[ip],GetHeroInt(Hero[ip],false)+udg_kill[ip]+udg_assist[ip],true)
 call SetHeroStr(Hero[ip],GetHeroStr(Hero[ip],false)+udg_kill[ip],true)
 call SetHeroAgi(Hero[ip],GetHeroAgi(Hero[ip],false)+udg_kill[ip],true)
+call SaveInteger(HH,GetHandleId(Hero[ip]),SH_CellKills,LoadInteger(HH,GetHandleId(Hero[ip]),SH_CellKills)+udg_kill[ip])
+call SaveInteger(HH,GetHandleId(Hero[ip]),SH_CellAssists,LoadInteger(HH,GetHandleId(Hero[ip]),SH_CellAssists)+udg_assist[ip])
 endif
 //call AddUnitMaxLife(Hero[ip],(round-1)*150)
 call SetHeroInt(Hero[ip],GetHeroInt(Hero[ip],false)+((round-1)-GetPlayerState(p,PLAYER_STATE_RESOURCE_LUMBER))*3,true)
@@ -47881,6 +48074,8 @@ if GetUnitTypeId(Hero[ip])=='H052' then
 call SetHeroInt(Hero[ip],GetHeroInt(Hero[ip],false)+udg_kill[ip]+udg_assist[ip],true)
 call SetHeroStr(Hero[ip],GetHeroStr(Hero[ip],false)+udg_kill[ip],true)
 call SetHeroAgi(Hero[ip],GetHeroAgi(Hero[ip],false)+udg_kill[ip],true)
+call SaveInteger(HH,GetHandleId(Hero[ip]),SH_CellKills,LoadInteger(HH,GetHandleId(Hero[ip]),SH_CellKills)+udg_kill[ip])
+call SaveInteger(HH,GetHandleId(Hero[ip]),SH_CellAssists,LoadInteger(HH,GetHandleId(Hero[ip]),SH_CellAssists)+udg_assist[ip])
 endif
 //call AddUnitMaxLife(Hero[ip],(round-1)*150)
 call SetHeroInt(Hero[ip],GetHeroInt(Hero[ip],false)+((round-1)-GetPlayerState(p,PLAYER_STATE_RESOURCE_LUMBER))*3,true)
@@ -47954,6 +48149,8 @@ if GetUnitTypeId(Hero[ip])=='H052' then
 call SetHeroInt(Hero[ip],GetHeroInt(Hero[ip],false)+udg_kill[ip]+udg_assist[ip],true)
 call SetHeroStr(Hero[ip],GetHeroStr(Hero[ip],false)+udg_kill[ip],true)
 call SetHeroAgi(Hero[ip],GetHeroAgi(Hero[ip],false)+udg_kill[ip],true)
+call SaveInteger(HH,GetHandleId(Hero[ip]),SH_CellKills,LoadInteger(HH,GetHandleId(Hero[ip]),SH_CellKills)+udg_kill[ip])
+call SaveInteger(HH,GetHandleId(Hero[ip]),SH_CellAssists,LoadInteger(HH,GetHandleId(Hero[ip]),SH_CellAssists)+udg_assist[ip])
 endif
 //call AddUnitMaxLife(Hero[ip],(round-1)*150)
 call SetHeroInt(Hero[ip],GetHeroInt(Hero[ip],false)+((round-1)-GetPlayerState(p,PLAYER_STATE_RESOURCE_LUMBER))*3,true)
@@ -48032,6 +48229,8 @@ if GetUnitTypeId(Hero[ip])=='H052' then
 call SetHeroInt(Hero[ip],GetHeroInt(Hero[ip],false)+udg_kill[ip]+udg_assist[ip],true)
 call SetHeroStr(Hero[ip],GetHeroStr(Hero[ip],false)+udg_kill[ip],true)
 call SetHeroAgi(Hero[ip],GetHeroAgi(Hero[ip],false)+udg_kill[ip],true)
+call SaveInteger(HH,GetHandleId(Hero[ip]),SH_CellKills,LoadInteger(HH,GetHandleId(Hero[ip]),SH_CellKills)+udg_kill[ip])
+call SaveInteger(HH,GetHandleId(Hero[ip]),SH_CellAssists,LoadInteger(HH,GetHandleId(Hero[ip]),SH_CellAssists)+udg_assist[ip])
 endif
 //call AddUnitMaxLife(Hero[ip],(round-1)*150)
 call SetHeroInt(Hero[ip],GetHeroInt(Hero[ip],false)+((round-1)-GetPlayerState(p,PLAYER_STATE_RESOURCE_LUMBER))*3,true)
@@ -48105,6 +48304,8 @@ if GetUnitTypeId(Hero[ip])=='H052' then
 call SetHeroInt(Hero[ip],GetHeroInt(Hero[ip],false)+udg_kill[ip]+udg_assist[ip],true)
 call SetHeroStr(Hero[ip],GetHeroStr(Hero[ip],false)+udg_kill[ip],true)
 call SetHeroAgi(Hero[ip],GetHeroAgi(Hero[ip],false)+udg_kill[ip],true)
+call SaveInteger(HH,GetHandleId(Hero[ip]),SH_CellKills,LoadInteger(HH,GetHandleId(Hero[ip]),SH_CellKills)+udg_kill[ip])
+call SaveInteger(HH,GetHandleId(Hero[ip]),SH_CellAssists,LoadInteger(HH,GetHandleId(Hero[ip]),SH_CellAssists)+udg_assist[ip])
 endif
 //call AddUnitMaxLife(Hero[ip],(round-1)*150)
 call SetHeroInt(Hero[ip],GetHeroInt(Hero[ip],false)+((round-1)-GetPlayerState(p,PLAYER_STATE_RESOURCE_LUMBER))*3,true)
@@ -48178,6 +48379,8 @@ if GetUnitTypeId(Hero[ip])=='H052' then
 call SetHeroInt(Hero[ip],GetHeroInt(Hero[ip],false)+udg_kill[ip]+udg_assist[ip],true)
 call SetHeroStr(Hero[ip],GetHeroStr(Hero[ip],false)+udg_kill[ip],true)
 call SetHeroAgi(Hero[ip],GetHeroAgi(Hero[ip],false)+udg_kill[ip],true)
+call SaveInteger(HH,GetHandleId(Hero[ip]),SH_CellKills,LoadInteger(HH,GetHandleId(Hero[ip]),SH_CellKills)+udg_kill[ip])
+call SaveInteger(HH,GetHandleId(Hero[ip]),SH_CellAssists,LoadInteger(HH,GetHandleId(Hero[ip]),SH_CellAssists)+udg_assist[ip])
 endif
 //call AddUnitMaxLife(Hero[ip],(round-1)*150)
 call SetHeroInt(Hero[ip],GetHeroInt(Hero[ip],false)+((round-1)-GetPlayerState(p,PLAYER_STATE_RESOURCE_LUMBER))*3,true)
@@ -48251,6 +48454,8 @@ if GetUnitTypeId(Hero[ip])=='H052' then
 call SetHeroInt(Hero[ip],GetHeroInt(Hero[ip],false)+udg_kill[ip]+udg_assist[ip],true)
 call SetHeroStr(Hero[ip],GetHeroStr(Hero[ip],false)+udg_kill[ip],true)
 call SetHeroAgi(Hero[ip],GetHeroAgi(Hero[ip],false)+udg_kill[ip],true)
+call SaveInteger(HH,GetHandleId(Hero[ip]),SH_CellKills,LoadInteger(HH,GetHandleId(Hero[ip]),SH_CellKills)+udg_kill[ip])
+call SaveInteger(HH,GetHandleId(Hero[ip]),SH_CellAssists,LoadInteger(HH,GetHandleId(Hero[ip]),SH_CellAssists)+udg_assist[ip])
 endif
 //call AddUnitMaxLife(Hero[ip],(round-1)*150)
 call SetHeroInt(Hero[ip],GetHeroInt(Hero[ip],false)+((round-1)-GetPlayerState(p,PLAYER_STATE_RESOURCE_LUMBER))*3,true)
@@ -48324,6 +48529,8 @@ if GetUnitTypeId(Hero[ip])=='H052' then
 call SetHeroInt(Hero[ip],GetHeroInt(Hero[ip],false)+udg_kill[ip]+udg_assist[ip],true)
 call SetHeroStr(Hero[ip],GetHeroStr(Hero[ip],false)+udg_kill[ip],true)
 call SetHeroAgi(Hero[ip],GetHeroAgi(Hero[ip],false)+udg_kill[ip],true)
+call SaveInteger(HH,GetHandleId(Hero[ip]),SH_CellKills,LoadInteger(HH,GetHandleId(Hero[ip]),SH_CellKills)+udg_kill[ip])
+call SaveInteger(HH,GetHandleId(Hero[ip]),SH_CellAssists,LoadInteger(HH,GetHandleId(Hero[ip]),SH_CellAssists)+udg_assist[ip])
 endif
 //call AddUnitMaxLife(Hero[ip],(round-1)*150)
 call SetHeroInt(Hero[ip],GetHeroInt(Hero[ip],false)+((round-1)-GetPlayerState(p,PLAYER_STATE_RESOURCE_LUMBER))*3,true)
@@ -48397,6 +48604,8 @@ if GetUnitTypeId(Hero[ip])=='H052' then
 call SetHeroInt(Hero[ip],GetHeroInt(Hero[ip],false)+udg_kill[ip]+udg_assist[ip],true)
 call SetHeroStr(Hero[ip],GetHeroStr(Hero[ip],false)+udg_kill[ip],true)
 call SetHeroAgi(Hero[ip],GetHeroAgi(Hero[ip],false)+udg_kill[ip],true)
+call SaveInteger(HH,GetHandleId(Hero[ip]),SH_CellKills,LoadInteger(HH,GetHandleId(Hero[ip]),SH_CellKills)+udg_kill[ip])
+call SaveInteger(HH,GetHandleId(Hero[ip]),SH_CellAssists,LoadInteger(HH,GetHandleId(Hero[ip]),SH_CellAssists)+udg_assist[ip])
 endif
 //call AddUnitMaxLife(Hero[ip],(round-1)*150)
 call SetHeroInt(Hero[ip],GetHeroInt(Hero[ip],false)+((round-1)-GetPlayerState(p,PLAYER_STATE_RESOURCE_LUMBER))*3,true)
@@ -48470,6 +48679,8 @@ if GetUnitTypeId(Hero[ip])=='H052' then
 call SetHeroInt(Hero[ip],GetHeroInt(Hero[ip],false)+udg_kill[ip]+udg_assist[ip],true)
 call SetHeroStr(Hero[ip],GetHeroStr(Hero[ip],false)+udg_kill[ip],true)
 call SetHeroAgi(Hero[ip],GetHeroAgi(Hero[ip],false)+udg_kill[ip],true)
+call SaveInteger(HH,GetHandleId(Hero[ip]),SH_CellKills,LoadInteger(HH,GetHandleId(Hero[ip]),SH_CellKills)+udg_kill[ip])
+call SaveInteger(HH,GetHandleId(Hero[ip]),SH_CellAssists,LoadInteger(HH,GetHandleId(Hero[ip]),SH_CellAssists)+udg_assist[ip])
 endif
 //call AddUnitMaxLife(Hero[ip],(round-1)*150)
 call SetHeroInt(Hero[ip],GetHeroInt(Hero[ip],false)+((round-1)-GetPlayerState(p,PLAYER_STATE_RESOURCE_LUMBER))*3,true)
@@ -48537,6 +48748,8 @@ if GetUnitTypeId(Hero[ip])=='H052' then
 call SetHeroInt(Hero[ip],GetHeroInt(Hero[ip],false)+udg_kill[ip]+udg_assist[ip],true)
 call SetHeroStr(Hero[ip],GetHeroStr(Hero[ip],false)+udg_kill[ip],true)
 call SetHeroAgi(Hero[ip],GetHeroAgi(Hero[ip],false)+udg_kill[ip],true)
+call SaveInteger(HH,GetHandleId(Hero[ip]),SH_CellKills,LoadInteger(HH,GetHandleId(Hero[ip]),SH_CellKills)+udg_kill[ip])
+call SaveInteger(HH,GetHandleId(Hero[ip]),SH_CellAssists,LoadInteger(HH,GetHandleId(Hero[ip]),SH_CellAssists)+udg_assist[ip])
 endif
 //call AddUnitMaxLife(Hero[ip],(round-1)*150)
 call SetHeroInt(Hero[ip],GetHeroInt(Hero[ip],false)+((round-1)-GetPlayerState(p,PLAYER_STATE_RESOURCE_LUMBER))*3,true)
@@ -48604,6 +48817,8 @@ if GetUnitTypeId(Hero[ip])=='H052' then
 call SetHeroInt(Hero[ip],GetHeroInt(Hero[ip],false)+udg_kill[ip]+udg_assist[ip],true)
 call SetHeroStr(Hero[ip],GetHeroStr(Hero[ip],false)+udg_kill[ip],true)
 call SetHeroAgi(Hero[ip],GetHeroAgi(Hero[ip],false)+udg_kill[ip],true)
+call SaveInteger(HH,GetHandleId(Hero[ip]),SH_CellKills,LoadInteger(HH,GetHandleId(Hero[ip]),SH_CellKills)+udg_kill[ip])
+call SaveInteger(HH,GetHandleId(Hero[ip]),SH_CellAssists,LoadInteger(HH,GetHandleId(Hero[ip]),SH_CellAssists)+udg_assist[ip])
 endif
 //call AddUnitMaxLife(Hero[ip],(round-1)*150)
 call SetHeroInt(Hero[ip],GetHeroInt(Hero[ip],false)+((round-1)-GetPlayerState(p,PLAYER_STATE_RESOURCE_LUMBER))*3,true)
@@ -48704,6 +48919,8 @@ if GetUnitTypeId(Hero[ip])=='H052' then
     call SetHeroInt(Hero[ip],GetHeroInt(Hero[ip],false)+udg_kill[ip]+udg_assist[ip],true)
     call SetHeroStr(Hero[ip],GetHeroStr(Hero[ip],false)+udg_kill[ip],true)
     call SetHeroAgi(Hero[ip],GetHeroAgi(Hero[ip],false)+udg_kill[ip],true)
+    call SaveInteger(HH,GetHandleId(Hero[ip]),SH_CellKills,LoadInteger(HH,GetHandleId(Hero[ip]),SH_CellKills)+udg_kill[ip])
+    call SaveInteger(HH,GetHandleId(Hero[ip]),SH_CellAssists,LoadInteger(HH,GetHandleId(Hero[ip]),SH_CellAssists)+udg_assist[ip])
 endif
 if GetUnitTypeId(Hero[ip])=='H06T' then
     set LUcy[ip]=Hero[ip]
@@ -51390,6 +51607,8 @@ if GetUnitTypeId(Hero[ip])=='H052' then
 call SetHeroInt(Hero[ip],GetHeroInt(Hero[ip],false)+udg_kill[ip]+udg_assist[ip],true)
 call SetHeroStr(Hero[ip],GetHeroStr(Hero[ip],false)+udg_kill[ip],true)
 call SetHeroAgi(Hero[ip],GetHeroAgi(Hero[ip],false)+udg_kill[ip],true)
+call SaveInteger(HH,GetHandleId(Hero[ip]),SH_CellKills,LoadInteger(HH,GetHandleId(Hero[ip]),SH_CellKills)+udg_kill[ip])
+call SaveInteger(HH,GetHandleId(Hero[ip]),SH_CellAssists,LoadInteger(HH,GetHandleId(Hero[ip]),SH_CellAssists)+udg_assist[ip])
 endif
 if GetUnitTypeId(Hero[ip])=='H06T' then
 set LUcy[ip]=Hero[ip]
