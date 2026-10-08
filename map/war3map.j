@@ -244262,10 +244262,27 @@ endloop
 return res
 endfunction
 
+// Поиск — от 2 символов: по одной букве находится полкаталога. Строки JASS — байты UTF-8,
+// русская буква занимает 2 байта, поэтому запрос из 2 байт может быть одной русской буквой.
+function Sh_QueryOk takes string q returns boolean
+local string abc="абвгдеёжзийклмнопрстуфхцчшщъыьэюяАБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ"
+local integer fp
+if StringLength(q)<2 then
+return false
+endif
+if StringLength(q)==2 then
+set fp=StringFind(abc,q,true)
+if fp>=0 and fp-(fp/2)*2==0 then
+return false
+endif
+endif
+return true
+endfunction
+
 // Каталог 10 в ряд, ShPage — сколько рядов прокручено. Если в поиске есть текст,
 // показываем найденное по всем разделам, иначе — выбранный раздел.
 function Sh_ListCount takes integer pid returns integer
-if ShQuery!="" then
+if Sh_QueryOk(ShQuery) then
 return ShFoundN
 endif
 return ShSecCnt[ShSelSec[pid]]
@@ -244273,7 +244290,7 @@ endfunction
 
 function Sh_PageItem takes integer pid,integer slot returns integer
 local integer cnt=ShPage[pid]*10+slot
-if ShQuery!="" then
+if Sh_QueryOk(ShQuery) then
 if cnt>=ShFoundN then
 return 0
 endif
@@ -244295,7 +244312,7 @@ function Sh_Filter takes nothing returns nothing
 local string qry=Sh_Lower(ShQuery)
 local integer i=0
 local integer cnt=0
-if qry=="" then
+if not Sh_QueryOk(qry) then
 set ShFoundN=0
 set ShLastQry=""
 return

@@ -32,7 +32,8 @@ calls: 14438, chunks: 58
 
 ## Code strings
 {"pairs":26,"converted":21,"literals":0,"timerTitles":0,"quests":0}
-skipped: 0
+skipped: 1
+- [no EN pair] 243951: local string abc="абвгдеёжзийклмнопрстуфхцчшщъыьэюяАБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ"
 
 ## Code reading object texts (check for desync / caching)
 - 2200: call SetBaseItemStringFieldById(lgId,LANG_IF(lgF),lgS)
