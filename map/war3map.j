@@ -1954,6 +1954,8 @@ framehandle ShDesc=null
 framehandle ShInv=null
 framehandle ShCraftGoldTxt=null
 framehandle ShDescName=null
+framehandle ShCraftCap=null // подписи магазина — для смены языка (Sh_LangRefresh)
+framehandle ShUseCap=null
 framehandle ShDescBody=null
 framehandle ShInvName=null
 framehandle ShBuyBtn=null
@@ -2117,6 +2119,9 @@ function LANG_A takes integer lgId,integer lgF,integer lgLv,string lgEn returns 
 call LANG_Reg(0,lgId,lgF,lgLv,lgEn)
 endfunction
 function LANG_It takes integer lgId,integer lgF,string lgEn returns nothing
+if lgF==0 then
+call SaveInteger(LANG_HT,-11,lgId,LANG_N+1) // запись имени предмета по типу — для LANG_ItemNames
+endif
 call LANG_Reg(1,lgId,lgF,0,lgEn)
 endfunction
 function LANG_U takes integer lgId,integer lgF,string lgEn returns nothing
@@ -2363,12 +2368,24 @@ call QuestSetDescription(LoadQuestHandle(LANG_HT,-56,lgK),Lng(LoadStr(LANG_HT,-5
 set lgK=lgK+1
 endloop
 endfunction
+// Оба имени предмета (русское | английское) — для поиска в магазине на любом языке
+function LANG_ItemNames takes integer lgId returns string
+local integer lgN=LoadInteger(LANG_HT,-11,lgId)-1
+if lgN<0 then
+return GetObjectName(lgId)
+endif
+if HaveSavedString(LANG_HT,lgN,4) then
+return LoadStr(LANG_HT,lgN,4)+" | "+LoadStr(LANG_HT,lgN,5)
+endif
+return GetObjectName(lgId)+" | "+LoadStr(LANG_HT,lgN,5)
+endfunction
 function LANG_Chat takes nothing returns nothing
 if GetTriggerPlayer()==GetLocalPlayer() then
 set LANG_EN=GetEventPlayerChatString()=="-en"
 endif
 call LANG_Apply()
 call LANG_Retitle()
+call ExecuteFunc("Sh_LangRefresh") // надписи магазина, заданные при загрузке
 if GetTriggerPlayer()==GetLocalPlayer() then
 call DisplayTimedTextToPlayer(GetLocalPlayer(),0,0,5,Lng("Язык: русский. Часть уже показанных надписей обновится при следующем выводе.","Language: English. Some texts already on screen update the next time they are shown."))
 endif
@@ -245331,7 +245348,7 @@ set id=ShSecItem[sec*64+i]
 if id!=0 and LoadBoolean(ShHT,-7,id)==false then
 call SaveBoolean(ShHT,-7,id,true)
 set ShAll[ShAllN]=id
-set ShAllLow[ShAllN]=Sh_Lower(GetObjectName(id))
+set ShAllLow[ShAllN]=Sh_Lower(LANG_ItemNames(id)) // русское и английское имя — поиск на любом языке
 if HaveSavedString(ShHT,-20,id) then
 set ShAllLow[ShAllN]=ShAllLow[ShAllN]+" | "+LoadStr(ShHT,-20,id)
 endif
@@ -245518,7 +245535,7 @@ set k=0
 set y=y-0.036
 endif
 endloop
-call Sh_Cap(ShCraft,Lng("|c00FFD700Сборка|r","|c00FFD700Assembly|r"))
+set ShCraftCap=Sh_Cap(ShCraft,Lng("|c00FFD700Сборка|r","|c00FFD700Assembly|r"))
 set ShCraftGoldTxt=BlzCreateFrameByType("TEXT","ShCraftGold",ShCraft,"",0)
 call BlzFrameSetPoint(ShCraftGoldTxt,FRAMEPOINT_RIGHT,ShCraft,FRAMEPOINT_TOPRIGHT,-0.006,-0.010)
 call BlzFrameSetScale(ShCraftGoldTxt,0.90)
@@ -245612,6 +245629,7 @@ set usecap=BlzCreateFrameByType("TEXT","ShUseCap",ShMain,"",0)
 call BlzFrameSetAbsPoint(usecap,FRAMEPOINT_CENTER,0.7125,0.509)
 call BlzFrameSetScale(usecap,0.90)
 call BlzFrameSetText(usecap,Lng("|c00FFD700Собирается в|r","|c00FFD700Builds into|r"))
+set ShUseCap=usecap
 set i=0
 loop
 exitwhen i==6
@@ -245775,6 +245793,30 @@ set ShTrgOpen=CreateTrigger()
 endif
 call TriggerAddAction(ShTrgOpen,function Sh_Toggle)
 call TimerStart(CreateTimer(),0.0,false,function Sh_InitBuild)
+endfunction
+// Смена языка (-en / -ru): подписи, заданные при загрузке, выставляем заново; остальное — при перерисовке
+function Sh_LangRefresh takes nothing returns nothing
+if ShMain==null then
+return
+endif
+call BlzFrameSetText(ShCraftCap,Lng("|c00FFD700Сборка|r","|c00FFD700Assembly|r"))
+call BlzFrameSetText(ShInvName,Lng("|c00FFFF00Инвентарь|r","|c00FFFF00Inventory|r"))
+call BlzFrameSetText(ShDescName,Lng("|c00FFFF00Предмет не выбран|r","|c00FFFF00Item is not selected|r"))
+call Sh_ActText(ShBuyBtn,Lng("|cFFFFA500КУПИТЬ|r","|cFFFFA500BUY|r"))
+call Sh_ActText(ShSellBtn,Lng("|cFFFFA500ПРОДАТЬ|r","|cFFFFA500SELL|r"))
+call Sh_ActText(ShUpgBtn,Lng("|cFFFFA500УЛУЧШИТЬ 750|r","|cFFFFA500UPGRADE 750|r"))
+call BlzFrameSetText(ShUseCap,Lng("|c00FFD700Собирается в|r","|c00FFD700Builds into|r"))
+call BlzFrameSetText(ShSearchHint,Lng("|cff8899aaПоиск предмета...|r","|cff8899aaSearch item...|r"))
+if OpenShopButtonText!=null then
+if ShOpened then
+call SetFrameText(OpenShopButtonText,Lng("Закрыть (B)","Close (B)"))
+else
+call SetFrameText(OpenShopButtonText,Lng("Магазин (B)","Shop (B)"))
+endif
+endif
+if ShOpened then
+call Sh_Redraw()
+endif
 endfunction
 //Shop32End
 function AbilitiesForChoice_Cond takes nothing returns boolean

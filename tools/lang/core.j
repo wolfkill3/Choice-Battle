@@ -23,6 +23,9 @@ function LANG_A takes integer lgId,integer lgF,integer lgLv,string lgEn returns 
 call LANG_Reg(0,lgId,lgF,lgLv,lgEn)
 endfunction
 function LANG_It takes integer lgId,integer lgF,string lgEn returns nothing
+if lgF==0 then
+call SaveInteger(LANG_HT,-11,lgId,LANG_N+1) // запись имени предмета по типу — для LANG_ItemNames
+endif
 call LANG_Reg(1,lgId,lgF,0,lgEn)
 endfunction
 function LANG_U takes integer lgId,integer lgF,string lgEn returns nothing
@@ -269,12 +272,24 @@ call QuestSetDescription(LoadQuestHandle(LANG_HT,-56,lgK),Lng(LoadStr(LANG_HT,-5
 set lgK=lgK+1
 endloop
 endfunction
+// Оба имени предмета (русское | английское) — для поиска в магазине на любом языке
+function LANG_ItemNames takes integer lgId returns string
+local integer lgN=LoadInteger(LANG_HT,-11,lgId)-1
+if lgN<0 then
+return GetObjectName(lgId)
+endif
+if HaveSavedString(LANG_HT,lgN,4) then
+return LoadStr(LANG_HT,lgN,4)+" | "+LoadStr(LANG_HT,lgN,5)
+endif
+return GetObjectName(lgId)+" | "+LoadStr(LANG_HT,lgN,5)
+endfunction
 function LANG_Chat takes nothing returns nothing
 if GetTriggerPlayer()==GetLocalPlayer() then
 set LANG_EN=GetEventPlayerChatString()=="-en"
 endif
 call LANG_Apply()
 call LANG_Retitle()
+call ExecuteFunc("Sh_LangRefresh") // надписи магазина, заданные при загрузке
 if GetTriggerPlayer()==GetLocalPlayer() then
 call DisplayTimedTextToPlayer(GetLocalPlayer(),0,0,5,Lng("Язык: русский. Часть уже показанных надписей обновится при следующем выводе.","Language: English. Some texts already on screen update the next time they are shown."))
 endif
