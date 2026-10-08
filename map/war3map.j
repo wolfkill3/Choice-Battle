@@ -2293,42 +2293,6 @@ if GetUnitStringField(lgU,UNIT_SF_PROPER_NAMES)!=lgTo then
 call SetUnitStringField(lgU,UNIT_SF_PROPER_NAMES,lgTo)
 endif
 endfunction
-// Заголовок панели героя (SimpleNameValue) игра берёт из имени, выбранного при создании юнита, и данные
-// на него не влияют — поэтому у локального игрока для выделенного героя подменяем текст рамки. Номер имени
-// ищем в обоих списках (русском и английском), показываем имя с тем же номером на своём языке.
-function LANG_Title takes nothing returns nothing
-local unit lgU=GetUnitSelected(GetLocalPlayer())
-local integer lgN
-local integer lgK
-local string lgCur
-local string lgTo
-local framehandle lgFr
-if lgU==null or not IsUnitType(lgU,UNIT_TYPE_HERO) then
-set lgU=null
-return
-endif
-set lgN=LoadInteger(LANG_HT,-10,GetUnitTypeId(lgU))-1
-if lgN>=0 and HaveSavedString(LANG_HT,lgN,4) then
-set lgCur=GetHeroProperName(lgU)
-set lgK=LANG_Idx(LoadStr(LANG_HT,lgN,4),lgCur)
-if lgK<0 then
-set lgK=LANG_Idx(LoadStr(LANG_HT,lgN,5),lgCur)
-endif
-if lgK>=0 then
-if LANG_EN then
-set lgTo=LANG_Tok(LoadStr(LANG_HT,lgN,5),lgK)
-else
-set lgTo=LANG_Tok(LoadStr(LANG_HT,lgN,4),lgK)
-endif
-set lgFr=GetFrameByName("SimpleNameValue",0)
-if lgTo!="" and GetFrameText(lgFr)!=lgTo then
-call SetFrameText(lgFr,lgTo)
-endif
-set lgFr=null
-endif
-endif
-set lgU=null
-endfunction
 // -pninfo (отладка прототипа): что хранит выделенный герой
 function LANG_PnInfo takes nothing returns nothing
 local group lgG=CreateGroup()
@@ -2339,7 +2303,7 @@ set lgU=FirstOfGroup(lgG)
 exitwhen lgU==null
 call GroupRemoveUnit(lgG,lgU)
 if GetTriggerPlayer()==GetLocalPlayer() then
-call DisplayTimedTextToPlayer(GetLocalPlayer(),0,0,20,"GetHeroProperName: "+GetHeroProperName(lgU)+"|nUNIT_SF_PROPER_NAME: "+GetUnitStringField(lgU,UNIT_SF_PROPER_NAME)+"|nUNIT_SF_PROPER_NAMES: "+GetUnitStringField(lgU,UNIT_SF_PROPER_NAMES)+"|nbase PROPER_NAMES: "+GetUnitBaseStringFieldById(GetUnitTypeId(lgU),UNIT_SF_PROPER_NAMES)+"|nSimpleNameValue: "+GetFrameText(GetFrameByName("SimpleNameValue",0))+"|nUNIT_SF_NAME: "+GetUnitStringField(lgU,UNIT_SF_NAME)+" / GetUnitName: "+GetUnitName(lgU))
+call DisplayTimedTextToPlayer(GetLocalPlayer(),0,0,20,"GetHeroProperName: "+GetHeroProperName(lgU)+"|nUNIT_SF_PROPER_NAME: "+GetUnitStringField(lgU,UNIT_SF_PROPER_NAME)+"|nUNIT_SF_PROPER_NAMES: "+GetUnitStringField(lgU,UNIT_SF_PROPER_NAMES)+"|nbase PROPER_NAMES: "+GetUnitBaseStringFieldById(GetUnitTypeId(lgU),UNIT_SF_PROPER_NAMES)+"|nUNIT_SF_NAME: "+GetUnitStringField(lgU,UNIT_SF_NAME)+" / GetUnitName: "+GetUnitName(lgU))
 endif
 endloop
 call DestroyGroup(lgG)
@@ -2467,7 +2431,6 @@ call TriggerRegisterPlayerChatEvent(lgT,Player(lgI),"-pninfo",true)
 set lgI=lgI+1
 endloop
 call TriggerAddAction(lgT,function LANG_PnInfo)
-call TimerStart(CreateTimer(),0.05,true,function LANG_Title)
 set lgT=null
 endfunction
 //LANG_CORE_END
