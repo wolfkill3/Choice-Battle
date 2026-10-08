@@ -68,7 +68,7 @@ function jstr(s) {
 const KINDS = [
   { file: 'ability', fn: 'LANG_A', fields: ['Tip', 'Ubertip', 'Researchtip', 'Researchubertip', 'Untip', 'Unubertip'], lv: true },
   { file: 'item', fn: 'LANG_It', fields: ['Name', 'Tip', 'Ubertip', 'Description'] },
-  { file: 'unit', fn: 'LANG_U', fields: ['Name', 'Propernames', 'Tip', 'Ubertip', 'Awakentip', 'Revivetip'] },
+  { file: 'unit', fn: 'LANG_U', fields: ['Name', null, 'Tip', 'Ubertip', 'Awakentip', 'Revivetip'] }, // Propernames — английские для всех, в unit.ini,
   { file: 'buff', fn: 'LANG_B', fields: ['Bufftip', 'Buffubertip'] }];
 const calls = []; const stat = {};
 const asList = (v) => v === undefined ? [] : Array.isArray(v) ? v : [v];
@@ -81,6 +81,7 @@ for (const k of KINDS) {
     if (!/^[\x21-\x7e]{4}$/.test(id) || id.includes("'") || id.includes('\\')) continue;
     k.fields.forEach((f, fi) => {
       let ev = es.get(f), rv = rs.get(f);
+      if (f === null) return;
       if (ev === undefined) return;
       if (!k.lv) {
         if (f === 'Propernames' && Array.isArray(ev)) { ev = ev.join(','); rv = asList(rv).join(','); }

@@ -26,9 +26,6 @@ function LANG_It takes integer lgId,integer lgF,string lgEn returns nothing
 call LANG_Reg(1,lgId,lgF,0,lgEn)
 endfunction
 function LANG_U takes integer lgId,integer lgF,string lgEn returns nothing
-if lgF==1 then
-call SaveInteger(LANG_HT,-10,lgId,LANG_N+1) // запись имён героя по типу юнита — для LANG_HeroName
-endif
 call LANG_Reg(2,lgId,lgF,0,lgEn)
 endfunction
 function LANG_B takes integer lgId,integer lgF,string lgEn returns nothing
@@ -149,72 +146,6 @@ endif
 set LANG_I=LANG_I+1
 endloop
 endfunction
-// lgK-е имя из списка через запятую (Propernames), "" если нет
-function LANG_Tok takes string lgL,integer lgK returns string
-local integer lgP=0
-local integer lgB=0
-local integer lgC=0
-local integer lgLen=StringLength(lgL)
-loop
-exitwhen lgP>lgLen
-if lgP==lgLen or SubString(lgL,lgP,lgP+1)=="," then
-if lgC==lgK then
-return SubString(lgL,lgB,lgP)
-endif
-set lgC=lgC+1
-set lgB=lgP+1
-endif
-set lgP=lgP+1
-endloop
-return ""
-endfunction
-function LANG_Idx takes string lgL,string lgS returns integer
-local integer lgK=0
-local string lgW
-loop
-set lgW=LANG_Tok(lgL,lgK)
-exitwhen lgW==""
-if lgW==lgS then
-return lgK
-endif
-set lgK=lgK+1
-endloop
-return -1
-endfunction
-// Имя героя выбирается при создании юнита. BlzSetHeroProperName в этой UjAPI пишет во вторую строку
-// панели («Level N …»), а не в заголовок — поэтому меняем у самого юнита список имён (UNIT_SF_PROPER_NAMES)
-// на список нужного языка: номер выбранного имени у юнита остаётся тем же
-function LANG_HeroName takes unit lgU returns nothing
-local integer lgN=LoadInteger(LANG_HT,-10,GetUnitTypeId(lgU))-1
-local string lgTo
-if lgN<0 or not IsUnitType(lgU,UNIT_TYPE_HERO) or not HaveSavedString(LANG_HT,lgN,4) then
-return
-endif
-if LANG_EN then
-set lgTo=LoadStr(LANG_HT,lgN,5)
-else
-set lgTo=LoadStr(LANG_HT,lgN,4)
-endif
-if GetUnitStringField(lgU,UNIT_SF_PROPER_NAMES)!=lgTo then
-call SetUnitStringField(lgU,UNIT_SF_PROPER_NAMES,lgTo)
-endif
-endfunction
-// -pninfo (отладка прототипа): что хранит выделенный герой
-function LANG_PnInfo takes nothing returns nothing
-local group lgG=CreateGroup()
-local unit lgU
-call GroupEnumUnitsSelected(lgG,GetTriggerPlayer(),null)
-loop
-set lgU=FirstOfGroup(lgG)
-exitwhen lgU==null
-call GroupRemoveUnit(lgG,lgU)
-if GetTriggerPlayer()==GetLocalPlayer() then
-call DisplayTimedTextToPlayer(GetLocalPlayer(),0,0,20,"GetHeroProperName: "+GetHeroProperName(lgU)+"|nUNIT_SF_PROPER_NAME: "+GetUnitStringField(lgU,UNIT_SF_PROPER_NAME)+"|nUNIT_SF_PROPER_NAMES: "+GetUnitStringField(lgU,UNIT_SF_PROPER_NAMES)+"|nbase PROPER_NAMES: "+GetUnitBaseStringFieldById(GetUnitTypeId(lgU),UNIT_SF_PROPER_NAMES)+"|nUNIT_SF_NAME: "+GetUnitStringField(lgU,UNIT_SF_NAME)+" / GetUnitName: "+GetUnitName(lgU))
-endif
-endloop
-call DestroyGroup(lgG)
-set lgG=null
-endfunction
 function LANG_ItemFix takes item lgIt returns nothing
 local integer lgId=GetItemTypeId(lgIt)
 local integer lgF=0
@@ -240,7 +171,7 @@ endfunction
 function LANG_ItemEnum takes nothing returns nothing
 call LANG_ItemFix(GetEnumItem())
 endfunction
-// 40 юнитов за поток: имя, имя героя, предметы в инвентаре
+// 40 юнитов за поток: имя юнита, предметы в инвентаре
 function LANG_UnitStep takes nothing returns nothing
 local integer lgC=0
 local unit lgU
@@ -254,7 +185,6 @@ if GetUnitStringField(lgU,UNIT_SF_NAME)==LoadStr(LANG_HT,-40,GetUnitTypeId(lgU))
 call SetUnitStringField(lgU,UNIT_SF_NAME,LoadStr(LANG_HT,-41,GetUnitTypeId(lgU)))
 endif
 endif
-call LANG_HeroName(lgU)
 set lgS=0
 loop
 exitwhen lgS>=UnitInventorySize(lgU)
@@ -301,9 +231,6 @@ exitwhen LANG_I==lgWas
 endloop
 call ExecuteFunc("LANG_Refresh")
 endfunction
-function LANG_HeroEnter takes nothing returns nothing
-call LANG_HeroName(GetTriggerUnit())
-endfunction
 function LANG_Chat takes nothing returns nothing
 if GetTriggerPlayer()==GetLocalPlayer() then
 set LANG_EN=GetEventPlayerChatString()=="-en"
@@ -326,17 +253,6 @@ call TriggerRegisterPlayerChatEvent(lgT,Player(lgI),"-ru",true)
 set lgI=lgI+1
 endloop
 call TriggerAddAction(lgT,function LANG_Chat)
-set lgT=CreateTrigger()
-call TriggerRegisterEnterRectSimple(lgT,GetWorldBounds())
-call TriggerAddAction(lgT,function LANG_HeroEnter)
-set lgT=CreateTrigger()
-set lgI=0
-loop
-exitwhen lgI>=bj_MAX_PLAYERS
-call TriggerRegisterPlayerChatEvent(lgT,Player(lgI),"-pninfo",true)
-set lgI=lgI+1
-endloop
-call TriggerAddAction(lgT,function LANG_PnInfo)
 set lgT=null
 endfunction
 //LANG_CORE_END
