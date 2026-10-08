@@ -2087,6 +2087,7 @@ boolean LANG_EN=false // язык интерфейса у локального �
 hashtable LANG_HT=InitHashtable()
 integer LANG_N=0
 integer LANG_I=0
+group LANG_G=CreateGroup()
 endglobals
 native MergeUnits       takes integer qty, integer a, integer b, integer make returns boolean   // reserved native for call 4 integer function and return BOOLEAN value
 native ConvertUnits takes integer qty, integer id returns boolean                                                       // reserved native for call 2 integer function and return BOOLEAN value (can be converted to int!)
@@ -2119,6 +2120,9 @@ function LANG_It takes integer lgId,integer lgF,string lgEn returns nothing
 call LANG_Reg(1,lgId,lgF,0,lgEn)
 endfunction
 function LANG_U takes integer lgId,integer lgF,string lgEn returns nothing
+if lgF==1 then
+call SaveInteger(LANG_HT,-10,lgId,LANG_N+1) // запись имён героя по типу юнита — для LANG_HeroName
+endif
 call LANG_Reg(2,lgId,lgF,0,lgEn)
 endfunction
 function LANG_B takes integer lgId,integer lgF,string lgEn returns nothing
@@ -2204,6 +2208,20 @@ else
 call SetFDFDataString(LoadStr(LANG_HT,lgN,6),lgS)
 endif
 endfunction
+// Уже созданные предметы и юниты держат свои копии текстов — для них запоминаем «было → стало»
+// по типу: предметы -20-поле / -30-поле, имя юнита -40 / -41
+function LANG_Track takes integer lgN,string lgTo returns nothing
+local integer lgKind=LoadInteger(LANG_HT,lgN,0)
+local integer lgId=LoadInteger(LANG_HT,lgN,1)
+local integer lgF=LoadInteger(LANG_HT,lgN,2)
+if lgKind==1 then
+call SaveStr(LANG_HT,-20-lgF,lgId,LANG_Get(lgN))
+call SaveStr(LANG_HT,-30-lgF,lgId,lgTo)
+elseif lgKind==2 and lgF==0 then
+call SaveStr(LANG_HT,-40,lgId,LANG_Get(lgN))
+call SaveStr(LANG_HT,-41,lgId,lgTo)
+endif
+endfunction
 // 400 записей за поток — далеко от лимита операций
 function LANG_Step takes nothing returns nothing
 local integer lgE=LANG_I+400
@@ -2216,16 +2234,151 @@ if LANG_EN then
 if not HaveSavedString(LANG_HT,LANG_I,4) then
 call SaveStr(LANG_HT,LANG_I,4,LANG_Get(LANG_I))
 endif
+call LANG_Track(LANG_I,LoadStr(LANG_HT,LANG_I,5))
 call LANG_Set(LANG_I,LoadStr(LANG_HT,LANG_I,5))
 elseif HaveSavedString(LANG_HT,LANG_I,4) then
+call LANG_Track(LANG_I,LoadStr(LANG_HT,LANG_I,4))
 call LANG_Set(LANG_I,LoadStr(LANG_HT,LANG_I,4))
 endif
 set LANG_I=LANG_I+1
 endloop
 endfunction
+// lgK-е имя из списка через запятую (Propernames), "" если нет
+function LANG_Tok takes string lgL,integer lgK returns string
+local integer lgP=0
+local integer lgB=0
+local integer lgC=0
+local integer lgLen=StringLength(lgL)
+loop
+exitwhen lgP>lgLen
+if lgP==lgLen or SubString(lgL,lgP,lgP+1)=="," then
+if lgC==lgK then
+return SubString(lgL,lgB,lgP)
+endif
+set lgC=lgC+1
+set lgB=lgP+1
+endif
+set lgP=lgP+1
+endloop
+return ""
+endfunction
+function LANG_Idx takes string lgL,string lgS returns integer
+local integer lgK=0
+local string lgW
+loop
+set lgW=LANG_Tok(lgL,lgK)
+exitwhen lgW==""
+if lgW==lgS then
+return lgK
+endif
+set lgK=lgK+1
+endloop
+return -1
+endfunction
+// Имя героя выбирается при создании юнита и само не меняется: берём то же по счёту имя из списка
+// нужного языка (если герой создан с русским именем, а у игрока EN — тоже переводится)
+function LANG_HeroName takes unit lgU returns nothing
+local integer lgN=LoadInteger(LANG_HT,-10,GetUnitTypeId(lgU))-1
+local string lgCur
+local string lgTo
+local integer lgK
+if lgN<0 or not IsUnitType(lgU,UNIT_TYPE_HERO) or not HaveSavedString(LANG_HT,lgN,4) then
+return
+endif
+set lgCur=GetHeroProperName(lgU)
+set lgK=LANG_Idx(LoadStr(LANG_HT,lgN,4),lgCur)
+if lgK<0 then
+set lgK=LANG_Idx(LoadStr(LANG_HT,lgN,5),lgCur)
+endif
+if lgK<0 then
+set lgK=0
+endif
+if LANG_EN then
+set lgTo=LANG_Tok(LoadStr(LANG_HT,lgN,5),lgK)
+else
+set lgTo=LANG_Tok(LoadStr(LANG_HT,lgN,4),lgK)
+endif
+if lgTo!="" and lgTo!=lgCur then
+call BlzSetHeroProperName(lgU,lgTo)
+endif
+endfunction
+function LANG_ItemFix takes item lgIt returns nothing
+local integer lgId=GetItemTypeId(lgIt)
+local integer lgF=0
+local string lgOld
+local string lgNew
+local string lgCur
+loop
+exitwhen lgF>3
+if HaveSavedString(LANG_HT,-20-lgF,lgId) then
+set lgOld=LoadStr(LANG_HT,-20-lgF,lgId)
+set lgNew=LoadStr(LANG_HT,-30-lgF,lgId)
+set lgCur=GetItemStringField(lgIt,LANG_IF(lgF))
+if lgCur==lgOld then
+call SetItemStringField(lgIt,LANG_IF(lgF),lgNew)
+elseif lgF==0 and StringLength(lgOld)>0 and SubString(lgCur,0,StringLength(lgOld))==lgOld then
+// имя с припиской владельца после подбора: «Имя (ник)»
+call SetItemStringField(lgIt,LANG_IF(lgF),lgNew+SubString(lgCur,StringLength(lgOld),StringLength(lgCur)))
+endif
+endif
+set lgF=lgF+1
+endloop
+endfunction
+function LANG_ItemEnum takes nothing returns nothing
+call LANG_ItemFix(GetEnumItem())
+endfunction
+// 40 юнитов за поток: имя, имя героя, предметы в инвентаре
+function LANG_UnitStep takes nothing returns nothing
+local integer lgC=0
+local unit lgU
+local integer lgS
+loop
+set lgU=FirstOfGroup(LANG_G)
+exitwhen lgU==null or lgC>=40
+call GroupRemoveUnit(LANG_G,lgU)
+if HaveSavedString(LANG_HT,-40,GetUnitTypeId(lgU)) then
+if GetUnitStringField(lgU,UNIT_SF_NAME)==LoadStr(LANG_HT,-40,GetUnitTypeId(lgU)) then
+call SetUnitStringField(lgU,UNIT_SF_NAME,LoadStr(LANG_HT,-41,GetUnitTypeId(lgU)))
+endif
+endif
+call LANG_HeroName(lgU)
+set lgS=0
+loop
+exitwhen lgS>=UnitInventorySize(lgU)
+if UnitItemInSlot(lgU,lgS)!=null then
+call LANG_ItemFix(UnitItemInSlot(lgU,lgS))
+endif
+set lgS=lgS+1
+endloop
+set lgC=lgC+1
+endloop
+set lgU=null
+endfunction
+function LANG_Refresh takes nothing returns nothing
+local rect lgR=GetWorldBounds()
+local integer lgWas
+call EnumItemsInRect(lgR,null,function LANG_ItemEnum)
+call GroupClear(LANG_G)
+call GroupEnumUnitsInRect(LANG_G,lgR,null)
+loop
+set lgWas=CountUnitsInGroup(LANG_G)
+exitwhen lgWas==0
+call ExecuteFunc("LANG_UnitStep")
+exitwhen CountUnitsInGroup(LANG_G)==lgWas
+endloop
+call GroupClear(LANG_G)
+call RemoveRect(lgR)
+set lgR=null
+endfunction
 // Выполняется у всех игроков (без ExecuteFunc внутри GetLocalPlayer); тексты меняются по своему LANG_EN
 function LANG_Apply takes nothing returns nothing
 local integer lgWas
+local integer lgF=-20
+loop
+exitwhen lgF<-41
+call FlushChildHashtable(LANG_HT,lgF)
+set lgF=lgF-1
+endloop
 set LANG_I=0
 loop
 exitwhen LANG_I>=LANG_N
@@ -2233,6 +2386,10 @@ set lgWas=LANG_I
 call ExecuteFunc("LANG_Step")
 exitwhen LANG_I==lgWas
 endloop
+call ExecuteFunc("LANG_Refresh")
+endfunction
+function LANG_HeroEnter takes nothing returns nothing
+call LANG_HeroName(GetTriggerUnit())
 endfunction
 function LANG_Chat takes nothing returns nothing
 if GetTriggerPlayer()==GetLocalPlayer() then
@@ -2256,6 +2413,9 @@ call TriggerRegisterPlayerChatEvent(lgT,Player(lgI),"-ru",true)
 set lgI=lgI+1
 endloop
 call TriggerAddAction(lgT,function LANG_Chat)
+set lgT=CreateTrigger()
+call TriggerRegisterEnterRectSimple(lgT,GetWorldBounds())
+call TriggerAddAction(lgT,function LANG_HeroEnter)
 set lgT=null
 endfunction
 //LANG_CORE_END

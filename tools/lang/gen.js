@@ -173,7 +173,7 @@ for (let k = 0; k < diff.length; k++) {
 }
 for (const [ln, s] of edits) L[ln] = s;
 // globals into the existing block, core after the last native, data before InitCustomTriggers, init call first in InitCustomTriggers
-const GL = ['boolean LANG_EN=false // язык интерфейса у локального игрока (LANG_Init, -en / -ru)', 'hashtable LANG_HT=InitHashtable()', 'integer LANG_N=0', 'integer LANG_I=0'];
+const GL = ['boolean LANG_EN=false // язык интерфейса у локального игрока (LANG_Init, -en / -ru)', 'hashtable LANG_HT=InitHashtable()', 'integer LANG_N=0', 'integer LANG_I=0', 'group LANG_G=CreateGroup()'];
 L = L.filter(l => !GL.includes(l));
 L.splice(L.indexOf('endglobals'), 0, ...GL);
 let lastNative = -1; L.forEach((l, i) => { if (/^native /.test(l)) lastNative = i; });
