@@ -1794,6 +1794,19 @@ integer array Colour
 boolexpr Base
 boolexpr BaseCat
 boolexpr BaseCatHero
+// поиск по ролям в таверне (TavRole_*): выбор у каждого игрока свой, затемнение — только локально
+constant integer TAVROLE_N=12
+hashtable TavRoleHT=null
+boolean TavRoleBuilt=false
+boolean array TavRoleSel
+boolean array TavRoleDim
+integer array TavRoleBase
+integer array TavRoleSetC
+framehandle TavRoleBtn=null
+framehandle TavRoleBtnText=null
+framehandle TavRolePanel=null
+framehandle array TavRoleCheck
+framehandle array TavRoleLbl
 boolexpr BaseGyudon
 boolexpr BaseFrenda
 boolexpr BaseUBW
@@ -2425,6 +2438,7 @@ endif
 call LANG_Apply()
 call LANG_Retitle()
 call ExecuteFunc("Sh_LangRefresh") // надписи магазина, заданные при загрузке
+call ExecuteFunc("TavRole_LangRefresh") // кнопка поиска по ролям в таверне
 if GetTriggerPlayer()==GetLocalPlayer() then
 call DisplayTimedTextToPlayer(GetLocalPlayer(),0,0,5,Lng("Язык: русский. Часть уже показанных надписей обновится при следующем выводе.","Language: English. Some texts already on screen update the next time they are shown."))
 endif
@@ -35739,6 +35753,7 @@ call UnitAddAbility(E,'Alnv')
 endif
 call GroupRemoveUnit(G,E)
 endloop
+call ExecuteFunc("TavRole_Build") // поиск по ролям в таверне
 set g=null
 set g2=null
 set e=null
@@ -35776,6 +35791,383 @@ set HeroTavernIconStats=null
 set HeroTavernIconOpenable=null
 set HoverHeroTavernIcon=null
 set HoverHeroTavernIconText=null
+endfunction
+// ===== Таверна: поиск по ролям =====
+// Роли героя — из строки Role:/Роль: его описания (tools/roles/gen.js пишет TavRole_Data). Отмеченные роли
+// должны быть у героя все сразу; остальные иконки в обоих режимах таверны слегка темнеют — только у того, кто ищет.
+function TavRole_Set takes integer trU,integer trM returns nothing
+local integer trB=0
+loop
+exitwhen trB>=TAVROLE_N
+call SaveBoolean(TavRoleHT,trU,trB,ModuloInteger(trM,2)==1)
+set trM=trM/2
+set trB=trB+1
+endloop
+endfunction
+//TAVROLE_DATA_BEGIN — генерирует tools/roles/gen.js из Role:/Роль: в описании героя (table/unit.ini), руками не править
+function TavRole_Data takes nothing returns nothing
+call TavRole_Set('H00I',9)
+call TavRole_Set('H00E',13)
+call TavRole_Set('H00A',537)
+call TavRole_Set('H00J',33)
+call TavRole_Set('H016',134)
+call TavRole_Set('H018',259)
+call TavRole_Set('H01A',19)
+call TavRole_Set('H00M',141)
+call TavRole_Set('H00H',88)
+call TavRole_Set('H00C',289)
+call TavRole_Set('H006',49)
+call TavRole_Set('H017',179)
+call TavRole_Set('H00P',49)
+call TavRole_Set('H00D',25)
+call TavRole_Set('H00K',37)
+call TavRole_Set('H00X',6)
+call TavRole_Set('H032',17)
+call TavRole_Set('H00Z',385)
+call TavRole_Set('H012',130)
+call TavRole_Set('H06D',2)
+call TavRole_Set('H014',5)
+call TavRole_Set('H00L',35)
+call TavRole_Set('H00N',49)
+call TavRole_Set('H01C',145)
+call TavRole_Set('H01D',3)
+call TavRole_Set('H01F',9)
+call TavRole_Set('H01H',35)
+call TavRole_Set('H01J',9)
+call TavRole_Set('H01L',231)
+call TavRole_Set('H01M',11)
+call TavRole_Set('H027',83)
+call TavRole_Set('H02B',25)
+call TavRole_Set('H02D',263)
+call TavRole_Set('H01B',17)
+call TavRole_Set('H02F',139)
+call TavRole_Set('H02G',257)
+call TavRole_Set('H02H',25)
+call TavRole_Set('H02I',11)
+call TavRole_Set('H02J',417)
+call TavRole_Set('H02K',146)
+call TavRole_Set('H02L',27)
+call TavRole_Set('H02M',137)
+call TavRole_Set('H02O',57)
+call TavRole_Set('H02P',135)
+call TavRole_Set('H02R',57)
+call TavRole_Set('H02S',263)
+call TavRole_Set('H02U',17)
+call TavRole_Set('H02V',27)
+call TavRole_Set('H02X',156)
+call TavRole_Set('H02Y',163)
+call TavRole_Set('H033',89)
+call TavRole_Set('H034',5)
+call TavRole_Set('H03B',73)
+call TavRole_Set('H00Y',24)
+call TavRole_Set('H03K',5)
+call TavRole_Set('H03L',395)
+call TavRole_Set('H03N',135)
+call TavRole_Set('H03P',193)
+call TavRole_Set('H03R',133)
+call TavRole_Set('H03S',89)
+call TavRole_Set('H031',5)
+call TavRole_Set('H042',149)
+call TavRole_Set('H043',7)
+call TavRole_Set('H044',33)
+call TavRole_Set('H045',165)
+call TavRole_Set('H047',25)
+call TavRole_Set('H048',33)
+call TavRole_Set('HYuj',218)
+call TavRole_Set('H04A',43)
+call TavRole_Set('H04C',66)
+call TavRole_Set('H04E',260)
+call TavRole_Set('H04F',27)
+call TavRole_Set('H04H',9)
+call TavRole_Set('H04L',17)
+call TavRole_Set('H04O',4095)
+call TavRole_Set('H04T',291)
+call TavRole_Set('H052',41)
+call TavRole_Set('H053',337)
+call TavRole_Set('H054',1)
+call TavRole_Set('H057',137)
+call TavRole_Set('H055',3)
+call TavRole_Set('H059',19)
+call TavRole_Set('H05A',163)
+call TavRole_Set('H05D',73)
+call TavRole_Set('H05N',11)
+call TavRole_Set('H05Q',145)
+call TavRole_Set('H05R',72)
+call TavRole_Set('H05Z',7)
+call TavRole_Set('H060',25)
+call TavRole_Set('H061',7)
+call TavRole_Set('H063',33)
+call TavRole_Set('H066',49)
+call TavRole_Set('H067',81)
+call TavRole_Set('H069',21)
+call TavRole_Set('H06B',153)
+call TavRole_Set('H06F',17)
+call TavRole_Set('H051',2120)
+call TavRole_Set('H06G',35)
+call TavRole_Set('H06M',391)
+call TavRole_Set('H06C',5)
+call TavRole_Set('H06Y',5)
+call TavRole_Set('H072',41)
+call TavRole_Set('H075',141)
+call TavRole_Set('H076',88)
+call TavRole_Set('H077',89)
+call TavRole_Set('H112',257)
+call TavRole_Set('H074',64)
+call TavRole_Set('H05C',130)
+call TavRole_Set('Ho0Z',293)
+call TavRole_Set('H078',293)
+call TavRole_Set('H073',289)
+call TavRole_Set('ORH1',49)
+call TavRole_Set('H06T',65)
+call TavRole_Set('WEND',81)
+call TavRole_Set('Hbel',5)
+call TavRole_Set('Ho11',35)
+call TavRole_Set('H116',48)
+call TavRole_Set('Ho0O',99)
+call TavRole_Set('HAlb',51)
+call TavRole_Set('HRen',641)
+call TavRole_Set('HMin',45)
+call TavRole_Set('HMad',99)
+call TavRole_Set('H10L',35)
+call TavRole_Set('HIc1',137)
+call TavRole_Set('Ho14',224)
+call TavRole_Set('H35Z',37)
+call TavRole_Set('HHSN',89)
+call TavRole_Set('H34Z',37)
+call TavRole_Set('HDSN',81)
+call TavRole_Set('HKar',59)
+call TavRole_Set('HBGN',17)
+call TavRole_Set('HSab',140)
+call TavRole_Set('HJi1',25)
+call TavRole_Set('HGoj',1)
+call TavRole_Set('HGrp',2064)
+call TavRole_Set('HSig',131)
+call TavRole_Set('Rosh',17)
+call TavRole_Set('HBrg',1552)
+call TavRole_Set('HSui',1042)
+call TavRole_Set('HRem',17)
+call TavRole_Set('HFla',1041)
+call TavRole_Set('HEsc',1552)
+endfunction
+//TAVROLE_DATA_END
+function TavRole_Name takes integer trB returns string
+if trB==0 then
+return "Caster"
+elseif trB==1 then
+return "Carry"
+elseif trB==2 then
+return "Assassin"
+elseif trB==3 then
+return "Durable"
+elseif trB==4 then
+return "Disabler"
+elseif trB==5 then
+return "Exhauster"
+elseif trB==6 then
+return "Support"
+elseif trB==7 then
+return "Swordsman"
+elseif trB==8 then
+return "Escape"
+elseif trB==9 then
+return "Tank"
+elseif trB==10 then
+return "Nuker"
+elseif trB==11 then
+return "Initiator"
+endif
+return ""
+endfunction
+// тёмнее в 0.55 раза; если иконку перекрасили (героя взяли), пока она была затемнена, — её цвет не трогаем
+function TavRole_Shade takes framehandle trF,integer trK,boolean trDim returns nothing
+local integer trC
+local integer trLow
+if trF==null then
+return
+endif
+if trDim and not TavRoleDim[trK] then
+set trC=GetFrameColourEx(trF,0)
+if trC==0 then
+set trC=0xFFFFFFFF
+endif
+set TavRoleBase[trK]=0xFF000000+ModuloInteger(trC,0x1000000)
+set trLow=ModuloInteger(trC,0x1000000)
+set trC=0xFF000000+(trLow/0x10000)*11/20*0x10000+ModuloInteger(trLow/0x100,0x100)*11/20*0x100+ModuloInteger(trLow,0x100)*11/20
+set TavRoleDim[trK]=true
+call SetFrameColourEx(trF,0,trC)
+call SetFrameColourEx(trF,1,trC)
+call SetFrameColourEx(trF,2,trC)
+// запоминаем цвет в том виде, в каком его отдаёт движок: иначе сравнение ниже не совпадало и цвет не возвращался
+set TavRoleSetC[trK]=GetFrameColourEx(trF,0)
+elseif not trDim and TavRoleDim[trK] then
+set TavRoleDim[trK]=false
+if GetFrameColourEx(trF,0)==TavRoleSetC[trK] then
+set trC=TavRoleBase[trK]
+call SetFrameColourEx(trF,0,trC)
+call SetFrameColourEx(trF,1,trC)
+call SetFrameColourEx(trF,2,trC)
+endif
+endif
+endfunction
+// вызывать только у локального игрока: фреймы и цвета локальные
+function TavRole_Apply takes integer trP returns nothing
+local integer trX=0
+local integer trB=0
+local boolean trAny=false
+local boolean trDim
+loop
+exitwhen trB>=TAVROLE_N
+if TavRoleSel[trP*16+trB] then
+set trAny=true
+call ShowFrame(TavRoleCheck[trB],true)
+call SetFrameText(TavRoleLbl[trB],"|cFFFFFFFF"+TavRole_Name(trB)+"|r")
+else
+call ShowFrame(TavRoleCheck[trB],false)
+call SetFrameText(TavRoleLbl[trB],"|cFFFFA500"+TavRole_Name(trB)+"|r")
+endif
+set trB=trB+1
+endloop
+loop
+exitwhen trX>=220
+if RH_Force[trX]!=0 then
+set trDim=false
+if trAny then
+set trB=0
+loop
+exitwhen trB>=TAVROLE_N or trDim
+if TavRoleSel[trP*16+trB] and not LoadBoolean(TavRoleHT,RH_Force[trX],trB) then
+set trDim=true
+endif
+set trB=trB+1
+endloop
+endif
+call TavRole_Shade(GetFrameByName("TavernBarHero",trX),trX,trDim)
+call TavRole_Shade(GetFrameByName("TavernBarHeroTitle",trX),220+trX,trDim)
+call TavRole_Shade(GetFrameByName("TavernBarHeroStat",trX),440+trX,trDim)
+endif
+set trX=trX+1
+endloop
+endfunction
+// клик приходит всем: выбор меняют все одинаково, рисует только тот, кто нажал
+function TavRole_Click takes nothing returns nothing
+local integer trP=GetPlayerId(GetTriggerPlayer())
+local integer trK=GetFrameContext(GetTriggerFrame())
+local integer trB=0
+if trK==100 then
+if GetTriggerPlayer()==GetLocalPlayer() then
+call ShowFrame(TavRolePanel,not IsFrameVisible(TavRolePanel))
+endif
+return
+endif
+if trK==TAVROLE_N then
+loop
+exitwhen trB>=TAVROLE_N
+set TavRoleSel[trP*16+trB]=false
+set trB=trB+1
+endloop
+elseif trK>=0 and trK<TAVROLE_N then
+set TavRoleSel[trP*16+trK]=not TavRoleSel[trP*16+trK]
+endif
+if GetTriggerPlayer()==GetLocalPlayer() then
+call TavRole_Apply(trP)
+endif
+endfunction
+function TavRole_LangRefresh takes nothing returns nothing
+if TavRoleBtnText!=null then
+call SetFrameText(TavRoleBtnText,Lng("Роли","Roles"))
+call SetFrameText(TavRoleLbl[TAVROLE_N],"|cFFFF6060"+Lng("Сбросить","Reset")+"|r")
+endif
+endfunction
+// строится один раз, после окна таверны (Trig_Dialog2_Actions)
+function TavRole_Build takes nothing returns nothing
+local integer trB=0
+local framehandle trF
+local trigger trT=CreateTrigger()
+if TavRoleBuilt or TavernHeroFrame==null or InfoTavernText==null then
+return
+endif
+set TavRoleBuilt=true
+set TavRoleHT=InitHashtable()
+call TavRole_Data()
+call TriggerAddAction(trT,function TavRole_Click)
+// кнопка — в полосе под панелью «Hero Information», справа (по скриншоту; от левого верхнего угла таверны)
+set TavRoleBtn=CreateFrameByType("SIMPLEBUTTON","TavRoleBtn",TavernHeroFrame,"",100)
+call ClearFrameAllPoints(TavRoleBtn)
+call SetFrameTexture(TavRoleBtn,"checkbox-depressed2.blp",0,true)
+call SetFrameTexture(TavRoleBtn,"checkbox-depressed2.blp",1,true)
+call SetFrameTexture(TavRoleBtn,"checkbox-depressed2.blp",2,true)
+call SetFrameSize(TavRoleBtn,.04,.018)
+call SetFramePriority(TavRoleBtn,6)
+call SetFrameRelativePoint(TavRoleBtn,FRAMEPOINT_CENTER,TavernHeroFrame,FRAMEPOINT_TOPLEFT,.08,-.34)
+call TriggerRegisterFrameEvent(trT,TavRoleBtn,FRAMEEVENT_CONTROL_CLICK)
+// текст — как у остальных надписей таверны (OpenTavernButtonText): без режима смешивания и ShowFrame он не виден
+set TavRoleBtnText=CreateFrameByType("SIMPLETEXT","TavRoleBtnText",TavRoleBtn,"",0)
+call ClearFrameAllPoints(TavRoleBtnText)
+call SetFrameBlendMode(TavRoleBtnText,0,BLEND_MODE_BLEND)
+call SetFrameFont(TavRoleBtnText,"Fonts\\FRIZQT__.TTF",.0095,0)
+call SetFrameTextAlignment(TavRoleBtnText,TEXT_JUSTIFY_CENTER,TEXT_JUSTIFY_MIDDLE)
+call SetFrameTextColour(TavRoleBtnText,0xFFFFD700)
+call SetFrameParent(TavRoleBtnText,TavRoleBtn)
+call SetFrameText(TavRoleBtnText," ")
+call ShowFrame(TavRoleBtnText,true)
+call SetFrameRelativePoint(TavRoleBtnText,FRAMEPOINT_CENTER,TavRoleBtn,FRAMEPOINT_CENTER,.00011,0)
+// окно с галочками — справа от кнопки, вверх от её низа
+set TavRolePanel=CreateFrameByType("SIMPLEFRAME","TavRolePanel",TavernHeroFrame,"",0)
+call ClearFrameAllPoints(TavRolePanel)
+call SetFrameSize(TavRolePanel,.1,.016*(TAVROLE_N+1)+.012)
+call SetFrameTextureEx(TavRolePanel,0,"UI\\widgets\\BattleNet\\bnet-tooltip-background.blp",false,"Choice-tooltip-border.blp",0)
+call SetFramePriority(TavRolePanel,8)
+call SetFrameRelativePoint(TavRolePanel,FRAMEPOINT_BOTTOMLEFT,TavRoleBtn,FRAMEPOINT_BOTTOMRIGHT,.003,0)
+loop
+exitwhen trB>TAVROLE_N
+// строка: квадрат галочки + подпись; нажимаются оба (контекст — номер роли, TAVROLE_N — «Сбросить»)
+if trB<TAVROLE_N then
+set trF=CreateFrameByType("SIMPLEBUTTON","TavRoleBox",TavRolePanel,"",trB)
+call ClearFrameAllPoints(trF)
+call SetFrameTexture(trF,"UI\\Widgets\\Glues\\GlueScreen-Checkbox-Background.blp",0,true)
+call SetFrameTexture(trF,"UI\\Widgets\\Glues\\GlueScreen-Checkbox-Background.blp",1,true)
+call SetFrameTexture(trF,"UI\\Widgets\\Glues\\GlueScreen-Checkbox-Background.blp",2,true)
+call SetFrameSize(trF,.013,.013)
+call SetFramePriority(trF,9)
+call SetFrameRelativePoint(trF,FRAMEPOINT_TOPLEFT,TavRolePanel,FRAMEPOINT_TOPLEFT,.007,-.007-.016*trB)
+call TriggerRegisterFrameEvent(trT,trF,FRAMEEVENT_CONTROL_CLICK)
+// галочка — простой фрейм поверх квадрата, без событий: вторая кнопка ловила тот же клик, и выбор переключался дважды
+set TavRoleCheck[trB]=CreateFrameByType("SIMPLEFRAME","TavRoleCheck",trF,"",trB)
+call ClearFrameAllPoints(TavRoleCheck[trB])
+call SetFrameTexture(TavRoleCheck[trB],"UI\\Widgets\\Glues\\GlueScreen-Checkbox-Check.blp",0,true)
+call SetFrameTexture(TavRoleCheck[trB],"UI\\Widgets\\Glues\\GlueScreen-Checkbox-Check.blp",1,true)
+call SetFrameTexture(TavRoleCheck[trB],"UI\\Widgets\\Glues\\GlueScreen-Checkbox-Check.blp",2,true)
+call SetFrameSize(TavRoleCheck[trB],.013,.013)
+call SetFramePriority(TavRoleCheck[trB],10)
+call SetFrameRelativePoint(TavRoleCheck[trB],FRAMEPOINT_CENTER,trF,FRAMEPOINT_CENTER,0,0)
+call ShowFrame(TavRoleCheck[trB],false)
+endif
+set trF=CreateFrameByType("SIMPLEBUTTON","TavRoleRow",TavRolePanel,"",trB)
+call ClearFrameAllPoints(trF)
+call SetFrameTexture(trF,"war3mapImported\\shop_none.tga",0,true)
+call SetFrameTexture(trF,"war3mapImported\\shop_none.tga",1,true)
+call SetFrameTexture(trF,"war3mapImported\\shop_none.tga",2,true)
+call SetFrameSize(trF,.072,.014)
+call SetFramePriority(trF,9)
+call SetFrameRelativePoint(trF,FRAMEPOINT_TOPLEFT,TavRolePanel,FRAMEPOINT_TOPLEFT,.023,-.0065-.016*trB)
+call TriggerRegisterFrameEvent(trT,trF,FRAMEEVENT_CONTROL_CLICK)
+set TavRoleLbl[trB]=CreateFrameByType("SIMPLETEXT","TavRoleLbl",trF,"",trB)
+call ClearFrameAllPoints(TavRoleLbl[trB])
+call SetFrameBlendMode(TavRoleLbl[trB],0,BLEND_MODE_BLEND)
+call SetFrameFont(TavRoleLbl[trB],"Fonts\\FRIZQT__.TTF",.0095,0)
+call SetFrameTextAlignment(TavRoleLbl[trB],TEXT_JUSTIFY_LEFT,TEXT_JUSTIFY_MIDDLE)
+call SetFrameTextColour(TavRoleLbl[trB],0xFFFFFFFF)
+call SetFrameParent(TavRoleLbl[trB],trF)
+call SetFrameText(TavRoleLbl[trB]," ")
+call ShowFrame(TavRoleLbl[trB],true)
+call SetFrameRelativePoint(TavRoleLbl[trB],FRAMEPOINT_LEFT,trF,FRAMEPOINT_LEFT,0,0)
+set trB=trB+1
+endloop
+call ShowFrame(TavRolePanel,false)
+call TavRole_LangRefresh()
+call TavRole_Apply(GetPlayerId(GetLocalPlayer()))
+set trF=null
+set trT=null
 endfunction
 function InitTrig_Dialog2 takes nothing returns nothing
 set gg_trg_Dialog2=CreateTrigger()
@@ -277462,7 +277854,7 @@ call LANG_U('H02C',0,"Accelerator")
 call LANG_U('H02C',2,"Accelerator")
 call LANG_U('H02C',3,"Accelerator is Academy City's strongest esper, his main ability is vector redirection.")
 call LANG_U('H02D',3,"Haku - Zabuza's partner, possesses the element of ice.|n|nRole: Caster, Carry, Assassin, Escape|n|n")
-call LANG_U('H02F',3,"Kirito is the strongest player in the popular, deadly online game \"Sword Art online\".|n|nRole: Durable, Caster, Swordsman|n|n")
+call LANG_U('H02F',3,"Kirito is the strongest player in the popular, deadly online game \"Sword Art online\".|n|nRole: Durable, Caster, Carry, Swordsman|n|n")
 call LANG_U('H02G',3,"The dark magician who seized power in the \"Tower of Heaven\" kept many wizards captive for 7 years and forced them to build this tower, in the hope of resurrecting Zeref.|n|nRole: Caster, Escape|n|n")
 call LANG_U('H12G',3,"The dark magician who seized power in the \"Tower of Heaven\" kept many wizards captive for 7 years and forced them to build this tower, in the hope of resurrecting Zeref.|n|nRole: Caster, Escape|n|n")
 call LANG_U('H02H',3,"Son Goku is a pure-blooded low-class Saiyan who was sent to destroy the Earth as a child. However, after gaining amnesia and forgetting his original name, Kakarotto, he rose to protect it.|n|nRole: Caster, Durable, Disabler|n|n")
@@ -277638,7 +278030,7 @@ call LANG_U('HHSG',3,"Madara Uchiha, one of the founders of the Leaf Village, le
 call LANG_U('HDSN',3,"Danzō Shimura was the elder of the Hidden Leaf. As the founder and leader of the Root, Danzō earned notoriety as the Darkness of the Shinobi.|n|nRole: Caster, Disabler, Support|n|n")
 call LANG_U('HBGN',3,"Goku Black is the result of Zamasu's soul being transferred into Goku's body.|n|nRole: Caster, Disabler|n|n")
 call LANG_U('HAlb',3,"Albedo is the commander of the guards of the Great Tomb of Nazarick.|n|nRole: Caster, Exhauster, Carry, Disabler|n|n")
-call LANG_U('HIc1',3,"Ichigo Kurosaki is a temporary Shinigami from Karakura.|n|nRole: Caster, Juggernaut, Tank, Berserker, Swordsman|n|n")
+call LANG_U('HIc1',3,"Ichigo Kurosaki is a temporary Shinigami from Karakura.|n|nRole: Caster, Durable, Swordsman|n|n")
 call LANG_U('HMad',3,"Madoka Kaname is a magical girl. He opposes violence and in the main story is the last to conclude a contract with Kyubei. To top it off, she becomes a goddess, disappearing from the universe and destroying the witches before they are born.|n|nRole: Caster, Carry, Exhauster, Support|n|n")
 call LANG_U('HMin',3,"Minato Namikaze is the Fourth Hokage of the Leaf Village, also nicknamed the \"Yellow Lightning of Konoha\", thanks to his abilities he can instantly cover great distances.|n|nRole: Caster, Assassin, Durable, Exhauster|n|n")
 call LANG_U('HRen',3,"Kyojuro Rengoku is a demon hunter, Flame Pillar, who was in the Demon Slayer organization.|n|nRole: Caster, Tank, Swordsman|n|n")
@@ -277695,7 +278087,7 @@ call LANG_U('HSaC',3,"Sabrac |n|nRole: Carry, Caster|n|nAbilities :|n|n")
 call LANG_U('HASC',3,"Aizen - Former Captain of the Fifth Division, absorbed the Hougyoku and became immortal.|n|nRole: Caster, Durable, Swordsman|n|n")
 call LANG_U('HAST',3,"Aizen - Former Captain of the Fifth Division, absorbed the Hougyoku and became immortal.|n|nRole: Caster, Durable, Swordsman|n|n")
 call LANG_U('HKar',3,"Karna is the son of the sun god Surya and a heroic soul summoned in the Lancer class.|n|nRole: Caster, Carry, Durable, Disabler, Exhauster|n|n")
-call LANG_U('HGrp',3,"Monkey D. Garp — Vice Admiral of the Marines, the legendary Fist of the Navy. |nLuffy's grandfather, a man without powers: only fists, will and cannonballs. (Made by AI by AlTrOn)|n|nRole: Bruiser, Initiator, Disabler.|n|n")
+call LANG_U('HGrp',3,"Monkey D. Garp — Vice Admiral of the Marines, the legendary Fist of the Navy. |nLuffy's grandfather, a man without powers: only fists, will and cannonballs. (Made by AI by AlTrOn)|n|nRole: Initiator, Disabler.|n|n")
 call LANG_U('HSig',3,"Signum — the leader of the Belkan knights, summoned by the «Book of Darkness». Her magic device, Laevatein, takes the form of a sword. In battle she relies on armor. |n|nRole: Caster, Carry, Swordsman|n|n")
 call LANG_U('HGuB',3,"|nGuts —  the Black Swordsman with a cursed brand (also known as the Hundred Man Slayer and the Hawk of Darkness) tirelessly opposes demonic forces. In battle he uses the huge two-handed sword «Dragonslayer», throwing knives, a crossbow and a metal prosthetic left arm hiding a small hand cannon."+"|n|n|nRole: Disabler, Durable, Caster, Swordsman|n|nAbilities: Tondeke Yagare,Darona,Sokou Doke,Jamada,Kurae Yagare.|n|n|cFFFFC850Strength: 18 +3.5|r|nAgility: 18 +2|nIntelligence: 12 +1.2")
 call LANG_U('HGuN',3,"|nGuts —  the Black Swordsman with a cursed brand (also known as the Hundred Man Slayer and the Hawk of Darkness) tirelessly opposes demonic forces. In battle he uses the huge two-handed sword «Dragonslayer», throwing knives, a crossbow and a metal prosthetic left arm hiding a small hand cannon."+"|n|n|nRole: Disabler, Durable, Caster, Swordsman|n|nAbilities: Tondeke Yagare,Darona,Sokou Doke,Jamada,Kurae Yagare.|n|n|cFFFFC850Strength: 15 +3.5|r|nAgility: 18 +2|nIntelligence: 15 +1.2")
@@ -277703,9 +278095,9 @@ call LANG_U('Rosh',3,"Master Roshi — a wise, yet very perverted old man. His h
 call LANG_U('HBrg',3,"Baraggan Louisenbairn — the 2nd Espada, King of Hueco Mundo. His power is aging: everything his breath touches rots and crumbles away.|nAlways in Resurreccion form: Arrogante. (Abilities made with Cloude 5 by AlTrOn, effects taken from Anime WOS2 by Thunder_Gear, model by XeSHTeG)|n|nRole: Nuker, "+"Disabler, Tank.|n|n")
 call LANG_U('HEsc',3,"Escanor — the Sin of Pride of the Seven Deadly Sins. His magic is \"Sunshine\": the closer it is to noon, the stronger he gets.|n(Abilities and effects ported from the Chinese map bof, by AlTrOn)|n|nRole: Tank, Nuker, Disabler.|n")
 call LANG_U('eB94',0,"Flandre's Cursor")
-call LANG_U('HFla',3,"Flandre Scarlet — Remilia's younger sister from Touhou Project, the \"Sister of the Devil\": she destroys everything she touches.|n(Abilities and effects ported from the Chinese map bof, by AlTrOn)|n|nRole: Nuker, Disabler.|n")
+call LANG_U('HFla',3,"Flandre Scarlet — Remilia's younger sister from Touhou Project, the \"Sister of the Devil\": she destroys everything she touches.|n(Abilities and effects ported from the Chinese map bof, by AlTrOn)|n|nRole: Caster, Nuker, Disabler.|n")
 call LANG_U('hB1W',0,"Flandre's Clone")
-call LANG_U('HRem',3,"Remilia Scarlet — a 500-year-old vampire, mistress of the Scarlet Devil Mansion from Touhou Project and Flandre's older sister. She controls fate.|n(Abilities and effects ported from the Chinese map bof, by AlTrOn)|n|nRole: Nuker, Disabler, Lifesteal.|n")
+call LANG_U('HRem',3,"Remilia Scarlet — a 500-year-old vampire, mistress of the Scarlet Devil Mansion from Touhou Project and Flandre's older sister. She controls fate.|n(Abilities and effects ported from the Chinese map bof, by AlTrOn)|n|nRole: Caster, Disabler.|n")
 call LANG_U('HSui',3,"Suigintou — the first doll of Rozen Maiden: black wings, a rapier and the mirror world N.|n(Abilities and effects ported from the Chinese map bof, by AlTrOn)|n|nRole: Carry, Nuker, Disabler.|n")
 call LANG_B('BRRV',0,"Rain Aura")
 call LANG_B('BRRV',1,"Aura of rain.")

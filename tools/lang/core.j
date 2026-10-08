@@ -312,6 +312,7 @@ endif
 call LANG_Apply()
 call LANG_Retitle()
 call ExecuteFunc("Sh_LangRefresh") // надписи магазина, заданные при загрузке
+call ExecuteFunc("TavRole_LangRefresh") // кнопка поиска по ролям в таверне
 if GetTriggerPlayer()==GetLocalPlayer() then
 call DisplayTimedTextToPlayer(GetLocalPlayer(),0,0,5,Lng("Язык: русский. Часть уже показанных надписей обновится при следующем выводе.","Language: English. Some texts already on screen update the next time they are shown."))
 endif
