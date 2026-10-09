@@ -1157,6 +1157,8 @@ framehandle CBS_QcChk=null
 framehandle CBS_ScChk=null
 framehandle CBS_QcLbl=null
 framehandle CBS_SmLbl=null
+// подпись строки «Озвучка DB» (-DB Jap / -DB Eng) под языком
+framehandle CBS_DbLbl=null
 boolean array CBS_KAll
 integer CBS_QcAb=0
 integer CBS_QcKey=-1
@@ -53337,6 +53339,7 @@ call SetFrameText(HPB_MText[0],Lng("Настройки карты","Map settings
 call SetFrameText(CBS_Head[0],"|cFFFFA500"+Lng("Полоски HP","HP bars")+"|r")
 call SetFrameText(CBS_Head[1],"|cFFFFA500"+Lng("Язык","Language")+"|r")
 call SetFrameText(CBS_Head[2],"|cFFFFA500"+Lng("Команды (как в чате)","Commands (same as chat)")+"|r")
+call SetFrameText(CBS_DbLbl,Lng("Озвучка DB","DB voice"))
 call SetFrameText(CBS_Head[3],"|cFFFFA500"+Lng("Цвета: свой / союзники / враги","Colours: own / allies / enemies")+"|r")
 call SetFrameText(CBS_Head[4],"|cFFFFA500"+Lng("Масштаб","Scale")+"|r")
 call SetFrameText(HPB_MText[2],Lng("Стандартный","Default"))
@@ -54513,6 +54516,11 @@ if CBS_P==GetLocalPlayer() then
 set CBS_AlOn=CBS_AutoL[GetPlayerId(CBS_P)]
 call ShowFrame(CBS_AlChk,HPB_MOpen and CBS_Tab==0 and CBS_AlOn)
 endif
+elseif cbK==105 then
+// озвучка Dragon Ball: японская / английская (как -DB Jap / -DB Eng)
+call ExecuteFunc("BlackGokuSoundJapAct")
+elseif cbK==106 then
+call ExecuteFunc("BlackGokuSoundEngAct")
 elseif cbK==100 then
 call LANG_Switch(CBS_P,false)
 elseif cbK==101 then
@@ -55045,7 +55053,7 @@ elseif cbK==1 then
 call SetFrameRelativePoint(CBS_Head[cbK],FRAMEPOINT_LEFT,HPB_Menu,FRAMEPOINT_TOPLEFT,CBS_PX(.252),CBS_PY(-.152))
 elseif cbK==2 then
 //call SetFrameRelativePoint(CBS_Head[cbK],FRAMEPOINT_LEFT,HPB_Menu,FRAMEPOINT_TOPLEFT,CBS_PX(.007),CBS_PY(-.1195))
-call SetFrameRelativePoint(CBS_Head[cbK],FRAMEPOINT_LEFT,HPB_Menu,FRAMEPOINT_TOPLEFT,CBS_PX(.252),CBS_PY(-.188))
+call SetFrameRelativePoint(CBS_Head[cbK],FRAMEPOINT_LEFT,HPB_Menu,FRAMEPOINT_TOPLEFT,CBS_PX(.252),CBS_PY(-.200))
 elseif cbK==3 then
 call SetFrameRelativePoint(CBS_Head[cbK],FRAMEPOINT_LEFT,HPB_Menu,FRAMEPOINT_TOPLEFT,CBS_PX(.016),CBS_PY(-.166))
 else
@@ -55147,6 +55155,11 @@ call CBS_Button(211,"",.40,-.032,.06,cbT)
 //call CBS_Button(101,"EN",.11,-.088,.03,cbT)
 call CBS_Button(100,"RU",.330,-.140,.05,cbT)
 call CBS_Button(101,"EN",.388,-.140,.05,cbT)
+// озвучка Dragon Ball под языком: подпись слева, кнопки под RU / EN
+set CBS_DbLbl=CBS_Label(CreateFrameByType("SIMPLETEXT","CBSDbVoiceLabel",HPB_Menu,"",0),.012,0xFFFFFFFF,.252,-.180)
+call CBS_Add(CBS_DbLbl)
+call CBS_Button(105,"-DB Jap",.330,-.168,.05,cbT)
+call CBS_Button(106,"-DB Eng",.388,-.168,.05,cbT)
 // команды: столбец, кнопка с командой и подпись справа
 set cbK=0
 loop
@@ -55156,7 +55169,8 @@ if cbK!=2 and cbK!=3 and cbK!=4 and cbK!=5 and cbK!=6 then
 //set cbX=.007+.117*(cbN/4)
 //set cbY=-.128-.0165*ModuloInteger(cbN,4)
 set cbX=.252
-set cbY=-.200-.029*cbN
+//set cbY=-.200-.029*cbN
+set cbY=-.212-.027*cbN
 set cbN=cbN+1
 call CBS_Button(cbK,CBS_Cmd(cbK),cbX,cbY,.07,cbT)
 set CBS_Lbl[cbK]=CreateFrameByType("SIMPLETEXT","CBSLabel",HPB_Menu,"",cbK)
@@ -220070,10 +220084,10 @@ endfunction
 
 function BlackGokuSoundJapAct takes nothing returns nothing
 
-call SaveBoolean(HH,GetHandleId( GetTriggerPlayer() ),SOUND_LANGUAGE,false)
+call SaveBoolean(HH,GetHandleId( CBS_TrigP() ),SOUND_LANGUAGE,false)
 
 
-if(GetLocalPlayer()==GetTriggerPlayer() ) then
+if(GetLocalPlayer()==CBS_TrigP() ) then
     call DisplayChatMessageEx(null,CHAT_RECIPIENT_UNKNOWN,10,true,Lng("Было сменено озвучивание на японской язык. Напишите -DB Eng - для английского ","The dubbing has been changed to Japanese. Write -DB Eng - for English "))
 endif
 
@@ -220099,9 +220113,9 @@ endfunction
 
 function BlackGokuSoundEngAct takes nothing returns nothing
 
-call SaveBoolean(HH,GetHandleId( GetTriggerPlayer() ),SOUND_LANGUAGE,true)
+call SaveBoolean(HH,GetHandleId( CBS_TrigP() ),SOUND_LANGUAGE,true)
 
-if(GetLocalPlayer()==GetTriggerPlayer() ) then
+if(GetLocalPlayer()==CBS_TrigP() ) then
     call DisplayChatMessageEx(null,CHAT_RECIPIENT_UNKNOWN,10,true,Lng("Было сменено озвучивание на английский язык. Напишите -DB Jap - для японского ","The dubbing has been changed to English. Write -DB Jap - for Japanese"))
 endif
 
