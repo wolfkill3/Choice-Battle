@@ -1038,22 +1038,170 @@ real HPB_CamTX=0.
 real HPB_CamTY=0.
 boolean HPB_CamMoved=true
 // размеры: ширина, высота HP / MP / щита; у героев (места 0..27) и остальных юнитов; поля рамки и зазор
-constant real HPB_HW=.04554
-constant real HPB_HH=.0046
-constant real HPB_HM=.0033
-constant real HPB_UW=.03289
-constant real HPB_UH=.0034
-constant real HPB_UM=.0027
-constant real HPB_SH=.0021
-constant real HPB_PAD=.0006
-constant real HPB_GAP=.0004
+// (были constant; теперь умножаются на масштаб полосок из окна настроек — HPB_ApplyScale)
+real HPB_HW=.04554
+real HPB_HH=.0046
+real HPB_HM=.0033
+real HPB_UW=.03289
+real HPB_UH=.0034
+real HPB_UM=.0027
+real HPB_SH=.0021
+real HPB_PAD=.0006
+real HPB_GAP=.0004
 // окно выбора цвета полосок HP (вместо команды -hpcolor): кнопка «HP» над миникартой, клики — локальным опросом мыши
 framehandle HPB_MBtn=null
 framehandle HPB_MBtnFrame=null
 framehandle array HPB_MText
 integer HPB_MBtnVis=0
+// ВРЕМЕННО: поиск рассинхрона при открытии окна настроек — биты отключённых частей (-cbsoff N, у себя)
+integer CBS_Off=0
+// окно настроек показано / скрыто — подготовку (CBS_ShowExtra) сделает общий таймер CBS_UiTick: ExecuteFunc у одного игрока
+// давал рассинхрон
+boolean CBS_ShowReq=false
 boolean HPB_TgtSb=false
 framehandle HPB_Menu=null
+// окно «Настройки карты» (CBS_*): кнопки команд; фреймы — для показа вместе с окном
+player CBS_P=null
+integer CBS_FrN=0
+framehandle array CBS_Fr
+framehandle array CBS_Lbl
+framehandle array CBS_Head
+// окно настроек: цвета полосок «свой / союзники / враги» (ARGB и R,G,B по отдельности), ползунки, масштабы — всё локально
+integer array HPB_RGB
+integer array CBS_Rgb
+integer array CBS_RgbDef
+real HPB_Sc=1.
+real HB_Sc=1.
+// высота панели героев сверху (было -0.060 — чуть ниже)
+constant real HB_Y=-0.066
+framehandle array CBS_RgbFr
+integer CBS_RgbN=0
+boolean CBS_Open=false
+boolean CBS_MbWas=false
+boolean CBS_PollClose=false
+integer CBS_ColSel=-1
+integer CBS_Drag=-1
+real CBS_DragOff=0.
+//constant real CBS_SLW=.15
+constant real CBS_SLW=.135 // .15 * CBS_Z
+trigger CBS_TrgSl=null
+framehandle array CBS_Sw
+framehandle array CBS_SwSel
+framehandle array CBS_SwLbl
+framehandle array CBS_RgbLbl
+framehandle array CBS_ScLbl
+framehandle CBS_Hint=null
+framehandle array CBS_SlTrack
+framehandle array CBS_SlFill
+framehandle array CBS_SlThumb
+framehandle array CBS_SlVal
+real array CBS_SlV
+real array CBS_SlMin
+real array CBS_SlMax
+real array CBS_SlStep
+integer array CBS_SlN
+// кнопки сброса — номер кнопки в CBS_Fr (надпись — следующий)
+integer CBS_ResetC=0
+integer CBS_ResetS=0
+// вкладки окна (0 — основное, 1 — хоткеи), списки фреймов вкладки хоткеев и «всегда» (вкладки, сохранить / загрузить)
+integer CBS_Tab=0
+framehandle array CBS_HkFr
+integer CBS_HkN=0
+framehandle array CBS_AllFr
+integer CBS_AllN=0
+framehandle array CBS_TabTxt
+framehandle CBS_SaveTxt=null
+framehandle CBS_LoadTxt=null
+framehandle CBS_HkResetTxt=null
+// хоткеи: клавиши (A-Z, 0-9, NumPad), привязка места (0..5 предметы, 6..17 панель команд) -> номер клавиши + 1
+oskeytype array CBS_Key
+integer array CBS_KeyCode
+string array CBS_KeyName
+integer CBS_KeyN=0
+boolean array CBS_KeyWas
+integer array CBS_Bind
+integer CBS_BindWait=-1
+integer CBS_KT=0
+framehandle array CBS_SlotFr
+framehandle CBS_ChatBar=null
+framehandle array CBS_HkBtn
+// ячейка хоткея — SIMPLEFRAME-держатель: в нём иконка-кнопка, рамка ожидания и рамка клавиши (у SIMPLEBUTTON детей
+// делать нельзя — игра падает при загрузке)
+framehandle array CBS_HkBox
+framehandle array CBS_HkTxt
+string array CBS_HkTex
+framehandle array CBS_HkHead
+framehandle array CBS_HkNote
+framehandle CBS_HkHint=null
+framehandle CBS_HkSel=null
+unit CBS_HkU=null
+// страница ячеек панели команд на вкладке хоткеев: 0 — панель, 1 — меню изучения (спеллбуки в карте не используются);
+// места привязок: 0..5 предметы, 6+страница*12+кнопка — панель команд (всего 30)
+integer CBS_HkPage=0
+// типы способностей героев (общий опрос у всех игроков: GetUnitAbilityByIndex создаёт handle) и исходные хоткеи
+integer array CBS_Ab
+integer array CBS_AbN
+hashtable CBS_AbHT=null
+// типы предметов в слотах героев (общий опрос в CBS_AbScan) — для иконок вкладки хоткеев без обращения к предмету у себя
+integer array CBS_ItT
+// содержимое окна настроек на 10% меньше (окно прежнее): размеры и шрифты *CBS_Z, позиции — к центру окна (CBS_PX / CBS_PY)
+constant real CBS_Z=.9
+// фреймы игры (multiboard, чат), взятые один раз у всех при загрузке: GetOriginFrame только у себя (открытие окна)
+// создавал handle у одного игрока — рассинхрон
+framehandle CBS_OfMb=null
+framehandle CBS_OfChat=null
+// квиккаст / смарткаст (опции у себя, приказ — через синхронизацию "CBQC") и иконки героев на миникарте при зажатом Alt
+boolean CBS_QC=false
+boolean CBS_SC=false
+framehandle CBS_QcChk=null
+framehandle CBS_ScChk=null
+framehandle CBS_QcLbl=null
+framehandle CBS_SmLbl=null
+boolean array CBS_KAll
+integer CBS_QcAb=0
+integer CBS_QcKey=-1
+integer CBS_QcWait=0
+// квиккаст предмета: слот + 1 (0 — нет)
+integer CBS_QcIt=0
+group CBS_QcG=null
+framehandle CBS_OfMini=null
+framehandle array CBS_MmIco
+framehandle array CBS_MmBg
+string array CBS_MmTex
+boolean CBS_MmOn=false
+// иконки героев на миникарте: всегда или никогда (опция у себя, по умолчанию включена); места 10..29 — иллюзии и клоны
+boolean CBS_MmOpt=true
+framehandle CBS_MmChk=null
+framehandle CBS_MmLbl=null
+integer array CBS_MmCol
+unit array CBS_IlU
+integer CBS_IlN=0
+group CBS_IlG=null
+// фрейм интерфейса игры для HeroBarPlace (её вызывает и ползунок масштаба — у себя)
+framehandle HB_GameUI=null
+// автопрокачка способностей: включена ли у игрока (общее, синхронизировано), у себя — для галочки и файла
+boolean array CBS_AutoL
+boolean CBS_AlOn=true // по умолчанию включена
+framehandle CBS_AlChk=null
+framehandle CBS_AlLbl=null
+// фон галочек режима полосок HP (прятать на вкладке хоткеев)
+framehandle array HPB_MBox
+framehandle array CBS_PageTxt
+boolean array CBS_KeyEdge
+// рамки выбора (0..2 — цвета, 3 — ячейка хоткея): опорный фрейм и 4 полоски поверх ячейки
+framehandle array CBS_RingA
+framehandle array CBS_RingP
+// файл настроек (один на компьютере игрока, подгружается при старте)
+constant string CBS_FILE="ChoiceBattle\\Settings.pld"
+// перетаскивание ползунков опросом мыши: поправка экранных координат курсора, найденная по нажатию на деление
+boolean CBS_Cal=false
+real CBS_CalX=0.
+real CBS_CalY=0.
+boolean CBS_YDown=false
+// способ перевода курсора в координаты фреймов (выбирается калибровкой, CBS_MX / CBS_MY)
+integer CBS_MXM=1
+integer CBS_MYM=1
+boolean CBS_WasPressed=false
 framehandle HPB_MClose=null
 framehandle array HPB_MRow
 framehandle array HPB_MChk
@@ -2286,6 +2434,11 @@ local integer lgF=0
 local string lgOld
 local string lgNew
 local string lgCur
+// предмет с хоткеем из окна настроек (ITEM_IF_HOTKEY меняется только у владельца): смена имени / описания при нём
+// роняла игру — вернуть хоткей из данных предмета; назначенный снова поставит CBS_ItemHkUnit через 0.1 с
+if GetItemIntegerField(lgIt,ITEM_IF_HOTKEY)!=GetBaseItemIntegerFieldById(lgId,ITEM_IF_HOTKEY) then
+call SetItemIntegerField(lgIt,ITEM_IF_HOTKEY,GetBaseItemIntegerFieldById(lgId,ITEM_IF_HOTKEY))
+endif
 loop
 exitwhen lgF>3
 if HaveSavedString(LANG_HT,-20-lgF,lgId) then
@@ -2421,27 +2574,32 @@ return LoadStr(LANG_HT,lgN,4)+" | "+LoadStr(LANG_HT,lgN,5)
 endif
 return GetObjectName(lgId)+" | "+LoadStr(LANG_HT,lgN,5)
 endfunction
-function LANG_Chat takes nothing returns nothing
-local integer lgP=GetPlayerId(GetTriggerPlayer())
+// смена языка игроком lgPl (чат -en / -ru или кнопка в окне настроек — оба пути синхронные)
+function LANG_Switch takes player lgPl,boolean lgToEn returns nothing
+local integer lgP=GetPlayerId(lgPl)
 local real lgNow=TimerGetElapsed(LANG_Clock)
 // не чаще раза в 10 сек. на игрока: время общее (таймер LANG_Clock), проверка одинакова у всех — отказ тоже у всех
 if HaveSavedReal(LANG_HT,-60,lgP) and lgNow-LoadReal(LANG_HT,-60,lgP)<10. then
-if GetTriggerPlayer()==GetLocalPlayer() then
+if lgPl==GetLocalPlayer() then
 call DisplayTimedTextToPlayer(GetLocalPlayer(),0,0,5,Lng("Сменить язык можно через ","You can switch the language again in ")+I2S(R2I(10.-(lgNow-LoadReal(LANG_HT,-60,lgP)))+1)+Lng(" сек."," sec."))
 endif
 return
 endif
 call SaveReal(LANG_HT,-60,lgP,lgNow)
-if GetTriggerPlayer()==GetLocalPlayer() then
-set LANG_EN=GetEventPlayerChatString()=="-en"
+if lgPl==GetLocalPlayer() then
+set LANG_EN=lgToEn
 endif
 call LANG_Apply()
 call LANG_Retitle()
 call ExecuteFunc("Sh_LangRefresh") // надписи магазина, заданные при загрузке
 call ExecuteFunc("TavRole_LangRefresh") // кнопка поиска по ролям в таверне
-if GetTriggerPlayer()==GetLocalPlayer() then
+call ExecuteFunc("CBS_LangRefresh") // окно настроек карты
+if lgPl==GetLocalPlayer() then
 call DisplayTimedTextToPlayer(GetLocalPlayer(),0,0,5,Lng("Язык: русский. Часть уже показанных надписей обновится при следующем выводе.","Language: English. Some texts already on screen update the next time they are shown."))
 endif
+endfunction
+function LANG_Chat takes nothing returns nothing
+call LANG_Switch(GetTriggerPlayer(),GetEventPlayerChatString()=="-en")
 endfunction
 function LANG_Init takes nothing returns nothing
 local trigger lgT=CreateTrigger()
@@ -6691,7 +6849,7 @@ function ShieldPortraitInit takes nothing returns nothing
     call TimerStart(CreateTimer(),0.1,true,function ShieldPortraitUpdate)
 endfunction
 // открыто ли большое окно (без multiboard) — по нему закрывается окно цвета полосок HP
-function HeroBarBlockedWindows takes nothing returns boolean
+function HeroBarBlockedOther takes nothing returns boolean
     if TavernHeroFrame!=null and IsFrameVisible(TavernHeroFrame) then
         return true
     endif
@@ -6715,6 +6873,12 @@ function HeroBarBlockedWindows takes nothing returns boolean
     endif
     return false
 endfunction
+// панель героев: то же, что HeroBarBlockedOther (окно настроек её не прячет)
+function HeroBarBlockedWindows takes nothing returns boolean
+// под окном настроек панель не прячется — уходит назад по приоритету (HeroBarBehind)
+//return HeroBarBlockedOther() or HPB_MOpen
+return HeroBarBlockedOther()
+endfunction
 // сдвиг панели героев (локально): пока развёрнут multiboard — влево, чтобы правый край панели был левее него.
 // multiboard прижат к правому краю экрана (0.4+0.3*ширина/высота окна); левый край панели не уходит за экран
 function HeroBarMbShift takes nothing returns real
@@ -6722,6 +6886,10 @@ function HeroBarMbShift takes nothing returns real
     local real hbw
     local real hbs
     if mbg==null or IsMultiboardDisplayed(mbg)==false or IsMultiboardMinimized(mbg) then
+        return 0.
+    endif
+    // мелкие иконки (масштаб меньше 0.8) до multiboard не достают — не сдвигать
+    if HB_Sc<0.8 then
         return 0.
     endif
     set hba=4./3.
@@ -6742,6 +6910,17 @@ function HeroBarMbShift takes nothing returns real
     endif
     return hbs
 endfunction
+// позиция в окне настроек (от левого верхнего угла): сжатие на 10% к центру окна .48 x .40
+function CBS_PX takes real cbX returns real
+return .24+(cbX-.24)*CBS_Z
+endfunction
+function CBS_PY takes real cbY returns real
+return -.2+(cbY+.2)*CBS_Z
+endfunction
+// ВРЕМЕННО: отключена ли часть открытия окна настроек (бит cbB в CBS_Off)
+function CBS_OffHas takes integer cbB returns boolean
+return ModuloInteger(CBS_Off/cbB,2)==1
+endfunction
 function HPB_Tex takes integer hpc returns string
     if hpc<10 then
         return "ReplaceableTextures\\TeamColor\\TeamColor"+"0"+I2S(hpc)+".blp"
@@ -6752,6 +6931,10 @@ endfunction
 function HPB_ColorOf takes unit hpu returns integer
     local player hpp=GetOwningPlayer(hpu)
     local integer hpc=6
+    // «Стандартный» — цвет «Свой» из окна настроек (по умолчанию тот же зелёный)
+    if HPB_Mode==0 then
+        set hpc=100
+    endif
     if HPB_Mode==1 then
         set hpc=GetHandleId(GetPlayerColor(hpp))
     elseif HPB_Mode==2 then
@@ -6766,14 +6949,18 @@ function HPB_ColorOf takes unit hpu returns integer
             endif
         elseif GetPlayerId(GetLocalPlayer())>=10 and GetPlayerId(hpp)<12 then
             set hpc=8
+        // свой / союзник / враг — цвета из окна настроек (HPB_RGB[0..2], по умолчанию зелёный, жёлтый, красный)
         elseif hpp==GetLocalPlayer() then
-            set hpc=6
+            //set hpc=6
+            set hpc=100
         elseif GetPlayerId(hpp)>=12 then
             set hpc=8
         elseif IsPlayerAlly(hpp,GetLocalPlayer()) then
-            set hpc=4
+            //set hpc=4
+            set hpc=101
         else
-            set hpc=0
+            //set hpc=0
+            set hpc=102
         endif
     endif
     set hpp=null
@@ -6821,6 +7008,15 @@ function HPB_Fill takes framehandle hpf, real hpw, real hph returns nothing
     endif
 endfunction
 // размер чёрной рамки по тому, есть ли MP и щит; щит — под MP (или под HP, если маны нет); окошко уровня — во всю высоту рамки
+// текстура и цвет заливки HP (все три состояния кнопки)
+function HPB_HpPaint takes integer hps, string hpt, integer hpc returns nothing
+    call SetFrameTexture(HPB_Hp[hps],hpt,0,true)
+    call SetFrameTexture(HPB_Hp[hps],hpt,1,true)
+    call SetFrameTexture(HPB_Hp[hps],hpt,2,true)
+    call SetFrameColourEx(HPB_Hp[hps],0,hpc)
+    call SetFrameColourEx(HPB_Hp[hps],1,hpc)
+    call SetFrameColourEx(HPB_Hp[hps],2,hpc)
+endfunction
 function HPB_Layout takes integer hps returns nothing
     local real hbw=HPB_UW
     local real hph=HPB_UH
@@ -6848,7 +7044,7 @@ function HPB_Layout takes integer hps returns nothing
     set hpy=hpy+HPB_PAD
     call SetFrameSize(HPB_Root[hps],hbw+2*HPB_PAD,hpy)
     if hps<HPB_HN then
-        call SetFrameSize(HPB_Lvl[hps],.0095,hpy)
+        call SetFrameSize(HPB_Lvl[hps],.0095*HPB_Sc,hpy)
     endif
 endfunction
 // юнит на экране (с запасом по краям) — экранные координаты, локально, без handle
@@ -7062,7 +7258,16 @@ function HPB_Update takes nothing returns nothing
                         set hpk=HPB_ColorOf(hpu)
                         if hpk!=HPB_Col[hps] then
                             set HPB_Col[hps]=hpk
-                            call SetFrameTextureEx(HPB_Hp[hps],0,HPB_Tex(hpk),false,"",0)
+                            // 100..102 — свой цвет: белая текстура, окрашенная цветом из окна настроек
+                            if hpk>=100 then
+                                //call SetFrameTextureEx(HPB_Hp[hps],0,"war3mapImported\\HPB_White.blp",false,"",0)
+                                //call SetFrameColourEx(HPB_Hp[hps],0,HPB_RGB[hpk-100])
+                                call HPB_HpPaint(hps,"war3mapImported\\HPB_White.blp",HPB_RGB[hpk-100])
+                            else
+                                //call SetFrameTextureEx(HPB_Hp[hps],0,HPB_Tex(hpk),false,"",0)
+                                //call SetFrameColourEx(HPB_Hp[hps],0,0xFFFFFFFF)
+                                call HPB_HpPaint(hps,HPB_Tex(hpk),0xFFFFFFFF)
+                            endif
                         endif
                     endif
                     // MP
@@ -7111,9 +7316,9 @@ function HPB_Update takes nothing returns nothing
                         if hpk>0 then
                             // остаток / полная длительность; бессрочный (100 с и больше) — полоса целиком
                             set hpr=LoadReal(CCB_HT,GetHandleId(hpu),2)
-                            set hpw=HPB_UW+2*HPB_PAD-.0078
+                            set hpw=HPB_UW+2*HPB_PAD-.0078*HPB_Sc
                             if hps<HPB_HN then
-                                set hpw=HPB_HW+.0095-.0078
+                                set hpw=HPB_HW+(.0095-.0078)*HPB_Sc
                             endif
                             if hpr>0. and hpr<100. then
                                 set hpw=hpw*LoadReal(CCB_HT,GetHandleId(hpu),1)/hpr
@@ -7121,14 +7326,14 @@ function HPB_Update takes nothing returns nothing
                             set hpw=I2R(R2I(hpw*4000.))/4000.
                             if hpw!=HPB_CcW[hps] then
                                 set HPB_CcW[hps]=hpw
-                                call HPB_Fill(HPB_CcFill[hps],hpw,.0078-2*HPB_PAD)
+                                call HPB_Fill(HPB_CcFill[hps],hpw,.0078*HPB_Sc-2*HPB_PAD)
                             endif
                         endif
                     endif
                     // текст урона/лечения: строки из общего кода; над полосой контроля, если она показана, иначе над рамкой
-                    set hpo=.001
+                    set hpo=.001*HPB_Sc
                     if HPB_CcK[hps]>0 then
-                        set hpo=.0096
+                        set hpo=.0096*HPB_Sc
                     endif
                     if hpo!=HPB_TxtY[hps] then
                         set HPB_TxtY[hps]=hpo
@@ -7167,10 +7372,10 @@ function HPB_Update takes nothing returns nothing
                                 if hpj<hpk then
                                     // толстая засечка: шаг 2500 или каждая пятая из мелких (2500, 5000)
                                     if hpr>500. or ModuloInteger(hpj+1,5)==0 then
-                                        set hpo=.0008
+                                        set hpo=.0008*HPB_Sc
                                         set hpa=hph
                                     else
-                                        set hpo=.0004
+                                        set hpo=.0004*HPB_Sc
                                         set hpa=hph*.6
                                     endif
                                     call SetFrameSize(HPB_Tick[hps*HPB_TN+hpj],hpo,hpa)
@@ -7276,7 +7481,7 @@ function HPB_SetMode takes integer hpk returns nothing
     set hps=0
     loop
         exitwhen hps>3
-        call ShowFrame(HPB_MChk[hps],HPB_MOpen and hps==HPB_Mode)
+        call ShowFrame(HPB_MChk[hps],HPB_MOpen and CBS_Tab==0 and hps==HPB_Mode)
         set hps=hps+1
     endloop
 endfunction
@@ -7286,18 +7491,40 @@ function HPB_MenuShow takes boolean hpv returns nothing
     call ShowFrame(HPB_Menu,hpv)
     call ShowFrame(HPB_MClose,hpv)
     // тексты SIMPLETEXT не появляются вместе с родителем — показывать явно
+    // заголовок и крестик — всегда; остальное — только на вкладке «Основное» (CBS_Tab 0)
+    if CBS_OffHas(32) then
+        set hps=6
+    endif
     loop
         exitwhen hps>5
-        call ShowFrame(HPB_MText[hps],hpv)
+        call ShowFrame(HPB_MText[hps],hpv and (hps<2 or CBS_Tab==0))
         set hps=hps+1
     endloop
     set hps=0
+    if CBS_OffHas(32) then
+        set hps=4
+    endif
     loop
         exitwhen hps>3
-        call ShowFrame(HPB_MRow[hps],hpv)
-        call ShowFrame(HPB_MChk[hps],hpv and hps==HPB_Mode)
+        call ShowFrame(HPB_MRow[hps],hpv and CBS_Tab==0)
+        call ShowFrame(HPB_MBox[hps],hpv and CBS_Tab==0)
+        call ShowFrame(HPB_MChk[hps],hpv and CBS_Tab==0 and hps==HPB_Mode)
         set hps=hps+1
     endloop
+    set hps=0
+    if CBS_OffHas(32) then
+        set hps=CBS_FrN
+    endif
+    loop
+        exitwhen hps>=CBS_FrN
+        call ShowFrame(CBS_Fr[hps],hpv and CBS_Tab==0)
+        set hps=hps+1
+    endloop
+    // крупное окно: закрыть другие, multiboard и чат; ползунки R/G/B — по выбранному цвету
+    if CBS_OffHas(1)==false then
+        //call ExecuteFunc("CBS_ShowExtra")
+        set CBS_ShowReq=true
+    endif
 endfunction
 // клик по кнопке «HP», строке выбора или крестику (событие кнопки); действует только у нажавшего
 function HPB_MenuClick takes nothing returns nothing
@@ -7332,11 +7559,17 @@ function HPB_MenuPoll takes nothing returns nothing
     endif
     // кнопка видна только после выбора режима и пока не открыто большое окно (развёрнутый multiboard не мешает);
     // окно при этом закрывается
+    // перетаскивание ползунка в окне настроек (кнопка мыши зажата)
+    // ползунки опрашивает CBS_UiTick (ExecuteFunc у одного игрока давал рассинхрон)
+    //if HPB_MOpen and CBS_OffHas(16)==false then
+    //    call ExecuteFunc("CBS_DragTick")
+    //endif
     set HPB_MT=HPB_MT+1
     if ModuloInteger(HPB_MT,5)!=0 then
         return
     endif
-    if HB_Inited and HeroBarBlockedWindows()==false then
+    //if HB_Inited and HeroBarBlockedWindows()==false then
+    if HB_Inited and HeroBarBlockedOther()==false then
         set hpk=1
     else
         set hpk=2
@@ -7345,7 +7578,10 @@ function HPB_MenuPoll takes nothing returns nothing
         set HPB_MBtnVis=hpk
         call ShowFrame(HPB_MBtn,hpk==1)
         if hpk==2 and HPB_MOpen then
+            // закрыто другим крупным окном — multiboard и чат оставить ему (CBS_ShowExtra)
+            set CBS_PollClose=true
             call HPB_MenuShow(false)
+            set CBS_PollClose=false
         endif
     endif
 endfunction
@@ -7353,15 +7589,36 @@ function HPB_MenuInit takes nothing returns nothing
     local integer hps=0
     local framehandle hpf
     local trigger hpg
+    // цвета «свой / союзники / враги» по умолчанию — как были TeamColor 06 / 04 / 00
+    set CBS_RgbDef[0]=32
+    set CBS_RgbDef[1]=192
+    set CBS_RgbDef[2]=0
+    set CBS_RgbDef[3]=255
+    set CBS_RgbDef[4]=252
+    set CBS_RgbDef[5]=1
+    set CBS_RgbDef[6]=255
+    set CBS_RgbDef[7]=3
+    set CBS_RgbDef[8]=3
+    loop
+        exitwhen hps>8
+        set CBS_Rgb[hps]=CBS_RgbDef[hps]
+        set hps=hps+1
+    endloop
+    set hps=0
+    set HPB_RGB[0]=0xFF20C000
+    set HPB_RGB[1]=0xFFFFFC01
+    set HPB_RGB[2]=0xFFFF0303
     // кнопка над правым краем миникарты: иконка (подложка с надписью «HP» больше не показывается)
     set HPB_MBtn=CreateFrameByType("SIMPLEBUTTON","HPBarMenuButton",null,"",0)
     call ClearFrameAllPoints(HPB_MBtn)
-    call SetFrameTexture(HPB_MBtn,"ReplaceableTextures\\CommandButtons\\BTNHealthStone.blp",0,true)
-    call SetFrameTexture(HPB_MBtn,"ReplaceableTextures\\CommandButtons\\BTNHealthStone.blp",1,true)
-    call SetFrameTexture(HPB_MBtn,"ReplaceableTextures\\CommandButtons\\BTNHealthStone.blp",2,true)
-    call SetFrameSize(HPB_MBtn,.02,.02)
+    // шестерёнка «Настройки карты»: 64x64 BLP с рамкой BTN / DISBTN из Button Manager (было BTNHealthStone)
+    call SetFrameTexture(HPB_MBtn,"ReplaceableTextures\\CommandButtons\\BTNChoiceSettings.blp",0,true)
+    call SetFrameTexture(HPB_MBtn,"ReplaceableTextures\\CommandButtons\\BTNChoiceSettings.blp",1,true)
+    call SetFrameTexture(HPB_MBtn,"ReplaceableTextures\\CommandButtonsDisabled\\DISBTNChoiceSettings.blp",2,true)
+    call SetFrameSize(HPB_MBtn,.017,.017) // было .02
     call SetFrameRelativePoint(HPB_MBtn,FRAMEPOINT_BOTTOMRIGHT,GetOriginFrame(ORIGIN_FRAME_MINIMAP,0),FRAMEPOINT_TOPRIGHT,0.,.012)
-    call SetFramePriority(HPB_MBtn,9)
+    //call SetFramePriority(HPB_MBtn,9)
+    call SetFramePriority(HPB_MBtn,8)
     set HPB_MBtnFrame=CreateFrameByType("SIMPLEFRAME","HPBarMenuButtonFrame",null,"",0)
     call ClearFrameAllPoints(HPB_MBtnFrame)
     call SetFrameSize(HPB_MBtnFrame,.032,.016)
@@ -7382,29 +7639,33 @@ function HPB_MenuInit takes nothing returns nothing
     // окно над кнопкой: заголовок, три строки с галочкой, крестик
     set HPB_Menu=CreateFrameByType("SIMPLEFRAME","HPBarMenu",null,"",0)
     call ClearFrameAllPoints(HPB_Menu)
-    call SetFrameSize(HPB_Menu,.112,.0755)
-    call SetFrameRelativePoint(HPB_Menu,FRAMEPOINT_BOTTOMLEFT,HPB_MBtn,FRAMEPOINT_TOPLEFT,0.,.003)
+    call SetFrameSize(HPB_Menu,.48,.40) // было .24 x .195 (а до того .112 x .0755 — только полоски HP); +.02 — ряд «Сохранить / Загрузить»
+    //call SetFrameRelativePoint(HPB_Menu,FRAMEPOINT_BOTTOMLEFT,HPB_MBtn,FRAMEPOINT_TOPLEFT,0.,.003)
+    // крупное окно — по центру экрана, как панели эмодзи и статистики; иконки героев сверху не перекрывает
+    call SetFrameRelativePoint(HPB_Menu,FRAMEPOINT_CENTER,GetOriginFrame(ORIGIN_FRAME_GAME_UI,0),FRAMEPOINT_BOTTOM,0.,.33)
     call SetFrameTextureEx(HPB_Menu,0,"UI\\widgets\\BattleNet\\bnet-tooltip-background.blp",false,"Choice-tooltip-border.blp",0)
-    call SetFramePriority(HPB_Menu,8)
+    //call SetFramePriority(HPB_Menu,8)
+    call SetFramePriority(HPB_Menu,4) // приоритеты SIMPLE-фреймов общие и не выше 8 (больше — как 8): окно 4, кнопки 5, рамки 6-7, деления 8
     set hpf=CreateFrameByType("SIMPLETEXT","HPBarMenuTitle",HPB_Menu,"",0)
     set HPB_MText[0]=hpf
     call ClearFrameAllPoints(hpf)
     call SetFrameBlendMode(hpf,0,BLEND_MODE_BLEND)
-    call SetFrameFont(hpf,"Fonts\\FRIZQT__.TTF",.0085,0)
+    call SetFrameFont(hpf,"Fonts\\FRIZQT__.TTF",.016,0)
     call SetFrameTextAlignment(hpf,TEXT_JUSTIFY_CENTER,TEXT_JUSTIFY_MIDDLE)
     call SetFrameTextColour(hpf,0xFFFFA500)
-    call SetFrameText(hpf,Lng("Цвет полосок HP","HP bar colour"))
-    call SetFrameRelativePoint(hpf,FRAMEPOINT_TOP,HPB_Menu,FRAMEPOINT_TOP,0.,-.007)
+    call SetFrameText(hpf,Lng("Настройки карты","Map settings"))
+    call SetFrameRelativePoint(hpf,FRAMEPOINT_TOP,HPB_Menu,FRAMEPOINT_TOP,0.,-.012)
     set HPB_MClose=CreateFrameByType("SIMPLEBUTTON","HPBarMenuClose",null,"",0)
     call ClearFrameAllPoints(HPB_MClose)
-    call SetFrameSize(HPB_MClose,.01,.01)
-    call SetFrameRelativePoint(HPB_MClose,FRAMEPOINT_TOPRIGHT,HPB_Menu,FRAMEPOINT_TOPRIGHT,-.004,-.004)
-    call SetFramePriority(HPB_MClose,9)
+    call SetFrameSize(HPB_MClose,.02,.02)
+    call SetFrameRelativePoint(HPB_MClose,FRAMEPOINT_TOPRIGHT,HPB_Menu,FRAMEPOINT_TOPRIGHT,-.007,-.007)
+    //call SetFramePriority(HPB_MClose,9)
+    call SetFramePriority(HPB_MClose,6)
     set hpf=CreateFrameByType("SIMPLETEXT","HPBarMenuCloseText",HPB_Menu,"",0)
     set HPB_MText[1]=hpf
     call ClearFrameAllPoints(hpf)
     call SetFrameBlendMode(hpf,0,BLEND_MODE_BLEND)
-    call SetFrameFont(hpf,"Fonts\\FRIZQT__.TTF",.0085,0)
+    call SetFrameFont(hpf,"Fonts\\FRIZQT__.TTF",.016,0)
     call SetFrameTextAlignment(hpf,TEXT_JUSTIFY_CENTER,TEXT_JUSTIFY_MIDDLE)
     call SetFrameTextColour(hpf,0xFFFFA500)
     call SetFrameText(hpf,"X")
@@ -7413,26 +7674,29 @@ function HPB_MenuInit takes nothing returns nothing
         exitwhen hps>3
         // фон галочки и подпись — в окне; строка целиком — невидимая кнопка поверх
         set hpf=CreateFrameByType("SIMPLEFRAME","HPBarMenuBox",HPB_Menu,"",hps)
+        set HPB_MBox[hps]=hpf
         call ClearFrameAllPoints(hpf)
-        call SetFrameSize(hpf,.009,.009)
-        call SetFrameRelativePoint(hpf,FRAMEPOINT_TOPLEFT,HPB_Menu,FRAMEPOINT_TOPLEFT,.007,-.0175-hps*.0135)
+        call SetFrameSize(hpf,(.017)*CBS_Z,(.017)*CBS_Z)
+        call SetFrameRelativePoint(hpf,FRAMEPOINT_TOPLEFT,HPB_Menu,FRAMEPOINT_TOPLEFT,CBS_PX(.016),CBS_PY(-.056-hps*.025))
         call SetFrameTextureEx(hpf,0,"UI\\Widgets\\EscMenu\\Human\\checkbox-background.blp",false,"",0)
-        call SetFramePriority(hpf,9)
+        //call SetFramePriority(hpf,9)
+        call SetFramePriority(hpf,5)
         set HPB_MChk[hps]=CreateFrameByType("SIMPLEFRAME","HPBarMenuCheck",null,"",hps)
         call ClearFrameAllPoints(HPB_MChk[hps])
-        call SetFrameSize(HPB_MChk[hps],.009,.009)
+        call SetFrameSize(HPB_MChk[hps],(.017)*CBS_Z,(.017)*CBS_Z)
         call SetFrameRelativePoint(HPB_MChk[hps],FRAMEPOINT_CENTER,hpf,FRAMEPOINT_CENTER,0.,0.)
         call SetFrameTextureEx(HPB_MChk[hps],0,"UI\\Widgets\\EscMenu\\Human\\checkbox-check.blp",false,"",0)
-        call SetFramePriority(HPB_MChk[hps],10)
+        //call SetFramePriority(HPB_MChk[hps],10)
+        call SetFramePriority(HPB_MChk[hps],6)
         set hpf=CreateFrameByType("SIMPLETEXT","HPBarMenuLabel",HPB_Menu,"",hps)
         set HPB_MText[2+hps]=hpf
         call ClearFrameAllPoints(hpf)
         call SetFrameBlendMode(hpf,0,BLEND_MODE_BLEND)
-        call SetFrameFont(hpf,"Fonts\\FRIZQT__.TTF",.0075,0)
+        call SetFrameFont(hpf,"Fonts\\FRIZQT__.TTF",.014*CBS_Z,0)
         call SetFrameTextAlignment(hpf,TEXT_JUSTIFY_CENTER,TEXT_JUSTIFY_LEFT)
         call SetFrameTextColour(hpf,0xFFFFFFFF)
         if hps==0 then
-            call SetFrameText(hpf,Lng("Стандартный (зелёный)","Default (green)"))
+            call SetFrameText(hpf,Lng("Стандартный","Default"))
         elseif hps==1 then
             call SetFrameText(hpf,Lng("Цвета игроков","Player colours"))
         elseif hps==2 then
@@ -7440,12 +7704,13 @@ function HPB_MenuInit takes nothing returns nothing
         else
             call SetFrameText(hpf,Lng("Стандартные полоски HP","Default HP bars"))
         endif
-        call SetFrameRelativePoint(hpf,FRAMEPOINT_LEFT,HPB_Menu,FRAMEPOINT_TOPLEFT,.019,-.022-hps*.0135)
+        call SetFrameRelativePoint(hpf,FRAMEPOINT_LEFT,HPB_Menu,FRAMEPOINT_TOPLEFT,CBS_PX(.040),CBS_PY(-.0645-hps*.025))
         set HPB_MRow[hps]=CreateFrameByType("SIMPLEBUTTON","HPBarMenuRow",null,"",hps)
         call ClearFrameAllPoints(HPB_MRow[hps])
-        call SetFrameSize(HPB_MRow[hps],.102,.012)
-        call SetFrameRelativePoint(HPB_MRow[hps],FRAMEPOINT_LEFT,HPB_Menu,FRAMEPOINT_TOPLEFT,.005,-.022-hps*.0135)
-        call SetFramePriority(HPB_MRow[hps],11)
+        call SetFrameSize(HPB_MRow[hps],(.21)*CBS_Z,(.022)*CBS_Z)
+        call SetFrameRelativePoint(HPB_MRow[hps],FRAMEPOINT_LEFT,HPB_Menu,FRAMEPOINT_TOPLEFT,CBS_PX(.012),CBS_PY(-.0645-hps*.025))
+        //call SetFramePriority(HPB_MRow[hps],11)
+        call SetFramePriority(HPB_MRow[hps],7)
         call SaveInteger(HH,GetHandleId(HPB_MRow[hps]),HPB_MIDX,hps+1)
         set hps=hps+1
     endloop
@@ -7459,6 +7724,7 @@ function HPB_MenuInit takes nothing returns nothing
         set hps=hps+1
     endloop
     call TriggerAddAction(hpg,function HPB_MenuClick)
+    call ExecuteFunc("CBS_Build") // разделы «Язык» и «Команды» окна настроек
     call HPB_MenuShow(false)
     call ShowFrame(HPB_MBtn,false)
     set HPB_MBtnVis=2
@@ -7471,6 +7737,20 @@ function HPB_Bar takes string hpn, framehandle hpr, integer hps, real hpw, real 
     call ClearFrameAllPoints(hpf)
     call SetFrameSize(hpf,hpw,hph)
     call SetFrameTextureEx(hpf,0,hpt,false,"",0)
+    call SetFramePriority(hpf,hpk)
+    return hpf
+endfunction
+// заливка HP — SIMPLEBUTTON: у неё меняется цвет текстуры (SetFrameColourEx), у подложки SIMPLEFRAME — нет (своя полоска
+// была серой). Мышь кнопка не ловит (IGNORE_TRACK_EVENTS, выключена) — клик проходит к юниту
+function HPB_BarBtn takes string hpn, framehandle hpr, integer hps, real hpw, real hph, string hpt, integer hpk returns framehandle
+    local framehandle hpf=CreateFrameByType("SIMPLEBUTTON",hpn,hpr,"",hps)
+    call ClearFrameAllPoints(hpf)
+    call SetFrameSize(hpf,hpw,hph)
+    call SetFrameTexture(hpf,hpt,0,true)
+    call SetFrameTexture(hpf,hpt,1,true)
+    call SetFrameTexture(hpf,hpt,2,true)
+    call SetFrameLayerFlag(hpf,LAYER_STYLE_IGNORE_TRACK_EVENTS,true)
+    call SetFrameEnabled(hpf,false)
     call SetFramePriority(hpf,hpk)
     return hpf
 endfunction
@@ -7608,6 +7888,59 @@ function CCB_Init takes nothing returns nothing
     set CCB_Flt=Condition(function CCB_Filter)
     call TimerStart(CreateTimer(),0.05,true,function CCB_Scan)
 endfunction
+// масштаб полосок HP (окно настроек, локально; 1 — как было, это минимум): размеры, шрифты и отступы всех мест;
+// заливки, засечки, рамку и сдвиг текста пересчитает HPB_Update (кэш сброшен)
+function HPB_ApplyScale takes real hsc returns nothing
+    local integer hps=0
+    local real hbw
+    local real hpw2
+    set HPB_Sc=hsc
+    set HPB_HW=.04554*hsc
+    set HPB_HH=.0046*hsc
+    set HPB_HM=.0033*hsc
+    set HPB_UW=.03289*hsc
+    set HPB_UH=.0034*hsc
+    set HPB_UM=.0027*hsc
+    set HPB_SH=.0021*hsc
+    set HPB_PAD=.0006*hsc
+    set HPB_GAP=.0004*hsc
+    loop
+        exitwhen hps>=HPB_N
+        set hbw=HPB_UW
+        if hps<HPB_HN then
+            set hbw=HPB_HW
+            call SetFrameFont(HPB_LvlTxt[hps],"Fonts\\FRIZQT__.TTF",.0085*hsc,0)
+        endif
+        set hpw2=hbw+2*HPB_PAD
+        if hps<HPB_HN then
+            set hpw2=hpw2+.0095*hsc
+        endif
+        call SetFrameSize(HPB_Cc[hps],hpw2,.0078*hsc)
+        call SetFrameRelativePoint(HPB_Cc[hps],FRAMEPOINT_BOTTOMRIGHT,HPB_Root[hps],FRAMEPOINT_TOPRIGHT,0.,.0008*hsc)
+        call SetFrameSize(HPB_CcIco[hps],.0078*hsc,.0078*hsc)
+        call SetFrameRelativePoint(HPB_CcFill[hps],FRAMEPOINT_TOPLEFT,HPB_Cc[hps],FRAMEPOINT_TOPLEFT,.0078*hsc+HPB_PAD,-HPB_PAD)
+        call SetFrameSize(HPB_CcTop[hps],hpw2,.0078*hsc)
+        call SetFrameFont(HPB_CcTxt[hps],"Fonts\\FRIZQT__.TTF",.0062*hsc,0)
+        call SetFrameRelativePoint(HPB_CcTxt[hps],FRAMEPOINT_CENTER,HPB_Cc[hps],FRAMEPOINT_CENTER,.0039*hsc,0.)
+        call SetFrameSize(HPB_TxtFr[hps],.1*hsc,.01*hsc)
+        call SetFrameFont(HPB_DmgTxt[hps],"Fonts\\FRIZQT__.TTF",.0115*hsc,0)
+        call SetFrameFont(HPB_HealTxt[hps],"Fonts\\FRIZQT__.TTF",.0115*hsc,0)
+        call SetFrameRelativePoint(HPB_HealTxt[hps],FRAMEPOINT_BOTTOM,HPB_TxtFr[hps],FRAMEPOINT_BOTTOM,0.,.0145*hsc)
+        set HPB_HpW[hps]=-1.
+        set HPB_MpW[hps]=-1.
+        set HPB_ShW[hps]=-1.
+        set HPB_Ticks[hps]=-1
+        set HPB_CcK[hps]=-1
+        set HPB_TxtY[hps]=-1.
+        set HPB_DmgS[hps]="~"
+        set HPB_HealS[hps]="~"
+        set HPB_MpOn[hps]=0
+        set HPB_ShOn[hps]=0
+        set HPB_PX[hps]=-9.
+        call HPB_Layout(hps)
+        set hps=hps+1
+    endloop
+endfunction
 function HPB_Init takes nothing returns nothing
     local integer hps=0
     local integer hpj
@@ -7636,7 +7969,8 @@ function HPB_Init takes nothing returns nothing
         // корень — чёрная рамка вокруг всей полоски (пустая часть HP/MP тоже чёрная)
         set HPB_Root[hps]=HPB_Bar("HPBarRoot",null,hps,hbw+2*HPB_PAD,hph+2*HPB_PAD,"Textures\\Black32.blp",1)
         call SetFrameAbsolutePoint(HPB_Root[hps],FRAMEPOINT_CENTER,0.4,0.3)
-        set HPB_Hp[hps]=HPB_Bar("HPBarHp",HPB_Root[hps],hps,hbw,hph,HPB_Tex(6),2)
+        //set HPB_Hp[hps]=HPB_Bar("HPBarHp",HPB_Root[hps],hps,hbw,hph,HPB_Tex(6),2)
+        set HPB_Hp[hps]=HPB_BarBtn("HPBarHp",HPB_Root[hps],hps,hbw,hph,HPB_Tex(6),2)
         call SetFrameRelativePoint(HPB_Hp[hps],FRAMEPOINT_TOPLEFT,HPB_Root[hps],FRAMEPOINT_TOPLEFT,HPB_PAD,-HPB_PAD)
         set HPB_Mp[hps]=HPB_Bar("HPBarMp",HPB_Root[hps],hps,hbw,hpm,HPB_Tex(1),2)
         call SetFrameRelativePoint(HPB_Mp[hps],FRAMEPOINT_TOPLEFT,HPB_Root[hps],FRAMEPOINT_TOPLEFT,HPB_PAD,-(HPB_PAD+hph+HPB_GAP))
@@ -7743,7 +8077,7 @@ function HeroBarFill takes framehandle hbf, real hbw returns nothing
     if hbw<0.0005 then
         call ShowFrame(hbf,false)
     else
-        call SetFrameSize(hbf,hbw,.0027)
+        call SetFrameSize(hbf,hbw,.0027*HB_Sc)
         call ShowFrame(hbf,true)
     endif
 endfunction
@@ -7788,7 +8122,7 @@ function HeroBarBars takes nothing returns nothing
             endif
             set hbw=0.
             if IsUnitType(hbh,UNIT_TYPE_DEAD)==false and GetUnitState(hbh,UNIT_STATE_MAX_LIFE)>0 then
-                set hbw=.02176*GetUnitState(hbh,UNIT_STATE_LIFE)/GetUnitState(hbh,UNIT_STATE_MAX_LIFE)
+                set hbw=.02176*HB_Sc*GetUnitState(hbh,UNIT_STATE_LIFE)/GetUnitState(hbh,UNIT_STATE_MAX_LIFE)
             endif
             set hbw=I2R(R2I(hbw*2000.))/2000.
             if hbw!=HB_HpW[hbi] then
@@ -7798,7 +8132,7 @@ function HeroBarBars takes nothing returns nothing
             set hbw=0.
             set hbm=GetUnitState(hbh,UNIT_STATE_MAX_MANA)
             if IsUnitType(hbh,UNIT_TYPE_DEAD)==false and hbm>0 then
-                set hbw=.02176*GetUnitState(hbh,UNIT_STATE_MANA)/hbm
+                set hbw=.02176*HB_Sc*GetUnitState(hbh,UNIT_STATE_MANA)/hbm
             endif
             set hbw=I2R(R2I(hbw*2000.))/2000.
             if hbw!=HB_MpW[hbi] then
@@ -7839,17 +8173,78 @@ endfunction
 function HeroBarPlace takes nothing returns nothing
     local integer hbi=0
     local real hbpos
+    // фрейм — взятый при загрузке у всех (GetOriginFrame у одного игрока, из ползунка масштаба, — рассинхрон)
+    if HB_GameUI==null then
+        set HB_GameUI=GetOriginFrame(ORIGIN_FRAME_GAME_UI,0)
+    endif
     loop
         exitwhen hbi>9
         if hbi<5 then
-            set hbpos=-0.0272-(4-hbi)*0.0252
+            set hbpos=(-0.0272-(4-hbi)*0.0252)*HB_Sc
         else
-            set hbpos=0.0272+(hbi-5)*0.0252
+            set hbpos=(0.0272+(hbi-5)*0.0252)*HB_Sc
         endif
-        call SetFrameRelativePoint(HeroBarIcon[hbi],FRAMEPOINT_CENTER,GetOriginFrame(ORIGIN_FRAME_GAME_UI,0),FRAMEPOINT_TOP,hbpos+HB_Shift,-0.060)
+        // масштаб иконок (окно настроек): верхний край остаётся на месте
+        call SetFrameRelativePoint(HeroBarIcon[hbi],FRAMEPOINT_CENTER,HB_GameUI,FRAMEPOINT_TOP,hbpos+HB_Shift,HB_Y-(HB_Sc-1.)*.011)
         set hbi=hbi+1
     endloop
-    call SetFrameRelativePoint(HB_ScoreFrame,FRAMEPOINT_CENTER,GetOriginFrame(ORIGIN_FRAME_GAME_UI,0),FRAMEPOINT_TOP,HB_Shift,-0.060)
+    call SetFrameRelativePoint(HB_ScoreFrame,FRAMEPOINT_CENTER,HB_GameUI,FRAMEPOINT_TOP,HB_Shift,HB_Y-(HB_Sc-1.)*.011)
+endfunction
+// масштаб иконок героев сверху (окно настроек, локально): иконки, полоски HP/MP, рамка щита, счёт FFA, подсказка
+function HeroBarScale takes real hbs returns nothing
+    local integer hbi=0
+    set HB_Sc=hbs
+    if HB_Inited==false then
+        return
+    endif
+    loop
+        exitwhen hbi>9
+        call SetFrameSize(HeroBarIcon[hbi],.02176*hbs,.02176*hbs)
+        call SetFrameSize(HB_ShBg[hbi],.02394*hbs,.00796*hbs)
+        call SetFrameRelativePoint(HB_ShBg[hbi],FRAMEPOINT_TOP,HeroBarIcon[hbi],FRAMEPOINT_BOTTOM,0.,.00048*hbs)
+        call SetFrameSize(HB_HpBg[hbi],.02176*hbs,.0027*hbs)
+        call SetFrameRelativePoint(HB_HpBg[hbi],FRAMEPOINT_TOP,HeroBarIcon[hbi],FRAMEPOINT_BOTTOM,0.,-.00068*hbs)
+        call SetFrameSize(HB_MpBg[hbi],.02176*hbs,.0027*hbs)
+        call SetFrameRelativePoint(HB_MpBg[hbi],FRAMEPOINT_TOP,HeroBarIcon[hbi],FRAMEPOINT_BOTTOM,0.,-.00374*hbs)
+        call SetFrameRelativePoint(HeroBarScore[hbi],FRAMEPOINT_TOP,HeroBarIcon[hbi],FRAMEPOINT_BOTTOM,0.,-.0075*hbs)
+        call BlzFrameSetPoint(HeroBarTipText[hbi],FRAMEPOINT_TOP,HeroBarIcon[hbi],FRAMEPOINT_BOTTOM,0.,-.021*hbs)
+        set HB_HpW[hbi]=-1.
+        set HB_MpW[hbi]=-1.
+        set hbi=hbi+1
+    endloop
+    call HeroBarPlace()
+    call HeroBarBars()
+endfunction
+// окно настроек открыто — панель героев рисуется позади него (у окна приоритет 4), закрыто — обычные приоритеты
+function HeroBarBehind takes boolean hbb returns nothing
+    local integer hbi=0
+    if HB_Inited==false then
+        return
+    endif
+    loop
+        exitwhen hbi>9
+        if hbb then
+            call SetFramePriority(HeroBarIcon[hbi],3)
+            call SetFramePriority(HB_ShBg[hbi],1)
+            call SetFramePriority(HB_HpBg[hbi],2)
+            call SetFramePriority(HB_Hp[hbi],3)
+            call SetFramePriority(HB_MpBg[hbi],2)
+            call SetFramePriority(HB_Mp[hbi],3)
+        else
+            call SetFramePriority(HeroBarIcon[hbi],7)
+            call SetFramePriority(HB_ShBg[hbi],6)
+            call SetFramePriority(HB_HpBg[hbi],7)
+            call SetFramePriority(HB_Hp[hbi],8)
+            call SetFramePriority(HB_MpBg[hbi],7)
+            call SetFramePriority(HB_Mp[hbi],8)
+        endif
+        set hbi=hbi+1
+    endloop
+    if hbb then
+        call SetFramePriority(HB_ScoreFrame,3)
+    else
+        call SetFramePriority(HB_ScoreFrame,7)
+    endif
 endfunction
 function HeroBarHideClick takes nothing returns nothing
     if GetTriggerPlayer()==GetLocalPlayer() then
@@ -7883,7 +8278,7 @@ function HeroBarFast takes nothing returns nothing
             if hbm>3 then
                 set hbm=6-hbm
             endif
-            call SetFrameSize(HeroBarIcon[hbi],.02176-.00082*hbm,.02176-.00082*hbm)
+            call SetFrameSize(HeroBarIcon[hbi],(.02176-.00082*hbm)*HB_Sc,(.02176-.00082*hbm)*HB_Sc)
         endif
         set hbi=hbi+1
     endloop
@@ -7925,7 +8320,7 @@ function HeroBarUpdate takes nothing returns nothing
             call SetFrameTexture(HeroBarIcon[hbi],hbs,0,true)
             call SetFrameTexture(HeroBarIcon[hbi],hbs,1,true)
             call SetFrameTexture(HeroBarIcon[hbi],hbs,2,true)
-            call SetFrameSize(HeroBarIcon[hbi],.02176,.02176)
+            call SetFrameSize(HeroBarIcon[hbi],.02176*HB_Sc,.02176*HB_Sc)
         endif
         if hbc!=HeroBarCol[hbi] then
             set HeroBarCol[hbi]=hbc
@@ -7978,6 +8373,7 @@ function HeroBarInit takes nothing returns nothing
     endif
     set HB_Inited=true
     set HB_MbFrame=GetOriginFrame(ORIGIN_FRAME_MULTIBOARD,0)
+    set HB_GameUI=GetOriginFrame(ORIGIN_FRAME_GAME_UI,0)
     loop
         exitwhen hbi>9
         if hbi<5 then
@@ -7987,7 +8383,7 @@ function HeroBarInit takes nothing returns nothing
         endif
         set hbf=CreateFrameByType("SIMPLEBUTTON","HeroBarIcon",null,"",hbi)
         call ClearFrameAllPoints(hbf)
-        call SetFrameRelativePoint(hbf,FRAMEPOINT_CENTER,GetOriginFrame(ORIGIN_FRAME_GAME_UI,0),FRAMEPOINT_TOP,hbpos,-0.060)
+        call SetFrameRelativePoint(hbf,FRAMEPOINT_CENTER,GetOriginFrame(ORIGIN_FRAME_GAME_UI,0),FRAMEPOINT_TOP,hbpos,HB_Y)
         call SetFrameTexture(hbf,"UI\\Widgets\\Console\\Human\\human-inventory-slotfiller.blp",0,true)
         call SetFrameTexture(hbf,"UI\\Widgets\\Console\\Human\\human-inventory-slotfiller.blp",1,true)
         call SetFrameTexture(hbf,"UI\\Widgets\\Console\\Human\\human-inventory-slotfiller.blp",2,true)
@@ -8095,7 +8491,7 @@ function HeroBarInit takes nothing returns nothing
     set HB_ScoreFrame=CreateFrameByType("SIMPLEFRAME","HeroBarScoreFrame",null,"",0)
     call ClearFrameAllPoints(HB_ScoreFrame)
     call SetFrameSize(HB_ScoreFrame,.04,.02)
-    call SetFrameRelativePoint(HB_ScoreFrame,FRAMEPOINT_CENTER,GetOriginFrame(ORIGIN_FRAME_GAME_UI,0),FRAMEPOINT_TOP,0.,-0.060)
+    call SetFrameRelativePoint(HB_ScoreFrame,FRAMEPOINT_CENTER,GetOriginFrame(ORIGIN_FRAME_GAME_UI,0),FRAMEPOINT_TOP,0.,HB_Y)
     call SetFramePriority(HB_ScoreFrame,7)
     set HB_ScoreText=CreateFrameByType("SIMPLETEXT","HeroBarScoreText",HB_ScoreFrame,"",0)
     call ClearFrameAllPoints(HB_ScoreText)
@@ -8145,6 +8541,10 @@ function HeroBarInit takes nothing returns nothing
     set HB_Hit[10]=-1000
     call TimerStart(CreateTimer(),0.02,true,function HeroBarFast)
     call TimerStart(CreateTimer(),0.1,true,function HeroBarBars)
+    // масштаб из окна настроек (сохранённый файл загружается раньше, чем появляется панель)
+    if HB_Sc!=1. then
+        call HeroBarScale(HB_Sc)
+    endif
     set hbf=null
     set hbt=null
     set hbtx=null
@@ -12047,7 +12447,7 @@ function InitForfeit takes nothing returns nothing
     call TriggerRegisterDialogEvent( LocTrigger, GetDialog( ) )
     call TriggerAddAction( LocTrigger, function ModeSelectionFunction2 )
     call SaveTimerHandle( GameHashTable, GetHandleId( GameHashTable), SH_Timer0, CreateTimer( ) )
-    call TimerStart( LoadTimerHandle( GameHashTable, GetHandleId( GameHashTable ), SH_Timer0 ), 4, false, function StartVoting ) // было 1 с: +3 с на загрузку данных
+    call TimerStart( LoadTimerHandle( GameHashTable, GetHandleId( GameHashTable ), SH_Timer0 ), 10, false, function StartVoting ) // было 1 с, затем 4 с: окно -ff после этапов загрузки (3 / 4.5 / 6 / 8 с)
     set LocTrigger = null
 endfunction
 
@@ -12133,12 +12533,19 @@ function W3mmdPlayercheck takes unit u returns nothing
     set p=null
 endfunction
 
+// игрок команды: из окна настроек (синхронно, CBS_Sync) или из чата
+function CBS_TrigP takes nothing returns player
+if CBS_P!=null then
+return CBS_P
+endif
+return GetTriggerPlayer()
+endfunction
 function DamageIndicatorForAll_Cond takes nothing returns boolean
         return true
 endfunction
 
 function DamageIndicatorForAll takes nothing returns nothing
-        local player newPlayer = GetTriggerPlayer()
+        local player newPlayer = CBS_TrigP()
         local integer i = 0
         local integer id = 0
         local real total_damage   = 0.0
@@ -12164,7 +12571,7 @@ function DamageIndicatorForAll takes nothing returns nothing
 endfunction
 
 function HealIndicatorForAll takes nothing returns nothing
-        local player newPlayer = GetTriggerPlayer()
+        local player newPlayer = CBS_TrigP()
         local integer i = 0
         local integer id = 0
         local real HealSelf    = 0.0
@@ -22178,7 +22585,7 @@ call LANG_QuestBJ(bj_QUESTTYPE_REQ_DISCOVERED,"Information","|cFFFFC850Ориг�
 
 //call CreateQuestBJ(bj_QUESTTYPE_REQ_DISCOVERED,"Игровые термины","|cFFFFC850Подробное описание статусов и игровых терминов|r\n\n"+"• |cFFFFC850Недосягаемость|r - статус при котором юнита/героя невозможно выделить таргетными способностями.\n\n"+"• |cFFFFC850Страх|r - тип контроля запрещающий игроку управлять юнитом, сам юнит - разбегается от источника страха. Страх снимается нанесением урона или по окончанию действия.","war3mapImported\\BTNdevil_may_cry3.blp")
 
-call LANG_QuestBJ(bj_QUESTTYPE_OPT_DISCOVERED,"Commands p.1","|cFFFFC850Игровые команды|r:\n\"-en\" / \"-ru\" - сменить язык карты (английский / русский), меняется только у вас.\n\"-test\" - команда вводится красным игроком до начала первого раунда. Активирует тест режим, давая доступ к дополнительным командам.\n\"-debt\" - показывает сколько золота вы должны союзнику и сколько должны вам.\n\"-itemsc\" - включает/выключает использование предметов на себя.\n\"-setmr\" - позволяет установить текуший маг резист.\n\"-cam\" - установить высоту камеры на значение от 100 до 6000.","|cFFFFC850Game commands|r:\n\"-en\" / \"-ru\" - switch the map language (English / Russian), only for you.\n\"-test\" - the command is entered by the red player before the first round. Activates the test mode, giving access to additional commands.\n\"-debt\" - shows how much gold you owe to an ally and how much you owe.\n\"-itemsc\" - enables/disables the use of items on yourself.\n\"-setmr\" - allows you to set the current magic resistance.\n\"-cam\" - set the camera height to a value from 100 to 6000.","ReplaceableTextures\\CommandButtons\\BTNVegetaUE.blp")
+call LANG_QuestBJ(bj_QUESTTYPE_OPT_DISCOVERED,"Commands p.1","|cFFFFC850Игровые команды|r:\n\"-en\" / \"-ru\" - сменить язык карты (английский / русский), меняется только у вас. Также в окне настроек (шестерёнка над миникартой).\n\"-en\" / \"-ru\" - switch the map language (English / Russian).\n\"-test\" - команда вводится красным игроком до начала первого раунда. Активирует тест режим, давая доступ к дополнительным командам.\n\"-debt\" - показывает сколько золота вы должны союзнику и сколько должны вам.\n\"-itemsc\" - включает/выключает использование предметов на себя.\n\"-setmr\" - позволяет установить текуший маг резист.\n\"-cam\" - установить высоту камеры на значение от 100 до 6000.","|cFFFFC850Game commands|r:\n\"-en\" / \"-ru\" - switch the map language (English / Russian), only for you. Also in the settings window (gear above the minimap).\n\"-en\" / \"-ru\" - сменить язык карты (английский / русский), меняется только у вас. Также в окне настроек (шестерёнка над миникартой).\n\"-test\" - the command is entered by the red player before the first round. Activates the test mode, giving access to additional commands.\n\"-debt\" - shows how much gold you owe to an ally and how much you owe.\n\"-itemsc\" - enables/disables the use of items on yourself.\n\"-setmr\" - allows you to set the current magic resistance.\n\"-cam\" - set the camera height to a value from 100 to 6000.","ReplaceableTextures\\CommandButtons\\BTNVegetaUE.blp")
 call LANG_QuestBJ(bj_QUESTTYPE_OPT_DISCOVERED,"Commands p.2","|cFFFFC850Игровые команды|r:\n\"-debug\" - снимает все эффекты, неуязвимости и паузы, если вы 15 секунд не двигалась. Телепортирует в случайную точку не далее 120 ед.\n\"-rfh\" - пересоздает героя, в случае бага, возможно только вне раунда.\n\"-re\" - воскрешает героя, применимо только на базе.\n\"killme\" - убивает героя через 10 сек.\n\"-swap x\" - поменяться персанажем с союзником.","|cFFFFC850Game commands|r:\n\"-debug\" - removes all effects, invulnerabilities and pauses if you have not moved for 15 seconds. Teleports to a random point no further than 120 units.\n\"-rfh\" - recreates the hero, in case of a bug, only possible outside the round.\n\"-re\" - resurrects the hero, only applicable at the base.\n\"killme\" - kills the hero after 10 sec.\n\"-swap x\" - swap characters with an ally.","ReplaceableTextures\\CommandButtons\\BTNOrochimaru.blp")
 call LANG_QuestBJ(bj_QUESTTYPE_OPT_DISCOVERED,"Commands p.3","|cFFFFC850Игровые команды|r:\n\"-mr\" - показывает текущее количество магических резистов у вашего персонажа.\n\"-cr\" - показывает текущее количество резистов к контролю у вашего персонажа.\n\"-damage\" - показывает игроку весь урон, который он нанес за всё время в игре, также количество уменьшенного урона общими резистами (не маг) и также количество урона, которое он заблокировал щитами или другими источниками.\n\"-tdamage\" - показывает всю эту информацию также и про других игроков.\n\"-theal\" - показывает всю информацию по восстановленному себе или союзным героям HP и MP у всех игроков.","|cFFFFC850Game commands|r:\n\"-mr\" - shows the current amount of magic resistances your character has.\n\"-cr\" - shows the current amount of control resistances your character has.\n\"-damage\" - shows the player all the damage he has dealt throughout the entire game, as well as the amount of damage reduced by general resistances (not a mage) and also the amount of damage he has blocked with shields or other sources.\n\"-tdamage\" - shows all this information about other players as well.\n\"-theal\" - shows all the information about HP and MP restored to yourself or allied heroes for all players.","ReplaceableTextures\\CommandButtons\\BTNLaxusExD_Port.blp")
 call LANG_QuestBJ(bj_QUESTTYPE_OPT_DISCOVERED,"Commands p.4","|cFFFFC850Игровые команды|r:\n\"-rounds xx\" - устанавливает кол-во раундов от 2 до 50.\n\"-setduels xx\" - устанавливает разницу между дуэлями, указать можно от 2 до 50. Написать можно лишь в первом раунде.\n\"-noduels\" - включает/выключает дуэли. Так же, после раунда, когда дуэль должна произойти, выдается компенсация. Написать можно лишь в первом раунде.","|cFFFFC850Game commands|r:\n\"-rounds xx\" - sets the number of rounds from 2 to 50.\n\"-setduels xx\" - sets the difference between duels, you can specify from 2 to 50. You can write only in the first round.\n\"-noduels\" - enables/disables duels. Also, after the round, when the duel should take place, compensation is given. You can only write in the first round.","ReplaceableTextures\\CommandButtons\\BTNWendy.blp")
@@ -26414,7 +26821,12 @@ if ShOpened then
 set ShOpened=false
 if ShMbWas then
 set ShMbWas=false
+// фрейм multiboard — взятый при загрузке у всех (GetOriginFrame здесь, у одного игрока, — рассинхрон)
+if CBS_OfMb!=null then
+call ShowFrame(CBS_OfMb,true)
+else
 call ShowFrame(GetOriginFrame(ORIGIN_FRAME_MULTIBOARD,0),true)
+endif
 endif
 if ShMain!=null then
 call BlzFrameSetVisible(ShMain,false)
@@ -26466,7 +26878,8 @@ function ToggleOpenStatusBar takes nothing returns nothing
     local player p = GetTriggerPlayer( )
     local integer pHid = GetHandleId( p )
     local integer i=0
-    if p==GetLocalPlayer() and not Sh_Typing() then
+    // пока открыто окно настроек карты, клавиши других окон не работают
+        if p==GetLocalPlayer() and not Sh_Typing() and not HPB_MOpen then
         if IsFrameVisible(OpenStatusButton)==true then
             call ShowFrame( StatusBarFrame, true )
             call ShowFrame( OpenStatusButton, false )
@@ -26549,7 +26962,8 @@ function ToggleOpenStatsBar takes nothing returns nothing
     local integer pHid = GetHandleId( p )
     local framehandle multbframw=GetOriginFrame( ORIGIN_FRAME_MULTIBOARD, 0 )
     local integer i=0
-    if p==GetLocalPlayer() and not Sh_Typing() then
+    // пока открыто окно настроек карты, клавиши других окон не работают
+        if p==GetLocalPlayer() and not Sh_Typing() and not HPB_MOpen then
         if IsFrameVisible(OpenStatsButton)==true then
             call SetFramePriority(GetOriginFrame( ORIGIN_FRAME_CHAT_MSG, 0 ),0)
             call ShowFrame( StatsBarFrame, true )
@@ -26635,7 +27049,8 @@ function ToggleOpenEmoteBar takes nothing returns nothing
     local integer pHid = GetHandleId( p )
     local framehandle multbframw=GetOriginFrame( ORIGIN_FRAME_MULTIBOARD, 0 )
     local integer i=0
-    if p==GetLocalPlayer() and not Sh_Typing() then
+    // пока открыто окно настроек карты, клавиши других окон не работают
+        if p==GetLocalPlayer() and not Sh_Typing() and not HPB_MOpen then
         if IsFrameVisible(OpenEmoteButton)==true then
             call ShowFrame( StatsBarFrame, false )
             call ShowFrame( EmoteBarFrame, true )
@@ -26799,7 +27214,8 @@ function ToggleOpenId takes nothing returns nothing
     local player p = GetTriggerPlayer( )
     local integer pHid = GetHandleId( p )
     local integer i=0
-    if p==GetLocalPlayer() and not Sh_Typing() then
+    // пока открыто окно настроек карты, клавиши других окон не работают
+        if p==GetLocalPlayer() and not Sh_Typing() and not HPB_MOpen then
         if IsFrameVisible(OpenIdButton)==true then
             call ShowFrame( IdHeroFrame, true )
             call Sh_CloseLocal()
@@ -27619,7 +28035,8 @@ function ToggleOpenTavern takes nothing returns nothing
     local integer i=0
     local integer j=0
     if udg_test==false then
-        if p==GetLocalPlayer() and not Sh_Typing() then
+        // пока открыто окно настроек карты, клавиши других окон не работают
+        if p==GetLocalPlayer() and not Sh_Typing() and not HPB_MOpen then
             if IsFrameVisible(OpenTavernButton)==true then
                 call ShowFrame( TavernHeroFrame, true )
                 call Sh_CloseLocal()
@@ -33220,7 +33637,7 @@ endif
 endfunction
 function InitTrig_Table takes nothing returns nothing
 set gg_trg_Table=CreateTrigger()
-call TriggerRegisterTimerEventSingle(gg_trg_Table,15) // было 10 с: +5 с на загрузку данных
+call TriggerRegisterTimerEventSingle(gg_trg_Table,16) // было 10 с, затем 15 с: выбор режима после голосования за -ff (10 с + 5 с)
 if ValidHLC() then
 call TriggerAddAction(gg_trg_Table,function Trig_Table2_Actions)
 else
@@ -36078,10 +36495,35 @@ call SetFrameText(TavRoleBtnText,Lng("Роли","Roles"))
 call SetFrameText(TavRoleLbl[TAVROLE_N],"|cFFFF6060"+Lng("Сбросить","Reset")+"|r")
 endif
 endfunction
+// место роли в окне: колонка 0/1 и строка 0..6
+function TavRole_Col takes integer trB returns integer
+if trB==0 or trB==10 or trB==4 or trB==5 or trB==6 or trB==11 then
+return 1
+endif
+return 0
+endfunction
+function TavRole_Row takes integer trB returns integer
+if trB==1 or trB==0 then
+return 0
+elseif trB==2 or trB==10 then
+return 1
+elseif trB==3 or trB==4 then
+return 2
+elseif trB==9 or trB==5 then
+return 3
+elseif trB==7 or trB==6 then
+return 4
+elseif trB==8 or trB==11 then
+return 5
+endif
+return 6
+endfunction
 // строится один раз, после окна таверны (Trig_Dialog2_Actions)
 function TavRole_Build takes nothing returns nothing
 local integer trB=0
 local framehandle trF
+local real trCx
+local real trRy
 local trigger trT=CreateTrigger()
 if TavRoleBuilt or TavernHeroFrame==null or InfoTavernText==null then
 return
@@ -36114,12 +36556,16 @@ call SetFrameRelativePoint(TavRoleBtnText,FRAMEPOINT_CENTER,TavRoleBtn,FRAMEPOIN
 // окно с галочками — справа от кнопки, вверх от её низа
 set TavRolePanel=CreateFrameByType("SIMPLEFRAME","TavRolePanel",TavernHeroFrame,"",0)
 call ClearFrameAllPoints(TavRolePanel)
-call SetFrameSize(TavRolePanel,.1,.016*(TAVROLE_N+1)+.012)
+// две колонки по 6: слева — как бьёт и живёт (Carry, Assassin, Durable, Tank, Swordsman, Escape),
+// справа — способности (Caster, Nuker, Disabler, Exhauster, Support, Initiator); «Сбросить» — под левой колонкой
+call SetFrameSize(TavRolePanel,.19,.016*6+.012+.024)
 call SetFrameTextureEx(TavRolePanel,0,"UI\\widgets\\BattleNet\\bnet-tooltip-background.blp",false,"Choice-tooltip-border.blp",0)
 call SetFramePriority(TavRolePanel,8)
-call SetFrameRelativePoint(TavRolePanel,FRAMEPOINT_BOTTOMLEFT,TavRoleBtn,FRAMEPOINT_BOTTOMRIGHT,.003,0)
+call SetFrameRelativePoint(TavRolePanel,FRAMEPOINT_BOTTOMLEFT,TavRoleBtn,FRAMEPOINT_BOTTOMRIGHT,.003,-.04)
 loop
 exitwhen trB>TAVROLE_N
+set trCx=.095*TavRole_Col(trB)
+set trRy=.016*TavRole_Row(trB)
 // строка: квадрат галочки + подпись; нажимаются оба (контекст — номер роли, TAVROLE_N — «Сбросить»)
 if trB<TAVROLE_N then
 set trF=CreateFrameByType("SIMPLEBUTTON","TavRoleBox",TavRolePanel,"",trB)
@@ -36129,7 +36575,7 @@ call SetFrameTexture(trF,"UI\\Widgets\\Glues\\GlueScreen-Checkbox-Background.blp
 call SetFrameTexture(trF,"UI\\Widgets\\Glues\\GlueScreen-Checkbox-Background.blp",2,true)
 call SetFrameSize(trF,.013,.013)
 call SetFramePriority(trF,9)
-call SetFrameRelativePoint(trF,FRAMEPOINT_TOPLEFT,TavRolePanel,FRAMEPOINT_TOPLEFT,.007,-.007-.016*trB)
+call SetFrameRelativePoint(trF,FRAMEPOINT_TOPLEFT,TavRolePanel,FRAMEPOINT_TOPLEFT,.007+trCx,-.007-trRy)
 call TriggerRegisterFrameEvent(trT,trF,FRAMEEVENT_CONTROL_CLICK)
 // галочка — простой фрейм поверх квадрата, без событий: вторая кнопка ловила тот же клик, и выбор переключался дважды
 set TavRoleCheck[trB]=CreateFrameByType("SIMPLEFRAME","TavRoleCheck",trF,"",trB)
@@ -36149,7 +36595,7 @@ call SetFrameTexture(trF,"war3mapImported\\shop_none.tga",1,true)
 call SetFrameTexture(trF,"war3mapImported\\shop_none.tga",2,true)
 call SetFrameSize(trF,.072,.014)
 call SetFramePriority(trF,9)
-call SetFrameRelativePoint(trF,FRAMEPOINT_TOPLEFT,TavRolePanel,FRAMEPOINT_TOPLEFT,.023,-.0065-.016*trB)
+call SetFrameRelativePoint(trF,FRAMEPOINT_TOPLEFT,TavRolePanel,FRAMEPOINT_TOPLEFT,.023+trCx,-.0065-trRy)
 call TriggerRegisterFrameEvent(trT,trF,FRAMEEVENT_CONTROL_CLICK)
 set TavRoleLbl[trB]=CreateFrameByType("SIMPLETEXT","TavRoleLbl",trF,"",trB)
 call ClearFrameAllPoints(TavRoleLbl[trB])
@@ -36161,6 +36607,18 @@ call SetFrameParent(TavRoleLbl[trB],trF)
 call SetFrameText(TavRoleLbl[trB]," ")
 call ShowFrame(TavRoleLbl[trB],true)
 call SetFrameRelativePoint(TavRoleLbl[trB],FRAMEPOINT_LEFT,trF,FRAMEPOINT_LEFT,0,0)
+// «Сбросить» — отдельная кнопка по центру под колонками
+if trB==TAVROLE_N then
+call ClearFrameAllPoints(trF)
+call SetFrameTexture(trF,"checkbox-depressed2.blp",0,true)
+call SetFrameTexture(trF,"checkbox-depressed2.blp",1,true)
+call SetFrameTexture(trF,"checkbox-depressed2.blp",2,true)
+call SetFrameSize(trF,.06,.017)
+call SetFrameRelativePoint(trF,FRAMEPOINT_BOTTOM,TavRolePanel,FRAMEPOINT_BOTTOM,0,.007)
+call ClearFrameAllPoints(TavRoleLbl[trB])
+call SetFrameTextAlignment(TavRoleLbl[trB],TEXT_JUSTIFY_CENTER,TEXT_JUSTIFY_MIDDLE)
+call SetFrameRelativePoint(TavRoleLbl[trB],FRAMEPOINT_CENTER,trF,FRAMEPOINT_CENTER,.00011,0)
+endif
 set trB=trB+1
 endloop
 call ShowFrame(TavRolePanel,false)
@@ -39732,6 +40190,14 @@ set u=null
 set p=null
 set it=null
 endfunction
+// имя предмета с ником владельца: сначала хоткей из данных предмета — с хоткеем из окна настроек (ITEM_IF_HOTKEY)
+// смена текста предмета роняла игру; назначенную клавишу окно настроек вернёт через 0.1 с (CBS_ItemHkUnit)
+function ItemSetNameSafe takes item itn, string its returns nothing
+    if GetItemIntegerField(itn,ITEM_IF_HOTKEY)!=GetBaseItemIntegerFieldById(GetItemTypeId(itn),ITEM_IF_HOTKEY) then
+        call SetItemIntegerField(itn,ITEM_IF_HOTKEY,GetBaseItemIntegerFieldById(GetItemTypeId(itn),ITEM_IF_HOTKEY))
+    endif
+    call SetItemStringField(itn,ITEM_SF_NAME,its)
+endfunction
 function Trig_PickItem_Actions takes nothing returns nothing
 local unit u=GetTriggerUnit()
 local item it=GetManipulatedItem()
@@ -39746,7 +40212,8 @@ if udg_DM[GetPlayerId(p)+1]!=null then
 endif
 if GetItemPlayer(it)==Player(15) or GetItemPlayer(it)==p or udg_test==true then
     call SetItemPlayer(it,p,false)
-    call SetItemStringField(it,ITEM_SF_NAME,GetBaseItemStringFieldById(GetItemTypeId(it),ITEM_SF_NAME)+" ("+Color[GetPlayerId(p)]+GetPlayerName(p)+"|r)")
+    //call SetItemStringField(it,ITEM_SF_NAME,GetBaseItemStringFieldById(GetItemTypeId(it),ITEM_SF_NAME)+" ("+Color[GetPlayerId(p)]+GetPlayerName(p)+"|r)")
+    call ItemSetNameSafe(it,GetBaseItemStringFieldById(GetItemTypeId(it),ITEM_SF_NAME)+" ("+Color[GetPlayerId(p)]+GetPlayerName(p)+"|r)")
     if itemsc[GetPlayerId(p)]==true then
         if GetItemTypeId(it) ==  'I04R' then
             call SetAbilityIntegerLevelField(GetUnitAbility(u,'A10Q'), ABILITY_ILF_TARGET_TYPE,0,1)
@@ -39800,7 +40267,8 @@ if GetItemPlayer(it)==Player(15) or GetItemPlayer(it)==p or udg_test==true then
     if GetItemTypeId(it) ==  'I04V' or GetItemTypeId(it) ==  'I13R' or GetItemTypeId(it) ==  'I13S' or GetItemTypeId(it) ==  'IMDi' then
         if UnitItemInSlot(u,0)==it or UnitItemInSlot(u,1)==it or UnitItemInSlot(u,2)==it or UnitItemInSlot(u,3)==it or UnitItemInSlot(u,4)==it or UnitItemInSlot(u,5)==it or UnitItemInSlot(u,6)==it or UnitItemInSlot(u,7)==it or UnitItemInSlot(u,8)==it then
             set f=CreateItem(GetItemTypeId(it),GetUnitX(u),GetUnitY(u))
-            call SetItemStringField(f,ITEM_SF_NAME,GetBaseItemStringFieldById(GetItemTypeId(f),ITEM_SF_NAME)+" ("+Color[GetPlayerId(p)]+GetPlayerName(p)+"|r)")
+            //call SetItemStringField(f,ITEM_SF_NAME,GetBaseItemStringFieldById(GetItemTypeId(f),ITEM_SF_NAME)+" ("+Color[GetPlayerId(p)]+GetPlayerName(p)+"|r)")
+            call ItemSetNameSafe(f,GetBaseItemStringFieldById(GetItemTypeId(f),ITEM_SF_NAME)+" ("+Color[GetPlayerId(p)]+GetPlayerName(p)+"|r)")
             call SetItemPlayer(f,p,false)
             call UnitRemoveItem(u,it)
             call RemoveItem(it)
@@ -39809,7 +40277,8 @@ if GetItemPlayer(it)==Player(15) or GetItemPlayer(it)==p or udg_test==true then
     else
         if UnitItemInSlot(u,9)==it then
             set f=CreateItem(GetItemTypeId(it),GetUnitX(u),GetUnitY(u))
-            call SetItemStringField(f,ITEM_SF_NAME,GetBaseItemStringFieldById(GetItemTypeId(f),ITEM_SF_NAME)+" ("+Color[GetPlayerId(p)]+GetPlayerName(p)+"|r)")
+            //call SetItemStringField(f,ITEM_SF_NAME,GetBaseItemStringFieldById(GetItemTypeId(f),ITEM_SF_NAME)+" ("+Color[GetPlayerId(p)]+GetPlayerName(p)+"|r)")
+            call ItemSetNameSafe(f,GetBaseItemStringFieldById(GetItemTypeId(f),ITEM_SF_NAME)+" ("+Color[GetPlayerId(p)]+GetPlayerName(p)+"|r)")
             call SetItemPlayer(f,p,false)
             call UnitRemoveItem(u,it)
             call RemoveItem(it)
@@ -39820,7 +40289,8 @@ if GetItemPlayer(it)==Player(15) or GetItemPlayer(it)==p or udg_test==true then
                 call SetItemRemainingCooldown(it,0.1)
             else
                 set f=CreateItem(GetItemTypeId(it),GetUnitX(u),GetUnitY(u))
-                call SetItemStringField(f,ITEM_SF_NAME,GetBaseItemStringFieldById(GetItemTypeId(f),ITEM_SF_NAME)+" ("+Color[GetPlayerId(p)]+GetPlayerName(p)+"|r)")
+                //call SetItemStringField(f,ITEM_SF_NAME,GetBaseItemStringFieldById(GetItemTypeId(f),ITEM_SF_NAME)+" ("+Color[GetPlayerId(p)]+GetPlayerName(p)+"|r)")
+                call ItemSetNameSafe(f,GetBaseItemStringFieldById(GetItemTypeId(f),ITEM_SF_NAME)+" ("+Color[GetPlayerId(p)]+GetPlayerName(p)+"|r)")
                 call SetItemPlayer(f,p,false)
                 call UnitRemoveItem(u,it)
                 call RemoveItem(it)
@@ -39850,7 +40320,8 @@ if GetItemPlayer(it)==Player(15) or GetItemPlayer(it)==p or udg_test==true then
     if id>-1 then
         if UnitItemInSlot(u,1)!=null and UnitItemInSlot(u,2)!=null and UnitItemInSlot(u,3)!=null and UnitItemInSlot(u,4)!=null and UnitItemInSlot(u,5)!=null and UnitItemInSlot(u,6)!=null and UnitItemInSlot(u,7)!=null and UnitItemInSlot(u,8)!=null and UnitItemInSlot(u,9)!=null and UnitItemInSlot(u,10)!=null and UnitItemInSlot(u,0)!=null then
             set f=CreateItem(id,GetUnitX(Chest[GetPlayerId(p)]),GetUnitY(Chest[GetPlayerId(p)]))
-            call SetItemStringField(f,ITEM_SF_NAME,GetBaseItemStringFieldById(GetItemTypeId(f),ITEM_SF_NAME)+" ("+Color[GetPlayerId(p)]+GetPlayerName(p)+"|r)")
+            //call SetItemStringField(f,ITEM_SF_NAME,GetBaseItemStringFieldById(GetItemTypeId(f),ITEM_SF_NAME)+" ("+Color[GetPlayerId(p)]+GetPlayerName(p)+"|r)")
+            call ItemSetNameSafe(f,GetBaseItemStringFieldById(GetItemTypeId(f),ITEM_SF_NAME)+" ("+Color[GetPlayerId(p)]+GetPlayerName(p)+"|r)")
             call SetItemPlayer(f,p,false)
             call UnitAddItem(Chest[GetPlayerId(p)],f)
         else
@@ -39893,7 +40364,8 @@ if GetItemPlayer(it)==Player(15) or GetItemPlayer(it)==p or udg_test==true then
 else
     set f=CreateItem(GetItemTypeId(it),GetUnitX(Hero[GetPlayerId(GetItemPlayer(it))]),GetUnitY(Hero[GetPlayerId(GetItemPlayer(it))]))
     call SetItemPlayer(f,GetItemPlayer(it),false)
-    call SetItemStringField(f,ITEM_SF_NAME,GetBaseItemStringFieldById(GetItemTypeId(f),ITEM_SF_NAME)+" ("+Color[GetPlayerId(GetItemPlayer(it))]+GetPlayerName(GetItemPlayer(it))+"|r)")
+    //call SetItemStringField(f,ITEM_SF_NAME,GetBaseItemStringFieldById(GetItemTypeId(f),ITEM_SF_NAME)+" ("+Color[GetPlayerId(GetItemPlayer(it))]+GetPlayerName(GetItemPlayer(it))+"|r)")
+    call ItemSetNameSafe(f,GetBaseItemStringFieldById(GetItemTypeId(f),ITEM_SF_NAME)+" ("+Color[GetPlayerId(GetItemPlayer(it))]+GetPlayerName(GetItemPlayer(it))+"|r)")
     call UnitAddItem(Hero[GetPlayerId(GetItemPlayer(it))],f)
     if itemsc[GetPlayerId(GetItemPlayer(it))]==true then
         if GetItemTypeId(f) ==  'I04R' then
@@ -46295,7 +46767,7 @@ function callDamageIndicator_Cond takes nothing returns boolean
         return true
 endfunction
 function callDamageIndicator takes nothing returns nothing
-        call DamageIndicatorForPlayer(GetTriggerPlayer())
+        call DamageIndicatorForPlayer(CBS_TrigP())
 endfunction
 
 function IrinaMsg_Cond takes nothing returns boolean
@@ -51202,21 +51674,21 @@ function Trig_test_Actions takes nothing returns nothing
     set HoverHeroIdIconText=null
 endfunction
 function Trig_mr_Actions takes nothing returns nothing
-call DisplayTextToPlayer(Player(GetPlayerId(GetTriggerPlayer())),0,0,Lng("Ваша текущая магическая защита - ","Your current magical defense is ")+R2SW(((1-myCustomDamage2(udg_Hero[GetPlayerId(GetTriggerPlayer())+1],1))*100),1,1)+"%.")
+call DisplayTextToPlayer(Player(GetPlayerId(CBS_TrigP())),0,0,Lng("Ваша текущая магическая защита - ","Your current magical defense is ")+R2SW(((1-myCustomDamage2(udg_Hero[GetPlayerId(CBS_TrigP())+1],1))*100),1,1)+"%.")
 endfunction
 function Trig_he_Actions takes nothing returns nothing
 call DisplayTextToPlayer(Player(GetPlayerId(GetTriggerPlayer())),0,0,Lng("Ваша текущая эффективность восстановления здоровья - ","Your current health recovery efficiency - ")+R2SW(((myCustomHeal2(udg_Hero[GetPlayerId(GetTriggerPlayer())+1],1))*100),1,1)+"%.")
 call DisplayTextToPlayer(Player(GetPlayerId(GetTriggerPlayer())),0,0,Lng("Ваша текущая эффективность восстановления маны - ","Your current Mana recovery efficiency - ")+R2SW(((myCustomMana2(udg_Hero[GetPlayerId(GetTriggerPlayer())+1],1))*100),1,1)+"%.")
 endfunction
 function Trig_ControlResist_Actions takes nothing returns nothing
-call DisplayTextToPlayer(Player(GetPlayerId(GetTriggerPlayer())),0,0,Lng("Ваше текущее сопротивление к контролю - ","Your current resistance to control is ")+R2SW(((10-CalculateControlResist(udg_Hero[GetPlayerId(GetTriggerPlayer())+1], 10))*10),1,1)+"%.")
+call DisplayTextToPlayer(Player(GetPlayerId(CBS_TrigP())),0,0,Lng("Ваше текущее сопротивление к контролю - ","Your current resistance to control is ")+R2SW(((10-CalculateControlResist(udg_Hero[GetPlayerId(CBS_TrigP())+1], 10))*10),1,1)+"%.")
 endfunction
 function Trig_CritChange_Actions takes nothing returns nothing
 call DisplayTextToPlayer(Player(GetPlayerId(GetTriggerPlayer())),0,0,Lng("Ваша текущая сумма критических шансов - ","Your current critical chance total - ")+R2SW(((CalculateCritChange(udg_Hero[GetPlayerId(GetTriggerPlayer())+1]))*100),1,1)+"%.")
 endfunction
 function Trig_debt_Actions takes nothing returns nothing
     local integer i
-    local integer id=GetPlayerId(GetTriggerPlayer())
+    local integer id=GetPlayerId(CBS_TrigP())
     call DisplayTextToPlayer(Player(id),0,0,Lng("Список игроков, кому должен:","List of players to who owes"))
     set i=0
     loop
@@ -51238,10 +51710,10 @@ function Trig_debt_Actions takes nothing returns nothing
     endloop
 endfunction
 function Trig_itemsc_Actions takes nothing returns nothing
-    local integer id=GetPlayerId(GetTriggerPlayer())
+    local integer id=GetPlayerId(CBS_TrigP())
     local integer i=10
     if itemsc[id]==false then
-        if(GetLocalPlayer()==GetTriggerPlayer() ) then
+        if(GetLocalPlayer()==CBS_TrigP() ) then
             call DisplayChatMessageEx(null,CHAT_RECIPIENT_UNKNOWN,10,true,Lng("Солнце Вонголы/Небо Маре/Сфера Льда/Сапоги льда на союзников: ON","Vongola Sun/Sky Mare/Ice Sphere/Ice Boots on allies: ON"))
         endif
         loop
@@ -51262,7 +51734,7 @@ function Trig_itemsc_Actions takes nothing returns nothing
         endloop
         set itemsc[id]=true
     else
-        if(GetLocalPlayer()==GetTriggerPlayer() ) then
+        if(GetLocalPlayer()==CBS_TrigP() ) then
             call DisplayChatMessageEx(null,CHAT_RECIPIENT_UNKNOWN,10,true,Lng("Солнце Вонголы/Небо Маре/Сфера Льда/Сапоги льда на союзников: OFF","Vongola Sun/Sky Mare/Ice Sphere/Ice Boots on allies: OFF"))
         endif
         loop
@@ -52176,22 +52648,22 @@ set t=null
 endfunction
 function Trig_Debug_Actions takes nothing returns nothing
 local timer t=CreateTimer()
-call SaveInteger(HH,GetHandleId(t),0,GetPlayerId(GetTriggerPlayer()))
-call SaveReal(HH,GetHandleId(t),3,GetUnitX(Hero[GetPlayerId(GetTriggerPlayer())]))
-call SaveReal(HH,GetHandleId(t),4,GetUnitY(Hero[GetPlayerId(GetTriggerPlayer())]))
-call SaveBoolean(HH,GetHandleId(Hero[GetPlayerId(GetTriggerPlayer())]),TARGET_ABILITY,false)
-call SetControlToUnit(Hero[GetPlayerId(GetTriggerPlayer())],Hero[GetPlayerId(GetTriggerPlayer())],1,"stun")
-// call SetControlToUnit(Hero[GetPlayerId(GetTriggerPlayer())],Hero[GetPlayerId(GetTriggerPlayer())],15,"heavystun")
-call SetControlToUnit(Hero[GetPlayerId(GetTriggerPlayer())],Hero[GetPlayerId(GetTriggerPlayer())],1,"ensnare")
-call SetControlToUnit(Hero[GetPlayerId(GetTriggerPlayer())],Hero[GetPlayerId(GetTriggerPlayer())],1,"root")
-call SetControlToUnit(Hero[GetPlayerId(GetTriggerPlayer())],Hero[GetPlayerId(GetTriggerPlayer())],1,"doom")
-call SetControlToUnit(Hero[GetPlayerId(GetTriggerPlayer())],Hero[GetPlayerId(GetTriggerPlayer())],1,"silence")
-call SetControlToUnit(Hero[GetPlayerId(GetTriggerPlayer())],Hero[GetPlayerId(GetTriggerPlayer())],1,"sleep")
-call IssueImmediateOrder(Hero[GetPlayerId(GetTriggerPlayer())],"stop")
-call IssuePointOrder( Hero[GetPlayerId(GetTriggerPlayer())], "smart", GetUnitX( Hero[GetPlayerId(GetTriggerPlayer())] )+GetRandomReal(-20,20), GetUnitY( Hero[GetPlayerId(GetTriggerPlayer())] )+GetRandomReal(-20,20) )
-call UnitAddAbility(Hero[GetPlayerId(GetTriggerPlayer())],'A0WR')
-call myCustomDamage(Hero[GetPlayerId(GetTriggerPlayer())],Hero[GetPlayerId(GetTriggerPlayer())],10,false,false,null,DAMAGE_TYPE_UNIVERSAL,null)
-call UnitRemoveAbility(Hero[GetPlayerId(GetTriggerPlayer())],'A0WR')
+call SaveInteger(HH,GetHandleId(t),0,GetPlayerId(CBS_TrigP()))
+call SaveReal(HH,GetHandleId(t),3,GetUnitX(Hero[GetPlayerId(CBS_TrigP())]))
+call SaveReal(HH,GetHandleId(t),4,GetUnitY(Hero[GetPlayerId(CBS_TrigP())]))
+call SaveBoolean(HH,GetHandleId(Hero[GetPlayerId(CBS_TrigP())]),TARGET_ABILITY,false)
+call SetControlToUnit(Hero[GetPlayerId(CBS_TrigP())],Hero[GetPlayerId(CBS_TrigP())],1,"stun")
+// call SetControlToUnit(Hero[GetPlayerId(CBS_TrigP())],Hero[GetPlayerId(CBS_TrigP())],15,"heavystun")
+call SetControlToUnit(Hero[GetPlayerId(CBS_TrigP())],Hero[GetPlayerId(CBS_TrigP())],1,"ensnare")
+call SetControlToUnit(Hero[GetPlayerId(CBS_TrigP())],Hero[GetPlayerId(CBS_TrigP())],1,"root")
+call SetControlToUnit(Hero[GetPlayerId(CBS_TrigP())],Hero[GetPlayerId(CBS_TrigP())],1,"doom")
+call SetControlToUnit(Hero[GetPlayerId(CBS_TrigP())],Hero[GetPlayerId(CBS_TrigP())],1,"silence")
+call SetControlToUnit(Hero[GetPlayerId(CBS_TrigP())],Hero[GetPlayerId(CBS_TrigP())],1,"sleep")
+call IssueImmediateOrder(Hero[GetPlayerId(CBS_TrigP())],"stop")
+call IssuePointOrder( Hero[GetPlayerId(CBS_TrigP())], "smart", GetUnitX( Hero[GetPlayerId(CBS_TrigP())] )+GetRandomReal(-20,20), GetUnitY( Hero[GetPlayerId(CBS_TrigP())] )+GetRandomReal(-20,20) )
+call UnitAddAbility(Hero[GetPlayerId(CBS_TrigP())],'A0WR')
+call myCustomDamage(Hero[GetPlayerId(CBS_TrigP())],Hero[GetPlayerId(CBS_TrigP())],10,false,false,null,DAMAGE_TYPE_UNIVERSAL,null)
+call UnitRemoveAbility(Hero[GetPlayerId(CBS_TrigP())],'A0WR')
 call TimerStart(t,15,false,function Trig_Debug_Actions2)
 set t=null
 endfunction
@@ -52249,10 +52721,10 @@ endfunction
 function Trig_Killme_Actions takes nothing returns nothing
 local timer t=CreateTimer()
 if bkillme then
-        call SaveInteger(HH,GetHandleId(t),0,GetPlayerId(GetTriggerPlayer()))
+        call SaveInteger(HH,GetHandleId(t),0,GetPlayerId(CBS_TrigP()))
         call TimerStart(t,10,false,function Trig_Killme_Actions2)
 else
-        call DisplayTextToPlayer(GetTriggerPlayer(),0,0, "Killme is disabled")
+        call DisplayTextToPlayer(CBS_TrigP(),0,0, "Killme is disabled")
         call DestroyTimer(t)
 endif
 
@@ -52278,7 +52750,7 @@ function CondRFH takes nothing returns boolean
 return udg_B==false and round>0
 endfunction
 function CastRFH takes nothing returns nothing
-local integer ip=GetPlayerId(GetTriggerPlayer())
+local integer ip=GetPlayerId(CBS_TrigP())
 local unit u=Hero[ip]
 local item array it
 local integer i=0
@@ -52778,7 +53250,7 @@ call FlushChildHashtable(h,id)
 set t=null
 endfunction
 function Trig_Resp_Actions takes nothing returns nothing
-local integer i=GetPlayerId(GetTriggerPlayer())+1
+local integer i=GetPlayerId(CBS_TrigP())+1
 local timer t=CreateTimer()
 //call DisplayTextToPlayer(Player(0),0,0,"0")
 if udg_B==false then
@@ -52807,6 +53279,2193 @@ call TriggerRegisterPlayerChatEvent(gg_trg_Resp,Player(9),"-re",true)
 //call TriggerRegisterPlayerChatEvent(gg_trg_Resp,Player(10),"-re",true)
 //call TriggerRegisterPlayerChatEvent(gg_trg_Resp,Player(11),"-re",true)
 call TriggerAddAction(gg_trg_Resp,function Trig_Resp_Actions)
+endfunction
+// ===== Окно «Настройки карты» (кнопка-шестерёнка над миникартой; было меню полосок HP) =====
+// Клик по кнопке — только у нажавшего, поэтому команда уходит через SendSyncData("CBST", номер) и выполняется
+// в CBS_Sync у всех одинаково; действия команд берут игрока через CBS_TrigP().
+function CBS_Text takes framehandle cbF,real cbSize,integer cbColour returns nothing
+call ClearFrameAllPoints(cbF)
+call SetFrameBlendMode(cbF,0,BLEND_MODE_BLEND)
+call SetFrameFont(cbF,"Fonts\\FRIZQT__.TTF",cbSize*CBS_Z,0)
+call SetFrameTextColour(cbF,cbColour)
+endfunction
+function CBS_Add takes framehandle cbF returns nothing
+set CBS_Fr[CBS_FrN]=cbF
+set CBS_FrN=CBS_FrN+1
+endfunction
+// фреймы ползунков R/G/B — видны, только пока выбран цвет
+function CBS_AddRgb takes framehandle cbF returns nothing
+set CBS_RgbFr[CBS_RgbN]=cbF
+set CBS_RgbN=CBS_RgbN+1
+endfunction
+function CBS_AddHk takes framehandle cbF returns nothing
+set CBS_HkFr[CBS_HkN]=cbF
+set CBS_HkN=CBS_HkN+1
+endfunction
+function CBS_Cmd takes integer cbK returns string
+if cbK==0 then
+return "-itemsc"
+elseif cbK==1 then
+return "-debt"
+elseif cbK==2 then
+return "-mr"
+elseif cbK==3 then
+return "-cr"
+elseif cbK==4 then
+return "-damage"
+elseif cbK==5 then
+return "-tdamage"
+elseif cbK==6 then
+return "-theal"
+elseif cbK==7 then
+return "-debug"
+elseif cbK==8 then
+return "-re"
+elseif cbK==9 then
+return "-rfh"
+elseif cbK==10 then
+return "killme"
+endif
+return ""
+endfunction
+// надписи — и при загрузке, и при -en / -ru
+function CBS_LangRefresh takes nothing returns nothing
+if CBS_FrN==0 then
+return
+endif
+call SetFrameText(HPB_MText[0],Lng("Настройки карты","Map settings"))
+call SetFrameText(CBS_Head[0],"|cFFFFA500"+Lng("Полоски HP","HP bars")+"|r")
+call SetFrameText(CBS_Head[1],"|cFFFFA500"+Lng("Язык","Language")+"|r")
+call SetFrameText(CBS_Head[2],"|cFFFFA500"+Lng("Команды (как в чате)","Commands (same as chat)")+"|r")
+call SetFrameText(CBS_Head[3],"|cFFFFA500"+Lng("Цвета: свой / союзники / враги","Colours: own / allies / enemies")+"|r")
+call SetFrameText(CBS_Head[4],"|cFFFFA500"+Lng("Масштаб","Scale")+"|r")
+call SetFrameText(HPB_MText[2],Lng("Стандартный","Default"))
+call SetFrameText(HPB_MText[3],Lng("Цвета игроков","Player colours"))
+call SetFrameText(HPB_MText[4],Lng("Свой / союзники / враги","Own / allies / enemies"))
+call SetFrameText(HPB_MText[5],Lng("Стандартные полоски HP","Default HP bars"))
+call SetFrameText(CBS_SwLbl[0],Lng("Свой","Own"))
+call SetFrameText(CBS_SwLbl[1],Lng("Союзники","Allies"))
+call SetFrameText(CBS_SwLbl[2],Lng("Враги","Enemies"))
+call SetFrameText(CBS_Hint,Lng("Нажмите на цвет, чтобы изменить его","Click a colour to change it"))
+call SetFrameText(CBS_ScLbl[0],Lng("Иконки героев сверху","Hero icons at the top"))
+call SetFrameText(CBS_ScLbl[1],Lng("Полоски HP","HP bars"))
+call SetFrameText(CBS_Lbl[0],Lng("Предметы на себя","Items on self"))
+call SetFrameText(CBS_Lbl[1],Lng("Долги золота","Gold debts"))
+//call SetFrameText(CBS_Lbl[2],Lng("Маг. резист","Magic resist"))
+//call SetFrameText(CBS_Lbl[3],Lng("Резист контроля","Control resist"))
+//call SetFrameText(CBS_Lbl[4],Lng("Мой урон","My damage"))
+//call SetFrameText(CBS_Lbl[5],Lng("Урон всех","Everyone's damage"))
+//call SetFrameText(CBS_Lbl[6],Lng("Лечение всех","Everyone's healing"))
+call SetFrameText(CBS_Lbl[7],Lng("Снять залипание","Unstuck"))
+call SetFrameText(CBS_Lbl[8],Lng("Воскресить на базе","Revive at base"))
+call SetFrameText(CBS_Lbl[9],Lng("Пересоздать героя","Recreate hero"))
+call SetFrameText(CBS_Lbl[10],Lng("Убить героя (10 сек.)","Kill hero (10 sec.)"))
+call SetFrameText(CBS_Fr[CBS_ResetC+1],Lng("Сбросить цвета","Reset colours"))
+call SetFrameText(CBS_Fr[CBS_ResetS+1],Lng("Сброс","Reset"))
+call SetFrameText(CBS_TabTxt[0],Lng("Основное","General"))
+call SetFrameText(CBS_TabTxt[1],Lng("Хоткеи","Hotkeys"))
+call SetFrameText(CBS_SaveTxt,Lng("Сохранить","Save"))
+call SetFrameText(CBS_LoadTxt,Lng("Загрузить","Load"))
+call SetFrameText(CBS_HkHead[0],"|cFFFFA500"+Lng("Предметы","Items")+"|r")
+call SetFrameText(CBS_HkNote[0],Lng("Клавиша нажимает эту кнопку на панели игры (не во время набора в чате).","The key presses this button on the game panel (not while typing in chat)."))
+call SetFrameText(CBS_HkNote[1],Lng("Если клавиша уже занята в игре, сработает и её действие.","If the key is already used by the game, its action works too."))
+call SetFrameText(CBS_HkResetTxt,Lng("Сбросить хоткеи","Reset hotkeys"))
+call SetFrameText(CBS_AlLbl,Lng("Автопрокачка способностей","Auto-learn abilities"))
+call SetFrameText(CBS_QcLbl,Lng("Квиккаст: каст сразу в курсор по клавише","Quick cast: cast at the cursor on key press"))
+call SetFrameText(CBS_MmLbl,Lng("Иконки героев на миникарте","Hero icons on the minimap"))
+call SetFrameText(CBS_SmLbl,Lng("Смарткаст: каст в курсор, когда клавишу отпустили","Smart cast: cast at the cursor on key release"))
+call ExecuteFunc("CBS_HkRefresh")
+endfunction
+// ---- цвета полосок и ползунки (всё локально, без синхронизации) ----
+function CBS_RgbBuild takes integer cbC returns nothing
+set HPB_RGB[cbC]=0xFF000000+CBS_Rgb[cbC*3]*0x10000+CBS_Rgb[cbC*3+1]*0x100+CBS_Rgb[cbC*3+2]
+endfunction
+function CBS_SwPaint takes integer cbC returns nothing
+call SetFrameColourEx(CBS_Sw[cbC],0,HPB_RGB[cbC])
+call SetFrameColourEx(CBS_Sw[cbC],1,HPB_RGB[cbC])
+call SetFrameColourEx(CBS_Sw[cbC],2,HPB_RGB[cbC])
+if HPB_Debug then
+call DisplayTimedTextToPlayer(GetLocalPlayer(),0,0,8,"CBS colour "+I2S(cbC)+" set "+I2S(HPB_RGB[cbC])+" got "+I2S(GetFrameColourEx(CBS_Sw[cbC],0)))
+endif
+endfunction
+// перекрасить все полоски на следующем тике HPB_Update
+function CBS_HpRecolour takes nothing returns nothing
+local integer cbK=0
+loop
+exitwhen cbK>=HPB_N
+set HPB_Col[cbK]=-1
+set cbK=cbK+1
+endloop
+endfunction
+function CBS_SlText takes integer cbS returns string
+if cbS<3 then
+return I2S(R2I(CBS_SlV[cbS]+.5))
+endif
+return R2SW(CBS_SlV[cbS],1,2)+"x"
+endfunction
+// заливка слева до значения, ползунок, число справа
+function CBS_SlDraw takes integer cbS returns nothing
+local real cbW=CBS_SLW*(CBS_SlV[cbS]-CBS_SlMin[cbS])/(CBS_SlMax[cbS]-CBS_SlMin[cbS])
+// ширина — от CBS_SLW (уже уменьшенной), высота — как у полосы
+call SetFrameSize(CBS_SlFill[cbS],RMaxBJ(cbW,.0005),.006)
+call SetFrameRelativePoint(CBS_SlThumb[cbS],FRAMEPOINT_CENTER,CBS_SlTrack[cbS],FRAMEPOINT_LEFT,cbW,0.)
+call SetFrameText(CBS_SlVal[cbS],CBS_SlText(cbS))
+endfunction
+// новое значение ползунка: 0..2 — R/G/B выбранного цвета, 3 — иконки героев сверху, 4 — полоски HP
+function CBS_SlSet takes integer cbS,real cbV returns nothing
+if cbV<CBS_SlMin[cbS] then
+set cbV=CBS_SlMin[cbS]
+elseif cbV>CBS_SlMax[cbS] then
+set cbV=CBS_SlMax[cbS]
+endif
+if cbS<3 then
+set cbV=I2R(R2I(cbV+.5))
+else
+set cbV=I2R(R2I(cbV*20.+.5))/20.
+endif
+if cbV==CBS_SlV[cbS] then
+return
+endif
+set CBS_SlV[cbS]=cbV
+call CBS_SlDraw(cbS)
+if cbS<3 then
+if CBS_ColSel>=0 then
+set CBS_Rgb[CBS_ColSel*3+cbS]=R2I(cbV)
+call CBS_RgbBuild(CBS_ColSel)
+call CBS_SwPaint(CBS_ColSel)
+call CBS_HpRecolour()
+endif
+elseif cbS==3 then
+call HeroBarScale(cbV)
+else
+call HPB_ApplyScale(cbV)
+endif
+endfunction
+// ползунки R/G/B показывают выбранный цвет (без применения)
+function CBS_RgbLoad takes nothing returns nothing
+local integer cbS=0
+loop
+exitwhen cbS>2
+if CBS_ColSel>=0 then
+set CBS_SlV[cbS]=I2R(CBS_Rgb[CBS_ColSel*3+cbS])
+call CBS_SlDraw(cbS)
+endif
+set cbS=cbS+1
+endloop
+endfunction
+// место привязки для ячейки вкладки: предметы 0..5 как есть, панель команд — по открытой странице
+function CBS_CellSlot takes integer cbC returns integer
+if cbC<6 then
+return cbC
+endif
+return 6+CBS_HkPage*12+(cbC-6)
+endfunction
+// ячейка вкладки для места привязки (-1 — место с другой страницы)
+function CBS_SlotCell takes integer cbS returns integer
+if cbS<6 then
+return cbS
+endif
+if (cbS-6)/12!=CBS_HkPage then
+return -1
+endif
+return 6+ModuloInteger(cbS-6,12)
+endfunction
+// показ / скрытие рамки выбора (опорный фрейм и 4 полоски)
+function CBS_RingShow takes integer cbR,boolean cbV returns nothing
+local integer cbK=0
+call ShowFrame(CBS_RingA[cbR],cbV)
+loop
+exitwhen cbK>3
+call ShowFrame(CBS_RingP[cbR*4+cbK],cbV)
+set cbK=cbK+1
+endloop
+endfunction
+// показ частей окна по вкладке: 0 — основное (полоски HP, масштаб, язык, команды), 1 — хоткеи; вкладки и
+// «Сохранить / Загрузить» — всегда, пока окно открыто
+function CBS_RgbShow takes nothing returns nothing
+local integer cbK=0
+local boolean cbM=HPB_MOpen and CBS_Tab==0
+local boolean cbV=cbM and CBS_ColSel>=0
+loop
+exitwhen cbK>=CBS_RgbN
+call ShowFrame(CBS_RgbFr[cbK],cbV)
+set cbK=cbK+1
+endloop
+call ShowFrame(CBS_Hint,cbM and CBS_ColSel<0)
+call ShowFrame(CBS_AlChk,cbM and CBS_AlOn)
+call ShowFrame(CBS_QcChk,HPB_MOpen and CBS_Tab==1 and CBS_QC)
+call ShowFrame(CBS_ScChk,HPB_MOpen and CBS_Tab==1 and CBS_SC)
+call ShowFrame(CBS_MmChk,HPB_MOpen and CBS_Tab==1 and CBS_MmOpt)
+set cbK=0
+loop
+exitwhen cbK>2
+//call ShowFrame(CBS_SwSel[cbK],cbM and cbK==CBS_ColSel)
+call CBS_RingShow(cbK,cbM and cbK==CBS_ColSel)
+set cbK=cbK+1
+endloop
+set cbK=0
+loop
+exitwhen cbK>=CBS_HkN
+call ShowFrame(CBS_HkFr[cbK],HPB_MOpen and CBS_Tab==1)
+set cbK=cbK+1
+endloop
+//call ShowFrame(CBS_HkSel,HPB_MOpen and CBS_Tab==1 and CBS_BindWait>=0)
+//call CBS_RingShow(3,HPB_MOpen and CBS_Tab==1 and CBS_BindWait>=0)
+set cbK=0
+loop
+exitwhen cbK>17
+call CBS_RingShow(22+cbK,HPB_MOpen and CBS_Tab==1 and CBS_BindWait>=0 and CBS_BindWait==CBS_CellSlot(cbK))
+//call CBS_RingShow(4+cbK,HPB_MOpen and CBS_Tab==1 and (CBS_Bind[cbK]>0 or CBS_BindWait==cbK))
+call CBS_RingShow(4+cbK,HPB_MOpen and CBS_Tab==1 and (CBS_Bind[CBS_CellSlot(cbK)]>0 or CBS_BindWait==CBS_CellSlot(cbK)))
+set cbK=cbK+1
+endloop
+set cbK=0
+loop
+exitwhen cbK>=CBS_AllN
+call ShowFrame(CBS_AllFr[cbK],HPB_MOpen)
+set cbK=cbK+1
+endloop
+endfunction
+// экранная X курсора в координатах фреймов (0..0.8 — сетка 4:3, на широком окне шире)
+// курсор в координатах фреймов — несколько вариантов: в каких единицах отдают координаты natives мыши, заранее неизвестно,
+// подходящий выбирает калибровка по нажатию на деление (CBS_Calibrate)
+function CBS_MX takes integer cbM returns real
+local real cbA=4./3.
+if GetWindowHeight()>0 then
+set cbA=I2R(GetWindowWidth())/I2R(GetWindowHeight())
+endif
+if cbM==0 then
+return GetMouseScreenRelativeX()
+elseif cbM==1 then
+return 0.4+(GetMouseScreenRelativeX()-0.5)*0.6*cbA
+elseif cbM==2 and GetWindowWidth()>0 then
+return 0.4+(I2R(GetMouseScreenPixelX())/I2R(GetWindowWidth())-0.5)*0.6*cbA
+elseif cbM==3 then
+return GetMouseScreenAbsoluteX()
+elseif cbM==4 then
+return 0.4+(GetMouseScreenAbsoluteX()-0.5)*0.6*cbA
+endif
+return -9.
+endfunction
+function CBS_MY takes integer cbM returns real
+if cbM==0 then
+return GetMouseScreenRelativeY()
+elseif cbM==1 then
+return GetMouseScreenRelativeY()*0.6
+elseif cbM==2 then
+return (1.-GetMouseScreenRelativeY())*0.6
+elseif cbM==3 and GetWindowHeight()>0 then
+return (1.-I2R(GetMouseScreenPixelY())/I2R(GetWindowHeight()))*0.6
+elseif cbM==4 then
+return GetMouseScreenAbsoluteY()
+elseif cbM==5 then
+return GetMouseScreenAbsoluteY()*0.6
+elseif cbM==6 then
+return (1.-GetMouseScreenAbsoluteY())*0.6
+elseif cbM==7 then
+return 0.6-GetMouseScreenRelativeY()
+endif
+return -9.
+endfunction
+function CBS_MouseX takes nothing returns real
+return CBS_MX(CBS_MXM)
+endfunction
+function CBS_MouseY takes nothing returns real
+return CBS_MY(CBS_MYM)
+endfunction
+// ползунок под курсором (с поправкой калибровки) или -1
+function CBS_SlAt takes nothing returns integer
+local integer cbS=0
+local real cbX=CBS_MouseX()+CBS_CalX
+local real cbY=CBS_MouseY()+CBS_CalY
+local real cbL
+loop
+exitwhen cbS>4
+if cbS>2 or CBS_ColSel>=0 then
+set cbL=GetFrameAbsolutePointX(CBS_SlTrack[cbS],FRAMEPOINT_LEFT)
+if cbX>=cbL-.004 and cbX<=cbL+CBS_SLW+.004 and RAbsBJ(cbY-GetFrameAbsolutePointY(CBS_SlTrack[cbS],FRAMEPOINT_LEFT))<.011 then
+return cbS
+endif
+endif
+set cbS=cbS+1
+endloop
+return -1
+endfunction
+// раз в 0.02 с, пока окно открыто (HPB_MenuPoll)
+function CBS_DragTick takes nothing returns nothing
+local real cbX
+local boolean cbP=IsMouseKeyPressed(MOUSE_BUTTON_TYPE_LEFT)
+// нажата левая кнопка над ползунком — начать перетаскивание (нужна калибровка: хотя бы одно нажатие на деление)
+if cbP and CBS_WasPressed==false and CBS_Drag<0 and CBS_Cal and CBS_Tab==0 then
+set CBS_Drag=CBS_SlAt()
+if CBS_Drag>=0 then
+set CBS_DragOff=CBS_CalX
+endif
+endif
+set CBS_WasPressed=cbP
+if CBS_Drag<0 then
+return
+endif
+if HPB_MOpen==false or cbP==false then
+set CBS_Drag=-1
+return
+endif
+set cbX=(CBS_MouseX()+CBS_DragOff-GetFrameAbsolutePointX(CBS_SlTrack[CBS_Drag],FRAMEPOINT_LEFT))/CBS_SLW
+call CBS_SlSet(CBS_Drag,CBS_SlMin[CBS_Drag]+(CBS_SlMax[CBS_Drag]-CBS_SlMin[CBS_Drag])*cbX)
+endfunction
+// нажатие на деление: курсор точно над ним — запомнить поправку экранных координат курсора к координатам фреймов
+// (и куда растёт Y); дальше зажатие над любым ползунком тянет его (CBS_DragTick)
+function CBS_Calibrate takes integer cbS,integer cbK returns nothing
+local real cbX=GetFrameAbsolutePointX(CBS_SlTrack[cbS],FRAMEPOINT_LEFT)+CBS_SLW*(I2R(cbK)+.5)/I2R(CBS_SlN[cbS])
+local real cbY=GetFrameAbsolutePointY(CBS_SlTrack[cbS],FRAMEPOINT_LEFT)
+local real cbA=9.
+local real cbB=9.
+local integer cbM=0
+//local real cbA=GetMouseScreenRelativeY()*0.6
+//local real cbB=(1.-GetMouseScreenRelativeY())*0.6
+//set CBS_YDown=RAbsBJ(cbB-cbY)<RAbsBJ(cbA-cbY)
+// ближайший к центру нажатого деления вариант перевода — по X и по Y отдельно
+loop
+exitwhen cbM>4
+if RAbsBJ(CBS_MX(cbM)-cbX)<cbA then
+set cbA=RAbsBJ(CBS_MX(cbM)-cbX)
+set CBS_MXM=cbM
+endif
+set cbM=cbM+1
+endloop
+set cbM=0
+loop
+exitwhen cbM>7
+if RAbsBJ(CBS_MY(cbM)-cbY)<cbB then
+set cbB=RAbsBJ(CBS_MY(cbM)-cbY)
+set CBS_MYM=cbM
+endif
+set cbM=cbM+1
+endloop
+set CBS_CalX=cbX-CBS_MouseX()
+set CBS_CalY=cbY-CBS_MouseY()
+set CBS_Cal=RAbsBJ(CBS_CalX)<.03 and RAbsBJ(CBS_CalY)<.03
+if HPB_Debug then
+call DisplayTimedTextToPlayer(GetLocalPlayer(),0,0,8,"CBS mouse rel "+R2SW(GetMouseScreenRelativeX(),1,4)+" "+R2SW(GetMouseScreenRelativeY(),1,4)+" | seg "+R2SW(cbX,1,4)+" "+R2SW(cbY,1,4)+" | cal "+R2SW(CBS_CalX,1,4)+" "+R2SW(CBS_CalY,1,4)+" ok "+B2S(CBS_Cal)+" modes "+I2S(CBS_MXM)+" "+I2S(CBS_MYM)+" abs "+R2SW(GetMouseScreenAbsoluteX(),1,4)+" "+R2SW(GetMouseScreenAbsoluteY(),1,4)+" px "+I2S(GetMouseScreenPixelX())+" "+I2S(GetMouseScreenPixelY())+" win "+I2S(GetWindowWidth())+"x"+I2S(GetWindowHeight())+" pressed "+B2S(IsMouseKeyPressed(MOUSE_BUTTON_TYPE_LEFT)))
+endif
+endfunction
+// ползунок — ряд невидимых кнопок-делений поверх полосы: нажатие ставит значение деления, зажатие тянет,
+// колесо мыши — шаг вверх / вниз. Контекст деления: номер ползунка*100 + номер деления
+function CBS_SlEvent takes nothing returns nothing
+local integer cbC
+local integer cbS
+local integer cbK
+local frameeventtype cbE
+if GetTriggerPlayer()!=GetLocalPlayer() or HPB_MOpen==false then
+return
+endif
+set cbC=GetFrameContext(GetTriggerFrame())
+set cbS=cbC/100
+set cbK=cbC-cbS*100
+set cbE=BlzGetTriggerFrameEvent()
+if cbS<3 and CBS_ColSel<0 then
+set cbE=null
+return
+endif
+// курсор зашёл на деление с зажатой левой кнопкой — перетаскивание без координат курсора
+if cbE==FRAMEEVENT_MOUSE_ENTER then
+if IsMouseKeyPressed(MOUSE_BUTTON_TYPE_LEFT) then
+call CBS_SlSet(cbS,CBS_SlMin[cbS]+(CBS_SlMax[cbS]-CBS_SlMin[cbS])*I2R(cbK)/I2R(CBS_SlN[cbS]-1))
+endif
+set cbE=null
+return
+endif
+if cbE==FRAMEEVENT_MOUSE_WHEEL then
+if BlzGetTriggerFrameValue()>0 then
+call CBS_SlSet(cbS,CBS_SlV[cbS]+CBS_SlStep[cbS])
+else
+call CBS_SlSet(cbS,CBS_SlV[cbS]-CBS_SlStep[cbS])
+endif
+else
+call CBS_SlSet(cbS,CBS_SlMin[cbS]+(CBS_SlMax[cbS]-CBS_SlMin[cbS])*I2R(cbK)/I2R(CBS_SlN[cbS]-1))
+if cbE==FRAMEEVENT_MOUSE_DOWN then
+// поправка курсор → полоса по центру нажатого деления; если она большая — координаты курсора не те, без перетаскивания
+set CBS_DragOff=GetFrameAbsolutePointX(CBS_SlTrack[cbS],FRAMEPOINT_LEFT)+CBS_SLW*(I2R(cbK)+.5)/I2R(CBS_SlN[cbS])-CBS_MouseX()
+set CBS_Drag=cbS
+if RAbsBJ(CBS_DragOff)>.05 then
+set CBS_Drag=-1
+endif
+elseif cbE==FRAMEEVENT_CONTROL_CLICK then
+set CBS_Drag=-1
+call CBS_Calibrate(cbS,cbK)
+endif
+endif
+set cbE=null
+endfunction
+// ---- хоткеи (вкладка 2): клавиша нажимает кнопку предмета (места 0..5) или панели команд (места 6..17, по строкам
+// слева направо, как кнопки игры). Всё локально: опрос IsKeyPressed и ClickFrame — как нажатие мышью этим игроком ----
+function CBS_KeyAdd takes integer cbCode,string cbName returns nothing
+set CBS_Key[CBS_KeyN]=ConvertOsKeyType(cbCode)
+set CBS_KeyCode[CBS_KeyN]=cbCode
+set CBS_KeyName[CBS_KeyN]=cbName
+set CBS_KeyN=CBS_KeyN+1
+endfunction
+// номер клавиши + 1 по коду (0 — нет такой)
+function CBS_KeyByCode takes integer cbCode returns integer
+local integer cbK=0
+if cbCode<=0 then
+return 0
+endif
+loop
+exitwhen cbK>=CBS_KeyN
+if CBS_KeyCode[cbK]==cbCode then
+return cbK+1
+endif
+set cbK=cbK+1
+endloop
+return 0
+endfunction
+function CBS_SlotFrame takes integer cbS returns framehandle
+if cbS<6 then
+return GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON,cbS)
+endif
+return GetOriginFrame(ORIGIN_FRAME_COMMAND_BUTTON,cbS-6)
+endfunction
+// подписи клавиш на ячейках, рамка ожидания клавиши, подсказка
+function CBS_HkRefresh takes nothing returns nothing
+local integer cbC=0
+local integer cbS
+local string cbT
+if CBS_FrN==0 then
+return
+endif
+loop
+exitwhen cbC>17
+set cbS=CBS_CellSlot(cbC)
+if CBS_BindWait==cbS then
+set cbT="|cFFFFFF00?|r"
+elseif CBS_Bind[cbS]>0 then
+set cbT="|cFFFFD700"+CBS_KeyName[CBS_Bind[cbS]-1]+"|r"
+else
+set cbT=" "
+endif
+call SetFrameText(CBS_HkTxt[cbC],cbT)
+set cbC=cbC+1
+endloop
+set cbC=-1
+if CBS_BindWait>=0 then
+set cbC=CBS_SlotCell(CBS_BindWait)
+endif
+if cbC>=0 then
+// рамка — своя у каждой ячейки (CBS_RgbShow)
+//call SetFrameParent(CBS_HkSel,CBS_HkBtn[cbC])
+//call SetFrameRelativePoint(CBS_HkSel,FRAMEPOINT_CENTER,CBS_HkBtn[cbC],FRAMEPOINT_CENTER,0.,0.)
+call SetFrameText(CBS_HkHint,Lng("Нажмите клавишу. Esc — отмена, Backspace — убрать хоткей","Press a key. Esc - cancel, Backspace - remove the hotkey"))
+else
+call SetFrameText(CBS_HkHint,Lng("Нажмите на ячейку, затем клавишу","Click a slot, then press a key"))
+endif
+if CBS_HkPage==0 then
+call SetFrameText(CBS_HkHead[1],"|cFFFFA500"+Lng("Способности (панель команд)","Abilities (command card)")+"|r")
+else
+call SetFrameText(CBS_HkHead[1],"|cFFFFA500"+Lng("Меню изучения","Learn menu")+"|r")
+endif
+// кнопок страниц больше нет (CBS_PageTxt пустые)
+if CBS_PageTxt[0]!=null then
+set cbC=0
+loop
+exitwhen cbC>1
+if cbC==CBS_HkPage then
+call SetFrameTextColour(CBS_PageTxt[cbC],0xFFFFD700)
+else
+call SetFrameTextColour(CBS_PageTxt[cbC],0xFF909090)
+endif
+set cbC=cbC+1
+endloop
+call SetFrameText(CBS_PageTxt[0],Lng("Панель","Card"))
+call SetFrameText(CBS_PageTxt[1],Lng("Изучение","Learn"))
+endif
+call CBS_RgbShow()
+endfunction
+// иконки ячеек — как сейчас на панелях предметов и команд (раз в 0.25 с, пока открыта вкладка)
+function CBS_HkIcons takes nothing returns nothing
+local integer cbS=0
+local string cbT
+//local unit cbU=GetUnitSelected(GetLocalPlayer())
+//local item cbI
+local integer cbP=GetPlayerId(GetLocalPlayer())
+loop
+exitwhen cbS>17
+set cbT=""
+if cbS<6 then
+// предмет в слоте своего героя — по типу из общего опроса (GetUnitSelected / UnitItemInSlot только у себя давали
+// рассинхрон: handle предмета или юнита, созданного игрой, появляется при первом обращении из скрипта)
+//if cbU!=null then
+//set cbI=UnitItemInSlot(cbU,cbS)
+//if cbI!=null then
+//set cbT=BlzGetItemIconPath(cbI)
+//endif
+//endif
+if cbP<10 and CBS_ItT[cbP*6+cbS]!=0 then
+set cbT=GetBaseItemStringFieldById(CBS_ItT[cbP*6+cbS],ITEM_SF_ICON)
+endif
+elseif CBS_SlotFr[cbS]!=null and IsFrameVisible(CBS_SlotFr[cbS]) then
+set cbT=GetFrameTexture(CBS_SlotFr[cbS],1)
+endif
+if cbT==null or cbT=="" then
+set cbT="UI\\Widgets\\Console\\Human\\human-inventory-slotfiller.blp"
+endif
+if cbT!=CBS_HkTex[cbS] then
+set CBS_HkTex[cbS]=cbT
+call SetFrameTexture(CBS_HkBtn[cbS],cbT,0,true)
+call SetFrameTexture(CBS_HkBtn[cbS],cbT,1,true)
+call SetFrameTexture(CBS_HkBtn[cbS],cbT,2,true)
+endif
+set cbS=cbS+1
+endloop
+//set cbU=null
+//set cbI=null
+endfunction
+// хоткей предмета — поле ITEM_IF_HOTKEY самого предмета: предмету в слоте с заданной клавишей — эта клавиша, остальным —
+// значение из данных предмета. Раз в 0.1 с, поэтому клавиша идёт за слотом при переносе, подборе и покупке.
+// Только у своих юнитов и только у себя (хоткей нужен лишь интерфейсу). NumPad в поле не записать — для него нажатие кнопки
+function CBS_ItemHkUnit takes unit cbU returns nothing
+local integer cbS=0
+local item cbI
+local integer cbV
+if cbU==null or GetOwningPlayer(cbU)!=GetLocalPlayer() then
+return
+endif
+loop
+exitwhen cbS>5
+set cbI=UnitItemInSlot(cbU,cbS)
+if cbI!=null then
+set cbV=GetBaseItemIntegerFieldById(GetItemTypeId(cbI),ITEM_IF_HOTKEY)
+// ВЫКЛЮЧЕНО: со своим ITEM_IF_HOTKEY на предмете игра вылетала (смена языка, выбор героя) — только возврат хоткея из данных;
+// клавиша предмета нажимает кнопку слота (CBS_KeyTick)
+//if CBS_Bind[cbS]>0 then
+//if CBS_KeyCode[CBS_Bind[cbS]-1]<0x60 then
+//set cbV=CBS_KeyCode[CBS_Bind[cbS]-1]
+//endif
+//endif
+if GetItemIntegerField(cbI,ITEM_IF_HOTKEY)!=cbV then
+call SetItemIntegerField(cbI,ITEM_IF_HOTKEY,cbV)
+if HPB_Debug then
+call DisplayTimedTextToPlayer(GetLocalPlayer(),0,0,5,"HK item slot "+I2S(cbS)+" set "+I2S(cbV)+" got "+I2S(GetItemIntegerField(cbI,ITEM_IF_HOTKEY)))
+endif
+endif
+endif
+set cbS=cbS+1
+endloop
+set cbI=null
+endfunction
+// способность своего героя, у которой сейчас хоткей cbCode и которая видна на панели (0 — нет)
+function CBS_AbByKey takes integer cbCode returns integer
+local integer cbP=GetPlayerId(GetLocalPlayer())
+local integer cbI=0
+if cbP>9 or Hero[cbP]==null then
+return 0
+endif
+loop
+exitwhen cbI>=CBS_AbN[cbP]
+if GetAbilityBaseIntegerFieldById(CBS_Ab[cbP*60+cbI],ABILITY_IF_BUTTON_HOTKEY_NORMAL)==cbCode and IsUnitAbilityVisible(Hero[cbP],CBS_Ab[cbP*60+cbI]) then
+return CBS_Ab[cbP*60+cbI]
+endif
+set cbI=cbI+1
+endloop
+return 0
+endfunction
+// слот предмета по клавише: своя клавиша слота или стандартная NumPad слота (7 8 / 4 5 / 1 2); -1 — нет
+function CBS_ItSlotByKey takes integer cbK returns integer
+local integer cbS=0
+local integer cbC=CBS_KeyCode[cbK]
+loop
+exitwhen cbS>5
+if CBS_Bind[cbS]==cbK+1 then
+return cbS
+endif
+set cbS=cbS+1
+endloop
+if cbC==0x67 then
+return 0
+elseif cbC==0x68 then
+return 1
+elseif cbC==0x64 then
+return 2
+elseif cbC==0x65 then
+return 3
+elseif cbC==0x61 then
+return 4
+elseif cbC==0x62 then
+return 5
+endif
+return -1
+endfunction
+// каст в точку под курсором: прицеливание игры отменить, приказ — всем через синхронизацию (CBS_QcSync)
+function CBS_QcSend takes integer cbId returns nothing
+local real cbX=GetMouseWorldX()
+local real cbY=GetMouseWorldY()
+call ForceUICancel()
+// предмет — "CBQI" со слотом, способность — "CBQC" с её типом
+if CBS_QcIt>0 then
+call SendSyncData("CBQI",I2S(CBS_QcIt-1)+";"+R2S(cbX)+";"+R2S(cbY))
+else
+call SendSyncData("CBQC",I2S(cbId)+";"+R2S(cbX)+";"+R2S(cbY))
+endif
+set CBS_QcIt=0
+endfunction
+// квиккаст: клавиша способности включила прицеливание — сразу каст в курсор; смарткаст: каст, когда клавишу отпустили.
+// Только когда выбран свой герой (IsUnitSelected — без GetUnitSelected, он давал рассинхрон). cbB — сейчас нельзя
+function CBS_QcTick takes boolean cbB returns nothing
+local integer cbK=0
+local integer cbE=-1
+local boolean cbP
+local integer cbPl=GetPlayerId(GetLocalPlayer())
+loop
+exitwhen cbK>=CBS_KeyN
+set cbP=IsKeyPressed(CBS_Key[cbK])
+if cbP and CBS_KAll[cbK]==false and cbE<0 then
+set cbE=cbK
+endif
+set CBS_KAll[cbK]=cbP
+set cbK=cbK+1
+endloop
+if cbB or cbPl>9 or Hero[cbPl]==null or IsUnitSelected(Hero[cbPl],GetLocalPlayer())==false then
+set CBS_QcAb=0
+set CBS_QcIt=0
+return
+endif
+if cbE>=0 and CBS_QcAb==0 then
+set CBS_QcAb=CBS_AbByKey(CBS_KeyCode[cbE])
+set CBS_QcIt=0
+// не способность — предмет в слоте по этой клавише (значение CBS_QcAb для предмета — просто «ждём»)
+if CBS_QcAb==0 and CBS_ItSlotByKey(cbE)>=0 and CBS_ItT[cbPl*6+CBS_ItSlotByKey(cbE)]!=0 then
+set CBS_QcIt=CBS_ItSlotByKey(cbE)+1
+set CBS_QcAb=-1
+endif
+set CBS_QcKey=cbE
+set CBS_QcWait=0
+endif
+if CBS_QcAb==0 then
+return
+endif
+set CBS_QcWait=CBS_QcWait+1
+if CBS_QC then
+if IsCursorInTargetMode() then
+call CBS_QcSend(CBS_QcAb)
+set CBS_QcAb=0
+elseif CBS_QcWait>5 then
+// способность без цели — игра уже применила её сама
+set CBS_QcAb=0
+endif
+else
+if IsKeyPressed(CBS_Key[CBS_QcKey])==false then
+if IsCursorInTargetMode() then
+call CBS_QcSend(CBS_QcAb)
+endif
+set CBS_QcAb=0
+elseif CBS_QcWait>5 and IsCursorInTargetMode()==false then
+// прицеливание закончилось кликом мыши или способность без цели
+set CBS_QcAb=0
+endif
+endif
+endfunction
+// иконки героев на миникарте, пока зажат Alt: только видимые себе; карта — игровая область (по большей стороне)
+// иконки героев (места 0..9) и их иллюзий / клонов (10..29) на миникарте — всегда, если включено в окне настроек
+// (раньше — только при зажатом Alt). Только видимые себе; иллюзия — как герой (та же иконка и цвет владельца).
+// Юниты — из общего опроса (Hero[], CBS_IlU), у себя новых handle нет. Карта — игровая область, по большей стороне
+function CBS_MmTick takes nothing returns nothing
+local boolean cbV=CBS_MmOpt and CBS_OfMini!=null
+local integer cbP=0
+local real cbL
+local real cbBt
+local real cbW
+local real cbH
+local real cbMx
+local real cbMy
+local real cbMs
+local real cbX
+local real cbY
+local unit cbU
+local string cbT
+local integer cbC
+if cbV==false then
+if CBS_MmOn then
+set CBS_MmOn=false
+loop
+exitwhen cbP>29
+call BlzFrameSetVisible(CBS_MmBg[cbP],false)
+set cbP=cbP+1
+endloop
+endif
+return
+endif
+set CBS_MmOn=true
+set cbL=GetFrameAbsolutePointX(CBS_OfMini,FRAMEPOINT_BOTTOMLEFT)
+set cbBt=GetFrameAbsolutePointY(CBS_OfMini,FRAMEPOINT_BOTTOMLEFT)
+set cbW=GetFrameAbsolutePointX(CBS_OfMini,FRAMEPOINT_TOPRIGHT)-cbL
+set cbH=GetFrameAbsolutePointY(CBS_OfMini,FRAMEPOINT_TOPRIGHT)-cbBt
+set cbMx=GetRectMinX(bj_mapInitialPlayableArea)
+set cbMy=GetRectMinY(bj_mapInitialPlayableArea)
+set cbMs=RMaxBJ(GetRectMaxX(bj_mapInitialPlayableArea)-cbMx,GetRectMaxY(bj_mapInitialPlayableArea)-cbMy)
+loop
+exitwhen cbP>29
+if cbP<10 then
+set cbU=Hero[cbP]
+else
+set cbU=CBS_IlU[cbP-10]
+endif
+if cbU!=null and GetUnitTypeId(cbU)!=0 and IsUnitType(cbU,UNIT_TYPE_DEAD)==false and IsUnitVisible(cbU,GetLocalPlayer()) and cbW>0. and cbMs>0. then
+set cbT=GetUnitBaseStringFieldById(GetUnitTypeId(cbU),UNIT_SF_ICON_NORMAL)
+if cbT!=CBS_MmTex[cbP] then
+set CBS_MmTex[cbP]=cbT
+call BlzFrameSetTexture(CBS_MmIco[cbP],cbT,0,true)
+call SetFrameBackgroundSize(CBS_MmIco[cbP],0,.0068)
+endif
+set cbC=GetHandleId(GetPlayerColor(GetOwningPlayer(cbU)))
+if cbC!=CBS_MmCol[cbP] then
+set CBS_MmCol[cbP]=cbC
+call BlzFrameSetTexture(CBS_MmBg[cbP],HPB_Tex(cbC),0,true)
+call SetFrameBackgroundSize(CBS_MmBg[cbP],0,.0082)
+endif
+// игровая область вписана в квадрат миникарты по большей стороне, по центру
+set cbX=cbL+cbW*(.5+(GetUnitX(cbU)-cbMx-(GetRectMaxX(bj_mapInitialPlayableArea)-cbMx)/2.)/cbMs)
+set cbY=cbBt+cbH*(.5+(GetUnitY(cbU)-cbMy-(GetRectMaxY(bj_mapInitialPlayableArea)-cbMy)/2.)/cbMs)
+call BlzFrameSetAbsPoint(CBS_MmBg[cbP],FRAMEPOINT_CENTER,cbX,cbY)
+call BlzFrameSetVisible(CBS_MmBg[cbP],true)
+else
+call BlzFrameSetVisible(CBS_MmBg[cbP],false)
+endif
+set cbP=cbP+1
+endloop
+set cbU=null
+endfunction
+// раз в 0.02 с у всех, действует только локально: ожидание клавиши для ячейки или нажатие кнопок по хоткеям
+function CBS_KeyTick takes nothing returns nothing
+local integer cbK=0
+local integer cbS
+local integer cbA=0
+local boolean cbP
+local framehandle cbF
+if CBS_OffHas(64) then
+return
+endif
+set CBS_KT=CBS_KT+1
+if CBS_BindWait>=0 then
+if HPB_MOpen==false or CBS_Tab!=1 then
+set CBS_BindWait=-1
+call CBS_HkRefresh()
+elseif IsKeyPressed(OSKEY_ESCAPE) then
+set CBS_BindWait=-1
+call CBS_HkRefresh()
+elseif IsKeyPressed(OSKEY_BACKSPACE) or IsKeyPressed(OSKEY_DELETE) then
+set CBS_Bind[CBS_BindWait]=0
+set CBS_BindWait=-1
+call CBS_HkRefresh()
+else
+loop
+exitwhen cbK>=CBS_KeyN
+set cbP=IsKeyPressed(CBS_Key[cbK])
+if cbP and CBS_KeyWas[cbK]==false and CBS_BindWait>=0 then
+// одна клавиша — одно место: убрать её с предметов и с той же страницы панели (на разных страницах — можно одну)
+set cbS=0
+loop
+exitwhen cbS>29
+if CBS_Bind[cbS]==cbK+1 and (CBS_BindWait<6 or cbS<6 or (cbS-6)/12==(CBS_BindWait-6)/12) then
+set CBS_Bind[cbS]=0
+endif
+set cbS=cbS+1
+endloop
+set CBS_Bind[CBS_BindWait]=cbK+1
+set CBS_BindWait=-1
+call CBS_HkRefresh()
+endif
+set CBS_KeyWas[cbK]=cbP
+set cbK=cbK+1
+endloop
+endif
+return
+endif
+// хоткей в предмет больше не пишется — опрос предметов у себя не нужен (GetUnitSelected / UnitItemInSlot у себя — рассинхрон)
+//if ModuloInteger(CBS_KT,5)==0 then
+//set CBS_HkU=GetUnitSelected(GetLocalPlayer())
+//call CBS_ItemHkUnit(Hero[GetPlayerId(GetLocalPlayer())])
+//if CBS_HkU!=Hero[GetPlayerId(GetLocalPlayer())] then
+//call CBS_ItemHkUnit(CBS_HkU)
+//endif
+//set CBS_HkU=null
+//endif
+if HPB_MOpen and CBS_Tab==1 and ModuloInteger(CBS_KT,12)==0 then
+call CBS_HkIcons()
+endif
+// какая страница панели сейчас на экране: открыто подменю (IsSubmenuOpen) — меню изучения (спеллбуки не используются)
+if IsSubmenuOpen() then
+set cbA=1
+endif
+// не во время набора в чате или в поиске магазина, не с Ctrl / Shift, не с открытым окном настроек
+//set cbP=HPB_MOpen or IsWindowActive()==false or Sh_Typing() or (CBS_ChatBar!=null and IsFrameVisible(CBS_ChatBar)) or IsKeyPressed(OSKEY_CONTROL) or IsKeyPressed(OSKEY_SHIFT)
+set cbP=HPB_MOpen or Sh_Typing() or (CBS_ChatBar!=null and IsFrameVisible(CBS_ChatBar)) or IsKeyPressed(OSKEY_CONTROL) or IsKeyPressed(OSKEY_SHIFT)
+if CBS_QC or CBS_SC then
+call CBS_QcTick(cbP)
+endif
+if ModuloInteger(CBS_KT,2)==0 then
+call CBS_MmTick()
+endif
+// нажатие — по разу на клавишу (одна клавиша может стоять на разных страницах)
+loop
+exitwhen cbK>=CBS_KeyN
+set CBS_KeyEdge[cbK]=false
+set cbK=cbK+1
+endloop
+set cbS=0
+loop
+exitwhen cbS>29
+if CBS_Bind[cbS]>0 then
+set cbK=CBS_Bind[cbS]-1
+set CBS_KeyEdge[cbK]=IsKeyPressed(CBS_Key[cbK]) and CBS_KeyWas[cbK]==false
+endif
+set cbS=cbS+1
+endloop
+set cbS=0
+loop
+exitwhen cbS>29
+if CBS_Bind[cbS]>0 then
+set cbK=CBS_Bind[cbS]-1
+if CBS_KeyEdge[cbK] then
+set cbF=null
+// предметы с буквой / цифрой — хоткей самого предмета (CBS_ItemHkUnit); нажимать кнопку — NumPad и способности
+if cbS<6 then
+//if CBS_KeyCode[cbK]>=0x60 then
+set cbF=CBS_SlotFr[cbS]
+//endif
+//elseif (cbS-6)/12==cbA then
+// способности с буквой / цифрой — хоткей самой способности (CBS_AbScan); нажимать кнопку — только NumPad
+elseif (cbS-6)/12==cbA and CBS_KeyCode[cbK]>=0x60 then
+set cbF=CBS_SlotFr[6+ModuloInteger(cbS-6,12)]
+endif
+if HPB_Debug then
+call DisplayTimedTextToPlayer(GetLocalPlayer(),0,0,5,"HK "+CBS_KeyName[cbK]+" slot "+I2S(cbS)+" page "+I2S(cbA)+" block "+B2S(cbP)+" (menu "+B2S(HPB_MOpen)+" shop "+B2S(Sh_Typing())+" chat "+B2S(CBS_ChatBar!=null and IsFrameVisible(CBS_ChatBar))+") btn "+B2S(cbF!=null)+" vis "+B2S(cbF!=null and IsFrameVisible(cbF)))
+endif
+if cbF!=null and cbP==false and IsFrameVisible(cbF) then
+// ClickFrame кнопку игры не нажимал (проверено отладкой) — нажатие левой кнопкой мыши
+//call ClickFrame(cbF)
+call ClickFrameEx(cbF,MOUSE_BUTTON_TYPE_LEFT)
+endif
+endif
+endif
+set cbS=cbS+1
+endloop
+set cbK=0
+loop
+exitwhen cbK>=CBS_KeyN
+set CBS_KeyWas[cbK]=IsKeyPressed(CBS_Key[cbK])
+set cbK=cbK+1
+endloop
+set cbF=null
+endfunction
+// ---- сохранение / загрузка: один файл настроек на компьютере игрока (Preload-файл, без handle и без синхронизации);
+// при старте карты подгружается сам. Данные — одна строка «CB1;режим;R,G,B ×3;иконки;полоски;коды клавиш ×18» через «;» ----
+function CBS_Tok takes string cbD,integer cbN returns string
+local integer cbI=0
+local integer cbL=StringLength(cbD)
+local integer cbA=0
+local integer cbC=0
+loop
+exitwhen cbI>=cbL
+if SubString(cbD,cbI,cbI+1)==";" then
+if cbC==cbN then
+return SubString(cbD,cbA,cbI)
+endif
+set cbC=cbC+1
+set cbA=cbI+1
+endif
+set cbI=cbI+1
+endloop
+if cbC==cbN then
+return SubString(cbD,cbA,cbL)
+endif
+return ""
+endfunction
+function CBS_Data takes nothing returns string
+local string cbD="CB1;"+I2S(HPB_Mode)
+local integer cbI=0
+loop
+exitwhen cbI>8
+set cbD=cbD+";"+I2S(CBS_Rgb[cbI])
+set cbI=cbI+1
+endloop
+set cbD=cbD+";"+R2SW(HB_Sc,1,2)+";"+R2SW(HPB_Sc,1,2)
+set cbI=0
+loop
+exitwhen cbI>29
+if CBS_Bind[cbI]>0 then
+set cbD=cbD+";"+I2S(CBS_KeyCode[CBS_Bind[cbI]-1])
+else
+set cbD=cbD+";0"
+endif
+set cbI=cbI+1
+endloop
+// 43 — автопрокачка, 44 — квиккаст, 45 — смарткаст
+if CBS_AlOn then
+set cbD=cbD+";1"
+else
+set cbD=cbD+";0"
+endif
+if CBS_QC then
+set cbD=cbD+";1"
+else
+set cbD=cbD+";0"
+endif
+if CBS_SC then
+set cbD=cbD+";1"
+else
+set cbD=cbD+";0"
+endif
+// 46 — иконки героев на миникарте
+if CBS_MmOpt then
+set cbD=cbD+";1"
+else
+set cbD=cbD+";0"
+endif
+return cbD
+endfunction
+// файл — скрипт Preload: при чтении (Preloader) выполняется вставленный вызов SetPlayerName(Player(14), данные)
+function CBS_Save takes nothing returns nothing
+call PreloadGenClear()
+call PreloadGenStart()
+call Preload("\")\ncall SetPlayerName(Player(14),\""+CBS_Data()+"\")\n//")
+call PreloadGenEnd(CBS_FILE)
+call DisplayTimedTextToPlayer(GetLocalPlayer(),0,0,5,Lng("|cFFFFD700Настройки сохранены|r","|cFFFFD700Settings saved|r"))
+endfunction
+function CBS_Load takes boolean cbSay returns nothing
+local string cbN=GetPlayerName(Player(14))
+local string cbD
+local integer cbI=0
+local integer cbV
+local real cbR
+call SetPlayerName(Player(14),"")
+call Preloader(CBS_FILE)
+set cbD=GetPlayerName(Player(14))
+call SetPlayerName(Player(14),cbN)
+if CBS_Tok(cbD,0)!="CB1" then
+if cbSay then
+call DisplayTimedTextToPlayer(GetLocalPlayer(),0,0,5,Lng("Сохранённых настроек нет","No saved settings"))
+endif
+return
+endif
+set cbV=S2I(CBS_Tok(cbD,1))
+if cbV>=0 and cbV<=3 then
+call HPB_SetMode(cbV)
+endif
+loop
+exitwhen cbI>8
+set cbV=S2I(CBS_Tok(cbD,2+cbI))
+if cbV<0 then
+set cbV=0
+elseif cbV>255 then
+set cbV=255
+endif
+set CBS_Rgb[cbI]=cbV
+set cbI=cbI+1
+endloop
+set cbI=0
+loop
+exitwhen cbI>2
+call CBS_RgbBuild(cbI)
+call CBS_SwPaint(cbI)
+set cbI=cbI+1
+endloop
+call CBS_RgbLoad()
+call CBS_HpRecolour()
+set cbR=S2R(CBS_Tok(cbD,11))
+if cbR>0. then
+call CBS_SlSet(3,cbR)
+endif
+set cbR=S2R(CBS_Tok(cbD,12))
+if cbR>0. then
+call CBS_SlSet(4,cbR)
+endif
+set cbI=0
+loop
+exitwhen cbI>29
+set CBS_Bind[cbI]=CBS_KeyByCode(S2I(CBS_Tok(cbD,13+cbI)))
+set cbI=cbI+1
+endloop
+set CBS_QC=CBS_Tok(cbD,44)=="1"
+set CBS_SC=CBS_Tok(cbD,45)=="1" and CBS_QC==false
+set CBS_MmOpt=CBS_Tok(cbD,46)!="0"
+set CBS_QcAb=0
+set CBS_BindWait=-1
+call CBS_HkRefresh()
+// автопрокачка: при старте — флаг (всем отправит CBS_AutoLearnSend), по кнопке «Загрузить» — включить сразу
+if CBS_Tok(cbD,43)=="1" then
+if cbSay then
+if CBS_AlOn==false then
+call SendSyncData("CBST","103")
+endif
+else
+set CBS_AlOn=true
+endif
+elseif CBS_Tok(cbD,43)=="0" then
+// выключена в файле: при старте — флаг (всем отправит CBS_AutoLearnSend), по кнопке — выключить сразу
+if cbSay then
+if CBS_AlOn then
+call SendSyncData("CBST","104")
+endif
+else
+set CBS_AlOn=false
+endif
+endif
+if cbSay then
+call DisplayTimedTextToPlayer(GetLocalPlayer(),0,0,5,Lng("|cFFFFD700Настройки загружены|r","|cFFFFD700Settings loaded|r"))
+endif
+endfunction
+// вкладки: активная — золотой текст
+function CBS_TabPaint takes nothing returns nothing
+if CBS_Tab==0 then
+call SetFrameTextColour(CBS_TabTxt[0],0xFFFFD700)
+call SetFrameTextColour(CBS_TabTxt[1],0xFF909090)
+else
+call SetFrameTextColour(CBS_TabTxt[0],0xFF909090)
+call SetFrameTextColour(CBS_TabTxt[1],0xFFFFD700)
+endif
+endfunction
+// локальные кнопки окна: 200..202 — выбор цвета (повторное нажатие прячет ползунки), 210 — сброс цветов, 211 — сброс масштабов,
+// 212 — сброс хоткеев, 220 / 221 — вкладки, 300 / 301 — сохранить / загрузить, 400..417 — ячейка хоткея
+function CBS_Local takes integer cbK returns nothing
+local integer cbI=0
+if cbK>=400 and cbK<418 then
+if CBS_BindWait==CBS_CellSlot(cbK-400) then
+set CBS_BindWait=-1
+else
+set CBS_BindWait=CBS_CellSlot(cbK-400)
+// нажатые сейчас клавиши не считаются — ждём новое нажатие
+loop
+exitwhen cbI>=CBS_KeyN
+set CBS_KeyWas[cbI]=IsKeyPressed(CBS_Key[cbI])
+set cbI=cbI+1
+endloop
+endif
+call CBS_HkRefresh()
+elseif cbK>=230 and cbK<=231 then
+// страница панели команд на вкладке хоткеев
+set CBS_HkPage=cbK-230
+set CBS_BindWait=-1
+call CBS_HkRefresh()
+elseif cbK==212 then
+loop
+exitwhen cbI>29
+set CBS_Bind[cbI]=0
+set cbI=cbI+1
+endloop
+set CBS_BindWait=-1
+call CBS_HkRefresh()
+elseif cbK==220 or cbK==221 then
+set CBS_Tab=cbK-220
+set CBS_BindWait=-1
+set CBS_Drag=-1
+call CBS_TabPaint()
+call HPB_MenuShow(HPB_MOpen)
+if CBS_Tab==1 then
+call CBS_HkIcons()
+endif
+call CBS_HkRefresh()
+elseif cbK==242 then
+set CBS_MmOpt=CBS_MmOpt==false
+call CBS_RgbShow()
+elseif cbK==240 or cbK==241 then
+// квиккаст и смарткаст — не вместе
+if cbK==240 then
+set CBS_QC=CBS_QC==false
+if CBS_QC then
+set CBS_SC=false
+endif
+else
+set CBS_SC=CBS_SC==false
+if CBS_SC then
+set CBS_QC=false
+endif
+endif
+set CBS_QcAb=0
+call CBS_RgbShow()
+elseif cbK==300 then
+call CBS_Save()
+elseif cbK==301 then
+call CBS_Load(true)
+elseif cbK>=200 and cbK<=202 then
+if CBS_ColSel==cbK-200 then
+set CBS_ColSel=-1
+else
+set CBS_ColSel=cbK-200
+call CBS_RgbLoad()
+endif
+call CBS_RgbShow()
+elseif cbK==210 then
+loop
+exitwhen cbI>8
+set CBS_Rgb[cbI]=CBS_RgbDef[cbI]
+set cbI=cbI+1
+endloop
+set cbI=0
+loop
+exitwhen cbI>2
+call CBS_RgbBuild(cbI)
+call CBS_SwPaint(cbI)
+set cbI=cbI+1
+endloop
+call CBS_RgbLoad()
+call CBS_HpRecolour()
+elseif cbK==211 then
+call CBS_SlSet(3,1.)
+call CBS_SlSet(4,1.)
+endif
+endfunction
+// крупное окно, как эмодзи и статистика: при открытии закрыть магазин, эмодзи, статистику и ID героя, спрятать multiboard,
+// чат — под окно; при закрытии вернуть. Закрыто другим крупным окном (CBS_PollClose) — multiboard и чат решает оно.
+function CBS_ShowExtra takes nothing returns nothing
+//local framehandle cbM=GetOriginFrame(ORIGIN_FRAME_MULTIBOARD,0)
+local framehandle cbM=CBS_OfMb
+if CBS_FrN==0 then
+set cbM=null
+return
+endif
+if HPB_MOpen and CBS_Open==false then
+set CBS_Open=true
+if CBS_OffHas(4)==false then
+call Sh_CloseLocal()
+endif
+if CBS_OffHas(4)==false and StatsBarFrame!=null and IsFrameVisible(StatsBarFrame) then
+call ShowFrame(StatsBarFrame,false)
+call ShowFrame(OpenStatsButton,true)
+set CBS_MbWas=true
+endif
+if CBS_OffHas(4)==false and EmoteBarFrame!=null and IsFrameVisible(EmoteBarFrame) then
+call ShowFrame(EmoteBarFrame,false)
+call ShowFrame(OpenEmoteButton,true)
+set CBS_MbWas=true
+endif
+if CBS_OffHas(4)==false and IdHeroFrame!=null and IsFrameVisible(IdHeroFrame) then
+call ShowFrame(IdHeroFrame,false)
+call ShowFrame(OpenIdButton,true)
+call ShowFrame(SelectTavernHeroCheck,false)
+call ShowFrame(SelectTestPlayerCheck,false)
+endif
+if CBS_OffHas(8)==false and cbM!=null and IsFrameVisible(cbM) then
+set CBS_MbWas=true
+call ShowFrame(cbM,false)
+endif
+if CBS_OffHas(8)==false then
+call SetFramePriority(CBS_OfChat,0)
+endif
+if CBS_OffHas(2)==false then
+call HeroBarBehind(true)
+endif
+elseif HPB_MOpen==false and CBS_Open then
+if CBS_OffHas(2)==false then
+call HeroBarBehind(false)
+endif
+set CBS_Open=false
+set CBS_Drag=-1
+if CBS_PollClose then
+// магазин вернёт multiboard при своём закрытии
+if CBS_MbWas and ShOpened then
+set ShMbWas=true
+endif
+if StatsBarFrame==null or IsFrameVisible(StatsBarFrame)==false then
+call SetFramePriority(CBS_OfChat,7)
+endif
+else
+if CBS_MbWas and cbM!=null then
+call ShowFrame(cbM,true)
+endif
+call SetFramePriority(CBS_OfChat,7)
+endif
+set CBS_MbWas=false
+endif
+if CBS_OffHas(128)==false then
+call CBS_RgbShow()
+endif
+set cbM=null
+endfunction
+// раз в 0.02 с у всех (прямые вызовы, без ExecuteFunc): подготовка окна после показа / скрытия и перетаскивание ползунков
+function CBS_UiTick takes nothing returns nothing
+if CBS_ShowReq then
+set CBS_ShowReq=false
+call CBS_ShowExtra()
+endif
+if HPB_MOpen and CBS_OffHas(16)==false then
+call CBS_DragTick()
+endif
+endfunction
+function CBS_Click takes nothing returns nothing
+local integer cbK
+if GetTriggerPlayer()==GetLocalPlayer() then
+set cbK=GetFrameContext(GetTriggerFrame())
+if cbK>=200 then
+call CBS_Local(cbK)
+else
+call SendSyncData("CBST",I2S(cbK))
+endif
+endif
+endfunction
+function CBS_Sync takes nothing returns nothing
+local integer cbK=S2I(GetTriggerSyncData())
+set CBS_P=GetTriggerSyncPlayer()
+if cbK==102 or cbK==103 or cbK==104 then
+// автопрокачка: 102 — переключить, 103 — включить, 104 — выключить (из файла настроек)
+//set CBS_AutoL[GetPlayerId(CBS_P)]=cbK==103 or CBS_AutoL[GetPlayerId(CBS_P)]==false
+set CBS_AutoL[GetPlayerId(CBS_P)]=cbK==103 or (cbK==102 and CBS_AutoL[GetPlayerId(CBS_P)]==false)
+if CBS_P==GetLocalPlayer() then
+set CBS_AlOn=CBS_AutoL[GetPlayerId(CBS_P)]
+call ShowFrame(CBS_AlChk,HPB_MOpen and CBS_Tab==0 and CBS_AlOn)
+endif
+elseif cbK==100 then
+call LANG_Switch(CBS_P,false)
+elseif cbK==101 then
+call LANG_Switch(CBS_P,true)
+elseif cbK==0 then
+call Trig_itemsc_Actions()
+elseif cbK==1 then
+call Trig_debt_Actions()
+elseif cbK==2 then
+call Trig_mr_Actions()
+elseif cbK==3 then
+call Trig_ControlResist_Actions()
+elseif cbK==4 then
+call callDamageIndicator()
+elseif cbK==5 then
+call DamageIndicatorForAll()
+elseif cbK==6 then
+call HealIndicatorForAll()
+elseif cbK==7 then
+call Trig_Debug_Actions()
+elseif cbK==8 then
+call Trig_Resp_Actions()
+elseif cbK==9 then
+if CondRFH() then
+call CastRFH()
+endif
+elseif cbK==10 then
+call Trig_Killme_Actions()
+endif
+set CBS_P=null
+endfunction
+// кнопка с надписью в окне настроек; cbK — номер команды (контекст фрейма)
+function CBS_Button takes integer cbK,string cbText,real cbX,real cbY,real cbW,trigger cbT returns framehandle
+local framehandle cbB=CreateFrameByType("SIMPLEBUTTON","CBSButton",null,"",cbK)
+local framehandle cbF
+call ClearFrameAllPoints(cbB)
+call SetFrameTexture(cbB,"checkbox-depressed2.blp",0,true)
+call SetFrameTexture(cbB,"checkbox-depressed2.blp",1,true)
+call SetFrameTexture(cbB,"checkbox-depressed2.blp",2,true)
+//call SetFrameSize(cbB,(cbW)*CBS_Z,(.0145)*CBS_Z)
+call SetFrameSize(cbB,(cbW)*CBS_Z,(.024)*CBS_Z) // окно вдвое крупнее
+call SetFrameRelativePoint(cbB,FRAMEPOINT_TOPLEFT,HPB_Menu,FRAMEPOINT_TOPLEFT,CBS_PX(cbX),CBS_PY(cbY))
+//call SetFramePriority(cbB,11)
+call SetFramePriority(cbB,5)
+call TriggerRegisterFrameEvent(cbT,cbB,FRAMEEVENT_CONTROL_CLICK)
+call CBS_Add(cbB)
+set cbF=CreateFrameByType("SIMPLETEXT","CBSButtonText",cbB,"",cbK)
+//call CBS_Text(cbF,.0072,0xFFFFD700)
+call CBS_Text(cbF,.012,0xFFFFD700)
+call SetFrameTextAlignment(cbF,TEXT_JUSTIFY_CENTER,TEXT_JUSTIFY_MIDDLE)
+call SetFrameParent(cbF,cbB)
+call SetFrameText(cbF,cbText)
+call SetFrameRelativePoint(cbF,FRAMEPOINT_CENTER,cbB,FRAMEPOINT_CENTER,.00011,0)
+call CBS_Add(cbF)
+set cbF=null
+return cbB
+endfunction
+// подпись слева, текст в окне
+function CBS_Label takes framehandle cbF,real cbSize,integer cbColour,real cbX,real cbY returns framehandle
+call CBS_Text(cbF,cbSize,cbColour)
+call SetFrameTextAlignment(cbF,TEXT_JUSTIFY_LEFT,TEXT_JUSTIFY_MIDDLE)
+call SetFrameText(cbF," ")
+call SetFrameRelativePoint(cbF,FRAMEPOINT_LEFT,HPB_Menu,FRAMEPOINT_TOPLEFT,CBS_PX(cbX),CBS_PY(cbY))
+return cbF
+endfunction
+// однотонная плашка (рамка выбора, бегунок): SIMPLEBUTTON с белой текстурой и цветом — у SIMPLEFRAME с подложкой
+// цвет не меняется (было серым); мышь не ловит
+// родитель задаётся сразу при создании: перенос SIMPLEFRAME / SIMPLEBUTTON через SetFrameParent ронял игру при загрузке
+function CBS_PlateIn takes framehandle cbR,real cbW,real cbH,integer cbC,integer cbP returns framehandle
+local framehandle cbF=CreateFrameByType("SIMPLEBUTTON","CBSPlate",cbR,"",0)
+call ClearFrameAllPoints(cbF)
+call SetFrameSize(cbF,(cbW)*CBS_Z,(cbH)*CBS_Z)
+call SetFrameTexture(cbF,"war3mapImported\\HPB_White.blp",0,true)
+call SetFrameTexture(cbF,"war3mapImported\\HPB_White.blp",1,true)
+call SetFrameTexture(cbF,"war3mapImported\\HPB_White.blp",2,true)
+call SetFrameColourEx(cbF,0,cbC)
+call SetFrameColourEx(cbF,1,cbC)
+call SetFrameColourEx(cbF,2,cbC)
+call SetFrameLayerFlag(cbF,LAYER_STYLE_IGNORE_TRACK_EVENTS,true)
+call SetFramePriority(cbF,cbP)
+return cbF
+endfunction
+function CBS_Plate takes real cbW,real cbH,integer cbC,integer cbP returns framehandle
+return CBS_PlateIn(null,cbW,cbH,cbC,cbP)
+endfunction
+// рамка выбора cbR: четыре тонкие золотые полоски по краям опорного фрейма, поверх ячейки (центр открыт — иконку видно)
+function CBS_RingIn takes framehandle cbPar,integer cbR,real cbW,real cbH,real cbT,integer cbP returns framehandle
+local integer cbK=0
+local framehandle cbF
+set CBS_RingA[cbR]=CreateFrameByType("SIMPLEFRAME","CBSRing",cbPar,"",cbR)
+call ClearFrameAllPoints(CBS_RingA[cbR])
+call SetFrameSize(CBS_RingA[cbR],(cbW)*CBS_Z,(cbH)*CBS_Z)
+call SetFramePriority(CBS_RingA[cbR],cbP)
+loop
+exitwhen cbK>3
+// полоски — дети опорного фрейма (рисуются поверх него); приоритет ребёнка SIMPLE-фрейма — малый (больше 7-8 нельзя)
+if cbK<2 then
+set cbF=CBS_PlateIn(CBS_RingA[cbR],cbW,cbT,0xFFFFD700,cbP+1)
+else
+set cbF=CBS_PlateIn(CBS_RingA[cbR],cbT,cbH,0xFFFFD700,cbP+1)
+endif
+if cbK==0 then
+call SetFrameRelativePoint(cbF,FRAMEPOINT_TOPLEFT,CBS_RingA[cbR],FRAMEPOINT_TOPLEFT,0.,0.)
+elseif cbK==1 then
+call SetFrameRelativePoint(cbF,FRAMEPOINT_BOTTOMLEFT,CBS_RingA[cbR],FRAMEPOINT_BOTTOMLEFT,0.,0.)
+elseif cbK==2 then
+call SetFrameRelativePoint(cbF,FRAMEPOINT_TOPLEFT,CBS_RingA[cbR],FRAMEPOINT_TOPLEFT,0.,0.)
+else
+call SetFrameRelativePoint(cbF,FRAMEPOINT_TOPRIGHT,CBS_RingA[cbR],FRAMEPOINT_TOPRIGHT,0.,0.)
+endif
+set CBS_RingP[cbR*4+cbK]=cbF
+call ShowFrame(cbF,false)
+set cbK=cbK+1
+endloop
+set cbF=null
+return CBS_RingA[cbR]
+endfunction
+function CBS_Ring takes integer cbR,real cbW,real cbH,real cbT,integer cbP returns framehandle
+return CBS_RingIn(null,cbR,cbW,cbH,cbT,cbP)
+endfunction
+// последние две записи CBS_Fr (кнопка и её надпись) — в список «всегда» (cbAll) или вкладки хоткеев
+function CBS_MoveLast2 takes boolean cbAll returns nothing
+local integer cbK=CBS_FrN-2
+loop
+exitwhen cbK>=CBS_FrN
+if cbAll then
+set CBS_AllFr[CBS_AllN]=CBS_Fr[cbK]
+set CBS_AllN=CBS_AllN+1
+else
+set CBS_HkFr[CBS_HkN]=CBS_Fr[cbK]
+set CBS_HkN=CBS_HkN+1
+endif
+set cbK=cbK+1
+endloop
+set CBS_FrN=CBS_FrN-2
+endfunction
+// ползунок cbS: полоса (левый край — cbX, середина по высоте — cbY), заливка, бегунок, число справа и деления-кнопки
+function CBS_Slider takes integer cbS,real cbX,real cbY,real cbMin,real cbMax,integer cbN,real cbStep,real cbV,string cbTex,boolean cbRgb returns nothing
+local framehandle cbF
+local integer cbK=0
+set CBS_SlMin[cbS]=cbMin
+set CBS_SlMax[cbS]=cbMax
+set CBS_SlN[cbS]=cbN
+set CBS_SlStep[cbS]=cbStep
+set CBS_SlV[cbS]=cbV
+set CBS_SlTrack[cbS]=CreateFrameByType("SIMPLEFRAME","CBSSlTrack",null,"",cbS)
+call ClearFrameAllPoints(CBS_SlTrack[cbS])
+call SetFrameSize(CBS_SlTrack[cbS],CBS_SLW,.006)
+call SetFrameRelativePoint(CBS_SlTrack[cbS],FRAMEPOINT_LEFT,HPB_Menu,FRAMEPOINT_TOPLEFT,CBS_PX(cbX),CBS_PY(cbY))
+call SetFrameTextureEx(CBS_SlTrack[cbS],0,"Textures\\Black32.blp",false,"",0)
+//call SetFramePriority(CBS_SlTrack[cbS],10)
+call SetFramePriority(CBS_SlTrack[cbS],5)
+set CBS_SlFill[cbS]=CreateFrameByType("SIMPLEFRAME","CBSSlFill",null,"",cbS)
+call ClearFrameAllPoints(CBS_SlFill[cbS])
+call SetFrameRelativePoint(CBS_SlFill[cbS],FRAMEPOINT_LEFT,CBS_SlTrack[cbS],FRAMEPOINT_LEFT,0.,0.)
+call SetFrameTextureEx(CBS_SlFill[cbS],0,cbTex,false,"",0)
+//call SetFramePriority(CBS_SlFill[cbS],11)
+call SetFramePriority(CBS_SlFill[cbS],6)
+//set CBS_SlThumb[cbS]=CreateFrameByType("SIMPLEFRAME","CBSSlThumb",null,"",cbS)
+//call ClearFrameAllPoints(CBS_SlThumb[cbS])
+//call SetFrameSize(CBS_SlThumb[cbS],(.007)*CBS_Z,(.016)*CBS_Z)
+//call SetFrameTextureEx(CBS_SlThumb[cbS],0,"war3mapImported\\shop_thumb_blue.tga",false,"",0)
+//call SetFrameTextureEx(CBS_SlThumb[cbS],0,"war3mapImported\\HPB_White.blp",false,"",0)
+//call SetFrameColourEx(CBS_SlThumb[cbS],0,0xFFFFE8A0)
+//call SetFramePriority(CBS_SlThumb[cbS],12)
+//set CBS_SlThumb[cbS]=CBS_Plate(.007,.016,0xFFFFE8A0,12)
+set CBS_SlThumb[cbS]=CBS_Plate(.007,.016,0xFFFFE8A0,7)
+set CBS_SlVal[cbS]=CreateFrameByType("SIMPLETEXT","CBSSlValue",HPB_Menu,"",cbS)
+call CBS_Label(CBS_SlVal[cbS],.012,0xFFFFFFFF,cbX+CBS_SLW+.009,cbY)
+call SetFrameRelativePoint(CBS_SlVal[cbS],FRAMEPOINT_LEFT,CBS_SlTrack[cbS],FRAMEPOINT_RIGHT,.008,0.)
+if cbRgb then
+call CBS_AddRgb(CBS_SlTrack[cbS])
+call CBS_AddRgb(CBS_SlFill[cbS])
+call CBS_AddRgb(CBS_SlThumb[cbS])
+call CBS_AddRgb(CBS_SlVal[cbS])
+else
+call CBS_Add(CBS_SlTrack[cbS])
+call CBS_Add(CBS_SlFill[cbS])
+call CBS_Add(CBS_SlThumb[cbS])
+call CBS_Add(CBS_SlVal[cbS])
+endif
+loop
+exitwhen cbK>=cbN
+set cbF=CreateFrameByType("SIMPLEBUTTON","CBSSlSeg",null,"",cbS*100+cbK)
+call ClearFrameAllPoints(cbF)
+call SetFrameSize(cbF,CBS_SLW/I2R(cbN),.02)
+call SetFrameRelativePoint(cbF,FRAMEPOINT_LEFT,CBS_SlTrack[cbS],FRAMEPOINT_LEFT,CBS_SLW*I2R(cbK)/I2R(cbN),0.)
+//call SetFramePriority(cbF,13)
+call SetFramePriority(cbF,8)
+call TriggerRegisterFrameEvent(CBS_TrgSl,cbF,FRAMEEVENT_CONTROL_CLICK)
+call TriggerRegisterFrameEvent(CBS_TrgSl,cbF,FRAMEEVENT_MOUSE_DOWN)
+call TriggerRegisterFrameEvent(CBS_TrgSl,cbF,FRAMEEVENT_MOUSE_ENTER)
+call TriggerRegisterFrameEvent(CBS_TrgSl,cbF,FRAMEEVENT_MOUSE_WHEEL)
+if cbRgb then
+call CBS_AddRgb(cbF)
+else
+call CBS_Add(cbF)
+endif
+set cbK=cbK+1
+endloop
+call CBS_SlDraw(cbS)
+set cbF=null
+endfunction
+// клавиша занята ячейкой предмета или ячейкой страницы cbPg (тогда у способности с таким исходным хоткеем его снять)
+function CBS_KeyTaken takes integer cbCode,integer cbPg returns boolean
+local integer cbS=0
+loop
+exitwhen cbS>29
+if CBS_Bind[cbS]>0 and (cbS<6 or (cbS-6)/12==cbPg) then
+if CBS_KeyCode[CBS_Bind[cbS]-1]==cbCode then
+return true
+endif
+endif
+set cbS=cbS+1
+endloop
+return false
+endfunction
+// хоткей способности по её ячейке: задан в окне — эта клавиша (не NumPad), иначе исходный; исходный, занятый другой
+// ячейкой или предметом, — снять (0). cbF — поле хоткея, cbK — ключ исходного значения, cbPg — страница (0 панель, 1 изучение)
+function CBS_AbKey takes integer cbId,abilityintegerfield cbF,integer cbK,integer cbSlot,integer cbPg returns nothing
+local integer cbO
+local integer cbV
+local integer cbB
+if not HaveSavedInteger(CBS_AbHT,cbId,cbK) then
+call SaveInteger(CBS_AbHT,cbId,cbK,GetAbilityBaseIntegerFieldById(cbId,cbF))
+endif
+set cbO=LoadInteger(CBS_AbHT,cbId,cbK)
+set cbV=cbO
+set cbB=0
+if cbSlot>=0 and cbSlot<12 then
+set cbB=CBS_Bind[6+cbPg*12+cbSlot]
+endif
+if cbB>0 and CBS_KeyCode[cbB-1]<0x60 then
+set cbV=CBS_KeyCode[cbB-1]
+elseif cbO>0 and CBS_KeyTaken(cbO,cbPg) then
+set cbV=0
+endif
+if GetAbilityBaseIntegerFieldById(cbId,cbF)!=cbV then
+call SetAbilityBaseIntegerFieldById(cbId,cbF,cbV)
+endif
+endfunction
+// раз в 0.25 с у всех: списки способностей героев; затем у себя — хоткеи способностей своего героя по ячейкам
+function CBS_AbScan takes nothing returns nothing
+local integer cbP=0
+local integer cbI
+local ability cbA
+local integer cbX
+local integer cbY
+local unit cbU
+// иллюзии героев и клоны (Наруто H14F, Тобирама H34X, Итачи H007) — для иконок на миникарте; общий код у всех
+set CBS_IlN=0
+if CBS_IlG!=null then
+call GroupEnumUnitsInRect(CBS_IlG,bj_mapInitialPlayableArea,null)
+loop
+set cbU=FirstOfGroup(CBS_IlG)
+exitwhen cbU==null
+call GroupRemoveUnit(CBS_IlG,cbU)
+if CBS_IlN<20 and IsUnitType(cbU,UNIT_TYPE_DEAD)==false and ((IsUnitIllusion(cbU) and IsUnitType(cbU,UNIT_TYPE_HERO)) or GetUnitTypeId(cbU)=='H14F' or GetUnitTypeId(cbU)=='H34X' or GetUnitTypeId(cbU)=='H007') then
+set CBS_IlU[CBS_IlN]=cbU
+set CBS_IlN=CBS_IlN+1
+endif
+endloop
+endif
+set cbI=CBS_IlN
+loop
+exitwhen cbI>=20
+set CBS_IlU[cbI]=null
+set cbI=cbI+1
+endloop
+set cbU=null
+loop
+exitwhen cbP>9
+set CBS_AbN[cbP]=0
+if Hero[cbP]!=null and GetUnitTypeId(Hero[cbP])!=0 then
+set cbI=0
+// число способностей — заранее (перебор по индексу за пределом мог читать мусор)
+set cbX=CountUnitAbilities(Hero[cbP],false)
+if cbX>60 then
+set cbX=60
+endif
+loop
+exitwhen cbI>=cbX
+set cbA=GetUnitAbilityByIndex(Hero[cbP],cbI)
+exitwhen cbA==null
+// только способности с кнопкой (иконкой): без инвентаря, движения, атаки и прочих служебных
+if GetAbilityBaseStringFieldById(GetAbilityTypeId(cbA),ABILITY_SF_ICON_NORMAL)!="" and GetAbilityBaseStringFieldById(GetAbilityTypeId(cbA),ABILITY_SF_ICON_NORMAL)!=null then
+set CBS_Ab[cbP*60+CBS_AbN[cbP]]=GetAbilityTypeId(cbA)
+set CBS_AbN[cbP]=CBS_AbN[cbP]+1
+endif
+set cbI=cbI+1
+endloop
+endif
+// типы предметов в слотах (общий код — обращение к предметам у всех одинаково)
+set cbI=0
+loop
+exitwhen cbI>5
+set CBS_ItT[cbP*6+cbI]=0
+if Hero[cbP]!=null and GetUnitTypeId(Hero[cbP])!=0 then
+set CBS_ItT[cbP*6+cbI]=GetItemTypeId(UnitItemInSlot(Hero[cbP],cbI))
+endif
+set cbI=cbI+1
+endloop
+set cbP=cbP+1
+endloop
+set cbA=null
+// дальше — только у себя (поля способностей нужны лишь интерфейсу)
+set cbP=GetPlayerId(GetLocalPlayer())
+if cbP>9 then
+return
+endif
+set cbI=0
+loop
+exitwhen cbI>=CBS_AbN[cbP]
+set cbX=GetAbilityBaseIntegerFieldById(CBS_Ab[cbP*60+cbI],ABILITY_IF_BUTTON_POSITION_NORMAL_X)
+set cbY=GetAbilityBaseIntegerFieldById(CBS_Ab[cbP*60+cbI],ABILITY_IF_BUTTON_POSITION_NORMAL_Y)
+if cbX>=0 and cbX<4 and cbY>=0 and cbY<3 then
+call CBS_AbKey(CBS_Ab[cbP*60+cbI],ABILITY_IF_BUTTON_HOTKEY_NORMAL,0,cbY*4+cbX,0)
+call CBS_AbKey(CBS_Ab[cbP*60+cbI],ABILITY_IF_BUTTON_HOTKEY_ACTIVATED,1,cbY*4+cbX,0)
+else
+call CBS_AbKey(CBS_Ab[cbP*60+cbI],ABILITY_IF_BUTTON_HOTKEY_NORMAL,0,-1,0)
+endif
+// меню изучения — только способности героя (у остальных позиция изучения по умолчанию 0,0, и запись в них не держится)
+set cbX=GetAbilityBaseIntegerFieldById(CBS_Ab[cbP*60+cbI],ABILITY_IF_BUTTON_POSITION_RESEARCH_X)
+set cbY=GetAbilityBaseIntegerFieldById(CBS_Ab[cbP*60+cbI],ABILITY_IF_BUTTON_POSITION_RESEARCH_Y)
+// хоткеи меню изучения убраны (вместо них — автопрокачка, CBS_AutoLearn)
+//if GetAbilityBaseBooleanFieldById(CBS_Ab[cbP*60+cbI],ABILITY_BF_HERO_ABILITY) and cbX>=0 and cbX<4 and cbY>=0 and cbY<3 then
+//call CBS_AbKey(CBS_Ab[cbP*60+cbI],ABILITY_IF_BUTTON_HOTKEY_RESEARCH,2,cbY*4+cbX,1)
+//endif
+set cbI=cbI+1
+endloop
+endfunction
+// автопрокачка (раз в 0.5 с у всех, общий код): у героя есть очки навыков — изучить сначала ультимейт (требуемый уровень
+// больше 1), затем способность с наименьшим уровнем; SelectHeroSkill сам проверяет уровень героя — не взялось, следующая
+function CBS_AutoLearn takes nothing returns nothing
+local integer cbP=0
+local unit cbU
+local string cbL
+local integer cbN
+local integer cbI
+local integer cbT
+local integer cbB
+local integer cbV
+local integer cbId
+local integer cbPts
+local boolean array cbF
+loop
+exitwhen cbP>9
+set cbU=Hero[cbP]
+if CBS_AutoL[cbP] and cbU!=null and GetUnitTypeId(cbU)!=0 and GetHeroSkillPoints(cbU)>0 then
+set cbL=StringReplace(GetUnitBaseStringFieldById(GetUnitTypeId(cbU),UNIT_SF_HERO_ABILITY_LIST),",","",true)
+set cbN=StringLength(cbL)/4
+if cbN>10 then
+set cbN=10
+endif
+set cbI=0
+loop
+exitwhen cbI>=cbN
+set cbF[cbI]=false
+set cbI=cbI+1
+endloop
+set cbT=0
+loop
+exitwhen cbT>=cbN or GetHeroSkillPoints(cbU)<=0
+// лучшая из ещё не опробованных: ультимейт, иначе наименьший уровень (при равенстве — раньше в списке)
+set cbB=-1
+set cbV=999
+set cbI=0
+loop
+exitwhen cbI>=cbN
+set cbId=String2Id(SubString(cbL,cbI*4,cbI*4+4))
+if cbF[cbI]==false and GetUnitAbilityLevel(cbU,cbId)<GetAbilityBaseIntegerFieldById(cbId,ABILITY_IF_LEVELS) then
+if GetAbilityBaseIntegerFieldById(cbId,ABILITY_IF_REQUIRED_LEVEL)>1 then
+if cbV>-1 then
+set cbV=-1
+set cbB=cbI
+endif
+elseif GetUnitAbilityLevel(cbU,cbId)<cbV then
+set cbV=GetUnitAbilityLevel(cbU,cbId)
+set cbB=cbI
+endif
+endif
+set cbI=cbI+1
+endloop
+exitwhen cbB<0
+set cbF[cbB]=true
+set cbPts=GetHeroSkillPoints(cbU)
+call SelectHeroSkill(cbU,String2Id(SubString(cbL,cbB*4,cbB*4+4)))
+set cbT=cbT+1
+endloop
+endif
+set cbP=cbP+1
+endloop
+set cbU=null
+endfunction
+// после загрузки: сохранённая автопрокачка этого игрока — всем (во время загрузки синхронизация не работает)
+function CBS_AutoLearnSend takes nothing returns nothing
+// по умолчанию включена у всех; выключена в файле настроек — всем "104"
+//if CBS_AlOn then
+//call SendSyncData("CBST","103")
+//endif
+if CBS_AlOn==false then
+call SendSyncData("CBST","104")
+endif
+call DestroyTimer(GetExpiredTimer())
+endfunction
+// квиккаст предмета (общий код): в точку; не принимает точку — ближайший к ней юнит (200), иначе без цели
+function CBS_QiSync takes nothing returns nothing
+local integer cbP=GetPlayerId(GetTriggerSyncPlayer())
+local string cbD=GetTriggerSyncData()
+local integer cbS=S2I(CBS_Tok(cbD,0))
+local real cbX=S2R(CBS_Tok(cbD,1))
+local real cbY=S2R(CBS_Tok(cbD,2))
+local unit cbU
+local item cbI
+local unit cbT
+local unit cbB=null
+local real cbR=200.*200.
+if cbP>9 or Hero[cbP]==null or cbS<0 or cbS>5 then
+return
+endif
+set cbU=Hero[cbP]
+set cbI=UnitItemInSlot(cbU,cbS)
+if cbI!=null then
+if UnitUseItemPoint(cbU,cbI,cbX,cbY)==false then
+call GroupEnumUnitsInRange(CBS_QcG,cbX,cbY,200.,null)
+loop
+set cbT=FirstOfGroup(CBS_QcG)
+exitwhen cbT==null
+call GroupRemoveUnit(CBS_QcG,cbT)
+if cbT!=cbU and IsUnitType(cbT,UNIT_TYPE_DEAD)==false and (GetUnitX(cbT)-cbX)*(GetUnitX(cbT)-cbX)+(GetUnitY(cbT)-cbY)*(GetUnitY(cbT)-cbY)<cbR then
+set cbR=(GetUnitX(cbT)-cbX)*(GetUnitX(cbT)-cbX)+(GetUnitY(cbT)-cbY)*(GetUnitY(cbT)-cbY)
+set cbB=cbT
+endif
+endloop
+if cbB==null or UnitUseItemTarget(cbU,cbI,cbB)==false then
+call UnitUseItem(cbU,cbI)
+endif
+endif
+endif
+set cbU=null
+set cbI=null
+set cbT=null
+set cbB=null
+endfunction
+// приказ квиккаста / смарткаста (общий код): в точку; не принимает точку — ближайший к ней юнит (200), иначе без цели
+function CBS_QcSync takes nothing returns nothing
+local integer cbP=GetPlayerId(GetTriggerSyncPlayer())
+local string cbD=GetTriggerSyncData()
+local integer cbId=S2I(CBS_Tok(cbD,0))
+local real cbX=S2R(CBS_Tok(cbD,1))
+local real cbY=S2R(CBS_Tok(cbD,2))
+local unit cbU
+local ability cbA
+local integer cbO
+local unit cbT
+local unit cbB=null
+local real cbR=200.*200.
+if GetTriggerSyncPrefix()=="CBQI" then
+call CBS_QiSync()
+return
+endif
+if cbP>9 or Hero[cbP]==null then
+return
+endif
+set cbU=Hero[cbP]
+set cbA=GetUnitAbility(cbU,cbId)
+if cbA!=null then
+set cbO=GetAbilityOrderId(cbA)
+if IssuePointOrderById(cbU,cbO,cbX,cbY)==false then
+call GroupEnumUnitsInRange(CBS_QcG,cbX,cbY,200.,null)
+loop
+set cbT=FirstOfGroup(CBS_QcG)
+exitwhen cbT==null
+call GroupRemoveUnit(CBS_QcG,cbT)
+if cbT!=cbU and IsUnitType(cbT,UNIT_TYPE_DEAD)==false and (GetUnitX(cbT)-cbX)*(GetUnitX(cbT)-cbX)+(GetUnitY(cbT)-cbY)*(GetUnitY(cbT)-cbY)<cbR then
+set cbR=(GetUnitX(cbT)-cbX)*(GetUnitX(cbT)-cbX)+(GetUnitY(cbT)-cbY)*(GetUnitY(cbT)-cbY)
+set cbB=cbT
+endif
+endloop
+if cbB==null or IssueTargetOrderById(cbU,cbO,cbB)==false then
+call IssueImmediateOrderById(cbU,cbO)
+endif
+endif
+endif
+set cbU=null
+set cbA=null
+set cbT=null
+set cbB=null
+endfunction
+// ВРЕМЕННО: -cbsoff N (у себя)
+function CBS_OffChat takes nothing returns nothing
+if GetTriggerPlayer()==GetLocalPlayer() then
+set CBS_Off=S2I(SubString(GetEventPlayerChatString(),8,StringLength(GetEventPlayerChatString())))
+call DisplayTimedTextToPlayer(GetLocalPlayer(),0,0,8,"CBS off = "+I2S(CBS_Off))
+endif
+endfunction
+function CBS_Build takes nothing returns nothing
+local trigger cbT=CreateTrigger()
+local trigger cbS=CreateTrigger()
+local integer cbK=0
+local framehandle cbF
+local real cbX
+local real cbY
+local integer cbN=0 // занятых мест в списке команд
+if HPB_Menu==null or CBS_FrN>0 then
+return
+endif
+call TriggerAddAction(cbT,function CBS_Click)
+loop
+exitwhen cbK>11
+call BlzTriggerRegisterPlayerSyncEvent(cbS,Player(cbK),"CBST",false)
+set cbK=cbK+1
+endloop
+call TriggerAddAction(cbS,function CBS_Sync)
+set CBS_TrgSl=CreateTrigger()
+call TriggerAddAction(CBS_TrgSl,function CBS_SlEvent)
+// окно .48 x .38: слева — полоски HP (режим, цвета), справа — масштаб, язык, команды
+// заголовки разделов: 0 полоски HP (строки режима выше), 1 язык, 2 команды, 3 цвета, 4 масштаб
+set cbK=0
+loop
+exitwhen cbK>4
+set CBS_Head[cbK]=CreateFrameByType("SIMPLETEXT","CBSHead",HPB_Menu,"",cbK)
+call CBS_Text(CBS_Head[cbK],.015,0xFFFFA500)
+call SetFrameTextAlignment(CBS_Head[cbK],TEXT_JUSTIFY_LEFT,TEXT_JUSTIFY_MIDDLE)
+if cbK==0 then
+//call SetFrameRelativePoint(CBS_Head[cbK],FRAMEPOINT_LEFT,HPB_Menu,FRAMEPOINT_TOPLEFT,CBS_PX(.007),CBS_PY(-.021))
+call SetFrameRelativePoint(CBS_Head[cbK],FRAMEPOINT_LEFT,HPB_Menu,FRAMEPOINT_TOPLEFT,CBS_PX(.016),CBS_PY(-.042))
+elseif cbK==1 then
+//call SetFrameRelativePoint(CBS_Head[cbK],FRAMEPOINT_LEFT,HPB_Menu,FRAMEPOINT_TOPLEFT,CBS_PX(.007),CBS_PY(-.0955))
+call SetFrameRelativePoint(CBS_Head[cbK],FRAMEPOINT_LEFT,HPB_Menu,FRAMEPOINT_TOPLEFT,CBS_PX(.252),CBS_PY(-.152))
+elseif cbK==2 then
+//call SetFrameRelativePoint(CBS_Head[cbK],FRAMEPOINT_LEFT,HPB_Menu,FRAMEPOINT_TOPLEFT,CBS_PX(.007),CBS_PY(-.1195))
+call SetFrameRelativePoint(CBS_Head[cbK],FRAMEPOINT_LEFT,HPB_Menu,FRAMEPOINT_TOPLEFT,CBS_PX(.252),CBS_PY(-.188))
+elseif cbK==3 then
+call SetFrameRelativePoint(CBS_Head[cbK],FRAMEPOINT_LEFT,HPB_Menu,FRAMEPOINT_TOPLEFT,CBS_PX(.016),CBS_PY(-.166))
+else
+call SetFrameRelativePoint(CBS_Head[cbK],FRAMEPOINT_LEFT,HPB_Menu,FRAMEPOINT_TOPLEFT,CBS_PX(.252),CBS_PY(-.042))
+endif
+call CBS_Add(CBS_Head[cbK])
+set cbK=cbK+1
+endloop
+// цвета «свой / союзники / враги»: образцы-кнопки, под ними подписи; нажатие открывает ползунки R/G/B
+set cbK=0
+loop
+exitwhen cbK>2
+set CBS_Sw[cbK]=CreateFrameByType("SIMPLEBUTTON","CBSSwatch",null,"",200+cbK)
+call ClearFrameAllPoints(CBS_Sw[cbK])
+call SetFrameTexture(CBS_Sw[cbK],"war3mapImported\\HPB_White.blp",0,true)
+call SetFrameTexture(CBS_Sw[cbK],"war3mapImported\\HPB_White.blp",1,true)
+call SetFrameTexture(CBS_Sw[cbK],"war3mapImported\\HPB_White.blp",2,true)
+call SetFrameSize(CBS_Sw[cbK],(.064)*CBS_Z,(.022)*CBS_Z)
+call SetFrameRelativePoint(CBS_Sw[cbK],FRAMEPOINT_TOPLEFT,HPB_Menu,FRAMEPOINT_TOPLEFT,CBS_PX(.016+cbK*.072),CBS_PY(-.180))
+//call SetFramePriority(CBS_Sw[cbK],11)
+call SetFramePriority(CBS_Sw[cbK],5)
+call TriggerRegisterFrameEvent(cbT,CBS_Sw[cbK],FRAMEEVENT_CONTROL_CLICK)
+call CBS_Add(CBS_Sw[cbK])
+call CBS_SwPaint(cbK)
+// рамка выбранного цвета — золотая подложка чуть больше образца
+//set CBS_SwSel[cbK]=CreateFrameByType("SIMPLEFRAME","CBSSwatchSel",null,"",cbK)
+//call ClearFrameAllPoints(CBS_SwSel[cbK])
+//call SetFrameSize(CBS_SwSel[cbK],(.069)*CBS_Z,(.027)*CBS_Z)
+//call SetFrameTextureEx(CBS_SwSel[cbK],0,"war3mapImported\\HPB_White.blp",false,"",0)
+//call SetFrameColourEx(CBS_SwSel[cbK],0,0xFFFFD700)
+//call SetFramePriority(CBS_SwSel[cbK],10)
+//set CBS_SwSel[cbK]=CBS_Plate(.069,.027,0xFFFFD700,10)
+//set CBS_SwSel[cbK]=CBS_Ring(cbK,.069,.027,.0025,14)
+set CBS_SwSel[cbK]=CBS_Ring(cbK,.069,.027,.0025,6)
+call SetFrameRelativePoint(CBS_SwSel[cbK],FRAMEPOINT_CENTER,CBS_Sw[cbK],FRAMEPOINT_CENTER,0.,0.)
+set CBS_SwLbl[cbK]=CreateFrameByType("SIMPLETEXT","CBSSwatchLabel",HPB_Menu,"",cbK)
+call CBS_Text(CBS_SwLbl[cbK],.011,0xFFFFFFFF)
+call SetFrameTextAlignment(CBS_SwLbl[cbK],TEXT_JUSTIFY_CENTER,TEXT_JUSTIFY_MIDDLE)
+call SetFrameText(CBS_SwLbl[cbK]," ")
+call SetFrameRelativePoint(CBS_SwLbl[cbK],FRAMEPOINT_TOP,CBS_Sw[cbK],FRAMEPOINT_BOTTOM,0.,-.003)
+call CBS_Add(CBS_SwLbl[cbK])
+set cbK=cbK+1
+endloop
+set CBS_Hint=CBS_Label(CreateFrameByType("SIMPLETEXT","CBSHint",HPB_Menu,"",0),.012,0xFFB0B0B0,.016,-.245)
+// ползунки R/G/B (32 деления, колесо — по 5) и подписи R / G / B
+set cbK=0
+loop
+exitwhen cbK>2
+set CBS_RgbLbl[cbK]=CreateFrameByType("SIMPLETEXT","CBSRgbLabel",HPB_Menu,"",cbK)
+if cbK==0 then
+call CBS_Label(CBS_RgbLbl[cbK],.013,0xFFFF4040,.016,-.245-cbK*.025)
+call SetFrameText(CBS_RgbLbl[cbK],"R")
+call CBS_Slider(cbK,.032,-.245-cbK*.025,0.,255.,32,5.,0.,"ReplaceableTextures\\TeamColor\\TeamColor00.blp",true)
+elseif cbK==1 then
+call CBS_Label(CBS_RgbLbl[cbK],.013,0xFF40FF40,.016,-.245-cbK*.025)
+call SetFrameText(CBS_RgbLbl[cbK],"G")
+call CBS_Slider(cbK,.032,-.245-cbK*.025,0.,255.,32,5.,0.,"ReplaceableTextures\\TeamColor\\TeamColor06.blp",true)
+else
+call CBS_Label(CBS_RgbLbl[cbK],.013,0xFF4080FF,.016,-.245-cbK*.025)
+call SetFrameText(CBS_RgbLbl[cbK],"B")
+call CBS_Slider(cbK,.032,-.245-cbK*.025,0.,255.,32,5.,0.,"ReplaceableTextures\\TeamColor\\TeamColor01.blp",true)
+endif
+call CBS_AddRgb(CBS_RgbLbl[cbK])
+set cbK=cbK+1
+endloop
+set CBS_ResetC=CBS_FrN
+call CBS_Button(210,"",.016,-.318,.11,cbT)
+// автопрокачка способностей: квадрат-кнопка (синхронизируется — меняет игру) и галочка поверх
+set cbF=CreateFrameByType("SIMPLEBUTTON","CBSAutoLearn",null,"",102)
+call ClearFrameAllPoints(cbF)
+call SetFrameTexture(cbF,"UI\\Widgets\\EscMenu\\Human\\checkbox-background.blp",0,true)
+call SetFrameTexture(cbF,"UI\\Widgets\\EscMenu\\Human\\checkbox-background.blp",1,true)
+call SetFrameTexture(cbF,"UI\\Widgets\\EscMenu\\Human\\checkbox-background.blp",2,true)
+call SetFrameSize(cbF,(.017)*CBS_Z,(.017)*CBS_Z)
+call SetFrameRelativePoint(cbF,FRAMEPOINT_TOPLEFT,HPB_Menu,FRAMEPOINT_TOPLEFT,CBS_PX(.016),CBS_PY(-.347))
+call SetFramePriority(cbF,5)
+call TriggerRegisterFrameEvent(cbT,cbF,FRAMEEVENT_CONTROL_CLICK)
+call CBS_Add(cbF)
+set CBS_AlChk=CreateFrameByType("SIMPLEFRAME","CBSAutoLearnCheck",null,"",0)
+call ClearFrameAllPoints(CBS_AlChk)
+call SetFrameSize(CBS_AlChk,(.017)*CBS_Z,(.017)*CBS_Z)
+call SetFrameRelativePoint(CBS_AlChk,FRAMEPOINT_CENTER,cbF,FRAMEPOINT_CENTER,0.,0.)
+call SetFrameTextureEx(CBS_AlChk,0,"UI\\Widgets\\EscMenu\\Human\\checkbox-check.blp",false,"",0)
+call SetFramePriority(CBS_AlChk,6)
+call ShowFrame(CBS_AlChk,false)
+set CBS_AlLbl=CBS_Label(CreateFrameByType("SIMPLETEXT","CBSAutoLearnLabel",HPB_Menu,"",0),.012,0xFFFFFFFF,.038,-.3555)
+call CBS_Add(CBS_AlLbl)
+// масштаб: иконки героев сверху 0.6..1.6, полоски HP 1..2 (1 — как было, меньше нельзя); шаг 0.05
+set CBS_ScLbl[0]=CBS_Label(CreateFrameByType("SIMPLETEXT","CBSScaleLabel",HPB_Menu,"",0),.012,0xFFFFFFFF,.252,-.064)
+call CBS_Add(CBS_ScLbl[0])
+call CBS_Slider(3,.252,-.082,.6,1.6,21,.05,HB_Sc,"ReplaceableTextures\\TeamColor\\TeamColor05.blp",false)
+set CBS_ScLbl[1]=CBS_Label(CreateFrameByType("SIMPLETEXT","CBSScaleLabel",HPB_Menu,"",1),.012,0xFFFFFFFF,.252,-.102)
+call CBS_Add(CBS_ScLbl[1])
+call CBS_Slider(4,.252,-.120,1.,2.,21,.05,HPB_Sc,"ReplaceableTextures\\TeamColor\\TeamColor05.blp",false)
+set CBS_ResetS=CBS_FrN
+call CBS_Button(211,"",.40,-.032,.06,cbT)
+// язык: RU / EN справа от заголовка
+//call CBS_Button(100,"RU",.075,-.088,.03,cbT)
+//call CBS_Button(101,"EN",.11,-.088,.03,cbT)
+call CBS_Button(100,"RU",.330,-.140,.05,cbT)
+call CBS_Button(101,"EN",.388,-.140,.05,cbT)
+// команды: столбец, кнопка с командой и подпись справа
+set cbK=0
+loop
+exitwhen cbK>=11
+// -mr, -cr, -damage, -tdamage, -theal в окне не нужны (остались в чате)
+if cbK!=2 and cbK!=3 and cbK!=4 and cbK!=5 and cbK!=6 then
+//set cbX=.007+.117*(cbN/4)
+//set cbY=-.128-.0165*ModuloInteger(cbN,4)
+set cbX=.252
+set cbY=-.200-.029*cbN
+set cbN=cbN+1
+call CBS_Button(cbK,CBS_Cmd(cbK),cbX,cbY,.07,cbT)
+set CBS_Lbl[cbK]=CreateFrameByType("SIMPLETEXT","CBSLabel",HPB_Menu,"",cbK)
+//call CBS_Text(CBS_Lbl[cbK],.0068,0xFFFFFFFF)
+call CBS_Text(CBS_Lbl[cbK],.012,0xFFFFFFFF)
+call SetFrameTextAlignment(CBS_Lbl[cbK],TEXT_JUSTIFY_LEFT,TEXT_JUSTIFY_MIDDLE)
+//call SetFrameRelativePoint(CBS_Lbl[cbK],FRAMEPOINT_LEFT,HPB_Menu,FRAMEPOINT_TOPLEFT,CBS_PX(cbX+.043),CBS_PY(cbY-.00725))
+call SetFrameRelativePoint(CBS_Lbl[cbK],FRAMEPOINT_LEFT,HPB_Menu,FRAMEPOINT_TOPLEFT,CBS_PX(cbX+.076),CBS_PY(cbY-.012))
+call CBS_Add(CBS_Lbl[cbK])
+endif
+set cbK=cbK+1
+endloop
+// вкладки и «Сохранить / Загрузить» — видны на обеих вкладках
+call CBS_Button(220,"",.010,-.008,.075,cbT)
+call CBS_MoveLast2(true)
+set CBS_TabTxt[0]=CBS_AllFr[CBS_AllN-1]
+call CBS_Button(221,"",.090,-.008,.075,cbT)
+call CBS_MoveLast2(true)
+set CBS_TabTxt[1]=CBS_AllFr[CBS_AllN-1]
+call CBS_Button(300,"",.160,-.372,.075,cbT)
+call CBS_MoveLast2(true)
+set CBS_SaveTxt=CBS_AllFr[CBS_AllN-1]
+call CBS_Button(301,"",.245,-.372,.075,cbT)
+call CBS_MoveLast2(true)
+set CBS_LoadTxt=CBS_AllFr[CBS_AllN-1]
+call CBS_TabPaint()
+// ---- вкладка «Хоткеи» ----
+// кнопки игры и полоса чата — один раз у всех (не создавать handle локально)
+set cbK=0
+loop
+exitwhen cbK>17
+set CBS_SlotFr[cbK]=CBS_SlotFrame(cbK)
+set CBS_HkTex[cbK]=""
+set cbK=cbK+1
+endloop
+set CBS_ChatBar=GetOriginFrame(ORIGIN_FRAME_CHAT_EDITBAR,0)
+//set cbF=GetOriginFrame(ORIGIN_FRAME_CHAT_MSG,0)
+//set cbF=GetOriginFrame(ORIGIN_FRAME_MULTIBOARD,0)
+set CBS_OfChat=GetOriginFrame(ORIGIN_FRAME_CHAT_MSG,0)
+set CBS_OfMb=GetOriginFrame(ORIGIN_FRAME_MULTIBOARD,0)
+// клавиши: A-Z, 0-9, цифры NumPad
+set cbK=0
+loop
+exitwhen cbK>25
+call CBS_KeyAdd(0x41+cbK,SubString("ABCDEFGHIJKLMNOPQRSTUVWXYZ",cbK,cbK+1))
+set cbK=cbK+1
+endloop
+set cbK=0
+loop
+exitwhen cbK>9
+call CBS_KeyAdd(0x30+cbK,I2S(cbK))
+set cbK=cbK+1
+endloop
+set cbK=0
+loop
+exitwhen cbK>9
+call CBS_KeyAdd(0x60+cbK,"Num"+I2S(cbK))
+set cbK=cbK+1
+endloop
+set CBS_HkHead[0]=CreateFrameByType("SIMPLETEXT","CBSHkHead",HPB_Menu,"",0)
+call CBS_Label(CBS_HkHead[0],.015,0xFFFFA500,.016,-.042)
+call CBS_AddHk(CBS_HkHead[0])
+set CBS_HkHead[1]=CreateFrameByType("SIMPLETEXT","CBSHkHead",HPB_Menu,"",1)
+call CBS_Label(CBS_HkHead[1],.015,0xFFFFA500,.170,-.042)
+call CBS_AddHk(CBS_HkHead[1])
+// рамка ячейки, ждущей клавишу
+//set CBS_HkSel=CBS_Plate(.044,.044,0xFFFFD700,10)
+//set CBS_HkSel=CBS_Ring(3,.042,.042,.0025,14)
+// полоски рамки — дети опорного фрейма (а он — ребёнок ячейки, см. CBS_HkRefresh): поверх иконки
+//set cbK=0
+//loop
+//exitwhen cbK>3
+//call SetFrameParent(CBS_RingP[3*4+cbK],CBS_HkSel)
+//set cbK=cbK+1
+//endloop
+// рамка ожидания клавиши — своя у каждой ячейки (рамки 22..39), ребёнок ячейки: поверх иконки
+// ячейки: предметы 2x3 (как инвентарь), панель команд 4x3; иконка — как сейчас на кнопке игры, клавиша — снизу
+set cbK=0
+loop
+exitwhen cbK>17
+if cbK<6 then
+set cbX=.020+ModuloInteger(cbK,2)*.046
+set cbY=-.056-(cbK/2)*.046
+else
+set cbX=.174+ModuloInteger(cbK-6,4)*.046
+set cbY=-.056-((cbK-6)/4)*.046
+endif
+set CBS_HkBox[cbK]=CreateFrameByType("SIMPLEFRAME","CBSHkBox",null,"",cbK)
+call ClearFrameAllPoints(CBS_HkBox[cbK])
+call SetFrameSize(CBS_HkBox[cbK],(.038)*CBS_Z,(.038)*CBS_Z)
+call SetFrameRelativePoint(CBS_HkBox[cbK],FRAMEPOINT_TOPLEFT,HPB_Menu,FRAMEPOINT_TOPLEFT,CBS_PX(cbX),CBS_PY(cbY))
+//call SetFramePriority(CBS_HkBox[cbK],11)
+call SetFramePriority(CBS_HkBox[cbK],4)
+call CBS_AddHk(CBS_HkBox[cbK])
+//set CBS_HkBtn[cbK]=CreateFrameByType("SIMPLEBUTTON","CBSHkCell",null,"",400+cbK)
+//set CBS_HkBtn[cbK]=CreateFrameByType("SIMPLEBUTTON","CBSHkCell",CBS_HkBox[cbK],"",400+cbK)
+// без вложения: приоритеты SIMPLE-фреймов общие, вложенность порядок не задаёт
+set CBS_HkBtn[cbK]=CreateFrameByType("SIMPLEBUTTON","CBSHkCell",null,"",400+cbK)
+call ClearFrameAllPoints(CBS_HkBtn[cbK])
+call SetFrameTexture(CBS_HkBtn[cbK],"UI\\Widgets\\Console\\Human\\human-inventory-slotfiller.blp",0,true)
+call SetFrameTexture(CBS_HkBtn[cbK],"UI\\Widgets\\Console\\Human\\human-inventory-slotfiller.blp",1,true)
+call SetFrameTexture(CBS_HkBtn[cbK],"UI\\Widgets\\Console\\Human\\human-inventory-slotfiller.blp",2,true)
+call SetFrameSize(CBS_HkBtn[cbK],(.038)*CBS_Z,(.038)*CBS_Z)
+//call SetFrameRelativePoint(CBS_HkBtn[cbK],FRAMEPOINT_TOPLEFT,HPB_Menu,FRAMEPOINT_TOPLEFT,CBS_PX(cbX),CBS_PY(cbY))
+//call SetFramePriority(CBS_HkBtn[cbK],11)
+call SetFrameRelativePoint(CBS_HkBtn[cbK],FRAMEPOINT_CENTER,CBS_HkBox[cbK],FRAMEPOINT_CENTER,0.,0.)
+//call SetFramePriority(CBS_HkBtn[cbK],1)
+call SetFramePriority(CBS_HkBtn[cbK],5)
+call TriggerRegisterFrameEvent(cbT,CBS_HkBtn[cbK],FRAMEEVENT_CONTROL_CLICK)
+call CBS_AddHk(CBS_HkBtn[cbK])
+// клавиша — в чёрной рамке с жёлтой обводкой внизу ячейки (видна, когда клавиша задана или ячейка ждёт клавишу)
+// рамка ожидания клавиши
+//call SetFrameRelativePoint(CBS_RingIn(CBS_HkBtn[cbK],22+cbK,.038,.038,.0025,14),FRAMEPOINT_CENTER,CBS_HkBtn[cbK],FRAMEPOINT_CENTER,0.,0.)
+//call SetFrameRelativePoint(CBS_RingIn(CBS_HkBox[cbK],22+cbK,.038,.038,.0025,3),FRAMEPOINT_CENTER,CBS_HkBox[cbK],FRAMEPOINT_CENTER,0.,0.)
+call SetFrameRelativePoint(CBS_Ring(22+cbK,.038,.038,.0025,6),FRAMEPOINT_CENTER,CBS_HkBox[cbK],FRAMEPOINT_CENTER,0.,0.)
+//set cbF=CBS_Ring(4+cbK,.027,.013,.0012,17)
+// рамка клавиши — ребёнок ячейки (иначе иконка ячейки рисуется поверх и чёрного фона не видно); создаётся сразу внутри ячейки
+//set cbF=CBS_RingIn(CBS_HkBtn[cbK],4+cbK,.027,.013,.0012,17)
+//set cbF=CBS_RingIn(CBS_HkBox[cbK],4+cbK,.027,.013,.0012,4)
+set cbF=CBS_Ring(4+cbK,.027,.013,.0012,7)
+//call SetFrameParent(cbF,CBS_HkBtn[cbK])
+//call SetFrameParent(CBS_RingP[(4+cbK)*4],cbF)
+//call SetFrameParent(CBS_RingP[(4+cbK)*4+1],cbF)
+//call SetFrameParent(CBS_RingP[(4+cbK)*4+2],cbF)
+//call SetFrameParent(CBS_RingP[(4+cbK)*4+3],cbF)
+call SetFrameTextureEx(cbF,0,"Textures\\Black32.blp",false,"",0)
+//call SetFramePriority(cbF,16)
+call SetFrameRelativePoint(cbF,FRAMEPOINT_BOTTOM,CBS_HkBtn[cbK],FRAMEPOINT_BOTTOM,0.,.002)
+//set CBS_HkTxt[cbK]=CreateFrameByType("SIMPLETEXT","CBSHkKey",CBS_HkBtn[cbK],"",cbK)
+set CBS_HkTxt[cbK]=CreateFrameByType("SIMPLETEXT","CBSHkKey",cbF,"",cbK)
+//call CBS_Text(CBS_HkTxt[cbK],.013,0xFFFFFFFF)
+call CBS_Text(CBS_HkTxt[cbK],.010,0xFFFFFFFF)
+call SetFrameTextAlignment(CBS_HkTxt[cbK],TEXT_JUSTIFY_CENTER,TEXT_JUSTIFY_MIDDLE)
+//call SetFrameParent(CBS_HkTxt[cbK],CBS_HkBtn[cbK])
+call SetFrameParent(CBS_HkTxt[cbK],cbF)
+call SetFrameText(CBS_HkTxt[cbK]," ")
+//call SetFrameRelativePoint(CBS_HkTxt[cbK],FRAMEPOINT_BOTTOM,CBS_HkBtn[cbK],FRAMEPOINT_BOTTOM,0.,.003)
+call SetFrameRelativePoint(CBS_HkTxt[cbK],FRAMEPOINT_CENTER,cbF,FRAMEPOINT_CENTER,0.,0.)
+call CBS_AddHk(CBS_HkTxt[cbK])
+set cbK=cbK+1
+endloop
+// страницы панели команд: панель / изучение — убраны (меню изучения — автопрокачка)
+//set cbK=0
+//loop
+//exitwhen cbK>1
+//call CBS_Button(230+cbK,"",.174+cbK*.07,-.192,.065,cbT)
+//call CBS_MoveLast2(false)
+//set CBS_PageTxt[cbK]=CBS_HkFr[CBS_HkN-1]
+//set cbK=cbK+1
+//endloop
+//set CBS_HkHint=CBS_Label(CreateFrameByType("SIMPLETEXT","CBSHkHint",HPB_Menu,"",0),.012,0xFFFFFFFF,.016,-.214)
+set CBS_HkHint=CBS_Label(CreateFrameByType("SIMPLETEXT","CBSHkHint",HPB_Menu,"",0),.012,0xFFFFFFFF,.016,-.232)
+call CBS_AddHk(CBS_HkHint)
+set CBS_HkNote[0]=CBS_Label(CreateFrameByType("SIMPLETEXT","CBSHkNote",HPB_Menu,"",0),.011,0xFFB0B0B0,.016,-.252)
+call CBS_AddHk(CBS_HkNote[0])
+set CBS_HkNote[1]=CBS_Label(CreateFrameByType("SIMPLETEXT","CBSHkNote",HPB_Menu,"",1),.011,0xFFB0B0B0,.016,-.270)
+call CBS_AddHk(CBS_HkNote[1])
+call CBS_Button(212,"",.016,-.292,.13,cbT)
+call CBS_MoveLast2(false)
+set CBS_HkResetTxt=CBS_HkFr[CBS_HkN-1]
+// квиккаст / смарткаст: квадрат-кнопка (у себя) и галочка поверх
+set cbK=0
+loop
+exitwhen cbK>1
+set cbF=CreateFrameByType("SIMPLEBUTTON","CBSQuickCast",null,"",240+cbK)
+call ClearFrameAllPoints(cbF)
+call SetFrameTexture(cbF,"UI\\Widgets\\EscMenu\\Human\\checkbox-background.blp",0,true)
+call SetFrameTexture(cbF,"UI\\Widgets\\EscMenu\\Human\\checkbox-background.blp",1,true)
+call SetFrameTexture(cbF,"UI\\Widgets\\EscMenu\\Human\\checkbox-background.blp",2,true)
+call SetFrameSize(cbF,(.017)*CBS_Z,(.017)*CBS_Z)
+call SetFrameRelativePoint(cbF,FRAMEPOINT_TOPLEFT,HPB_Menu,FRAMEPOINT_TOPLEFT,CBS_PX(.016),CBS_PY(-.322-cbK*.024))
+call SetFramePriority(cbF,5)
+call TriggerRegisterFrameEvent(cbT,cbF,FRAMEEVENT_CONTROL_CLICK)
+call CBS_AddHk(cbF)
+if cbK==0 then
+set CBS_QcChk=CreateFrameByType("SIMPLEFRAME","CBSQuickCastCheck",null,"",cbK)
+set cbX=0.
+call ClearFrameAllPoints(CBS_QcChk)
+call SetFrameSize(CBS_QcChk,(.017)*CBS_Z,(.017)*CBS_Z)
+call SetFrameRelativePoint(CBS_QcChk,FRAMEPOINT_CENTER,cbF,FRAMEPOINT_CENTER,0.,0.)
+call SetFrameTextureEx(CBS_QcChk,0,"UI\\Widgets\\EscMenu\\Human\\checkbox-check.blp",false,"",0)
+call SetFramePriority(CBS_QcChk,6)
+call ShowFrame(CBS_QcChk,false)
+set CBS_QcLbl=CBS_Label(CreateFrameByType("SIMPLETEXT","CBSQuickCastLabel",HPB_Menu,"",cbK),.012,0xFFFFFFFF,.038,-.3305)
+call CBS_AddHk(CBS_QcLbl)
+else
+set CBS_ScChk=CreateFrameByType("SIMPLEFRAME","CBSQuickCastCheck",null,"",cbK)
+call ClearFrameAllPoints(CBS_ScChk)
+call SetFrameSize(CBS_ScChk,(.017)*CBS_Z,(.017)*CBS_Z)
+call SetFrameRelativePoint(CBS_ScChk,FRAMEPOINT_CENTER,cbF,FRAMEPOINT_CENTER,0.,0.)
+call SetFrameTextureEx(CBS_ScChk,0,"UI\\Widgets\\EscMenu\\Human\\checkbox-check.blp",false,"",0)
+call SetFramePriority(CBS_ScChk,6)
+call ShowFrame(CBS_ScChk,false)
+set CBS_SmLbl=CBS_Label(CreateFrameByType("SIMPLETEXT","CBSQuickCastLabel",HPB_Menu,"",cbK),.012,0xFFFFFFFF,.038,-.3545)
+call CBS_AddHk(CBS_SmLbl)
+endif
+set cbK=cbK+1
+endloop
+// иконки героев на миникарте (Alt): рамка цвета игрока и иконка
+// опция «иконки героев на миникарте» — справа от квиккаста
+set cbF=CreateFrameByType("SIMPLEBUTTON","CBSMinimapOpt",null,"",242)
+call ClearFrameAllPoints(cbF)
+call SetFrameTexture(cbF,"UI\\Widgets\\EscMenu\\Human\\checkbox-background.blp",0,true)
+call SetFrameTexture(cbF,"UI\\Widgets\\EscMenu\\Human\\checkbox-background.blp",1,true)
+call SetFrameTexture(cbF,"UI\\Widgets\\EscMenu\\Human\\checkbox-background.blp",2,true)
+call SetFrameSize(cbF,(.017)*CBS_Z,(.017)*CBS_Z)
+call SetFrameRelativePoint(cbF,FRAMEPOINT_TOPLEFT,HPB_Menu,FRAMEPOINT_TOPLEFT,CBS_PX(.252),CBS_PY(-.322))
+call SetFramePriority(cbF,5)
+call TriggerRegisterFrameEvent(cbT,cbF,FRAMEEVENT_CONTROL_CLICK)
+call CBS_AddHk(cbF)
+set CBS_MmChk=CreateFrameByType("SIMPLEFRAME","CBSMinimapOptCheck",null,"",0)
+call ClearFrameAllPoints(CBS_MmChk)
+call SetFrameSize(CBS_MmChk,(.017)*CBS_Z,(.017)*CBS_Z)
+call SetFrameRelativePoint(CBS_MmChk,FRAMEPOINT_CENTER,cbF,FRAMEPOINT_CENTER,0.,0.)
+call SetFrameTextureEx(CBS_MmChk,0,"UI\\Widgets\\EscMenu\\Human\\checkbox-check.blp",false,"",0)
+call SetFramePriority(CBS_MmChk,6)
+call ShowFrame(CBS_MmChk,false)
+set CBS_MmLbl=CBS_Label(CreateFrameByType("SIMPLETEXT","CBSMinimapOptLabel",HPB_Menu,"",0),.012,0xFFFFFFFF,.274,-.3305)
+call CBS_AddHk(CBS_MmLbl)
+set CBS_IlG=CreateGroup()
+set CBS_OfMini=GetOriginFrame(ORIGIN_FRAME_MINIMAP,0)
+// родитель иконок — интерфейс игры (взят у всех при загрузке; HeroBarInit ставит его позже)
+if HB_GameUI==null then
+set HB_GameUI=GetOriginFrame(ORIGIN_FRAME_GAME_UI,0)
+endif
+set cbK=0
+loop
+exitwhen cbK>29
+// обычные фреймы (BACKDROP) поверх интерфейса игры: SIMPLE-фреймы прятались под туманом миникарты
+//set CBS_MmBg[cbK]=CreateFrameByType("SIMPLEFRAME","CBSMinimapHeroBg",null,"",cbK)
+//call ClearFrameAllPoints(CBS_MmBg[cbK])
+//call SetFrameSize(CBS_MmBg[cbK],.0135,.0135)
+//call SetFrameSize(CBS_MmBg[cbK],.011,.011)
+set CBS_MmBg[cbK]=BlzCreateFrameByType("BACKDROP","CBSMinimapHeroBg",HB_GameUI,"",cbK)
+//call BlzFrameSetSize(CBS_MmBg[cbK],.011,.011)
+//call BlzFrameSetSize(CBS_MmBg[cbK],.0095,.0095)
+call BlzFrameSetSize(CBS_MmBg[cbK],.0082,.0082)
+// размер текстуры подложки = размеру фрейма: иначе текстура не масштабируется, а обрезается до левого верхнего угла
+call SetFrameBackgroundSize(CBS_MmBg[cbK],0,.0082)
+call BlzFrameSetLevel(CBS_MmBg[cbK],8)
+//call SetFrameTextureEx(CBS_MmBg[cbK],0,HPB_Tex(GetHandleId(GetPlayerColor(Player(cbK)))),false,"",0)
+// цвет рамки — владельца, ставится при показе (CBS_MmTick)
+set CBS_MmCol[cbK]=-1
+// на миникарте — наивысший приоритет (8; иконка создаётся позже — поверх рамки)
+//call SetFramePriority(CBS_MmBg[cbK],7)
+//call SetFramePriority(CBS_MmBg[cbK],8)
+//call SetFrameAbsolutePoint(CBS_MmBg[cbK],FRAMEPOINT_CENTER,.4,.3)
+call BlzFrameSetAbsPoint(CBS_MmBg[cbK],FRAMEPOINT_CENTER,.4,.3)
+//set CBS_MmIco[cbK]=CreateFrameByType("SIMPLEFRAME","CBSMinimapHero",null,"",cbK)
+//call ClearFrameAllPoints(CBS_MmIco[cbK])
+//call SetFrameSize(CBS_MmIco[cbK],.011,.011)
+//call SetFrameSize(CBS_MmIco[cbK],.009,.009)
+//call SetFrameRelativePoint(CBS_MmIco[cbK],FRAMEPOINT_CENTER,CBS_MmBg[cbK],FRAMEPOINT_CENTER,0.,0.)
+//call SetFramePriority(CBS_MmIco[cbK],8)
+set CBS_MmIco[cbK]=BlzCreateFrameByType("BACKDROP","CBSMinimapHero",CBS_MmBg[cbK],"",cbK)
+//call BlzFrameSetSize(CBS_MmIco[cbK],.009,.009)
+//call BlzFrameSetSize(CBS_MmIco[cbK],.0078,.0078)
+call BlzFrameSetSize(CBS_MmIco[cbK],.0068,.0068)
+call SetFrameBackgroundSize(CBS_MmIco[cbK],0,.0068)
+call BlzFrameSetPoint(CBS_MmIco[cbK],FRAMEPOINT_CENTER,CBS_MmBg[cbK],FRAMEPOINT_CENTER,0.,0.)
+call BlzFrameSetVisible(CBS_MmBg[cbK],false)
+set CBS_MmTex[cbK]=""
+set cbK=cbK+1
+endloop
+// приказ квиккаста — всем
+set CBS_QcG=CreateGroup()
+set cbS=CreateTrigger()
+set cbK=0
+loop
+exitwhen cbK>11
+call BlzTriggerRegisterPlayerSyncEvent(cbS,Player(cbK),"CBQC",false)
+call BlzTriggerRegisterPlayerSyncEvent(cbS,Player(cbK),"CBQI",false)
+set cbK=cbK+1
+endloop
+call TriggerAddAction(cbS,function CBS_QcSync)
+// предметы — тот же триггер, разбор по префиксу в CBS_QcSync
+
+// ВРЕМЕННО: -cbsoff N — отключить части открытия окна настроек у себя (поиск рассинхрона)
+set cbS=CreateTrigger()
+set cbK=0
+loop
+exitwhen cbK>11
+// поиск рассинхрона закончен (причина — ExecuteFunc у одного игрока): команда -cbsoff отключена
+//call TriggerRegisterPlayerChatEvent(cbS,Player(cbK),"-cbsoff",false)
+set cbK=cbK+1
+endloop
+call TriggerAddAction(cbS,function CBS_OffChat)
+call CBS_LangRefresh()
+call HPB_MenuShow(HPB_MOpen)
+// сохранённые настройки этого игрока — сразу при старте (каждый читает свой файл, только локальные настройки)
+call CBS_Load(false)
+call TimerStart(CreateTimer(),0.02,true,function CBS_KeyTick)
+call TimerStart(CreateTimer(),0.02,true,function CBS_UiTick)
+// автопрокачка: сохранённое включение — всем через 3 с; сама прокачка — раз в 0.5 с
+// по умолчанию автопрокачка включена у всех игроков
+set cbK=0
+loop
+exitwhen cbK>9
+set CBS_AutoL[cbK]=true
+set cbK=cbK+1
+endloop
+call TimerStart(CreateTimer(),3.,false,function CBS_AutoLearnSend)
+call TimerStart(CreateTimer(),0.5,true,function CBS_AutoLearn)
+// хоткеи способностей — полем хоткея способности (CBS_AbScan)
+set CBS_AbHT=InitHashtable()
+call TimerStart(CreateTimer(),0.25,true,function CBS_AbScan)
+set cbF=null
+set cbT=null
+set cbS=null
 endfunction
 function Trig_SetInv_Actions takes nothing returns nothing
 call SetUnitInvulnerable(GetTriggerUnit(),true)
@@ -246430,6 +249089,10 @@ return
 endif
 // открыть нельзя, пока на экране крупное окно или выбор режима; закрыть — всегда
 if ShOpened==false then
+// пока открыто окно настроек карты, магазин клавишей не открывается
+if HPB_MOpen then
+return
+endif
 if ShModePick then
 return
 endif
@@ -261971,6 +264634,13 @@ call InitTrig_EShikiOne()
 call InitTrig_EShikiTwo()
 call InitTrig_EShikiNewTwo()
 call InitTrig_LearnRShiki()
+set t=null
+// продолжение — Trig_Execute_Actions2b (4.5 с)
+endfunction
+// вторая половина загрузки триггеров героев (была в Trig_Execute_Actions2) — через 1.5 с после первой
+function Trig_Execute_Actions2b takes nothing returns nothing
+local trigger t
+local integer i=0
 //call InitTrig_LearnTShiki()
 call InitTrig_RShikiOne()
 call InitTrig_RShikiTwo()
@@ -262234,6 +264904,7 @@ call W3MMD_Lite_Set_Integer(Player(i),"Rounds_to_win",15)
 call W3MMD_Lite_Set_Integer(Player(i),"Won_rounds",0)
 set i=i+1
 endloop
+set t=null
 endfunction
 function Trig_Execute_Actions takes nothing returns nothing
 local trigger t
@@ -262251,158 +264922,7 @@ set t=CreateTrigger()
 call TriggerRegisterAnyUnitEventBJ(t,EVENT_PLAYER_UNIT_SPELL_EFFECT)
 call TriggerAddCondition(t,Condition(function SendItemsCond))
 call TriggerAddAction(t,function SendItemsCast)
-call UIS_RegisterItem('I007',0,0,0,0,0,0,0,0,0,'I00E','I009')
-call UIS_RegisterItem('I009',0,0,0,0,0,0,0,0,0,'I00E','I00A')
-call UIS_RegisterItem('I00A',0,0,0,0,0,0,0,0,0,'I00E','I00B')
-call UIS_RegisterItem('I00B',0,0,0,0,0,0,0,0,0,'I00E','I00C')
-call UIS_RegisterItem('I00C',0,0,0,0,0,0,0,0,0,'I00E','I00D')
-call UIS_RegisterItem('I00F',0,0,0,0,0,0,0,0,0,'I00E','I00G')
-call UIS_RegisterItem('I00G',0,0,0,0,0,0,0,0,0,'I00E','I00H')
-call UIS_RegisterItem('I00H',0,0,0,0,0,0,0,0,0,'I00E','I00I')
-call UIS_RegisterItem('I00I',0,0,0,0,0,0,0,0,0,'I00E','I00J')
-call UIS_RegisterItem('I00J',0,0,0,0,0,0,0,0,0,'I00E','I00K')
-call UIS_RegisterItem('I00L',0,0,0,0,0,0,0,0,0,'I00E','I00M')
-call UIS_RegisterItem('I00M',0,0,0,0,0,0,0,0,0,'I00E','I00N')
-call UIS_RegisterItem('I00N',0,0,0,0,0,0,0,0,0,'I00E','I00O')
-call UIS_RegisterItem('I00O',0,0,0,0,0,0,0,0,0,'I00E','I00P')
-call UIS_RegisterItem('I00P',0,0,0,0,0,0,0,0,0,'I00E','I00Q')
-call UIS_RegisterItem('I00R',0,0,0,0,0,0,0,0,0,'I00E','I00S')
-call UIS_RegisterItem('I00S',0,0,0,0,0,0,0,0,0,'I00E','I00T')
-call UIS_RegisterItem('I00T',0,0,0,0,0,0,0,0,0,'I00E','I00U')
-call UIS_RegisterItem('I00U',0,0,0,0,0,0,0,0,0,'I00E','I00V')
-call UIS_RegisterItem('I00V',0,0,0,0,0,0,0,0,0,'I00E','I00W')
-call UIS_RegisterItem('I00X',0,0,0,0,0,0,0,0,0,'I00E','I00Y')
-call UIS_RegisterItem('I00Y',0,0,0,0,0,0,0,0,0,'I00E','I00Z')
-call UIS_RegisterItem('I00Z',0,0,0,0,0,0,0,0,0,'I00E','I010')
-call UIS_RegisterItem('I010',0,0,0,0,0,0,0,0,0,'I00E','I011')
-call UIS_RegisterItem('I011',0,0,0,0,0,0,0,0,0,'I00E','I012')
-call UIS_RegisterItem('I013',0,0,0,0,0,0,0,0,0,'I00E','I014')
-call UIS_RegisterItem('I014',0,0,0,0,0,0,0,0,0,'I00E','I015')
-call UIS_RegisterItem('I015',0,0,0,0,0,0,0,0,0,'I00E','I016')
-call UIS_RegisterItem('I016',0,0,0,0,0,0,0,0,0,'I00E','I017')
-call UIS_RegisterItem('I017',0,0,0,0,0,0,0,0,0,'I00E','I018')
-call UIS_RegisterItem('I019',0,0,0,0,0,0,0,0,0,'I00E','I01A')
-call UIS_RegisterItem('I01A',0,0,0,0,0,0,0,0,0,'I00E','I01B')
-call UIS_RegisterItem('I01B',0,0,0,0,0,0,0,0,0,'I00E','I01C')
-call UIS_RegisterItem('I01C',0,0,0,0,0,0,0,0,0,'I00E','I01D')
-call UIS_RegisterItem('I01D',0,0,0,0,0,0,0,0,0,'I00E','I01E')
-call UIS_RegisterItem('I01H',0,0,0,0,0,0,0,0,0,'I00E','I01J')
-call UIS_RegisterItem('I01J',0,0,0,0,0,0,0,0,0,'I00E','I01I')
-call UIS_RegisterItem('I01I',0,0,0,0,0,0,0,0,0,'I00E','I01K')
-call UIS_RegisterItem('I01L',0,0,0,0,0,0,0,0,0,'I01P','I01O')
-call UIS_RegisterItem('I01O',0,0,0,0,0,0,0,0,0,'I01R','I01Q')
-call UIS_RegisterItem('I01O',0,0,0,0,0,0,0,0,0,'I01T','I01S')
-call UIS_RegisterItem('I01O',0,0,0,0,0,0,0,0,0,'I01V','I01U')
-call UIS_RegisterItem('I01W',0,0,0,0,0,0,0,0,0,'I00E','I01X')
-call UIS_RegisterItem('I01X',0,0,0,0,0,0,0,0,0,'I00E','I01Y')
-call UIS_RegisterItem('I01Y',0,0,0,0,0,0,0,0,0,'I00E','I01Z')
-call UIS_RegisterItem('I01Z',0,0,0,0,0,0,0,0,0,'I00E','I06C')
-call UIS_RegisterItem('I06C',0,0,0,0,0,0,0,0,0,'I00E','I020')
-call UIS_RegisterItem('I02E',0,0,0,0,0,0,0,0,0,'I00E','I02F')
-call UIS_RegisterItem('I02F',0,0,0,0,0,0,0,0,0,'I00E','I02G')
-call UIS_RegisterItem('I02G',0,0,0,0,0,0,0,0,0,'I00E','I02H')
-call UIS_RegisterItem('I02H',0,0,0,0,0,0,0,0,0,'I00E','I02I')
-call UIS_RegisterItem('I02I',0,0,0,0,0,0,0,0,0,'I00E','I02J')
-call UIS_RegisterItem('I02L',0,0,0,0,0,0,0,0,0,'I00E','I02M')
-call UIS_RegisterItem('I02M',0,0,0,0,0,0,0,0,0,'I00E','I02N')
-call UIS_RegisterItem('I02N',0,0,0,0,0,0,0,0,0,'I00E','I02O')
-call UIS_RegisterItem('I02O',0,0,0,0,0,0,0,0,0,'I00E','I02P')
-call UIS_RegisterItem('I02P',0,0,0,0,0,0,0,0,0,'I00E','I02Q')
-call UIS_RegisterItem('I01L','I02T',0,0,0,0,0,0,0,0,'I02U','I02V')
-call UIS_RegisterItem('I01F','I01M','I02R',0,0,0,0,0,0,0,'I02X','I02W')
-call UIS_RegisterItem('IOS2','I02S',0,0,0,0,0,0,0,0,'I02Z','I02Y')							// Перчатки Льда
-call UIS_RegisterItem('I033','I032','I034','I035',0,0,0,0,0,0,0,'I036')
-call UIS_RegisterItem('I03D','I03E','I03B','I03C',0,0,0,0,0,0,0,'I03F')
-call UIS_RegisterItem('I008',0,0,0,0,0,0,0,0,0,'I00E','I03G')
-call UIS_RegisterItem('I03G',0,0,0,0,0,0,0,0,0,'I00E','I03H')
-call UIS_RegisterItem('I03H',0,0,0,0,0,0,0,0,0,'I00E','I03I')
-call UIS_RegisterItem('I01K',0,0,0,0,0,0,0,0,0,'I00E','I01L')
-call UIS_RegisterItem('I03I',0,0,0,0,0,0,0,0,0,'I00E','I03J')
-call UIS_RegisterItem('I03J',0,0,0,0,0,0,0,0,0,'I00E','I03K')
-call UIS_RegisterItem('I03K',0,0,0,0,0,0,0,0,0,'I00E','I03L')
-call UIS_RegisterItem('I03Z','I03X','I03Y','I03W',0,0,0,0,0,0,0,'I040')
-call UIS_RegisterItem('I02S','I02R','I02T',0,0,0,0,0,0,0,'I045','I044')
-call UIS_RegisterItem('I01F','I01M','I02T',0,0,0,0,0,0,0,'I047','I046')
-call UIS_RegisterItem('I049',0,0,0,0,0,0,0,0,0,'I00E','I04A')
-call UIS_RegisterItem('I04A',0,0,0,0,0,0,0,0,0,'I00E','I04B')
-call UIS_RegisterItem('I04B',0,0,0,0,0,0,0,0,0,'I00E','I04C')
-call UIS_RegisterItem('I04C',0,0,0,0,0,0,0,0,0,'I00E','I04D')
-call UIS_RegisterItem('I04D',0,0,0,0,0,0,0,0,0,'I00E','I04E')
-call UIS_RegisterItem('I04H','I04H',0,0,0,0,0,0,0,0,'I00E','I04I')
-call UIS_RegisterItem('I04M',0,0,0,0,0,0,0,0,0,'I00E','I04N')
-call UIS_RegisterItem('I04N',0,0,0,0,0,0,0,0,0,'I00E','I04O')
-call UIS_RegisterItem('I04O',0,0,0,0,0,0,0,0,0,'I00E','I04P')
-call UIS_RegisterItem('I04P',0,0,0,0,0,0,0,0,0,'I00E','I04Q')
-call UIS_RegisterItem('I04Q',0,0,0,0,0,0,0,0,0,'I00E','I04R')
-call UIS_RegisterItem('I02S','I01M','I02S',0,0,0,0,0,0,0,0,'I04L')
-call UIS_RegisterItem('I02S','I02R','I02T',0,0,0,0,0,0,0,'I04Y','I03A')
-call UIS_RegisterItem('I06L','I032','I02T',0,0,0,0,0,0,0,'I04U','I042')
-call UIS_RegisterItem('I01O',0,0,0,0,0,0,0,0,0,'I04X','I04F')
-call UIS_RegisterItem('I01O',0,0,0,0,0,0,0,0,0,'I04Z','I03O')
-call UIS_RegisterItem('I033','I03B','I01M',0,0,0,0,0,0,0,'I051','I050')
-call UIS_RegisterItem('I03I','I01K','I01M',0,0,0,0,0,0,0,0,'I04V')
-call UIS_RegisterItem('I12R','I03R',0,0,0,0,0,0,0,0,'I14R','I13R')
-call UIS_RegisterItem('I00W',0,0,0,0,0,0,0,0,0,'IGDr','IGDi')                                             // Gae Dearg Сборка
-call UIS_RegisterItem('I01L','I01M',0,0,0,0,0,0,0,0,'IPar','I031')                                // Patriot сборка
-call UIS_RegisterItem('I03D','I05W','I02T',0,0,0,0,0,0,0,0,'IMDi')                                // Medusa-Dr.Stone Сборка
-call UIS_RegisterItem('IOS3','I05E',0,0,0,0,0,0,0,0,'IHYr','IHYi')                                // Yukirin Hourglass Сборка
-call UIS_RegisterItem('I03Y','IOS1','I02S',0,0,0,0,0,0,0,'ISTr','ISTi')                   // Stigmata Tesseract Сборка
-call UIS_RegisterItem('I01H','IOS3','I12R',0,0,0,0,0,0,0,0,'ISHk')                            // Sode no Shirayuki
-call UIS_RegisterItem('I02Y','ISHk',0,0,0,0,0,0,0,0,0,'IHnK')                                 // Hakka No Togame
-call UIS_RegisterItem('I01L','I12R',0,0,0,0,0,0,0,0,'IBSR','IBSI')                                 // Buster Sword
-call UIS_RegisterItem('I03Z','I03C','I060',0,0,0,0,0,0,0,0,'IAoF')                                 // Fafnir
-call UIS_RegisterItem('ISPB','I06K','I01X',0,0,0,0,0,0,0,'IPRR','IPRB')                                 // Лук Жрицы
-call UIS_RegisterItem('ISlA','IGlA',0,0,0,0,0,0,0,0,'IPlR','IPlA')                                 // Совершенный амулет
-call UIS_RegisterItem('ISt0','IGlA','ISt0',0,0,0,0,0,0,0,'IBS1','I043')                            // Сфера крови
-call UIS_RegisterItem('IMT0','I06F','IMT0',0,0,0,0,0,0,0,'IGn0','I048')                            // Гунгнир
-call UIS_RegisterItem('I06H','IMT0','INY0','IMS0',0,0,0,0,0,0,'IYM0','I04T')                            // Зеркало ята
-call UIS_RegisterItem('IMS0','ISt0','IMS0',0,0,0,0,0,0,0,'IBN0','I037')                            // Башосен
-call UIS_RegisterItem('I03Y','IMS0','I05C',0,0,0,0,0,0,0,'IGP0','I06Z')                            // Grimoir
-call UIS_RegisterItem('I01M','INY0','I00F',0,0,0,0,0,0,0,'IVS0','I03R')                            // Сфера пустоты
-call UIS_RegisterItem('I01M','IMS0','I00L',0,0,0,0,0,0,0,'ISS0','I03Q')                            // Сфера Пространства
-call UIS_RegisterItem('I01M','IMT0','I04M',0,0,0,0,0,0,0,'ITS0','I03P')                            // Сфера Времени
-call UIS_RegisterItem('IOS3','IOS4','IOS2','IOS1',0,0,0,0,0,0,0,'I1S4')
-call UIS_RegisterItem('I01Z','I02T',0,0,0,0,0,0,0,0,'I052','I04G')
-// call UIS_RegisterItem('I03B','I01I',0,'I053',0,0,'I038') //old Kosa
-call UIS_RegisterItem('I03B','I01I',0,0,0,0,0,0,0,0,'I053','ISDi')
-call UIS_RegisterItem('I01F','I02S','I01M',0,0,0,0,0,0,0,'I055','I054')
-call UIS_RegisterItem('I056',0,0,0,0,0,0,0,0,0,'I00E','I057')
-call UIS_RegisterItem('I057',0,0,0,0,0,0,0,0,0,'I00E','I058')
-call UIS_RegisterItem('I058',0,0,0,0,0,0,0,0,0,'I00E','I059')
-call UIS_RegisterItem('I059',0,0,0,0,0,0,0,0,0,'I00E','I05A')
-call UIS_RegisterItem('I05A',0,0,0,0,0,0,0,0,0,'I00E','I05B')
-call UIS_RegisterItem('I05C',0,0,0,0,0,0,0,0,0,'I00E','I05D')
-call UIS_RegisterItem('I05D',0,0,0,0,0,0,0,0,0,'I00E','I05E')
-call UIS_RegisterItem('I05E',0,0,0,0,0,0,0,0,0,'I00E','I05F')
-call UIS_RegisterItem('I05F',0,0,0,0,0,0,0,0,0,'I00E','I05G')
-call UIS_RegisterItem('I05G',0,0,0,0,0,0,0,0,0,'I00E','I05H')
-call UIS_RegisterItem('I05I',0,0,0,0,0,0,0,0,0,'I00E','I05J')
-call UIS_RegisterItem('I05J',0,0,0,0,0,0,0,0,0,'I00E','I05K')
-call UIS_RegisterItem('I05K',0,0,0,0,0,0,0,0,0,'I00E','I05L')
-call UIS_RegisterItem('I05L',0,0,0,0,0,0,0,0,0,'I00E','I05M')
-call UIS_RegisterItem('I05M',0,0,0,0,0,0,0,0,0,'I00E','I05N')
-call UIS_RegisterItem('I05O',0,0,0,0,0,0,0,0,0,'I00E','I05P')
-call UIS_RegisterItem('I05P',0,0,0,0,0,0,0,0,0,'I00E','I05Q')
-call UIS_RegisterItem('I05Q',0,0,0,0,0,0,0,0,0,'I00E','I05R')
-call UIS_RegisterItem('I05R',0,0,0,0,0,0,0,0,0,'I00E','I05S')
-call UIS_RegisterItem('I05S',0,0,0,0,0,0,0,0,0,'I00E','I05T')
-call UIS_RegisterItem('I05U',0,0,0,0,0,0,0,0,0,'I00E','I05V')
-call UIS_RegisterItem('I05V',0,0,0,0,0,0,0,0,0,'I00E','I05W')
-call UIS_RegisterItem('I05W',0,0,0,0,0,0,0,0,0,'I00E','I05X')
-call UIS_RegisterItem('I05X',0,0,0,0,0,0,0,0,0,'I00E','I05Y')
-call UIS_RegisterItem('I05Y',0,0,0,0,0,0,0,0,0,'I00E','I05Z')
-call UIS_RegisterItem('I060',0,0,0,0,0,0,0,0,0,'I00E','I061')
-call UIS_RegisterItem('I061',0,0,0,0,0,0,0,0,0,'I00E','I062')
-call UIS_RegisterItem('I062',0,0,0,0,0,0,0,0,0,'I00E','I063')
-call UIS_RegisterItem('I063',0,0,0,0,0,0,0,0,0,'I00E','I064')
-call UIS_RegisterItem('I064',0,0,0,0,0,0,0,0,0,'I00E','I065')
-call UIS_RegisterItem('I033','I04I',0,0,0,0,0,0,0,0,0,'I066')
-call UIS_RegisterItem('I06I','I06F','I06G','I06H',0,0,0,0,0,0,0,'I06E')
-call UIS_RegisterItem('I06K','I06L','I06M','I06N',0,0,0,0,0,0,0,'I06J')
-call UIS_RegisterItem('I068',0,0,0,0,0,0,0,0,0,'I06P','I06O')
-call UIS_RegisterItem('I02R','I035','I06N',0,0,0,0,0,0,0,0,'I068') //grail
-call UIS_RegisterItem('I06C',0,0,0,0,0,0,0,0,0,'I06S','I06Q')
-call UIS_RegisterItem('I06C',0,0,0,0,0,0,0,0,0,'I06T','I06R')
+// рецепты предметов — отдельным шагом (Trig_Execute_Items, 8 с)
 set t=CreateTrigger()
 loop
 exitwhen i>=11
@@ -263810,15 +266330,175 @@ call TriggerAddCondition(t,Condition(function GKCond))
 call TriggerAddAction(t,function GKCast)
 set t=null
 endfunction
+// рецепты предметов (были в Trig_Execute_Actions) — отдельный шаг загрузки, 8 с
+function Trig_Execute_Items takes nothing returns nothing
+call UIS_RegisterItem('I007',0,0,0,0,0,0,0,0,0,'I00E','I009')
+call UIS_RegisterItem('I009',0,0,0,0,0,0,0,0,0,'I00E','I00A')
+call UIS_RegisterItem('I00A',0,0,0,0,0,0,0,0,0,'I00E','I00B')
+call UIS_RegisterItem('I00B',0,0,0,0,0,0,0,0,0,'I00E','I00C')
+call UIS_RegisterItem('I00C',0,0,0,0,0,0,0,0,0,'I00E','I00D')
+call UIS_RegisterItem('I00F',0,0,0,0,0,0,0,0,0,'I00E','I00G')
+call UIS_RegisterItem('I00G',0,0,0,0,0,0,0,0,0,'I00E','I00H')
+call UIS_RegisterItem('I00H',0,0,0,0,0,0,0,0,0,'I00E','I00I')
+call UIS_RegisterItem('I00I',0,0,0,0,0,0,0,0,0,'I00E','I00J')
+call UIS_RegisterItem('I00J',0,0,0,0,0,0,0,0,0,'I00E','I00K')
+call UIS_RegisterItem('I00L',0,0,0,0,0,0,0,0,0,'I00E','I00M')
+call UIS_RegisterItem('I00M',0,0,0,0,0,0,0,0,0,'I00E','I00N')
+call UIS_RegisterItem('I00N',0,0,0,0,0,0,0,0,0,'I00E','I00O')
+call UIS_RegisterItem('I00O',0,0,0,0,0,0,0,0,0,'I00E','I00P')
+call UIS_RegisterItem('I00P',0,0,0,0,0,0,0,0,0,'I00E','I00Q')
+call UIS_RegisterItem('I00R',0,0,0,0,0,0,0,0,0,'I00E','I00S')
+call UIS_RegisterItem('I00S',0,0,0,0,0,0,0,0,0,'I00E','I00T')
+call UIS_RegisterItem('I00T',0,0,0,0,0,0,0,0,0,'I00E','I00U')
+call UIS_RegisterItem('I00U',0,0,0,0,0,0,0,0,0,'I00E','I00V')
+call UIS_RegisterItem('I00V',0,0,0,0,0,0,0,0,0,'I00E','I00W')
+call UIS_RegisterItem('I00X',0,0,0,0,0,0,0,0,0,'I00E','I00Y')
+call UIS_RegisterItem('I00Y',0,0,0,0,0,0,0,0,0,'I00E','I00Z')
+call UIS_RegisterItem('I00Z',0,0,0,0,0,0,0,0,0,'I00E','I010')
+call UIS_RegisterItem('I010',0,0,0,0,0,0,0,0,0,'I00E','I011')
+call UIS_RegisterItem('I011',0,0,0,0,0,0,0,0,0,'I00E','I012')
+call UIS_RegisterItem('I013',0,0,0,0,0,0,0,0,0,'I00E','I014')
+call UIS_RegisterItem('I014',0,0,0,0,0,0,0,0,0,'I00E','I015')
+call UIS_RegisterItem('I015',0,0,0,0,0,0,0,0,0,'I00E','I016')
+call UIS_RegisterItem('I016',0,0,0,0,0,0,0,0,0,'I00E','I017')
+call UIS_RegisterItem('I017',0,0,0,0,0,0,0,0,0,'I00E','I018')
+call UIS_RegisterItem('I019',0,0,0,0,0,0,0,0,0,'I00E','I01A')
+call UIS_RegisterItem('I01A',0,0,0,0,0,0,0,0,0,'I00E','I01B')
+call UIS_RegisterItem('I01B',0,0,0,0,0,0,0,0,0,'I00E','I01C')
+call UIS_RegisterItem('I01C',0,0,0,0,0,0,0,0,0,'I00E','I01D')
+call UIS_RegisterItem('I01D',0,0,0,0,0,0,0,0,0,'I00E','I01E')
+call UIS_RegisterItem('I01H',0,0,0,0,0,0,0,0,0,'I00E','I01J')
+call UIS_RegisterItem('I01J',0,0,0,0,0,0,0,0,0,'I00E','I01I')
+call UIS_RegisterItem('I01I',0,0,0,0,0,0,0,0,0,'I00E','I01K')
+call UIS_RegisterItem('I01L',0,0,0,0,0,0,0,0,0,'I01P','I01O')
+call UIS_RegisterItem('I01O',0,0,0,0,0,0,0,0,0,'I01R','I01Q')
+call UIS_RegisterItem('I01O',0,0,0,0,0,0,0,0,0,'I01T','I01S')
+call UIS_RegisterItem('I01O',0,0,0,0,0,0,0,0,0,'I01V','I01U')
+call UIS_RegisterItem('I01W',0,0,0,0,0,0,0,0,0,'I00E','I01X')
+call UIS_RegisterItem('I01X',0,0,0,0,0,0,0,0,0,'I00E','I01Y')
+call UIS_RegisterItem('I01Y',0,0,0,0,0,0,0,0,0,'I00E','I01Z')
+call UIS_RegisterItem('I01Z',0,0,0,0,0,0,0,0,0,'I00E','I06C')
+call UIS_RegisterItem('I06C',0,0,0,0,0,0,0,0,0,'I00E','I020')
+call UIS_RegisterItem('I02E',0,0,0,0,0,0,0,0,0,'I00E','I02F')
+call UIS_RegisterItem('I02F',0,0,0,0,0,0,0,0,0,'I00E','I02G')
+call UIS_RegisterItem('I02G',0,0,0,0,0,0,0,0,0,'I00E','I02H')
+call UIS_RegisterItem('I02H',0,0,0,0,0,0,0,0,0,'I00E','I02I')
+call UIS_RegisterItem('I02I',0,0,0,0,0,0,0,0,0,'I00E','I02J')
+call UIS_RegisterItem('I02L',0,0,0,0,0,0,0,0,0,'I00E','I02M')
+call UIS_RegisterItem('I02M',0,0,0,0,0,0,0,0,0,'I00E','I02N')
+call UIS_RegisterItem('I02N',0,0,0,0,0,0,0,0,0,'I00E','I02O')
+call UIS_RegisterItem('I02O',0,0,0,0,0,0,0,0,0,'I00E','I02P')
+call UIS_RegisterItem('I02P',0,0,0,0,0,0,0,0,0,'I00E','I02Q')
+call UIS_RegisterItem('I01L','I02T',0,0,0,0,0,0,0,0,'I02U','I02V')
+call UIS_RegisterItem('I01F','I01M','I02R',0,0,0,0,0,0,0,'I02X','I02W')
+call UIS_RegisterItem('IOS2','I02S',0,0,0,0,0,0,0,0,'I02Z','I02Y')							// Перчатки Льда
+call UIS_RegisterItem('I033','I032','I034','I035',0,0,0,0,0,0,0,'I036')
+call UIS_RegisterItem('I03D','I03E','I03B','I03C',0,0,0,0,0,0,0,'I03F')
+call UIS_RegisterItem('I008',0,0,0,0,0,0,0,0,0,'I00E','I03G')
+call UIS_RegisterItem('I03G',0,0,0,0,0,0,0,0,0,'I00E','I03H')
+call UIS_RegisterItem('I03H',0,0,0,0,0,0,0,0,0,'I00E','I03I')
+call UIS_RegisterItem('I01K',0,0,0,0,0,0,0,0,0,'I00E','I01L')
+call UIS_RegisterItem('I03I',0,0,0,0,0,0,0,0,0,'I00E','I03J')
+call UIS_RegisterItem('I03J',0,0,0,0,0,0,0,0,0,'I00E','I03K')
+call UIS_RegisterItem('I03K',0,0,0,0,0,0,0,0,0,'I00E','I03L')
+call UIS_RegisterItem('I03Z','I03X','I03Y','I03W',0,0,0,0,0,0,0,'I040')
+call UIS_RegisterItem('I02S','I02R','I02T',0,0,0,0,0,0,0,'I045','I044')
+call UIS_RegisterItem('I01F','I01M','I02T',0,0,0,0,0,0,0,'I047','I046')
+call UIS_RegisterItem('I049',0,0,0,0,0,0,0,0,0,'I00E','I04A')
+call UIS_RegisterItem('I04A',0,0,0,0,0,0,0,0,0,'I00E','I04B')
+call UIS_RegisterItem('I04B',0,0,0,0,0,0,0,0,0,'I00E','I04C')
+call UIS_RegisterItem('I04C',0,0,0,0,0,0,0,0,0,'I00E','I04D')
+call UIS_RegisterItem('I04D',0,0,0,0,0,0,0,0,0,'I00E','I04E')
+call UIS_RegisterItem('I04H','I04H',0,0,0,0,0,0,0,0,'I00E','I04I')
+call UIS_RegisterItem('I04M',0,0,0,0,0,0,0,0,0,'I00E','I04N')
+call UIS_RegisterItem('I04N',0,0,0,0,0,0,0,0,0,'I00E','I04O')
+call UIS_RegisterItem('I04O',0,0,0,0,0,0,0,0,0,'I00E','I04P')
+call UIS_RegisterItem('I04P',0,0,0,0,0,0,0,0,0,'I00E','I04Q')
+call UIS_RegisterItem('I04Q',0,0,0,0,0,0,0,0,0,'I00E','I04R')
+call UIS_RegisterItem('I02S','I01M','I02S',0,0,0,0,0,0,0,0,'I04L')
+call UIS_RegisterItem('I02S','I02R','I02T',0,0,0,0,0,0,0,'I04Y','I03A')
+call UIS_RegisterItem('I06L','I032','I02T',0,0,0,0,0,0,0,'I04U','I042')
+call UIS_RegisterItem('I01O',0,0,0,0,0,0,0,0,0,'I04X','I04F')
+call UIS_RegisterItem('I01O',0,0,0,0,0,0,0,0,0,'I04Z','I03O')
+call UIS_RegisterItem('I033','I03B','I01M',0,0,0,0,0,0,0,'I051','I050')
+call UIS_RegisterItem('I03I','I01K','I01M',0,0,0,0,0,0,0,0,'I04V')
+call UIS_RegisterItem('I12R','I03R',0,0,0,0,0,0,0,0,'I14R','I13R')
+call UIS_RegisterItem('I00W',0,0,0,0,0,0,0,0,0,'IGDr','IGDi')                                             // Gae Dearg Сборка
+call UIS_RegisterItem('I01L','I01M',0,0,0,0,0,0,0,0,'IPar','I031')                                // Patriot сборка
+call UIS_RegisterItem('I03D','I05W','I02T',0,0,0,0,0,0,0,0,'IMDi')                                // Medusa-Dr.Stone Сборка
+call UIS_RegisterItem('IOS3','I05E',0,0,0,0,0,0,0,0,'IHYr','IHYi')                                // Yukirin Hourglass Сборка
+call UIS_RegisterItem('I03Y','IOS1','I02S',0,0,0,0,0,0,0,'ISTr','ISTi')                   // Stigmata Tesseract Сборка
+call UIS_RegisterItem('I01H','IOS3','I12R',0,0,0,0,0,0,0,0,'ISHk')                            // Sode no Shirayuki
+call UIS_RegisterItem('I02Y','ISHk',0,0,0,0,0,0,0,0,0,'IHnK')                                 // Hakka No Togame
+call UIS_RegisterItem('I01L','I12R',0,0,0,0,0,0,0,0,'IBSR','IBSI')                                 // Buster Sword
+call UIS_RegisterItem('I03Z','I03C','I060',0,0,0,0,0,0,0,0,'IAoF')                                 // Fafnir
+call UIS_RegisterItem('ISPB','I06K','I01X',0,0,0,0,0,0,0,'IPRR','IPRB')                                 // Лук Жрицы
+call UIS_RegisterItem('ISlA','IGlA',0,0,0,0,0,0,0,0,'IPlR','IPlA')                                 // Совершенный амулет
+call UIS_RegisterItem('ISt0','IGlA','ISt0',0,0,0,0,0,0,0,'IBS1','I043')                            // Сфера крови
+call UIS_RegisterItem('IMT0','I06F','IMT0',0,0,0,0,0,0,0,'IGn0','I048')                            // Гунгнир
+call UIS_RegisterItem('I06H','IMT0','INY0','IMS0',0,0,0,0,0,0,'IYM0','I04T')                            // Зеркало ята
+call UIS_RegisterItem('IMS0','ISt0','IMS0',0,0,0,0,0,0,0,'IBN0','I037')                            // Башосен
+call UIS_RegisterItem('I03Y','IMS0','I05C',0,0,0,0,0,0,0,'IGP0','I06Z')                            // Grimoir
+call UIS_RegisterItem('I01M','INY0','I00F',0,0,0,0,0,0,0,'IVS0','I03R')                            // Сфера пустоты
+call UIS_RegisterItem('I01M','IMS0','I00L',0,0,0,0,0,0,0,'ISS0','I03Q')                            // Сфера Пространства
+call UIS_RegisterItem('I01M','IMT0','I04M',0,0,0,0,0,0,0,'ITS0','I03P')                            // Сфера Времени
+call UIS_RegisterItem('IOS3','IOS4','IOS2','IOS1',0,0,0,0,0,0,0,'I1S4')
+call UIS_RegisterItem('I01Z','I02T',0,0,0,0,0,0,0,0,'I052','I04G')
+// call UIS_RegisterItem('I03B','I01I',0,'I053',0,0,'I038') //old Kosa
+call UIS_RegisterItem('I03B','I01I',0,0,0,0,0,0,0,0,'I053','ISDi')
+call UIS_RegisterItem('I01F','I02S','I01M',0,0,0,0,0,0,0,'I055','I054')
+call UIS_RegisterItem('I056',0,0,0,0,0,0,0,0,0,'I00E','I057')
+call UIS_RegisterItem('I057',0,0,0,0,0,0,0,0,0,'I00E','I058')
+call UIS_RegisterItem('I058',0,0,0,0,0,0,0,0,0,'I00E','I059')
+call UIS_RegisterItem('I059',0,0,0,0,0,0,0,0,0,'I00E','I05A')
+call UIS_RegisterItem('I05A',0,0,0,0,0,0,0,0,0,'I00E','I05B')
+call UIS_RegisterItem('I05C',0,0,0,0,0,0,0,0,0,'I00E','I05D')
+call UIS_RegisterItem('I05D',0,0,0,0,0,0,0,0,0,'I00E','I05E')
+call UIS_RegisterItem('I05E',0,0,0,0,0,0,0,0,0,'I00E','I05F')
+call UIS_RegisterItem('I05F',0,0,0,0,0,0,0,0,0,'I00E','I05G')
+call UIS_RegisterItem('I05G',0,0,0,0,0,0,0,0,0,'I00E','I05H')
+call UIS_RegisterItem('I05I',0,0,0,0,0,0,0,0,0,'I00E','I05J')
+call UIS_RegisterItem('I05J',0,0,0,0,0,0,0,0,0,'I00E','I05K')
+call UIS_RegisterItem('I05K',0,0,0,0,0,0,0,0,0,'I00E','I05L')
+call UIS_RegisterItem('I05L',0,0,0,0,0,0,0,0,0,'I00E','I05M')
+call UIS_RegisterItem('I05M',0,0,0,0,0,0,0,0,0,'I00E','I05N')
+call UIS_RegisterItem('I05O',0,0,0,0,0,0,0,0,0,'I00E','I05P')
+call UIS_RegisterItem('I05P',0,0,0,0,0,0,0,0,0,'I00E','I05Q')
+call UIS_RegisterItem('I05Q',0,0,0,0,0,0,0,0,0,'I00E','I05R')
+call UIS_RegisterItem('I05R',0,0,0,0,0,0,0,0,0,'I00E','I05S')
+call UIS_RegisterItem('I05S',0,0,0,0,0,0,0,0,0,'I00E','I05T')
+call UIS_RegisterItem('I05U',0,0,0,0,0,0,0,0,0,'I00E','I05V')
+call UIS_RegisterItem('I05V',0,0,0,0,0,0,0,0,0,'I00E','I05W')
+call UIS_RegisterItem('I05W',0,0,0,0,0,0,0,0,0,'I00E','I05X')
+call UIS_RegisterItem('I05X',0,0,0,0,0,0,0,0,0,'I00E','I05Y')
+call UIS_RegisterItem('I05Y',0,0,0,0,0,0,0,0,0,'I00E','I05Z')
+call UIS_RegisterItem('I060',0,0,0,0,0,0,0,0,0,'I00E','I061')
+call UIS_RegisterItem('I061',0,0,0,0,0,0,0,0,0,'I00E','I062')
+call UIS_RegisterItem('I062',0,0,0,0,0,0,0,0,0,'I00E','I063')
+call UIS_RegisterItem('I063',0,0,0,0,0,0,0,0,0,'I00E','I064')
+call UIS_RegisterItem('I064',0,0,0,0,0,0,0,0,0,'I00E','I065')
+call UIS_RegisterItem('I033','I04I',0,0,0,0,0,0,0,0,0,'I066')
+call UIS_RegisterItem('I06I','I06F','I06G','I06H',0,0,0,0,0,0,0,'I06E')
+call UIS_RegisterItem('I06K','I06L','I06M','I06N',0,0,0,0,0,0,0,'I06J')
+call UIS_RegisterItem('I068',0,0,0,0,0,0,0,0,0,'I06P','I06O')
+call UIS_RegisterItem('I02R','I035','I06N',0,0,0,0,0,0,0,0,'I068') //grail
+call UIS_RegisterItem('I06C',0,0,0,0,0,0,0,0,0,'I06S','I06Q')
+call UIS_RegisterItem('I06C',0,0,0,0,0,0,0,0,0,'I06T','I06R')
+endfunction
 function InitTrig_Execute takes nothing returns nothing
 set gg_trg_Execute=CreateTrigger()
-call TriggerRegisterTimerEventSingle(gg_trg_Execute,4.00)
+//call TriggerRegisterTimerEventSingle(gg_trg_Execute,4.00)
+// этапы загрузки разнесены: 3 с, 4.5 с, 6 с, 8 с (было 2 и 4 с)
+call TriggerRegisterTimerEventSingle(gg_trg_Execute,6.00)
 call TriggerAddAction(gg_trg_Execute,function Trig_Execute_Actions)
+call TimerStart(CreateTimer(),8.00,false,function Trig_Execute_Items)
 endfunction
 function InitTrig_Execute2 takes nothing returns nothing
 local trigger t=CreateTrigger()
-call TriggerRegisterTimerEventSingle(t,2.00)
+//call TriggerRegisterTimerEventSingle(t,2.00)
+call TriggerRegisterTimerEventSingle(t,3.00)
 call TriggerAddAction(t,function Trig_Execute_Actions2)
+call TimerStart(CreateTimer(),4.50,false,function Trig_Execute_Actions2b)
 set t=null
 endfunction
 //LANG_DATA_BEGIN — сгенерировано tools/lang/gen.js из table/en, руками не править

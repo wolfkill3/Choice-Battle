@@ -160,6 +160,11 @@ local integer lgF=0
 local string lgOld
 local string lgNew
 local string lgCur
+// предмет с хоткеем из окна настроек (ITEM_IF_HOTKEY меняется только у владельца): смена имени / описания при нём
+// роняла игру — вернуть хоткей из данных предмета; назначенный снова поставит CBS_ItemHkUnit через 0.1 с
+if GetItemIntegerField(lgIt,ITEM_IF_HOTKEY)!=GetBaseItemIntegerFieldById(lgId,ITEM_IF_HOTKEY) then
+call SetItemIntegerField(lgIt,ITEM_IF_HOTKEY,GetBaseItemIntegerFieldById(lgId,ITEM_IF_HOTKEY))
+endif
 loop
 exitwhen lgF>3
 if HaveSavedString(LANG_HT,-20-lgF,lgId) then
@@ -295,27 +300,32 @@ return LoadStr(LANG_HT,lgN,4)+" | "+LoadStr(LANG_HT,lgN,5)
 endif
 return GetObjectName(lgId)+" | "+LoadStr(LANG_HT,lgN,5)
 endfunction
-function LANG_Chat takes nothing returns nothing
-local integer lgP=GetPlayerId(GetTriggerPlayer())
+// смена языка игроком lgPl (чат -en / -ru или кнопка в окне настроек — оба пути синхронные)
+function LANG_Switch takes player lgPl,boolean lgToEn returns nothing
+local integer lgP=GetPlayerId(lgPl)
 local real lgNow=TimerGetElapsed(LANG_Clock)
 // не чаще раза в 10 сек. на игрока: время общее (таймер LANG_Clock), проверка одинакова у всех — отказ тоже у всех
 if HaveSavedReal(LANG_HT,-60,lgP) and lgNow-LoadReal(LANG_HT,-60,lgP)<10. then
-if GetTriggerPlayer()==GetLocalPlayer() then
+if lgPl==GetLocalPlayer() then
 call DisplayTimedTextToPlayer(GetLocalPlayer(),0,0,5,Lng("Сменить язык можно через ","You can switch the language again in ")+I2S(R2I(10.-(lgNow-LoadReal(LANG_HT,-60,lgP)))+1)+Lng(" сек."," sec."))
 endif
 return
 endif
 call SaveReal(LANG_HT,-60,lgP,lgNow)
-if GetTriggerPlayer()==GetLocalPlayer() then
-set LANG_EN=GetEventPlayerChatString()=="-en"
+if lgPl==GetLocalPlayer() then
+set LANG_EN=lgToEn
 endif
 call LANG_Apply()
 call LANG_Retitle()
 call ExecuteFunc("Sh_LangRefresh") // надписи магазина, заданные при загрузке
 call ExecuteFunc("TavRole_LangRefresh") // кнопка поиска по ролям в таверне
-if GetTriggerPlayer()==GetLocalPlayer() then
+call ExecuteFunc("CBS_LangRefresh") // окно настроек карты
+if lgPl==GetLocalPlayer() then
 call DisplayTimedTextToPlayer(GetLocalPlayer(),0,0,5,Lng("Язык: русский. Часть уже показанных надписей обновится при следующем выводе.","Language: English. Some texts already on screen update the next time they are shown."))
 endif
+endfunction
+function LANG_Chat takes nothing returns nothing
+call LANG_Switch(GetTriggerPlayer(),GetEventPlayerChatString()=="-en")
 endfunction
 function LANG_Init takes nothing returns nothing
 local trigger lgT=CreateTrigger()
