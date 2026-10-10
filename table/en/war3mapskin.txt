@@ -1,0 +1,14 @@
+[FrameDef]
+COLON_LUMBER=Victory points.
+DAMAGETIP_CHAOS=Heroes deal less damage to fortified objects.
+DAMAGETIP_CHAOS_V0C=Heroes deal less damage to fortified objects.
+DAMAGETIP_CHAOS_V0M=Heroes deal less damage to fortified objects.
+DAMAGE_CHAOS=Type: |Cffffcc00Hero|R
+IDLE_PEON=Chest (|Cfffed312F8|R)
+IDLE_PEON_DESC=You can put things here.
+LUMBER=Victory points
+RESOURCE_UBERTIP_GOLD=Gold is earned by winning rounds and by defeating heroes.
+RESOURCE_UBERTIP_LUMBER=Victory points are earned for winning a round, by reaching a certain number of points you win.
+UPKEEP_HIGH=|c0000FF00Choice Battle |r|c0000FFFFv3.7.9 EN|r
+UPKEEP_LOW=|c0000FF00Choice Battle |r|c0000FFFFv3.7.9 EN|r
+UPKEEP_NONE=|c0000FF00Choice Battle |r|c0000FFFFv3.7.9 EN|r
