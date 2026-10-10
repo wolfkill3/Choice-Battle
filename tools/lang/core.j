@@ -227,6 +227,21 @@ exitwhen CountUnitsInGroup(LANG_G)==lgWas
 endloop
 call GroupClear(LANG_G)
 endfunction
+// Русские оригиналы — у всех на загрузке (одинаковая работа у всех): иначе первая смена RU -> EN в игре читала
+// и запоминала 14 тыс. текстов за один кадр (вдвое тяжелее следующих смен)
+function LANG_CacheStep takes nothing returns nothing
+local integer lgE=LANG_I+400
+if lgE>LANG_N then
+set lgE=LANG_N
+endif
+loop
+exitwhen LANG_I>=lgE
+if not HaveSavedString(LANG_HT,LANG_I,4) then
+call SaveStr(LANG_HT,LANG_I,4,LANG_Get(LANG_I))
+endif
+set LANG_I=LANG_I+1
+endloop
+endfunction
 // Выполняется у всех игроков одинаково (без ExecuteFunc внутри GetLocalPlayer). Пропуск работы у тех, чей язык
 // не менялся, давал десинк — поэтому вся работа выполняется у всех
 function LANG_Apply takes nothing returns nothing
@@ -301,6 +316,40 @@ endif
 return GetObjectName(lgId)+" | "+LoadStr(LANG_HT,lgN,5)
 endfunction
 // смена языка игроком lgPl (чат -en / -ru или кнопка в окне настроек — оба пути синхронные)
+// Смена языка в игре: те же порции LANG_Step, но по 3 порции (1 200 записей) раз в 0.03 с, а не все 14 тыс. за один
+// кадр (была просадка FPS на несколько секунд). Таймер общий — у всех игроков одинаковая работа в одни и те же моменты.
+// Надписи окон и квестов — после последней порции. Таймер один на игру (LANG_HT -70), хэндлов при смене не создаётся.
+function LANG_SliceTick takes nothing returns nothing
+local integer lgK=0
+local integer lgWas
+loop
+exitwhen lgK>=3 or LANG_I>=LANG_N
+set lgWas=LANG_I
+call ExecuteFunc("LANG_Step")
+exitwhen LANG_I==lgWas
+set lgK=lgK+1
+endloop
+if LANG_I>=LANG_N then
+call PauseTimer(GetExpiredTimer())
+call ExecuteFunc("LANG_Refresh")
+set LANG_Applied=LANG_EN
+call LANG_Retitle()
+call ExecuteFunc("Sh_LangRefresh") // надписи магазина, заданные при загрузке
+call ExecuteFunc("TavRole_LangRefresh") // кнопка поиска по ролям в таверне
+call ExecuteFunc("CBS_LangRefresh") // окно настроек карты
+endif
+endfunction
+function LANG_ApplySliced takes nothing returns nothing
+local integer lgF=-20
+set LANG_Dirty=true
+loop
+exitwhen lgF<-41
+call FlushChildHashtable(LANG_HT,lgF)
+set lgF=lgF-1
+endloop
+set LANG_I=0
+call TimerStart(LoadTimerHandle(LANG_HT,-70,0),0.03,true,function LANG_SliceTick)
+endfunction
 function LANG_Switch takes player lgPl,boolean lgToEn returns nothing
 local integer lgP=GetPlayerId(lgPl)
 local real lgNow=TimerGetElapsed(LANG_Clock)
@@ -315,11 +364,7 @@ call SaveReal(LANG_HT,-60,lgP,lgNow)
 if lgPl==GetLocalPlayer() then
 set LANG_EN=lgToEn
 endif
-call LANG_Apply()
-call LANG_Retitle()
-call ExecuteFunc("Sh_LangRefresh") // надписи магазина, заданные при загрузке
-call ExecuteFunc("TavRole_LangRefresh") // кнопка поиска по ролям в таверне
-call ExecuteFunc("CBS_LangRefresh") // окно настроек карты
+call LANG_ApplySliced() // порциями по таймеру; надписи окон обновит последняя порция
 if lgPl==GetLocalPlayer() then
 call DisplayTimedTextToPlayer(GetLocalPlayer(),0,0,5,Lng("Язык: русский. Часть уже показанных надписей обновится при следующем выводе.","Language: English. Some texts already on screen update the next time they are shown."))
 endif
@@ -327,14 +372,58 @@ endfunction
 function LANG_Chat takes nothing returns nothing
 call LANG_Switch(GetTriggerPlayer(),GetEventPlayerChatString()=="-en")
 endfunction
+// язык из файла настроек окна (CBS_FILE, поле 48: 1 — английский, 0 — русский) — читается уже на загрузке,
+// чтобы не переключать язык в игре: первое переключение RU -> EN тяжёлое (просадка FPS на несколько секунд).
+// Файл — скрипт Preload, как в CBS_Load: Preloader вызывает SetPlayerName(Player(14), данные). Только локально.
+function LANG_Saved takes nothing returns nothing
+local string lgN=GetPlayerName(Player(14))
+local string lgD
+local integer lgP=0
+local integer lgK=0
+local integer lgL
+call SetPlayerName(Player(14),"")
+call Preloader(CBS_FILE)
+set lgD=GetPlayerName(Player(14))
+call SetPlayerName(Player(14),lgN)
+if SubString(lgD,0,4)!="CB1;" then
+return
+endif
+set lgL=StringLength(lgD)
+// после 48-го разделителя «;» начинается поле 48
+loop
+exitwhen lgP>=lgL or lgK==48
+if SubString(lgD,lgP,lgP+1)==";" then
+set lgK=lgK+1
+endif
+set lgP=lgP+1
+endloop
+if lgK==48 then
+if SubString(lgD,lgP,lgP+1)=="1" then
+set LANG_EN=true
+elseif SubString(lgD,lgP,lgP+1)=="0" then
+set LANG_EN=false
+endif
+endif
+endfunction
 function LANG_Init takes nothing returns nothing
 local trigger lgT=CreateTrigger()
 local integer lgI=0
 set LANG_EN=SubString(GetLocale(),0,2)!="ru"
+call LANG_Saved() // сохранённый в настройках язык важнее языка клиента
 set LANG_R=GetWorldBounds()
 set LANG_Clock=CreateTimer()
 call TimerStart(LANG_Clock,999999.,false,null) // общие часы для паузы между сменами языка
 call ExecuteFunc("LANG_DataAll")
+call SaveTimerHandle(LANG_HT,-70,0,CreateTimer()) // таймер порционной смены языка (LANG_ApplySliced)
+// русские оригиналы — сразу, у всех (см. LANG_CacheStep)
+set LANG_I=0
+loop
+exitwhen LANG_I>=LANG_N
+set lgI=LANG_I
+call ExecuteFunc("LANG_CacheStep")
+exitwhen LANG_I==lgI
+endloop
+set lgI=0
 call LANG_Apply()
 loop
 exitwhen lgI>=bj_MAX_PLAYERS

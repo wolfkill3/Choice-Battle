@@ -1184,6 +1184,7 @@ framehandle HB_GameUI=null
 // автопрокачка способностей: включена ли у игрока (общее, синхронизировано), у себя — для галочки и файла
 boolean array CBS_AutoL
 boolean CBS_AlOn=true // по умолчанию включена
+integer CBS_LangSav=-1 // язык карты из файла настроек: 1 — английский, 0 — русский, -1 — нет в файле (берётся по клиенту)
 framehandle CBS_AlChk=null
 framehandle CBS_AlLbl=null
 // фон галочек режима полосок HP (прятать на вкладке хоткеев)
@@ -2261,6 +2262,13 @@ group Snakes_G=CreateGroup()
 timer Snakes_T=CreateTimer()
 boolean Snakes_On=false
 integer Snakes_N=0
+// судья на месте вышедшего игрока: JudgeSlot[судья]=слот+1, SlotJudge[слот]=судья+1
+integer array JudgeSlot
+integer array SlotJudge
+integer array JudgeGold0
+string array JudgeName
+// -switch: игрок перешёл в другую команду (TeamOfP)
+boolean array SwFlip
 boolean LANG_EN=false // язык интерфейса у локального игрока (LANG_Init, -en / -ru)
 hashtable LANG_HT=InitHashtable()
 integer LANG_N=0
@@ -2503,6 +2511,21 @@ exitwhen CountUnitsInGroup(LANG_G)==lgWas
 endloop
 call GroupClear(LANG_G)
 endfunction
+// Русские оригиналы — у всех на загрузке (одинаковая работа у всех): иначе первая смена RU -> EN в игре читала
+// и запоминала 14 тыс. текстов за один кадр (вдвое тяжелее следующих смен)
+function LANG_CacheStep takes nothing returns nothing
+local integer lgE=LANG_I+400
+if lgE>LANG_N then
+set lgE=LANG_N
+endif
+loop
+exitwhen LANG_I>=lgE
+if not HaveSavedString(LANG_HT,LANG_I,4) then
+call SaveStr(LANG_HT,LANG_I,4,LANG_Get(LANG_I))
+endif
+set LANG_I=LANG_I+1
+endloop
+endfunction
 // Выполняется у всех игроков одинаково (без ExecuteFunc внутри GetLocalPlayer). Пропуск работы у тех, чей язык
 // не менялся, давал десинк — поэтому вся работа выполняется у всех
 function LANG_Apply takes nothing returns nothing
@@ -2577,6 +2600,40 @@ endif
 return GetObjectName(lgId)+" | "+LoadStr(LANG_HT,lgN,5)
 endfunction
 // смена языка игроком lgPl (чат -en / -ru или кнопка в окне настроек — оба пути синхронные)
+// Смена языка в игре: те же порции LANG_Step, но по 3 порции (1 200 записей) раз в 0.03 с, а не все 14 тыс. за один
+// кадр (была просадка FPS на несколько секунд). Таймер общий — у всех игроков одинаковая работа в одни и те же моменты.
+// Надписи окон и квестов — после последней порции. Таймер один на игру (LANG_HT -70), хэндлов при смене не создаётся.
+function LANG_SliceTick takes nothing returns nothing
+local integer lgK=0
+local integer lgWas
+loop
+exitwhen lgK>=3 or LANG_I>=LANG_N
+set lgWas=LANG_I
+call ExecuteFunc("LANG_Step")
+exitwhen LANG_I==lgWas
+set lgK=lgK+1
+endloop
+if LANG_I>=LANG_N then
+call PauseTimer(GetExpiredTimer())
+call ExecuteFunc("LANG_Refresh")
+set LANG_Applied=LANG_EN
+call LANG_Retitle()
+call ExecuteFunc("Sh_LangRefresh") // надписи магазина, заданные при загрузке
+call ExecuteFunc("TavRole_LangRefresh") // кнопка поиска по ролям в таверне
+call ExecuteFunc("CBS_LangRefresh") // окно настроек карты
+endif
+endfunction
+function LANG_ApplySliced takes nothing returns nothing
+local integer lgF=-20
+set LANG_Dirty=true
+loop
+exitwhen lgF<-41
+call FlushChildHashtable(LANG_HT,lgF)
+set lgF=lgF-1
+endloop
+set LANG_I=0
+call TimerStart(LoadTimerHandle(LANG_HT,-70,0),0.03,true,function LANG_SliceTick)
+endfunction
 function LANG_Switch takes player lgPl,boolean lgToEn returns nothing
 local integer lgP=GetPlayerId(lgPl)
 local real lgNow=TimerGetElapsed(LANG_Clock)
@@ -2591,11 +2648,7 @@ call SaveReal(LANG_HT,-60,lgP,lgNow)
 if lgPl==GetLocalPlayer() then
 set LANG_EN=lgToEn
 endif
-call LANG_Apply()
-call LANG_Retitle()
-call ExecuteFunc("Sh_LangRefresh") // надписи магазина, заданные при загрузке
-call ExecuteFunc("TavRole_LangRefresh") // кнопка поиска по ролям в таверне
-call ExecuteFunc("CBS_LangRefresh") // окно настроек карты
+call LANG_ApplySliced() // порциями по таймеру; надписи окон обновит последняя порция
 if lgPl==GetLocalPlayer() then
 call DisplayTimedTextToPlayer(GetLocalPlayer(),0,0,5,Lng("Язык: русский. Часть уже показанных надписей обновится при следующем выводе.","Language: English. Some texts already on screen update the next time they are shown."))
 endif
@@ -2603,14 +2656,58 @@ endfunction
 function LANG_Chat takes nothing returns nothing
 call LANG_Switch(GetTriggerPlayer(),GetEventPlayerChatString()=="-en")
 endfunction
+// язык из файла настроек окна (CBS_FILE, поле 48: 1 — английский, 0 — русский) — читается уже на загрузке,
+// чтобы не переключать язык в игре: первое переключение RU -> EN тяжёлое (просадка FPS на несколько секунд).
+// Файл — скрипт Preload, как в CBS_Load: Preloader вызывает SetPlayerName(Player(14), данные). Только локально.
+function LANG_Saved takes nothing returns nothing
+local string lgN=GetPlayerName(Player(14))
+local string lgD
+local integer lgP=0
+local integer lgK=0
+local integer lgL
+call SetPlayerName(Player(14),"")
+call Preloader(CBS_FILE)
+set lgD=GetPlayerName(Player(14))
+call SetPlayerName(Player(14),lgN)
+if SubString(lgD,0,4)!="CB1;" then
+return
+endif
+set lgL=StringLength(lgD)
+// после 48-го разделителя «;» начинается поле 48
+loop
+exitwhen lgP>=lgL or lgK==48
+if SubString(lgD,lgP,lgP+1)==";" then
+set lgK=lgK+1
+endif
+set lgP=lgP+1
+endloop
+if lgK==48 then
+if SubString(lgD,lgP,lgP+1)=="1" then
+set LANG_EN=true
+elseif SubString(lgD,lgP,lgP+1)=="0" then
+set LANG_EN=false
+endif
+endif
+endfunction
 function LANG_Init takes nothing returns nothing
 local trigger lgT=CreateTrigger()
 local integer lgI=0
 set LANG_EN=SubString(GetLocale(),0,2)!="ru"
+call LANG_Saved() // сохранённый в настройках язык важнее языка клиента
 set LANG_R=GetWorldBounds()
 set LANG_Clock=CreateTimer()
 call TimerStart(LANG_Clock,999999.,false,null) // общие часы для паузы между сменами языка
 call ExecuteFunc("LANG_DataAll")
+call SaveTimerHandle(LANG_HT,-70,0,CreateTimer()) // таймер порционной смены языка (LANG_ApplySliced)
+// русские оригиналы — сразу, у всех (см. LANG_CacheStep)
+set LANG_I=0
+loop
+exitwhen LANG_I>=LANG_N
+set lgI=LANG_I
+call ExecuteFunc("LANG_CacheStep")
+exitwhen LANG_I==lgI
+endloop
+set lgI=0
 call LANG_Apply()
 loop
 exitwhen lgI>=bj_MAX_PLAYERS
@@ -2622,6 +2719,36 @@ call TriggerAddAction(lgT,function LANG_Chat)
 set lgT=null
 endfunction
 //LANG_CORE_END
+// хелперы судьи и -switch — вне блока LANG_CORE (его перезаписывает tools/lang/gen.js)
+// локальный игрок — судья (11, 12), не занявший место вышедшего: только у него судейские окна и обзор
+function IsLocalJudge takes nothing returns boolean
+local integer jl=GetPlayerId(GetLocalPlayer())
+return jl>=10 and jl<12 and JudgeSlot[jl]==0
+endfunction
+// чей герой у игрока: у судьи на месте вышедшего (-take) или игрока после -switch — герой этого слота
+function JudgeHid takes integer pid returns integer
+if JudgeSlot[pid]>0 then
+return JudgeSlot[pid]-1
+endif
+return pid
+endfunction
+// локальный игрок управляет юнитами игрока q: свой слот или занятый (-take / -switch). Только для выделения и
+// интерфейса внутри блоков GetLocalPlayer — состояние игры по нему не менять.
+function IsLocalCtl takes player q returns boolean
+return Player(JudgeHid(GetPlayerId(GetLocalPlayer())))==q
+endfunction
+// команда слота: 0 — первая (изначально 0–4), 1 — вторая (5–9), 2 — судьи; после -switch игрок и ливер меняются командами
+function TeamOfP takes integer pid returns integer
+if pid<10 and SwFlip[pid] then
+return 1-pid/5
+endif
+return pid/5
+endfunction
+// союзник ли q с точки зрения локального игрока: после -take / -switch — союзники занятого слота
+function ViewAlly takes player q returns boolean
+local player vp=Player(JudgeHid(GetPlayerId(GetLocalPlayer())))
+return q==vp or IsPlayerAlly(q,vp)
+endfunction
 function GetTerrainZ takes real x, real y returns real
 call MoveLocation(TerrainZLoc, x, y)
 return GetLocationZ(TerrainZLoc)
@@ -6723,7 +6850,7 @@ function HeroBarPress takes integer hbi returns nothing
     set HB_Hit[hbi]=HB_Tick
     set HB_Anim[hbi]=6
     if hbh!=null and GetUnitTypeId(hbh)!=0 and IsUnitType(hbh,UNIT_TYPE_DEAD)==false then
-        if IsUnitAlly(hbh,GetLocalPlayer()) or GetPlayerId(GetLocalPlayer())>=10 or udg_B==false then
+        if ViewAlly(GetOwningPlayer(hbh)) or IsLocalJudge() or udg_B==false then
             call ClearSelection()
             call SelectUnit(hbh,true)
             call SetCameraPosition(GetUnitX(hbh),GetUnitY(hbh))
@@ -6941,23 +7068,23 @@ function HPB_ColorOf takes unit hpu returns integer
         set hpc=GetHandleId(GetPlayerColor(hpp))
     elseif HPB_Mode==2 then
         // судьи (10, 11): цвета команд — первая (0–4) зелёная, вторая (5–9) красная; в FFA — цвета игроков
-        if GetPlayerId(GetLocalPlayer())>=10 and GetPlayerId(hpp)<10 then
+        if IsLocalJudge() and GetPlayerId(hpp)<10 then
             if FFAMode then
                 set hpc=GetHandleId(GetPlayerColor(hpp))
-            elseif GetPlayerId(hpp)<5 then
+            elseif TeamOfP(GetPlayerId(hpp))==0 then
                 set hpc=6
             else
                 set hpc=0
             endif
-        elseif GetPlayerId(GetLocalPlayer())>=10 and GetPlayerId(hpp)<12 then
+        elseif IsLocalJudge() and GetPlayerId(hpp)<12 then
             set hpc=8
         // свой / союзник / враг — цвета из окна настроек (HPB_RGB[0..2], по умолчанию зелёный, жёлтый, красный)
-        elseif hpp==GetLocalPlayer() then
+        elseif GetPlayerId(hpp)==JudgeHid(GetPlayerId(GetLocalPlayer())) then
             //set hpc=6
             set hpc=100
         elseif GetPlayerId(hpp)>=12 then
             set hpc=8
-        elseif IsPlayerAlly(hpp,GetLocalPlayer()) then
+        elseif ViewAlly(hpp) then
             //set hpc=4
             set hpc=101
         else
@@ -6986,7 +7113,7 @@ function HPB_Eligible takes unit hpu returns boolean
     if IsUnitVisible(hpu,GetLocalPlayer())==false then
         return false
     endif
-    if GetUnitOverheadOffset(hpu)>1000 and IsUnitAlly(hpu,GetLocalPlayer())==false and GetPlayerId(GetLocalPlayer())<10 then
+    if GetUnitOverheadOffset(hpu)>1000 and ViewAlly(GetOwningPlayer(hpu))==false and IsLocalJudge()==false then
         return false
     endif
     return true
@@ -8094,7 +8221,7 @@ function HeroBarBars takes nothing returns nothing
         set hbh=Hero[hbi]
         set hbv=2
         if HB_Shown and HB_Blocked==false and hbh!=null and GetUnitTypeId(hbh)!=0 and GetPlayerSlotState(Player(hbi))!=PLAYER_SLOT_STATE_EMPTY then
-            if IsPlayerAlly(GetLocalPlayer(),Player(hbi)) or GetLocalPlayer()==Player(hbi) or GetPlayerId(GetLocalPlayer())>=10 then
+            if ViewAlly(Player(hbi)) or IsLocalJudge() then
                 set hbv=1
             endif
         endif
@@ -8304,7 +8431,7 @@ function HeroBarUpdate takes nothing returns nothing
         set hbs="UI\\Widgets\\Console\\Human\\human-inventory-slotfiller.blp"
         set hbc=0xFFFFFFFF
         set hbn=""
-        if GetPlayerSlotState(hbp)==PLAYER_SLOT_STATE_LEFT then
+        if GetPlayerSlotState(hbp)==PLAYER_SLOT_STATE_LEFT and SlotJudge[hbi]==0 then
             set hbc=0xFF404040
         endif
         if GetPlayerSlotState(hbp)!=PLAYER_SLOT_STATE_EMPTY and hbh!=null then
@@ -8655,8 +8782,8 @@ function CreateModeIndicatorWithPauseFormMadara takes unit newCaster, string new
         call SetFramePriority( NewFrame, 7 )
         call HandleListAddHandle(StatusBarFrameList[GetPlayerId(p)],NewFrame)
         call SetFrameParent(NewFrame,StatusBarFrame)
-        call ShowFrame( NewFrame, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
-        call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
+        call ShowFrame( NewFrame, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (ViewAlly(GetOwningPlayer(newCaster)) or IsLocalJudge()))
+        call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (ViewAlly(GetOwningPlayer(newCaster)) or IsLocalJudge()))
         call SaveFrameHandle(HH,idp,StringHash(newString),NewFrame)
         call StatusIndicatorTooltip(NewFrame, newString)
         //call SaveReal               (HH, GetHandleId(NewFrame), c_DURATION, 2)
@@ -8668,15 +8795,15 @@ function CreateModeIndicatorWithPauseFormMadara takes unit newCaster, string new
         call SetFrameText( NewFrameText, R2SW(newDur,2, 1) )
         call SetFrameTextColour( NewFrameText, 0xFFFFA500 )
         call HandleListAddHandle(StatusBarFrameList[GetPlayerId(p)],NewFrameText)
-        call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
+        call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (ViewAlly(GetOwningPlayer(newCaster)) or IsLocalJudge()))
         call SaveFrameHandle(HH,idp,StringHash(newString+"2"),NewFrameText)
     else
         if LoadReal(HH, GetHandleId(NewFrame), c_DURATION)<=0 then
             set NewFrame=LoadFrameHandle(HH, idp,StringHash(newString))
             set NewFrameText=LoadFrameHandle(HH, idp,StringHash(newString+"2"))
             call SetFrameText( NewFrameText, R2SW(newDur,2, 1) )
-            call ShowFrame( NewFrame, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
-            call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
+            call ShowFrame( NewFrame, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (ViewAlly(GetOwningPlayer(newCaster)) or IsLocalJudge()))
+            call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (ViewAlly(GetOwningPlayer(newCaster)) or IsLocalJudge()))
         endif
     endif
     loop
@@ -8761,8 +8888,8 @@ function CreateModeIndicatorFormLaxus takes unit newCaster, string newString, re
         call SetFramePriority( NewFrame, 7 )
         call HandleListAddHandle(StatusBarFrameList[GetPlayerId(p)],NewFrame)
         call SetFrameParent(NewFrame,StatusBarFrame)
-        call ShowFrame( NewFrame, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
-        call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
+        call ShowFrame( NewFrame, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (ViewAlly(GetOwningPlayer(newCaster)) or IsLocalJudge()))
+        call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (ViewAlly(GetOwningPlayer(newCaster)) or IsLocalJudge()))
         call SaveFrameHandle(HH,idp,StringHash(newString),NewFrame)
         call StatusIndicatorTooltip(NewFrame, newString)
         //call SaveReal               (HH, GetHandleId(NewFrame), c_DURATION, 2)
@@ -8775,15 +8902,15 @@ function CreateModeIndicatorFormLaxus takes unit newCaster, string newString, re
         call SetFrameText( NewFrameText, R2SW(newDur,2, 1) )
         call SetFrameTextColour( NewFrameText, ConvertColour(255,255,30,30) )
         call HandleListAddHandle(StatusBarFrameList[GetPlayerId(p)],NewFrameText)
-        call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
+        call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (ViewAlly(GetOwningPlayer(newCaster)) or IsLocalJudge()))
         call SaveFrameHandle(HH,idp,StringHash(newString+"2"),NewFrameText)
     else
         if LoadReal(HH, GetHandleId(NewFrame), c_DURATION)<=0 then
             set NewFrame=LoadFrameHandle(HH, idp,StringHash(newString))
             set NewFrameText=LoadFrameHandle(HH, idp,StringHash(newString+"2"))
             call SetFrameText( NewFrameText, R2SW(newDur,2, 1) )
-            call ShowFrame( NewFrame, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
-            call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
+            call ShowFrame( NewFrame, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (ViewAlly(GetOwningPlayer(newCaster)) or IsLocalJudge()))
+            call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (ViewAlly(GetOwningPlayer(newCaster)) or IsLocalJudge()))
         endif
     endif
     if LoadReal(HH, GetHandleId(NewFrame), c_DURATION)<=0 then
@@ -8873,8 +9000,8 @@ function CreateModeIndicatorKarnaQ takes unit newCaster, string newString, real 
         call SetFramePriority( NewFrame, 7 )
         call HandleListAddHandle(StatusBarFrameList[GetPlayerId(p)],NewFrame)
         call SetFrameParent(NewFrame,StatusBarFrame)
-        call ShowFrame( NewFrame, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
-        call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
+        call ShowFrame( NewFrame, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (ViewAlly(GetOwningPlayer(newCaster)) or IsLocalJudge()))
+        call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (ViewAlly(GetOwningPlayer(newCaster)) or IsLocalJudge()))
         call SaveFrameHandle(HH,idp,StringHash(newString),NewFrame)
         call StatusIndicatorTooltip(NewFrame, newString)
         //call SaveReal               (HH, GetHandleId(NewFrame), c_DURATION, 2)
@@ -8887,15 +9014,15 @@ function CreateModeIndicatorKarnaQ takes unit newCaster, string newString, real 
         call SetFrameText( NewFrameText, R2SW(newDur,2, 1) )
         call SetFrameTextColour( NewFrameText, ConvertColour(255,255,30,30) )
         call HandleListAddHandle(StatusBarFrameList[GetPlayerId(p)],NewFrameText)
-        call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
+        call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (ViewAlly(GetOwningPlayer(newCaster)) or IsLocalJudge()))
         call SaveFrameHandle(HH,idp,StringHash(newString+"2"),NewFrameText)
     else
         if LoadReal(HH, GetHandleId(NewFrame), c_DURATION)<=0 then
             set NewFrame=LoadFrameHandle(HH, idp,StringHash(newString))
             set NewFrameText=LoadFrameHandle(HH, idp,StringHash(newString+"2"))
             call SetFrameText( NewFrameText, R2SW(newDur,2, 1) )
-            call ShowFrame( NewFrame, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
-            call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
+            call ShowFrame( NewFrame, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (ViewAlly(GetOwningPlayer(newCaster)) or IsLocalJudge()))
+            call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (ViewAlly(GetOwningPlayer(newCaster)) or IsLocalJudge()))
         endif
     endif
     if LoadReal(HH, GetHandleId(NewFrame), c_DURATION)<=0 then
@@ -8985,8 +9112,8 @@ function CreateModeIndicatorKarnaW takes unit newCaster, string newString, real 
         call SetFramePriority( NewFrame, 7 )
         call HandleListAddHandle(StatusBarFrameList[GetPlayerId(p)],NewFrame)
         call SetFrameParent(NewFrame,StatusBarFrame)
-        call ShowFrame( NewFrame, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
-        call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
+        call ShowFrame( NewFrame, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (ViewAlly(GetOwningPlayer(newCaster)) or IsLocalJudge()))
+        call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (ViewAlly(GetOwningPlayer(newCaster)) or IsLocalJudge()))
         call SaveFrameHandle(HH,idp,StringHash(newString),NewFrame)
         call StatusIndicatorTooltip(NewFrame, newString)
         //call SaveReal               (HH, GetHandleId(NewFrame), c_DURATION, 2)
@@ -8999,15 +9126,15 @@ function CreateModeIndicatorKarnaW takes unit newCaster, string newString, real 
         call SetFrameText( NewFrameText, R2SW(newDur,2, 1) )
         call SetFrameTextColour( NewFrameText, ConvertColour(255,255,30,30) )
         call HandleListAddHandle(StatusBarFrameList[GetPlayerId(p)],NewFrameText)
-        call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
+        call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (ViewAlly(GetOwningPlayer(newCaster)) or IsLocalJudge()))
         call SaveFrameHandle(HH,idp,StringHash(newString+"2"),NewFrameText)
     else
         if LoadReal(HH, GetHandleId(NewFrame), c_DURATION)<=0 then
             set NewFrame=LoadFrameHandle(HH, idp,StringHash(newString))
             set NewFrameText=LoadFrameHandle(HH, idp,StringHash(newString+"2"))
             call SetFrameText( NewFrameText, R2SW(newDur,2, 1) )
-            call ShowFrame( NewFrame, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
-            call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
+            call ShowFrame( NewFrame, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (ViewAlly(GetOwningPlayer(newCaster)) or IsLocalJudge()))
+            call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (ViewAlly(GetOwningPlayer(newCaster)) or IsLocalJudge()))
         endif
     endif
     if LoadReal(HH, GetHandleId(NewFrame), c_DURATION)<=0 then
@@ -11352,8 +11479,8 @@ function CreateModeIndicatorFormGoku takes unit newCaster, string newString, rea
         call SetFramePriority( NewFrame, 7 )
         call HandleListAddHandle(StatusBarFrameList[GetPlayerId(p)],NewFrame)
         call SetFrameParent(NewFrame,StatusBarFrame)
-        call ShowFrame( NewFrame, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
-        call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
+        call ShowFrame( NewFrame, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (ViewAlly(GetOwningPlayer(newCaster)) or IsLocalJudge()))
+        call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (ViewAlly(GetOwningPlayer(newCaster)) or IsLocalJudge()))
         call SaveFrameHandle(HH,idp,StringHash(newString),NewFrame)
         call StatusIndicatorTooltip(NewFrame, newString)
         //call SaveReal               (HH, GetHandleId(NewFrame), c_DURATION, 2)
@@ -11366,15 +11493,15 @@ function CreateModeIndicatorFormGoku takes unit newCaster, string newString, rea
         call SetFrameText( NewFrameText, R2SW(newDur,2, 1) )
         call SetFrameTextColour( NewFrameText, ConvertColour(255,255,30,30) )
         call HandleListAddHandle(StatusBarFrameList[GetPlayerId(p)],NewFrameText)
-        call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
+        call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (ViewAlly(GetOwningPlayer(newCaster)) or IsLocalJudge()))
         call SaveFrameHandle(HH,idp,StringHash(newString+"2"),NewFrameText)
     else
         if LoadReal(HH, GetHandleId(NewFrame), c_DURATION)<=0 then
             set NewFrame=LoadFrameHandle(HH, idp,StringHash(newString))
             set NewFrameText=LoadFrameHandle(HH, idp,StringHash(newString+"2"))
             call SetFrameText( NewFrameText, R2SW(newDur,2, 1) )
-            call ShowFrame( NewFrame, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
-            call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
+            call ShowFrame( NewFrame, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (ViewAlly(GetOwningPlayer(newCaster)) or IsLocalJudge()))
+            call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (ViewAlly(GetOwningPlayer(newCaster)) or IsLocalJudge()))
         endif
     endif
     if LoadReal(HH, GetHandleId(NewFrame), c_DURATION)<=0 then
@@ -11465,8 +11592,8 @@ function CreateModeIndicatorForm takes unit newCaster, string newString, real ne
         call SetFramePriority( NewFrame, 7 )
         call HandleListAddHandle(StatusBarFrameList[GetPlayerId(p)],NewFrame)
         call SetFrameParent(NewFrame,StatusBarFrame)
-        call ShowFrame( NewFrame, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
-        call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
+        call ShowFrame( NewFrame, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (ViewAlly(GetOwningPlayer(newCaster)) or IsLocalJudge()))
+        call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (ViewAlly(GetOwningPlayer(newCaster)) or IsLocalJudge()))
         call SaveFrameHandle(HH,idp,StringHash(newString),NewFrame)
         call StatusIndicatorTooltip(NewFrame, newString)
         //call SaveReal               (HH, GetHandleId(NewFrame), c_DURATION, 2)
@@ -11479,15 +11606,15 @@ function CreateModeIndicatorForm takes unit newCaster, string newString, real ne
         call SetFrameText( NewFrameText, R2SW(newDur,2, 1) )
         call SetFrameTextColour( NewFrameText, ConvertColour(255,255,30,30) )
         call HandleListAddHandle(StatusBarFrameList[GetPlayerId(p)],NewFrameText)
-        call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
+        call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (ViewAlly(GetOwningPlayer(newCaster)) or IsLocalJudge()))
         call SaveFrameHandle(HH,idp,StringHash(newString+"2"),NewFrameText)
     else
         if LoadReal(HH, GetHandleId(NewFrame), c_DURATION)<=0 then
             set NewFrame=LoadFrameHandle(HH, idp,StringHash(newString))
             set NewFrameText=LoadFrameHandle(HH, idp,StringHash(newString+"2"))
             call SetFrameText( NewFrameText, R2SW(newDur,2, 1) )
-            call ShowFrame( NewFrame, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
-            call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
+            call ShowFrame( NewFrame, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (ViewAlly(GetOwningPlayer(newCaster)) or IsLocalJudge()))
+            call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (ViewAlly(GetOwningPlayer(newCaster)) or IsLocalJudge()))
         endif
     endif
     if LoadReal(HH, GetHandleId(NewFrame), c_DURATION)<=0 then
@@ -11581,8 +11708,8 @@ function CreateModeIndicatorWithPauseForm takes unit newCaster, string newString
         call SetFramePriority( NewFrame, 7 )
         call HandleListAddHandle(StatusBarFrameList[GetPlayerId(p)],NewFrame)
         call SetFrameParent(NewFrame,StatusBarFrame)
-        call ShowFrame( NewFrame, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
-        call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
+        call ShowFrame( NewFrame, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (ViewAlly(GetOwningPlayer(newCaster)) or IsLocalJudge()))
+        call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (ViewAlly(GetOwningPlayer(newCaster)) or IsLocalJudge()))
         call SaveFrameHandle(HH,idp,StringHash(newString),NewFrame)
         call StatusIndicatorTooltip(NewFrame, newString)
         //call SaveReal               (HH, GetHandleId(NewFrame), c_DURATION, 2)
@@ -11595,15 +11722,15 @@ function CreateModeIndicatorWithPauseForm takes unit newCaster, string newString
         call SetFrameText( NewFrameText, R2SW(newDur,2, 1) )
         call SetFrameTextColour( NewFrameText, 0xFFFFA500 )
         call HandleListAddHandle(StatusBarFrameList[GetPlayerId(p)],NewFrameText)
-        call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
+        call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (ViewAlly(GetOwningPlayer(newCaster)) or IsLocalJudge()))
         call SaveFrameHandle(HH,idp,StringHash(newString+"2"),NewFrameText)
     else
         if LoadReal(HH, GetHandleId(NewFrame), c_DURATION)<=0 then
             set NewFrame=LoadFrameHandle(HH, idp,StringHash(newString))
             set NewFrameText=LoadFrameHandle(HH, idp,StringHash(newString+"2"))
             call SetFrameText( NewFrameText, R2SW(newDur,2, 1) )
-            call ShowFrame( NewFrame, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
-            call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
+            call ShowFrame( NewFrame, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (ViewAlly(GetOwningPlayer(newCaster)) or IsLocalJudge()))
+            call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (ViewAlly(GetOwningPlayer(newCaster)) or IsLocalJudge()))
         endif
     endif
     if LoadReal(HH, GetHandleId(NewFrame), c_DURATION)<=0 then
@@ -11695,8 +11822,8 @@ function CreateModeIndicatorFormDispellable takes unit newCaster, string newStri
         call SetFramePriority( NewFrame, 7 )
         call HandleListAddHandle(StatusBarFrameList[GetPlayerId(p)],NewFrame)
         call SetFrameParent(NewFrame,StatusBarFrame)
-        call ShowFrame( NewFrame, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
-        call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
+        call ShowFrame( NewFrame, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (ViewAlly(GetOwningPlayer(newCaster)) or IsLocalJudge()))
+        call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (ViewAlly(GetOwningPlayer(newCaster)) or IsLocalJudge()))
         call SaveFrameHandle(HH,idp,StringHash(newString),NewFrame)
         call StatusIndicatorTooltip(NewFrame, newString)
         //call SaveReal               (HH, GetHandleId(NewFrame), c_DURATION, 2)
@@ -11709,15 +11836,15 @@ function CreateModeIndicatorFormDispellable takes unit newCaster, string newStri
         call SetFrameText( NewFrameText, R2SW(newDur,2, 1) )
         call SetFrameTextColour( NewFrameText, ConvertColour(255,255,30,30) )
         call HandleListAddHandle(StatusBarFrameList[GetPlayerId(p)],NewFrameText)
-        call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
+        call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (ViewAlly(GetOwningPlayer(newCaster)) or IsLocalJudge()))
         call SaveFrameHandle(HH,idp,StringHash(newString+"2"),NewFrameText)
     else
         if LoadReal(HH, GetHandleId(NewFrame), c_DURATION)<=0 then
             set NewFrame=LoadFrameHandle(HH, idp,StringHash(newString))
             set NewFrameText=LoadFrameHandle(HH, idp,StringHash(newString+"2"))
             call SetFrameText( NewFrameText, R2SW(newDur,2, 1) )
-            call ShowFrame( NewFrame, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
-            call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
+            call ShowFrame( NewFrame, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (ViewAlly(GetOwningPlayer(newCaster)) or IsLocalJudge()))
+            call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (ViewAlly(GetOwningPlayer(newCaster)) or IsLocalJudge()))
         endif
     endif
     if LoadReal(HH, GetHandleId(NewFrame), c_DURATION)<=0 then
@@ -11813,8 +11940,8 @@ function CreateModeIndicatorWithPauseFormDispellable takes unit newCaster, strin
         call SetFramePriority( NewFrame, 7 )
         call HandleListAddHandle(StatusBarFrameList[GetPlayerId(p)],NewFrame)
         call SetFrameParent(NewFrame,StatusBarFrame)
-        call ShowFrame( NewFrame, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
-        call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
+        call ShowFrame( NewFrame, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (ViewAlly(GetOwningPlayer(newCaster)) or IsLocalJudge()))
+        call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (ViewAlly(GetOwningPlayer(newCaster)) or IsLocalJudge()))
         call SaveFrameHandle(HH,idp,StringHash(newString),NewFrame)
         call StatusIndicatorTooltip(NewFrame, newString)
         //call SaveReal               (HH, GetHandleId(NewFrame), c_DURATION, 2)
@@ -11827,15 +11954,15 @@ function CreateModeIndicatorWithPauseFormDispellable takes unit newCaster, strin
         call SetFrameText( NewFrameText, R2SW(newDur,2, 1) )
         call SetFrameTextColour( NewFrameText, 0xFFFFA500 )
         call HandleListAddHandle(StatusBarFrameList[GetPlayerId(p)],NewFrameText)
-        call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
+        call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (ViewAlly(GetOwningPlayer(newCaster)) or IsLocalJudge()))
         call SaveFrameHandle(HH,idp,StringHash(newString+"2"),NewFrameText)
     else
         if LoadReal(HH, GetHandleId(NewFrame), c_DURATION)<=0 then
             set NewFrame=LoadFrameHandle(HH, idp,StringHash(newString))
             set NewFrameText=LoadFrameHandle(HH, idp,StringHash(newString+"2"))
             call SetFrameText( NewFrameText, R2SW(newDur,2, 1) )
-            call ShowFrame( NewFrame, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
-            call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
+            call ShowFrame( NewFrame, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (ViewAlly(GetOwningPlayer(newCaster)) or IsLocalJudge()))
+            call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (ViewAlly(GetOwningPlayer(newCaster)) or IsLocalJudge()))
         endif
     endif
     if LoadReal(HH, GetHandleId(NewFrame), c_DURATION)<=0 then
@@ -11931,8 +12058,8 @@ function CreateModeIndicatorWithPauseFormDispellableHash takes unit newCaster, s
         call SetFramePriority( NewFrame, 7 )
         call HandleListAddHandle(StatusBarFrameList[GetPlayerId(p)],NewFrame)
         call SetFrameParent(NewFrame,StatusBarFrame)
-        call ShowFrame( NewFrame, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
-        call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
+        call ShowFrame( NewFrame, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (ViewAlly(GetOwningPlayer(newCaster)) or IsLocalJudge()))
+        call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (ViewAlly(GetOwningPlayer(newCaster)) or IsLocalJudge()))
         call SaveFrameHandle(HH,idp,StringHash(newString),NewFrame)
         call StatusIndicatorTooltip(NewFrame, newString)
         //call SaveReal               (HH, GetHandleId(NewFrame), c_DURATION, 2)
@@ -11945,15 +12072,15 @@ function CreateModeIndicatorWithPauseFormDispellableHash takes unit newCaster, s
         call SetFrameText( NewFrameText, R2SW(newDur,2, 1) )
         call SetFrameTextColour( NewFrameText, 0xFFFFA500 )
         call HandleListAddHandle(StatusBarFrameList[GetPlayerId(p)],NewFrameText)
-        call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
+        call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (ViewAlly(GetOwningPlayer(newCaster)) or IsLocalJudge()))
         call SaveFrameHandle(HH,idp,StringHash(newString+"2"),NewFrameText)
     else
         if LoadReal(HH, GetHandleId(NewFrame), c_DURATION)<=0 then
             set NewFrame=LoadFrameHandle(HH, idp,StringHash(newString))
             set NewFrameText=LoadFrameHandle(HH, idp,StringHash(newString+"2"))
             call SetFrameText( NewFrameText, R2SW(newDur,2, 1) )
-            call ShowFrame( NewFrame, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
-            call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
+            call ShowFrame( NewFrame, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (ViewAlly(GetOwningPlayer(newCaster)) or IsLocalJudge()))
+            call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (ViewAlly(GetOwningPlayer(newCaster)) or IsLocalJudge()))
         endif
     endif
     if LoadReal(HH, GetHandleId(NewFrame), c_DURATION)<=0 then
@@ -12541,6 +12668,10 @@ if CBS_P!=null then
 return CBS_P
 endif
 return GetTriggerPlayer()
+endfunction
+// герой игрока для команд (-debug, killme, -re, -rfh): у судьи / игрока после -switch — герой занятого слота
+function CBS_HeroId takes nothing returns integer
+return JudgeHid(GetPlayerId(CBS_TrigP()))
 endfunction
 function DamageIndicatorForAll_Cond takes nothing returns boolean
         return true
@@ -13495,6 +13626,10 @@ local real z=GetUnitFlyHeight(c)+150.
 local real x1=GetUnitX(c)+150.*CosBJ(ang)
 local real y1=GetUnitY(c)+150.*SinBJ(ang)
 local timer t
+// бонус автоатак (урон, отбрасывание, эффекты) — с 6 уровня героя; описание в E
+if GetHeroLevel(c)<6 then
+return
+endif
 call Bof_Dmg(c,u,(I2R(Rem_Int_atk(c,true))*20.)*0.001)
 call Rem_Fx(c,"bof\\Scarlet-44.mdx",GetUnitX(u),GetUnitY(u),z,ang+180.,1.,0.)
 call SetSpecialEffectPitch(bj_lastCreatedEffect,180.)
@@ -15091,6 +15226,11 @@ local real x=GetUnitX(c)
 local real y=GetUnitY(c)
 if GetUnitTypeId(c)!='HFla' then
 set fla=LoadUnitHandle(HH,GetHandleId(c),SH_FlaOwner)
+endif
+// бонус автоатак Фландре и её клонов — с 6 уровня Фландре; описание в E
+if fla==null or GetHeroLevel(fla)<6 then
+set fla=null
+return
 endif
 if fla!=null then
 call Bof_Dmg(fla,u,(I2R(Fla_Int_atk(fla,true))*20.)*0.001)
@@ -22588,7 +22728,7 @@ call LANG_QuestBJ(bj_QUESTTYPE_REQ_DISCOVERED,"Information","|cFFFFC850Ориг�
 //call CreateQuestBJ(bj_QUESTTYPE_REQ_DISCOVERED,"Игровые термины","|cFFFFC850Подробное описание статусов и игровых терминов|r\n\n"+"• |cFFFFC850Недосягаемость|r - статус при котором юнита/героя невозможно выделить таргетными способностями.\n\n"+"• |cFFFFC850Страх|r - тип контроля запрещающий игроку управлять юнитом, сам юнит - разбегается от источника страха. Страх снимается нанесением урона или по окончанию действия.","war3mapImported\\BTNdevil_may_cry3.blp")
 
 call LANG_QuestBJ(bj_QUESTTYPE_OPT_DISCOVERED,"Commands p.1","|cFFFFC850Игровые команды|r:\n\"-en\" / \"-ru\" - сменить язык карты (английский / русский), меняется только у вас. Также в окне настроек (шестерёнка над миникартой).\n\"-en\" / \"-ru\" - switch the map language (English / Russian).\n\"-test\" - команда вводится красным игроком до начала первого раунда. Активирует тест режим, давая доступ к дополнительным командам.\n\"-debt\" - показывает сколько золота вы должны союзнику и сколько должны вам.\n\"-itemsc\" - включает/выключает использование предметов на себя.\n\"-setmr\" - позволяет установить текуший маг резист.\n\"-cam\" - установить высоту камеры на значение от 100 до 6000.","|cFFFFC850Game commands|r:\n\"-en\" / \"-ru\" - switch the map language (English / Russian), only for you. Also in the settings window (gear above the minimap).\n\"-en\" / \"-ru\" - сменить язык карты (английский / русский), меняется только у вас. Также в окне настроек (шестерёнка над миникартой).\n\"-test\" - the command is entered by the red player before the first round. Activates the test mode, giving access to additional commands.\n\"-debt\" - shows how much gold you owe to an ally and how much you owe.\n\"-itemsc\" - enables/disables the use of items on yourself.\n\"-setmr\" - allows you to set the current magic resistance.\n\"-cam\" - set the camera height to a value from 100 to 6000.","ReplaceableTextures\\CommandButtons\\BTNVegetaUE.blp")
-call LANG_QuestBJ(bj_QUESTTYPE_OPT_DISCOVERED,"Commands p.2","|cFFFFC850Игровые команды|r:\n\"-debug\" - снимает все эффекты, неуязвимости и паузы, если вы 15 секунд не двигалась. Телепортирует в случайную точку не далее 120 ед.\n\"-rfh\" - пересоздает героя, в случае бага, возможно только вне раунда.\n\"-re\" - воскрешает героя, применимо только на базе.\n\"killme\" - убивает героя через 10 сек.\n\"-swap x\" - поменяться персанажем с союзником.","|cFFFFC850Game commands|r:\n\"-debug\" - removes all effects, invulnerabilities and pauses if you have not moved for 15 seconds. Teleports to a random point no further than 120 units.\n\"-rfh\" - recreates the hero, in case of a bug, only possible outside the round.\n\"-re\" - resurrects the hero, only applicable at the base.\n\"killme\" - kills the hero after 10 sec.\n\"-swap x\" - swap characters with an ally.","ReplaceableTextures\\CommandButtons\\BTNOrochimaru.blp")
+call LANG_QuestBJ(bj_QUESTTYPE_OPT_DISCOVERED,"Commands p.2","|cFFFFC850Игровые команды|r:\n\"-debug\" - снимает все эффекты, неуязвимости и паузы, если вы 15 секунд не двигалась. Телепортирует в случайную точку не далее 120 ед.\n\"-rfh\" - пересоздает героя, в случае бага, возможно только вне раунда.\n\"-re\" - воскрешает героя, применимо только на базе.\n\"killme\" - убивает героя через 10 сек.\n\"-swap x\" - поменяться персанажем с союзником.\n\"-take N\" / \"-untake\" - судья занимает место вышедшего игрока N (без номера — первое свободное) / возвращается в судьи.\n\"-switch x\" - перейти со своим героем в команду соперника, а вышедший игрок x с его героем переходит в вашу. Не в FFA, только между раундами.","|cFFFFC850Game commands|r:\n\"-debug\" - removes all effects, invulnerabilities and pauses if you have not moved for 15 seconds. Teleports to a random point no further than 120 units.\n\"-rfh\" - recreates the hero, in case of a bug, only possible outside the round.\n\"-re\" - resurrects the hero, only applicable at the base.\n\"killme\" - kills the hero after 10 sec.\n\"-swap x\" - swap characters with an ally.\n\"-take N\" / \"-untake\" - a judge takes the place of player N who left (no number: the first free one) / goes back to judging.\n\"-switch x\" - move with your hero to the enemy team; player x who left moves with their hero to yours. Not in FFA, only between rounds.","ReplaceableTextures\\CommandButtons\\BTNOrochimaru.blp")
 call LANG_QuestBJ(bj_QUESTTYPE_OPT_DISCOVERED,"Commands p.3","|cFFFFC850Игровые команды|r:\n\"-mr\" - показывает текущее количество магических резистов у вашего персонажа.\n\"-cr\" - показывает текущее количество резистов к контролю у вашего персонажа.\n\"-damage\" - показывает игроку весь урон, который он нанес за всё время в игре, также количество уменьшенного урона общими резистами (не маг) и также количество урона, которое он заблокировал щитами или другими источниками.\n\"-tdamage\" - показывает всю эту информацию также и про других игроков.\n\"-theal\" - показывает всю информацию по восстановленному себе или союзным героям HP и MP у всех игроков.","|cFFFFC850Game commands|r:\n\"-mr\" - shows the current amount of magic resistances your character has.\n\"-cr\" - shows the current amount of control resistances your character has.\n\"-damage\" - shows the player all the damage he has dealt throughout the entire game, as well as the amount of damage reduced by general resistances (not a mage) and also the amount of damage he has blocked with shields or other sources.\n\"-tdamage\" - shows all this information about other players as well.\n\"-theal\" - shows all the information about HP and MP restored to yourself or allied heroes for all players.","ReplaceableTextures\\CommandButtons\\BTNLaxusExD_Port.blp")
 call LANG_QuestBJ(bj_QUESTTYPE_OPT_DISCOVERED,"Commands p.4","|cFFFFC850Игровые команды|r:\n\"-rounds xx\" - устанавливает кол-во раундов от 2 до 50.\n\"-setduels xx\" - устанавливает разницу между дуэлями, указать можно от 2 до 50. Написать можно лишь в первом раунде.\n\"-noduels\" - включает/выключает дуэли. Так же, после раунда, когда дуэль должна произойти, выдается компенсация. Написать можно лишь в первом раунде.","|cFFFFC850Game commands|r:\n\"-rounds xx\" - sets the number of rounds from 2 to 50.\n\"-setduels xx\" - sets the difference between duels, you can specify from 2 to 50. You can write only in the first round.\n\"-noduels\" - enables/disables duels. Also, after the round, when the duel should take place, compensation is given. You can only write in the first round.","ReplaceableTextures\\CommandButtons\\BTNWendy.blp")
 call LANG_QuestBJ(bj_QUESTTYPE_OPT_DISCOVERED,"Commands for Test Mode","|cFFFFC850Игровые команды|r:\n\"-hero x yyy\" - Создается герой c id yyy для игрока x. Узнать id можно с помощью команды \"-id 1..4 \".\n\"-cd\" - сбрасывает перезарядку у всех героев.\n\"-setmr\" - позволяет установить текуший маг резист.\n\"-heal\" и \"-unheal\" - Восстанавливает/Уменьшает до 1 здоровье и ману всех героев.\n\"-start\" - Начинает раунд спустя 3 сек.\n\"-pause\" - Останавливает любой таймер на экране.\"-amir\" - Дает каждому игроку 99999999 золота.\n\"-lvlamir\" - Дает максимальный уровень всем героям.\n\"-lvl x\" - устанавливает всем игрокам X уровень.\n\"-control x\" - Дает контроль над указанным игроком.\n\"-height x\" - Устанавливает выбранному юниту X высоту.","|cFFFFC850Game commands|r:\n\"-hero x yyy\" - A hero with the id yyy is created for player x. You can find out the id using the command \"-id 1..4 \".\n\"-cd\" - Resets the cooldown for all heroes.\n\"-setmr\" - Allows you to set the current magic resistance.\n\"-heal\" and \"-unheal\" - Restores/Reduces to 1 health and mana for all heroes.\n\"-start\" - Starts the round after 3 sec.\n\"-pause\" - Stops any timer for screen.\"-amir\" - Gives each player 99999999 gold.\n\"-lvlamir\" - Gives the maximum level to all heroes.\n\"-lvl x\" - sets all players to level X.\n\"-control x\" - Gives control over the specified player.\n\"-height x\" - Sets the selected unit's height to X.","ReplaceableTextures\\CommandButtons\\BTNHourglass_Yukirin.blp")
@@ -28224,9 +28364,9 @@ function OnButtonPickHeroId takes nothing returns nothing
             call UnitAddItemById(Hero[TestModePlayerId[GetPlayerId(p)]],'I00D')
             call UnitAddItemById(Hero[TestModePlayerId[GetPlayerId(p)]],'I00Q')
             if FFAMode==false then
-                if Player(TestModePlayerId[GetPlayerId(p)])==Player(0)or Player(TestModePlayerId[GetPlayerId(p)])==Player(1)or Player(TestModePlayerId[GetPlayerId(p)])==Player(2)or Player(TestModePlayerId[GetPlayerId(p)])==Player(3)or Player(TestModePlayerId[GetPlayerId(p)])==Player(4)then
+                if TeamOfP(TestModePlayerId[GetPlayerId(p)])==0 then
                     call GroupAddUnit(udg_CG[1],Hero[TestModePlayerId[GetPlayerId(p)]])
-                    elseif Player(TestModePlayerId[GetPlayerId(p)])==Player(5)or Player(TestModePlayerId[GetPlayerId(p)])==Player(6)or Player(TestModePlayerId[GetPlayerId(p)])==Player(7)or Player(TestModePlayerId[GetPlayerId(p)])==Player(8)or Player(TestModePlayerId[GetPlayerId(p)])==Player(9)then
+                    elseif TeamOfP(TestModePlayerId[GetPlayerId(p)])==1 then
                     call GroupAddUnit(udg_CG[2],Hero[TestModePlayerId[GetPlayerId(p)]])
                 endif
             else
@@ -28299,9 +28439,9 @@ function OnButtonPickHeroId takes nothing returns nothing
                 call W3MMD_Lite_Set_Integer(p,"Picked_hero",HeroSkin(udg_Hero[GetPlayerId(p)+1]))
             endif
             if FFAMode==false then
-                if Player(GetPlayerId(p))==Player(0)or Player(GetPlayerId(p))==Player(1)or Player(GetPlayerId(p))==Player(2)or Player(GetPlayerId(p))==Player(3)or Player(GetPlayerId(p))==Player(4)then
+                if TeamOfP(GetPlayerId(p))==0 then
                     call GroupAddUnit(udg_CG[1],Hero[GetPlayerId(p)])
-                    elseif Player(GetPlayerId(p))==Player(5)or Player(GetPlayerId(p))==Player(6)or Player(GetPlayerId(p))==Player(7)or Player(GetPlayerId(p))==Player(8)or Player(GetPlayerId(p))==Player(9)then
+                    elseif TeamOfP(GetPlayerId(p))==1 then
                     call GroupAddUnit(udg_CG[2],Hero[GetPlayerId(p)])
                 endif
             else
@@ -28361,9 +28501,9 @@ function OnButtonRandom takes nothing returns nothing
         call SetFrameColourEx( GetFrameByName("TavernBarHeroTitle",id),1, 0xFF505050 )
         call SetFrameColourEx( GetFrameByName("TavernBarHeroTitle",id),2, 0xFF505050 )
         if FFAMode==false then
-        if Player(i)==Player(0)or Player(i)==Player(1)or Player(i)==Player(2)or Player(i)==Player(3)or Player(i)==Player(4)then
+        if TeamOfP(i)==0 then
         call GroupAddUnit(udg_CG[1],u[i+1])
-        elseif Player(i)==Player(5)or Player(i)==Player(6)or Player(i)==Player(7)or Player(i)==Player(8)or Player(i)==Player(9)then
+        elseif TeamOfP(i)==1 then
         call GroupAddUnit(udg_CG[2],u[i+1])
         endif
         else
@@ -35909,9 +36049,9 @@ set kakineid[i]=id
 call DisplayChatMessageEx(null,CHAT_RECIPIENT_UNKNOWN,10,true,Lng("Игроку ","Player ")+udg_Color[i+1]+GetPlayerName(Player(i))+Lng("|r выпал ","|r gets ")+GetUnitName(u[i+1]))
 // call AddFrameText(TavernChat,"Игроку "+udg_Color[i+1]+GetPlayerName(Player(i))+"|r выпал "+GetUnitName(u[i+1]))
 if FFAMode==false then
-if Player(i)==Player(0)or Player(i)==Player(1)or Player(i)==Player(2)or Player(i)==Player(3)or Player(i)==Player(4)then
+if TeamOfP(i)==0 then
 call GroupAddUnit(udg_CG[1],u[i+1])
-elseif Player(i)==Player(5)or Player(i)==Player(6)or Player(i)==Player(7)or Player(i)==Player(8)or Player(i)==Player(9)then
+elseif TeamOfP(i)==1 then
 call GroupAddUnit(udg_CG[2],u[i+1])
 endif
 else
@@ -36019,7 +36159,7 @@ elseif bu==udg_Button[3] then
         call SetFrameTexture( SpectacleCaptainSelect0, "checkbox-depressed2.blp", 1, true )
         call SetFrameTexture( SpectacleCaptainSelect0, "checkbox-depressed2.blp", 2, true )
         call SetFrameSize( SpectacleCaptainSelect0, .12, .035 )
-        call ShowFrame( SpectacleCaptainSelect0, GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11 )
+        call ShowFrame( SpectacleCaptainSelect0, IsLocalJudge() )
         call SetFramePriority( SpectacleCaptainSelect0, 7 )
         call SetFrameRelativePoint( SpectacleCaptainSelect0, FRAMEPOINT_CENTER, TavernHeroFrame, FRAMEPOINT_TOP, -0.13, -.112 )
 
@@ -36031,7 +36171,7 @@ elseif bu==udg_Button[3] then
         call SetFrameTextColour( SpectacleCaptainSelect0Text, 0xFFFFA500 )
         call SetFrameParent( SpectacleCaptainSelect0Text, SpectacleCaptainSelect0 )
         call SetFrameText( SpectacleCaptainSelect0Text, "First pick to "+udg_Color[1]+GetPlayerName(Player(0))+"|r")
-        call ShowFrame( SpectacleCaptainSelect0Text, GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11 )
+        call ShowFrame( SpectacleCaptainSelect0Text, IsLocalJudge() )
         call SetFrameRelativePoint( SpectacleCaptainSelect0Text, FRAMEPOINT_CENTER, SpectacleCaptainSelect0, FRAMEPOINT_CENTER, .00011, .0 ) 
 
         set tOnPress = CreateTrigger( )
@@ -36051,7 +36191,7 @@ elseif bu==udg_Button[3] then
         call SetFrameTexture( SpectacleCaptainSelect1, "checkbox-depressed2.blp", 1, true )
         call SetFrameTexture( SpectacleCaptainSelect1, "checkbox-depressed2.blp", 2, true )
         call SetFrameSize( SpectacleCaptainSelect1, .12, .035 )
-        call ShowFrame( SpectacleCaptainSelect1, GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11 )
+        call ShowFrame( SpectacleCaptainSelect1, IsLocalJudge() )
         call SetFramePriority( SpectacleCaptainSelect1, 7 )
         call SetFrameRelativePoint( SpectacleCaptainSelect1, FRAMEPOINT_CENTER, TavernHeroFrame, FRAMEPOINT_TOP, 0.15, -.112 )
 
@@ -36063,7 +36203,7 @@ elseif bu==udg_Button[3] then
         call SetFrameTextColour( SpectacleCaptainSelect1Text, 0xFFFFA500 )
         call SetFrameParent( SpectacleCaptainSelect1Text, SpectacleCaptainSelect1 )
         call SetFrameText( SpectacleCaptainSelect1Text, "First pick to "+udg_Color[6]+GetPlayerName(Player(5))+"|r")
-        call ShowFrame( SpectacleCaptainSelect1Text, GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11 )
+        call ShowFrame( SpectacleCaptainSelect1Text, IsLocalJudge() )
         call SetFrameRelativePoint( SpectacleCaptainSelect1Text, FRAMEPOINT_CENTER, SpectacleCaptainSelect1, FRAMEPOINT_CENTER, .00011, .0 ) 
 
         set tOnPress = CreateTrigger( )
@@ -36743,9 +36883,9 @@ function UpdateMultiboard takes nothing returns nothing
                 call MultiboardReleaseItem(mbitem)
             endif
             if FFAMode==false then
-                if Rowx>=0 and Rowx<=4 then
+                if TeamOfP(Rowx)==0 then
                     call SetPlayerState(Player(Rowx),PLAYER_STATE_RESOURCE_LUMBER,win[1])
-                elseif Rowx>=5 and Rowx<=9 then
+                elseif TeamOfP(Rowx)==1 then
                     call SetPlayerState(Player(Rowx),PLAYER_STATE_RESOURCE_LUMBER,win[2])
                 endif
             else
@@ -37516,7 +37656,7 @@ local unit u=Hero[ip]
 local integer uid=GetHandleId(u)
 if GetUnitTypeId(u)=='H02O' then
     if IsUnitSelected(u,GetLocalPlayer()) and IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(u)) then
-        call SetFrameText(GetFrameByName("CustomLeaderboardText",0),"|c00FF80C0Absorbed|r |c00FF0000STR|r: +"+I2S(GutsStr[ip])+"|n|c00FF80C0Nearby deaths|r (round): |c00FF0000STR|r +"+I2S(LoadInteger(HH,uid,SH_BuuNearStr))+"  |c003CFF3CAGI|r +"+I2S(LoadInteger(HH,uid,SH_BuuNearAgi))+"  |c000080FFINT|r +"+I2S(LoadInteger(HH,uid,SH_BuuNearInt)))
+        call SetFrameText(GetFrameByName("CustomLeaderboardText",0),"|c00FF80C0"+Lng("Поглощено","Absorbed")+":|r |c00FF0000STR|r +"+I2S(GutsStr[ip])+"|n|c00FF80C0"+Lng("Смерти (пассив)","Deaths (passive)")+":|r |c00FF0000STR|r +"+I2S(LoadInteger(HH,uid,SH_BuuNearStr))+" |c003CFF3CAGI|r +"+I2S(LoadInteger(HH,uid,SH_BuuNearAgi))+" |c000080FFINT|r +"+I2S(LoadInteger(HH,uid,SH_BuuNearInt)))
         call ShowFrame(GetFrameByName("CustomLeaderboard",0), true)
         call SetFrameSize( GetFrameByName("CustomLeaderboard",0), .1775, GetFrameHeight( GetFrameByName("CustomLeaderboardText",0))+0.016)
         call SetFrameTextAlignment( GetFrameByName("CustomLeaderboardText",0), TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_LEFT )
@@ -37749,8 +37889,8 @@ function ShadowCoverIndicator takes unit newCaster, string newString, real newDu
         call SetFramePriority( NewFrame, 7 )
         call HandleListAddHandle(StatusBarFrameList[GetPlayerId(p)],NewFrame)
         call SetFrameParent(NewFrame,StatusBarFrame)
-        call ShowFrame( NewFrame, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
-        call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
+        call ShowFrame( NewFrame, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (ViewAlly(GetOwningPlayer(newCaster)) or IsLocalJudge()))
+        call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (ViewAlly(GetOwningPlayer(newCaster)) or IsLocalJudge()))
         call SaveFrameHandle(HH,idp,StringHash(newString),NewFrame)
         call StatusIndicatorTooltip(NewFrame, newString)
         //call SaveReal               (HH, GetHandleId(NewFrame), c_DURATION, 2)
@@ -37763,15 +37903,15 @@ function ShadowCoverIndicator takes unit newCaster, string newString, real newDu
         call SetFrameText( NewFrameText, R2SW(newDur,2, 1) )
         call SetFrameTextColour( NewFrameText, ConvertColour(255,255,30,30) )
         call HandleListAddHandle(StatusBarFrameList[GetPlayerId(p)],NewFrameText)
-        call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
+        call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (ViewAlly(GetOwningPlayer(newCaster)) or IsLocalJudge()))
         call SaveFrameHandle(HH,idp,StringHash(newString+"2"),NewFrameText)
     else
         if LoadReal(HH, GetHandleId(NewFrame), c_DURATION)<=0 then
             set NewFrame=LoadFrameHandle(HH, idp,StringHash(newString))
             set NewFrameText=LoadFrameHandle(HH, idp,StringHash(newString+"2"))
             call SetFrameText( NewFrameText, R2SW(newDur,2, 1) )
-            call ShowFrame( NewFrame, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
-            call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
+            call ShowFrame( NewFrame, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (ViewAlly(GetOwningPlayer(newCaster)) or IsLocalJudge()))
+            call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (ViewAlly(GetOwningPlayer(newCaster)) or IsLocalJudge()))
         endif
     endif
     if LoadReal(HH, GetHandleId(NewFrame), c_DURATION)<=0 then
@@ -44155,7 +44295,7 @@ if ModuloInteger(seconds,10)<1 and GetFrameHeight( GetFrameChild(GetOriginFrame(
 endif
 loop
 exitwhen x>=12
-    if GetPlayerSlotState(Player(x))!=PLAYER_SLOT_STATE_PLAYING then
+    if GetPlayerSlotState(Player(x))!=PLAYER_SLOT_STATE_PLAYING and SlotJudge[x]==0 then
         set ingame[x]=false
     endif
     if LoadInteger(HH,GetHandleId( Player(x) ),SH_1486)>0 then
@@ -46753,12 +46893,12 @@ function WriteAlly_Act takes nothing returns nothing
         local integer id_player=GetPlayerId(GetTriggerPlayer())
         loop
         exitwhen i>=11
-                if id_player>4 then
-                        if i>4 then
+                if TeamOfP(id_player)==1 then
+                        if TeamOfP(i)>=1 then
                                 call DisplayTimedTextToPlayer(Player(i),0,0,3, udg_Color[GetPlayerId(GetTriggerPlayer())+1]+GetPlayerName(GetTriggerPlayer())+"|r: "+s)
                         endif
                 else
-                        if i<5 then
+                        if TeamOfP(i)==0 then
                                 call DisplayTimedTextToPlayer(Player(i),0,0,3, udg_Color[GetPlayerId(GetTriggerPlayer())+1]+GetPlayerName(GetTriggerPlayer())+"|r: "+s)
                         endif
                 endif
@@ -48200,9 +48340,9 @@ set it[i]=UnitItemInSlot(u,i)
 set i=i+1
 endloop
 if FFAMode==false then
-if ip<5 then
+if TeamOfP(ip)==0 then
 call GroupAddUnit(udg_CG[1],n)
-elseif ip>=5 and ip<10 then
+elseif TeamOfP(ip)==1 then
 call GroupAddUnit(udg_CG[2],n)
 endif
 else
@@ -48275,9 +48415,9 @@ set it[i]=UnitItemInSlot(u,i)
 set i=i+1
 endloop
 if FFAMode==false then
-if ip<5 then
+if TeamOfP(ip)==0 then
 call GroupAddUnit(udg_CG[1],n)
-elseif ip>=5 and ip<10 then
+elseif TeamOfP(ip)==1 then
 call GroupAddUnit(udg_CG[2],n)
 endif
 else
@@ -48350,9 +48490,9 @@ set it[i]=UnitItemInSlot(u,i)
 set i=i+1
 endloop
 if FFAMode==false then
-if ip<5 then
+if TeamOfP(ip)==0 then
 call GroupAddUnit(udg_CG[1],n)
-elseif ip>=5 and ip<10 then
+elseif TeamOfP(ip)==1 then
 call GroupAddUnit(udg_CG[2],n)
 endif
 else
@@ -48425,9 +48565,9 @@ set it[i]=UnitItemInSlot(u,i)
 set i=i+1
 endloop
 if FFAMode==false then
-if ip<5 then
+if TeamOfP(ip)==0 then
 call GroupAddUnit(udg_CG[1],n)
-elseif ip>=5 and ip<10 then
+elseif TeamOfP(ip)==1 then
 call GroupAddUnit(udg_CG[2],n)
 endif
 else
@@ -48500,9 +48640,9 @@ set it[i]=UnitItemInSlot(u,i)
 set i=i+1
 endloop
 if FFAMode==false then
-if ip<5 then
+if TeamOfP(ip)==0 then
 call GroupAddUnit(udg_CG[1],n)
-elseif ip>=5 and ip<10 then
+elseif TeamOfP(ip)==1 then
 call GroupAddUnit(udg_CG[2],n)
 endif
 else
@@ -48575,9 +48715,9 @@ set it[i]=UnitItemInSlot(u,i)
 set i=i+1
 endloop
 if FFAMode==false then
-if ip<5 then
+if TeamOfP(ip)==0 then
 call GroupAddUnit(udg_CG[1],n)
-elseif ip>=5 and ip<10 then
+elseif TeamOfP(ip)==1 then
 call GroupAddUnit(udg_CG[2],n)
 endif
 else
@@ -48650,9 +48790,9 @@ set it[i]=UnitItemInSlot(u,i)
 set i=i+1
 endloop
 if FFAMode==false then
-if ip<5 then
+if TeamOfP(ip)==0 then
 call GroupAddUnit(udg_CG[1],n)
-elseif ip>=5 and ip<10 then
+elseif TeamOfP(ip)==1 then
 call GroupAddUnit(udg_CG[2],n)
 endif
 else
@@ -48744,9 +48884,9 @@ set it[i]=UnitItemInSlot(u,i)
 set i=i+1
 endloop
 if FFAMode==false then
-if ip<5 then
+if TeamOfP(ip)==0 then
 call GroupAddUnit(udg_CG[1],n)
-elseif ip>=5 and ip<10 then
+elseif TeamOfP(ip)==1 then
 call GroupAddUnit(udg_CG[2],n)
 endif
 else
@@ -48819,9 +48959,9 @@ set it[i]=UnitItemInSlot(u,i)
 set i=i+1
 endloop
 if FFAMode==false then
-if ip<5 then
+if TeamOfP(ip)==0 then
 call GroupAddUnit(udg_CG[1],n)
-elseif ip>=5 and ip<10 then
+elseif TeamOfP(ip)==1 then
 call GroupAddUnit(udg_CG[2],n)
 endif
 else
@@ -48894,9 +49034,9 @@ set it[i]=UnitItemInSlot(u,i)
 set i=i+1
 endloop
 if FFAMode==false then
-if ip<5 then
+if TeamOfP(ip)==0 then
 call GroupAddUnit(udg_CG[1],n)
-elseif ip>=5 and ip<10 then
+elseif TeamOfP(ip)==1 then
 call GroupAddUnit(udg_CG[2],n)
 endif
 else
@@ -48969,9 +49109,9 @@ set it[i]=UnitItemInSlot(u,i)
 set i=i+1
 endloop
 if FFAMode==false then
-if ip<5 then
+if TeamOfP(ip)==0 then
 call GroupAddUnit(udg_CG[1],n)
-elseif ip>=5 and ip<10 then
+elseif TeamOfP(ip)==1 then
 call GroupAddUnit(udg_CG[2],n)
 endif
 else
@@ -49044,9 +49184,9 @@ set it[i]=UnitItemInSlot(u,i)
 set i=i+1
 endloop
 if FFAMode==false then
-if ip<5 then
+if TeamOfP(ip)==0 then
 call GroupAddUnit(udg_CG[1],n)
-elseif ip>=5 and ip<10 then
+elseif TeamOfP(ip)==1 then
 call GroupAddUnit(udg_CG[2],n)
 endif
 else
@@ -49119,9 +49259,9 @@ set it[i]=UnitItemInSlot(u,i)
 set i=i+1
 endloop
 if FFAMode==false then
-if ip<5 then
+if TeamOfP(ip)==0 then
 call GroupAddUnit(udg_CG[1],n)
-elseif ip>=5 and ip<10 then
+elseif TeamOfP(ip)==1 then
 call GroupAddUnit(udg_CG[2],n)
 endif
 else
@@ -49194,9 +49334,9 @@ set it[i]=UnitItemInSlot(u,i)
 set i=i+1
 endloop
 if FFAMode==false then
-if ip<5 then
+if TeamOfP(ip)==0 then
 call GroupAddUnit(udg_CG[1],n)
-elseif ip>=5 and ip<10 then
+elseif TeamOfP(ip)==1 then
 call GroupAddUnit(udg_CG[2],n)
 endif
 else
@@ -49269,9 +49409,9 @@ set it[i]=UnitItemInSlot(u,i)
 set i=i+1
 endloop
 if FFAMode==false then
-if ip<5 then
+if TeamOfP(ip)==0 then
 call GroupAddUnit(udg_CG[1],n)
-elseif ip>=5 and ip<10 then
+elseif TeamOfP(ip)==1 then
 call GroupAddUnit(udg_CG[2],n)
 endif
 else
@@ -49344,9 +49484,9 @@ set it[i]=UnitItemInSlot(u,i)
 set i=i+1
 endloop
 if FFAMode==false then
-if ip<5 then
+if TeamOfP(ip)==0 then
 call GroupAddUnit(udg_CG[1],n)
-elseif ip>=5 and ip<10 then
+elseif TeamOfP(ip)==1 then
 call GroupAddUnit(udg_CG[2],n)
 endif
 else
@@ -49424,9 +49564,9 @@ set i=i+1
 endloop
 call ShowAbility2('A901',true)
 if FFAMode==false then
-if ip<5 then
+if TeamOfP(ip)==0 then
 call GroupAddUnit(udg_CG[1],n)
-elseif ip>=5 and ip<10 then
+elseif TeamOfP(ip)==1 then
 call GroupAddUnit(udg_CG[2],n)
 endif
 else
@@ -49499,9 +49639,9 @@ set it[i]=UnitItemInSlot(u,i)
 set i=i+1
 endloop
 if FFAMode==false then
-if ip<5 then
+if TeamOfP(ip)==0 then
 call GroupAddUnit(udg_CG[1],n)
-elseif ip>=5 and ip<10 then
+elseif TeamOfP(ip)==1 then
 call GroupAddUnit(udg_CG[2],n)
 endif
 else
@@ -49574,9 +49714,9 @@ set it[i]=UnitItemInSlot(u,i)
 set i=i+1
 endloop
 if FFAMode==false then
-if ip<5 then
+if TeamOfP(ip)==0 then
 call GroupAddUnit(udg_CG[1],n)
-elseif ip>=5 and ip<10 then
+elseif TeamOfP(ip)==1 then
 call GroupAddUnit(udg_CG[2],n)
 endif
 else
@@ -49649,9 +49789,9 @@ set it[i]=UnitItemInSlot(u,i)
 set i=i+1
 endloop
 if FFAMode==false then
-if ip<5 then
+if TeamOfP(ip)==0 then
 call GroupAddUnit(udg_CG[1],n)
-elseif ip>=5 and ip<10 then
+elseif TeamOfP(ip)==1 then
 call GroupAddUnit(udg_CG[2],n)
 endif
 else
@@ -49724,9 +49864,9 @@ set it[i]=UnitItemInSlot(u,i)
 set i=i+1
 endloop
 if FFAMode==false then
-if ip<5 then
+if TeamOfP(ip)==0 then
 call GroupAddUnit(udg_CG[1],n)
-elseif ip>=5 and ip<10 then
+elseif TeamOfP(ip)==1 then
 call GroupAddUnit(udg_CG[2],n)
 endif
 else
@@ -49799,9 +49939,9 @@ set it[i]=UnitItemInSlot(u,i)
 set i=i+1
 endloop
 if FFAMode==false then
-if ip<5 then
+if TeamOfP(ip)==0 then
 call GroupAddUnit(udg_CG[1],n)
-elseif ip>=5 and ip<10 then
+elseif TeamOfP(ip)==1 then
 call GroupAddUnit(udg_CG[2],n)
 endif
 else
@@ -49874,9 +50014,9 @@ set it[i]=UnitItemInSlot(u,i)
 set i=i+1
 endloop
 if FFAMode==false then
-if ip<5 then
+if TeamOfP(ip)==0 then
 call GroupAddUnit(udg_CG[1],n)
-elseif ip>=5 and ip<10 then
+elseif TeamOfP(ip)==1 then
 call GroupAddUnit(udg_CG[2],n)
 endif
 else
@@ -49943,9 +50083,9 @@ set it[i]=UnitItemInSlot(u,i)
 set i=i+1
 endloop
 if FFAMode==false then
-if ip<5 then
+if TeamOfP(ip)==0 then
 call GroupAddUnit(udg_CG[1],n)
-elseif ip>=5 and ip<10 then
+elseif TeamOfP(ip)==1 then
 call GroupAddUnit(udg_CG[2],n)
 endif
 else
@@ -50012,9 +50152,9 @@ set it[i]=UnitItemInSlot(u,i)
 set i=i+1
 endloop
 if FFAMode==false then
-if ip<5 then
+if TeamOfP(ip)==0 then
 call GroupAddUnit(udg_CG[1],n)
-elseif ip>=5 and ip<10 then
+elseif TeamOfP(ip)==1 then
 call GroupAddUnit(udg_CG[2],n)
 endif
 else
@@ -50116,9 +50256,9 @@ set it[i]=UnitItemInSlot(u,i)
 set i=i+1
 endloop
 if FFAMode==false then
-if ip<5 then
+if TeamOfP(ip)==0 then
     call GroupAddUnit(udg_CG[1],n)
-    elseif ip>=5 and ip<10 then
+    elseif TeamOfP(ip)==1 then
     call GroupAddUnit(udg_CG[2],n)
 endif
 else
@@ -50469,9 +50609,9 @@ if GetLocalPlayer()==GetTriggerPlayer() then
     call SetFrameColourEx( TavernHeroRandom,2, 0xFF404040 )
 endif
 if FFAMode==false then
-if Player(i)==Player(0)or Player(i)==Player(1)or Player(i)==Player(2)or Player(i)==Player(3)or Player(i)==Player(4)then
+if TeamOfP(i)==0 then
 call GroupAddUnit(udg_CG[1],u[i+1])
-elseif Player(i)==Player(5)or Player(i)==Player(6)or Player(i)==Player(7)or Player(i)==Player(8)or Player(i)==Player(9)then
+elseif TeamOfP(i)==1 then
 call GroupAddUnit(udg_CG[2],u[i+1])
 endif
 else
@@ -50503,7 +50643,7 @@ function Trig_SwapHeroes_Actions takes nothing returns nothing
 local player p=GetTriggerPlayer()
 local integer i=GetPlayerId(p)+1
 local integer j=S2I(SubString(GetEventPlayerChatString(),6,8))
-if j>=1 and j<13 and i!=j and IsPlayerAlly(Player(j-1),Player(i-1))and udg_B==false and pick!=1 and pick!=2 and udg_Swap[j]==false and udg_Swap[i]==false and GetPlayerSlotState(Player(j-1))==PLAYER_SLOT_STATE_PLAYING and udg_Hero[j]!=null then
+if j>=1 and j<13 and i!=j and IsPlayerAlly(Player(j-1),Player(i-1))and udg_B==false and pick!=1 and pick!=2 and udg_Swap[j]==false and udg_Swap[i]==false and GetPlayerSlotState(Player(j-1))==PLAYER_SLOT_STATE_PLAYING and udg_Hero[j]!=null and JudgeSlot[i-1]==0 and JudgeSlot[j-1]==0 then
 if GetLocalPlayer()==Player(j-1) then
 call DisplayChatMessageEx(null,CHAT_RECIPIENT_UNKNOWN,10,true,udg_Color[i]+GetPlayerName(Player(i-1))+"  "+GetUnitName(udg_Hero[i])+Lng("|r предлагает вам обменяться героями, согласиться -ok, отказаться -no.","|r invites you to exchange heroes, agree -ok, refuse -no."))
 endif
@@ -50599,7 +50739,7 @@ local item array t1
 local item array t2
 local unit u1
 local unit u2
-if GetEventPlayerChatString()=="-ok"and udg_B==false and udg_Swap[i]==true and udg_Swap[udg_SwapId[i]]==true then
+if GetEventPlayerChatString()=="-ok"and udg_B==false and udg_Swap[i]==true and udg_Swap[udg_SwapId[i]]==true and JudgeSlot[i-1]==0 and JudgeSlot[udg_SwapId[i]-1]==0 then
 loop
 set t1[j]=UnitRemoveItemFromSlot(udg_Hero[i],j)
 set t2[j]=UnitRemoveItemFromSlot(udg_Hero[udg_SwapId[i]],j)
@@ -50803,9 +50943,9 @@ call SetFrameColourEx( GetFrameByName("TavernBarHeroTitle",id),0, 0xFF505050 )
 call SetFrameColourEx( GetFrameByName("TavernBarHeroTitle",id),1, 0xFF505050 )
 call SetFrameColourEx( GetFrameByName("TavernBarHeroTitle",id),2, 0xFF505050 )
 if FFAMode==false then
-if Player(i-1)==Player(0)or Player(i-1)==Player(1)or Player(i-1)==Player(2)or Player(i-1)==Player(3)or Player(i-1)==Player(4)then
+if TeamOfP(i-1)==0 then
 call GroupAddUnit(udg_CG[1],udg_Hero[i])
-elseif Player(i-1)==Player(5)or Player(i-1)==Player(6)or Player(i-1)==Player(7)or Player(i-1)==Player(8)or Player(i-1)==Player(9)then
+elseif TeamOfP(i-1)==1 then
 call GroupAddUnit(udg_CG[2],udg_Hero[i])
 endif
 else
@@ -52322,9 +52462,9 @@ call UnitAddItemById(Hero[LvlS],'I04T')
 call UnitAddItemById(Hero[LvlS],'I00D')
 call UnitAddItemById(Hero[LvlS],'I00Q')
 if FFAMode==false then
-if Player(LvlS)==Player(0)or Player(LvlS)==Player(1)or Player(LvlS)==Player(2)or Player(LvlS)==Player(3)or Player(LvlS)==Player(4)then
+if TeamOfP(LvlS)==0 then
     call GroupAddUnit(udg_CG[1],Hero[LvlS])
-    elseif Player(LvlS)==Player(5)or Player(LvlS)==Player(6)or Player(LvlS)==Player(7)or Player(LvlS)==Player(8)or Player(LvlS)==Player(9)then
+    elseif TeamOfP(LvlS)==1 then
     call GroupAddUnit(udg_CG[2],Hero[LvlS])
 endif
 else
@@ -52650,22 +52790,22 @@ set t=null
 endfunction
 function Trig_Debug_Actions takes nothing returns nothing
 local timer t=CreateTimer()
-call SaveInteger(HH,GetHandleId(t),0,GetPlayerId(CBS_TrigP()))
-call SaveReal(HH,GetHandleId(t),3,GetUnitX(Hero[GetPlayerId(CBS_TrigP())]))
-call SaveReal(HH,GetHandleId(t),4,GetUnitY(Hero[GetPlayerId(CBS_TrigP())]))
-call SaveBoolean(HH,GetHandleId(Hero[GetPlayerId(CBS_TrigP())]),TARGET_ABILITY,false)
-call SetControlToUnit(Hero[GetPlayerId(CBS_TrigP())],Hero[GetPlayerId(CBS_TrigP())],1,"stun")
-// call SetControlToUnit(Hero[GetPlayerId(CBS_TrigP())],Hero[GetPlayerId(CBS_TrigP())],15,"heavystun")
-call SetControlToUnit(Hero[GetPlayerId(CBS_TrigP())],Hero[GetPlayerId(CBS_TrigP())],1,"ensnare")
-call SetControlToUnit(Hero[GetPlayerId(CBS_TrigP())],Hero[GetPlayerId(CBS_TrigP())],1,"root")
-call SetControlToUnit(Hero[GetPlayerId(CBS_TrigP())],Hero[GetPlayerId(CBS_TrigP())],1,"doom")
-call SetControlToUnit(Hero[GetPlayerId(CBS_TrigP())],Hero[GetPlayerId(CBS_TrigP())],1,"silence")
-call SetControlToUnit(Hero[GetPlayerId(CBS_TrigP())],Hero[GetPlayerId(CBS_TrigP())],1,"sleep")
-call IssueImmediateOrder(Hero[GetPlayerId(CBS_TrigP())],"stop")
-call IssuePointOrder( Hero[GetPlayerId(CBS_TrigP())], "smart", GetUnitX( Hero[GetPlayerId(CBS_TrigP())] )+GetRandomReal(-20,20), GetUnitY( Hero[GetPlayerId(CBS_TrigP())] )+GetRandomReal(-20,20) )
-call UnitAddAbility(Hero[GetPlayerId(CBS_TrigP())],'A0WR')
-call myCustomDamage(Hero[GetPlayerId(CBS_TrigP())],Hero[GetPlayerId(CBS_TrigP())],10,false,false,null,DAMAGE_TYPE_UNIVERSAL,null)
-call UnitRemoveAbility(Hero[GetPlayerId(CBS_TrigP())],'A0WR')
+call SaveInteger(HH,GetHandleId(t),0,CBS_HeroId())
+call SaveReal(HH,GetHandleId(t),3,GetUnitX(Hero[CBS_HeroId()]))
+call SaveReal(HH,GetHandleId(t),4,GetUnitY(Hero[CBS_HeroId()]))
+call SaveBoolean(HH,GetHandleId(Hero[CBS_HeroId()]),TARGET_ABILITY,false)
+call SetControlToUnit(Hero[CBS_HeroId()],Hero[CBS_HeroId()],1,"stun")
+// call SetControlToUnit(Hero[CBS_HeroId()],Hero[CBS_HeroId()],15,"heavystun")
+call SetControlToUnit(Hero[CBS_HeroId()],Hero[CBS_HeroId()],1,"ensnare")
+call SetControlToUnit(Hero[CBS_HeroId()],Hero[CBS_HeroId()],1,"root")
+call SetControlToUnit(Hero[CBS_HeroId()],Hero[CBS_HeroId()],1,"doom")
+call SetControlToUnit(Hero[CBS_HeroId()],Hero[CBS_HeroId()],1,"silence")
+call SetControlToUnit(Hero[CBS_HeroId()],Hero[CBS_HeroId()],1,"sleep")
+call IssueImmediateOrder(Hero[CBS_HeroId()],"stop")
+call IssuePointOrder( Hero[CBS_HeroId()], "smart", GetUnitX( Hero[CBS_HeroId()] )+GetRandomReal(-20,20), GetUnitY( Hero[CBS_HeroId()] )+GetRandomReal(-20,20) )
+call UnitAddAbility(Hero[CBS_HeroId()],'A0WR')
+call myCustomDamage(Hero[CBS_HeroId()],Hero[CBS_HeroId()],10,false,false,null,DAMAGE_TYPE_UNIVERSAL,null)
+call UnitRemoveAbility(Hero[CBS_HeroId()],'A0WR')
 call TimerStart(t,15,false,function Trig_Debug_Actions2)
 set t=null
 endfunction
@@ -52681,8 +52821,8 @@ call TriggerRegisterPlayerChatEvent(gg_trg_Debug,Player(6),"-debug",true)
 call TriggerRegisterPlayerChatEvent(gg_trg_Debug,Player(7),"-debug",true)
 call TriggerRegisterPlayerChatEvent(gg_trg_Debug,Player(8),"-debug",true)
 call TriggerRegisterPlayerChatEvent(gg_trg_Debug,Player(9),"-debug",true)
-//call TriggerRegisterPlayerChatEvent(gg_trg_Debug,Player(10),"-debug",true)
-//call TriggerRegisterPlayerChatEvent(gg_trg_Debug,Player(11),"-debug",true)
+call TriggerRegisterPlayerChatEvent(gg_trg_Debug,Player(10),"-debug",true)
+call TriggerRegisterPlayerChatEvent(gg_trg_Debug,Player(11),"-debug",true)
 call TriggerAddAction(gg_trg_Debug,function Trig_Debug_Actions)
 endfunction
 function Trig_Killme_Actions2 takes nothing returns nothing
@@ -52723,7 +52863,7 @@ endfunction
 function Trig_Killme_Actions takes nothing returns nothing
 local timer t=CreateTimer()
 if bkillme then
-        call SaveInteger(HH,GetHandleId(t),0,GetPlayerId(CBS_TrigP()))
+        call SaveInteger(HH,GetHandleId(t),0,CBS_HeroId())
         call TimerStart(t,10,false,function Trig_Killme_Actions2)
 else
         call DisplayTextToPlayer(CBS_TrigP(),0,0, "Killme is disabled")
@@ -52744,15 +52884,15 @@ call TriggerRegisterPlayerChatEvent(gg_trg_Killme,Player(6),"killme",true)
 call TriggerRegisterPlayerChatEvent(gg_trg_Killme,Player(7),"killme",true)
 call TriggerRegisterPlayerChatEvent(gg_trg_Killme,Player(8),"killme",true)
 call TriggerRegisterPlayerChatEvent(gg_trg_Killme,Player(9),"killme",true)
-//call TriggerRegisterPlayerChatEvent(gg_trg_Killme,Player(10),"killme",true)
-//call TriggerRegisterPlayerChatEvent(gg_trg_Killme,Player(11),"killme",true)
+call TriggerRegisterPlayerChatEvent(gg_trg_Killme,Player(10),"killme",true)
+call TriggerRegisterPlayerChatEvent(gg_trg_Killme,Player(11),"killme",true)
 call TriggerAddAction(gg_trg_Killme,function Trig_Killme_Actions)
 endfunction
 function CondRFH takes nothing returns boolean
 return udg_B==false and round>0
 endfunction
 function CastRFH takes nothing returns nothing
-local integer ip=GetPlayerId(CBS_TrigP())
+local integer ip=CBS_HeroId()
 local unit u=Hero[ip]
 local item array it
 local integer i=0
@@ -52802,9 +52942,9 @@ exitwhen i>=10
     set i=i+1
 endloop
 if FFAMode==false then
-if ip<5 then
+if TeamOfP(ip)==0 then
     call GroupAddUnit(udg_CG[1],n)
-elseif ip>=5 and ip<10 then
+elseif TeamOfP(ip)==1 then
     call GroupAddUnit(udg_CG[2],n)
 endif
 else
@@ -52901,7 +53041,7 @@ local integer i=0
 loop
 call TriggerRegisterPlayerChatEvent(t,Player(i),"-rfh",true)
 set i=i+1
-exitwhen i>=10
+exitwhen i>=12
 endloop
 call TriggerAddAction(t,function CastRFH)
 call TriggerAddCondition(t,Condition(function CondRFH))
@@ -53136,7 +53276,7 @@ if UnitIsAlive(Hero[i])==false or AllIsVisible==true then
         call SaveFogModifierHandle(HH,id,i,f)
         call FogModifierStart(f)
     endif
-elseif GetPlayerSlotState(Player(i))==PLAYER_SLOT_STATE_PLAYING and Hero[i]!=null and UnitIsAlive(Hero[i])then
+elseif ((GetPlayerSlotState(Player(i))==PLAYER_SLOT_STATE_PLAYING and JudgeSlot[i]==0) or SlotJudge[i]>0) and Hero[i]!=null and UnitIsAlive(Hero[i])then
     if GetUnitData( Hero[i], "combo4" ) <= 1 and GetUnitAbilityLevel(Hero[i],'B01L')>0 then
         call UnitRemoveAbility(Hero[i], 'A2VJ')
         call UnitRemoveAbility(Hero[i], 'B01L')
@@ -53167,19 +53307,19 @@ elseif GetPlayerSlotState(Player(i))==PLAYER_SLOT_STATE_PLAYING and Hero[i]!=nul
 endif
 set i=i+1
 endloop
-if GetFrameText(SpectacleTeamSelectText)=="Full Map Vision" then
+if GetFrameText(SpectacleTeamSelectText)=="Full Map Vision" and JudgeSlot[10]==0 then
     set f=CreateFogModifierRadius(Player(10),FOG_OF_WAR_VISIBLE,500,-240,99999,true,true)
     call SaveFogModifierHandle(HH,id,10,f)
     call FogModifierStart(f)
 endif
-if GetFrameText(SpectacleTeamSelect1Text)=="Full Map Vision" then
+if GetFrameText(SpectacleTeamSelect1Text)=="Full Map Vision" and JudgeSlot[11]==0 then
     set f=CreateFogModifierRadius(Player(11),FOG_OF_WAR_VISIBLE,500,-240,99999,true,true)
     call SaveFogModifierHandle(HH,id,11,f)
     call FogModifierStart(f)
 endif
 // if f!=null then
-call ShowFrame( SpectacleTeamSelect, GetPlayerId(GetLocalPlayer())==10 )
-call ShowFrame( SpectacleTeamSelect1, GetPlayerId(GetLocalPlayer())==11 )
+call ShowFrame( SpectacleTeamSelect, GetPlayerId(GetLocalPlayer())==10 and JudgeSlot[10]==0 )
+call ShowFrame( SpectacleTeamSelect1, GetPlayerId(GetLocalPlayer())==11 and JudgeSlot[11]==0 )
 call TimerStart(t,0.2,false,function VisibityOfHeroesCast2) // было 1 с: 10 модификаторов на игрока одновременно; 0.2 с при шаге 0.1 — по 2, без мигания
 // else
 //     call FlushChildHashtable(HH,id)
@@ -53197,12 +53337,268 @@ call TriggerAddAction(t,function VisibityOfHeroesCast)
 //call TriggerAddCondition(t,Condition(function VisibityOfHeroesCond))
 set t=null
 endfunction
+// Судья (игроки 11, 12) занимает место вышедшего: "-take N" (N — номер игрока, как в таблице; без номера — первое
+// свободное), "-untake" — вернуться в судьи. Юниты остаются за вышедшим игроком: судья получает общий контроль,
+// союз и обзор его команды, его золото (доход вышедшего каждые 0.2 с переходит судье) и магазин его героя (JudgeHid).
+// Судейские окна, обзор за командами и судейские HP-бары на это время пропадают (IsLocalJudge) — всё как у игрока.
+function JudgeFree takes integer js returns boolean
+return js>=0 and js<10 and GetPlayerSlotState(Player(js))==PLAYER_SLOT_STATE_LEFT and SlotJudge[js]==0 and Hero[js]!=null and GetUnitTypeId(Hero[js])!=0
+endfunction
+function JudgeGoldTick takes nothing returns nothing
+local integer j=10
+local integer js
+loop
+exitwhen j>11
+set js=JudgeSlot[j]-1
+if js>=0 and GetPlayerState(Player(js),PLAYER_STATE_RESOURCE_GOLD)!=0 then
+call SetPlayerState(Player(j),PLAYER_STATE_RESOURCE_GOLD,GetPlayerState(Player(j),PLAYER_STATE_RESOURCE_GOLD)+GetPlayerState(Player(js),PLAYER_STATE_RESOURCE_GOLD))
+call SetPlayerState(Player(js),PLAYER_STATE_RESOURCE_GOLD,0)
+endif
+set j=j+1
+endloop
+endfunction
+function JudgeTake takes integer j,integer js returns nothing
+local player pj=Player(j)
+local player ps=Player(js)
+local integer ip=0
+set JudgeSlot[j]=js+1
+set SlotJudge[js]=j+1
+set ingame[js]=true
+set JudgeName[js]=GetPlayerName(ps)
+loop
+exitwhen ip>9
+if ip==js or (IsPlayerAlly(Player(ip),ps) and IsPlayerAlly(ps,Player(ip))) then
+call SetPlayerAlliance(pj,Player(ip),ALLIANCE_PASSIVE,true)
+call SetPlayerAlliance(Player(ip),pj,ALLIANCE_PASSIVE,true)
+call SetPlayerAlliance(pj,Player(ip),ALLIANCE_SHARED_VISION,true)
+call SetPlayerAlliance(Player(ip),pj,ALLIANCE_SHARED_VISION,true)
+else
+call SetPlayerAlliance(pj,Player(ip),ALLIANCE_PASSIVE,false)
+call SetPlayerAlliance(pj,Player(ip),ALLIANCE_SHARED_VISION,false)
+call SetPlayerAlliance(Player(ip),pj,ALLIANCE_SHARED_VISION,false)
+endif
+set ip=ip+1
+endloop
+call SetPlayerAlliance(ps,pj,ALLIANCE_SHARED_CONTROL,true)
+call SetPlayerAlliance(ps,pj,ALLIANCE_SHARED_ADVANCED_CONTROL,true)
+set JudgeGold0[j]=GetPlayerState(pj,PLAYER_STATE_RESOURCE_GOLD)
+call SetPlayerState(pj,PLAYER_STATE_RESOURCE_GOLD,GetPlayerState(ps,PLAYER_STATE_RESOURCE_GOLD))
+call SetPlayerState(ps,PLAYER_STATE_RESOURCE_GOLD,0)
+call DisplayChatMessageEx(null,CHAT_RECIPIENT_UNKNOWN,10,true,Color[j]+GetPlayerName(pj)+"|r"+Lng(" занял место игрока "," took the place of ")+Color[js]+JudgeName[js]+"|r")
+call SetPlayerName(ps,GetPlayerName(pj))
+if j==10 then
+call ShowFrame(SpectacleTeamSelect,false)
+else
+call ShowFrame(SpectacleTeamSelect1,false)
+endif
+if GetLocalPlayer()==pj then
+call ClearSelection()
+call SelectUnit(Hero[js],true)
+call PanCameraToTimed(GetUnitX(Hero[js]),GetUnitY(Hero[js]),0)
+endif
+set pj=null
+set ps=null
+endfunction
+function JudgeRelease takes integer j returns nothing
+local player pj=Player(j)
+local integer js=JudgeSlot[j]-1
+local player ps
+local integer ip=0
+if js<0 then
+set pj=null
+return
+endif
+set ps=Player(js)
+set JudgeSlot[j]=0
+set SlotJudge[js]=0
+loop
+exitwhen ip>9
+call SetPlayerAlliance(pj,Player(ip),ALLIANCE_PASSIVE,true)
+call SetPlayerAlliance(Player(ip),pj,ALLIANCE_PASSIVE,false)
+call SetPlayerAlliance(pj,Player(ip),ALLIANCE_SHARED_VISION,false)
+call SetPlayerAlliance(Player(ip),pj,ALLIANCE_SHARED_VISION,true)
+set ip=ip+1
+endloop
+call SetPlayerAlliance(ps,pj,ALLIANCE_SHARED_CONTROL,false)
+call SetPlayerAlliance(ps,pj,ALLIANCE_SHARED_ADVANCED_CONTROL,false)
+call SetPlayerState(ps,PLAYER_STATE_RESOURCE_GOLD,GetPlayerState(ps,PLAYER_STATE_RESOURCE_GOLD)+GetPlayerState(pj,PLAYER_STATE_RESOURCE_GOLD))
+call SetPlayerState(pj,PLAYER_STATE_RESOURCE_GOLD,JudgeGold0[j])
+call SetPlayerName(ps,JudgeName[js])
+// обзор судьи — снова «вся карта по командам», с начала круга кнопки
+if j==10 then
+call SetFrameText(SpectacleTeamSelectText,"Current team: All")
+else
+call SetFrameText(SpectacleTeamSelect1Text,"Current team: All")
+endif
+call DisplayChatMessageEx(null,CHAT_RECIPIENT_UNKNOWN,10,true,Color[j]+GetPlayerName(pj)+"|r"+Lng(" вернулся в судьи, место свободно: "," is a judge again, free place: ")+Color[js]+JudgeName[js]+"|r (-take "+I2S(js+1)+")")
+if GetLocalPlayer()==pj then
+call ClearSelection()
+endif
+set pj=null
+set ps=null
+endfunction
+// союз в обе стороны (как bj_ALLIANCE_ALLIED_VISION) или его снятие вместе с общим контролем
+function SwAlly takes player a,player b,boolean on returns nothing
+call SetPlayerAlliance(a,b,ALLIANCE_PASSIVE,on)
+call SetPlayerAlliance(b,a,ALLIANCE_PASSIVE,on)
+call SetPlayerAlliance(a,b,ALLIANCE_HELP_REQUEST,on)
+call SetPlayerAlliance(b,a,ALLIANCE_HELP_REQUEST,on)
+call SetPlayerAlliance(a,b,ALLIANCE_HELP_RESPONSE,on)
+call SetPlayerAlliance(b,a,ALLIANCE_HELP_RESPONSE,on)
+call SetPlayerAlliance(a,b,ALLIANCE_SHARED_XP,on)
+call SetPlayerAlliance(b,a,ALLIANCE_SHARED_XP,on)
+call SetPlayerAlliance(a,b,ALLIANCE_SHARED_SPELLS,on)
+call SetPlayerAlliance(b,a,ALLIANCE_SHARED_SPELLS,on)
+call SetPlayerAlliance(a,b,ALLIANCE_SHARED_VISION,on)
+call SetPlayerAlliance(b,a,ALLIANCE_SHARED_VISION,on)
+if on==false then
+call SetPlayerAlliance(a,b,ALLIANCE_SHARED_CONTROL,false)
+call SetPlayerAlliance(b,a,ALLIANCE_SHARED_CONTROL,false)
+call SetPlayerAlliance(a,b,ALLIANCE_SHARED_ADVANCED_CONTROL,false)
+call SetPlayerAlliance(b,a,ALLIANCE_SHARED_ADVANCED_CONTROL,false)
+endif
+endfunction
+function SwMoveCG takes unit u,integer ta returns nothing
+if u!=null and IsUnitInGroup(u,udg_CG[ta+1]) then
+call GroupRemoveUnit(udg_CG[ta+1],u)
+call GroupAddUnit(udg_CG[2-ta],u)
+endif
+endfunction
+// "-switch x" (не в FFA, между раундами): игрок со своим героем переходит в команду соперника на место вышедшего
+// игрока x, а x со своим героем — в его бывшую команду (под общий контроль её игроков, как обычный ливер).
+// Меняется только принадлежность к команде: союзы, форсы all[1]/all[2] (их союз пересобирается каждый раунд),
+// группы команд udg_CG[1]/[2], SetPlayerTeam и TeamOfP. Герои, золото и предметы остаются у своих владельцев.
+function SwitchAct takes nothing returns nothing
+local player p=GetTriggerPlayer()
+local integer a=GetPlayerId(p)
+local string cs=GetEventPlayerChatString()
+local integer jn=0
+local integer ip=0
+local integer ta=TeamOfP(a)
+local integer tm
+local player ps
+if FFAMode then
+call DisplayTimedTextToPlayer(p,0,0,6,Lng("-switch недоступен в FFA.","-switch is not available in FFA."))
+set p=null
+return
+endif
+if udg_B then
+call DisplayTimedTextToPlayer(p,0,0,6,Lng("-switch — только между раундами.","-switch works only between rounds."))
+set p=null
+return
+endif
+if StringLength(cs)>8 then
+set jn=S2I(SubString(cs,8,StringLength(cs)))
+endif
+if jn<1 or jn>10 or GetPlayerSlotState(Player(jn-1))!=PLAYER_SLOT_STATE_LEFT or SlotJudge[jn-1]>0 or TeamOfP(jn-1)==ta then
+call DisplayTimedTextToPlayer(p,0,0,6,Lng("x — номер вышедшего игрока команды соперника, за которого не играет судья.","x must be the number of a player who left the enemy team, not taken by a judge."))
+set p=null
+return
+endif
+set ps=Player(jn-1)
+loop
+exitwhen ip>9
+if ip!=a and ip!=jn-1 then
+if TeamOfP(ip)==ta then
+// бывшая команда игрока: с ним больше не в союзе, вышедший x — её союзник под общим контролем
+call SwAlly(p,Player(ip),false)
+call SwAlly(ps,Player(ip),true)
+call SetPlayerAlliance(ps,Player(ip),ALLIANCE_SHARED_CONTROL,true)
+else
+call SwAlly(p,Player(ip),true)
+call SwAlly(ps,Player(ip),false)
+endif
+endif
+set ip=ip+1
+endloop
+call SwAlly(p,ps,false)
+set SwFlip[a]=SwFlip[a]==false
+set SwFlip[jn-1]=SwFlip[jn-1]==false
+call ForceRemovePlayer(all[ta+1],p)
+call ForceAddPlayer(all[2-ta],p)
+call ForceRemovePlayer(all[2-ta],ps)
+call ForceAddPlayer(all[ta+1],ps)
+call SwMoveCG(Hero[a],ta)
+call SwMoveCG(Lucy[a],ta)
+call SwMoveCG(Hero[jn-1],1-ta)
+call SwMoveCG(Lucy[jn-1],1-ta)
+set tm=GetPlayerTeam(p)
+call SetPlayerTeam(p,GetPlayerTeam(ps))
+call SetPlayerTeam(ps,tm)
+call DisplayChatMessageEx(null,CHAT_RECIPIENT_UNKNOWN,10,true,Color[a]+GetPlayerName(p)+"|r"+Lng(" перешёл в команду соперника, а "," switched to the enemy team, and ")+Color[jn-1]+GetPlayerName(ps)+"|r"+Lng(" (вышел) — в его бывшую команду"," (left) moved to the former team"))
+set p=null
+set ps=null
+endfunction
+function JudgeTakeAct takes nothing returns nothing
+local player p=GetTriggerPlayer()
+local integer j=GetPlayerId(p)
+local string cs=GetEventPlayerChatString()
+local integer jn=0
+local integer i=0
+if cs=="-untake" then
+call JudgeRelease(j)
+set p=null
+return
+endif
+if SubString(cs,0,5)!="-take" then
+set p=null
+return
+endif
+if JudgeSlot[j]>0 then
+call DisplayTimedTextToPlayer(p,0,0,6,Lng("Вы уже играете за вышедшего игрока. Вернуться в судьи: -untake","You already play for a player who left. Back to judging: -untake"))
+set p=null
+return
+endif
+if StringLength(cs)>6 then
+set jn=S2I(SubString(cs,6,StringLength(cs)))
+endif
+if jn==0 then
+loop
+exitwhen i>9 or jn>0
+if JudgeFree(i) then
+set jn=i+1
+endif
+set i=i+1
+endloop
+endif
+if JudgeFree(jn-1)==false then
+call DisplayTimedTextToPlayer(p,0,0,6,Lng("Нет свободного места вышедшего игрока с героем.","No free place of a player who left (with a hero)."))
+set p=null
+return
+endif
+call JudgeTake(j,jn-1)
+set p=null
+endfunction
+function JudgeTakeInit takes nothing returns nothing
+local trigger t=CreateTrigger()
+local integer ip=0
+call TriggerRegisterPlayerChatEvent(t,Player(10),"-take",false)
+call TriggerRegisterPlayerChatEvent(t,Player(11),"-take",false)
+call TriggerRegisterPlayerChatEvent(t,Player(10),"-untake",true)
+call TriggerRegisterPlayerChatEvent(t,Player(11),"-untake",true)
+call TriggerAddAction(t,function JudgeTakeAct)
+set t=CreateTrigger()
+loop
+exitwhen ip>9
+call TriggerRegisterPlayerChatEvent(t,Player(ip),"-switch ",false)
+set ip=ip+1
+endloop
+call TriggerAddAction(t,function SwitchAct)
+call TimerStart(CreateTimer(),0.2,true,function JudgeGoldTick)
+set t=null
+endfunction
 function GameLeftAct takes nothing returns nothing
 local player p=GetTriggerPlayer()
 local integer i=GetPlayerId(p)
 local integer x=0
 local integer ip=0
 call DisplayChatMessageEx(null,CHAT_RECIPIENT_UNKNOWN,10,true,Color[i]+GetPlayerName(Player(i))+Lng(" вышел из игры"," left the game"))
+if i>=10 and i<12 then
+call JudgeRelease(i)
+endif
+if i<10 and Hero[i]!=null and ((GetPlayerSlotState(Player(10))==PLAYER_SLOT_STATE_PLAYING and JudgeSlot[10]==0) or (GetPlayerSlotState(Player(11))==PLAYER_SLOT_STATE_PLAYING and JudgeSlot[11]==0)) then
+call DisplayChatMessageEx(null,CHAT_RECIPIENT_UNKNOWN,10,true,Lng("Судья может занять его место: -take ","A judge can take the place: -take ")+I2S(i+1))
+endif
 loop
 if IsPlayerAlly(Player(ip),p) then
 call SetPlayerAlliance(p,Player(ip), ALLIANCE_SHARED_VISION, true )
@@ -53238,6 +53634,7 @@ set i=i+1
 exitwhen i>=bj_MAX_PLAYER_SLOTS
 endloop
 call TriggerAddAction(t,function GameLeftAct)
+call JudgeTakeInit()
 set t=null
 endfunction
 function Trig_Resp_Actions2 takes nothing returns nothing
@@ -53252,7 +53649,7 @@ call FlushChildHashtable(h,id)
 set t=null
 endfunction
 function Trig_Resp_Actions takes nothing returns nothing
-local integer i=GetPlayerId(CBS_TrigP())+1
+local integer i=CBS_HeroId()+1
 local timer t=CreateTimer()
 //call DisplayTextToPlayer(Player(0),0,0,"0")
 if udg_B==false then
@@ -53278,8 +53675,8 @@ call TriggerRegisterPlayerChatEvent(gg_trg_Resp,Player(6),"-re",true)
 call TriggerRegisterPlayerChatEvent(gg_trg_Resp,Player(7),"-re",true)
 call TriggerRegisterPlayerChatEvent(gg_trg_Resp,Player(8),"-re",true)
 call TriggerRegisterPlayerChatEvent(gg_trg_Resp,Player(9),"-re",true)
-//call TriggerRegisterPlayerChatEvent(gg_trg_Resp,Player(10),"-re",true)
-//call TriggerRegisterPlayerChatEvent(gg_trg_Resp,Player(11),"-re",true)
+call TriggerRegisterPlayerChatEvent(gg_trg_Resp,Player(10),"-re",true)
+call TriggerRegisterPlayerChatEvent(gg_trg_Resp,Player(11),"-re",true)
 call TriggerAddAction(gg_trg_Resp,function Trig_Resp_Actions)
 endfunction
 // ===== Окно «Настройки карты» (кнопка-шестерёнка над миникартой; было меню полосок HP) =====
@@ -53339,7 +53736,7 @@ call SetFrameText(HPB_MText[0],Lng("Настройки карты","Map settings
 call SetFrameText(CBS_Head[0],"|cFFFFA500"+Lng("Полоски HP","HP bars")+"|r")
 call SetFrameText(CBS_Head[1],"|cFFFFA500"+Lng("Язык","Language")+"|r")
 call SetFrameText(CBS_Head[2],"|cFFFFA500"+Lng("Команды (как в чате)","Commands (same as chat)")+"|r")
-call SetFrameText(CBS_DbLbl,Lng("Озвучка DB","DB voice"))
+call SetFrameText(CBS_DbLbl,"|cFFFFA500"+Lng("Озвучка DB","DB voice")+"|r")
 call SetFrameText(CBS_Head[3],"|cFFFFA500"+Lng("Цвета: свой / союзники / враги","Colours: own / allies / enemies")+"|r")
 call SetFrameText(CBS_Head[4],"|cFFFFA500"+Lng("Масштаб","Scale")+"|r")
 call SetFrameText(HPB_MText[2],Lng("Стандартный","Default"))
@@ -54136,8 +54533,8 @@ if cbS<6 then
 set cbF=CBS_SlotFr[cbS]
 //endif
 //elseif (cbS-6)/12==cbA then
-// способности с буквой / цифрой — хоткей самой способности (CBS_AbScan); нажимать кнопку — только NumPad
-elseif (cbS-6)/12==cbA and CBS_KeyCode[cbK]>=0x60 then
+// способности с буквой / цифрой — хоткей самой способности (CBS_AbScan); нажимать кнопку — только NumPad и кнопки мыши
+elseif (cbS-6)/12==cbA and (CBS_KeyCode[cbK]>=0x60 or CBS_KeyCode[cbK]<0x30) then
 set cbF=CBS_SlotFr[6+ModuloInteger(cbS-6,12)]
 endif
 if HPB_Debug then
@@ -54224,6 +54621,18 @@ set cbD=cbD+";1"
 else
 set cbD=cbD+";0"
 endif
+// 47 — озвучка DB: 1 — японская (-DB Jap), 0 — английская (-DB Eng)
+if LoadBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE) then
+set cbD=cbD+";0"
+else
+set cbD=cbD+";1"
+endif
+// 48 — язык карты: 1 — английский, 0 — русский
+if LANG_EN then
+set cbD=cbD+";1"
+else
+set cbD=cbD+";0"
+endif
 return cbD
 endfunction
 // файл — скрипт Preload: при чтении (Preloader) выполняется вставленный вызов SetPlayerName(Player(14), данные)
@@ -54291,6 +54700,24 @@ endloop
 set CBS_QC=CBS_Tok(cbD,44)=="1"
 set CBS_SC=CBS_Tok(cbD,45)=="1" and CBS_QC==false
 set CBS_MmOpt=CBS_Tok(cbD,46)!="0"
+// озвучка DB: флаг SOUND_LANGUAGE читается только для локального игрока (какой звук играть у себя),
+// поэтому из файла выставляем его сразу и локально, без синхронизации (через 3 с она у игрока не срабатывала)
+if CBS_Tok(cbD,47)=="1" then
+call SaveBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE,false)
+elseif CBS_Tok(cbD,47)=="0" then
+call SaveBoolean(HH,GetHandleId(GetLocalPlayer()),SOUND_LANGUAGE,true)
+endif
+// язык: при старте — флаг (переключит CBS_AutoLearnSend через синхронизацию, как -en / -ru), по кнопке — сразу, если отличается
+if CBS_Tok(cbD,48)=="1" or CBS_Tok(cbD,48)=="0" then
+set CBS_LangSav=S2I(CBS_Tok(cbD,48))
+if cbSay then
+if CBS_LangSav==1 and LANG_EN==false then
+call SendSyncData("CBST","101")
+elseif CBS_LangSav==0 and LANG_EN then
+call SendSyncData("CBST","100")
+endif
+endif
+endif
 set CBS_QcAb=0
 set CBS_BindWait=-1
 call CBS_HkRefresh()
@@ -54753,7 +55180,7 @@ set cbB=0
 if cbSlot>=0 and cbSlot<12 then
 set cbB=CBS_Bind[6+cbPg*12+cbSlot]
 endif
-if cbB>0 and CBS_KeyCode[cbB-1]<0x60 then
+if cbB>0 and CBS_KeyCode[cbB-1]>=0x30 and CBS_KeyCode[cbB-1]<0x60 then
 set cbV=CBS_KeyCode[cbB-1]
 elseif cbO>0 and CBS_KeyTaken(cbO,cbPg) then
 set cbV=0
@@ -54923,6 +55350,12 @@ function CBS_AutoLearnSend takes nothing returns nothing
 //endif
 if CBS_AlOn==false then
 call SendSyncData("CBST","104")
+endif
+// язык из файла, если отличается от языка клиента
+if CBS_LangSav==1 and LANG_EN==false then
+call SendSyncData("CBST","101")
+elseif CBS_LangSav==0 and LANG_EN then
+call SendSyncData("CBST","100")
 endif
 call DestroyTimer(GetExpiredTimer())
 endfunction
@@ -55156,7 +55589,7 @@ call CBS_Button(211,"",.40,-.032,.06,cbT)
 call CBS_Button(100,"RU",.330,-.140,.05,cbT)
 call CBS_Button(101,"EN",.388,-.140,.05,cbT)
 // озвучка Dragon Ball под языком: подпись слева, кнопки под RU / EN
-set CBS_DbLbl=CBS_Label(CreateFrameByType("SIMPLETEXT","CBSDbVoiceLabel",HPB_Menu,"",0),.012,0xFFFFFFFF,.252,-.180)
+set CBS_DbLbl=CBS_Label(CreateFrameByType("SIMPLETEXT","CBSDbVoiceLabel",HPB_Menu,"",0),.015,0xFFFFA500,.252,-.180) // как заголовки разделов
 call CBS_Add(CBS_DbLbl)
 call CBS_Button(105,"-DB Jap",.330,-.168,.05,cbT)
 call CBS_Button(106,"-DB Eng",.388,-.168,.05,cbT)
@@ -55211,7 +55644,7 @@ set CBS_ChatBar=GetOriginFrame(ORIGIN_FRAME_CHAT_EDITBAR,0)
 //set cbF=GetOriginFrame(ORIGIN_FRAME_MULTIBOARD,0)
 set CBS_OfChat=GetOriginFrame(ORIGIN_FRAME_CHAT_MSG,0)
 set CBS_OfMb=GetOriginFrame(ORIGIN_FRAME_MULTIBOARD,0)
-// клавиши: A-Z, 0-9, цифры NumPad
+// клавиши: A-Z, 0-9, цифры NumPad, боковые кнопки мыши
 set cbK=0
 loop
 exitwhen cbK>25
@@ -55230,6 +55663,9 @@ exitwhen cbK>9
 call CBS_KeyAdd(0x60+cbK,"Num"+I2S(cbK))
 set cbK=cbK+1
 endloop
+// боковые кнопки мыши (XBUTTON1 / XBUTTON2): в поле хоткея способности не записать — нажатием кнопки, как NumPad
+call CBS_KeyAdd(0x05,"M4")
+call CBS_KeyAdd(0x06,"M5")
 set CBS_HkHead[0]=CreateFrameByType("SIMPLETEXT","CBSHkHead",HPB_Menu,"",0)
 call CBS_Label(CBS_HkHead[0],.015,0xFFFFA500,.016,-.042)
 call CBS_AddHk(CBS_HkHead[0])
@@ -55832,7 +56268,7 @@ if GetUnitTypeId(Hero[i])=='Ho11' then//
     call SaveInteger(HH,GetHandleId(Hero[i]),SH_BonusSTR,0)
     call SaveInteger(HH,GetHandleId(Hero[i]),SH_BonusAGI,0)
 endif
-if (win2==2 and i<5 and i>=0) or (win2==1 and i<10 and i>=5) then
+if (win2==2 and i<10 and TeamOfP(i)==0) or (win2==1 and i<10 and TeamOfP(i)==1) then
 call SetHeroInt(Hero[i],GetHeroInt(Hero[i],false)+3,true)
 call SetHeroAgi(Hero[i],GetHeroAgi(Hero[i],false)+3,true)
 call SetHeroStr(Hero[i],GetHeroStr(Hero[i],false)+3,true)
@@ -55934,12 +56370,14 @@ function EndOfChoiceAct takes nothing returns nothing
                 set win[1]=win[1]+1
                 set win2=1
                 loop
-                exitwhen he==4
+                exitwhen he==10
+                    if TeamOfP(he)==0 then
                     if round>5 then
                         call SetPlayerState(Player(he),PLAYER_STATE_RESOURCE_GOLD,GetPlayerState(Player(he),PLAYER_STATE_RESOURCE_GOLD)+150)
                     endif
                     call W3MMD_Lite_Set_Integer(Player(he),"Won_rounds",win[1])
                     call SetPlayerState(Player(he),PLAYER_STATE_RESOURCE_LUMBER,GetPlayerState(Player(he),PLAYER_STATE_RESOURCE_LUMBER)+1)
+                    endif
                     set he=he+1
                 endloop
                 if round>5 then
@@ -55948,16 +56386,18 @@ function EndOfChoiceAct takes nothing returns nothing
                     call DisplayTextToPlayer(GetLocalPlayer(),0,0,Lng("Побеждает первая команда.","The first team wins."))
                 endif
             elseif GroupIsDeath(udg_CG[1]) then
-                set he=5
+                set he=0
                 set win[2]=win[2]+1
                 set win2=2
                 loop
-                exitwhen he==9
+                exitwhen he==10
+                    if TeamOfP(he)==1 then
                     if round>5 then
                         call SetPlayerState(Player(he),PLAYER_STATE_RESOURCE_GOLD,GetPlayerState(Player(he),PLAYER_STATE_RESOURCE_GOLD)+150)
                     endif
                     call W3MMD_Lite_Set_Integer(Player(he),"Won_rounds",win[2])
                     call SetPlayerState(Player(he),PLAYER_STATE_RESOURCE_LUMBER,GetPlayerState(Player(he),PLAYER_STATE_RESOURCE_LUMBER)+1)
+                    endif
                     set he=he+1
                 endloop
                 if round>5 then
@@ -56326,7 +56766,7 @@ function EndOfChoiceAct takes nothing returns nothing
     set i=0
     loop
     exitwhen i>9
-    if i<5 then
+    if TeamOfP(i)==0 then
     call W3MMD_Lite_Flag_Winner( Player(i) )
     else
     call W3MMD_Lite_Flag_Loser( Player(i) )
@@ -56352,7 +56792,7 @@ function EndOfChoiceAct takes nothing returns nothing
     set i=0
     loop
     exitwhen i>9
-    if i<5 then
+    if TeamOfP(i)==0 then
     call W3MMD_Lite_Flag_Loser( Player(i) )
     else
     call W3MMD_Lite_Flag_Winner( Player(i) )
@@ -57219,9 +57659,9 @@ if udg_RH[id]!=0 then
     call SetFrameColourEx( GetFrameByName("TavernBarHeroTitle",id),1, 0xFF505050 )
     call SetFrameColourEx( GetFrameByName("TavernBarHeroTitle",id),2, 0xFF505050 )
     if FFAMode==false then
-        if Player(i)==Player(0)or Player(i)==Player(1)or Player(i)==Player(2)or Player(i)==Player(3)or Player(i)==Player(4)then
+        if TeamOfP(i)==0 then
             call GroupAddUnit(udg_CG[1],u[i+1])
-        elseif Player(i)==Player(5)or Player(i)==Player(6)or Player(i)==Player(7)or Player(i)==Player(8)or Player(i)==Player(9)then
+        elseif TeamOfP(i)==1 then
             call GroupAddUnit(udg_CG[2],u[i+1])
         endif
     else
@@ -58954,7 +59394,7 @@ call PauseUnit(u,false)
 call SetUnitX(u,x+GetRandomReal(-900,900))
 call SetUnitY(u,y+GetRandomReal(-900,900))
 call UnitRemoveBuffs(u,false,true)
-if GetLocalPlayer()==GetOwningPlayer(u)then
+if IsLocalCtl(GetOwningPlayer(u)) then
 call ClearSelection()
 call SelectUnit(u,true)
 endif
@@ -67558,7 +67998,7 @@ function Trig_BKB_Conditions takes nothing returns boolean
 return udg_B
 endfunction
 function Trig_BKB_Actions takes nothing returns nothing
-local integer i=GetPlayerId(GetTriggerPlayer())
+local integer i=JudgeHid(GetPlayerId(GetTriggerPlayer()))
 local integer ind=0
 local integer lp=0
 if GetTriggerPlayerKey()==OSKEY_OEM_3 then
@@ -67568,7 +68008,7 @@ if GetTriggerPlayerKey()==OSKEY_OEM_3 then
         call PanCameraToTimed(GetUnitX(Hero[i]),GetUnitY(Hero[i]),0)
     endif
 endif
-if UnitHasItemOfTypeBJCustom(Hero[GetPlayerId(GetTriggerPlayer())],'I04V') and IsUnitPaused(Hero[GetPlayerId(GetTriggerPlayer())])==false and (RectContainsUnit(gg_rct_AntiMh,Hero[GetPlayerId(GetTriggerPlayer())])==false and RectContainsUnit(gg_rct_HibariFight,Hero[GetPlayerId(GetTriggerPlayer())])==false) and GetUnitState(Hero[GetPlayerId(GetTriggerPlayer())],UNIT_STATE_MANA)>=25 and GetUnitAbilityLevel(Hero[GetPlayerId(GetTriggerPlayer())],'Pet1')==0 and GetUnitAbilityLevel(Hero[GetPlayerId(GetTriggerPlayer())],'cbc8')==0 then
+if UnitHasItemOfTypeBJCustom(Hero[JudgeHid(GetPlayerId(GetTriggerPlayer()))],'I04V') and IsUnitPaused(Hero[JudgeHid(GetPlayerId(GetTriggerPlayer()))])==false and (RectContainsUnit(gg_rct_AntiMh,Hero[JudgeHid(GetPlayerId(GetTriggerPlayer()))])==false and RectContainsUnit(gg_rct_HibariFight,Hero[JudgeHid(GetPlayerId(GetTriggerPlayer()))])==false) and GetUnitState(Hero[JudgeHid(GetPlayerId(GetTriggerPlayer()))],UNIT_STATE_MANA)>=25 and GetUnitAbilityLevel(Hero[JudgeHid(GetPlayerId(GetTriggerPlayer()))],'Pet1')==0 and GetUnitAbilityLevel(Hero[JudgeHid(GetPlayerId(GetTriggerPlayer()))],'cbc8')==0 then
     loop
         exitwhen lp==10
         if GetItemTypeId(UnitItemInSlot(Hero[i],lp))=='I04V' then
@@ -67653,7 +68093,7 @@ function InitTrig_BKB takes nothing returns nothing
 local integer i=0
 set gg_trg_BKB=CreateTrigger()
 loop
-exitwhen i>=10
+exitwhen i>=12
 call TriggerRegisterPlayerKeyEvent( gg_trg_BKB, Player(i), OSKEY_OEM_3, 0 ,true )
 call TriggerRegisterPlayerKeyEvent( gg_trg_BKB, Player(i), OSKEY_ESCAPE, 0 ,true )
 set i=i+1
@@ -69874,7 +70314,7 @@ function Trig_EscBoros_Conditions takes nothing returns boolean
 return udg_B
 endfunction
 function Trig_EscBoros_Actions takes nothing returns nothing
-local integer i=GetPlayerId(GetTriggerPlayer())
+local integer i=JudgeHid(GetPlayerId(GetTriggerPlayer()))
 local integer ind=0
 local integer lp=0
 if GetTriggerPlayerKey()==OSKEY_OEM_3 then
@@ -69884,7 +70324,7 @@ if GetTriggerPlayerKey()==OSKEY_OEM_3 then
         call PanCameraToTimed(GetUnitX(Hero[i]),GetUnitY(Hero[i]),0)
     endif
 endif
-if UnitHasItemOfTypeBJCustom(Hero[GetPlayerId(GetTriggerPlayer())],'I13R') and IsUnitPaused(Hero[GetPlayerId(GetTriggerPlayer())])==false and (RectContainsUnit(gg_rct_AntiMh,Hero[GetPlayerId(GetTriggerPlayer())])==false and RectContainsUnit(gg_rct_HibariFight,Hero[GetPlayerId(GetTriggerPlayer())])==false) and GetUnitState(Hero[GetPlayerId(GetTriggerPlayer())],UNIT_STATE_MANA)>=25 and GetUnitAbilityLevel(Hero[GetPlayerId(GetTriggerPlayer())],'Pet1')==0 and GetUnitAbilityLevel(Hero[GetPlayerId(GetTriggerPlayer())],'cbc8')==0 then
+if UnitHasItemOfTypeBJCustom(Hero[JudgeHid(GetPlayerId(GetTriggerPlayer()))],'I13R') and IsUnitPaused(Hero[JudgeHid(GetPlayerId(GetTriggerPlayer()))])==false and (RectContainsUnit(gg_rct_AntiMh,Hero[JudgeHid(GetPlayerId(GetTriggerPlayer()))])==false and RectContainsUnit(gg_rct_HibariFight,Hero[JudgeHid(GetPlayerId(GetTriggerPlayer()))])==false) and GetUnitState(Hero[JudgeHid(GetPlayerId(GetTriggerPlayer()))],UNIT_STATE_MANA)>=25 and GetUnitAbilityLevel(Hero[JudgeHid(GetPlayerId(GetTriggerPlayer()))],'Pet1')==0 and GetUnitAbilityLevel(Hero[JudgeHid(GetPlayerId(GetTriggerPlayer()))],'cbc8')==0 then
     loop
         exitwhen lp==10
         if GetItemTypeId(UnitItemInSlot(Hero[i],lp))=='I13R' then
@@ -69918,7 +70358,7 @@ function InitTrig_EscBoros takes nothing returns nothing
 local integer i=0
 local trigger t=CreateTrigger()
 loop
-exitwhen i>=10
+exitwhen i>=12
 call TriggerRegisterPlayerKeyEvent( t, Player(i), OSKEY_OEM_3, 0 ,true )
 call TriggerRegisterPlayerKeyEvent( t, Player(i), OSKEY_ESCAPE, 0 ,true )
 set i=i+1
@@ -71409,7 +71849,7 @@ function Trig_X_Banner_Actions2 takes nothing returns nothing
     if GetUnitState(u,UNIT_STATE_MANA)>GetUnitState(u,UNIT_STATE_MAX_MANA)*0.04 and OrderId2String(GetUnitCurrentOrder(u))=="channel" and GetWidgetLife(LoadUnitHandle(HH, GetHandleId(u), TsunaR_Circle))>1.0 then
         //call SetUnitInvulnerable(u, true)
         //call PauseUnit(u, true)
-        if GetOwningPlayer(u)==GetLocalPlayer()then
+        if IsLocalCtl(GetOwningPlayer(u)) then
             call ClearSelection()
             call SetUnitVertexColor(dummy,255,255,255,255)
             call SelectUnit(dummy,true)
@@ -71521,7 +71961,7 @@ function Trig_X_Banner_Actions2 takes nothing returns nothing
         //call SetUnitInvulnerable(u, false)
         //call PauseUnit(u, false)
         call IssueImmediateOrder(u, "stop")
-        if GetOwningPlayer(u)==GetLocalPlayer()then
+        if IsLocalCtl(GetOwningPlayer(u)) then
             call ClearSelection()
             call SelectUnit(u,true)
         endif
@@ -100060,7 +100500,7 @@ local unit c=LoadUnitHandle(h,id,2)
 local real x=GetUnitX(u)
 local real y=GetUnitY(u)
 local player p=GetOwningPlayer(u)
-local real dmg=GetHeroStr(u,true)*1.5
+local real dmg=GetHeroStr(u,true)*2.5 // было 1.5
 local real time=LoadReal(h,id,1)
 local real size=LoadReal(h,id,3)
 local real he=0
@@ -100078,6 +100518,13 @@ if time<2.5 then
         set he=GetRandomReal(100,300)
         call SetUnitFlyHeight(n,GetRandomReal(40,110),0)
         call PlanetGeyserMissleFly(u,n,50,0,x+GetRandomReal(-1000,1000),y+GetRandomReal(-1000,1000),he,dmg)
+        // каждый 4-й тик — ещё один шар (шаров на четверть больше)
+        call SaveInteger(h,id,4,LoadInteger(h,id,4)+1)
+        if ModuloInteger(LoadInteger(h,id,4),4)==0 then
+            set n=CreateUnit(p,'e0QY',x,y,0)
+            call SetUnitFlyHeight(n,GetRandomReal(40,110),0)
+            call PlanetGeyserMissleFly(u,n,50,0,x+GetRandomReal(-1000,1000),y+GetRandomReal(-1000,1000),GetRandomReal(100,300),dmg)
+        endif
     endif
 else
     call SaveReal(h,id,3,size-0.44)
@@ -100133,6 +100580,26 @@ function PowerDownBroly takes nothing returns nothing
     local timer t=GetExpiredTimer()
     local integer id=GetHandleId(t)
     local unit u=LoadUnitHandle(h,id,0)
+    local ability lssA=GetUnitAbility(u,'A1NM')
+    local integer lssS
+    local integer lssG
+    local integer lssI
+        // LSS (A1NM ур. 4): +16 ко всем характеристикам и +7.5% от всех характеристик (с бонусами) — пересчёт раз в 0.1 с
+        if GetUnitAbilityLevel(u,'A0TL')>0 and lssA!=null and GetUnitAbilityLevel(u,'A1NM')==4 then
+            // от полных характеристик (с бонусами), без текущего бонуса самого LSS — иначе процент рос бы сам от себя
+            set lssS=16+R2I((GetHeroStr(u,true)-GetAbilityIntegerLevelField(lssA,ABILITY_ILF_STRENGTH_BONUS_ISTR,3))*0.075)
+            set lssG=16+R2I((GetHeroAgi(u,true)-GetAbilityIntegerLevelField(lssA,ABILITY_ILF_AGILITY_BONUS,3))*0.075)
+            set lssI=16+R2I((GetHeroInt(u,true)-GetAbilityIntegerLevelField(lssA,ABILITY_ILF_INTELLIGENCE_BONUS,3))*0.075)
+            if GetAbilityIntegerLevelField(lssA,ABILITY_ILF_STRENGTH_BONUS_ISTR,3)!=lssS or GetAbilityIntegerLevelField(lssA,ABILITY_ILF_AGILITY_BONUS,3)!=lssG or GetAbilityIntegerLevelField(lssA,ABILITY_ILF_INTELLIGENCE_BONUS,3)!=lssI then
+                call SetAbilityIntegerLevelField(lssA,ABILITY_ILF_STRENGTH_BONUS_ISTR,3,lssS)
+                call SetAbilityIntegerLevelField(lssA,ABILITY_ILF_AGILITY_BONUS,3,lssG)
+                call SetAbilityIntegerLevelField(lssA,ABILITY_ILF_INTELLIGENCE_BONUS,3,lssI)
+                // бонус Aamk применяется при смене уровня
+                call SetUnitAbilityLevel(u,'A1NM',3)
+                call SetUnitAbilityLevel(u,'A1NM',4)
+            endif
+        endif
+        set lssA=null
         if IsUnitPaused(u)==false and GetUnitAbilityLevel(u,'Pet1')==0 then
             if GetUnitAbilityLevel(u,'A0TJ')>0 or GetUnitAbilityLevel(u,'A0TK')>0 then
                 call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-GetUnitState(u,UNIT_STATE_MAX_MANA)*0.0003)
@@ -100619,7 +101086,7 @@ set E=FirstOfGroup(DG)
 exitwhen E==null
 if Condition_Base(p,E)then
 call myCustomDamage(LoadUnitHandle(h,id,10),E,dmg,false,false,null,null,null)
-call SetControlToUnit(LoadUnitHandle(h,id,10),E, 2, "stun")
+// без оглушения (было 2 с)
 endif
 call GroupRemoveUnit(DG,E)
 endloop
@@ -100710,7 +101177,7 @@ set E=FirstOfGroup(DG)
 exitwhen E==null
 if Condition_Base(p,E)then
 call myCustomDamage(LoadUnitHandle(h,id,10),E,dmg,false,false,null,null,null)
-call SetControlToUnit(LoadUnitHandle(h,id,10),E, 2, "stun")
+// без оглушения (было 2 с)
 endif
 call GroupRemoveUnit(DG,E)
 endloop
@@ -100775,10 +101242,10 @@ local real hei=GetUnitFlyHeight(u)
 local real time=LoadReal(h,id,7)
 if time==0 then
 call SetUnitAnimationByIndex(u,36)
-call SetUnitTimeScale(u,1.2)
+call SetUnitTimeScale(u,1.44) // зарядка 1.5 с вместо 1.8 — анимация на 20% быстрее (было 1.2)
 endif
 call SaveReal(h,id,7,time+0.02)
-if time>=1.8 then
+if time>=1.5 then // зарядка T: было 1.8 с
 set x=x+50*Cos(a)
 set y=y+50*Sin(a)
 set n=CreateUnit(p,'e2E5',x,y,a)
@@ -100818,12 +101285,12 @@ call SetUnitFlyHeight(u,350,450)
 call SaveUnitHandle(h,id,0,u)
 set EFF=AddSpecialEffect("war3mapImported\\BrolyCompression.mdx",GetUnitX(u)+75*Cos(a),GetUnitY(u)+75*Sin(a))
 call SetSpecialEffectZ(EFF,455)
-call SetSpecialEffectTimeScale(EFF , 0.28)
+call SetSpecialEffectTimeScale(EFF , 0.336) // под зарядку 1.5 с (было 0.28)
 call SetSpecialEffectScale(EFF , 2)
-call RemoveEffect(EFF,1.7,false,CreateTimer())
+call RemoveEffect(EFF,1.4,false,CreateTimer()) // было 1.7
 set n=CreateUnit(p,'e06G',GetUnitX(u),GetUnitY(u),GetRandomReal(0,359))
 call UnitApplyTimedLife(n,'BTLF',4)
-call SetUnitTimeScale(n,0.3)
+call SetUnitTimeScale(n,0.36) // было 0.3
 // set n=CreateUnit(p,'e0EL',GetUnitX(u),GetUnitY(u),GetRandomReal(0,359))
 // call UnitApplyTimedLife(n,'BTLF',4)
 // call SetUnitTimeScale(n,0.2)
@@ -101112,25 +101579,22 @@ else
     call UnitApplyTimedLife(CreateUnit(p,'e0E9',x1,y1,GetRandomReal(0,359)),'BHwe',3)
     call UnitApplyTimedLife(CreateUnit(p,'e0EN',x1,y1,GetRandomReal(0,359)),'BHwe',3)
     else
-    // взрыв вплотную. Шаровые взрывы — на земле, как у обычного взрыва, но мельче
-    // (x0.2 от масштаба юнитов) и с анимацией в 2 раза быстрее
-    set EFF=AddSpecialEffect("BrolyExplosion1.mdl", x1,y1)
-    call SetSpecialEffectScale(EFF , 0.2)
+    // взрыв вплотную: попадание R Луччи в зелёном (BrolyRHitGreen, масштаб 0.5, вдвое быстрее, на 250 дальше по направлению выстрела), развёрнут от Броли к врагу.
+    // Шаровые взрывы BrolyExplosion1/3 и GreenSlam убраны
+    set EFF=AddSpecialEffect("war3mapImported\\BrolyRHitGreen.mdl", x1+250*Cos(a),y1+250*Sin(a))
+    call SetSpecialEffectFacing(EFF,Atan2(GetUnitY(c)-y1,GetUnitX(c)-x1)*bj_RADTODEG)
+    call SetSpecialEffectScale(EFF , 0.5)
+    call SetSpecialEffectZ(EFF , 60)
     call SetSpecialEffectTimeScale(EFF , 2)
-    call DestroyEffect(EFF)
-    set EFF=AddSpecialEffect("BrolyExplosion3.mdl", x1,y1)
-    call SetSpecialEffectScale(EFF , 0.2)
+    call RemoveEffect(EFF,0.35,true,CreateTimer())
+    // вторая копия поверх: частицы аддитивные, эффект ярче без увеличения масштаба
+    set EFF=AddSpecialEffect("war3mapImported\\BrolyRHitGreen.mdl", x1+250*Cos(a),y1+250*Sin(a))
+    call SetSpecialEffectFacing(EFF,Atan2(GetUnitY(c)-y1,GetUnitX(c)-x1)*bj_RADTODEG)
+    call SetSpecialEffectScale(EFF , 0.5)
+    call SetSpecialEffectZ(EFF , 60)
     call SetSpecialEffectTimeScale(EFF , 2)
-    call RemoveEffect(EFF,1.5,true,CreateTimer())
-    // пыль. GreenSlam — на земле без поворота, как у обычного взрыва; остальная — к врагу (наклон -90, высота 100)
-    set EFF=AddSpecialEffect("war3mapImported\\GreenSlam.mdl", x1,y1)
-    call SetSpecialEffectScale(EFF , 3.2)
-    call RemoveEffect(EFF,3,true,CreateTimer())
-    set EFF=AddSpecialEffect("war3mapImported\\GreenShockwave.mdl", x1,y1)
-    call SetSpecialEffectOrientation(EFF,Atan2(GetUnitY(c)-y1,GetUnitX(c)-x1)*bj_RADTODEG,-90,0)
-    call SetSpecialEffectZ(EFF , 100)
-    call SetSpecialEffectScale(EFF , 2.4)
-    call RemoveEffect(EFF,3,true,CreateTimer())
+    call RemoveEffect(EFF,0.35,true,CreateTimer())
+    // кольцо GreenShockwave убрано
     // пыль из взрыва щита E2 (WarStompCaster), зелёная, к врагу
     set EFF=AddSpecialEffect("war3mapImported\\WarStompCaster.mdx", x1,y1)
     call SetSpecialEffectOrientation(EFF,Atan2(GetUnitY(c)-y1,GetUnitX(c)-x1)*bj_RADTODEG,-90,0)
@@ -101146,12 +101610,7 @@ else
     call SetSpecialEffectTimeScale(EFF , 0.75)
     call SetSpecialEffectVertexColour(EFF,120,255,120,160)
     call RemoveEffect(EFF,1.35,true,CreateTimer())
-    // ударная волна EffectID[6] (Signum\CF2.mdl) с лёгким зелёным оттенком, на врага
-    set EFF=AddSpecialEffect(EffectID[6], x1, y1)
-    call SetSpecialEffectOrientation(EFF,Atan2(GetUnitY(c)-y1,GetUnitX(c)-x1)*bj_RADTODEG,0,0)
-    call SetSpecialEffectZ(EFF , 60)
-    call SetSpecialEffectVertexColour(EFF,190,255,190,255)
-    call DestroyEffect(EFF)
+    // кольцо EffectID[6] (CF2) убрано
     endif
     call GroupEnumUnitsInRange(g,x1,y1,500,Base)
     set idg=GetHandleId(g)
@@ -101168,8 +101627,8 @@ else
                 call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,false)
                 call myCustomDamage(u,E,dmg*1.1,false,false,null,null,null)
                 call SetControlToUnit(E,E, 3, "stun")
-                // вместо полёта со снарядом — отлёт на 350
-                call Push3(E,50,a,350,"")
+                // вместо полёта со снарядом — отлёт на 900 (было 350)
+                call Push3(E,50,a,900,"")
             endif
         endif
         call GroupRemoveUnit(g,E)
@@ -119536,12 +119995,12 @@ call UnitApplyTimedLife(n,'BTLF',0.4)
 call SaveReal(h,id,6,time+0.1)
 else
 if time>11.8 and FFAMode==false then
-        if idu>=0 and idu<=4 then
+        if TeamOfP(idu)==0 then
         set i=0
         loop
-        exitwhen i>=10
-        set random_i=GetRandomInt(0, 4)
-        if Hero[random_i]!=u and UnitIsAlive(Hero[random_i])==false and Hero[random_i]!=null and ingame[random_i] then
+        exitwhen i>=20
+        set random_i=GetRandomInt(0, 9)
+        if Hero[random_i]!=u and TeamOfP(random_i)==TeamOfP(idu) and UnitIsAlive(Hero[random_i])==false and Hero[random_i]!=null and ingame[random_i] then
             call ReviveHero(Hero[random_i],x-200*Cos(f),y-200*Sin(f),true)
             call SetUnitControlCount(Hero[random_i], 11,0)
             call SaveInteger(HH,GetHandleId(Hero[random_i]),SH_VegetaDeath,1)
@@ -119555,16 +120014,16 @@ if time>11.8 and FFAMode==false then
             call SetUnitTargetable(Hero[random_i],true)
             call IssuePointOrder(Hero[random_i],"move",x+500*Cos(f),y+500*Sin(f))
             call DestroyEffect(AddSpecialEffect("war3mapImported\\AncientExplode.mdx",x-200*Cos(f),y-200*Sin(f)))
-            set i=11
+            set i=21
         endif
         set i=i+1
         endloop
-    elseif idu>=5 and idu<=9 then
+    elseif TeamOfP(idu)==1 then
         set i=0
         loop
-        exitwhen i>=10
-        set random_i=GetRandomInt(5, 9)
-        if Hero[random_i]!=u and UnitIsAlive(Hero[random_i])==false and Hero[random_i]!=null and ingame[random_i] then
+        exitwhen i>=20
+        set random_i=GetRandomInt(0, 9)
+        if Hero[random_i]!=u and TeamOfP(random_i)==TeamOfP(idu) and UnitIsAlive(Hero[random_i])==false and Hero[random_i]!=null and ingame[random_i] then
             call ReviveHero(Hero[random_i],x-200*Cos(f),y-200*Sin(f),true)
             call SetUnitControlCount(Hero[random_i], 11,0)
             call SaveInteger(HH,GetHandleId(Hero[random_i]),SH_VegetaDeath,1)
@@ -119578,7 +120037,7 @@ if time>11.8 and FFAMode==false then
             call SetUnitTargetable(Hero[random_i],true)
             call IssuePointOrder(Hero[random_i],"move",x+500*Cos(f),y+500*Sin(f))
             call DestroyEffect(AddSpecialEffect("war3mapImported\\AncientExplode.mdx",x-200*Cos(f),y-200*Sin(f)))
-            set i=11
+            set i=21
         endif
         set i=i+1
         endloop
@@ -125257,8 +125716,8 @@ function IchigoVaster_OvertimeForm takes unit newCaster, string newString, real 
         call SetFramePriority( NewFrame, 7 )
         call HandleListAddHandle(StatusBarFrameList[GetPlayerId(p)],NewFrame)
         call SetFrameParent(NewFrame,StatusBarFrame)
-        call ShowFrame( NewFrame, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
-        call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
+        call ShowFrame( NewFrame, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (ViewAlly(GetOwningPlayer(newCaster)) or IsLocalJudge()))
+        call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (ViewAlly(GetOwningPlayer(newCaster)) or IsLocalJudge()))
         call SaveFrameHandle(HH,idp,StringHash(newString),NewFrame)
         call StatusIndicatorTooltip(NewFrame, newString)
         //call SaveReal               (HH, GetHandleId(NewFrame), c_DURATION, 2)
@@ -125271,15 +125730,15 @@ function IchigoVaster_OvertimeForm takes unit newCaster, string newString, real 
         call SetFrameText( NewFrameText, R2SW(newDur,2, 1) )
         call SetFrameTextColour( NewFrameText, 0xFFFFA500 )
         call HandleListAddHandle(StatusBarFrameList[GetPlayerId(p)],NewFrameText)
-        call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
+        call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (ViewAlly(GetOwningPlayer(newCaster)) or IsLocalJudge()))
         call SaveFrameHandle(HH,idp,StringHash(newString+"2"),NewFrameText)
     else
         if LoadReal(HH, GetHandleId(NewFrame), c_DURATION)<=0 then
             set NewFrame=LoadFrameHandle(HH, idp,StringHash(newString))
             set NewFrameText=LoadFrameHandle(HH, idp,StringHash(newString+"2"))
             call SetFrameText( NewFrameText, R2SW(newDur,2, 1) )
-            call ShowFrame( NewFrame, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
-            call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
+            call ShowFrame( NewFrame, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (ViewAlly(GetOwningPlayer(newCaster)) or IsLocalJudge()))
+            call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (ViewAlly(GetOwningPlayer(newCaster)) or IsLocalJudge()))
         endif
     endif
     if LoadReal(HH, GetHandleId(NewFrame), c_DURATION)<=0 then
@@ -170271,9 +170730,9 @@ call SetHeroInt(Lucy[ip],R2I(GetHeroInt(LUcy[ip],true)*1.15),false)
 call SetUnitState(Lucy[ip],UNIT_STATE_MANA,GetUnitState(Lucy[ip],UNIT_STATE_MAX_MANA))
 call SetUnitMoveSpeed(Lucy[ip],550)
 if FFAMode==false then
-if Player(ip)==Player(0)or Player(ip)==Player(1)or Player(ip)==Player(2)or Player(ip)==Player(3)or Player(ip)==Player(4)then
+if TeamOfP(ip)==0 then
 call GroupAddUnit(udg_CG[1],Lucy[ip])
-elseif Player(ip)==Player(5)or Player(ip)==Player(6)or Player(ip)==Player(7)or Player(ip)==Player(8)or Player(ip)==Player(9)then
+elseif TeamOfP(ip)==1 then
 call GroupAddUnit(udg_CG[2],Lucy[ip])
 endif
 endif
@@ -198095,7 +198554,7 @@ return udg_B
 endfunction
 
 function DrStoneESC takes nothing returns nothing
-local integer i=GetPlayerId(GetTriggerPlayer())
+local integer i=JudgeHid(GetPlayerId(GetTriggerPlayer()))
 local integer ind=0
 local integer lp=0
 if GetTriggerPlayerKey()==OSKEY_OEM_3 then
@@ -198105,7 +198564,7 @@ if GetTriggerPlayerKey()==OSKEY_OEM_3 then
         call PanCameraToTimed(GetUnitX(Hero[i]),GetUnitY(Hero[i]),0)
     endif
 endif
-if UnitHasItemOfTypeBJCustom(Hero[GetPlayerId(GetTriggerPlayer())],'IMDi') and IsUnitPaused(Hero[GetPlayerId(GetTriggerPlayer())])==false and RectContainsUnit(gg_rct_AntiMh,Hero[GetPlayerId(GetTriggerPlayer())])==false and GetUnitAbilityLevel(Hero[GetPlayerId(GetTriggerPlayer())],'Pet1')==0 and GetUnitAbilityLevel(Hero[GetPlayerId(GetTriggerPlayer())],'cbc8')==0 then
+if UnitHasItemOfTypeBJCustom(Hero[JudgeHid(GetPlayerId(GetTriggerPlayer()))],'IMDi') and IsUnitPaused(Hero[JudgeHid(GetPlayerId(GetTriggerPlayer()))])==false and RectContainsUnit(gg_rct_AntiMh,Hero[JudgeHid(GetPlayerId(GetTriggerPlayer()))])==false and GetUnitAbilityLevel(Hero[JudgeHid(GetPlayerId(GetTriggerPlayer()))],'Pet1')==0 and GetUnitAbilityLevel(Hero[JudgeHid(GetPlayerId(GetTriggerPlayer()))],'cbc8')==0 then
     loop
     exitwhen lp==10
         if GetItemTypeId(UnitItemInSlot(Hero[i],lp))=='IMDi' then
@@ -198180,7 +198639,7 @@ function InitTrig_DrStoneInt takes nothing returns nothing
         set trig=CreateTrigger()
         set index=0
         loop
-        exitwhen index==10
+        exitwhen index==12
             call TriggerRegisterPlayerKeyEvent( trig, Player(index), OSKEY_OEM_3, 0 ,true )
             call TriggerRegisterPlayerKeyEvent( trig, Player(index), OSKEY_ESCAPE, 0 ,true )
             set index=index+1
@@ -214402,7 +214861,7 @@ call MoveAoe1(LoadReal(HH,id,11),LoadReal(HH,id,12),caster,GetRandomReal(-500,50
 call UnitCreateAndMove(caster,'ds26',caster,GetUnitFacing(caster),1,1,0.8,100,100,100,60,100,caster,0,GetUnitFacing(caster))
 call UnitCreateAndMove(caster,'ds27',caster,GetUnitFacing(caster),1,0.8,0.6,100,100,100,60,0,caster,0,GetUnitFacing(caster))
 call UnitCreateAndMove(caster,'ds04',caster,GetUnitFacing(caster),1,0.6,1,100,100,100,70,0,caster,0,GetUnitFacing(caster))
-if GetLocalPlayer()==GetOwningPlayer(caster)then
+if IsLocalCtl(GetOwningPlayer(caster)) then
 call ClearSelection()
 call SelectUnit(caster,true)
 endif
@@ -216822,11 +217281,11 @@ if time==24 then
     call MoveUnit(LoadUnitHandle(HH,id,22),target,0,facing)
     call RemoveUnit(LoadUnitHandle(HH,id,21))
     call RemoveUnit(LoadUnitHandle(HH,id,22))
-    if GetLocalPlayer()==GetOwningPlayer(caster)then
+    if IsLocalCtl(GetOwningPlayer(caster)) then
         call ClearSelection()
         call SelectUnit(caster,true)
     endif
-    if GetLocalPlayer()==GetOwningPlayer(target)then
+    if IsLocalCtl(GetOwningPlayer(target)) then
         call ClearSelection()
         call SelectUnit(target,true)
     endif
@@ -216859,7 +217318,7 @@ else
         call PauseUnit(caster,false)
         call SetUnitInvulnerable(caster,false)
 
-        if GetLocalPlayer()==GetOwningPlayer(caster) then
+        if IsLocalCtl(GetOwningPlayer(caster)) then
             call ClearSelection()
             call SelectUnit(caster,true)
         endif
@@ -216959,7 +217418,7 @@ else
                     call SaveBoolean(HH,GetHandleId(n0),TARGET_ABILITY,false)
                     call RemoveUnit(LoadUnitHandle(HH,id,20))
                     call RemoveUnit(LoadUnitHandle(HH,id,21))
-                    if GetLocalPlayer()==GetOwningPlayer(caster)then
+                    if IsLocalCtl(GetOwningPlayer(caster)) then
                         call ClearSelection()
                         call SelectUnit(caster,true)
                     endif
@@ -220622,8 +221081,8 @@ function CreateModeIndicatorWithPauseSabrac takes unit newCasterOwner,unit newCa
         call HandleListAddHandle(StatusBarFrameList[GetPlayerId(p)],NewFrame)
         call SetFrameParent(NewFrame,StatusBarFrame)
         //if IsUnitSelected( newCaster, GetLocalPlayer())==false then
-        call ShowFrame( NewFrame, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
-        call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
+        call ShowFrame( NewFrame, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (ViewAlly(GetOwningPlayer(newCaster)) or IsLocalJudge()))
+        call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (ViewAlly(GetOwningPlayer(newCaster)) or IsLocalJudge()))
         call SaveFrameHandle(HH,idp,StringHash(newString),NewFrame)
         call StatusIndicatorTooltip(NewFrame, newString)
         //call SaveReal               (HH, GetHandleId(NewFrame), c_DURATION, 2)
@@ -220636,15 +221095,15 @@ function CreateModeIndicatorWithPauseSabrac takes unit newCasterOwner,unit newCa
         call SetFrameText( NewFrameText, R2SW(newDur,2, 1) )
         call SetFrameTextColour( NewFrameText, 0xFFFFA500 )
         call HandleListAddHandle(StatusBarFrameList[GetPlayerId(p)],NewFrameText)
-        call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
+        call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (ViewAlly(GetOwningPlayer(newCaster)) or IsLocalJudge()))
         call SaveFrameHandle(HH,idp,StringHash(newString+"2"),NewFrameText)
     else
         if LoadReal(HH, GetHandleId(NewFrame), c_DURATION)<=0 then
             set NewFrame=LoadFrameHandle(HH, idp,StringHash(newString))
             set NewFrameText=LoadFrameHandle(HH, idp,StringHash(newString+"2"))
             call SetFrameText( NewFrameText, R2SW(newDur,2, 1) )
-            call ShowFrame( NewFrame, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
-            call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
+            call ShowFrame( NewFrame, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (ViewAlly(GetOwningPlayer(newCaster)) or IsLocalJudge()))
+            call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (ViewAlly(GetOwningPlayer(newCaster)) or IsLocalJudge()))
         endif
     endif
     if LoadReal(HH, GetHandleId(NewFrame), c_DURATION)<=0 then
@@ -225072,7 +225531,7 @@ call SaveReal(HH,GetHandleId(Dummy),SH_AizenTR,0)
 call PauseUnit(caster,false)
 call SetUnitInvulnerable(caster,false)
 call ShowUnit(caster,true)
-if GetLocalPlayer()==GetOwningPlayer(caster)then
+if IsLocalCtl(GetOwningPlayer(caster)) then
 call ClearSelection()
 call SelectUnit(caster,true)
 endif
@@ -225129,7 +225588,7 @@ call SaveReal(HH,GetHandleId(Dummy),SH_AizenTR,0)
 call PauseUnit(caster,false)
 call SetUnitInvulnerable(caster,false)
 call ShowUnit(caster,true)
-if GetLocalPlayer()==GetOwningPlayer(caster)then
+if IsLocalCtl(GetOwningPlayer(caster)) then
 call ClearSelection()
 call SelectUnit(caster,true)
 endif
@@ -225369,7 +225828,7 @@ set soundplay=SndN(3972) // Sound\Music\mp3Music\AizenTself1.mp3
 call StartSound(soundplay)
 //call KillSoundWhenDone(soundplay) // звук из массива soundStr — не удалять
 call ShowUnit(caster,true)
-if GetLocalPlayer()==GetOwningPlayer(caster)then
+if IsLocalCtl(GetOwningPlayer(caster)) then
 call ClearSelection()
 call SelectUnit(caster,true)
 endif
@@ -225606,8 +226065,8 @@ function CreateModeIndicatorWithPauseAizen takes unit newCasterOwner,unit newCas
         call SetFramePriority( NewFrame, 7 )
         call HandleListAddHandle(StatusBarFrameList[GetPlayerId(p)],NewFrame)
         call SetFrameParent(NewFrame,StatusBarFrame)
-        call ShowFrame( NewFrame, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
-        call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
+        call ShowFrame( NewFrame, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (ViewAlly(GetOwningPlayer(newCaster)) or IsLocalJudge()))
+        call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (ViewAlly(GetOwningPlayer(newCaster)) or IsLocalJudge()))
         call SaveFrameHandle(HH,idp,StringHash(newString),NewFrame)
         call StatusIndicatorTooltip(NewFrame, newString)
         //call SaveReal               (HH, GetHandleId(NewFrame), c_DURATION, 2)
@@ -225620,15 +226079,15 @@ function CreateModeIndicatorWithPauseAizen takes unit newCasterOwner,unit newCas
         call SetFrameText( NewFrameText, R2SW(newDur,2, 1) )
         call SetFrameTextColour( NewFrameText, 0xFFFFA500 )
         call HandleListAddHandle(StatusBarFrameList[GetPlayerId(p)],NewFrameText)
-        call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
+        call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (ViewAlly(GetOwningPlayer(newCaster)) or IsLocalJudge()))
         call SaveFrameHandle(HH,idp,StringHash(newString+"2"),NewFrameText)
     else
         if LoadReal(HH, GetHandleId(NewFrame), c_DURATION)<=0 then
             set NewFrame=LoadFrameHandle(HH, idp,StringHash(newString))
             set NewFrameText=LoadFrameHandle(HH, idp,StringHash(newString+"2"))
             call SetFrameText( NewFrameText, R2SW(newDur,2, 1) )
-            call ShowFrame( NewFrame, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
-            call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(newCaster)) or GetPlayerId(GetLocalPlayer())==10 or GetPlayerId(GetLocalPlayer())==11))
+            call ShowFrame( NewFrame, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (ViewAlly(GetOwningPlayer(newCaster)) or IsLocalJudge()))
+            call ShowFrame( NewFrameText, GetOwningPlayer(GetUnitSelected(GetLocalPlayer()))==GetOwningPlayer(newCaster) and (ViewAlly(GetOwningPlayer(newCaster)) or IsLocalJudge()))
         endif
     endif
     if LoadReal(HH, GetHandleId(NewFrame), c_DURATION)<=0 then
@@ -232747,7 +233206,7 @@ function IchigoBankaiE_Periodic takes nothing returns nothing
         call MyRemoveUnit(LoadUnitHandle(h, id, 9), 1.5)
         call MyRemoveUnit(LoadUnitHandle(h, id, 10), 1.5)
         call ShowUnit(caster, true)
-        if GetLocalPlayer()==GetOwningPlayer(caster) then
+        if IsLocalCtl(GetOwningPlayer(caster)) then
             call ClearSelection()
             call SelectUnit(caster, true)
         endif
@@ -232943,7 +233402,7 @@ function IchigoBankaiR_Periodic2 takes nothing returns nothing
         endif
     else
         call ShowUnit(caster, true)
-        if GetLocalPlayer()==GetOwningPlayer(caster) then
+        if IsLocalCtl(GetOwningPlayer(caster)) then
             call ClearSelection()
             call SelectUnit(caster, true)
         endif
@@ -233149,7 +233608,7 @@ function IchigoBankaiR_Periodic1 takes nothing returns nothing
             call StopSound(LoadSoundHandle(h, id, 102), false, true) // звук из массива — останавливаем, не удаляем
             call RemoveUnit(LoadUnitHandle(h, id, 5))
             call ShowUnit(caster, true)
-            if GetLocalPlayer()==GetOwningPlayer(caster) then
+            if IsLocalCtl(GetOwningPlayer(caster)) then
                 call ClearSelection()
                 call SelectUnit(caster, true)
             endif
@@ -236498,7 +236957,7 @@ function KarnaT_Periodic1 takes nothing returns nothing
     if duration>=0 then
         call SetUnitInvulnerable(caster, true)
         call PauseUnit(caster, true)
-        if GetOwningPlayer(caster)==GetLocalPlayer()then
+        if IsLocalCtl(GetOwningPlayer(caster)) then
             call ClearSelection()
             call SetUnitVertexColor(LoadUnitHandle(HH, c_id, KarnaT_Circle),255,255,255,255)
             call SelectUnit(LoadUnitHandle(HH, c_id, KarnaT_Circle),true)
@@ -236564,7 +237023,7 @@ function KarnaT_Periodic1 takes nothing returns nothing
         endloop
         call SetControlToUnit(caster, caster, 0.11,"doomdebug")
     else
-        if GetOwningPlayer(caster)==GetLocalPlayer()then
+        if IsLocalCtl(GetOwningPlayer(caster)) then
             call ClearSelection()
             call SelectUnit(caster, true)
         endif
@@ -237016,7 +237475,7 @@ function KarnaT2_Laser_Periodic takes nothing returns nothing
 		
         call SetUnitInvulnerable(u, true)
         call PauseUnit(u, true)
-        if GetOwningPlayer(u)==GetLocalPlayer()then
+        if IsLocalCtl(GetOwningPlayer(u)) then
             call ClearSelection()
             call SelectUnit(dummy,true)
         endif
@@ -237148,7 +237607,7 @@ function KarnaT2_Laser_Periodic takes nothing returns nothing
         call SetUnitInvulnerable(u, false)
         call PauseUnit(u, false)
         call IssueImmediateOrder(u, "stop")
-        if GetOwningPlayer(u)==GetLocalPlayer()then
+        if IsLocalCtl(GetOwningPlayer(u)) then
             call ClearSelection()
             call SelectUnit(u,true)
         endif
@@ -237796,7 +238255,7 @@ function SinonW_Periodic takes nothing returns nothing
         set soundplay=SndN(4200) // Sound\Music\mp3Music\SinonWend.mp3
         call StartSound(soundplay)
         //call KillSoundWhenDone(soundplay) // звук из массива soundStr — не удалять
-        if GetOwningPlayer(caster)==GetLocalPlayer()then
+        if IsLocalCtl(GetOwningPlayer(caster)) then
             call ClearSelection()
             call SelectUnit(caster, true)
         endif
@@ -237875,7 +238334,7 @@ function SinonW_Cast takes unit newCaster, real point_x, real point_y returns no
     call SetWidgetMana(n, GetWidgetMana(newCaster))
     call SaveUnitHandle(HH, GetHandleId(newCaster), TsunaR_Circle, n)
     call SaveTriggerHandle(h, id, 100, newTrigger)
-    if GetOwningPlayer(newCaster)==GetLocalPlayer() then
+    if IsLocalCtl(GetOwningPlayer(newCaster)) then
         call ClearSelection()
         call SelectUnit(n,true)
     endif
@@ -245625,7 +246084,7 @@ call SetUnitFacing(LoadUnitHandle(HH,id,21),facing)
 
 
 call UnitSpeed(caster,1)
-if GetLocalPlayer()==GetOwningPlayer(caster)then
+if IsLocalCtl(GetOwningPlayer(caster)) then
 call ClearSelection()
 call SelectUnit(caster,true)
 endif
@@ -247179,6 +247638,7 @@ function Sh_ScanInv takes integer pid returns boolean
 local integer i=0
 local integer id
 local boolean ch=false
+set pid=JudgeHid(pid)
 loop
 exitwhen i==20
 set id=0
@@ -247892,7 +248352,7 @@ endfunction
 
 // Под предметом инвентаря — сколько за него дадут при продаже
 function Sh_DrawInv takes nothing returns nothing
-local integer pid=GetPlayerId(GetLocalPlayer())
+local integer pid=JudgeHid(GetPlayerId(GetLocalPlayer()))
 local integer i=0
 local integer id
 loop
@@ -248098,8 +248558,8 @@ call Sh_Redraw()
 endif
 elseif tag>=300 and tag<310 then
 set ShInvSel[pid]=tag-300
-if Hero[pid]!=null and UnitItemInSlot(Hero[pid],tag-300)!=null then
-set ShSel[pid]=GetItemTypeId(UnitItemInSlot(Hero[pid],tag-300))
+if Hero[JudgeHid(pid)]!=null and UnitItemInSlot(Hero[JudgeHid(pid)],tag-300)!=null then
+set ShSel[pid]=GetItemTypeId(UnitItemInSlot(Hero[JudgeHid(pid)],tag-300))
 endif
 call Sh_Redraw()
 elseif tag==410 then
@@ -248226,7 +248686,7 @@ local player p=GetTriggerSyncPlayer()
 local integer pid=GetPlayerId(p)
 local string pref=GetTriggerSyncPrefix()
 local integer val=S2I(GetTriggerSyncData())
-local unit hu=Hero[pid]
+local unit hu=Hero[JudgeHid(pid)]
 local integer cost
 local item itm
 if Sh_InZone(hu)==false then
@@ -248276,7 +248736,7 @@ set hu=null
 return
 endif
 call SetPlayerState(p,PLAYER_STATE_RESOURCE_GOLD,GetPlayerState(p,PLAYER_STATE_RESOURCE_GOLD)-cost)
-call Sh_Give(p,pid,val)
+call Sh_Give(p,JudgeHid(pid),val)
 if GetLocalPlayer()==p then
 call Sh_Msg(Lng("|c0066ff66Куплено: ","|c0066ff66Bought: ")+Sh_Name(val)+Lng(" за "," for ")+I2S(cost)+"|r")
 endif
@@ -255396,7 +255856,7 @@ call SaveBoolean(HH,id,16,SignumGBuff)
 
 if GetSpellAbilityId()=='SiF1' then
 
-if GetLocalPlayer()==GetOwningPlayer(caster)then
+if IsLocalCtl(GetOwningPlayer(caster)) then
 call ClearSelection()
 call SelectUnit(caster,true)
 endif
@@ -255432,7 +255892,7 @@ endif
 
 if GetSpellAbilityId()=='SiF2' then
 
-if GetLocalPlayer()==GetOwningPlayer(caster)then
+if IsLocalCtl(GetOwningPlayer(caster)) then
 call ClearSelection()
 call SelectUnit(caster,true)
 endif
@@ -255664,7 +256124,7 @@ call SetUnitFlyHeight(n0,100,0)
 call SaveUnitHandle(HH,id,2,n0)
 call UnitAddAbility(n0,'SiR2')
 
-if GetLocalPlayer()==GetOwningPlayer(caster)then
+if IsLocalCtl(GetOwningPlayer(caster)) then
 call ClearSelection()
 call SelectUnit(n0,true)
 endif
@@ -258705,7 +259165,7 @@ set time=time+0.02
 call SaveReal(HH,id,5,time)
 if time>4 then
 call DestroyEffect(LoadEffectHandle(HH,id,10))
-if GetOwningPlayer(caster)==GetLocalPlayer()then
+if IsLocalCtl(GetOwningPlayer(caster)) then
 call ClearSelection()
 call SelectUnit(caster,true)
 endif
@@ -258756,7 +259216,7 @@ call SetUnitFlyHeight(n0,0,0)
 call SetUnitAnimationByIndex(n0,0)
 call UnitSpeed(n0,0)
 call SaveUnitHandle(HH,id,20,n0)
-if GetOwningPlayer(caster)==GetLocalPlayer()then
+if IsLocalCtl(GetOwningPlayer(caster)) then
 call ClearSelection()
 call SelectUnit(n0,true)
 endif
@@ -258764,7 +259224,7 @@ set n0=null
 endif
 if time>0.02 then
 if time1==0.02 or time1==0.2 or time1==0.38 then
-if GetOwningPlayer(caster)==GetLocalPlayer()then
+if IsLocalCtl(GetOwningPlayer(caster)) then
 call ClearSelection()
 call SelectUnit(Dummy,true)
 endif
@@ -264001,7 +264461,7 @@ if FFAMode==false then
         set E=FirstOfGroup(G)
         exitwhen E==null
         if E==Hero[GetPlayerId(GetOwningPlayer(E))] and IsUnitType(E,UNIT_TYPE_HERO) then
-            if GetPlayerId(GetOwningPlayer(E))>4 then
+            if TeamOfP(GetPlayerId(GetOwningPlayer(E)))==1 then
                 set TeamCount[1]=TeamCount[1]+1
             else
                 set TeamCount[0]=TeamCount[0]+1
@@ -264080,18 +264540,22 @@ if FFAMode==false then
     call SetFrameRelativePoint( LoadFrameHandle(HH,id,3), FRAMEPOINT_CENTER, TeamBar[1], FRAMEPOINT_CENTER, 0, 0 )
     if TeamPoints[0]!=TeamPoints[1] then
         if TeamPoints[0]>=MaxPoints and TeamPoints[0]>TeamPoints[1] then
-            set i=5
+            set i=0
             loop
-            exitwhen i>10
+            exitwhen i>9
+            if TeamOfP(i)==1 then
             call KillUnit(Hero[i])
+            endif
             set i=i+1
             endloop
         endif
         if TeamPoints[1]>=MaxPoints and TeamPoints[1]>TeamPoints[0] then
             set i=0
             loop
-            exitwhen i>4
+            exitwhen i>9
+            if TeamOfP(i)==0 then
             call KillUnit(Hero[i])
+            endif
             set i=i+1
             endloop
         endif
@@ -264213,7 +264677,7 @@ if FFAMode==false then
         set E=FirstOfGroup(G)
         exitwhen E==null
         if E==Hero[GetPlayerId(GetOwningPlayer(E))] and IsUnitType(E,UNIT_TYPE_HERO) then
-            if GetPlayerId(GetOwningPlayer(E))>4 then
+            if TeamOfP(GetPlayerId(GetOwningPlayer(E)))==1 then
                 set TeamCountFountain[1]=TeamCountFountain[1]+1
             else
                 set TeamCountFountain[0]=TeamCountFountain[0]+1
@@ -264281,7 +264745,7 @@ if FFAMode==false then
         set E=FirstOfGroup(G)
         exitwhen E==null
         if E==Hero[GetPlayerId(GetOwningPlayer(E))] and IsUnitType(E,UNIT_TYPE_HERO) then
-            if GetPlayerId(GetOwningPlayer(E))>4 then
+            if TeamOfP(GetPlayerId(GetOwningPlayer(E)))==1 then
                 set TeamCountTower[1]=TeamCountTower[1]+1
             else
                 set TeamCountTower[0]=TeamCountTower[0]+1
@@ -269985,13 +270449,13 @@ call LANG_A('A0JF',0,1,"Eraser Cannon, [|cffffcc00Level 2|r] (|cffffcc00W|r)")
 call LANG_A('A0JF',0,2,"Eraser Cannon, [|cffffcc00Level 3|r] (|cffffcc00W|r)")
 call LANG_A('A0JF',0,3,"Eraser Cannon, [|cffffcc00Level 4|r] (|cffffcc00W|r)")
 call LANG_A('A0JF',0,4,"Eraser Cannon, [|cffffcc00Level 5|r] (|cffffcc00W|r)")
-call LANG_A('A0JF',1,0,"Broly unleashes a burst of dense Ki energy that scatters enemies hit and stuns them for 1 seconds.|nIf there was an enemy in front of Broly at the time of launch, the projectile explodes immediately, and the enemy is knocked back 350 units, takes 10% more damage and is stunned for 3 seconds.|nIf use"+"d within 2 seconds after Q, it makes a small dash towards the target before firing.|n|n|cFF00A5FF|nDamage: 2*|r|c00FF5555STR|r|cFF00A5FF|nRange: 2000|nProjectile AoE: 150|nAoE: 500|nCooldown: 20 seconds|r")
-call LANG_A('A0JF',1,1,"Broly unleashes a burst of dense Ki energy that scatters enemies hit and stuns them for 1 seconds.|nIf there was an enemy in front of Broly at the time of launch, the projectile explodes immediately, and the enemy is knocked back 350 units, takes 10% more damage and is stunned for 3 seconds.|nIf use"+"d within 2 seconds after Q, it makes a small dash towards the target before firing.|n|n|cFF00A5FF|nDamage: 3*|r|c00FF5555STR|r|cFF00A5FF|nRange: 2000|nProjectile AoE: 150|nAoE: 500|nCooldown: 20 seconds|r")
-call LANG_A('A0JF',1,2,"Broly unleashes a burst of dense Ki energy that scatters enemies hit and stuns them for 1 seconds.|nIf there was an enemy in front of Broly at the time of launch, the projectile explodes immediately, and the enemy is knocked back 350 units, takes 10% more damage and is stunned for 3 seconds.|nIf use"+"d within 2 seconds after Q, it makes a small dash towards the target before firing.|n|n|cFF00A5FF|nDamage: 4*|r|c00FF5555STR|r|cFF00A5FF|nRange: 2000|nProjectile AoE: 150|nAoE: 500|nCooldown: 20 seconds|r")
-call LANG_A('A0JF',1,3,"Broly unleashes a burst of dense Ki energy that scatters enemies hit and stuns them for 1 seconds.|nIf there was an enemy in front of Broly at the time of launch, the projectile explodes immediately, and the enemy is knocked back 350 units, takes 10% more damage and is stunned for 3 seconds.|nIf use"+"d within 2 seconds after Q, it makes a small dash towards the target before firing.|n|n|cFF00A5FF|nDamage: 5*|r|c00FF5555STR|r|cFF00A5FF|nRange: 2000|nProjectile AoE: 150|nAoE: 500|nCooldown: 20 seconds|r")
-call LANG_A('A0JF',1,4,"Broly unleashes a burst of dense Ki energy that scatters enemies hit and stuns them for 1 seconds.|nIf there was an enemy in front of Broly at the time of launch, the projectile explodes immediately, and the enemy is knocked back 350 units, takes 10% more damage and is stunned for 3 seconds.|nIf use"+"d within 2 seconds after Q, it makes a small dash towards the target before firing.|n|n|cFF00A5FF|nDamage: 6*|r|c00FF5555STR|r|cFF00A5FF|nRange: 2000|nProjectile AoE: 150|nAoE: 500|nCooldown: 20 seconds|r")
+call LANG_A('A0JF',1,0,"Broly unleashes a burst of dense Ki energy that scatters enemies hit and stuns them for 1 seconds.|nIf there was an enemy in front of Broly at the time of launch, the projectile explodes immediately, and the enemy is knocked back 900 units, takes 10% more damage and is stunned for 3 seconds.|nIf use"+"d within 2 seconds after Q, it makes a small dash towards the target before firing.|n|n|cFF00A5FF|nDamage: 2*|r|c00FF5555STR|r|cFF00A5FF|nRange: 2000|nProjectile AoE: 150|nAoE: 500|nCooldown: 20 seconds|r")
+call LANG_A('A0JF',1,1,"Broly unleashes a burst of dense Ki energy that scatters enemies hit and stuns them for 1 seconds.|nIf there was an enemy in front of Broly at the time of launch, the projectile explodes immediately, and the enemy is knocked back 900 units, takes 10% more damage and is stunned for 3 seconds.|nIf use"+"d within 2 seconds after Q, it makes a small dash towards the target before firing.|n|n|cFF00A5FF|nDamage: 3*|r|c00FF5555STR|r|cFF00A5FF|nRange: 2000|nProjectile AoE: 150|nAoE: 500|nCooldown: 20 seconds|r")
+call LANG_A('A0JF',1,2,"Broly unleashes a burst of dense Ki energy that scatters enemies hit and stuns them for 1 seconds.|nIf there was an enemy in front of Broly at the time of launch, the projectile explodes immediately, and the enemy is knocked back 900 units, takes 10% more damage and is stunned for 3 seconds.|nIf use"+"d within 2 seconds after Q, it makes a small dash towards the target before firing.|n|n|cFF00A5FF|nDamage: 4*|r|c00FF5555STR|r|cFF00A5FF|nRange: 2000|nProjectile AoE: 150|nAoE: 500|nCooldown: 20 seconds|r")
+call LANG_A('A0JF',1,3,"Broly unleashes a burst of dense Ki energy that scatters enemies hit and stuns them for 1 seconds.|nIf there was an enemy in front of Broly at the time of launch, the projectile explodes immediately, and the enemy is knocked back 900 units, takes 10% more damage and is stunned for 3 seconds.|nIf use"+"d within 2 seconds after Q, it makes a small dash towards the target before firing.|n|n|cFF00A5FF|nDamage: 5*|r|c00FF5555STR|r|cFF00A5FF|nRange: 2000|nProjectile AoE: 150|nAoE: 500|nCooldown: 20 seconds|r")
+call LANG_A('A0JF',1,4,"Broly unleashes a burst of dense Ki energy that scatters enemies hit and stuns them for 1 seconds.|nIf there was an enemy in front of Broly at the time of launch, the projectile explodes immediately, and the enemy is knocked back 900 units, takes 10% more damage and is stunned for 3 seconds.|nIf use"+"d within 2 seconds after Q, it makes a small dash towards the target before firing.|n|n|cFF00A5FF|nDamage: 6*|r|c00FF5555STR|r|cFF00A5FF|nRange: 2000|nProjectile AoE: 150|nAoE: 500|nCooldown: 20 seconds|r")
 call LANG_A('A0JF',2,0,"Eraser Cannon, [|cffffcc00Level %d|r] (|cffffcc00W|r)")
-call LANG_A('A0JF',3,0,"Broly unleashes a burst of dense Ki energy that scatters enemies hit and stuns them for 1 seconds.|nIf there was an enemy in front of Broly at the time of launch, the projectile explodes immediately, and the enemy is knocked back 350 units, takes 10% more damage and is stunned for 3 seconds.|nIf use"+"d within 2 seconds after Q, it makes a small dash towards the target before firing.|n|n|cFF00A5FF|nDamage: 2\\3\\4\\5\\6*|r|c00FF5555STR|r|cFF00A5FF|nRange: 2000|nProjectile AoE: 150|nAoE: 500|nCooldown: 20 seconds|r")
+call LANG_A('A0JF',3,0,"Broly unleashes a burst of dense Ki energy that scatters enemies hit and stuns them for 1 seconds.|nIf there was an enemy in front of Broly at the time of launch, the projectile explodes immediately, and the enemy is knocked back 900 units, takes 10% more damage and is stunned for 3 seconds.|nIf use"+"d within 2 seconds after Q, it makes a small dash towards the target before firing.|n|n|cFF00A5FF|nDamage: 2\\3\\4\\5\\6*|r|c00FF5555STR|r|cFF00A5FF|nRange: 2000|nProjectile AoE: 150|nAoE: 500|nCooldown: 20 seconds|r")
 call LANG_A('A0JH',0,0,"Gigantic Meteor, [|cffffcc00Level 1|r] (|cffffcc00E|r)")
 call LANG_A('A0JH',0,1,"Gigantic Meteor, [|cffffcc00Level 2|r] (|cffffcc00E|r)")
 call LANG_A('A0JH',0,2,"Gigantic Meteor, [|cffffcc00Level 3|r] (|cffffcc00E|r)")
@@ -270004,9 +270468,9 @@ call LANG_A('A0JH',1,3,"Broly creates a giant sphere that pulls everyone in and 
 call LANG_A('A0JH',1,4,"Broly creates a giant sphere that pulls everyone in and then explodes.|n|n|cFF00A5FF|nDamage: 8*|r|c00FF5555STR|r|cFF00A5FF|nCooldown: 25 seconds|r")
 call LANG_A('A0JH',2,0,"Gigantic Meteor, [|cffffcc00Level %d|r] (|cffffcc00E|r)")
 call LANG_A('A0JH',3,0,"Broly creates a giant sphere that pulls everyone in and then explodes.|n|n|cFF00A5FF|nDamage: 4\\5\\6\\7\\8*|r|c00FF5555STR|r|cFF00A5FF|nCooldown: 25 seconds|r")
-call LANG_A('A0JK',1,0,"Broly fires a powerful burst of ki energy, dealing damage and stunning enemies.|n|n|cFF00A5FF|nDamage: 11*|r|c00FF5555STR|r|cFF00A5FF|nStun: 2 sec|nRange: 2000|nAoE: 850|nCooldown: 35 seconds|r")
+call LANG_A('A0JK',1,0,"Broly fires a powerful burst of ki energy, dealing damage to enemies.|n|n|cFF00A5FF|nDamage: 11*|r|c00FF5555STR|r|cFF00A5FF|nRange: 2000|nAoE: 850|nCooldown: 35 seconds|r")
 call LANG_A('A0JK',2,0,"Omega Blaster, [|cffffcc00Level %d|r] (|cffffcc00T|r)")
-call LANG_A('A0JK',3,0,"Broly fires a powerful burst of ki energy, dealing damage and stunning enemies.|n|n|cFF00A5FF|nDamage: 11*|r|c00FF5555STR|r|cFF00A5FF|nStun: 2 sec|nRange: 2000|nAoE: 850|nCooldown: 35 seconds|r")
+call LANG_A('A0JK',3,0,"Broly fires a powerful burst of ki energy, dealing damage to enemies.|n|n|cFF00A5FF|nDamage: 11*|r|c00FF5555STR|r|cFF00A5FF|nRange: 2000|nAoE: 850|nCooldown: 35 seconds|r")
 call LANG_A('A0JL',1,0,"Broly concentrates his ki energy in his hand and slams it into the ground, attacking all nearby enemies.|n|n|cFF00A5FF|nDamage: 10*|r|c00FF5555STR|r|cFF00A5FF|nCooldown: 25 seconds|r")
 call LANG_A('A0JL',3,0,"Broly concentrates his ki energy in his hand and slams it into the ground, attacking all nearby enemies.|n|n|cFF00A5FF|nDamage: 10*|r|c00FF5555STR|r|cFF00A5FF|nCooldown: 25 seconds|r")
 call LANG_A('A0JN',0,0,"Hado #63: Raikoho, [|cffffcc00Level 1|r] (|cffffcc00Q|r)")
@@ -277289,9 +277753,9 @@ call LANG_A('BRRS',3,0,"Increase |c00FFFF66AllStat|r by 8.|nAfter the first acti
 call LANG_A('BRSS',1,0,"Increase |c00FFFF66AllStat|r by 16.|n|n|cFF00A5FFMP Consumed: 0.3% per second|r")
 call LANG_A('BRSS',2,0,"Super Saiyan, [|cffffcc00Level %d|r] (|cffffcc00W|r)")
 call LANG_A('BRSS',3,0,"Increase |c00FFFF66AllStat|r by 16.|n|n|cFF00A5FFMP Consumed: 0.3% per second|r")
-call LANG_A('BRLS',1,0,"Increase |c00FFFF66AllStat|r by 32, at full MP, Broly automatically splashes out excess energy over time, loses HP and MP and gets stunned|n|n|cFF00A5FFDamage: 1.5*|r|c00FF5555STR|r|cFF00A5FF per projectile.|nAoE: 2000(250)|nDuration: 2 sec.|nHP and MP loss: 10% of Max values|nStun yourself: 1 sec.|"+"nCooldown: 10 sec.|r|n|n|c00FF0000Recovers|r |cFF00A5FFMP: 0.6% per second|r|n|c00FF0000Cannot be disabled manually after the transition. Only a complete loss of MP or 85% of HP will bring you out of this state|r|n|n|cFF00A5FFCooldown LSS: 20 sec. from the end.|r")
+call LANG_A('BRLS',1,0,"Increase |c00FFFF66AllStat|r by 16 and 7.5% of total stats (with bonuses), at full MP, Broly automatically splashes out excess energy over time, loses HP and MP and gets stunned|n|n|cFF00A5FFDamage: 2.5*|r|c00FF5555STR|r|cFF00A5FF per projectile.|nAoE: 2000(250)|nDuration: 2 sec.|nHP and MP loss: 10"+"% of Max values|nStun yourself: 1 sec.|nCooldown: 10 sec.|r|n|n|c00FF0000Recovers|r |cFF00A5FFMP: 0.6% per second|r|n|c00FF0000Cannot be disabled manually after the transition. Only a complete loss of MP or 85% of HP will bring you out of this state|r|n|n|cFF00A5FFCooldown LSS: 20 sec. from the end."+"|r")
 call LANG_A('BRLS',2,0,"Legendary Super Saiyan, [|cffffcc00Level %d|r] (|cffffcc00E|r)")
-call LANG_A('BRLS',3,0,"Increase |c00FFFF66AllStat|r by 32, at full MP, Broly automatically splashes out excess energy over time, loses HP and MP and gets stunned|n|n|cFF00A5FFDamage: 1.5*|r|c00FF5555STR|r|cFF00A5FF per projectile.|nAoE: 2000(250)|nDuration: 2 sec.|nHP and MP loss: 10% of Max values|nStun yourself: 1 sec.|"+"nCooldown: 10 sec.|r|n|n|c00FF0000Recovers|r |cFF00A5FFMP: 0.6% per second|r|n|c00FF0000Cannot be disabled manually after the transition. Only a complete loss of MP or 85% of HP will bring you out of this state|r|n|n|cFF00A5FFCooldown LSS: 20 sec. from the end.|r")
+call LANG_A('BRLS',3,0,"Increase |c00FFFF66AllStat|r by 16 and 7.5% of total stats (with bonuses), at full MP, Broly automatically splashes out excess energy over time, loses HP and MP and gets stunned|n|n|cFF00A5FFDamage: 2.5*|r|c00FF5555STR|r|cFF00A5FF per projectile.|nAoE: 2000(250)|nDuration: 2 sec.|nHP and MP loss: 10"+"% of Max values|nStun yourself: 1 sec.|nCooldown: 10 sec.|r|n|n|c00FF0000Recovers|r |cFF00A5FFMP: 0.6% per second|r|n|c00FF0000Cannot be disabled manually after the transition. Only a complete loss of MP or 85% of HP will bring you out of this state|r|n|n|cFF00A5FFCooldown LSS: 20 sec. from the end."+"|r")
 call LANG_A('TRBB',1,0,"Return to base form.")
 call LANG_A('TRBB',2,0,"Base form, [|cffffcc00Level %d|r] (|cffffcc00V|r)")
 call LANG_A('TRBB',3,0,"Return to base form.")
@@ -279074,13 +279538,13 @@ call LANG_A('FlE1',0,1,"Forbidden Fruit, [|cffffcc00Level 2|r] (|cffffcc00E|r)")
 call LANG_A('FlE1',0,2,"Forbidden Fruit, [|cffffcc00Level 3|r] (|cffffcc00E|r)")
 call LANG_A('FlE1',0,3,"Forbidden Fruit, [|cffffcc00Level 4|r] (|cffffcc00E|r)")
 call LANG_A('FlE1',0,4,"Forbidden Fruit, [|cffffcc00Level 5|r] (|cffffcc00E|r)")
-call LANG_A('FlE1',1,0,"A super-dense barrage at a point: keeps enemies stunned and hits them 4 times.|n|n|cFF00A5FF|nDamage: 1*|r|c0077FFFFINT|r|cFF00A5FF per strike|nStun: 1 sec.|nAoE: 300|nRange: 1000|nCast time: +0.1 sec.|nCooldown: 25 sec.|r")
-call LANG_A('FlE1',1,1,"A super-dense barrage at a point: keeps enemies stunned and hits them 4 times.|n|n|cFF00A5FF|nDamage: 1.25*|r|c0077FFFFINT|r|cFF00A5FF per strike|nStun: 1 sec.|nAoE: 300|nRange: 1000|nCast time: +0.1 sec.|nCooldown: 25 sec.|r")
-call LANG_A('FlE1',1,2,"A super-dense barrage at a point: keeps enemies stunned and hits them 4 times.|n|n|cFF00A5FF|nDamage: 1.5*|r|c0077FFFFINT|r|cFF00A5FF per strike|nStun: 1 sec.|nAoE: 300|nRange: 1000|nCast time: +0.1 sec.|nCooldown: 25 sec.|r")
-call LANG_A('FlE1',1,3,"A super-dense barrage at a point: keeps enemies stunned and hits them 4 times.|n|n|cFF00A5FF|nDamage: 1.75*|r|c0077FFFFINT|r|cFF00A5FF per strike|nStun: 1 sec.|nAoE: 300|nRange: 1000|nCast time: +0.1 sec.|nCooldown: 25 sec.|r")
-call LANG_A('FlE1',1,4,"A super-dense barrage at a point: keeps enemies stunned and hits them 4 times.|n|n|cFF00A5FF|nDamage: 2*|r|c0077FFFFINT|r|cFF00A5FF per strike|nStun: 1 sec.|nAoE: 300|nRange: 1000|nCast time: +0.1 sec.|nCooldown: 25 sec.|r")
+call LANG_A('FlE1',1,0,"A super-dense barrage at a point: keeps enemies stunned and hits them 4 times.|n|nPassive: from level 6, every attack of Flandre and her clones deals an additional 0.19*|c0077FFFFINT|r.|n|n|cFF00A5FF|nDamage: 1*|r|c0077FFFFINT|r|cFF00A5FF per strike|nStun: 1 sec.|nAoE: 300|nRange: 1000|nCast time: +"+"0.1 sec.|nCooldown: 25 sec.|r")
+call LANG_A('FlE1',1,1,"A super-dense barrage at a point: keeps enemies stunned and hits them 4 times.|n|nPassive: from level 6, every attack of Flandre and her clones deals an additional 0.19*|c0077FFFFINT|r.|n|n|cFF00A5FF|nDamage: 1.25*|r|c0077FFFFINT|r|cFF00A5FF per strike|nStun: 1 sec.|nAoE: 300|nRange: 1000|nCast time"+": +0.1 sec.|nCooldown: 25 sec.|r")
+call LANG_A('FlE1',1,2,"A super-dense barrage at a point: keeps enemies stunned and hits them 4 times.|n|nPassive: from level 6, every attack of Flandre and her clones deals an additional 0.19*|c0077FFFFINT|r.|n|n|cFF00A5FF|nDamage: 1.5*|r|c0077FFFFINT|r|cFF00A5FF per strike|nStun: 1 sec.|nAoE: 300|nRange: 1000|nCast time:"+" +0.1 sec.|nCooldown: 25 sec.|r")
+call LANG_A('FlE1',1,3,"A super-dense barrage at a point: keeps enemies stunned and hits them 4 times.|n|nPassive: from level 6, every attack of Flandre and her clones deals an additional 0.19*|c0077FFFFINT|r.|n|n|cFF00A5FF|nDamage: 1.75*|r|c0077FFFFINT|r|cFF00A5FF per strike|nStun: 1 sec.|nAoE: 300|nRange: 1000|nCast time"+": +0.1 sec.|nCooldown: 25 sec.|r")
+call LANG_A('FlE1',1,4,"A super-dense barrage at a point: keeps enemies stunned and hits them 4 times.|n|nPassive: from level 6, every attack of Flandre and her clones deals an additional 0.19*|c0077FFFFINT|r.|n|n|cFF00A5FF|nDamage: 2*|r|c0077FFFFINT|r|cFF00A5FF per strike|nStun: 1 sec.|nAoE: 300|nRange: 1000|nCast time: +"+"0.1 sec.|nCooldown: 25 sec.|r")
 call LANG_A('FlE1',2,0,"Forbidden Fruit, [|cffffcc00Level %d|r] (|cffffcc00E|r)")
-call LANG_A('FlE1',3,0,"A super-dense barrage at a point: keeps enemies stunned and hits them 4 times.|n|n|cFF00A5FF|nDamage: 1\\1.25\\1.5\\1.75\\2*|r|c0077FFFFINT|r|cFF00A5FF per strike|nStun: 1 sec.|nAoE: 300|nRange: 1000|nCast time: +0.1 sec.|nCooldown: 25 sec.|r")
+call LANG_A('FlE1',3,0,"A super-dense barrage at a point: keeps enemies stunned and hits them 4 times.|n|nPassive: from level 6, every attack of Flandre and her clones deals an additional 0.19*|c0077FFFFINT|r.|n|n|cFF00A5FF|nDamage: 1\\1.25\\1.5\\1.75\\2*|r|c0077FFFFINT|r|cFF00A5FF per strike|nStun: 1 sec.|nAoE: 300|nRange"+": 1000|nCast time: +0.1 sec.|nCooldown: 25 sec.|r")
 call LANG_A('FlR1',0,0,"Kagome, Kagome, [|cffffcc00Level 1|r] (|cffffcc00R|r)")
 call LANG_A('FlR1',0,1,"Kagome, Kagome, [|cffffcc00Level 2|r] (|cffffcc00R|r)")
 call LANG_A('FlR1',0,2,"Kagome, Kagome, [|cffffcc00Level 3|r] (|cffffcc00R|r)")
@@ -279093,8 +279557,8 @@ call LANG_A('FlR1',1,3,"A song spell: a cage of projectiles rises around enemies
 call LANG_A('FlR1',1,4,"A song spell: a cage of projectiles rises around enemies. Press R again, no more than 6 sec. between presses, or the song is interrupted; after the third press the cage strikes a large area around Flandre.|n|n|cFF00A5FF|nDamage: 1.33*|r|c0077FFFFINT|r|cFF00A5FF per projectile|nStun: 1.5 sec.|nCast t"+"ime: +0.1 sec.|nCooldown between presses: 4 sec.|nCooldown: 30 sec.|r")
 call LANG_A('FlR1',2,0,"Kagome, Kagome, [|cffffcc00Level %d|r] (|cffffcc00R|r)")
 call LANG_A('FlR1',3,0,"A song spell: a cage of projectiles rises around enemies. Press R again, no more than 6 sec. between presses, or the song is interrupted; after the third press the cage strikes a large area around Flandre.|n|n|cFF00A5FF|nDamage: 0.67\\0.83\\1\\1.17\\1.33*|r|c0077FFFFINT|r|cFF00A5FF per projectile|nS"+"tun: 1.5 sec.|nCast time: +0.1 sec.|nCooldown between presses: 4 sec.|nCooldown: 30 sec.|r")
-call LANG_A('FlT1',1,0,"A Flandre clone at a point: attacks nearby enemies on its own.|nNo cooldown — charges: several clones can be placed in a row.|nRight-click near a clone — a damaging dash to it, once per clone.|nAttack order (A + click on an enemy or the ground) — all clones rush there, hit and stun.|n|nPassive"+": every attack of Flandre and her clones deals an additional 0.19*|c0077FFFFINT|r.|n|n|cFF00A5FF|nClone attack damage: 50% of Flandre's |r|c0077FFFFINT|r|cFF00A5FF|nDash damage: 0.45*|r|c0077FFFFINT|r|cFF00A5FF (AoE 320)|nClone duration: 12 sec.|nCharges: 3, one restores every 20 sec.|nDash range: 1"+"600|nClone attack cooldown: 30 sec.|nRange: 800|nCast time: +0.1 sec.|r")
-call LANG_A('FlT1',3,0,"A Flandre clone at a point: attacks nearby enemies on its own.|nNo cooldown — charges: several clones can be placed in a row.|nRight-click near a clone — a damaging dash to it, once per clone.|nAttack order (A + click on an enemy or the ground) — all clones rush there, hit and stun.|n|nPassive"+": every attack of Flandre and her clones deals an additional 0.19*|c0077FFFFINT|r.|n|n|cFF00A5FF|nClone attack damage: 50% of Flandre's |r|c0077FFFFINT|r|cFF00A5FF|nDash damage: 0.45*|r|c0077FFFFINT|r|cFF00A5FF (AoE 320)|nClone duration: 12 sec.|nCharges: 3, one restores every 20 sec.|nDash range: 1"+"600|nClone attack cooldown: 30 sec.|nRange: 800|nCast time: +0.1 sec.|r")
+call LANG_A('FlT1',1,0,"A Flandre clone at a point: attacks nearby enemies on its own.|nNo cooldown — charges: several clones can be placed in a row.|nRight-click near a clone — a damaging dash to it, once per clone.|nAttack order (A + click on an enemy or the ground) — all clones rush there, hit and stun.|n|n|cFF00A"+"5FF|nClone attack damage: 50% of Flandre's |r|c0077FFFFINT|r|cFF00A5FF|nDash damage: 0.45*|r|c0077FFFFINT|r|cFF00A5FF (AoE 320)|nClone duration: 12 sec.|nCharges: 3, one restores every 20 sec.|nDash range: 1600|nClone attack cooldown: 30 sec.|nRange: 800|nCast time: +0.1 sec.|r")
+call LANG_A('FlT1',3,0,"A Flandre clone at a point: attacks nearby enemies on its own.|nNo cooldown — charges: several clones can be placed in a row.|nRight-click near a clone — a damaging dash to it, once per clone.|nAttack order (A + click on an enemy or the ground) — all clones rush there, hit and stun.|n|n|cFF00A"+"5FF|nClone attack damage: 50% of Flandre's |r|c0077FFFFINT|r|cFF00A5FF|nDash damage: 0.45*|r|c0077FFFFINT|r|cFF00A5FF (AoE 320)|nClone duration: 12 sec.|nCharges: 3, one restores every 20 sec.|nDash range: 1600|nClone attack cooldown: 30 sec.|nRange: 800|nCast time: +0.1 sec.|r")
 call LANG_A('FlD1',1,0,"A projectile flies to a point and becomes a clock. Whoever touches the clock returns to where they were 6 sec. ago: enemies take damage, allies are healed.|n|n|cFF00A5FF|nDamage / healing: 6*|r|c0077FFFFINT|r|cFF00A5FF|nClock duration: 5 sec.|nRange: 1200|nCast time: +0.1 sec.|nCooldown: 35 sec.|r")
 call LANG_A('FlD1',3,0,"A projectile flies to a point and becomes a clock. Whoever touches the clock returns to where they were 6 sec. ago: enemies take damage, allies are healed.|n|n|cFF00A5FF|nDamage / healing: 6*|r|c0077FFFFINT|r|cFF00A5FF|nClock duration: 5 sec.|nRange: 1200|nCast time: +0.1 sec.|nCooldown: 35 sec.|r")
 call LANG_A('FlF1',1,0,"Flandre is invulnerable and hits everyone nearby on her own — steer her where you need. At the end, a final area strike with a stun.|n|n|cFF00A5FF|nDamage: 0.35*|r|c0077FFFFINT|r|cFF00A5FF every 0.3 sec. (AoE 250)|nFinal strike: 1.75*|r|c0077FFFFINT|r|cFF00A5FF (AoE 600)|nStun: 1 sec.|nDuration: 4"+" sec.|nCooldown: 45 sec.|r")
@@ -279138,13 +279602,13 @@ call LANG_A('RmE1',0,1,"Dracula Cradle, [|cffffcc00Level 2|r] (|cffffcc00E|r)")
 call LANG_A('RmE1',0,2,"Dracula Cradle, [|cffffcc00Level 3|r] (|cffffcc00E|r)")
 call LANG_A('RmE1',0,3,"Dracula Cradle, [|cffffcc00Level 4|r] (|cffffcc00E|r)")
 call LANG_A('RmE1',0,4,"Dracula Cradle, [|cffffcc00Level 5|r] (|cffffcc00E|r)")
-call LANG_A('RmE1',1,0,"A series of dashes too fast for the eye to follow.|n|n|cFF00A5FF|nDamage: 1.2*|r|c0077FFFFINT|r|cFF00A5FF per strike|nStun: 1 sec.|nRange: 1000|nCast time: +0.1 sec.|nCooldown: 25 sec.|r")
-call LANG_A('RmE1',1,1,"A series of dashes too fast for the eye to follow.|n|n|cFF00A5FF|nDamage: 1.4*|r|c0077FFFFINT|r|cFF00A5FF per strike|nStun: 1 sec.|nRange: 1000|nCast time: +0.1 sec.|nCooldown: 25 sec.|r")
-call LANG_A('RmE1',1,2,"A series of dashes too fast for the eye to follow.|n|n|cFF00A5FF|nDamage: 1.6*|r|c0077FFFFINT|r|cFF00A5FF per strike|nStun: 1 sec.|nRange: 1000|nCast time: +0.1 sec.|nCooldown: 25 sec.|r")
-call LANG_A('RmE1',1,3,"A series of dashes too fast for the eye to follow.|n|n|cFF00A5FF|nDamage: 1.8*|r|c0077FFFFINT|r|cFF00A5FF per strike|nStun: 1 sec.|nRange: 1000|nCast time: +0.1 sec.|nCooldown: 25 sec.|r")
-call LANG_A('RmE1',1,4,"A series of dashes too fast for the eye to follow.|n|n|cFF00A5FF|nDamage: 2*|r|c0077FFFFINT|r|cFF00A5FF per strike|nStun: 1 sec.|nRange: 1000|nCast time: +0.1 sec.|nCooldown: 25 sec.|r")
+call LANG_A('RmE1',1,0,"A series of dashes too fast for the eye to follow.|n|nPassive — Thousand-Year Vampire:|nFrom level 6, attacks deal an additional 0.19*|c0077FFFFINT|r.|n7% of all damage dealt (10% from level 25) heals Remilia; excess healing becomes temporary HP above maximum (up to 25%), which drains away after 1"+"5 sec. without dealing damage.|n|n|cFF00A5FF|nDamage: 1.2*|r|c0077FFFFINT|r|cFF00A5FF per strike|nStun: 1 sec.|nRange: 1000|nCast time: +0.1 sec.|nCooldown: 25 sec.|r")
+call LANG_A('RmE1',1,1,"A series of dashes too fast for the eye to follow.|n|nPassive — Thousand-Year Vampire:|nFrom level 6, attacks deal an additional 0.19*|c0077FFFFINT|r.|n7% of all damage dealt (10% from level 25) heals Remilia; excess healing becomes temporary HP above maximum (up to 25%), which drains away after 1"+"5 sec. without dealing damage.|n|n|cFF00A5FF|nDamage: 1.4*|r|c0077FFFFINT|r|cFF00A5FF per strike|nStun: 1 sec.|nRange: 1000|nCast time: +0.1 sec.|nCooldown: 25 sec.|r")
+call LANG_A('RmE1',1,2,"A series of dashes too fast for the eye to follow.|n|nPassive — Thousand-Year Vampire:|nFrom level 6, attacks deal an additional 0.19*|c0077FFFFINT|r.|n7% of all damage dealt (10% from level 25) heals Remilia; excess healing becomes temporary HP above maximum (up to 25%), which drains away after 1"+"5 sec. without dealing damage.|n|n|cFF00A5FF|nDamage: 1.6*|r|c0077FFFFINT|r|cFF00A5FF per strike|nStun: 1 sec.|nRange: 1000|nCast time: +0.1 sec.|nCooldown: 25 sec.|r")
+call LANG_A('RmE1',1,3,"A series of dashes too fast for the eye to follow.|n|nPassive — Thousand-Year Vampire:|nFrom level 6, attacks deal an additional 0.19*|c0077FFFFINT|r.|n7% of all damage dealt (10% from level 25) heals Remilia; excess healing becomes temporary HP above maximum (up to 25%), which drains away after 1"+"5 sec. without dealing damage.|n|n|cFF00A5FF|nDamage: 1.8*|r|c0077FFFFINT|r|cFF00A5FF per strike|nStun: 1 sec.|nRange: 1000|nCast time: +0.1 sec.|nCooldown: 25 sec.|r")
+call LANG_A('RmE1',1,4,"A series of dashes too fast for the eye to follow.|n|nPassive — Thousand-Year Vampire:|nFrom level 6, attacks deal an additional 0.19*|c0077FFFFINT|r.|n7% of all damage dealt (10% from level 25) heals Remilia; excess healing becomes temporary HP above maximum (up to 25%), which drains away after 1"+"5 sec. without dealing damage.|n|n|cFF00A5FF|nDamage: 2*|r|c0077FFFFINT|r|cFF00A5FF per strike|nStun: 1 sec.|nRange: 1000|nCast time: +0.1 sec.|nCooldown: 25 sec.|r")
 call LANG_A('RmE1',2,0,"Dracula Cradle, [|cffffcc00Level %d|r] (|cffffcc00E|r)")
-call LANG_A('RmE1',3,0,"A series of dashes too fast for the eye to follow.|n|n|cFF00A5FF|nDamage: 1.2\\1.4\\1.6\\1.8\\2*|r|c0077FFFFINT|r|cFF00A5FF per strike|nStun: 1 sec.|nRange: 1000|nCast time: +0.1 sec.|nCooldown: 25 sec.|r")
+call LANG_A('RmE1',3,0,"A series of dashes too fast for the eye to follow.|n|nPassive — Thousand-Year Vampire:|nFrom level 6, attacks deal an additional 0.19*|c0077FFFFINT|r.|n7% of all damage dealt (10% from level 25) heals Remilia; excess healing becomes temporary HP above maximum (up to 25%), which drains away after 1"+"5 sec. without dealing damage.|n|n|cFF00A5FF|nDamage: 1.2\\1.4\\1.6\\1.8\\2*|r|c0077FFFFINT|r|cFF00A5FF per strike|nStun: 1 sec.|nRange: 1000|nCast time: +0.1 sec.|nCooldown: 25 sec.|r")
 call LANG_A('RmR1',0,0,"Spear the Gungnir, [|cffffcc00Level 1|r] (|cffffcc00R|r)")
 call LANG_A('RmR1',0,1,"Spear the Gungnir, [|cffffcc00Level 2|r] (|cffffcc00R|r)")
 call LANG_A('RmR1',0,2,"Spear the Gungnir, [|cffffcc00Level 3|r] (|cffffcc00R|r)")
@@ -279157,8 +279621,8 @@ call LANG_A('RmR1',1,3,"A five-press spell: press R, no more than 5 sec. between
 call LANG_A('RmR1',1,4,"A five-press spell: press R, no more than 5 sec. between presses; each press hits nearby enemies. The fifth throws a spear at the nearest enemy hero: half of the spear damage goes through invulnerability.|nThe pierced target is lifted into the air and stays stunned.|n|n|cFF00A5FF|nPress damage: 0.8*"+"|r|c0077FFFFINT|r|cFF00A5FF|nSpear damage: 4*|r|c0077FFFFINT|r|cFF00A5FF + 15% of Remilia's max HP|nSpear stun: 1.2 sec.|nSpear range: 3000|nCast time: +0.1 sec.|nCooldown between presses: 1.5 sec.|nCooldown: 30 sec.|r")
 call LANG_A('RmR1',2,0,"Spear the Gungnir, [|cffffcc00Level %d|r] (|cffffcc00R|r)")
 call LANG_A('RmR1',3,0,"A five-press spell: press R, no more than 5 sec. between presses; each press hits nearby enemies. The fifth throws a spear at the nearest enemy hero: half of the spear damage goes through invulnerability.|nThe pierced target is lifted into the air and stays stunned.|n|n|cFF00A5FF|nPress damage: 0.4"+"\\0.5\\0.6\\0.7\\0.8*|r|c0077FFFFINT|r|cFF00A5FF|nSpear damage: 2\\2.5\\3\\3.5\\4*|r|c0077FFFFINT|r|cFF00A5FF + 15% of Remilia's max HP|nSpear stun: 1.2 sec.|nSpear range: 3000|nCast time: +0.1 sec.|nCooldown between presses: 1.5 sec.|nCooldown: 30 sec.|r")
-call LANG_A('RmT1',1,0,"A whirl of scarlet aura burns everything around the target; at the end, Heart Break hits the same target.|nRemilia and the target are invulnerable during the skill.|nIf an enemy hero dies during T (from anything), Remilia permanently gains +4% of their max HP.|n|nPassive — Thousand-Year Vampire:|n"+"Attacks deal an additional 0.19*|c0077FFFFINT|r.|n7% of all damage dealt (10% once T is learned) heals Remilia; excess healing becomes temporary HP above maximum (up to 25%), which drains away after 15 sec. without dealing damage.|n|n|cFF00A5FF|nDamage: 6*|r|c0077FFFFINT|r|cFF00A5FF + 30% of the HP "+"difference between Remilia and the target|nHeart Break: 20% of the target's max HP|nDuration: ~5 sec.|nRange: 450|nCast time: +0.1 sec.|nCooldown: 60 sec.|r")
-call LANG_A('RmT1',3,0,"A whirl of scarlet aura burns everything around the target; at the end, Heart Break hits the same target.|nRemilia and the target are invulnerable during the skill.|nIf an enemy hero dies during T (from anything), Remilia permanently gains +4% of their max HP.|n|nPassive — Thousand-Year Vampire:|n"+"Attacks deal an additional 0.19*|c0077FFFFINT|r.|n7% of all damage dealt (10% once T is learned) heals Remilia; excess healing becomes temporary HP above maximum (up to 25%), which drains away after 15 sec. without dealing damage.|n|n|cFF00A5FF|nDamage: 6*|r|c0077FFFFINT|r|cFF00A5FF + 30% of the HP "+"difference between Remilia and the target|nHeart Break: 20% of the target's max HP|nDuration: ~5 sec.|nRange: 450|nCast time: +0.1 sec.|nCooldown: 60 sec.|r")
+call LANG_A('RmT1',1,0,"A whirl of scarlet aura burns everything around the target; at the end, Heart Break hits the same target.|nRemilia and the target are invulnerable during the skill.|nIf an enemy hero dies during T (from anything), Remilia permanently gains +4% of their max HP.|n|n|cFF00A5FF|nDamage: 6*|r|c0077FFFFIN"+"T|r|cFF00A5FF + 30% of the HP difference between Remilia and the target|nHeart Break: 20% of the target's max HP|nDuration: ~5 sec.|nRange: 450|nCast time: +0.1 sec.|nCooldown: 60 sec.|r")
+call LANG_A('RmT1',3,0,"A whirl of scarlet aura burns everything around the target; at the end, Heart Break hits the same target.|nRemilia and the target are invulnerable during the skill.|nIf an enemy hero dies during T (from anything), Remilia permanently gains +4% of their max HP.|n|n|cFF00A5FF|nDamage: 6*|r|c0077FFFFIN"+"T|r|cFF00A5FF + 30% of the HP difference between Remilia and the target|nHeart Break: 20% of the target's max HP|nDuration: ~5 sec.|nRange: 450|nCast time: +0.1 sec.|nCooldown: 60 sec.|r")
 call LANG_A('RmD1',1,0,"Homing chains of scarlet aura reach out to enemies.|nWhile the chains fly, Remilia stands still and is invulnerable.|n|n|cFF00A5FF|nDamage: 0.2*|r|c0077FFFFINT|r|cFF00A5FF per touch|nStun: 0.5 sec.|nDuration: 2 sec.|nRange: 1200|nCast time: +0.1 sec.|nCooldown: 30 sec.|r")
 call LANG_A('RmD1',3,0,"Homing chains of scarlet aura reach out to enemies.|nWhile the chains fly, Remilia stands still and is invulnerable.|n|n|cFF00A5FF|nDamage: 0.2*|r|c0077FFFFINT|r|cFF00A5FF per touch|nStun: 0.5 sec.|nDuration: 2 sec.|nRange: 1200|nCast time: +0.1 sec.|nCooldown: 30 sec.|r")
 call LANG_A('RmF1',1,0,"Remilia melts into a lake of blood: invulnerable, but loses health. Other abilities are unavailable meanwhile; pressing F again ends it early.|n|n|cFF00A5FF|nHealth loss: 2% of max HP per sec.|nDuration: up to 4 sec.|nCooldown: 30 sec.|r")
@@ -280920,8 +281384,6 @@ call LANG_B('B06H',1,"Armor reduced.")
 call LANG_B('B06L',1,"This warrior is under the spell ''Thrice-setting Sunf''. His defense and attack power is well above the norm.")
 call LANG_B('B06M',1,"This warrior is in a state of invisibility.")
 call LANG_B('B06N',1,"Unit is within the range of Jeanne's banner, it gains increased attack power, general resistance and melee lifesteal")
-call LANG_B('B06R',0,"Lord Camelot|nCastle of the Distant Utopia")
-call LANG_B('B06R',1,"Lord Camelot|nCastle of the Distant Utopia")
 call LANG_B('B06X',1,"This character can be saved by the Clock.")
 call LANG_B('B070',0,"Quincy Set")
 call LANG_B('B070',1,"Quincy Set")
