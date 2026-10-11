@@ -1242,6 +1242,13 @@ handlelist array EmoteFrameList
 framehandle  EmoteBarFrame=null
 framehandle  EmoteBarFrameText
 framehandle  EmoteBarGridFrame
+framehandle  EmoteHL=null // подсветка эмодзи под курсором (колесо эмодзи)
+framehandle array EmoteFr // кнопки эмодзи по номеру
+framehandle array EmoteBgFr // подложки эмодзи
+framehandle array EmoteBlkFr // замки эмодзи
+framehandle array EmoteTabBtn // вкладки колеса эмодзи (0 — эмодзи 0..16, 1 — 17..33)
+framehandle  EmoteTabHL=null
+integer EmoteTab=0 // открытая вкладка (у себя, только интерфейс)
 framehandle  OpenEmoteButton
 framehandle  OpenEmoteButtonText
 
@@ -2013,7 +2020,12 @@ integer array luffypunch
 boolean randcond
 // Single Draft: у игрока i варианты SD_Opt[i*3+0..2] (индексы таверны: STR, AGI, INT), без пересечений
 boolean SDMode=false
+boolean SD_Drafted=false // три героя раздаются один раз — сразу при выборе режима, без рероллов
 integer array SD_Opt
+framehandle array SD_Panel
+boolean SD_Shown=false // только локально: окно сейчас показано
+boolean array SD_Done // игрок уже выбрал героя (в т.ч. тестовым выбором)
+boolean array SD_UsedB // индекс таверны уже выдан кому-то (без перебора SD_Opt — дорого по лимиту операций)
 integer array score
 real array gear
 item ite
@@ -14230,7 +14242,8 @@ set e=FirstOfGroup(g)
 exitwhen e==null
 call GroupRemoveUnit(g,e)
 // неуязвимого героя тоже можно (половина урона копья проходит сквозь неуязвимость); неуязвимых дамми и сундуки — нет
-if Condition_Base(GetOwningPlayer(u),e) and UnitIsAlive(e) and GetUnitAbilityLevel(e,'Aloc')==0 and (GetUnitAbilityLevel(e,'Avul')==0 or IsUnitType(e,UNIT_TYPE_HERO)) then
+// копьё не летит в иллюзии (11 окт)
+if Condition_Base(GetOwningPlayer(u),e) and UnitIsAlive(e) and GetUnitAbilityLevel(e,'Aloc')==0 and not IsUnitIllusion(e) and (GetUnitAbilityLevel(e,'Avul')==0 or IsUnitType(e,UNIT_TYPE_HERO)) then
 set dmy=SRS(GetUnitX(u),GetUnitY(u),GetUnitX(e),GetUnitY(e))
 if (IsUnitType(e,UNIT_TYPE_HERO) and not isHero) or (IsUnitType(e,UNIT_TYPE_HERO)==isHero and dmy<bestD) then
 set best=e
@@ -16026,7 +16039,8 @@ exitwhen e==null
 call GroupRemoveUnit(g,e)
 // клетка — только живым уязвимым врагам: иначе копья летели в неуязвимые сундуки в зоне ожидания
 // и в тела мёртвых героев, даже когда врагов рядом нет (владелец 4 окт)
-if Condition_Base(GetOwningPlayer(caster),e) and GetUnitAbilityLevel(e,'Avul')==0 and UnitIsAlive(e) then
+// иллюзиям клетки нет (11 окт)
+if Condition_Base(GetOwningPlayer(caster),e) and GetUnitAbilityLevel(e,'Avul')==0 and UnitIsAlive(e) and not IsUnitIllusion(e) then
 set ea=GetUnitFacing(e)+180.
 set sg=CreateGroup()
 set str=1
@@ -16410,7 +16424,7 @@ loop
 set e=FirstOfGroup(g)
 exitwhen e==null
 call GroupRemoveUnit(g,e)
-if Condition_Base(GetOwningPlayer(caster),e) and GetUnitAbilityLevel(e,'Avul')==0 and RAbsBJ((GetUnitX(e)-bx)*SinBJ(ang)-(GetUnitY(e)-by)*CosBJ(ang))<=260. then
+if Condition_Base(GetOwningPlayer(caster),e) and GetUnitAbilityLevel(e,'Avul')==0 and RAbsBJ((GetUnitX(e)-bx)*SinBJ(ang)-(GetUnitY(e)-by)*CosBJ(ang))<=270. then // ширина луча 270 (было 260, 11 окт)
 call Bof_Dmg(caster,e,(I2R(Fla_Int_G(caster,true))*20.)*0.001)
 call Bof_Ctrl(caster,e,.2,"stun")
 endif
@@ -16456,6 +16470,7 @@ endif
 if tk==25 then
 set dmy=CreateUnit(GetOwningPlayer(caster),'eBLP',x+300.*CosBJ(ang),y+300.*SinBJ(ang),ang)
 call SetUnitModel(dmy,"bof\\Scarlet-90.mdx")
+call SetUnitScale(dmy,.95,.95,.95) // луч визуально на 5% меньше (11 окт)
 call UnitApplyTimedLife(dmy,'BHwe',3.)
 call SetUnitFlyHeight(dmy,0.,1000000000.)
 call SetUnitAnimation(dmy,"Birth")
@@ -16474,7 +16489,7 @@ if tk>=34 and tk<=110 then
 if k==1 or ModuloInteger(k-1,12)==0 then
 call Rem_Fx(caster,"bof\\Tsubaki-33.mdx",x,y,250.,ang,1.,0.)
 call SetSpecialEffectPitch(bj_lastCreatedEffect,90.)
-call Rem_Fx(caster,"bof\\Minato-31.mdx",x+150.*CosBJ(ang),y+150.*SinBJ(ang),250.,ang,3.6,0.)
+call Rem_Fx(caster,"bof\\Minato-31.mdx",x+150.*CosBJ(ang),y+150.*SinBJ(ang),250.,ang,3.42,0.)
 call SetSpecialEffectPitch(bj_lastCreatedEffect,90.)
 endif
 if ModuloInteger(k,5)==0 then
@@ -26769,6 +26784,12 @@ function OnEmoteHover takes nothing returns nothing
     local integer i=0
     if p == GetLocalPlayer( ) then
         call SetFrameSpriteColour( cursor, 0xFF00FF00 )
+        // подсветка — эмодзи, которое будет выбрано
+        if EmoteHL!=null then
+            call ClearFrameAllPoints( EmoteHL )
+            call SetFrameRelativePoint( EmoteHL, FRAMEPOINT_CENTER, but, FRAMEPOINT_CENTER, 0, 0 )
+            call ShowFrame( EmoteHL, true )
+        endif
     endif
     set p = null
     set but = null
@@ -26782,6 +26803,9 @@ function OnEmoteUnHover takes nothing returns nothing
     local integer i=0
     if p == GetLocalPlayer( ) then
         call SetFrameSpriteColour( cursor, 0xFFFFFFFF )
+        if EmoteHL!=null then
+            call ShowFrame( EmoteHL, false )
+        endif
     endif
     set p = null
     set but = null
@@ -27215,6 +27239,95 @@ function ToggleOpenStatsBar takes nothing returns nothing
     set p = null
 endfunction
 
+// колесо эмодзи — центр к курсору, целиком на экране (вызывать только у себя)
+function Emote_Place takes nothing returns nothing
+local real ex=GetMouseScreenRelativeX()
+local real ey=GetMouseScreenRelativeY()
+local real k=1.
+local integer x=0
+local real a
+// интерфейс растянут по ширине экрана (как в HPB_Update): ширины и смещения по X делятся на k
+if GetWindowHeight()>0 then
+set k=0.75*I2R(GetWindowWidth())/I2R(GetWindowHeight())
+endif
+if k<.5 then
+set k=1.
+endif
+call SetFrameSize(EmoteBarFrame,.25/k,.25)
+loop
+exitwhen x>33
+if EmoteFr[x]!=null then
+set a=bj_PI/2.-2.*bj_PI*ModuloInteger(x,17)/17.
+call ClearFrameAllPoints(EmoteFr[x])
+call SetFrameRelativePoint(EmoteFr[x],FRAMEPOINT_CENTER,EmoteBarFrame,FRAMEPOINT_CENTER,.092*Cos(a)/k,.092*Sin(a))
+call SetFrameSize(EmoteFr[x],.029/k,.029)
+call SetFrameSize(EmoteBgFr[x],.034/k,.034)
+call SetFrameSize(EmoteBlkFr[x],.03/k,.03)
+endif
+set x=x+1
+endloop
+set x=0
+loop
+exitwhen x>1
+if EmoteTabBtn[x]!=null then
+call ClearFrameAllPoints(EmoteTabBtn[x])
+call SetFrameRelativePoint(EmoteTabBtn[x],FRAMEPOINT_CENTER,EmoteBarFrame,FRAMEPOINT_CENTER,(-.036+.072*x)/k,0)
+call SetFrameSize(EmoteTabBtn[x],.021/k,.021)
+endif
+set x=x+1
+endloop
+call SetFrameSize(CloseEmoteButton,.017/k,.017)
+call SetFrameSize(OpenEmoteButton,.017/k,.017)
+if EmoteHL!=null then
+call SetFrameSize(EmoteHL,.038/k,.038)
+call SetFrameSize(EmoteTabHL,.03/k,.03)
+endif
+if ex<.13/k then
+set ex=.13/k
+elseif ex>.8-.13/k then
+set ex=.8-.13/k
+endif
+// снизу — над нижней панелью (около .15), сверху — под верхней
+if ey<.31 then
+set ey=.31
+elseif ey>.42 then
+set ey=.42
+endif
+call ClearFrameAllPoints(EmoteBarFrame)
+call SetFrameAbsolutePoint(EmoteBarFrame,FRAMEPOINT_CENTER,ex,ey)
+if EmoteHL!=null then
+call ShowFrame(EmoteHL,false)
+endif
+endfunction
+// вкладка колеса эмодзи (у себя): эмодзи своей вкладки видны, остальные скрыты; затем замки неоткрытых эмодзи
+function Emote_Tab takes integer t returns nothing
+local integer x=0
+local player op=P
+set EmoteTab=t
+loop
+exitwhen x>33
+if EmoteFr[x]!=null then
+call ShowFrame(EmoteFr[x],x/17==t)
+endif
+set x=x+1
+endloop
+if EmoteTabHL!=null then
+call ClearFrameAllPoints(EmoteTabHL)
+call SetFrameRelativePoint(EmoteTabHL,FRAMEPOINT_CENTER,EmoteTabBtn[t],FRAMEPOINT_CENTER,0,0)
+endif
+if EmoteHL!=null then
+call ShowFrame(EmoteHL,false)
+endif
+set P=GetLocalPlayer()
+call HandleListForEach(EmoteFrameList[GetPlayerId(P)],function ShowEmote)
+set P=op
+set op=null
+endfunction
+function Emote_TabClick takes nothing returns nothing
+if GetTriggerPlayer()==GetLocalPlayer() then
+call Emote_Tab(GetFrameContext(GetTriggerFrame()))
+endif
+endfunction
 function OnButtonCloseEmoteBar takes nothing returns nothing
     local player p = GetTriggerPlayer( )
     local integer pHid = GetHandleId( p )
@@ -27254,6 +27367,7 @@ function OnButtonOpenEmoteBar takes nothing returns nothing
     endif
     if p==GetLocalPlayer() then
         call ShowFrame( StatsBarFrame, false )
+        call Emote_Place()
         call ShowFrame( EmoteBarFrame, true )
         call Sh_CloseLocal()
         call ShowFrame( multbframw, false )
@@ -27271,6 +27385,9 @@ function OnButtonOpenEmoteBar takes nothing returns nothing
         set i=i+1
     endloop
     set P=null
+    if p==GetLocalPlayer() then
+        call Emote_Tab(EmoteTab)
+    endif
     set p = null
     set multbframw = null
     set but = null
@@ -27285,6 +27402,7 @@ function ToggleOpenEmoteBar takes nothing returns nothing
         if p==GetLocalPlayer() and not Sh_Typing() and not HPB_MOpen then
         if IsFrameVisible(OpenEmoteButton)==true then
             call ShowFrame( StatsBarFrame, false )
+            call Emote_Place()
             call ShowFrame( EmoteBarFrame, true )
             call Sh_CloseLocal()
             call ShowFrame( multbframw, false )
@@ -27307,23 +27425,27 @@ function ToggleOpenEmoteBar takes nothing returns nothing
         set i=i+1
     endloop
     set P=null
+    if p==GetLocalPlayer() and EmoteBarFrame!=null and IsFrameVisible(EmoteBarFrame) then
+        call Emote_Tab(EmoteTab)
+    endif
     set multbframw = null
     set p = null
 endfunction
 
 function OnButtonEmoteClick2 takes nothing returns nothing
     local player p=GetTriggerPlayer()
-    if Hero[GetPlayerId(p)]!=null then
-        set EFF=AddSpecialEffect("Emote.mdx",GetTriggerPlayerMouseWorldX(),GetTriggerPlayerMouseWorldY())
-        if IsPlayerAlly(GetLocalPlayer(),p)==false then
-            call SetSpecialEffectVertexColour(EFF,0,0,0,0)
-        endif
-        call SetSpecialEffectPlayerColour(EFF,GetPlayerColor(p))
-        call SetSpecialEffectTexture(EFF,GetUnitStringField(Hero[GetPlayerId(p)],UNIT_SF_ICON_NORMAL),0)
-        call SetSpecialEffectScale(EFF , 0.5)
-        call SetSpecialEffectZ(EFF,350)
-        call RemoveEffect(EFF,2.5,false,CreateTimer())
-    endif
+    // вторая метка (иконка героя над эмодзи) выглядела как второе эмодзи — убрана (11 окт); эмодзи и так в цвете игрока
+    //if Hero[GetPlayerId(p)]!=null then
+    //set EFF=AddSpecialEffect("Emote.mdx",GetTriggerPlayerMouseWorldX(),GetTriggerPlayerMouseWorldY())
+    //if IsPlayerAlly(GetLocalPlayer(),p)==false then
+    //call SetSpecialEffectVertexColour(EFF,0,0,0,0)
+    //endif
+    //call SetSpecialEffectPlayerColour(EFF,GetPlayerColor(p))
+    //call SetSpecialEffectTexture(EFF,GetUnitStringField(Hero[GetPlayerId(p)],UNIT_SF_ICON_NORMAL),0)
+    //call SetSpecialEffectScale(EFF , 0.5)
+    //call SetSpecialEffectZ(EFF,350)
+    //call RemoveEffect(EFF,2.5,false,CreateTimer())
+    //endif
     set EFF=AddSpecialEffect("Emote.mdx",GetTriggerPlayerMouseWorldX(),GetTriggerPlayerMouseWorldY())
     if LoadBoolean(HH,GetHandleId( p ),SH_1489) then
         call SaveBoolean(HH,GetHandleId( p ),SH_1489,false)
@@ -28111,6 +28233,10 @@ function OnButtonCloseTavern takes nothing returns nothing
         return
     endif
     if p==GetLocalPlayer() then
+        // окно ролей закрывается вместе с таверной
+        if TavRolePanel!=null then
+            call ShowFrame( TavRolePanel, false )
+        endif
         call ClearFrameAllPoints( GetOriginFrame( ORIGIN_FRAME_CHAT_MSG, 0 ) )
         call SetFrameSize( GetOriginFrame( ORIGIN_FRAME_CHAT_MSG, 0 ), 1, 2 )
         call SetFrameRelativePoint( GetOriginFrame( ORIGIN_FRAME_CHAT_MSG, 0 ), FRAMEPOINT_TOP, FrameTop, FRAMEPOINT_CENTER, 0.000, 0.2 )
@@ -28176,6 +28302,7 @@ function OnButtonOpenTavern takes nothing returns nothing
     endif
     if p==GetLocalPlayer() then
         call ShowFrame( TavernHeroFrame, true )
+        call ShowFrame( TavRolePanel, false )
         call Sh_CloseLocal()
         call ShowFrame( TavernHeroPortrait, true )
         call ShowFrame( StatusBarFrame, false)
@@ -28271,6 +28398,7 @@ function ToggleOpenTavern takes nothing returns nothing
         if p==GetLocalPlayer() and not Sh_Typing() and not HPB_MOpen then
             if IsFrameVisible(OpenTavernButton)==true then
                 call ShowFrame( TavernHeroFrame, true )
+                call ShowFrame( TavRolePanel, false )
                 call Sh_CloseLocal()
                 call ShowFrame( TavernHeroPortrait, true )
                 call ClearFrameAllPoints( GetOriginFrame( ORIGIN_FRAME_CHAT_MSG, 0 ) )
@@ -28404,6 +28532,31 @@ endfunction
 function SD_Has takes integer i,integer idx returns boolean
 return SD_Opt[i*3]==idx or SD_Opt[i*3+1]==idx or SD_Opt[i*3+2]==idx
 endfunction
+// Single Draft: герой idx закреплён за другим игроком (не i)
+function SD_Reserved takes integer i,integer idx returns boolean
+local integer k=0
+loop
+    exitwhen k>=30
+    if SD_Opt[k]==idx and k/3!=i then
+        return true
+    endif
+    set k=k+1
+endloop
+return false
+endfunction
+// Single Draft: окно игрока i прячется сразу при выборе героя (не ждёт тика)
+function SD_HideNow takes integer i returns nothing
+if i>=0 and i<10 then
+    set SD_Done[i]=true
+endif
+if SDMode and i>=0 and i<10 and SD_Panel[i]!=null and GetLocalPlayer()==Player(i) then
+    set SD_Shown=false
+    call ShowFrame(SD_Panel[i],false)
+    if TavRolePanel!=null then
+        call ShowFrame(TavRolePanel,false)
+    endif
+endif
+endfunction
 // Случайный индекс таверны: в Single Draft — из ещё свободных вариантов игрока, иначе (и если все заняты) — любой
 function SD_RandomId takes integer i returns integer
 local integer k=GetRandomInt(0,2)
@@ -28417,6 +28570,17 @@ if SDMode and i>=0 and i<10 then
         set k=ModuloInteger(k+1,3)
         set sn=sn+1
     endloop
+endif
+// все три свои заняты — любой свободный, но не из чужих вариантов (герои закреплены за игроками)
+if SDMode then
+    set sn=0
+    loop
+        set k=GetRandomInt(0,144)
+        exitwhen udg_RH[k]!=0 and not SD_Reserved(i,k)
+        set sn=sn+1
+        exitwhen sn>500
+    endloop
+    return k
 endif
 return GetRandomInt(0,144) // 145 (Хирако) — только из таверны, в случайный выбор не попадает
 endfunction
@@ -28483,6 +28647,7 @@ function OnButtonPickHeroId takes nothing returns nothing
                 call GroupAddUnit(udg_CG[4],Hero[TestModePlayerId[GetPlayerId(p)]])
             endif
             set TestModeHeroId[GetPlayerId(p)]=0
+            call SD_HideNow(GetPlayerId(p))
         endif
     else
         // Single Draft: только свои три героя
@@ -28565,6 +28730,7 @@ function OnButtonPickHeroId takes nothing returns nothing
             endif
             set udg_RH[TavernHeroId[GetPlayerId(p)]]=0
             set TavernPlayerPickAllow[GetPlayerId(p)]=false
+            call SD_HideNow(GetPlayerId(p))
             set TavernHeroId[GetPlayerId(p)]=0
             set TavernPickedHeroFrame[GetPlayerId(p)]=null
             set TavernPickedHeroFrame2[GetPlayerId(p)]=null
@@ -28640,6 +28806,7 @@ function OnButtonRandom takes nothing returns nothing
         endif
         call ExecuteFunc("UpdateMultiboard")
         set TavernPlayerPickAllow[i]=false
+        call SD_HideNow(i)
         set TavernHeroId[i]=0
         set TavernPickedHeroFrame[i]=null
         set TavernPickedHeroFrame2[i]=null
@@ -33545,6 +33712,9 @@ function OnButtonSelectHero takes nothing returns nothing
         set len = StringLength( abilList2 )
         endif
         call SetFrameRelativePoint( selector, FRAMEPOINT_BOTTOMLEFT, but, FRAMEPOINT_BOTTOMLEFT, -.001, -.001 )
+        // модель выделения — по размеру кнопки: иконки таверны .0237 (масштаб .63), окна Single Draft крупнее
+        call SetFrameSize( selector, GetFrameWidth(but), GetFrameWidth(but) )
+        call SetFrameSpriteScale( selector, .63*GetFrameWidth(but)/.0237 )
         call ShowFrame( selector, true )
         call ShowFrame( InfoTavernText, true )
         call ShowFrame( GetFrameByName("TavernBarAdditionalAbilityList",0), false )
@@ -33958,15 +34128,7 @@ endfunction
 // ----- Single Draft: каждому игроку — случайный STR, AGI и INT герой (без пересечений), окно с ними над таверной.
 // Клик по иконке выбирает героя (описание — в таверне), Select подтверждает. Выбор в таверне — только из этих трёх.
 function SD_Used takes integer idx returns boolean
-local integer k=0
-loop
-    exitwhen k>=30
-    if SD_Opt[k]==idx then
-        return true
-    endif
-    set k=k+1
-endloop
-return false
+return SD_UsedB[idx]
 endfunction
 // случайный свободный герой с основной характеристикой a (1 STR, 3 AGI, 2 INT); нет такого — любой свободный
 function SD_Roll takes integer a returns integer
@@ -33998,63 +34160,109 @@ endif
 if sn==0 then
     return 0
 endif
-return c[GetRandomInt(0,sn-1)]
+set id=c[GetRandomInt(0,sn-1)]
+set SD_UsedB[id]=true
+return id
+endfunction
+// окно Single Draft: видимость — раз в 0.1 c по состоянию игрока (только локально)
+function SD_Tick takes nothing returns nothing
+local integer i=GetPlayerId(GetLocalPlayer())
+local boolean act
+if i<10 and SD_Panel[i]!=null then
+    // герой есть в любом виде (Hero / udg_Hero) или выбор закрыт — окна нет
+    set act=Hero[i]==null and udg_Hero[i+1]==null and TavernPlayerPickAllow[i] and not SD_Done[i]
+    set act=act and TavernHeroFrame!=null and IsFrameVisible(TavernHeroFrame)
+    if act!=SD_Shown then
+        set SD_Shown=act
+        call ShowFrame(SD_Panel[i],act)
+    endif
+endif
+endfunction
+function SD_Text takes framehandle parent,integer ctx,real sz,string sdtxt returns framehandle
+local framehandle tx=CreateFrameByType("SIMPLETEXT","SDText",parent,"",ctx)
+call ClearFrameAllPoints(tx)
+call SetFrameBlendMode(tx,0,BLEND_MODE_BLEND)
+call SetFrameFont(tx,"Fonts\\FRIZQT__.TTF",sz,0)
+call SetFrameTextAlignment(tx,TEXT_JUSTIFY_CENTER,TEXT_JUSTIFY_MIDDLE)
+call SetFrameTextColour(tx,ConvertColour(255,255,255,255))
+call SetFrameParent(tx,parent)
+call SetFrameText(tx,sdtxt)
+call ShowFrame(tx,true)
+return tx
+endfunction
+// раздача Single Draft: один раз, в момент выбора режима
+function SD_Draft takes nothing returns nothing
+local integer i=0
+if SD_Drafted then
+    return
+endif
+set SD_Drafted=true
+loop
+    exitwhen i>=10
+    if GetPlayerSlotState(Player(i))==PLAYER_SLOT_STATE_PLAYING and Hero[i]==null then
+        set SD_Opt[i*3]=SD_Roll(1)
+        set SD_Opt[i*3+1]=SD_Roll(3)
+        set SD_Opt[i*3+2]=SD_Roll(2)
+    endif
+    set i=i+1
+endloop
+endfunction
+function SD_StartT takes nothing returns nothing
+call DestroyTimer(GetExpiredTimer())
+call ExecuteFunc("SD_Build")
 endfunction
 function SD_Start takes nothing returns nothing
+// поток режима уже длинный: окна строятся в новом потоке
+call TimerStart(CreateTimer(),0.,false,function SD_StartT)
+endfunction
+function SD_Build takes nothing returns nothing
 local integer i=0
 local integer k
 local integer idx
 local framehandle panel
-local framehandle b
+local framehandle bt
 local framehandle tx
 local trigger t1
 local trigger t2
 local trigger t3
 local string at
+call TimerStart(CreateTimer(),.03,true,function SD_Tick)
 loop
     exitwhen i>=10
-    set SD_Opt[i*3]=0
-    set SD_Opt[i*3+1]=0
-    set SD_Opt[i*3+2]=0
-    if GetPlayerSlotState(Player(i))==PLAYER_SLOT_STATE_PLAYING and Hero[i]==null then
-        set SD_Opt[i*3]=SD_Roll(1)
-        set SD_Opt[i*3+1]=SD_Roll(3)
-        set SD_Opt[i*3+2]=SD_Roll(2)
-        set panel=CreateFrameByType("SIMPLEFRAME","SDBar",TavernHeroFrame,"",i)
+    if SD_Opt[i*3]>0 and SD_Panel[i]==null then
+        // окно — фон как у других окон
+        // не дочернее таверне: ShowFrame таверны показывает все вложенные окна, в т.ч. чужие
+        set panel=CreateFrameByType("SIMPLEFRAME","SDBar",null,"",i)
         call ClearFrameAllPoints(panel)
-        call SetFrameRelativePoint(panel,FRAMEPOINT_TOP,TavernHeroFrame,FRAMEPOINT_TOP,0,-.05)
-        call SetFrameSize(panel,.33,.15)
-        call SetFrameTexture(panel,"StatsBackGround.tga",0,true)
-        call SetFrameTexture(panel,"StatsBackGround.tga",1,true)
-        call SetFrameTexture(panel,"StatsBackGround.tga",2,true)
+        call SetFrameRelativePoint(panel,FRAMEPOINT_CENTER,TavernHeroFrame,FRAMEPOINT_CENTER,0,.02)
+        call SetFrameSize(panel,.26,.125)
+        call SetFrameTextureEx(panel,0,"UI\\widgets\\BattleNet\\bnet-tooltip-background.blp",false,"Choice-tooltip-border.blp",0)
         call SetFramePriority(panel,8)
-        set tx=CreateFrameByType("SIMPLETEXT","SDBarTitle",panel,"",i)
-        call ClearFrameAllPoints(tx)
-        call SetFrameFont(tx,"Fonts\\FRIZQT__.TTF",.013,0)
-        call SetFrameTextAlignment(tx,TEXT_JUSTIFY_CENTER,TEXT_JUSTIFY_MIDDLE)
-        call SetFrameTextColour(tx,0xFFFFA500)
-        call SetFrameText(tx,Lng("Single Draft: выберите героя и нажмите Select","Single Draft: choose a hero and press Select"))
-        call SetFrameSize(tx,.32,.02)
-        call SetFrameRelativePoint(tx,FRAMEPOINT_TOP,panel,FRAMEPOINT_TOP,0,-.008)
+        call ShowFrame(panel,false)
+        set SD_Panel[i]=panel
+        set tx=SD_Text(panel,i,.012,"Single Draft")
+        call SetFrameTextColour(tx,ConvertColour(255,165,0,255))
+        call SetFrameRelativePoint(tx,FRAMEPOINT_TOP,panel,FRAMEPOINT_TOP,0,-.01)
         set k=0
         loop
             exitwhen k>2
             set idx=SD_Opt[i*3+k]
             if idx>0 then
-                set b=CreateFrameByType("SIMPLEBUTTON","SDHero",panel,"",idx)
-                call ClearFrameAllPoints(b)
-                call SetFrameTexture(b,GetFrameTexture(GetFrameByName("TavernBarHero",idx),0),0,true)
-                call SetFrameTexture(b,GetFrameTexture(GetFrameByName("TavernBarHero",idx),0),1,true)
-                call SetFrameTexture(b,GetFrameTexture(GetFrameByName("TavernBarHero",idx),0),2,true)
-                call SetFrameSize(b,.05,.05)
-                call SetFramePriority(b,9)
-                call SetFrameRelativePoint(b,FRAMEPOINT_CENTER,panel,FRAMEPOINT_CENTER,(k-1)*.1,.005)
+                set bt=CreateFrameByType("SIMPLEBUTTON","SDHero",panel,"",idx)
+                call ClearFrameAllPoints(bt)
+                call SetFrameTexture(bt,GetFrameTexture(GetFrameByName("TavernBarHero",idx),0),0,true)
+                call SetFrameTexture(bt,GetFrameTexture(GetFrameByName("TavernBarHero",idx),0),1,true)
+                call SetFrameTexture(bt,GetFrameTexture(GetFrameByName("TavernBarHero",idx),0),2,true)
+                call SetFrameSize(bt,.038,.038)
+                call SetFramePriority(bt,8)
+                call SetFrameRelativePoint(bt,FRAMEPOINT_CENTER,panel,FRAMEPOINT_TOP,(k-1)*.075,-.048)
+                call ShowFrame(bt,true)
                 set t1=CreateTrigger()
                 set t2=CreateTrigger()
                 set t3=CreateTrigger()
-                call TriggerRegisterFrameEvent(t1,b,FRAMEEVENT_MOUSE_ENTER)
-                call TriggerRegisterFrameEvent(t2,b,FRAMEEVENT_MOUSE_LEAVE)
-                call TriggerRegisterFrameEvent(t3,b,FRAMEEVENT_CONTROL_CLICK)
+                call TriggerRegisterFrameEvent(t1,bt,FRAMEEVENT_MOUSE_ENTER)
+                call TriggerRegisterFrameEvent(t2,bt,FRAMEEVENT_MOUSE_LEAVE)
+                call TriggerRegisterFrameEvent(t3,bt,FRAMEEVENT_CONTROL_CLICK)
                 call TriggerAddAction(t1,function OnButtonHover)
                 call TriggerAddAction(t2,function OnButtonUnHover)
                 call TriggerAddAction(t3,function OnButtonSelectHero)
@@ -34065,23 +34273,22 @@ loop
                 else
                     set at="|cff40a0ffINT|r"
                 endif
-                set tx=CreateFrameByType("SIMPLETEXT","SDHeroName",panel,"",idx)
-                call ClearFrameAllPoints(tx)
-                call SetFrameFont(tx,"Fonts\\FRIZQT__.TTF",.009,0)
-                call SetFrameTextAlignment(tx,TEXT_JUSTIFY_CENTER,TEXT_JUSTIFY_TOP)
-                call SetFrameText(tx,at+"\n"+GetUnitBaseStringFieldById(RH_Force[idx],UNIT_SF_NAME))
-                call SetFrameSize(tx,.1,.03)
-                call SetFrameRelativePoint(tx,FRAMEPOINT_TOP,b,FRAMEPOINT_BOTTOM,0,-.003)
+                set tx=SD_Text(panel,idx,.0085,at+"|n"+GetUnitBaseStringFieldById(RH_Force[idx],UNIT_SF_NAME))
+                call SetFrameRelativePoint(tx,FRAMEPOINT_TOP,bt,FRAMEPOINT_BOTTOM,0,-.003)
             endif
             set k=k+1
         endloop
-        call ShowFrame(panel,GetLocalPlayer()==Player(i))
+        set tx=SD_Text(panel,i,.009,Lng("Выбор и случайный — кнопками Select / Random внизу слева","Select / Random — buttons at the bottom left"))
+        call SetFrameTextColour(tx,ConvertColour(180,180,180,255))
+        call SetFrameRelativePoint(tx,FRAMEPOINT_BOTTOM,panel,FRAMEPOINT_BOTTOM,0,.01)
+        call ShowFrame(panel,false)
+        set SD_Panel[i]=panel
         call DisplayTextToPlayer(Player(i),0,0,Lng("|cffffcc00Single Draft|r: ваши герои — ","|cffffcc00Single Draft|r: your heroes — ")+GetUnitBaseStringFieldById(RH_Force[SD_Opt[i*3]],UNIT_SF_NAME)+", "+GetUnitBaseStringFieldById(RH_Force[SD_Opt[i*3+1]],UNIT_SF_NAME)+", "+GetUnitBaseStringFieldById(RH_Force[SD_Opt[i*3+2]],UNIT_SF_NAME))
     endif
     set i=i+1
 endloop
 set panel=null
-set b=null
+set bt=null
 set tx=null
 set t1=null
 set t2=null
@@ -36002,6 +36209,7 @@ endif
 if bu==udg_Button[6] and bu!=null then
     set SDMode=true
     set bu=udg_Button[1]
+    call SD_Draft()
 endif
 if FFAMode==true then
 call DisplayChatMessageEx(null,CHAT_RECIPIENT_UNKNOWN,10,true,Lng("FFA: ON! Количество побед - 7","FFA: ON! Number of wins - 7"))
@@ -38101,8 +38309,8 @@ set show=GetLocalPlayer()==GetOwningPlayer(u) and UnitIsAlive(u) and not IsUnitH
 loop
     exitwhen k>2
     set fx=LoadEffectHandle(HH,id,1+k)
-    call SetSpecialEffectPosition(fx,GetUnitX(u)+I2R(k-1)*60.,GetUnitY(u))
-    call SetSpecialEffectHeight(fx,GetUnitFlyHeight(u)+300.)
+    // чуть выше кастомной полоски HP (земля + GetUnitOverheadOffset), не ниже прежних 300
+    call SetSpecialEffectPositionWithZ(fx,GetUnitX(u)+I2R(k-1)*60.,GetUnitY(u),GetUnitZ(u)+RMaxBJ(300.,GetUnitOverheadOffset(u)+140.))
     set a=0
     if show then
         if k<ch then
@@ -41964,23 +42172,25 @@ function Trig_StatusBar_Actions takes nothing returns nothing
     //call BJDebugMsg(B2S_EXD(IsOperationLimitEnabled())
 
 
+    // окно эмодзи — колесо вокруг курсора (11 окт): прозрачная рамка размером с колесо, центр — к курсору при открытии (Emote_Place)
     set EmoteBarFrame=CreateFrameByType("SIMPLEFRAME", "EmoteBar", null, "", 0)
     call ClearFrameAllPoints( EmoteBarFrame )
-    call SetFrameRelativePoint( EmoteBarFrame, FRAMEPOINT_CENTER, gameUI, FRAMEPOINT_BOTTOM,  .0013, .378  )
-    call SetFrameSize( EmoteBarFrame, .8, .386)
-    call SetFrameTextureEx(EmoteBarFrame, 0, "UI\\widgets\\BattleNet\\bnet-tooltip-background.blp", false, "Choice-tooltip-border.blp", 0)
+    call SetFrameAbsolutePoint( EmoteBarFrame, FRAMEPOINT_CENTER, .4, .32 )
+    call SetFrameSize( EmoteBarFrame, .25, .25)
+    call SetFrameTexture(EmoteBarFrame, "Emotes\\EmoteWheel.blp", 0, true)
     call SetFramePriority( EmoteBarFrame, 5 )
         
     set EmoteBarFrameText=CreateFrameByType( "SIMPLETEXT", "EmoteBarText", EmoteBarFrame, "", 0 )
     call ClearFrameAllPoints( EmoteBarFrameText )
     call SetFrameBlendMode( EmoteBarFrameText, 0, BLEND_MODE_BLEND )
-    call SetFrameFont( EmoteBarFrameText, "Fonts\\FRIZQT__.TTF", .011, 0 )
+    call SetFrameFont( EmoteBarFrameText, "Fonts\\FRIZQT__.TTF", .0085, 0 )
     call SetFrameTextAlignment( EmoteBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
     call SetFrameTextColour( EmoteBarFrameText, 0xFFFFA500 )
     call SetFrameParent( EmoteBarFrameText, EmoteBarFrame )
     call SetFrameText( EmoteBarFrameText, "Right Click - Place on land with left click, only allies can see. Left click - place above your hero, can be seen by everyone")
     call ShowFrame( EmoteBarFrameText, true )
-    call SetFrameRelativePoint( EmoteBarFrameText, FRAMEPOINT_TOPLEFT, EmoteBarFrame, FRAMEPOINT_TOPLEFT, .013, -.02 )
+    call SetFrameSize( EmoteBarFrameText, .23, 0 )
+    call SetFrameRelativePoint( EmoteBarFrameText, FRAMEPOINT_TOP, EmoteBarFrame, FRAMEPOINT_BOTTOM, 0, -.003 )
     
     set EmoteBarGridFrame=CreateFrameByType("SIMPLEGRID", "EmoteBarGrid", EmoteBarFrame, "", 0)
     call ClearFrameAllPoints( EmoteBarGridFrame )
@@ -41998,38 +42208,36 @@ function Trig_StatusBar_Actions takes nothing returns nothing
     set x=0
     loop 
     exitwhen x>33
-    set EmoteFrame=CreateFrameByType( "SIMPLEBUTTON", "EmoteFrame", EmoteBarGridFrame, "", x )
+    set EmoteFrame=CreateFrameByType( "SIMPLEBUTTON", "EmoteFrame", EmoteBarFrame, "", x )
     call ClearFrameAllPoints( EmoteFrame )
     call SetFrameTexture( EmoteFrame, EmoteList[x], 0, true )
     call SetFrameTexture( EmoteFrame, EmoteList[x], 1, true )
     call SetFrameTexture( EmoteFrame, EmoteList[x], 2, true )
-    call SetFrameSize( EmoteFrame, .032, .032 )
+    call SetFrameSize( EmoteFrame, .029, .029 )
     call ShowFrame( EmoteFrame, true )
     call RegisterFrameMouseButton( EmoteFrame, MOUSE_BUTTON_TYPE_RIGHT, true)
-    if x<17 then
-        call SetFrameGridFrame( EmoteBarGridFrame, 0, x, EmoteFrame )
-    elseif x>=17 and x<29 then
-        call SetFrameGridFrame( EmoteBarGridFrame, 1, x-17, EmoteFrame )
-    else
-        call SetFrameGridFrame( EmoteBarGridFrame, 2, x-30, EmoteFrame )
-    endif
+    // одно кольцо на вкладку: по 17 эмодзи, от верха по часовой
+    call SetFrameRelativePoint( EmoteFrame, FRAMEPOINT_CENTER, EmoteBarFrame, FRAMEPOINT_CENTER, .092*Cos(bj_PI/2.-2.*bj_PI*ModuloInteger(x,17)/17.), .092*Sin(bj_PI/2.-2.*bj_PI*ModuloInteger(x,17)/17.) )
+    set EmoteFr[x]=EmoteFrame
     call SetFramePriority( EmoteFrame, 5 )
 
     set EmoteFrameBG=CreateFrameByType("SIMPLEFRAME", "EmoteFrameBG", EmoteFrame, "", x)
     call ClearFrameAllPoints( EmoteFrameBG )
     call SetFrameRelativePoint( EmoteFrameBG, FRAMEPOINT_CENTER, EmoteFrame, FRAMEPOINT_CENTER,  0, 0  )
-    call SetFrameSize( EmoteFrameBG, .065, .065)
+    call SetFrameSize( EmoteFrameBG, .034, .034)
     call SetFrameTexture(EmoteFrameBG, "Emotes\\EmoteBackground.blp", 0, true)
+    set EmoteBgFr[x]=EmoteFrameBG
     call SetFramePriority( EmoteFrameBG, 5 )
 
     set EmoteFrameBlock=CreateFrameByType("SIMPLEFRAME", "EmoteFrameBlock", EmoteFrame, "", x)
     call ClearFrameAllPoints( EmoteFrameBlock )
     call SetFrameRelativePoint( EmoteFrameBlock, FRAMEPOINT_CENTER, EmoteFrame, FRAMEPOINT_CENTER,  0, 0  )
-    call SetFrameSize( EmoteFrameBlock, .033, .033)
+    call SetFrameSize( EmoteFrameBlock, .03, .03)
     call SetFrameTexture(EmoteFrameBlock, "Emotes\\EmoteBlock.blp", 0, true)
     call SetFrameTexture(EmoteFrameBlock, "Emotes\\EmoteBlock.blp", 1, true)
     call SetFrameTexture(EmoteFrameBlock, "Emotes\\EmoteBlock.blp", 2, true)
     call SetFramePriority( EmoteFrameBlock, 7 )
+    set EmoteBlkFr[x]=EmoteFrameBlock
 
     set j=0
     loop
@@ -42066,7 +42274,36 @@ function Trig_StatusBar_Actions takes nothing returns nothing
     call SetFrameParent( CloseEmoteButton, EmoteBarFrame )
     call ShowFrame( CloseEmoteButton, true )
     call SetFramePriority( CloseEmoteButton, 7 )
-    call SetFrameRelativePoint( CloseEmoteButton, FRAMEPOINT_CENTER, EmoteBarFrame, FRAMEPOINT_TOPLEFT, .056, -.004 )
+    call SetFrameRelativePoint( CloseEmoteButton, FRAMEPOINT_CENTER, EmoteBarFrame, FRAMEPOINT_CENTER, 0, 0 )
+    // подсветка эмодзи под курсором — одна рамка, ставится на наведённую кнопку
+    set EmoteHL=CreateFrameByType("SIMPLEFRAME", "EmoteHL", EmoteBarFrame, "", 0)
+    call SetFrameSize( EmoteHL, .038, .038 )
+    call SetFrameTexture( EmoteHL, "Emotes\\EmoteRing.blp", 0, true )
+    call SetFramePriority( EmoteHL, 8 )
+    call ShowFrame( EmoteHL, false )
+    // вкладки: кнопки с иконкой первого эмодзи вкладки сверху окна, открытая — в рамке
+    set tOnClick = CreateTrigger( )
+    set x=0
+    loop
+    exitwhen x>1
+    set EmoteTabBtn[x]=CreateFrameByType( "SIMPLEBUTTON", "EmoteTab", EmoteBarFrame, "", x )
+    call ClearFrameAllPoints( EmoteTabBtn[x] )
+    call SetFrameTexture( EmoteTabBtn[x], EmoteList[x*17], 0, true )
+    call SetFrameTexture( EmoteTabBtn[x], EmoteList[x*17], 1, true )
+    call SetFrameTexture( EmoteTabBtn[x], EmoteList[x*17], 2, true )
+    call SetFrameSize( EmoteTabBtn[x], .021, .021 )
+    call SetFrameRelativePoint( EmoteTabBtn[x], FRAMEPOINT_CENTER, EmoteBarFrame, FRAMEPOINT_CENTER, -.036+.072*x, 0 )
+    call SetFramePriority( EmoteTabBtn[x], 7 )
+    call TriggerRegisterFrameEvent( tOnClick, EmoteTabBtn[x], FRAMEEVENT_CONTROL_CLICK )
+    set x=x+1
+    endloop
+    call TriggerAddAction( tOnClick, function Emote_TabClick )
+    set x=0
+    set EmoteTabHL=CreateFrameByType("SIMPLEFRAME", "EmoteTabHL", EmoteBarFrame, "", 0)
+    call SetFrameSize( EmoteTabHL, .03, .03 )
+    call SetFrameTexture( EmoteTabHL, "Emotes\\EmoteRing.blp", 0, true )
+    call SetFramePriority( EmoteTabHL, 8 )
+    call SetFrameRelativePoint( EmoteTabHL, FRAMEPOINT_CENTER, EmoteTabBtn[0], FRAMEPOINT_CENTER, 0, 0 )
 
     set CloseEmoteButtonText=CreateFrameByType( "SIMPLETEXT", "EmoteBarCloseText", CloseEmoteButton, "", 0 )
     call ClearFrameAllPoints( CloseEmoteButtonText )
@@ -42098,7 +42335,7 @@ function Trig_StatusBar_Actions takes nothing returns nothing
     call SetFrameSize( OpenEmoteButton, .017, .017 )
     call ShowFrame( OpenEmoteButton, false )
     call SetFramePriority( OpenEmoteButton, 7 )
-    call SetFrameRelativePoint( OpenEmoteButton, FRAMEPOINT_CENTER, CloseEmoteButton, FRAMEPOINT_CENTER, 0, 0 )
+    call SetFrameRelativePoint( OpenEmoteButton, FRAMEPOINT_CENTER, gameUI, FRAMEPOINT_BOTTOM, -.3427, .567 )
     
     set OpenEmoteButtonText=CreateFrameByType( "SIMPLETEXT", "EmoteBarOpenText", OpenEmoteButton, "", 0 )
     call ClearFrameAllPoints( OpenEmoteButtonText )
@@ -54717,13 +54954,28 @@ endfunction
 function CBS_QcSend takes integer cbId returns nothing
 local real cbX=GetMouseWorldX()
 local real cbY=GetMouseWorldY()
-call ForceUICancel()
-// предмет — "CBQI" со слотом, способность — "CBQC" с её типом
-if CBS_QcIt>0 then
-call SendSyncData("CBQI",I2S(CBS_QcIt-1)+";"+R2S(cbX)+";"+R2S(cbY))
-else
-call SendSyncData("CBQC",I2S(cbId)+";"+R2S(cbX)+";"+R2S(cbY))
+local framehandle cbF=GetOriginFrame(ORIGIN_FRAME_PORTRAIT,0)
+local real cbMx=GetMouseScreenRelativeX()
+local real cbMy=GetMouseScreenRelativeY()
+local string cbS=";0"
+local unit cbCu=GetUnitUnderCursor()
+// курсор на портрете — применить на себя (как клик по портрету при обычном прицеливании)
+if cbF!=null and cbMx>=GetFrameAbsolutePointX(cbF,FRAMEPOINT_BOTTOMLEFT) and cbMx<=GetFrameAbsolutePointX(cbF,FRAMEPOINT_TOPRIGHT) and cbMy>=GetFrameAbsolutePointY(cbF,FRAMEPOINT_BOTTOMLEFT) and cbMy<=GetFrameAbsolutePointY(cbF,FRAMEPOINT_TOPRIGHT) then
+set cbS=";1"
 endif
+// юнит под курсором (как клик по юниту при обычном прицеливании) — его точные координаты, у всех юнит найдётся по ним
+if cbCu!=null then
+set cbS=cbS+";"+R2S(GetUnitX(cbCu))+";"+R2S(GetUnitY(cbCu))
+set cbCu=null
+endif
+call ForceUICancel()
+// предмет — "CBQI" со слотом, способность — "CBQC" с её типом; последнее поле — на себя (1)
+if CBS_QcIt>0 then
+call SendSyncData("CBQI",I2S(CBS_QcIt-1)+";"+R2S(cbX)+";"+R2S(cbY)+cbS)
+else
+call SendSyncData("CBQC",I2S(cbId)+";"+R2S(cbX)+";"+R2S(cbY)+cbS)
+endif
+set cbF=null
 set CBS_QcIt=0
 endfunction
 // квиккаст: клавиша способности включила прицеливание — сразу каст в курсор; смарткаст: каст, когда клавишу отпустили.
@@ -54787,7 +55039,8 @@ endfunction
 // (раньше — только при зажатом Alt). Только видимые себе; иллюзия — как герой (та же иконка и цвет владельца).
 // Юниты — из общего опроса (Hero[], CBS_IlU), у себя новых handle нет. Карта — игровая область, по большей стороне
 function CBS_MmTick takes nothing returns nothing
-local boolean cbV=CBS_MmOpt and CBS_OfMini!=null
+// при открытой таверне иконки героев на миникарте скрыты
+local boolean cbV=CBS_MmOpt and CBS_OfMini!=null and not (TavernHeroFrame!=null and IsFrameVisible(TavernHeroFrame))
 local integer cbP=0
 local real cbL
 local real cbBt
@@ -54832,13 +55085,13 @@ set cbT=GetUnitBaseStringFieldById(GetUnitTypeId(cbU),UNIT_SF_ICON_NORMAL)
 if cbT!=CBS_MmTex[cbP] then
 set CBS_MmTex[cbP]=cbT
 call BlzFrameSetTexture(CBS_MmIco[cbP],cbT,0,true)
-call SetFrameBackgroundSize(CBS_MmIco[cbP],0,.0068)
+call SetFrameBackgroundSize(CBS_MmIco[cbP],0,.0088)
 endif
 set cbC=GetHandleId(GetPlayerColor(GetOwningPlayer(cbU)))
 if cbC!=CBS_MmCol[cbP] then
 set CBS_MmCol[cbP]=cbC
 call BlzFrameSetTexture(CBS_MmBg[cbP],HPB_Tex(cbC),0,true)
-call SetFrameBackgroundSize(CBS_MmBg[cbP],0,.0082)
+call SetFrameBackgroundSize(CBS_MmBg[cbP],0,.0105)
 endif
 // игровая область вписана в квадрат миникарты по большей стороне, по центру
 set cbX=cbL+cbW*(.5+(GetUnitX(cbU)-cbMx-(GetRectMaxX(bj_mapInitialPlayableArea)-cbMx)/2.)/cbMs)
@@ -55778,6 +56031,31 @@ endif
 call DestroyTimer(GetExpiredTimer())
 endfunction
 // квиккаст предмета (общий код): в точку; не принимает точку — ближайший к ней юнит (200), иначе без цели
+// юнит, который был под курсором у отправителя (поля 4, 5 — его координаты); null — не было
+function CBS_QcCursorUnit takes string cbD,unit cbU returns unit
+local real cbX
+local real cbY
+local unit cbT
+local unit cbB=null
+local real cbR=40.*40.
+if CBS_Tok(cbD,4)=="" then
+return null
+endif
+set cbX=S2R(CBS_Tok(cbD,4))
+set cbY=S2R(CBS_Tok(cbD,5))
+call GroupEnumUnitsInRange(CBS_QcG,cbX,cbY,40.,null)
+loop
+set cbT=FirstOfGroup(CBS_QcG)
+exitwhen cbT==null
+call GroupRemoveUnit(CBS_QcG,cbT)
+if IsUnitType(cbT,UNIT_TYPE_DEAD)==false and (GetUnitX(cbT)-cbX)*(GetUnitX(cbT)-cbX)+(GetUnitY(cbT)-cbY)*(GetUnitY(cbT)-cbY)<=cbR then
+set cbR=(GetUnitX(cbT)-cbX)*(GetUnitX(cbT)-cbX)+(GetUnitY(cbT)-cbY)*(GetUnitY(cbT)-cbY)
+set cbB=cbT
+endif
+endloop
+set cbT=null
+return cbB
+endfunction
 function CBS_QiSync takes nothing returns nothing
 local integer cbP=GetPlayerId(GetTriggerSyncPlayer())
 local string cbD=GetTriggerSyncData()
@@ -55794,6 +56072,20 @@ return
 endif
 set cbU=Hero[cbP]
 set cbI=UnitItemInSlot(cbU,cbS)
+// на себя (курсор на портрете): по герою, иначе в точку под ним
+if cbI!=null and CBS_Tok(cbD,3)=="1" then
+set cbX=GetUnitX(cbU)
+set cbY=GetUnitY(cbU)
+if UnitUseItemTarget(cbU,cbI,cbU) then
+set cbI=null
+endif
+endif
+if cbI!=null then
+set cbT=CBS_QcCursorUnit(cbD,cbU)
+if cbT!=null and UnitUseItemTarget(cbU,cbI,cbT) then
+set cbI=null
+endif
+endif
 if cbI!=null then
 if UnitUseItemPoint(cbU,cbI,cbX,cbY)==false then
 call GroupEnumUnitsInRange(CBS_QcG,cbX,cbY,200.,null)
@@ -55829,6 +56121,9 @@ local integer cbO
 local unit cbT
 local unit cbB=null
 local real cbR=200.*200.
+local boolean cbOk
+local integer cbTt
+local string cbOs
 if GetTriggerSyncPrefix()=="CBQI" then
 call CBS_QiSync()
 return
@@ -55840,7 +56135,38 @@ set cbU=Hero[cbP]
 set cbA=GetUnitAbility(cbU,cbId)
 if cbA!=null then
 set cbO=GetAbilityOrderId(cbA)
-if IssuePointOrderById(cbU,cbO,cbX,cbY)==false then
+// Channel: код приказа — в поле уровня Ncl6 (GetAbilityOrderId его не видит — квик каст не работал у всех Channel)
+set cbOs=GetAbilityStringLevelField(cbA,ABILITY_SLF_BASE_ORDER_ID_NCL6,GetUnitAbilityLevel(cbU,cbId)-1)
+if cbOs!=null and cbOs!="" and OrderId(cbOs)!=0 then
+set cbO=OrderId(cbOs)
+endif
+if HPB_Debug then
+call DisplayTimedTextToPlayer(GetLocalPlayer(),0,0,5,"QC "+GetObjectName(cbId)+" order "+I2S(cbO)+" "+OrderId2String(cbO)+" base "+OrderId2String(GetAbilityOrderId(cbA))+" self "+CBS_Tok(cbD,3))
+endif
+// на себя (курсор на портрете): по герою, иначе в точку под ним
+if CBS_Tok(cbD,3)=="1" then
+set cbX=GetUnitX(cbU)
+set cbY=GetUnitY(cbU)
+if IssueTargetOrderById(cbU,cbO,cbU) then
+set cbU=null
+set cbA=null
+return
+endif
+endif
+// курсор на юните — сначала приказ по нему (как клик по юниту), иначе как раньше
+set cbT=CBS_QcCursorUnit(cbD,cbU)
+if cbT!=null and CBS_Tok(cbD,3)!="1" and IssueTargetOrderById(cbU,cbO,cbT) then
+set cbU=null
+set cbA=null
+set cbT=null
+return
+endif
+// запасной путь — применение по самой способности (CastAbility*): приказ по коду игра отклоняет у Channel
+// с «чужим» кодом, например thunderbolt в точку (W Барагана, E Занзаса). Только если готова и хватает маны
+set cbOk=not IsAbilityOnCooldown(cbA) and GetUnitState(cbU,UNIT_STATE_MANA)>=I2R(GetAbilityIntegerLevelField(cbA,ABILITY_ILF_MANA_COST,GetUnitAbilityLevel(cbU,cbId)-1))
+// CastAbilityGround — только у способностей с целью «точка» (Channel: тип цели 2), иначе применилась бы без цели
+set cbTt=GetAbilityIntegerLevelField(cbA,ABILITY_ILF_TARGET_TYPE,GetUnitAbilityLevel(cbU,cbId)-1)
+if IssuePointOrderById(cbU,cbO,cbX,cbY)==false and not (cbOk and cbTt==2 and CastAbilityGround(cbA,cbX,cbY)) then
 call GroupEnumUnitsInRange(CBS_QcG,cbX,cbY,200.,null)
 loop
 set cbT=FirstOfGroup(CBS_QcG)
@@ -55852,7 +56178,9 @@ set cbB=cbT
 endif
 endloop
 if cbB==null or IssueTargetOrderById(cbU,cbO,cbB)==false then
+if not (cbOk and cbB!=null and (cbTt==1 or cbTt==3) and CastAbilityTarget(cbA,cbB)) then
 call IssueImmediateOrderById(cbU,cbO)
+endif
 endif
 endif
 endif
@@ -56261,9 +56589,9 @@ exitwhen cbK>29
 set CBS_MmBg[cbK]=BlzCreateFrameByType("BACKDROP","CBSMinimapHeroBg",HB_GameUI,"",cbK)
 //call BlzFrameSetSize(CBS_MmBg[cbK],.011,.011)
 //call BlzFrameSetSize(CBS_MmBg[cbK],.0095,.0095)
-call BlzFrameSetSize(CBS_MmBg[cbK],.0082,.0082)
+call BlzFrameSetSize(CBS_MmBg[cbK],.0105,.0105) // было .0082
 // размер текстуры подложки = размеру фрейма: иначе текстура не масштабируется, а обрезается до левого верхнего угла
-call SetFrameBackgroundSize(CBS_MmBg[cbK],0,.0082)
+call SetFrameBackgroundSize(CBS_MmBg[cbK],0,.0105)
 call BlzFrameSetLevel(CBS_MmBg[cbK],8)
 //call SetFrameTextureEx(CBS_MmBg[cbK],0,HPB_Tex(GetHandleId(GetPlayerColor(Player(cbK)))),false,"",0)
 // цвет рамки — владельца, ставится при показе (CBS_MmTick)
@@ -56282,8 +56610,8 @@ call BlzFrameSetAbsPoint(CBS_MmBg[cbK],FRAMEPOINT_CENTER,.4,.3)
 set CBS_MmIco[cbK]=BlzCreateFrameByType("BACKDROP","CBSMinimapHero",CBS_MmBg[cbK],"",cbK)
 //call BlzFrameSetSize(CBS_MmIco[cbK],.009,.009)
 //call BlzFrameSetSize(CBS_MmIco[cbK],.0078,.0078)
-call BlzFrameSetSize(CBS_MmIco[cbK],.0068,.0068)
-call SetFrameBackgroundSize(CBS_MmIco[cbK],0,.0068)
+call BlzFrameSetSize(CBS_MmIco[cbK],.0088,.0088) // было .0068
+call SetFrameBackgroundSize(CBS_MmIco[cbK],0,.0088)
 call BlzFrameSetPoint(CBS_MmIco[cbK],FRAMEPOINT_CENTER,CBS_MmBg[cbK],FRAMEPOINT_CENTER,0.,0.)
 call BlzFrameSetVisible(CBS_MmBg[cbK],false)
 set CBS_MmTex[cbK]=""
@@ -258841,9 +259169,9 @@ call MoveUnit(caster,Heart1,-40,0)
 call MoveUnit(caster,Heart2,30,0)
 call MoveUnit(caster,Heart3,100,0)
 if IsUnitHidden(caster)==false then
-call SetUnitFlyHeight(Heart1,GetUnitFlyHeight(caster)+400,0)
-call SetUnitFlyHeight(Heart2,GetUnitFlyHeight(caster)+400,0)
-call SetUnitFlyHeight(Heart3,GetUnitFlyHeight(caster)+400,0)
+call SetUnitFlyHeight(Heart1,GetUnitFlyHeight(caster)+RMaxBJ(400.,GetUnitOverheadOffset(caster)+140.),0)
+call SetUnitFlyHeight(Heart2,GetUnitFlyHeight(caster)+RMaxBJ(400.,GetUnitOverheadOffset(caster)+140.),0)
+call SetUnitFlyHeight(Heart3,GetUnitFlyHeight(caster)+RMaxBJ(400.,GetUnitOverheadOffset(caster)+140.),0)
 else
 call SetUnitFlyHeight(Heart1,GetUnitFlyHeight(caster)+6000,0)
 call SetUnitFlyHeight(Heart2,GetUnitFlyHeight(caster)+6000,0)
