@@ -114,6 +114,9 @@ constant integer SH_BuuNearStr = StringHash("BuuNearStr")
 constant integer SH_BuuNearInt = StringHash("BuuNearInt")
 constant integer SH_CellDBoard = StringHash("CellDBoard")
 constant integer SH_RemDBoard = StringHash("RemDBoard")
+constant integer SH_FlaDBoard = StringHash("FlaDBoard")
+constant integer SH_FlaRechT = StringHash("FlaRechT")
+constant integer SH_FlaOrbs = StringHash("FlaOrbs")
 constant integer SH_CellKills = StringHash("CellKills") // Селл: убийства и ассисты, за которые получены характеристики
 constant integer SH_CellAssists = StringHash("CellAssists")
 constant integer SH_da = StringHash("da")
@@ -2008,6 +2011,9 @@ boolean array itemsc
 boolean array AutoE
 integer array luffypunch
 boolean randcond
+// Single Draft: у игрока i варианты SD_Opt[i*3+0..2] (индексы таверны: STR, AGI, INT), без пересечений
+boolean SDMode=false
+integer array SD_Opt
 integer array score
 real array gear
 item ite
@@ -2020,7 +2026,7 @@ trigger duels
 unit array fi
 force array all
 lightning v
-boolean damage
+boolean damageFlagOld
 integer array win
 integer win2
 lightning L
@@ -2783,22 +2789,22 @@ endfunction
 // Хирако T (банкай): лечение противника Хирако в зоне уходит тому из команды Хирако в зоне (и ему самому),
 // у кого меньше всего здоровья в процентах. true — лечение отдано (цели ничего).
 function ShinjiBankaiHeal takes unit tgt,real amt returns boolean
-local unit s=LoadUnitHandle(HH,GetHandleId(tgt),SH_ShnBankSrc)
+local unit hs=LoadUnitHandle(HH,GetHandleId(tgt),SH_ShnBankSrc)
 local group g
 local unit e
 local unit best=null
 local real bp=2.
 local real hp
-if amt<=0 or s==null or LoadReal(HH,GetHandleId(tgt),SH_ShnBank)<=TimerGetElapsed(ShnClock) or not IsUnitEnemy(tgt,GetOwningPlayer(s)) then
-set s=null
+if amt<=0 or hs==null or LoadReal(HH,GetHandleId(tgt),SH_ShnBank)<=TimerGetElapsed(ShnClock) or not IsUnitEnemy(tgt,GetOwningPlayer(hs)) then
+set hs=null
 return false
 endif
 set g=CreateGroup()
-call GroupEnumUnitsInRange(g,GetUnitX(s),GetUnitY(s),700,null)
+call GroupEnumUnitsInRange(g,GetUnitX(hs),GetUnitY(hs),700,null)
 loop
 set e=FirstOfGroup(g)
 exitwhen e==null
-if GetWidgetLife(e)>0.405 and IsUnitAlly(e,GetOwningPlayer(s)) and IsUnitType(e,UNIT_TYPE_HERO) and GetUnitAbilityLevel(e,'Aloc')==0 then
+if GetWidgetLife(e)>0.405 and IsUnitAlly(e,GetOwningPlayer(hs)) and IsUnitType(e,UNIT_TYPE_HERO) and GetUnitAbilityLevel(e,'Aloc')==0 then
 set hp=GetWidgetLife(e)/RMaxBJ(GetUnitState(e,UNIT_STATE_MAX_LIFE),1)
 if hp<bp then
 set bp=hp
@@ -2809,7 +2815,7 @@ call GroupRemoveUnit(g,e)
 endloop
 call DestroyGroup(g)
 set g=null
-set s=null
+set hs=null
 if best==null then
 return false
 endif
@@ -2870,7 +2876,7 @@ function GetCommandString takes nothing returns string
 return HLCcommand
 endfunction
 function ValidHLC takes nothing returns boolean
-return GetCommandString()=="a" or GetCommandString()=="b" or GetCommandString()=="c" or GetCommandString()=="d" or GetCommandString()=="e" or GetCommandString()=="f" or GetCommandString()=="g" or GetCommandString()=="h" or GetCommandString()=="i" or GetCommandString()=="j" or GetCommandString()=="k" or GetCommandString()=="l" or GetCommandString()=="m" or GetCommandString()=="n"
+return GetCommandString()=="a" or GetCommandString()=="b" or GetCommandString()=="c" or GetCommandString()=="d" or GetCommandString()=="e" or GetCommandString()=="f" or GetCommandString()=="g" or GetCommandString()=="h" or GetCommandString()=="i" or GetCommandString()=="j" or GetCommandString()=="k" or GetCommandString()=="l" or GetCommandString()=="m" or GetCommandString()=="n" or GetCommandString()=="o" or GetCommandString()=="p" or GetCommandString()=="q" or GetCommandString()=="r"
 endfunction
 // Выключение предмета своими флагами (9 — блок инвентаря, 25 — слоты 6–8) и включение ТОЛЬКО того, что выключили сами.
 // EnableItem по предмету, который мы не выключали, ломал Doom: кнопка серела, но предмет нажимался хоткеем.
@@ -13434,10 +13440,10 @@ endfunction
 function Rem_Int_Q2 takes unit u,boolean b returns integer
 return R2I(I2R(GetHeroInt(u,b))*(0.025)*1000.+0.5)
 endfunction
-// интеллект для урона кнопки R: нажатие x24 = 0.4..0.8*ИНТ (нажатий 5), копьё x120 = 2..4*ИНТ — стандарт 4..8 (4 окт);
+// интеллект для урона кнопки R: копьё x120 (нажатия без урона с 11 окт) = 2..6*ИНТ (было 2..4) — стандарт 4..8 (4 окт);
 // x1000, чтобы не терять дробь в целом (в Bof_Dmg урон делится обратно на 1000)
 function Rem_Int_R takes unit u,boolean b returns integer
-return R2I(I2R(GetHeroInt(u,b))*((3.+I2R(GetUnitAbilityLevel(u,'RmR1')))/240.)*1000.+0.5)
+return R2I(I2R(GetHeroInt(u,b))*((1.+I2R(GetUnitAbilityLevel(u,'RmR1')))/120.)*1000.+0.5)
 endfunction
 // интеллект для урона кнопки W: 0.5..1.4*ИНТ за удар (x25 в вызове, ударов 5) — стандарт 2.5..7 (4 окт);
 // x1000, чтобы не терять дробь в целом (в Bof_Dmg урон делится обратно на 1000)
@@ -13593,9 +13599,9 @@ call Rem_Fx(c,"bof\\Scarlet-44.mdx",x,y,z,ang,1.,0.)
 else
 call SetUnitAnimationByIndex(c,18)
 call Rem_Sound("bof\\war3mapImported\\RemiliaScarlet-T-YX5.wav",100)
-call Rem_Fx(c,"bof\\Scarlet-44.mdx",x,y,z,ang+180.,1.75,0.)
+call Rem_Fx(c,"bof\\Scarlet-44.mdx",x,y,z,ang+180.,1.05,0.)
 call SetSpecialEffectPitch(bj_lastCreatedEffect,160.)
-call Rem_Fx(c,"bof\\Scarlet-72.mdx",x,y,z,ang,2.5,0.)
+call Rem_Fx(c,"bof\\Scarlet-72.mdx",x,y,z,ang,1.5,0.)
 endif
 endfunction
 // Вампиризм (пассивка): 7% урона (10% с T) — лечение. Перелив лечения во время боя копится во
@@ -13720,8 +13726,8 @@ call Rem_Fx(c,"bof\\Scarlet-44.mdx",GetUnitX(u),GetUnitY(u),z,ang+180.,1.,0.)
 call SetSpecialEffectPitch(bj_lastCreatedEffect,180.)
 call Rem_Fx(c,"bof\\Scarlet-72.mdx",GetUnitX(u),GetUnitY(u),z,ang+180.,1.,0.)
 call SetSpecialEffectPitch(bj_lastCreatedEffect,180.)
-call Rem_Fx(c,"bof\\Scarlet-67.mdx",x1,y1,150.,GetRandomDirectionDeg(),2.,0.)
-call Rem_Fx(c,"bof\\Scarlet-67.mdx",x1,y1,150.,GetRandomDirectionDeg(),2.,0.)
+call Rem_Fx(c,"bof\\Scarlet-67.mdx",x1,y1,150.,GetRandomDirectionDeg(),1.2,0.)
+call Rem_Fx(c,"bof\\Scarlet-67.mdx",x1,y1,150.,GetRandomDirectionDeg(),1.2,0.)
 call Rem_Sound("bof\\war3mapImported\\RemiliaScarlet-T-YX3.wav",100)
 if not IsUnitPaused(u) then
 set t=CreateTimer()
@@ -13783,9 +13789,9 @@ call SaveReal(HH,id,10,y+speed*SinBJ(dir))
 else
 set x=LoadReal(HH,id,9)
 set y=LoadReal(HH,id,10)
-call Rem_Fx(caster,"bof\\Scarlet-54.mdx",x,y,50.,ang,1.5,0.)
-call Rem_Fx(caster,"bof\\Scarlet-27.mdx",x,y,50.,ang,1.5,0.)
-call Rem_Fx(caster,"bof\\Scarlet-37.mdx",x,y,50.,ang,1.5,0.)
+call Rem_Fx(caster,"bof\\Scarlet-54.mdx",x,y,50.,ang,0.9,0.)
+call Rem_Fx(caster,"bof\\Scarlet-27.mdx",x,y,50.,ang,0.9,0.)
+call Rem_Fx(caster,"bof\\Scarlet-37.mdx",x,y,50.,ang,0.9,0.)
 call Rem_Fx(caster,"bof\\Scarlet-75.mdx",x,y,50.,ang,1.,0.)
 set g=CreateGroup()
 call GroupEnumUnitsInRange(g,x,y,350.,null)
@@ -13856,9 +13862,9 @@ endif
 if tk==31 then
 call Rem_Noise(GetOwningPlayer(caster),35.,.4)
 call Rem_Sound("bof\\war3mapImported\\RemiliaScarlet-Q-YX1.mp3",100)
-call Rem_Fx(caster,"bof\\Tsubaki-37.mdx",x,y,GetUnitFlyHeight(caster)+100.,ang,5.,0.)
+call Rem_Fx(caster,"bof\\Tsubaki-37.mdx",x,y,GetUnitFlyHeight(caster)+100.,ang,3,0.)
 call SetSpecialEffectPitch(bj_lastCreatedEffect,90.)
-call Rem_Fx(caster,"bof\\Saber-17.mdx",x,y,GetUnitFlyHeight(caster)+50.,ang,1.5,0.)
+call Rem_Fx(caster,"bof\\Saber-17.mdx",x,y,GetUnitFlyHeight(caster)+50.,ang,0.9,0.)
 endif
 if tk>=32 and tk<=50 then
 set k=LoadInteger(HH,id,5)+1
@@ -13983,7 +13989,7 @@ exitwhen e==null
 call GroupRemoveUnit(g,e)
 if Condition_Base(GetOwningPlayer(caster),e) and GetUnitAbilityLevel(e,'Avul')==0 then
 call Bof_Dmg(caster,e,(I2R(Rem_Int_Q2(caster,true))*80.)*0.001)
-call Bof_Ctrl(caster,e,1.5,"stun")
+call Bof_Ctrl(caster,e,1.,"stun")
 endif
 endloop
 call DestroyGroup(g)
@@ -14139,8 +14145,8 @@ call Rem_Swing(caster,ang,hit)
 call Rem_Noise(GetOwningPlayer(caster),30.,.29)
 set x=GetUnitX(caster)+150.*CosBJ(ang)
 set y=GetUnitY(caster)+150.*SinBJ(ang)
-call Rem_Fx(caster,"bof\\Scarlet-67.mdx",x,y,150.,GetRandomDirectionDeg(),2.,0.)
-call Rem_Fx(caster,"bof\\Scarlet-67.mdx",x,y,150.,GetRandomDirectionDeg(),2.,0.)
+call Rem_Fx(caster,"bof\\Scarlet-67.mdx",x,y,150.,GetRandomDirectionDeg(),1.2,0.)
+call Rem_Fx(caster,"bof\\Scarlet-67.mdx",x,y,150.,GetRandomDirectionDeg(),1.2,0.)
 set g=CreateGroup()
 call GroupEnumUnitsInRange(g,GetUnitX(caster),GetUnitY(caster),300.,null)
 loop
@@ -14191,7 +14197,7 @@ call Rem_Fx(caster,"bof\\Scarlet-74.mdx",x,y,z+150.,ang,1.,0.)
 call Rem_Sound("bof\\war3mapImported\\RemiliaScarlet-T-YX2.wav",120)
 call Bof_zU(.5,AddSpecialEffectTarget("bof\\Scarlet-9.mdx",caster,"chest"))
 call Rem_Fx(caster,"bof\\Saber-15.mdx",x,y,125.,ang,1.,0.)
-call Rem_Fx(caster,"bof\\Saber-17.mdx",x,y,z+50.,ang,1.5,0.)
+call Rem_Fx(caster,"bof\\Saber-17.mdx",x,y,z+50.,ang,0.9,0.)
 call Rem_Fx(caster,"bof\\Minato-25.mdx",x,y,z+50.,ang,1.,0.)
 call Rem_Fx(caster,"bof\\chongfeng2.mdx",x,y,z+50.,ang,1.,0.)
 call Rem_Sound("bof\\war3mapImported\\RemiliaScarlet-E-YY1.mp3",100)
@@ -14216,9 +14222,9 @@ local group g=CreateGroup()
 local unit e
 local unit best=null
 local real dmy
-local real bestD=3001.
+local real bestD=5001.
 local boolean isHero=false
-call GroupEnumUnitsInRange(g,GetUnitX(u),GetUnitY(u),3000.,null)
+call GroupEnumUnitsInRange(g,GetUnitX(u),GetUnitY(u),5000.,null)
 loop
 set e=FirstOfGroup(g)
 exitwhen e==null
@@ -14251,7 +14257,7 @@ local timer t=GetExpiredTimer()
 local unit caster=LoadUnitHandle(HH,GetHandleId(t),0)
 local integer cid=GetHandleId(caster)
 call SaveReal(HH,cid,SH_RemSpearIdle,LoadReal(HH,cid,SH_RemSpearIdle)+.05)
-if LoadReal(HH,cid,SH_RemSpearIdle)>=5. or not LoadBoolean(HH,cid,SH_RemSpearOn) then
+if LoadReal(HH,cid,SH_RemSpearIdle)>=7. or not LoadBoolean(HH,cid,SH_RemSpearOn) then
 call SaveBoolean(HH,cid,SH_RemSpearOn,false)
 call SaveInteger(HH,cid,SH_RemSpearStage,0)
 if not LoadBoolean(HH,cid,SH_RemSpearDone) then
@@ -14324,13 +14330,13 @@ set y=y+100.*SinBJ(ang)
 // SetUnitXY_1 без проверки: SetUnitPosition учитывал проходимость — копьё упиралось в декорации
 call SetUnitXY_1(dmy,x,y, false)
 if ModuloInteger(tk,2)==0 then
-call Rem_Fx(caster,"bof\\Scarlet-55.mdx",x,y,150.,ang,1.,1.)
+call Rem_Fx(caster,"bof\\Scarlet-55.mdx",x,y,150.,ang,0.6,1.)
 endif
 if ModuloInteger(tk,4)==0 then
 call Rem_Sound("bof\\war3mapImported\\RemiliaScarlet-R-YX1.mp3",100)
-call Rem_Fx(caster,"bof\\Scarlet-47.mdx",x+240.*CosBJ(ang+90.),y+240.*SinBJ(ang+90.),-1.,ang,1.,0.)
+call Rem_Fx(caster,"bof\\Scarlet-47.mdx",x+240.*CosBJ(ang+90.),y+240.*SinBJ(ang+90.),-1.,ang,0.6,0.)
 call SetSpecialEffectPitch(bj_lastCreatedEffect,30.)
-call Rem_Fx(caster,"bof\\Scarlet-47.mdx",x+240.*CosBJ(ang-90.),y+240.*SinBJ(ang-90.),-1.,ang,1.,0.)
+call Rem_Fx(caster,"bof\\Scarlet-47.mdx",x+240.*CosBJ(ang-90.),y+240.*SinBJ(ang-90.),-1.,ang,0.6,0.)
 call SetSpecialEffectPitch(bj_lastCreatedEffect,30.)
 endif
 else
@@ -14339,14 +14345,14 @@ call SetUnitAnimation(dmy,"Death")
 call Bof_zO(.2,dmy)
 if dist<200. then
 set m=CreateUnit(GetOwningPlayer(caster),'eBMC',tx,ty,ang)
-call SetUnitScale(m,5.,1.,1)
+call SetUnitScale(m,3.,1.,1)
 call SetUnitFlyHeight(m,GetUnitFlyHeight(caster)+100.,0.)
 call Bof_zU(0.,AddSpecialEffectTarget("bof\\Tsubaki-51.mdx",m,"origin"))
 call SetUnitVertexColor(m,255,0,0,255)
 call UnitApplyTimedLife(m,'BHwe',.01)
-call Rem_Fx(caster,"bof\\Scarlet-4.mdx",tx,ty,25.,0.,1.5,0.)
-call Rem_Fx(caster,"bof\\Scarlet-29.mdx",tx,ty,25.,0.,1.,0.)
-call Rem_Fx(caster,"bof\\Scarlet-14.mdx",tx,ty,25.,0.,1.5,1.)
+call Rem_Fx(caster,"bof\\Scarlet-4.mdx",tx,ty,25.,0.,0.9,0.)
+call Rem_Fx(caster,"bof\\Scarlet-29.mdx",tx,ty,25.,0.,0.6,0.)
+call Rem_Fx(caster,"bof\\Scarlet-14.mdx",tx,ty,25.,0.,0.9,1.)
 call Rem_Sound("bof\\war3mapImported\\RemiliaScarlet-R-YX2.mp3",100)
 set dmg=I2R(Rem_Int_R(caster,true))*120.*0.001+GetUnitState(caster,UNIT_STATE_MAX_LIFE)*.15
 if GetUnitAbilityLevel(target,'Avul')==0 then
@@ -14440,25 +14446,13 @@ local group g
 local unit e
 local timer t
 call SaveInteger(HH,cid,SH_RemSpearStage,stage)
-// каждое нажатие: удар 800 с замедлением
-set g=CreateGroup()
-call GroupEnumUnitsInRange(g,x,y,800.,null)
-loop
-set e=FirstOfGroup(g)
-exitwhen e==null
-call GroupRemoveUnit(g,e)
-if Condition_Base(GetOwningPlayer(caster),e) and GetUnitAbilityLevel(e,'Avul')==0 then
-call Bof_Dmg(caster,e,(I2R(Rem_Int_R(caster,true))*24.)*0.001)
-call Bof_Slow(caster,e,0.5,0,2,2,false)
-endif
-endloop
-call DestroyGroup(g)
+// нажатия без урона: бьют только копья (11 окт)
 call SaveReal(HH,cid,SH_RemSpearIdle,0.)
-call Rem_Fx(caster,"bof\\Scarlet-29.mdx",x,y,z,0.,1.,0.)
-call Rem_Fx(caster,"bof\\Scarlet-14.mdx",x,y,20.,0.,1.,1.)
-call Rem_Fx(caster,"bof\\Scarlet-21.mdx",x,y,z,0.,2.,0.)
-call Rem_Fx(caster,"bof\\Scarlet-65.mdx",x,y,z,0.,1.,0.)
-call Rem_Fx(caster,"bof\\Scarlet-4.mdx",x,y,z,0.,1.,0.)
+call Rem_Fx(caster,"bof\\Scarlet-29.mdx",x,y,z,0.,0.6,0.)
+call Rem_Fx(caster,"bof\\Scarlet-14.mdx",x,y,20.,0.,0.6,1.)
+call Rem_Fx(caster,"bof\\Scarlet-21.mdx",x,y,z,0.,1.2,0.)
+call Rem_Fx(caster,"bof\\Scarlet-65.mdx",x,y,z,0.,0.6,0.)
+call Rem_Fx(caster,"bof\\Scarlet-4.mdx",x,y,z,0.,0.6,0.)
 if stage==1 then
 call Rem_Sound("bof\\war3mapImported\\RemiliaScarlet-R-YY1.mp3",100)
 call SaveBoolean(HH,cid,SH_RemSpearDone,false)
@@ -14685,7 +14679,7 @@ local timer t=CreateTimer()
 call Bof_DzSetUnitModel(pool,"bof\\Scarlet-14.mdx")
 call UnitApplyTimedLife(pool,'BHwe',12.)
 call Rem_Fx(caster,"bof\\Scarlet-8.mdx",x,y,GetUnitFlyHeight(caster)+20.,0.,1.,0.)
-call Rem_Fx(caster,"bof\\Scarlet-73.mdx",x,y,GetUnitFlyHeight(caster)+20.,0.,3.,0.)
+call Rem_Fx(caster,"bof\\Scarlet-73.mdx",x,y,GetUnitFlyHeight(caster)+20.,0.,1.8,0.)
 call Rem_Sound("bof\\war3mapImported\\RemiliaScarlet-F-YY1.mp3",100)
 call SaveBoolean(HH,GetHandleId(caster),SH_RemFOn,true)
 call UnitAddAbility(caster,'RmF2')
@@ -14778,15 +14772,15 @@ call SetUnitXY_1(caster,tx+200.*CosBJ(ang),ty+200.*SinBJ(ang), true)
 set x=GetUnitX(caster)
 set y=GetUnitY(caster)
 call Rem_Sound("bof\\war3mapImported\\RemiliaScarlet-T-YX5.wav",100)
-call Rem_Fx(caster,"bof\\Scarlet-44.mdx",x,y,GetUnitFlyHeight(caster)+150.,ang+180.,2.,0.)
+call Rem_Fx(caster,"bof\\Scarlet-44.mdx",x,y,GetUnitFlyHeight(caster)+150.,ang+180.,1.2,0.)
 call SetSpecialEffectRoll(bj_lastCreatedEffect,45.)
-call Rem_Fx(caster,"bof\\Scarlet-72.mdx",x,y,GetUnitFlyHeight(caster)+150.,ang+180.,2.5,0.)
-call Rem_Fx(caster,"bof\\Scarlet-61.mdx",tx,ty,GetUnitFlyHeight(target)+20.,ang,4.,0.)
+call Rem_Fx(caster,"bof\\Scarlet-72.mdx",x,y,GetUnitFlyHeight(caster)+150.,ang+180.,1.5,0.)
+call Rem_Fx(caster,"bof\\Scarlet-61.mdx",tx,ty,GetUnitFlyHeight(target)+20.,ang,2.4,0.)
 call Rem_Fx(caster,"bof\\Scarlet-36.MDX",tx,ty,GetUnitFlyHeight(target)+20.,ang,1.,0.)
 call Rem_Fx(caster,"bof\\Scarlet-43.mdx",tx,ty,GetUnitFlyHeight(target)+150.,ang,1.,0.)
 call Rem_Fx(caster,"bof\\Scarlet-52.mdx",tx,ty,GetUnitFlyHeight(target)+150.,ang,1.,0.)
-call Rem_Fx(caster,"bof\\Scarlet-3.mdx",tx,ty,GetUnitFlyHeight(target)+150.,GetRandomDirectionDeg(),8.,0.)
-call Rem_Fx(caster,"bof\\Scarlet-3.mdx",tx,ty,GetUnitFlyHeight(target)+150.,GetRandomDirectionDeg(),8.,0.)
+call Rem_Fx(caster,"bof\\Scarlet-3.mdx",tx,ty,GetUnitFlyHeight(target)+150.,GetRandomDirectionDeg(),4.8,0.)
+call Rem_Fx(caster,"bof\\Scarlet-3.mdx",tx,ty,GetUnitFlyHeight(target)+150.,GetRandomDirectionDeg(),4.8,0.)
 call Rem_Noise(GetOwningPlayer(caster),60.,.6)
 // цель в стойке-реверсе: ни урона, ни лечения, ни стана (Bof_Rev отдаёт ей Ремилию)
 if not Bof_Rev(caster,target) then
@@ -14895,8 +14889,8 @@ call Rem_Swing(caster,ang,k)
 call Rem_Noise(p,35.,.29)
 call Rem_Noise(tp,35.,.29)
 call Bof_Slide(caster,ang,60.,.3)
-call Rem_Fx(caster,"bof\\Scarlet-3.mdx",tx,ty,tz+150.,GetRandomDirectionDeg(),3.,0.)
-call Rem_Fx(caster,"bof\\Tsubaki-41.mdx",tx,ty,tz+150.,GetRandomDirectionDeg(),2.,0.)
+call Rem_Fx(caster,"bof\\Scarlet-3.mdx",tx,ty,tz+150.,GetRandomDirectionDeg(),1.8,0.)
+call Rem_Fx(caster,"bof\\Tsubaki-41.mdx",tx,ty,tz+150.,GetRandomDirectionDeg(),1.2,0.)
 call Rem_Fx(caster,"bof\\Scarlet-52.mdx",tx,ty,tz+150.,GetRandomDirectionDeg(),1.,0.)
 call Rem_Fx(caster,"bof\\Scarlet-26.mdx",tx,ty,tz+150.,GetRandomDirectionDeg(),1.,0.)
 call Rem_Fx(caster,"bof\\hongping.mdx",tx,ty,tz+20.,0.,1.,0.)
@@ -14923,8 +14917,8 @@ call CameraSetEQNoiseForPlayer(p,25.)
 call CameraSetEQNoiseForPlayer(tp,25.)
 call SaveInteger(HH,id,5,0)
 call SetUnitTimeScale(caster,.25)
-call Rem_Fx(caster,"bof\\Scarlet-57.MDX",tx,ty,tz+150.,0.,1.5,2.)
-call Rem_Fx(caster,"bof\\Scarlet-21.mdx",tx,ty,450.,ang,3.,0.)
+call Rem_Fx(caster,"bof\\Scarlet-57.MDX",tx,ty,tz+150.,0.,0.9,2.)
+call Rem_Fx(caster,"bof\\Scarlet-21.mdx",tx,ty,450.,ang,1.8,0.)
 call Rem_Fx(caster,"bof\\Scarlet-70.mdx",tx,ty,25.,0.,2.5,5.)
 call Rem_Sound("bof\\war3mapImported\\RemiliaScarlet-T-YX10.mp3",100)
 endif
@@ -14959,7 +14953,7 @@ endif
 if tk==306 then
 call SaveInteger(HH,id,5,0)
 call Rem_Fx(caster,"bof\\Scarlet-62.mdx",tx,ty,tz+150.,0.,1.,3.)
-call Rem_Fx(caster,"bof\\Scarlet-57.MDX",tx,ty,tz+150.,0.,3.,3.)
+call Rem_Fx(caster,"bof\\Scarlet-57.MDX",tx,ty,tz+150.,0.,1.8,3.)
 call Rem_Fx(caster,"bof\\Scarlet-5.mdx",tx,ty,25.,0.,15.,0.)
 endif
 if tk==310 then
@@ -15031,7 +15025,7 @@ set ang=Atan2BJ(GetUnitY(target)-y,GetUnitX(target)-x)
 set bx=GetUnitX(target)+150.*CosBJ(Atan2BJ(y-GetUnitY(target),x-GetUnitX(target)))
 set by=GetUnitY(target)+150.*SinBJ(Atan2BJ(y-GetUnitY(target),x-GetUnitX(target)))
 call SetUnitXY_1(caster,bx,by, true)
-call Rem_Fx(caster,"bof\\Scarlet-21.mdx",bx,by,GetUnitFlyHeight(caster),ang,2.,0.)
+call Rem_Fx(caster,"bof\\Scarlet-21.mdx",bx,by,GetUnitFlyHeight(caster),ang,1.2,0.)
 call Rem_Fx(caster,"bof\\Scarlet-65.mdx",bx,by,GetUnitFlyHeight(caster),ang,1.,0.)
 call Rem_Fx(caster,"bof\\Scarlet-4.mdx",bx,by,GetUnitFlyHeight(caster),ang,1.,0.)
 call PauseUnit(caster,true)
@@ -15097,7 +15091,7 @@ exitwhen e==null
 call GroupRemoveUnit(g,e)
 // цель в стойке-реверсе: маны не жжём, Bof_Rev отдаёт ей Ремилию
 if Condition_Base(GetOwningPlayer(caster),e) and not Bof_Rev(caster,e) then
-set burn=GetUnitState(e,UNIT_STATE_MAX_MANA)*.01
+set burn=GetUnitState(e,UNIT_STATE_MAX_MANA)*.006
 call SetUnitManaBJ(e,GetUnitState(e,UNIT_STATE_MANA)-burn)
 if GetUnitState(e,UNIT_STATE_MANA)<GetUnitState(e,UNIT_STATE_MAX_MANA)*.2 then
 call Bof_Dmg(caster,e,(I2R(Rem_Int_G(caster,true))*6.)*0.001)
@@ -15124,7 +15118,7 @@ local real y=GetUnitY(caster)
 local unit ring=CreateUnit(GetOwningPlayer(caster),'eBLP',x,y,0.)
 local unit wave=CreateUnit(GetOwningPlayer(caster),'eBLP',x,y,0.)
 local timer t
-call Rem_Fx(caster,"bof\\Scarlet-57.MDX",x,y,150.,0.,1.5,2.)
+call Rem_Fx(caster,"bof\\Scarlet-57.MDX",x,y,150.,0.,0.9,2.)
 call Rem_Fx(caster,"bof\\Scarlet-21.mdx",x,y,25.,0.,3.,0.)
 call Rem_Fx(caster,"bof\\Scarlet-29.mdx",x,y,GetUnitFlyHeight(caster),0.,1.,0.)
 call Bof_DzSetUnitModel(ring,"bof\\Scarlet-70.mdx")
@@ -15177,15 +15171,15 @@ endfunction
 function Fla_Int_G2 takes unit u,boolean b returns integer
 return R2I(I2R(GetHeroInt(u,b))*(0.025)*1000.+0.5)
 endfunction
-// интеллект для урона кнопки Q: урон bof x (0.0225 + 0.005 x уровень), бафф 28 сен x1.25 (было 0.018 + 0.004 x уровень);
+// интеллект для урона кнопки Q: урон bof x (0.01875 + 0.00625 x уровень) = 3..6*ИНТ (11 окт; было 0.0225 + 0.005 x уровень), бафф 28 сен x1.25 (было 0.018 + 0.004 x уровень);
 // x1000, чтобы не терять дробь в целом (в Bof_Dmg урон делится обратно на 1000)
 function Fla_Int_Q takes unit u,boolean b returns integer
-return R2I(I2R(GetHeroInt(u,b))*(0.0225+0.005*I2R(GetUnitAbilityLevel(u,'FlQ1')))*1000.+0.5)
+return R2I(I2R(GetHeroInt(u,b))*(0.01875+0.00625*I2R(GetUnitAbilityLevel(u,'FlQ1')))*1000.+0.5)
 endfunction
-// интеллект для урона кнопки R: x (3 + уровень)/480, x80 = 0.67..1.33 за удар (3 нажатия + 3 копья) — стандарт 4..8 (4 окт);
+// интеллект для урона кнопки R: x (3 + уровень)/320, x80 = 1..2 за удар (11 окт, было /480 = 0.67..1.33) — стандарт 4..8 (4 окт);
 // x1000, чтобы не терять дробь в целом (в Bof_Dmg урон делится обратно на 1000)
 function Fla_Int_R takes unit u,boolean b returns integer
-return R2I(I2R(GetHeroInt(u,b))*((3.+I2R(GetUnitAbilityLevel(u,'FlR1')))/480.)*1000.+0.5)
+return R2I(I2R(GetHeroInt(u,b))*((3.+I2R(GetUnitAbilityLevel(u,'FlR1')))/320.)*1000.+0.5)
 endfunction
 // интеллект для урона кнопки W: x (5 + 3 x уровень)/960, x120 = 1..2.5 за удар, ударов 2 (+W2) — стандарт (4 окт);
 // x1000, чтобы не терять дробь в целом (в Bof_Dmg урон делится обратно на 1000)
@@ -15389,9 +15383,9 @@ loop
 exitwhen i>5
 set x=GetUnitX(target)+CosBJ(I2R(i)*72.)*450.
 set y=GetUnitY(target)+SinBJ(I2R(i)*72.)*450.
-call Rem_Fx(caster,"bof\\Scarlet-54.mdx",x,y,50.,0.,1.5,0.)
-call Rem_Fx(caster,"bof\\Scarlet-27.mdx",x,y,50.,0.,1.5,0.)
-call Rem_Fx(caster,"bof\\Scarlet-37.mdx",x,y,50.,0.,1.5,0.)
+call Rem_Fx(caster,"bof\\Scarlet-54.mdx",x,y,50.,0.,0.9,0.)
+call Rem_Fx(caster,"bof\\Scarlet-27.mdx",x,y,50.,0.,0.9,0.)
+call Rem_Fx(caster,"bof\\Scarlet-37.mdx",x,y,50.,0.,0.9,0.)
 call Rem_Fx(caster,"bof\\Scarlet-75.mdx",x,y,50.,0.,1.,0.)
 set dmy=CreateUnit(GetOwningPlayer(caster),'eBLP',x,y,0.)
 call SetUnitModel(dmy,"bof\\Scarlet-11.mdx")
@@ -15419,10 +15413,10 @@ if SRS(GetUnitX(target),GetUnitY(target),tx,ty)<250. then
 call Bof_Dmg(caster,target,(I2R(Fla_Int_Q(caster,true))*120.)*0.001)
 call Bof_Ctrl(caster,target,1.5,"stun")
 endif
-call Rem_Fx(caster,"bof\\Scarlet-85.mdx",tx,ty,50.,0.,2.25,.75)
+call Rem_Fx(caster,"bof\\Scarlet-85.mdx",tx,ty,50.,0.,1.35,.75)
 call Rem_Fx(caster,"bof\\Tsubaki-33.mdx",tx,ty,50.,0.,1.,0.)
 call Rem_Fx(caster,"bof\\Scarlet-69.mdx",tx,ty,50.,0.,1.,0.)
-call Rem_Fx(caster,"bof\\Scarlet-10.mdx",tx,ty,GetUnitFlyHeight(caster),0.,1.5,0.)
+call Rem_Fx(caster,"bof\\Scarlet-10.mdx",tx,ty,GetUnitFlyHeight(caster),0.,0.9,0.)
 call Rem_Noise(GetOwningPlayer(caster),50.,.5)
 call Rem_Noise(GetOwningPlayer(target),50.,.5)
 call Rem_Sound("bof\\war3mapImported\\Flandre Scarlet-Q-YX1.mp3",100)
@@ -15475,7 +15469,9 @@ call Rem_Fx(caster,"bof\\Scarlet-29.mdx",x,y,25.,0.,1.,0.)
 call Rem_Fx(caster,"bof\\Madara-huitu-17.mdx",x,y,25.,0.,1.,0.)
 call Rem_Fx(caster,"bof\\Scarlet-40.mdx",x,y,25.,0.,1.5,0.)
 call Rem_Sound("bof\\war3mapImported\\RemiliaScarlet-R-YX2.mp3",100)
+if IsUnitEnemy(target,GetOwningPlayer(caster)) then
 call Bof_Dmg(caster,target,(I2R(Fla_Int_W(caster,true))*120.)*0.001)
+endif
 endfunction
 // «Рассвет» (dawn_3 → dawn_2 → dawn_1) держится на цели 100 тиков по 0.03 c
 function Fla_W_Dawn takes nothing returns nothing
@@ -15501,7 +15497,9 @@ call SaveUnitHandle(HH,id,2,dmy)
 endif
 call SetUnitXY_1(dmy,GetUnitX(target),GetUnitY(target), false)
 else
+if IsUnitEnemy(target,GetOwningPlayer(caster)) then
 call Bof_Ctrl(caster,target,1.5,"stun")
+endif
 call Fla_W_Blast(caster,target)
 call FlushChildHashtable(HH,id)
 call DestroyTimer(t)
@@ -15616,11 +15614,16 @@ set caster=null
 set dmy=null
 endfunction
 function Fla_W_Act takes unit caster,unit target returns nothing
-local timer t=CreateTimer()
+local timer t
+// W только по врагам: союзник целью — умение ничего не делает (11 окт)
+if target==null or not IsUnitEnemy(target,GetOwningPlayer(caster)) then
+return
+endif
+set t=CreateTimer()
 call SaveBoolean(HH,GetHandleId(caster),SH_bofRevd,false)
 call Bof_SwapStage(caster,'FlW1','FlW2',8.)
 call Rem_Sound("bof\\war3mapImported\\Flandre Scarlet-W-YY1.mp3",100)
-call Rem_Fx(caster,"bof\\Scarlet-21.mdx",GetUnitX(caster),GetUnitY(caster),GetUnitFlyHeight(caster),0.,2.,0.)
+call Rem_Fx(caster,"bof\\Scarlet-21.mdx",GetUnitX(caster),GetUnitY(caster),GetUnitFlyHeight(caster),0.,1.2,0.)
 call Fla_Anim(caster,10,-1.)
 call PauseUnit(caster,true)
 call SetUnitInvulnerable(caster,true)
@@ -15671,13 +15674,13 @@ endif
 if tk==50 then
 call Rem_Sound("bof\\war3mapImported\\Madara-huitu-TR-YX2.mp3",90)
 call Rem_Sound("bof\\NL-Q-YX.mp3",110)
-call Rem_Fx(caster,"bof\\Scarlet-82.mdx",x,y,600.,ang+180.,4.,0.)
+call Rem_Fx(caster,"bof\\Scarlet-82.mdx",x,y,600.,ang+180.,2.4,0.)
 call SetSpecialEffectPitch(bj_lastCreatedEffect,180.)
 call SetSpecialEffectTimeScale(bj_lastCreatedEffect,.5)
-call Rem_Fx(caster,"bof\\Scarlet-82.mdx",x,y,900.,ang+180.,6.,0.)
+call Rem_Fx(caster,"bof\\Scarlet-82.mdx",x,y,900.,ang+180.,3.6,0.)
 call SetSpecialEffectPitch(bj_lastCreatedEffect,180.)
 call SetSpecialEffectTimeScale(bj_lastCreatedEffect,.5)
-call Rem_Fx(caster,"bof\\Scarlet-82.mdx",x,y,1200.,ang+180.,8.,0.)
+call Rem_Fx(caster,"bof\\Scarlet-82.mdx",x,y,1200.,ang+180.,4.8,0.)
 call SetSpecialEffectPitch(bj_lastCreatedEffect,180.)
 call SetSpecialEffectTimeScale(bj_lastCreatedEffect,.5)
 call SetUnitTimeScale(caster,1.)
@@ -15691,7 +15694,7 @@ exitwhen i>6
 set a=ang+90.-30.*I2R(i)
 set px=x+CosBJ(a)*600.
 set py=y+SinBJ(a)*600.
-call Rem_Fx(caster,"bof\\Scarlet-81.mdx",px,py,GetUnitFlyHeight(caster)+25.,a+180.,1.5,0.)
+call Rem_Fx(caster,"bof\\Scarlet-81.mdx",px,py,GetUnitFlyHeight(caster)+25.,a+180.,0.9,0.)
 call Rem_Fx(caster,"bof\\Minato-31.mdx",px,py,25.,ang,4.,0.)
 set g=CreateGroup()
 call GroupEnumUnitsInRange(g,px,py,350.,null)
@@ -15834,7 +15837,7 @@ local timer t=GetExpiredTimer()
 local unit caster=LoadUnitHandle(HH,GetHandleId(t),0)
 local integer cid=GetHandleId(caster)
 call SaveReal(HH,cid,SH_FlaRTime,LoadReal(HH,cid,SH_FlaRTime)+.05)
-if LoadReal(HH,cid,SH_FlaRTime)>=6. or not LoadBoolean(HH,cid,SH_FlaROn) then
+if LoadReal(HH,cid,SH_FlaRTime)>=8. or not LoadBoolean(HH,cid,SH_FlaROn) then
 call SaveBoolean(HH,cid,SH_FlaROn,false)
 call SaveInteger(HH,cid,SH_FlaRStage,0)
 if not LoadBoolean(HH,cid,SH_FlaRDone) then
@@ -15892,10 +15895,10 @@ else
 call Rem_Sound("bof\\war3mapImported\\Flandre Scarlet-Q-YX1.mp3",100)
 call SetUnitAnimation(dmy,"Death")
 call UnitApplyTimedLife(dmy,'BHwe',.4)
-call Rem_Fx(caster,"bof\\Scarlet-85.mdx",x,y,50.,yaw,2.25,.75)
-call Rem_Fx(caster,"bof\\Tsubaki-33.mdx",x,y,50.,yaw,1.,0.)
-call Rem_Fx(caster,"bof\\Scarlet-69.mdx",x,y,50.,yaw,1.,0.)
-call Rem_Fx(caster,"bof\\Scarlet-10.mdx",x,y,GetUnitFlyHeight(caster),yaw,1.5,0.)
+call Rem_Fx(caster,"bof\\Scarlet-85.mdx",x,y,50.,yaw,1.35,.75)
+call Rem_Fx(caster,"bof\\Tsubaki-33.mdx",x,y,50.,yaw,0.6,0.)
+call Rem_Fx(caster,"bof\\Scarlet-69.mdx",x,y,50.,yaw,0.6,0.)
+call Rem_Fx(caster,"bof\\Scarlet-10.mdx",x,y,GetUnitFlyHeight(caster),yaw,0.9,0.)
 set g=CreateGroup()
 call GroupEnumUnitsInRange(g,x,y,450.,null)
 loop
@@ -15985,25 +15988,13 @@ local unit e
 local unit dmy
 local timer t
 call SaveInteger(HH,cid,SH_FlaRStage,stage)
-// каждое нажатие: удар 800 с замедлением
-set g=CreateGroup()
-call GroupEnumUnitsInRange(g,x,y,800.,null)
-loop
-set e=FirstOfGroup(g)
-exitwhen e==null
-call GroupRemoveUnit(g,e)
-if Condition_Base(GetOwningPlayer(caster),e) and GetUnitAbilityLevel(e,'Avul')==0 then
-call Bof_Dmg(caster,e,(I2R(Fla_Int_R(caster,true))*80.)*0.001)
-call Bof_Slow(caster,e,0.5,0,2,2,false)
-endif
-endloop
-call DestroyGroup(g)
+// нажатия без урона: бьют только копья (11 окт)
 call SaveReal(HH,cid,SH_FlaRTime,0.)
-call Rem_Fx(caster,"bof\\Scarlet-29.mdx",x,y,z,0.,1.,0.)
-call Rem_Fx(caster,"bof\\Scarlet-14.mdx",x,y,20.,0.,1.,1.)
-call Rem_Fx(caster,"bof\\Scarlet-21.mdx",x,y,z,0.,2.,0.)
-call Rem_Fx(caster,"bof\\Scarlet-65.mdx",x,y,z,0.,1.,0.)
-call Rem_Fx(caster,"bof\\Scarlet-4.mdx",x,y,z,0.,1.,0.)
+call Rem_Fx(caster,"bof\\Scarlet-29.mdx",x,y,z,0.,0.6,0.)
+call Rem_Fx(caster,"bof\\Scarlet-14.mdx",x,y,20.,0.,0.6,1.)
+call Rem_Fx(caster,"bof\\Scarlet-21.mdx",x,y,z,0.,1.2,0.)
+call Rem_Fx(caster,"bof\\Scarlet-65.mdx",x,y,z,0.,0.6,0.)
+call Rem_Fx(caster,"bof\\Scarlet-4.mdx",x,y,z,0.,0.6,0.)
 if stage==1 then
 call Rem_Sound("bof\\war3mapImported\\Flandre Scarlet-R-YY1.mp3",100)
 call Rem_Text(caster,"Kagome, Kagome")
@@ -16028,7 +16019,7 @@ call SaveBoolean(HH,cid,SH_FlaROn,false)
 call SetAbilityRemainingCooldown(GetUnitAbility(caster,'FlR1'),30.)
 set t=CreateTimer()
 set g=CreateGroup()
-call GroupEnumUnitsInRange(g,x,y,1600.,null)
+call GroupEnumUnitsInRange(g,x,y,4000.,null)
 loop
 set e=FirstOfGroup(g)
 exitwhen e==null
@@ -16041,12 +16032,12 @@ set sg=CreateGroup()
 set str=1
 loop
 exitwhen str>3
-set px=x+CosBJ(ea-60.+30.*I2R(str))*1000.
-set py=y+SinBJ(ea-60.+30.*I2R(str))*1000.
-call Rem_Fx(null,"bof\\Scarlet-54.mdx",px,py,50.,ea,1.5,0.)
-call Rem_Fx(null,"bof\\Scarlet-27.mdx",px,py,50.,ea,1.5,0.)
-call Rem_Fx(null,"bof\\Scarlet-37.mdx",px,py,50.,ea,1.5,0.)
-call Rem_Fx(null,"bof\\Scarlet-75.mdx",px,py,50.,ea,1.,0.)
+set px=GetUnitX(e)+CosBJ(ea-60.+30.*I2R(str))*1000.
+set py=GetUnitY(e)+SinBJ(ea-60.+30.*I2R(str))*1000.
+call Rem_Fx(null,"bof\\Scarlet-54.mdx",px,py,50.,ea,0.9,0.)
+call Rem_Fx(null,"bof\\Scarlet-27.mdx",px,py,50.,ea,0.9,0.)
+call Rem_Fx(null,"bof\\Scarlet-37.mdx",px,py,50.,ea,0.9,0.)
+call Rem_Fx(null,"bof\\Scarlet-75.mdx",px,py,50.,ea,0.6,0.)
 set dmy=CreateUnit(GetOwningPlayer(caster),'eBLP',px,py,ea)
 call SetUnitModel(dmy,"bof\\Scarlet-11.mdx")
 call UnitApplyTimedLife(dmy,'BHwe',2.)
@@ -16071,17 +16062,20 @@ set e=null
 set dmy=null
 set t=null
 endfunction
-// ----- T «Four of a Kind»: клон в точке (12 c), стоит заряд; зарядов до 3, +1 раз в 20 c -----
+// ----- T «Four of a Kind»: клон в точке (12 c), стоит заряд; зарядов до 3. Как D у Роши: каждый
+// потраченный заряд восстанавливается своим таймером через 20 c (ячейки SH_FlaRechT+0..2) -----
 function Fla_T_Recharge takes nothing returns nothing
 local timer t=GetExpiredTimer()
 local unit caster=LoadUnitHandle(HH,GetHandleId(t),0)
 local integer cid=GetHandleId(caster)
-if caster==null or GetUnitTypeId(caster)==0 then
-call FlushChildHashtable(HH,GetHandleId(t))
-call DestroyTimer(t)
-elseif LoadInteger(HH,cid,SH_FlaCharges)<3 then
+if caster!=null and GetUnitTypeId(caster)!=0 then
+call RemoveSavedHandle(HH,cid,SH_FlaRechT+LoadInteger(HH,GetHandleId(t),1))
+if LoadInteger(HH,cid,SH_FlaCharges)<3 then
 call SaveInteger(HH,cid,SH_FlaCharges,LoadInteger(HH,cid,SH_FlaCharges)+1)
 endif
+endif
+call FlushChildHashtable(HH,GetHandleId(t))
+call DestroyTimer(t)
 set t=null
 set caster=null
 endfunction
@@ -16113,12 +16107,17 @@ call SaveUnitHandle(HH,cid,SH_FlaClones+k,cl)
 call Rem_Sound("bof\\war3mapImported\\RemiliaScarlet-G-YX1.mp3",100)
 call Rem_Fx(caster,"bof\\Scarlet-69.mdx",tx,ty,150.,ang,.75,0.)
 call Rem_Fx(caster,"bof\\Scarlet-84.mdx",tx,ty,150.,ang,1.,0.)
-if not LoadBoolean(HH,cid,SH_FlaRecharge) then
-call SaveBoolean(HH,cid,SH_FlaRecharge,true)
+// таймер этого заряда — в свободную ячейку
+set k=0
+loop
+exitwhen k>=2 or LoadTimerHandle(HH,cid,SH_FlaRechT+k)==null
+set k=k+1
+endloop
 set t=CreateTimer()
 call SaveUnitHandle(HH,GetHandleId(t),0,caster)
-call TimerStart(t,20.,true,function Fla_T_Recharge)
-endif
+call SaveInteger(HH,GetHandleId(t),1,k)
+call SaveTimerHandle(HH,cid,SH_FlaRechT+k,t)
+call TimerStart(t,20.,false,function Fla_T_Recharge)
 set cl=null
 set t=null
 endfunction
@@ -16334,10 +16333,12 @@ if tk<=200 and IsUnitAliveBJ(caster) then
 // неуязвимость F — каждым тиком: её снимают рывок к клону и чужие эффекты (тестер 29 сен)
 call SetUnitInvulnerable(caster,true)
 if ModuloInteger(tk-1,15)==0 then
+// замок кнопок — раз в 1.5 c, не каждые 0.3 c: SetPlayerAbilityAvailable перестраивает панель команд и роняет FPS (11 окт)
+if ModuloInteger(tk-1,75)==0 then
 call Fla_FLock(caster,true)
+endif
 call Rem_Fx(caster,"bof\\Scarlet-4.mdx",x,y,z,0.,1.,0.)
 call Rem_Fx(caster,"bof\\Scarlet-84.mdx",x,y,z,0.,1.,0.)
-call Rem_Fx(caster,"bof\\Scarlet-69.mdx",x,y,z,0.,1.,0.)
 set g=CreateGroup()
 call GroupEnumUnitsInRange(g,x,y,250.,null)
 loop
@@ -16384,7 +16385,7 @@ call SetUnitFlyHeight(dmy,25.,0.)
 call Bof_zO(4.,dmy)
 call Rem_Fx(caster,"bof\\Scarlet-29.mdx",x,y,z,0.,1.,0.)
 call Rem_Fx(caster,"bof\\Scarlet-14.mdx",x,y,20.,0.,1.,1.)
-call Rem_Fx(caster,"bof\\Scarlet-21.mdx",x,y,z,0.,2.,0.)
+call Rem_Fx(caster,"bof\\Scarlet-21.mdx",x,y,z,0.,1.2,0.)
 call Rem_Fx(caster,"bof\\Scarlet-65.mdx",x,y,z,0.,1.,0.)
 call Rem_Fx(caster,"bof\\Scarlet-4.mdx",x,y,z,0.,1.,0.)
 call Rem_Fx(caster,"bof\\Scarlet-69.mdx",x,y,z,0.,1.,0.)
@@ -16464,7 +16465,7 @@ call Rem_Sound("bof\\war3mapImported\\Flandre Scarlet-G-YX2.mp3",200)
 endif
 if tk==50 then
 // у bof точка эффекта к этому тику уже перезаписана местом Фландре (эффекты раз в 10 тиков)
-call Rem_Fx(caster,"bof\\Saber-14.mdx",x,y,150.,0.,2.,0.)
+call Rem_Fx(caster,"bof\\Saber-14.mdx",x,y,150.,0.,1.2,0.)
 call SetUnitAnimationByIndex(dmy,1)
 set k=0
 endif
@@ -16473,7 +16474,7 @@ if tk>=34 and tk<=110 then
 if k==1 or ModuloInteger(k-1,12)==0 then
 call Rem_Fx(caster,"bof\\Tsubaki-33.mdx",x,y,250.,ang,1.,0.)
 call SetSpecialEffectPitch(bj_lastCreatedEffect,90.)
-call Rem_Fx(caster,"bof\\Minato-31.mdx",x+150.*CosBJ(ang),y+150.*SinBJ(ang),250.,ang,6.,0.)
+call Rem_Fx(caster,"bof\\Minato-31.mdx",x+150.*CosBJ(ang),y+150.*SinBJ(ang),250.,ang,3.6,0.)
 call SetSpecialEffectPitch(bj_lastCreatedEffect,90.)
 endif
 if ModuloInteger(k,5)==0 then
@@ -16693,7 +16694,7 @@ set ang=Atan2BJ(GetUnitY(cl)-y,GetUnitX(cl)-x)
 call SaveBoolean(HH,GetHandleId(caster),SH_bofRevd,false)
 call SetUnitInvulnerable(caster,true)
 call Rem_Fx(caster,"bof\\Saber-15.mdx",x,y,125.,ang,1.,0.)
-call Rem_Fx(caster,"bof\\Saber-17.mdx",x,y,z+50.,ang,1.5,0.)
+call Rem_Fx(caster,"bof\\Saber-17.mdx",x,y,z+50.,ang,0.9,0.)
 call Rem_Fx(caster,"bof\\Minato-25.mdx",x,y,z+50.,ang,1.,0.)
 call Rem_Fx(caster,"bof\\chongfeng2.mdx",x,y,z+50.,ang,1.,0.)
 set t=CreateTimer()
@@ -16735,7 +16736,7 @@ call SetUnitInvulnerable(cl,true)
 if tk==18 then
 call Rem_Sound("bof\\war3mapImported\\Flandre Scarlet-pingA-YX1.mp3",110)
 call Rem_Fx(cl,"bof\\Saber-15.mdx",x,y,125.,ang,1.,0.)
-call Rem_Fx(cl,"bof\\Saber-17.mdx",x,y,z+50.,ang,1.5,0.)
+call Rem_Fx(cl,"bof\\Saber-17.mdx",x,y,z+50.,ang,0.9,0.)
 call Rem_Fx(cl,"bof\\Minato-25.mdx",x,y,z+50.,ang,1.,0.)
 call Rem_Fx(cl,"bof\\chongfeng2.mdx",x,y,z+50.,ang,1.,0.)
 call SetUnitTimeScale(cl,1.)
@@ -25567,7 +25568,7 @@ call RegionAddRect(gamerect,bj_mapInitialPlayableArea)
 set MH=Condition(function BoolMH)
 set cmn=-1
 set cmb=false
-set damage=false
+set damageFlagOld=false
 set Rounds=false
 set DamageOff=true
 call DisplayTextToPlayer(GetLocalPlayer(),0,0,Lng("Подгрузка основных систем карты.","Loading of the main map systems."))
@@ -28399,6 +28400,26 @@ endfunction
 
 
 
+// Single Draft: герой idx — один из трёх вариантов игрока i
+function SD_Has takes integer i,integer idx returns boolean
+return SD_Opt[i*3]==idx or SD_Opt[i*3+1]==idx or SD_Opt[i*3+2]==idx
+endfunction
+// Случайный индекс таверны: в Single Draft — из ещё свободных вариантов игрока, иначе (и если все заняты) — любой
+function SD_RandomId takes integer i returns integer
+local integer k=GetRandomInt(0,2)
+local integer sn=0
+if SDMode and i>=0 and i<10 then
+    loop
+        exitwhen sn>2
+        if SD_Opt[i*3+k]>0 and udg_RH[SD_Opt[i*3+k]]!=0 then
+            return SD_Opt[i*3+k]
+        endif
+        set k=ModuloInteger(k+1,3)
+        set sn=sn+1
+    endloop
+endif
+return GetRandomInt(0,144) // 145 (Хирако) — только из таверны, в случайный выбор не попадает
+endfunction
 function OnButtonPickHeroId takes nothing returns nothing
     local player p = GetTriggerPlayer( )
     local integer pHid = GetHandleId( p )
@@ -28464,6 +28485,12 @@ function OnButtonPickHeroId takes nothing returns nothing
             set TestModeHeroId[GetPlayerId(p)]=0
         endif
     else
+        // Single Draft: только свои три героя
+        if SDMode and TavernPlayerPickAllow[GetPlayerId(p)]==true and GetPlayerId(p)<10 and not SD_Has(GetPlayerId(p),TavernHeroId[GetPlayerId(p)]) then
+            call DisplayTextToPlayer(p,0,0,Lng("|cffffcc00Single Draft|r: можно выбрать только одного из трёх героев в окне Single Draft","|cffffcc00Single Draft|r: you can pick only one of the three heroes in the Single Draft window"))
+            set p=null
+            return
+        endif
         if udg_RH[TavernHeroId[GetPlayerId(p)]]!=null and TavernPlayerPickAllow[GetPlayerId(p)]==true and GetPlayerId(p)<10 then
             if p==GetLocalPlayer() then
                 call ShowFrame( SelectTavernHeroCheck, false )
@@ -28570,7 +28597,7 @@ function OnButtonRandom takes nothing returns nothing
                 set udg_Repick[i+1]=-2
         endif
         loop
-        set id=GetRandomInt(0,144) // 145 (Хирако) — только из таверны, в случайный выбор не попадает
+        set id=SD_RandomId(i)
         if udg_RH[id]!=0 then
         set u[i+1]=CreateUnit(Player(i),udg_RH[id],GetRectCenterX(gg_rct_Rect1),GetRectCenterY(gg_rct_Rect1),0)
         call UnitInventorySetSize(u[i+1],10)
@@ -33841,6 +33868,7 @@ set udg_Button[5]=DialogAddButton(udg_Dialog,"FFA: OFF",0)
 set udg_Button[1]=DialogAddButton(udg_Dialog,"Standard Mode",0)
 set udg_Button[4]=DialogAddButton(udg_Dialog,"Ban Mode",0)
 set udg_Button[2]=DialogAddButton(udg_Dialog,"Random Mode",0)
+set udg_Button[6]=DialogAddButton(udg_Dialog,"Single Draft",0)
 if maxplayers==10 then
 set udg_Button[3]=DialogAddButton(udg_Dialog,"Captain Mode",0)
 endif
@@ -33887,6 +33915,7 @@ set udg_Button[5]=DialogAddButton(udg_Dialog,"FFA: ON",0)
 set udg_Button[1]=DialogAddButton(udg_Dialog,"Standard Mode",0)
 set udg_Button[4]=DialogAddButton(udg_Dialog,"Ban Mode",0)
 set udg_Button[2]=DialogAddButton(udg_Dialog,"Random Mode",0)
+set udg_Button[6]=DialogAddButton(udg_Dialog,"Single Draft",0)
 //set udg_Button[3]=DialogAddButton(udg_Dialog,"Captain Mode",0)
 call DialogDisplay(Player(0),udg_Dialog,true)
 // Shop32: пока выбирается режим, магазин закрыт
@@ -33904,6 +33933,7 @@ set udg_Button[5]=DialogAddButton(udg_Dialog,"FFA: OFF",0)
 set udg_Button[1]=DialogAddButton(udg_Dialog,"Standard Mode",0)
 set udg_Button[4]=DialogAddButton(udg_Dialog,"Ban Mode",0)
 set udg_Button[2]=DialogAddButton(udg_Dialog,"Random Mode",0)
+set udg_Button[6]=DialogAddButton(udg_Dialog,"Single Draft",0)
 if maxplayers==10 then
 set udg_Button[3]=DialogAddButton(udg_Dialog,"Captain Mode",0)
 endif
@@ -33923,7 +33953,139 @@ call TriggerAddCondition(gg_trg_Dialog3,Condition(function Trig_Dialog3_Conditio
 call TriggerAddAction(gg_trg_Dialog3,function Trig_Dialog3_Actions)
 endfunction
 function Trig_Dialog2_Conditions takes nothing returns boolean
-return GetClickedButton()==udg_Button[1]or GetClickedButton()==udg_Button[2]or GetClickedButton()==udg_Button[3]or GetClickedButton()==udg_Button[4]
+return GetClickedButton()==udg_Button[1]or GetClickedButton()==udg_Button[2]or GetClickedButton()==udg_Button[3]or GetClickedButton()==udg_Button[4]or GetClickedButton()==udg_Button[6]
+endfunction
+// ----- Single Draft: каждому игроку — случайный STR, AGI и INT герой (без пересечений), окно с ними над таверной.
+// Клик по иконке выбирает героя (описание — в таверне), Select подтверждает. Выбор в таверне — только из этих трёх.
+function SD_Used takes integer idx returns boolean
+local integer k=0
+loop
+    exitwhen k>=30
+    if SD_Opt[k]==idx then
+        return true
+    endif
+    set k=k+1
+endloop
+return false
+endfunction
+// случайный свободный герой с основной характеристикой a (1 STR, 3 AGI, 2 INT); нет такого — любой свободный
+function SD_Roll takes integer a returns integer
+local integer array c
+local integer sn=0
+local integer id=1
+loop
+    exitwhen id>144
+    if udg_RH[id]!=0 and not SD_Used(id) and GetUnitBaseIntegerFieldById(udg_RH[id],UNIT_IF_PRIMARY_ATTRIBUTE)==a then
+        set c[sn]=id
+        set sn=sn+1
+    endif
+    set id=id+1
+endloop
+if sn==0 and a!=0 then
+    return SD_Roll(0)
+endif
+if sn==0 then
+    set id=1
+    loop
+        exitwhen id>144
+        if udg_RH[id]!=0 and not SD_Used(id) then
+            set c[sn]=id
+            set sn=sn+1
+        endif
+        set id=id+1
+    endloop
+endif
+if sn==0 then
+    return 0
+endif
+return c[GetRandomInt(0,sn-1)]
+endfunction
+function SD_Start takes nothing returns nothing
+local integer i=0
+local integer k
+local integer idx
+local framehandle panel
+local framehandle b
+local framehandle tx
+local trigger t1
+local trigger t2
+local trigger t3
+local string at
+loop
+    exitwhen i>=10
+    set SD_Opt[i*3]=0
+    set SD_Opt[i*3+1]=0
+    set SD_Opt[i*3+2]=0
+    if GetPlayerSlotState(Player(i))==PLAYER_SLOT_STATE_PLAYING and Hero[i]==null then
+        set SD_Opt[i*3]=SD_Roll(1)
+        set SD_Opt[i*3+1]=SD_Roll(3)
+        set SD_Opt[i*3+2]=SD_Roll(2)
+        set panel=CreateFrameByType("SIMPLEFRAME","SDBar",TavernHeroFrame,"",i)
+        call ClearFrameAllPoints(panel)
+        call SetFrameRelativePoint(panel,FRAMEPOINT_TOP,TavernHeroFrame,FRAMEPOINT_TOP,0,-.05)
+        call SetFrameSize(panel,.33,.15)
+        call SetFrameTexture(panel,"StatsBackGround.tga",0,true)
+        call SetFrameTexture(panel,"StatsBackGround.tga",1,true)
+        call SetFrameTexture(panel,"StatsBackGround.tga",2,true)
+        call SetFramePriority(panel,8)
+        set tx=CreateFrameByType("SIMPLETEXT","SDBarTitle",panel,"",i)
+        call ClearFrameAllPoints(tx)
+        call SetFrameFont(tx,"Fonts\\FRIZQT__.TTF",.013,0)
+        call SetFrameTextAlignment(tx,TEXT_JUSTIFY_CENTER,TEXT_JUSTIFY_MIDDLE)
+        call SetFrameTextColour(tx,0xFFFFA500)
+        call SetFrameText(tx,Lng("Single Draft: выберите героя и нажмите Select","Single Draft: choose a hero and press Select"))
+        call SetFrameSize(tx,.32,.02)
+        call SetFrameRelativePoint(tx,FRAMEPOINT_TOP,panel,FRAMEPOINT_TOP,0,-.008)
+        set k=0
+        loop
+            exitwhen k>2
+            set idx=SD_Opt[i*3+k]
+            if idx>0 then
+                set b=CreateFrameByType("SIMPLEBUTTON","SDHero",panel,"",idx)
+                call ClearFrameAllPoints(b)
+                call SetFrameTexture(b,GetFrameTexture(GetFrameByName("TavernBarHero",idx),0),0,true)
+                call SetFrameTexture(b,GetFrameTexture(GetFrameByName("TavernBarHero",idx),0),1,true)
+                call SetFrameTexture(b,GetFrameTexture(GetFrameByName("TavernBarHero",idx),0),2,true)
+                call SetFrameSize(b,.05,.05)
+                call SetFramePriority(b,9)
+                call SetFrameRelativePoint(b,FRAMEPOINT_CENTER,panel,FRAMEPOINT_CENTER,(k-1)*.1,.005)
+                set t1=CreateTrigger()
+                set t2=CreateTrigger()
+                set t3=CreateTrigger()
+                call TriggerRegisterFrameEvent(t1,b,FRAMEEVENT_MOUSE_ENTER)
+                call TriggerRegisterFrameEvent(t2,b,FRAMEEVENT_MOUSE_LEAVE)
+                call TriggerRegisterFrameEvent(t3,b,FRAMEEVENT_CONTROL_CLICK)
+                call TriggerAddAction(t1,function OnButtonHover)
+                call TriggerAddAction(t2,function OnButtonUnHover)
+                call TriggerAddAction(t3,function OnButtonSelectHero)
+                if k==0 then
+                    set at="|cffff4040STR|r"
+                elseif k==1 then
+                    set at="|cff40ff40AGI|r"
+                else
+                    set at="|cff40a0ffINT|r"
+                endif
+                set tx=CreateFrameByType("SIMPLETEXT","SDHeroName",panel,"",idx)
+                call ClearFrameAllPoints(tx)
+                call SetFrameFont(tx,"Fonts\\FRIZQT__.TTF",.009,0)
+                call SetFrameTextAlignment(tx,TEXT_JUSTIFY_CENTER,TEXT_JUSTIFY_TOP)
+                call SetFrameText(tx,at+"\n"+GetUnitBaseStringFieldById(RH_Force[idx],UNIT_SF_NAME))
+                call SetFrameSize(tx,.1,.03)
+                call SetFrameRelativePoint(tx,FRAMEPOINT_TOP,b,FRAMEPOINT_BOTTOM,0,-.003)
+            endif
+            set k=k+1
+        endloop
+        call ShowFrame(panel,GetLocalPlayer()==Player(i))
+        call DisplayTextToPlayer(Player(i),0,0,Lng("|cffffcc00Single Draft|r: ваши герои — ","|cffffcc00Single Draft|r: your heroes — ")+GetUnitBaseStringFieldById(RH_Force[SD_Opt[i*3]],UNIT_SF_NAME)+", "+GetUnitBaseStringFieldById(RH_Force[SD_Opt[i*3+1]],UNIT_SF_NAME)+", "+GetUnitBaseStringFieldById(RH_Force[SD_Opt[i*3+2]],UNIT_SF_NAME))
+    endif
+    set i=i+1
+endloop
+set panel=null
+set b=null
+set tx=null
+set t1=null
+set t2=null
+set t3=null
 endfunction
 function Trig_Dialog2_Actions takes nothing returns nothing
 local integer i
@@ -35757,6 +35919,7 @@ if ValidHLC() then
     set udg_Button[4]=DialogAddButton(udg_Dialog,"Ban Mode",0)
     set udg_Button[2]=DialogAddButton(udg_Dialog,"Random Mode",0)
     set udg_Button[3]=DialogAddButton(udg_Dialog,"Captain Mode",0)
+    set udg_Button[6]=DialogAddButton(udg_Dialog,"Single Draft",0)
     call DialogDisplay(Player(0),udg_Dialog,false)
     if GetCommandString()=="a" then
         set bu=udg_Button[4]
@@ -35814,6 +35977,18 @@ if ValidHLC() then
         set bu=udg_Button[2]
         set FFAMode=true
         //set DamageOff=false
+    elseif GetCommandString()=="o" then
+        set bu=udg_Button[6]
+        set FFAMode=false
+    elseif GetCommandString()=="p" then
+        set bu=udg_Button[6]
+        set FFAMode=true
+    elseif GetCommandString()=="q" then
+        set bu=udg_Button[6]
+        set FFAMode=false
+    elseif GetCommandString()=="r" then
+        set bu=udg_Button[6]
+        set FFAMode=true
     endif
 else
     if udg_button2==true then
@@ -35822,6 +35997,11 @@ else
         set bu=GetClickedButton()
         set udg_button2=true
     endif
+endif
+// Single Draft — дальше всё как в Стандарте, плюс 3 варианта на игрока (SD_Start)
+if bu==udg_Button[6] and bu!=null then
+    set SDMode=true
+    set bu=udg_Button[1]
 endif
 if FFAMode==true then
 call DisplayChatMessageEx(null,CHAT_RECIPIENT_UNKNOWN,10,true,Lng("FFA: ON! Количество побед - 7","FFA: ON! Number of wins - 7"))
@@ -36031,11 +36211,19 @@ call W3MMD_Lite_Set_Integer(Player(9),"FFAMode",0)
 endif
 call EnableTrigger(gg_trg_MoveHeroes)
 if bu==udg_Button[1] then
+if SDMode then
+call DisplayTopMessage(GetLocalPlayer(),"Single Draft")
+else
 call DisplayTopMessage(GetLocalPlayer(),"Standard Mode")
+endif
 set i=0
 loop
 exitwhen i>9
+if SDMode then
+call W3MMD_Lite_Set_String(Player(i),"Game_Mode","Single Draft")
+else
 call W3MMD_Lite_Set_String(Player(i),"Game_Mode","Standard Mode")
+endif
 if Hero[i]==null then
     set TavernPlayerPickAllow[i]=true
 endif
@@ -36065,6 +36253,9 @@ call DisplayChatMessageEx(null,CHAT_RECIPIENT_UNKNOWN,10,true,Lng("Паузы у
 call DisplayChatMessageEx(null,CHAT_RECIPIENT_UNKNOWN,10,true,Lng("Красный игрок между раундами может вкл/выкл уменьшение командой -PauseRes","The red player can turn on / off the reduction between rounds with the command -PauseRes"))
 // call AddFrameText(TavernChat,"Паузы уменьшают урон на 50%, красный игрок между раундами может вкл/выкл уменьшение командой -PauseRes")
 set randcond=true
+if SDMode then
+call SD_Start()
+endif
 elseif bu==udg_Button[4] then
     call DisplayTopMessage(GetLocalPlayer(),"Ban Mode")
 	call DisplayChatMessageEx(null,CHAT_RECIPIENT_UNKNOWN,10,true,Lng("Если вы не воспользуетесь правом забанить одного персонажа - ","If you do not use the right to ban one character,"))
@@ -37822,6 +38013,112 @@ set u=null
 set t=null
 endfunction
 
+// Табло Фландре: заряды клонов T и время до следующего (+1 раз в 20 c)
+function FlaDBoard2 takes nothing returns nothing
+local timer t=GetExpiredTimer()
+local integer id=GetHandleId(t)
+local integer ip=LoadInteger(HH,id,0)
+local unit u=Hero[ip]
+local integer uid=GetHandleId(u)
+local integer ch
+local timer rt
+local string str
+local real nx
+local integer k
+if GetUnitTypeId(u)=='HFla' then
+    if IsUnitSelected(u,GetLocalPlayer()) and IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(u)) then
+        if LoadBoolean(HH,uid,SH_FlaState) then
+            set ch=LoadInteger(HH,uid,SH_FlaCharges)
+        else
+            set ch=3
+        endif
+        set str="|c00FF4040Clones|r: "+I2S(ch)+"/3"
+        set nx=99.
+        set k=0
+        loop
+            exitwhen k>2
+            set rt=LoadTimerHandle(HH,uid,SH_FlaRechT+k)
+            if rt!=null and TimerGetRemaining(rt)<nx then
+                set nx=TimerGetRemaining(rt)
+            endif
+            set k=k+1
+        endloop
+        if ch<3 and nx<99. then
+            set str=str+"  |c00FFB0B0+1 in|r "+I2S(R2I(nx+0.99))+" s"
+        endif
+        call SetFrameText(GetFrameByName("CustomLeaderboardText",0),str)
+        call ShowFrame(GetFrameByName("CustomLeaderboard",0), true)
+        call SetFrameSize( GetFrameByName("CustomLeaderboard",0), .1775, GetFrameHeight( GetFrameByName("CustomLeaderboardText",0))+0.016)
+        call SetFrameTextAlignment( GetFrameByName("CustomLeaderboardText",0), TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_LEFT )
+    endif
+else
+    if IsUnitSelected(u,GetLocalPlayer()) and IsPlayerAlly(GetLocalPlayer(),GetOwningPlayer(u)) then
+        call SetFrameText(GetFrameByName("CustomLeaderboardText",0)," ")
+        call ShowFrame(GetFrameByName("CustomLeaderboard",0),false)
+    endif
+    call SaveInteger(HH,ip,SH_FlaDBoard,0)
+    call RemoveSavedInteger(HH,ip,SH_FlaDBoard)
+    call PauseTimer(t)
+    call DestroyTimer(t)
+    call FlushChildHashtable(HH,id)
+endif
+set rt=null
+set u=null
+set t=null
+endfunction
+
+// Шары зарядов клонов над Фландре, как у D Роши: 3 круглые иконки D, видит только владелец;
+// потраченный заряд — тусклый, пока восстанавливается. Эффекты под ключами 1..3 таймера
+function FlaOrbTick takes nothing returns nothing
+local timer t=GetExpiredTimer()
+local integer id=GetHandleId(t)
+local integer ip=LoadInteger(HH,id,0)
+local unit u=Hero[ip]
+local integer uid=GetHandleId(u)
+local integer ch=3
+local integer k=0
+local integer a
+local effect fx
+local boolean show
+if GetUnitTypeId(u)!='HFla' then
+    loop
+        exitwhen k>2
+        call DestroyEffect(LoadEffectHandle(HH,id,1+k))
+        set k=k+1
+    endloop
+    call SaveInteger(HH,ip,SH_FlaOrbs,0)
+    call PauseTimer(t)
+    call DestroyTimer(t)
+    call FlushChildHashtable(HH,id)
+    set u=null
+    set t=null
+    return
+endif
+if LoadBoolean(HH,uid,SH_FlaState) then
+    set ch=LoadInteger(HH,uid,SH_FlaCharges)
+endif
+set show=GetLocalPlayer()==GetOwningPlayer(u) and UnitIsAlive(u) and not IsUnitHidden(u)
+loop
+    exitwhen k>2
+    set fx=LoadEffectHandle(HH,id,1+k)
+    call SetSpecialEffectPosition(fx,GetUnitX(u)+I2R(k-1)*60.,GetUnitY(u))
+    call SetSpecialEffectHeight(fx,GetUnitFlyHeight(u)+300.)
+    set a=0
+    if show then
+        if k<ch then
+            set a=255
+        else
+            set a=70
+        endif
+    endif
+    call SetSpecialEffectAlpha(fx,a)
+    set k=k+1
+endloop
+set fx=null
+set u=null
+set t=null
+endfunction
+
 function SinonAmmo_Periodic takes nothing returns nothing
 	local integer id = GetHandleId(GetExpiredTimer())
     local integer ip_target = LoadInteger(HH, id, 0)
@@ -38743,6 +39040,28 @@ if GetUnitTypeId(u)=='HRem' then
         call SaveInteger(HH,GetHandleId(cjlocgn_00000000),0,ip)
         call SaveInteger(HH,ip,SH_RemDBoard,1)
         call TimerStart(cjlocgn_00000000,0.2,true,function RemDBoard2)
+        set cjlocgn_00000000=null
+    endif
+endif
+if GetUnitTypeId(u)=='HFla' then
+    if LoadInteger(HH,ip,SH_FlaDBoard)!=1 then
+        set cjlocgn_00000000=CreateTimer()
+        call SaveInteger(HH,GetHandleId(cjlocgn_00000000),0,ip)
+        call SaveInteger(HH,ip,SH_FlaDBoard,1)
+        call TimerStart(cjlocgn_00000000,0.2,true,function FlaDBoard2)
+        set cjlocgn_00000000=null
+    endif
+    if LoadInteger(HH,ip,SH_FlaOrbs)!=1 then
+        set cjlocgn_00000000=CreateTimer()
+        call SaveInteger(HH,GetHandleId(cjlocgn_00000000),0,ip)
+        call SaveInteger(HH,ip,SH_FlaOrbs,1)
+        call SaveEffectHandle(HH,GetHandleId(cjlocgn_00000000),1,AddSpecialEffect("war3mapImported\\FlaCloneOrb.mdx",GetUnitX(u),GetUnitY(u)))
+        call SaveEffectHandle(HH,GetHandleId(cjlocgn_00000000),2,AddSpecialEffect("war3mapImported\\FlaCloneOrb.mdx",GetUnitX(u),GetUnitY(u)))
+        call SaveEffectHandle(HH,GetHandleId(cjlocgn_00000000),3,AddSpecialEffect("war3mapImported\\FlaCloneOrb.mdx",GetUnitX(u),GetUnitY(u)))
+        call SetSpecialEffectScale(LoadEffectHandle(HH,GetHandleId(cjlocgn_00000000),1),.8)
+        call SetSpecialEffectScale(LoadEffectHandle(HH,GetHandleId(cjlocgn_00000000),2),.8)
+        call SetSpecialEffectScale(LoadEffectHandle(HH,GetHandleId(cjlocgn_00000000),3),.8)
+        call TimerStart(cjlocgn_00000000,0.03,true,function FlaOrbTick)
         set cjlocgn_00000000=null
     endif
 endif
@@ -46133,7 +46452,7 @@ endfunction
 function damage2 takes nothing returns nothing
 call PauseTimer(GetExpiredTimer())
 call DestroyTimer(GetExpiredTimer())
-set damage=false
+set damageFlagOld=false
 endfunction
 function CheckRandMem takes integer value returns boolean
 local integer i=0
@@ -50674,7 +50993,7 @@ if bonus_repick[i]==2 then
         set udg_Repick[i+1]=-2
 endif
 loop
-set id=GetRandomInt(0,144) // 145 (Хирако) — только из таверны, в случайный выбор не попадает
+set id=SD_RandomId(i) // 145 (Хирако) — только из таверны, в случайный выбор не попадает
 if udg_RH[id]!=0 then
 set u[i+1]=CreateUnit(Player(i),udg_RH[id],GetRectCenterX(gg_rct_Rect1),GetRectCenterY(gg_rct_Rect1),0)
 call UnitInventorySetSize(u[i+1],10)
@@ -51004,6 +51323,12 @@ local integer j=0
 local player p=GetOwningPlayer(udg_Hero[i])
 local item array t1
 local integer lvl=GetHeroLevel(udg_Hero[i])
+// в Single Draft -repick нет
+if SDMode then
+call DisplayTextToPlayer(GetTriggerPlayer(),0,0,Lng("|cffffcc00Single Draft|r: -repick недоступен","|cffffcc00Single Draft|r: -repick is not available"))
+set p=null
+return
+endif
 if (rand[i-1]==true and udg_Repick[i]!=2) and udg_B==false then
 set sssb[i-1]=false
 loop
@@ -51022,7 +51347,7 @@ if udg_Repick[i]<2 then
         set udg_Repick[i]=udg_Repick[i]+1
 endif
 loop
-set id=GetRandomInt(0,144) // 145 (Хирако) — только из таверны, в случайный выбор не попадает
+set id=SD_RandomId(i-1) // 145 (Хирако) — только из таверны, в случайный выбор не попадает
 if udg_RH[id]!=0 then
 set udg_Hero[i]=CreateUnit(p,udg_RH[id],GetRectCenterX(gg_rct_Rect1),GetRectCenterY(gg_rct_Rect1),0)
 call UnitInventorySetSize(udg_Hero[i],10)
@@ -57733,7 +58058,7 @@ if bonus_repick[i]==2 then
 	set udg_Repick[i+1]=-2
 endif
 loop
-set id=GetRandomInt(0,144) // 145 (Хирако) — только из таверны, в случайный выбор не попадает
+set id=SD_RandomId(i) // 145 (Хирако) — только из таверны, в случайный выбор не попадает
 if udg_RH[id]!=0 then
     set u[i+1]=CreateUnit(Player(i),udg_RH[id],GetRectCenterX(gg_rct_Rect1),GetRectCenterY(gg_rct_Rect1),0)
     call UnitInventorySetSize(u[i+1],10)
@@ -58052,6 +58377,9 @@ exitwhen i>=10
                 call UnitAddItemToSlotById(Hero[i], 'I03A',AlastorPos)    
                 call DisableUnitAbility2(Hero[i],'AInv',false,true)
             endif
+        endif
+        if GetUnitTypeId( Hero[i] )=='HFla' and LoadBoolean(HH,GetHandleId(Hero[i]),SH_FlaState) then
+            call SaveInteger(HH,GetHandleId(Hero[i]),SH_FlaCharges,3)
         endif
         if GetUnitTypeId( Hero[i] )=='Rosh' then
             call SaveReal(HH,GetHandleId(GetOwningPlayer( Hero[i] )),SH_KimiFormDur,30)
@@ -92140,7 +92468,7 @@ function MissleMoveLucoraGun2 takes nothing returns nothing
     set t=null
     set u=null
 endfunction
-function MissleMoveLucoraGun takes unit u,unit c,unit l__d,real speed,real angle,real dmg,real x,real y,integer rand returns nothing
+function MissleMoveLucoraGun takes unit u,unit c,unit l__d,real speed,real angle,real dmg,real x,real y,integer lrand returns nothing
     local timer t=CreateTimer()
     local integer id=GetHandleId(t)
     call SaveUnitHandle(h,id,0,u)
@@ -92151,7 +92479,7 @@ function MissleMoveLucoraGun takes unit u,unit c,unit l__d,real speed,real angle
     call SaveReal(h,id,5,dmg)
     call SaveReal(h,id,6,x)
     call SaveReal(h,id,7,y)
-    call SaveInteger(h,id,8,rand)    
+    call SaveInteger(h,id,8,lrand)    
     call TimerStart(t,0.03,true,function MissleMoveLucoraGun2)
     set t=null
 endfunction
@@ -235101,7 +235429,7 @@ function Karna_ModifAttack takes unit newCaster, unit newTarget, real attack_fac
 	local boolean miss         = false
     local boolean first_crit   = false
     local boolean soul_eater_miss = false
-    local boolean yamato       = false
+    local boolean yamatoOk       = false
 	local real critchance_dmg  = 0.0
 	local real crit_damage     = 0.0     // крит урон, база 0.0
     local real crit_factor     = 0.3     // модификаторы крита, процент
@@ -235233,7 +235561,7 @@ function Karna_ModifAttack takes unit newCaster, unit newTarget, real attack_fac
                 call DestroyEffect(AddSpecialEffectTarget("war3mapImported\\BloodEX.mdx",newTarget,"chest"))
                 call SaveReal(HH,GetHandleId(newCaster),SH_yamato,0)
                 //call AllTextTag("|c000080FFYAMATO!|r" , newTarget)
-                set yamato = true
+                set yamatoOk = true
             endif
         endif
     
@@ -235433,9 +235761,9 @@ function Karna_ModifAttack takes unit newCaster, unit newTarget, real attack_fac
                 set text_damage = "|c00880a0aCRIT!|r"
             endif
         endif
-        if yamato and (crit_count>1) then
+        if yamatoOk and (crit_count>1) then
             set text_damage = text_damage + " + |c000080FFYAMATO!|r"
-         elseif yamato then
+         elseif yamatoOk then
             set text_damage = "|c000080FFYAMATO!|r"
         endif
         call AllTextTag(text_damage , newTarget)
@@ -235475,7 +235803,7 @@ function Sinon_ModifAttack takes unit newCaster, unit newTarget, real attack_fac
     local real max_crit_count  = 2
     local real heal_factor     = 0.6     // модификаторы хилла, процент
     local string text_damage   = ""
-    local boolean yamato       = false
+    local boolean yamatoOk       = false
     local boolean fragility    = false
 	local integer crit_count   = 0 
     
@@ -235522,7 +235850,7 @@ function Sinon_ModifAttack takes unit newCaster, unit newTarget, real attack_fac
             set first_crit = false
             call DestroyEffect(AddSpecialEffectTarget("war3mapImported\\BloodEX.mdx",newTarget,"chest"))
             call SaveReal(HH,GetHandleId(newCaster),SH_yamato,0)
-            set yamato = true
+            set yamatoOk = true
             set crit_count = crit_count + 1
         endif
     endif
@@ -235790,9 +236118,9 @@ function Sinon_ModifAttack takes unit newCaster, unit newTarget, real attack_fac
             elseif backstab then
                 set text_damage = "|c007a02dbBACKSTAB!|r"
             endif
-            // if yamato and (first_crit==false or backstab) then
+            // if yamatoOk and (first_crit==false or backstab) then
             //     set text_damage = text_damage + " + |c000080FFYAMATO!|r"
-            // elseif yamato then
+            // elseif yamatoOk then
             //     set text_damage = "|c000080FFYAMATO!|r"
             // endif
             if fragility and (first_crit==false or backstab) then
@@ -265664,9 +265992,10 @@ call UnitAddAbility(gg_unit_n00A_0035,'A0DD')
 call UnitRemoveAbility(gg_unit_n00A_0035,'A0DD')
 call UnitAddAbility(gg_unit_n00A_0035,'A0ZL')
 call UnitRemoveAbility(gg_unit_n00A_0035,'A0ZL')
-// HCL: i–k — тест без FFA, l–n — тест с FFA (e–h — обычные FFA-режимы, без теста)
+// HCL: i–k — тест без FFA, l–n — тест с FFA (e–h — обычные FFA-режимы, без теста);
+// Single Draft: o / p — без теста (без FFA / FFA), q / r — с тестом (без FFA / FFA)
 if ValidHLC() then
-    if GetCommandString()=="i" or GetCommandString()=="j" or GetCommandString()=="k" or GetCommandString()=="l" or GetCommandString()=="m" or GetCommandString()=="n" then
+    if GetCommandString()=="i" or GetCommandString()=="j" or GetCommandString()=="k" or GetCommandString()=="l" or GetCommandString()=="m" or GetCommandString()=="n" or GetCommandString()=="q" or GetCommandString()=="r" then
         call TriggerExecute(gg_trg_test)
     endif
 endif
@@ -278833,21 +279162,21 @@ call LANG_A('KI46',0,0,"True Staff of Darkness")
 call LANG_A('KI46',1,0,"Increase attack power by 100, AS +100%, increase |c00FFFF66AllStat|r by 30.|nAura of Darkness: Reduces outgoing physical damage from an enemy by 20% within a 1000 radius.|n")
 call LANG_A('KI46',2,0,"True Staff of Darkness")
 call LANG_A('KI46',3,0,"Increase attack power by 100, AS +100%, increase |c00FFFF66AllStat|r by 30.|nAura of Darkness: Reduces outgoing physical damage from an enemy by 20% within a 1000 radius.|n")
-call LANG_A('KI48',0,0,"Sun Ring, Rank D")
+call LANG_A('KI48',0,0,"Vongola Sun Ring, Rank D")
 call LANG_A('KI48',1,0,"Increase |c00FF5555STR|r by 10 and HP Regen for 10.")
-call LANG_A('KI48',2,0,"Sun Ring, Rank D")
+call LANG_A('KI48',2,0,"Vongola Sun Ring, Rank D")
 call LANG_A('KI48',3,0,"Increase |c00FF5555STR|r by 10 and HP Regen for 10.")
-call LANG_A('KI50',0,0,"Sun Ring, Rank C")
+call LANG_A('KI50',0,0,"Vongola Sun Ring, Rank C")
 call LANG_A('KI50',1,0,"Increase |c00FF5555STR|r by 15 and HP Regen for 15.")
-call LANG_A('KI50',2,0,"Sun Ring, Rank C")
+call LANG_A('KI50',2,0,"Vongola Sun Ring, Rank C")
 call LANG_A('KI50',3,0,"Increase |c00FF5555STR|r by 15 and HP Regen for 15.")
-call LANG_A('KI52',0,0,"Sun Ring, Rank B")
+call LANG_A('KI52',0,0,"Vongola Sun Ring, Rank B")
 call LANG_A('KI52',1,0,"Increase |c00FF5555STR|r by 20 and HP Regen for 20.")
-call LANG_A('KI52',2,0,"Sun Ring, Rank B")
+call LANG_A('KI52',2,0,"Vongola Sun Ring, Rank B")
 call LANG_A('KI52',3,0,"Increase |c00FF5555STR|r by 20 and HP Regen for 20.")
-call LANG_A('KI54',0,0,"Sun Ring, Rank A")
+call LANG_A('KI54',0,0,"Vongola Sun Ring, Rank A")
 call LANG_A('KI54',1,0,"Increase |c00FF5555STR|r by 25 and HP Regen for 25.")
-call LANG_A('KI54',2,0,"Sun Ring, Rank A")
+call LANG_A('KI54',2,0,"Vongola Sun Ring, Rank A")
 call LANG_A('KI54',3,0,"Increase |c00FF5555STR|r by 25 and HP Regen for 25.")
 call LANG_A('KI56',0,0,"Vongola Sun Ring")
 call LANG_A('KI56',1,0,"Increase |c00FF5555STR|r by 30 and HP Regen for 35.")
@@ -278859,21 +279188,21 @@ call LANG_A('KI58',2,0,"True Vongola Sun Ring")
 endfunction
 function LANG_Data44 takes nothing returns nothing
 call LANG_A('KI58',3,0,"Increase |c00FF5555STR|r by 35, HP Regen by 35 and HP recovery efficiency by 15%.")
-call LANG_A('KI60',0,0,"Mist Ring, Rank D")
+call LANG_A('KI60',0,0,"Vongola Mist Ring, Rank D")
 call LANG_A('KI60',1,0,"Increase |c0077FFFFINT|r by 10 and |c00FF5555STR|r by 5.")
-call LANG_A('KI60',2,0,"Mist Ring, Rank D")
+call LANG_A('KI60',2,0,"Vongola Mist Ring, Rank D")
 call LANG_A('KI60',3,0,"Increase |c0077FFFFINT|r by 10 and |c00FF5555STR|r by 5.")
-call LANG_A('KI62',0,0,"Mist Ring, Rank C")
+call LANG_A('KI62',0,0,"Vongola Mist Ring, Rank C")
 call LANG_A('KI62',1,0,"Increase |c0077FFFFINT|r by 15 and |c00FF5555STR|r by 10.")
-call LANG_A('KI62',2,0,"Mist Ring, Rank C")
+call LANG_A('KI62',2,0,"Vongola Mist Ring, Rank C")
 call LANG_A('KI62',3,0,"Increase |c0077FFFFINT|r by 15 and |c00FF5555STR|r by 10.")
-call LANG_A('KI64',0,0,"Mist Ring, Rank B")
+call LANG_A('KI64',0,0,"Vongola Mist Ring, Rank B")
 call LANG_A('KI64',1,0,"Increase |c0077FFFFINT|r by 20 and |c00FF5555STR|r by 15.")
-call LANG_A('KI64',2,0,"Mist Ring, Rank B")
+call LANG_A('KI64',2,0,"Vongola Mist Ring, Rank B")
 call LANG_A('KI64',3,0,"Increase |c0077FFFFINT|r by 20 and |c00FF5555STR|r by 15.")
-call LANG_A('KI66',0,0,"Mist Ring, Rank A")
+call LANG_A('KI66',0,0,"Vongola Mist Ring, Rank A")
 call LANG_A('KI66',1,0,"Increase |c0077FFFFINT|r by 25 and |c00FF5555STR|r by 20.")
-call LANG_A('KI66',2,0,"Mist Ring, Rank A")
+call LANG_A('KI66',2,0,"Vongola Mist Ring, Rank A")
 call LANG_A('KI66',3,0,"Increase |c0077FFFFINT|r by 25 and |c00FF5555STR|r by 20.")
 call LANG_A('KI68',0,0,"Vongola Mist Ring")
 call LANG_A('KI68',1,0,"Increase |c0077FFFFINT|r by 30 and |c00FF5555STR|r by 25.")
@@ -278883,21 +279212,21 @@ call LANG_A('KI70',0,0,"True Vongola Mist Ring")
 call LANG_A('KI70',1,0,"Increase |c0077FFFFINT|r by 45 and |c00FF5555STR|r by 30.")
 call LANG_A('KI70',2,0,"True Vongola Mist Ring")
 call LANG_A('KI70',3,0,"Increase |c0077FFFFINT|r by 45 and |c00FF5555STR|r by 30.")
-call LANG_A('KI72',0,0,"Cloud Ring, Rank D")
+call LANG_A('KI72',0,0,"Vongola Cloud Ring, Rank D")
 call LANG_A('KI72',1,0,"Increase |c003CFF3CAGI|r by 10 and |c00FF5555STR|r by 5.")
-call LANG_A('KI72',2,0,"Cloud Ring, Rank D")
+call LANG_A('KI72',2,0,"Vongola Cloud Ring, Rank D")
 call LANG_A('KI72',3,0,"Increase |c003CFF3CAGI|r by 10 and |c00FF5555STR|r by 5.")
-call LANG_A('KI74',0,0,"Cloud Ring, Rank C")
+call LANG_A('KI74',0,0,"Vongola Cloud Ring, Rank C")
 call LANG_A('KI74',1,0,"Increase |c003CFF3CAGI|r by 15 and |c00FF5555STR|r by 10.")
-call LANG_A('KI74',2,0,"Cloud Ring, Rank C")
+call LANG_A('KI74',2,0,"Vongola Cloud Ring, Rank C")
 call LANG_A('KI74',3,0,"Increase |c003CFF3CAGI|r by 15 and |c00FF5555STR|r by 10.")
-call LANG_A('KI76',0,0,"Cloud Ring, Rank B")
+call LANG_A('KI76',0,0,"Vongola Cloud Ring, Rank B")
 call LANG_A('KI76',1,0,"Increase |c003CFF3CAGI|r by 20 and |c00FF5555STR|r by 15.")
-call LANG_A('KI76',2,0,"Cloud Ring, Rank B")
+call LANG_A('KI76',2,0,"Vongola Cloud Ring, Rank B")
 call LANG_A('KI76',3,0,"Increase |c003CFF3CAGI|r by 20 and |c00FF5555STR|r by 15.")
-call LANG_A('KI78',0,0,"Cloud Ring, Rank A")
+call LANG_A('KI78',0,0,"Vongola Cloud Ring, Rank A")
 call LANG_A('KI78',1,0,"Increase |c003CFF3CAGI|r by 25 and |c00FF5555STR|r by 20.")
-call LANG_A('KI78',2,0,"Cloud Ring, Rank A")
+call LANG_A('KI78',2,0,"Vongola Cloud Ring, Rank A")
 call LANG_A('KI78',3,0,"Increase |c003CFF3CAGI|r by 25 and |c00FF5555STR|r by 20.")
 call LANG_A('KI80',0,0,"Vongola Cloud Ring")
 call LANG_A('KI80',1,0,"Increase |c003CFF3CAGI|r by 25 and |c00FF5555STR|r by 20.")
@@ -278907,21 +279236,21 @@ call LANG_A('KI82',0,0,"True Vongola Cloud Ring")
 call LANG_A('KI82',1,0,"Increase |c003CFF3CAGI|r by 45, |c00FF5555STR|r by 30.")
 call LANG_A('KI82',2,0,"True Vongola Cloud Ring")
 call LANG_A('KI82',3,0,"Increase |c003CFF3CAGI|r by 45, |c00FF5555STR|r by 30.")
-call LANG_A('KI84',0,0,"Storm Ring, Rank D")
+call LANG_A('KI84',0,0,"Vongola Storm Ring, Rank D")
 call LANG_A('KI84',1,0,"Increase |c003CFF3CAGI|r by 7, |c0077FFFFINT|r by 7 and MP Regen by 50%")
-call LANG_A('KI84',2,0,"Storm Ring, Rank D")
+call LANG_A('KI84',2,0,"Vongola Storm Ring, Rank D")
 call LANG_A('KI84',3,0,"Increase |c003CFF3CAGI|r by 7, |c0077FFFFINT|r by 7 and MP Regen by 50%")
-call LANG_A('KI86',0,0,"Storm Ring, Rank C")
+call LANG_A('KI86',0,0,"Vongola Storm Ring, Rank C")
 call LANG_A('KI86',1,0,"Increase |c003CFF3CAGI|r by 10, |c0077FFFFINT|r by 10 and MP Regen by 50%")
-call LANG_A('KI86',2,0,"Storm Ring, Rank C")
+call LANG_A('KI86',2,0,"Vongola Storm Ring, Rank C")
 call LANG_A('KI86',3,0,"Increase |c003CFF3CAGI|r by 10, |c0077FFFFINT|r by 10 and MP Regen by 50%")
-call LANG_A('KI88',0,0,"Storm Ring, Rank B")
+call LANG_A('KI88',0,0,"Vongola Storm Ring, Rank B")
 call LANG_A('KI88',1,0,"Increase |c003CFF3CAGI|r by 14, |c0077FFFFINT|r by 14 and MP Regen by 50%")
-call LANG_A('KI88',2,0,"Storm Ring, Rank B")
+call LANG_A('KI88',2,0,"Vongola Storm Ring, Rank B")
 call LANG_A('KI88',3,0,"Increase |c003CFF3CAGI|r by 14, |c0077FFFFINT|r by 14 and MP Regen by 50%")
-call LANG_A('KI90',0,0,"Storm Ring, Rank A")
+call LANG_A('KI90',0,0,"Vongola Storm Ring, Rank A")
 call LANG_A('KI90',1,0,"Increase |c003CFF3CAGI|r by 22, |c0077FFFFINT|r by 22 and MP Regen by 50%")
-call LANG_A('KI90',2,0,"Storm Ring, Rank A")
+call LANG_A('KI90',2,0,"Vongola Storm Ring, Rank A")
 call LANG_A('KI90',3,0,"Increase |c003CFF3CAGI|r by 22, |c0077FFFFINT|r by 22 and MP Regen by 50%")
 call LANG_A('KI92',0,0,"Vongola Storm Ring")
 call LANG_A('KI92',1,0,"Increase |c003CFF3CAGI|r by 27, |c0077FFFFINT|r by 27 and MP Regen by 75%")
@@ -278933,21 +279262,21 @@ call LANG_A('KI94',2,0,"True Vongola Storm Ring")
 call LANG_A('KI94',3,0,"Increase |c003CFF3CAGI|r by 35, |c0077FFFFINT|r by 35 and MP Regen by 100%.")
 call LANG_A('KI96',1,0,"Increase |c00FF5555STR|r by 15, |c003CFF3CAGI|r and |c0077FFFFINT|r by 40 and MP Regen by 125%.|nPassive: |c0077FFFFMana Destruction|r - Damage greater than 7% of the target's HP destroys 7% of their Max MP. CD 10 sec.")
 call LANG_A('KI96',3,0,"Increase |c00FF5555STR|r by 15, |c003CFF3CAGI|r and |c0077FFFFINT|r by 40 and MP Regen by 125%.|nPassive: |c0077FFFFMana Destruction|r - Damage greater than 7% of the target's HP destroys 7% of their Max MP. CD 10 sec.")
-call LANG_A('KI98',0,0,"Rain Ring, Rank D")
+call LANG_A('KI98',0,0,"Vongola Rain Ring, Rank D")
 call LANG_A('KI98',1,0,"Increase |c003CFF3CAGI|r by 10 and AS by 10%, \"Rain Aura\" - slows all enemies within a radius of 1000 by 10% and absorbs 10% of any incoming damage.")
-call LANG_A('KI98',2,0,"Rain Ring, Rank D")
+call LANG_A('KI98',2,0,"Vongola Rain Ring, Rank D")
 call LANG_A('KI98',3,0,"Increase |c003CFF3CAGI|r by 10 and AS by 10%, \"Rain Aura\" - slows all enemies within a radius of 1000 by 10% and absorbs 10% of any incoming damage.")
-call LANG_A('KIA0',0,0,"Rain Ring, Rank C")
+call LANG_A('KIA0',0,0,"Vongola Rain Ring, Rank C")
 call LANG_A('KIA0',1,0,"Increase |c003CFF3CAGI|r by 15 and AS by 20%, \"Rain Aura\" - slows all enemies within a radius of 1000 by 15% and absorbs 13% of any incoming damage.")
-call LANG_A('KIA0',2,0,"Rain Ring, Rank C")
+call LANG_A('KIA0',2,0,"Vongola Rain Ring, Rank C")
 call LANG_A('KIA0',3,0,"Increase |c003CFF3CAGI|r by 15 and AS by 20%, \"Rain Aura\" - slows all enemies within a radius of 1000 by 15% and absorbs 13% of any incoming damage.")
-call LANG_A('KIA2',0,0,"Rain Ring, Rank B")
+call LANG_A('KIA2',0,0,"Vongola Rain Ring, Rank B")
 call LANG_A('KIA2',1,0,"Increase |c003CFF3CAGI|r by 20 and AS by 30%, \"Rain Aura\" - slows all enemies within a radius of 1000 by 20% and absorbs 16% of any incoming damage.")
-call LANG_A('KIA2',2,0,"Rain Ring, Rank B")
+call LANG_A('KIA2',2,0,"Vongola Rain Ring, Rank B")
 call LANG_A('KIA2',3,0,"Increase |c003CFF3CAGI|r by 20 and AS by 30%, \"Rain Aura\" - slows all enemies within a radius of 1000 by 20% and absorbs 16% of any incoming damage.")
-call LANG_A('KIA4',0,0,"Rain Ring, Rank A")
+call LANG_A('KIA4',0,0,"Vongola Rain Ring, Rank A")
 call LANG_A('KIA4',1,0,"Increase |c003CFF3CAGI|r by 25 and AS by 40%, \"Rain Aura\" - slows all enemies within a radius of 1000 by 25% and absorbs 19% of any incoming damage.")
-call LANG_A('KIA4',2,0,"Rain Ring, Rank A")
+call LANG_A('KIA4',2,0,"Vongola Rain Ring, Rank A")
 call LANG_A('KIA4',3,0,"Increase |c003CFF3CAGI|r by 25 and AS by 40%, \"Rain Aura\" - slows all enemies within a radius of 1000 by 25% and absorbs 19% of any incoming damage.")
 call LANG_A('KIA6',0,0,"Vongola Rain Ring")
 call LANG_A('KIA6',1,0,"Increase |c003CFF3CAGI|r by 30 and AS by 50%, \"Rain Aura\" - slows all enemies within a radius of 1000 by 30% and absorbs 22% of any incoming damage.")
@@ -278957,21 +279286,21 @@ call LANG_A('KIA8',0,0,"True Vongola Rain Ring")
 call LANG_A('KIA8',1,0,"Increase |c003CFF3CAGI|r by 45 and AS by 60%, \"Rain Aura\" - slows all enemies within a radius of 1000 by 35% and absorbs 25% of any incoming damage.")
 call LANG_A('KIA8',2,0,"True Vongola Rain Ring")
 call LANG_A('KIA8',3,0,"Increase |c003CFF3CAGI|r by 45 and AS by 60%, \"Rain Aura\" - slows all enemies within a radius of 1000 by 35% and absorbs 25% of any incoming damage.")
-call LANG_A('KIB0',0,0,"Thunder Ring, Rank D")
+call LANG_A('KIB0',0,0,"Vongola Thunder Ring, Rank D")
 call LANG_A('KIB0',1,0,"Increase |c0077FFFFINT|r by 5, DEF by 2 and HP by 300.")
-call LANG_A('KIB0',2,0,"Thunder Ring, Rank D")
+call LANG_A('KIB0',2,0,"Vongola Thunder Ring, Rank D")
 call LANG_A('KIB0',3,0,"Increase |c0077FFFFINT|r by 5, DEF by 2 and HP by 300.")
-call LANG_A('KIB2',0,0,"Thunder Ring, Rank C")
+call LANG_A('KIB2',0,0,"Vongola Thunder Ring, Rank C")
 call LANG_A('KIB2',1,0,"Increase |c0077FFFFINT|r by 10, DEF by 4 and HP by 500.")
-call LANG_A('KIB2',2,0,"Thunder Ring, Rank C")
+call LANG_A('KIB2',2,0,"Vongola Thunder Ring, Rank C")
 call LANG_A('KIB2',3,0,"Increase |c0077FFFFINT|r by 10, DEF by 4 and HP by 500.")
-call LANG_A('KIB4',0,0,"Thunder Ring, Rank B")
+call LANG_A('KIB4',0,0,"Vongola Thunder Ring, Rank B")
 call LANG_A('KIB4',1,0,"Increase |c0077FFFFINT|r by 15, DEF by 6 and HP by 700.")
-call LANG_A('KIB4',2,0,"Thunder Ring, Rank B")
+call LANG_A('KIB4',2,0,"Vongola Thunder Ring, Rank B")
 call LANG_A('KIB4',3,0,"Increase |c0077FFFFINT|r by 15, DEF by 6 and HP by 700.")
-call LANG_A('KIB6',0,0,"Thunder Ring, Rank A")
+call LANG_A('KIB6',0,0,"Vongola Thunder Ring, Rank A")
 call LANG_A('KIB6',1,0,"Increase |c0077FFFFINT|r by 20, DEF by 8 and HP by 900.")
-call LANG_A('KIB6',2,0,"Thunder Ring, Rank A")
+call LANG_A('KIB6',2,0,"Vongola Thunder Ring, Rank A")
 call LANG_A('KIB6',3,0,"Increase |c0077FFFFINT|r by 20, DEF by 8 and HP by 900.")
 call LANG_A('KIB8',0,0,"Vongola Thunder Ring")
 call LANG_A('KIB8',1,0,"Increase |c0077FFFFINT|r by 25, DEF by 10 and HP by 1100.")
@@ -278981,21 +279310,21 @@ call LANG_A('KIC0',0,0,"True Vongola Thunder Ring")
 call LANG_A('KIC0',1,0,"Increase |c0077FFFFINT|r by 30, DEF by 10 and HP by 1300.")
 call LANG_A('KIC0',2,0,"True Vongola Thunder Ring")
 call LANG_A('KIC0',3,0,"Increase |c0077FFFFINT|r by 30, DEF by 10 and HP by 1300.")
-call LANG_A('KIC2',0,0,"Sky Ring, Rank D")
+call LANG_A('KIC2',0,0,"Vongola Sky Ring, Rank D")
 call LANG_A('KIC2',1,0,"Increase |c00FFFF66AllStat|r by 9, attack by 10.")
-call LANG_A('KIC2',2,0,"Sky Ring, Rank D")
+call LANG_A('KIC2',2,0,"Vongola Sky Ring, Rank D")
 call LANG_A('KIC2',3,0,"Increase |c00FFFF66AllStat|r by 9, attack by 10.")
-call LANG_A('KIC4',0,0,"Sky Ring, Rank C")
+call LANG_A('KIC4',0,0,"Vongola Sky Ring, Rank C")
 call LANG_A('KIC4',1,0,"Increase |c00FFFF66AllStat|r by 13, attack by 20.")
-call LANG_A('KIC4',2,0,"Sky Ring, Rank C")
+call LANG_A('KIC4',2,0,"Vongola Sky Ring, Rank C")
 call LANG_A('KIC4',3,0,"Increase |c00FFFF66AllStat|r by 13, attack by 20.")
-call LANG_A('KIC6',0,0,"Sky Ring, Rank B")
+call LANG_A('KIC6',0,0,"Vongola Sky Ring, Rank B")
 call LANG_A('KIC6',1,0,"Increase |c00FFFF66AllStat|r by 16, attack by 30.")
-call LANG_A('KIC6',2,0,"Sky Ring, Rank B")
+call LANG_A('KIC6',2,0,"Vongola Sky Ring, Rank B")
 call LANG_A('KIC6',3,0,"Increase |c00FFFF66AllStat|r by 16, attack by 30.")
-call LANG_A('KIC8',0,0,"Sky Ring, Rank A")
+call LANG_A('KIC8',0,0,"Vongola Sky Ring, Rank A")
 call LANG_A('KIC8',1,0,"Increase |c00FFFF66AllStat|r by 19, attack by 40.")
-call LANG_A('KIC8',2,0,"Sky Ring, Rank A")
+call LANG_A('KIC8',2,0,"Vongola Sky Ring, Rank A")
 call LANG_A('KIC8',3,0,"Increase |c00FFFF66AllStat|r by 19, attack by 40.")
 call LANG_A('KID0',0,0,"Vongola Sky Ring")
 call LANG_A('KID0',1,0,"Increase |c00FFFF66AllStat|r by 22, attack by 50.")
@@ -279267,17 +279596,17 @@ call LANG_A('KIQ2',0,0,"Storm Mare Ring, Rank D")
 call LANG_A('KIQ2',1,0,"Increase |c00FFFF66AllStat|r by 9.")
 call LANG_A('KIQ2',2,0,"Storm Mare Ring, Rank D")
 call LANG_A('KIQ2',3,0,"Increase |c00FFFF66AllStat|r by 9.")
-call LANG_A('KIQ4',0,0,"Mare's Thunder Ring, Rank C")
+call LANG_A('KIQ4',0,0,"Mare's Vongola Thunder Ring, Rank C")
 call LANG_A('KIQ4',1,0,"Increase |c00FFFF66AllStat|r by 13.")
-call LANG_A('KIQ4',2,0,"Mare's Thunder Ring, Rank C")
+call LANG_A('KIQ4',2,0,"Mare's Vongola Thunder Ring, Rank C")
 call LANG_A('KIQ4',3,0,"Increase |c00FFFF66AllStat|r by 13.")
 call LANG_A('KIQ6',0,0,"Storm Mare Ring, Rank B")
 call LANG_A('KIQ6',1,0,"Increase |c00FFFF66AllStat|r by 16.")
 call LANG_A('KIQ6',2,0,"Storm Mare Ring, Rank B")
 call LANG_A('KIQ6',3,0,"Increase |c00FFFF66AllStat|r by 16.")
-call LANG_A('KIQ8',0,0,"Mare's Thunder Ring, Rank A")
+call LANG_A('KIQ8',0,0,"Mare's Vongola Thunder Ring, Rank A")
 call LANG_A('KIQ8',1,0,"Increase |c00FFFF66AllStat|r by 19.")
-call LANG_A('KIQ8',2,0,"Mare's Thunder Ring, Rank A")
+call LANG_A('KIQ8',2,0,"Mare's Vongola Thunder Ring, Rank A")
 call LANG_A('KIQ8',3,0,"Increase |c00FFFF66AllStat|r by 19.")
 call LANG_A('KIR0',0,0,"Fake Thunder Mare Ring")
 call LANG_A('KIR0',1,0,"Increase |c00FFFF66AllStat|r by 22.")
@@ -280303,13 +280632,13 @@ call LANG_A('FlQ1',0,1,"Cranberry Trap, [|cffffcc00Level 2|r] (|cffffcc00Q|r)")
 call LANG_A('FlQ1',0,2,"Cranberry Trap, [|cffffcc00Level 3|r] (|cffffcc00Q|r)")
 call LANG_A('FlQ1',0,3,"Cranberry Trap, [|cffffcc00Level 4|r] (|cffffcc00Q|r)")
 call LANG_A('FlQ1',0,4,"Cranberry Trap, [|cffffcc00Level 5|r] (|cffffcc00Q|r)")
-call LANG_A('FlQ1',1,0,"Flandre slows an enemy and unleashes a barrage of projectiles on them, stunning them.|n|n|cFF00A5FF|nDamage: 3.3*|r|c0077FFFFINT|r|cFF00A5FF|nStun: 1.5 sec.|nRange: 1000|nCast time: +0.1 sec.|nCooldown: 20 sec.|r")
-call LANG_A('FlQ1',1,1,"Flandre slows an enemy and unleashes a barrage of projectiles on them, stunning them.|n|n|cFF00A5FF|nDamage: 3.9*|r|c0077FFFFINT|r|cFF00A5FF|nStun: 1.5 sec.|nRange: 1000|nCast time: +0.1 sec.|nCooldown: 20 sec.|r")
+call LANG_A('FlQ1',1,0,"Flandre slows an enemy and unleashes a barrage of projectiles on them, stunning them.|n|n|cFF00A5FF|nDamage: 3*|r|c0077FFFFINT|r|cFF00A5FF|nStun: 1.5 sec.|nRange: 1000|nCast time: +0.1 sec.|nCooldown: 20 sec.|r")
+call LANG_A('FlQ1',1,1,"Flandre slows an enemy and unleashes a barrage of projectiles on them, stunning them.|n|n|cFF00A5FF|nDamage: 3.75*|r|c0077FFFFINT|r|cFF00A5FF|nStun: 1.5 sec.|nRange: 1000|nCast time: +0.1 sec.|nCooldown: 20 sec.|r")
 call LANG_A('FlQ1',1,2,"Flandre slows an enemy and unleashes a barrage of projectiles on them, stunning them.|n|n|cFF00A5FF|nDamage: 4.5*|r|c0077FFFFINT|r|cFF00A5FF|nStun: 1.5 sec.|nRange: 1000|nCast time: +0.1 sec.|nCooldown: 20 sec.|r")
-call LANG_A('FlQ1',1,3,"Flandre slows an enemy and unleashes a barrage of projectiles on them, stunning them.|n|n|cFF00A5FF|nDamage: 5.1*|r|c0077FFFFINT|r|cFF00A5FF|nStun: 1.5 sec.|nRange: 1000|nCast time: +0.1 sec.|nCooldown: 20 sec.|r")
-call LANG_A('FlQ1',1,4,"Flandre slows an enemy and unleashes a barrage of projectiles on them, stunning them.|n|n|cFF00A5FF|nDamage: 5.7*|r|c0077FFFFINT|r|cFF00A5FF|nStun: 1.5 sec.|nRange: 1000|nCast time: +0.1 sec.|nCooldown: 20 sec.|r")
+call LANG_A('FlQ1',1,3,"Flandre slows an enemy and unleashes a barrage of projectiles on them, stunning them.|n|n|cFF00A5FF|nDamage: 5.25*|r|c0077FFFFINT|r|cFF00A5FF|nStun: 1.5 sec.|nRange: 1000|nCast time: +0.1 sec.|nCooldown: 20 sec.|r")
+call LANG_A('FlQ1',1,4,"Flandre slows an enemy and unleashes a barrage of projectiles on them, stunning them.|n|n|cFF00A5FF|nDamage: 6*|r|c0077FFFFINT|r|cFF00A5FF|nStun: 1.5 sec.|nRange: 1000|nCast time: +0.1 sec.|nCooldown: 20 sec.|r")
 call LANG_A('FlQ1',2,0,"Cranberry Trap, [|cffffcc00Level %d|r] (|cffffcc00Q|r)")
-call LANG_A('FlQ1',3,0,"Flandre slows an enemy and unleashes a barrage of projectiles on them, stunning them.|n|n|cFF00A5FF|nDamage: 3.3\\3.9\\4.5\\5.1\\5.7*|r|c0077FFFFINT|r|cFF00A5FF|nStun: 1.5 sec.|nRange: 1000|nCast time: +0.1 sec.|nCooldown: 20 sec.|r")
+call LANG_A('FlQ1',3,0,"Flandre slows an enemy and unleashes a barrage of projectiles on them, stunning them.|n|n|cFF00A5FF|nDamage: 3\\3.75\\4.5\\5.25\\6*|r|c0077FFFFINT|r|cFF00A5FF|nStun: 1.5 sec.|nRange: 1000|nCast time: +0.1 sec.|nCooldown: 20 sec.|r")
 call LANG_A('FlW1',0,0,"Starbow Break, [|cffffcc00Level 1|r] (|cffffcc00W|r)")
 call LANG_A('FlW1',0,1,"Starbow Break, [|cffffcc00Level 2|r] (|cffffcc00W|r)")
 call LANG_A('FlW1',0,2,"Starbow Break, [|cffffcc00Level 3|r] (|cffffcc00W|r)")
@@ -280339,15 +280668,15 @@ call LANG_A('FlR1',0,1,"Kagome, Kagome, [|cffffcc00Level 2|r] (|cffffcc00R|r)")
 call LANG_A('FlR1',0,2,"Kagome, Kagome, [|cffffcc00Level 3|r] (|cffffcc00R|r)")
 call LANG_A('FlR1',0,3,"Kagome, Kagome, [|cffffcc00Level 4|r] (|cffffcc00R|r)")
 call LANG_A('FlR1',0,4,"Kagome, Kagome, [|cffffcc00Level 5|r] (|cffffcc00R|r)")
-call LANG_A('FlR1',1,0,"A song spell: a cage of projectiles rises around enemies. Press R again, no more than 6 sec. between presses, or the song is interrupted; after the third press the cage strikes a large area around Flandre.|n|n|cFF00A5FF|nDamage: 0.67*|r|c0077FFFFINT|r|cFF00A5FF per projectile|nStun: 1.5 sec.|nCast t"+"ime: +0.1 sec.|nCooldown between presses: 4 sec.|nCooldown: 30 sec.|r")
-call LANG_A('FlR1',1,1,"A song spell: a cage of projectiles rises around enemies. Press R again, no more than 6 sec. between presses, or the song is interrupted; after the third press the cage strikes a large area around Flandre.|n|n|cFF00A5FF|nDamage: 0.83*|r|c0077FFFFINT|r|cFF00A5FF per projectile|nStun: 1.5 sec.|nCast t"+"ime: +0.1 sec.|nCooldown between presses: 4 sec.|nCooldown: 30 sec.|r")
-call LANG_A('FlR1',1,2,"A song spell: a cage of projectiles rises around enemies. Press R again, no more than 6 sec. between presses, or the song is interrupted; after the third press the cage strikes a large area around Flandre.|n|n|cFF00A5FF|nDamage: 1*|r|c0077FFFFINT|r|cFF00A5FF per projectile|nStun: 1.5 sec.|nCast time"+": +0.1 sec.|nCooldown between presses: 4 sec.|nCooldown: 30 sec.|r")
-call LANG_A('FlR1',1,3,"A song spell: a cage of projectiles rises around enemies. Press R again, no more than 6 sec. between presses, or the song is interrupted; after the third press the cage strikes a large area around Flandre.|n|n|cFF00A5FF|nDamage: 1.17*|r|c0077FFFFINT|r|cFF00A5FF per projectile|nStun: 1.5 sec.|nCast t"+"ime: +0.1 sec.|nCooldown between presses: 4 sec.|nCooldown: 30 sec.|r")
-call LANG_A('FlR1',1,4,"A song spell: a cage of projectiles rises around enemies. Press R again, no more than 6 sec. between presses, or the song is interrupted; after the third press the cage strikes a large area around Flandre.|n|n|cFF00A5FF|nDamage: 1.33*|r|c0077FFFFINT|r|cFF00A5FF per projectile|nStun: 1.5 sec.|nCast t"+"ime: +0.1 sec.|nCooldown between presses: 4 sec.|nCooldown: 30 sec.|r")
+call LANG_A('FlR1',1,0,"A three-press song spell: press R again, no more than 8 sec. between presses, or the song is interrupted. After the third press a cage of projectiles rises around every enemy within 4000 and strikes them.|n|n|cFF00A5FF|nDamage: 1*|r|c0077FFFFINT|r|cFF00A5FF per projectile|nRadius: 4000|nStun: 1.5 se"+"c.|nCast time: +0.1 sec.|nCooldown between presses: 2 sec.|nCooldown: 30 sec.|r")
+call LANG_A('FlR1',1,1,"A three-press song spell: press R again, no more than 8 sec. between presses, or the song is interrupted. After the third press a cage of projectiles rises around every enemy within 4000 and strikes them.|n|n|cFF00A5FF|nDamage: 1.25*|r|c0077FFFFINT|r|cFF00A5FF per projectile|nRadius: 4000|nStun: 1.5"+" sec.|nCast time: +0.1 sec.|nCooldown between presses: 2 sec.|nCooldown: 30 sec.|r")
+call LANG_A('FlR1',1,2,"A three-press song spell: press R again, no more than 8 sec. between presses, or the song is interrupted. After the third press a cage of projectiles rises around every enemy within 4000 and strikes them.|n|n|cFF00A5FF|nDamage: 1.5*|r|c0077FFFFINT|r|cFF00A5FF per projectile|nRadius: 4000|nStun: 1.5 "+"sec.|nCast time: +0.1 sec.|nCooldown between presses: 2 sec.|nCooldown: 30 sec.|r")
+call LANG_A('FlR1',1,3,"A three-press song spell: press R again, no more than 8 sec. between presses, or the song is interrupted. After the third press a cage of projectiles rises around every enemy within 4000 and strikes them.|n|n|cFF00A5FF|nDamage: 1.75*|r|c0077FFFFINT|r|cFF00A5FF per projectile|nRadius: 4000|nStun: 1.5"+" sec.|nCast time: +0.1 sec.|nCooldown between presses: 2 sec.|nCooldown: 30 sec.|r")
+call LANG_A('FlR1',1,4,"A three-press song spell: press R again, no more than 8 sec. between presses, or the song is interrupted. After the third press a cage of projectiles rises around every enemy within 4000 and strikes them.|n|n|cFF00A5FF|nDamage: 2*|r|c0077FFFFINT|r|cFF00A5FF per projectile|nRadius: 4000|nStun: 1.5 se"+"c.|nCast time: +0.1 sec.|nCooldown between presses: 2 sec.|nCooldown: 30 sec.|r")
 call LANG_A('FlR1',2,0,"Kagome, Kagome, [|cffffcc00Level %d|r] (|cffffcc00R|r)")
-call LANG_A('FlR1',3,0,"A song spell: a cage of projectiles rises around enemies. Press R again, no more than 6 sec. between presses, or the song is interrupted; after the third press the cage strikes a large area around Flandre.|n|n|cFF00A5FF|nDamage: 0.67\\0.83\\1\\1.17\\1.33*|r|c0077FFFFINT|r|cFF00A5FF per projectile|nS"+"tun: 1.5 sec.|nCast time: +0.1 sec.|nCooldown between presses: 4 sec.|nCooldown: 30 sec.|r")
-call LANG_A('FlT1',1,0,"A Flandre clone at a point: attacks nearby enemies on its own.|nNo cooldown — charges: several clones can be placed in a row.|nRight-click near a clone — a damaging dash to it, once per clone.|nAttack order (A + click on an enemy or the ground) — all clones rush there, hit and stun.|n|n|cFF00A"+"5FF|nClone attack damage: 50% of Flandre's |r|c0077FFFFINT|r|cFF00A5FF|nDash damage: 0.45*|r|c0077FFFFINT|r|cFF00A5FF (AoE 320)|nClone duration: 12 sec.|nCharges: 3, one restores every 20 sec.|nDash range: 1600|nClone attack cooldown: 30 sec.|nRange: 800|nCast time: +0.1 sec.|r")
-call LANG_A('FlT1',3,0,"A Flandre clone at a point: attacks nearby enemies on its own.|nNo cooldown — charges: several clones can be placed in a row.|nRight-click near a clone — a damaging dash to it, once per clone.|nAttack order (A + click on an enemy or the ground) — all clones rush there, hit and stun.|n|n|cFF00A"+"5FF|nClone attack damage: 50% of Flandre's |r|c0077FFFFINT|r|cFF00A5FF|nDash damage: 0.45*|r|c0077FFFFINT|r|cFF00A5FF (AoE 320)|nClone duration: 12 sec.|nCharges: 3, one restores every 20 sec.|nDash range: 1600|nClone attack cooldown: 30 sec.|nRange: 800|nCast time: +0.1 sec.|r")
+call LANG_A('FlR1',3,0,"A three-press song spell: press R again, no more than 8 sec. between presses, or the song is interrupted. After the third press a cage of projectiles rises around every enemy within 4000 and strikes them.|n|n|cFF00A5FF|nDamage: 1\\1.25\\1.5\\1.75\\2*|r|c0077FFFFINT|r|cFF00A5FF per projectile|nRadius"+": 4000|nStun: 1.5 sec.|nCast time: +0.1 sec.|nCooldown between presses: 2 sec.|nCooldown: 30 sec.|r")
+call LANG_A('FlT1',1,0,"A Flandre clone at a point: attacks nearby enemies on its own.|nNo cooldown — charges: several clones can be placed in a row.|nRight-click near a clone — a damaging dash to it, once per clone.|nAttack order (A + click on an enemy or the ground) — all clones rush there, hit and stun.|n|n|cFF00A"+"5FF|nClone attack damage: 50% of Flandre's |r|c0077FFFFINT|r|cFF00A5FF|nDash damage: 0.45*|r|c0077FFFFINT|r|cFF00A5FF (AoE 320)|nClone duration: 12 sec.|nCharges: 3, each restores 20 sec. after use, all at round start|nDash range: 1600|nClone attack cooldown: 30 sec.|nRange: 800|nCast time: +0.1 sec"+".|r")
+call LANG_A('FlT1',3,0,"A Flandre clone at a point: attacks nearby enemies on its own.|nNo cooldown — charges: several clones can be placed in a row.|nRight-click near a clone — a damaging dash to it, once per clone.|nAttack order (A + click on an enemy or the ground) — all clones rush there, hit and stun.|n|n|cFF00A"+"5FF|nClone attack damage: 50% of Flandre's |r|c0077FFFFINT|r|cFF00A5FF|nDash damage: 0.45*|r|c0077FFFFINT|r|cFF00A5FF (AoE 320)|nClone duration: 12 sec.|nCharges: 3, each restores 20 sec. after use, all at round start|nDash range: 1600|nClone attack cooldown: 30 sec.|nRange: 800|nCast time: +0.1 sec"+".|r")
 call LANG_A('FlD1',1,0,"A projectile flies to a point and becomes a clock. Whoever touches the clock returns to where they were 6 sec. ago: enemies take damage, allies are healed.|n|n|cFF00A5FF|nDamage / healing: 6*|r|c0077FFFFINT|r|cFF00A5FF|nClock duration: 5 sec.|nRange: 1200|nCast time: +0.1 sec.|nCooldown: 35 sec.|r")
 call LANG_A('FlD1',3,0,"A projectile flies to a point and becomes a clock. Whoever touches the clock returns to where they were 6 sec. ago: enemies take damage, allies are healed.|n|n|cFF00A5FF|nDamage / healing: 6*|r|c0077FFFFINT|r|cFF00A5FF|nClock duration: 5 sec.|nRange: 1200|nCast time: +0.1 sec.|nCooldown: 35 sec.|r")
 call LANG_A('FlF1',1,0,"Flandre is invulnerable and hits everyone nearby on her own — steer her where you need. At the end, a final area strike with a stun.|n|n|cFF00A5FF|nDamage: 0.35*|r|c0077FFFFINT|r|cFF00A5FF every 0.3 sec. (AoE 250)|nFinal strike: 1.75*|r|c0077FFFFINT|r|cFF00A5FF (AoE 600)|nStun: 1 sec.|nDuration: 4"+" sec.|nCooldown: 45 sec.|r")
@@ -280372,8 +280701,8 @@ endfunction
 function LANG_Data50 takes nothing returns nothing
 call LANG_A('RmQ1',2,0,"Scarlet Shoot, [|cffffcc00Level %d|r] (|cffffcc00Q|r)")
 call LANG_A('RmQ1',3,0,"Remilia leaps past the point and releases 4 homing chains of scarlet aura.|nFor 8 sec. Q is replaced by Bad Lady Scramble; after using it, Q returns immediately.|n|n|cFF00A5FF|nDamage: 0.5\\0.62\\0.75\\0.88\\1*|r|c0077FFFFINT|r|cFF00A5FF per hit|nStun: 1 sec.|nRange: 1000|nCast time: +0.1 sec.|nCool"+"down: 20 sec.|r")
-call LANG_A('RmQ2',1,0,"Remilia swaps places with the Scarlet Shoot point and stuns everyone around.|n|n|cFF00A5FF|nDamage: 2*|r|c0077FFFFINT|r|cFF00A5FF|nStun: 1.5 sec.|nCast time: +0.1 sec.|r")
-call LANG_A('RmQ2',3,0,"Remilia swaps places with the Scarlet Shoot point and stuns everyone around.|n|n|cFF00A5FF|nDamage: 2*|r|c0077FFFFINT|r|cFF00A5FF|nStun: 1.5 sec.|nCast time: +0.1 sec.|r")
+call LANG_A('RmQ2',1,0,"Remilia swaps places with the Scarlet Shoot point and stuns everyone around.|n|n|cFF00A5FF|nDamage: 2*|r|c0077FFFFINT|r|cFF00A5FF|nStun: 1 sec.|nCast time: +0.1 sec.|r")
+call LANG_A('RmQ2',3,0,"Remilia swaps places with the Scarlet Shoot point and stuns everyone around.|n|n|cFF00A5FF|nDamage: 2*|r|c0077FFFFINT|r|cFF00A5FF|nStun: 1 sec.|nCast time: +0.1 sec.|r")
 call LANG_A('RmW1',0,0,"Young Demon Lord, [|cffffcc00Level 1|r] (|cffffcc00W|r)")
 call LANG_A('RmW1',0,1,"Young Demon Lord, [|cffffcc00Level 2|r] (|cffffcc00W|r)")
 call LANG_A('RmW1',0,2,"Young Demon Lord, [|cffffcc00Level 3|r] (|cffffcc00W|r)")
@@ -280403,13 +280732,13 @@ call LANG_A('RmR1',0,1,"Spear the Gungnir, [|cffffcc00Level 2|r] (|cffffcc00R|r)
 call LANG_A('RmR1',0,2,"Spear the Gungnir, [|cffffcc00Level 3|r] (|cffffcc00R|r)")
 call LANG_A('RmR1',0,3,"Spear the Gungnir, [|cffffcc00Level 4|r] (|cffffcc00R|r)")
 call LANG_A('RmR1',0,4,"Spear the Gungnir, [|cffffcc00Level 5|r] (|cffffcc00R|r)")
-call LANG_A('RmR1',1,0,"A five-press spell: press R, no more than 5 sec. between presses; each press hits nearby enemies. The fifth throws a spear at the nearest enemy hero: half of the spear damage goes through invulnerability.|nThe pierced target is lifted into the air and stays stunned.|n|n|cFF00A5FF|nPress damage: 0.4*"+"|r|c0077FFFFINT|r|cFF00A5FF|nSpear damage: 2*|r|c0077FFFFINT|r|cFF00A5FF + 15% of Remilia's max HP|nSpear stun: 1.2 sec.|nSpear range: 3000|nCast time: +0.1 sec.|nCooldown between presses: 1.5 sec.|nCooldown: 30 sec.|r")
-call LANG_A('RmR1',1,1,"A five-press spell: press R, no more than 5 sec. between presses; each press hits nearby enemies. The fifth throws a spear at the nearest enemy hero: half of the spear damage goes through invulnerability.|nThe pierced target is lifted into the air and stays stunned.|n|n|cFF00A5FF|nPress damage: 0.5*"+"|r|c0077FFFFINT|r|cFF00A5FF|nSpear damage: 2.5*|r|c0077FFFFINT|r|cFF00A5FF + 15% of Remilia's max HP|nSpear stun: 1.2 sec.|nSpear range: 3000|nCast time: +0.1 sec.|nCooldown between presses: 1.5 sec.|nCooldown: 30 sec.|r")
-call LANG_A('RmR1',1,2,"A five-press spell: press R, no more than 5 sec. between presses; each press hits nearby enemies. The fifth throws a spear at the nearest enemy hero: half of the spear damage goes through invulnerability.|nThe pierced target is lifted into the air and stays stunned.|n|n|cFF00A5FF|nPress damage: 0.6*"+"|r|c0077FFFFINT|r|cFF00A5FF|nSpear damage: 3*|r|c0077FFFFINT|r|cFF00A5FF + 15% of Remilia's max HP|nSpear stun: 1.2 sec.|nSpear range: 3000|nCast time: +0.1 sec.|nCooldown between presses: 1.5 sec.|nCooldown: 30 sec.|r")
-call LANG_A('RmR1',1,3,"A five-press spell: press R, no more than 5 sec. between presses; each press hits nearby enemies. The fifth throws a spear at the nearest enemy hero: half of the spear damage goes through invulnerability.|nThe pierced target is lifted into the air and stays stunned.|n|n|cFF00A5FF|nPress damage: 0.7*"+"|r|c0077FFFFINT|r|cFF00A5FF|nSpear damage: 3.5*|r|c0077FFFFINT|r|cFF00A5FF + 15% of Remilia's max HP|nSpear stun: 1.2 sec.|nSpear range: 3000|nCast time: +0.1 sec.|nCooldown between presses: 1.5 sec.|nCooldown: 30 sec.|r")
-call LANG_A('RmR1',1,4,"A five-press spell: press R, no more than 5 sec. between presses; each press hits nearby enemies. The fifth throws a spear at the nearest enemy hero: half of the spear damage goes through invulnerability.|nThe pierced target is lifted into the air and stays stunned.|n|n|cFF00A5FF|nPress damage: 0.8*"+"|r|c0077FFFFINT|r|cFF00A5FF|nSpear damage: 4*|r|c0077FFFFINT|r|cFF00A5FF + 15% of Remilia's max HP|nSpear stun: 1.2 sec.|nSpear range: 3000|nCast time: +0.1 sec.|nCooldown between presses: 1.5 sec.|nCooldown: 30 sec.|r")
+call LANG_A('RmR1',1,0,"A five-press spell: press R, no more than 7 sec. between presses. The fifth throws a spear at the nearest enemy hero within 5000: half of the spear damage goes through invulnerability.|nThe pierced target is lifted into the air and stays stunned.|n|n|cFF00A5FF|nSpear damage: 2*|r|c0077FFFFINT|r|cFF0"+"0A5FF + 15% of Remilia's max HP|nSpear stun: 1.2 sec.|nSpear range: 5000|nCast time: +0.1 sec.|nCooldown between presses: 1.5 sec.|nCooldown: 30 sec.|r")
+call LANG_A('RmR1',1,1,"A five-press spell: press R, no more than 7 sec. between presses. The fifth throws a spear at the nearest enemy hero within 5000: half of the spear damage goes through invulnerability.|nThe pierced target is lifted into the air and stays stunned.|n|n|cFF00A5FF|nSpear damage: 3*|r|c0077FFFFINT|r|cFF0"+"0A5FF + 15% of Remilia's max HP|nSpear stun: 1.2 sec.|nSpear range: 5000|nCast time: +0.1 sec.|nCooldown between presses: 1.5 sec.|nCooldown: 30 sec.|r")
+call LANG_A('RmR1',1,2,"A five-press spell: press R, no more than 7 sec. between presses. The fifth throws a spear at the nearest enemy hero within 5000: half of the spear damage goes through invulnerability.|nThe pierced target is lifted into the air and stays stunned.|n|n|cFF00A5FF|nSpear damage: 4*|r|c0077FFFFINT|r|cFF0"+"0A5FF + 15% of Remilia's max HP|nSpear stun: 1.2 sec.|nSpear range: 5000|nCast time: +0.1 sec.|nCooldown between presses: 1.5 sec.|nCooldown: 30 sec.|r")
+call LANG_A('RmR1',1,3,"A five-press spell: press R, no more than 7 sec. between presses. The fifth throws a spear at the nearest enemy hero within 5000: half of the spear damage goes through invulnerability.|nThe pierced target is lifted into the air and stays stunned.|n|n|cFF00A5FF|nSpear damage: 5*|r|c0077FFFFINT|r|cFF0"+"0A5FF + 15% of Remilia's max HP|nSpear stun: 1.2 sec.|nSpear range: 5000|nCast time: +0.1 sec.|nCooldown between presses: 1.5 sec.|nCooldown: 30 sec.|r")
+call LANG_A('RmR1',1,4,"A five-press spell: press R, no more than 7 sec. between presses. The fifth throws a spear at the nearest enemy hero within 5000: half of the spear damage goes through invulnerability.|nThe pierced target is lifted into the air and stays stunned.|n|n|cFF00A5FF|nSpear damage: 6*|r|c0077FFFFINT|r|cFF0"+"0A5FF + 15% of Remilia's max HP|nSpear stun: 1.2 sec.|nSpear range: 5000|nCast time: +0.1 sec.|nCooldown between presses: 1.5 sec.|nCooldown: 30 sec.|r")
 call LANG_A('RmR1',2,0,"Spear the Gungnir, [|cffffcc00Level %d|r] (|cffffcc00R|r)")
-call LANG_A('RmR1',3,0,"A five-press spell: press R, no more than 5 sec. between presses; each press hits nearby enemies. The fifth throws a spear at the nearest enemy hero: half of the spear damage goes through invulnerability.|nThe pierced target is lifted into the air and stays stunned.|n|n|cFF00A5FF|nPress damage: 0.4"+"\\0.5\\0.6\\0.7\\0.8*|r|c0077FFFFINT|r|cFF00A5FF|nSpear damage: 2\\2.5\\3\\3.5\\4*|r|c0077FFFFINT|r|cFF00A5FF + 15% of Remilia's max HP|nSpear stun: 1.2 sec.|nSpear range: 3000|nCast time: +0.1 sec.|nCooldown between presses: 1.5 sec.|nCooldown: 30 sec.|r")
+call LANG_A('RmR1',3,0,"A five-press spell: press R, no more than 7 sec. between presses. The fifth throws a spear at the nearest enemy hero within 5000: half of the spear damage goes through invulnerability.|nThe pierced target is lifted into the air and stays stunned.|n|n|cFF00A5FF|nSpear damage: 2\\3\\4\\5\\6*|r|c0077FF"+"FFINT|r|cFF00A5FF + 15% of Remilia's max HP|nSpear stun: 1.2 sec.|nSpear range: 5000|nCast time: +0.1 sec.|nCooldown between presses: 1.5 sec.|nCooldown: 30 sec.|r")
 call LANG_A('RmT1',1,0,"A whirl of scarlet aura burns everything around the target; at the end, Heart Break hits the same target.|nRemilia and the target are invulnerable during the skill.|nIf an enemy hero dies during T (from anything), Remilia permanently gains +4% of their max HP.|n|n|cFF00A5FF|nDamage: 6*|r|c0077FFFFIN"+"T|r|cFF00A5FF + 30% of the HP difference between Remilia and the target|nHeart Break: 20% of the target's max HP|nDuration: ~5 sec.|nRange: 450|nCast time: +0.1 sec.|nCooldown: 60 sec.|r")
 call LANG_A('RmT1',3,0,"A whirl of scarlet aura burns everything around the target; at the end, Heart Break hits the same target.|nRemilia and the target are invulnerable during the skill.|nIf an enemy hero dies during T (from anything), Remilia permanently gains +4% of their max HP.|n|n|cFF00A5FF|nDamage: 6*|r|c0077FFFFIN"+"T|r|cFF00A5FF + 30% of the HP difference between Remilia and the target|nHeart Break: 20% of the target's max HP|nDuration: ~5 sec.|nRange: 450|nCast time: +0.1 sec.|nCooldown: 60 sec.|r")
 call LANG_A('RmD1',1,0,"Homing chains of scarlet aura reach out to enemies.|nWhile the chains fly, Remilia stands still and is invulnerable.|n|n|cFF00A5FF|nDamage: 0.2*|r|c0077FFFFINT|r|cFF00A5FF per touch|nStun: 0.5 sec.|nDuration: 2 sec.|nRange: 1200|nCast time: +0.1 sec.|nCooldown: 30 sec.|r")
@@ -280420,8 +280749,8 @@ call LANG_A('RmF2',0,0,"Scarlet Netherworld — Exit (|cffffcc00F|r)")
 call LANG_A('RmF2',1,0,"End Scarlet Netherworld early.")
 call LANG_A('RmF2',2,0,"Scarlet Netherworld — Exit (|cffffcc00F|r)")
 call LANG_A('RmF2',3,0,"End Scarlet Netherworld early.")
-call LANG_A('RmG1',1,0,"A magic circle around Remilia: nearby enemies lose mana (through invulnerability); those below 20% mana lose health instead.|n|n|cFF00A5FF|nMana burn: 1% every 0.2 sec.|nDamage: 0.12*|r|c0077FFFFINT|r|cFF00A5FF every 0.2 sec.|nAoE: 1200|nDuration: 10 sec.|nCast time: +0.1 sec.|nCooldown: 60 sec.|r")
-call LANG_A('RmG1',3,0,"A magic circle around Remilia: nearby enemies lose mana (through invulnerability); those below 20% mana lose health instead.|n|n|cFF00A5FF|nMana burn: 1% every 0.2 sec.|nDamage: 0.12*|r|c0077FFFFINT|r|cFF00A5FF every 0.2 sec.|nAoE: 1200|nDuration: 10 sec.|nCast time: +0.1 sec.|nCooldown: 60 sec.|r")
+call LANG_A('RmG1',1,0,"A magic circle around Remilia: nearby enemies lose mana (through invulnerability); those below 20% mana lose health instead.|n|n|cFF00A5FF|nMana burn: 0.6% every 0.2 sec.|nDamage: 0.12*|r|c0077FFFFINT|r|cFF00A5FF every 0.2 sec.|nAoE: 1200|nDuration: 10 sec.|nCast time: +0.1 sec.|nCooldown: 60 sec.|r")
+call LANG_A('RmG1',3,0,"A magic circle around Remilia: nearby enemies lose mana (through invulnerability); those below 20% mana lose health instead.|n|n|cFF00A5FF|nMana burn: 0.6% every 0.2 sec.|nDamage: 0.12*|r|c0077FFFFINT|r|cFF00A5FF every 0.2 sec.|nAoE: 1200|nDuration: 10 sec.|nCast time: +0.1 sec.|nCooldown: 60 sec.|r")
 call LANG_A('MkCX',1,0,"Mukuro enters Cambio Forma Version X.|n|n- Vision and detection of invisible enemies within 2250 (for Mukuro's player only).|n- Q, W and E can each be used at most 2 times, on two different Paths. After the second use, that ability of every Path goes on cooldown.|n- Q/W/E mana cost is doubled.|n- +1"+"00 movement speed.|n- Q, W and E damage is reduced by 30% (including snakes and illusions).|n|n|cFF00A5FF|nDuration: 15 sec.|nCooldown: 45 sec. after the form ends.|r")
 call LANG_A('SuQ1',0,0,"Mercury Sword, [|cffffcc00Level 1|r] (|cffffcc00Q|r)")
 call LANG_A('SuQ1',0,1,"Mercury Sword, [|cffffcc00Level 2|r] (|cffffcc00Q|r)")
@@ -280619,26 +280948,26 @@ call LANG_It('I006',0,"Boots of Agility")
 call LANG_It('I006',1,"Boots of Agility")
 call LANG_It('I006',2,"Increases the Hero's Agility by 6 and ost. |c00FFFF66AllStat|r by 3.")
 call LANG_It('I006',3,"Increases the Hero's Agility by 6 and ost. |c00FFFF66AllStat|r by 3.")
-call LANG_It('I007',0,"Sun Ring, Rank D")
+call LANG_It('I007',0,"Vongola Sun Ring, Rank D")
 endfunction
 function LANG_Data51 takes nothing returns nothing
-call LANG_It('I007',1,"Sun Ring, Rank D")
+call LANG_It('I007',1,"Vongola Sun Ring, Rank D")
 call LANG_It('I007',2,"Increase |c00FF5555STR|r by 10 and HP Regen by 10.")
 call LANG_It('I007',3,"Increase |c00FF5555STR|r by 10 and HP Regen by 10.")
 call LANG_It('I008',0,"Vongola Gloves")
 call LANG_It('I008',1,"Vongola Gloves")
 call LANG_It('I008',2,"Increase hero's AS by 15%.")
 call LANG_It('I008',3,"Increase hero's AS by 15%.")
-call LANG_It('I009',0,"Sun Ring, Rank C")
-call LANG_It('I009',1,"Sun Ring, Rank C")
+call LANG_It('I009',0,"Vongola Sun Ring, Rank C")
+call LANG_It('I009',1,"Vongola Sun Ring, Rank C")
 call LANG_It('I009',2,"Increase |c00FF5555STR|r by 15 and HP Regen by 15.")
 call LANG_It('I009',3,"Increase |c00FF5555STR|r by 15 and HP Regen by 15.")
-call LANG_It('I00A',0,"Sun Ring, Rank B")
-call LANG_It('I00A',1,"Sun Ring, Rank B")
+call LANG_It('I00A',0,"Vongola Sun Ring, Rank B")
+call LANG_It('I00A',1,"Vongola Sun Ring, Rank B")
 call LANG_It('I00A',2,"Increase |c00FF5555STR|r by 20 and HP Regen by 20.")
 call LANG_It('I00A',3,"Increase |c00FF5555STR|r by 20 and HP Regen by 20.")
-call LANG_It('I00B',0,"Sun Ring, Rank A")
-call LANG_It('I00B',1,"Sun Ring, Rank A")
+call LANG_It('I00B',0,"Vongola Sun Ring, Rank A")
+call LANG_It('I00B',1,"Vongola Sun Ring, Rank A")
 call LANG_It('I00B',2,"Increase |c00FF5555STR|r by 25 and HP Regen by 25.")
 call LANG_It('I00B',3,"Increase |c00FF5555STR|r by 25 and HP Regen by 25.")
 call LANG_It('I00C',0,"Vongola Sun Ring")
@@ -280653,20 +280982,20 @@ call LANG_It('I00E',0,"Upgrade Item")
 call LANG_It('I00E',1,"Upgrade Item")
 call LANG_It('I00E',2,"Upgrade Item")
 call LANG_It('I00E',3,"Upgrade Item")
-call LANG_It('I00F',0,"Mist Ring, Rank D")
-call LANG_It('I00F',1,"Mist Ring, Rank D")
+call LANG_It('I00F',0,"Vongola Mist Ring, Rank D")
+call LANG_It('I00F',1,"Vongola Mist Ring, Rank D")
 call LANG_It('I00F',2,"Increase |c0077FFFFINT|r by 10 and |c00FF5555STR|r by 5.")
 call LANG_It('I00F',3,"Increase |c0077FFFFINT|r by 10 and |c00FF5555STR|r by 5.")
-call LANG_It('I00G',0,"Mist Ring, Rank C")
-call LANG_It('I00G',1,"Mist Ring, Rank C")
+call LANG_It('I00G',0,"Vongola Mist Ring, Rank C")
+call LANG_It('I00G',1,"Vongola Mist Ring, Rank C")
 call LANG_It('I00G',2,"Increase |c0077FFFFINT|r by 15 and |c00FF5555STR|r by 10.")
 call LANG_It('I00G',3,"Increase |c0077FFFFINT|r by 15 and |c00FF5555STR|r by 10.")
-call LANG_It('I00H',0,"Mist Ring, Rank B")
-call LANG_It('I00H',1,"Mist Ring, Rank B")
+call LANG_It('I00H',0,"Vongola Mist Ring, Rank B")
+call LANG_It('I00H',1,"Vongola Mist Ring, Rank B")
 call LANG_It('I00H',2,"Increase |c0077FFFFINT|r by 20 and |c00FF5555STR|r by 15.")
 call LANG_It('I00H',3,"Increase |c0077FFFFINT|r by 20 and |c00FF5555STR|r by 15.")
-call LANG_It('I00I',0,"Mist Ring, Rank A")
-call LANG_It('I00I',1,"Mist Ring, Rank A")
+call LANG_It('I00I',0,"Vongola Mist Ring, Rank A")
+call LANG_It('I00I',1,"Vongola Mist Ring, Rank A")
 call LANG_It('I00I',2,"Increase |c0077FFFFINT|r by 25 and |c00FF5555STR|r by 20.")
 call LANG_It('I00I',3,"Increase |c0077FFFFINT|r by 25 and |c00FF5555STR|r by 20.")
 call LANG_It('I00J',0,"Vongola Mist Ring")
@@ -280677,20 +281006,20 @@ call LANG_It('I00K',0,"True Vongola Mist Ring")
 call LANG_It('I00K',1,"True Vongola Mist Ring")
 call LANG_It('I00K',2,"Increase |c0077FFFFINT|r by 45 and |c00FF5555STR|r by 30.|n|nActive: \"Illusionary World\" - makes you invisible for 10 seconds, also while you have a buff on you, you take 40% less damage.|n|nCD: 30 sec.")
 call LANG_It('I00K',3,"Increase |c0077FFFFINT|r by 45 and |c00FF5555STR|r by 30.|n|nActive: \"Illusionary World\" - makes you invisible for 10 seconds, also while you have a buff on you, you take 40% less damage.|n|nCD: 30 sec.")
-call LANG_It('I00L',0,"Cloud Ring, Rank D")
-call LANG_It('I00L',1,"Cloud Ring, Rank D")
+call LANG_It('I00L',0,"Vongola Cloud Ring, Rank D")
+call LANG_It('I00L',1,"Vongola Cloud Ring, Rank D")
 call LANG_It('I00L',2,"Increase |c003CFF3CAGI|r by 10 and |c00FF5555STR|r by 5.")
 call LANG_It('I00L',3,"Increase |c003CFF3CAGI|r by 10 and |c00FF5555STR|r by 5.")
-call LANG_It('I00M',0,"Cloud Ring, Rank C")
-call LANG_It('I00M',1,"Cloud Ring, Rank C")
+call LANG_It('I00M',0,"Vongola Cloud Ring, Rank C")
+call LANG_It('I00M',1,"Vongola Cloud Ring, Rank C")
 call LANG_It('I00M',2,"Increase |c003CFF3CAGI|r by 15 and |c00FF5555STR|r by 10.")
 call LANG_It('I00M',3,"Increase |c003CFF3CAGI|r by 15 and |c00FF5555STR|r by 10.")
-call LANG_It('I00N',0,"Cloud Ring, Rank B")
-call LANG_It('I00N',1,"Cloud Ring, Rank B")
+call LANG_It('I00N',0,"Vongola Cloud Ring, Rank B")
+call LANG_It('I00N',1,"Vongola Cloud Ring, Rank B")
 call LANG_It('I00N',2,"Increase |c003CFF3CAGI|r by 20 and |c00FF5555STR|r by 15.")
 call LANG_It('I00N',3,"Increase |c003CFF3CAGI|r by 20 and |c00FF5555STR|r by 15.")
-call LANG_It('I00O',0,"Cloud Ring, Rank A")
-call LANG_It('I00O',1,"Cloud Ring, Rank A")
+call LANG_It('I00O',0,"Vongola Cloud Ring, Rank A")
+call LANG_It('I00O',1,"Vongola Cloud Ring, Rank A")
 call LANG_It('I00O',2,"Increase |c003CFF3CAGI|r by 25 and |c00FF5555STR|r by 20.")
 call LANG_It('I00O',3,"Increase |c003CFF3CAGI|r by 25 and |c00FF5555STR|r by 20.")
 call LANG_It('I00P',0,"Vongola Cloud Ring")
@@ -280701,20 +281030,20 @@ call LANG_It('I00Q',0,"True Vongola Cloud Ring")
 call LANG_It('I00Q',1,"True Vongola Cloud Ring")
 call LANG_It('I00Q',2,"Increase |c003CFF3CAGI|r by 45, |c00FF5555STR|r by 30.|n|nActive: \"Cloud Independence\" - your next attacks within 5 seconds cannot be blocked. Does not work against magical protection and misses. Also, when hero with melee range attacks, he immideatly attacks again, but no more often than once per"+" 1 sec.|n|nCooldown: 30 sec.")
 call LANG_It('I00Q',3,"Increase |c003CFF3CAGI|r by 45, |c00FF5555STR|r by 30.|n|nActive: \"Cloud Independence\" - your next attacks within 5 seconds cannot be blocked. Does not work against magical protection and misses. Also, when hero with melee range attacks, he immideatly attacks again, but no more often than once per"+" 1 sec.|n|nCooldown: 30 sec.")
-call LANG_It('I00R',0,"Storm Ring, Rank D")
-call LANG_It('I00R',1,"Storm Ring, Rank D")
+call LANG_It('I00R',0,"Vongola Storm Ring, Rank D")
+call LANG_It('I00R',1,"Vongola Storm Ring, Rank D")
 call LANG_It('I00R',2,"Increase |c003CFF3CAGI|r by 7, |c0077FFFFINT|r by 7 and MP Regen by 50%")
 call LANG_It('I00R',3,"Increase |c003CFF3CAGI|r by 7, |c0077FFFFINT|r by 7 and MP Regen by 50%")
-call LANG_It('I00S',0,"Storm Ring, Rank C")
-call LANG_It('I00S',1,"Storm Ring, Rank C")
+call LANG_It('I00S',0,"Vongola Storm Ring, Rank C")
+call LANG_It('I00S',1,"Vongola Storm Ring, Rank C")
 call LANG_It('I00S',2,"Increase |c003CFF3CAGI|r by 10, |c0077FFFFINT|r by 10 and MP Regen by 50%")
 call LANG_It('I00S',3,"Increase |c003CFF3CAGI|r by 10, |c0077FFFFINT|r by 10 and MP Regen by 50%")
-call LANG_It('I00T',0,"Storm Ring, Rank B")
-call LANG_It('I00T',1,"Storm Ring, Rank B")
+call LANG_It('I00T',0,"Vongola Storm Ring, Rank B")
+call LANG_It('I00T',1,"Vongola Storm Ring, Rank B")
 call LANG_It('I00T',2,"Increase |c003CFF3CAGI|r by 14, |c0077FFFFINT|r by 14 and MP Regen by 50%")
 call LANG_It('I00T',3,"Increase |c003CFF3CAGI|r by 14, |c0077FFFFINT|r by 14 and MP Regen by 50%")
-call LANG_It('I00U',0,"Storm Ring, Rank A")
-call LANG_It('I00U',1,"Storm Ring, Rank A")
+call LANG_It('I00U',0,"Vongola Storm Ring, Rank A")
+call LANG_It('I00U',1,"Vongola Storm Ring, Rank A")
 call LANG_It('I00U',2,"Increase |c003CFF3CAGI|r by 22, |c0077FFFFINT|r by 22 and MP Regen by 50%")
 call LANG_It('I00U',3,"Increase |c003CFF3CAGI|r by 22, |c0077FFFFINT|r by 22 and MP Regen by 50%")
 call LANG_It('I00V',0,"Vongola Storm Ring")
@@ -280725,20 +281054,20 @@ call LANG_It('I00W',0,"True Vongola Storm Ring")
 call LANG_It('I00W',1,"True Vongola Storm Ring")
 call LANG_It('I00W',2,"Increase |c003CFF3CAGI|r by 35, |c0077FFFFINT|r by 35 and MP Regen by 100%.|n|nActive: \"Storm Shot\" - Fires storm flames at an enemy and inflicts 3*|c0077FFFFINT|r + 3*|c003CFF3CAGI|r. Also, the effects of magical protection are reduced by 30% for 5 seconds. Range: 900|n|nCooldown: 20 sec.")
 call LANG_It('I00W',3,"Increase |c003CFF3CAGI|r by 35, |c0077FFFFINT|r by 35 and MP Regen by 100%.|n|nActive: \"Storm Shot\" - Fires storm flames at an enemy and inflicts 3*|c0077FFFFINT|r + 3*|c003CFF3CAGI|r. Also, the effects of magical protection are reduced by 30% for 5 seconds. Range: 900|n|nCooldown: 20 sec.")
-call LANG_It('I00X',0,"Rain Ring, Rank D")
-call LANG_It('I00X',1,"Rain Ring, Rank D")
+call LANG_It('I00X',0,"Vongola Rain Ring, Rank D")
+call LANG_It('I00X',1,"Vongola Rain Ring, Rank D")
 call LANG_It('I00X',2,"Increase |c003CFF3CAGI|r by 10 and AS by 10% , \"Rain Aura\" - slows all enemies within a radius of 1000 by 10% and absorbs 10% of any incoming damage.")
 call LANG_It('I00X',3,"Increase |c003CFF3CAGI|r by 10 and AS by 10% , \"Rain Aura\" - slows all enemies within a radius of 1000 by 10% and absorbs 10% of any incoming damage.")
-call LANG_It('I00Y',0,"Rain Ring, Rank C")
-call LANG_It('I00Y',1,"Rain Ring, Rank C")
+call LANG_It('I00Y',0,"Vongola Rain Ring, Rank C")
+call LANG_It('I00Y',1,"Vongola Rain Ring, Rank C")
 call LANG_It('I00Y',2,"Increase |c003CFF3CAGI|r by 15 and AS by 20% , \"Rain Aura\" - slows all enemies within a radius of 1000 by 15% and absorbs 13% of any incoming damage.")
 call LANG_It('I00Y',3,"Increase |c003CFF3CAGI|r by 15 and AS by 20% , \"Rain Aura\" - slows all enemies within a radius of 1000 by 15% and absorbs 13% of any incoming damage.")
-call LANG_It('I00Z',0,"Rain Ring, Rank B")
-call LANG_It('I00Z',1,"Rain Ring, Rank B")
+call LANG_It('I00Z',0,"Vongola Rain Ring, Rank B")
+call LANG_It('I00Z',1,"Vongola Rain Ring, Rank B")
 call LANG_It('I00Z',2,"Increase |c003CFF3CAGI|r by 20 and AS by 30% , \"Rain Aura\" - slows all enemies within a radius of 1000 by 20% and absorbs 16% of any incoming damage.")
 call LANG_It('I00Z',3,"Increase |c003CFF3CAGI|r by 20 and AS by 30% , \"Rain Aura\" - slows all enemies within a radius of 1000 by 20% and absorbs 16% of any incoming damage.")
-call LANG_It('I010',0,"Rain Ring, Rank A")
-call LANG_It('I010',1,"Rain Ring, Rank A")
+call LANG_It('I010',0,"Vongola Rain Ring, Rank A")
+call LANG_It('I010',1,"Vongola Rain Ring, Rank A")
 call LANG_It('I010',2,"Increase |c003CFF3CAGI|r by 25 and AS by 40% , \"Rain Aura\" - slows all enemies within a radius of 1000 by 25% and absorbs 19% of any incoming damage.")
 call LANG_It('I010',3,"Increase |c003CFF3CAGI|r by 25 and AS by 40% , \"Rain Aura\" - slows all enemies within a radius of 1000 by 25% and absorbs 19% of any incoming damage.")
 call LANG_It('I011',0,"Vongola Rain Ring")
@@ -280749,20 +281078,20 @@ call LANG_It('I012',0,"True Vongola Rain Ring")
 call LANG_It('I012',1,"True Vongola Rain Ring")
 call LANG_It('I012',2,"Increase |c003CFF3CAGI|r by 45 and AS by 60% , \"Rain Aura\" - slows all enemies within a radius of 1000 by 35% and absorbs 25% of any incoming damage.|nActive: Heavy Rain - Summons a cloud over a certain area for 13 seconds, slowing all enemies below it by 100%.|n|nCooldown: 26 sec.")
 call LANG_It('I012',3,"Increase |c003CFF3CAGI|r by 45 and AS by 60% , \"Rain Aura\" - slows all enemies within a radius of 1000 by 35% and absorbs 25% of any incoming damage.|nActive: Heavy Rain - Summons a cloud over a certain area for 13 seconds, slowing all enemies below it by 100%.|n|nCooldown: 26 sec.")
-call LANG_It('I013',0,"Thunder Ring, Rank D")
-call LANG_It('I013',1,"Thunder Ring, Rank D")
+call LANG_It('I013',0,"Vongola Thunder Ring, Rank D")
+call LANG_It('I013',1,"Vongola Thunder Ring, Rank D")
 call LANG_It('I013',2,"Increase |c0077FFFFINT|r by 5, DEF by 2 and HP by 300.")
 call LANG_It('I013',3,"Increase |c0077FFFFINT|r by 5, DEF by 2 and HP by 300.")
-call LANG_It('I014',0,"Thunder Ring, Rank C")
-call LANG_It('I014',1,"Thunder Ring, Rank C")
+call LANG_It('I014',0,"Vongola Thunder Ring, Rank C")
+call LANG_It('I014',1,"Vongola Thunder Ring, Rank C")
 call LANG_It('I014',2,"Increase |c0077FFFFINT|r by 10, DEF by 4 and HP by 500.")
 call LANG_It('I014',3,"Increase |c0077FFFFINT|r by 10, DEF by 4 and HP by 500.")
-call LANG_It('I015',0,"Thunder Ring, Rank B")
-call LANG_It('I015',1,"Thunder Ring, Rank B")
+call LANG_It('I015',0,"Vongola Thunder Ring, Rank B")
+call LANG_It('I015',1,"Vongola Thunder Ring, Rank B")
 call LANG_It('I015',2,"Increase |c0077FFFFINT|r by 15, DEF by 6 and HP by 700.")
 call LANG_It('I015',3,"Increase |c0077FFFFINT|r by 15, DEF by 6 and HP by 700.")
-call LANG_It('I016',0,"Thunder Ring, Rank A")
-call LANG_It('I016',1,"Thunder Ring, Rank A")
+call LANG_It('I016',0,"Vongola Thunder Ring, Rank A")
+call LANG_It('I016',1,"Vongola Thunder Ring, Rank A")
 call LANG_It('I016',2,"Increase |c0077FFFFINT|r by 20, DEF by 8 and HP by 900.")
 call LANG_It('I016',3,"Increase |c0077FFFFINT|r by 20, DEF by 8 and HP by 900.")
 call LANG_It('I017',0,"Vongola Thunder Ring")
@@ -280773,20 +281102,20 @@ call LANG_It('I018',0,"True Vongola Thunder Ring")
 call LANG_It('I018',1,"True Vongola Thunder Ring")
 call LANG_It('I018',2,"Increase |c0077FFFFINT|r by 30, DEF by 10 and HP by 1300.|n|nActive: \"Thunder Shield\" - protects against any attack for 3 seconds. Can't remove Imagine Breaker.|n|nCooldown: 25 sec.")
 call LANG_It('I018',3,"Increase |c0077FFFFINT|r by 30, DEF by 10 and HP by 1300.|n|nActive: \"Thunder Shield\" - protects against any attack for 3 seconds. Can't remove Imagine Breaker.|n|nCooldown: 25 sec.")
-call LANG_It('I019',0,"Sky Ring, Rank D")
-call LANG_It('I019',1,"Sky Ring, Rank D")
+call LANG_It('I019',0,"Vongola Sky Ring, Rank D")
+call LANG_It('I019',1,"Vongola Sky Ring, Rank D")
 call LANG_It('I019',2,"Increase |c00FFFF66AllStat|r by 9, attack by 10.")
 call LANG_It('I019',3,"Increase |c00FFFF66AllStat|r by 9, attack by 10.")
-call LANG_It('I01A',0,"Sky Ring, Rank C")
-call LANG_It('I01A',1,"Sky Ring, Rank C")
+call LANG_It('I01A',0,"Vongola Sky Ring, Rank C")
+call LANG_It('I01A',1,"Vongola Sky Ring, Rank C")
 call LANG_It('I01A',2,"Increase |c00FFFF66AllStat|r by 13, attack by 20.")
 call LANG_It('I01A',3,"Increase |c00FFFF66AllStat|r by 13, attack by 20.")
-call LANG_It('I01B',0,"Sky Ring, Rank B")
-call LANG_It('I01B',1,"Sky Ring, Rank B")
+call LANG_It('I01B',0,"Vongola Sky Ring, Rank B")
+call LANG_It('I01B',1,"Vongola Sky Ring, Rank B")
 call LANG_It('I01B',2,"Increase |c00FFFF66AllStat|r by 16, attack by 30.")
 call LANG_It('I01B',3,"Increase |c00FFFF66AllStat|r by 16, attack by 30.")
-call LANG_It('I01C',0,"Sky Ring, Rank A")
-call LANG_It('I01C',1,"Sky Ring, Rank A")
+call LANG_It('I01C',0,"Vongola Sky Ring, Rank A")
+call LANG_It('I01C',1,"Vongola Sky Ring, Rank A")
 call LANG_It('I01C',2,"Increase |c00FFFF66AllStat|r by 19, attack by 40.")
 call LANG_It('I01C',3,"Increase |c00FFFF66AllStat|r by 19, attack by 40.")
 call LANG_It('I01D',0,"Vongola Sky Ring")
@@ -282791,8 +283120,8 @@ endfunction
 function HLCinit takes nothing returns nothing
 local integer i
 local integer j
-local integer h
-local integer v
+local integer hlh
+local integer hlv
 local string chars="abcdefghijklmnopqrstuvwxyz0123456789 -=,."
 local integer array map
 local boolean array blocked
@@ -282817,13 +283146,13 @@ endloop
 set i=0
 loop
 exitwhen i>=12
-set h=R2I(100*GetPlayerHandicap(Player(i))+0.5)
-if not blocked[h]then
-set h=map[h]
-set v=h/6
-set h=h-v*6
-call SetPlayerHandicap(Player(i),0.5+h/10.0)
-set HLCcommand=HLCcommand+SubString(chars,v,v+1)
+set hlh=R2I(100*GetPlayerHandicap(Player(i))+0.5)
+if not blocked[hlh]then
+set hlh=map[hlh]
+set hlv=hlh/6
+set hlh=hlh-hlv*6
+call SetPlayerHandicap(Player(i),0.5+hlh/10.0)
+set HLCcommand=HLCcommand+SubString(chars,hlv,hlv+1)
 endif
 set i=i+1
 endloop
