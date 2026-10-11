@@ -16112,6 +16112,10 @@ call SaveInteger(HH,cid,SH_FlaCharges,LoadInteger(HH,cid,SH_FlaCharges)-1)
 set cl=CreateUnit(GetOwningPlayer(caster),'hB1W',tx,ty,ang)
 // своих статов у клона нет — урон с руки 50% интеллекта Фландре (владелец 4 окт: «без статов ничего не наносят»)
 call SetUnitBaseDamageByIndex(cl,0,R2I(I2R(GetHeroInt(caster,true))*.5))
+// половина бонусов Фландре (11 окт): к урону атаки, скорости атаки (прибавка сверх 100%) и передвижения (сверх базовой)
+call SetUnitBonusDamageByIndex(cl,0,R2I(I2R(GetUnitBonusDamageByIndex(caster,0))*.5))
+call SetUnitAttackCooldownByIndex(cl,0,GetUnitAttackCooldownByIndex(cl,0)/RMaxBJ(1.,1.+(GetUnitAttackSpeed(caster)-1.)*.5))
+call SetUnitMoveSpeed(cl,GetUnitDefaultMoveSpeed(cl)+RMaxBJ(0.,GetUnitMoveSpeed(caster)-GetUnitDefaultMoveSpeed(caster))*.5)
 call SaveBoolean(HH,GetHandleId(cl),SH_FlaDash,true)
 call SaveUnitHandle(HH,GetHandleId(cl),SH_FlaOwner,caster)
 call SetUnitXY_1(cl,tx,ty, true)
@@ -37765,7 +37769,8 @@ call TriggerAddAction(t,function OnButtonEmoteClick2)
 set t=null
 endfunction
 function Trig_Set_Ability_Conditions takes nothing returns boolean
-return IsUnitType(GetTriggerUnit(),UNIT_TYPE_HERO) and pick!=3
+// игрок 14 — только клоны Ямато (герои того же типа на 0.3 c): настройка героя им не нужна (вечные таймеры, Hero[14]==null)
+return IsUnitType(GetTriggerUnit(),UNIT_TYPE_HERO) and pick!=3 and GetOwningPlayer(GetTriggerUnit())!=Player(14)
 endfunction
 function IndexTouma2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
@@ -281003,8 +281008,8 @@ call LANG_A('FlR1',1,3,"A three-press song spell: press R again, no more than 8 
 call LANG_A('FlR1',1,4,"A three-press song spell: press R again, no more than 8 sec. between presses, or the song is interrupted. After the third press a cage of projectiles rises around every enemy within 4000 and strikes them.|n|n|cFF00A5FF|nDamage: 2*|r|c0077FFFFINT|r|cFF00A5FF per projectile|nRadius: 4000|nStun: 1.5 se"+"c.|nCast time: +0.1 sec.|nCooldown between presses: 2 sec.|nCooldown: 30 sec.|r")
 call LANG_A('FlR1',2,0,"Kagome, Kagome, [|cffffcc00Level %d|r] (|cffffcc00R|r)")
 call LANG_A('FlR1',3,0,"A three-press song spell: press R again, no more than 8 sec. between presses, or the song is interrupted. After the third press a cage of projectiles rises around every enemy within 4000 and strikes them.|n|n|cFF00A5FF|nDamage: 1\\1.25\\1.5\\1.75\\2*|r|c0077FFFFINT|r|cFF00A5FF per projectile|nRadius"+": 4000|nStun: 1.5 sec.|nCast time: +0.1 sec.|nCooldown between presses: 2 sec.|nCooldown: 30 sec.|r")
-call LANG_A('FlT1',1,0,"A Flandre clone at a point: attacks nearby enemies on its own.|nNo cooldown — charges: several clones can be placed in a row.|nRight-click near a clone — a damaging dash to it, once per clone.|nAttack order (A + click on an enemy or the ground) — all clones rush there, hit and stun.|n|n|cFF00A"+"5FF|nClone attack damage: 50% of Flandre's |r|c0077FFFFINT|r|cFF00A5FF|nDash damage: 0.45*|r|c0077FFFFINT|r|cFF00A5FF (AoE 320)|nClone duration: 12 sec.|nCharges: 3, each restores 20 sec. after use, all at round start|nDash range: 1600|nClone attack cooldown: 30 sec.|nRange: 800|nCast time: +0.1 sec"+".|r")
-call LANG_A('FlT1',3,0,"A Flandre clone at a point: attacks nearby enemies on its own.|nNo cooldown — charges: several clones can be placed in a row.|nRight-click near a clone — a damaging dash to it, once per clone.|nAttack order (A + click on an enemy or the ground) — all clones rush there, hit and stun.|n|n|cFF00A"+"5FF|nClone attack damage: 50% of Flandre's |r|c0077FFFFINT|r|cFF00A5FF|nDash damage: 0.45*|r|c0077FFFFINT|r|cFF00A5FF (AoE 320)|nClone duration: 12 sec.|nCharges: 3, each restores 20 sec. after use, all at round start|nDash range: 1600|nClone attack cooldown: 30 sec.|nRange: 800|nCast time: +0.1 sec"+".|r")
+call LANG_A('FlT1',1,0,"A Flandre clone at a point: attacks nearby enemies on its own.|nNo cooldown — charges: several clones can be placed in a row.|nRight-click near a clone — a damaging dash to it, once per clone.|nAttack order (A + click on an enemy or the ground) — all clones rush there, hit and stun.|n|n|cFF00A"+"5FF|nClone attack damage: 50% of Flandre's |r|c0077FFFFINT|r|cFF00A5FF|nFlandre's bonuses to attack damage, attack speed and movement speed: 50%|nDash damage: 0.45*|r|c0077FFFFINT|r|cFF00A5FF (AoE 320)|nClone duration: 12 sec.|nCharges: 3, each restores 20 sec. after use, all at round start|nDash ra"+"nge: 1600|nClone attack cooldown: 30 sec.|nRange: 800|nCast time: +0.1 sec.|r")
+call LANG_A('FlT1',3,0,"A Flandre clone at a point: attacks nearby enemies on its own.|nNo cooldown — charges: several clones can be placed in a row.|nRight-click near a clone — a damaging dash to it, once per clone.|nAttack order (A + click on an enemy or the ground) — all clones rush there, hit and stun.|n|n|cFF00A"+"5FF|nClone attack damage: 50% of Flandre's |r|c0077FFFFINT|r|cFF00A5FF|nFlandre's bonuses to attack damage, attack speed and movement speed: 50%|nDash damage: 0.45*|r|c0077FFFFINT|r|cFF00A5FF (AoE 320)|nClone duration: 12 sec.|nCharges: 3, each restores 20 sec. after use, all at round start|nDash ra"+"nge: 1600|nClone attack cooldown: 30 sec.|nRange: 800|nCast time: +0.1 sec.|r")
 call LANG_A('FlD1',1,0,"A projectile flies to a point and becomes a clock. Whoever touches the clock returns to where they were 6 sec. ago: enemies take damage, allies are healed.|n|n|cFF00A5FF|nDamage / healing: 6*|r|c0077FFFFINT|r|cFF00A5FF|nClock duration: 5 sec.|nRange: 1200|nCast time: +0.1 sec.|nCooldown: 35 sec.|r")
 call LANG_A('FlD1',3,0,"A projectile flies to a point and becomes a clock. Whoever touches the clock returns to where they were 6 sec. ago: enemies take damage, allies are healed.|n|n|cFF00A5FF|nDamage / healing: 6*|r|c0077FFFFINT|r|cFF00A5FF|nClock duration: 5 sec.|nRange: 1200|nCast time: +0.1 sec.|nCooldown: 35 sec.|r")
 call LANG_A('FlF1',1,0,"Flandre is invulnerable and hits everyone nearby on her own — steer her where you need. At the end, a final area strike with a stun.|n|n|cFF00A5FF|nDamage: 0.35*|r|c0077FFFFINT|r|cFF00A5FF every 0.3 sec. (AoE 250)|nFinal strike: 1.75*|r|c0077FFFFINT|r|cFF00A5FF (AoE 600)|nStun: 1 sec.|nDuration: 4"+" sec.|nCooldown: 45 sec.|r")
