@@ -14054,7 +14054,7 @@ set t=null
 set caster=null
 return
 endif
-call SetUnitInvulnerable(caster,true)
+// без неуязвимости (11 окт) — только пауза
 call PauseUnit(caster,true)
 if tk==13 then
 call CameraSetEQNoiseForPlayer(GetOwningPlayer(caster),35.)
@@ -14079,7 +14079,6 @@ endif
 if tk==50 then
 call Rem_W_Hit(caster,tx,ty,false)
 call CameraClearNoiseForPlayer(GetOwningPlayer(caster))
-call SetUnitInvulnerable(caster,false)
 call PauseUnit(caster,false)
 call Bof_Unstick(caster)
 call SetUnitTimeScale(caster,1.)
@@ -14099,7 +14098,6 @@ call SaveBoolean(HH,GetHandleId(caster),SH_bofRevd,false)
 call Rem_Fx(caster,"bof\\Scarlet-8.mdx",x,y,-1.,0.,1.,0.)
 call Rem_Fx(caster,"bof\\Tsubaki-33.mdx",x,y,-1.,0.,1.,0.)
 call Rem_Fx(caster,"bof\\Madara-huitu-22.mdx",x,y,25.,ang,4.,0.)
-call SetUnitInvulnerable(caster,true)
 call PauseUnit(caster,true)
 call Rem_Sound("bof\\war3mapImported\\RemiliaScarlet-W-YY1.mp3",100)
 call SaveUnitHandle(HH,GetHandleId(t),0,caster)
@@ -14711,9 +14709,9 @@ call SaveBoolean(HH,GetHandleId(caster),SH_RemFOn,false)
 endfunction
 // ----- Heart Break (конец T): рывок за спину цели, отнимает 20% её максимума, лечит на столько же -----
 function Rem_T_Kill takes unit caster,unit target returns nothing
-// убила финальным уроном T — навсегда +4% максимума цели (не больше 30000) к своему максимуму
+// убила финальным уроном T — навсегда +3% максимума цели (не больше 30000) к своему максимуму (было 4%, 11 окт)
 local integer cid=GetHandleId(caster)
-local integer bonus=IMinBJ(R2I(GetUnitState(target,UNIT_STATE_MAX_LIFE)*.04),30000)
+local integer bonus=IMinBJ(R2I(GetUnitState(target,UNIT_STATE_MAX_LIFE)*.03),30000)
 if not IsUnitType(target,UNIT_TYPE_HERO) or IsUnitIllusion(target) then
 return
 endif
@@ -15092,12 +15090,13 @@ if tk<=200 then
 call SetUnitXY_1(ring,x,y, false)
 call SetUnitXY_1(wave,x,y, false)
 if tk==1 or ModuloInteger(tk-1,8)==0 then
-call Rem_Fx(caster,"bof\\Scarlet-4.mdx",x,y,25.,GetUnitFacing(caster),1.,0.)
+call Rem_Fx(caster,"bof\\Scarlet-4.mdx",x,y,25.,GetUnitFacing(caster),.67,0.)
 call Rem_Fx(caster,"bof\\Scarlet-29.mdx",x,y,GetUnitFlyHeight(caster),GetUnitFacing(caster),1.,0.)
 endif
 if tk==1 or ModuloInteger(tk-1,4)==0 then
 set g=CreateGroup()
-call GroupEnumUnitsInRange(g,x,y,1200.,null)
+// AoE 800 (11 окт; было 1200), эффекты зоны — в 2/3
+call GroupEnumUnitsInRange(g,x,y,800.,null)
 loop
 set e=FirstOfGroup(g)
 exitwhen e==null
@@ -15112,7 +15111,7 @@ endif
 endif
 endloop
 call DestroyGroup(g)
-call Rem_RandFx(caster,x,y,1200.,90)
+call Rem_RandFx(caster,x,y,800.,90)
 endif
 else
 call FlushChildHashtable(HH,id)
@@ -15131,14 +15130,14 @@ local real y=GetUnitY(caster)
 local unit ring=CreateUnit(GetOwningPlayer(caster),'eBLP',x,y,0.)
 local unit wave=CreateUnit(GetOwningPlayer(caster),'eBLP',x,y,0.)
 local timer t
-call Rem_Fx(caster,"bof\\Scarlet-57.MDX",x,y,150.,0.,0.9,2.)
-call Rem_Fx(caster,"bof\\Scarlet-21.mdx",x,y,25.,0.,3.,0.)
+call Rem_Fx(caster,"bof\\Scarlet-57.MDX",x,y,150.,0.,0.6,2.)
+call Rem_Fx(caster,"bof\\Scarlet-21.mdx",x,y,25.,0.,2.,0.)
 call Rem_Fx(caster,"bof\\Scarlet-29.mdx",x,y,GetUnitFlyHeight(caster),0.,1.,0.)
 call Bof_DzSetUnitModel(ring,"bof\\Scarlet-70.mdx")
-call SetUnitScale(ring,3.,3.,3.)
+call SetUnitScale(ring,2.,2.,2.)
 call UnitApplyTimedLife(ring,'BHwe',10.)
 call Bof_DzSetUnitModel(wave,"bof\\Scarlet-5.mdx")
-call SetUnitScale(wave,10.,10.,10.)
+call SetUnitScale(wave,6.67,6.67,6.67)
 call UnitApplyTimedLife(wave,'BHwe',3.)
 call Rem_Sound("bof\\war3mapImported\\RemiliaScarlet-G-YY1.mp3",100)
 call Rem_Sound("bof\\war3mapImported\\RemiliaScarlet-G-YX1.mp3",100)
@@ -15647,7 +15646,7 @@ call SaveReal(HH,GetHandleId(t),2,Atan2BJ(GetUnitY(target)-GetUnitY(caster),GetU
 call TimerStart(t,.02,true,function Fla_W_Act2)
 set t=null
 endfunction
-// ----- W2 Laevatein: 1 c замах, затем 6 ударов веером на 600 (радиус 350): урон W2 x80, стан 1.5 c -----
+// ----- W2 Laevatein: 1 c замах, затем 6 ударов веером на 600 (радиус 350): урон W2 x160 (2*INT), стан 1 c (11 окт; было x80, 1.5 c) -----
 function Fla_W2_Act2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
@@ -15661,6 +15660,7 @@ local real px
 local real py
 local integer i
 local group g
+local group hg
 local unit e
 call SaveInteger(HH,id,2,tk)
 // реверс (цель в стойке развернула умение): умение кончается, героиня отпущена
@@ -15701,6 +15701,8 @@ call CameraClearNoiseForPlayer(GetOwningPlayer(caster))
 call Rem_Noise(GetOwningPlayer(caster),80.,1.)
 call PauseUnit(caster,false)
 call SetUnitInvulnerable(caster,false)
+// задетые (11 окт): цель получает урон и стан один раз за W2, сколько бы кругов её ни накрыло
+set hg=CreateGroup()
 set i=1
 loop
 exitwhen i>6
@@ -15715,14 +15717,35 @@ loop
 set e=FirstOfGroup(g)
 exitwhen e==null
 call GroupRemoveUnit(g,e)
-if Condition_Base(GetOwningPlayer(caster),e) and GetUnitAbilityLevel(e,'Avul')==0 then
-call Bof_Dmg(caster,e,(I2R(Fla_Int_W2(caster,true))*80.)*0.001)
-call Bof_Ctrl(caster,e,1.5,"stun")
+if not IsUnitInGroup(e,hg) and Condition_Base(GetOwningPlayer(caster),e) and GetUnitAbilityLevel(e,'Avul')==0 then
+call GroupAddUnit(hg,e)
+call Bof_Dmg(caster,e,(I2R(Fla_Int_W2(caster,true))*160.)*0.001)
+call Bof_Ctrl(caster,e,1.,"stun")
 endif
 endloop
 call DestroyGroup(g)
 set i=i+1
 endloop
+// ближняя зона (11 окт): круг 350 в 250 перед Фландре — веер на 600 вплотную перед ней не доставал.
+// (общая группа задетых — без двойного урона)
+set px=x+CosBJ(ang)*250.
+set py=y+SinBJ(ang)*250.
+call Rem_Fx(caster,"bof\\Minato-31.mdx",px,py,25.,ang,4.,0.)
+set g=CreateGroup()
+call GroupEnumUnitsInRange(g,px,py,350.,null)
+loop
+set e=FirstOfGroup(g)
+exitwhen e==null
+call GroupRemoveUnit(g,e)
+if not IsUnitInGroup(e,hg) and Condition_Base(GetOwningPlayer(caster),e) and GetUnitAbilityLevel(e,'Avul')==0 then
+call GroupAddUnit(hg,e)
+call Bof_Dmg(caster,e,(I2R(Fla_Int_W2(caster,true))*160.)*0.001)
+call Bof_Ctrl(caster,e,1.,"stun")
+endif
+endloop
+call DestroyGroup(g)
+call DestroyGroup(hg)
+set hg=null
 call FlushChildHashtable(HH,id)
 call DestroyTimer(t)
 endif
@@ -281016,8 +281039,8 @@ call LANG_A('FlF1',1,0,"Flandre is invulnerable and hits everyone nearby on her 
 call LANG_A('FlF1',3,0,"Flandre is invulnerable and hits everyone nearby on her own — steer her where you need. At the end, a final area strike with a stun.|n|n|cFF00A5FF|nDamage: 0.35*|r|c0077FFFFINT|r|cFF00A5FF every 0.3 sec. (AoE 250)|nFinal strike: 1.75*|r|c0077FFFFINT|r|cFF00A5FF (AoE 600)|nStun: 1 sec.|nDuration: 4"+" sec.|nCooldown: 45 sec.|r")
 call LANG_A('FlG1',1,0,"A magic circle around Flandre: the line in front of her takes 16 hits over 1.5 sec.|nFor 8 sec. after G the button becomes QED \"Ripples of 495 Years\": a hit on the target with a stun.|n|n|cFF00A5FF|nDamage: 0.4*|r|c0077FFFFINT|r|cFF00A5FF per strike|nLine length: 2000|nCast time: +0.1 sec.|nCooldo"+"wn: 60 sec.|r")
 call LANG_A('FlG1',3,0,"A magic circle around Flandre: the line in front of her takes 16 hits over 1.5 sec.|nFor 8 sec. after G the button becomes QED \"Ripples of 495 Years\": a hit on the target with a stun.|n|n|cFF00A5FF|nDamage: 0.4*|r|c0077FFFFINT|r|cFF00A5FF per strike|nLine length: 2000|nCast time: +0.1 sec.|nCooldo"+"wn: 60 sec.|r")
-call LANG_A('FlW2',1,0,"Flandre forcefully swings the flaming sword Laevatein over an area.|n|n|cFF00A5FF|nDamage: 1*|r|c0077FFFFINT|r|cFF00A5FF per strike (6 strikes in a fan)|nStun: 1.5 sec.|nCast time: +0.1 sec.|r")
-call LANG_A('FlW2',3,0,"Flandre forcefully swings the flaming sword Laevatein over an area.|n|n|cFF00A5FF|nDamage: 1*|r|c0077FFFFINT|r|cFF00A5FF per strike (6 strikes in a fan)|nStun: 1.5 sec.|nCast time: +0.1 sec.|r")
+call LANG_A('FlW2',1,0,"Flandre forcefully swings the flaming sword Laevatein over an area.|n|n|cFF00A5FF|nDamage: 2*|r|c0077FFFFINT|r|cFF00A5FF per strike (6 strikes in a fan at 600 and one right in front of Flandre); once per target|nStun: 1 sec.|nCast time: +0.1 sec.|r")
+call LANG_A('FlW2',3,0,"Flandre forcefully swings the flaming sword Laevatein over an area.|n|n|cFF00A5FF|nDamage: 2*|r|c0077FFFFINT|r|cFF00A5FF per strike (6 strikes in a fan at 600 and one right in front of Flandre); once per target|nStun: 1 sec.|nCast time: +0.1 sec.|r")
 call LANG_A('FlG2',1,0,"\"495 Years of Solitude\": two hits on the target.|n|n|cFF00A5FF|nDamage: 2.5*|r|c0077FFFFINT|r|cFF00A5FF per strike|nStun: 1.5 sec.|nRange: 800|nCast time: +0.1 sec.|r")
 call LANG_A('FlG2',3,0,"\"495 Years of Solitude\": two hits on the target.|n|n|cFF00A5FF|nDamage: 2.5*|r|c0077FFFFINT|r|cFF00A5FF per strike|nStun: 1.5 sec.|nRange: 800|nCast time: +0.1 sec.|r")
 call LANG_A('RmQ1',0,0,"Scarlet Shoot, [|cffffcc00Level 1|r] (|cffffcc00Q|r)")
@@ -281025,15 +281048,15 @@ call LANG_A('RmQ1',0,1,"Scarlet Shoot, [|cffffcc00Level 2|r] (|cffffcc00Q|r)")
 call LANG_A('RmQ1',0,2,"Scarlet Shoot, [|cffffcc00Level 3|r] (|cffffcc00Q|r)")
 call LANG_A('RmQ1',0,3,"Scarlet Shoot, [|cffffcc00Level 4|r] (|cffffcc00Q|r)")
 call LANG_A('RmQ1',0,4,"Scarlet Shoot, [|cffffcc00Level 5|r] (|cffffcc00Q|r)")
-call LANG_A('RmQ1',1,0,"Remilia leaps past the point and releases 4 homing chains of scarlet aura.|nFor 8 sec. Q is replaced by Bad Lady Scramble; after using it, Q returns immediately.|n|n|cFF00A5FF|nDamage: 0.5*|r|c0077FFFFINT|r|cFF00A5FF per hit|nStun: 1 sec.|nRange: 1000|nCast time: +0.1 sec.|nCooldown: 20 sec.|r")
-call LANG_A('RmQ1',1,1,"Remilia leaps past the point and releases 4 homing chains of scarlet aura.|nFor 8 sec. Q is replaced by Bad Lady Scramble; after using it, Q returns immediately.|n|n|cFF00A5FF|nDamage: 0.62*|r|c0077FFFFINT|r|cFF00A5FF per hit|nStun: 1 sec.|nRange: 1000|nCast time: +0.1 sec.|nCooldown: 20 sec.|r")
-call LANG_A('RmQ1',1,2,"Remilia leaps past the point and releases 4 homing chains of scarlet aura.|nFor 8 sec. Q is replaced by Bad Lady Scramble; after using it, Q returns immediately.|n|n|cFF00A5FF|nDamage: 0.75*|r|c0077FFFFINT|r|cFF00A5FF per hit|nStun: 1 sec.|nRange: 1000|nCast time: +0.1 sec.|nCooldown: 20 sec.|r")
-call LANG_A('RmQ1',1,3,"Remilia leaps past the point and releases 4 homing chains of scarlet aura.|nFor 8 sec. Q is replaced by Bad Lady Scramble; after using it, Q returns immediately.|n|n|cFF00A5FF|nDamage: 0.88*|r|c0077FFFFINT|r|cFF00A5FF per hit|nStun: 1 sec.|nRange: 1000|nCast time: +0.1 sec.|nCooldown: 20 sec.|r")
-call LANG_A('RmQ1',1,4,"Remilia leaps past the point and releases 4 homing chains of scarlet aura.|nFor 8 sec. Q is replaced by Bad Lady Scramble; after using it, Q returns immediately.|n|n|cFF00A5FF|nDamage: 1*|r|c0077FFFFINT|r|cFF00A5FF per hit|nStun: 1 sec.|nRange: 1000|nCast time: +0.1 sec.|nCooldown: 20 sec.|r")
+call LANG_A('RmQ1',1,0,"Remilia leaps past the point and releases 4 homing chains of scarlet aura.|nFor 8 sec. Q is replaced by Bad Lady Scramble; after using it, Q returns immediately.|n|n|cFF00A5FF|nDamage: 0.5*|r|c0077FFFFINT|r|cFF00A5FF per hit|nStun: 1 sec.|nRange: 1000|nCast time: +0.1 sec.|nCooldown: 23 sec.|r")
+call LANG_A('RmQ1',1,1,"Remilia leaps past the point and releases 4 homing chains of scarlet aura.|nFor 8 sec. Q is replaced by Bad Lady Scramble; after using it, Q returns immediately.|n|n|cFF00A5FF|nDamage: 0.62*|r|c0077FFFFINT|r|cFF00A5FF per hit|nStun: 1 sec.|nRange: 1000|nCast time: +0.1 sec.|nCooldown: 23 sec.|r")
+call LANG_A('RmQ1',1,2,"Remilia leaps past the point and releases 4 homing chains of scarlet aura.|nFor 8 sec. Q is replaced by Bad Lady Scramble; after using it, Q returns immediately.|n|n|cFF00A5FF|nDamage: 0.75*|r|c0077FFFFINT|r|cFF00A5FF per hit|nStun: 1 sec.|nRange: 1000|nCast time: +0.1 sec.|nCooldown: 23 sec.|r")
+call LANG_A('RmQ1',1,3,"Remilia leaps past the point and releases 4 homing chains of scarlet aura.|nFor 8 sec. Q is replaced by Bad Lady Scramble; after using it, Q returns immediately.|n|n|cFF00A5FF|nDamage: 0.88*|r|c0077FFFFINT|r|cFF00A5FF per hit|nStun: 1 sec.|nRange: 1000|nCast time: +0.1 sec.|nCooldown: 23 sec.|r")
+call LANG_A('RmQ1',1,4,"Remilia leaps past the point and releases 4 homing chains of scarlet aura.|nFor 8 sec. Q is replaced by Bad Lady Scramble; after using it, Q returns immediately.|n|n|cFF00A5FF|nDamage: 1*|r|c0077FFFFINT|r|cFF00A5FF per hit|nStun: 1 sec.|nRange: 1000|nCast time: +0.1 sec.|nCooldown: 23 sec.|r")
 endfunction
 function LANG_Data50 takes nothing returns nothing
 call LANG_A('RmQ1',2,0,"Scarlet Shoot, [|cffffcc00Level %d|r] (|cffffcc00Q|r)")
-call LANG_A('RmQ1',3,0,"Remilia leaps past the point and releases 4 homing chains of scarlet aura.|nFor 8 sec. Q is replaced by Bad Lady Scramble; after using it, Q returns immediately.|n|n|cFF00A5FF|nDamage: 0.5\\0.62\\0.75\\0.88\\1*|r|c0077FFFFINT|r|cFF00A5FF per hit|nStun: 1 sec.|nRange: 1000|nCast time: +0.1 sec.|nCool"+"down: 20 sec.|r")
+call LANG_A('RmQ1',3,0,"Remilia leaps past the point and releases 4 homing chains of scarlet aura.|nFor 8 sec. Q is replaced by Bad Lady Scramble; after using it, Q returns immediately.|n|n|cFF00A5FF|nDamage: 0.5\\0.62\\0.75\\0.88\\1*|r|c0077FFFFINT|r|cFF00A5FF per hit|nStun: 1 sec.|nRange: 1000|nCast time: +0.1 sec.|nCool"+"down: 23 sec.|r")
 call LANG_A('RmQ2',1,0,"Remilia swaps places with the Scarlet Shoot point and stuns everyone around.|n|n|cFF00A5FF|nDamage: 2*|r|c0077FFFFINT|r|cFF00A5FF|nStun: 1 sec.|nCast time: +0.1 sec.|r")
 call LANG_A('RmQ2',3,0,"Remilia swaps places with the Scarlet Shoot point and stuns everyone around.|n|n|cFF00A5FF|nDamage: 2*|r|c0077FFFFINT|r|cFF00A5FF|nStun: 1 sec.|nCast time: +0.1 sec.|r")
 call LANG_A('RmW1',0,0,"Young Demon Lord, [|cffffcc00Level 1|r] (|cffffcc00W|r)")
@@ -281041,25 +281064,25 @@ call LANG_A('RmW1',0,1,"Young Demon Lord, [|cffffcc00Level 2|r] (|cffffcc00W|r)"
 call LANG_A('RmW1',0,2,"Young Demon Lord, [|cffffcc00Level 3|r] (|cffffcc00W|r)")
 call LANG_A('RmW1',0,3,"Young Demon Lord, [|cffffcc00Level 4|r] (|cffffcc00W|r)")
 call LANG_A('RmW1',0,4,"Young Demon Lord, [|cffffcc00Level 5|r] (|cffffcc00W|r)")
-call LANG_A('RmW1',1,0,"An upward dash in a cloud of aura: enemies in a small area are knocked up, held and hit 5 times.|n|n|cFF00A5FF|nDamage: 0.5*|r|c0077FFFFINT|r|cFF00A5FF per strike|nStun: 1 sec.|nAoE: 300|nRange: 1000|nCast time: +0.1 sec.|nCooldown: 20 sec.|r")
-call LANG_A('RmW1',1,1,"An upward dash in a cloud of aura: enemies in a small area are knocked up, held and hit 5 times.|n|n|cFF00A5FF|nDamage: 0.73*|r|c0077FFFFINT|r|cFF00A5FF per strike|nStun: 1 sec.|nAoE: 300|nRange: 1000|nCast time: +0.1 sec.|nCooldown: 20 sec.|r")
-call LANG_A('RmW1',1,2,"An upward dash in a cloud of aura: enemies in a small area are knocked up, held and hit 5 times.|n|n|cFF00A5FF|nDamage: 0.95*|r|c0077FFFFINT|r|cFF00A5FF per strike|nStun: 1 sec.|nAoE: 300|nRange: 1000|nCast time: +0.1 sec.|nCooldown: 20 sec.|r")
-call LANG_A('RmW1',1,3,"An upward dash in a cloud of aura: enemies in a small area are knocked up, held and hit 5 times.|n|n|cFF00A5FF|nDamage: 1.18*|r|c0077FFFFINT|r|cFF00A5FF per strike|nStun: 1 sec.|nAoE: 300|nRange: 1000|nCast time: +0.1 sec.|nCooldown: 20 sec.|r")
-call LANG_A('RmW1',1,4,"An upward dash in a cloud of aura: enemies in a small area are knocked up, held and hit 5 times.|n|n|cFF00A5FF|nDamage: 1.4*|r|c0077FFFFINT|r|cFF00A5FF per strike|nStun: 1 sec.|nAoE: 300|nRange: 1000|nCast time: +0.1 sec.|nCooldown: 20 sec.|r")
+call LANG_A('RmW1',1,0,"An upward dash in a cloud of aura: enemies in a small area are knocked up, held and hit 5 times.|n|n|cFF00A5FF|nDamage: 0.5*|r|c0077FFFFINT|r|cFF00A5FF per strike|nStun: 1 sec.|nAoE: 300|nRange: 1000|nCast time: +0.1 sec.|nCooldown: 23 sec.|r")
+call LANG_A('RmW1',1,1,"An upward dash in a cloud of aura: enemies in a small area are knocked up, held and hit 5 times.|n|n|cFF00A5FF|nDamage: 0.73*|r|c0077FFFFINT|r|cFF00A5FF per strike|nStun: 1 sec.|nAoE: 300|nRange: 1000|nCast time: +0.1 sec.|nCooldown: 23 sec.|r")
+call LANG_A('RmW1',1,2,"An upward dash in a cloud of aura: enemies in a small area are knocked up, held and hit 5 times.|n|n|cFF00A5FF|nDamage: 0.95*|r|c0077FFFFINT|r|cFF00A5FF per strike|nStun: 1 sec.|nAoE: 300|nRange: 1000|nCast time: +0.1 sec.|nCooldown: 23 sec.|r")
+call LANG_A('RmW1',1,3,"An upward dash in a cloud of aura: enemies in a small area are knocked up, held and hit 5 times.|n|n|cFF00A5FF|nDamage: 1.18*|r|c0077FFFFINT|r|cFF00A5FF per strike|nStun: 1 sec.|nAoE: 300|nRange: 1000|nCast time: +0.1 sec.|nCooldown: 23 sec.|r")
+call LANG_A('RmW1',1,4,"An upward dash in a cloud of aura: enemies in a small area are knocked up, held and hit 5 times.|n|n|cFF00A5FF|nDamage: 1.4*|r|c0077FFFFINT|r|cFF00A5FF per strike|nStun: 1 sec.|nAoE: 300|nRange: 1000|nCast time: +0.1 sec.|nCooldown: 23 sec.|r")
 call LANG_A('RmW1',2,0,"Young Demon Lord, [|cffffcc00Level %d|r] (|cffffcc00W|r)")
-call LANG_A('RmW1',3,0,"An upward dash in a cloud of aura: enemies in a small area are knocked up, held and hit 5 times.|n|n|cFF00A5FF|nDamage: 0.5\\0.73\\0.95\\1.18\\1.4*|r|c0077FFFFINT|r|cFF00A5FF per strike|nStun: 1 sec.|nAoE: 300|nRange: 1000|nCast time: +0.1 sec.|nCooldown: 20 sec.|r")
+call LANG_A('RmW1',3,0,"An upward dash in a cloud of aura: enemies in a small area are knocked up, held and hit 5 times.|n|n|cFF00A5FF|nDamage: 0.5\\0.73\\0.95\\1.18\\1.4*|r|c0077FFFFINT|r|cFF00A5FF per strike|nStun: 1 sec.|nAoE: 300|nRange: 1000|nCast time: +0.1 sec.|nCooldown: 23 sec.|r")
 call LANG_A('RmE1',0,0,"Dracula Cradle, [|cffffcc00Level 1|r] (|cffffcc00E|r)")
 call LANG_A('RmE1',0,1,"Dracula Cradle, [|cffffcc00Level 2|r] (|cffffcc00E|r)")
 call LANG_A('RmE1',0,2,"Dracula Cradle, [|cffffcc00Level 3|r] (|cffffcc00E|r)")
 call LANG_A('RmE1',0,3,"Dracula Cradle, [|cffffcc00Level 4|r] (|cffffcc00E|r)")
 call LANG_A('RmE1',0,4,"Dracula Cradle, [|cffffcc00Level 5|r] (|cffffcc00E|r)")
-call LANG_A('RmE1',1,0,"A series of dashes too fast for the eye to follow.|n|nPassive — Thousand-Year Vampire:|nFrom level 6, attacks deal an additional 0.19*|c0077FFFFINT|r.|n7% of all damage dealt (10% from level 25) heals Remilia; excess healing becomes temporary HP above maximum (up to 25%), which drains away after 1"+"5 sec. without dealing damage.|n|n|cFF00A5FF|nDamage: 1.2*|r|c0077FFFFINT|r|cFF00A5FF per strike|nStun: 1 sec.|nRange: 1000|nCast time: +0.1 sec.|nCooldown: 25 sec.|r")
-call LANG_A('RmE1',1,1,"A series of dashes too fast for the eye to follow.|n|nPassive — Thousand-Year Vampire:|nFrom level 6, attacks deal an additional 0.19*|c0077FFFFINT|r.|n7% of all damage dealt (10% from level 25) heals Remilia; excess healing becomes temporary HP above maximum (up to 25%), which drains away after 1"+"5 sec. without dealing damage.|n|n|cFF00A5FF|nDamage: 1.4*|r|c0077FFFFINT|r|cFF00A5FF per strike|nStun: 1 sec.|nRange: 1000|nCast time: +0.1 sec.|nCooldown: 25 sec.|r")
-call LANG_A('RmE1',1,2,"A series of dashes too fast for the eye to follow.|n|nPassive — Thousand-Year Vampire:|nFrom level 6, attacks deal an additional 0.19*|c0077FFFFINT|r.|n7% of all damage dealt (10% from level 25) heals Remilia; excess healing becomes temporary HP above maximum (up to 25%), which drains away after 1"+"5 sec. without dealing damage.|n|n|cFF00A5FF|nDamage: 1.6*|r|c0077FFFFINT|r|cFF00A5FF per strike|nStun: 1 sec.|nRange: 1000|nCast time: +0.1 sec.|nCooldown: 25 sec.|r")
-call LANG_A('RmE1',1,3,"A series of dashes too fast for the eye to follow.|n|nPassive — Thousand-Year Vampire:|nFrom level 6, attacks deal an additional 0.19*|c0077FFFFINT|r.|n7% of all damage dealt (10% from level 25) heals Remilia; excess healing becomes temporary HP above maximum (up to 25%), which drains away after 1"+"5 sec. without dealing damage.|n|n|cFF00A5FF|nDamage: 1.8*|r|c0077FFFFINT|r|cFF00A5FF per strike|nStun: 1 sec.|nRange: 1000|nCast time: +0.1 sec.|nCooldown: 25 sec.|r")
-call LANG_A('RmE1',1,4,"A series of dashes too fast for the eye to follow.|n|nPassive — Thousand-Year Vampire:|nFrom level 6, attacks deal an additional 0.19*|c0077FFFFINT|r.|n7% of all damage dealt (10% from level 25) heals Remilia; excess healing becomes temporary HP above maximum (up to 25%), which drains away after 1"+"5 sec. without dealing damage.|n|n|cFF00A5FF|nDamage: 2*|r|c0077FFFFINT|r|cFF00A5FF per strike|nStun: 1 sec.|nRange: 1000|nCast time: +0.1 sec.|nCooldown: 25 sec.|r")
+call LANG_A('RmE1',1,0,"A series of dashes too fast for the eye to follow.|n|nPassive — Thousand-Year Vampire:|nFrom level 6, attacks deal an additional 0.19*|c0077FFFFINT|r.|n7% of all damage dealt (10% from level 25) heals Remilia; excess healing becomes temporary HP above maximum (up to 25%), which drains away after 1"+"5 sec. without dealing damage.|n|n|cFF00A5FF|nDamage: 1.2*|r|c0077FFFFINT|r|cFF00A5FF per strike|nStun: 1 sec.|nRange: 1000|nCast time: +0.1 sec.|nCooldown: 28 sec.|r")
+call LANG_A('RmE1',1,1,"A series of dashes too fast for the eye to follow.|n|nPassive — Thousand-Year Vampire:|nFrom level 6, attacks deal an additional 0.19*|c0077FFFFINT|r.|n7% of all damage dealt (10% from level 25) heals Remilia; excess healing becomes temporary HP above maximum (up to 25%), which drains away after 1"+"5 sec. without dealing damage.|n|n|cFF00A5FF|nDamage: 1.4*|r|c0077FFFFINT|r|cFF00A5FF per strike|nStun: 1 sec.|nRange: 1000|nCast time: +0.1 sec.|nCooldown: 28 sec.|r")
+call LANG_A('RmE1',1,2,"A series of dashes too fast for the eye to follow.|n|nPassive — Thousand-Year Vampire:|nFrom level 6, attacks deal an additional 0.19*|c0077FFFFINT|r.|n7% of all damage dealt (10% from level 25) heals Remilia; excess healing becomes temporary HP above maximum (up to 25%), which drains away after 1"+"5 sec. without dealing damage.|n|n|cFF00A5FF|nDamage: 1.6*|r|c0077FFFFINT|r|cFF00A5FF per strike|nStun: 1 sec.|nRange: 1000|nCast time: +0.1 sec.|nCooldown: 28 sec.|r")
+call LANG_A('RmE1',1,3,"A series of dashes too fast for the eye to follow.|n|nPassive — Thousand-Year Vampire:|nFrom level 6, attacks deal an additional 0.19*|c0077FFFFINT|r.|n7% of all damage dealt (10% from level 25) heals Remilia; excess healing becomes temporary HP above maximum (up to 25%), which drains away after 1"+"5 sec. without dealing damage.|n|n|cFF00A5FF|nDamage: 1.8*|r|c0077FFFFINT|r|cFF00A5FF per strike|nStun: 1 sec.|nRange: 1000|nCast time: +0.1 sec.|nCooldown: 28 sec.|r")
+call LANG_A('RmE1',1,4,"A series of dashes too fast for the eye to follow.|n|nPassive — Thousand-Year Vampire:|nFrom level 6, attacks deal an additional 0.19*|c0077FFFFINT|r.|n7% of all damage dealt (10% from level 25) heals Remilia; excess healing becomes temporary HP above maximum (up to 25%), which drains away after 1"+"5 sec. without dealing damage.|n|n|cFF00A5FF|nDamage: 2*|r|c0077FFFFINT|r|cFF00A5FF per strike|nStun: 1 sec.|nRange: 1000|nCast time: +0.1 sec.|nCooldown: 28 sec.|r")
 call LANG_A('RmE1',2,0,"Dracula Cradle, [|cffffcc00Level %d|r] (|cffffcc00E|r)")
-call LANG_A('RmE1',3,0,"A series of dashes too fast for the eye to follow.|n|nPassive — Thousand-Year Vampire:|nFrom level 6, attacks deal an additional 0.19*|c0077FFFFINT|r.|n7% of all damage dealt (10% from level 25) heals Remilia; excess healing becomes temporary HP above maximum (up to 25%), which drains away after 1"+"5 sec. without dealing damage.|n|n|cFF00A5FF|nDamage: 1.2\\1.4\\1.6\\1.8\\2*|r|c0077FFFFINT|r|cFF00A5FF per strike|nStun: 1 sec.|nRange: 1000|nCast time: +0.1 sec.|nCooldown: 25 sec.|r")
+call LANG_A('RmE1',3,0,"A series of dashes too fast for the eye to follow.|n|nPassive — Thousand-Year Vampire:|nFrom level 6, attacks deal an additional 0.19*|c0077FFFFINT|r.|n7% of all damage dealt (10% from level 25) heals Remilia; excess healing becomes temporary HP above maximum (up to 25%), which drains away after 1"+"5 sec. without dealing damage.|n|n|cFF00A5FF|nDamage: 1.2\\1.4\\1.6\\1.8\\2*|r|c0077FFFFINT|r|cFF00A5FF per strike|nStun: 1 sec.|nRange: 1000|nCast time: +0.1 sec.|nCooldown: 28 sec.|r")
 call LANG_A('RmR1',0,0,"Spear the Gungnir, [|cffffcc00Level 1|r] (|cffffcc00R|r)")
 call LANG_A('RmR1',0,1,"Spear the Gungnir, [|cffffcc00Level 2|r] (|cffffcc00R|r)")
 call LANG_A('RmR1',0,2,"Spear the Gungnir, [|cffffcc00Level 3|r] (|cffffcc00R|r)")
@@ -281072,8 +281095,8 @@ call LANG_A('RmR1',1,3,"A five-press spell: press R, no more than 7 sec. between
 call LANG_A('RmR1',1,4,"A five-press spell: press R, no more than 7 sec. between presses. The fifth throws a spear at the nearest enemy hero within 5000: half of the spear damage goes through invulnerability.|nThe pierced target is lifted into the air and stays stunned.|n|n|cFF00A5FF|nSpear damage: 6*|r|c0077FFFFINT|r|cFF0"+"0A5FF + 15% of Remilia's max HP|nSpear stun: 1.2 sec.|nSpear range: 5000|nCast time: +0.1 sec.|nCooldown between presses: 1.5 sec.|nCooldown: 30 sec.|r")
 call LANG_A('RmR1',2,0,"Spear the Gungnir, [|cffffcc00Level %d|r] (|cffffcc00R|r)")
 call LANG_A('RmR1',3,0,"A five-press spell: press R, no more than 7 sec. between presses. The fifth throws a spear at the nearest enemy hero within 5000: half of the spear damage goes through invulnerability.|nThe pierced target is lifted into the air and stays stunned.|n|n|cFF00A5FF|nSpear damage: 2\\3\\4\\5\\6*|r|c0077FF"+"FFINT|r|cFF00A5FF + 15% of Remilia's max HP|nSpear stun: 1.2 sec.|nSpear range: 5000|nCast time: +0.1 sec.|nCooldown between presses: 1.5 sec.|nCooldown: 30 sec.|r")
-call LANG_A('RmT1',1,0,"A whirl of scarlet aura burns everything around the target; at the end, Heart Break hits the same target.|nRemilia and the target are invulnerable during the skill.|nIf an enemy hero dies during T (from anything), Remilia permanently gains +4% of their max HP.|n|n|cFF00A5FF|nDamage: 6*|r|c0077FFFFIN"+"T|r|cFF00A5FF + 30% of the HP difference between Remilia and the target|nHeart Break: 20% of the target's max HP|nDuration: ~5 sec.|nRange: 450|nCast time: +0.1 sec.|nCooldown: 60 sec.|r")
-call LANG_A('RmT1',3,0,"A whirl of scarlet aura burns everything around the target; at the end, Heart Break hits the same target.|nRemilia and the target are invulnerable during the skill.|nIf an enemy hero dies during T (from anything), Remilia permanently gains +4% of their max HP.|n|n|cFF00A5FF|nDamage: 6*|r|c0077FFFFIN"+"T|r|cFF00A5FF + 30% of the HP difference between Remilia and the target|nHeart Break: 20% of the target's max HP|nDuration: ~5 sec.|nRange: 450|nCast time: +0.1 sec.|nCooldown: 60 sec.|r")
+call LANG_A('RmT1',1,0,"A whirl of scarlet aura burns everything around the target; at the end, Heart Break hits the same target.|nRemilia and the target are invulnerable during the skill.|nIf an enemy hero dies during T (from anything), Remilia permanently gains +3% of their max HP.|n|n|cFF00A5FF|nDamage: 6*|r|c0077FFFFIN"+"T|r|cFF00A5FF + 30% of the HP difference between Remilia and the target|nHeart Break: 20% of the target's max HP|nDuration: ~5 sec.|nRange: 450|nCast time: +0.1 sec.|nCooldown: 60 sec.|r")
+call LANG_A('RmT1',3,0,"A whirl of scarlet aura burns everything around the target; at the end, Heart Break hits the same target.|nRemilia and the target are invulnerable during the skill.|nIf an enemy hero dies during T (from anything), Remilia permanently gains +3% of their max HP.|n|n|cFF00A5FF|nDamage: 6*|r|c0077FFFFIN"+"T|r|cFF00A5FF + 30% of the HP difference between Remilia and the target|nHeart Break: 20% of the target's max HP|nDuration: ~5 sec.|nRange: 450|nCast time: +0.1 sec.|nCooldown: 60 sec.|r")
 call LANG_A('RmD1',1,0,"Homing chains of scarlet aura reach out to enemies.|nWhile the chains fly, Remilia stands still and is invulnerable.|n|n|cFF00A5FF|nDamage: 0.2*|r|c0077FFFFINT|r|cFF00A5FF per touch|nStun: 0.5 sec.|nDuration: 2 sec.|nRange: 1200|nCast time: +0.1 sec.|nCooldown: 30 sec.|r")
 call LANG_A('RmD1',3,0,"Homing chains of scarlet aura reach out to enemies.|nWhile the chains fly, Remilia stands still and is invulnerable.|n|n|cFF00A5FF|nDamage: 0.2*|r|c0077FFFFINT|r|cFF00A5FF per touch|nStun: 0.5 sec.|nDuration: 2 sec.|nRange: 1200|nCast time: +0.1 sec.|nCooldown: 30 sec.|r")
 call LANG_A('RmF1',1,0,"Remilia melts into a lake of blood: invulnerable, but loses health. Other abilities are unavailable meanwhile; pressing F again ends it early.|n|n|cFF00A5FF|nHealth loss: 2% of max HP per sec.|nDuration: up to 4 sec.|nCooldown: 30 sec.|r")
@@ -281082,8 +281105,8 @@ call LANG_A('RmF2',0,0,"Scarlet Netherworld — Exit (|cffffcc00F|r)")
 call LANG_A('RmF2',1,0,"End Scarlet Netherworld early.")
 call LANG_A('RmF2',2,0,"Scarlet Netherworld — Exit (|cffffcc00F|r)")
 call LANG_A('RmF2',3,0,"End Scarlet Netherworld early.")
-call LANG_A('RmG1',1,0,"A magic circle around Remilia: nearby enemies lose mana (through invulnerability); those below 20% mana lose health instead.|n|n|cFF00A5FF|nMana burn: 0.6% every 0.2 sec.|nDamage: 0.12*|r|c0077FFFFINT|r|cFF00A5FF every 0.2 sec.|nAoE: 1200|nDuration: 10 sec.|nCast time: +0.1 sec.|nCooldown: 60 sec.|r")
-call LANG_A('RmG1',3,0,"A magic circle around Remilia: nearby enemies lose mana (through invulnerability); those below 20% mana lose health instead.|n|n|cFF00A5FF|nMana burn: 0.6% every 0.2 sec.|nDamage: 0.12*|r|c0077FFFFINT|r|cFF00A5FF every 0.2 sec.|nAoE: 1200|nDuration: 10 sec.|nCast time: +0.1 sec.|nCooldown: 60 sec.|r")
+call LANG_A('RmG1',1,0,"A magic circle around Remilia: nearby enemies lose mana (through invulnerability); those below 20% mana lose health instead.|n|n|cFF00A5FF|nMana burn: 0.6% every 0.2 sec.|nDamage: 0.12*|r|c0077FFFFINT|r|cFF00A5FF every 0.2 sec.|nAoE: 800|nDuration: 10 sec.|nCast time: +0.1 sec.|nCooldown: 60 sec.|r")
+call LANG_A('RmG1',3,0,"A magic circle around Remilia: nearby enemies lose mana (through invulnerability); those below 20% mana lose health instead.|n|n|cFF00A5FF|nMana burn: 0.6% every 0.2 sec.|nDamage: 0.12*|r|c0077FFFFINT|r|cFF00A5FF every 0.2 sec.|nAoE: 800|nDuration: 10 sec.|nCast time: +0.1 sec.|nCooldown: 60 sec.|r")
 call LANG_A('MkCX',1,0,"Mukuro enters Cambio Forma Version X.|n|n- Vision and detection of invisible enemies within 2250 (for Mukuro's player only).|n- Q, W and E can each be used at most 2 times, on two different Paths. After the second use, that ability of every Path goes on cooldown.|n- Q/W/E mana cost is doubled.|n- +1"+"00 movement speed.|n- Q, W and E damage is reduced by 30% (including snakes and illusions).|n|n|cFF00A5FF|nDuration: 15 sec.|nCooldown: 45 sec. after the form ends.|r")
 call LANG_A('SuQ1',0,0,"Mercury Sword, [|cffffcc00Level 1|r] (|cffffcc00Q|r)")
 call LANG_A('SuQ1',0,1,"Mercury Sword, [|cffffcc00Level 2|r] (|cffffcc00Q|r)")
