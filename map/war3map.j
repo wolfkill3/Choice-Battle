@@ -8328,7 +8328,7 @@ function CCB_Init takes nothing returns nothing
     set CCB_HT=InitHashtable()
     set CCB_G=CreateGroup()
     set CCB_Flt=Condition(function CCB_Filter)
-    call TimerStart(CreateTimer(),0.05,true,function CCB_Scan)
+    call TimerStart(CreateTimer(),0.1,true,function CCB_Scan) // 10 раз в секунду (было 0.05 — 20; 12 окт)
 endfunction
 // масштаб полосок HP (окно настроек, локально; 1 — как было, это минимум): размеры, шрифты и отступы всех мест;
 // заливки, засечки, рамку и сдвиг текста пересчитает HPB_Update (кэш сброшен)
@@ -34411,6 +34411,16 @@ endfunction
 function SD_Tick takes nothing returns nothing
 local integer i=PId(GetLocalPlayer())
 local boolean act
+// раунд начался — выбор героев закончен: окно спрятать, таймер больше не нужен (udg_B общий — у всех одинаково; 12 окт)
+if udg_B then
+    if i<10 and SD_Panel[i]!=null then
+        call ShowFrame(SD_Panel[i],false)
+    endif
+    set SD_Shown=false
+    call PauseTimer(GetExpiredTimer())
+    call DestroyTimer(GetExpiredTimer())
+    return
+endif
 if i<10 and SD_Panel[i]!=null then
     // герой есть в любом виде (Hero / udg_Hero) или выбор закрыт — окна нет
     set act=Hero[i]==null and udg_Hero[i+1]==null and TavernPlayerPickAllow[i] and not SD_Done[i]
