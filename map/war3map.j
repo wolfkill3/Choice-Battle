@@ -55300,7 +55300,9 @@ endif
 call ForceUICancel()
 // предмет — "CBQI" со слотом, способность — "CBQC" с её типом; последнее поле — на себя (1)
 if CBS_QcIt>0 then
-call SendSyncData("CBQI",I2S(CBS_QcIt-1)+";"+R2S(cbX)+";"+R2S(cbY)+cbS)
+// поле 4 — тип предмета на момент нажатия (из общего опроса CBS_ItT): синхронизация приходит с задержкой,
+// за это время предмет могли переложить — обработчик ищет его по типу
+call SendSyncData("CBQI",I2S(CBS_QcIt-1)+";"+R2S(cbX)+";"+R2S(cbY)+cbS+";"+I2S(CBS_ItT[CBS_Me(PId(GetLocalPlayer()))*6+CBS_QcIt-1]))
 else
 call SendSyncData("CBQC",I2S(cbId)+";"+R2S(cbX)+";"+R2S(cbY)+cbS)
 endif
@@ -56444,6 +56446,18 @@ return
 endif
 set cbU=Hero[cbP]
 set cbI=UnitItemInSlot(cbU,cbS)
+// предмет переложили, пока шла синхронизация, — ищем нажатый по типу; нет его — ничего не делаем
+if S2I(CBS_Tok(cbD,4))!=0 and (cbI==null or GetItemTypeId(cbI)!=S2I(CBS_Tok(cbD,4))) then
+set cbI=null
+set cbS=0
+loop
+exitwhen cbS>5 or cbI!=null
+if GetItemTypeId(UnitItemInSlot(cbU,cbS))==S2I(CBS_Tok(cbD,4)) then
+set cbI=UnitItemInSlot(cbU,cbS)
+endif
+set cbS=cbS+1
+endloop
+endif
 // на себя (курсор на портрете): по герою, иначе в точку под ним
 if cbI!=null and CBS_Tok(cbD,3)=="1" then
 set cbX=GetUnitX(cbU)
@@ -56598,7 +56612,7 @@ endif
 set cbOk=not IsAbilityOnCooldown(cbA) and GetUnitState(cbU,UNIT_STATE_MANA)>=I2R(GetAbilityIntegerLevelField(cbA,ABILITY_ILF_MANA_COST,GetUnitAbilityLevel(cbU,cbId)-1))
 // CastAbilityGround — только у способностей с целью «точка» (Channel: тип цели 2), иначе применилась бы без цели
 set cbTt=GetAbilityIntegerLevelField(cbA,ABILITY_ILF_TARGET_TYPE,GetUnitAbilityLevel(cbU,cbId)-1)
-if IssuePointOrderById(cbU,cbO,cbX,cbY)==false and not (cbOk and cbTt==2 and CastAbilityGround(cbA,cbX,cbY)) then
+if IssuePointOrderById(cbU,cbO,cbX,cbY)==false then // CastAbilityGround / CastAbilityTarget убраны (12 окт): при спаме с задержкой синхронизации применяли выключенную стадию (Нанаи) в обход приказа — крит игры
 call GroupEnumUnitsInRange(CBS_QcG,cbX,cbY,200.,null)
 loop
 set cbT=FirstOfGroup(CBS_QcG)
@@ -56610,9 +56624,7 @@ set cbB=cbT
 endif
 endloop
 if cbB==null or IssueTargetOrderById(cbU,cbO,cbB)==false then
-if not (cbOk and cbB!=null and (cbTt==1 or cbTt==3) and CastAbilityTarget(cbA,cbB)) then
 call IssueImmediateOrderById(cbU,cbO)
-endif
 endif
 endif
 endif
