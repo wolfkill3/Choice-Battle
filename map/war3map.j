@@ -17131,53 +17131,52 @@ set t=null
 endfunction
 //Flandre1end
 //Suigintou1start
-// ловкость для урона Mirror Shift (вторая стадия T, коды SuD2/Sui_D2_*): урон bof x (0.02);
+// ловкость для урона Mirror Shift (вторая стадия T, коды SuD2/Sui_D2_*): x (0.02), по цели один раз x140 = 2.8;
 // x1000, чтобы не терять дробь в целом (в Bof_Dmg урон делится обратно на 1000)
 function Sui_Agi_D2 takes unit u,boolean b returns integer
 return R2I(I2R(GetHeroAgi(u,b))*(0.02)*1000.+0.5)
 endfunction
-// ловкость для урона кнопки E2: урон bof x (0.03);
+// ловкость для урона кнопки E2: x (0.03), по цели один раз x60 = 1.8;
 // x1000, чтобы не терять дробь в целом (в Bof_Dmg урон делится обратно на 1000)
 function Sui_Agi_E2 takes unit u,boolean b returns integer
 return R2I(I2R(GetHeroAgi(u,b))*(0.03)*1000.+0.5)
 endfunction
-// ловкость для урона кнопки E: x (0.015 + 0.005 x уровень), перо x50 — три пера 3..6 (стандарт карты);
+// ловкость для урона кнопки E: x (0.015 + 0.005 x уровень), по цели один раз x150 = 3..6 (стандарт карты);
 // x1000, чтобы не терять дробь в целом (в Bof_Dmg урон делится обратно на 1000)
 function Sui_Agi_Ei takes unit u,boolean b returns integer
 return R2I(I2R(GetHeroAgi(u,b))*(0.015+0.005*I2R(GetUnitAbilityLevel(u,'SuE1')))*1000.+0.5)
 endfunction
-// ловкость для урона кнопки F: урон bof x (0.015);
+// ловкость для урона кнопки F: x (0.015), по цели один раз x200 = 3;
 // x1000, чтобы не терять дробь в целом (в Bof_Dmg урон делится обратно на 1000)
 function Sui_Agi_F takes unit u,boolean b returns integer
 return R2I(I2R(GetHeroAgi(u,b))*(0.015)*1000.+0.5)
 endfunction
-// ловкость для урона кнопки F2: урон bof x (0.01);
+// ловкость для урона кнопки F2: x (0.01), по цели один раз x200 = 2;
 // x1000, чтобы не терять дробь в целом (в Bof_Dmg урон делится обратно на 1000)
 function Sui_Agi_F2 takes unit u,boolean b returns integer
 return R2I(I2R(GetHeroAgi(u,b))*(0.01)*1000.+0.5)
 endfunction
-// ловкость для урона кнопки G: x (0.02), цепь x40, перо x20, без среза паузы — ~11 по цели в центре;
+// ловкость для урона кнопки G: x (0.02), по цели один раз (цепь или перо) x500 = 10, без среза паузы;
 // x1000, чтобы не терять дробь в целом (в Bof_Dmg урон делится обратно на 1000)
 function Sui_Agi_G takes unit u,boolean b returns integer
 return R2I(I2R(GetHeroAgi(u,b))*(0.02)*1000.+0.5)
 endfunction
-// ловкость для урона кнопки Q: x (0.005 + 0.005 x уровень), удары 50+50+100 — серия 2..6 (стандарт карты, 4 окт);
+// ловкость для урона кнопки Q: x (0.005 + 0.005 x уровень), по цели один раз x200 — серия 2..6 (стандарт карты);
 // x1000, чтобы не терять дробь в целом (в Bof_Dmg урон делится обратно на 1000)
 function Sui_Agi_Qi takes unit u,boolean b returns integer
 return R2I(I2R(GetHeroAgi(u,b))*(0.005+0.005*I2R(GetUnitAbilityLevel(u,'SuQ1')))*1000.+0.5)
 endfunction
-// ловкость для урона кнопки R: x (0.02 + 0.005 x уровень), большой дракон x200 = 5..9, из пера x50 (стандарт карты);
+// ловкость для урона кнопки R: x (0.02 + 0.005 x уровень), по цели один раз x200 = 5..9 — и большой дракон, и из пера;
 // x1000, чтобы не терять дробь в целом (в Bof_Dmg урон делится обратно на 1000)
 function Sui_Agi_R takes unit u,boolean b returns integer
 return R2I(I2R(GetHeroAgi(u,b))*(0.02+0.005*I2R(GetUnitAbilityLevel(u,'SuR1')))*1000.+0.5)
 endfunction
-// ловкость для урона Feather Recall (кнопка D, коды SuT1/Sui_T_*): x (0.04), перо x25 = 1; 14 окт: была T
-// (0.08 = 2 с перезарядкой 35 c), стала D без перезарядки — урон за перо вдвое меньше;
+// ловкость для урона Feather Recall (кнопка D, коды SuT1/Sui_T_*): x (0.04), по цели один раз за вызов x75 = 3;
 // x1000, чтобы не терять дробь в целом (в Bof_Dmg урон делится обратно на 1000)
 function Sui_Agi_T takes unit u,boolean b returns integer
 return R2I(I2R(GetHeroAgi(u,b))*(0.04)*1000.+0.5)
 endfunction
-// ловкость для урона кнопки W: x (0.012 + 0.004 x уровень), перо x6 — ~32 пера по цели 3..6 (стандарт карты);
+// ловкость для урона кнопки W: x (0.012 + 0.004 x уровень), по цели один раз x187.5 = 3..6 (стандарт карты);
 // x1000, чтобы не терять дробь в целом (в Bof_Dmg урон делится обратно на 1000)
 function Sui_Agi_Wi takes unit u,boolean b returns integer
 return R2I(I2R(GetHeroAgi(u,b))*(0.012+0.004*I2R(GetUnitAbilityLevel(u,'SuW1')))*1000.+0.5)
@@ -17303,6 +17302,31 @@ call SaveInteger(HH,id,SH_SuiFCnt,k)
 set f=null
 return k
 endfunction
+// ----- «попал — нанёс урон» (владелец 14 окт): каст бьёт каждую цель один раз и сразу полным уроном умения —
+// первым попавшим ударом/пером/драконом; следующие попадания того же каста по ней урона (и стана) не дают,
+// эффекты остаются. Реестр каста — ключ в HH (ключи — хэндлы целей): у однотаймерных умений это таймер каста,
+// у умений со снарядами — свой таймер Sui_Reg, который сам чистится через dur c (дольше всех снарядов каста)
+function Sui_RegEnd takes nothing returns nothing
+local timer t=GetExpiredTimer()
+call FlushChildHashtable(HH,GetHandleId(t))
+call DestroyTimer(t)
+set t=null
+endfunction
+function Sui_Reg takes real dur returns integer
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+call TimerStart(t,dur,false,function Sui_RegEnd)
+set t=null
+return id
+endfunction
+// первое попадание каста reg по цели — true (цель запоминается), дальше — false
+function Sui_First takes integer reg,unit e returns boolean
+if LoadBoolean(HH,reg,GetHandleId(e)) then
+return false
+endif
+call SaveBoolean(HH,reg,GetHandleId(e),true)
+return true
+endfunction
 // зеркало (T), если оно ещё стоит
 function Sui_Mirror takes unit hr returns unit
 set bj_lastCreatedUnit=LoadUnitHandle(HH,GetHandleId(hr),SH_SuiMirror)
@@ -17312,8 +17336,9 @@ set bj_lastCreatedUnit=null
 endif
 return bj_lastCreatedUnit
 endfunction
-// ----- Q «Mercury Sword»: рывок вперёд, враги рядом тащатся с ней; три удара (40, 40, 60), стан 2 c -----
-function Sui_Q_Strike takes unit src,unit hr,real r,real k returns nothing
+// ----- Q «Mercury Sword»: рывок вперёд, враги рядом тащатся с ней; три удара — по цели урон серии (x200)
+// и стан 2 c один раз, с первого попавшего удара -----
+function Sui_Q_Strike takes unit src,unit hr,real r,integer reg returns nothing
 local group g=CreateGroup()
 local unit e
 call GroupEnumUnitsInRange(g,GetUnitX(src),GetUnitY(src),r,null)
@@ -17322,9 +17347,11 @@ set e=FirstOfGroup(g)
 exitwhen e==null
 call GroupRemoveUnit(g,e)
 if Condition_Base(OwnerOf(src),e) and GetUnitAbilityLevel(e,'Avul')==0 then
-call Bof_Dmg(hr,e,I2R(Sui_Agi_Qi(hr,true))*k*.001)
-call Rem_Fx(hr,"bof\\Scarlet-51.mdx",GetUnitX(e),GetUnitY(e),GetUnitFlyHeight(e)+150.,0.,1.,0.)
+if Sui_First(reg,e) then
+call Bof_Dmg(hr,e,I2R(Sui_Agi_Qi(hr,true))*200.*.001)
 call Bof_Ctrl(hr,e,2.,"stun")
+endif
+call Rem_Fx(hr,"bof\\Scarlet-51.mdx",GetUnitX(e),GetUnitY(e),GetUnitFlyHeight(e)+150.,0.,1.,0.)
 endif
 endloop
 call DestroyGroup(g)
@@ -17415,7 +17442,7 @@ call Rem_Fx(hr,"bof\\Saber-17.mdx",x,y,z+50.,ang,1.5,0.)
 call Rem_Fx(hr,"bof\\Tsubaki-37.mdx",x,y,z+50.,ang,4.,0.)
 call SetSpecialEffectPitch(bj_lastCreatedEffect,90.)
 call Bof_Glide(src,ang,400.,.4)
-call Sui_Q_Strike(src,hr,300.,50.)
+call Sui_Q_Strike(src,hr,300.,id)
 endif
 if tk==46 then
 call Rem_Noise(OwnerOf(src),50.,.5)
@@ -17429,7 +17456,7 @@ set a2=a2-15.
 call Rem_Fx(hr,"bof\\Tsubaki-32.mdx",x,y,z+25.,a2+180.,2.,0.)
 set k=k+1
 endloop
-call Sui_Q_Strike(src,hr,450.,100.)
+call Sui_Q_Strike(src,hr,450.,id)
 endif
 if tk>=56 then
 call SetUnitInvulnerable(src,false)
@@ -17477,7 +17504,8 @@ call Sui_Q_Do(Sui_Ghost(caster,GetUnitX(m),GetUnitY(m),GetUnitFacing(m),-1,1),ca
 endif
 set m=null
 endfunction
-// ----- W «Black Feather Volley»: 2 c из-за крыльев вылетают перья и летят вперёд, каждое бьёт раз (6) -----
+// ----- W «Black Feather Volley»: 2 c из-за крыльев вылетают перья и летят вперёд; по цели урон залпа (x187.5)
+// один раз, с первого попавшего пера -----
 function Sui_W_Fly takes nothing returns nothing
 local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
@@ -17506,9 +17534,8 @@ loop
 set e=FirstOfGroup(g)
 exitwhen e==null
 call GroupRemoveUnit(g,e)
-if Condition_Base(OwnerOf(src),e) and GetUnitAbilityLevel(e,'Avul')==0 and not LoadBoolean(HH,id,GetHandleId(e)) then
-call SaveBoolean(HH,id,GetHandleId(e),true)
-call Bof_Dmg(hr,e,I2R(Sui_Agi_Wi(hr,true))*6.*.001)
+if Condition_Base(OwnerOf(src),e) and GetUnitAbilityLevel(e,'Avul')==0 and Sui_First(LoadInteger(HH,id,6),e) then
+call Bof_Dmg(hr,e,I2R(Sui_Agi_Wi(hr,true))*187.5*.001)
 endif
 endloop
 call DestroyGroup(g)
@@ -17552,6 +17579,7 @@ call SaveUnitHandle(HH,GetHandleId(t2),1,hr)
 call SaveUnitHandle(HH,GetHandleId(t2),2,f)
 call SaveReal(HH,GetHandleId(t2),3,ang)
 call SaveReal(HH,GetHandleId(t2),5,40.)
+call SaveInteger(HH,GetHandleId(t2),6,LoadInteger(HH,id,3))
 call TimerStart(t2,.02,true,function Sui_W_Fly)
 else
 call FlushChildHashtable(HH,id)
@@ -17574,6 +17602,7 @@ call Rem_Fx(hr,"bof\\Mercury Lamp-22.mdx",x,y,z+50.,ang,1.,0.)
 call Rem_Fx(hr,"bof\\Mercury Lamp-27.mdx",x,y,z+50.,ang,1.,0.)
 call SaveUnitHandle(HH,GetHandleId(t),0,src)
 call SaveUnitHandle(HH,GetHandleId(t),1,hr)
+call SaveInteger(HH,GetHandleId(t),3,Sui_Reg(3.))
 call TimerStart(t,.05,true,function Sui_W_Tick)
 set t=null
 endfunction
@@ -17592,7 +17621,8 @@ call Sui_W_Do(m,caster,GetUnitFacing(m))
 endif
 set m=null
 endfunction
-// ----- E «Feather Scatter»: отскок, 3 пера веером (50, без стана), потом лежат 12 c; E -> E2 на 8 c -----
+// ----- E «Feather Scatter»: отскок, 3 пера веером (по цели урон броска x150 один раз, без стана), потом лежат
+// 12 c; E -> E2 на 8 c -----
 function Sui_E_Fly takes nothing returns nothing
 local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
@@ -17626,7 +17656,9 @@ exitwhen e==null
 call GroupRemoveUnit(g,e)
 if Condition_Base(OwnerOf(src),e) and GetUnitAbilityLevel(e,'Avul')==0 and not LoadBoolean(HH,id,GetHandleId(e)) then
 call SaveBoolean(HH,id,GetHandleId(e),true)
-call Bof_Dmg(hr,e,I2R(Sui_Agi_Ei(hr,true))*50.*.001)
+if Sui_First(LoadInteger(HH,id,7),e) then
+call Bof_Dmg(hr,e,I2R(Sui_Agi_Ei(hr,true))*150.*.001)
+endif
 call DestroyEffect(AddSpecialEffectTarget("bof\\hero_skeletonking_n2s_e_sta1r.mdx",e,"chest"))
 call Rem_Fx(hr,"bof\\Minato-3.mdx",GetUnitX(e),GetUnitY(e),150.,ang,1.,0.)
 call Rem_Sound("bof\\war3mapImported\\Minato-Q-YX2.mp3",110)
@@ -17661,6 +17693,7 @@ local real y=GetUnitY(src)
 local real z=GetUnitFlyHeight(src)
 local real fa
 local integer k
+local integer reg
 local unit f
 local timer t2
 call SaveInteger(HH,id,3,tk)
@@ -17688,6 +17721,7 @@ call Rem_Fx(hr,"bof\\Saber-17.mdx",x,y,z+50.,ang,1.5,0.)
 endif
 if tk==40 then
 call Rem_Sound("bof\\war3mapImported\\Mercury Lamp-ZS1JN-YX1.mp3",100)
+set reg=Sui_Reg(2.)
 set fa=ang-30.
 set k=1
 loop
@@ -17708,6 +17742,7 @@ call SaveUnitHandle(HH,GetHandleId(t2),2,f)
 call SaveReal(HH,GetHandleId(t2),3,ang)
 call SaveReal(HH,GetHandleId(t2),5,40.)
 call SaveReal(HH,GetHandleId(t2),6,fa)
+call SaveInteger(HH,GetHandleId(t2),7,reg)
 call TimerStart(t2,.02,true,function Sui_E_Fly)
 set k=k+1
 endloop
@@ -17993,9 +18028,8 @@ loop
 set e=FirstOfGroup(g)
 exitwhen e==null
 call GroupRemoveUnit(g,e)
-if Condition_Base(OwnerOf(hr),e) and GetUnitAbilityLevel(e,'Avul')==0 and not LoadBoolean(HH,id,GetHandleId(e)) then
-call SaveBoolean(HH,id,GetHandleId(e),true)
-call Bof_Dmg(hr,e,I2R(Sui_Agi_D2(hr,true))*60.*.001)
+if Condition_Base(OwnerOf(hr),e) and GetUnitAbilityLevel(e,'Avul')==0 and Sui_First(id,e) then
+call Bof_Dmg(hr,e,I2R(Sui_Agi_D2(hr,true))*140.*.001)
 call Bof_Ctrl(hr,e,1.,"stun")
 endif
 endloop
@@ -18025,7 +18059,9 @@ set e=FirstOfGroup(g)
 exitwhen e==null
 call GroupRemoveUnit(g,e)
 if Condition_Base(OwnerOf(hr),e) and GetUnitAbilityLevel(e,'Avul')==0 then
-call Bof_Dmg(hr,e,I2R(Sui_Agi_D2(hr,true))*80.*.001)
+if Sui_First(id,e) then
+call Bof_Dmg(hr,e,I2R(Sui_Agi_D2(hr,true))*140.*.001)
+endif
 call Bof_Ctrl(hr,e,3.,"stun")
 endif
 endloop
@@ -18113,8 +18149,10 @@ exitwhen e==null
 call GroupRemoveUnit(g,e)
 if Condition_Base(OwnerOf(hr),e) and GetUnitAbilityLevel(e,'Avul')==0 and not LoadBoolean(HH,id,GetHandleId(e)) then
 call SaveBoolean(HH,id,GetHandleId(e),true)
-call Bof_Dmg(hr,e,I2R(Sui_Agi_F(hr,true))*100.*.001)
+if Sui_First(LoadInteger(HH,id,7),e) then
+call Bof_Dmg(hr,e,I2R(Sui_Agi_F(hr,true))*200.*.001)
 call Bof_Ctrl(hr,e,3.,"stun")
+endif
 call DestroyEffect(AddSpecialEffectTarget("bof\\hero_skeletonking_n2s_e_sta1r.mdx",e,"chest"))
 call Rem_Fx(hr,"bof\\Minato-3.mdx",GetUnitX(e),GetUnitY(e),150.,ang,1.,0.)
 call Rem_Sound("bof\\war3mapImported\\Minato-Q-YX2.mp3",110)
@@ -18148,6 +18186,7 @@ local real fa
 local real x
 local real y
 local integer k=1
+local integer reg=Sui_Reg(3.)
 local unit f
 local timer t
 call Bof_SwapStage(caster,'SuF1','SuF2',8.)
@@ -18178,13 +18217,14 @@ call SaveUnitHandle(HH,GetHandleId(t),1,f)
 call SaveReal(HH,GetHandleId(t),2,ang)
 call SaveReal(HH,GetHandleId(t),3,fa)
 call SaveInteger(HH,GetHandleId(t),5,k)
+call SaveInteger(HH,GetHandleId(t),7,reg)
 call TimerStart(t,.02,true,function Sui_F_Tick)
 set k=k+1
 endloop
 set f=null
 set t=null
 endfunction
-// ----- F2 «N-Field»: поле в точке на 2 c — каждые 0.2 c по области 600 урон (20) и стан 0.3 c -----
+// ----- F2 «N-Field»: поле в точке на 2 c — каждые 0.2 c по области 600 стан 0.3 c; урон (x200) по цели один раз -----
 function Sui_F2_Fade takes nothing returns nothing
 local timer t=GetExpiredTimer()
 local unit u=LoadUnitHandle(HH,GetHandleId(t),0)
@@ -18226,7 +18266,9 @@ set e=FirstOfGroup(g)
 exitwhen e==null
 call GroupRemoveUnit(g,e)
 if Condition_Base(OwnerOf(hr),e) and GetUnitAbilityLevel(e,'Avul')==0 then
-call Bof_Dmg(hr,e,I2R(Sui_Agi_F2(hr,true))*20.*.001)
+if Sui_First(id,e) then
+call Bof_Dmg(hr,e,I2R(Sui_Agi_F2(hr,true))*200.*.001)
+endif
 call Bof_Ctrl(hr,e,.3,"stun")
 endif
 endloop
@@ -18280,8 +18322,9 @@ set u=null
 set t=null
 endfunction
 // ----- R «Black Feather Dragon»: перья в области 450 у точки становятся драконами — каждый сам находит
-// ближайшего вражеского героя (не дальше 3000 от Суйгинто), летит по спирали, бьёт (50) и оглушает на 3 c
-// (КД 25 всегда — стандарт карты, 4 окт); перьев нет — один большой дракон вперёд, взрыв по области 600 (200, стан 3 c) -----
+// ближайшего вражеского героя (не дальше 3000 от Суйгинто), летит по спирали, бьёт (200, по цели один раз за каст)
+// и оглушает на 3 c
+// (КД 30 всегда, 14 окт); перьев нет — один большой дракон вперёд, взрыв по области 600 (200, стан 3 c) -----
 function Sui_R_Boom takes unit hr,real x,real y,real ang returns nothing
 call Rem_Fx(hr,"bof\\Madara-huitu-13.mdx",x,y,25.,0.,1.,0.)
 call Rem_Fx(hr,"bof\\Mercury Lamp-24.mdx",x,y,GetUnitFlyHeight(hr)+50.,ang,2.5,0.)
@@ -18364,8 +18407,10 @@ endif
 else
 if e!=null and GetUnitTypeId(dg)!=0 and dd<=120. and GetWidgetLife(e)>.405 then
 call Sui_R_Boom(hr,GetUnitX(e),GetUnitY(e),GetUnitFacing(dg))
-call Bof_Dmg(hr,e,I2R(Sui_Agi_R(hr,true))*50.*.001)
+if Sui_First(LoadInteger(HH,id,5),e) then
+call Bof_Dmg(hr,e,I2R(Sui_Agi_R(hr,true))*200.*.001)
 call Bof_Ctrl(hr,e,3.,"stun")
+endif
 endif
 call RemoveUnit(dg)
 call FlushChildHashtable(HH,id)
@@ -18444,6 +18489,7 @@ local integer cnt=Sui_FClean(caster)
 local integer i=0
 local integer k
 local integer used=0
+local integer reg=Sui_Reg(6.)
 local unit f
 local unit dg
 local unit e
@@ -18490,6 +18536,7 @@ call SaveUnitHandle(HH,GetHandleId(t),0,caster)
 call SaveUnitHandle(HH,GetHandleId(t),1,dg)
 call SaveUnitHandle(HH,GetHandleId(t),2,e)
 call SaveReal(HH,GetHandleId(t),4,-90.)
+call SaveInteger(HH,GetHandleId(t),5,reg)
 call TimerStart(t,.03,true,function Sui_R_Dragon)
 endif
 set i=i+1
@@ -18518,7 +18565,7 @@ set dg=null
 set e=null
 set t=null
 endfunction
-// ----- D «Feather Recall»: все перья летят к Суйгинто (каждого раз, 25, стан 2 c); долетевшее перо даёт
+// ----- D «Feather Recall»: все перья летят к Суйгинто (по цели урон x75 и стан 2 c один раз за вызов); долетевшее перо даёт
 // щит 6% максимума здоровья на 12 c — пока в нём есть запас, удар гасится целиком -----
 function Sui_ShieldAct takes nothing returns nothing
 local timer t=GetExpiredTimer()
@@ -18590,8 +18637,10 @@ exitwhen e==null
 call GroupRemoveUnit(g,e)
 if Condition_Base(OwnerOf(hr),e) and GetUnitAbilityLevel(e,'Avul')==0 and not LoadBoolean(HH,id,GetHandleId(e)) then
 call SaveBoolean(HH,id,GetHandleId(e),true)
-call Bof_Dmg(hr,e,I2R(Sui_Agi_T(hr,true))*25.*.001)
+if Sui_First(LoadInteger(HH,id,3),e) then
+call Bof_Dmg(hr,e,I2R(Sui_Agi_T(hr,true))*75.*.001)
 call Bof_Ctrl(hr,e,2.,"stun")
+endif
 call DestroyEffect(AddSpecialEffectTarget("bof\\hero_skeletonking_n2s_e_sta1r.mdx",e,"chest"))
 call Rem_Fx(hr,"bof\\Minato-3.mdx",GetUnitX(e),GetUnitY(e),150.,a2,1.,0.)
 call Rem_Sound("bof\\war3mapImported\\Minato-Q-YX2.mp3",110)
@@ -18626,9 +18675,11 @@ local real x
 local real y
 local real a2
 local timer t
+local integer reg
 if cnt==0 then
 return
 endif
+set reg=Sui_Reg(4.)
 call Rem_Sound("bof\\war3mapImported\\Mercury Lamp-ZS1JN-YX1.mp3",100)
 call Rem_Sound("bof\\war3mapImported\\Mercury Lamp-T-YY1.mp3",100)
 loop
@@ -18646,6 +18697,7 @@ call SetUnitFacing(f,a2)
 set t=CreateTimer()
 call SaveUnitHandle(HH,GetHandleId(t),0,caster)
 call SaveUnitHandle(HH,GetHandleId(t),1,f)
+call SaveInteger(HH,GetHandleId(t),3,reg)
 call TimerStart(t,.02,true,function Sui_T_Fly)
 set i=i+1
 endloop
@@ -18655,7 +18707,8 @@ set f=null
 set t=null
 endfunction
 // ----- G «Final Wings»: 3.8 c в воздухе, неуязвима; с 1 c — крылья, с 1.2 c — раз в 0.6 c цепь (по области
-// 350 урон 20, стан 1.2 c, и 4 c сковывает всех в 350 у точки G) и ливень перьев раз в 0.04 c (по 220 урон 10) -----
+// 350 стан 1.2 c; первая цепь ещё 4 c сковывает всех в 350 у точки G) и ливень перьев раз в 0.04 c (по 220);
+// урон (x500) — по цели один раз, от первой попавшей цепи или пера -----
 function Sui_G_LightOff takes nothing returns nothing
 local timer t=GetExpiredTimer()
 call DestroyLightning(LoadLightningHandle(HH,GetHandleId(t),0))
@@ -18741,17 +18794,22 @@ set e=FirstOfGroup(g)
 exitwhen e==null
 call GroupRemoveUnit(g,e)
 if Condition_Base(OwnerOf(hr),e) and GetUnitAbilityLevel(e,'Avul')==0 then
-call Bof_DmgFull(hr,e,I2R(Sui_Agi_G(hr,true))*40.*.001)
+if Sui_First(LoadInteger(HH,id,12),e) then
+call Bof_DmgFull(hr,e,I2R(Sui_Agi_G(hr,true))*500.*.001)
+endif
 call Bof_Ctrl(hr,e,1.2,"stun")
 endif
 endloop
 call DestroyGroup(g)
+// заморозку у точки G ставит только первая цепь (раньше каждая из 5 — враги стояли ~6.4 c вместо 4)
+if LoadBoolean(HH,id,13) then
 set t2=CreateTimer()
 call SaveUnitHandle(HH,GetHandleId(t2),0,hr)
 call SaveGroupHandle(HH,GetHandleId(t2),1,CreateGroup())
 call SaveReal(HH,GetHandleId(t2),2,LoadReal(HH,id,10))
 call SaveReal(HH,GetHandleId(t2),3,LoadReal(HH,id,11))
 call TimerStart(t2,.05,true,function Sui_G_Freeze)
+endif
 call FlushChildHashtable(HH,id)
 call DestroyTimer(t)
 endif
@@ -18787,8 +18845,8 @@ loop
 set e=FirstOfGroup(g)
 exitwhen e==null
 call GroupRemoveUnit(g,e)
-if Condition_Base(OwnerOf(hr),e) and GetUnitAbilityLevel(e,'Avul')==0 then
-call Bof_DmgFull(hr,e,I2R(Sui_Agi_G(hr,true))*20.*.001)
+if Condition_Base(OwnerOf(hr),e) and GetUnitAbilityLevel(e,'Avul')==0 and Sui_First(LoadInteger(HH,id,12),e) then
+call Bof_DmgFull(hr,e,I2R(Sui_Agi_G(hr,true))*500.*.001)
 endif
 endloop
 call DestroyGroup(g)
@@ -18824,7 +18882,10 @@ call SaveUnitHandle(HH,GetHandleId(t),1,dg)
 call SaveReal(HH,GetHandleId(t),2,ang)
 call SaveReal(HH,GetHandleId(t),4,zz)
 call SaveReal(HH,GetHandleId(t),5,zz/20.)
+call SaveInteger(HH,GetHandleId(t),12,LoadInteger(HH,id,8))
 if chain then
+call SaveBoolean(HH,GetHandleId(t),13,not LoadBoolean(HH,id,9))
+call SaveBoolean(HH,id,9,true)
 call Rem_Fx(hr,"bof\\Tsubaki-33.mdx",x,y,zz,ang,1.,0.)
 call SetSpecialEffectPitch(bj_lastCreatedEffect,90.)
 call UnitApplyTimedLife(dg,'BHwe',5.)
@@ -18943,6 +19004,7 @@ call SaveReal(HH,GetHandleId(t),1,ang)
 call SaveReal(HH,GetHandleId(t),2,SRS(x,y,tx,ty))
 call SaveReal(HH,GetHandleId(t),3,tx)
 call SaveReal(HH,GetHandleId(t),4,ty)
+call SaveInteger(HH,GetHandleId(t),8,Sui_Reg(6.))
 call TimerStart(t,.02,true,function Sui_G_Tick)
 set t=null
 endfunction
@@ -281655,37 +281717,37 @@ call LANG_A('SuQ1',0,1,"Mercury Sword, [|cffffcc00Level 2|r] (|cffffcc00Q|r)")
 call LANG_A('SuQ1',0,2,"Mercury Sword, [|cffffcc00Level 3|r] (|cffffcc00Q|r)")
 call LANG_A('SuQ1',0,3,"Mercury Sword, [|cffffcc00Level 4|r] (|cffffcc00Q|r)")
 call LANG_A('SuQ1',0,4,"Mercury Sword, [|cffffcc00Level 5|r] (|cffffcc00Q|r)")
-call LANG_A('SuQ1',1,0,"• A series of rapier thrusts toward the cursor: two strikes and a finisher.|n• If Mirror of N (T) is placed, the mirror repeats the strike.|n|cFF00A5FF|nDamage: 2\\3\\4\\5\\6*|c003CFF3CAGI|r per series|nStun: 2 sec.|nCooldown: 20 sec.|r")
-call LANG_A('SuQ1',1,1,"• A series of rapier thrusts toward the cursor: two strikes and a finisher.|n• If Mirror of N (T) is placed, the mirror repeats the strike.|n|cFF00A5FF|nDamage: 2\\3\\4\\5\\6*|c003CFF3CAGI|r per series|nStun: 2 sec.|nCooldown: 20 sec.|r")
-call LANG_A('SuQ1',1,2,"• A series of rapier thrusts toward the cursor: two strikes and a finisher.|n• If Mirror of N (T) is placed, the mirror repeats the strike.|n|cFF00A5FF|nDamage: 2\\3\\4\\5\\6*|c003CFF3CAGI|r per series|nStun: 2 sec.|nCooldown: 20 sec.|r")
-call LANG_A('SuQ1',1,3,"• A series of rapier thrusts toward the cursor: two strikes and a finisher.|n• If Mirror of N (T) is placed, the mirror repeats the strike.|n|cFF00A5FF|nDamage: 2\\3\\4\\5\\6*|c003CFF3CAGI|r per series|nStun: 2 sec.|nCooldown: 20 sec.|r")
-call LANG_A('SuQ1',1,4,"• A series of rapier thrusts toward the cursor: two strikes and a finisher.|n• If Mirror of N (T) is placed, the mirror repeats the strike.|n|cFF00A5FF|nDamage: 2\\3\\4\\5\\6*|c003CFF3CAGI|r per series|nStun: 2 sec.|nCooldown: 20 sec.|r")
+call LANG_A('SuQ1',1,0,"• A series of rapier thrusts toward the cursor: two strikes and a finisher.|n• If Mirror of N (T) is placed, the mirror repeats the strike.|n|cFF00A5FF|nDamage: 2\\3\\4\\5\\6*|c003CFF3CAGI|r (once per target, from the first hit)|nStun: 2 sec.|nCooldown: 20 sec.|r")
+call LANG_A('SuQ1',1,1,"• A series of rapier thrusts toward the cursor: two strikes and a finisher.|n• If Mirror of N (T) is placed, the mirror repeats the strike.|n|cFF00A5FF|nDamage: 2\\3\\4\\5\\6*|c003CFF3CAGI|r (once per target, from the first hit)|nStun: 2 sec.|nCooldown: 20 sec.|r")
+call LANG_A('SuQ1',1,2,"• A series of rapier thrusts toward the cursor: two strikes and a finisher.|n• If Mirror of N (T) is placed, the mirror repeats the strike.|n|cFF00A5FF|nDamage: 2\\3\\4\\5\\6*|c003CFF3CAGI|r (once per target, from the first hit)|nStun: 2 sec.|nCooldown: 20 sec.|r")
+call LANG_A('SuQ1',1,3,"• A series of rapier thrusts toward the cursor: two strikes and a finisher.|n• If Mirror of N (T) is placed, the mirror repeats the strike.|n|cFF00A5FF|nDamage: 2\\3\\4\\5\\6*|c003CFF3CAGI|r (once per target, from the first hit)|nStun: 2 sec.|nCooldown: 20 sec.|r")
+call LANG_A('SuQ1',1,4,"• A series of rapier thrusts toward the cursor: two strikes and a finisher.|n• If Mirror of N (T) is placed, the mirror repeats the strike.|n|cFF00A5FF|nDamage: 2\\3\\4\\5\\6*|c003CFF3CAGI|r (once per target, from the first hit)|nStun: 2 sec.|nCooldown: 20 sec.|r")
 call LANG_A('SuQ1',2,0,"Mercury Sword, [|cffffcc00Level %d|r] (|cffffcc00Q|r)")
-call LANG_A('SuQ1',3,0,"• A series of rapier thrusts toward the cursor: two strikes and a finisher.|n• If Mirror of N (T) is placed, the mirror repeats the strike.|n|cFF00A5FF|nDamage: 2\\3\\4\\5\\6*|c003CFF3CAGI|r per series|nStun: 2 sec.|nCooldown: 20 sec.|r")
+call LANG_A('SuQ1',3,0,"• A series of rapier thrusts toward the cursor: two strikes and a finisher.|n• If Mirror of N (T) is placed, the mirror repeats the strike.|n|cFF00A5FF|nDamage: 2\\3\\4\\5\\6*|c003CFF3CAGI|r (once per target, from the first hit)|nStun: 2 sec.|nCooldown: 20 sec.|r")
 call LANG_A('SuW1',0,0,"Black Feather Volley, [|cffffcc00Level 1|r] (|cffffcc00W|r)")
 call LANG_A('SuW1',0,1,"Black Feather Volley, [|cffffcc00Level 2|r] (|cffffcc00W|r)")
 call LANG_A('SuW1',0,2,"Black Feather Volley, [|cffffcc00Level 3|r] (|cffffcc00W|r)")
 call LANG_A('SuW1',0,3,"Black Feather Volley, [|cffffcc00Level 4|r] (|cffffcc00W|r)")
 call LANG_A('SuW1',0,4,"Black Feather Volley, [|cffffcc00Level 5|r] (|cffffcc00W|r)")
-call LANG_A('SuW1',1,0,"• Suigintou flaps her wings and for 2 sec. showers everything in front of her with feathers (40 feathers).|n• If Mirror of N (T) is placed, the mirror repeats the volley.|n|cFF00A5FF|nDamage: 0.096\\0.12\\0.144\\0.168\\0.192*|c003CFF3CAGI|r per feather|nCooldown: 20 sec.|r")
-call LANG_A('SuW1',1,1,"• Suigintou flaps her wings and for 2 sec. showers everything in front of her with feathers (40 feathers).|n• If Mirror of N (T) is placed, the mirror repeats the volley.|n|cFF00A5FF|nDamage: 0.096\\0.12\\0.144\\0.168\\0.192*|c003CFF3CAGI|r per feather|nCooldown: 20 sec.|r")
-call LANG_A('SuW1',1,2,"• Suigintou flaps her wings and for 2 sec. showers everything in front of her with feathers (40 feathers).|n• If Mirror of N (T) is placed, the mirror repeats the volley.|n|cFF00A5FF|nDamage: 0.096\\0.12\\0.144\\0.168\\0.192*|c003CFF3CAGI|r per feather|nCooldown: 20 sec.|r")
-call LANG_A('SuW1',1,3,"• Suigintou flaps her wings and for 2 sec. showers everything in front of her with feathers (40 feathers).|n• If Mirror of N (T) is placed, the mirror repeats the volley.|n|cFF00A5FF|nDamage: 0.096\\0.12\\0.144\\0.168\\0.192*|c003CFF3CAGI|r per feather|nCooldown: 20 sec.|r")
-call LANG_A('SuW1',1,4,"• Suigintou flaps her wings and for 2 sec. showers everything in front of her with feathers (40 feathers).|n• If Mirror of N (T) is placed, the mirror repeats the volley.|n|cFF00A5FF|nDamage: 0.096\\0.12\\0.144\\0.168\\0.192*|c003CFF3CAGI|r per feather|nCooldown: 20 sec.|r")
+call LANG_A('SuW1',1,0,"• Suigintou flaps her wings and for 2 sec. showers everything in front of her with feathers (40 feathers).|n• If Mirror of N (T) is placed, the mirror repeats the volley.|n|cFF00A5FF|nDamage: 3\\3.75\\4.5\\5.25\\6*|c003CFF3CAGI|r (once per target, from the first feather)|nCooldown: 20 sec.|r")
+call LANG_A('SuW1',1,1,"• Suigintou flaps her wings and for 2 sec. showers everything in front of her with feathers (40 feathers).|n• If Mirror of N (T) is placed, the mirror repeats the volley.|n|cFF00A5FF|nDamage: 3\\3.75\\4.5\\5.25\\6*|c003CFF3CAGI|r (once per target, from the first feather)|nCooldown: 20 sec.|r")
+call LANG_A('SuW1',1,2,"• Suigintou flaps her wings and for 2 sec. showers everything in front of her with feathers (40 feathers).|n• If Mirror of N (T) is placed, the mirror repeats the volley.|n|cFF00A5FF|nDamage: 3\\3.75\\4.5\\5.25\\6*|c003CFF3CAGI|r (once per target, from the first feather)|nCooldown: 20 sec.|r")
+call LANG_A('SuW1',1,3,"• Suigintou flaps her wings and for 2 sec. showers everything in front of her with feathers (40 feathers).|n• If Mirror of N (T) is placed, the mirror repeats the volley.|n|cFF00A5FF|nDamage: 3\\3.75\\4.5\\5.25\\6*|c003CFF3CAGI|r (once per target, from the first feather)|nCooldown: 20 sec.|r")
+call LANG_A('SuW1',1,4,"• Suigintou flaps her wings and for 2 sec. showers everything in front of her with feathers (40 feathers).|n• If Mirror of N (T) is placed, the mirror repeats the volley.|n|cFF00A5FF|nDamage: 3\\3.75\\4.5\\5.25\\6*|c003CFF3CAGI|r (once per target, from the first feather)|nCooldown: 20 sec.|r")
 call LANG_A('SuW1',2,0,"Black Feather Volley, [|cffffcc00Level %d|r] (|cffffcc00W|r)")
-call LANG_A('SuW1',3,0,"• Suigintou flaps her wings and for 2 sec. showers everything in front of her with feathers (40 feathers).|n• If Mirror of N (T) is placed, the mirror repeats the volley.|n|cFF00A5FF|nDamage: 0.096\\0.12\\0.144\\0.168\\0.192*|c003CFF3CAGI|r per feather|nCooldown: 20 sec.|r")
+call LANG_A('SuW1',3,0,"• Suigintou flaps her wings and for 2 sec. showers everything in front of her with feathers (40 feathers).|n• If Mirror of N (T) is placed, the mirror repeats the volley.|n|cFF00A5FF|nDamage: 3\\3.75\\4.5\\5.25\\6*|c003CFF3CAGI|r (once per target, from the first feather)|nCooldown: 20 sec.|r")
 call LANG_A('SuE1',0,0,"Feather Scatter, [|cffffcc00Level 1|r] (|cffffcc00E|r)")
 call LANG_A('SuE1',0,1,"Feather Scatter, [|cffffcc00Level 2|r] (|cffffcc00E|r)")
 call LANG_A('SuE1',0,2,"Feather Scatter, [|cffffcc00Level 3|r] (|cffffcc00E|r)")
 call LANG_A('SuE1',0,3,"Feather Scatter, [|cffffcc00Level 4|r] (|cffffcc00E|r)")
 call LANG_A('SuE1',0,4,"Feather Scatter, [|cffffcc00Level 5|r] (|cffffcc00E|r)")
-call LANG_A('SuE1',1,0,"• Three feathers in a fan toward the cursor; after hitting, they stay on the ground for 12 sec.|n• For 8 sec. E is replaced by Floating Plume.|n• If Mirror of N (T) is placed, the mirror repeats the throw.|n|cFF00A5FF|nDamage: 1\\1.25\\1.5\\1.75\\2*|c003CFF3CAGI|r per feather|nCooldown: 25 sec"+".|r")
-call LANG_A('SuE1',1,1,"• Three feathers in a fan toward the cursor; after hitting, they stay on the ground for 12 sec.|n• For 8 sec. E is replaced by Floating Plume.|n• If Mirror of N (T) is placed, the mirror repeats the throw.|n|cFF00A5FF|nDamage: 1\\1.25\\1.5\\1.75\\2*|c003CFF3CAGI|r per feather|nCooldown: 25 sec"+".|r")
-call LANG_A('SuE1',1,2,"• Three feathers in a fan toward the cursor; after hitting, they stay on the ground for 12 sec.|n• For 8 sec. E is replaced by Floating Plume.|n• If Mirror of N (T) is placed, the mirror repeats the throw.|n|cFF00A5FF|nDamage: 1\\1.25\\1.5\\1.75\\2*|c003CFF3CAGI|r per feather|nCooldown: 25 sec"+".|r")
-call LANG_A('SuE1',1,3,"• Three feathers in a fan toward the cursor; after hitting, they stay on the ground for 12 sec.|n• For 8 sec. E is replaced by Floating Plume.|n• If Mirror of N (T) is placed, the mirror repeats the throw.|n|cFF00A5FF|nDamage: 1\\1.25\\1.5\\1.75\\2*|c003CFF3CAGI|r per feather|nCooldown: 25 sec"+".|r")
-call LANG_A('SuE1',1,4,"• Three feathers in a fan toward the cursor; after hitting, they stay on the ground for 12 sec.|n• For 8 sec. E is replaced by Floating Plume.|n• If Mirror of N (T) is placed, the mirror repeats the throw.|n|cFF00A5FF|nDamage: 1\\1.25\\1.5\\1.75\\2*|c003CFF3CAGI|r per feather|nCooldown: 25 sec"+".|r")
+call LANG_A('SuE1',1,0,"• Three feathers in a fan toward the cursor; after hitting, they stay on the ground for 12 sec.|n• For 8 sec. E is replaced by Floating Plume.|n• If Mirror of N (T) is placed, the mirror repeats the throw.|n|cFF00A5FF|nDamage: 3\\3.75\\4.5\\5.25\\6*|c003CFF3CAGI|r (once per target, from the fi"+"rst feather)|nCooldown: 25 sec.|r")
+call LANG_A('SuE1',1,1,"• Three feathers in a fan toward the cursor; after hitting, they stay on the ground for 12 sec.|n• For 8 sec. E is replaced by Floating Plume.|n• If Mirror of N (T) is placed, the mirror repeats the throw.|n|cFF00A5FF|nDamage: 3\\3.75\\4.5\\5.25\\6*|c003CFF3CAGI|r (once per target, from the fi"+"rst feather)|nCooldown: 25 sec.|r")
+call LANG_A('SuE1',1,2,"• Three feathers in a fan toward the cursor; after hitting, they stay on the ground for 12 sec.|n• For 8 sec. E is replaced by Floating Plume.|n• If Mirror of N (T) is placed, the mirror repeats the throw.|n|cFF00A5FF|nDamage: 3\\3.75\\4.5\\5.25\\6*|c003CFF3CAGI|r (once per target, from the fi"+"rst feather)|nCooldown: 25 sec.|r")
+call LANG_A('SuE1',1,3,"• Three feathers in a fan toward the cursor; after hitting, they stay on the ground for 12 sec.|n• For 8 sec. E is replaced by Floating Plume.|n• If Mirror of N (T) is placed, the mirror repeats the throw.|n|cFF00A5FF|nDamage: 3\\3.75\\4.5\\5.25\\6*|c003CFF3CAGI|r (once per target, from the fi"+"rst feather)|nCooldown: 25 sec.|r")
+call LANG_A('SuE1',1,4,"• Three feathers in a fan toward the cursor; after hitting, they stay on the ground for 12 sec.|n• For 8 sec. E is replaced by Floating Plume.|n• If Mirror of N (T) is placed, the mirror repeats the throw.|n|cFF00A5FF|nDamage: 3\\3.75\\4.5\\5.25\\6*|c003CFF3CAGI|r (once per target, from the fi"+"rst feather)|nCooldown: 25 sec.|r")
 call LANG_A('SuE1',2,0,"Feather Scatter, [|cffffcc00Level %d|r] (|cffffcc00E|r)")
-call LANG_A('SuE1',3,0,"• Three feathers in a fan toward the cursor; after hitting, they stay on the ground for 12 sec.|n• For 8 sec. E is replaced by Floating Plume.|n• If Mirror of N (T) is placed, the mirror repeats the throw.|n|cFF00A5FF|nDamage: 1\\1.25\\1.5\\1.75\\2*|c003CFF3CAGI|r per feather|nCooldown: 25 sec"+".|r")
+call LANG_A('SuE1',3,0,"• Three feathers in a fan toward the cursor; after hitting, they stay on the ground for 12 sec.|n• For 8 sec. E is replaced by Floating Plume.|n• If Mirror of N (T) is placed, the mirror repeats the throw.|n|cFF00A5FF|nDamage: 3\\3.75\\4.5\\5.25\\6*|c003CFF3CAGI|r (once per target, from the fi"+"rst feather)|nCooldown: 25 sec.|r")
 call LANG_A('SuE2',1,0,"• A dash toward the cursor: damages and stuns everyone in the path.|n|cFF00A5FF|nDamage: 1.8*|c003CFF3CAGI|r|nStun: 1.2 sec.|nCooldown: 12 sec.|r")
 call LANG_A('SuE2',3,0,"• A dash toward the cursor: damages and stuns everyone in the path.|n|cFF00A5FF|nDamage: 1.8*|c003CFF3CAGI|r|nStun: 1.2 sec.|nCooldown: 12 sec.|r")
 call LANG_A('SuR1',0,0,"Black Feather Dragon, [|cffffcc00Level 1|r] (|cffffcc00R|r)")
@@ -281693,25 +281755,25 @@ call LANG_A('SuR1',0,1,"Black Feather Dragon, [|cffffcc00Level 2|r] (|cffffcc00R
 call LANG_A('SuR1',0,2,"Black Feather Dragon, [|cffffcc00Level 3|r] (|cffffcc00R|r)")
 call LANG_A('SuR1',0,3,"Black Feather Dragon, [|cffffcc00Level 4|r] (|cffffcc00R|r)")
 call LANG_A('SuR1',0,4,"Black Feather Dragon, [|cffffcc00Level 5|r] (|cffffcc00R|r)")
-call LANG_A('SuR1',1,0,"• If there are feathers in the chosen area, each becomes a black dragon that finds an enemy within 3000 by itself, hits and stuns.|n• If there are no feathers, one big dragon flies toward the point.|n|cFF00A5FF|nDragon from a feather: 1.25\\1.5\\1.75\\2\\2.25*|c003CFF3CAGI|r|nBig dragon: 5\\6\\7"+"\\8\\9*|c003CFF3CAGI|r|nStun: 3 sec.|nRange: 2000|nCooldown: 30 sec.|r")
-call LANG_A('SuR1',1,1,"• If there are feathers in the chosen area, each becomes a black dragon that finds an enemy within 3000 by itself, hits and stuns.|n• If there are no feathers, one big dragon flies toward the point.|n|cFF00A5FF|nDragon from a feather: 1.25\\1.5\\1.75\\2\\2.25*|c003CFF3CAGI|r|nBig dragon: 5\\6\\7"+"\\8\\9*|c003CFF3CAGI|r|nStun: 3 sec.|nRange: 2000|nCooldown: 30 sec.|r")
-call LANG_A('SuR1',1,2,"• If there are feathers in the chosen area, each becomes a black dragon that finds an enemy within 3000 by itself, hits and stuns.|n• If there are no feathers, one big dragon flies toward the point.|n|cFF00A5FF|nDragon from a feather: 1.25\\1.5\\1.75\\2\\2.25*|c003CFF3CAGI|r|nBig dragon: 5\\6\\7"+"\\8\\9*|c003CFF3CAGI|r|nStun: 3 sec.|nRange: 2000|nCooldown: 30 sec.|r")
-call LANG_A('SuR1',1,3,"• If there are feathers in the chosen area, each becomes a black dragon that finds an enemy within 3000 by itself, hits and stuns.|n• If there are no feathers, one big dragon flies toward the point.|n|cFF00A5FF|nDragon from a feather: 1.25\\1.5\\1.75\\2\\2.25*|c003CFF3CAGI|r|nBig dragon: 5\\6\\7"+"\\8\\9*|c003CFF3CAGI|r|nStun: 3 sec.|nRange: 2000|nCooldown: 30 sec.|r")
-call LANG_A('SuR1',1,4,"• If there are feathers in the chosen area, each becomes a black dragon that finds an enemy within 3000 by itself, hits and stuns.|n• If there are no feathers, one big dragon flies toward the point.|n|cFF00A5FF|nDragon from a feather: 1.25\\1.5\\1.75\\2\\2.25*|c003CFF3CAGI|r|nBig dragon: 5\\6\\7"+"\\8\\9*|c003CFF3CAGI|r|nStun: 3 sec.|nRange: 2000|nCooldown: 30 sec.|r")
+call LANG_A('SuR1',1,0,"• If there are feathers in the chosen area, each becomes a black dragon that finds an enemy within 3000 by itself, hits and stuns.|n• If there are no feathers, one big dragon flies toward the point.|n|cFF00A5FF|nDamage: 5\\6\\7\\8\\9*|c003CFF3CAGI|r (feather dragon or big dragon; once per target"+")|nStun: 3 sec.|nRange: 2000|nCooldown: 30 sec.|r")
+call LANG_A('SuR1',1,1,"• If there are feathers in the chosen area, each becomes a black dragon that finds an enemy within 3000 by itself, hits and stuns.|n• If there are no feathers, one big dragon flies toward the point.|n|cFF00A5FF|nDamage: 5\\6\\7\\8\\9*|c003CFF3CAGI|r (feather dragon or big dragon; once per target"+")|nStun: 3 sec.|nRange: 2000|nCooldown: 30 sec.|r")
+call LANG_A('SuR1',1,2,"• If there are feathers in the chosen area, each becomes a black dragon that finds an enemy within 3000 by itself, hits and stuns.|n• If there are no feathers, one big dragon flies toward the point.|n|cFF00A5FF|nDamage: 5\\6\\7\\8\\9*|c003CFF3CAGI|r (feather dragon or big dragon; once per target"+")|nStun: 3 sec.|nRange: 2000|nCooldown: 30 sec.|r")
+call LANG_A('SuR1',1,3,"• If there are feathers in the chosen area, each becomes a black dragon that finds an enemy within 3000 by itself, hits and stuns.|n• If there are no feathers, one big dragon flies toward the point.|n|cFF00A5FF|nDamage: 5\\6\\7\\8\\9*|c003CFF3CAGI|r (feather dragon or big dragon; once per target"+")|nStun: 3 sec.|nRange: 2000|nCooldown: 30 sec.|r")
+call LANG_A('SuR1',1,4,"• If there are feathers in the chosen area, each becomes a black dragon that finds an enemy within 3000 by itself, hits and stuns.|n• If there are no feathers, one big dragon flies toward the point.|n|cFF00A5FF|nDamage: 5\\6\\7\\8\\9*|c003CFF3CAGI|r (feather dragon or big dragon; once per target"+")|nStun: 3 sec.|nRange: 2000|nCooldown: 30 sec.|r")
 call LANG_A('SuR1',2,0,"Black Feather Dragon, [|cffffcc00Level %d|r] (|cffffcc00R|r)")
-call LANG_A('SuR1',3,0,"• If there are feathers in the chosen area, each becomes a black dragon that finds an enemy within 3000 by itself, hits and stuns.|n• If there are no feathers, one big dragon flies toward the point.|n|cFF00A5FF|nDragon from a feather: 1.25\\1.5\\1.75\\2\\2.25*|c003CFF3CAGI|r|nBig dragon: 5\\6\\7"+"\\8\\9*|c003CFF3CAGI|r|nStun: 3 sec.|nRange: 2000|nCooldown: 30 sec.|r")
+call LANG_A('SuR1',3,0,"• If there are feathers in the chosen area, each becomes a black dragon that finds an enemy within 3000 by itself, hits and stuns.|n• If there are no feathers, one big dragon flies toward the point.|n|cFF00A5FF|nDamage: 5\\6\\7\\8\\9*|c003CFF3CAGI|r (feather dragon or big dragon; once per target"+")|nStun: 3 sec.|nRange: 2000|nCooldown: 30 sec.|r")
 call LANG_A('SuD1',1,0,"• Places a mirror at the point for 12 sec.: it repeats Suigintou's Q, W and E. To turn the mirror, give an attack order (A + click) in the desired direction.|n• After 0.5 sec. T is replaced by Mirror Shift.|n|cFF00A5FF|nRange: 1000|nCooldown: 60 sec.|r")
 call LANG_A('SuD1',3,0,"• Places a mirror at the point for 12 sec.: it repeats Suigintou's Q, W and E. To turn the mirror, give an attack order (A + click) in the desired direction.|n• After 0.5 sec. T is replaced by Mirror Shift.|n|cFF00A5FF|nRange: 1000|nCooldown: 60 sec.|r")
 call LANG_A('SuD2',1,0,"• Enters the mirror world and exits through the mirror, slashing everything in the direction it faces.|n|cFF00A5FF|nDamage: 2.8*|c003CFF3CAGI|r|nStun: 3 sec.|r")
 call LANG_A('SuD2',3,0,"• Enters the mirror world and exits through the mirror, slashing everything in the direction it faces.|n|cFF00A5FF|nDamage: 2.8*|c003CFF3CAGI|r|nStun: 3 sec.|r")
-call LANG_A('SuF1',1,0,"• Two deadly feathers toward the cursor; after hitting, they stay on the ground for 12 sec.|n• For 8 sec. F is replaced by N-Field.|n|cFF00A5FF|nDamage: 1.5*|c003CFF3CAGI|r per feather|nStun: 3 sec.|nCooldown: 20 sec.|r")
-call LANG_A('SuF1',3,0,"• Two deadly feathers toward the cursor; after hitting, they stay on the ground for 12 sec.|n• For 8 sec. F is replaced by N-Field.|n|cFF00A5FF|nDamage: 1.5*|c003CFF3CAGI|r per feather|nStun: 3 sec.|nCooldown: 20 sec.|r")
-call LANG_A('SuF2',1,0,"• A field from the mirror world: short stuns and damage to everyone in the area.|n|cFF00A5FF|nDamage: 0.2*|c003CFF3CAGI|r per tick|nAoE: 800|nRange: 1000|nCooldown: 60 sec.|r")
-call LANG_A('SuF2',3,0,"• A field from the mirror world: short stuns and damage to everyone in the area.|n|cFF00A5FF|nDamage: 0.2*|c003CFF3CAGI|r per tick|nAoE: 800|nRange: 1000|nCooldown: 60 sec.|r")
-call LANG_A('SuG1',1,0,"• Chains strike the ground and bind nearby enemies (350): 1.2 sec. stun, then a 4 sec. freeze.|n• A rain of feathers falls from above: each feather hits within 220 around.|n|cFF00A5FF|nChain damage: 0.8*|c003CFF3CAGI|r|nFeather damage: 0.4*|c003CFF3CAGI|r|nArea: 650|nRange: 1600|nCooldown: 60 se"+"c.|r")
-call LANG_A('SuG1',3,0,"• Chains strike the ground and bind nearby enemies (350): 1.2 sec. stun, then a 4 sec. freeze.|n• A rain of feathers falls from above: each feather hits within 220 around.|n|cFF00A5FF|nChain damage: 0.8*|c003CFF3CAGI|r|nFeather damage: 0.4*|c003CFF3CAGI|r|nArea: 650|nRange: 1600|nCooldown: 60 se"+"c.|r")
-call LANG_A('SuT1',1,0,"• All feathers on the map fly back to Suigintou, wounding and stunning enemies in their path.|n• Each returning feather grants a shield for 12 sec.: while it has capacity left, hits on Suigintou are fully absorbed.|n|cFF00A5FF|nDamage: 1*|c003CFF3CAGI|r per feather|nShield: 6% of max HP per feat"+"her|nStun: 2 sec.|nNo cooldown.|r")
-call LANG_A('SuT1',3,0,"• All feathers on the map fly back to Suigintou, wounding and stunning enemies in their path.|n• Each returning feather grants a shield for 12 sec.: while it has capacity left, hits on Suigintou are fully absorbed.|n|cFF00A5FF|nDamage: 1*|c003CFF3CAGI|r per feather|nShield: 6% of max HP per feat"+"her|nStun: 2 sec.|nNo cooldown.|r")
+call LANG_A('SuF1',1,0,"• Two deadly feathers toward the cursor; after hitting, they stay on the ground for 12 sec.|n• For 8 sec. F is replaced by N-Field.|n|cFF00A5FF|nDamage: 3*|c003CFF3CAGI|r (once per target, from the first feather)|nStun: 3 sec.|nCooldown: 20 sec.|r")
+call LANG_A('SuF1',3,0,"• Two deadly feathers toward the cursor; after hitting, they stay on the ground for 12 sec.|n• For 8 sec. F is replaced by N-Field.|n|cFF00A5FF|nDamage: 3*|c003CFF3CAGI|r (once per target, from the first feather)|nStun: 3 sec.|nCooldown: 20 sec.|r")
+call LANG_A('SuF2',1,0,"• A field from the mirror world: short stuns and damage to everyone in the area.|n|cFF00A5FF|nDamage: 2*|c003CFF3CAGI|r (once per target)|nAoE: 600|nRange: 1000|nCooldown: 60 sec.|r")
+call LANG_A('SuF2',3,0,"• A field from the mirror world: short stuns and damage to everyone in the area.|n|cFF00A5FF|nDamage: 2*|c003CFF3CAGI|r (once per target)|nAoE: 600|nRange: 1000|nCooldown: 60 sec.|r")
+call LANG_A('SuG1',1,0,"• Chains strike the ground and bind nearby enemies (350): 1.2 sec. stun, then a 4 sec. freeze.|n• A rain of feathers falls from above: each feather hits within 220 around.|n|cFF00A5FF|nDamage: 10*|c003CFF3CAGI|r (by chain or feather; once per target)|nArea: 650|nRange: 1600|nCooldown: 60 sec.|r")
+call LANG_A('SuG1',3,0,"• Chains strike the ground and bind nearby enemies (350): 1.2 sec. stun, then a 4 sec. freeze.|n• A rain of feathers falls from above: each feather hits within 220 around.|n|cFF00A5FF|nDamage: 10*|c003CFF3CAGI|r (by chain or feather; once per target)|nArea: 650|nRange: 1600|nCooldown: 60 sec.|r")
+call LANG_A('SuT1',1,0,"• All feathers on the map fly back to Suigintou, wounding and stunning enemies in their path.|n• Each returning feather grants a shield for 12 sec.: while it has capacity left, hits on Suigintou are fully absorbed.|n|cFF00A5FF|nDamage: 3*|c003CFF3CAGI|r (once per target per cast)|nShield: 6% of "+"max HP per feather|nStun: 2 sec.|nNo cooldown.|r")
+call LANG_A('SuT1',3,0,"• All feathers on the map fly back to Suigintou, wounding and stunning enemies in their path.|n• Each returning feather grants a shield for 12 sec.: while it has capacity left, hits on Suigintou are fully absorbed.|n|cFF00A5FF|nDamage: 3*|c003CFF3CAGI|r (once per target per cast)|nShield: 6% of "+"max HP per feather|nStun: 2 sec.|nNo cooldown.|r")
 call LANG_A('KrF1',1,0,"Passive — Battle Healing:|nEvery 10 sec. Kirito restores 8% Max HP and 10% of the damage taken during that time.|n|nActive — Switch:|nKirito swaps places with an allied hero and knocks down enemies around the new spot. Cannot be used on invulnerable targets.|n|n|cFF00A5FFRange: 1200|nKnockdown: "+"0.5 sec. (AoE: 350)|nCooldown: 18 sec.|r")
 call LANG_A('KrG1',1,0,"Passive — Dual Blades:|nEvery 4th attack of Kirito strikes with the second blade — two crossing slashes.|n|cFF00A5FFBonus damage: 1.5*|r|c00FF5555STR|r|n|nActive — Single Shot:|nKirito throws a pick in the chosen direction: it flies in a straight line and hits the first enemy in its path, inte"+"rrupting its cast and channel and slowing it.|n|n|cFF00A5FFDamage: 2*|r|c00FF5555STR|r|cFF00A5FF|nSlow: 30% for 2 sec.|nRange: 1500|nCooldown: 12 sec.|r")
 call LANG_A('KrT1',1,0,"Variation in which Kirito performs a fast series of 16 strikes, knocks the enemy back, catches up and pushes them.|n|n|cFF00A5FFDamage: 10*|r|c00FF5555STR|r|cFF00A5FF|nDuration: ~3.5 sec.|nMana cost: 350|nCooldown: 35 sec.|r")
