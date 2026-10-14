@@ -650,6 +650,9 @@ boolean udg_button2=false
 boolean PauseRes=true
 boolean BonusTimer=false
 boolean FFAMode=false
+// Turbo: золото и уровни за раунд x2, старт +6 уровней и +2000 золота, без капитанки (14 окт)
+boolean TurboMode=false
+integer TurboMul=1
 boolean AH=false
 boolean AllIsVisible=false
 boolean KarnaW1=false
@@ -1925,7 +1928,7 @@ unit dmgu=null
 unit n=null
 unit n0=null
 integer nd
-integer passedTime=-5
+integer passedTime=0
 integer HealRes=0
 integer SpeedRes=0
 integer array lvl5
@@ -4107,7 +4110,7 @@ function myCustomDamage takes unit whichUnit, unit target, real amount, boolean 
             set currentDmg = currentDmg*(1.00+(0.05*passedTime)*minusres)
         endif
         if GetHeroInt(target, true)>0 then
-            set currentDmg = currentDmg*(1.00-(0.0004*GetHeroInt(target, true))*minusres)
+            set currentDmg = currentDmg*(1.00-(0.0005*GetHeroInt(target, true))*minusres)
         endif
         // Калейдожезл Руби
         if GetUnitAbilityLevel(target,'B072') > 0 then
@@ -4346,7 +4349,7 @@ function myCustomDamage2 takes unit target, real amount returns real
             set currentDmg = currentDmg + amount*(I2R(GetUnitAbilityLevel(target, 'BGiT'))*0.05)
         endif
         if GetHeroInt(target, true)>0 then
-            set currentDmg = currentDmg*(1.00-(0.0004*GetHeroInt(target, true))*minusres)
+            set currentDmg = currentDmg*(1.00-(0.0005*GetHeroInt(target, true))*minusres)
         endif
         // Шторм Вонголы и Гае Дирг
         //if GetUnitAbilityLevel(target,'RiSV') == 0 and GetUnitAbilityLevel(target,'GDSV') == 0  then
@@ -4502,7 +4505,7 @@ function myCustomDamage2_dec takes unit target, real amount returns real
             set currentDmg = currentDmg + amount*(I2R(GetUnitAbilityLevel(target, 'BGiT'))*0.05)
         endif
         if GetHeroInt(target, true)>0 then
-            set currentDmg = currentDmg*(1.00-(0.0004*GetHeroInt(target, true))*minusres)
+            set currentDmg = currentDmg*(1.00-(0.0005*GetHeroInt(target, true))*minusres)
         endif
         // Шторм Вонголы и Гае Дирг
         //if GetUnitAbilityLevel(target,'RiSV') == 0 and GetUnitAbilityLevel(target,'GDSV') == 0  then
@@ -34362,6 +34365,38 @@ endfunction
 function Trig_Table2_Actions takes nothing returns nothing
 call TriggerExecute(gg_trg_Dialog2)
 endfunction
+// окно выбора режима заново (после переключения FFA / Turbo)
+function Mode_Dialog takes nothing returns nothing
+set udg_Dialog=DialogCreate()
+call DialogClear(udg_Dialog)
+call DialogSetMessage(udg_Dialog,"Choice Mode")
+if FFAMode then
+set udg_Button[5]=DialogAddButton(udg_Dialog,"FFA: ON",0)
+else
+set udg_Button[5]=DialogAddButton(udg_Dialog,"FFA: OFF",0)
+endif
+if TurboMode then
+set udg_Button[7]=DialogAddButton(udg_Dialog,"Turbo: ON",0)
+else
+set udg_Button[7]=DialogAddButton(udg_Dialog,"Turbo: OFF",0)
+endif
+set udg_Button[1]=DialogAddButton(udg_Dialog,"Standard Mode",0)
+set udg_Button[4]=DialogAddButton(udg_Dialog,"Ban Mode",0)
+set udg_Button[2]=DialogAddButton(udg_Dialog,"Random Mode",0)
+set udg_Button[6]=DialogAddButton(udg_Dialog,"Single Draft",0)
+// капитанка — только 5x5 без FFA и Turbo
+if maxplayers==10 and FFAMode==false and TurboMode==false then
+set udg_Button[3]=DialogAddButton(udg_Dialog,"Captain Mode",0)
+else
+set udg_Button[3]=null
+endif
+call DialogDisplay(PlayerV(0),udg_Dialog,true)
+// Shop32: пока выбирается режим, магазин закрыт
+set ShModePick=true
+call Sh_CloseLocal()
+call TriggerRegisterDialogEvent(gg_trg_Dialog2,udg_Dialog)
+call TriggerRegisterDialogEvent(gg_trg_Dialog3,udg_Dialog)
+endfunction
 function Trig_Table_Actions2 takes nothing returns nothing
 if udg_button2==false then
 call DialogDisplay(PlayerV(0),udg_Dialog, false )
@@ -34375,6 +34410,7 @@ set udg_Dialog=DialogCreate()
 call DialogClear(udg_Dialog)
 call DialogSetMessage(udg_Dialog,"Choice Mode")
 set udg_Button[5]=DialogAddButton(udg_Dialog,"FFA: OFF",0)
+set udg_Button[7]=DialogAddButton(udg_Dialog,"Turbo: OFF",0)
 set udg_Button[1]=DialogAddButton(udg_Dialog,"Standard Mode",0)
 set udg_Button[4]=DialogAddButton(udg_Dialog,"Ban Mode",0)
 set udg_Button[2]=DialogAddButton(udg_Dialog,"Random Mode",0)
@@ -34414,48 +34450,20 @@ call TriggerAddAction(gg_trg_Table,function Trig_Table_Actions)
 endif
 endfunction
 function Trig_Dialog3_Conditions takes nothing returns boolean
-return GetClickedButton()==udg_Button[5]
+return GetClickedButton()==udg_Button[5] or GetClickedButton()==udg_Button[7]
 endfunction
 function Trig_Dialog3_Actions takes nothing returns nothing
-if FFAMode==false then
-set udg_Dialog=DialogCreate()
-call DialogClear(udg_Dialog)
-call DialogSetMessage(udg_Dialog,"Choice Mode")
-set udg_Button[5]=DialogAddButton(udg_Dialog,"FFA: ON",0)
-set udg_Button[1]=DialogAddButton(udg_Dialog,"Standard Mode",0)
-set udg_Button[4]=DialogAddButton(udg_Dialog,"Ban Mode",0)
-set udg_Button[2]=DialogAddButton(udg_Dialog,"Random Mode",0)
-set udg_Button[6]=DialogAddButton(udg_Dialog,"Single Draft",0)
-//set udg_Button[3]=DialogAddButton(udg_Dialog,"Captain Mode",0)
-call DialogDisplay(PlayerV(0),udg_Dialog,true)
-// Shop32: пока выбирается режим, магазин закрыт
-set ShModePick=true
-call Sh_CloseLocal()
-call TriggerRegisterDialogEvent(gg_trg_Dialog2,udg_Dialog)
-call TriggerRegisterDialogEvent(gg_trg_Dialog3,udg_Dialog)
-set FFAMode=true
-//set DamageOff=false
+if GetClickedButton()==udg_Button[7] then
+set TurboMode=not TurboMode
 else
-set udg_Dialog=DialogCreate()
-call DialogClear(udg_Dialog)
-call DialogSetMessage(udg_Dialog,"Choice Mode")
-set udg_Button[5]=DialogAddButton(udg_Dialog,"FFA: OFF",0)
-set udg_Button[1]=DialogAddButton(udg_Dialog,"Standard Mode",0)
-set udg_Button[4]=DialogAddButton(udg_Dialog,"Ban Mode",0)
-set udg_Button[2]=DialogAddButton(udg_Dialog,"Random Mode",0)
-set udg_Button[6]=DialogAddButton(udg_Dialog,"Single Draft",0)
-if maxplayers==10 then
-set udg_Button[3]=DialogAddButton(udg_Dialog,"Captain Mode",0)
+set FFAMode=not FFAMode
 endif
-call DialogDisplay(PlayerV(0),udg_Dialog,true)
-// Shop32: пока выбирается режим, магазин закрыт
-set ShModePick=true
-call Sh_CloseLocal()
-call TriggerRegisterDialogEvent(gg_trg_Dialog2,udg_Dialog)
-call TriggerRegisterDialogEvent(gg_trg_Dialog3,udg_Dialog)
-set FFAMode=false
-//set DamageOff=true
+if TurboMode then
+set TurboMul=2
+else
+set TurboMul=1
 endif
+call Mode_Dialog()
 endfunction
 function InitTrig_Dialog3 takes nothing returns nothing
 set gg_trg_Dialog3=CreateTrigger()
@@ -36766,6 +36774,16 @@ call W3MMD_Lite_Set_Integer(PlayerV(6),"FFAMode",0)
 call W3MMD_Lite_Set_Integer(PlayerV(7),"FFAMode",0)
 call W3MMD_Lite_Set_Integer(PlayerV(8),"FFAMode",0)
 call W3MMD_Lite_Set_Integer(PlayerV(9),"FFAMode",0)
+endif
+if TurboMode then
+// Turbo: +2000 золота к стартовому
+set i=0
+loop
+exitwhen i>9
+call SetPlayerState(PlayerV(i),PLAYER_STATE_RESOURCE_GOLD,GetPlayerState(PlayerV(i),PLAYER_STATE_RESOURCE_GOLD)+2000)
+set i=i+1
+endloop
+call DisplayChatMessageEx(null,CHAT_RECIPIENT_UNKNOWN,10,true,Lng("Turbo: ON! Золото и уровни за раунд x2, +6 уровней и +2000 золота на старте","Turbo: ON! Gold and levels per round x2, +6 levels and +2000 gold at start"))
 endif
 call EnableTrigger(gg_trg_MoveHeroes)
 if bu==udg_Button[1] then
@@ -46222,11 +46240,11 @@ if cmb!=true then
         set nowpick=1
         if FFAMode==false then
             if GetHeroLevel(u)==1 then
-                call SetHeroLevel(u,(round*3)+2,true)
+                call SetHeroLevel(u,(round*3*TurboMul)+2+(TurboMul-1)*6,true)
             endif
         else
             if GetHeroLevel(u)==1 then
-                call SetHeroLevel(u,(round*3)+8,true)
+                call SetHeroLevel(u,(round*3*TurboMul)+8+(TurboMul-1)*6,true)
             endif
         endif
         call SaveGroupHandle(h,id,SH_SpellGroup,CreateGroup())
@@ -56654,8 +56672,6 @@ local integer cbO
 local unit cbT
 local unit cbB=null
 local real cbR=200.*200.
-local boolean cbOk
-local integer cbTt
 local string cbOs
 if GetTriggerSyncPrefix()=="CBQI" then
 call CBS_QiSync()
@@ -56704,11 +56720,6 @@ set cbA=null
 set cbT=null
 return
 endif
-// запасной путь — применение по самой способности (CastAbility*): приказ по коду игра отклоняет у Channel
-// с «чужим» кодом, например thunderbolt в точку (W Барагана, E Занзаса). Только если готова и хватает маны
-set cbOk=not IsAbilityOnCooldown(cbA) and GetUnitState(cbU,UNIT_STATE_MANA)>=I2R(GetAbilityIntegerLevelField(cbA,ABILITY_ILF_MANA_COST,GetUnitAbilityLevel(cbU,cbId)-1))
-// CastAbilityGround — только у способностей с целью «точка» (Channel: тип цели 2), иначе применилась бы без цели
-set cbTt=GetAbilityIntegerLevelField(cbA,ABILITY_ILF_TARGET_TYPE,GetUnitAbilityLevel(cbU,cbId)-1)
 if IssuePointOrderById(cbU,cbO,cbX,cbY)==false then // CastAbilityGround / CastAbilityTarget убраны (12 окт): при спаме с задержкой синхронизации применяли выключенную стадию (Нанаи) в обход приказа — крит игры
 call GroupEnumUnitsInRange(CBS_QcG,cbX,cbY,200.,null)
 loop
@@ -57597,23 +57608,10 @@ function EndOfChoiceAct takes nothing returns nothing
     call DestroyEffect(Tower)
     call DestroyEffect(Fountain)
     if FFAMode==false then
-        if round<=2 then
-            set passedTime=-5
-            set HealRes=0
-            set SpeedRes=0
-        elseif round>2 and round<=4 then
-            set passedTime=-6
-            set HealRes=0
-            set SpeedRes=0
-        elseif round>4 and round<=6 then
-            set passedTime=-7
-            set HealRes=0
-            set SpeedRes=0
-        elseif round>6 then
-            set passedTime=-8
-            set HealRes=0
-            set SpeedRes=0
-        endif
+        // резист вне FFA: 0% в первом раунде, +10% за раунд, не больше 40% (14 окт; было 25/30/35/40% по парам раундов)
+        set passedTime=-IMinBJ(8,(round-1)*2)
+        set HealRes=0
+        set SpeedRes=0
     else
         if round<=2 then
             set passedTime=-0
@@ -57801,12 +57799,12 @@ function EndOfChoiceAct takes nothing returns nothing
                 call SaveInteger(HH,GetHandleId(Hero[i]),SH_recall,2)
         endif
         call UnitRemoveAbility(Hero[i],'A0WR')
-        call SetHeroLevel(Hero[i],GetHeroLevel(Hero[i])+3,true)
+        call SetHeroLevel(Hero[i],GetHeroLevel(Hero[i])+3*TurboMul,true)
         call SetUnitMoveSpeed(Hero[i], GetUnitDefaultMoveSpeed(Hero[i]))
         if round>5 then
-            call SetPlayerState(PlayerV(i),PLAYER_STATE_RESOURCE_GOLD,GetPlayerState(PlayerV(i),PLAYER_STATE_RESOURCE_GOLD)+1250)
+            call SetPlayerState(PlayerV(i),PLAYER_STATE_RESOURCE_GOLD,GetPlayerState(PlayerV(i),PLAYER_STATE_RESOURCE_GOLD)+1250*TurboMul)
         else
-            call SetPlayerState(PlayerV(i),PLAYER_STATE_RESOURCE_GOLD,GetPlayerState(PlayerV(i),PLAYER_STATE_RESOURCE_GOLD)+1000)
+            call SetPlayerState(PlayerV(i),PLAYER_STATE_RESOURCE_GOLD,GetPlayerState(PlayerV(i),PLAYER_STATE_RESOURCE_GOLD)+1000*TurboMul)
         endif
         if noduels==true and ModuloInteger(round,duelround)==0 then
             call SetPlayerState(PlayerV(i),PLAYER_STATE_RESOURCE_GOLD,GetPlayerState(PlayerV(i),PLAYER_STATE_RESOURCE_GOLD)+250)
@@ -58526,7 +58524,7 @@ if UnitIsAlive(Hero[i])==false then
 call ReviveHero(Hero[i],RX,RY,false)
 call SetUnitControlCount(Hero[i], 11,0)
 endif
-call SetHeroLevel(Hero[i],GetHeroLevel(Hero[i])+3,true)
+call SetHeroLevel(Hero[i],GetHeroLevel(Hero[i])+3*TurboMul,true)
 call SetUnitMoveSpeed(Hero[i], GetUnitDefaultMoveSpeed(Hero[i]))
 call PauseUnit(Hero[i],false)
 call SaveBoolean(HH,GetHandleId(Hero[i]),TARGET_ABILITY,false)
@@ -59119,7 +59117,7 @@ if FFAMode==false then
         call SetFrameColourEx( TavernHeroPick,2, 0xFF404040 )
     
         endif
-        set passedTime=-5
+        set passedTime=0 // резист вне FFA в первом раунде — 0% (14 окт)
         if udg_test==false then
         set HealRes=-25
         else
@@ -59140,20 +59138,9 @@ if FFAMode==false then
         set i=i+1
         endloop
         set i = 0
-    elseif round<=2 then
-        set passedTime=-5
-        set HealRes=0
-        set SpeedRes=0
-    elseif round>2 and round<=4 then
-        set passedTime=-6
-        set HealRes=0
-        set SpeedRes=0
-    elseif round>4 and round<=6 then
-        set passedTime=-7
-        set HealRes=0
-        set SpeedRes=0
-    elseif round>6 then
-        set passedTime=-8
+    else
+        // +10% за раунд, не больше 40%
+        set passedTime=-IMinBJ(8,(round-1)*2)
         set HealRes=0
         set SpeedRes=0
     endif
