@@ -2319,212 +2319,6 @@ endglobals
 native MergeUnits       takes integer qty, integer a, integer b, integer make returns boolean   // reserved native for call 4 integer function and return BOOLEAN value
 native ConvertUnits takes integer qty, integer id returns boolean                                                       // reserved native for call 2 integer function and return BOOLEAN value (can be converted to int!)
 native IgnoredUnits takes integer unitid returns integer                                                                        // reserved native for call 1 integer function and return integer value
-// ===== Виртуализация игрока для -take (12 окт) =====
-// Пока судья (игрок 11 / 12) занимает место вышедшего игрока N (JudgeSlot / SlotJudge), для всей логики карты
-// он и есть игрок N: номер судьи -> N (PId), Player(N), владелец юнита / предмета, игрок триггера -> судья (PlayerV, V).
-// Данные, привязанные к хэндлу игрока, — всегда под хэндлом исходного слота (PH): записанное до -take сохраняется.
-// Юниты места N на это время принадлежат судье (JudgeTake / JudgeRelease). Без -take все обёртки — тождество.
-function V takes player p returns player
-local integer i
-if not JT_Any then
-return p
-endif
-set i=GetPlayerId(p)
-if p!=null and i>=0 and i<10 and SlotJudge[i]>0 then
-return Player(SlotJudge[i]-1)
-endif
-return p
-endfunction
-function PId takes player p returns integer
-local integer i=GetPlayerId(p)
-if not JT_Any then
-return i
-endif
-if i>=10 and i<=11 and JudgeSlot[i]>0 then
-return JudgeSlot[i]-1
-endif
-return i
-endfunction
-function PlayerV takes integer i returns player
-if not JT_Any then
-return Player(i)
-endif
-if i>=0 and i<10 and SlotJudge[i]>0 then
-return Player(SlotJudge[i]-1)
-endif
-return Player(i)
-endfunction
-function PlayerVC takes integer i returns player
-return PlayerV(i-1)
-endfunction
-function OwnerOf takes unit u returns player
-if not JT_Any then
-return GetOwningPlayer(u)
-endif
-return V(GetOwningPlayer(u))
-endfunction
-function TrigP takes nothing returns player
-if not JT_Any then
-return GetTriggerPlayer()
-endif
-return V(GetTriggerPlayer())
-endfunction
-function ItemP takes item it returns player
-if not JT_Any then
-return GetItemPlayer(it)
-endif
-return V(GetItemPlayer(it))
-endfunction
-// ключ данных игрока — хэндл исходного слота
-function PH takes player p returns integer
-if p==null then
-return 0
-endif
-if not JT_Any then
-return GetHandleId(p)
-endif
-return GetHandleId(Player(PId(p)))
-endfunction
-// в форсах — только исходные игроки слотов (судья в них не попадает, перебор форса отдаёт его через V)
-function ForceAddV takes force f,player p returns nothing
-call ForceAddPlayer(f,Player(PId(p)))
-endfunction
-function ForceRemV takes force f,player p returns nothing
-call ForceRemovePlayer(f,Player(PId(p)))
-endfunction
-function InForceV takes player p,force f returns boolean
-return IsPlayerInForce(Player(PId(p)),f)
-endfunction
-// событие юнитов игрока: регистрация как была + (для игроков 1..10) один раз на судей 11, 12 — их юниты
-// во время -take; повторная регистрация того же триггера, события и игрока пропускается
-function TRPUE takes trigger t,player p,playerunitevent ev,boolexpr f returns event
-local integer i=GetPlayerId(p)
-local integer k=GetHandleId(ev)*16
-local integer th=GetHandleId(t)
-local integer j=10
-local event e=null
-if JT_RegHT==null then
-set JT_RegHT=InitHashtable()
-endif
-if i<0 or not LoadBoolean(JT_RegHT,th,k+i) then
-if i>=0 then
-call SaveBoolean(JT_RegHT,th,k+i,true)
-endif
-set e=TriggerRegisterPlayerUnitEvent(t,p,ev,f)
-endif
-if i>=0 and i<10 then
-loop
-exitwhen j>11
-if not LoadBoolean(JT_RegHT,th,k+j) then
-call SaveBoolean(JT_RegHT,th,k+j,true)
-call TriggerRegisterPlayerUnitEvent(t,Player(j),ev,f)
-endif
-set j=j+1
-endloop
-endif
-return e
-endfunction
-// чат, клавиши, события игрока: как TRPUE, но судья без места (-take) срабатывает, только если его регистрировали
-// явно (судейские команды и клавиши); для автоматически добавленного судьи — условие JT_EvOk
-function JT_EvOk takes nothing returns boolean
-local integer i=GetPlayerId(GetTriggerPlayer())
-if i>=10 and i<=11 and JudgeSlot[i]==0 and not LoadBoolean(JT_RegHT,GetHandleId(GetTriggeringTrigger()),-1) then
-return false
-endif
-return true
-endfunction
-// отметить регистрацию (триггер, ключ k, игрок i); true — новая
-function JT_Mark takes trigger t,integer k,integer i returns boolean
-if JT_RegHT==null then
-set JT_RegHT=InitHashtable()
-endif
-if i>=10 then
-call SaveBoolean(JT_RegHT,GetHandleId(t),-1,true)
-endif
-if LoadBoolean(JT_RegHT,GetHandleId(t),k*16+i) then
-return false
-endif
-call SaveBoolean(JT_RegHT,GetHandleId(t),k*16+i,true)
-return true
-endfunction
-// судьи для триггера t: условие — один раз
-function JT_AutoJudge takes trigger t returns nothing
-if not LoadBoolean(JT_RegHT,GetHandleId(t),-2) then
-call SaveBoolean(JT_RegHT,GetHandleId(t),-2,true)
-call TriggerAddCondition(t,Condition(function JT_EvOk))
-endif
-endfunction
-function TRPCE takes trigger t,player p,string m,boolean x returns event
-local integer i=GetPlayerId(p)
-local integer k=StringHash(m)
-local integer j=10
-local event e=null
-if x then
-set k=k+1
-endif
-if i<0 or JT_Mark(t,k,i) then
-set e=TriggerRegisterPlayerChatEvent(t,p,m,x)
-endif
-if i>=0 and i<10 then
-loop
-exitwhen j>11
-if not LoadBoolean(JT_RegHT,GetHandleId(t),k*16+j) then
-call SaveBoolean(JT_RegHT,GetHandleId(t),k*16+j,true)
-call JT_AutoJudge(t)
-call TriggerRegisterPlayerChatEvent(t,Player(j),m,x)
-endif
-set j=j+1
-endloop
-endif
-return e
-endfunction
-function TRPKE takes trigger t,player p,oskeytype key,integer meta,boolean down returns event
-local integer i=GetPlayerId(p)
-local integer k=GetHandleId(key)*64+meta*2
-local integer j=10
-local event e=null
-if down then
-set k=k+1
-endif
-if i<0 or JT_Mark(t,k,i) then
-set e=TriggerRegisterPlayerKeyEvent(t,p,key,meta,down)
-endif
-if i>=0 and i<10 then
-loop
-exitwhen j>11
-if not LoadBoolean(JT_RegHT,GetHandleId(t),k*16+j) then
-call SaveBoolean(JT_RegHT,GetHandleId(t),k*16+j,true)
-call JT_AutoJudge(t)
-call TriggerRegisterPlayerKeyEvent(t,Player(j),key,meta,down)
-endif
-set j=j+1
-endloop
-endif
-return e
-endfunction
-function TRPE takes trigger t,player p,playerevent ev returns event
-local integer i=GetPlayerId(p)
-local integer k=GetHandleId(ev)
-local integer j=10
-local event e=null
-if i<0 or JT_Mark(t,k,i) then
-set e=TriggerRegisterPlayerEvent(t,p,ev)
-endif
-if i>=0 and i<10 then
-loop
-exitwhen j>11
-if not LoadBoolean(JT_RegHT,GetHandleId(t),k*16+j) then
-call SaveBoolean(JT_RegHT,GetHandleId(t),k*16+j,true)
-call JT_AutoJudge(t)
-call TriggerRegisterPlayerEvent(t,Player(j),ev)
-endif
-set j=j+1
-endloop
-endif
-return e
-endfunction
-
-
 //LANG_CORE_BEGIN — одна карта на двух языках (прототип). Тексты объектов в table/*.ini — русские,
 // английские лежат в LANG_Data* (генерирует tools/lang/gen.js). Язык свой у каждого игрока: по GetLocale(),
 // сменить — -en / -ru. Язык меняет только то, что видно на экране: от L() и текстов объектов
@@ -2962,6 +2756,212 @@ call TriggerAddAction(lgT,function LANG_Chat)
 set lgT=null
 endfunction
 //LANG_CORE_END
+// ===== Виртуализация игрока для -take (12 окт) =====
+// Пока судья (игрок 11 / 12) занимает место вышедшего игрока N (JudgeSlot / SlotJudge), для всей логики карты
+// он и есть игрок N: номер судьи -> N (PId), Player(N), владелец юнита / предмета, игрок триггера -> судья (PlayerV, V).
+// Данные, привязанные к хэндлу игрока, — всегда под хэндлом исходного слота (PH): записанное до -take сохраняется.
+// Юниты места N на это время принадлежат судье (JudgeTake / JudgeRelease). Без -take все обёртки — тождество.
+function V takes player p returns player
+local integer i
+if not JT_Any then
+return p
+endif
+set i=GetPlayerId(p)
+if p!=null and i>=0 and i<10 and SlotJudge[i]>0 then
+return Player(SlotJudge[i]-1)
+endif
+return p
+endfunction
+function PId takes player p returns integer
+local integer i=GetPlayerId(p)
+if not JT_Any then
+return i
+endif
+if i>=10 and i<=11 and JudgeSlot[i]>0 then
+return JudgeSlot[i]-1
+endif
+return i
+endfunction
+function PlayerV takes integer i returns player
+if not JT_Any then
+return Player(i)
+endif
+if i>=0 and i<10 and SlotJudge[i]>0 then
+return Player(SlotJudge[i]-1)
+endif
+return Player(i)
+endfunction
+function PlayerVC takes integer i returns player
+return PlayerV(i-1)
+endfunction
+function OwnerOf takes unit u returns player
+if not JT_Any then
+return GetOwningPlayer(u)
+endif
+return V(GetOwningPlayer(u))
+endfunction
+function TrigP takes nothing returns player
+if not JT_Any then
+return GetTriggerPlayer()
+endif
+return V(GetTriggerPlayer())
+endfunction
+function ItemP takes item it returns player
+if not JT_Any then
+return GetItemPlayer(it)
+endif
+return V(GetItemPlayer(it))
+endfunction
+// ключ данных игрока — хэндл исходного слота
+function PH takes player p returns integer
+if p==null then
+return 0
+endif
+if not JT_Any then
+return GetHandleId(p)
+endif
+return GetHandleId(Player(PId(p)))
+endfunction
+// в форсах — только исходные игроки слотов (судья в них не попадает, перебор форса отдаёт его через V)
+function ForceAddV takes force f,player p returns nothing
+call ForceAddPlayer(f,Player(PId(p)))
+endfunction
+function ForceRemV takes force f,player p returns nothing
+call ForceRemovePlayer(f,Player(PId(p)))
+endfunction
+function InForceV takes player p,force f returns boolean
+return IsPlayerInForce(Player(PId(p)),f)
+endfunction
+// событие юнитов игрока: регистрация как была + (для игроков 1..10) один раз на судей 11, 12 — их юниты
+// во время -take; повторная регистрация того же триггера, события и игрока пропускается
+function TRPUE takes trigger t,player p,playerunitevent ev,boolexpr f returns event
+local integer i=GetPlayerId(p)
+local integer k=GetHandleId(ev)*16
+local integer th=GetHandleId(t)
+local integer j=10
+local event e=null
+if JT_RegHT==null then
+set JT_RegHT=InitHashtable()
+endif
+if i<0 or not LoadBoolean(JT_RegHT,th,k+i) then
+if i>=0 then
+call SaveBoolean(JT_RegHT,th,k+i,true)
+endif
+set e=TriggerRegisterPlayerUnitEvent(t,p,ev,f)
+endif
+if i>=0 and i<10 then
+loop
+exitwhen j>11
+if not LoadBoolean(JT_RegHT,th,k+j) then
+call SaveBoolean(JT_RegHT,th,k+j,true)
+call TriggerRegisterPlayerUnitEvent(t,Player(j),ev,f)
+endif
+set j=j+1
+endloop
+endif
+return e
+endfunction
+// чат, клавиши, события игрока: как TRPUE, но судья без места (-take) срабатывает, только если его регистрировали
+// явно (судейские команды и клавиши); для автоматически добавленного судьи — условие JT_EvOk
+function JT_EvOk takes nothing returns boolean
+local integer i=GetPlayerId(GetTriggerPlayer())
+if i>=10 and i<=11 and JudgeSlot[i]==0 and not LoadBoolean(JT_RegHT,GetHandleId(GetTriggeringTrigger()),-1) then
+return false
+endif
+return true
+endfunction
+// отметить регистрацию (триггер, ключ k, игрок i); true — новая
+function JT_Mark takes trigger t,integer k,integer i returns boolean
+if JT_RegHT==null then
+set JT_RegHT=InitHashtable()
+endif
+if i>=10 then
+call SaveBoolean(JT_RegHT,GetHandleId(t),-1,true)
+endif
+if LoadBoolean(JT_RegHT,GetHandleId(t),k*16+i) then
+return false
+endif
+call SaveBoolean(JT_RegHT,GetHandleId(t),k*16+i,true)
+return true
+endfunction
+// судьи для триггера t: условие — один раз
+function JT_AutoJudge takes trigger t returns nothing
+if not LoadBoolean(JT_RegHT,GetHandleId(t),-2) then
+call SaveBoolean(JT_RegHT,GetHandleId(t),-2,true)
+call TriggerAddCondition(t,Condition(function JT_EvOk))
+endif
+endfunction
+function TRPCE takes trigger t,player p,string m,boolean x returns event
+local integer i=GetPlayerId(p)
+local integer k=StringHash(m)
+local integer j=10
+local event e=null
+if x then
+set k=k+1
+endif
+if i<0 or JT_Mark(t,k,i) then
+set e=TriggerRegisterPlayerChatEvent(t,p,m,x)
+endif
+if i>=0 and i<10 then
+loop
+exitwhen j>11
+if not LoadBoolean(JT_RegHT,GetHandleId(t),k*16+j) then
+call SaveBoolean(JT_RegHT,GetHandleId(t),k*16+j,true)
+call JT_AutoJudge(t)
+call TriggerRegisterPlayerChatEvent(t,Player(j),m,x)
+endif
+set j=j+1
+endloop
+endif
+return e
+endfunction
+function TRPKE takes trigger t,player p,oskeytype key,integer meta,boolean down returns event
+local integer i=GetPlayerId(p)
+local integer k=GetHandleId(key)*64+meta*2
+local integer j=10
+local event e=null
+if down then
+set k=k+1
+endif
+if i<0 or JT_Mark(t,k,i) then
+set e=TriggerRegisterPlayerKeyEvent(t,p,key,meta,down)
+endif
+if i>=0 and i<10 then
+loop
+exitwhen j>11
+if not LoadBoolean(JT_RegHT,GetHandleId(t),k*16+j) then
+call SaveBoolean(JT_RegHT,GetHandleId(t),k*16+j,true)
+call JT_AutoJudge(t)
+call TriggerRegisterPlayerKeyEvent(t,Player(j),key,meta,down)
+endif
+set j=j+1
+endloop
+endif
+return e
+endfunction
+function TRPE takes trigger t,player p,playerevent ev returns event
+local integer i=GetPlayerId(p)
+local integer k=GetHandleId(ev)
+local integer j=10
+local event e=null
+if i<0 or JT_Mark(t,k,i) then
+set e=TriggerRegisterPlayerEvent(t,p,ev)
+endif
+if i>=0 and i<10 then
+loop
+exitwhen j>11
+if not LoadBoolean(JT_RegHT,GetHandleId(t),k*16+j) then
+call SaveBoolean(JT_RegHT,GetHandleId(t),k*16+j,true)
+call JT_AutoJudge(t)
+call TriggerRegisterPlayerEvent(t,Player(j),ev)
+endif
+set j=j+1
+endloop
+endif
+return e
+endfunction
+
+
 // хелперы судьи и -switch — вне блока LANG_CORE (его перезаписывает tools/lang/gen.js)
 // локальный игрок — судья (11, 12), не занявший место вышедшего: только у него судейские окна и обзор
 function IsLocalJudge takes nothing returns boolean
@@ -283642,6 +283642,7 @@ call LANG_B('BbB3',1,"Aging: slows movement and attack speed.")
 call LANG_B('BbB4',1,"Aging: slows movement and attack speed.")
 call LANG_B('BMe2',1,"This unit is slowed (AS/MS -70%)")
 call LANG_B('BMe4',1,"This unit is slowed (AS/MS -70%) and gradually loses health")
+call LANG_F("BONUS_MANAREGEN"," - Each point increases mana regeneration|n - Each point increases magic resistance by 0.05%")
 call LANG_F("COLON_LUMBER","Victory points.")
 call LANG_F("DAMAGETIP_CHAOS","Heroes deal less damage to fortified objects.")
 call LANG_F("DAMAGETIP_CHAOS_V0C","Heroes deal less damage to fortified objects.")

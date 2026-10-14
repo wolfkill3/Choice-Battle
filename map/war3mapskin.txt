@@ -49,6 +49,7 @@ ToolTipBorder=war3mapImported\BlackCinematicBorder.blp
 TownAttackSound=.mp3
 UnderAttackSound=.mp2
 [FrameDef]
+BONUS_MANAREGEN= - 1 ед. повышает скорость восстановления маны|n - 1 ед. повышает магическое сопротивление на 0.05%
 COLON_LUMBER=Очки победы.
 DAMAGETIP_CHAOS=Герои наносят меньший урон укрепленным объектам.
 DAMAGETIP_CHAOS_V0C=Герои наносят меньший урон укрепленным объектам.

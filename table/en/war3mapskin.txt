@@ -1,4 +1,5 @@
 [FrameDef]
+BONUS_MANAREGEN= - Each point increases mana regeneration|n - Each point increases magic resistance by 0.05%
 COLON_LUMBER=Victory points.
 DAMAGETIP_CHAOS=Heroes deal less damage to fortified objects.
 DAMAGETIP_CHAOS_V0C=Heroes deal less damage to fortified objects.
