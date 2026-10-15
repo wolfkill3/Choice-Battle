@@ -3100,8 +3100,21 @@ endfunction
 function GetCommandString takes nothing returns string
 return HLCcommand
 endfunction
+// HCL с тест-режимом для Turbo: буква Turbo (s-z) + "t" (15 окт). HLC_Mode — буква режима без суффикса,
+// HLC_Test — включать ли тест-режим
+function HLC_Mode takes nothing returns string
+local string c=GetCommandString()
+if StringLength(c)==2 and SubString(c,1,2)=="t" then
+return SubString(c,0,1)
+endif
+return c
+endfunction
+function HLC_Test takes nothing returns boolean
+local string c=GetCommandString()
+return c=="i" or c=="j" or c=="k" or c=="l" or c=="m" or c=="n" or c=="q" or c=="r" or (StringLength(c)==2 and SubString(c,1,2)=="t")
+endfunction
 function ValidHLC takes nothing returns boolean
-return GetCommandString()=="a" or GetCommandString()=="b" or GetCommandString()=="c" or GetCommandString()=="d" or GetCommandString()=="e" or GetCommandString()=="f" or GetCommandString()=="g" or GetCommandString()=="h" or GetCommandString()=="i" or GetCommandString()=="j" or GetCommandString()=="k" or GetCommandString()=="l" or GetCommandString()=="m" or GetCommandString()=="n" or GetCommandString()=="o" or GetCommandString()=="p" or GetCommandString()=="q" or GetCommandString()=="r"
+return GetCommandString()=="st" or GetCommandString()=="tt" or GetCommandString()=="ut" or GetCommandString()=="vt" or GetCommandString()=="wt" or GetCommandString()=="xt" or GetCommandString()=="yt" or GetCommandString()=="zt" or GetCommandString()=="a" or GetCommandString()=="b" or GetCommandString()=="c" or GetCommandString()=="d" or GetCommandString()=="e" or GetCommandString()=="f" or GetCommandString()=="g" or GetCommandString()=="h" or GetCommandString()=="i" or GetCommandString()=="j" or GetCommandString()=="k" or GetCommandString()=="l" or GetCommandString()=="m" or GetCommandString()=="n" or GetCommandString()=="o" or GetCommandString()=="p" or GetCommandString()=="q" or GetCommandString()=="r" or GetCommandString()=="s" or GetCommandString()=="t" or GetCommandString()=="u" or GetCommandString()=="v" or GetCommandString()=="w" or GetCommandString()=="x" or GetCommandString()=="y" or GetCommandString()=="z"
 endfunction
 // Выключение предмета своими флагами (9 — блок инвентаря, 25 — слоты 6–8) и включение ТОЛЬКО того, что выключили сами.
 // EnableItem по предмету, который мы не выключали, ломал Doom: кнопка серела, но предмет нажимался хоткеем.
@@ -17373,26 +17386,6 @@ call DestroyGroup(g)
 set g=null
 set e=null
 endfunction
-// конец тяги Q: враги рядом встают SetUnitPosition-ом на месте — кого протащило в декорацию, встаёт рядом
-// с ней (декор главной арены закрыт блокираторами пути — это разрушаемые, Bof_Unstick по IsTerrainPathable
-// их может не видеть, SetUnitPosition видит всё); на проходимом месте не двигает.
-// Цель в стойке реверса не тянули — её и не трогаем
-function Sui_Q_Land takes unit src,real x,real y returns nothing
-local group g=CreateGroup()
-local unit e
-call GroupEnumUnitsInRange(g,x,y,500.,null)
-loop
-set e=FirstOfGroup(g)
-exitwhen e==null
-call GroupRemoveUnit(g,e)
-if Condition_Base(OwnerOf(src),e) and GetUnitAbilityLevel(e,'Avul')==0 and not LoadBoolean(HH,GetHandleId(e),ANTITARGET_ABILITY) then
-call SetUnitPosition(e,GetUnitX(e),GetUnitY(e))
-endif
-endloop
-call DestroyGroup(g)
-set g=null
-set e=null
-endfunction
 function Sui_Q_Tick takes nothing returns nothing
 local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
@@ -17410,7 +17403,6 @@ local unit e
 call SaveInteger(HH,id,3,tk)
 // реверс (цель в стойке развернула умение): умение кончается, героиня отпущена
 if src==hr and Bof_RevEnd(src) then
-call Sui_Q_Land(src,x,y)
 call FlushChildHashtable(HH,id)
 call DestroyTimer(t)
 set t=null
@@ -17423,8 +17415,8 @@ call PauseUnit(src,true)
 if tk==1 then
 call Bof_Glide(src,ang,400.,.4)
 endif
-// враги тянутся за серией сквозь декор (с SetUnitPosition упирались в декорацию и выпадали из ударов),
-// после тяги встают на проходимое место (Sui_Q_Land)
+// враги тянутся за серией — SetUnitXY_1, как у других героев (координаты, приказы не сбиваются); 15 окт:
+// вместо Bof_Put + Sui_Q_Land (тот в конце ставил SetUnitPosition всем врагам в 500 и сбивал им приказы и каналы)
 if tk<=48 then
 set g=CreateGroup()
 call GroupEnumUnitsInRange(g,x,y,220.,null)
@@ -17433,13 +17425,10 @@ set e=FirstOfGroup(g)
 exitwhen e==null
 call GroupRemoveUnit(g,e)
 if Condition_Base(OwnerOf(src),e) and GetUnitAbilityLevel(e,'Avul')==0 and not Bof_Rev(hr,e) then
-call Bof_Put(e,GetUnitX(e)+20.*CosBJ(ang),GetUnitY(e)+20.*SinBJ(ang))
+call SetUnitXY_1(e,GetUnitX(e)+20.*CosBJ(ang),GetUnitY(e)+20.*SinBJ(ang),true)
 endif
 endloop
 call DestroyGroup(g)
-endif
-if tk==48 then
-call Sui_Q_Land(src,x,y)
 endif
 if tk==16 or tk==31 then
 call Rem_Noise(OwnerOf(src),30.,.29)
@@ -36500,74 +36489,115 @@ if ValidHLC() then
     set udg_Button[3]=DialogAddButton(udg_Dialog,"Captain Mode",0)
     set udg_Button[6]=DialogAddButton(udg_Dialog,"Single Draft",0)
     call DialogDisplay(PlayerV(0),udg_Dialog,false)
-    if GetCommandString()=="a" then
+    if HLC_Mode()=="a" then
         set bu=udg_Button[4]
         set FFAMode=false
         //set DamageOff=true
-    elseif GetCommandString()=="b" then
+    elseif HLC_Mode()=="b" then
         set bu=udg_Button[1]
         set FFAMode=false
         //set DamageOff=true
-    elseif GetCommandString()=="c" then
+    elseif HLC_Mode()=="c" then
         set bu=udg_Button[3]
         set FFAMode=false
         //set DamageOff=true
-    elseif GetCommandString()=="d" then
+    elseif HLC_Mode()=="d" then
         set bu=udg_Button[2]
         set FFAMode=false
         //set DamageOff=true
-    elseif GetCommandString()=="e" then
+    elseif HLC_Mode()=="e" then
         set bu=udg_Button[4]
         set FFAMode=true
         //set DamageOff=false
-    elseif GetCommandString()=="f" then
+    elseif HLC_Mode()=="f" then
         set bu=udg_Button[1]
         set FFAMode=true
         //set DamageOff=false
-    elseif GetCommandString()=="g" then
+    elseif HLC_Mode()=="g" then
         set bu=udg_Button[3]
         set FFAMode=true
         //set DamageOff=false
-    elseif GetCommandString()=="h" then
+    elseif HLC_Mode()=="h" then
         set bu=udg_Button[2]
         set FFAMode=true
         //set DamageOff=false
-    elseif GetCommandString()=="i" then
+    elseif HLC_Mode()=="i" then
         set bu=udg_Button[4]
         set FFAMode=false
         //set DamageOff=true
-    elseif GetCommandString()=="j" then
+    elseif HLC_Mode()=="j" then
         set bu=udg_Button[1]
         set FFAMode=false
         //set DamageOff=true
-    elseif GetCommandString()=="k" then
+    elseif HLC_Mode()=="k" then
         set bu=udg_Button[2]
         set FFAMode=false
         //set DamageOff=true
-    elseif GetCommandString()=="l" then
+    elseif HLC_Mode()=="l" then
         set bu=udg_Button[4]
         set FFAMode=true
         set DamageOff=false
-    elseif GetCommandString()=="m" then
+    elseif HLC_Mode()=="m" then
         set bu=udg_Button[1]
         set FFAMode=true
         //set DamageOff=false
-    elseif GetCommandString()=="n" then
+    elseif HLC_Mode()=="n" then
         set bu=udg_Button[2]
         set FFAMode=true
         //set DamageOff=false
-    elseif GetCommandString()=="o" then
+    elseif HLC_Mode()=="o" then
         set bu=udg_Button[6]
         set FFAMode=false
-    elseif GetCommandString()=="p" then
+    elseif HLC_Mode()=="p" then
         set bu=udg_Button[6]
         set FFAMode=true
-    elseif GetCommandString()=="q" then
+    elseif HLC_Mode()=="q" then
         set bu=udg_Button[6]
         set FFAMode=false
-    elseif GetCommandString()=="r" then
+    elseif HLC_Mode()=="r" then
         set bu=udg_Button[6]
         set FFAMode=true
+    // Turbo (15 окт): s-v без FFA, w-z с FFA — Ban, Standard, Random, Single Draft (капитанки в Turbo нет)
+    elseif HLC_Mode()=="s" then
+        set bu=udg_Button[4]
+        set FFAMode=false
+        set TurboMode=true
+        set TurboMul=2
+    elseif HLC_Mode()=="t" then
+        set bu=udg_Button[1]
+        set FFAMode=false
+        set TurboMode=true
+        set TurboMul=2
+    elseif HLC_Mode()=="u" then
+        set bu=udg_Button[2]
+        set FFAMode=false
+        set TurboMode=true
+        set TurboMul=2
+    elseif HLC_Mode()=="v" then
+        set bu=udg_Button[6]
+        set FFAMode=false
+        set TurboMode=true
+        set TurboMul=2
+    elseif HLC_Mode()=="w" then
+        set bu=udg_Button[4]
+        set FFAMode=true
+        set TurboMode=true
+        set TurboMul=2
+    elseif HLC_Mode()=="x" then
+        set bu=udg_Button[1]
+        set FFAMode=true
+        set TurboMode=true
+        set TurboMul=2
+    elseif HLC_Mode()=="y" then
+        set bu=udg_Button[2]
+        set FFAMode=true
+        set TurboMode=true
+        set TurboMul=2
+    elseif HLC_Mode()=="z" then
+        set bu=udg_Button[6]
+        set FFAMode=true
+        set TurboMode=true
+        set TurboMul=2
     endif
 else
     if udg_button2==true then
@@ -36789,6 +36819,18 @@ call W3MMD_Lite_Set_Integer(PlayerV(7),"FFAMode",0)
 call W3MMD_Lite_Set_Integer(PlayerV(8),"FFAMode",0)
 call W3MMD_Lite_Set_Integer(PlayerV(9),"FFAMode",0)
 endif
+// статистика W3MMD: режим Turbo (1 / 0), как FFAMode
+call W3MMD_Lite_Register_Integer("TurboMode")
+set i=0
+loop
+exitwhen i>9
+if TurboMode then
+call W3MMD_Lite_Set_Integer(PlayerV(i),"TurboMode",1)
+else
+call W3MMD_Lite_Set_Integer(PlayerV(i),"TurboMode",0)
+endif
+set i=i+1
+endloop
 if TurboMode then
 // Turbo: +2000 золота к стартовому
 set i=0
@@ -57051,6 +57093,9 @@ endloop
 // боковые кнопки мыши (XBUTTON1 / XBUTTON2): в поле хоткея способности не записать — нажатием кнопки, как NumPad
 call CBS_KeyAdd(0x05,"M4")
 call CBS_KeyAdd(0x06,"M5")
+// пробел — как кнопки мыши, нажатием кнопки на панели; стандартный прыжок камеры по пробелу остаётся (15 окт).
+// в конце списка: номера клавиш сохранённых биндов не сдвигаются
+call CBS_KeyAdd(0x20,"Space")
 set CBS_HkHead[0]=CreateFrameByType("SIMPLETEXT","CBSHkHead",HPB_Menu,"",0)
 call CBS_Label(CBS_HkHead[0],.015,0xFFFFA500,.016,-.042)
 call CBS_AddHk(CBS_HkHead[0])
@@ -267054,7 +267099,7 @@ call UnitRemoveAbility(gg_unit_n00A_0035,'A0ZL')
 // HCL: i–k — тест без FFA, l–n — тест с FFA (e–h — обычные FFA-режимы, без теста);
 // Single Draft: o / p — без теста (без FFA / FFA), q / r — с тестом (без FFA / FFA)
 if ValidHLC() then
-    if GetCommandString()=="i" or GetCommandString()=="j" or GetCommandString()=="k" or GetCommandString()=="l" or GetCommandString()=="m" or GetCommandString()=="n" or GetCommandString()=="q" or GetCommandString()=="r" then
+    if HLC_Test() then
         call TriggerExecute(gg_trg_test)
     endif
 endif
@@ -283630,8 +283675,6 @@ call LANG_B('B06H',1,"Armor reduced.")
 call LANG_B('B06L',1,"This warrior is under the spell ''Thrice-setting Sunf''. His defense and attack power is well above the norm.")
 call LANG_B('B06M',1,"This warrior is in a state of invisibility.")
 call LANG_B('B06N',1,"Unit is within the range of Jeanne's banner, it gains increased attack power, general resistance and melee lifesteal")
-call LANG_B('B06R',0,"Lord Camelot|nCastle of the Distant Utopia")
-call LANG_B('B06R',1,"Lord Camelot|nCastle of the Distant Utopia")
 call LANG_B('B06X',1,"This character can be saved by the Clock.")
 call LANG_B('B070',0,"Quincy Set")
 call LANG_B('B070',1,"Quincy Set")
@@ -283756,6 +283799,7 @@ call LANG_B('BbB3',1,"Aging: slows movement and attack speed.")
 call LANG_B('BbB4',1,"Aging: slows movement and attack speed.")
 call LANG_B('BMe2',1,"This unit is slowed (AS/MS -70%)")
 call LANG_B('BMe4',1,"This unit is slowed (AS/MS -70%) and gradually loses health")
+call LANG_F("BONUS_ATTACK_SPEED"," - Each point increases attack speed|n - Each point increases movement speed by 0.7")
 call LANG_F("BONUS_MANAREGEN"," - Each point increases mana regeneration|n - Each point increases magic resistance by 0.05%")
 call LANG_F("COLON_LUMBER","Victory points.")
 call LANG_F("DAMAGETIP_CHAOS","Heroes deal less damage to fortified objects.")

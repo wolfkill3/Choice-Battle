@@ -1,4 +1,5 @@
 [FrameDef]
+BONUS_ATTACK_SPEED= - Each point increases attack speed|n - Each point increases movement speed by 0.7
 BONUS_MANAREGEN= - Each point increases mana regeneration|n - Each point increases magic resistance by 0.05%
 COLON_LUMBER=Victory points.
 DAMAGETIP_CHAOS=Heroes deal less damage to fortified objects.
