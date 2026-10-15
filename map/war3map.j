@@ -15706,10 +15706,10 @@ endfunction
 function Fla_W_Blast takes unit caster,unit target returns nothing
 local real x=GetUnitX(target)
 local real y=GetUnitY(target)
-call Rem_Fx(caster,"bof\\Scarlet-47.mdx",x,y,25.,0.,2.5,0.)
-call Rem_Fx(caster,"bof\\Scarlet-29.mdx",x,y,25.,0.,1.,0.)
-call Rem_Fx(caster,"bof\\Madara-huitu-17.mdx",x,y,25.,0.,1.,0.)
-call Rem_Fx(caster,"bof\\Scarlet-40.mdx",x,y,25.,0.,1.5,0.)
+call Rem_Fx(caster,"bof\\Scarlet-47.mdx",x,y,25.,0.,1.5,0.) // эффект W / W2 на 40% меньше (15 окт)
+call Rem_Fx(caster,"bof\\Scarlet-29.mdx",x,y,25.,0.,0.6,0.) // эффект W / W2 на 40% меньше (15 окт)
+call Rem_Fx(caster,"bof\\Madara-huitu-17.mdx",x,y,25.,0.,0.6,0.) // эффект W / W2 на 40% меньше (15 окт)
+call Rem_Fx(caster,"bof\\Scarlet-40.mdx",x,y,25.,0.,0.9,0.) // эффект W / W2 на 40% меньше (15 окт)
 call Rem_Sound("bof\\war3mapImported\\RemiliaScarlet-R-YX2.mp3",100)
 if IsUnitEnemy(target,OwnerOf(caster)) then
 call Bof_Dmg(caster,target,(I2R(Fla_Int_W(caster,true))*120.)*0.001)
@@ -15771,8 +15771,8 @@ set x=x+100.*CosBJ(ang)
 set y=y+100.*SinBJ(ang)
 call SetUnitXY_1(dmy,x,y, false)
 if ModuloInteger(tk,4)==0 then
-call Rem_Fx(caster,"bof\\Scarlet-69.mdx",x,y,150.,ang,.75,0.)
-call Rem_Fx(caster,"bof\\Scarlet-84.mdx",x,y,150.,ang,1.,0.)
+call Rem_Fx(caster,"bof\\Scarlet-69.mdx",x,y,150.,ang,0.45,0.) // эффект W / W2 на 40% меньше (15 окт)
+call Rem_Fx(caster,"bof\\Scarlet-84.mdx",x,y,150.,ang,0.6,0.) // эффект W / W2 на 40% меньше (15 окт)
 endif
 else
 call CameraClearNoiseForPlayer(OwnerOf(caster))
@@ -15827,7 +15827,7 @@ call PauseUnit(caster,true)
 if tk==18 then
 set x=GetUnitX(caster)
 set y=GetUnitY(caster)
-call Rem_Fx(caster,"bof\\Tsubaki-33.mdx",x,y,250.,ang,1.,0.)
+call Rem_Fx(caster,"bof\\Tsubaki-33.mdx",x,y,250.,ang,0.6,0.) // эффект W / W2 на 40% меньше (15 окт)
 call SetSpecialEffectPitch(bj_lastCreatedEffect,90.)
 call CameraSetEQNoiseForPlayer(OwnerOf(caster),50.)
 call Rem_Sound("bof\\war3mapImported\\RemiliaScarlet-R-YX3.mp3",100)
@@ -15865,7 +15865,7 @@ set t=CreateTimer()
 call SaveBoolean(HH,GetHandleId(caster),SH_bofRevd,false)
 call Bof_SwapStage(caster,'FlW1','FlW2',8.)
 call Rem_Sound("bof\\war3mapImported\\Flandre Scarlet-W-YY1.mp3",100)
-call Rem_Fx(caster,"bof\\Scarlet-21.mdx",GetUnitX(caster),GetUnitY(caster),GetUnitFlyHeight(caster),0.,1.2,0.)
+call Rem_Fx(caster,"bof\\Scarlet-21.mdx",GetUnitX(caster),GetUnitY(caster),GetUnitFlyHeight(caster),0.,0.72,0.) // эффект W / W2 на 40% меньше (15 окт)
 call Fla_Anim(caster,10,-1.)
 call PauseUnit(caster,true)
 call SetUnitInvulnerable(caster,true)
@@ -15906,24 +15906,24 @@ call PauseUnit(caster,true)
 if tk<=50 then
 call CameraSetEQNoiseForPlayer(OwnerOf(caster),25.)
 if ModuloInteger(tk,10)==0 then
-call Rem_Fx(caster,"bof\\Madara-huitu-22.mdx",x,y,25.,ang,8.,0.)
+call Rem_Fx(caster,"bof\\Madara-huitu-22.mdx",x,y,25.,ang,4.8,0.) // эффект W / W2 на 40% меньше (15 окт)
 endif
 if ModuloInteger(tk,20)==0 then
 set px=x+CosBJ(GetRandomDirectionDeg())*GetRandomReal(-1000.,1000.)
 set py=y+SinBJ(GetRandomDirectionDeg())*GetRandomReal(-1000.,1000.)
-call Rem_Fx(caster,"bof\\Scarlet-77.mdx",px,py,25.,ang,1.,0.)
+call Rem_Fx(caster,"bof\\Scarlet-77.mdx",px,py,25.,ang,0.6,0.) // эффект W / W2 на 40% меньше (15 окт)
 endif
 endif
 if tk==50 then
 call Rem_Sound("bof\\war3mapImported\\Madara-huitu-TR-YX2.mp3",90)
 call Rem_Sound("bof\\NL-Q-YX.mp3",110)
-call Rem_Fx(caster,"bof\\Scarlet-82.mdx",x,y,600.,ang+180.,2.4,0.)
+call Rem_Fx(caster,"bof\\Scarlet-82.mdx",x,y,600.,ang+180.,1.44,0.) // эффект W / W2 на 40% меньше (15 окт)
 call SetSpecialEffectPitch(bj_lastCreatedEffect,180.)
 call SetSpecialEffectTimeScale(bj_lastCreatedEffect,.5)
-call Rem_Fx(caster,"bof\\Scarlet-82.mdx",x,y,900.,ang+180.,3.6,0.)
+call Rem_Fx(caster,"bof\\Scarlet-82.mdx",x,y,900.,ang+180.,2.16,0.) // эффект W / W2 на 40% меньше (15 окт)
 call SetSpecialEffectPitch(bj_lastCreatedEffect,180.)
 call SetSpecialEffectTimeScale(bj_lastCreatedEffect,.5)
-call Rem_Fx(caster,"bof\\Scarlet-82.mdx",x,y,1200.,ang+180.,4.8,0.)
+call Rem_Fx(caster,"bof\\Scarlet-82.mdx",x,y,1200.,ang+180.,2.88,0.) // эффект W / W2 на 40% меньше (15 окт)
 call SetSpecialEffectPitch(bj_lastCreatedEffect,180.)
 call SetSpecialEffectTimeScale(bj_lastCreatedEffect,.5)
 call SetUnitTimeScale(caster,1.)
@@ -15939,8 +15939,8 @@ exitwhen i>6
 set a=ang+90.-30.*I2R(i)
 set px=x+CosBJ(a)*600.
 set py=y+SinBJ(a)*600.
-call Rem_Fx(caster,"bof\\Scarlet-81.mdx",px,py,GetUnitFlyHeight(caster)+25.,a+180.,0.9,0.)
-call Rem_Fx(caster,"bof\\Minato-31.mdx",px,py,25.,ang,4.,0.)
+call Rem_Fx(caster,"bof\\Scarlet-81.mdx",px,py,GetUnitFlyHeight(caster)+25.,a+180.,0.54,0.) // эффект W / W2 на 40% меньше (15 окт)
+call Rem_Fx(caster,"bof\\Minato-31.mdx",px,py,25.,ang,2.4,0.) // эффект W / W2 на 40% меньше (15 окт)
 set g=CreateGroup()
 call GroupEnumUnitsInRange(g,px,py,350.,null)
 loop
@@ -15960,7 +15960,7 @@ endloop
 // (общая группа задетых — без двойного урона)
 set px=x+CosBJ(ang)*250.
 set py=y+SinBJ(ang)*250.
-call Rem_Fx(caster,"bof\\Minato-31.mdx",px,py,25.,ang,4.,0.)
+call Rem_Fx(caster,"bof\\Minato-31.mdx",px,py,25.,ang,2.4,0.) // эффект W / W2 на 40% меньше (15 окт)
 set g=CreateGroup()
 call GroupEnumUnitsInRange(g,px,py,350.,null)
 loop
@@ -15989,7 +15989,7 @@ local real x=GetUnitX(caster)
 local real y=GetUnitY(caster)
 local real ang=Atan2BJ(ty-y,tx-x)
 local timer t=CreateTimer()
-call Rem_Fx(caster,"bof\\Tsubaki-33.mdx",x,y,20.,ang,1.25,0.)
+call Rem_Fx(caster,"bof\\Tsubaki-33.mdx",x,y,20.,ang,0.75,0.) // эффект W / W2 на 40% меньше (15 окт)
 call Fla_Anim(caster,8,.25)
 call Rem_Sound("bof\\war3mapImported\\Flandre Scarlet-ZS1-YY1.mp3",100)
 call SaveUnitHandle(HH,GetHandleId(t),0,caster)
