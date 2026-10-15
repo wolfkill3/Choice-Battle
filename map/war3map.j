@@ -283811,9 +283811,9 @@ call LANG_F("IDLE_PEON_DESC","You can put things here.")
 call LANG_F("LUMBER","Victory points")
 call LANG_F("RESOURCE_UBERTIP_GOLD","Gold is earned by winning rounds and by defeating heroes.")
 call LANG_F("RESOURCE_UBERTIP_LUMBER","Victory points are earned for winning a round, by reaching a certain number of points you win.")
-call LANG_F("UPKEEP_HIGH","|c0000FF00Choice Battle |r|c0000FFFFv3.7.11 EN|r")
-call LANG_F("UPKEEP_LOW","|c0000FF00Choice Battle |r|c0000FFFFv3.7.11 EN|r")
-call LANG_F("UPKEEP_NONE","|c0000FF00Choice Battle |r|c0000FFFFv3.7.11 EN|r")
+call LANG_F("UPKEEP_HIGH","|c0000FF00Choice Battle |r|c0000FFFFv3.7.12 EN|r")
+call LANG_F("UPKEEP_LOW","|c0000FF00Choice Battle |r|c0000FFFFv3.7.12 EN|r")
+call LANG_F("UPKEEP_NONE","|c0000FF00Choice Battle |r|c0000FFFFv3.7.12 EN|r")
 endfunction
 function LANG_DataAll takes nothing returns nothing
 call ExecuteFunc("LANG_Data0")
