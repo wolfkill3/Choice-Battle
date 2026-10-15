@@ -102994,6 +102994,7 @@ local real dmg=GetHeroStr(u,true)*(GetUnitAbilityLevel(u,'A0JF')+1)
 local real Range=LoadReal(h,id,9)
 local unit c=LoadUnitHandle(h,id,11)
 local real time2=LoadReal(h,id,12)
+local unit k=LoadUnitHandle(h,id,13) // первый задетый в полёте: летит со снарядом
 if time==0 then
     call SetUnitAnimationByIndex(u,35)
     call DestroyEffect(AddSpecialEffectTarget("war3mapImported\\BrolyCompression2.mdx",l__d,"origin"))
@@ -103072,8 +103073,11 @@ elseif c==null and Range<2000 and UnitIsAlive(l__d) and IsTerrainPathable(x1,y1,
     set x1=x1+50*Cos(a)
     set y1=y1+50*Sin(a)
     call SetUnitXY_1(l__d,x1,y1, false)
-    call PauseUnit(c,true)
-    call SetUnitXY_1(c,x1+25*Cos(a),y1+25*Sin(a), false)
+    //call PauseUnit(c,true)
+    //call SetUnitXY_1(c,x1+25*Cos(a),y1+25*Sin(a), false)
+    if k!=null then
+        call SetUnitXY_1(k,x1+25*Cos(a),y1+25*Sin(a), false)
+    endif
     call SaveReal(h,id,3,x1)
     call SaveReal(h,id,4,y1)
     call SetUnitFacing(l__d,a*bj_RADTODEG)
@@ -103090,7 +103094,16 @@ elseif c==null and Range<2000 and UnitIsAlive(l__d) and IsTerrainPathable(x1,y1,
                 call myCustomDamage(u,E,dmg,false,false,null,null,null)
                 call SetControlToUnit(E,E, 1, "stun")
                 call SaveUnitHandle(h,idg,ide,E)
-                call Push(E,90,Atan2(GetUnitY(E)-y1,GetUnitX(E)-x1),270)
+                // первого задетого снаряд хватает и несёт с собой, остальных толкает
+                if k==null and UnitIsAlive(E) and LoadBoolean(HH,ide,ANTITARGET_ABILITY)==false then
+                    set k=E
+                    call SaveUnitHandle(h,id,13,k)
+                    call PauseUnit(k,true)
+                    call SaveBoolean(HH,ide,TARGET_ABILITY,true)
+                    call SetUnitXY_1(k,x1+25*Cos(a),y1+25*Sin(a), false)
+                else
+                    call Push(E,90,Atan2(GetUnitY(E)-y1,GetUnitX(E)-x1),270)
+                endif
             endif
         endif
         call GroupRemoveUnit(g,E)
@@ -103160,6 +103173,15 @@ else
         call GroupRemoveUnit(g,E)
     endloop
     call GroupClear(g)
+    // отпустить пойманного в полёте: оглушение 1 сек после взрыва
+    if k!=null then
+        call PauseUnit(k,false)
+        call SaveBoolean(HH,GetHandleId(k),TARGET_ABILITY,false)
+        call SetUnitPosition(k,GetUnitX(k),GetUnitY(k))
+        if UnitIsAlive(k) then
+            call SetControlToUnit(k,k, 1, "stun")
+        endif
+    endif
     call DestroyGroup(g)
     call RemoveUnit(l__d)
     call FlushChildHashtable(h,id)
@@ -103169,6 +103191,7 @@ else
 endif
 set u=null
 set c=null
+set k=null
 set p=null
 set g=null
 set t=null
@@ -272546,13 +272569,13 @@ call LANG_A('A0JF',0,1,"Eraser Cannon, [|cffffcc00Level 2|r] (|cffffcc00W|r)")
 call LANG_A('A0JF',0,2,"Eraser Cannon, [|cffffcc00Level 3|r] (|cffffcc00W|r)")
 call LANG_A('A0JF',0,3,"Eraser Cannon, [|cffffcc00Level 4|r] (|cffffcc00W|r)")
 call LANG_A('A0JF',0,4,"Eraser Cannon, [|cffffcc00Level 5|r] (|cffffcc00W|r)")
-call LANG_A('A0JF',1,0,"Broly unleashes a burst of dense Ki energy that scatters enemies hit and stuns them for 1 seconds.|nIf there was an enemy in front of Broly at the time of launch, the projectile explodes immediately, and the enemy is knocked back 900 units, takes 10% more damage and is stunned for 3 seconds.|nIf use"+"d within 2 seconds after Q, it makes a small dash towards the target before firing.|n|n|cFF00A5FF|nDamage: 2*|r|c00FF5555STR|r|cFF00A5FF|nRange: 2000|nProjectile AoE: 150|nAoE: 500|nCooldown: 20 seconds|r")
-call LANG_A('A0JF',1,1,"Broly unleashes a burst of dense Ki energy that scatters enemies hit and stuns them for 1 seconds.|nIf there was an enemy in front of Broly at the time of launch, the projectile explodes immediately, and the enemy is knocked back 900 units, takes 10% more damage and is stunned for 3 seconds.|nIf use"+"d within 2 seconds after Q, it makes a small dash towards the target before firing.|n|n|cFF00A5FF|nDamage: 3*|r|c00FF5555STR|r|cFF00A5FF|nRange: 2000|nProjectile AoE: 150|nAoE: 500|nCooldown: 20 seconds|r")
-call LANG_A('A0JF',1,2,"Broly unleashes a burst of dense Ki energy that scatters enemies hit and stuns them for 1 seconds.|nIf there was an enemy in front of Broly at the time of launch, the projectile explodes immediately, and the enemy is knocked back 900 units, takes 10% more damage and is stunned for 3 seconds.|nIf use"+"d within 2 seconds after Q, it makes a small dash towards the target before firing.|n|n|cFF00A5FF|nDamage: 4*|r|c00FF5555STR|r|cFF00A5FF|nRange: 2000|nProjectile AoE: 150|nAoE: 500|nCooldown: 20 seconds|r")
-call LANG_A('A0JF',1,3,"Broly unleashes a burst of dense Ki energy that scatters enemies hit and stuns them for 1 seconds.|nIf there was an enemy in front of Broly at the time of launch, the projectile explodes immediately, and the enemy is knocked back 900 units, takes 10% more damage and is stunned for 3 seconds.|nIf use"+"d within 2 seconds after Q, it makes a small dash towards the target before firing.|n|n|cFF00A5FF|nDamage: 5*|r|c00FF5555STR|r|cFF00A5FF|nRange: 2000|nProjectile AoE: 150|nAoE: 500|nCooldown: 20 seconds|r")
-call LANG_A('A0JF',1,4,"Broly unleashes a burst of dense Ki energy that scatters enemies hit and stuns them for 1 seconds.|nIf there was an enemy in front of Broly at the time of launch, the projectile explodes immediately, and the enemy is knocked back 900 units, takes 10% more damage and is stunned for 3 seconds.|nIf use"+"d within 2 seconds after Q, it makes a small dash towards the target before firing.|n|n|cFF00A5FF|nDamage: 6*|r|c00FF5555STR|r|cFF00A5FF|nRange: 2000|nProjectile AoE: 150|nAoE: 500|nCooldown: 20 seconds|r")
+call LANG_A('A0JF',1,0,"Broly unleashes a burst of dense Ki energy that scatters enemies hit and stuns them for 1 seconds.|nThe first enemy hit is grabbed and carried along until the explosion.|nIf there was an enemy in front of Broly at the time of launch, the projectile explodes immediately, and the enemy is knocked back"+" 900 units, takes 10% more damage and is stunned for 3 seconds.|nIf used within 2 seconds after Q, it makes a small dash towards the target before firing.|n|n|cFF00A5FF|nDamage: 2*|r|c00FF5555STR|r|cFF00A5FF|nRange: 2000|nProjectile AoE: 150|nAoE: 500|nCooldown: 20 seconds|r")
+call LANG_A('A0JF',1,1,"Broly unleashes a burst of dense Ki energy that scatters enemies hit and stuns them for 1 seconds.|nThe first enemy hit is grabbed and carried along until the explosion.|nIf there was an enemy in front of Broly at the time of launch, the projectile explodes immediately, and the enemy is knocked back"+" 900 units, takes 10% more damage and is stunned for 3 seconds.|nIf used within 2 seconds after Q, it makes a small dash towards the target before firing.|n|n|cFF00A5FF|nDamage: 3*|r|c00FF5555STR|r|cFF00A5FF|nRange: 2000|nProjectile AoE: 150|nAoE: 500|nCooldown: 20 seconds|r")
+call LANG_A('A0JF',1,2,"Broly unleashes a burst of dense Ki energy that scatters enemies hit and stuns them for 1 seconds.|nThe first enemy hit is grabbed and carried along until the explosion.|nIf there was an enemy in front of Broly at the time of launch, the projectile explodes immediately, and the enemy is knocked back"+" 900 units, takes 10% more damage and is stunned for 3 seconds.|nIf used within 2 seconds after Q, it makes a small dash towards the target before firing.|n|n|cFF00A5FF|nDamage: 4*|r|c00FF5555STR|r|cFF00A5FF|nRange: 2000|nProjectile AoE: 150|nAoE: 500|nCooldown: 20 seconds|r")
+call LANG_A('A0JF',1,3,"Broly unleashes a burst of dense Ki energy that scatters enemies hit and stuns them for 1 seconds.|nThe first enemy hit is grabbed and carried along until the explosion.|nIf there was an enemy in front of Broly at the time of launch, the projectile explodes immediately, and the enemy is knocked back"+" 900 units, takes 10% more damage and is stunned for 3 seconds.|nIf used within 2 seconds after Q, it makes a small dash towards the target before firing.|n|n|cFF00A5FF|nDamage: 5*|r|c00FF5555STR|r|cFF00A5FF|nRange: 2000|nProjectile AoE: 150|nAoE: 500|nCooldown: 20 seconds|r")
+call LANG_A('A0JF',1,4,"Broly unleashes a burst of dense Ki energy that scatters enemies hit and stuns them for 1 seconds.|nThe first enemy hit is grabbed and carried along until the explosion.|nIf there was an enemy in front of Broly at the time of launch, the projectile explodes immediately, and the enemy is knocked back"+" 900 units, takes 10% more damage and is stunned for 3 seconds.|nIf used within 2 seconds after Q, it makes a small dash towards the target before firing.|n|n|cFF00A5FF|nDamage: 6*|r|c00FF5555STR|r|cFF00A5FF|nRange: 2000|nProjectile AoE: 150|nAoE: 500|nCooldown: 20 seconds|r")
 call LANG_A('A0JF',2,0,"Eraser Cannon, [|cffffcc00Level %d|r] (|cffffcc00W|r)")
-call LANG_A('A0JF',3,0,"Broly unleashes a burst of dense Ki energy that scatters enemies hit and stuns them for 1 seconds.|nIf there was an enemy in front of Broly at the time of launch, the projectile explodes immediately, and the enemy is knocked back 900 units, takes 10% more damage and is stunned for 3 seconds.|nIf use"+"d within 2 seconds after Q, it makes a small dash towards the target before firing.|n|n|cFF00A5FF|nDamage: 2\\3\\4\\5\\6*|r|c00FF5555STR|r|cFF00A5FF|nRange: 2000|nProjectile AoE: 150|nAoE: 500|nCooldown: 20 seconds|r")
+call LANG_A('A0JF',3,0,"Broly unleashes a burst of dense Ki energy that scatters enemies hit and stuns them for 1 seconds.|nThe first enemy hit is grabbed and carried along until the explosion.|nIf there was an enemy in front of Broly at the time of launch, the projectile explodes immediately, and the enemy is knocked back"+" 900 units, takes 10% more damage and is stunned for 3 seconds.|nIf used within 2 seconds after Q, it makes a small dash towards the target before firing.|n|n|cFF00A5FF|nDamage: 2\\3\\4\\5\\6*|r|c00FF5555STR|r|cFF00A5FF|nRange: 2000|nProjectile AoE: 150|nAoE: 500|nCooldown: 20 seconds|r")
 call LANG_A('A0JH',0,0,"Gigantic Meteor, [|cffffcc00Level 1|r] (|cffffcc00E|r)")
 call LANG_A('A0JH',0,1,"Gigantic Meteor, [|cffffcc00Level 2|r] (|cffffcc00E|r)")
 call LANG_A('A0JH',0,2,"Gigantic Meteor, [|cffffcc00Level 3|r] (|cffffcc00E|r)")
@@ -283550,6 +283573,8 @@ call LANG_B('B06H',1,"Armor reduced.")
 call LANG_B('B06L',1,"This warrior is under the spell ''Thrice-setting Sunf''. His defense and attack power is well above the norm.")
 call LANG_B('B06M',1,"This warrior is in a state of invisibility.")
 call LANG_B('B06N',1,"Unit is within the range of Jeanne's banner, it gains increased attack power, general resistance and melee lifesteal")
+call LANG_B('B06R',0,"Lord Camelot|nCastle of the Distant Utopia")
+call LANG_B('B06R',1,"Lord Camelot|nCastle of the Distant Utopia")
 call LANG_B('B06X',1,"This character can be saved by the Clock.")
 call LANG_B('B070',0,"Quincy Set")
 call LANG_B('B070',1,"Quincy Set")
