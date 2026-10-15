@@ -47194,6 +47194,24 @@ function ShowAbility2Timed2 takes nothing returns nothing
     local integer i
     local timer t=GetExpiredTimer()
     local integer id=GetHandleId(t)
+    local string ord
+    // выключение стадии во время её каста роняло игру (спам квиками Селла E: каст 1 с, выключение через 0.76 с; 15 окт) —
+    // пока какой-то герой кастует эту способность (текущий приказ = её приказ Channel), выключение откладывается на 0.1 с
+    if LoadBoolean(HH,id,2)==false then
+        set ord=GetAbilityBaseStringLevelFieldById(LoadInteger(HH,id,1),ABILITY_SLF_BASE_ORDER_ID_NCL6,0)
+        if ord!=null and ord!="" and OrderId(ord)!=0 then
+            set i=0
+            loop
+                exitwhen i>=10
+                if Hero[i]!=null and GetUnitCurrentOrder(Hero[i])==OrderId(ord) and GetUnitAbilityLevel(Hero[i],LoadInteger(HH,id,1))>0 then
+                    call TimerStart(t,0.1,false,function ShowAbility2Timed2)
+                    set t=null
+                    return
+                endif
+                set i=i+1
+            endloop
+        endif
+    endif
     set i=0
     loop
         call SetPlayerAbilityAvailable(PlayerV(i), LoadInteger(HH,id,1), LoadBoolean(HH,id,2))
@@ -56349,6 +56367,26 @@ call SetAbilityBaseIntegerFieldById(cbId,cbF,cbV)
 endif
 endfunction
 // раз в 0.25 с у всех: списки способностей героев; затем у себя — хоткеи способностей своего героя по ячейкам
+// индекс уровня для таблицы способности: уровень героя в пределах числа уровней в описании (0..levels-1)
+function CBS_QcLv takes unit cbU,integer cbId returns integer
+local integer cbL=GetUnitAbilityLevel(cbU,cbId)
+local integer cbN=GetAbilityBaseIntegerFieldById(cbId,ABILITY_IF_LEVELS)
+if cbN>0 and cbL>cbN then
+set cbL=cbN
+endif
+if cbL<1 then
+return 0
+endif
+return cbL-1
+endfunction
+// приказ Channel (поле Ncl6) из таблицы способности; "" — не Channel
+function CBS_QcNcl takes unit cbU,integer cbId returns string
+local string cbOs=GetAbilityBaseStringLevelFieldById(cbId,ABILITY_SLF_BASE_ORDER_ID_NCL6,CBS_QcLv(cbU,cbId))
+if cbOs==null then
+return ""
+endif
+return cbOs
+endfunction
 function CBS_AbScan takes nothing returns nothing
 local integer cbP=0
 local integer cbI
@@ -56394,8 +56432,15 @@ exitwhen cbA==null
 // только способности с кнопкой (иконкой): без инвентаря, движения, атаки и прочих служебных
 if GetAbilityBaseStringFieldById(GetAbilityTypeId(cbA),ABILITY_SF_ICON_NORMAL)!="" and GetAbilityBaseStringFieldById(GetAbilityTypeId(cbA),ABILITY_SF_ICON_NORMAL)!=null then
 set CBS_Ab[cbP*60+CBS_AbN[cbP]]=GetAbilityTypeId(cbA)
-set CBS_AbOk[cbP*60+CBS_AbN[cbP]]=IsAbilityEnabled(cbA) and IsAbilityVisible(cbA)
-set CBS_AbTg[cbP*60+CBS_AbN[cbP]]=GetAbilityBaseTypeId(cbA)!='ANcl' or GetUnitAbilityLevel(Hero[cbP],GetAbilityTypeId(cbA))<1 or GetAbilityIntegerLevelField(cbA,ABILITY_ILF_TARGET_TYPE,GetUnitAbilityLevel(Hero[cbP],GetAbilityTypeId(cbA))-1)!=0
+// скрытая способность (выключенная стадия): поля экземпляра не читаем — крит Game.dll (15 окт)
+if IsUnitAbilityVisible(Hero[cbP],GetAbilityTypeId(cbA)) and GetUnitAbilityLevel(Hero[cbP],GetAbilityTypeId(cbA))>0 then
+set CBS_AbOk[cbP*60+CBS_AbN[cbP]]=IsAbilityEnabled(cbA)
+// тип цели — из таблицы способности (поля экземпляра не читаем)
+set CBS_AbTg[cbP*60+CBS_AbN[cbP]]=CBS_QcNcl(Hero[cbP],GetAbilityTypeId(cbA))=="" or GetAbilityBaseIntegerLevelFieldById(GetAbilityTypeId(cbA),ABILITY_ILF_TARGET_TYPE,CBS_QcLv(Hero[cbP],GetAbilityTypeId(cbA)))!=0
+else
+set CBS_AbOk[cbP*60+CBS_AbN[cbP]]=false
+set CBS_AbTg[cbP*60+CBS_AbN[cbP]]=GetAbilityBaseIntegerLevelFieldById(GetAbilityTypeId(cbA),ABILITY_ILF_TARGET_TYPE,0)!=0
+endif
 set CBS_AbN[cbP]=CBS_AbN[cbP]+1
 endif
 set cbI=cbI+1
@@ -56455,7 +56500,7 @@ set cbN=CountUnitAbilities(cbU,false)
 loop
 exitwhen cbI>=cbN or cbR!=cbId
 set cbA=GetUnitAbilityByIndex(cbU,cbI)
-if cbA!=null and GetAbilityBaseTypeId(cbA)=='ANeg' then
+if cbA!=null and GetAbilityLevel(cbA)>0 and GetAbilityBaseTypeId(cbA)=='ANeg' then
 set cbK=0
 loop
 exitwhen cbK>3 or cbR!=cbId
@@ -56651,12 +56696,15 @@ function CBS_QcOrd takes unit cbU,integer cbId returns integer
 local ability cbA=GetUnitAbility(cbU,cbId)
 local integer cbO=0
 local string cbOs
-// уровень 0 (не изучена / стадия выключена): поля уровня -1 читали мусор — крит при спаме квиками (15 окт)
-if cbA!=null and GetUnitAbilityLevel(cbU,cbId)>0 then
-set cbO=GetAbilityOrderId(cbA)
-set cbOs=GetAbilityStringLevelField(cbA,ABILITY_SLF_BASE_ORDER_ID_NCL6,GetUnitAbilityLevel(cbU,cbId)-1)
-if cbOs!=null and cbOs!="" and OrderId(cbOs)!=0 then
+// поля экземпляра способности на герое не читаем совсем: у Channel-способностей со стадиями (Нанаи E, Широ T,
+// Селл E) это роняло игру (Game.dll+0xD6066, 15 окт). Channel — приказ из таблицы способности, остальные —
+// GetAbilityOrderId (приказ общий для типа). Скрытая (выключенная стадия) или неизученная — 0
+if cbA!=null and GetUnitAbilityLevel(cbU,cbId)>0 and IsUnitAbilityVisible(cbU,cbId) then
+set cbOs=CBS_QcNcl(cbU,cbId)
+if cbOs!="" and OrderId(cbOs)!=0 then
 set cbO=OrderId(cbOs)
+else
+set cbO=GetAbilityOrderId(cbA)
 endif
 endif
 set cbA=null
@@ -56665,12 +56713,11 @@ endfunction
 // способность героя может целиться в юнита: не Channel или Channel с типом цели «юнит» / «юнит или точка».
 // Channel «только точка» с юнитовым кодом приказа (W Нанаи: acidbomb) игра принимает приказом на юнита — точки нет (общий код)
 function CBS_QcUnitOk takes unit cbU,integer cbId returns boolean
-local ability cbA=GetUnitAbility(cbU,cbId)
 local integer cbTt=1
-if cbA!=null and GetUnitAbilityLevel(cbU,cbId)>0 and GetAbilityBaseTypeId(cbA)=='ANcl' then
-set cbTt=GetAbilityIntegerLevelField(cbA,ABILITY_ILF_TARGET_TYPE,GetUnitAbilityLevel(cbU,cbId)-1)
+// Channel — тип цели из таблицы способности (1 — юнит, 3 — юнит или точка), остальные — можно по юниту
+if CBS_QcNcl(cbU,cbId)!="" then
+set cbTt=GetAbilityBaseIntegerLevelFieldById(cbId,ABILITY_ILF_TARGET_TYPE,CBS_QcLv(cbU,cbId))
 endif
-set cbA=null
 return cbTt==1 or cbTt==3
 endfunction
 // другие стадии на той же кнопке (та же позиция на панели; Q / E Нанаи — стадии выключаются SetPlayerAbilityAvailable):
@@ -56685,7 +56732,7 @@ local integer cbPy=GetAbilityBaseIntegerFieldById(cbId,ABILITY_IF_BUTTON_POSITIO
 loop
 exitwhen cbI>=CBS_AbN[cbP]
 set cbS=CBS_Ab[cbP*60+cbI]
-if cbS!=cbId and GetAbilityBaseIntegerFieldById(cbS,ABILITY_IF_BUTTON_POSITION_NORMAL_X)==cbPx and GetAbilityBaseIntegerFieldById(cbS,ABILITY_IF_BUTTON_POSITION_NORMAL_Y)==cbPy then
+if cbS!=cbId and IsUnitAbilityVisible(cbU,cbS) and GetAbilityBaseIntegerFieldById(cbS,ABILITY_IF_BUTTON_POSITION_NORMAL_X)==cbPx and GetAbilityBaseIntegerFieldById(cbS,ABILITY_IF_BUTTON_POSITION_NORMAL_Y)==cbPy then
 set cbO=CBS_QcOrd(cbU,cbS)
 if cbO!=0 and ((cbT!=null and CBS_QcUnitOk(cbU,cbS) and IssueTargetOrderById(cbU,cbO,cbT)) or IssuePointOrderById(cbU,cbO,cbX,cbY)) then
 set cbU=null
@@ -56720,21 +56767,17 @@ endif
 set cbU=Hero[cbP]
 set cbA=GetUnitAbility(cbU,cbId)
 // уровень 0 — способность не применить, а поля уровня -1 читают мусор (крит при спаме, 15 окт)
-if cbA!=null and GetUnitAbilityLevel(cbU,cbId)<1 then
+if cbA!=null and (GetUnitAbilityLevel(cbU,cbId)<1 or not IsUnitAbilityVisible(cbU,cbId)) then
 set cbA=null
 call CBS_QcStages(cbP,cbId,cbX,cbY,null)
 set cbU=null
 return
 endif
 if cbA!=null then
-set cbO=GetAbilityOrderId(cbA)
-// Channel: код приказа — в поле уровня Ncl6 (GetAbilityOrderId его не видит — квик каст не работал у всех Channel)
-set cbOs=GetAbilityStringLevelField(cbA,ABILITY_SLF_BASE_ORDER_ID_NCL6,GetUnitAbilityLevel(cbU,cbId)-1)
-if cbOs!=null and cbOs!="" and OrderId(cbOs)!=0 then
-set cbO=OrderId(cbOs)
-endif
+// код приказа (Channel — поле Ncl6 из таблицы способности): CBS_QcOrd
+set cbO=CBS_QcOrd(cbU,cbId)
 if HPB_Debug then
-call DisplayTimedTextToPlayer(GetLocalPlayer(),0,0,5,"QC "+GetObjectName(cbId)+" order "+I2S(cbO)+" "+OrderId2String(cbO)+" base "+OrderId2String(GetAbilityOrderId(cbA))+" self "+CBS_Tok(cbD,3))
+call DisplayTimedTextToPlayer(GetLocalPlayer(),0,0,5,"QC "+GetObjectName(cbId)+" order "+I2S(cbO)+" "+OrderId2String(cbO)+" self "+CBS_Tok(cbD,3))
 endif
 // на себя (курсор на портрете): по герою, иначе в точку под ним
 if CBS_Tok(cbD,3)=="1" then
