@@ -14678,11 +14678,12 @@ local timer t
 call SaveInteger(HH,cid,SH_RemSpearStage,stage)
 // нажатия без урона: бьют только копья (11 окт)
 call SaveReal(HH,cid,SH_RemSpearIdle,0.)
-call Rem_Fx(caster,"bof\\Scarlet-29.mdx",x,y,z,0.,0.6,0.)
-call Rem_Fx(caster,"bof\\Scarlet-14.mdx",x,y,20.,0.,0.6,1.)
-call Rem_Fx(caster,"bof\\Scarlet-21.mdx",x,y,z,0.,1.2,0.)
-call Rem_Fx(caster,"bof\\Scarlet-65.mdx",x,y,z,0.,0.6,0.)
-call Rem_Fx(caster,"bof\\Scarlet-4.mdx",x,y,z,0.,0.6,0.)
+// волны нажатия R на 40% меньше (15 окт; было 0.6 / 0.6 / 1.2 / 0.6 / 0.6)
+call Rem_Fx(caster,"bof\\Scarlet-29.mdx",x,y,z,0.,0.36,0.)
+call Rem_Fx(caster,"bof\\Scarlet-14.mdx",x,y,20.,0.,0.36,1.)
+call Rem_Fx(caster,"bof\\Scarlet-21.mdx",x,y,z,0.,0.72,0.)
+call Rem_Fx(caster,"bof\\Scarlet-65.mdx",x,y,z,0.,0.36,0.)
+call Rem_Fx(caster,"bof\\Scarlet-4.mdx",x,y,z,0.,0.36,0.)
 if stage==1 then
 call Rem_Sound("bof\\war3mapImported\\RemiliaScarlet-R-YY1.mp3",100)
 call SaveBoolean(HH,cid,SH_RemSpearDone,false)
@@ -15139,7 +15140,8 @@ if tk>=157 and tk<=205 then
 set k=LoadInteger(HH,id,5)+1
 call SaveInteger(HH,id,5,k)
 if k==1 or ModuloInteger(k-1,4)==0 then
-call Rem_Fx(caster,"bof\\Scarlet-5.mdx",tx,ty,tz+150.,0.,1.,0.)
+// волны T на 40% меньше (15 окт)
+call Rem_Fx(caster,"bof\\Scarlet-5.mdx",tx,ty,tz+150.,0.,.6,0.)
 endif
 endif
 if tk==206 then
@@ -15148,7 +15150,7 @@ call CameraSetEQNoiseForPlayer(tp,25.)
 call SaveInteger(HH,id,5,0)
 call SetUnitTimeScale(caster,.25)
 call Rem_Fx(caster,"bof\\Scarlet-57.MDX",tx,ty,tz+150.,0.,0.9,2.)
-call Rem_Fx(caster,"bof\\Scarlet-21.mdx",tx,ty,450.,ang,1.8,0.)
+call Rem_Fx(caster,"bof\\Scarlet-21.mdx",tx,ty,450.,ang,1.08,0.)
 call Rem_Fx(caster,"bof\\Scarlet-70.mdx",tx,ty,25.,0.,2.5,5.)
 call Rem_Sound("bof\\war3mapImported\\RemiliaScarlet-T-YX10.mp3",100)
 endif
@@ -15159,7 +15161,8 @@ if k==1 or ModuloInteger(k-1,4)==0 then
 call Rem_Fx(caster,"bof\\Scarlet-15.MDX",tx,ty,tz+150.,0.,1.,0.)
 call Rem_Fx(caster,"bof\\Scarlet-54.mdx",tx,ty,tz+150.,0.,1.,0.)
 endif
-if k==1 or ModuloInteger(k-1,8)==0 then
+// лучи T вдвое реже (15 окт; было каждые 8 тиков)
+if k==1 or ModuloInteger(k-1,16)==0 then
 call Rem_RandFx(caster,GetUnitX(caster),GetUnitY(caster),800.,120)
 endif
 endif
@@ -15177,14 +15180,17 @@ exitwhen i>5
 call Rem_Fx(caster,"bof\\Scarlet-58.mdx",tx+CosBJ(I2R(i)*72.)*150.,ty+SinBJ(I2R(i)*72.)*150.,tz+100.,I2R(i)*72.+180.,1.,0.)
 set i=i+1
 endloop
+// лучи T вдвое реже (15 окт)
+if ModuloInteger(k-1,16)==0 then
 call Rem_RandFx(caster,GetUnitX(caster),GetUnitY(caster),800.,120)
+endif
 endif
 endif
 if tk==306 then
 call SaveInteger(HH,id,5,0)
 call Rem_Fx(caster,"bof\\Scarlet-62.mdx",tx,ty,tz+150.,0.,1.,3.)
 call Rem_Fx(caster,"bof\\Scarlet-57.MDX",tx,ty,tz+150.,0.,1.8,3.)
-call Rem_Fx(caster,"bof\\Scarlet-5.mdx",tx,ty,25.,0.,15.,0.)
+call Rem_Fx(caster,"bof\\Scarlet-5.mdx",tx,ty,25.,0.,9.,0.)
 endif
 if tk==310 then
 call CameraClearNoiseForPlayer(p)
@@ -15205,8 +15211,8 @@ if k==1 or ModuloInteger(k-1,4)==0 then
 call Rem_Fx(caster,"bof\\Scarlet-47.mdx",tx,ty,25.,0.,1.5,0.)
 endif
 if k==1 or ModuloInteger(k-1,12)==0 then
-call Rem_Fx(caster,"bof\\Scarlet-5.mdx",tx,ty,25.,0.,15.,0.)
-call Rem_Fx(caster,"bof\\Scarlet-5.mdx",GetUnitX(caster),GetUnitY(caster),25.,0.,8.,0.)
+call Rem_Fx(caster,"bof\\Scarlet-5.mdx",tx,ty,25.,0.,9.,0.)
+call Rem_Fx(caster,"bof\\Scarlet-5.mdx",GetUnitX(caster),GetUnitY(caster),25.,0.,4.8,0.)
 endif
 endif
 if tk==380 then
@@ -15255,7 +15261,7 @@ set ang=Atan2BJ(GetUnitY(target)-y,GetUnitX(target)-x)
 set bx=GetUnitX(target)+150.*CosBJ(Atan2BJ(y-GetUnitY(target),x-GetUnitX(target)))
 set by=GetUnitY(target)+150.*SinBJ(Atan2BJ(y-GetUnitY(target),x-GetUnitX(target)))
 call SetUnitXY_1(caster,bx,by, true)
-call Rem_Fx(caster,"bof\\Scarlet-21.mdx",bx,by,GetUnitFlyHeight(caster),ang,1.2,0.)
+call Rem_Fx(caster,"bof\\Scarlet-21.mdx",bx,by,GetUnitFlyHeight(caster),ang,.72,0.)
 call Rem_Fx(caster,"bof\\Scarlet-65.mdx",bx,by,GetUnitFlyHeight(caster),ang,1.,0.)
 call Rem_Fx(caster,"bof\\Scarlet-4.mdx",bx,by,GetUnitFlyHeight(caster),ang,1.,0.)
 call PauseUnit(caster,true)
@@ -15309,8 +15315,9 @@ if tk<=200 then
 call SetUnitXY_1(ring,x,y, false)
 call SetUnitXY_1(wave,x,y, false)
 if tk==1 or ModuloInteger(tk-1,8)==0 then
-call Rem_Fx(caster,"bof\\Scarlet-4.mdx",x,y,25.,GetUnitFacing(caster),.67,0.)
-call Rem_Fx(caster,"bof\\Scarlet-29.mdx",x,y,GetUnitFlyHeight(caster),GetUnitFacing(caster),1.,0.)
+// волны G на 40% меньше (15 окт; было .67 / 1.)
+call Rem_Fx(caster,"bof\\Scarlet-4.mdx",x,y,25.,GetUnitFacing(caster),.4,0.)
+call Rem_Fx(caster,"bof\\Scarlet-29.mdx",x,y,GetUnitFlyHeight(caster),GetUnitFacing(caster),.6,0.)
 endif
 if tk==1 or ModuloInteger(tk-1,4)==0 then
 set g=CreateGroup()
@@ -15330,7 +15337,10 @@ endif
 endif
 endloop
 call DestroyGroup(g)
+// лучи G вдвое реже (15 окт; было каждые 0.2 c)
+if ModuloInteger(tk-1,8)==0 then
 call Rem_RandFx(caster,x,y,800.,90)
+endif
 endif
 else
 call FlushChildHashtable(HH,id)
@@ -15349,14 +15359,15 @@ local real y=GetUnitY(caster)
 local unit ring=CreateUnit(OwnerOf(caster),'eBLP',x,y,0.)
 local unit wave=CreateUnit(OwnerOf(caster),'eBLP',x,y,0.)
 local timer t
-call Rem_Fx(caster,"bof\\Scarlet-57.MDX",x,y,150.,0.,0.6,2.)
-call Rem_Fx(caster,"bof\\Scarlet-21.mdx",x,y,25.,0.,2.,0.)
-call Rem_Fx(caster,"bof\\Scarlet-29.mdx",x,y,GetUnitFlyHeight(caster),0.,1.,0.)
+// волны G на 40% меньше (15 окт; было 0.6 / 2. / 1., волна 6.67); кольцо зоны не трогаем
+call Rem_Fx(caster,"bof\\Scarlet-57.MDX",x,y,150.,0.,0.36,2.)
+call Rem_Fx(caster,"bof\\Scarlet-21.mdx",x,y,25.,0.,1.2,0.)
+call Rem_Fx(caster,"bof\\Scarlet-29.mdx",x,y,GetUnitFlyHeight(caster),0.,.6,0.)
 call Bof_DzSetUnitModel(ring,"bof\\Scarlet-70.mdx")
 call SetUnitScale(ring,2.,2.,2.)
 call UnitApplyTimedLife(ring,'BHwe',10.)
 call Bof_DzSetUnitModel(wave,"bof\\Scarlet-5.mdx")
-call SetUnitScale(wave,6.67,6.67,6.67)
+call SetUnitScale(wave,4.,4.,4.)
 call UnitApplyTimedLife(wave,'BHwe',3.)
 call Rem_Sound("bof\\war3mapImported\\RemiliaScarlet-G-YY1.mp3",100)
 call Rem_Sound("bof\\war3mapImported\\RemiliaScarlet-G-YX1.mp3",100)
@@ -16245,11 +16256,12 @@ local timer t
 call SaveInteger(HH,cid,SH_FlaRStage,stage)
 // нажатия без урона: бьют только копья (11 окт)
 call SaveReal(HH,cid,SH_FlaRTime,0.)
-call Rem_Fx(caster,"bof\\Scarlet-29.mdx",x,y,z,0.,0.6,0.)
-call Rem_Fx(caster,"bof\\Scarlet-14.mdx",x,y,20.,0.,0.6,1.)
-call Rem_Fx(caster,"bof\\Scarlet-21.mdx",x,y,z,0.,1.2,0.)
-call Rem_Fx(caster,"bof\\Scarlet-65.mdx",x,y,z,0.,0.6,0.)
-call Rem_Fx(caster,"bof\\Scarlet-4.mdx",x,y,z,0.,0.6,0.)
+// волны нажатия R на 40% меньше (15 окт; было 0.6 / 0.6 / 1.2 / 0.6 / 0.6)
+call Rem_Fx(caster,"bof\\Scarlet-29.mdx",x,y,z,0.,0.36,0.)
+call Rem_Fx(caster,"bof\\Scarlet-14.mdx",x,y,20.,0.,0.36,1.)
+call Rem_Fx(caster,"bof\\Scarlet-21.mdx",x,y,z,0.,0.72,0.)
+call Rem_Fx(caster,"bof\\Scarlet-65.mdx",x,y,z,0.,0.36,0.)
+call Rem_Fx(caster,"bof\\Scarlet-4.mdx",x,y,z,0.,0.36,0.)
 if stage==1 then
 call Rem_Sound("bof\\war3mapImported\\Flandre Scarlet-R-YY1.mp3",100)
 call Rem_Text(caster,"Kagome, Kagome")
