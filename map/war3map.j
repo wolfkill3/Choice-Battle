@@ -258056,9 +258056,11 @@ if GetSpellAbilityId()=='SiQ1' then
 call PauseUnit(caster,true)
 if SignumGBuff then
 call SaveReal(HH,id,19,3300)
-call SaveReal(HH,id,15,75+(1+GetUnitAbilityLevel(caster,'SiQ1'))*GetHeroAgi(caster,true)+1.5*( GetUnitBaseDamageByIndex( caster ,0)+GetUnitBonusDamageByIndex( caster ,0) )   )
+//call SaveReal(HH,id,15,75+(1+GetUnitAbilityLevel(caster,'SiQ1'))*GetHeroAgi(caster,true)+1.5*( GetUnitBaseDamageByIndex( caster ,0)+GetUnitBonusDamageByIndex( caster ,0) )   )
+call SaveReal(HH,id,15,(2+GetUnitAbilityLevel(caster,'SiQ1'))*GetHeroAgi(caster,true)+1.5*( GetUnitBaseDamageByIndex( caster ,0)+GetUnitBonusDamageByIndex( caster ,0) )   ) // 3..7*AGI без базы 75
 else
-call SaveReal(HH,id,15,75+(1+GetUnitAbilityLevel(caster,'SiQ1'))*GetHeroAgi(caster,true))
+//call SaveReal(HH,id,15,75+(1+GetUnitAbilityLevel(caster,'SiQ1'))*GetHeroAgi(caster,true))
+call SaveReal(HH,id,15,(2+GetUnitAbilityLevel(caster,'SiQ1'))*GetHeroAgi(caster,true)) // 3..7*AGI без базы 75
 call SaveReal(HH,id,19,2300)
 endif
 
@@ -281211,13 +281213,13 @@ call LANG_A('SiQ1',0,1,"Sturmwinde, [|cffffcc00Level 2|r] (|cffffcc00Q|r)")
 call LANG_A('SiQ1',0,2,"Sturmwinde, [|cffffcc00Level 3|r] (|cffffcc00Q|r)")
 call LANG_A('SiQ1',0,3,"Sturmwinde, [|cffffcc00Level 4|r] (|cffffcc00Q|r)")
 call LANG_A('SiQ1',0,4,"Sturmwinde, [|cffffcc00Level 5|r] (|cffffcc00Q|r)")
-call LANG_A('SiQ1',1,0,"Signum releases a wave of flame from the sword in a direction|n|cFF00A5FF|nDamage: 75+2*|r|c003CFF3CAGI|r|cFF00A5FF|nRange: 2300|nAoE: 230-400|nPreparation: 0.2|nCooldown: 19|r|n|n• With the Exlosion empowerment: |cFF00A5FF|nRange: +1000|nBonus damage: +AD*1.5 (magic damage)")
-call LANG_A('SiQ1',1,1,"Signum releases a wave of flame from the sword in a direction|n|cFF00A5FF|nDamage: 75+3*|r|c003CFF3CAGI|r|cFF00A5FF|nRange: 2300|nAoE: 230-400|nPreparation: 0.2|nCooldown: 18|r|n|n• With the Exlosion empowerment: |cFF00A5FF|nRange: +1000|nBonus damage: +AD*1.5 (magic damage)")
-call LANG_A('SiQ1',1,2,"Signum releases a wave of flame from the sword in a direction|n|cFF00A5FF|nDamage: 75+4*|r|c003CFF3CAGI|r|cFF00A5FF|nRange: 2300|nAoE: 230-400|nPreparation: 0.2|nCooldown: 17|r|n|n• With the Exlosion empowerment: |cFF00A5FF|nRange: +1000|nBonus damage: +AD*1.5 (magic damage)")
-call LANG_A('SiQ1',1,3,"Signum releases a wave of flame from the sword in a direction|n|cFF00A5FF|nDamage: 75+5*|r|c003CFF3CAGI|r|cFF00A5FF|nRange: 2300|nAoE: 230-400|nPreparation: 0.2|nCooldown: 16|r|n|n• With the Exlosion empowerment: |cFF00A5FF|nRange: +1000|nBonus damage: +AD*1.5 (magic damage)")
-call LANG_A('SiQ1',1,4,"Signum releases a wave of flame from the sword in a direction|n|cFF00A5FF|nDamage: 75+6*|r|c003CFF3CAGI|r|cFF00A5FF|nRange: 2300|nAoE: 230-400|nPreparation: 0.2|nCooldown: 15|r|n|n• With the Exlosion empowerment: |cFF00A5FF|nRange: +1000|nBonus damage: +AD*1.5 (magic damage)")
+call LANG_A('SiQ1',1,0,"Signum releases a wave of flame from the sword in a direction|n|cFF00A5FF|nDamage: 3*|r|c003CFF3CAGI|r|cFF00A5FF|nRange: 2300|nAoE: 230-400|nPreparation: 0.2|nCooldown: 19|r|n|n• With the Exlosion empowerment: |cFF00A5FF|nRange: +1000|nBonus damage: +AD*1.5 (magic damage)")
+call LANG_A('SiQ1',1,1,"Signum releases a wave of flame from the sword in a direction|n|cFF00A5FF|nDamage: 4*|r|c003CFF3CAGI|r|cFF00A5FF|nRange: 2300|nAoE: 230-400|nPreparation: 0.2|nCooldown: 18|r|n|n• With the Exlosion empowerment: |cFF00A5FF|nRange: +1000|nBonus damage: +AD*1.5 (magic damage)")
+call LANG_A('SiQ1',1,2,"Signum releases a wave of flame from the sword in a direction|n|cFF00A5FF|nDamage: 5*|r|c003CFF3CAGI|r|cFF00A5FF|nRange: 2300|nAoE: 230-400|nPreparation: 0.2|nCooldown: 17|r|n|n• With the Exlosion empowerment: |cFF00A5FF|nRange: +1000|nBonus damage: +AD*1.5 (magic damage)")
+call LANG_A('SiQ1',1,3,"Signum releases a wave of flame from the sword in a direction|n|cFF00A5FF|nDamage: 6*|r|c003CFF3CAGI|r|cFF00A5FF|nRange: 2300|nAoE: 230-400|nPreparation: 0.2|nCooldown: 16|r|n|n• With the Exlosion empowerment: |cFF00A5FF|nRange: +1000|nBonus damage: +AD*1.5 (magic damage)")
+call LANG_A('SiQ1',1,4,"Signum releases a wave of flame from the sword in a direction|n|cFF00A5FF|nDamage: 7*|r|c003CFF3CAGI|r|cFF00A5FF|nRange: 2300|nAoE: 230-400|nPreparation: 0.2|nCooldown: 15|r|n|n• With the Exlosion empowerment: |cFF00A5FF|nRange: +1000|nBonus damage: +AD*1.5 (magic damage)")
 call LANG_A('SiQ1',2,0,"Sturmwinde, [|cffffcc00Level %d|r] (|cffffcc00Q|r)")
-call LANG_A('SiQ1',3,0,"Signum releases a wave of flame from the sword in a direction|n|cFF00A5FF|nDamage: 75+2/3/4/5/6*|r|c003CFF3CAGI|r|cFF00A5FF|nRange: 2300|nAoE: 230-400|nPreparation: 0.2|nCooldown: 19/18/17/16/15|r|n|n• With the Exlosion empowerment: |cFF00A5FF|nRange: +1000|nBonus damage: +AD*1.5 (magic damage)")
+call LANG_A('SiQ1',3,0,"Signum releases a wave of flame from the sword in a direction|n|cFF00A5FF|nDamage: 3/4/5/6/7*|r|c003CFF3CAGI|r|cFF00A5FF|nRange: 2300|nAoE: 230-400|nPreparation: 0.2|nCooldown: 19/18/17/16/15|r|n|n• With the Exlosion empowerment: |cFF00A5FF|nRange: +1000|nBonus damage: +AD*1.5 (magic damage)")
 call LANG_A('SiQ2',0,0,"Schlangenform: Schlag, [|cffffcc00Level 1|r] (|cffffcc00Q|r)")
 call LANG_A('SiQ2',0,1,"Schlangenform: Schlag, [|cffffcc00Level 2|r] (|cffffcc00Q|r)")
 call LANG_A('SiQ2',0,2,"Schlangenform: Schlag, [|cffffcc00Level 3|r] (|cffffcc00Q|r)")
