@@ -2304,7 +2304,7 @@ constant integer SH_ShnMask=StringHash("ShnMask")
 constant integer SH_ShnMaskDmg=StringHash("ShnMaskDmg")
 constant integer SH_ShnBank=StringHash("ShnBank")
 constant integer SH_ShnBankSrc=StringHash("ShnBankSrc")
-// Хирако T (16 окт): каст завершён (отмена до 0.5 c — возврат), номер каста, при котором юнит уже получил дебафф
+// Хирако T (16 окт): каст завершён (отмена до 0.3 c — возврат), номер каста, при котором юнит уже получил дебафф
 constant integer SH_ShnTDone=StringHash("ShnTDone")
 constant integer SH_ShnConfCast=StringHash("ShnConfCast")
 // путаница банкая по игрокам 0..11: включена, до какого времени ShnClock; снимок союзов (PASSIVE) на момент первой путаницы
@@ -128111,7 +128111,7 @@ endfunction
 //call TriggerAddAction(t,function ShinjiTCast)
 //set t=null
 //endfunction
-// T — банкай Сакасима Ёкосима Хаппо Фусагари (16 окт). Channel 0.5 с: стоп / движение до конца — отмена,
+// T — банкай Сакасима Ёкосима Хаппо Фусагари (16 окт). Channel 0.3 с: стоп / движение до конца — отмена,
 // перезарядка и мана возвращаются. Затем у места каста закрывается бутон (Shinji2_Bankai, Birth 2 с) и выпускается
 // туман AoE 1000 на 6 с. Раз в секунду всем в тумане, кроме юнитов игрока Хирако (и союзникам Хирако тоже), — путаница
 // на 1.2 с: игрок воспринимает врагов союзниками, а союзников врагами (ALLIANCE_PASSIVE в обе стороны со всеми игроками
@@ -128319,7 +128319,7 @@ endfunction
 function ShinjiTStart takes nothing returns nothing
 call SaveBoolean(HH,GetHandleId(GetTriggerUnit()),SH_ShnTDone,false)
 endfunction
-// каст дошёл до конца (0.5 c) — бутон и туман
+// каст дошёл до конца (0.3 c) — бутон и туман
 function ShinjiTCast takes nothing returns nothing
 local unit u=GetTriggerUnit()
 local timer t
@@ -282301,8 +282301,8 @@ call LANG_A('SnR1',1,3,"A crimson Cero along a horizontal line. Without the mask
 call LANG_A('SnR1',1,4,"A crimson Cero along a horizontal line. Without the mask it is a weak short beam; with the mask it is a full Cero that knocks back.|n|n|cFF00A5FF|nDamage without the mask: 2\\2.5\\3\\3.5\\4*|r|c003CFF3CAGI|r|cFF00A5FF, length 900|nDamage with the mask: 3.5\\4.1\\4.7\\5.3\\6*|r|c003CFF3CAGI|r|cFF00A5"+"FF, length 1500, knockback 300|nCooldown: 14 sec.|r")
 call LANG_A('SnR1',2,0,"Cero, [|cffffcc00Level %d|r] (|cffffcc00R|r)")
 call LANG_A('SnR1',3,0,"A crimson Cero along a horizontal line. Without the mask it is a weak short beam; with the mask it is a full Cero that knocks back.|n|n|cFF00A5FF|nDamage without the mask: 2\\2.5\\3\\3.5\\4*|r|c003CFF3CAGI|r|cFF00A5FF, length 900|nDamage with the mask: 3.5\\4.1\\4.7\\5.3\\6*|r|c003CFF3CAGI|r|cFF00A5"+"FF, length 1500, knockback 300|nCooldown: 14 sec.|r")
-call LANG_A('SnT1',1,0,"Bankai. After a 0.5 sec. cast (can be cancelled — cooldown and mana are returned) a bud closes around Hirako, then releases a mist. Every second everyone in the mist except Hirako (allies too) gets confused: enemies look like allies and allies like enemies. On the first confusion a hero instantly "+"uses a random ability on the nearest \"enemy\".|n|n|cFF00A5FF|nCast: 0.5 sec.|nBud: 2 sec.|nMist AoE: 1000|nMist duration: 6 sec.|nConfusion: 1.2 sec. (renewed every second)|nCooldown: 90 sec.|r")
-call LANG_A('SnT1',3,0,"Bankai. After a 0.5 sec. cast (can be cancelled — cooldown and mana are returned) a bud closes around Hirako, then releases a mist. Every second everyone in the mist except Hirako (allies too) gets confused: enemies look like allies and allies like enemies. On the first confusion a hero instantly "+"uses a random ability on the nearest \"enemy\".|n|n|cFF00A5FF|nCast: 0.5 sec.|nBud: 2 sec.|nMist AoE: 1000|nMist duration: 6 sec.|nConfusion: 1.2 sec. (renewed every second)|nCooldown: 90 sec.|r")
+call LANG_A('SnT1',1,0,"Bankai. After a 0.3 sec. cast (can be cancelled — cooldown and mana are returned) a bud closes around Hirako, then releases a mist. Every second everyone in the mist except Hirako (allies too) gets confused: enemies look like allies and allies like enemies. On the first confusion a hero instantly "+"uses a random ability on the nearest \"enemy\".|n|n|cFF00A5FF|nCast: 0.3 sec.|nBud: 2 sec.|nMist AoE: 1000|nMist duration: 6 sec.|nConfusion: 1.2 sec. (renewed every second)|nCooldown: 90 sec.|r")
+call LANG_A('SnT1',3,0,"Bankai. After a 0.3 sec. cast (can be cancelled — cooldown and mana are returned) a bud closes around Hirako, then releases a mist. Every second everyone in the mist except Hirako (allies too) gets confused: enemies look like allies and allies like enemies. On the first confusion a hero instantly "+"uses a random ability on the nearest \"enemy\".|n|n|cFF00A5FF|nCast: 0.3 sec.|nBud: 2 sec.|nMist AoE: 1000|nMist duration: 6 sec.|nConfusion: 1.2 sec. (renewed every second)|nCooldown: 90 sec.|r")
 call LANG_A('SnD1',1,0,"Hirako spins Sakanade by its ring: a wave of scent around him. Nearby enemies take damage and are briefly inverted: their movement and turning go the opposite way.|n|n|cFF00A5FF|nDamage: 1*|r|c003CFF3CAGI|r|cFF00A5FF|nInversion: 1.25 sec.|nAoE: 400|nCooldown: 20 sec.|r")
 call LANG_A('SnD1',3,0,"Hirako spins Sakanade by its ring: a wave of scent around him. Nearby enemies take damage and are briefly inverted: their movement and turning go the opposite way.|n|n|cFF00A5FF|nDamage: 1*|r|c003CFF3CAGI|r|cFF00A5FF|nInversion: 1.25 sec.|nAoE: 400|nCooldown: 20 sec.|r")
 call LANG_A('SnF1',1,0,"An instant step to a point. Recharges twice as fast from inside the W mist.|n|n|cFF00A5FF|nRange: 600|nCooldown: 8 sec. (4 sec. from the mist)|r")
