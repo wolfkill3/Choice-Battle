@@ -2311,6 +2311,8 @@ constant integer SH_ShnTCur=StringHash("ShnTCur")
 // Хирако E (16 окт): запас маски (сек.) на герое, табло на номере игрока
 constant integer SH_ShnMaskRes=StringHash("ShnMaskRes")
 constant integer SH_ShnDBoard=StringHash("ShnDBoard")
+// Хирако: отладка принудительного каста T (-shndbg)
+boolean ShnDbg=false
 // путаница банкая по игрокам 0..11: включена, до какого времени ShnClock; снимок союзов (PASSIVE) на момент первой путаницы
 boolean array ShnConfOn
 real array ShnConfEnd
@@ -127834,7 +127836,7 @@ local integer id=GetHandleId(t)
 local unit u=LoadUnitHandle(h,id,0)
 if UnitIsAlive(u) then
 call SetUnitPosition(u,LoadReal(h,id,1),LoadReal(h,id,2))
-call SetUnitFacing(u,bj_RADTODEG*Atan2(LoadReal(h,id,4)-GetUnitY(u),LoadReal(h,id,3)-GetUnitX(u)))
+call SetUnitFacingInstant(u,bj_RADTODEG*Atan2(LoadReal(h,id,4)-GetUnitY(u),LoadReal(h,id,3)-GetUnitX(u)))
 if LoadBoolean(h,id,5) then
 call SetUnitAnimation(u,"attack")
 call QueueUnitAnimation(u,"stand")
@@ -127861,63 +127863,151 @@ endfunction
 function ShinjiQCond takes nothing returns boolean
 return GetSpellAbilityId()=='SnQ1' and udg_B==true and GetUnitTypeId(GetTriggerUnit())=='HShn'
 endfunction
-function ShinjiQCast takes nothing returns nothing
-local unit u=GetTriggerUnit()
+// Q до 16 окт (вечер): мгновенный перенос, урон по отрезку сразу
+//function ShinjiQCast takes nothing returns nothing
+//local unit u=GetTriggerUnit()
+//local player p=OwnerOf(u)
+//local real x=GetUnitX(u)
+//local real y=GetUnitY(u)
+//local real x1=GetSpellTargetX()
+//local real y1=GetSpellTargetY()
+//local real dmg=75+(1+GetUnitAbilityLevel(u,'SnQ1'))*GetHeroAgi(u,true) // 75 + 2..6*AGI (16 окт; было 1..2, затем 3..7)
+//local real a=Atan2(y1-y,x1-x)
+//local real len=SR(x,y,x1,y1)
+//local real ex
+//local real ey
+//local real k
+//local real ea
+//local group g=CreateGroup()
+//local unit e
+//call DestroyEffect(AddSpecialEffect("FlashAura.mdl",x,y))
+//// враги вдоль отрезка (x,y)-(x1,y1): расстояние до отрезка не больше 150
+//// своя группа и юнит: обработчики урона сами пользуются глобальными G / E
+//call GroupEnumUnitsInRange(g,(x+x1)/2,(y+y1)/2,len/2+150,Base)
+//loop
+//set e=FirstOfGroup(g)
+//exitwhen e==null
+//if Condition_Base(p,e) then
+//set ex=GetUnitX(e)
+//set ey=GetUnitY(e)
+//// проекция на отрезок: k от 0 до 1
+//set k=((ex-x)*(x1-x)+(ey-y)*(y1-y))/RMaxBJ(len*len,1)
+//if k<0 then
+//set k=0
+//elseif k>1 then
+//set k=1
+//endif
+//if SR(ex,ey,x+(x1-x)*k,y+(y1-y)*k)<=150 then
+//if LoadReal(HH,GetHandleId(e),SH_ShnInv)>TimerGetElapsed(ShnClock) then
+//// в тумане W удар приходит со спины
+//set ea=GetUnitFacing(e)*bj_DEGTORAD+bj_PI
+//call DestroyEffect(AddSpecialEffect("Abilities\\Spells\\Orc\\Disenchant\\DisenchantSpecialArt.mdl",ex+60*Cos(ea),ey+60*Sin(ea)))
+//call myCustomDamage(u,e,dmg+GetHeroAgi(u,true),false,false,null,null,null) // со спины: +1*AGI (16 окт; было +50%)
+//else
+//call myCustomDamage(u,e,dmg,false,false,null,null,null)
+//endif
+//call DestroyEffect(AddSpecialEffectTarget("SwordSlash1.mdx",e,"chest"))
+//endif
+//endif
+//call GroupRemoveUnit(g,e)
+//endloop
+//call DestroyGroup(g)
+//// сюмпо: SetUnitPosition сам сдвигает к ближайшей проходимой точке
+////call SetUnitPosition(u,x1,y1)
+////call SetUnitFacing(u,a*bj_RADTODEG)
+////call SetUnitAnimation(u,"attack")
+////call QueueUnitAnimation(u,"stand")
+////call DestroyEffect(AddSpecialEffect("FlashAura.mdl",GetUnitX(u),GetUnitY(u)))
+//call ShinjiShunpo(u,x1,y1,x1+100*Cos(a),y1+100*Sin(a),true)
+//set g=null
+//set p=null
+//set u=null
+//endfunction
+// Q (16 окт, вечер): настоящий рывок — 60 за 0.02 с (3000/с) по прямой до точки, упор в непроходимое — стоп.
+// Кого Хирако проходит (150), тот получает разрез один раз; в тумане W — со спины (+1*AGI)
+function ShinjiQDash takes nothing returns nothing
+local timer t=GetExpiredTimer()
+local integer id=GetHandleId(t)
+local unit u=LoadUnitHandle(h,id,0)
+local real a=LoadReal(h,id,1)
+local real left=LoadReal(h,id,2)
+local real dmg=LoadReal(h,id,3)
+local group hit=LoadGroupHandle(h,id,4)
+local integer tk=LoadInteger(h,id,5)+1
 local player p=OwnerOf(u)
-local real x=GetUnitX(u)
-local real y=GetUnitY(u)
-local real x1=GetSpellTargetX()
-local real y1=GetSpellTargetY()
-local real dmg=75+(1+GetUnitAbilityLevel(u,'SnQ1'))*GetHeroAgi(u,true) // 75 + 2..6*AGI (16 окт; было 1..2, затем 3..7)
-local real a=Atan2(y1-y,x1-x)
-local real len=SR(x,y,x1,y1)
-local real ex
-local real ey
-local real k
-local real ea
-local group g=CreateGroup()
+local real st=RMinBJ(60,left)
+local real nx=GetUnitX(u)+st*Cos(a)
+local real ny=GetUnitY(u)+st*Sin(a)
+local group g
 local unit e
-call DestroyEffect(AddSpecialEffect("FlashAura.mdl",x,y))
-// враги вдоль отрезка (x,y)-(x1,y1): расстояние до отрезка не больше 150
-// своя группа и юнит: обработчики урона сами пользуются глобальными G / E
-call GroupEnumUnitsInRange(g,(x+x1)/2,(y+y1)/2,len/2+150,Base)
+local real ea
+call SaveInteger(h,id,5,tk)
+if left>0 and UnitIsAlive(u) and udg_B==true and not IsTerrainPathable(nx,ny,PATHING_TYPE_WALKABILITY) then
+call SetUnitX(u,nx)
+call SetUnitY(u,ny)
+call SetUnitFacingInstant(u,a*bj_RADTODEG)
+call SaveReal(h,id,2,left-st)
+if ModuloInteger(tk,3)==0 then
+call DestroyEffect(AddSpecialEffect("Abilities\\Spells\\NightElf\\Blink\\BlinkCaster.mdl",nx,ny))
+endif
+set g=CreateGroup()
+call GroupEnumUnitsInRange(g,nx,ny,150,Base)
 loop
 set e=FirstOfGroup(g)
 exitwhen e==null
-if Condition_Base(p,e) then
-set ex=GetUnitX(e)
-set ey=GetUnitY(e)
-// проекция на отрезок: k от 0 до 1
-set k=((ex-x)*(x1-x)+(ey-y)*(y1-y))/RMaxBJ(len*len,1)
-if k<0 then
-set k=0
-elseif k>1 then
-set k=1
-endif
-if SR(ex,ey,x+(x1-x)*k,y+(y1-y)*k)<=150 then
+if Condition_Base(p,e) and not IsUnitInGroup(e,hit) then
+call GroupAddUnit(hit,e)
 if LoadReal(HH,GetHandleId(e),SH_ShnInv)>TimerGetElapsed(ShnClock) then
-// в тумане W удар приходит со спины
+// в тумане W удар приходит со спины: +1*AGI
 set ea=GetUnitFacing(e)*bj_DEGTORAD+bj_PI
-call DestroyEffect(AddSpecialEffect("Abilities\\Spells\\Orc\\Disenchant\\DisenchantSpecialArt.mdl",ex+60*Cos(ea),ey+60*Sin(ea)))
-call myCustomDamage(u,e,dmg+GetHeroAgi(u,true),false,false,null,null,null) // со спины: +1*AGI (16 окт; было +50%)
+call DestroyEffect(AddSpecialEffect("Abilities\\Spells\\Orc\\Disenchant\\DisenchantSpecialArt.mdl",GetUnitX(e)+60*Cos(ea),GetUnitY(e)+60*Sin(ea)))
+call myCustomDamage(u,e,dmg+GetHeroAgi(u,true),false,false,null,null,null)
 else
 call myCustomDamage(u,e,dmg,false,false,null,null,null)
 endif
 call DestroyEffect(AddSpecialEffectTarget("SwordSlash1.mdx",e,"chest"))
 endif
-endif
 call GroupRemoveUnit(g,e)
 endloop
 call DestroyGroup(g)
-// сюмпо: SetUnitPosition сам сдвигает к ближайшей проходимой точке
-//call SetUnitPosition(u,x1,y1)
-//call SetUnitFacing(u,a*bj_RADTODEG)
-//call SetUnitAnimation(u,"attack")
-//call QueueUnitAnimation(u,"stand")
-//call DestroyEffect(AddSpecialEffect("FlashAura.mdl",GetUnitX(u),GetUnitY(u)))
-call ShinjiShunpo(u,x1,y1,x1+100*Cos(a),y1+100*Sin(a),true)
+else
+call SetUnitTimeScale(u,1.)
+call SetUnitPathing(u,true)
+call SetUnitPosition(u,GetUnitX(u),GetUnitY(u))
+call SetUnitFacingInstant(u,a*bj_RADTODEG)
+call QueueUnitAnimation(u,"stand")
+call DestroyEffect(AddSpecialEffect("FlashAura.mdl",GetUnitX(u),GetUnitY(u)))
+call DestroyGroup(hit)
+call PauseTimer(t)
+call DestroyTimer(t)
+call FlushChildHashtable(h,id)
+endif
 set g=null
+set e=null
+set hit=null
 set p=null
+set u=null
+set t=null
+endfunction
+function ShinjiQCast takes nothing returns nothing
+local unit u=GetTriggerUnit()
+local real x=GetUnitX(u)
+local real y=GetUnitY(u)
+local real a=Atan2(GetSpellTargetY()-y,GetSpellTargetX()-x)
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+call DestroyEffect(AddSpecialEffect("FlashAura.mdl",x,y))
+call SaveUnitHandle(h,id,0,u)
+call SaveReal(h,id,1,a)
+call SaveReal(h,id,2,SR(x,y,GetSpellTargetX(),GetSpellTargetY()))
+call SaveReal(h,id,3,75+(1+GetUnitAbilityLevel(u,'SnQ1'))*GetHeroAgi(u,true)) // 75 + 2..6*AGI
+call SaveGroupHandle(h,id,4,CreateGroup())
+call SetUnitPathing(u,false)
+call SetUnitFacingInstant(u,a*bj_RADTODEG)
+call SetUnitAnimation(u,"attack")
+call SetUnitTimeScale(u,2.)
+call TimerStart(t,0.02,true,function ShinjiQDash)
+set t=null
 set u=null
 endfunction
 function InitTrig_ShinjiQ takes nothing returns nothing
@@ -128853,6 +128943,22 @@ call ShinjiConfSync()
 endif
 endfunction
 // случайная готовая способность героя e по ближайшему врагу (в 1200): по юниту, иначе в его точку, иначе без цели
+// отладка принудительного каста T: -shndbg (любой игрок) включает / выключает строки на экране у всех
+function ShinjiB2S takes boolean b returns string
+if b then
+return "да"
+endif
+return "нет"
+endfunction
+function ShinjiDbg takes string m returns nothing
+if ShnDbg then
+call DisplayTimedTextToPlayer(GetLocalPlayer(),0,0,10,"|cffff80ffT|r "+m)
+endif
+endfunction
+function ShinjiDbgToggle takes nothing returns nothing
+set ShnDbg=not ShnDbg
+call DisplayTimedTextToPlayer(GetLocalPlayer(),0,0,5,"shndbg: "+ShinjiB2S(ShnDbg))
+endfunction
 function ShinjiForceCast takes unit e returns boolean
 local integer cbP=CBS_Me(PId(OwnerOf(e)))
 local player p=OwnerOf(e)
@@ -128870,6 +128976,7 @@ local string os
 local integer tt
 local boolean ok=false
 if cbP<0 or cbP>11 or Hero[cbP]!=e then
+call ShinjiDbg(GetUnitName(e)+": не герой слота "+I2S(cbP))
 set p=null
 return false
 endif
@@ -128906,6 +129013,11 @@ endif
 call DestroyGroup(g)
 set g=null
 set cnt=CBS_AbN[cbP]
+if t!=null then
+call ShinjiDbg(GetUnitName(e)+": способностей "+I2S(cnt)+", цель "+GetUnitName(t))
+else
+call ShinjiDbg(GetUnitName(e)+": способностей "+I2S(cnt)+", цели нет")
+endif
 if cnt>0 then
 set k=GetRandomInt(0,cnt-1)
 loop
@@ -128924,6 +129036,9 @@ elseif GetAbilityBaseBooleanFieldById(id,ABILITY_BF_HERO_ABILITY) and not GetAbi
 set o=GetAbilityOrderId(GetUnitAbility(e,id))
 set tt=4
 endif
+endif
+if o!=0 then
+call ShinjiDbg("  "+GetObjectName(id)+" приказ "+I2S(o)+" цель-тип "+I2S(tt))
 endif
 if o!=0 then
 if t!=null and (tt==1 or tt==3 or tt==4) and IssueTargetOrderById(e,o,t) then
@@ -128963,6 +129078,7 @@ endif
 set i=i+1
 endloop
 endif
+call ShinjiDbg(GetUnitName(e)+": итог "+ShinjiB2S(ok)+", приказ сейчас "+I2S(GetUnitCurrentOrder(e)))
 set t=null
 set c=null
 set p=null
@@ -129190,6 +129306,18 @@ call TriggerRegisterAnyUnitEventBJ(t,EVENT_PLAYER_UNIT_SPELL_ENDCAST)
 call TriggerAddCondition(t,Condition(function ShinjiTCond))
 call TriggerAddAction(t,function ShinjiTEnd)
 call TimerStart(CreateTimer(),0.1,true,function ShinjiConfTick)
+set t=CreateTrigger()
+call TriggerRegisterPlayerChatEvent(t,Player(0),"-shndbg",true)
+call TriggerRegisterPlayerChatEvent(t,Player(1),"-shndbg",true)
+call TriggerRegisterPlayerChatEvent(t,Player(2),"-shndbg",true)
+call TriggerRegisterPlayerChatEvent(t,Player(3),"-shndbg",true)
+call TriggerRegisterPlayerChatEvent(t,Player(4),"-shndbg",true)
+call TriggerRegisterPlayerChatEvent(t,Player(5),"-shndbg",true)
+call TriggerRegisterPlayerChatEvent(t,Player(6),"-shndbg",true)
+call TriggerRegisterPlayerChatEvent(t,Player(7),"-shndbg",true)
+call TriggerRegisterPlayerChatEvent(t,Player(8),"-shndbg",true)
+call TriggerRegisterPlayerChatEvent(t,Player(9),"-shndbg",true)
+call TriggerAddAction(t,function ShinjiDbgToggle)
 set t=CreateTrigger()
 call TriggerRegisterAnyUnitEventBJ(t,EVENT_PLAYER_UNIT_SPELL_EFFECT)
 call TriggerAddCondition(t,Condition(function ShinjiTCancelCond))
