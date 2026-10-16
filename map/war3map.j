@@ -127995,7 +127995,7 @@ local group g=CreateGroup()
 local unit e
 if mask then
 set len=1500
-set dmg=(2.875+0.625*lv)*GetHeroAgi(u,true)
+set dmg=(2+lv)*GetHeroAgi(u,true) // 3..7*AGI (16 окт; было 3.5..6)
 set sc=1.6
 endif
 set x1=x+len*Cos(a)
@@ -282466,13 +282466,13 @@ call LANG_A('SnEc',0,1,"Cero, [|cffffcc00Level 2|r] (|cffffcc00E|r)")
 call LANG_A('SnEc',0,2,"Cero, [|cffffcc00Level 3|r] (|cffffcc00E|r)")
 call LANG_A('SnEc',0,3,"Cero, [|cffffcc00Level 4|r] (|cffffcc00E|r)")
 call LANG_A('SnEc',0,4,"Cero, [|cffffcc00Level 5|r] (|cffffcc00E|r)")
-call LANG_A('SnEc',1,0,"A crimson Cero along a horizontal line. Knocks back. The button replaces E while the Hollow mask is on.|n|n|cFF00A5FF|nDamage: 3.5\\4.1\\4.7\\5.3\\6*|r|c003CFF3CAGI|r|cFF00A5FF, length 1500, knockback 300|nCooldown: 14 sec.|r")
-call LANG_A('SnEc',1,1,"A crimson Cero along a horizontal line. Knocks back. The button replaces E while the Hollow mask is on.|n|n|cFF00A5FF|nDamage: 3.5\\4.1\\4.7\\5.3\\6*|r|c003CFF3CAGI|r|cFF00A5FF, length 1500, knockback 300|nCooldown: 14 sec.|r")
-call LANG_A('SnEc',1,2,"A crimson Cero along a horizontal line. Knocks back. The button replaces E while the Hollow mask is on.|n|n|cFF00A5FF|nDamage: 3.5\\4.1\\4.7\\5.3\\6*|r|c003CFF3CAGI|r|cFF00A5FF, length 1500, knockback 300|nCooldown: 14 sec.|r")
-call LANG_A('SnEc',1,3,"A crimson Cero along a horizontal line. Knocks back. The button replaces E while the Hollow mask is on.|n|n|cFF00A5FF|nDamage: 3.5\\4.1\\4.7\\5.3\\6*|r|c003CFF3CAGI|r|cFF00A5FF, length 1500, knockback 300|nCooldown: 14 sec.|r")
-call LANG_A('SnEc',1,4,"A crimson Cero along a horizontal line. Knocks back. The button replaces E while the Hollow mask is on.|n|n|cFF00A5FF|nDamage: 3.5\\4.1\\4.7\\5.3\\6*|r|c003CFF3CAGI|r|cFF00A5FF, length 1500, knockback 300|nCooldown: 14 sec.|r")
+call LANG_A('SnEc',1,0,"A crimson Cero along a horizontal line. Knocks back. The button replaces E while the Hollow mask is on.|n|n|cFF00A5FF|nDamage: 3\\4\\5\\6\\7*|r|c003CFF3CAGI|r|cFF00A5FF, length 1500, knockback 300|nCooldown: 14 sec.|r")
+call LANG_A('SnEc',1,1,"A crimson Cero along a horizontal line. Knocks back. The button replaces E while the Hollow mask is on.|n|n|cFF00A5FF|nDamage: 3\\4\\5\\6\\7*|r|c003CFF3CAGI|r|cFF00A5FF, length 1500, knockback 300|nCooldown: 14 sec.|r")
+call LANG_A('SnEc',1,2,"A crimson Cero along a horizontal line. Knocks back. The button replaces E while the Hollow mask is on.|n|n|cFF00A5FF|nDamage: 3\\4\\5\\6\\7*|r|c003CFF3CAGI|r|cFF00A5FF, length 1500, knockback 300|nCooldown: 14 sec.|r")
+call LANG_A('SnEc',1,3,"A crimson Cero along a horizontal line. Knocks back. The button replaces E while the Hollow mask is on.|n|n|cFF00A5FF|nDamage: 3\\4\\5\\6\\7*|r|c003CFF3CAGI|r|cFF00A5FF, length 1500, knockback 300|nCooldown: 14 sec.|r")
+call LANG_A('SnEc',1,4,"A crimson Cero along a horizontal line. Knocks back. The button replaces E while the Hollow mask is on.|n|n|cFF00A5FF|nDamage: 3\\4\\5\\6\\7*|r|c003CFF3CAGI|r|cFF00A5FF, length 1500, knockback 300|nCooldown: 14 sec.|r")
 call LANG_A('SnEc',2,0,"Cero, [|cffffcc00Level %d|r] (|cffffcc00E|r)")
-call LANG_A('SnEc',3,0,"A crimson Cero along a horizontal line. Knocks back. The button replaces E while the Hollow mask is on.|n|n|cFF00A5FF|nDamage: 3.5\\4.1\\4.7\\5.3\\6*|r|c003CFF3CAGI|r|cFF00A5FF, length 1500, knockback 300|nCooldown: 14 sec.|r")
+call LANG_A('SnEc',3,0,"A crimson Cero along a horizontal line. Knocks back. The button replaces E while the Hollow mask is on.|n|n|cFF00A5FF|nDamage: 3\\4\\5\\6\\7*|r|c003CFF3CAGI|r|cFF00A5FF, length 1500, knockback 300|nCooldown: 14 sec.|r")
 call LANG_A('SnT1',1,0,"Bankai. After a 0.3 sec. cast (can be cancelled — cooldown and mana are returned) a bud closes around Hirako, and halfway through releases a mist. While the bankai lasts Hirako is invulnerable and has only the cancel button. Every second everyone in the mist except Hirako (allies too) gets confuse"+"d: enemies look like allies and allies like enemies. On the first confusion a hero instantly uses a random ability on the nearest \"enemy\".|n|n|cFF00A5FF|nCast: 0.3 sec.|nMist: 1 sec. after the cast|nMist AoE: 1000|nMist duration: 6 sec.|nConfusion: 1.2 sec. (renewed every second)|nCooldown: 90 sec"+".|r")
 call LANG_A('SnT1',3,0,"Bankai. After a 0.3 sec. cast (can be cancelled — cooldown and mana are returned) a bud closes around Hirako, and halfway through releases a mist. While the bankai lasts Hirako is invulnerable and has only the cancel button. Every second everyone in the mist except Hirako (allies too) gets confuse"+"d: enemies look like allies and allies like enemies. On the first confusion a hero instantly uses a random ability on the nearest \"enemy\".|n|n|cFF00A5FF|nCast: 0.3 sec.|nMist: 1 sec. after the cast|nMist AoE: 1000|nMist duration: 6 sec.|nConfusion: 1.2 sec. (renewed every second)|nCooldown: 90 sec"+".|r")
 call LANG_A('SnTc',0,0,"Cancel Bankai (|cffffcc00T|r)")
