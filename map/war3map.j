@@ -128309,9 +128309,9 @@ loop
 exitwhen i>6
 if i==0 then
 // туман W — облако CloudOfFog в розовом (16 окт; было SmokeFuzzy, как у T)
-set fx=AddSpecialEffect("war3mapImported\\ElitePoisonCloud.mdl",x1,y1)
+set fx=AddSpecialEffect("Shinji2_MistW.mdx",x1,y1)
 else
-set fx=AddSpecialEffect("war3mapImported\\ElitePoisonCloud.mdl",x1+250*Cos(i*bj_PI/3),y1+250*Sin(i*bj_PI/3))
+set fx=AddSpecialEffect("Shinji2_MistW.mdx",x1+250*Cos(i*bj_PI/3),y1+250*Sin(i*bj_PI/3))
 endif
 call SetSpecialEffectScale(fx,1.2)
 call SetSpecialEffectVertexColour(fx,255,255,255,255)
@@ -129085,6 +129085,7 @@ local integer o
 local string os
 local integer tt
 local boolean ok=false
+local ability ab
 if cbP<0 or cbP>11 or Hero[cbP]!=e then
 call ShinjiDbg(GetUnitName(e)+": не герой слота "+I2S(cbP))
 set p=null
@@ -129135,16 +129136,32 @@ exitwhen i>=cnt
 set id=CBS_Ab[cbP*60+ModuloInteger(k+i,cnt)]
 // только данные типа способности (Game.dll+0xD6066 на 16 окт: CBS_QcOrd читал способность на герое — крит);
 // Channel — приказ из поля Ncl6 и тип цели из таблицы; другие — только видимые геройские способности (не предметы, ауры, инвентарь)
+//set o=0
+//if id!='SnT1' and GetUnitAbilityLevel(e,id)>0 then
+//set os=GetAbilityBaseStringLevelFieldById(id,ABILITY_SLF_BASE_ORDER_ID_NCL6,0)
+//// не Channel тоже даёт непустую строку, но приказ 0 (16 окт) — Channel только с настоящим приказом
+//if os!=null and os!="" and OrderId(os)!=0 then
+//set o=OrderId(os)
+//set tt=GetAbilityBaseIntegerLevelFieldById(id,ABILITY_ILF_TARGET_TYPE,0)
+//elseif ShinjiFcAbOk(e,id) then
+//// геройская не-Channel: приказ способности на герое, цель — пробуем юнит, точку, без цели
+//set o=GetAbilityOrderId(GetUnitAbility(e,id))
+//set tt=4
+//endif
+//endif
+// поля Channel (Ncl6, тип цели) — только у способностей с базой ANcl: у других это чтение мусора (крит Game.dll+0xD6066, 16 окт)
 set o=0
-if id!='SnT1' and GetUnitAbilityLevel(e,id)>0 then
-set os=GetAbilityBaseStringLevelFieldById(id,ABILITY_SLF_BASE_ORDER_ID_NCL6,0)
-// не Channel тоже даёт непустую строку, но приказ 0 (16 окт) — Channel только с настоящим приказом
-if os!=null and os!="" and OrderId(os)!=0 then
+set ab=GetUnitAbility(e,id)
+if id!='SnT1' and ab!=null and ShinjiFcAbOk(e,id) then
+if GetAbilityBaseTypeId(ab)=='ANcl' then
+set os=GetAbilityBaseStringLevelFieldById(id,ABILITY_SLF_BASE_ORDER_ID_NCL6,CBS_QcLv(e,id))
+if os!=null and os!="" then
 set o=OrderId(os)
-set tt=GetAbilityBaseIntegerLevelFieldById(id,ABILITY_ILF_TARGET_TYPE,0)
-elseif ShinjiFcAbOk(e,id) then
-// геройская не-Channel: приказ способности на герое, цель — пробуем юнит, точку, без цели
-set o=GetAbilityOrderId(GetUnitAbility(e,id))
+set tt=GetAbilityBaseIntegerLevelFieldById(id,ABILITY_ILF_TARGET_TYPE,CBS_QcLv(e,id))
+endif
+else
+// не Channel: приказ способности на герое, цель — пробуем юнит, точку, без цели
+set o=GetAbilityOrderId(ab)
 set tt=4
 endif
 endif
@@ -129170,13 +129187,25 @@ set i=0
 loop
 exitwhen ok or i>=cnt
 set id=CBS_Ab[cbP*60+ModuloInteger(k+i,cnt)]
+//set o=0
+//if id!='SnT1' and GetUnitAbilityLevel(e,id)>0 then
+//set os=GetAbilityBaseStringLevelFieldById(id,ABILITY_SLF_BASE_ORDER_ID_NCL6,0)
+//if os!=null and os!="" and OrderId(os)!=0 then
+//set o=OrderId(os)
+//elseif ShinjiFcAbOk(e,id) then
+//set o=GetAbilityOrderId(GetUnitAbility(e,id))
+//endif
+//endif
 set o=0
-if id!='SnT1' and GetUnitAbilityLevel(e,id)>0 then
-set os=GetAbilityBaseStringLevelFieldById(id,ABILITY_SLF_BASE_ORDER_ID_NCL6,0)
-if os!=null and os!="" and OrderId(os)!=0 then
+set ab=GetUnitAbility(e,id)
+if id!='SnT1' and ab!=null and ShinjiFcAbOk(e,id) then
+if GetAbilityBaseTypeId(ab)=='ANcl' then
+set os=GetAbilityBaseStringLevelFieldById(id,ABILITY_SLF_BASE_ORDER_ID_NCL6,CBS_QcLv(e,id))
+if os!=null and os!="" then
 set o=OrderId(os)
-elseif ShinjiFcAbOk(e,id) then
-set o=GetAbilityOrderId(GetUnitAbility(e,id))
+endif
+else
+set o=GetAbilityOrderId(ab)
 endif
 endif
 if o!=0 then
@@ -129190,6 +129219,7 @@ set i=i+1
 endloop
 endif
 call ShinjiDbg(GetUnitName(e)+": итог "+ShinjiB2S(ok)+", приказ сейчас "+I2S(GetUnitCurrentOrder(e)))
+set ab=null
 set t=null
 set c=null
 set p=null
@@ -129282,11 +129312,11 @@ if tk==10 then
 loop
 exitwhen i>18
 if i==0 then
-set fx=AddSpecialEffect("war3mapImported\\ElitePoisonCloud.mdl",x,y)
+set fx=AddSpecialEffect("Shinji2_MistT.mdx",x,y)
 elseif i<=6 then
-set fx=AddSpecialEffect("war3mapImported\\ElitePoisonCloud.mdl",x+450*Cos(i*bj_PI/3),y+450*Sin(i*bj_PI/3))
+set fx=AddSpecialEffect("Shinji2_MistT.mdx",x+450*Cos(i*bj_PI/3),y+450*Sin(i*bj_PI/3))
 else
-set fx=AddSpecialEffect("war3mapImported\\ElitePoisonCloud.mdl",x+850*Cos((i-7)*bj_PI/6),y+850*Sin((i-7)*bj_PI/6))
+set fx=AddSpecialEffect("Shinji2_MistT.mdx",x+850*Cos((i-7)*bj_PI/6),y+850*Sin((i-7)*bj_PI/6))
 endif
 call SetSpecialEffectScale(fx,2.4)
 call SetSpecialEffectVertexColour(fx,255,255,255,255) // фиолетовый (16 окт)
@@ -129300,10 +129330,10 @@ set i=0
 loop
 exitwhen i>3
 set ep=GetRandomInt(0,359)
-set fx=AddSpecialEffect("war3mapImported\\ElitePoisonCloud.mdl",x+GetRandomReal(0,950)*Cos(ep*bj_DEGTORAD),y+GetRandomReal(0,950)*Sin(ep*bj_DEGTORAD))
+set fx=AddSpecialEffect("Shinji2_MistT.mdx",x+GetRandomReal(0,950)*Cos(ep*bj_DEGTORAD),y+GetRandomReal(0,950)*Sin(ep*bj_DEGTORAD))
 call SetSpecialEffectScale(fx,GetRandomReal(2.,2.6))
 call SetSpecialEffectVertexColour(fx,255,255,255,255)
-call RemoveEffect(fx,1.8,true,CreateTimer())
+call RemoveEffect(fx,1.2,true,CreateTimer()) // было 1.8 (16 окт)
 set i=i+1
 endloop
 set i=0
@@ -129541,7 +129571,7 @@ set fx=null
 call SaveUnitHandle(h,GetHandleId(ShinjiDTimer()),0,u)
 loop
 exitwhen i>5
-set fx=AddSpecialEffect("war3mapImported\\ElitePoisonCloud.mdl",x+220*Cos(i*bj_PI/3),y+220*Sin(i*bj_PI/3))
+set fx=AddSpecialEffect("Shinji2_MistW.mdx",x+220*Cos(i*bj_PI/3),y+220*Sin(i*bj_PI/3))
 call SetSpecialEffectScale(fx,1.)
 call SetSpecialEffectVertexColour(fx,255,255,255,255)
 call RemoveEffect(fx,1.25,true,CreateTimer())
