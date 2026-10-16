@@ -127826,6 +127826,38 @@ endfunction
 // Цифры и описания — table/ability.ini (RU), table/en/ability.ini (EN). Модель и иконки временно Урахары.
 // Q — Сакаканаде: разрез. Мгновенное сюмпо к точке, урон (1..2)*AGI всем в 150 от пути.
 // Враг в тумане W (с меткой инверсии) получает удар со спины: +50% урона, эффект позади него.
+// сюмпо Хирако (16 окт): перенос после каста — таймер 0 с. SetUnitPosition прямо в SPELL_EFFECT прерывал каст до
+// списания маны и перезарядки (Q / F / G были без перезарядки). Взгляд — на точку tx / ty, anim — анимация атаки
+function ShinjiShunpoAct takes nothing returns nothing
+local timer t=GetExpiredTimer()
+local integer id=GetHandleId(t)
+local unit u=LoadUnitHandle(h,id,0)
+if UnitIsAlive(u) then
+call SetUnitPosition(u,LoadReal(h,id,1),LoadReal(h,id,2))
+call SetUnitFacing(u,bj_RADTODEG*Atan2(LoadReal(h,id,4)-GetUnitY(u),LoadReal(h,id,3)-GetUnitX(u)))
+if LoadBoolean(h,id,5) then
+call SetUnitAnimation(u,"attack")
+call QueueUnitAnimation(u,"stand")
+endif
+call DestroyEffect(AddSpecialEffect("FlashAura.mdl",GetUnitX(u),GetUnitY(u)))
+endif
+call FlushChildHashtable(h,id)
+call DestroyTimer(t)
+set u=null
+set t=null
+endfunction
+function ShinjiShunpo takes unit u,real x,real y,real tx,real ty,boolean anim returns nothing
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+call SaveUnitHandle(h,id,0,u)
+call SaveReal(h,id,1,x)
+call SaveReal(h,id,2,y)
+call SaveReal(h,id,3,tx)
+call SaveReal(h,id,4,ty)
+call SaveBoolean(h,id,5,anim)
+call TimerStart(t,0,false,function ShinjiShunpoAct)
+set t=null
+endfunction
 function ShinjiQCond takes nothing returns boolean
 return GetSpellAbilityId()=='SnQ1' and udg_B==true and GetUnitTypeId(GetTriggerUnit())=='HShn'
 endfunction
@@ -127878,11 +127910,12 @@ call GroupRemoveUnit(g,e)
 endloop
 call DestroyGroup(g)
 // сюмпо: SetUnitPosition сам сдвигает к ближайшей проходимой точке
-call SetUnitPosition(u,x1,y1)
-call SetUnitFacing(u,a*bj_RADTODEG)
-call SetUnitAnimation(u,"attack")
-call QueueUnitAnimation(u,"stand")
-call DestroyEffect(AddSpecialEffect("FlashAura.mdl",GetUnitX(u),GetUnitY(u)))
+//call SetUnitPosition(u,x1,y1)
+//call SetUnitFacing(u,a*bj_RADTODEG)
+//call SetUnitAnimation(u,"attack")
+//call QueueUnitAnimation(u,"stand")
+//call DestroyEffect(AddSpecialEffect("FlashAura.mdl",GetUnitX(u),GetUnitY(u)))
+call ShinjiShunpo(u,x1,y1,x1+100*Cos(a),y1+100*Sin(a),true)
 set g=null
 set p=null
 set u=null
@@ -128706,21 +128739,25 @@ loop
 exitwhen i>=cnt
 set id=CBS_Ab[cbP*60+ModuloInteger(k+i,cnt)]
 // только данные типа способности (Game.dll+0xD6066 на 16 окт: CBS_QcOrd читал способность на герое — крит);
-// приказ — поле Channel Ncl6, тип цели — из таблицы; не Channel — пропуск
+// Channel — приказ из поля Ncl6 и тип цели из таблицы; другие — только видимые геройские способности (не предметы, ауры, инвентарь)
 set o=0
 if id!='SnT1' and GetUnitAbilityLevel(e,id)>0 then
 set os=GetAbilityBaseStringLevelFieldById(id,ABILITY_SLF_BASE_ORDER_ID_NCL6,0)
 if os!=null and os!="" then
 set o=OrderId(os)
+set tt=GetAbilityBaseIntegerLevelFieldById(id,ABILITY_ILF_TARGET_TYPE,0)
+elseif GetAbilityBaseBooleanFieldById(id,ABILITY_BF_HERO_ABILITY) and not GetAbilityBaseBooleanFieldById(id,ABILITY_BF_ITEM_ABILITY) and IsUnitAbilityVisible(e,id) then
+// геройская не-Channel: приказ способности на герое, цель — пробуем юнит, точку, без цели
+set o=GetAbilityOrderId(GetUnitAbility(e,id))
+set tt=4
 endif
 endif
 if o!=0 then
-set tt=GetAbilityBaseIntegerLevelFieldById(id,ABILITY_ILF_TARGET_TYPE,0)
-if (tt==1 or tt==3) and IssueTargetOrderById(e,o,t) then
+if (tt==1 or tt==3 or tt==4) and IssueTargetOrderById(e,o,t) then
 set i=cnt
-elseif (tt==2 or tt==3) and IssuePointOrderById(e,o,GetUnitX(t),GetUnitY(t)) then
+elseif (tt==2 or tt==3 or tt==4) and IssuePointOrderById(e,o,GetUnitX(t),GetUnitY(t)) then
 set i=cnt
-elseif tt==0 and IssueImmediateOrderById(e,o) then
+elseif (tt==0 or tt==4) and IssueImmediateOrderById(e,o) then
 set i=cnt
 endif
 endif
@@ -129035,8 +129072,9 @@ call SaveUnitHandle(h,GetHandleId(t),0,u)
 call TimerStart(t,0,false,function ShinjiFCd)
 set t=null
 endif
-call SetUnitPosition(u,GetSpellTargetX(),GetSpellTargetY())
-call DestroyEffect(AddSpecialEffect("FlashAura.mdl",GetUnitX(u),GetUnitY(u)))
+//call SetUnitPosition(u,GetSpellTargetX(),GetSpellTargetY())
+//call DestroyEffect(AddSpecialEffect("FlashAura.mdl",GetUnitX(u),GetUnitY(u)))
+call ShinjiShunpo(u,GetSpellTargetX(),GetSpellTargetY(),2*GetSpellTargetX()-x,2*GetSpellTargetY()-y,false)
 set u=null
 endfunction
 function InitTrig_ShinjiF takes nothing returns nothing
@@ -129056,10 +129094,11 @@ local unit c=GetSpellTargetUnit()
 local real f=GetUnitFacing(c)*bj_DEGTORAD+bj_PI
 local real dmg=3*GetHeroAgi(u,true)+0.15*(GetUnitState(c,UNIT_STATE_MAX_LIFE)-GetWidgetLife(c)) // 3*AGI + 15% (16 окт; было 2*AGI + 25%)
 call DestroyEffect(AddSpecialEffect("FlashAura.mdl",GetUnitX(u),GetUnitY(u)))
-call SetUnitPosition(u,GetUnitX(c)+100*Cos(f),GetUnitY(c)+100*Sin(f))
-call SetUnitFacing(u,bj_RADTODEG*Atan2(GetUnitY(c)-GetUnitY(u),GetUnitX(c)-GetUnitX(u)))
-call SetUnitAnimation(u,"attack")
-call QueueUnitAnimation(u,"stand")
+//call SetUnitPosition(u,GetUnitX(c)+100*Cos(f),GetUnitY(c)+100*Sin(f))
+//call SetUnitFacing(u,bj_RADTODEG*Atan2(GetUnitY(c)-GetUnitY(u),GetUnitX(c)-GetUnitX(u)))
+//call SetUnitAnimation(u,"attack")
+//call QueueUnitAnimation(u,"stand")
+call ShinjiShunpo(u,GetUnitX(c)+100*Cos(f),GetUnitY(c)+100*Sin(f),GetUnitX(c),GetUnitY(c),true)
 if Condition_Base(OwnerOf(u),c) then
 call myCustomDamage(u,c,dmg,false,false,null,null,null)
 call DestroyEffect(AddSpecialEffectTarget("Abilities\\Spells\\Orc\\Disenchant\\DisenchantSpecialArt.mdl",c,"chest"))
