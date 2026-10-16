@@ -127809,7 +127809,7 @@ if LoadReal(HH,GetHandleId(e),SH_ShnInv)>TimerGetElapsed(ShnClock) then
 // в тумане W удар приходит со спины
 set ea=GetUnitFacing(e)*bj_DEGTORAD+bj_PI
 call DestroyEffect(AddSpecialEffect("Abilities\\Spells\\Orc\\Disenchant\\DisenchantSpecialArt.mdl",ex+60*Cos(ea),ey+60*Sin(ea)))
-call myCustomDamage(u,e,dmg*1.5,false,false,null,null,null)
+call myCustomDamage(u,e,dmg+GetHeroAgi(u,true),false,false,null,null,null) // со спины: +1*AGI (16 окт; было +50%)
 else
 call myCustomDamage(u,e,dmg,false,false,null,null,null)
 endif
@@ -282589,13 +282589,13 @@ call LANG_A('SnQ1',0,1,"Sakanade: Slash, [|cffffcc00Level 2|r] (|cffffcc00Q|r)")
 call LANG_A('SnQ1',0,2,"Sakanade: Slash, [|cffffcc00Level 3|r] (|cffffcc00Q|r)")
 call LANG_A('SnQ1',0,3,"Sakanade: Slash, [|cffffcc00Level 4|r] (|cffffcc00Q|r)")
 call LANG_A('SnQ1',0,4,"Sakanade: Slash, [|cffffcc00Level 5|r] (|cffffcc00Q|r)")
-call LANG_A('SnQ1',1,0,"Shunpo to a point, slashing everyone on the way. A target standing in the W mist is hit from behind for more damage.|n|n|cFF00A5FF|nDamage: 75 + 2\\3\\4\\5\\6*|r|c003CFF3CAGI|r|cFF00A5FF|nHit from behind in the mist: +50% damage|nRange: 700|nCooldown: 12 sec.|r")
-call LANG_A('SnQ1',1,1,"Shunpo to a point, slashing everyone on the way. A target standing in the W mist is hit from behind for more damage.|n|n|cFF00A5FF|nDamage: 75 + 2\\3\\4\\5\\6*|r|c003CFF3CAGI|r|cFF00A5FF|nHit from behind in the mist: +50% damage|nRange: 700|nCooldown: 12 sec.|r")
-call LANG_A('SnQ1',1,2,"Shunpo to a point, slashing everyone on the way. A target standing in the W mist is hit from behind for more damage.|n|n|cFF00A5FF|nDamage: 75 + 2\\3\\4\\5\\6*|r|c003CFF3CAGI|r|cFF00A5FF|nHit from behind in the mist: +50% damage|nRange: 700|nCooldown: 12 sec.|r")
-call LANG_A('SnQ1',1,3,"Shunpo to a point, slashing everyone on the way. A target standing in the W mist is hit from behind for more damage.|n|n|cFF00A5FF|nDamage: 75 + 2\\3\\4\\5\\6*|r|c003CFF3CAGI|r|cFF00A5FF|nHit from behind in the mist: +50% damage|nRange: 700|nCooldown: 12 sec.|r")
-call LANG_A('SnQ1',1,4,"Shunpo to a point, slashing everyone on the way. A target standing in the W mist is hit from behind for more damage.|n|n|cFF00A5FF|nDamage: 75 + 2\\3\\4\\5\\6*|r|c003CFF3CAGI|r|cFF00A5FF|nHit from behind in the mist: +50% damage|nRange: 700|nCooldown: 12 sec.|r")
+call LANG_A('SnQ1',1,0,"Shunpo to a point, slashing everyone on the way. A target standing in the W mist is hit from behind for more damage.|n|n|cFF00A5FF|nDamage: 75 + 2\\3\\4\\5\\6*|r|c003CFF3CAGI|r|cFF00A5FF|nHit from behind in the mist: +1*|r|c003CFF3CAGI|r|cFF00A5FF damage|nRange: 700|nCooldown: 12 sec.|r")
+call LANG_A('SnQ1',1,1,"Shunpo to a point, slashing everyone on the way. A target standing in the W mist is hit from behind for more damage.|n|n|cFF00A5FF|nDamage: 75 + 2\\3\\4\\5\\6*|r|c003CFF3CAGI|r|cFF00A5FF|nHit from behind in the mist: +1*|r|c003CFF3CAGI|r|cFF00A5FF damage|nRange: 700|nCooldown: 12 sec.|r")
+call LANG_A('SnQ1',1,2,"Shunpo to a point, slashing everyone on the way. A target standing in the W mist is hit from behind for more damage.|n|n|cFF00A5FF|nDamage: 75 + 2\\3\\4\\5\\6*|r|c003CFF3CAGI|r|cFF00A5FF|nHit from behind in the mist: +1*|r|c003CFF3CAGI|r|cFF00A5FF damage|nRange: 700|nCooldown: 12 sec.|r")
+call LANG_A('SnQ1',1,3,"Shunpo to a point, slashing everyone on the way. A target standing in the W mist is hit from behind for more damage.|n|n|cFF00A5FF|nDamage: 75 + 2\\3\\4\\5\\6*|r|c003CFF3CAGI|r|cFF00A5FF|nHit from behind in the mist: +1*|r|c003CFF3CAGI|r|cFF00A5FF damage|nRange: 700|nCooldown: 12 sec.|r")
+call LANG_A('SnQ1',1,4,"Shunpo to a point, slashing everyone on the way. A target standing in the W mist is hit from behind for more damage.|n|n|cFF00A5FF|nDamage: 75 + 2\\3\\4\\5\\6*|r|c003CFF3CAGI|r|cFF00A5FF|nHit from behind in the mist: +1*|r|c003CFF3CAGI|r|cFF00A5FF damage|nRange: 700|nCooldown: 12 sec.|r")
 call LANG_A('SnQ1',2,0,"Sakanade: Slash, [|cffffcc00Level %d|r] (|cffffcc00Q|r)")
-call LANG_A('SnQ1',3,0,"Shunpo to a point, slashing everyone on the way. A target standing in the W mist is hit from behind for more damage.|n|n|cFF00A5FF|nDamage: 75 + 2\\3\\4\\5\\6*|r|c003CFF3CAGI|r|cFF00A5FF|nHit from behind in the mist: +50% damage|nRange: 700|nCooldown: 12 sec.|r")
+call LANG_A('SnQ1',3,0,"Shunpo to a point, slashing everyone on the way. A target standing in the W mist is hit from behind for more damage.|n|n|cFF00A5FF|nDamage: 75 + 2\\3\\4\\5\\6*|r|c003CFF3CAGI|r|cFF00A5FF|nHit from behind in the mist: +1*|r|c003CFF3CAGI|r|cFF00A5FF damage|nRange: 700|nCooldown: 12 sec.|r")
 call LANG_A('SnW1',0,0,"Sakanade: Inverted World, [|cffffcc00Level 1|r] (|cffffcc00W|r)")
 call LANG_A('SnW1',0,1,"Sakanade: Inverted World, [|cffffcc00Level 2|r] (|cffffcc00W|r)")
 call LANG_A('SnW1',0,2,"Sakanade: Inverted World, [|cffffcc00Level 3|r] (|cffffcc00W|r)")
