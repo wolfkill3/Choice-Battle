@@ -128211,12 +128211,12 @@ loop
 exitwhen i>6
 if i==0 then
 // туман W — облако CloudOfFog в розовом (16 окт; было SmokeFuzzy, как у T)
-set fx=AddSpecialEffect("Abilities\\Spells\\Human\\CloudOfFog\\CloudOfFog.mdl",x1,y1)
+set fx=AddSpecialEffect("war3mapImported\\ElitePoisonCloud.mdl",x1,y1)
 else
-set fx=AddSpecialEffect("Abilities\\Spells\\Human\\CloudOfFog\\CloudOfFog.mdl",x1+250*Cos(i*bj_PI/3),y1+250*Sin(i*bj_PI/3))
+set fx=AddSpecialEffect("war3mapImported\\ElitePoisonCloud.mdl",x1+250*Cos(i*bj_PI/3),y1+250*Sin(i*bj_PI/3))
 endif
-call SetSpecialEffectScale(fx,1.3)
-call SetSpecialEffectVertexColour(fx,255,150,220,220)
+call SetSpecialEffectScale(fx,1.2)
+call SetSpecialEffectVertexColour(fx,255,255,255,255)
 call SaveEffectHandle(h,id,10+i,fx)
 set i=i+1
 endloop
@@ -129181,27 +129181,27 @@ if tk==10 then
 loop
 exitwhen i>18
 if i==0 then
-set fx=AddSpecialEffect("Hashirama\\SmokeFuzzy.mdl",x,y)
+set fx=AddSpecialEffect("war3mapImported\\ElitePoisonCloud.mdl",x,y)
 elseif i<=6 then
-set fx=AddSpecialEffect("Hashirama\\SmokeFuzzy.mdl",x+450*Cos(i*bj_PI/3),y+450*Sin(i*bj_PI/3))
+set fx=AddSpecialEffect("war3mapImported\\ElitePoisonCloud.mdl",x+450*Cos(i*bj_PI/3),y+450*Sin(i*bj_PI/3))
 else
-set fx=AddSpecialEffect("Hashirama\\SmokeFuzzy.mdl",x+850*Cos((i-7)*bj_PI/6),y+850*Sin((i-7)*bj_PI/6))
+set fx=AddSpecialEffect("war3mapImported\\ElitePoisonCloud.mdl",x+850*Cos((i-7)*bj_PI/6),y+850*Sin((i-7)*bj_PI/6))
 endif
-call SetSpecialEffectScale(fx,2.5)
-call SetSpecialEffectVertexColour(fx,120,40,255,200) // фиолетовый (16 окт)
+call SetSpecialEffectScale(fx,2.4)
+call SetSpecialEffectVertexColour(fx,255,255,255,255) // фиолетовый (16 окт)
 call SaveEffectHandle(h,id,10+i,fx)
 set i=i+1
 endloop
 endif
-// клубы тумана, пока банкай активен: раз в 0.3 с — 3 клуба в случайных точках круга 1000, живут 1.8 с (16 окт)
+// клубы тумана, пока банкай активен: раз в 0.3 с — 4 клуба (яд Маюри, сильнее, чем на W / D) в случайных точках круга 1000, живут 1.8 с (16 окт)
 if tk>=10 and ModuloInteger(tk,3)==0 then
 set i=0
 loop
-exitwhen i>2
+exitwhen i>3
 set ep=GetRandomInt(0,359)
-set fx=AddSpecialEffect("Hashirama\\SmokeFuzzy.mdl",x+GetRandomReal(0,950)*Cos(ep*bj_DEGTORAD),y+GetRandomReal(0,950)*Sin(ep*bj_DEGTORAD))
-call SetSpecialEffectScale(fx,GetRandomReal(1.6,2.4))
-call SetSpecialEffectVertexColour(fx,120,40,255,170)
+set fx=AddSpecialEffect("war3mapImported\\ElitePoisonCloud.mdl",x+GetRandomReal(0,950)*Cos(ep*bj_DEGTORAD),y+GetRandomReal(0,950)*Sin(ep*bj_DEGTORAD))
+call SetSpecialEffectScale(fx,GetRandomReal(2.,2.6))
+call SetSpecialEffectVertexColour(fx,255,255,255,255)
 call RemoveEffect(fx,1.8,true,CreateTimer())
 set i=i+1
 endloop
@@ -129361,15 +129361,23 @@ set fx=null
 set u=null
 set t=null
 endfunction
+// вращение из кода (позиция / поворот эффекта каждый тик) меч не показывало — заменено моделью Shinji2_ShikaiSpin (16 окт)
+//function ShinjiDSpinStart takes unit u returns nothing
+//local timer t=CreateTimer()
+//local effect fx=AddSpecialEffect("Shinji2_Shikai.mdx",GetUnitX(u)+100,GetUnitY(u))
+//call SetSpecialEffectScale(fx,0.65)
+//call SaveUnitHandle(h,GetHandleId(t),0,u)
+//call SaveEffectHandle(h,GetHandleId(t),1,fx)
+//call TimerStart(t,0.02,true,function ShinjiDSpin)
+//set fx=null
+//set t=null
+//endfunction
+// D: Сакаканаде крутится вокруг Хирако за кольцо — модель Shinji2_ShikaiSpin (меч плашмя, оборот за 0.3 с), 0.6 с
 function ShinjiDSpinStart takes unit u returns nothing
-local timer t=CreateTimer()
-local effect fx=AddSpecialEffect("Shinji2_Shikai.mdx",GetUnitX(u)+100,GetUnitY(u))
+local effect fx=AddSpecialEffect("Shinji2_ShikaiSpin.mdx",GetUnitX(u),GetUnitY(u))
 call SetSpecialEffectScale(fx,0.65)
-call SaveUnitHandle(h,GetHandleId(t),0,u)
-call SaveEffectHandle(h,GetHandleId(t),1,fx)
-call TimerStart(t,0.02,true,function ShinjiDSpin)
+call RemoveEffect(fx,0.6,false,CreateTimer())
 set fx=null
-set t=null
 endfunction
 function ShinjiDCast takes nothing returns nothing
 local unit u=GetTriggerUnit()
@@ -129386,9 +129394,9 @@ call QueueUnitAnimation(u,"stand")
 call ShinjiDSpinStart(u)
 loop
 exitwhen i>5
-set fx=AddSpecialEffect("Abilities\\Spells\\Human\\CloudOfFog\\CloudOfFog.mdl",x+220*Cos(i*bj_PI/3),y+220*Sin(i*bj_PI/3))
-call SetSpecialEffectScale(fx,0.9)
-call SetSpecialEffectVertexColour(fx,255,150,220,220)
+set fx=AddSpecialEffect("war3mapImported\\ElitePoisonCloud.mdl",x+220*Cos(i*bj_PI/3),y+220*Sin(i*bj_PI/3))
+call SetSpecialEffectScale(fx,1.)
+call SetSpecialEffectVertexColour(fx,255,255,255,255)
 call RemoveEffect(fx,1.25,true,CreateTimer())
 set i=i+1
 endloop
