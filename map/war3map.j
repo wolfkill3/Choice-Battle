@@ -129341,7 +129341,7 @@ local integer tk=LoadInteger(h,id,2)+1
 local real ang=tk*36.
 call SaveInteger(h,id,2,tk)
 if tk<=30 and UnitIsAlive(u) then
-call SetSpecialEffectPosition(fx,GetUnitX(u)+100*Cos(ang*bj_DEGTORAD),GetUnitY(u)+100*Sin(ang*bj_DEGTORAD),GetUnitFlyHeight(u)+GetTerrainZ(GetUnitX(u),GetUnitY(u))+60)
+call SetSpecialEffectPositionWithZ(fx,GetUnitX(u)+100*Cos(ang*bj_DEGTORAD),GetUnitY(u)+100*Sin(ang*bj_DEGTORAD),GetUnitFlyHeight(u)+GetTerrainZ(GetUnitX(u),GetUnitY(u))+60)
 call SetSpecialEffectOrientation(fx,ang+90.,0.,90.)
 else
 call DestroyEffect(fx)
