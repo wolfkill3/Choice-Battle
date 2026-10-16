@@ -128960,6 +128960,15 @@ function ShinjiDbgToggle takes nothing returns nothing
 set ShnDbg=not ShnDbg
 call DisplayTimedTextToPlayer(GetLocalPlayer(),0,0,5,"shndbg: "+ShinjiB2S(ShnDbg))
 endfunction
+// способность для принудительного каста (16 окт): кнопка в рядах способностей героя (Q W E R — ряд 2, D F G T — ряд 1),
+// видна и изучена; инвентарь, атака, движение — нет. Поле «геройская способность» по типу всегда давало «нет»
+function ShinjiFcAbOk takes unit e,integer id returns boolean
+local integer by=GetAbilityBaseIntegerFieldById(id,ABILITY_IF_BUTTON_POSITION_NORMAL_Y)
+if id=='AInv' or id=='Aatk' or id=='Amov' or id=='Ahar' or id=='Aloc' then
+return false
+endif
+return (by==1 or by==2) and IsUnitAbilityVisible(e,id) and GetUnitAbilityLevel(e,id)>0
+endfunction
 function ShinjiForceCast takes unit e returns boolean
 local integer cbP=CBS_Me(PId(OwnerOf(e)))
 local player p=OwnerOf(e)
@@ -129032,7 +129041,7 @@ set os=GetAbilityBaseStringLevelFieldById(id,ABILITY_SLF_BASE_ORDER_ID_NCL6,0)
 if os!=null and os!="" then
 set o=OrderId(os)
 set tt=GetAbilityBaseIntegerLevelFieldById(id,ABILITY_ILF_TARGET_TYPE,0)
-elseif GetAbilityBaseBooleanFieldById(id,ABILITY_BF_HERO_ABILITY) and not GetAbilityBaseBooleanFieldById(id,ABILITY_BF_ITEM_ABILITY) and IsUnitAbilityVisible(e,id) then
+elseif ShinjiFcAbOk(e,id) then
 // геройская не-Channel: приказ способности на герое, цель — пробуем юнит, точку, без цели
 set o=GetAbilityOrderId(GetUnitAbility(e,id))
 set tt=4
@@ -129065,7 +129074,7 @@ if id!='SnT1' and GetUnitAbilityLevel(e,id)>0 then
 set os=GetAbilityBaseStringLevelFieldById(id,ABILITY_SLF_BASE_ORDER_ID_NCL6,0)
 if os!=null and os!="" then
 set o=OrderId(os)
-elseif GetAbilityBaseBooleanFieldById(id,ABILITY_BF_HERO_ABILITY) and not GetAbilityBaseBooleanFieldById(id,ABILITY_BF_ITEM_ABILITY) and IsUnitAbilityVisible(e,id) then
+elseif ShinjiFcAbOk(e,id) then
 set o=GetAbilityOrderId(GetUnitAbility(e,id))
 endif
 endif
