@@ -46211,7 +46211,7 @@ if cmb!=true then
         call IH('HFla',u,"ReplaceableTextures\\CommandButtons\\BTNFlandreScarletHero.blp")
 //Flandre1end
 //Shinji1start
-        call IH('HShn',u,"ReplaceableTextures\\CommandButtons\\BTNUrahara.blp") // временно иконка Урахары
+        call IH('HShn',u,"ReplaceableTextures\\CommandButtons\\BTNShinjiHero.blp")
 //Shinji1end
 //Escanor1start
         call IH('HEsc',u,"ReplaceableTextures\\CommandButtons\\BTNEscanorHero.blp")
@@ -283537,7 +283537,7 @@ call LANG_U('HFla',3,"Flandre Scarlet — Remilia's younger sister from Touhou P
 call LANG_U('hB1W',0,"Flandre's Clone")
 call LANG_U('HRem',3,"Remilia Scarlet — a 500-year-old vampire, mistress of the Scarlet Devil Mansion from Touhou Project and Flandre's older sister. She controls fate.|n(Abilities and effects ported from the Chinese map bof, by AlTrOn)|n|nRole: Caster, Disabler.|n")
 call LANG_U('HSui',3,"Suigintou — the first doll of Rozen Maiden: black wings, a rapier and the mirror world N.|n(Abilities and effects ported from the Chinese map bof, by AlTrOn)|n|nRole: Carry, Nuker, Disabler.|n")
-call LANG_U('HShn',3,"Hirako Shinji, captain of the 5th Division and a Visored from Bleach. Sakanade turns the enemy's world upside down, and the Hollow mask gives him a Hollow's power.|n(3.7.10 framework: Urahara model and icons for now)|n|nRole: Carry, Disabler.|n")
+call LANG_U('HShn',3,"Hirako Shinji, captain of the 5th Division and a Visored from Bleach. Sakanade turns the enemy's world upside down, and the Hollow mask gives him a Hollow's power.|n(Ability icons are Urahara's for now)|n|nRole: Carry, Disabler.|n")
 call LANG_B('BRRV',0,"Rain Aura")
 call LANG_B('BRRV',1,"Aura of rain.")
 call LANG_B('BMUR',0,"Wood Dragon")
@@ -283675,6 +283675,8 @@ call LANG_B('B06H',1,"Armor reduced.")
 call LANG_B('B06L',1,"This warrior is under the spell ''Thrice-setting Sunf''. His defense and attack power is well above the norm.")
 call LANG_B('B06M',1,"This warrior is in a state of invisibility.")
 call LANG_B('B06N',1,"Unit is within the range of Jeanne's banner, it gains increased attack power, general resistance and melee lifesteal")
+call LANG_B('B06R',0,"Lord Camelot|nCastle of the Distant Utopia")
+call LANG_B('B06R',1,"Lord Camelot|nCastle of the Distant Utopia")
 call LANG_B('B06X',1,"This character can be saved by the Clock.")
 call LANG_B('B070',0,"Quincy Set")
 call LANG_B('B070',1,"Quincy Set")
