@@ -129418,22 +129418,77 @@ endfunction
 function ShinjiGCond takes nothing returns boolean
 return GetSpellAbilityId()=='SnG1' and udg_B==true and GetUnitTypeId(GetTriggerUnit())=='HShn'
 endfunction
+// G до 16 окт (вечер): урон сразу, два эффекта на груди
+//function ShinjiGCast takes nothing returns nothing
+//local unit u=GetTriggerUnit()
+//local unit c=GetSpellTargetUnit()
+//local real f=GetUnitFacing(c)*bj_DEGTORAD+bj_PI
+//local real dmg=3*GetHeroAgi(u,true)+0.15*(GetUnitState(c,UNIT_STATE_MAX_LIFE)-GetWidgetLife(c)) // 3*AGI + 15% (16 окт; было 2*AGI + 25%)
+//call DestroyEffect(AddSpecialEffect("FlashAura.mdl",GetUnitX(u),GetUnitY(u)))
+////call SetUnitPosition(u,GetUnitX(c)+100*Cos(f),GetUnitY(c)+100*Sin(f))
+////call SetUnitFacing(u,bj_RADTODEG*Atan2(GetUnitY(c)-GetUnitY(u),GetUnitX(c)-GetUnitX(u)))
+////call SetUnitAnimation(u,"attack")
+////call QueueUnitAnimation(u,"stand")
+//call ShinjiShunpo(u,GetUnitX(c)+100*Cos(f),GetUnitY(c)+100*Sin(f),GetUnitX(c),GetUnitY(c),true)
+//if Condition_Base(OwnerOf(u),c) then
+//call myCustomDamage(u,c,dmg,false,false,null,null,null)
+//call DestroyEffect(AddSpecialEffectTarget("Abilities\\Spells\\Orc\\Disenchant\\DisenchantSpecialArt.mdl",c,"chest"))
+//call DestroyEffect(AddSpecialEffectTarget("war3mapImported\\SlashEffectRed by Deckai.mdx",c,"chest"))
+//endif
+//set c=null
+//set u=null
+//endfunction
+// G (16 окт, вечер): розовые клубы вокруг цели — Хирако исчезает и через сюмпо встаёт за спиной, через 0.15 с —
+// многослойный разрез; урон тот же (3*AGI + 15% недостающего здоровья), в момент удара
+function ShinjiGStrike takes nothing returns nothing
+local timer t=GetExpiredTimer()
+local integer id=GetHandleId(t)
+local unit u=LoadUnitHandle(h,id,0)
+local unit c=LoadUnitHandle(h,id,1)
+local real a
+local effect fx
+if UnitIsAlive(u) and UnitIsAlive(c) and Condition_Base(OwnerOf(u),c) then
+set a=Atan2(GetUnitY(c)-GetUnitY(u),GetUnitX(c)-GetUnitX(u))
+call myCustomDamage(u,c,3*GetHeroAgi(u,true)+0.15*(GetUnitState(c,UNIT_STATE_MAX_LIFE)-GetWidgetLife(c)),false,false,null,null,null)
+set fx=AddSpecialEffect("3DMGslash_Red.mdl",GetUnitX(c),GetUnitY(c))
+call SetSpecialEffectYaw(fx,a*bj_RADTODEG)
+call SetSpecialEffectZ(fx,60)
+call DestroyEffect(fx)
+call DestroyEffect(AddSpecialEffectTarget("war3mapImported\\SlashEffectRed by Deckai.mdx",c,"chest"))
+call DestroyEffect(AddSpecialEffectTarget("SwordSlash1.mdx",c,"chest"))
+call DestroyEffect(AddSpecialEffectTarget("Abilities\\Spells\\Orc\\Disenchant\\DisenchantSpecialArt.mdl",c,"chest"))
+call DestroyEffect(AddSpecialEffectTarget("Objects\\Spawnmodels\\Human\\HumanBlood\\HumanBloodFootman.mdl",c,"chest"))
+endif
+call FlushChildHashtable(h,id)
+call DestroyTimer(t)
+set fx=null
+set c=null
+set u=null
+set t=null
+endfunction
 function ShinjiGCast takes nothing returns nothing
 local unit u=GetTriggerUnit()
 local unit c=GetSpellTargetUnit()
 local real f=GetUnitFacing(c)*bj_DEGTORAD+bj_PI
-local real dmg=3*GetHeroAgi(u,true)+0.15*(GetUnitState(c,UNIT_STATE_MAX_LIFE)-GetWidgetLife(c)) // 3*AGI + 15% (16 окт; было 2*AGI + 25%)
+local timer t=CreateTimer()
+local integer i=0
+local effect fx
 call DestroyEffect(AddSpecialEffect("FlashAura.mdl",GetUnitX(u),GetUnitY(u)))
-//call SetUnitPosition(u,GetUnitX(c)+100*Cos(f),GetUnitY(c)+100*Sin(f))
-//call SetUnitFacing(u,bj_RADTODEG*Atan2(GetUnitY(c)-GetUnitY(u),GetUnitX(c)-GetUnitX(u)))
-//call SetUnitAnimation(u,"attack")
-//call QueueUnitAnimation(u,"stand")
+// перевёрнутый мир вокруг цели: 6 розовых клубов
+loop
+exitwhen i>5
+set fx=AddSpecialEffect("Hashirama\\SmokeFuzzy.mdl",GetUnitX(c)+150*Cos(i*bj_PI/3),GetUnitY(c)+150*Sin(i*bj_PI/3))
+call SetSpecialEffectScale(fx,1.2)
+call SetSpecialEffectVertexColour(fx,255,140,210,170)
+call RemoveEffect(fx,0.8,true,CreateTimer())
+set i=i+1
+endloop
 call ShinjiShunpo(u,GetUnitX(c)+100*Cos(f),GetUnitY(c)+100*Sin(f),GetUnitX(c),GetUnitY(c),true)
-if Condition_Base(OwnerOf(u),c) then
-call myCustomDamage(u,c,dmg,false,false,null,null,null)
-call DestroyEffect(AddSpecialEffectTarget("Abilities\\Spells\\Orc\\Disenchant\\DisenchantSpecialArt.mdl",c,"chest"))
-call DestroyEffect(AddSpecialEffectTarget("war3mapImported\\SlashEffectRed by Deckai.mdx",c,"chest"))
-endif
+call SaveUnitHandle(h,GetHandleId(t),0,u)
+call SaveUnitHandle(h,GetHandleId(t),1,c)
+call TimerStart(t,0.15,false,function ShinjiGStrike)
+set fx=null
+set t=null
 set c=null
 set u=null
 endfunction
