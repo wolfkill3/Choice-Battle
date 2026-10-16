@@ -2304,6 +2304,14 @@ constant integer SH_ShnMask=StringHash("ShnMask")
 constant integer SH_ShnMaskDmg=StringHash("ShnMaskDmg")
 constant integer SH_ShnBank=StringHash("ShnBank")
 constant integer SH_ShnBankSrc=StringHash("ShnBankSrc")
+// Хирако T (16 окт): каст завершён (отмена до 0.5 c — возврат), номер каста, при котором юнит уже получил дебафф
+constant integer SH_ShnTDone=StringHash("ShnTDone")
+constant integer SH_ShnConfCast=StringHash("ShnConfCast")
+// путаница банкая по игрокам 0..11: включена, до какого времени ShnClock; снимок союзов (PASSIVE) на момент первой путаницы
+boolean array ShnConfOn
+real array ShnConfEnd
+boolean array ShnAllySnap
+integer ShnConfN=0
 boolean JT_Any=false // хоть один судья сейчас занимает место (-take): без этого обёртки — сразу натив
 hashtable JT_RegHT=null // @538AB@0F88 A>1KB89 N=8B>2 AC4LO< (TRPUE): B@8335@ � A>1KB85 � 83@>:
 boolean LANG_EN=false // язык интерфейса у локального игрока (LANG_Init, -en / -ru)
@@ -4806,10 +4814,10 @@ function myCustomHeal2 takes unit target, real amount returns real
     if currentHeal<0 then
         set currentHeal=0
     endif
-    // Хирако T: лечение противника в зоне банкая уходит команде Хирако
-    if ShinjiBankaiHeal(target,currentHeal) then
-        set currentHeal=0
-    endif
+    // Хирако T: лечение противника в зоне банкая уходило команде Хирако — заменено путаницей союзов (16 окт)
+    //if ShinjiBankaiHeal(target,currentHeal) then
+    //    set currentHeal=0
+    //endif
 
     return currentHeal
 
@@ -65173,11 +65181,12 @@ if nb>0 and suid=='HShn' and LoadBoolean(HH,cid,SH_ShnMask) then
     set nb=nb*(1+LoadReal(HH,cid,SH_ShnMaskDmg))
 endif
 // Хирако T: банкай — 40% урона любого из зоны (кроме Хирако) по противнику уходит ближайшему союзнику атакующего
-if nb>0 and c!=null and LoadReal(HH,cid,SH_ShnBank)>TimerGetElapsed(ShnClock) and isTargetEnemy then
-    if ShinjiBankaiRedirect(c,u,nb*0.4) then
-        set nb=nb*0.6
-    endif
-endif
+// заменено путаницей союзов (16 окт)
+//if nb>0 and c!=null and LoadReal(HH,cid,SH_ShnBank)>TimerGetElapsed(ShnClock) and isTargetEnemy then
+//    if ShinjiBankaiRedirect(c,u,nb*0.4) then
+//        set nb=nb*0.6
+//    endif
+//endif
 //Shinji1end
 if nb>l and (duid=='H03T' or duid=='H03W' or duid=='H03S' or duid=='H03V' or duid=='H03U') and LoadBoolean(h,GetHandleId(Hero[idu]),SH_alive)==true then // скобки (12 окт): фейковая смерть путей Pain — только при смертельном уроне
     call SetUnitInvulnerable(u,true)
@@ -127939,7 +127948,9 @@ call SaveReal(HH,GetHandleId(u),SH_ShnMaskDmg,0.25+0.05*lv)
 call UnitAddAbility(u,'SnEa')
 call SetUnitAbilityLevel(u,'SnEa',lv)
 call DestroyEffect(AddSpecialEffectTarget("Abilities\\Spells\\Undead\\DeathPact\\DeathPactTarget.mdl",u,"origin"))
-call SaveEffectHandle(h,id,5,AddSpecialEffectTarget("Abilities\\Spells\\Orc\\Bloodlust\\BloodlustTarget.mdl",u,"head"))
+//call SaveEffectHandle(h,id,5,AddSpecialEffectTarget("Abilities\\Spells\\Orc\\Bloodlust\\BloodlustTarget.mdl",u,"head"))
+// маска пустого — модель Shinji2_Mask (начало координат модели — точка head героя Shinji2)
+call SaveEffectHandle(h,id,5,AddSpecialEffectTarget("Shinji2_Mask.mdx",u,"head"))
 call TimerStart(t,0.1,true,function ShinjiECast2)
 set t=null
 set u=null
@@ -128029,74 +128040,340 @@ call TriggerAddCondition(t,Condition(function ShinjiRCond))
 call TriggerAddAction(t,function ShinjiRCast)
 set t=null
 endfunction
-// T — банкай Сакасима Ёкосима Хаппо Фусагари: 6 с зона 700 вокруг Хирако. Всем в зоне, кроме самого Хирако
-// (и союзникам тоже), — метка SH_ShnBank (время конца по ShnClock); 40% их урона по противникам уходит ближайшему их союзнику (ShinjiBankaiRedirect
-// в обработчике урона). Раз в секунду — розовое кольцо по краю зоны.
+// T (старый вариант 3.7.10, заменён 16 окт)
+//// T — банкай Сакасима Ёкосима Хаппо Фусагари: 6 с зона 700 вокруг Хирако. Всем в зоне, кроме самого Хирако
+//// (и союзникам тоже), — метка SH_ShnBank (время конца по ShnClock); 40% их урона по противникам уходит ближайшему их союзнику (ShinjiBankaiRedirect
+//// в обработчике урона). Раз в секунду — розовое кольцо по краю зоны.
+//function ShinjiTCond takes nothing returns boolean
+//return GetSpellAbilityId()=='SnT1' and udg_B==true and GetUnitTypeId(GetTriggerUnit())=='HShn'
+//endfunction
+//function ShinjiTCast2 takes nothing returns nothing
+//local timer t=GetExpiredTimer()
+//local integer id=GetHandleId(t)
+//local unit u=LoadUnitHandle(h,id,0)
+//local player p=OwnerOf(u)
+//local real x=GetUnitX(u)
+//local real y=GetUnitY(u)
+//local real time=LoadReal(h,id,3)
+//local integer i=0
+//local effect fx
+//call SaveReal(h,id,3,time+0.05)
+//if time<LoadReal(h,id,4) and UnitIsAlive(u) and udg_B==true then
+//call GroupEnumUnitsInRange(G,x,y,700,Base)
+//loop
+//set E=FirstOfGroup(G)
+//exitwhen E==null
+//if E!=u and not IsUnitType(E,UNIT_TYPE_STRUCTURE) and GetUnitAbilityLevel(E,'Aloc')==0 and 'dumm'!=GetUnitTypeId(E) and 'cdm1'!=GetUnitTypeId(E) then
+//call SaveReal(HH,GetHandleId(E),SH_ShnBank,TimerGetElapsed(ShnClock)+0.15)
+//call SaveUnitHandle(HH,GetHandleId(E),SH_ShnBankSrc,u)
+//endif
+//call GroupRemoveUnit(G,E)
+//endloop
+//call GroupClear(G)
+//if ModuloInteger(R2I(time*20+0.5),20)==0 then
+//loop
+//exitwhen i>7
+//set fx=AddSpecialEffect("Hashirama\\SmokeFuzzy.mdl",x+650*Cos(i*bj_PI/4),y+650*Sin(i*bj_PI/4))
+//call SetSpecialEffectScale(fx,1.2)
+//call SetSpecialEffectVertexColour(fx,255,160,210,150)
+//call RemoveEffect(fx,1.,true,CreateTimer())
+//set i=i+1
+//endloop
+//endif
+//else
+//call DestroyEffect(LoadEffectHandle(h,id,5))
+//call PauseTimer(t)
+//call DestroyTimer(t)
+//call FlushChildHashtable(h,id)
+//endif
+//set fx=null
+//set p=null
+//set u=null
+//set t=null
+//endfunction
+//function ShinjiTCast takes nothing returns nothing
+//local unit u=GetTriggerUnit()
+//local timer t=CreateTimer()
+//local integer id=GetHandleId(t)
+//call SaveUnitHandle(h,id,0,u)
+//call SaveReal(h,id,3,0)
+//call SaveReal(h,id,4,6.)
+//call SaveEffectHandle(h,id,5,AddSpecialEffectTarget("Abilities\\Spells\\Other\\Charm\\CharmTarget.mdl",u,"overhead"))
+//call DestroyEffect(AddSpecialEffect("Abilities\\Spells\\Human\\Polymorph\\PolyMorphDoneGround.mdl",GetUnitX(u),GetUnitY(u)))
+//call TimerStart(t,0.05,true,function ShinjiTCast2)
+//set t=null
+//set u=null
+//endfunction
+//function InitTrig_ShinjiT takes nothing returns nothing
+//local trigger t=CreateTrigger()
+//call TriggerRegisterAnyUnitEventBJ(t,EVENT_PLAYER_UNIT_SPELL_EFFECT)
+//call TriggerAddCondition(t,Condition(function ShinjiTCond))
+//call TriggerAddAction(t,function ShinjiTCast)
+//set t=null
+//endfunction
+// T — банкай Сакасима Ёкосима Хаппо Фусагари (16 окт). Channel 0.5 с: стоп / движение до конца — отмена,
+// перезарядка и мана возвращаются. Затем у места каста закрывается бутон (Shinji2_Bankai, Birth 2 с) и выпускается
+// туман AoE 1000 на 6 с. Раз в секунду всем в тумане, кроме юнитов игрока Хирако (и союзникам Хирако тоже), — путаница
+// на 1.2 с: игрок воспринимает врагов союзниками, а союзников врагами (ALLIANCE_PASSIVE в обе стороны со всеми игроками
+// 0..11; снимок союзов — на момент первой путаницы, возврат — когда путаница кончилась у всех). При первом дебаффе
+// за каст герой применяет случайную готовую способность по ближайшему (уже «перевёрнутому») врагу.
+function ShinjiConfSync takes nothing returns nothing
+local integer i=0
+local integer j
+local boolean al
+loop
+exitwhen i>11
+set j=0
+loop
+exitwhen j>11
+if i!=j then
+set al=ShnAllySnap[i*12+j]
+if ShnConfOn[i] or ShnConfOn[j] then
+set al=not al
+endif
+call SetPlayerAlliance(Player(i),Player(j),ALLIANCE_PASSIVE,al)
+endif
+set j=j+1
+endloop
+set i=i+1
+endloop
+endfunction
+function ShinjiConfOn takes integer pid,real dur returns nothing
+local integer i=0
+local integer j
+if pid<0 or pid>11 then
+return
+endif
+if not ShnConfOn[pid] then
+if ShnConfN==0 then
+loop
+exitwhen i>11
+set j=0
+loop
+exitwhen j>11
+set ShnAllySnap[i*12+j]=GetPlayerAlliance(Player(i),Player(j),ALLIANCE_PASSIVE)
+set j=j+1
+endloop
+set i=i+1
+endloop
+endif
+set ShnConfOn[pid]=true
+set ShnConfN=ShnConfN+1
+call ShinjiConfSync()
+endif
+set ShnConfEnd[pid]=RMaxBJ(ShnConfEnd[pid],TimerGetElapsed(ShnClock)+dur)
+endfunction
+// общий таймер 0.1 с: путаница кончилась (или раунд) — союзы игрока возвращаются
+function ShinjiConfTick takes nothing returns nothing
+local integer i=0
+local boolean ch=false
+if ShnConfN==0 then
+return
+endif
+loop
+exitwhen i>11
+if ShnConfOn[i] and (ShnConfEnd[i]<=TimerGetElapsed(ShnClock) or udg_B==false) then
+set ShnConfOn[i]=false
+set ShnConfEnd[i]=0
+set ShnConfN=ShnConfN-1
+set ch=true
+endif
+set i=i+1
+endloop
+if ch then
+call ShinjiConfSync()
+endif
+endfunction
+// случайная готовая способность героя e по ближайшему врагу (в 1200): по юниту, иначе в его точку, иначе без цели
+function ShinjiForceCast takes unit e returns nothing
+local integer cbP=CBS_Me(PId(OwnerOf(e)))
+local player p=OwnerOf(e)
+local group g
+local unit t=null
+local unit c
+local real bd=1440000.
+local real dd
+local integer cnt
+local integer k
+local integer i=0
+local integer id
+local integer o
+if cbP<0 or cbP>11 or Hero[cbP]!=e then
+set p=null
+return
+endif
+set g=CreateGroup()
+call GroupEnumUnitsInRange(g,GetUnitX(e),GetUnitY(e),1200,null)
+loop
+set c=FirstOfGroup(g)
+exitwhen c==null
+if c!=e and UnitIsAlive(c) and Condition_Base(p,c) and GetUnitAbilityLevel(c,'Aloc')==0 then
+set dd=(GetUnitX(c)-GetUnitX(e))*(GetUnitX(c)-GetUnitX(e))+(GetUnitY(c)-GetUnitY(e))*(GetUnitY(c)-GetUnitY(e))
+if dd<bd then
+set bd=dd
+set t=c
+endif
+endif
+call GroupRemoveUnit(g,c)
+endloop
+call DestroyGroup(g)
+set g=null
+set cnt=CBS_AbN[cbP]
+if t!=null and cnt>0 then
+set k=GetRandomInt(0,cnt-1)
+loop
+exitwhen i>=cnt
+set id=CBS_Ab[cbP*60+ModuloInteger(k+i,cnt)]
+set o=CBS_QcOrd(e,id)
+if o!=0 and id!='SnT1' then
+if CBS_QcUnitOk(e,id) and IssueTargetOrderById(e,o,t) then
+set i=cnt
+elseif IssuePointOrderById(e,o,GetUnitX(t),GetUnitY(t)) then
+set i=cnt
+elseif IssueImmediateOrderById(e,o) then
+set i=cnt
+endif
+endif
+set i=i+1
+endloop
+endif
+set t=null
+set c=null
+set p=null
+endfunction
 function ShinjiTCond takes nothing returns boolean
-return GetSpellAbilityId()=='SnT1' and udg_B==true and GetUnitTypeId(GetTriggerUnit())=='HShn'
+return GetSpellAbilityId()=='SnT1' and GetUnitTypeId(GetTriggerUnit())=='HShn'
 endfunction
 function ShinjiTCast2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
 local unit u=LoadUnitHandle(h,id,0)
-local player p=OwnerOf(u)
-local real x=GetUnitX(u)
-local real y=GetUnitY(u)
+local integer hp=GetPlayerId(GetOwningPlayer(u))
+local real x=LoadReal(h,id,1)
+local real y=LoadReal(h,id,2)
 local real time=LoadReal(h,id,3)
+local integer tk=R2I(time*10+0.5)
 local integer i=0
+local integer ep
+local group g
+local unit e
 local effect fx
-call SaveReal(h,id,3,time+0.05)
-if time<LoadReal(h,id,4) and UnitIsAlive(u) and udg_B==true then
-call GroupEnumUnitsInRange(G,x,y,700,Base)
+call SaveReal(h,id,3,time+0.1)
+if time<8. and UnitIsAlive(u) and udg_B==true then
+// бутон закрылся — туман: центр, кольцо 450 (6), кольцо 850 (12)
+if tk==20 then
 loop
-set E=FirstOfGroup(G)
-exitwhen E==null
-if E!=u and not IsUnitType(E,UNIT_TYPE_STRUCTURE) and GetUnitAbilityLevel(E,'Aloc')==0 and 'dumm'!=GetUnitTypeId(E) and 'cdm1'!=GetUnitTypeId(E) then
-call SaveReal(HH,GetHandleId(E),SH_ShnBank,TimerGetElapsed(ShnClock)+0.15)
-call SaveUnitHandle(HH,GetHandleId(E),SH_ShnBankSrc,u)
+exitwhen i>18
+if i==0 then
+set fx=AddSpecialEffect("Hashirama\\SmokeFuzzy.mdl",x,y)
+elseif i<=6 then
+set fx=AddSpecialEffect("Hashirama\\SmokeFuzzy.mdl",x+450*Cos(i*bj_PI/3),y+450*Sin(i*bj_PI/3))
+else
+set fx=AddSpecialEffect("Hashirama\\SmokeFuzzy.mdl",x+850*Cos((i-7)*bj_PI/6),y+850*Sin((i-7)*bj_PI/6))
 endif
-call GroupRemoveUnit(G,E)
-endloop
-call GroupClear(G)
-if ModuloInteger(R2I(time*20+0.5),20)==0 then
-loop
-exitwhen i>7
-set fx=AddSpecialEffect("Hashirama\\SmokeFuzzy.mdl",x+650*Cos(i*bj_PI/4),y+650*Sin(i*bj_PI/4))
-call SetSpecialEffectScale(fx,1.2)
-call SetSpecialEffectVertexColour(fx,255,160,210,150)
-call RemoveEffect(fx,1.,true,CreateTimer())
+call SetSpecialEffectScale(fx,2.5)
+call SetSpecialEffectVertexColour(fx,255,160,210,170)
+call SaveEffectHandle(h,id,10+i,fx)
 set i=i+1
 endloop
 endif
+// раз в секунду с закрытия бутона — путаница всем в тумане, кроме игрока Хирако
+if tk>=20 and ModuloInteger(tk-20,10)==0 then
+set g=CreateGroup()
+call GroupEnumUnitsInRange(g,x,y,1000,null)
+loop
+set e=FirstOfGroup(g)
+exitwhen e==null
+set ep=GetPlayerId(GetOwningPlayer(e))
+if ep<12 and ep!=hp and UnitIsAlive(e) and not IsUnitType(e,UNIT_TYPE_STRUCTURE) and GetUnitAbilityLevel(e,'Aloc')==0 and 'dumm'!=GetUnitTypeId(e) and 'cdm1'!=GetUnitTypeId(e) then
+call ShinjiConfOn(ep,1.2)
+call DestroyEffect(AddSpecialEffectTarget("Abilities\\Spells\\Other\\Charm\\CharmTarget.mdl",e,"overhead"))
+if LoadInteger(HH,GetHandleId(e),SH_ShnConfCast)!=id then
+call SaveInteger(HH,GetHandleId(e),SH_ShnConfCast,id)
+call ShinjiForceCast(e)
+endif
+endif
+call GroupRemoveUnit(g,e)
+endloop
+call DestroyGroup(g)
+endif
 else
+// конец: бутон раскрывается и уходит (Death), туман гаснет; путаница сходит сама через 1.2 с
 call DestroyEffect(LoadEffectHandle(h,id,5))
+loop
+exitwhen i>18
+call DestroyEffect(LoadEffectHandle(h,id,10+i))
+set i=i+1
+endloop
 call PauseTimer(t)
 call DestroyTimer(t)
 call FlushChildHashtable(h,id)
 endif
 set fx=null
-set p=null
+set g=null
+set e=null
 set u=null
 set t=null
 endfunction
+// начало каста: ещё не завершён
+function ShinjiTStart takes nothing returns nothing
+call SaveBoolean(HH,GetHandleId(GetTriggerUnit()),SH_ShnTDone,false)
+endfunction
+// каст дошёл до конца (0.5 c) — бутон и туман
 function ShinjiTCast takes nothing returns nothing
 local unit u=GetTriggerUnit()
-local timer t=CreateTimer()
-local integer id=GetHandleId(t)
+local timer t
+local integer id
+if udg_B==false then
+set u=null
+return
+endif
+call SaveBoolean(HH,GetHandleId(u),SH_ShnTDone,true)
+set t=CreateTimer()
+set id=GetHandleId(t)
 call SaveUnitHandle(h,id,0,u)
+call SaveReal(h,id,1,GetUnitX(u))
+call SaveReal(h,id,2,GetUnitY(u))
 call SaveReal(h,id,3,0)
-call SaveReal(h,id,4,6.)
-call SaveEffectHandle(h,id,5,AddSpecialEffectTarget("Abilities\\Spells\\Other\\Charm\\CharmTarget.mdl",u,"overhead"))
-call DestroyEffect(AddSpecialEffect("Abilities\\Spells\\Human\\Polymorph\\PolyMorphDoneGround.mdl",GetUnitX(u),GetUnitY(u)))
-call TimerStart(t,0.05,true,function ShinjiTCast2)
+call SaveEffectHandle(h,id,5,AddSpecialEffect("Shinji2_Bankai.mdx",GetUnitX(u),GetUnitY(u)))
+call TimerStart(t,0.1,true,function ShinjiTCast2)
 set t=null
 set u=null
+endfunction
+// отмена до конца каста: перезарядка 0 и мана назад (таймер 0 с — после того, как игра поставит перезарядку)
+function ShinjiTRefund takes nothing returns nothing
+local timer t=GetExpiredTimer()
+local unit u=LoadUnitHandle(h,GetHandleId(t),0)
+call SetAbilityRemainingCooldown(GetUnitAbility(u,'SnT1'),0.)
+call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)+I2R(GetAbilityBaseIntegerLevelFieldById('SnT1',ABILITY_ILF_MANA_COST,0)))
+call FlushChildHashtable(h,GetHandleId(t))
+call DestroyTimer(t)
+set u=null
+set t=null
+endfunction
+function ShinjiTEnd takes nothing returns nothing
+local timer t
+if not LoadBoolean(HH,GetHandleId(GetTriggerUnit()),SH_ShnTDone) then
+set t=CreateTimer()
+call SaveUnitHandle(h,GetHandleId(t),0,GetTriggerUnit())
+call TimerStart(t,0,false,function ShinjiTRefund)
+set t=null
+endif
 endfunction
 function InitTrig_ShinjiT takes nothing returns nothing
 local trigger t=CreateTrigger()
 call TriggerRegisterAnyUnitEventBJ(t,EVENT_PLAYER_UNIT_SPELL_EFFECT)
 call TriggerAddCondition(t,Condition(function ShinjiTCond))
+call TriggerAddAction(t,function ShinjiTStart)
+set t=CreateTrigger()
+call TriggerRegisterAnyUnitEventBJ(t,EVENT_PLAYER_UNIT_SPELL_FINISH)
+call TriggerAddCondition(t,Condition(function ShinjiTCond))
 call TriggerAddAction(t,function ShinjiTCast)
+set t=CreateTrigger()
+call TriggerRegisterAnyUnitEventBJ(t,EVENT_PLAYER_UNIT_SPELL_ENDCAST)
+call TriggerAddCondition(t,Condition(function ShinjiTCond))
+call TriggerAddAction(t,function ShinjiTEnd)
+call TimerStart(CreateTimer(),0.1,true,function ShinjiConfTick)
 set t=null
 endfunction
 // D — Вращение Сакаканаде: волна 400 вокруг, урон 1*AGI и инверсия на 1.25 с — та же метка SH_ShnInv, что у W
@@ -282024,8 +282301,8 @@ call LANG_A('SnR1',1,3,"A crimson Cero along a horizontal line. Without the mask
 call LANG_A('SnR1',1,4,"A crimson Cero along a horizontal line. Without the mask it is a weak short beam; with the mask it is a full Cero that knocks back.|n|n|cFF00A5FF|nDamage without the mask: 2\\2.5\\3\\3.5\\4*|r|c003CFF3CAGI|r|cFF00A5FF, length 900|nDamage with the mask: 3.5\\4.1\\4.7\\5.3\\6*|r|c003CFF3CAGI|r|cFF00A5"+"FF, length 1500, knockback 300|nCooldown: 14 sec.|r")
 call LANG_A('SnR1',2,0,"Cero, [|cffffcc00Level %d|r] (|cffffcc00R|r)")
 call LANG_A('SnR1',3,0,"A crimson Cero along a horizontal line. Without the mask it is a weak short beam; with the mask it is a full Cero that knocks back.|n|n|cFF00A5FF|nDamage without the mask: 2\\2.5\\3\\3.5\\4*|r|c003CFF3CAGI|r|cFF00A5FF, length 900|nDamage with the mask: 3.5\\4.1\\4.7\\5.3\\6*|r|c003CFF3CAGI|r|cFF00A5"+"FF, length 1500, knockback 300|nCooldown: 14 sec.|r")
-call LANG_A('SnT1',1,0,"Bankai: a zone around Hirako where everyone but him mistakes friend for foe (allies too). 40% of damage to opponents goes to the attacker's own ally nearest to the target. Healing on Hirako's opponents in the zone goes to the most wounded (in %) hero of his team in the zone, Hirako included.|n|n|cFF"+"00A5FF|nRedirected damage: 40%|nAoE: 700|nDuration: 6 sec.|nCooldown: 90 sec.|r")
-call LANG_A('SnT1',3,0,"Bankai: a zone around Hirako where everyone but him mistakes friend for foe (allies too). 40% of damage to opponents goes to the attacker's own ally nearest to the target. Healing on Hirako's opponents in the zone goes to the most wounded (in %) hero of his team in the zone, Hirako included.|n|n|cFF"+"00A5FF|nRedirected damage: 40%|nAoE: 700|nDuration: 6 sec.|nCooldown: 90 sec.|r")
+call LANG_A('SnT1',1,0,"Bankai. After a 0.5 sec. cast (can be cancelled — cooldown and mana are returned) a bud closes around Hirako, then releases a mist. Every second everyone in the mist except Hirako (allies too) gets confused: enemies look like allies and allies like enemies. On the first confusion a hero instantly "+"uses a random ability on the nearest \"enemy\".|n|n|cFF00A5FF|nCast: 0.5 sec.|nBud: 2 sec.|nMist AoE: 1000|nMist duration: 6 sec.|nConfusion: 1.2 sec. (renewed every second)|nCooldown: 90 sec.|r")
+call LANG_A('SnT1',3,0,"Bankai. After a 0.5 sec. cast (can be cancelled — cooldown and mana are returned) a bud closes around Hirako, then releases a mist. Every second everyone in the mist except Hirako (allies too) gets confused: enemies look like allies and allies like enemies. On the first confusion a hero instantly "+"uses a random ability on the nearest \"enemy\".|n|n|cFF00A5FF|nCast: 0.5 sec.|nBud: 2 sec.|nMist AoE: 1000|nMist duration: 6 sec.|nConfusion: 1.2 sec. (renewed every second)|nCooldown: 90 sec.|r")
 call LANG_A('SnD1',1,0,"Hirako spins Sakanade by its ring: a wave of scent around him. Nearby enemies take damage and are briefly inverted: their movement and turning go the opposite way.|n|n|cFF00A5FF|nDamage: 1*|r|c003CFF3CAGI|r|cFF00A5FF|nInversion: 1.25 sec.|nAoE: 400|nCooldown: 20 sec.|r")
 call LANG_A('SnD1',3,0,"Hirako spins Sakanade by its ring: a wave of scent around him. Nearby enemies take damage and are briefly inverted: their movement and turning go the opposite way.|n|n|cFF00A5FF|nDamage: 1*|r|c003CFF3CAGI|r|cFF00A5FF|nInversion: 1.25 sec.|nAoE: 400|nCooldown: 20 sec.|r")
 call LANG_A('SnF1',1,0,"An instant step to a point. Recharges twice as fast from inside the W mist.|n|n|cFF00A5FF|nRange: 600|nCooldown: 8 sec. (4 sec. from the mist)|r")
