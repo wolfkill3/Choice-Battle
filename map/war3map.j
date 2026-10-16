@@ -128028,7 +128028,7 @@ return
 endif
 call SaveUnitHandle(h,id,0,u)
 call SaveBoolean(HH,GetHandleId(u),SH_ShnMask,true)
-call SaveReal(HH,GetHandleId(u),SH_ShnMaskDmg,0.1+0.02*lv) // 12..20% (16 окт; было 30..50%)
+call SaveReal(HH,GetHandleId(u),SH_ShnMaskDmg,0.025+0.025*lv) // 5..15% (16 окт; было 30..50%, затем 12..20%)
 call UnitAddAbility(u,'SnEa')
 call SetUnitAbilityLevel(u,'SnEa',lv)
 // пока маска надета, на месте E — Серо (SnEc, уровень как у E)
@@ -128055,70 +128055,160 @@ endfunction
 function ShinjiRCond takes nothing returns boolean
 return GetSpellAbilityId()=='SnEc' and udg_B==true and GetUnitTypeId(GetTriggerUnit())=='HShn'
 endfunction
-function ShinjiRCast takes nothing returns nothing
-local unit u=GetTriggerUnit()
+// Серо до 16 окт: мгновенная волна (весь луч и урон сразу)
+//function ShinjiRCast takes nothing returns nothing
+//local unit u=GetTriggerUnit()
+//local player p=OwnerOf(u)
+//local integer lv=GetUnitAbilityLevel(u,'SnEc')
+//local boolean mask=LoadBoolean(HH,GetHandleId(u),SH_ShnMask)
+//local real x=GetUnitX(u)
+//local real y=GetUnitY(u)
+//local real a=Atan2(GetSpellTargetY()-y,GetSpellTargetX()-x)
+//local real len=900
+//local real dmg=(1.5+0.5*lv)*GetHeroAgi(u,true)
+//local real sc=1.
+//local real x1
+//local real y1
+//local real sd=0
+//local real k
+//local real ex
+//local real ey
+//local group g=CreateGroup()
+//local unit e
+//if mask then
+//set len=1500
+//set dmg=(2+lv)*GetHeroAgi(u,true) // 3..7*AGI (16 окт; было 3.5..6)
+//set sc=1.6
+//endif
+//set x1=x+len*Cos(a)
+//set y1=y+len*Sin(a)
+//call SetUnitFacing(u,a*bj_RADTODEG)
+//call SetUnitAnimation(u,"spell")
+//call QueueUnitAnimation(u,"stand")
+//loop
+//exitwhen sd>len
+//set n=CreateUnit(p,'e0TJ',x+sd*Cos(a),y+sd*Sin(a),a*bj_RADTODEG)
+//call SetUnitVertexColor(n,255,40,40,255)
+//call SetUnitScale(n,sc,sc,sc)
+//call UnitApplyTimedLife(n,'BTLF',0.6)
+//set sd=sd+100
+//endloop
+//// своя группа и юнит: обработчики урона сами пользуются глобальными G / E
+//call GroupEnumUnitsInRange(g,(x+x1)/2,(y+y1)/2,len/2+150,Base)
+//loop
+//set e=FirstOfGroup(g)
+//exitwhen e==null
+//if Condition_Base(p,e) then
+//set ex=GetUnitX(e)
+//set ey=GetUnitY(e)
+//set k=((ex-x)*(x1-x)+(ey-y)*(y1-y))/(len*len)
+//if k<0 then
+//set k=0
+//elseif k>1 then
+//set k=1
+//endif
+//if SR(ex,ey,x+(x1-x)*k,y+(y1-y)*k)<=150 then
+//call myCustomDamage(u,e,dmg,false,false,null,null,null)
+//call DestroyEffect(AddSpecialEffectTarget("Abilities\\Weapons\\FireBallMissile\\FireBallMissile.mdl",e,"chest"))
+//if mask then
+//call Push3(e,50,a,300,"")
+//endif
+//endif
+//endif
+//call GroupRemoveUnit(g,e)
+//endloop
+//call DestroyGroup(g)
+//set g=null
+//set p=null
+//set u=null
+//endfunction
+// Серо (16 окт): летящий луч — фронт идёт на 75 за 0.03 с (2500/с), за ним остаются сегменты; урон и отбрасывание —
+// когда фронт проходит рядом с врагом (150), каждому один раз
+function ShinjiRCast2 takes nothing returns nothing
+local timer t=GetExpiredTimer()
+local integer id=GetHandleId(t)
+local unit u=LoadUnitHandle(h,id,0)
 local player p=OwnerOf(u)
-local integer lv=GetUnitAbilityLevel(u,'SnEc')
-local boolean mask=LoadBoolean(HH,GetHandleId(u),SH_ShnMask)
-local real x=GetUnitX(u)
-local real y=GetUnitY(u)
-local real a=Atan2(GetSpellTargetY()-y,GetSpellTargetX()-x)
-local real len=900
-local real dmg=(1.5+0.5*lv)*GetHeroAgi(u,true)
-local real sc=1.
-local real x1
-local real y1
-local real sd=0
-local real k
-local real ex
-local real ey
-local group g=CreateGroup()
+local real x=LoadReal(h,id,1)
+local real y=LoadReal(h,id,2)
+local real a=LoadReal(h,id,3)
+local real len=LoadReal(h,id,4)
+local real dmg=LoadReal(h,id,5)
+local real sc=LoadReal(h,id,6)
+local boolean mask=LoadBoolean(h,id,7)
+local real sd=LoadReal(h,id,8)+75
+local group hit=LoadGroupHandle(h,id,9)
+local group g
 local unit e
-if mask then
-set len=1500
-set dmg=(2+lv)*GetHeroAgi(u,true) // 3..7*AGI (16 окт; было 3.5..6)
-set sc=1.6
-endif
-set x1=x+len*Cos(a)
-set y1=y+len*Sin(a)
-call SetUnitFacing(u,a*bj_RADTODEG)
-call SetUnitAnimation(u,"spell")
-call QueueUnitAnimation(u,"stand")
-loop
-exitwhen sd>len
-set n=CreateUnit(p,'e0TJ',x+sd*Cos(a),y+sd*Sin(a),a*bj_RADTODEG)
+local real fx
+local real fy
+if sd>len or u==null or udg_B==false then
+call DestroyGroup(hit)
+call PauseTimer(t)
+call DestroyTimer(t)
+call FlushChildHashtable(h,id)
+else
+call SaveReal(h,id,8,sd)
+set fx=x+sd*Cos(a)
+set fy=y+sd*Sin(a)
+set n=CreateUnit(p,'e0TJ',fx,fy,a*bj_RADTODEG)
 call SetUnitVertexColor(n,255,40,40,255)
 call SetUnitScale(n,sc,sc,sc)
-call UnitApplyTimedLife(n,'BTLF',0.6)
-set sd=sd+100
-endloop
-// своя группа и юнит: обработчики урона сами пользуются глобальными G / E
-call GroupEnumUnitsInRange(g,(x+x1)/2,(y+y1)/2,len/2+150,Base)
+call UnitApplyTimedLife(n,'BTLF',0.45)
+set g=CreateGroup()
+call GroupEnumUnitsInRange(g,fx,fy,150,Base)
 loop
 set e=FirstOfGroup(g)
 exitwhen e==null
-if Condition_Base(p,e) then
-set ex=GetUnitX(e)
-set ey=GetUnitY(e)
-set k=((ex-x)*(x1-x)+(ey-y)*(y1-y))/(len*len)
-if k<0 then
-set k=0
-elseif k>1 then
-set k=1
-endif
-if SR(ex,ey,x+(x1-x)*k,y+(y1-y)*k)<=150 then
+if Condition_Base(p,e) and not IsUnitInGroup(e,hit) then
+call GroupAddUnit(hit,e)
 call myCustomDamage(u,e,dmg,false,false,null,null,null)
 call DestroyEffect(AddSpecialEffectTarget("Abilities\\Weapons\\FireBallMissile\\FireBallMissile.mdl",e,"chest"))
 if mask then
 call Push3(e,50,a,300,"")
 endif
 endif
-endif
 call GroupRemoveUnit(g,e)
 endloop
 call DestroyGroup(g)
+endif
 set g=null
+set hit=null
+set e=null
 set p=null
+set u=null
+set t=null
+endfunction
+function ShinjiRCast takes nothing returns nothing
+local unit u=GetTriggerUnit()
+local integer lv=GetUnitAbilityLevel(u,'SnEc')
+local boolean mask=LoadBoolean(HH,GetHandleId(u),SH_ShnMask)
+local real x=GetUnitX(u)
+local real y=GetUnitY(u)
+local real a=Atan2(GetSpellTargetY()-y,GetSpellTargetX()-x)
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+call SaveUnitHandle(h,id,0,u)
+call SaveReal(h,id,1,x)
+call SaveReal(h,id,2,y)
+call SaveReal(h,id,3,a)
+if mask then
+call SaveReal(h,id,4,1500)
+call SaveReal(h,id,5,(2+lv)*GetHeroAgi(u,true)) // 3..7*AGI
+call SaveReal(h,id,6,1.6)
+else
+call SaveReal(h,id,4,900)
+call SaveReal(h,id,5,(1.5+0.5*lv)*GetHeroAgi(u,true))
+call SaveReal(h,id,6,1.)
+endif
+call SaveBoolean(h,id,7,mask)
+call SaveReal(h,id,8,0)
+call SaveGroupHandle(h,id,9,CreateGroup())
+call SetUnitFacing(u,a*bj_RADTODEG)
+call SetUnitAnimation(u,"spell")
+call QueueUnitAnimation(u,"stand")
+call TimerStart(t,0.03,true,function ShinjiRCast2)
+set t=null
 set u=null
 endfunction
 // R — Хадо №91 «Сэндзю Котэн Тайхо» (16 окт): 7 световых столбов (BeamLight) раз в 0.12 с — центр, затем кольцо 250
@@ -128703,7 +128793,7 @@ function ShinjiGCast takes nothing returns nothing
 local unit u=GetTriggerUnit()
 local unit c=GetSpellTargetUnit()
 local real f=GetUnitFacing(c)*bj_DEGTORAD+bj_PI
-local real dmg=4*GetHeroAgi(u,true)+0.25*(GetUnitState(c,UNIT_STATE_MAX_LIFE)-GetWidgetLife(c)) // 4*AGI (16 окт; было 2)
+local real dmg=3*GetHeroAgi(u,true)+0.15*(GetUnitState(c,UNIT_STATE_MAX_LIFE)-GetWidgetLife(c)) // 3*AGI + 15% (16 окт; было 2*AGI + 25%)
 call DestroyEffect(AddSpecialEffect("FlashAura.mdl",GetUnitX(u),GetUnitY(u)))
 call SetUnitPosition(u,GetUnitX(c)+100*Cos(f),GetUnitY(c)+100*Sin(f))
 call SetUnitFacing(u,bj_RADTODEG*Atan2(GetUnitY(c)-GetUnitY(u),GetUnitX(c)-GetUnitX(u)))
@@ -282523,13 +282613,13 @@ call LANG_A('SnE1',0,1,"Hollow Mask, [|cffffcc00Level 2|r] (|cffffcc00E|r)")
 call LANG_A('SnE1',0,2,"Hollow Mask, [|cffffcc00Level 3|r] (|cffffcc00E|r)")
 call LANG_A('SnE1',0,3,"Hollow Mask, [|cffffcc00Level 4|r] (|cffffcc00E|r)")
 call LANG_A('SnE1',0,4,"Hollow Mask, [|cffffcc00Level 5|r] (|cffffcc00E|r)")
-call LANG_A('SnE1',1,0,"The Visored Hollow mask: bonus damage and attack speed, regeneration. While the mask is on, the E button fires a Cero.|n|n|cFF00A5FF|nDamage bonus: 12\\14\\16\\18\\20%|nAttack speed: +20\\25\\30\\35\\40%|nRegeneration: 1% max HP per sec.|nMask reserve: 8\\9\\10\\11\\12 sec. (spent while worn; 3 sec."+" needed to put it on)|nRefill without the mask: +1 sec. every 5 sec. and +1 sec. per 5*|r|c003CFF3CAGI|r|cFF00A5FF damage dealt; full at round start|nCooldown: 3 sec.|r")
-call LANG_A('SnE1',1,1,"The Visored Hollow mask: bonus damage and attack speed, regeneration. While the mask is on, the E button fires a Cero.|n|n|cFF00A5FF|nDamage bonus: 12\\14\\16\\18\\20%|nAttack speed: +20\\25\\30\\35\\40%|nRegeneration: 1% max HP per sec.|nMask reserve: 8\\9\\10\\11\\12 sec. (spent while worn; 3 sec."+" needed to put it on)|nRefill without the mask: +1 sec. every 5 sec. and +1 sec. per 5*|r|c003CFF3CAGI|r|cFF00A5FF damage dealt; full at round start|nCooldown: 3 sec.|r")
-call LANG_A('SnE1',1,2,"The Visored Hollow mask: bonus damage and attack speed, regeneration. While the mask is on, the E button fires a Cero.|n|n|cFF00A5FF|nDamage bonus: 12\\14\\16\\18\\20%|nAttack speed: +20\\25\\30\\35\\40%|nRegeneration: 1% max HP per sec.|nMask reserve: 8\\9\\10\\11\\12 sec. (spent while worn; 3 sec."+" needed to put it on)|nRefill without the mask: +1 sec. every 5 sec. and +1 sec. per 5*|r|c003CFF3CAGI|r|cFF00A5FF damage dealt; full at round start|nCooldown: 3 sec.|r")
-call LANG_A('SnE1',1,3,"The Visored Hollow mask: bonus damage and attack speed, regeneration. While the mask is on, the E button fires a Cero.|n|n|cFF00A5FF|nDamage bonus: 12\\14\\16\\18\\20%|nAttack speed: +20\\25\\30\\35\\40%|nRegeneration: 1% max HP per sec.|nMask reserve: 8\\9\\10\\11\\12 sec. (spent while worn; 3 sec."+" needed to put it on)|nRefill without the mask: +1 sec. every 5 sec. and +1 sec. per 5*|r|c003CFF3CAGI|r|cFF00A5FF damage dealt; full at round start|nCooldown: 3 sec.|r")
-call LANG_A('SnE1',1,4,"The Visored Hollow mask: bonus damage and attack speed, regeneration. While the mask is on, the E button fires a Cero.|n|n|cFF00A5FF|nDamage bonus: 12\\14\\16\\18\\20%|nAttack speed: +20\\25\\30\\35\\40%|nRegeneration: 1% max HP per sec.|nMask reserve: 8\\9\\10\\11\\12 sec. (spent while worn; 3 sec."+" needed to put it on)|nRefill without the mask: +1 sec. every 5 sec. and +1 sec. per 5*|r|c003CFF3CAGI|r|cFF00A5FF damage dealt; full at round start|nCooldown: 3 sec.|r")
+call LANG_A('SnE1',1,0,"The Visored Hollow mask: bonus damage and attack speed, regeneration. While the mask is on, the E button fires a Cero.|n|n|cFF00A5FF|nDamage bonus: 5\\7.5\\10\\12.5\\15%|nAttack speed: +20\\25\\30\\35\\40%|nRegeneration: 1% max HP per sec.|nMask reserve: 8\\9\\10\\11\\12 sec. (spent while worn; 3 se"+"c. needed to put it on)|nRefill without the mask: +1 sec. every 5 sec. and +1 sec. per 5*|r|c003CFF3CAGI|r|cFF00A5FF damage dealt; full at round start|nCooldown: 3 sec.|r")
+call LANG_A('SnE1',1,1,"The Visored Hollow mask: bonus damage and attack speed, regeneration. While the mask is on, the E button fires a Cero.|n|n|cFF00A5FF|nDamage bonus: 5\\7.5\\10\\12.5\\15%|nAttack speed: +20\\25\\30\\35\\40%|nRegeneration: 1% max HP per sec.|nMask reserve: 8\\9\\10\\11\\12 sec. (spent while worn; 3 se"+"c. needed to put it on)|nRefill without the mask: +1 sec. every 5 sec. and +1 sec. per 5*|r|c003CFF3CAGI|r|cFF00A5FF damage dealt; full at round start|nCooldown: 3 sec.|r")
+call LANG_A('SnE1',1,2,"The Visored Hollow mask: bonus damage and attack speed, regeneration. While the mask is on, the E button fires a Cero.|n|n|cFF00A5FF|nDamage bonus: 5\\7.5\\10\\12.5\\15%|nAttack speed: +20\\25\\30\\35\\40%|nRegeneration: 1% max HP per sec.|nMask reserve: 8\\9\\10\\11\\12 sec. (spent while worn; 3 se"+"c. needed to put it on)|nRefill without the mask: +1 sec. every 5 sec. and +1 sec. per 5*|r|c003CFF3CAGI|r|cFF00A5FF damage dealt; full at round start|nCooldown: 3 sec.|r")
+call LANG_A('SnE1',1,3,"The Visored Hollow mask: bonus damage and attack speed, regeneration. While the mask is on, the E button fires a Cero.|n|n|cFF00A5FF|nDamage bonus: 5\\7.5\\10\\12.5\\15%|nAttack speed: +20\\25\\30\\35\\40%|nRegeneration: 1% max HP per sec.|nMask reserve: 8\\9\\10\\11\\12 sec. (spent while worn; 3 se"+"c. needed to put it on)|nRefill without the mask: +1 sec. every 5 sec. and +1 sec. per 5*|r|c003CFF3CAGI|r|cFF00A5FF damage dealt; full at round start|nCooldown: 3 sec.|r")
+call LANG_A('SnE1',1,4,"The Visored Hollow mask: bonus damage and attack speed, regeneration. While the mask is on, the E button fires a Cero.|n|n|cFF00A5FF|nDamage bonus: 5\\7.5\\10\\12.5\\15%|nAttack speed: +20\\25\\30\\35\\40%|nRegeneration: 1% max HP per sec.|nMask reserve: 8\\9\\10\\11\\12 sec. (spent while worn; 3 se"+"c. needed to put it on)|nRefill without the mask: +1 sec. every 5 sec. and +1 sec. per 5*|r|c003CFF3CAGI|r|cFF00A5FF damage dealt; full at round start|nCooldown: 3 sec.|r")
 call LANG_A('SnE1',2,0,"Hollow Mask, [|cffffcc00Level %d|r] (|cffffcc00E|r)")
-call LANG_A('SnE1',3,0,"The Visored Hollow mask: bonus damage and attack speed, regeneration. While the mask is on, the E button fires a Cero.|n|n|cFF00A5FF|nDamage bonus: 12\\14\\16\\18\\20%|nAttack speed: +20\\25\\30\\35\\40%|nRegeneration: 1% max HP per sec.|nMask reserve: 8\\9\\10\\11\\12 sec. (spent while worn; 3 sec."+" needed to put it on)|nRefill without the mask: +1 sec. every 5 sec. and +1 sec. per 5*|r|c003CFF3CAGI|r|cFF00A5FF damage dealt; full at round start|nCooldown: 3 sec.|r")
+call LANG_A('SnE1',3,0,"The Visored Hollow mask: bonus damage and attack speed, regeneration. While the mask is on, the E button fires a Cero.|n|n|cFF00A5FF|nDamage bonus: 5\\7.5\\10\\12.5\\15%|nAttack speed: +20\\25\\30\\35\\40%|nRegeneration: 1% max HP per sec.|nMask reserve: 8\\9\\10\\11\\12 sec. (spent while worn; 3 se"+"c. needed to put it on)|nRefill without the mask: +1 sec. every 5 sec. and +1 sec. per 5*|r|c003CFF3CAGI|r|cFF00A5FF damage dealt; full at round start|nCooldown: 3 sec.|r")
 call LANG_A('SnR1',0,0,"Hadō #91: Senju Kōten Taihō, [|cffffcc00Level 1|r] (|cffffcc00R|r)")
 call LANG_A('SnR1',0,1,"Hadō #91: Senju Kōten Taihō, [|cffffcc00Level 2|r] (|cffffcc00R|r)")
 call LANG_A('SnR1',0,2,"Hadō #91: Senju Kōten Taihō, [|cffffcc00Level 3|r] (|cffffcc00R|r)")
@@ -282547,13 +282637,13 @@ call LANG_A('SnEc',0,1,"Cero, [|cffffcc00Level 2|r] (|cffffcc00E|r)")
 call LANG_A('SnEc',0,2,"Cero, [|cffffcc00Level 3|r] (|cffffcc00E|r)")
 call LANG_A('SnEc',0,3,"Cero, [|cffffcc00Level 4|r] (|cffffcc00E|r)")
 call LANG_A('SnEc',0,4,"Cero, [|cffffcc00Level 5|r] (|cffffcc00E|r)")
-call LANG_A('SnEc',1,0,"A crimson Cero along a horizontal line. Knocks back. The button replaces E while the Hollow mask is on.|n|n|cFF00A5FF|nDamage: 3\\4\\5\\6\\7*|r|c003CFF3CAGI|r|cFF00A5FF, length 1500, knockback 300|nCooldown: 14 sec.|r")
-call LANG_A('SnEc',1,1,"A crimson Cero along a horizontal line. Knocks back. The button replaces E while the Hollow mask is on.|n|n|cFF00A5FF|nDamage: 3\\4\\5\\6\\7*|r|c003CFF3CAGI|r|cFF00A5FF, length 1500, knockback 300|nCooldown: 14 sec.|r")
-call LANG_A('SnEc',1,2,"A crimson Cero along a horizontal line. Knocks back. The button replaces E while the Hollow mask is on.|n|n|cFF00A5FF|nDamage: 3\\4\\5\\6\\7*|r|c003CFF3CAGI|r|cFF00A5FF, length 1500, knockback 300|nCooldown: 14 sec.|r")
-call LANG_A('SnEc',1,3,"A crimson Cero along a horizontal line. Knocks back. The button replaces E while the Hollow mask is on.|n|n|cFF00A5FF|nDamage: 3\\4\\5\\6\\7*|r|c003CFF3CAGI|r|cFF00A5FF, length 1500, knockback 300|nCooldown: 14 sec.|r")
-call LANG_A('SnEc',1,4,"A crimson Cero along a horizontal line. Knocks back. The button replaces E while the Hollow mask is on.|n|n|cFF00A5FF|nDamage: 3\\4\\5\\6\\7*|r|c003CFF3CAGI|r|cFF00A5FF, length 1500, knockback 300|nCooldown: 14 sec.|r")
+call LANG_A('SnEc',1,0,"A crimson Cero flies forward as a beam and knocks back those it hits. The button replaces E while the Hollow mask is on.|n|n|cFF00A5FF|nDamage: 3\\4\\5\\6\\7*|r|c003CFF3CAGI|r|cFF00A5FF, length 1500, knockback 300|nCooldown: 14 sec.|r")
+call LANG_A('SnEc',1,1,"A crimson Cero flies forward as a beam and knocks back those it hits. The button replaces E while the Hollow mask is on.|n|n|cFF00A5FF|nDamage: 3\\4\\5\\6\\7*|r|c003CFF3CAGI|r|cFF00A5FF, length 1500, knockback 300|nCooldown: 14 sec.|r")
+call LANG_A('SnEc',1,2,"A crimson Cero flies forward as a beam and knocks back those it hits. The button replaces E while the Hollow mask is on.|n|n|cFF00A5FF|nDamage: 3\\4\\5\\6\\7*|r|c003CFF3CAGI|r|cFF00A5FF, length 1500, knockback 300|nCooldown: 14 sec.|r")
+call LANG_A('SnEc',1,3,"A crimson Cero flies forward as a beam and knocks back those it hits. The button replaces E while the Hollow mask is on.|n|n|cFF00A5FF|nDamage: 3\\4\\5\\6\\7*|r|c003CFF3CAGI|r|cFF00A5FF, length 1500, knockback 300|nCooldown: 14 sec.|r")
+call LANG_A('SnEc',1,4,"A crimson Cero flies forward as a beam and knocks back those it hits. The button replaces E while the Hollow mask is on.|n|n|cFF00A5FF|nDamage: 3\\4\\5\\6\\7*|r|c003CFF3CAGI|r|cFF00A5FF, length 1500, knockback 300|nCooldown: 14 sec.|r")
 call LANG_A('SnEc',2,0,"Cero, [|cffffcc00Level %d|r] (|cffffcc00E|r)")
-call LANG_A('SnEc',3,0,"A crimson Cero along a horizontal line. Knocks back. The button replaces E while the Hollow mask is on.|n|n|cFF00A5FF|nDamage: 3\\4\\5\\6\\7*|r|c003CFF3CAGI|r|cFF00A5FF, length 1500, knockback 300|nCooldown: 14 sec.|r")
+call LANG_A('SnEc',3,0,"A crimson Cero flies forward as a beam and knocks back those it hits. The button replaces E while the Hollow mask is on.|n|n|cFF00A5FF|nDamage: 3\\4\\5\\6\\7*|r|c003CFF3CAGI|r|cFF00A5FF, length 1500, knockback 300|nCooldown: 14 sec.|r")
 call LANG_A('SnT1',1,0,"Bankai. After a 0.3 sec. cast (can be cancelled — cooldown and mana are returned) a bud closes around Hirako, and halfway through releases a mist. While the bankai lasts Hirako is invulnerable and has only the cancel button. Every second everyone in the mist except Hirako (allies too) gets confuse"+"d: enemies look like allies and allies like enemies. On the first confusion a hero instantly uses a random ability on the nearest \"enemy\".|n|n|cFF00A5FF|nCast: 0.3 sec.|nMist: 1 sec. after the cast|nMist AoE: 1000|nMist duration: 6 sec.|nConfusion: 1.2 sec. (renewed every second)|nCooldown: 90 sec"+".|r")
 call LANG_A('SnT1',3,0,"Bankai. After a 0.3 sec. cast (can be cancelled — cooldown and mana are returned) a bud closes around Hirako, and halfway through releases a mist. While the bankai lasts Hirako is invulnerable and has only the cancel button. Every second everyone in the mist except Hirako (allies too) gets confuse"+"d: enemies look like allies and allies like enemies. On the first confusion a hero instantly uses a random ability on the nearest \"enemy\".|n|n|cFF00A5FF|nCast: 0.3 sec.|nMist: 1 sec. after the cast|nMist AoE: 1000|nMist duration: 6 sec.|nConfusion: 1.2 sec. (renewed every second)|nCooldown: 90 sec"+".|r")
 call LANG_A('SnTc',0,0,"Cancel Bankai (|cffffcc00T|r)")
@@ -282564,8 +282654,8 @@ call LANG_A('SnF1',1,0,"An instant step to a point. Recharges twice as fast from
 endfunction
 function LANG_Data51 takes nothing returns nothing
 call LANG_A('SnF1',3,0,"An instant step to a point. Recharges twice as fast from inside the W mist.|n|n|cFF00A5FF|nRange: 600|nCooldown: 8 sec. (4 sec. from the mist)|r")
-call LANG_A('SnG1',1,0,"Shunpo behind the target and a slash: the target sees the strike coming from the front, but it lands from behind. A finisher: damage grows with the target's missing HP.|n|n|cFF00A5FF|nDamage: 4*|r|c003CFF3CAGI|r|cFF00A5FF + 25% of the target's missing HP|nRange: 600|nCooldown: 45 sec.|r")
-call LANG_A('SnG1',3,0,"Shunpo behind the target and a slash: the target sees the strike coming from the front, but it lands from behind. A finisher: damage grows with the target's missing HP.|n|n|cFF00A5FF|nDamage: 4*|r|c003CFF3CAGI|r|cFF00A5FF + 25% of the target's missing HP|nRange: 600|nCooldown: 45 sec.|r")
+call LANG_A('SnG1',1,0,"Shunpo behind the target and a slash: the target sees the strike coming from the front, but it lands from behind. A finisher: damage grows with the target's missing HP.|n|n|cFF00A5FF|nDamage: 3*|r|c003CFF3CAGI|r|cFF00A5FF + 15% of the target's missing HP|nRange: 600|nCooldown: 45 sec.|r")
+call LANG_A('SnG1',3,0,"Shunpo behind the target and a slash: the target sees the strike coming from the front, but it lands from behind. A finisher: damage grows with the target's missing HP.|n|n|cFF00A5FF|nDamage: 3*|r|c003CFF3CAGI|r|cFF00A5FF + 15% of the target's missing HP|nRange: 600|nCooldown: 45 sec.|r")
 call LANG_It('I000',0,"Gauntlets of Power")
 call LANG_It('I000',1,"Gauntlets of Power")
 call LANG_It('I001',1,"Crown of Nobility")
