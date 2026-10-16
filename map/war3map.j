@@ -127889,6 +127889,82 @@ call TimerStart(t,0,false,function ShinjiInvReissue)
 set e=null
 set t=null
 endfunction
+// приказ по юниту у юнита с меткой инверсии (16 окт): цель — юнит у отражённой точки (300), иначе приказ в точку, иначе стоп
+function ShinjiInvReissueT takes nothing returns nothing
+local timer t=GetExpiredTimer()
+local integer id=GetHandleId(t)
+local unit e=LoadUnitHandle(h,id,0)
+local integer eid=GetHandleId(e)
+local integer o=LoadInteger(h,id,1)
+local unit c=LoadUnitHandle(h,id,4)
+call SaveBoolean(HH,eid,SH_ShnInvBusy,true)
+if not ((c!=null and IssueTargetOrderById(e,o,c)) or IssuePointOrderById(e,o,LoadReal(h,id,2),LoadReal(h,id,3))) then
+call SaveBoolean(HH,eid,SH_ShnInvBusy,false)
+call IssueImmediateOrder(e,"stop")
+endif
+call FlushChildHashtable(h,id)
+call DestroyTimer(t)
+set c=null
+set e=null
+set t=null
+endfunction
+function ShinjiInvTOrder takes nothing returns nothing
+local unit e=GetTriggerUnit()
+local integer eid=GetHandleId(e)
+local unit tg=GetOrderTargetUnit()
+local timer t
+local integer id
+local real nx
+local real ny
+local group g
+local unit c
+local unit best=null
+local real bd=90000.
+local real dd
+if LoadBoolean(HH,eid,SH_ShnInvBusy) then
+call SaveBoolean(HH,eid,SH_ShnInvBusy,false)
+set tg=null
+set e=null
+return
+endif
+if tg==null or tg==e or LoadReal(HH,eid,SH_ShnInv)<=TimerGetElapsed(ShnClock) then
+set tg=null
+set e=null
+return
+endif
+set nx=RMaxBJ(GetRectMinX(bj_mapInitialPlayableArea),RMinBJ(GetRectMaxX(bj_mapInitialPlayableArea),2*GetUnitX(e)-GetUnitX(tg)))
+set ny=RMaxBJ(GetRectMinY(bj_mapInitialPlayableArea),RMinBJ(GetRectMaxY(bj_mapInitialPlayableArea),2*GetUnitY(e)-GetUnitY(tg)))
+set g=CreateGroup()
+call GroupEnumUnitsInRange(g,nx,ny,300,null)
+loop
+set c=FirstOfGroup(g)
+exitwhen c==null
+if c!=e and c!=tg and UnitIsAlive(c) and not IsUnitType(c,UNIT_TYPE_STRUCTURE) and GetUnitAbilityLevel(c,'Aloc')==0 then
+set dd=(GetUnitX(c)-nx)*(GetUnitX(c)-nx)+(GetUnitY(c)-ny)*(GetUnitY(c)-ny)
+if dd<bd then
+set bd=dd
+set best=c
+endif
+endif
+call GroupRemoveUnit(g,c)
+endloop
+call DestroyGroup(g)
+set t=CreateTimer()
+set id=GetHandleId(t)
+call SaveUnitHandle(h,id,0,e)
+call SaveInteger(h,id,1,GetIssuedOrderId())
+call SaveReal(h,id,2,nx)
+call SaveReal(h,id,3,ny)
+if best!=null then
+call SaveUnitHandle(h,id,4,best)
+endif
+call TimerStart(t,0,false,function ShinjiInvReissueT)
+set g=null
+set best=null
+set tg=null
+set e=null
+set t=null
+endfunction
 function ShinjiWCast2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
@@ -127898,18 +127974,28 @@ local real x=LoadReal(h,id,1)
 local real y=LoadReal(h,id,2)
 local real time=LoadReal(h,id,3)
 local integer i=0
+local group g
+local unit e
 call SaveReal(h,id,3,time+0.05)
 if time<LoadReal(h,id,4) and UnitIsAlive(u) and udg_B==true then
-call GroupEnumUnitsInRange(G,x,y,450,Base)
+// своя группа: SlowUnit и обработчики могут пользоваться глобальными G / E
+set g=CreateGroup()
+call GroupEnumUnitsInRange(g,x,y,450,Base)
 loop
-set E=FirstOfGroup(G)
-exitwhen E==null
-if Condition_Base(p,E) then
-call SaveReal(HH,GetHandleId(E),SH_ShnInv,TimerGetElapsed(ShnClock)+0.15)
+set e=FirstOfGroup(g)
+exitwhen e==null
+if Condition_Base(p,e) then
+call SaveReal(HH,GetHandleId(e),SH_ShnInv,TimerGetElapsed(ShnClock)+0.15)
+// замедление 20% бега раз в 0.5 с на 0.6 с (16 окт)
+if ModuloInteger(R2I(time*20+0.5),10)==0 then
+call SlowUnit(u,e,0.2,0.,0.6,2,false)
 endif
-call GroupRemoveUnit(G,E)
+endif
+call GroupRemoveUnit(g,e)
 endloop
-call GroupClear(G)
+call DestroyGroup(g)
+set g=null
+set e=null
 else
 loop
 exitwhen i>6
@@ -127929,7 +128015,7 @@ function ShinjiWCast takes nothing returns nothing
 local unit u=GetTriggerUnit()
 local real x1=GetSpellTargetX()
 local real y1=GetSpellTargetY()
-local real dur=3.5+0.5*GetUnitAbilityLevel(u,'SnW1')
+local real dur=1.5+0.5*GetUnitAbilityLevel(u,'SnW1') // 2..4 с (16 окт; было 4..6)
 local timer t=CreateTimer()
 local integer id=GetHandleId(t)
 local integer i=0
@@ -127969,6 +128055,10 @@ call TriggerAddAction(t,function ShinjiWCast)
 set t=CreateTrigger()
 call TriggerRegisterAnyUnitEventBJ(t,EVENT_PLAYER_UNIT_ISSUED_POINT_ORDER)
 call TriggerAddAction(t,function ShinjiInvOrder)
+// и приказы по юниту (16 окт)
+set t=CreateTrigger()
+call TriggerRegisterAnyUnitEventBJ(t,EVENT_PLAYER_UNIT_ISSUED_TARGET_ORDER)
+call TriggerAddAction(t,function ShinjiInvTOrder)
 // часы инверсии: идут всю игру, время — для меток SH_ShnInv
 set ShnClock=CreateTimer()
 call TimerStart(ShnClock,999999.,false,null)
@@ -282601,13 +282691,13 @@ call LANG_A('SnW1',0,1,"Sakanade: Inverted World, [|cffffcc00Level 2|r] (|cffffc
 call LANG_A('SnW1',0,2,"Sakanade: Inverted World, [|cffffcc00Level 3|r] (|cffffcc00W|r)")
 call LANG_A('SnW1',0,3,"Sakanade: Inverted World, [|cffffcc00Level 4|r] (|cffffcc00W|r)")
 call LANG_A('SnW1',0,4,"Sakanade: Inverted World, [|cffffcc00Level 5|r] (|cffffcc00W|r)")
-call LANG_A('SnW1',1,0,"\"Collapse, Sakanade\": a sweet mist at a point. Enemies inside see the world upside down: move orders and point-targeted skills go the opposite way.|n|n|cFF00A5FF|nDuration: 4\\4.5\\5\\5.5\\6 sec.|nAoE: 450|nRange: 900|nCooldown: 22 sec.|r")
-call LANG_A('SnW1',1,1,"\"Collapse, Sakanade\": a sweet mist at a point. Enemies inside see the world upside down: move orders and point-targeted skills go the opposite way.|n|n|cFF00A5FF|nDuration: 4\\4.5\\5\\5.5\\6 sec.|nAoE: 450|nRange: 900|nCooldown: 22 sec.|r")
-call LANG_A('SnW1',1,2,"\"Collapse, Sakanade\": a sweet mist at a point. Enemies inside see the world upside down: move orders and point-targeted skills go the opposite way.|n|n|cFF00A5FF|nDuration: 4\\4.5\\5\\5.5\\6 sec.|nAoE: 450|nRange: 900|nCooldown: 22 sec.|r")
-call LANG_A('SnW1',1,3,"\"Collapse, Sakanade\": a sweet mist at a point. Enemies inside see the world upside down: move orders and point-targeted skills go the opposite way.|n|n|cFF00A5FF|nDuration: 4\\4.5\\5\\5.5\\6 sec.|nAoE: 450|nRange: 900|nCooldown: 22 sec.|r")
-call LANG_A('SnW1',1,4,"\"Collapse, Sakanade\": a sweet mist at a point. Enemies inside see the world upside down: move orders and point-targeted skills go the opposite way.|n|n|cFF00A5FF|nDuration: 4\\4.5\\5\\5.5\\6 sec.|nAoE: 450|nRange: 900|nCooldown: 22 sec.|r")
+call LANG_A('SnW1',1,0,"\"Collapse, Sakanade\": a sweet mist at a point. Enemies inside see the world upside down: move, attack and skill orders (point- and unit-targeted) go the opposite way. The mist slows a little.|n|n|cFF00A5FF|nDuration: 2\\2.5\\3\\3.5\\4 sec.|nSlow: 20% move speed|nAoE: 450|nRange: 900|nCooldown: 22 "+"sec.|r")
+call LANG_A('SnW1',1,1,"\"Collapse, Sakanade\": a sweet mist at a point. Enemies inside see the world upside down: move, attack and skill orders (point- and unit-targeted) go the opposite way. The mist slows a little.|n|n|cFF00A5FF|nDuration: 2\\2.5\\3\\3.5\\4 sec.|nSlow: 20% move speed|nAoE: 450|nRange: 900|nCooldown: 22 "+"sec.|r")
+call LANG_A('SnW1',1,2,"\"Collapse, Sakanade\": a sweet mist at a point. Enemies inside see the world upside down: move, attack and skill orders (point- and unit-targeted) go the opposite way. The mist slows a little.|n|n|cFF00A5FF|nDuration: 2\\2.5\\3\\3.5\\4 sec.|nSlow: 20% move speed|nAoE: 450|nRange: 900|nCooldown: 22 "+"sec.|r")
+call LANG_A('SnW1',1,3,"\"Collapse, Sakanade\": a sweet mist at a point. Enemies inside see the world upside down: move, attack and skill orders (point- and unit-targeted) go the opposite way. The mist slows a little.|n|n|cFF00A5FF|nDuration: 2\\2.5\\3\\3.5\\4 sec.|nSlow: 20% move speed|nAoE: 450|nRange: 900|nCooldown: 22 "+"sec.|r")
+call LANG_A('SnW1',1,4,"\"Collapse, Sakanade\": a sweet mist at a point. Enemies inside see the world upside down: move, attack and skill orders (point- and unit-targeted) go the opposite way. The mist slows a little.|n|n|cFF00A5FF|nDuration: 2\\2.5\\3\\3.5\\4 sec.|nSlow: 20% move speed|nAoE: 450|nRange: 900|nCooldown: 22 "+"sec.|r")
 call LANG_A('SnW1',2,0,"Sakanade: Inverted World, [|cffffcc00Level %d|r] (|cffffcc00W|r)")
-call LANG_A('SnW1',3,0,"\"Collapse, Sakanade\": a sweet mist at a point. Enemies inside see the world upside down: move orders and point-targeted skills go the opposite way.|n|n|cFF00A5FF|nDuration: 4\\4.5\\5\\5.5\\6 sec.|nAoE: 450|nRange: 900|nCooldown: 22 sec.|r")
+call LANG_A('SnW1',3,0,"\"Collapse, Sakanade\": a sweet mist at a point. Enemies inside see the world upside down: move, attack and skill orders (point- and unit-targeted) go the opposite way. The mist slows a little.|n|n|cFF00A5FF|nDuration: 2\\2.5\\3\\3.5\\4 sec.|nSlow: 20% move speed|nAoE: 450|nRange: 900|nCooldown: 22 "+"sec.|r")
 call LANG_A('SnE1',0,0,"Hollow Mask, [|cffffcc00Level 1|r] (|cffffcc00E|r)")
 call LANG_A('SnE1',0,1,"Hollow Mask, [|cffffcc00Level 2|r] (|cffffcc00E|r)")
 call LANG_A('SnE1',0,2,"Hollow Mask, [|cffffcc00Level 3|r] (|cffffcc00E|r)")
