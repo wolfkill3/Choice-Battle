@@ -128970,7 +128970,7 @@ endfunction
 //endfunction
 // T — банкай Сакасима Ёкосима Хаппо Фусагари (16 окт). Channel 0.3 с: стоп / движение до конца — отмена,
 // перезарядка и мана возвращаются. Затем у места каста закрывается бутон (Shinji2_Bankai, Birth 2 с) и выпускается
-// туман AoE 1000 на 6 с. Раз в секунду всем в тумане, кроме юнитов игрока Хирако (и союзникам Хирако тоже), — путаница
+// туман AoE 1000 на 6 с. Раз в секунду врагам Хирако в тумане (16 окт: только врагам, односторонне) — путаница
 // на 1.2 с: игрок воспринимает врагов союзниками, а союзников врагами (ALLIANCE_PASSIVE в обе стороны со всеми игроками
 // 0..11; снимок союзов — на момент первой путаницы, возврат — когда путаница кончилась у всех). При первом дебаффе
 // за каст герой применяет случайную готовую способность по ближайшему (уже «перевёрнутому») врагу.
@@ -128985,7 +128985,9 @@ loop
 exitwhen j>11
 if i!=j then
 set al=ShnAllySnap[i*12+j]
-if ShnConfOn[i] or ShnConfOn[j] then
+// односторонне (16 окт): переворачивается только взгляд запутанного игрока на других
+//if ShnConfOn[i] or ShnConfOn[j] then
+if ShnConfOn[i] then
 set al=not al
 endif
 call SetPlayerAlliance(Player(i),Player(j),ALLIANCE_PASSIVE,al)
@@ -129136,7 +129138,8 @@ set id=CBS_Ab[cbP*60+ModuloInteger(k+i,cnt)]
 set o=0
 if id!='SnT1' and GetUnitAbilityLevel(e,id)>0 then
 set os=GetAbilityBaseStringLevelFieldById(id,ABILITY_SLF_BASE_ORDER_ID_NCL6,0)
-if os!=null and os!="" then
+// не Channel тоже даёт непустую строку, но приказ 0 (16 окт) — Channel только с настоящим приказом
+if os!=null and os!="" and OrderId(os)!=0 then
 set o=OrderId(os)
 set tt=GetAbilityBaseIntegerLevelFieldById(id,ABILITY_ILF_TARGET_TYPE,0)
 elseif ShinjiFcAbOk(e,id) then
@@ -129170,7 +129173,7 @@ set id=CBS_Ab[cbP*60+ModuloInteger(k+i,cnt)]
 set o=0
 if id!='SnT1' and GetUnitAbilityLevel(e,id)>0 then
 set os=GetAbilityBaseStringLevelFieldById(id,ABILITY_SLF_BASE_ORDER_ID_NCL6,0)
-if os!=null and os!="" then
+if os!=null and os!="" and OrderId(os)!=0 then
 set o=OrderId(os)
 elseif ShinjiFcAbOk(e,id) then
 set o=GetAbilityOrderId(GetUnitAbility(e,id))
@@ -129313,7 +129316,7 @@ loop
 set e=FirstOfGroup(g)
 exitwhen e==null
 set ep=GetPlayerId(GetOwningPlayer(e))
-if ep<12 and ep!=hp and UnitIsAlive(e) and not IsUnitType(e,UNIT_TYPE_STRUCTURE) and GetUnitAbilityLevel(e,'Aloc')==0 and 'dumm'!=GetUnitTypeId(e) and 'cdm1'!=GetUnitTypeId(e) then
+if ep<12 and ep!=hp and IsPlayerEnemy(Player(hp),Player(ep)) and UnitIsAlive(e) and not IsUnitType(e,UNIT_TYPE_STRUCTURE) and GetUnitAbilityLevel(e,'Aloc')==0 and 'dumm'!=GetUnitTypeId(e) and 'cdm1'!=GetUnitTypeId(e) then
 call ShinjiConfOn(ep,1.2)
 call DestroyEffect(AddSpecialEffectTarget("Abilities\\Spells\\Other\\Charm\\CharmTarget.mdl",e,"overhead"))
 // принудительный каст — одна попытка за каст при первом дебаффе; нет маны или всё на перезарядке — без повторов (16 окт)
@@ -129400,6 +129403,17 @@ call TimerStart(t,0,false,function ShinjiTRefund)
 set t=null
 endif
 endfunction
+// предметы во время банкая (16 окт): приказы слотов 1-6 (852008..852013) — стоп
+function ShinjiTItemCond takes nothing returns boolean
+return GetIssuedOrderId()>=852008 and GetIssuedOrderId()<=852013 and GetUnitAbilityLevel(GetTriggerUnit(),'SnTc')>0
+endfunction
+function ShinjiTItem takes nothing returns nothing
+local unit u=GetTriggerUnit()
+call PauseUnit(u,true)
+call IssueImmediateOrder(u,"stop")
+call PauseUnit(u,false)
+set u=null
+endfunction
 function InitTrig_ShinjiT takes nothing returns nothing
 local trigger t=CreateTrigger()
 call TriggerRegisterAnyUnitEventBJ(t,EVENT_PLAYER_UNIT_SPELL_EFFECT)
@@ -129430,6 +129444,12 @@ set t=CreateTrigger()
 call TriggerRegisterAnyUnitEventBJ(t,EVENT_PLAYER_UNIT_SPELL_EFFECT)
 call TriggerAddCondition(t,Condition(function ShinjiTCancelCond))
 call TriggerAddAction(t,function ShinjiTCancel)
+set t=CreateTrigger()
+call TriggerRegisterAnyUnitEventBJ(t,EVENT_PLAYER_UNIT_ISSUED_ORDER)
+call TriggerRegisterAnyUnitEventBJ(t,EVENT_PLAYER_UNIT_ISSUED_POINT_ORDER)
+call TriggerRegisterAnyUnitEventBJ(t,EVENT_PLAYER_UNIT_ISSUED_TARGET_ORDER)
+call TriggerAddCondition(t,Condition(function ShinjiTItemCond))
+call TriggerAddAction(t,function ShinjiTItem)
 set t=null
 endfunction
 // D — Вращение Сакаканаде: волна 400 вокруг, урон 1*AGI и инверсия на 1.25 с — та же метка SH_ShnInv, что у W
