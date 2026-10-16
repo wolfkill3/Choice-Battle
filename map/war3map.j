@@ -283883,7 +283883,7 @@ call LANG_U('HFla',3,"Flandre Scarlet — Remilia's younger sister from Touhou P
 call LANG_U('hB1W',0,"Flandre's Clone")
 call LANG_U('HRem',3,"Remilia Scarlet — a 500-year-old vampire, mistress of the Scarlet Devil Mansion from Touhou Project and Flandre's older sister. She controls fate.|n(Abilities and effects ported from the Chinese map bof, by AlTrOn)|n|nRole: Caster, Disabler.|n")
 call LANG_U('HSui',3,"Suigintou — the first doll of Rozen Maiden: black wings, a rapier and the mirror world N.|n(Abilities and effects ported from the Chinese map bof, by AlTrOn)|n|nRole: Carry, Nuker, Disabler.|n")
-call LANG_U('HShn',3,"Hirako Shinji, captain of the 5th Division and a Visored from Bleach. Sakanade turns the enemy's world upside down, and the Hollow mask gives him a Hollow's power.|n(Ability icons are Urahara's for now)|n|nRole: Carry, Disabler.|n")
+call LANG_U('HShn',3,"Hirako Shinji, captain of the 5th Division and a Visored from Bleach. Sakanade turns the enemy's world upside down, and the Hollow mask gives him a Hollow's power.|n|nRole: Carry, Disabler.|n")
 call LANG_B('BRRV',0,"Rain Aura")
 call LANG_B('BRRV',1,"Aura of rain.")
 call LANG_B('BMUR',0,"Wood Dragon")
