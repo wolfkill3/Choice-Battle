@@ -2308,6 +2308,9 @@ constant integer SH_ShnBankSrc=StringHash("ShnBankSrc")
 constant integer SH_ShnTDone=StringHash("ShnTDone")
 constant integer SH_ShnConfCast=StringHash("ShnConfCast")
 constant integer SH_ShnTCur=StringHash("ShnTCur")
+// Хирако E (16 окт): запас маски (сек.) на герое, табло на номере игрока
+constant integer SH_ShnMaskRes=StringHash("ShnMaskRes")
+constant integer SH_ShnDBoard=StringHash("ShnDBoard")
 // путаница банкая по игрокам 0..11: включена, до какого времени ShnClock; снимок союзов (PASSIVE) на момент первой путаницы
 boolean array ShnConfOn
 real array ShnConfEnd
@@ -38655,6 +38658,46 @@ set u=null
 set t=null
 endfunction
 
+// Табло Хирако: запас маски E; без маски запас растёт на 1 сек. каждые 5 сек. (тик 0.2 с), не выше 7+уровень E
+function ShnDBoard2 takes nothing returns nothing
+local timer t=GetExpiredTimer()
+local integer id=GetHandleId(t)
+local integer ip=LoadInteger(HH,id,0)
+local unit u=Hero[ip]
+local integer uid=GetHandleId(u)
+local real mx
+local real r
+if GetUnitTypeId(u)=='HShn' then
+    set mx=7.+GetUnitAbilityLevel(u,'SnE1')
+    set r=LoadReal(HH,uid,SH_ShnMaskRes)
+    if not LoadBoolean(HH,uid,SH_ShnMask) and UnitIsAlive(u) then
+        set r=r+0.04
+    endif
+    if r>mx then
+        set r=mx
+    endif
+    call SaveReal(HH,uid,SH_ShnMaskRes,r)
+    if GetUnitAbilityLevel(u,'SnE1')>0 and IsUnitSelected(u,GetLocalPlayer()) and IsPlayerAlly(GetLocalPlayer(),OwnerOf(u)) then
+        call SetFrameText(GetFrameByName("CustomLeaderboardText",0),"|c00FFE0A0Hollow Mask|r: "+R2SW(r,1,1)+"/"+I2S(R2I(mx))+" s")
+        call ShowFrame(GetFrameByName("CustomLeaderboard",0), true)
+        call SetFrameSize( GetFrameByName("CustomLeaderboard",0), .1775, GetFrameHeight( GetFrameByName("CustomLeaderboardText",0))+0.016)
+        call SetFrameTextAlignment( GetFrameByName("CustomLeaderboardText",0), TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_LEFT )
+    endif
+else
+    if IsUnitSelected(u,GetLocalPlayer()) and IsPlayerAlly(GetLocalPlayer(),OwnerOf(u)) then
+        call SetFrameText(GetFrameByName("CustomLeaderboardText",0)," ")
+        call ShowFrame(GetFrameByName("CustomLeaderboard",0),false)
+    endif
+    call SaveInteger(HH,ip,SH_ShnDBoard,0)
+    call RemoveSavedInteger(HH,ip,SH_ShnDBoard)
+    call PauseTimer(t)
+    call DestroyTimer(t)
+    call FlushChildHashtable(HH,id)
+endif
+set u=null
+set t=null
+endfunction
+
 // Табло Фландре: заряды клонов T и время до следующего (+1 раз в 20 c)
 function FlaDBoard2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
@@ -39682,6 +39725,16 @@ if GetUnitTypeId(u)=='HRem' then
         call SaveInteger(HH,GetHandleId(cjlocgn_00000000),0,ip)
         call SaveInteger(HH,ip,SH_RemDBoard,1)
         call TimerStart(cjlocgn_00000000,0.2,true,function RemDBoard2)
+        set cjlocgn_00000000=null
+    endif
+endif
+if GetUnitTypeId(u)=='HShn' then
+    if LoadInteger(HH,ip,SH_ShnDBoard)!=1 then
+        set cjlocgn_00000000=CreateTimer()
+        call SaveInteger(HH,GetHandleId(cjlocgn_00000000),0,ip)
+        call SaveInteger(HH,ip,SH_ShnDBoard,1)
+        call SaveReal(HH,GetHandleId(u),SH_ShnMaskRes,99.)
+        call TimerStart(cjlocgn_00000000,0.2,true,function ShnDBoard2)
         set cjlocgn_00000000=null
     endif
 endif
@@ -59378,6 +59431,9 @@ exitwhen i>=10
         if GetUnitTypeId( Hero[i] )=='HFla' and LoadBoolean(HH,GetHandleId(Hero[i]),SH_FlaState) then
             call SaveInteger(HH,GetHandleId(Hero[i]),SH_FlaCharges,3)
         endif
+        if GetUnitTypeId( Hero[i] )=='HShn' then
+            call SaveReal(HH,GetHandleId(Hero[i]),SH_ShnMaskRes,99.)
+        endif
         if GetUnitTypeId( Hero[i] )=='Rosh' then
             call SaveReal(HH,PH(OwnerOf( Hero[i] )),SH_KimiFormDur,30)
 
@@ -65178,6 +65234,10 @@ if critcoef>1 then
 endif
 //Shinji1start
 // Хирако E: маска пустоты — бонус ко всему урону Хирако
+// Хирако E: урон без маски пополняет запас маски — 1 сек. за 5*AGI (16 окт)
+if nb>0 and suid=='HShn' and isTargetEnemy and not LoadBoolean(HH,cid,SH_ShnMask) and GetUnitAbilityLevel(c,'SnE1')>0 then
+    call SaveReal(HH,cid,SH_ShnMaskRes,RMinBJ(7.+GetUnitAbilityLevel(c,'SnE1'),LoadReal(HH,cid,SH_ShnMaskRes)+nb/RMaxBJ(5.*GetHeroAgi(c,true),1.)))
+endif
 if nb>0 and suid=='HShn' and LoadBoolean(HH,cid,SH_ShnMask) then
     set nb=nb*(1+LoadReal(HH,cid,SH_ShnMaskDmg))
 endif
@@ -127923,9 +127983,10 @@ function ShinjiECast2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
 local unit u=LoadUnitHandle(h,id,0)
-local real time=LoadReal(h,id,3)
-call SaveReal(h,id,3,time+0.1)
-if time<LoadReal(h,id,4) and UnitIsAlive(u) and udg_B==true then
+local real r=LoadReal(HH,GetHandleId(u),SH_ShnMaskRes)-0.1
+// запас маски тратится, пока она надета (16 окт; раньше — 7+уровень сек. от надевания)
+call SaveReal(HH,GetHandleId(u),SH_ShnMaskRes,RMaxBJ(r,0.))
+if r>0. and UnitIsAlive(u) and udg_B==true then
 // регенерация в маске: 1% макс. HP в секунду (16 окт)
 call SetUnitState(u,UNIT_STATE_LIFE,GetUnitState(u,UNIT_STATE_LIFE)+0.001*GetUnitState(u,UNIT_STATE_MAX_LIFE))
 else
@@ -127941,14 +128002,31 @@ endif
 set u=null
 set t=null
 endfunction
+// маски не хватает (меньше 3 сек. запаса): перезарядка 0 и мана назад
+function ShinjiERefund takes nothing returns nothing
+local timer t=GetExpiredTimer()
+local unit u=LoadUnitHandle(h,GetHandleId(t),0)
+call SetAbilityRemainingCooldown(GetUnitAbility(u,'SnE1'),0.)
+call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)+I2R(GetAbilityBaseIntegerLevelFieldById('SnE1',ABILITY_ILF_MANA_COST,GetUnitAbilityLevel(u,'SnE1')-1)))
+call FlushChildHashtable(h,GetHandleId(t))
+call DestroyTimer(t)
+set u=null
+set t=null
+endfunction
 function ShinjiECast takes nothing returns nothing
 local unit u=GetTriggerUnit()
 local integer lv=GetUnitAbilityLevel(u,'SnE1')
 local timer t=CreateTimer()
 local integer id=GetHandleId(t)
+if LoadReal(HH,GetHandleId(u),SH_ShnMaskRes)<3. or LoadBoolean(HH,GetHandleId(u),SH_ShnMask) then
 call SaveUnitHandle(h,id,0,u)
-call SaveReal(h,id,3,0)
-call SaveReal(h,id,4,7.+lv)
+call TimerStart(t,0,false,function ShinjiERefund)
+call DisplayTextToPlayer(OwnerOf(u),0,0,Lng("Маска ещё не восстановилась (нужно 3 сек.)","The mask has not recovered yet (3 sec. needed)"))
+set t=null
+set u=null
+return
+endif
+call SaveUnitHandle(h,id,0,u)
 call SaveBoolean(HH,GetHandleId(u),SH_ShnMask,true)
 call SaveReal(HH,GetHandleId(u),SH_ShnMaskDmg,0.1+0.02*lv) // 12..20% (16 окт; было 30..50%)
 call UnitAddAbility(u,'SnEa')
@@ -282445,13 +282523,13 @@ call LANG_A('SnE1',0,1,"Hollow Mask, [|cffffcc00Level 2|r] (|cffffcc00E|r)")
 call LANG_A('SnE1',0,2,"Hollow Mask, [|cffffcc00Level 3|r] (|cffffcc00E|r)")
 call LANG_A('SnE1',0,3,"Hollow Mask, [|cffffcc00Level 4|r] (|cffffcc00E|r)")
 call LANG_A('SnE1',0,4,"Hollow Mask, [|cffffcc00Level 5|r] (|cffffcc00E|r)")
-call LANG_A('SnE1',1,0,"The Visored Hollow mask: bonus damage and attack speed, regeneration. While the mask is on, the E button fires a Cero.|n|n|cFF00A5FF|nDamage bonus: 12\\14\\16\\18\\20%|nAttack speed: +20\\25\\30\\35\\40%|nRegeneration: 1% max HP per sec.|nDuration: 8\\9\\10\\11\\12 sec.|nCooldown: 40 sec.|r")
-call LANG_A('SnE1',1,1,"The Visored Hollow mask: bonus damage and attack speed, regeneration. While the mask is on, the E button fires a Cero.|n|n|cFF00A5FF|nDamage bonus: 12\\14\\16\\18\\20%|nAttack speed: +20\\25\\30\\35\\40%|nRegeneration: 1% max HP per sec.|nDuration: 8\\9\\10\\11\\12 sec.|nCooldown: 40 sec.|r")
-call LANG_A('SnE1',1,2,"The Visored Hollow mask: bonus damage and attack speed, regeneration. While the mask is on, the E button fires a Cero.|n|n|cFF00A5FF|nDamage bonus: 12\\14\\16\\18\\20%|nAttack speed: +20\\25\\30\\35\\40%|nRegeneration: 1% max HP per sec.|nDuration: 8\\9\\10\\11\\12 sec.|nCooldown: 40 sec.|r")
-call LANG_A('SnE1',1,3,"The Visored Hollow mask: bonus damage and attack speed, regeneration. While the mask is on, the E button fires a Cero.|n|n|cFF00A5FF|nDamage bonus: 12\\14\\16\\18\\20%|nAttack speed: +20\\25\\30\\35\\40%|nRegeneration: 1% max HP per sec.|nDuration: 8\\9\\10\\11\\12 sec.|nCooldown: 40 sec.|r")
-call LANG_A('SnE1',1,4,"The Visored Hollow mask: bonus damage and attack speed, regeneration. While the mask is on, the E button fires a Cero.|n|n|cFF00A5FF|nDamage bonus: 12\\14\\16\\18\\20%|nAttack speed: +20\\25\\30\\35\\40%|nRegeneration: 1% max HP per sec.|nDuration: 8\\9\\10\\11\\12 sec.|nCooldown: 40 sec.|r")
+call LANG_A('SnE1',1,0,"The Visored Hollow mask: bonus damage and attack speed, regeneration. While the mask is on, the E button fires a Cero.|n|n|cFF00A5FF|nDamage bonus: 12\\14\\16\\18\\20%|nAttack speed: +20\\25\\30\\35\\40%|nRegeneration: 1% max HP per sec.|nMask reserve: 8\\9\\10\\11\\12 sec. (spent while worn; 3 sec."+" needed to put it on)|nRefill without the mask: +1 sec. every 5 sec. and +1 sec. per 5*|r|c003CFF3CAGI|r|cFF00A5FF damage dealt; full at round start|nCooldown: 3 sec.|r")
+call LANG_A('SnE1',1,1,"The Visored Hollow mask: bonus damage and attack speed, regeneration. While the mask is on, the E button fires a Cero.|n|n|cFF00A5FF|nDamage bonus: 12\\14\\16\\18\\20%|nAttack speed: +20\\25\\30\\35\\40%|nRegeneration: 1% max HP per sec.|nMask reserve: 8\\9\\10\\11\\12 sec. (spent while worn; 3 sec."+" needed to put it on)|nRefill without the mask: +1 sec. every 5 sec. and +1 sec. per 5*|r|c003CFF3CAGI|r|cFF00A5FF damage dealt; full at round start|nCooldown: 3 sec.|r")
+call LANG_A('SnE1',1,2,"The Visored Hollow mask: bonus damage and attack speed, regeneration. While the mask is on, the E button fires a Cero.|n|n|cFF00A5FF|nDamage bonus: 12\\14\\16\\18\\20%|nAttack speed: +20\\25\\30\\35\\40%|nRegeneration: 1% max HP per sec.|nMask reserve: 8\\9\\10\\11\\12 sec. (spent while worn; 3 sec."+" needed to put it on)|nRefill without the mask: +1 sec. every 5 sec. and +1 sec. per 5*|r|c003CFF3CAGI|r|cFF00A5FF damage dealt; full at round start|nCooldown: 3 sec.|r")
+call LANG_A('SnE1',1,3,"The Visored Hollow mask: bonus damage and attack speed, regeneration. While the mask is on, the E button fires a Cero.|n|n|cFF00A5FF|nDamage bonus: 12\\14\\16\\18\\20%|nAttack speed: +20\\25\\30\\35\\40%|nRegeneration: 1% max HP per sec.|nMask reserve: 8\\9\\10\\11\\12 sec. (spent while worn; 3 sec."+" needed to put it on)|nRefill without the mask: +1 sec. every 5 sec. and +1 sec. per 5*|r|c003CFF3CAGI|r|cFF00A5FF damage dealt; full at round start|nCooldown: 3 sec.|r")
+call LANG_A('SnE1',1,4,"The Visored Hollow mask: bonus damage and attack speed, regeneration. While the mask is on, the E button fires a Cero.|n|n|cFF00A5FF|nDamage bonus: 12\\14\\16\\18\\20%|nAttack speed: +20\\25\\30\\35\\40%|nRegeneration: 1% max HP per sec.|nMask reserve: 8\\9\\10\\11\\12 sec. (spent while worn; 3 sec."+" needed to put it on)|nRefill without the mask: +1 sec. every 5 sec. and +1 sec. per 5*|r|c003CFF3CAGI|r|cFF00A5FF damage dealt; full at round start|nCooldown: 3 sec.|r")
 call LANG_A('SnE1',2,0,"Hollow Mask, [|cffffcc00Level %d|r] (|cffffcc00E|r)")
-call LANG_A('SnE1',3,0,"The Visored Hollow mask: bonus damage and attack speed, regeneration. While the mask is on, the E button fires a Cero.|n|n|cFF00A5FF|nDamage bonus: 12\\14\\16\\18\\20%|nAttack speed: +20\\25\\30\\35\\40%|nRegeneration: 1% max HP per sec.|nDuration: 8\\9\\10\\11\\12 sec.|nCooldown: 40 sec.|r")
+call LANG_A('SnE1',3,0,"The Visored Hollow mask: bonus damage and attack speed, regeneration. While the mask is on, the E button fires a Cero.|n|n|cFF00A5FF|nDamage bonus: 12\\14\\16\\18\\20%|nAttack speed: +20\\25\\30\\35\\40%|nRegeneration: 1% max HP per sec.|nMask reserve: 8\\9\\10\\11\\12 sec. (spent while worn; 3 sec."+" needed to put it on)|nRefill without the mask: +1 sec. every 5 sec. and +1 sec. per 5*|r|c003CFF3CAGI|r|cFF00A5FF damage dealt; full at round start|nCooldown: 3 sec.|r")
 call LANG_A('SnR1',0,0,"Hadō #91: Senju Kōten Taihō, [|cffffcc00Level 1|r] (|cffffcc00R|r)")
 call LANG_A('SnR1',0,1,"Hadō #91: Senju Kōten Taihō, [|cffffcc00Level 2|r] (|cffffcc00R|r)")
 call LANG_A('SnR1',0,2,"Hadō #91: Senju Kōten Taihō, [|cffffcc00Level 3|r] (|cffffcc00R|r)")
