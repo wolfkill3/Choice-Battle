@@ -129092,10 +129092,10 @@ set ep=GetPlayerId(GetOwningPlayer(e))
 if ep<12 and ep!=hp and UnitIsAlive(e) and not IsUnitType(e,UNIT_TYPE_STRUCTURE) and GetUnitAbilityLevel(e,'Aloc')==0 and 'dumm'!=GetUnitTypeId(e) and 'cdm1'!=GetUnitTypeId(e) then
 call ShinjiConfOn(ep,1.2)
 call DestroyEffect(AddSpecialEffectTarget("Abilities\\Spells\\Other\\Charm\\CharmTarget.mdl",e,"overhead"))
-// принудительный каст — один раз за каст; не вышло (нет готовой способности / цели) — пробуем на следующем импульсе
+// принудительный каст — одна попытка за каст при первом дебаффе; нет маны или всё на перезарядке — без повторов (16 окт)
 if LoadInteger(HH,GetHandleId(e),SH_ShnConfCast)!=id then
-if ShinjiForceCast(e) then
 call SaveInteger(HH,GetHandleId(e),SH_ShnConfCast,id)
+if ShinjiForceCast(e) then
 endif
 endif
 endif
