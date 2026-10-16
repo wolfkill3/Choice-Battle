@@ -37489,7 +37489,7 @@ call TavRole_Set('HSui',1042)
 call TavRole_Set('HRem',17)
 call TavRole_Set('HFla',1041)
 call TavRole_Set('HEsc',1552)
-call TavRole_Set('HShn',2064)
+call TavRole_Set('HShn',2067)
 endfunction
 //TAVROLE_DATA_END
 function TavRole_Name takes integer trB returns string
@@ -284615,7 +284615,7 @@ call LANG_U('HFla',3,"Flandre Scarlet — Remilia's younger sister from Touhou P
 call LANG_U('hB1W',0,"Flandre's Clone")
 call LANG_U('HRem',3,"Remilia Scarlet — a 500-year-old vampire, mistress of the Scarlet Devil Mansion from Touhou Project and Flandre's older sister. She controls fate.|n(Abilities and effects ported from the Chinese map bof, by AlTrOn)|n|nRole: Caster, Disabler.|n")
 call LANG_U('HSui',3,"Suigintou — the first doll of Rozen Maiden: black wings, a rapier and the mirror world N.|n(Abilities and effects ported from the Chinese map bof, by AlTrOn)|n|nRole: Carry, Nuker, Disabler.|n")
-call LANG_U('HShn',3,"Captain of the 5th Division and a Visored. His Sakanade turns the enemy's world upside down, and the Hollow mask unleashes a Hollow's power.|n|nRole: Initiator, Disabler.|n")
+call LANG_U('HShn',3,"Captain of the 5th Division and a Visored. His Sakanade turns the enemy's world upside down, and the Hollow mask unleashes a Hollow's power.|n|nRole: Initiator, Disabler, Caster, Carry.|n")
 call LANG_B('BRRV',0,"Rain Aura")
 call LANG_B('BRRV',1,"Aura of rain.")
 call LANG_B('BMUR',0,"Wood Dragon")
