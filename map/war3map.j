@@ -128853,7 +128853,7 @@ call ShinjiConfSync()
 endif
 endfunction
 // случайная готовая способность героя e по ближайшему врагу (в 1200): по юниту, иначе в его точку, иначе без цели
-function ShinjiForceCast takes unit e returns nothing
+function ShinjiForceCast takes unit e returns boolean
 local integer cbP=CBS_Me(PId(OwnerOf(e)))
 local player p=OwnerOf(e)
 local group g
@@ -128868,9 +128868,10 @@ local integer id
 local integer o
 local string os
 local integer tt
+local boolean ok=false
 if cbP<0 or cbP>11 or Hero[cbP]!=e then
 set p=null
-return
+return false
 endif
 set g=CreateGroup()
 call GroupEnumUnitsInRange(g,GetUnitX(e),GetUnitY(e),1200,null)
@@ -128886,6 +128887,22 @@ endif
 endif
 call GroupRemoveUnit(g,c)
 endloop
+// «врагов» рядом нет (например, один на один: после путаницы враги кажутся союзниками) — ближайший юнит вообще (16 окт)
+if t==null then
+call GroupEnumUnitsInRange(g,GetUnitX(e),GetUnitY(e),1200,null)
+loop
+set c=FirstOfGroup(g)
+exitwhen c==null
+if c!=e and UnitIsAlive(c) and not IsUnitType(c,UNIT_TYPE_STRUCTURE) and GetUnitAbilityLevel(c,'Aloc')==0 and 'dumm'!=GetUnitTypeId(c) and 'cdm1'!=GetUnitTypeId(c) then
+set dd=(GetUnitX(c)-GetUnitX(e))*(GetUnitX(c)-GetUnitX(e))+(GetUnitY(c)-GetUnitY(e))*(GetUnitY(c)-GetUnitY(e))
+if dd<bd then
+set bd=dd
+set t=c
+endif
+endif
+call GroupRemoveUnit(g,c)
+endloop
+endif
 call DestroyGroup(g)
 set g=null
 set cnt=CBS_AbN[cbP]
@@ -128910,10 +128927,13 @@ endif
 endif
 if o!=0 then
 if (tt==1 or tt==3 or tt==4) and IssueTargetOrderById(e,o,t) then
+set ok=true
 set i=cnt
 elseif (tt==2 or tt==3 or tt==4) and IssuePointOrderById(e,o,GetUnitX(t),GetUnitY(t)) then
+set ok=true
 set i=cnt
 elseif (tt==0 or tt==4) and IssueImmediateOrderById(e,o) then
+set ok=true
 set i=cnt
 endif
 endif
@@ -128923,6 +128943,7 @@ endif
 set t=null
 set c=null
 set p=null
+return ok
 endfunction
 // на время банкая Хирако неуязвим, способности / движение / атака скрыты и выключены, предметы выключены;
 // на месте T — кнопка отмены SnTc. Текущий таймер банкая — на герое (SH_ShnTDone как номер не годится: свой ключ SH_ShnTCur)
@@ -129048,9 +129069,11 @@ set ep=GetPlayerId(GetOwningPlayer(e))
 if ep<12 and ep!=hp and UnitIsAlive(e) and not IsUnitType(e,UNIT_TYPE_STRUCTURE) and GetUnitAbilityLevel(e,'Aloc')==0 and 'dumm'!=GetUnitTypeId(e) and 'cdm1'!=GetUnitTypeId(e) then
 call ShinjiConfOn(ep,1.2)
 call DestroyEffect(AddSpecialEffectTarget("Abilities\\Spells\\Other\\Charm\\CharmTarget.mdl",e,"overhead"))
+// принудительный каст — один раз за каст; не вышло (нет готовой способности / цели) — пробуем на следующем импульсе
 if LoadInteger(HH,GetHandleId(e),SH_ShnConfCast)!=id then
+if ShinjiForceCast(e) then
 call SaveInteger(HH,GetHandleId(e),SH_ShnConfCast,id)
-call ShinjiForceCast(e)
+endif
 endif
 endif
 call GroupRemoveUnit(g,e)
