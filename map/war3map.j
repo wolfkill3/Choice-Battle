@@ -128210,12 +128210,13 @@ call SaveReal(h,id,4,dur)
 loop
 exitwhen i>6
 if i==0 then
-set fx=AddSpecialEffect("Hashirama\\SmokeFuzzy.mdl",x1,y1)
+// туман W — облако CloudOfFog в розовом (16 окт; было SmokeFuzzy, как у T)
+set fx=AddSpecialEffect("Abilities\\Spells\\Human\\CloudOfFog\\CloudOfFog.mdl",x1,y1)
 else
-set fx=AddSpecialEffect("Hashirama\\SmokeFuzzy.mdl",x1+250*Cos(i*bj_PI/3),y1+250*Sin(i*bj_PI/3))
+set fx=AddSpecialEffect("Abilities\\Spells\\Human\\CloudOfFog\\CloudOfFog.mdl",x1+250*Cos(i*bj_PI/3),y1+250*Sin(i*bj_PI/3))
 endif
-call SetSpecialEffectScale(fx,2.)
-call SetSpecialEffectVertexColour(fx,255,160,210,170)
+call SetSpecialEffectScale(fx,1.3)
+call SetSpecialEffectVertexColour(fx,255,150,220,220)
 call SaveEffectHandle(h,id,10+i,fx)
 set i=i+1
 endloop
@@ -129178,7 +129179,7 @@ else
 set fx=AddSpecialEffect("Hashirama\\SmokeFuzzy.mdl",x+850*Cos((i-7)*bj_PI/6),y+850*Sin((i-7)*bj_PI/6))
 endif
 call SetSpecialEffectScale(fx,2.5)
-call SetSpecialEffectVertexColour(fx,170,80,255,190) // фиолетовый (16 окт)
+call SetSpecialEffectVertexColour(fx,120,40,255,200) // фиолетовый (16 окт)
 call SaveEffectHandle(h,id,10+i,fx)
 set i=i+1
 endloop
@@ -129191,7 +129192,7 @@ exitwhen i>2
 set ep=GetRandomInt(0,359)
 set fx=AddSpecialEffect("Hashirama\\SmokeFuzzy.mdl",x+GetRandomReal(0,950)*Cos(ep*bj_DEGTORAD),y+GetRandomReal(0,950)*Sin(ep*bj_DEGTORAD))
 call SetSpecialEffectScale(fx,GetRandomReal(1.6,2.4))
-call SetSpecialEffectVertexColour(fx,170,80,255,160)
+call SetSpecialEffectVertexColour(fx,120,40,255,170)
 call RemoveEffect(fx,1.8,true,CreateTimer())
 set i=i+1
 endloop
@@ -129329,6 +129330,38 @@ endfunction
 function ShinjiDCond takes nothing returns boolean
 return GetSpellAbilityId()=='SnD1' and udg_B==true and GetUnitTypeId(GetTriggerUnit())=='HShn'
 endfunction
+// вращение Сакаканаде на D (16 окт): модель шикая (Shinji2_Shikai) лежит плашмя и крутится вокруг Хирако на 100
+// 0.6 с (тик 0.02, +36° за тик — ~3 оборота), затем исчезает
+function ShinjiDSpin takes nothing returns nothing
+local timer t=GetExpiredTimer()
+local integer id=GetHandleId(t)
+local unit u=LoadUnitHandle(h,id,0)
+local effect fx=LoadEffectHandle(h,id,1)
+local integer tk=LoadInteger(h,id,2)+1
+local real ang=tk*36.
+call SaveInteger(h,id,2,tk)
+if tk<=30 and UnitIsAlive(u) then
+call SetSpecialEffectPosition(fx,GetUnitX(u)+100*Cos(ang*bj_DEGTORAD),GetUnitY(u)+100*Sin(ang*bj_DEGTORAD),GetUnitFlyHeight(u)+GetTerrainZ(GetUnitX(u),GetUnitY(u))+60)
+call SetSpecialEffectOrientation(fx,ang+90.,0.,90.)
+else
+call DestroyEffect(fx)
+call FlushChildHashtable(h,id)
+call DestroyTimer(t)
+endif
+set fx=null
+set u=null
+set t=null
+endfunction
+function ShinjiDSpinStart takes unit u returns nothing
+local timer t=CreateTimer()
+local effect fx=AddSpecialEffect("Shinji2_Shikai.mdx",GetUnitX(u)+100,GetUnitY(u))
+call SetSpecialEffectScale(fx,0.65)
+call SaveUnitHandle(h,GetHandleId(t),0,u)
+call SaveEffectHandle(h,GetHandleId(t),1,fx)
+call TimerStart(t,0.02,true,function ShinjiDSpin)
+set fx=null
+set t=null
+endfunction
 function ShinjiDCast takes nothing returns nothing
 local unit u=GetTriggerUnit()
 local player p=OwnerOf(u)
@@ -129341,11 +129374,12 @@ local integer i=0
 local effect fx
 call SetUnitAnimation(u,"spell")
 call QueueUnitAnimation(u,"stand")
+call ShinjiDSpinStart(u)
 loop
 exitwhen i>5
-set fx=AddSpecialEffect("Hashirama\\SmokeFuzzy.mdl",x+220*Cos(i*bj_PI/3),y+220*Sin(i*bj_PI/3))
-call SetSpecialEffectScale(fx,1.4)
-call SetSpecialEffectVertexColour(fx,255,160,210,170)
+set fx=AddSpecialEffect("Abilities\\Spells\\Human\\CloudOfFog\\CloudOfFog.mdl",x+220*Cos(i*bj_PI/3),y+220*Sin(i*bj_PI/3))
+call SetSpecialEffectScale(fx,0.9)
+call SetSpecialEffectVertexColour(fx,255,150,220,220)
 call RemoveEffect(fx,1.25,true,CreateTimer())
 set i=i+1
 endloop
