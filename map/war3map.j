@@ -128474,6 +128474,81 @@ call TimerStart(t,0.15,false,function ShinjiRayEnd)
 set l=null
 set t=null
 endfunction
+// снаряд Хадо (16 окт): световая сфера Кидзару (e0G7) летит дугой с высоты he к точке, разгоняясь (x1.02 за 0.03 с);
+// в точке — взрыв Кидзару (e0G1 / e0G2 / e0G3 + Slam) и урон в 220 тем, кого этот каст ещё не задел (группа hit)
+function ShinjiHadoMissile2 takes nothing returns nothing
+local timer t=GetExpiredTimer()
+local integer id=GetHandleId(t)
+local unit m=LoadUnitHandle(h,id,0)
+local unit u=LoadUnitHandle(h,id,1)
+local real sp=LoadReal(h,id,2)
+local real tx=LoadReal(h,id,3)
+local real ty=LoadReal(h,id,4)
+local real he=LoadReal(h,id,5)
+local real dist=LoadReal(h,id,6)
+local group hit=LoadGroupHandle(h,id,7)
+local real dmg=LoadReal(h,id,8)
+local real mx=GetUnitX(m)
+local real my=GetUnitY(m)
+local real rd=SR(mx,my,tx,ty)
+local real a=Atan2(ty-my,tx-mx)
+local player p=OwnerOf(u)
+local group g
+local unit e
+if rd>sp+20 then
+call SetUnitXY_1(m,mx+sp*Cos(a),my+sp*Sin(a),false)
+call SaveReal(h,id,2,sp*1.02)
+call SetUnitFacing(m,a*bj_RADTODEG)
+call SetUnitFlyHeight(m,he*rd/RMaxBJ(dist,1)+50,0)
+else
+set g=CreateGroup()
+call GroupEnumUnitsInRange(g,tx,ty,220,Base)
+loop
+set e=FirstOfGroup(g)
+exitwhen e==null
+if Condition_Base(p,e) and not IsUnitInGroup(e,hit) then
+call GroupAddUnit(hit,e)
+call myCustomDamage(u,e,dmg,false,false,null,null,null)
+endif
+call GroupRemoveUnit(g,e)
+endloop
+call DestroyGroup(g)
+call UnitApplyTimedLife(CreateUnit(p,'e0G1',tx,ty,GetRandomReal(0,359)),'BTLF',1)
+call UnitApplyTimedLife(CreateUnit(p,'e0G2',tx,ty,GetRandomReal(0,359)),'BTLF',1)
+call UnitApplyTimedLife(CreateUnit(p,'e0G3',tx,ty,GetRandomReal(0,359)),'BTLF',1)
+call DestroyEffect(AddSpecialEffect("war3mapImported\\Slam.mdx",tx,ty))
+call RemoveUnit(m)
+call PauseTimer(t)
+call DestroyTimer(t)
+call FlushChildHashtable(h,id)
+endif
+set g=null
+set e=null
+set hit=null
+set p=null
+set m=null
+set u=null
+set t=null
+endfunction
+function ShinjiHadoMissile takes unit u,real tx,real ty,group hit,real dmg returns nothing
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+local real he=GetRandomReal(400,475)
+local unit m=CreateUnit(OwnerOf(u),'e0G7',GetUnitX(u)+GetRandomReal(-150,150),GetUnitY(u)+GetRandomReal(-150,150),bj_RADTODEG*Atan2(ty-GetUnitY(u),tx-GetUnitX(u)))
+call SetUnitFlyHeight(m,he,0)
+call SaveUnitHandle(h,id,0,m)
+call SaveUnitHandle(h,id,1,u)
+call SaveReal(h,id,2,50)
+call SaveReal(h,id,3,tx)
+call SaveReal(h,id,4,ty)
+call SaveReal(h,id,5,he)
+call SaveReal(h,id,6,SR(GetUnitX(m),GetUnitY(m),tx,ty))
+call SaveGroupHandle(h,id,7,hit)
+call SaveReal(h,id,8,dmg)
+call TimerStart(t,0.03,true,function ShinjiHadoMissile2)
+set m=null
+set t=null
+endfunction
 function ShinjiHadoCast2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
@@ -128487,36 +128562,41 @@ local real dmg=(4+GetUnitAbilityLevel(u,'SnR1'))*GetHeroAgi(u,true) // 5..9*AGI 
 local group g
 local unit e
 local effect fx
-if k>=7 or not UnitIsAlive(u) or udg_B==false then
+// снаряды ещё летят — группа задетых живёт 2 с после последнего (k до 7+25)
+if k>=32 then
 call DestroyGroup(hit)
 call PauseTimer(t)
 call DestroyTimer(t)
 call FlushChildHashtable(h,id)
+elseif k>=7 or not UnitIsAlive(u) or udg_B==false then
+call SaveInteger(h,id,3,k+1)
 else
 if k>0 then
 set px=px+250*Cos((k-1)*bj_PI/3)
 set py=py+250*Sin((k-1)*bj_PI/3)
 endif
-// быстрые световые лучи от Хирако (над ним, разброс 60) к точке столба — 3 штуки (16 окт)
-call ShinjiRay(GetUnitX(u)+GetRandomReal(-60,60),GetUnitY(u)+GetRandomReal(-60,60),GetRandomReal(220,320),px,py)
-call ShinjiRay(GetUnitX(u)+GetRandomReal(-60,60),GetUnitY(u)+GetRandomReal(-60,60),GetRandomReal(220,320),px+GetRandomReal(-80,80),py+GetRandomReal(-80,80))
-call ShinjiRay(GetUnitX(u)+GetRandomReal(-60,60),GetUnitY(u)+GetRandomReal(-60,60),GetRandomReal(220,320),px+GetRandomReal(-80,80),py+GetRandomReal(-80,80))
-set fx=AddSpecialEffect("BeamLight.mdl",px,py)
-call SetSpecialEffectScale(fx,1.2)
-call SetSpecialEffectZ(fx,30)
-call DestroyEffect(fx)
-set g=CreateGroup()
-call GroupEnumUnitsInRange(g,px,py,220,Base)
-loop
-set e=FirstOfGroup(g)
-exitwhen e==null
-if Condition_Base(p,e) and not IsUnitInGroup(e,hit) then
-call GroupAddUnit(hit,e)
-call myCustomDamage(u,e,dmg,false,false,null,null,null)
-endif
-call GroupRemoveUnit(g,e)
-endloop
-call DestroyGroup(g)
+// столбы BeamLight, лучи-молнии и мгновенный урон до 16 окт (вечер) — заменены снарядами Кидзару
+//// быстрые световые лучи от Хирако (над ним, разброс 60) к точке столба — 3 штуки (16 окт)
+//call ShinjiRay(GetUnitX(u)+GetRandomReal(-60,60),GetUnitY(u)+GetRandomReal(-60,60),GetRandomReal(220,320),px,py)
+//call ShinjiRay(GetUnitX(u)+GetRandomReal(-60,60),GetUnitY(u)+GetRandomReal(-60,60),GetRandomReal(220,320),px+GetRandomReal(-80,80),py+GetRandomReal(-80,80))
+//call ShinjiRay(GetUnitX(u)+GetRandomReal(-60,60),GetUnitY(u)+GetRandomReal(-60,60),GetRandomReal(220,320),px+GetRandomReal(-80,80),py+GetRandomReal(-80,80))
+//set fx=AddSpecialEffect("BeamLight.mdl",px,py)
+//call SetSpecialEffectScale(fx,1.2)
+//call SetSpecialEffectZ(fx,30)
+//call DestroyEffect(fx)
+//set g=CreateGroup()
+//call GroupEnumUnitsInRange(g,px,py,220,Base)
+//loop
+//set e=FirstOfGroup(g)
+//exitwhen e==null
+//if Condition_Base(p,e) and not IsUnitInGroup(e,hit) then
+//call GroupAddUnit(hit,e)
+//call myCustomDamage(u,e,dmg,false,false,null,null,null)
+//endif
+//call GroupRemoveUnit(g,e)
+//endloop
+//call DestroyGroup(g)
+call ShinjiHadoMissile(u,px,py,hit,dmg)
 call SaveInteger(h,id,3,k+1)
 endif
 set fx=null
@@ -282925,13 +283005,13 @@ call LANG_A('SnR1',0,1,"Hadō #91: Senju Kōten Taihō, [|cffffcc00Level 2|r] (|
 call LANG_A('SnR1',0,2,"Hadō #91: Senju Kōten Taihō, [|cffffcc00Level 3|r] (|cffffcc00R|r)")
 call LANG_A('SnR1',0,3,"Hadō #91: Senju Kōten Taihō, [|cffffcc00Level 4|r] (|cffffcc00R|r)")
 call LANG_A('SnR1',0,4,"Hadō #91: Senju Kōten Taihō, [|cffffcc00Level 5|r] (|cffffcc00R|r)")
-call LANG_A('SnR1',1,0,"Hadō #91 \"Senju Kōten Taihō\" without incantation: seven pillars of light strike the area — the centre and a ring around it. Each enemy takes damage once per cast.|n|n|cFF00A5FF|nDamage: 5\\6\\7\\8\\9*|r|c003CFF3CAGI|r|cFF00A5FF|nRange: 1200|nAoE: 450 (pillar 220)|nCooldown: 16 sec.|r")
-call LANG_A('SnR1',1,1,"Hadō #91 \"Senju Kōten Taihō\" without incantation: seven pillars of light strike the area — the centre and a ring around it. Each enemy takes damage once per cast.|n|n|cFF00A5FF|nDamage: 5\\6\\7\\8\\9*|r|c003CFF3CAGI|r|cFF00A5FF|nRange: 1200|nAoE: 450 (pillar 220)|nCooldown: 16 sec.|r")
-call LANG_A('SnR1',1,2,"Hadō #91 \"Senju Kōten Taihō\" without incantation: seven pillars of light strike the area — the centre and a ring around it. Each enemy takes damage once per cast.|n|n|cFF00A5FF|nDamage: 5\\6\\7\\8\\9*|r|c003CFF3CAGI|r|cFF00A5FF|nRange: 1200|nAoE: 450 (pillar 220)|nCooldown: 16 sec.|r")
-call LANG_A('SnR1',1,3,"Hadō #91 \"Senju Kōten Taihō\" without incantation: seven pillars of light strike the area — the centre and a ring around it. Each enemy takes damage once per cast.|n|n|cFF00A5FF|nDamage: 5\\6\\7\\8\\9*|r|c003CFF3CAGI|r|cFF00A5FF|nRange: 1200|nAoE: 450 (pillar 220)|nCooldown: 16 sec.|r")
-call LANG_A('SnR1',1,4,"Hadō #91 \"Senju Kōten Taihō\" without incantation: seven pillars of light strike the area — the centre and a ring around it. Each enemy takes damage once per cast.|n|n|cFF00A5FF|nDamage: 5\\6\\7\\8\\9*|r|c003CFF3CAGI|r|cFF00A5FF|nRange: 1200|nAoE: 450 (pillar 220)|nCooldown: 16 sec.|r")
+call LANG_A('SnR1',1,0,"Hadō #91 \"Senju Kōten Taihō\" without incantation: seven light projectiles arc into the area — the centre and a ring around it. Each enemy takes damage once per cast.|n|n|cFF00A5FF|nDamage: 5\\6\\7\\8\\9*|r|c003CFF3CAGI|r|cFF00A5FF|nRange: 1200|nAoE: 450 (projectile 220)|nCooldown: 16 sec.|r")
+call LANG_A('SnR1',1,1,"Hadō #91 \"Senju Kōten Taihō\" without incantation: seven light projectiles arc into the area — the centre and a ring around it. Each enemy takes damage once per cast.|n|n|cFF00A5FF|nDamage: 5\\6\\7\\8\\9*|r|c003CFF3CAGI|r|cFF00A5FF|nRange: 1200|nAoE: 450 (projectile 220)|nCooldown: 16 sec.|r")
+call LANG_A('SnR1',1,2,"Hadō #91 \"Senju Kōten Taihō\" without incantation: seven light projectiles arc into the area — the centre and a ring around it. Each enemy takes damage once per cast.|n|n|cFF00A5FF|nDamage: 5\\6\\7\\8\\9*|r|c003CFF3CAGI|r|cFF00A5FF|nRange: 1200|nAoE: 450 (projectile 220)|nCooldown: 16 sec.|r")
+call LANG_A('SnR1',1,3,"Hadō #91 \"Senju Kōten Taihō\" without incantation: seven light projectiles arc into the area — the centre and a ring around it. Each enemy takes damage once per cast.|n|n|cFF00A5FF|nDamage: 5\\6\\7\\8\\9*|r|c003CFF3CAGI|r|cFF00A5FF|nRange: 1200|nAoE: 450 (projectile 220)|nCooldown: 16 sec.|r")
+call LANG_A('SnR1',1,4,"Hadō #91 \"Senju Kōten Taihō\" without incantation: seven light projectiles arc into the area — the centre and a ring around it. Each enemy takes damage once per cast.|n|n|cFF00A5FF|nDamage: 5\\6\\7\\8\\9*|r|c003CFF3CAGI|r|cFF00A5FF|nRange: 1200|nAoE: 450 (projectile 220)|nCooldown: 16 sec.|r")
 call LANG_A('SnR1',2,0,"Hadō #91: Senju Kōten Taihō, [|cffffcc00Level %d|r] (|cffffcc00R|r)")
-call LANG_A('SnR1',3,0,"Hadō #91 \"Senju Kōten Taihō\" without incantation: seven pillars of light strike the area — the centre and a ring around it. Each enemy takes damage once per cast.|n|n|cFF00A5FF|nDamage: 5\\6\\7\\8\\9*|r|c003CFF3CAGI|r|cFF00A5FF|nRange: 1200|nAoE: 450 (pillar 220)|nCooldown: 16 sec.|r")
+call LANG_A('SnR1',3,0,"Hadō #91 \"Senju Kōten Taihō\" without incantation: seven light projectiles arc into the area — the centre and a ring around it. Each enemy takes damage once per cast.|n|n|cFF00A5FF|nDamage: 5\\6\\7\\8\\9*|r|c003CFF3CAGI|r|cFF00A5FF|nRange: 1200|nAoE: 450 (projectile 220)|nCooldown: 16 sec.|r")
 call LANG_A('SnEc',0,0,"Cero, [|cffffcc00Level 1|r] (|cffffcc00E|r)")
 call LANG_A('SnEc',0,1,"Cero, [|cffffcc00Level 2|r] (|cffffcc00E|r)")
 call LANG_A('SnEc',0,2,"Cero, [|cffffcc00Level 3|r] (|cffffcc00E|r)")
