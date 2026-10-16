@@ -127925,40 +127925,86 @@ endfunction
 //endfunction
 // Q (16 окт, вечер): настоящий рывок — 60 за 0.02 с (3000/с) по прямой до точки, упор в непроходимое — стоп.
 // Кого Хирако проходит (150), тот получает разрез один раз; в тумане W — со спины (+1*AGI)
-function ShinjiQDash takes nothing returns nothing
+// рывок Q до 16 окт (вечер, 2): урон по пути сразу
+//function ShinjiQDash takes nothing returns nothing
+//local timer t=GetExpiredTimer()
+//local integer id=GetHandleId(t)
+//local unit u=LoadUnitHandle(h,id,0)
+//local real a=LoadReal(h,id,1)
+//local real left=LoadReal(h,id,2)
+//local real dmg=LoadReal(h,id,3)
+//local group hit=LoadGroupHandle(h,id,4)
+//local integer tk=LoadInteger(h,id,5)+1
+//local player p=OwnerOf(u)
+//local real st=RMinBJ(60,left)
+//local real nx=GetUnitX(u)+st*Cos(a)
+//local real ny=GetUnitY(u)+st*Sin(a)
+//local group g
+//local unit e
+//local real ea
+//call SaveInteger(h,id,5,tk)
+//if left>0 and UnitIsAlive(u) and udg_B==true and not IsTerrainPathable(nx,ny,PATHING_TYPE_WALKABILITY) then
+//call SetUnitX(u,nx)
+//call SetUnitY(u,ny)
+//call SetUnitFacingInstant(u,a*bj_RADTODEG)
+//call SaveReal(h,id,2,left-st)
+//if ModuloInteger(tk,3)==0 then
+//call DestroyEffect(AddSpecialEffect("Abilities\\Spells\\NightElf\\Blink\\BlinkCaster.mdl",nx,ny))
+//endif
+//set g=CreateGroup()
+//call GroupEnumUnitsInRange(g,nx,ny,150,Base)
+//loop
+//set e=FirstOfGroup(g)
+//exitwhen e==null
+//if Condition_Base(p,e) and not IsUnitInGroup(e,hit) then
+//call GroupAddUnit(hit,e)
+//if LoadReal(HH,GetHandleId(e),SH_ShnInv)>TimerGetElapsed(ShnClock) then
+//// в тумане W удар приходит со спины: +1*AGI
+//set ea=GetUnitFacing(e)*bj_DEGTORAD+bj_PI
+//call DestroyEffect(AddSpecialEffect("Abilities\\Spells\\Orc\\Disenchant\\DisenchantSpecialArt.mdl",GetUnitX(e)+60*Cos(ea),GetUnitY(e)+60*Sin(ea)))
+//call myCustomDamage(u,e,dmg+GetHeroAgi(u,true),false,false,null,null,null)
+//else
+//call myCustomDamage(u,e,dmg,false,false,null,null,null)
+//endif
+//call DestroyEffect(AddSpecialEffectTarget("SwordSlash1.mdx",e,"chest"))
+//endif
+//call GroupRemoveUnit(g,e)
+//endloop
+//call DestroyGroup(g)
+//else
+//call SetUnitTimeScale(u,1.)
+//call SetUnitPathing(u,true)
+//call SetUnitPosition(u,GetUnitX(u),GetUnitY(u))
+//call SetUnitFacingInstant(u,a*bj_RADTODEG)
+//call QueueUnitAnimation(u,"stand")
+//call DestroyEffect(AddSpecialEffect("FlashAura.mdl",GetUnitX(u),GetUnitY(u)))
+//call DestroyGroup(hit)
+//call PauseTimer(t)
+//call DestroyTimer(t)
+//call FlushChildHashtable(h,id)
+//endif
+//set g=null
+//set e=null
+//set hit=null
+//set p=null
+//set u=null
+//set t=null
+//endfunction
+function ShinjiQFinish takes nothing returns nothing
 local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
 local unit u=LoadUnitHandle(h,id,0)
-local real a=LoadReal(h,id,1)
-local real left=LoadReal(h,id,2)
-local real dmg=LoadReal(h,id,3)
 local group hit=LoadGroupHandle(h,id,4)
-local integer tk=LoadInteger(h,id,5)+1
+local real dmg=LoadReal(h,id,3)
 local player p=OwnerOf(u)
-local real st=RMinBJ(60,left)
-local real nx=GetUnitX(u)+st*Cos(a)
-local real ny=GetUnitY(u)+st*Sin(a)
-local group g
 local unit e
 local real ea
-call SaveInteger(h,id,5,tk)
-if left>0 and UnitIsAlive(u) and udg_B==true and not IsTerrainPathable(nx,ny,PATHING_TYPE_WALKABILITY) then
-call SetUnitX(u,nx)
-call SetUnitY(u,ny)
-call SetUnitFacingInstant(u,a*bj_RADTODEG)
-call SaveReal(h,id,2,left-st)
-if ModuloInteger(tk,3)==0 then
-call DestroyEffect(AddSpecialEffect("Abilities\\Spells\\NightElf\\Blink\\BlinkCaster.mdl",nx,ny))
-endif
-set g=CreateGroup()
-call GroupEnumUnitsInRange(g,nx,ny,150,Base)
 loop
-set e=FirstOfGroup(g)
+set e=FirstOfGroup(hit)
 exitwhen e==null
-if Condition_Base(p,e) and not IsUnitInGroup(e,hit) then
-call GroupAddUnit(hit,e)
+call GroupRemoveUnit(hit,e)
+if UnitIsAlive(e) and Condition_Base(p,e) then
 if LoadReal(HH,GetHandleId(e),SH_ShnInv)>TimerGetElapsed(ShnClock) then
-// в тумане W удар приходит со спины: +1*AGI
 set ea=GetUnitFacing(e)*bj_DEGTORAD+bj_PI
 call DestroyEffect(AddSpecialEffect("Abilities\\Spells\\Orc\\Disenchant\\DisenchantSpecialArt.mdl",GetUnitX(e)+60*Cos(ea),GetUnitY(e)+60*Sin(ea)))
 call myCustomDamage(u,e,dmg+GetHeroAgi(u,true),false,false,null,null,null)
@@ -127966,22 +128012,72 @@ else
 call myCustomDamage(u,e,dmg,false,false,null,null,null)
 endif
 call DestroyEffect(AddSpecialEffectTarget("SwordSlash1.mdx",e,"chest"))
+call DestroyEffect(AddSpecialEffectTarget("Objects\\Spawnmodels\\Human\\HumanBlood\\HumanBloodFootman.mdl",e,"chest"))
+endif
+endloop
+call DestroyGroup(hit)
+call SetUnitTimeScale(u,1.)
+call FlushChildHashtable(h,id)
+call DestroyTimer(t)
+set e=null
+set hit=null
+set p=null
+set u=null
+set t=null
+endfunction
+function ShinjiQDash takes nothing returns nothing
+local timer t=GetExpiredTimer()
+local integer id=GetHandleId(t)
+local unit u=LoadUnitHandle(h,id,0)
+local real a=LoadReal(h,id,1)
+local real left=LoadReal(h,id,2)
+local group hit=LoadGroupHandle(h,id,4)
+local integer tk=LoadInteger(h,id,5)+1
+local player p=OwnerOf(u)
+local real st=RMinBJ(80,left)
+local real nx=GetUnitX(u)+st*Cos(a)
+local real ny=GetUnitY(u)+st*Sin(a)
+local group g
+local unit e
+local effect fx
+call SaveInteger(h,id,5,tk)
+if left>0 and UnitIsAlive(u) and udg_B==true and not IsTerrainPathable(nx,ny,PATHING_TYPE_WALKABILITY) then
+call SetUnitX(u,nx)
+call SetUnitY(u,ny)
+call SetUnitFacingInstant(u,a*bj_RADTODEG)
+call SaveReal(h,id,2,left-st)
+if ModuloInteger(tk,2)==0 then
+call DestroyEffect(AddSpecialEffect("Abilities\\Spells\\NightElf\\Blink\\BlinkCaster.mdl",nx,ny))
+endif
+// задетых по пути только отмечаем — режем в конце
+set g=CreateGroup()
+call GroupEnumUnitsInRange(g,nx,ny,150,Base)
+loop
+set e=FirstOfGroup(g)
+exitwhen e==null
+if Condition_Base(p,e) and not IsUnitInGroup(e,hit) then
+call GroupAddUnit(hit,e)
 endif
 call GroupRemoveUnit(g,e)
 endloop
 call DestroyGroup(g)
 else
-call SetUnitTimeScale(u,1.)
+// конец рывка: Хирако проявляется с ударом, красный разрез вдоль пути, через 0.15 с — разрезы по всем задетым
+call SetUnitVertexColor(u,255,255,255,255)
+call SetUnitTimeScale(u,1.5)
 call SetUnitPathing(u,true)
 call SetUnitPosition(u,GetUnitX(u),GetUnitY(u))
 call SetUnitFacingInstant(u,a*bj_RADTODEG)
+call SetUnitAnimation(u,"attack")
 call QueueUnitAnimation(u,"stand")
 call DestroyEffect(AddSpecialEffect("FlashAura.mdl",GetUnitX(u),GetUnitY(u)))
-call DestroyGroup(hit)
-call PauseTimer(t)
-call DestroyTimer(t)
-call FlushChildHashtable(h,id)
+set fx=AddSpecialEffect("3DMGslash_Red.mdl",GetUnitX(u)-100*Cos(a),GetUnitY(u)-100*Sin(a))
+call SetSpecialEffectYaw(fx,a*bj_RADTODEG)
+call SetSpecialEffectZ(fx,60)
+call DestroyEffect(fx)
+call TimerStart(t,0.15,false,function ShinjiQFinish)
 endif
+set fx=null
 set g=null
 set e=null
 set hit=null
@@ -128004,8 +128100,10 @@ call SaveReal(h,id,3,75+(1+GetUnitAbilityLevel(u,'SnQ1'))*GetHeroAgi(u,true)) //
 call SaveGroupHandle(h,id,4,CreateGroup())
 call SetUnitPathing(u,false)
 call SetUnitFacingInstant(u,a*bj_RADTODEG)
-call SetUnitAnimation(u,"attack")
-call SetUnitTimeScale(u,2.)
+// рывок-размытие: полупрозрачный, анимация бега ускорена
+call SetUnitVertexColor(u,255,255,255,70)
+call SetUnitAnimation(u,"walk")
+call SetUnitTimeScale(u,3.)
 call TimerStart(t,0.02,true,function ShinjiQDash)
 set t=null
 set u=null
@@ -129379,6 +129477,33 @@ call SetSpecialEffectScale(fx,0.65)
 call RemoveEffect(fx,0.6,false,CreateTimer())
 set fx=null
 endfunction
+// D (16 окт): пока крутится меч — 0.6 с пауза и неуязвимость; ставится таймером 0 с после каста
+function ShinjiDLockEnd takes nothing returns nothing
+local timer t=GetExpiredTimer()
+local unit u=LoadUnitHandle(h,GetHandleId(t),0)
+call PauseUnit(u,false)
+call SetUnitInvulnerable(u,false)
+call FlushChildHashtable(h,GetHandleId(t))
+call DestroyTimer(t)
+set u=null
+set t=null
+endfunction
+function ShinjiDLock takes nothing returns nothing
+local timer t=GetExpiredTimer()
+local unit u=LoadUnitHandle(h,GetHandleId(t),0)
+call PauseUnit(u,true)
+call SetUnitInvulnerable(u,true)
+call SetUnitAnimation(u,"spell")
+call TimerStart(t,0.6,false,function ShinjiDLockEnd)
+set u=null
+set t=null
+endfunction
+// таймер блокировки D: создаётся и сразу запускается (0 с), юнит кладётся сразу после
+function ShinjiDTimer takes nothing returns timer
+set bj_lastStartedTimer=CreateTimer()
+call TimerStart(bj_lastStartedTimer,0,false,function ShinjiDLock)
+return bj_lastStartedTimer
+endfunction
 function ShinjiDCast takes nothing returns nothing
 local unit u=GetTriggerUnit()
 local player p=OwnerOf(u)
@@ -129392,6 +129517,8 @@ local effect fx
 call SetUnitAnimation(u,"spell")
 call QueueUnitAnimation(u,"stand")
 call ShinjiDSpinStart(u)
+set fx=null
+call SaveUnitHandle(h,GetHandleId(ShinjiDTimer()),0,u)
 loop
 exitwhen i>5
 set fx=AddSpecialEffect("war3mapImported\\ElitePoisonCloud.mdl",x+220*Cos(i*bj_PI/3),y+220*Sin(i*bj_PI/3))
