@@ -37489,7 +37489,7 @@ call TavRole_Set('HSui',1042)
 call TavRole_Set('HRem',17)
 call TavRole_Set('HFla',1041)
 call TavRole_Set('HEsc',1552)
-call TavRole_Set('HShn',18)
+call TavRole_Set('HShn',2064)
 endfunction
 //TAVROLE_DATA_END
 function TavRole_Name takes integer trB returns string
@@ -128476,30 +128476,82 @@ set t=null
 endfunction
 // снаряд Хадо (16 окт): световая сфера Кидзару (e0G7) летит дугой с высоты he к точке, разгоняясь (x1.02 за 0.03 с);
 // в точке — взрыв Кидзару (e0G1 / e0G2 / e0G3 + Slam) и урон в 220 тем, кого этот каст ещё не задел (группа hit)
+//function ShinjiHadoMissile2 takes nothing returns nothing
+//local timer t=GetExpiredTimer()
+//local integer id=GetHandleId(t)
+//local unit m=LoadUnitHandle(h,id,0)
+//local unit u=LoadUnitHandle(h,id,1)
+//local real sp=LoadReal(h,id,2)
+//local real tx=LoadReal(h,id,3)
+//local real ty=LoadReal(h,id,4)
+//local real he=LoadReal(h,id,5)
+//local real dist=LoadReal(h,id,6)
+//local group hit=LoadGroupHandle(h,id,7)
+//local real dmg=LoadReal(h,id,8)
+//local real mx=GetUnitX(m)
+//local real my=GetUnitY(m)
+//local real rd=SR(mx,my,tx,ty)
+//local real a=Atan2(ty-my,tx-mx)
+//local player p=OwnerOf(u)
+//local group g
+//local unit e
+//if rd>sp+20 then
+//call SetUnitXY_1(m,mx+sp*Cos(a),my+sp*Sin(a),false)
+//call SaveReal(h,id,2,sp*1.02)
+//call SetUnitFacing(m,a*bj_RADTODEG)
+//call SetUnitFlyHeight(m,he*rd/RMaxBJ(dist,1)+50,0)
+//else
+//set g=CreateGroup()
+//call GroupEnumUnitsInRange(g,tx,ty,220,Base)
+//loop
+//set e=FirstOfGroup(g)
+//exitwhen e==null
+//if Condition_Base(p,e) and not IsUnitInGroup(e,hit) then
+//call GroupAddUnit(hit,e)
+//call myCustomDamage(u,e,dmg,false,false,null,null,null)
+//endif
+//call GroupRemoveUnit(g,e)
+//endloop
+//call DestroyGroup(g)
+//call UnitApplyTimedLife(CreateUnit(p,'e0G1',tx,ty,GetRandomReal(0,359)),'BTLF',1)
+//call UnitApplyTimedLife(CreateUnit(p,'e0G2',tx,ty,GetRandomReal(0,359)),'BTLF',1)
+//call UnitApplyTimedLife(CreateUnit(p,'e0G3',tx,ty,GetRandomReal(0,359)),'BTLF',1)
+//call DestroyEffect(AddSpecialEffect("war3mapImported\\Slam.mdx",tx,ty))
+//call RemoveUnit(m)
+//call PauseTimer(t)
+//call DestroyTimer(t)
+//call FlushChildHashtable(h,id)
+//endif
+//set g=null
+//set e=null
+//set hit=null
+//set p=null
+//set m=null
+//set u=null
+//set t=null
+//endfunction
+// снаряд Хадо (16 окт, вечер): прямой быстрый выстрел как Lucora Gun Веджиты (e0BP), в точке — световой столб (BeamLight)
+// и взрыв Lucora (LightNova e0G3 + Slam e0LF), урон в 220 тем, кого каст ещё не задел
 function ShinjiHadoMissile2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
 local unit m=LoadUnitHandle(h,id,0)
 local unit u=LoadUnitHandle(h,id,1)
-local real sp=LoadReal(h,id,2)
 local real tx=LoadReal(h,id,3)
 local real ty=LoadReal(h,id,4)
-local real he=LoadReal(h,id,5)
-local real dist=LoadReal(h,id,6)
 local group hit=LoadGroupHandle(h,id,7)
 local real dmg=LoadReal(h,id,8)
 local real mx=GetUnitX(m)
 local real my=GetUnitY(m)
-local real rd=SR(mx,my,tx,ty)
 local real a=Atan2(ty-my,tx-mx)
 local player p=OwnerOf(u)
 local group g
 local unit e
-if rd>sp+20 then
-call SetUnitXY_1(m,mx+sp*Cos(a),my+sp*Sin(a),false)
-call SaveReal(h,id,2,sp*1.02)
+local effect fx
+if SR(mx,my,tx,ty)>85 then
+call SetUnitX(m,mx+80*Cos(a))
+call SetUnitY(m,my+80*Sin(a))
 call SetUnitFacing(m,a*bj_RADTODEG)
-call SetUnitFlyHeight(m,he*rd/RMaxBJ(dist,1)+50,0)
 else
 set g=CreateGroup()
 call GroupEnumUnitsInRange(g,tx,ty,220,Base)
@@ -128513,15 +128565,20 @@ endif
 call GroupRemoveUnit(g,e)
 endloop
 call DestroyGroup(g)
-call UnitApplyTimedLife(CreateUnit(p,'e0G1',tx,ty,GetRandomReal(0,359)),'BTLF',1)
-call UnitApplyTimedLife(CreateUnit(p,'e0G2',tx,ty,GetRandomReal(0,359)),'BTLF',1)
-call UnitApplyTimedLife(CreateUnit(p,'e0G3',tx,ty,GetRandomReal(0,359)),'BTLF',1)
-call DestroyEffect(AddSpecialEffect("war3mapImported\\Slam.mdx",tx,ty))
-call RemoveUnit(m)
+set fx=AddSpecialEffect("BeamLight.mdl",tx,ty)
+call SetSpecialEffectScale(fx,1.)
+call SetSpecialEffectZ(fx,30)
+call DestroyEffect(fx)
+call UnitApplyTimedLife(CreateUnit(p,'e0G3',tx,ty,GetRandomReal(0,359)),'BHwe',1)
+call UnitApplyTimedLife(CreateUnit(p,'e0LF',tx,ty,GetRandomReal(0,359)),'BHwe',1)
+set soundplay=SndN(1280) // Sound\Music\mp3Music\PunchStrike.mp3
+call StartSound(soundplay)
+call KillUnit(m)
 call PauseTimer(t)
 call DestroyTimer(t)
 call FlushChildHashtable(h,id)
 endif
+set fx=null
 set g=null
 set e=null
 set hit=null
@@ -128530,19 +128587,38 @@ set m=null
 set u=null
 set t=null
 endfunction
+//function ShinjiHadoMissile takes unit u,real tx,real ty,group hit,real dmg returns nothing
+//local timer t=CreateTimer()
+//local integer id=GetHandleId(t)
+//local real he=GetRandomReal(400,475)
+//local unit m=CreateUnit(OwnerOf(u),'e0G7',GetUnitX(u)+GetRandomReal(-150,150),GetUnitY(u)+GetRandomReal(-150,150),bj_RADTODEG*Atan2(ty-GetUnitY(u),tx-GetUnitX(u)))
+//call SetUnitFlyHeight(m,he,0)
+//call SaveUnitHandle(h,id,0,m)
+//call SaveUnitHandle(h,id,1,u)
+//call SaveReal(h,id,2,50)
+//call SaveReal(h,id,3,tx)
+//call SaveReal(h,id,4,ty)
+//call SaveReal(h,id,5,he)
+//call SaveReal(h,id,6,SR(GetUnitX(m),GetUnitY(m),tx,ty))
+//call SaveGroupHandle(h,id,7,hit)
+//call SaveReal(h,id,8,dmg)
+//call TimerStart(t,0.03,true,function ShinjiHadoMissile2)
+//set m=null
+//set t=null
+//endfunction
 function ShinjiHadoMissile takes unit u,real tx,real ty,group hit,real dmg returns nothing
 local timer t=CreateTimer()
 local integer id=GetHandleId(t)
-local real he=GetRandomReal(400,475)
-local unit m=CreateUnit(OwnerOf(u),'e0G7',GetUnitX(u)+GetRandomReal(-150,150),GetUnitY(u)+GetRandomReal(-150,150),bj_RADTODEG*Atan2(ty-GetUnitY(u),tx-GetUnitX(u)))
-call SetUnitFlyHeight(m,he,0)
+local real a=Atan2(ty-GetUnitY(u),tx-GetUnitX(u))
+local real r=GetRandomReal(-0.6,0.6)
+local unit m=CreateUnit(OwnerOf(u),'e0BP',GetUnitX(u)+GetRandomReal(100,140)*Cos(a+r),GetUnitY(u)+GetRandomReal(100,140)*Sin(a+r),a*bj_RADTODEG)
+// вспышка выстрела, как у Lucora Gun
+call UnitApplyTimedLife(CreateUnit(OwnerOf(u),'e1BQ',GetUnitX(u)+GetRandomReal(40,90)*Cos(a+r),GetUnitY(u)+GetRandomReal(40,90)*Sin(a+r),a*bj_RADTODEG-180),'BTLF',0.5)
+call SetUnitFacing(u,a*bj_RADTODEG)
 call SaveUnitHandle(h,id,0,m)
 call SaveUnitHandle(h,id,1,u)
-call SaveReal(h,id,2,50)
 call SaveReal(h,id,3,tx)
 call SaveReal(h,id,4,ty)
-call SaveReal(h,id,5,he)
-call SaveReal(h,id,6,SR(GetUnitX(m),GetUnitY(m),tx,ty))
 call SaveGroupHandle(h,id,7,hit)
 call SaveReal(h,id,8,dmg)
 call TimerStart(t,0.03,true,function ShinjiHadoMissile2)
@@ -128563,7 +128639,7 @@ local group g
 local unit e
 local effect fx
 // снаряды ещё летят — группа задетых живёт 2 с после последнего (k до 7+25)
-if k>=32 then
+if k>=47 then
 call DestroyGroup(hit)
 call PauseTimer(t)
 call DestroyTimer(t)
@@ -128617,7 +128693,7 @@ call SaveInteger(h,id,3,0)
 call SaveGroupHandle(h,id,4,CreateGroup())
 call SetUnitAnimation(u,"spell")
 call QueueUnitAnimation(u,"stand")
-call TimerStart(t,0.08,true,function ShinjiHadoCast2)
+call TimerStart(t,0.04,true,function ShinjiHadoCast2)
 set t=null
 set u=null
 endfunction
@@ -284539,7 +284615,7 @@ call LANG_U('HFla',3,"Flandre Scarlet — Remilia's younger sister from Touhou P
 call LANG_U('hB1W',0,"Flandre's Clone")
 call LANG_U('HRem',3,"Remilia Scarlet — a 500-year-old vampire, mistress of the Scarlet Devil Mansion from Touhou Project and Flandre's older sister. She controls fate.|n(Abilities and effects ported from the Chinese map bof, by AlTrOn)|n|nRole: Caster, Disabler.|n")
 call LANG_U('HSui',3,"Suigintou — the first doll of Rozen Maiden: black wings, a rapier and the mirror world N.|n(Abilities and effects ported from the Chinese map bof, by AlTrOn)|n|nRole: Carry, Nuker, Disabler.|n")
-call LANG_U('HShn',3,"Hirako Shinji, captain of the 5th Division and a Visored from Bleach. Sakanade turns the enemy's world upside down, and the Hollow mask gives him a Hollow's power.|n|nRole: Carry, Disabler.|n")
+call LANG_U('HShn',3,"Captain of the 5th Division and a Visored. His Sakanade turns the enemy's world upside down, and the Hollow mask unleashes a Hollow's power.|n|nRole: Initiator, Disabler.|n")
 call LANG_B('BRRV',0,"Rain Aura")
 call LANG_B('BRRV',1,"Aura of rain.")
 call LANG_B('BMUR',0,"Wood Dragon")
