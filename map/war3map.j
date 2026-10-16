@@ -2307,6 +2307,7 @@ constant integer SH_ShnBankSrc=StringHash("ShnBankSrc")
 // Хирако T (16 окт): каст завершён (отмена до 0.3 c — возврат), номер каста, при котором юнит уже получил дебафф
 constant integer SH_ShnTDone=StringHash("ShnTDone")
 constant integer SH_ShnConfCast=StringHash("ShnConfCast")
+constant integer SH_ShnTCur=StringHash("ShnTCur")
 // путаница банкая по игрокам 0..11: включена, до какого времени ShnClock; снимок союзов (PASSIVE) на момент первой путаницы
 boolean array ShnConfOn
 real array ShnConfEnd
@@ -127726,7 +127727,7 @@ local real k
 local real ea
 local group g=CreateGroup()
 local unit e
-call DestroyEffect(AddSpecialEffect("Abilities\\Spells\\NightElf\\Blink\\BlinkCaster.mdl",x,y))
+call DestroyEffect(AddSpecialEffect("FlashAura.mdl",x,y))
 // враги вдоль отрезка (x,y)-(x1,y1): расстояние до отрезка не больше 150
 // своя группа и юнит: обработчики урона сами пользуются глобальными G / E
 call GroupEnumUnitsInRange(g,(x+x1)/2,(y+y1)/2,len/2+150,Base)
@@ -127752,7 +127753,7 @@ call myCustomDamage(u,e,dmg*1.5,false,false,null,null,null)
 else
 call myCustomDamage(u,e,dmg,false,false,null,null,null)
 endif
-call DestroyEffect(AddSpecialEffectTarget("Objects\\Spawnmodels\\Human\\HumanBlood\\HumanBloodFootman.mdl",e,"chest"))
+call DestroyEffect(AddSpecialEffectTarget("SwordSlash1.mdx",e,"chest"))
 endif
 endif
 call GroupRemoveUnit(g,e)
@@ -127763,7 +127764,7 @@ call SetUnitPosition(u,x1,y1)
 call SetUnitFacing(u,a*bj_RADTODEG)
 call SetUnitAnimation(u,"attack")
 call QueueUnitAnimation(u,"stand")
-call DestroyEffect(AddSpecialEffect("Abilities\\Spells\\NightElf\\Blink\\BlinkTarget.mdl",GetUnitX(u),GetUnitY(u)))
+call DestroyEffect(AddSpecialEffect("FlashAura.mdl",GetUnitX(u),GetUnitY(u)))
 set g=null
 set p=null
 set u=null
@@ -127947,7 +127948,7 @@ call SaveBoolean(HH,GetHandleId(u),SH_ShnMask,true)
 call SaveReal(HH,GetHandleId(u),SH_ShnMaskDmg,0.25+0.05*lv)
 call UnitAddAbility(u,'SnEa')
 call SetUnitAbilityLevel(u,'SnEa',lv)
-call DestroyEffect(AddSpecialEffectTarget("Abilities\\Spells\\Undead\\DeathPact\\DeathPactTarget.mdl",u,"origin"))
+call DestroyEffect(AddSpecialEffectTarget("war3mapImported\\HollowRoar10.mdl",u,"origin"))
 //call SaveEffectHandle(h,id,5,AddSpecialEffectTarget("Abilities\\Spells\\Orc\\Bloodlust\\BloodlustTarget.mdl",u,"head"))
 // маска пустого — модель Shinji2_Mask (начало координат модели — точка head героя Shinji2)
 call SaveEffectHandle(h,id,5,AddSpecialEffectTarget("Shinji2_Mask.mdx",u,"head"))
@@ -128241,6 +128242,64 @@ set t=null
 set c=null
 set p=null
 endfunction
+// на время банкая Хирако неуязвим, способности / движение / атака скрыты и выключены, предметы выключены;
+// на месте T — кнопка отмены SnTc. Текущий таймер банкая — на герое (SH_ShnTDone как номер не годится: свой ключ SH_ShnTCur)
+function ShinjiTLock takes unit u,boolean on returns nothing
+local integer i=0
+local integer a
+loop
+exitwhen i>10
+if i==0 then
+set a='SnQ1'
+elseif i==1 then
+set a='SnW1'
+elseif i==2 then
+set a='SnE1'
+elseif i==3 then
+set a='SnR1'
+elseif i==4 then
+set a='SnT1'
+elseif i==5 then
+set a='SnD1'
+elseif i==6 then
+set a='SnF1'
+elseif i==7 then
+set a='SnG1'
+elseif i==8 then
+set a='Amov'
+elseif i==9 then
+set a='Aatk'
+else
+set a='AInv'
+endif
+if GetUnitAbilityLevel(u,a)>0 then
+if on then
+call DisableUnitAbility(u,a,a!='AInv',true)
+else
+call EnableUnitAbility(u,a,true,true)
+endif
+endif
+set i=i+1
+endloop
+call SetUnitInvulnerable(u,on)
+if on then
+call UnitAddAbility(u,'SnTc')
+call IssueImmediateOrder(u,"stop")
+else
+call UnitRemoveAbility(u,'SnTc')
+call RemoveSavedInteger(HH,GetHandleId(u),SH_ShnTCur)
+endif
+endfunction
+// кнопка отмены: банкай кончается на следующем тике таймера
+function ShinjiTCancelCond takes nothing returns boolean
+return GetSpellAbilityId()=='SnTc'
+endfunction
+function ShinjiTCancel takes nothing returns nothing
+local integer id=LoadInteger(HH,GetHandleId(GetTriggerUnit()),SH_ShnTCur)
+if id!=0 then
+call SaveBoolean(h,id,6,true)
+endif
+endfunction
 function ShinjiTCond takes nothing returns boolean
 return GetSpellAbilityId()=='SnT1' and GetUnitTypeId(GetTriggerUnit())=='HShn'
 endfunction
@@ -128259,9 +128318,9 @@ local group g
 local unit e
 local effect fx
 call SaveReal(h,id,3,time+0.1)
-if time<8. and UnitIsAlive(u) and udg_B==true then
-// бутон закрылся — туман: центр, кольцо 450 (6), кольцо 850 (12)
-if tk==20 then
+if time<7. and UnitIsAlive(u) and udg_B==true and not LoadBoolean(h,id,6) then
+// бутон закрылся наполовину (1 с) — туман: центр, кольцо 450 (6), кольцо 850 (12)
+if tk==10 then
 loop
 exitwhen i>18
 if i==0 then
@@ -128277,8 +128336,8 @@ call SaveEffectHandle(h,id,10+i,fx)
 set i=i+1
 endloop
 endif
-// раз в секунду с закрытия бутона — путаница всем в тумане, кроме игрока Хирако
-if tk>=20 and ModuloInteger(tk-20,10)==0 then
+// раз в секунду с начала тумана — путаница всем в тумане, кроме игрока Хирако
+if tk>=10 and ModuloInteger(tk-10,10)==0 then
 set g=CreateGroup()
 call GroupEnumUnitsInRange(g,x,y,1000,null)
 loop
@@ -128299,6 +128358,7 @@ call DestroyGroup(g)
 endif
 else
 // конец: бутон раскрывается и уходит (Death), туман гаснет; путаница сходит сама через 1.2 с
+call ShinjiTLock(u,false)
 call DestroyEffect(LoadEffectHandle(h,id,5))
 loop
 exitwhen i>18
@@ -128336,6 +128396,8 @@ call SaveReal(h,id,1,GetUnitX(u))
 call SaveReal(h,id,2,GetUnitY(u))
 call SaveReal(h,id,3,0)
 call SaveEffectHandle(h,id,5,AddSpecialEffect("Shinji2_Bankai.mdx",GetUnitX(u),GetUnitY(u)))
+call SaveInteger(HH,GetHandleId(u),SH_ShnTCur,id)
+call ShinjiTLock(u,true)
 call TimerStart(t,0.1,true,function ShinjiTCast2)
 set t=null
 set u=null
@@ -128374,6 +128436,10 @@ call TriggerRegisterAnyUnitEventBJ(t,EVENT_PLAYER_UNIT_SPELL_ENDCAST)
 call TriggerAddCondition(t,Condition(function ShinjiTCond))
 call TriggerAddAction(t,function ShinjiTEnd)
 call TimerStart(CreateTimer(),0.1,true,function ShinjiConfTick)
+set t=CreateTrigger()
+call TriggerRegisterAnyUnitEventBJ(t,EVENT_PLAYER_UNIT_SPELL_EFFECT)
+call TriggerAddCondition(t,Condition(function ShinjiTCancelCond))
+call TriggerAddAction(t,function ShinjiTCancel)
 set t=null
 endfunction
 // D — Вращение Сакаканаде: волна 400 вокруг, урон 1*AGI и инверсия на 1.25 с — та же метка SH_ShnInv, что у W
@@ -128410,6 +128476,7 @@ if Condition_Base(p,e) then
 call myCustomDamage(u,e,dmg,false,false,null,null,null)
 call SaveReal(HH,GetHandleId(e),SH_ShnInv,TimerGetElapsed(ShnClock)+1.25)
 call DestroyEffect(AddSpecialEffectTarget("Abilities\\Spells\\Other\\Charm\\CharmTarget.mdl",e,"overhead"))
+call DestroyEffect(AddSpecialEffectTarget("SwordSlash1.mdx",e,"chest"))
 endif
 call GroupRemoveUnit(g,e)
 endloop
@@ -128446,7 +128513,7 @@ local integer uid=GetHandleId(u)
 local real x=GetUnitX(u)
 local real y=GetUnitY(u)
 local timer t
-call DestroyEffect(AddSpecialEffect("Abilities\\Spells\\NightElf\\Blink\\BlinkCaster.mdl",x,y))
+call DestroyEffect(AddSpecialEffect("FlashAura.mdl",x,y))
 if LoadBoolean(HH,uid,SH_ShnMistOn) and SR(x,y,LoadReal(HH,uid,SH_ShnMistX),LoadReal(HH,uid,SH_ShnMistY))<=450 then
 set t=CreateTimer()
 call SaveUnitHandle(h,GetHandleId(t),0,u)
@@ -128454,7 +128521,7 @@ call TimerStart(t,0,false,function ShinjiFCd)
 set t=null
 endif
 call SetUnitPosition(u,GetSpellTargetX(),GetSpellTargetY())
-call DestroyEffect(AddSpecialEffect("Abilities\\Spells\\NightElf\\Blink\\BlinkTarget.mdl",GetUnitX(u),GetUnitY(u)))
+call DestroyEffect(AddSpecialEffect("FlashAura.mdl",GetUnitX(u),GetUnitY(u)))
 set u=null
 endfunction
 function InitTrig_ShinjiF takes nothing returns nothing
@@ -128473,7 +128540,7 @@ local unit u=GetTriggerUnit()
 local unit c=GetSpellTargetUnit()
 local real f=GetUnitFacing(c)*bj_DEGTORAD+bj_PI
 local real dmg=2*GetHeroAgi(u,true)+0.25*(GetUnitState(c,UNIT_STATE_MAX_LIFE)-GetWidgetLife(c))
-call DestroyEffect(AddSpecialEffect("Abilities\\Spells\\NightElf\\Blink\\BlinkCaster.mdl",GetUnitX(u),GetUnitY(u)))
+call DestroyEffect(AddSpecialEffect("FlashAura.mdl",GetUnitX(u),GetUnitY(u)))
 call SetUnitPosition(u,GetUnitX(c)+100*Cos(f),GetUnitY(c)+100*Sin(f))
 call SetUnitFacing(u,bj_RADTODEG*Atan2(GetUnitY(c)-GetUnitY(u),GetUnitX(c)-GetUnitX(u)))
 call SetUnitAnimation(u,"attack")
@@ -128481,7 +128548,7 @@ call QueueUnitAnimation(u,"stand")
 if Condition_Base(OwnerOf(u),c) then
 call myCustomDamage(u,c,dmg,false,false,null,null,null)
 call DestroyEffect(AddSpecialEffectTarget("Abilities\\Spells\\Orc\\Disenchant\\DisenchantSpecialArt.mdl",c,"chest"))
-call DestroyEffect(AddSpecialEffectTarget("Objects\\Spawnmodels\\Human\\HumanBlood\\HumanBloodFootman.mdl",c,"chest"))
+call DestroyEffect(AddSpecialEffectTarget("war3mapImported\\SlashEffectRed by Deckai.mdx",c,"chest"))
 endif
 set c=null
 set u=null
@@ -282301,8 +282368,10 @@ call LANG_A('SnR1',1,3,"A crimson Cero along a horizontal line. Without the mask
 call LANG_A('SnR1',1,4,"A crimson Cero along a horizontal line. Without the mask it is a weak short beam; with the mask it is a full Cero that knocks back.|n|n|cFF00A5FF|nDamage without the mask: 2\\2.5\\3\\3.5\\4*|r|c003CFF3CAGI|r|cFF00A5FF, length 900|nDamage with the mask: 3.5\\4.1\\4.7\\5.3\\6*|r|c003CFF3CAGI|r|cFF00A5"+"FF, length 1500, knockback 300|nCooldown: 14 sec.|r")
 call LANG_A('SnR1',2,0,"Cero, [|cffffcc00Level %d|r] (|cffffcc00R|r)")
 call LANG_A('SnR1',3,0,"A crimson Cero along a horizontal line. Without the mask it is a weak short beam; with the mask it is a full Cero that knocks back.|n|n|cFF00A5FF|nDamage without the mask: 2\\2.5\\3\\3.5\\4*|r|c003CFF3CAGI|r|cFF00A5FF, length 900|nDamage with the mask: 3.5\\4.1\\4.7\\5.3\\6*|r|c003CFF3CAGI|r|cFF00A5"+"FF, length 1500, knockback 300|nCooldown: 14 sec.|r")
-call LANG_A('SnT1',1,0,"Bankai. After a 0.3 sec. cast (can be cancelled — cooldown and mana are returned) a bud closes around Hirako, then releases a mist. Every second everyone in the mist except Hirako (allies too) gets confused: enemies look like allies and allies like enemies. On the first confusion a hero instantly "+"uses a random ability on the nearest \"enemy\".|n|n|cFF00A5FF|nCast: 0.3 sec.|nBud: 2 sec.|nMist AoE: 1000|nMist duration: 6 sec.|nConfusion: 1.2 sec. (renewed every second)|nCooldown: 90 sec.|r")
-call LANG_A('SnT1',3,0,"Bankai. After a 0.3 sec. cast (can be cancelled — cooldown and mana are returned) a bud closes around Hirako, then releases a mist. Every second everyone in the mist except Hirako (allies too) gets confused: enemies look like allies and allies like enemies. On the first confusion a hero instantly "+"uses a random ability on the nearest \"enemy\".|n|n|cFF00A5FF|nCast: 0.3 sec.|nBud: 2 sec.|nMist AoE: 1000|nMist duration: 6 sec.|nConfusion: 1.2 sec. (renewed every second)|nCooldown: 90 sec.|r")
+call LANG_A('SnT1',1,0,"Bankai. After a 0.3 sec. cast (can be cancelled — cooldown and mana are returned) a bud closes around Hirako, and halfway through releases a mist. While the bankai lasts Hirako is invulnerable and has only the cancel button. Every second everyone in the mist except Hirako (allies too) gets confuse"+"d: enemies look like allies and allies like enemies. On the first confusion a hero instantly uses a random ability on the nearest \"enemy\".|n|n|cFF00A5FF|nCast: 0.3 sec.|nMist: 1 sec. after the cast|nMist AoE: 1000|nMist duration: 6 sec.|nConfusion: 1.2 sec. (renewed every second)|nCooldown: 90 sec"+".|r")
+call LANG_A('SnT1',3,0,"Bankai. After a 0.3 sec. cast (can be cancelled — cooldown and mana are returned) a bud closes around Hirako, and halfway through releases a mist. While the bankai lasts Hirako is invulnerable and has only the cancel button. Every second everyone in the mist except Hirako (allies too) gets confuse"+"d: enemies look like allies and allies like enemies. On the first confusion a hero instantly uses a random ability on the nearest \"enemy\".|n|n|cFF00A5FF|nCast: 0.3 sec.|nMist: 1 sec. after the cast|nMist AoE: 1000|nMist duration: 6 sec.|nConfusion: 1.2 sec. (renewed every second)|nCooldown: 90 sec"+".|r")
+call LANG_A('SnTc',0,0,"Cancel Bankai (|cffffcc00T|r)")
+call LANG_A('SnTc',1,0,"|cFF00A5FFEnds the bankai early: the bud opens, the mist fades.|r")
 call LANG_A('SnD1',1,0,"Hirako spins Sakanade by its ring: a wave of scent around him. Nearby enemies take damage and are briefly inverted: their movement and turning go the opposite way.|n|n|cFF00A5FF|nDamage: 1*|r|c003CFF3CAGI|r|cFF00A5FF|nInversion: 1.25 sec.|nAoE: 400|nCooldown: 20 sec.|r")
 call LANG_A('SnD1',3,0,"Hirako spins Sakanade by its ring: a wave of scent around him. Nearby enemies take damage and are briefly inverted: their movement and turning go the opposite way.|n|n|cFF00A5FF|nDamage: 1*|r|c003CFF3CAGI|r|cFF00A5FF|nInversion: 1.25 sec.|nAoE: 400|nCooldown: 20 sec.|r")
 call LANG_A('SnF1',1,0,"An instant step to a point. Recharges twice as fast from inside the W mist.|n|n|cFF00A5FF|nRange: 600|nCooldown: 8 sec. (4 sec. from the mist)|r")
@@ -282328,10 +282397,10 @@ call LANG_It('I005',1,"Shoes of Agility")
 call LANG_It('I006',0,"Boots of Agility")
 call LANG_It('I006',1,"Boots of Agility")
 call LANG_It('I006',2,"Increases the Hero's Agility by 6 and ost. |c00FFFF66AllStat|r by 3.")
-call LANG_It('I006',3,"Increases the Hero's Agility by 6 and ost. |c00FFFF66AllStat|r by 3.")
-call LANG_It('I007',0,"Vongola Sun Ring, Rank D")
 endfunction
 function LANG_Data51 takes nothing returns nothing
+call LANG_It('I006',3,"Increases the Hero's Agility by 6 and ost. |c00FFFF66AllStat|r by 3.")
+call LANG_It('I007',0,"Vongola Sun Ring, Rank D")
 call LANG_It('I007',1,"Vongola Sun Ring, Rank D")
 call LANG_It('I007',2,"Increase |c00FF5555STR|r by 10 and HP Regen by 10.")
 call LANG_It('I007',3,"Increase |c00FF5555STR|r by 10 and HP Regen by 10.")
@@ -282580,10 +282649,10 @@ call LANG_It('I01W',3,"Attack Damage +10, AS +10%, |c00FFFF66AllStat|r +8")
 call LANG_It('I01X',0,"Staff of Darkness, Rank C")
 call LANG_It('I01X',1,"Staff of Darkness, Rank C")
 call LANG_It('I01X',2,"Attack Damage +20, AS +20%, |c00FFFF66AllStat|r +12")
-call LANG_It('I01X',3,"Attack Damage +20, AS +20%, |c00FFFF66AllStat|r +12")
-call LANG_It('I01Y',0,"Staff of Darkness, Rank B")
 endfunction
 function LANG_Data52 takes nothing returns nothing
+call LANG_It('I01X',3,"Attack Damage +20, AS +20%, |c00FFFF66AllStat|r +12")
+call LANG_It('I01Y',0,"Staff of Darkness, Rank B")
 call LANG_It('I01Y',1,"Staff of Darkness, Rank B")
 call LANG_It('I01Y',2,"Attack Damage +30, AS +30%, |c00FFFF66AllStat|r +16")
 call LANG_It('I01Y',3,"Attack Damage +30, AS +30%, |c00FFFF66AllStat|r +16")
@@ -282832,10 +282901,10 @@ call LANG_It('I03M',1,"Vongola Gloves Ver. X (Recipe)")
 call LANG_It('I03M',2,"Increase hero's AS by 175%, |c00FFFF66AllStat|r by 35|n|nActive: \"Burning Axel\" - Throws a fireball, which explodes upon hitting the enemy, dealing |c00FFFF66AllStat|r*2 and stunning for 0.2 in 500 AoE. Additionally, the hero starts dealing 10% more damage for 6 seconds as chaos damage.|n|nCooldow"+"n: 25 sec.|n|nRequires: Vongola Gloves, 6xUpgrade item.")
 call LANG_It('I03M',3,"Increase hero's AS by 175%, |c00FFFF66AllStat|r by 35|n|nActive: \"Burning Axel\" - Throws a fireball, which explodes upon hitting the enemy, dealing |c00FFFF66AllStat|r*2 and stunning for 0.2 in 500 AoE. Additionally, the hero starts dealing 10% more damage for 6 seconds as chaos damage.|n|nCooldow"+"n: 25|n|nRequires: Vongola Gloves, 6xUpgrade item.")
 call LANG_It('I03N',0,"Samehada (Manaburn)")
-call LANG_It('I03N',1,"Samehada (Manaburn)")
-call LANG_It('I03N',2,"Increase |c00FF5555STR|r and |c0077FFFFINT|r by 35, Attack by 125, and AS by 50%. Switch between modes: 1) Each attack burns 8% of the current MP, restoring 1.5x the amount of burned MP in the form of HP. 2) Each attack deals 150+20% of your auto attack as pure damage.")
 endfunction
 function LANG_Data53 takes nothing returns nothing
+call LANG_It('I03N',1,"Samehada (Manaburn)")
+call LANG_It('I03N',2,"Increase |c00FF5555STR|r and |c0077FFFFINT|r by 35, Attack by 125, and AS by 50%. Switch between modes: 1) Each attack burns 8% of the current MP, restoring 1.5x the amount of burned MP in the form of HP. 2) Each attack deals 150+20% of your auto attack as pure damage.")
 call LANG_It('I03N',3,"Increase |c00FF5555STR|r and |c0077FFFFINT|r by 35, Attack by 125, and AS by 50%. Switch between modes: 1) Each attack burns 8% of the current MP, restoring 1.5x the amount of burned MP in the form of HP. 2) Each attack deals 150+20% of your auto attack as pure damage.")
 call LANG_It('I03O',0,"Samehada (Bleeding)")
 call LANG_It('I03O',1,"Samehada (Bleeding)")
@@ -283084,10 +283153,10 @@ call LANG_It('I055',1,"Ice Boots (Recipe)")
 call LANG_It('I055',2,"Increase MS by 300, increase |c00FFFF66AllStat|r by 30, reduces MP loss by 25%.|n|nActive: \"Brain Freeze\" - instantly restores 15% MP to the target, and for 8 sec. the target spends 55% less MP (stacks with the passive part). Using -itemsc, you can target allies.|n|nRange: 200|nCooldown: 30 sec.|n"+"|nRequires: Boots of Speed, Medal of Courage, Ice Sphere, Recipe.")
 call LANG_It('I055',3,"Increase MS by 300, increase |c00FFFF66AllStat|r by 30, reduces MP loss by 25%.|n|nActive: \"Brain Freeze\" - instantly restores 15% MP to the target, and for 8 sec. the target spends 55% less MP (stacks with the passive part). Using -itemsc, you can target allies.|n|nRange: 200|nCooldown: 30 sec.|n"+"|nRequires: Boots of Speed, Medal of Courage, Ice Sphere, Recipe.")
 call LANG_It('I056',0,"Thunder Mare Ring, Rank D")
-call LANG_It('I056',1,"Thunder Mare Ring, Rank D")
-call LANG_It('I056',2,"Increase |c00FFFF66AllStat|r by 9.")
 endfunction
 function LANG_Data54 takes nothing returns nothing
+call LANG_It('I056',1,"Thunder Mare Ring, Rank D")
+call LANG_It('I056',2,"Increase |c00FFFF66AllStat|r by 9.")
 call LANG_It('I056',3,"Increase |c00FFFF66AllStat|r by 9.")
 call LANG_It('I057',0,"Thunder Mare Ring, Rank C")
 call LANG_It('I057',1,"Thunder Mare Ring, Rank C")
@@ -283336,10 +283405,10 @@ call LANG_It('I06X',3,"Increases |c0077FFFFINT|r by 60, |c00FF5555STR|r by 10, M
 call LANG_It('I06Z',0,"Prelati's Grimoire")
 call LANG_It('I06Z',1,"Prelati's Grimoire")
 call LANG_It('I06Z',2,"Increases |c0077FFFFINT|r by 60, |c00FF5555STR|r by 10, Magic Resistance by 15%. Passive (toggled): disabled.|n")
-call LANG_It('I06Z',3,"Increases |c0077FFFFINT|r by 60, |c00FF5555STR|r by 10, Magic Resistance by 15%. Passive (toggled): disabled.|n")
-call LANG_It('IGP0',0,"Prelati's Grimoire (Recipe)")
 endfunction
 function LANG_Data55 takes nothing returns nothing
+call LANG_It('I06Z',3,"Increases |c0077FFFFINT|r by 60, |c00FF5555STR|r by 10, Magic Resistance by 15%. Passive (toggled): disabled.|n")
+call LANG_It('IGP0',0,"Prelati's Grimoire (Recipe)")
 call LANG_It('IGP0',1,"Prelati's Grimoire (Recipe)")
 call LANG_It('IGP0',2,"Increases |c0077FFFFINT|r by 60, |c00FF5555STR|r by 10, and Magic Resistance by 15%.|nDepending on the selected mode, converts 2% HP to 3.5% MP every second / 3.5% MP to 2% HP / does nothing. The mode is changed by activating the item. |n|nRequires: Akatsuki Hat, Magic Staff, Sun Mare Ring, Rank D, "+"Recipe.")
 call LANG_It('IGP0',3,"Increases |c0077FFFFINT|r by 60, |c00FF5555STR|r by 10, and Magic Resistance by 15%.|nDepending on the selected mode, converts 2% HP to 3.5% MP every second / 3.5% MP to 2% HP / does nothing. The mode is changed by activating the item. |n|nRequires: Akatsuki Hat, Magic Staff, Sun Mare Ring, Rank D, "+"Recipe.")
@@ -283588,10 +283657,10 @@ call LANG_U('H02O',3,"Super Buu - Was resurrected by Bibidi to destroy the unive
 call LANG_U('H02P',3,"Trafalgar Law is the captain of the Heart Pirates, a former Shichibukai.|n|nRole: Caster, Carry, Assassin, Swordsman|n|n")
 call LANG_U('H02R',3,"Gaara is the 5th Kazekage of the Sand Village.|n|nRole: Caster, Durable, Disabler, Exhauster|n|n")
 call LANG_U('H02S',3,"Borsalino - 1 of the Marine Admirals, ate the \"Pika Pika no Mi\" fruit and became a \"light man\".|n|nRole: Carry, Caster, Escape, Assassin|n|n")
-call LANG_U('H02U',3,"Kuzan, a former Marine Admiral, ate the \"Hie Hie no Mi\" fruit and became an \"Ice Man\".|n|nRole: Caster, Disabler|n|n")
-call LANG_U('H02V',3,"Stile Magnus is one of the warriors of the Anglican-Protistant Church.|n|nRole: Caster, Carry, Disabler, Durable|n|n")
 endfunction
 function LANG_Data56 takes nothing returns nothing
+call LANG_U('H02U',3,"Kuzan, a former Marine Admiral, ate the \"Hie Hie no Mi\" fruit and became an \"Ice Man\".|n|nRole: Caster, Disabler|n|n")
+call LANG_U('H02V',3,"Stile Magnus is one of the warriors of the Anglican-Protistant Church.|n|nRole: Caster, Carry, Disabler, Durable|n|n")
 call LANG_U('H02X',3,"Killer Bee, the jinchuriki of the Eight-Tails, has mastered the eight-sword style.|n|nRole: Assassin, Durable, Disabler, Swordsman|n|n")
 call LANG_U('H02Y',3,"Genkishi - one of the pseudo-funeral wreaths, master of illusions and 4 swords.|n|nRole: Carry, Caster, Exhauster, Swordsman|n|n")
 call LANG_U('H02Z',3,"Enel, the god of Skypiea, ate the Goro Goro no Mi fruit and became Lightning Man.|n|nRole: Caster, Carry|n|n")
@@ -283840,10 +283909,10 @@ call LANG_B('B00V',0,"Illusion World")
 call LANG_B('B00V',1,"This warrior cast the Illusion World spell.")
 call LANG_B('B00W',0,"|c0000FF00Vongola Independence|r")
 call LANG_B('B00W',1,"Vongola Independence")
-call LANG_B('B00X',0,"Pouring Rain")
-call LANG_B('B00X',1,"Pouring Rain")
 endfunction
 function LANG_Data57 takes nothing returns nothing
+call LANG_B('B00X',0,"Pouring Rain")
+call LANG_B('B00X',1,"Pouring Rain")
 call LANG_B('B00Y',0,"Thunder Shield")
 call LANG_B('B00Y',1,"Thunder Shield")
 call LANG_B('B00Z',0,"Clear Sky")
@@ -284092,6 +284161,8 @@ call LANG_F("RESOURCE_UBERTIP_GOLD","Gold is earned by winning rounds and by def
 call LANG_F("RESOURCE_UBERTIP_LUMBER","Victory points are earned for winning a round, by reaching a certain number of points you win.")
 call LANG_F("UPKEEP_HIGH","|c0000FF00Choice Battle |r|c0000FFFFv3.7.12 EN|r")
 call LANG_F("UPKEEP_LOW","|c0000FF00Choice Battle |r|c0000FFFFv3.7.12 EN|r")
+endfunction
+function LANG_Data58 takes nothing returns nothing
 call LANG_F("UPKEEP_NONE","|c0000FF00Choice Battle |r|c0000FFFFv3.7.12 EN|r")
 endfunction
 function LANG_DataAll takes nothing returns nothing
@@ -284153,6 +284224,7 @@ call ExecuteFunc("LANG_Data54")
 call ExecuteFunc("LANG_Data55")
 call ExecuteFunc("LANG_Data56")
 call ExecuteFunc("LANG_Data57")
+call ExecuteFunc("LANG_Data58")
 endfunction
 //LANG_DATA_END
 function InitCustomTriggers takes nothing returns nothing
