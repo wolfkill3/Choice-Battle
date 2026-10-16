@@ -128906,7 +128906,7 @@ endif
 call DestroyGroup(g)
 set g=null
 set cnt=CBS_AbN[cbP]
-if t!=null and cnt>0 then
+if cnt>0 then
 set k=GetRandomInt(0,cnt-1)
 loop
 exitwhen i>=cnt
@@ -128926,15 +128926,38 @@ set tt=4
 endif
 endif
 if o!=0 then
-if (tt==1 or tt==3 or tt==4) and IssueTargetOrderById(e,o,t) then
+if t!=null and (tt==1 or tt==3 or tt==4) and IssueTargetOrderById(e,o,t) then
 set ok=true
 set i=cnt
-elseif (tt==2 or tt==3 or tt==4) and IssuePointOrderById(e,o,GetUnitX(t),GetUnitY(t)) then
+elseif t!=null and (tt==2 or tt==3 or tt==4) and IssuePointOrderById(e,o,GetUnitX(t),GetUnitY(t)) then
 set ok=true
 set i=cnt
 elseif (tt==0 or tt==4) and IssueImmediateOrderById(e,o) then
 set ok=true
 set i=cnt
+endif
+endif
+set i=i+1
+endloop
+// по врагам ничего не применилось — любая готовая способность без цели, а не умеет без цели — в точку на 300 перед героем (16 окт)
+set i=0
+loop
+exitwhen ok or i>=cnt
+set id=CBS_Ab[cbP*60+ModuloInteger(k+i,cnt)]
+set o=0
+if id!='SnT1' and GetUnitAbilityLevel(e,id)>0 then
+set os=GetAbilityBaseStringLevelFieldById(id,ABILITY_SLF_BASE_ORDER_ID_NCL6,0)
+if os!=null and os!="" then
+set o=OrderId(os)
+elseif GetAbilityBaseBooleanFieldById(id,ABILITY_BF_HERO_ABILITY) and not GetAbilityBaseBooleanFieldById(id,ABILITY_BF_ITEM_ABILITY) and IsUnitAbilityVisible(e,id) then
+set o=GetAbilityOrderId(GetUnitAbility(e,id))
+endif
+endif
+if o!=0 then
+if IssueImmediateOrderById(e,o) then
+set ok=true
+elseif IssuePointOrderById(e,o,GetUnitX(e)+300*Cos(GetUnitFacing(e)*bj_DEGTORAD),GetUnitY(e)+300*Sin(GetUnitFacing(e)*bj_DEGTORAD)) then
+set ok=true
 endif
 endif
 set i=i+1
