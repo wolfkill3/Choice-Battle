@@ -2313,6 +2313,8 @@ constant integer SH_ShnMaskRes=StringHash("ShnMaskRes")
 constant integer SH_ShnDBoard=StringHash("ShnDBoard")
 // Хирако: отладка принудительного каста T (-shndbg)
 boolean ShnDbg=false
+string array ShnLogL
+integer ShnLogN=0
 // путаница банкая по игрокам 0..11: включена, до какого времени ShnClock; снимок союзов (PASSIVE) на момент первой путаницы
 boolean array ShnConfOn
 real array ShnConfEnd
@@ -129052,8 +129054,30 @@ endif
 return "нет"
 endfunction
 function ShinjiDbg takes string m returns nothing
+local integer i
 if ShnDbg then
 call DisplayTimedTextToPlayer(GetLocalPlayer(),0,0,10,"|cffff80ffT|r "+m)
+// и сразу в файл ChoiceBattle\ShinjiT.txt (последние 60 строк) — остаётся после крита (16 окт)
+if ShnLogN>=60 then
+set i=0
+loop
+exitwhen i>=59
+set ShnLogL[i]=ShnLogL[i+1]
+set i=i+1
+endloop
+set ShnLogN=59
+endif
+set ShnLogL[ShnLogN]=R2S(TimerGetElapsed(ShnClock))+" "+m
+set ShnLogN=ShnLogN+1
+call PreloadGenClear()
+call PreloadGenStart()
+set i=0
+loop
+exitwhen i>=ShnLogN
+call Preload(ShnLogL[i])
+set i=i+1
+endloop
+call PreloadGenEnd("ChoiceBattle\\ShinjiT.txt")
 endif
 endfunction
 function ShinjiDbgToggle takes nothing returns nothing
@@ -129154,19 +129178,22 @@ set o=0
 set ab=GetUnitAbility(e,id)
 if id!='SnT1' and ab!=null and ShinjiFcAbOk(e,id) then
 if GetAbilityBaseTypeId(ab)=='ANcl' then
+call ShinjiDbg("  Channel "+GetObjectName(id)+" ур "+I2S(GetUnitAbilityLevel(e,id))+"/"+I2S(GetAbilityBaseIntegerFieldById(id,ABILITY_IF_LEVELS))+" — Ncl6")
 set os=GetAbilityBaseStringLevelFieldById(id,ABILITY_SLF_BASE_ORDER_ID_NCL6,CBS_QcLv(e,id))
 if os!=null and os!="" then
+call ShinjiDbg("  Ncl6 = "+os+" — тип цели")
 set o=OrderId(os)
 set tt=GetAbilityBaseIntegerLevelFieldById(id,ABILITY_ILF_TARGET_TYPE,CBS_QcLv(e,id))
 endif
 else
 // не Channel: приказ способности на герое, цель — пробуем юнит, точку, без цели
+call ShinjiDbg("  "+GetObjectName(id)+" база "+I2S(GetAbilityBaseTypeId(ab))+" — GetAbilityOrderId")
 set o=GetAbilityOrderId(ab)
 set tt=4
 endif
 endif
 if o!=0 then
-call ShinjiDbg("  "+GetObjectName(id)+" приказ "+I2S(o)+" цель-тип "+I2S(tt))
+call ShinjiDbg("  "+GetObjectName(id)+" приказ "+I2S(o)+" цель-тип "+I2S(tt)+" — отдаю")
 endif
 if o!=0 then
 if t!=null and (tt==1 or tt==3 or tt==4) and IssueTargetOrderById(e,o,t) then
@@ -129200,15 +129227,18 @@ set o=0
 set ab=GetUnitAbility(e,id)
 if id!='SnT1' and ab!=null and ShinjiFcAbOk(e,id) then
 if GetAbilityBaseTypeId(ab)=='ANcl' then
+call ShinjiDbg("  (2) Channel "+GetObjectName(id)+" — Ncl6")
 set os=GetAbilityBaseStringLevelFieldById(id,ABILITY_SLF_BASE_ORDER_ID_NCL6,CBS_QcLv(e,id))
 if os!=null and os!="" then
 set o=OrderId(os)
 endif
 else
+call ShinjiDbg("  (2) "+GetObjectName(id)+" — GetAbilityOrderId")
 set o=GetAbilityOrderId(ab)
 endif
 endif
 if o!=0 then
+call ShinjiDbg("  (2) приказ "+I2S(o)+" без цели / в точку")
 if IssueImmediateOrderById(e,o) then
 set ok=true
 elseif IssuePointOrderById(e,o,GetUnitX(e)+300*Cos(GetUnitFacing(e)*bj_DEGTORAD),GetUnitY(e)+300*Sin(GetUnitFacing(e)*bj_DEGTORAD)) then
