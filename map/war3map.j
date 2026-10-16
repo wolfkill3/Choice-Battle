@@ -128214,20 +128214,76 @@ endfunction
 //endfunction
 // Серо (16 окт): летящий луч — фронт идёт на 75 за 0.03 с (2500/с), за ним остаются сегменты; урон и отбрасывание —
 // когда фронт проходит рядом с врагом (150), каждому один раз
+// Серо (16 окт, вечер): как Серо Улькиорры (CeroB) — сегменты TC_EnergyBolt цветом команды, только жёлтым;
+// луч разгоняется (шаг 30 +1.5 за тик 0.013 с) и толстеет (0.75 +0.15 за тик); урон и отбрасывание по ширине луча
+//function ShinjiRCast2 takes nothing returns nothing
+//local timer t=GetExpiredTimer()
+//local integer id=GetHandleId(t)
+//local unit u=LoadUnitHandle(h,id,0)
+//local player p=OwnerOf(u)
+//local real x=LoadReal(h,id,1)
+//local real y=LoadReal(h,id,2)
+//local real a=LoadReal(h,id,3)
+//local real len=LoadReal(h,id,4)
+//local real dmg=LoadReal(h,id,5)
+//local real sc=LoadReal(h,id,6)
+//local boolean mask=LoadBoolean(h,id,7)
+//local real sd=LoadReal(h,id,8)+75
+//local group hit=LoadGroupHandle(h,id,9)
+//local group g
+//local unit e
+//local real fx
+//local real fy
+//if sd>len or u==null or udg_B==false then
+//call DestroyGroup(hit)
+//call PauseTimer(t)
+//call DestroyTimer(t)
+//call FlushChildHashtable(h,id)
+//else
+//call SaveReal(h,id,8,sd)
+//set fx=x+sd*Cos(a)
+//set fy=y+sd*Sin(a)
+//set n=CreateUnit(p,'e0TJ',fx,fy,a*bj_RADTODEG)
+//call SetUnitVertexColor(n,255,40,40,255)
+//call SetUnitScale(n,sc,sc,sc)
+//call UnitApplyTimedLife(n,'BTLF',0.45)
+//set g=CreateGroup()
+//call GroupEnumUnitsInRange(g,fx,fy,150,Base)
+//loop
+//set e=FirstOfGroup(g)
+//exitwhen e==null
+//if Condition_Base(p,e) and not IsUnitInGroup(e,hit) then
+//call GroupAddUnit(hit,e)
+//call myCustomDamage(u,e,dmg,false,false,null,null,null)
+//call DestroyEffect(AddSpecialEffectTarget("Abilities\\Weapons\\FireBallMissile\\FireBallMissile.mdl",e,"chest"))
+//if mask then
+//call Push3(e,50,a,300,"")
+//endif
+//endif
+//call GroupRemoveUnit(g,e)
+//endloop
+//call DestroyGroup(g)
+//endif
+//set g=null
+//set hit=null
+//set e=null
+//set p=null
+//set u=null
+//set t=null
+//endfunction
 function ShinjiRCast2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
 local unit u=LoadUnitHandle(h,id,0)
 local player p=OwnerOf(u)
-local real x=LoadReal(h,id,1)
-local real y=LoadReal(h,id,2)
 local real a=LoadReal(h,id,3)
 local real len=LoadReal(h,id,4)
 local real dmg=LoadReal(h,id,5)
 local real sc=LoadReal(h,id,6)
 local boolean mask=LoadBoolean(h,id,7)
-local real sd=LoadReal(h,id,8)+75
+local real sd=LoadReal(h,id,8)
 local group hit=LoadGroupHandle(h,id,9)
+local real sp=LoadReal(h,id,10)
 local group g
 local unit e
 local real fx
@@ -128238,22 +128294,23 @@ call PauseTimer(t)
 call DestroyTimer(t)
 call FlushChildHashtable(h,id)
 else
-call SaveReal(h,id,8,sd)
-set fx=x+sd*Cos(a)
-set fy=y+sd*Sin(a)
+set fx=LoadReal(h,id,1)+sd*Cos(a)
+set fy=LoadReal(h,id,2)+sd*Sin(a)
 set n=CreateUnit(p,'e0TJ',fx,fy,a*bj_RADTODEG)
-call SetUnitVertexColor(n,255,40,40,255)
-call SetUnitScale(n,sc,sc,sc)
-call UnitApplyTimedLife(n,'BTLF',0.45)
+call SetUnitColor(n,PLAYER_COLOR_YELLOW)
+call SetUnitScale(n,sc+0.5,sc+0.5,sc+0.5)
+call UnitApplyTimedLife(n,'BTLF',1)
+call SaveReal(h,id,6,sc+0.15)
+call SaveReal(h,id,10,sp+1.5)
+call SaveReal(h,id,8,sd+sp)
 set g=CreateGroup()
-call GroupEnumUnitsInRange(g,fx,fy,150,Base)
+call GroupEnumUnitsInRange(g,fx,fy,150+15*sc,Base)
 loop
 set e=FirstOfGroup(g)
 exitwhen e==null
 if Condition_Base(p,e) and not IsUnitInGroup(e,hit) then
 call GroupAddUnit(hit,e)
 call myCustomDamage(u,e,dmg,false,false,null,null,null)
-call DestroyEffect(AddSpecialEffectTarget("Abilities\\Weapons\\FireBallMissile\\FireBallMissile.mdl",e,"chest"))
 if mask then
 call Push3(e,50,a,300,"")
 endif
@@ -128279,25 +128336,28 @@ local real a=Atan2(GetSpellTargetY()-y,GetSpellTargetX()-x)
 local timer t=CreateTimer()
 local integer id=GetHandleId(t)
 call SaveUnitHandle(h,id,0,u)
-call SaveReal(h,id,1,x)
-call SaveReal(h,id,2,y)
+call SaveReal(h,id,1,x+75*Cos(a))
+call SaveReal(h,id,2,y+75*Sin(a))
 call SaveReal(h,id,3,a)
 if mask then
 call SaveReal(h,id,4,1500)
 call SaveReal(h,id,5,(2+lv)*GetHeroAgi(u,true)) // 3..7*AGI
-call SaveReal(h,id,6,1.6)
+call SaveReal(h,id,6,0.75)
 else
 call SaveReal(h,id,4,900)
 call SaveReal(h,id,5,(1.5+0.5*lv)*GetHeroAgi(u,true))
-call SaveReal(h,id,6,1.)
+call SaveReal(h,id,6,0.75)
 endif
 call SaveBoolean(h,id,7,mask)
 call SaveReal(h,id,8,0)
 call SaveGroupHandle(h,id,9,CreateGroup())
+call SaveReal(h,id,10,30)
 call SetUnitFacing(u,a*bj_RADTODEG)
+set soundplay=SndN(1965) // Sound\Music\mp3Music\UlqCero.mp3
+call StartSound(soundplay)
 call SetUnitAnimation(u,"spell")
 call QueueUnitAnimation(u,"stand")
-call TimerStart(t,0.03,true,function ShinjiRCast2)
+call TimerStart(t,0.013,true,function ShinjiRCast2)
 set t=null
 set u=null
 endfunction
@@ -128305,6 +128365,23 @@ endfunction
 // по 6 направлениям; столб бьёт в 220. Каждый враг — один раз за каст: (1.5..3.5)*AGI
 function ShinjiHadoCond takes nothing returns boolean
 return GetSpellAbilityId()=='SnR1' and udg_B==true and GetUnitTypeId(GetTriggerUnit())=='HShn'
+endfunction
+// световой луч Хадо: молния от Хирако к столбу на 0.15 с
+function ShinjiRayEnd takes nothing returns nothing
+local timer t=GetExpiredTimer()
+call DestroyLightning(LoadLightningHandle(h,GetHandleId(t),0))
+call FlushChildHashtable(h,GetHandleId(t))
+call DestroyTimer(t)
+set t=null
+endfunction
+function ShinjiRay takes real x1,real y1,real z1,real x2,real y2 returns nothing
+local timer t=CreateTimer()
+local lightning l=AddLightningEx("HWPB",true,x1,y1,z1,x2,y2,20)
+call SetLightningColor(l,1,0.95,0.6,1)
+call SaveLightningHandle(h,GetHandleId(t),0,l)
+call TimerStart(t,0.15,false,function ShinjiRayEnd)
+set l=null
+set t=null
 endfunction
 function ShinjiHadoCast2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
@@ -128329,6 +128406,10 @@ if k>0 then
 set px=px+250*Cos((k-1)*bj_PI/3)
 set py=py+250*Sin((k-1)*bj_PI/3)
 endif
+// быстрые световые лучи от Хирако (над ним, разброс 60) к точке столба — 3 штуки (16 окт)
+call ShinjiRay(GetUnitX(u)+GetRandomReal(-60,60),GetUnitY(u)+GetRandomReal(-60,60),GetRandomReal(220,320),px,py)
+call ShinjiRay(GetUnitX(u)+GetRandomReal(-60,60),GetUnitY(u)+GetRandomReal(-60,60),GetRandomReal(220,320),px+GetRandomReal(-80,80),py+GetRandomReal(-80,80))
+call ShinjiRay(GetUnitX(u)+GetRandomReal(-60,60),GetUnitY(u)+GetRandomReal(-60,60),GetRandomReal(220,320),px+GetRandomReal(-80,80),py+GetRandomReal(-80,80))
 set fx=AddSpecialEffect("BeamLight.mdl",px,py)
 call SetSpecialEffectScale(fx,1.2)
 call SetSpecialEffectZ(fx,30)
@@ -128365,7 +128446,7 @@ call SaveInteger(h,id,3,0)
 call SaveGroupHandle(h,id,4,CreateGroup())
 call SetUnitAnimation(u,"spell")
 call QueueUnitAnimation(u,"stand")
-call TimerStart(t,0.12,true,function ShinjiHadoCast2)
+call TimerStart(t,0.08,true,function ShinjiHadoCast2)
 set t=null
 set u=null
 endfunction
@@ -128538,6 +128619,8 @@ local integer k
 local integer i=0
 local integer id
 local integer o
+local string os
+local integer tt
 if cbP<0 or cbP>11 or Hero[cbP]!=e then
 set p=null
 return
@@ -128564,13 +128647,22 @@ set k=GetRandomInt(0,cnt-1)
 loop
 exitwhen i>=cnt
 set id=CBS_Ab[cbP*60+ModuloInteger(k+i,cnt)]
-set o=CBS_QcOrd(e,id)
-if o!=0 and id!='SnT1' then
-if CBS_QcUnitOk(e,id) and IssueTargetOrderById(e,o,t) then
+// только данные типа способности (Game.dll+0xD6066 на 16 окт: CBS_QcOrd читал способность на герое — крит);
+// приказ — поле Channel Ncl6, тип цели — из таблицы; не Channel — пропуск
+set o=0
+if id!='SnT1' and GetUnitAbilityLevel(e,id)>0 then
+set os=GetAbilityBaseStringLevelFieldById(id,ABILITY_SLF_BASE_ORDER_ID_NCL6,0)
+if os!=null and os!="" then
+set o=OrderId(os)
+endif
+endif
+if o!=0 then
+set tt=GetAbilityBaseIntegerLevelFieldById(id,ABILITY_ILF_TARGET_TYPE,0)
+if (tt==1 or tt==3) and IssueTargetOrderById(e,o,t) then
 set i=cnt
-elseif IssuePointOrderById(e,o,GetUnitX(t),GetUnitY(t)) then
+elseif (tt==2 or tt==3) and IssuePointOrderById(e,o,GetUnitX(t),GetUnitY(t)) then
 set i=cnt
-elseif IssueImmediateOrderById(e,o) then
+elseif tt==0 and IssueImmediateOrderById(e,o) then
 set i=cnt
 endif
 endif
@@ -128675,10 +128767,24 @@ else
 set fx=AddSpecialEffect("Hashirama\\SmokeFuzzy.mdl",x+850*Cos((i-7)*bj_PI/6),y+850*Sin((i-7)*bj_PI/6))
 endif
 call SetSpecialEffectScale(fx,2.5)
-call SetSpecialEffectVertexColour(fx,255,160,210,170)
+call SetSpecialEffectVertexColour(fx,170,80,255,190) // фиолетовый (16 окт)
 call SaveEffectHandle(h,id,10+i,fx)
 set i=i+1
 endloop
+endif
+// клубы тумана, пока банкай активен: раз в 0.3 с — 3 клуба в случайных точках круга 1000, живут 1.8 с (16 окт)
+if tk>=10 and ModuloInteger(tk,3)==0 then
+set i=0
+loop
+exitwhen i>2
+set ep=GetRandomInt(0,359)
+set fx=AddSpecialEffect("Hashirama\\SmokeFuzzy.mdl",x+GetRandomReal(0,950)*Cos(ep*bj_DEGTORAD),y+GetRandomReal(0,950)*Sin(ep*bj_DEGTORAD))
+call SetSpecialEffectScale(fx,GetRandomReal(1.6,2.4))
+call SetSpecialEffectVertexColour(fx,170,80,255,160)
+call RemoveEffect(fx,1.8,true,CreateTimer())
+set i=i+1
+endloop
+set i=0
 endif
 // раз в секунду с начала тумана — путаница всем в тумане, кроме игрока Хирако
 if tk>=10 and ModuloInteger(tk-10,10)==0 then
@@ -128728,6 +128834,7 @@ function ShinjiTCast takes nothing returns nothing
 local unit u=GetTriggerUnit()
 local timer t
 local integer id
+local effect fx
 if udg_B==false then
 set u=null
 return
@@ -128739,6 +128846,12 @@ call SaveUnitHandle(h,id,0,u)
 call SaveReal(h,id,1,GetUnitX(u))
 call SaveReal(h,id,2,GetUnitY(u))
 call SaveReal(h,id,3,0)
+// высвобождение банкая: пыльная волна (банкай Гина) и вспышка (16 окт)
+set fx=AddSpecialEffect("GinBankai-DustWave.mdl",GetUnitX(u),GetUnitY(u))
+call SetSpecialEffectVertexColour(fx,200,140,255,255)
+call DestroyEffect(fx)
+call DestroyEffect(AddSpecialEffect("FlashAura.mdl",GetUnitX(u),GetUnitY(u)))
+set fx=null
 call SaveEffectHandle(h,id,5,AddSpecialEffect("Shinji2_Bankai.mdx",GetUnitX(u),GetUnitY(u)))
 call SaveInteger(HH,GetHandleId(u),SH_ShnTCur,id)
 call ShinjiTLock(u,true)
