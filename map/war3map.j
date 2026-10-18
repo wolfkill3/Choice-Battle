@@ -128375,7 +128375,7 @@ set qe=null
 set u=null
 set t=null
 endfunction
-// минирывок Q вбок (18 окт): враг перевёрнут — Хирако за 5 тиков по 0.02 с смещается на 200 в сторону (угол h 9) со шлейфом,
+// лёгкий рывок Q назад (18 окт): враг перевёрнут — Хирако за 5 тиков по 0.02 с отскакивает на 150 от цели (угол h 9), без образов,
 // затем исчезает со вспышкой и через 0.25 с бьёт со спины (ShinjiQBack). h 10 — тик минирывка
 function ShinjiQSide takes nothing returns nothing
 local timer t=GetExpiredTimer()
@@ -128384,13 +128384,15 @@ local unit u=LoadUnitHandle(h,id,0)
 local real sa=LoadReal(h,id,9)
 local integer sk=LoadInteger(h,id,10)+1
 call SaveInteger(h,id,10,sk)
-if UnitIsAlive(u) and sk<=5 then
-call ShinjiQAfter(OwnerOf(u),GetUnitX(u),GetUnitY(u),GetUnitFacing(u))
-call SetUnitX(u,GetUnitX(u)+40*Cos(sa))
-call SetUnitY(u,GetUnitY(u)+40*Sin(sa))
+if UnitIsAlive(u) and sk<=7 then
+call SetUnitX(u,GetUnitX(u)+(60/sk)*Cos(sa))
+call SetUnitY(u,GetUnitY(u)+(60/sk)*Sin(sa))
 else
-call ShinjiBlink(GetUnitX(u),GetUnitY(u))
+// call ShinjiBlink(GetUnitX(u),GetUnitY(u))
 call SetUnitVertexColor(u,255,255,255,0)
+// невидимый Хирако возвращается в точку до прыжка: удар со спины считается от направления до прыжка, а не от бока (18 окт)
+// call SetUnitX(u,LoadReal(h,id,11))
+// call SetUnitY(u,LoadReal(h,id,12))
 call PauseTimer(t)
 call TimerStart(t,0.25,false,function ShinjiQBack)
 endif
@@ -128416,31 +128418,32 @@ call SetUnitInvulnerable(u,true)
 endif
 if qe==null or not UnitIsAlive(qe) or IsUnitHidden(qe) or not UnitIsAlive(u) or udg_B==false or tk>50 then
 call SetUnitVertexColor(u,255,255,255,255)
-call ShinjiBlink(GetUnitX(u),GetUnitY(u))
+// call ShinjiBlink(GetUnitX(u),GetUnitY(u))
 call TimerStart(t,0.1,false,function ShinjiQFinish)
 else
 set qd=SR(GetUnitX(u),GetUnitY(u),GetUnitX(qe),GetUnitY(qe))
 set a=Atan2(GetUnitY(qe)-GetUnitY(u),GetUnitX(qe)-GetUnitX(u))
-if qd<=330 and ShinjiInvOn(qe) and not LoadBoolean(HH,GetHandleId(qe),ANTITARGET_ABILITY) then
-// враг под W (18 окт): чуть раньше (с 330) — минирывок на 200 вбок, затем исчезновение и удар со спины (было: исчезал сразу в 130)
+if ShinjiInvOn(qe) and not LoadBoolean(HH,GetHandleId(qe),ANTITARGET_ABILITY) then
+// враг под W (18 окт): без рывка вперёд — сразу лёгкий рывок назад на 150, исчезновение и удар со спины
+// (было: исчезал сразу в 130, затем минирывок вбок с 330)
 if not IsUnitType(qe,UNIT_TYPE_STRUCTURE) then
 call ShinjiFaceHold(qe,(a+bj_PI)*bj_RADTODEG,0.9)
 call SaveBoolean(HH,GetHandleId(qe),SH_ShnPHold,true)
 call PauseUnit(qe,true)
 call SaveBoolean(h,id,7,true)
 endif
-if GetRandomInt(0,1)==0 then
-call SaveReal(h,id,9,a+bj_PI/2)
-else
-call SaveReal(h,id,9,a-bj_PI/2)
-endif
+call SetUnitFacingInstant(u,a*bj_RADTODEG)
+call SaveReal(h,id,9,a+bj_PI)
+// точка до рывка назад — от неё считается «спина» цели (18 окт)
+call SaveReal(h,id,11,GetUnitX(u))
+call SaveReal(h,id,12,GetUnitY(u))
 call SaveInteger(h,id,10,0)
 call PauseTimer(t)
 call TimerStart(t,0.02,true,function ShinjiQSide)
 elseif qd<=130 then
 if ShinjiInvOn(qe) and not LoadBoolean(HH,GetHandleId(qe),ANTITARGET_ABILITY) then
 // враг под W (17 окт): как контрудар Джирена (E) — Хирако исчезает со вспышкой, через 0.35 с появляется за спиной и бьёт
-call ShinjiBlink(GetUnitX(u),GetUnitY(u))
+// call ShinjiBlink(GetUnitX(u),GetUnitY(u))
 call SetUnitVertexColor(u,255,255,255,0)
 if not IsUnitType(qe,UNIT_TYPE_STRUCTURE) then
 call ShinjiFaceHold(qe,(a+bj_PI)*bj_RADTODEG,0.9)
@@ -128739,6 +128742,7 @@ local timer t=CreateTimer()
 // своя розовая копия CirclePulse (у White цвет геосета зелёный); квадрат ±100, в анимации x1.1 — круг ~105 при масштабе 1
 local effect rfx=AddSpecialEffect("Shinji2_RangeCircle.mdx",rx,ry)
 call SetSpecialEffectScale(rfx,rr/105.)
+call SetSpecialEffectTimeScale(rfx,0.01)
 call SaveEffectHandle(h,GetHandleId(t),0,rfx)
 call TimerStart(t,rdur,false,function ShinjiRingEnd)
 set rfx=null
@@ -129436,7 +129440,7 @@ function ShinjiHadoHitFx takes player hp,real hx,real hy,real hs,boolean hmain r
 local unit hn
 if hmain then
 set hn=CreateUnit(hp,'dH21',hx,hy,GetRandomReal(0,359))
-call SetUnitScale(hn,0.95,0.95,0.95) // радиус модели ~495 — взрыв на весь круг AoE 450 (18 окт); урон — как раньше
+call SetUnitScale(hn,0.45,0.45,0.45) // радиус модели ~495 — взрыв на весь круг AoE 450 (18 окт); урон — как раньше
 call KillUnit(hn)
 call MyRemoveUnit(hn,3.5)
 set hn=CreateUnit(hp,'dR41',hx,hy,GetRandomReal(0,359))
@@ -129444,6 +129448,16 @@ call SetUnitScale(hn,0.7,0.7,0.7) // плоский эффект: квадрат
 call SetUnitFlyHeight(hn,0,0)
 call MyRemoveUnit(hn,3.5)
 endif
+set bj_lastCreatedEffect=AddSpecialEffect(EffectID[394],hx,hy)
+call SetSpecialEffectScale(bj_lastCreatedEffect,1.2)
+call SetSpecialEffectVertexColour(bj_lastCreatedEffect,235,230,235,220)
+// call SetSpecialEffectAnimationByIndex(bj_lastCreatedEffect,0)
+call RemoveEffect(bj_lastCreatedEffect,1.6,false,CreateTimer())
+set bj_lastCreatedEffect=AddSpecialEffect(EffectID[41],hx,hy)
+call SetSpecialEffectScale(bj_lastCreatedEffect,1.1)
+call SetSpecialEffectVertexColour(bj_lastCreatedEffect,235,230,235,220)
+call SetSpecialEffectAnimationByIndex(bj_lastCreatedEffect,0)
+call RemoveEffect(bj_lastCreatedEffect,1.6,false,CreateTimer())
 set hn=null
 endfunction
 function ShinjiHadoMissile2 takes nothing returns nothing
@@ -129536,8 +129550,8 @@ call UnitAddAbility(m,'Amrf')
 call UnitRemoveAbility(m,'Amrf')
 call SetUnitFlyHeight(m,hoz,0)
 // 18 окт: SolarBlast убран — летит сама оранжевая сфера (xtyball3Yellow, как сферы вокруг Хирако)
-call SetUnitModel(m,"BlackGoku\\xtyball3Yellow.mdx")
-call SetUnitScale(m,0.15,0.15,0.15) // 18 окт: летящие шары меньше (было 0.55, затем 0.22)
+call SetUnitModel(m,"EnBlast.mdx")
+call SetUnitScale(m,0.65,0.65,0.65) // 18 окт: летящие шары меньше (было 0.55, затем 0.22)
 call SetUnitVertexColor(m,235,150,60,170)
 call SaveUnitHandle(h,id,0,m)
 call SaveUnitHandle(h,id,1,u)
