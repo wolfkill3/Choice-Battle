@@ -127868,6 +127868,12 @@ endfunction
 // 6 Spell Mask (рука по лицу), 18 Spell 1.1 (рука с мечом вперёд), 21 Spell 3 (наклон вперёд, руки в стороны),
 // 24 Spell 5.1 (стойка из ножен — исчезает — появляется). Через dur — скорость 1 и stand (17 окт)
 // вспышка сюмпо Хирако (17 окт): BlackBlink, как у телепортов Гоку — x3, полупрозрачная; для всех телепортов Хирако
+// инверсия W / D / G (метка SH_ShnInv) действует, только пока метка не истекла и у юнита нет очищения, как у путаницы T:
+// Imagine Breaker (A15H) или «Чистое небо» Маре (CE04) — тогда не действует и сразу спадает (18 окт).
+// Если на владельца юнита действует путаница T (ShnConfOn), инверсия W / D / G не действует — T в приоритете, её путаница остаётся (18 окт)
+function ShinjiInvOn takes unit u returns boolean
+return u!=null and LoadReal(HH,GetHandleId(u),SH_ShnInv)>TimerGetElapsed(ShnClock) and GetUnitAbilityLevel(u,'A15H')==0 and GetUnitAbilityLevel(u,'CE04')==0 and not ShnConfOn[GetPlayerId(GetOwningPlayer(u))]
+endfunction
 function ShinjiBlink takes real bx,real by returns nothing
 local effect bfx=AddSpecialEffect("war3mapImported\\BlackBlink.mdx",bx,by)
 call SetSpecialEffectTimeScale(bfx,3)
@@ -128372,6 +128378,28 @@ set qe=null
 set u=null
 set t=null
 endfunction
+// минирывок Q вбок (18 окт): враг перевёрнут — Хирако за 5 тиков по 0.02 с смещается на 200 в сторону (угол h 9) со шлейфом,
+// затем исчезает со вспышкой и через 0.25 с бьёт со спины (ShinjiQBack). h 10 — тик минирывка
+function ShinjiQSide takes nothing returns nothing
+local timer t=GetExpiredTimer()
+local integer id=GetHandleId(t)
+local unit u=LoadUnitHandle(h,id,0)
+local real sa=LoadReal(h,id,9)
+local integer sk=LoadInteger(h,id,10)+1
+call SaveInteger(h,id,10,sk)
+if UnitIsAlive(u) and sk<=5 then
+call ShinjiQAfter(OwnerOf(u),GetUnitX(u),GetUnitY(u),GetUnitFacing(u))
+call SetUnitX(u,GetUnitX(u)+40*Cos(sa))
+call SetUnitY(u,GetUnitY(u)+40*Sin(sa))
+else
+call ShinjiBlink(GetUnitX(u),GetUnitY(u))
+call SetUnitVertexColor(u,255,255,255,0)
+call PauseTimer(t)
+call TimerStart(t,0.25,false,function ShinjiQBack)
+endif
+set u=null
+set t=null
+endfunction
 function ShinjiQDash takes nothing returns nothing
 local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
@@ -128396,8 +128424,24 @@ call TimerStart(t,0.1,false,function ShinjiQFinish)
 else
 set qd=SR(GetUnitX(u),GetUnitY(u),GetUnitX(qe),GetUnitY(qe))
 set a=Atan2(GetUnitY(qe)-GetUnitY(u),GetUnitX(qe)-GetUnitX(u))
-if qd<=130 then
-if LoadReal(HH,GetHandleId(qe),SH_ShnInv)>TimerGetElapsed(ShnClock) and not LoadBoolean(HH,GetHandleId(qe),ANTITARGET_ABILITY) then
+if qd<=330 and ShinjiInvOn(qe) and not LoadBoolean(HH,GetHandleId(qe),ANTITARGET_ABILITY) then
+// враг под W (18 окт): чуть раньше (с 330) — минирывок на 200 вбок, затем исчезновение и удар со спины (было: исчезал сразу в 130)
+if not IsUnitType(qe,UNIT_TYPE_STRUCTURE) then
+call ShinjiFaceHold(qe,(a+bj_PI)*bj_RADTODEG,0.9)
+call SaveBoolean(HH,GetHandleId(qe),SH_ShnPHold,true)
+call PauseUnit(qe,true)
+call SaveBoolean(h,id,7,true)
+endif
+if GetRandomInt(0,1)==0 then
+call SaveReal(h,id,9,a+bj_PI/2)
+else
+call SaveReal(h,id,9,a-bj_PI/2)
+endif
+call SaveInteger(h,id,10,0)
+call PauseTimer(t)
+call TimerStart(t,0.02,true,function ShinjiQSide)
+elseif qd<=130 then
+if ShinjiInvOn(qe) and not LoadBoolean(HH,GetHandleId(qe),ANTITARGET_ABILITY) then
 // враг под W (17 окт): как контрудар Джирена (E) — Хирако исчезает со вспышкой, через 0.35 с появляется за спиной и бьёт
 call ShinjiBlink(GetUnitX(u),GetUnitY(u))
 call SetUnitVertexColor(u,255,255,255,0)
@@ -128442,7 +128486,7 @@ local real a=Atan2(GetUnitY(qe)-y,GetUnitX(qe)-x)
 local timer t=CreateTimer()
 local integer id=GetHandleId(t)
 // озвучка Q (18 окт): враг в тумане W (перевёрнут) — HirakoQ2, иначе HirakoQ
-if LoadReal(HH,GetHandleId(qe),SH_ShnInv)>TimerGetElapsed(ShnClock) then
+if ShinjiInvOn(qe) then
 call ShinjiSnd("HirakoQ2")
 else
 call ShinjiSnd("HirakoQ")
@@ -128516,7 +128560,7 @@ local real inx
 local real iny
 local timer ict
 local integer icid
-if GetSpellTargetUnit()!=null or (icx==0. and icy==0.) or ico==0 or LoadReal(HH,iceid,SH_ShnInv)<=TimerGetElapsed(ShnClock) then
+if GetSpellTargetUnit()!=null or (icx==0. and icy==0.) or ico==0 or not ShinjiInvOn(ice) then
 set ice=null
 return
 endif
@@ -128577,7 +128621,7 @@ call SaveBoolean(HH,eid,SH_ShnInvBusy,false)
 set e=null
 return
 endif
-if LoadReal(HH,eid,SH_ShnInv)<=TimerGetElapsed(ShnClock) then
+if not ShinjiInvOn(e) then
 set e=null
 return
 endif
@@ -128640,7 +128684,7 @@ set tg=null
 set e=null
 return
 endif
-if tg==null or tg==e or LoadReal(HH,eid,SH_ShnInv)<=TimerGetElapsed(ShnClock) then
+if tg==null or tg==e or not ShinjiInvOn(e) then
 set tg=null
 set e=null
 return
@@ -288964,13 +289008,13 @@ call LANG_A('SnW1',0,1,"Sakanade: Inverted World, [|cffffcc00Level 2|r] (|cffffc
 call LANG_A('SnW1',0,2,"Sakanade: Inverted World, [|cffffcc00Level 3|r] (|cffffcc00W|r)")
 call LANG_A('SnW1',0,3,"Sakanade: Inverted World, [|cffffcc00Level 4|r] (|cffffcc00W|r)")
 call LANG_A('SnW1',0,4,"Sakanade: Inverted World, [|cffffcc00Level 5|r] (|cffffcc00W|r)")
-call LANG_A('SnW1',1,0,"\"Fall, Sakanade\": Hirako spins Sakanade by its ring. Nearby enemies take damage and are briefly \"inverted\", and a sweet mist rises around Hirako. Enemies in the mist see the world upside down: move, attack and ability orders (point and unit) go the opposite way. The mist slows a little, and enem"+"y attacks in it miss with a 50% chance.|n|n|cFF00A5FF|nDamage: 3\\4\\5\\6\\7*|r|c003CFF3CAGI|r|cFF00A5FF|nStrike AoE: 350|nInversion after the strike: 1.25 sec.|nMist AoE: 500\\600\\700\\800\\900|nMist duration: 3\\3.5\\4\\4.5\\5 sec.|nSlow in the mist: 20% move speed|nMiss in the mist: 50%|nCooldow"+"n: 22 sec.|r")
-call LANG_A('SnW1',1,1,"\"Fall, Sakanade\": Hirako spins Sakanade by its ring. Nearby enemies take damage and are briefly \"inverted\", and a sweet mist rises around Hirako. Enemies in the mist see the world upside down: move, attack and ability orders (point and unit) go the opposite way. The mist slows a little, and enem"+"y attacks in it miss with a 50% chance.|n|n|cFF00A5FF|nDamage: 3\\4\\5\\6\\7*|r|c003CFF3CAGI|r|cFF00A5FF|nStrike AoE: 350|nInversion after the strike: 1.25 sec.|nMist AoE: 500\\600\\700\\800\\900|nMist duration: 3\\3.5\\4\\4.5\\5 sec.|nSlow in the mist: 20% move speed|nMiss in the mist: 50%|nCooldow"+"n: 22 sec.|r")
-call LANG_A('SnW1',1,2,"\"Fall, Sakanade\": Hirako spins Sakanade by its ring. Nearby enemies take damage and are briefly \"inverted\", and a sweet mist rises around Hirako. Enemies in the mist see the world upside down: move, attack and ability orders (point and unit) go the opposite way. The mist slows a little, and enem"+"y attacks in it miss with a 50% chance.|n|n|cFF00A5FF|nDamage: 3\\4\\5\\6\\7*|r|c003CFF3CAGI|r|cFF00A5FF|nStrike AoE: 350|nInversion after the strike: 1.25 sec.|nMist AoE: 500\\600\\700\\800\\900|nMist duration: 3\\3.5\\4\\4.5\\5 sec.|nSlow in the mist: 20% move speed|nMiss in the mist: 50%|nCooldow"+"n: 22 sec.|r")
-call LANG_A('SnW1',1,3,"\"Fall, Sakanade\": Hirako spins Sakanade by its ring. Nearby enemies take damage and are briefly \"inverted\", and a sweet mist rises around Hirako. Enemies in the mist see the world upside down: move, attack and ability orders (point and unit) go the opposite way. The mist slows a little, and enem"+"y attacks in it miss with a 50% chance.|n|n|cFF00A5FF|nDamage: 3\\4\\5\\6\\7*|r|c003CFF3CAGI|r|cFF00A5FF|nStrike AoE: 350|nInversion after the strike: 1.25 sec.|nMist AoE: 500\\600\\700\\800\\900|nMist duration: 3\\3.5\\4\\4.5\\5 sec.|nSlow in the mist: 20% move speed|nMiss in the mist: 50%|nCooldow"+"n: 22 sec.|r")
-call LANG_A('SnW1',1,4,"\"Fall, Sakanade\": Hirako spins Sakanade by its ring. Nearby enemies take damage and are briefly \"inverted\", and a sweet mist rises around Hirako. Enemies in the mist see the world upside down: move, attack and ability orders (point and unit) go the opposite way. The mist slows a little, and enem"+"y attacks in it miss with a 50% chance.|n|n|cFF00A5FF|nDamage: 3\\4\\5\\6\\7*|r|c003CFF3CAGI|r|cFF00A5FF|nStrike AoE: 350|nInversion after the strike: 1.25 sec.|nMist AoE: 500\\600\\700\\800\\900|nMist duration: 3\\3.5\\4\\4.5\\5 sec.|nSlow in the mist: 20% move speed|nMiss in the mist: 50%|nCooldow"+"n: 22 sec.|r")
+call LANG_A('SnW1',1,0,"\"Fall, Sakanade\": Hirako spins Sakanade by its ring. Nearby enemies take damage and are briefly \"inverted\", and a sweet mist rises around Hirako. Enemies in the mist see the world upside down: move, attack and ability orders (point and unit) go the opposite way. The mist slows a little, and enem"+"y attacks in it miss with a 50% chance. The inversion has no effect under Imagine Breaker or Mare's Clear Sky, nor on those confused by T (T takes priority).|n|n|cFF00A5FF|nDamage: 3\\4\\5\\6\\7*|r|c003CFF3CAGI|r|cFF00A5FF|nStrike AoE: 350|nInversion after the strike: 1.25 sec.|nMist AoE: 500\\600\\"+"700\\800\\900|nMist duration: 3\\3.5\\4\\4.5\\5 sec.|nSlow in the mist: 20% move speed|nMiss in the mist: 50%|nCooldown: 22 sec.|r")
+call LANG_A('SnW1',1,1,"\"Fall, Sakanade\": Hirako spins Sakanade by its ring. Nearby enemies take damage and are briefly \"inverted\", and a sweet mist rises around Hirako. Enemies in the mist see the world upside down: move, attack and ability orders (point and unit) go the opposite way. The mist slows a little, and enem"+"y attacks in it miss with a 50% chance. The inversion has no effect under Imagine Breaker or Mare's Clear Sky, nor on those confused by T (T takes priority).|n|n|cFF00A5FF|nDamage: 3\\4\\5\\6\\7*|r|c003CFF3CAGI|r|cFF00A5FF|nStrike AoE: 350|nInversion after the strike: 1.25 sec.|nMist AoE: 500\\600\\"+"700\\800\\900|nMist duration: 3\\3.5\\4\\4.5\\5 sec.|nSlow in the mist: 20% move speed|nMiss in the mist: 50%|nCooldown: 22 sec.|r")
+call LANG_A('SnW1',1,2,"\"Fall, Sakanade\": Hirako spins Sakanade by its ring. Nearby enemies take damage and are briefly \"inverted\", and a sweet mist rises around Hirako. Enemies in the mist see the world upside down: move, attack and ability orders (point and unit) go the opposite way. The mist slows a little, and enem"+"y attacks in it miss with a 50% chance. The inversion has no effect under Imagine Breaker or Mare's Clear Sky, nor on those confused by T (T takes priority).|n|n|cFF00A5FF|nDamage: 3\\4\\5\\6\\7*|r|c003CFF3CAGI|r|cFF00A5FF|nStrike AoE: 350|nInversion after the strike: 1.25 sec.|nMist AoE: 500\\600\\"+"700\\800\\900|nMist duration: 3\\3.5\\4\\4.5\\5 sec.|nSlow in the mist: 20% move speed|nMiss in the mist: 50%|nCooldown: 22 sec.|r")
+call LANG_A('SnW1',1,3,"\"Fall, Sakanade\": Hirako spins Sakanade by its ring. Nearby enemies take damage and are briefly \"inverted\", and a sweet mist rises around Hirako. Enemies in the mist see the world upside down: move, attack and ability orders (point and unit) go the opposite way. The mist slows a little, and enem"+"y attacks in it miss with a 50% chance. The inversion has no effect under Imagine Breaker or Mare's Clear Sky, nor on those confused by T (T takes priority).|n|n|cFF00A5FF|nDamage: 3\\4\\5\\6\\7*|r|c003CFF3CAGI|r|cFF00A5FF|nStrike AoE: 350|nInversion after the strike: 1.25 sec.|nMist AoE: 500\\600\\"+"700\\800\\900|nMist duration: 3\\3.5\\4\\4.5\\5 sec.|nSlow in the mist: 20% move speed|nMiss in the mist: 50%|nCooldown: 22 sec.|r")
+call LANG_A('SnW1',1,4,"\"Fall, Sakanade\": Hirako spins Sakanade by its ring. Nearby enemies take damage and are briefly \"inverted\", and a sweet mist rises around Hirako. Enemies in the mist see the world upside down: move, attack and ability orders (point and unit) go the opposite way. The mist slows a little, and enem"+"y attacks in it miss with a 50% chance. The inversion has no effect under Imagine Breaker or Mare's Clear Sky, nor on those confused by T (T takes priority).|n|n|cFF00A5FF|nDamage: 3\\4\\5\\6\\7*|r|c003CFF3CAGI|r|cFF00A5FF|nStrike AoE: 350|nInversion after the strike: 1.25 sec.|nMist AoE: 500\\600\\"+"700\\800\\900|nMist duration: 3\\3.5\\4\\4.5\\5 sec.|nSlow in the mist: 20% move speed|nMiss in the mist: 50%|nCooldown: 22 sec.|r")
 call LANG_A('SnW1',2,0,"Sakanade: Inverted World, [|cffffcc00Level %d|r] (|cffffcc00W|r)")
-call LANG_A('SnW1',3,0,"\"Fall, Sakanade\": Hirako spins Sakanade by its ring. Nearby enemies take damage and are briefly \"inverted\", and a sweet mist rises around Hirako. Enemies in the mist see the world upside down: move, attack and ability orders (point and unit) go the opposite way. The mist slows a little, and enem"+"y attacks in it miss with a 50% chance.|n|n|cFF00A5FF|nDamage: 3\\4\\5\\6\\7*|r|c003CFF3CAGI|r|cFF00A5FF|nStrike AoE: 350|nInversion after the strike: 1.25 sec.|nMist AoE: 500\\600\\700\\800\\900|nMist duration: 3\\3.5\\4\\4.5\\5 sec.|nSlow in the mist: 20% move speed|nMiss in the mist: 50%|nCooldow"+"n: 22 sec.|r")
+call LANG_A('SnW1',3,0,"\"Fall, Sakanade\": Hirako spins Sakanade by its ring. Nearby enemies take damage and are briefly \"inverted\", and a sweet mist rises around Hirako. Enemies in the mist see the world upside down: move, attack and ability orders (point and unit) go the opposite way. The mist slows a little, and enem"+"y attacks in it miss with a 50% chance. The inversion has no effect under Imagine Breaker or Mare's Clear Sky, nor on those confused by T (T takes priority).|n|n|cFF00A5FF|nDamage: 3\\4\\5\\6\\7*|r|c003CFF3CAGI|r|cFF00A5FF|nStrike AoE: 350|nInversion after the strike: 1.25 sec.|nMist AoE: 500\\600\\"+"700\\800\\900|nMist duration: 3\\3.5\\4\\4.5\\5 sec.|nSlow in the mist: 20% move speed|nMiss in the mist: 50%|nCooldown: 22 sec.|r")
 call LANG_A('SnE1',0,0,"Hollow Mask, [|cffffcc00Level 1|r] (|cffffcc00E|r)")
 call LANG_A('SnE1',0,1,"Hollow Mask, [|cffffcc00Level 2|r] (|cffffcc00E|r)")
 call LANG_A('SnE1',0,2,"Hollow Mask, [|cffffcc00Level 3|r] (|cffffcc00E|r)")
