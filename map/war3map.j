@@ -25723,7 +25723,7 @@ set udg_RH[139]='Rosh'//Мутен Роши
 set udg_RH[140]='HBrg'//Baraggan
 //Barragan1end
 //Suigintou1start
-//set udg_RH[144]='HSui'//Suigintou — не готова, не релизить
+set udg_RH[144]='HSui'//Suigintou — не готова, не релизить
 //Suigintou1end
 //Remilia1start
 set udg_RH[141]='HRem'//Remilia
@@ -185196,9 +185196,9 @@ local integer id
 local player p=OwnerOf(u)
 set n=LoadUnitHandle(h,GetHandleId(c),0)
 // 18 окт: только в тестовой карте Хирако (там udg_RH[145]=='HShn'): Орихиме воскрешает Ичиго (шикай / банкай) Васто Лорде
-if udg_RH[145]=='HShn' and (GetUnitTypeId(n)=='HIc1' or GetUnitTypeId(n)=='HIc2') then
-call OrehimeT_IchigoVaster(u,n)
-else
+// if udg_RH[145]=='HShn' and (GetUnitTypeId(n)=='HIc1' or GetUnitTypeId(n)=='HIc2') then
+// call OrehimeT_IchigoVaster(u,n)
+// else
         set soundplay=SndN(2888) // Sound\Music\mp3Music\OriT2.mp3
         call StartSound(soundplay)
         //call KillSoundWhenDone(soundplay) // звук из массива soundStr — не удалять
@@ -185214,7 +185214,7 @@ else
         call RemoveTransformation(n)
         call SaveInteger(HH,GetHandleId(n),SH_VegetaDeath,1)
         call DestroyEffect(AddSpecialEffectTarget("Abilities\\Spells\\Human\\Resurrect\\ResurrectCaster.mdl",n,"origin"))
-endif
+// endif
 call KillUnit(LoadUnitHandle(h,GetHandleId(c),1))
 call KillUnit(c)
 set t=null
