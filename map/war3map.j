@@ -11592,11 +11592,12 @@ call SND_Add(4853,2,"Sound\\Music\\mp3Music\\YotonYumesu.mp3",12700)
 call SND_Add(4855,2,"Voice\\HirakoSummon.mp3",12700)
 // озвучка способностей Хирако (18 окт): Sound\Shinji\HirakoX.mp3, X — хоткей (E2 — серо в маске, R2 — попадание R)
 call SND_Add(4857,2,"Sound\\Shinji\\HirakoR.mp3",12700)
-call SND_Add(4861,2,"Sound\\Shinji\\HirakoQ.mp3",12700)
-call SND_Add(4875,2,"Sound\\Shinji\\HirakoQ2.mp3",12700) // Q по врагу в тумане W (18 окт)
+call SND_Add(4861,2,"Sound\\Shinji\\HirakoQ1.mp3",12700)
+call SND_Add(4875,2,"Sound\\Shinji\\HirakoQ2-1.mp3",12700) // Q по врагу в тумане W (18 окт)
+call SND_Add(4877,2,"Sound\\Shinji\\HirakoQ2-2.mp3",12700) // Q при врагу в тумане W (18 окт)
 call SND_Add(4879,2,"Sound\\Shinji\\HirakoQHit.mp3",12700)
 call SND_Add(4863,2,"Sound\\Shinji\\HirakoW1.mp3",12700)
-call SND_Add(4877,2,"Sound\\Shinji\\HirakoW2.mp3",12700)
+call SND_Add(4887,2,"Sound\\Shinji\\HirakoW2.mp3",12700)
 call SND_Add(4865,2,"Sound\\Shinji\\HirakoE.mp3",12700)
 call SND_Add(4867,2,"Sound\\Shinji\\HirakoE2.mp3",12700)
 call SND_Add(4869,2,"Sound\\Shinji\\HirakoT.mp3",12700)
@@ -128334,6 +128335,7 @@ call RemoveEffect(qfx,0.45,false,CreateTimer()) // единственная ан
 endif
 if qbk then
 call myCustomDamage(u,qe,dmg+GetHeroAgi(u,true),false,false,null,null,null)
+call ShinjiSnd("HirakoQ2-2")
 else
 call myCustomDamage(u,qe,dmg,false,false,null,null,null)
 endif
@@ -128491,11 +128493,11 @@ local real y=GetUnitY(u)
 local real a=Atan2(GetUnitY(qe)-y,GetUnitX(qe)-x)
 local timer t=CreateTimer()
 local integer id=GetHandleId(t)
-// озвучка Q (18 окт): враг в тумане W (перевёрнут) — HirakoQ2, иначе HirakoQ
+// озвучка Q (18 окт): враг в тумане W (перевёрнут) — HirakoQ2-1, иначе HirakoQ1
 if ShinjiInvOn(qe) then
-call ShinjiSnd("HirakoQ2")
+call ShinjiSnd("HirakoQ2-1")
 else
-call ShinjiSnd("HirakoQ")
+call ShinjiSnd("HirakoQ1")
 endif
 call ShinjiBlink(x,y)
 // пыльный вихрь на месте рывка (EffectID[20] WindCirclefaster; 18 окт)
@@ -128843,7 +128845,7 @@ local timer t=CreateTimer()
 local integer id=GetHandleId(t)
 local integer i=0
 local effect fx
-call ShinjiSnd("HirakoW")
+call ShinjiSnd("HirakoW"+GetRandomInt(1,2))
 call SaveUnitHandle(h,id,0,u)
 call SaveReal(h,id,1,x1)
 call SaveReal(h,id,2,y1)
