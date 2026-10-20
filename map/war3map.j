@@ -11594,12 +11594,17 @@ call SND_Add(4855,2,"Voice\\HirakoSummon.mp3",12700)
 call SND_Add(4857,2,"Sound\\Shinji\\HirakoR.mp3",12700)
 call SND_Add(4861,2,"Sound\\Shinji\\HirakoQ.mp3",12700)
 call SND_Add(4875,2,"Sound\\Shinji\\HirakoQ2.mp3",12700) // Q по врагу в тумане W (18 окт)
-call SND_Add(4863,2,"Sound\\Shinji\\HirakoW.mp3",12700)
+call SND_Add(4879,2,"Sound\\Shinji\\HirakoQHit.mp3",12700)
+call SND_Add(4863,2,"Sound\\Shinji\\HirakoW1.mp3",12700)
+call SND_Add(4877,2,"Sound\\Shinji\\HirakoW2.mp3",12700)
 call SND_Add(4865,2,"Sound\\Shinji\\HirakoE.mp3",12700)
 call SND_Add(4867,2,"Sound\\Shinji\\HirakoE2.mp3",12700)
 call SND_Add(4869,2,"Sound\\Shinji\\HirakoT.mp3",12700)
 call SND_Add(4871,2,"Sound\\Shinji\\HirakoF.mp3",12700)
 call SND_Add(4873,2,"Sound\\Shinji\\HirakoG.mp3",12700)
+call SND_Add(4881,2,"Sound\\Shinji\\HirakoGHit1.mp3",12700)
+call SND_Add(4883,2,"Sound\\Shinji\\HirakoGHit2.mp3",12700)
+call SND_Add(4885,2,"Sound\\Shinji\\HirakoGHit3.mp3",12700)
 call SND_Add(4859,2,"Sound\\Shinji\\HirakoR2.mp3",12700)
 endfunction
 function SND_ArrInit takes nothing returns nothing
@@ -128332,6 +128337,7 @@ call myCustomDamage(u,qe,dmg+GetHeroAgi(u,true),false,false,null,null,null)
 else
 call myCustomDamage(u,qe,dmg,false,false,null,null,null)
 endif
+call ShinjiSnd("HirakoQHit")
 call ShinjiAkameCut(qe,qpa*bj_RADTODEG)
 call ShinjiBigHit(qe,qpa*bj_RADTODEG)
 call ShinjiBloodFx(qe,qpa*bj_RADTODEG)
@@ -134293,7 +134299,7 @@ set o=0
 set ab=GetUnitAbility(e,id)
 if id!='SnT1' and ab!=null and ShinjiFcAbOk(e,id) then
 if GetAbilityBaseTypeId(ab)=='ANcl' then
-call ShinjiDbg("  Channel "+GetObjectName(id)+" ур "+I2S(GetUnitAbilityLevel(e,id))+"/"+I2S(GetAbilityBaseIntegerFieldById(id,ABILITY_IF_LEVELS))+" — приказ из таблицы")
+call ShinjiDbg("  Channel "+GetObjectName(id)+" ур "+I2S(GetUnitAbilityLevel(e,id))+ "/"+I2S(GetAbilityBaseIntegerFieldById(id,ABILITY_IF_LEVELS))+" — приказ из таблицы")
 set os=LoadStr(HH,SH_ShnChanO,id)
 if os!=null and os!="" then
 call ShinjiDbg("  Ncl6 = "+os+" — тип цели")
@@ -135032,6 +135038,7 @@ call SetUnitY(u,gy)
 call SetUnitFacingInstant(u,gyaw)
 call ShinjiBlink(gx,gy)
 call ShinjiAnimFor(u,4,2.,0.8)
+call ShinjiSnd("HirakoGHit"+GetRandomInt(1,3))
 call myCustomDamage(u,c,1.5*GetHeroAgi(u,true)+0.075*(GetUnitState(c,UNIT_STATE_MAX_LIFE)-GetWidgetLife(c)),false,false,null,null,null)
 set fx=AddSpecialEffect("Sabrac\\TG_animeslashfinal_2.mdx",GetUnitX(c),GetUnitY(c))
 call SetSpecialEffectOrientation(fx,gyaw,0.,0.)
