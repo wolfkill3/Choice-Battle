@@ -2303,6 +2303,14 @@ constant integer SH_ShnMistY=StringHash("ShnMistY")
 constant integer SH_ShnMistR=StringHash("ShnMistR")
 constant integer SH_ShnInvMX=StringHash("ShnInvMX")
 constant integer SH_ShnInvMY=StringHash("ShnInvMY")
+// 21 окт: иммунитет к W после снятия (небо / Брейкер / Медуза), меч на точке weapon (эффект, модель), W ведёт меч, G идёт, текущий W
+constant integer SH_ShnInvImm=StringHash("ShnInvImm")
+constant integer SH_ShnSwFx=StringHash("ShnSwFx")
+constant integer SH_ShnSwM=StringHash("ShnSwM")
+constant integer SH_ShnSwLock=StringHash("ShnSwLock")
+constant integer SH_ShnFade=StringHash("ShnFade")
+constant integer SH_ShnGOn=StringHash("ShnGOn")
+constant integer SH_ShnWId=StringHash("ShnWId")
 constant integer SH_ShnMask=StringHash("ShnMask")
 constant integer SH_ShnMaskDmg=StringHash("ShnMaskDmg")
 constant integer SH_ShnQRun=StringHash("ShnQRun") // таймер текущего рывка Q — сторож 3 с (18 окт)
@@ -2330,6 +2338,7 @@ unit ShnFcU=null
 real array ShnConfEnd
 boolean array ShnAllySnap
 integer ShnConfN=0
+boolean ShnConfHit=false // 21 окт: идёт урон запутанного, переданный Хирако (обработчик урона не трогает его второй раз)
 boolean JT_Any=false // хоть один судья сейчас занимает место (-take): без этого обёртки — сразу натив
 hashtable JT_RegHT=null // @538AB@0F88 A>1KB89 N=8B>2 AC4LO< (TRPUE): B@8335@ � A>1KB85 � 83@>:
 boolean LANG_EN=false // язык интерфейса у локального игрока (LANG_Init, -en / -ru)
@@ -14385,6 +14394,29 @@ call TimerStart(t,.02,true,function Rem_W_Act2)
 set t=null
 endfunction
 // ----- E «Dracula Cradle»: рывок 0.42 c, толкает врагов в 220; 4 удара 300 со станом -----
+// E (21 окт): враги, задетые рывком или ударом, на паузе до конца E — пауза ставится заново каждый тик (группа в HH id 6)
+function Rem_E_PauseEnum takes nothing returns nothing
+if UnitIsAlive(GetEnumUnit()) then
+call PauseUnit(GetEnumUnit(),true)
+endif
+endfunction
+function Rem_E_FreeEnum takes nothing returns nothing
+call PauseUnit(GetEnumUnit(),false)
+endfunction
+function Rem_E_Grab takes group remEg,unit e returns nothing
+if not LoadBoolean(HH,GetHandleId(e),ANTITARGET_ABILITY) and not IsUnitType(e,UNIT_TYPE_STRUCTURE) then
+call GroupAddUnit(remEg,e)
+call PauseUnit(e,true)
+endif
+endfunction
+function Rem_E_Free takes integer id returns nothing
+local group remEg=LoadGroupHandle(HH,id,6)
+if remEg!=null then
+call ForGroup(remEg,function Rem_E_FreeEnum)
+call DestroyGroup(remEg)
+endif
+set remEg=null
+endfunction
 function Rem_E_Act2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
@@ -14401,6 +14433,7 @@ local unit e
 call SaveInteger(HH,id,2,tk)
 // реверс (цель в стойке развернула умение): как у героев Чейза — умение кончается, кастер отпущен
 if Bof_RevEnd(caster) then
+call Rem_E_Free(id)
 call FlushChildHashtable(HH,id)
 call DestroyTimer(t)
 set t=null
@@ -14409,8 +14442,10 @@ return
 endif
 call SaveReal(HH,id,3,speed)
 call SaveReal(HH,id,4,decel)
+// спам паузы и неуязвимости по себе и паузы по задетым врагам — каждый тик (21 окт)
 call SetUnitInvulnerable(caster,true)
 call PauseUnit(caster,true)
+call ForGroup(LoadGroupHandle(HH,id,6),function Rem_E_PauseEnum)
 if tk<=21 then
 call Bof_Put(caster,GetUnitX(caster)+CosBJ(ang)*speed,GetUnitY(caster)+SinBJ(ang)*speed)
 set g=CreateGroup()
@@ -14421,6 +14456,7 @@ exitwhen e==null
 call GroupRemoveUnit(g,e)
 if Condition_Base(OwnerOf(caster),e) and GetUnitAbilityLevel(e,'Avul')==0 then
 call SetUnitXY_1(e,GetUnitX(e)+speed*CosBJ(ang),GetUnitY(e)+speed*SinBJ(ang), true)
+call Rem_E_Grab(LoadGroupHandle(HH,id,6),e)
 endif
 endloop
 call DestroyGroup(g)
@@ -14443,8 +14479,10 @@ call GroupRemoveUnit(g,e)
 if Condition_Base(OwnerOf(caster),e) and GetUnitAbilityLevel(e,'Avul')==0 then
 call Rem_Fx(caster,"bof\\Scarlet-26.mdx",GetUnitX(e),GetUnitY(e),GetUnitFlyHeight(e)+150.,0.,1.,0.)
 call Rem_Fx(caster,"bof\\Scarlet-52.mdx",GetUnitX(e),GetUnitY(e),GetUnitFlyHeight(e)+150.,0.,1.,0.)
-call Bof_Dmg(caster,e,(I2R(Rem_Int_E(caster,true))*25.)*0.001)
+// цель на паузе E — урон полный (Bof_DmgFull: обработчик режет урон по паузе вдвое; 21 окт)
+call Bof_DmgFull(caster,e,(I2R(Rem_Int_E(caster,true))*25.)*0.001)
 call Bof_Ctrl(caster,e,1.,"stun")
+call Rem_E_Grab(LoadGroupHandle(HH,id,6),e)
 endif
 endloop
 call DestroyGroup(g)
@@ -14454,6 +14492,7 @@ call SetUnitInvulnerable(caster,false)
 call PauseUnit(caster,false)
 call SetUnitTimeScale(caster,1.)
 call Bof_Unstick(caster)
+call Rem_E_Free(id)
 call FlushChildHashtable(HH,id)
 call DestroyTimer(t)
 endif
@@ -14498,6 +14537,7 @@ call SaveUnitHandle(HH,GetHandleId(t),0,caster)
 call SaveReal(HH,GetHandleId(t),1,ang)
 call SaveReal(HH,GetHandleId(t),3,100.)
 call SaveReal(HH,GetHandleId(t),4,6.)
+call SaveGroupHandle(HH,GetHandleId(t),6,CreateGroup())
 call TimerStart(t,.02,true,function Rem_E_Act2)
 set t=null
 endfunction
@@ -38758,8 +38798,9 @@ local unit u=Hero[ip]
 local integer uid=GetHandleId(u)
 local real mx
 local real r
-if GetUnitTypeId(u)=='HShn' then
-    set mx=7.+GetUnitAbilityLevel(u,'SnE1')
+// Тоусен (21 окт): тот же запас маски, предел 7+уровень A0JA
+if GetUnitTypeId(u)=='HShn' or GetUnitTypeId(u)=='H02K' then
+    set mx=7.+GetUnitAbilityLevel(u,'SnE1')+GetUnitAbilityLevel(u,'A0JA')
     set r=LoadReal(HH,uid,SH_ShnMaskRes)
     if not LoadBoolean(HH,uid,SH_ShnMask) and UnitIsAlive(u) then
         set r=r+0.04
@@ -38768,7 +38809,7 @@ if GetUnitTypeId(u)=='HShn' then
         set r=mx
     endif
     call SaveReal(HH,uid,SH_ShnMaskRes,r)
-    if GetUnitAbilityLevel(u,'SnE1')>0 and IsUnitSelected(u,GetLocalPlayer()) and IsPlayerAlly(GetLocalPlayer(),OwnerOf(u)) then
+    if (GetUnitAbilityLevel(u,'SnE1')>0 or GetUnitAbilityLevel(u,'A0JA')>0) and IsUnitSelected(u,GetLocalPlayer()) and IsPlayerAlly(GetLocalPlayer(),OwnerOf(u)) then
         call SetFrameText(GetFrameByName("CustomLeaderboardText",0),"|c00FFE0A0Hollow Mask|r: "+R2SW(r,1,1)+"/"+I2S(R2I(mx))+" s")
         call ShowFrame(GetFrameByName("CustomLeaderboard",0), true)
         call SetFrameSize( GetFrameByName("CustomLeaderboard",0), .1775, GetFrameHeight( GetFrameByName("CustomLeaderboardText",0))+0.016)
@@ -39819,7 +39860,7 @@ if GetUnitTypeId(u)=='HRem' then
         set cjlocgn_00000000=null
     endif
 endif
-if GetUnitTypeId(u)=='HShn' then
+if GetUnitTypeId(u)=='HShn' or GetUnitTypeId(u)=='H02K' then
     if LoadInteger(HH,ip,SH_ShnDBoard)!=1 then
         set cjlocgn_00000000=CreateTimer()
         call SaveInteger(HH,GetHandleId(cjlocgn_00000000),0,ip)
@@ -47997,6 +48038,13 @@ if GetUnitTypeId(u) == 'H02K' then
     call UnitRemoveAbility(u,'ToE6')
     call UnitRemoveAbility(u,'B03C')
     call ShowAbility2('A0JA', true)
+    // маска на запасе (21 окт)
+    if LoadBoolean(HH,GetHandleId(u),SH_ShnMask) then
+        call SaveBoolean(HH,GetHandleId(u),SH_ShnMask,false)
+        call UnitRemoveAbility(u,'ToEc')
+        call EnableUnitAbility(u,'A0JA',true,true)
+        call SetUnitVertexColor(u,255,255,255,255)
+    endif
 endif
 if GetUnitTypeId(u) == 'H00A' then
     call UnitMakeAbilityPermanent(u,false,'LmE1')
@@ -51526,6 +51574,11 @@ endloop
 if GetUnitTypeId(u)=='H069' then
     call Nanaya_DropComboBar(p)
 endif
+// Ремилия: постоянный +HP от убийств T хранится по юниту — переносим на нового героя (21 окт; -rfh его сбрасывал)
+if GetUnitTypeId(u)=='HRem' and LoadInteger(HH,GetHandleId(u),SH_RemKillLife)>0 then
+call SaveInteger(HH,GetHandleId(Hero[ip]),SH_RemKillLife,LoadInteger(HH,GetHandleId(u),SH_RemKillLife))
+call Bof_xa(Hero[ip],0,2,LoadInteger(HH,GetHandleId(Hero[ip]),SH_RemKillLife))
+endif
 call RemoveUnit(u)
 if GetLocalPlayer()==p then
     call ClearSelection()
@@ -54218,6 +54271,11 @@ endloop
 if GetUnitTypeId(u)=='H069' then
 call Nanaya_DropComboBar(OwnerOf(u))
 call UnitRemoveAbility(u,'A1BN')
+endif
+// Ремилия: постоянный +HP от убийств T хранится по юниту — переносим на нового героя (21 окт; -rfh его сбрасывал)
+if GetUnitTypeId(u)=='HRem' and LoadInteger(HH,GetHandleId(u),SH_RemKillLife)>0 then
+call SaveInteger(HH,GetHandleId(Hero[ip]),SH_RemKillLife,LoadInteger(HH,GetHandleId(u),SH_RemKillLife))
+call Bof_xa(Hero[ip],0,2,LoadInteger(HH,GetHandleId(Hero[ip]),SH_RemKillLife))
 endif
 call FlushChildHashtable(HH,GetHandleId(u))
 call RemoveUnit(u)
@@ -59528,7 +59586,7 @@ exitwhen i>=10
         if GetUnitTypeId( Hero[i] )=='HFla' and LoadBoolean(HH,GetHandleId(Hero[i]),SH_FlaState) then
             call SaveInteger(HH,GetHandleId(Hero[i]),SH_FlaCharges,3)
         endif
-        if GetUnitTypeId( Hero[i] )=='HShn' then
+        if GetUnitTypeId( Hero[i] )=='HShn' or GetUnitTypeId( Hero[i] )=='H02K' then
             call SaveReal(HH,GetHandleId(Hero[i]),SH_ShnMaskRes,99.)
         endif
         if GetUnitTypeId( Hero[i] )=='Rosh' then
@@ -65021,6 +65079,89 @@ set target=null
 set t=null
 endfunction
 //Barragan1end
+//=========== Сюсуй - Shusui
+function Trig_Shadow_Storm_Conditions takes nothing returns boolean
+return (UnitHasItemOfTypeBJ(GetAttacker(),'I01Q') or GetUnitAbilityLevel(GetAttacker(),'KI16')>0)and (GetRandomReal(0,100)<=20 or GetUnitAbilityLevel(GetAttacker(),'A06K')>0) and GetUnitAbilityLevel(GetAttacker(),'SSCD')==0 and GetUnitTypeId(GetTriggerUnit())!='H007'  and GetUnitAbilityLevel(GetTriggerUnit(),'GIE1')==0 and IsUnitIllusion(GetAttacker())==false and IsUnitType(GetAttacker(), UNIT_TYPE_HERO) and IsUnitIllusion(GetAttacker())==false
+endfunction
+function Trig_Shadow_Storm_Actions2 takes nothing returns nothing
+local timer t=GetExpiredTimer()
+local integer id=GetHandleId(t)
+local unit c=LoadUnitHandle(h,id,0)
+local group ng=LoadGroupHandle(h,id,1)
+local unit l__d
+local integer i=1
+local real x=LoadReal(h,id,50)
+local real y=LoadReal(h,id,51)
+local unit u
+local real dist
+local real modif_factor=LoadReal(h, id, 100)
+local real dmg=GetHeroAgi(c,true)*3. *modif_factor // 21 окт: x2 (было 1.5*AGI)
+local integer l__idg=GetHandleId(ng)
+loop
+exitwhen i>10
+set l__d=LoadUnitHandle(h,id,1+i)
+set dist=LoadReal(h,id,StringHash("dist"+I2S(i)))+70
+call SaveReal(h,id,StringHash("Dist"+I2S(i)),dist)
+call SetUnitX(l__d,x+dist*Cos(GetUnitFacing(l__d)*bj_DEGTORAD))
+call SetUnitY(l__d,y+dist*Sin(GetUnitFacing(l__d)*bj_DEGTORAD))
+set i=i+1
+endloop
+call GroupEnumUnitsInRange(ng,x,y,dist,Base)
+loop
+set u=FirstOfGroup(ng)
+if IsUnitEnemy(u,OwnerOf(c))and u!=LoadUnitHandle(h,l__idg,GetHandleId(u))then
+call myCustomDamage(c,u,dmg,false,false,null,null,null)
+call DestroyEffect(AddSpecialEffectTarget("Abilities\\Spells\\Undead\\CarrionSwarm\\CarrionSwarmDamage.mdl",u,"chest"))
+call SaveUnitHandle(h,l__idg,GetHandleId(u),u)
+endif
+call GroupRemoveUnit(ng,u)
+exitwhen u==null
+endloop
+if dist>=500 then
+call DestroyGroup(ng)
+call DestroyTimer(t)
+call FlushChildHashtable(h,id)
+call FlushChildHashtable(h,l__idg)
+endif
+set c=null
+set ng=null
+set u=null
+set t=null
+set l__d=null
+endfunction
+function Shusui_Cast takes unit c, real modif_factor returns nothing
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+local real x=GetUnitX(c)
+local real y=GetUnitY(c)
+local real r=0.
+local unit l__d
+local integer i=1
+call UnitAddAbility(c, 'SSCD')
+call UnitMakeAbilityPermanent(c, true, 'SSCD')
+call UnitRemoveAbilityTimed(c, 'SSCD', 0.2)
+loop
+exitwhen i>10
+set r=i*36.
+set l__d=CreateUnit(OwnerOf(c),'e02D',x,y,r)
+call UnitAddAbility(l__d,'Arav')
+call UnitRemoveAbility(l__d,'Arav')
+call UnitApplyTimedLife(l__d,'BHwe',.8)
+call SaveUnitHandle(h,id,1+i,l__d)
+set l__d=null
+set i=i+1
+endloop
+call SaveUnitHandle(h,id,0,c)
+call SaveGroupHandle(h,id,1,CreateGroup())
+call SaveReal(h,id,50,x)
+call SaveReal(h,id,51,y)
+call SaveReal(h,id,100,modif_factor)
+call TimerStart(t,.04,true,function Trig_Shadow_Storm_Actions2)
+set c=null
+set t=null
+endfunction
+
+// Сюсуй: функции волны перенесены выше обработчика урона — прок теперь там (21 окт)
 // кэш предметов юнита для обработчика урона: DMG_IHT[handle юнита][тип предмета]=true
 function DmgItemsRefresh takes unit diw returns nothing
     local integer dii=0
@@ -65101,6 +65242,11 @@ local attacktype atkType = GetEventAttackType()
 local integer suid = GetUnitTypeId(c)
 local integer duid = GetUnitTypeId(u)
 local boolean isTargetEnemy = IsUnitEnemy(u,sourcePlayer)
+// Хирако T (21 окт): урон запутанного по врагу Хирако — кто запутал, сколько, игроки
+local unit shnBy=null
+local real shnT=0
+local integer shnP
+local integer shnH
 
 // предметы цели и источника — один раз (кэш по юниту, см. DmgItemsRefresh)
 call DmgItemsRefresh(u)
@@ -65330,12 +65476,32 @@ if critcoef>1 then
     set nb=nb+nb*(critcoef-1)
 endif
 //Shinji1start
+// Хирако T (21 окт; было ShinjiConfKill — отдельный триггер только на смертельный урон): весь урон юнита запутанного игрока
+// по врагу Хирако (по снимку союзов до путаницы) здесь обнуляется, а внизу обработчика его наносит сам Хирако
+if nb>0 and c!=null and not ShnConfHit then
+    set shnP=GetPlayerId(GetOwningPlayer(c))
+    if shnP>=0 and shnP<=11 and ShnConfOn[shnP] then
+        set shnBy=ShnConfBy[shnP]
+        if shnBy!=null and UnitIsAlive(shnBy) and GetUnitTypeId(shnBy)=='HShn' and shnBy!=u and shnBy!=c then
+            set shnH=GetPlayerId(GetOwningPlayer(shnBy))
+            set shnP=GetPlayerId(GetOwningPlayer(u))
+            if shnP>=0 and shnP<=11 and shnH>=0 and shnH<=11 and shnP!=shnH and not ShnAllySnap[shnH*12+shnP] then
+                set shnT=nb
+                set nb=0
+            endif
+        endif
+    endif
+endif
 // Хирако E: маска пустоты — бонус ко всему урону Хирако
 // Хирако E: урон без маски пополняет запас маски — 1 сек. за 5*AGI (16 окт)
-if nb>0 and suid=='HShn' and isTargetEnemy and not LoadBoolean(HH,cid,SH_ShnMask) and GetUnitAbilityLevel(c,'SnE1')>0 then
+if nb>0 and suid=='HShn' and isTargetEnemy and not ShnConfHit and not LoadBoolean(HH,cid,SH_ShnMask) and GetUnitAbilityLevel(c,'SnE1')>0 then
     call SaveReal(HH,cid,SH_ShnMaskRes,RMinBJ(7.+GetUnitAbilityLevel(c,'SnE1'),LoadReal(HH,cid,SH_ShnMaskRes)+nb/RMaxBJ(5.*GetHeroAgi(c,true),1.)))
 endif
-if nb>0 and suid=='HShn' and LoadBoolean(HH,cid,SH_ShnMask) then
+// Тоусен E (21 окт): урон без маски пополняет запас, как у Хирако
+if nb>0 and suid=='H02K' and isTargetEnemy and not LoadBoolean(HH,cid,SH_ShnMask) and GetUnitAbilityLevel(c,'A0JA')>0 then
+    call SaveReal(HH,cid,SH_ShnMaskRes,RMinBJ(7.+GetUnitAbilityLevel(c,'A0JA'),LoadReal(HH,cid,SH_ShnMaskRes)+nb/RMaxBJ(5.*GetHeroAgi(c,true),1.)))
+endif
+if nb>0 and suid=='HShn' and not ShnConfHit and LoadBoolean(HH,cid,SH_ShnMask) then
     set nb=nb*(1+LoadReal(HH,cid,SH_ShnMaskDmg))
 endif
 // Хирако T: банкай — 40% урона любого из зоны (кроме Хирако) по противнику уходит ближайшему союзнику атакующего
@@ -67340,6 +67506,14 @@ endif
         if (LoadBoolean(DMG_IHT,cid,'I02V') or GetUnitAbilityLevel(c,'KIG4')>0) and nb>0 and GetUnitAbilityLevel(c,'A3WR')==0 and IsUnitType(c, UNIT_TYPE_HERO) and IsUnitIllusion(c)==false then
             call Essence(c,u,1)
         endif
+        // Сюсуй и Фэнг (21 окт): прок от урона атаки, а не от замаха (было EVENT_PLAYER_UNIT_ATTACKED — срабатывало на замах, промах и отменённую атаку)
+        if nb>0 and (UnitHasItemOfTypeBJ(c,'I01Q') or GetUnitAbilityLevel(c,'KI16')>0) and (GetRandomReal(0,100)<=20 or GetUnitAbilityLevel(c,'A06K')>0) and GetUnitAbilityLevel(c,'SSCD')==0 and GetUnitTypeId(u)!='H007' and GetUnitAbilityLevel(u,'GIE1')==0 and IsUnitType(c,UNIT_TYPE_HERO) and IsUnitIllusion(c)==false then
+            call Shusui_Cast(c,1)
+        endif
+        if nb>0 and (UnitHasItemOfTypeBJ(c,'I01U') or GetUnitAbilityLevel(c,'KI20')>0) and GetUnitTypeId(c)!='H059' and GetUnitTypeId(c)!='H06S' and GetUnitTypeId(c)!='H070' and (c==Hero[PId(OwnerOf(c))] or GetUnitAbilityLevel(c,'A14Y')>0) and (GetRandomIntMem(0,100)<=25 or GetUnitAbilityLevel(c,'A06K')>0) and IsUnitType(c,UNIT_TYPE_HERO) and IsUnitIllusion(c)==false and udg_B==true and Condition_Base(OwnerOf(c),u) then
+            call PoisonDamage5(c,u,2.5*GetHeroInt(c,true),6,"Abilities\\Weapons\\PoisonSting\\PoisonStingTarget.mdl","chest")
+            call SlowUnit(c,u,0.5,0.5,1,1,false)
+        endif
         if nb>0 and GetUnitAbilityLevel(c,'A17K')>0 and GetUnitAbilityLevel(c,'A3WR')==0 then
             //call SetEventDamage(nb+(GetHeroAgi(c,true)*2 + GetUnitTotalDamage(c)*0.6)*myCustomDamage2(u,1))
             set nb=nb+(GetHeroAgi(c,true)*2 + GetUnitTotalDamage(c)*0.6)*myCustomDamage2(u,1)
@@ -68949,6 +69123,13 @@ if LoadReal(HH,uid,'tlrs')>0 then
         endif
     endif
 endif
+// Хирако T: урон запутанного — от имени Хирако (21 окт); ShnConfHit — чтобы обработчик не перехватил его снова
+if shnT>0 and UnitIsAlive(u) and UnitIsAlive(shnBy) then
+    set ShnConfHit=true
+    call UnitDamageTarget(shnBy,u,shnT,false,false,ATTACK_TYPE_CHAOS,DAMAGE_TYPE_UNIVERSAL,null)
+    set ShnConfHit=false
+endif
+set shnBy=null
 set i=0
 set n3=null
 set sourcePlayer = null
@@ -68983,95 +69164,13 @@ endfunction
 // call TriggerAddAction(t,function Trig_Text_PreDamage_Actions)
 // set t=null
 // endfunction
-//=========== Сюсуй - Shusui
-function Trig_Shadow_Storm_Conditions takes nothing returns boolean
-return (UnitHasItemOfTypeBJ(GetAttacker(),'I01Q') or GetUnitAbilityLevel(GetAttacker(),'KI16')>0)and (GetRandomReal(0,100)<=20 or GetUnitAbilityLevel(GetAttacker(),'A06K')>0) and GetUnitAbilityLevel(GetAttacker(),'SSCD')==0 and GetUnitTypeId(GetTriggerUnit())!='H007'  and GetUnitAbilityLevel(GetTriggerUnit(),'GIE1')==0 and IsUnitIllusion(GetAttacker())==false and IsUnitType(GetAttacker(), UNIT_TYPE_HERO) and IsUnitIllusion(GetAttacker())==false
-endfunction
-function Trig_Shadow_Storm_Actions2 takes nothing returns nothing
-local timer t=GetExpiredTimer()
-local integer id=GetHandleId(t)
-local unit c=LoadUnitHandle(h,id,0)
-local group ng=LoadGroupHandle(h,id,1)
-local unit l__d
-local integer i=1
-local real x=LoadReal(h,id,50)
-local real y=LoadReal(h,id,51)
-local unit u
-local real dist
-local real modif_factor=LoadReal(h, id, 100)
-local real dmg=GetHeroAgi(c,true)*1.5 *modif_factor
-local integer l__idg=GetHandleId(ng)
-loop
-exitwhen i>10
-set l__d=LoadUnitHandle(h,id,1+i)
-set dist=LoadReal(h,id,StringHash("dist"+I2S(i)))+70
-call SaveReal(h,id,StringHash("Dist"+I2S(i)),dist)
-call SetUnitX(l__d,x+dist*Cos(GetUnitFacing(l__d)*bj_DEGTORAD))
-call SetUnitY(l__d,y+dist*Sin(GetUnitFacing(l__d)*bj_DEGTORAD))
-set i=i+1
-endloop
-call GroupEnumUnitsInRange(ng,x,y,dist,Base)
-loop
-set u=FirstOfGroup(ng)
-if IsUnitEnemy(u,OwnerOf(c))and u!=LoadUnitHandle(h,l__idg,GetHandleId(u))then
-call myCustomDamage(c,u,dmg,false,false,null,null,null)
-call DestroyEffect(AddSpecialEffectTarget("Abilities\\Spells\\Undead\\CarrionSwarm\\CarrionSwarmDamage.mdl",u,"chest"))
-call SaveUnitHandle(h,l__idg,GetHandleId(u),u)
-endif
-call GroupRemoveUnit(ng,u)
-exitwhen u==null
-endloop
-if dist>=500 then
-call DestroyGroup(ng)
-call DestroyTimer(t)
-call FlushChildHashtable(h,id)
-call FlushChildHashtable(h,l__idg)
-endif
-set c=null
-set ng=null
-set u=null
-set t=null
-set l__d=null
-endfunction
-function Shusui_Cast takes unit c, real modif_factor returns nothing
-local timer t=CreateTimer()
-local integer id=GetHandleId(t)
-local real x=GetUnitX(c)
-local real y=GetUnitY(c)
-local real r=0.
-local unit l__d
-local integer i=1
-call UnitAddAbility(c, 'SSCD')
-call UnitMakeAbilityPermanent(c, true, 'SSCD')
-call UnitRemoveAbilityTimed(c, 'SSCD', 0.2)
-loop
-exitwhen i>10
-set r=i*36.
-set l__d=CreateUnit(OwnerOf(c),'e02D',x,y,r)
-call UnitAddAbility(l__d,'Arav')
-call UnitRemoveAbility(l__d,'Arav')
-call UnitApplyTimedLife(l__d,'BHwe',.8)
-call SaveUnitHandle(h,id,1+i,l__d)
-set l__d=null
-set i=i+1
-endloop
-call SaveUnitHandle(h,id,0,c)
-call SaveGroupHandle(h,id,1,CreateGroup())
-call SaveReal(h,id,50,x)
-call SaveReal(h,id,51,y)
-call SaveReal(h,id,100,modif_factor)
-call TimerStart(t,.04,true,function Trig_Shadow_Storm_Actions2)
-set c=null
-set t=null
-endfunction
-
 function Trig_Shadow_Storm_Actions takes nothing returns nothing
         call Shusui_Cast(GetAttacker(),1)
 endfunction
 
 function InitTrig_Shadow_Storm takes nothing returns nothing
 set gg_trg_Shadow_Storm=CreateTrigger()
-call TriggerRegisterAnyUnitEventBJ(gg_trg_Shadow_Storm,EVENT_PLAYER_UNIT_ATTACKED)
+// call TriggerRegisterAnyUnitEventBJ(gg_trg_Shadow_Storm,EVENT_PLAYER_UNIT_ATTACKED) // 21 окт: прок в обработчике урона
 call TriggerAddCondition(gg_trg_Shadow_Storm,Condition(function Trig_Shadow_Storm_Conditions))
 call TriggerAddAction(gg_trg_Shadow_Storm,function Trig_Shadow_Storm_Actions)
 endfunction
@@ -69145,7 +69244,7 @@ endfunction
 
 function InitTrig_FengPassive takes nothing returns nothing
         set Trig_FengPassive=CreateTrigger()
-        call TriggerRegisterAnyUnitEventBJ(Trig_FengPassive,EVENT_PLAYER_UNIT_ATTACKED)
+        // call TriggerRegisterAnyUnitEventBJ(Trig_FengPassive,EVENT_PLAYER_UNIT_ATTACKED) // 21 окт: прок в обработчике урона
         call TriggerAddCondition(Trig_FengPassive,Condition(function FengPassive_Conditions))
         call TriggerAddAction(Trig_FengPassive,function FengPassive_Actions)
 endfunction
@@ -69277,10 +69376,11 @@ if Condition_Base(p,E) then
         if UnitHasItemOfTypeBJ(E,'I05O')or UnitHasItemOfTypeBJ(E,'I05P')or UnitHasItemOfTypeBJ(E,'I05Q')or UnitHasItemOfTypeBJ(E,'I05R')or UnitHasItemOfTypeBJ(E,'I05S')or UnitHasItemOfTypeBJ(E,'I05T') or GetUnitAbilityLevel(E, 'KIT8')>0 or GetUnitAbilityLevel(E, 'KIU0')>0 or GetUnitAbilityLevel(E, 'KIU2')>0 or GetUnitAbilityLevel(E, 'KIU4')>0 or GetUnitAbilityLevel(E, 'KIU6')>0 or GetUnitAbilityLevel(E, 'KIU8')>0 then
             call RainMare_Actions(u,E)
         endif
-        if UnitHasItemOfTypeBJ(u, 'I01Q') and (GetRandomInt(1, 100)<=20 or GetUnitAbilityLevel(u,'A06K')>0) then 		// Сюсуй
+        // Сюсуй / Фэнг: урон выше с флагом атаки — прок в обработчике урона (21 окт)
+        if false and UnitHasItemOfTypeBJ(u, 'I01Q') and (GetRandomInt(1, 100)<=20 or GetUnitAbilityLevel(u,'A06K')>0) then 		// Сюсуй
             call Shusui_Cast(u, 1)
         endif
-        if UnitHasItemOfTypeBJ(u, 'I01U') and GetRandomInt(1, 100)<=45 then 		// Feng
+        if false and UnitHasItemOfTypeBJ(u, 'I01U') and GetRandomInt(1, 100)<=45 then 		// Feng
             call PoisonDamage5(u,E,2.5*GetHeroInt(u,true),6,"Abilities\\Weapons\\PoisonSting\\PoisonStingTarget.mdl","chest")
             call SlowUnit(u,E,0.5,0.,1,1,false)
         endif
@@ -101225,7 +101325,8 @@ function GinNewSpellsInit takes nothing returns nothing
 endfunction
 
 function HollowMaskCond takes nothing returns boolean
-return GetSpellAbilityId()=='A0JA'
+// 21 окт: маска Тоусена — TousenECast (запас, как у Хирако); регенерация там же
+return false and GetSpellAbilityId()=='A0JA'
 endfunction
 function HollowMaskCast2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
@@ -127875,7 +127976,21 @@ endfunction
 // Imagine Breaker (A15H) или «Чистое небо» Маре (CE04) — тогда не действует и сразу спадает (18 окт).
 // Если на владельца юнита действует путаница T (ShnConfOn), инверсия W / D / G не действует — T в приоритете, её путаница остаётся (18 окт)
 function ShinjiInvOn takes unit u returns boolean
-return u!=null and LoadReal(HH,GetHandleId(u),SH_ShnInv)>TimerGetElapsed(ShnClock) and GetUnitAbilityLevel(u,'A15H')==0 and GetUnitAbilityLevel(u,'CE04')==0 and not ShnConfOn[GetPlayerId(GetOwningPlayer(u))]
+local integer uid
+if u==null then
+return false
+endif
+set uid=GetHandleId(u)
+if LoadReal(HH,uid,SH_ShnInvImm)>TimerGetElapsed(ShnClock) or LoadReal(HH,uid,SH_ShnInv)<=TimerGetElapsed(ShnClock) then
+return false
+endif
+// эффект W сняли «Небом» Маре, Imagine Breaker или Медузой (она тоже даёт A15H) — 10 с иммунитета к W (21 окт)
+if GetUnitAbilityLevel(u,'A15H')>0 or GetUnitAbilityLevel(u,'CE04')>0 then
+call SaveReal(HH,uid,SH_ShnInvImm,TimerGetElapsed(ShnClock)+10.)
+call SaveReal(HH,uid,SH_ShnInv,0.)
+return false
+endif
+return not ShnConfOn[GetPlayerId(GetOwningPlayer(u))]
 endfunction
 function ShinjiBlink takes real bx,real by returns nothing
 local effect bfx=AddSpecialEffect("war3mapImported\\BlackBlink.mdx",bx,by)
@@ -127908,6 +128023,43 @@ call SetUnitTimeScale(au,ts)
 call SaveUnitHandle(h,GetHandleId(at),0,au)
 call TimerStart(at,dur,false,function ShinjiAnimEnd)
 set at=null
+endfunction
+// плавная прозрачность Хирако (21 окт): от текущей до fa за fn тиков по 0.02 с. Новая плавность или ShinjiAlpha отменяют идущую (SH_ShnFade)
+function ShinjiAlpha takes unit fu,integer fa returns nothing
+call RemoveSavedInteger(HH,GetHandleId(fu),SH_ShnFade)
+call SetUnitVertexColor(fu,255,255,255,fa)
+endfunction
+function ShinjiFadeTick takes nothing returns nothing
+local timer t=GetExpiredTimer()
+local integer id=GetHandleId(t)
+local unit fu=LoadUnitHandle(h,id,0)
+local integer fk=LoadInteger(h,id,1)+1
+local integer fn=LoadInteger(h,id,2)
+local integer fa0=LoadInteger(h,id,3)
+local integer fa1=LoadInteger(h,id,4)
+call SaveInteger(h,id,1,fk)
+if fu!=null and LoadInteger(HH,GetHandleId(fu),SH_ShnFade)==id and fk<fn then
+call SetUnitVertexColor(fu,255,255,255,fa0+(fa1-fa0)*fk/fn)
+else
+if fu!=null and LoadInteger(HH,GetHandleId(fu),SH_ShnFade)==id then
+call ShinjiAlpha(fu,fa1)
+endif
+call FlushChildHashtable(h,id)
+call DestroyTimer(t)
+endif
+set fu=null
+set t=null
+endfunction
+function ShinjiFade takes unit fu,integer fa,integer fn returns nothing
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+call SaveUnitHandle(h,id,0,fu)
+call SaveInteger(h,id,2,fn)
+call SaveInteger(h,id,3,BitwiseShiftRightLogical(GetWidgetVertexColour(fu),24))
+call SaveInteger(h,id,4,fa)
+call SaveInteger(HH,GetHandleId(fu),SH_ShnFade,id)
+call TimerStart(t,0.02,true,function ShinjiFadeTick)
+set t=null
 endfunction
 // Сакаканаде у правой кисти в позе Spell Shikai (28): 45 вперёд, 33 вправо, кисть на высоте 75 (замер по рукояти в Spell 1.0).
 // mdl: Shinji2_ShikaiSwing — кольцо в начале модели (z=hz), Shinji2_ShikaiSpin — головка на высоте 65 (z=hz-65)
@@ -127952,6 +128104,54 @@ call SaveReal(h,id,4,ty)
 call SaveBoolean(h,id,5,anim)
 call TimerStart(t,0,false,function ShinjiShunpoAct)
 set t=null
+endfunction
+// меч Хирако — отдельная модель на точке weapon (21 окт): в Shinji2.mdx меч в руке скрыт во всех анимациях (геосеты 22 / 23).
+// Запечатанный — Shinji2_Sword, шикай Сакаканаде — Shinji2_Shikai (W, G, T); на касте W — Shinji2_SwordDown и Shinji2_ShikaiSpinHand
+function ShinjiSwordSet takes unit u,string m returns nothing
+local integer uid=GetHandleId(u)
+if LoadStr(HH,uid,SH_ShnSwM)==m and LoadEffectHandle(HH,uid,SH_ShnSwFx)!=null then
+return
+endif
+if LoadEffectHandle(HH,uid,SH_ShnSwFx)!=null then
+call SetSpecialEffectVisible(LoadEffectHandle(HH,uid,SH_ShnSwFx),false)
+call DestroyEffect(LoadEffectHandle(HH,uid,SH_ShnSwFx))
+endif
+call SaveEffectHandle(HH,uid,SH_ShnSwFx,AddSpecialEffectTarget(m,u,"weapon"))
+call SaveStr(HH,uid,SH_ShnSwM,m)
+endfunction
+// какой меч сейчас: шикай, пока идёт туман W, G или T; иначе запечатанный. Во время каста W меч ведёт сам W (SH_ShnSwLock)
+function ShinjiSwordBase takes unit u returns nothing
+local integer uid=GetHandleId(u)
+if u==null or LoadBoolean(HH,uid,SH_ShnSwLock) then
+return
+endif
+if LoadBoolean(HH,uid,SH_ShnMistOn) or LoadBoolean(HH,uid,SH_ShnGOn) or LoadInteger(HH,uid,SH_ShnTCur)!=0 then
+call ShinjiSwordSet(u,"Shinji2_Shikai.mdx")
+else
+call ShinjiSwordSet(u,"Shinji2_Sword.mdx")
+endif
+endfunction
+// раз в 0.03 с: у каждого Хирако есть меч; прозрачность меча — как у Хирако (эффект на точке крепления её не наследует)
+function ShinjiSwordTick takes nothing returns nothing
+local integer i=0
+local unit u
+local effect fx
+loop
+exitwhen i>11
+set u=Hero[i]
+if u!=null and GetUnitTypeId(u)=='HShn' then
+if LoadEffectHandle(HH,GetHandleId(u),SH_ShnSwFx)==null then
+call ShinjiSwordBase(u)
+endif
+set fx=LoadEffectHandle(HH,GetHandleId(u),SH_ShnSwFx)
+if fx!=null then
+call SetSpecialEffectAlpha(fx,BitwiseShiftRightLogical(GetWidgetVertexColour(u),24))
+endif
+endif
+set i=i+1
+endloop
+set fx=null
+set u=null
 endfunction
 function ShinjiQCond takes nothing returns boolean
 return GetSpellAbilityId()=='SnQ1' and udg_B==true and GetUnitTypeId(GetTriggerUnit())=='HShn'
@@ -128120,9 +128320,11 @@ endif
 set qn=null
 set t=null
 endfunction
-function ShinjiQAfter takes player qp,real qx,real qy,real qf returns nothing
+// образ с наклоном qr (крен, градусы; клоны G летят боком / вниз головой, 21 окт)
+function ShinjiQAfterR takes player qp,real qx,real qy,real qf,real qr returns nothing
 local unit qn=CreateUnit(qp,'e200',qx,qy,qf)
 call SetUnitModel(qn,"Shinji2.mdx")
+call SetUnitOrientation(qn,qf,0.,qr)
 call SetUnitScale(qn,0.65,0.65,0.65)
 call SetUnitBlendTime(qn,0.)
 call SetUnitAnimationByIndex(qn,16)
@@ -128133,6 +128335,9 @@ call SaveUnitHandle(h,GetHandleId(bj_lastStartedTimer),0,qn)
 call SaveInteger(h,GetHandleId(bj_lastStartedTimer),1,130)
 call TimerStart(bj_lastStartedTimer,0.05,true,function ShinjiQAfterUFade)
 set qn=null
+endfunction
+function ShinjiQAfter takes player qp,real qx,real qy,real qf returns nothing
+call ShinjiQAfterR(qp,qx,qy,qf,0.)
 endfunction
 // эффект попадания точкой на юните на его высоте (18 окт: не креплением к chest)
 function ShinjiHitFx takes string hm,unit hu,real hz returns nothing
@@ -128169,7 +128374,7 @@ endif
 call RemoveSavedInteger(HH,GetHandleId(u),SH_ShnQRun)
 call PauseUnit(u,false)
 call SetUnitInvulnerable(u,false)
-call SetUnitVertexColor(u,255,255,255,255)
+call ShinjiAlpha(u,255)
 call SetUnitPathing(u,true)
 call SetUnitPosition(u,GetUnitX(u),GetUnitY(u))
 call SetUnitTimeScale(u,1.)
@@ -128201,7 +128406,7 @@ call RemoveSavedInteger(HH,GetHandleId(u),SH_ShnQRun)
 endif
 call PauseUnit(u,false)
 call SetUnitInvulnerable(u,false)
-call SetUnitVertexColor(u,255,255,255,255)
+call ShinjiAlpha(u,255)
 call SetUnitPathing(u,true)
 call SetUnitPosition(u,GetUnitX(u),GetUnitY(u))
 call SetUnitTimeScale(u,1.)
@@ -128254,6 +128459,8 @@ if ps<=0 then
 set ps=19.
 endif
 if pk<=8 and UnitIsAlive(pe) then
+// плавное торможение (21 окт): шаг убывает от 1.8*ps до 0.2*ps, в сумме те же 8*ps
+set ps=ps*(9-pk)/4.5
 call SetUnitXY_1(pe,GetUnitX(pe)+ps*Cos(pa),GetUnitY(pe)+ps*Sin(pa),true)
 else
 call FlushChildHashtable(h,id)
@@ -128289,7 +128496,7 @@ endif
 // пауза и неуязвимость снимаются сразу, иначе ответный удар не пройдёт
 if LoadBoolean(HH,GetHandleId(qe),ANTITARGET_ABILITY) then
 call SaveUnitHandle(HH,GetHandleId(qe),REVERSE_TARGET,u)
-call SetUnitVertexColor(u,255,255,255,255)
+call ShinjiAlpha(u,255)
 call PauseUnit(u,false)
 call SetUnitInvulnerable(u,false)
 return true
@@ -128298,14 +128505,16 @@ if qbk then
 set qsx=GetUnitX(qe)-90*Cos(qef)
 set qsy=GetUnitY(qe)-90*Sin(qef)
 else
-set qsx=GetUnitX(qe)+90*Cos(qef)
-set qsy=GetUnitY(qe)+90*Sin(qef)
+// спереди — удар с того места, где закончился рывок (21 окт; был перескок на 90 от цели)
+set qsx=GetUnitX(u)
+set qsy=GetUnitY(u)
 endif
 call SetUnitX(u,qsx)
 call SetUnitY(u,qsy)
 set qpa=Atan2(GetUnitY(qe)-qsy,GetUnitX(qe)-qsx)
 call SetUnitFacingInstant(u,qpa*bj_RADTODEG)
-call SetUnitVertexColor(u,255,255,255,255)
+// проявление за 0.1 с, а не сразу (21 окт)
+call ShinjiFade(u,255,5)
 if qbk then
 // появление за спиной — вспышка, как у контрудара Джирена (E)
 call ShinjiBlink(qsx,qsy)
@@ -128383,7 +128592,7 @@ set qe=null
 set u=null
 set t=null
 endfunction
-// лёгкий рывок Q назад (18 окт): враг перевёрнут — Хирако за 5 тиков по 0.02 с отскакивает на 150 от цели (угол h 9), без образов,
+// лёгкий рывок Q назад (18 окт): враг перевёрнут — Хирако за 10 тиков по 0.02 с плавно отскакивает на 160 от цели (угол h 9), без образов,
 // затем исчезает со вспышкой и через 0.25 с бьёт со спины (ShinjiQBack). h 10 — тик минирывка
 function ShinjiQSide takes nothing returns nothing
 local timer t=GetExpiredTimer()
@@ -128392,12 +128601,13 @@ local unit u=LoadUnitHandle(h,id,0)
 local real sa=LoadReal(h,id,9)
 local integer sk=LoadInteger(h,id,10)+1
 call SaveInteger(h,id,10,sk)
-if UnitIsAlive(u) and sk<=7 then
-call SetUnitX(u,GetUnitX(u)+(60/sk)*Cos(sa))
-call SetUnitY(u,GetUnitY(u)+(60/sk)*Sin(sa))
+if UnitIsAlive(u) and sk<=10 then
+// 21 окт: торможение по синусу (было 60/sk за 7 тиков — рывок в начале и резкая остановка); растворяется параллельно (ShinjiFade в ShinjiQDash)
+call SetUnitX(u,GetUnitX(u)+160*(Sin(sk*bj_PI/20)-Sin((sk-1)*bj_PI/20))*Cos(sa))
+call SetUnitY(u,GetUnitY(u)+160*(Sin(sk*bj_PI/20)-Sin((sk-1)*bj_PI/20))*Sin(sa))
 else
 // call ShinjiBlink(GetUnitX(u),GetUnitY(u))
-call SetUnitVertexColor(u,255,255,255,0)
+call ShinjiAlpha(u,0)
 // невидимый Хирако возвращается в точку до прыжка: удар со спины считается от направления до прыжка, а не от бока (18 окт)
 // call SetUnitX(u,LoadReal(h,id,11))
 // call SetUnitY(u,LoadReal(h,id,12))
@@ -128425,7 +128635,7 @@ call PauseUnit(u,true)
 call SetUnitInvulnerable(u,true)
 endif
 if qe==null or not UnitIsAlive(qe) or IsUnitHidden(qe) or not UnitIsAlive(u) or udg_B==false or tk>50 then
-call SetUnitVertexColor(u,255,255,255,255)
+call ShinjiFade(u,255,4)
 // call ShinjiBlink(GetUnitX(u),GetUnitY(u))
 call TimerStart(t,0.1,false,function ShinjiQFinish)
 else
@@ -128446,6 +128656,7 @@ call SaveReal(h,id,9,a+bj_PI)
 call SaveReal(h,id,11,GetUnitX(u))
 call SaveReal(h,id,12,GetUnitY(u))
 call SaveInteger(h,id,10,0)
+call ShinjiFade(u,0,10)
 call PauseTimer(t)
 call TimerStart(t,0.02,true,function ShinjiQSide)
 elseif qd<=130 then
@@ -128471,7 +128682,8 @@ else
 if ModuloInteger(tk,2)==0 then
 call ShinjiQAfter(OwnerOf(u),GetUnitX(u),GetUnitY(u),a*bj_RADTODEG)
 endif
-set st=RMinBJ(80,qd-100)
+// у цели плавно тормозит (21 окт): шаг 80, в последние ~180 — до 25
+set st=RMinBJ(qd-100,RMinBJ(80,RMaxBJ(25,(qd-100)*0.45)))
 set nx=GetUnitX(u)+st*Cos(a)
 set ny=GetUnitY(u)+st*Sin(a)
 call SetUnitX(u,nx)
@@ -128510,7 +128722,10 @@ call SaveUnitHandle(h,id,6,qe)
 call SetUnitPathing(u,false)
 call SetUnitFacingInstant(u,a*bj_RADTODEG)
 // рывок-размытие: стойка из ножен и исчезновение (Spell 5.1), полупрозрачный
-call SetUnitVertexColor(u,255,255,255,70)
+// 21 окт: полупрозрачность наплывом за 0.08 с; под W Хирако не тускнеет сразу — растворяется в рывке назад
+if not ShinjiInvOn(qe) then
+call ShinjiFade(u,70,4)
+endif
 call SetUnitAnimationByIndex(u,24)
 call SetUnitTimeScale(u,3.)
 call TimerStart(t,0.02,true,function ShinjiQDash)
@@ -128750,7 +128965,7 @@ local timer t=CreateTimer()
 // своя розовая копия CirclePulse (у White цвет геосета зелёный); квадрат ±100, в анимации x1.1 — круг ~105 при масштабе 1
 local effect rfx=AddSpecialEffect("Shinji2_RangeCircle.mdx",rx,ry)
 call SetSpecialEffectScale(rfx,rr/105.)
-call SetSpecialEffectTimeScale(rfx,0.01)
+call SetSpecialEffectTimeScale(rfx,0.) // 21 окт: анимация круга стоит (было 0.01)
 call SaveEffectHandle(h,GetHandleId(t),0,rfx)
 call TimerStart(t,rdur,false,function ShinjiRingEnd)
 set rfx=null
@@ -128785,31 +129000,84 @@ call SetSpecialEffectVertexColour(gfx,255,0,155,ga)
 call RemoveEffect(gfx,gdur,true,CreateTimer())
 set gfx=null
 endfunction
-function ShinjiWCast2 takes nothing returns nothing
-local timer t=GetExpiredTimer()
-local integer id=GetHandleId(t)
-local unit u=LoadUnitHandle(h,id,0)
-local player p=OwnerOf(u)
-local real x=LoadReal(h,id,1)
-local real y=LoadReal(h,id,2)
-local real time=LoadReal(h,id,3)
-local integer i=0
-local group g
+// туман Сакаканаде (21 окт) как у Кабуто (R Гэнгэцу, Choice Random 5.301): дым по земле Others\Effect_E (0) — две копии
+// крест-накрест, масштаб 0.4 на AoE 1000, ускорен x4, слегка розовый и прозрачнее (альфа 100; у Кабуто 128); круг дальности —
+// Shinji2_RangeCircle. Эффекты в h[id] 20 / 21 (туман) и 22 (круг)
+// mring false — без круга (малый туман G, 21 окт)
+function ShinjiMistNewEx takes integer id,real mx,real my,boolean mring returns nothing
+local effect mfx=AddSpecialEffect("Others\\Effect_E (0).mdx",mx,my)
+call SetSpecialEffectVertexColour(mfx,255,190,225,100)
+call SetSpecialEffectTimeScale(mfx,4.)
+call SetSpecialEffectScale(mfx,0.01)
+call SaveEffectHandle(h,id,20,mfx)
+set mfx=AddSpecialEffect("Others\\Effect_E (0).mdx",mx,my)
+call SetSpecialEffectYaw(mfx,90.)
+call SetSpecialEffectVertexColour(mfx,255,190,225,100)
+call SetSpecialEffectTimeScale(mfx,4.)
+call SetSpecialEffectScale(mfx,0.01)
+call SaveEffectHandle(h,id,21,mfx)
+if mring then
+set mfx=AddSpecialEffect("Shinji2_RangeCircle.mdx",mx,my)
+call SetSpecialEffectScale(mfx,0.01)
+call SetSpecialEffectTimeScale(mfx,0.) // 21 окт: анимация круга стоит (было 0.01)
+call SaveEffectHandle(h,id,22,mfx)
+endif
+set mfx=null
+endfunction
+function ShinjiMistNew takes integer id,real mx,real my returns nothing
+call ShinjiMistNewEx(id,mx,my,true)
+endfunction
+// туман и круг — в точку mx / my под радиус mr
+function ShinjiMistMove takes integer id,real mx,real my,real mr returns nothing
+local integer k=20
+local real mz=GetTerrainZ(mx,my)
+loop
+exitwhen k>22
+if LoadEffectHandle(h,id,k)!=null then
+call SetSpecialEffectPositionWithZ(LoadEffectHandle(h,id,k),mx,my,mz)
+if k<22 then
+call SetSpecialEffectScale(LoadEffectHandle(h,id,k),RMaxBJ(0.01,0.4*mr/1000.))
+else
+call SetSpecialEffectScale(LoadEffectHandle(h,id,k),RMaxBJ(0.01,mr/105.))
+endif
+endif
+set k=k+1
+endloop
+endfunction
+// конец тумана: эффекты прячутся (без вспышки смерти) и удаляются
+function ShinjiMistKill takes integer id returns nothing
+local integer k=20
+local effect mfx
+loop
+exitwhen k>22
+set mfx=LoadEffectHandle(h,id,k)
+if mfx!=null then
+call SetSpecialEffectAlpha(mfx,0)
+call SetSpecialEffectScale(mfx,0.01)
+call SetSpecialEffectZ(mfx,-2000.)
+call DestroyEffect(mfx)
+call RemoveSavedHandle(h,id,k)
+endif
+set k=k+1
+endloop
+set mfx=null
+endfunction
+// враги Хирако в тумане: перевёрнуты (SH_ShnInv, +0.15 с), кроме иммунных после снятия; с wfull (W) — ещё замедление 20% и промах 50% раз в 0.5 с
+function ShinjiMistHit takes unit u,real mx,real my,real mr,boolean wfull,real time returns nothing
+local group g=CreateGroup()
 local unit e
-call SaveReal(h,id,3,time+0.05)
-if time<LoadReal(h,id,4) and UnitIsAlive(u) and udg_B==true then
-// своя группа: SlowUnit и обработчики могут пользоваться глобальными G / E
-set g=CreateGroup()
-call GroupEnumUnitsInRange(g,x,y,LoadReal(h,id,5),Base)
+local player p=OwnerOf(u)
+local real now=TimerGetElapsed(ShnClock)
+call GroupEnumUnitsInRange(g,mx,my,mr,Base)
 loop
 set e=FirstOfGroup(g)
 exitwhen e==null
-if Condition_Base(p,e) then
-call SaveReal(HH,GetHandleId(e),SH_ShnInv,TimerGetElapsed(ShnClock)+0.15)
-// замедление 20% бега раз в 0.5 с на 0.6 с (16 окт)
-if ModuloInteger(R2I(time*20+0.5),10)==0 then
+if Condition_Base(p,e) and LoadReal(HH,GetHandleId(e),SH_ShnInvImm)<=now then
+call SaveReal(HH,GetHandleId(e),SH_ShnInv,RMaxBJ(LoadReal(HH,GetHandleId(e),SH_ShnInv),now+0.15))
+// проверка сразу: снятие небом / Брейкером / Медузой включает иммунитет
+call ShinjiInvOn(e)
+if wfull and LoadReal(HH,GetHandleId(e),SH_ShnInvImm)<=now and ModuloInteger(R2I(time*20+0.5),10)==0 then
 call SlowUnit(u,e,0.2,0.,0.6,2,false)
-// промах 50% атак, как в дыму Синон (17 окт)
 call MissUnit(u,e,0.6,0.5,false)
 endif
 endif
@@ -128818,59 +129086,130 @@ endloop
 call DestroyGroup(g)
 set g=null
 set e=null
-else
-loop
-exitwhen i>6
-call DestroyEffect(LoadEffectHandle(h,id,10+i))
-call DestroyEffect(LoadEffectHandle(h,id,40+i))
-set i=i+1
-endloop
-call SaveBoolean(HH,GetHandleId(u),SH_ShnMistOn,false)
+set p=null
+endfunction
+// G (21 окт): вместо метки инверсии — маленький туман Сакаканаде 300 вокруг цели на 2.5 с, идёт за целью; в нём враги Хирако
+// перевёрнуты (как в тумане W, без замедления и промахов). h: 0 Хирако, 1 цель, 3 время, 9 / 10 — центр
+function ShinjiGMistTick takes nothing returns nothing
+local timer t=GetExpiredTimer()
+local integer id=GetHandleId(t)
+local unit u=LoadUnitHandle(h,id,0)
+local unit c=LoadUnitHandle(h,id,1)
+local real time=LoadReal(h,id,3)+0.05
+call SaveReal(h,id,3,time)
+if c!=null and UnitIsAlive(c) then
+call SaveReal(h,id,9,GetUnitX(c))
+call SaveReal(h,id,10,GetUnitY(c))
+endif
+if time>=2.5 or udg_B==false or u==null then
+call ShinjiMistKill(id)
 call PauseTimer(t)
 call DestroyTimer(t)
 call FlushChildHashtable(h,id)
+else
+call ShinjiMistMove(id,LoadReal(h,id,9),LoadReal(h,id,10),300.)
+call ShinjiMistHit(u,LoadReal(h,id,9),LoadReal(h,id,10),300.,false,time)
 endif
-set p=null
+set c=null
+set u=null
+set t=null
+endfunction
+function ShinjiGMist takes unit u,unit c returns nothing
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+call SaveUnitHandle(h,id,0,u)
+call SaveUnitHandle(h,id,1,c)
+call SaveReal(h,id,3,0.)
+call SaveReal(h,id,9,GetUnitX(c))
+call SaveReal(h,id,10,GetUnitY(c))
+call ShinjiMistNewEx(id,GetUnitX(c),GetUnitY(c),false)
+call ShinjiMistMove(id,GetUnitX(c),GetUnitY(c),300.)
+call ShinjiMistHit(u,GetUnitX(c),GetUnitY(c),300.,false,0.)
+call TimerStart(t,0.05,true,function ShinjiGMistTick)
+set t=null
+endfunction
+// W (21 окт): каст 1 с — пауза и неуязвимость, рука вперёд (Spell Shikai, 28, растянута на 1 с) с мечом вниз (Shinji2_SwordDown);
+// через 0.5 с меч меняется на Сакаканаде и делает круговой размах вокруг руки (Shinji2_ShikaiSpinHand, оборот за 0.5 с).
+// Затем туман растёт от Хирако до AoE 500..900 за 1..2 с (по уровню) и ходит за ним 5 с. В тумане враги перевёрнуты,
+// замедлены на 20% и промахиваются с шансом 50%. Урона и слеша нет (удар-вращение ShinjiDCast выключен).
+// Конец W — меч назад (если не идут G / T). T прекращает W (h 6). h: 0 Хирако, 3 время, 4 AoE, 5 время роста, 6 стоп, 7 меч сменён, 8 туман начат
+function ShinjiWCast2 takes nothing returns nothing
+local timer t=GetExpiredTimer()
+local integer id=GetHandleId(t)
+local unit u=LoadUnitHandle(h,id,0)
+local integer uid=GetHandleId(u)
+local real time=LoadReal(h,id,3)+0.05
+local real mr
+local boolean cur=LoadInteger(HH,uid,SH_ShnWId)==id
+call SaveReal(h,id,3,time)
+if time>=6. or LoadBoolean(h,id,6) or not UnitIsAlive(u) or udg_B==false then
+call ShinjiMistKill(id)
+// флаги героя трогает только текущий W (новый каст поверх старого их уже поставил)
+if cur then
+if not LoadBoolean(h,id,8) then
+call PauseUnit(u,false)
+call SetUnitInvulnerable(u,false)
+call SetUnitTimeScale(u,1.)
+endif
+call SaveBoolean(HH,uid,SH_ShnMistOn,false)
+call SaveBoolean(HH,uid,SH_ShnSwLock,false)
+call RemoveSavedInteger(HH,uid,SH_ShnWId)
+call ShinjiSwordBase(u)
+endif
+call PauseTimer(t)
+call DestroyTimer(t)
+call FlushChildHashtable(h,id)
+elseif time<1. then
+if time>=0.5 and not LoadBoolean(h,id,7) then
+call SaveBoolean(h,id,7,true)
+call ShinjiSwordSet(u,"Shinji2_ShikaiSpinHand.mdx")
+endif
+else
+if not LoadBoolean(h,id,8) then
+call SaveBoolean(h,id,8,true)
+call PauseUnit(u,false)
+call SetUnitInvulnerable(u,false)
+call SetUnitTimeScale(u,1.)
+call SetUnitAnimationByIndex(u,15)
+call SaveBoolean(HH,uid,SH_ShnSwLock,false)
+call SaveBoolean(HH,uid,SH_ShnMistOn,true)
+call ShinjiSwordBase(u)
+call ShinjiMistNew(id,GetUnitX(u),GetUnitY(u))
+endif
+set mr=LoadReal(h,id,4)*RMinBJ(1.,(time-1.)/LoadReal(h,id,5))
+call ShinjiMistMove(id,GetUnitX(u),GetUnitY(u),mr)
+call SaveReal(HH,uid,SH_ShnMistX,GetUnitX(u))
+call SaveReal(HH,uid,SH_ShnMistY,GetUnitY(u))
+call SaveReal(HH,uid,SH_ShnMistR,mr)
+call ShinjiMistHit(u,GetUnitX(u),GetUnitY(u),mr,true,time)
+endif
 set u=null
 set t=null
 endfunction
 function ShinjiWCast takes nothing returns nothing
 local unit u=GetTriggerUnit()
-local real x1=GetUnitX(u)
-local real y1=GetUnitY(u)
-local real dur=2.5+0.5*GetUnitAbilityLevel(u,'SnW1') // 3..5 с (17 окт; было 2..4)
-// 17 окт: W без цели — туман вокруг Хирако, AoE 500..900 по уровню; удар-вращение (бывший D) — ShinjiDCast на том же касте
-local real mr=400.+100.*GetUnitAbilityLevel(u,'SnW1')
+local integer uid=GetHandleId(u)
+local integer lv=GetUnitAbilityLevel(u,'SnW1')
 local timer t=CreateTimer()
 local integer id=GetHandleId(t)
-local integer i=0
-local effect fx
 call ShinjiSnd("HirakoW"+I2S(GetRandomInt(1,2)))
-call SaveUnitHandle(h,id,0,u)
-call SaveReal(h,id,1,x1)
-call SaveReal(h,id,2,y1)
-call SaveReal(h,id,3,0)
-call SaveReal(h,id,4,dur)
-call SaveReal(h,id,5,mr)
-// туман: центр и 6 облаков по кругу 0.55*AoE (было 250 при 450), розовый сладкий запах Сакаканаде
-loop
-exitwhen i>6
-// туман W как R Генкиши (17 окт; было Shinji2_MistW): центр и 6 облаков по кругу 0.55*AoE, масштаб AoE/380 (было /266)
-if i==0 then
-call ShinjiGenMist(id,10,x1,y1,mr/380.,false)
-else
-call ShinjiGenMist(id,10+i,x1+0.55*mr*Cos(i*bj_PI/3),y1+0.55*mr*Sin(i*bj_PI/3),mr/380.,false)
+// прошлый W ещё идёт — заканчивается сразу
+if LoadInteger(HH,uid,SH_ShnWId)!=0 then
+call SaveBoolean(h,LoadInteger(HH,uid,SH_ShnWId),6,true)
 endif
-set i=i+1
-endloop
-call SaveBoolean(HH,GetHandleId(u),SH_ShnMistOn,true)
-call SaveReal(HH,GetHandleId(u),SH_ShnMistX,x1)
-call SaveReal(HH,GetHandleId(u),SH_ShnMistY,y1)
-call SaveReal(HH,GetHandleId(u),SH_ShnMistR,mr)
-// круг дальности тумана W (18 окт)
-call ShinjiRing(x1,y1,mr,dur)
+call SaveInteger(HH,uid,SH_ShnWId,id)
+call SaveUnitHandle(h,id,0,u)
+call SaveReal(h,id,3,0.)
+call SaveReal(h,id,4,400.+100.*lv) // AoE 500..900
+call SaveReal(h,id,5,0.75+0.25*lv) // туман растёт 1..2 с
+call SaveBoolean(HH,uid,SH_ShnMistOn,false)
+call SaveBoolean(HH,uid,SH_ShnSwLock,true)
+call ShinjiSwordSet(u,"Shinji2_SwordDown.mdx")
+call PauseUnit(u,true)
+call SetUnitInvulnerable(u,true)
+call SetUnitAnimationByIndex(u,28)
+call SetUnitTimeScale(u,0.8)
 call TimerStart(t,0.05,true,function ShinjiWCast2)
-set fx=null
 set t=null
 set u=null
 endfunction
@@ -128894,6 +129233,8 @@ call TriggerAddAction(t,function ShinjiInvCast)
 // часы инверсии: идут всю игру, время — для меток SH_ShnInv
 set ShnClock=CreateTimer()
 call TimerStart(ShnClock,999999.,false,null)
+// меч на руке и его прозрачность (21 окт)
+call TimerStart(CreateTimer(),0.03,true,function ShinjiSwordTick)
 set t=null
 endfunction
 // E — Маска пустоты: на 8..12 с урон Хирако +30..50% (в обработчике урона по SH_ShnMask / SH_ShnMaskDmg)
@@ -129179,6 +129520,13 @@ call SaveInteger(h,GetHandleId(t),2,0)
 call TimerStart(t,csd,false,function ShinjiCeroShrinkStart)
 set t=null
 endfunction
+// модель для зелёного серо Тоусена, иначе своя модель юнита (21 окт)
+function ShinjiCeroM takes boolean cg,string cm returns string
+if cg then
+return cm
+endif
+return ""
+endfunction
 function ShinjiRCast2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
@@ -129192,6 +129540,7 @@ local real sd=LoadReal(h,id,8)
 local group hit=LoadGroupHandle(h,id,9)
 local integer ck=LoadInteger(h,id,11)
 local unit cb=LoadUnitHandle(h,id,12)
+local boolean grn=LoadBoolean(h,id,13) // зелёное серо Тоусена (21 окт)
 local group g
 local unit e
 local real fx
@@ -129200,7 +129549,7 @@ if ck>0 then
 call SaveInteger(h,id,11,ck-1)
 if ModuloInteger(ck,3)==0 and cb!=null then
 // искры заряда — как у Ичиго Васто Лорде (IchigoVasterR_WaitTime, 18 окт): d060 x4.5 на высоте 250; у krk (1965) 16 анимаций — индекс 0..15
-set e=ShinjiCeroUnit(p,'d060',"",GetUnitX(cb),GetUnitY(cb),a*bj_RADTODEG,2.7,0.6,150.,2.) // 18 окт: мельче, чем у Ичиго (4.5 / 250)
+set e=ShinjiCeroUnit(p,'d060',ShinjiCeroM(grn,"Tousen_CeroSpark.mdx"),GetUnitX(cb),GetUnitY(cb),a*bj_RADTODEG,2.7,0.6,150.,2.) // 18 окт: мельче, чем у Ичиго (4.5 / 250)
 call SetUnitAnimationByIndex(e,GetRandomInt(0,15))
 endif
 elseif sd>len or u==null or udg_B==false then
@@ -129225,17 +129574,26 @@ if sd==0 then
 set bj_lastCreatedEffect=AddSpecialEffect(EffectID[19],GetUnitX(u),GetUnitY(u))
 call SetSpecialEffectScale(bj_lastCreatedEffect,0.6)
 call SetSpecialEffectVertexColour(bj_lastCreatedEffect,255,60,50,255)
+if grn then
+call SetSpecialEffectVertexColour(bj_lastCreatedEffect,60,255,80,255)
+endif
 call SetSpecialEffectAnimationByIndex(bj_lastCreatedEffect,0)
 call SetSpecialEffectTimeScale(bj_lastCreatedEffect,0.7)
 call RemoveEffect(bj_lastCreatedEffect,1.2,false,CreateTimer())
 // выстрел как у Ичиго Васто Лорде (18 окт): лазер d059 и конус dR42 x1.6 (скорость 0.6, 2 с), шар заряда умирает (KillUnit)
 set e=CreateUnit(p,'d059',GetUnitX(cb),GetUnitY(cb),a*bj_RADTODEG)
+if grn then
+call SetUnitModel(e,"Tousen_CeroLaser.mdx")
+endif
 call SetUnitTimeScale(e,0.6)
 call SetUnitScale(e,1.,1.,1.) // 18 окт: мельче (у Ичиго 1.6)
 call MyRemoveUnit(e,2)
 set e=CreateUnit(p,'dR42',GetUnitX(cb),GetUnitY(cb),a*bj_RADTODEG)
 call SetUnitTimeScale(e,0.6)
 call SetUnitScale(e,1.,1.,1.)
+if grn then
+call SetUnitVertexColor(e,110,255,120,255)
+endif
 call MyRemoveUnit(e,2)
 call KillUnit(cb)
 call MyRemoveUnit(cb,1.2)
@@ -129251,6 +129609,10 @@ set fx=LoadReal(h,id,1)+(sd+65*ck)*Cos(a)
 set fy=LoadReal(h,id,2)+(sd+65*ck)*Sin(a)
 set e=CreateUnit(p,'d062',fx,fy,0)
 call SetUnitVertexColor(e,255,155,155,155)
+if grn then
+call SetUnitModel(e,"Tousen_CeroOrb.mdx")
+call SetUnitVertexColor(e,155,255,155,155)
+endif
 call SetUnitScale(e,1.2,1.2,1.2) // 18 окт: мельче (у Ичиго 2)
 call SetUnitFlyHeight(e,50,0)
 call UnitApplyTimedLife(e,'BTLF',1.3)
@@ -129260,10 +129622,16 @@ endloop
 set e=CreateUnit(p,'dR99',fx+50*Cos(a+45*bj_DEGTORAD),fy+50*Sin(a+45*bj_DEGTORAD),a*bj_RADTODEG-120)
 call SetUnitScale(e,1.2,1.2,1.2)
 call SetUnitVertexColor(e,255,155,155,155)
+if grn then
+call SetUnitVertexColor(e,155,255,155,155)
+endif
 call UnitApplyTimedLife(e,'BTLF',1.5)
 set e=CreateUnit(p,'dR99',fx+50*Cos(a-45*bj_DEGTORAD),fy+50*Sin(a-45*bj_DEGTORAD),a*bj_RADTODEG+120)
 call SetUnitScale(e,1.2,1.2,1.2)
 call SetUnitVertexColor(e,255,155,155,155)
+if grn then
+call SetUnitVertexColor(e,155,255,155,155)
+endif
 call UnitApplyTimedLife(e,'BTLF',1.5)
 set fx=LoadReal(h,id,1)+sd*Cos(a)
 set fy=LoadReal(h,id,2)+sd*Sin(a)
@@ -129278,9 +129646,9 @@ exitwhen e==null
 if Condition_Base(p,e) and not IsUnitInGroup(e,hit) then
 call GroupAddUnit(hit,e)
 call myCustomDamage(u,e,dmg,false,false,null,null,null)
-// оглушение 2 сек. (18 окт)
+// оглушение 2.5 сек. (21 окт; было 2) — и у Хирако, и у Тоусена
 if UnitIsAlive(e) then
-call SetControlToUnit(u,e,2.,"stun")
+call SetControlToUnit(u,e,2.5,"stun")
 endif
 if mask then
 call Push3(e,50,a,300,"")
@@ -129359,6 +129727,162 @@ call TimerStart(t,0.04,true,function ShinjiRCast2)
 set cb=null
 set t=null
 set u=null
+endfunction
+// Тоусен E (21 окт): маска пустого на запасе, как у Хирако. Запас 8..12 сек. (7+уровень), тратится, пока маска надета
+// (в паузе — нет), без маски +1 сек. каждые 5 сек. (табло ShnDBoard2) и от урона (1 сек. за 5*AGI); надеть — от 3 сек.
+// Бонусы прежние: ToE1 (бег 30%, атака +70%), ToE2..6 (+300..700 HP), регенерация 1.5% HP в сек., серый цвет.
+// Пока маска надета, на месте E — зелёное серо (ToEc, код серо Хирако с h 13)
+function TousenEOff takes unit u returns nothing
+call SaveBoolean(HH,GetHandleId(u),SH_ShnMask,false)
+call UnitMakeAbilityPermanent(u,false,'ToE1')
+call UnitRemoveAbility(u,'ToE1')
+call UnitRemoveAbility(u,'ToE2')
+call UnitRemoveAbility(u,'ToE3')
+call UnitRemoveAbility(u,'ToE4')
+call UnitRemoveAbility(u,'ToE5')
+call UnitRemoveAbility(u,'ToE6')
+call UnitRemoveAbility(u,'ToEc')
+call EnableUnitAbility(u,'A0JA',true,true)
+call SetUnitVertexColor(u,255,255,255,255)
+endfunction
+function TousenECast2 takes nothing returns nothing
+local timer t=GetExpiredTimer()
+local integer id=GetHandleId(t)
+local unit u=LoadUnitHandle(h,id,0)
+local real r=LoadReal(HH,GetHandleId(u),SH_ShnMaskRes)
+if not IsUnitPaused(u) then
+set r=r-0.1
+endif
+call SaveReal(HH,GetHandleId(u),SH_ShnMaskRes,RMaxBJ(r,0.))
+if r>0. and UnitIsAlive(u) and udg_B==true and LoadBoolean(HH,GetHandleId(u),SH_ShnMask) then
+call SetUnitState(u,UNIT_STATE_LIFE,GetUnitState(u,UNIT_STATE_LIFE)+0.0015*GetUnitState(u,UNIT_STATE_MAX_LIFE))
+else
+if LoadBoolean(HH,GetHandleId(u),SH_ShnMask) then
+call TousenEOff(u)
+endif
+call PauseTimer(t)
+call DestroyTimer(t)
+call FlushChildHashtable(h,id)
+endif
+set u=null
+set t=null
+endfunction
+function TousenERefund takes nothing returns nothing
+local timer t=GetExpiredTimer()
+local unit u=LoadUnitHandle(h,GetHandleId(t),0)
+call SetAbilityRemainingCooldown(GetUnitAbility(u,'A0JA'),0.)
+call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)+I2R(GetAbilityBaseIntegerLevelFieldById('A0JA',ABILITY_ILF_MANA_COST,GetUnitAbilityLevel(u,'A0JA')-1)))
+call FlushChildHashtable(h,GetHandleId(t))
+call DestroyTimer(t)
+set u=null
+set t=null
+endfunction
+function TousenECond takes nothing returns boolean
+return GetSpellAbilityId()=='A0JA' and udg_B==true and GetUnitTypeId(GetTriggerUnit())=='H02K'
+endfunction
+function TousenECast takes nothing returns nothing
+local unit u=GetTriggerUnit()
+local integer lv=GetUnitAbilityLevel(u,'A0JA')
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+call SaveUnitHandle(h,id,0,u)
+if LoadReal(HH,GetHandleId(u),SH_ShnMaskRes)<3. or LoadBoolean(HH,GetHandleId(u),SH_ShnMask) then
+call TimerStart(t,0,false,function TousenERefund)
+call DisplayTextToPlayer(OwnerOf(u),0,0,Lng("Маска ещё не восстановилась (нужно 3 сек.)","The mask has not recovered yet (3 sec. needed)"))
+set t=null
+set u=null
+return
+endif
+set soundplay=SndN(3170) // Sound\Music\mp3Music\TousenE.mp3
+call StartSound(soundplay)
+call SaveBoolean(HH,GetHandleId(u),SH_ShnMask,true)
+if lv==1 then
+call UnitAddAbility(u,'ToE2')
+elseif lv==2 then
+call UnitAddAbility(u,'ToE3')
+elseif lv==3 then
+call UnitAddAbility(u,'ToE4')
+elseif lv==4 then
+call UnitAddAbility(u,'ToE5')
+else
+call UnitAddAbility(u,'ToE6')
+endif
+call UnitAddAbility(u,'ToE1')
+call UnitMakeAbilityPermanent(u,true,'ToE1')
+call SetUnitVertexColor(u,190,190,190,255)
+call DisableUnitAbility(u,'A0JA',true,true)
+call UnitAddAbility(u,'ToEc')
+call SetUnitAbilityLevel(u,'ToEc',lv)
+call TimerStart(t,0.1,true,function TousenECast2)
+set t=null
+set u=null
+endfunction
+// зелёное серо Тоусена — серо Хирако в маске: 3..7*AGI, луч 2200, оглушение 2.5 сек., отбрасывание 300
+function TousenCeroCond takes nothing returns boolean
+return GetSpellAbilityId()=='ToEc' and udg_B==true and GetUnitTypeId(GetTriggerUnit())=='H02K'
+endfunction
+function TousenCeroCast takes nothing returns nothing
+local unit u=GetTriggerUnit()
+local integer lv=GetUnitAbilityLevel(u,'ToEc')
+local real x=GetUnitX(u)
+local real y=GetUnitY(u)
+local real a=Atan2(GetSpellTargetY()-y,GetSpellTargetX()-x)
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+local unit cb
+call ShinjiSnd("HirakoE2")
+call SaveUnitHandle(h,id,0,u)
+call SaveReal(h,id,1,x+150*Cos(a))
+call SaveReal(h,id,2,y+150*Sin(a))
+call SaveReal(h,id,3,a)
+call SaveReal(h,id,4,2200)
+call SaveReal(h,id,5,(2+lv)*GetHeroAgi(u,true))
+call SaveBoolean(h,id,7,true)
+call SaveReal(h,id,8,0)
+call SaveGroupHandle(h,id,9,CreateGroup())
+call SaveBoolean(h,id,13,true)
+call SetUnitFacingInstant(u,a*bj_RADTODEG)
+call SetUnitAnimation(u,"spell")
+call QueueUnitAnimation(u,"stand")
+set bj_lastCreatedEffect=AddSpecialEffect(EffectID[23],x,y)
+call SetSpecialEffectScale(bj_lastCreatedEffect,0.8)
+call SetSpecialEffectVertexColour(bj_lastCreatedEffect,40,255,60,255)
+call DestroyEffect(bj_lastCreatedEffect)
+set bj_lastCreatedEffect=AddSpecialEffect(EffectID[19],x,y)
+call SetSpecialEffectScale(bj_lastCreatedEffect,0.6)
+call SetSpecialEffectVertexColour(bj_lastCreatedEffect,60,255,80,255)
+call SetSpecialEffectAnimationByIndex(bj_lastCreatedEffect,0)
+call SetSpecialEffectTimeScale(bj_lastCreatedEffect,0.7)
+call RemoveEffect(bj_lastCreatedEffect,1.2,false,CreateTimer())
+set bj_lastCreatedUnit=CreateUnit(OwnerOf(u),'dM32',x,y,GetRandomReal(0,359))
+call SetUnitVertexColor(bj_lastCreatedUnit,255,255,255,210)
+call SetUnitScale(bj_lastCreatedUnit,1.8,1.8,1.8)
+call UnitApplyTimedLife(bj_lastCreatedUnit,'BTLF',1.8)
+call MyRemoveUnit(bj_lastCreatedUnit,3)
+call RemoveEffect(AddSpecialEffectTarget("buff-txblack.mdl",u,"origin"),1.5,true,CreateTimer())
+set cb=CreateUnit(OwnerOf(u),'d158',x+150*Cos(a),y+150*Sin(a),GetRandomReal(0,359))
+call SetUnitModel(cb,"Tousen_CeroBall.mdx")
+call UnitScale(cb,0.1,0.8,0.5)
+call SetUnitFlyHeight(cb,60,2000)
+call SaveUnitHandle(h,id,12,cb)
+call PauseUnit(u,true)
+call SetUnitInvulnerable(u,true)
+call SaveInteger(h,id,11,12)
+call TimerStart(t,0.04,true,function ShinjiRCast2)
+set cb=null
+set t=null
+set u=null
+endfunction
+function InitTrig_TousenE takes nothing returns nothing
+local trigger t=CreateTrigger()
+call TriggerRegisterAnyUnitEventBJ(t,EVENT_PLAYER_UNIT_SPELL_EFFECT)
+call TriggerAddCondition(t,Condition(function TousenECond))
+call TriggerAddAction(t,function TousenECast)
+set t=CreateTrigger()
+call TriggerRegisterAnyUnitEventBJ(t,EVENT_PLAYER_UNIT_SPELL_EFFECT)
+call TriggerAddCondition(t,Condition(function TousenCeroCond))
+call TriggerAddAction(t,function TousenCeroCast)
+set t=null
 endfunction
 // R — Хадо №91 «Сэндзю Котэн Тайхо» (16 окт): 7 световых столбов (BeamLight) раз в 0.12 с — центр, затем кольцо 250
 // по 6 направлениям; столб бьёт в 220. Каждый враг — один раз за каст: (1.5..3.5)*AGI
@@ -129492,8 +130016,11 @@ call SetUnitFacing(m,a*bj_RADTODEG)
 // снижение от высоты сферы к земле (17 окт)
 call SetUnitFlyHeight(m,LoadReal(h,id,9)*SR(mx,my,tx,ty)/RMaxBJ(LoadReal(h,id,10),1.),0)
 else
+// урон — только от центральной сферы, по всей области 650 (21 окт; было 220 от каждой)
 set g=CreateGroup()
-call GroupEnumUnitsInRange(g,tx,ty,220,Base)
+if not LoadBoolean(h,id,11) then
+call GroupEnumUnitsInRange(g,tx,ty,650,Base)
+endif
 loop
 set e=FirstOfGroup(g)
 exitwhen e==null
@@ -129651,8 +130178,9 @@ exitwhen hk>hke
 set px=LoadReal(h,id,1)
 set py=LoadReal(h,id,2)
 if hk>0 then
-set ha=(hk-1)*2*bj_PI/13+GetRandomReal(-0.2,0.2)
-set hr=GetRandomReal(180,240)
+// кольцо ровно: 13 сфер через равные углы на 430 — вместе с центральной взрывы закрывают AoE 650 (21 окт)
+set ha=(hk-1)*2*bj_PI/13
+set hr=430.
 set px=px+hr*Cos(ha)
 set py=py+hr*Sin(ha)
 endif
@@ -131902,6 +132430,8 @@ call SaveInteger(HH,SH_ShnChanT,'SiW1',1)
 call SaveStr(HH,SH_ShnChanO,'SiW2',"channel")
 call SaveStr(HH,SH_ShnChanO,'SnD1',"thunderclap")
 call SaveStr(HH,SH_ShnChanO,'SnE1',"berserk")
+call SaveStr(HH,SH_ShnChanO,'ToEc',"carrionswarm")
+call SaveInteger(HH,SH_ShnChanT,'ToEc',2)
 call SaveStr(HH,SH_ShnChanO,'SnEc',"carrionswarm")
 call SaveInteger(HH,SH_ShnChanT,'SnEc',2)
 call SaveStr(HH,SH_ShnChanO,'SnF1',"blink")
@@ -134037,6 +134567,7 @@ call SaveStr(HH,SH_AbOrd,'Slo3',"load")
 call SaveStr(HH,SH_AbOrd,'Sloa',"load")
 call SaveStr(HH,SH_AbOrd,'SnD1',"thunderclap")
 call SaveStr(HH,SH_AbOrd,'SnE1',"berserk")
+call SaveStr(HH,SH_AbOrd,'ToEc',"carrionswarm")
 call SaveStr(HH,SH_AbOrd,'SnEc',"carrionswarm")
 call SaveStr(HH,SH_AbOrd,'SnF1',"blink")
 call SaveStr(HH,SH_AbOrd,'SnG1',"shadowstrike")
@@ -134482,32 +135013,11 @@ else
 call UnitRemoveAbility(u,'SnTc')
 call UnitRemoveAbility(u,'A1BL')
 call RemoveSavedInteger(HH,GetHandleId(u),SH_ShnTCur)
+// конец T — меч назад (21 окт)
+call ShinjiSwordBase(u)
 endif
 endfunction
 // кнопка отмены: банкай кончается на следующем тике таймера
-// убийство запутанным игроком (T) засчитывается Хирако (18 окт): смертельный урон от юнита запутанного игрока
-// по врагу Хирако (по снимку союзов до путаницы) обнуляется, и этот урон наносит сам Хирако
-function ShinjiConfKill takes nothing returns nothing
-local unit ksrc=GetEventDamageSource()
-local unit kt=GetTriggerUnit()
-local integer kp=GetPlayerId(GetOwningPlayer(ksrc))
-local integer kh
-local unit kc
-local real kd=GetEventDamage()
-if kp>=0 and kp<=11 and ShnConfOn[kp] and kd>0 and UnitIsAlive(kt) and kd>=GetWidgetLife(kt)-0.405 then
-set kc=ShnConfBy[kp]
-if kc!=null and UnitIsAlive(kc) and GetUnitTypeId(kc)=='HShn' and kc!=kt then
-set kh=GetPlayerId(GetOwningPlayer(kc))
-if GetPlayerId(GetOwningPlayer(kt))!=kh and not ShinjiFcRealAlly(GetOwningPlayer(kc),kt) then
-call SetEventDamage(0.)
-call UnitDamageTarget(kc,kt,RMaxBJ(kd,GetWidgetLife(kt)+10.),false,false,ATTACK_TYPE_CHAOS,DAMAGE_TYPE_UNIVERSAL,null)
-endif
-endif
-endif
-set kc=null
-set kt=null
-set ksrc=null
-endfunction
 function ShinjiTCancelCond takes nothing returns boolean
 return GetSpellAbilityId()=='SnTc'
 endfunction
@@ -134537,6 +135047,7 @@ local effect fx
 call SaveReal(h,id,3,time+0.1)
 if time<7. and UnitIsAlive(u) and udg_B==true and not LoadBoolean(h,id,6) then
 // бутон закрылся наполовину (1 с) — туман: центр, кольцо 450 (6), кольцо 850 (12)
+// 21 окт: вернули старый туман T (туман Сакаканаде W на T отменён)
 if tk==10 then
 // круг дальности тумана T — 1000, до конца банкая (18 окт)
 call ShinjiRing(x,y,1000.,6.)
@@ -134647,6 +135158,11 @@ call RemoveEffect(bj_lastCreatedEffect,1.,false,CreateTimer())
 set fx=null
 call SaveEffectHandle(h,id,5,AddSpecialEffect("Shinji2_Bankai.mdx",GetUnitX(u),GetUnitY(u)))
 call SaveInteger(HH,GetHandleId(u),SH_ShnTCur,id)
+// T прекращает W и даёт шикай в руку (21 окт)
+if LoadInteger(HH,GetHandleId(u),SH_ShnWId)!=0 then
+call SaveBoolean(h,LoadInteger(HH,GetHandleId(u),SH_ShnWId),6,true)
+endif
+call ShinjiSwordBase(u)
 call ShinjiTLock(u,true)
 // на банкае — обычный Stand (17 окт: без случайных «spell»)
 call SetUnitAnimationByIndex(u,15)
@@ -134702,9 +135218,7 @@ call TriggerRegisterAnyUnitEventBJ(t,EVENT_PLAYER_UNIT_SPELL_ENDCAST)
 call TriggerAddCondition(t,Condition(function ShinjiTCond))
 call TriggerAddAction(t,function ShinjiTEnd)
 call TimerStart(CreateTimer(),0.1,true,function ShinjiConfTick)
-set t=CreateTrigger()
-call TriggerRegisterAnyUnitEventBJ(t,EVENT_PLAYER_UNIT_DAMAGED)
-call TriggerAddAction(t,function ShinjiConfKill)
+// 21 окт: ShinjiConfKill убран — передача урона запутанного Хирако в обработчике урона
 set t=CreateTrigger()
 call TriggerRegisterPlayerChatEvent(t,Player(0),"-shndbg",true)
 call TriggerRegisterPlayerChatEvent(t,Player(1),"-shndbg",true)
@@ -134733,7 +135247,8 @@ endfunction
 // (приказы по точке отражаются, ShinjiInvOrder)
 // 17 окт: D убран с героя, удар-вращение срабатывает на касте W (SnW1); туман делает ShinjiWCast
 function ShinjiDCond takes nothing returns boolean
-return GetSpellAbilityId()=='SnW1' and udg_B==true and GetUnitTypeId(GetTriggerUnit())=='HShn'
+// 21 окт: удар-вращение и слеш W убраны (W — каст 1 с и туман, ShinjiWCast)
+return false
 endfunction
 // вращение Сакаканаде на D (16 окт): модель шикая (Shinji2_Shikai) лежит плашмя и крутится вокруг Хирако на 100
 // 0.6 с (тик 0.02, +36° за тик — ~3 оборота), затем исчезает
@@ -134956,7 +135471,10 @@ endfunction
 function ShinjiGEnd takes nothing returns nothing
 local timer t=GetExpiredTimer()
 local unit gu=LoadUnitHandle(h,GetHandleId(t),0)
-call SetUnitVertexColor(gu,255,255,255,255)
+call ShinjiAlpha(gu,255)
+// конец G — меч назад в запечатанный, если не идёт W / T (21 окт)
+call SaveBoolean(HH,GetHandleId(gu),SH_ShnGOn,false)
+call ShinjiSwordBase(gu)
 set gu=null
 call PauseUnit(LoadUnitHandle(h,GetHandleId(t),0),false)
 call SetUnitPathing(LoadUnitHandle(h,GetHandleId(t),0),true)
@@ -134987,11 +135505,12 @@ set ga=Atan2(GetUnitY(gc)-GetUnitY(gn),GetUnitX(gc)-GetUnitX(gn))
 set gd=SR(GetUnitX(gn),GetUnitY(gn),GetUnitX(gc),GetUnitY(gc))
 if gd>70 then
 if ModuloInteger(gk,2)==0 then
-call ShinjiQAfter(GetOwningPlayer(gn),GetUnitX(gn),GetUnitY(gn),ga*bj_RADTODEG)
+call ShinjiQAfterR(GetOwningPlayer(gn),GetUnitX(gn),GetUnitY(gn),ga*bj_RADTODEG,LoadReal(h,id,3))
 endif
 call SetUnitX(gn,GetUnitX(gn)+RMinBJ(45.,gd-60.)*Cos(ga))
 call SetUnitY(gn,GetUnitY(gn)+RMinBJ(45.,gd-60.)*Sin(ga))
-call SetUnitFacing(gn,ga*bj_RADTODEG)
+// клон летит с креном h 3 (21 окт)
+call SetUnitOrientation(gn,ga*bj_RADTODEG,0.,LoadReal(h,id,3))
 set gn=null
 set gc=null
 set t=null
@@ -135008,7 +135527,12 @@ call SetSpecialEffectTimeScale(gfx,1.1)
 call SetSpecialEffectAnimationByIndex(gfx,0)
 call RemoveEffect(gfx,0.45,false,CreateTimer())
 endif
-call RemoveUnit(gn)
+// клон не пропадает, а застывает и гаснет за ~0.4 с (21 окт)
+call SetUnitTimeScale(gn,0.)
+set bj_lastStartedTimer=CreateTimer()
+call SaveUnitHandle(h,GetHandleId(bj_lastStartedTimer),0,gn)
+call SaveInteger(h,GetHandleId(bj_lastStartedTimer),1,120)
+call TimerStart(bj_lastStartedTimer,0.05,true,function ShinjiQAfterUFade)
 call FlushChildHashtable(h,id)
 call DestroyTimer(t)
 set gfx=null
@@ -135029,6 +135553,9 @@ call ShinjiBlink(GetUnitX(gn),GetUnitY(gn))
 call SaveUnitHandle(h,GetHandleId(t),0,gn)
 call SaveUnitHandle(h,GetHandleId(t),1,gc)
 call SaveInteger(h,GetHandleId(t),2,0)
+// крен клона (21 окт): боком под разными углами, бывает и вниз головой
+call SaveReal(h,GetHandleId(t),3,GetRandomReal(-180.,180.))
+call SetUnitOrientation(gn,ga*bj_RADTODEG+180.,0.,LoadReal(h,GetHandleId(t),3))
 call TimerStart(t,0.02,true,function ShinjiGCloneTick)
 set gn=null
 set t=null
@@ -135039,7 +135566,12 @@ call SetUnitX(u,gx)
 call SetUnitY(u,gy)
 call SetUnitFacingInstant(u,gyaw)
 call ShinjiBlink(gx,gy)
+if gpush then
 call ShinjiAnimFor(u,4,2.,0.8)
+else
+// последний удар — вниз головой (Spell 4: перевёрнут с 0.2 до 1.54 с из 2.12; x1.6 — с 0.13 до 0.96 с; 21 окт)
+call ShinjiAnimFor(u,22,1.6,1.15)
+endif
 call ShinjiSnd("HirakoGHit"+I2S(GetRandomInt(1,3)))
 call myCustomDamage(u,c,1.5*GetHeroAgi(u,true)+0.075*(GetUnitState(c,UNIT_STATE_MAX_LIFE)-GetWidgetLife(c)),false,false,null,null,null)
 set fx=AddSpecialEffect("Sabrac\\TG_animeslashfinal_2.mdx",GetUnitX(c),GetUnitY(c))
@@ -135084,6 +135616,7 @@ local unit c=LoadUnitHandle(h,id,1)
 local integer gk=LoadInteger(h,id,5)+1
 local real ga
 local real gd
+local real gst
 call SaveInteger(h,id,5,gk)
 if UnitIsAlive(u) and UnitIsAlive(c) and Condition_Base(OwnerOf(u),c) then
 set ga=Atan2(GetUnitY(c)-GetUnitY(u),GetUnitX(c)-GetUnitX(u))
@@ -135092,8 +135625,10 @@ if gd>100 and gk<40 then
 if ModuloInteger(gk,2)==0 then
 call ShinjiQAfter(OwnerOf(u),GetUnitX(u),GetUnitY(u),ga*bj_RADTODEG)
 endif
-call SetUnitX(u,GetUnitX(u)+RMinBJ(45.,gd-90.)*Cos(ga))
-call SetUnitY(u,GetUnitY(u)+RMinBJ(45.,gd-90.)*Sin(ga))
+// у цели плавно тормозит (21 окт): шаг 45, в последние ~150 — до 20
+set gst=RMinBJ(gd-90.,RMinBJ(45.,RMaxBJ(20.,(gd-90.)*0.5)))
+call SetUnitX(u,GetUnitX(u)+gst*Cos(ga))
+call SetUnitY(u,GetUnitY(u)+gst*Sin(ga))
 call SetUnitFacingInstant(u,ga*bj_RADTODEG)
 set c=null
 set u=null
@@ -135108,10 +135643,13 @@ call RemoveSavedBoolean(h,id,4)
 endif
 call SetUnitTimeScale(u,1.)
 call ShinjiGHit(u,c,GetUnitX(u),GetUnitY(u),ga*bj_RADTODEG,false)
+// второй удар — маленький туман Сакаканаде 300 вокруг цели на 2.5 с, он и переворачивает (21 окт)
+call ShinjiGMist(u,c)
 endif
 call SetUnitPathing(u,true)
 call ShinjiGRelease(id)
-call TimerStart(t,0.4,false,function ShinjiGEnd)
+// пауза до конца переворота (21 окт; было 0.4)
+call TimerStart(t,1.,false,function ShinjiGEnd)
 set c=null
 set u=null
 set t=null
@@ -135129,7 +135667,9 @@ call SetUnitX(u,GetUnitX(c)+600*Cos(f))
 call SetUnitY(u,GetUnitY(c)+600*Sin(f))
 call SetUnitFacingInstant(u,f*bj_RADTODEG+180.)
 call ShinjiBlink(GetUnitX(u),GetUnitY(u))
-call SetUnitVertexColor(u,255,255,255,255)
+// проявляется на бегу за 0.12 с, а не сразу (21 окт)
+call ShinjiAlpha(u,0)
+call ShinjiFade(u,255,6)
 call SetUnitAnimationByIndex(u,16)
 call SetUnitTimeScale(u,2.)
 call SaveInteger(h,id,5,0)
@@ -135149,10 +135689,10 @@ local unit u=LoadUnitHandle(h,id,0)
 local unit c=LoadUnitHandle(h,id,1)
 local real f=LoadReal(h,id,3)
 local effect fx
-call SetUnitVertexColor(u,255,255,255,255)
 if UnitIsAlive(u) and UnitIsAlive(c) and LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY) then
 // реверс: удара нет, цели отдаём Хирако, паузы снимаются сразу
 call SaveUnitHandle(HH,GetHandleId(c),REVERSE_TARGET,u)
+call ShinjiAlpha(u,255)
 call ShinjiGRelease(id)
 call PauseUnit(u,false)
 call TimerStart(t,0.,false,function ShinjiGEnd)
@@ -135171,14 +135711,15 @@ call SetSpecialEffectVertexColour(fx,255,170,180,255)
 call SetSpecialEffectTimeScale(fx,1.1)
 call SetSpecialEffectAnimationByIndex(fx,0)
 call RemoveEffect(fx,0.45,false,CreateTimer())
-// перевёрнутый мир на 1.25 с, как после удара W
-call SaveReal(HH,GetHandleId(c),SH_ShnInv,TimerGetElapsed(ShnClock)+1.25)
+// малый туман Сакаканаде — на втором ударе (21 окт; был на первом)
 // на момент удара пауза цели снимается, после удара — снова до второго удара (18 окт)
 if LoadBoolean(h,id,4) then
 call RemoveSavedBoolean(HH,GetHandleId(c),SH_ShnPHold)
 call PauseUnit(c,false)
 endif
 call ShinjiGHit(u,c,GetUnitX(c)-90*Cos(f),GetUnitY(c)-90*Sin(f),f*bj_RADTODEG,true)
+// за спиной проявляется за 0.08 с (21 окт)
+call ShinjiFade(u,255,4)
 // образ после первого удара гаснет быстро (~0.3 с; 18 окт)
 if LoadEffectHandle(h,id,2)!=null then
 set bj_lastStartedTimer=CreateTimer()
@@ -135211,9 +135752,13 @@ local real f=Atan2(GetUnitY(u)-GetUnitY(c),GetUnitX(u)-GetUnitX(c))
 local timer t=CreateTimer()
 local effect fx
 call ShinjiSnd("HirakoG")
+// в руке — шикай Сакаканаде до конца G (21 окт)
+call SaveBoolean(HH,GetHandleId(u),SH_ShnGOn,true)
+call ShinjiSwordBase(u)
 call PauseUnit(u,true)
 call ShinjiBlink(GetUnitX(u),GetUnitY(u))
-call SetUnitVertexColor(u,255,255,255,0)
+// растворяется за 0.08 с, а не сразу (21 окт)
+call ShinjiFade(u,0,4)
 // остаточный образ перед лицом цели
 set fx=AddSpecialEffect("Shinji2.mdl",GetUnitX(c)+100*Cos(f),GetUnitY(c)+100*Sin(f))
 call SetSpecialEffectScale(fx,0.65)
@@ -143425,8 +143970,11 @@ function Trig_DamageUltKurapika_Conditions takes nothing returns boolean
         return GetUnitAbilityLevel(GetTriggerUnit(),'A0YY')>0 or GetUnitAbilityLevel(GetTriggerUnit(),'A1AC')>0
 endfunction
 
-function Trig_DamageUltKurapika_Actions takes nothing returns nothing
-	local unit u=GetTriggerUnit()
+// 21 окт: снятие баффов, неуязвимости и пересоздание Аластора посреди начала чужого каста ломало героя
+// (пауза / интерфейс до -rfh) — теперь всё через таймер 0 с после начала каста; метка снимается сразу
+function Trig_DamageUltKurapika_Act2 takes nothing returns nothing
+	local timer kt=GetExpiredTimer()
+	local unit u=LoadUnitHandle(h,GetHandleId(kt),0)
 	local player p=OwnerOf(u)
 	local real x1=GetUnitX(u)
 	local real dmg=0
@@ -143459,8 +144007,6 @@ function Trig_DamageUltKurapika_Actions takes nothing returns nothing
 		call myCustomDamage(Kurapika,u,5*GetHeroStr(Kurapika,true),false,false,null,DAMAGE_TYPE_UNIVERSAL,WEAPON_TYPE_WHOKNOWS)
 	endif
 	call UnitRemoveAbility(u,'A0WR')
-	call UnitRemoveAbility(u,'A0YY')
-	call UnitRemoveAbility(u,'A1AC')
 	call UnitApplyTimedLife(CreateUnit(p,'e03V',x1,y1,GetRandomReal(0,359)),'BTLF',1)
 	call UnitApplyTimedLife(CreateUnit(p,'e03D',x1,y1,GetRandomReal(0,359)),'BTLF',1)
 	call UnitApplyTimedLife(CreateUnit(p,'e03V',x1,y1,GetRandomReal(0,359)),'BTLF',1)
@@ -143470,8 +144016,20 @@ function Trig_DamageUltKurapika_Actions takes nothing returns nothing
 	call UnitApplyTimedLife(CreateUnit(p,'e06F',x1,y1,GetRandomReal(0,359)),'BTLF',1)
 	call UnitApplyTimedLife(CreateUnit(p,'e06F',x1,y1,GetRandomReal(0,359)),'BTLF',1)
 	call UnitApplyTimedLife(CreateUnit(p,'e06F',x1,y1,GetRandomReal(0,359)),'BTLF',1)
+	call FlushChildHashtable(h,GetHandleId(kt))
+	call DestroyTimer(kt)
+	set kt=null
 	set u=null
 	set p=null
+endfunction
+function Trig_DamageUltKurapika_Actions takes nothing returns nothing
+	local timer kt=CreateTimer()
+	// метка снимается сразу — второй каст до таймера не сработает дважды
+	call UnitRemoveAbility(GetTriggerUnit(),'A0YY')
+	call UnitRemoveAbility(GetTriggerUnit(),'A1AC')
+	call SaveUnitHandle(h,GetHandleId(kt),0,GetTriggerUnit())
+	call TimerStart(kt,0.,false,function Trig_DamageUltKurapika_Act2)
+	set kt=null
 endfunction
 function ChangeStatsCond takes nothing returns boolean
 return GetSpellAbilityId()=='A1AA' or GetSpellAbilityId()=='A1AB' or GetSpellAbilityId()=='A16E'
@@ -200523,7 +201081,7 @@ function SpellAct takes nothing returns nothing
 local integer id = GetSpellAbilityId()
 if id == 'AFUP' then
 call GoldenFriezaStart(GetTriggerUnit())
-elseif id == 'A07U' or id == 'A1D2' or id == 'A0LY' or id == 'A1OX' or id == 'A0OX' or id == 'A03N' or id == 'A119' or id == 'A0GE' or id == 'A0PD' or id == 'A0KP' or id == 'A0CI' or id == 'LCE1' or id == 'A1DX' or id == 'A0UN' or id == 'A1EF' or id == 'A0PR' or id == 'A0BT' or id == 'A0BZ' or id == 'A1EG' or id == 'A0C8' or id=='A0JA' or id=='A0TF' or id=='A01O' or id=='A168' then
+elseif id == 'A07U' or id == 'A1D2' or id == 'A0LY' or id == 'A1OX' or id == 'A0OX' or id == 'A03N' or id == 'A119' or id == 'A0GE' or id == 'A0PD' or id == 'A0KP' or id == 'A0CI' or id == 'LCE1' or id == 'A1DX' or id == 'A0UN' or id == 'A1EF' or id == 'A0PR' or id == 'A0BT' or id == 'A0BZ' or id == 'A1EG' or id == 'A0C8' or id=='A0TF' or id=='A01O' or id=='A168' then
 call TransformationStart(GetTriggerUnit())
 elseif id == 'CS01' then
 call EDantesStart(GetTriggerUnit())
@@ -208182,10 +208740,11 @@ function AkainuFCast2 takes nothing returns nothing
         if UnitHasItemOfTypeBJ(target,'I05O')or UnitHasItemOfTypeBJ(target,'I05P')or UnitHasItemOfTypeBJ(target,'I05Q')or UnitHasItemOfTypeBJ(target,'I05R')or UnitHasItemOfTypeBJ(target,'I05S')or UnitHasItemOfTypeBJ(target,'I05T') or GetUnitAbilityLevel(target, 'KIT8')>0 or GetUnitAbilityLevel(target, 'KIU0')>0 or GetUnitAbilityLevel(target, 'KIU2')>0 or GetUnitAbilityLevel(target, 'KIU4')>0 or GetUnitAbilityLevel(target, 'KIU6')>0 or GetUnitAbilityLevel(target, 'KIU8')>0 then
             call RainMare_Actions(caster,target)
         endif
-        if UnitHasItemOfTypeBJ(caster, 'I01Q') and (GetRandomInt(1, 100)<=20 or GetUnitAbilityLevel(caster,'A06K')>0) then 		// Сюсуй
+        // Сюсуй / Фэнг: урон выше с флагом атаки — прок в обработчике урона (21 окт)
+        if false and UnitHasItemOfTypeBJ(caster, 'I01Q') and (GetRandomInt(1, 100)<=20 or GetUnitAbilityLevel(caster,'A06K')>0) then 		// Сюсуй
             call Shusui_Cast(caster, 1)
         endif
-        if UnitHasItemOfTypeBJ(caster, 'I01U') and GetRandomInt(1, 100)<=45 then 		// Feng
+        if false and UnitHasItemOfTypeBJ(caster, 'I01U') and GetRandomInt(1, 100)<=45 then 		// Feng
             call PoisonDamage5(caster,target,2.5*GetHeroInt(caster,true),6,"Abilities\\Weapons\\PoisonSting\\PoisonStingTarget.mdl","chest")
             call SlowUnit(caster,target,0.5,0.,1,1,false)
         endif
@@ -274243,6 +274802,7 @@ call InitTrig_CeroB()
 call InitTrig_ShinjiQ()
 call InitTrig_ShinjiW()
 call InitTrig_ShinjiE()
+call InitTrig_TousenE()
 call InitTrig_ShinjiR()
 call InitTrig_ShinjiT()
 call InitTrig_ShinjiD()
@@ -279124,7 +279684,7 @@ call LANG_A('A0H9',1,1,"Dual Blades skill: Kirito dashes to the target point and
 call LANG_A('A0H9',1,2,"Dual Blades skill: Kirito dashes to the target point and performs two circular strikes with both blades, knocking enemies back. Invulnerable during the skill.|n|n|cFF00A5FFDamage: 6*|r|c00FF5555STR|r|cFF00A5FF for both strikes|nRange: 400|nStun: 1 sec. per strike|nAoE: 400|nCooldown: 20 sec.|r")
 call LANG_A('A0H9',1,3,"Dual Blades skill: Kirito dashes to the target point and performs two circular strikes with both blades, knocking enemies back. Invulnerable during the skill.|n|n|cFF00A5FFDamage: 7*|r|c00FF5555STR|r|cFF00A5FF for both strikes|nRange: 400|nStun: 1 sec. per strike|nAoE: 400|nCooldown: 20 sec.|r")
 call LANG_A('A0H9',1,4,"Dual Blades skill: Kirito dashes to the target point and performs two circular strikes with both blades, knocking enemies back. Invulnerable during the skill.|n|n|cFF00A5FFDamage: 8*|r|c00FF5555STR|r|cFF00A5FF for both strikes|nRange: 400|nStun: 1 sec. per strike|nAoE: 400|nCooldown: 20 sec.|r")
-call LANG_A('A0H9',2,0,"Double Circular, [|cffffcc00Level %d|r] (|cffffcc00W|r)")
+call LANG_A('A0H9',2,0,"Double Circular, [|cffffcc00Level %d|r] (|cffffcc00E|r)")
 call LANG_A('A0H9',3,0,"Dual Blades skill: Kirito dashes to the target point and performs two circular strikes with both blades, knocking enemies back. Invulnerable during the skill.|n|n|cFF00A5FFDamage: 4\\5\\6\\7\\8*|r|c00FF5555STR|r|cFF00A5FF for both strikes|nRange: 400|nStun: 1 sec. per strike|nAoE: 400|nCooldown: 20 "+"sec.|r")
 call LANG_A('A0HA',0,0,"100.000.000 Volt, [|cffffcc00Level 1|r] (|cffffcc00E|r)")
 call LANG_A('A0HA',1,0,"Enel instantly moves to the enemy and deals damage to him and all nearby enemies.|n|n|cFF00A5FF|nDamage: 4*|r|c0077FFFFINT|r|cFF00A5FF.|nCooldown: 15 seconds|r")
@@ -279679,13 +280239,13 @@ call LANG_A('A0JA',0,1,"Hollow Mask, [|cffffcc00Level 2|r] (|cffffcc00E|r)")
 call LANG_A('A0JA',0,2,"Hollow Mask, [|cffffcc00Level 3|r] (|cffffcc00E|r)")
 call LANG_A('A0JA',0,3,"Hollow Mask, [|cffffcc00Level 4|r] (|cffffcc00E|r)")
 call LANG_A('A0JA',0,4,"Hollow Mask, [|cffffcc00Level 5|r] (|cffffcc00E|r)")
-call LANG_A('A0JA',1,0,"Tōsen uses a Hollow mask to empower his skills.|n|n|cFF00A5FFBonus HP: 300|nDuration: 15sec|nRunning Speed: 30%|nAttack Speed: +70%|nRegeneration: 1.5%sec|nCooldown: 45sec|r")
-call LANG_A('A0JA',1,1,"Tōsen uses a Hollow mask to empower his skills.|n|n|cFF00A5FFBonus HP: 400|nDuration: 15sec|nRunning Speed: 30%|nAttack Speed: +70%|nRegeneration: 1.5%sec|nCooldown: 40sec|r")
-call LANG_A('A0JA',1,2,"Tōsen uses a Hollow mask to empower his skills.|n|n|cFF00A5FFBonus HP: 500|nDuration: 15sec|nRunning Speed: 30%|nAttack Speed: +70%|nRegeneration: 1.5%sec|nCooldown: 35sec|r")
-call LANG_A('A0JA',1,3,"Tōsen uses a Hollow mask to empower his skills.|n|n|cFF00A5FFBonus HP: 600|nDuration: 15sec|nRunning Speed: 30%|nAttack Speed: +70%|nRegeneration: 1.5%sec|nCooldown: 30sec|r")
-call LANG_A('A0JA',1,4,"Tōsen uses a Hollow mask to empower his skills.|n|n|cFF00A5FFBonus HP: 700|nDuration: 15sec|nRunning Speed: 30%|nAttack Speed: +70%|nRegeneration: 1.5%sec|nCooldown: 25sec|r")
+call LANG_A('A0JA',1,0,"Tōsen puts on a Hollow mask: the bonuses last until the mask reserve runs out. While the mask is on, E is a green Cero.|n|n|cFF00A5FFBonus HP: 300|nMask reserve: 8 sec. (3 sec. to put it on)|nRecovery: +1 sec. every 5 sec. and from damage without the mask|nRunning Speed: 30%|nAttack Speed: +70%|nRe"+"generation: 1.5%sec|nCooldown: 3 sec.|r")
+call LANG_A('A0JA',1,1,"Tōsen puts on a Hollow mask: the bonuses last until the mask reserve runs out. While the mask is on, E is a green Cero.|n|n|cFF00A5FFBonus HP: 400|nMask reserve: 9 sec. (3 sec. to put it on)|nRecovery: +1 sec. every 5 sec. and from damage without the mask|nRunning Speed: 30%|nAttack Speed: +70%|nRe"+"generation: 1.5%sec|nCooldown: 3 sec.|r")
+call LANG_A('A0JA',1,2,"Tōsen puts on a Hollow mask: the bonuses last until the mask reserve runs out. While the mask is on, E is a green Cero.|n|n|cFF00A5FFBonus HP: 500|nMask reserve: 10 sec. (3 sec. to put it on)|nRecovery: +1 sec. every 5 sec. and from damage without the mask|nRunning Speed: 30%|nAttack Speed: +70%|nR"+"egeneration: 1.5%sec|nCooldown: 3 sec.|r")
+call LANG_A('A0JA',1,3,"Tōsen puts on a Hollow mask: the bonuses last until the mask reserve runs out. While the mask is on, E is a green Cero.|n|n|cFF00A5FFBonus HP: 600|nMask reserve: 11 sec. (3 sec. to put it on)|nRecovery: +1 sec. every 5 sec. and from damage without the mask|nRunning Speed: 30%|nAttack Speed: +70%|nR"+"egeneration: 1.5%sec|nCooldown: 3 sec.|r")
+call LANG_A('A0JA',1,4,"Tōsen puts on a Hollow mask: the bonuses last until the mask reserve runs out. While the mask is on, E is a green Cero.|n|n|cFF00A5FFBonus HP: 700|nMask reserve: 12 sec. (3 sec. to put it on)|nRecovery: +1 sec. every 5 sec. and from damage without the mask|nRunning Speed: 30%|nAttack Speed: +70%|nR"+"egeneration: 1.5%sec|nCooldown: 3 sec.|r")
 call LANG_A('A0JA',2,0,"Hollow Mask, [|cffffcc00Level %d|r] (|cffffcc00W|r)")
-call LANG_A('A0JA',3,0,"Tōsen uses a Hollow mask to empower his skills.|n|n|cFF00A5FFBonus HP: 300\\400\\500\\600\\700|nDuration: 15sec|nRunning Speed: 30%|nAttack Speed: +70%|nRegeneration: 1.5%sec|nCooldown Time: 45\\40\\35\\30 \\25 sec|r")
+call LANG_A('A0JA',3,0,"Tōsen puts on a Hollow mask: the bonuses last until the mask reserve runs out. While the mask is on, E is a green Cero.|n|n|cFF00A5FFBonus HP: 300\\400\\500\\600\\700|nMask reserve: 8\\9\\10\\11\\12 sec. (3 sec. to put it on)|nRecovery: +1 sec. every 5 sec. and from damage without the mask|nRunning"+" Speed: 30%|nAttack Speed: +70%|nRegeneration: 1.5%sec|nCooldown: 3 sec.|r")
 call LANG_A('A0JB',1,0,"Tōsen creates a space within which enemies cannot see and use abilities.|n|n|cFF00A5FF|nDuration: 5 sec.|nCast time: +0.38 sec.|nCooldown: 45 sec.")
 call LANG_A('A0JB',2,0,"Bankai: Suzumushi Tsuishiki: Enma Korogi, [|cffffcc00Level 1|r] (|cffffcc00T|r)")
 call LANG_A('A0JB',3,0,"Tōsen creates a space within which enemies cannot see and use abilities.|n|n|cFF00A5FF|nDuration: 5 sec.|nCast time: +0.38 sec.|nCooldown: 45 sec.")
@@ -282061,7 +282621,7 @@ call LANG_A('A0XF',1,0,"Minato swaps places with target unit.|n|n|cFF00A5FFRange
 call LANG_A('A0XF',2,0,"Storm Shot, [|cffffcc00Level %d|r] (|cffffcc00Q|r)")
 call LANG_A('A0XF',3,0,"Gokudera shoots out hurricane flames, dealing damage and incapacitating abilities for 3 seconds.|n|n|cFF00A5FFDamage: 50\\100\\150\\200\\250+1\\2\\3\\4\\5*|r|c0077FFFFINT|r|cFF00A5FF|nCooldown: 20 seconds|r")
 call LANG_A('A0XG',1,0,"Zoro cuts all enemies around.|n|n|cFF00A5FFDamage: 2.5*|r|c00FF5555STR|r|cFF00A5FF per sec.|nDuration: 4 sec.|nAoE: 350|nCast time: +0.1 sec.|nCooldown: 45 sec.")
-call LANG_A('A0XG',2,0,"Double Circular, [|cffffcc00Level %d|r] (|cffffcc00W|r)")
+call LANG_A('A0XG',2,0,"Double Circular, [|cffffcc00Level %d|r] (|cffffcc00E|r)")
 call LANG_A('A0XG',3,0,"Kirito attacks all enemies around him, knocking them back.|n|n|cFF00A5FFDamage: 1*|r|c00FF5555STR|r|cFF00A5FF|nDuration: 3\\4\\5\\6\\7 sec.|nCooldown: 20 sec.")
 call LANG_A('A0XI',0,0,"Transparent Giant Hand, [|cffffcc00Level 1|r] (|cffffcc00E|r)")
 call LANG_A('A0XI',0,1,"Transparent Giant Hand, [|cffffcc00Level 2|r] (|cffffcc00E|r)")
@@ -282076,7 +282636,7 @@ call LANG_A('A0XI',1,4,"Byakuran crushes the targeted enemy with a hand of flame
 call LANG_A('A0XI',2,0,"Transparent Giant Hand, [|cffffcc00Level %d|r] (|cffffcc00E|r)")
 call LANG_A('A0XI',3,0,"Byakuran crushes the targeted enemy with a hand of flame.|n|n|cFF00A5FF|nDamage: 4\\5\\6\\7\\8*|r|c0077FFFFINT|r|cFF00A5FF|nCooldown: 24 seconds|r")
 call LANG_A('A0XJ',1,0,"Nagato resurrects a random fallen ally for 100% MP and 75% current HP in return.|n|n|cFF00A5FF|nCast Time: 12 sec.|nCooldown: 300 sec.")
-call LANG_A('A0XJ',2,0,"Double Circular, [|cffffcc00Level %d|r] (|cffffcc00W|r)")
+call LANG_A('A0XJ',2,0,"Double Circular, [|cffffcc00Level %d|r] (|cffffcc00E|r)")
 call LANG_A('A0XJ',3,0,"Kirito attacks all enemies around him, knocking them back.|n|n|cFF00A5FFDamage: 1*|r|c00FF5555STR|r|cFF00A5FF|nDuration: 3\\4\\5\\6\\7 sec.|nCooldown: 20 sec.")
 call LANG_A('A0XK',1,0,"Blackstar's most powerful attack.|n|n|cFF00A5FF|nDamage: 10(12) *|r|c00FF5555STR|r|cFF00A5FF|nRange: 1000|nCast time: +0.33 sec.|nCooldown: 30 sec.|r")
 call LANG_A('A0XK',2,0,"Masamune: Hell Spirit, [|cffffcc00Level 1|r] (|cffffcc00T|r)")
@@ -283374,7 +283934,7 @@ call LANG_A('A162',1,4,"Hibari's willpower increases his combat stats. Also, eac
 call LANG_A('A162',2,0,"Clouds Independent, [|cffffcc00Level %d|r] (|cffffcc00W|r)")
 call LANG_A('A162',3,0,"Hibari's willpower increases his combat stats. Also, each kill he makes allows him to quickly recover from the control (stun, silence).|n|n|cFF00A5FFAttack Speed: 15%\\30%\\45%\\60%\\75%|nRun Speed: 15%\\20%\\25%\\30%\\35%|nControl Reduction: 10% + Kill%")
 call LANG_A('A166',1,0,"Marman attacks opponents with infernal worms of all opponents around.|n|n|cFF00A5FFDamage: 8*|r|c0077FFFFINT|r|cFF00A5FF|nCooldown: 40 sec.")
-call LANG_A('A166',2,0,"Double Circular, [|cffffcc00Level %d|r] (|cffffcc00W|r)")
+call LANG_A('A166',2,0,"Double Circular, [|cffffcc00Level %d|r] (|cffffcc00E|r)")
 call LANG_A('A166',3,0,"Kirito attacks all enemies around him, knocking them back.|n|n|cFF00A5FFDamage: 1*|r|c00FF5555STR|r|cFF00A5FF|nDuration: 3\\4\\5\\6\\7 sec.|nCooldown: 20 sec.")
 call LANG_A('A168',0,0,"Thunder Setter, [|cffffcc00Level 1|r] (|cffffcc00E|r)")
 call LANG_A('A168',0,1,"Thunder Setter, [|cffffcc00Level 2|r] (|cffffcc00E|r)")
@@ -285827,7 +286387,7 @@ call LANG_A('A41C',1,0,"Turn off Elettro Volpi.")
 call LANG_A('A42C',0,0,"Turn off ''Innocentius'', (|cffffcc00T|r).")
 call LANG_A('A42C',1,0,"Turn off Innocentius.")
 call LANG_A('AFUP',1,0,"Frieza transforms into the next form - gold.|nAt the end, if Frieza's level is less than 35, then he is heavily depleted and gains 3 seconds of stun and 6 seconds of slow.|n|n|cFF00A5FF+30 |c00FFFF66AllStat|r.|cFF00A5FF|nGives you the ability to use all abilities instantly.|nDeath Beam deals 25% mor"+"e damage and slows the enemy for 3 seconds by 40%.|nDuration: 15 sec.|nCooldown: 60 sec.")
-call LANG_A('AFUP',2,0,"Double Circular, [|cffffcc00Level %d|r] (|cffffcc00W|r)")
+call LANG_A('AFUP',2,0,"Double Circular, [|cffffcc00Level %d|r] (|cffffcc00E|r)")
 call LANG_A('AFUP',3,0,"Kirito attacks all enemies around him, knocking them back.|n|n|cFF00A5FFDamage: 1*|r|c00FF5555STR|r|cFF00A5FF|nDuration: 3\\4\\5\\6\\7 sec.|nCooldown: 20 sec.")
 call LANG_A('AK1A',1,0,"Activate running.")
 call LANG_A('AK2A',1,0,"Deactivate running.")
@@ -287238,9 +287798,9 @@ call LANG_A('KI14',1,0,"Increases attack power by 80, |c00FFFF66AllStat|r by 25.
 call LANG_A('KI14',2,0,"Sandai Kitetsu")
 call LANG_A('KI14',3,0,"Increases attack power by 80, |c00FFFF66AllStat|r by 25.|nPassive: Mortal Strike - 20% chance to deal 2x damage.")
 call LANG_A('KI16',0,0,"Shusui")
-call LANG_A('KI16',1,0,"Attack power increased by 100, |c00FFFF66AllStat|r by 30, 20% chance to deal 2x damage.|nPassive: \"Deadly Wave\" - 20% chance to deal 1.5*|c003CFF3CAGI|r damage around the target in 500 AoE.")
+call LANG_A('KI16',1,0,"Attack power increased by 100, |c00FFFF66AllStat|r by 30, 20% chance to deal 2x damage.|nPassive: \"Deadly Wave\" - 20% chance to deal 3*|c003CFF3CAGI|r damage around the target in 500 AoE.")
 call LANG_A('KI16',2,0,"Shusui")
-call LANG_A('KI16',3,0,"Attack power increased by 100, |c00FFFF66AllStat|r by 30, 20% chance to deal 2x damage.|nPassive: \"Deadly Wave\" - 20% chance to deal 1.5*|c003CFF3CAGI|r damage around the target in 500 AoE.")
+call LANG_A('KI16',3,0,"Attack power increased by 100, |c00FFFF66AllStat|r by 30, 20% chance to deal 2x damage.|nPassive: \"Deadly Wave\" - 20% chance to deal 3*|c003CFF3CAGI|r damage around the target in 500 AoE.")
 call LANG_A('KI18',0,0,"Dark Excalibur")
 call LANG_A('KI18',1,0,"Increase attack power by 125, |c00FF5555STR|r by 40, |c003CFF3CAGI|r by 20, 30% chance to deal 2x damage.|nPassive: Bloodlust - 30% chance to gain 90% AS and 45% lifesteal for 3 seconds. Cooldown: 12 sec.")
 call LANG_A('KI18',2,0,"Dark Excalibur")
@@ -289016,71 +289576,85 @@ call LANG_A('SnQ1',0,1,"Sakanade: Slash, [|cffffcc00Level 2|r] (|cffffcc00Q|r)")
 call LANG_A('SnQ1',0,2,"Sakanade: Slash, [|cffffcc00Level 3|r] (|cffffcc00Q|r)")
 call LANG_A('SnQ1',0,3,"Sakanade: Slash, [|cffffcc00Level 4|r] (|cffffcc00Q|r)")
 call LANG_A('SnQ1',0,4,"Sakanade: Slash, [|cffffcc00Level 5|r] (|cffffcc00Q|r)")
-call LANG_A('SnQ1',1,0,"Shunpo to the chosen enemy: the slash stuns and pushes him back a little. If the enemy is under W, Hirako appears behind him — the strike is stronger and stuns longer. Hirako is invulnerable and cannot be controlled during the whole move.|n|n|cFF00A5FF|nDamage: 75 + 2\\3\\4\\5\\6*|r|c003CFF3CAGI|r"+"|cFF00A5FF|nStrike from behind (enemy under W): +1*|r|c003CFF3CAGI|r|cFF00A5FF damage|nStun: 1 sec. (from behind — 2 sec.)|nPush: 150|nRange: 700|nCooldown: 12 sec.|r")
-call LANG_A('SnQ1',1,1,"Shunpo to the chosen enemy: the slash stuns and pushes him back a little. If the enemy is under W, Hirako appears behind him — the strike is stronger and stuns longer. Hirako is invulnerable and cannot be controlled during the whole move.|n|n|cFF00A5FF|nDamage: 75 + 2\\3\\4\\5\\6*|r|c003CFF3CAGI|r"+"|cFF00A5FF|nStrike from behind (enemy under W): +1*|r|c003CFF3CAGI|r|cFF00A5FF damage|nStun: 1 sec. (from behind — 2 sec.)|nPush: 150|nRange: 700|nCooldown: 12 sec.|r")
-call LANG_A('SnQ1',1,2,"Shunpo to the chosen enemy: the slash stuns and pushes him back a little. If the enemy is under W, Hirako appears behind him — the strike is stronger and stuns longer. Hirako is invulnerable and cannot be controlled during the whole move.|n|n|cFF00A5FF|nDamage: 75 + 2\\3\\4\\5\\6*|r|c003CFF3CAGI|r"+"|cFF00A5FF|nStrike from behind (enemy under W): +1*|r|c003CFF3CAGI|r|cFF00A5FF damage|nStun: 1 sec. (from behind — 2 sec.)|nPush: 150|nRange: 700|nCooldown: 12 sec.|r")
-call LANG_A('SnQ1',1,3,"Shunpo to the chosen enemy: the slash stuns and pushes him back a little. If the enemy is under W, Hirako appears behind him — the strike is stronger and stuns longer. Hirako is invulnerable and cannot be controlled during the whole move.|n|n|cFF00A5FF|nDamage: 75 + 2\\3\\4\\5\\6*|r|c003CFF3CAGI|r"+"|cFF00A5FF|nStrike from behind (enemy under W): +1*|r|c003CFF3CAGI|r|cFF00A5FF damage|nStun: 1 sec. (from behind — 2 sec.)|nPush: 150|nRange: 700|nCooldown: 12 sec.|r")
-call LANG_A('SnQ1',1,4,"Shunpo to the chosen enemy: the slash stuns and pushes him back a little. If the enemy is under W, Hirako appears behind him — the strike is stronger and stuns longer. Hirako is invulnerable and cannot be controlled during the whole move.|n|n|cFF00A5FF|nDamage: 75 + 2\\3\\4\\5\\6*|r|c003CFF3CAGI|r"+"|cFF00A5FF|nStrike from behind (enemy under W): +1*|r|c003CFF3CAGI|r|cFF00A5FF damage|nStun: 1 sec. (from behind — 2 sec.)|nPush: 150|nRange: 700|nCooldown: 12 sec.|r")
+call LANG_A('SnQ1',1,0,"Shunpo to the enemy and a slash: stuns and pushes a little. Enemy under W — a strike from behind: stronger and stuns longer. Hirako is invulnerable during the move.|n|n|cFF00A5FF|nDamage: 75 + 2*|r|c003CFF3CAGI|r|cFF00A5FF|nFrom behind: +1*|r|c003CFF3CAGI|r|cFF00A5FF, stun 2 sec.|nStun: 1 sec.|nRa"+"nge: 700|nCooldown: 12 sec.|r")
+call LANG_A('SnQ1',1,1,"Shunpo to the enemy and a slash: stuns and pushes a little. Enemy under W — a strike from behind: stronger and stuns longer. Hirako is invulnerable during the move.|n|n|cFF00A5FF|nDamage: 75 + 3*|r|c003CFF3CAGI|r|cFF00A5FF|nFrom behind: +1*|r|c003CFF3CAGI|r|cFF00A5FF, stun 2 sec.|nStun: 1 sec.|nRa"+"nge: 700|nCooldown: 12 sec.|r")
+call LANG_A('SnQ1',1,2,"Shunpo to the enemy and a slash: stuns and pushes a little. Enemy under W — a strike from behind: stronger and stuns longer. Hirako is invulnerable during the move.|n|n|cFF00A5FF|nDamage: 75 + 4*|r|c003CFF3CAGI|r|cFF00A5FF|nFrom behind: +1*|r|c003CFF3CAGI|r|cFF00A5FF, stun 2 sec.|nStun: 1 sec.|nRa"+"nge: 700|nCooldown: 12 sec.|r")
+call LANG_A('SnQ1',1,3,"Shunpo to the enemy and a slash: stuns and pushes a little. Enemy under W — a strike from behind: stronger and stuns longer. Hirako is invulnerable during the move.|n|n|cFF00A5FF|nDamage: 75 + 5*|r|c003CFF3CAGI|r|cFF00A5FF|nFrom behind: +1*|r|c003CFF3CAGI|r|cFF00A5FF, stun 2 sec.|nStun: 1 sec.|nRa"+"nge: 700|nCooldown: 12 sec.|r")
+call LANG_A('SnQ1',1,4,"Shunpo to the enemy and a slash: stuns and pushes a little. Enemy under W — a strike from behind: stronger and stuns longer. Hirako is invulnerable during the move.|n|n|cFF00A5FF|nDamage: 75 + 6*|r|c003CFF3CAGI|r|cFF00A5FF|nFrom behind: +1*|r|c003CFF3CAGI|r|cFF00A5FF, stun 2 sec.|nStun: 1 sec.|nRa"+"nge: 700|nCooldown: 12 sec.|r")
 call LANG_A('SnQ1',2,0,"Sakanade: Slash, [|cffffcc00Level %d|r] (|cffffcc00Q|r)")
-call LANG_A('SnQ1',3,0,"Shunpo to the chosen enemy: the slash stuns and pushes him back a little. If the enemy is under W, Hirako appears behind him — the strike is stronger and stuns longer. Hirako is invulnerable and cannot be controlled during the whole move.|n|n|cFF00A5FF|nDamage: 75 + 2\\3\\4\\5\\6*|r|c003CFF3CAGI|r"+"|cFF00A5FF|nStrike from behind (enemy under W): +1*|r|c003CFF3CAGI|r|cFF00A5FF damage|nStun: 1 sec. (from behind — 2 sec.)|nPush: 150|nRange: 700|nCooldown: 12 sec.|r")
+call LANG_A('SnQ1',3,0,"Shunpo to the enemy and a slash: stuns and pushes a little. Enemy under W — a strike from behind: stronger and stuns longer. Hirako is invulnerable during the move.|n|n|cFF00A5FF|nDamage: 75 + 2\\3\\4\\5\\6*|r|c003CFF3CAGI|r|cFF00A5FF|nFrom behind: +1*|r|c003CFF3CAGI|r|cFF00A5FF, stun 2 sec.|nStun"+": 1 sec.|nRange: 700|nCooldown: 12 sec.|r")
 call LANG_A('SnW1',0,0,"Sakanade: Inverted World, [|cffffcc00Level 1|r] (|cffffcc00W|r)")
 call LANG_A('SnW1',0,1,"Sakanade: Inverted World, [|cffffcc00Level 2|r] (|cffffcc00W|r)")
 call LANG_A('SnW1',0,2,"Sakanade: Inverted World, [|cffffcc00Level 3|r] (|cffffcc00W|r)")
 call LANG_A('SnW1',0,3,"Sakanade: Inverted World, [|cffffcc00Level 4|r] (|cffffcc00W|r)")
 call LANG_A('SnW1',0,4,"Sakanade: Inverted World, [|cffffcc00Level 5|r] (|cffffcc00W|r)")
-call LANG_A('SnW1',1,0,"\"Fall, Sakanade\": Hirako spins Sakanade by its ring. Nearby enemies take damage and are briefly \"inverted\", and a sweet mist rises around Hirako. Enemies in the mist see the world upside down: move, attack and ability orders (point and unit) go the opposite way. The mist slows a little, and enem"+"y attacks in it miss with a 50% chance. The inversion has no effect under Imagine Breaker or Mare's Clear Sky, nor on those confused by T (T takes priority).|n|n|cFF00A5FF|nDamage: 3\\4\\5\\6\\7*|r|c003CFF3CAGI|r|cFF00A5FF|nStrike AoE: 350|nInversion after the strike: 1.25 sec.|nMist AoE: 500\\600\\"+"700\\800\\900|nMist duration: 3\\3.5\\4\\4.5\\5 sec.|nSlow in the mist: 20% move speed|nMiss in the mist: 50%|nCooldown: 22 sec.|r")
-call LANG_A('SnW1',1,1,"\"Fall, Sakanade\": Hirako spins Sakanade by its ring. Nearby enemies take damage and are briefly \"inverted\", and a sweet mist rises around Hirako. Enemies in the mist see the world upside down: move, attack and ability orders (point and unit) go the opposite way. The mist slows a little, and enem"+"y attacks in it miss with a 50% chance. The inversion has no effect under Imagine Breaker or Mare's Clear Sky, nor on those confused by T (T takes priority).|n|n|cFF00A5FF|nDamage: 3\\4\\5\\6\\7*|r|c003CFF3CAGI|r|cFF00A5FF|nStrike AoE: 350|nInversion after the strike: 1.25 sec.|nMist AoE: 500\\600\\"+"700\\800\\900|nMist duration: 3\\3.5\\4\\4.5\\5 sec.|nSlow in the mist: 20% move speed|nMiss in the mist: 50%|nCooldown: 22 sec.|r")
-call LANG_A('SnW1',1,2,"\"Fall, Sakanade\": Hirako spins Sakanade by its ring. Nearby enemies take damage and are briefly \"inverted\", and a sweet mist rises around Hirako. Enemies in the mist see the world upside down: move, attack and ability orders (point and unit) go the opposite way. The mist slows a little, and enem"+"y attacks in it miss with a 50% chance. The inversion has no effect under Imagine Breaker or Mare's Clear Sky, nor on those confused by T (T takes priority).|n|n|cFF00A5FF|nDamage: 3\\4\\5\\6\\7*|r|c003CFF3CAGI|r|cFF00A5FF|nStrike AoE: 350|nInversion after the strike: 1.25 sec.|nMist AoE: 500\\600\\"+"700\\800\\900|nMist duration: 3\\3.5\\4\\4.5\\5 sec.|nSlow in the mist: 20% move speed|nMiss in the mist: 50%|nCooldown: 22 sec.|r")
-call LANG_A('SnW1',1,3,"\"Fall, Sakanade\": Hirako spins Sakanade by its ring. Nearby enemies take damage and are briefly \"inverted\", and a sweet mist rises around Hirako. Enemies in the mist see the world upside down: move, attack and ability orders (point and unit) go the opposite way. The mist slows a little, and enem"+"y attacks in it miss with a 50% chance. The inversion has no effect under Imagine Breaker or Mare's Clear Sky, nor on those confused by T (T takes priority).|n|n|cFF00A5FF|nDamage: 3\\4\\5\\6\\7*|r|c003CFF3CAGI|r|cFF00A5FF|nStrike AoE: 350|nInversion after the strike: 1.25 sec.|nMist AoE: 500\\600\\"+"700\\800\\900|nMist duration: 3\\3.5\\4\\4.5\\5 sec.|nSlow in the mist: 20% move speed|nMiss in the mist: 50%|nCooldown: 22 sec.|r")
-call LANG_A('SnW1',1,4,"\"Fall, Sakanade\": Hirako spins Sakanade by its ring. Nearby enemies take damage and are briefly \"inverted\", and a sweet mist rises around Hirako. Enemies in the mist see the world upside down: move, attack and ability orders (point and unit) go the opposite way. The mist slows a little, and enem"+"y attacks in it miss with a 50% chance. The inversion has no effect under Imagine Breaker or Mare's Clear Sky, nor on those confused by T (T takes priority).|n|n|cFF00A5FF|nDamage: 3\\4\\5\\6\\7*|r|c003CFF3CAGI|r|cFF00A5FF|nStrike AoE: 350|nInversion after the strike: 1.25 sec.|nMist AoE: 500\\600\\"+"700\\800\\900|nMist duration: 3\\3.5\\4\\4.5\\5 sec.|nSlow in the mist: 20% move speed|nMiss in the mist: 50%|nCooldown: 22 sec.|r")
+call LANG_A('SnW1',1,0,"\"Fall, Sakanade\": Hirako draws the sword and spins Sakanade by its ring, then a mist grows around him and follows him. Enemies in the mist are inverted (orders go the opposite way), slowed and miss. Whoever removes the effect with Imagine Breaker, Clear Sky or Medusa is immune to it for 10 sec. T "+"confusion takes priority.|n|n|cFF00A5FF|nMist AoE: 500|nMist growth: 1 sec.|nDuration: 5 sec.|nSlow: 20% move speed|nMiss: 50%|nCast time: +1 sec. (Hirako is invulnerable)|nCooldown: 22 sec.|r")
+call LANG_A('SnW1',1,1,"\"Fall, Sakanade\": Hirako draws the sword and spins Sakanade by its ring, then a mist grows around him and follows him. Enemies in the mist are inverted (orders go the opposite way), slowed and miss. Whoever removes the effect with Imagine Breaker, Clear Sky or Medusa is immune to it for 10 sec. T "+"confusion takes priority.|n|n|cFF00A5FF|nMist AoE: 600|nMist growth: 1.25 sec.|nDuration: 5 sec.|nSlow: 20% move speed|nMiss: 50%|nCast time: +1 sec. (Hirako is invulnerable)|nCooldown: 22 sec.|r")
+call LANG_A('SnW1',1,2,"\"Fall, Sakanade\": Hirako draws the sword and spins Sakanade by its ring, then a mist grows around him and follows him. Enemies in the mist are inverted (orders go the opposite way), slowed and miss. Whoever removes the effect with Imagine Breaker, Clear Sky or Medusa is immune to it for 10 sec. T "+"confusion takes priority.|n|n|cFF00A5FF|nMist AoE: 700|nMist growth: 1.5 sec.|nDuration: 5 sec.|nSlow: 20% move speed|nMiss: 50%|nCast time: +1 sec. (Hirako is invulnerable)|nCooldown: 22 sec.|r")
+call LANG_A('SnW1',1,3,"\"Fall, Sakanade\": Hirako draws the sword and spins Sakanade by its ring, then a mist grows around him and follows him. Enemies in the mist are inverted (orders go the opposite way), slowed and miss. Whoever removes the effect with Imagine Breaker, Clear Sky or Medusa is immune to it for 10 sec. T "+"confusion takes priority.|n|n|cFF00A5FF|nMist AoE: 800|nMist growth: 1.75 sec.|nDuration: 5 sec.|nSlow: 20% move speed|nMiss: 50%|nCast time: +1 sec. (Hirako is invulnerable)|nCooldown: 22 sec.|r")
+call LANG_A('SnW1',1,4,"\"Fall, Sakanade\": Hirako draws the sword and spins Sakanade by its ring, then a mist grows around him and follows him. Enemies in the mist are inverted (orders go the opposite way), slowed and miss. Whoever removes the effect with Imagine Breaker, Clear Sky or Medusa is immune to it for 10 sec. T "+"confusion takes priority.|n|n|cFF00A5FF|nMist AoE: 900|nMist growth: 2 sec.|nDuration: 5 sec.|nSlow: 20% move speed|nMiss: 50%|nCast time: +1 sec. (Hirako is invulnerable)|nCooldown: 22 sec.|r")
 call LANG_A('SnW1',2,0,"Sakanade: Inverted World, [|cffffcc00Level %d|r] (|cffffcc00W|r)")
-call LANG_A('SnW1',3,0,"\"Fall, Sakanade\": Hirako spins Sakanade by its ring. Nearby enemies take damage and are briefly \"inverted\", and a sweet mist rises around Hirako. Enemies in the mist see the world upside down: move, attack and ability orders (point and unit) go the opposite way. The mist slows a little, and enem"+"y attacks in it miss with a 50% chance. The inversion has no effect under Imagine Breaker or Mare's Clear Sky, nor on those confused by T (T takes priority).|n|n|cFF00A5FF|nDamage: 3\\4\\5\\6\\7*|r|c003CFF3CAGI|r|cFF00A5FF|nStrike AoE: 350|nInversion after the strike: 1.25 sec.|nMist AoE: 500\\600\\"+"700\\800\\900|nMist duration: 3\\3.5\\4\\4.5\\5 sec.|nSlow in the mist: 20% move speed|nMiss in the mist: 50%|nCooldown: 22 sec.|r")
+call LANG_A('SnW1',3,0,"\"Fall, Sakanade\": Hirako draws the sword and spins Sakanade by its ring, then a mist grows around him and follows him. Enemies in the mist are inverted (orders go the opposite way), slowed and miss. Whoever removes the effect with Imagine Breaker, Clear Sky or Medusa is immune to it for 10 sec. T "+"confusion takes priority.|n|n|cFF00A5FF|nMist AoE: 500\\600\\700\\800\\900|nMist growth: 1\\1.25\\1.5\\1.75\\2 sec.|nDuration: 5 sec.|nSlow: 20% move speed|nMiss: 50%|nCast time: +1 sec. (Hirako is invulnerable)|nCooldown: 22 sec.|r")
 call LANG_A('SnE1',0,0,"Hollow Mask, [|cffffcc00Level 1|r] (|cffffcc00E|r)")
 call LANG_A('SnE1',0,1,"Hollow Mask, [|cffffcc00Level 2|r] (|cffffcc00E|r)")
 call LANG_A('SnE1',0,2,"Hollow Mask, [|cffffcc00Level 3|r] (|cffffcc00E|r)")
 call LANG_A('SnE1',0,3,"Hollow Mask, [|cffffcc00Level 4|r] (|cffffcc00E|r)")
 call LANG_A('SnE1',0,4,"Hollow Mask, [|cffffcc00Level 5|r] (|cffffcc00E|r)")
-call LANG_A('SnE1',1,0,"The Visored Hollow mask: bonus damage and attack speed, regeneration. While the mask is on, the E button fires a Cero.|n|n|cFF00A5FF|nDamage bonus: 5\\7.5\\10\\12.5\\15%|nAttack speed: +20\\25\\30\\35\\40%|nRegeneration: 1% max HP per sec.|nMask reserve: 8\\9\\10\\11\\12 sec. (spent while worn; 3 se"+"c. needed to put it on)|nRefill without the mask: +1 sec. every 5 sec. and +1 sec. per 5*|r|c003CFF3CAGI|r|cFF00A5FF damage dealt; full at round start|nCooldown: 3 sec.|r")
-call LANG_A('SnE1',1,1,"The Visored Hollow mask: bonus damage and attack speed, regeneration. While the mask is on, the E button fires a Cero.|n|n|cFF00A5FF|nDamage bonus: 5\\7.5\\10\\12.5\\15%|nAttack speed: +20\\25\\30\\35\\40%|nRegeneration: 1% max HP per sec.|nMask reserve: 8\\9\\10\\11\\12 sec. (spent while worn; 3 se"+"c. needed to put it on)|nRefill without the mask: +1 sec. every 5 sec. and +1 sec. per 5*|r|c003CFF3CAGI|r|cFF00A5FF damage dealt; full at round start|nCooldown: 3 sec.|r")
-call LANG_A('SnE1',1,2,"The Visored Hollow mask: bonus damage and attack speed, regeneration. While the mask is on, the E button fires a Cero.|n|n|cFF00A5FF|nDamage bonus: 5\\7.5\\10\\12.5\\15%|nAttack speed: +20\\25\\30\\35\\40%|nRegeneration: 1% max HP per sec.|nMask reserve: 8\\9\\10\\11\\12 sec. (spent while worn; 3 se"+"c. needed to put it on)|nRefill without the mask: +1 sec. every 5 sec. and +1 sec. per 5*|r|c003CFF3CAGI|r|cFF00A5FF damage dealt; full at round start|nCooldown: 3 sec.|r")
-call LANG_A('SnE1',1,3,"The Visored Hollow mask: bonus damage and attack speed, regeneration. While the mask is on, the E button fires a Cero.|n|n|cFF00A5FF|nDamage bonus: 5\\7.5\\10\\12.5\\15%|nAttack speed: +20\\25\\30\\35\\40%|nRegeneration: 1% max HP per sec.|nMask reserve: 8\\9\\10\\11\\12 sec. (spent while worn; 3 se"+"c. needed to put it on)|nRefill without the mask: +1 sec. every 5 sec. and +1 sec. per 5*|r|c003CFF3CAGI|r|cFF00A5FF damage dealt; full at round start|nCooldown: 3 sec.|r")
-call LANG_A('SnE1',1,4,"The Visored Hollow mask: bonus damage and attack speed, regeneration. While the mask is on, the E button fires a Cero.|n|n|cFF00A5FF|nDamage bonus: 5\\7.5\\10\\12.5\\15%|nAttack speed: +20\\25\\30\\35\\40%|nRegeneration: 1% max HP per sec.|nMask reserve: 8\\9\\10\\11\\12 sec. (spent while worn; 3 se"+"c. needed to put it on)|nRefill without the mask: +1 sec. every 5 sec. and +1 sec. per 5*|r|c003CFF3CAGI|r|cFF00A5FF damage dealt; full at round start|nCooldown: 3 sec.|r")
+call LANG_A('SnE1',1,0,"Hollow mask: damage, attack speed and regeneration. While the mask is on, E is Cero.|n|n|cFF00A5FF|nDamage bonus: 5%|nAttack speed: +20%|nRegeneration: 1% max HP per sec.|nMask reserve: 8 sec. (3 sec. to put it on)|nRecovery: +1 sec. every 5 sec. and from damage without the mask|nCooldown: 3 sec.|r")
+call LANG_A('SnE1',1,1,"Hollow mask: damage, attack speed and regeneration. While the mask is on, E is Cero.|n|n|cFF00A5FF|nDamage bonus: 7.5%|nAttack speed: +25%|nRegeneration: 1% max HP per sec.|nMask reserve: 9 sec. (3 sec. to put it on)|nRecovery: +1 sec. every 5 sec. and from damage without the mask|nCooldown: 3 sec.|"+"r")
+call LANG_A('SnE1',1,2,"Hollow mask: damage, attack speed and regeneration. While the mask is on, E is Cero.|n|n|cFF00A5FF|nDamage bonus: 10%|nAttack speed: +30%|nRegeneration: 1% max HP per sec.|nMask reserve: 10 sec. (3 sec. to put it on)|nRecovery: +1 sec. every 5 sec. and from damage without the mask|nCooldown: 3 sec.|"+"r")
+call LANG_A('SnE1',1,3,"Hollow mask: damage, attack speed and regeneration. While the mask is on, E is Cero.|n|n|cFF00A5FF|nDamage bonus: 12.5%|nAttack speed: +35%|nRegeneration: 1% max HP per sec.|nMask reserve: 11 sec. (3 sec. to put it on)|nRecovery: +1 sec. every 5 sec. and from damage without the mask|nCooldown: 3 sec"+".|r")
+call LANG_A('SnE1',1,4,"Hollow mask: damage, attack speed and regeneration. While the mask is on, E is Cero.|n|n|cFF00A5FF|nDamage bonus: 15%|nAttack speed: +40%|nRegeneration: 1% max HP per sec.|nMask reserve: 12 sec. (3 sec. to put it on)|nRecovery: +1 sec. every 5 sec. and from damage without the mask|nCooldown: 3 sec.|"+"r")
 call LANG_A('SnE1',2,0,"Hollow Mask, [|cffffcc00Level %d|r] (|cffffcc00E|r)")
-call LANG_A('SnE1',3,0,"The Visored Hollow mask: bonus damage and attack speed, regeneration. While the mask is on, the E button fires a Cero.|n|n|cFF00A5FF|nDamage bonus: 5\\7.5\\10\\12.5\\15%|nAttack speed: +20\\25\\30\\35\\40%|nRegeneration: 1% max HP per sec.|nMask reserve: 8\\9\\10\\11\\12 sec. (spent while worn; 3 se"+"c. needed to put it on)|nRefill without the mask: +1 sec. every 5 sec. and +1 sec. per 5*|r|c003CFF3CAGI|r|cFF00A5FF damage dealt; full at round start|nCooldown: 3 sec.|r")
+call LANG_A('SnE1',3,0,"Hollow mask: damage, attack speed and regeneration. While the mask is on, E is Cero.|n|n|cFF00A5FF|nDamage bonus: 5\\7.5\\10\\12.5\\15%|nAttack speed: +20\\25\\30\\35\\40%|nRegeneration: 1% max HP per sec.|nMask reserve: 8\\9\\10\\11\\12 sec. (3 sec. to put it on)|nRecovery: +1 sec. every 5 sec. and"+" from damage without the mask|nCooldown: 3 sec.|r")
 call LANG_A('SnR1',0,0,"Hadō #91: Senju Kōten Taihō, [|cffffcc00Level 1|r] (|cffffcc00R|r)")
 call LANG_A('SnR1',0,1,"Hadō #91: Senju Kōten Taihō, [|cffffcc00Level 2|r] (|cffffcc00R|r)")
 call LANG_A('SnR1',0,2,"Hadō #91: Senju Kōten Taihō, [|cffffcc00Level 3|r] (|cffffcc00R|r)")
 call LANG_A('SnR1',0,3,"Hadō #91: Senju Kōten Taihō, [|cffffcc00Level 4|r] (|cffffcc00R|r)")
 call LANG_A('SnR1',0,4,"Hadō #91: Senju Kōten Taihō, [|cffffcc00Level 5|r] (|cffffcc00R|r)")
-call LANG_A('SnR1',1,0,"Hado #91 \"Senju Koten Taiho\" without incantation: 14 orange spheres light up around Hirako and launch almost at once into the area: the first to the centre, the rest around it. Enemies hit are slowed. Each enemy takes damage once per cast. Hirako is invulnerable and cannot be controlled during the"+" volley.|n|n|cFF00A5FF|nDamage: 5\\6\\7\\8\\9*|r|c003CFF3CAGI|r|cFF00A5FF|nSlow: 50% move and attack speed, 3 sec.|nRange: 1200|nAoE: 450 (missile 220)|nCooldown: 16 sec.|r")
-call LANG_A('SnR1',1,1,"Hado #91 \"Senju Koten Taiho\" without incantation: 14 orange spheres light up around Hirako and launch almost at once into the area: the first to the centre, the rest around it. Enemies hit are slowed. Each enemy takes damage once per cast. Hirako is invulnerable and cannot be controlled during the"+" volley.|n|n|cFF00A5FF|nDamage: 5\\6\\7\\8\\9*|r|c003CFF3CAGI|r|cFF00A5FF|nSlow: 50% move and attack speed, 3 sec.|nRange: 1200|nAoE: 450 (missile 220)|nCooldown: 16 sec.|r")
-call LANG_A('SnR1',1,2,"Hado #91 \"Senju Koten Taiho\" without incantation: 14 orange spheres light up around Hirako and launch almost at once into the area: the first to the centre, the rest around it. Enemies hit are slowed. Each enemy takes damage once per cast. Hirako is invulnerable and cannot be controlled during the"+" volley.|n|n|cFF00A5FF|nDamage: 5\\6\\7\\8\\9*|r|c003CFF3CAGI|r|cFF00A5FF|nSlow: 50% move and attack speed, 3 sec.|nRange: 1200|nAoE: 450 (missile 220)|nCooldown: 16 sec.|r")
-call LANG_A('SnR1',1,3,"Hado #91 \"Senju Koten Taiho\" without incantation: 14 orange spheres light up around Hirako and launch almost at once into the area: the first to the centre, the rest around it. Enemies hit are slowed. Each enemy takes damage once per cast. Hirako is invulnerable and cannot be controlled during the"+" volley.|n|n|cFF00A5FF|nDamage: 5\\6\\7\\8\\9*|r|c003CFF3CAGI|r|cFF00A5FF|nSlow: 50% move and attack speed, 3 sec.|nRange: 1200|nAoE: 450 (missile 220)|nCooldown: 16 sec.|r")
-call LANG_A('SnR1',1,4,"Hado #91 \"Senju Koten Taiho\" without incantation: 14 orange spheres light up around Hirako and launch almost at once into the area: the first to the centre, the rest around it. Enemies hit are slowed. Each enemy takes damage once per cast. Hirako is invulnerable and cannot be controlled during the"+" volley.|n|n|cFF00A5FF|nDamage: 5\\6\\7\\8\\9*|r|c003CFF3CAGI|r|cFF00A5FF|nSlow: 50% move and attack speed, 3 sec.|nRange: 1200|nAoE: 450 (missile 220)|nCooldown: 16 sec.|r")
+call LANG_A('SnR1',1,0,"Hado #91: spheres around Hirako rush into the area. The central sphere deals the damage to the whole area, those hit are slowed. Hirako is invulnerable during the volley.|n|n|cFF00A5FF|nDamage: 5*|r|c003CFF3CAGI|r|cFF00A5FF|nAoE: 650|nSlow: 50% move and attack speed, 3 sec.|nRange: 1200|nCooldown: 2"+"2 sec.|r")
+call LANG_A('SnR1',1,1,"Hado #91: spheres around Hirako rush into the area. The central sphere deals the damage to the whole area, those hit are slowed. Hirako is invulnerable during the volley.|n|n|cFF00A5FF|nDamage: 6*|r|c003CFF3CAGI|r|cFF00A5FF|nAoE: 650|nSlow: 50% move and attack speed, 3 sec.|nRange: 1200|nCooldown: 2"+"2 sec.|r")
+call LANG_A('SnR1',1,2,"Hado #91: spheres around Hirako rush into the area. The central sphere deals the damage to the whole area, those hit are slowed. Hirako is invulnerable during the volley.|n|n|cFF00A5FF|nDamage: 7*|r|c003CFF3CAGI|r|cFF00A5FF|nAoE: 650|nSlow: 50% move and attack speed, 3 sec.|nRange: 1200|nCooldown: 2"+"2 sec.|r")
+call LANG_A('SnR1',1,3,"Hado #91: spheres around Hirako rush into the area. The central sphere deals the damage to the whole area, those hit are slowed. Hirako is invulnerable during the volley.|n|n|cFF00A5FF|nDamage: 8*|r|c003CFF3CAGI|r|cFF00A5FF|nAoE: 650|nSlow: 50% move and attack speed, 3 sec.|nRange: 1200|nCooldown: 2"+"2 sec.|r")
+call LANG_A('SnR1',1,4,"Hado #91: spheres around Hirako rush into the area. The central sphere deals the damage to the whole area, those hit are slowed. Hirako is invulnerable during the volley.|n|n|cFF00A5FF|nDamage: 9*|r|c003CFF3CAGI|r|cFF00A5FF|nAoE: 650|nSlow: 50% move and attack speed, 3 sec.|nRange: 1200|nCooldown: 2"+"2 sec.|r")
 call LANG_A('SnR1',2,0,"Hadō #91: Senju Kōten Taihō, [|cffffcc00Level %d|r] (|cffffcc00R|r)")
-call LANG_A('SnR1',3,0,"Hado #91 \"Senju Koten Taiho\" without incantation: 14 orange spheres light up around Hirako and launch almost at once into the area: the first to the centre, the rest around it. Enemies hit are slowed. Each enemy takes damage once per cast. Hirako is invulnerable and cannot be controlled during the"+" volley.|n|n|cFF00A5FF|nDamage: 5\\6\\7\\8\\9*|r|c003CFF3CAGI|r|cFF00A5FF|nSlow: 50% move and attack speed, 3 sec.|nRange: 1200|nAoE: 450 (missile 220)|nCooldown: 16 sec.|r")
+call LANG_A('SnR1',3,0,"Hado #91: spheres around Hirako rush into the area. The central sphere deals the damage to the whole area, those hit are slowed. Hirako is invulnerable during the volley.|n|n|cFF00A5FF|nDamage: 5\\6\\7\\8\\9*|r|c003CFF3CAGI|r|cFF00A5FF|nAoE: 650|nSlow: 50% move and attack speed, 3 sec.|nRange: 1200|"+"nCooldown: 22 sec.|r")
 call LANG_A('SnEc',0,0,"Cero, [|cffffcc00Level 1|r] (|cffffcc00E|r)")
 call LANG_A('SnEc',0,1,"Cero, [|cffffcc00Level 2|r] (|cffffcc00E|r)")
 call LANG_A('SnEc',0,2,"Cero, [|cffffcc00Level 3|r] (|cffffcc00E|r)")
 call LANG_A('SnEc',0,3,"Cero, [|cffffcc00Level 4|r] (|cffffcc00E|r)")
 call LANG_A('SnEc',0,4,"Cero, [|cffffcc00Level 5|r] (|cffffcc00E|r)")
-call LANG_A('SnEc',1,0,"A yellow Cero fires a beam forward, stunning and knocking back those hit. The button replaces E while the Hollow mask is on. Hirako is invulnerable and cannot be controlled while charging and firing.|n|n|cFF00A5FF|nDamage: 3\\4\\5\\6\\7*|r|c003CFF3CAGI|r|cFF00A5FF|nStun: 2 sec.|nBeam length: 1500|nK"+"nockback: 300|nCooldown: 14 sec.|r")
-call LANG_A('SnEc',1,1,"A yellow Cero fires a beam forward, stunning and knocking back those hit. The button replaces E while the Hollow mask is on. Hirako is invulnerable and cannot be controlled while charging and firing.|n|n|cFF00A5FF|nDamage: 3\\4\\5\\6\\7*|r|c003CFF3CAGI|r|cFF00A5FF|nStun: 2 sec.|nBeam length: 1500|nK"+"nockback: 300|nCooldown: 14 sec.|r")
-call LANG_A('SnEc',1,2,"A yellow Cero fires a beam forward, stunning and knocking back those hit. The button replaces E while the Hollow mask is on. Hirako is invulnerable and cannot be controlled while charging and firing.|n|n|cFF00A5FF|nDamage: 3\\4\\5\\6\\7*|r|c003CFF3CAGI|r|cFF00A5FF|nStun: 2 sec.|nBeam length: 1500|nK"+"nockback: 300|nCooldown: 14 sec.|r")
-call LANG_A('SnEc',1,3,"A yellow Cero fires a beam forward, stunning and knocking back those hit. The button replaces E while the Hollow mask is on. Hirako is invulnerable and cannot be controlled while charging and firing.|n|n|cFF00A5FF|nDamage: 3\\4\\5\\6\\7*|r|c003CFF3CAGI|r|cFF00A5FF|nStun: 2 sec.|nBeam length: 1500|nK"+"nockback: 300|nCooldown: 14 sec.|r")
-call LANG_A('SnEc',1,4,"A yellow Cero fires a beam forward, stunning and knocking back those hit. The button replaces E while the Hollow mask is on. Hirako is invulnerable and cannot be controlled while charging and firing.|n|n|cFF00A5FF|nDamage: 3\\4\\5\\6\\7*|r|c003CFF3CAGI|r|cFF00A5FF|nStun: 2 sec.|nBeam length: 1500|nK"+"nockback: 300|nCooldown: 14 sec.|r")
+call LANG_A('SnEc',1,0,"Cero like Ichigo's: a beam ahead stuns and knocks back those hit. Hirako is invulnerable during the charge and the beam.|n|n|cFF00A5FF|nDamage: 3*|r|c003CFF3CAGI|r|cFF00A5FF|nStun: 2.5 sec.|nBeam length: 2200|nKnockback: 300|nCooldown: 14 sec.|r")
+call LANG_A('SnEc',1,1,"Cero like Ichigo's: a beam ahead stuns and knocks back those hit. Hirako is invulnerable during the charge and the beam.|n|n|cFF00A5FF|nDamage: 4*|r|c003CFF3CAGI|r|cFF00A5FF|nStun: 2.5 sec.|nBeam length: 2200|nKnockback: 300|nCooldown: 14 sec.|r")
+call LANG_A('SnEc',1,2,"Cero like Ichigo's: a beam ahead stuns and knocks back those hit. Hirako is invulnerable during the charge and the beam.|n|n|cFF00A5FF|nDamage: 5*|r|c003CFF3CAGI|r|cFF00A5FF|nStun: 2.5 sec.|nBeam length: 2200|nKnockback: 300|nCooldown: 14 sec.|r")
+call LANG_A('SnEc',1,3,"Cero like Ichigo's: a beam ahead stuns and knocks back those hit. Hirako is invulnerable during the charge and the beam.|n|n|cFF00A5FF|nDamage: 6*|r|c003CFF3CAGI|r|cFF00A5FF|nStun: 2.5 sec.|nBeam length: 2200|nKnockback: 300|nCooldown: 14 sec.|r")
+call LANG_A('SnEc',1,4,"Cero like Ichigo's: a beam ahead stuns and knocks back those hit. Hirako is invulnerable during the charge and the beam.|n|n|cFF00A5FF|nDamage: 7*|r|c003CFF3CAGI|r|cFF00A5FF|nStun: 2.5 sec.|nBeam length: 2200|nKnockback: 300|nCooldown: 14 sec.|r")
 call LANG_A('SnEc',2,0,"Cero, [|cffffcc00Level %d|r] (|cffffcc00E|r)")
-call LANG_A('SnEc',3,0,"A yellow Cero fires a beam forward, stunning and knocking back those hit. The button replaces E while the Hollow mask is on. Hirako is invulnerable and cannot be controlled while charging and firing.|n|n|cFF00A5FF|nDamage: 3\\4\\5\\6\\7*|r|c003CFF3CAGI|r|cFF00A5FF|nStun: 2 sec.|nBeam length: 1500|nK"+"nockback: 300|nCooldown: 14 sec.|r")
-call LANG_A('SnT1',1,0,"Bankai: a bud closes around Hirako and releases a mist. Hirako is invulnerable and the mask reserve does not drain. Every second everyone in the mist except Hirako is confused: enemies look like allies and vice versa. On the first confusion a hero instantly uses a random ability on the nearest \"ene"+"my\" (taunt). Kills by confused units are credited to Hirako. Cancelling the cast returns mana and cooldown. No effect under Imagine Breaker or Mare's Clear Sky.|n|n|cFF00A5FF|nMist AoE: 1000|nDuration: 6 sec.|nConfusion: 1.2 sec. (every second)|nTaunt: 1.5 sec.|nCast time: +0.3 sec.|nCooldown: 90 s"+"ec.|r|n|r")
-call LANG_A('SnT1',3,0,"Bankai: a bud closes around Hirako and releases a mist. Hirako is invulnerable and the mask reserve does not drain. Every second everyone in the mist except Hirako is confused: enemies look like allies and vice versa. On the first confusion a hero instantly uses a random ability on the nearest \"ene"+"my\" (taunt). Kills by confused units are credited to Hirako. Cancelling the cast returns mana and cooldown. No effect under Imagine Breaker or Mare's Clear Sky.|n|n|cFF00A5FF|nMist AoE: 1000|nDuration: 6 sec.|nConfusion: 1.2 sec. (every second)|nTaunt: 1.5 sec.|nCast time: +0.3 sec.|nCooldown: 90 s"+"ec.|r|n|r")
+call LANG_A('SnEc',3,0,"Cero like Ichigo's: a beam ahead stuns and knocks back those hit. Hirako is invulnerable during the charge and the beam.|n|n|cFF00A5FF|nDamage: 3\\4\\5\\6\\7*|r|c003CFF3CAGI|r|cFF00A5FF|nStun: 2.5 sec.|nBeam length: 2200|nKnockback: 300|nCooldown: 14 sec.|r")
+call LANG_A('ToEc',0,0,"Cero, [|cffffcc00Level 1|r] (|cffffcc00E|r)")
+call LANG_A('ToEc',0,1,"Cero, [|cffffcc00Level 2|r] (|cffffcc00E|r)")
+call LANG_A('ToEc',0,2,"Cero, [|cffffcc00Level 3|r] (|cffffcc00E|r)")
+call LANG_A('ToEc',0,3,"Cero, [|cffffcc00Level 4|r] (|cffffcc00E|r)")
+call LANG_A('ToEc',0,4,"Cero, [|cffffcc00Level 5|r] (|cffffcc00E|r)")
+call LANG_A('ToEc',1,0,"Green Cero from the mask: a beam ahead stuns and knocks back those hit. Tōsen is invulnerable during the charge and the beam.|n|n|cFF00A5FF|nDamage: 3*|r|c003CFF3CAGI|r|cFF00A5FF|nStun: 2.5 sec.|nBeam length: 2200|nKnockback: 300|nCooldown: 14 sec.|r")
+call LANG_A('ToEc',1,1,"Green Cero from the mask: a beam ahead stuns and knocks back those hit. Tōsen is invulnerable during the charge and the beam.|n|n|cFF00A5FF|nDamage: 4*|r|c003CFF3CAGI|r|cFF00A5FF|nStun: 2.5 sec.|nBeam length: 2200|nKnockback: 300|nCooldown: 14 sec.|r")
+call LANG_A('ToEc',1,2,"Green Cero from the mask: a beam ahead stuns and knocks back those hit. Tōsen is invulnerable during the charge and the beam.|n|n|cFF00A5FF|nDamage: 5*|r|c003CFF3CAGI|r|cFF00A5FF|nStun: 2.5 sec.|nBeam length: 2200|nKnockback: 300|nCooldown: 14 sec.|r")
+call LANG_A('ToEc',1,3,"Green Cero from the mask: a beam ahead stuns and knocks back those hit. Tōsen is invulnerable during the charge and the beam.|n|n|cFF00A5FF|nDamage: 6*|r|c003CFF3CAGI|r|cFF00A5FF|nStun: 2.5 sec.|nBeam length: 2200|nKnockback: 300|nCooldown: 14 sec.|r")
+call LANG_A('ToEc',1,4,"Green Cero from the mask: a beam ahead stuns and knocks back those hit. Tōsen is invulnerable during the charge and the beam.|n|n|cFF00A5FF|nDamage: 7*|r|c003CFF3CAGI|r|cFF00A5FF|nStun: 2.5 sec.|nBeam length: 2200|nKnockback: 300|nCooldown: 14 sec.|r")
+call LANG_A('ToEc',2,0,"Cero, [|cffffcc00Level %d|r] (|cffffcc00E|r)")
+call LANG_A('ToEc',3,0,"Green Cero from the mask: a beam ahead stuns and knocks back those hit. Tōsen is invulnerable during the charge and the beam.|n|n|cFF00A5FF|nDamage: 3\\4\\5\\6\\7*|r|c003CFF3CAGI|r|cFF00A5FF|nStun: 2.5 sec.|nBeam length: 2200|nKnockback: 300|nCooldown: 14 sec.|r")
+call LANG_A('SnT1',1,0,"Bankai: a bud around Hirako releases a mist (W ends). Hirako is invulnerable and immovable, the mask is not spent. Every second everyone in the mist except Hirako is confused: enemies look like allies and vice versa; on the first confusion — a random ability at the nearest \"enemy\". All damage of"+" the confused to Hirako's enemies is dealt by Hirako himself. No effect under Imagine Breaker or Clear Sky.|n|n|cFF00A5FF|nMist AoE: 1000|nDuration: 6 sec.|nConfusion: 1.2 sec.|nCast time: +0.3 sec.|nCooldown: 70 sec.|r")
+call LANG_A('SnT1',3,0,"Bankai: a bud around Hirako releases a mist (W ends). Hirako is invulnerable and immovable, the mask is not spent. Every second everyone in the mist except Hirako is confused: enemies look like allies and vice versa; on the first confusion — a random ability at the nearest \"enemy\". All damage of"+" the confused to Hirako's enemies is dealt by Hirako himself. No effect under Imagine Breaker or Clear Sky.|n|n|cFF00A5FF|nMist AoE: 1000|nDuration: 6 sec.|nConfusion: 1.2 sec.|nCast time: +0.3 sec.|nCooldown: 70 sec.|r")
 call LANG_A('SnTc',0,0,"Cancel Bankai (|cffffcc00T|r)")
 call LANG_A('SnTc',1,0,"|cFF00A5FFEnds the bankai early: the bud opens, the mist fades.|r")
 call LANG_A('SnD1',1,0,"Hirako spins Sakanade by its ring: a wave of scent around him. Nearby enemies take damage and are briefly inverted: their movement and turning go the opposite way.|n|n|cFF00A5FF|nDamage: 3*|r|c003CFF3CAGI|r|cFF00A5FF|nInversion: 1.25 sec.|nAoE: 400|nCooldown: 20 sec.|r")
+endfunction
+function LANG_Data51 takes nothing returns nothing
 call LANG_A('SnD1',3,0,"Hirako spins Sakanade by its ring: a wave of scent around him. Nearby enemies take damage and are briefly inverted: their movement and turning go the opposite way.|n|n|cFF00A5FF|nDamage: 3*|r|c003CFF3CAGI|r|cFF00A5FF|nInversion: 1.25 sec.|nAoE: 400|nCooldown: 20 sec.|r")
-call LANG_A('SnF1',1,0,"An instant step to a point. Recharges twice as fast from inside the W mist.|n|n|cFF00A5FF|nRange: 600|nCooldown: 8 sec. (4 sec. from the mist)|r")
-call LANG_A('SnF1',3,0,"An instant step to a point. Recharges twice as fast from inside the W mist.|n|n|cFF00A5FF|nRange: 600|nCooldown: 8 sec. (4 sec. from the mist)|r")
-call LANG_A('SnG1',1,0,"Hirako vanishes, leaving his afterimage in front of the target: the target freezes and stares at it. Hirako appears behind while the afterimage slashes from the front (\"pincer\", the target is briefly inverted as by W), then Hirako vanishes and rushes into the target from the opposite side for the "+"second strike. The first strike pushes. A finisher: damage grows with the target's missing HP. Hirako cannot be controlled until the strike ends.|n|n|cFF00A5FF|nDamage: 2 strikes of 1.5*|r|c003CFF3CAGI|r|cFF00A5FF + 7.5% of the target's missing HP|nRange: 600|nCooldown: 45 sec.|r")
-call LANG_A('SnG1',3,0,"Hirako vanishes, leaving his afterimage in front of the target: the target freezes and stares at it. Hirako appears behind while the afterimage slashes from the front (\"pincer\", the target is briefly inverted as by W), then Hirako vanishes and rushes into the target from the opposite side for the "+"second strike. The first strike pushes. A finisher: damage grows with the target's missing HP. Hirako cannot be controlled until the strike ends.|n|n|cFF00A5FF|nDamage: 2 strikes of 1.5*|r|c003CFF3CAGI|r|cFF00A5FF + 7.5% of the target's missing HP|nRange: 600|nCooldown: 45 sec.|r")
+call LANG_A('SnF1',1,0,"An instant step to a point. From the W mist it recharges twice as fast.|n|n|cFF00A5FF|nRange: 600|nCooldown: 8 sec. (4 sec. from the mist)|r")
+call LANG_A('SnF1',3,0,"An instant step to a point. From the W mist it recharges twice as fast.|n|n|cFF00A5FF|nRange: 600|nCooldown: 8 sec. (4 sec. from the mist)|r")
+call LANG_A('SnG1',1,0,"Hirako vanishes leaving his afterimage before the target, the target freezes. Strike 1: Hirako behind and the afterimage in front. Strike 2: Hirako rushes in from the opposite side, a small Sakanade mist around the target (inversion as from W). Damage grows with missing HP, the first strike pushes. "+"Sakanade is in his hand during the move.|n|n|cFF00A5FF|nDamage: 2 strikes of 1.5*|r|c003CFF3CAGI|r|cFF00A5FF + 7.5% of missing HP|nSmall mist: AoE 300, 2.5 sec.|nRange: 600|nCooldown: 45 sec.|r")
+call LANG_A('SnG1',3,0,"Hirako vanishes leaving his afterimage before the target, the target freezes. Strike 1: Hirako behind and the afterimage in front. Strike 2: Hirako rushes in from the opposite side, a small Sakanade mist around the target (inversion as from W). Damage grows with missing HP, the first strike pushes. "+"Sakanade is in his hand during the move.|n|n|cFF00A5FF|nDamage: 2 strikes of 1.5*|r|c003CFF3CAGI|r|cFF00A5FF + 7.5% of missing HP|nSmall mist: AoE 300, 2.5 sec.|nRange: 600|nCooldown: 45 sec.|r")
 call LANG_It('I000',0,"Gauntlets of Power")
 call LANG_It('I000',1,"Gauntlets of Power")
 call LANG_It('I001',1,"Crown of Nobility")
@@ -289088,8 +289662,6 @@ call LANG_It('I002',0,"Bracelets of Power")
 call LANG_It('I002',1,"Bracelets of Power")
 call LANG_It('I002',2,"Increase Hero Power by 6 and ost. |c00FFFF66AllStat|r by 3.")
 call LANG_It('I002',3,"Increase Hero Power by 6 and ost. |c00FFFF66AllStat|r by 3.")
-endfunction
-function LANG_Data51 takes nothing returns nothing
 call LANG_It('I003',0,"Scholar's Robe")
 call LANG_It('I003',1,"Scholar's Robe")
 call LANG_It('I003',3,"Increases the Hero's Mind by 3.")
@@ -289323,11 +289895,13 @@ call LANG_It('I01P',2,"Increased attack power by 80, |c00FFFF66AllStat|r by 25, 
 call LANG_It('I01P',3,"Increased attack power by 80, |c00FFFF66AllStat|r by 25, Passive: Mortal Strike - 20% chance to deal 2x damage.|n|nCooldown: 4 sec.|n|nRequires: Tempered Sword, Recipe.")
 call LANG_It('I01Q',0,"Shusui")
 call LANG_It('I01Q',1,"Shusui")
-call LANG_It('I01Q',2,"Attack power increased by 100, |c00FFFF66AllStat|r by 30, 20% chance to deal 2x damage, Passive: Deathwave - 20% chance to deal 1.5*|c003CFF3CAGI|r damage around the target in 500 AoE.|n|nActive: \"Quick Strikes\" - moves towards the enemy, striking and activating the passive ability of Shusui, Fang"+" and Dark Excalibur (if not on cooldown) if the owner has them.|n|nRange: 600|nCooldown: 4 sec.")
-call LANG_It('I01Q',3,"Attack power increased by 100, |c00FFFF66AllStat|r by 30, 20% chance to deal 2x damage, Passive: Deathwave - 20% chance to deal 1.5*|c003CFF3CAGI|r damage around the target in 500 AoE.|n|nActive: \"Quick Strikes\" - moves towards the enemy, striking and activating the passive ability of Shusui, Fang"+" and Dark Excalibur (if not on cooldown) if the owner has them.|n|nRange: 600|nCooldown: 4 sec.")
+call LANG_It('I01Q',2,"Attack power increased by 100, |c00FFFF66AllStat|r by 30, 20% chance to deal 2x damage, Passive: Deathwave - 20% chance to deal 3*|c003CFF3CAGI|r damage around the target in 500 AoE.|n|nActive: \"Quick Strikes\" - moves towards the enemy, striking and activating the passive ability of Shusui, Fang a"+"nd Dark Excalibur (if not on cooldown) if the owner has them.|n|nRange: 600|nCooldown: 4 sec.")
+call LANG_It('I01Q',3,"Attack power increased by 100, |c00FFFF66AllStat|r by 30, 20% chance to deal 2x damage, Passive: Deathwave - 20% chance to deal 3*|c003CFF3CAGI|r damage around the target in 500 AoE.|n|nActive: \"Quick Strikes\" - moves towards the enemy, striking and activating the passive ability of Shusui, Fang a"+"nd Dark Excalibur (if not on cooldown) if the owner has them.|n|nRange: 600|nCooldown: 4 sec.")
 call LANG_It('I01R',0,"Shusui (Recipe)")
 call LANG_It('I01R',1,"Shusui (Recipe)")
 call LANG_It('I01R',2,"Attack power increased by 100, |c00FFFF66AllStat|r by 30, 20% chance to deal 2x damage. Passive: Death Wave - 20% chance to deal 1.5*|c003CFF3CAGI|r damage in 500 AoE.|nActive: \"Quick Strikes\" - moves towards the enemy, striking and activating the passive ability of Shusui, Fang and Dark Excalibur"+" (if not on cooldown) if the owner has them.|nRange: 600|nCooldown: 4 sec.|n|nRequires: Sandai Kitetsu, Recipe.")
+endfunction
+function LANG_Data52 takes nothing returns nothing
 call LANG_It('I01R',3,"Increases attack damage by 100, |c00FFFF66AllStat|r by 30, 20% chance to deal 2x damage. Passive: \"Deadly Wave\" - 20% chance to deal 1.5*|c003CFF3CAGI|r damage in 500 AoE.|nActive: \"Quick Strikes\" - moves towards the enemy, striking and activating the passive ability of Shusui, Fang and Dark Exc"+"alibur (if not on cooldown) if the owner has them.|nRange: 600|nCooldown: 4 sec.|n|nRequires: Sandai Kitetsu, Recipe.")
 call LANG_It('I01S',0,"Dark Excalibur")
 call LANG_It('I01S',1,"Dark Excalibur")
@@ -289340,8 +289914,6 @@ call LANG_It('I01T',3,"Increase attack power by 125, |c00FF5555STR|r by 40, |c00
 call LANG_It('I01U',0,"Fang")
 call LANG_It('I01U',1,"Fang")
 call LANG_It('I01U',2,"Attack power increased by 100, |c00FFFF66AllStat|r by 30, 20% chance to deal 2x damage, Passive: \"Toxic Poison\" - 25% chance to inflict a powerful poison on the enemy, dealing 2.5*|c0077FFFFINT|r over 6 sec and slowing MS by 50% for 1 sec.|n|nActive: \"Quick Strikes\" - moves towards the enemy, st"+"riking and activating the passive ability of Shusui, Fang and Dark Excalibur (if not on cooldown) if the owner has them.|n|nRange: 600|nCooldown: 4 sec.")
-endfunction
-function LANG_Data52 takes nothing returns nothing
 call LANG_It('I01U',3,"Attack power increased by 100, |c00FFFF66AllStat|r by 30, 20% chance to deal 2x damage, Passive: \"Toxic Poison\" - 25% chance to inflict a powerful poison on the enemy, dealing 2.5*|c0077FFFFINT|r over 6 sec and slowing MS by 50% for 1 sec.|n|nActive: \"Quick Strikes\" - moves towards the enemy, st"+"riking and activating the passive ability of Shusui, Fang and Dark Excalibur (if not on cooldown) if the owner has them.|n|nRange: 600|nCooldown: 4 sec.")
 call LANG_It('I01V',0,"Fang (Recipe)")
 call LANG_It('I01V',1,"Fang (Recipe)")
@@ -289580,6 +290152,8 @@ call LANG_It('I03G',1,"Vongola Gloves Level 1")
 call LANG_It('I03G',2,"Increase hero's AS by 45%.")
 call LANG_It('I03G',3,"Increase hero's AS by 45%.")
 call LANG_It('I03H',0,"Vongola Gloves Level 2")
+endfunction
+function LANG_Data53 takes nothing returns nothing
 call LANG_It('I03H',1,"Vongola Gloves Level 2")
 call LANG_It('I03H',2,"Hero's AS increased by 75%, |c00FFFF66AllStat|r by 6.")
 call LANG_It('I03H',3,"Hero's AS increased by 75%, |c00FFFF66AllStat|r by 6.")
@@ -289592,8 +290166,6 @@ call LANG_It('I03J',1,"Vongola Gloves Level 4")
 call LANG_It('I03J',2,"Hero's AS increased by 135%, |c00FFFF66AllStat|r by 18.")
 call LANG_It('I03J',3,"Hero's AS increased by 135%, |c00FFFF66AllStat|r by 18.")
 call LANG_It('I03K',0,"Vongola Gloves Level 5")
-endfunction
-function LANG_Data53 takes nothing returns nothing
 call LANG_It('I03K',1,"Vongola Gloves Level 5")
 call LANG_It('I03K',2,"Hero's AS increased by 175%, |c00FFFF66AllStat|r by 24.")
 call LANG_It('I03K',3,"Hero's AS increased by 175%, |c00FFFF66AllStat|r by 24.")
@@ -289832,6 +290404,8 @@ call LANG_It('I04Z',1,"Samehada (Recipe)")
 call LANG_It('I04Z',2,"Increase |c00FF5555STR|r and |c0077FFFFINT|r by 35, attack by 125. (50 for bleeding), increased AS by 50%. Switch between modes: 1) Mana burn 8% of current +heal 2) Pure damage 150+20% of auto attack.|n|nRequires: Sandai Kitetsu, Recipe.")
 call LANG_It('I04Z',3,"Increase |c00FF5555STR|r and |c0077FFFFINT|r by 35, attack by 125. (50 for bleeding), increased AS by 50%. Mode Switching: 1) Mana Break 8% of current + heal 2) True Damage 150+20% of auto attack.|n|nRequires: Sandai Kitetsu, Recipe.")
 call LANG_It('I050',0,"Gegetsuburi")
+endfunction
+function LANG_Data54 takes nothing returns nothing
 call LANG_It('I050',1,"Gegetsuburi")
 call LANG_It('I050',2,"Increase |c00FFFF66AllStat|r by 30, increase attack by 30, each attack deals 80 additional damage. pure damage, penetrating resistances, but not shields.|n |nPassive: \"Stunning Blow\" - 20% chance to stun for 1 sec. (0.2 if Imagine Breaker is active).|nIf the owner has not hit anyone for 10 sec., t"+"he chance increases to 100%.|nCD: 1 sec.")
 call LANG_It('I050',3,"Increase |c00FFFF66AllStat|r by 30, increase attack by 30, each attack deals 80 additional damage. pure damage, penetrating resistances, but not shields.|n |nPassive: \"Stunning Blow\" - 20% chance to stun for 1 sec. (0.2 if Imagine Breaker is active).|nIf the owner has not hit anyone for 10 sec., t"+"he chance increases to 100%.|nCD: 1 sec.")
@@ -289844,8 +290418,6 @@ call LANG_It('I052',1,"Staff of the West Wind (Recipe)")
 call LANG_It('I052',2,"Increases |c00FFFF66AllStat|r by 30.|nActive ability: \"Western Wind\" - throws up yourself or an enemy for 2.5 sec. into the air, making him invulnerable.|n|cFFFF0000Cannot be used on enemies affected by Imagine Breaker.|r|n|nRange: 1000|nCooldown: 20 sec.|n|nRequires: Rank A Dark Staff, Wind Spher"+"e, Recipe.")
 call LANG_It('I052',3,"Increases |c00FFFF66AllStat|r by 30.|nActive ability: \"Western Wind\" - throws up yourself or an enemy for 2.5 sec. into the air, making him invulnerable.|n|cFFFF0000Cannot be used on enemies affected by Imagine Breaker.|r|n|nRange: 1000|nCooldown: 20 sec.|n|nRequires: Rank A Dark Staff, Wind Spher"+"e, Recipe.")
 call LANG_It('I053',0,"Death Scythe (Recipe)")
-endfunction
-function LANG_Data54 takes nothing returns nothing
 call LANG_It('I053',1,"Death Scythe (Recipe)")
 call LANG_It('I053',2,"Increase |c003CFF3CAGI|r by 50, HP by 500, Attack by 125. Sweeping Strikes - 70% splash in 600. AoE|n|nCooldown: 25 sec.|n|nActive: \"Kishin Hunt\"|nRequires: Anbu Sword, Rank B Sword, Recipe.")
 call LANG_It('I053',3,"Increase |c003CFF3CAGI|r by 50, HP by 500, Attack by 125. Sweeping Strikes - 70% splash in 600. AoE|n|nCooldown: 25 sec.|n|nActive: \"Kishin Hunt\"|nRequires: Anbu Sword, Rank B Sword, Recipe.")
@@ -290084,6 +290656,8 @@ call LANG_It('I06R',3,"Increase |c00FFFF66AllStat|r by 30, and increase allies' 
 call LANG_It('I06S',0,"Kaleidoscepter Ruby (Recipe)")
 call LANG_It('I06S',1,"Kaleidoscepter Ruby (Recipe)")
 call LANG_It('I06S',2,"Increase |c00FFFF66AllStat|r by 35, reduce the magic resistance of enemies by 15% within 1000.|n|nActive Ability: \"Slash\"|n|nRequires: Sealed Dark Staff, Recipe")
+endfunction
+function LANG_Data55 takes nothing returns nothing
 call LANG_It('I06S',3,"Increase |c00FFFF66AllStat|r by 35, reduce the magic resistance of enemies by 15% within 1000.|n|nActive Ability: \"Slash\"|n|nRequires: Sealed Dark Staff, Recipe")
 call LANG_It('I06T',0,"Kaleidoscepter Sapphire (Recipe)")
 call LANG_It('I06T',1,"Kaleidoscepter Sapphire (Recipe)")
@@ -290096,8 +290670,6 @@ call LANG_It('I06U',3,"MS +20%, Regeneration +20, DEF +5, AoE +1500, |c00FFFF66A
 call LANG_It('I06V',0,"Quincy Set (Recipe)")
 call LANG_It('I06V',1,"Quincy Set (Recipe)")
 call LANG_It('I06V',2,"Active ability: \"The Balance\" - hangs a mark on the enemy, which increases the duration of control by 50%.|nIf the enemy uses an item, the mark disappears, but they will lose the ability to use items and abilities for 3 seconds.|n|nDuration: 7 sec.|nCDR: 30 sec.")
-endfunction
-function LANG_Data55 takes nothing returns nothing
 call LANG_It('I06V',3,"Active ability: \"The Balance\" - hangs a mark on the enemy, which increases the duration of control by 50%.|nIf the enemy uses an item, the mark disappears, but they will lose the ability to use items and abilities for 3 seconds.|n|nDuration: 7 sec.|nCDR: 30 sec.")
 call LANG_It('I06W',0,"Prelati's Grimoire")
 call LANG_It('I06W',1,"Prelati's Grimoire")
@@ -290336,6 +290908,8 @@ call LANG_U('H01S',0,"Dante")
 call LANG_U('H01S',2,"Dante")
 call LANG_U('H01S',3,"Jiraiya is a hermit from Mount Myoboku, taught by Minato and Naruto, is a member of the \"Legendary Trinity of Konoha\".")
 call LANG_U('H027',3,"Oma Shu is a 17-year-old Tokyo high school student who got the ability to control the voids of people and saved the whole world from the \"Apocalypse Virus\".|n|nRole: Caster, Carry, Support, Disabler|n|n")
+endfunction
+function LANG_Data56 takes nothing returns nothing
 call LANG_U('H02B',3,"Accelerator is Academy City's strongest esper, his main ability is vector redirection.|n|nRole: Durable, Caster, Disabler|n|n")
 call LANG_U('H02C',0,"Accelerator")
 call LANG_U('H02C',2,"Accelerator")
@@ -290348,8 +290922,6 @@ call LANG_U('H02H',3,"Son Goku is a pure-blooded low-class Saiyan who was sent t
 call LANG_U('HJi1',3,"Jiren the Gray is the pride of the 11th Universe. The strongest mortal, surpassing even the Gods of Destruction in strength and a member of the Pride Cavalry, a squad that monitors the order of the universe.|n|nRole: Caster, Durable, Disabler|n|n")
 call LANG_U('HGoj',3,"Satoru Gojo is a 28-year-old teacher at Tokyo Magic College.|n|nRole: Caster|n|n")
 call LANG_U('H02I',3,"Vegeta the Fourth, the eldest son of King Vegeta the Third, was in the royal army before the extinction of his race.|n|nRole: Caster, Durable, Carry|n|n")
-endfunction
-function LANG_Data56 takes nothing returns nothing
 call LANG_U('H02J',3,"Ichimaru Gin, former captain of the 3rd Division, joined Aizen and then betrayed him.|n|nRole: Caster, Exhauster, Escape, Swordsman|n|n")
 call LANG_U('H02K',3,"The ex-Captain of the 9th Division, blind from birth, assisted Aizen.|n|nRole: Swordsman, Carry, Disabler, Initiator|n|n")
 call LANG_U('H02L',3,"Broly is a legendary Super Saiyan born at the same time as Goku. Baby Broly was 50 times stronger than an ordinary Saiyan, so they wanted to kill him and his father.|n|nRole: Carry, Durable, Caster, Disabler, Initiator|n|n")
@@ -290588,6 +291160,8 @@ call LANG_U('HRem',3,"Remilia Scarlet — a 500-year-old vampire, mistress of th
 call LANG_U('HSui',3,"Suigintou — the first doll of Rozen Maiden: black wings, a rapier and the mirror world N.|n(Abilities and effects ported from the Chinese map bof, by AlTrOn)|n|nRole: Carry, Nuker, Disabler.|n")
 call LANG_U('HShn',3,"Captain of the 5th Division and leader of the Visored — Shinigami who gained a Hollow's power. A lazy-looking joker who is calculating and cunning in battle: he lures the enemy into deception and strikes once they can no longer tell friend from foe.|n|nRole: Initiator, Disabler, Caster, Carry.|n")
 call LANG_B('BRRV',0,"Rain Aura")
+endfunction
+function LANG_Data57 takes nothing returns nothing
 call LANG_B('BRRV',1,"Aura of rain.")
 call LANG_B('BMUR',0,"Wood Dragon")
 call LANG_B('BMUR',1,"Warrior gradually loses chakra")
@@ -290600,8 +291174,6 @@ call LANG_B('B007',1,"This warrior is slow.")
 call LANG_B('B00B',0,"Frozen")
 call LANG_B('B00C',1,"This warrior is protected by a mantle.")
 call LANG_B('B00I',1,"This warrior is slow.")
-endfunction
-function LANG_Data57 takes nothing returns nothing
 call LANG_B('B00J',1,"This warrior is under the spell of Orochimaru.")
 call LANG_B('B00M',1,"This warrior is paralyzed.")
 call LANG_B('B00N',1,"This warrior is under the spell ''The Realm of Humans''. His defense and attack power is well above the norm.")
@@ -290840,6 +291412,8 @@ call LANG_B('BKQ2',1,"This unit is slowed AS/MS: -50%")
 call LANG_B('BSiT',1,"Blocks damage below 2*AGI")
 call LANG_B('BLam',1,"Empowers the owner's abilities")
 call LANG_B('BI01',0,"This unit is protected by wind")
+endfunction
+function LANG_Data58 takes nothing returns nothing
 call LANG_B('BI01',1,"This unit is protected by wind")
 call LANG_B('BMRG',1,"This unit is hypnotized. Incoming/Outgoing magic damage: +30/-30%")
 call LANG_B('BbB1',1,"Aging: slows movement and attack speed.")
@@ -290852,8 +291426,6 @@ call LANG_F("BONUS_ATTACK_SPEED"," - Each point increases attack speed|n - Each 
 call LANG_F("BONUS_MANAREGEN"," - Each point increases mana regeneration|n - Each point increases magic resistance by 0.05%")
 call LANG_F("COLON_LUMBER","Victory points.")
 call LANG_F("DAMAGETIP_CHAOS","Heroes deal less damage to fortified objects.")
-endfunction
-function LANG_Data58 takes nothing returns nothing
 call LANG_F("DAMAGETIP_CHAOS_V0C","Heroes deal less damage to fortified objects.")
 call LANG_F("DAMAGETIP_CHAOS_V0M","Heroes deal less damage to fortified objects.")
 call LANG_F("DAMAGE_CHAOS","Type: |Cffffcc00Hero|R")
