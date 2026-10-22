@@ -132040,10 +132040,15 @@ set e=FirstOfGroup(g)
 exitwhen e==null
 if Condition_Base(p,e) and not IsUnitInGroup(e,hit) then
 call GroupAddUnit(hit,e)
+// реверс (22 окт): цель в стойке — рывок кончается, Тоусен отпущен, стойка бьёт его
+if Bof_Rev(u,e) then
+set fin=true
+else
 call myCustomDamage(u,e,dmg,false,false,null,null,null)
 call DestroyEffect(AddSpecialEffectTarget("Tousen_Sonic.mdl",e,"chest"))
 if UnitIsAlive(e) then
 call SetControlToUnit(u,e,1.,"stun")
+endif
 endif
 endif
 call GroupRemoveUnit(g,e)
@@ -132058,6 +132063,7 @@ else
 set fin=true
 endif
 if fin then
+call Bof_RevEnd(u)
 call SetUnitFlyHeight(u,40,0)
 call SetUnitTimeScale(u,1.)
 call SetUnitPathing(u,true)
@@ -132105,6 +132111,7 @@ call SaveInteger(h,id,6,IMinBJ(30,IMaxBJ(16,16+R2I(SquareRoot((GetSpellTargetX()
 call SaveGroupHandle(h,id,8,CreateGroup())
 // v7: рывок сквозь юнитов
 call SetUnitPathing(u,false)
+call SaveBoolean(HH,GetHandleId(u),SH_bofRevd,false) // реверс: флаг гасится при старте
 call TimerStart(t,0.02,true,function TousenFETick)
 set t=null
 set u=null
@@ -132322,18 +132329,22 @@ local real sp
 local boolean fin=false
 call SaveInteger(h,id,2,tk)
 call SaveInteger(h,id,9,pt)
-if not UnitIsAlive(u) or udg_B==false or not UnitIsAlive(e) or (k==0 and tk>75) then
+// реверс (22 окт): цель в стойке развернула удар — G кончается, Тоусен отпущен
+if not UnitIsAlive(u) or udg_B==false or not UnitIsAlive(e) or (k==0 and tk>75) or Bof_RevEnd(u) then
 set fin=true
 elseif k>=4 and ph==1 and pt>=12 then
 set fin=true
 call PauseUnit(e,false)
+if not Bof_Rev(u,e) then
 call myCustomDamage(u,e,8*GetHeroAgi(u,true),false,false,null,null,null)
 call DestroyEffect(AddSpecialEffect("war3mapImported\\BrolyRHitGreen.mdl",ex,ey))
 if UnitIsAlive(e) then
 call SetControlToUnit(u,e,2.,"stun")
 endif
 endif
+endif
 if fin then
+call Bof_RevEnd(u)
 call DestroyEffect(LoadEffectHandle(h,id,5))
 call UnitSpeed(u,1)
 call SetUnitFlyHeight(u,40,0)
@@ -132365,7 +132376,9 @@ call SetSpecialEffectScale(bj_lastCreatedEffect,0.35)
 call SetSpecialEffectVertexColour(bj_lastCreatedEffect,90,255,110,255)
 call DestroyEffect(bj_lastCreatedEffect)
 endif
-if SR(GetUnitX(u),GetUnitY(u),ex,ey)<100 then
+if SR(GetUnitX(u),GetUnitY(u),ex,ey)<100 and Bof_Rev(u,e) then
+// реверс: удара нет, на следующем тике Bof_RevEnd закончит G
+elseif SR(GetUnitX(u),GetUnitY(u),ex,ey)<100 then
 // удар: цель на паузе, эффекты, дальше пролёт тем же курсом
 if not LoadBoolean(h,id,6) then
 call PauseUnit(e,true)
@@ -132433,6 +132446,7 @@ call SaveInteger(h,id,2,0) // v2: счётчик тиков
 call SaveInteger(h,id,7,0)
 call SaveInteger(h,id,8,0) // v3: фаза рывка
 call SaveInteger(h,id,9,0)
+call SaveBoolean(HH,GetHandleId(u),SH_bofRevd,false) // реверс: флаг гасится при старте
 call SaveInteger(h,id,4,GetRandomInt(1,2))
 //call SaveEffectHandle(h,id,5,AddSpecialEffectTarget("Kisame\\file00002180.mdl",u,"origin"))
 call SaveEffectHandle(h,id,5,AddSpecialEffectTarget("Zoro\\afbgreencharge.mdl",u,"origin")) // зелёная аура (22 окт)
