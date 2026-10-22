@@ -135844,10 +135844,10 @@ if UnitIsAlive(u) and UnitIsAlive(c) and Condition_Base(OwnerOf(u),c) then
 set ga=Atan2(GetUnitY(c)-GetUnitY(u),GetUnitX(c)-GetUnitX(u))
 set gd=SR(GetUnitX(u),GetUnitY(u),GetUnitX(c),GetUnitY(c))
 if gd>100 and gk<40 then
-// анимация последнего удара — ещё на подлёте, с 300 до цели (22 окт; было — на касании)
-if gd<=300 and not LoadBoolean(h,id,6) then
+// анимация последнего удара — ещё на подлёте, с 400 до цели, x1.8 (22 окт; было с 300 x1.6, ещё раньше — на касании)
+if gd<=400 and not LoadBoolean(h,id,6) then
 call SaveBoolean(h,id,6,true)
-call ShinjiAnimFor(u,22,1.6,1.15)
+call ShinjiAnimFor(u,22,1.8,1.)
 endif
 if ModuloInteger(gk,2)==0 and not LoadBoolean(h,id,6) then
 call ShinjiQAfter(OwnerOf(u),GetUnitX(u),GetUnitY(u),ga*bj_RADTODEG)
