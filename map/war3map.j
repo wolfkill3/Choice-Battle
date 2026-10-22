@@ -130320,6 +130320,7 @@ if LoadBoolean(HH,GetHandleId(u),SH_TouHollow) then
 call SaveBoolean(HH,GetHandleId(u),SH_TouHollow,false)
 call SetUnitModel(u,"[H321]KanameTousen2.mdl")
 call SetUnitScale(u,1.,1.,1.)
+call SetUnitFlyHeight(u,0,0)
 call SetWidgetPortrait(u,LoadStr(HH,GetHandleId(u),SH_TouPortrait))
 // облик мухи (E2): W и T назад, новые W / T и бонус поля убираются, «Слепота» возвращается (22 окт)
 call UnitRemoveAbility(u,'ToFW')
@@ -130990,6 +130991,10 @@ call SetUnitStringField(u,UNIT_SF_ICON_NORMAL,"ReplaceableTextures\\CommandButto
 call IH('H02K',u,"ReplaceableTextures\\CommandButtons\\BTNTousenFlyHero.blp")
 call SetUnitVertexColor(u,255,255,255,255)
 call SetUnitScale(u,1.5,1.5,1.5) // муха крупнее (22 окт)
+// муха парит над землёй (бег в модели заменён зависанием)
+call UnitAddAbility(u,'Amrf')
+call UnitRemoveAbility(u,'Amrf')
+call SetUnitFlyHeight(u,40,0)
 call UnitRemoveAbility(u,'ToEf')
 call UnitAddAbility(u,'ToFE')
 call SetUnitAbilityLevel(u,'ToFE',IMaxBJ(1,GetUnitAbilityLevel(u,'A0JA')))
@@ -131171,7 +131176,7 @@ endif
 if tk<fn and UnitIsAlive(u) and udg_B==true then
 call SetUnitX(u,LoadReal(h,id,1)+(LoadReal(h,id,3)-LoadReal(h,id,1))*fe)
 call SetUnitY(u,LoadReal(h,id,2)+(LoadReal(h,id,4)-LoadReal(h,id,2))*fe)
-call SetUnitFlyHeight(u,fh,0)
+call SetUnitFlyHeight(u,40+fh,0) // от высоты парения (v6)
 // зелёный шлейф — каждый тик, мельче (v4)
 if true then
 set fx=AddSpecialEffect("Others\\WindCirclefaster.mdl",GetUnitX(u),GetUnitY(u))
@@ -131181,7 +131186,7 @@ call SetSpecialEffectVertexColour(fx,90,255,110,255)
 call DestroyEffect(fx)
 endif
 else
-call SetUnitFlyHeight(u,0,0)
+call SetUnitFlyHeight(u,40,0) // приземление на высоту парения (v6)
 call SetUnitTimeScale(u,1.)
 call PauseUnit(u,false)
 call SetUnitInvulnerable(u,false)
