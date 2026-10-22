@@ -131146,8 +131146,12 @@ local integer tk=LoadInteger(h,id,5)+1
 // v4: длительность и высота дуги от расстояния (h 6 / 7), движение с плавным разгоном и торможением
 local integer fn=IMaxBJ(1,LoadInteger(h,id,6))
 local real f=I2R(tk)/fn
-local real fe=f*f*(3-2*f)
-local real fh=LoadReal(h,id,7)*Sin(f*bj_PI)
+// v5: фазы — взлёт (f < 0.25), полёт на высоте с покачиванием, пикирование (f > 0.75)
+local real fq=RMinBJ(1.,f/0.25)
+local real fc=RMinBJ(1.,RMaxBJ(0.,(f-0.25)/0.5))
+local real fd=RMaxBJ(0.,(f-0.75)/0.25)
+local real fe=0.05*fq*fq*(3-2*fq)+0.9*fc*fc*(3-2*fc)+0.05*fd
+local real fh=LoadReal(h,id,7)*fq*fq*(3-2*fq)*(1-fd*fd)+20*Sin(fc*2*bj_PI)*(1-fd)
 local player p=OwnerOf(u)
 local real dmg=(2+GetUnitAbilityLevel(u,'ToFE'))*GetHeroAgi(u,true)
 local group g
@@ -131156,7 +131160,13 @@ local effect fx
 call SaveInteger(h,id,5,tk)
 if tk==1 then
 call PauseUnit(u,true)
+// взлёт — зависание (Stand 1), полёт — рывок (8 Dash) с середины (v5)
+call SetUnitAnimationByIndex(u,10)
+call SetUnitTimeScale(u,1.6)
+endif
+if tk==R2I(fn*0.25)+1 then
 call SetUnitAnimationByIndex(u,7)
+call SetUnitTimeScale(u,0.7)
 endif
 if tk<fn and UnitIsAlive(u) and udg_B==true then
 call SetUnitX(u,LoadReal(h,id,1)+(LoadReal(h,id,3)-LoadReal(h,id,1))*fe)
@@ -131172,6 +131182,7 @@ call DestroyEffect(fx)
 endif
 else
 call SetUnitFlyHeight(u,0,0)
+call SetUnitTimeScale(u,1.)
 call PauseUnit(u,false)
 call SetUnitInvulnerable(u,false)
 if UnitIsAlive(u) and udg_B==true then
@@ -131243,8 +131254,11 @@ call SaveReal(h,id,3,GetSpellTargetX())
 call SaveReal(h,id,4,GetSpellTargetY())
 call SaveInteger(h,id,5,0)
 // v4: 0.5..1 с и дуга 180..380 по расстоянию
-call SaveInteger(h,id,6,IMinBJ(34,IMaxBJ(17,17+R2I(SquareRoot((GetSpellTargetX()-GetUnitX(u))*(GetSpellTargetX()-GetUnitX(u))+(GetSpellTargetY()-GetUnitY(u))*(GetSpellTargetY()-GetUnitY(u)))/55.))))
-call SaveReal(h,id,7,RMinBJ(380.,180.+0.22*SquareRoot((GetSpellTargetX()-GetUnitX(u))*(GetSpellTargetX()-GetUnitX(u))+(GetSpellTargetY()-GetUnitY(u))*(GetSpellTargetY()-GetUnitY(u)))))
+//call SaveInteger(h,id,6,IMinBJ(34,IMaxBJ(17,17+R2I(SquareRoot((GetSpellTargetX()-GetUnitX(u))*(GetSpellTargetX()-GetUnitX(u))+(GetSpellTargetY()-GetUnitY(u))*(GetSpellTargetY()-GetUnitY(u)))/55.))))
+// v5: 0.9..1.5 с (30..50 тиков по 0.03) по расстоянию
+call SaveInteger(h,id,6,IMinBJ(50,IMaxBJ(30,30+R2I(SquareRoot((GetSpellTargetX()-GetUnitX(u))*(GetSpellTargetX()-GetUnitX(u))+(GetSpellTargetY()-GetUnitY(u))*(GetSpellTargetY()-GetUnitY(u)))/45.))))
+//call SaveReal(h,id,7,RMinBJ(380.,180.+0.22*SquareRoot((GetSpellTargetX()-GetUnitX(u))*(GetSpellTargetX()-GetUnitX(u))+(GetSpellTargetY()-GetUnitY(u))*(GetSpellTargetY()-GetUnitY(u)))))
+call SaveReal(h,id,7,RMinBJ(320.,220.+0.11*SquareRoot((GetSpellTargetX()-GetUnitX(u))*(GetSpellTargetX()-GetUnitX(u))+(GetSpellTargetY()-GetUnitY(u))*(GetSpellTargetY()-GetUnitY(u)))))
 set bj_lastCreatedEffect=AddSpecialEffect(EffectID[19],GetUnitX(u),GetUnitY(u))
 call SetSpecialEffectScale(bj_lastCreatedEffect,0.5)
 call SetSpecialEffectVertexColour(bj_lastCreatedEffect,60,255,80,255)
