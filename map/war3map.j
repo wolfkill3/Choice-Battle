@@ -2319,6 +2319,7 @@ constant integer SH_TouCharge=StringHash("TouCharge") // 22 окт: идёт з�
 constant integer SH_TouStr=StringHash("TouStr") // 22 окт: +15% характеристик мухи (сколько добавлено)
 constant integer SH_TouAgi=StringHash("TouAgi")
 constant integer SH_TouInt=StringHash("TouInt")
+constant integer SH_TouRegen=StringHash("TouRegen") // 22 окт: регенерация мухи, доля макс. HP в сек.
 constant integer SH_ShnWId=StringHash("ShnWId")
 constant integer SH_ShnMask=StringHash("ShnMask")
 constant integer SH_ShnMaskDmg=StringHash("ShnMaskDmg")
@@ -46707,6 +46708,7 @@ if cmb!=true then
         call IH('H02I',u,"war3mapImported\\BTNVegeta.blp")
         call IH('H02J',u,"ReplaceableTextures\\CommandButtons\\BTNGinPort.blp")
         call IH('H02K',u,"war3mapImported\\BTNKanameTousen.blp")
+        call IH('H0TF',u,"ReplaceableTextures\\CommandButtons\\BTNTousenFlyHero.blp")
         call IH('H02L',u,"war3mapImported\\BTNBroly.blp")
         call IH('H02M',u,"ReplaceableTextures\\CommandButtons\\BTNAizen.blp")
         call IH('H12M',u,"ReplaceableTextures\\CommandButtons\\BTNAizenTYW.blp")
@@ -48400,6 +48402,14 @@ if GetUnitTypeId(u) == 'H03Q' then
     call UnitAddAbility(u, 'S191')
     call IssueImmediateOrder(u, "bearform")
     call UnitRemoveAbility(u, 'S191')
+endif
+// Тоусен-муха (H0TF) -> Тоусен (22 окт)
+if GetUnitTypeId(u) == 'H0TF' then
+    call UnitAddAbility(u, 'ToMB')
+    call IssueImmediateOrder(u, "bearform")
+    call UnitRemoveAbility(u, 'ToMB')
+    call UnitRemoveAbility(u, 'ToRg')
+    call SetUnitFlyHeight(u,0,0)
 endif
 if GetUnitTypeId(u) == 'H02K' then
     call UnitMakeAbilityPermanent(u,false,'ToE1')
@@ -59959,7 +59969,7 @@ exitwhen i>=10
         if GetUnitTypeId( Hero[i] )=='HFla' and LoadBoolean(HH,GetHandleId(Hero[i]),SH_FlaState) then
             call SaveInteger(HH,GetHandleId(Hero[i]),SH_FlaCharges,3)
         endif
-        if GetUnitTypeId( Hero[i] )=='HShn' or GetUnitTypeId( Hero[i] )=='H02K' then
+        if GetUnitTypeId( Hero[i] )=='HShn' or GetUnitTypeId( Hero[i] )=='H02K' or GetUnitTypeId( Hero[i] )=='H0TF' then
             call SaveReal(HH,GetHandleId(Hero[i]),SH_ShnMaskRes,99.)
             // Хирако T: в начале раунда 10 сек. перезарядки (22 окт)
             if GetUnitAbilityLevel(Hero[i],'SnT1')>0 then
@@ -130328,10 +130338,18 @@ endfunction
 function TousenHollowOff takes unit u returns nothing
 if LoadBoolean(HH,GetHandleId(u),SH_TouHollow) then
 call SaveBoolean(HH,GetHandleId(u),SH_TouHollow,false)
-call SetUnitModel(u,"[H321]KanameTousen2.mdl")
-call SetUnitScale(u,1.,1.,1.)
+//call SetUnitModel(u,"[H321]KanameTousen2.mdl")
+//call SetUnitScale(u,1.,1.,1.)
+// назад сменой юнита H0TF -> H02K (22 окт); у мёртвого — в RemoveTransformation в начале раунда
+if GetUnitTypeId(u)=='H0TF' and UnitIsAlive(u) then
+call UnitAddAbility(u,'ToMB')
+call IssueImmediateOrder(u,"bearform")
+call UnitRemoveAbility(u,'ToMB')
+endif
+call UnitRemoveAbility(u,'ToRg')
+call RemoveSavedReal(HH,GetHandleId(u),SH_TouRegen)
 call SetUnitFlyHeight(u,0,0)
-call SetWidgetPortrait(u,LoadStr(HH,GetHandleId(u),SH_TouPortrait))
+//call SetWidgetPortrait(u,LoadStr(HH,GetHandleId(u),SH_TouPortrait)) // портрет — из типа (22 окт)
 // облик мухи (E2): W и T назад, новые W / T и бонус поля убираются, «Слепота» возвращается (22 окт)
 call UnitRemoveAbility(u,'ToFW')
 call UnitRemoveAbility(u,'ToFT')
@@ -130347,7 +130365,7 @@ call RemoveSavedInteger(HH,GetHandleId(u),SH_TouStr)
 call RemoveSavedInteger(HH,GetHandleId(u),SH_TouAgi)
 call RemoveSavedInteger(HH,GetHandleId(u),SH_TouInt)
 if LoadStr(HH,GetHandleId(u),SH_TouIcon)!=null and LoadStr(HH,GetHandleId(u),SH_TouIcon)!="" then
-call SetUnitStringField(u,UNIT_SF_ICON_NORMAL,LoadStr(HH,GetHandleId(u),SH_TouIcon))
+//call SetUnitStringField(u,UNIT_SF_ICON_NORMAL,LoadStr(HH,GetHandleId(u),SH_TouIcon))
 endif
 call IH('H02K',u,"war3mapImported\\BTNKanameTousen.blp")
 call EnableUnitAbility(u,'A0J8',true,true)
@@ -130386,6 +130404,7 @@ local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
 local unit u=LoadUnitHandle(h,id,0)
 local real r=LoadReal(HH,GetHandleId(u),SH_ShnMaskRes)
+local real rg
 // в облике пустого (G) маска не тратится и не снимается до конца раунда / гибели (22 окт)
 local boolean ho=LoadBoolean(HH,GetHandleId(u),SH_TouHollow)
 if not IsUnitPaused(u) and not ho then
@@ -130393,7 +130412,26 @@ set r=r-0.1
 endif
 call SaveReal(HH,GetHandleId(u),SH_ShnMaskRes,RMaxBJ(r,0.))
 if (r>0. or ho) and UnitIsAlive(u) and udg_B==true and LoadBoolean(HH,GetHandleId(u),SH_ShnMask) then
+if ho then
+// муха (22 окт): регенерация падает на 0.05% в сек.; в плюсе — зелёный бонус регенерации (ToRg, 5 HP/с за уровень), в минусе — отнимает HP
+set rg=LoadReal(HH,GetHandleId(u),SH_TouRegen)-0.00005
+call SaveReal(HH,GetHandleId(u),SH_TouRegen,rg)
+if rg>0 then
+if GetUnitAbilityLevel(u,'ToRg')==0 then
+call UnitAddAbility(u,'ToRg')
+call UnitMakeAbilityPermanent(u,true,'ToRg')
+endif
+call SetUnitAbilityLevel(u,'ToRg',IMinBJ(60,IMaxBJ(1,R2I(rg*GetUnitState(u,UNIT_STATE_MAX_LIFE)/5.+0.5))))
+else
+if GetUnitAbilityLevel(u,'ToRg')>0 then
+call UnitMakeAbilityPermanent(u,false,'ToRg')
+call UnitRemoveAbility(u,'ToRg')
+endif
+call SetUnitState(u,UNIT_STATE_LIFE,RMaxBJ(1.,GetUnitState(u,UNIT_STATE_LIFE)+rg*0.1*GetUnitState(u,UNIT_STATE_MAX_LIFE)))
+endif
+else
 call SetUnitState(u,UNIT_STATE_LIFE,GetUnitState(u,UNIT_STATE_LIFE)+0.0015*GetUnitState(u,UNIT_STATE_MAX_LIFE))
+endif
 else
 if LoadBoolean(HH,GetHandleId(u),SH_ShnMask) then
 call TousenEOff(u)
@@ -130457,6 +130495,7 @@ call DisableUnitAbility(u,'A0JA',true,true)
 //endif
 // 22 окт: в маске на месте E — E2, превращение в муху (серо — только в облике мухи, E3); до 25-го уровня кнопка серая
 call UnitAddAbility(u,'ToEf')
+call StartAbilityCooldown(GetUnitAbility(u,'ToEf'),2.) // E2 — 2 с после надевания маски (22 окт)
 if GetHeroLevel(u)<25 then
 call DisableUnitAbility(u,'ToEf',false,true)
 endif
@@ -130466,7 +130505,7 @@ set u=null
 endfunction
 // зелёное серо Тоусена — серо Хирако в маске: 3..7*AGI, луч 2200, оглушение 2.5 сек., отбрасывание 300
 function TousenCeroCond takes nothing returns boolean
-return GetSpellAbilityId()=='ToEc' and udg_B==true and GetUnitTypeId(GetTriggerUnit())=='H02K'
+return GetSpellAbilityId()=='ToEc' and udg_B==true and (GetUnitTypeId(GetTriggerUnit())=='H02K' or GetUnitTypeId(GetTriggerUnit())=='H0TF')
 endfunction
 function TousenCeroCast takes nothing returns nothing
 local unit u=GetTriggerUnit()
@@ -130616,7 +130655,7 @@ endfunction
 //endfunction
 // «Стрёкот крыльев» (W мухи, 22 окт): звуковая волна конусом 60° на 700 — урон (1.5+0.5*ур.)*AGI и немота 1.5+0.1*ур. сек.
 function TousenFWCond takes nothing returns boolean
-return GetSpellAbilityId()=='ToFW' and udg_B==true and GetUnitTypeId(GetTriggerUnit())=='H02K'
+return GetSpellAbilityId()=='ToFW' and udg_B==true and (GetUnitTypeId(GetTriggerUnit())=='H02K' or GetUnitTypeId(GetTriggerUnit())=='H0TF')
 endfunction
 // W мухи до v3: кольца стояли рядами
 //function TousenFWCast takes nothing returns nothing
@@ -130986,7 +131025,7 @@ set u=null
 set t=null
 endfunction
 function TousenFTCond takes nothing returns boolean
-return GetSpellAbilityId()=='ToFT' and udg_B==true and GetUnitTypeId(GetTriggerUnit())=='H02K'
+return GetSpellAbilityId()=='ToFT' and udg_B==true and (GetUnitTypeId(GetTriggerUnit())=='H02K' or GetUnitTypeId(GetTriggerUnit())=='H0TF')
 endfunction
 // T мухи до v3
 //function TousenFTCast takes nothing returns nothing
@@ -131068,14 +131107,30 @@ local integer b
 call SaveBoolean(HH,uid,SH_TouHollow,true)
 call SaveStr(HH,uid,SH_TouPortrait,GetWidgetPortrait(u))
 call SaveStr(HH,uid,SH_TouIcon,GetUnitStringField(u,UNIT_SF_ICON_NORMAL))
-call SetUnitModel(u,"Tousen\\[By XeSHTeG]Tosen_Hollow.mdx")
+//call SetUnitModel(u,"Tousen\\[By XeSHTeG]Tosen_Hollow.mdx")
 //call SetWidgetPortrait(u,"Tousen\\[By XeSHTeG]Tosen_Hollow.mdx")
+// смена юнита, как у других трансформаций (22 окт): Bear Form H02K -> H0TF (модель, портрет, иконка, масштаб, атака — из типа)
+call UnitAddAbility(u,'ToMF')
+call IssueImmediateOrder(u,"bearform")
+call UnitRemoveAbility(u,'ToMF')
+// бафы старой маски снимаются (22 окт)
+call UnitMakeAbilityPermanent(u,false,'ToE1')
+call UnitRemoveAbility(u,'ToE1')
+call UnitRemoveAbility(u,'ToE2')
+call UnitRemoveAbility(u,'ToE3')
+call UnitRemoveAbility(u,'ToE4')
+call UnitRemoveAbility(u,'ToE5')
+call UnitRemoveAbility(u,'ToE6')
+call SetUnitVertexColor(u,255,255,255,255)
+// регенерация мухи: 1.5% макс. HP в сек., затем -0.05% каждую секунду (TousenECast2); счётчик над HP — до ухода в минус (30 с)
+call SaveReal(HH,uid,SH_TouRegen,0.015)
+call CreateModeIndicatorForm(u,"ReplaceableTextures\\CommandButtons\\BTNTousenFlyHero.blp",30.)
 // портрет — картинка из аниме, как у Хирако (Shinji2_Portrait): плоскость с текстурой и камерой (22 окт)
-call SetWidgetPortrait(u,"Tousen\\Tousen_FlyPortrait.mdx")
-call SetUnitStringField(u,UNIT_SF_ICON_NORMAL,"ReplaceableTextures\\CommandButtons\\BTNTousenFlyHero.blp")
+//call SetWidgetPortrait(u,"Tousen\\Tousen_FlyPortrait.mdx") // портрет — из типа H0TF (22 окт)
+//call SetUnitStringField(u,UNIT_SF_ICON_NORMAL,"ReplaceableTextures\\CommandButtons\\BTNTousenFlyHero.blp") // иконка — из типа H0TF (22 окт)
 call IH('H02K',u,"ReplaceableTextures\\CommandButtons\\BTNTousenFlyHero.blp")
 call SetUnitVertexColor(u,255,255,255,255)
-call SetUnitScale(u,1.5,1.5,1.5) // муха крупнее (22 окт)
+//call SetUnitScale(u,1.5,1.5,1.5) // муха крупнее (22 окт) — масштаб из типа H0TF
 // муха парит над землёй (бег в модели заменён зависанием)
 call UnitAddAbility(u,'Amrf')
 call UnitRemoveAbility(u,'Amrf')
@@ -131623,7 +131678,7 @@ set u=null
 set t=null
 endfunction
 function TousenFECond takes nothing returns boolean
-return GetSpellAbilityId()=='ToFE' and udg_B==true and GetUnitTypeId(GetTriggerUnit())=='H02K'
+return GetSpellAbilityId()=='ToFE' and udg_B==true and (GetUnitTypeId(GetTriggerUnit())=='H02K' or GetUnitTypeId(GetTriggerUnit())=='H0TF')
 endfunction
 function TousenFECast takes nothing returns nothing
 local unit u=GetTriggerUnit()
@@ -292847,6 +292902,7 @@ call LANG_U('HGoj',3,"Satoru Gojo is a 28-year-old teacher at Tokyo Magic Colleg
 call LANG_U('H02I',3,"Vegeta the Fourth, the eldest son of King Vegeta the Third, was in the royal army before the extinction of his race.|n|nRole: Caster, Durable, Carry|n|n")
 call LANG_U('H02J',3,"Ichimaru Gin, former captain of the 3rd Division, joined Aizen and then betrayed him.|n|nRole: Caster, Exhauster, Escape, Swordsman|n|n")
 call LANG_U('H02K',3,"The ex-Captain of the 9th Division, blind from birth, assisted Aizen.|n|nRole: Swordsman, Carry, Disabler, Initiator|n|n")
+call LANG_U('H0TF',3,"The ex-Captain of the 9th Division, blind from birth, assisted Aizen.|n|nRole: Swordsman, Carry, Disabler, Initiator|n|n")
 call LANG_U('H02L',3,"Broly is a legendary Super Saiyan born at the same time as Goku. Baby Broly was 50 times stronger than an ordinary Saiyan, so they wanted to kill him and his father.|n|nRole: Carry, Durable, Caster, Disabler, Initiator|n|n")
 call LANG_U('H02M',3,"Aizen - Ex-Captain of the Fifth Division, absorbed Hougyoku and became immortal.|n|nRole: Caster, Durable, Swordsman|n|n")
 call LANG_U('H12M',3,"Aizen - Ex-Captain of the Fifth Division, absorbed Hougyoku and became immortal.|n|nRole: Caster, Durable, Swordsman|n|n")
@@ -293060,9 +293116,9 @@ call LANG_U('h05W',0,"Creep Frieza")
 call LANG_U('h068',0,"Level 18")
 call LANG_U('h146',0,"Level 5")
 call LANG_U('h246',0,"Level 20")
-call LANG_U('h346',0,"Level 10")
 endfunction
 function LANG_Data57 takes nothing returns nothing
+call LANG_U('h346',0,"Level 10")
 call LANG_U('h446',0,"Level 15")
 call LANG_U('h546',0,"Level 25")
 call LANG_U('n008',0,"Box")
@@ -293312,9 +293368,9 @@ call LANG_B('B26b',1,"Effectivness of controls effects is increased by 20%.")
 call LANG_B('IcWb',1,"This one is slow and cannot attack.")
 call LANG_B('MaDb',1,"Madoka's next skill deals additional damage. The number of stacks used is equal to the level of this buff.")
 call LANG_B('MaEb',1,"This character is temporarily blind. He constantly misses.")
-call LANG_B('MaFb',1,"This warrior is slow. The speed of his movement and combat is much lower than normal.")
 endfunction
 function LANG_Data58 takes nothing returns nothing
+call LANG_B('MaFb',1,"This warrior is slow. The speed of his movement and combat is much lower than normal.")
 call LANG_B('MaRb',1,"Madoka's Q skill has been buffed.")
 call LANG_B('MiMp',1,"This warrior is electrocuted. He's slow.")
 call LANG_B('ReD3',1,"|c00FF8000|rRengoku is flaming")
