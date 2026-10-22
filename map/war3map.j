@@ -131328,10 +131328,11 @@ endif
 set fx=null
 set t=null
 endfunction
-function TousenFW2Ring takes integer id,integer k,real rd,real sc,real rz returns nothing
+function TousenFW2Ring takes integer id,integer k,real rd,real sc,real rz,real rs returns nothing
 local real a=LoadReal(h,id,3)
-local real rx=LoadReal(h,id,4)+rd*Cos(a)
-local real ry=LoadReal(h,id,5)+rd*Sin(a)
+// rs — сдвиг вбок от луча (23 окт): <0 влево, >0 вправо
+local real rx=LoadReal(h,id,4)+rd*Cos(a)+rs*Cos(a-bj_PI/2)
+local real ry=LoadReal(h,id,5)+rd*Sin(a)+rs*Sin(a-bj_PI/2)
 //local effect fx=AddSpecialEffect("Tousen_Sonic.mdl",rx,ry)
 // 23 окт: Tousen_Sonic в игре не поворачивался и не масштабировался — кольцо CirclePulse_Green ребром, луч проходит сквозь него
 local effect fx=AddSpecialEffect("CirclePulse_Green.mdl",rx,ry)
@@ -131428,7 +131429,7 @@ endif
 // 23 окт: колец вдвое больше — 20, новое каждый тик (кольца 2..21)
 if tk-10<=19 then
 set k=2+(tk-10)
-call TousenFW2Ring(id,k,80.+70.*k,0.5+0.085*k,110.)
+call TousenFW2Ring(id,k,80.+70.*k,0.5+0.085*k,110.,0.)
 endif
 // урон раз в 0.25 с (8 тиков) по конусу до фронта луча
 if ModuloInteger(tk-10,8)==0 then
@@ -131495,11 +131496,15 @@ call SaveGroupHandle(h,id,10,CreateGroup())
 // пара колец рядом — сразу, луч из них через 0.3 с
 //call TousenFW2Ring(id,0,90.,0.55)
 //call TousenFW2Ring(id,1,170.,0.7)
-// 23 окт: перед выстрелом сразу 4 кольца перед Тоусеном на разных высотах
-call TousenFW2Ring(id,30,110.,0.55,50.)
-call TousenFW2Ring(id,31,140.,0.65,120.)
-call TousenFW2Ring(id,32,170.,0.75,190.)
-call TousenFW2Ring(id,33,200.,0.85,260.)
+// 23 окт: перед выстрелом сразу 4 кольца перед Тоусеном на разных высотах — 2 слева, 2 справа
+//call TousenFW2Ring(id,30,110.,0.55,50.)
+//call TousenFW2Ring(id,31,140.,0.65,120.)
+//call TousenFW2Ring(id,32,170.,0.75,190.)
+//call TousenFW2Ring(id,33,200.,0.85,260.)
+call TousenFW2Ring(id,30,120.,0.6,70.,-90.)
+call TousenFW2Ring(id,31,150.,0.7,210.,-170.)
+call TousenFW2Ring(id,32,120.,0.6,140.,90.)
+call TousenFW2Ring(id,33,150.,0.7,260.,170.)
 call TimerStart(t,0.03,true,function TousenFW2Tick)
 set t=null
 set u=null
