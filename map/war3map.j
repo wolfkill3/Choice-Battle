@@ -131261,6 +131261,165 @@ endfunction
 //set t=null
 //set u=null
 //endfunction
+// T v6 (22 окт): волна кольца летит в своего врага (70 за 0.03 с, самонаведение), при попадании 0.5*AGI и немота 0.6 с
+function TousenFTWave takes nothing returns nothing
+local timer t=GetExpiredTimer()
+local integer id=GetHandleId(t)
+local unit u=LoadUnitHandle(h,id,0)
+local unit e=LoadUnitHandle(h,id,1)
+local effect fx=LoadEffectHandle(h,id,2)
+local real x=LoadReal(h,id,3)
+local real y=LoadReal(h,id,4)
+local integer tk=LoadInteger(h,id,5)+1
+local real wa=Atan2(GetUnitY(e)-y,GetUnitX(e)-x)
+local real ed=SquareRoot((GetUnitX(e)-x)*(GetUnitX(e)-x)+(GetUnitY(e)-y)*(GetUnitY(e)-y))
+call SaveInteger(h,id,5,tk)
+if ed<=70 or tk>40 or not UnitIsAlive(e) or udg_B==false then
+if ed<=70 and UnitIsAlive(e) and udg_B==true then
+//call myCustomDamage(u,e,0.5*GetHeroAgi(u,true),false,false,null,null,null)
+call myCustomDamage(u,e,1.*GetHeroAgi(u,true),false,false,null,null,null) // v7: волна раз в 1 с
+call DestroyEffect(AddSpecialEffectTarget("Tousen_Sonic.mdl",e,"chest"))
+if UnitIsAlive(e) then
+call SetControlToUnit(u,e,1.1,"silence") // v7: до следующей волны
+endif
+endif
+call DestroyEffect(fx)
+call PauseTimer(t)
+call FlushChildHashtable(h,id)
+call DestroyTimer(t)
+else
+set x=x+70*Cos(wa)
+set y=y+70*Sin(wa)
+call SaveReal(h,id,3,x)
+call SaveReal(h,id,4,y)
+call SetSpecialEffectOrientation(fx,wa*bj_RADTODEG+90.,0.,90.)
+call SetSpecialEffectPositionWithZ(fx,x,y,GetTerrainZ(x,y)+RMaxBJ(80.,150.-3.*tk))
+call SetSpecialEffectScale(fx,0.16+0.008*tk)
+endif
+set fx=null
+set u=null
+set e=null
+set t=null
+endfunction
+// T v6 (22 окт): поле 800 на 6 с — раз в 0.5 с вокруг Тоусена в воздухе появляется кольцо на каждого врага в поле и пускает в него волну
+function TousenFTTick2 takes nothing returns nothing
+local timer t=GetExpiredTimer()
+local integer id=GetHandleId(t)
+local unit u=LoadUnitHandle(h,id,0)
+local integer tk=LoadInteger(h,id,1)+1
+local player p=OwnerOf(u)
+local real x=GetUnitX(u)
+local real y=GetUnitY(u)
+local group g
+local unit e
+local effect fx
+local real ra
+local real rx
+local real ry
+call SaveInteger(h,id,1,tk)
+if tk<=120 and UnitIsAlive(u) and udg_B==true and LoadBoolean(HH,GetHandleId(u),SH_TouHollow) then
+// v7 (22 окт): кольца в воздухе вокруг Тоусена каждые 0.1 с, гаснут за 0.4 с
+if ModuloInteger(tk,2)==0 then
+set ra=GetRandomReal(0,2*bj_PI)
+set rx=x+GetRandomReal(110,220)*Cos(ra)
+set ry=y+GetRandomReal(110,220)*Sin(ra)
+set fx=AddSpecialEffect("CirclePulse_Green.mdl",rx,ry)
+call SetSpecialEffectScale(fx,GetRandomReal(0.3,0.45))
+call SetSpecialEffectVertexColour(fx,90,255,110,255)
+call SetSpecialEffectOrientation(fx,ra*bj_RADTODEG+90.,0.,90.)
+call SetSpecialEffectPositionWithZ(fx,rx,ry,GetUnitZ(u)+GetRandomReal(110,200))
+call RemoveEffect(fx,0.4,false,CreateTimer())
+endif
+// зелёные волны от Тоусена, слабее (v7b, 22 окт): раз в 1 с, полупрозрачные, до 700
+if ModuloInteger(tk,20)==11 then
+set ra=I2R(ModuloInteger(tk/20,2))
+call DestroyEffect(LoadEffectHandle(h,id,40+R2I(ra)))
+set fx=AddSpecialEffect("CirclePulse_Green.mdl",x,y)
+call SetSpecialEffectScale(fx,0.7)
+call SetSpecialEffectVertexColour(fx,90,255,110,140)
+call SaveEffectHandle(h,id,40+R2I(ra),fx)
+call SaveInteger(h,id,45+R2I(ra),tk)
+// волна несёт немоту 0.6 с врагам в 700 (без урона)
+set g=CreateGroup()
+call GroupEnumUnitsInRange(g,x,y,700,Base)
+loop
+set e=FirstOfGroup(g)
+exitwhen e==null
+if Condition_Base(p,e) and UnitIsAlive(e) then
+call SetControlToUnit(u,e,0.6,"silence")
+endif
+call GroupRemoveUnit(g,e)
+endloop
+call DestroyGroup(g)
+endif
+set rx=0
+loop
+exitwhen rx>1
+set fx=LoadEffectHandle(h,id,40+R2I(rx))
+if fx!=null then
+if tk-LoadInteger(h,id,45+R2I(rx))>=14 then
+call DestroyEffect(fx)
+call RemoveSavedHandle(h,id,40+R2I(rx))
+else
+call SetSpecialEffectPositionWithZ(fx,x,y,GetUnitZ(u)+20)
+call SetSpecialEffectScale(fx,(100.+43.*(tk-LoadInteger(h,id,45+R2I(rx))))/141.)
+call SetSpecialEffectVertexColour(fx,90,255,110,140-10*(tk-LoadInteger(h,id,45+R2I(rx))))
+endif
+endif
+set rx=rx+1
+endloop
+//if ModuloInteger(tk,10)==1 then
+if ModuloInteger(tk,20)==1 then // волны раз в 1 с (v7)
+set g=CreateGroup()
+call GroupEnumUnitsInRange(g,x,y,800,Base)
+loop
+set e=FirstOfGroup(g)
+exitwhen e==null
+if Condition_Base(p,e) then
+// кольцо в воздухе в сторону врага (с разбросом), ребром к нему; гаснет за 0.4 с
+set ra=Atan2(GetUnitY(e)-y,GetUnitX(e)-x)+GetRandomReal(-0.5,0.5)
+set rx=x+GetRandomReal(130,200)*Cos(ra)
+set ry=y+GetRandomReal(130,200)*Sin(ra)
+set fx=AddSpecialEffect("CirclePulse_Green.mdl",rx,ry)
+call SetSpecialEffectScale(fx,0.4)
+call SetSpecialEffectVertexColour(fx,90,255,110,255)
+call SetSpecialEffectOrientation(fx,Atan2(GetUnitY(e)-ry,GetUnitX(e)-rx)*bj_RADTODEG+90.,0.,90.)
+call SetSpecialEffectPositionWithZ(fx,rx,ry,GetUnitZ(u)+GetRandomReal(130,190))
+call RemoveEffect(fx,0.4,false,CreateTimer())
+// волна из кольца — в этого врага
+set bj_lastStartedTimer=CreateTimer()
+call SaveUnitHandle(h,GetHandleId(bj_lastStartedTimer),0,u)
+call SaveUnitHandle(h,GetHandleId(bj_lastStartedTimer),1,e)
+set fx=AddSpecialEffect("Tousen_Wave.mdl",rx,ry)
+call SetSpecialEffectScale(fx,0.16)
+call SetSpecialEffectOrientation(fx,Atan2(GetUnitY(e)-ry,GetUnitX(e)-rx)*bj_RADTODEG+90.,0.,90.)
+call SetSpecialEffectPositionWithZ(fx,rx,ry,GetTerrainZ(rx,ry)+150.)
+call SaveEffectHandle(h,GetHandleId(bj_lastStartedTimer),2,fx)
+call SaveReal(h,GetHandleId(bj_lastStartedTimer),3,rx)
+call SaveReal(h,GetHandleId(bj_lastStartedTimer),4,ry)
+call SaveInteger(h,GetHandleId(bj_lastStartedTimer),5,0)
+call TimerStart(bj_lastStartedTimer,0.03,true,function TousenFTWave)
+endif
+call GroupRemoveUnit(g,e)
+endloop
+call DestroyGroup(g)
+endif
+else
+call UnitRemoveAbility(u,'ToFa')
+call DestroyEffect(LoadEffectHandle(h,id,4))
+call DestroyEffect(LoadEffectHandle(h,id,40))
+call DestroyEffect(LoadEffectHandle(h,id,41))
+call PauseTimer(t)
+call DestroyTimer(t)
+call FlushChildHashtable(h,id)
+endif
+set fx=null
+set g=null
+set e=null
+set p=null
+set u=null
+set t=null
+endfunction
 function TousenFTCast takes nothing returns nothing
 local unit u=GetTriggerUnit()
 local timer t=CreateTimer()
@@ -131268,40 +131427,42 @@ local integer id=GetHandleId(t)
 local effect fx
 local integer i=0
 call UnitAddAbility(u,'ToFa')
+// v6 (22 окт): на земле ничего — ни колец поля, ни хоровода, ни вспышки
 // большое кольцо поля 800 и второе внутри (пак), идут за Тоусеном
-set fx=AddSpecialEffectTarget("CirclePulse_Green.mdl",u,"origin")
-call SetSpecialEffectScale(fx,800./141.)
-call SetSpecialEffectVertexColour(fx,90,255,110,255)
-call SaveEffectHandle(h,id,2,fx)
-set fx=AddSpecialEffectTarget("CirclePulse_Green.mdl",u,"origin")
-call SetSpecialEffectScale(fx,640./141.)
-call SetSpecialEffectVertexColour(fx,90,255,110,255)
-call SaveEffectHandle(h,id,3,fx)
+//set fx=AddSpecialEffectTarget("CirclePulse_Green.mdl",u,"origin")
+//call SetSpecialEffectScale(fx,800./141.)
+//call SetSpecialEffectVertexColour(fx,90,255,110,255)
+//call SaveEffectHandle(h,id,2,fx)
+//set fx=AddSpecialEffectTarget("CirclePulse_Green.mdl",u,"origin")
+//call SetSpecialEffectScale(fx,640./141.)
+//call SetSpecialEffectVertexColour(fx,90,255,110,255)
+//call SaveEffectHandle(h,id,3,fx)
 // девять колец Los Nueve Aspectos
-loop
-exitwhen i>8
-set fx=AddSpecialEffect("CirclePulse_Green.mdl",GetUnitX(u),GetUnitY(u))
-call SetSpecialEffectScale(fx,0.45)
-call SetSpecialEffectPitch(fx,-90.)
-call SetSpecialEffectVertexColour(fx,90,255,110,255)
-call SaveEffectHandle(h,id,10+i,fx)
+//loop
+//exitwhen i>8
+//set fx=AddSpecialEffect("CirclePulse_Green.mdl",GetUnitX(u),GetUnitY(u))
+//call SetSpecialEffectScale(fx,0.45)
+//call SetSpecialEffectPitch(fx,-90.)
+//call SetSpecialEffectVertexColour(fx,90,255,110,255)
+//call SaveEffectHandle(h,id,10+i,fx)
 // v5 (22 окт): внутреннего хоровода нет
 //set fx=AddSpecialEffect("CirclePulse_Green.mdl",GetUnitX(u),GetUnitY(u))
 //call SetSpecialEffectScale(fx,0.35)
 //call SetSpecialEffectPitch(fx,-90.)
 //call SetSpecialEffectVertexColour(fx,90,255,110,255)
 //call SaveEffectHandle(h,id,19+i,fx)
-set i=i+1
-endloop
-set bj_lastCreatedEffect=AddSpecialEffect(EffectID[23],GetUnitX(u),GetUnitY(u))
-call SetSpecialEffectScale(bj_lastCreatedEffect,1.3)
-call SetSpecialEffectVertexColour(bj_lastCreatedEffect,40,255,60,255)
-call DestroyEffect(bj_lastCreatedEffect)
+//set i=i+1
+//endloop
+//set bj_lastCreatedEffect=AddSpecialEffect(EffectID[23],GetUnitX(u),GetUnitY(u))
+//call SetSpecialEffectScale(bj_lastCreatedEffect,1.3)
+//call SetSpecialEffectVertexColour(bj_lastCreatedEffect,40,255,60,255)
+//call DestroyEffect(bj_lastCreatedEffect)
 // зелёная аура на Тоусене на время поля (v5, 22 окт)
 call SaveEffectHandle(h,id,4,AddSpecialEffectTarget("az_goods_tp_caster(green).mdl",u,"origin"))
 call SaveUnitHandle(h,id,0,u)
 call SaveInteger(h,id,1,0)
-call TimerStart(t,0.05,true,function TousenFTTick)
+//call TimerStart(t,0.05,true,function TousenFTTick)
+call TimerStart(t,0.05,true,function TousenFTTick2) // v6 (22 окт)
 set fx=null
 set t=null
 set u=null
@@ -292180,8 +292341,8 @@ call LANG_A('ToFW',1,3,"The fly's wings send a sound wave ahead: it rolls throug
 call LANG_A('ToFW',1,4,"The fly's wings send a sound wave ahead: it rolls through the cone: enemies it reaches take a one-time hit and silence, then damage over 2 sec.|n|n|cFF00A5FF|nDamage: 6*|r|c003CFF3CAGI|r|cFF00A5FF|nDamage over time: 2*|r|c003CFF3CAGI|r|cFF00A5FF over 2 sec.|nSilence: 2.0 sec.|nRange: 1500, cone 60°"+"|nCooldown: 12 sec.|r")
 call LANG_A('ToFW',2,0,"Wing Chirr, [|cffffcc00Level %d|r] (|cffffcc00W|r)")
 call LANG_A('ToFW',3,0,"The fly's wings send a sound wave ahead: it rolls through the cone: enemies it reaches take a one-time hit and silence, then damage over 2 sec.|n|n|cFF00A5FF|nDamage: 2\\3\\4\\5\\6*|r|c003CFF3CAGI|r|cFF00A5FF|nDamage over time: 2*|r|c003CFF3CAGI|r|cFF00A5FF over 2 sec.|nSilence: 1.6\\1.7\\1.8\\1.9\\"+"2.0 sec.|nRange: 1500, cone 60°|nCooldown: 12 sec.|r")
-call LANG_A('ToFT',1,0,"A sound field around Tōsen follows him: enemies inside are silenced and take damage, Tōsen attacks faster.|n|n|cFF00A5FF|nAoE: 800|nDamage: 1*|r|c003CFF3CAGI|r|cFF00A5FF per sec.|nSilence: while in the field|nAttack speed: +60%|nDuration: 6 sec.|nCooldown: 45 sec.|r")
-call LANG_A('ToFT',3,0,"A sound field around Tōsen follows him: enemies inside are silenced and take damage, Tōsen attacks faster.|n|n|cFF00A5FF|nAoE: 800|nDamage: 1*|r|c003CFF3CAGI|r|cFF00A5FF per sec.|nSilence: while in the field|nAttack speed: +60%|nDuration: 6 sec.|nCooldown: 45 sec.|r")
+call LANG_A('ToFT',1,0,"A sound field around Tōsen follows him: rings keep flashing next to him, and once per second each hits its own enemy in the field with a wave (damage and silence). Tōsen attacks faster.|n|n|cFF00A5FF|nAoE: 800|nDamage: 1*|r|c003CFF3CAGI|r|cFF00A5FF per sec.|nSilence: while in the field|nAttack spe"+"ed: +60%|nDuration: 6 sec.|nCooldown: 45 sec.|r")
+call LANG_A('ToFT',3,0,"A sound field around Tōsen follows him: rings keep flashing next to him, and once per second each hits its own enemy in the field with a wave (damage and silence). Tōsen attacks faster.|n|n|cFF00A5FF|nAoE: 800|nDamage: 1*|r|c003CFF3CAGI|r|cFF00A5FF per sec.|nSilence: while in the field|nAttack spe"+"ed: +60%|nDuration: 6 sec.|nCooldown: 45 sec.|r")
 call LANG_A('ToEc',0,0,"Double Cero, [|cffffcc00Level 1|r] (|cffffcc00R|r)")
 call LANG_A('ToEc',0,1,"Double Cero, [|cffffcc00Level 2|r] (|cffffcc00R|r)")
 call LANG_A('ToEc',0,2,"Double Cero, [|cffffcc00Level 3|r] (|cffffcc00R|r)")
