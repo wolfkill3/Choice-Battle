@@ -130809,6 +130809,29 @@ endfunction
 //set t=null
 //endfunction
 // волны W (v5): h 0..2 волны, 3 угол, 4 / 5 откуда, 6 тик; цепочка колец — h 20+k эффект кольца k (k 0..9), появляется на тике 2k+1
+// W: урон по времени после волны (22 окт): 8 тиков по 0.25 с, всего 2*AGI
+function TousenFWDot takes nothing returns nothing
+local timer t=GetExpiredTimer()
+local integer id=GetHandleId(t)
+local unit u=LoadUnitHandle(h,id,0)
+local unit e=LoadUnitHandle(h,id,1)
+local integer cnt=LoadInteger(h,id,3)+1
+call SaveInteger(h,id,3,cnt)
+if UnitIsAlive(e) and udg_B==true then
+call myCustomDamage(u,e,LoadReal(h,id,2),false,false,null,null,null)
+if ModuloInteger(cnt,2)==0 then
+call DestroyEffect(AddSpecialEffectTarget("Tousen_Sonic.mdl",e,"chest"))
+endif
+endif
+if cnt>=8 or not UnitIsAlive(e) or udg_B==false then
+call PauseTimer(t)
+call FlushChildHashtable(h,id)
+call DestroyTimer(t)
+endif
+set u=null
+set e=null
+set t=null
+endfunction
 function TousenFWWave takes nothing returns nothing
 local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
@@ -130841,9 +130864,17 @@ set ed=SquareRoot((GetUnitX(e)-x0)*(GetUnitX(e)-x0)+(GetUnitY(e)-y0)*(GetUnitY(e
 set k=IMinBJ(9,IMaxBJ(0,R2I((ed-80.)/140.+0.5)))
 set age=tk-(2*k+1)
 if age>=0 and age<18 then
-call myCustomDamage(u,e,LoadReal(h,id,8)/6.,false,false,null,null,null)
+//call myCustomDamage(u,e,LoadReal(h,id,8)/6.,false,false,null,null,null)
+// v2 (22 окт): разовый урон при первом касании волны + 2*AGI за 2 с
 if not IsUnitInGroup(e,LoadGroupHandle(h,id,10)) then
 call GroupAddUnit(LoadGroupHandle(h,id,10),e)
+call myCustomDamage(u,e,LoadReal(h,id,8),false,false,null,null,null)
+set bj_lastStartedTimer=CreateTimer()
+call SaveUnitHandle(h,GetHandleId(bj_lastStartedTimer),0,u)
+call SaveUnitHandle(h,GetHandleId(bj_lastStartedTimer),1,e)
+call SaveReal(h,GetHandleId(bj_lastStartedTimer),2,0.25*GetHeroAgi(u,true))
+call SaveInteger(h,GetHandleId(bj_lastStartedTimer),3,0)
+call TimerStart(bj_lastStartedTimer,0.25,true,function TousenFWDot)
 call DestroyEffect(AddSpecialEffectTarget("Tousen_Sonic.mdl",e,"chest"))
 if UnitIsAlive(e) then
 call SetControlToUnit(u,e,LoadReal(h,id,9),"silence")
@@ -130944,7 +130975,8 @@ local integer lv=GetUnitAbilityLevel(u,'ToFW')
 local real x=GetUnitX(u)
 local real y=GetUnitY(u)
 local real a=Atan2(GetSpellTargetY()-y,GetSpellTargetX()-x)
-local real dmg=(2+lv)*GetHeroAgi(u,true)
+//local real dmg=(2+lv)*GetHeroAgi(u,true)
+local real dmg=(1+lv)*GetHeroAgi(u,true) // разово 2..6*AGI (22 окт)
 local group g=CreateGroup()
 local unit e
 local real ea
@@ -132003,8 +132035,97 @@ endfunction
 //set e=null
 //set t=null
 //endfunction
-// G v2 (22 окт): быстрее, облёт цели плавный (по кругу 170), анимация полёта, эффекты зелёные.
-// Рывок 80 за 0.02 с (до 1.5 с), у цели 4 удара через 0.2 с, в конце 8*AGI и оглушение 2 с
+//// G v2 (22 окт): быстрее, облёт цели плавный (по кругу 170), анимация полёта, эффекты зелёные.
+//// Рывок 80 за 0.02 с (до 1.5 с), у цели 4 удара через 0.2 с, в конце 8*AGI и оглушение 2 с
+//function TousenFGTick takes nothing returns nothing
+//local timer t=GetExpiredTimer()
+//local integer id=GetHandleId(t)
+//local unit u=LoadUnitHandle(h,id,0)
+//local unit e=LoadUnitHandle(h,id,1)
+//local integer tk=LoadInteger(h,id,2)+1
+//local integer k=LoadInteger(h,id,7)
+//local integer rf=LoadInteger(h,id,4)
+//local real th=LoadReal(h,id,3)
+//local real ex=GetUnitX(e)
+//local real ey=GetUnitY(e)
+//local real fd=SR(GetUnitX(u),GetUnitY(u),ex,ey)
+//local boolean fin=false
+//call SaveInteger(h,id,2,tk)
+//if not UnitIsAlive(u) or udg_B==false or (k==0 and (not UnitIsAlive(e) or tk>75)) then
+//set fin=true
+//elseif k>0 and k>4*10+6 then
+//set fin=true
+//if UnitIsAlive(e) then
+//call PauseUnit(e,false)
+//call myCustomDamage(u,e,8*GetHeroAgi(u,true),false,false,null,null,null)
+//call DestroyEffect(AddSpecialEffect("war3mapImported\\BrolyRHitGreen.mdl",ex,ey))
+//if UnitIsAlive(e) then
+//call SetControlToUnit(u,e,2.,"stun")
+//endif
+//endif
+//endif
+//if fin then
+//call DestroyEffect(LoadEffectHandle(h,id,5))
+//call UnitSpeed(u,1)
+//call SetUnitFlyHeight(u,40,0)
+//call PauseUnit(u,false)
+//call SetUnitInvulnerable(u,false)
+//call SetUnitPathing(u,true)
+//call SetUnitTurnSpeed(u,GetUnitDefaultTurnSpeed(u))
+//call SetUnitAnimation(u,"stand")
+//if LoadBoolean(h,id,6) then
+//call PauseUnit(e,false)
+//endif
+//call PauseTimer(t)
+//call FlushChildHashtable(h,id)
+//call DestroyTimer(t)
+//elseif k==0 then
+//// рывок к цели с анимацией полёта
+//if ModuloInteger(tk,15)==1 then
+//call SetUnitAnimation(u,"walk")
+//endif
+//call SetUnitFacingInstant(u,Angle2(GetUnitX(u),GetUnitY(u),ex,ey))
+//call SetUnitX(u,GetUnitX(u)+RMinBJ(80.,fd)*Cos(Atan2(ey-GetUnitY(u),ex-GetUnitX(u))))
+//call SetUnitY(u,GetUnitY(u)+RMinBJ(80.,fd)*Sin(Atan2(ey-GetUnitY(u),ex-GetUnitX(u))))
+//if ModuloInteger(tk,3)==0 then
+//set bj_lastCreatedEffect=AddSpecialEffect("Others\\WindCirclefaster.mdl",GetUnitX(u),GetUnitY(u))
+//call SetSpecialEffectScale(bj_lastCreatedEffect,0.35)
+//call SetSpecialEffectVertexColour(bj_lastCreatedEffect,90,255,110,255)
+//call DestroyEffect(bj_lastCreatedEffect)
+//endif
+//if SR(GetUnitX(u),GetUnitY(u),ex,ey)<220 then
+//call PauseUnit(e,true)
+//call SaveBoolean(h,id,6,true)
+//call SaveInteger(h,id,7,1)
+//call SaveReal(h,id,3,Atan2(GetUnitY(u)-ey,GetUnitX(u)-ex))
+//endif
+//else
+//// облёт цели по кругу 170: 9 градусов за тик, лицом к цели, без рывков
+//call SaveInteger(h,id,7,k+1)
+//set th=th+rf*0.157
+//call SaveReal(h,id,3,th)
+//call SetUnitX(u,ex+170*Cos(th))
+//call SetUnitY(u,ey+170*Sin(th))
+//call SetUnitFacingInstant(u,Angle2(GetUnitX(u),GetUnitY(u),ex,ey))
+//if ModuloInteger(k-1,10)==0 and k<=4*10 then
+//call SetUnitAnimation(u,"attack")
+//call QueueUnitAnimation(u,"walk")
+//call EffectCreateAndMove(true,"Others\\WindCirclefaster.mdl",GetRandomReal(0,360),1,1.3,1.5,40,100,50,40,0,e,0,th*bj_RADTODEG)
+//call DestroyEffect(AddSpecialEffect("war3mapImported\\az_jugggreen_e2_impact.mdl",ex,ey))
+//set bj_lastCreatedEffect=AddSpecialEffect("war3mapImported\\az-slash-green.mdl",ex,ey)
+//call SetSpecialEffectYaw(bj_lastCreatedEffect,th*bj_RADTODEG+90.)
+//call SetSpecialEffectHeight(bj_lastCreatedEffect,80.)
+//call DestroyEffect(bj_lastCreatedEffect)
+//call DestroyEffect(AddSpecialEffectTarget("Tousen_Sonic.mdl",e,"chest"))
+//endif
+//endif
+//set u=null
+//set e=null
+//set t=null
+//endfunction
+// G v3 (22 окт): удар с налёта — рывок к цели (80 за 0.02 с), удар, пролёт насквозь с торможением (12 тиков), разворот к цели
+// (6 тиков, до 30 градусов за тик), снова рывок. 4 удара, в конце 8*AGI и оглушение 2 с. Первый подлёт — до 1.5 с, иначе отмена
+// фазы (h,id,8): 0 рывок, 1 пролёт и торможение, 2 разворот; (h,id,9) тик фазы, (h,id,10) курс, (h,id,7) ударов
 function TousenFGTick takes nothing returns nothing
 local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
@@ -132012,24 +132133,26 @@ local unit u=LoadUnitHandle(h,id,0)
 local unit e=LoadUnitHandle(h,id,1)
 local integer tk=LoadInteger(h,id,2)+1
 local integer k=LoadInteger(h,id,7)
-local integer rf=LoadInteger(h,id,4)
-local real th=LoadReal(h,id,3)
+local integer ph=LoadInteger(h,id,8)
+local integer pt=LoadInteger(h,id,9)+1
+local real cr=LoadReal(h,id,10)
 local real ex=GetUnitX(e)
 local real ey=GetUnitY(e)
-local real fd=SR(GetUnitX(u),GetUnitY(u),ex,ey)
+local real ta=Atan2(ey-GetUnitY(u),ex-GetUnitX(u))
+local real df
+local real sp
 local boolean fin=false
 call SaveInteger(h,id,2,tk)
-if not UnitIsAlive(u) or udg_B==false or (k==0 and (not UnitIsAlive(e) or tk>75)) then
+call SaveInteger(h,id,9,pt)
+if not UnitIsAlive(u) or udg_B==false or not UnitIsAlive(e) or (k==0 and tk>75) then
 set fin=true
-elseif k>0 and k>4*10+6 then
+elseif k>=4 and ph==1 and pt>=12 then
 set fin=true
-if UnitIsAlive(e) then
 call PauseUnit(e,false)
 call myCustomDamage(u,e,8*GetHeroAgi(u,true),false,false,null,null,null)
 call DestroyEffect(AddSpecialEffect("war3mapImported\\BrolyRHitGreen.mdl",ex,ey))
 if UnitIsAlive(e) then
 call SetControlToUnit(u,e,2.,"stun")
-endif
 endif
 endif
 if fin then
@@ -132047,44 +132170,61 @@ endif
 call PauseTimer(t)
 call FlushChildHashtable(h,id)
 call DestroyTimer(t)
-elseif k==0 then
-// рывок к цели с анимацией полёта
-if ModuloInteger(tk,15)==1 then
+elseif ph==0 then
+// рывок прямо в цель
+if pt==1 then
+call UnitSpeed(u,1.8)
 call SetUnitAnimation(u,"walk")
 endif
-call SetUnitFacingInstant(u,Angle2(GetUnitX(u),GetUnitY(u),ex,ey))
-call SetUnitX(u,GetUnitX(u)+RMinBJ(80.,fd)*Cos(Atan2(ey-GetUnitY(u),ex-GetUnitX(u))))
-call SetUnitY(u,GetUnitY(u)+RMinBJ(80.,fd)*Sin(Atan2(ey-GetUnitY(u),ex-GetUnitX(u))))
-if ModuloInteger(tk,3)==0 then
+set cr=ta
+call SaveReal(h,id,10,cr)
+call SetUnitFacingInstant(u,cr*bj_RADTODEG)
+call SetUnitX(u,GetUnitX(u)+80*Cos(cr))
+call SetUnitY(u,GetUnitY(u)+80*Sin(cr))
+if ModuloInteger(pt,3)==0 then
 set bj_lastCreatedEffect=AddSpecialEffect("Others\\WindCirclefaster.mdl",GetUnitX(u),GetUnitY(u))
 call SetSpecialEffectScale(bj_lastCreatedEffect,0.35)
 call SetSpecialEffectVertexColour(bj_lastCreatedEffect,90,255,110,255)
 call DestroyEffect(bj_lastCreatedEffect)
 endif
-if SR(GetUnitX(u),GetUnitY(u),ex,ey)<220 then
+if SR(GetUnitX(u),GetUnitY(u),ex,ey)<100 then
+// удар: цель на паузе, эффекты, дальше пролёт тем же курсом
+if not LoadBoolean(h,id,6) then
 call PauseUnit(e,true)
 call SaveBoolean(h,id,6,true)
-call SaveInteger(h,id,7,1)
-call SaveReal(h,id,3,Atan2(GetUnitY(u)-ey,GetUnitX(u)-ex))
 endif
-else
-// облёт цели по кругу 170: 9 градусов за тик, лицом к цели, без рывков
 call SaveInteger(h,id,7,k+1)
-set th=th+rf*0.157
-call SaveReal(h,id,3,th)
-call SetUnitX(u,ex+170*Cos(th))
-call SetUnitY(u,ey+170*Sin(th))
-call SetUnitFacingInstant(u,Angle2(GetUnitX(u),GetUnitY(u),ex,ey))
-if ModuloInteger(k-1,10)==0 and k<=4*10 then
+call SaveInteger(h,id,8,1)
+call SaveInteger(h,id,9,0)
 call SetUnitAnimation(u,"attack")
-call QueueUnitAnimation(u,"walk")
-call EffectCreateAndMove(true,"Others\\WindCirclefaster.mdl",GetRandomReal(0,360),1,1.3,1.5,40,100,50,40,0,e,0,th*bj_RADTODEG)
+call EffectCreateAndMove(true,"Others\\WindCirclefaster.mdl",GetRandomReal(0,360),1,1.3,1.5,40,100,50,40,0,e,0,cr*bj_RADTODEG)
 call DestroyEffect(AddSpecialEffect("war3mapImported\\az_jugggreen_e2_impact.mdl",ex,ey))
 set bj_lastCreatedEffect=AddSpecialEffect("war3mapImported\\az-slash-green.mdl",ex,ey)
-call SetSpecialEffectYaw(bj_lastCreatedEffect,th*bj_RADTODEG+90.)
+call SetSpecialEffectYaw(bj_lastCreatedEffect,cr*bj_RADTODEG+90.)
 call SetSpecialEffectHeight(bj_lastCreatedEffect,80.)
 call DestroyEffect(bj_lastCreatedEffect)
 call DestroyEffect(AddSpecialEffectTarget("Tousen_Sonic.mdl",e,"chest"))
+endif
+elseif ph==1 then
+// пролёт насквозь с торможением: 60 -> 5 за 12 тиков (~380)
+set sp=RMaxBJ(5.,60.-5.*pt)
+call SetUnitX(u,GetUnitX(u)+sp*Cos(cr))
+call SetUnitY(u,GetUnitY(u)+sp*Sin(cr))
+call UnitSpeed(u,RMaxBJ(0.5,1.8-0.11*pt))
+if pt>=12 then
+call SaveInteger(h,id,8,2)
+call SaveInteger(h,id,9,0)
+call SetUnitAnimation(u,"walk")
+endif
+else
+// разворот к цели: не больше 30 градусов за тик, 6 тиков
+set df=ModuloReal(ta-cr+bj_PI,2*bj_PI)-bj_PI
+set cr=cr+RMaxBJ(-0.52,RMinBJ(0.52,df))
+call SaveReal(h,id,10,cr)
+call SetUnitFacingInstant(u,cr*bj_RADTODEG)
+if pt>=6 then
+call SaveInteger(h,id,8,0)
+call SaveInteger(h,id,9,0)
 endif
 endif
 set u=null
@@ -132104,6 +132244,8 @@ call SaveUnitHandle(h,id,1,GetSpellTargetUnit())
 //call SaveReal(h,id,3,Angle2(GetUnitX(u),GetUnitY(u),GetUnitX(GetSpellTargetUnit()),GetUnitY(GetSpellTargetUnit())))
 call SaveInteger(h,id,2,0) // v2: счётчик тиков
 call SaveInteger(h,id,7,0)
+call SaveInteger(h,id,8,0) // v3: фаза рывка
+call SaveInteger(h,id,9,0)
 call SaveInteger(h,id,4,GetRandomInt(1,2))
 //call SaveEffectHandle(h,id,5,AddSpecialEffectTarget("Kisame\\file00002180.mdl",u,"origin"))
 call SaveEffectHandle(h,id,5,AddSpecialEffectTarget("Zoro\\afbgreencharge.mdl",u,"origin")) // зелёная аура (22 окт)
@@ -292014,13 +292156,13 @@ call LANG_A('ToFW',0,1,"Wing Chirr, [|cffffcc00Level 2|r] (|cffffcc00W|r)")
 call LANG_A('ToFW',0,2,"Wing Chirr, [|cffffcc00Level 3|r] (|cffffcc00W|r)")
 call LANG_A('ToFW',0,3,"Wing Chirr, [|cffffcc00Level 4|r] (|cffffcc00W|r)")
 call LANG_A('ToFW',0,4,"Wing Chirr, [|cffffcc00Level 5|r] (|cffffcc00W|r)")
-call LANG_A('ToFW',1,0,"The fly's wings send a sound wave ahead: it rolls through the cone and hits enemies while passing them (6 hits over 0.5 sec.), silence from the first hit.|n|n|cFF00A5FF|nDamage: 3*|r|c003CFF3CAGI|r|cFF00A5FF over 0.5 sec.|nSilence: 1.6 sec.|nRange: 1500, cone 60°|nCooldown: 12 sec.|r")
-call LANG_A('ToFW',1,1,"The fly's wings send a sound wave ahead: it rolls through the cone and hits enemies while passing them (6 hits over 0.5 sec.), silence from the first hit.|n|n|cFF00A5FF|nDamage: 4*|r|c003CFF3CAGI|r|cFF00A5FF over 0.5 sec.|nSilence: 1.7 sec.|nRange: 1500, cone 60°|nCooldown: 12 sec.|r")
-call LANG_A('ToFW',1,2,"The fly's wings send a sound wave ahead: it rolls through the cone and hits enemies while passing them (6 hits over 0.5 sec.), silence from the first hit.|n|n|cFF00A5FF|nDamage: 5*|r|c003CFF3CAGI|r|cFF00A5FF over 0.5 sec.|nSilence: 1.8 sec.|nRange: 1500, cone 60°|nCooldown: 12 sec.|r")
-call LANG_A('ToFW',1,3,"The fly's wings send a sound wave ahead: it rolls through the cone and hits enemies while passing them (6 hits over 0.5 sec.), silence from the first hit.|n|n|cFF00A5FF|nDamage: 6*|r|c003CFF3CAGI|r|cFF00A5FF over 0.5 sec.|nSilence: 1.9 sec.|nRange: 1500, cone 60°|nCooldown: 12 sec.|r")
-call LANG_A('ToFW',1,4,"The fly's wings send a sound wave ahead: it rolls through the cone and hits enemies while passing them (6 hits over 0.5 sec.), silence from the first hit.|n|n|cFF00A5FF|nDamage: 7*|r|c003CFF3CAGI|r|cFF00A5FF over 0.5 sec.|nSilence: 2.0 sec.|nRange: 1500, cone 60°|nCooldown: 12 sec.|r")
+call LANG_A('ToFW',1,0,"The fly's wings send a sound wave ahead: it rolls through the cone: enemies it reaches take a one-time hit and silence, then damage over 2 sec.|n|n|cFF00A5FF|nDamage: 2*|r|c003CFF3CAGI|r|cFF00A5FF|nDamage over time: 2*|r|c003CFF3CAGI|r|cFF00A5FF over 2 sec.|nSilence: 1.6 sec.|nRange: 1500, cone 60°"+"|nCooldown: 12 sec.|r")
+call LANG_A('ToFW',1,1,"The fly's wings send a sound wave ahead: it rolls through the cone: enemies it reaches take a one-time hit and silence, then damage over 2 sec.|n|n|cFF00A5FF|nDamage: 3*|r|c003CFF3CAGI|r|cFF00A5FF|nDamage over time: 2*|r|c003CFF3CAGI|r|cFF00A5FF over 2 sec.|nSilence: 1.7 sec.|nRange: 1500, cone 60°"+"|nCooldown: 12 sec.|r")
+call LANG_A('ToFW',1,2,"The fly's wings send a sound wave ahead: it rolls through the cone: enemies it reaches take a one-time hit and silence, then damage over 2 sec.|n|n|cFF00A5FF|nDamage: 4*|r|c003CFF3CAGI|r|cFF00A5FF|nDamage over time: 2*|r|c003CFF3CAGI|r|cFF00A5FF over 2 sec.|nSilence: 1.8 sec.|nRange: 1500, cone 60°"+"|nCooldown: 12 sec.|r")
+call LANG_A('ToFW',1,3,"The fly's wings send a sound wave ahead: it rolls through the cone: enemies it reaches take a one-time hit and silence, then damage over 2 sec.|n|n|cFF00A5FF|nDamage: 5*|r|c003CFF3CAGI|r|cFF00A5FF|nDamage over time: 2*|r|c003CFF3CAGI|r|cFF00A5FF over 2 sec.|nSilence: 1.9 sec.|nRange: 1500, cone 60°"+"|nCooldown: 12 sec.|r")
+call LANG_A('ToFW',1,4,"The fly's wings send a sound wave ahead: it rolls through the cone: enemies it reaches take a one-time hit and silence, then damage over 2 sec.|n|n|cFF00A5FF|nDamage: 6*|r|c003CFF3CAGI|r|cFF00A5FF|nDamage over time: 2*|r|c003CFF3CAGI|r|cFF00A5FF over 2 sec.|nSilence: 2.0 sec.|nRange: 1500, cone 60°"+"|nCooldown: 12 sec.|r")
 call LANG_A('ToFW',2,0,"Wing Chirr, [|cffffcc00Level %d|r] (|cffffcc00W|r)")
-call LANG_A('ToFW',3,0,"The fly's wings send a sound wave ahead: it rolls through the cone and hits enemies while passing them (6 hits over 0.5 sec.), silence from the first hit.|n|n|cFF00A5FF|nDamage: 3\\4\\5\\6\\7*|r|c003CFF3CAGI|r|cFF00A5FF over 0.5 sec.|nSilence: 1.6\\1.7\\1.8\\1.9\\2.0 sec.|nRange: 1500, cone 60°|nCo"+"oldown: 12 sec.|r")
+call LANG_A('ToFW',3,0,"The fly's wings send a sound wave ahead: it rolls through the cone: enemies it reaches take a one-time hit and silence, then damage over 2 sec.|n|n|cFF00A5FF|nDamage: 2\\3\\4\\5\\6*|r|c003CFF3CAGI|r|cFF00A5FF|nDamage over time: 2*|r|c003CFF3CAGI|r|cFF00A5FF over 2 sec.|nSilence: 1.6\\1.7\\1.8\\1.9\\"+"2.0 sec.|nRange: 1500, cone 60°|nCooldown: 12 sec.|r")
 call LANG_A('ToFT',1,0,"A sound field around Tōsen follows him: enemies inside are silenced and take damage, Tōsen attacks faster.|n|n|cFF00A5FF|nAoE: 800|nDamage: 1*|r|c003CFF3CAGI|r|cFF00A5FF per sec.|nSilence: while in the field|nAttack speed: +60%|nDuration: 6 sec.|nCooldown: 45 sec.|r")
 call LANG_A('ToFT',3,0,"A sound field around Tōsen follows him: enemies inside are silenced and take damage, Tōsen attacks faster.|n|n|cFF00A5FF|nAoE: 800|nDamage: 1*|r|c003CFF3CAGI|r|cFF00A5FF per sec.|nSilence: while in the field|nAttack speed: +60%|nDuration: 6 sec.|nCooldown: 45 sec.|r")
 call LANG_A('ToEc',0,0,"Double Cero, [|cffffcc00Level 1|r] (|cffffcc00R|r)")
