@@ -135694,6 +135694,7 @@ call SaveBoolean(HH,GetHandleId(gu),SH_ShnGOn,false)
 call ShinjiSwordBase(gu)
 set gu=null
 call PauseUnit(LoadUnitHandle(h,GetHandleId(t),0),false)
+call SetUnitInvulnerable(LoadUnitHandle(h,GetHandleId(t),0),false)
 call SetUnitPathing(LoadUnitHandle(h,GetHandleId(t),0),true)
 call FlushChildHashtable(h,GetHandleId(t))
 call DestroyTimer(t)
@@ -135843,7 +135844,12 @@ if UnitIsAlive(u) and UnitIsAlive(c) and Condition_Base(OwnerOf(u),c) then
 set ga=Atan2(GetUnitY(c)-GetUnitY(u),GetUnitX(c)-GetUnitX(u))
 set gd=SR(GetUnitX(u),GetUnitY(u),GetUnitX(c),GetUnitY(c))
 if gd>100 and gk<40 then
-if ModuloInteger(gk,2)==0 then
+// анимация последнего удара — ещё на подлёте, с 300 до цели (22 окт; было — на касании)
+if gd<=300 and not LoadBoolean(h,id,6) then
+call SaveBoolean(h,id,6,true)
+call ShinjiAnimFor(u,22,1.6,1.15)
+endif
+if ModuloInteger(gk,2)==0 and not LoadBoolean(h,id,6) then
 call ShinjiQAfter(OwnerOf(u),GetUnitX(u),GetUnitY(u),ga*bj_RADTODEG)
 endif
 // у цели плавно тормозит (21 окт): шаг 45, в последние ~150 — до 20
@@ -135862,15 +135868,22 @@ call RemoveSavedBoolean(HH,GetHandleId(c),SH_ShnPHold)
 call PauseUnit(c,false)
 call RemoveSavedBoolean(h,id,4)
 endif
+// анимация уже идёт с подлёта — только удар (22 окт)
+if LoadBoolean(h,id,6) then
+call SetUnitFacingInstant(u,ga*bj_RADTODEG)
+call ShinjiBlink(GetUnitX(u),GetUnitY(u))
+call ShinjiGHitDo(u,c,ga*bj_RADTODEG,false)
+else
 call SetUnitTimeScale(u,1.)
 call ShinjiGHit(u,c,GetUnitX(u),GetUnitY(u),ga*bj_RADTODEG,false)
+endif
 // второй удар — маленький туман Сакаканаде 300 вокруг цели на 2.5 с, он и переворачивает (21 окт)
 call ShinjiGMist(u,c)
 endif
 call SetUnitPathing(u,true)
 call ShinjiGRelease(id)
-// пауза до конца переворота (21 окт; было 0.4)
-call TimerStart(t,1.,false,function ShinjiGEnd)
+// пауза после удара 0.7 с (22 окт: анимация начинается раньше; 21 окт — 1, было 0.4)
+call TimerStart(t,0.7,false,function ShinjiGEnd)
 set c=null
 set u=null
 set t=null
@@ -136003,6 +136016,8 @@ call ShinjiSnd("HirakoG")
 call SaveBoolean(HH,GetHandleId(u),SH_ShnGOn,true)
 call ShinjiSwordBase(u)
 call PauseUnit(u,true)
+// неуязвим всю G (22 окт), снимается в ShinjiGEnd
+call SetUnitInvulnerable(u,true)
 call ShinjiBlink(GetUnitX(u),GetUnitY(u))
 // растворяется за 0.08 с, а не сразу (21 окт)
 call ShinjiFade(u,0,4)
