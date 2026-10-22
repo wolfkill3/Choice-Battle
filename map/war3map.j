@@ -130190,7 +130190,7 @@ function ShinjiHadoHitFx takes player hp,real hx,real hy,real hs,boolean hmain r
 local unit hn
 if hmain then
 set hn=CreateUnit(hp,'dH21',hx,hy,GetRandomReal(0,359))
-call SetUnitScale(hn,0.65,0.65,0.65) // взрыв на весь круг AoE 650 (22 окт; было 0.45 под AoE 450); урон — как раньше
+call SetUnitScale(hn,0.8,0.8,0.8) // взрыв центрального чуть больше (22 окт: 0.8; было 0.65, до этого 0.45 под AoE 450); урон — как раньше
 call KillUnit(hn)
 call MyRemoveUnit(hn,3.5)
 set hn=CreateUnit(hp,'dR41',hx,hy,GetRandomReal(0,359))
@@ -130376,20 +130376,20 @@ call PauseUnit(u,false)
 call SetUnitInvulnerable(u,false)
 elseif k<=13 then
 call ShinjiHadoOrb(u,id,k)
-elseif k==19 or (k>=21 and k<=23) then
-// залп почти одновременно (18 окт; было по одной сфере за тик): k 19 — центр, k 21..23 — кольцо пачками 1..5, 6..9, 10..13
+elseif k==19 or k==21 or k==22 or k==24 then
+// залп почти одновременно (18 окт; было по одной сфере за тик): кольцо пачками 1..5, 6..9, 10..13 (k 19, 21, 22), центр — последним, k 24 (22 окт; был первым, k 19)
 if k==19 then
-set hk=0
-set hke=0
-elseif k==21 then
 set hk=1
 set hke=5
-elseif k==22 then
+elseif k==21 then
 set hk=6
 set hke=9
-else
+elseif k==22 then
 set hk=10
 set hke=13
+else
+set hk=0
+set hke=0
 endif
 loop
 exitwhen hk>hke
