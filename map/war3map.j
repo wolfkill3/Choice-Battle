@@ -131303,10 +131303,11 @@ set fx=AddSpecialEffect("BlackGoku\\groundshock1.mdl",x1,y1)
 call SetSpecialEffectScale(fx,1.3)
 call SetSpecialEffectVertexColour(fx,140,255,150,255)
 call DestroyEffect(fx)
-set fx=AddSpecialEffect("CirclePulse_Green.mdl",x1,y1)
-call SetSpecialEffectScale(fx,300./141.)
-call SetSpecialEffectVertexColour(fx,90,255,110,255)
-call RemoveEffect(fx,0.8,false,CreateTimer())
+// без зелёного кольца при приземлении (22 окт)
+//set fx=AddSpecialEffect("CirclePulse_Green.mdl",x1,y1)
+//call SetSpecialEffectScale(fx,300./141.)
+//call SetSpecialEffectVertexColour(fx,90,255,110,255)
+//call RemoveEffect(fx,0.8,false,CreateTimer())
 set g=CreateGroup()
 call GroupEnumUnitsInRange(g,GetUnitX(u),GetUnitY(u),300,Base)
 loop
@@ -131322,10 +131323,10 @@ endif
 call GroupRemoveUnit(g,e)
 endloop
 call DestroyGroup(g)
-elseif tk<=fn+8 then
-// скольжение вперёд по инерции: 220 за 8 тиков, задевает по пути
-set nx=GetUnitX(u)+27.5*Cos(ang)
-set ny=GetUnitY(u)+27.5*Sin(ang)
+elseif tk<=fn+14 then
+// скольжение вперёд по инерции: 400 за 14 тиков (22 окт; было 220 за 8), задевает по пути
+set nx=GetUnitX(u)+28.6*Cos(ang)
+set ny=GetUnitY(u)+28.6*Sin(ang)
 if IsTerrainPathable(nx,ny,PATHING_TYPE_WALKABILITY) then
 set fin=true
 else
