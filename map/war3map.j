@@ -131121,29 +131121,38 @@ set ra=i*2*bj_PI/9+tk*0.105
 call SetSpecialEffectPositionWithZ(LoadEffectHandle(h,id,10+i),x+220*Cos(ra),y+220*Sin(ra),GetUnitZ(u)+140+18*Sin(tk*0.25+i*0.7))
 call SetSpecialEffectOrientation(LoadEffectHandle(h,id,10+i),ra*bj_RADTODEG+90.,0.,90.)
 call SetSpecialEffectScale(LoadEffectHandle(h,id,10+i),0.45+0.07*Sin(tk*0.3+i))
-// второй хоровод вплотную к Тоусену, в обратную сторону (v4)
-set ra=i*2*bj_PI/9-tk*0.16
-call SetSpecialEffectPositionWithZ(LoadEffectHandle(h,id,19+i),x+110*Cos(ra),y+110*Sin(ra),GetUnitZ(u)+70)
-call SetSpecialEffectOrientation(LoadEffectHandle(h,id,19+i),ra*bj_RADTODEG+90.,0.,90.)
+// v5 (22 окт): внутреннего хоровода нет
+//// второй хоровод вплотную к Тоусену, в обратную сторону (v4)
+//set ra=i*2*bj_PI/9-tk*0.16
+//call SetSpecialEffectPositionWithZ(LoadEffectHandle(h,id,19+i),x+110*Cos(ra),y+110*Sin(ra),GetUnitZ(u)+70)
+//call SetSpecialEffectOrientation(LoadEffectHandle(h,id,19+i),ra*bj_RADTODEG+90.,0.,90.)
 set i=i+1
 endloop
-// спам зелёных колец по полю
-set i=0
-loop
-exitwhen i>3
+//// спам зелёных колец по полю
+//set i=0
+//loop
+//exitwhen i>3
+//set ra=GetRandomReal(0,2*bj_PI)
+//// v4: три кольца у самого Тоусена (до 300), одно по полю
+//if i<3 then
+//set fx=AddSpecialEffect("CirclePulse_Green.mdl",x+GetRandomReal(40,300)*Cos(ra),y+GetRandomReal(40,300)*Sin(ra))
+//else
+//set fx=AddSpecialEffect("CirclePulse_Green.mdl",x+GetRandomReal(300,780)*Cos(ra),y+GetRandomReal(300,780)*Sin(ra))
+//endif
+//call SetSpecialEffectScale(fx,GetRandomReal(0.5,1.1))
+//call RemoveEffect(fx,0.6,false,CreateTimer())
+//set i=i+1
+//endloop
+// v5 (22 окт): вместо спама колец — зелёные столбы бьют в случайные точки поля (раз в 0.1 с)
+if ModuloInteger(tk,2)==0 then
 set ra=GetRandomReal(0,2*bj_PI)
-// v4: три кольца у самого Тоусена (до 300), одно по полю
-if i<3 then
-set fx=AddSpecialEffect("CirclePulse_Green.mdl",x+GetRandomReal(40,300)*Cos(ra),y+GetRandomReal(40,300)*Sin(ra))
-else
-set fx=AddSpecialEffect("CirclePulse_Green.mdl",x+GetRandomReal(300,780)*Cos(ra),y+GetRandomReal(300,780)*Sin(ra))
+set fx=AddSpecialEffect("greenstolb.mdl",x+GetRandomReal(150,760)*Cos(ra),y+GetRandomReal(150,760)*Sin(ra))
+call SetSpecialEffectScale(fx,GetRandomReal(0.45,0.7))
+call DestroyEffect(fx)
 endif
-call SetSpecialEffectScale(fx,GetRandomReal(0.5,1.1))
-call RemoveEffect(fx,0.6,false,CreateTimer())
-set i=i+1
-endloop
 // звуковые волны (22 окт): каждые 0.5 с от Тоусена расходится кольцо до края поля 800 и гаснет
-if ModuloInteger(tk,10)==1 then
+//if ModuloInteger(tk,10)==1 then
+if ModuloInteger(tk,20)==1 then // v5: раз в 1 с (22 окт)
 set i=ModuloInteger(tk/10,3)
 call DestroyEffect(LoadEffectHandle(h,id,40+i))
 set fx=AddSpecialEffect("CirclePulse_Green.mdl",x,y)
@@ -131172,6 +131181,9 @@ set fx=AddSpecialEffect("Others\\WindCirclefaster.mdl",x,y)
 call SetSpecialEffectScale(fx,2.8)
 call SetSpecialEffectVertexColour(fx,90,255,110,255)
 call DestroyEffect(fx)
+set fx=AddSpecialEffect("war3mapImported\\GreenSlam.mdl",x,y) // v5 (22 окт)
+call SetSpecialEffectScale(fx,1.4)
+call DestroyEffect(fx)
 endif
 if ModuloInteger(tk,10)==0 then
 set g=CreateGroup()
@@ -131182,6 +131194,7 @@ exitwhen e==null
 if Condition_Base(p,e) then
 call myCustomDamage(u,e,0.5*GetHeroAgi(u,true),false,false,null,null,null)
 call DestroyEffect(AddSpecialEffectTarget("Tousen_Sonic.mdl",e,"chest"))
+call DestroyEffect(AddSpecialEffectTarget("war3mapImported\\az_jugggreen_e2_impact.mdl",e,"origin")) // v5 (22 окт)
 if UnitIsAlive(e) then
 call SetControlToUnit(u,e,0.6,"silence")
 endif
@@ -131194,6 +131207,7 @@ else
 call UnitRemoveAbility(u,'ToFa')
 call DestroyEffect(LoadEffectHandle(h,id,2))
 call DestroyEffect(LoadEffectHandle(h,id,3))
+call DestroyEffect(LoadEffectHandle(h,id,4))
 loop
 exitwhen i>17
 call DestroyEffect(LoadEffectHandle(h,id,10+i))
@@ -131271,17 +131285,20 @@ call SetSpecialEffectScale(fx,0.45)
 call SetSpecialEffectPitch(fx,-90.)
 call SetSpecialEffectVertexColour(fx,90,255,110,255)
 call SaveEffectHandle(h,id,10+i,fx)
-set fx=AddSpecialEffect("CirclePulse_Green.mdl",GetUnitX(u),GetUnitY(u))
-call SetSpecialEffectScale(fx,0.35)
-call SetSpecialEffectPitch(fx,-90.)
-call SetSpecialEffectVertexColour(fx,90,255,110,255)
-call SaveEffectHandle(h,id,19+i,fx)
+// v5 (22 окт): внутреннего хоровода нет
+//set fx=AddSpecialEffect("CirclePulse_Green.mdl",GetUnitX(u),GetUnitY(u))
+//call SetSpecialEffectScale(fx,0.35)
+//call SetSpecialEffectPitch(fx,-90.)
+//call SetSpecialEffectVertexColour(fx,90,255,110,255)
+//call SaveEffectHandle(h,id,19+i,fx)
 set i=i+1
 endloop
 set bj_lastCreatedEffect=AddSpecialEffect(EffectID[23],GetUnitX(u),GetUnitY(u))
 call SetSpecialEffectScale(bj_lastCreatedEffect,1.3)
 call SetSpecialEffectVertexColour(bj_lastCreatedEffect,40,255,60,255)
 call DestroyEffect(bj_lastCreatedEffect)
+// зелёная аура на Тоусене на время поля (v5, 22 окт)
+call SaveEffectHandle(h,id,4,AddSpecialEffectTarget("az_goods_tp_caster(green).mdl",u,"origin"))
 call SaveUnitHandle(h,id,0,u)
 call SaveInteger(h,id,1,0)
 call TimerStart(t,0.05,true,function TousenFTTick)
