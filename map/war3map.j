@@ -48424,6 +48424,7 @@ if GetUnitTypeId(u) == 'H0TF' then
     call IssueImmediateOrder(u, "bearform")
     call UnitRemoveAbility(u, 'ToMB')
     call UnitRemoveAbility(u, 'ToRg')
+    call UnitRemoveAbility(u, 'ToFG')
     call SetUnitFlyHeight(u,0,0)
     // портрет назад (22 окт)
     if LoadStr(HH,GetHandleId(u),SH_TouPortrait)!=null and LoadStr(HH,GetHandleId(u),SH_TouPortrait)!="" then
@@ -130384,6 +130385,7 @@ call UnitRemoveAbility(u,'ToFa')
 // v2 (22 окт): полёт (E3) и серо (R) убираются, Хадо назад, +15% характеристик снимаются, иконка назад
 call UnitRemoveAbility(u,'ToFE')
 call UnitRemoveAbility(u,'ToEc')
+call UnitRemoveAbility(u,'ToFG')
 call EnableUnitAbility(u,'A0J9',true,true)
 call SetHeroStr(u,GetHeroStr(u,false)-LoadInteger(HH,GetHandleId(u),SH_TouStr),true)
 call SetHeroAgi(u,GetHeroAgi(u,false)-LoadInteger(HH,GetHandleId(u),SH_TouAgi),true)
@@ -130829,7 +130831,9 @@ set rd=80.+140.*k
 set fx=AddSpecialEffect("Tousen_Sonic.mdl",x0+rd*Cos(a),y0+rd*Sin(a))
 call SetSpecialEffectScale(fx,0.5+0.17*k)
 // кольцо стоит лицом к врагам: поперёк направления, на высоте 110 (22 окт)
-call SetSpecialEffectOrientation(fx,a*bj_RADTODEG,-90.,0.)
+//call SetSpecialEffectOrientation(fx,a*bj_RADTODEG,-90.,0.)
+// ребром к врагам поворотом по Roll (22 окт): плоскость кольца поперёк направления
+call SetSpecialEffectOrientation(fx,a*bj_RADTODEG+90.,0.,90.)
 call SetSpecialEffectPositionWithZ(fx,x0+rd*Cos(a),y0+rd*Sin(a),GetTerrainZ(x0+rd*Cos(a),y0+rd*Sin(a))+110.)
 call SaveEffectHandle(h,id,20+k,fx)
 endif
@@ -130844,9 +130848,11 @@ if age==18 then
 call DestroyEffect(fx)
 else
 set rd=80.+140.*k
-set side=(18.+4.*k)*Sin(age*0.7+k*1.3)
-call SetSpecialEffectPositionWithZ(fx,x0+rd*Cos(a)+side*Cos(a+bj_PI/2),y0+rd*Sin(a)+side*Sin(a+bj_PI/2),GetTerrainZ(x0+rd*Cos(a),y0+rd*Sin(a))+110.)
-call SetSpecialEffectOrientation(fx,a*bj_RADTODEG+14.*Sin(age*0.7+k*1.3),-90.,12.*Cos(age*0.6+k))
+//set side=(18.+4.*k)*Sin(age*0.7+k*1.3)
+//call SetSpecialEffectPositionWithZ(fx,x0+rd*Cos(a)+side*Cos(a+bj_PI/2),y0+rd*Sin(a)+side*Sin(a+bj_PI/2),GetTerrainZ(x0+rd*Cos(a),y0+rd*Sin(a))+110.)
+//call SetSpecialEffectOrientation(fx,a*bj_RADTODEG+14.*Sin(age*0.7+k*1.3),-90.,12.*Cos(age*0.6+k))
+// без покачивания (22 окт): кольцо стоит на месте и плавно растёт
+call SetSpecialEffectScale(fx,(0.5+0.17*k)*(1.+0.012*age))
 endif
 endif
 set k=k+1
@@ -130993,10 +130999,15 @@ if tk<=120 and UnitIsAlive(u) and udg_B==true and LoadBoolean(HH,GetHandleId(u),
 loop
 exitwhen i>8
 set ra=i*2*bj_PI/9+tk*0.105
-call SetSpecialEffectPositionWithZ(LoadEffectHandle(h,id,10+i),x+220*Cos(ra),y+220*Sin(ra),GetUnitZ(u)+140)
+//call SetSpecialEffectPositionWithZ(LoadEffectHandle(h,id,10+i),x+220*Cos(ra),y+220*Sin(ra),GetUnitZ(u)+140)
+// кольца смотрят наружу и покачиваются по высоте (22 окт)
+call SetSpecialEffectPositionWithZ(LoadEffectHandle(h,id,10+i),x+220*Cos(ra),y+220*Sin(ra),GetUnitZ(u)+140+18*Sin(tk*0.25+i*0.7))
+call SetSpecialEffectOrientation(LoadEffectHandle(h,id,10+i),ra*bj_RADTODEG+90.,0.,90.)
+call SetSpecialEffectScale(LoadEffectHandle(h,id,10+i),0.45+0.07*Sin(tk*0.3+i))
 // второй хоровод вплотную к Тоусену, в обратную сторону (v4)
 set ra=i*2*bj_PI/9-tk*0.16
 call SetSpecialEffectPositionWithZ(LoadEffectHandle(h,id,19+i),x+110*Cos(ra),y+110*Sin(ra),GetUnitZ(u)+70)
+call SetSpecialEffectOrientation(LoadEffectHandle(h,id,19+i),ra*bj_RADTODEG+90.,0.,90.)
 set i=i+1
 endloop
 // спам зелёных колец по полю
@@ -131012,6 +131023,31 @@ set fx=AddSpecialEffect("CirclePulse_Green.mdl",x+GetRandomReal(300,780)*Cos(ra)
 endif
 call SetSpecialEffectScale(fx,GetRandomReal(0.5,1.1))
 call RemoveEffect(fx,0.6,false,CreateTimer())
+set i=i+1
+endloop
+// звуковые волны (22 окт): каждые 0.5 с от Тоусена расходится кольцо до края поля 800 и гаснет
+if ModuloInteger(tk,10)==1 then
+set i=ModuloInteger(tk/10,3)
+call DestroyEffect(LoadEffectHandle(h,id,40+i))
+set fx=AddSpecialEffect("CirclePulse_Green.mdl",x,y)
+call SetSpecialEffectScale(fx,0.7)
+call SaveEffectHandle(h,id,40+i,fx)
+call SaveInteger(h,id,45+i,tk)
+endif
+set i=0
+loop
+exitwhen i>2
+if LoadEffectHandle(h,id,40+i)!=null then
+set fx=LoadEffectHandle(h,id,40+i)
+if tk-LoadInteger(h,id,45+i)>=14 then
+call DestroyEffect(fx)
+call RemoveSavedHandle(h,id,40+i)
+else
+call SetSpecialEffectPositionWithZ(fx,x,y,GetUnitZ(u)+20)
+call SetSpecialEffectScale(fx,(100.+50.*(tk-LoadInteger(h,id,45+i)))/141.)
+call SetSpecialEffectVertexColour(fx,90,255,110,255-17*(tk-LoadInteger(h,id,45+i)))
+endif
+endif
 set i=i+1
 endloop
 if ModuloInteger(tk,20)==1 then
@@ -131046,6 +131082,9 @@ exitwhen i>17
 call DestroyEffect(LoadEffectHandle(h,id,10+i))
 set i=i+1
 endloop
+call DestroyEffect(LoadEffectHandle(h,id,40))
+call DestroyEffect(LoadEffectHandle(h,id,41))
+call DestroyEffect(LoadEffectHandle(h,id,42))
 call PauseTimer(t)
 call DestroyTimer(t)
 call FlushChildHashtable(h,id)
@@ -131199,6 +131238,8 @@ call UnitAddAbility(u,'Amrf')
 call UnitRemoveAbility(u,'Amrf')
 call SetUnitFlyHeight(u,40,0)
 call UnitRemoveAbility(u,'ToEf')
+// G — удар мухи (W2 Кисаме, 22 окт)
+call UnitAddAbility(u,'ToFG')
 call UnitAddAbility(u,'ToFE')
 call SetUnitAbilityLevel(u,'ToFE',IMaxBJ(1,GetUnitAbilityLevel(u,'A0JA')))
 call DisableUnitAbility(u,'A0J9',true,true)
@@ -131788,6 +131829,118 @@ call TimerStart(t,0.03,true,function TousenFETick)
 set t=null
 set u=null
 endfunction
+// G мухи «Grillar Golpe» (22 окт) — W2 Кисаме из CR 5.3 (Shark Strike): рывок к цели (50 за 0.02 с), у цели серия из 4 ударов
+// по кругу, в конце 8*AGI (без AD) и оглушение 2 с; Тоусен на паузе и неуязвим, цель на паузе. Рывок до 2 с, иначе отмена
+function TousenFGTick takes nothing returns nothing
+local timer t=GetExpiredTimer()
+local integer id=GetHandleId(t)
+local unit u=LoadUnitHandle(h,id,0)
+local unit e=LoadUnitHandle(h,id,1)
+local real time=LoadReal(h,id,2)+0.02
+local real facing=LoadReal(h,id,3)
+local integer rf=LoadInteger(h,id,4)
+local boolean fin=false
+call SaveReal(h,id,2,time)
+if not UnitIsAlive(u) or udg_B==false or (time<20 and (not UnitIsAlive(e) or time>2.)) then
+set fin=true
+elseif time>21.6 then
+set fin=true
+if UnitIsAlive(e) then
+call PauseUnit(e,false)
+call myCustomDamage(u,e,8*GetHeroAgi(u,true),false,false,null,null,null)
+if UnitIsAlive(e) then
+call SetControlToUnit(u,e,2.,"stun")
+endif
+endif
+endif
+if fin then
+call DestroyEffect(LoadEffectHandle(h,id,5))
+call UnitSpeed(u,1)
+call SetUnitFlyHeight(u,40,0)
+call PauseUnit(u,false)
+call SetUnitInvulnerable(u,false)
+call SetUnitPathing(u,true)
+call SetUnitTurnSpeed(u,GetUnitDefaultTurnSpeed(u))
+if LoadBoolean(h,id,6) then
+call PauseUnit(e,false)
+endif
+call PauseTimer(t)
+call FlushChildHashtable(h,id)
+call DestroyTimer(t)
+else
+if time<20 then
+set facing=Angle2(GetUnitX(u),GetUnitY(u),GetUnitX(e),GetUnitY(e))
+call SaveReal(h,id,3,facing)
+endif
+call SetUnitFacing(u,facing)
+if time>0.2 and time<20 then
+call MoveUnit(u,u,50,facing)
+if SR(GetUnitX(u),GetUnitY(u),GetUnitX(e),GetUnitY(e))<250 then
+call SaveReal(h,id,2,20)
+call PauseUnit(e,true)
+call SaveBoolean(h,id,6,true)
+endif
+endif
+if time>20 then
+if time<20.3 then
+call MoveUnit(u,u,50,facing)
+endif
+// облёт цели: три поворота на 15 градусов в одну сторону
+if (time>20.1 and time<20.3) or (time>20.7 and time<20.9) or (time>21.3 and time<21.5) then
+if rf==1 then
+set facing=facing+15
+else
+set facing=facing-15
+endif
+call SaveReal(h,id,3,facing)
+endif
+if (time>20.29 and time<20.31) or (time>20.89 and time<20.91) or (time>21.49 and time<21.51) then
+set facing=Angle2(GetUnitX(u),GetUnitY(u),GetUnitX(e),GetUnitY(e))
+call SaveReal(h,id,3,facing)
+call SetUnitFacingInstant(u,facing)
+endif
+if time>=20.3 and time<22 then
+call MoveUnit(u,u,50,facing)
+endif
+// удары: эффекты Кисаме (пак), ветер зелёный
+if (time>20.01 and time<20.03) or (time>20.49 and time<20.51) or (time>20.99 and time<21.01) or (time>21.59 and time<21.61) then
+call SetUnitAnimation(u,"attack")
+call EffectCreateAndMove(true,"Others\\WindCirclefaster.mdl",GetRandomReal(0,360),1,1.5,1.5,40,100,50,40,0,e,0,facing)
+call EffectCreateAndMove(true,"Others\\[A]az_axe_ef1.mdl",GetRandomReal(0,360),1,1.25,0.75,100,100,100,40,0,e,0,facing)
+call EffectCreateAndMove(true,"Kisame\\qqqqqr.mdl",GetRandomReal(0,360),1,2.5,0.3,100,100,100,0,150,e,0,facing)
+call EffectCreateAndMove(true,"Kisame\\afbcronoseffect1.mdl",GetRandomReal(0,360),1,1,1.75,100,100,100,0,150,e,0,facing)
+call EffectCreateAndMove90(true,"Kisame\\suijinha.mdl",facing,1.5,1.5,0.5,100,100,100,0,150,e,-50,facing)
+call DestroyEffect(AddSpecialEffectTarget("Tousen_Sonic.mdl",e,"chest"))
+endif
+endif
+endif
+set u=null
+set e=null
+set t=null
+endfunction
+function TousenFGCond takes nothing returns boolean
+return GetSpellAbilityId()=='ToFG' and udg_B==true and GetUnitTypeId(GetTriggerUnit())=='H0TF'
+endfunction
+function TousenFGCast takes nothing returns nothing
+local unit u=GetTriggerUnit()
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+call SaveUnitHandle(h,id,0,u)
+call SaveUnitHandle(h,id,1,GetSpellTargetUnit())
+call SaveReal(h,id,2,0.)
+call SaveReal(h,id,3,Angle2(GetUnitX(u),GetUnitY(u),GetUnitX(GetSpellTargetUnit()),GetUnitY(GetSpellTargetUnit())))
+call SaveInteger(h,id,4,GetRandomInt(1,2))
+call SaveEffectHandle(h,id,5,AddSpecialEffectTarget("Kisame\\file00002180.mdl",u,"origin"))
+call PauseUnit(u,true)
+call SetUnitInvulnerable(u,true)
+call SetUnitPathing(u,false)
+call SetUnitTurnSpeed(u,3000)
+call SetUnitAnimation(u,"walk")
+call UnitSpeed(u,1.5)
+call TimerStart(t,0.02,true,function TousenFGTick)
+set t=null
+set u=null
+endfunction
 function InitTrig_TousenE takes nothing returns nothing
 local trigger t=CreateTrigger()
 call TriggerRegisterAnyUnitEventBJ(t,EVENT_PLAYER_UNIT_SPELL_EFFECT)
@@ -131813,6 +131966,10 @@ set t=CreateTrigger()
 call TriggerRegisterAnyUnitEventBJ(t,EVENT_PLAYER_UNIT_SPELL_EFFECT)
 call TriggerAddCondition(t,Condition(function TousenFECond))
 call TriggerAddAction(t,function TousenFECast)
+set t=CreateTrigger()
+call TriggerRegisterAnyUnitEventBJ(t,EVENT_PLAYER_UNIT_SPELL_EFFECT)
+call TriggerAddCondition(t,Condition(function TousenFGCond))
+call TriggerAddAction(t,function TousenFGCast)
 set t=null
 endfunction
 // R — Хадо №91 «Сэндзю Котэн Тайхо» (16 окт): 7 световых столбов (BeamLight) раз в 0.12 с — центр, затем кольцо 250
@@ -134441,6 +134598,8 @@ call SaveInteger(HH,SH_ShnChanT,'ToEc',2)
 call SaveStr(HH,SH_ShnChanO,'ToEf',"metamorphosis")
 call SaveStr(HH,SH_ShnChanO,'ToFE',"unholyfrenzy")
 call SaveInteger(HH,SH_ShnChanT,'ToFE',2)
+call SaveStr(HH,SH_ShnChanO,'ToFG',"spiritwolf")
+call SaveInteger(HH,SH_ShnChanT,'ToFG',1)
 call SaveStr(HH,SH_ShnChanO,'ToFT',"submerge")
 call SaveStr(HH,SH_ShnChanO,'ToFW',"vengeance")
 call SaveInteger(HH,SH_ShnChanT,'ToFW',2)
@@ -136565,6 +136724,7 @@ call SaveStr(HH,SH_AbOrd,'TRSS',"faeriefire")
 call SaveStr(HH,SH_AbOrd,'ToEc',"carrionswarm")
 call SaveStr(HH,SH_AbOrd,'ToEf',"metamorphosis")
 call SaveStr(HH,SH_AbOrd,'ToFE',"unholyfrenzy")
+call SaveStr(HH,SH_AbOrd,'ToFG',"spiritwolf")
 call SaveStr(HH,SH_AbOrd,'ToFT',"submerge")
 call SaveStr(HH,SH_AbOrd,'ToFW',"vengeance")
 call SaveStr(HH,SH_AbOrd,'ToMB',"bearform")
@@ -291669,11 +291829,13 @@ call LANG_A('ToFE',1,3,"The fly dashes to the point: damage and stun to enemies 
 call LANG_A('ToFE',1,4,"The fly dashes to the point: damage and stun to enemies on the way. Always the full range towards the click, Tōsen is paused.|n|n|cFF00A5FF|nDamage: 8*|r|c003CFF3CAGI|r|cFF00A5FF|nStun: 1 sec.|nAoE: 300|nRange: 1200|nCooldown: 10 sec.|r")
 call LANG_A('ToFE',2,0,"Flight, [|cffffcc00Level %d|r] (|cffffcc00E|r)")
 call LANG_A('ToFE',3,0,"The fly dashes to the point: damage and stun to enemies on the way. Always the full range towards the click, Tōsen is paused.|n|n|cFF00A5FF|nDamage: 4\\5\\6\\7\\8*|r|c003CFF3CAGI|r|cFF00A5FF|nStun: 1 sec.|nAoE: 300|nRange: 1200|nCooldown: 10 sec.|r")
+call LANG_A('ToFG',1,0,"The fly dashes to the target and lands a series of 4 strikes, circling around it.|n|n|cFF00A5FFDamage: 8*|r|c003CFF3CAGI|r|cFF00A5FF|nStun: 2 sec.|nRange: 1000|nCooldown: 25 sec.|r")
+call LANG_A('ToFG',3,0,"The fly dashes to the target and lands a series of 4 strikes, circling around it.|n|n|cFF00A5FFDamage: 8*|r|c003CFF3CAGI|r|cFF00A5FF|nStun: 2 sec.|nRange: 1000|nCooldown: 25 sec.|r")
 call LANG_A('ToFW',0,0,"Wing Chirr, [|cffffcc00Level 1|r] (|cffffcc00W|r)")
-call LANG_A('ToFW',0,1,"Wing Chirr, [|cffffcc00Level 2|r] (|cffffcc00W|r)")
-call LANG_A('ToFW',0,2,"Wing Chirr, [|cffffcc00Level 3|r] (|cffffcc00W|r)")
 endfunction
 function LANG_Data51 takes nothing returns nothing
+call LANG_A('ToFW',0,1,"Wing Chirr, [|cffffcc00Level 2|r] (|cffffcc00W|r)")
+call LANG_A('ToFW',0,2,"Wing Chirr, [|cffffcc00Level 3|r] (|cffffcc00W|r)")
 call LANG_A('ToFW',0,3,"Wing Chirr, [|cffffcc00Level 4|r] (|cffffcc00W|r)")
 call LANG_A('ToFW',0,4,"Wing Chirr, [|cffffcc00Level 5|r] (|cffffcc00W|r)")
 call LANG_A('ToFW',1,0,"The fly's wings send a sound wave ahead: damage and silence to everyone in the cone.|n|n|cFF00A5FF|nDamage: 3*|r|c003CFF3CAGI|r|cFF00A5FF|nSilence: 1.6 sec.|nRange: 1500, cone 60°|nCooldown: 12 sec.|r")
@@ -291922,10 +292084,10 @@ call LANG_It('I01I',3,"Increases attack power by 60 and |c00FFFF66AllStat|r by 1
 call LANG_It('I01J',0,"Sword, Rank C")
 call LANG_It('I01J',1,"Sword, Rank C")
 call LANG_It('I01J',2,"Increases attack power by 40 and |c00FFFF66AllStat|r by 12, Passive: Mortal Strike - 15% chance to deal 1.5x damage")
-call LANG_It('I01J',3,"Increases attack power by 40 and |c00FFFF66AllStat|r by 12, Passive: Mortal Strike - 15% chance to deal 1.5x damage")
-call LANG_It('I01K',0,"Sword, Rank A")
 endfunction
 function LANG_Data52 takes nothing returns nothing
+call LANG_It('I01J',3,"Increases attack power by 40 and |c00FFFF66AllStat|r by 12, Passive: Mortal Strike - 15% chance to deal 1.5x damage")
+call LANG_It('I01K',0,"Sword, Rank A")
 call LANG_It('I01K',1,"Sword, Rank A")
 call LANG_It('I01K',2,"Increases attack power by 80 and |c00FFFF66AllStat|r by 24, Passive: Mortal Strike - 15% chance to deal 2x damage")
 call LANG_It('I01K',3,"Increases attack power by 80 and |c00FFFF66AllStat|r by 24, Passive: Mortal Strike - 15% chance to deal 2x damage")
@@ -292174,10 +292336,10 @@ call LANG_It('I038',3,"Increase |c003CFF3CAGI|r by 50, HP by 500, Attack by 125.
 call LANG_It('I039',0,"Lucky Box")
 call LANG_It('I039',1,"Lucky Box")
 call LANG_It('I039',2,"When opened, 1 random items drop.")
-call LANG_It('I039',3,"When opened, 1 random items drop.")
-call LANG_It('I03A',0,"Alastor")
 endfunction
 function LANG_Data53 takes nothing returns nothing
+call LANG_It('I039',3,"When opened, 1 random items drop.")
+call LANG_It('I03A',0,"Alastor")
 call LANG_It('I03A',1,"Alastor")
 call LANG_It('I03A',2,"Increases |c00FFFF66AllStat|r by 35, increases regeneration up to 50 per sec., \"Alastor's Fire\" - deals 8*Hero level damage per sec. to all enemies within a radius of 700.|nThe aura does not activate the Onizuka Set.|n|n\"Fire Clone\" - creates a fiery clone that deals 50% damage and receives 200%"+".|nCDR: 20 sec.")
 call LANG_It('I03A',3,"Increases |c00FFFF66AllStat|r by 35, increases regeneration up to 50 per sec., \"Alastor's Fire\" - deals 8*Hero level damage per sec. to all enemies within a radius of 700.|nThe aura does not activate the Onizuka Set.|n|n\"Fire Clone\" - creates a fiery clone that deals 50% damage and receives 200%"+"|nCDR: 20 sec.")
@@ -292426,10 +292588,10 @@ call LANG_It('I04S',1,"Ice Essence (Recipe)")
 call LANG_It('I04S',2,"Increases the hero's |c0077FFFFINT|r by 35, and |c00FF5555STR|r and |c003CFF3CAGI|r by 15. Ability: \"Cooling\" - for 10 sec. prevents HP restoration and also deals ((30% of Max HP)-1000) damage over 10 sec.|n|cFFFF0000Cannot be used on enemies under the effect of Imagine Breaker,|r but if applied, "+"there is no way to clear it.|n|nRange: 800|nCD: 35 sec.|n|nRequires: 2xIce Sphere, Medal of Courage")
 call LANG_It('I04S',3,"Increases the hero's |c0077FFFFINT|r by 35, and |c00FF5555STR|r and |c003CFF3CAGI|r by 15. Ability: \"Cooling\" - for 10 sec. prevents HP restoration and also deals ((30% of Max HP)-1000) damage over 10 sec.|n|cFFFF0000Cannot be used on enemies under the effect of Imagine Breaker,|r but if applied, "+"there is no way to clear it.|n|nRange: 800|nCD: 35 sec.|n|nRequires: 2xIce Sphere, Medal of Courage")
 call LANG_It('I04T',0,"Yata Mirror")
-call LANG_It('I04T',1,"Yata Mirror")
-call LANG_It('I04T',2,"Increase |c00FFFF66AllStat|r by 35, mana regen 50%, DEF by 10, when damaged, the wearer returns 25% of the damage received. Onizuka's Set and Stigmata Tesseract's passive ability activation damage is reduced by 50% when hitting back.|nActive: Increases the amount of damage returned by up to 60% for "+"5 seconds. CD: 20.")
 endfunction
 function LANG_Data54 takes nothing returns nothing
+call LANG_It('I04T',1,"Yata Mirror")
+call LANG_It('I04T',2,"Increase |c00FFFF66AllStat|r by 35, mana regen 50%, DEF by 10, when damaged, the wearer returns 25% of the damage received. Onizuka's Set and Stigmata Tesseract's passive ability activation damage is reduced by 50% when hitting back.|nActive: Increases the amount of damage returned by up to 60% for "+"5 seconds. CD: 20.")
 call LANG_It('I04T',3,"Increase |c00FFFF66AllStat|r by 35, mana regen 50%, DEF by 10, when damaged, the wearer returns 25% of the damage received. Onizuka's Set and Stigmata Tesseract's passive ability activation damage is reduced by 50% when hitting back.|nActive: Increases the amount of damage returned by up to 60% for "+"5 seconds. CD: 20.")
 call LANG_It('IYM0',0,"Yata Mirror (Recipe)")
 call LANG_It('IYM0',1,"Yata Mirror (Recipe)")
@@ -292678,10 +292840,10 @@ call LANG_It('I06K',1,"Quincy Glove")
 call LANG_It('I06K',2,"Increase |c00FFFF66AllStat|r by 13, attack by 40")
 call LANG_It('I06K',3,"Increase |c00FFFF66AllStat|r by 13, attack by 40")
 call LANG_It('I06L',0,"Quincy Cross")
-call LANG_It('I06L',1,"Quincy Cross")
-call LANG_It('I06L',2,"Increase Regen HP by 20.")
 endfunction
 function LANG_Data55 takes nothing returns nothing
+call LANG_It('I06L',1,"Quincy Cross")
+call LANG_It('I06L',2,"Increase Regen HP by 20.")
 call LANG_It('I06L',3,"Increase Regen HP by 20.")
 call LANG_It('I06M',0,"Quincy Medallion")
 call LANG_It('I06M',1,"Quincy Medallion")
@@ -292930,10 +293092,10 @@ call LANG_U('H00V',3,"Enel, the god of Skypiea, ate the Goro Goro no Mi fruit an
 call LANG_U('H00Q',3,"Gekko Moria - a former shichibukai, ate the fruit \"Kage Kage no Mi\" allowing him to control shadows.|n|nRole: Caster, Carry, Exhauster|n|n")
 call LANG_U('H00W',2,"Hibari Kyoya")
 call LANG_U('H00W',3,"Sasagawa Ryohei is the head of the Namimori Boxing Club and is also the \"Keeper of the Vongola Sun\".")
-call LANG_U('H00X',3,"Hibari Kyoya is the head of the Namimori School's Discipline Committee and is also the \"Guardian of the Vongola Cloud\".|n|nRole: Assassin, Carry|n|n")
-call LANG_U('H00Y',3,"\"Akainu\" is a Marine admiral who ate the \"Magu Magu no Mi\" fruit and became a human capable of manipulating magma.|n|nRole: Durable, Disabler|n|n")
 endfunction
 function LANG_Data56 takes nothing returns nothing
+call LANG_U('H00X',3,"Hibari Kyoya is the head of the Namimori School's Discipline Committee and is also the \"Guardian of the Vongola Cloud\".|n|nRole: Assassin, Carry|n|n")
+call LANG_U('H00Y',3,"\"Akainu\" is a Marine admiral who ate the \"Magu Magu no Mi\" fruit and became a human capable of manipulating magma.|n|nRole: Durable, Disabler|n|n")
 call LANG_U('H00Z',3,"Gintoki is a former participant in the war against aliens, a samurai nicknamed the white deman.|n|nRole: Caster, Escape, Swordsman|n|n")
 call LANG_U('H011',3,"Nami is the navigator on the Straw Hat crew's ship, and is well versed in the weather.|n|nRole: Caster, Disabler, Exhauster|n|n")
 call LANG_U('H012',3,"Hichigo is the remnant of a Hollow White who infected Ichigo's Zanpakutō with his essence.|n|nRole: Carry, Swordsman|n|n")
@@ -293182,10 +293344,10 @@ call LANG_U('h109',0,"35 Level.")
 call LANG_U('h046',0,"Level 6")
 call LANG_U('h04K',0,"Level 12")
 call LANG_U('h15T',0,"Moria's Creep")
-call LANG_U('h25T',0,"Moria's Creep")
-call LANG_U('h05T',0,"Creep Frieza")
 endfunction
 function LANG_Data57 takes nothing returns nothing
+call LANG_U('h25T',0,"Moria's Creep")
+call LANG_U('h05T',0,"Creep Frieza")
 call LANG_U('h05U',0,"Creep Frieza")
 call LANG_U('h05V',0,"Creep Frieza")
 call LANG_U('h05W',0,"Creep Frieza")
@@ -293434,10 +293596,10 @@ call LANG_B('IHYb',0,"Yukirin's Hourglass")
 call LANG_B('IHYb',1,"This unit's health regeneration efficiency has been reduced by 25/50/75%. Depending on the level of this buff.")
 call LANG_B('IO3b',0,"Weighty Argument")
 call LANG_B('IO3b',1,"This unit's health regeneration efficiency has been reduced by 25%.")
-call LANG_B('IO4b',0,"Stigmata Recharge")
-call LANG_B('IO4b',1,"Stigmata Recharge")
 endfunction
 function LANG_Data58 takes nothing returns nothing
+call LANG_B('IO4b',0,"Stigmata Recharge")
+call LANG_B('IO4b',1,"Stigmata Recharge")
 call LANG_B('IO5b',1,"Effectivness of controls effects is increased by 25%.")
 call LANG_B('B25b',1,"Effectivness of controls effects is increased by 15%.")
 call LANG_B('B26b',1,"Effectivness of controls effects is increased by 20%.")
