@@ -132386,6 +132386,10 @@ endif
 elseif ph==1 then
 // пролёт насквозь с торможением: 60 -> 5 за 12 тиков (~380)
 set sp=RMaxBJ(5.,60.-5.*pt)
+// v3b (22 окт): пролёт по дуге — курс уходит в сторону на 7 градусов за тик
+set cr=cr+(2*LoadInteger(h,id,4)-3)*0.12
+call SaveReal(h,id,10,cr)
+call SetUnitFacingInstant(u,cr*bj_RADTODEG)
 call SetUnitX(u,GetUnitX(u)+sp*Cos(cr))
 call SetUnitY(u,GetUnitY(u)+sp*Sin(cr))
 call UnitSpeed(u,RMaxBJ(0.5,1.8-0.11*pt))
@@ -132397,10 +132401,15 @@ endif
 else
 // разворот к цели: не больше 30 градусов за тик, 6 тиков
 set df=ModuloReal(ta-cr+bj_PI,2*bj_PI)-bj_PI
-set cr=cr+RMaxBJ(-0.52,RMinBJ(0.52,df))
+//set cr=cr+RMaxBJ(-0.52,RMinBJ(0.52,df))
+// v3b: плавный разворот, 11.5 градуса за тик, до 10 тиков (или пока не смотрит на цель)
+set cr=cr+RMaxBJ(-0.2,RMinBJ(0.2,df))
 call SaveReal(h,id,10,cr)
 call SetUnitFacingInstant(u,cr*bj_RADTODEG)
-if pt>=6 then
+call SetUnitX(u,GetUnitX(u)+5*Cos(cr))
+call SetUnitY(u,GetUnitY(u)+5*Sin(cr))
+//if pt>=6 then
+if pt>=10 or (df<0.2 and df>-0.2) then
 call SaveInteger(h,id,8,0)
 call SaveInteger(h,id,9,0)
 endif
