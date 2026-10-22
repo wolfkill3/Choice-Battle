@@ -131528,12 +131528,36 @@ if tk==1 then
 call PauseUnit(u,true)
 call SetUnitAnimationByIndex(u,7)
 call SetUnitTimeScale(u,1.5)
+// старт рывка — крупный направленный ветер и dash sfx (как у рывков других героев)
+set fx=AddSpecialEffect("WindVectorPush.mdx",GetUnitX(u),GetUnitY(u))
+call SetSpecialEffectOrientation(fx,ang*bj_RADTODEG,0,0)
+call SetSpecialEffectZ(fx,GetUnitZ(u)+50)
+call SetSpecialEffectScale(fx,1.3)
+call SetSpecialEffectVertexColour(fx,120,255,140,255)
+call DestroyEffect(fx)
+set fx=AddSpecialEffect("war3mapImported\\dash sfx.mdl",GetUnitX(u),GetUnitY(u))
+call SetSpecialEffectFacing(fx,ang*bj_RADTODEG-180)
+call SetSpecialEffectScale(fx,1.5)
+call SetSpecialEffectVertexColour(fx,120,255,140,255)
+call DestroyEffect(fx)
 endif
 if not UnitIsAlive(u) or udg_B==false or tk>40 then
 set fin=true
 elseif dd>5 then
 if ModuloInteger(tk,2)==1 then
 call TousenAfter(p,GetUnitX(u),GetUnitY(u),ang*bj_RADTODEG)
+set fx=AddSpecialEffect("war3mapImported\\DustWindFaster3.mdl",GetUnitX(u),GetUnitY(u))
+call SetSpecialEffectFacing(fx,ang*bj_RADTODEG+180)
+call SetSpecialEffectScale(fx,1.2)
+call SetSpecialEffectVertexColour(fx,140,255,150,255)
+call DestroyEffect(fx)
+endif
+if ModuloInteger(tk,3)==0 then
+set fx=AddSpecialEffect("war3mapImported\\dash sfx.mdl",GetUnitX(u),GetUnitY(u))
+call SetSpecialEffectFacing(fx,ang*bj_RADTODEG-180)
+call SetSpecialEffectScale(fx,1.2)
+call SetSpecialEffectVertexColour(fx,120,255,140,255)
+call DestroyEffect(fx)
 endif
 call SetUnitX(u,GetUnitX(u)+st*Cos(ang))
 call SetUnitY(u,GetUnitY(u)+st*Sin(ang))
@@ -131559,11 +131583,11 @@ call GroupRemoveUnit(g,e)
 endloop
 call DestroyGroup(g)
 else
-// конец рывка — удар о землю
-set fx=AddSpecialEffect("BlackGoku\\groundshock1.mdl",GetUnitX(u),GetUnitY(u))
-call SetSpecialEffectScale(fx,0.8)
-call SetSpecialEffectVertexColour(fx,140,255,150,255)
-call DestroyEffect(fx)
+// конец рывка — без удара о землю (22 окт)
+//set fx=AddSpecialEffect("BlackGoku\\groundshock1.mdl",GetUnitX(u),GetUnitY(u))
+//call SetSpecialEffectScale(fx,0.8)
+//call SetSpecialEffectVertexColour(fx,140,255,150,255)
+//call DestroyEffect(fx)
 set fin=true
 endif
 if fin then
