@@ -128645,47 +128645,9 @@ endfunction
 function ShinjiQPush takes unit pe,real pa returns nothing
 call ShinjiQPushEx(pe,pa,19.)
 endfunction
-function ShinjiQHit takes unit u,unit qe,real dmg,boolean qback returns boolean
-local real qef=Atan2(GetUnitY(u)-GetUnitY(qe),GetUnitX(u)-GetUnitX(qe))
-local boolean qbk=qback
-local real qsx
-local real qsy
-local real qpa
+// удар Q: разрезы, урон, оглушение, толчок (22 окт: вынесено — со спины удар идёт через 0.15 с после телепорта)
+function ShinjiQHitDo takes unit u,unit qe,real dmg,real qpa,boolean qbk returns nothing
 local effect qfx
-// 17 окт: Хирако подлетел — цель сразу лицом к нему (qef), от этого считаются «спереди» / «сзади»
-if not IsUnitType(qe,UNIT_TYPE_STRUCTURE) then
-call ShinjiFaceHold(qe,qef*bj_RADTODEG,0.6)
-endif
-// реверс (стойки Гарпа, UI Гоку, E Курапики и др., 17 окт): удара нет, цели отдаём Хирако (REVERSE_TARGET),
-// пауза и неуязвимость снимаются сразу, иначе ответный удар не пройдёт
-if LoadBoolean(HH,GetHandleId(qe),ANTITARGET_ABILITY) then
-call SaveUnitHandle(HH,GetHandleId(qe),REVERSE_TARGET,u)
-call ShinjiAlpha(u,255)
-call PauseUnit(u,false)
-call SetUnitInvulnerable(u,false)
-return true
-endif
-if qbk then
-set qsx=GetUnitX(qe)-90*Cos(qef)
-set qsy=GetUnitY(qe)-90*Sin(qef)
-else
-// спереди — удар с того места, где закончился рывок (21 окт; был перескок на 90 от цели)
-set qsx=GetUnitX(u)
-set qsy=GetUnitY(u)
-endif
-call SetUnitX(u,qsx)
-call SetUnitY(u,qsy)
-set qpa=Atan2(GetUnitY(qe)-qsy,GetUnitX(qe)-qsx)
-call SetUnitFacingInstant(u,qpa*bj_RADTODEG)
-// проявление за 0.1 с, а не сразу (21 окт)
-call ShinjiFade(u,255,5)
-if qbk then
-// появление за спиной — вспышка, как у контрудара Джирена (E)
-call ShinjiBlink(qsx,qsy)
-endif
-// удар Q (и спереди, и со спины) — рубящий сверху вниз (18 окт): Attack 2 и разрез, поставленный вертикально
-call SetUnitAnimationByIndex(u,1) // Attack 2
-call SetUnitTimeScale(u,1.5)
 // дуговой разрез (аниме-слеш, как у Сабрак; 18 окт): полумесяц по направлению удара, наклон 35, красноватый
 set qfx=AddSpecialEffect("Sabrac\\TG_animeslashfinal_1.mdx",GetUnitX(qe),GetUnitY(qe))
 call SetSpecialEffectOrientation(qfx,qpa*bj_RADTODEG,0.,10.) // вбок, почти горизонтально (18 окт; был наклон 35)
@@ -128728,6 +128690,80 @@ if UnitIsAlive(qe) and not IsUnitType(qe,UNIT_TYPE_STRUCTURE) then
 call ShinjiQPush(qe,qpa)
 endif
 set qfx=null
+endfunction
+// Q со спины (22 окт): через 0.15 с после телепорта — замах переходит в удар (Attack 2 снова x1.5), цель отпускается на удар
+function ShinjiQBackHit takes nothing returns nothing
+local timer t=GetExpiredTimer()
+local unit u=LoadUnitHandle(h,GetHandleId(t),0)
+local unit qe=LoadUnitHandle(h,GetHandleId(t),1)
+if qe!=null and LoadBoolean(HH,GetHandleId(qe),SH_ShnPHold) then
+call RemoveSavedBoolean(HH,GetHandleId(qe),SH_ShnPHold)
+call PauseUnit(qe,false)
+endif
+if u!=null and UnitIsAlive(u) and qe!=null and UnitIsAlive(qe) and not IsUnitHidden(qe) then
+call SetUnitTimeScale(u,1.5)
+call ShinjiQHitDo(u,qe,LoadReal(h,GetHandleId(t),2),LoadReal(h,GetHandleId(t),3),true)
+endif
+call FlushChildHashtable(h,GetHandleId(t))
+call DestroyTimer(t)
+set qe=null
+set u=null
+set t=null
+endfunction
+function ShinjiQHit takes unit u,unit qe,real dmg,boolean qback returns boolean
+local real qef=Atan2(GetUnitY(u)-GetUnitY(qe),GetUnitX(u)-GetUnitX(qe))
+local boolean qbk=qback
+local real qsx
+local real qsy
+local real qpa
+local effect qfx
+// 17 окт: Хирако подлетел — цель сразу лицом к нему (qef), от этого считаются «спереди» / «сзади»
+if not IsUnitType(qe,UNIT_TYPE_STRUCTURE) then
+call ShinjiFaceHold(qe,qef*bj_RADTODEG,0.6)
+endif
+// реверс (стойки Гарпа, UI Гоку, E Курапики и др., 17 окт): удара нет, цели отдаём Хирако (REVERSE_TARGET),
+// пауза и неуязвимость снимаются сразу, иначе ответный удар не пройдёт
+if LoadBoolean(HH,GetHandleId(qe),ANTITARGET_ABILITY) then
+call SaveUnitHandle(HH,GetHandleId(qe),REVERSE_TARGET,u)
+call ShinjiAlpha(u,255)
+call PauseUnit(u,false)
+call SetUnitInvulnerable(u,false)
+return true
+endif
+if qbk then
+set qsx=GetUnitX(qe)-90*Cos(qef)
+set qsy=GetUnitY(qe)-90*Sin(qef)
+else
+// спереди — удар с того места, где закончился рывок (21 окт; был перескок на 90 от цели)
+set qsx=GetUnitX(u)
+set qsy=GetUnitY(u)
+endif
+call SetUnitX(u,qsx)
+call SetUnitY(u,qsy)
+set qpa=Atan2(GetUnitY(qe)-qsy,GetUnitX(qe)-qsx)
+call SetUnitFacingInstant(u,qpa*bj_RADTODEG)
+// проявление за 0.1 с, а не сразу (21 окт)
+call ShinjiFade(u,255,5)
+if qbk then
+// появление за спиной — вспышка, как у контрудара Джирена (E)
+call ShinjiBlink(qsx,qsy)
+endif
+// удар Q (и спереди, и со спины) — рубящий сверху вниз (18 окт): Attack 2 и разрез, поставленный вертикально
+call SetUnitAnimationByIndex(u,1) // Attack 2
+call SetUnitTimeScale(u,1.5)
+if qbk then
+// со спины (22 окт): телепорт и небольшой замах (Attack 2 x0.4), удар — через 0.15 с (ShinjiQBackHit)
+call SetUnitTimeScale(u,0.4)
+set bj_lastStartedTimer=CreateTimer()
+call SaveUnitHandle(h,GetHandleId(bj_lastStartedTimer),0,u)
+call SaveUnitHandle(h,GetHandleId(bj_lastStartedTimer),1,qe)
+call SaveReal(h,GetHandleId(bj_lastStartedTimer),2,dmg)
+call SaveReal(h,GetHandleId(bj_lastStartedTimer),3,qpa)
+call TimerStart(bj_lastStartedTimer,0.15,false,function ShinjiQBackHit)
+else
+call ShinjiQHitDo(u,qe,dmg,qpa,false)
+endif
+set qfx=null
 return false
 endfunction
 // Q по цели (17 окт; было по точке): рывок 80 за 0.02 с с доводкой к цели (ключ 6), на 130 — удар ShinjiQHit.
@@ -128738,18 +128774,16 @@ local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
 local unit u=LoadUnitHandle(h,id,0)
 local unit qe=LoadUnitHandle(h,id,6)
+if qe!=null and UnitIsAlive(qe) and UnitIsAlive(u) and not IsUnitHidden(qe) and not ShinjiQHit(u,qe,LoadReal(h,id,3),true) then
+// удар через 0.15 с — цель держится на паузе до него и отпускается в ShinjiQBackHit (22 окт)
+call RemoveSavedBoolean(h,id,7)
+call TimerStart(t,0.55,false,function ShinjiQFinish)
+else
 if LoadBoolean(h,id,7) and qe!=null then
 call RemoveSavedBoolean(HH,GetHandleId(qe),SH_ShnPHold)
 call PauseUnit(qe,false)
 call RemoveSavedBoolean(h,id,7)
 endif
-if qe!=null and UnitIsAlive(qe) and UnitIsAlive(u) and not IsUnitHidden(qe) then
-if ShinjiQHit(u,qe,LoadReal(h,id,3),true) then
-call TimerStart(t,0.,false,function ShinjiQFinish)
-else
-call TimerStart(t,0.4,false,function ShinjiQFinish)
-endif
-else
 call TimerStart(t,0.,false,function ShinjiQFinish)
 endif
 set qe=null
@@ -129332,9 +129366,12 @@ if time>=0.4 and not LoadBoolean(h,id,9) then
 call SaveBoolean(h,id,9,true)
 call SetUnitTimeScale(u,0.)
 endif
+// замена меча — с этого момента растёт туман (22 окт; было с выхода из паузы)
 if time>=0.7 and not LoadBoolean(h,id,7) then
 call SaveBoolean(h,id,7,true)
 call ShinjiSwordSet(u,"Shinji2_ShikaiSpinHand.mdx")
+call SaveBoolean(HH,uid,SH_ShnMistOn,true)
+call ShinjiMistNew(id,GetUnitX(u),GetUnitY(u))
 endif
 else
 if not LoadBoolean(h,id,8) then
@@ -129344,11 +129381,14 @@ call SetUnitInvulnerable(u,false)
 call SetUnitTimeScale(u,1.)
 call SetUnitAnimationByIndex(u,15)
 call SaveBoolean(HH,uid,SH_ShnSwLock,false)
-call SaveBoolean(HH,uid,SH_ShnMistOn,true)
 call ShinjiSwordBase(u)
-call ShinjiMistNew(id,GetUnitX(u),GetUnitY(u))
+// длительность W (6 с с выхода из паузы) — в статус-бар (22 окт)
+call CreateModeIndicatorForm(u,"ReplaceableTextures\\CommandButtons\\BTNShinjiW.blp",6.)
 endif
-set mr=LoadReal(h,id,4)*RMinBJ(1.,(time-1.5)/LoadReal(h,id,5))
+endif
+// туман: растёт с 0.7 с за 1..2 с до AoE, ходит за Хирако
+if time<7.5 and LoadBoolean(h,id,7) and LoadInteger(HH,uid,SH_ShnWId)==id then
+set mr=LoadReal(h,id,4)*RMinBJ(1.,(time-0.7)/LoadReal(h,id,5))
 call ShinjiMistMove(id,GetUnitX(u),GetUnitY(u),mr)
 call SaveReal(HH,uid,SH_ShnMistX,GetUnitX(u))
 call SaveReal(HH,uid,SH_ShnMistY,GetUnitY(u))
@@ -135224,6 +135264,8 @@ if time<7. and UnitIsAlive(u) and udg_B==true and not LoadBoolean(h,id,6) then
 // бутон закрылся наполовину (1 с) — туман: центр, кольцо 450 (6), кольцо 850 (12)
 // 21 окт: вернули старый туман T (туман Сакаканаде W на T отменён)
 if tk==10 then
+// длительность T (6 с тумана) — в статус-бар (22 окт)
+call CreateModeIndicatorForm(u,"ReplaceableTextures\\CommandButtons\\BTNShinjiT.blp",6.)
 // круг дальности тумана T — 1000, до конца банкая (18 окт)
 call ShinjiRing(x,y,1000.,6.)
 loop
@@ -135735,18 +135777,9 @@ call TimerStart(t,0.02,true,function ShinjiGCloneTick)
 set gn=null
 set t=null
 endfunction
-function ShinjiGHit takes unit u,unit c,real gx,real gy,real gyaw,boolean gpush returns nothing
+// удар G: звук, урон, разрезы, толчок (22 окт: вынесено — первый удар идёт через 0.15 с после телепорта)
+function ShinjiGHitDo takes unit u,unit c,real gyaw,boolean gpush returns nothing
 local effect fx
-call SetUnitX(u,gx)
-call SetUnitY(u,gy)
-call SetUnitFacingInstant(u,gyaw)
-call ShinjiBlink(gx,gy)
-if gpush then
-call ShinjiAnimFor(u,4,2.,0.8)
-else
-// последний удар — вниз головой (Spell 4: перевёрнут с 0.2 до 1.54 с из 2.12; x1.6 — с 0.13 до 0.96 с; 21 окт)
-call ShinjiAnimFor(u,22,1.6,1.15)
-endif
 call ShinjiSnd("HirakoGHit"+I2S(GetRandomInt(1,3)))
 call myCustomDamage(u,c,1.5*GetHeroAgi(u,true)+0.075*(GetUnitState(c,UNIT_STATE_MAX_LIFE)-GetWidgetLife(c)),false,false,null,null,null)
 set fx=AddSpecialEffect("Sabrac\\TG_animeslashfinal_2.mdx",GetUnitX(c),GetUnitY(c))
@@ -135765,6 +135798,19 @@ if gpush and UnitIsAlive(c) and not IsUnitType(c,UNIT_TYPE_STRUCTURE) then
 call ShinjiQPushEx(c,gyaw*bj_DEGTORAD,40.) // сильнее, ~320 (18 окт; было 150)
 endif
 set fx=null
+endfunction
+function ShinjiGHit takes unit u,unit c,real gx,real gy,real gyaw,boolean gpush returns nothing
+call SetUnitX(u,gx)
+call SetUnitY(u,gy)
+call SetUnitFacingInstant(u,gyaw)
+call ShinjiBlink(gx,gy)
+if gpush then
+call ShinjiAnimFor(u,4,2.,0.8)
+else
+// последний удар — вниз головой (Spell 4: перевёрнут с 0.2 до 1.54 с из 2.12; x1.6 — с 0.13 до 0.96 с; 21 окт)
+call ShinjiAnimFor(u,22,1.6,1.15)
+endif
+call ShinjiGHitDo(u,c,gyaw,gpush)
 endfunction
 function ShinjiGRelease takes integer id returns nothing
 if LoadBoolean(h,id,4) and LoadUnitHandle(h,id,1)!=null then
@@ -135857,21 +135903,15 @@ set c=null
 set u=null
 set t=null
 endfunction
-function ShinjiGStrike takes nothing returns nothing
+// первый удар G (22 окт): через 0.15 с после телепорта за спину — образ спереди и Хирако сзади рубят, цель отпускается на удар
+function ShinjiGStrikeHit takes nothing returns nothing
 local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
 local unit u=LoadUnitHandle(h,id,0)
 local unit c=LoadUnitHandle(h,id,1)
 local real f=LoadReal(h,id,3)
 local effect fx
-if UnitIsAlive(u) and UnitIsAlive(c) and LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY) then
-// реверс: удара нет, цели отдаём Хирако, паузы снимаются сразу
-call SaveUnitHandle(HH,GetHandleId(c),REVERSE_TARGET,u)
-call ShinjiAlpha(u,255)
-call ShinjiGRelease(id)
-call PauseUnit(u,false)
-call TimerStart(t,0.,false,function ShinjiGEnd)
-elseif UnitIsAlive(u) and UnitIsAlive(c) and Condition_Base(OwnerOf(u),c) then
+if UnitIsAlive(u) and UnitIsAlive(c) and Condition_Base(OwnerOf(u),c) then
 // клещи: образ спереди рубит одновременно с Хирако сзади
 set fx=LoadEffectHandle(h,id,2)
 if fx!=null then
@@ -135892,9 +135932,9 @@ if LoadBoolean(h,id,4) then
 call RemoveSavedBoolean(HH,GetHandleId(c),SH_ShnPHold)
 call PauseUnit(c,false)
 endif
-call ShinjiGHit(u,c,GetUnitX(c)-90*Cos(f),GetUnitY(c)-90*Sin(f),f*bj_RADTODEG,true)
-// за спиной проявляется за 0.08 с (21 окт)
-call ShinjiFade(u,255,4)
+// замах переходит в удар: Spell Attack 2 снова x2 (22 окт)
+call SetUnitTimeScale(u,2.)
+call ShinjiGHitDo(u,c,f*bj_RADTODEG,true)
 // образ после первого удара гаснет быстро (~0.3 с; 18 окт)
 if LoadEffectHandle(h,id,2)!=null then
 set bj_lastStartedTimer=CreateTimer()
@@ -135911,6 +135951,38 @@ endif
 call ShinjiGClone(OwnerOf(u),c,f+bj_PI/2+GetRandomReal(-0.6,0.6))
 call ShinjiGClone(OwnerOf(u),c,f-bj_PI/2+GetRandomReal(-0.6,0.6))
 call TimerStart(t,0.35,false,function ShinjiGStrike2)
+else
+call ShinjiGRelease(id)
+call TimerStart(t,0.,false,function ShinjiGEnd)
+endif
+set fx=null
+set c=null
+set u=null
+set t=null
+endfunction
+function ShinjiGStrike takes nothing returns nothing
+local timer t=GetExpiredTimer()
+local integer id=GetHandleId(t)
+local unit u=LoadUnitHandle(h,id,0)
+local unit c=LoadUnitHandle(h,id,1)
+local real f=LoadReal(h,id,3)
+local effect fx
+if UnitIsAlive(u) and UnitIsAlive(c) and LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY) then
+// реверс: удара нет, цели отдаём Хирако, паузы снимаются сразу
+call SaveUnitHandle(HH,GetHandleId(c),REVERSE_TARGET,u)
+call ShinjiAlpha(u,255)
+call ShinjiGRelease(id)
+call PauseUnit(u,false)
+call TimerStart(t,0.,false,function ShinjiGEnd)
+elseif UnitIsAlive(u) and UnitIsAlive(c) and Condition_Base(OwnerOf(u),c) then
+// 22 окт: телепорт за спину и небольшой замах (Spell Attack 2 x0.4), удар — через 0.15 с (ShinjiGStrikeHit)
+call SetUnitX(u,GetUnitX(c)-90*Cos(f))
+call SetUnitY(u,GetUnitY(c)-90*Sin(f))
+call SetUnitFacingInstant(u,f*bj_RADTODEG)
+call ShinjiBlink(GetUnitX(u),GetUnitY(u))
+call ShinjiAnimFor(u,4,0.4,1.05)
+call ShinjiFade(u,255,4)
+call TimerStart(t,0.15,false,function ShinjiGStrikeHit)
 else
 call ShinjiGRelease(id)
 call TimerStart(t,0.,false,function ShinjiGEnd)
