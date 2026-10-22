@@ -2320,6 +2320,7 @@ constant integer SH_TouStr=StringHash("TouStr") // 22 окт: +15% характ�
 constant integer SH_TouAgi=StringHash("TouAgi")
 constant integer SH_TouInt=StringHash("TouInt")
 constant integer SH_TouRegen=StringHash("TouRegen") // 22 окт: регенерация мухи, доля макс. HP в сек.
+constant integer SH_TouHeal=StringHash("TouHeal") // 22 окт: сила восстановления HP мухи (1 .. 0.5)
 constant integer SH_ShnWId=StringHash("ShnWId")
 constant integer SH_ShnMask=StringHash("ShnMask")
 constant integer SH_ShnMaskDmg=StringHash("ShnMaskDmg")
@@ -4837,6 +4838,9 @@ function myCustomHeal2 takes unit target, real amount returns real
     endif
     if UnitHasItemOfTypeBJ(target,'I00D') or GetUnitAbilityLevel(target,'KI58')>0 then // Солнце вонголы
         set currentHeal = currentHeal * 1.15
+    endif
+    if GetUnitTypeId(target)=='H0TF' and LoadReal(HH,idTar,SH_TouHeal)>0 then // Тоусен-муха: восстановление HP слабеет до 50% (22 окт)
+        set currentHeal = currentHeal * LoadReal(HH,idTar,SH_TouHeal)
     endif
     if GetUnitTypeId(target)=='H00Q' then // Доппель Мории
         set currentHeal = currentHeal * 1.5
@@ -39186,10 +39190,11 @@ if GetUnitTypeId(u)=='HShn' or GetUnitTypeId(u)=='H02K' or GetUnitTypeId(u)=='H0
     if (GetUnitAbilityLevel(u,'SnE1')>0 or GetUnitAbilityLevel(u,'A0JA')>0) and IsUnitSelected(u,GetLocalPlayer()) and IsPlayerAlly(GetLocalPlayer(),OwnerOf(u)) then
         // облик мухи: вместо запаса маски — текущая регенерация (% макс. HP в сек.), в плюсе зелёная, в минусе красная (22 окт)
         if LoadBoolean(HH,uid,SH_TouHollow) then
-            if LoadReal(HH,uid,SH_TouRegen)>=0 then
+            if LoadReal(HH,uid,SH_TouRegen)>0 then
                 call SetFrameText(GetFrameByName("CustomLeaderboardText",0),"|c00FFE0A0Regeneration|r: |c0000FF00+"+R2SW(100*LoadReal(HH,uid,SH_TouRegen),1,2)+"%|r HP/s")
             else
-                call SetFrameText(GetFrameByName("CustomLeaderboardText",0),"|c00FFE0A0Regeneration|r: |c00FF4040"+R2SW(100*LoadReal(HH,uid,SH_TouRegen),1,2)+"%|r HP/s")
+                // регенерация кончилась — сила восстановления HP (22 окт)
+                call SetFrameText(GetFrameByName("CustomLeaderboardText",0),"|c00FFE0A0Healing|r: |c00FF4040"+I2S(R2I(100*LoadReal(HH,uid,SH_TouHeal)+0.5))+"%|r")
             endif
         else
         call SetFrameText(GetFrameByName("CustomLeaderboardText",0),"|c00FFE0A0Hollow Mask|r: "+R2SW(r,1,1)+"/"+I2S(R2I(mx))+" s")
@@ -130357,6 +130362,7 @@ call UnitRemoveAbility(u,'ToMB')
 endif
 call UnitRemoveAbility(u,'ToRg')
 call RemoveSavedReal(HH,GetHandleId(u),SH_TouRegen)
+call RemoveSavedReal(HH,GetHandleId(u),SH_TouHeal)
 call SetUnitFlyHeight(u,0,0)
 //call SetWidgetPortrait(u,LoadStr(HH,GetHandleId(u),SH_TouPortrait)) // портрет — из типа (22 окт)
 // облик мухи (E2): W и T назад, новые W / T и бонус поля убираются, «Слепота» возвращается (22 окт)
@@ -130423,7 +130429,8 @@ call SaveReal(HH,GetHandleId(u),SH_ShnMaskRes,RMaxBJ(r,0.))
 if (r>0. or ho) and UnitIsAlive(u) and udg_B==true and LoadBoolean(HH,GetHandleId(u),SH_ShnMask) then
 if ho then
 // муха (22 окт): регенерация падает на 0.05% в сек.; в плюсе — зелёный бонус регенерации (ToRg, 5 HP/с за уровень), в минусе — отнимает HP
-set rg=RMaxBJ(-0.005,LoadReal(HH,GetHandleId(u),SH_TouRegen)-0.00005) // минус не больше 0.5% в сек. (22 окт)
+//set rg=RMaxBJ(-0.005,LoadReal(HH,GetHandleId(u),SH_TouRegen)-0.00005) // минус не больше 0.5% в сек. (22 окт)
+set rg=RMaxBJ(0.,LoadReal(HH,GetHandleId(u),SH_TouRegen)-0.00005) // до нуля, без минуса (22 окт)
 call SaveReal(HH,GetHandleId(u),SH_TouRegen,rg)
 if rg>0 then
 if GetUnitAbilityLevel(u,'ToRg')==0 then
@@ -130436,7 +130443,9 @@ if GetUnitAbilityLevel(u,'ToRg')>0 then
 call UnitMakeAbilityPermanent(u,false,'ToRg')
 call UnitRemoveAbility(u,'ToRg')
 endif
-call SetUnitState(u,UNIT_STATE_LIFE,RMaxBJ(1.,GetUnitState(u,UNIT_STATE_LIFE)+rg*0.1*GetUnitState(u,UNIT_STATE_MAX_LIFE)))
+//call SetUnitState(u,UNIT_STATE_LIFE,RMaxBJ(1.,GetUnitState(u,UNIT_STATE_LIFE)+rg*0.1*GetUnitState(u,UNIT_STATE_MAX_LIFE)))
+// регенерация кончилась — восстановление HP слабеет на 2% в сек. до 50% (22 окт)
+call SaveReal(HH,GetHandleId(u),SH_TouHeal,RMaxBJ(0.5,LoadReal(HH,GetHandleId(u),SH_TouHeal)-0.002))
 endif
 else
 call SetUnitState(u,UNIT_STATE_LIFE,GetUnitState(u,UNIT_STATE_LIFE)+0.0015*GetUnitState(u,UNIT_STATE_MAX_LIFE))
@@ -131133,6 +131142,7 @@ call UnitRemoveAbility(u,'ToE6')
 call SetUnitVertexColor(u,255,255,255,255)
 // регенерация мухи: 1.5% макс. HP в сек., затем -0.05% каждую секунду (TousenECast2); счётчик над HP — до ухода в минус (30 с)
 call SaveReal(HH,uid,SH_TouRegen,0.015)
+call SaveReal(HH,uid,SH_TouHeal,1.)
 //call CreateModeIndicatorForm(u,"ReplaceableTextures\\CommandButtons\\BTNTousenFlyHero.blp",30.) // регенерация — в табличке маски (22 окт)
 // портрет — картинка из аниме, как у Хирако (Shinji2_Portrait): плоскость с текстурой и камерой (22 окт)
 //call SetWidgetPortrait(u,"Tousen\\Tousen_FlyPortrait.mdx") // портрет — из типа H0TF (22 окт)
