@@ -130554,6 +130554,13 @@ local unit e
 local effect fx
 call SaveInteger(h,id,1,tk)
 if tk<=12 and UnitIsAlive(u) and udg_B==true and LoadBoolean(HH,GetHandleId(u),SH_TouHollow) then
+// раз в секунду — зелёный вихрь от Тоусена (пак, 22 окт)
+if ModuloInteger(tk,2)==1 then
+set fx=AddSpecialEffect("Others\\WindCirclefaster.mdl",GetUnitX(u),GetUnitY(u))
+call SetSpecialEffectScale(fx,2.2)
+call SetSpecialEffectVertexColour(fx,90,255,110,255)
+call DestroyEffect(fx)
+endif
 set g=CreateGroup()
 call GroupEnumUnitsInRange(g,GetUnitX(u),GetUnitY(u),600,Base)
 loop
@@ -130577,6 +130584,7 @@ call DestroyEffect(fx)
 else
 call UnitRemoveAbility(u,'ToFa')
 call DestroyEffect(LoadEffectHandle(h,id,2))
+call DestroyEffect(LoadEffectHandle(h,id,3))
 call PauseTimer(t)
 call DestroyTimer(t)
 call FlushChildHashtable(h,id)
@@ -130602,7 +130610,13 @@ call UnitAddAbility(u,'ToFa')
 set fx=AddSpecialEffectTarget("CirclePulse_Green.mdl",u,"origin")
 call SetSpecialEffectScale(fx,600./141.) // круг пака (22 окт), радиус модели ~141
 call SetSpecialEffectTimeScale(fx,0.)
-call SetSpecialEffectVertexColour(fx,120,255,130,140)
+//call SetSpecialEffectVertexColour(fx,120,255,130,140)
+call SetSpecialEffectVertexColour(fx,90,255,110,255) // кольцо ярче (22 окт)
+// второе кольцо внутри — 0.8 радиуса, пульсирует
+set bj_lastCreatedEffect=AddSpecialEffectTarget("CirclePulse_Green.mdl",u,"origin")
+call SetSpecialEffectScale(bj_lastCreatedEffect,480./141.)
+call SetSpecialEffectVertexColour(bj_lastCreatedEffect,90,255,110,255)
+call SaveEffectHandle(h,GetHandleId(t),3,bj_lastCreatedEffect)
 set bj_lastCreatedEffect=AddSpecialEffect(EffectID[23],GetUnitX(u),GetUnitY(u))
 call SetSpecialEffectScale(bj_lastCreatedEffect,1.)
 call SetSpecialEffectVertexColour(bj_lastCreatedEffect,40,255,60,255)
