@@ -130842,6 +130842,20 @@ call DestroyEffect(fx)
 endif
 set i=i+1
 endloop
+// плоские волны по земле снизу, как раньше (22 окт)
+set i=30
+loop
+exitwhen i>32
+set wa=a+(i-31)*0.32
+set fx=LoadEffectHandle(h,id,i)
+if tk<=25 then
+call SetSpecialEffectPosition(fx,x0+wd*Cos(wa),y0+wd*Sin(wa))
+call SetSpecialEffectScale(fx,1.+0.04*tk)
+elseif tk==26 then
+call DestroyEffect(fx)
+endif
+set i=i+1
+endloop
 // цепочка колец: новое кольцо каждые 2 тика — дальше и больше предыдущего
 if ModuloInteger(tk,2)==1 and tk<=19 then
 set k=(tk-1)/2
@@ -130853,7 +130867,9 @@ call SetSpecialEffectScale(fx,0.5+0.17*k)
 // ребром к врагам поворотом по Roll (22 окт): плоскость кольца поперёк направления
 //call SetSpecialEffectOrientation(fx,a*bj_RADTODEG+90.,0.,90.)
 // звуковые кольца — как раньше (Pitch), повернуть нужно было волны (22 окт)
-call SetSpecialEffectOrientation(fx,a*bj_RADTODEG,-90.,0.)
+//call SetSpecialEffectOrientation(fx,a*bj_RADTODEG,-90.,0.)
+// и кольца, и волны — ребром к врагам (Roll, 22 окт)
+call SetSpecialEffectOrientation(fx,a*bj_RADTODEG+90.,0.,90.)
 call SetSpecialEffectPositionWithZ(fx,x0+rd*Cos(a),y0+rd*Sin(a),GetTerrainZ(x0+rd*Cos(a),y0+rd*Sin(a))+110.)
 call SaveEffectHandle(h,id,20+k,fx)
 endif
@@ -130909,6 +130925,16 @@ loop
 exitwhen i>2
 set fx=AddSpecialEffect("Tousen_Wave.mdl",x,y)
 call SetSpecialEffectYaw(fx,(a+(i-1)*0.32)*bj_RADTODEG)
+call SetSpecialEffectScale(fx,1.)
+call SaveEffectHandle(h,GetHandleId(t),i,fx)
+set i=i+1
+endloop
+// ещё три плоские волны по земле (22 окт)
+set i=30
+loop
+exitwhen i>32
+set fx=AddSpecialEffect("Tousen_Wave.mdl",x,y)
+call SetSpecialEffectYaw(fx,(a+(i-31)*0.32)*bj_RADTODEG)
 call SetSpecialEffectScale(fx,1.)
 call SaveEffectHandle(h,GetHandleId(t),i,fx)
 set i=i+1
