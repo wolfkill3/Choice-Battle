@@ -135241,6 +135241,8 @@ endif
 set i=i+1
 endloop
 call SetUnitInvulnerable(u,on)
+// предметы на время банкая выключены (22 окт): общий механизм DisableItem, как у других героев; перехват приказов слотов — тоже остаётся
+call UnitEnableInventoryCustom(u,not on,false)
 if on then
 call UnitAddAbility(u,'SnTc')
 // неподвижен до конца банкая (18 окт)
