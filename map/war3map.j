@@ -2311,6 +2311,7 @@ constant integer SH_ShnSwLock=StringHash("ShnSwLock")
 constant integer SH_ShnFade=StringHash("ShnFade")
 constant integer SH_ShnSwA=StringHash("ShnSwA")
 constant integer SH_ShnGOn=StringHash("ShnGOn")
+constant integer SH_ShnSwHide=StringHash("ShnSwHide") // 22 окт: меч спрятан (R)
 constant integer SH_ShnWId=StringHash("ShnWId")
 constant integer SH_ShnMask=StringHash("ShnMask")
 constant integer SH_ShnMaskDmg=StringHash("ShnMaskDmg")
@@ -128302,6 +128303,10 @@ set fx=LoadEffectHandle(HH,GetHandleId(u),SH_ShnSwFx)
 // 22 окт: прозрачность меча не трогаем (SetSpecialEffectAlpha затемнял меч) — пока Хирако почти невидим (альфа < 160),
 // меч спрятан, иначе виден. SH_ShnSwA: 255 — меч показан, 0 — спрятан
 set sa=BitwiseShiftRightLogical(GetUnitVertexColour(u),24)
+// пока идёт R — меча в руке нет (22 окт)
+if LoadBoolean(HH,GetHandleId(u),SH_ShnSwHide) then
+set sa=0
+endif
 if fx!=null then
 if sa<160 and LoadInteger(HH,GetHandleId(u),SH_ShnSwA)!=0 then
 call SetSpecialEffectVisible(fx,false)
@@ -130370,10 +130375,12 @@ set hk=hk+1
 endloop
 call PauseUnit(u,false)
 call SetUnitInvulnerable(u,false)
+call RemoveSavedBoolean(HH,GetHandleId(u),SH_ShnSwHide)
 call SaveInteger(h,id,3,60)
 elseif k==34 then
 call PauseUnit(u,false)
 call SetUnitInvulnerable(u,false)
+call RemoveSavedBoolean(HH,GetHandleId(u),SH_ShnSwHide)
 elseif k<=13 then
 call ShinjiHadoOrb(u,id,k)
 elseif k==19 or k==21 or k==22 or k==24 then
@@ -130416,6 +130423,18 @@ set hit=null
 set u=null
 set t=null
 endfunction
+// анимация шикая на R — таймером 0 с: в событии каста её перебивала анимация самой способности (22 окт)
+function ShinjiHadoAnim takes nothing returns nothing
+local timer t=GetExpiredTimer()
+local unit u=LoadUnitHandle(h,GetHandleId(t),0)
+if UnitIsAlive(u) then
+call ShinjiAnimFor(u,28,0.4,2.)
+endif
+call FlushChildHashtable(h,GetHandleId(t))
+call DestroyTimer(t)
+set u=null
+set t=null
+endfunction
 function ShinjiHadoCast takes nothing returns nothing
 local unit u=GetTriggerUnit()
 local timer t=CreateTimer()
@@ -130430,7 +130449,12 @@ call SaveGroupHandle(h,id,4,CreateGroup())
 // разворот к цели сразу и до паузы (17 окт: плавный SetUnitFacing после PauseUnit не успевал — Хирако смотрел в сторону)
 call SetUnitFacingInstant(u,bj_RADTODEG*Atan2(GetSpellTargetY()-GetUnitY(u),GetSpellTargetX()-GetUnitX(u)))
 // 22 окт: анимация шикая (Spell Shikai, 28: рука вперёд) растянута на весь залп 2 с (было Spell 1.1, 18)
-call ShinjiAnimFor(u,28,0.4,2.)
+//call ShinjiAnimFor(u,28,0.4,2.)
+set bj_lastStartedTimer=CreateTimer()
+call SaveUnitHandle(h,GetHandleId(bj_lastStartedTimer),0,u)
+call TimerStart(bj_lastStartedTimer,0.,false,function ShinjiHadoAnim)
+// меч из руки убран до конца залпа (22 окт)
+call SaveBoolean(HH,GetHandleId(u),SH_ShnSwHide,true)
 // «Хадо №91… Сэндзю Котэн Тайхо» — из видео youtube MdmGlPgrJV0 (ChoiceShinji.mpq, 17 окт)
 call ShinjiSnd("HirakoR")
 // весь залп Хирако в паузе и неуязвим (17 окт); снимается после последнего снаряда (k 34) или при гибели
