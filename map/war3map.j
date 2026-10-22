@@ -129167,6 +129167,7 @@ local timer t=CreateTimer()
 local effect rfx=AddSpecialEffect("Shinji2_RangeCircle.mdx",rx,ry)
 call SetSpecialEffectScale(rfx,rr/105.)
 call SetSpecialEffectTimeScale(rfx,0.) // 21 окт: анимация круга стоит (было 0.01)
+call SetSpecialEffectAlpha(rfx,120) // прозрачнее (22 окт; было 255; смешивание AddAlpha)
 call SaveEffectHandle(h,GetHandleId(t),0,rfx)
 call TimerStart(t,rdur,false,function ShinjiRingEnd)
 set rfx=null
@@ -130395,9 +130396,9 @@ exitwhen hk>hke
 set px=LoadReal(h,id,1)
 set py=LoadReal(h,id,2)
 if hk>0 then
-// кольцо ровно: 13 сфер через равные углы на 430 — вместе с центральной взрывы закрывают AoE 650 (21 окт)
+// кольцо ровно: 13 сфер через равные углы на 330 — взрывы кучнее (22 окт; было 430 — вместе с центральной закрывали AoE 650)
 set ha=(hk-1)*2*bj_PI/13
-set hr=430.
+set hr=330.
 set px=px+hr*Cos(ha)
 set py=py+hr*Sin(ha)
 endif
