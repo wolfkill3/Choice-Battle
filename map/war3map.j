@@ -129967,6 +129967,16 @@ if LoadBoolean(HH,GetHandleId(u),SH_TouHollow) then
 call SaveBoolean(HH,GetHandleId(u),SH_TouHollow,false)
 call SetUnitModel(u,"[H321]KanameTousen2.mdl")
 call SetWidgetPortrait(u,LoadStr(HH,GetHandleId(u),SH_TouPortrait))
+// облик мухи (E2): W и T назад, новые W / T и бонус поля убираются, «Слепота» возвращается (22 окт)
+call UnitRemoveAbility(u,'ToFW')
+call UnitRemoveAbility(u,'ToFT')
+call UnitRemoveAbility(u,'ToFa')
+call EnableUnitAbility(u,'A0J8',true,true)
+call EnableUnitAbility(u,'A0JB',true,true)
+if GetUnitAbilityLevel(u,'Blnd')==0 then
+call UnitAddAbility(u,'Blnd')
+call UnitMakeAbilityPermanent(u,true,'Blnd')
+endif
 endif
 endfunction
 function TousenEOff takes unit u returns nothing
@@ -129979,7 +129989,8 @@ call UnitRemoveAbility(u,'ToE4')
 call UnitRemoveAbility(u,'ToE5')
 call UnitRemoveAbility(u,'ToE6')
 call UnitRemoveAbility(u,'ToEc')
-call UnitRemoveAbility(u,'ToG1')
+//call UnitRemoveAbility(u,'ToG1')
+call UnitRemoveAbility(u,'ToEf')
 call TousenHollowOff(u)
 call EnableUnitAbility(u,'A0JA',true,true)
 call SetUnitVertexColor(u,255,255,255,255)
@@ -130052,11 +130063,16 @@ call UnitAddAbility(u,'ToE1')
 call UnitMakeAbilityPermanent(u,true,'ToE1')
 call SetUnitVertexColor(u,190,190,190,255)
 call DisableUnitAbility(u,'A0JA',true,true)
-call UnitAddAbility(u,'ToEc')
-call SetUnitAbilityLevel(u,'ToEc',lv)
-// с 25-го уровня в маске на G — облик пустого (22 окт)
-if GetHeroLevel(u)>=25 and not LoadBoolean(HH,GetHandleId(u),SH_TouHollow) then
-call UnitAddAbility(u,'ToG1')
+//call UnitAddAbility(u,'ToEc')
+//call SetUnitAbilityLevel(u,'ToEc',lv)
+//// с 25-го уровня в маске на G — облик пустого (22 окт)
+//if GetHeroLevel(u)>=25 and not LoadBoolean(HH,GetHandleId(u),SH_TouHollow) then
+//call UnitAddAbility(u,'ToG1')
+//endif
+// 22 окт: в маске на месте E — E2, превращение в муху (серо — только в облике мухи, E3); до 25-го уровня кнопка серая
+call UnitAddAbility(u,'ToEf')
+if GetHeroLevel(u)<25 then
+call DisableUnitAbility(u,'ToEf',false,true)
 endif
 call TimerStart(t,0.1,true,function TousenECast2)
 set t=null
@@ -130155,12 +130171,25 @@ set u=null
 endfunction
 // G (22 окт): облик пустого до конца раунда. Способность убирается таймером 0 с (не в событии её же каста)
 function TousenGCond takes nothing returns boolean
-return GetSpellAbilityId()=='ToG1' and udg_B==true and GetUnitTypeId(GetTriggerUnit())=='H02K'
+return GetSpellAbilityId()=='ToEf' and udg_B==true and GetUnitTypeId(GetTriggerUnit())=='H02K'
 endfunction
 function TousenGEnd takes nothing returns nothing
 local timer t=GetExpiredTimer()
 local unit u=LoadUnitHandle(h,GetHandleId(t),0)
-call UnitRemoveAbility(u,'ToG1')
+//call UnitRemoveAbility(u,'ToG1')
+// облик мухи (22 окт): E2 -> E3 двойное серо, W / T -> «Стрёкот крыльев» / «Гриляр Грийо», «Слепота» снимается
+if LoadBoolean(HH,GetHandleId(u),SH_TouHollow) then
+call UnitRemoveAbility(u,'ToEf')
+call UnitAddAbility(u,'ToEc')
+call SetUnitAbilityLevel(u,'ToEc',IMaxBJ(1,GetUnitAbilityLevel(u,'A0JA')))
+call DisableUnitAbility(u,'A0J8',true,true)
+call DisableUnitAbility(u,'A0JB',true,true)
+call UnitAddAbility(u,'ToFW')
+call SetUnitAbilityLevel(u,'ToFW',IMaxBJ(1,GetUnitAbilityLevel(u,'A0J8')))
+call UnitAddAbility(u,'ToFT')
+call UnitMakeAbilityPermanent(u,false,'Blnd')
+call UnitRemoveAbility(u,'Blnd')
+endif
 call PauseUnit(u,false)
 call FlushChildHashtable(h,GetHandleId(t))
 call DestroyTimer(t)
@@ -130170,6 +130199,11 @@ endfunction
 function TousenGCast takes nothing returns nothing
 local unit u=GetTriggerUnit()
 if LoadBoolean(HH,GetHandleId(u),SH_TouHollow) or not LoadBoolean(HH,GetHandleId(u),SH_ShnMask) then
+set u=null
+return
+endif
+if GetHeroLevel(u)<25 then
+call DisplayTextToPlayer(OwnerOf(u),0,0,Lng("Превращение доступно с 25-го уровня","Available from level 25"))
 set u=null
 return
 endif
@@ -130192,6 +130226,134 @@ call SaveUnitHandle(h,GetHandleId(bj_lastStartedTimer),0,u)
 call TimerStart(bj_lastStartedTimer,0.,false,function TousenGEnd)
 set u=null
 endfunction
+// «Стрёкот крыльев» (W мухи, 22 окт): звуковая волна конусом 60° на 700 — урон (1.5+0.5*ур.)*AGI и немота 1.5+0.1*ур. сек.
+function TousenFWCond takes nothing returns boolean
+return GetSpellAbilityId()=='ToFW' and udg_B==true and GetUnitTypeId(GetTriggerUnit())=='H02K'
+endfunction
+function TousenFWCast takes nothing returns nothing
+local unit u=GetTriggerUnit()
+local player p=OwnerOf(u)
+local integer lv=GetUnitAbilityLevel(u,'ToFW')
+local real x=GetUnitX(u)
+local real y=GetUnitY(u)
+local real a=Atan2(GetSpellTargetY()-y,GetSpellTargetX()-x)
+local real dmg=(1.5+0.5*lv)*GetHeroAgi(u,true)
+local group g=CreateGroup()
+local unit e
+local real ea
+local integer i=1
+local integer j
+local effect fx
+call SetUnitFacingInstant(u,a*bj_RADTODEG)
+set fx=AddSpecialEffect(EffectID[19],x,y)
+call SetSpecialEffectScale(fx,0.6)
+call SetSpecialEffectVertexColour(fx,60,255,80,255)
+call SetSpecialEffectAnimationByIndex(fx,0)
+call RemoveEffect(fx,1.,false,CreateTimer())
+// волна: ряды звуковых колец по конусу
+loop
+exitwhen i>5
+set j=-1
+loop
+exitwhen j>1
+set fx=AddSpecialEffect("Abilities\\Spells\\Other\\Silence\\SilenceAreaBirth.mdl",x+130*i*Cos(a+j*0.35),y+130*i*Sin(a+j*0.35))
+call SetSpecialEffectScale(fx,0.35+0.08*i)
+call SetSpecialEffectVertexColour(fx,140,255,150,255)
+call DestroyEffect(fx)
+set j=j+1
+endloop
+set i=i+1
+endloop
+call GroupEnumUnitsInRange(g,x,y,700,Base)
+loop
+set e=FirstOfGroup(g)
+exitwhen e==null
+if Condition_Base(p,e) then
+set ea=Atan2(GetUnitY(e)-y,GetUnitX(e)-x)
+if Cos(ea-a)>=0.866 then
+call myCustomDamage(u,e,dmg,false,false,null,null,null)
+if UnitIsAlive(e) then
+call SetControlToUnit(u,e,1.5+0.1*lv,"silence")
+endif
+endif
+endif
+call GroupRemoveUnit(g,e)
+endloop
+call DestroyGroup(g)
+set fx=null
+set g=null
+set p=null
+set u=null
+endfunction
+// «Гриляр Грийо» (T мухи, 22 окт): звуковое поле 600 вокруг Тоусена на 6 с, раз в 0.5 с — 0.5*AGI и немота 0.6 с врагам внутри;
+// Тоусен +60% скорости атаки (ToFa). h: 0 Тоусен, 1 тик, 2 круг
+function TousenFTTick takes nothing returns nothing
+local timer t=GetExpiredTimer()
+local integer id=GetHandleId(t)
+local unit u=LoadUnitHandle(h,id,0)
+local integer tk=LoadInteger(h,id,1)+1
+local player p=OwnerOf(u)
+local group g
+local unit e
+local effect fx
+call SaveInteger(h,id,1,tk)
+if tk<=12 and UnitIsAlive(u) and udg_B==true and LoadBoolean(HH,GetHandleId(u),SH_TouHollow) then
+set g=CreateGroup()
+call GroupEnumUnitsInRange(g,GetUnitX(u),GetUnitY(u),600,Base)
+loop
+set e=FirstOfGroup(g)
+exitwhen e==null
+if Condition_Base(p,e) then
+call myCustomDamage(u,e,0.5*GetHeroAgi(u,true),false,false,null,null,null)
+if UnitIsAlive(e) then
+call SetControlToUnit(u,e,0.6,"silence")
+endif
+endif
+call GroupRemoveUnit(g,e)
+endloop
+call DestroyGroup(g)
+set fx=AddSpecialEffect("Abilities\\Spells\\Other\\Silence\\SilenceAreaBirth.mdl",GetUnitX(u)+GetRandomReal(0,500)*Cos(tk*2.4),GetUnitY(u)+GetRandomReal(0,500)*Sin(tk*2.4))
+call SetSpecialEffectVertexColour(fx,140,255,150,255)
+call DestroyEffect(fx)
+else
+call UnitRemoveAbility(u,'ToFa')
+call DestroyEffect(LoadEffectHandle(h,id,2))
+call PauseTimer(t)
+call DestroyTimer(t)
+call FlushChildHashtable(h,id)
+endif
+set fx=null
+set g=null
+set e=null
+set p=null
+set u=null
+set t=null
+endfunction
+function TousenFTCond takes nothing returns boolean
+return GetSpellAbilityId()=='ToFT' and udg_B==true and GetUnitTypeId(GetTriggerUnit())=='H02K'
+endfunction
+function TousenFTCast takes nothing returns nothing
+local unit u=GetTriggerUnit()
+local timer t=CreateTimer()
+local effect fx
+call UnitAddAbility(u,'ToFa')
+// круг поля идёт за Тоусеном (зелёный круг дальности, как у Хирако)
+set fx=AddSpecialEffectTarget("Shinji2_RangeCircle.mdx",u,"origin")
+call SetSpecialEffectScale(fx,600./105.)
+call SetSpecialEffectTimeScale(fx,0.)
+call SetSpecialEffectVertexColour(fx,120,255,130,140)
+set bj_lastCreatedEffect=AddSpecialEffect(EffectID[23],GetUnitX(u),GetUnitY(u))
+call SetSpecialEffectScale(bj_lastCreatedEffect,1.)
+call SetSpecialEffectVertexColour(bj_lastCreatedEffect,40,255,60,255)
+call DestroyEffect(bj_lastCreatedEffect)
+call SaveUnitHandle(h,GetHandleId(t),0,u)
+call SaveInteger(h,GetHandleId(t),1,0)
+call SaveEffectHandle(h,GetHandleId(t),2,fx)
+call TimerStart(t,0.5,true,function TousenFTTick)
+set fx=null
+set t=null
+set u=null
+endfunction
 function InitTrig_TousenE takes nothing returns nothing
 local trigger t=CreateTrigger()
 call TriggerRegisterAnyUnitEventBJ(t,EVENT_PLAYER_UNIT_SPELL_EFFECT)
@@ -130205,6 +130367,14 @@ set t=CreateTrigger()
 call TriggerRegisterAnyUnitEventBJ(t,EVENT_PLAYER_UNIT_SPELL_EFFECT)
 call TriggerAddCondition(t,Condition(function TousenGCond))
 call TriggerAddAction(t,function TousenGCast)
+set t=CreateTrigger()
+call TriggerRegisterAnyUnitEventBJ(t,EVENT_PLAYER_UNIT_SPELL_EFFECT)
+call TriggerAddCondition(t,Condition(function TousenFWCond))
+call TriggerAddAction(t,function TousenFWCast)
+set t=CreateTrigger()
+call TriggerRegisterAnyUnitEventBJ(t,EVENT_PLAYER_UNIT_SPELL_EFFECT)
+call TriggerAddCondition(t,Condition(function TousenFTCond))
+call TriggerAddAction(t,function TousenFTCast)
 set t=null
 endfunction
 // R — Хадо №91 «Сэндзю Котэн Тайхо» (16 окт): 7 световых столбов (BeamLight) раз в 0.12 с — центр, затем кольцо 250
@@ -132830,7 +133000,10 @@ call SaveStr(HH,SH_ShnChanO,'TRSR',"creepanimatedead")
 call SaveStr(HH,SH_ShnChanO,'TRSS',"faeriefire")
 call SaveStr(HH,SH_ShnChanO,'ToEc',"carrionswarm")
 call SaveInteger(HH,SH_ShnChanT,'ToEc',2)
-call SaveStr(HH,SH_ShnChanO,'ToG1',"metamorphosis")
+call SaveStr(HH,SH_ShnChanO,'ToEf',"metamorphosis")
+call SaveStr(HH,SH_ShnChanO,'ToFT',"submerge")
+call SaveStr(HH,SH_ShnChanO,'ToFW',"vengeance")
+call SaveInteger(HH,SH_ShnChanT,'ToFW',2)
 call SaveStr(HH,SH_ShnChanO,'UKD1',"chainlightning")
 call SaveStr(HH,SH_ShnChanO,'VGBB',"earthquake")
 call SaveStr(HH,SH_ShnChanO,'VGBS',"hex")
@@ -134950,7 +135123,9 @@ call SaveStr(HH,SH_AbOrd,'TRS2',"breathoffrost")
 call SaveStr(HH,SH_AbOrd,'TRSR',"creepanimatedead")
 call SaveStr(HH,SH_AbOrd,'TRSS',"faeriefire")
 call SaveStr(HH,SH_AbOrd,'ToEc',"carrionswarm")
-call SaveStr(HH,SH_AbOrd,'ToG1',"metamorphosis")
+call SaveStr(HH,SH_AbOrd,'ToEf',"metamorphosis")
+call SaveStr(HH,SH_AbOrd,'ToFT',"submerge")
+call SaveStr(HH,SH_AbOrd,'ToFW',"vengeance")
 call SaveStr(HH,SH_AbOrd,'UKD1',"chainlightning")
 call SaveStr(HH,SH_AbOrd,'UKD2',"attributemodskill")
 call SaveStr(HH,SH_AbOrd,'VGBB',"earthquake")
@@ -290034,25 +290209,37 @@ call LANG_A('SnEc',1,3,"Cero like Ichigo's: a beam ahead stuns those hit. Hirako
 call LANG_A('SnEc',1,4,"Cero like Ichigo's: a beam ahead stuns those hit. Hirako is invulnerable during the charge and the beam.|n|n|cFF00A5FF|nDamage: 7*|r|c003CFF3CAGI|r|cFF00A5FF|nStun: 2.5 sec.|nBeam length: 2200|nCooldown: 14 sec.|r")
 call LANG_A('SnEc',2,0,"Cero, [|cffffcc00Level %d|r] (|cffffcc00E|r)")
 call LANG_A('SnEc',3,0,"Cero like Ichigo's: a beam ahead stuns those hit. Hirako is invulnerable during the charge and the beam.|n|n|cFF00A5FF|nDamage: 3\\4\\5\\6\\7*|r|c003CFF3CAGI|r|cFF00A5FF|nStun: 2.5 sec.|nBeam length: 2200|nCooldown: 14 sec.|r")
-call LANG_A('ToG1',0,0,"Hollow Form (|cffffcc00G|r)")
-call LANG_A('ToG1',1,0,"Tousen fully turns into a hollow until the round ends. The mask is no longer spent, Cero fires two beams side by side: wider and stronger.|n|n|cFF00A5FFAvailable: in the mask (E), from level 25|nCero: damage x2, width 300|nDuration: until the round ends|r")
-call LANG_A('ToEc',0,0,"Cero, [|cffffcc00Level 1|r] (|cffffcc00E|r)")
-call LANG_A('ToEc',0,1,"Cero, [|cffffcc00Level 2|r] (|cffffcc00E|r)")
-call LANG_A('ToEc',0,2,"Cero, [|cffffcc00Level 3|r] (|cffffcc00E|r)")
-call LANG_A('ToEc',0,3,"Cero, [|cffffcc00Level 4|r] (|cffffcc00E|r)")
-call LANG_A('ToEc',0,4,"Cero, [|cffffcc00Level 5|r] (|cffffcc00E|r)")
-call LANG_A('ToEc',1,0,"Green Cero from the mask: a beam ahead stuns and knocks back those hit. Tōsen is invulnerable during the charge and the beam.|n|n|cFF00A5FF|nDamage: 3*|r|c003CFF3CAGI|r|cFF00A5FF|nStun: 2.5 sec.|nBeam length: 2200|nKnockback: 300|nCooldown: 14 sec.|r")
-call LANG_A('ToEc',1,1,"Green Cero from the mask: a beam ahead stuns and knocks back those hit. Tōsen is invulnerable during the charge and the beam.|n|n|cFF00A5FF|nDamage: 4*|r|c003CFF3CAGI|r|cFF00A5FF|nStun: 2.5 sec.|nBeam length: 2200|nKnockback: 300|nCooldown: 14 sec.|r")
-call LANG_A('ToEc',1,2,"Green Cero from the mask: a beam ahead stuns and knocks back those hit. Tōsen is invulnerable during the charge and the beam.|n|n|cFF00A5FF|nDamage: 5*|r|c003CFF3CAGI|r|cFF00A5FF|nStun: 2.5 sec.|nBeam length: 2200|nKnockback: 300|nCooldown: 14 sec.|r")
-call LANG_A('ToEc',1,3,"Green Cero from the mask: a beam ahead stuns and knocks back those hit. Tōsen is invulnerable during the charge and the beam.|n|n|cFF00A5FF|nDamage: 6*|r|c003CFF3CAGI|r|cFF00A5FF|nStun: 2.5 sec.|nBeam length: 2200|nKnockback: 300|nCooldown: 14 sec.|r")
-call LANG_A('ToEc',1,4,"Green Cero from the mask: a beam ahead stuns and knocks back those hit. Tōsen is invulnerable during the charge and the beam.|n|n|cFF00A5FF|nDamage: 7*|r|c003CFF3CAGI|r|cFF00A5FF|nStun: 2.5 sec.|nBeam length: 2200|nKnockback: 300|nCooldown: 14 sec.|r")
+call LANG_A('ToEf',0,0,"Suzumushi Hyakushiki: Grillar Grillo (|cffffcc00E|r)")
+call LANG_A('ToEf',1,0,"Tōsen turns into the fly until the round ends: the mask stays on, E becomes a double Cero, W and T become Wing Chirr and Grillar Grillo. Tōsen regains his sight: Blindness is removed.|n|n|cFF00A5FFAvailable: in the mask (E), from level 25|nDuration: until the round ends|r")
+call LANG_A('ToFW',0,0,"Wing Chirr, [|cffffcc00Level 1|r] (|cffffcc00W|r)")
+call LANG_A('ToFW',0,1,"Wing Chirr, [|cffffcc00Level 2|r] (|cffffcc00W|r)")
+call LANG_A('ToFW',0,2,"Wing Chirr, [|cffffcc00Level 3|r] (|cffffcc00W|r)")
+call LANG_A('ToFW',0,3,"Wing Chirr, [|cffffcc00Level 4|r] (|cffffcc00W|r)")
+call LANG_A('ToFW',0,4,"Wing Chirr, [|cffffcc00Level 5|r] (|cffffcc00W|r)")
+call LANG_A('ToFW',1,0,"The fly's wings send a sound wave ahead: damage and silence to everyone in the cone.|n|n|cFF00A5FF|nDamage: 2*|r|c003CFF3CAGI|r|cFF00A5FF|nSilence: 1.6 sec.|nRange: 700, cone 60°|nCooldown: 12 sec.|r")
+call LANG_A('ToFW',1,1,"The fly's wings send a sound wave ahead: damage and silence to everyone in the cone.|n|n|cFF00A5FF|nDamage: 2.5*|r|c003CFF3CAGI|r|cFF00A5FF|nSilence: 1.7 sec.|nRange: 700, cone 60°|nCooldown: 12 sec.|r")
+call LANG_A('ToFW',1,2,"The fly's wings send a sound wave ahead: damage and silence to everyone in the cone.|n|n|cFF00A5FF|nDamage: 3*|r|c003CFF3CAGI|r|cFF00A5FF|nSilence: 1.8 sec.|nRange: 700, cone 60°|nCooldown: 12 sec.|r")
+call LANG_A('ToFW',1,3,"The fly's wings send a sound wave ahead: damage and silence to everyone in the cone.|n|n|cFF00A5FF|nDamage: 3.5*|r|c003CFF3CAGI|r|cFF00A5FF|nSilence: 1.9 sec.|nRange: 700, cone 60°|nCooldown: 12 sec.|r")
+call LANG_A('ToFW',1,4,"The fly's wings send a sound wave ahead: damage and silence to everyone in the cone.|n|n|cFF00A5FF|nDamage: 4*|r|c003CFF3CAGI|r|cFF00A5FF|nSilence: 2.0 sec.|nRange: 700, cone 60°|nCooldown: 12 sec.|r")
+call LANG_A('ToFT',0,0,"Grillar Grillo (|cffffcc00T|r)")
+call LANG_A('ToFT',1,0,"A sound field around Tōsen follows him: enemies inside are silenced and take damage, Tōsen attacks faster.|n|n|cFF00A5FF|nAoE: 600|nDamage: 1*|r|c003CFF3CAGI|r|cFF00A5FF per sec.|nSilence: while in the field|nAttack speed: +60%|nDuration: 6 sec.|nCooldown: 45 sec.|r")
+call LANG_A('ToEc',0,0,"Double Cero, [|cffffcc00Level 1|r] (|cffffcc00E|r)")
+call LANG_A('ToEc',0,1,"Double Cero, [|cffffcc00Level 2|r] (|cffffcc00E|r)")
+call LANG_A('ToEc',0,2,"Double Cero, [|cffffcc00Level 3|r] (|cffffcc00E|r)")
+endfunction
+function LANG_Data51 takes nothing returns nothing
+call LANG_A('ToEc',0,3,"Double Cero, [|cffffcc00Level 4|r] (|cffffcc00E|r)")
+call LANG_A('ToEc',0,4,"Double Cero, [|cffffcc00Level 5|r] (|cffffcc00E|r)")
+call LANG_A('ToEc',1,0,"The fly fires two green Ceros side by side: a wide beam ahead stuns those hit. Tōsen is invulnerable during the charge and the beam.|n|n|cFF00A5FF|nDamage: 6*|r|c003CFF3CAGI|r|cFF00A5FF|nStun: 2.5 sec.|nBeam length: 2200, width 300|nCooldown: 14 sec.|r")
+call LANG_A('ToEc',1,1,"The fly fires two green Ceros side by side: a wide beam ahead stuns those hit. Tōsen is invulnerable during the charge and the beam.|n|n|cFF00A5FF|nDamage: 8*|r|c003CFF3CAGI|r|cFF00A5FF|nStun: 2.5 sec.|nBeam length: 2200, width 300|nCooldown: 14 sec.|r")
+call LANG_A('ToEc',1,2,"The fly fires two green Ceros side by side: a wide beam ahead stuns those hit. Tōsen is invulnerable during the charge and the beam.|n|n|cFF00A5FF|nDamage: 10*|r|c003CFF3CAGI|r|cFF00A5FF|nStun: 2.5 sec.|nBeam length: 2200, width 300|nCooldown: 14 sec.|r")
+call LANG_A('ToEc',1,3,"The fly fires two green Ceros side by side: a wide beam ahead stuns those hit. Tōsen is invulnerable during the charge and the beam.|n|n|cFF00A5FF|nDamage: 12*|r|c003CFF3CAGI|r|cFF00A5FF|nStun: 2.5 sec.|nBeam length: 2200, width 300|nCooldown: 14 sec.|r")
+call LANG_A('ToEc',1,4,"The fly fires two green Ceros side by side: a wide beam ahead stuns those hit. Tōsen is invulnerable during the charge and the beam.|n|n|cFF00A5FF|nDamage: 14*|r|c003CFF3CAGI|r|cFF00A5FF|nStun: 2.5 sec.|nBeam length: 2200, width 300|nCooldown: 14 sec.|r")
 call LANG_A('ToEc',2,0,"Cero, [|cffffcc00Level %d|r] (|cffffcc00E|r)")
 call LANG_A('ToEc',3,0,"Green Cero from the mask: a beam ahead stuns and knocks back those hit. Tōsen is invulnerable during the charge and the beam.|n|n|cFF00A5FF|nDamage: 3\\4\\5\\6\\7*|r|c003CFF3CAGI|r|cFF00A5FF|nStun: 2.5 sec.|nBeam length: 2200|nKnockback: 300|nCooldown: 14 sec.|r")
 call LANG_A('SnT1',1,0,"Bankai: a bud around Hirako releases a mist (W ends). Hirako is invulnerable and immovable, the mask is not spent. Every second everyone in the mist except Hirako is confused: enemies look like allies and vice versa (Hirako's allies from the 3rd second, a \"!\" above them before that); on the first "+"confusion — a random ability at the nearest \"enemy\". All damage of the confused to Hirako's enemies is dealt by Hirako himself. No effect under Imagine Breaker or Clear Sky.|n|n|cFF00A5FF|nMist AoE: 1000|nDuration: 6 sec.|nConfusion: 1.2 sec.|nCast time: +0.3 sec.|nCooldown: 70 sec. (10 sec. at "+"round start)|r")
 call LANG_A('SnT1',3,0,"Bankai: a bud around Hirako releases a mist (W ends). Hirako is invulnerable and immovable, the mask is not spent. Every second everyone in the mist except Hirako is confused: enemies look like allies and vice versa (Hirako's allies from the 3rd second, a \"!\" above them before that); on the first "+"confusion — a random ability at the nearest \"enemy\". All damage of the confused to Hirako's enemies is dealt by Hirako himself. No effect under Imagine Breaker or Clear Sky.|n|n|cFF00A5FF|nMist AoE: 1000|nDuration: 6 sec.|nConfusion: 1.2 sec.|nCast time: +0.3 sec.|nCooldown: 70 sec. (10 sec. at "+"round start)|r")
 call LANG_A('SnTc',0,0,"Cancel Bankai (|cffffcc00T|r)")
-endfunction
-function LANG_Data51 takes nothing returns nothing
 call LANG_A('SnTc',1,0,"|cFF00A5FFEnds the bankai early: the bud opens, the mist fades.|r")
 call LANG_A('SnD1',1,0,"Hirako spins Sakanade by its ring: a wave of scent around him. Nearby enemies take damage and are briefly inverted: their movement and turning go the opposite way.|n|n|cFF00A5FF|nDamage: 3*|r|c003CFF3CAGI|r|cFF00A5FF|nInversion: 1.25 sec.|nAoE: 400|nCooldown: 20 sec.|r")
 call LANG_A('SnD1',3,0,"Hirako spins Sakanade by its ring: a wave of scent around him. Nearby enemies take damage and are briefly inverted: their movement and turning go the opposite way.|n|n|cFF00A5FF|nDamage: 3*|r|c003CFF3CAGI|r|cFF00A5FF|nInversion: 1.25 sec.|nAoE: 400|nCooldown: 20 sec.|r")
@@ -290291,6 +290478,8 @@ call LANG_It('I01N',1,"Medal of Courage (Recipe)")
 call LANG_It('I01N',2,"Increase |c00FFFF66AllStat|r by 14.|n|nRequires: Robe of the Sage, Boots of Agility, Bracers of Strength.")
 call LANG_It('I01N',3,"Increase |c00FFFF66AllStat|r by 14.|n|nRequires: Robe of the Sage, Boots of Agility, Bracers of Strength.")
 call LANG_It('I01O',0,"Sandai Kitetsu")
+endfunction
+function LANG_Data52 takes nothing returns nothing
 call LANG_It('I01O',1,"Sandai Kitetsu")
 call LANG_It('I01O',2,"Increased attack power by 80, |c00FFFF66AllStat|r by 25, Passive: Mortal Strike - 20% chance to deal 2x damage.|n|nActive: \"Quick Strikes\" - moves towards the enemy, striking and activating the passive ability of Shusui, Fang and Dark Excalibur (if not on cooldown) if the owner has them.|n|nRange:"+" 600|nCooldown: 4 sec.")
 call LANG_It('I01O',3,"Increased attack power by 80, |c00FFFF66AllStat|r by 25, Passive: Mortal Strike - 20% chance to deal 2x damage.|n|nActive: \"Quick Strikes\" - moves towards the enemy, striking and activating the passive ability of Shusui, Fang and Dark Excalibur (if not on cooldown) if the owner has them.|n|nCooldo"+"wn: 4 sec.")
@@ -290303,8 +290492,6 @@ call LANG_It('I01Q',1,"Shusui")
 call LANG_It('I01Q',2,"Attack power increased by 100, |c00FFFF66AllStat|r by 30, 20% chance to deal 2x damage, Passive: Deathwave - 20% chance to deal 3*|c003CFF3CAGI|r damage around the target in 500 AoE.|n|nActive: \"Quick Strikes\" - moves towards the enemy, striking and activating the passive ability of Shusui, Fang a"+"nd Dark Excalibur (if not on cooldown) if the owner has them.|n|nRange: 600|nCooldown: 4 sec.")
 call LANG_It('I01Q',3,"Attack power increased by 100, |c00FFFF66AllStat|r by 30, 20% chance to deal 2x damage, Passive: Deathwave - 20% chance to deal 3*|c003CFF3CAGI|r damage around the target in 500 AoE.|n|nActive: \"Quick Strikes\" - moves towards the enemy, striking and activating the passive ability of Shusui, Fang a"+"nd Dark Excalibur (if not on cooldown) if the owner has them.|n|nRange: 600|nCooldown: 4 sec.")
 call LANG_It('I01R',0,"Shusui (Recipe)")
-endfunction
-function LANG_Data52 takes nothing returns nothing
 call LANG_It('I01R',1,"Shusui (Recipe)")
 call LANG_It('I01R',2,"Attack power increased by 100, |c00FFFF66AllStat|r by 30, 20% chance to deal 2x damage. Passive: Death Wave - 20% chance to deal 1.5*|c003CFF3CAGI|r damage in 500 AoE.|nActive: \"Quick Strikes\" - moves towards the enemy, striking and activating the passive ability of Shusui, Fang and Dark Excalibur"+" (if not on cooldown) if the owner has them.|nRange: 600|nCooldown: 4 sec.|n|nRequires: Sandai Kitetsu, Recipe.")
 call LANG_It('I01R',3,"Increases attack damage by 100, |c00FFFF66AllStat|r by 30, 20% chance to deal 2x damage. Passive: \"Deadly Wave\" - 20% chance to deal 1.5*|c003CFF3CAGI|r damage in 500 AoE.|nActive: \"Quick Strikes\" - moves towards the enemy, striking and activating the passive ability of Shusui, Fang and Dark Exc"+"alibur (if not on cooldown) if the owner has them.|nRange: 600|nCooldown: 4 sec.|n|nRequires: Sandai Kitetsu, Recipe.")
@@ -290543,6 +290730,8 @@ call LANG_It('I03C',3,"Increases HP by 500 units, reduces physical damage to the
 call LANG_It('I03D',0,"Anbu Mask")
 call LANG_It('I03D',1,"Anbu Mask")
 call LANG_It('I03D',2,"Increase MP by 500, increase |c003CFF3CAGI|r by 15. |c00FF5555STR|r by 10")
+endfunction
+function LANG_Data53 takes nothing returns nothing
 call LANG_It('I03D',3,"Increase MP by 500, increase |c003CFF3CAGI|r by 15. |c00FF5555STR|r by 10")
 call LANG_It('I03E',0,"Anbu Shoes")
 call LANG_It('I03E',1,"Anbu Shoes")
@@ -290555,8 +290744,6 @@ call LANG_It('I03F',3,"Gives a 35% chance to dodge, reduces physical damage to t
 call LANG_It('I03G',0,"Vongola Gloves Level 1")
 call LANG_It('I03G',1,"Vongola Gloves Level 1")
 call LANG_It('I03G',2,"Increase hero's AS by 45%.")
-endfunction
-function LANG_Data53 takes nothing returns nothing
 call LANG_It('I03G',3,"Increase hero's AS by 45%.")
 call LANG_It('I03H',0,"Vongola Gloves Level 2")
 call LANG_It('I03H',1,"Vongola Gloves Level 2")
@@ -290795,6 +290982,8 @@ call LANG_It('I04V',3,"Increase |c00FFFF66AllStat|r by 35, HP +500, by pressing 
 call LANG_It('I04W',0,"Imagine Breaker (Recipe)")
 call LANG_It('I04W',1,"Imagine Breaker (Recipe)")
 call LANG_It('I04W',2,"Increase |c00FFFF66AllStat|r by 35, 500. health|nCannot be purchased with Boros Armor or Medusa.|nActive ability: “Frenzy” - makes you immune to negative effects for 7 sec and gives 15% impenetrable magic resistance, but reduces magic DMG by 15%.|n|nCooldown: 55 sec.|n|nRequires: Rank A Sword, V"+"ongola Glove Level 3, Medal of Courage.")
+endfunction
+function LANG_Data54 takes nothing returns nothing
 call LANG_It('I04W',3,"Increase |c00FFFF66AllStat|r by 35, 500. health|nCannot be purchased with Boros Armor or Medusa.|nActive ability: “Frenzy” - makes you immune to negative effects for 7 sec and gives 15% impenetrable magic resistance, but reduces magic DMG by 15%.|n|nCooldown: 55 sec.|n|nRequires: Rank A Sword, V"+"ongola Glove Level 3, Medal of Courage.")
 call LANG_It('I04X',0,"Excalibur (Recipe)")
 call LANG_It('I04X',1,"Excalibur (Recipe)")
@@ -290807,8 +290996,6 @@ call LANG_It('I04Y',3,"Increases |c00FFFF66AllStat|r by 35, increases regenerati
 call LANG_It('I04Z',0,"Samehada (Recipe)")
 call LANG_It('I04Z',1,"Samehada (Recipe)")
 call LANG_It('I04Z',2,"Increase |c00FF5555STR|r and |c0077FFFFINT|r by 35, attack by 125. (50 for bleeding), increased AS by 50%. Switch between modes: 1) Mana burn 8% of current +heal 2) Pure damage 150+20% of auto attack.|n|nRequires: Sandai Kitetsu, Recipe.")
-endfunction
-function LANG_Data54 takes nothing returns nothing
 call LANG_It('I04Z',3,"Increase |c00FF5555STR|r and |c0077FFFFINT|r by 35, attack by 125. (50 for bleeding), increased AS by 50%. Mode Switching: 1) Mana Break 8% of current + heal 2) True Damage 150+20% of auto attack.|n|nRequires: Sandai Kitetsu, Recipe.")
 call LANG_It('I050',0,"Gegetsuburi")
 call LANG_It('I050',1,"Gegetsuburi")
@@ -291047,6 +291234,8 @@ call LANG_It('I06O',1,"Dark Grail")
 call LANG_It('I06O',2,"MS +25%, Regeneration +25, DEF +10, AoE +1500, |c00FFFF66AllStat|r +30|n|nActive: \"Healing\" - gradually restores 1000 + Level * 20. HP to all allies for 6 sec. within a radius of 1000. Cannot be used again on affected targets for 15 seconds after it ends.|n|nCDR: 45 sec")
 call LANG_It('I06O',3,"MS +25%, Regeneration +25, DEF +10, AoE +1500, |c00FFFF66AllStat|r +30|n|nActive: \"Healing\" - gradually restores 1000 + Level * 20. HP to all allies for 6 sec. within a radius of 1000. Cannot be used again on affected targets for 15 seconds after it ends.|n|nCDR: 45 sec")
 call LANG_It('I06P',0,"Dark Grail (Recipe)")
+endfunction
+function LANG_Data55 takes nothing returns nothing
 call LANG_It('I06P',1,"Dark Grail (Recipe)")
 call LANG_It('I06P',2,"MS +25%, Regeneration +25, DEF +10, AoE +1500, |c00FFFF66AllStat|r +30.|n|nActive: \"Heal\"|n|nCooldown: 45 sec.|n|nRequires: Holy Grail, Recipe.")
 call LANG_It('I06P',3,"MS +25%, Regeneration +25, DEF +10, AoE +1500, |c00FFFF66AllStat|r +30.|n|nActive: \"Heal\"|n|nCooldown: 45 sec.|n|nRequires: Holy Grail, Recipe.")
@@ -291059,8 +291248,6 @@ call LANG_It('I06R',1,"Kaleidoscepter Sapphire")
 call LANG_It('I06R',2,"Increase |c00FFFF66AllStat|r by 30, and increase allies' magic resistance by 15% within 1000.|n|nActive ability: \"Mass Purge\" - releases a wave in the specified direction, which after 2 seconds removes all effects and shields from hit enemies that did not have the effect of Imagine Breaker. Allies"+" hit will instantly have their HP recovery caps removed and recover 5% Max HP.|n|nCDR: 15 sec.")
 call LANG_It('I06R',3,"Increase |c00FFFF66AllStat|r by 30, and increase allies' magic resistance by 15% within 1000.|n|nActive ability: \"Mass Purge\" - releases a wave in the specified direction, which after 2 seconds removes all effects and shields from hit enemies that did not have the effect of Imagine Breaker. Allies"+" hit will instantly have their HP recovery caps removed and recover 5% Max HP.|n|nCDR: 15 sec.")
 call LANG_It('I06S',0,"Kaleidoscepter Ruby (Recipe)")
-endfunction
-function LANG_Data55 takes nothing returns nothing
 call LANG_It('I06S',1,"Kaleidoscepter Ruby (Recipe)")
 call LANG_It('I06S',2,"Increase |c00FFFF66AllStat|r by 35, reduce the magic resistance of enemies by 15% within 1000.|n|nActive Ability: \"Slash\"|n|nRequires: Sealed Dark Staff, Recipe")
 call LANG_It('I06S',3,"Increase |c00FFFF66AllStat|r by 35, reduce the magic resistance of enemies by 15% within 1000.|n|nActive Ability: \"Slash\"|n|nRequires: Sealed Dark Staff, Recipe")
@@ -291299,6 +291486,8 @@ call LANG_U('H01B',3,"Gamma is the captain of the third division of the Black Sp
 call LANG_U('H01C',3,"Urahara Kisuke is the former captain of the 12th Division, the creator of Hougyoku, and currently runs a small shop in the human world.|n|nRole: Caster, Disabler, Swordsman, Nuker|n|n")
 call LANG_U('H01D',3,"Maka Albarn is one of the Spartans.|n|nRole: Caster, Carry|n|n")
 call LANG_U('H01E',3,"Maka Albarn is one of the Spartans.")
+endfunction
+function LANG_Data56 takes nothing returns nothing
 call LANG_U('H01F',3,"Black Star - part of the Sparta squad, works in tandem with Tsubaki.|n|nRole: Caster, Durable|n|n")
 call LANG_U('H01G',3,"Black Star - part of the Sparta squad, works in tandem with Tsubaki.")
 call LANG_U('H01H',3,"Death the Kid - the son of a shinigami, uses two pistols, is on the Sparta team.|n|nRole: Caster, Carry, Exhauster|n|n")
@@ -291311,8 +291500,6 @@ call LANG_U('H01N',3,"Dante is the main protagonist of the Devil May Cry series.
 call LANG_U('H01R',3,"Jiraiya is a hermit from Mount Myoboku, taught by Minato and Naruto, is a member of the \"Legendary Trinity of Konoha\".")
 call LANG_U('H01S',0,"Dante")
 call LANG_U('H01S',2,"Dante")
-endfunction
-function LANG_Data56 takes nothing returns nothing
 call LANG_U('H01S',3,"Jiraiya is a hermit from Mount Myoboku, taught by Minato and Naruto, is a member of the \"Legendary Trinity of Konoha\".")
 call LANG_U('H027',3,"Oma Shu is a 17-year-old Tokyo high school student who got the ability to control the voids of people and saved the whole world from the \"Apocalypse Virus\".|n|nRole: Caster, Carry, Support, Disabler|n|n")
 call LANG_U('H02B',3,"Accelerator is Academy City's strongest esper, his main ability is vector redirection.|n|nRole: Durable, Caster, Disabler|n|n")
@@ -291551,6 +291738,8 @@ call LANG_U('HSaC',3,"Sabrac |n|nRole: Carry, Caster|n|nAbilities :|n|n")
 call LANG_U('HASC',3,"Aizen - Former Captain of the Fifth Division, absorbed the Hougyoku and became immortal.|n|nRole: Caster, Durable, Swordsman|n|n")
 call LANG_U('HAST',3,"Aizen - Former Captain of the Fifth Division, absorbed the Hougyoku and became immortal.|n|nRole: Caster, Durable, Swordsman|n|n")
 call LANG_U('HKar',3,"Karna is the son of the sun god Surya and a heroic soul summoned in the Lancer class.|n|nRole: Caster, Carry, Durable, Disabler, Exhauster|n|n")
+endfunction
+function LANG_Data57 takes nothing returns nothing
 call LANG_U('HGrp',3,"Monkey D. Garp — Vice Admiral of the Marines, the legendary Fist of the Navy. |nLuffy's grandfather, a man without powers: only fists, will and cannonballs. (Made by AI by AlTrOn)|n|nRole: Initiator, Disabler.|n|n")
 call LANG_U('HSig',3,"Signum — the leader of the Belkan knights, summoned by the «Book of Darkness». Her magic device, Laevatein, takes the form of a sword. In battle she relies on armor. |n|nRole: Caster, Carry, Swordsman|n|n")
 call LANG_U('HGuB',3,"|nGuts —  the Black Swordsman with a cursed brand (also known as the Hundred Man Slayer and the Hawk of Darkness) tirelessly opposes demonic forces. In battle he uses the huge two-handed sword «Dragonslayer», throwing knives, a crossbow and a metal prosthetic left arm hiding a small hand cannon."+"|n|n|nRole: Disabler, Durable, Caster, Swordsman|n|nAbilities: Tondeke Yagare,Darona,Sokou Doke,Jamada,Kurae Yagare.|n|n|cFFFFC850Strength: 18 +3.5|r|nAgility: 18 +2|nIntelligence: 12 +1.2")
@@ -291563,8 +291752,6 @@ call LANG_U('HFla',3,"Flandre Scarlet — Remilia's younger sister from Touhou P
 call LANG_U('hB1W',0,"Flandre's Clone")
 call LANG_U('HRem',3,"Remilia Scarlet — a 500-year-old vampire, mistress of the Scarlet Devil Mansion from Touhou Project and Flandre's older sister. She controls fate.|n(Abilities and effects ported from the Chinese map bof, by AlTrOn)|n|nRole: Caster, Disabler.|n")
 call LANG_U('HSui',3,"Suigintou — the first doll of Rozen Maiden: black wings, a rapier and the mirror world N.|n(Abilities and effects ported from the Chinese map bof, by AlTrOn)|n|nRole: Carry, Nuker, Disabler.|n")
-endfunction
-function LANG_Data57 takes nothing returns nothing
 call LANG_U('HShn',3,"Captain of the 5th Division and leader of the Visored — Shinigami who gained a Hollow's power. A lazy-looking joker who is calculating and cunning in battle: he lures the enemy into deception and strikes once they can no longer tell friend from foe.|n|nRole: Initiator, Disabler, Caster, Carry.|n")
 call LANG_B('BRRV',0,"Rain Aura")
 call LANG_B('BRRV',1,"Aura of rain.")
@@ -291803,6 +291990,8 @@ call LANG_B('ReFP',1,"Rengoku Flame Breathing Secret Technique.")
 call LANG_B('ReRf',1,"This warrior is pissed off. He cannot control himself.")
 call LANG_B('ReSb',1,"This warrior is slow. The speed of his movement and combat is much lower than normal.")
 call LANG_B('RiSV',1,"Unit loses bonus magic resistance")
+endfunction
+function LANG_Data58 takes nothing returns nothing
 call LANG_B('YuFb',1,"This unit is inside the Barrier. He is slow and cannot cast spells.")
 call LANG_B('YuWb',1,"This one is slow and cannot attack.")
 call LANG_B('aokb',1,"The unit gains 40% magic defense.")
@@ -291815,8 +292004,6 @@ call LANG_B('KaB1',1,"Karna's next basic attack will deal bonus damage.")
 call LANG_B('B14W',0,"Maneuvering")
 call LANG_B('B14W',1,"Sinon is accelerated after reloading the clip.")
 call LANG_B('BHXW',1,"Outgoing damage increased by  40%")
-endfunction
-function LANG_Data58 takes nothing returns nothing
 call LANG_B('BHXE',1,"Incoming damage reduced by  40%")
 call LANG_B('BHXR',1,"Damage taken increased by 20%")
 call LANG_B('BGSG',1,"Incoming damage reduced by 50%; enemies cannot get closer than 300 to the owner")
