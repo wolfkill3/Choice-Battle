@@ -130197,6 +130197,7 @@ function TousenHollowOff takes unit u returns nothing
 if LoadBoolean(HH,GetHandleId(u),SH_TouHollow) then
 call SaveBoolean(HH,GetHandleId(u),SH_TouHollow,false)
 call SetUnitModel(u,"[H321]KanameTousen2.mdl")
+call SetUnitScale(u,1.,1.,1.)
 call SetWidgetPortrait(u,LoadStr(HH,GetHandleId(u),SH_TouPortrait))
 // облик мухи (E2): W и T назад, новые W / T и бонус поля убираются, «Слепота» возвращается (22 окт)
 call UnitRemoveAbility(u,'ToFW')
@@ -130497,13 +130498,21 @@ call SetSpecialEffectScale(fx,0.6)
 call SetSpecialEffectVertexColour(fx,60,255,80,255)
 call SetSpecialEffectAnimationByIndex(fx,0)
 call RemoveEffect(fx,1.,false,CreateTimer())
-// волна: ряды звуковых колец по конусу
+// волна (пак, 22 окт): wavejojo по направлению, затем ряды звуковых колец по конусу
+set fx=AddSpecialEffect("BlackGoku\\[a]wavejojo.mdl",x+120*Cos(a),y+120*Sin(a))
+call SetSpecialEffectYaw(fx,a*bj_RADTODEG)
+call SetSpecialEffectScale(fx,1.2)
+call SetSpecialEffectVertexColour(fx,140,255,150,255)
+call DestroyEffect(fx)
 loop
 exitwhen i>5
 set j=-1
 loop
 exitwhen j>1
-set fx=AddSpecialEffect("Abilities\\Spells\\Other\\Silence\\SilenceAreaBirth.mdl",x+130*i*Cos(a+j*0.35),y+130*i*Sin(a+j*0.35))
+//set fx=AddSpecialEffect("Abilities\\Spells\\Other\\Silence\\SilenceAreaBirth.mdl",x+130*i*Cos(a+j*0.35),y+130*i*Sin(a+j*0.35))
+// эффекты пака вместо стандартных (22 окт): звуковые кольца SonicMap рядами по конусу
+set fx=AddSpecialEffect("Akaza\\SonicMap (3).mdl",x+130*i*Cos(a+j*0.35),y+130*i*Sin(a+j*0.35))
+call SetSpecialEffectYaw(fx,a*bj_RADTODEG)
 call SetSpecialEffectScale(fx,0.35+0.08*i)
 call SetSpecialEffectVertexColour(fx,140,255,150,255)
 call DestroyEffect(fx)
@@ -130552,6 +130561,7 @@ set e=FirstOfGroup(g)
 exitwhen e==null
 if Condition_Base(p,e) then
 call myCustomDamage(u,e,0.5*GetHeroAgi(u,true),false,false,null,null,null)
+call DestroyEffect(AddSpecialEffectTarget("Abilities\\Weapons\\PoisonSting\\Rings_Green.mdl",e,"overhead"))
 if UnitIsAlive(e) then
 call SetControlToUnit(u,e,0.6,"silence")
 endif
@@ -130559,7 +130569,9 @@ endif
 call GroupRemoveUnit(g,e)
 endloop
 call DestroyGroup(g)
-set fx=AddSpecialEffect("Abilities\\Spells\\Other\\Silence\\SilenceAreaBirth.mdl",GetUnitX(u)+GetRandomReal(0,500)*Cos(tk*2.4),GetUnitY(u)+GetRandomReal(0,500)*Sin(tk*2.4))
+//set fx=AddSpecialEffect("Abilities\\Spells\\Other\\Silence\\SilenceAreaBirth.mdl",GetUnitX(u)+GetRandomReal(0,500)*Cos(tk*2.4),GetUnitY(u)+GetRandomReal(0,500)*Sin(tk*2.4))
+set fx=AddSpecialEffect("Akaza\\SonicMap (3).mdl",GetUnitX(u)+GetRandomReal(0,500)*Cos(tk*2.4),GetUnitY(u)+GetRandomReal(0,500)*Sin(tk*2.4))
+call SetSpecialEffectScale(fx,0.8)
 call SetSpecialEffectVertexColour(fx,140,255,150,255)
 call DestroyEffect(fx)
 else
@@ -130585,8 +130597,10 @@ local timer t=CreateTimer()
 local effect fx
 call UnitAddAbility(u,'ToFa')
 // круг поля идёт за Тоусеном (зелёный круг дальности, как у Хирако)
-set fx=AddSpecialEffectTarget("Shinji2_RangeCircle.mdx",u,"origin")
-call SetSpecialEffectScale(fx,600./105.)
+//set fx=AddSpecialEffectTarget("Shinji2_RangeCircle.mdx",u,"origin")
+//call SetSpecialEffectScale(fx,600./105.)
+set fx=AddSpecialEffectTarget("CirclePulse_Green.mdl",u,"origin")
+call SetSpecialEffectScale(fx,600./141.) // круг пака (22 окт), радиус модели ~141
 call SetSpecialEffectTimeScale(fx,0.)
 call SetSpecialEffectVertexColour(fx,120,255,130,140)
 set bj_lastCreatedEffect=AddSpecialEffect(EffectID[23],GetUnitX(u),GetUnitY(u))
@@ -130615,6 +130629,7 @@ call SetWidgetPortrait(u,"Tousen\\Tousen_FlyPortrait.mdx")
 call SetUnitStringField(u,UNIT_SF_ICON_NORMAL,"ReplaceableTextures\\CommandButtons\\BTNTousenFlyHero.blp")
 call IH('H02K',u,"ReplaceableTextures\\CommandButtons\\BTNTousenFlyHero.blp")
 call SetUnitVertexColor(u,255,255,255,255)
+call SetUnitScale(u,1.5,1.5,1.5) // муха крупнее (22 окт)
 call UnitRemoveAbility(u,'ToEf')
 call UnitAddAbility(u,'ToFE')
 call SetUnitAbilityLevel(u,'ToFE',IMaxBJ(1,GetUnitAbilityLevel(u,'A0JA')))
@@ -130799,7 +130814,14 @@ set fx=AddSpecialEffect(EffectID[23],GetUnitX(u),GetUnitY(u))
 call SetSpecialEffectScale(fx,0.9)
 call SetSpecialEffectVertexColour(fx,40,255,60,255)
 call DestroyEffect(fx)
-call DestroyEffect(AddSpecialEffect("Abilities\\Spells\\Orc\\WarStomp\\WarStompCaster.mdl",GetUnitX(u),GetUnitY(u)))
+//call DestroyEffect(AddSpecialEffect("Abilities\\Spells\\Orc\\WarStomp\\WarStompCaster.mdl",GetUnitX(u),GetUnitY(u)))
+set fx=AddSpecialEffect("BlackGoku\\groundshock1.mdl",GetUnitX(u),GetUnitY(u))
+call SetSpecialEffectScale(fx,0.8)
+call DestroyEffect(fx)
+set fx=AddSpecialEffect("DustWaveAnimate2.mdl",GetUnitX(u),GetUnitY(u))
+call SetSpecialEffectScale(fx,0.7)
+call SetSpecialEffectVertexColour(fx,160,255,170,255)
+call DestroyEffect(fx)
 set g=CreateGroup()
 call GroupEnumUnitsInRange(g,GetUnitX(u),GetUnitY(u),300,Base)
 loop
@@ -130848,6 +130870,9 @@ call SetSpecialEffectScale(bj_lastCreatedEffect,0.5)
 call SetSpecialEffectVertexColour(bj_lastCreatedEffect,60,255,80,255)
 call SetSpecialEffectAnimationByIndex(bj_lastCreatedEffect,0)
 call RemoveEffect(bj_lastCreatedEffect,1.,false,CreateTimer())
+set bj_lastCreatedEffect=AddSpecialEffect("Others\\WindCirclefaster.mdl",GetUnitX(u),GetUnitY(u))
+call SetSpecialEffectVertexColour(bj_lastCreatedEffect,140,255,150,255)
+call DestroyEffect(bj_lastCreatedEffect)
 call TimerStart(t,0.03,true,function TousenFETick)
 set t=null
 set u=null
@@ -290714,7 +290739,6 @@ call LANG_A('SnEc',1,3,"Cero like Ichigo's: a beam ahead stuns those hit. Hirako
 call LANG_A('SnEc',1,4,"Cero like Ichigo's: a beam ahead stuns those hit. Hirako is invulnerable during the charge and the beam.|n|n|cFF00A5FF|nDamage: 7*|r|c003CFF3CAGI|r|cFF00A5FF|nStun: 2.5 sec.|nBeam length: 2200|nCooldown: 14 sec.|r")
 call LANG_A('SnEc',2,0,"Cero, [|cffffcc00Level %d|r] (|cffffcc00E|r)")
 call LANG_A('SnEc',3,0,"Cero like Ichigo's: a beam ahead stuns those hit. Hirako is invulnerable during the charge and the beam.|n|n|cFF00A5FF|nDamage: 3\\4\\5\\6\\7*|r|c003CFF3CAGI|r|cFF00A5FF|nStun: 2.5 sec.|nBeam length: 2200|nCooldown: 14 sec.|r")
-call LANG_A('ToEf',0,0,"Suzumushi Hyakushiki: Grillar Grillo (|cffffcc00E|r)")
 call LANG_A('ToEf',1,0,"After a 2.5 sec. charge Tōsen turns into the fly until the round ends: the mask stays on, stats +15%, Tōsen regains his sight (Blindness is removed). E becomes Flight, W Wing Chirr, R a double Cero (Hado is unavailable), T Los Nueve Aspectos.|n|n|cFF00A5FFAvailable: in the mask (E), from level 25|"+"nCharge: 2.5 sec. (invulnerable)|nStats: +15%|nDuration: until the round ends|r")
 call LANG_A('ToFE',0,0,"Flight, [|cffffcc00Level 1|r] (|cffffcc00E|r)")
 call LANG_A('ToFE',0,1,"Flight, [|cffffcc00Level 2|r] (|cffffcc00E|r)")
@@ -290731,9 +290755,9 @@ call LANG_A('ToFW',0,1,"Wing Chirr, [|cffffcc00Level 2|r] (|cffffcc00W|r)")
 call LANG_A('ToFW',0,2,"Wing Chirr, [|cffffcc00Level 3|r] (|cffffcc00W|r)")
 call LANG_A('ToFW',0,3,"Wing Chirr, [|cffffcc00Level 4|r] (|cffffcc00W|r)")
 call LANG_A('ToFW',0,4,"Wing Chirr, [|cffffcc00Level 5|r] (|cffffcc00W|r)")
+call LANG_A('ToFW',1,0,"The fly's wings send a sound wave ahead: damage and silence to everyone in the cone.|n|n|cFF00A5FF|nDamage: 3*|r|c003CFF3CAGI|r|cFF00A5FF|nSilence: 1.6 sec.|nRange: 700, cone 60°|nCooldown: 12 sec.|r")
 endfunction
 function LANG_Data51 takes nothing returns nothing
-call LANG_A('ToFW',1,0,"The fly's wings send a sound wave ahead: damage and silence to everyone in the cone.|n|n|cFF00A5FF|nDamage: 3*|r|c003CFF3CAGI|r|cFF00A5FF|nSilence: 1.6 sec.|nRange: 700, cone 60°|nCooldown: 12 sec.|r")
 call LANG_A('ToFW',1,1,"The fly's wings send a sound wave ahead: damage and silence to everyone in the cone.|n|n|cFF00A5FF|nDamage: 4*|r|c003CFF3CAGI|r|cFF00A5FF|nSilence: 1.7 sec.|nRange: 700, cone 60°|nCooldown: 12 sec.|r")
 call LANG_A('ToFW',1,2,"The fly's wings send a sound wave ahead: damage and silence to everyone in the cone.|n|n|cFF00A5FF|nDamage: 5*|r|c003CFF3CAGI|r|cFF00A5FF|nSilence: 1.8 sec.|nRange: 700, cone 60°|nCooldown: 12 sec.|r")
 call LANG_A('ToFW',1,3,"The fly's wings send a sound wave ahead: damage and silence to everyone in the cone.|n|n|cFF00A5FF|nDamage: 6*|r|c003CFF3CAGI|r|cFF00A5FF|nSilence: 1.9 sec.|nRange: 700, cone 60°|nCooldown: 12 sec.|r")
@@ -290983,9 +291007,9 @@ call LANG_It('I01K',2,"Increases attack power by 80 and |c00FFFF66AllStat|r by 2
 call LANG_It('I01K',3,"Increases attack power by 80 and |c00FFFF66AllStat|r by 24, Passive: Mortal Strike - 15% chance to deal 2x damage")
 call LANG_It('I01L',0,"Tempered Sword")
 call LANG_It('I01L',1,"Tempered Sword")
+call LANG_It('I01L',2,"Increases attack power by 80 and |c00FFFF66AllStat|r by 24, Passive: Mortal Strike - 15% chance to deal 2x damage. |n|nActive: \"Quick Strikes\" - moves towards the enemy, striking and activating the passive ability of Shusui, Fang and Dark Excalibur (if not on cooldown) if the owner has them. |n|nR"+"ange: 600|nCooldown: 7 seconds")
 endfunction
 function LANG_Data52 takes nothing returns nothing
-call LANG_It('I01L',2,"Increases attack power by 80 and |c00FFFF66AllStat|r by 24, Passive: Mortal Strike - 15% chance to deal 2x damage. |n|nActive: \"Quick Strikes\" - moves towards the enemy, striking and activating the passive ability of Shusui, Fang and Dark Excalibur (if not on cooldown) if the owner has them. |n|nR"+"ange: 600|nCooldown: 7 seconds")
 call LANG_It('I01L',3,"Increases attack power by 80 and |c00FFFF66AllStat|r by 24, Passive: Mortal Strike - 15% chance to deal 2x damage. |n|nActive: \"Quick Strikes\" - moves towards the enemy, striking and activating the passive ability of Shusui, Fang and Dark Excalibur (if not on cooldown) if the owner has them.")
 call LANG_It('I01M',2,"Increase |c00FFFF66AllStat|r by 14.")
 call LANG_It('I01M',3,"Increase |c00FFFF66AllStat|r by 14.")
@@ -291235,9 +291259,9 @@ call LANG_It('I03A',2,"Increases |c00FFFF66AllStat|r by 35, increases regenerati
 call LANG_It('I03A',3,"Increases |c00FFFF66AllStat|r by 35, increases regeneration up to 50 per sec., \"Alastor's Fire\" - deals 8*Hero level damage per sec. to all enemies within a radius of 700.|nThe aura does not activate the Onizuka Set.|n|n\"Fire Clone\" - creates a fiery clone that deals 50% damage and receives 200%"+"|nCDR: 20 sec.")
 call LANG_It('I03B',0,"Anbu Sword")
 call LANG_It('I03B',1,"Anbu Sword")
+call LANG_It('I03B',2,"Increases AS by 30%, each attack deals 55 additional damage. pure damage that pierces resists but not shields, the effect does not stack.")
 endfunction
 function LANG_Data53 takes nothing returns nothing
-call LANG_It('I03B',2,"Increases AS by 30%, each attack deals 55 additional damage. pure damage that pierces resists but not shields, the effect does not stack.")
 call LANG_It('I03B',3,"Increases AS by 30%, each attack deals 55 additional damage. pure damage that pierces resists but not shields, the effect does not stack.")
 call LANG_It('I03C',0,"Anbu Vest")
 call LANG_It('I03C',1,"Anbu Vest")
@@ -291487,9 +291511,9 @@ call LANG_It('IYM0',0,"Yata Mirror (Recipe)")
 call LANG_It('IYM0',1,"Yata Mirror (Recipe)")
 call LANG_It('IYM0',2,"Increase |c00FFFF66AllStat|r by 35, mana regen 50%, DEF by 10, when damaged, the wearer returns 25% of the damage received. Onizuka's Set and Stigmata Tesseract's passive ability activation damage is reduced by 50% when hitting back.|nActive: Increases the amount of damage returned by up to 60% for "+"5 seconds. CD: 20.|n|nRequires: Saiyan Armor, Master's Tank Top, Nanatsu Yoru, Magic Staff, Recipe.")
 call LANG_It('IYM0',3,"Increase |c00FFFF66AllStat|r by 35, mana regen 50%, DEF by 10, when damaged, the wearer returns 25% of the damage received. Onizuka's Set and Stigmata Tesseract's passive ability activation damage is reduced by 50% when hitting back.|nActive: Increases the amount of damage returned by up to 60% for "+"5 seconds. CD: 20.|n|nRequires: Saiyan Armor, Master's Tank Top, Nanatsu Yoru, Magic Staff, Recipe.")
+call LANG_It('I04U',0,"Captain's Set (Recipe)")
 endfunction
 function LANG_Data54 takes nothing returns nothing
-call LANG_It('I04U',0,"Captain's Set (Recipe)")
 call LANG_It('I04U',1,"Captain's Set (Recipe)")
 call LANG_It('I04U',2,"|c00FFFF66AllStat|r increases by 30, HP Regen by 20, DEF by 5, AS by 30%, Attack by 30.|nActive ability: \"Blink\" - teleportation over a short distance, after moving you will be accelerated by 25% for 4 seconds.|nRange: 750|nCDR: 25 sec.|n|nRequired: Quincy Cross, Madao Glasses, Wind Sphere, Recipe"+".")
 call LANG_It('I04U',3,"|c00FFFF66AllStat|r increases by 30, HP Regen by 20, DEF by 5, AS by 30%, Attack by 30.|nActive ability: \"Blink\" - teleportation over a short distance, after moving you will be accelerated by 25% for 4 seconds.|nRange: 750|nCDR: 25 sec.|n|nRequired: Quincy Cross, Madao Glasses, Wind Sphere, Recipe"+".")
@@ -291739,9 +291763,9 @@ call LANG_It('I06M',0,"Quincy Medallion")
 call LANG_It('I06M',1,"Quincy Medallion")
 call LANG_It('I06M',2,"Increase HP by 1000.")
 call LANG_It('I06M',3,"Increase HP by 1000.")
+call LANG_It('I06N',0,"Quincy Overcoat")
 endfunction
 function LANG_Data55 takes nothing returns nothing
-call LANG_It('I06N',0,"Quincy Overcoat")
 call LANG_It('I06N',1,"Quincy Overcoat")
 call LANG_It('I06N',2,"Increase movement speed by 20%, stat by 10.")
 call LANG_It('I06N',3,"Increase movement speed by 20%, stat by 10.")
@@ -291991,9 +292015,9 @@ call LANG_U('H011',3,"Nami is the navigator on the Straw Hat crew's ship, and is
 call LANG_U('H012',3,"Hichigo is the remnant of a Hollow White who infected Ichigo's Zanpakutō with his essence.|n|nRole: Carry, Swordsman|n|n")
 call LANG_U('H013',2,"Hichigo")
 call LANG_U('H013',3,"Enel, the god of Skypiea, ate the Goro Goro no Mi fruit and became Lightning Man.")
+call LANG_U('H014',3,"Gokudera is the storm guardian of the Vongola and is the right hand of the 10th boss.|n|nRole: Caster, Assassin, Nuker|n|n")
 endfunction
 function LANG_Data56 takes nothing returns nothing
-call LANG_U('H014',3,"Gokudera is the storm guardian of the Vongola and is the right hand of the 10th boss.|n|nRole: Caster, Assassin, Nuker|n|n")
 call LANG_U('H016',3,"Yamamoto Takeshi - Vongola Rain Guardian, mastered the \"Shigure Kintoki\" style.|n|nRole: Carry, Assassin, Swordsman|n|n")
 call LANG_U('H017',3,"Shana is a supporter of the fire mist, whose task is to protect the world from collapse.|n|nRole: Caster, Carry, Disabler, Exhauster, Swordsman|n|n")
 call LANG_U('H018',3,"Uryu Ishida - The last young Quincy, in ordinary life he studies at the same school as \"Ichigo\".|n|nRole: Caster, Carry, Escape|n|n")
@@ -292243,9 +292267,9 @@ call LANG_U('h05W',0,"Creep Frieza")
 call LANG_U('h068',0,"Level 18")
 call LANG_U('h146',0,"Level 5")
 call LANG_U('h246',0,"Level 20")
+call LANG_U('h346',0,"Level 10")
 endfunction
 function LANG_Data57 takes nothing returns nothing
-call LANG_U('h346',0,"Level 10")
 call LANG_U('h446',0,"Level 15")
 call LANG_U('h546',0,"Level 25")
 call LANG_U('n008',0,"Box")
@@ -292495,9 +292519,9 @@ call LANG_B('B26b',1,"Effectivness of controls effects is increased by 20%.")
 call LANG_B('IcWb',1,"This one is slow and cannot attack.")
 call LANG_B('MaDb',1,"Madoka's next skill deals additional damage. The number of stacks used is equal to the level of this buff.")
 call LANG_B('MaEb',1,"This character is temporarily blind. He constantly misses.")
+call LANG_B('MaFb',1,"This warrior is slow. The speed of his movement and combat is much lower than normal.")
 endfunction
 function LANG_Data58 takes nothing returns nothing
-call LANG_B('MaFb',1,"This warrior is slow. The speed of his movement and combat is much lower than normal.")
 call LANG_B('MaRb',1,"Madoka's Q skill has been buffed.")
 call LANG_B('MiMp',1,"This warrior is electrocuted. He's slow.")
 call LANG_B('ReD3',1,"|c00FF8000|rRengoku is flaming")
