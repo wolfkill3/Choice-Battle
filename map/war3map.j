@@ -130666,35 +130666,101 @@ endfunction
 //set u=null
 //endfunction
 // волны W (v3): h 0..2 эффекты, 3 угол центра, 4 / 5 откуда, 6 тик
+// волны W до v5 (мелкие кольца за волнами)
+//function TousenFWWave takes nothing returns nothing
+//local timer t=GetExpiredTimer()
+//local integer id=GetHandleId(t)
+//local integer tk=LoadInteger(h,id,6)+1
+//local real a=LoadReal(h,id,3)
+//local real wd=60.*tk
+//local integer i=0
+//local real wa
+//local effect fx
+//call SaveInteger(h,id,6,tk)
+//loop
+//exitwhen i>2
+//set wa=a+(i-1)*0.32
+//set fx=LoadEffectHandle(h,id,i)
+//if tk<=25 then
+//call SetSpecialEffectPosition(fx,LoadReal(h,id,4)+wd*Cos(wa),LoadReal(h,id,5)+wd*Sin(wa))
+//call SetSpecialEffectScale(fx,1.+0.04*tk) // до 1500 (v4)
+//if ModuloInteger(tk,2)==0 then
+//set bj_lastCreatedEffect=AddSpecialEffect("Tousen_Sonic.mdl",LoadReal(h,id,4)+wd*Cos(wa),LoadReal(h,id,5)+wd*Sin(wa))
+//call SetSpecialEffectYaw(bj_lastCreatedEffect,wa*bj_RADTODEG)
+//call SetSpecialEffectScale(bj_lastCreatedEffect,0.4+0.03*tk)
+//call DestroyEffect(bj_lastCreatedEffect)
+//endif
+//else
+//call DestroyEffect(fx)
+//endif
+//set i=i+1
+//endloop
+//if tk>25 then
+//call PauseTimer(t)
+//call DestroyTimer(t)
+//call FlushChildHashtable(h,id)
+//endif
+//set fx=null
+//set t=null
+//endfunction
+// волны W (v5): h 0..2 волны, 3 угол, 4 / 5 откуда, 6 тик; цепочка колец — h 20+k эффект кольца k (k 0..9), появляется на тике 2k+1
 function TousenFWWave takes nothing returns nothing
 local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
 local integer tk=LoadInteger(h,id,6)+1
 local real a=LoadReal(h,id,3)
+local real x0=LoadReal(h,id,4)
+local real y0=LoadReal(h,id,5)
 local real wd=60.*tk
 local integer i=0
+local integer k
+local integer age
 local real wa
+local real rd
+local real side
 local effect fx
 call SaveInteger(h,id,6,tk)
+// три волны
 loop
 exitwhen i>2
 set wa=a+(i-1)*0.32
 set fx=LoadEffectHandle(h,id,i)
 if tk<=25 then
-call SetSpecialEffectPosition(fx,LoadReal(h,id,4)+wd*Cos(wa),LoadReal(h,id,5)+wd*Sin(wa))
-call SetSpecialEffectScale(fx,1.+0.04*tk) // до 1500 (v4)
-if ModuloInteger(tk,2)==0 then
-set bj_lastCreatedEffect=AddSpecialEffect("Tousen_Sonic.mdl",LoadReal(h,id,4)+wd*Cos(wa),LoadReal(h,id,5)+wd*Sin(wa))
-call SetSpecialEffectYaw(bj_lastCreatedEffect,wa*bj_RADTODEG)
-call SetSpecialEffectScale(bj_lastCreatedEffect,0.4+0.03*tk)
-call DestroyEffect(bj_lastCreatedEffect)
-endif
-else
+call SetSpecialEffectPosition(fx,x0+wd*Cos(wa),y0+wd*Sin(wa))
+call SetSpecialEffectScale(fx,1.+0.04*tk)
+elseif tk==26 then
 call DestroyEffect(fx)
 endif
 set i=i+1
 endloop
-if tk>25 then
+// цепочка колец: новое кольцо каждые 2 тика — дальше и больше предыдущего
+if ModuloInteger(tk,2)==1 and tk<=19 then
+set k=(tk-1)/2
+set rd=80.+140.*k
+set fx=AddSpecialEffect("Tousen_Sonic.mdl",x0+rd*Cos(a),y0+rd*Sin(a))
+call SetSpecialEffectScale(fx,0.5+0.17*k)
+call SetSpecialEffectYaw(fx,a*bj_RADTODEG)
+call SaveEffectHandle(h,id,20+k,fx)
+endif
+// кольца покачивает из стороны в сторону, через 18 тиков гаснут
+set k=0
+loop
+exitwhen k>9
+set age=tk-(2*k+1)
+if age>=0 and age<=18 then
+set fx=LoadEffectHandle(h,id,20+k)
+if age==18 then
+call DestroyEffect(fx)
+else
+set rd=80.+140.*k
+set side=(18.+4.*k)*Sin(age*0.7+k*1.3)
+call SetSpecialEffectPosition(fx,x0+rd*Cos(a)+side*Cos(a+bj_PI/2),y0+rd*Sin(a)+side*Sin(a+bj_PI/2))
+call SetSpecialEffectYaw(fx,a*bj_RADTODEG+14.*Sin(age*0.7+k*1.3))
+endif
+endif
+set k=k+1
+endloop
+if tk>38 then
 call PauseTimer(t)
 call DestroyTimer(t)
 call FlushChildHashtable(h,id)
