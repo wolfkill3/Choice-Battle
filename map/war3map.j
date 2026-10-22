@@ -2361,6 +2361,15 @@ boolean LANG_Applied=false // какой язык сейчас выставле�
 boolean LANG_Dirty=false
 rect LANG_R=null
 timer LANG_Clock=null
+// Годжита R: снаряды одним общим таймером (GogetaRMissles / GogetaRMissles2)
+unit array GRM_U
+real array GRM_Speed
+real array GRM_X
+real array GRM_Y
+real array GRM_D
+integer array GRM_Mode
+integer GRM_N=0
+timer GRM_T=null
 endglobals
 native MergeUnits       takes integer qty, integer a, integer b, integer make returns boolean   // reserved native for call 4 integer function and return BOOLEAN value
 native ConvertUnits takes integer qty, integer id returns boolean                                                       // reserved native for call 2 integer function and return BOOLEAN value (can be converted to int!)
@@ -11646,6 +11655,18 @@ call SND_Add(4881,2,"Sound\\Shinji\\HirakoGHit1.mp3",12700)
 call SND_Add(4883,2,"Sound\\Shinji\\HirakoGHit2.mp3",12700)
 call SND_Add(4885,2,"Sound\\Shinji\\HirakoGHit3.mp3",12700)
 call SND_Add(4859,2,"Sound\\Shinji\\HirakoR2.mp3",12700)
+// озвучка Тоусена (22 окт): Sound\Tousen\*.mp3 — E2 (превращение в муху) и способности мухи Q W E R T G (Grillo)
+call SND_Add(4889,2,"Sound\\Tousen\\TousenE2.mp3",12700)
+call SND_Add(4891,2,"Sound\\Tousen\\TousenGrilloQ.mp3",12700)
+call SND_Add(4893,2,"Sound\\Tousen\\TousenGrilloW.mp3",12700)
+call SND_Add(4895,2,"Sound\\Tousen\\TousenGrilloW-sfx.mp3",12700)
+call SND_Add(4897,2,"Sound\\Tousen\\TousenGrilloE.mp3",12700)
+call SND_Add(4899,2,"Sound\\Tousen\\TousenGrilloR.mp3",12700)
+call SND_Add(4901,2,"Sound\\Tousen\\TousenGrilloT.mp3",12700)
+call SND_Add(4903,2,"Sound\\Tousen\\TousenGrilloT-sfx.mp3",12700)
+call SND_Add(4905,2,"Sound\\Tousen\\TousenGrilloG.mp3",12700)
+call SND_Add(4907,2,"Sound\\Tousen\\TousenGrilloG-sfx1.mp3",12700)
+call SND_Add(4909,2,"Sound\\Tousen\\TousenGrilloG-sfx2.mp3",12700)
 endfunction
 function SND_ArrInit takes nothing returns nothing
 call ExecuteFunc("SND_Arr0")
@@ -11679,6 +11700,11 @@ function SndByPath takes string sbp returns sound
     set SND_Tmp=CreateSound(sbp,false,false,true,12700,12700,"")
     call KillSoundWhenDone(SND_Tmp)
     return SND_Tmp
+endfunction
+// звук Тоусена: Sound\Tousen\<имя>.mp3 (22 окт)
+function TousenSnd takes string tsn returns nothing
+    set soundplay=SndByPath("Sound\\Tousen\\"+tsn+".mp3")
+    call StartSound(soundplay)
 endfunction
 
 function CreateModeIndicatorFormYujiD_Periodic takes nothing returns nothing
@@ -69431,7 +69457,7 @@ if GetUnitAbilityLevel(u,'B06T')>0 and c!=UltimateDamage and GetUnitAbilityLevel
     call SaveReal(HH,uid,'ASrs',nb)
     call SaveReal(HH,uid,'tlrs',LoadReal(HH,uid,'tlrs')+nb)
 endif
-if (LoadBoolean(DMG_IHT,uid,'I04T') or GetUnitAbilityLevel(u,'KIP8')>0) and c!=UltimateDamage and GetUnitAbilityLevel(c,'A1WR')==0 and GetUnitAbilityLevel(c,'A0WR')==0 and nb>0 and UnitHasItemOfTypeBJCustom(c,'I13R')==false then
+if (LoadBoolean(DMG_IHT,uid,'I04T') or GetUnitAbilityLevel(u,'KIP8')>0) and u==Hero[idu] and c!=UltimateDamage and GetUnitAbilityLevel(c,'A1WR')==0 and GetUnitAbilityLevel(c,'A0WR')==0 and nb>0 and UnitHasItemOfTypeBJCustom(c,'I13R')==false then
     if GetUnitAbilityLevel(u,'YatB')==0 then
         // call SaveReal(HH,uid,'YTrs',nb*0.25)
         call SaveReal(HH,uid,'tlrs',LoadReal(HH,uid,'tlrs')+nb*0.25)
@@ -84810,10 +84836,12 @@ local real y2=LoadReal(h,id,5)
 local real a=LoadReal(h,id,1)
 local group g=LoadGroupHandle(h,id,3)
 local integer l__idg=GetHandleId(g)
-local integer lvl=GetUnitAbilityLevel(u,'A0BJ')
-local real dmg=50*lvl+GetHeroAgi(u,true)*lvl
+// урон и уровень считаются один раз в CastJC (ключи 6, 7); поиск целей раз в 3 тика (ключ 8) радиусом 230 вокруг точки +30 — покрывает те же 3 шага по 30
+local integer lvl=LoadInteger(h,id,7)
+local real dmg=LoadReal(h,id,6)
 local player p=OwnerOf(u)
 local real dist=LoadReal(h,id,9)
+local integer tick=LoadInteger(h,id,8)
 local integer l__ide
 if SR(x2,y2,x1,y1)<1750 and dist<1750 and LoadBoolean(HH,GetHandleId(u),DASH_USER)==true then
 call SetUnitX(u,x1+30*Cos(a))
@@ -84830,7 +84858,9 @@ call UnitApplyTimedLife(n,'BTLF',0.01)
 call SetUnitScale(n,1,1,1)
 call SetUnitVertexColor(n,255,0,0,50)
 call SaveReal(h,id,9,dist+30)
-call GroupEnumUnitsInRange(G,x1,y1,200,Base)
+call SaveInteger(h,id,8,tick+1)
+if ModuloInteger(tick,3)==0 then
+call GroupEnumUnitsInRange(G,x1+30*Cos(a),y1+30*Sin(a),230,Base)
 loop
 set E=FirstOfGroup(G)
 set l__ide=GetHandleId(E)
@@ -84848,6 +84878,7 @@ endif
 call GroupRemoveUnit(G,E)
 exitwhen E==null
 endloop
+endif
 else
 call SaveBoolean(HH,GetHandleId(u),DASH_USER,false)
 call FlushChildHashtable(h,id)
@@ -84872,6 +84903,9 @@ call SaveReal(h,id,4,GetUnitX(u))
 call SaveReal(h,id,5,GetUnitY(u))
 call SaveReal(h,id,1,Atan2(GetSpellTargetY()-GetUnitY(u),GetSpellTargetX()-GetUnitX(u)))
 call SaveGroupHandle(h,id,3,CreateGroup())
+call SaveInteger(h,id,7,GetUnitAbilityLevel(u,'A0BJ'))
+call SaveReal(h,id,6,50*GetUnitAbilityLevel(u,'A0BJ')+GetHeroAgi(u,true)*GetUnitAbilityLevel(u,'A0BJ'))
+call SaveInteger(h,id,8,0)
 call UnitAddAbility(u,'A0BK')
 call SetUnitTimeScale(u,3)
 call SetUnitAnimation(u,"attack")
@@ -102186,8 +102220,13 @@ function TousenSleepCast takes unit u returns nothing
         call UnitApplyTimedLife(CreateUnit(OwnerOf(u),'e0DZ',x,y,GetRandomReal(0,359)),'BTLF',1)
         call UnitApplyTimedLife(CreateUnit(OwnerOf(u),'e06G',x,y,GetRandomReal(0,359)),'BTLF',1)
         call UnitApplyTimedLife(CreateUnit(OwnerOf(u),'e0E1',x,y,GetRandomReal(0,359)),'BTLF',1)
-        set soundplay=SndN(1361) // Sound\Music\mp3Music\Suzumushi.mp3
-        call StartSound(soundplay)
+        // Q в трансформе (облик мухи) — своя озвучка GrilloQ вместо обычной (22 окт)
+        if GetUnitTypeId(u)=='H0TF' or LoadBoolean(HH,GetHandleId(u),SH_TouHollow) then
+            call TousenSnd("TousenGrilloQ")
+        else
+            set soundplay=SndN(1361) // Sound\Music\mp3Music\Suzumushi.mp3
+            call StartSound(soundplay)
+        endif
         //call KillSoundWhenDone(soundplay) // звук из массива soundStr — не удалять
         call CinematicFadeBJCustom(bj_CINEFADETYPE_FADEIN,2,"ReplaceableTextures\\CameraMasks\\Black_mask.blp",255,255,255,0)
         set n = CreateUnit(OwnerOf(u),'e0J8',x,y,0)
@@ -117745,33 +117784,43 @@ endfunction
 function GogetaRCond takes nothing returns boolean
 return GetSpellAbilityId()=='A2FF'
 endfunction
+// все снаряды R одним таймером 0.015 (раньше у каждого из 140 снарядов был свой таймер и хеш-таблица); движение то же
 function GogetaRMissles2 takes nothing returns nothing
-local timer t=GetExpiredTimer()
-local integer id=GetHandleId(t)
-local unit l__d=LoadUnitHandle(h,id,0)
-local real speed=LoadReal(h,id,1)
-local real f=LoadReal(h,id,2)
-local real x=GetUnitX(l__d)
-local real y=GetUnitY(l__d)
-local real x1=LoadReal(h,id,5)
-local real y1=LoadReal(h,id,6)
-local real a=Atan2(y1-y,x1-x)
-local real sr=SR(x,y,x1,y1)
-local real fl=sr/LoadReal(h,id,7)
-if SR(x,y,x1,y1)>50 and l__d!=null and GetUnitFlyHeight(l__d)>10 then
+local integer i=0
+local integer k
+local unit l__d
+local real speed
+local real x
+local real y
+local real x1
+local real y1
+local real a
+local real sr
+loop
+exitwhen i>=GRM_N
+set l__d=GRM_U[i]
+set speed=GRM_Speed[i]
+set x=GetUnitX(l__d)
+set y=GetUnitY(l__d)
+set x1=GRM_X[i]
+set y1=GRM_Y[i]
+set a=Atan2(y1-y,x1-x)
+set sr=SR(x,y,x1,y1)
+if sr>50 and l__d!=null and GetUnitFlyHeight(l__d)>10 then
 call SetUnitXY_1(l__d,x+speed*Cos(a),y+speed*Sin(a), false)
 if IsTerrainPathable(GetUnitX(l__d),GetUnitY(l__d),PATHING_TYPE_FLYABILITY)==false then
 call UnitApplyTimedLife(l__d,'BTLF',0.05)
 endif
 call SetUnitFacing(l__d,a*bj_RADTODEG)
-if LoadInteger(h,id,9)==0 then
-call SetUnitFlyHeight(l__d,ParabolaZ2(0,850,650,LoadReal(h,id,8),sr),0)
-elseif LoadInteger(h,id,9)==1 then
-call SetUnitFlyHeight(l__d,ParabolaZ2(10,850,90,LoadReal(h,id,8),sr),0)
-elseif LoadInteger(h,id,9)==2 then
-call SetUnitFlyHeight(l__d,ParabolaZ2(0,850,510,LoadReal(h,id,8),sr),0)
+if GRM_Mode[i]==0 then
+call SetUnitFlyHeight(l__d,ParabolaZ2(0,850,650,GRM_D[i],sr),0)
+elseif GRM_Mode[i]==1 then
+call SetUnitFlyHeight(l__d,ParabolaZ2(10,850,90,GRM_D[i],sr),0)
+elseif GRM_Mode[i]==2 then
+call SetUnitFlyHeight(l__d,ParabolaZ2(0,850,510,GRM_D[i],sr),0)
 endif
-call SaveReal(h,id,1,speed*0.984)
+set GRM_Speed[i]=speed*0.984
+set i=i+1
 else
 if l__d!=null then
 call SetUnitFlyHeight(l__d,5,0)
@@ -117784,26 +117833,37 @@ call SetSpecialEffectScale(EFF,0.65)
 call SetSpecialEffectTimeScale(EFF , 3)
 call DestroyEffect(EFF)
 endif
-call PauseTimer(t)
-call DestroyTimer(t)
-call FlushChildHashtable(h,id)
+// последний снаряд на место выбывшего; i не растёт — он обработается в этом же тике
+set GRM_N=GRM_N-1
+set k=GRM_N
+set GRM_U[i]=GRM_U[k]
+set GRM_Speed[i]=GRM_Speed[k]
+set GRM_X[i]=GRM_X[k]
+set GRM_Y[i]=GRM_Y[k]
+set GRM_D[i]=GRM_D[k]
+set GRM_Mode[i]=GRM_Mode[k]
+set GRM_U[k]=null
+endif
+endloop
+if GRM_N==0 then
+call PauseTimer(GRM_T)
 endif
 set l__d=null
-set t=null
 endfunction
 function GogetaRMissles takes unit l__d,real speed,real a,real x,real y,unit u,integer mode returns nothing
-local timer t=CreateTimer()
-local integer id=GetHandleId(t)
-call SaveUnitHandle(h,id,0,l__d)
-call SaveReal(h,id,1,speed)
-call SaveReal(h,id,2,GetUnitFlyHeight(l__d))
-call SaveReal(h,id,5,x)
-call SaveReal(h,id,6,y)
-call SaveReal(h,id,7,SR(x,y,GetUnitX(l__d),GetUnitY(l__d)))
-call SaveReal(h,id,8,SR(x,y,GetUnitX(u),GetUnitY(u)))
-call SaveInteger(h,id,9,mode)
-call TimerStart(t,0.015,true,function GogetaRMissles2)
-set t=null
+set GRM_U[GRM_N]=l__d
+set GRM_Speed[GRM_N]=speed
+set GRM_X[GRM_N]=x
+set GRM_Y[GRM_N]=y
+set GRM_D[GRM_N]=SR(x,y,GetUnitX(u),GetUnitY(u))
+set GRM_Mode[GRM_N]=mode
+set GRM_N=GRM_N+1
+if GRM_N==1 then
+if GRM_T==null then
+set GRM_T=CreateTimer()
+endif
+call TimerStart(GRM_T,0.015,true,function GogetaRMissles2)
+endif
 endfunction
 function GogetaRCast3 takes nothing returns nothing
 local timer t=GetExpiredTimer()
@@ -130568,6 +130628,9 @@ local real a=Atan2(GetSpellTargetY()-y,GetSpellTargetX()-x)
 local timer t=CreateTimer()
 local integer id=GetHandleId(t)
 local unit cb
+if GetUnitTypeId(u)=='H0TF' then
+call TousenSnd("TousenGrilloR") // R мухи (22 окт)
+endif
 call ShinjiSnd("HirakoE2")
 call SaveUnitHandle(h,id,0,u)
 call SaveReal(h,id,1,x+150*Cos(a))
@@ -130984,6 +131047,8 @@ local integer i=0
 local timer t=CreateTimer()
 local effect fx
 call SetUnitFacingInstant(u,a*bj_RADTODEG)
+call TousenSnd("TousenGrilloT") // 22 окт: голос W и T поменяны местами
+call TousenSnd("TousenGrilloW-sfx")
 set fx=AddSpecialEffect("Tousen_Sonic.mdl",x,y)
 call SetSpecialEffectScale(fx,1.2)
 call DestroyEffect(fx)
@@ -131227,6 +131292,170 @@ set p=null
 set u=null
 set t=null
 endfunction
+// W мухи v8 (22 окт, в стиле Q Роши в T): сначала пара звуковых колец у Тоусена, через 0.3 с из них бьёт луч —
+// каждые 0.18 с три волны (Tousen_Wave) по конусу на 1500, вдоль луча цепочка колец (Tousen_Sonic). W держится 2 с,
+// Тоусен на паузе и неуязвим. Враги в конусе до фронта луча: первое попадание — разовый урон и немота 1 с, дальше раз
+// в 0.25 с — урон по времени 0.25*AGI и немота 0.2 с; всё время замедление 70%.
+// h: 0 Тоусен, 1 тик, 3 угол, 4 / 5 откуда, 8 урон, 10 задетые, 20+k кольца
+function TousenFW2WaveMove takes nothing returns nothing
+local timer t=GetExpiredTimer()
+local integer id=GetHandleId(t)
+local integer tk=LoadInteger(h,id,1)+1
+local effect fx=LoadEffectHandle(h,id,0)
+local real wa=LoadReal(h,id,2)
+local real wx=LoadReal(h,id,3)+60.*tk*Cos(wa)
+local real wy=LoadReal(h,id,4)+60.*tk*Sin(wa)
+call SaveInteger(h,id,1,tk)
+if tk<=25 then
+call SetSpecialEffectOrientation(fx,wa*bj_RADTODEG+90.,0.,90.)
+call SetSpecialEffectPositionWithZ(fx,wx,wy,GetTerrainZ(wx,wy)+150.)
+call SetSpecialEffectScale(fx,0.35+0.022*tk)
+else
+call DestroyEffect(fx)
+call FlushChildHashtable(h,id)
+call DestroyTimer(t)
+endif
+set fx=null
+set t=null
+endfunction
+function TousenFW2Ring takes integer id,integer k,real rd,real sc returns nothing
+local real a=LoadReal(h,id,3)
+local real rx=LoadReal(h,id,4)+rd*Cos(a)
+local real ry=LoadReal(h,id,5)+rd*Sin(a)
+local effect fx=AddSpecialEffect("Tousen_Sonic.mdl",rx,ry)
+call SetSpecialEffectScale(fx,sc)
+call SetSpecialEffectOrientation(fx,a*bj_RADTODEG+90.,0.,90.)
+call SetSpecialEffectPositionWithZ(fx,rx,ry,GetTerrainZ(rx,ry)+110.)
+call SaveEffectHandle(h,id,20+k,fx)
+set fx=null
+endfunction
+function TousenFW2Tick takes nothing returns nothing
+local timer t=GetExpiredTimer()
+local integer id=GetHandleId(t)
+local unit u=LoadUnitHandle(h,id,0)
+local integer tk=LoadInteger(h,id,1)+1
+local real a=LoadReal(h,id,3)
+local real x0=LoadReal(h,id,4)
+local real y0=LoadReal(h,id,5)
+local integer i
+local integer k
+local real front
+local group g
+local unit e
+local timer wt
+local effect fx
+call SaveInteger(h,id,1,tk)
+if tk>67 or not UnitIsAlive(u) or udg_B==false then
+// конец W (2 с): кольца гаснут, Тоусен отпущен
+set k=0
+loop
+exitwhen k>11
+call DestroyEffect(LoadEffectHandle(h,id,20+k))
+set k=k+1
+endloop
+call DestroyGroup(LoadGroupHandle(h,id,10))
+if u!=null then
+call PauseUnit(u,false)
+call SetUnitInvulnerable(u,false)
+call SetUnitTimeScale(u,1.)
+call SetUnitAnimation(u,"stand")
+endif
+call PauseTimer(t)
+call FlushChildHashtable(h,id)
+call DestroyTimer(t)
+else
+call PauseUnit(u,true)
+call SetUnitInvulnerable(u,true)
+// луч — с 0.3 с (тик 10)
+if tk>=10 then
+// волны: три по конусу раз в 0.18 с
+if ModuloInteger(tk-10,6)==0 then
+set i=0
+loop
+exitwhen i>2
+set fx=AddSpecialEffect("Tousen_Wave.mdl",x0+120*Cos(a),y0+120*Sin(a))
+set wt=CreateTimer()
+call SaveEffectHandle(h,GetHandleId(wt),0,fx)
+call SaveInteger(h,GetHandleId(wt),1,0)
+call SaveReal(h,GetHandleId(wt),2,a+(i-1)*0.32)
+call SaveReal(h,GetHandleId(wt),3,x0+120*Cos(a))
+call SaveReal(h,GetHandleId(wt),4,y0+120*Sin(a))
+call TimerStart(wt,0.03,true,function TousenFW2WaveMove)
+set i=i+1
+endloop
+endif
+// цепочка колец вдоль луча: новое каждые 2 тика, дальше и больше предыдущего (кольца 2..11)
+if ModuloInteger(tk-10,2)==0 and tk-10<=18 then
+set k=2+(tk-10)/2
+call TousenFW2Ring(id,k,80.+140.*k,0.5+0.17*k)
+endif
+// урон раз в 0.25 с (8 тиков) по конусу до фронта луча
+if ModuloInteger(tk-10,8)==0 then
+set front=RMinBJ(1500.,120.+60.*(tk-10)+300.)
+set g=CreateGroup()
+call GroupEnumUnitsInRange(g,x0,y0,front,Base)
+loop
+set e=FirstOfGroup(g)
+exitwhen e==null
+if Condition_Base(OwnerOf(u),e) and UnitIsAlive(e) and Cos(Atan2(GetUnitY(e)-y0,GetUnitX(e)-x0)-a)>=0.866 then
+if not IsUnitInGroup(e,LoadGroupHandle(h,id,10)) then
+call GroupAddUnit(LoadGroupHandle(h,id,10),e)
+call myCustomDamage(u,e,LoadReal(h,id,8),false,false,null,null,null)
+if UnitIsAlive(e) then
+call SetControlToUnit(u,e,1.,"silence")
+endif
+else
+call myCustomDamage(u,e,0.25*GetHeroAgi(u,true),false,false,null,null,null)
+if UnitIsAlive(e) then
+call SetControlToUnit(u,e,0.2,"silence")
+endif
+endif
+if UnitIsAlive(e) then
+call SlowUnit(u,e,0.7,0.7,0.35,0,false)
+endif
+call DestroyEffect(AddSpecialEffectTarget("Tousen_Sonic.mdl",e,"chest"))
+endif
+call GroupRemoveUnit(g,e)
+endloop
+call DestroyGroup(g)
+endif
+endif
+endif
+set fx=null
+set wt=null
+set g=null
+set e=null
+set u=null
+set t=null
+endfunction
+function TousenFWCast2 takes nothing returns nothing
+local unit u=GetTriggerUnit()
+local integer lv=GetUnitAbilityLevel(u,'ToFW')
+local real x=GetUnitX(u)
+local real y=GetUnitY(u)
+local real a=Atan2(GetSpellTargetY()-y,GetSpellTargetX()-x)
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+call SetUnitFacingInstant(u,a*bj_RADTODEG)
+call TousenSnd("TousenGrilloT") // голос W и T поменяны местами (22 окт)
+call TousenSnd("TousenGrilloW-sfx")
+call PauseUnit(u,true)
+call SetUnitInvulnerable(u,true)
+call SetUnitAnimation(u,"spell")
+call SaveUnitHandle(h,id,0,u)
+call SaveInteger(h,id,1,0)
+call SaveReal(h,id,3,a)
+call SaveReal(h,id,4,x)
+call SaveReal(h,id,5,y)
+call SaveReal(h,id,8,(1+lv)*GetHeroAgi(u,true)) // разово 2..6*AGI
+call SaveGroupHandle(h,id,10,CreateGroup())
+// пара колец рядом — сразу, луч из них через 0.3 с
+call TousenFW2Ring(id,0,90.,0.55)
+call TousenFW2Ring(id,1,170.,0.7)
+call TimerStart(t,0.03,true,function TousenFW2Tick)
+set t=null
+set u=null
+endfunction
 function TousenFTCond takes nothing returns boolean
 return GetSpellAbilityId()=='ToFT' and udg_B==true and (GetUnitTypeId(GetTriggerUnit())=='H02K' or GetUnitTypeId(GetTriggerUnit())=='H0TF')
 endfunction
@@ -131318,6 +131547,8 @@ local real rx
 local real ry
 call SaveInteger(h,id,1,tk)
 if tk<=120 and UnitIsAlive(u) and udg_B==true and LoadBoolean(HH,GetHandleId(u),SH_TouHollow) then
+// кольцо поля на земле под Тоусеном (22 окт)
+call SetSpecialEffectPositionWithZ(LoadEffectHandle(h,id,4),x,y,GetTerrainZ(x,y))
 // v7 (22 окт): кольца в воздухе вокруг Тоусена каждые 0.1 с, гаснут за 0.4 с
 if ModuloInteger(tk,2)==0 then
 set ra=GetRandomReal(0,2*bj_PI)
@@ -131406,6 +131637,9 @@ call DestroyGroup(g)
 endif
 else
 call UnitRemoveAbility(u,'ToFa')
+// кольцо прячется без вспышки смерти
+call SetSpecialEffectAlpha(LoadEffectHandle(h,id,4),0)
+call SetSpecialEffectZ(LoadEffectHandle(h,id,4),-2000.)
 call DestroyEffect(LoadEffectHandle(h,id,4))
 call DestroyEffect(LoadEffectHandle(h,id,40))
 call DestroyEffect(LoadEffectHandle(h,id,41))
@@ -131427,6 +131661,8 @@ local integer id=GetHandleId(t)
 local effect fx
 local integer i=0
 call UnitAddAbility(u,'ToFa')
+call TousenSnd("TousenGrilloW") // 22 окт: голос W и T поменяны местами
+call TousenSnd("TousenGrilloT-sfx")
 // v6 (22 окт): на земле ничего — ни колец поля, ни хоровода, ни вспышки
 // большое кольцо поля 800 и второе внутри (пак), идут за Тоусеном
 //set fx=AddSpecialEffectTarget("CirclePulse_Green.mdl",u,"origin")
@@ -131458,7 +131694,12 @@ call UnitAddAbility(u,'ToFa')
 //call SetSpecialEffectVertexColour(bj_lastCreatedEffect,40,255,60,255)
 //call DestroyEffect(bj_lastCreatedEffect)
 // зелёная аура на Тоусене на время поля (v5, 22 окт)
-call SaveEffectHandle(h,id,4,AddSpecialEffectTarget("az_goods_tp_caster(green).mdl",u,"origin"))
+// 22 окт: вместо эффекта на Тоусене (az_goods_tp_caster) — зелёное кольцо поля 800 на земле, как кольцо тумана Хирако; ходит за Тоусеном
+//call SaveEffectHandle(h,id,4,AddSpecialEffectTarget("az_goods_tp_caster(green).mdl",u,"origin"))
+set fx=AddSpecialEffect("Tousen_RangeCircle.mdx",GetUnitX(u),GetUnitY(u))
+call SetSpecialEffectScale(fx,800./105.)
+call SetSpecialEffectTimeScale(fx,0.)
+call SaveEffectHandle(h,id,4,fx)
 call SaveUnitHandle(h,id,0,u)
 call SaveInteger(h,id,1,0)
 //call TimerStart(t,0.05,true,function TousenFTTick)
@@ -131651,7 +131892,7 @@ endif
 call SetUnitVertexColor(tfx,120,255,140,255)
 set i=i+1
 endloop
-call ShinjiSnd("HirakoE")
+//call ShinjiSnd("HirakoE") // 22 окт: голос Хирако убран, у Тоусена своя реплика с начала зарядки
 call TousenFlyDo(u)
 endif
 call PauseTimer(t)
@@ -131683,6 +131924,7 @@ return
 endif
 call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-0.4*GetUnitState(u,UNIT_STATE_MAX_MANA)-150)
 call SaveBoolean(HH,GetHandleId(u),SH_TouCharge,true)
+call TousenSnd("TousenE2") // 22 окт: «Сузумуши Хякушики: Гриляр Грийо» (8 с)
 // аура зарядки (dM32, как у Гона), зелёная
 set bj_lastCreatedUnit=CreateUnit(OwnerOf(u),'dM32',GetUnitX(u),GetUnitY(u),0)
 call SetUnitVertexColor(bj_lastCreatedUnit,120,255,140,190)
@@ -132092,6 +132334,7 @@ local integer id=GetHandleId(t)
 call UnitAddAbility(u,'Amrf')
 call UnitRemoveAbility(u,'Amrf')
 call SetUnitFacingInstant(u,bj_RADTODEG*Atan2(GetSpellTargetY()-GetUnitY(u),GetSpellTargetX()-GetUnitX(u)))
+call TousenSnd("TousenGrilloE") // 22 окт
 //call SetUnitInvulnerable(u,true) // рывок только с паузой (22 окт)
 call SaveUnitHandle(h,id,0,u)
 call SaveReal(h,id,1,GetUnitX(u))
@@ -132332,11 +132575,13 @@ call SaveInteger(h,id,9,pt)
 // реверс (22 окт): цель в стойке развернула удар — G кончается, Тоусен отпущен
 if not UnitIsAlive(u) or udg_B==false or not UnitIsAlive(e) or (k==0 and tk>75) or Bof_RevEnd(u) then
 set fin=true
-elseif k>=4 and ph==1 and pt>=12 then
+elseif k>=4 and ph==1 and pt>=15 then
 set fin=true
 call PauseUnit(e,false)
 if not Bof_Rev(u,e) then
-call myCustomDamage(u,e,8*GetHeroAgi(u,true),false,false,null,null,null)
+// 22 окт: урон теперь на каждом пролёте (4 x 2*AGI), в конце — оглушение
+//call myCustomDamage(u,e,8*GetHeroAgi(u,true),false,false,null,null,null)
+call TousenSnd("TousenGrilloG-sfx2") // финальный удар (22 окт)
 call DestroyEffect(AddSpecialEffect("war3mapImported\\BrolyRHitGreen.mdl",ex,ey))
 if UnitIsAlive(e) then
 call SetControlToUnit(u,e,2.,"stun")
@@ -132368,8 +132613,9 @@ endif
 set cr=ta
 call SaveReal(h,id,10,cr)
 call SetUnitFacingInstant(u,cr*bj_RADTODEG)
-call SetUnitX(u,GetUnitX(u)+80*Cos(cr))
-call SetUnitY(u,GetUnitY(u)+80*Sin(cr))
+// 22 окт: быстрее — 110 за тик (было 80)
+call SetUnitX(u,GetUnitX(u)+110*Cos(cr))
+call SetUnitY(u,GetUnitY(u)+110*Sin(cr))
 if ModuloInteger(pt,3)==0 then
 set bj_lastCreatedEffect=AddSpecialEffect("Others\\WindCirclefaster.mdl",GetUnitX(u),GetUnitY(u))
 call SetSpecialEffectScale(bj_lastCreatedEffect,0.35)
@@ -132388,6 +132634,9 @@ call SaveInteger(h,id,7,k+1)
 call SaveInteger(h,id,8,1)
 call SaveInteger(h,id,9,0)
 call SetUnitAnimation(u,"attack")
+call TousenSnd("TousenGrilloG-sfx1") // удар (22 окт)
+// каждый пролёт бьёт: 2*AGI (22 окт; было 8*AGI одним ударом в конце)
+call myCustomDamage(u,e,2*GetHeroAgi(u,true),false,false,null,null,null)
 call EffectCreateAndMove(true,"Others\\WindCirclefaster.mdl",GetRandomReal(0,360),1,1.3,1.5,40,100,50,40,0,e,0,cr*bj_RADTODEG)
 call DestroyEffect(AddSpecialEffect("war3mapImported\\az_jugggreen_e2_impact.mdl",ex,ey))
 set bj_lastCreatedEffect=AddSpecialEffect("war3mapImported\\az-slash-green.mdl",ex,ey)
@@ -132398,15 +132647,19 @@ call DestroyEffect(AddSpecialEffectTarget("Tousen_Sonic.mdl",e,"chest"))
 endif
 elseif ph==1 then
 // пролёт насквозь с торможением: 60 -> 5 за 12 тиков (~380)
-set sp=RMaxBJ(5.,60.-5.*pt)
+//set sp=RMaxBJ(5.,60.-5.*pt)
+// 22 окт: пролетает дальше — 70 -> 10 за 20 тиков (~770)
+//set sp=RMaxBJ(10.,70.-3.*pt)
+// 22 окт: быстрее — 100 -> 30 за 15 тиков (~1000)
+set sp=RMaxBJ(15.,100.-5.*pt)
 // v3b (22 окт): пролёт по дуге — курс уходит в сторону на 7 градусов за тик
-set cr=cr+(2*LoadInteger(h,id,4)-3)*0.12
+set cr=cr+(2*LoadInteger(h,id,4)-3)*0.09 // 22 окт: 5 градусов за тик (пролёт 15 тиков; было 7, затем 4)
 call SaveReal(h,id,10,cr)
 call SetUnitFacingInstant(u,cr*bj_RADTODEG)
 call SetUnitX(u,GetUnitX(u)+sp*Cos(cr))
 call SetUnitY(u,GetUnitY(u)+sp*Sin(cr))
-call UnitSpeed(u,RMaxBJ(0.5,1.8-0.11*pt))
-if pt>=12 then
+call UnitSpeed(u,RMaxBJ(0.6,2.2-0.1*pt))
+if pt>=15 then
 call SaveInteger(h,id,8,2)
 call SaveInteger(h,id,9,0)
 call SetUnitAnimation(u,"walk")
@@ -132416,13 +132669,14 @@ else
 set df=ModuloReal(ta-cr+bj_PI,2*bj_PI)-bj_PI
 //set cr=cr+RMaxBJ(-0.52,RMinBJ(0.52,df))
 // v3b: плавный разворот, 11.5 градуса за тик, до 10 тиков (или пока не смотрит на цель)
-set cr=cr+RMaxBJ(-0.2,RMinBJ(0.2,df))
+// 22 окт: разворот быстрее — 23 градуса за тик, до 6 тиков (было 11.5 и 10)
+set cr=cr+RMaxBJ(-0.4,RMinBJ(0.4,df))
 call SaveReal(h,id,10,cr)
 call SetUnitFacingInstant(u,cr*bj_RADTODEG)
-call SetUnitX(u,GetUnitX(u)+5*Cos(cr))
-call SetUnitY(u,GetUnitY(u)+5*Sin(cr))
+call SetUnitX(u,GetUnitX(u)+12*Cos(cr))
+call SetUnitY(u,GetUnitY(u)+12*Sin(cr))
 //if pt>=6 then
-if pt>=10 or (df<0.2 and df>-0.2) then
+if pt>=6 or (df<0.4 and df>-0.4) then
 call SaveInteger(h,id,8,0)
 call SaveInteger(h,id,9,0)
 endif
@@ -132450,6 +132704,7 @@ call SaveBoolean(HH,GetHandleId(u),SH_bofRevd,false) // реверс: флаг �
 call SaveInteger(h,id,4,GetRandomInt(1,2))
 //call SaveEffectHandle(h,id,5,AddSpecialEffectTarget("Kisame\\file00002180.mdl",u,"origin"))
 call SaveEffectHandle(h,id,5,AddSpecialEffectTarget("Zoro\\afbgreencharge.mdl",u,"origin")) // зелёная аура (22 окт)
+call TousenSnd("TousenGrilloG") // 22 окт
 call PauseUnit(u,true)
 call SetUnitInvulnerable(u,true)
 call SetUnitPathing(u,false)
@@ -132476,7 +132731,7 @@ call TriggerAddAction(t,function TousenGCast)
 set t=CreateTrigger()
 call TriggerRegisterAnyUnitEventBJ(t,EVENT_PLAYER_UNIT_SPELL_EFFECT)
 call TriggerAddCondition(t,Condition(function TousenFWCond))
-call TriggerAddAction(t,function TousenFWCast)
+call TriggerAddAction(t,function TousenFWCast2) // v8 (22 окт)
 set t=CreateTrigger()
 call TriggerRegisterAnyUnitEventBJ(t,EVENT_PLAYER_UNIT_SPELL_EFFECT)
 call TriggerAddCondition(t,Condition(function TousenFTCond))
@@ -292348,8 +292603,8 @@ call LANG_A('ToFE',1,3,"The fly dashes to the point: damage and stun to enemies 
 call LANG_A('ToFE',1,4,"The fly dashes to the point: damage and stun to enemies on the way. Always the full range towards the click, Tōsen is paused.|n|n|cFF00A5FF|nDamage: 8*|r|c003CFF3CAGI|r|cFF00A5FF|nStun: 1 sec.|nAoE: 300|nRange: 1200|nCooldown: 10 sec.|r")
 call LANG_A('ToFE',2,0,"Flight, [|cffffcc00Level %d|r] (|cffffcc00E|r)")
 call LANG_A('ToFE',3,0,"The fly dashes to the point: damage and stun to enemies on the way. Always the full range towards the click, Tōsen is paused.|n|n|cFF00A5FF|nDamage: 4\\5\\6\\7\\8*|r|c003CFF3CAGI|r|cFF00A5FF|nStun: 1 sec.|nAoE: 300|nRange: 1200|nCooldown: 10 sec.|r")
-call LANG_A('ToFG',1,0,"The fly dashes to the target and lands a series of 4 strikes, circling around it.|n|n|cFF00A5FFDamage: 8*|r|c003CFF3CAGI|r|cFF00A5FF|nStun: 2 sec.|nRange: 1000|nCooldown: 25 sec.|r")
-call LANG_A('ToFG',3,0,"The fly dashes to the target and lands a series of 4 strikes, circling around it.|n|n|cFF00A5FFDamage: 8*|r|c003CFF3CAGI|r|cFF00A5FF|nStun: 2 sec.|nRange: 1000|nCooldown: 25 sec.|r")
+call LANG_A('ToFG',1,0,"The fly dashes to the target and lands a series of 4 strikes, circling around it.|n|n|cFF00A5FFDamage: 4 passes of 2*|r|c003CFF3CAGI|r|cFF00A5FF|nStun: 2 sec.|nRange: 1000|nCooldown: 25 sec.|r")
+call LANG_A('ToFG',3,0,"The fly dashes to the target and lands a series of 4 strikes, circling around it.|n|n|cFF00A5FFDamage: 4 passes of 2*|r|c003CFF3CAGI|r|cFF00A5FF|nStun: 2 sec.|nRange: 1000|nCooldown: 25 sec.|r")
 call LANG_A('ToFW',0,0,"Wing Chirr, [|cffffcc00Level 1|r] (|cffffcc00W|r)")
 endfunction
 function LANG_Data51 takes nothing returns nothing
@@ -292357,13 +292612,13 @@ call LANG_A('ToFW',0,1,"Wing Chirr, [|cffffcc00Level 2|r] (|cffffcc00W|r)")
 call LANG_A('ToFW',0,2,"Wing Chirr, [|cffffcc00Level 3|r] (|cffffcc00W|r)")
 call LANG_A('ToFW',0,3,"Wing Chirr, [|cffffcc00Level 4|r] (|cffffcc00W|r)")
 call LANG_A('ToFW',0,4,"Wing Chirr, [|cffffcc00Level 5|r] (|cffffcc00W|r)")
-call LANG_A('ToFW',1,0,"The fly's wings send a sound wave ahead: it rolls through the cone: enemies it reaches take a one-time hit and silence, then damage over 2 sec.|n|n|cFF00A5FF|nDamage: 2*|r|c003CFF3CAGI|r|cFF00A5FF|nDamage over time: 2*|r|c003CFF3CAGI|r|cFF00A5FF over 2 sec.|nSilence: 1.6 sec.|nRange: 1500, cone 60°"+"|nCooldown: 12 sec.|r")
-call LANG_A('ToFW',1,1,"The fly's wings send a sound wave ahead: it rolls through the cone: enemies it reaches take a one-time hit and silence, then damage over 2 sec.|n|n|cFF00A5FF|nDamage: 3*|r|c003CFF3CAGI|r|cFF00A5FF|nDamage over time: 2*|r|c003CFF3CAGI|r|cFF00A5FF over 2 sec.|nSilence: 1.7 sec.|nRange: 1500, cone 60°"+"|nCooldown: 12 sec.|r")
-call LANG_A('ToFW',1,2,"The fly's wings send a sound wave ahead: it rolls through the cone: enemies it reaches take a one-time hit and silence, then damage over 2 sec.|n|n|cFF00A5FF|nDamage: 4*|r|c003CFF3CAGI|r|cFF00A5FF|nDamage over time: 2*|r|c003CFF3CAGI|r|cFF00A5FF over 2 sec.|nSilence: 1.8 sec.|nRange: 1500, cone 60°"+"|nCooldown: 12 sec.|r")
-call LANG_A('ToFW',1,3,"The fly's wings send a sound wave ahead: it rolls through the cone: enemies it reaches take a one-time hit and silence, then damage over 2 sec.|n|n|cFF00A5FF|nDamage: 5*|r|c003CFF3CAGI|r|cFF00A5FF|nDamage over time: 2*|r|c003CFF3CAGI|r|cFF00A5FF over 2 sec.|nSilence: 1.9 sec.|nRange: 1500, cone 60°"+"|nCooldown: 12 sec.|r")
-call LANG_A('ToFW',1,4,"The fly's wings send a sound wave ahead: it rolls through the cone: enemies it reaches take a one-time hit and silence, then damage over 2 sec.|n|n|cFF00A5FF|nDamage: 6*|r|c003CFF3CAGI|r|cFF00A5FF|nDamage over time: 2*|r|c003CFF3CAGI|r|cFF00A5FF over 2 sec.|nSilence: 2.0 sec.|nRange: 1500, cone 60°"+"|nCooldown: 12 sec.|r")
+call LANG_A('ToFW',1,0,"The fly's wings: two sound rings rise before Tousen, a moment later a sound beam strikes from them over a cone. The beam lasts 2 sec., Tousen is invulnerable and immobile meanwhile. The first hit deals damage and 1 sec. silence, then every 0.25 sec. damage over time and 0.2 sec. silence; enemies hit"+" are slowed by 70%.|n|n|cFF00A5FF|nDamage: 2*|r|c003CFF3CAGI|r|cFF00A5FF|nDamage over time: 0.25*|r|c003CFF3CAGI|r|cFF00A5FF every 0.25 sec.|nSlow: 70%|nSilence: 1 sec., then 0.2 sec.|nRange: 1500, cone 60°|nDuration: 2 sec.|nCooldown: 12 sec.|r")
+call LANG_A('ToFW',1,1,"The fly's wings: two sound rings rise before Tousen, a moment later a sound beam strikes from them over a cone. The beam lasts 2 sec., Tousen is invulnerable and immobile meanwhile. The first hit deals damage and 1 sec. silence, then every 0.25 sec. damage over time and 0.2 sec. silence; enemies hit"+" are slowed by 70%.|n|n|cFF00A5FF|nDamage: 3*|r|c003CFF3CAGI|r|cFF00A5FF|nDamage over time: 0.25*|r|c003CFF3CAGI|r|cFF00A5FF every 0.25 sec.|nSlow: 70%|nSilence: 1 sec., then 0.2 sec.|nRange: 1500, cone 60°|nDuration: 2 sec.|nCooldown: 12 sec.|r")
+call LANG_A('ToFW',1,2,"The fly's wings: two sound rings rise before Tousen, a moment later a sound beam strikes from them over a cone. The beam lasts 2 sec., Tousen is invulnerable and immobile meanwhile. The first hit deals damage and 1 sec. silence, then every 0.25 sec. damage over time and 0.2 sec. silence; enemies hit"+" are slowed by 70%.|n|n|cFF00A5FF|nDamage: 4*|r|c003CFF3CAGI|r|cFF00A5FF|nDamage over time: 0.25*|r|c003CFF3CAGI|r|cFF00A5FF every 0.25 sec.|nSlow: 70%|nSilence: 1 sec., then 0.2 sec.|nRange: 1500, cone 60°|nDuration: 2 sec.|nCooldown: 12 sec.|r")
+call LANG_A('ToFW',1,3,"The fly's wings: two sound rings rise before Tousen, a moment later a sound beam strikes from them over a cone. The beam lasts 2 sec., Tousen is invulnerable and immobile meanwhile. The first hit deals damage and 1 sec. silence, then every 0.25 sec. damage over time and 0.2 sec. silence; enemies hit"+" are slowed by 70%.|n|n|cFF00A5FF|nDamage: 5*|r|c003CFF3CAGI|r|cFF00A5FF|nDamage over time: 0.25*|r|c003CFF3CAGI|r|cFF00A5FF every 0.25 sec.|nSlow: 70%|nSilence: 1 sec., then 0.2 sec.|nRange: 1500, cone 60°|nDuration: 2 sec.|nCooldown: 12 sec.|r")
+call LANG_A('ToFW',1,4,"The fly's wings: two sound rings rise before Tousen, a moment later a sound beam strikes from them over a cone. The beam lasts 2 sec., Tousen is invulnerable and immobile meanwhile. The first hit deals damage and 1 sec. silence, then every 0.25 sec. damage over time and 0.2 sec. silence; enemies hit"+" are slowed by 70%.|n|n|cFF00A5FF|nDamage: 6*|r|c003CFF3CAGI|r|cFF00A5FF|nDamage over time: 0.25*|r|c003CFF3CAGI|r|cFF00A5FF every 0.25 sec.|nSlow: 70%|nSilence: 1 sec., then 0.2 sec.|nRange: 1500, cone 60°|nDuration: 2 sec.|nCooldown: 12 sec.|r")
 call LANG_A('ToFW',2,0,"Wing Chirr, [|cffffcc00Level %d|r] (|cffffcc00W|r)")
-call LANG_A('ToFW',3,0,"The fly's wings send a sound wave ahead: it rolls through the cone: enemies it reaches take a one-time hit and silence, then damage over 2 sec.|n|n|cFF00A5FF|nDamage: 2\\3\\4\\5\\6*|r|c003CFF3CAGI|r|cFF00A5FF|nDamage over time: 2*|r|c003CFF3CAGI|r|cFF00A5FF over 2 sec.|nSilence: 1.6\\1.7\\1.8\\1.9\\"+"2.0 sec.|nRange: 1500, cone 60°|nCooldown: 12 sec.|r")
+call LANG_A('ToFW',3,0,"The fly's wings: two sound rings rise before Tousen, a moment later a sound beam strikes from them over a cone. The beam lasts 2 sec., Tousen is invulnerable and immobile meanwhile. The first hit deals damage and 1 sec. silence, then every 0.25 sec. damage over time and 0.2 sec. silence; enemies hit"+" are slowed by 70%.|n|n|cFF00A5FF|nDamage: 2\\3\\4\\5\\6*|r|c003CFF3CAGI|r|cFF00A5FF|nDamage over time: 0.25*|r|c003CFF3CAGI|r|cFF00A5FF every 0.25 sec.|nSlow: 70%|nSilence: 1 sec., then 0.2 sec.|nRange: 1500, cone 60°|nDuration: 2 sec.|nCooldown: 12 sec.|r")
 call LANG_A('ToFT',1,0,"A sound field around Tōsen follows him: rings keep flashing next to him, and once per second each hits its own enemy in the field with a wave (damage and silence). Tōsen attacks faster.|n|n|cFF00A5FF|nAoE: 800|nDamage: 1*|r|c003CFF3CAGI|r|cFF00A5FF per sec.|nSilence: while in the field|nAttack spe"+"ed: +60%|nDuration: 6 sec.|nCooldown: 45 sec.|r")
 call LANG_A('ToFT',3,0,"A sound field around Tōsen follows him: rings keep flashing next to him, and once per second each hits its own enemy in the field with a wave (damage and silence). Tōsen attacks faster.|n|n|cFF00A5FF|nAoE: 800|nDamage: 1*|r|c003CFF3CAGI|r|cFF00A5FF per sec.|nSilence: while in the field|nAttack spe"+"ed: +60%|nDuration: 6 sec.|nCooldown: 45 sec.|r")
 call LANG_A('ToEc',0,0,"Double Cero, [|cffffcc00Level 1|r] (|cffffcc00R|r)")
