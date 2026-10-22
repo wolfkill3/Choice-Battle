@@ -2352,15 +2352,6 @@ integer ShnConfN=0
 boolean ShnConfHit=false // 21 окт: идёт урон запутанного, переданный Хирако (обработчик урона не трогает его второй раз)
 boolean JT_Any=false // хоть один судья сейчас занимает место (-take): без этого обёртки — сразу натив
 hashtable JT_RegHT=null // @538AB@0F88 A>1KB89 N=8B>2 AC4LO< (TRPUE): B@8335@ � A>1KB85 � 83@>:
-boolean LANG_EN=false // язык интерфейса у локального игрока (LANG_Init, -en / -ru)
-hashtable LANG_HT=InitHashtable()
-integer LANG_N=0
-integer LANG_I=0
-group LANG_G=CreateGroup()
-boolean LANG_Applied=false // какой язык сейчас выставлен у локального игрока
-boolean LANG_Dirty=false
-rect LANG_R=null
-timer LANG_Clock=null
 // Годжита R: снаряды одним общим таймером (GogetaRMissles / GogetaRMissles2)
 unit array GRM_U
 real array GRM_Speed
@@ -2370,6 +2361,15 @@ real array GRM_D
 integer array GRM_Mode
 integer GRM_N=0
 timer GRM_T=null
+boolean LANG_EN=false // язык интерфейса у локального игрока (LANG_Init, -en / -ru)
+hashtable LANG_HT=InitHashtable()
+integer LANG_N=0
+integer LANG_I=0
+group LANG_G=CreateGroup()
+boolean LANG_Applied=false // какой язык сейчас выставлен у локального игрока
+boolean LANG_Dirty=false
+rect LANG_R=null
+timer LANG_Clock=null
 endglobals
 native MergeUnits       takes integer qty, integer a, integer b, integer make returns boolean   // reserved native for call 4 integer function and return BOOLEAN value
 native ConvertUnits takes integer qty, integer id returns boolean                                                       // reserved native for call 2 integer function and return BOOLEAN value (can be converted to int!)
@@ -132554,6 +132554,37 @@ endfunction
 // G v3 (22 окт): удар с налёта — рывок к цели (80 за 0.02 с), удар, пролёт насквозь с торможением (12 тиков), разворот к цели
 // (6 тиков, до 30 градусов за тик), снова рывок. 4 удара, в конце 8*AGI и оглушение 2 с. Первый подлёт — до 1.5 с, иначе отмена
 // фазы (h,id,8): 0 рывок, 1 пролёт и торможение, 2 разворот; (h,id,9) тик фазы, (h,id,10) курс, (h,id,7) ударов
+// G мухи v4 (23 окт): пролёты в 2 раза быстрее и в 2 раза больше — 7 пролётов с ударом (1*AGI, анимация удара и
+// зелёные слеши), направление дуги чередуется; 8-й удар — взлёт и резкое пике сверху на цель, удар о землю как у E
+// Йоруичи, без пролёта дальше; оглушение 2 с в конце.
+// h: 0 Тоусен, 1 цель, 2 тики, 4 сторона дуги (1/2), 5 аура, 6 цель на паузе, 7 ударов, 8 фаза, 9 тик фазы, 10 курс,
+// 11 / 12 откуда пике. Фазы: 0 рывок в цель, 1 пролёт насквозь, 2 разворот, 3 пике
+function TousenFGSlash takes unit u,unit e,integer k,real cr returns nothing
+local real ex=GetUnitX(e)
+local real ey=GetUnitY(e)
+local real sd=2*ModuloInteger(k,2)-1
+call SetUnitTimeScale(u,2.5)
+if ModuloInteger(k,2)==1 then
+call SetUnitAnimationByIndex(u,15) // Attack 1
+else
+call SetUnitAnimationByIndex(u,77) // Combo Attack
+endif
+call TousenSnd("TousenGrilloG-sfx1") // удар (22 окт)
+call myCustomDamage(u,e,GetHeroAgi(u,true),false,false,null,null,null)
+call EffectCreateAndMove(true,"Others\\WindCirclefaster.mdl",GetRandomReal(0,360),1,1.3,1.5,40,100,50,40,0,e,0,cr*bj_RADTODEG)
+call DestroyEffect(AddSpecialEffect("war3mapImported\\az_jugggreen_e2_impact.mdl",ex,ey))
+// два перекрещенных слеша, наклон чередуется
+set bj_lastCreatedEffect=AddSpecialEffect("war3mapImported\\az-slash-green.mdl",ex,ey)
+call SetSpecialEffectOrientation(bj_lastCreatedEffect,cr*bj_RADTODEG+90.,0.,sd*35.)
+call SetSpecialEffectHeight(bj_lastCreatedEffect,80.)
+call DestroyEffect(bj_lastCreatedEffect)
+set bj_lastCreatedEffect=AddSpecialEffect("war3mapImported\\az-slash-green.mdl",ex,ey)
+call SetSpecialEffectOrientation(bj_lastCreatedEffect,cr*bj_RADTODEG+90.+sd*50.,0.,-sd*25.)
+call SetSpecialEffectHeight(bj_lastCreatedEffect,100.)
+call SetSpecialEffectScale(bj_lastCreatedEffect,0.8)
+call DestroyEffect(bj_lastCreatedEffect)
+call DestroyEffect(AddSpecialEffectTarget("Tousen_Sonic.mdl",e,"chest"))
+endfunction
 function TousenFGTick takes nothing returns nothing
 local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
@@ -132563,26 +132594,41 @@ local integer tk=LoadInteger(h,id,2)+1
 local integer k=LoadInteger(h,id,7)
 local integer ph=LoadInteger(h,id,8)
 local integer pt=LoadInteger(h,id,9)+1
+local integer sd=2*LoadInteger(h,id,4)-3
 local real cr=LoadReal(h,id,10)
 local real ex=GetUnitX(e)
 local real ey=GetUnitY(e)
 local real ta=Atan2(ey-GetUnitY(u),ex-GetUnitX(u))
 local real df
 local real sp
+local real fh
+local real fx
+local real fy
 local boolean fin=false
 call SaveInteger(h,id,2,tk)
 call SaveInteger(h,id,9,pt)
 // реверс (22 окт): цель в стойке развернула удар — G кончается, Тоусен отпущен
 if not UnitIsAlive(u) or udg_B==false or not UnitIsAlive(e) or (k==0 and tk>75) or Bof_RevEnd(u) then
 set fin=true
-elseif k>=4 and ph==1 and pt>=15 then
+elseif ph==3 and pt>=11 then
+// приземление пике у цели
 set fin=true
+call SetUnitX(u,ex-50*Cos(cr))
+call SetUnitY(u,ey-50*Sin(cr))
 call PauseUnit(e,false)
 if not Bof_Rev(u,e) then
-// 22 окт: урон теперь на каждом пролёте (4 x 2*AGI), в конце — оглушение
-//call myCustomDamage(u,e,8*GetHeroAgi(u,true),false,false,null,null,null)
+call myCustomDamage(u,e,GetHeroAgi(u,true),false,false,null,null,null)
 call TousenSnd("TousenGrilloG-sfx2") // финальный удар (22 окт)
 call DestroyEffect(AddSpecialEffect("war3mapImported\\BrolyRHitGreen.mdl",ex,ey))
+set bj_lastCreatedEffect=AddSpecialEffect("slamEarth.mdl",ex,ey)
+call SetSpecialEffectScale(bj_lastCreatedEffect,1.)
+call DestroyEffect(bj_lastCreatedEffect)
+set bj_lastCreatedEffect=AddSpecialEffect("chushou_by_wood_effect_earth_sandycrack_fag.mdl",ex,ey)
+call SetSpecialEffectZ(bj_lastCreatedEffect,-8)
+call SetSpecialEffectScale(bj_lastCreatedEffect,1.6)
+call DestroyEffect(bj_lastCreatedEffect)
+call DestroyEffect(AddSpecialEffect("war3mapImported\\az_jugggreen_e2_impact.mdl",ex,ey))
+call ShakeCamera(0.6,25)
 if UnitIsAlive(e) then
 call SetControlToUnit(u,e,2.,"stun")
 endif
@@ -132592,6 +132638,7 @@ if fin then
 call Bof_RevEnd(u)
 call DestroyEffect(LoadEffectHandle(h,id,5))
 call UnitSpeed(u,1)
+call SetUnitTimeScale(u,1.)
 call SetUnitFlyHeight(u,40,0)
 call PauseUnit(u,false)
 call SetUnitInvulnerable(u,false)
@@ -132604,28 +132651,64 @@ endif
 call PauseTimer(t)
 call FlushChildHashtable(h,id)
 call DestroyTimer(t)
+elseif ph==0 and k>=7 then
+// после 7 пролётов — взлёт и пике сверху на цель
+call SaveInteger(h,id,8,3)
+call SaveInteger(h,id,9,0)
+call SaveReal(h,id,10,ta)
+call SaveReal(h,id,11,GetUnitX(u))
+call SaveReal(h,id,12,GetUnitY(u))
+call UnitAddAbility(u,'Amrf')
+call UnitRemoveAbility(u,'Amrf')
+call SetUnitFacingInstant(u,ta*bj_RADTODEG)
+call SetUnitTimeScale(u,2.)
+call SetUnitAnimationByIndex(u,27) // Boost
+elseif ph==3 then
+// пике: 6 тиков взлёт до 420 с подлётом, 5 тиков резкое падение на цель
+set fx=LoadReal(h,id,11)+(ex-50*Cos(cr)-LoadReal(h,id,11))*pt/11.
+set fy=LoadReal(h,id,12)+(ey-50*Sin(cr)-LoadReal(h,id,12))*pt/11.
+call SetUnitX(u,fx)
+call SetUnitY(u,fy)
+if pt<=6 then
+set fh=40+380*Sin(pt*bj_PI/12)
+else
+set fh=RMaxBJ(0.,420*(1-(pt-6)/5.))
+endif
+call SetUnitFlyHeight(u,fh,0)
+if pt==7 then
+call SetUnitTimeScale(u,2.5)
+call SetUnitAnimationByIndex(u,15) // Attack 1 вниз
+endif
+if pt>6 then
+set bj_lastCreatedEffect=AddSpecialEffect("Others\\WindCirclefaster.mdl",fx,fy)
+call SetSpecialEffectHeight(bj_lastCreatedEffect,fh)
+call SetSpecialEffectScale(bj_lastCreatedEffect,0.35)
+call SetSpecialEffectVertexColour(bj_lastCreatedEffect,90,255,110,255)
+call DestroyEffect(bj_lastCreatedEffect)
+endif
 elseif ph==0 then
-// рывок прямо в цель
+// рывок прямо в цель, 220 за тик (в 2 раза быстрее)
 if pt==1 then
 call UnitSpeed(u,1.8)
+call SetUnitTimeScale(u,2.)
 call SetUnitAnimation(u,"walk")
 endif
 set cr=ta
 call SaveReal(h,id,10,cr)
 call SetUnitFacingInstant(u,cr*bj_RADTODEG)
-// 22 окт: быстрее — 110 за тик (было 80)
-call SetUnitX(u,GetUnitX(u)+110*Cos(cr))
-call SetUnitY(u,GetUnitY(u)+110*Sin(cr))
-if ModuloInteger(pt,3)==0 then
+call SetUnitX(u,GetUnitX(u)+220*Cos(cr))
+call SetUnitY(u,GetUnitY(u)+220*Sin(cr))
+if ModuloInteger(pt,2)==0 then
 set bj_lastCreatedEffect=AddSpecialEffect("Others\\WindCirclefaster.mdl",GetUnitX(u),GetUnitY(u))
 call SetSpecialEffectScale(bj_lastCreatedEffect,0.35)
 call SetSpecialEffectVertexColour(bj_lastCreatedEffect,90,255,110,255)
 call DestroyEffect(bj_lastCreatedEffect)
 endif
-if SR(GetUnitX(u),GetUnitY(u),ex,ey)<100 and Bof_Rev(u,e) then
+// шаг большой — удар, если цель ближе шага
+if SR(GetUnitX(u),GetUnitY(u),ex,ey)<230 and Bof_Rev(u,e) then
 // реверс: удара нет, на следующем тике Bof_RevEnd закончит G
-elseif SR(GetUnitX(u),GetUnitY(u),ex,ey)<100 then
-// удар: цель на паузе, эффекты, дальше пролёт тем же курсом
+elseif SR(GetUnitX(u),GetUnitY(u),ex,ey)<230 then
+// удар: цель на паузе, дальше пролёт тем же курсом, дуга в другую сторону
 if not LoadBoolean(h,id,6) then
 call PauseUnit(e,true)
 call SaveBoolean(h,id,6,true)
@@ -132633,50 +132716,39 @@ endif
 call SaveInteger(h,id,7,k+1)
 call SaveInteger(h,id,8,1)
 call SaveInteger(h,id,9,0)
-call SetUnitAnimation(u,"attack")
-call TousenSnd("TousenGrilloG-sfx1") // удар (22 окт)
-// каждый пролёт бьёт: 2*AGI (22 окт; было 8*AGI одним ударом в конце)
-call myCustomDamage(u,e,2*GetHeroAgi(u,true),false,false,null,null,null)
-call EffectCreateAndMove(true,"Others\\WindCirclefaster.mdl",GetRandomReal(0,360),1,1.3,1.5,40,100,50,40,0,e,0,cr*bj_RADTODEG)
-call DestroyEffect(AddSpecialEffect("war3mapImported\\az_jugggreen_e2_impact.mdl",ex,ey))
-set bj_lastCreatedEffect=AddSpecialEffect("war3mapImported\\az-slash-green.mdl",ex,ey)
-call SetSpecialEffectYaw(bj_lastCreatedEffect,cr*bj_RADTODEG+90.)
-call SetSpecialEffectHeight(bj_lastCreatedEffect,80.)
-call DestroyEffect(bj_lastCreatedEffect)
-call DestroyEffect(AddSpecialEffectTarget("Tousen_Sonic.mdl",e,"chest"))
+call SaveInteger(h,id,4,3-LoadInteger(h,id,4))
+call TousenFGSlash(u,e,k+1,cr)
 endif
 elseif ph==1 then
-// пролёт насквозь с торможением: 60 -> 5 за 12 тиков (~380)
-//set sp=RMaxBJ(5.,60.-5.*pt)
-// 22 окт: пролетает дальше — 70 -> 10 за 20 тиков (~770)
-//set sp=RMaxBJ(10.,70.-3.*pt)
-// 22 окт: быстрее — 100 -> 30 за 15 тиков (~1000)
-set sp=RMaxBJ(15.,100.-5.*pt)
-// v3b (22 окт): пролёт по дуге — курс уходит в сторону на 7 градусов за тик
-set cr=cr+(2*LoadInteger(h,id,4)-3)*0.09 // 22 окт: 5 градусов за тик (пролёт 15 тиков; было 7, затем 4)
+// пролёт насквозь с торможением по дуге: 200 -> 40 за 8 тиков (~1000, в 2 раза быстрее)
+set sp=RMaxBJ(40.,200.-20.*pt)
+set cr=cr+sd*0.18
 call SaveReal(h,id,10,cr)
 call SetUnitFacingInstant(u,cr*bj_RADTODEG)
 call SetUnitX(u,GetUnitX(u)+sp*Cos(cr))
 call SetUnitY(u,GetUnitY(u)+sp*Sin(cr))
-call UnitSpeed(u,RMaxBJ(0.6,2.2-0.1*pt))
-if pt>=15 then
+call UnitSpeed(u,RMaxBJ(0.6,2.2-0.2*pt))
+if pt==3 then
+call SetUnitTimeScale(u,2.)
+if sd>0 then
+call SetUnitAnimationByIndex(u,42) // Dash L
+else
+call SetUnitAnimationByIndex(u,25) // Dash R
+endif
+endif
+if pt>=8 then
 call SaveInteger(h,id,8,2)
 call SaveInteger(h,id,9,0)
-call SetUnitAnimation(u,"walk")
 endif
 else
-// разворот к цели: не больше 30 градусов за тик, 6 тиков
+// разворот к цели: 46 градусов за тик, до 3 тиков
 set df=ModuloReal(ta-cr+bj_PI,2*bj_PI)-bj_PI
-//set cr=cr+RMaxBJ(-0.52,RMinBJ(0.52,df))
-// v3b: плавный разворот, 11.5 градуса за тик, до 10 тиков (или пока не смотрит на цель)
-// 22 окт: разворот быстрее — 23 градуса за тик, до 6 тиков (было 11.5 и 10)
-set cr=cr+RMaxBJ(-0.4,RMinBJ(0.4,df))
+set cr=cr+RMaxBJ(-0.8,RMinBJ(0.8,df))
 call SaveReal(h,id,10,cr)
 call SetUnitFacingInstant(u,cr*bj_RADTODEG)
-call SetUnitX(u,GetUnitX(u)+12*Cos(cr))
-call SetUnitY(u,GetUnitY(u)+12*Sin(cr))
-//if pt>=6 then
-if pt>=6 or (df<0.4 and df>-0.4) then
+call SetUnitX(u,GetUnitX(u)+24*Cos(cr))
+call SetUnitY(u,GetUnitY(u)+24*Sin(cr))
+if pt>=3 or (df<0.8 and df>-0.8) then
 call SaveInteger(h,id,8,0)
 call SaveInteger(h,id,9,0)
 endif
@@ -292603,8 +292675,8 @@ call LANG_A('ToFE',1,3,"The fly dashes to the point: damage and stun to enemies 
 call LANG_A('ToFE',1,4,"The fly dashes to the point: damage and stun to enemies on the way. Always the full range towards the click, Tōsen is paused.|n|n|cFF00A5FF|nDamage: 8*|r|c003CFF3CAGI|r|cFF00A5FF|nStun: 1 sec.|nAoE: 300|nRange: 1200|nCooldown: 10 sec.|r")
 call LANG_A('ToFE',2,0,"Flight, [|cffffcc00Level %d|r] (|cffffcc00E|r)")
 call LANG_A('ToFE',3,0,"The fly dashes to the point: damage and stun to enemies on the way. Always the full range towards the click, Tōsen is paused.|n|n|cFF00A5FF|nDamage: 4\\5\\6\\7\\8*|r|c003CFF3CAGI|r|cFF00A5FF|nStun: 1 sec.|nAoE: 300|nRange: 1200|nCooldown: 10 sec.|r")
-call LANG_A('ToFG',1,0,"The fly dashes to the target and lands a series of 4 strikes, circling around it.|n|n|cFF00A5FFDamage: 4 passes of 2*|r|c003CFF3CAGI|r|cFF00A5FF|nStun: 2 sec.|nRange: 1000|nCooldown: 25 sec.|r")
-call LANG_A('ToFG',3,0,"The fly dashes to the target and lands a series of 4 strikes, circling around it.|n|n|cFF00A5FFDamage: 4 passes of 2*|r|c003CFF3CAGI|r|cFF00A5FF|nStun: 2 sec.|nRange: 1000|nCooldown: 25 sec.|r")
+call LANG_A('ToFG',1,0,"The fly darts through the target 7 times, striking on every pass, then dives onto it from above.|n|n|cFF00A5FFDamage: 8 strikes of 1*|r|c003CFF3CAGI|r|cFF00A5FF|nStun: 2 sec.|nRange: 1000|nCooldown: 25 sec.|r")
+call LANG_A('ToFG',3,0,"The fly darts through the target 7 times, striking on every pass, then dives onto it from above.|n|n|cFF00A5FFDamage: 8 strikes of 1*|r|c003CFF3CAGI|r|cFF00A5FF|nStun: 2 sec.|nRange: 1000|nCooldown: 25 sec.|r")
 call LANG_A('ToFW',0,0,"Wing Chirr, [|cffffcc00Level 1|r] (|cffffcc00W|r)")
 endfunction
 function LANG_Data51 takes nothing returns nothing
