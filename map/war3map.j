@@ -135882,8 +135882,8 @@ call ShinjiGMist(u,c)
 endif
 call SetUnitPathing(u,true)
 call ShinjiGRelease(id)
-// пауза после удара 0.7 с (22 окт: анимация начинается раньше; 21 окт — 1, было 0.4)
-call TimerStart(t,0.7,false,function ShinjiGEnd)
+// выход из паузы сразу после последнего удара (22 окт; было 0.7, до этого 1 и 0.4)
+call TimerStart(t,0.,false,function ShinjiGEnd)
 set c=null
 set u=null
 set t=null
