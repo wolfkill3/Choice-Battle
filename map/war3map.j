@@ -39194,7 +39194,8 @@ if GetUnitTypeId(u)=='HShn' or GetUnitTypeId(u)=='H02K' or GetUnitTypeId(u)=='H0
                 call SetFrameText(GetFrameByName("CustomLeaderboardText",0),"|c00FFE0A0Regeneration|r: |c0000FF00+"+R2SW(100*LoadReal(HH,uid,SH_TouRegen),1,2)+"%|r HP/s")
             else
                 // регенерация кончилась — сила восстановления HP (22 окт)
-                call SetFrameText(GetFrameByName("CustomLeaderboardText",0),"|c00FFE0A0Healing|r: |c00FF4040"+I2S(R2I(100*LoadReal(HH,uid,SH_TouHeal)+0.5))+"%|r")
+                //call SetFrameText(GetFrameByName("CustomLeaderboardText",0),"|c00FFE0A0Healing|r: |c00FF4040"+I2S(R2I(100*LoadReal(HH,uid,SH_TouHeal)+0.5))+"%|r")
+                call SetFrameText(GetFrameByName("CustomLeaderboardText",0),"|c00FFE0A0Regeneration|r: |c00FF40400.00%|r HP/s") // только падение до 0 (22 окт)
             endif
         else
         call SetFrameText(GetFrameByName("CustomLeaderboardText",0),"|c00FFE0A0Hollow Mask|r: "+R2SW(r,1,1)+"/"+I2S(R2I(mx))+" s")
@@ -130459,7 +130460,7 @@ call UnitRemoveAbility(u,'ToRg')
 endif
 //call SetUnitState(u,UNIT_STATE_LIFE,RMaxBJ(1.,GetUnitState(u,UNIT_STATE_LIFE)+rg*0.1*GetUnitState(u,UNIT_STATE_MAX_LIFE)))
 // регенерация кончилась — восстановление HP слабеет на 2% в сек. до 50% (22 окт)
-call SaveReal(HH,GetHandleId(u),SH_TouHeal,RMaxBJ(0.5,LoadReal(HH,GetHandleId(u),SH_TouHeal)-0.002))
+//call SaveReal(HH,GetHandleId(u),SH_TouHeal,RMaxBJ(0.5,LoadReal(HH,GetHandleId(u),SH_TouHeal)-0.002)) // отменено: только падение регенерации до 0 (22 окт)
 endif
 else
 call SetUnitState(u,UNIT_STATE_LIFE,GetUnitState(u,UNIT_STATE_LIFE)+0.0015*GetUnitState(u,UNIT_STATE_MAX_LIFE))
