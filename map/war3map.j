@@ -31400,6 +31400,15 @@ function OnButtonAddonAbility takes nothing returns nothing
                 endloop
                 call AddFrameText( GetFrameByName("TavernAbilityTooltipText",4), "\n\n"+GetAbilityBaseStringFieldById( 'ToFT', ABILITY_SF_NAME )+", (|cffffcc00"+IntToChar(GetAbilityBaseIntegerFieldById( 'ToFT', ABILITY_IF_BUTTON_HOTKEY_NORMAL ))+"|r)\n\n"+GetAbilityBaseStringFieldById( 'ToFT', ABILITY_SLF_TOOLTIP_LEARN_EXTENDED )) // окно изучения с уровнями (22 окт)
                 call SetFrameSize( GetFrameByName("TavernAbilityTooltip",4), .26, GetFrameHeight( GetFrameByName("TavernAbilityTooltipText",4))+0.03)
+                // G мухи (Grillar Golpe) появляется в слоте G, как у Мории T показывает кнопки (22 окт)
+                call ShowFrame( GetFrameByName("TavernAbility",6), true )
+                call SetFrameText( GetFrameByName("TavernAbilityTooltipText",6), "     " )
+                call SetFrameTexture( GetFrameByName("TavernAbility",6), GetAbilityBaseStringFieldById( 'ToFG', ABILITY_SF_ICON_NORMAL ), 0, true )
+                call SetFrameTexture( GetFrameByName("TavernAbility",6), GetAbilityBaseStringFieldById( 'ToFG', ABILITY_SF_ICON_NORMAL ), 1, true )
+                call SetFrameTexture( GetFrameByName("TavernAbility",6), GetAbilityBaseStringFieldById( 'ToFG', ABILITY_SF_ICON_NORMAL ), 2, true )
+                call AddFrameText( GetFrameByName("TavernAbilityTooltipText",6), "|cffffcc00"+I2S(GetAbilityBaseIntegerLevelFieldById( 'ToFG', ABILITY_ILF_MANA_COST, 0 ))+"|r")
+                call AddFrameText( GetFrameByName("TavernAbilityTooltipText",6), "\n\n"+GetAbilityBaseStringFieldById( 'ToFG', ABILITY_SF_NAME )+", (|cffffcc00"+IntToChar(GetAbilityBaseIntegerFieldById( 'ToFG', ABILITY_IF_BUTTON_HOTKEY_NORMAL ))+"|r)\n\n"+GetAbilityBaseStringFieldById( 'ToFG', ABILITY_SLF_TOOLTIP_LEARN_EXTENDED ))
+                call SetFrameSize( GetFrameByName("TavernAbilityTooltip",6), .26, GetFrameHeight( GetFrameByName("TavernAbilityTooltipText",6))+0.03)
             elseif GetFrameTexture(but,0)==GetAbilityBaseStringFieldById('ToFE',ABILITY_SF_ICON_NORMAL) and i==GetFrameContext(but) then
                 call SetFrameText( GetFrameByName("TavernAbilityTooltipText",2), "     " )
                 call SetFrameTexture( GetFrameByName("TavernAbility",2), GetAbilityBaseStringFieldById( 'A0JA', ABILITY_SF_ICON_NORMAL ), 0, true )
@@ -31453,6 +31462,11 @@ function OnButtonAddonAbility takes nothing returns nothing
                 endloop
                 call AddFrameText( GetFrameByName("TavernAbilityTooltipText",4), "\n\n"+GetAbilityBaseStringFieldById( 'A0JB', ABILITY_SF_NAME )+", (|cffffcc00"+IntToChar(GetAbilityBaseIntegerFieldById( 'A0JB', ABILITY_IF_BUTTON_HOTKEY_RESEARCH ))+"|r)\n\n"+GetAbilityBaseStringFieldById( 'A0JB', ABILITY_SLF_TOOLTIP_LEARN_EXTENDED ))
                 call SetFrameSize( GetFrameByName("TavernAbilityTooltip",4), .26, GetFrameHeight( GetFrameByName("TavernAbilityTooltipText",4))+0.03)
+                // G мухи убирается из слота G (22 окт)
+                call SetFrameText( GetFrameByName("TavernAbilityTooltipText",6), "     " )
+                call SetFrameTexture( GetFrameByName("TavernAbility",6), "UI\\Widgets\\Console\\Human\\human-inventory-slotfiller.blp", 0, true )
+                call SetFrameTexture( GetFrameByName("TavernAbility",6), "UI\\Widgets\\Console\\Human\\human-inventory-slotfiller.blp", 1, true )
+                call SetFrameTexture( GetFrameByName("TavernAbility",6), "UI\\Widgets\\Console\\Human\\human-inventory-slotfiller.blp", 2, true )
             // T <-> отмена банкая в таверне не показываем (служебная кнопка, 16 окт)
 //            elseif GetFrameTexture(but,0)==GetAbilityBaseStringFieldById('SnT1',ABILITY_SF_ICON_NORMAL) and i==GetFrameContext(but) then
 //                call SetFrameText( GetFrameByName("TavernAbilityTooltipText",i), "     " )
@@ -291815,8 +291829,8 @@ call LANG_A('SnEc',1,3,"Cero like Ichigo's: a beam ahead stuns those hit. Hirako
 call LANG_A('SnEc',1,4,"Cero like Ichigo's: a beam ahead stuns those hit. Hirako is invulnerable during the charge and the beam.|n|n|cFF00A5FF|nDamage: 7*|r|c003CFF3CAGI|r|cFF00A5FF|nStun: 2.5 sec.|nBeam length: 2200|nCooldown: 14 sec.|r")
 call LANG_A('SnEc',2,0,"Cero, [|cffffcc00Level %d|r] (|cffffcc00E|r)")
 call LANG_A('SnEc',3,0,"Cero like Ichigo's: a beam ahead stuns those hit. Hirako is invulnerable during the charge and the beam.|n|n|cFF00A5FF|nDamage: 3\\4\\5\\6\\7*|r|c003CFF3CAGI|r|cFF00A5FF|nStun: 2.5 sec.|nBeam length: 2200|nCooldown: 14 sec.|r")
-call LANG_A('ToEf',1,0,"After a 2.5 sec. charge Tōsen turns into the fly until the round ends: the mask stays on, stats +15%, Tōsen regains his sight (Blindness is removed). E becomes Flight, W Wing Chirr, R a double Cero (Hado is unavailable), T Los Nueve Aspectos.|n|n|cFF00A5FFAvailable: in the mask (E), from level 25|"+"nCharge: 2.5 sec. (invulnerable)|nCost: 40% max MP + 150|nStats: +15%|nDuration: until the round ends|r")
-call LANG_A('ToEf',3,0,"After a 2.5 sec. charge Tōsen turns into the fly until the round ends: the mask stays on, stats +15%, Tōsen regains his sight (Blindness is removed). E becomes Flight, W Wing Chirr, R a double Cero (Hado is unavailable), T Los Nueve Aspectos.|n|n|cFF00A5FFAvailable: in the mask (E), from level 25|"+"nCharge: 2.5 sec. (invulnerable)|nCost: 40% max MP + 150|nStats: +15%|nDuration: until the round ends|r")
+call LANG_A('ToEf',1,0,"After a 2.5 sec. charge Tōsen turns into the fly until the round ends: the mask stays on, stats +15%, Tōsen regains his sight (Blindness is removed). E becomes Flight, W Wing Chirr, R a double Cero (Hado is unavailable), T Los Nueve Aspectos, G Grillar Golpe.|n|n|cFF00A5FFAvailable: in the mask (E"+"), from level 25|nCharge: 2.5 sec. (invulnerable)|nCost: 40% max MP + 150|nStats: +15%|nDuration: until the round ends|r")
+call LANG_A('ToEf',3,0,"After a 2.5 sec. charge Tōsen turns into the fly until the round ends: the mask stays on, stats +15%, Tōsen regains his sight (Blindness is removed). E becomes Flight, W Wing Chirr, R a double Cero (Hado is unavailable), T Los Nueve Aspectos, G Grillar Golpe.|n|n|cFF00A5FFAvailable: in the mask (E"+"), from level 25|nCharge: 2.5 sec. (invulnerable)|nCost: 40% max MP + 150|nStats: +15%|nDuration: until the round ends|r")
 call LANG_A('ToFE',0,0,"Flight, [|cffffcc00Level 1|r] (|cffffcc00E|r)")
 call LANG_A('ToFE',0,1,"Flight, [|cffffcc00Level 2|r] (|cffffcc00E|r)")
 call LANG_A('ToFE',0,2,"Flight, [|cffffcc00Level 3|r] (|cffffcc00E|r)")
