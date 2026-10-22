@@ -128488,6 +128488,9 @@ endfunction
 function ShinjiQAfterR takes player qp,real qx,real qy,real qf,real qr returns nothing
 local unit qn=CreateUnit(qp,'e200',qx,qy,qf)
 call SetUnitModel(qn,"Shinji2.mdx")
+// крен держится только без авто-ориентации; высота — чтобы перевёрнутое тело было над землёй (22 окт; было 200 у e200)
+call UnitEnableAutoOrientation(qn,false)
+call SetUnitFlyHeight(qn,55.*(1.-Cos(qr*bj_DEGTORAD)),0.)
 call SetUnitOrientation(qn,qf,0.,qr)
 call SetUnitScale(qn,0.65,0.65,0.65)
 call SetUnitBlendTime(qn,0.)
@@ -135773,6 +135776,9 @@ call SaveUnitHandle(h,GetHandleId(t),1,gc)
 call SaveInteger(h,GetHandleId(t),2,0)
 // крен клона (21 окт): боком под разными углами, бывает и вниз головой
 call SaveReal(h,GetHandleId(t),3,GetRandomReal(-180.,180.))
+// без авто-ориентации (иначе крен сбрасывается каждый кадр) и без высоты 200 e200 — только подъём под крен (22 окт)
+call UnitEnableAutoOrientation(gn,false)
+call SetUnitFlyHeight(gn,55.*(1.-Cos(LoadReal(h,GetHandleId(t),3)*bj_DEGTORAD)),0.)
 call SetUnitOrientation(gn,ga*bj_RADTODEG+180.,0.,LoadReal(h,GetHandleId(t),3))
 call TimerStart(t,0.02,true,function ShinjiGCloneTick)
 set gn=null
@@ -135963,7 +135969,8 @@ call PauseUnit(c,true)
 endif
 call ShinjiGClone(OwnerOf(u),c,f+bj_PI/2+GetRandomReal(-0.6,0.6))
 call ShinjiGClone(OwnerOf(u),c,f-bj_PI/2+GetRandomReal(-0.6,0.6))
-call TimerStart(t,0.35,false,function ShinjiGStrike2)
+// последний удар на 0.15 с позже (22 окт; было 0.35)
+call TimerStart(t,0.5,false,function ShinjiGStrike2)
 else
 call ShinjiGRelease(id)
 call TimerStart(t,0.,false,function ShinjiGEnd)
@@ -136031,7 +136038,7 @@ call ShinjiBlink(GetUnitX(c)+100*Cos(f),GetUnitY(c)+100*Sin(f))
 // цель смотрит на образ и стоит на паузе до конца серии
 if not IsUnitType(c,UNIT_TYPE_STRUCTURE) then
 call SaveBoolean(HH,GetHandleId(c),SH_ShnPHold,true)
-call ShinjiFaceHold(c,f*bj_RADTODEG,1.)
+call ShinjiFaceHold(c,f*bj_RADTODEG,1.3) // 1.3: удары на 0.15 с позже (22 окт; было 1.)
 call PauseUnit(c,true)
 call SaveBoolean(h,GetHandleId(t),4,true)
 endif
@@ -136042,7 +136049,8 @@ call SaveReal(h,GetHandleId(t),3,f)
 // клоны влетают с боков, как рывки R Нелл (18 окт)
 call ShinjiGClone(OwnerOf(u),c,f+bj_PI/2+GetRandomReal(-0.6,0.6))
 call ShinjiGClone(OwnerOf(u),c,f-bj_PI/2+GetRandomReal(-0.6,0.6))
-call TimerStart(t,0.5,false,function ShinjiGStrike)
+// первый удар (телепорт) на 0.15 с позже (22 окт; было 0.5)
+call TimerStart(t,0.65,false,function ShinjiGStrike)
 set fx=null
 set t=null
 set c=null
