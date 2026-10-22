@@ -31345,7 +31345,7 @@ function OnButtonAddonAbility takes nothing returns nothing
                     call AddFrameText( GetFrameByName("TavernAbilityTooltipText",i), "/")
                     set j=j+1
                 endloop                        
-                call AddFrameText( GetFrameByName("TavernAbilityTooltipText",i), "\n\n"+GetAbilityBaseStringFieldById( 'ToEf', ABILITY_SF_NAME )+", (|cffffcc00"+IntToChar(GetAbilityBaseIntegerFieldById( 'ToEf', ABILITY_IF_BUTTON_HOTKEY_NORMAL ))+"|r)\n\n"+GetAbilityBaseStringFieldById( 'ToEf', ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED ))
+                call AddFrameText( GetFrameByName("TavernAbilityTooltipText",i), "\n\n"+GetAbilityBaseStringFieldById( 'ToEf', ABILITY_SF_NAME )+", (|cffffcc00"+IntToChar(GetAbilityBaseIntegerFieldById( 'ToEf', ABILITY_IF_BUTTON_HOTKEY_NORMAL ))+"|r)\n\n"+GetAbilityBaseStringFieldById( 'ToEf', ABILITY_SLF_TOOLTIP_LEARN_EXTENDED )) // окно изучения с уровнями (22 окт)
                 call SetFrameSize( GetFrameByName("TavernAbilityTooltip",i), .26, GetFrameHeight( GetFrameByName("TavernAbilityTooltipText",i))+0.03)
             elseif GetFrameTexture(but,0)==GetAbilityBaseStringFieldById('ToEf',ABILITY_SF_ICON_NORMAL) and i==GetFrameContext(but) then
                 call SetFrameText( GetFrameByName("TavernAbilityTooltipText",2), "     " )
@@ -31359,7 +31359,7 @@ function OnButtonAddonAbility takes nothing returns nothing
                     call AddFrameText( GetFrameByName("TavernAbilityTooltipText",2), "/")
                     set j=j+1
                 endloop
-                call AddFrameText( GetFrameByName("TavernAbilityTooltipText",2), "\n\n"+GetAbilityBaseStringFieldById( 'ToFE', ABILITY_SF_NAME )+", (|cffffcc00"+IntToChar(GetAbilityBaseIntegerFieldById( 'ToFE', ABILITY_IF_BUTTON_HOTKEY_NORMAL ))+"|r)\n\n"+GetAbilityBaseStringFieldById( 'ToFE', ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED ))
+                call AddFrameText( GetFrameByName("TavernAbilityTooltipText",2), "\n\n"+GetAbilityBaseStringFieldById( 'ToFE', ABILITY_SF_NAME )+", (|cffffcc00"+IntToChar(GetAbilityBaseIntegerFieldById( 'ToFE', ABILITY_IF_BUTTON_HOTKEY_NORMAL ))+"|r)\n\n"+GetAbilityBaseStringFieldById( 'ToFE', ABILITY_SLF_TOOLTIP_LEARN_EXTENDED )) // окно изучения с уровнями (22 окт)
                 call SetFrameSize( GetFrameByName("TavernAbilityTooltip",2), .26, GetFrameHeight( GetFrameByName("TavernAbilityTooltipText",2))+0.03)
                 call SetFrameText( GetFrameByName("TavernAbilityTooltipText",1), "     " )
                 call SetFrameTexture( GetFrameByName("TavernAbility",1), GetAbilityBaseStringFieldById( 'ToFW', ABILITY_SF_ICON_NORMAL ), 0, true )
@@ -31372,7 +31372,7 @@ function OnButtonAddonAbility takes nothing returns nothing
                     call AddFrameText( GetFrameByName("TavernAbilityTooltipText",1), "/")
                     set j=j+1
                 endloop
-                call AddFrameText( GetFrameByName("TavernAbilityTooltipText",1), "\n\n"+GetAbilityBaseStringFieldById( 'ToFW', ABILITY_SF_NAME )+", (|cffffcc00"+IntToChar(GetAbilityBaseIntegerFieldById( 'ToFW', ABILITY_IF_BUTTON_HOTKEY_NORMAL ))+"|r)\n\n"+GetAbilityBaseStringFieldById( 'ToFW', ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED ))
+                call AddFrameText( GetFrameByName("TavernAbilityTooltipText",1), "\n\n"+GetAbilityBaseStringFieldById( 'ToFW', ABILITY_SF_NAME )+", (|cffffcc00"+IntToChar(GetAbilityBaseIntegerFieldById( 'ToFW', ABILITY_IF_BUTTON_HOTKEY_NORMAL ))+"|r)\n\n"+GetAbilityBaseStringFieldById( 'ToFW', ABILITY_SLF_TOOLTIP_LEARN_EXTENDED )) // окно изучения с уровнями (22 окт)
                 call SetFrameSize( GetFrameByName("TavernAbilityTooltip",1), .26, GetFrameHeight( GetFrameByName("TavernAbilityTooltipText",1))+0.03)
                 call SetFrameText( GetFrameByName("TavernAbilityTooltipText",3), "     " )
                 call SetFrameTexture( GetFrameByName("TavernAbility",3), GetAbilityBaseStringFieldById( 'ToEc', ABILITY_SF_ICON_NORMAL ), 0, true )
@@ -31385,7 +31385,7 @@ function OnButtonAddonAbility takes nothing returns nothing
                     call AddFrameText( GetFrameByName("TavernAbilityTooltipText",3), "/")
                     set j=j+1
                 endloop
-                call AddFrameText( GetFrameByName("TavernAbilityTooltipText",3), "\n\n"+GetAbilityBaseStringFieldById( 'ToEc', ABILITY_SF_NAME )+", (|cffffcc00"+IntToChar(GetAbilityBaseIntegerFieldById( 'ToEc', ABILITY_IF_BUTTON_HOTKEY_NORMAL ))+"|r)\n\n"+GetAbilityBaseStringFieldById( 'ToEc', ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED ))
+                call AddFrameText( GetFrameByName("TavernAbilityTooltipText",3), "\n\n"+GetAbilityBaseStringFieldById( 'ToEc', ABILITY_SF_NAME )+", (|cffffcc00"+IntToChar(GetAbilityBaseIntegerFieldById( 'ToEc', ABILITY_IF_BUTTON_HOTKEY_NORMAL ))+"|r)\n\n"+GetAbilityBaseStringFieldById( 'ToEc', ABILITY_SLF_TOOLTIP_LEARN_EXTENDED )) // окно изучения с уровнями (22 окт)
                 call SetFrameSize( GetFrameByName("TavernAbilityTooltip",3), .26, GetFrameHeight( GetFrameByName("TavernAbilityTooltipText",3))+0.03)
                 call SetFrameText( GetFrameByName("TavernAbilityTooltipText",4), "     " )
                 call SetFrameTexture( GetFrameByName("TavernAbility",4), GetAbilityBaseStringFieldById( 'ToFT', ABILITY_SF_ICON_NORMAL ), 0, true )
@@ -31398,7 +31398,7 @@ function OnButtonAddonAbility takes nothing returns nothing
                     call AddFrameText( GetFrameByName("TavernAbilityTooltipText",4), "/")
                     set j=j+1
                 endloop
-                call AddFrameText( GetFrameByName("TavernAbilityTooltipText",4), "\n\n"+GetAbilityBaseStringFieldById( 'ToFT', ABILITY_SF_NAME )+", (|cffffcc00"+IntToChar(GetAbilityBaseIntegerFieldById( 'ToFT', ABILITY_IF_BUTTON_HOTKEY_NORMAL ))+"|r)\n\n"+GetAbilityBaseStringFieldById( 'ToFT', ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED ))
+                call AddFrameText( GetFrameByName("TavernAbilityTooltipText",4), "\n\n"+GetAbilityBaseStringFieldById( 'ToFT', ABILITY_SF_NAME )+", (|cffffcc00"+IntToChar(GetAbilityBaseIntegerFieldById( 'ToFT', ABILITY_IF_BUTTON_HOTKEY_NORMAL ))+"|r)\n\n"+GetAbilityBaseStringFieldById( 'ToFT', ABILITY_SLF_TOOLTIP_LEARN_EXTENDED )) // окно изучения с уровнями (22 окт)
                 call SetFrameSize( GetFrameByName("TavernAbilityTooltip",4), .26, GetFrameHeight( GetFrameByName("TavernAbilityTooltipText",4))+0.03)
             elseif GetFrameTexture(but,0)==GetAbilityBaseStringFieldById('ToFE',ABILITY_SF_ICON_NORMAL) and i==GetFrameContext(but) then
                 call SetFrameText( GetFrameByName("TavernAbilityTooltipText",2), "     " )
@@ -48424,6 +48424,10 @@ if GetUnitTypeId(u) == 'H0TF' then
     call UnitRemoveAbility(u, 'ToMB')
     call UnitRemoveAbility(u, 'ToRg')
     call SetUnitFlyHeight(u,0,0)
+    // портрет назад (22 окт)
+    if LoadStr(HH,GetHandleId(u),SH_TouPortrait)!=null and LoadStr(HH,GetHandleId(u),SH_TouPortrait)!="" then
+        call SetWidgetPortrait(u,LoadStr(HH,GetHandleId(u),SH_TouPortrait))
+    endif
 endif
 if GetUnitTypeId(u) == 'H02K' then
     call UnitMakeAbilityPermanent(u,false,'ToE1')
@@ -130368,6 +130372,10 @@ call RemoveSavedReal(HH,GetHandleId(u),SH_TouRegen)
 call RemoveSavedReal(HH,GetHandleId(u),SH_TouHeal)
 call SetUnitFlyHeight(u,0,0)
 //call SetWidgetPortrait(u,LoadStr(HH,GetHandleId(u),SH_TouPortrait)) // портрет — из типа (22 окт)
+// портрет назад (22 окт)
+if LoadStr(HH,GetHandleId(u),SH_TouPortrait)!=null and LoadStr(HH,GetHandleId(u),SH_TouPortrait)!="" then
+call SetWidgetPortrait(u,LoadStr(HH,GetHandleId(u),SH_TouPortrait))
+endif
 // облик мухи (E2): W и T назад, новые W / T и бонус поля убираются, «Слепота» возвращается (22 окт)
 call UnitRemoveAbility(u,'ToFW')
 call UnitRemoveAbility(u,'ToFT')
@@ -131124,6 +131132,18 @@ set fx=null
 set t=null
 set u=null
 endfunction
+// портрет мухи после смены юнита (22 окт): из типа не подхватывается, ставится скриптом ещё раз через 0.1 с
+function TousenFlyPortrait takes nothing returns nothing
+local timer t=GetExpiredTimer()
+local unit u=LoadUnitHandle(h,GetHandleId(t),0)
+if GetUnitTypeId(u)=='H0TF' then
+call SetWidgetPortrait(u,"Tousen\\Tousen_FlyPortrait.mdx")
+endif
+call FlushChildHashtable(h,GetHandleId(t))
+call DestroyTimer(t)
+set u=null
+set t=null
+endfunction
 // превращение в муху (v2, 22 окт): облик, портрет, иконка, способности, «Слепота» снимается, +15% силы / ловкости / разума
 function TousenFlyDo takes unit u returns nothing
 local integer uid=GetHandleId(u)
@@ -131164,6 +131184,11 @@ call SaveReal(HH,uid,SH_TouHeal,1.)
 //call CreateModeIndicatorForm(u,"ReplaceableTextures\\CommandButtons\\BTNTousenFlyHero.blp",30.) // регенерация — в табличке маски (22 окт)
 // портрет — картинка из аниме, как у Хирако (Shinji2_Portrait): плоскость с текстурой и камерой (22 окт)
 //call SetWidgetPortrait(u,"Tousen\\Tousen_FlyPortrait.mdx") // портрет — из типа H0TF (22 окт)
+// портрет из типа после смены юнита пропадает — ставится скриптом (22 окт)
+call SetWidgetPortrait(u,"Tousen\\Tousen_FlyPortrait.mdx")
+set bj_lastStartedTimer=CreateTimer()
+call SaveUnitHandle(h,GetHandleId(bj_lastStartedTimer),0,u)
+call TimerStart(bj_lastStartedTimer,0.1,false,function TousenFlyPortrait)
 //call SetUnitStringField(u,UNIT_SF_ICON_NORMAL,"ReplaceableTextures\\CommandButtons\\BTNTousenFlyHero.blp") // иконка — из типа H0TF (22 окт)
 call IH('H02K',u,"ReplaceableTextures\\CommandButtons\\BTNTousenFlyHero.blp")
 call SetUnitVertexColor(u,255,255,255,255)
@@ -132763,7 +132788,7 @@ call SaveStr(HH,SH_ShnChanO,'A0J2',"banish")
 call SaveInteger(HH,SH_ShnChanT,'A0J2',2)
 call SaveStr(HH,SH_ShnChanO,'A0J5',"acolyteharvest")
 call SaveInteger(HH,SH_ShnChanT,'A0J5',2)
-call SaveStr(HH,SH_ShnChanO,'A0J6',"bearform")
+call SaveStr(HH,SH_ShnChanO,'A0J6',"spiritlink")
 call SaveStr(HH,SH_ShnChanO,'A0J8',"acidbomb")
 call SaveInteger(HH,SH_ShnChanT,'A0J8',2)
 call SaveStr(HH,SH_ShnChanO,'A0J9',"gold2lumber")
@@ -134847,7 +134872,7 @@ call SaveStr(HH,SH_AbOrd,'A0IZ',"absorb")
 call SaveStr(HH,SH_AbOrd,'A0J1',"acidbomb")
 call SaveStr(HH,SH_AbOrd,'A0J2',"banish")
 call SaveStr(HH,SH_AbOrd,'A0J5',"acolyteharvest")
-call SaveStr(HH,SH_AbOrd,'A0J6',"bearform")
+call SaveStr(HH,SH_AbOrd,'A0J6',"spiritlink")
 call SaveStr(HH,SH_AbOrd,'A0J7',"sleep")
 call SaveStr(HH,SH_AbOrd,'A0J8',"acidbomb")
 call SaveStr(HH,SH_AbOrd,'A0J9',"gold2lumber")
@@ -136541,6 +136566,8 @@ call SaveStr(HH,SH_AbOrd,'ToEf',"metamorphosis")
 call SaveStr(HH,SH_AbOrd,'ToFE',"unholyfrenzy")
 call SaveStr(HH,SH_AbOrd,'ToFT',"submerge")
 call SaveStr(HH,SH_AbOrd,'ToFW',"vengeance")
+call SaveStr(HH,SH_AbOrd,'ToMB',"bearform")
+call SaveStr(HH,SH_AbOrd,'ToMF',"bearform")
 call SaveStr(HH,SH_AbOrd,'UKD1',"chainlightning")
 call SaveStr(HH,SH_AbOrd,'UKD2',"attributemodskill")
 call SaveStr(HH,SH_AbOrd,'VGBB',"earthquake")
@@ -291628,6 +291655,7 @@ call LANG_A('SnEc',1,4,"Cero like Ichigo's: a beam ahead stuns those hit. Hirako
 call LANG_A('SnEc',2,0,"Cero, [|cffffcc00Level %d|r] (|cffffcc00E|r)")
 call LANG_A('SnEc',3,0,"Cero like Ichigo's: a beam ahead stuns those hit. Hirako is invulnerable during the charge and the beam.|n|n|cFF00A5FF|nDamage: 3\\4\\5\\6\\7*|r|c003CFF3CAGI|r|cFF00A5FF|nStun: 2.5 sec.|nBeam length: 2200|nCooldown: 14 sec.|r")
 call LANG_A('ToEf',1,0,"After a 2.5 sec. charge Tōsen turns into the fly until the round ends: the mask stays on, stats +15%, Tōsen regains his sight (Blindness is removed). E becomes Flight, W Wing Chirr, R a double Cero (Hado is unavailable), T Los Nueve Aspectos.|n|n|cFF00A5FFAvailable: in the mask (E), from level 25|"+"nCharge: 2.5 sec. (invulnerable)|nCost: 40% max MP + 150|nStats: +15%|nDuration: until the round ends|r")
+call LANG_A('ToEf',3,0,"After a 2.5 sec. charge Tōsen turns into the fly until the round ends: the mask stays on, stats +15%, Tōsen regains his sight (Blindness is removed). E becomes Flight, W Wing Chirr, R a double Cero (Hado is unavailable), T Los Nueve Aspectos.|n|n|cFF00A5FFAvailable: in the mask (E), from level 25|"+"nCharge: 2.5 sec. (invulnerable)|nCost: 40% max MP + 150|nStats: +15%|nDuration: until the round ends|r")
 call LANG_A('ToFE',0,0,"Flight, [|cffffcc00Level 1|r] (|cffffcc00E|r)")
 call LANG_A('ToFE',0,1,"Flight, [|cffffcc00Level 2|r] (|cffffcc00E|r)")
 call LANG_A('ToFE',0,2,"Flight, [|cffffcc00Level 3|r] (|cffffcc00E|r)")
@@ -291638,19 +291666,24 @@ call LANG_A('ToFE',1,1,"The fly dashes to the point: damage and stun to enemies 
 call LANG_A('ToFE',1,2,"The fly dashes to the point: damage and stun to enemies on the way. Always the full range towards the click, Tōsen is paused.|n|n|cFF00A5FF|nDamage: 6*|r|c003CFF3CAGI|r|cFF00A5FF|nStun: 1 sec.|nAoE: 300|nRange: 1200|nCooldown: 10 sec.|r")
 call LANG_A('ToFE',1,3,"The fly dashes to the point: damage and stun to enemies on the way. Always the full range towards the click, Tōsen is paused.|n|n|cFF00A5FF|nDamage: 7*|r|c003CFF3CAGI|r|cFF00A5FF|nStun: 1 sec.|nAoE: 300|nRange: 1200|nCooldown: 10 sec.|r")
 call LANG_A('ToFE',1,4,"The fly dashes to the point: damage and stun to enemies on the way. Always the full range towards the click, Tōsen is paused.|n|n|cFF00A5FF|nDamage: 8*|r|c003CFF3CAGI|r|cFF00A5FF|nStun: 1 sec.|nAoE: 300|nRange: 1200|nCooldown: 10 sec.|r")
+call LANG_A('ToFE',2,0,"Flight, [|cffffcc00Level %d|r] (|cffffcc00E|r)")
+call LANG_A('ToFE',3,0,"The fly dashes to the point: damage and stun to enemies on the way. Always the full range towards the click, Tōsen is paused.|n|n|cFF00A5FF|nDamage: 4\\5\\6\\7\\8*|r|c003CFF3CAGI|r|cFF00A5FF|nStun: 1 sec.|nAoE: 300|nRange: 1200|nCooldown: 10 sec.|r")
 call LANG_A('ToFW',0,0,"Wing Chirr, [|cffffcc00Level 1|r] (|cffffcc00W|r)")
 call LANG_A('ToFW',0,1,"Wing Chirr, [|cffffcc00Level 2|r] (|cffffcc00W|r)")
 call LANG_A('ToFW',0,2,"Wing Chirr, [|cffffcc00Level 3|r] (|cffffcc00W|r)")
+endfunction
+function LANG_Data51 takes nothing returns nothing
 call LANG_A('ToFW',0,3,"Wing Chirr, [|cffffcc00Level 4|r] (|cffffcc00W|r)")
 call LANG_A('ToFW',0,4,"Wing Chirr, [|cffffcc00Level 5|r] (|cffffcc00W|r)")
 call LANG_A('ToFW',1,0,"The fly's wings send a sound wave ahead: damage and silence to everyone in the cone.|n|n|cFF00A5FF|nDamage: 3*|r|c003CFF3CAGI|r|cFF00A5FF|nSilence: 1.6 sec.|nRange: 1500, cone 60°|nCooldown: 12 sec.|r")
-endfunction
-function LANG_Data51 takes nothing returns nothing
 call LANG_A('ToFW',1,1,"The fly's wings send a sound wave ahead: damage and silence to everyone in the cone.|n|n|cFF00A5FF|nDamage: 4*|r|c003CFF3CAGI|r|cFF00A5FF|nSilence: 1.7 sec.|nRange: 1500, cone 60°|nCooldown: 12 sec.|r")
 call LANG_A('ToFW',1,2,"The fly's wings send a sound wave ahead: damage and silence to everyone in the cone.|n|n|cFF00A5FF|nDamage: 5*|r|c003CFF3CAGI|r|cFF00A5FF|nSilence: 1.8 sec.|nRange: 1500, cone 60°|nCooldown: 12 sec.|r")
 call LANG_A('ToFW',1,3,"The fly's wings send a sound wave ahead: damage and silence to everyone in the cone.|n|n|cFF00A5FF|nDamage: 6*|r|c003CFF3CAGI|r|cFF00A5FF|nSilence: 1.9 sec.|nRange: 1500, cone 60°|nCooldown: 12 sec.|r")
 call LANG_A('ToFW',1,4,"The fly's wings send a sound wave ahead: damage and silence to everyone in the cone.|n|n|cFF00A5FF|nDamage: 7*|r|c003CFF3CAGI|r|cFF00A5FF|nSilence: 2.0 sec.|nRange: 1500, cone 60°|nCooldown: 12 sec.|r")
+call LANG_A('ToFW',2,0,"Wing Chirr, [|cffffcc00Level %d|r] (|cffffcc00W|r)")
+call LANG_A('ToFW',3,0,"The fly's wings send a sound wave ahead: damage and silence to everyone in the cone.|n|n|cFF00A5FF|nDamage: 3\\4\\5\\6\\7*|r|c003CFF3CAGI|r|cFF00A5FF|nSilence: 1.6\\1.7\\1.8\\1.9\\2.0 sec.|nRange: 1500, cone 60°|nCooldown: 12 sec.|r")
 call LANG_A('ToFT',1,0,"A sound field around Tōsen follows him: enemies inside are silenced and take damage, Tōsen attacks faster.|n|n|cFF00A5FF|nAoE: 800|nDamage: 1*|r|c003CFF3CAGI|r|cFF00A5FF per sec.|nSilence: while in the field|nAttack speed: +60%|nDuration: 6 sec.|nCooldown: 45 sec.|r")
+call LANG_A('ToFT',3,0,"A sound field around Tōsen follows him: enemies inside are silenced and take damage, Tōsen attacks faster.|n|n|cFF00A5FF|nAoE: 800|nDamage: 1*|r|c003CFF3CAGI|r|cFF00A5FF per sec.|nSilence: while in the field|nAttack speed: +60%|nDuration: 6 sec.|nCooldown: 45 sec.|r")
 call LANG_A('ToEc',0,0,"Double Cero, [|cffffcc00Level 1|r] (|cffffcc00R|r)")
 call LANG_A('ToEc',0,1,"Double Cero, [|cffffcc00Level 2|r] (|cffffcc00R|r)")
 call LANG_A('ToEc',0,2,"Double Cero, [|cffffcc00Level 3|r] (|cffffcc00R|r)")
@@ -291890,14 +291923,14 @@ call LANG_It('I01J',1,"Sword, Rank C")
 call LANG_It('I01J',2,"Increases attack power by 40 and |c00FFFF66AllStat|r by 12, Passive: Mortal Strike - 15% chance to deal 1.5x damage")
 call LANG_It('I01J',3,"Increases attack power by 40 and |c00FFFF66AllStat|r by 12, Passive: Mortal Strike - 15% chance to deal 1.5x damage")
 call LANG_It('I01K',0,"Sword, Rank A")
+endfunction
+function LANG_Data52 takes nothing returns nothing
 call LANG_It('I01K',1,"Sword, Rank A")
 call LANG_It('I01K',2,"Increases attack power by 80 and |c00FFFF66AllStat|r by 24, Passive: Mortal Strike - 15% chance to deal 2x damage")
 call LANG_It('I01K',3,"Increases attack power by 80 and |c00FFFF66AllStat|r by 24, Passive: Mortal Strike - 15% chance to deal 2x damage")
 call LANG_It('I01L',0,"Tempered Sword")
 call LANG_It('I01L',1,"Tempered Sword")
 call LANG_It('I01L',2,"Increases attack power by 80 and |c00FFFF66AllStat|r by 24, Passive: Mortal Strike - 15% chance to deal 2x damage. |n|nActive: \"Quick Strikes\" - moves towards the enemy, striking and activating the passive ability of Shusui, Fang and Dark Excalibur (if not on cooldown) if the owner has them. |n|nR"+"ange: 600|nCooldown: 7 seconds")
-endfunction
-function LANG_Data52 takes nothing returns nothing
 call LANG_It('I01L',3,"Increases attack power by 80 and |c00FFFF66AllStat|r by 24, Passive: Mortal Strike - 15% chance to deal 2x damage. |n|nActive: \"Quick Strikes\" - moves towards the enemy, striking and activating the passive ability of Shusui, Fang and Dark Excalibur (if not on cooldown) if the owner has them.")
 call LANG_It('I01M',2,"Increase |c00FFFF66AllStat|r by 14.")
 call LANG_It('I01M',3,"Increase |c00FFFF66AllStat|r by 14.")
@@ -292142,14 +292175,14 @@ call LANG_It('I039',1,"Lucky Box")
 call LANG_It('I039',2,"When opened, 1 random items drop.")
 call LANG_It('I039',3,"When opened, 1 random items drop.")
 call LANG_It('I03A',0,"Alastor")
+endfunction
+function LANG_Data53 takes nothing returns nothing
 call LANG_It('I03A',1,"Alastor")
 call LANG_It('I03A',2,"Increases |c00FFFF66AllStat|r by 35, increases regeneration up to 50 per sec., \"Alastor's Fire\" - deals 8*Hero level damage per sec. to all enemies within a radius of 700.|nThe aura does not activate the Onizuka Set.|n|n\"Fire Clone\" - creates a fiery clone that deals 50% damage and receives 200%"+".|nCDR: 20 sec.")
 call LANG_It('I03A',3,"Increases |c00FFFF66AllStat|r by 35, increases regeneration up to 50 per sec., \"Alastor's Fire\" - deals 8*Hero level damage per sec. to all enemies within a radius of 700.|nThe aura does not activate the Onizuka Set.|n|n\"Fire Clone\" - creates a fiery clone that deals 50% damage and receives 200%"+"|nCDR: 20 sec.")
 call LANG_It('I03B',0,"Anbu Sword")
 call LANG_It('I03B',1,"Anbu Sword")
 call LANG_It('I03B',2,"Increases AS by 30%, each attack deals 55 additional damage. pure damage that pierces resists but not shields, the effect does not stack.")
-endfunction
-function LANG_Data53 takes nothing returns nothing
 call LANG_It('I03B',3,"Increases AS by 30%, each attack deals 55 additional damage. pure damage that pierces resists but not shields, the effect does not stack.")
 call LANG_It('I03C',0,"Anbu Vest")
 call LANG_It('I03C',1,"Anbu Vest")
@@ -292394,14 +292427,14 @@ call LANG_It('I04S',3,"Increases the hero's |c0077FFFFINT|r by 35, and |c00FF555
 call LANG_It('I04T',0,"Yata Mirror")
 call LANG_It('I04T',1,"Yata Mirror")
 call LANG_It('I04T',2,"Increase |c00FFFF66AllStat|r by 35, mana regen 50%, DEF by 10, when damaged, the wearer returns 25% of the damage received. Onizuka's Set and Stigmata Tesseract's passive ability activation damage is reduced by 50% when hitting back.|nActive: Increases the amount of damage returned by up to 60% for "+"5 seconds. CD: 20.")
+endfunction
+function LANG_Data54 takes nothing returns nothing
 call LANG_It('I04T',3,"Increase |c00FFFF66AllStat|r by 35, mana regen 50%, DEF by 10, when damaged, the wearer returns 25% of the damage received. Onizuka's Set and Stigmata Tesseract's passive ability activation damage is reduced by 50% when hitting back.|nActive: Increases the amount of damage returned by up to 60% for "+"5 seconds. CD: 20.")
 call LANG_It('IYM0',0,"Yata Mirror (Recipe)")
 call LANG_It('IYM0',1,"Yata Mirror (Recipe)")
 call LANG_It('IYM0',2,"Increase |c00FFFF66AllStat|r by 35, mana regen 50%, DEF by 10, when damaged, the wearer returns 25% of the damage received. Onizuka's Set and Stigmata Tesseract's passive ability activation damage is reduced by 50% when hitting back.|nActive: Increases the amount of damage returned by up to 60% for "+"5 seconds. CD: 20.|n|nRequires: Saiyan Armor, Master's Tank Top, Nanatsu Yoru, Magic Staff, Recipe.")
 call LANG_It('IYM0',3,"Increase |c00FFFF66AllStat|r by 35, mana regen 50%, DEF by 10, when damaged, the wearer returns 25% of the damage received. Onizuka's Set and Stigmata Tesseract's passive ability activation damage is reduced by 50% when hitting back.|nActive: Increases the amount of damage returned by up to 60% for "+"5 seconds. CD: 20.|n|nRequires: Saiyan Armor, Master's Tank Top, Nanatsu Yoru, Magic Staff, Recipe.")
 call LANG_It('I04U',0,"Captain's Set (Recipe)")
-endfunction
-function LANG_Data54 takes nothing returns nothing
 call LANG_It('I04U',1,"Captain's Set (Recipe)")
 call LANG_It('I04U',2,"|c00FFFF66AllStat|r increases by 30, HP Regen by 20, DEF by 5, AS by 30%, Attack by 30.|nActive ability: \"Blink\" - teleportation over a short distance, after moving you will be accelerated by 25% for 4 seconds.|nRange: 750|nCDR: 25 sec.|n|nRequired: Quincy Cross, Madao Glasses, Wind Sphere, Recipe"+".")
 call LANG_It('I04U',3,"|c00FFFF66AllStat|r increases by 30, HP Regen by 20, DEF by 5, AS by 30%, Attack by 30.|nActive ability: \"Blink\" - teleportation over a short distance, after moving you will be accelerated by 25% for 4 seconds.|nRange: 750|nCDR: 25 sec.|n|nRequired: Quincy Cross, Madao Glasses, Wind Sphere, Recipe"+".")
@@ -292646,14 +292679,14 @@ call LANG_It('I06K',3,"Increase |c00FFFF66AllStat|r by 13, attack by 40")
 call LANG_It('I06L',0,"Quincy Cross")
 call LANG_It('I06L',1,"Quincy Cross")
 call LANG_It('I06L',2,"Increase Regen HP by 20.")
+endfunction
+function LANG_Data55 takes nothing returns nothing
 call LANG_It('I06L',3,"Increase Regen HP by 20.")
 call LANG_It('I06M',0,"Quincy Medallion")
 call LANG_It('I06M',1,"Quincy Medallion")
 call LANG_It('I06M',2,"Increase HP by 1000.")
 call LANG_It('I06M',3,"Increase HP by 1000.")
 call LANG_It('I06N',0,"Quincy Overcoat")
-endfunction
-function LANG_Data55 takes nothing returns nothing
 call LANG_It('I06N',1,"Quincy Overcoat")
 call LANG_It('I06N',2,"Increase movement speed by 20%, stat by 10.")
 call LANG_It('I06N',3,"Increase movement speed by 20%, stat by 10.")
@@ -292898,14 +292931,14 @@ call LANG_U('H00W',2,"Hibari Kyoya")
 call LANG_U('H00W',3,"Sasagawa Ryohei is the head of the Namimori Boxing Club and is also the \"Keeper of the Vongola Sun\".")
 call LANG_U('H00X',3,"Hibari Kyoya is the head of the Namimori School's Discipline Committee and is also the \"Guardian of the Vongola Cloud\".|n|nRole: Assassin, Carry|n|n")
 call LANG_U('H00Y',3,"\"Akainu\" is a Marine admiral who ate the \"Magu Magu no Mi\" fruit and became a human capable of manipulating magma.|n|nRole: Durable, Disabler|n|n")
+endfunction
+function LANG_Data56 takes nothing returns nothing
 call LANG_U('H00Z',3,"Gintoki is a former participant in the war against aliens, a samurai nicknamed the white deman.|n|nRole: Caster, Escape, Swordsman|n|n")
 call LANG_U('H011',3,"Nami is the navigator on the Straw Hat crew's ship, and is well versed in the weather.|n|nRole: Caster, Disabler, Exhauster|n|n")
 call LANG_U('H012',3,"Hichigo is the remnant of a Hollow White who infected Ichigo's Zanpakutō with his essence.|n|nRole: Carry, Swordsman|n|n")
 call LANG_U('H013',2,"Hichigo")
 call LANG_U('H013',3,"Enel, the god of Skypiea, ate the Goro Goro no Mi fruit and became Lightning Man.")
 call LANG_U('H014',3,"Gokudera is the storm guardian of the Vongola and is the right hand of the 10th boss.|n|nRole: Caster, Assassin, Nuker|n|n")
-endfunction
-function LANG_Data56 takes nothing returns nothing
 call LANG_U('H016',3,"Yamamoto Takeshi - Vongola Rain Guardian, mastered the \"Shigure Kintoki\" style.|n|nRole: Carry, Assassin, Swordsman|n|n")
 call LANG_U('H017',3,"Shana is a supporter of the fire mist, whose task is to protect the world from collapse.|n|nRole: Caster, Carry, Disabler, Exhauster, Swordsman|n|n")
 call LANG_U('H018',3,"Uryu Ishida - The last young Quincy, in ordinary life he studies at the same school as \"Ichigo\".|n|nRole: Caster, Carry, Escape|n|n")
@@ -293150,14 +293183,14 @@ call LANG_U('h04K',0,"Level 12")
 call LANG_U('h15T',0,"Moria's Creep")
 call LANG_U('h25T',0,"Moria's Creep")
 call LANG_U('h05T',0,"Creep Frieza")
+endfunction
+function LANG_Data57 takes nothing returns nothing
 call LANG_U('h05U',0,"Creep Frieza")
 call LANG_U('h05V',0,"Creep Frieza")
 call LANG_U('h05W',0,"Creep Frieza")
 call LANG_U('h068',0,"Level 18")
 call LANG_U('h146',0,"Level 5")
 call LANG_U('h246',0,"Level 20")
-endfunction
-function LANG_Data57 takes nothing returns nothing
 call LANG_U('h346',0,"Level 10")
 call LANG_U('h446',0,"Level 15")
 call LANG_U('h546',0,"Level 25")
@@ -293402,14 +293435,14 @@ call LANG_B('IO3b',0,"Weighty Argument")
 call LANG_B('IO3b',1,"This unit's health regeneration efficiency has been reduced by 25%.")
 call LANG_B('IO4b',0,"Stigmata Recharge")
 call LANG_B('IO4b',1,"Stigmata Recharge")
+endfunction
+function LANG_Data58 takes nothing returns nothing
 call LANG_B('IO5b',1,"Effectivness of controls effects is increased by 25%.")
 call LANG_B('B25b',1,"Effectivness of controls effects is increased by 15%.")
 call LANG_B('B26b',1,"Effectivness of controls effects is increased by 20%.")
 call LANG_B('IcWb',1,"This one is slow and cannot attack.")
 call LANG_B('MaDb',1,"Madoka's next skill deals additional damage. The number of stacks used is equal to the level of this buff.")
 call LANG_B('MaEb',1,"This character is temporarily blind. He constantly misses.")
-endfunction
-function LANG_Data58 takes nothing returns nothing
 call LANG_B('MaFb',1,"This warrior is slow. The speed of his movement and combat is much lower than normal.")
 call LANG_B('MaRb',1,"Madoka's Q skill has been buffed.")
 call LANG_B('MiMp',1,"This warrior is electrocuted. He's slow.")
