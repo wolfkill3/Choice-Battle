@@ -130824,7 +130824,37 @@ local real wa
 local real rd
 local real side
 local effect fx
+local unit u=LoadUnitHandle(h,id,7)
+local group g
+local unit e
+local real ed
 call SaveInteger(h,id,6,tk)
+// урон волной (22 окт): каждые 3 тика враги в конусе у живого кольца получают 1/6 урона, немота с первого попадания
+if ModuloInteger(tk,3)==0 and UnitIsAlive(u) then
+set g=CreateGroup()
+call GroupEnumUnitsInRange(g,x0,y0,1500,Base)
+loop
+set e=FirstOfGroup(g)
+exitwhen e==null
+if Condition_Base(OwnerOf(u),e) and Cos(Atan2(GetUnitY(e)-y0,GetUnitX(e)-x0)-a)>=0.866 then
+set ed=SquareRoot((GetUnitX(e)-x0)*(GetUnitX(e)-x0)+(GetUnitY(e)-y0)*(GetUnitY(e)-y0))
+set k=IMinBJ(9,IMaxBJ(0,R2I((ed-80.)/140.+0.5)))
+set age=tk-(2*k+1)
+if age>=0 and age<18 then
+call myCustomDamage(u,e,LoadReal(h,id,8)/6.,false,false,null,null,null)
+if not IsUnitInGroup(e,LoadGroupHandle(h,id,10)) then
+call GroupAddUnit(LoadGroupHandle(h,id,10),e)
+call DestroyEffect(AddSpecialEffectTarget("Tousen_Sonic.mdl",e,"chest"))
+if UnitIsAlive(e) then
+call SetControlToUnit(u,e,LoadReal(h,id,9),"silence")
+endif
+endif
+endif
+endif
+call GroupRemoveUnit(g,e)
+endloop
+call DestroyGroup(g)
+endif
 // три волны
 loop
 exitwhen i>2
@@ -130894,11 +130924,15 @@ endif
 set k=k+1
 endloop
 if tk>38 then
+call DestroyGroup(LoadGroupHandle(h,id,10))
 call PauseTimer(t)
 call DestroyTimer(t)
 call FlushChildHashtable(h,id)
 endif
 set fx=null
+set g=null
+set e=null
+set u=null
 set t=null
 endfunction
 // «Wing Chirr» (W мухи, v3 22 окт): звуковая волна конусом 60° на 700 — урон (2+ур.)*AGI и немота 1.5+0.1*ур. сек.;
@@ -130943,24 +130977,29 @@ call SaveReal(h,GetHandleId(t),3,a)
 call SaveReal(h,GetHandleId(t),4,x)
 call SaveReal(h,GetHandleId(t),5,y)
 call SaveInteger(h,GetHandleId(t),6,0)
+call SaveUnitHandle(h,GetHandleId(t),7,u)
+call SaveReal(h,GetHandleId(t),8,dmg)
+call SaveReal(h,GetHandleId(t),9,1.5+0.1*lv)
+call SaveGroupHandle(h,GetHandleId(t),10,CreateGroup())
 call TimerStart(t,0.03,true,function TousenFWWave)
-call GroupEnumUnitsInRange(g,x,y,1500,Base) // дальность 1500 (v4; было 700)
-loop
-set e=FirstOfGroup(g)
-exitwhen e==null
-if Condition_Base(p,e) then
-set ea=Atan2(GetUnitY(e)-y,GetUnitX(e)-x)
-if Cos(ea-a)>=0.866 then
-call myCustomDamage(u,e,dmg,false,false,null,null,null)
-call DestroyEffect(AddSpecialEffectTarget("Tousen_Sonic.mdl",e,"chest"))
-if UnitIsAlive(e) then
-call SetControlToUnit(u,e,1.5+0.1*lv,"silence")
-endif
-endif
-endif
-call GroupRemoveUnit(g,e)
-endloop
-call DestroyGroup(g)
+// урон теперь наносит сама волна (TousenFWWave, 22 окт)
+//call GroupEnumUnitsInRange(g,x,y,1500,Base) // дальность 1500 (v4; было 700)
+//loop
+//set e=FirstOfGroup(g)
+//exitwhen e==null
+//if Condition_Base(p,e) then
+//set ea=Atan2(GetUnitY(e)-y,GetUnitX(e)-x)
+//if Cos(ea-a)>=0.866 then
+//call myCustomDamage(u,e,dmg,false,false,null,null,null)
+//call DestroyEffect(AddSpecialEffectTarget("Tousen_Sonic.mdl",e,"chest"))
+//if UnitIsAlive(e) then
+//call SetControlToUnit(u,e,1.5+0.1*lv,"silence")
+//endif
+//endif
+//endif
+//call GroupRemoveUnit(g,e)
+//endloop
+//call DestroyGroup(g)
 set fx=null
 set t=null
 set g=null
@@ -291975,13 +292014,13 @@ call LANG_A('ToFW',0,1,"Wing Chirr, [|cffffcc00Level 2|r] (|cffffcc00W|r)")
 call LANG_A('ToFW',0,2,"Wing Chirr, [|cffffcc00Level 3|r] (|cffffcc00W|r)")
 call LANG_A('ToFW',0,3,"Wing Chirr, [|cffffcc00Level 4|r] (|cffffcc00W|r)")
 call LANG_A('ToFW',0,4,"Wing Chirr, [|cffffcc00Level 5|r] (|cffffcc00W|r)")
-call LANG_A('ToFW',1,0,"The fly's wings send a sound wave ahead: damage and silence to everyone in the cone.|n|n|cFF00A5FF|nDamage: 3*|r|c003CFF3CAGI|r|cFF00A5FF|nSilence: 1.6 sec.|nRange: 1500, cone 60°|nCooldown: 12 sec.|r")
-call LANG_A('ToFW',1,1,"The fly's wings send a sound wave ahead: damage and silence to everyone in the cone.|n|n|cFF00A5FF|nDamage: 4*|r|c003CFF3CAGI|r|cFF00A5FF|nSilence: 1.7 sec.|nRange: 1500, cone 60°|nCooldown: 12 sec.|r")
-call LANG_A('ToFW',1,2,"The fly's wings send a sound wave ahead: damage and silence to everyone in the cone.|n|n|cFF00A5FF|nDamage: 5*|r|c003CFF3CAGI|r|cFF00A5FF|nSilence: 1.8 sec.|nRange: 1500, cone 60°|nCooldown: 12 sec.|r")
-call LANG_A('ToFW',1,3,"The fly's wings send a sound wave ahead: damage and silence to everyone in the cone.|n|n|cFF00A5FF|nDamage: 6*|r|c003CFF3CAGI|r|cFF00A5FF|nSilence: 1.9 sec.|nRange: 1500, cone 60°|nCooldown: 12 sec.|r")
-call LANG_A('ToFW',1,4,"The fly's wings send a sound wave ahead: damage and silence to everyone in the cone.|n|n|cFF00A5FF|nDamage: 7*|r|c003CFF3CAGI|r|cFF00A5FF|nSilence: 2.0 sec.|nRange: 1500, cone 60°|nCooldown: 12 sec.|r")
+call LANG_A('ToFW',1,0,"The fly's wings send a sound wave ahead: it rolls through the cone and hits enemies while passing them (6 hits over 0.5 sec.), silence from the first hit.|n|n|cFF00A5FF|nDamage: 3*|r|c003CFF3CAGI|r|cFF00A5FF over 0.5 sec.|nSilence: 1.6 sec.|nRange: 1500, cone 60°|nCooldown: 12 sec.|r")
+call LANG_A('ToFW',1,1,"The fly's wings send a sound wave ahead: it rolls through the cone and hits enemies while passing them (6 hits over 0.5 sec.), silence from the first hit.|n|n|cFF00A5FF|nDamage: 4*|r|c003CFF3CAGI|r|cFF00A5FF over 0.5 sec.|nSilence: 1.7 sec.|nRange: 1500, cone 60°|nCooldown: 12 sec.|r")
+call LANG_A('ToFW',1,2,"The fly's wings send a sound wave ahead: it rolls through the cone and hits enemies while passing them (6 hits over 0.5 sec.), silence from the first hit.|n|n|cFF00A5FF|nDamage: 5*|r|c003CFF3CAGI|r|cFF00A5FF over 0.5 sec.|nSilence: 1.8 sec.|nRange: 1500, cone 60°|nCooldown: 12 sec.|r")
+call LANG_A('ToFW',1,3,"The fly's wings send a sound wave ahead: it rolls through the cone and hits enemies while passing them (6 hits over 0.5 sec.), silence from the first hit.|n|n|cFF00A5FF|nDamage: 6*|r|c003CFF3CAGI|r|cFF00A5FF over 0.5 sec.|nSilence: 1.9 sec.|nRange: 1500, cone 60°|nCooldown: 12 sec.|r")
+call LANG_A('ToFW',1,4,"The fly's wings send a sound wave ahead: it rolls through the cone and hits enemies while passing them (6 hits over 0.5 sec.), silence from the first hit.|n|n|cFF00A5FF|nDamage: 7*|r|c003CFF3CAGI|r|cFF00A5FF over 0.5 sec.|nSilence: 2.0 sec.|nRange: 1500, cone 60°|nCooldown: 12 sec.|r")
 call LANG_A('ToFW',2,0,"Wing Chirr, [|cffffcc00Level %d|r] (|cffffcc00W|r)")
-call LANG_A('ToFW',3,0,"The fly's wings send a sound wave ahead: damage and silence to everyone in the cone.|n|n|cFF00A5FF|nDamage: 3\\4\\5\\6\\7*|r|c003CFF3CAGI|r|cFF00A5FF|nSilence: 1.6\\1.7\\1.8\\1.9\\2.0 sec.|nRange: 1500, cone 60°|nCooldown: 12 sec.|r")
+call LANG_A('ToFW',3,0,"The fly's wings send a sound wave ahead: it rolls through the cone and hits enemies while passing them (6 hits over 0.5 sec.), silence from the first hit.|n|n|cFF00A5FF|nDamage: 3\\4\\5\\6\\7*|r|c003CFF3CAGI|r|cFF00A5FF over 0.5 sec.|nSilence: 1.6\\1.7\\1.8\\1.9\\2.0 sec.|nRange: 1500, cone 60°|nCo"+"oldown: 12 sec.|r")
 call LANG_A('ToFT',1,0,"A sound field around Tōsen follows him: enemies inside are silenced and take damage, Tōsen attacks faster.|n|n|cFF00A5FF|nAoE: 800|nDamage: 1*|r|c003CFF3CAGI|r|cFF00A5FF per sec.|nSilence: while in the field|nAttack speed: +60%|nDuration: 6 sec.|nCooldown: 45 sec.|r")
 call LANG_A('ToFT',3,0,"A sound field around Tōsen follows him: enemies inside are silenced and take damage, Tōsen attacks faster.|n|n|cFF00A5FF|nAoE: 800|nDamage: 1*|r|c003CFF3CAGI|r|cFF00A5FF per sec.|nSilence: while in the field|nAttack speed: +60%|nDuration: 6 sec.|nCooldown: 45 sec.|r")
 call LANG_A('ToEc',0,0,"Double Cero, [|cffffcc00Level 1|r] (|cffffcc00R|r)")
