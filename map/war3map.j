@@ -131737,21 +131737,28 @@ if tk<=25 then
 call SetSpecialEffectOrientation(fx,wa*bj_RADTODEG+90.,0.,90.)
 call SetSpecialEffectPositionWithZ(fx,wx,wy,GetTerrainZ(wx,wy)+150.)
 call SetSpecialEffectScale(fx,0.35+0.022*tk)
+call SetSpecialEffectOrientation(LoadEffectHandle(h,id,5),wa*bj_RADTODEG+90.,0.,90.)
+call SetSpecialEffectPositionWithZ(LoadEffectHandle(h,id,5),wx,wy,GetTerrainZ(wx,wy)+150.)
+call SetSpecialEffectScale(LoadEffectHandle(h,id,5),0.35+0.022*tk)
 else
 call DestroyEffect(fx)
+call DestroyEffect(LoadEffectHandle(h,id,5))
 call FlushChildHashtable(h,id)
 call TSE_DestroyTimer(t)
 endif
 set fx=null
 set t=null
 endfunction
-function TousenFW2Ring takes integer id,integer k,real rd,real sc,real rz,real rs returns nothing
-local real a=LoadReal(h,id,3)
+function TousenFW2Ring takes integer id,integer k,real rd,real sc,real rz,real rs,real ra returns nothing
+// ra — ряд волн (23 окт): 0 центр (слоты 20+k), <0 левый (100+k), >0 правый (130+k)
+local real a=LoadReal(h,id,3)+ra
+local integer sl=20+k
 // rs — сдвиг вбок от луча (23 окт): <0 влево, >0 вправо
 local real rx=LoadReal(h,id,4)+rd*Cos(a)+rs*Cos(a-bj_PI/2)
 local real ry=LoadReal(h,id,5)+rd*Sin(a)+rs*Sin(a-bj_PI/2)
 //local effect fx=AddSpecialEffect("Tousen_Sonic.mdl",rx,ry)
 // 23 окт: Tousen_Sonic в игре не поворачивался и не масштабировался — кольцо CirclePulse_Green ребром, луч проходит сквозь него
+// 23 окт: SonicMap (13) не подошёл — снова CirclePulse_Green
 local effect fx=AddSpecialEffect("CirclePulse_Green.mdl",rx,ry)
 // 23 окт: кольцо смотрит вдоль луча (Pitch, как рабочие кольца W от 22 окт); масштаб — после поворота, иначе поворот его сбрасывает
 //call SetSpecialEffectScale(fx,sc)
@@ -131762,7 +131769,12 @@ call SetSpecialEffectPositionWithZ(fx,rx,ry,GetTerrainZ(rx,ry)+rz)
 call SetSpecialEffectVertexColour(fx,90,255,110,255)
 //call SetSpecialEffectScale(fx,sc)
 call SetSpecialEffectScale(fx,sc*0.53) // радиус CirclePulse ~141 против ~75 у Tousen_Sonic
-call SaveEffectHandle(h,id,20+k,fx)
+if ra<0 then
+set sl=200+k // 23 окт: слоты боковых рядов раздвинуты под 40 колец (было 100+k / 130+k)
+elseif ra>0 then
+set sl=260+k
+endif
+call SaveEffectHandle(h,id,sl,fx)
 set fx=null
 endfunction
 function TousenFW2Tick takes nothing returns nothing
@@ -131787,7 +131799,7 @@ if tk>67 or not UnitIsAlive(u) or udg_B==false then
 // конец W (2 с): кольца гаснут, Тоусен отпущен
 set k=0
 loop
-exitwhen k>33 // 23 окт: 0..21 цепочка, 30..33 кольца перед выстрелом
+exitwhen k>281 // 23 окт: слоты 22..61 центр, 80..83 кольца перед выстрелом, 202..241 и 262..301 боковые ряды
 call DestroyEffect(LoadEffectHandle(h,id,20+k))
 set k=k+1
 endloop
@@ -131805,6 +131817,20 @@ else
 call PauseUnit(u,true)
 call SetUnitInvulnerable(u,true)
 // луч — с 0.3 с (тик 10)
+if tk==10 then
+// 23 окт: большой круговой ветер nitu вокруг Тоусена при выстреле
+set i=0
+loop
+exitwhen i>15
+set fx=AddSpecialEffect("nitu.mdx",x0+350.*Cos(i*bj_PI/8),y0+350.*Sin(i*bj_PI/8))
+call SetSpecialEffectScale(fx,0.8)
+call SetSpecialEffectFacing(fx,i*22.5+180.)
+call SetSpecialEffectTimeScale(fx,0.6)
+call SetSpecialEffectVertexColour(fx,90,255,110,90)
+call DestroyEffect(fx)
+set i=i+1
+endloop
+endif
 if tk>=10 then
 // волны: три по конусу раз в 0.18 с
 if ModuloInteger(tk-10,6)==0 then
@@ -131814,6 +131840,8 @@ exitwhen i>2
 set fx=AddSpecialEffect("Tousen_Wave.mdl",x0+120*Cos(a),y0+120*Sin(a))
 set wt=CreateTimer()
 call SaveEffectHandle(h,GetHandleId(wt),0,fx)
+// 23 окт: вторая копия волны поверх — волна плотнее (слот 5)
+call SaveEffectHandle(h,GetHandleId(wt),5,AddSpecialEffect("Tousen_Wave.mdl",x0+120*Cos(a),y0+120*Sin(a)))
 call SaveInteger(h,GetHandleId(wt),1,0)
 call SaveReal(h,GetHandleId(wt),2,a+(i-1)*0.32)
 call SaveReal(h,GetHandleId(wt),3,x0+120*Cos(a))
@@ -131827,26 +131855,39 @@ endif
 //set k=2+(tk-10)/2
 //call TousenFW2Ring(id,k,80.+140.*k,0.5+0.17*k)
 // 23 окт: ветерки вдоль луча — прозрачные зелёные nitu (как на рывках Йоруичи / Кирито), по 3 каждые 2 тика
-if ModuloInteger(tk,2)==0 then
+// 23 окт: круговые ветерки nitu (как у Кийо: по кругу, к центру) на каждом из 3 рядов, раз в 0.3 с, прозрачные зелёные
+if ModuloInteger(tk-10,10)==0 then
 set i=0
 loop
 exitwhen i>2
-set wr=GetRandomReal(150.,RMinBJ(1500.,120.+60.*(tk-10)+300.))
-set ws=GetRandomReal(-110.,110.)
-set fx=AddSpecialEffect("nitu.mdx",x0+wr*Cos(a)+ws*Cos(a+bj_PI/2),y0+wr*Sin(a)+ws*Sin(a+bj_PI/2))
-call SetSpecialEffectScale(fx,GetRandomReal(0.9,1.3))
-call SetSpecialEffectFacing(fx,a*bj_RADTODEG+180.)
-call SetSpecialEffectHeight(fx,GetRandomReal(40.,220.))
+set ws=a+(i-1)*0.32
+set wr=GetRandomReal(200.,RMinBJ(1450.,120.+60.*(tk-10)+300.))
+set k=0
+loop
+exitwhen k>7
+set fx=AddSpecialEffect("nitu.mdx",x0+wr*Cos(ws)+170.*Cos(k*bj_PI/4),y0+wr*Sin(ws)+170.*Sin(k*bj_PI/4))
+call SetSpecialEffectScale(fx,0.4)
+call SetSpecialEffectFacing(fx,k*45.+180.)
+call SetSpecialEffectHeight(fx,110.)
 call SetSpecialEffectTimeScale(fx,0.8)
-call SetSpecialEffectVertexColour(fx,90,255,110,110)
+call SetSpecialEffectVertexColour(fx,90,255,110,140) // 23 окт: плотнее (было 70)
 call DestroyEffect(fx)
+set k=k+1
+endloop
 set i=i+1
 endloop
 endif
 // 23 окт: колец вдвое больше — 20, новое каждый тик (кольца 2..21)
+// 23 окт: цепочка плотнее — 40 колец на ряд с шагом 35, по два за тик, размер растёт быстрее (0.54..5.2)
 if tk-10<=19 then
-set k=2+(tk-10)
-call TousenFW2Ring(id,k,80.+70.*k,0.5+0.085*k,110.,0.)
+set k=2+2*(tk-10)
+loop
+exitwhen k>3+2*(tk-10)
+call TousenFW2Ring(id,k,80.+35.*k,0.3+0.12*k,110.,0.,0.)
+call TousenFW2Ring(id,k,80.+35.*k,0.3+0.12*k,110.,0.,-0.32)
+call TousenFW2Ring(id,k,80.+35.*k,0.3+0.12*k,110.,0.,0.32)
+set k=k+1
+endloop
 endif
 // урон раз в 0.25 с (8 тиков) по конусу до фронта луча
 if ModuloInteger(tk-10,8)==0 then
@@ -131918,10 +131959,10 @@ call SaveGroupHandle(h,id,10,CreateGroup())
 //call TousenFW2Ring(id,31,140.,0.65,120.)
 //call TousenFW2Ring(id,32,170.,0.75,190.)
 //call TousenFW2Ring(id,33,200.,0.85,260.)
-call TousenFW2Ring(id,30,120.,0.6,70.,-90.)
-call TousenFW2Ring(id,31,150.,0.7,210.,-170.)
-call TousenFW2Ring(id,32,120.,0.6,140.,90.)
-call TousenFW2Ring(id,33,150.,0.7,260.,170.)
+call TousenFW2Ring(id,60,120.,0.6,70.,-90.,0.)
+call TousenFW2Ring(id,61,150.,0.7,210.,-170.,0.)
+call TousenFW2Ring(id,62,120.,0.6,140.,90.,0.)
+call TousenFW2Ring(id,63,150.,0.7,260.,170.,0.)
 call TSE_TimerStart(t,0.03,true,function TousenFW2Tick)
 set t=null
 set u=null
@@ -132042,6 +132083,17 @@ call SaveInteger(h,id,1,tk)
 if tk<=120 and UnitIsAlive(u) and udg_B==true and LoadBoolean(HH,GetHandleId(u),SH_TouHollow) then
 // кольцо поля на земле под Тоусеном (22 окт)
 call SetSpecialEffectPositionWithZ(LoadEffectHandle(h,id,4),x,y,GetTerrainZ(x,y))
+// 23 окт: старая орбита — 9 колец ребром кружат вокруг Тоусена на 220, покачиваются и пульсируют
+set rx=0
+loop
+exitwhen rx>8
+set ra=rx*2*bj_PI/9+tk*0.105
+set fx=LoadEffectHandle(h,id,50+R2I(rx))
+call SetSpecialEffectOrientation(fx,ra*bj_RADTODEG+90.,0.,90.)
+call SetSpecialEffectPositionWithZ(fx,x+220*Cos(ra),y+220*Sin(ra),GetUnitZ(u)+140+18*Sin(tk*0.25+rx*0.7))
+call SetSpecialEffectScale(fx,0.45+0.07*Sin(tk*0.3+rx))
+set rx=rx+1
+endloop
 // v7 (22 окт): кольца в воздухе вокруг Тоусена каждые 0.1 с, гаснут за 0.4 с
 // 23 окт: колец больше — каждые 0.05 с, вокруг Тоусена по два
 //if ModuloInteger(tk,2)==0 then
@@ -132055,6 +132107,9 @@ call SetSpecialEffectVertexColour(fx,90,255,110,255)
 call SetSpecialEffectOrientation(fx,ra*bj_RADTODEG+90.,0.,90.)
 call SetSpecialEffectPositionWithZ(fx,rx,ry,GetUnitZ(u)+GetRandomReal(60,240))
 call RemoveEffect(fx,0.4,false,CreateTimer())
+endif
+// 23 окт: середина между старым и новым — второе кольцо у Тоусена только через тик
+if ModuloInteger(tk,2)==0 then
 set ra=GetRandomReal(0,2*bj_PI)
 set rx=x+GetRandomReal(110,220)*Cos(ra)
 set ry=y+GetRandomReal(110,220)*Sin(ra)
@@ -132069,11 +132124,18 @@ set ra=GetRandomReal(0,2*bj_PI)
 set rx=x+GetRandomReal(150,780)*Cos(ra)
 set ry=y+GetRandomReal(150,780)*Sin(ra)
 set fx=AddSpecialEffect("CirclePulse_Green.mdl",rx,ry)
-call SetSpecialEffectScale(fx,GetRandomReal(0.35,0.6))
 call SetSpecialEffectVertexColour(fx,90,255,110,255)
+// 23 окт: через раз — лёжа на земле (как в старом T) и ребром (как сейчас)
+if ModuloInteger(tk,2)==0 then
+call SetSpecialEffectPositionWithZ(fx,rx,ry,GetTerrainZ(rx,ry)+5)
+call SetSpecialEffectScale(fx,GetRandomReal(0.4,0.7))
+call RemoveEffect(fx,0.6,false,CreateTimer())
+else
 call SetSpecialEffectOrientation(fx,ra*bj_RADTODEG+90.,0.,90.)
 call SetSpecialEffectPositionWithZ(fx,rx,ry,GetTerrainZ(rx,ry)+GetRandomReal(60,140))
+call SetSpecialEffectScale(fx,GetRandomReal(0.35,0.6))
 call RemoveEffect(fx,0.4,false,CreateTimer())
+endif
 endif
 // зелёные волны от Тоусена, слабее (v7b, 22 окт): раз в 1 с, полупрозрачные, до 700
 // 23 окт: звуковая рябь по земле — зелёная SoundBlu раз в 0.5 с расходится от Тоусена до 800
@@ -132082,6 +132144,7 @@ set ra=I2R(ModuloInteger(tk/10,2))
 call DestroyEffect(LoadEffectHandle(h,id,40+R2I(ra)))
 //set fx=AddSpecialEffect("war3mapImported\\SoundBlu.mdl",x,y)
 // 23 окт: вместо SoundBlu — снова старое расходящееся кольцо CirclePulse_Green
+// 23 окт: SonicMap (12) не подошёл — снова CirclePulse_Green
 set fx=AddSpecialEffect("CirclePulse_Green.mdl",x,y)
 call SetSpecialEffectScale(fx,0.7)
 call SetSpecialEffectVertexColour(fx,90,255,110,140)
@@ -132183,6 +132246,14 @@ call SetSpecialEffectZ(LoadEffectHandle(h,id,4),-2000.)
 call DestroyEffect(LoadEffectHandle(h,id,4))
 call DestroyEffect(LoadEffectHandle(h,id,40))
 call DestroyEffect(LoadEffectHandle(h,id,41))
+// 23 окт: орбита и диск гаснут
+call DestroyEffect(LoadEffectHandle(h,id,59))
+set rx=0
+loop
+exitwhen rx>8
+call DestroyEffect(LoadEffectHandle(h,id,50+R2I(rx)))
+set rx=rx+1
+endloop
 call PauseTimer(t)
 call TSE_DestroyTimer(t)
 call FlushChildHashtable(h,id)
@@ -132244,6 +132315,24 @@ set fx=AddSpecialEffect("Tousen_RangeCircle.mdx",GetUnitX(u),GetUnitY(u))
 call SetSpecialEffectScale(fx,800./105.)
 call SetSpecialEffectTimeScale(fx,0.)
 call SaveEffectHandle(h,id,4,fx)
+// 23 окт: старый зелёный диск 800 под Тоусеном, полупрозрачный (слот 59)
+set fx=AddSpecialEffectTarget("CirclePulse_Green.mdl",u,"origin")
+// 23 окт: точно по АоЕ 800 — та же модель, что Tousen_RangeCircle (радиус ~105 в первом кадре), пульс остановлен
+//call SetSpecialEffectScale(fx,800./141.)
+call SetSpecialEffectScale(fx,800./105.)
+call SetSpecialEffectTimeScale(fx,0.)
+call SetSpecialEffectVertexColour(fx,90,255,110,110)
+call SaveEffectHandle(h,id,59,fx)
+// 23 окт: старая орбита — 9 колец вокруг Тоусена (слоты 50..58)
+loop
+exitwhen i>8
+set fx=AddSpecialEffect("CirclePulse_Green.mdl",GetUnitX(u),GetUnitY(u))
+call SetSpecialEffectScale(fx,0.45)
+call SetSpecialEffectVertexColour(fx,90,255,110,255)
+call SaveEffectHandle(h,id,50+i,fx)
+set i=i+1
+endloop
+set i=0
 call SaveUnitHandle(h,id,0,u)
 call SaveInteger(h,id,1,0)
 //call TSE_TimerStart(t,0.05,true,function TousenFTTick)
@@ -132376,10 +132465,13 @@ call SetUnitScale(tfx,0.8+time/2.5,0.8+time/2.5,0.8+time/2.5)
 call SetUnitVertexColor(tfx,120,255,140,255)
 call KillUnit(tfx)
 if time>1.2 then
+// 23 окт: столб (~1000 частиц, x2.5) раз в 0.4 с вместо каждых 0.1 с — было до 14 столбов разом, спайки
+if ModuloInteger(R2I(time*10+0.5)-13,4)==0 then
 set tfx=CreateUnit(p,'dR70',x,y,GetRandomInt(0,360))
 call SetUnitScale(tfx,2.5,2.5,2.5)
 call SetUnitVertexColor(tfx,120,255,140,255)
 call MyRemoveUnit(tfx,1.5)
+endif
 set tfx=CreateUnit(p,'dR43',x,y,GetRandomInt(0,360))
 call SetUnitVertexColor(tfx,120,255,140,255)
 call UnitApplyTimedLife(tfx,'BTLF',1.)
@@ -133170,8 +133262,15 @@ call myCustomDamage(u,e,GetHeroAgi(u,true),false,false,null,null,null)
 //call TousenSnd("TousenGrilloG-sfx2") // финальный удар (22 окт)
 call DestroyEffect(AddSpecialEffect("war3mapImported\\BrolyRHitGreen.mdl",ex,ey))
 // 23 окт: пыль как в конце E Йоруичи — slamEarth 1.8, держится 2 с
-set bj_lastCreatedEffect=AddSpecialEffect("slamEarth.mdl",ex,ey)
-call SetSpecialEffectScale(bj_lastCreatedEffect,1.8)
+//set bj_lastCreatedEffect=AddSpecialEffect("slamEarth.mdl",ex,ey)
+//call SetSpecialEffectScale(bj_lastCreatedEffect,1.8)
+//call RemoveEffect(bj_lastCreatedEffect,2,false,CreateTimer())
+// 23 окт: slamEarth — это кратер; пыль от падения как в W Гоку (Push9 / Push10)
+set bj_lastCreatedEffect=AddSpecialEffect("chushou_by_wood_effect_earth_sandycrack_fag.mdl",ex,ey)
+call SetSpecialEffectScale(bj_lastCreatedEffect,0.9)
+call RemoveEffect(bj_lastCreatedEffect,1.5,false,CreateTimer())
+set bj_lastCreatedEffect=AddSpecialEffect("war3mapImported\\WindCircleFaster.mdl",ex,ey)
+call SetSpecialEffectScale(bj_lastCreatedEffect,1.2)
 call RemoveEffect(bj_lastCreatedEffect,2,false,CreateTimer())
 //set bj_lastCreatedEffect=AddSpecialEffect("chushou_by_wood_effect_earth_sandycrack_fag.mdl",ex,ey)
 //call SetSpecialEffectZ(bj_lastCreatedEffect,-8)
@@ -138575,6 +138674,7 @@ local integer ep
 local group g
 local unit e
 local effect fx
+local framehandle fr
 call SaveReal(h,id,3,time+0.1)
 if time<7. and UnitIsAlive(u) and udg_B==true and not LoadBoolean(h,id,6) then
 // бутон закрылся наполовину (1 с) — туман: центр, кольцо 450 (6), кольцо 850 (12)
@@ -138583,7 +138683,13 @@ if tk==10 then
 // длительность T (6 с тумана) — в статус-бар (22 окт)
 call CreateModeIndicatorForm(u,"ReplaceableTextures\\CommandButtons\\BTNShinjiT.blp",6.)
 // круг дальности тумана T — 1000, до конца банкая (18 окт)
-call ShinjiRing(x,y,1000.,6.)
+//call ShinjiRing(x,y,1000.,6.)
+// 23 окт: кольцо T своё (слот 60), чтобы при отмене T гасло сразу; вид как у ShinjiRing
+set fx=AddSpecialEffect("Shinji2_RangeCircle.mdx",x,y)
+call SetSpecialEffectScale(fx,1000./105.)
+call SetSpecialEffectTimeScale(fx,0.)
+call SetSpecialEffectAlpha(fx,120)
+call SaveEffectHandle(h,id,60,fx)
 loop
 exitwhen i>18
 // туман T как R Генкиши (17 окт; было Shinji2_MistT)
@@ -138606,6 +138712,9 @@ set ep=GetRandomInt(0,359)
 set fx=AddSpecialEffect("Shinji2_GenMistT.mdx",x+GetRandomReal(0,950)*Cos(ep*bj_DEGTORAD),y+GetRandomReal(0,950)*Sin(ep*bj_DEGTORAD))
 call SetSpecialEffectScale(fx,GetRandomReal(1.2,1.6))
 call RemoveEffect(fx,1.2,true,CreateTimer()) // было 1.8 (16 окт)
+// 23 окт: последние 12 клубов (0.9 с) — в слотах 70..81, чтобы спрятать их при отмене T
+call SaveEffectHandle(h,id,70+ModuloInteger(LoadInteger(h,id,69),12),fx)
+call SaveInteger(h,id,69,LoadInteger(h,id,69)+1)
 set i=i+1
 endloop
 set i=0
@@ -138644,6 +138753,29 @@ else
 // конец: бутон раскрывается и уходит (Death), туман гаснет; путаница сходит сама через 1.2 с
 call ShinjiTLock(u,false)
 call DestroyEffect(LoadEffectHandle(h,id,5))
+// 23 окт: конец или отмена T — кольцо гаснет без вспышки, свежие клубы тумана прячутся, счётчик в статус-баре гаснет
+set fx=LoadEffectHandle(h,id,60)
+if fx!=null then
+call SetSpecialEffectAlpha(fx,0)
+call SetSpecialEffectScale(fx,0.01)
+call SetSpecialEffectZ(fx,-2000.)
+call DestroyEffect(fx)
+endif
+loop
+exitwhen i>11
+set fx=LoadEffectHandle(h,id,70+i)
+if fx!=null then // клубы живут 1.2 с, в слотах только последние 0.9 с — все ещё живы
+call SetSpecialEffectAlpha(fx,0)
+call SetSpecialEffectZ(fx,-2000.)
+endif
+set i=i+1
+endloop
+set i=0
+set fr=LoadFrameHandle(HH,PH(GetOwningPlayer(u)),StringHash("ReplaceableTextures\\CommandButtons\\BTNShinjiT.blp"))
+if fr!=null and LoadReal(HH,GetHandleId(fr),c_DURATION)>0 then
+call SaveReal(HH,GetHandleId(fr),c_DURATION,0.01)
+endif
+set fr=null
 loop
 exitwhen i>18
 call DestroyEffect(LoadEffectHandle(h,id,10+i))
