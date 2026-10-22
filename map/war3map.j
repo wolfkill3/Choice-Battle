@@ -130831,8 +130831,12 @@ exitwhen i>2
 set wa=a+(i-1)*0.32
 set fx=LoadEffectHandle(h,id,i)
 if tk<=25 then
-call SetSpecialEffectPosition(fx,x0+wd*Cos(wa),y0+wd*Sin(wa))
-call SetSpecialEffectScale(fx,1.+0.04*tk)
+//call SetSpecialEffectPosition(fx,x0+wd*Cos(wa),y0+wd*Sin(wa))
+//call SetSpecialEffectScale(fx,1.+0.04*tk)
+// волна стоит ребром к врагам (Roll) и летит вперёд (22 окт)
+call SetSpecialEffectOrientation(fx,wa*bj_RADTODEG+90.,0.,90.)
+call SetSpecialEffectPositionWithZ(fx,x0+wd*Cos(wa),y0+wd*Sin(wa),GetTerrainZ(x0+wd*Cos(wa),y0+wd*Sin(wa))+150.)
+call SetSpecialEffectScale(fx,0.35+0.022*tk)
 elseif tk==26 then
 call DestroyEffect(fx)
 endif
@@ -130847,7 +130851,9 @@ call SetSpecialEffectScale(fx,0.5+0.17*k)
 // кольцо стоит лицом к врагам: поперёк направления, на высоте 110 (22 окт)
 //call SetSpecialEffectOrientation(fx,a*bj_RADTODEG,-90.,0.)
 // ребром к врагам поворотом по Roll (22 окт): плоскость кольца поперёк направления
-call SetSpecialEffectOrientation(fx,a*bj_RADTODEG+90.,0.,90.)
+//call SetSpecialEffectOrientation(fx,a*bj_RADTODEG+90.,0.,90.)
+// звуковые кольца — как раньше (Pitch), повернуть нужно было волны (22 окт)
+call SetSpecialEffectOrientation(fx,a*bj_RADTODEG,-90.,0.)
 call SetSpecialEffectPositionWithZ(fx,x0+rd*Cos(a),y0+rd*Sin(a),GetTerrainZ(x0+rd*Cos(a),y0+rd*Sin(a))+110.)
 call SaveEffectHandle(h,id,20+k,fx)
 endif
@@ -131845,23 +131851,117 @@ set u=null
 endfunction
 // G мухи «Grillar Golpe» (22 окт) — W2 Кисаме из CR 5.3 (Shark Strike): рывок к цели (50 за 0.02 с), у цели серия из 4 ударов
 // по кругу, в конце 8*AGI (без AD) и оглушение 2 с; Тоусен на паузе и неуязвим, цель на паузе. Рывок до 2 с, иначе отмена
+//function TousenFGTick takes nothing returns nothing
+//local timer t=GetExpiredTimer()
+//local integer id=GetHandleId(t)
+//local unit u=LoadUnitHandle(h,id,0)
+//local unit e=LoadUnitHandle(h,id,1)
+//local real time=LoadReal(h,id,2)+0.02
+//local real facing=LoadReal(h,id,3)
+//local integer rf=LoadInteger(h,id,4)
+//local boolean fin=false
+//call SaveReal(h,id,2,time)
+//if not UnitIsAlive(u) or udg_B==false or (time<20 and (not UnitIsAlive(e) or time>2.)) then
+//set fin=true
+//elseif time>21.6 then
+//set fin=true
+//if UnitIsAlive(e) then
+//call PauseUnit(e,false)
+//call myCustomDamage(u,e,8*GetHeroAgi(u,true),false,false,null,null,null)
+//if UnitIsAlive(e) then
+//call SetControlToUnit(u,e,2.,"stun")
+//endif
+//endif
+//endif
+//if fin then
+//call DestroyEffect(LoadEffectHandle(h,id,5))
+//call UnitSpeed(u,1)
+//call SetUnitFlyHeight(u,40,0)
+//call PauseUnit(u,false)
+//call SetUnitInvulnerable(u,false)
+//call SetUnitPathing(u,true)
+//call SetUnitTurnSpeed(u,GetUnitDefaultTurnSpeed(u))
+//if LoadBoolean(h,id,6) then
+//call PauseUnit(e,false)
+//endif
+//call PauseTimer(t)
+//call FlushChildHashtable(h,id)
+//call DestroyTimer(t)
+//else
+//if time<20 then
+//set facing=Angle2(GetUnitX(u),GetUnitY(u),GetUnitX(e),GetUnitY(e))
+//call SaveReal(h,id,3,facing)
+//endif
+//call SetUnitFacing(u,facing)
+//if time>0.2 and time<20 then
+//call MoveUnit(u,u,50,facing)
+//if SR(GetUnitX(u),GetUnitY(u),GetUnitX(e),GetUnitY(e))<250 then
+//call SaveReal(h,id,2,20)
+//call PauseUnit(e,true)
+//call SaveBoolean(h,id,6,true)
+//endif
+//endif
+//if time>20 then
+//if time<20.3 then
+//call MoveUnit(u,u,50,facing)
+//endif
+//// облёт цели: три поворота на 15 градусов в одну сторону
+//if (time>20.1 and time<20.3) or (time>20.7 and time<20.9) or (time>21.3 and time<21.5) then
+//if rf==1 then
+//set facing=facing+15
+//else
+//set facing=facing-15
+//endif
+//call SaveReal(h,id,3,facing)
+//endif
+//if (time>20.29 and time<20.31) or (time>20.89 and time<20.91) or (time>21.49 and time<21.51) then
+//set facing=Angle2(GetUnitX(u),GetUnitY(u),GetUnitX(e),GetUnitY(e))
+//call SaveReal(h,id,3,facing)
+//call SetUnitFacingInstant(u,facing)
+//endif
+//if time>=20.3 and time<22 then
+//call MoveUnit(u,u,50,facing)
+//endif
+//// удары: эффекты Кисаме (пак), ветер зелёный
+//if (time>20.01 and time<20.03) or (time>20.49 and time<20.51) or (time>20.99 and time<21.01) or (time>21.59 and time<21.61) then
+//call SetUnitAnimation(u,"attack")
+//call EffectCreateAndMove(true,"Others\\WindCirclefaster.mdl",GetRandomReal(0,360),1,1.5,1.5,40,100,50,40,0,e,0,facing)
+//call EffectCreateAndMove(true,"Others\\[A]az_axe_ef1.mdl",GetRandomReal(0,360),1,1.25,0.75,100,100,100,40,0,e,0,facing)
+//call EffectCreateAndMove(true,"Kisame\\qqqqqr.mdl",GetRandomReal(0,360),1,2.5,0.3,100,100,100,0,150,e,0,facing)
+//call EffectCreateAndMove(true,"Kisame\\afbcronoseffect1.mdl",GetRandomReal(0,360),1,1,1.75,100,100,100,0,150,e,0,facing)
+//call EffectCreateAndMove90(true,"Kisame\\suijinha.mdl",facing,1.5,1.5,0.5,100,100,100,0,150,e,-50,facing)
+//call DestroyEffect(AddSpecialEffectTarget("Tousen_Sonic.mdl",e,"chest"))
+//endif
+//endif
+//endif
+//set u=null
+//set e=null
+//set t=null
+//endfunction
+// G v2 (22 окт): быстрее, облёт цели плавный (по кругу 170), анимация полёта, эффекты зелёные.
+// Рывок 80 за 0.02 с (до 1.5 с), у цели 4 удара через 0.2 с, в конце 8*AGI и оглушение 2 с
 function TousenFGTick takes nothing returns nothing
 local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
 local unit u=LoadUnitHandle(h,id,0)
 local unit e=LoadUnitHandle(h,id,1)
-local real time=LoadReal(h,id,2)+0.02
-local real facing=LoadReal(h,id,3)
+local integer tk=LoadInteger(h,id,2)+1
+local integer k=LoadInteger(h,id,7)
 local integer rf=LoadInteger(h,id,4)
+local real th=LoadReal(h,id,3)
+local real ex=GetUnitX(e)
+local real ey=GetUnitY(e)
+local real fd=SR(GetUnitX(u),GetUnitY(u),ex,ey)
 local boolean fin=false
-call SaveReal(h,id,2,time)
-if not UnitIsAlive(u) or udg_B==false or (time<20 and (not UnitIsAlive(e) or time>2.)) then
+call SaveInteger(h,id,2,tk)
+if not UnitIsAlive(u) or udg_B==false or (k==0 and (not UnitIsAlive(e) or tk>75)) then
 set fin=true
-elseif time>21.6 then
+elseif k>0 and k>4*10+6 then
 set fin=true
 if UnitIsAlive(e) then
 call PauseUnit(e,false)
 call myCustomDamage(u,e,8*GetHeroAgi(u,true),false,false,null,null,null)
+call DestroyEffect(AddSpecialEffect("war3mapImported\\BrolyRHitGreen.mdl",ex,ey))
 if UnitIsAlive(e) then
 call SetControlToUnit(u,e,2.,"stun")
 endif
@@ -131875,57 +131975,51 @@ call PauseUnit(u,false)
 call SetUnitInvulnerable(u,false)
 call SetUnitPathing(u,true)
 call SetUnitTurnSpeed(u,GetUnitDefaultTurnSpeed(u))
+call SetUnitAnimation(u,"stand")
 if LoadBoolean(h,id,6) then
 call PauseUnit(e,false)
 endif
 call PauseTimer(t)
 call FlushChildHashtable(h,id)
 call DestroyTimer(t)
-else
-if time<20 then
-set facing=Angle2(GetUnitX(u),GetUnitY(u),GetUnitX(e),GetUnitY(e))
-call SaveReal(h,id,3,facing)
+elseif k==0 then
+// рывок к цели с анимацией полёта
+if ModuloInteger(tk,15)==1 then
+call SetUnitAnimation(u,"walk")
 endif
-call SetUnitFacing(u,facing)
-if time>0.2 and time<20 then
-call MoveUnit(u,u,50,facing)
-if SR(GetUnitX(u),GetUnitY(u),GetUnitX(e),GetUnitY(e))<250 then
-call SaveReal(h,id,2,20)
+call SetUnitFacingInstant(u,Angle2(GetUnitX(u),GetUnitY(u),ex,ey))
+call SetUnitX(u,GetUnitX(u)+RMinBJ(80.,fd)*Cos(Atan2(ey-GetUnitY(u),ex-GetUnitX(u))))
+call SetUnitY(u,GetUnitY(u)+RMinBJ(80.,fd)*Sin(Atan2(ey-GetUnitY(u),ex-GetUnitX(u))))
+if ModuloInteger(tk,3)==0 then
+set bj_lastCreatedEffect=AddSpecialEffect("Others\\WindCirclefaster.mdl",GetUnitX(u),GetUnitY(u))
+call SetSpecialEffectScale(bj_lastCreatedEffect,0.35)
+call SetSpecialEffectVertexColour(bj_lastCreatedEffect,90,255,110,255)
+call DestroyEffect(bj_lastCreatedEffect)
+endif
+if SR(GetUnitX(u),GetUnitY(u),ex,ey)<220 then
 call PauseUnit(e,true)
 call SaveBoolean(h,id,6,true)
+call SaveInteger(h,id,7,1)
+call SaveReal(h,id,3,Atan2(GetUnitY(u)-ey,GetUnitX(u)-ex))
 endif
-endif
-if time>20 then
-if time<20.3 then
-call MoveUnit(u,u,50,facing)
-endif
-// облёт цели: три поворота на 15 градусов в одну сторону
-if (time>20.1 and time<20.3) or (time>20.7 and time<20.9) or (time>21.3 and time<21.5) then
-if rf==1 then
-set facing=facing+15
 else
-set facing=facing-15
-endif
-call SaveReal(h,id,3,facing)
-endif
-if (time>20.29 and time<20.31) or (time>20.89 and time<20.91) or (time>21.49 and time<21.51) then
-set facing=Angle2(GetUnitX(u),GetUnitY(u),GetUnitX(e),GetUnitY(e))
-call SaveReal(h,id,3,facing)
-call SetUnitFacingInstant(u,facing)
-endif
-if time>=20.3 and time<22 then
-call MoveUnit(u,u,50,facing)
-endif
-// удары: эффекты Кисаме (пак), ветер зелёный
-if (time>20.01 and time<20.03) or (time>20.49 and time<20.51) or (time>20.99 and time<21.01) or (time>21.59 and time<21.61) then
+// облёт цели по кругу 170: 9 градусов за тик, лицом к цели, без рывков
+call SaveInteger(h,id,7,k+1)
+set th=th+rf*0.157
+call SaveReal(h,id,3,th)
+call SetUnitX(u,ex+170*Cos(th))
+call SetUnitY(u,ey+170*Sin(th))
+call SetUnitFacingInstant(u,Angle2(GetUnitX(u),GetUnitY(u),ex,ey))
+if ModuloInteger(k-1,10)==0 and k<=4*10 then
 call SetUnitAnimation(u,"attack")
-call EffectCreateAndMove(true,"Others\\WindCirclefaster.mdl",GetRandomReal(0,360),1,1.5,1.5,40,100,50,40,0,e,0,facing)
-call EffectCreateAndMove(true,"Others\\[A]az_axe_ef1.mdl",GetRandomReal(0,360),1,1.25,0.75,100,100,100,40,0,e,0,facing)
-call EffectCreateAndMove(true,"Kisame\\qqqqqr.mdl",GetRandomReal(0,360),1,2.5,0.3,100,100,100,0,150,e,0,facing)
-call EffectCreateAndMove(true,"Kisame\\afbcronoseffect1.mdl",GetRandomReal(0,360),1,1,1.75,100,100,100,0,150,e,0,facing)
-call EffectCreateAndMove90(true,"Kisame\\suijinha.mdl",facing,1.5,1.5,0.5,100,100,100,0,150,e,-50,facing)
+call QueueUnitAnimation(u,"walk")
+call EffectCreateAndMove(true,"Others\\WindCirclefaster.mdl",GetRandomReal(0,360),1,1.3,1.5,40,100,50,40,0,e,0,th*bj_RADTODEG)
+call DestroyEffect(AddSpecialEffect("war3mapImported\\az_jugggreen_e2_impact.mdl",ex,ey))
+set bj_lastCreatedEffect=AddSpecialEffect("war3mapImported\\az-slash-green.mdl",ex,ey)
+call SetSpecialEffectYaw(bj_lastCreatedEffect,th*bj_RADTODEG+90.)
+call SetSpecialEffectHeight(bj_lastCreatedEffect,80.)
+call DestroyEffect(bj_lastCreatedEffect)
 call DestroyEffect(AddSpecialEffectTarget("Tousen_Sonic.mdl",e,"chest"))
-endif
 endif
 endif
 set u=null
@@ -131941,16 +132035,19 @@ local timer t=CreateTimer()
 local integer id=GetHandleId(t)
 call SaveUnitHandle(h,id,0,u)
 call SaveUnitHandle(h,id,1,GetSpellTargetUnit())
-call SaveReal(h,id,2,0.)
-call SaveReal(h,id,3,Angle2(GetUnitX(u),GetUnitY(u),GetUnitX(GetSpellTargetUnit()),GetUnitY(GetSpellTargetUnit())))
+//call SaveReal(h,id,2,0.)
+//call SaveReal(h,id,3,Angle2(GetUnitX(u),GetUnitY(u),GetUnitX(GetSpellTargetUnit()),GetUnitY(GetSpellTargetUnit())))
+call SaveInteger(h,id,2,0) // v2: счётчик тиков
+call SaveInteger(h,id,7,0)
 call SaveInteger(h,id,4,GetRandomInt(1,2))
-call SaveEffectHandle(h,id,5,AddSpecialEffectTarget("Kisame\\file00002180.mdl",u,"origin"))
+//call SaveEffectHandle(h,id,5,AddSpecialEffectTarget("Kisame\\file00002180.mdl",u,"origin"))
+call SaveEffectHandle(h,id,5,AddSpecialEffectTarget("Zoro\\afbgreencharge.mdl",u,"origin")) // зелёная аура (22 окт)
 call PauseUnit(u,true)
 call SetUnitInvulnerable(u,true)
 call SetUnitPathing(u,false)
 call SetUnitTurnSpeed(u,3000)
 call SetUnitAnimation(u,"walk")
-call UnitSpeed(u,1.5)
+call UnitSpeed(u,1.8)
 call TimerStart(t,0.02,true,function TousenFGTick)
 set t=null
 set u=null
