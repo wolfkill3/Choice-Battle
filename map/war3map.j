@@ -131143,75 +131143,167 @@ set u=null
 endfunction
 // E3 мухи «Полёт» (22 окт): взлёт по дуге (высота до 350) к точке за 0.6 с, пауза и неуязвимость; приземление — урон (2+ур.)*AGI
 // и оглушение 1 с врагам в 300. h: 0 Тоусен, 1..4 откуда / куда, 5 тик
+// полёт до v6 (фазы взлёт / полёт / пикирование, остановка перед приземлением)
+//function TousenFETick takes nothing returns nothing
+//local timer t=GetExpiredTimer()
+//local integer id=GetHandleId(t)
+//local unit u=LoadUnitHandle(h,id,0)
+//local integer tk=LoadInteger(h,id,5)+1
+//// v4: длительность и высота дуги от расстояния (h 6 / 7), движение с плавным разгоном и торможением
+//local integer fn=IMaxBJ(1,LoadInteger(h,id,6))
+//local real f=I2R(tk)/fn
+//// v5: фазы — взлёт (f < 0.25), полёт на высоте с покачиванием, пикирование (f > 0.75)
+//local real fq=RMinBJ(1.,f/0.25)
+//local real fc=RMinBJ(1.,RMaxBJ(0.,(f-0.25)/0.5))
+//local real fd=RMaxBJ(0.,(f-0.75)/0.25)
+//local real fe=0.05*fq*fq*(3-2*fq)+0.9*fc*fc*(3-2*fc)+0.05*fd
+//local real fh=LoadReal(h,id,7)*fq*fq*(3-2*fq)*(1-fd*fd)+20*Sin(fc*2*bj_PI)*(1-fd)
+//local player p=OwnerOf(u)
+//local real dmg=(2+GetUnitAbilityLevel(u,'ToFE'))*GetHeroAgi(u,true)
+//local group g
+//local unit e
+//local effect fx
+//call SaveInteger(h,id,5,tk)
+//if tk==1 then
+//call PauseUnit(u,true)
+//// взлёт — зависание (Stand 1), полёт — рывок (8 Dash) с середины (v5)
+//call SetUnitAnimationByIndex(u,10)
+//call SetUnitTimeScale(u,1.6)
+//endif
+//if tk==R2I(fn*0.25)+1 then
+//call SetUnitAnimationByIndex(u,7)
+//call SetUnitTimeScale(u,0.7)
+//endif
+//if tk<fn and UnitIsAlive(u) and udg_B==true then
+//call SetUnitX(u,LoadReal(h,id,1)+(LoadReal(h,id,3)-LoadReal(h,id,1))*fe)
+//call SetUnitY(u,LoadReal(h,id,2)+(LoadReal(h,id,4)-LoadReal(h,id,2))*fe)
+//call SetUnitFlyHeight(u,40+fh,0) // от высоты парения (v6)
+//// зелёный шлейф — каждый тик, мельче (v4)
+//if true then
+//set fx=AddSpecialEffect("Others\\WindCirclefaster.mdl",GetUnitX(u),GetUnitY(u))
+//call SetSpecialEffectZ(fx,GetUnitZ(u)+fh+60)
+//call SetSpecialEffectScale(fx,0.45+0.25*Sin(f*bj_PI))
+//call SetSpecialEffectVertexColour(fx,90,255,110,255)
+//call DestroyEffect(fx)
+//endif
+//else
+//call SetUnitFlyHeight(u,40,0) // приземление на высоту парения (v6)
+//call SetUnitTimeScale(u,1.)
+//call PauseUnit(u,false)
+//call SetUnitInvulnerable(u,false)
+//if UnitIsAlive(u) and udg_B==true then
+//call SetUnitX(u,LoadReal(h,id,3))
+//call SetUnitY(u,LoadReal(h,id,4))
+//set fx=AddSpecialEffect(EffectID[19],GetUnitX(u),GetUnitY(u))
+//call SetSpecialEffectScale(fx,0.8)
+//call SetSpecialEffectVertexColour(fx,60,255,80,255)
+//call SetSpecialEffectAnimationByIndex(fx,0)
+//call RemoveEffect(fx,1.2,false,CreateTimer())
+//set fx=AddSpecialEffect(EffectID[23],GetUnitX(u),GetUnitY(u))
+//call SetSpecialEffectScale(fx,0.9)
+//call SetSpecialEffectVertexColour(fx,40,255,60,255)
+//call DestroyEffect(fx)
+////call DestroyEffect(AddSpecialEffect("Abilities\\Spells\\Orc\\WarStomp\\WarStompCaster.mdl",GetUnitX(u),GetUnitY(u)))
+//set fx=AddSpecialEffect("BlackGoku\\groundshock1.mdl",GetUnitX(u),GetUnitY(u))
+//call SetSpecialEffectScale(fx,1.3) // крупнее (v3; было 0.8)
+//call SetSpecialEffectVertexColour(fx,140,255,150,255)
+//call DestroyEffect(fx)
+//set fx=AddSpecialEffect("DustWaveAnimate2.mdl",GetUnitX(u),GetUnitY(u))
+//call SetSpecialEffectScale(fx,1.)
+//call SetSpecialEffectVertexColour(fx,160,255,170,255)
+//call DestroyEffect(fx)
+//set fx=AddSpecialEffect("CirclePulse_Green.mdl",GetUnitX(u),GetUnitY(u))
+//call SetSpecialEffectScale(fx,300./141.)
+//call SetSpecialEffectVertexColour(fx,90,255,110,255)
+//call RemoveEffect(fx,0.8,false,CreateTimer())
+//set g=CreateGroup()
+//call GroupEnumUnitsInRange(g,GetUnitX(u),GetUnitY(u),300,Base)
+//loop
+//set e=FirstOfGroup(g)
+//exitwhen e==null
+//if Condition_Base(p,e) then
+//call myCustomDamage(u,e,dmg,false,false,null,null,null)
+//if UnitIsAlive(e) then
+//call SetControlToUnit(u,e,1.,"stun")
+//endif
+//endif
+//call GroupRemoveUnit(g,e)
+//endloop
+//call DestroyGroup(g)
+//endif
+//call PauseTimer(t)
+//call DestroyTimer(t)
+//call FlushChildHashtable(h,id)
+//endif
+//set fx=null
+//set g=null
+//set e=null
+//set p=null
+//set u=null
+//set t=null
+//endfunction
+// E3 мухи «Flight» (v6, 22 окт): непрерывный рывок по низкой дуге (ускоряясь к точке, без зависания и торможения), анимация рывка;
+// в точке — удар по 300, затем скольжение вперёд на 220 (8 тиков), задетые по пути получают тот же урон и оглушение (каждый раз за каст).
+// h: 0 Тоусен, 1..4 откуда / куда, 5 тик, 6 тиков полёта, 7 высота дуги, 8 группа задетых
 function TousenFETick takes nothing returns nothing
 local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
 local unit u=LoadUnitHandle(h,id,0)
 local integer tk=LoadInteger(h,id,5)+1
-// v4: длительность и высота дуги от расстояния (h 6 / 7), движение с плавным разгоном и торможением
 local integer fn=IMaxBJ(1,LoadInteger(h,id,6))
+local real x0=LoadReal(h,id,1)
+local real y0=LoadReal(h,id,2)
+local real x1=LoadReal(h,id,3)
+local real y1=LoadReal(h,id,4)
+local real ang=Atan2(y1-y0,x1-x0)
 local real f=I2R(tk)/fn
-// v5: фазы — взлёт (f < 0.25), полёт на высоте с покачиванием, пикирование (f > 0.75)
-local real fq=RMinBJ(1.,f/0.25)
-local real fc=RMinBJ(1.,RMaxBJ(0.,(f-0.25)/0.5))
-local real fd=RMaxBJ(0.,(f-0.75)/0.25)
-local real fe=0.05*fq*fq*(3-2*fq)+0.9*fc*fc*(3-2*fc)+0.05*fd
-local real fh=LoadReal(h,id,7)*fq*fq*(3-2*fq)*(1-fd*fd)+20*Sin(fc*2*bj_PI)*(1-fd)
+local real fe=0.7*f+0.3*f*f
 local player p=OwnerOf(u)
 local real dmg=(2+GetUnitAbilityLevel(u,'ToFE'))*GetHeroAgi(u,true)
+local group hit=LoadGroupHandle(h,id,8)
 local group g
 local unit e
 local effect fx
+local real nx
+local real ny
+local boolean fin=false
 call SaveInteger(h,id,5,tk)
 if tk==1 then
 call PauseUnit(u,true)
-// взлёт — зависание (Stand 1), полёт — рывок (8 Dash) с середины (v5)
-call SetUnitAnimationByIndex(u,10)
-call SetUnitTimeScale(u,1.6)
-endif
-if tk==R2I(fn*0.25)+1 then
 call SetUnitAnimationByIndex(u,7)
-call SetUnitTimeScale(u,0.7)
+call SetUnitTimeScale(u,1.2)
 endif
-if tk<fn and UnitIsAlive(u) and udg_B==true then
-call SetUnitX(u,LoadReal(h,id,1)+(LoadReal(h,id,3)-LoadReal(h,id,1))*fe)
-call SetUnitY(u,LoadReal(h,id,2)+(LoadReal(h,id,4)-LoadReal(h,id,2))*fe)
-call SetUnitFlyHeight(u,40+fh,0) // от высоты парения (v6)
-// зелёный шлейф — каждый тик, мельче (v4)
-if true then
+if not UnitIsAlive(u) or udg_B==false then
+set fin=true
+elseif tk<fn then
+call SetUnitX(u,x0+(x1-x0)*fe)
+call SetUnitY(u,y0+(y1-y0)*fe)
+call SetUnitFacingInstant(u,ang*bj_RADTODEG)
+call SetUnitFlyHeight(u,40+LoadReal(h,id,7)*Sin(f*bj_PI),0)
 set fx=AddSpecialEffect("Others\\WindCirclefaster.mdl",GetUnitX(u),GetUnitY(u))
-call SetSpecialEffectZ(fx,GetUnitZ(u)+fh+60)
+call SetSpecialEffectZ(fx,GetUnitZ(u)+40+LoadReal(h,id,7)*Sin(f*bj_PI)+60)
 call SetSpecialEffectScale(fx,0.45+0.25*Sin(f*bj_PI))
 call SetSpecialEffectVertexColour(fx,90,255,110,255)
 call DestroyEffect(fx)
-endif
-else
-call SetUnitFlyHeight(u,40,0) // приземление на высоту парения (v6)
-call SetUnitTimeScale(u,1.)
-call PauseUnit(u,false)
-call SetUnitInvulnerable(u,false)
-if UnitIsAlive(u) and udg_B==true then
-call SetUnitX(u,LoadReal(h,id,3))
-call SetUnitY(u,LoadReal(h,id,4))
-set fx=AddSpecialEffect(EffectID[19],GetUnitX(u),GetUnitY(u))
+elseif tk==fn then
+// приземление в точке: удар по 300
+call SetUnitX(u,x1)
+call SetUnitY(u,y1)
+call SetUnitFlyHeight(u,40,0)
+set fx=AddSpecialEffect(EffectID[19],x1,y1)
 call SetSpecialEffectScale(fx,0.8)
 call SetSpecialEffectVertexColour(fx,60,255,80,255)
 call SetSpecialEffectAnimationByIndex(fx,0)
 call RemoveEffect(fx,1.2,false,CreateTimer())
-set fx=AddSpecialEffect(EffectID[23],GetUnitX(u),GetUnitY(u))
+set fx=AddSpecialEffect(EffectID[23],x1,y1)
 call SetSpecialEffectScale(fx,0.9)
 call SetSpecialEffectVertexColour(fx,40,255,60,255)
 call DestroyEffect(fx)
-//call DestroyEffect(AddSpecialEffect("Abilities\\Spells\\Orc\\WarStomp\\WarStompCaster.mdl",GetUnitX(u),GetUnitY(u)))
-set fx=AddSpecialEffect("BlackGoku\\groundshock1.mdl",GetUnitX(u),GetUnitY(u))
-call SetSpecialEffectScale(fx,1.3) // крупнее (v3; было 0.8)
+set fx=AddSpecialEffect("BlackGoku\\groundshock1.mdl",x1,y1)
+call SetSpecialEffectScale(fx,1.3)
 call SetSpecialEffectVertexColour(fx,140,255,150,255)
 call DestroyEffect(fx)
-set fx=AddSpecialEffect("DustWaveAnimate2.mdl",GetUnitX(u),GetUnitY(u))
-call SetSpecialEffectScale(fx,1.)
-call SetSpecialEffectVertexColour(fx,160,255,170,255)
-call DestroyEffect(fx)
-set fx=AddSpecialEffect("CirclePulse_Green.mdl",GetUnitX(u),GetUnitY(u))
+set fx=AddSpecialEffect("CirclePulse_Green.mdl",x1,y1)
 call SetSpecialEffectScale(fx,300./141.)
 call SetSpecialEffectVertexColour(fx,90,255,110,255)
 call RemoveEffect(fx,0.8,false,CreateTimer())
@@ -131220,7 +131312,38 @@ call GroupEnumUnitsInRange(g,GetUnitX(u),GetUnitY(u),300,Base)
 loop
 set e=FirstOfGroup(g)
 exitwhen e==null
-if Condition_Base(p,e) then
+if Condition_Base(p,e) and not IsUnitInGroup(e,hit) then
+call GroupAddUnit(hit,e)
+call myCustomDamage(u,e,dmg,false,false,null,null,null)
+if UnitIsAlive(e) then
+call SetControlToUnit(u,e,1.,"stun")
+endif
+endif
+call GroupRemoveUnit(g,e)
+endloop
+call DestroyGroup(g)
+elseif tk<=fn+8 then
+// скольжение вперёд по инерции: 220 за 8 тиков, задевает по пути
+set nx=GetUnitX(u)+27.5*Cos(ang)
+set ny=GetUnitY(u)+27.5*Sin(ang)
+if IsTerrainPathable(nx,ny,PATHING_TYPE_WALKABILITY) then
+set fin=true
+else
+call SetUnitX(u,nx)
+call SetUnitY(u,ny)
+if ModuloInteger(tk-fn,2)==1 then
+set fx=AddSpecialEffect("DustWaveAnimate2.mdl",nx,ny)
+call SetSpecialEffectScale(fx,0.5)
+call SetSpecialEffectVertexColour(fx,160,255,170,255)
+call DestroyEffect(fx)
+endif
+set g=CreateGroup()
+call GroupEnumUnitsInRange(g,GetUnitX(u),GetUnitY(u),120,Base)
+loop
+set e=FirstOfGroup(g)
+exitwhen e==null
+if Condition_Base(p,e) and not IsUnitInGroup(e,hit) then
+call GroupAddUnit(hit,e)
 call myCustomDamage(u,e,dmg,false,false,null,null,null)
 if UnitIsAlive(e) then
 call SetControlToUnit(u,e,1.,"stun")
@@ -131230,6 +131353,15 @@ call GroupRemoveUnit(g,e)
 endloop
 call DestroyGroup(g)
 endif
+else
+set fin=true
+endif
+if fin then
+call SetUnitFlyHeight(u,40,0)
+call SetUnitTimeScale(u,1.)
+call PauseUnit(u,false)
+call SetUnitInvulnerable(u,false)
+call DestroyGroup(hit)
 call PauseTimer(t)
 call DestroyTimer(t)
 call FlushChildHashtable(h,id)
@@ -131237,6 +131369,7 @@ endif
 set fx=null
 set g=null
 set e=null
+set hit=null
 set p=null
 set u=null
 set t=null
@@ -131261,9 +131394,13 @@ call SaveInteger(h,id,5,0)
 // v4: 0.5..1 с и дуга 180..380 по расстоянию
 //call SaveInteger(h,id,6,IMinBJ(34,IMaxBJ(17,17+R2I(SquareRoot((GetSpellTargetX()-GetUnitX(u))*(GetSpellTargetX()-GetUnitX(u))+(GetSpellTargetY()-GetUnitY(u))*(GetSpellTargetY()-GetUnitY(u)))/55.))))
 // v5: 0.9..1.5 с (30..50 тиков по 0.03) по расстоянию
-call SaveInteger(h,id,6,IMinBJ(50,IMaxBJ(30,30+R2I(SquareRoot((GetSpellTargetX()-GetUnitX(u))*(GetSpellTargetX()-GetUnitX(u))+(GetSpellTargetY()-GetUnitY(u))*(GetSpellTargetY()-GetUnitY(u)))/45.))))
+//call SaveInteger(h,id,6,IMinBJ(50,IMaxBJ(30,30+R2I(SquareRoot((GetSpellTargetX()-GetUnitX(u))*(GetSpellTargetX()-GetUnitX(u))+(GetSpellTargetY()-GetUnitY(u))*(GetSpellTargetY()-GetUnitY(u)))/45.))))
+// v6: рывок 0.5..0.9 с (16..30 тиков) по расстоянию, дуга ниже (120..220), группа задетых
+call SaveInteger(h,id,6,IMinBJ(30,IMaxBJ(16,16+R2I(SquareRoot((GetSpellTargetX()-GetUnitX(u))*(GetSpellTargetX()-GetUnitX(u))+(GetSpellTargetY()-GetUnitY(u))*(GetSpellTargetY()-GetUnitY(u)))/65.))))
+call SaveGroupHandle(h,id,8,CreateGroup())
 //call SaveReal(h,id,7,RMinBJ(380.,180.+0.22*SquareRoot((GetSpellTargetX()-GetUnitX(u))*(GetSpellTargetX()-GetUnitX(u))+(GetSpellTargetY()-GetUnitY(u))*(GetSpellTargetY()-GetUnitY(u)))))
-call SaveReal(h,id,7,RMinBJ(320.,220.+0.11*SquareRoot((GetSpellTargetX()-GetUnitX(u))*(GetSpellTargetX()-GetUnitX(u))+(GetSpellTargetY()-GetUnitY(u))*(GetSpellTargetY()-GetUnitY(u)))))
+//call SaveReal(h,id,7,RMinBJ(320.,220.+0.11*SquareRoot((GetSpellTargetX()-GetUnitX(u))*(GetSpellTargetX()-GetUnitX(u))+(GetSpellTargetY()-GetUnitY(u))*(GetSpellTargetY()-GetUnitY(u)))))
+call SaveReal(h,id,7,RMinBJ(220.,120.+0.1*SquareRoot((GetSpellTargetX()-GetUnitX(u))*(GetSpellTargetX()-GetUnitX(u))+(GetSpellTargetY()-GetUnitY(u))*(GetSpellTargetY()-GetUnitY(u)))))
 set bj_lastCreatedEffect=AddSpecialEffect(EffectID[19],GetUnitX(u),GetUnitY(u))
 call SetSpecialEffectScale(bj_lastCreatedEffect,0.5)
 call SetSpecialEffectVertexColour(bj_lastCreatedEffect,60,255,80,255)
