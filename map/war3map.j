@@ -39172,8 +39172,8 @@ local unit u=Hero[ip]
 local integer uid=GetHandleId(u)
 local real mx
 local real r
-// Тоусен (21 окт): тот же запас маски, предел 7+уровень A0JA
-if GetUnitTypeId(u)=='HShn' or GetUnitTypeId(u)=='H02K' then
+// Тоусен (21 окт): тот же запас маски, предел 7+уровень A0JA; муха H0TF (22 окт) — та же табличка, в ней регенерация
+if GetUnitTypeId(u)=='HShn' or GetUnitTypeId(u)=='H02K' or GetUnitTypeId(u)=='H0TF' then
     set mx=7.+GetUnitAbilityLevel(u,'SnE1')+GetUnitAbilityLevel(u,'A0JA')
     set r=LoadReal(HH,uid,SH_ShnMaskRes)
     if not LoadBoolean(HH,uid,SH_ShnMask) and UnitIsAlive(u) then
@@ -39184,7 +39184,16 @@ if GetUnitTypeId(u)=='HShn' or GetUnitTypeId(u)=='H02K' then
     endif
     call SaveReal(HH,uid,SH_ShnMaskRes,r)
     if (GetUnitAbilityLevel(u,'SnE1')>0 or GetUnitAbilityLevel(u,'A0JA')>0) and IsUnitSelected(u,GetLocalPlayer()) and IsPlayerAlly(GetLocalPlayer(),OwnerOf(u)) then
+        // облик мухи: вместо запаса маски — текущая регенерация (% макс. HP в сек.), в плюсе зелёная, в минусе красная (22 окт)
+        if LoadBoolean(HH,uid,SH_TouHollow) then
+            if LoadReal(HH,uid,SH_TouRegen)>=0 then
+                call SetFrameText(GetFrameByName("CustomLeaderboardText",0),"|c00FFE0A0Regeneration|r: |c0000FF00+"+R2SW(100*LoadReal(HH,uid,SH_TouRegen),1,2)+"%|r HP/s")
+            else
+                call SetFrameText(GetFrameByName("CustomLeaderboardText",0),"|c00FFE0A0Regeneration|r: |c00FF4040"+R2SW(100*LoadReal(HH,uid,SH_TouRegen),1,2)+"%|r HP/s")
+            endif
+        else
         call SetFrameText(GetFrameByName("CustomLeaderboardText",0),"|c00FFE0A0Hollow Mask|r: "+R2SW(r,1,1)+"/"+I2S(R2I(mx))+" s")
+        endif
         call ShowFrame(GetFrameByName("CustomLeaderboard",0), true)
         call SetFrameSize( GetFrameByName("CustomLeaderboard",0), .1775, GetFrameHeight( GetFrameByName("CustomLeaderboardText",0))+0.016)
         call SetFrameTextAlignment( GetFrameByName("CustomLeaderboardText",0), TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_LEFT )
@@ -130414,7 +130423,7 @@ call SaveReal(HH,GetHandleId(u),SH_ShnMaskRes,RMaxBJ(r,0.))
 if (r>0. or ho) and UnitIsAlive(u) and udg_B==true and LoadBoolean(HH,GetHandleId(u),SH_ShnMask) then
 if ho then
 // муха (22 окт): регенерация падает на 0.05% в сек.; в плюсе — зелёный бонус регенерации (ToRg, 5 HP/с за уровень), в минусе — отнимает HP
-set rg=LoadReal(HH,GetHandleId(u),SH_TouRegen)-0.00005
+set rg=RMaxBJ(-0.005,LoadReal(HH,GetHandleId(u),SH_TouRegen)-0.00005) // минус не больше 0.5% в сек. (22 окт)
 call SaveReal(HH,GetHandleId(u),SH_TouRegen,rg)
 if rg>0 then
 if GetUnitAbilityLevel(u,'ToRg')==0 then
@@ -131124,7 +131133,7 @@ call UnitRemoveAbility(u,'ToE6')
 call SetUnitVertexColor(u,255,255,255,255)
 // регенерация мухи: 1.5% макс. HP в сек., затем -0.05% каждую секунду (TousenECast2); счётчик над HP — до ухода в минус (30 с)
 call SaveReal(HH,uid,SH_TouRegen,0.015)
-call CreateModeIndicatorForm(u,"ReplaceableTextures\\CommandButtons\\BTNTousenFlyHero.blp",30.)
+//call CreateModeIndicatorForm(u,"ReplaceableTextures\\CommandButtons\\BTNTousenFlyHero.blp",30.) // регенерация — в табличке маски (22 окт)
 // портрет — картинка из аниме, как у Хирако (Shinji2_Portrait): плоскость с текстурой и камерой (22 окт)
 //call SetWidgetPortrait(u,"Tousen\\Tousen_FlyPortrait.mdx") // портрет — из типа H0TF (22 окт)
 //call SetUnitStringField(u,UNIT_SF_ICON_NORMAL,"ReplaceableTextures\\CommandButtons\\BTNTousenFlyHero.blp") // иконка — из типа H0TF (22 окт)
