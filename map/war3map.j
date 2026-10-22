@@ -2309,6 +2309,7 @@ constant integer SH_ShnSwFx=StringHash("ShnSwFx")
 constant integer SH_ShnSwM=StringHash("ShnSwM")
 constant integer SH_ShnSwLock=StringHash("ShnSwLock")
 constant integer SH_ShnFade=StringHash("ShnFade")
+constant integer SH_ShnSwA=StringHash("ShnSwA")
 constant integer SH_ShnGOn=StringHash("ShnGOn")
 constant integer SH_ShnWId=StringHash("ShnWId")
 constant integer SH_ShnMask=StringHash("ShnMask")
@@ -6259,6 +6260,22 @@ function MUIHandle takes nothing returns integer
             endif
             if percent==4 then
                 set BuffId = 'Bsl5'
+            endif
+            // свои флаги замедлений (22 окт): один бафф на источник — внутри источника сильнейшее, с остальными складывается
+            if percent==5 then
+                set BuffId = 'Bsl6' // аура Дождя Вонголы
+            endif
+            if percent==6 then
+                set BuffId = 'Bsl7' // аура старения Баррагана
+            endif
+            if percent==7 then
+                set BuffId = 'Bsl8' // аура гравитации Фудзиторы
+            endif
+            if percent==8 then
+                set BuffId = 'Bsl9' // кольца Дождя Маре (только скорость атаки атакующего)
+            endif
+            if percent==9 then
+                set BuffId = 'BslA' // «Проливной дождь» (облако Настоящего кольца Дождя Вонголы)
             endif
         endif
         if c_type == "weakness" then
@@ -59588,6 +59605,10 @@ exitwhen i>=10
         endif
         if GetUnitTypeId( Hero[i] )=='HShn' or GetUnitTypeId( Hero[i] )=='H02K' then
             call SaveReal(HH,GetHandleId(Hero[i]),SH_ShnMaskRes,99.)
+            // Хирако T: в начале раунда 10 сек. перезарядки (22 окт)
+            if GetUnitAbilityLevel(Hero[i],'SnT1')>0 then
+                call StartAbilityCooldown(GetUnitAbility(Hero[i],'SnT1'),10.)
+            endif
         endif
         if GetUnitTypeId( Hero[i] )=='Rosh' then
             call SaveReal(HH,PH(OwnerOf( Hero[i] )),SH_KimiFormDur,30)
@@ -69257,17 +69278,17 @@ local player p=OwnerOf(u)
 local real x1=GetUnitX(c)
 local real y1=GetUnitY(c)
 if UnitHasItemOfTypeBJ(GetTriggerUnit(),'I05O') or GetUnitAbilityLevel(GetTriggerUnit(), 'KIT8')>0 then
-call SlowUnit(u,c,0.0,0.3,2,3,false)
+call SlowUnit(u,c,0.0,0.3,2,8,false)
 elseif UnitHasItemOfTypeBJ(GetTriggerUnit(),'I05P') or GetUnitAbilityLevel(GetTriggerUnit(), 'KIU0')>0 then
-call SlowUnit(u,c,0.0,0.6,2,3,false)
+call SlowUnit(u,c,0.0,0.6,2,8,false)
 elseif UnitHasItemOfTypeBJ(GetTriggerUnit(),'I05Q') or GetUnitAbilityLevel(GetTriggerUnit(), 'KIU2')>0 then
-call SlowUnit(u,c,0.0,0.9,2,3,false)
+call SlowUnit(u,c,0.0,0.9,2,8,false)
 elseif UnitHasItemOfTypeBJ(GetTriggerUnit(),'I05R') or GetUnitAbilityLevel(GetTriggerUnit(), 'KIU4')>0 then
-call SlowUnit(u,c,0.0,1.2,2,3,false)
+call SlowUnit(u,c,0.0,1.2,2,8,false)
 elseif UnitHasItemOfTypeBJ(GetTriggerUnit(),'I05S') or GetUnitAbilityLevel(GetTriggerUnit(), 'KIU6')>0 then
-call SlowUnit(u,c,0.0,1.5,2,3,false)
+call SlowUnit(u,c,0.0,1.5,2,8,false)
 elseif UnitHasItemOfTypeBJ(GetTriggerUnit(),'I05T') or GetUnitAbilityLevel(GetTriggerUnit(), 'KIU8')>0 then
-call SlowUnit(u,c,0.0,2.3,2,3,false)
+call SlowUnit(u,c,0.0,2.3,2,8,false)
 endif
 set u=null
 set c=null
@@ -72410,6 +72431,134 @@ call TriggerRegisterAnyUnitEventBJ(gg_trg_GoldenSword,EVENT_PLAYER_UNIT_SPELL_EF
 call TriggerAddCondition(gg_trg_GoldenSword,Condition(function GoldenSwordCond))
 call TriggerAddAction(gg_trg_GoldenSword,function GoldenSwordCast)
 endfunction
+// Аура Дождя Вонголы и Senescencia Баррагана (22 окт): ауры — пустышки (значок и бафф, значения 0), замедление — SlowUnit
+// раз в 0.5 с на 0.6 с, у каждого источника свой флаг (5 аура Дождя, 6 Барраган, 7 Фудзитора, 9 «Проливной дождь») — складываются между собой и с прочими. Дождь: 10/15/20/25/30/35% бега и атаки в 1000 (сильнейшее кольцо у героя; кольца в книгах KI* — те же
+// способности). Барраган: 7% за каждый круг 1200 / 1000 / 800 / 600 — до 28%
+function AuraSlowOk takes unit ru,unit re returns boolean
+return Condition_Base(OwnerOf(ru),re) and UnitIsAlive(re) and GetUnitAbilityLevel(re,'Aloc')==0
+endfunction
+function RainAuraSlowAmt takes unit ru returns real
+if GetUnitAbilityLevel(ru,'A05A')>0 then
+return 0.35
+elseif GetUnitAbilityLevel(ru,'A059')>0 then
+return 0.3
+elseif GetUnitAbilityLevel(ru,'A056')>0 then
+return 0.25
+elseif GetUnitAbilityLevel(ru,'A055')>0 then
+return 0.2
+elseif GetUnitAbilityLevel(ru,'A052')>0 then
+return 0.15
+elseif GetUnitAbilityLevel(ru,'A051')>0 then
+return 0.1
+endif
+return 0.
+endfunction
+function AuraSlowTick takes nothing returns nothing
+local integer i=0
+local unit ru
+local unit re
+local real rs
+local real rd
+local group rg=CreateGroup()
+loop
+exitwhen i>11
+set ru=Hero[i]
+if ru!=null and UnitIsAlive(ru) then
+set rs=RainAuraSlowAmt(ru)
+if rs>0. then
+call GroupEnumUnitsInRange(rg,GetUnitX(ru),GetUnitY(ru),1000.,null)
+loop
+set re=FirstOfGroup(rg)
+exitwhen re==null
+call GroupRemoveUnit(rg,re)
+if AuraSlowOk(ru,re) then
+call SlowUnit(ru,re,rs,rs,0.6,5,false)
+endif
+endloop
+endif
+if GetUnitAbilityLevel(ru,'BbG1')>0 then
+call GroupEnumUnitsInRange(rg,GetUnitX(ru),GetUnitY(ru),1200.,null)
+loop
+set re=FirstOfGroup(rg)
+exitwhen re==null
+call GroupRemoveUnit(rg,re)
+if AuraSlowOk(ru,re) then
+set rd=SR(GetUnitX(ru),GetUnitY(ru),GetUnitX(re),GetUnitY(re))
+set rs=0.07
+if rd<=1000. then
+set rs=rs+0.07
+endif
+if rd<=800. then
+set rs=rs+0.07
+endif
+if rd<=600. then
+set rs=rs+0.07
+endif
+call SlowUnit(ru,re,rs,rs,0.6,6,false)
+endif
+endloop
+endif
+// Фудзитора (22 окт): 5% за каждый круг 1000 / 800 / 600 / 400 / 200 — до 25%
+if GetUnitAbilityLevel(ru,'A15Q')>0 then
+call GroupEnumUnitsInRange(rg,GetUnitX(ru),GetUnitY(ru),1000.,null)
+loop
+set re=FirstOfGroup(rg)
+exitwhen re==null
+call GroupRemoveUnit(rg,re)
+if AuraSlowOk(ru,re) then
+set rd=SR(GetUnitX(ru),GetUnitY(ru),GetUnitX(re),GetUnitY(re))
+set rs=0.05
+if rd<=800. then
+set rs=rs+0.05
+endif
+if rd<=600. then
+set rs=rs+0.05
+endif
+if rd<=400. then
+set rs=rs+0.05
+endif
+if rd<=200. then
+set rs=rs+0.05
+endif
+call SlowUnit(ru,re,rs,rs,0.6,7,false)
+endif
+endloop
+endif
+endif
+set i=i+1
+endloop
+call DestroyGroup(rg)
+set rg=null
+set re=null
+set ru=null
+endfunction
+// «Проливной дождь» (22 окт): облако hfoo с аурой-пустышкой A05D, замедление 70% бега и атаки в 300 — SlowUnit раз в 0.5 с
+function RainRingSlowTick takes nothing returns nothing
+local timer t=GetExpiredTimer()
+local unit rn=LoadUnitHandle(h,GetHandleId(t),0)
+local group rg
+local unit re
+if rn!=null and UnitIsAlive(rn) then
+set rg=CreateGroup()
+call GroupEnumUnitsInRange(rg,GetUnitX(rn),GetUnitY(rn),300.,null)
+loop
+set re=FirstOfGroup(rg)
+exitwhen re==null
+call GroupRemoveUnit(rg,re)
+if AuraSlowOk(rn,re) then
+call SlowUnit(rn,re,0.7,0.7,0.6,9,false)
+endif
+endloop
+call DestroyGroup(rg)
+else
+call FlushChildHashtable(h,GetHandleId(t))
+call DestroyTimer(t)
+endif
+set rg=null
+set re=null
+set rn=null
+set t=null
+endfunction
 function Trig_Rain_ring_Conditions takes nothing returns boolean
 return GetSpellAbilityId()=='A05C' and GetUnitTypeId(GetTriggerUnit())!='H007' and GetUnitAbilityLevel(GetTriggerUnit(),'GIE1')==0
 endfunction
@@ -72418,6 +72567,9 @@ if GetUnitAbilityLevel(GetTriggerUnit(),'GIE1')==0 then
 set n = CreateUnit(OwnerOf(GetTriggerUnit()),'hfoo',GetSpellTargetX(),GetSpellTargetY(),0)
 call UnitApplyTimedLife(n,'BTLF',13)
 call SetUnitVertexColor(n,255,255,255,150)
+set bj_lastStartedTimer=CreateTimer()
+call SaveUnitHandle(h,GetHandleId(bj_lastStartedTimer),0,n)
+call TimerStart(bj_lastStartedTimer,0.5,true,function RainRingSlowTick)
 endif
 endfunction
 function InitTrig_Rain_ring takes nothing returns nothing
@@ -72425,6 +72577,7 @@ set gg_trg_Rain_ring=CreateTrigger()
 call TriggerRegisterAnyUnitEventBJ(gg_trg_Rain_ring,EVENT_PLAYER_UNIT_SPELL_EFFECT)
 call TriggerAddCondition(gg_trg_Rain_ring,Condition(function Trig_Rain_ring_Conditions))
 call TriggerAddAction(gg_trg_Rain_ring,function Trig_Rain_ring_Actions)
+call TimerStart(CreateTimer(),0.5,true,function AuraSlowTick)
 endfunction
 function Trig_Mist_ring_Conditions takes nothing returns boolean
 return GetSpellAbilityId()=='A049' and GetUnitTypeId(GetTriggerUnit())!='H007'
@@ -128055,7 +128208,7 @@ local timer t=CreateTimer()
 local integer id=GetHandleId(t)
 call SaveUnitHandle(h,id,0,fu)
 call SaveInteger(h,id,2,fn)
-call SaveInteger(h,id,3,BitwiseShiftRightLogical(GetWidgetVertexColour(fu),24))
+call SaveInteger(h,id,3,BitwiseShiftRightLogical(GetUnitVertexColour(fu),24))
 call SaveInteger(h,id,4,fa)
 call SaveInteger(HH,GetHandleId(fu),SH_ShnFade,id)
 call TimerStart(t,0.02,true,function ShinjiFadeTick)
@@ -128113,11 +128266,12 @@ if LoadStr(HH,uid,SH_ShnSwM)==m and LoadEffectHandle(HH,uid,SH_ShnSwFx)!=null th
 return
 endif
 if LoadEffectHandle(HH,uid,SH_ShnSwFx)!=null then
-call SetSpecialEffectVisible(LoadEffectHandle(HH,uid,SH_ShnSwFx),false)
+// старый меч уходит анимацией смерти — мгновенное сжатие до нуля (22 окт)
 call DestroyEffect(LoadEffectHandle(HH,uid,SH_ShnSwFx))
 endif
 call SaveEffectHandle(HH,uid,SH_ShnSwFx,AddSpecialEffectTarget(m,u,"weapon"))
 call SaveStr(HH,uid,SH_ShnSwM,m)
+call SaveInteger(HH,uid,SH_ShnSwA,255)
 endfunction
 // какой меч сейчас: шикай, пока идёт туман W, G или T; иначе запечатанный. Во время каста W меч ведёт сам W (SH_ShnSwLock)
 function ShinjiSwordBase takes unit u returns nothing
@@ -128136,6 +128290,7 @@ function ShinjiSwordTick takes nothing returns nothing
 local integer i=0
 local unit u
 local effect fx
+local integer sa
 loop
 exitwhen i>11
 set u=Hero[i]
@@ -128144,8 +128299,17 @@ if LoadEffectHandle(HH,GetHandleId(u),SH_ShnSwFx)==null then
 call ShinjiSwordBase(u)
 endif
 set fx=LoadEffectHandle(HH,GetHandleId(u),SH_ShnSwFx)
+// 22 окт: прозрачность меча не трогаем (SetSpecialEffectAlpha затемнял меч) — пока Хирако почти невидим (альфа < 160),
+// меч спрятан, иначе виден. SH_ShnSwA: 255 — меч показан, 0 — спрятан
+set sa=BitwiseShiftRightLogical(GetUnitVertexColour(u),24)
 if fx!=null then
-call SetSpecialEffectAlpha(fx,BitwiseShiftRightLogical(GetWidgetVertexColour(u),24))
+if sa<160 and LoadInteger(HH,GetHandleId(u),SH_ShnSwA)!=0 then
+call SetSpecialEffectVisible(fx,false)
+call SaveInteger(HH,GetHandleId(u),SH_ShnSwA,0)
+elseif sa>=160 and LoadInteger(HH,GetHandleId(u),SH_ShnSwA)!=255 then
+call SetSpecialEffectVisible(fx,true)
+call SaveInteger(HH,GetHandleId(u),SH_ShnSwA,255)
+endif
 endif
 endif
 set i=i+1
@@ -129077,7 +129241,7 @@ call SaveReal(HH,GetHandleId(e),SH_ShnInv,RMaxBJ(LoadReal(HH,GetHandleId(e),SH_S
 // проверка сразу: снятие небом / Брейкером / Медузой включает иммунитет
 call ShinjiInvOn(e)
 if wfull and LoadReal(HH,GetHandleId(e),SH_ShnInvImm)<=now and ModuloInteger(R2I(time*20+0.5),10)==0 then
-call SlowUnit(u,e,0.2,0.,0.6,2,false)
+call SlowUnit(u,e,0.2,0.,0.5,2,false)
 call MissUnit(u,e,0.6,0.5,false)
 endif
 endif
@@ -129142,7 +129306,8 @@ local real time=LoadReal(h,id,3)+0.05
 local real mr
 local boolean cur=LoadInteger(HH,uid,SH_ShnWId)==id
 call SaveReal(h,id,3,time)
-if time>=6. or LoadBoolean(h,id,6) or not UnitIsAlive(u) or udg_B==false then
+// туман держится 6 с после каста 1.5 с (22 окт; было 5)
+if time>=7.5 or LoadBoolean(h,id,6) or not UnitIsAlive(u) or udg_B==false then
 call ShinjiMistKill(id)
 // флаги героя трогает только текущий W (новый каст поверх старого их уже поставил)
 if cur then
@@ -129159,8 +129324,15 @@ endif
 call PauseTimer(t)
 call DestroyTimer(t)
 call FlushChildHashtable(h,id)
-elseif time<1. then
-if time>=0.5 and not LoadBoolean(h,id,7) then
+elseif time<1.5 then
+// каст 1.5 с (22 окт): до 0.7 с запечатанный меч остриём вверх, с 0.7 до 1.5 — вращающаяся Сакаканаде (2 оборота), затем туман
+// рука вытянута: Spell Shikai доходит до 400 мс за 0.4 с — поза замирает (22 окт; было x2 и 0.2 с — замирала посреди
+// перехода из стойки, рука у бока и меч лежал горизонтально)
+if time>=0.4 and not LoadBoolean(h,id,9) then
+call SaveBoolean(h,id,9,true)
+call SetUnitTimeScale(u,0.)
+endif
+if time>=0.7 and not LoadBoolean(h,id,7) then
 call SaveBoolean(h,id,7,true)
 call ShinjiSwordSet(u,"Shinji2_ShikaiSpinHand.mdx")
 endif
@@ -129176,7 +129348,7 @@ call SaveBoolean(HH,uid,SH_ShnMistOn,true)
 call ShinjiSwordBase(u)
 call ShinjiMistNew(id,GetUnitX(u),GetUnitY(u))
 endif
-set mr=LoadReal(h,id,4)*RMinBJ(1.,(time-1.)/LoadReal(h,id,5))
+set mr=LoadReal(h,id,4)*RMinBJ(1.,(time-1.5)/LoadReal(h,id,5))
 call ShinjiMistMove(id,GetUnitX(u),GetUnitY(u),mr)
 call SaveReal(HH,uid,SH_ShnMistX,GetUnitX(u))
 call SaveReal(HH,uid,SH_ShnMistY,GetUnitY(u))
@@ -129204,11 +129376,13 @@ call SaveReal(h,id,4,400.+100.*lv) // AoE 500..900
 call SaveReal(h,id,5,0.75+0.25*lv) // туман растёт 1..2 с
 call SaveBoolean(HH,uid,SH_ShnMistOn,false)
 call SaveBoolean(HH,uid,SH_ShnSwLock,true)
-call ShinjiSwordSet(u,"Shinji2_SwordDown.mdx")
+// 22 окт: Хирако стоит ровно с вытянутой рукой (Spell Shikai замирает на 400 мс), запечатанный меч остриём вверх;
+// последнюю треть секунды паузы — вращающаяся Сакаканаде (оборот за 0.35 с), в конце она уходит резкой смертью
+call ShinjiSwordSet(u,"Shinji2_SwordUp.mdx")
 call PauseUnit(u,true)
 call SetUnitInvulnerable(u,true)
 call SetUnitAnimationByIndex(u,28)
-call SetUnitTimeScale(u,0.8)
+call SetUnitTimeScale(u,1.)
 call TimerStart(t,0.05,true,function ShinjiWCast2)
 set t=null
 set u=null
@@ -129972,11 +130146,11 @@ function ShinjiHadoHitFx takes player hp,real hx,real hy,real hs,boolean hmain r
 local unit hn
 if hmain then
 set hn=CreateUnit(hp,'dH21',hx,hy,GetRandomReal(0,359))
-call SetUnitScale(hn,0.45,0.45,0.45) // радиус модели ~495 — взрыв на весь круг AoE 450 (18 окт); урон — как раньше
+call SetUnitScale(hn,0.65,0.65,0.65) // взрыв на весь круг AoE 650 (22 окт; было 0.45 под AoE 450); урон — как раньше
 call KillUnit(hn)
 call MyRemoveUnit(hn,3.5)
 set hn=CreateUnit(hp,'dR41',hx,hy,GetRandomReal(0,359))
-call SetUnitScale(hn,0.7,0.7,0.7) // плоский эффект: квадраты ±600 и растущий круг до ~720 — на круг AoE 450 (18 окт)
+call SetUnitScale(hn,1.,1.,1.) // плоский эффект: квадраты ±600 и растущий круг до ~720 — на круг AoE 650 (22 окт; было 0.7 под AoE 450)
 call SetUnitFlyHeight(hn,0,0)
 call MyRemoveUnit(hn,3.5)
 endif
@@ -130211,7 +130385,8 @@ call SaveGroupHandle(h,id,4,CreateGroup())
 // стоит на земле, рука вперёд всё время залпа (клип: ладони вместе, затем руки в стороны)
 // разворот к цели сразу и до паузы (17 окт: плавный SetUnitFacing после PauseUnit не успевал — Хирако смотрел в сторону)
 call SetUnitFacingInstant(u,bj_RADTODEG*Atan2(GetSpellTargetY()-GetUnitY(u),GetSpellTargetX()-GetUnitX(u)))
-call ShinjiAnimFor(u,18,0.5,2.)
+// 22 окт: анимация шикая (Spell Shikai, 28: рука вперёд) растянута на весь залп 2 с (было Spell 1.1, 18)
+call ShinjiAnimFor(u,28,0.4,2.)
 // «Хадо №91… Сэндзю Котэн Тайхо» — из видео youtube MdmGlPgrJV0 (ChoiceShinji.mpq, 17 окт)
 call ShinjiSnd("HirakoR")
 // весь залп Хирако в паузе и неуязвим (17 окт); снимается после последнего снаряда (k 34) или при гибели
@@ -289588,13 +289763,13 @@ call LANG_A('SnW1',0,1,"Sakanade: Inverted World, [|cffffcc00Level 2|r] (|cffffc
 call LANG_A('SnW1',0,2,"Sakanade: Inverted World, [|cffffcc00Level 3|r] (|cffffcc00W|r)")
 call LANG_A('SnW1',0,3,"Sakanade: Inverted World, [|cffffcc00Level 4|r] (|cffffcc00W|r)")
 call LANG_A('SnW1',0,4,"Sakanade: Inverted World, [|cffffcc00Level 5|r] (|cffffcc00W|r)")
-call LANG_A('SnW1',1,0,"\"Fall, Sakanade\": Hirako draws the sword and spins Sakanade by its ring, then a mist grows around him and follows him. Enemies in the mist are inverted (orders go the opposite way), slowed and miss. Whoever removes the effect with Imagine Breaker, Clear Sky or Medusa is immune to it for 10 sec. T "+"confusion takes priority.|n|n|cFF00A5FF|nMist AoE: 500|nMist growth: 1 sec.|nDuration: 5 sec.|nSlow: 20% move speed|nMiss: 50%|nCast time: +1 sec. (Hirako is invulnerable)|nCooldown: 22 sec.|r")
-call LANG_A('SnW1',1,1,"\"Fall, Sakanade\": Hirako draws the sword and spins Sakanade by its ring, then a mist grows around him and follows him. Enemies in the mist are inverted (orders go the opposite way), slowed and miss. Whoever removes the effect with Imagine Breaker, Clear Sky or Medusa is immune to it for 10 sec. T "+"confusion takes priority.|n|n|cFF00A5FF|nMist AoE: 600|nMist growth: 1.25 sec.|nDuration: 5 sec.|nSlow: 20% move speed|nMiss: 50%|nCast time: +1 sec. (Hirako is invulnerable)|nCooldown: 22 sec.|r")
-call LANG_A('SnW1',1,2,"\"Fall, Sakanade\": Hirako draws the sword and spins Sakanade by its ring, then a mist grows around him and follows him. Enemies in the mist are inverted (orders go the opposite way), slowed and miss. Whoever removes the effect with Imagine Breaker, Clear Sky or Medusa is immune to it for 10 sec. T "+"confusion takes priority.|n|n|cFF00A5FF|nMist AoE: 700|nMist growth: 1.5 sec.|nDuration: 5 sec.|nSlow: 20% move speed|nMiss: 50%|nCast time: +1 sec. (Hirako is invulnerable)|nCooldown: 22 sec.|r")
-call LANG_A('SnW1',1,3,"\"Fall, Sakanade\": Hirako draws the sword and spins Sakanade by its ring, then a mist grows around him and follows him. Enemies in the mist are inverted (orders go the opposite way), slowed and miss. Whoever removes the effect with Imagine Breaker, Clear Sky or Medusa is immune to it for 10 sec. T "+"confusion takes priority.|n|n|cFF00A5FF|nMist AoE: 800|nMist growth: 1.75 sec.|nDuration: 5 sec.|nSlow: 20% move speed|nMiss: 50%|nCast time: +1 sec. (Hirako is invulnerable)|nCooldown: 22 sec.|r")
-call LANG_A('SnW1',1,4,"\"Fall, Sakanade\": Hirako draws the sword and spins Sakanade by its ring, then a mist grows around him and follows him. Enemies in the mist are inverted (orders go the opposite way), slowed and miss. Whoever removes the effect with Imagine Breaker, Clear Sky or Medusa is immune to it for 10 sec. T "+"confusion takes priority.|n|n|cFF00A5FF|nMist AoE: 900|nMist growth: 2 sec.|nDuration: 5 sec.|nSlow: 20% move speed|nMiss: 50%|nCast time: +1 sec. (Hirako is invulnerable)|nCooldown: 22 sec.|r")
+call LANG_A('SnW1',1,0,"\"Fall, Sakanade\": Hirako draws the sword and spins Sakanade by its ring, then a mist grows around him and follows him. Enemies in the mist are inverted (orders go the opposite way), slowed and miss. Whoever removes the effect with Imagine Breaker, Clear Sky or Medusa is immune to it for 10 sec. T "+"confusion takes priority.|n|n|cFF00A5FF|nMist AoE: 500|nMist growth: 1 sec.|nDuration: 6 sec.|nSlow: 20% move speed|nMiss: 50%|nCast time: +1.5 sec. (Hirako is invulnerable)|nCooldown: 22 sec.|r")
+call LANG_A('SnW1',1,1,"\"Fall, Sakanade\": Hirako draws the sword and spins Sakanade by its ring, then a mist grows around him and follows him. Enemies in the mist are inverted (orders go the opposite way), slowed and miss. Whoever removes the effect with Imagine Breaker, Clear Sky or Medusa is immune to it for 10 sec. T "+"confusion takes priority.|n|n|cFF00A5FF|nMist AoE: 600|nMist growth: 1.25 sec.|nDuration: 6 sec.|nSlow: 20% move speed|nMiss: 50%|nCast time: +1.5 sec. (Hirako is invulnerable)|nCooldown: 22 sec.|r")
+call LANG_A('SnW1',1,2,"\"Fall, Sakanade\": Hirako draws the sword and spins Sakanade by its ring, then a mist grows around him and follows him. Enemies in the mist are inverted (orders go the opposite way), slowed and miss. Whoever removes the effect with Imagine Breaker, Clear Sky or Medusa is immune to it for 10 sec. T "+"confusion takes priority.|n|n|cFF00A5FF|nMist AoE: 700|nMist growth: 1.5 sec.|nDuration: 6 sec.|nSlow: 20% move speed|nMiss: 50%|nCast time: +1.5 sec. (Hirako is invulnerable)|nCooldown: 22 sec.|r")
+call LANG_A('SnW1',1,3,"\"Fall, Sakanade\": Hirako draws the sword and spins Sakanade by its ring, then a mist grows around him and follows him. Enemies in the mist are inverted (orders go the opposite way), slowed and miss. Whoever removes the effect with Imagine Breaker, Clear Sky or Medusa is immune to it for 10 sec. T "+"confusion takes priority.|n|n|cFF00A5FF|nMist AoE: 800|nMist growth: 1.75 sec.|nDuration: 6 sec.|nSlow: 20% move speed|nMiss: 50%|nCast time: +1.5 sec. (Hirako is invulnerable)|nCooldown: 22 sec.|r")
+call LANG_A('SnW1',1,4,"\"Fall, Sakanade\": Hirako draws the sword and spins Sakanade by its ring, then a mist grows around him and follows him. Enemies in the mist are inverted (orders go the opposite way), slowed and miss. Whoever removes the effect with Imagine Breaker, Clear Sky or Medusa is immune to it for 10 sec. T "+"confusion takes priority.|n|n|cFF00A5FF|nMist AoE: 900|nMist growth: 2 sec.|nDuration: 6 sec.|nSlow: 20% move speed|nMiss: 50%|nCast time: +1.5 sec. (Hirako is invulnerable)|nCooldown: 22 sec.|r")
 call LANG_A('SnW1',2,0,"Sakanade: Inverted World, [|cffffcc00Level %d|r] (|cffffcc00W|r)")
-call LANG_A('SnW1',3,0,"\"Fall, Sakanade\": Hirako draws the sword and spins Sakanade by its ring, then a mist grows around him and follows him. Enemies in the mist are inverted (orders go the opposite way), slowed and miss. Whoever removes the effect with Imagine Breaker, Clear Sky or Medusa is immune to it for 10 sec. T "+"confusion takes priority.|n|n|cFF00A5FF|nMist AoE: 500\\600\\700\\800\\900|nMist growth: 1\\1.25\\1.5\\1.75\\2 sec.|nDuration: 5 sec.|nSlow: 20% move speed|nMiss: 50%|nCast time: +1 sec. (Hirako is invulnerable)|nCooldown: 22 sec.|r")
+call LANG_A('SnW1',3,0,"\"Fall, Sakanade\": Hirako draws the sword and spins Sakanade by its ring, then a mist grows around him and follows him. Enemies in the mist are inverted (orders go the opposite way), slowed and miss. Whoever removes the effect with Imagine Breaker, Clear Sky or Medusa is immune to it for 10 sec. T "+"confusion takes priority.|n|n|cFF00A5FF|nMist AoE: 500\\600\\700\\800\\900|nMist growth: 1\\1.25\\1.5\\1.75\\2 sec.|nDuration: 6 sec.|nSlow: 20% move speed|nMiss: 50%|nCast time: +1.5 sec. (Hirako is invulnerable)|nCooldown: 22 sec.|r")
 call LANG_A('SnE1',0,0,"Hollow Mask, [|cffffcc00Level 1|r] (|cffffcc00E|r)")
 call LANG_A('SnE1',0,1,"Hollow Mask, [|cffffcc00Level 2|r] (|cffffcc00E|r)")
 call LANG_A('SnE1',0,2,"Hollow Mask, [|cffffcc00Level 3|r] (|cffffcc00E|r)")
@@ -289643,8 +289818,8 @@ call LANG_A('ToEc',1,3,"Green Cero from the mask: a beam ahead stuns and knocks 
 call LANG_A('ToEc',1,4,"Green Cero from the mask: a beam ahead stuns and knocks back those hit. Tōsen is invulnerable during the charge and the beam.|n|n|cFF00A5FF|nDamage: 7*|r|c003CFF3CAGI|r|cFF00A5FF|nStun: 2.5 sec.|nBeam length: 2200|nKnockback: 300|nCooldown: 14 sec.|r")
 call LANG_A('ToEc',2,0,"Cero, [|cffffcc00Level %d|r] (|cffffcc00E|r)")
 call LANG_A('ToEc',3,0,"Green Cero from the mask: a beam ahead stuns and knocks back those hit. Tōsen is invulnerable during the charge and the beam.|n|n|cFF00A5FF|nDamage: 3\\4\\5\\6\\7*|r|c003CFF3CAGI|r|cFF00A5FF|nStun: 2.5 sec.|nBeam length: 2200|nKnockback: 300|nCooldown: 14 sec.|r")
-call LANG_A('SnT1',1,0,"Bankai: a bud around Hirako releases a mist (W ends). Hirako is invulnerable and immovable, the mask is not spent. Every second everyone in the mist except Hirako is confused: enemies look like allies and vice versa; on the first confusion — a random ability at the nearest \"enemy\". All damage of"+" the confused to Hirako's enemies is dealt by Hirako himself. No effect under Imagine Breaker or Clear Sky.|n|n|cFF00A5FF|nMist AoE: 1000|nDuration: 6 sec.|nConfusion: 1.2 sec.|nCast time: +0.3 sec.|nCooldown: 70 sec.|r")
-call LANG_A('SnT1',3,0,"Bankai: a bud around Hirako releases a mist (W ends). Hirako is invulnerable and immovable, the mask is not spent. Every second everyone in the mist except Hirako is confused: enemies look like allies and vice versa; on the first confusion — a random ability at the nearest \"enemy\". All damage of"+" the confused to Hirako's enemies is dealt by Hirako himself. No effect under Imagine Breaker or Clear Sky.|n|n|cFF00A5FF|nMist AoE: 1000|nDuration: 6 sec.|nConfusion: 1.2 sec.|nCast time: +0.3 sec.|nCooldown: 70 sec.|r")
+call LANG_A('SnT1',1,0,"Bankai: a bud around Hirako releases a mist (W ends). Hirako is invulnerable and immovable, the mask is not spent. Every second everyone in the mist except Hirako is confused: enemies look like allies and vice versa; on the first confusion — a random ability at the nearest \"enemy\". All damage of"+" the confused to Hirako's enemies is dealt by Hirako himself. No effect under Imagine Breaker or Clear Sky.|n|n|cFF00A5FF|nMist AoE: 1000|nDuration: 6 sec.|nConfusion: 1.2 sec.|nCast time: +0.3 sec.|nCooldown: 70 sec. (10 sec. at round start)|r")
+call LANG_A('SnT1',3,0,"Bankai: a bud around Hirako releases a mist (W ends). Hirako is invulnerable and immovable, the mask is not spent. Every second everyone in the mist except Hirako is confused: enemies look like allies and vice versa; on the first confusion — a random ability at the nearest \"enemy\". All damage of"+" the confused to Hirako's enemies is dealt by Hirako himself. No effect under Imagine Breaker or Clear Sky.|n|n|cFF00A5FF|nMist AoE: 1000|nDuration: 6 sec.|nConfusion: 1.2 sec.|nCast time: +0.3 sec.|nCooldown: 70 sec. (10 sec. at round start)|r")
 call LANG_A('SnTc',0,0,"Cancel Bankai (|cffffcc00T|r)")
 call LANG_A('SnTc',1,0,"|cFF00A5FFEnds the bankai early: the bud opens, the mist fades.|r")
 call LANG_A('SnD1',1,0,"Hirako spins Sakanade by its ring: a wave of scent around him. Nearby enemies take damage and are briefly inverted: their movement and turning go the opposite way.|n|n|cFF00A5FF|nDamage: 3*|r|c003CFF3CAGI|r|cFF00A5FF|nInversion: 1.25 sec.|nAoE: 400|nCooldown: 20 sec.|r")
@@ -291349,6 +291524,11 @@ call LANG_B('Bgf1',1,"Fatigue.")
 call LANG_B('Bgf2',1,"Slow 90%.")
 call LANG_B('Bgf3',1,"Silence.")
 call LANG_B('Bsl1',1,"This warrior is slowed.")
+call LANG_B('Bsl6',1,"This warrior is slowed.")
+call LANG_B('Bsl7',1,"This warrior is slowed.")
+call LANG_B('Bsl8',1,"This warrior is slowed.")
+call LANG_B('Bsl9',1,"This warrior is slowed.")
+call LANG_B('BslA',1,"This warrior is slowed.")
 call LANG_B('Bsl2',1,"This warrior is slowed.")
 call LANG_B('Bsl3',1,"This warrior is slowed.")
 call LANG_B('Bsl4',1,"This warrior hit the owner of Mare's Rain Ring, his AS is slowed down.")
@@ -291407,13 +291587,13 @@ call LANG_B('B14W',1,"Sinon is accelerated after reloading the clip.")
 call LANG_B('BHXW',1,"Outgoing damage increased by  40%")
 call LANG_B('BHXE',1,"Incoming damage reduced by  40%")
 call LANG_B('BHXR',1,"Damage taken increased by 20%")
+endfunction
+function LANG_Data58 takes nothing returns nothing
 call LANG_B('BGSG',1,"Incoming damage reduced by 50%; enemies cannot get closer than 300 to the owner")
 call LANG_B('BKQ2',1,"This unit is slowed AS/MS: -50%")
 call LANG_B('BSiT',1,"Blocks damage below 2*AGI")
 call LANG_B('BLam',1,"Empowers the owner's abilities")
 call LANG_B('BI01',0,"This unit is protected by wind")
-endfunction
-function LANG_Data58 takes nothing returns nothing
 call LANG_B('BI01',1,"This unit is protected by wind")
 call LANG_B('BMRG',1,"This unit is hypnotized. Incoming/Outgoing magic damage: +30/-30%")
 call LANG_B('BbB1',1,"Aging: slows movement and attack speed.")
