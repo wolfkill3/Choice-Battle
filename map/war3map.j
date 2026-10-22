@@ -102223,6 +102223,10 @@ function TousenSleepCast takes unit u returns nothing
         // Q в трансформе (облик мухи) — своя озвучка GrilloQ вместо обычной (22 окт)
         if GetUnitTypeId(u)=='H0TF' or LoadBoolean(HH,GetHandleId(u),SH_TouHollow) then
             call TousenSnd("TousenGrilloQ")
+            if GetUnitTypeId(u)=='H0TF' then
+                call SetUnitAnimationByIndex(u,5) // 23 окт: взмах крыльями
+                call QueueUnitAnimation(u,"stand")
+            endif
         else
             set soundplay=SndN(1361) // Sound\Music\mp3Music\Suzumushi.mp3
             call StartSound(soundplay)
@@ -130630,8 +130634,10 @@ local integer id=GetHandleId(t)
 local unit cb
 if GetUnitTypeId(u)=='H0TF' then
 call TousenSnd("TousenGrilloR") // R мухи (22 окт)
-endif
+else
+// 23 окт: в облике мухи только GrilloR, обычный голос — вне его
 call ShinjiSnd("HirakoE2")
+endif
 call SaveUnitHandle(h,id,0,u)
 call SaveReal(h,id,1,x+150*Cos(a))
 call SaveReal(h,id,2,y+150*Sin(a))
@@ -130650,7 +130656,11 @@ call SaveReal(h,id,14,450.) // ширина 450 (22 окт; было 300)
 call SaveReal(h,id,16,60.) // 120 между лучами (22 окт; было 55, 63, 100)
 endif
 call SetUnitFacingInstant(u,a*bj_RADTODEG)
+if GetUnitTypeId(u)=='H0TF' then
+call SetUnitAnimationByIndex(u,9) // 23 окт: муха — «10 Roar» (у неё нет spell)
+else
 call SetUnitAnimation(u,"spell")
+endif
 call QueueUnitAnimation(u,"stand")
 set bj_lastCreatedEffect=AddSpecialEffect(EffectID[23],x,y)
 call SetSpecialEffectScale(bj_lastCreatedEffect,0.8)
@@ -131318,14 +131328,22 @@ endif
 set fx=null
 set t=null
 endfunction
-function TousenFW2Ring takes integer id,integer k,real rd,real sc returns nothing
+function TousenFW2Ring takes integer id,integer k,real rd,real sc,real rz returns nothing
 local real a=LoadReal(h,id,3)
 local real rx=LoadReal(h,id,4)+rd*Cos(a)
 local real ry=LoadReal(h,id,5)+rd*Sin(a)
-local effect fx=AddSpecialEffect("Tousen_Sonic.mdl",rx,ry)
-call SetSpecialEffectScale(fx,sc)
+//local effect fx=AddSpecialEffect("Tousen_Sonic.mdl",rx,ry)
+// 23 окт: Tousen_Sonic в игре не поворачивался и не масштабировался — кольцо CirclePulse_Green ребром, луч проходит сквозь него
+local effect fx=AddSpecialEffect("CirclePulse_Green.mdl",rx,ry)
+// 23 окт: кольцо смотрит вдоль луча (Pitch, как рабочие кольца W от 22 окт); масштаб — после поворота, иначе поворот его сбрасывает
+//call SetSpecialEffectScale(fx,sc)
+//call SetSpecialEffectOrientation(fx,a*bj_RADTODEG+90.,0.,90.)
+//call SetSpecialEffectOrientation(fx,a*bj_RADTODEG,-90.,0.)
 call SetSpecialEffectOrientation(fx,a*bj_RADTODEG+90.,0.,90.)
-call SetSpecialEffectPositionWithZ(fx,rx,ry,GetTerrainZ(rx,ry)+110.)
+call SetSpecialEffectPositionWithZ(fx,rx,ry,GetTerrainZ(rx,ry)+rz)
+call SetSpecialEffectVertexColour(fx,90,255,110,255)
+//call SetSpecialEffectScale(fx,sc)
+call SetSpecialEffectScale(fx,sc*0.53) // радиус CirclePulse ~141 против ~75 у Tousen_Sonic
 call SaveEffectHandle(h,id,20+k,fx)
 set fx=null
 endfunction
@@ -131340,6 +131358,8 @@ local real y0=LoadReal(h,id,5)
 local integer i
 local integer k
 local real front
+local real wr
+local real ws
 local group g
 local unit e
 local timer wt
@@ -131349,7 +131369,7 @@ if tk>67 or not UnitIsAlive(u) or udg_B==false then
 // конец W (2 с): кольца гаснут, Тоусен отпущен
 set k=0
 loop
-exitwhen k>11
+exitwhen k>33 // 23 окт: 0..21 цепочка, 30..33 кольца перед выстрелом
 call DestroyEffect(LoadEffectHandle(h,id,20+k))
 set k=k+1
 endloop
@@ -131385,9 +131405,30 @@ set i=i+1
 endloop
 endif
 // цепочка колец вдоль луча: новое каждые 2 тика, дальше и больше предыдущего (кольца 2..11)
-if ModuloInteger(tk-10,2)==0 and tk-10<=18 then
-set k=2+(tk-10)/2
-call TousenFW2Ring(id,k,80.+140.*k,0.5+0.17*k)
+//if ModuloInteger(tk-10,2)==0 and tk-10<=18 then
+//set k=2+(tk-10)/2
+//call TousenFW2Ring(id,k,80.+140.*k,0.5+0.17*k)
+// 23 окт: ветерки вдоль луча — прозрачные зелёные nitu (как на рывках Йоруичи / Кирито), по 3 каждые 2 тика
+if ModuloInteger(tk,2)==0 then
+set i=0
+loop
+exitwhen i>2
+set wr=GetRandomReal(150.,RMinBJ(1500.,120.+60.*(tk-10)+300.))
+set ws=GetRandomReal(-110.,110.)
+set fx=AddSpecialEffect("nitu.mdx",x0+wr*Cos(a)+ws*Cos(a+bj_PI/2),y0+wr*Sin(a)+ws*Sin(a+bj_PI/2))
+call SetSpecialEffectScale(fx,GetRandomReal(0.9,1.3))
+call SetSpecialEffectFacing(fx,a*bj_RADTODEG+180.)
+call SetSpecialEffectHeight(fx,GetRandomReal(40.,220.))
+call SetSpecialEffectTimeScale(fx,0.8)
+call SetSpecialEffectVertexColour(fx,90,255,110,110)
+call DestroyEffect(fx)
+set i=i+1
+endloop
+endif
+// 23 окт: колец вдвое больше — 20, новое каждый тик (кольца 2..21)
+if tk-10<=19 then
+set k=2+(tk-10)
+call TousenFW2Ring(id,k,80.+70.*k,0.5+0.085*k,110.)
 endif
 // урон раз в 0.25 с (8 тиков) по конусу до фронта луча
 if ModuloInteger(tk-10,8)==0 then
@@ -131441,7 +131482,9 @@ call TousenSnd("TousenGrilloT") // голос W и T поменяны места
 call TousenSnd("TousenGrilloW-sfx")
 call PauseUnit(u,true)
 call SetUnitInvulnerable(u,true)
-call SetUnitAnimation(u,"spell")
+//call SetUnitAnimation(u,"spell")
+call SetUnitAnimationByIndex(u,9) // 23 окт: «10 Roar» — звуковой крик на месте (у мухи нет spell)
+call SetUnitTimeScale(u,1.25)
 call SaveUnitHandle(h,id,0,u)
 call SaveInteger(h,id,1,0)
 call SaveReal(h,id,3,a)
@@ -131450,8 +131493,13 @@ call SaveReal(h,id,5,y)
 call SaveReal(h,id,8,(1+lv)*GetHeroAgi(u,true)) // разово 2..6*AGI
 call SaveGroupHandle(h,id,10,CreateGroup())
 // пара колец рядом — сразу, луч из них через 0.3 с
-call TousenFW2Ring(id,0,90.,0.55)
-call TousenFW2Ring(id,1,170.,0.7)
+//call TousenFW2Ring(id,0,90.,0.55)
+//call TousenFW2Ring(id,1,170.,0.7)
+// 23 окт: перед выстрелом сразу 4 кольца перед Тоусеном на разных высотах
+call TousenFW2Ring(id,30,110.,0.55,50.)
+call TousenFW2Ring(id,31,140.,0.65,120.)
+call TousenFW2Ring(id,32,170.,0.75,190.)
+call TousenFW2Ring(id,33,200.,0.85,260.)
 call TimerStart(t,0.03,true,function TousenFW2Tick)
 set t=null
 set u=null
@@ -131531,6 +131579,29 @@ set e=null
 set t=null
 endfunction
 // T v6 (22 окт): поле 800 на 6 с — раз в 0.5 с вокруг Тоусена в воздухе появляется кольцо на каждого врага в поле и пускает в него волну
+// T мухи (23 окт): вертикальная звуковая волна (Tousen_Wave) летит от Тоусена наружу до края поля 800
+function TousenFTFront takes nothing returns nothing
+local timer t=GetExpiredTimer()
+local integer id=GetHandleId(t)
+local integer tk=LoadInteger(h,id,1)+1
+local effect fx=LoadEffectHandle(h,id,0)
+local real wa=LoadReal(h,id,2)
+local real wx=LoadReal(h,id,3)+57.*tk*Cos(wa)
+local real wy=LoadReal(h,id,4)+57.*tk*Sin(wa)
+call SaveInteger(h,id,1,tk)
+if tk<=14 then
+call SetSpecialEffectOrientation(fx,wa*bj_RADTODEG+90.,0.,90.)
+call SetSpecialEffectPositionWithZ(fx,wx,wy,GetTerrainZ(wx,wy)+120.)
+call SetSpecialEffectScale(fx,0.18+0.02*tk)
+call SetSpecialEffectAlpha(fx,255-12*tk)
+else
+call DestroyEffect(fx)
+call FlushChildHashtable(h,id)
+call DestroyTimer(t)
+endif
+set fx=null
+set t=null
+endfunction
 function TousenFTTick2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
@@ -131550,7 +131621,18 @@ if tk<=120 and UnitIsAlive(u) and udg_B==true and LoadBoolean(HH,GetHandleId(u),
 // кольцо поля на земле под Тоусеном (22 окт)
 call SetSpecialEffectPositionWithZ(LoadEffectHandle(h,id,4),x,y,GetTerrainZ(x,y))
 // v7 (22 окт): кольца в воздухе вокруг Тоусена каждые 0.1 с, гаснут за 0.4 с
-if ModuloInteger(tk,2)==0 then
+// 23 окт: колец больше — каждые 0.05 с, вокруг Тоусена по два
+//if ModuloInteger(tk,2)==0 then
+if tk>0 then
+set ra=GetRandomReal(0,2*bj_PI)
+set rx=x+GetRandomReal(90,260)*Cos(ra)
+set ry=y+GetRandomReal(90,260)*Sin(ra)
+set fx=AddSpecialEffect("CirclePulse_Green.mdl",rx,ry)
+call SetSpecialEffectScale(fx,GetRandomReal(0.3,0.5))
+call SetSpecialEffectVertexColour(fx,90,255,110,255)
+call SetSpecialEffectOrientation(fx,ra*bj_RADTODEG+90.,0.,90.)
+call SetSpecialEffectPositionWithZ(fx,rx,ry,GetUnitZ(u)+GetRandomReal(60,240))
+call RemoveEffect(fx,0.4,false,CreateTimer())
 set ra=GetRandomReal(0,2*bj_PI)
 set rx=x+GetRandomReal(110,220)*Cos(ra)
 set ry=y+GetRandomReal(110,220)*Sin(ra)
@@ -131560,16 +131642,31 @@ call SetSpecialEffectVertexColour(fx,90,255,110,255)
 call SetSpecialEffectOrientation(fx,ra*bj_RADTODEG+90.,0.,90.)
 call SetSpecialEffectPositionWithZ(fx,rx,ry,GetUnitZ(u)+GetRandomReal(110,200))
 call RemoveEffect(fx,0.4,false,CreateTimer())
+// 23 окт: и по всему зелёному кругу — кольца ребром, повёрнуты к Тоусену
+set ra=GetRandomReal(0,2*bj_PI)
+set rx=x+GetRandomReal(150,780)*Cos(ra)
+set ry=y+GetRandomReal(150,780)*Sin(ra)
+set fx=AddSpecialEffect("CirclePulse_Green.mdl",rx,ry)
+call SetSpecialEffectScale(fx,GetRandomReal(0.35,0.6))
+call SetSpecialEffectVertexColour(fx,90,255,110,255)
+call SetSpecialEffectOrientation(fx,ra*bj_RADTODEG+90.,0.,90.)
+call SetSpecialEffectPositionWithZ(fx,rx,ry,GetTerrainZ(rx,ry)+GetRandomReal(60,140))
+call RemoveEffect(fx,0.4,false,CreateTimer())
 endif
 // зелёные волны от Тоусена, слабее (v7b, 22 окт): раз в 1 с, полупрозрачные, до 700
-if ModuloInteger(tk,20)==11 then
-set ra=I2R(ModuloInteger(tk/20,2))
+// 23 окт: звуковая рябь по земле — зелёная SoundBlu раз в 0.5 с расходится от Тоусена до 800
+if ModuloInteger(tk,10)==1 then
+set ra=I2R(ModuloInteger(tk/10,2))
 call DestroyEffect(LoadEffectHandle(h,id,40+R2I(ra)))
+//set fx=AddSpecialEffect("war3mapImported\\SoundBlu.mdl",x,y)
+// 23 окт: вместо SoundBlu — снова старое расходящееся кольцо CirclePulse_Green
 set fx=AddSpecialEffect("CirclePulse_Green.mdl",x,y)
 call SetSpecialEffectScale(fx,0.7)
 call SetSpecialEffectVertexColour(fx,90,255,110,140)
 call SaveEffectHandle(h,id,40+R2I(ra),fx)
 call SaveInteger(h,id,45+R2I(ra),tk)
+endif
+if ModuloInteger(tk,20)==11 then
 // волна несёт немоту 0.6 с врагам в 700 (без урона)
 set g=CreateGroup()
 call GroupEnumUnitsInRange(g,x,y,700,Base)
@@ -131600,6 +131697,24 @@ endif
 set rx=rx+1
 endloop
 //if ModuloInteger(tk,10)==1 then
+// 23 окт: 8 вертикальных звуковых фронтов от Тоусена наружу — 2 раза в секунду, вместе с рябью по земле
+if ModuloInteger(tk,10)==1 then
+set ra=GetRandomReal(0,bj_PI/4)
+set rx=0
+loop
+exitwhen rx>7
+set bj_lastStartedTimer=CreateTimer()
+set fx=AddSpecialEffect("Tousen_Wave.mdl",x,y)
+call SetSpecialEffectVertexColour(fx,90,255,110,255)
+call SaveEffectHandle(h,GetHandleId(bj_lastStartedTimer),0,fx)
+call SaveInteger(h,GetHandleId(bj_lastStartedTimer),1,0)
+call SaveReal(h,GetHandleId(bj_lastStartedTimer),2,ra+rx*bj_PI/4)
+call SaveReal(h,GetHandleId(bj_lastStartedTimer),3,x)
+call SaveReal(h,GetHandleId(bj_lastStartedTimer),4,y)
+call TimerStart(bj_lastStartedTimer,0.03,true,function TousenFTFront)
+set rx=rx+1
+endloop
+endif
 if ModuloInteger(tk,20)==1 then // волны раз в 1 с (v7)
 set g=CreateGroup()
 call GroupEnumUnitsInRange(g,x,y,800,Base)
@@ -131607,6 +131722,9 @@ loop
 set e=FirstOfGroup(g)
 exitwhen e==null
 if Condition_Base(p,e) then
+// влияние звука на врага: ноты и звуковые кольца над головой
+//call DestroyEffect(AddSpecialEffectTarget("effects\\FConcertNote.mdl",e,"overhead")) // 23 окт: ноты убраны
+call RemoveEffect(AddSpecialEffectTarget("Abilities\\Weapons\\PoisonSting\\Rings_Green.mdl",e,"overhead"),0.9,false,CreateTimer())
 // кольцо в воздухе в сторону врага (с разбросом), ребром к нему; гаснет за 0.4 с
 set ra=Atan2(GetUnitY(e)-y,GetUnitX(e)-x)+GetRandomReal(-0.5,0.5)
 set rx=x+GetRandomReal(130,200)*Cos(ra)
@@ -131661,6 +131779,10 @@ local integer id=GetHandleId(t)
 local effect fx
 local integer i=0
 call UnitAddAbility(u,'ToFa')
+if GetUnitTypeId(u)=='H0TF' then
+call SetUnitAnimationByIndex(u,75) // 23 окт: «60 Roar» — крик с подскоком
+call QueueUnitAnimation(u,"stand")
+endif
 call TousenSnd("TousenGrilloW") // 22 окт: голос W и T поменяны местами
 call TousenSnd("TousenGrilloT-sfx")
 // v6 (22 окт): на земле ничего — ни колец поля, ни хоровода, ни вспышки
@@ -132563,13 +132685,18 @@ function TousenFGSlash takes unit u,unit e,integer k,real cr returns nothing
 local real ex=GetUnitX(e)
 local real ey=GetUnitY(e)
 local real sd=2*ModuloInteger(k,2)-1
-call SetUnitTimeScale(u,2.5)
+// 23 окт: удары — выпад с клинком вперёд (17) и рывок с размашистым ударом (8), было Attack 1 / Combo Attack
+call SetUnitTimeScale(u,3.)
 if ModuloInteger(k,2)==1 then
-call SetUnitAnimationByIndex(u,15) // Attack 1
+call SetUnitAnimationByIndex(u,17)
 else
-call SetUnitAnimationByIndex(u,77) // Combo Attack
+call SetUnitAnimationByIndex(u,8)
 endif
-call TousenSnd("TousenGrilloG-sfx1") // удар (22 окт)
+//call TousenSnd("TousenGrilloG-sfx1") // удар (22 окт)
+// 23 окт: sfx1 — на рывке, sfx2 — на первом попадании
+if k==1 then
+call TousenSnd("TousenGrilloG-sfx2")
+endif
 call myCustomDamage(u,e,GetHeroAgi(u,true),false,false,null,null,null)
 call EffectCreateAndMove(true,"Others\\WindCirclefaster.mdl",GetRandomReal(0,360),1,1.3,1.5,40,100,50,40,0,e,0,cr*bj_RADTODEG)
 call DestroyEffect(AddSpecialEffect("war3mapImported\\az_jugggreen_e2_impact.mdl",ex,ey))
@@ -132618,15 +132745,16 @@ call SetUnitY(u,ey-50*Sin(cr))
 call PauseUnit(e,false)
 if not Bof_Rev(u,e) then
 call myCustomDamage(u,e,GetHeroAgi(u,true),false,false,null,null,null)
-call TousenSnd("TousenGrilloG-sfx2") // финальный удар (22 окт)
+//call TousenSnd("TousenGrilloG-sfx2") // финальный удар (22 окт)
 call DestroyEffect(AddSpecialEffect("war3mapImported\\BrolyRHitGreen.mdl",ex,ey))
+// 23 окт: пыль как в конце E Йоруичи — slamEarth 1.8, держится 2 с
 set bj_lastCreatedEffect=AddSpecialEffect("slamEarth.mdl",ex,ey)
-call SetSpecialEffectScale(bj_lastCreatedEffect,1.)
-call DestroyEffect(bj_lastCreatedEffect)
-set bj_lastCreatedEffect=AddSpecialEffect("chushou_by_wood_effect_earth_sandycrack_fag.mdl",ex,ey)
-call SetSpecialEffectZ(bj_lastCreatedEffect,-8)
-call SetSpecialEffectScale(bj_lastCreatedEffect,1.6)
-call DestroyEffect(bj_lastCreatedEffect)
+call SetSpecialEffectScale(bj_lastCreatedEffect,1.8)
+call RemoveEffect(bj_lastCreatedEffect,2,false,CreateTimer())
+//set bj_lastCreatedEffect=AddSpecialEffect("chushou_by_wood_effect_earth_sandycrack_fag.mdl",ex,ey)
+//call SetSpecialEffectZ(bj_lastCreatedEffect,-8)
+//call SetSpecialEffectScale(bj_lastCreatedEffect,1.6)
+//call DestroyEffect(bj_lastCreatedEffect) // 23 окт: кратер убран
 call DestroyEffect(AddSpecialEffect("war3mapImported\\az_jugggreen_e2_impact.mdl",ex,ey))
 call ShakeCamera(0.6,25)
 if UnitIsAlive(e) then
@@ -132663,6 +132791,7 @@ call UnitRemoveAbility(u,'Amrf')
 call SetUnitFacingInstant(u,ta*bj_RADTODEG)
 call SetUnitTimeScale(u,2.)
 call SetUnitAnimationByIndex(u,27) // Boost
+call TousenSnd("TousenGrilloG-sfx1") // 23 окт: звук рывка в пике
 elseif ph==3 then
 // пике: 6 тиков взлёт до 420 с подлётом, 5 тиков резкое падение на цель
 set fx=LoadReal(h,id,11)+(ex-50*Cos(cr)-LoadReal(h,id,11))*pt/11.
@@ -132672,12 +132801,15 @@ call SetUnitY(u,fy)
 if pt<=6 then
 set fh=40+380*Sin(pt*bj_PI/12)
 else
-set fh=RMaxBJ(0.,420*(1-(pt-6)/5.))
+//set fh=RMaxBJ(0.,420*(1-(pt-6)/5.))
+// 23 окт: падение играет анимация 48 (начинается ~470 над юнитом), юнит сразу внизу
+set fh=40
 endif
 call SetUnitFlyHeight(u,fh,0)
 if pt==7 then
-call SetUnitTimeScale(u,2.5)
-call SetUnitAnimationByIndex(u,15) // Attack 1 вниз
+call SetUnitTimeScale(u,3.)
+//call SetUnitAnimationByIndex(u,15) // Attack 1 вниз
+call SetUnitAnimationByIndex(u,48) // 23 окт: «43» — падение сверху на землю с ударом
 endif
 if pt>6 then
 set bj_lastCreatedEffect=AddSpecialEffect("Others\\WindCirclefaster.mdl",fx,fy)
@@ -132689,6 +132821,7 @@ endif
 elseif ph==0 then
 // рывок прямо в цель, 220 за тик (в 2 раза быстрее)
 if pt==1 then
+call TousenSnd("TousenGrilloG-sfx1") // 23 окт: звук рывка
 call UnitSpeed(u,1.8)
 call SetUnitTimeScale(u,2.)
 call SetUnitAnimation(u,"walk")
@@ -132716,13 +132849,17 @@ endif
 call SaveInteger(h,id,7,k+1)
 call SaveInteger(h,id,8,1)
 call SaveInteger(h,id,9,0)
-call SaveInteger(h,id,4,3-LoadInteger(h,id,4))
+//call SaveInteger(h,id,4,3-LoadInteger(h,id,4))
+// 23 окт: каждый пролёт со своим углом — сторона и крутизна дуги случайные
+call SaveInteger(h,id,4,GetRandomInt(1,2))
+call SaveReal(h,id,13,GetRandomReal(0.05,0.32))
 call TousenFGSlash(u,e,k+1,cr)
 endif
 elseif ph==1 then
 // пролёт насквозь с торможением по дуге: 200 -> 40 за 8 тиков (~1000, в 2 раза быстрее)
 set sp=RMaxBJ(40.,200.-20.*pt)
-set cr=cr+sd*0.18
+//set cr=cr+sd*0.18
+set cr=cr+sd*LoadReal(h,id,13)
 call SaveReal(h,id,10,cr)
 call SetUnitFacingInstant(u,cr*bj_RADTODEG)
 call SetUnitX(u,GetUnitX(u)+sp*Cos(cr))
@@ -132774,6 +132911,7 @@ call SaveInteger(h,id,8,0) // v3: фаза рывка
 call SaveInteger(h,id,9,0)
 call SaveBoolean(HH,GetHandleId(u),SH_bofRevd,false) // реверс: флаг гасится при старте
 call SaveInteger(h,id,4,GetRandomInt(1,2))
+call SaveReal(h,id,13,GetRandomReal(0.05,0.32))
 //call SaveEffectHandle(h,id,5,AddSpecialEffectTarget("Kisame\\file00002180.mdl",u,"origin"))
 call SaveEffectHandle(h,id,5,AddSpecialEffectTarget("Zoro\\afbgreencharge.mdl",u,"origin")) // зелёная аура (22 окт)
 call TousenSnd("TousenGrilloG") // 22 окт
