@@ -130314,6 +130314,16 @@ endfunction
 // (в паузе — нет), без маски +1 сек. каждые 5 сек. (табло ShnDBoard2) и от урона (1 сек. за 5*AGI); надеть — от 3 сек.
 // Бонусы прежние: ToE1 (бег 30%, атака +70%), ToE2..6 (+300..700 HP), регенерация 1.5% HP в сек., серый цвет.
 // Пока маска надета, на месте E — зелёное серо (ToEc, код серо Хирако с h 13)
+// общая перезарядка кнопки (22 окт): оставшаяся перезарядка a переносится на b
+function TousenCdCopy takes unit u,integer a,integer b returns nothing
+local real r
+if GetUnitAbilityLevel(u,a)>0 and GetUnitAbilityLevel(u,b)>0 then
+set r=GetAbilityRemainingCooldown(GetUnitAbility(u,a))
+if r>0.05 then
+call StartAbilityCooldown(GetUnitAbility(u,b),r)
+endif
+endif
+endfunction
 // облик пустого (G, 22 окт): модель и портрет назад, метка снимается
 function TousenHollowOff takes unit u returns nothing
 if LoadBoolean(HH,GetHandleId(u),SH_TouHollow) then
@@ -130349,6 +130359,13 @@ endif
 endif
 endfunction
 function TousenEOff takes unit u returns nothing
+// облик мухи кончается — перезарядки кнопок мухи переходят на обычные (22 окт)
+if LoadBoolean(HH,GetHandleId(u),SH_TouHollow) then
+call TousenCdCopy(u,'ToFE','A0JA')
+call TousenCdCopy(u,'ToFW','A0J8')
+call TousenCdCopy(u,'ToEc','A0J9')
+call TousenCdCopy(u,'ToFT','A0JB')
+endif
 call SaveBoolean(HH,GetHandleId(u),SH_ShnMask,false)
 call UnitMakeAbilityPermanent(u,false,'ToE1')
 call UnitRemoveAbility(u,'ToE1')
@@ -130739,7 +130756,9 @@ set k=(tk-1)/2
 set rd=80.+140.*k
 set fx=AddSpecialEffect("Tousen_Sonic.mdl",x0+rd*Cos(a),y0+rd*Sin(a))
 call SetSpecialEffectScale(fx,0.5+0.17*k)
-call SetSpecialEffectYaw(fx,a*bj_RADTODEG)
+// кольцо стоит лицом к врагам: поперёк направления, на высоте 110 (22 окт)
+call SetSpecialEffectOrientation(fx,a*bj_RADTODEG,-90.,0.)
+call SetSpecialEffectPositionWithZ(fx,x0+rd*Cos(a),y0+rd*Sin(a),GetTerrainZ(x0+rd*Cos(a),y0+rd*Sin(a))+110.)
 call SaveEffectHandle(h,id,20+k,fx)
 endif
 // кольца покачивает из стороны в сторону, через 18 тиков гаснут
@@ -130754,8 +130773,8 @@ call DestroyEffect(fx)
 else
 set rd=80.+140.*k
 set side=(18.+4.*k)*Sin(age*0.7+k*1.3)
-call SetSpecialEffectPosition(fx,x0+rd*Cos(a)+side*Cos(a+bj_PI/2),y0+rd*Sin(a)+side*Sin(a+bj_PI/2))
-call SetSpecialEffectYaw(fx,a*bj_RADTODEG+14.*Sin(age*0.7+k*1.3))
+call SetSpecialEffectPositionWithZ(fx,x0+rd*Cos(a)+side*Cos(a+bj_PI/2),y0+rd*Sin(a)+side*Sin(a+bj_PI/2),GetTerrainZ(x0+rd*Cos(a),y0+rd*Sin(a))+110.)
+call SetSpecialEffectOrientation(fx,a*bj_RADTODEG+14.*Sin(age*0.7+k*1.3),-90.,12.*Cos(age*0.6+k))
 endif
 endif
 set k=k+1
@@ -131072,6 +131091,11 @@ call DisableUnitAbility(u,'A0JB',true,true)
 call UnitAddAbility(u,'ToFW')
 call SetUnitAbilityLevel(u,'ToFW',IMaxBJ(1,GetUnitAbilityLevel(u,'A0J8')))
 call UnitAddAbility(u,'ToFT')
+// общие перезарядки: обычные кнопки -> кнопки мухи (22 окт)
+call TousenCdCopy(u,'A0JA','ToFE')
+call TousenCdCopy(u,'A0J8','ToFW')
+call TousenCdCopy(u,'A0J9','ToEc')
+call TousenCdCopy(u,'A0JB','ToFT')
 call UnitMakeAbilityPermanent(u,false,'Blnd')
 call UnitRemoveAbility(u,'Blnd')
 set b=R2I(0.15*GetHeroStr(u,false)+0.5)
@@ -131317,121 +131341,235 @@ endfunction
 // E3 мухи «Flight» (v6, 22 окт): непрерывный рывок по низкой дуге (ускоряясь к точке, без зависания и торможения), анимация рывка;
 // в точке — удар по 300, затем скольжение вперёд на 220 (8 тиков), задетые по пути получают тот же урон и оглушение (каждый раз за каст).
 // h: 0 Тоусен, 1..4 откуда / куда, 5 тик, 6 тиков полёта, 7 высота дуги, 8 группа задетых
+// полёт до v7 (рывок по дуге с приземлением и скольжением)
+//function TousenFETick takes nothing returns nothing
+//local timer t=GetExpiredTimer()
+//local integer id=GetHandleId(t)
+//local unit u=LoadUnitHandle(h,id,0)
+//local integer tk=LoadInteger(h,id,5)+1
+//local integer fn=IMaxBJ(1,LoadInteger(h,id,6))
+//local real x0=LoadReal(h,id,1)
+//local real y0=LoadReal(h,id,2)
+//local real x1=LoadReal(h,id,3)
+//local real y1=LoadReal(h,id,4)
+//local real ang=Atan2(y1-y0,x1-x0)
+//local real f=I2R(tk)/fn
+//local real fe=0.7*f+0.3*f*f
+//local player p=OwnerOf(u)
+//local real dmg=(2+GetUnitAbilityLevel(u,'ToFE'))*GetHeroAgi(u,true)
+//local group hit=LoadGroupHandle(h,id,8)
+//local group g
+//local unit e
+//local effect fx
+//local real nx
+//local real ny
+//local boolean fin=false
+//call SaveInteger(h,id,5,tk)
+//if tk==1 then
+//call PauseUnit(u,true)
+//call SetUnitAnimationByIndex(u,7)
+//call SetUnitTimeScale(u,1.2)
+//endif
+//if not UnitIsAlive(u) or udg_B==false then
+//set fin=true
+//elseif tk<fn then
+//call SetUnitX(u,x0+(x1-x0)*fe)
+//call SetUnitY(u,y0+(y1-y0)*fe)
+//call SetUnitFacingInstant(u,ang*bj_RADTODEG)
+//call SetUnitFlyHeight(u,40+LoadReal(h,id,7)*Sin(f*bj_PI),0)
+//set fx=AddSpecialEffect("Others\\WindCirclefaster.mdl",GetUnitX(u),GetUnitY(u))
+//call SetSpecialEffectZ(fx,GetUnitZ(u)+40+LoadReal(h,id,7)*Sin(f*bj_PI)+60)
+//call SetSpecialEffectScale(fx,0.45+0.25*Sin(f*bj_PI))
+//call SetSpecialEffectVertexColour(fx,90,255,110,255)
+//call DestroyEffect(fx)
+//elseif tk==fn then
+//// приземление в точке: удар по 300
+//call SetUnitX(u,x1)
+//call SetUnitY(u,y1)
+//call SetUnitFlyHeight(u,40,0)
+//set fx=AddSpecialEffect(EffectID[19],x1,y1)
+//call SetSpecialEffectScale(fx,0.8)
+//call SetSpecialEffectVertexColour(fx,60,255,80,255)
+//call SetSpecialEffectAnimationByIndex(fx,0)
+//call RemoveEffect(fx,1.2,false,CreateTimer())
+//set fx=AddSpecialEffect(EffectID[23],x1,y1)
+//call SetSpecialEffectScale(fx,0.9)
+//call SetSpecialEffectVertexColour(fx,40,255,60,255)
+//call DestroyEffect(fx)
+//set fx=AddSpecialEffect("BlackGoku\\groundshock1.mdl",x1,y1)
+//call SetSpecialEffectScale(fx,1.3)
+//call SetSpecialEffectVertexColour(fx,140,255,150,255)
+//call DestroyEffect(fx)
+//// без зелёного кольца при приземлении (22 окт)
+////set fx=AddSpecialEffect("CirclePulse_Green.mdl",x1,y1)
+////call SetSpecialEffectScale(fx,300./141.)
+////call SetSpecialEffectVertexColour(fx,90,255,110,255)
+////call RemoveEffect(fx,0.8,false,CreateTimer())
+//set g=CreateGroup()
+//call GroupEnumUnitsInRange(g,GetUnitX(u),GetUnitY(u),300,Base)
+//loop
+//set e=FirstOfGroup(g)
+//exitwhen e==null
+//if Condition_Base(p,e) and not IsUnitInGroup(e,hit) then
+//call GroupAddUnit(hit,e)
+//call myCustomDamage(u,e,dmg,false,false,null,null,null)
+//if UnitIsAlive(e) then
+//call SetControlToUnit(u,e,1.,"stun")
+//endif
+//endif
+//call GroupRemoveUnit(g,e)
+//endloop
+//call DestroyGroup(g)
+//elseif tk<=fn+14 then
+//// скольжение вперёд по инерции: 400 за 14 тиков (22 окт; было 220 за 8), задевает по пути
+//set nx=GetUnitX(u)+28.6*Cos(ang)
+//set ny=GetUnitY(u)+28.6*Sin(ang)
+//if IsTerrainPathable(nx,ny,PATHING_TYPE_WALKABILITY) then
+//set fin=true
+//else
+//call SetUnitX(u,nx)
+//call SetUnitY(u,ny)
+//if ModuloInteger(tk-fn,2)==1 then
+//set fx=AddSpecialEffect("DustWaveAnimate2.mdl",nx,ny)
+//call SetSpecialEffectScale(fx,0.5)
+//call SetSpecialEffectVertexColour(fx,160,255,170,255)
+//call DestroyEffect(fx)
+//endif
+//set g=CreateGroup()
+//call GroupEnumUnitsInRange(g,GetUnitX(u),GetUnitY(u),120,Base)
+//loop
+//set e=FirstOfGroup(g)
+//exitwhen e==null
+//if Condition_Base(p,e) and not IsUnitInGroup(e,hit) then
+//call GroupAddUnit(hit,e)
+//call myCustomDamage(u,e,dmg,false,false,null,null,null)
+//if UnitIsAlive(e) then
+//call SetControlToUnit(u,e,1.,"stun")
+//endif
+//endif
+//call GroupRemoveUnit(g,e)
+//endloop
+//call DestroyGroup(g)
+//endif
+//else
+//set fin=true
+//endif
+//if fin then
+//call SetUnitFlyHeight(u,40,0)
+//call SetUnitTimeScale(u,1.)
+//call PauseUnit(u,false)
+//call SetUnitInvulnerable(u,false)
+//call DestroyGroup(hit)
+//call PauseTimer(t)
+//call DestroyTimer(t)
+//call FlushChildHashtable(h,id)
+//endif
+//set fx=null
+//set g=null
+//set e=null
+//set hit=null
+//set p=null
+//set u=null
+//set t=null
+//endfunction
+// остаточный образ рывка мухи (22 окт): юнит-пустышка с моделью мухи, застывшая поза, зелёный, гаснет за ~0.35 с
+function TousenAfterFade takes nothing returns nothing
+local timer t=GetExpiredTimer()
+local unit qn=LoadUnitHandle(h,GetHandleId(t),0)
+local integer qa=LoadInteger(h,GetHandleId(t),1)-20
+call SaveInteger(h,GetHandleId(t),1,qa)
+if qa>0 and qn!=null then
+call SetUnitVertexColor(qn,120,255,140,qa)
+else
+call RemoveUnit(qn)
+call FlushChildHashtable(h,GetHandleId(t))
+call DestroyTimer(t)
+endif
+set qn=null
+set t=null
+endfunction
+function TousenAfter takes player qp,real qx,real qy,real qf returns nothing
+local unit qn=CreateUnit(qp,'e200',qx,qy,qf)
+call SetUnitModel(qn,"Tousen\\[By XeSHTeG]Tosen_Hollow.mdx")
+call SetUnitScale(qn,1.5,1.5,1.5)
+call SetUnitFlyHeight(qn,40,0)
+call SetUnitBlendTime(qn,0.)
+call SetUnitAnimationByIndex(qn,7)
+call SetUnitTimeScale(qn,0.)
+call SetUnitVertexColor(qn,120,255,140,140)
+set bj_lastStartedTimer=CreateTimer()
+call SaveUnitHandle(h,GetHandleId(bj_lastStartedTimer),0,qn)
+call SaveInteger(h,GetHandleId(bj_lastStartedTimer),1,140)
+call TimerStart(bj_lastStartedTimer,0.05,true,function TousenAfterFade)
+set qn=null
+endfunction
+// E3 мухи «Flight» (v7, 22 окт): быстрый рывок по земле к точке (90 за 0.02 с), остаточные образы и зелёный вихрь;
+// задетые по пути (130) — урон (2+ур.)*AGI и оглушение 1 с, каждый раз за каст; в конце — удар о землю.
+// h: 0 Тоусен, 3 / 4 куда, 5 тик, 8 группа задетых
 function TousenFETick takes nothing returns nothing
 local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
 local unit u=LoadUnitHandle(h,id,0)
 local integer tk=LoadInteger(h,id,5)+1
-local integer fn=IMaxBJ(1,LoadInteger(h,id,6))
-local real x0=LoadReal(h,id,1)
-local real y0=LoadReal(h,id,2)
 local real x1=LoadReal(h,id,3)
 local real y1=LoadReal(h,id,4)
-local real ang=Atan2(y1-y0,x1-x0)
-local real f=I2R(tk)/fn
-local real fe=0.7*f+0.3*f*f
+local real dd=SR(GetUnitX(u),GetUnitY(u),x1,y1)
+local real ang=Atan2(y1-GetUnitY(u),x1-GetUnitX(u))
+local real st=RMinBJ(90.,dd)
 local player p=OwnerOf(u)
 local real dmg=(2+GetUnitAbilityLevel(u,'ToFE'))*GetHeroAgi(u,true)
 local group hit=LoadGroupHandle(h,id,8)
 local group g
 local unit e
 local effect fx
-local real nx
-local real ny
 local boolean fin=false
 call SaveInteger(h,id,5,tk)
 if tk==1 then
 call PauseUnit(u,true)
 call SetUnitAnimationByIndex(u,7)
-call SetUnitTimeScale(u,1.2)
+call SetUnitTimeScale(u,1.5)
 endif
-if not UnitIsAlive(u) or udg_B==false then
+if not UnitIsAlive(u) or udg_B==false or tk>40 then
 set fin=true
-elseif tk<fn then
-call SetUnitX(u,x0+(x1-x0)*fe)
-call SetUnitY(u,y0+(y1-y0)*fe)
+elseif dd>5 then
+if ModuloInteger(tk,2)==1 then
+call TousenAfter(p,GetUnitX(u),GetUnitY(u),ang*bj_RADTODEG)
+endif
+call SetUnitX(u,GetUnitX(u)+st*Cos(ang))
+call SetUnitY(u,GetUnitY(u)+st*Sin(ang))
 call SetUnitFacingInstant(u,ang*bj_RADTODEG)
-call SetUnitFlyHeight(u,40+LoadReal(h,id,7)*Sin(f*bj_PI),0)
 set fx=AddSpecialEffect("Others\\WindCirclefaster.mdl",GetUnitX(u),GetUnitY(u))
-call SetSpecialEffectZ(fx,GetUnitZ(u)+40+LoadReal(h,id,7)*Sin(f*bj_PI)+60)
-call SetSpecialEffectScale(fx,0.45+0.25*Sin(f*bj_PI))
+call SetSpecialEffectScale(fx,0.5)
 call SetSpecialEffectVertexColour(fx,90,255,110,255)
 call DestroyEffect(fx)
-elseif tk==fn then
-// приземление в точке: удар по 300
-call SetUnitX(u,x1)
-call SetUnitY(u,y1)
-call SetUnitFlyHeight(u,40,0)
-set fx=AddSpecialEffect(EffectID[19],x1,y1)
+set g=CreateGroup()
+call GroupEnumUnitsInRange(g,GetUnitX(u),GetUnitY(u),130,Base)
+loop
+set e=FirstOfGroup(g)
+exitwhen e==null
+if Condition_Base(p,e) and not IsUnitInGroup(e,hit) then
+call GroupAddUnit(hit,e)
+call myCustomDamage(u,e,dmg,false,false,null,null,null)
+call DestroyEffect(AddSpecialEffectTarget("Tousen_Sonic.mdl",e,"chest"))
+if UnitIsAlive(e) then
+call SetControlToUnit(u,e,1.,"stun")
+endif
+endif
+call GroupRemoveUnit(g,e)
+endloop
+call DestroyGroup(g)
+else
+// конец рывка — удар о землю
+set fx=AddSpecialEffect("BlackGoku\\groundshock1.mdl",GetUnitX(u),GetUnitY(u))
 call SetSpecialEffectScale(fx,0.8)
-call SetSpecialEffectVertexColour(fx,60,255,80,255)
-call SetSpecialEffectAnimationByIndex(fx,0)
-call RemoveEffect(fx,1.2,false,CreateTimer())
-set fx=AddSpecialEffect(EffectID[23],x1,y1)
-call SetSpecialEffectScale(fx,0.9)
-call SetSpecialEffectVertexColour(fx,40,255,60,255)
-call DestroyEffect(fx)
-set fx=AddSpecialEffect("BlackGoku\\groundshock1.mdl",x1,y1)
-call SetSpecialEffectScale(fx,1.3)
 call SetSpecialEffectVertexColour(fx,140,255,150,255)
 call DestroyEffect(fx)
-// без зелёного кольца при приземлении (22 окт)
-//set fx=AddSpecialEffect("CirclePulse_Green.mdl",x1,y1)
-//call SetSpecialEffectScale(fx,300./141.)
-//call SetSpecialEffectVertexColour(fx,90,255,110,255)
-//call RemoveEffect(fx,0.8,false,CreateTimer())
-set g=CreateGroup()
-call GroupEnumUnitsInRange(g,GetUnitX(u),GetUnitY(u),300,Base)
-loop
-set e=FirstOfGroup(g)
-exitwhen e==null
-if Condition_Base(p,e) and not IsUnitInGroup(e,hit) then
-call GroupAddUnit(hit,e)
-call myCustomDamage(u,e,dmg,false,false,null,null,null)
-if UnitIsAlive(e) then
-call SetControlToUnit(u,e,1.,"stun")
-endif
-endif
-call GroupRemoveUnit(g,e)
-endloop
-call DestroyGroup(g)
-elseif tk<=fn+14 then
-// скольжение вперёд по инерции: 400 за 14 тиков (22 окт; было 220 за 8), задевает по пути
-set nx=GetUnitX(u)+28.6*Cos(ang)
-set ny=GetUnitY(u)+28.6*Sin(ang)
-if IsTerrainPathable(nx,ny,PATHING_TYPE_WALKABILITY) then
-set fin=true
-else
-call SetUnitX(u,nx)
-call SetUnitY(u,ny)
-if ModuloInteger(tk-fn,2)==1 then
-set fx=AddSpecialEffect("DustWaveAnimate2.mdl",nx,ny)
-call SetSpecialEffectScale(fx,0.5)
-call SetSpecialEffectVertexColour(fx,160,255,170,255)
-call DestroyEffect(fx)
-endif
-set g=CreateGroup()
-call GroupEnumUnitsInRange(g,GetUnitX(u),GetUnitY(u),120,Base)
-loop
-set e=FirstOfGroup(g)
-exitwhen e==null
-if Condition_Base(p,e) and not IsUnitInGroup(e,hit) then
-call GroupAddUnit(hit,e)
-call myCustomDamage(u,e,dmg,false,false,null,null,null)
-if UnitIsAlive(e) then
-call SetControlToUnit(u,e,1.,"stun")
-endif
-endif
-call GroupRemoveUnit(g,e)
-endloop
-call DestroyGroup(g)
-endif
-else
 set fin=true
 endif
 if fin then
 call SetUnitFlyHeight(u,40,0)
 call SetUnitTimeScale(u,1.)
+call SetUnitPathing(u,true)
 call PauseUnit(u,false)
 call SetUnitInvulnerable(u,false)
 call DestroyGroup(hit)
@@ -131471,6 +131609,12 @@ call SaveInteger(h,id,5,0)
 // v6: рывок 0.5..0.9 с (16..30 тиков) по расстоянию, дуга ниже (120..220), группа задетых
 call SaveInteger(h,id,6,IMinBJ(30,IMaxBJ(16,16+R2I(SquareRoot((GetSpellTargetX()-GetUnitX(u))*(GetSpellTargetX()-GetUnitX(u))+(GetSpellTargetY()-GetUnitY(u))*(GetSpellTargetY()-GetUnitY(u)))/65.))))
 call SaveGroupHandle(h,id,8,CreateGroup())
+// v7: рывок сквозь юнитов
+call SetUnitPathing(u,false)
+call TimerStart(t,0.02,true,function TousenFETick)
+set t=null
+set u=null
+return
 //call SaveReal(h,id,7,RMinBJ(380.,180.+0.22*SquareRoot((GetSpellTargetX()-GetUnitX(u))*(GetSpellTargetX()-GetUnitX(u))+(GetSpellTargetY()-GetUnitY(u))*(GetSpellTargetY()-GetUnitY(u)))))
 //call SaveReal(h,id,7,RMinBJ(320.,220.+0.11*SquareRoot((GetSpellTargetX()-GetUnitX(u))*(GetSpellTargetX()-GetUnitX(u))+(GetSpellTargetY()-GetUnitY(u))*(GetSpellTargetY()-GetUnitY(u)))))
 call SaveReal(h,id,7,RMinBJ(220.,120.+0.1*SquareRoot((GetSpellTargetX()-GetUnitX(u))*(GetSpellTargetX()-GetUnitX(u))+(GetSpellTargetY()-GetUnitY(u))*(GetSpellTargetY()-GetUnitY(u)))))
