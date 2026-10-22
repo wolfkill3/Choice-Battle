@@ -290210,7 +290210,7 @@ call LANG_A('SnEc',1,4,"Cero like Ichigo's: a beam ahead stuns those hit. Hirako
 call LANG_A('SnEc',2,0,"Cero, [|cffffcc00Level %d|r] (|cffffcc00E|r)")
 call LANG_A('SnEc',3,0,"Cero like Ichigo's: a beam ahead stuns those hit. Hirako is invulnerable during the charge and the beam.|n|n|cFF00A5FF|nDamage: 3\\4\\5\\6\\7*|r|c003CFF3CAGI|r|cFF00A5FF|nStun: 2.5 sec.|nBeam length: 2200|nCooldown: 14 sec.|r")
 call LANG_A('ToEf',0,0,"Suzumushi Hyakushiki: Grillar Grillo (|cffffcc00E|r)")
-call LANG_A('ToEf',1,0,"Tōsen turns into the fly until the round ends: the mask stays on, E becomes a double Cero, W and T become Wing Chirr and Grillar Grillo. Tōsen regains his sight: Blindness is removed.|n|n|cFF00A5FFAvailable: in the mask (E), from level 25|nDuration: until the round ends|r")
+call LANG_A('ToEf',1,0,"Tōsen turns into the fly until the round ends: the mask stays on, E becomes a double Cero, W and T become Wing Chirr and Los Nueve Aspectos. Tōsen regains his sight: Blindness is removed.|n|n|cFF00A5FFAvailable: in the mask (E), from level 25|nDuration: until the round ends|r")
 call LANG_A('ToFW',0,0,"Wing Chirr, [|cffffcc00Level 1|r] (|cffffcc00W|r)")
 call LANG_A('ToFW',0,1,"Wing Chirr, [|cffffcc00Level 2|r] (|cffffcc00W|r)")
 call LANG_A('ToFW',0,2,"Wing Chirr, [|cffffcc00Level 3|r] (|cffffcc00W|r)")
@@ -290221,14 +290221,13 @@ call LANG_A('ToFW',1,1,"The fly's wings send a sound wave ahead: damage and sile
 call LANG_A('ToFW',1,2,"The fly's wings send a sound wave ahead: damage and silence to everyone in the cone.|n|n|cFF00A5FF|nDamage: 3*|r|c003CFF3CAGI|r|cFF00A5FF|nSilence: 1.8 sec.|nRange: 700, cone 60°|nCooldown: 12 sec.|r")
 call LANG_A('ToFW',1,3,"The fly's wings send a sound wave ahead: damage and silence to everyone in the cone.|n|n|cFF00A5FF|nDamage: 3.5*|r|c003CFF3CAGI|r|cFF00A5FF|nSilence: 1.9 sec.|nRange: 700, cone 60°|nCooldown: 12 sec.|r")
 call LANG_A('ToFW',1,4,"The fly's wings send a sound wave ahead: damage and silence to everyone in the cone.|n|n|cFF00A5FF|nDamage: 4*|r|c003CFF3CAGI|r|cFF00A5FF|nSilence: 2.0 sec.|nRange: 700, cone 60°|nCooldown: 12 sec.|r")
-call LANG_A('ToFT',0,0,"Grillar Grillo (|cffffcc00T|r)")
 call LANG_A('ToFT',1,0,"A sound field around Tōsen follows him: enemies inside are silenced and take damage, Tōsen attacks faster.|n|n|cFF00A5FF|nAoE: 600|nDamage: 1*|r|c003CFF3CAGI|r|cFF00A5FF per sec.|nSilence: while in the field|nAttack speed: +60%|nDuration: 6 sec.|nCooldown: 45 sec.|r")
 call LANG_A('ToEc',0,0,"Double Cero, [|cffffcc00Level 1|r] (|cffffcc00E|r)")
 call LANG_A('ToEc',0,1,"Double Cero, [|cffffcc00Level 2|r] (|cffffcc00E|r)")
 call LANG_A('ToEc',0,2,"Double Cero, [|cffffcc00Level 3|r] (|cffffcc00E|r)")
+call LANG_A('ToEc',0,3,"Double Cero, [|cffffcc00Level 4|r] (|cffffcc00E|r)")
 endfunction
 function LANG_Data51 takes nothing returns nothing
-call LANG_A('ToEc',0,3,"Double Cero, [|cffffcc00Level 4|r] (|cffffcc00E|r)")
 call LANG_A('ToEc',0,4,"Double Cero, [|cffffcc00Level 5|r] (|cffffcc00E|r)")
 call LANG_A('ToEc',1,0,"The fly fires two green Ceros side by side: a wide beam ahead stuns those hit. Tōsen is invulnerable during the charge and the beam.|n|n|cFF00A5FF|nDamage: 6*|r|c003CFF3CAGI|r|cFF00A5FF|nStun: 2.5 sec.|nBeam length: 2200, width 300|nCooldown: 14 sec.|r")
 call LANG_A('ToEc',1,1,"The fly fires two green Ceros side by side: a wide beam ahead stuns those hit. Tōsen is invulnerable during the charge and the beam.|n|n|cFF00A5FF|nDamage: 8*|r|c003CFF3CAGI|r|cFF00A5FF|nStun: 2.5 sec.|nBeam length: 2200, width 300|nCooldown: 14 sec.|r")
@@ -290478,9 +290477,9 @@ call LANG_It('I01N',1,"Medal of Courage (Recipe)")
 call LANG_It('I01N',2,"Increase |c00FFFF66AllStat|r by 14.|n|nRequires: Robe of the Sage, Boots of Agility, Bracers of Strength.")
 call LANG_It('I01N',3,"Increase |c00FFFF66AllStat|r by 14.|n|nRequires: Robe of the Sage, Boots of Agility, Bracers of Strength.")
 call LANG_It('I01O',0,"Sandai Kitetsu")
+call LANG_It('I01O',1,"Sandai Kitetsu")
 endfunction
 function LANG_Data52 takes nothing returns nothing
-call LANG_It('I01O',1,"Sandai Kitetsu")
 call LANG_It('I01O',2,"Increased attack power by 80, |c00FFFF66AllStat|r by 25, Passive: Mortal Strike - 20% chance to deal 2x damage.|n|nActive: \"Quick Strikes\" - moves towards the enemy, striking and activating the passive ability of Shusui, Fang and Dark Excalibur (if not on cooldown) if the owner has them.|n|nRange:"+" 600|nCooldown: 4 sec.")
 call LANG_It('I01O',3,"Increased attack power by 80, |c00FFFF66AllStat|r by 25, Passive: Mortal Strike - 20% chance to deal 2x damage.|n|nActive: \"Quick Strikes\" - moves towards the enemy, striking and activating the passive ability of Shusui, Fang and Dark Excalibur (if not on cooldown) if the owner has them.|n|nCooldo"+"wn: 4 sec.")
 call LANG_It('I01P',0,"Sandai Kitetsu (Recipe)")
@@ -290730,9 +290729,9 @@ call LANG_It('I03C',3,"Increases HP by 500 units, reduces physical damage to the
 call LANG_It('I03D',0,"Anbu Mask")
 call LANG_It('I03D',1,"Anbu Mask")
 call LANG_It('I03D',2,"Increase MP by 500, increase |c003CFF3CAGI|r by 15. |c00FF5555STR|r by 10")
+call LANG_It('I03D',3,"Increase MP by 500, increase |c003CFF3CAGI|r by 15. |c00FF5555STR|r by 10")
 endfunction
 function LANG_Data53 takes nothing returns nothing
-call LANG_It('I03D',3,"Increase MP by 500, increase |c003CFF3CAGI|r by 15. |c00FF5555STR|r by 10")
 call LANG_It('I03E',0,"Anbu Shoes")
 call LANG_It('I03E',1,"Anbu Shoes")
 call LANG_It('I03E',2,"Grants a 35% chance to dodge, when activated, increases your run speed to a maximum for 4 seconds.|n|nCD: 15 seconds.")
@@ -290982,9 +290981,9 @@ call LANG_It('I04V',3,"Increase |c00FFFF66AllStat|r by 35, HP +500, by pressing 
 call LANG_It('I04W',0,"Imagine Breaker (Recipe)")
 call LANG_It('I04W',1,"Imagine Breaker (Recipe)")
 call LANG_It('I04W',2,"Increase |c00FFFF66AllStat|r by 35, 500. health|nCannot be purchased with Boros Armor or Medusa.|nActive ability: “Frenzy” - makes you immune to negative effects for 7 sec and gives 15% impenetrable magic resistance, but reduces magic DMG by 15%.|n|nCooldown: 55 sec.|n|nRequires: Rank A Sword, V"+"ongola Glove Level 3, Medal of Courage.")
+call LANG_It('I04W',3,"Increase |c00FFFF66AllStat|r by 35, 500. health|nCannot be purchased with Boros Armor or Medusa.|nActive ability: “Frenzy” - makes you immune to negative effects for 7 sec and gives 15% impenetrable magic resistance, but reduces magic DMG by 15%.|n|nCooldown: 55 sec.|n|nRequires: Rank A Sword, V"+"ongola Glove Level 3, Medal of Courage.")
 endfunction
 function LANG_Data54 takes nothing returns nothing
-call LANG_It('I04W',3,"Increase |c00FFFF66AllStat|r by 35, 500. health|nCannot be purchased with Boros Armor or Medusa.|nActive ability: “Frenzy” - makes you immune to negative effects for 7 sec and gives 15% impenetrable magic resistance, but reduces magic DMG by 15%.|n|nCooldown: 55 sec.|n|nRequires: Rank A Sword, V"+"ongola Glove Level 3, Medal of Courage.")
 call LANG_It('I04X',0,"Excalibur (Recipe)")
 call LANG_It('I04X',1,"Excalibur (Recipe)")
 call LANG_It('I04X',2,"|c00FFFF66AllStat|r by 30, attacks by 125, with each attack restores 20% of the damage dealt (melee only)|nWith each attack, reduces armor by 4 for 10 sec.|n|nActive: \"Excalibur Slash\" - performs a swing that deals 200% of attack to enemies in front of him in an AoE of 500. Counts as a normal atta"+"ck, but cannot trigger Dark Excalibur's Bloodlust, Li Shuwen's Q, or Shigan Lucci's.|n|nCDR: 3 sec.|n|nRequires: Sandai Kitetsu, Recipe.")
@@ -291234,9 +291233,9 @@ call LANG_It('I06O',1,"Dark Grail")
 call LANG_It('I06O',2,"MS +25%, Regeneration +25, DEF +10, AoE +1500, |c00FFFF66AllStat|r +30|n|nActive: \"Healing\" - gradually restores 1000 + Level * 20. HP to all allies for 6 sec. within a radius of 1000. Cannot be used again on affected targets for 15 seconds after it ends.|n|nCDR: 45 sec")
 call LANG_It('I06O',3,"MS +25%, Regeneration +25, DEF +10, AoE +1500, |c00FFFF66AllStat|r +30|n|nActive: \"Healing\" - gradually restores 1000 + Level * 20. HP to all allies for 6 sec. within a radius of 1000. Cannot be used again on affected targets for 15 seconds after it ends.|n|nCDR: 45 sec")
 call LANG_It('I06P',0,"Dark Grail (Recipe)")
+call LANG_It('I06P',1,"Dark Grail (Recipe)")
 endfunction
 function LANG_Data55 takes nothing returns nothing
-call LANG_It('I06P',1,"Dark Grail (Recipe)")
 call LANG_It('I06P',2,"MS +25%, Regeneration +25, DEF +10, AoE +1500, |c00FFFF66AllStat|r +30.|n|nActive: \"Heal\"|n|nCooldown: 45 sec.|n|nRequires: Holy Grail, Recipe.")
 call LANG_It('I06P',3,"MS +25%, Regeneration +25, DEF +10, AoE +1500, |c00FFFF66AllStat|r +30.|n|nActive: \"Heal\"|n|nCooldown: 45 sec.|n|nRequires: Holy Grail, Recipe.")
 call LANG_It('I06Q',0,"Kaleidoscepter Ruby")
@@ -291486,9 +291485,9 @@ call LANG_U('H01B',3,"Gamma is the captain of the third division of the Black Sp
 call LANG_U('H01C',3,"Urahara Kisuke is the former captain of the 12th Division, the creator of Hougyoku, and currently runs a small shop in the human world.|n|nRole: Caster, Disabler, Swordsman, Nuker|n|n")
 call LANG_U('H01D',3,"Maka Albarn is one of the Spartans.|n|nRole: Caster, Carry|n|n")
 call LANG_U('H01E',3,"Maka Albarn is one of the Spartans.")
+call LANG_U('H01F',3,"Black Star - part of the Sparta squad, works in tandem with Tsubaki.|n|nRole: Caster, Durable|n|n")
 endfunction
 function LANG_Data56 takes nothing returns nothing
-call LANG_U('H01F',3,"Black Star - part of the Sparta squad, works in tandem with Tsubaki.|n|nRole: Caster, Durable|n|n")
 call LANG_U('H01G',3,"Black Star - part of the Sparta squad, works in tandem with Tsubaki.")
 call LANG_U('H01H',3,"Death the Kid - the son of a shinigami, uses two pistols, is on the Sparta team.|n|nRole: Caster, Carry, Exhauster|n|n")
 call LANG_U('H01I',3,"Death the Kid - son of a shinigami, uses two pistols, is on the sparta team.")
@@ -291738,9 +291737,9 @@ call LANG_U('HSaC',3,"Sabrac |n|nRole: Carry, Caster|n|nAbilities :|n|n")
 call LANG_U('HASC',3,"Aizen - Former Captain of the Fifth Division, absorbed the Hougyoku and became immortal.|n|nRole: Caster, Durable, Swordsman|n|n")
 call LANG_U('HAST',3,"Aizen - Former Captain of the Fifth Division, absorbed the Hougyoku and became immortal.|n|nRole: Caster, Durable, Swordsman|n|n")
 call LANG_U('HKar',3,"Karna is the son of the sun god Surya and a heroic soul summoned in the Lancer class.|n|nRole: Caster, Carry, Durable, Disabler, Exhauster|n|n")
+call LANG_U('HGrp',3,"Monkey D. Garp — Vice Admiral of the Marines, the legendary Fist of the Navy. |nLuffy's grandfather, a man without powers: only fists, will and cannonballs. (Made by AI by AlTrOn)|n|nRole: Initiator, Disabler.|n|n")
 endfunction
 function LANG_Data57 takes nothing returns nothing
-call LANG_U('HGrp',3,"Monkey D. Garp — Vice Admiral of the Marines, the legendary Fist of the Navy. |nLuffy's grandfather, a man without powers: only fists, will and cannonballs. (Made by AI by AlTrOn)|n|nRole: Initiator, Disabler.|n|n")
 call LANG_U('HSig',3,"Signum — the leader of the Belkan knights, summoned by the «Book of Darkness». Her magic device, Laevatein, takes the form of a sword. In battle she relies on armor. |n|nRole: Caster, Carry, Swordsman|n|n")
 call LANG_U('HGuB',3,"|nGuts —  the Black Swordsman with a cursed brand (also known as the Hundred Man Slayer and the Hawk of Darkness) tirelessly opposes demonic forces. In battle he uses the huge two-handed sword «Dragonslayer», throwing knives, a crossbow and a metal prosthetic left arm hiding a small hand cannon."+"|n|n|nRole: Disabler, Durable, Caster, Swordsman|n|nAbilities: Tondeke Yagare,Darona,Sokou Doke,Jamada,Kurae Yagare.|n|n|cFFFFC850Strength: 18 +3.5|r|nAgility: 18 +2|nIntelligence: 12 +1.2")
 call LANG_U('HGuN',3,"|nGuts —  the Black Swordsman with a cursed brand (also known as the Hundred Man Slayer and the Hawk of Darkness) tirelessly opposes demonic forces. In battle he uses the huge two-handed sword «Dragonslayer», throwing knives, a crossbow and a metal prosthetic left arm hiding a small hand cannon."+"|n|n|nRole: Disabler, Durable, Caster, Swordsman|n|nAbilities: Tondeke Yagare,Darona,Sokou Doke,Jamada,Kurae Yagare.|n|n|cFFFFC850Strength: 15 +3.5|r|nAgility: 18 +2|nIntelligence: 15 +1.2")
@@ -291990,9 +291989,9 @@ call LANG_B('ReFP',1,"Rengoku Flame Breathing Secret Technique.")
 call LANG_B('ReRf',1,"This warrior is pissed off. He cannot control himself.")
 call LANG_B('ReSb',1,"This warrior is slow. The speed of his movement and combat is much lower than normal.")
 call LANG_B('RiSV',1,"Unit loses bonus magic resistance")
+call LANG_B('YuFb',1,"This unit is inside the Barrier. He is slow and cannot cast spells.")
 endfunction
 function LANG_Data58 takes nothing returns nothing
-call LANG_B('YuFb',1,"This unit is inside the Barrier. He is slow and cannot cast spells.")
 call LANG_B('YuWb',1,"This one is slow and cannot attack.")
 call LANG_B('aokb',1,"The unit gains 40% magic defense.")
 call LANG_B('cbc3',1,"Silence is applied to the unit.")
