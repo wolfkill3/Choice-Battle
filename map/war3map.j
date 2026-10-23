@@ -69987,7 +69987,9 @@ if GetUnitAbilityLevel(u,'B06T')>0 and c!=UltimateDamage and GetUnitAbilityLevel
     call SaveReal(HH,uid,'ASrs',nb)
     call SaveReal(HH,uid,'tlrs',LoadReal(HH,uid,'tlrs')+nb)
 endif
-if (LoadBoolean(DMG_IHT,uid,'I04T') or GetUnitAbilityLevel(u,'KIP8')>0) and u==Hero[idu] and c!=UltimateDamage and GetUnitAbilityLevel(c,'A1WR')==0 and GetUnitAbilityLevel(c,'A0WR')==0 and nb>0 and UnitHasItemOfTypeBJCustom(c,'I13R')==false then
+//if (LoadBoolean(DMG_IHT,uid,'I04T') or GetUnitAbilityLevel(u,'KIP8')>0) and u==Hero[idu] and c!=UltimateDamage and GetUnitAbilityLevel(c,'A1WR')==0 and GetUnitAbilityLevel(c,'A0WR')==0 and nb>0 and UnitHasItemOfTypeBJCustom(c,'I13R')==false then
+// 23 окт: зеркало Ята отражает и с Доппельмана Мории (H00Q), клоны Наруто / Тобирамы — нет
+if (LoadBoolean(DMG_IHT,uid,'I04T') or GetUnitAbilityLevel(u,'KIP8')>0) and (u==Hero[idu] or GetUnitTypeId(u)=='H00Q') and c!=UltimateDamage and GetUnitAbilityLevel(c,'A1WR')==0 and GetUnitAbilityLevel(c,'A0WR')==0 and nb>0 and UnitHasItemOfTypeBJCustom(c,'I13R')==false then
     if GetUnitAbilityLevel(u,'YatB')==0 then
         // call SaveReal(HH,uid,'YTrs',nb*0.25)
         call SaveReal(HH,uid,'tlrs',LoadReal(HH,uid,'tlrs')+nb*0.25)
