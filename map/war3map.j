@@ -102685,7 +102685,7 @@ function TousenSleepCast takes unit u returns nothing
         if GetUnitTypeId(u)=='H0TF' or LoadBoolean(HH,GetHandleId(u),SH_TouHollow) then
             call TousenSnd("TousenGrilloQ")
             if GetUnitTypeId(u)=='H0TF' then
-                call TousenAnimFor(u,5,1.,1.3) // 23 окт: взмах крыльями, потом стойка
+                call TousenAnimFor(u,0,1.,1.3) // 23 окт: взмах крыльями «6», потом стойка (модель мухи из 14 анимаций, 23 окт)
             endif
         else
             set soundplay=SndN(1361) // Sound\Music\mp3Music\Suzumushi.mp3
@@ -131120,7 +131120,7 @@ call SaveReal(h,id,16,60.) // 120 между лучами (22 окт; было 5
 endif
 call SetUnitFacingInstant(u,a*bj_RADTODEG)
 if GetUnitTypeId(u)=='H0TF' then
-call TousenAnimFor(u,9,1.5,1.9) // 23 окт: муха — «10 Roar» (у неё нет spell), потом стойка
+call TousenAnimFor(u,3,1.5,1.9) // 23 окт: муха — «10 Roar» (у неё нет spell), потом стойка (модель мухи из 14 анимаций, 23 окт)
 else
 call SetUnitAnimation(u,"spell")
 endif
@@ -131988,7 +131988,7 @@ call TousenSnd("TousenGrilloW-sfx")
 call PauseUnit(u,true)
 call SetUnitInvulnerable(u,true)
 //call SetUnitAnimation(u,"spell")
-call SetUnitAnimationByIndex(u,9) // 23 окт: «10 Roar» — звуковой крик на месте (у мухи нет spell)
+call SetUnitAnimationByIndex(u,3) // 23 окт: «10 Roar» — звуковой крик на месте (у мухи нет spell) (модель мухи из 14 анимаций, 23 окт)
 call SetUnitTimeScale(u,1.25)
 call SaveUnitHandle(h,id,0,u)
 call SaveInteger(h,id,1,0)
@@ -132319,7 +132319,7 @@ local effect fx
 local integer i=0
 call UnitAddAbility(u,'ToFa')
 if GetUnitTypeId(u)=='H0TF' then
-call TousenAnimFor(u,74,2.,1.38) // 23 окт: «60 Roar» — крик с подскоком, потом стойка
+call TousenAnimFor(u,13,2.,1.38) // 23 окт: «60 Roar» — крик с подскоком, потом стойка (модель мухи из 14 анимаций, 23 окт)
 endif
 call TousenSnd("TousenGrilloW") // 22 окт: голос W и T поменяны местами
 call TousenSnd("TousenGrilloT-sfx")
@@ -132902,7 +132902,7 @@ call SetUnitModel(qn,"Tousen\\[By XeSHTeG]Tosen_Hollow.mdx")
 call SetUnitScale(qn,1.5,1.5,1.5)
 call SetUnitFlyHeight(qn,40,0)
 call SetUnitBlendTime(qn,0.)
-call SetUnitAnimationByIndex(qn,7)
+call SetUnitAnimationByIndex(qn,1) // «8 Dash» (модель мухи из 14 анимаций, 23 окт)
 call SetUnitTimeScale(qn,0.)
 call SetUnitVertexColor(qn,120,255,140,140)
 set bj_lastStartedTimer=CreateTimer()
@@ -132934,7 +132934,7 @@ local boolean fin=false
 call SaveInteger(h,id,5,tk)
 if tk==1 then
 call PauseUnit(u,true)
-call SetUnitAnimationByIndex(u,7)
+call SetUnitAnimationByIndex(u,1) // «8 Dash» (модель мухи из 14 анимаций, 23 окт)
 call SetUnitTimeScale(u,1.5)
 // старт рывка — крупный направленный ветер и dash sfx (как у рывков других героев)
 set fx=AddSpecialEffect("WindVectorPush.mdx",GetUnitX(u),GetUnitY(u))
@@ -133273,9 +133273,9 @@ local real sd=2*ModuloInteger(k,2)-1
 // 23 окт: удары — выпад с клинком вперёд (17) и рывок с размашистым ударом (8), было Attack 1 / Combo Attack
 call SetUnitTimeScale(u,3.)
 if ModuloInteger(k,2)==1 then
-call SetUnitAnimationByIndex(u,17)
+call SetUnitAnimationByIndex(u,6) // «15» (модель мухи из 14 анимаций, 23 окт)
 else
-call SetUnitAnimationByIndex(u,8)
+call SetUnitAnimationByIndex(u,2) // «9»
 endif
 //call TousenSnd("TousenGrilloG-sfx1") // удар (22 окт)
 // 23 окт: sfx1 — на рывке, sfx2 — на первом попадании
@@ -133382,7 +133382,7 @@ call UnitAddAbility(u,'Amrf')
 call UnitRemoveAbility(u,'Amrf')
 call SetUnitFacingInstant(u,ta*bj_RADTODEG)
 call SetUnitTimeScale(u,2.)
-call SetUnitAnimationByIndex(u,26) // Boost (23 окт: номера после 22 сдвинуты — у модели убран дубль Walk)
+call SetUnitAnimationByIndex(u,9) // Boost (модель мухи из 14 анимаций, 23 окт)
 call TousenSnd("TousenGrilloG-sfx1") // 23 окт: звук рывка в пике
 elseif ph==3 then
 // пике: 6 тиков взлёт до 420 с подлётом, 5 тиков резкое падение на цель
@@ -133401,7 +133401,7 @@ call SetUnitFlyHeight(u,fh,0)
 if pt==7 then
 call SetUnitTimeScale(u,3.)
 //call SetUnitAnimationByIndex(u,15) // Attack 1 вниз
-call SetUnitAnimationByIndex(u,47) // 23 окт: «43» — падение сверху на землю с ударом
+call SetUnitAnimationByIndex(u,12) // 23 окт: «43» — падение сверху на землю с ударом (модель мухи из 14 анимаций, 23 окт)
 endif
 if pt>6 then
 set bj_lastCreatedEffect=AddSpecialEffect("Others\\WindCirclefaster.mdl",fx,fy)
@@ -133460,9 +133460,9 @@ call UnitSpeed(u,RMaxBJ(0.6,2.2-0.2*pt))
 if pt==3 then
 call SetUnitTimeScale(u,2.)
 if sd>0 then
-call SetUnitAnimationByIndex(u,41) // Dash L
+call SetUnitAnimationByIndex(u,11) // Dash L (модель мухи из 14 анимаций, 23 окт)
 else
-call SetUnitAnimationByIndex(u,24) // Dash R
+call SetUnitAnimationByIndex(u,8) // Dash R (модель мухи из 14 анимаций, 23 окт)
 endif
 endif
 if pt>=8 then
