@@ -66071,7 +66071,8 @@ local real y=LoadReal(h,id,51)
 local unit u
 local real dist
 local real modif_factor=LoadReal(h, id, 100)
-local real dmg=GetHeroAgi(c,true)*3. *modif_factor // 21 окт: x2 (было 1.5*AGI)
+//local real dmg=GetHeroAgi(c,true)*3. *modif_factor // 21 окт: x2 (было 1.5*AGI)
+local real dmg=GetHeroAgi(c,true)*2. *modif_factor // 23 окт: 2*AGI (было 1.5, 21 окт — 3)
 local integer l__idg=GetHandleId(ng)
 loop
 exitwhen i>10
@@ -293854,8 +293855,8 @@ call LANG_It('I01P',2,"Increased attack power by 80, |c00FFFF66AllStat|r by 25, 
 call LANG_It('I01P',3,"Increased attack power by 80, |c00FFFF66AllStat|r by 25, Passive: Mortal Strike - 20% chance to deal 2x damage.|n|nCooldown: 4 sec.|n|nRequires: Tempered Sword, Recipe.")
 call LANG_It('I01Q',0,"Shusui")
 call LANG_It('I01Q',1,"Shusui")
-call LANG_It('I01Q',2,"Attack power increased by 100, |c00FFFF66AllStat|r by 30, 20% chance to deal 2x damage, Passive: Deathwave - 20% chance to deal 3*|c003CFF3CAGI|r damage around the target in 500 AoE.|n|nActive: \"Quick Strikes\" - moves towards the enemy, striking and activating the passive ability of Shusui, Fang a"+"nd Dark Excalibur (if not on cooldown) if the owner has them.|n|nRange: 600|nCooldown: 4 sec.")
-call LANG_It('I01Q',3,"Attack power increased by 100, |c00FFFF66AllStat|r by 30, 20% chance to deal 2x damage, Passive: Deathwave - 20% chance to deal 3*|c003CFF3CAGI|r damage around the target in 500 AoE.|n|nActive: \"Quick Strikes\" - moves towards the enemy, striking and activating the passive ability of Shusui, Fang a"+"nd Dark Excalibur (if not on cooldown) if the owner has them.|n|nRange: 600|nCooldown: 4 sec.")
+call LANG_It('I01Q',2,"Attack power increased by 100, |c00FFFF66AllStat|r by 30, 20% chance to deal 2x damage, Passive: Deathwave - 20% chance to deal 2*|c003CFF3CAGI|r damage around the target in 500 AoE.|n|nActive: \"Quick Strikes\" - moves towards the enemy, striking and activating the passive ability of Shusui, Fang a"+"nd Dark Excalibur (if not on cooldown) if the owner has them.|n|nRange: 600|nCooldown: 4 sec.")
+call LANG_It('I01Q',3,"Attack power increased by 100, |c00FFFF66AllStat|r by 30, 20% chance to deal 2x damage, Passive: Deathwave - 20% chance to deal 2*|c003CFF3CAGI|r damage around the target in 500 AoE.|n|nActive: \"Quick Strikes\" - moves towards the enemy, striking and activating the passive ability of Shusui, Fang a"+"nd Dark Excalibur (if not on cooldown) if the owner has them.|n|nRange: 600|nCooldown: 4 sec.")
 call LANG_It('I01R',0,"Shusui (Recipe)")
 call LANG_It('I01R',1,"Shusui (Recipe)")
 call LANG_It('I01R',2,"Attack power increased by 100, |c00FFFF66AllStat|r by 30, 20% chance to deal 2x damage. Passive: Death Wave - 20% chance to deal 1.5*|c003CFF3CAGI|r damage in 500 AoE.|nActive: \"Quick Strikes\" - moves towards the enemy, striking and activating the passive ability of Shusui, Fang and Dark Excalibur"+" (if not on cooldown) if the owner has them.|nRange: 600|nCooldown: 4 sec.|n|nRequires: Sandai Kitetsu, Recipe.")
