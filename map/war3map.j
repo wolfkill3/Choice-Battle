@@ -15294,6 +15294,14 @@ call FlushChildHashtable(HH,GetHandleId(t))
 call TSE_DestroyTimer(t)
 set t=null
 endfunction
+// R (23 окт): цель копья — выбранный враг; каст на себя или не на врага — ближайший противник, как раньше (Rem_SpearReady)
+function Rem_R_Pick takes unit u,unit tu returns boolean
+if tu!=null and tu!=u and Condition_Base(OwnerOf(u),tu) and UnitIsAlive(tu) and GetUnitAbilityLevel(tu,'Aloc')==0 and not IsUnitIllusion(tu) then
+call SaveUnitHandle(HH,GetHandleId(u),SH_RemSpear,tu)
+return true
+endif
+return Rem_SpearReady(u)
+endfunction
 function Rem_R_Act takes unit caster returns nothing
 local integer cid=GetHandleId(caster)
 local real x=GetUnitX(caster)
@@ -15336,8 +15344,11 @@ call Rem_Text(caster,Lng("Пронжу тебя","I will pierce you"))
 //elseif stage==5 and Rem_SpearReady(caster) then
 //set target=LoadUnitHandle(HH,cid,SH_RemSpear)
 // 23 окт: R по точке — копьё летит в сторону клика (Rem_R_Spear, свободный полёт)
-elseif stage==5 then
-set target=null
+//elseif stage==5 then
+//set target=null
+// 23 окт (позже): R по юниту — копьё в выбранного врага, на себя — в ближайшего
+elseif stage==5 and Rem_R_Pick(caster,GetSpellTargetUnit()) then
+set target=LoadUnitHandle(HH,cid,SH_RemSpear)
 call Rem_Sound("bof\\war3mapImported\\RemiliaScarlet-R-YY5.mp3",100)
 call Rem_Text(caster,"Spear the Gungnir")
 call SaveInteger(HH,cid,SH_RemSpearStage,0)
@@ -15355,11 +15366,12 @@ set t=CreateTimer()
 call SaveUnitHandle(HH,GetHandleId(t),0,caster)
 call SaveUnitHandle(HH,GetHandleId(t),1,target)
 //call SaveReal(HH,GetHandleId(t),2,Atan2BJ(GetUnitY(target)-y,GetUnitX(target)-x))
-if SRS(x,y,GetSpellTargetX(),GetSpellTargetY())>10. then
-call SaveReal(HH,GetHandleId(t),2,Atan2BJ(GetSpellTargetY()-y,GetSpellTargetX()-x))
-else
-call SaveReal(HH,GetHandleId(t),2,GetUnitFacing(caster))
-endif
+//if SRS(x,y,GetSpellTargetX(),GetSpellTargetY())>10. then
+//call SaveReal(HH,GetHandleId(t),2,Atan2BJ(GetSpellTargetY()-y,GetSpellTargetX()-x))
+//else
+//call SaveReal(HH,GetHandleId(t),2,GetUnitFacing(caster))
+//endif
+call SaveReal(HH,GetHandleId(t),2,Atan2BJ(GetUnitY(target)-y,GetUnitX(target)-x))
 call TSE_TimerStart(t,.02,true,function Rem_R_Act2)
 endif
 set target=null
@@ -136093,7 +136105,7 @@ call SaveStr(HH,SH_ShnChanO,'RmQ1',"flamestrike")
 call SaveInteger(HH,SH_ShnChanT,'RmQ1',2)
 call SaveStr(HH,SH_ShnChanO,'RmQ2',"absorb")
 call SaveStr(HH,SH_ShnChanO,'RmR1',"incineratearrow")
-call SaveInteger(HH,SH_ShnChanT,'RmR1',2)
+call SaveInteger(HH,SH_ShnChanT,'RmR1',1)
 call SaveStr(HH,SH_ShnChanO,'RmT1',"wateryminion")
 call SaveInteger(HH,SH_ShnChanT,'RmT1',1)
 call SaveStr(HH,SH_ShnChanO,'RmW1',"flamingarrows")
@@ -293291,13 +293303,13 @@ call LANG_A('RmR1',0,1,"Spear the Gungnir, [|cffffcc00Level 2|r] (|cffffcc00R|r)
 call LANG_A('RmR1',0,2,"Spear the Gungnir, [|cffffcc00Level 3|r] (|cffffcc00R|r)")
 call LANG_A('RmR1',0,3,"Spear the Gungnir, [|cffffcc00Level 4|r] (|cffffcc00R|r)")
 call LANG_A('RmR1',0,4,"Spear the Gungnir, [|cffffcc00Level 5|r] (|cffffcc00R|r)")
-call LANG_A('RmR1',1,0,"A five-press spell: press R, no more than 7 sec. between presses. Every press targets a point; the fifth throws a spear towards the click, it pierces the first enemy on the way: half of the spear damage goes through invulnerability.|nThe pierced target is lifted into the air and stays stunned.|n|n|c"+"FF00A5FF|nSpear damage: 2*|r|c0077FFFFINT|r|cFF00A5FF + 15% of Remilia's max HP|nSpear stun: 1.2 sec.|nSpear range: 5000|nCast time: +0.1 sec.|nCooldown between presses: 1.5 sec.|nCooldown: 30 sec.|r")
-call LANG_A('RmR1',1,1,"A five-press spell: press R, no more than 7 sec. between presses. Every press targets a point; the fifth throws a spear towards the click, it pierces the first enemy on the way: half of the spear damage goes through invulnerability.|nThe pierced target is lifted into the air and stays stunned.|n|n|c"+"FF00A5FF|nSpear damage: 3*|r|c0077FFFFINT|r|cFF00A5FF + 15% of Remilia's max HP|nSpear stun: 1.2 sec.|nSpear range: 5000|nCast time: +0.1 sec.|nCooldown between presses: 1.5 sec.|nCooldown: 30 sec.|r")
-call LANG_A('RmR1',1,2,"A five-press spell: press R, no more than 7 sec. between presses. Every press targets a point; the fifth throws a spear towards the click, it pierces the first enemy on the way: half of the spear damage goes through invulnerability.|nThe pierced target is lifted into the air and stays stunned.|n|n|c"+"FF00A5FF|nSpear damage: 4*|r|c0077FFFFINT|r|cFF00A5FF + 15% of Remilia's max HP|nSpear stun: 1.2 sec.|nSpear range: 5000|nCast time: +0.1 sec.|nCooldown between presses: 1.5 sec.|nCooldown: 30 sec.|r")
-call LANG_A('RmR1',1,3,"A five-press spell: press R, no more than 7 sec. between presses. Every press targets a point; the fifth throws a spear towards the click, it pierces the first enemy on the way: half of the spear damage goes through invulnerability.|nThe pierced target is lifted into the air and stays stunned.|n|n|c"+"FF00A5FF|nSpear damage: 5*|r|c0077FFFFINT|r|cFF00A5FF + 15% of Remilia's max HP|nSpear stun: 1.2 sec.|nSpear range: 5000|nCast time: +0.1 sec.|nCooldown between presses: 1.5 sec.|nCooldown: 30 sec.|r")
-call LANG_A('RmR1',1,4,"A five-press spell: press R, no more than 7 sec. between presses. Every press targets a point; the fifth throws a spear towards the click, it pierces the first enemy on the way: half of the spear damage goes through invulnerability.|nThe pierced target is lifted into the air and stays stunned.|n|n|c"+"FF00A5FF|nSpear damage: 6*|r|c0077FFFFINT|r|cFF00A5FF + 15% of Remilia's max HP|nSpear stun: 1.2 sec.|nSpear range: 5000|nCast time: +0.1 sec.|nCooldown between presses: 1.5 sec.|nCooldown: 30 sec.|r")
+call LANG_A('RmR1',1,0,"A five-press spell: press R, no more than 7 sec. between presses. The fifth throws a spear at the chosen enemy (cast on herself — at the nearest enemy hero within 5000): half of the spear damage goes through invulnerability.|nThe pierced target is lifted into the air and stays stunned.|n|n|cFF00A5"+"FF|nSpear damage: 2*|r|c0077FFFFINT|r|cFF00A5FF + 15% of Remilia's max HP|nSpear stun: 1.2 sec.|nSpear range: 5000|nCast time: +0.1 sec.|nCooldown between presses: 1.5 sec.|nCooldown: 30 sec.|r")
+call LANG_A('RmR1',1,1,"A five-press spell: press R, no more than 7 sec. between presses. The fifth throws a spear at the chosen enemy (cast on herself — at the nearest enemy hero within 5000): half of the spear damage goes through invulnerability.|nThe pierced target is lifted into the air and stays stunned.|n|n|cFF00A5"+"FF|nSpear damage: 3*|r|c0077FFFFINT|r|cFF00A5FF + 15% of Remilia's max HP|nSpear stun: 1.2 sec.|nSpear range: 5000|nCast time: +0.1 sec.|nCooldown between presses: 1.5 sec.|nCooldown: 30 sec.|r")
+call LANG_A('RmR1',1,2,"A five-press spell: press R, no more than 7 sec. between presses. The fifth throws a spear at the chosen enemy (cast on herself — at the nearest enemy hero within 5000): half of the spear damage goes through invulnerability.|nThe pierced target is lifted into the air and stays stunned.|n|n|cFF00A5"+"FF|nSpear damage: 4*|r|c0077FFFFINT|r|cFF00A5FF + 15% of Remilia's max HP|nSpear stun: 1.2 sec.|nSpear range: 5000|nCast time: +0.1 sec.|nCooldown between presses: 1.5 sec.|nCooldown: 30 sec.|r")
+call LANG_A('RmR1',1,3,"A five-press spell: press R, no more than 7 sec. between presses. The fifth throws a spear at the chosen enemy (cast on herself — at the nearest enemy hero within 5000): half of the spear damage goes through invulnerability.|nThe pierced target is lifted into the air and stays stunned.|n|n|cFF00A5"+"FF|nSpear damage: 5*|r|c0077FFFFINT|r|cFF00A5FF + 15% of Remilia's max HP|nSpear stun: 1.2 sec.|nSpear range: 5000|nCast time: +0.1 sec.|nCooldown between presses: 1.5 sec.|nCooldown: 30 sec.|r")
+call LANG_A('RmR1',1,4,"A five-press spell: press R, no more than 7 sec. between presses. The fifth throws a spear at the chosen enemy (cast on herself — at the nearest enemy hero within 5000): half of the spear damage goes through invulnerability.|nThe pierced target is lifted into the air and stays stunned.|n|n|cFF00A5"+"FF|nSpear damage: 6*|r|c0077FFFFINT|r|cFF00A5FF + 15% of Remilia's max HP|nSpear stun: 1.2 sec.|nSpear range: 5000|nCast time: +0.1 sec.|nCooldown between presses: 1.5 sec.|nCooldown: 30 sec.|r")
 call LANG_A('RmR1',2,0,"Spear the Gungnir, [|cffffcc00Level %d|r] (|cffffcc00R|r)")
-call LANG_A('RmR1',3,0,"A five-press spell: press R, no more than 7 sec. between presses. Every press targets a point; the fifth throws a spear towards the click, it pierces the first enemy on the way: half of the spear damage goes through invulnerability.|nThe pierced target is lifted into the air and stays stunned.|n|n|c"+"FF00A5FF|nSpear damage: 2\\3\\4\\5\\6*|r|c0077FFFFINT|r|cFF00A5FF + 15% of Remilia's max HP|nSpear stun: 1.2 sec.|nSpear range: 5000|nCast time: +0.1 sec.|nCooldown between presses: 1.5 sec.|nCooldown: 30 sec.|r")
+call LANG_A('RmR1',3,0,"A five-press spell: press R, no more than 7 sec. between presses. The fifth throws a spear at the chosen enemy (cast on herself — at the nearest enemy hero within 5000): half of the spear damage goes through invulnerability.|nThe pierced target is lifted into the air and stays stunned.|n|n|cFF00A5"+"FF|nSpear damage: 2\\3\\4\\5\\6*|r|c0077FFFFINT|r|cFF00A5FF + 15% of Remilia's max HP|nSpear stun: 1.2 sec.|nSpear range: 5000|nCast time: +0.1 sec.|nCooldown between presses: 1.5 sec.|nCooldown: 30 sec.|r")
 call LANG_A('RmT1',1,0,"A whirl of scarlet aura burns everything around the target; at the end, Heart Break hits the same target.|nRemilia and the target are invulnerable during the skill.|nIf an enemy hero dies during T (from anything), Remilia permanently gains +3% of their max HP.|n|n|cFF00A5FF|nDamage: 6*|r|c0077FFFFIN"+"T|r|cFF00A5FF + 30% of the HP difference between Remilia and the target|nHeart Break: 20% of the target's max HP|nDuration: ~5 sec.|nRange: 450|nCast time: +0.1 sec.|nCooldown: 60 sec.|r")
 call LANG_A('RmT1',3,0,"A whirl of scarlet aura burns everything around the target; at the end, Heart Break hits the same target.|nRemilia and the target are invulnerable during the skill.|nIf an enemy hero dies during T (from anything), Remilia permanently gains +3% of their max HP.|n|n|cFF00A5FF|nDamage: 6*|r|c0077FFFFIN"+"T|r|cFF00A5FF + 30% of the HP difference between Remilia and the target|nHeart Break: 20% of the target's max HP|nDuration: ~5 sec.|nRange: 450|nCast time: +0.1 sec.|nCooldown: 60 sec.|r")
 call LANG_A('RmD1',1,0,"Homing chains of scarlet aura reach out to enemies.|nWhile the chains fly, Remilia stands still and is invulnerable.|n|n|cFF00A5FF|nDamage: 0.2*|r|c0077FFFFINT|r|cFF00A5FF per touch|nStun: 0.5 sec.|nDuration: 2 sec.|nRange: 1200|nCast time: +0.1 sec.|nCooldown: 30 sec.|r")
