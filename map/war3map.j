@@ -192268,6 +192268,8 @@ local real y2=0
 local real a=Atan2(y1-y,x1-x)
 local integer i=0
 local real sr=SR(x,y,x1,y1)/2
+local boolean hc=false
+local real hl=0.
 call KillUnit(l__d)
 call SetUnitInvulnerable(c,false)
 call SetUnitInvulnerable(u,false)
@@ -192278,17 +192280,33 @@ call PauseUnit(u,false)
 if dmg<GetUnitState(c,UNIT_STATE_LIFE) then
 call myCustomDamage(u,c,dmg,false,false,null,null,null)
 else
-call SetUnitState(c,UNIT_STATE_LIFE,5)
+//// 23 окт: добивающий удар — как под облаком Вонголы (A1WT): блоки и поглощение урона не срабатывают
+//set hc=GetUnitAbilityLevel(u,'A1WT')>0
+//if not hc then
+//call UnitAddAbility(u,'A1WT')
+//endif
+//call SetUnitState(c,UNIT_STATE_LIFE,5)
+//call myCustomDamage(u,c,dmg,false,false,null,DAMAGE_TYPE_UNIVERSAL,null)
+//if not hc then
+//call UnitRemoveAbility(u,'A1WT')
+//endif
+// 23 окт (v3): сначала обычный удар; цель выжила, но урон прошёл (здоровье упало больше чем на 5% от удара) — HP до 1 и добивание;
+// огромный щит съел удар (здоровье почти не изменилось) — HP не трогаем, только урон
+set hl=GetUnitState(c,UNIT_STATE_LIFE)
 call myCustomDamage(u,c,dmg,false,false,null,DAMAGE_TYPE_UNIVERSAL,null)
-// 23 окт: добивание наверняка — урон срезали или поглотили (щиты, снижения): ещё удар, затем KillUnit;
-// не по невосприимчивым к мгновенному убийству (Evening Bell A1GR) и не по путям Пейна (у них своя ложная смерть)
-if UnitIsAlive(c) and GetUnitAbilityLevel(c,'A1GR')==0 and GetUnitTypeId(c)!='H03T' and GetUnitTypeId(c)!='H03W' and GetUnitTypeId(c)!='H03S' and GetUnitTypeId(c)!='H03V' and GetUnitTypeId(c)!='H03U' then
+if UnitIsAlive(c) and hl-GetUnitState(c,UNIT_STATE_LIFE)>RMinBJ(dmg*0.05,hl*0.25) then // урон прошёл: больше 5% удара или четверти здоровья
 call SetUnitState(c,UNIT_STATE_LIFE,1)
-call myCustomDamage(u,c,1000000.,false,false,null,DAMAGE_TYPE_UNIVERSAL,null)
-if UnitIsAlive(c) then
-call KillUnit(c)
+call myCustomDamage(u,c,dmg,false,false,null,DAMAGE_TYPE_UNIVERSAL,null)
 endif
-endif
+//// 23 окт: добивание наверняка — урон срезали или поглотили (щиты, снижения): ещё удар, затем KillUnit;
+//// не по невосприимчивым к мгновенному убийству (Evening Bell A1GR) и не по путям Пейна (у них своя ложная смерть)
+//if UnitIsAlive(c) and GetUnitAbilityLevel(c,'A1GR')==0 and GetUnitTypeId(c)!='H03T' and GetUnitTypeId(c)!='H03W' and GetUnitTypeId(c)!='H03S' and GetUnitTypeId(c)!='H03V' and GetUnitTypeId(c)!='H03U' then
+//call SetUnitState(c,UNIT_STATE_LIFE,1)
+//call myCustomDamage(u,c,1000000.,false,false,null,DAMAGE_TYPE_UNIVERSAL,null)
+//if UnitIsAlive(c) then
+//call KillUnit(c)
+//endif
+//endif
 endif
 call StartAbilityCooldown(GetUnitAbility(u, 'A1GU'), 30)
 call PauseTimer(t)
