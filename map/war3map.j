@@ -14226,7 +14226,9 @@ endfunction
 // интеллект для урона кнопки Q: 0.5..1*ИНТ за цепь (x20 в вызове, цепей 4), с Q2 — стандарт 4..6 (4 окт; 29 сен было 1.2..2);
 // x1000, чтобы не терять дробь в целом (в Bof_Dmg урон делится обратно на 1000)
 function Rem_Int_Q takes unit u,boolean b returns integer
-return R2I(I2R(GetHeroInt(u,b))*((3.+I2R(GetUnitAbilityLevel(u,'RmQ1')))/160.)*1000.+0.5)
+//return R2I(I2R(GetHeroInt(u,b))*((3.+I2R(GetUnitAbilityLevel(u,'RmQ1')))/160.)*1000.+0.5)
+// 23 окт: цепь Q 0.5\0.75\1\1.25\1.5*ИНТ (было 0.5..1; 4 цепи по цели — 2..6): (1+ур.)/80, x20 в вызове
+return R2I(I2R(GetHeroInt(u,b))*((1.+I2R(GetUnitAbilityLevel(u,'RmQ1')))/80.)*1000.+0.5)
 endfunction
 // интеллект для урона кнопки Q2: 2*ИНТ (x80 в вызове); 4 окт, было 5;
 // x1000, чтобы не терять дробь в целом (в Bof_Dmg урон делится обратно на 1000)
@@ -16026,7 +16028,9 @@ endfunction
 // интеллект для урона кнопки W2: x (0.0125), x80 = 1 за удар веера (4 окт);
 // x1000, чтобы не терять дробь в целом (в Bof_Dmg урон делится обратно на 1000)
 function Fla_Int_W2 takes unit u,boolean b returns integer
-return R2I(I2R(GetHeroInt(u,b))*(0.0125)*1000.+0.5)
+//return R2I(I2R(GetHeroInt(u,b))*(0.0125)*1000.+0.5)
+// 23 окт: W2 3*ИНТ по цели (было 2): 0.01875, x160 в вызове
+return R2I(I2R(GetHeroInt(u,b))*(0.01875)*1000.+0.5)
 endfunction
 // интеллект для урона кнопки atk: урон bof x (0.0095), бафф 28 сен (было 0.0075);
 // x1000, чтобы не терять дробь в целом (в Bof_Dmg урон делится обратно на 1000)
@@ -293187,8 +293191,8 @@ call LANG_A('FlF1',1,0,"Flandre is invulnerable and hits everyone nearby on her 
 call LANG_A('FlF1',3,0,"Flandre is invulnerable and hits everyone nearby on her own — steer her where you need. At the end, a final area strike with a stun.|n|n|cFF00A5FF|nDamage: 0.35*|r|c0077FFFFINT|r|cFF00A5FF every 0.3 sec. (AoE 250)|nFinal strike: 1.75*|r|c0077FFFFINT|r|cFF00A5FF (AoE 600)|nStun: 1 sec.|nDuration: 4"+" sec.|nCooldown: 45 sec.|r")
 call LANG_A('FlG1',1,0,"A magic circle around Flandre: the line in front of her takes 16 hits over 1.5 sec.|nFor 8 sec. after G the button becomes QED \"Ripples of 495 Years\": a hit on the target with a stun.|n|n|cFF00A5FF|nDamage: 0.4*|r|c0077FFFFINT|r|cFF00A5FF per strike|nLine length: 2000|nCast time: +0.1 sec.|nCooldo"+"wn: 60 sec.|r")
 call LANG_A('FlG1',3,0,"A magic circle around Flandre: the line in front of her takes 16 hits over 1.5 sec.|nFor 8 sec. after G the button becomes QED \"Ripples of 495 Years\": a hit on the target with a stun.|n|n|cFF00A5FF|nDamage: 0.4*|r|c0077FFFFINT|r|cFF00A5FF per strike|nLine length: 2000|nCast time: +0.1 sec.|nCooldo"+"wn: 60 sec.|r")
-call LANG_A('FlW2',1,0,"Flandre forcefully swings the flaming sword Laevatein over an area.|n|n|cFF00A5FF|nDamage: 2*|r|c0077FFFFINT|r|cFF00A5FF per strike (6 strikes in a fan at 600 and one right in front of Flandre); once per target|nStun: 1 sec.|nCast time: +0.1 sec.|r")
-call LANG_A('FlW2',3,0,"Flandre forcefully swings the flaming sword Laevatein over an area.|n|n|cFF00A5FF|nDamage: 2*|r|c0077FFFFINT|r|cFF00A5FF per strike (6 strikes in a fan at 600 and one right in front of Flandre); once per target|nStun: 1 sec.|nCast time: +0.1 sec.|r")
+call LANG_A('FlW2',1,0,"Flandre forcefully swings the flaming sword Laevatein over an area.|n|n|cFF00A5FF|nDamage: 3*|r|c0077FFFFINT|r|cFF00A5FF per strike (6 strikes in a fan at 600 and one right in front of Flandre); once per target|nStun: 1 sec.|nCast time: +0.1 sec.|r")
+call LANG_A('FlW2',3,0,"Flandre forcefully swings the flaming sword Laevatein over an area.|n|n|cFF00A5FF|nDamage: 3*|r|c0077FFFFINT|r|cFF00A5FF per strike (6 strikes in a fan at 600 and one right in front of Flandre); once per target|nStun: 1 sec.|nCast time: +0.1 sec.|r")
 call LANG_A('FlG2',1,0,"\"495 Years of Solitude\": two hits on the target.|n|n|cFF00A5FF|nDamage: 2.5*|r|c0077FFFFINT|r|cFF00A5FF per strike|nStun: 1.5 sec.|nRange: 800|nCast time: +0.1 sec.|r")
 call LANG_A('FlG2',3,0,"\"495 Years of Solitude\": two hits on the target.|n|n|cFF00A5FF|nDamage: 2.5*|r|c0077FFFFINT|r|cFF00A5FF per strike|nStun: 1.5 sec.|nRange: 800|nCast time: +0.1 sec.|r")
 call LANG_A('RmQ1',0,0,"Scarlet Shoot, [|cffffcc00Level 1|r] (|cffffcc00Q|r)")
@@ -293197,14 +293201,14 @@ call LANG_A('RmQ1',0,2,"Scarlet Shoot, [|cffffcc00Level 3|r] (|cffffcc00Q|r)")
 call LANG_A('RmQ1',0,3,"Scarlet Shoot, [|cffffcc00Level 4|r] (|cffffcc00Q|r)")
 call LANG_A('RmQ1',0,4,"Scarlet Shoot, [|cffffcc00Level 5|r] (|cffffcc00Q|r)")
 call LANG_A('RmQ1',1,0,"Remilia leaps past the point and releases 4 homing chains of scarlet aura.|nFor 8 sec. Q is replaced by Bad Lady Scramble; after using it, Q returns immediately.|n|n|cFF00A5FF|nDamage: 0.5*|r|c0077FFFFINT|r|cFF00A5FF per hit|nStun: 1 sec.|nRange: 1000|nCast time: +0.1 sec.|nCooldown: 23 sec.|r")
-call LANG_A('RmQ1',1,1,"Remilia leaps past the point and releases 4 homing chains of scarlet aura.|nFor 8 sec. Q is replaced by Bad Lady Scramble; after using it, Q returns immediately.|n|n|cFF00A5FF|nDamage: 0.62*|r|c0077FFFFINT|r|cFF00A5FF per hit|nStun: 1 sec.|nRange: 1000|nCast time: +0.1 sec.|nCooldown: 23 sec.|r")
-call LANG_A('RmQ1',1,2,"Remilia leaps past the point and releases 4 homing chains of scarlet aura.|nFor 8 sec. Q is replaced by Bad Lady Scramble; after using it, Q returns immediately.|n|n|cFF00A5FF|nDamage: 0.75*|r|c0077FFFFINT|r|cFF00A5FF per hit|nStun: 1 sec.|nRange: 1000|nCast time: +0.1 sec.|nCooldown: 23 sec.|r")
-call LANG_A('RmQ1',1,3,"Remilia leaps past the point and releases 4 homing chains of scarlet aura.|nFor 8 sec. Q is replaced by Bad Lady Scramble; after using it, Q returns immediately.|n|n|cFF00A5FF|nDamage: 0.88*|r|c0077FFFFINT|r|cFF00A5FF per hit|nStun: 1 sec.|nRange: 1000|nCast time: +0.1 sec.|nCooldown: 23 sec.|r")
-call LANG_A('RmQ1',1,4,"Remilia leaps past the point and releases 4 homing chains of scarlet aura.|nFor 8 sec. Q is replaced by Bad Lady Scramble; after using it, Q returns immediately.|n|n|cFF00A5FF|nDamage: 1*|r|c0077FFFFINT|r|cFF00A5FF per hit|nStun: 1 sec.|nRange: 1000|nCast time: +0.1 sec.|nCooldown: 23 sec.|r")
+call LANG_A('RmQ1',1,1,"Remilia leaps past the point and releases 4 homing chains of scarlet aura.|nFor 8 sec. Q is replaced by Bad Lady Scramble; after using it, Q returns immediately.|n|n|cFF00A5FF|nDamage: 0.75*|r|c0077FFFFINT|r|cFF00A5FF per hit|nStun: 1 sec.|nRange: 1000|nCast time: +0.1 sec.|nCooldown: 23 sec.|r")
+call LANG_A('RmQ1',1,2,"Remilia leaps past the point and releases 4 homing chains of scarlet aura.|nFor 8 sec. Q is replaced by Bad Lady Scramble; after using it, Q returns immediately.|n|n|cFF00A5FF|nDamage: 1*|r|c0077FFFFINT|r|cFF00A5FF per hit|nStun: 1 sec.|nRange: 1000|nCast time: +0.1 sec.|nCooldown: 23 sec.|r")
+call LANG_A('RmQ1',1,3,"Remilia leaps past the point and releases 4 homing chains of scarlet aura.|nFor 8 sec. Q is replaced by Bad Lady Scramble; after using it, Q returns immediately.|n|n|cFF00A5FF|nDamage: 1.25*|r|c0077FFFFINT|r|cFF00A5FF per hit|nStun: 1 sec.|nRange: 1000|nCast time: +0.1 sec.|nCooldown: 23 sec.|r")
+call LANG_A('RmQ1',1,4,"Remilia leaps past the point and releases 4 homing chains of scarlet aura.|nFor 8 sec. Q is replaced by Bad Lady Scramble; after using it, Q returns immediately.|n|n|cFF00A5FF|nDamage: 1.5*|r|c0077FFFFINT|r|cFF00A5FF per hit|nStun: 1 sec.|nRange: 1000|nCast time: +0.1 sec.|nCooldown: 23 sec.|r")
 endfunction
 function LANG_Data50 takes nothing returns nothing
 call LANG_A('RmQ1',2,0,"Scarlet Shoot, [|cffffcc00Level %d|r] (|cffffcc00Q|r)")
-call LANG_A('RmQ1',3,0,"Remilia leaps past the point and releases 4 homing chains of scarlet aura.|nFor 8 sec. Q is replaced by Bad Lady Scramble; after using it, Q returns immediately.|n|n|cFF00A5FF|nDamage: 0.5\\0.62\\0.75\\0.88\\1*|r|c0077FFFFINT|r|cFF00A5FF per hit|nStun: 1 sec.|nRange: 1000|nCast time: +0.1 sec.|nCool"+"down: 23 sec.|r")
+call LANG_A('RmQ1',3,0,"Remilia leaps past the point and releases 4 homing chains of scarlet aura.|nFor 8 sec. Q is replaced by Bad Lady Scramble; after using it, Q returns immediately.|n|n|cFF00A5FF|nDamage: 0.5\\0.75\\1\\1.25\\1.5*|r|c0077FFFFINT|r|cFF00A5FF per hit|nStun: 1 sec.|nRange: 1000|nCast time: +0.1 sec.|nCoold"+"own: 23 sec.|r")
 call LANG_A('RmQ2',1,0,"Remilia swaps places with the Scarlet Shoot point and stuns everyone around.|n|n|cFF00A5FF|nDamage: 2*|r|c0077FFFFINT|r|cFF00A5FF|nStun: 1 sec.|nCast time: +0.1 sec.|r")
 call LANG_A('RmQ2',3,0,"Remilia swaps places with the Scarlet Shoot point and stuns everyone around.|n|n|cFF00A5FF|nDamage: 2*|r|c0077FFFFINT|r|cFF00A5FF|nStun: 1 sec.|nCast time: +0.1 sec.|r")
 call LANG_A('RmW1',0,0,"Young Demon Lord, [|cffffcc00Level 1|r] (|cffffcc00W|r)")
