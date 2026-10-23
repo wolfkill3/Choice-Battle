@@ -69100,7 +69100,9 @@ endif
                 call myCustomDamage(Hero[idc],u,GetHeroInt(Hero[idc],true)*3*1.2,false,false,null,null,null)
             endif
         endif
-        if nb>0 and GetUnitAbilityLevel(c,'B03C')>0 then
+        //if nb>0 and GetUnitAbilityLevel(c,'B03C')>0 then
+        // 23 окт: и в облике мухи (баф маски без эффектов B0TN) — прыжок на другую сторону цели при атаке
+        if nb>0 and (GetUnitAbilityLevel(c,'B03C')>0 or GetUnitAbilityLevel(c,'B0TN')>0) then
             set r=GetRandomReal(0,7)
             set x1=x+100*Cos(r)
             set y1=y+100*Sin(r)
@@ -132988,7 +132990,8 @@ endfunction
 function TousenAfter takes player qp,real qx,real qy,real qf returns nothing
 local unit qn=CreateUnit(qp,'e200',qx,qy,qf)
 call SetUnitModel(qn,"Tousen\\[By XeSHTeG]Tosen_Hollow.mdx")
-call SetUnitScale(qn,1.5,1.5,1.5)
+//call SetUnitScale(qn,1.5,1.5,1.5)
+call SetUnitScale(qn,1.65,1.65,1.65) // 23 окт: муха на 10% крупнее
 call SetUnitFlyHeight(qn,40,0)
 call SetUnitBlendTime(qn,0.)
 call SetUnitAnimationByIndex(qn,1) // «8 Dash» (модель мухи из 14 анимаций, 23 окт)
