@@ -131009,7 +131009,9 @@ else
 call SetUnitState(u,UNIT_STATE_LIFE,GetUnitState(u,UNIT_STATE_LIFE)+0.0015*GetUnitState(u,UNIT_STATE_MAX_LIFE))
 endif
 else
-if LoadBoolean(HH,GetHandleId(u),SH_ShnMask) then
+// конец раунда (23 окт): RemoveTransformation уже снял флаг маски — облик мухи всё равно убираем полностью
+//if LoadBoolean(HH,GetHandleId(u),SH_ShnMask) then
+if LoadBoolean(HH,GetHandleId(u),SH_ShnMask) or LoadBoolean(HH,GetHandleId(u),SH_TouHollow) then
 call TousenEOff(u)
 endif
 call PauseTimer(t)
@@ -138701,6 +138703,7 @@ call SetUnitInvulnerable(u,on)
 call UnitEnableInventoryCustom(u,not on,false)
 if on then
 call UnitAddAbility(u,'SnTc')
+call StartAbilityCooldown(GetUnitAbility(u,'SnTc'),2.) // отмена T — не раньше чем через 2 с (23 окт)
 // неподвижен до конца банкая (18 окт)
 call UnitAddAbility(u,'A1BL')
 call UnitMakeAbilityPermanent(u,false,'A1BL')
