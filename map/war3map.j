@@ -192280,6 +192280,15 @@ call myCustomDamage(u,c,dmg,false,false,null,null,null)
 else
 call SetUnitState(c,UNIT_STATE_LIFE,5)
 call myCustomDamage(u,c,dmg,false,false,null,DAMAGE_TYPE_UNIVERSAL,null)
+// 23 окт: добивание наверняка — урон срезали или поглотили (щиты, снижения): ещё удар, затем KillUnit;
+// не по невосприимчивым к мгновенному убийству (Evening Bell A1GR) и не по путям Пейна (у них своя ложная смерть)
+if UnitIsAlive(c) and GetUnitAbilityLevel(c,'A1GR')==0 and GetUnitTypeId(c)!='H03T' and GetUnitTypeId(c)!='H03W' and GetUnitTypeId(c)!='H03S' and GetUnitTypeId(c)!='H03V' and GetUnitTypeId(c)!='H03U' then
+call SetUnitState(c,UNIT_STATE_LIFE,1)
+call myCustomDamage(u,c,1000000.,false,false,null,DAMAGE_TYPE_UNIVERSAL,null)
+if UnitIsAlive(c) then
+call KillUnit(c)
+endif
+endif
 endif
 call StartAbilityCooldown(GetUnitAbility(u, 'A1GU'), 30)
 call PauseTimer(t)
@@ -192505,6 +192514,29 @@ local player p=OwnerOf(u)
 local real sc=0
 local integer is=0
 local real ig=15*bj_DEGTORAD
+// 23 окт: погоня кончается, если цель или Хассан погибли или раунд закончился (раньше Хассан оставался на паузе и неуязвимым)
+if not UnitIsAlive(u) or not UnitIsAlive(c) or udg_B==false or GetUnitTypeId(c)==0 then
+call PauseUnit(u,false)
+call SetUnitInvulnerable(u,false)
+call SetUnitVertexColor(u,255,255,255,255)
+call SetUnitTimeScale(u,1)
+call SetUnitFlyHeight(u,0,0)
+if LoadBoolean(HH,GetHandleId(c),TARGET_ABILITY) then
+call PauseUnit(c,false)
+call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,false)
+endif
+call RemoveUnit(l__d)
+call StartAbilityCooldown(GetUnitAbility(u,'A1GU'),30)
+call PauseTimer(t)
+call TSE_DestroyTimer(t)
+call FlushChildHashtable(h,id)
+set l__d=null
+set p=null
+set c=null
+set u=null
+set t=null
+return
+endif
 if SR(x,y,x1,y1)>400 then
 call SaveReal(h,id,3,walk+0.03)
 call SaveReal(h,id,4,fire+0.03)
