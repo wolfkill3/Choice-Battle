@@ -2384,6 +2384,8 @@ handlelist TSE_Abl=null
 handlelist TSE_Itm=null
 timer TSE_End=null
 timer TSE_Tick=null
+boolean TSE_Ready=false
+timer TSE_ET=null
 // таймеры способностей: зарегистрированные (владелец) и остановленные этой остановкой
 timer array TSE_TL
 player array TSE_TP
@@ -6880,18 +6882,32 @@ endfunction
 // Владелец таймера: внутри кода другого таймера — владелец того таймера; иначе атакующий в событии урона, иначе юнит события.
 // Неизвестный владелец (инициализация, UI, чат, системные таймеры) — таймер не учитывается и никогда не останавливается.
 // Учёт: TSE_TL/TSE_TP (индекс+1 в TSE_HT[таймер][10]); истёкшие разовые таймеры подчищаются понемногу при каждом запуске.
+// GetExpiredTimer — только в колбэке таймера (нет триггера) или в триггере с событием таймера: в остальных событиях
+// (кнопка диалога «Standard Mode» и т.п.) натив 1.26 читает данные события как таймер — краш Game.dll+0x430C91 (23 окт).
+// До конца инициализации карты владелец не определяется (TSE_Ready).
 function TSE_Owner takes nothing returns player
-local timer et=GetExpiredTimer()
+local timer et=null
 local unit u=null
 local player p=null
 local integer k
+set TSE_ET=null
+if not TSE_Ready then
+return null
+endif
+if GetTriggeringTrigger()==null or GetTriggerEventId()==EVENT_GAME_TIMER_EXPIRED then
+set et=GetExpiredTimer()
+set TSE_ET=et
+endif
 if et!=null then
 set k=LoadInteger(TSE_HT,GetHandleId(et),10)
 if k>0 then
 set p=TSE_TP[k-1]
 endif
 else
+// 23 окт: GetEventDamageSource — только в событии урона; вне него (кнопка диалога «Standard Mode» и т.п.) UjAPI читал мусор — краш ACCESS_VIOLATION
+if GetTriggerEventId()==EVENT_PLAYER_UNIT_DAMAGED or GetTriggerEventId()==EVENT_PLAYER_UNIT_DAMAGING then
 set u=GetEventDamageSource()
+endif
 if u==null then
 set u=GetTriggerUnit()
 endif
@@ -6918,7 +6934,7 @@ endfunction
 // выкинуть истёкшие разовые и уничтожённые мимо обёртки; таймер, чей код сейчас выполняется, не трогается (его могут перезапустить)
 function TSE_TPrune takes integer cnt returns nothing
 local timer tm
-local timer et=GetExpiredTimer()
+local timer et=TSE_ET // получен в TSE_Owner (безопасно)
 loop
 exitwhen cnt<=0 or TSE_TN==0
 if TSE_TCur>=TSE_TN then
@@ -7240,8 +7256,13 @@ else
 call TSE_Stop()
 endif
 endfunction
+function TSE_ReadyF takes nothing returns nothing
+set TSE_Ready=true
+call DestroyTimer(GetExpiredTimer())
+endfunction
 function TSE_Init takes nothing returns nothing
 local trigger tr=CreateTrigger()
+call TimerStart(CreateTimer(),0.,false,function TSE_ReadyF)
 set TSE_G=CreateGroup()
 set TSE_Tmp=CreateGroup()
 set TSE_HT=InitHashtable()
@@ -48880,6 +48901,8 @@ if GetUnitTypeId(u) == 'H0TF' then
     call UnitAddAbility(u, 'ToMB')
     call IssueImmediateOrder(u, "bearform")
     call UnitRemoveAbility(u, 'ToMB')
+    call SetUnitTimeScale(u,1.) // 23 окт: скорость и стойка с нуля после модели мухи
+    call SetUnitAnimation(u,"stand")
     call UnitRemoveAbility(u, 'ToRg')
     call UnitRemoveAbility(u, 'ToFG')
     call SetUnitFlyHeight(u,0,0)
@@ -102629,6 +102652,27 @@ function TousenSleepCastLoop takes nothing returns nothing
                 call Clear(id)
         endif
 endfunction
+// анимация мухи по номеру на время (23 окт): по номеру игра держит позу и при ходьбе, поэтому через dur — снова стойка
+function TousenAnimEnd takes nothing returns nothing
+local timer at=GetExpiredTimer()
+local unit au=LoadUnitHandle(h,GetHandleId(at),0)
+if au!=null and UnitIsAlive(au) and GetUnitTypeId(au)=='H0TF' then
+call SetUnitTimeScale(au,1.)
+call SetUnitAnimation(au,"stand")
+endif
+call FlushChildHashtable(h,GetHandleId(at))
+call TSE_DestroyTimer(at)
+set au=null
+set at=null
+endfunction
+function TousenAnimFor takes unit au,integer ai,real ts,real dur returns nothing
+local timer at=CreateTimer()
+call SetUnitAnimationByIndex(au,ai)
+call SetUnitTimeScale(au,ts)
+call SaveUnitHandle(h,GetHandleId(at),0,au)
+call TSE_TimerStart(at,dur,false,function TousenAnimEnd)
+set at=null
+endfunction
 function TousenSleepCast takes unit u returns nothing
         local integer hId = PId(TrigP())
         local integer id = NewTimer(hId) //
@@ -102641,8 +102685,7 @@ function TousenSleepCast takes unit u returns nothing
         if GetUnitTypeId(u)=='H0TF' or LoadBoolean(HH,GetHandleId(u),SH_TouHollow) then
             call TousenSnd("TousenGrilloQ")
             if GetUnitTypeId(u)=='H0TF' then
-                call SetUnitAnimationByIndex(u,5) // 23 окт: взмах крыльями
-                call QueueUnitAnimation(u,"stand")
+                call TousenAnimFor(u,5,1.,1.3) // 23 окт: взмах крыльями, потом стойка
             endif
         else
             set soundplay=SndN(1361) // Sound\Music\mp3Music\Suzumushi.mp3
@@ -130864,6 +130907,9 @@ call UnitAddAbility(u,'ToMB')
 call IssueImmediateOrder(u,"bearform")
 call UnitRemoveAbility(u,'ToMB')
 endif
+// 23 окт: обычная модель — скорость и стойка с нуля (номера анимаций мухи у неё нет — T-поза)
+call SetUnitTimeScale(u,1.)
+call SetUnitAnimation(u,"stand")
 call UnitRemoveAbility(u,'ToRg')
 call RemoveSavedReal(HH,GetHandleId(u),SH_TouRegen)
 call RemoveSavedReal(HH,GetHandleId(u),SH_TouHeal)
@@ -131074,7 +131120,7 @@ call SaveReal(h,id,16,60.) // 120 между лучами (22 окт; было 5
 endif
 call SetUnitFacingInstant(u,a*bj_RADTODEG)
 if GetUnitTypeId(u)=='H0TF' then
-call SetUnitAnimationByIndex(u,9) // 23 окт: муха — «10 Roar» (у неё нет spell)
+call TousenAnimFor(u,9,1.5,1.9) // 23 окт: муха — «10 Roar» (у неё нет spell), потом стойка
 else
 call SetUnitAnimation(u,"spell")
 endif
@@ -132273,8 +132319,7 @@ local effect fx
 local integer i=0
 call UnitAddAbility(u,'ToFa')
 if GetUnitTypeId(u)=='H0TF' then
-call SetUnitAnimationByIndex(u,75) // 23 окт: «60 Roar» — крик с подскоком
-call QueueUnitAnimation(u,"stand")
+call TousenAnimFor(u,74,2.,1.38) // 23 окт: «60 Roar» — крик с подскоком, потом стойка
 endif
 call TousenSnd("TousenGrilloW") // 22 окт: голос W и T поменяны местами
 call TousenSnd("TousenGrilloT-sfx")
@@ -132342,11 +132387,31 @@ set t=null
 set u=null
 endfunction
 // портрет мухи после смены юнита (22 окт): из типа не подхватывается, ставится скриптом ещё раз через 0.1 с
+// после смены модели на муху (23 окт): стойка по имени, скорость 1 — иначе модель оставалась без анимации (T-поза)
+function TousenFlyStand takes nothing returns nothing
+local timer at=GetExpiredTimer()
+local unit au=LoadUnitHandle(h,GetHandleId(at),0)
+if au!=null and UnitIsAlive(au) and GetUnitTypeId(au)=='H0TF' then
+call SetUnitTimeScale(au,1.)
+call SetUnitAnimation(au,"stand")
+endif
+call FlushChildHashtable(h,GetHandleId(at))
+call TSE_DestroyTimer(at)
+set au=null
+set at=null
+endfunction
 function TousenFlyPortrait takes nothing returns nothing
 local timer t=GetExpiredTimer()
 local unit u=LoadUnitHandle(h,GetHandleId(t),0)
 if GetUnitTypeId(u)=='H0TF' then
 call SetWidgetPortrait(u,"Tousen\\Tousen_FlyPortrait.mdx")
+//call TousenAnimFor(u,14,1.,2.4) // 23 окт: взлёт с рёвом, уже на модели мухи, потом стойка
+// 23 окт: №14 после смены модели не включался — сразу стойка и ещё раз через 0.4 с
+call SetUnitTimeScale(u,1.)
+call SetUnitAnimation(u,"stand")
+set bj_lastStartedTimer=CreateTimer()
+call SaveUnitHandle(h,GetHandleId(bj_lastStartedTimer),0,u)
+call TSE_TimerStart(bj_lastStartedTimer,0.4,false,function TousenFlyStand)
 endif
 call FlushChildHashtable(h,GetHandleId(t))
 call TSE_DestroyTimer(t)
@@ -132436,11 +132501,13 @@ set b=R2I(0.15*GetHeroInt(u,false)+0.5)
 call SaveInteger(HH,uid,SH_TouInt,b)
 call SetHeroInt(u,GetHeroInt(u,false)+b,true)
 // рёв пустого (анимация «13 Roar»)
-call SetUnitAnimationByIndex(u,14)
-call QueueUnitAnimation(u,"stand")
+//call SetUnitAnimationByIndex(u,14)
+//call QueueUnitAnimation(u,"stand")
+// 23 окт: анимация 14 — из таймера портрета (после смены модели); здесь у обычной модели (12 анимаций) её нет — была T-поза
 endfunction
 // зарядка в стиле G Гона (GonG_Periodic): 2.5 с пауза и неуязвимость, раз в 0.1 с — волна dH49 и растущий dR48,
 // с 1.2 с — dR70 и dR43; в конце — выброс как у Гона и превращение. Всё зелёное. h: 0 Тоусен, 1 время
+// 23 окт: превращение фиолетовое — оттенок 185,95,255 вместо зелёного 120,255,140 (и в TousenGCast)
 function TousenFlyCharge takes nothing returns nothing
 local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
@@ -132458,22 +132525,22 @@ call SetUnitInvulnerable(u,true)
 set tfx=CreateUnit(p,'dH49',x,y,GetRandomInt(0,360))
 call SetUnitFlyHeight(tfx,75,0)
 call SetUnitAnimation(tfx,"birth")
-call SetUnitVertexColor(tfx,120,255,140,255)
+call SetUnitVertexColor(tfx,185,95,255,255)
 call MyRemoveUnit(tfx,2)
 set tfx=CreateUnit(p,'dR48',x,y,GetRandomInt(0,360))
 call SetUnitScale(tfx,0.8+time/2.5,0.8+time/2.5,0.8+time/2.5)
-call SetUnitVertexColor(tfx,120,255,140,255)
+call SetUnitVertexColor(tfx,185,95,255,255)
 call KillUnit(tfx)
 if time>1.2 then
 // 23 окт: столб (~1000 частиц, x2.5) раз в 0.4 с вместо каждых 0.1 с — было до 14 столбов разом, спайки
 if ModuloInteger(R2I(time*10+0.5)-13,4)==0 then
 set tfx=CreateUnit(p,'dR70',x,y,GetRandomInt(0,360))
 call SetUnitScale(tfx,2.5,2.5,2.5)
-call SetUnitVertexColor(tfx,120,255,140,255)
+call SetUnitVertexColor(tfx,185,95,255,255)
 call MyRemoveUnit(tfx,1.5)
 endif
 set tfx=CreateUnit(p,'dR43',x,y,GetRandomInt(0,360))
-call SetUnitVertexColor(tfx,120,255,140,255)
+call SetUnitVertexColor(tfx,185,95,255,255)
 call UnitApplyTimedLife(tfx,'BTLF',1.)
 endif
 else
@@ -132483,7 +132550,7 @@ call RemoveSavedBoolean(HH,GetHandleId(u),SH_TouCharge)
 if time>=2.5 and UnitIsAlive(u) and udg_B==true and LoadBoolean(HH,GetHandleId(u),SH_ShnMask) then
 set tfx=CreateUnit(p,'dR70',x,y,GetRandomInt(0,360))
 call SetUnitScale(tfx,2.5,2.5,2.5)
-call SetUnitVertexColor(tfx,120,255,140,255)
+call SetUnitVertexColor(tfx,185,95,255,255)
 call MyRemoveUnit(tfx,1.5)
 // выброс как у Гона (Trig_GonsRage_Actions / GonG_Periodic)
 loop
@@ -132499,8 +132566,9 @@ elseif i==2 then
 set tfx=CreateUnit(p,'e0L9',x,y,0)
 call UnitApplyTimedLife(tfx,'BTLF',3)
 elseif i==3 then
-set tfx=CreateUnit(p,'e0C7',x,y,0)
-call UnitApplyTimedLife(tfx,'BTLF',6)
+// 23 окт: пятно Splat (e0C7, 6 с) на земле убрано
+//set tfx=CreateUnit(p,'e0C7',x,y,0)
+//call UnitApplyTimedLife(tfx,'BTLF',6)
 elseif i==4 then
 //set tfx=CreateUnit(p,'e0AX',x,y,GetRandomReal(0,359))
 set tfx=null // жёлтая вспышка убрана (22 окт)
@@ -132525,7 +132593,7 @@ else
 set tfx=null // жёлтая вспышка убрана (22 окт)
 call UnitApplyTimedLife(tfx,'BTLF',0.4)
 endif
-call SetUnitVertexColor(tfx,120,255,140,255)
+call SetUnitVertexColor(tfx,185,95,255,255)
 set i=i+1
 endloop
 //call ShinjiSnd("HirakoE") // 22 окт: голос Хирако убран, у Тоусена своя реплика с начала зарядки
@@ -132563,11 +132631,12 @@ call SaveBoolean(HH,GetHandleId(u),SH_TouCharge,true)
 call TousenSnd("TousenE2") // 22 окт: «Сузумуши Хякушики: Гриляр Грийо» (8 с)
 // аура зарядки (dM32, как у Гона), зелёная
 set bj_lastCreatedUnit=CreateUnit(OwnerOf(u),'dM32',GetUnitX(u),GetUnitY(u),0)
-call SetUnitVertexColor(bj_lastCreatedUnit,120,255,140,190)
+call SetUnitVertexColor(bj_lastCreatedUnit,185,95,255,190)
 call UnitScale(bj_lastCreatedUnit,1,3,4)
 call UnitApplyTimedLife(bj_lastCreatedUnit,'BTLF',2.7)
 call MyRemoveUnit(bj_lastCreatedUnit,3.5)
-call SetUnitAnimationByIndex(u,9)
+//call SetUnitAnimationByIndex(u,9)
+call SetUnitAnimationByIndex(u,11) // 23 окт: у обычной модели 9 — Death; 11 — Spell Channel
 // пауза — на первом тике (не в событии каста)
 set t=CreateTimer()
 call SaveUnitHandle(h,GetHandleId(t),0,u)
@@ -132924,9 +132993,10 @@ set fin=true
 else
 call myCustomDamage(u,e,dmg,false,false,null,null,null)
 call DestroyEffect(AddSpecialEffectTarget("Tousen_Sonic.mdl",e,"chest"))
-if UnitIsAlive(e) then
-call SetControlToUnit(u,e,1.,"stun")
-endif
+// 23 окт: без оглушения
+//if UnitIsAlive(e) then
+//call SetControlToUnit(u,e,1.,"stun")
+//endif
 endif
 endif
 call GroupRemoveUnit(g,e)
@@ -132944,6 +133014,7 @@ if fin then
 call Bof_RevEnd(u)
 call SetUnitFlyHeight(u,40,0)
 call SetUnitTimeScale(u,1.)
+call SetUnitAnimation(u,"stand") // 23 окт: рывок играл Dash по номеру — без этого муха ходила в его позе
 call SetUnitPathing(u,true)
 call PauseUnit(u,false)
 //call SetUnitInvulnerable(u,false) // без неуязвимости (22 окт)
@@ -133311,7 +133382,7 @@ call UnitAddAbility(u,'Amrf')
 call UnitRemoveAbility(u,'Amrf')
 call SetUnitFacingInstant(u,ta*bj_RADTODEG)
 call SetUnitTimeScale(u,2.)
-call SetUnitAnimationByIndex(u,27) // Boost
+call SetUnitAnimationByIndex(u,26) // Boost (23 окт: номера после 22 сдвинуты — у модели убран дубль Walk)
 call TousenSnd("TousenGrilloG-sfx1") // 23 окт: звук рывка в пике
 elseif ph==3 then
 // пике: 6 тиков взлёт до 420 с подлётом, 5 тиков резкое падение на цель
@@ -133330,7 +133401,7 @@ call SetUnitFlyHeight(u,fh,0)
 if pt==7 then
 call SetUnitTimeScale(u,3.)
 //call SetUnitAnimationByIndex(u,15) // Attack 1 вниз
-call SetUnitAnimationByIndex(u,48) // 23 окт: «43» — падение сверху на землю с ударом
+call SetUnitAnimationByIndex(u,47) // 23 окт: «43» — падение сверху на землю с ударом
 endif
 if pt>6 then
 set bj_lastCreatedEffect=AddSpecialEffect("Others\\WindCirclefaster.mdl",fx,fy)
@@ -133389,9 +133460,9 @@ call UnitSpeed(u,RMaxBJ(0.6,2.2-0.2*pt))
 if pt==3 then
 call SetUnitTimeScale(u,2.)
 if sd>0 then
-call SetUnitAnimationByIndex(u,42) // Dash L
+call SetUnitAnimationByIndex(u,41) // Dash L
 else
-call SetUnitAnimationByIndex(u,25) // Dash R
+call SetUnitAnimationByIndex(u,24) // Dash R
 endif
 endif
 if pt>=8 then
