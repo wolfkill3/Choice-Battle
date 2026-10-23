@@ -192569,8 +192569,12 @@ call SetUnitTimeScale(l__d,0)
 call SaveReal(h,id,3,0)
 endif
 call SetUnitXY_1(l__d,x,y, false)
-call SetUnitX(u,x+7*Cos(a))
-call SetUnitY(u,y+7*Sin(a))
+//call SetUnitX(u,x+7*Cos(a))
+//call SetUnitY(u,y+7*Sin(a))
+// 23 окт: погоня ускоряется на 1% каждую секунду (сложный процент): ~233 -> ~258 за 10 с, ~285 за 20 с
+call SaveReal(h,id,13,LoadReal(h,id,13)+0.03)
+call SetUnitX(u,x+7*Pow(1.01,LoadReal(h,id,13))*Cos(a))
+call SetUnitY(u,y+7*Pow(1.01,LoadReal(h,id,13))*Sin(a))
 call SetUnitFacing(u,a*bj_RADTODEG)
 if fire>0.2 then
 set n=CreateUnit(p,'e16B',x,y,a*bj_RADTODEG)
@@ -241969,7 +241973,8 @@ if GetSpellAbilityId()=='KkR2' then
 
     if GetUnitAbilityLevel(caster,'A1A6')>0 or GetUnitAbilityLevel(caster,'A1AD')>0 then//ловкость
         call SaveReal(HH,id,15,5*GetHeroAgi(caster,true))
-        call SaveReal(HH,id,24,4)
+        //call SaveReal(HH,id,24,4)
+        call SaveReal(HH,id,24,3) // 23 окт: в ловкости цепь +3 с (было +4)
     elseif GetUnitAbilityLevel(caster,'A1A7')>0 or GetUnitAbilityLevel(caster,'A1AF')>0 then//инта
         call SaveReal(HH,id,15,5*GetHeroInt(caster,true))
         call SaveBoolean(HH,id,21,true)
@@ -242000,7 +242005,8 @@ if GetSpellAbilityId()=='KkR1' then
 
         call SaveReal(HH,id,15,GetUnitAbilityLevel(caster,'KkR1')*GetHeroAgi(caster,true))
         call SaveReal(HH,id,22,10000)
-        call SaveReal(HH,id,24,4)
+        //call SaveReal(HH,id,24,4)
+        call SaveReal(HH,id,24,3) // 23 окт: в ловкости цепь +3 с (было +4)
         call SaveBoolean(HH,id,25,true)
 
     elseif GetUnitAbilityLevel(caster,'A1A7')>0 or GetUnitAbilityLevel(caster,'A1AF')>0 then//инта
@@ -287960,7 +287966,7 @@ call LANG_A('A16B',1,3,"Index summons an angel to the target area. The health of
 call LANG_A('A16B',1,4,"Index summons an angel to the target area. The health of allies in this area is restored, and the opponents lose health.|n|n|cFF00A5FF|nHealing: 4% of missing HP.|nMana regen: 2% of missing mana|nAction time 10 sec.|nCooldown: 40 seconds|r")
 call LANG_A('A16B',2,0,"Portable Church, [|cffffcc00Level %d|r] (|cffffcc00E|r)")
 call LANG_A('A16B',3,0,"Index summons an angel to the target area. The health of allies in this area is restored, and the opponents lose health.|n|n|cFF00A5FF|nHealing: 4% of missing HP.|nMana regen: 2% of missing mana|nAction time 10 sec.|nCooldown: 60\\55\\50\\45\\40 sec|r")
-call LANG_A('A16E',1,0,"Your abilities are currently hit by |c003CFF3CAGI|r|n• Q - stun duration increases by 1.5 seconds|n• W - additionally restores 40% of the missing MP|n• E - AS/MS: +20%, reducing incoming damage by 40% for 5 seconds|n• R - the chain cannot be broken, duration +4 seconds, contraction is increa"+"sed by 2 times.")
+call LANG_A('A16E',1,0,"Your abilities are currently hit by |c003CFF3CAGI|r|n• Q - stun duration increases by 1.5 seconds|n• W - additionally restores 40% of the missing MP|n• E - AS/MS: +20%, reducing incoming damage by 40% for 5 seconds|n• R - the chain cannot be broken, duration +3 seconds, contraction is increa"+"sed by 2 times.")
 call LANG_A('A16F',0,0,"Face Breaker, [|cffffcc00Level 1|r] (|cffffcc00W|r)")
 call LANG_A('A16F',0,1,"Face Breaker, [|cffffcc00Level 2|r] (|cffffcc00W|r)")
 call LANG_A('A16F',0,2,"Face Breaker, [|cffffcc00Level 3|r] (|cffffcc00W|r)")
@@ -289850,9 +289856,9 @@ call LANG_A('A1GT',1,3,"Hassan instantly appears in front of the enemy, pierces 
 call LANG_A('A1GT',1,4,"Hassan instantly appears in front of the enemy, pierces him with his sword and returns to the cast point, stunning for 1.5 seconds.|n|n|cFF00A5FF|nDamage: 8*|r|c00FF5555STR|r|cFF00A5FF|nCooldown: 30 sec.")
 call LANG_A('A1GT',2,0,"The Rift of the Valley, [|cffffcc00Level %d|r] (|cffffcc00R|r)")
 call LANG_A('A1GT',3,0,"Hassan instantly appears in front of the enemy, pierces him with his sword and returns to the cast point, stunning for 1.5 seconds.|n|n|cFF00A5FF|nDamage: 4\\5\\6\\7\\8*|r|c00FF5555STR|r|cFF00A5FF|nCooldown: 30 sec.")
-call LANG_A('A1GU',1,0,"Hassan begins to chase the target, gradually increasing the damage from the ability, if the damage of the ability exceeds the target's health, then instantly kills him.|n|n|cFF00A5FF|nDamage: 10*|r|c00FF5555STR|r|cFF00A5FF|nDamage per second: 0.5*|r|c00FF5555STR|r|cFF00A5FF|nRange: 1200|nCooldown: 3"+"0 sec. after the end of ability")
+call LANG_A('A1GU',1,0,"Hassan begins to chase the target, gradually increasing the damage from the ability, if the damage of the ability exceeds the target's health, then instantly kills him.|n|n|cFF00A5FF|nDamage: 10*|r|c00FF5555STR|r|cFF00A5FF|nDamage per second: 0.5*|r|c00FF5555STR|r|cFF00A5FF|nChase speed: +1% per sec"+".|nRange: 1200|nCooldown: 30 sec. after the end of ability")
 call LANG_A('A1GU',2,0,"Azrael: The Angel That Announces Death, [|cffffcc00Level 1|r] (|cffffcc00T|r)")
-call LANG_A('A1GU',3,0,"Hassan begins to chase the target, gradually increasing the damage from the ability, if the damage of the ability exceeds the target's health, then instantly kills him.|n|n|cFF00A5FF|nDamage: 10*|r|c00FF5555STR|r|cFF00A5FF|nDamage per second: 0.5*|r|c00FF5555STR|r|cFF00A5FF|nRange: 1200|nCooldown: 3"+"0 sec. after the end of ability")
+call LANG_A('A1GU',3,0,"Hassan begins to chase the target, gradually increasing the damage from the ability, if the damage of the ability exceeds the target's health, then instantly kills him.|n|n|cFF00A5FF|nDamage: 10*|r|c00FF5555STR|r|cFF00A5FF|nDamage per second: 0.5*|r|c00FF5555STR|r|cFF00A5FF|nChase speed: +1% per sec"+".|nRange: 1200|nCooldown: 30 sec. after the end of ability")
 call LANG_A('A1GW',0,0,"God's Resolution, [|cffffcc00Level 1|r] (|cffffcc00E|r)")
 call LANG_A('A1GW',0,1,"God's Resolution, [|cffffcc00Level 2|r] (|cffffcc00E|r)")
 call LANG_A('A1GW',0,2,"God's Resolution, [|cffffcc00Level 3|r] (|cffffcc00E|r)")
