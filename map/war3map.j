@@ -16009,7 +16009,9 @@ endfunction
 // интеллект для урона кнопки Q: урон bof x (0.01875 + 0.00625 x уровень) = 3..6*ИНТ (11 окт; было 0.0225 + 0.005 x уровень), бафф 28 сен x1.25 (было 0.018 + 0.004 x уровень);
 // x1000, чтобы не терять дробь в целом (в Bof_Dmg урон делится обратно на 1000)
 function Fla_Int_Q takes unit u,boolean b returns integer
-return R2I(I2R(GetHeroInt(u,b))*(0.01875+0.00625*I2R(GetUnitAbilityLevel(u,'FlQ1')))*1000.+0.5)
+//return R2I(I2R(GetHeroInt(u,b))*(0.01875+0.00625*I2R(GetUnitAbilityLevel(u,'FlQ1')))*1000.+0.5)
+// 23 окт: Q 3\4\5\6\7*ИНТ (было 3..6): (2+ур.)/120, x120 в вызове
+return R2I(I2R(GetHeroInt(u,b))*((2.+I2R(GetUnitAbilityLevel(u,'FlQ1')))/120.)*1000.+0.5)
 endfunction
 // интеллект для урона кнопки R: x (3 + уровень)/320, x80 = 1..2 за удар (11 окт, было /480 = 0.67..1.33) — стандарт 4..8 (4 окт);
 // x1000, чтобы не терять дробь в целом (в Bof_Dmg урон делится обратно на 1000)
@@ -293135,12 +293137,12 @@ call LANG_A('FlQ1',0,2,"Cranberry Trap, [|cffffcc00Level 3|r] (|cffffcc00Q|r)")
 call LANG_A('FlQ1',0,3,"Cranberry Trap, [|cffffcc00Level 4|r] (|cffffcc00Q|r)")
 call LANG_A('FlQ1',0,4,"Cranberry Trap, [|cffffcc00Level 5|r] (|cffffcc00Q|r)")
 call LANG_A('FlQ1',1,0,"Flandre slows an enemy and unleashes a barrage of projectiles on them, stunning them.|n|n|cFF00A5FF|nDamage: 3*|r|c0077FFFFINT|r|cFF00A5FF|nStun: 1.5 sec.|nRange: 1000|nCast time: +0.1 sec.|nCooldown: 20 sec.|r")
-call LANG_A('FlQ1',1,1,"Flandre slows an enemy and unleashes a barrage of projectiles on them, stunning them.|n|n|cFF00A5FF|nDamage: 3.75*|r|c0077FFFFINT|r|cFF00A5FF|nStun: 1.5 sec.|nRange: 1000|nCast time: +0.1 sec.|nCooldown: 20 sec.|r")
-call LANG_A('FlQ1',1,2,"Flandre slows an enemy and unleashes a barrage of projectiles on them, stunning them.|n|n|cFF00A5FF|nDamage: 4.5*|r|c0077FFFFINT|r|cFF00A5FF|nStun: 1.5 sec.|nRange: 1000|nCast time: +0.1 sec.|nCooldown: 20 sec.|r")
-call LANG_A('FlQ1',1,3,"Flandre slows an enemy and unleashes a barrage of projectiles on them, stunning them.|n|n|cFF00A5FF|nDamage: 5.25*|r|c0077FFFFINT|r|cFF00A5FF|nStun: 1.5 sec.|nRange: 1000|nCast time: +0.1 sec.|nCooldown: 20 sec.|r")
-call LANG_A('FlQ1',1,4,"Flandre slows an enemy and unleashes a barrage of projectiles on them, stunning them.|n|n|cFF00A5FF|nDamage: 6*|r|c0077FFFFINT|r|cFF00A5FF|nStun: 1.5 sec.|nRange: 1000|nCast time: +0.1 sec.|nCooldown: 20 sec.|r")
+call LANG_A('FlQ1',1,1,"Flandre slows an enemy and unleashes a barrage of projectiles on them, stunning them.|n|n|cFF00A5FF|nDamage: 4*|r|c0077FFFFINT|r|cFF00A5FF|nStun: 1.5 sec.|nRange: 1000|nCast time: +0.1 sec.|nCooldown: 20 sec.|r")
+call LANG_A('FlQ1',1,2,"Flandre slows an enemy and unleashes a barrage of projectiles on them, stunning them.|n|n|cFF00A5FF|nDamage: 5*|r|c0077FFFFINT|r|cFF00A5FF|nStun: 1.5 sec.|nRange: 1000|nCast time: +0.1 sec.|nCooldown: 20 sec.|r")
+call LANG_A('FlQ1',1,3,"Flandre slows an enemy and unleashes a barrage of projectiles on them, stunning them.|n|n|cFF00A5FF|nDamage: 6*|r|c0077FFFFINT|r|cFF00A5FF|nStun: 1.5 sec.|nRange: 1000|nCast time: +0.1 sec.|nCooldown: 20 sec.|r")
+call LANG_A('FlQ1',1,4,"Flandre slows an enemy and unleashes a barrage of projectiles on them, stunning them.|n|n|cFF00A5FF|nDamage: 7*|r|c0077FFFFINT|r|cFF00A5FF|nStun: 1.5 sec.|nRange: 1000|nCast time: +0.1 sec.|nCooldown: 20 sec.|r")
 call LANG_A('FlQ1',2,0,"Cranberry Trap, [|cffffcc00Level %d|r] (|cffffcc00Q|r)")
-call LANG_A('FlQ1',3,0,"Flandre slows an enemy and unleashes a barrage of projectiles on them, stunning them.|n|n|cFF00A5FF|nDamage: 3\\3.75\\4.5\\5.25\\6*|r|c0077FFFFINT|r|cFF00A5FF|nStun: 1.5 sec.|nRange: 1000|nCast time: +0.1 sec.|nCooldown: 20 sec.|r")
+call LANG_A('FlQ1',3,0,"Flandre slows an enemy and unleashes a barrage of projectiles on them, stunning them.|n|n|cFF00A5FF|nDamage: 3\\4\\5\\6\\7*|r|c0077FFFFINT|r|cFF00A5FF|nStun: 1.5 sec.|nRange: 1000|nCast time: +0.1 sec.|nCooldown: 20 sec.|r")
 call LANG_A('FlW1',0,0,"Starbow Break, [|cffffcc00Level 1|r] (|cffffcc00W|r)")
 call LANG_A('FlW1',0,1,"Starbow Break, [|cffffcc00Level 2|r] (|cffffcc00W|r)")
 call LANG_A('FlW1',0,2,"Starbow Break, [|cffffcc00Level 3|r] (|cffffcc00W|r)")
