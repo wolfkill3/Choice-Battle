@@ -13737,7 +13737,7 @@ function Condition_AbilityString takes integer id returns boolean
 return Condition_AbilityString2(id) or Condition_AbilityString3(id) or id=='SaW1' or id=='SaE1' or id=='SaR1' or id=='SaT1' or id=='TMW0' or id=='A0P6' or id=='A1D7' or id=='HSW1' or id=='HST1' or id=='KHG1' or id=='A2DJ' or id=='IcQ1' or id=='IcT1' or id=='MadF' or id=='A0N1' or id=='A2CZ' or id=='A0CZ' or id=='DSW1' or id=='Ad02' or id=='BGW1' or id=='KaA6' or id=='KaAF' or id=='BGG1' or id=='ASQ1' or id=='ASW1' or id=='ASE1' or id=='AST1' or id=='A1BO' or id=='A1BT' or id=='A1BW' or id=='A085' or id=='A08J' or id=='MiQ1' or id=='MiE1' or id=='MiR1' or id=='A0FN' or id=='WE03' or id=='WE06' or id=='A1AJ' or id=='A1ER' or id=='A0QK' or id=='A1HO' or id=='AlFS'
 endfunction
 function Condition_Base takes player p,unit e returns boolean
-return IsUnitEnemy(e,p) and IsUnitType(e,UNIT_TYPE_STRUCTURE)==false and 'dumm'!=GetUnitTypeId(e) and 'cdm1'!=GetUnitTypeId(e) and 'e16T'!=GetUnitTypeId(e) and UltimateDamage!=e and GetUnitAbilityLevel(e, 'IMDc')==0 and GetUnitTypeId(e)!='dM02'
+return IsUnitEnemy(e,p) and IsUnitType(e,UNIT_TYPE_STRUCTURE)==false and 'dumm'!=GetUnitTypeId(e) and 'cdm1'!=GetUnitTypeId(e) and 'e16T'!=GetUnitTypeId(e) and UltimateDamage!=e and GetUnitAbilityLevel(e, 'IMDc')==0 and GetUnitTypeId(e)!='dM02' and GetUnitTypeId(e)!='dM00' and GetUnitTypeId(e)!='eTk0'
 endfunction
 //BofLibStart
 // ===== Библиотека героев из bof (китайская карта 1.27/YDWE) — общая для всех перенесённых =====
@@ -136085,6 +136085,7 @@ call SaveInteger(HH,SH_ShnChanT,'MiQ4',2)
 call SaveStr(HH,SH_ShnChanO,'MiR1',"controlmagic")
 call SaveStr(HH,SH_ShnChanO,'MiT1',"darkritual")
 call SaveInteger(HH,SH_ShnChanT,'MiT1',2)
+call SaveStr(HH,SH_ShnChanO,'MinF',"acidbomb")
 call SaveStr(HH,SH_ShnChanO,'MinW',"channel")
 call SaveStr(HH,SH_ShnChanO,'MkCX',"stampede")
 call SaveStr(HH,SH_ShnChanO,'MrE1',"charm")
@@ -138209,6 +138210,7 @@ call SaveStr(HH,SH_AbOrd,'MiQ3',"cloudoffog")
 call SaveStr(HH,SH_AbOrd,'MiQ4',"chainlightning")
 call SaveStr(HH,SH_AbOrd,'MiR1',"controlmagic")
 call SaveStr(HH,SH_AbOrd,'MiT1',"darkritual")
+call SaveStr(HH,SH_AbOrd,'MinF',"acidbomb")
 call SaveStr(HH,SH_AbOrd,'MinW',"channel")
 call SaveStr(HH,SH_AbOrd,'MkCX',"stampede")
 call SaveStr(HH,SH_AbOrd,'MrE1',"charm")
@@ -218934,23 +218936,38 @@ function MinatoD1_Periodic takes nothing returns nothing
         call DestroyEffect(LoadEffectHandle(h, id, Effect2Hash))
         call MinatoAddHiraishinSeal(LoadUnitHandle(h, id, TargetHash) , CreateTimer())
         call PauseUnit(LoadUnitHandle(h, id, CasterHash), false)
+        // 23 окт: после рывка F перезаряжается E (как в Choice Random)
+        if GetAbilityRemainingCooldown(GetUnitAbility(LoadUnitHandle(h, id, CasterHash), 'MiE1')) > 1.0 and GetUnitAbilityLevel(LoadUnitHandle(h, id, CasterHash), 'MiE1') > 0 then
+            call StartAbilityCooldown(GetUnitAbility(LoadUnitHandle(h, id, CasterHash), 'MiE1'), 0.1)
+        endif
         call SetUnitVertexColor(LoadUnitHandle(h, id, CasterHash), 255, 255, 255, 255)
         call FlushChildHashtable(h, id)
         call TSE_DestroyTimer(GetExpiredTimer())
     endif
 endfunction
 
-function MinatoD1_Cast takes unit newCaster,unit newTarget,timer newTimer returns nothing
+//function MinatoD1_Cast takes unit newCaster,unit newTarget,timer newTimer returns nothing
+// 23 окт: MinatoFG: true — F (рывок к цели), false — G (кунай на месте или перезарядка Q), как в Choice Random
+function MinatoD1_Cast takes unit newCaster,unit newTarget,timer newTimer,boolean MinatoFG returns nothing
     local integer id= GetHandleId(newTimer)
     local real caster_x= GetUnitX(newCaster)
     local real caster_y= GetUnitY(newCaster)
     local real angle= AU(newCaster , newTarget)
-    if newCaster == newTarget then
+    //if newCaster == newTarget then
+    if MinatoFG==false then
         set soundplay=SndN(3369) // Sound\war3mapImported\Minato_D(self).mp3
         call StartSound(soundplay)
         //call KillSoundWhenDone(soundplay) // звук из массива soundStr — не удалять
-        if GetAbilityRemainingCooldown(GetUnitAbility(newCaster , 'MiQ1')) > 1.0 and GetUnitAbilityLevel(newCaster, 'MiQ1') > 0 then
-            call StartAbilityCooldown(GetUnitAbility(newCaster , 'MiQ1' ), 0.1)
+        //if GetAbilityRemainingCooldown(GetUnitAbility(newCaster , 'MiQ1')) > 1.0 and GetUnitAbilityLevel(newCaster, 'MiQ1') > 0 then
+        //call StartAbilityCooldown(GetUnitAbility(newCaster , 'MiQ1' ), 0.1)
+        // 23 окт: перезаряжает и Q, и Q режима R (MiQ4)
+        if (GetAbilityRemainingCooldown(GetUnitAbility(newCaster , 'MiQ4')) > 1.0 and GetUnitAbilityLevel(newCaster, 'MiQ4') > 0) or (GetAbilityRemainingCooldown(GetUnitAbility(newCaster , 'MiQ1')) > 1.0 and GetUnitAbilityLevel(newCaster, 'MiQ1') > 0) then
+            if GetAbilityRemainingCooldown(GetUnitAbility(newCaster , 'MiQ1')) > 1.0 then
+                call StartAbilityCooldown(GetUnitAbility(newCaster , 'MiQ1' ), 0.1)
+            endif
+            if GetAbilityRemainingCooldown(GetUnitAbility(newCaster , 'MiQ4')) > 1.0 then
+                call StartAbilityCooldown(GetUnitAbility(newCaster , 'MiQ4' ), 0.1)
+            endif
         else
             set bjLCU=CreateUnit(OwnerOf(newCaster), 'dM02', GetUnitX(newCaster), GetUnitY(newCaster), GetRandomInt(0, 360))
             call UnitApplyTimedLife(bjLCU, 'BTLF', 15)
@@ -219933,6 +219950,14 @@ function MinatoQ1_Periodic takes nothing returns nothing
                 set n=CreateUnit(OwnerOf(LoadUnitHandle(h, id, CasterHash)), 'dM09', GetUnitX(LoadUnitHandle(h, id, CasterHash)), GetUnitY(LoadUnitHandle(h, id, CasterHash)), GetRandomInt(0, 360))
                 call MyRemoveUnit(n , 1.5)
             endif
+        endif
+        // 23 окт: промах (не в режиме R) — кунай остаётся в земле на 3 с, на него можно переместиться ПКМ (как в Choice Random)
+        if UnitIsAlive(bjLCU) and MinatoR_Mod==false and LoadBoolean(h, id_caster, SH_MinatoQ_Blink)==false then
+            set n=CreateUnit(OwnerOf(LoadUnitHandle(h, id, CasterHash)), 'dM00', GetUnitX(bjLCU), GetUnitY(bjLCU), GetRandomInt(0, 360))
+            call UnitApplyTimedLife(n, 'BTLF', 3)
+            call UnitEnableInventoryCustom(n,false,false )
+            call UnitEnableMovement(n,false,false )
+            call UnitEnableAttack(n,false,false )
         endif
         if UnitIsAlive(bjLCU) then
             call KillUnit(bjLCU)
@@ -221312,7 +221337,11 @@ endfunction
 
 function Trig_MinatoInt_Actions takes nothing returns nothing
     if GetSpellAbilityId() == 'MiD1' then
-        call MinatoD1_Cast(GetSpellAbilityUnit() , GetSpellTargetUnit() , CreateTimer())
+        //call MinatoD1_Cast(GetSpellAbilityUnit() , GetSpellTargetUnit() , CreateTimer())
+        call MinatoD1_Cast(GetSpellAbilityUnit() , GetSpellTargetUnit() , CreateTimer(), true)
+    endif
+    if GetSpellAbilityId() == 'MinF' then
+        call MinatoD1_Cast(GetSpellAbilityUnit() , GetSpellAbilityUnit() , CreateTimer(), false)
     endif
     if GetSpellAbilityId() == 'MiD2' then
         if GetSpellTargetUnit() == null then
@@ -221384,7 +221413,9 @@ function ClobalClick_Action takes nothing returns nothing
 			loop
 			set E=FirstOfGroup(bjLCG)
 			exitwhen E==null
-				if GetUnitTypeId(E)=='dM02' and UnitIsAlive(E) then
+				//if GetUnitTypeId(E)=='dM02' and UnitIsAlive(E) then
+				// 23 окт: и кунай в земле от промаха Q (dM00), только свои кунаи
+				if (GetUnitTypeId(E)=='dM02' or GetUnitTypeId(E)=='dM00') and UnitIsAlive(E) and OwnerOf(E)==OwnerOf(triggerUnit) then
 					if SquareRootUnit(triggerUnit, E)<2500 then
 						call SetWidgetMana(triggerUnit , GetWidgetMana(triggerUnit) - GetWidgetMaxMana(triggerUnit) * 0.05)
 						set n=CreateUnit(OwnerOf(triggerUnit), 'dM08', GetUnitX(triggerUnit), GetUnitY(triggerUnit), GetRandomInt(0, 360))
@@ -221396,13 +221427,16 @@ function ClobalClick_Action takes nothing returns nothing
 						set soundplay=SndN(3392) // Sound\war3mapImported\Minato_Hiraishin_Sound.mp3
 						call StartSound(soundplay)
 						//call KillSoundWhenDone(soundplay) // звук из массива soundStr — не удалять
-						if LoadBoolean(h, GetHandleId(triggerUnit), SH_MinatoR_Mod) then
-							if GetAbilityRemainingCooldown(GetUnitAbility(triggerUnit, 'MiQ4')) > 0.1 then
-								call StartAbilityCooldown(GetUnitAbility(triggerUnit, 'MiQ4' ), 0.1)
-							endif
-						else
-							if GetAbilityRemainingCooldown(GetUnitAbility(triggerUnit, 'MiQ1')) > 0.1 then
-								call StartAbilityCooldown(GetUnitAbility(triggerUnit, 'MiQ1' ), 0.1)
+						// 23 окт: кунай от промаха Q (dM00) Q не перезаряжает
+						if GetUnitTypeId(E)!='dM00' then
+							if LoadBoolean(h, GetHandleId(triggerUnit), SH_MinatoR_Mod) then
+								if GetAbilityRemainingCooldown(GetUnitAbility(triggerUnit, 'MiQ4')) > 0.1 then
+									call StartAbilityCooldown(GetUnitAbility(triggerUnit, 'MiQ4' ), 0.1)
+								endif
+							else
+								if GetAbilityRemainingCooldown(GetUnitAbility(triggerUnit, 'MiQ1')) > 0.1 then
+									call StartAbilityCooldown(GetUnitAbility(triggerUnit, 'MiQ1' ), 0.1)
+								endif
 							endif
 						endif
 						set n=CreateUnit(OwnerOf(triggerUnit), 'dM08', GetUnitX(triggerUnit), GetUnitY(triggerUnit), GetRandomInt(0, 360))
@@ -256316,6 +256350,14 @@ function TobiramaWCast2 takes nothing returns nothing
             call MyRemoveUnit(n , 1.5)
             call TobiramaW2Cast(u , a , 700 , CreateTimer())
         endif
+        // 23 окт: промах — кунай остаётся в земле печатью на 3 с, на него можно переместиться через F (как в Choice Random)
+        if UnitIsAlive(l__d) and LoadBoolean(HH, idu, SH_TobiramaW_Blink)==false and LoadBoolean(HH, idu, SH_TobiramaW_Blink3)==false then
+            set n=CreateUnit(OwnerOf(u), 'eTk0', GetUnitX(l__d), GetUnitY(l__d), GetRandomInt(0, 360))
+            call UnitApplyTimedLife(n, 'BTLF', 3)
+            call UnitEnableInventoryCustom(n,false,false )
+            call UnitEnableMovement(n,false,false )
+            call UnitEnableAttack(n,false,false )
+        endif
         if UnitIsAlive(l__d) then
             call KillUnit(l__d)
         endif
@@ -257012,6 +257054,16 @@ function TobiramaF2Cast takes unit u, real x1, real y1 returns nothing
             endif
             call GroupRemoveUnit(G,E)
         endloop
+        // 23 окт: кунай W в земле (eTk0) — тоже печать для F
+        call GroupEnumUnitsInRange(G,x1,y1,1000,null)
+        loop
+            set E=FirstOfGroup(G)
+            exitwhen E==null
+            if GetUnitTypeId(E)=='eTk0' and UnitIsAlive(E) and OwnerOf(E)==p and SR(GetUnitX(u),GetUnitY(u),GetUnitX(E),GetUnitY(E))<3000 then
+                call GroupAddUnit(g,E)
+            endif
+            call GroupRemoveUnit(G,E)
+        endloop
         if LoadUnitHandle(HH,GetHandleId(Hero[idp]),SH_TobiramaW_Kunai)!=null then
             if SR(x1,y1,GetUnitX(LoadUnitHandle(HH,GetHandleId(Hero[idp]),SH_TobiramaW_Kunai)),GetUnitY(LoadUnitHandle(HH,GetHandleId(Hero[idp]),SH_TobiramaW_Kunai)))<1000 then
                 call GroupAddUnit(g,LoadUnitHandle(HH,GetHandleId(Hero[idp]),SH_TobiramaW_Kunai))
@@ -257051,6 +257103,10 @@ function TobiramaF2Cast takes unit u, real x1, real y1 returns nothing
             if c==LoadUnitHandle(HH,GetHandleId(Hero[idp]),SH_TobiramaW_Kunai) then
                 call SaveBoolean(HH, GetHandleId(Hero[idp]), SH_TobiramaW_Blink3, true)
             endif
+            if GetUnitTypeId(c)=='eTk0' then
+                call KillUnit(c)
+                call MyRemoveUnit(c , 0.5)
+            endif
             set soundplay=SndN(4306) // Sound\Music\mp3Music\TobiramaF.mp3
             call StartSound(soundplay)
             //call KillSoundWhenDone(soundplay) // звук из массива soundStr — не удалять
@@ -257078,6 +257134,16 @@ function TobiramaFCast takes unit u, real x1, real y1 returns nothing
         set E=FirstOfGroup(G)
         exitwhen E==null
         if (GetUnitAbilityLevel(E,'TMF1')>0 or GetUnitTypeId(E)=='H34X' or GetUnitTypeId(E)=='H34Z') and u!=E and SR(GetUnitX(u),GetUnitY(u),GetUnitX(E),GetUnitY(E))<3000 then
+            call GroupAddUnit(g,E)
+        endif
+        call GroupRemoveUnit(G,E)
+    endloop
+    // 23 окт: кунай W в земле (eTk0) — тоже печать для F
+    call GroupEnumUnitsInRange(G,x1,y1,1000,null)
+    loop
+        set E=FirstOfGroup(G)
+        exitwhen E==null
+        if GetUnitTypeId(E)=='eTk0' and UnitIsAlive(E) and OwnerOf(E)==OwnerOf(u) and SR(GetUnitX(u),GetUnitY(u),GetUnitX(E),GetUnitY(E))<3000 then
             call GroupAddUnit(g,E)
         endif
         call GroupRemoveUnit(G,E)
@@ -257122,6 +257188,10 @@ function TobiramaFCast takes unit u, real x1, real y1 returns nothing
             call SaveBoolean(HH, idu, SH_TobiramaW_Blink3, true)
         endif
         call UnitRemoveAbility(c,'TMF1')
+        if GetUnitTypeId(c)=='eTk0' then
+            call KillUnit(c)
+            call MyRemoveUnit(c , 0.5)
+        endif
         set soundplay=SndN(4306) // Sound\Music\mp3Music\TobiramaF.mp3
         call StartSound(soundplay)
         //call KillSoundWhenDone(soundplay) // звук из массива soundStr — не удалять
@@ -291252,7 +291322,7 @@ call LANG_A('MadW',1,3,"Madoka heals the target ally or himself over 10 seconds.
 call LANG_A('MadW',1,4,"Madoka heals the target ally or himself over 10 seconds. The first 30% of healing happens instantly.|n|c0000FF00When used on self, Madoka's Q arrows restore 70% of all W to allies.|r|n|n|cFF00A5FFRecovery: 5% Madoka's HP + 13% target's HP|nCooldown: 25 sec.")
 call LANG_A('MadW',2,0,"Soul Vessel, [|cffffcc00Level %d|r] (|cffffcc00W|r)")
 call LANG_A('MadW',3,0,"Madoka heals the target ally or himself over 10 seconds. The first 30% of healing happens instantly.|n|c0000FF00When used on self, Madoka's Q arrows restore 70% of all W to allies.|r|n|n|cFF00A5FFRecovery: 5% Madoka's HP + 5/7/9/11/13% target's HP|nCooldown: 25 sec.")
-call LANG_A('MiD1',1,0,"Minato dashes to the targeted unit and seals them.|nWhen used on himself, leaves a kunai in place or instantly reloads Q.|n|n|cFF00A5FFRange: 800.|nSeal Duration: 15 sec|nCooldown: 15 sec|r")
+call LANG_A('MiD1',1,0,"Minato dashes to the targeted unit and seals them. After the dash E is instantly reloaded.|n|n|cFF00A5FFRange: 800.|nSeal Duration: 15 sec|nCooldown: 15 sec|r")
 call LANG_A('MiD1',3,0,"Albedo builds up strength, and then delivers a powerful blow, dealing damage to all enemies in front of him. The longer she accumulates strength, the greater the damage and the longer the stun.|n|n|cFF00A5FFDamage: 3/4/5/6/7*|r|c00FF5555STR|r|cFF00A5FF +2.5*|r|c00FF5555STR|r|cFF00A5FF/ sec|nStun: 0."+"5 - 3 sec|nCooldown: 15 sec|r")
 call LANG_A('MiD2',1,0,"Minato dashes in the indicated direction and prints on all hit.|nWhen used on himself, leaves a kunai in place or instantly reloads Q.|n • |c0000FF00WF|r: with a rasengan, performs an aerial combo. The ability goes on an additional CD.|n |n|cFF00A5FFDamage: 0/5*|r|c003CFF3CAGI|r|cFF00A5FF + Raseng"+"an|nRange: 800.|nSeal Duration: 15 sec.|nCooldown: 15/45 sec.|r")
 call LANG_A('MiD2',3,0,"Albedo builds up strength, and then delivers a powerful blow, dealing damage to all enemies in front of him. The longer she accumulates strength, the greater the damage and the longer the stun.|n|n|cFF00A5FFDamage: 3/4/5/6/7*|r|c00FF5555STR|r|cFF00A5FF +2.5*|r|c00FF5555STR|r|cFF00A5FF/ sec|nStun: 0."+"5 - 3 sec|nCooldown: 15 sec|r")
@@ -291313,7 +291383,7 @@ call LANG_A('MiR1',3,0,"Minato uses Tailed Mode to become stronger.|n|n|cFF00A5F
 call LANG_A('MiT1',1,0,"Minato creates clones and one of them dashes in the indicated direction. On impact, launches a combo that deals massive damage and knocks back the target.|n|n|cFF00A5FFDamage: 10*|r|c003CFF3CAGI|r|cFF00A5FF|nStun: 1s|nCooldown: 45s|r")
 call LANG_A('MiT1',2,0,"Flying Thunder God: Rasengan Combination, [|cffffcc00Level %d|r] (|cffffcc00T|r)")
 call LANG_A('MiT1',3,0,"Minato creates clones and one of them dashes in the indicated direction. On impact, launches a combo that deals massive damage and knocks back the target.|n|n|cFF00A5FFDamage: 10*|r|c003CFF3CAGI|r|cFF00A5FF|nStun: 1s|nCooldown: 45s|r")
-call LANG_A('MinF',1,0,"Minato's special technique allows him to teleport to a kunai, which are left behind ater some of his techniques, by pressing RMB.|n|cFF00A5FFSpend: 5% MP|nRange: up to 2500.|r")
+call LANG_A('MinF',1,0,"Passive: Minato teleports to his kunai by pressing RMB. Moving to a kunai left by this ability reloads Q. A Q kunai that missed (outside R mode) stays in the ground for 3 sec.|n|cFF00A5FFSpend: 5% MP|nRange: up to 2500.|r|n|nActive: Minato leaves a kunai at his position or instantly reloads Q.|n|cFF"+"00A5FFKunai duration: 15 sec.|nCooldown: 20 sec.|r")
 call LANG_A('MinW',0,0,"Rasengan, [|cffffcc00Level 1|r] (|cffffcc00W|r)")
 call LANG_A('MinW',0,1,"Rasengan, [|cffffcc00Level 2|r] (|cffffcc00W|r)")
 call LANG_A('MinW',0,2,"Rasengan, [|cffffcc00Level 3|r] (|cffffcc00W|r)")
@@ -291403,13 +291473,13 @@ call LANG_A('TMW0',0,1,"Kunai, [|cffffcc00Level 2|r] (|cffffcc00W|r)")
 call LANG_A('TMW0',0,2,"Kunai, [|cffffcc00Level 3|r] (|cffffcc00W|r)")
 call LANG_A('TMW0',0,3,"Kunai, [|cffffcc00Level 4|r] (|cffffcc00W|r)")
 call LANG_A('TMW0',0,4,"Kunai, [|cffffcc00Level 5|r] (|cffffcc00W|r)")
-call LANG_A('TMW0',1,0,"Tobirama throws a kunai in the indicated direction, setting a seal and stunning the first enemy hit.|n|n|cFF00A5FFDamage: 50 + 1*|r|c0077FFFFINT|r|cFF00A5FF|nRange: 2000|nStun: 0.5 sec|nPrint duration: 15 sec.|nCooldown: 8 sec.|n|n|c0082C0FFHiraishingiri|r: Becomes available while the kunai is flyin"+"g and for a second after hitting an enemy.|nTobirama teleports to the enemy and makes a sharp dash, dealing damage to all enemies hit.|n|cFF00A5FFDamage: 3*|r|c0077FFFFINT|r|cFF00A5FF|nRange: 700|nStun: 1 sec|nMana Cost: 65|nCooldown: 20 seconds|r")
-call LANG_A('TMW0',1,1,"Tobirama throws a kunai in the indicated direction, setting a seal and stunning the first enemy hit.|n|n|cFF00A5FFDamage: 50 + 1.5*|r|c0077FFFFINT|r|cFF00A5FF|nRange: 2000|nStun: 0.5 sec|nPrint duration: 15 sec.|nCooldown: 8 sec.|n|n|c0082C0FFHiraishingiri|r: Becomes available while the kunai is fly"+"ing and for a second after hitting an enemy.|nTobirama teleports to the enemy and makes a sharp dash, dealing damage to all enemies hit.|n|cFF00A5FFDamage: 3.5*|r|c0077FFFFINT|r|cFF00A5FF|nRange: 700|nStun: 1 sec|nMana Cost: 85|nCooldown: 20 seconds|r")
-call LANG_A('TMW0',1,2,"Tobirama throws a kunai in the indicated direction, setting a seal and stunning the first enemy hit.|n|n|cFF00A5FFDamage: 50 + 2*|r|c0077FFFFINT|r|cFF00A5FF|nRange: 2000|nStun: 0.5 sec|nPrint duration: 15 sec.|nCooldown: 8 sec.|n|n|c0082C0FFHiraishingiri|r: Becomes available while the kunai is flyin"+"g and for a second after hitting an enemy.|nTobirama teleports to the enemy and makes a sharp dash, dealing damage to all enemies hit.|n|cFF00A5FFDamage: 4*|r|c0077FFFFINT|r|cFF00A5FF|nRange: 700|nStun: 1 sec|nMana Cost: 105|nCooldown: 20 seconds|r")
-call LANG_A('TMW0',1,3,"Tobirama throws a kunai in the indicated direction, setting a seal and stunning the first enemy hit.|n|n|cFF00A5FFDamage: 50 + 2.5*|r|c0077FFFFINT|r|cFF00A5FF|nRange: 2000|nStun: 0.5 sec|nPrint duration: 15 sec.|nCooldown: 8 sec.|n|n|c0082C0FFHiraishingiri|r: Becomes available while the kunai is fly"+"ing and for a second after hitting an enemy.|nTobirama teleports to the enemy and makes a sharp dash, dealing damage to all enemies hit.|n|cFF00A5FFDamage: 4.5*|r|c0077FFFFINT|r|cFF00A5FF|nRange: 700|nStun: 1 sec|nMana Cost: 125|nCooldown: 20 seconds|r")
-call LANG_A('TMW0',1,4,"Tobirama throws a kunai in the indicated direction, setting a seal and stunning the first enemy hit.|n|n|cFF00A5FFDamage: 50 + 3*|r|c0077FFFFINT|r|cFF00A5FF|nRange: 2000|nStun: 0.5 sec|nPrint duration: 15 sec.|nCooldown: 8 sec.|n|n|c0082C0FFHiraishingiri|r: Becomes available while the kunai is flyin"+"g and for a second after hitting an enemy.|nTobirama teleports to the enemy and makes a sharp dash, dealing damage to all enemies hit.|n|cFF00A5FFDamage: 5*|r|c0077FFFFINT|r|cFF00A5FF|nRange: 700|nStun: 1 sec|nMana Cost: 145|nCooldown: 20 seconds|r")
+call LANG_A('TMW0',1,0,"Tobirama throws a kunai in the indicated direction, setting a seal and stunning the first enemy hit. A kunai that missed stays in the ground as a seal for 3 sec.|n|n|cFF00A5FFDamage: 50 + 1*|r|c0077FFFFINT|r|cFF00A5FF|nRange: 2000|nStun: 0.5 sec|nPrint duration: 15 sec.|nCooldown: 8 sec.|n|n|c0082C0"+"FFHiraishingiri|r: Becomes available while the kunai is flying and for a second after hitting an enemy.|nTobirama teleports to the enemy and makes a sharp dash, dealing damage to all enemies hit.|n|cFF00A5FFDamage: 3*|r|c0077FFFFINT|r|cFF00A5FF|nRange: 700|nStun: 1 sec|nMana Cost: 65|nCooldown: 20 s"+"econds|r")
+call LANG_A('TMW0',1,1,"Tobirama throws a kunai in the indicated direction, setting a seal and stunning the first enemy hit. A kunai that missed stays in the ground as a seal for 3 sec.|n|n|cFF00A5FFDamage: 50 + 1.5*|r|c0077FFFFINT|r|cFF00A5FF|nRange: 2000|nStun: 0.5 sec|nPrint duration: 15 sec.|nCooldown: 8 sec.|n|n|c0082"+"C0FFHiraishingiri|r: Becomes available while the kunai is flying and for a second after hitting an enemy.|nTobirama teleports to the enemy and makes a sharp dash, dealing damage to all enemies hit.|n|cFF00A5FFDamage: 3.5*|r|c0077FFFFINT|r|cFF00A5FF|nRange: 700|nStun: 1 sec|nMana Cost: 85|nCooldown: "+"20 seconds|r")
+call LANG_A('TMW0',1,2,"Tobirama throws a kunai in the indicated direction, setting a seal and stunning the first enemy hit. A kunai that missed stays in the ground as a seal for 3 sec.|n|n|cFF00A5FFDamage: 50 + 2*|r|c0077FFFFINT|r|cFF00A5FF|nRange: 2000|nStun: 0.5 sec|nPrint duration: 15 sec.|nCooldown: 8 sec.|n|n|c0082C0"+"FFHiraishingiri|r: Becomes available while the kunai is flying and for a second after hitting an enemy.|nTobirama teleports to the enemy and makes a sharp dash, dealing damage to all enemies hit.|n|cFF00A5FFDamage: 4*|r|c0077FFFFINT|r|cFF00A5FF|nRange: 700|nStun: 1 sec|nMana Cost: 105|nCooldown: 20 "+"seconds|r")
+call LANG_A('TMW0',1,3,"Tobirama throws a kunai in the indicated direction, setting a seal and stunning the first enemy hit. A kunai that missed stays in the ground as a seal for 3 sec.|n|n|cFF00A5FFDamage: 50 + 2.5*|r|c0077FFFFINT|r|cFF00A5FF|nRange: 2000|nStun: 0.5 sec|nPrint duration: 15 sec.|nCooldown: 8 sec.|n|n|c0082"+"C0FFHiraishingiri|r: Becomes available while the kunai is flying and for a second after hitting an enemy.|nTobirama teleports to the enemy and makes a sharp dash, dealing damage to all enemies hit.|n|cFF00A5FFDamage: 4.5*|r|c0077FFFFINT|r|cFF00A5FF|nRange: 700|nStun: 1 sec|nMana Cost: 125|nCooldown:"+" 20 seconds|r")
+call LANG_A('TMW0',1,4,"Tobirama throws a kunai in the indicated direction, setting a seal and stunning the first enemy hit. A kunai that missed stays in the ground as a seal for 3 sec.|n|n|cFF00A5FFDamage: 50 + 3*|r|c0077FFFFINT|r|cFF00A5FF|nRange: 2000|nStun: 0.5 sec|nPrint duration: 15 sec.|nCooldown: 8 sec.|n|n|c0082C0"+"FFHiraishingiri|r: Becomes available while the kunai is flying and for a second after hitting an enemy.|nTobirama teleports to the enemy and makes a sharp dash, dealing damage to all enemies hit.|n|cFF00A5FFDamage: 5*|r|c0077FFFFINT|r|cFF00A5FF|nRange: 700|nStun: 1 sec|nMana Cost: 145|nCooldown: 20 "+"seconds|r")
 call LANG_A('TMW0',2,0,"Kunai, [|cffffcc00Level %d|r] (|cffffcc00W|r)")
-call LANG_A('TMW0',3,0,"Tobirama throws a kunai in the indicated direction, setting a seal and stunning the first enemy hit.|n|n|cFF00A5FFDamage: 50 + 1/1.5/2/2.5/3*|r|c0077FFFFINT|r|cFF00A5FF|nRange: 2000|nStun: 0.5 sec|nPrint duration: 15 sec.|nCooldown: 8 sec.|n|n|c0082C0FFHiraishingiri|r: Becomes available while the ku"+"nai is flying and for a second after hitting an enemy.|nTobirama teleports to the enemy and makes a sharp dash, dealing damage to all enemies hit.|n|cFF00A5FFDamage: 3/3.5/4/4.5/5*|r|c0077FFFFINT|r|cFF00A5FF|nRange: 700|nStun: 1 sec|nMana cost: 65/85/105/125/145|nCooldown: 20 seconds|r")
+call LANG_A('TMW0',3,0,"Tobirama throws a kunai in the indicated direction, setting a seal and stunning the first enemy hit. A kunai that missed stays in the ground as a seal for 3 sec.|n|n|cFF00A5FFDamage: 50 + 1/1.5/2/2.5/3*|r|c0077FFFFINT|r|cFF00A5FF|nRange: 2000|nStun: 0.5 sec|nPrint duration: 15 sec.|nCooldown: 8 sec."+"|n|n|c0082C0FFHiraishingiri|r: Becomes available while the kunai is flying and for a second after hitting an enemy.|nTobirama teleports to the enemy and makes a sharp dash, dealing damage to all enemies hit.|n|cFF00A5FFDamage: 3/3.5/4/4.5/5*|r|c0077FFFFINT|r|cFF00A5FF|nRange: 700|nStun: 1 sec|nMana "+"cost: 65/85/105/125/145|nCooldown: 20 seconds|r")
 call LANG_A('TMW1',0,0,"Hiraishingiri, [|cffffcc00Level 1|r] (|cffffcc00W|r)")
 call LANG_A('TMW1',0,1,"Hiraishingiri, [|cffffcc00Level 2|r] (|cffffcc00W|r)")
 call LANG_A('TMW1',0,2,"Hiraishingiri, [|cffffcc00Level 3|r] (|cffffcc00W|r)")
@@ -291449,7 +291519,7 @@ call LANG_A('TMT0',1,0,"Tobirama throws a seal at the target location, which mul
 call LANG_A('TMT0',2,0,"Goju Kibaku Fuda, [|cffffcc00Level 1|r] (|cffffcc00T|r)")
 call LANG_A('TMT0',3,0,"Tobirama throws a seal at the target location, which multiplies and detonates, causing a chain reaction of multiple explosions.|n|n|cFF00A5FFDamage: 15*|r|c0077FFFFINT|r|cFF00A5FF over time|nRange: 700|nAoE: 200-1000|nStun: 0.1 sec each 0.25 sec.|nDuration: 3 sec.|nCooldown: 35 seconds|r")
 call LANG_A('TMD0',1,0,"Tobirama creates a shadow clone that takes 1750% damage but can use Hiraishin no Jutsu.|n|n|cFF00A5FFCooldown 20 sec.|r")
-call LANG_A('TMF0',1,0,"Tobirama instantly moves to the nearest seal point from a kunai or clone. Removes seal from enemy. If used by a shadow clone, the ability is considered to have been used by the original.|n|cFF00A5FF|nSearch Radius: 1000|nMax Range: 3000|nCooldown: 1 seconds|r")
+call LANG_A('TMF0',1,0,"Tobirama instantly moves to the nearest seal point from a kunai (on an enemy or in the ground) or clone. Removes seal from enemy. If used by a shadow clone, the ability is considered to have been used by the original.|n|cFF00A5FF|nSearch Radius: 1000|nMax Range: 3000|nCooldown: 1 seconds|r")
 call LANG_A('TMF2',1,0,"Tobirama instantly moves to the nearest seal point from a kunai or clone.|n|cFF00A5FF|nSearch Radius: 1000|nMax Range: 3000|nCooldown: 1 seconds|r")
 call LANG_A('TMG0',1,0,"Tobirama uses genjutsu, blinding the opponent.|n|n|cFF00A5FF|nDuration: 6 sec.|nAoE: 1200|nCooldown: 35 seconds|r")
 call LANG_A('TMG0',2,0,"Kokuangyo no Jutsu, [|cffffcc00Level 1|r] (|cffffcc00G|r)")
