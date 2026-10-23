@@ -15077,6 +15077,18 @@ set best=null
 return true
 endfunction
 // Отсчёт R: 5 c без нажатия — стадия сбрасывается, R уходит на 40 c (после броска — тоже через 5 c)
+// R (23 окт): нажатия 1..4 без цели, пятое — по юниту: тип цели кнопки меняется на лету (как у T Гоку)
+function Rem_R_SetTarget takes unit u,integer tt returns nothing
+local integer i=0
+if GetUnitAbilityLevel(u,'RmR1')==0 then
+return
+endif
+loop
+exitwhen i>4
+call SetAbilityIntegerLevelField(GetUnitAbility(u,'RmR1'),ABILITY_ILF_TARGET_TYPE,i,tt)
+set i=i+1
+endloop
+endfunction
 function Rem_R_Idle takes nothing returns nothing
 local timer t=GetExpiredTimer()
 local unit caster=LoadUnitHandle(HH,GetHandleId(t),0)
@@ -15085,6 +15097,7 @@ call SaveReal(HH,cid,SH_RemSpearIdle,LoadReal(HH,cid,SH_RemSpearIdle)+.05)
 if LoadReal(HH,cid,SH_RemSpearIdle)>=7. or not LoadBoolean(HH,cid,SH_RemSpearOn) then
 call SaveBoolean(HH,cid,SH_RemSpearOn,false)
 call SaveInteger(HH,cid,SH_RemSpearStage,0)
+call Rem_R_SetTarget(caster,0) // снова без цели (23 окт)
 if not LoadBoolean(HH,cid,SH_RemSpearDone) then
 call DisplayTextToPlayer(OwnerOf(caster),0,0,Lng("Spear the Gungnir прервано!","Spear the Gungnir interrupted!"))
 endif
@@ -15209,7 +15222,8 @@ call Rem_Fx(caster,"bof\\Scarlet-4.mdx",tx,ty,25.,0.,0.9,0.)
 call Rem_Fx(caster,"bof\\Scarlet-29.mdx",tx,ty,25.,0.,0.3,0.) // волна Scarlet-29 вдвое меньше (15 окт, было 0.6)
 call Rem_Fx(caster,"bof\\Scarlet-14.mdx",tx,ty,25.,0.,0.9,1.)
 call Rem_Sound("bof\\war3mapImported\\RemiliaScarlet-R-YX2.mp3",100)
-set dmg=I2R(Rem_Int_R(caster,true))*120.*0.001+GetUnitState(caster,UNIT_STATE_MAX_LIFE)*.15
+//set dmg=I2R(Rem_Int_R(caster,true))*120.*0.001+GetUnitState(caster,UNIT_STATE_MAX_LIFE)*.15
+set dmg=I2R(Rem_Int_R(caster,true))*120.*0.001+GetUnitState(caster,UNIT_STATE_MAX_LIFE)*.2 // 23 окт: 20% максимума здоровья (было 15%)
 if GetUnitAbilityLevel(target,'Avul')==0 then
 call Bof_Dmg(caster,target,dmg)
 else
@@ -15341,6 +15355,7 @@ call Rem_Text(caster,Lng("Я — из рода истинных вампиров
 elseif stage==4 then
 call Rem_Sound("bof\\war3mapImported\\RemiliaScarlet-R-YY4.mp3",100)
 call Rem_Text(caster,Lng("Пронжу тебя","I will pierce you"))
+call Rem_R_SetTarget(caster,1) // пятое нажатие — по юниту (23 окт)
 //elseif stage==5 and Rem_SpearReady(caster) then
 //set target=LoadUnitHandle(HH,cid,SH_RemSpear)
 // 23 окт: R по точке — копьё летит в сторону клика (Rem_R_Spear, свободный полёт)
@@ -15353,6 +15368,7 @@ call Rem_Sound("bof\\war3mapImported\\RemiliaScarlet-R-YY5.mp3",100)
 call Rem_Text(caster,"Spear the Gungnir")
 call SaveInteger(HH,cid,SH_RemSpearStage,0)
 call SaveBoolean(HH,cid,SH_RemSpearDone,true)
+call Rem_R_SetTarget(caster,0) // после броска — снова без цели (23 окт)
 // полное прочтение — R сразу уходит на перезарядку 30 c (раньше — только через 5 c ожидания)
 call SaveBoolean(HH,cid,SH_RemSpearOn,false)
 call SetAbilityRemainingCooldown(GetUnitAbility(caster,'RmR1'),30.)
@@ -136105,7 +136121,6 @@ call SaveStr(HH,SH_ShnChanO,'RmQ1',"flamestrike")
 call SaveInteger(HH,SH_ShnChanT,'RmQ1',2)
 call SaveStr(HH,SH_ShnChanO,'RmQ2',"absorb")
 call SaveStr(HH,SH_ShnChanO,'RmR1',"incineratearrow")
-call SaveInteger(HH,SH_ShnChanT,'RmR1',1)
 call SaveStr(HH,SH_ShnChanO,'RmT1',"wateryminion")
 call SaveInteger(HH,SH_ShnChanT,'RmT1',1)
 call SaveStr(HH,SH_ShnChanO,'RmW1',"flamingarrows")
@@ -138820,6 +138835,7 @@ local group g
 local unit e
 local effect fx
 local framehandle fr
+local real rr=1200.*RMinBJ(1.,I2R(R2I(LoadReal(h,id,3)*10+0.5)-10)/20.)
 call SaveReal(h,id,3,time+0.1)
 if time<7. and UnitIsAlive(u) and udg_B==true and not LoadBoolean(h,id,6) then
 // бутон закрылся наполовину (1 с) — туман: центр, кольцо 450 (6), кольцо 850 (12)
@@ -138831,22 +138847,49 @@ call CreateModeIndicatorForm(u,"ReplaceableTextures\\CommandButtons\\BTNShinjiT.
 //call ShinjiRing(x,y,1000.,6.)
 // 23 окт: кольцо T своё (слот 60), чтобы при отмене T гасло сразу; вид как у ShinjiRing
 set fx=AddSpecialEffect("Shinji2_RangeCircle.mdx",x,y)
-call SetSpecialEffectScale(fx,1000./105.)
+//call SetSpecialEffectScale(fx,1000./105.)
+call SetSpecialEffectScale(fx,0.5) // 23 окт: кольцо растёт вместе с туманом до 1200
 call SetSpecialEffectTimeScale(fx,0.)
 call SetSpecialEffectAlpha(fx,120)
 call SaveEffectHandle(h,id,60,fx)
+//loop
+//exitwhen i>18
+//// туман T как R Генкиши (17 окт; было Shinji2_MistT)
+//if i==0 then
+//call ShinjiGenMist(id,10,x,y,1.6,true)
+//elseif i<=6 then
+//call ShinjiGenMist(id,10+i,x+450*Cos(i*bj_PI/3),y+450*Sin(i*bj_PI/3),1.6,true)
+//else
+//call ShinjiGenMist(id,10+i,x+850*Cos((i-7)*bj_PI/6),y+850*Sin((i-7)*bj_PI/6),1.6,true)
+//endif
+//set i=i+1
+//endloop
+// 23 окт: облака тумана ставятся ниже, по мере роста радиуса
+endif
+// 23 окт: туман разрастается плавно за 2 с с начала (tk 10..30) до 1200; облака — 30 в 4 кольца (центр, 7 на 420, 10 на 800, 12 на 1130),
+// каждое появляется, когда радиус до него доходит (слоты 200..229 и 230..259)
+if tk>=10 then
+set rr=1200.*RMinBJ(1.,I2R(tk-10)/20.)
+if LoadEffectHandle(h,id,60)!=null then
+call SetSpecialEffectScale(LoadEffectHandle(h,id,60),RMaxBJ(60.,rr)/105.)
+endif
+set i=0
 loop
-exitwhen i>18
-// туман T как R Генкиши (17 окт; было Shinji2_MistT)
+exitwhen i>29
+if LoadEffectHandle(h,id,200+i)==null then
 if i==0 then
-call ShinjiGenMist(id,10,x,y,1.6,true)
-elseif i<=6 then
-call ShinjiGenMist(id,10+i,x+450*Cos(i*bj_PI/3),y+450*Sin(i*bj_PI/3),1.6,true)
-else
-call ShinjiGenMist(id,10+i,x+850*Cos((i-7)*bj_PI/6),y+850*Sin((i-7)*bj_PI/6),1.6,true)
+call ShinjiGenMist(id,200,x,y,1.6,true)
+elseif i<=7 and rr>=420. then
+call ShinjiGenMist(id,200+i,x+420*Cos((i-1)*2*bj_PI/7),y+420*Sin((i-1)*2*bj_PI/7),1.5,true)
+elseif i>=8 and i<=17 and rr>=800. then
+call ShinjiGenMist(id,200+i,x+800*Cos((i-8)*2*bj_PI/10+0.3),y+800*Sin((i-8)*2*bj_PI/10+0.3),1.6,true)
+elseif i>=18 and rr>=1130. then
+call ShinjiGenMist(id,200+i,x+1130*Cos((i-18)*2*bj_PI/12),y+1130*Sin((i-18)*2*bj_PI/12),1.6,true)
+endif
 endif
 set i=i+1
 endloop
+set i=0
 endif
 // клубы тумана, пока банкай активен: раз в 0.3 с — 4 клуба (яд Маюри, сильнее, чем на W / D) в случайных точках круга 1000, живут 1.8 с (16 окт)
 if tk>=10 and ModuloInteger(tk,3)==0 then
@@ -138854,7 +138897,8 @@ set i=0
 loop
 exitwhen i>3
 set ep=GetRandomInt(0,359)
-set fx=AddSpecialEffect("Shinji2_GenMistT.mdx",x+GetRandomReal(0,950)*Cos(ep*bj_DEGTORAD),y+GetRandomReal(0,950)*Sin(ep*bj_DEGTORAD))
+//set fx=AddSpecialEffect("Shinji2_GenMistT.mdx",x+GetRandomReal(0,950)*Cos(ep*bj_DEGTORAD),y+GetRandomReal(0,950)*Sin(ep*bj_DEGTORAD))
+set fx=AddSpecialEffect("Shinji2_GenMistT.mdx",x+GetRandomReal(0,RMaxBJ(100.,rr-50.))*Cos(ep*bj_DEGTORAD),y+GetRandomReal(0,RMaxBJ(100.,rr-50.))*Sin(ep*bj_DEGTORAD)) // 23 окт: внутри растущего тумана
 call SetSpecialEffectScale(fx,GetRandomReal(1.2,1.6))
 call RemoveEffect(fx,1.2,true,CreateTimer()) // было 1.8 (16 окт)
 // 23 окт: последние 12 клубов (0.9 с) — в слотах 70..81, чтобы спрятать их при отмене T
@@ -138867,7 +138911,8 @@ endif
 // раз в секунду с начала тумана — путаница всем в тумане, кроме игрока Хирако (и врагам, и его союзникам — 17 окт)
 if tk>=10 and ModuloInteger(tk-10,10)==0 then
 set g=CreateGroup()
-call GroupEnumUnitsInRange(g,x,y,1000,null)
+//call GroupEnumUnitsInRange(g,x,y,1000,null)
+call GroupEnumUnitsInRange(g,x,y,RMaxBJ(150.,rr),null) // 23 окт: радиус растёт до 1200
 loop
 set e=FirstOfGroup(g)
 exitwhen e==null
@@ -138925,6 +138970,13 @@ loop
 exitwhen i>18
 call DestroyEffect(LoadEffectHandle(h,id,10+i))
 call DestroyEffect(LoadEffectHandle(h,id,40+i))
+set i=i+1
+endloop
+set i=0
+loop
+exitwhen i>29
+call DestroyEffect(LoadEffectHandle(h,id,200+i))
+call DestroyEffect(LoadEffectHandle(h,id,230+i))
 set i=i+1
 endloop
 call PauseTimer(t)
@@ -293303,13 +293355,13 @@ call LANG_A('RmR1',0,1,"Spear the Gungnir, [|cffffcc00Level 2|r] (|cffffcc00R|r)
 call LANG_A('RmR1',0,2,"Spear the Gungnir, [|cffffcc00Level 3|r] (|cffffcc00R|r)")
 call LANG_A('RmR1',0,3,"Spear the Gungnir, [|cffffcc00Level 4|r] (|cffffcc00R|r)")
 call LANG_A('RmR1',0,4,"Spear the Gungnir, [|cffffcc00Level 5|r] (|cffffcc00R|r)")
-call LANG_A('RmR1',1,0,"A five-press spell: press R, no more than 7 sec. between presses. The fifth throws a spear at the chosen enemy (cast on herself — at the nearest enemy hero within 5000): half of the spear damage goes through invulnerability.|nThe pierced target is lifted into the air and stays stunned.|n|n|cFF00A5"+"FF|nSpear damage: 2*|r|c0077FFFFINT|r|cFF00A5FF + 15% of Remilia's max HP|nSpear stun: 1.2 sec.|nSpear range: 5000|nCast time: +0.1 sec.|nCooldown between presses: 1.5 sec.|nCooldown: 30 sec.|r")
-call LANG_A('RmR1',1,1,"A five-press spell: press R, no more than 7 sec. between presses. The fifth throws a spear at the chosen enemy (cast on herself — at the nearest enemy hero within 5000): half of the spear damage goes through invulnerability.|nThe pierced target is lifted into the air and stays stunned.|n|n|cFF00A5"+"FF|nSpear damage: 3*|r|c0077FFFFINT|r|cFF00A5FF + 15% of Remilia's max HP|nSpear stun: 1.2 sec.|nSpear range: 5000|nCast time: +0.1 sec.|nCooldown between presses: 1.5 sec.|nCooldown: 30 sec.|r")
-call LANG_A('RmR1',1,2,"A five-press spell: press R, no more than 7 sec. between presses. The fifth throws a spear at the chosen enemy (cast on herself — at the nearest enemy hero within 5000): half of the spear damage goes through invulnerability.|nThe pierced target is lifted into the air and stays stunned.|n|n|cFF00A5"+"FF|nSpear damage: 4*|r|c0077FFFFINT|r|cFF00A5FF + 15% of Remilia's max HP|nSpear stun: 1.2 sec.|nSpear range: 5000|nCast time: +0.1 sec.|nCooldown between presses: 1.5 sec.|nCooldown: 30 sec.|r")
-call LANG_A('RmR1',1,3,"A five-press spell: press R, no more than 7 sec. between presses. The fifth throws a spear at the chosen enemy (cast on herself — at the nearest enemy hero within 5000): half of the spear damage goes through invulnerability.|nThe pierced target is lifted into the air and stays stunned.|n|n|cFF00A5"+"FF|nSpear damage: 5*|r|c0077FFFFINT|r|cFF00A5FF + 15% of Remilia's max HP|nSpear stun: 1.2 sec.|nSpear range: 5000|nCast time: +0.1 sec.|nCooldown between presses: 1.5 sec.|nCooldown: 30 sec.|r")
-call LANG_A('RmR1',1,4,"A five-press spell: press R, no more than 7 sec. between presses. The fifth throws a spear at the chosen enemy (cast on herself — at the nearest enemy hero within 5000): half of the spear damage goes through invulnerability.|nThe pierced target is lifted into the air and stays stunned.|n|n|cFF00A5"+"FF|nSpear damage: 6*|r|c0077FFFFINT|r|cFF00A5FF + 15% of Remilia's max HP|nSpear stun: 1.2 sec.|nSpear range: 5000|nCast time: +0.1 sec.|nCooldown between presses: 1.5 sec.|nCooldown: 30 sec.|r")
+call LANG_A('RmR1',1,0,"A five-press spell: press R, no more than 7 sec. between presses. The fifth press is targeted: the spear flies at the chosen enemy (cast on herself — at the nearest enemy hero within 5000): half of the spear damage goes through invulnerability.|nThe pierced target is lifted into the air and stays "+"stunned.|n|n|cFF00A5FF|nSpear damage: 2*|r|c0077FFFFINT|r|cFF00A5FF + 20% of Remilia's max HP|nSpear stun: 1.2 sec.|nSpear range: 5000|nCast time: +0.1 sec.|nCooldown between presses: 1.5 sec.|nCooldown: 30 sec.|r")
+call LANG_A('RmR1',1,1,"A five-press spell: press R, no more than 7 sec. between presses. The fifth press is targeted: the spear flies at the chosen enemy (cast on herself — at the nearest enemy hero within 5000): half of the spear damage goes through invulnerability.|nThe pierced target is lifted into the air and stays "+"stunned.|n|n|cFF00A5FF|nSpear damage: 3*|r|c0077FFFFINT|r|cFF00A5FF + 20% of Remilia's max HP|nSpear stun: 1.2 sec.|nSpear range: 5000|nCast time: +0.1 sec.|nCooldown between presses: 1.5 sec.|nCooldown: 30 sec.|r")
+call LANG_A('RmR1',1,2,"A five-press spell: press R, no more than 7 sec. between presses. The fifth press is targeted: the spear flies at the chosen enemy (cast on herself — at the nearest enemy hero within 5000): half of the spear damage goes through invulnerability.|nThe pierced target is lifted into the air and stays "+"stunned.|n|n|cFF00A5FF|nSpear damage: 4*|r|c0077FFFFINT|r|cFF00A5FF + 20% of Remilia's max HP|nSpear stun: 1.2 sec.|nSpear range: 5000|nCast time: +0.1 sec.|nCooldown between presses: 1.5 sec.|nCooldown: 30 sec.|r")
+call LANG_A('RmR1',1,3,"A five-press spell: press R, no more than 7 sec. between presses. The fifth press is targeted: the spear flies at the chosen enemy (cast on herself — at the nearest enemy hero within 5000): half of the spear damage goes through invulnerability.|nThe pierced target is lifted into the air and stays "+"stunned.|n|n|cFF00A5FF|nSpear damage: 5*|r|c0077FFFFINT|r|cFF00A5FF + 20% of Remilia's max HP|nSpear stun: 1.2 sec.|nSpear range: 5000|nCast time: +0.1 sec.|nCooldown between presses: 1.5 sec.|nCooldown: 30 sec.|r")
+call LANG_A('RmR1',1,4,"A five-press spell: press R, no more than 7 sec. between presses. The fifth press is targeted: the spear flies at the chosen enemy (cast on herself — at the nearest enemy hero within 5000): half of the spear damage goes through invulnerability.|nThe pierced target is lifted into the air and stays "+"stunned.|n|n|cFF00A5FF|nSpear damage: 6*|r|c0077FFFFINT|r|cFF00A5FF + 20% of Remilia's max HP|nSpear stun: 1.2 sec.|nSpear range: 5000|nCast time: +0.1 sec.|nCooldown between presses: 1.5 sec.|nCooldown: 30 sec.|r")
 call LANG_A('RmR1',2,0,"Spear the Gungnir, [|cffffcc00Level %d|r] (|cffffcc00R|r)")
-call LANG_A('RmR1',3,0,"A five-press spell: press R, no more than 7 sec. between presses. The fifth throws a spear at the chosen enemy (cast on herself — at the nearest enemy hero within 5000): half of the spear damage goes through invulnerability.|nThe pierced target is lifted into the air and stays stunned.|n|n|cFF00A5"+"FF|nSpear damage: 2\\3\\4\\5\\6*|r|c0077FFFFINT|r|cFF00A5FF + 15% of Remilia's max HP|nSpear stun: 1.2 sec.|nSpear range: 5000|nCast time: +0.1 sec.|nCooldown between presses: 1.5 sec.|nCooldown: 30 sec.|r")
+call LANG_A('RmR1',3,0,"A five-press spell: press R, no more than 7 sec. between presses. The fifth press is targeted: the spear flies at the chosen enemy (cast on herself — at the nearest enemy hero within 5000): half of the spear damage goes through invulnerability.|nThe pierced target is lifted into the air and stays "+"stunned.|n|n|cFF00A5FF|nSpear damage: 2\\3\\4\\5\\6*|r|c0077FFFFINT|r|cFF00A5FF + 20% of Remilia's max HP|nSpear stun: 1.2 sec.|nSpear range: 5000|nCast time: +0.1 sec.|nCooldown between presses: 1.5 sec.|nCooldown: 30 sec.|r")
 call LANG_A('RmT1',1,0,"A whirl of scarlet aura burns everything around the target; at the end, Heart Break hits the same target.|nRemilia and the target are invulnerable during the skill.|nIf an enemy hero dies during T (from anything), Remilia permanently gains +3% of their max HP.|n|n|cFF00A5FF|nDamage: 6*|r|c0077FFFFIN"+"T|r|cFF00A5FF + 30% of the HP difference between Remilia and the target|nHeart Break: 20% of the target's max HP|nDuration: ~5 sec.|nRange: 450|nCast time: +0.1 sec.|nCooldown: 60 sec.|r")
 call LANG_A('RmT1',3,0,"A whirl of scarlet aura burns everything around the target; at the end, Heart Break hits the same target.|nRemilia and the target are invulnerable during the skill.|nIf an enemy hero dies during T (from anything), Remilia permanently gains +3% of their max HP.|n|n|cFF00A5FF|nDamage: 6*|r|c0077FFFFIN"+"T|r|cFF00A5FF + 30% of the HP difference between Remilia and the target|nHeart Break: 20% of the target's max HP|nDuration: ~5 sec.|nRange: 450|nCast time: +0.1 sec.|nCooldown: 60 sec.|r")
 call LANG_A('RmD1',1,0,"Homing chains of scarlet aura reach out to enemies.|nWhile the chains fly, Remilia stands still and is invulnerable.|n|n|cFF00A5FF|nDamage: 0.2*|r|c0077FFFFINT|r|cFF00A5FF per touch|nStun: 0.5 sec.|nDuration: 2 sec.|nRange: 1200|nCast time: +0.1 sec.|nCooldown: 30 sec.|r")
@@ -293547,8 +293599,8 @@ call LANG_A('ToEc',1,3,"The fly fires two green Ceros side by side: a wide beam 
 call LANG_A('ToEc',1,4,"The fly fires two green Ceros side by side: a wide beam ahead stuns those hit.|n|n|cFF00A5FF|nDamage: 9*|r|c003CFF3CAGI|r|cFF00A5FF|nStun: 2.5 sec.|nBeam length: 2200, width 450|nCooldown: 14 sec.|r")
 call LANG_A('ToEc',2,0,"Double Cero, [|cffffcc00Level %d|r] (|cffffcc00R|r)")
 call LANG_A('ToEc',3,0,"The fly fires two green Ceros side by side: a wide beam ahead stuns those hit.|n|n|cFF00A5FF|nDamage: 5\\6\\7\\8\\9*|r|c003CFF3CAGI|r|cFF00A5FF|nStun: 2.5 sec.|nBeam length: 2200, width 450|nCooldown: 14 sec.|r")
-call LANG_A('SnT1',1,0,"Bankai: a bud around Hirako releases a mist (W ends). The mask is not spent. Every second everyone in the mist except Hirako is confused: enemies look like allies and vice versa (Hirako's allies from the 3rd second, a \"!\" above them before that); on the first confusion — a random ability at the "+"nearest \"enemy\". All damage of the confused to Hirako's enemies is dealt by Hirako himself. No effect under Imagine Breaker or Clear Sky.|n|n|cFF00A5FF|nMist AoE: 1000|nDuration: 6 sec.|nConfusion: 1.2 sec.|nCast time: +0.3 sec.|nCooldown: 70 sec. (10 sec. at round start)|r")
-call LANG_A('SnT1',3,0,"Bankai: a bud around Hirako releases a mist (W ends). The mask is not spent. Every second everyone in the mist except Hirako is confused: enemies look like allies and vice versa (Hirako's allies from the 3rd second, a \"!\" above them before that); on the first confusion — a random ability at the "+"nearest \"enemy\". All damage of the confused to Hirako's enemies is dealt by Hirako himself. No effect under Imagine Breaker or Clear Sky.|n|n|cFF00A5FF|nMist AoE: 1000|nDuration: 6 sec.|nConfusion: 1.2 sec.|nCast time: +0.3 sec.|nCooldown: 70 sec. (10 sec. at round start)|r")
+call LANG_A('SnT1',1,0,"Bankai: a bud around Hirako releases a mist (W ends). The mask is not spent. Every second everyone in the mist except Hirako is confused: enemies look like allies and vice versa (Hirako's allies from the 3rd second, a \"!\" above them before that); on the first confusion — a random ability at the "+"nearest \"enemy\". All damage of the confused to Hirako's enemies is dealt by Hirako himself. No effect under Imagine Breaker or Clear Sky.|n|n|cFF00A5FF|nMist AoE: 1200 (grows over 2 sec.)|nDuration: 6 sec.|nConfusion: 1.2 sec.|nCast time: +0.3 sec.|nCooldown: 70 sec. (10 sec. at round start)|r")
+call LANG_A('SnT1',3,0,"Bankai: a bud around Hirako releases a mist (W ends). The mask is not spent. Every second everyone in the mist except Hirako is confused: enemies look like allies and vice versa (Hirako's allies from the 3rd second, a \"!\" above them before that); on the first confusion — a random ability at the "+"nearest \"enemy\". All damage of the confused to Hirako's enemies is dealt by Hirako himself. No effect under Imagine Breaker or Clear Sky.|n|n|cFF00A5FF|nMist AoE: 1200 (grows over 2 sec.)|nDuration: 6 sec.|nConfusion: 1.2 sec.|nCast time: +0.3 sec.|nCooldown: 70 sec. (10 sec. at round start)|r")
 call LANG_A('SnTc',0,0,"Cancel Bankai (|cffffcc00T|r)")
 call LANG_A('SnTc',1,0,"|cFF00A5FFEnds the bankai early: the bud opens, the mist fades.|r")
 call LANG_A('SnD1',1,0,"Hirako spins Sakanade by its ring: a wave of scent around him. Nearby enemies take damage and are briefly inverted: their movement and turning go the opposite way.|n|n|cFF00A5FF|nDamage: 3*|r|c003CFF3CAGI|r|cFF00A5FF|nInversion: 1.25 sec.|nAoE: 400|nCooldown: 20 sec.|r")
