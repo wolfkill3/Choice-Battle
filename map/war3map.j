@@ -69102,7 +69102,8 @@ endif
         endif
         //if nb>0 and GetUnitAbilityLevel(c,'B03C')>0 then
         // 23 окт: и в облике мухи (баф маски без эффектов B0TN) — прыжок на другую сторону цели при атаке
-        if nb>0 and (GetUnitAbilityLevel(c,'B03C')>0 or GetUnitAbilityLevel(c,'B0TN')>0) then
+//        if nb>0 and (GetUnitAbilityLevel(c,'B03C')>0 or GetUnitAbilityLevel(c,'B0TN')>0) then
+        if nb>0 and (GetUnitAbilityLevel(c,'B03C')>0 or GetUnitTypeId(c)=='H0TF') then // 23 окт: муха прыгает всегда (привязка к юниту)
             set r=GetRandomReal(0,7)
             set x1=x+100*Cos(r)
             set y1=y+100*Sin(r)
