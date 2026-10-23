@@ -15142,12 +15142,42 @@ local real ang=Atan2BJ(ty-y,tx-x)
 local real dist=SRS(x,y,tx,ty)
 local real dmg
 local unit m
+local group rsG
+local unit rsE
 call SaveInteger(HH,id,3,tk)
+// 23 окт: копьё летит в сторону клика (h4 — угол, h5 — свободный полёт) и бьёт первого врага в 150 на пути, до 5000 (50 тиков)
+if LoadBoolean(HH,id,5) then
+set ang=LoadReal(HH,id,4)
+set target=null
+set rsG=CreateGroup()
+call GroupEnumUnitsInRange(rsG,x,y,150.,null)
+loop
+set rsE=FirstOfGroup(rsG)
+exitwhen rsE==null or target!=null
+call GroupRemoveUnit(rsG,rsE)
+if Condition_Base(OwnerOf(caster),rsE) and UnitIsAlive(rsE) and GetUnitAbilityLevel(rsE,'Aloc')==0 and not IsUnitIllusion(rsE) and (GetUnitAbilityLevel(rsE,'Avul')==0 or IsUnitType(rsE,UNIT_TYPE_HERO)) then
+set target=rsE
+endif
+endloop
+call DestroyGroup(rsG)
+if target!=null then
+set tx=GetUnitX(target)
+set ty=GetUnitY(target)
+set dist=0.
+else
+set dist=99999.
+if tk>50 then
+set tk=999
+endif
+endif
+call SetUnitFacing(dmy,ang)
+else
 call SetUnitFacing(dmy,ang)
 if GetUnitTypeId(target)==0 or not UnitIsAlive(target) then
 // цель умерла или пропала — копьё гаснет на месте
 set dist=99999.
 set tk=999
+endif
 endif
 if I2R(tk)*.01<=1.33 and dist>100. and UnitIsAlive(dmy) then
 set x=x+100.*CosBJ(ang)
@@ -15198,6 +15228,8 @@ set caster=null
 set target=null
 set dmy=null
 set m=null
+set rsG=null
+set rsE=null
 endfunction
 // Бросок: Ремилия зависает 0.46 c, в 0.36 c копьё вылетает
 function Rem_R_Act2 takes nothing returns nothing
@@ -15236,6 +15268,8 @@ set t2=CreateTimer()
 call SaveUnitHandle(HH,GetHandleId(t2),0,caster)
 call SaveUnitHandle(HH,GetHandleId(t2),1,target)
 call SaveUnitHandle(HH,GetHandleId(t2),2,dmy)
+call SaveReal(HH,GetHandleId(t2),4,ang)
+call SaveBoolean(HH,GetHandleId(t2),5,target==null) // 23 окт: без цели — в сторону клика
 call TSE_TimerStart(t2,.03,true,function Rem_R_Spear)
 endif
 if tk==23 then
@@ -15299,8 +15333,11 @@ call Rem_Text(caster,Lng("Я — из рода истинных вампиров
 elseif stage==4 then
 call Rem_Sound("bof\\war3mapImported\\RemiliaScarlet-R-YY4.mp3",100)
 call Rem_Text(caster,Lng("Пронжу тебя","I will pierce you"))
-elseif stage==5 and Rem_SpearReady(caster) then
-set target=LoadUnitHandle(HH,cid,SH_RemSpear)
+//elseif stage==5 and Rem_SpearReady(caster) then
+//set target=LoadUnitHandle(HH,cid,SH_RemSpear)
+// 23 окт: R по точке — копьё летит в сторону клика (Rem_R_Spear, свободный полёт)
+elseif stage==5 then
+set target=null
 call Rem_Sound("bof\\war3mapImported\\RemiliaScarlet-R-YY5.mp3",100)
 call Rem_Text(caster,"Spear the Gungnir")
 call SaveInteger(HH,cid,SH_RemSpearStage,0)
@@ -15317,7 +15354,12 @@ call SetUnitPathing(caster,false)
 set t=CreateTimer()
 call SaveUnitHandle(HH,GetHandleId(t),0,caster)
 call SaveUnitHandle(HH,GetHandleId(t),1,target)
-call SaveReal(HH,GetHandleId(t),2,Atan2BJ(GetUnitY(target)-y,GetUnitX(target)-x))
+//call SaveReal(HH,GetHandleId(t),2,Atan2BJ(GetUnitY(target)-y,GetUnitX(target)-x))
+if SRS(x,y,GetSpellTargetX(),GetSpellTargetY())>10. then
+call SaveReal(HH,GetHandleId(t),2,Atan2BJ(GetSpellTargetY()-y,GetSpellTargetX()-x))
+else
+call SaveReal(HH,GetHandleId(t),2,GetUnitFacing(caster))
+endif
 call TSE_TimerStart(t,.02,true,function Rem_R_Act2)
 endif
 set target=null
@@ -18024,14 +18066,14 @@ call SetUnitTimeScale(src,1.)
 if tk==16 then
 call SetUnitAnimationByIndex(src,6)
 call Rem_Sound("bof\\war3mapImported\\Mercury Lamp-Q-YX1.mp3",100)
-call Sui_Slash(src,'eBMC',x,y,ang,4.,17,z+100.,"")
+call Sui_Slash(src,'eBMC',x,y,ang,4.*.75,17,z+100.,"")
 else
 call SetUnitAnimationByIndex(src,7)
 call Rem_Sound("bof\\war3mapImported\\Mercury Lamp-Q-YX2.mp3",100)
-call Sui_Slash(src,'eBME',x,y,ang,4.,124,z+100.,"")
+call Sui_Slash(src,'eBME',x,y,ang,4.*.75,124,z+100.,"")
 endif
 call Rem_Fx(hr,"bof\\Saber-17.mdx",x,y,z+50.,ang,1.5,0.)
-call Rem_Fx(hr,"bof\\Tsubaki-37.mdx",x,y,z+50.,ang,4.,0.)
+call Rem_Fx(hr,"bof\\Tsubaki-37.mdx",x,y,z+50.,ang,4.*.75,0.)
 call SetSpecialEffectPitch(bj_lastCreatedEffect,90.)
 call Bof_Glide(src,ang,400.,.4)
 call Sui_Q_Strike(src,hr,300.,id)
@@ -18039,7 +18081,7 @@ endif
 if tk==46 then
 call Rem_Noise(OwnerOf(src),50.,.5)
 call Rem_Sound("bof\\war3mapImported\\Mercury Lamp-Q-YX3.mp3",100)
-call Sui_Slash(src,'eBMD',x,y,ang,6.5,9,z+100.,"")
+call Sui_Slash(src,'eBMD',x,y,ang,6.5*.75,9,z+100.,"")
 set a2=ang+45.
 set k=1
 loop
@@ -18072,7 +18114,7 @@ local timer t=CreateTimer()
 call Bof_zU(1.,AddSpecialEffectTarget("bof\\Mercury Lamp-25.mdx",src,"chest"))
 call Rem_Fx(hr,"bof\\Saber-15.mdx",x,y,125.,ang,1.,0.)
 call Rem_Fx(hr,"bof\\Saber-17.mdx",x,y,z+50.,ang,1.5,0.)
-call Rem_Fx(hr,"bof\\Tsubaki-37.mdx",x,y,z+50.,ang,4.,0.)
+call Rem_Fx(hr,"bof\\Tsubaki-37.mdx",x,y,z+50.,ang,4.*.75,0.)
 call SetSpecialEffectPitch(bj_lastCreatedEffect,90.)
 call Sui_Anim(src,.75,5)
 call SaveUnitHandle(HH,GetHandleId(t),0,src)
@@ -18306,7 +18348,7 @@ call DestroyEffect(AddSpecialEffectTarget("bof\\Mercury Lamp-2.mdx",src,"chest")
 endif
 if tk==31 then
 call Rem_Noise(OwnerOf(src),35.,.4)
-call Rem_Fx(hr,"bof\\Tsubaki-37.mdx",x,y,z+100.,ang,5.,0.)
+call Rem_Fx(hr,"bof\\Tsubaki-37.mdx",x,y,z+100.,ang,5.*.75,0.)
 call SetSpecialEffectPitch(bj_lastCreatedEffect,90.)
 call Rem_Fx(hr,"bof\\Saber-17.mdx",x,y,z+50.,ang,1.5,0.)
 endif
@@ -18321,9 +18363,9 @@ set fa=fa+15.
 set f=Sui_Feather(hr,x,y,fa,z+100.,1.,12.)
 call Sui_FAdd(hr,f)
 if k==2 then
-call Rem_Fx(hr,"bof\\Tsubaki-37.mdx",x,y,GetUnitFlyHeight(f)+50.,fa,4.,0.)
+call Rem_Fx(hr,"bof\\Tsubaki-37.mdx",x,y,GetUnitFlyHeight(f)+50.,fa,4.*.75,0.)
 call SetSpecialEffectPitch(bj_lastCreatedEffect,90.)
-call Rem_Fx(hr,"bof\\Minato-31.mdx",x,y,GetUnitFlyHeight(f)+50.,fa,3.,0.)
+call Rem_Fx(hr,"bof\\Minato-31.mdx",x,y,GetUnitFlyHeight(f)+50.,fa,3.*.75,0.)
 call SetSpecialEffectPitch(bj_lastCreatedEffect,90.)
 endif
 set t2=CreateTimer()
@@ -18481,7 +18523,7 @@ call Rem_Fx(caster,"bof\\Mercury Lamp-20.mdx",x,y,z+50.,ang,1.5,0.)
 call Bof_zU(1.,AddSpecialEffectTarget("bof\\Mercury Lamp-25.mdx",caster,"chest"))
 call Rem_Fx(caster,"bof\\Saber-15.mdx",x,y,125.,ang,1.,0.)
 call Rem_Fx(caster,"bof\\Saber-17.mdx",x,y,z+50.,ang,1.5,0.)
-call Rem_Fx(caster,"bof\\Tsubaki-37.mdx",x,y,z+50.,ang,4.,0.)
+call Rem_Fx(caster,"bof\\Tsubaki-37.mdx",x,y,z+50.,ang,4.*.75,0.)
 call SetSpecialEffectPitch(bj_lastCreatedEffect,90.)
 call Sui_Ghost(caster,x,y,ang,1,5)
 call Rem_Sound("bof\\war3mapImported\\Mercury Lamp-ZS1JN-YX1.mp3",100)
@@ -18548,9 +18590,9 @@ call Bof_EXSetUnitMoveType(m,1)
 call SetUnitInvulnerable(m,true)
 call SaveUnitHandle(HH,GetHandleId(caster),SH_SuiMirror,m)
 call Rem_Sound("bof\\war3mapImported\\Mercury Lamp-G-YX2.mp3",100)
-call Rem_Fx(caster,"bof\\Mercury Lamp-38.mdx",tx,ty,25.,0.,3.,0.)
+call Rem_Fx(caster,"bof\\Mercury Lamp-38.mdx",tx,ty,25.,0.,3.*.75,0.)
 call Rem_Fx(caster,"bof\\Mercury Lamp-37.mdx",tx,ty,800.,0.,2.,3.)
-call Rem_Fx(caster,"bof\\Mercury Lamp-32.mdx",tx,ty,800.,ang,4.,0.)
+call Rem_Fx(caster,"bof\\Mercury Lamp-32.mdx",tx,ty,800.,ang,4.*.75,0.)
 call Rem_Fx(caster,"bof\\Saber-28.mdx",tx,ty,25.,0.,.75,1.5)
 call SetPlayerAbilityAvailable(OwnerOf(caster),'SuD1',false)
 set t=CreateTimer()
@@ -18602,7 +18644,7 @@ set y=GetUnitY(hr)
 set z=GetUnitFlyHeight(hr)
 call Rem_Fx(hr,"bof\\Saber-15.mdx",x,y,250.,ang,1.,0.)
 call Rem_Fx(hr,"bof\\Saber-17.mdx",x,y,z+250.,ang,1.5,0.)
-call Rem_Fx(hr,"bof\\Tsubaki-37.mdx",x,y,z+200.,ang,4.,0.)
+call Rem_Fx(hr,"bof\\Tsubaki-37.mdx",x,y,z+200.,ang,4.*.75,0.)
 call SetSpecialEffectPitch(bj_lastCreatedEffect,90.)
 call SetUnitTimeScale(hr,.75)
 call SetUnitAnimationByIndex(hr,7)
@@ -18632,7 +18674,7 @@ set y=GetUnitY(hr)
 set z=GetUnitFlyHeight(hr)
 call SetUnitInvulnerable(hr,false)
 call PauseUnit(hr,false)
-call Sui_Slash(hr,'eBMD',x,y,ang,6.5,9,z+100.,"bof\\Mercury Lamp-28.mdx")
+call Sui_Slash(hr,'eBMD',x,y,ang,6.5*.75,9,z+100.,"bof\\Mercury Lamp-28.mdx")
 set a2=ang+45.
 set k=1
 loop
@@ -18679,9 +18721,9 @@ set ang=GetUnitFacing(m)
 call SaveBoolean(HH,GetHandleId(caster),SH_bofRevd,false)
 call SetUnitAnimationByIndex(Sui_Ghost(caster,x,y,ang,1,2),12)
 call Rem_Fx(caster,"bof\\Mercury Lamp-39.mdx",x,y,150.,0.,1.5,0.)
-call Rem_Fx(caster,"bof\\Mercury Lamp-38.mdx",x,y,25.,0.,3.,0.)
-call Rem_Fx(caster,"bof\\Mercury Lamp-37.mdx",x,y,600.,0.,3.,0.)
-call Rem_Fx(caster,"bof\\Mercury Lamp-32.mdx",x,y,600.,ang,4.,0.)
+call Rem_Fx(caster,"bof\\Mercury Lamp-38.mdx",x,y,25.,0.,3.*.75,0.)
+call Rem_Fx(caster,"bof\\Mercury Lamp-37.mdx",x,y,600.,0.,3.*.75,0.)
+call Rem_Fx(caster,"bof\\Mercury Lamp-32.mdx",x,y,600.,ang,4.*.75,0.)
 call Rem_Fx(caster,"bof\\Saber-28.mdx",x,y,25.,0.,.75,1.5)
 call Rem_Sound("bof\\war3mapImported\\Mercury Lamp-ZS1JN-YX1.mp3",100)
 if GetRandomInt(1,2)==1 then
@@ -18719,9 +18761,9 @@ call SaveInteger(HH,id,4,tk)
 if tk==40 then
 call Rem_Sound("bof\\war3mapImported\\RemiliaScarlet-Q-YX1.mp3",100)
 call Rem_Noise(OwnerOf(hr),35.,.4)
-call Rem_Fx(hr,"bof\\Tsubaki-37.mdx",x,y,z+50.,fa,4.,0.)
+call Rem_Fx(hr,"bof\\Tsubaki-37.mdx",x,y,z+50.,fa,4.*.75,0.)
 call SetSpecialEffectPitch(bj_lastCreatedEffect,90.)
-call Rem_Fx(hr,"bof\\Minato-31.mdx",x,y,z+50.,fa,3.,0.)
+call Rem_Fx(hr,"bof\\Minato-31.mdx",x,y,z+50.,fa,3.*.75,0.)
 call SetSpecialEffectPitch(bj_lastCreatedEffect,90.)
 call Rem_Fx(hr,"bof\\Saber-17.mdx",x,y,z+50.,fa,1.5,0.)
 call Bof_Glide(f,fa,1600.,.6)
@@ -18844,7 +18886,7 @@ local group g
 local unit e
 call SaveInteger(HH,id,3,tk)
 if tk<=10 then
-call Rem_Fx(hr,"bof\\Mercury Lamp-32.mdx",x,y,925.,0.,6.,0.)
+call Rem_Fx(hr,"bof\\Mercury Lamp-32.mdx",x,y,925.,0.,6.*.75,0.)
 call Sui_F2_Ring(hr,x,y)
 set g=CreateGroup()
 call GroupEnumUnitsInRange(g,x,y,600.,null)
@@ -18875,8 +18917,8 @@ local unit u=CreateUnit(OwnerOf(caster),'eBLP',tx,ty,ang)
 local timer t
 local integer k=1
 local real a2
-call Rem_Fx(caster,"bof\\Mercury Lamp-39.mdx",tx,ty,400.,ang,4.,2.)
-call Rem_Fx(caster,"bof\\Mercury Lamp-37.mdx",tx,ty,800.,0.,3.,2.)
+call Rem_Fx(caster,"bof\\Mercury Lamp-39.mdx",tx,ty,400.,ang,4.*.75,2.)
+call Rem_Fx(caster,"bof\\Mercury Lamp-37.mdx",tx,ty,800.,0.,3.*.75,2.)
 call Bof_DzSetUnitModel(u,"bof\\Mercury Lamp-35.mdx")
 call SetUnitScale(u,6.,1.,1.)
 call SetUnitFlyHeight(u,25.,0.)
@@ -19276,9 +19318,9 @@ set x=GetUnitX(f)
 set y=GetUnitY(f)
 set a2=Atan2BJ(y-GetUnitY(caster),x-GetUnitX(caster))+180.
 call Rem_Fx(caster,"bof\\Mercury Lamp-23.mdx",x,y,GetUnitFlyHeight(caster)+50.,a2,1.,0.)
-call Rem_Fx(caster,"bof\\Tsubaki-37.mdx",x,y,GetUnitFlyHeight(f)+50.,a2,4.,0.)
+call Rem_Fx(caster,"bof\\Tsubaki-37.mdx",x,y,GetUnitFlyHeight(f)+50.,a2,4.*.75,0.)
 call SetSpecialEffectPitch(bj_lastCreatedEffect,90.)
-call Rem_Fx(caster,"bof\\Minato-31.mdx",x,y,GetUnitFlyHeight(f)+50.,a2,3.,0.)
+call Rem_Fx(caster,"bof\\Minato-31.mdx",x,y,GetUnitFlyHeight(f)+50.,a2,3.*.75,0.)
 call SetSpecialEffectPitch(bj_lastCreatedEffect,90.)
 call SetUnitFacing(f,a2)
 set t=CreateTimer()
@@ -19578,7 +19620,7 @@ call Rem_Fx(caster,"bof\\Saber-28.mdx",x,y,25.,0.,2.5,3.8)
 call Rem_Fx(caster,"bof\\Mercury Lamp-23.mdx",x,y,z+50.,ang,1.,0.)
 call Rem_Fx(caster,"bof\\Mercury Lamp-22.mdx",x,y,z+50.,ang,1.,0.)
 call Rem_Fx(caster,"bof\\Mercury Lamp-27.mdx",x,y,z+50.,ang,1.,0.)
-call Rem_Fx(caster,"bof\\Minato-31.mdx",x,y,z+50.,ang,6.,0.)
+call Rem_Fx(caster,"bof\\Minato-31.mdx",x,y,z+50.,ang,6.*.75,0.)
 call Rem_Sound("bof\\war3mapImported\\Mercury Lamp-G-YX2.mp3",100)
 call Rem_Noise(OwnerOf(caster),50.,.5)
 if GetRandomInt(1,2)==1 then
@@ -19599,7 +19641,7 @@ endfunction
 function Sui_Attack_Act takes unit c,unit u returns nothing
 local real ang=Atan2BJ(GetUnitY(u)-GetUnitY(c),GetUnitX(u)-GetUnitX(c))
 call Bof_Dmg(c,u,I2R(Sui_Agi_atk(c,true))*20.*.001)
-call Rem_Fx(c,"bof\\Mercury Lamp-28.mdx",GetUnitX(c),GetUnitY(c),150.,ang+180.,3.5,0.)
+call Rem_Fx(c,"bof\\Mercury Lamp-28.mdx",GetUnitX(c),GetUnitY(c),150.,ang+180.,3.5*.75,0.)
 call DestroyEffect(AddSpecialEffectTarget("bof\\hero_skeletonking_n2s_e_sta1r.mdx",u,"chest"))
 call Rem_Fx(c,"bof\\Minato-3.mdx",GetUnitX(u),GetUnitY(u),150.,ang+180.,1.,0.)
 call Rem_Sound("bof\\war3mapImported\\Kirito-D-YX1.mp3",100)
@@ -135328,8 +135370,11 @@ call SaveInteger(HH,SH_ShnChanT,'A1GE',2)
 call SaveStr(HH,SH_ShnChanO,'A1GK',"resumeharvesting")
 call SaveInteger(HH,SH_ShnChanT,'A1GK',2)
 call SaveStr(HH,SH_ShnChanO,'A1GM',"coldarrowstarg")
+call SaveInteger(HH,SH_ShnChanT,'A1GM',2)
 call SaveStr(HH,SH_ShnChanO,'A1GN',"creepheal")
+call SaveInteger(HH,SH_ShnChanT,'A1GN',2)
 call SaveStr(HH,SH_ShnChanO,'A1GO',"deathanddecay")
+call SaveInteger(HH,SH_ShnChanT,'A1GO',2)
 call SaveStr(HH,SH_ShnChanO,'A1GQ',"etherealform")
 call SaveInteger(HH,SH_ShnChanT,'A1GQ',2)
 call SaveStr(HH,SH_ShnChanO,'A1GR',"townbellon")
@@ -136048,6 +136093,7 @@ call SaveStr(HH,SH_ShnChanO,'RmQ1',"flamestrike")
 call SaveInteger(HH,SH_ShnChanT,'RmQ1',2)
 call SaveStr(HH,SH_ShnChanO,'RmQ2',"absorb")
 call SaveStr(HH,SH_ShnChanO,'RmR1',"incineratearrow")
+call SaveInteger(HH,SH_ShnChanT,'RmR1',2)
 call SaveStr(HH,SH_ShnChanO,'RmT1',"wateryminion")
 call SaveInteger(HH,SH_ShnChanT,'RmT1',1)
 call SaveStr(HH,SH_ShnChanO,'RmW1',"flamingarrows")
@@ -191570,6 +191616,11 @@ set dist=1100
 set soundplay=SndN(2914) // Sound\Music\mp3Music\KingHassanAttack3.mp3
 call StartSound(soundplay)
 //call KillSoundWhenDone(soundplay) // звук из массива soundStr — не удалять
+endif
+// 23 окт: направление — в сторону клика (Q/W/E по точке), дальность прежняя 300 / 700 / 1100
+if SquareRoot((GetSpellTargetX()-x)*(GetSpellTargetX()-x)+(GetSpellTargetY()-y)*(GetSpellTargetY()-y))>10. then
+set f=Atan2(GetSpellTargetY()-y,GetSpellTargetX()-x)
+call SetUnitFacingInstant(u,f*bj_RADTODEG)
 endif
 set n=CreateUnit(p,'e160',x,y,GetRandomReal(0,359))
 call UnitApplyTimedLife(n,'BTLF',0.6)
@@ -289608,11 +289659,11 @@ call LANG_A('A1GM',0,1,"Deadly Fire, [|cffffcc00Level 2|r] (|cffffcc00Q|r)")
 call LANG_A('A1GM',0,2,"Deadly Fire, [|cffffcc00Level 3|r] (|cffffcc00Q|r)")
 call LANG_A('A1GM',0,3,"Deadly Fire, [|cffffcc00Level 4|r] (|cffffcc00Q|r)")
 call LANG_A('A1GM',0,4,"Deadly Fire, [|cffffcc00Level 5|r] (|cffffcc00Q|r)")
-call LANG_A('A1GM',1,0,"King Hassan explodes in an area in front of him at a distance of 300. Hit slows the target by 20% and increases the damage of this ability by 30% (stacking)|n|n|cFF00A5FF|nDamage: 1*|r|c00FF5555STR|r|cFF00A5FF+25|nCooldown: 20 sec.")
-call LANG_A('A1GM',1,1,"King Hassan explodes in an area in front of him at a distance of 300. Hit slows the target by 20% and increases the damage of this ability by 30% (stacking)|n|n|cFF00A5FF|nDamage: 1.5*|r|c00FF5555STR|r|cFF00A5FF + 25|nCooldown: 20 sec.")
-call LANG_A('A1GM',1,2,"King Hassan explodes in an area in front of him at a distance of 300. Hit slows the target by 20% and increases the damage of this ability by 30% (stacking)|n|n|cFF00A5FF|nDamage: 2*|r|c00FF5555STR|r|cFF00A5FF + 25|nCooldown: 20 sec.")
-call LANG_A('A1GM',1,3,"King Hassan explodes in an area in front of him at a distance of 300. Hit slows the target by 20% and increases the damage of this ability by 30% (stacking)|n|n|cFF00A5FF|nDamage: 2.5*|r|c00FF5555STR|r|cFF00A5FF + 25|nCooldown: 20 sec.")
-call LANG_A('A1GM',1,4,"King Hassan explodes in an area in front of him at a distance of 300. Hit slows the target by 20% and increases the damage of this ability by 30% (stacking)|n|n|cFF00A5FF|nDamage: 3*|r|c00FF5555STR|r|cFF00A5FF + 25|nCooldown: 20 sec.")
+call LANG_A('A1GM',1,0,"King Hassan explodes an area in the chosen direction at a distance of 300. Hit slows the target by 20% and increases the damage of this ability by 30% (stacking)|n|n|cFF00A5FF|nDamage: 1*|r|c00FF5555STR|r|cFF00A5FF+25|nCooldown: 20 sec.")
+call LANG_A('A1GM',1,1,"King Hassan explodes an area in the chosen direction at a distance of 300. Hit slows the target by 20% and increases the damage of this ability by 30% (stacking)|n|n|cFF00A5FF|nDamage: 1.5*|r|c00FF5555STR|r|cFF00A5FF + 25|nCooldown: 20 sec.")
+call LANG_A('A1GM',1,2,"King Hassan explodes an area in the chosen direction at a distance of 300. Hit slows the target by 20% and increases the damage of this ability by 30% (stacking)|n|n|cFF00A5FF|nDamage: 2*|r|c00FF5555STR|r|cFF00A5FF + 25|nCooldown: 20 sec.")
+call LANG_A('A1GM',1,3,"King Hassan explodes an area in the chosen direction at a distance of 300. Hit slows the target by 20% and increases the damage of this ability by 30% (stacking)|n|n|cFF00A5FF|nDamage: 2.5*|r|c00FF5555STR|r|cFF00A5FF + 25|nCooldown: 20 sec.")
+call LANG_A('A1GM',1,4,"King Hassan explodes an area in the chosen direction at a distance of 300. Hit slows the target by 20% and increases the damage of this ability by 30% (stacking)|n|n|cFF00A5FF|nDamage: 3*|r|c00FF5555STR|r|cFF00A5FF + 25|nCooldown: 20 sec.")
 call LANG_A('A1GM',2,0,"Deadly Fire, [|cffffcc00Level %d|r] (|cffffcc00Q|r)")
 call LANG_A('A1GM',3,0,"King Hassan explodes an area in front of him at a distance of 300\\700\\1100 depending on the chosen ability. A hit slows the target by 20% and increases the damage of this ability by 30% (stacking)|n|n|cFF00A5FF|nDamage: 1\\1.5\\2\\2.5\\3*|r|c00FF5555STR|r|cFF00A5FF + 25")
 call LANG_A('A1GN',0,0,"Deadly Fire, [|cffffcc00Level 1|r] (|cffffcc00W|r)")
@@ -289620,21 +289671,21 @@ call LANG_A('A1GN',0,1,"Deadly Fire, [|cffffcc00Level 2|r] (|cffffcc00W|r)")
 call LANG_A('A1GN',0,2,"Deadly Fire, [|cffffcc00Level 3|r] (|cffffcc00W|r)")
 call LANG_A('A1GN',0,3,"Deadly Fire, [|cffffcc00Level 4|r] (|cffffcc00W|r)")
 call LANG_A('A1GN',0,4,"Deadly Fire, [|cffffcc00Level 5|r] (|cffffcc00W|r)")
-call LANG_A('A1GN',1,0,"King Hassan explodes in an area in front of him at a distance of 700. Hit slows the target by 20% and increases the damage of this ability by 30% (stacking)|n|n|cFF00A5FF|nDamage: 1*|r|c00FF5555STR|r|cFF00A5FF+25|nCooldown: 20 sec.")
-call LANG_A('A1GN',1,1,"King Hassan explodes in an area in front of him at a distance of 700. Hit slows the target by 20% and increases the damage of this ability by 30% (stacking)|n|n|cFF00A5FF|nDamage: 1.5*|r|c00FF5555STR|r|cFF00A5FF + 25|nCooldown: 20 sec.")
-call LANG_A('A1GN',1,2,"King Hassan explodes in an area in front of him at a distance of 700. Hit slows the target by 20% and increases the damage of this ability by 30% (stacking)|n|n|cFF00A5FF|nDamage: 2*|r|c00FF5555STR|r|cFF00A5FF + 25|nCooldown: 20 sec.")
-call LANG_A('A1GN',1,3,"King Hassan explodes in an area in front of him at a distance of 700. Hit slows the target by 20% and increases the damage of this ability by 30% (stacking)|n|n|cFF00A5FF|nDamage: 2.5*|r|c00FF5555STR|r|cFF00A5FF + 25|nCooldown: 20 sec.")
-call LANG_A('A1GN',1,4,"King Hassan explodes in an area in front of him at a distance of 700. Hit slows the target by 20% and increases the damage of this ability by 30% (stacking)|n|n|cFF00A5FF|nDamage: 3*|r|c00FF5555STR|r|cFF00A5FF + 25|nCooldown: 20 sec.")
+call LANG_A('A1GN',1,0,"King Hassan explodes an area in the chosen direction at a distance of 700. Hit slows the target by 20% and increases the damage of this ability by 30% (stacking)|n|n|cFF00A5FF|nDamage: 1*|r|c00FF5555STR|r|cFF00A5FF+25|nCooldown: 20 sec.")
+call LANG_A('A1GN',1,1,"King Hassan explodes an area in the chosen direction at a distance of 700. Hit slows the target by 20% and increases the damage of this ability by 30% (stacking)|n|n|cFF00A5FF|nDamage: 1.5*|r|c00FF5555STR|r|cFF00A5FF + 25|nCooldown: 20 sec.")
+call LANG_A('A1GN',1,2,"King Hassan explodes an area in the chosen direction at a distance of 700. Hit slows the target by 20% and increases the damage of this ability by 30% (stacking)|n|n|cFF00A5FF|nDamage: 2*|r|c00FF5555STR|r|cFF00A5FF + 25|nCooldown: 20 sec.")
+call LANG_A('A1GN',1,3,"King Hassan explodes an area in the chosen direction at a distance of 700. Hit slows the target by 20% and increases the damage of this ability by 30% (stacking)|n|n|cFF00A5FF|nDamage: 2.5*|r|c00FF5555STR|r|cFF00A5FF + 25|nCooldown: 20 sec.")
+call LANG_A('A1GN',1,4,"King Hassan explodes an area in the chosen direction at a distance of 700. Hit slows the target by 20% and increases the damage of this ability by 30% (stacking)|n|n|cFF00A5FF|nDamage: 3*|r|c00FF5555STR|r|cFF00A5FF + 25|nCooldown: 20 sec.")
 call LANG_A('A1GO',0,0,"Deadly Fire, [|cffffcc00Level 1|r] (|cffffcc00E|r)")
 call LANG_A('A1GO',0,1,"Deadly Fire, [|cffffcc00Level 2|r] (|cffffcc00E|r)")
 call LANG_A('A1GO',0,2,"Deadly Fire, [|cffffcc00Level 3|r] (|cffffcc00E|r)")
 call LANG_A('A1GO',0,3,"Deadly Fire, [|cffffcc00Level 4|r] (|cffffcc00E|r)")
 call LANG_A('A1GO',0,4,"Deadly Fire, [|cffffcc00Level 5|r] (|cffffcc00E|r)")
-call LANG_A('A1GO',1,0,"King Hassan explodes in an area in front of him at a distance of 1100. Hit slows the target by 20% and increases the damage of this ability by 30% (stacking)|n|n|cFF00A5FF|nDamage: 1*|r|c00FF5555STR|r|cFF00A5FF+25|nCooldown: 20 sec.")
-call LANG_A('A1GO',1,1,"King Hassan explodes in an area in front of him at a distance of 1100. Hit slows the target by 20% and increases the damage of this ability by 30% (stacking)|n|n|cFF00A5FF|nDamage: 1.5*|r|c00FF5555STR|r|cFF00A5FF + 25|nCooldown: 20 sec.")
-call LANG_A('A1GO',1,2,"King Hassan explodes in an area in front of him at a distance of 1100. Hit slows the target by 20% and increases the damage of this ability by 30% (stacking)|n|n|cFF00A5FF|nDamage: 2*|r|c00FF5555STR|r|cFF00A5FF + 25|nCooldown: 20 sec.")
-call LANG_A('A1GO',1,3,"King Hassan explodes in an area in front of him at a distance of 1100. Hit slows the target by 20% and increases the damage of this ability by 30% (stacking)|n|n|cFF00A5FF|nDamage: 2.5*|r|c00FF5555STR|r|cFF00A5FF + 25|nCooldown: 20 sec.")
-call LANG_A('A1GO',1,4,"King Hassan explodes in an area in front of him at a distance of 1100. Hit slows the target by 20% and increases the damage of this ability by 30% (stacking)|n|n|cFF00A5FF|nDamage: 3*|r|c00FF5555STR|r|cFF00A5FF + 25|nCooldown: 20 sec.")
+call LANG_A('A1GO',1,0,"King Hassan explodes an area in the chosen direction at a distance of 1100. Hit slows the target by 20% and increases the damage of this ability by 30% (stacking)|n|n|cFF00A5FF|nDamage: 1*|r|c00FF5555STR|r|cFF00A5FF+25|nCooldown: 20 sec.")
+call LANG_A('A1GO',1,1,"King Hassan explodes an area in the chosen direction at a distance of 1100. Hit slows the target by 20% and increases the damage of this ability by 30% (stacking)|n|n|cFF00A5FF|nDamage: 1.5*|r|c00FF5555STR|r|cFF00A5FF + 25|nCooldown: 20 sec.")
+call LANG_A('A1GO',1,2,"King Hassan explodes an area in the chosen direction at a distance of 1100. Hit slows the target by 20% and increases the damage of this ability by 30% (stacking)|n|n|cFF00A5FF|nDamage: 2*|r|c00FF5555STR|r|cFF00A5FF + 25|nCooldown: 20 sec.")
+call LANG_A('A1GO',1,3,"King Hassan explodes an area in the chosen direction at a distance of 1100. Hit slows the target by 20% and increases the damage of this ability by 30% (stacking)|n|n|cFF00A5FF|nDamage: 2.5*|r|c00FF5555STR|r|cFF00A5FF + 25|nCooldown: 20 sec.")
+call LANG_A('A1GO',1,4,"King Hassan explodes an area in the chosen direction at a distance of 1100. Hit slows the target by 20% and increases the damage of this ability by 30% (stacking)|n|n|cFF00A5FF|nDamage: 3*|r|c00FF5555STR|r|cFF00A5FF + 25|nCooldown: 20 sec.")
 call LANG_A('A1GQ',0,0,"Rapidly Killing, [|cffffcc00Level 1|r] (|cffffcc00F|r)")
 call LANG_A('A1GQ',0,1,"Rapidly Killing, [|cffffcc00Level 2|r] (|cffffcc00F|r)")
 call LANG_A('A1GQ',0,2,"Rapidly Killing, [|cffffcc00Level 3|r] (|cffffcc00F|r)")
@@ -293240,13 +293291,13 @@ call LANG_A('RmR1',0,1,"Spear the Gungnir, [|cffffcc00Level 2|r] (|cffffcc00R|r)
 call LANG_A('RmR1',0,2,"Spear the Gungnir, [|cffffcc00Level 3|r] (|cffffcc00R|r)")
 call LANG_A('RmR1',0,3,"Spear the Gungnir, [|cffffcc00Level 4|r] (|cffffcc00R|r)")
 call LANG_A('RmR1',0,4,"Spear the Gungnir, [|cffffcc00Level 5|r] (|cffffcc00R|r)")
-call LANG_A('RmR1',1,0,"A five-press spell: press R, no more than 7 sec. between presses. The fifth throws a spear at the nearest enemy hero within 5000: half of the spear damage goes through invulnerability.|nThe pierced target is lifted into the air and stays stunned.|n|n|cFF00A5FF|nSpear damage: 2*|r|c0077FFFFINT|r|cFF0"+"0A5FF + 15% of Remilia's max HP|nSpear stun: 1.2 sec.|nSpear range: 5000|nCast time: +0.1 sec.|nCooldown between presses: 1.5 sec.|nCooldown: 30 sec.|r")
-call LANG_A('RmR1',1,1,"A five-press spell: press R, no more than 7 sec. between presses. The fifth throws a spear at the nearest enemy hero within 5000: half of the spear damage goes through invulnerability.|nThe pierced target is lifted into the air and stays stunned.|n|n|cFF00A5FF|nSpear damage: 3*|r|c0077FFFFINT|r|cFF0"+"0A5FF + 15% of Remilia's max HP|nSpear stun: 1.2 sec.|nSpear range: 5000|nCast time: +0.1 sec.|nCooldown between presses: 1.5 sec.|nCooldown: 30 sec.|r")
-call LANG_A('RmR1',1,2,"A five-press spell: press R, no more than 7 sec. between presses. The fifth throws a spear at the nearest enemy hero within 5000: half of the spear damage goes through invulnerability.|nThe pierced target is lifted into the air and stays stunned.|n|n|cFF00A5FF|nSpear damage: 4*|r|c0077FFFFINT|r|cFF0"+"0A5FF + 15% of Remilia's max HP|nSpear stun: 1.2 sec.|nSpear range: 5000|nCast time: +0.1 sec.|nCooldown between presses: 1.5 sec.|nCooldown: 30 sec.|r")
-call LANG_A('RmR1',1,3,"A five-press spell: press R, no more than 7 sec. between presses. The fifth throws a spear at the nearest enemy hero within 5000: half of the spear damage goes through invulnerability.|nThe pierced target is lifted into the air and stays stunned.|n|n|cFF00A5FF|nSpear damage: 5*|r|c0077FFFFINT|r|cFF0"+"0A5FF + 15% of Remilia's max HP|nSpear stun: 1.2 sec.|nSpear range: 5000|nCast time: +0.1 sec.|nCooldown between presses: 1.5 sec.|nCooldown: 30 sec.|r")
-call LANG_A('RmR1',1,4,"A five-press spell: press R, no more than 7 sec. between presses. The fifth throws a spear at the nearest enemy hero within 5000: half of the spear damage goes through invulnerability.|nThe pierced target is lifted into the air and stays stunned.|n|n|cFF00A5FF|nSpear damage: 6*|r|c0077FFFFINT|r|cFF0"+"0A5FF + 15% of Remilia's max HP|nSpear stun: 1.2 sec.|nSpear range: 5000|nCast time: +0.1 sec.|nCooldown between presses: 1.5 sec.|nCooldown: 30 sec.|r")
+call LANG_A('RmR1',1,0,"A five-press spell: press R, no more than 7 sec. between presses. Every press targets a point; the fifth throws a spear towards the click, it pierces the first enemy on the way: half of the spear damage goes through invulnerability.|nThe pierced target is lifted into the air and stays stunned.|n|n|c"+"FF00A5FF|nSpear damage: 2*|r|c0077FFFFINT|r|cFF00A5FF + 15% of Remilia's max HP|nSpear stun: 1.2 sec.|nSpear range: 5000|nCast time: +0.1 sec.|nCooldown between presses: 1.5 sec.|nCooldown: 30 sec.|r")
+call LANG_A('RmR1',1,1,"A five-press spell: press R, no more than 7 sec. between presses. Every press targets a point; the fifth throws a spear towards the click, it pierces the first enemy on the way: half of the spear damage goes through invulnerability.|nThe pierced target is lifted into the air and stays stunned.|n|n|c"+"FF00A5FF|nSpear damage: 3*|r|c0077FFFFINT|r|cFF00A5FF + 15% of Remilia's max HP|nSpear stun: 1.2 sec.|nSpear range: 5000|nCast time: +0.1 sec.|nCooldown between presses: 1.5 sec.|nCooldown: 30 sec.|r")
+call LANG_A('RmR1',1,2,"A five-press spell: press R, no more than 7 sec. between presses. Every press targets a point; the fifth throws a spear towards the click, it pierces the first enemy on the way: half of the spear damage goes through invulnerability.|nThe pierced target is lifted into the air and stays stunned.|n|n|c"+"FF00A5FF|nSpear damage: 4*|r|c0077FFFFINT|r|cFF00A5FF + 15% of Remilia's max HP|nSpear stun: 1.2 sec.|nSpear range: 5000|nCast time: +0.1 sec.|nCooldown between presses: 1.5 sec.|nCooldown: 30 sec.|r")
+call LANG_A('RmR1',1,3,"A five-press spell: press R, no more than 7 sec. between presses. Every press targets a point; the fifth throws a spear towards the click, it pierces the first enemy on the way: half of the spear damage goes through invulnerability.|nThe pierced target is lifted into the air and stays stunned.|n|n|c"+"FF00A5FF|nSpear damage: 5*|r|c0077FFFFINT|r|cFF00A5FF + 15% of Remilia's max HP|nSpear stun: 1.2 sec.|nSpear range: 5000|nCast time: +0.1 sec.|nCooldown between presses: 1.5 sec.|nCooldown: 30 sec.|r")
+call LANG_A('RmR1',1,4,"A five-press spell: press R, no more than 7 sec. between presses. Every press targets a point; the fifth throws a spear towards the click, it pierces the first enemy on the way: half of the spear damage goes through invulnerability.|nThe pierced target is lifted into the air and stays stunned.|n|n|c"+"FF00A5FF|nSpear damage: 6*|r|c0077FFFFINT|r|cFF00A5FF + 15% of Remilia's max HP|nSpear stun: 1.2 sec.|nSpear range: 5000|nCast time: +0.1 sec.|nCooldown between presses: 1.5 sec.|nCooldown: 30 sec.|r")
 call LANG_A('RmR1',2,0,"Spear the Gungnir, [|cffffcc00Level %d|r] (|cffffcc00R|r)")
-call LANG_A('RmR1',3,0,"A five-press spell: press R, no more than 7 sec. between presses. The fifth throws a spear at the nearest enemy hero within 5000: half of the spear damage goes through invulnerability.|nThe pierced target is lifted into the air and stays stunned.|n|n|cFF00A5FF|nSpear damage: 2\\3\\4\\5\\6*|r|c0077FF"+"FFINT|r|cFF00A5FF + 15% of Remilia's max HP|nSpear stun: 1.2 sec.|nSpear range: 5000|nCast time: +0.1 sec.|nCooldown between presses: 1.5 sec.|nCooldown: 30 sec.|r")
+call LANG_A('RmR1',3,0,"A five-press spell: press R, no more than 7 sec. between presses. Every press targets a point; the fifth throws a spear towards the click, it pierces the first enemy on the way: half of the spear damage goes through invulnerability.|nThe pierced target is lifted into the air and stays stunned.|n|n|c"+"FF00A5FF|nSpear damage: 2\\3\\4\\5\\6*|r|c0077FFFFINT|r|cFF00A5FF + 15% of Remilia's max HP|nSpear stun: 1.2 sec.|nSpear range: 5000|nCast time: +0.1 sec.|nCooldown between presses: 1.5 sec.|nCooldown: 30 sec.|r")
 call LANG_A('RmT1',1,0,"A whirl of scarlet aura burns everything around the target; at the end, Heart Break hits the same target.|nRemilia and the target are invulnerable during the skill.|nIf an enemy hero dies during T (from anything), Remilia permanently gains +3% of their max HP.|n|n|cFF00A5FF|nDamage: 6*|r|c0077FFFFIN"+"T|r|cFF00A5FF + 30% of the HP difference between Remilia and the target|nHeart Break: 20% of the target's max HP|nDuration: ~5 sec.|nRange: 450|nCast time: +0.1 sec.|nCooldown: 60 sec.|r")
 call LANG_A('RmT1',3,0,"A whirl of scarlet aura burns everything around the target; at the end, Heart Break hits the same target.|nRemilia and the target are invulnerable during the skill.|nIf an enemy hero dies during T (from anything), Remilia permanently gains +3% of their max HP.|n|n|cFF00A5FF|nDamage: 6*|r|c0077FFFFIN"+"T|r|cFF00A5FF + 30% of the HP difference between Remilia and the target|nHeart Break: 20% of the target's max HP|nDuration: ~5 sec.|nRange: 450|nCast time: +0.1 sec.|nCooldown: 60 sec.|r")
 call LANG_A('RmD1',1,0,"Homing chains of scarlet aura reach out to enemies.|nWhile the chains fly, Remilia stands still and is invulnerable.|n|n|cFF00A5FF|nDamage: 0.2*|r|c0077FFFFINT|r|cFF00A5FF per touch|nStun: 0.5 sec.|nDuration: 2 sec.|nRange: 1200|nCast time: +0.1 sec.|nCooldown: 30 sec.|r")
