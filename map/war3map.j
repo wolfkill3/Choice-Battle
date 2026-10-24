@@ -17953,8 +17953,8 @@ endfunction
 function Sui_Agi_Qi takes unit u,boolean b returns integer
 return R2I(I2R(GetHeroAgi(u,b))*(0.005+0.005*I2R(GetUnitAbilityLevel(u,'SuQ1')))*1000.+0.5)
 endfunction
-// ловкость для урона кнопки R: x (0.015 + 0.005 x уровень), по цели один раз x200 = 4..8 — и большой дракон, и из пера
-// (18 окт: -1x, было 5..9);
+// ловкость для урона кнопки R: x (0.015 + 0.005 x уровень), большой дракон по цели один раз x200 = 4..8 (18 окт: -1x,
+// было 5..9); дракон из пера — каждый своим ударом x100 = 2..4 (24 окт, раньше по цели один раз за каст);
 // x1000, чтобы не терять дробь в целом (в Bof_Dmg урон делится обратно на 1000)
 function Sui_Agi_R takes unit u,boolean b returns integer
 return R2I(I2R(GetHeroAgi(u,b))*(0.015+0.005*I2R(GetUnitAbilityLevel(u,'SuR1')))*1000.+0.5)
@@ -19082,9 +19082,9 @@ set u=null
 set t=null
 endfunction
 // ----- R «Black Feather Dragon»: перья в области 450 у точки становятся драконами — каждый сам находит
-// ближайшего вражеского героя (не дальше 3000 от Суйгинто), летит по спирали, бьёт (200, по цели один раз за каст)
-// и оглушает на 3 c
-// (КД 30 всегда, 14 окт); перьев нет — один большой дракон вперёд, взрыв по области 600 (200, стан 3 c) -----
+// ближайшего вражеского героя (не дальше 3000 от Суйгинто), летит по спирали, бьёт (100 — каждый дракон своим уроном)
+// и оглушает на 1.5 c
+// (КД 30 всегда, 14 окт); перьев нет — один большой дракон вперёд, взрыв по области 600 (200, стан 1.5 c) -----
 function Sui_R_Boom takes unit hr,real x,real y,real ang returns nothing
 call Rem_Fx(hr,"bof\\Madara-huitu-13.mdx",x,y,25.,0.,1.,0.)
 call Rem_Fx(hr,"bof\\Mercury Lamp-24.mdx",x,y,GetUnitFlyHeight(hr)+50.,ang,2.5,0.)
@@ -19167,10 +19167,8 @@ endif
 else
 if e!=null and GetUnitTypeId(dg)!=0 and dd<=120. and GetWidgetLife(e)>.405 then
 call Sui_R_Boom(hr,GetUnitX(e),GetUnitY(e),GetUnitFacing(dg))
-if Sui_First(LoadInteger(HH,id,5),e) then
-call Bof_Dmg(hr,e,I2R(Sui_Agi_R(hr,true))*200.*.001)
-call Bof_Ctrl(hr,e,3.,"stun")
-endif
+call Bof_Dmg(hr,e,I2R(Sui_Agi_R(hr,true))*100.*.001)
+call Bof_Ctrl(hr,e,1.5,"stun")
 endif
 call RemoveUnit(dg)
 call FlushChildHashtable(HH,id)
@@ -19226,7 +19224,7 @@ exitwhen e==null
 call GroupRemoveUnit(g,e)
 if Condition_Base(OwnerOf(hr),e) and GetUnitAbilityLevel(e,'Avul')==0 then
 call Bof_Dmg(hr,e,I2R(Sui_Agi_R(hr,true))*200.*.001)
-call Bof_Ctrl(hr,e,3.,"stun")
+call Bof_Ctrl(hr,e,1.5,"stun")
 endif
 endloop
 call DestroyGroup(g)
@@ -19249,7 +19247,6 @@ local integer cnt=Sui_FClean(caster)
 local integer i=0
 local integer k
 local integer used=0
-local integer reg=Sui_Reg(6.)
 local unit f
 local unit dg
 local unit e
@@ -19296,7 +19293,6 @@ call SaveUnitHandle(HH,GetHandleId(t),0,caster)
 call SaveUnitHandle(HH,GetHandleId(t),1,dg)
 call SaveUnitHandle(HH,GetHandleId(t),2,e)
 call SaveReal(HH,GetHandleId(t),4,-90.)
-call SaveInteger(HH,GetHandleId(t),5,reg)
 call TSE_TimerStart(t,.03,true,function Sui_R_Dragon)
 endif
 set i=i+1
@@ -293697,13 +293693,13 @@ call LANG_A('SuR1',0,1,"Black Feather Dragon, [|cffffcc00Level 2|r] (|cffffcc00R
 call LANG_A('SuR1',0,2,"Black Feather Dragon, [|cffffcc00Level 3|r] (|cffffcc00R|r)")
 call LANG_A('SuR1',0,3,"Black Feather Dragon, [|cffffcc00Level 4|r] (|cffffcc00R|r)")
 call LANG_A('SuR1',0,4,"Black Feather Dragon, [|cffffcc00Level 5|r] (|cffffcc00R|r)")
-call LANG_A('SuR1',1,0,"• If there are feathers in the chosen area, each becomes a black dragon that finds an enemy within 3000 by itself, hits and stuns.|n• If there are no feathers, one big dragon flies toward the point.|n|cFF00A5FF|nDamage: 4\\5\\6\\7\\8*|r|c003CFF3CAGI|r|cFF00A5FF (feather dragon or big dragon; onc"+"e per target)|nStun: 3 sec.|nRange: 2000|nCooldown: 30 sec.|r")
-call LANG_A('SuR1',1,1,"• If there are feathers in the chosen area, each becomes a black dragon that finds an enemy within 3000 by itself, hits and stuns.|n• If there are no feathers, one big dragon flies toward the point.|n|cFF00A5FF|nDamage: 4\\5\\6\\7\\8*|r|c003CFF3CAGI|r|cFF00A5FF (feather dragon or big dragon; onc"+"e per target)|nStun: 3 sec.|nRange: 2000|nCooldown: 30 sec.|r")
-call LANG_A('SuR1',1,2,"• If there are feathers in the chosen area, each becomes a black dragon that finds an enemy within 3000 by itself, hits and stuns.|n• If there are no feathers, one big dragon flies toward the point.|n|cFF00A5FF|nDamage: 4\\5\\6\\7\\8*|r|c003CFF3CAGI|r|cFF00A5FF (feather dragon or big dragon; onc"+"e per target)|nStun: 3 sec.|nRange: 2000|nCooldown: 30 sec.|r")
-call LANG_A('SuR1',1,3,"• If there are feathers in the chosen area, each becomes a black dragon that finds an enemy within 3000 by itself, hits and stuns.|n• If there are no feathers, one big dragon flies toward the point.|n|cFF00A5FF|nDamage: 4\\5\\6\\7\\8*|r|c003CFF3CAGI|r|cFF00A5FF (feather dragon or big dragon; onc"+"e per target)|nStun: 3 sec.|nRange: 2000|nCooldown: 30 sec.|r")
-call LANG_A('SuR1',1,4,"• If there are feathers in the chosen area, each becomes a black dragon that finds an enemy within 3000 by itself, hits and stuns.|n• If there are no feathers, one big dragon flies toward the point.|n|cFF00A5FF|nDamage: 4\\5\\6\\7\\8*|r|c003CFF3CAGI|r|cFF00A5FF (feather dragon or big dragon; onc"+"e per target)|nStun: 3 sec.|nRange: 2000|nCooldown: 30 sec.|r")
+call LANG_A('SuR1',1,0,"• If there are feathers in the chosen area, each becomes a black dragon that finds an enemy within 3000 by itself, hits and stuns.|n• If there are no feathers, one big dragon flies toward the point.|n|cFF00A5FF|nBig dragon: 4\\5\\6\\7\\8*|r|c003CFF3CAGI|r|cFF00A5FF (once per target)|nFeather dra"+"gon: 2\\2.5\\3\\3.5\\4*|r|c003CFF3CAGI|r|cFF00A5FF — each dragon hits on its own|nStun: 1.5 sec.|nRange: 2000|nCooldown: 30 sec.|r")
+call LANG_A('SuR1',1,1,"• If there are feathers in the chosen area, each becomes a black dragon that finds an enemy within 3000 by itself, hits and stuns.|n• If there are no feathers, one big dragon flies toward the point.|n|cFF00A5FF|nBig dragon: 4\\5\\6\\7\\8*|r|c003CFF3CAGI|r|cFF00A5FF (once per target)|nFeather dra"+"gon: 2\\2.5\\3\\3.5\\4*|r|c003CFF3CAGI|r|cFF00A5FF — each dragon hits on its own|nStun: 1.5 sec.|nRange: 2000|nCooldown: 30 sec.|r")
+call LANG_A('SuR1',1,2,"• If there are feathers in the chosen area, each becomes a black dragon that finds an enemy within 3000 by itself, hits and stuns.|n• If there are no feathers, one big dragon flies toward the point.|n|cFF00A5FF|nBig dragon: 4\\5\\6\\7\\8*|r|c003CFF3CAGI|r|cFF00A5FF (once per target)|nFeather dra"+"gon: 2\\2.5\\3\\3.5\\4*|r|c003CFF3CAGI|r|cFF00A5FF — each dragon hits on its own|nStun: 1.5 sec.|nRange: 2000|nCooldown: 30 sec.|r")
+call LANG_A('SuR1',1,3,"• If there are feathers in the chosen area, each becomes a black dragon that finds an enemy within 3000 by itself, hits and stuns.|n• If there are no feathers, one big dragon flies toward the point.|n|cFF00A5FF|nBig dragon: 4\\5\\6\\7\\8*|r|c003CFF3CAGI|r|cFF00A5FF (once per target)|nFeather dra"+"gon: 2\\2.5\\3\\3.5\\4*|r|c003CFF3CAGI|r|cFF00A5FF — each dragon hits on its own|nStun: 1.5 sec.|nRange: 2000|nCooldown: 30 sec.|r")
+call LANG_A('SuR1',1,4,"• If there are feathers in the chosen area, each becomes a black dragon that finds an enemy within 3000 by itself, hits and stuns.|n• If there are no feathers, one big dragon flies toward the point.|n|cFF00A5FF|nBig dragon: 4\\5\\6\\7\\8*|r|c003CFF3CAGI|r|cFF00A5FF (once per target)|nFeather dra"+"gon: 2\\2.5\\3\\3.5\\4*|r|c003CFF3CAGI|r|cFF00A5FF — each dragon hits on its own|nStun: 1.5 sec.|nRange: 2000|nCooldown: 30 sec.|r")
 call LANG_A('SuR1',2,0,"Black Feather Dragon, [|cffffcc00Level %d|r] (|cffffcc00R|r)")
-call LANG_A('SuR1',3,0,"• If there are feathers in the chosen area, each becomes a black dragon that finds an enemy within 3000 by itself, hits and stuns.|n• If there are no feathers, one big dragon flies toward the point.|n|cFF00A5FF|nDamage: 4\\5\\6\\7\\8*|r|c003CFF3CAGI|r|cFF00A5FF (feather dragon or big dragon; onc"+"e per target)|nStun: 3 sec.|nRange: 2000|nCooldown: 30 sec.|r")
+call LANG_A('SuR1',3,0,"• If there are feathers in the chosen area, each becomes a black dragon that finds an enemy within 3000 by itself, hits and stuns.|n• If there are no feathers, one big dragon flies toward the point.|n|cFF00A5FF|nBig dragon: 4\\5\\6\\7\\8*|r|c003CFF3CAGI|r|cFF00A5FF (once per target)|nFeather dra"+"gon: 2\\2.5\\3\\3.5\\4*|r|c003CFF3CAGI|r|cFF00A5FF — each dragon hits on its own|nStun: 1.5 sec.|nRange: 2000|nCooldown: 30 sec.|r")
 call LANG_A('SuD1',1,0,"• Places a mirror at the point for 12 sec.: it repeats Suigintou's Q, W and E. To turn the mirror, give an attack order (A + click) in the desired direction.|n• After 0.5 sec. G is replaced by Mirror Shift.|n|cFF00A5FF|nRange: 1000|nCooldown: 60 sec.|r")
 call LANG_A('SuD1',3,0,"• Places a mirror at the point for 12 sec.: it repeats Suigintou's Q, W and E. To turn the mirror, give an attack order (A + click) in the desired direction.|n• After 0.5 sec. G is replaced by Mirror Shift.|n|cFF00A5FF|nRange: 1000|nCooldown: 60 sec.|r")
 call LANG_A('SuD2',1,0,"• Enters the mirror world and exits through the mirror, slashing everything in the direction it faces.|n|cFF00A5FF|nDamage: 2.8*|r|c003CFF3CAGI|r|cFF00A5FF|nStun: 3 sec.|r")
