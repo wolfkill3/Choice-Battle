@@ -29778,11 +29778,12 @@ function OnButtonPickHeroId takes nothing returns nothing
         //    return
         //endif
         // антибан (23 окт): Хирако и Суйгинто нельзя забанить — ни в Ban Mode, ни блокировкой в режиме капитанов
-        if (pick==3 or cmb==true) and (udg_RH[TavernHeroId[PId(p)]]=='HShn' or udg_RH[TavernHeroId[PId(p)]]=='HSui') and TavernPlayerPickAllow[PId(p)]==true and PId(p)<10 then
-            call DisplayTextToPlayer(p,0,0,GetUnitBaseStringFieldById(udg_RH[TavernHeroId[PId(p)]],UNIT_SF_NAME)+Lng(" — этого героя нельзя забанить"," — this hero can't be banned"))
-            set p=null
-            return
-        endif
+        // 24 окт (3.8.1): антибан снят — их снова можно банить
+        //if (pick==3 or cmb==true) and (udg_RH[TavernHeroId[PId(p)]]=='HShn' or udg_RH[TavernHeroId[PId(p)]]=='HSui') and TavernPlayerPickAllow[PId(p)]==true and PId(p)<10 then
+            //call DisplayTextToPlayer(p,0,0,GetUnitBaseStringFieldById(udg_RH[TavernHeroId[PId(p)]],UNIT_SF_NAME)+Lng(" — этого героя нельзя забанить"," — this hero can't be banned"))
+            //set p=null
+            //return
+        //endif
         if udg_RH[TavernHeroId[PId(p)]]!=null and TavernPlayerPickAllow[PId(p)]==true and PId(p)<10 then
             if p==GetLocalPlayer() then
                 call ShowFrame( SelectTavernHeroCheck, false )
