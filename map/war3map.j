@@ -95513,6 +95513,15 @@ function PowerDownGoku takes nothing returns nothing
     local player p=OwnerOf(u)
     local integer idp=PH(p)
     local real time=LoadReal(h,id,1)
+    // 3.8.1: данные стёрты (начало раунда) или героя нет — таймер завершается, иначе ни одно условие выхода не сработает
+    if u==null or GetUnitTypeId(u)==0 then
+    call FlushChildHashtable(h,id)
+    call PauseTimer(t)
+    call TSE_DestroyTimer(t)
+    set t=null
+    set u=null
+    return
+    endif
     call SaveReal(h,id,1,time+0.1)
     if GetUnitAbilityLevel(u,'GkH7')>0 then
         if ModuloReal(time,5)<0.1 and LoadInteger(HH,idp,UIDodgeHash)<LoadInteger(HH,idp,UIMaxDodgeHash) then
@@ -100556,6 +100565,15 @@ function PowerDownVegeta takes nothing returns nothing
 local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
 local unit u=LoadUnitHandle(h,id,0)
+// 3.8.1: данные стёрты (начало раунда) или героя нет — таймер завершается, иначе ни одно условие выхода не сработает
+if u==null or GetUnitTypeId(u)==0 then
+call FlushChildHashtable(h,id)
+call PauseTimer(t)
+call TSE_DestroyTimer(t)
+set t=null
+set u=null
+return
+endif
 if IsUnitPaused(u)==false and GetUnitAbilityLevel(u,'Pet1')==0 then
     if GetUnitAbilityLevel(u,'VGH1')>0 then
         call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-GetUnitState(u,UNIT_STATE_MAX_MANA)*0.0003)
@@ -103750,6 +103768,16 @@ function PowerDownBroly takes nothing returns nothing
     local integer lssS
     local integer lssG
     local integer lssI
+    // 3.8.1: данные стёрты (начало раунда) или героя нет — таймер завершается, иначе ни одно условие выхода не сработает
+    if u==null or GetUnitTypeId(u)==0 then
+    call FlushChildHashtable(h,id)
+    call PauseTimer(t)
+    call TSE_DestroyTimer(t)
+    set lssA=null
+    set t=null
+    set u=null
+    return
+    endif
         // LSS (A1NM ур. 4): +20 ко всем характеристикам и +5% от всех характеристик (с бонусами) — пересчёт раз в 0.1 с
         if GetUnitAbilityLevel(u,'A0TL')>0 and lssA!=null and GetUnitAbilityLevel(u,'A1NM')==4 then
             // от полных характеристик (с бонусами), без текущего бонуса самого LSS — иначе процент рос бы сам от себя
@@ -115392,6 +115420,15 @@ function PowerDownGotenks takes nothing returns nothing
 local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
 local unit u=LoadUnitHandle(h,id,0)
+// 3.8.1: данные стёрты (начало раунда) или героя нет — таймер завершается, иначе ни одно условие выхода не сработает
+if u==null or GetUnitTypeId(u)==0 then
+call FlushChildHashtable(h,id)
+call PauseTimer(t)
+call TSE_DestroyTimer(t)
+set t=null
+set u=null
+return
+endif
 if IsUnitPaused(u)==false and GetUnitAbilityLevel(u,'Pet1')==0 then
     if GetUnitAbilityLevel(u,'A17A')>0 then
         call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-GetUnitState(u,UNIT_STATE_MAX_MANA)*0.0003)
@@ -118064,6 +118101,15 @@ function PowerDownGogeta takes nothing returns nothing
 local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
 local unit u=LoadUnitHandle(h,id,0)
+// 3.8.1: данные стёрты (начало раунда) или героя нет — таймер завершается, иначе ни одно условие выхода не сработает
+if u==null or GetUnitTypeId(u)==0 then
+call FlushChildHashtable(h,id)
+call PauseTimer(t)
+call TSE_DestroyTimer(t)
+set t=null
+set u=null
+return
+endif
 if IsUnitPaused(u)==false and GetUnitAbilityLevel(u,'Pet1')==0 then
     if GetUnitAbilityLevel(u,'A16Y')>0 then
         call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-GetUnitState(u,UNIT_STATE_MAX_MANA)*0.0003)
@@ -125149,6 +125195,15 @@ function PowerDownTrunks takes nothing returns nothing
 local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
 local unit u=LoadUnitHandle(h,id,0)
+// 3.8.1: данные стёрты (начало раунда) или героя нет — таймер завершается, иначе ни одно условие выхода не сработает
+if u==null or GetUnitTypeId(u)==0 then
+call FlushChildHashtable(h,id)
+call PauseTimer(t)
+call TSE_DestroyTimer(t)
+set t=null
+set u=null
+return
+endif
 if IsUnitPaused(u)==false and GetUnitAbilityLevel(u,'Pet1')==0 then
     if GetUnitAbilityLevel(u,'A16S')>0 then
         call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-GetUnitState(u,UNIT_STATE_MAX_MANA)*0.0003)
@@ -126390,6 +126445,15 @@ function PowerDownVegito takes nothing returns nothing
 local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
 local unit u=LoadUnitHandle(h,id,0)
+// 3.8.1: данные стёрты (начало раунда) или героя нет — таймер завершается, иначе ни одно условие выхода не сработает
+if u==null or GetUnitTypeId(u)==0 then
+call FlushChildHashtable(h,id)
+call PauseTimer(t)
+call TSE_DestroyTimer(t)
+set t=null
+set u=null
+return
+endif
 if IsUnitPaused(u)==false and GetUnitAbilityLevel(u,'Pet1')==0 then
     if GetUnitAbilityLevel(u,'A174')>0 then
         call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-GetUnitState(u,UNIT_STATE_MAX_MANA)*0.0003)
