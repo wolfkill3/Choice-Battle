@@ -49,6 +49,7 @@ constant integer SH_RemQ2Point = StringHash("RemQ2Point")
 constant integer SH_RemFOn = StringHash("RemFOn")
 constant integer SH_RemFight = StringHash("RemFight")
 constant integer SH_RemFightTime = StringHash("RemFightTime")
+constant integer SH_RemAtkSnd = StringHash("RemAtkSnd")
 constant integer SH_RemLeak = StringHash("RemLeak")
 constant integer SH_RemTmpLife = StringHash("RemTmpLife")
 constant integer SH_RemKillLife = StringHash("RemKillLife")
@@ -14355,12 +14356,28 @@ return R2I(I2R(GetHeroInt(u,b))*(0.0095)*1000.+0.5)
 endfunction
 // ----- общие мелочи Ремилии -----
 // Звук умения (громкость 0–127)
+// 3.8.1: звук по пути из пула — до 3 копий на путь, создаются при первом использовании и потом переиспользуются по кругу
+// (раньше CreateSound на каждый вызов: файл читался заново на каждую реплику, звуки копились). Копии НЕ удалять.
+function SND_Pool takes string spp,integer spv returns nothing
+local integer spk=StringHash(spp)
+local integer spc=LoadInteger(SND_IX,spk,1)
+local integer spr=LoadInteger(SND_IX,spk,2)
+local sound sps
+if spc<3 then
+set sps=CreateSound(spp,false,false,false,10,10,"Default")
+call SaveSoundHandle(SND_IX,spk,10+spc,sps)
+call SaveInteger(SND_IX,spk,1,spc+1)
+else
+set sps=LoadSoundHandle(SND_IX,spk,10+spr)
+call SaveInteger(SND_IX,spk,2,ModuloInteger(spr+1,3))
+call StopSound(sps,false,false)
+endif
+call SetSoundVolume(sps,spv)
+call StartSound(sps)
+set sps=null
+endfunction
 function Rem_Sound takes string path,integer vol returns nothing
-local sound str=CreateSound(path,false,false,false,10,10,"Default")
-call SetSoundVolume(str,vol)
-call StartSound(str)
-call KillSoundWhenDone(str)
-set str=null
+call SND_Pool(path,vol)
 endfunction
 // Эффект bof в точке: с обзором для владельца (Bof_AddEffV), высота z (z<0 — не менять), поворот
 // yaw в градусах, размер sc, удаление через life (0 — на следующем тике, как zU(0) у bof).
@@ -14626,7 +14643,11 @@ call Rem_Fx(c,"bof\\Scarlet-72.mdx",GetUnitX(u),GetUnitY(u),z,ang+180.,1.,0.)
 call SetSpecialEffectPitch(bj_lastCreatedEffect,180.)
 call Rem_Fx(c,"bof\\Scarlet-67.mdx",x1,y1,150.,GetRandomDirectionDeg(),1.2,0.)
 call Rem_Fx(c,"bof\\Scarlet-67.mdx",x1,y1,150.,GetRandomDirectionDeg(),1.2,0.)
+// 3.8.1: не чаще раза в 0.3 c (при высокой скорости атаки звуки накладывались)
+if AST_Now()>=LoadReal(HH,GetHandleId(c),SH_RemAtkSnd) then
+call SaveReal(HH,GetHandleId(c),SH_RemAtkSnd,AST_Now()+0.3)
 call Rem_Sound("bof\\war3mapImported\\RemiliaScarlet-T-YX3.wav",100)
+endif
 if not IsUnitPaused(u) then
 set t=CreateTimer()
 call SaveUnitHandle(HH,GetHandleId(t),0,u)
@@ -20161,14 +20182,8 @@ set UE=null
 set UF=null
 endfunction
 function Bof_BBn takes string T8,integer T9 returns nothing
-local sound K=CreateSound(T8,false,false,false,10,10,"Default")
-local timer UB=CreateTimer()
-call SaveSoundHandle(bof_UD,GetHandleId(UB),SH_sound,K)
-call StartSound(K)
-call SetSoundVolume(K,T9)
-call TSE_TimerStart(UB,1,false,function Bof_BBm)
-set K=null
-set UB=null
+// 3.8.1: из пула звуков (раньше новый звук и таймер на каждый вызов)
+call SND_Pool(T8,T9)
 endfunction
 function Esc_Sun_Tick takes nothing returns nothing
 local timer ST
@@ -138656,6 +138671,8 @@ local integer tt
 local boolean ok=false
 local ability ab
 local integer ps=0
+// 3.8.1: перед использованием способности — отмена текущего приказа цели
+call IssueImmediateOrderById(e,851972)
 set g=CreateGroup()
 call GroupEnumUnitsInRange(g,GetUnitX(e),GetUnitY(e),1200,null)
 loop
@@ -138845,7 +138862,7 @@ if ok then
 call SetUnitControlCount(e,9,GetUnitControlCount(e,9)+1)
 set ut=CreateTimer()
 call SaveUnitHandle(h,GetHandleId(ut),0,e)
-call TSE_TimerStart(ut,1.5,false,function ShinjiFcUnlock)
+call TSE_TimerStart(ut,2.,false,function ShinjiFcUnlock) // 3.8.1: 2 c (было 1.5)
 set ut=null
 endif
 call ShinjiDbg(GetUnitName(e)+": итог "+ShinjiB2S(ok)+", приказ сейчас "+I2S(GetUnitCurrentOrder(e)))
@@ -138860,6 +138877,44 @@ return ShinjiForceCastEx(e,true)
 endfunction
 function ShinjiFcLawRun takes nothing returns nothing
 call ShinjiForceCastEx(ShnFcU,false)
+endfunction
+// 3.8.1: подходящей способности нет (перезарядка, нет маны, не та цель) — повтор раз в 0.1 c до 2 c с начала.
+// Всё окно цель под счётчиком контроля 9 (приказ игрока не проходит); на время самой попытки он снимается, чтобы прошёл приказ кода.
+function ShinjiFcRetryTick takes nothing returns nothing
+local timer rt=GetExpiredTimer()
+local integer rid=GetHandleId(rt)
+local unit re=LoadUnitHandle(h,rid,0)
+local real rel=LoadReal(h,rid,1)+0.1
+local boolean rok=false
+if re!=null and UnitIsAlive(re) and udg_B and rel<2. then
+call SaveReal(h,rid,1,rel)
+if not IsUnitInvulnerable(re) then
+call SetUnitControlCount(re,9,GetUnitControlCount(re,9)-1)
+set rok=ShinjiForceCastEx(re,true)
+call SetUnitControlCount(re,9,GetUnitControlCount(re,9)+1)
+endif
+endif
+if rok or re==null or not UnitIsAlive(re) or not udg_B or rel>=2. then
+if re!=null and GetUnitControlCount(re,9)>0 then
+call SetUnitControlCount(re,9,GetUnitControlCount(re,9)-1)
+endif
+call FlushChildHashtable(h,rid)
+call TSE_DestroyTimer(rt)
+endif
+set rt=null
+set re=null
+endfunction
+function ShinjiFcStart takes unit e returns nothing
+local timer rt
+if ShinjiForceCast(e) then
+return
+endif
+call SetUnitControlCount(e,9,GetUnitControlCount(e,9)+1)
+set rt=CreateTimer()
+call SaveUnitHandle(h,GetHandleId(rt),0,e)
+call SaveReal(h,GetHandleId(rt),1,0.)
+call TSE_TimerStart(rt,0.1,true,function ShinjiFcRetryTick)
+set rt=null
 endfunction
 // на время банкая Хирако неуязвим, способности / движение / атака скрыты и выключены, предметы выключены;
 // на месте T — кнопка отмены SnTc. Текущий таймер банкая — на герое (SH_ShnTDone как номер не годится: свой ключ SH_ShnTCur)
@@ -139069,8 +139124,7 @@ call RemoveEffect(fx,1.1,true,CreateTimer())
 // неуязвимый — не кастует, попытка не тратится: сработает на тике, когда неуязвимость спадёт (17 окт)
 if LoadInteger(HH,GetHandleId(e),SH_ShnConfCast)!=id and not IsUnitInvulnerable(e) then
 call SaveInteger(HH,GetHandleId(e),SH_ShnConfCast,id)
-if ShinjiForceCast(e) then
-endif
+call ShinjiFcStart(e) // 3.8.1: с повтором до 2 c
 endif
 endif
 call GroupRemoveUnit(g,e)
@@ -192379,6 +192433,28 @@ endfunction
 function TKingHassanCond takes nothing returns boolean
 return GetSpellAbilityId()=='A1GU' and udg_B
 endfunction
+// 3.8.1: Хасан настиг цель — каждые 0.03 c пауза и неуязвимость обоим (чтобы ничто не сбило удержание) до финального удара (TKingHassanCast7)
+function TKingHassanLockTick takes nothing returns nothing
+local timer t=GetExpiredTimer()
+local integer id=GetHandleId(t)
+local unit u=LoadUnitHandle(h,id,0)
+local unit c=LoadUnitHandle(h,id,1)
+if UnitIsAlive(u) and UnitIsAlive(c) and udg_B then
+call PauseUnit(u,true)
+call PauseUnit(c,true)
+call SetUnitInvulnerable(u,true)
+call SetUnitInvulnerable(c,true)
+call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,true)
+else
+// ссылку в таймере каста — убрать: номер этого таймера достанется другому, и Cast7 уничтожил бы чужой
+call RemoveSavedHandle(h,LoadInteger(h,id,2),21)
+call FlushChildHashtable(h,id)
+call TSE_DestroyTimer(t)
+endif
+set t=null
+set u=null
+set c=null
+endfunction
 function TKingHassanCast7 takes nothing returns nothing
 local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
@@ -192398,6 +192474,13 @@ local integer i=0
 local real sr=SR(x,y,x1,y1)/2
 local boolean hc=false
 local real hl=0.
+local timer lk=LoadTimerHandle(h,id,21)
+// 3.8.1: удержание снимается перед финальным ударом
+if lk!=null then
+call FlushChildHashtable(h,GetHandleId(lk))
+call TSE_DestroyTimer(lk)
+set lk=null
+endif
 call KillUnit(l__d)
 call SetUnitInvulnerable(c,false)
 call SetUnitInvulnerable(u,false)
@@ -192660,6 +192743,7 @@ local player p=OwnerOf(u)
 local real sc=0
 local integer is=0
 local real ig=15*bj_DEGTORAD
+local timer lk
 // 23 окт: погоня кончается, если цель или Хассан погибли или раунд закончился (раньше Хассан оставался на паузе и неуязвимым)
 if not UnitIsAlive(u) or not UnitIsAlive(c) or udg_B==false or GetUnitTypeId(c)==0 then
 call PauseUnit(u,false)
@@ -192735,6 +192819,14 @@ else
         call SetUnitAnimation(u,"attack")
         call PauseTimer(t)
         call TSE_TimerStart(t,0.75,false,function TKingHassanCast3)
+        // 3.8.1: настиг — удержание паузой и неуязвимостью обоих каждые 0.03 c
+        set lk=CreateTimer()
+        call SaveUnitHandle(h,GetHandleId(lk),0,u)
+        call SaveUnitHandle(h,GetHandleId(lk),1,c)
+        call SaveInteger(h,GetHandleId(lk),2,id)
+        call SaveTimerHandle(h,id,21,lk)
+        call TSE_TimerStart(lk,0.03,true,function TKingHassanLockTick)
+        set lk=null
         loop
         exitwhen is>=25
         set n=CreateUnit(p,'e0ZH',x1+850*Cos(ig*is),y1+850*Sin(ig*is),180+is*15)
@@ -269643,7 +269735,7 @@ call FlushChildHashtable(HH,id)
 call TSE_DestroyTimer(GetExpiredTimer())
 else
 if time==0.02 then
-call SaveGroupHandle(HH,id,4,CreateGroup())
+// 3.8.1: группа создавалась дважды (первая терялась)
 set soundplay=SndN(4581) // Sound\Music\mp3Music\SignumGTCharge.mp3
 call StartSound(soundplay)
 ////call KillSoundWhenDone(soundplay)
@@ -293878,8 +293970,8 @@ call LANG_A('ToEc',1,3,"The fly fires two green Ceros side by side: a wide beam 
 call LANG_A('ToEc',1,4,"The fly fires two green Ceros side by side: a wide beam ahead stuns those hit.|n|n|cFF00A5FF|nDamage: 9*|r|c003CFF3CAGI|r|cFF00A5FF|nStun: 2.5 sec.|nBeam length: 2200, width 450|nCooldown: 14 sec.|r")
 call LANG_A('ToEc',2,0,"Double Cero, [|cffffcc00Level %d|r] (|cffffcc00R|r)")
 call LANG_A('ToEc',3,0,"The fly fires two green Ceros side by side: a wide beam ahead stuns those hit.|n|n|cFF00A5FF|nDamage: 5\\6\\7\\8\\9*|r|c003CFF3CAGI|r|cFF00A5FF|nStun: 2.5 sec.|nBeam length: 2200, width 450|nCooldown: 14 sec.|r")
-call LANG_A('SnT1',1,0,"Bankai: a bud around Hirako releases a mist (W ends). The mask is not spent. Every second everyone in the mist except Hirako is confused: enemies look like allies and vice versa (Hirako's allies from the 3rd second, a \"!\" above them before that); on the first confusion — a random ability at the "+"nearest \"enemy\". All damage of the confused to Hirako's enemies is dealt by Hirako himself. No effect under Imagine Breaker or Clear Sky.|n|n|cFF00A5FF|nMist AoE: 1400 (grows over 1 sec.)|nDuration: 6 sec.|nConfusion: 1.2 sec.|nCast time: +0.3 sec.|nCooldown: 60 sec. (10 sec. at round start)|r")
-call LANG_A('SnT1',3,0,"Bankai: a bud around Hirako releases a mist (W ends). The mask is not spent. Every second everyone in the mist except Hirako is confused: enemies look like allies and vice versa (Hirako's allies from the 3rd second, a \"!\" above them before that); on the first confusion — a random ability at the "+"nearest \"enemy\". All damage of the confused to Hirako's enemies is dealt by Hirako himself. No effect under Imagine Breaker or Clear Sky.|n|n|cFF00A5FF|nMist AoE: 1400 (grows over 1 sec.)|nDuration: 6 sec.|nConfusion: 1.2 sec.|nCast time: +0.3 sec.|nCooldown: 60 sec. (10 sec. at round start)|r")
+call LANG_A('SnT1',1,0,"Bankai: a bud around Hirako releases a mist (W ends). The mask is not spent. Every second everyone in the mist except Hirako is confused: enemies look like allies and vice versa (Hirako's allies from the 3rd second, a \"!\" above them before that); on the first confusion the target drops its order a"+"nd uses a random ability at the nearest \"enemy\" (looks for a ready one for up to 2 sec., orders do not go through meanwhile). All damage of the confused to Hirako's enemies is dealt by Hirako himself. No effect under Imagine Breaker or Clear Sky.|n|n|cFF00A5FF|nMist AoE: 1400 (grows over 1 sec.)|n"+"Duration: 6 sec.|nConfusion: 1.2 sec.|nCast time: +0.3 sec.|nCooldown: 60 sec. (10 sec. at round start)|r")
+call LANG_A('SnT1',3,0,"Bankai: a bud around Hirako releases a mist (W ends). The mask is not spent. Every second everyone in the mist except Hirako is confused: enemies look like allies and vice versa (Hirako's allies from the 3rd second, a \"!\" above them before that); on the first confusion the target drops its order a"+"nd uses a random ability at the nearest \"enemy\" (looks for a ready one for up to 2 sec., orders do not go through meanwhile). All damage of the confused to Hirako's enemies is dealt by Hirako himself. No effect under Imagine Breaker or Clear Sky.|n|n|cFF00A5FF|nMist AoE: 1400 (grows over 1 sec.)|n"+"Duration: 6 sec.|nConfusion: 1.2 sec.|nCast time: +0.3 sec.|nCooldown: 60 sec. (10 sec. at round start)|r")
 call LANG_A('SnTc',0,0,"Cancel Bankai (|cffffcc00T|r)")
 call LANG_A('SnTc',1,0,"|cFF00A5FFEnds the bankai early: the bud opens, the mist fades. Available 2 sec. after the start.|r")
 call LANG_A('SnD1',1,0,"Hirako spins Sakanade by its ring: a wave of scent around him. Nearby enemies take damage and are briefly inverted: their movement and turning go the opposite way.|n|n|cFF00A5FF|nDamage: 3*|r|c003CFF3CAGI|r|cFF00A5FF|nInversion: 1.25 sec.|nAoE: 400|nCooldown: 20 sec.|r")
