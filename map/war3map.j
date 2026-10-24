@@ -2382,6 +2382,9 @@ boolean TSE_Ready=false
 group PERF_G=null
 integer PERF_E=0
 hashtable PERF_HT=null
+integer array PERF_LastH
+real array PERF_LastT
+integer SND_PoolN=0
 timer TSE_ET=null
 // таймеры способностей: зарегистрированные (владелец) и остановленные этой остановкой
 timer array TSE_TL
@@ -7284,13 +7287,21 @@ call TRPCE(tr,PlayerV(0),"-ts",false)
 call TriggerAddAction(tr,function TSE_Chat)
 set tr=null
 endfunction
-// ===== -perf (3.8.1): диагностика просадок FPS — юниты, даммики (топ типов), эффекты, живые таймеры способностей, номер хэндла =====
+// ===== -perf (3.8.1): диагностика просадок FPS =====
+// Строка 1: FPS, юниты (герои, даммики), эффекты, таймеры способностей (активные / из них периодических), живые хэндлы
+// (GetHandleCount) и их прирост с прошлого -perf этого игрока, наибольший номер хэндла, звуков в пуле.
+// Строка 2–6: топ-5 типов даммиков. Строка 7: чьи таймеры (по игрокам). Строка 8: чьи даммики (по игрокам).
 // Считается в общем коде (событие чата у всех), текст — только набравшему.
 function PERF_Eff takes nothing returns nothing
 set PERF_E=PERF_E+1
 endfunction
+function PERF_EffF takes nothing returns boolean
+set PERF_E=PERF_E+1
+return false
+endfunction
 function PERF_Chat takes nothing returns nothing
 local player pl=GetTriggerPlayer()
+local integer pid=GetPlayerId(pl)
 local integer i=0
 local integer k
 local integer nall=0
@@ -7302,13 +7313,23 @@ local integer bestc
 local unit u
 local location lc=Location(0.,0.)
 local integer hid=GetHandleId(lc)
+local integer hcnt=GetHandleCount()
+local real now=AST_Now()
 local rect r=WorldBoundsR()
 local integer array tp
 local integer ntp=0
+local integer array tcnt
+local integer array dcnt
+local integer tact=0
+local integer tper=0
+local timer tm
 local string msg
+local string dh=""
 call RemoveLocation(lc)
 loop
 exitwhen i>=16
+set tcnt[i]=0
+set dcnt[i]=0
 call GroupEnumUnitsOfPlayer(PERF_G,Player(i),null)
 loop
 set u=FirstOfGroup(PERF_G)
@@ -7320,6 +7341,7 @@ set heroes=heroes+1
 endif
 if GetUnitAbilityLevel(u,'Aloc')>0 then
 set loc=loc+1
+set dcnt[i]=dcnt[i]+1
 set k=GetUnitTypeId(u)
 set cnt=LoadInteger(PERF_HT,0,k)
 if cnt==0 and ntp<8000 then
@@ -7331,11 +7353,37 @@ endif
 endloop
 set i=i+1
 endloop
+// таймеры способностей: живые (периодические или с остатком) и чьи
+set i=0
+loop
+exitwhen i>=TSE_TN
+set tm=TSE_TL[i]
+if tm!=null and (TimerIsPeriodic(tm) or TimerGetRemaining(tm)>0) then
+set tact=tact+1
+if TimerIsPeriodic(tm) then
+set tper=tper+1
+endif
+set k=GetPlayerId(TSE_TP[i])
+if k>=0 and k<16 then
+set tcnt[k]=tcnt[k]+1
+endif
+endif
+set i=i+1
+endloop
+set tm=null
 set PERF_E=0
-call EnumSpecialEffectsInRange(GetRectCenterX(r),GetRectCenterY(r),40000.,null,function PERF_Eff)
-set msg="|cffffcc00-perf|r юниты: "+I2S(nall)+" (герои "+I2S(heroes)+", даммики "+I2S(loc)+") | эффекты: "+I2S(PERF_E)+" | таймеры способностей: "+I2S(TSE_TN)+" | хэндл: "+I2S(hid)
+call EnumSpecialEffectsInRange(GetRectCenterX(r),GetRectCenterY(r),40000.,Filter(function PERF_EffF),function PERF_Eff)
+// прирост хэндлов с прошлого -perf этого игрока
+if pid>=0 and pid<16 then
+if PERF_LastT[pid]>0. then
+set dh=" ("+I2S(hcnt-PERF_LastH[pid])+" за "+I2S(R2I(now-PERF_LastT[pid]))+" с)"
+endif
+set PERF_LastH[pid]=hcnt
+set PERF_LastT[pid]=RMaxBJ(now,0.01)
+endif
 if GetLocalPlayer()==pl then
-call DisplayTimedTextToPlayer(pl,0,0,15,msg)
+set msg="|cffffcc00-perf|r FPS "+I2S(R2I(GetFPS()))+" | юниты: "+I2S(nall)+" (герои "+I2S(heroes)+", даммики "+I2S(loc)+") | эффекты: "+I2S(PERF_E)+" | таймеры: "+I2S(tact)+" (период. "+I2S(tper)+") | хэндлы: "+I2S(hcnt)+dh+", номер "+I2S(hid)+" | звуков в пуле: "+I2S(SND_PoolN)
+call DisplayTimedTextToPlayer(pl,0,0,20,msg)
 endif
 // топ-5 типов даммиков
 set k=0
@@ -7353,14 +7401,60 @@ endif
 set i=i+1
 endloop
 exitwhen best<0
-set msg="   "+I2S(k+1)+". "+GetObjectName(tp[best])+" ["+Id2String(tp[best])+"]: "+I2S(bestc)
 if GetLocalPlayer()==pl then
-call DisplayTimedTextToPlayer(pl,0,0,15,msg)
+call DisplayTimedTextToPlayer(pl,0,0,20,"   "+I2S(k+1)+". "+GetObjectName(tp[best])+" ["+Id2String(tp[best])+"]: "+I2S(bestc))
 endif
 call SaveInteger(PERF_HT,0,tp[best],0)
 set k=k+1
 endloop
 call FlushChildHashtable(PERF_HT,0)
+// чьи таймеры и даммики: топ-4 игроков
+set msg="   таймеры по игрокам:"
+set k=0
+loop
+exitwhen k>=4
+set best=-1
+set bestc=0
+set i=0
+loop
+exitwhen i>=16
+if tcnt[i]>bestc then
+set bestc=tcnt[i]
+set best=i
+endif
+set i=i+1
+endloop
+exitwhen best<0
+set msg=msg+" "+GetPlayerName(Player(best))+": "+I2S(bestc)
+set tcnt[best]=0
+set k=k+1
+endloop
+if GetLocalPlayer()==pl then
+call DisplayTimedTextToPlayer(pl,0,0,20,msg)
+endif
+set msg="   даммики по игрокам:"
+set k=0
+loop
+exitwhen k>=4
+set best=-1
+set bestc=0
+set i=0
+loop
+exitwhen i>=16
+if dcnt[i]>bestc then
+set bestc=dcnt[i]
+set best=i
+endif
+set i=i+1
+endloop
+exitwhen best<0
+set msg=msg+" "+GetPlayerName(Player(best))+": "+I2S(bestc)
+set dcnt[best]=0
+set k=k+1
+endloop
+if GetLocalPlayer()==pl then
+call DisplayTimedTextToPlayer(pl,0,0,20,msg)
+endif
 set lc=null
 set r=null
 set u=null
@@ -14365,6 +14459,7 @@ local integer spr=LoadInteger(SND_IX,spk,2)
 local sound sps
 if spc<3 then
 set sps=CreateSound(spp,false,false,false,10,10,"Default")
+set SND_PoolN=SND_PoolN+1
 call SaveSoundHandle(SND_IX,spk,10+spc,sps)
 call SaveInteger(SND_IX,spk,1,spc+1)
 else
