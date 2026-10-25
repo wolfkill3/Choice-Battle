@@ -2402,6 +2402,36 @@ boolean LANG_Applied=false // какой язык сейчас выставле�
 boolean LANG_Dirty=false
 rect LANG_R=null
 timer LANG_Clock=null
+//DraftGlobals (Ban Draft Mode)
+boolean DraftOn=false
+boolean DraftDone=false
+integer array DraftTeam
+integer array DraftPool
+integer DraftPoolN=0
+integer array DraftCap
+integer DraftTurn=0
+trigger DraftTrg=null
+trigger DraftSyncTrg=null
+timer DraftT=null
+group DraftTmpG=null
+timer DrwTick=null
+timer DraftGoT=null
+framehandle DrwMain=null
+framehandle DrwHead=null
+framehandle DrwT1Head=null
+framehandle DrwT2Head=null
+framehandle array DrwT1Ico
+framehandle array DrwT1Txt
+framehandle array DrwT2Ico
+framehandle array DrwT2Txt
+framehandle array DrwCard
+framehandle array DrwCardIco
+framehandle array DrwCardTxt
+integer array DrwCardPid
+framehandle DrwMsg=null
+real DrwMsgLeft=0.
+sound DraftSnd=null
+//DraftGlobalsEnd
 endglobals
 native MergeUnits       takes integer qty, integer a, integer b, integer make returns boolean   // reserved native for call 4 integer function and return BOOLEAN value
 native ConvertUnits takes integer qty, integer id returns boolean                                                       // reserved native for call 2 integer function and return BOOLEAN value (can be converted to int!)
@@ -3138,10 +3168,15 @@ return true
 endfunction
 // команда слота: 0 — первая (изначально 0–4), 1 — вторая (5–9), 2 — судьи; после -switch игрок и ливер меняются командами
 function TeamOfP takes integer pid returns integer
-if pid<10 and SwFlip[pid] then
-return 1-pid/5
+local integer t=pid/5
+// Ban Draft Mode: после драфта — команда драфта; -switch после драфта переводит уже из неё
+if pid>=0 and pid<10 and DraftDone and DraftTeam[pid]>=0 then
+set t=DraftTeam[pid]
 endif
-return pid/5
+if pid<10 and SwFlip[pid] then
+return 1-t
+endif
+return t
 endfunction
 // союзник ли q с точки зрения локального игрока: после -take / -switch — союзники занятого слота
 function ViewAlly takes player q returns boolean
@@ -9339,16 +9374,32 @@ endfunction
 function HeroBarPlace takes nothing returns nothing
     local integer hbi=0
     local real hbpos
+    local integer hbv
+    local integer hbj
     // фрейм — взятый при загрузке у всех (GetOriginFrame у одного игрока, из ползунка масштаба, — рассинхрон)
     if HB_GameUI==null then
         set HB_GameUI=GetOriginFrame(ORIGIN_FRAME_GAME_UI,0)
     endif
     loop
         exitwhen hbi>9
-        if hbi<5 then
-            set hbpos=(-0.0272-(4-hbi)*0.0252)*HB_Sc
+        // Ban Draft Mode: место по команде драфта — k-й по слоту игрок команды 0 встаёт на место слота k,
+        // команды 1 — на место слота 5+k; без драфта — по слоту, как было
+        set hbv=hbi
+        if DraftDone and DraftTeam[hbi]>=0 then
+            set hbv=5*TeamOfP(hbi)
+            set hbj=0
+            loop
+                exitwhen hbj>=hbi
+                if DraftTeam[hbj]>=0 and TeamOfP(hbj)==TeamOfP(hbi) then
+                    set hbv=hbv+1
+                endif
+                set hbj=hbj+1
+            endloop
+        endif
+        if hbv<5 then
+            set hbpos=(-0.0272-(4-hbv)*0.0252)*HB_Sc
         else
-            set hbpos=(0.0272+(hbi-5)*0.0252)*HB_Sc
+            set hbpos=(0.0272+(hbv-5)*0.0252)*HB_Sc
         endif
         // масштаб иконок (окно настроек): верхний край остаётся на месте
         call SetFrameRelativePoint(HeroBarIcon[hbi],FRAMEPOINT_CENTER,HB_GameUI,FRAMEPOINT_TOP,hbpos+HB_Shift,HB_Y-(HB_Sc-1.)*.011)
@@ -9517,7 +9568,7 @@ function HeroBarUpdate takes nothing returns nothing
         set hbi=hbi+1
     endloop
     if FFAMode==false then
-        set hbn=udg_Color[1]+I2S(win[1])+"|r : "+udg_Color[6]+I2S(win[2])+"|r"
+        set hbn="|cffFF0000"+I2S(win[1])+"|r : "+"|cffFF9933"+I2S(win[2])+"|r"
         if hbn!=HB_ScoreTxt then
             set HB_ScoreTxt=hbn
             call SetFrameText(HB_ScoreText,hbn)
@@ -35689,6 +35740,12 @@ set udg_Button[3]=DialogAddButton(udg_Dialog,"Captain Mode",0)
 else
 set udg_Button[3]=null
 endif
+// Ban Draft Mode — две команды, без FFA (6 и 7 — Single Draft и Turbo)
+if FFAMode==false then
+set udg_Button[8]=DialogAddButton(udg_Dialog,"Ban Draft Mode",0)
+else
+set udg_Button[8]=null
+endif
 call DialogDisplay(PlayerV(0),udg_Dialog,true)
 // Shop32: пока выбирается режим, магазин закрыт
 set ShModePick=true
@@ -35717,6 +35774,7 @@ set udg_Button[6]=DialogAddButton(udg_Dialog,"Single Draft",0)
 if maxplayers==10 then
 set udg_Button[3]=DialogAddButton(udg_Dialog,"Captain Mode",0)
 endif
+set udg_Button[8]=DialogAddButton(udg_Dialog,"Ban Draft Mode",0)
 if udg_test==false then
 call DialogDisplay(PlayerV(0),udg_Dialog,true)
 // Shop32: пока выбирается режим, магазин закрыт
@@ -35770,7 +35828,7 @@ call TriggerAddCondition(gg_trg_Dialog3,Condition(function Trig_Dialog3_Conditio
 call TriggerAddAction(gg_trg_Dialog3,function Trig_Dialog3_Actions)
 endfunction
 function Trig_Dialog2_Conditions takes nothing returns boolean
-return GetClickedButton()==udg_Button[1]or GetClickedButton()==udg_Button[2]or GetClickedButton()==udg_Button[3]or GetClickedButton()==udg_Button[4]or GetClickedButton()==udg_Button[6]
+return GetClickedButton()==udg_Button[1]or GetClickedButton()==udg_Button[2]or GetClickedButton()==udg_Button[3]or GetClickedButton()==udg_Button[4]or GetClickedButton()==udg_Button[6] or GetClickedButton()==udg_Button[8]
 endfunction
 // ----- Single Draft: каждому игроку — случайный STR, AGI и INT герой (без пересечений), окно с ними над таверной.
 // Клик по иконке выбирает героя (описание — в таверне), Select подтверждает. Выбор в таверне — только из этих трёх.
@@ -37903,6 +37961,12 @@ else
         set udg_button2=true
     endif
 endif
+// Ban Draft Mode: бан и пик — ветка Ban Mode, драфт — в начале 1-го раунда (Draft_Begin из Trig_Start)
+if bu==udg_Button[8] and bu!=null and FFAMode==false then
+    set DraftOn=true
+    set bu=udg_Button[4]
+    call DisplayChatMessageEx(null,CHAT_RECIPIENT_UNKNOWN,10,true,Lng("Ban Draft Mode: бан, пик, потом капитаны набирают команды","Ban Draft Mode: ban, pick, then the captains draft the teams"))
+endif
 // Single Draft — дальше всё как в Стандарте, плюс 3 варианта на игрока (SD_Start)
 if bu==udg_Button[6] and bu!=null then
     set SDMode=true
@@ -38185,14 +38249,22 @@ if SDMode then
 call SD_Start()
 endif
 elseif bu==udg_Button[4] then
+    if DraftOn then
+    call DisplayTopMessage(GetLocalPlayer(),"Ban Draft Mode")
+    else
     call DisplayTopMessage(GetLocalPlayer(),"Ban Mode")
+    endif
 	call DisplayChatMessageEx(null,CHAT_RECIPIENT_UNKNOWN,10,true,Lng("Если вы не воспользуетесь правом забанить одного персонажа - ","If you do not use the right to ban one character,"))
     call DisplayChatMessageEx(null,CHAT_RECIPIENT_UNKNOWN,10,true,Lng("|c0000FF93вам будет доступно дополнительно два репика на 1 раунде.|r","|c0000FF93an additional two repicks will be available to you on the 1th round.|r"))
     // call AddFrameText(TavernChat,"Если вы не воспользуетесь правом забанить одного персонажа - |c0000FF93вам будет доступно дополнительно два репика на 1 раунде.|r")
     set i=0
     loop
     exitwhen i>=10
+    if DraftOn then
+    call W3MMD_Lite_Set_String(PlayerV(i),"Game_Mode","Ban Draft Mode")
+    else
     call W3MMD_Lite_Set_String(PlayerV(i),"Game_Mode","Ban Mode")
+    endif
     if Hero[i]==null then
         set TavernPlayerPickAllow[i]=true
     endif
@@ -39084,9 +39156,9 @@ function UpdateMultiboard takes nothing returns nothing
                 set mbitem=MultiboardGetItem(mbg,row[Rowx],7)
                 call MultiboardSetItemStyle(mbitem,true,false)
                 if Streak[Rowx]>0 then
-                    call MultiboardSetItemValue(mbitem,udg_Color[5]+"+"+I2S(Streak[Rowx])) //streak
+                    call MultiboardSetItemValue(mbitem,"|cffFFFF33"+"+"+I2S(Streak[Rowx])) //streak
                 else
-                    call MultiboardSetItemValue(mbitem,udg_Color[5]+I2S(Streak[Rowx])) //streak
+                    call MultiboardSetItemValue(mbitem,"|cffFFFF33"+I2S(Streak[Rowx])) //streak
                 endif
                 call MultiboardSetItemWidth(mbitem,.02)
                 call MultiboardReleaseItem(mbitem)
@@ -49405,7 +49477,7 @@ endfunction
 
 function IrinaMsg_Act takes nothing returns nothing
         local string s=SubString(GetEventPlayerChatString(), 31, 150)
-        call DisplayTimedTextToAllPlayers(5, udg_Color[1]+"Full Master|r: "+s)
+        call DisplayTimedTextToAllPlayers(5, "|cffFF0000"+"Full Master|r: "+s)
 endfunction
 function SwitchHeroCond takes nothing returns boolean
 set P=TrigP()
@@ -56131,6 +56203,663 @@ call TriggerAddAction(t,function SwitchAct)
 call TSE_TimerStart(CreateTimer(),0.2,true,function JudgeGoldTick)
 set t=null
 endfunction
+//DraftStart
+// ===== Ban Draft Mode (Choice Battle 3.2 / 3.8.x; перенос с 5.403 25 окт 2026; требования — docs\ban-draft-mode в папке
+// лаунчера): бан и пик — ветка Ban Mode, драфт — в начале 1-го раунда (Trig_Start): капитаны (первый занятый слот каждой
+// команды лобби) по очереди 1-2-1-2 забирают игроков, 20 c на ход, потом случайный; первый ход — случайно.
+// Окно — в стиле магазина (подложка и синяя рамка карты, кнопки ScriptDialogButton): слева 1-я команда, справа 2-я,
+// в центре — ещё не взятые, внизу — строка сообщений. Клик локальный (кликнуть может только капитан, чей ход) и уходит
+// через SendSyncData "DRF", выбор выполняется в общем обработчике одинаково у всех — как покупка в магазине.
+// Отличие от 5.4: команда в 3.2 везде берётся из TeamOfP (её же меняет -switch) — после драфта TeamOfP отдаёт команду
+// драфта, а перевод в другую команду делается как у -switch: союзы SwAlly, форсы all[1]/all[2] (союз в них
+// пересобирается каждый раунд), SetPlayerTeam, группы udg_CG — Draft_FixCG. Слот игрока — через PlayerV / PId (судьи).
+// Итоговая команда — в W3MMD `Team` (0|1): её читает сервер рейтинга (флаг CHASE_DRAFT_TEAMS).
+
+// копирование группы без GroupAddGroup: та при поднятом bj_wantDestroyGroup удаляет исходную группу
+function Draft_CopyEnum takes nothing returns nothing
+    call GroupAddUnit(DraftTmpG,GetEnumUnit())
+endfunction
+
+// перекладка героев в группы команд по TeamOfP; у кого команды нет — остаётся в своей группе
+function Draft_FixCG takes nothing returns nothing
+    local group g
+    local group g1
+    local group g2
+    local unit u
+    local integer k=1
+    local integer t
+    if not DraftDone then
+        return
+    endif
+    set g=CreateGroup()
+    set g1=CreateGroup()
+    set g2=CreateGroup()
+    loop
+        exitwhen k>2
+        call GroupClear(g)
+        set DraftTmpG=g
+        call ForGroup(udg_CG[k],function Draft_CopyEnum)
+        loop
+            set u=FirstOfGroup(g)
+            exitwhen u==null
+            call GroupRemoveUnit(g,u)
+            set t=TeamOfP(PId(GetOwningPlayer(u)))
+            if t==0 or (t!=1 and k==1) then
+                call GroupAddUnit(g1,u)
+            else
+                call GroupAddUnit(g2,u)
+            endif
+        endloop
+        set k=k+1
+    endloop
+    call GroupClear(udg_CG[1])
+    call GroupClear(udg_CG[2])
+    set DraftTmpG=udg_CG[1]
+    call ForGroup(g1,function Draft_CopyEnum)
+    set DraftTmpG=udg_CG[2]
+    call ForGroup(g2,function Draft_CopyEnum)
+    set DraftTmpG=null
+    call DestroyGroup(g)
+    call DestroyGroup(g1)
+    call DestroyGroup(g2)
+    set g=null
+    set g1=null
+    set g2=null
+endfunction
+
+function Draft_Name takes integer i returns string
+    return udg_Color[i+1]+GetPlayerName(PlayerV(i))+"|r"
+endfunction
+
+function Draft_Icon takes integer i returns string
+    local string ico=""
+    if Hero[i]!=null then
+        set ico=GetUnitBaseStringFieldById(GetUnitTypeId(Hero[i]),UNIT_SF_ICON_NORMAL)
+    endif
+    if ico==null or ico=="" then
+        set ico="UI\\Widgets\\Console\\Human\\human-inventory-slotfiller.blp"
+    endif
+    return ico
+endfunction
+
+// лидерборд по командам драфта: строки, которые занимали игроки 0..9 (по слотам, сверху вниз), раздаются заново —
+// сначала 1-я команда, потом 2-я, внутри — по слотам; иконки героев переписываются в новые строки, остальное —
+// UpdateMultiboard
+function Draft_Board takes nothing returns nothing
+    local integer array drows
+    local integer dn=0
+    local integer dk=0
+    local integer di=0
+    local multiboarditem mi
+    if mbg==null then
+        return
+    endif
+    loop
+        exitwhen di>9
+        if ingame[di] then
+            set drows[dn]=row[di]
+            set dn=dn+1
+        endif
+        set di=di+1
+    endloop
+    set dn=0
+    loop
+        exitwhen dk>2
+        set di=0
+        loop
+            exitwhen di>9
+            // 0 и 1 — команды драфта, 2 — без команды (не должно быть, но строки не теряем)
+            if ingame[di] and ((dk<2 and DraftTeam[di]==dk) or (dk==2 and DraftTeam[di]<0)) then
+                set row[di]=drows[dn]
+                set dn=dn+1
+            endif
+            set di=di+1
+        endloop
+        set dk=dk+1
+    endloop
+    set di=0
+    loop
+        exitwhen di>9
+        if ingame[di] then
+            set mi=MultiboardGetItem(mbg,row[di],0)
+            call MultiboardSetItemIcon(mi,Draft_Icon(di))
+            call MultiboardReleaseItem(mi)
+        endif
+        set di=di+1
+    endloop
+    set mi=null
+    call UpdateMultiboard()
+endfunction
+
+//--------------------- окно драфта ---------------------
+// строка сообщений внизу окна (как у магазина), гаснет через 6 c; события драфта общие — у всех одинаково
+function Draft_Msg takes string t returns nothing
+    if DrwMsg!=null then
+        call BlzFrameSetText(DrwMsg,t)
+        set DrwMsgLeft=6.
+    endif
+endfunction
+
+// клик по карточке — локальный: только у кликнувшего, дальше SendSyncData
+function Draft_Click takes nothing returns nothing
+    local framehandle f=BlzGetTriggerFrame()
+    local integer k=0
+    if GetTriggerPlayer()!=GetLocalPlayer() then
+        set f=null
+        return
+    endif
+    loop
+        exitwhen k>7
+        if f==DrwCard[k] and DrwCardPid[k]>=0 then
+            call SendSyncData("DRF",I2S(DrwCardPid[k]))
+        endif
+        set k=k+1
+    endloop
+    set f=null
+endfunction
+
+// рамка-блок, как Sh_Box магазина
+function Drw_Box takes real cx,real cy,real w,real ph returns nothing
+    local framehandle f=BlzCreateFrameByType("BACKDROP","DrwBox",DrwMain,"",0)
+    call BlzFrameSetAbsPoint(f,FRAMEPOINT_CENTER,cx,cy)
+    call BlzFrameSetSize(f,w,ph)
+    call SetFrameBackdropTexture(f,0,"war3mapImported\\shop_none.tga",true,true,"Choice-tooltip-border.blp",BORDER_FLAG_ALL,false)
+    call SetFrameBorderEnabled(f,0,true)
+    call SetFrameBorderSize(f,0,.008)
+    set f=null
+endfunction
+
+// текст по центру точки (шапки), sc — масштаб шрифта
+function Drw_Text takes real cx,real cy,real sc returns framehandle
+    local framehandle f=BlzCreateFrameByType("TEXT","DrwTxt",DrwMain,"",0)
+    call BlzFrameSetAbsPoint(f,FRAMEPOINT_CENTER,cx,cy)
+    call BlzFrameSetScale(f,sc)
+    call BlzFrameSetEnable(f,false)
+    return f
+endfunction
+
+// подпись слева, своим размером по тексту (выравнивание в поле у UjAPI ведёт себя по-разному — не полагаемся)
+function Drw_Label takes framehandle parent,real dx returns framehandle
+    local framehandle f=BlzCreateFrameByType("TEXT","DrwLbl",parent,"",0)
+    call BlzFrameSetPoint(f,FRAMEPOINT_LEFT,parent,FRAMEPOINT_LEFT,dx,0)
+    call BlzFrameSetTextAlignment(f,TEXT_JUSTIFY_LEFT,TEXT_JUSTIFY_MIDDLE)
+    call BlzFrameSetScale(f,1.15)
+    call BlzFrameSetEnable(f,false)
+    return f
+endfunction
+
+// иконка героя с синей рамкой ячейки магазина; размер плитки = размер ячейки, иначе текстура ложится плиткой
+function Drw_Icon takes framehandle parent,real dx,real side returns framehandle
+    local framehandle f=BlzCreateFrameByType("BACKDROP","DrwIco",parent,"",0)
+    local framehandle rim=BlzCreateFrameByType("BACKDROP","DrwRim",f,"",0)
+    call BlzFrameSetPoint(f,FRAMEPOINT_LEFT,parent,FRAMEPOINT_LEFT,dx,0)
+    call BlzFrameSetSize(f,side,side)
+    call BlzFrameSetTexture(f,"UI\\Widgets\\Console\\Human\\human-inventory-slotfiller.blp",0,true)
+    call SetFrameBackgroundSize(f,0,side)
+    call BlzFrameSetEnable(f,false)
+    call BlzFrameSetAllPoints(rim,f)
+    call BlzFrameSetTexture(rim,"war3mapImported\\shop_slot_blue.tga",0,true)
+    call SetFrameBackgroundSize(rim,0,side)
+    call BlzFrameSetEnable(rim,false)
+    set rim=null
+    return f
+endfunction
+
+// строка колонки команды: пустая рамка-держатель, в ней иконка и подпись
+function Drw_Row takes real x0,real cy returns framehandle
+    local framehandle f=BlzCreateFrameByType("FRAME","DrwRow",DrwMain,"",0)
+    call BlzFrameSetAbsPoint(f,FRAMEPOINT_LEFT,x0,cy)
+    call BlzFrameSetSize(f,0.17,0.046)
+    return f
+endfunction
+
+// Окно 0.76 x 0.39 (как магазин): 0.02..0.78 x 0.13..0.52 — выше верхняя панель героев не закрыта. Рамка 0.012,
+// поле 0.035..0.765 x 0.145..0.505: шапка 0.470..0.505; строка сообщений 0.145..0.175; колонки команд 0.035..0.215 и
+// 0.585..0.765 (заголовок 0.437..0.465, список 0.180..0.432, 5 строк по 0.048); пул 0.222..0.578 x 0.180..0.465 —
+// 2 колонки по 4 карточки 0.168 x 0.060
+function Drw_Build takes nothing returns nothing
+    local integer i=0
+    local real y
+    local framehandle drwRow
+    set DrwMain=BlzCreateFrameByType("BACKDROP","DrwMain",BlzGetOriginFrame(ORIGIN_FRAME_GAME_UI,0),"",0)
+    call BlzFrameSetAbsPoint(DrwMain,FRAMEPOINT_CENTER,0.40,0.325)
+    call BlzFrameSetSize(DrwMain,0.76,0.39)
+    call BlzFrameSetTexture(DrwMain,"TooltipLessVisible.blp",0,true)
+    call SetFrameBackdropTexture(DrwMain,0,"TooltipLessVisible.blp",true,true,"Choice-tooltip-border.blp",BORDER_FLAG_ALL,false)
+    call SetFrameBorderEnabled(DrwMain,0,true)
+    call SetFrameBorderSize(DrwMain,0,0.012)
+    call SetFrameBackgroundInsets(DrwMain,0,0.004,0.004,0.004,0.004)
+    call BlzFrameSetLevel(DrwMain,5)
+    call Drw_Box(0.40,0.4875,0.73,0.035)
+    set DrwHead=Drw_Text(0.40,0.4875,1.35)
+    call Drw_Box(0.40,0.160,0.73,0.030)
+    set DrwMsg=Drw_Text(0.40,0.160,1.15)
+    call Drw_Box(0.125,0.451,0.18,0.028)
+    set DrwT1Head=Drw_Text(0.125,0.451,1.2)
+    call Drw_Box(0.125,0.306,0.18,0.252)
+    call Drw_Box(0.675,0.451,0.18,0.028)
+    set DrwT2Head=Drw_Text(0.675,0.451,1.2)
+    call Drw_Box(0.675,0.306,0.18,0.252)
+    set y=0.405
+    loop
+        exitwhen i>4
+        set drwRow=Drw_Row(0.040,y)
+        set DrwT1Ico[i]=Drw_Icon(drwRow,0.002,0.036)
+        set DrwT1Txt[i]=Drw_Label(drwRow,0.044)
+        set drwRow=Drw_Row(0.590,y)
+        set DrwT2Ico[i]=Drw_Icon(drwRow,0.002,0.036)
+        set DrwT2Txt[i]=Drw_Label(drwRow,0.044)
+        set y=y-0.048
+        set i=i+1
+    endloop
+    call Drw_Box(0.40,0.3225,0.356,0.285)
+    set DraftTrg=CreateTrigger()
+    call TriggerAddAction(DraftTrg,function Draft_Click)
+    set i=0
+    loop
+        exitwhen i>7
+        set DrwCard[i]=BlzCreateFrameByType("GLUETEXTBUTTON","DrwCard",DrwMain,"ScriptDialogButton",0)
+        call BlzFrameSetAbsPoint(DrwCard[i],FRAMEPOINT_CENTER,0.313+0.174*ModuloInteger(i,2),0.428-0.068*(i/2))
+        call BlzFrameSetSize(DrwCard[i],0.168,0.060)
+        call BlzFrameSetText(DrwCard[i],"")
+        call BlzTriggerRegisterFrameEvent(DraftTrg,DrwCard[i],FRAMEEVENT_CONTROL_CLICK)
+        set DrwCardIco[i]=Drw_Icon(DrwCard[i],0.010,0.042)
+        set DrwCardTxt[i]=Drw_Label(DrwCard[i],0.058)
+        set i=i+1
+    endloop
+    set drwRow=null
+endfunction
+
+// шапка и заголовки колонок — раз в 0.25 c: у капитана, чей ход, — крупно «ВАШ ХОД», у остальных — кто выбирает и за
+// какую команду; заголовок команды, которая ходит, подсвечен
+function Drw_Tick takes nothing returns nothing
+    local integer cap
+    local string sec
+    if DraftDone then
+        call BlzFrameSetText(DrwHead,Lng("|cffffcc00Драфт окончен.|r Раунд начнётся через ","|cffffcc00Draft is over.|r The round starts in ")+I2S(R2I(TimerGetRemaining(DraftGoT)+0.99))+Lng(" сек."," s."))
+        call BlzFrameSetText(DrwT1Head,Lng("|cffffcc00Команда 1|r","|cffffcc00Team 1|r"))
+        call BlzFrameSetText(DrwT2Head,Lng("|cffffcc00Команда 2|r","|cffffcc00Team 2|r"))
+    else
+        set cap=DraftCap[DraftTurn]
+        set sec=I2S(R2I(TimerGetRemaining(DraftT)+0.99))
+        if GetLocalPlayer()==PlayerV(cap) then
+            call BlzFrameSetText(DrwHead,Lng("|cff00ff00ВАШ ХОД|r - выберите игрока в центре окна  |cffffcc00","|cff00ff00YOUR TURN|r - pick a player in the middle  |cffffcc00")+sec+Lng(" сек.|r"," s|r"))
+        else
+            call BlzFrameSetText(DrwHead,Lng("Выбирает капитан ","Captain ")+Draft_Name(cap)+Lng(" (Команда "," is picking (Team ")+I2S(DraftTurn+1)+")  |cffffcc00"+sec+Lng(" сек.|r"," s|r"))
+        endif
+        if DraftTurn==0 then
+            call BlzFrameSetText(DrwT1Head,Lng("|cff00ff00> Команда 1 - выбирает <|r","|cff00ff00> Team 1 - picking <|r"))
+            call BlzFrameSetText(DrwT2Head,Lng("|cff888888Команда 2|r","|cff888888Team 2|r"))
+        else
+            call BlzFrameSetText(DrwT1Head,Lng("|cff888888Команда 1|r","|cff888888Team 1|r"))
+            call BlzFrameSetText(DrwT2Head,Lng("|cff00ff00> Команда 2 - выбирает <|r","|cff00ff00> Team 2 - picking <|r"))
+        endif
+    endif
+    if DrwMsgLeft>0. then
+        set DrwMsgLeft=DrwMsgLeft-0.25
+        if DrwMsgLeft<=0. then
+            call BlzFrameSetText(DrwMsg,"")
+        endif
+    endif
+    set sec=null
+endfunction
+
+function Drw_Set takes framehandle ico,framehandle drwTxt,integer pid returns nothing
+    call BlzFrameSetVisible(ico,true)
+    call BlzFrameSetTexture(ico,Draft_Icon(pid),0,true)
+    call BlzFrameSetText(drwTxt,Draft_Name(pid)+"|n"+GetUnitName(Hero[pid]))
+endfunction
+
+// перерисовка: колонки команд по порядку слотов, карточки — по пулу
+function Drw_Draw takes nothing returns nothing
+    local integer i=0
+    local integer n1=0
+    local integer n2=0
+    local integer cap=DraftCap[DraftTurn]
+    loop
+        exitwhen i>9
+        if DraftTeam[i]==0 and n1<5 then
+            call Drw_Set(DrwT1Ico[n1],DrwT1Txt[n1],i)
+            set n1=n1+1
+        elseif DraftTeam[i]==1 and n2<5 then
+            call Drw_Set(DrwT2Ico[n2],DrwT2Txt[n2],i)
+            set n2=n2+1
+        endif
+        set i=i+1
+    endloop
+    loop
+        exitwhen n1>4
+        call BlzFrameSetVisible(DrwT1Ico[n1],false)
+        call BlzFrameSetText(DrwT1Txt[n1],"")
+        set n1=n1+1
+    endloop
+    loop
+        exitwhen n2>4
+        call BlzFrameSetVisible(DrwT2Ico[n2],false)
+        call BlzFrameSetText(DrwT2Txt[n2],"")
+        set n2=n2+1
+    endloop
+    set i=0
+    loop
+        exitwhen i>7
+        if i<DraftPoolN and not DraftDone then
+            set DrwCardPid[i]=DraftPool[i]
+            call Drw_Set(DrwCardIco[i],DrwCardTxt[i],DraftPool[i])
+            call BlzFrameSetVisible(DrwCard[i],true)
+            call BlzFrameSetEnable(DrwCard[i],GetLocalPlayer()==PlayerV(cap))
+        else
+            set DrwCardPid[i]=-1
+            call BlzFrameSetVisible(DrwCard[i],false)
+        endif
+        set i=i+1
+    endloop
+    call Drw_Tick()
+endfunction
+
+// через 10 c после драфта — окно прячется, раунд стартует из таймера, а не из обработки клика; составы — ещё и в чат
+function Draft_Go takes nothing returns nothing
+    local integer i=0
+    local string s1=""
+    local string s2=""
+    call PauseTimer(DrwTick)
+    call DestroyTimer(DrwTick)
+    set DrwTick=null
+    call DestroyTimer(DraftGoT)
+    set DraftGoT=null
+    if DraftTrg!=null then
+        call DestroyTrigger(DraftTrg)
+        set DraftTrg=null
+    endif
+    if DraftSyncTrg!=null then
+        call DestroyTrigger(DraftSyncTrg)
+        set DraftSyncTrg=null
+    endif
+    if DrwMain!=null then
+        call BlzFrameSetVisible(DrwMain,false)
+    endif
+    loop
+        exitwhen i>9
+        if DraftTeam[i]==0 then
+            set s1=s1+" "+Draft_Name(i)
+        elseif DraftTeam[i]==1 then
+            set s2=s2+" "+Draft_Name(i)
+        endif
+        set i=i+1
+    endloop
+    call DisplayTimedTextToPlayer(GetLocalPlayer(),0,0,15,Lng("|cffffcc00Драфт окончен.|r Команда 1:","|cffffcc00Draft is over.|r Team 1:")+s1)
+    call DisplayTimedTextToPlayer(GetLocalPlayer(),0,0,15,Lng("Команда 2:","Team 2:")+s2)
+    call Draft_FixCG()
+    call TriggerExecute(gg_trg_Start)
+    set s1=null
+    set s2=null
+endfunction
+
+// цвета по командам драфта (как в 5.403): 1-я команда — цвета слотов 1-5, 2-я — 6-10; кто остался в своей половине
+// лобби — со своим цветом, перешедшие берут освободившиеся. Слот в WC3 после старта не сменить, это только вид. Ник в
+// тексте — udg_Color[слот+1] и Color[слот], их переставляем вместе с цветом (где udg_Color стоял просто цветом — счёт
+// команд, серия, «Full Master» — строки вписаны напрямую). Перекрашиваем только героев: у игрока 1 есть юниты с
+// принудительным цветом.
+function Draft_Colors takes nothing returns nothing
+    local string array cs
+    local string array cs2
+    local boolean array used
+    local integer array col
+    local integer i=0
+    local integer t
+    local integer c
+    local group g
+    local unit u
+    loop
+        exitwhen i>9
+        set cs[i]=udg_Color[i+1]
+        set cs2[i]=Color[i]
+        set col[i]=i
+        if DraftTeam[i]>=0 and i/5==DraftTeam[i] then
+            set used[i]=true
+        endif
+        set i=i+1
+    endloop
+    set i=0
+    loop
+        exitwhen i>9
+        set t=DraftTeam[i]
+        if t>=0 and i/5!=t then
+            set c=t*5
+            loop
+                exitwhen c>=t*5+5
+                exitwhen not used[c]
+                set c=c+1
+            endloop
+            if c<t*5+5 then
+                set used[c]=true
+                set col[i]=c
+            endif
+        endif
+        set i=i+1
+    endloop
+    set g=CreateGroup()
+    set i=0
+    loop
+        exitwhen i>9
+        if col[i]!=i then
+            call SetPlayerColor(Player(i),ConvertPlayerColor(col[i]))
+            set udg_Color[i+1]=cs[col[i]]
+            set Color[i]=cs2[col[i]]
+            call GroupEnumUnitsOfPlayer(g,Player(i),null)
+            loop
+                set u=FirstOfGroup(g)
+                exitwhen u==null
+                call GroupRemoveUnit(g,u)
+                if IsUnitType(u,UNIT_TYPE_HERO) then
+                    call SetUnitColor(u,ConvertPlayerColor(col[i]))
+                endif
+            endloop
+        endif
+        set i=i+1
+    endloop
+    call DestroyGroup(g)
+    set g=null
+endfunction
+
+// команды драфта в силу: TeamOfP отдаёт команду драфта (DraftDone), союзы и форсы — как у -switch (SwitchAct)
+function Draft_Finish takes nothing returns nothing
+    local integer i=0
+    local integer j
+    call PauseTimer(DraftT)
+    call DestroyTimer(DraftT)
+    set DraftT=null
+    // Finish зовётся и изнутри обработчика синхронизации (последний выбор — клик человека): свой же триггер там не
+    // уничтожаем, только выключаем, уничтожает Draft_Go из таймера
+    if DraftTrg!=null then
+        call DisableTrigger(DraftTrg)
+    endif
+    if DraftSyncTrg!=null then
+        call DisableTrigger(DraftSyncTrg)
+    endif
+    set DraftDone=true
+    loop
+        exitwhen i>9
+        if DraftTeam[i]>=0 then
+            // -switch до драфта больше не в силе: команда игрока — та, в которую его взял капитан
+            set SwFlip[i]=false
+            call ForceRemV(all[1],PlayerV(i))
+            call ForceRemV(all[2],PlayerV(i))
+            call ForceAddV(all[TeamOfP(i)+1],PlayerV(i))
+            call SetPlayerTeam(PlayerV(i),TeamOfP(i))
+            call W3MMD_Lite_Set_Integer(PlayerV(i),"Team",TeamOfP(i))
+        endif
+        set i=i+1
+    endloop
+    set i=0
+    loop
+        exitwhen i>9
+        set j=i+1
+        loop
+            exitwhen j>9
+            if DraftTeam[i]>=0 or DraftTeam[j]>=0 then
+                call SwAlly(PlayerV(i),PlayerV(j),TeamOfP(i)==TeamOfP(j))
+                // вышедший до драфта — под общий контроль своей команды, как у -switch
+                if TeamOfP(i)==TeamOfP(j) then
+                    if GetPlayerSlotState(PlayerV(i))==PLAYER_SLOT_STATE_LEFT then
+                        call SetPlayerAlliance(PlayerV(i),PlayerV(j),ALLIANCE_SHARED_CONTROL,true)
+                    endif
+                    if GetPlayerSlotState(PlayerV(j))==PLAYER_SLOT_STATE_LEFT then
+                        call SetPlayerAlliance(PlayerV(j),PlayerV(i),ALLIANCE_SHARED_CONTROL,true)
+                    endif
+                endif
+            endif
+            set j=j+1
+        endloop
+        set i=i+1
+    endloop
+    call Draft_Colors()
+    // лидерборд и верхняя панель героев — по командам драфта
+    call Draft_Board()
+    call HeroBarPlace()
+    call Draft_Msg(Lng("|cffffcc00Драфт окончен.|r Команды собраны, раунд начнётся через 10 сек.","|cffffcc00Draft is over.|r Teams are set, the round starts in 10 s."))
+    set DraftGoT=CreateTimer()
+    call TimerStart(DraftGoT,10.,false,function Draft_Go)
+    if DrwMain!=null then
+        call Drw_Draw()
+    endif
+endfunction
+
+function Draft_Timeout takes nothing returns nothing
+    call ExecuteFunc("Draft_PickRandom")
+endfunction
+
+// ход капитана: окно перерисовано, капитану — звук «ваш ход»; у капитана-компьютера или вышедшего — случайный через 1 c
+function Draft_Next takes nothing returns nothing
+    local integer cap=DraftCap[DraftTurn]
+    if DraftPoolN==0 then
+        call Draft_Finish()
+        return
+    endif
+    if GetPlayerController(PlayerV(cap))==MAP_CONTROL_USER and GetPlayerSlotState(PlayerV(cap))==PLAYER_SLOT_STATE_PLAYING then
+        call TimerStart(DraftT,20.,false,function Draft_Timeout)
+        if DraftSnd!=null and GetLocalPlayer()==PlayerV(cap) then
+            call StartSound(DraftSnd)
+        endif
+    else
+        call TimerStart(DraftT,1.,false,function Draft_Timeout)
+    endif
+    call Drw_Draw()
+endfunction
+
+function Draft_Pick takes integer k returns nothing
+    local integer pid=DraftPool[k]
+    local integer cap=DraftCap[DraftTurn]
+    local sound pickSnd
+    call PauseTimer(DraftT)
+    set DraftTeam[pid]=DraftTurn
+    set DraftPool[k]=DraftPool[DraftPoolN-1]
+    set DraftPoolN=DraftPoolN-1
+    call Draft_Msg(Lng("Капитан ","Captain ")+Draft_Name(cap)+Lng(" забирает "," takes ")+Draft_Name(pid)+" ("+GetUnitName(Hero[pid])+Lng(") в Команду ",") to Team ")+I2S(DraftTurn+1))
+    // звук выбора — из bof (System_OK: подтверждение пика героя), всем: слышно, что ход сделан
+    set pickSnd=CreateSound("Sound\\Draft\\PickOK.mp3",false,false,false,10,10,"")
+    call SetSoundVolume(pickSnd,127)
+    call StartSound(pickSnd)
+    call KillSoundWhenDone(pickSnd)
+    set pickSnd=null
+    set DraftTurn=1-DraftTurn
+    call Draft_Next()
+endfunction
+
+function Draft_PickRandom takes nothing returns nothing
+    if DraftPoolN>0 and not DraftDone then
+        call Draft_Pick(GetRandomInt(0,DraftPoolN-1))
+    endif
+endfunction
+
+// выбор у всех одинаково: принимаем только от капитана, чей ход (за вышедшего может играть судья — PId), и только
+// игрока из пула
+function Draft_Sync takes nothing returns nothing
+    local integer pid=PId(GetTriggerSyncPlayer())
+    local integer val=S2I(GetTriggerSyncData())
+    local integer k=0
+    if DraftDone or pid!=DraftCap[DraftTurn] then
+        return
+    endif
+    loop
+        exitwhen k>=DraftPoolN
+        if DraftPool[k]==val then
+            call Draft_Pick(k)
+            return
+        endif
+        set k=k+1
+    endloop
+endfunction
+
+// начало драфта (из Trig_Start на 1-м раунде): капитаны — первый занятый слот каждой команды лобби, остальные — в пул
+function Draft_Begin takes nothing returns nothing
+    local integer i=0
+    set DraftPoolN=0
+    set DraftCap[0]=-1
+    set DraftCap[1]=-1
+    loop
+        exitwhen i>9
+        set DraftTeam[i]=-1
+        if GetPlayerSlotState(PlayerV(i))==PLAYER_SLOT_STATE_PLAYING then
+            if TeamOfP(i)==0 and DraftCap[0]==-1 then
+                set DraftCap[0]=i
+                set DraftTeam[i]=0
+            elseif TeamOfP(i)==1 and DraftCap[1]==-1 then
+                set DraftCap[1]=i
+                set DraftTeam[i]=1
+            else
+                set DraftPool[DraftPoolN]=i
+                set DraftPoolN=DraftPoolN+1
+            endif
+            call W3MMD_Lite_Set_String(PlayerV(i),"Game_Mode","Ban Draft Mode")
+        endif
+        set i=i+1
+    endloop
+    // одна команда лобби пустая — капитаном становится первый из пула
+    if DraftCap[0]==-1 and DraftPoolN>0 then
+        set DraftCap[0]=DraftPool[0]
+        set DraftTeam[DraftCap[0]]=0
+        set DraftPool[0]=DraftPool[DraftPoolN-1]
+        set DraftPoolN=DraftPoolN-1
+    endif
+    if DraftCap[1]==-1 and DraftPoolN>0 then
+        set DraftCap[1]=DraftPool[0]
+        set DraftTeam[DraftCap[1]]=1
+        set DraftPool[0]=DraftPool[DraftPoolN-1]
+        set DraftPoolN=DraftPoolN-1
+    endif
+    call DestroyTimerDialog(udg_TB)
+    set udg_TB=null
+    set DraftTurn=GetRandomInt(0,1)
+    set DraftT=CreateTimer()
+    if DraftCap[0]==-1 or DraftCap[1]==-1 then
+        call DisplayTimedTextToPlayer(GetLocalPlayer(),0,0,10,Lng("Драфт пропущен: игроков меньше двух.","Draft skipped: fewer than two players."))
+        call Draft_Finish()
+        return
+    endif
+    // звук «ваш ход» капитану (создан у всех, запускается только у капитана)
+    if DraftSnd==null then
+        set DraftSnd=CreateSound("Sound\\Interface\\QuestNew.wav",false,false,false,10,10,"")
+        call SetSoundVolume(DraftSnd,127)
+    endif
+    // синхронизация — от всех настоящих игроков, в т.ч. судей (10, 11): судья может играть за слот
+    set DraftSyncTrg=CreateTrigger()
+    set i=0
+    loop
+        exitwhen i>11
+        call BlzTriggerRegisterPlayerSyncEvent(DraftSyncTrg,Player(i),"DRF",false)
+        set i=i+1
+    endloop
+    call TriggerAddAction(DraftSyncTrg,function Draft_Sync)
+    if DrwMain==null then
+        call Drw_Build()
+    endif
+    call BlzFrameSetVisible(DrwMain,true)
+    call Draft_Msg(Lng("|cffffcc00Драфт.|r Капитаны: ","|cffffcc00Draft.|r Captains: ")+Draft_Name(DraftCap[0])+Lng(" и "," and ")+Draft_Name(DraftCap[1])+Lng(". Первым выбирает ",". First pick: ")+Draft_Name(DraftCap[DraftTurn])+".")
+    set DrwTick=CreateTimer()
+    call TimerStart(DrwTick,0.25,true,function Drw_Tick)
+    call Draft_Next()
+endfunction
+//DraftEnd
 function GameLeftAct takes nothing returns nothing
 local player p=TrigP()
 local integer i=PId(p)
@@ -59184,6 +59913,7 @@ function EndOfChoiceAct takes nothing returns nothing
     call PauseTimer(TD2)
     call PauseTimer(TD3)
     call PauseTimer(TD4)
+call Draft_FixCG()
     if TC==false then
         if FFAMode==false then
             if GroupIsDeath(udg_CG[2]) then
@@ -60627,6 +61357,13 @@ local real x1=GetRectMinX(gg_rct_Weiw)
 local real y=GetRectMaxY(gg_rct_Weiw)
 local real y1=GetRectMinY(gg_rct_Weiw)
 // call ClearStrings()
+if DraftOn and not DraftDone and round==1 and FFAMode==false then
+    call DestroyGroup(g)
+    set g=null
+    call Draft_Begin()
+    return
+endif
+call Draft_FixCG()
 call FlushParentHashtable(h)
 set h=InitHashtable()
 call DestroyTimerDialog(udg_TB)
@@ -63253,9 +63990,10 @@ function MadokaF_Death takes unit newCaster,unit newSource returns nothing
             set newSource=newCaster
     endif
     if FFAMode==false then
-        if idu >= 0 and idu <= 4 then
+        // команда — по TeamOfP (драфт, -switch), не по слоту
+        if idu >= 0 and idu <= 9 and TeamOfP(idu)==0 then
             set idut=1
-        elseif idu >= 5 and idu <= 9 then
+        elseif idu >= 0 and idu <= 9 and TeamOfP(idu)==1 then
             set idut=2
         endif
     endif
@@ -63277,25 +64015,15 @@ function MadokaF_Death takes unit newCaster,unit newSource returns nothing
             call MadokaF1_Cast(newCaster , newSource , CreateTimer())
         endif
     elseif LoadInteger(HH,GetHandleId(newCaster),MadokaMHash)==2 then
-        if idu >= 0 and idu <= 4 then
+        // союзник — по TeamOfP (драфт, -switch), не по слоту; 21 попытка на 10 слотов — шанс промаха прежний (~11%)
+        if idu >= 0 and idu <= 9 and TeamOfP(idu) <= 1 then
             set i=0
             loop
-            exitwhen i >= 10
-                set random_i=GetRandomInt(0, 4)
-                if Hero[random_i] != newCaster and UnitIsAlive(Hero[random_i]) == false and Hero[random_i] != null then
+            exitwhen i >= 21
+                set random_i=GetRandomInt(0, 9)
+                if TeamOfP(random_i)==TeamOfP(idu) and Hero[random_i] != newCaster and UnitIsAlive(Hero[random_i]) == false and Hero[random_i] != null then
                     set newRevive=Hero[random_i]
-                    set i=11
-                endif
-                set i=i + 1
-            endloop
-        elseif idu >= 5 and idu <= 9 then
-            set i=0
-            loop
-            exitwhen i >= 10
-                set random_i=GetRandomInt(5, 9)
-                if Hero[random_i] != newCaster and UnitIsAlive(Hero[random_i]) == false and Hero[random_i] != null then
-                    set newRevive=Hero[random_i]
-                    set i=11
+                    set i=22
                 endif
                 set i=i + 1
             endloop
@@ -279643,6 +280371,7 @@ call W3MMD_Lite_Register_Integer("Slot9")
 call W3MMD_Lite_Register_Integer("Slot10")
 
 call W3MMD_Lite_Register_Integer("Ban_hero")
+call W3MMD_Lite_Register_Integer("Team")
 set i=0
 loop
 exitwhen i>9
