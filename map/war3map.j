@@ -9376,25 +9376,71 @@ function HeroBarPlace takes nothing returns nothing
     local real hbpos
     local integer hbv
     local integer hbj
+    local integer hbt
+    local integer array hbPos
+    local boolean array hbTaken
     // фрейм — взятый при загрузке у всех (GetOriginFrame у одного игрока, из ползунка масштаба, — рассинхрон)
     if HB_GameUI==null then
         set HB_GameUI=GetOriginFrame(ORIGIN_FRAME_GAME_UI,0)
     endif
+    // Ban Draft Mode: места по командам драфта — сначала взятые в драфт (k-й по слоту игрок команды t — на место
+    // 5t+k), потом остальные слоты (пустые, вышедшие до драфта) — на свободные места своей команды, иначе на любые;
+    // без драфта — по слоту, как было
+    if DraftDone then
+        loop
+            exitwhen hbi>9
+            set hbPos[hbi]=-1
+            if DraftTeam[hbi]>=0 then
+                set hbv=5*TeamOfP(hbi)
+                set hbj=0
+                loop
+                    exitwhen hbj>=hbi
+                    if DraftTeam[hbj]>=0 and TeamOfP(hbj)==TeamOfP(hbi) then
+                        set hbv=hbv+1
+                    endif
+                    set hbj=hbj+1
+                endloop
+                if hbv<5*TeamOfP(hbi)+5 then
+                    set hbPos[hbi]=hbv
+                    set hbTaken[hbv]=true
+                endif
+            endif
+            set hbi=hbi+1
+        endloop
+        set hbi=0
+        loop
+            exitwhen hbi>9
+            if hbPos[hbi]<0 then
+                set hbt=TeamOfP(hbi)
+                if hbt<0 or hbt>1 then
+                    set hbt=hbi/5
+                endif
+                set hbj=hbt*5
+                loop
+                    exitwhen hbj>=hbt*5+5
+                    exitwhen not hbTaken[hbj]
+                    set hbj=hbj+1
+                endloop
+                if hbj>=hbt*5+5 then
+                    set hbj=0
+                    loop
+                        exitwhen hbj>9
+                        exitwhen not hbTaken[hbj]
+                        set hbj=hbj+1
+                    endloop
+                endif
+                set hbPos[hbi]=hbj
+                set hbTaken[hbj]=true
+            endif
+            set hbi=hbi+1
+        endloop
+        set hbi=0
+    endif
     loop
         exitwhen hbi>9
-        // Ban Draft Mode: место по команде драфта — k-й по слоту игрок команды 0 встаёт на место слота k,
-        // команды 1 — на место слота 5+k; без драфта — по слоту, как было
         set hbv=hbi
-        if DraftDone and DraftTeam[hbi]>=0 then
-            set hbv=5*TeamOfP(hbi)
-            set hbj=0
-            loop
-                exitwhen hbj>=hbi
-                if DraftTeam[hbj]>=0 and TeamOfP(hbj)==TeamOfP(hbi) then
-                    set hbv=hbv+1
-                endif
-                set hbj=hbj+1
-            endloop
+        if DraftDone then
+            set hbv=hbPos[hbi]
         endif
         if hbv<5 then
             set hbpos=(-0.0272-(4-hbv)*0.0252)*HB_Sc
@@ -13460,10 +13506,20 @@ function ResetForfeitVotes takes nothing returns nothing
         set i = i + 1
     endloop
     
-    if LoadInteger( W3MMDTable, GetHandleId( GetExpiredTimer( ) ), SH_VotedTeam ) - 1 == 0 then
-        set i = 0
-    else
-        set i = 6
+    // кому сообщить: первый живой слот проголосовавшей команды по TeamOfP (после драфта и -switch в слотах 1 и 7
+    // может стоять другая команда); никого нет — как было
+    set i = 0
+    loop
+        exitwhen i > 9
+        exitwhen TeamOfP( i ) == LoadInteger( W3MMDTable, GetHandleId( GetExpiredTimer( ) ), SH_VotedTeam ) - 1 and GetPlayerSlotState( PlayerV( i ) ) == PLAYER_SLOT_STATE_PLAYING
+        set i = i + 1
+    endloop
+    if i > 9 then
+        if LoadInteger( W3MMDTable, GetHandleId( GetExpiredTimer( ) ), SH_VotedTeam ) - 1 == 0 then
+            set i = 0
+        else
+            set i = 6
+        endif
     endif
 
     call TeamMessage( PlayerV( i ), 10, "Votes to end the game have been reset." )
@@ -13528,7 +13584,8 @@ function SetTotalPlayersFFA takes nothing returns nothing
 endfunction
 
 function SetTotalPlayers takes nothing returns nothing
-    if IsPlayerAlly( PlayerV( 0 ), TrigP() ) then
+    // команда вышедшего — по TeamOfP (драфт, -switch), а не по союзу с игроком слота 1
+    if TeamOfP( PId( TrigP() ) ) == 0 then
         call SetMMDInt( "TotalTeam1", GetMMDInt( "TotalTeam1" ) - 1 )
     else
         call SetMMDInt( "TotalTeam2", GetMMDInt( "TotalTeam2" ) - 1 )
@@ -56103,6 +56160,12 @@ call DisplayTimedTextToPlayer(p,0,0,6,Lng("-switch — только между �
 set p=null
 return
 endif
+// Ban Draft Mode: во время драфта команды ещё набираются
+if DraftOn and not DraftDone then
+call DisplayTimedTextToPlayer(p,0,0,6,Lng("-switch недоступен во время драфта.","-switch is not available during the draft."))
+set p=null
+return
+endif
 if StringLength(cs)>8 then
 set jn=S2I(SubString(cs,8,StringLength(cs)))
 endif
@@ -56141,6 +56204,11 @@ call SwMoveCG(Lucy[jn-1],1-ta)
 set tm=GetPlayerTeam(p)
 call SetPlayerTeam(p,GetPlayerTeam(ps))
 call SetPlayerTeam(ps,tm)
+// Ban Draft Mode: новая команда — и серверу рейтинга (W3MMD Team)
+if DraftDone then
+call W3MMD_Lite_Set_Integer(p,"Team",TeamOfP(a))
+call W3MMD_Lite_Set_Integer(ps,"Team",TeamOfP(jn-1))
+endif
 call DisplayChatMessageEx(null,CHAT_RECIPIENT_UNKNOWN,10,true,Color[a]+GetPlayerName(p)+"|r"+Lng(" перешёл в команду соперника, а "," switched to the enemy team, and ")+Color[jn-1]+GetPlayerName(ps)+"|r"+Lng(" (вышел) — в его бывшую команду"," (left) moved to the former team"))
 set p=null
 set ps=null
@@ -56220,7 +56288,9 @@ function Draft_CopyEnum takes nothing returns nothing
     call GroupAddUnit(DraftTmpG,GetEnumUnit())
 endfunction
 
-// перекладка героев в группы команд по TeamOfP; у кого команды нет — остаётся в своей группе
+// перекладка героев в группы команд по TeamOfP; у кого команды нет — остаётся в своей группе. Только перед стартом
+// раунда (Trig_Start): по ходу раунда всё в группы кладётся по TeamOfP, а взятый на время чужой герой (Bullet of
+// Obsession, A0YT) — по хозяину, которому его вернут (SH_CS)
 function Draft_FixCG takes nothing returns nothing
     local group g
     local group g1
@@ -56228,6 +56298,7 @@ function Draft_FixCG takes nothing returns nothing
     local unit u
     local integer k=1
     local integer t
+    local player po
     if not DraftDone then
         return
     endif
@@ -56243,7 +56314,11 @@ function Draft_FixCG takes nothing returns nothing
             set u=FirstOfGroup(g)
             exitwhen u==null
             call GroupRemoveUnit(g,u)
-            set t=TeamOfP(PId(GetOwningPlayer(u)))
+            set po=GetOwningPlayer(u)
+            if GetUnitAbilityLevel(u,'A0YT')>0 and LoadPlayerHandle(h,GetHandleId(u),SH_CS)!=null then
+                set po=LoadPlayerHandle(h,GetHandleId(u),SH_CS)
+            endif
+            set t=TeamOfP(PId(po))
             if t==0 or (t!=1 and k==1) then
                 call GroupAddUnit(g1,u)
             else
@@ -56265,6 +56340,21 @@ function Draft_FixCG takes nothing returns nothing
     set g=null
     set g1=null
     set g2=null
+    set po=null
+endfunction
+
+// союз слотов i и j: и того, кто за слот играет (PlayerV — судья за вышедшего), и хозяина юнитов слота (Player)
+function Draft_Ally takes integer i,integer j,boolean on returns nothing
+    call SwAlly(PlayerV(i),PlayerV(j),on)
+    if SlotJudge[i]>0 then
+        call SwAlly(Player(i),PlayerV(j),on)
+    endif
+    if SlotJudge[j]>0 then
+        call SwAlly(PlayerV(i),Player(j),on)
+        if SlotJudge[i]>0 then
+            call SwAlly(Player(i),Player(j),on)
+        endif
+    endif
 endfunction
 
 function Draft_Name takes integer i returns string
@@ -56614,7 +56704,8 @@ function Draft_Colors takes nothing returns nothing
         set cs[i]=udg_Color[i+1]
         set cs2[i]=Color[i]
         set col[i]=i
-        if DraftTeam[i]>=0 and i/5==DraftTeam[i] then
+        // цвет занят: игрок остался в своей половине лобби, или он вышел до драфта, а герой его стоит на поле
+        if (DraftTeam[i]>=0 and i/5==DraftTeam[i]) or (DraftTeam[i]<0 and Hero[i]!=null) then
             set used[i]=true
         endif
         set i=i+1
@@ -56665,6 +56756,8 @@ endfunction
 function Draft_Finish takes nothing returns nothing
     local integer i=0
     local integer j
+    local integer c1=0
+    local integer c2=0
     call PauseTimer(DraftT)
     call DestroyTimer(DraftT)
     set DraftT=null
@@ -56697,14 +56790,14 @@ function Draft_Finish takes nothing returns nothing
         loop
             exitwhen j>9
             if DraftTeam[i]>=0 or DraftTeam[j]>=0 then
-                call SwAlly(PlayerV(i),PlayerV(j),TeamOfP(i)==TeamOfP(j))
-                // вышедший до драфта — под общий контроль своей команды, как у -switch
+                call Draft_Ally(i,j,TeamOfP(i)==TeamOfP(j))
+                // юниты вышедшего до драфта — под общий контроль своей команды, как у -switch
                 if TeamOfP(i)==TeamOfP(j) then
-                    if GetPlayerSlotState(PlayerV(i))==PLAYER_SLOT_STATE_LEFT then
-                        call SetPlayerAlliance(PlayerV(i),PlayerV(j),ALLIANCE_SHARED_CONTROL,true)
+                    if GetPlayerSlotState(Player(i))==PLAYER_SLOT_STATE_LEFT then
+                        call SetPlayerAlliance(Player(i),PlayerV(j),ALLIANCE_SHARED_CONTROL,true)
                     endif
-                    if GetPlayerSlotState(PlayerV(j))==PLAYER_SLOT_STATE_LEFT then
-                        call SetPlayerAlliance(PlayerV(j),PlayerV(i),ALLIANCE_SHARED_CONTROL,true)
+                    if GetPlayerSlotState(Player(j))==PLAYER_SLOT_STATE_LEFT then
+                        call SetPlayerAlliance(Player(j),PlayerV(i),ALLIANCE_SHARED_CONTROL,true)
                     endif
                 endif
             endif
@@ -56712,6 +56805,22 @@ function Draft_Finish takes nothing returns nothing
         endloop
         set i=i+1
     endloop
+    // -ff: пороги голосования считались при включении -ff по союзу с игроком слота 1 — пересчитать по командам драфта
+    // (голос и порог берутся по GetPlayerTeam, его выставили выше); так же, как ActivateForfeit — живые люди
+    set i=0
+    loop
+        exitwhen i>9
+        if GetPlayerSlotState(PlayerV(i))==PLAYER_SLOT_STATE_PLAYING and GetPlayerController(PlayerV(i))==MAP_CONTROL_USER then
+            if TeamOfP(i)==0 then
+                set c1=c1+1
+            elseif TeamOfP(i)==1 then
+                set c2=c2+1
+            endif
+        endif
+        set i=i+1
+    endloop
+    call SetMMDInt("TotalTeam1",c1)
+    call SetMMDInt("TotalTeam2",c2)
     call Draft_Colors()
     // лидерборд и верхняя панель героев — по командам драфта
     call Draft_Board()
@@ -56799,7 +56908,8 @@ function Draft_Begin takes nothing returns nothing
     loop
         exitwhen i>9
         set DraftTeam[i]=-1
-        if GetPlayerSlotState(PlayerV(i))==PLAYER_SLOT_STATE_PLAYING then
+        // слот, за который уже играет судья (за вышедшего), в драфт не идёт и остаётся в своей команде — как у -switch
+        if GetPlayerSlotState(PlayerV(i))==PLAYER_SLOT_STATE_PLAYING and SlotJudge[i]==0 then
             if TeamOfP(i)==0 and DraftCap[0]==-1 then
                 set DraftCap[0]=i
                 set DraftTeam[i]=0
@@ -59622,6 +59732,9 @@ call TSE_TimerStart(CreateTimer(),0.5,true,function ArenaWatch)
 endfunction
 function EndOfChoiceCond takes nothing returns boolean
 set n=GetTriggerUnit()
+if DraftOn and (not DraftDone or DraftGoT!=null) then
+return false
+endif
 if FFAMode==false then
 return OwnerOf(n)!=PlayerV(14)and GetUnitAbilityLevel(n,'A14Y')==0 and GetUnitTypeId(GetTriggerUnit())!='H03W' and GetUnitTypeId(GetTriggerUnit())!='H03X' and GetUnitTypeId(GetTriggerUnit())!='H03V' and GetUnitTypeId(GetTriggerUnit())!='H03U' and GetUnitTypeId(GetTriggerUnit())!='H03T' and GetUnitTypeId(GetTriggerUnit())!='H03Y' and GetUnitTypeId(GetTriggerUnit())!='H03O' and GetUnitTypeId(n)!='H007' and GetUnitTypeId(n)!='Ho13' and GetUnitTypeId(n)!='H34X' and GetUnitTypeId(n)!='H14F' and GetUnitTypeId(n)!='H035' and IsUnitType(n,UNIT_TYPE_HERO)==true and udg_B==true and(GroupIsDeath(udg_CG[1])and GroupIsDeath(udg_CG[2])) or (GroupIsDeath(udg_CG[1])and GroupIsDeath(udg_CG[3])) or (GroupIsDeath(udg_CG[2])and GroupIsDeath(udg_CG[3]))
 else
@@ -59913,7 +60026,6 @@ function EndOfChoiceAct takes nothing returns nothing
     call PauseTimer(TD2)
     call PauseTimer(TD3)
     call PauseTimer(TD4)
-call Draft_FixCG()
     if TC==false then
         if FFAMode==false then
             if GroupIsDeath(udg_CG[2]) then
@@ -61357,6 +61469,13 @@ local real x1=GetRectMinX(gg_rct_Weiw)
 local real y=GetRectMaxY(gg_rct_Weiw)
 local real y1=GetRectMinY(gg_rct_Weiw)
 // call ClearStrings()
+// Ban Draft Mode: пока идёт драфт и 10 c после него, раунд не стартует (-start в тест-режиме); Draft_Go обнуляет
+// DrwTick и DraftGoT перед своим TriggerExecute
+if DraftOn and (DrwTick!=null or DraftGoT!=null) then
+    call DestroyGroup(g)
+    set g=null
+    return
+endif
 if DraftOn and not DraftDone and round==1 and FFAMode==false then
     call DestroyGroup(g)
     set g=null
