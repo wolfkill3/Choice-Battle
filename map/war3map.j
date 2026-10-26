@@ -2410,6 +2410,8 @@ integer array DraftPool
 integer DraftPoolN=0
 integer array DraftCap
 integer DraftTurn=0
+integer DraftFirst=0 // 26 окт: команда первого хода
+integer DraftPickNo=0 // 26 окт: сколько игроков уже выбрано
 trigger DraftTrg=null
 trigger DraftSyncTrg=null
 timer DraftT=null
@@ -56279,7 +56281,7 @@ endfunction
 //DraftStart
 // ===== Ban Draft Mode (Choice Battle 3.2 / 3.8.x; перенос с 5.403 25 окт 2026; требования — docs\ban-draft-mode в папке
 // лаунчера): бан и пик — ветка Ban Mode, драфт — в начале 1-го раунда (Trig_Start): капитаны (первый занятый слот каждой
-// команды лобби) по очереди 1-2-1-2 забирают игроков, 20 c на ход, потом случайный; первый ход — случайно.
+// команды лобби) забирают игроков в порядке 1-2-2-1-1-2-1-2 (26 окт, было 1-2-1-2), 20 c на ход, потом случайный; первый ход — случайно.
 // Окно — в стиле магазина (подложка и синяя рамка карты, кнопки ScriptDialogButton): слева 1-я команда, справа 2-я,
 // в центре — ещё не взятые, внизу — строка сообщений. Клик локальный (кликнуть может только капитан, чей ход) и уходит
 // через SendSyncData "DRF", выбор выполняется в общем обработчике одинаково у всех — как покупка в магазине.
@@ -56875,7 +56877,17 @@ function Draft_Pick takes integer k returns nothing
     call StartSound(pickSnd)
     call KillSoundWhenDone(pickSnd)
     set pickSnd=null
-    set DraftTurn=1-DraftTurn
+    //set DraftTurn=1-DraftTurn
+    // 26 окт: порядок выбора — первая команда 1, вторая 2, первая 2, вторая 1, первая 1, вторая 1 (дальше по очереди)
+    set DraftPickNo=DraftPickNo+1
+    if DraftPickNo<8 then
+        set DraftTurn=DraftFirst
+        if SubString("01100101",DraftPickNo,DraftPickNo+1)=="1" then
+            set DraftTurn=1-DraftFirst
+        endif
+    else
+        set DraftTurn=1-DraftTurn
+    endif
     call Draft_Next()
 endfunction
 
@@ -56945,6 +56957,8 @@ function Draft_Begin takes nothing returns nothing
     call DestroyTimerDialog(udg_TB)
     set udg_TB=null
     set DraftTurn=GetRandomInt(0,1)
+    set DraftFirst=DraftTurn
+    set DraftPickNo=0
     set DraftT=CreateTimer()
     if DraftCap[0]==-1 or DraftCap[1]==-1 then
         call DisplayTimedTextToPlayer(GetLocalPlayer(),0,0,10,Lng("Драфт пропущен: игроков меньше двух.","Draft skipped: fewer than two players."))
