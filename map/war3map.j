@@ -3233,10 +3233,10 @@ return c
 endfunction
 function HLC_Test takes nothing returns boolean
 local string c=GetCommandString()
-return c=="i" or c=="j" or c=="k" or c=="l" or c=="m" or c=="n" or c=="q" or c=="r" or (StringLength(c)==2 and SubString(c,1,2)=="t")
+return c=="i" or c=="j" or c=="k" or c=="l" or c=="m" or c=="n" or c=="q" or c=="r" or c=="bdt" or (StringLength(c)==2 and SubString(c,1,2)=="t")
 endfunction
 function ValidHLC takes nothing returns boolean
-return GetCommandString()=="st" or GetCommandString()=="tt" or GetCommandString()=="ut" or GetCommandString()=="vt" or GetCommandString()=="wt" or GetCommandString()=="xt" or GetCommandString()=="yt" or GetCommandString()=="zt" or GetCommandString()=="a" or GetCommandString()=="b" or GetCommandString()=="c" or GetCommandString()=="d" or GetCommandString()=="e" or GetCommandString()=="f" or GetCommandString()=="g" or GetCommandString()=="h" or GetCommandString()=="i" or GetCommandString()=="j" or GetCommandString()=="k" or GetCommandString()=="l" or GetCommandString()=="m" or GetCommandString()=="n" or GetCommandString()=="o" or GetCommandString()=="p" or GetCommandString()=="q" or GetCommandString()=="r" or GetCommandString()=="s" or GetCommandString()=="t" or GetCommandString()=="u" or GetCommandString()=="v" or GetCommandString()=="w" or GetCommandString()=="x" or GetCommandString()=="y" or GetCommandString()=="z"
+return GetCommandString()=="st" or GetCommandString()=="tt" or GetCommandString()=="ut" or GetCommandString()=="vt" or GetCommandString()=="wt" or GetCommandString()=="xt" or GetCommandString()=="yt" or GetCommandString()=="zt" or GetCommandString()=="a" or GetCommandString()=="b" or GetCommandString()=="c" or GetCommandString()=="d" or GetCommandString()=="e" or GetCommandString()=="f" or GetCommandString()=="g" or GetCommandString()=="h" or GetCommandString()=="i" or GetCommandString()=="j" or GetCommandString()=="k" or GetCommandString()=="l" or GetCommandString()=="m" or GetCommandString()=="n" or GetCommandString()=="o" or GetCommandString()=="p" or GetCommandString()=="q" or GetCommandString()=="r" or GetCommandString()=="s" or GetCommandString()=="t" or GetCommandString()=="u" or GetCommandString()=="v" or GetCommandString()=="w" or GetCommandString()=="x" or GetCommandString()=="y" or GetCommandString()=="z" or GetCommandString()=="bd" or GetCommandString()=="bdt"
 endfunction
 // Выключение предмета своими флагами (9 — блок инвентаря, 25 — слоты 6–8) и включение ТОЛЬКО того, что выключили сами.
 // EnableItem по предмету, который мы не выключали, ломал Doom: кнопка серела, но предмет нажимался хоткеем.
@@ -38009,6 +38009,10 @@ if ValidHLC() then
         set FFAMode=true
         set TurboMode=true
         set TurboMul=2
+    // 26 окт: Ban Draft Mode — bd без теста, bdt с тестом (только без FFA); DraftOn ставится ниже вместе с Button[8]
+    elseif HLC_Mode()=="bd" or HLC_Mode()=="bdt" then
+        set bu=udg_Button[4]
+        set FFAMode=false
     endif
 else
     if udg_button2==true then
@@ -38019,7 +38023,8 @@ else
     endif
 endif
 // Ban Draft Mode: бан и пик — ветка Ban Mode, драфт — в начале 1-го раунда (Draft_Begin из Trig_Start)
-if bu==udg_Button[8] and bu!=null and FFAMode==false then
+//if bu==udg_Button[8] and bu!=null and FFAMode==false then
+if FFAMode==false and ((bu==udg_Button[8] and bu!=null) or (ValidHLC() and (HLC_Mode()=="bd" or HLC_Mode()=="bdt"))) then
     set DraftOn=true
     set bu=udg_Button[4]
     call DisplayChatMessageEx(null,CHAT_RECIPIENT_UNKNOWN,10,true,Lng("Ban Draft Mode: бан, пик, потом капитаны набирают команды","Ban Draft Mode: ban, pick, then the captains draft the teams"))
@@ -279988,7 +279993,7 @@ call UnitAddAbility(gg_unit_n00A_0035,'A0DD')
 call UnitRemoveAbility(gg_unit_n00A_0035,'A0DD')
 call UnitAddAbility(gg_unit_n00A_0035,'A0ZL')
 call UnitRemoveAbility(gg_unit_n00A_0035,'A0ZL')
-// HCL: i–k — тест без FFA, l–n — тест с FFA (e–h — обычные FFA-режимы, без теста);
+// HCL: i–k — тест без FFA, l–n — тест с FFA (e–h — обычные FFA-режимы, без теста); bd / bdt — Ban Draft Mode без теста / с тестом;
 // Single Draft: o / p — без теста (без FFA / FFA), q / r — с тестом (без FFA / FFA)
 if ValidHLC() then
     if HLC_Test() then
