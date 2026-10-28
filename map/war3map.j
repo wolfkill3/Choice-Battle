@@ -50,6 +50,8 @@ constant integer SH_RemFOn = StringHash("RemFOn")
 constant integer SH_RemFight = StringHash("RemFight")
 constant integer SH_RemFightTime = StringHash("RemFightTime")
 constant integer SH_RemAtkSnd = StringHash("RemAtkSnd")
+constant integer SH_AkaStk = StringHash("AkaStk")
+constant integer SH_DMBoard = StringHash("DMBoard") // Дезмастер: табличка энергии запущена (ключ — номер игрока)
 constant integer SH_RemLeak = StringHash("RemLeak")
 constant integer SH_RemTmpLife = StringHash("RemTmpLife")
 constant integer SH_RemKillLife = StringHash("RemKillLife")
@@ -687,6 +689,9 @@ effect bjLCE = null
 effect Tower = null
 effect Fountain = null
 effect KingOfHill = null
+// 28 окт (3.8.2): зона царя горы — круг этого радиуса от центра gg_rct_KingOfHillRect; кольцо RingPulse.mdx рисуется по нему
+// (линия кольца — 98.8 * масштаб; при масштабе 6.2 — как старый квадрат SquarePulse)
+real KOH_R=612.
 framehandle array TeamBar
 framehandle  KingOfHillIcon
 framehandle  KingOfHillContainer=null
@@ -1013,6 +1018,14 @@ hashtable DMG_IHT=InitHashtable()
 string array SND_Pre
 integer SND_PreN=0
 integer SND_PreI=0
+integer SND_PreS=0
+real DSC_K=1.
+// Дезмастер (3.8.2, из 5.3): герой на карте (один) и общий дамми его способностей
+unit Deadmaster=null
+unit n00=null
+integer array ArenaStuckN
+real array ArenaStuckX
+real array ArenaStuckY
 // массив звуков (SND_Add / SndN / SndByPath)
 integer array SND_Cnt
 integer array SND_Rot
@@ -2317,6 +2330,8 @@ constant integer SH_TouHollow=StringHash("TouHollow") // 22 окт: Тоусен
 constant integer SH_TouPortrait=StringHash("TouPortrait") // 22 окт: портрет Тоусена до превращения
 constant integer SH_TouIcon=StringHash("TouIcon") // 22 окт: иконка Тоусена до превращения
 constant integer SH_TouCharge=StringHash("TouCharge") // 22 окт: идёт зарядка превращения в муху
+constant integer SH_TouDmg0=StringHash("TouDmg0") // 28 окт: базовый урон перед сменой юнита муха <-> Тоусен
+constant integer SH_TouAgi0=StringHash("TouAgi0") // 28 окт: белая ловкость перед сменой юнита
 constant integer SH_TouStr=StringHash("TouStr") // 22 окт: +15% характеристик мухи (сколько добавлено)
 constant integer SH_TouAgi=StringHash("TouAgi")
 constant integer SH_TouInt=StringHash("TouInt")
@@ -2393,15 +2408,6 @@ integer TSE_TN=0
 integer TSE_TCur=0
 timer array TSE_PT
 integer TSE_PN=0
-boolean LANG_EN=false // язык интерфейса у локального игрока (LANG_Init, -en / -ru)
-hashtable LANG_HT=InitHashtable()
-integer LANG_N=0
-integer LANG_I=0
-group LANG_G=CreateGroup()
-boolean LANG_Applied=false // какой язык сейчас выставлен у локального игрока
-boolean LANG_Dirty=false
-rect LANG_R=null
-timer LANG_Clock=null
 //DraftGlobals (Ban Draft Mode)
 boolean DraftOn=false
 boolean DraftDone=false
@@ -2434,6 +2440,15 @@ framehandle DrwMsg=null
 real DrwMsgLeft=0.
 sound DraftSnd=null
 //DraftGlobalsEnd
+boolean LANG_EN=false // язык интерфейса у локального игрока (LANG_Init, -en / -ru)
+hashtable LANG_HT=InitHashtable()
+integer LANG_N=0
+integer LANG_I=0
+group LANG_G=CreateGroup()
+boolean LANG_Applied=false // какой язык сейчас выставлен у локального игрока
+boolean LANG_Dirty=false
+rect LANG_R=null
+timer LANG_Clock=null
 endglobals
 native MergeUnits       takes integer qty, integer a, integer b, integer make returns boolean   // reserved native for call 4 integer function and return BOOLEAN value
 native ConvertUnits takes integer qty, integer id returns boolean                                                       // reserved native for call 2 integer function and return BOOLEAN value (can be converted to int!)
@@ -3795,6 +3810,13 @@ function AST_IsAssist takes integer i, unit c, unit u, integer iu, real asd retu
 endfunction
 // деление золота за убийство asg: котёл 100%, доли — по урону за окно (AST_Dmg); убийце не меньше 40%,
 // помощнику не меньше 10% (контроль, лечение, щит без урона); без помощников всё убийце. Помощники — в PlayerH.
+// 28 окт (3.8.2): Ключ Баб-Илу — множитель золота игрока pi: 1+k с ключом у героя, иначе 1
+function BabiluGoldK takes integer pi,real k returns real
+    if pi>=0 and pi<12 and UnitHasItemOfTypeBJ(Hero[pi],'IBBi') then
+        return 1.+k
+    endif
+    return 1.
+endfunction
 function AST_PayKill takes integer iu, unit c, integer asg, integer asStreak, string msg returns nothing
     local integer asi=GetHandleId(c)
     local integer ask=0
@@ -3818,7 +3840,7 @@ function AST_PayKill takes integer iu, unit c, integer asg, integer asStreak, st
         set ask=ask+1
     endloop
     if asn==0 then
-        set asv=asg+asStreak
+        set asv=R2I((asg+asStreak)*BabiluGoldK(iu,0.2)) // 3.8.2: Ключ Баб-Илу +20%
         call SetPlayerState(PlayerV(iu),PLAYER_STATE_RESOURCE_GOLD,GetPlayerState(PlayerV(iu),PLAYER_STATE_RESOURCE_GOLD)+asv)
         call DisplayTextToPlayer(GetLocalPlayer(),0,0,msg+" |cFFFFCC00+"+I2S(asv)+"|r")
         return
@@ -3868,7 +3890,7 @@ function AST_PayKill takes integer iu, unit c, integer asg, integer asStreak, st
         endif
         set ask=ask+1
     endloop
-    set asv=R2I(asg*ask2+asStreak*ask3)
+    set asv=R2I((asg*ask2+asStreak*ask3)*BabiluGoldK(iu,0.2)) // 3.8.2: Ключ Баб-Илу +20%
     call SetPlayerState(PlayerV(iu),PLAYER_STATE_RESOURCE_GOLD,GetPlayerState(PlayerV(iu),PLAYER_STATE_RESOURCE_GOLD)+asv)
     call DisplayTextToPlayer(GetLocalPlayer(),0,0,msg+" |cFFFFCC00|||r "+Color[iu]+GetUnitName(Hero[iu])+"|r +"+I2S(asv)+ass)
 endfunction
@@ -4252,6 +4274,9 @@ function myCustomDamage takes unit whichUnit, unit target, real amount, boolean 
         // Калейдожезл Руби
         if GetUnitAbilityLevel(target,'B072') > 0 then
             set currentDmg = currentDmg * 1.15
+        endif
+        if GetUnitAbilityLevel(whichUnit,'DMT2') > 0 then // Дезмастер T
+            set currentDmg = currentDmg * 1.3
         endif
                 
         // if GetUnitAbilityLevel(whichUnit,'A0U5') > 0 then
@@ -4927,6 +4952,12 @@ function myCustomHeal2 takes unit target, real amount returns real
     if GetUnitTypeId(target)=='H02O' and GetHeroLevel(target)>5 then //Buu Passive
         // +1% при пустой мане .. +20% при полной (было +4.9% .. +25%)
         set currentHeal = currentHeal * (1.01+(GetUnitState(target,UNIT_STATE_MANA) / GetUnitState(target,UNIT_STATE_MAX_MANA))*0.19)
+    endif
+    if GetUnitAbilityLevel(target,'DMT2') > 0 then // Дезмастер T: +30%
+        set currentHeal = currentHeal * 1.3
+    endif
+    if GetUnitAbilityLevel(target,'DMT3') > 0 then // Дезмастер T: -30% врагам в зоне
+        set currentHeal = currentHeal * 0.7
     endif
     if GetUnitAbilityLevel(target,'BNC1') > 0 or GetUnitAbilityLevel(target,'BNC2') > 0 then // эссенс
         set currentHeal=0
@@ -12401,6 +12432,18 @@ call SND_Add(4903,2,"Sound\\Tousen\\TousenGrilloT-sfx.mp3",12700)
 call SND_Add(4905,2,"Sound\\Tousen\\TousenGrilloG.mp3",12700)
 call SND_Add(4907,2,"Sound\\Tousen\\TousenGrilloG-sfx1.mp3",12700)
 call SND_Add(4909,2,"Sound\\Tousen\\TousenGrilloG-sfx2.mp3",12700)
+// Дезмастер (3.8.2)
+call SND_Add(4911,2,"Voice\\DeadMasterSummon.mp3",12700)
+call SND_Add(4913,2,"Sound\\DeadMaster\\DeadMaster_D.mp3",12700)
+call SND_Add(4915,2,"Sound\\DeadMaster\\DeadMaster_E.mp3",12700)
+call SND_Add(4917,2,"Sound\\DeadMaster\\DeadMaster_F.mp3",12700)
+call SND_Add(4919,2,"Sound\\DeadMaster\\DeadMaster_G.mp3",12700)
+call SND_Add(4921,2,"Sound\\DeadMaster\\DeadMaster_Q1.mp3",12700)
+call SND_Add(4923,2,"Sound\\DeadMaster\\DeadMaster_Q2.mp3",12700)
+call SND_Add(4925,2,"Sound\\DeadMaster\\DeadMaster_R1.mp3",12700)
+call SND_Add(4927,2,"Sound\\DeadMaster\\DeadMaster_R2.mp3",12700)
+call SND_Add(4929,2,"Sound\\DeadMaster\\DeadMaster_T.mp3",12700)
+call SND_Add(4931,2,"Sound\\DeadMaster\\DeadMaster_W.mp3",12700)
 endfunction
 function SND_ArrInit takes nothing returns nothing
 call ExecuteFunc("SND_Arr0")
@@ -14030,7 +14073,7 @@ call ForGroup(g,function GroupAddGroupEnum)
 return bj_groupAddGroupDest
 endfunction
 function Condition_RecipeString takes integer id returns boolean
-return id=='I00E' or id=='I01P' or id=='I01R' or id=='I01T' or id=='I01V' or id=='I02U' or id=='I02X' or id=='I02Z' or id=='I045' or id=='I047' or id=='I04Y' or id=='I04U' or id=='I04X' or id=='I04Z' or id=='I051' or id=='I14R' or id=='IGDr' or id=='IPar' or id=='IHYr' or id=='ISTr' or id=='IBSR' or id=='I052' or id=='I053' or id=='I055' or id=='I06P' or id=='I06S' or id=='I06T' or id=='IPRR' or id=='IPlR' or id=='IBS1' or id=='IYM0' or id=='IGn0' or id=='IBN0' or id=='IGP0' or id=='IVS0' or id=='ISS0' or id=='ITS0'
+return id=='IBBr' or id=='I00E' or id=='I01P' or id=='I01R' or id=='I01T' or id=='I01V' or id=='I02U' or id=='I02X' or id=='I02Z' or id=='I045' or id=='I047' or id=='I04Y' or id=='I04U' or id=='I04X' or id=='I04Z' or id=='I051' or id=='I14R' or id=='IGDr' or id=='IPar' or id=='IHYr' or id=='ISTr' or id=='IBSR' or id=='I052' or id=='I053' or id=='I055' or id=='I06P' or id=='I06S' or id=='I06T' or id=='IPRR' or id=='IPlR' or id=='IBS1' or id=='IYM0' or id=='IGn0' or id=='IBN0' or id=='IGP0' or id=='IVS0' or id=='ISS0' or id=='ITS0'
 endfunction
 function Condition_AbilityString3 takes integer id returns boolean
 return id=='OM13' or id=='A17D' or id=='A177' or id=='A172' or id=='A16U' or id=='A0TN'  or id=='MrF1' or id=='MrT1' or id=='MrG2' or id=='RsT1' or id=='RsF1' or id=='SiF1' or id=='SiF2' or id=='SiE1' or id=='SiE2' or id=='BbT1' or id=='FlW1' or id=='FlG1' or id=='RmQ1' or id=='SuE1' or id=='SuF1' or id=='SuD1' or id=='SnE1' or id=='A0JA'
@@ -22918,6 +22961,16 @@ function KiyoRage takes unit c,real per returns nothing
     call TSE_TimerStart(sysTimer,0.01,true,function KiyoRage2)
     set sysTimer=null
 endfunction
+// 28 окт (3.8.2): спасение от смерти (Туман Маре, Комплект Анбу, богиня Мадоки) снимает некроз и обморожение эссенции льда.
+// Возвращает множитель восстановления: 0.5, если они висели, иначе 1. Таймеры Essence2 / FrozenCast2 сами закончатся без баффа.
+function DeathSaveCleanse takes unit u returns real
+    if GetUnitAbilityLevel(u,'BNC1')>0 or GetUnitAbilityLevel(u,'BNC2')>0 then
+        call UnitRemoveAbility(u,'BNC1')
+        call UnitRemoveAbility(u,'BNC2')
+        return 0.5
+    endif
+    return 1.
+endfunction
 function Essence2 takes nothing returns nothing
     local integer id=GetHandleId(GetExpiredTimer())
     local unit c=LoadUnitHandle(h,id,4)
@@ -25325,6 +25378,396 @@ function SND_PreList3 takes nothing returns nothing
     set SND_Pre[SND_PreN]="Sound\\Roshi\\Roshi_G0.mp3"
     set SND_PreN=SND_PreN+1
 endfunction
+// 28 окт (3.8.2): озвучки вызова героев грузятся заранее (остальная предзагрузка выключена 15 окт).
+// Прогреваются сами звуки массива (первый StartSound незагруженного звука в WC3 молчит, а озвучка вызова играет раз за игру):
+// запуск с громкостью 0 и остановка на следующем тике — каналы не занимаются (173 звука разом забивали их).
+function SND_PreVoices takes nothing returns nothing
+    set SND_Pre[SND_PreN]="Voice\\Aizen.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\Ichigo.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\HIchigo_Summon.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\Nell.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\Mayri.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\Ulqa.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\Gin.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\Ishida.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\NatsuSummon.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\PickAce.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\FriezaPick.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\LaxusSummon.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\DoflamingoSummon.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\LuffieSummon.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\WhitebeardSummon.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\KizaruSummon.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\NamiSummon.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\PeinSummon.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\JirayaSummon.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\MinatoSummon.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\BeeSummon.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\HakuSummon.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\Genkishi.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\Gamma.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\Xanxus.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\Tsuna.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\Mukuro.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\Yamamoto.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\Ryohei.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\Viper.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\Hibari.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\Byakuran.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\Lambo.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\GokuderaPick.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\Tamamo.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\Scathachsummon.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\GilgameshSummon.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\RyougiShiki.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\SaberAlterPrewiew.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\SaberLilyPrewiew.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\SaberPrewiew.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\EmiyaArcherPrewiew.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\SaberSakuraPrewiew.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\Emiya.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\NanayaPrewiew.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\ArcueidPrewiew.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\JeanneAlter.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\NeroSaberSummon.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\LiShuwenPrewiew.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\AtalantaPrewiew.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\X-SaberPrewiew.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\ArturiaMasterPrewiew.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\DrakePreview.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\KingHassanSummon.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\ArchetypeSummon.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\JeannePrewiev.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\EnkidoPick.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\Kuuko.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\MomongaSummon.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\GonSummon.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\KilluaSummon.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\Kurapika.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\BlackStarSummon.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\MakaSummon.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\DeathTheKidSummon.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\BrolySummon.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\BrolySummon-jap.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\CellSummon.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\CellSummon-jap.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\GogetaSummon.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\GogetaSummon-jap.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\GokuSummon.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\GokuSummon-jap.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\VegetaSummon.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\VegetaSummon-jap.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\TrunksSummon.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\TrunksSummon-jap.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\VegitoSummon.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\VegitoSummon-jap.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\JirenSummon.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\JirenSummon-jap.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\AkameSummon.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\YujiSummon.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\ShanaSummon.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\StiylMagnusSummon.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\AccelPick.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\MisakaSummon.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\KamidzeToumaSummon.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\FrendaSummon.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\KireiSummon.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\EdmondDantesSummon.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\DeidaraSummon.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\OrochimaruSummon.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\FriezaPick-jap.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\GintokiPick.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\NeroPadoruPick.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\MidoriyaPick.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\AkainuSummon.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\WendySummon.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\KiyohimeSummon.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\NejiSummon.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\WaverSummon.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\MeloiSummon.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\Albedo_Summon.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\Rengoku_Summon.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\Belphegor_Summon.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\Minato_Summon.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\Madoka_Summon.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\Arthur_Summon.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\KazumaSummon.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\NeroBrideSummon.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\OumaSummon.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\YoumuSummon.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\KatsuraSummon.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\InoriSummon.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\SinonSummon.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\LouiseSummon.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\KiritoSummon.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\DanteSummon.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\VergilSummon.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\UraharaSummon.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\TousenSummon.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\OrihimeSummon.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\ItachiSummon.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\KimimaroSummon.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\GaaraSummon.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\MeiSummon.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\MadaraSummon.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\NarutoSummon.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\SasukeSummon.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\SakuraSummon.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\TsunadeSummon.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\JellalSummon.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\GraySummon.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\LucySummon.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\GajeelSummon.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\GunhaSummon.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\SanjiSummon.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\EnelSummon.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\ZoroSummon.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\MoriaSummon.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\AokijiSummon.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\LucciSummon.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\FujitoraSummon.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\LawSummon.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\ShielderSummon.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\RinSummon.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\BuuSummon.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\GotenksSummon.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\YoruichiSummon.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\TobiramaSummon.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\HashiramaSummon.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\DanzoSummon.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\KarnaSummon.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\SabracSummon.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\GojoSummon.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\GarpSummon.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\BarraganSummon.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\SignumSummon.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\RoshiSummon.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\AizenGin.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\AizenIchigo.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\IchidaMayri.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\IchigoUlqa.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\IchigoNell.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\IshidaIchigo.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\YujiAndShana.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\ByakuranMukuro.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\ByakuranTsuna.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\GilvsSaber.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\ShirouGilgameshUBW.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\Heroine_X_myroom_Nero.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\HirakoSummon.mp3"
+    set SND_PreN=SND_PreN+1
+    set SND_Pre[SND_PreN]="Voice\\DeadMasterSummon.mp3"
+    set SND_PreN=SND_PreN+1
+endfunction
+// включить (on) или выключить звуки озвучки SND_Pre[i] из массива soundStr
+function SND_PreVoiceSet takes integer i,boolean on returns nothing
+    local integer b=LoadInteger(SND_IX,StringHash(SND_Pre[i]),0)
+    local integer k=0
+    if b<=0 then
+        return
+    endif
+    loop
+        exitwhen k>=SND_Cnt[b]
+        if on then
+            call SetSoundVolume(soundStr[b+k],0)
+            call StartSound(soundStr[b+k])
+        else
+            call StopSound(soundStr[b+k],false,false)
+            call SetSoundVolume(soundStr[b+k],127)
+        endif
+        set k=k+1
+    endloop
+endfunction
+function SND_PreVoiceTick takes nothing returns nothing
+    local integer sni=SND_PreS
+    loop
+        exitwhen sni>=SND_PreI
+        call SND_PreVoiceSet(sni,false)
+        set sni=sni+1
+    endloop
+    if SND_PreI>=SND_PreN then
+        call TSE_DestroyTimer(GetExpiredTimer())
+        return
+    endif
+    set SND_PreS=SND_PreI
+    loop
+        exitwhen SND_PreI>=SND_PreN or SND_PreI-SND_PreS>=5
+        call SND_PreVoiceSet(SND_PreI,true)
+        set SND_PreI=SND_PreI+1
+    endloop
+endfunction
 // по 15 звуков раз в 0.1 с, чтобы не было рывка при старте
 function SND_PreTick takes nothing returns nothing
     local integer sni=0
@@ -25757,6 +26200,9 @@ exitwhen i>153
 endloop
 // звуки периодических способностей — постепенно
 //call SND_PreStart()
+// озвучки вызова героев — постепенно
+call SND_PreVoices()
+call TSE_TimerStart(CreateTimer(),0.1,true,function SND_PreVoiceTick)
 endfunction
 function InitTrig_VoicePreload takes nothing returns nothing
 set gg_trg_VoicePreload=CreateTrigger()
@@ -25838,6 +26284,8 @@ set l__s="Tamamo.mp3"
 elseif id=='HShn' then
 // Хирако (17 окт): голос из видео youtube UzYHGoqx_jA, первые 10 с (ChoiceShinji.mpq)
 set l__s="HirakoSummon.mp3"
+elseif id=='HDMa' then
+set l__s="DeadMasterSummon.mp3"
 endif
 if id=='H06Z' or id=='H16Z' then
 set l__s="Scathachsummon.mp3"
@@ -26499,7 +26947,7 @@ call SetPlayerAbilityAvailableBJ(false,'KI1H',PlayerVC(GetForLoopIndexA()))
 call SaveBoolean(HH,PH(PlayerVC(GetForLoopIndexA())),SOUND_LANGUAGE,true)
 set bj_forLoopAIndex=bj_forLoopAIndex+1
 endloop
-call FogMaskEnableOn()
+call FogMaskEnable(false)
 set udg_Color[1]="|cffFF0000"
 set udg_Color[2]="|cff0066CC"
 set udg_Color[3]="|cff66FFCC"
@@ -26678,6 +27126,9 @@ set udg_RH[142]='HFla'//Flandre
 //Shinji1start
 set udg_RH[145]='HShn'//Hirako — на тест (3.7.10)
 //Shinji1end
+//DeadMaster1start
+set udg_RH[146]='HDMa'//Dead Master (3.8.2, из Choice Random 5.3)
+//DeadMaster1end
 loop
 exitwhen i>=210
         if udg_RH[i]!=0 then
@@ -27228,6 +27679,7 @@ set kombo[i]=0
 set combo[i]=CreateTimer()
 set yamato[i]=CreateTimer()
 call SetPlayerAbilityAvailable(PlayerV(i),'A11T',false)
+call SetPlayerAbilityAvailable(PlayerV(i),'DMQ2',false) //DeadMaster
 call SetPlayerAbilityAvailable(PlayerV(i),'A14R',false)
 call SetPlayerAbilityAvailable(PlayerV(i),'A11N',false)
 call SetPlayerAbilityAvailable(PlayerV(i),'A11M',false)
@@ -38853,6 +39305,7 @@ call TavRole_Set('HRem',17)
 call TavRole_Set('HFla',1041)
 call TavRole_Set('HEsc',1552)
 call TavRole_Set('HShn',2067)
+call TavRole_Set('HDMa',81)
 endfunction
 //TAVROLE_DATA_END
 function TavRole_Name takes integer trB returns string
@@ -40693,6 +41146,15 @@ endif
 if GetUnitAbilityLevel(u,'Blnd')>0 then
 call UnitMakeAbilityPermanent(u,true,'Blnd')
 endif
+//DeadMaster4start
+if GetUnitTypeId(u)=='HDMa' then
+set Deadmaster=u
+call SetPlayerAbilityAvailable(OwnerOf(u),'DMQ2',false)
+call SetPlayerAbilityAvailable(OwnerOf(u),'DMQ1',true)
+call EnableUnitAbility2(u,'DMQ1',false,true)
+call EnableUnitAbility2(u,'DMQ2',false,true)
+endif
+//DeadMaster4end
 if GetUnitTypeId(u)=='H058' then
 call UnitMakeAbilityPermanent(u,true,'A11D')
 call UnitMakeAbilityPermanent(u,true,'A11O')
@@ -46178,6 +46640,37 @@ set EffectID[2601]="Others\\Effect_E (1).mdl"
 set EffectID[2617]="Others\\Effect_E (17).mdl"
 set EffectID[2627]="Others\\Effect_E (27).mdl"
 set EffectID[2630]="Others\\Effect_E (30).mdl"
+//DeadMaster4start (3.8.2, из 5.3)
+set EffectID[592]="DeadMaster\\suanye-duwu.mdx"
+set EffectID[2204]="DeadMaster\\Effect_C (4).mdx"
+set EffectID[2205]="DeadMaster\\Effect_C (5).mdx"
+set EffectID[2208]="DeadMaster\\Effect_C (8).mdx"
+set EffectID[2209]="DeadMaster\\Effect_C (9).mdx"
+set EffectID[2210]="DeadMaster\\Effect_C (10).mdx"
+set EffectID[2216]="DeadMaster\\Effect_C (16).mdx"
+set EffectID[2224]="DeadMaster\\Effect_C (24).mdx"
+set EffectID[2226]="DeadMaster\\Effect_C (26).mdx"
+set EffectID[2235]="DeadMaster\\Effect_C (35).mdx"
+set EffectID[2236]="DeadMaster\\Effect_C (36).mdx"
+set EffectID[2242]="DeadMaster\\Effect_C (42).mdx"
+set EffectID[2250]="DeadMaster\\Effect_C (50).mdx"
+set EffectID[2255]="DeadMaster\\Effect_C (55).mdx"
+set EffectID[1537]="DeadMaster\\EffectCheck (37).mdx"
+set EffectID[2263]="DeadMaster\\Effect_C (63).mdx"
+set EffectID[2269]="DeadMaster\\Effect_C (69).mdx"
+set EffectID[2314]="DeadMaster\\Effect_C (114).mdx"
+set EffectID[2502]="DeadMaster\\es77Green.mdx"
+set EffectID[1446]="DeadMaster\\DeadMasterSkullSmall.mdx"
+set EffectID[2116]="DeadMaster\\Effect_B (16).mdx"
+set EffectID[2254]="DeadMaster\\Effect_C (54).mdx"
+set EffectID[2434]="DeadMaster\\Effect_D (34).mdx"
+set EffectID[2223]="DeadMaster\\Effect_C (23).mdx"
+set EffectID[589]="DeadMaster\\Pillar of Flame Green.mdx"
+set EffectID[1570]="Others\\Effect_A (3).mdx"
+set EffectID[2217]="Others\\Effect_C (17).mdx"
+set EffectID[2220]="Others\\Effect_C (20).mdx"
+set EffectID[2251]="Others\\Effect_C (51).mdx"
+//DeadMaster4end
 
 
 
@@ -47571,7 +48064,7 @@ if cmb!=true then
                 set udg_RH[i]=0
             endif
             set i=i+1
-            exitwhen i>=146 //139; 145 — Хирако (3.7.10)
+            exitwhen i>=147 //139; 145 — Хирако (3.7.10), 146 — Дезмастер (3.8.2)
             endloop
             call RemoveUnit(u)
             call SetPlayerStateBJ(OwnerOf(u),PLAYER_STATE_FOOD_CAP_CEILING,0)
@@ -47711,6 +48204,7 @@ if cmb!=true then
 //Flandre1end
 //Shinji1start
         call IH('HShn',u,"ReplaceableTextures\\CommandButtons\\BTNShinjiHero.blp")
+        call IH('HDMa',u,"ReplaceableTextures\\CommandButtons\\BTNDeadMasterIcon.blp")
 //Shinji1end
 //Escanor1start
         call IH('HEsc',u,"ReplaceableTextures\\CommandButtons\\BTNEscanorHero.blp")
@@ -47820,7 +48314,7 @@ if cmb!=true then
                     set udg_RH[i]=0
                 endif
                 set i=i+1
-                exitwhen i>=146 //139; 145 — Хирако (3.7.10)
+                exitwhen i>=147 //139; 145 — Хирако (3.7.10), 146 — Дезмастер (3.8.2)
             endloop
         endif
         call SaveInteger(h,GetHandleId(u),'A1GS',0)
@@ -47843,7 +48337,7 @@ if IsUnitType(u,UNIT_TYPE_HERO) and CPTModeON and cmb==true then
         call RemoveUnit(u)
         set i=0
         loop
-        exitwhen i>=146 //139; 145 — Хирако (3.7.10)
+        exitwhen i>=147 //139; 145 — Хирако (3.7.10), 146 — Дезмастер (3.8.2)
             if GetUnitTypeId(u)==udg_RH[i] then
                 set udg_RH[i]=0
             endif
@@ -49125,6 +49619,31 @@ return haveShield
 
 endfunction
 
+// 28 окт (3.8.2): белая атака после смены юнита = урон до смены + прирост белой ловкости (морф её не учитывал)
+function TousenDmgFixTick takes nothing returns nothing
+local timer dt=GetExpiredTimer()
+local unit du=LoadUnitHandle(h,GetHandleId(dt),0)
+if du!=null and GetUnitTypeId(du)!=0 then
+call SetUnitBaseDamageByIndex(du,0,LoadInteger(HH,GetHandleId(du),SH_TouDmg0)+GetHeroAgi(du,false)-LoadInteger(HH,GetHandleId(du),SH_TouAgi0))
+endif
+call FlushChildHashtable(h,GetHandleId(dt))
+call TSE_DestroyTimer(dt)
+set du=null
+set dt=null
+endfunction
+// вызывать прямо перед приказом bearform; если поле урона не включает ловкость (меньше её) — не трогаем
+function TousenDmgKeep takes unit u returns nothing
+local timer dt
+if GetUnitBaseDamageByIndex(u,0)<GetHeroAgi(u,false) then
+return
+endif
+call SaveInteger(HH,GetHandleId(u),SH_TouDmg0,GetUnitBaseDamageByIndex(u,0))
+call SaveInteger(HH,GetHandleId(u),SH_TouAgi0,GetHeroAgi(u,false))
+set dt=CreateTimer()
+call SaveUnitHandle(h,GetHandleId(dt),0,u)
+call TSE_TimerStart(dt,0.15,false,function TousenDmgFixTick)
+set dt=null
+endfunction
 function RemoveTransformation takes unit u returns nothing
 if GetUnitTypeId(u)=='H04B' then
     call PauseUnit(u,false)
@@ -49335,6 +49854,7 @@ if GetUnitTypeId(u) == 'H03Q' then
 endif
 // Тоусен-муха (H0TF) -> Тоусен (22 окт)
 if GetUnitTypeId(u) == 'H0TF' then
+    call TousenDmgKeep(u) // 28 окт: белая атака после смены юнита
     call UnitAddAbility(u, 'ToMB')
     call IssueImmediateOrder(u, "bearform")
     call UnitRemoveAbility(u, 'ToMB')
@@ -59728,6 +60248,45 @@ endloop
 call SetUnitX(u,x)
 call SetUnitY(u,y)
 endfunction
+// 28 окт (3.8.2): отмена застревания внутри арены — ближайшее свободное место по спирали (шаг 40, до 800)
+function ArenaUnstick takes unit u returns nothing
+local real x=GetUnitX(u)
+local real y=GetUnitY(u)
+local real r=40.
+local real a
+loop
+exitwhen r>800.
+set a=0.
+loop
+exitwhen a>=6.28
+if RectContainsCoords(gg_rct_GameZone,x+r*Cos(a),y+r*Sin(a)) and ArenaClear(x+r*Cos(a),y+r*Sin(a)) then
+call SetUnitX(u,x+r*Cos(a))
+call SetUnitY(u,y+r*Sin(a))
+return
+endif
+set a=a+0.5236
+endloop
+set r=r+40.
+endloop
+endfunction
+// герой стоит (сдвиг меньше 5) в непроходимой точке 4 проверки подряд (2 с), не на паузе, не скрыт, не летающий
+function ArenaStuckCheck takes integer i returns nothing
+local unit u=Hero[i]
+local real x=GetUnitX(u)
+local real y=GetUnitY(u)
+if IsUnitPaused(u) or IsUnitHidden(u) or IsUnitType(u,UNIT_TYPE_FLYING) or ArenaWalkable(x,y) or SquareRoot((x-ArenaStuckX[i])*(x-ArenaStuckX[i])+(y-ArenaStuckY[i])*(y-ArenaStuckY[i]))>=5. then
+set ArenaStuckN[i]=0
+else
+set ArenaStuckN[i]=ArenaStuckN[i]+1
+if ArenaStuckN[i]>=4 then
+set ArenaStuckN[i]=0
+call ArenaUnstick(u)
+endif
+endif
+set ArenaStuckX[i]=GetUnitX(u)
+set ArenaStuckY[i]=GetUnitY(u)
+set u=null
+endfunction
 function ArenaWatch takes nothing returns nothing
 local integer i=0
 if udg_B==true and DU==true then
@@ -59735,6 +60294,8 @@ loop
 exitwhen i>=12
 if Hero[i]!=null and UnitIsAlive(Hero[i]) and ArenaSkip(Hero[i])==false and (RectContainsUnit(gg_rct_GameZone,Hero[i])==false or (ArenaNearEdge(GetUnitX(Hero[i]),GetUnitY(Hero[i])) and ArenaClear(GetUnitX(Hero[i]),GetUnitY(Hero[i]))==false)) then
 call ArenaReturn(Hero[i])
+elseif Hero[i]!=null and UnitIsAlive(Hero[i]) and ArenaSkip(Hero[i])==false then
+call ArenaStuckCheck(i)
 endif
 set i=i+1
 endloop
@@ -60200,9 +60761,9 @@ function EndOfChoiceAct takes nothing returns nothing
         call SetHeroLevel(Hero[i],GetHeroLevel(Hero[i])+3*TurboMul,true)
         call SetUnitMoveSpeed(Hero[i], GetUnitDefaultMoveSpeed(Hero[i]))
         if round>5 then
-            call SetPlayerState(PlayerV(i),PLAYER_STATE_RESOURCE_GOLD,GetPlayerState(PlayerV(i),PLAYER_STATE_RESOURCE_GOLD)+1250*TurboMul)
+            call SetPlayerState(PlayerV(i),PLAYER_STATE_RESOURCE_GOLD,GetPlayerState(PlayerV(i),PLAYER_STATE_RESOURCE_GOLD)+R2I(1250*TurboMul*BabiluGoldK(i,0.1))) // 3.8.2: Ключ Баб-Илу +10%
         else
-            call SetPlayerState(PlayerV(i),PLAYER_STATE_RESOURCE_GOLD,GetPlayerState(PlayerV(i),PLAYER_STATE_RESOURCE_GOLD)+1000*TurboMul)
+            call SetPlayerState(PlayerV(i),PLAYER_STATE_RESOURCE_GOLD,GetPlayerState(PlayerV(i),PLAYER_STATE_RESOURCE_GOLD)+R2I(1000*TurboMul*BabiluGoldK(i,0.1))) // 3.8.2: Ключ Баб-Илу +10%
         endif
         if noduels==true and ModuloInteger(round,duelround)==0 then
             call SetPlayerState(PlayerV(i),PLAYER_STATE_RESOURCE_GOLD,GetPlayerState(PlayerV(i),PLAYER_STATE_RESOURCE_GOLD)+250)
@@ -60598,8 +61159,8 @@ function KingOfHillActivation takes nothing returns nothing
     call PauseTimer(t)
     if DU2==true then
         call DisplayTextToPlayer(GetLocalPlayer(),0,0,Lng("Активирован режим \"Царь горы\".","\"King of the Hill\" mode activated."))
-        set KingOfHill=AddSpecialEffect("SquarePulse.mdx",GetRectCenterX(gg_rct_KingOfHillRect),GetRectCenterY(gg_rct_KingOfHillRect))
-        call SetSpecialEffectScale(KingOfHill,6.2)
+        set KingOfHill=AddSpecialEffect("RingPulse.mdx",GetRectCenterX(gg_rct_KingOfHillRect),GetRectCenterY(gg_rct_KingOfHillRect))
+        call SetSpecialEffectScale(KingOfHill,KOH_R/98.8)
         call ShowFrame( KingOfHillIcon, true)
         call EnableTrigger(gg_trg_KingOfHill_Enter)
     endif
@@ -61624,6 +62185,16 @@ exitwhen i>=10
         call SaveInteger(HH,GetHandleId(Hero[i]),ROYAL_GUARD_STACKS,0)
         call UnitRemoveAbility(Hero[i],'A26F')
         call UnitRemoveAbility(Hero[i],'A25F')
+        //DeadMaster4start
+        call UnitRemoveAbility(Hero[i],'DMT3')
+        call UnitRemoveAbility(Hero[i],'DME2')
+        if GetUnitTypeId(Hero[i])=='HDMa' then
+            call SetPlayerAbilityAvailable(OwnerOf(Hero[i]),'DMQ2',false)
+            call SetPlayerAbilityAvailable(OwnerOf(Hero[i]),'DMQ1',true)
+            call EnableUnitAbility2(Hero[i],'DMQ1',false,true)
+            call EnableUnitAbility2(Hero[i],'DMQ2',false,true)
+        endif
+        //DeadMaster4end
         call SetUnitState(Hero[i],UNIT_STATE_MANA,GetUnitState(Hero[i],UNIT_STATE_MAX_MANA))
         call UnitResetCooldown(Hero[i])
         if UnitHasItemOfTypeBJCustom(Hero[i], 'I03A') and GetWidgetLife(Hero[i])>0 and IsUnitIllusion(Hero[i])==false then
@@ -67221,6 +67792,28 @@ set t=null
 endfunction
 
 // Сюсуй: функции волны перенесены выше обработчика урона — прок теперь там (21 окт)
+// 28 окт (3.8.2): Ключ Баб-Илу — добивание: после удара у вражеского героя меньше 3% HP и нет щита — добивающий удар
+// (спасения от смерти — Комплект Анбу, Туман Маре и т.п. — срабатывают как обычно)
+function BabiluExecTick takes nothing returns nothing
+    local timer bt=GetExpiredTimer()
+    local unit bs=LoadUnitHandle(h,GetHandleId(bt),0)
+    local unit bu=LoadUnitHandle(h,GetHandleId(bt),1)
+    if bs!=null and bu!=null and UnitIsAlive(bu) and udg_B and GetWidgetLife(bu)<GetUnitState(bu,UNIT_STATE_MAX_LIFE)*0.03 and not HeroHasShield(bu) and not IsUnitInvulnerable(bu) then
+        call myCustomDamage(bs,bu,GetWidgetLife(bu)*3.+50.,false,false,null,DAMAGE_TYPE_UNIVERSAL,null)
+    endif
+    call FlushChildHashtable(h,GetHandleId(bt))
+    call TSE_DestroyTimer(bt)
+    set bt=null
+    set bs=null
+    set bu=null
+endfunction
+function BabiluExec takes unit bs,unit bu returns nothing
+    local timer bt=CreateTimer()
+    call SaveUnitHandle(h,GetHandleId(bt),0,bs)
+    call SaveUnitHandle(h,GetHandleId(bt),1,bu)
+    call TSE_TimerStart(bt,0.,false,function BabiluExecTick)
+    set bt=null
+endfunction
 // кэш предметов юнита для обработчика урона: DMG_IHT[handle юнита][тип предмета]=true
 function DmgItemsRefresh takes unit diw returns nothing
     local integer dii=0
@@ -68392,15 +68985,33 @@ endif
 			//endif
 		endif
 
+     //DeadMaster6Start
+            if GetUnitAbilityLevel( u ,'DMQ3')>0 or GetUnitAbilityLevel( u ,'DMQ4')>0 and nb>0 then
+
+            if GetUnitAbilityLevel( u ,'DMQ3')>0 and GetUnitAbilityLevel( u ,'DMQ4')>0 then
+            
+            call SetUnitState(u,UNIT_STATE_LIFE,GetWidgetLife(u)+nb*0.2)
+            set nb=nb*0.8
+
+            else
+
+            call SetUnitState(u,UNIT_STATE_LIFE,GetWidgetLife(u)+nb*0.1)
+            set nb=nb*0.9
+
+            endif
+
+
+            endif
+     //DeadMaster6End
         if nb>GetWidgetLife(u)and (LoadBoolean(DMG_IHT,uid,'I03F') or GetUnitAbilityLevel(u,'KIJ4')>0)and GetUnitAbilityLevel(u,'B01O')==0 and GetHeroPrimaryAttribute(u)==HERO_ATTRIBUTE_AGI and GetUnitAbilityLevel(u,'A0WR')==0 and nb>0 then
 			if LoadInteger(h, uid, SH_AnbuSet_CD)==0 and GetWidgetMana(u)>=GetWidgetMaxMana(u)*0.25 and GetUnitAbilityLevel(u,'A1CE')==0 then
 				set hn=CreateUnit(damagedPlayer,'e0RA',x,y,0)
 				call UnitApplyTimedLife(hn,'BTLF',1)
 				call SetUnitAnimation(hn,"birth")
                 //call SetEventDamage(0.05)
-				set nb=GetWidgetMaxLife(u)*0.15
+				set nb=GetWidgetMaxLife(u)*0.15*DeathSaveCleanse(u) // 3.8.2: снимает некроз / эссенцию льда, с ними — половина
                 call SetWidgetLife(u, 1)
-                call HealTextTag(u,u,GetWidgetMaxLife(u)*0.15*myCustomHeal2(u,1),"HealthRes")
+                call HealTextTag(u,u,nb*myCustomHeal2(u,1),"HealthRes")
 				call SetWidgetLife(u, nb)
 				set bjLCT=CreateTimer()
 				call SaveUnitHandle(h, GetHandleId(bjLCT), 0, u)
@@ -70183,6 +70794,32 @@ endif
                 call myCustomDamage(Hero[idc],u,GetHeroInt(Hero[idc],true)*3*1.2,false,false,null,null,null)
             endif
         endif
+//DeadMaster6Start
+
+    if GetUnitTypeId(c)=='HDMa'  and GetUnitAbilityLevel(c,'DME2')>0 and nb>0  and (GetUnitAbilityLevel(u,'B017')>0 or GetUnitAbilityLevel(u,'B019')>0 ) and udg_B==true and DU2==true then
+        
+          //GetUnitAbilityLevel(c, 'YECD')==0
+        //call UnitAddAbility(c, 'YECD')
+        //call UnitMakeAbilityPermanent(c, true, 'YECD')
+        //call UnitRemoveAbilityTimed(c, 'YECD', 0.1)
+        //set tyam=CreateTimer()
+        //set A=Atan2(y-y1,x-x1)
+       // call DestroyEffect(AddSpecialEffectTarget("Abilities\\Spells\\Undead\\FrostNova\\FrostNovaTarget.mdl",u,"origin"))
+        call DestroyEffect(AddSpecialEffectTarget(EffectID[2236],u,"chest"))
+        call DestroyEffect(AddSpecialEffectTarget(EffectID[2236],u,"origin"))
+
+
+        call DestroyEffect(AddSpecialEffectTarget(EffectID[2251],u,"chest"))
+
+        //call DestroyEffect(AddSpecialEffectTarget(EffectID[1570],u,"chest"))
+        call UnitRemoveAbility(u,'B017')
+        call UnitRemoveAbility(u,'B019')
+        call myCustomDamage(c,u,0.5*GetHeroInt(c,true),false,false,null,null,null)
+        call CC_UnitEx( u, u, 0., 1, "ensnare", false, EffectID[2502], "origin",0,0)
+      
+    endif
+
+//DeadMaster6End
         //if nb>0 and GetUnitAbilityLevel(c,'B03C')>0 then
         // 23 окт: и в облике мухи (баф маски без эффектов B0TN) — прыжок на другую сторону цели при атаке
 //        if nb>0 and (GetUnitAbilityLevel(c,'B03C')>0 or GetUnitAbilityLevel(c,'B0TN')>0) then
@@ -70711,7 +71348,7 @@ endif
         call SaveInteger(HH, GetHandleId(c), SH_GaeDeargP_CD, 0)
         call GaeDearg_Passive(c)
     endif
-    if nb>30 and (LoadBoolean(DMG_IHT,cid,'IOS1') or GetUnitAbilityLevel(c, 'KI0I')>0) and LoadBoolean(DMG_IHT,cid,'I1S4')==false and GetUnitAbilityLevel(c, 'KI0Q')==0 and GetUnitAbilityLevel(c, 'MuCD')==0 then
+    if nb>30 and (LoadBoolean(DMG_IHT,cid,'IOS1') or LoadBoolean(DMG_IHT,cid,'IBBi') or GetUnitAbilityLevel(c, 'KI0I')>0) and LoadBoolean(DMG_IHT,cid,'I1S4')==false and GetUnitAbilityLevel(c, 'KI0Q')==0 and GetUnitAbilityLevel(c, 'MuCD')==0 then
         call UnitAddAbility(c, 'MuCD')
         call UnitMakeAbilityPermanent(c, true, 'MuCD')
         call UnitRemoveAbilityTimed(c, 'MuCD', 1.0)
@@ -70795,11 +71432,12 @@ endif
     if GetUnitAbilityLevel(c,'A1WT')==0 and GetUnitAbilityLevel(c,'A3WR')==0 and  (GetUnitAbilityLevel(c,'CB01')==0 or (GetUnitAbilityLevel(c,'CB01')>0 and CurrentEventAttack)) and GetUnitAbilityLevel(c,'B059')==0 and GetUnitAbilityLevel(u,'Bwul')==0 and LoadInteger(HH,cid,BlockPenetrate)==0 then
         if GetUnitAbilityLevel(u,'A18L')>0 and nb>l then
             set t=CreateTimer()
+            set DSC_K=DeathSaveCleanse(u) // 3.8.2: снимает некроз / эссенцию льда, с ними — половина HP
             call SetUnitInvulnerable(u,true)
             call ShowUnitTimed(u,false,0.01)
             call PauseUnit(u,true)
-            call HealTextTag(u,u,(GetWidgetMaxLife(u)*0.35-GetWidgetLife(u))*myCustomHeal2(u,1),"HealthRes")
-            call SetUnitState(u,UNIT_STATE_LIFE,GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.35)
+            call HealTextTag(u,u,(GetWidgetMaxLife(u)*0.35*DSC_K-GetWidgetLife(u))*myCustomHeal2(u,1),"HealthRes")
+            call SetUnitState(u,UNIT_STATE_LIFE,GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.35*DSC_K)
             if GetWidgetMana(u)<GetUnitState(u,UNIT_STATE_MAX_MANA)*0.35 then
                 call HealTextTag(u,u,(GetUnitState(u,UNIT_STATE_MAX_MANA)*0.35-GetWidgetMana(u))*myCustomMana2(u,1),"ManaRes")
                 call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MAX_MANA)*0.35)
@@ -70944,7 +71582,7 @@ endif
             endif
         endif
         if GetHeroLevel(u) >= 25 and duid == 'HMad' and GetUnitAbilityLevel(u, 'MaF2') == 0 and nb>0 and nb>=GetWidgetLife(u) and DU==true then     
-            call SetWidgetLife(u, GetWidgetMaxLife(u) * 0.5)
+            call SetWidgetLife(u, GetWidgetMaxLife(u) * 0.5 * DeathSaveCleanse(u)) // 3.8.2: снимает некроз / эссенцию льда, с ними — половина
             call MadokaF_Death(u , c)
             set nb=0
         endif
@@ -71056,6 +71694,10 @@ if nb>0 then
         call UnitRemoveBuffs(u,true,false)
     endif
     call SetEventDamage(nb)
+    // 3.8.2: Ключ Баб-Илу — добивание вражеского героя ниже 3% HP (урон любого юнита владельца ключа)
+    if u==Hero[idu] and l-nb>0 and l-nb<ll*0.03 and IsUnitEnemy(u,sourcePlayer) and idc>=0 and idc<12 and UnitHasItemOfTypeBJ(Hero[idc],'IBBi') then
+        call BabiluExec(Hero[idc],u)
+    endif
     if GetUnitAbilityLevel(u,'A4DF')>0 then
         call IssueImmediateOrder(u,"stop")
     endif
@@ -72302,11 +72944,30 @@ endfunction
 function AkatsukiSetCond takes nothing returns boolean
 return GetHeroPrimaryAttribute(GetTriggerUnit())==HERO_ATTRIBUTE_INT and  GetSpellAbilityId()!='ASGG' and GetSpellAbilityId()!='A1I3' and GetSpellAbilityId()!='A11G' and GetSpellAbilityId()!='A1G2' and GetSpellAbilityId()!='A1G1' and GetSpellAbilityId()!='A16E' and GetSpellAbilityId()!='A1AA' and GetSpellAbilityId()!='A1AB' and GetSpellAbilityId()!='A11E' and GetSpellAbilityId()!='A11D' and GetSpellAbilityId()!='A11F' and UnitHasItemOfTypeBJ(GetTriggerUnit(),'I040')and GetSpellAbilityId()!='A0N1' and GetSpellAbilityId()!='A0N2' and GetSpellAbilityId()!='A0A2' and GetSpellAbilityId()!='A0EH' and GetSpellAbilityId()!='A0UG' and GetSpellAbilityId()!='AaS0' and GetSpellAbilityId()!='A1I3' and GetSpellAbilityId()!='A0X6'  and GetSpellAbilityId()!='A0B3' and GetSpellAbilityId()!='A0N0' and GetSpellAbilityId()!='A40C' and GetSpellAbilityId()!='A30C' and GetSpellAbilityId()!='MadD' and GetSpellAbilityId()!='TMF0' and GetSpellAbilityId()!='TMF2' and GetSpellAbilityId()!='A06J' and GetSpellAbilityId()!='A0VQ' and GetSpellAbilityId()!='A0HX' and GetSpellAbilityId()!='A2HX' and GetSpellAbilityId()!='A14T' and GetSpellAbilityId()!='A19O' and GetSpellAbilityId()!='MrF2' and GetSpellAbilityId()!='MrG1' and GetSpellAbilityId()!='MrG2' and udg_B==true // and GetSpellAbilityId()!='LawQ' and GetSpellAbilityId()!='LawW'
 endfunction
+// 28 окт (3.8.2): стаки "Мастерства" (+8 INT на 10 с) — зарядами на Комплекте Акацки; d — изменение числа стаков
+function AkatsukiSetStk takes unit u,integer d returns nothing
+    local integer k=0
+    local integer cnt=IMaxBJ(LoadInteger(HH,GetHandleId(u),SH_AkaStk)+d,0)
+    local item it
+    call SaveInteger(HH,GetHandleId(u),SH_AkaStk,cnt)
+    loop
+        exitwhen k>=UnitInventorySize(u)
+        set it=UnitItemInSlot(u,k)
+        if GetItemTypeId(it)=='I040' then
+            call SetItemCharges(it,cnt)
+        endif
+        set k=k+1
+    endloop
+    set it=null
+endfunction
 function AkatsukiSetCast2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
 local unit u=LoadUnitHandle(h,id,0)
 call SetHeroInt(u,GetHeroInt(u,false)-8,true)
+if u!=null then
+    call AkatsukiSetStk(u,-1)
+endif
 call FlushChildHashtable(h,id)
 call TSE_DestroyTimer(t)
 set u=null
@@ -72326,6 +72987,7 @@ else
         call SetHeroInt(u,GetHeroInt(u,false)+8,true)
         call SaveUnitHandle(h,id,0,u)
     endif
+    call AkatsukiSetStk(LoadUnitHandle(h,id,0),1)
     call TSE_TimerStart(t,10,false,function AkatsukiSetCast2)
 endif
 set u=null
@@ -72605,7 +73267,7 @@ set ide=GetHandleId(E)
 if Condition_Base(p,E)and LoadUnitHandle(HH,idg2,ide)!=E then
 call SaveUnitHandle(HH,idg2,ide,E)
 call myCustomDamage(u,E,dmg,false,false,null,null,null)
-call SetControlToUnit(E,E, 1, "stun")
+call SetControlToUnit(E,E, 1.5, "stun") // 28 окт (3.8.2): Коса — 1.5 с (было 1)
 endif
 call GroupRemoveUnit(g,E)
 endloop
@@ -132158,6 +132820,7 @@ call SaveBoolean(HH,GetHandleId(u),SH_TouHollow,false)
 //call SetUnitScale(u,1.,1.,1.)
 // назад сменой юнита H0TF -> H02K (22 окт); у мёртвого — в RemoveTransformation в начале раунда
 if GetUnitTypeId(u)=='H0TF' and UnitIsAlive(u) then
+call TousenDmgKeep(u)
 call UnitAddAbility(u,'ToMB')
 call IssueImmediateOrder(u,"bearform")
 call UnitRemoveAbility(u,'ToMB')
@@ -133691,6 +134354,7 @@ call UnitMakeAbilityPermanent(u,true,'ToE3')
 call UnitMakeAbilityPermanent(u,true,'ToE4')
 call UnitMakeAbilityPermanent(u,true,'ToE5')
 call UnitMakeAbilityPermanent(u,true,'ToE6')
+call TousenDmgKeep(u)
 call UnitAddAbility(u,'ToMF')
 call IssueImmediateOrder(u,"bearform")
 call UnitRemoveAbility(u,'ToMF')
@@ -133878,13 +134542,13 @@ call DisplayTextToPlayer(OwnerOf(u),0,0,Lng("Превращение доступ
 set u=null
 return
 endif
-// стоимость превращения — 40% макс. маны + 150 (22 окт)
-if GetUnitState(u,UNIT_STATE_MANA)<0.4*GetUnitState(u,UNIT_STATE_MAX_MANA)+150 then
-call DisplayTextToPlayer(OwnerOf(u),0,0,Lng("Недостаточно маны: нужно 40% макс. MP + 150","Not enough mana: 40% max MP + 150 needed"))
+// стоимость превращения — 35% макс. маны + 120 (28 окт, 3.8.2; было 40% + 150)
+if GetUnitState(u,UNIT_STATE_MANA)<0.35*GetUnitState(u,UNIT_STATE_MAX_MANA)+120 then
+call DisplayTextToPlayer(OwnerOf(u),0,0,Lng("Недостаточно маны: нужно 35% макс. MP + 120","Not enough mana: 35% max MP + 120 needed"))
 set u=null
 return
 endif
-call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-0.4*GetUnitState(u,UNIT_STATE_MAX_MANA)-150)
+call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-0.35*GetUnitState(u,UNIT_STATE_MAX_MANA)-120)
 call SaveBoolean(HH,GetHandleId(u),SH_TouCharge,true)
 call TousenSnd("TousenE2") // 22 окт: «Сузумуши Хякушики: Гриляр Грийо» (8 с)
 // аура зарядки (dM32, как у Гона), зелёная
@@ -262879,7 +263543,7 @@ set ShSecItem[74]='I050'
 set ShSecItem[75]='IBSI'
 set ShSecItem[76]='IPRB'
 set ShSecName[2]="Ultimate Items"
-set ShSecCnt[2]=41
+set ShSecCnt[2]=42
 set ShSecItem[128]='I02Y'
 set ShSecItem[129]='I040'
 set ShSecItem[130]='I042'
@@ -262921,6 +263585,7 @@ set ShSecItem[165]='I06J'
 set ShSecItem[166]='ISTi'
 set ShSecItem[167]='I1S4'
 set ShSecItem[168]='IPlA'
+set ShSecItem[169]='IBBi'
 set ShSecName[3]="Half Vongola Rings"
 set ShSecCnt[3]=10
 set ShSecItem[192]='I02L'
@@ -262964,7 +263629,7 @@ set ShSecItem[388]='I05T'
 set ShSecItem[389]='I05Z'
 set ShSecItem[390]='I065'
 set ShSecName[7]="Recipes"
-set ShSecCnt[7]=36
+set ShSecCnt[7]=37
 set ShSecItem[448]='I02X'
 set ShSecItem[449]='I047'
 set ShSecItem[450]='I055'
@@ -263001,6 +263666,7 @@ set ShSecItem[480]='IBS1'
 set ShSecItem[481]='ISS0'
 set ShSecItem[482]='IVS0'
 set ShSecItem[483]='ITS0'
+set ShSecItem[484]='IBBr'
 set ShSecName[8]="Ultimate Sets"
 set ShSecCnt[8]=24
 set ShSecItem[512]='I06G'
@@ -264248,6 +264914,8 @@ call SaveStr(ShHT,-20,'ISHs',"sode no shirayuki (recipe)")
 call SaveStr(ShHT,-20,'ISPB',"sports bow")
 call SaveStr(ShHT,-20,'ISS0',"space sphere (recipe)")
 call SaveStr(ShHT,-20,'ISTr',"stigmata tesseract (recipe)")
+call SaveStr(ShHT,-20,'IBBi',"key of bab-ilu")
+call SaveStr(ShHT,-20,'IBBr',"key of bab-ilu (recipe)")
 call SaveStr(ShHT,-20,'ISlA',"silver amulet")
 call SaveStr(ShHT,-20,'ISt0',"soul talisman")
 call SaveStr(ShHT,-20,'ITS0',"time sphere (recipe)")
@@ -264773,6 +265441,2302 @@ call Sh_Redraw()
 endif
 endfunction
 //Shop32End
+//DeadMaster2start — Дезмастер (HDMa), перенос из Choice Random 5.3 (28 окт 2026, 3.8.2)
+function CreateModeIndicatorWithPauseForm_PeriodicAbility takes nothing returns nothing
+    local timer t               =GetExpiredTimer()
+    local integer id            =GetHandleId(t)
+    local unit caster           =LoadUnitHandle(HH, id, c_CASTER)
+    local player p              =OwnerOf(caster)
+    local integer idp           =GetHandleId(p)
+    local string mode_name      =LoadStr(HH, id, c_NAME)
+    local framehandle NewFrame  =LoadFrameHandle(HH, idp,StringHash(mode_name))
+    local real duration         =LoadReal(HH, GetHandleId(NewFrame), c_DURATION)-0.05
+    local integer position         =LoadInteger(HH, id, c_POSITION)
+
+    if position>0 then
+        if LoadBoolean(HH,idp,position-1)==false then
+        call SaveBoolean(HH,idp,position-1,true)
+        call SaveBoolean(HH,idp,position,false)
+        call SaveInteger(HH, id, c_POSITION,position-1)
+        set position=position-1
+        endif
+    endif
+
+
+    if GetUnitAbilityLevel(caster,'Avul')==0 and IsUnitPaused(caster)==false and IsUnitHidden(caster)==false and GetUnitAbilityLevel(caster,'Pet1')==0 and GetUnitAbilityLevel(caster,'Pet3')==0 then
+        call SaveReal           (HH, GetHandleId(NewFrame), c_DURATION, duration)
+        call SetFrameText( LoadFrameHandle(HH, idp,StringHash(mode_name+"2")), R2SW(duration,2, 1) )
+    endif
+
+    call SetFrameRelativePoint( NewFrame, FRAMEPOINT_CENTER, StatusBarFrame, FRAMEPOINT_LEFT, 0.017+position*0.025, 0.005 )
+    if  IsUnitTrueHero(caster)==false  or IsUnitIllusion(caster)==true or duration<=0 or udg_B==false or DU2==false or UnitIsAlive(caster)==false or GetUnitAbilityLevel(caster,LoadInteger(HH,id,10))==0  then
+        call ShowFrame( NewFrame, false )
+        call SaveReal(HH, GetHandleId(NewFrame), c_DURATION, 0)
+        call SaveBoolean(HH,idp,position,false)
+        call FlushChildHashtable(HH, id)
+        call TSE_DestroyTimer(t)
+    endif
+    set t=null
+    set caster=null
+    set mode_name=null
+    set NewFrame=null
+    set p=null
+endfunction
+function CreateModeIndicatorWithPauseFormAbility takes unit newCaster, string newString, real newDur,integer abil_Code returns nothing
+        local timer newTimer        = null
+        local integer id            = 0
+
+
+
+    local framehandle NewFrame  = null
+    local framehandle NewFrameText  = null
+    local player p              =OwnerOf(newCaster)
+    local integer idp           =GetHandleId(p)
+    local framehandle consoleUI
+    local integer i=9
+    local integer j=0
+
+
+
+    if IsUnitIllusion(newCaster)==false then
+
+     set newTimer        = CreateTimer()
+     set id            = GetHandleId(newTimer)
+     set consoleUI=GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 )
+    if LoadFrameHandle(HH, idp,StringHash(newString))==null then    
+        set NewFrame = CreateFrameByType( "SIMPLEBUTTON", newString, StatusBarFrame, "", 0 )
+        call ClearFrameAllPoints( NewFrame )
+        call SetFrameTexture( NewFrame, newString, 0, true )
+        call SetFrameTexture( NewFrame, newString, 1, true )
+        call SetFrameTexture( NewFrame, newString, 2, true )
+        call SetFrameSize( NewFrame, .0237, .0237 )
+        call SetFramePriority( NewFrame, 7 )
+        call HandleListAddHandle(StatusBarFrameList[PId(p)],NewFrame)
+        call SetFrameParent(NewFrame,StatusBarFrame)
+        if OwnerOf(newCaster)!=GetLocalPlayer()then
+            call ShowFrame( NewFrame, false)
+        else
+            call ShowFrame( NewFrame, true)
+        endif
+        call SaveFrameHandle(HH,idp,StringHash(newString),NewFrame)
+        //call SaveReal               (HH, GetHandleId(NewFrame), c_DURATION, 2)
+        
+        set NewFrameText=CreateFrameByType( "SIMPLETEXT", newString+"1", NewFrame, "", 0 )
+        call ClearFrameAllPoints( NewFrameText )
+        call SetFramePriority( NewFrameText, 2 )
+        call SetFrameFont( NewFrameText, "Fonts\\FRIZQT__.TTF", .008, 0 )
+        call SetFrameTextAlignment( NewFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_LEFT )
+        call SetFrameText( NewFrameText, R2SW(newDur,2, 1) )
+        call SetFrameTextColour( NewFrameText, 0xFFFFA500 )
+        //call HandleListAddHandle(StatusBarFrameList[PId(p)],NewFrameText)
+        if OwnerOf(newCaster)!=GetLocalPlayer()then
+            call ShowFrame( NewFrameText, false)
+        else
+            call ShowFrame( NewFrameText, true)
+        endif
+        call SaveFrameHandle(HH,idp,StringHash(newString+"2"),NewFrameText)
+    else
+        set NewFrame=LoadFrameHandle(HH, idp,StringHash(newString))
+        set NewFrameText=LoadFrameHandle(HH, idp,StringHash(newString+"2"))
+        call SetFrameText( NewFrameText, R2SW(newDur,2, 1) )
+        if OwnerOf(newCaster)!=GetLocalPlayer()then
+            call ShowFrame( NewFrame, false)
+        else
+            call ShowFrame( NewFrame, true)
+        endif
+    endif
+    if LoadReal(HH, GetHandleId(NewFrame), c_DURATION)<=0 then
+        loop
+            exitwhen i==0
+            if LoadBoolean(HH,idp,i)==false then
+            call SaveBoolean(HH,idp,i,true)
+            call SaveBoolean(HH,idp,i+1,false)
+            set j=i
+            endif
+            set i=i-1
+        endloop
+        call SetFrameRelativePoint( NewFrame, FRAMEPOINT_CENTER, StatusBarFrame, FRAMEPOINT_LEFT, 0.017+j*0.025, 0.005 )
+        call SetFrameRelativePoint( NewFrameText, FRAMEPOINT_BOTTOM, NewFrame, FRAMEPOINT_BOTTOM, .0, -.01 )
+        call SaveUnitHandle         (HH, id, c_CASTER, newCaster)
+        call SaveReal               (HH, GetHandleId(NewFrame), c_DURATION, newDur)
+        call SaveInteger            (HH, id, c_POSITION, j)
+        call SaveStr                (HH, id, c_NAME, newString)
+        call SaveInteger            (HH, id, 10, abil_Code)
+        call TimerStart             (newTimer, 0.05, true, function CreateModeIndicatorWithPauseForm_PeriodicAbility)
+    else
+        call SaveReal           (HH, GetHandleId(NewFrame), c_DURATION, newDur)
+    endif
+
+     endif
+    set consoleUI=null
+    set newTimer=null
+    set p=null
+    set NewFrame=null
+    set NewFrameText=null
+endfunction
+function Effect_Visible_Timed_Act takes nothing returns nothing
+local integer id=GetHandleId(GetExpiredTimer())
+local unit caster0=LoadUnitHandle(HH,id,1)
+local real time=LoadReal(HH,id,5)
+local real time_max=LoadReal(HH,id,6)
+set time=time+0.02
+call SaveReal(HH,id,5,time)
+call PauseUnit(caster0,true)
+call SetUnitInvulnerable(caster0,true)
+call UnitColor(caster0,100,100,100,time/time_max*100)
+if time>=time_max then
+call RemoveUnit(caster0)
+call PauseTimer(GetExpiredTimer())
+call FlushChildHashtable(HH,id)
+call TSE_DestroyTimer(GetExpiredTimer())
+endif
+set caster0=null
+endfunction
+function Effect_Visible_Timed takes unit caster0,real duration returns nothing
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+call PauseUnit(caster0,true)
+call SetUnitInvulnerable(caster0,true)
+call SaveUnitHandle(HH,id,1,caster0)
+call SaveReal(HH,id,6,duration)
+if GetUnitAbilityLevel(caster0,'Aloc')==0  then
+call UnitAddAbility(caster0,'Aloc')
+endif
+
+call TSE_TimerStart(t,0.02,true,function Effect_Visible_Timed_Act)
+set caster0=null
+set t=null
+endfunction
+function Effect_Visible_Timed_RGB_Act takes nothing returns nothing
+local integer id=GetHandleId(GetExpiredTimer())
+local unit caster0=LoadUnitHandle(HH,id,1)
+local real time=LoadReal(HH,id,5)
+local real time_max=LoadReal(HH,id,6)
+set time=time+0.02
+call SaveReal(HH,id,5,time)
+call PauseUnit(caster0,true)
+call SetUnitInvulnerable(caster0,true)
+call UnitColor(caster0,LoadReal(HH,id,16),LoadReal(HH,id,17),LoadReal(HH,id,18),time/time_max*100)
+if time>=time_max then
+call RemoveUnit(caster0)
+call PauseTimer(GetExpiredTimer())
+call FlushChildHashtable(HH,id)
+call TSE_DestroyTimer(GetExpiredTimer())
+endif
+set caster0=null
+endfunction
+function Effect_Visible_Timed_RGB takes unit caster0,real duration,real red0,real green0,real blue0 returns nothing
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+call PauseUnit(caster0,true)
+call SetUnitInvulnerable(caster0,true)
+call SaveUnitHandle(HH,id,1,caster0)
+call SaveReal(HH,id,6,duration)
+if GetUnitAbilityLevel(caster0,'Aloc')==0 then
+call UnitAddAbility(caster0,'Aloc')
+endif
+call SaveReal(HH,id,16,red0)
+call SaveReal(HH,id,17,green0)
+call SaveReal(HH,id,18,blue0)
+call TSE_TimerStart(t,0.02,true,function Effect_Visible_Timed_RGB_Act)
+set caster0=null
+set t=null
+endfunction
+function Death_Master_DMG_Increase takes boolean do_damage,unit caster0,real damage0 returns real
+
+local integer energy=  R2I( LoadInteger(HH,PH(OwnerOf(caster0)),StringHash("KimiEnergy"))/70)
+//local integer energy=  R2I( LoadInteger(HH,PH(OwnerOf(caster0)),StringHash("KimiEnergy"))*0.01 )
+local real dmg_buff=0. // 28 окт (3.8.2): бонус урона от душ снят (было 0.02 за душу; оплата бонуса энергией — тоже 0)
+local real damage_increase=1
+local real dmg_remove=0
+set energy=R2I(energy*0.01)
+
+set dmg_buff=dmg_buff*energy
+
+
+
+//dmg_buff
+
+ 
+
+
+//set dmg_remove=damage0
+
+set damage_increase= damage_increase + dmg_buff
+
+
+set dmg_remove=damage0*dmg_buff//(damage0*damage_increase)-damage0
+
+
+set damage0=damage0*damage_increase
+
+
+if do_damage==true then
+
+//if(GetLocalPlayer()==OwnerOf(caster0))then
+//call DisplayTextToPlayer(GetLocalPlayer(),0,0,R2S(dmg_remove))
+//endif
+
+if LoadInteger(HH,PH(OwnerOf(caster0)),StringHash("KimiEnergy")) > 7000 then
+
+if GetUnitAbilityLevel(caster0,'DMT2')>0 then
+set dmg_remove=dmg_remove*1.3
+endif
+
+set energy=  R2I( LoadInteger(HH,PH(OwnerOf(caster0)),StringHash("KimiEnergy")))
+call SaveInteger(HH,PH(OwnerOf(caster0)),StringHash("KimiEnergy"),energy-R2I(dmg_remove))
+
+endif
+
+
+endif
+
+
+
+return damage0
+//return damage_increase
+
+
+
+endfunction
+
+
+function DamageAoeAndStun_DM takes unit caster0,real x00,real y00,real range0,real damage,real duration0 returns nothing
+call GroupClear(G)
+call GroupEnumUnitsInRange(G,x00,y00,range0,Base)
+loop
+set n0=FirstOfGroup(G)
+exitwhen n0==null
+if  Condition_Base(OwnerOf(caster0),n0)  then
+//call UnitStop(n0)
+
+call myCustomDamage(caster0,n0,damage,false,false,null,null,null)
+call SetControlToUnit(caster0,n0, duration0, "stun")
+
+set damage= Death_Master_DMG_Increase(true,caster0,damage)
+
+
+endif
+call GroupRemoveUnit(G,n0)
+endloop
+set caster0=null
+endfunction
+
+
+
+function DamageAoeOneTime0_DM takes unit damager,real x0,real y0,real range,real damage returns nothing
+
+call GroupClear(G)
+call GroupEnumUnitsInRange(G,x0,y0,range,Base)
+loop
+set n0=FirstOfGroup(G)
+exitwhen n0==null
+if  Condition_Base(OwnerOf(damager),n0)  then
+call myCustomDamage(damager,n0,damage,false,false,null,null,null)
+
+set damage= Death_Master_DMG_Increase(true,damager,damage)
+
+endif
+call GroupRemoveUnit(G,n0)
+endloop
+call GroupClear(G)
+set damager=null
+                        
+endfunction
+
+
+
+function Death_Master_Drain takes unit caster0,real value0 returns nothing
+local integer energy=LoadInteger(HH,PH(OwnerOf(caster0)),StringHash("KimiEnergy"))
+local integer energy_count1=0
+local integer energy_count2=0
+if energy+value0>energy then
+//set energy_count1=R2I(energy*0.0001)
+//set energy_count2=R2I((energy+value0)*0.0001)
+set energy_count1=R2I(energy/7000)
+set energy_count2=R2I((energy+value0)/7000)
+
+if energy_count2>energy_count1 then
+call Bof_Heal(caster0,caster0,GetUnitState(caster0,UNIT_STATE_MAX_LIFE)*0.05)
+call SetUnitState(caster0,UNIT_STATE_MANA,GetUnitState(caster0,UNIT_STATE_MANA)+GetUnitState(caster0,UNIT_STATE_MAX_MANA)*0.05)
+endif
+
+endif
+call SaveInteger(HH,PH(OwnerOf(caster0)),StringHash("KimiEnergy"),energy+R2I(value0))
+endfunction
+
+
+function Death_Master_Heal takes unit caster0,unit target0,real value0 returns nothing
+local integer energy=LoadInteger(HH,PH(OwnerOf(caster0)),StringHash("KimiEnergy"))
+local real damage0=GetUnitState(target0,UNIT_STATE_MAX_LIFE)*0.015
+local real damage1=GetUnitState(target0,UNIT_STATE_MAX_MANA)*0.015
+local real unit_hp=GetUnitState(target0,UNIT_STATE_LIFE)
+local real unit_max_hp=GetUnitState(target0,UNIT_STATE_MAX_LIFE)
+local real unit_mp=GetUnitState(target0,UNIT_STATE_MANA)
+local real unit_max_mp=GetUnitState(target0,UNIT_STATE_MAX_MANA)
+
+local real healIncreaseReal=0
+local real healIncreaseReal2=0
+
+if value0==2 then
+set damage0=GetUnitState(target0,UNIT_STATE_MAX_LIFE)*0.03
+set damage1=GetUnitState(target0,UNIT_STATE_MAX_MANA)*0.03
+endif
+
+if GetUnitAbilityLevel(caster0,'DMT2')>0 then
+set damage0=damage0*1.3
+set damage1=damage1*1.3
+endif
+if unit_hp+damage0>unit_max_hp then
+set damage0=unit_max_hp-unit_hp
+endif
+if unit_mp+damage1>unit_max_mp then
+set damage1=unit_max_mp-unit_mp
+endif
+if energy>(damage0+damage1)then
+
+
+set healIncreaseReal= damage0 // 28 окт (3.8.2): без бонуса лечения от душ (было *(1+0.02*души))
+
+
+set healIncreaseReal2=healIncreaseReal
+
+
+call Bof_Heal(caster0,target0,healIncreaseReal)
+
+set healIncreaseReal= damage1 // 28 окт (3.8.2): без бонуса от душ
+
+set healIncreaseReal2=healIncreaseReal2+healIncreaseReal
+
+
+
+call SetUnitState(target0,UNIT_STATE_MANA,GetUnitState(target0,UNIT_STATE_MANA)+healIncreaseReal)
+
+if value0==2 then
+call EffectCreateAndMove(true,EffectID[513],GetRandomReal(0,360),1.5,1.25,0.75,100,100,100,60,0,target0,0,0)
+endif
+endif
+
+
+set damage0=damage0+damage1
+
+if energy>damage0 then
+
+call Death_Master_Drain(caster0,-healIncreaseReal2)
+//call Death_Master_Drain(caster0,-damage0)
+endif
+
+
+endfunction
+
+
+
+
+function Death_Master_Poison_Act2 takes nothing returns nothing
+local integer id=GetHandleId(GetExpiredTimer())
+local unit caster=LoadUnitHandle(HH,id,1)
+local unit Dummy=LoadUnitHandle(HH,id,20)
+local real time=LoadReal(HH,id,5)
+local real time1=LoadReal(HH,id,6)
+local real x1=LoadReal(HH,id,11)
+local real y1=LoadReal(HH,id,12)
+local real damage= LoadReal(HH,id,15)
+local real facing=GetRandomReal(0,360)
+local integer energy=LoadInteger(HH,PH(OwnerOf(caster)),StringHash("KimiEnergy"))
+set time=time+0.02
+call SaveReal(HH,id,5,time)
+set time1=time1+0.02
+if time>5 or (time>0.02 and energy<damage) or(time>0.02 and udg_B==false)then
+call SetUnitAnimationByIndex(Dummy,1)
+call MyRemoveUnit(Dummy,1.5)
+call RemoveUnit(LoadUnitHandle(HH,id,21))
+call PauseTimer(GetExpiredTimer())
+call FlushChildHashtable(HH,id)
+call TSE_DestroyTimer(GetExpiredTimer())
+else
+
+if time==0.02 then
+set n0=CreateUnit(OwnerOf(caster),'e000',x1,y1,facing)
+call SetUnitModel(n0,EffectID[592])
+call UnitSize(n0,3,1,1)
+call UnitColor(n0,100,100,100,00)
+call UnitAddAbility(n0,'Amrf')
+call UnitRemoveAbility(n0,'Amrf')
+call SetUnitFlyHeight(n0,0,0)
+call SetUnitAnimationByIndex(n0,0)
+call SaveUnitHandle(HH,id,20,n0)
+set n0=null
+set n0=CreateUnit(OwnerOf(caster),'e000',x1,y1,facing)
+call UnitSize(n0,3.9,1,1)
+call UnitSpeed(n0,0)
+call UnitColor(n0,100,100,100,80)
+call UnitAddAbility(n0,'Amrf')
+call UnitRemoveAbility(n0,'Amrf')
+call SetUnitFlyHeight(n0,0,0)
+call SaveUnitHandle(HH,id,21,n0)
+set n0=null
+endif
+if time1>=0 then
+call GroupClear(G)
+call GroupEnumUnitsInRange(G,x1,y1,400,Base)
+loop
+set n0=FirstOfGroup(G)
+exitwhen n0==null
+if IsUnitEnemy(n0,OwnerOf(caster))==true and GetUnitAbilityLevel(n0,'Avul')==0 then
+if energy>damage then
+
+
+set damage= Death_Master_DMG_Increase(true,caster,LoadReal(HH,id,15))
+call DamageU(false,caster,n0,damage)
+
+
+if IsUnitType(n0,UNIT_TYPE_HERO)==true then
+call SaveInteger(HH,PH(OwnerOf(caster)),StringHash("KimiEnergy"),energy-R2I(damage))
+endif
+
+endif
+
+
+endif
+call GroupRemoveUnit(G,n0)
+endloop
+call GroupClear(G)
+set time1=-0.2
+endif
+call SaveReal(HH,id,6,time1)
+endif
+set caster=null
+set Dummy=null
+endfunction
+
+
+function Death_Master_Poison_Act takes unit caster0,real x1,real y1 returns nothing
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+local real damage=GetHeroInt(caster0,true)*0.1
+call SaveUnitHandle(HH,id,1,caster0)
+call SaveReal(HH,id,11,x1)
+call SaveReal(HH,id,12,y1)
+call SaveReal(HH,id,15,damage)
+
+
+
+if GetHeroLevel(caster0)>=20 then
+call TSE_TimerStart(t,0.02,true,function Death_Master_Poison_Act2)
+else
+call TSE_TimerStart(t,0.02,true,function SabracGnull)
+endif
+
+set t=null
+endfunction
+
+
+
+
+
+function Death_Master_E_Root_Act2 takes nothing returns nothing
+local integer id=GetHandleId(GetExpiredTimer())
+local unit caster=LoadUnitHandle(HH,id,1)
+local unit Dummy=LoadUnitHandle(HH,id,20)
+local real time=LoadReal(HH,id,5)
+local real time2=LoadReal(HH,id,8)
+local real facing=GetUnitFacing(caster)
+
+
+local real x0=GetUnitX(caster)
+local real y0=GetUnitY(caster)
+local real x1=LoadReal(HH,id,11)
+local real y1=LoadReal(HH,id,12)
+
+
+
+set time=time+0.02
+call SaveReal(HH,id,5,time)
+
+
+
+
+
+
+if time>0.02 and(SR(x0,y0,x1,y1)>600 or time>time2 or GetUnitAbilityLevel(caster,'B05G')>0 or GetUnitAbilityLevel(caster,'CE04')>0 )then
+call SetUnitAnimationByIndex(Dummy,1)
+call MyRemoveUnit(Dummy,2)
+call PauseTimer(GetExpiredTimer())
+call FlushChildHashtable(HH,id)
+call TSE_DestroyTimer(GetExpiredTimer())
+else
+if time==0.02 then
+call UnitAddAbility(caster,'DME2')
+call UnitMakeAbilityPermanent(caster,true,'DME2')
+set n0=CreateUnit(OwnerOf(caster),'e000',GetUnitX(caster),GetUnitY(caster),facing)
+call SetUnitModel(n0,EffectID[2502])
+call UnitSize(n0,1,1,1)
+call UnitColor(n0,100,100,100,0)
+call UnitAddAbility(n0,'Amrf')
+call UnitRemoveAbility(n0,'Amrf')
+call SetUnitAnimationByIndex(n0,0)
+call SaveUnitHandle(HH,id,20,n0)
+set n0=null
+endif
+if time>0.02 then
+call MoveAoe1(LoadReal(HH,id,11),LoadReal(HH,id,12),caster,0,facing)
+call MoveUnit(caster,LoadUnitHandle(HH,id,20),0,facing)
+call SetUnitFlyHeight(LoadUnitHandle(HH,id,20),GetUnitFlyHeight(caster),0)
+if CheckUnitInvisible(caster)==true then
+if GetUnitAbilityLevel(LoadUnitHandle(HH,id,20),'A0A1')==0 then
+call UnitAddAbility(LoadUnitHandle(HH,id,20),'A0A1')
+endif
+else
+if GetUnitAbilityLevel(LoadUnitHandle(HH,id,20),'A0A1')==1 then
+call UnitRemoveAbility(LoadUnitHandle(HH,id,20),'A0A1')
+endif
+endif
+endif
+endif
+set caster=null
+set Dummy=null
+endfunction
+
+
+
+function Death_Master_E_Root_Act takes unit caster,real duration00 returns nothing
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+local real x0=GetUnitX(caster)
+local real y0=GetUnitY(caster)
+call SaveUnitHandle(HH,id,1,caster)
+call SaveReal(HH,id,8,duration00)
+call SaveReal(HH,id,11,x0)
+call SaveReal(HH,id,12,y0)
+call TSE_TimerStart(t,0.02,true,function Death_Master_E_Root_Act2)
+set t=null
+endfunction
+function Death_Master_E_Root takes unit caster00,real x00,real y00,real range00,real duration00 returns nothing
+call GroupClear(G)
+call GroupEnumUnitsInRange(G,x00,y00,range00,null)
+loop
+set n0=FirstOfGroup(G)
+exitwhen n0==null
+if IsUnitEnemy(n0,OwnerOf(caster00))==true and IsUnitType(n0,UNIT_TYPE_STRUCTURE)==false then
+call Death_Master_E_Root_Act(n0,duration00)
+endif
+call GroupRemoveUnit(G,n0)
+endloop
+call GroupClear(G)
+endfunction
+
+function Death_Master_Drain_Passive_Act takes nothing returns nothing
+local integer id=GetHandleId(GetExpiredTimer())
+local unit caster=LoadUnitHandle(HH,id,1)
+local unit target=LoadUnitHandle(HH,id,2)
+local unit Dummy=LoadUnitHandle(HH,id,20)
+local real time=LoadReal(HH,id,5)
+local real time1=LoadReal(HH,id,6)
+local real damage=LoadReal(HH,id,15)
+local real damage0=LoadReal(HH,id,16)
+
+local real x0=GetUnitX(caster)
+local real y0=GetUnitY(caster)
+local real x1=GetUnitX(target)
+local real y1=GetUnitY(target)
+local real x2=GetUnitX(Dummy)
+local real y2=GetUnitY(Dummy)
+local real facing=LoadReal(HH,id,3)
+set time=time+0.02
+call SaveReal(HH,id,5,time)
+if time>=5 then
+call EffectCreateAndMove(true,EffectID[2217],facing,1,1,1.5,100,100,100,60,0,caster,0,facing)
+call Death_Master_Drain(caster,damage)
+call MoveUnit(caster,LoadUnitHandle(HH,id,20),0,0)
+call MoveUnit(caster,LoadUnitHandle(HH,id,21),0,0)
+call MyRemoveUnit(LoadUnitHandle(HH,id,20),0.5)
+call MyRemoveUnit(LoadUnitHandle(HH,id,21),0.5)
+
+
+call DamageIndicatorFunction(caster, target, damage0)
+call DamageTextTag(caster,target,damage0)
+
+
+
+
+call PauseTimer(GetExpiredTimer())
+call FlushChildHashtable(HH,id)
+call TSE_DestroyTimer(GetExpiredTimer())
+else
+set time1=time1+0.02
+if time1>=0.2 or time==0.02 then
+set time1=0
+endif
+call SaveReal(HH,id,6,time1)
+set facing=Angle2(x2,y2,x0,y0)
+call SaveReal(HH,id,3,facing)
+call MoveUnit(Dummy,Dummy,25+SR(x2,y2,x0,y0)*0.01,facing)
+call MoveUnit(Dummy,LoadUnitHandle(HH,id,21),0,facing)
+if SR(x2,y2,x0,y0)<100 and time<5 then
+call SaveReal(HH,id,5,5)
+endif
+endif
+set caster=null
+set target=null
+set Dummy=null
+endfunction
+
+
+
+
+function Death_Master_Drain_Passive takes unit caster0,unit target0 returns nothing
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+local real x0=GetUnitX(caster0)
+local real y0=GetUnitY(caster0)
+local real x1=GetUnitX(target0)
+local real y1=GetUnitY(target0)
+local real facing0=Angle2(x0,y0,x1,y1)
+local real damage0=GetUnitState(target0,UNIT_STATE_MAX_LIFE)*0.015
+local real damage1=GetUnitState(target0,UNIT_STATE_MAX_MANA)*0.015
+
+  if GetUnitAbilityLevel(caster0,'DMT2')>0 then
+    set damage0=damage0*1.3
+    set damage1=damage1*1.3
+  endif
+
+  if GetUnitState(target0,UNIT_STATE_LIFE)>damage0 then
+     call SetUnitState(target0,UNIT_STATE_LIFE,GetUnitState(target0,UNIT_STATE_LIFE)-damage0)
+  endif
+
+call SetUnitState(target0,UNIT_STATE_MANA,GetUnitState(target0,UNIT_STATE_MANA)-damage1)
+call SaveUnitHandle(HH,id,1,caster0)
+call SaveUnitHandle(HH,id,2,target0)
+call SaveReal(HH,id,3,facing0)
+
+
+
+
+
+
+set n00=CreateUnit(OwnerOf(caster0),'e000',x1,y1,facing0)
+call SetUnitModel(n00,EffectID[1570])
+call UnitSize(n00,0.5,1,1)
+call SetUnitFlyHeight(n00,150,0)
+call UnitSpeed(n00,0.5)
+call UnitColor(n00,100,100,100,70)
+call SaveUnitHandle(HH,id,20,n00)
+set n00=null
+
+
+set n00=CreateUnit(OwnerOf(caster0),'e000',x1,y1,facing0)
+call SetUnitModel(n00,EffectID[2236])
+call SetUnitFlyHeight(n00,150,0)
+call UnitSize(n00,2,1,1)
+call UnitSpeed(n00,1.5)
+call UnitColor(n00,100,100,100,0)
+call SaveUnitHandle(HH,id,21,n00)
+set n00=null
+
+
+
+
+
+call SaveReal(HH,id,15,damage0+damage1)
+call SaveReal(HH,id,16,damage0)
+
+call TSE_TimerStart(t,0.02,true,function Death_Master_Drain_Passive_Act)
+
+set t=null
+
+endfunction
+
+
+
+
+
+function Death_Master_Drain_Passive_Aoe takes unit caster0,real x00,real y00,real range0 returns nothing
+if GetUnitAbilityLevel(caster0,'DME2')>0 then
+set range0=1500
+endif
+call GroupClear(G)
+call GroupEnumUnitsInRange(G,x00,y00,range0,null)
+loop
+set n0=FirstOfGroup(G)
+exitwhen n0==null
+if UnitIsAlive(n0)and IsUnitEnemy(n0,OwnerOf(caster0))==true and IsUnitType(n0,UNIT_TYPE_STRUCTURE)==false and IsUnitType(n0,UNIT_TYPE_HERO)==true then
+call Death_Master_Drain_Passive(caster0,n0)
+endif
+call GroupRemoveUnit(G,n0)
+endloop
+call GroupClear(G)
+endfunction
+
+
+
+
+
+function Death_Master_D_Act2 takes nothing returns nothing
+local integer id=GetHandleId(GetExpiredTimer())
+local unit caster=LoadUnitHandle(HH,id,1)
+local unit Dummy=LoadUnitHandle(HH,id,20)
+local real facing=LoadReal(HH,id,3)
+local real time=LoadReal(HH,id,5)
+local real time1=LoadReal(HH,id,6)
+local real x0=GetUnitX(caster)
+local real y0=GetUnitY(caster)
+local real x1=LoadReal(HH,id,11)
+local real y1=LoadReal(HH,id,12)
+local real damage= LoadReal(HH,id,15)
+local real dist=LoadReal(HH,id,8)
+local real dist_Base=LoadReal(HH,id,9)
+local integer energy=LoadInteger(HH,PH(OwnerOf(caster)),StringHash("KimiEnergy"))
+set time=time+0.02
+call SaveReal(HH,id,5,time)
+if time>20 then
+call RemoveUnit(LoadUnitHandle(HH,id,20))
+call RemoveUnit(LoadUnitHandle(HH,id,21))
+call RemoveUnit(LoadUnitHandle(HH,id,22))
+call PauseTimer(GetExpiredTimer())
+call FlushChildHashtable(HH,id)
+call TSE_DestroyTimer(GetExpiredTimer())
+else
+if time==0.02 then
+call sound_play("Sound\\DeadMaster\\DeadMaster_D.mp3",200)
+call SetUnitAnimationByIndex(caster,11)
+call UnitSpeed(caster,1)
+set n0=CreateUnit(OwnerOf(caster),'e000',x0,y0,facing)
+call SetUnitModel(n0,EffectID[2254])
+call MoveUnit(n0,n0,100,facing)
+call SetUnitFlyHeight(n0,100,0)
+call UnitSize(n0,1.5,1,1)
+call SaveUnitHandle(HH,id,20,n0)
+set dist=SR(x0,y0,x1,y1)
+call SaveReal(HH,id,8,dist-100)
+call SaveReal(HH,id,9,dist-100)
+set n0=null
+call EffectCreateAndMove(true,EffectID[768],facing,1.5,0.75,1.5,100,100,100,80,0,caster,0,facing)
+call EffectCreateAndMove(true,EffectID[19],facing,1.5,1,0.5,60,100,60,20,0,caster,0,facing)
+call EffectCreateAndMove(true,EffectID[0],facing+180,1,1,0.75,60,100,60,0,100,caster,100,facing)
+call EffectCreateAndMove(true,EffectID[6],facing,1,0.4,0.4,60,100,60,0,100,caster,100,facing)
+call EffectCreateAndMove90(true,EffectID[2217],facing,1.5,1.5,0.5,100,100,100,0,100,caster,100,facing)
+endif
+if time>0.02 and time<10 then
+call SaveReal(HH,id,8,dist-60)
+call MoveUnit(Dummy,Dummy,60,facing)
+if dist<=0 then
+call SaveReal(HH,id,5,10)
+set n0=CreateUnit(OwnerOf(caster),'e000',x1,y1,facing)
+call SetUnitModel(n0,EffectID[2255])
+call MoveUnit(n0,n0,100,facing)
+call SetUnitFlyHeight(n0,0,0)
+call UnitSize(n0,1.1,1,1)
+call SaveUnitHandle(HH,id,21,n0)
+set n0=CreateUnit(OwnerOf(caster),'e000',x1,y1,facing)
+call SetUnitModel(n0,EffectID[2250])
+call MoveUnit(n0,n0,100,facing)
+call SetUnitFlyHeight(n0,0,0)
+call UnitSize(n0,1.5,1,1)
+call SaveUnitHandle(HH,id,22,n0)
+set n0=CreateUnit(OwnerOf(caster),'e000',x1,y1,facing)
+call SetUnitFlyHeight(n0,0,0)
+call UnitSpeed(n0,0)
+call UnitSize(n0,5.8,1,1)
+call MyRemoveUnit(n0,10)
+call Death_Master_Poison_Act(caster,x1,y1)
+call Death_Master_Drain_Passive_Aoe(caster,x1,y1,1000)
+endif
+endif
+if time>10 then
+set time1=time1+0.02
+if time1>=0 then
+call GroupClear(G)
+call GroupEnumUnitsInRange(G,x1,y1,600,Base)
+loop
+set n0=FirstOfGroup(G)
+exitwhen n0==null
+if IsUnitEnemy(n0,OwnerOf(caster))==true then
+if GetUnitAbilityLevel(n0,'Avul')==0 then
+if energy>damage then
+
+
+set damage= Death_Master_DMG_Increase(true,caster,LoadReal(HH,id,15))
+call DamageU(false,caster,n0,damage)
+
+
+
+call EffectCreateAndMove(true,EffectID[589],GetRandomReal(0,360),1,1,1,100,100,100,40,0,n0,0,facing)
+
+if IsUnitType(n0,UNIT_TYPE_HERO)==true then
+call SaveInteger(HH,PH(OwnerOf(caster)),StringHash("KimiEnergy"),energy-R2I(damage))
+endif
+
+
+endif
+
+
+
+endif
+else
+call Death_Master_Heal(caster,n0,2)
+endif
+call GroupRemoveUnit(G,n0)
+endloop
+call GroupClear(G)
+set time1=-0.5
+endif
+call SaveReal(HH,id,6,time1)
+endif
+endif
+set caster=null
+set Dummy=null
+endfunction
+function Death_Master_D_Act takes unit caster,real x1,real y1 returns nothing
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+local real x0=GetUnitX(caster)
+local real y0=GetUnitY(caster)
+local real facing=Angle2(x0,y0,x1,y1)
+local real damage=GetHeroInt(caster,true)*0.5
+local real dist=SR(x0,y0,x1,y1)
+call SaveUnitHandle(HH,id,1,caster)
+call SaveReal(HH,id,3,facing)
+call SaveReal(HH,id,8,dist)
+call SaveReal(HH,id,9,dist)
+call SaveReal(HH,id,11,x1)
+call SaveReal(HH,id,12,y1)
+call SaveReal(HH,id,15,damage)
+call TSE_TimerStart(t,0.02,true,function Death_Master_D_Act2)
+set t=null
+endfunction
+
+
+
+function Death_Master_E_F_Act2 takes nothing returns nothing
+local integer id=GetHandleId(GetExpiredTimer())
+local unit caster=LoadUnitHandle(HH,id,1)
+local unit target=LoadUnitHandle(HH,id,2)
+local unit Dummy=LoadUnitHandle(HH,id,20)
+local real time=LoadReal(HH,id,5)
+local real time2=LoadReal(HH,id,18)
+local real x0=GetUnitX(caster)
+local real y0=GetUnitY(caster)
+local real x1=GetUnitX(target)
+local real y1=GetUnitY(target)
+local real x2=GetUnitX(Dummy)
+local real y2=GetUnitY(Dummy)
+local real damage=LoadReal(HH,id,15)
+local real dist=SR(x2,y2,x1,y1)
+local real dist2=SR(x0,y0,x1,y1)
+local real facing=Angle2(x2,y2,x1,y1)
+local real facing2=Angle2(x0,y0,x1,y1)
+set time=time+0.02
+call SaveReal(HH,id,5,time)
+if time>7 or(UnitIsAlive(target)==false or UnitIsAlive(caster)==false)then
+call DestroyLightning(LoadLightningHandle(HH,id,16))
+call UnitSpeed(LoadUnitHandle(HH,id,21),1)
+call UnitSpeed(LoadUnitHandle(HH,id,22),1)
+call UnitSpeed(LoadUnitHandle(HH,id,23),1)
+call MyRemoveUnit(LoadUnitHandle(HH,id,21),1)
+call MyRemoveUnit(LoadUnitHandle(HH,id,22),1)
+call MyRemoveUnit(LoadUnitHandle(HH,id,23),1)
+call RemoveUnit(Dummy)
+call PauseTimer(GetExpiredTimer())
+call FlushChildHashtable(HH,id)
+call TSE_DestroyTimer(GetExpiredTimer())
+else
+if time==0.02 then
+call SaveLightningHandle(HH,id,16,AddLightningEx("DRAL",true,x0,y0,GetUnitFlyHeight(caster)+100,x0,y0,GetUnitFlyHeight(caster)+100))
+call PauseUnit(caster,false)
+call SetUnitPathing(caster,true)
+set n0=CreateUnit(OwnerOf(caster),'e000',x0,y0,facing)
+call SetUnitFlyHeight(n0,0,0)
+call UnitSize(n0,1.5,1,1)
+call SaveUnitHandle(HH,id,20,n0)
+set n0=null
+endif
+if time>0.02 then
+if time<5 then
+if LoadInteger(HH,id,25)==1 then
+call MoveUnit(Dummy,Dummy,70,facing)
+else
+call MoveUnit(Dummy,Dummy,60,facing)
+endif
+if dist<=85 then
+call SaveReal(HH,id,5,5)
+set n0=CreateUnit(OwnerOf(caster),'e000',x1,y1,facing)
+call SetUnitModel(n0,EffectID[162])
+call SetUnitFlyHeight(n0,100,0)
+call UnitSize(n0,1.25,1,1)
+call UnitColor(n0,20,20,20,40)
+call SaveUnitHandle(HH,id,21,n0)
+set n0=null
+set n0=CreateUnit(OwnerOf(caster),'e000',x1,y1,facing+90)
+call SetUnitModel(n0,EffectID[162])
+call SetUnitFlyHeight(n0,100,0)
+call UnitSize(n0,1.45,1,1)
+call UnitColor(n0,20,20,20,40)
+call SaveUnitHandle(HH,id,22,n0)
+set n0=null
+set n0=CreateUnit(OwnerOf(caster),'e000',x1,y1,facing-90)
+call SetUnitModel(n0,EffectID[162])
+call SetUnitFlyHeight(n0,100,0)
+call UnitSize(n0,1.65,1,1)
+call UnitColor(n0,20,20,20,40)
+call SaveUnitHandle(HH,id,23,n0)
+set n0=null
+endif
+call MoveLightningEx(LoadLightningHandle(HH,id,16),true,GetUnitX(caster),GetUnitY(caster),GetUnitFlyHeight(caster)+100,GetUnitX(Dummy),GetUnitY(Dummy),GetUnitFlyHeight(Dummy)+100)
+else
+call MoveUnit(target,Dummy,0,facing)
+call MoveUnit(target,LoadUnitHandle(HH,id,21),0,facing)
+call MoveUnit(target,LoadUnitHandle(HH,id,22),0,facing)
+call MoveUnit(target,LoadUnitHandle(HH,id,23),0,facing)
+call MoveLightningEx(LoadLightningHandle(HH,id,16),true,GetUnitX(caster),GetUnitY(caster),GetUnitFlyHeight(caster)+100,GetUnitX(target),GetUnitY(target),GetUnitFlyHeight(target)+100)
+if dist2>150 then
+if LoadInteger(HH,id,25)==1 then
+call MoveUnit(target,target,-60,facing2)
+else
+call MoveUnit(target,target,-40,facing2)
+endif
+else
+call SaveReal(HH,id,5,7)
+endif
+endif
+endif
+endif
+set caster=null
+set target=null
+set Dummy=null
+endfunction
+function Death_Master_E_F_Act takes unit caster,unit target,integer speed0 returns nothing
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+local real x0=GetUnitX(caster)
+local real y0=GetUnitY(caster)
+local real x1=GetUnitX(target)
+local real y1=GetUnitY(target)
+local real facing=Angle2(x0,y0,x1,y1)
+local real damage=0
+call SaveUnitHandle(HH,id,1,caster)
+call SaveUnitHandle(HH,id,2,target)
+call SaveInteger(HH,id,25,speed0)
+call TSE_TimerStart(t,0.02,true,function Death_Master_E_F_Act2)
+set t=null
+endfunction
+
+
+
+function Death_Master_E_F_Act0 takes unit caster0,unit target0,integer speed0 returns nothing
+local real x0=GetUnitX(target0)
+local real y0=GetUnitY(target0)
+call GroupClear(G)
+call GroupEnumUnitsInRange(G,x0,y0,1250,Base)
+loop
+set n0=FirstOfGroup(G)
+exitwhen n0==null
+if target0!=n0 and IsUnitEnemy(n0,OwnerOf(caster0))==true then
+call Death_Master_E_F_Act(target0,n0,speed0)
+endif
+call GroupRemoveUnit(G,n0)
+endloop
+call GroupClear(G)
+endfunction
+
+
+
+function Death_Master_E1_Act2 takes nothing returns nothing
+local integer id=GetHandleId(GetExpiredTimer())
+local unit caster=LoadUnitHandle(HH,id,1)
+local unit Dummy=LoadUnitHandle(HH,id,20)
+local real time=LoadReal(HH,id,5)
+local real facing=GetUnitFacing(caster)
+set time=time+0.02
+if time<=0.04 or(IsUnitPaused(caster)==false and GetUnitAbilityLevel(caster,'Avul')==0)then
+call SaveReal(HH,id,5,time)
+endif
+if time>20.04 or(time>0.02 and udg_B==false)then
+call UnitRemoveAbility(caster,'DME2')
+call RemoveUnit(Dummy)
+call RemoveUnit(LoadUnitHandle(HH,id,21))
+call AbilityCD(caster,'DME1',45-GetUnitAbilityLevel(caster,'DME1')*5)
+call PauseTimer(GetExpiredTimer())
+call FlushChildHashtable(HH,id)
+call TSE_DestroyTimer(GetExpiredTimer())
+else
+if time==0.02 then
+call UnitAddAbility(caster,'DME2')
+call UnitMakeAbilityPermanent(caster,true,'DME2')
+
+
+call CreateModeIndicatorWithPauseFormAbility(caster, "ReplaceableTextures\\CommandButtons\\BTNDeadMasterE.blp", 20,'DME2')
+
+
+
+
+set n0=CreateUnit(OwnerOf(caster),'e000',GetUnitX(caster),GetUnitY(caster),facing)
+call SetUnitModel(n0,EffectID[2224])
+call UnitSize(n0,1,1,1)
+call UnitColor(n0,100,100,100,40)
+call UnitAddAbility(n0,'Amrf')
+call UnitRemoveAbility(n0,'Amrf')
+call SetUnitFlyHeight(n0,0,0)
+call SaveUnitHandle(HH,id,20,n0)
+set n0=null
+set n0=CreateUnit(OwnerOf(caster),'e000',GetUnitX(caster),GetUnitY(caster),facing)
+call SetUnitModel(n0,EffectID[2263])
+call UnitSize(n0,2,1,1)
+call UnitColor(n0,100,100,100,40)
+call UnitAddAbility(n0,'Amrf')
+call UnitRemoveAbility(n0,'Amrf')
+call SetUnitFlyHeight(n0,150,0)
+call SaveUnitHandle(HH,id,21,n0)
+set n0=null
+call sound_play("Sound\\DeadMaster\\DeadMaster_E.mp3",200)
+call EffectCreateAndMove(true,EffectID[2217],facing,1.5,2,0.75,100,100,100,60,0,caster,0,facing)
+call EffectCreateAndMove(true,EffectID[2220],facing,1.5,1.25,0.75,100,100,100,60,0,caster,0,facing)
+call EffectCreateAndMove(true,EffectID[23],GetRandomReal(0,360),1,1.5,0.3,60,100,60,60,-200,Dummy,0,facing)
+call EffectCreateAndMove(true,EffectID[2209],GetRandomReal(0,360),2,1.25,0.5,100,100,100,60,100,Dummy,0,facing)
+call SetUnitAnimationByIndex(caster,12)
+call UnitSpeed(caster,1)
+call Death_Master_Poison_Act(caster,GetUnitX(caster),GetUnitY(caster))
+call Death_Master_Drain_Passive_Aoe(caster,GetUnitX(caster),GetUnitY(caster),1000)
+endif
+if time>0.02 then
+call MoveUnit(caster,LoadUnitHandle(HH,id,20),0,facing)
+call SetUnitFlyHeight(Dummy,GetUnitFlyHeight(caster),0)
+call MoveUnit(caster,LoadUnitHandle(HH,id,21),0,facing)
+call SetUnitFlyHeight(LoadUnitHandle(HH,id,21),GetUnitFlyHeight(caster)+150,0)
+if CheckUnitInvisible(caster)==true then
+if GetUnitAbilityLevel(LoadUnitHandle(HH,id,20),'A0A1')==0 then
+call UnitAddAbility(LoadUnitHandle(HH,id,20),'A0A1')
+endif
+else
+if GetUnitAbilityLevel(LoadUnitHandle(HH,id,20),'A0A1')==1 then
+call UnitRemoveAbility(LoadUnitHandle(HH,id,20),'A0A1')
+endif
+endif
+endif
+endif
+set caster=null
+set Dummy=null
+endfunction
+function Death_Master_E1_Act takes unit caster returns nothing
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+local real x0=GetUnitX(caster)
+local real y0=GetUnitY(caster)
+call SaveUnitHandle(HH,id,1,caster)
+call TSE_TimerStart(t,0.02,true,function Death_Master_E1_Act2)
+set t=null
+endfunction
+
+function DeadMaster_T3 takes nothing returns nothing
+local integer id=GetHandleId(GetExpiredTimer())
+local real x1=LoadReal(HH,id,11)
+local real y1=LoadReal(HH,id,12)
+local group gr=LoadGroupHandle(HH,id,4)
+local real time=LoadReal(HH,id,5)
+
+if SR(x1,y1,GetUnitX(GetEnumUnit()),GetUnitY(GetEnumUnit()))>1800 then
+call UnitRemoveAbility(GetEnumUnit(),'DMT3')
+call GroupRemoveUnit(gr,GetEnumUnit())
+call SaveGroupHandle(HH,id,4,gr)
+
+endif
+
+if time>=21 then
+call UnitRemoveAbility(GetEnumUnit(),'DMT3')
+endif
+
+set gr=null
+endfunction
+function Death_Master_T1_Act2 takes nothing returns nothing
+local integer id=GetHandleId(GetExpiredTimer())
+local unit caster=LoadUnitHandle(HH,id,1)
+local group gr=LoadGroupHandle(HH,id,4)
+local group gr2=LoadGroupHandle(HH,id,40)
+local real time=LoadReal(HH,id,5)
+local real time1=LoadReal(HH,id,6)
+local real damage=LoadReal(HH,id,15)
+local real x1=LoadReal(HH,id,11)
+local real y1=LoadReal(HH,id,12)
+local real facing=LoadReal(HH,id,3)
+local integer fire_count=0
+set time=time+0.02
+call SaveReal(HH,id,5,time)
+if time>=21 or (time>1 and  udg_B==false) then
+
+
+
+loop
+set n0=FirstOfGroup(gr2)
+exitwhen n0==null
+//call MyRemoveUnit(n0,1)
+call UnitSpeed(n0,0.5)
+
+
+call Effect_Visible_Timed(n0,1)
+//call SetUnitAnimationByIndex(n0,2)
+call GroupRemoveUnit(gr2,n0)
+endloop
+
+
+
+call UnitRemoveAbility(caster,'DMT2')
+call UnitRemoveAbility(caster,'BDMT')
+
+call ForGroup(gr,function DeadMaster_T3)
+
+call DestroyGroup(gr)
+call DestroyGroup(gr2)
+call PauseTimer(GetExpiredTimer())
+call FlushChildHashtable(HH,id)
+call TSE_DestroyTimer(GetExpiredTimer())
+else
+if time==0.02 then
+call Death_Master_Drain_Passive_Aoe(caster,x1,y1,1000)
+call Death_Master_Poison_Act(caster,GetUnitX(caster),GetUnitY(caster))
+call sound_play("Sound\\DeadMaster\\DeadMaster_T.mp3",200)
+call SetUnitAnimationByIndex(caster,8)
+call SetUnitAnimationByIndex(caster,12)
+call UnitSpeed(caster,1)
+loop
+set n0=CreateUnit(OwnerOf(caster),'090e',GetUnitX(caster),GetUnitY(caster),fire_count*15)
+
+call GroupAddUnit(gr2,n0)
+
+
+call SetUnitModel(n0,EffectID[2210])
+call UnitSpeed(n0,0.5)
+call UnitSize(n0,1.4,1,1)
+call UnitColor(n0,100,100,100,80)
+call MyRemoveUnit(n0,21)
+call MoveUnit(n0,n0,50,fire_count*15)
+call PushTimed(n0,fire_count*15,50,30)
+set fire_count=fire_count+1
+exitwhen fire_count>=24
+endloop
+
+
+
+
+call EffectCreateAndMove(true,EffectID[2208],facing,1.5,2.5,0.5,100,100,100,0,100,caster,0,facing)
+call EffectCreateAndMove(true,EffectID[2251],facing,1.5,4,0.3,100,100,100,40,0,caster,0,facing)
+set n0=CreateUnit(OwnerOf(caster),'e000',GetUnitX(caster),GetUnitY(caster),facing)
+call SetUnitModel(n0,EffectID[2250])
+call UnitSize(n0,5,1,1)
+call SetUnitFlyHeight(n0,0,0)
+call UnitColor(n0,100,100,100,0)
+call UnitSpeed(n0,1)
+call SaveUnitHandle(HH,id,20,n0)
+
+//call MyRemoveUnit(n0,21)
+call GroupAddUnit(gr2,n0)
+
+set n0=CreateUnit(OwnerOf(caster),'e000',GetUnitX(caster),GetUnitY(caster),facing)
+call UnitSize(n0,14.8,1,1)
+call SetUnitFlyHeight(n0,0,0)
+call UnitColor(n0,60,100,60,40)
+call UnitSpeed(n0,0)
+call SaveUnitHandle(HH,id,21,n0)
+//call MyRemoveUnit(n0,21)
+call GroupAddUnit(gr2,n0)
+
+set n0=CreateUnit(OwnerOf(caster),'e000',GetUnitX(caster),GetUnitY(caster),facing)
+call SetUnitModel(n0,EffectID[2269])
+call UnitSize(n0,6,1,1)
+call SetUnitFlyHeight(n0,0,0)
+call UnitColor(n0,40,40,40,80)
+call UnitSpeed(n0,0.2)
+call SaveUnitHandle(HH,id,22,n0)
+//call MyRemoveUnit(n0,21)
+call GroupAddUnit(gr2,n0)
+
+set n0=CreateUnit(OwnerOf(caster),'e000',GetUnitX(caster),GetUnitY(caster),facing)
+
+call SetUnitModel(n0,"DeadMaster\\Effect_T.mdl")
+
+call UnitSize(n0,6,1,1)
+call SetUnitFlyHeight(n0,0,0)
+call UnitColor(n0,100,100,100,0)
+call UnitSpeed(n0,1)
+//call MyRemoveUnit(n0,21)
+call SaveUnitHandle(HH,id,23,n0)
+call GroupAddUnit(gr2,n0)
+
+call SaveGroupHandle(HH,id,40,gr2)
+
+endif
+
+if time==1 then
+
+call CreateModeIndicatorForm(caster, "ReplaceableTextures\\CommandButtons\\BTNDeadMasterT.blp", 20)
+endif
+
+
+
+if time>1 then
+call GroupEnumUnitsInRange(G,x1,y1,2000,null)
+loop
+set n0=FirstOfGroup(G)
+exitwhen n0==null
+if n0==caster then
+if SR(x1,y1,GetUnitX(n0),GetUnitY(n0))>1701 then
+if GetUnitAbilityLevel(caster,'DMT2')>0 then
+call UnitRemoveAbility(caster,'DMT2')
+call UnitRemoveAbility(caster,'BDMT')
+endif
+else
+if GetUnitAbilityLevel(caster,'DMT2')==0 then
+call UnitAddAbility(caster,'DMT2')
+endif
+endif
+else
+
+
+
+
+
+if IsUnitType(n0,UNIT_TYPE_STRUCTURE)==false then
+
+
+if GetUnitAbilityLevel(n0,'DMT3')==0 and IsUnitEnemy(n0,OwnerOf(caster))==true then 
+
+call UnitAddAbility(n0,'DMT3') 
+call GroupAddUnit(gr,n0)
+
+
+endif
+
+
+if SR(x1,y1,GetUnitX(n0),GetUnitY(n0))>1501 and SR(x1,y1,GetUnitX(n0),GetUnitY(n0))<1650 then
+set facing=Angle2(x1,y1,GetUnitX(n0),GetUnitY(n0))
+call MoveAoe1(x1,y1,n0,1500,facing)
+
+
+
+endif
+if SR(x1,y1,GetUnitX(n0),GetUnitY(n0))>1650 and SR(x1,y1,GetUnitX(n0),GetUnitY(n0))<1750 then
+set facing=Angle2(x1,y1,GetUnitX(n0),GetUnitY(n0))
+call MoveAoe1(x1,y1,n0,1751,facing)
+
+
+
+
+endif
+endif
+endif
+call GroupRemoveUnit(G,n0)
+endloop
+
+call SaveGroupHandle(HH,id,4,gr)
+
+call ForGroup(gr,function DeadMaster_T3)
+
+
+endif
+endif
+
+set caster=null
+set gr=null
+set gr2=null
+endfunction
+function Death_Master_T1_Act takes unit caster returns nothing
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+local real x0=GetUnitX(caster)
+local real y0=GetUnitY(caster)
+local real facing=GetUnitFacing(caster)
+local real damage=0
+
+call SaveUnitHandle(HH,id,1,caster)
+call SaveReal(HH,id,3,facing)
+call SaveGroupHandle(HH,id,4,CreateGroup())
+call SaveGroupHandle(HH,id,40,CreateGroup())
+call SaveReal(HH,id,11,x0)
+call SaveReal(HH,id,12,y0)
+call SaveReal(HH,id,15,damage)
+call TSE_TimerStart(t,0.02,true,function Death_Master_T1_Act2)
+set t=null
+endfunction
+
+
+
+
+function DM_Q_CD_Act takes nothing returns nothing
+local timer t=GetExpiredTimer()
+local integer id=GetHandleId(t)
+local unit caster=LoadUnitHandle(HH,id,0)
+if LoadInteger(HH,id,6)==1 then
+
+
+call EnableUnitAbility2(caster,'DMQ1',false,true)
+
+call UnitAddAbility(caster,'DMQ3')
+call UnitMakeAbilityPermanent(caster,true,'DMQ3')
+call SaveBoolean(HH,GetHandleId(caster),StringHash("DM_Skull_1"),true)
+else
+
+call EnableUnitAbility2(caster,'DMQ2',false,true)
+
+
+call UnitAddAbility(caster,'DMQ4')
+call UnitMakeAbilityPermanent(caster,true,'DMQ4')
+call SaveBoolean(HH,GetHandleId(caster),StringHash("DM_Skull_2"),true)
+endif
+call PauseTimer(t)
+call TSE_DestroyTimer(t)
+call FlushChildHashtable(HH,id)
+set caster=null
+set t=null
+endfunction
+function DM_Q_CD takes unit caster,integer id_Q returns nothing
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+call SaveUnitHandle(HH,id,0,caster)
+if id_Q==1 then
+
+
+call DisableUnitAbility2(caster,'DMQ1',false,true)
+
+call UnitRemoveAbility(caster,'DMQ3')
+call SaveBoolean(HH,GetHandleId(caster),StringHash("DM_Skull_1"),false)
+else
+
+call DisableUnitAbility2(caster,'DMQ2',false,true)
+
+
+call UnitRemoveAbility(caster,'DMQ4')
+call SaveBoolean(HH,GetHandleId(caster),StringHash("DM_Skull_2"),false)
+endif
+call SaveInteger(HH,id,6,id_Q)
+call TSE_TimerStart(t,15-GetUnitAbilityLevel(caster,'DMQ1'),false,function DM_Q_CD_Act)
+set t=null
+endfunction
+
+
+
+function Death_Master_F1_Act3 takes nothing returns nothing
+local integer id=GetHandleId(GetExpiredTimer())
+local unit caster=LoadUnitHandle(HH,id,1)
+local unit target=LoadUnitHandle(HH,id,2)
+local unit Dummy=LoadUnitHandle(HH,id,20)
+local real time=LoadReal(HH,id,5)
+local real time1=LoadReal(HH,id,6)
+local real x0=GetUnitX(Dummy)
+local real y0=GetUnitY(Dummy)
+local real x1=GetUnitX(target)
+local real y1=GetUnitY(target)
+local real dist=SR(x0,y0,x1,y1)
+local real damage=LoadReal(HH,id,15)
+local real facing=Angle2(x0,y0,x1,y1)
+local integer id_Q=LoadInteger(HH,id,19)
+set time=time+0.02
+call SaveReal(HH,id,5,time)
+if time>15.04 then
+call RemoveUnit(LoadUnitHandle(HH,id,20))
+call RemoveUnit(LoadUnitHandle(HH,id,21))
+call RemoveUnit(LoadUnitHandle(HH,id,22))
+call PauseTimer(GetExpiredTimer())
+call FlushChildHashtable(HH,id)
+call TSE_DestroyTimer(GetExpiredTimer())
+else
+if time==0.02 then
+call UnitSpeed(caster,1)
+call SetUnitAnimationByIndex(caster,14)
+call sound_play("Sound\\DeadMaster\\DeadMaster_F.mp3",200)
+call EffectCreateAndMove(true,EffectID[768],facing,1.5,0.75,1.5,100,100,100,80,0,caster,0,facing)
+call EffectCreateAndMove(true,EffectID[23],facing,1.5,1,0.5,60,100,60,0,0,caster,0,facing)
+endif
+if time==0.2 then
+call EffectCreateAndMove(true,EffectID[0],facing+180,1,1,0.75,60,100,60,0,100,Dummy,0,facing)
+call EffectCreateAndMove(true,EffectID[6],facing,1,0.4,0.4,60,100,60,0,100,Dummy,0,facing)
+call EffectCreateAndMove90(true,EffectID[2217],facing,1.5,1.5,0.5,100,100,100,0,100,Dummy,50,facing)
+endif
+if time>0.2 and time<10 then
+call MoveUnit(Dummy,Dummy,60,facing)
+if dist<=50 or IsTerrainPathable(PolX(x0,50,facing),PolY(y0,50,facing),PATHING_TYPE_FLYABILITY)==true then
+set n0=CreateUnit(OwnerOf(caster),'e000',x0,y0,facing)
+call SetUnitModel(n0,EffectID[2224])
+call UnitSize(n0,1,1,1)
+call SaveUnitHandle(HH,id,21,n0)
+set n0=CreateUnit(OwnerOf(caster),'e000',x0,y0,facing)
+call SaveUnitHandle(HH,id,22,n0)
+if IsUnitAlly(target,OwnerOf(caster))==false then
+call SetUnitModel(n0,EffectID[2236])
+call UnitSize(n0,2.5,1,1)
+call SetUnitFlyHeight(n0,100,0)
+else
+call SetUnitModel(n0,EffectID[1537])
+call UnitSize(n0,1.5,1,1)
+if id_Q==1 then
+call UnitAddAbilityTimed(target,5,'DMQ3')
+else
+call UnitAddAbilityTimed(target,5,'DMQ4')
+endif
+endif
+call Death_Master_Drain_Passive_Aoe(caster,x1,y1,1000)
+if GetUnitAbilityLevel(caster,'DME2')>0 then
+call Death_Master_E_F_Act0(caster,target,0)
+endif
+call EffectCreateAndMove(true,EffectID[2251],facing,1.5,2,1,100,100,100,0,100,target,0,facing)
+call EffectCreateAndMove(true,EffectID[768],facing,2,1.25,0.5,100,100,100,80,-200,Dummy,0,facing)
+set time=10
+call SaveReal(HH,id,5,10)
+call Death_Master_Poison_Act(caster,GetUnitX(target),GetUnitY(target))
+endif
+endif
+if time>10 then
+call MoveUnit(target,Dummy,0,facing)
+call MoveUnit(target,LoadUnitHandle(HH,id,21),0,facing)
+call MoveUnit(target,LoadUnitHandle(HH,id,22),0,facing)
+set time1=time1+0.02
+if time1>=1 or time==10.02 then
+set time1=0
+if IsUnitAlly(target,OwnerOf(caster))==false then
+call Death_Master_Drain_Passive(caster,target)
+call EffectCreateAndMove(true,EffectID[2217],GetRandomReal(0,360),2,1.5,1,100,100,100,0,100,target,0,facing)
+call EffectCreateAndMove(true,EffectID[2251],GetRandomReal(0,360),1.5,1,1,100,100,100,0,100,target,0,facing)
+else
+call EffectCreateAndMove(true,EffectID[2209],GetRandomReal(0,360),2,1,0.75,100,100,100,0,150,target,0,facing)
+call Death_Master_Heal(caster,target,1)
+endif
+endif
+call SaveReal(HH,id,6,time1)
+endif
+endif
+set caster=null
+set target=null
+set Dummy=null
+endfunction
+function Death_Master_F1_Act2 takes unit caster,unit target,integer id_Q returns nothing
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+local real x0=GetUnitX(caster)
+local real y0=GetUnitY(caster)
+local real x1=GetUnitX(target)
+local real y1=GetUnitY(target)
+local real facing=GetUnitFacing(caster)
+local real dist
+local real damage=GetHeroInt(caster,true)
+call SaveInteger(HH,id,19,id_Q)
+if id_Q==1 then
+set x0=PolX(GetUnitX(caster),200,facing+90)
+set y0=PolY(GetUnitY(caster),200,facing+90)
+call DM_Q_CD(caster,id_Q)
+else
+set x0=PolX(GetUnitX(caster),200,facing-90)
+set y0=PolY(GetUnitY(caster),200,facing-90)
+call DM_Q_CD(caster,id_Q)
+endif
+set facing=Angle2(x0,y0,x1,y1)
+call SaveUnitHandle(HH,id,1,caster)
+call SaveUnitHandle(HH,id,2,target)
+call SaveReal(HH,id,15,damage)
+set n0=CreateUnit(OwnerOf(caster),'e000',x0,y0,facing)
+call SetUnitModel(n0,EffectID[1446])
+call UnitSize(n0,0.5,1,1)
+set facing=Angle2(x0,y0,x1,y1)
+set dist=SR(x0,y0,x1,y1)
+set dist=SR(x0,y0,x1,y1)
+call SaveReal(HH,id,8,dist)
+call SaveReal(HH,id,11,x1)
+call SaveReal(HH,id,12,y1)
+call SaveReal(HH,id,3,facing)
+call SaveUnitHandle(HH,id,20,n0)
+call TSE_TimerStart(t,0.02,true,function Death_Master_F1_Act3)
+set t=null
+endfunction
+function Death_Master_F1_Act takes unit caster,unit target returns nothing
+local integer random_int=0
+if LoadBoolean(HH,GetHandleId(caster),StringHash("DM_Skull_1"))==true and LoadBoolean(HH,GetHandleId(caster),StringHash("DM_Skull_2"))==false then
+call Death_Master_F1_Act2(caster,target,1)
+call SaveBoolean(HH,GetHandleId(caster),StringHash("DM_Skull_1"),false)
+
+
+if GetUnitAbilityLevel(caster,'DMQ1')>3 then
+call SetPlayerAbilityAvailable(OwnerOf(caster),'DMQ1',false)
+call SetPlayerAbilityAvailable(OwnerOf(caster),'DMQ2',true)
+endif
+
+
+endif
+if LoadBoolean(HH,GetHandleId(caster),StringHash("DM_Skull_2"))==true and LoadBoolean(HH,GetHandleId(caster),StringHash("DM_Skull_1"))==false then
+call Death_Master_F1_Act2(caster,target,2)
+call SaveBoolean(HH,GetHandleId(caster),StringHash("DM_Skull_2"),false)
+
+
+if GetUnitAbilityLevel(caster,'DMQ1')>3 then
+call SetPlayerAbilityAvailable(OwnerOf(caster),'DMQ2',false)
+call SetPlayerAbilityAvailable(OwnerOf(caster),'DMQ1',true)
+endif
+
+endif
+if LoadBoolean(HH,GetHandleId(caster),StringHash("DM_Skull_1"))==true and LoadBoolean(HH,GetHandleId(caster),StringHash("DM_Skull_2"))==true then
+set random_int=GetRandomInt(1,2)
+call Death_Master_F1_Act2(caster,target,random_int)
+if random_int==1 then
+
+
+if GetUnitAbilityLevel(caster,'DMQ1')>3 then
+call SetPlayerAbilityAvailable(OwnerOf(caster),'DMQ1',false)
+call SetPlayerAbilityAvailable(OwnerOf(caster),'DMQ2',true)
+endif
+
+
+call SaveBoolean(HH,GetHandleId(caster),StringHash("DM_Skull_1"),false)
+else
+
+
+if GetUnitAbilityLevel(caster,'DMQ1')>3 then
+call SetPlayerAbilityAvailable(OwnerOf(caster),'DMQ2',false)
+call SetPlayerAbilityAvailable(OwnerOf(caster),'DMQ1',true)
+endif
+
+
+call SaveBoolean(HH,GetHandleId(caster),StringHash("DM_Skull_2"),false)
+endif
+endif
+endfunction
+
+
+
+
+function Death_Master_G_Act2 takes nothing returns nothing
+local integer id=GetHandleId(GetExpiredTimer())
+local unit caster=LoadUnitHandle(HH,id,1)
+local unit target=LoadUnitHandle(HH,id,2)
+local unit Dummy=LoadUnitHandle(HH,id,20)
+local real time=LoadReal(HH,id,5)
+local real time1=LoadReal(HH,id,6)
+local real facing=LoadReal(HH,id,3)
+local real damage=LoadReal(HH,id,15)
+set time=time+0.02
+call SaveReal(HH,id,5,time)
+if time>1.5 then
+call SetUnitFlyHeight(target,0,GetUnitFlyHeight(target))
+call PauseUnit(caster,false)
+call SetUnitInvulnerable(caster,false)
+call RemoveUnit(LoadUnitHandle(HH,id,20))
+call UnitSpeed(caster,1)
+call PauseTimer(GetExpiredTimer())
+call FlushChildHashtable(HH,id)
+call TSE_DestroyTimer(GetExpiredTimer())
+else
+if time==0.02 then
+call Death_Master_Poison_Act(caster,GetUnitX(target),GetUnitY(target))
+call sound_play("Sound\\DeadMaster\\DeadMaster_G.mp3",200)
+call Death_Master_Drain_Passive_Aoe(caster,GetUnitX(caster),GetUnitY(caster),1000)
+call UnitAddAbility(target,'Amrf')
+call UnitRemoveAbility(target,'Amrf')
+call EffectCreateAndMove(true,EffectID[1842],GetRandomReal(0,360),1.5,2.5,1,100,100,100,0,100,target,0,facing)
+call EffectCreateAndMoveAn(true,EffectID[2216],GetRandomReal(0,360),1.5,3.5,2,100,100,100,0,0,target,0,facing,0)
+call EffectCreateAndMove(true,EffectID[2116],GetRandomReal(0,360),1.5,2,1,100,100,100,0,0,target,0,facing)
+call EffectCreateAndMove(true,EffectID[2236],GetRandomReal(0,360),1.5,1,1,100,100,100,0,100,caster,80,facing+30)
+call EffectCreateAndMove(true,EffectID[2236],GetRandomReal(0,360),1.5,1,1,100,100,100,0,100,caster,80,facing-30)
+call EffectCreateAndMove(true,EffectID[2236],GetRandomReal(0,360),1.5,1,1,100,100,100,0,100,caster,80,facing)
+call SetUnitAnimationByIndex(caster,14)
+call UnitSpeed(caster,2)
+endif
+if time<0.2 then
+call SetUnitFlyHeight(target,GetUnitFlyHeight(target)+10,0)
+endif
+call SetUnitInvulnerable(caster,true)
+call PauseUnit(caster,true)
+call MoveUnit(Dummy,target,0,facing)
+if caster!=target then
+if GetUnitAbilityLevel(target,'B05G')==0 and GetUnitAbilityLevel(target,'CE04')==0 then
+call MoveUnit(Dummy,caster,-300,facing)
+endif
+endif
+if SR(GetUnitX(Dummy),GetUnitY(Dummy),GetUnitX(target),GetUnitY(target))>400 then
+call SaveReal(HH,id,5,10)
+endif
+if time==0.02 or time==0.2 or time==0.4 or time==0.6 or time==0.8 or time==1 or time==1.2 then
+call EffectCreateAndMove(true,EffectID[2217],GetRandomReal(0,360),1.5,2,1,100,100,100,60,50,target,0,facing)
+endif
+
+
+if  GetUnitAbilityLevel(caster,'DME2')>0 and  IsUnitEnemy(target,OwnerOf(caster))==true then
+call SetControlToUnit(target,target,0.1,"doom")
+call SetControlToUnit(target,target,0.1,"stunbkb")
+endif
+
+
+set time1=time1+.02
+if time1>=0 then
+
+
+
+set time1=-0.16
+call EffectCreateAndMove(true,EffectID[23],GetRandomReal(0,360),1,1.25,0.4,60,100,60,60,-200,target,0,facing)
+if IsUnitEnemy(target,OwnerOf(caster))==true then
+
+
+
+
+call EffectCreateAndMove(true,EffectID[589],GetRandomReal(0,360),1,1.4,0.8,100,100,100,40,0,target,0,facing)
+call Death_Master_Drain_Passive(caster,target)
+else
+call EffectCreateAndMove(true,EffectID[1537],GetRandomReal(0,360),1,2,1,100,100,100,0,0,target,0,facing)
+call Death_Master_Heal(caster,target,1)
+endif
+endif
+call SaveReal(HH,id,6,time1)
+endif
+set caster=null
+set target=null
+set Dummy=null
+endfunction
+function Death_Master_G_Act takes unit caster,unit target returns nothing
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+local real x0=GetUnitX(caster)
+local real y0=GetUnitY(caster)
+local real x1=GetUnitX(target)
+local real y1=GetUnitY(target)
+local real facing=Angle2(x0,y0,x1,y1)
+local real damage=GetUnitState(target,UNIT_STATE_LIFE)*0.01
+call SaveUnitHandle(HH,id,1,caster)
+call SaveUnitHandle(HH,id,2,target)
+set facing=Angle2(x0,y0,x1,y1)
+set n0=CreateUnit(OwnerOf(caster),'e000',GetUnitX(target),GetUnitY(target),facing)
+call UnitSize(n0,1.5,1,1)
+call UnitSpeed(n0,1)
+call UnitColor(n0,100,100,100,0)
+call SetUnitFlyHeight(n0,0,0)
+call SaveUnitHandle(HH,id,20,n0)
+call SetUnitAnimationByIndex(n0,1)
+if caster!=target then
+call MoveUnit(n0,caster,-300,facing)
+endif
+call SetUnitInvulnerable(caster,true)
+call PauseUnit(caster,true)
+set n0=null
+call SaveReal(HH,id,3,facing)
+call SetUnitInvulnerable(caster,true)
+call SaveReal(HH,id,15,damage)
+call TSE_TimerStart(t,0.02,true,function Death_Master_G_Act2)
+set t=null
+endfunction
+
+
+
+
+function Death_Master_R1_Act2 takes nothing returns nothing
+local integer id=GetHandleId(GetExpiredTimer())
+local unit caster=LoadUnitHandle(HH,id,1)
+local unit Dummy=LoadUnitHandle(HH,id,20)
+local real time=LoadReal(HH,id,5)
+local real time1=LoadReal(HH,id,6)
+local real x0=GetUnitX(Dummy)
+local real y0=GetUnitY(Dummy)
+local real x1=LoadReal(HH,id,11)
+local real y1=LoadReal(HH,id,12)
+local real dist=SR(x0,y0,x1,y1)
+local real damage= LoadReal(HH,id,15)
+local real facing=LoadReal(HH,id,3)
+set time=time+0.02
+call SaveReal(HH,id,5,time)
+if time>3 then
+//call RemoveUnit(LoadUnitHandle(HH,id,20))
+call PauseTimer(GetExpiredTimer())
+call FlushChildHashtable(HH,id)
+call TSE_DestroyTimer(GetExpiredTimer())
+else
+if time==0.02 then
+call UnitSpeed(caster,1)
+call SetUnitAnimationByIndex(caster,8)
+call sound_play("Sound\\DeadMaster\\DeadMaster_R1.mp3",200)
+call EffectCreateAndMove(true,EffectID[768],facing,1.5,0.75,1.5,100,100,100,80,0,caster,0,facing)
+call EffectCreateAndMove(true,EffectID[23],facing,1.5,1,0.5,60,100,60,0,0,caster,0,facing)
+endif
+if time==0.5 then
+
+call Effect_Visible_Timed_RGB(LoadUnitHandle(HH,id,20),2,100,100,100)
+
+
+
+call Death_Master_Poison_Act(caster,x1,y1)
+call Death_Master_Drain_Passive_Aoe(caster,x1,y1,1000)
+if LoadBoolean(HH,id,19)==true then
+call EffectCreateAndMove(true,EffectID[2226],facing,1.5,2.25,0.5,100,100,100,0,0,Dummy,-600,facing)
+call EffectCreateAndMove(true,EffectID[2251],facing,1.5,5,1,100,100,100,0,0,Dummy,-600,facing)
+call DamageAoeOneTime0_DM(caster,x1,y1,600,GetHeroInt(caster,true)*2  )
+endif
+call EffectCreateAndMove(true,EffectID[2217],facing,1.5,5,0.5,100,100,100,0,100,Dummy,-600,facing)
+call EffectCreateAndMove(true,EffectID[2208],facing,1.5,1.75,0.5,100,100,100,0,100,Dummy,-600,facing)
+call EffectCreateAndMove(true,EffectID[2209],facing,1.5,2,0.5,100,100,100,0,150,Dummy,-600,facing)
+//call EffectCreateAndMove(true,EffectID[214],facing,1.5,6,0.5,60,100,60,60,0,Dummy,-600,facing)
+call DamageAoeAndStun_DM(caster,x1,y1,600,damage,2)
+endif
+if time==1.2 then
+call sound_play("Sound\\DeadMaster\\DeadMaster_R2.mp3",200)
+endif
+if time==1.5 and GetUnitAbilityLevel(caster,'DME2')>0 then
+call EffectCreateAndMove(true,EffectID[2204],facing,1.5,3,1.5,100,100,100,0,100,Dummy,-600,facing)
+call EffectCreateAndMove(true,EffectID[2205],facing,1.5,4,0.75,100,100,100,0,0,Dummy,-600,facing)
+call Death_Master_E_Root(caster,x1,y1,600,2)
+call DamageAoeOneTime0_DM(caster,x1,y1,600,GetHeroInt(caster,true)*2)
+endif
+endif
+set caster=null
+set Dummy=null
+endfunction
+function Death_Master_R1_Act takes unit caster,real x1,real y1 returns nothing
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+local real x0=GetUnitX(caster)
+local real y0=GetUnitY(caster)
+local real facing=GetUnitFacing(caster)
+local real dist
+local real damage=GetHeroInt(caster,true)*(GetUnitAbilityLevel(caster,'DMR1')+2)
+local real x2=LoadReal(HH,GetHandleId(caster),StringHash("DMQ_X1"))
+local real y2=LoadReal(HH,GetHandleId(caster),StringHash("DMQ_Y1"))
+local real x3=LoadReal(HH,GetHandleId(caster),StringHash("DMQ_X2"))
+local real y3=LoadReal(HH,GetHandleId(caster),StringHash("DMQ_Y2"))
+
+
+
+if (SR(x1,y1,x2,y2)<=600 or SR(x1,y1,x3,y3)<=600) and  (x2!=0 or x3!=0) then
+call SaveBoolean(HH,id,19,true)
+else
+call SaveBoolean(HH,id,19,false)
+endif
+set facing=Angle2(x0,y0,x1,y1)
+call SaveUnitHandle(HH,id,1,caster)
+call SaveReal(HH,id,15,damage)
+set n0=CreateUnit(OwnerOf(caster),'e000',x1,y1,facing+180)
+call SetUnitModel(n0,EffectID[2235])
+call UnitSize(n0,4,1,1)
+call UnitSpeed(n0,2)
+call SetUnitAnimationByIndex(n0,1)
+//DestroyEffect
+//call AddSpecialEffectTarget(EffectID[2254],n0,"hand right")
+call AddSpecialEffectTarget(EffectID[2217],n0,"hand right")
+call AddSpecialEffectTarget(EffectID[2251],n0,"hand right")
+
+
+
+
+
+call MoveUnit(n0,n0,600,facing)
+set dist=SR(x0,y0,x1,y1)
+call SaveReal(HH,id,8,dist)
+call SaveReal(HH,id,11,x1)
+call SaveReal(HH,id,12,y1)
+call SaveReal(HH,id,3,facing)
+call SaveUnitHandle(HH,id,20,n0)
+call TSE_TimerStart(t,0.02,true,function Death_Master_R1_Act2)
+set t=null
+endfunction
+function Death_Master_W1_Act2 takes nothing returns nothing
+local integer id=GetHandleId(GetExpiredTimer())
+local unit caster=LoadUnitHandle(HH,id,1)
+local unit Dummy=LoadUnitHandle(HH,id,20)
+local real facing=LoadReal(HH,id,3)
+local real time=LoadReal(HH,id,5)
+local real time1=LoadReal(HH,id,6)
+local real time2=LoadReal(HH,id,18)
+local real x0=GetUnitX(Dummy)
+local real y0=GetUnitY(Dummy)
+local real damage= LoadReal(HH,id,15)
+local real dist=LoadReal(HH,id,8)
+local real dist_Base=LoadReal(HH,id,9)
+set time=time+0.02
+call SaveReal(HH,id,5,time)
+if dist<0 and time>0.02 then
+call Death_Master_Poison_Act(caster,x0,y0)
+call Death_Master_Drain_Passive_Aoe(caster,x0,y0,1000)
+call UnitSpeed(caster,1)
+call PauseUnit(caster,false)
+call SetUnitInvulnerable(caster,false)
+call SetUnitPathing(caster,true)
+call EffectCreateAndMove(true,EffectID[768],facing,1.5,1.25,1,100,100,100,60,0,Dummy,0,facing)
+//call EffectCreateAndMove(true,EffectID[214],facing,1.5,4,1,100,100,100,60,0,Dummy,0,facing)
+call EffectCreateAndMove90(true,EffectID[2217],facing,1.5,2,0.5,100,100,100,0,100,Dummy,0,facing)
+call EffectCreateAndMove90(true,EffectID[2226],facing,1.5,1,0.75,100,100,100,0,150,Dummy,50,facing)
+call EffectCreateAndMove(true,EffectID[2226],facing,1.5,0.5,1,100,100,100,60,150,Dummy,50,facing)
+call GroupClear(G)
+call GroupEnumUnitsInRange(G,x0,y0,400,Base)
+loop
+set n0=FirstOfGroup(G)
+exitwhen n0==null
+if IsUnitEnemy(n0,OwnerOf(caster))==true and GetUnitAbilityLevel(n0,'Avul')==0 then
+
+set damage= Death_Master_DMG_Increase(true,caster,LoadReal(HH,id,15))
+call DamageU(false,caster,n0,damage)
+
+
+
+
+call SetControlToUnit(n0,n0,2,"stun")
+endif
+call GroupRemoveUnit(G,n0)
+endloop
+call GroupClear(G)
+call SetUnitAnimationByIndex(Dummy,1)
+call MyRemoveUnit(Dummy,1)
+call PauseTimer(GetExpiredTimer())
+call FlushChildHashtable(HH,id)
+call TSE_DestroyTimer(GetExpiredTimer())
+else
+call PauseUnit(caster,true)
+call SetUnitInvulnerable(caster,true)
+call SetUnitPathing(caster,false)
+if time==0.02 then
+call DestroyEffect(AddSpecialEffectTarget(EffectID[1883],caster,"hand right"))
+call DestroyEffect(AddSpecialEffectTarget(EffectID[1883],caster,"hand left"))
+call DestroyEffect(AddSpecialEffectTarget(EffectID[1883],caster,"weapon"))
+call EffectCreateAndMove90(true,EffectID[2217],facing,1.5,1.25,0.75,100,100,100,0,100,caster,0,facing)
+call sound_play("Sound\\DeadMaster\\DeadMaster_W.mp3",200)
+set n0=CreateUnit(OwnerOf(caster),'e000',GetUnitX(caster),GetUnitY(caster),facing)
+call SetUnitModel(n0,EffectID[2210])
+call UnitSize(n0,0.65,1,1)
+call UnitColor(n0,100,100,100,100)
+call UnitSpeed(n0,1)
+call SaveUnitHandle(HH,id,20,n0)
+call SetUnitAnimationByIndex(caster,10)
+call UnitSpeed(caster,2)
+if GetUnitAbilityLevel(caster,'DME2')>0 then
+call Death_Master_E_F_Act0(caster,n0,1)
+endif
+set n0=null
+endif
+if dist>0 then
+call SaveReal(HH,id,8,dist-40)
+call MoveUnit(caster,caster,40,facing)
+call MoveUnit(caster,Dummy,200,facing)
+if GetUnitAbilityLevel(caster,'DME2')>0 then
+call GroupClear(G)
+call GroupEnumUnitsInRange(G,x0,y0,250,Base)
+loop
+set n0=FirstOfGroup(G)
+exitwhen n0==null
+if UnitIsAlive(n0)and IsUnitEnemy(n0,OwnerOf(caster))==true and IsUnitType(n0,UNIT_TYPE_STRUCTURE)==false then
+call SetUnitPathing(n0,false)
+if SR(x0,y0,GetUnitX(n0),GetUnitY(n0))>100 then
+call MoveUnit(n0,n0,35,facing)
+else
+call MoveUnit(n0,n0,45,facing)
+endif
+endif
+call GroupRemoveUnit(G,n0)
+endloop
+call GroupClear(G)
+endif
+endif
+endif
+set caster=null
+set Dummy=null
+endfunction
+function Death_Master_W1_Act takes unit caster,real x1,real y1 returns nothing
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+local real x0=GetUnitX(caster)
+local real y0=GetUnitY(caster)
+local real facing=Angle2(x0,y0,x1,y1)
+local real damage=(1+GetUnitAbilityLevel(caster,'DMW1'))*GetHeroInt(caster,true)
+local real dist=SR(x0,y0,x1,y1)-200
+call SaveUnitHandle(HH,id,1,caster)
+call SaveReal(HH,id,3,facing)
+call SaveReal(HH,id,8,dist)
+call SaveReal(HH,id,11,x1)
+call SaveReal(HH,id,12,y1)
+call SaveReal(HH,id,15,damage)
+call PauseUnit(caster,true)
+call SetUnitInvulnerable(caster,true)
+call SetUnitPathing(caster,false)
+call TSE_TimerStart(t,0.02,true,function Death_Master_W1_Act2)
+set t=null
+endfunction
+
+
+
+function Death_Master_Q1_Act2 takes nothing returns nothing
+local integer id=GetHandleId(GetExpiredTimer())
+local unit caster=LoadUnitHandle(HH,id,1)
+local unit Dummy=LoadUnitHandle(HH,id,20)
+local real time=LoadReal(HH,id,5)
+local real time1=LoadReal(HH,id,6)
+local real x0=GetUnitX(Dummy)
+local real y0=GetUnitY(Dummy)
+local real x1=LoadReal(HH,id,11)
+local real y1=LoadReal(HH,id,12)
+local real dist=SR(x0,y0,x1,y1)
+local real damage= LoadReal(HH,id,15)
+local real facing=LoadReal(HH,id,3)
+local integer id_Q=LoadInteger(HH,id,19)
+set time=time+0.02
+call SaveReal(HH,id,5,time)
+if time>12 then
+if id_Q==1 then
+call RemoveSavedReal(HH,GetHandleId(caster),StringHash("DMQ_X1"))
+call RemoveSavedReal(HH,GetHandleId(caster),StringHash("DMQ_Y1"))
+else
+call RemoveSavedReal(HH,GetHandleId(caster),StringHash("DMQ_X2"))
+call RemoveSavedReal(HH,GetHandleId(caster),StringHash("DMQ_Y2"))
+endif
+call RemoveUnit(LoadUnitHandle(HH,id,20))
+call PauseTimer(GetExpiredTimer())
+call FlushChildHashtable(HH,id)
+call TSE_DestroyTimer(GetExpiredTimer())
+else
+if time==0.02 then
+call UnitSpeed(caster,1)
+call SetUnitAnimationByIndex(caster,1)
+call EffectCreateAndMove(true,EffectID[768],facing,1.5,0.75,1.5,100,100,100,80,0,caster,0,facing)
+call EffectCreateAndMove(true,EffectID[23],facing,1.5,1,0.5,60,100,60,0,0,caster,0,facing)
+endif
+if time==0.2 then
+call EffectCreateAndMove(true,EffectID[0],facing+180,1,1,0.75,60,100,60,0,100,Dummy,0,facing)
+call EffectCreateAndMove(true,EffectID[6],facing,1,0.4,0.4,60,100,60,0,100,Dummy,0,facing)
+call EffectCreateAndMove90(true,EffectID[2217],facing,1.5,1.5,0.5,100,100,100,0,100,Dummy,50,facing)
+endif
+if time>0.2 and time<10 then
+call MoveUnit(Dummy,Dummy,60,facing)
+call GroupClear(G)
+call GroupEnumUnitsInRange(G,x0,y0,300,null)
+loop
+set n0=FirstOfGroup(G)
+exitwhen n0==null
+if IsUnitEnemy(n0,OwnerOf(caster))==true and IsUnitType(n0,UNIT_TYPE_STRUCTURE)==false and GetUnitAbilityLevel(n0,'Avul')==0 then
+call SetUnitPathing(n0,false)
+if SR(GetUnitX(n0),GetUnitY(n0),GetUnitX(Dummy),GetUnitY(Dummy))<290 then
+call MoveUnit(n0,n0,40,LoadReal(HH,id,3))
+endif
+if SR(GetUnitX(n0),GetUnitY(n0),GetUnitX(Dummy),GetUnitY(Dummy))>70 then
+set facing=Angle2(GetUnitX(n0),GetUnitY(n0),GetUnitX(Dummy),GetUnitY(Dummy))
+call MoveUnit(n0,n0,25,facing)
+endif
+endif
+call GroupRemoveUnit(G,n0)
+endloop
+call GroupClear(G)
+if dist<=80 or IsTerrainPathable(PolX(x0,50,facing),PolY(y0,50,facing),PATHING_TYPE_FLYABILITY)==true then
+call Death_Master_Poison_Act(caster,x1,y1)
+call Death_Master_Drain_Passive_Aoe(caster,x1,y1,1000)
+if id_Q==1 then
+call SaveReal(HH,GetHandleId(caster),StringHash("DMQ_X1"),x1)
+call SaveReal(HH,GetHandleId(caster),StringHash("DMQ_Y1"),y1)
+else
+call SaveReal(HH,GetHandleId(caster),StringHash("DMQ_X2"),x1)
+call SaveReal(HH,GetHandleId(caster),StringHash("DMQ_Y2"),y1)
+endif
+call DamageAoeOneTime0_DM(caster,x0,y0,400,damage*2)
+call EffectCreateAndMove(true,EffectID[2208],GetRandomReal(0,360),2,0.5,0.5,100,100,100,60,0,Dummy,0,facing)
+call EffectCreateAndMove(true,EffectID[2226],GetRandomReal(0,360),2,0.5,0.5,100,100,100,0,0,Dummy,0,facing)
+call EffectCreateAndMoveAn(true,EffectID[2224],GetRandomReal(0,360),2,2,0.5,100,100,100,60,0,Dummy,0,facing,1)
+call EffectCreateAndMove(true,EffectID[2254],facing,2,2,1,100,100,100,0,0,Dummy,0,facing)
+call EffectCreateAndMove(true,EffectID[768],facing,2,1.25,0.5,100,100,100,80,-200,Dummy,0,facing)
+set time=10
+call SaveReal(HH,id,5,10)
+endif
+endif
+if time>10 then
+if time==10.02 and GetUnitAbilityLevel(caster,'DME2')>0 then
+call Death_Master_E_Root(caster,x0,y0,400,3)
+endif
+if time==10.02 or time==10.4 or time==10.8 or time==11.2 or time==11.6 then
+call EffectCreateAndMove(true,EffectID[23],GetRandomReal(0,360),1,1.5,0.3,60,100,60,60,-200,Dummy,0,facing)
+call EffectCreateAndMove(true,EffectID[2209],GetRandomReal(0,360),2,1.25,0.5,100,100,100,60,100,Dummy,0,facing)
+call EffectCreateAndMove(true,EffectID[2217],GetRandomReal(0,360),2,1.75,0.5,100,100,100,60,0,Dummy,0,facing)
+endif
+set time1=time1-0.02
+if time1<0 then
+set time1=0.2
+call DamageAoeOneTime0_DM(caster,x0,y0,400,damage*0.1)
+endif
+call SaveReal(HH,id,6,time1)
+call GroupClear(G)
+call GroupEnumUnitsInRange(G,x0,y0,400,null)
+loop
+set n0=FirstOfGroup(G)
+exitwhen n0==null
+if IsUnitEnemy(n0,OwnerOf(caster))==true and IsUnitType(n0,UNIT_TYPE_STRUCTURE)==false and GetUnitAbilityLevel(n0,'Avul')==0 then
+if SR(GetUnitX(Dummy),GetUnitY(Dummy),GetUnitX(n0),GetUnitY(n0))>200 then
+set facing=Angle2(GetUnitX(Dummy),GetUnitY(Dummy),GetUnitX(n0),GetUnitY(n0))
+call MoveUnit(n0,n0,-10,facing)
+call UnitPathingTimed(n0,2)
+endif
+endif
+call GroupRemoveUnit(G,n0)
+endloop
+call GroupClear(G)
+endif
+endif
+set caster=null
+set Dummy=null
+endfunction
+function Death_Master_Q1_Act takes unit caster,real x1,real y1,integer id_Q returns nothing
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+local real x0=GetUnitX(caster)
+local real y0=GetUnitY(caster)
+local real facing=GetUnitFacing(caster)
+local real dist
+local real damage=GetHeroInt(caster,true)
+local integer random_int=0
+local boolean Throw_Skull=false
+call SaveInteger(HH,id,19,id_Q)
+if LoadBoolean(HH,GetHandleId(caster),StringHash("DM_Skull_1"))==true and id_Q==1 then
+set Throw_Skull=true
+endif
+if LoadBoolean(HH,GetHandleId(caster),StringHash("DM_Skull_2"))==true and id_Q==2 then
+set Throw_Skull=true
+endif
+if Throw_Skull==true then
+if id_Q==1 then
+call sound_play("Sound\\DeadMaster\\DeadMaster_Q1.mp3",200)
+set x0=PolX(GetUnitX(caster),200,facing+90)
+set y0=PolY(GetUnitY(caster),200,facing+90)
+if GetUnitAbilityLevel(caster,'DMQ1')>3 then
+call SetPlayerAbilityAvailable(OwnerOf(caster),'DMQ1',false)
+call SetPlayerAbilityAvailable(OwnerOf(caster),'DMQ2',true)
+endif
+call DM_Q_CD(caster,id_Q)
+else
+call sound_play("Sound\\DeadMaster\\DeadMaster_Q2.mp3",200)
+set x0=PolX(GetUnitX(caster),200,facing-90)
+set y0=PolY(GetUnitY(caster),200,facing-90)
+call SetPlayerAbilityAvailable(OwnerOf(caster),'DMQ2',false)
+call SetPlayerAbilityAvailable(OwnerOf(caster),'DMQ1',true)
+call DM_Q_CD(caster,id_Q)
+endif
+set facing=Angle2(x0,y0,x1,y1)
+call SaveUnitHandle(HH,id,1,caster)
+call SaveReal(HH,id,15,damage)
+set n0=CreateUnit(OwnerOf(caster),'e000',x0,y0,facing)
+call SetUnitModel(n0,EffectID[1446])
+call UnitSize(n0,0.5,1,1)
+set facing=Angle2(x0,y0,x1,y1)
+set dist=SR(x0,y0,x1,y1)
+set dist=SR(x0,y0,x1,y1)
+call SaveReal(HH,id,8,dist)
+call SaveReal(HH,id,11,x1)
+call SaveReal(HH,id,12,y1)
+call SaveReal(HH,id,3,facing)
+call SaveUnitHandle(HH,id,20,n0)
+call TSE_TimerStart(t,0.02,true,function Death_Master_Q1_Act2)
+else
+call TSE_TimerStart(t,0.02,false,function SabracGnull)
+endif
+set t=null
+endfunction
+
+
+// 28 окт (3.8.2): души и энергия — в общей рамке CustomLeaderboard (как у Сабрака, Броли), видно союзникам, выделившим Дезмастера
+function Death_Master_Board_Act2 takes nothing returns nothing
+local timer t=GetExpiredTimer()
+local integer id=GetHandleId(t)
+local integer ip=LoadInteger(HH,id,16)
+local unit u=Hero[ip]
+local integer en
+if GetUnitTypeId(u)=='HDMa' then
+    if IsUnitSelected(u,GetLocalPlayer()) and IsPlayerAlly(GetLocalPlayer(),OwnerOf(u)) then
+        set en=LoadInteger(HH,PH(OwnerOf(u)),StringHash("KimiEnergy"))
+        call SetFrameText(GetFrameByName("CustomLeaderboardText",0),"|cffff8affSoul|r: "+I2S(en/7000)+"  |cffff8affEnergy|r: "+I2S(en))
+        call ShowFrame(GetFrameByName("CustomLeaderboard",0), true)
+        call SetFrameSize( GetFrameByName("CustomLeaderboard",0), .1775, GetFrameHeight( GetFrameByName("CustomLeaderboardText",0))+0.016)
+        call SetFrameTextAlignment( GetFrameByName("CustomLeaderboardText",0), TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_LEFT )
+    endif
+else
+    if IsUnitSelected(u,GetLocalPlayer()) and IsPlayerAlly(GetLocalPlayer(),OwnerOf(u)) then
+        call SetFrameText(GetFrameByName("CustomLeaderboardText",0)," ")
+        call ShowFrame(GetFrameByName("CustomLeaderboard",0),false)
+    endif
+    call RemoveSavedInteger(HH,ip,SH_DMBoard)
+    call PauseTimer(t)
+    call TSE_DestroyTimer(t)
+    call FlushChildHashtable(HH,id)
+endif
+set u=null
+set t=null
+endfunction
+function Death_Master_Board_Act takes unit caster0 returns nothing
+local timer t
+local integer ip=PId(OwnerOf(caster0))
+if LoadInteger(HH,ip,SH_DMBoard)==1 then
+    return
+endif
+set t=CreateTimer()
+call SaveInteger(HH,ip,SH_DMBoard,1)
+call SaveInteger(HH,GetHandleId(t),16,ip)
+call TSE_TimerStart(t,0.2,true,function Death_Master_Board_Act2)
+set t=null
+endfunction
+function Death_Master_Skull_Summon_Act takes nothing returns nothing
+local integer id=GetHandleId(GetExpiredTimer())
+local unit caster=Hero[LoadInteger(HH,id,16)]
+local real facing=GetUnitFacing(caster)
+local unit Dummy1=LoadUnitHandle(HH,id,20)
+local unit Dummy2=LoadUnitHandle(HH,id,21)
+local real x=GetUnitX(caster)
+local real y=GetUnitY(caster)
+local real x1=0
+local real y1=0
+local real x2=0
+local real y2=0
+local real facing2=0
+call SetUnitFacing(Dummy1,facing)
+call SetUnitFacing(Dummy2,facing)
+
+
+if UnitIsAlive(caster) then
+
+set x1=PolX(x,200,facing+90)
+set y1=PolY(y,200,facing+90)
+call SetUnitX(Dummy1,x1)
+call SetUnitY(Dummy1,y1)
+set x2=PolX(x,200,facing-90)
+set y2=PolY(y,200,facing-90)
+call SetUnitX(Dummy2,x2)
+call SetUnitY(Dummy2,y2)
+
+else
+call MoveAoe1(GetRectCenterX(gg_rct_Rect1),GetRectCenterY(gg_rct_Rect1),Dummy1,0,GetUnitFacing(caster))
+call MoveAoe1(GetRectCenterX(gg_rct_Rect1),GetRectCenterY(gg_rct_Rect1),Dummy2,0,GetUnitFacing(caster))
+endif
+
+
+
+
+
+if LoadBoolean(HH,GetHandleId(caster),StringHash("DM_Skull_1"))==true then
+call SetUnitFlyHeight(Dummy1,GetUnitFlyHeight(caster),0)
+else
+call SetUnitFlyHeight(Dummy1,5000,0)
+endif
+if LoadBoolean(HH,GetHandleId(caster),StringHash("DM_Skull_2"))==true then
+call SetUnitFlyHeight(Dummy2,GetUnitFlyHeight(caster),0)
+else
+call SetUnitFlyHeight(Dummy2,5000,0)
+endif
+if CheckUnitInvisible(caster)then
+if GetUnitAbilityLevel(Dummy1,'A0A1')==0 then
+call UnitAddAbility(Dummy1,'A0A1')
+call UnitAddAbility(Dummy2,'A0A1')
+endif
+else
+call UnitRemoveAbility(Dummy1,'A0A1')
+call UnitRemoveAbility(Dummy2,'A0A1')
+endif
+if GetUnitAbilityLevel(caster,'DMQ1')==0 then
+call RemoveUnit(Dummy1)
+call RemoveUnit(Dummy2)
+call DisplayTextToPlayer(OwnerOf(caster),0,0,Lng("Черепки исчезли","The skulls are gone"))
+call PauseTimer(GetExpiredTimer())
+call FlushChildHashtable(HH,id)
+call TSE_DestroyTimer(GetExpiredTimer())
+endif
+set caster=null
+set Dummy1=null
+set Dummy2=null
+endfunction
+function Death_Master_Skull_Summon takes unit caster0 returns nothing
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+call SaveUnitHandle(HH,id,1,caster0)
+call DisplayTextToPlayer(OwnerOf(caster0),0,0,Lng("Черепки появились","The skulls are back"))
+set n0=CreateUnit(OwnerOf(caster0),'gb01',GetUnitX(caster0),GetUnitY(caster0),GetUnitFacing(caster0))
+call SetUnitModel(n0,EffectID[1446])
+call UnitSize(n0,0.5,1,1)
+call SetUnitFlyHeight(n0,0,0)
+call SaveUnitHandle(HH,id,20,n0)
+call SaveUnitHandle(HH,GetHandleId(caster0),StringHash("DM_Skull_1_U"),n0)
+set n0=CreateUnit(OwnerOf(caster0),'gb01',GetUnitX(caster0),GetUnitY(caster0),GetUnitFacing(caster0))
+call SetUnitModel(n0,EffectID[1446])
+call UnitSize(n0,0.5,1,1)
+call SetUnitFlyHeight(n0,0,0)
+call SaveUnitHandle(HH,id,21,n0)
+call SaveUnitHandle(HH,GetHandleId(caster0),StringHash("DM_Skull_2_U"),n0)
+call SaveBoolean(HH,GetHandleId(caster0),StringHash("DM_Skull_1"),true)
+call SaveBoolean(HH,GetHandleId(caster0),StringHash("DM_Skull_2"),false)
+
+call SaveInteger(HH,id,16,PId(OwnerOf(caster0)))
+
+
+call TSE_TimerStart(t,0.02,true,function Death_Master_Skull_Summon_Act)
+set caster0=null
+set t=null
+endfunction
+
+
+
+function Death_Master_Hero_Death_Action2 takes nothing returns nothing
+local integer id=GetHandleId(GetExpiredTimer())
+local unit caster=LoadUnitHandle(HH,id,1)
+local unit Dummy=LoadUnitHandle(HH,id,20)
+local real time=LoadReal(HH,id,5)
+local integer swords=0
+//set time=time+0.02
+//call SaveReal(HH,id,5,time)
+if SR(GetUnitX(caster),GetUnitY(caster),GetUnitX(Dummy),GetUnitY(Dummy))<150 then
+call EffectCreateAndMove(true,EffectID[2217],GetRandomReal(0,360),1.5,1.75,1,100,100,100,0,0,caster,0,0)
+set swords=LoadInteger(HH,PH(OwnerOf(caster)),StringHash("KimiFormDur"))
+call SaveInteger(HH,PH(OwnerOf(caster)),StringHash("KimiFormDur"),swords+1)
+set swords=LoadInteger(HH,PH(OwnerOf(caster)),StringHash("KimiEnergy"))
+call SaveInteger(HH,PH(OwnerOf(caster)),StringHash("KimiEnergy"),swords+7000)
+
+call Bof_Heal(caster,caster,GetUnitState(caster,UNIT_STATE_MAX_LIFE)*0.05)
+call SetUnitState(caster,UNIT_STATE_MANA,GetUnitState(caster,UNIT_STATE_MANA)+GetUnitState(caster,UNIT_STATE_MAX_MANA)*0.05)
+
+set time=25
+call SaveReal(HH,id,5,time)
+endif
+if time>=25 or udg_B==false or DU2==false or UnitIsAlive(caster)==false then 
+call RemoveUnit(Dummy)
+call RemoveUnit(LoadUnitHandle(HH,id,21))
+call RemoveUnit(LoadUnitHandle(HH,id,22))
+call PauseTimer(GetExpiredTimer())
+call FlushChildHashtable(HH,id)
+call TSE_DestroyTimer(GetExpiredTimer())
+endif
+set caster=null
+set Dummy=null
+endfunction
+function Trig_DeadMasterHeroDie_Actions takes nothing  returns nothing
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+local unit caster=Deadmaster
+local unit target=GetTriggerUnit()
+local real facing=GetUnitFacing(target)
+call SaveReal(HH,id,3,facing)
+call SaveUnitHandle(HH,id,1,caster)
+set n0=CreateUnit(OwnerOf(caster),'e000',GetUnitX(target),GetUnitY(target),facing)
+call SetUnitModel(n0,EffectID[2242])
+call UnitAddAbility(n0,'Amrf')
+call UnitRemoveAbility(n0,'Amrf')
+call UnitSize(n0,1.5,1,1)
+call SaveUnitHandle(HH,id,20,n0)
+set n0=CreateUnit(OwnerOf(caster),'e000',GetUnitX(target),GetUnitY(target),facing)
+call SetUnitModel(n0,EffectID[2314])
+call UnitSize(n0,1.25,1,1)
+call SaveUnitHandle(HH,id,21,n0)
+set n0=CreateUnit(OwnerOf(caster),'e000',GetUnitX(target),GetUnitY(target),facing)
+call SetUnitModel(n0,EffectID[2263])
+call UnitSize(n0,1.5,1,1)
+call SetUnitFlyHeight(n0,150,0)
+call SaveUnitHandle(HH,id,22,n0)
+set n0=null
+call TSE_TimerStart(t,0.02,true,function Death_Master_Hero_Death_Action2)
+set caster=null
+set target=null
+set t=null
+endfunction
+
+
+
+function DeadMasterHeroDieCond takes nothing returns boolean
+return   IsUnitEnemy(GetTriggerUnit(),OwnerOf(   Deadmaster ))==true  and     GetHeroLevel(GetTriggerUnit())>=20 and udg_B==true and UnitIsAlive(Deadmaster) and  Deadmaster!=null  and  LoadBoolean(HH,GetHandleId( Hero[ PId( OwnerOf( GetTriggerUnit() )  )  ] ), StringHash("SabracKillme") ) ==false and OwnerOf( GetTriggerUnit() )!= PlayerV(14) and IsUnitIllusion( GetTriggerUnit() )==false  and IsUnitType(GetTriggerUnit(),UNIT_TYPE_HERO)  and GetUnitTypeId(GetTriggerUnit())!='H035' and GetUnitTypeId(GetTriggerUnit())!='Ho13' and GetUnitTypeId(GetTriggerUnit())!='H34X' and GetUnitTypeId(GetTriggerUnit())!='HASC'  and GetUnitTypeId(GetTriggerUnit())!='HSaC' and GetUnitTypeId(GetTriggerUnit())!='H039'  
+endfunction
+function InitTrig_DeadMasterHeroDie takes nothing returns nothing
+local trigger t=CreateTrigger()
+call TriggerRegisterAnyUnitEventBJ(t,EVENT_PLAYER_UNIT_DEATH)
+call TriggerAddCondition(t,Condition(function DeadMasterHeroDieCond))
+call TriggerAddAction(t,function Trig_DeadMasterHeroDie_Actions)
+
+
+set t=null
+endfunction
+
+//DeadMaster2end
 function AbilitiesForChoice_Cond takes nothing returns boolean
     local boolean cond1=GetSpellAbilityId()=='RsQ1' or GetSpellAbilityId()=='RsQ2' or GetSpellAbilityId()=='RsQ3' or GetSpellAbilityId()=='RsW1' or GetSpellAbilityId()=='RsW2' or GetSpellAbilityId()=='RsE1' or GetSpellAbilityId()=='RsR1' or GetSpellAbilityId()=='RsR2' or GetSpellAbilityId()=='RsT1' or GetSpellAbilityId()=='RsD1' or GetSpellAbilityId()=='RsD2' or GetSpellAbilityId()=='RsD3' or GetSpellAbilityId()=='RsF1' or GetSpellAbilityId()=='RsF2' or GetSpellAbilityId()=='RsF3' or GetSpellAbilityId()=='RsG1' or GetSpellAbilityId()=='GinG' or GetSpellAbilityId()=='LamF' or GetSpellAbilityId()=='SiD1' or GetSpellAbilityId()=='AKQ1' or GetSpellAbilityId()=='AKW1' or GetSpellAbilityId()=='AKE1' or GetSpellAbilityId()=='AKR1' or GetSpellAbilityId()=='AKT1' or GetSpellAbilityId()=='AKF1' or GetSpellAbilityId()=='AKG1' or GetSpellAbilityId()=='GrQ1' or GetSpellAbilityId()=='GrW1' or GetSpellAbilityId()=='GrE1' or GetSpellAbilityId()=='GrR1' or GetSpellAbilityId()=='GrT1' or GetSpellAbilityId()=='GrF1' or GetSpellAbilityId()=='GrG2' or GetSpellAbilityId()=='UKD1' or GetSpellAbilityId()=='BuuG' or GetSpellAbilityId()=='GSQ1' or GetSpellAbilityId()=='GSQ2' or GetSpellAbilityId()=='GSW1' or GetSpellAbilityId()=='GSE1' or GetSpellAbilityId()=='GSE2' or GetSpellAbilityId()=='GSF1' or GetSpellAbilityId()=='GSF2' or GetSpellAbilityId()=='GSG1' or GetSpellAbilityId()=='GSR1' or GetSpellAbilityId()=='GST1' or GetSpellAbilityId()=='GST2' or GetSpellAbilityId()=='GST3' or GetSpellAbilityId()=='SHG1' or GetSpellAbilityId()=='CelF' or GetSpellAbilityId()=='CelG' or GetSpellAbilityId()=='CelT' or GetSpellAbilityId()=='AccD' or GetSpellAbilityId()=='AccG' or GetSpellAbilityId()=='FSF1' or GetSpellAbilityId()=='FSG1' or GetSpellAbilityId()=='ASGD'
     local boolean cond2=GetSpellAbilityId()=='BbQ1' or GetSpellAbilityId()=='BbW1' or GetSpellAbilityId()=='BbE1' or GetSpellAbilityId()=='BbR1' or GetSpellAbilityId()=='BbT1' or GetSpellAbilityId()=='BbT2' or GetSpellAbilityId()=='BbD1' or GetSpellAbilityId()=='BbF1' or GetSpellAbilityId()=='BbGb' //Barragan1start//Barragan1end
@@ -264781,7 +267745,8 @@ function AbilitiesForChoice_Cond takes nothing returns boolean
     local boolean condRemilia=GetSpellAbilityId()=='RmQ1' or GetSpellAbilityId()=='RmQ2' or GetSpellAbilityId()=='RmW1' or GetSpellAbilityId()=='RmE1' or GetSpellAbilityId()=='RmR1' or GetSpellAbilityId()=='RmT1' or GetSpellAbilityId()=='RmD1' or GetSpellAbilityId()=='RmF1' or GetSpellAbilityId()=='RmF2' or GetSpellAbilityId()=='RmG1' //Remilia1start//Remilia1end
     local boolean condSuigintou=GetSpellAbilityId()=='SuQ1' or GetSpellAbilityId()=='SuW1' or GetSpellAbilityId()=='SuE1' or GetSpellAbilityId()=='SuE2' or GetSpellAbilityId()=='SuR1' or GetSpellAbilityId()=='SuD1' or GetSpellAbilityId()=='SuD2' or GetSpellAbilityId()=='SuF1' or GetSpellAbilityId()=='SuF2' or GetSpellAbilityId()=='SuG1' or GetSpellAbilityId()=='SuT1' //Suigintou1start//Suigintou1end
     local boolean condMei=GetSpellAbilityId()=='MeiQ' or GetSpellAbilityId()=='MeiW' or GetSpellAbilityId()=='MeiE' or GetSpellAbilityId()=='MeiR' or GetSpellAbilityId()=='MeiT' or GetSpellAbilityId()=='MeiG'
-    if cond1 or cond2 or condEscanor or condFlandre or condRemilia or condSuigintou or condMei then
+    local boolean condDM=GetSpellAbilityId()=='DMQ1' or GetSpellAbilityId()=='DMQ2' or GetSpellAbilityId()=='DMW1' or GetSpellAbilityId()=='DME1' or GetSpellAbilityId()=='DMR1' or GetSpellAbilityId()=='DMT1' or GetSpellAbilityId()=='DMD1' or GetSpellAbilityId()=='DMF1' or GetSpellAbilityId()=='DMG1' //DeadMaster
+    if cond1 or cond2 or condEscanor or condFlandre or condRemilia or condSuigintou or condMei or condDM then
         return true
     else
         return false
@@ -276518,6 +279483,38 @@ endif
 if GetSpellAbilityId()=='FSG1' then
 call Frenda_G_Act(caster,x1,y1)
 endif
+//DeadMaster2Start
+
+if GetSpellAbilityId()=='DMD1' then
+call Death_Master_D_Act(caster,x1,y1)
+endif
+if GetSpellAbilityId()=='DME1' then
+call Death_Master_E1_Act(caster)
+endif
+if GetSpellAbilityId()=='DMT1' then
+call Death_Master_T1_Act(caster)
+endif
+if GetSpellAbilityId()=='DMF1' then
+call Death_Master_F1_Act(caster,target)
+endif
+if GetSpellAbilityId()=='DMG1' then
+call Death_Master_G_Act(caster,target)
+endif
+if GetSpellAbilityId()=='DMR1' then
+call Death_Master_R1_Act(caster,x1,y1)
+endif
+if GetSpellAbilityId()=='DMW1' then
+call Death_Master_W1_Act(caster,x1,y1)
+endif
+if GetSpellAbilityId()=='DMQ1' then
+call Death_Master_Q1_Act(caster,x1,y1,1)
+endif
+if GetSpellAbilityId()=='DMQ2' then
+call Death_Master_Q1_Act(caster,x1,y1,2)
+endif
+
+
+//DeadMaster2End
 set caster=null
     set target=null
 endfunction
@@ -276539,7 +279536,7 @@ endfunction
 
 
 function AbilitiesForChoiceLearn_Cond takes nothing returns boolean
-return (GetLearnedSkill()=='AKR1' or GetLearnedSkill()=='A19R' or GetLearnedSkill()=='A19S' or GetLearnedSkill()=='A0QU' or GetLearnedSkill()=='RsT1' or GetLearnedSkill()=='RsR1' or GetLearnedSkill()=='RsE1' or GetLearnedSkill()=='GSE1' or GetLearnedSkill()=='A0BG' or GetLearnedSkill()=='A0K4' or GetLearnedSkill()=='JNQ1') and IsUnitIllusion(GetTriggerUnit())==false
+return (GetLearnedSkill()=='DMQ1' or GetLearnedSkill()=='DME1' or GetLearnedSkill()=='DMR1' or GetLearnedSkill()=='AKR1' or GetLearnedSkill()=='A19R' or GetLearnedSkill()=='A19S' or GetLearnedSkill()=='A0QU' or GetLearnedSkill()=='RsT1' or GetLearnedSkill()=='RsR1' or GetLearnedSkill()=='RsE1' or GetLearnedSkill()=='GSE1' or GetLearnedSkill()=='A0BG' or GetLearnedSkill()=='A0K4' or GetLearnedSkill()=='JNQ1') and IsUnitIllusion(GetTriggerUnit())==false
 endfunction
 
 function AbilitiesForChoiceLearn_Act takes nothing returns nothing//моя прокачка абилок для всех героев разберешься
@@ -276610,6 +279607,43 @@ if GetLearnedSkill()== lvl then
 call SetUnitAbilityLevel(caster,'FSG1',GetUnitAbilityLevel(caster,lvl))
 endif
 //Frenda5End
+//DeadMaster5start
+
+set lvl='DME1'
+if GetLearnedSkill()== lvl then
+call SetUnitAbilityLevel(caster,'DMF1',GetUnitAbilityLevel(caster,lvl))
+endif
+
+set lvl='DMR1'
+if GetLearnedSkill()== lvl then
+call SetUnitAbilityLevel(caster,'DMG1',GetUnitAbilityLevel(caster,lvl))
+endif
+
+set lvl='DMQ1'
+if GetLearnedSkill()==lvl then
+
+call SetUnitAbilityLevel(caster,'DMQ2',GetUnitAbilityLevel(caster,lvl))
+
+if GetUnitAbilityLevel(caster,lvl)>3 then
+call SaveBoolean(HH,GetHandleId(caster),StringHash("DM_Skull_2"),true)
+endif
+
+
+if  GetUnitAbilityLevel(caster,lvl)==1 then
+call DisplayTextToPlayer(skillPlayer,0,0,Lng("Пассивная энергия изучена","Passive Energy Learned"))
+
+
+call Death_Master_Board_Act(caster)
+call Death_Master_Skull_Summon(caster)
+
+
+endif
+
+//call SetUnitAbilityLevel(caster,'HiF1',GetUnitAbilityLevel(caster,lvl))
+endif
+
+
+//DeadMaster5End
 //Kimimaro GPass
 set lvl='AKR1'
 if GetLearnedSkill()==lvl and GetUnitAbilityLevel(caster,lvl)==1 then
@@ -279364,7 +282398,7 @@ if cmb!=true and u!=null then
             set udg_RH[i2]=0
         endif
         set i2=i2+1
-        exitwhen i2==146 //139; было 142 — не доходило до Фландре (142) и Хирако (145)
+        exitwhen i2==147 //146 — Дезмастер (3.8.2); 139; было 142 — не доходило до Фландре (142) и Хирако (145)
         endloop
         call SetUnitPosition(u,GetRectCenterX(gg_rct_Resp7),GetRectCenterY(gg_rct_Resp7))
         set p=OwnerOf(u)
@@ -279581,7 +282615,7 @@ endif
 if FFAMode==false then
     set TeamCount[0]=0
     set TeamCount[1]=0
-    call GroupEnumUnitsInRect(G, gg_rct_KingOfHillRect, Base)
+    call GroupEnumUnitsInRange(G,GetRectCenterX(gg_rct_KingOfHillRect),GetRectCenterY(gg_rct_KingOfHillRect),KOH_R,Base) // круг (было — квадрат rect)
     loop
         set E=FirstOfGroup(G)
         exitwhen E==null
@@ -279699,7 +282733,7 @@ else
     set i=i+1
     exitwhen i>9
     endloop
-    call GroupEnumUnitsInRect(G, gg_rct_KingOfHillRect, Base)
+    call GroupEnumUnitsInRange(G,GetRectCenterX(gg_rct_KingOfHillRect),GetRectCenterY(gg_rct_KingOfHillRect),KOH_R,Base) // круг (было — квадрат rect)
     loop
         set E=FirstOfGroup(G)
         exitwhen E==null
@@ -282041,6 +285075,7 @@ call UIS_RegisterItem('I00W',0,0,0,0,0,0,0,0,0,'IGDr','IGDi')                   
 call UIS_RegisterItem('I01L','I01M',0,0,0,0,0,0,0,0,'IPar','I031')                                // Patriot сборка
 call UIS_RegisterItem('I03D','I05W','I02T',0,0,0,0,0,0,0,0,'IMDi')                                // Medusa-Dr.Stone Сборка
 call UIS_RegisterItem('IOS3','I05E',0,0,0,0,0,0,0,0,'IHYr','IHYi')                                // Yukirin Hourglass Сборка
+call UIS_RegisterItem('I033','IOS1',0,0,0,0,0,0,0,0,'IBBr','IBBi') // Ключ Баб-Илу (3.8.2)
 call UIS_RegisterItem('I03Y','IOS1','I02S',0,0,0,0,0,0,0,'ISTr','ISTi')                   // Stigmata Tesseract Сборка
 call UIS_RegisterItem('I01H','IOS3','I12R',0,0,0,0,0,0,0,0,'ISHk')                            // Sode no Shirayuki
 call UIS_RegisterItem('I02Y','ISHk',0,0,0,0,0,0,0,0,0,'IHnK')                                 // Hakka No Togame
@@ -294950,22 +297985,22 @@ call LANG_A('SnEc',1,3,"Cero like Ichigo's: a beam ahead stuns those hit.|n|n|cF
 call LANG_A('SnEc',1,4,"Cero like Ichigo's: a beam ahead stuns those hit.|n|n|cFF00A5FF|nDamage: 7*|r|c003CFF3CAGI|r|cFF00A5FF|nStun: 2.5 sec.|nBeam length: 2200|nCooldown: 14 sec.|r")
 call LANG_A('SnEc',2,0,"Cero, [|cffffcc00Level %d|r] (|cffffcc00E|r)")
 call LANG_A('SnEc',3,0,"Cero like Ichigo's: a beam ahead stuns those hit.|n|n|cFF00A5FF|nDamage: 3\\4\\5\\6\\7*|r|c003CFF3CAGI|r|cFF00A5FF|nStun: 2.5 sec.|nBeam length: 2200|nCooldown: 14 sec.|r")
-call LANG_A('ToEf',1,0,"After a 2.5 sec. charge Tōsen turns into the fly until the round ends: the mask stays on, stats +15%, Tōsen regains his sight (Blindness is removed). E becomes Flight, W Wing Chirr, R a double Cero (Hado is unavailable), T Los Nueve Aspectos, G Grillar Golpe.|n|n|cFF00A5FFAvailable: in the mask (E"+"), from level 25|nCharge: 2.5 sec.|nCost: 40% max MP + 150|nStats: +15% of total (bonuses included)|nMask bonuses: kept (move, attack, HP)|nRegeneration: 1.5% HP/sec., drops by 0.05% per sec. to 0|nDuration: until the round ends|r")
-call LANG_A('ToEf',3,0,"After a 2.5 sec. charge Tōsen turns into the fly until the round ends: the mask stays on, stats +15%, Tōsen regains his sight (Blindness is removed). E becomes Flight, W Wing Chirr, R a double Cero (Hado is unavailable), T Los Nueve Aspectos, G Grillar Golpe.|n|n|cFF00A5FFAvailable: in the mask (E"+"), from level 25|nCharge: 2.5 sec.|nCost: 40% max MP + 150|nStats: +15% of total (bonuses included)|nMask bonuses: kept (move, attack, HP)|nRegeneration: 1.5% HP/sec., drops by 0.05% per sec. to 0|nDuration: until the round ends|r")
+call LANG_A('ToEf',1,0,"After a 2.5 sec. charge Tōsen turns into the fly until the round ends: the mask stays on, stats +15%, Tōsen regains his sight (Blindness is removed). E becomes Flight, W Wing Chirr, R a double Cero (Hado is unavailable), T Los Nueve Aspectos, G Grillar Golpe.|n|n|cFF00A5FFAvailable: in the mask (E"+"), from level 25|nCharge: 2.5 sec.|nCost: 35% max MP + 120|nStats: +15% of total (bonuses included)|nMask bonuses: kept (move, attack, HP)|nRegeneration: 1.5% HP/sec., drops by 0.05% per sec. to 0|nDuration: until the round ends|r")
+call LANG_A('ToEf',3,0,"After a 2.5 sec. charge Tōsen turns into the fly until the round ends: the mask stays on, stats +15%, Tōsen regains his sight (Blindness is removed). E becomes Flight, W Wing Chirr, R a double Cero (Hado is unavailable), T Los Nueve Aspectos, G Grillar Golpe.|n|n|cFF00A5FFAvailable: in the mask (E"+"), from level 25|nCharge: 2.5 sec.|nCost: 35% max MP + 120|nStats: +15% of total (bonuses included)|nMask bonuses: kept (move, attack, HP)|nRegeneration: 1.5% HP/sec., drops by 0.05% per sec. to 0|nDuration: until the round ends|r")
 call LANG_A('ToFE',0,0,"Flight, [|cffffcc00Level 1|r] (|cffffcc00E|r)")
 call LANG_A('ToFE',0,1,"Flight, [|cffffcc00Level 2|r] (|cffffcc00E|r)")
 call LANG_A('ToFE',0,2,"Flight, [|cffffcc00Level 3|r] (|cffffcc00E|r)")
 call LANG_A('ToFE',0,3,"Flight, [|cffffcc00Level 4|r] (|cffffcc00E|r)")
 call LANG_A('ToFE',0,4,"Flight, [|cffffcc00Level 5|r] (|cffffcc00E|r)")
-call LANG_A('ToFE',1,0,"The fly dashes to the point: damage to enemies on the way. Always the full range towards the click.|n|n|cFF00A5FF|nDamage: 4*|r|c003CFF3CAGI|r|cFF00A5FF|nAoE: 300|nRange: 1200|nCooldown: 10 sec.|r")
-call LANG_A('ToFE',1,1,"The fly dashes to the point: damage to enemies on the way. Always the full range towards the click.|n|n|cFF00A5FF|nDamage: 5*|r|c003CFF3CAGI|r|cFF00A5FF|nAoE: 300|nRange: 1200|nCooldown: 10 sec.|r")
-call LANG_A('ToFE',1,2,"The fly dashes to the point: damage to enemies on the way. Always the full range towards the click.|n|n|cFF00A5FF|nDamage: 6*|r|c003CFF3CAGI|r|cFF00A5FF|nAoE: 300|nRange: 1200|nCooldown: 10 sec.|r")
-call LANG_A('ToFE',1,3,"The fly dashes to the point: damage to enemies on the way. Always the full range towards the click.|n|n|cFF00A5FF|nDamage: 7*|r|c003CFF3CAGI|r|cFF00A5FF|nAoE: 300|nRange: 1200|nCooldown: 10 sec.|r")
-call LANG_A('ToFE',1,4,"The fly dashes to the point: damage to enemies on the way. Always the full range towards the click.|n|n|cFF00A5FF|nDamage: 8*|r|c003CFF3CAGI|r|cFF00A5FF|nAoE: 300|nRange: 1200|nCooldown: 10 sec.|r")
+call LANG_A('ToFE',1,0,"The fly dashes to the point: damage to enemies on the way. Always the full range towards the click.|n|n|cFF00A5FF|nDamage: 4*|r|c003CFF3CAGI|r|cFF00A5FF|nAoE: 300|nRange: 1200|nCooldown: 12 sec.|r")
+call LANG_A('ToFE',1,1,"The fly dashes to the point: damage to enemies on the way. Always the full range towards the click.|n|n|cFF00A5FF|nDamage: 5*|r|c003CFF3CAGI|r|cFF00A5FF|nAoE: 300|nRange: 1200|nCooldown: 12 sec.|r")
+call LANG_A('ToFE',1,2,"The fly dashes to the point: damage to enemies on the way. Always the full range towards the click.|n|n|cFF00A5FF|nDamage: 6*|r|c003CFF3CAGI|r|cFF00A5FF|nAoE: 300|nRange: 1200|nCooldown: 12 sec.|r")
+call LANG_A('ToFE',1,3,"The fly dashes to the point: damage to enemies on the way. Always the full range towards the click.|n|n|cFF00A5FF|nDamage: 7*|r|c003CFF3CAGI|r|cFF00A5FF|nAoE: 300|nRange: 1200|nCooldown: 12 sec.|r")
+call LANG_A('ToFE',1,4,"The fly dashes to the point: damage to enemies on the way. Always the full range towards the click.|n|n|cFF00A5FF|nDamage: 8*|r|c003CFF3CAGI|r|cFF00A5FF|nAoE: 300|nRange: 1200|nCooldown: 12 sec.|r")
 call LANG_A('ToFE',2,0,"Flight, [|cffffcc00Level %d|r] (|cffffcc00E|r)")
-call LANG_A('ToFE',3,0,"The fly dashes to the point: damage to enemies on the way. Always the full range towards the click.|n|n|cFF00A5FF|nDamage: 4\\5\\6\\7\\8*|r|c003CFF3CAGI|r|cFF00A5FF|nAoE: 300|nRange: 1200|nCooldown: 10 sec.|r")
-call LANG_A('ToFG',1,0,"The fly darts through the target 7 times, striking on every pass, then dives onto it from above.|n|n|cFF00A5FFDamage: 8 strikes of 1*|r|c003CFF3CAGI|r|cFF00A5FF|nStun: 2 sec.|nRange: 1000|nCooldown: 25 sec.|r")
-call LANG_A('ToFG',3,0,"The fly darts through the target 7 times, striking on every pass, then dives onto it from above.|n|n|cFF00A5FFDamage: 8 strikes of 1*|r|c003CFF3CAGI|r|cFF00A5FF|nStun: 2 sec.|nRange: 1000|nCooldown: 25 sec.|r")
+call LANG_A('ToFE',3,0,"The fly dashes to the point: damage to enemies on the way. Always the full range towards the click.|n|n|cFF00A5FF|nDamage: 4\\5\\6\\7\\8*|r|c003CFF3CAGI|r|cFF00A5FF|nAoE: 300|nRange: 1200|nCooldown: 12 sec.|r")
+call LANG_A('ToFG',1,0,"The fly darts through the target 7 times, striking on every pass, then dives onto it from above.|n|n|cFF00A5FFDamage: 8 strikes of 1*|r|c003CFF3CAGI|r|cFF00A5FF|nStun: 2 sec.|nRange: 1000|nCooldown: 28 sec.|r")
+call LANG_A('ToFG',3,0,"The fly darts through the target 7 times, striking on every pass, then dives onto it from above.|n|n|cFF00A5FFDamage: 8 strikes of 1*|r|c003CFF3CAGI|r|cFF00A5FF|nStun: 2 sec.|nRange: 1000|nCooldown: 28 sec.|r")
 call LANG_A('ToFW',0,0,"Wing Chirr, [|cffffcc00Level 1|r] (|cffffcc00W|r)")
 endfunction
 function LANG_Data51 takes nothing returns nothing
@@ -294973,27 +298008,27 @@ call LANG_A('ToFW',0,1,"Wing Chirr, [|cffffcc00Level 2|r] (|cffffcc00W|r)")
 call LANG_A('ToFW',0,2,"Wing Chirr, [|cffffcc00Level 3|r] (|cffffcc00W|r)")
 call LANG_A('ToFW',0,3,"Wing Chirr, [|cffffcc00Level 4|r] (|cffffcc00W|r)")
 call LANG_A('ToFW',0,4,"Wing Chirr, [|cffffcc00Level 5|r] (|cffffcc00W|r)")
-call LANG_A('ToFW',1,0,"The fly's wings: two sound rings rise before Tousen, a moment later a sound beam strikes from them over a cone. The beam lasts 2 sec.. The first hit deals damage and 1 sec. silence, then every 0.25 sec. damage over time and 0.2 sec. silence; enemies hit are slowed by 70%.|n|n|cFF00A5FF|nDamage: 2*|r"+"|c003CFF3CAGI|r|cFF00A5FF|nDamage over time: 0.25*|r|c003CFF3CAGI|r|cFF00A5FF every 0.25 sec.|nSlow: 70%|nSilence: 1 sec., then 0.2 sec.|nRange: 1500, cone 60°|nDuration: 2 sec.|nCooldown: 12 sec.|r")
-call LANG_A('ToFW',1,1,"The fly's wings: two sound rings rise before Tousen, a moment later a sound beam strikes from them over a cone. The beam lasts 2 sec.. The first hit deals damage and 1 sec. silence, then every 0.25 sec. damage over time and 0.2 sec. silence; enemies hit are slowed by 70%.|n|n|cFF00A5FF|nDamage: 3*|r"+"|c003CFF3CAGI|r|cFF00A5FF|nDamage over time: 0.25*|r|c003CFF3CAGI|r|cFF00A5FF every 0.25 sec.|nSlow: 70%|nSilence: 1 sec., then 0.2 sec.|nRange: 1500, cone 60°|nDuration: 2 sec.|nCooldown: 12 sec.|r")
-call LANG_A('ToFW',1,2,"The fly's wings: two sound rings rise before Tousen, a moment later a sound beam strikes from them over a cone. The beam lasts 2 sec.. The first hit deals damage and 1 sec. silence, then every 0.25 sec. damage over time and 0.2 sec. silence; enemies hit are slowed by 70%.|n|n|cFF00A5FF|nDamage: 4*|r"+"|c003CFF3CAGI|r|cFF00A5FF|nDamage over time: 0.25*|r|c003CFF3CAGI|r|cFF00A5FF every 0.25 sec.|nSlow: 70%|nSilence: 1 sec., then 0.2 sec.|nRange: 1500, cone 60°|nDuration: 2 sec.|nCooldown: 12 sec.|r")
-call LANG_A('ToFW',1,3,"The fly's wings: two sound rings rise before Tousen, a moment later a sound beam strikes from them over a cone. The beam lasts 2 sec.. The first hit deals damage and 1 sec. silence, then every 0.25 sec. damage over time and 0.2 sec. silence; enemies hit are slowed by 70%.|n|n|cFF00A5FF|nDamage: 5*|r"+"|c003CFF3CAGI|r|cFF00A5FF|nDamage over time: 0.25*|r|c003CFF3CAGI|r|cFF00A5FF every 0.25 sec.|nSlow: 70%|nSilence: 1 sec., then 0.2 sec.|nRange: 1500, cone 60°|nDuration: 2 sec.|nCooldown: 12 sec.|r")
-call LANG_A('ToFW',1,4,"The fly's wings: two sound rings rise before Tousen, a moment later a sound beam strikes from them over a cone. The beam lasts 2 sec.. The first hit deals damage and 1 sec. silence, then every 0.25 sec. damage over time and 0.2 sec. silence; enemies hit are slowed by 70%.|n|n|cFF00A5FF|nDamage: 6*|r"+"|c003CFF3CAGI|r|cFF00A5FF|nDamage over time: 0.25*|r|c003CFF3CAGI|r|cFF00A5FF every 0.25 sec.|nSlow: 70%|nSilence: 1 sec., then 0.2 sec.|nRange: 1500, cone 60°|nDuration: 2 sec.|nCooldown: 12 sec.|r")
+call LANG_A('ToFW',1,0,"The fly's wings: two sound rings rise before Tousen, a moment later a sound beam strikes from them over a cone. The beam lasts 2 sec.. The first hit deals damage and 1 sec. silence, then every 0.25 sec. damage over time and 0.2 sec. silence; enemies hit are slowed by 70%.|n|n|cFF00A5FF|nDamage: 2*|r"+"|c003CFF3CAGI|r|cFF00A5FF|nDamage over time: 0.25*|r|c003CFF3CAGI|r|cFF00A5FF every 0.25 sec.|nSlow: 70%|nSilence: 1 sec., then 0.2 sec.|nRange: 1500, cone 60°|nDuration: 2 sec.|nCooldown: 14 sec.|r")
+call LANG_A('ToFW',1,1,"The fly's wings: two sound rings rise before Tousen, a moment later a sound beam strikes from them over a cone. The beam lasts 2 sec.. The first hit deals damage and 1 sec. silence, then every 0.25 sec. damage over time and 0.2 sec. silence; enemies hit are slowed by 70%.|n|n|cFF00A5FF|nDamage: 3*|r"+"|c003CFF3CAGI|r|cFF00A5FF|nDamage over time: 0.25*|r|c003CFF3CAGI|r|cFF00A5FF every 0.25 sec.|nSlow: 70%|nSilence: 1 sec., then 0.2 sec.|nRange: 1500, cone 60°|nDuration: 2 sec.|nCooldown: 14 sec.|r")
+call LANG_A('ToFW',1,2,"The fly's wings: two sound rings rise before Tousen, a moment later a sound beam strikes from them over a cone. The beam lasts 2 sec.. The first hit deals damage and 1 sec. silence, then every 0.25 sec. damage over time and 0.2 sec. silence; enemies hit are slowed by 70%.|n|n|cFF00A5FF|nDamage: 4*|r"+"|c003CFF3CAGI|r|cFF00A5FF|nDamage over time: 0.25*|r|c003CFF3CAGI|r|cFF00A5FF every 0.25 sec.|nSlow: 70%|nSilence: 1 sec., then 0.2 sec.|nRange: 1500, cone 60°|nDuration: 2 sec.|nCooldown: 14 sec.|r")
+call LANG_A('ToFW',1,3,"The fly's wings: two sound rings rise before Tousen, a moment later a sound beam strikes from them over a cone. The beam lasts 2 sec.. The first hit deals damage and 1 sec. silence, then every 0.25 sec. damage over time and 0.2 sec. silence; enemies hit are slowed by 70%.|n|n|cFF00A5FF|nDamage: 5*|r"+"|c003CFF3CAGI|r|cFF00A5FF|nDamage over time: 0.25*|r|c003CFF3CAGI|r|cFF00A5FF every 0.25 sec.|nSlow: 70%|nSilence: 1 sec., then 0.2 sec.|nRange: 1500, cone 60°|nDuration: 2 sec.|nCooldown: 14 sec.|r")
+call LANG_A('ToFW',1,4,"The fly's wings: two sound rings rise before Tousen, a moment later a sound beam strikes from them over a cone. The beam lasts 2 sec.. The first hit deals damage and 1 sec. silence, then every 0.25 sec. damage over time and 0.2 sec. silence; enemies hit are slowed by 70%.|n|n|cFF00A5FF|nDamage: 6*|r"+"|c003CFF3CAGI|r|cFF00A5FF|nDamage over time: 0.25*|r|c003CFF3CAGI|r|cFF00A5FF every 0.25 sec.|nSlow: 70%|nSilence: 1 sec., then 0.2 sec.|nRange: 1500, cone 60°|nDuration: 2 sec.|nCooldown: 14 sec.|r")
 call LANG_A('ToFW',2,0,"Wing Chirr, [|cffffcc00Level %d|r] (|cffffcc00W|r)")
-call LANG_A('ToFW',3,0,"The fly's wings: two sound rings rise before Tousen, a moment later a sound beam strikes from them over a cone. The beam lasts 2 sec.. The first hit deals damage and 1 sec. silence, then every 0.25 sec. damage over time and 0.2 sec. silence; enemies hit are slowed by 70%.|n|n|cFF00A5FF|nDamage: 2\\3"+"\\4\\5\\6*|r|c003CFF3CAGI|r|cFF00A5FF|nDamage over time: 0.25*|r|c003CFF3CAGI|r|cFF00A5FF every 0.25 sec.|nSlow: 70%|nSilence: 1 sec., then 0.2 sec.|nRange: 1500, cone 60°|nDuration: 2 sec.|nCooldown: 12 sec.|r")
-call LANG_A('ToFT',1,0,"A sound field around Tōsen follows him: rings keep flashing next to him, and once per second each hits its own enemy in the field with a wave (damage and silence). Tōsen attacks faster.|n|n|cFF00A5FF|nAoE: 800|nDamage: 1*|r|c003CFF3CAGI|r|cFF00A5FF per sec.|nSilence: while in the field|nAttack spe"+"ed: +60%|nDuration: 6 sec.|nCooldown: 45 sec.|r")
-call LANG_A('ToFT',3,0,"A sound field around Tōsen follows him: rings keep flashing next to him, and once per second each hits its own enemy in the field with a wave (damage and silence). Tōsen attacks faster.|n|n|cFF00A5FF|nAoE: 800|nDamage: 1*|r|c003CFF3CAGI|r|cFF00A5FF per sec.|nSilence: while in the field|nAttack spe"+"ed: +60%|nDuration: 6 sec.|nCooldown: 45 sec.|r")
+call LANG_A('ToFW',3,0,"The fly's wings: two sound rings rise before Tousen, a moment later a sound beam strikes from them over a cone. The beam lasts 2 sec.. The first hit deals damage and 1 sec. silence, then every 0.25 sec. damage over time and 0.2 sec. silence; enemies hit are slowed by 70%.|n|n|cFF00A5FF|nDamage: 2\\3"+"\\4\\5\\6*|r|c003CFF3CAGI|r|cFF00A5FF|nDamage over time: 0.25*|r|c003CFF3CAGI|r|cFF00A5FF every 0.25 sec.|nSlow: 70%|nSilence: 1 sec., then 0.2 sec.|nRange: 1500, cone 60°|nDuration: 2 sec.|nCooldown: 14 sec.|r")
+call LANG_A('ToFT',1,0,"A sound field around Tōsen follows him: rings keep flashing next to him, and once per second each hits its own enemy in the field with a wave (damage and silence). Tōsen attacks faster.|n|n|cFF00A5FF|nAoE: 800|nDamage: 1*|r|c003CFF3CAGI|r|cFF00A5FF per sec.|nSilence: while in the field|nAttack spe"+"ed: +60%|nDuration: 6 sec.|nCooldown: 50 sec.|r")
+call LANG_A('ToFT',3,0,"A sound field around Tōsen follows him: rings keep flashing next to him, and once per second each hits its own enemy in the field with a wave (damage and silence). Tōsen attacks faster.|n|n|cFF00A5FF|nAoE: 800|nDamage: 1*|r|c003CFF3CAGI|r|cFF00A5FF per sec.|nSilence: while in the field|nAttack spe"+"ed: +60%|nDuration: 6 sec.|nCooldown: 50 sec.|r")
 call LANG_A('ToEc',0,0,"Double Cero, [|cffffcc00Level 1|r] (|cffffcc00R|r)")
 call LANG_A('ToEc',0,1,"Double Cero, [|cffffcc00Level 2|r] (|cffffcc00R|r)")
 call LANG_A('ToEc',0,2,"Double Cero, [|cffffcc00Level 3|r] (|cffffcc00R|r)")
 call LANG_A('ToEc',0,3,"Double Cero, [|cffffcc00Level 4|r] (|cffffcc00R|r)")
 call LANG_A('ToEc',0,4,"Double Cero, [|cffffcc00Level 5|r] (|cffffcc00R|r)")
-call LANG_A('ToEc',1,0,"The fly fires two green Ceros side by side: a wide beam ahead stuns those hit.|n|n|cFF00A5FF|nDamage: 5*|r|c003CFF3CAGI|r|cFF00A5FF|nStun: 2.5 sec.|nBeam length: 2200, width 450|nCooldown: 14 sec.|r")
-call LANG_A('ToEc',1,1,"The fly fires two green Ceros side by side: a wide beam ahead stuns those hit.|n|n|cFF00A5FF|nDamage: 6*|r|c003CFF3CAGI|r|cFF00A5FF|nStun: 2.5 sec.|nBeam length: 2200, width 450|nCooldown: 14 sec.|r")
-call LANG_A('ToEc',1,2,"The fly fires two green Ceros side by side: a wide beam ahead stuns those hit.|n|n|cFF00A5FF|nDamage: 7*|r|c003CFF3CAGI|r|cFF00A5FF|nStun: 2.5 sec.|nBeam length: 2200, width 450|nCooldown: 14 sec.|r")
-call LANG_A('ToEc',1,3,"The fly fires two green Ceros side by side: a wide beam ahead stuns those hit.|n|n|cFF00A5FF|nDamage: 8*|r|c003CFF3CAGI|r|cFF00A5FF|nStun: 2.5 sec.|nBeam length: 2200, width 450|nCooldown: 14 sec.|r")
-call LANG_A('ToEc',1,4,"The fly fires two green Ceros side by side: a wide beam ahead stuns those hit.|n|n|cFF00A5FF|nDamage: 9*|r|c003CFF3CAGI|r|cFF00A5FF|nStun: 2.5 sec.|nBeam length: 2200, width 450|nCooldown: 14 sec.|r")
+call LANG_A('ToEc',1,0,"The fly fires two green Ceros side by side: a wide beam ahead stuns those hit.|n|n|cFF00A5FF|nDamage: 5*|r|c003CFF3CAGI|r|cFF00A5FF|nStun: 2.5 sec.|nBeam length: 2200, width 450|nCooldown: 16 sec.|r")
+call LANG_A('ToEc',1,1,"The fly fires two green Ceros side by side: a wide beam ahead stuns those hit.|n|n|cFF00A5FF|nDamage: 6*|r|c003CFF3CAGI|r|cFF00A5FF|nStun: 2.5 sec.|nBeam length: 2200, width 450|nCooldown: 16 sec.|r")
+call LANG_A('ToEc',1,2,"The fly fires two green Ceros side by side: a wide beam ahead stuns those hit.|n|n|cFF00A5FF|nDamage: 7*|r|c003CFF3CAGI|r|cFF00A5FF|nStun: 2.5 sec.|nBeam length: 2200, width 450|nCooldown: 16 sec.|r")
+call LANG_A('ToEc',1,3,"The fly fires two green Ceros side by side: a wide beam ahead stuns those hit.|n|n|cFF00A5FF|nDamage: 8*|r|c003CFF3CAGI|r|cFF00A5FF|nStun: 2.5 sec.|nBeam length: 2200, width 450|nCooldown: 16 sec.|r")
+call LANG_A('ToEc',1,4,"The fly fires two green Ceros side by side: a wide beam ahead stuns those hit.|n|n|cFF00A5FF|nDamage: 9*|r|c003CFF3CAGI|r|cFF00A5FF|nStun: 2.5 sec.|nBeam length: 2200, width 450|nCooldown: 16 sec.|r")
 call LANG_A('ToEc',2,0,"Double Cero, [|cffffcc00Level %d|r] (|cffffcc00R|r)")
-call LANG_A('ToEc',3,0,"The fly fires two green Ceros side by side: a wide beam ahead stuns those hit.|n|n|cFF00A5FF|nDamage: 5\\6\\7\\8\\9*|r|c003CFF3CAGI|r|cFF00A5FF|nStun: 2.5 sec.|nBeam length: 2200, width 450|nCooldown: 14 sec.|r")
+call LANG_A('ToEc',3,0,"The fly fires two green Ceros side by side: a wide beam ahead stuns those hit.|n|n|cFF00A5FF|nDamage: 5\\6\\7\\8\\9*|r|c003CFF3CAGI|r|cFF00A5FF|nStun: 2.5 sec.|nBeam length: 2200, width 450|nCooldown: 16 sec.|r")
 call LANG_A('SnT1',1,0,"Bankai: a bud around Hirako releases a mist (W ends). The mask is not spent. Every second everyone in the mist except Hirako is confused: enemies look like allies and vice versa (Hirako's allies from the 3rd second, a \"!\" above them before that); on the first confusion the target drops its order a"+"nd uses a random ability at the nearest \"enemy\" (looks for a ready one for up to 2 sec., orders do not go through meanwhile). All damage of the confused to Hirako's enemies is dealt by Hirako himself. No effect under Imagine Breaker or Clear Sky.|n|n|cFF00A5FF|nMist AoE: 1400 (grows over 1 sec.)|n"+"Duration: 6 sec.|nConfusion: 1.2 sec.|nCast time: +0.3 sec.|nCooldown: 60 sec. (10 sec. at round start)|r")
 call LANG_A('SnT1',3,0,"Bankai: a bud around Hirako releases a mist (W ends). The mask is not spent. Every second everyone in the mist except Hirako is confused: enemies look like allies and vice versa (Hirako's allies from the 3rd second, a \"!\" above them before that); on the first confusion the target drops its order a"+"nd uses a random ability at the nearest \"enemy\" (looks for a ready one for up to 2 sec., orders do not go through meanwhile). All damage of the confused to Hirako's enemies is dealt by Hirako himself. No effect under Imagine Breaker or Clear Sky.|n|n|cFF00A5FF|nMist AoE: 1400 (grows over 1 sec.)|n"+"Duration: 6 sec.|nConfusion: 1.2 sec.|nCast time: +0.3 sec.|nCooldown: 60 sec. (10 sec. at round start)|r")
 call LANG_A('SnTc',0,0,"Cancel Bankai (|cffffcc00T|r)")
@@ -295004,6 +298039,92 @@ call LANG_A('SnF1',1,0,"An instant step to a point. From the W mist it recharges
 call LANG_A('SnF1',3,0,"An instant step to a point. From the W mist it recharges twice as fast.|n|n|cFF00A5FF|nRange: 600|nCooldown: 8 sec. (4 sec. from the mist)|r")
 call LANG_A('SnG1',1,0,"Hirako vanishes leaving his afterimage before the target, the target freezes. Strike 1: Hirako behind and the afterimage in front. Strike 2: Hirako rushes in from the opposite side, a small Sakanade mist around the target (inversion as from W). Damage grows with missing HP. Sakanade is in his hand d"+"uring the move.|n|n|cFF00A5FF|nDamage: 2 strikes of 1.5*|r|c003CFF3CAGI|r|cFF00A5FF + 7.5% of missing HP|nSmall mist: AoE 300, 2.5 sec.|nRange: 600|nCooldown: 45 sec.|r")
 call LANG_A('SnG1',3,0,"Hirako vanishes leaving his afterimage before the target, the target freezes. Strike 1: Hirako behind and the afterimage in front. Strike 2: Hirako rushes in from the opposite side, a small Sakanade mist around the target (inversion as from W). Damage grows with missing HP. Sakanade is in his hand d"+"uring the move.|n|n|cFF00A5FF|nDamage: 2 strikes of 1.5*|r|c003CFF3CAGI|r|cFF00A5FF + 7.5% of missing HP|nSmall mist: AoE 300, 2.5 sec.|nRange: 600|nCooldown: 45 sec.|r")
+call LANG_A('DMD1',0,0,"Doku/Tamashi, [|cffffcc00Level 1|r] (|cffffcc00D|r)")
+call LANG_A('DMD1',1,0,"Passive (from level 20):|nAbilities leave poison in their area for 5 sec., dealing 0.1x|r|c0077FFFFINT|r every 0.2 sec. and spending the stored energy when they deal damage.|n|nEnemy heroes leave a soul on death that Dead Master can pick up.|nOne soul equals 7000 energy.|nPicking up a soul / gatheri"+"ng 7000 energy instantly restores 5% HP/MP to Dead Master.|n|nActive:|nDead Master throws a projectile into an area that damages enemies and restores HP/MP to allies.|n|cFF00A5FF|nDamage: 0.5|r|c0077FFFFINT|r|cFF00A5FF every 0.5 sec.|nRestoration: 3% every 0.5 sec.|nAoE: 600|nRange: 2000|nDuration: "+"10 sec.|nCast time: 0.1|nCooldown: 20 sec.|r ")
+call LANG_A('DME1',0,0,"Chenhandoru, [|cffffcc00Level 1|r] (|cffffcc00E|r)")
+call LANG_A('DME1',0,1,"Chenhandoru, [|cffffcc00Level 2|r] (|cffffcc00E|r)")
+call LANG_A('DME1',0,2,"Chenhandoru, [|cffffcc00Level 3|r] (|cffffcc00E|r)")
+call LANG_A('DME1',0,3,"Chenhandoru, [|cffffcc00Level 4|r] (|cffffcc00E|r)")
+call LANG_A('DME1',0,4,"Chenhandoru, [|cffffcc00Level 5|r] (|cffffcc00E|r)")
+call LANG_A('DME1',1,0,"Dead Master empowers herself and her abilities for 20 sec. (can be dispelled).|nEach attack deals 0.5*|r|c0077FFFFINT|r and ensnares for 1 sec.|nIncreases the energy gathering range by 500.|n|nQ: roots enemies for 3 sec. when the skull hits.|nW: pulls all enemies within 1250 with chains and pushes t"+"hem forward in a 250 area up to the ability area.|nF: pulls all enemies within 1250 to the chosen target with chains.|nR: additionally deals 2*|r|c0077FFFFINT|r and roots enemies for 2 sec. a second after the strike.|nG: holds the enemy while the drain lasts (1.5 sec.)|n|nThe root breaks on teleport"+"ing farther than 600.|n|cFF00A5FF|nCooldown: 40 sec. (after the end)|r|n")
+call LANG_A('DME1',1,1,"Dead Master empowers herself and her abilities for 20 sec. (can be dispelled).|nEach attack deals 0.5*|r|c0077FFFFINT|r and ensnares for 1 sec.|nIncreases the energy gathering range by 500.|n|nQ: roots enemies for 3 sec. when the skull hits.|nW: pulls all enemies within 1250 with chains and pushes t"+"hem forward in a 250 area up to the ability area.|nF: pulls all enemies within 1250 to the chosen target with chains.|nR: additionally deals 2*|r|c0077FFFFINT|r and roots enemies for 2 sec. a second after the strike.|nG: holds the enemy while the drain lasts (1.5 sec.)|n|nThe root breaks on teleport"+"ing farther than 600.|n|cFF00A5FF|nCooldown: 35 sec. (after the end)|r|n")
+call LANG_A('DME1',1,2,"Dead Master empowers herself and her abilities for 20 sec. (can be dispelled).|nEach attack deals 0.5*|r|c0077FFFFINT|r and ensnares for 1 sec.|nIncreases the energy gathering range by 500.|n|nQ: roots enemies for 3 sec. when the skull hits.|nW: pulls all enemies within 1250 with chains and pushes t"+"hem forward in a 250 area up to the ability area.|nF: pulls all enemies within 1250 to the chosen target with chains.|nR: additionally deals 2*|r|c0077FFFFINT|r and roots enemies for 2 sec. a second after the strike.|nG: holds the enemy while the drain lasts (1.5 sec.)|n|nThe root breaks on teleport"+"ing farther than 600.|n|cFF00A5FF|nCooldown: 30 sec. (after the end)|r|n")
+call LANG_A('DME1',1,3,"Dead Master empowers herself and her abilities for 20 sec. (can be dispelled).|nEach attack deals 0.5*|r|c0077FFFFINT|r and ensnares for 1 sec.|nIncreases the energy gathering range by 500.|n|nQ: roots enemies for 3 sec. when the skull hits.|nW: pulls all enemies within 1250 with chains and pushes t"+"hem forward in a 250 area up to the ability area.|nF: pulls all enemies within 1250 to the chosen target with chains.|nR: additionally deals 2*|r|c0077FFFFINT|r and roots enemies for 2 sec. a second after the strike.|nG: holds the enemy while the drain lasts (1.5 sec.)|n|nThe root breaks on teleport"+"ing farther than 600.|n|cFF00A5FF|nCooldown: 25 sec. (after the end)|r|n")
+call LANG_A('DME1',1,4,"Dead Master empowers herself and her abilities for 20 sec. (can be dispelled).|nEach attack deals 0.5*|r|c0077FFFFINT|r and ensnares for 1 sec.|nIncreases the energy gathering range by 500.|n|nQ: roots enemies for 3 sec. when the skull hits.|nW: pulls all enemies within 1250 with chains and pushes t"+"hem forward in a 250 area up to the ability area.|nF: pulls all enemies within 1250 to the chosen target with chains.|nR: additionally deals 2*|r|c0077FFFFINT|r and roots enemies for 2 sec. a second after the strike.|nG: holds the enemy while the drain lasts (1.5 sec.)|n|nThe root breaks on teleport"+"ing farther than 600.|n|cFF00A5FF|nCooldown: 20 sec. (after the end)|r|n")
+call LANG_A('DME1',2,0,"Chenhandoru, [|cffffcc00Level %d|r] (|cffffcc00E|r)")
+call LANG_A('DME1',3,0,"Dead Master empowers herself and her abilities for 20 sec. (can be dispelled).|nEach attack deals 0.5*|r|c0077FFFFINT|r and ensnares for 1 sec.|nIncreases the energy gathering range by 500.|n|nQ: roots enemies for 3 sec. when the skull hits.|nW: pulls all enemies within 1250 with chains and pushes t"+"hem forward in a 250 area up to the ability area.|nF: pulls all enemies within 1250 to the chosen target with chains.|nR: additionally deals 2*|r|c0077FFFFINT|r and roots enemies for 2 sec. a second after the strike.|nG: holds the enemy while the drain lasts (1.5 sec.)|n|nThe root breaks on teleport"+"ing farther than 600.|n|cFF00A5FF|nCooldown: 40\\35\\30\\25\\20 sec. (after the end)|r|n")
+call LANG_A('DMF1',0,0,"Zugaikotsu/Kyushu, [|cffffcc00Level 1|r] (|cffffcc00F|r)")
+call LANG_A('DMF1',0,1,"Zugaikotsu/Kyushu, [|cffffcc00Level 2|r] (|cffffcc00F|r)")
+call LANG_A('DMF1',0,2,"Zugaikotsu/Kyushu, [|cffffcc00Level 3|r] (|cffffcc00F|r)")
+call LANG_A('DMF1',0,3,"Zugaikotsu/Kyushu, [|cffffcc00Level 4|r] (|cffffcc00F|r)")
+call LANG_A('DMF1',0,4,"Zugaikotsu/Kyushu, [|cffffcc00Level 5|r] (|cffffcc00F|r)")
+call LANG_A('DMF1',1,0,"Passive (from level 1):|nEvery ability of Dead Master drains energy (1.5% MP/HP) from enemies within 1000; the energy is spent on the D poison and on the healing of D, F and G.|n|nActive:|nDead Master throws a skull at the target (if one is available).|nAn ally restores 1.5% HP/MP every second for 5"+" sec. and gains 10% resistance.|nAn enemy is drained of 1.5% HP/MP every second for 5 sec.|cFF00A5FF|nRange: 2000|nCast time: 0.15|nCooldown: 6 sec. |r|n")
+call LANG_A('DMF1',1,1,"Passive (from level 1):|nEvery ability of Dead Master drains energy (1.5% MP/HP) from enemies within 1000; the energy is spent on the D poison and on the healing of D, F and G.|n|nActive:|nDead Master throws a skull at the target (if one is available).|nAn ally restores 1.5% HP/MP every second for 5"+" sec. and gains 10% resistance.|nAn enemy is drained of 1.5% HP/MP every second for 5 sec.|cFF00A5FF|nRange: 2000|nCast time: 0.15|nCooldown: 5 sec. |r|n")
+call LANG_A('DMF1',1,2,"Passive (from level 1):|nEvery ability of Dead Master drains energy (1.5% MP/HP) from enemies within 1000; the energy is spent on the D poison and on the healing of D, F and G.|n|nActive:|nDead Master throws a skull at the target (if one is available).|nAn ally restores 1.5% HP/MP every second for 5"+" sec. and gains 10% resistance.|nAn enemy is drained of 1.5% HP/MP every second for 5 sec.|cFF00A5FF|nRange: 2000|nCast time: 0.15|nCooldown: 4 sec. |r|n")
+call LANG_A('DMF1',1,3,"Passive (from level 1):|nEvery ability of Dead Master drains energy (1.5% MP/HP) from enemies within 1000; the energy is spent on the D poison and on the healing of D, F and G.|n|nActive:|nDead Master throws a skull at the target (if one is available).|nAn ally restores 1.5% HP/MP every second for 5"+" sec. and gains 10% resistance.|nAn enemy is drained of 1.5% HP/MP every second for 5 sec.|cFF00A5FF|nRange: 2000|nCast time: 0.15|nCooldown: 3 sec. |r|n")
+call LANG_A('DMF1',1,4,"Passive (from level 1):|nEvery ability of Dead Master drains energy (1.5% MP/HP) from enemies within 1000; the energy is spent on the D poison and on the healing of D, F and G.|n|nActive:|nDead Master throws a skull at the target (if one is available).|nAn ally restores 1.5% HP/MP every second for 5"+" sec. and gains 10% resistance.|nAn enemy is drained of 1.5% HP/MP every second for 5 sec.|cFF00A5FF|nRange: 2000|nCast time: 0.15|nCooldown: 2 sec. |r|n")
+call LANG_A('DMG1',0,0,"Hikiwatasu/Torinozoku, [|cffffcc00Level 1|r] (|cffffcc00G|r)")
+call LANG_A('DMG1',0,1,"Hikiwatasu/Torinozoku, [|cffffcc00Level 2|r] (|cffffcc00G|r)")
+call LANG_A('DMG1',0,2,"Hikiwatasu/Torinozoku, [|cffffcc00Level 3|r] (|cffffcc00G|r)")
+call LANG_A('DMG1',0,3,"Hikiwatasu/Torinozoku, [|cffffcc00Level 4|r] (|cffffcc00G|r)")
+call LANG_A('DMG1',0,4,"Hikiwatasu/Torinozoku, [|cffffcc00Level 5|r] (|cffffcc00G|r)")
+call LANG_A('DMG1',1,0,"Dead Master lifts and holds the target: an ally restores HP/MP at the cost of energy, an enemy is drained of 15% over 1.5 sec.|nCan be cast on herself.|n|cFF00A5FF|nRange: 300|nCast time: 0.25|nCooldown: 50 sec. |r|n")
+call LANG_A('DMG1',1,1,"Dead Master lifts and holds the target: an ally restores HP/MP at the cost of energy, an enemy is drained of 15% over 1.5 sec.|nCan be cast on herself.|n|cFF00A5FF|nRange: 300|nCast time: 0.25|nCooldown: 45 sec. |r|n")
+call LANG_A('DMG1',1,2,"Dead Master lifts and holds the target: an ally restores HP/MP at the cost of energy, an enemy is drained of 15% over 1.5 sec.|nCan be cast on herself.|n|cFF00A5FF|nRange: 300|nCast time: 0.25|nCooldown: 40 sec. |r|n")
+call LANG_A('DMG1',1,3,"Dead Master lifts and holds the target: an ally restores HP/MP at the cost of energy, an enemy is drained of 15% over 1.5 sec.|nCan be cast on herself.|n|cFF00A5FF|nRange: 300|nCast time: 0.25|nCooldown: 35 sec. |r|n")
+call LANG_A('DMG1',1,4,"Dead Master lifts and holds the target: an ally restores HP/MP at the cost of energy, an enemy is drained of 15% over 1.5 sec.|nCan be cast on herself.|n|cFF00A5FF|nRange: 300|nCast time: 0.25|nCooldown: 30 sec. |r|n")
+call LANG_A('DMQ1',0,0,"Soratobu zugaikotsu 1, [|cffffcc00Level 1|r] (|cffffcc00Q|r)")
+call LANG_A('DMQ1',0,1,"Soratobu zugaikotsu 1, [|cffffcc00Level 2|r] (|cffffcc00Q|r)")
+call LANG_A('DMQ1',0,2,"Soratobu zugaikotsu 1, [|cffffcc00Level 3|r] (|cffffcc00Q|r)")
+call LANG_A('DMQ1',0,3,"Soratobu zugaikotsu 1, [|cffffcc00Level 4|r] (|cffffcc00Q|r)")
+call LANG_A('DMQ1',0,4,"Soratobu zugaikotsu 1, [|cffffcc00Level 5|r] (|cffffcc00Q|r)")
+call LANG_A('DMQ1',1,0,"Passive:|nDead Master has 2 skulls (the first from level 1, the second from level 4 of Q) that are spent by Q and F and refill in 9 sec. each.|nEach active skull reduces incoming damage by 10%.|n|nActive:|nDead Master throws a skull that drags enemies along and pulls them into the area.|cFF00A5FF|nD"+"amage: 2*|r|c0077FFFFINT|r|cFF00A5FF instantly|nDamage: 0.1*|r|c0077FFFFINT|r|cFF00A5FF every 0.2 sec., 10 times|nAoE: 400|nRange: 1200|nDuration: 2 sec.|nCast time: 0.1|nCooldown: 19|r|n")
+call LANG_A('DMQ1',1,1,"Passive:|nDead Master has 2 skulls (the first from level 1, the second from level 4 of Q) that are spent by Q and F and refill in 8 sec. each.|nEach active skull reduces incoming damage by 10%.|n|nActive:|nDead Master throws a skull that drags enemies along and pulls them into the area.|cFF00A5FF|nD"+"amage: 2*|r|c0077FFFFINT|r|cFF00A5FF instantly|nDamage: 0.1*|r|c0077FFFFINT|r|cFF00A5FF every 0.2 sec., 10 times|nAoE: 400|nRange: 1400|nDuration: 2 sec.|nCast time: 0.1|nCooldown: 18|r|n")
+call LANG_A('DMQ1',1,2,"Passive:|nDead Master has 2 skulls (the first from level 1, the second from level 4 of Q) that are spent by Q and F and refill in 7 sec. each.|nEach active skull reduces incoming damage by 10%.|n|nActive:|nDead Master throws a skull that drags enemies along and pulls them into the area.|cFF00A5FF|nD"+"amage: 2*|r|c0077FFFFINT|r|cFF00A5FF instantly|nDamage: 0.1*|r|c0077FFFFINT|r|cFF00A5FF every 0.2 sec., 10 times|nAoE: 400|nRange: 1600|nDuration: 2 sec.|nCast time: 0.1|nCooldown: 17|r|n")
+call LANG_A('DMQ1',1,3,"Passive:|nDead Master has 2 skulls (the first from level 1, the second from level 4 of Q) that are spent by Q and F and refill in 6 sec. each.|nEach active skull reduces incoming damage by 10%.|n|nActive:|nDead Master throws a skull that drags enemies along and pulls them into the area.|cFF00A5FF|nD"+"amage: 2*|r|c0077FFFFINT|r|cFF00A5FF instantly|nDamage: 0.1*|r|c0077FFFFINT|r|cFF00A5FF every 0.2 sec., 10 times|nAoE: 400|nRange: 1800|nDuration: 2 sec.|nCast time: 0.1|nCooldown: 16|r|n")
+call LANG_A('DMQ1',1,4,"Passive:|nDead Master has 2 skulls (the first from level 1, the second from level 4 of Q) that are spent by Q and F and refill in 5 sec. each.|nEach active skull reduces incoming damage by 10%.|n|nActive:|nDead Master throws a skull that drags enemies along and pulls them into the area.|cFF00A5FF|nD"+"amage: 2*|r|c0077FFFFINT|r|cFF00A5FF instantly|nDamage: 0.1*|r|c0077FFFFINT|r|cFF00A5FF every 0.2 sec., 10 times|nAoE: 400|nRange: 2000|nDuration: 2 sec.|nCast time: 0.1|nCooldown: 15|r|n")
+call LANG_A('DMQ1',2,0,"Soratobu zugaikotsu 1, [|cffffcc00Level %d|r] (|cffffcc00Q|r)")
+call LANG_A('DMQ1',3,0,"Passive:|nDead Master has 2 skulls (the first from level 1, the second from level 4 of Q) that are spent by Q and F and refill in 9/8/7/6/5 sec. each.|nEach active skull reduces incoming damage by 10%.|n|nActive:|nDead Master throws a skull that drags enemies along and pulls them into the area.|cFF0"+"0A5FF|nDamage: 2*|r|c0077FFFFINT|r|cFF00A5FF instantly|nDamage: 0.1*|r|c0077FFFFINT|r|cFF00A5FF every 0.2 sec., 10 times|nAoE: 400|nRange: 1200/1400/1600/1800/2000|nDuration: 2 sec.|nCast time: 0.1|nCooldown: 19/18/17/16/15|r|n")
+call LANG_A('DMQ2',0,0,"Soratobu zugaikotsu 2, [|cffffcc00Level 1|r] (|cffffcc00Q|r)")
+call LANG_A('DMQ2',0,1,"Soratobu zugaikotsu 2, [|cffffcc00Level 2|r] (|cffffcc00Q|r)")
+call LANG_A('DMQ2',0,2,"Soratobu zugaikotsu 2, [|cffffcc00Level 3|r] (|cffffcc00Q|r)")
+call LANG_A('DMQ2',0,3,"Soratobu zugaikotsu 2, [|cffffcc00Level 4|r] (|cffffcc00Q|r)")
+call LANG_A('DMQ2',0,4,"Soratobu zugaikotsu 2, [|cffffcc00Level 5|r] (|cffffcc00Q|r)")
+call LANG_A('DMQ2',1,0,"Passive:|nDead Master has 2 skulls (the first from level 1, the second from level 4 of Q) that are spent by Q and F and refill in 9 sec. each.|nEach active skull reduces incoming damage by 10%.|n|nActive:|nDead Master throws a skull that drags enemies along and pulls them into the area.|cFF00A5FF|nD"+"amage: 2*|r|c0077FFFFINT|r|cFF00A5FF instantly|nDamage: 0.1*|r|c0077FFFFINT|r|cFF00A5FF every 0.2 sec., 10 times|nAoE: 400|nRange: 1200|nDuration: 2 sec.|nCast time: 0.1|nCooldown: 19|r|n")
+call LANG_A('DMQ2',1,1,"Passive:|nDead Master has 2 skulls (the first from level 1, the second from level 4 of Q) that are spent by Q and F and refill in 8 sec. each.|nEach active skull reduces incoming damage by 10%.|n|nActive:|nDead Master throws a skull that drags enemies along and pulls them into the area.|cFF00A5FF|nD"+"amage: 2*|r|c0077FFFFINT|r|cFF00A5FF instantly|nDamage: 0.1*|r|c0077FFFFINT|r|cFF00A5FF every 0.2 sec., 10 times|nAoE: 400|nRange: 1400|nDuration: 2 sec.|nCast time: 0.1|nCooldown: 18|r|n")
+call LANG_A('DMQ2',1,2,"Passive:|nDead Master has 2 skulls (the first from level 1, the second from level 4 of Q) that are spent by Q and F and refill in 7 sec. each.|nEach active skull reduces incoming damage by 10%.|n|nActive:|nDead Master throws a skull that drags enemies along and pulls them into the area.|cFF00A5FF|nD"+"amage: 2*|r|c0077FFFFINT|r|cFF00A5FF instantly|nDamage: 0.1*|r|c0077FFFFINT|r|cFF00A5FF every 0.2 sec., 10 times|nAoE: 400|nRange: 1600|nDuration: 2 sec.|nCast time: 0.1|nCooldown: 17|r|n")
+call LANG_A('DMQ2',1,3,"Passive:|nDead Master has 2 skulls (the first from level 1, the second from level 4 of Q) that are spent by Q and F and refill in 6 sec. each.|nEach active skull reduces incoming damage by 10%.|n|nActive:|nDead Master throws a skull that drags enemies along and pulls them into the area.|cFF00A5FF|nD"+"amage: 2*|r|c0077FFFFINT|r|cFF00A5FF instantly|nDamage: 0.1*|r|c0077FFFFINT|r|cFF00A5FF every 0.2 sec., 10 times|nAoE: 400|nRange: 1800|nDuration: 2 sec.|nCast time: 0.1|nCooldown: 16|r|n")
+call LANG_A('DMQ2',1,4,"Passive:|nDead Master has 2 skulls (the first from level 1, the second from level 4 of Q) that are spent by Q and F and refill in 5 sec. each.|nEach active skull reduces incoming damage by 10%.|n|nActive:|nDead Master throws a skull that drags enemies along and pulls them into the area.|cFF00A5FF|nD"+"amage: 2*|r|c0077FFFFINT|r|cFF00A5FF instantly|nDamage: 0.1*|r|c0077FFFFINT|r|cFF00A5FF every 0.2 sec., 10 times|nAoE: 400|nRange: 2000|nDuration: 2 sec.|nCast time: 0.1|nCooldown: 15|r|n")
+call LANG_A('DMQ2',2,0,"Soratobu zugaikotsu 2, [|cffffcc00Level %d|r] (|cffffcc00Q|r)")
+call LANG_A('DMQ2',3,0,"Passive:|nDead Master has 2 skulls (the first from level 1, the second from level 4 of Q) that are spent by Q and F and refill in 9/8/7/6/5 sec. each.|nEach active skull reduces incoming damage by 10%.|n|nActive:|nDead Master throws a skull that drags enemies along and pulls them into the area.|cFF0"+"0A5FF|nDamage: 2*|r|c0077FFFFINT|r|cFF00A5FF instantly|nDamage: 0.1*|r|c0077FFFFINT|r|cFF00A5FF every 0.2 sec., 10 times|nAoE: 400|nRange: 1200/1400/1600/1800/2000|nDuration: 2 sec.|nCast time: 0.1|nCooldown: 19/18/17/16/15|r|n")
+call LANG_A('DMR1',0,0,"Kyojin no senshi, [|cffffcc00Level 1|r] (|cffffcc00R|r)")
+call LANG_A('DMR1',0,1,"Kyojin no senshi, [|cffffcc00Level 2|r] (|cffffcc00R|r)")
+call LANG_A('DMR1',0,2,"Kyojin no senshi, [|cffffcc00Level 3|r] (|cffffcc00R|r)")
+call LANG_A('DMR1',0,3,"Kyojin no senshi, [|cffffcc00Level 4|r] (|cffffcc00R|r)")
+call LANG_A('DMR1',0,4,"Kyojin no senshi, [|cffffcc00Level 5|r] (|cffffcc00R|r)")
+call LANG_A('DMR1',1,0,"Passive:|nIf a Q skull was in the area before the strike, deals an additional 2*|r|c0077FFFFINT|r damage.|n|nActive:|nDead Master summons a monster that strikes the area and stuns those hit.|n|cFF00A5FF|nDamage: 3*|r|c0077FFFFINT|r|cFF00A5FF|nStun: 2 sec.|nAoE: 600|nRange: 1500|nCast time: 0.15|nCoo"+"ldown: 30 sec.|r|n")
+call LANG_A('DMR1',1,1,"Passive:|nIf a Q skull was in the area before the strike, deals an additional 2*|r|c0077FFFFINT|r damage.|n|nActive:|nDead Master summons a monster that strikes the area and stuns those hit.|n|cFF00A5FF|nDamage: 4*|r|c0077FFFFINT|r|cFF00A5FF|nStun: 2 sec.|nAoE: 600|nRange: 1500|nCast time: 0.15|nCoo"+"ldown: 30 sec.|r|n")
+call LANG_A('DMR1',1,2,"Passive:|nIf a Q skull was in the area before the strike, deals an additional 2*|r|c0077FFFFINT|r damage.|n|nActive:|nDead Master summons a monster that strikes the area and stuns those hit.|n|cFF00A5FF|nDamage: 5*|r|c0077FFFFINT|r|cFF00A5FF|nStun: 2 sec.|nAoE: 600|nRange: 1500|nCast time: 0.15|nCoo"+"ldown: 30 sec.|r|n")
+call LANG_A('DMR1',1,3,"Passive:|nIf a Q skull was in the area before the strike, deals an additional 2*|r|c0077FFFFINT|r damage.|n|nActive:|nDead Master summons a monster that strikes the area and stuns those hit.|n|cFF00A5FF|nDamage: 6*|r|c0077FFFFINT|r|cFF00A5FF|nStun: 2 sec.|nAoE: 600|nRange: 1500|nCast time: 0.15|nCoo"+"ldown: 30 sec.|r|n")
+call LANG_A('DMR1',1,4,"Passive:|nIf a Q skull was in the area before the strike, deals an additional 2*|r|c0077FFFFINT|r damage.|n|nActive:|nDead Master summons a monster that strikes the area and stuns those hit.|n|cFF00A5FF|nDamage: 7*|r|c0077FFFFINT|r|cFF00A5FF|nStun: 2 sec.|nAoE: 600|nRange: 1500|nCast time: 0.15|nCoo"+"ldown: 30 sec.|r|n")
+call LANG_A('DMR1',2,0,"Kyojin no senshi, [|cffffcc00Level %d|r] (|cffffcc00R|r)")
+call LANG_A('DMR1',3,0,"Passive:|nIf a Q skull was in the area before the strike, deals an additional 2*|r|c0077FFFFINT|r damage.|n|nActive:|nDead Master summons a monster that strikes the area and stuns those hit.|n|cFF00A5FF|nDamage: 3\\4\\5\\6\\7*|r|c0077FFFFINT|r|cFF00A5FF|nStun: 2 sec.|nAoE: 600|nRange: 1500|nCast tim"+"e: 0.15|nCooldown: 30 sec.|r|n")
+call LANG_A('DMT1',0,0,"Kojin tekina sekai, [|cffffcc00Level 1|r] (|cffffcc00T|r)")
+call LANG_A('DMT1',1,0,"After 1 sec. Dead Master creates a zone in which she empowers herself and weakens enemies;|neveryone except her can only leave or enter it at a slow movement speed.|n|cFF00A5FF|nEmpowerment (inside the zone):|nHP/MP regen: +30% efficiency|nMagical Damage: +30%|nAS: +100%|nMS: +1000%|n|nWeakening: -3"+"0% HP/MP regen efficiency|n|nAoE: 1500|nCast time: 0.25|nDuration: 20 sec.|nCooldown: 60 sec. |r|n")
+call LANG_A('DMT1',2,0,"Kojin tekina sekai, [|cffffcc00Level 1|r] (|cffffcc00T|r)")
+call LANG_A('DMT1',3,0,"After 1 sec. Dead Master creates a zone in which she empowers herself and weakens enemies;|neveryone except her can only leave or enter it at a slow movement speed.|n|cFF00A5FF|nEmpowerment (inside the zone):|nHP/MP regen: +30% efficiency|nMagical Damage: +30%|nAS: +100%|nMS: +1000%|n|nWeakening: -3"+"0% HP/MP regen efficiency|n|nAoE: 1500|nCast time: 0.25|nDuration: 20 sec.|nCooldown: 60 sec. |r|n")
+call LANG_A('DMW1',0,0,"Desusaizu, [|cffffcc00Level 1|r] (|cffffcc00W|r)")
+call LANG_A('DMW1',0,1,"Desusaizu, [|cffffcc00Level 2|r] (|cffffcc00W|r)")
+call LANG_A('DMW1',0,2,"Desusaizu, [|cffffcc00Level 3|r] (|cffffcc00W|r)")
+call LANG_A('DMW1',0,3,"Desusaizu, [|cffffcc00Level 4|r] (|cffffcc00W|r)")
+call LANG_A('DMW1',0,4,"Desusaizu, [|cffffcc00Level 5|r] (|cffffcc00W|r)")
+call LANG_A('DMW1',1,0,"Dead Master dashes into the area, dealing damage and stunning enemies.|cFF00A5FF|nDamage: 2*|r|c0077FFFFINT|r|cFF00A5FF|nStun: 2 sec.|nAoE: 400|nRange: 1100|nCast time: 0.2|nCooldown: 20 sec.|r|n")
+call LANG_A('DMW1',1,1,"Dead Master dashes into the area, dealing damage and stunning enemies.|cFF00A5FF|nDamage: 3*|r|c0077FFFFINT|r|cFF00A5FF|nStun: 2 sec.|nAoE: 400|nRange: 1200|nCast time: 0.2|nCooldown: 20 sec.|r|n")
+call LANG_A('DMW1',1,2,"Dead Master dashes into the area, dealing damage and stunning enemies.|cFF00A5FF|nDamage: 4*|r|c0077FFFFINT|r|cFF00A5FF|nStun: 2 sec.|nAoE: 400|nRange: 1300|nCast time: 0.2|nCooldown: 20 sec.|r|n")
+call LANG_A('DMW1',1,3,"Dead Master dashes into the area, dealing damage and stunning enemies.|cFF00A5FF|nDamage: 5*|r|c0077FFFFINT|r|cFF00A5FF|nStun: 2 sec.|nAoE: 400|nRange: 1400|nCast time: 0.2|nCooldown: 20 sec.|r|n")
+call LANG_A('DMW1',1,4,"Dead Master dashes into the area, dealing damage and stunning enemies.|cFF00A5FF|nDamage: 6*|r|c0077FFFFINT|r|cFF00A5FF|nStun: 2 sec.|nAoE: 400|nRange: 1500|nCast time: 0.2|nCooldown: 20 sec.|r|n")
+call LANG_A('DMW1',2,0,"Desusaizu, [|cffffcc00Level %d|r] (|cffffcc00W|r)")
+call LANG_A('DMW1',3,0,"Dead Master dashes into the area, dealing damage and stunning enemies.|cFF00A5FF|nDamage: 2/3/4/5/6*|r|c0077FFFFINT|r|cFF00A5FF|nStun: 2 sec.|nAoE: 400|nRange: 1100/1200/1300/1400/1500|nCast time: 0.2|nCooldown: 20 sec.|r|n")
 call LANG_It('I000',0,"Gauntlets of Power")
 call LANG_It('I000',1,"Gauntlets of Power")
 call LANG_It('I001',1,"Crown of Nobility")
@@ -295133,6 +298254,8 @@ call LANG_It('I00X',1,"Vongola Rain Ring, Rank D")
 call LANG_It('I00X',2,"Increase |c003CFF3CAGI|r by 10 and AS by 10% , \"Rain Aura\" - slows all enemies within a radius of 1000 by 10% and absorbs 10% of any incoming damage.")
 call LANG_It('I00X',3,"Increase |c003CFF3CAGI|r by 10 and AS by 10% , \"Rain Aura\" - slows all enemies within a radius of 1000 by 10% and absorbs 10% of any incoming damage.")
 call LANG_It('I00Y',0,"Vongola Rain Ring, Rank C")
+endfunction
+function LANG_Data52 takes nothing returns nothing
 call LANG_It('I00Y',1,"Vongola Rain Ring, Rank C")
 call LANG_It('I00Y',2,"Increase |c003CFF3CAGI|r by 15 and AS by 20% , \"Rain Aura\" - slows all enemies within a radius of 1000 by 15% and absorbs 13% of any incoming damage.")
 call LANG_It('I00Y',3,"Increase |c003CFF3CAGI|r by 15 and AS by 20% , \"Rain Aura\" - slows all enemies within a radius of 1000 by 15% and absorbs 13% of any incoming damage.")
@@ -295219,8 +298342,6 @@ call LANG_It('I01I',3,"Increases attack power by 60 and |c00FFFF66AllStat|r by 1
 call LANG_It('I01J',0,"Sword, Rank C")
 call LANG_It('I01J',1,"Sword, Rank C")
 call LANG_It('I01J',2,"Increases attack power by 40 and |c00FFFF66AllStat|r by 12, Passive: Mortal Strike - 15% chance to deal 1.5x damage")
-endfunction
-function LANG_Data52 takes nothing returns nothing
 call LANG_It('I01J',3,"Increases attack power by 40 and |c00FFFF66AllStat|r by 12, Passive: Mortal Strike - 15% chance to deal 1.5x damage")
 call LANG_It('I01K',0,"Sword, Rank A")
 call LANG_It('I01K',1,"Sword, Rank A")
@@ -295385,6 +298506,8 @@ call LANG_It('I02O',1,"Hell Ring: \"Demonic Eye\", Rank A")
 call LANG_It('I02O',2,"Increases DEF by 12, HP regen by 28, HP 400, |c00FFFF66AllStat|r by 18.")
 call LANG_It('I02O',3,"Increases DEF by 12, HP regen by 28, HP 400, |c00FFFF66AllStat|r by 18.")
 call LANG_It('I02P',0,"Sealed Hell Ring: \"Demonic Eye\"")
+endfunction
+function LANG_Data53 takes nothing returns nothing
 call LANG_It('I02P',1,"Sealed Hell Ring: \"Demonic Eye\"")
 call LANG_It('I02P',2,"Increases DEF by 15, HP regen by 28, HP 400, |c00FFFF66AllStat|r by 20.")
 call LANG_It('I02P',3,"Increases DEF by 15, HP regen by 28, HP 400, |c00FFFF66AllStat|r by 20.")
@@ -295471,8 +298594,6 @@ call LANG_It('I038',3,"Increase |c003CFF3CAGI|r by 50, HP by 500, Attack by 125.
 call LANG_It('I039',0,"Lucky Box")
 call LANG_It('I039',1,"Lucky Box")
 call LANG_It('I039',2,"When opened, 1 random items drop.")
-endfunction
-function LANG_Data53 takes nothing returns nothing
 call LANG_It('I039',3,"When opened, 1 random items drop.")
 call LANG_It('I03A',0,"Alastor")
 call LANG_It('I03A',1,"Alastor")
@@ -295496,8 +298617,8 @@ call LANG_It('I03E',2,"Grants a 35% chance to dodge, when activated, increases y
 call LANG_It('I03E',3,"Grants a 35% chance to dodge, when activated, increases your run speed to a maximum for 4 seconds.|n|nCD: 15 seconds.")
 call LANG_It('I03F',0,"Anbu Set")
 call LANG_It('I03F',1,"Anbu Set")
-call LANG_It('I03F',2,"Gives a 35% chance to dodge, reduces physical damage to the owner by 50 damage, increases |c003CFF3CAGI|r by 35 units, |c00FF5555STR|r by 20 units, increases MP and HP reserves by 500 units, increases AS by 30%, each attack additionally deals 55 points of pure damage that penetrates resistances but "+"not shields, the effect does not stack.|n• Body Replacement Technique - upon receiving fatal damage, your character uses the replacement technique and restores 15% of HP. Only works on heroes with the main characteristic |c003CFF3CAGI|r. Cost: 25% MP. Cooldown: 35 sec.|nWhen activated: increases r"+"unning speed to maximum for 4 sec.|n|nCD: 15 sec.")
-call LANG_It('I03F',3,"Gives a 35% chance to dodge, reduces physical damage to the owner by 50 damage, increases |c003CFF3CAGI|r by 35 units, |c00FF5555STR|r by 20 units, increases MP and HP reserves by 500 units, increases AS by 30%, each attack additionally deals 55 points of pure damage that penetrates resistances but "+"not shields, the effect does not stack.|n• Body Replacement Technique - upon receiving fatal damage, your character uses the replacement technique and restores 15% of HP. Only works on heroes with the main characteristic |c003CFF3CAGI|r. Cost: 25% MP. Cooldown: 35 sec.|nWhen activated: increases r"+"unning speed to maximum for 4 sec.|n|nCD: 15 sec.")
+call LANG_It('I03F',2,"Gives a 35% chance to dodge, reduces physical damage to the owner by 50 damage, increases |c003CFF3CAGI|r by 35 units, |c00FF5555STR|r by 20 units, increases MP and HP reserves by 500 units, increases AS by 30%, each attack additionally deals 55 points of pure damage that penetrates resistances but "+"not shields, the effect does not stack.|n• Body Replacement Technique - upon receiving fatal damage, your character uses the replacement technique and restores 15% of HP, removing Necrosis and Ice Essence Frostbite (if they were present - only 7.5% HP). Only works on heroes with the main character"+"istic |c003CFF3CAGI|r. Cost: 25% MP. Cooldown: 35 sec.|nWhen activated: increases running speed to maximum for 4 sec.|n|nCD: 15 sec.")
+call LANG_It('I03F',3,"Gives a 35% chance to dodge, reduces physical damage to the owner by 50 damage, increases |c003CFF3CAGI|r by 35 units, |c00FF5555STR|r by 20 units, increases MP and HP reserves by 500 units, increases AS by 30%, each attack additionally deals 55 points of pure damage that penetrates resistances but "+"not shields, the effect does not stack.|n• Body Replacement Technique - upon receiving fatal damage, your character uses the replacement technique and restores 15% of HP, removing Necrosis and Ice Essence Frostbite (if they were present - only 7.5% HP). Only works on heroes with the main character"+"istic |c003CFF3CAGI|r. Cost: 25% MP. Cooldown: 35 sec.|nWhen activated: increases running speed to maximum for 4 sec.|n|nCD: 15 sec.")
 call LANG_It('I03G',0,"Vongola Gloves Level 1")
 call LANG_It('I03G',1,"Vongola Gloves Level 1")
 call LANG_It('I03G',2,"Increase hero's AS by 45%.")
@@ -295637,6 +298758,8 @@ call LANG_It('I047',1,"Hurricane Boots (Recipe)")
 call LANG_It('I047',2,"Increase MS by 200, increase |c00FFFF66AllStat|r by 30.|nActive: \"Typhoon\"|n|nCooldown: 10 sec.|n|nRequires: Boots of Speed, Wind Sphere, Medal of Courage, Recipe.")
 call LANG_It('I047',3,"Increase MS by 200, increase |c00FFFF66AllStat|r by 30.|nActive: \"Typhoon\"|n|nCooldown: 10 sec.|n|nRequires: Boots of Speed, Wind Sphere, Medal of Courage, Recipe.")
 call LANG_It('I048',0,"Gungnir")
+endfunction
+function LANG_Data54 takes nothing returns nothing
 call LANG_It('I048',1,"Gungnir")
 call LANG_It('I048',2,"Increase |c00FF5555STR|r by 50.|n|nThrow - Throw a spear that deals 5*|c00FF5555STR|r pure, unblockable damage.|n|nCD: 30 sec.")
 call LANG_It('I048',3,"Increase |c00FF5555STR|r by 50.|n|nThrow - Throw a spear that deals 5*|c00FF5555STR|r pure, unblockable damage.|n|nCD: 30 sec.")
@@ -295723,8 +298846,6 @@ call LANG_It('I04S',1,"Ice Essence (Recipe)")
 call LANG_It('I04S',2,"Increases the hero's |c0077FFFFINT|r by 35, and |c00FF5555STR|r and |c003CFF3CAGI|r by 15. Ability: \"Cooling\" - for 10 sec. prevents HP restoration and also deals ((30% of Max HP)-1000) damage over 10 sec.|n|cFFFF0000Cannot be used on enemies under the effect of Imagine Breaker,|r but if applied, "+"there is no way to clear it.|n|nRange: 800|nCD: 35 sec.|n|nRequires: 2xIce Sphere, Medal of Courage")
 call LANG_It('I04S',3,"Increases the hero's |c0077FFFFINT|r by 35, and |c00FF5555STR|r and |c003CFF3CAGI|r by 15. Ability: \"Cooling\" - for 10 sec. prevents HP restoration and also deals ((30% of Max HP)-1000) damage over 10 sec.|n|cFFFF0000Cannot be used on enemies under the effect of Imagine Breaker,|r but if applied, "+"there is no way to clear it.|n|nRange: 800|nCD: 35 sec.|n|nRequires: 2xIce Sphere, Medal of Courage")
 call LANG_It('I04T',0,"Yata Mirror")
-endfunction
-function LANG_Data54 takes nothing returns nothing
 call LANG_It('I04T',1,"Yata Mirror")
 call LANG_It('I04T',2,"Increase |c00FFFF66AllStat|r by 35, mana regen 50%, DEF by 10, when damaged, the wearer returns 25% of the damage received. Onizuka's Set and Stigmata Tesseract's passive ability activation damage is reduced by 50% when hitting back.|nActive: Increases the amount of damage returned by up to 60% for "+"5 seconds. CD: 20.")
 call LANG_It('I04T',3,"Increase |c00FFFF66AllStat|r by 35, mana regen 50%, DEF by 10, when damaged, the wearer returns 25% of the damage received. Onizuka's Set and Stigmata Tesseract's passive ability activation damage is reduced by 50% when hitting back.|nActive: Increases the amount of damage returned by up to 60% for "+"5 seconds. CD: 20.")
@@ -295889,6 +299010,8 @@ call LANG_It('I05W',3,"Increase |c0077FFFFINT|r by 20 and |c00FF5555STR|r by 15.
 call LANG_It('I05X',0,"Mist Mare Ring, Rank A")
 call LANG_It('I05X',1,"Mist Mare Ring, Rank A")
 call LANG_It('I05X',2,"Increase |c0077FFFFINT|r by 25 and |c00FF5555STR|r by 20.")
+endfunction
+function LANG_Data55 takes nothing returns nothing
 call LANG_It('I05X',3,"Increase |c0077FFFFINT|r by 25 and |c00FF5555STR|r by 20.")
 call LANG_It('I05Y',0,"Fake Mist Mare Ring")
 call LANG_It('I05Y',1,"Fake Mist Mare Ring")
@@ -295896,8 +299019,8 @@ call LANG_It('I05Y',2,"Increase |c0077FFFFINT|r by 30 and |c00FF5555STR|r by 25.
 call LANG_It('I05Y',3,"Increase |c0077FFFFINT|r by 30 and |c00FF5555STR|r by 25.")
 call LANG_It('I05Z',0,"True Mist Mare Ring")
 call LANG_It('I05Z',1,"True Mist Mare Ring")
-call LANG_It('I05Z',2,"Increase |c0077FFFFINT|r by 40 and |c00FF5555STR|r by 40, DEF by 10.|n|n[|c0077FFFFShadow Cover|r] - If the hero does not move or receive damage for 4 seconds, he becomes invisible as long as he meets the conditions.|n|nActive: For 6 seconds, the hero has a chance to be reborn with 35% health. HP an"+"d MP. Respawn time 5 sec.|nCannot be bought with Anbu Set!|n|nCooldown: 40 sec.")
-call LANG_It('I05Z',3,"Increase |c0077FFFFINT|r by 40 and |c00FF5555STR|r by 40, DEF by 10.|n|n[|c0077FFFFShadow Cover|r] - If the hero does not move or receive damage for 4 seconds, he becomes invisible as long as he meets the conditions.|n|nActive: For 6 seconds, the hero has a chance to be reborn with 35% health. HP an"+"d MP. Respawn time 5 sec.|nCannot be bought with Anbu Set!|n|nCooldown: 40 sec.")
+call LANG_It('I05Z',2,"Increase |c0077FFFFINT|r by 40 and |c00FF5555STR|r by 40, DEF by 10.|n|n[|c0077FFFFShadow Cover|r] - If the hero does not move or receive damage for 4 seconds, he becomes invisible as long as he meets the conditions.|n|nActive: For 6 seconds, the hero has a chance to be reborn with 35% HP and MP, Ne"+"crosis and Ice Essence Frostbite are removed (if they were present - only 17.5% HP). Respawn time 5 sec.|nCannot be bought with Anbu Set!|n|nCooldown: 40 sec.")
+call LANG_It('I05Z',3,"Increase |c0077FFFFINT|r by 40 and |c00FF5555STR|r by 40, DEF by 10.|n|n[|c0077FFFFShadow Cover|r] - If the hero does not move or receive damage for 4 seconds, he becomes invisible as long as he meets the conditions.|n|nActive: For 6 seconds, the hero has a chance to be reborn with 35% HP and MP, Ne"+"crosis and Ice Essence Frostbite are removed (if they were present - only 17.5% HP). Respawn time 5 sec.|nCannot be bought with Anbu Set!|n|nCooldown: 40 sec.")
 call LANG_It('I060',0,"Cloud Mare Ring, Rank D")
 call LANG_It('I060',1,"Cloud Mare Ring, Rank D")
 call LANG_It('I060',2,"Increase |c00FF5555STR|r by 10, reduces physical damage to the owner by 20 damage")
@@ -295975,8 +299098,6 @@ call LANG_It('I06K',1,"Quincy Glove")
 call LANG_It('I06K',2,"Increase |c00FFFF66AllStat|r by 13, attack by 40")
 call LANG_It('I06K',3,"Increase |c00FFFF66AllStat|r by 13, attack by 40")
 call LANG_It('I06L',0,"Quincy Cross")
-endfunction
-function LANG_Data55 takes nothing returns nothing
 call LANG_It('I06L',1,"Quincy Cross")
 call LANG_It('I06L',2,"Increase Regen HP by 20.")
 call LANG_It('I06L',3,"Increase Regen HP by 20.")
@@ -296075,8 +299196,8 @@ call LANG_It('IPar',2,"Increases attack power by 75, |c00FFFF66AllStat|r by 25, 
 call LANG_It('IPar',3,"Increases attack power by 75, |c00FFFF66AllStat|r by 25, Passive: \"Patriotism\" - Each hit steals 3 enemy stats for 10 sec.|n\"Meaninglessness\" - Steals 30 |c00FFFF66AllStat|r for 10 sec, in addition, the target's resistances and shields will register incoming damage as 25% more. The target will n"+"ot take more damage than was originally dealt.|n|nCooldown: 45 sec.")
 call LANG_It('ISDi',0,"Death Scythe")
 call LANG_It('ISDi',1,"Death Scythe")
-call LANG_It('ISDi',2,"Increase |c003CFF3CAGI|r by 50, HP by 500, Attack by 125. Sweeping Strikes - 70% splash in 600. AoE|n|nActive: \"Kishin Hunt\" - a wave of energy that stuns for 1 sec. enemies and dealing 6*|c003CFF3CAGI|r damage.|n|nCooldown: 25 sec.")
-call LANG_It('ISDi',3,"Increase |c003CFF3CAGI|r by 50, HP by 500, Attack by 125. Sweeping Strikes - 70% splash in 600. AoE|n|nActive: \"Kishin Hunt\" - a wave of energy that stuns for 1 sec. enemies and dealing 6*|c003CFF3CAGI|r damage.|n|nCooldown: 25 sec.")
+call LANG_It('ISDi',2,"Increase |c003CFF3CAGI|r by 50, HP by 500, Attack by 125. Sweeping Strikes - 70% splash in 600. AoE|n|nActive: \"Kishin Hunt\" - a wave of energy that stuns for 1.5 sec. enemies and dealing 6*|c003CFF3CAGI|r damage.|n|nCooldown: 25 sec.")
+call LANG_It('ISDi',3,"Increase |c003CFF3CAGI|r by 50, HP by 500, Attack by 125. Sweeping Strikes - 70% splash in 600. AoE|n|nActive: \"Kishin Hunt\" - a wave of energy that stuns for 1.5 sec. enemies and dealing 6*|c003CFF3CAGI|r damage.|n|nCooldown: 25 sec.")
 call LANG_It('I1S4',0,"Onizuka Set")
 call LANG_It('I1S4',1,"Onizuka Set")
 call LANG_It('I1S4',2,"Increase |c00FFFF66AllStat|r by 25, HP by 600, DMG by 80, AS by 50%, Regen MP by 50%.|nPassive: Dealing damage over 30 deals an additional 0.2*|c00FFFF66AllStat|r (Chaos Damage/Blockable) and slows Regen HP by 25% for 5 seconds. (does not work with Yukirin Clock), restores 0.5% Max HP/MP to the wear"+"er. CD: 1 sec.|nActive: Reduces passive cooldown to 0.2 for 5 seconds. CD: 20 sec")
@@ -296141,6 +299262,8 @@ call LANG_It('IPlA',0,"Perfect Amulet")
 call LANG_It('IPlA',1,"Perfect Amulet")
 call LANG_It('IPlA',2,"Increases |c00FFFF66AllStat|r by 15, |c003CFF3CAGI|r and |c00FF5555STR|r by an additional 10, HP and MP by 1000, DEF by 5, MP recovery by 10%, and HP Regen by 5. When dealing damage, restores HP equal to 7.5% of the damage and MP equal to 10%.|nThis effect does not stack with other amulets or Blood "+"Sphere.|n")
 call LANG_It('IPlA',3,"Increases |c00FFFF66AllStat|r by 15, |c003CFF3CAGI|r and |c00FF5555STR|r by an additional 10, HP and MP by 1000, DEF by 5, MP recovery by 10%, and HP Regen by 5. When dealing damage, restores HP equal to 7.5% of the damage and MP equal to 10%.|nThis effect does not stack with other amulets or Blood "+"Sphere.|n")
+endfunction
+function LANG_Data56 takes nothing returns nothing
 call LANG_It('IPlR',0,"Perfect Amulet (Recipe)")
 call LANG_It('IPlR',1,"Perfect Amulet (Recipe)")
 call LANG_It('IPlR',2,"Increases |c00FFFF66AllStat|r by 15, |c003CFF3CAGI|r and |c00FF5555STR|r by an additional 10, HP and MP by 1000, DEF by 5, MP recovery by 10%, and HP Regen by 5. When dealing damage, restores HP equal to 7.5% of the damage and MP equal to 10%.|nThis effect does not stack with other amulets or Blood "+"Sphere.|n|nRequires: Golden Amulet, Silver Amulet, Recipe.")
@@ -296187,6 +299310,14 @@ call LANG_It('IAZI',0,"Seal of Alchemy (INT, Passive off)")
 call LANG_It('IAZI',1,"Seal of Alchemy (INT, Passive off)")
 call LANG_It('IAZI',2,"Increases |c0077FFFFINT|r by 35 + 5%, HP by 500, and DEF by 3. Cannot be stolen. Can be sold for full value.|nPassive (disabled): Changes all outgoing magical damage to physical, but increases magical damage taken by 5%.|nActive: Double press - changes the |c0077FFFFINT|r bonus to |c00FF5555STR|r, r"+"eplacing the bonus HP with 50% MP regeneration.|nSingle press - enables Passive.")
 call LANG_It('IAZI',3,"Increases |c0077FFFFINT|r by 35 + 5%, HP by 500, and DEF by 3. Cannot be stolen. Can be sold for full value.|nPassive (disabled): Changes all outgoing magical damage to physical, but increases magical damage taken by 5%.|nActive: Double press - changes the |c0077FFFFINT|r bonus to |c00FF5555STR|r, r"+"eplacing the bonus HP with 50% MP regeneration.|nSingle press - enables Passive.")
+call LANG_It('IBBi',0,"Key of Bab-ilu")
+call LANG_It('IBBi',1,"Key of Bab-ilu")
+call LANG_It('IBBi',2,"Increase HP regeneration by 10 and mana regeneration by 75%, DEF + 4, attack by 40, AS by 50%.|n|n• [|c008000FFPaphos Dosage|r] - each infliction of damage over 30 deals an additional 30 (Chaos Damage/Blockable). Does not work with the Onizuka Set. Cooldown: 1 second.|n• [|cFFFFCC00Treasury|r] -"+" gold for kills +20%, gold for the end of the round +10%.|n• [|cFFFF4040Execution|r] - the owner's damage finishes off an enemy hero left with less than 3% HP. Does not work on targets with a shield.")
+call LANG_It('IBBi',3,"Increase HP regeneration by 10 and mana regeneration by 75%, DEF + 4, attack by 40, AS by 50%.|n|n• [|c008000FFPaphos Dosage|r] - each infliction of damage over 30 deals an additional 30 (Chaos Damage/Blockable). Does not work with the Onizuka Set. Cooldown: 1 second.|n• [|cFFFFCC00Treasury|r] -"+" gold for kills +20%, gold for the end of the round +10%.|n• [|cFFFF4040Execution|r] - the owner's damage finishes off an enemy hero left with less than 3% HP. Does not work on targets with a shield.")
+call LANG_It('IBBr',0,"Key of Bab-ilu (Recipe)")
+call LANG_It('IBBr',1,"Key of Bab-ilu (Recipe)")
+call LANG_It('IBBr',2,"Increase HP regeneration by 10 and mana regeneration by 75%, DEF + 4, attack by 40, AS by 50%.|n|n• [|c008000FFPaphos Dosage|r] - each infliction of damage over 30 deals an additional 30 (Chaos Damage/Blockable). Does not work with the Onizuka Set. Cooldown: 1 second.|n• [|cFFFFCC00Treasury|r] -"+" gold for kills +20%, gold for the end of the round +10%.|n• [|cFFFF4040Execution|r] - the owner's damage finishes off an enemy hero left with less than 3% HP. Does not work on targets with a shield.|n |nBuild: Madao's Hat(1100) + Hair Mousse(1400) + Rec(100)")
+call LANG_It('IBBr',3,"Increase HP regeneration by 10 and mana regeneration by 75%, DEF + 4, attack by 40, AS by 50%.|n|n• [|c008000FFPaphos Dosage|r] - each infliction of damage over 30 deals an additional 30 (Chaos Damage/Blockable). Does not work with the Onizuka Set. Cooldown: 1 second.|n• [|cFFFFCC00Treasury|r] -"+" gold for kills +20%, gold for the end of the round +10%.|n• [|cFFFF4040Execution|r] - the owner's damage finishes off an enemy hero left with less than 3% HP. Does not work on targets with a shield.|n |nBuild: Madao's Hat(1100) + Hair Mousse(1400) + Rec(100)")
 call LANG_U('hfoo',0,"Chunin")
 call LANG_U('hsor',0,"Anbu healer")
 call LANG_U('hwtw',0,"Anbu")
@@ -296227,8 +299358,6 @@ call LANG_U('H00V',3,"Enel, the god of Skypiea, ate the Goro Goro no Mi fruit an
 call LANG_U('H00Q',3,"Gekko Moria - a former shichibukai, ate the fruit \"Kage Kage no Mi\" allowing him to control shadows.|n|nRole: Caster, Carry, Exhauster|n|n")
 call LANG_U('H00W',2,"Hibari Kyoya")
 call LANG_U('H00W',3,"Sasagawa Ryohei is the head of the Namimori Boxing Club and is also the \"Keeper of the Vongola Sun\".")
-endfunction
-function LANG_Data56 takes nothing returns nothing
 call LANG_U('H00X',3,"Hibari Kyoya is the head of the Namimori School's Discipline Committee and is also the \"Guardian of the Vongola Cloud\".|n|nRole: Assassin, Carry|n|n")
 call LANG_U('H00Y',3,"\"Akainu\" is a Marine admiral who ate the \"Magu Magu no Mi\" fruit and became a human capable of manipulating magma.|n|nRole: Durable, Disabler|n|n")
 call LANG_U('H00Z',3,"Gintoki is a former participant in the war against aliens, a samurai nicknamed the white deman.|n|nRole: Caster, Escape, Swordsman|n|n")
@@ -296385,6 +299514,8 @@ call LANG_U('H064',3,"Youmu Konpaku learned swordsmanship from her father in her
 call LANG_U('H065',3,"Kurapika Kuruta, the last survivor of his clan, dreams of taking revenge on the murderers of his brothers.|n|nRole: Carry, Assassin, Exhauster|n|n")
 call LANG_U('H066',3,"Donquixote Doflamingo is one of the Shichibukai, a usurper of Dressrosa and a former Tenryubito.|n|nRole: Caster, Disabler, Exhauster, Initiator|n|n")
 call LANG_U('H067',3,"Tamamo no Mae - caster Fate\\Extra.|n|nRole: Caster, Disabler, Support|n|n|n|n")
+endfunction
+function LANG_Data57 takes nothing returns nothing
 call LANG_U('H069',3,"Tohno Shiki's alter ego created by Shiro Len.|n|nRole: Caster, Assassin, Disabler|n|n")
 call LANG_U('H06B',3,"Nero - a former emperor, Nero's artistic nature is reflected in her fighting style.|n|nRole: Caster, Durable, Disabler, Swordsman|n|n")
 call LANG_U('H06C',3,"Li Shuwen is a master of martial arts and stealth techniques.|n|nRole: Assassin, Caster|n|n")
@@ -296479,8 +299610,6 @@ call LANG_U('h109',0,"35 Level.")
 call LANG_U('h046',0,"Level 6")
 call LANG_U('h04K',0,"Level 12")
 call LANG_U('h15T',0,"Moria's Creep")
-endfunction
-function LANG_Data57 takes nothing returns nothing
 call LANG_U('h25T',0,"Moria's Creep")
 call LANG_U('h05T',0,"Creep Frieza")
 call LANG_U('h05U',0,"Creep Frieza")
@@ -296511,6 +299640,7 @@ call LANG_U('hB1W',0,"Flandre's Clone")
 call LANG_U('HRem',3,"Remilia Scarlet — a 500-year-old vampire, mistress of the Scarlet Devil Mansion from Touhou Project and Flandre's older sister. She controls fate.|n(Abilities and effects ported from the Chinese map bof, by AlTrOn)|n|nRole: Caster, Disabler.|n")
 call LANG_U('HSui',3,"Suigintou — the first doll of Rozen Maiden: black wings, a rapier and the mirror world N.|n(Abilities and effects ported from the Chinese map bof, by AlTrOn)|n|nRole: Carry, Nuker, Disabler.|n")
 call LANG_U('HShn',3,"Captain of the 5th Division and leader of the Visored — Shinigami who gained a Hollow's power. A lazy-looking joker who is calculating and cunning in battle: he lures the enemy into deception and strikes once they can no longer tell friend from foe.|n|nRole: Initiator, Disabler, Caster, Carry.|n")
+call LANG_U('HDMa',3,"Dead Master — the dark reflection of Yomi from a parallel world: a very cruel girl made to kill. She sees Black Rock Shooter as her direct rival.|n|nRole: Caster, Disabler, Support|n")
 call LANG_B('BRRV',0,"Rain Aura")
 call LANG_B('BRRV',1,"Aura of rain.")
 call LANG_B('BMUR',0,"Wood Dragon")
@@ -296636,6 +299766,8 @@ call LANG_B('B067',1,"This warrior is caught")
 call LANG_B('B068',0,"Holy Grail")
 call LANG_B('B068',1,"Holy Grail")
 call LANG_B('B069',0,"Radiance of the Grail")
+endfunction
+function LANG_Data58 takes nothing returns nothing
 call LANG_B('B069',1,"Radiance of the Grail")
 call LANG_B('B06C',0,"Millefiore Independence")
 call LANG_B('B06C',1,"Millefiore Independence")
@@ -296731,8 +299863,6 @@ call LANG_B('IHYb',0,"Yukirin's Hourglass")
 call LANG_B('IHYb',1,"This unit's health regeneration efficiency has been reduced by 25/50/75%. Depending on the level of this buff.")
 call LANG_B('IO3b',0,"Weighty Argument")
 call LANG_B('IO3b',1,"This unit's health regeneration efficiency has been reduced by 25%.")
-endfunction
-function LANG_Data58 takes nothing returns nothing
 call LANG_B('IO4b',0,"Stigmata Recharge")
 call LANG_B('IO4b',1,"Stigmata Recharge")
 call LANG_B('IO5b',1,"Effectivness of controls effects is increased by 25%.")
@@ -296789,9 +299919,9 @@ call LANG_F("IDLE_PEON_DESC","You can put things here.")
 call LANG_F("LUMBER","Victory points")
 call LANG_F("RESOURCE_UBERTIP_GOLD","Gold is earned by winning rounds and by defeating heroes.")
 call LANG_F("RESOURCE_UBERTIP_LUMBER","Victory points are earned for winning a round, by reaching a certain number of points you win.")
-call LANG_F("UPKEEP_HIGH","|c0000FF00Choice Battle |r|c0000FFFFv3.8.1 EN|r")
-call LANG_F("UPKEEP_LOW","|c0000FF00Choice Battle |r|c0000FFFFv3.8.1 EN|r")
-call LANG_F("UPKEEP_NONE","|c0000FF00Choice Battle |r|c0000FFFFv3.8.1 EN|r")
+call LANG_F("UPKEEP_HIGH","|c0000FF00Choice Battle |r|c0000FFFFv3.8.2 EN|r")
+call LANG_F("UPKEEP_LOW","|c0000FF00Choice Battle |r|c0000FFFFv3.8.2 EN|r")
+call LANG_F("UPKEEP_NONE","|c0000FF00Choice Battle |r|c0000FFFFv3.8.2 EN|r")
 endfunction
 function LANG_DataAll takes nothing returns nothing
 call ExecuteFunc("LANG_Data0")
@@ -296974,6 +300104,7 @@ call InitTrig_ChangeSamehadaMod()
 call InitTrig_ChangeAlchemySealMod()
 call InitTrig_MoveHeroes()
 call InitTrig_KingOfHill_Enter()
+call InitTrig_DeadMasterHeroDie() //DeadMaster
 call InitTrig_Tower_Enter()
 call InitTrig_Fountain_Enter()
 call DisableTrigger(gg_trg_KingOfHill_Enter)
