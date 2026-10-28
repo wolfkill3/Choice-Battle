@@ -20745,7 +20745,7 @@ endfunction
 // Sunshine (D) на 20 c: +80% силы и +40% здоровья (владелец 27 сен: сначала +117%/+57% как у bof —
 // «уменьши ещё немного»; эти +117%/+57% теперь у The One).
 function Esc_SunshineOn takes unit u returns nothing
-call Esc_BuffOn(u,"EscSun",.8,.4)
+call Esc_BuffOn(u,"EscSun",0.,.2) // 29 окт: сила — полуденное солнце (Esc_T_Act), сверху только +20% здоровья (было +80% силы, +40% здоровья)
 endfunction
 function Esc_SunshineOff takes unit u returns nothing
 call Esc_BuffOff(u,"EscSun")
@@ -22728,7 +22728,7 @@ call Bof_zU(0.,LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$3
 call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6B54C545,Esc_Time(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
 call Esc_SetClock(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),12.,true)
 call SaveBoolean(bof_M9,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)),$DF127C78,true)
-call Esc_SunStr(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),0.) // 29 окт: ночной штраф снят на время D
+call Esc_SunStr(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),255.) // 29 окт: на время D — полдень: ночной штраф снят, +50% белой силы
 call Esc_SunshineOn(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2))
 set ST=CreateTimer()
 call SaveReal(bof_OI,GetHandleId(ST),$6B54C545,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6B54C545))
@@ -298226,8 +298226,8 @@ call LANG_A('EsF1',1,0,"A pillar of flame silences the area for 5 sec. and burns
 call LANG_A('EsF1',3,0,"A pillar of flame silences the area for 5 sec. and burns everyone in it, then a blazing sun falls into it.|n|n|cFF00A5FF|nDamage: 3*|r|c00FF5555STR|r|cFF00A5FF (from base strength) by the explosion + 1.5*|r|c00FF5555STR|r|cFF00A5FF per sec. in the pillar|nStun: 3 sec.|nAoE: 600|nRange: 1600|nCooldow"+"n: 18 sec.|r")
 call LANG_A('EsG1',1,0,"Only from 9 to 15 by his clock. Escanor burns his own life and becomes The One: a strike on everyone around, then 15 sec. of burning everyone nearby, dropping explosions for the first 5 sec. At the end Escanor dies.|n|n|cFF00A5FF|nStrike (AoE 900): 5*|r|c00FF5555STR|r|cFF00A5FF|nNearby (AoE 450): 0."+"15*|r|c00FF5555STR|r|cFF00A5FF every 0.25 sec.|nExplosions (AoE 650): 2.5*|r|c00FF5555STR|r|cFF00A5FF|nBonus: +117% strength, +57% health|nDuration: 15 sec.|nCooldown: 55 sec.|r")
 call LANG_A('EsG1',3,0,"Only from 9 to 15 by his clock. Escanor burns his own life and becomes The One: a strike on everyone around, then 15 sec. of burning everyone nearby, dropping explosions for the first 5 sec. At the end Escanor dies.|n|n|cFF00A5FF|nStrike (AoE 900): 5*|r|c00FF5555STR|r|cFF00A5FF|nNearby (AoE 450): 0."+"15*|r|c00FF5555STR|r|cFF00A5FF every 0.25 sec.|nExplosions (AoE 650): 2.5*|r|c00FF5555STR|r|cFF00A5FF|nBonus: +117% strength, +57% health|nDuration: 15 sec.|nCooldown: 55 sec.|r")
-call LANG_A('EsT1',1,0,"Escanor has his own day — 4 minutes, starting at dawn; the clock is in the window at the top right.|nPassive: by day his strength grows towards noon, at night it drops towards midnight. Every attack deals 0.5*|c00FF5555STR|r more.|nActive (night only, 18 to 6): noon comes for 20 sec. — the night"+" penalty is lifted, strength and health grow.|n|n|cFF00A5FF|nDay: up to +50% white strength (at noon)|nNight: up to −30% white strength (at midnight)|nActive: +80% strength, +40% health for 20 sec.|nCooldown: 70 sec.|r")
-call LANG_A('EsT1',3,0,"Escanor has his own day — 4 minutes, starting at dawn; the clock is in the window at the top right.|nPassive: by day his strength grows towards noon, at night it drops towards midnight. Every attack deals 0.5*|c00FF5555STR|r more.|nActive (night only, 18 to 6): noon comes for 20 sec. — the night"+" penalty is lifted, strength and health grow.|n|n|cFF00A5FF|nDay: up to +50% white strength (at noon)|nNight: up to −30% white strength (at midnight)|nActive: +80% strength, +40% health for 20 sec.|nCooldown: 70 sec.|r")
+call LANG_A('EsT1',1,0,"Escanor has his own day — 4 minutes, starting at dawn; the clock is in the window at the top right.|nPassive: by day his strength grows towards noon, at night it drops towards midnight. Every attack deals 0.5*|c00FF5555STR|r more.|nActive (night only, 18 to 6): noon comes for 20 sec.: the night pe"+"nalty is lifted, strength as at noon, health grows.|n|n|cFF00A5FF|nDay: up to +50% white strength (at noon)|nNight: up to −30% white strength (at midnight)|nActive: +50% white strength, +20% health for 20 sec.|nCooldown: 70 sec.|r")
+call LANG_A('EsT1',3,0,"Escanor has his own day — 4 minutes, starting at dawn; the clock is in the window at the top right.|nPassive: by day his strength grows towards noon, at night it drops towards midnight. Every attack deals 0.5*|c00FF5555STR|r more.|nActive (night only, 18 to 6): noon comes for 20 sec.: the night pe"+"nalty is lifted, strength as at noon, health grows.|n|n|cFF00A5FF|nDay: up to +50% white strength (at noon)|nNight: up to −30% white strength (at midnight)|nActive: +50% white strength, +20% health for 20 sec.|nCooldown: 70 sec.|r")
 call LANG_A('FlF2',1,0,"The cursor's final strike: \"You're not going anywhere now.\"")
 call LANG_A('FlF2',3,0,"The cursor's final strike: \"You're not going anywhere now.\"")
 call LANG_A('FlQ1',0,0,"Cranberry Trap, [|cffffcc00Level 1|r] (|cffffcc00Q|r)")
