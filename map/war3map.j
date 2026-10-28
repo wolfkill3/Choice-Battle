@@ -81,7 +81,6 @@ constant integer SH_FlaPastX = StringHash("FlaPastX")
 constant integer SH_FlaPastY = StringHash("FlaPastY")
 constant integer SH_EscClock = StringHash("EscClock")
 constant integer SH_EscClockFrozen = StringHash("EscClockFrozen")
-constant integer SH_EscBoard = StringHash("EscBoard")
 constant integer SH_t = StringHash("t")
 constant integer SH_sound = StringHash("sound")
 constant integer SH_EscRGST4 = StringHash("EscRGST4")
@@ -690,8 +689,9 @@ effect Tower = null
 effect Fountain = null
 effect KingOfHill = null
 // 28 окт (3.8.2): зона царя горы — круг этого радиуса от центра gg_rct_KingOfHillRect; кольцо RingPulse.mdx рисуется по нему
-// (линия кольца — 98.8 * масштаб; при масштабе 6.2 — как старый квадрат SquarePulse)
-real KOH_R=612.
+// (линия кольца — 88.5 * масштаб: 29 окт линия в SelectionRing.blp вдвое толще и ближе к центру; было 98.8)
+// 29 окт: радиус вдвое больше (было 612)
+real KOH_R=1224.
 framehandle array TeamBar
 framehandle  KingOfHillIcon
 framehandle  KingOfHillContainer=null
@@ -2408,6 +2408,26 @@ integer TSE_TN=0
 integer TSE_TCur=0
 timer array TSE_PT
 integer TSE_PN=0
+// 29 окт: урон по замороженным — TSE_DH[юнит][0] сумма, [1] последний источник; TSE_HG — у кого есть накопленный урон
+hashtable TSE_DH=null
+group TSE_HG=null
+// таймеры раунда (TD, TD2, TD4) и Царь горы, остановленные модулем; заглушённые звуки soundStr
+boolean array TSE_RT
+boolean TSE_KOH=false
+integer array TSE_Snd
+integer TSE_SN=0
+// 29 окт: остановка по области — круг (TSE_AX, TSE_AY, TSE_AR)
+boolean TSE_Area=false
+real TSE_AX=0.
+real TSE_AY=0.
+real TSE_AR=0.
+// владелец кода, запустившего звук soundStr[i] (SndN), — глушатся только звуки тех, для кого стоит время
+player array SND_Own
+// затемнение показано у этого игрока (локально) — тик возвращает его, если чужой код снял маску
+boolean TSE_FiltOn=false
+// отладка: -ts красного пишет ему, сколько заморожено
+boolean TSE_Dbg=false
+integer TSE_DbgTm=0
 //DraftGlobals (Ban Draft Mode)
 boolean DraftOn=false
 boolean DraftDone=false
@@ -2440,6 +2460,12 @@ framehandle DrwMsg=null
 real DrwMsgLeft=0.
 sound DraftSnd=null
 //DraftGlobalsEnd
+constant integer SH_PVWarm = StringHash("PVWarm") // озвучка выбора: когда прогрет файл (ключ — хэш пути)
+timer PV_Clock=null
+real PV_Time=1.
+constant integer SH_TavSwap = StringHash("TavSwap") // таверна: первая способность -> вторая
+constant integer SH_TavSwapIc = StringHash("TavSwapIc") // таверна: хэш иконки -> способность, на которую переключить
+constant integer SH_TavSwapFirst = StringHash("TavSwapFirst") // таверна: способность — первая из пары
 boolean LANG_EN=false // язык интерфейса у локального игрока (LANG_Init, -en / -ru)
 hashtable LANG_HT=InitHashtable()
 integer LANG_N=0
@@ -5586,8 +5612,8 @@ set gg_rct_Resp5 = Rect( -3584.0, -5088.0, -3072.0, -4608.0 )
 set gg_rct_Resp7 = Rect( 3360.0, 7232.0, 3680.0, 7520.0 )
 set gg_rct________________004 = Rect( 2304.0, 6112.0, 4768.0, 7616.0 )
 set gg_rct________________006 = Rect( -5120.0, -5632.0, 5632.0, 5120.0 )
-set gg_rct_GameZone = Rect( -5376.0, -5824.0, 5312.0, 5152.0 )
-set gg_rct_GameZone1 = Rect( -5536.0, -6024.0, 5512.0, 5352.0)
+set gg_rct_GameZone = Rect( -5120.0, -5632.0, 5632.0, 5120.0 ) // 28 окт: = новой арене (регион 006 после land change); было -5376, -5824, 5312, 5152
+set gg_rct_GameZone1 = Rect( -5280.0, -5832.0, 5832.0, 5320.0) // 28 окт: GameZone + 160 слева, 200 с остальных сторон; было -5536, -6024, 5512, 5352
 set gg_rct_TargetStart = Rect( 128.0, -416.0, 384.0, -160.0 )
 set gg_rct_HibariFirst = Rect( 10912.0, -1440.0, 11104.0, -1216.0 )
 set gg_rct_HibariSecond = Rect( 11488.0, -1440.0, 11680.0, -1216.0 )
@@ -6946,8 +6972,12 @@ endfunction
 // (TSE_AddExemptType). dur<=0 — до TSE_Stop. Всё в общем коде, у всех одинаково.
 // Стоят: юниты (пауза, анимация 0, время жизни даммиков), баффы, откаты способностей/предметов/атаки,
 // снаряды, эффекты (снимок на момент остановки — у эффектов нет владельца, новые не трогаются).
-// Таймеры кода способностей стоят, если известен их владелец (см. TSE_TimerStart). Не стоят: звуки, молнии, PolledWait.
-// TSE_HT: [-1][тип героя] — исключение; [handle][0] — скорость анимации/снаряда, [1] — откат или скорость снаряда, [2] — откат атаки.
+// Таймеры кода способностей стоят, если известен их владелец (см. TSE_TimerStart).
+// 29 окт: урон по замороженным копится и приходит при возобновлении (TSE_HoldDmg из обработчика урона); их регенерация
+// HP/MP стоит (TSE_ZeroScale); таймеры раунда TD/TD2/TD4 и Царь горы стоят; звуки soundStr, игравшие в момент остановки,
+// глушатся до конца; ожидания способностей — TSE_PolledWait. Молнии стоят сами: их двигают и удаляют таймеры способностей.
+// TSE_HT: [-1][тип героя] — исключение; [handle][0] — скорость анимации/снаряда, [1] — откат или скорость снаряда, [2] — откат атаки,
+// [3]/[4] — HP/MP юнита на момент остановки (регенерация не идёт).
 function TSE_AddExemptType takes integer typeId returns nothing
 call SaveBoolean(TSE_HT,-1,typeId,true)
 endfunction
@@ -6956,6 +6986,13 @@ if TSE_Src!=null and p==OwnerOf(TSE_Src) then
 return true
 endif
 return LoadBoolean(TSE_HT,-1,GetUnitTypeId(Hero[PId(p)]))
+endfunction
+// для игрока стоит время (его таймеры, ожидания, звуки): не исключён; при остановке по области — его герой заморожен
+function TSE_PlayerStopped takes player p returns boolean
+if p==null or TSE_PlayerExempt(p) then
+return false
+endif
+return not TSE_Area or IsUnitInGroup(Hero[PId(p)],TSE_G)
 endfunction
 // ---- таймеры способностей. Ниже модуля все TimerStart / DestroyTimer заменены на TSE_TimerStart / TSE_DestroyTimer. ----
 // Владелец таймера: внутри кода другого таймера — владелец того таймера; иначе атакующий в событии урона, иначе юнит события.
@@ -6997,6 +7034,28 @@ endif
 set et=null
 set u=null
 return p
+endfunction
+// пауза таймера с запоминанием периода и остатка: TSE_HT[таймер][11] период, [12] периодический, [13] остаток
+function TSE_TPause takes timer tm returns nothing
+local integer id=GetHandleId(tm)
+call SaveReal(TSE_HT,id,11,TimerGetTimeout(tm))
+call SaveBoolean(TSE_HT,id,12,TimerIsPeriodic(tm))
+call SaveReal(TSE_HT,id,13,TimerGetRemaining(tm))
+call PauseTimer(tm)
+set TSE_DbgTm=TSE_DbgTm+1
+endfunction
+// ResumeTimer у периодического таймера срабатывает один раз на остаток и перестаёт повторяться (снаряды/рывки вставали навсегда)
+function TSE_TResume takes timer tm returns nothing
+local integer id=GetHandleId(tm)
+call ResumeTimer(tm)
+if LoadBoolean(TSE_HT,id,12) then
+call TimerSetPeriodic(tm,true)
+call TimerSetTimeout(tm,LoadReal(TSE_HT,id,11))
+call TimerSetRemaining(tm,LoadReal(TSE_HT,id,13))
+endif
+call RemoveSavedReal(TSE_HT,id,11)
+call RemoveSavedBoolean(TSE_HT,id,12)
+call RemoveSavedReal(TSE_HT,id,13)
 endfunction
 function TSE_TDel takes integer k returns nothing
 local integer last=TSE_TN-1
@@ -7053,8 +7112,8 @@ call SaveInteger(TSE_HT,GetHandleId(tm),10,k)
 endif
 set TSE_TP[k-1]=p
 // запущен во время остановки не исключённым игроком — сразу на паузу до конца остановки
-if TSE_On and not TSE_PlayerExempt(p) and TSE_PN<8190 then
-call PauseTimer(tm)
+if TSE_On and TSE_PlayerStopped(p) and TSE_PN<8190 then
+call TSE_TPause(tm)
 set TSE_PT[TSE_PN]=tm
 set TSE_PN=TSE_PN+1
 endif
@@ -7077,20 +7136,42 @@ endif
 endloop
 call DestroyTimer(tm)
 endfunction
-function TSE_PauseTimers takes nothing returns nothing
+// таймеры тех, для кого стоит время; p!=null — только этого игрока (его герой зашёл в область позже)
+function TSE_PauseTimers takes player p returns nothing
 local integer i=0
 local timer tm
 loop
 exitwhen i>=TSE_TN or TSE_PN>=8190
 set tm=TSE_TL[i]
-if tm!=null and not TSE_PlayerExempt(TSE_TP[i]) and not TimerIsPaused(tm) and TimerGetRemaining(tm)>0 then
-call PauseTimer(tm)
+if tm!=null and (p==null or TSE_TP[i]==p) and TSE_PlayerStopped(TSE_TP[i]) and not TimerIsPaused(tm) and TimerGetRemaining(tm)>0 then
+call TSE_TPause(tm)
 set TSE_PT[TSE_PN]=tm
 set TSE_PN=TSE_PN+1
 endif
 set i=i+1
 endloop
 set tm=null
+endfunction
+// экран слегка затемняется серым (маска на весь экран, 0.3 с); вызывать у всех или в блоке GetLocalPlayer
+// экран слегка затемняется серым (маска на весь экран, появление dur с); вызывать у всех или в блоке GetLocalPlayer
+function TSE_FilterD takes real dur returns nothing
+set TSE_FiltOn=true
+call SetCineFilterTexture("ReplaceableTextures\\CameraMasks\\White_mask.blp")
+call SetCineFilterBlendMode(BLEND_MODE_BLEND)
+call SetCineFilterTexMapFlags(TEXMAP_FLAG_NONE)
+call SetCineFilterStartUV(0,0,1,1)
+call SetCineFilterEndUV(0,0,1,1)
+if dur>0 then
+call SetCineFilterStartColor(110,110,120,0)
+else
+call SetCineFilterStartColor(110,110,120,90)
+endif
+call SetCineFilterEndColor(110,110,120,90)
+call SetCineFilterDuration(dur)
+call DisplayCineFilter(true)
+endfunction
+function TSE_Filter takes nothing returns nothing
+call TSE_FilterD(0.3)
 endfunction
 // продолжить остановленные (ResumeTimer доигрывает остаток); уничтоженные обёрткой уже убраны из списка
 function TSE_ResumeTimers takes nothing returns nothing
@@ -7100,7 +7181,7 @@ loop
 exitwhen i>=TSE_PN
 set tm=TSE_PT[i]
 if tm!=null and LoadInteger(TSE_HT,GetHandleId(tm),10)>0 then
-call ResumeTimer(tm)
+call TSE_TResume(tm)
 endif
 set TSE_PT[i]=null
 set i=i+1
@@ -7118,6 +7199,20 @@ local item it
 call GroupAddUnit(TSE_G,u)
 call SaveReal(TSE_HT,id,0,GetUnitTimeScale(u))
 call SaveReal(TSE_HT,id,2,GetUnitAttackRemainingCooldown(u))
+call SaveReal(TSE_HT,id,3,GetWidgetLife(u))
+call SaveReal(TSE_HT,id,4,GetUnitState(u,UNIT_STATE_MANA))
+// даммики (Aloc) держатся на месте: их может двигать код игрока, для которого время идёт (снаряд влетел в область)
+if GetUnitAbilityLevel(u,'Aloc')>0 then
+call SaveBoolean(TSE_HT,id,7,true)
+call SaveReal(TSE_HT,id,5,GetUnitX(u))
+call SaveReal(TSE_HT,id,6,GetUnitY(u))
+endif
+if TSE_Area and u==Hero[PId(OwnerOf(u))] then
+call TSE_PauseTimers(OwnerOf(u))
+if GetLocalPlayer()==OwnerOf(u) then
+call TSE_Filter()
+endif
+endif
 call SetUnitTimeScale(u,0)
 call PauseUnitEx(u,true)
 call UnitPauseTimedLife(u,true)
@@ -7166,7 +7261,7 @@ loop
 set u=FirstOfGroup(TSE_Tmp)
 exitwhen u==null
 call GroupRemoveUnit(TSE_Tmp,u)
-if not IsUnitInGroup(u,TSE_G) and not TSE_PlayerExempt(OwnerOf(u)) then
+if not IsUnitInGroup(u,TSE_G) and not TSE_PlayerExempt(OwnerOf(u)) and (not TSE_Area or IsUnitInRangeXY(u,TSE_AX,TSE_AY,TSE_AR)) then
 call TSE_FreezeUnit(u)
 endif
 endloop
@@ -7179,7 +7274,11 @@ local integer i=0
 local integer cnt
 local projectile pr
 local unit pu
+if TSE_Area then
+call HandleListEnumProjectilesInRange(l,TSE_AX,TSE_AY,TSE_AR,null)
+else
 call HandleListEnumProjectilesInRect(l,WorldBoundsR(),null)
+endif
 set cnt=HandleListGetProjectileCount(l)
 loop
 exitwhen i>=cnt
@@ -7190,6 +7289,7 @@ if pu==null or not TSE_PlayerExempt(OwnerOf(pu)) then
 call SaveReal(TSE_HT,GetHandleId(pr),0,GetProjectileTimeScale(pr))
 call SaveReal(TSE_HT,GetHandleId(pr),1,GetProjectileSpeed(pr))
 call SetProjectileTimeScale(pr,0)
+call SetProjectileAnimationFrozen(pr,true)
 call SetProjectileSpeed(pr,0)
 call HandleListAddHandle(TSE_Prj,pr)
 endif
@@ -7201,24 +7301,159 @@ set l=null
 set pr=null
 set pu=null
 endfunction
-function TSE_EffEnum takes nothing returns nothing
-local effect e=GetEnumSpecialEffect()
-if e!=null and not HandleListContainsHandle(TSE_Eff,e) then
+// эффект замирает: при остановке по области — в круге; при общей — кроме тех, что у самого остановившего (в 150 от него)
+function TSE_EffFreeze takes effect e returns nothing
+local real ex=GetSpecialEffectX(e)
+local real ey=GetSpecialEffectY(e)
+if TSE_Area then
+if (ex-TSE_AX)*(ex-TSE_AX)+(ey-TSE_AY)*(ey-TSE_AY)>TSE_AR*TSE_AR then
+return
+endif
+elseif TSE_Src!=null and (ex-GetUnitX(TSE_Src))*(ex-GetUnitX(TSE_Src))+(ey-GetUnitY(TSE_Src))*(ey-GetUnitY(TSE_Src))<22500. then
+return
+endif
 call SaveReal(TSE_HT,GetHandleId(e),0,GetSpecialEffectTimeScale(e))
 call SetSpecialEffectTimeScale(e,0)
+call SetSpecialEffectAnimationFrozen(e,true)
 call HandleListAddHandle(TSE_Eff,e)
+endfunction
+// все эффекты по типу хэндла ('efct'): EnumSpecialEffectsInRange не находил прикреплённые к юнитам; отдельный поток (ExecuteFunc)
+function TSE_ScanEffects takes nothing returns nothing
+local handlelist l=HandleListCreate()
+local integer i=0
+local integer cnt
+local effect e
+call HandleListEnumById(l,'efct',null)
+set cnt=HandleListGetEffectCount(l)
+loop
+exitwhen i>=cnt
+set e=HandleListGetEffectByIndex(l,i)
+if e!=null then
+call TSE_EffFreeze(e)
 endif
+set i=i+1
+endloop
+call HandleListDestroy(l)
+set l=null
 set e=null
 endfunction
-// код способностей (его таймеры идут) может вернуть скорость анимации — снова 0
+// код способностей (его таймеры идут) может вернуть скорость анимации — снова 0;
+// регенерация стоит: HP/MP выше запомненного срезаются, ниже (вытягивание маны и т.п. от того, кто остановил) — запоминаются
 function TSE_ZeroScale takes nothing returns nothing
-call SetUnitTimeScale(GetEnumUnit(),0)
+local unit u=GetEnumUnit()
+local integer id=GetHandleId(u)
+call SetUnitTimeScale(u,0)
+if LoadBoolean(TSE_HT,id,7) then
+call SetUnitX(u,LoadReal(TSE_HT,id,5))
+call SetUnitY(u,LoadReal(TSE_HT,id,6))
+endif
+if GetWidgetLife(u)>0.405 then
+if GetWidgetLife(u)>LoadReal(TSE_HT,id,3) then
+call SetWidgetLife(u,LoadReal(TSE_HT,id,3))
+else
+call SaveReal(TSE_HT,id,3,GetWidgetLife(u))
+endif
+if GetUnitState(u,UNIT_STATE_MANA)>LoadReal(TSE_HT,id,4) then
+call SetUnitState(u,UNIT_STATE_MANA,LoadReal(TSE_HT,id,4))
+else
+call SaveReal(TSE_HT,id,4,GetUnitState(u,UNIT_STATE_MANA))
+endif
+endif
+set u=null
+endfunction
+// урон по замороженному (вызывается из обработчика урона с итоговым уроном; там он обнуляется)
+function TSE_HoldDmg takes unit u,unit c,real tsd returns nothing
+local integer id=GetHandleId(u)
+call SaveReal(TSE_DH,id,0,LoadReal(TSE_DH,id,0)+tsd)
+call SaveUnitHandle(TSE_DH,id,1,c)
+call GroupAddUnit(TSE_HG,u)
+endfunction
+// при возобновлении: не смертельный — снимается с HP; смертельный — HP 1 и остаток обычным ударом через обработчик
+// (щиты и спасения от смерти срабатывают)
+function TSE_ReleaseDmg takes nothing returns nothing
+local unit u=GetEnumUnit()
+local integer id=GetHandleId(u)
+local real tsd=LoadReal(TSE_DH,id,0)
+local unit c=LoadUnitHandle(TSE_DH,id,1)
+local real l=GetWidgetLife(u)
+call FlushChildHashtable(TSE_DH,id)
+if tsd>0 and l>0.405 then
+if l-tsd>0.405 then
+call SetWidgetLife(u,l-tsd)
+else
+call SetWidgetLife(u,1.)
+if c==null then
+set c=u
+endif
+call UnitDamageTarget(c,u,tsd-(l-1.),true,false,ATTACK_TYPE_CHAOS,DAMAGE_TYPE_UNIVERSAL,null)
+endif
+endif
+set u=null
+set c=null
+endfunction
+// звуки soundStr, играющие в момент остановки, — без звука до конца (паузы у звуков нет); только тех, для кого стоит время
+// (владелец — SND_Own, неизвестный — не трогаем); отдельный поток (ExecuteFunc) — 8000 проверок
+function TSE_MuteSounds takes nothing returns nothing
+local integer i=0
+loop
+exitwhen i>=8190
+if soundStr[i]!=null and SND_Own[i]!=null and TSE_PlayerStopped(SND_Own[i]) and GetSoundIsPlaying(soundStr[i]) then
+call SetSoundVolume(soundStr[i],0)
+set TSE_Snd[TSE_SN]=i
+set TSE_SN=TSE_SN+1
+endif
+set i=i+1
+endloop
+endfunction
+function TSE_PauseRound takes timer tm,integer k returns nothing
+set TSE_RT[k]=false
+if tm!=null and TimerGetRemaining(tm)>0 and not TimerIsPaused(tm) then
+call TSE_TPause(tm)
+set TSE_RT[k]=true
+endif
+endfunction
+// PolledWait из Blizzard.j, но стоит, пока остановлено время владельца (кода способности, вызвавшего ожидание)
+function TSE_PolledWait takes real tsd returns nothing
+local player p=TSE_Owner()
+local timer tm
+local real left
+local boolean ps=false
+if tsd<=0 then
+return
+endif
+set tm=CreateTimer()
+call TimerStart(tm,tsd,false,null)
+loop
+if TSE_On and TSE_PlayerStopped(p) then
+if not ps then
+call PauseTimer(tm)
+set ps=true
+endif
+elseif ps then
+call ResumeTimer(tm)
+set ps=false
+endif
+set left=TimerGetRemaining(tm)
+exitwhen left<=0
+if ps or left<=bj_POLLED_WAIT_SKIP_THRESHOLD then
+call TriggerSleepAction(bj_POLLED_WAIT_INTERVAL)
+else
+call TriggerSleepAction(0.1*left)
+endif
+endloop
+call DestroyTimer(tm)
+set tm=null
+set p=null
 endfunction
 // раз в 0.1 с: новые юниты и снаряды не исключённых игроков тоже встают
 function TSE_TickF takes nothing returns nothing
 call TSE_ScanUnits()
 call TSE_ScanProjectiles()
 call ForGroup(TSE_G,function TSE_ZeroScale)
+// затемнение могла снять чужая маска (DisplayCineFilter(false) в коде способностей) — вернуть без появления
+if TSE_FiltOn and not IsCineFilterDisplayed() then
+call TSE_FilterD(0.)
+endif
 endfunction
 function TSE_UnfreezeUnit takes nothing returns nothing
 local unit u=GetEnumUnit()
@@ -7243,17 +7478,41 @@ if not TSE_On then
 return
 endif
 set TSE_On=false
+set TSE_FiltOn=false
+if TSE_Dbg then
+call DisplayTextToPlayer(PlayerV(0),0,0,"|cff808080TSE: юнитов "+I2S(CountUnitsInGroup(TSE_G))+", эффектов "+I2S(HandleListGetEffectCount(TSE_Eff))+", снарядов "+I2S(HandleListGetProjectileCount(TSE_Prj))+", таймеров на паузе "+I2S(TSE_DbgTm)+"|r")
+endif
+set TSE_DbgTm=0
+call DisplayCineFilter(false)
 call PauseTimer(TSE_Tick)
 call PauseTimer(TSE_End)
 call ForGroup(TSE_G,function TSE_UnfreezeUnit)
 call GroupClear(TSE_G)
 call TSE_ResumeTimers()
+call ForGroup(TSE_HG,function TSE_ReleaseDmg)
+call GroupClear(TSE_HG)
+if TSE_RT[0] then
+call TSE_TResume(TD)
+endif
+if TSE_RT[1] then
+call TSE_TResume(TD2)
+endif
+if TSE_RT[2] then
+call TSE_TResume(TD4)
+endif
+if TSE_KOH then
+call EnableTrigger(gg_trg_KingOfHill_Enter)
+set TSE_KOH=false
+endif
+loop
+exitwhen TSE_SN<=0
+set TSE_SN=TSE_SN-1
+call SetSoundVolume(soundStr[TSE_Snd[TSE_SN]],127)
+endloop
 // пропавшие за время остановки объекты выкидываются из списков
 call HandleListRemoveEmpty(TSE_Buf)
 call HandleListRemoveEmpty(TSE_Abl)
 call HandleListRemoveEmpty(TSE_Itm)
-call HandleListRemoveEmpty(TSE_Eff)
-call HandleListRemoveEmpty(TSE_Prj)
 set cnt=HandleListGetBuffCount(TSE_Buf)
 loop
 exitwhen i>=cnt
@@ -7283,7 +7542,10 @@ set cnt=HandleListGetEffectCount(TSE_Eff)
 loop
 exitwhen i>=cnt
 set e=HandleListGetEffectByIndex(TSE_Eff,i)
+if e!=null then
 call SetSpecialEffectTimeScale(e,LoadReal(TSE_HT,GetHandleId(e),0))
+call SetSpecialEffectAnimationFrozen(e,false)
+endif
 call FlushChildHashtable(TSE_HT,GetHandleId(e))
 set i=i+1
 endloop
@@ -7292,8 +7554,19 @@ set cnt=HandleListGetProjectileCount(TSE_Prj)
 loop
 exitwhen i>=cnt
 set pr=HandleListGetProjectileByIndex(TSE_Prj,i)
-call SetProjectileTimeScale(pr,LoadReal(TSE_HT,GetHandleId(pr),0))
+if pr!=null and IsProjectileAlive(pr) then
+call SetProjectileTimeScale(pr,RMaxBJ(LoadReal(TSE_HT,GetHandleId(pr),0),1.))
+call SetProjectileAnimationFrozen(pr,false)
+// у летящего снаряда автоатаки скорость читалась как 0 — тогда 1000, иначе он висел навсегда (29 окт)
+if LoadReal(TSE_HT,GetHandleId(pr),1)>0 then
 call SetProjectileSpeed(pr,LoadReal(TSE_HT,GetHandleId(pr),1))
+else
+call SetProjectileSpeed(pr,1000.)
+endif
+if TSE_Dbg then
+call DisplayTextToPlayer(PlayerV(0),0,0,"|cff808080TSE: снаряд скорость "+R2S(LoadReal(TSE_HT,GetHandleId(pr),1))+" -> "+R2S(GetProjectileSpeed(pr))+"|r")
+endif
+endif
 call FlushChildHashtable(TSE_HT,GetHandleId(pr))
 set i=i+1
 endloop
@@ -7303,37 +7576,95 @@ call HandleListClear(TSE_Itm)
 call HandleListClear(TSE_Eff)
 call HandleListClear(TSE_Prj)
 set TSE_Src=null
+set TSE_Area=false
 set e=null
 set pr=null
 set a=null
 set it=null
 endfunction
-function TSE_Start takes unit src,real dur returns nothing
-local rect r=WorldBoundsR()
+// area=false — всё (кроме исключённых); area=true — только круг (x, y, r): юниты и снаряды в нём и залетевшие позже,
+// эффекты в нём, таймеры/ожидания/звуки игроков, чей герой заморожен. Таймеры раунда и Царь горы стоят только при общей.
+function TSE_StartEx takes unit src,real dur,boolean area,real x,real y,real r returns nothing
+local rect wr=WorldBoundsR()
 if TSE_On then
 call TSE_Stop()
 endif
 set TSE_On=true
 set TSE_Src=src
+set TSE_Area=area
+set TSE_AX=x
+set TSE_AY=y
+set TSE_AR=r
+if not area then
+call TSE_Filter()
+endif
 call TSE_ScanUnits()
-call EnumSpecialEffectsInRange(GetRectCenterX(r),GetRectCenterY(r),40000,null,function TSE_EffEnum)
+call ExecuteFunc("TSE_ScanEffects")
 call TSE_ScanProjectiles()
-call TSE_PauseTimers()
+call TSE_PauseTimers(null)
+if not area then
+call TSE_PauseRound(TD,0)
+call TSE_PauseRound(TD2,1)
+call TSE_PauseRound(TD4,2)
+if IsTriggerEnabled(gg_trg_KingOfHill_Enter) then
+call DisableTrigger(gg_trg_KingOfHill_Enter)
+set TSE_KOH=true
+endif
+endif
+set TSE_SN=0
+call ExecuteFunc("TSE_MuteSounds")
 call TimerStart(TSE_Tick,0.1,true,function TSE_TickF)
 if dur>0 then
 call TimerStart(TSE_End,dur,false,function TSE_Stop)
 endif
-set r=null
+set wr=null
+endfunction
+function TSE_Start takes unit src,real dur returns nothing
+call TSE_StartEx(src,dur,false,0.,0.,0.)
+endfunction
+function TSE_StartArea takes unit src,real dur,real x,real y,real r returns nothing
+call TSE_StartEx(src,dur,true,x,y,r)
 endfunction
 // проверка: красный пишет -ts 5 (секунды) — остановка от его героя; -ts без числа — снять
+// проверка: красный пишет -ts 5 (секунды) — остановка от его героя; -ts без числа — снять;
+// -tsa 5 800 — остановка по области 800 вокруг его героя (без радиуса — 600); если время уже стоит — любой -ts / -tsa его возвращает
 function TSE_Chat takes nothing returns nothing
 local string msg=GetEventPlayerChatString()
-local real sec=S2R(SubString(msg,4,StringLength(msg)))
-if sec>0 then
-call TSE_Start(Hero[PId(TrigP())],sec)
+local unit tsh=Hero[PId(TrigP())]
+local real sec
+local real rad=600.
+local integer sp
+set TSE_Dbg=true
+if TSE_On then
+call TSE_Stop()
+set tsh=null
+return
+endif
+if SubString(msg,0,5)=="-tsa " then
+set msg=SubString(msg,5,StringLength(msg))
+set sp=0
+loop
+exitwhen sp>=StringLength(msg) or SubString(msg,sp,sp+1)==" "
+set sp=sp+1
+endloop
+set sec=S2R(SubString(msg,0,sp))
+if sp<StringLength(msg) and S2R(SubString(msg,sp+1,StringLength(msg)))>0 then
+set rad=S2R(SubString(msg,sp+1,StringLength(msg)))
+endif
+if sec>0 and tsh!=null then
+call TSE_StartArea(tsh,sec,GetUnitX(tsh),GetUnitY(tsh),rad)
 else
 call TSE_Stop()
 endif
+else
+set sec=S2R(SubString(msg,4,StringLength(msg)))
+if sec>0 then
+call TSE_Start(tsh,sec)
+else
+call TSE_Stop()
+endif
+endif
+set tsh=null
 endfunction
 function TSE_ReadyF takes nothing returns nothing
 set TSE_Ready=true
@@ -7345,6 +7676,8 @@ call TimerStart(CreateTimer(),0.,false,function TSE_ReadyF)
 set TSE_G=CreateGroup()
 set TSE_Tmp=CreateGroup()
 set TSE_HT=InitHashtable()
+set TSE_DH=InitHashtable()
+set TSE_HG=CreateGroup()
 set TSE_Eff=HandleListCreate()
 set TSE_Prj=HandleListCreate()
 set TSE_Buf=HandleListCreate()
@@ -12466,6 +12799,7 @@ function SndN takes integer sni returns sound
         set snk=0
     endif
     call SetSoundVolume(soundStr[sni+snk],127)
+    set SND_Own[sni+snk]=TSE_Owner() // 29 окт: чей код запустил звук — для остановки времени
     return soundStr[sni+snk]
 endfunction
 // звук по пути (путь собирается в коде); если пути нет в массиве — по-старому, свой звук, удалится сам
@@ -12477,6 +12811,88 @@ function SndByPath takes string sbp returns sound
     set SND_Tmp=CreateSound(sbp,false,false,true,12700,12700,"")
     call KillSoundWhenDone(SND_Tmp)
     return SND_Tmp
+endfunction
+// 28 окт (3.8.2): озвучка выбора героя — свой звук на каждый выбор. Первый запуск ещё не загруженного файла в WC3 молчит
+// (проверено -voice: первый молчит, через 3 с тот же файл играет), поэтому файл прогревается тихим запуском: при клике
+// по герою в таверне (PickVoiceWarm). Если прогрева не было за последнюю минуту — прогрев сейчас, звук через 3.5 с (2 с при первой загрузке не хватало).
+// Звук запускается у всех (синхронно), кому не положено слышать — громкость 0; удаляется сам.
+function PickVoiceSnd takes string pvp,integer pvVol returns nothing
+    local sound pvs=CreateSound(pvp,false,false,false,10,10,"")
+    call SetSoundDuration(pvs,GetSoundFileDuration(pvp))
+    call SetSoundChannel(pvs,0)
+    call SetSoundVolume(pvs,pvVol)
+    call StartSound(pvs)
+    call KillSoundWhenDone(pvs)
+    set pvs=null
+endfunction
+// время игры для прогрева: свой счётчик раз в 0.25 с (часы на TimerStart(..,null) не проверены в 1.26)
+function PickVoiceClockTick takes nothing returns nothing
+    set PV_Time=PV_Time+.25
+endfunction
+function PickVoiceNow takes nothing returns real
+    if PV_Clock==null then
+        set PV_Clock=CreateTimer()
+        call TimerStart(PV_Clock,.25,true,function PickVoiceClockTick)
+    endif
+    return PV_Time
+endfunction
+function PickVoiceWarm takes string pvp returns nothing
+    local real pvT=LoadReal(HH,SH_PVWarm,StringHash(pvp))
+    if pvT>0. and PickVoiceNow()-pvT<30. then
+        return
+    endif
+    call SaveReal(HH,SH_PVWarm,StringHash(pvp),PickVoiceNow()+.01)
+    call PickVoiceSnd(pvp,0)
+endfunction
+// играет копия из массива soundStr: в тесте -voice слышна именно она (после загрузки файла тихим свежим звуком)
+function PickVoicePlay takes string pvp,boolean pvAll,player pvPl returns nothing
+    local sound pvs=SndByPath(pvp)
+    call StopSound(pvs,false,false)
+    if pvAll or GetLocalPlayer()==pvPl then
+        call SetSoundVolume(pvs,127)
+    else
+        call SetSoundVolume(pvs,0)
+    endif
+    call StartSound(pvs)
+    set pvs=null
+endfunction
+function PickVoiceLate takes nothing returns nothing
+    local integer pvId=GetHandleId(GetExpiredTimer())
+    call PickVoicePlay(LoadStr(HH,pvId,0),LoadBoolean(HH,pvId,1),LoadPlayerHandle(HH,pvId,2))
+    call FlushChildHashtable(HH,pvId)
+    call DestroyTimer(GetExpiredTimer())
+endfunction
+function PickVoice takes string pvp,boolean pvAll,player pvPl returns nothing
+    local real pvT=LoadReal(HH,SH_PVWarm,StringHash(pvp))
+    local timer pvTm
+    if pvT>0. and PickVoiceNow()-pvT>=1. and PickVoiceNow()-pvT<60. then
+        call PickVoicePlay(pvp,pvAll,pvPl)
+        return
+    endif
+    call PickVoiceWarm(pvp)
+    set pvTm=CreateTimer()
+    call SaveStr(HH,GetHandleId(pvTm),0,pvp)
+    call SaveBoolean(HH,GetHandleId(pvTm),1,pvAll)
+    call SavePlayerHandle(HH,GetHandleId(pvTm),2,pvPl)
+    call TimerStart(pvTm,3.5,false,function PickVoiceLate)
+    set pvTm=null
+endfunction
+// -voice: проверка у себя — ровно тот вызов, что при выборе героя (PickVoice, голос Хирако).
+// Первый раз: прогрев и звук через 2 с; повтор через 1..60 с после прошлого — сразу.
+function PickVoiceTest takes nothing returns nothing
+    call DisplayTextToPlayer(GetTriggerPlayer(),0,0,"-voice: PickVoice, "+R2S(GetSoundFileDuration("Voice\\HirakoSummon.mp3")/1000.)+" s, прогрев "+R2S(PickVoiceNow()-LoadReal(HH,SH_PVWarm,StringHash("Voice\\HirakoSummon.mp3")))+" s назад")
+    call PickVoice("Voice\\HirakoSummon.mp3",false,GetTriggerPlayer())
+endfunction
+function PickVoiceTestInit takes nothing returns nothing
+    local trigger pvtr=CreateTrigger()
+    local integer pvi=0
+    loop
+        exitwhen pvi>=12
+        call TriggerRegisterPlayerChatEvent(pvtr,Player(pvi),"-voice",true)
+        set pvi=pvi+1
+    endloop
+    call TriggerAddAction(pvtr,function PickVoiceTest)
+    set pvtr=null
 endfunction
 // звук Тоусена: Sound\Tousen\<имя>.mp3 (22 окт)
 function TousenSnd takes string tsn returns nothing
@@ -14075,7 +14491,48 @@ endfunction
 function Condition_RecipeString takes integer id returns boolean
 return id=='IBBr' or id=='I00E' or id=='I01P' or id=='I01R' or id=='I01T' or id=='I01V' or id=='I02U' or id=='I02X' or id=='I02Z' or id=='I045' or id=='I047' or id=='I04Y' or id=='I04U' or id=='I04X' or id=='I04Z' or id=='I051' or id=='I14R' or id=='IGDr' or id=='IPar' or id=='IHYr' or id=='ISTr' or id=='IBSR' or id=='I052' or id=='I053' or id=='I055' or id=='I06P' or id=='I06S' or id=='I06T' or id=='IPRR' or id=='IPlR' or id=='IBS1' or id=='IYM0' or id=='IGn0' or id=='IBN0' or id=='IGP0' or id=='IVS0' or id=='ISS0' or id=='ITS0'
 endfunction
+// 29 окт (3.8.2): вторые кнопки в таверне — клик по иконке показывает вторую способность и обратно (как у Суйгинто),
+// но через общую таблицу: TavSwapAdd(первая, вторая). Пары с одинаковыми иконками (BGR1/BGR2, FlF1/FlF2) так не переключить.
+function TavSwapAdd takes integer a,integer b returns nothing
+    call SaveInteger(HH,SH_TavSwap,a,b)
+    call SaveBoolean(HH,SH_TavSwapFirst,a,true)
+    call SaveInteger(HH,SH_TavSwapIc,StringHash(GetAbilityBaseStringFieldById(a,ABILITY_SF_ICON_NORMAL)),b)
+    call SaveInteger(HH,SH_TavSwapIc,StringHash(GetAbilityBaseStringFieldById(b,ABILITY_SF_ICON_NORMAL)),a)
+endfunction
+function TavSwapInit takes nothing returns nothing
+    // только Дезмастер (Эсканор вторых кнопок не имеет); остальных героев владелец не просил
+    call TavSwapAdd('DMQ1','DMQ2')
+endfunction
+// показать в ячейке i способность id: иконка, стоимость по уровням, название, клавиша, описание
+function TavSwapShow takes integer i,integer id returns nothing
+    local integer j=0
+    local integer hk
+    local string tx=GetAbilityBaseStringFieldById(id,ABILITY_SLF_TOOLTIP_LEARN_EXTENDED)
+    if tx==null or tx=="" or tx=="Default String" then
+        set tx=GetAbilityBaseStringFieldById(id,ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED)
+    endif
+    if LoadBoolean(HH,SH_TavSwapFirst,id) then
+        set hk=GetAbilityBaseIntegerFieldById(id,ABILITY_IF_BUTTON_HOTKEY_RESEARCH)
+    else
+        set hk=GetAbilityBaseIntegerFieldById(id,ABILITY_IF_BUTTON_HOTKEY_NORMAL)
+    endif
+    call SetFrameText( GetFrameByName("TavernAbilityTooltipText",i), "     " )
+    call SetFrameTexture( GetFrameByName("TavernAbility",i), GetAbilityBaseStringFieldById( id, ABILITY_SF_ICON_NORMAL ), 0, true )
+    call SetFrameTexture( GetFrameByName("TavernAbility",i), GetAbilityBaseStringFieldById( id, ABILITY_SF_ICON_NORMAL ), 1, true )
+    call SetFrameTexture( GetFrameByName("TavernAbility",i), GetAbilityBaseStringFieldById( id, ABILITY_SF_ICON_NORMAL ), 2, true )
+    loop
+        call AddFrameText( GetFrameByName("TavernAbilityTooltipText",i), "|cffffcc00"+I2S(GetAbilityBaseIntegerLevelFieldById( id, ABILITY_ILF_MANA_COST, j ))+"|r")
+        exitwhen j>=GetAbilityBaseIntegerFieldById(id, ABILITY_IF_LEVELS)-1
+        call AddFrameText( GetFrameByName("TavernAbilityTooltipText",i), "/")
+        set j=j+1
+    endloop
+    call AddFrameText( GetFrameByName("TavernAbilityTooltipText",i), "\n\n"+GetAbilityBaseStringFieldById( id, ABILITY_SF_NAME )+", (|cffffcc00"+IntToChar(hk)+"|r)\n\n"+tx)
+    call SetFrameSize( GetFrameByName("TavernAbilityTooltip",i), .26, GetFrameHeight( GetFrameByName("TavernAbilityTooltipText",i))+0.03)
+endfunction
 function Condition_AbilityString3 takes integer id returns boolean
+if HaveSavedInteger(HH,SH_TavSwap,id) then
+return true // 29 окт: вторые кнопки из таблицы TavSwapAdd
+endif
 return id=='OM13' or id=='A17D' or id=='A177' or id=='A172' or id=='A16U' or id=='A0TN'  or id=='MrF1' or id=='MrT1' or id=='MrG2' or id=='RsT1' or id=='RsF1' or id=='SiF1' or id=='SiF2' or id=='SiE1' or id=='SiE2' or id=='BbT1' or id=='FlW1' or id=='FlG1' or id=='RmQ1' or id=='SuE1' or id=='SuF1' or id=='SuD1' or id=='SnE1' or id=='A0JA'
 //A0J8 / A0JB / A0J9 — до 22 окт (v3: W / R / T меняются вместе с E2)
 endfunction
@@ -20138,44 +20595,37 @@ function Esc_SetClock takes unit u,real hour,boolean freeze returns nothing
 call SaveReal(bof_HT,GetHandleId(u),SH_EscClock,hour)
 call SaveBoolean(bof_HT,GetHandleId(u),SH_EscClockFrozen,freeze)
 endfunction
-// Окошко со временем — лидерборд, как у Буу (Кушу) и Кимимару: только текст, видит только владелец.
-// Днём золотое, ночью голубое. Хранится на игроке, а не на юните: при перевыборе героя юнит
-// пропадает, и окно убирает тик солнца (Esc_BoardKill).
+// Окошко со временем — общая рамка CustomLeaderboard (как у Дезмастера, Сабрака): видно союзникам,
+// выделившим Эсканора. Днём золотое, ночью голубое. Обновляет тик солнца (0.1 c); когда юнит
+// пропал (перевыбор), окно прячет Esc_BoardKill. 28 окт 2026: раньше был обычный leaderboard.
 function Esc_PanelInit takes unit u returns nothing
-local player escP=OwnerOf(u)
-if LoadLeaderboardHandle(bof_HT,PH(escP),SH_EscBoard)==null then
-call SaveLeaderboardHandle(bof_HT,PH(escP),SH_EscBoard,CreateLeaderboardBJ(bj_FORCE_PLAYER[PId(escP)],"Время: 6:00"))
-endif
-set escP=null
 endfunction
 function Esc_BoardKill takes player p returns nothing
-local leaderboard escBd=LoadLeaderboardHandle(bof_HT,PH(p),SH_EscBoard)
-if escBd!=null then
-call LeaderboardDisplay(escBd,false)
-call DestroyLeaderboard(escBd)
-call RemoveSavedHandle(bof_HT,PH(p),SH_EscBoard)
+if GetLocalPlayer()==p then
+    call SetFrameText(GetFrameByName("CustomLeaderboardText",0)," ")
+    call ShowFrame(GetFrameByName("CustomLeaderboard",0),false)
 endif
-set escBd=null
 endfunction
 function Esc_PanelUpdate takes unit u,real hour returns nothing
-local leaderboard escBd=LoadLeaderboardHandle(bof_HT,PH(OwnerOf(u)),SH_EscBoard)
 local integer escHH=R2I(hour)
 local integer escMM=R2I((hour-I2R(escHH))*60.)
 local string escTxt
-if escBd==null then
-return
+if not IsUnitSelected(u,GetLocalPlayer()) or not IsPlayerAlly(GetLocalPlayer(),OwnerOf(u)) then
+    return
 endif
 if hour>=6. and hour<18. then
-set escTxt=Lng("|cffffcc00Время: ","|cffffcc00Time: ")
+set escTxt=Lng("|cffffcc00Время|r: ","|cffffcc00Time|r: ")
 else
-set escTxt=Lng("|cff78aaffВремя: ","|cff78aaffTime: ")
+set escTxt=Lng("|cff78aaffВремя|r: ","|cff78aaffTime|r: ")
 endif
 set escTxt=escTxt+I2S(escHH)+":"
 if escMM<10 then
 set escTxt=escTxt+"0"
 endif
-call LeaderboardSetLabel(escBd,escTxt+I2S(escMM)+"|r")
-set escBd=null
+call SetFrameText(GetFrameByName("CustomLeaderboardText",0),escTxt+I2S(escMM))
+call ShowFrame(GetFrameByName("CustomLeaderboard",0),true)
+call SetFrameSize(GetFrameByName("CustomLeaderboard",0),.1775,GetFrameHeight(GetFrameByName("CustomLeaderboardText",0))+0.016)
+call SetFrameTextAlignment(GetFrameByName("CustomLeaderboardText",0),TEXT_JUSTIFY_LEFT,TEXT_JUSTIFY_LEFT)
 endfunction
 // Бафф долями от наших статов: СИЛА +strK от базовой (без бонусов bof), здоровье +hpK от максимума.
 // Числа bof (+600 СИЛЫ, +200000 здоровья) в их масштабе — база 511 СИЛЫ, ~352 тыс. здоровья;
@@ -20225,7 +20675,7 @@ set escU=null
 return
 endif
 set escG=CreateGroup()
-call GroupEnumUnitsInRange(escG,GetUnitX(escU),GetUnitY(escU),600.,null)
+call GroupEnumUnitsInRange(escG,GetUnitX(escU),GetUnitY(escU),450.,null)
 loop
 set escE=FirstOfGroup(escG)
 exitwhen escE==null
@@ -20846,7 +21296,7 @@ call Bof_zU(0.,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$7A07744))
 call Bof_EXSetEffectSpeed(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$2260746D),.5)
 call Bof_EXSetEffectSpeed(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$7A07744),.5)
 set TF=CreateGroup()
-call GroupEnumUnitsInRange(TF,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$A99320FA),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$FDF65382),600.,null)
+call GroupEnumUnitsInRange(TF,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$A99320FA),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$FDF65382),450.,null)
 loop
 set bl_TG=FirstOfGroup(TF)
 exitwhen bl_TG==null
@@ -21225,7 +21675,7 @@ if LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2B0A6845)<=.03 then
 call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$2392447A,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$A99320FA)+LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$38AB9941)*CosBJ(LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2D345649)))
 call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$B0897302,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$FDF65382)+LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$38AB9941)*SinBJ(LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2D345649)))
 set TF=CreateGroup()
-call GroupEnumUnitsInRange(TF,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2392447A),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$B0897302),380.,null)
+call GroupEnumUnitsInRange(TF,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2392447A),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$B0897302),300.,null)
 loop
 set bl_TG=FirstOfGroup(TF)
 exitwhen bl_TG==null
@@ -21416,7 +21866,7 @@ call SaveEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$321957D9,Esc_AddEff
 call Esc_EffSize(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$321957D9),1.)
 call Bof_zU(1.,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$321957D9))
 set TF=CreateGroup()
-call GroupEnumUnitsInRange(TF,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$A99320FA),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$FDF65382),380.,null)
+call GroupEnumUnitsInRange(TF,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$A99320FA),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$FDF65382),300.,null)
 loop
 set bl_TG=FirstOfGroup(TF)
 exitwhen bl_TG==null
@@ -21533,7 +21983,7 @@ local group TF
 local unit bl_TG
 call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$936AD39A,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$936AD39A)+.02)
 set TF=CreateGroup()
-call GroupEnumUnitsInRange(TF,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2392447A),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$B0897302),800.,null)
+call GroupEnumUnitsInRange(TF,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2392447A),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$B0897302),600.,null)
 loop
 set bl_TG=FirstOfGroup(TF)
 exitwhen bl_TG==null
@@ -21601,7 +22051,7 @@ set ST=CreateTimer()
 call SavePlayerHandle(bof_OI,GetHandleId(ST),$48656946,LoadPlayerHandle(bof_OI,GetHandleId(GetExpiredTimer()),$48656946))
 call TSE_TimerStart(ST,.65,false,function Bof_CW5)
 set TF=CreateGroup()
-call GroupEnumUnitsInRange(TF,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2392447A),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$B0897302),600.,null)
+call GroupEnumUnitsInRange(TF,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2392447A),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$B0897302),450.,null)
 loop
 set bl_TG=FirstOfGroup(TF)
 exitwhen bl_TG==null
@@ -21909,7 +22359,7 @@ call Bof_EffCut(escE,.5)
 set Uu=Uu+1
 endloop
 set TF=CreateGroup()
-call GroupEnumUnitsInRange(TF,escX,escY,380.,null)
+call GroupEnumUnitsInRange(TF,escX,escY,300.,null)
 loop
 set bl_TG=FirstOfGroup(TF)
 exitwhen bl_TG==null
@@ -22101,7 +22551,7 @@ call Esc_EffSize(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13F
 call Bof_zU(1.,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE))
 endif
 call SaveLocationHandle(bof_OI,GetHandleId(GetExpiredTimer()),$B0FD2C34,Location(LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$41713DA3),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$71CA3531)))
-call SaveGroupHandle(bof_OI,GetHandleId(GetExpiredTimer()),$1BF14788,Bof_xk(900.,LoadLocationHandle(bof_OI,GetHandleId(GetExpiredTimer()),$B0FD2C34),Condition(function Bof_CXZ)))
+call SaveGroupHandle(bof_OI,GetHandleId(GetExpiredTimer()),$1BF14788,Bof_xk(650.,LoadLocationHandle(bof_OI,GetHandleId(GetExpiredTimer()),$B0FD2C34),Condition(function Bof_CXZ)))
 call RemoveLocation(LoadLocationHandle(bof_OI,GetHandleId(GetExpiredTimer()),$B0FD2C34))
 call ForGroupBJ(LoadGroupHandle(bof_OI,GetHandleId(GetExpiredTimer()),$1BF14788),function Bof_CXa)
 call DestroyGroup(LoadGroupHandle(bof_OI,GetHandleId(GetExpiredTimer()),$1BF14788))
@@ -22142,7 +22592,7 @@ call Bof_zU(0.,LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$7
 call CameraSetEQNoiseForPlayer(LoadPlayerHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$48656946),80.)
 call Bof_BBn("bof\\war3mapImported\\Escanor-G-YY1.mp3",100)
 set TF=CreateGroup()
-call GroupEnumUnitsInRange(TF,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382),1200.,null)
+call GroupEnumUnitsInRange(TF,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382),900.,null)
 loop
 set bl_TG=FirstOfGroup(TF)
 exitwhen bl_TG==null
@@ -22293,7 +22743,7 @@ else
 endif
 call SetUnitPosition(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$D2A88040),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2392447A),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$B0897302))
 set TF=CreateGroup()
-call GroupEnumUnitsInRange(TF,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2392447A),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$B0897302),450.,null)
+call GroupEnumUnitsInRange(TF,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2392447A),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$B0897302),350.,null)
 loop
 set bl_TG=FirstOfGroup(TF)
 exitwhen bl_TG==null
@@ -26216,8 +26666,9 @@ endloop
 // звуки периодических способностей — постепенно
 //call SND_PreStart()
 // озвучки вызова героев — постепенно
-call SND_PreVoices()
-call TSE_TimerStart(CreateTimer(),0.1,true,function SND_PreVoiceTick)
+// 28 окт: прогрев массива выключен — озвучка выбора теперь своим звуком (PickVoice)
+//call SND_PreVoices()
+//call TSE_TimerStart(CreateTimer(),0.1,true,function SND_PreVoiceTick)
 endfunction
 function InitTrig_VoicePreload takes nothing returns nothing
 set gg_trg_VoicePreload=CreateTrigger()
@@ -27136,7 +27587,7 @@ set udg_RH[141]='HRem'//Remilia
 set udg_RH[142]='HFla'//Flandre
 //Flandre1end
 //Escanor1start
-// set udg_RH[143]='HEsc'//Escanor
+set udg_RH[143]='HEsc'//Escanor
 //Escanor1end
 //Shinji1start
 set udg_RH[145]='HShn'//Hirako — на тест (3.7.10)
@@ -28631,6 +29082,9 @@ function OnButtonHover takes nothing returns nothing
     local framehandle cursor = GetOriginFrame( ORIGIN_FRAME_CURSOR_FRAME, 0 )
     local player p = TrigP()
     local integer i=0
+    if RH_Force[GetFrameContext(GetTriggerFrame())]!=0 then
+        call PickVoiceWarm("Voice\\"+InitVoice(RH_Force[GetFrameContext(GetTriggerFrame())])) // 29 окт: прогрев озвучки при наведении на героя
+    endif
     if p == GetLocalPlayer( ) then
         call SetFrameSpriteColour( cursor, 0xFF00FF00 )
         call SetFrameSpriteModel( GetCFrameByName( "HeroPickSelector", 0 ), " " )
@@ -34955,6 +35409,8 @@ function OnButtonAddonAbility takes nothing returns nothing
                 endloop                        
                 call AddFrameText( GetFrameByName("TavernAbilityTooltipText",i), "\n\n"+GetAbilityBaseStringFieldById( 'SuD1', ABILITY_SF_NAME )+", (|cffffcc00"+IntToChar(GetAbilityBaseIntegerFieldById( 'SuD1', ABILITY_IF_BUTTON_HOTKEY_NORMAL ))+"|r)\n\n"+GetAbilityBaseStringFieldById( 'SuD1', ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED ))
                 call SetFrameSize( GetFrameByName("TavernAbilityTooltip",i), .26, GetFrameHeight( GetFrameByName("TavernAbilityTooltipText",i))+0.03)
+            elseif HaveSavedInteger(HH,SH_TavSwapIc,StringHash(GetFrameTexture(but,0))) and i==GetFrameContext(but) then
+                call TavSwapShow(i,LoadInteger(HH,SH_TavSwapIc,StringHash(GetFrameTexture(but,0)))) // 29 окт: вторые кнопки из таблицы
             endif
             set i=i+1
         endloop
@@ -35898,6 +36354,7 @@ function OnButtonSelectHero takes nothing returns nothing
     if buttonId == -1 then
         return
     endif
+    call PickVoiceWarm("Voice\\"+InitVoice(RH_Force[GetFrameContext(but)])) // 29 окт: прогрев озвучки выбора (и в тестовом режиме)
     if udg_test then
     set TestModeHeroId[PId(p)]=GetFrameContext(but)
     else
@@ -37393,7 +37850,7 @@ if udg_test==false then
     set TavernHeroGrid=CreateFrameByType("SIMPLEGRID", "TavernBarHeroList3", TavernHeroFrameTitles, "", 0)
     call ClearFrameAllPoints( TavernHeroGrid )
     call SetFrameRelativePoint( TavernHeroGrid, FRAMEPOINT_CENTER, TavernHeroFrame, FRAMEPOINT_TOP,  -0.1, -.19  )
-    call SetFrameGridSize( TavernHeroGrid, 5, 6 )
+    call SetFrameGridSize( TavernHeroGrid, 5, 7 )
     call SetFrameSize( TavernHeroGrid, .15, .12)
     call SetFramePriority( TavernHeroGrid, 5 )
 
@@ -37419,7 +37876,7 @@ if udg_test==false then
     call SetFrameTexture( HeroTavernIcon, GetUnitBaseStringFieldById(RH_Force[x],UNIT_SF_ICON_NORMAL), 0, true )
     call SetFrameTexture( HeroTavernIcon, GetUnitBaseStringFieldById(RH_Force[x],UNIT_SF_ICON_NORMAL), 1, true )
     call SetFrameTexture( HeroTavernIcon, GetUnitBaseStringFieldById(RH_Force[x],UNIT_SF_ICON_NORMAL), 2, true )
-    call SetFrameSize( HeroTavernIcon, .0217, .0217 )
+    call SetFrameSize( HeroTavernIcon, .019, .019 )
     call ShowFrame( HeroTavernIcon, true )
     call SetFramePriority( HeroTavernIcon, 5 )
     call SetFrameGridFrame( TavernHeroGrid, GrX, GrY, HeroTavernIcon )
@@ -37444,7 +37901,7 @@ if udg_test==false then
         call SetFrameTexture( HeroTavernIconStats, "ButtonAll.blp", 2, true )
     endif
     call SetFrameRelativePoint( HeroTavernIconStats, FRAMEPOINT_CENTER, HeroTavernIcon, FRAMEPOINT_CENTER,  .0, .0  )
-    call SetFrameSize( HeroTavernIconStats, .0217, .0217 )
+    call SetFrameSize( HeroTavernIconStats, .019, .019 )
     call ShowFrame( HeroTavernIconStats, true )
     call SetFramePriority( HeroTavernIconStats, 6 )
 
@@ -37487,7 +37944,7 @@ if udg_test==false then
     call TriggerAddAction( tOnUnHover, function OnButtonUnHover ) 
     call TriggerAddAction( tOnClick, function OnButtonSelectHero )
 
-    if GrY>4 then
+    if GrY>5 then // 29 >:B: 7 2 @O4 (1K;> 6)
     set GrX=GrX+1
     set GrY=0
     else
@@ -37501,7 +37958,7 @@ if udg_test==false then
     set TavernHeroGrid=CreateFrameByType("SIMPLEGRID", "TavernBarHeroList4", TavernHeroFrameTitles, "", 0)
     call ClearFrameAllPoints( TavernHeroGrid )
     call SetFrameRelativePoint( TavernHeroGrid, FRAMEPOINT_CENTER, TavernHeroFrame, FRAMEPOINT_TOP,  -0.1, -.45  )
-    call SetFrameGridSize( TavernHeroGrid, 5, 6 )
+    call SetFrameGridSize( TavernHeroGrid, 5, 7 )
     call SetFrameSize( TavernHeroGrid, .15, .12)
     call SetFramePriority( TavernHeroGrid, 5 )
 
@@ -37527,7 +37984,7 @@ if udg_test==false then
     call SetFrameTexture( HeroTavernIcon, GetUnitBaseStringFieldById(RH_Force[x],UNIT_SF_ICON_NORMAL), 0, true )
     call SetFrameTexture( HeroTavernIcon, GetUnitBaseStringFieldById(RH_Force[x],UNIT_SF_ICON_NORMAL), 1, true )
     call SetFrameTexture( HeroTavernIcon, GetUnitBaseStringFieldById(RH_Force[x],UNIT_SF_ICON_NORMAL), 2, true )
-    call SetFrameSize( HeroTavernIcon, .0217, .0217 )
+    call SetFrameSize( HeroTavernIcon, .019, .019 )
     call ShowFrame( HeroTavernIcon, true )
     call SetFramePriority( HeroTavernIcon, 5 )
     call SetFrameGridFrame( TavernHeroGrid, GrX, GrY, HeroTavernIcon )
@@ -37552,7 +38009,7 @@ if udg_test==false then
         call SetFrameTexture( HeroTavernIconStats, "ButtonAll.blp", 2, true )
     endif
     call SetFrameRelativePoint( HeroTavernIconStats, FRAMEPOINT_CENTER, HeroTavernIcon, FRAMEPOINT_CENTER,  .0, .0  )
-    call SetFrameSize( HeroTavernIconStats, .0217, .0217 )
+    call SetFrameSize( HeroTavernIconStats, .019, .019 )
     call ShowFrame( HeroTavernIconStats, true )
     call SetFramePriority( HeroTavernIconStats, 6 )
 
@@ -37595,7 +38052,7 @@ if udg_test==false then
     call TriggerAddAction( tOnUnHover, function OnButtonUnHover ) 
     call TriggerAddAction( tOnClick, function OnButtonSelectHero )
 
-    if GrY>4 then
+    if GrY>5 then // 29 >:B: 7 2 @O4 (1K;> 6)
     set GrX=GrX+1
     set GrY=0
     else
@@ -37609,7 +38066,7 @@ if udg_test==false then
     set TavernHeroGrid=CreateFrameByType("SIMPLEGRID", "TavernBarHeroList5", TavernHeroFrameTitles, "", 0)
     call ClearFrameAllPoints( TavernHeroGrid )
     call SetFrameRelativePoint( TavernHeroGrid, FRAMEPOINT_CENTER, TavernHeroFrame, FRAMEPOINT_TOP,  0.075, -.19  )
-    call SetFrameGridSize( TavernHeroGrid, 5, 6 )
+    call SetFrameGridSize( TavernHeroGrid, 5, 7 )
     call SetFrameSize( TavernHeroGrid, .15, .12)
     call SetFramePriority( TavernHeroGrid, 5 )
 
@@ -37635,7 +38092,7 @@ if udg_test==false then
     call SetFrameTexture( HeroTavernIcon, GetUnitBaseStringFieldById(RH_Force[x],UNIT_SF_ICON_NORMAL), 0, true )
     call SetFrameTexture( HeroTavernIcon, GetUnitBaseStringFieldById(RH_Force[x],UNIT_SF_ICON_NORMAL), 1, true )
     call SetFrameTexture( HeroTavernIcon, GetUnitBaseStringFieldById(RH_Force[x],UNIT_SF_ICON_NORMAL), 2, true )
-    call SetFrameSize( HeroTavernIcon, .0217, .0217 )
+    call SetFrameSize( HeroTavernIcon, .019, .019 )
     call ShowFrame( HeroTavernIcon, true )
     call SetFramePriority( HeroTavernIcon, 5 )
     call SetFrameGridFrame( TavernHeroGrid, GrX, GrY, HeroTavernIcon )
@@ -37660,7 +38117,7 @@ if udg_test==false then
         call SetFrameTexture( HeroTavernIconStats, "ButtonAll.blp", 2, true )
     endif
     call SetFrameRelativePoint( HeroTavernIconStats, FRAMEPOINT_CENTER, HeroTavernIcon, FRAMEPOINT_CENTER,  .0, .0  )
-    call SetFrameSize( HeroTavernIconStats, .0217, .0217 )
+    call SetFrameSize( HeroTavernIconStats, .019, .019 )
     call ShowFrame( HeroTavernIconStats, true )
     call SetFramePriority( HeroTavernIconStats, 6 )
 
@@ -37703,7 +38160,7 @@ if udg_test==false then
     call TriggerAddAction( tOnUnHover, function OnButtonUnHover ) 
     call TriggerAddAction( tOnClick, function OnButtonSelectHero )
 
-    if GrY>4 then
+    if GrY>5 then // 29 >:B: 7 2 @O4 (1K;> 6)
     set GrX=GrX+1
     set GrY=0
     else
@@ -37716,7 +38173,7 @@ if udg_test==false then
     set TavernHeroGrid=CreateFrameByType("SIMPLEGRID", "TavernBarHeroList6", TavernHeroFrameTitles, "", 0)
     call ClearFrameAllPoints( TavernHeroGrid )
     call SetFrameRelativePoint( TavernHeroGrid, FRAMEPOINT_CENTER, TavernHeroFrame, FRAMEPOINT_TOP,  0.25, -.19  )
-    call SetFrameGridSize( TavernHeroGrid, 5, 6 )
+    call SetFrameGridSize( TavernHeroGrid, 5, 7 )
     call SetFrameSize( TavernHeroGrid, .15, .12)
     call SetFramePriority( TavernHeroGrid, 5 )
 
@@ -37742,7 +38199,7 @@ if udg_test==false then
     call SetFrameTexture( HeroTavernIcon, GetUnitBaseStringFieldById(RH_Force[x],UNIT_SF_ICON_NORMAL), 0, true )
     call SetFrameTexture( HeroTavernIcon, GetUnitBaseStringFieldById(RH_Force[x],UNIT_SF_ICON_NORMAL), 1, true )
     call SetFrameTexture( HeroTavernIcon, GetUnitBaseStringFieldById(RH_Force[x],UNIT_SF_ICON_NORMAL), 2, true )
-    call SetFrameSize( HeroTavernIcon, .0217, .0217 )
+    call SetFrameSize( HeroTavernIcon, .019, .019 )
     call ShowFrame( HeroTavernIcon, true )
     call SetFramePriority( HeroTavernIcon, 5 )
     call SetFrameGridFrame( TavernHeroGrid, GrX, GrY, HeroTavernIcon )
@@ -37767,7 +38224,7 @@ if udg_test==false then
         call SetFrameTexture( HeroTavernIconStats, "ButtonAll.blp", 2, true )
     endif
     call SetFrameRelativePoint( HeroTavernIconStats, FRAMEPOINT_CENTER, HeroTavernIcon, FRAMEPOINT_CENTER,  .0, .0  )
-    call SetFrameSize( HeroTavernIconStats, .0217, .0217 )
+    call SetFrameSize( HeroTavernIconStats, .019, .019 )
     call ShowFrame( HeroTavernIconStats, true )
     call SetFramePriority( HeroTavernIconStats, 6 )
 
@@ -37810,7 +38267,7 @@ if udg_test==false then
     call TriggerAddAction( tOnUnHover, function OnButtonUnHover ) 
     call TriggerAddAction( tOnClick, function OnButtonSelectHero )
 
-    if GrY>4 then
+    if GrY>5 then // 29 >:B: 7 2 @O4 (1K;> 6)
     set GrX=GrX+1
     set GrY=0
     else
@@ -37823,7 +38280,7 @@ if udg_test==false then
     set TavernHeroGrid=CreateFrameByType("SIMPLEGRID", "TavernBarHeroList7", TavernHeroFrameTitles, "", 0)
     call ClearFrameAllPoints( TavernHeroGrid )
     call SetFrameRelativePoint( TavernHeroGrid, FRAMEPOINT_CENTER, TavernHeroFrame, FRAMEPOINT_TOP,  -0.1, -.34  )
-    call SetFrameGridSize( TavernHeroGrid, 5, 6 )
+    call SetFrameGridSize( TavernHeroGrid, 5, 7 )
     call SetFrameSize( TavernHeroGrid, .15, .12)
     call SetFramePriority( TavernHeroGrid, 5 )
 
@@ -37849,7 +38306,7 @@ if udg_test==false then
     call SetFrameTexture( HeroTavernIcon, GetUnitBaseStringFieldById(RH_Force[x],UNIT_SF_ICON_NORMAL), 0, true )
     call SetFrameTexture( HeroTavernIcon, GetUnitBaseStringFieldById(RH_Force[x],UNIT_SF_ICON_NORMAL), 1, true )
     call SetFrameTexture( HeroTavernIcon, GetUnitBaseStringFieldById(RH_Force[x],UNIT_SF_ICON_NORMAL), 2, true )
-    call SetFrameSize( HeroTavernIcon, .0217, .0217 )
+    call SetFrameSize( HeroTavernIcon, .019, .019 )
     call ShowFrame( HeroTavernIcon, true )
     call SetFramePriority( HeroTavernIcon, 5 )
     call SetFrameGridFrame( TavernHeroGrid, GrX, GrY, HeroTavernIcon )
@@ -37874,7 +38331,7 @@ if udg_test==false then
         call SetFrameTexture( HeroTavernIconStats, "ButtonAll.blp", 2, true )
     endif
     call SetFrameRelativePoint( HeroTavernIconStats, FRAMEPOINT_CENTER, HeroTavernIcon, FRAMEPOINT_CENTER,  .0, .0  )
-    call SetFrameSize( HeroTavernIconStats, .0217, .0217 )
+    call SetFrameSize( HeroTavernIconStats, .019, .019 )
     call ShowFrame( HeroTavernIconStats, true )
     call SetFramePriority( HeroTavernIconStats, 6 )
 
@@ -37917,7 +38374,7 @@ if udg_test==false then
     call TriggerAddAction( tOnUnHover, function OnButtonUnHover ) 
     call TriggerAddAction( tOnClick, function OnButtonSelectHero )
 
-    if GrY>4 then
+    if GrY>5 then // 29 >:B: 7 2 @O4 (1K;> 6)
     set GrX=GrX+1
     set GrY=0
     else
@@ -37931,7 +38388,7 @@ if udg_test==false then
     set TavernHeroGrid=CreateFrameByType("SIMPLEGRID", "TavernBarHeroList8", TavernHeroFrameTitles, "", 0)
     call ClearFrameAllPoints( TavernHeroGrid )
     call SetFrameRelativePoint( TavernHeroGrid, FRAMEPOINT_CENTER, TavernHeroFrame, FRAMEPOINT_TOP,  0.075, -.45  )
-    call SetFrameGridSize( TavernHeroGrid, 5, 6 )
+    call SetFrameGridSize( TavernHeroGrid, 5, 7 )
     call SetFrameSize( TavernHeroGrid, .15, .12)
     call SetFramePriority( TavernHeroGrid, 5 )
 
@@ -37957,7 +38414,7 @@ if udg_test==false then
     call SetFrameTexture( HeroTavernIcon, GetUnitBaseStringFieldById(RH_Force[x],UNIT_SF_ICON_NORMAL), 0, true )
     call SetFrameTexture( HeroTavernIcon, GetUnitBaseStringFieldById(RH_Force[x],UNIT_SF_ICON_NORMAL), 1, true )
     call SetFrameTexture( HeroTavernIcon, GetUnitBaseStringFieldById(RH_Force[x],UNIT_SF_ICON_NORMAL), 2, true )
-    call SetFrameSize( HeroTavernIcon, .0217, .0217 )
+    call SetFrameSize( HeroTavernIcon, .019, .019 )
     call ShowFrame( HeroTavernIcon, true )
     call SetFramePriority( HeroTavernIcon, 5 )
     call SetFrameGridFrame( TavernHeroGrid, GrX, GrY, HeroTavernIcon )
@@ -37982,7 +38439,7 @@ if udg_test==false then
         call SetFrameTexture( HeroTavernIconStats, "ButtonAll.blp", 2, true )
     endif
     call SetFrameRelativePoint( HeroTavernIconStats, FRAMEPOINT_CENTER, HeroTavernIcon, FRAMEPOINT_CENTER,  .0, .0  )
-    call SetFrameSize( HeroTavernIconStats, .0217, .0217 )
+    call SetFrameSize( HeroTavernIconStats, .019, .019 )
     call ShowFrame( HeroTavernIconStats, true )
     call SetFramePriority( HeroTavernIconStats, 6 )
 
@@ -38025,7 +38482,7 @@ if udg_test==false then
     call TriggerAddAction( tOnUnHover, function OnButtonUnHover ) 
     call TriggerAddAction( tOnClick, function OnButtonSelectHero )
 
-    if GrY>4 then
+    if GrY>5 then // 29 >:B: 7 2 @O4 (1K;> 6)
     set GrX=GrX+1
     set GrY=0
     else
@@ -38039,7 +38496,7 @@ if udg_test==false then
     set TavernHeroGrid=CreateFrameByType("SIMPLEGRID", "TavernBarHeroList9", TavernHeroFrameTitles, "", 0)
     call ClearFrameAllPoints( TavernHeroGrid )
     call SetFrameRelativePoint( TavernHeroGrid, FRAMEPOINT_CENTER, TavernHeroFrame, FRAMEPOINT_TOP,  0.075, -.34  )
-    call SetFrameGridSize( TavernHeroGrid, 5, 6 )
+    call SetFrameGridSize( TavernHeroGrid, 5, 7 )
     call SetFrameSize( TavernHeroGrid, .15, .12)
     call SetFramePriority( TavernHeroGrid, 5 )
 
@@ -38065,7 +38522,7 @@ if udg_test==false then
     call SetFrameTexture( HeroTavernIcon, GetUnitBaseStringFieldById(RH_Force[x],UNIT_SF_ICON_NORMAL), 0, true )
     call SetFrameTexture( HeroTavernIcon, GetUnitBaseStringFieldById(RH_Force[x],UNIT_SF_ICON_NORMAL), 1, true )
     call SetFrameTexture( HeroTavernIcon, GetUnitBaseStringFieldById(RH_Force[x],UNIT_SF_ICON_NORMAL), 2, true )
-    call SetFrameSize( HeroTavernIcon, .0217, .0217 )
+    call SetFrameSize( HeroTavernIcon, .019, .019 )
     call ShowFrame( HeroTavernIcon, true )
     call SetFramePriority( HeroTavernIcon, 5 )
     call SetFrameGridFrame( TavernHeroGrid, GrX, GrY, HeroTavernIcon )
@@ -38090,7 +38547,7 @@ if udg_test==false then
         call SetFrameTexture( HeroTavernIconStats, "ButtonAll.blp", 2, true )
     endif
     call SetFrameRelativePoint( HeroTavernIconStats, FRAMEPOINT_CENTER, HeroTavernIcon, FRAMEPOINT_CENTER,  .0, .0  )
-    call SetFrameSize( HeroTavernIconStats, .0217, .0217 )
+    call SetFrameSize( HeroTavernIconStats, .019, .019 )
     call ShowFrame( HeroTavernIconStats, true )
     call SetFramePriority( HeroTavernIconStats, 6 )
 
@@ -38133,7 +38590,7 @@ if udg_test==false then
     call TriggerAddAction( tOnUnHover, function OnButtonUnHover ) 
     call TriggerAddAction( tOnClick, function OnButtonSelectHero )
 
-    if GrY>4 then
+    if GrY>5 then // 29 >:B: 7 2 @O4 (1K;> 6)
     set GrX=GrX+1
     set GrY=0
     else
@@ -38146,7 +38603,7 @@ if udg_test==false then
     set TavernHeroGrid=CreateFrameByType("SIMPLEGRID", "TavernBarHeroList10", TavernHeroFrameTitles, "", 0)
     call ClearFrameAllPoints( TavernHeroGrid )
     call SetFrameRelativePoint( TavernHeroGrid, FRAMEPOINT_CENTER, TavernHeroFrame, FRAMEPOINT_TOP,  0.25, -.34  )
-    call SetFrameGridSize( TavernHeroGrid, 5, 6 )
+    call SetFrameGridSize( TavernHeroGrid, 5, 7 )
     call SetFrameSize( TavernHeroGrid, .15, .12)
     call SetFramePriority( TavernHeroGrid, 5 )
 
@@ -38172,7 +38629,7 @@ if udg_test==false then
     call SetFrameTexture( HeroTavernIcon, GetUnitBaseStringFieldById(RH_Force[x],UNIT_SF_ICON_NORMAL), 0, true )
     call SetFrameTexture( HeroTavernIcon, GetUnitBaseStringFieldById(RH_Force[x],UNIT_SF_ICON_NORMAL), 1, true )
     call SetFrameTexture( HeroTavernIcon, GetUnitBaseStringFieldById(RH_Force[x],UNIT_SF_ICON_NORMAL), 2, true )
-    call SetFrameSize( HeroTavernIcon, .0217, .0217 )
+    call SetFrameSize( HeroTavernIcon, .019, .019 )
     call ShowFrame( HeroTavernIcon, true )
     call SetFramePriority( HeroTavernIcon, 5 )
     call SetFrameGridFrame( TavernHeroGrid, GrX, GrY, HeroTavernIcon )
@@ -38197,7 +38654,7 @@ if udg_test==false then
         call SetFrameTexture( HeroTavernIconStats, "ButtonAll.blp", 2, true )
     endif
     call SetFrameRelativePoint( HeroTavernIconStats, FRAMEPOINT_CENTER, HeroTavernIcon, FRAMEPOINT_CENTER,  .0, .0  )
-    call SetFrameSize( HeroTavernIconStats, .0217, .0217 )
+    call SetFrameSize( HeroTavernIconStats, .019, .019 )
     call ShowFrame( HeroTavernIconStats, true )
     call SetFramePriority( HeroTavernIconStats, 6 )
 
@@ -38240,7 +38697,7 @@ if udg_test==false then
     call TriggerAddAction( tOnUnHover, function OnButtonUnHover ) 
     call TriggerAddAction( tOnClick, function OnButtonSelectHero )
 
-    if GrY>4 then
+    if GrY>5 then // 29 >:B: 7 2 @O4 (1K;> 6)
     set GrX=GrX+1
     set GrY=0
     else
@@ -38252,9 +38709,10 @@ if udg_test==false then
 
     set TavernHeroGrid=CreateFrameByType("SIMPLEGRID", "TavernBarHeroList14", TavernHeroFrameTitles, "", 0)
     call ClearFrameAllPoints( TavernHeroGrid )
-    call SetFrameRelativePoint( TavernHeroGrid, FRAMEPOINT_CENTER, TavernHeroFrame, FRAMEPOINT_TOP,  0.25, -.45  )
-    call SetFrameGridSize( TavernHeroGrid, 5, 6 )
-    call SetFrameSize( TavernHeroGrid, .15, .12)
+    // 29 окт (3.8.2): Other Anime — 7 рядов по 6 (было 5: 30 мест на 31 героя); верх на месте, сетка растёт вниз
+    call SetFrameRelativePoint( TavernHeroGrid, FRAMEPOINT_CENTER, TavernHeroFrame, FRAMEPOINT_TOP,  0.25, -.474  )
+    call SetFrameGridSize( TavernHeroGrid, 7, 7 )
+    call SetFrameSize( TavernHeroGrid, .15, .168)
     call SetFramePriority( TavernHeroGrid, 5 )
 
     // set TavernHeroGridText=CreateFrameByType( "SIMPLETEXT", "TavernBarHeroListText14", TavernHeroGrid, "", 0 )
@@ -38279,7 +38737,7 @@ if udg_test==false then
     call SetFrameTexture( HeroTavernIcon, GetUnitBaseStringFieldById(RH_Force[x],UNIT_SF_ICON_NORMAL), 0, true )
     call SetFrameTexture( HeroTavernIcon, GetUnitBaseStringFieldById(RH_Force[x],UNIT_SF_ICON_NORMAL), 1, true )
     call SetFrameTexture( HeroTavernIcon, GetUnitBaseStringFieldById(RH_Force[x],UNIT_SF_ICON_NORMAL), 2, true )
-    call SetFrameSize( HeroTavernIcon, .0217, .0217 )
+    call SetFrameSize( HeroTavernIcon, .019, .019 )
     call ShowFrame( HeroTavernIcon, true )
     call SetFramePriority( HeroTavernIcon, 5 )
     call SetFrameGridFrame( TavernHeroGrid, GrX, GrY, HeroTavernIcon )
@@ -38304,7 +38762,7 @@ if udg_test==false then
         call SetFrameTexture( HeroTavernIconStats, "ButtonAll.blp", 2, true )
     endif
     call SetFrameRelativePoint( HeroTavernIconStats, FRAMEPOINT_CENTER, HeroTavernIcon, FRAMEPOINT_CENTER,  .0, .0  )
-    call SetFrameSize( HeroTavernIconStats, .0217, .0217 )
+    call SetFrameSize( HeroTavernIconStats, .019, .019 )
     call ShowFrame( HeroTavernIconStats, true )
     call SetFramePriority( HeroTavernIconStats, 6 )
 
@@ -38347,7 +38805,7 @@ if udg_test==false then
     call TriggerAddAction( tOnUnHover, function OnButtonUnHover ) 
     call TriggerAddAction( tOnClick, function OnButtonSelectHero )
 
-    if GrY>4 then
+    if GrY>5 then // 29 >:B: 7 2 @O4 (1K;> 6)
     set GrX=GrX+1
     set GrY=0
     else
@@ -48223,9 +48681,9 @@ if cmb!=true then
 //Shinji1end
 //Escanor1start
         call IH('HEsc',u,"ReplaceableTextures\\CommandButtons\\BTNEscanorHero.blp")
-        // if GetUnitTypeId(u)=='HEsc' then
-        //     call Esc_OnSpawn(u)
-        // endif
+        if GetUnitTypeId(u)=='HEsc' then
+            call Esc_OnSpawn(u) // 28 окт: солнце и часы Эсканора (было закомментировано, пока он был выключен)
+        endif
 //Escanor1end
         call IH('H060',u,"ReplaceableTextures\\CommandButtons\\BTNWhitebeard.blp")
         call IH('H061',u,"ReplaceableTextures\\CommandButtons\\BTNRyougi.blp")
@@ -48333,17 +48791,7 @@ if cmb!=true then
             endloop
         endif
         call SaveInteger(h,GetHandleId(u),'A1GS',0)
-        if pick==1 or pick==2 then
-        set soundplay=SndByPath("Voice\\"+InitVoice(ty))
-        call StartSound(soundplay)
-        //call KillSoundWhenDone(soundplay) // звук из массива soundStr — не удалять
-        else
-        set soundplay=SndByPath("Voice\\"+InitVoice(ty))
-        if GetLocalPlayer()==p then
-        call StartSound(soundplay)
-        endif
-        //call KillSoundWhenDone(soundplay) // звук из массива soundStr — не удалять
-        endif
+        call PickVoice("Voice\\"+InitVoice(ty),pick==1 or pick==2,p)
     endif
 endif
 if IsUnitType(u,UNIT_TYPE_HERO) and CPTModeON and cmb==true then
@@ -48689,6 +49137,9 @@ endfunction
 function InitTrig_Ih takes nothing returns nothing
 set gg_trg_Ih=CreateTrigger()
 call TriggerRegisterEnterRectSimple(gg_trg_Ih,gg_rct_Rect1)
+// 29 окт: после land change рядом с Rect1 появился проходимый участок (X -3824..-3216, Y 7568..7664) — CreateUnit
+// в центре Rect1 (непроходимо) ставит героя туда, вне Rect1, и выбор не срабатывал (уровень 1, нет озвучки)
+call TriggerRegisterEnterRectSimple(gg_trg_Ih,Rect(-3904.,7488.,-3136.,7744.))
 call TriggerAddAction(gg_trg_Ih,function Trig_Ih_Actions)
 call TriggerAddCondition(gg_trg_Ih,Condition(function Trig_Ih_Conditions))
 endfunction
@@ -51487,11 +51938,7 @@ set udg_Hero[ip+1]=n
 if GetHeroLevel(u)>1 then
 call SetHeroLevel(n,GetHeroLevel(u),false)
 endif
-set soundplay=SndByPath("Voice\\"+InitVoice(GetUnitTypeId(n)))
-if GetLocalPlayer()==p then
-call StartSound(soundplay)
-//call KillSoundWhenDone(soundplay) // звук из массива soundStr — не удалять
-endif
+call PickVoice("Voice\\"+InitVoice(GetUnitTypeId(n)),false,p)
 //call KillSoundWhenDone(soundplay) // звук из массива soundStr — не удалять
 loop
 exitwhen i>=10
@@ -51562,11 +52009,7 @@ set udg_Hero[ip+1]=n
 if GetHeroLevel(u)>1 then
 call SetHeroLevel(n,GetHeroLevel(u),false)
 endif
-set soundplay=SndByPath("Voice\\"+InitVoice(GetUnitTypeId(n)))
-if GetLocalPlayer()==p then
-call StartSound(soundplay)
-//call KillSoundWhenDone(soundplay) // звук из массива soundStr — не удалять
-endif
+call PickVoice("Voice\\"+InitVoice(GetUnitTypeId(n)),false,p)
 //call KillSoundWhenDone(soundplay) // звук из массива soundStr — не удалять
 loop
 exitwhen i>=10
@@ -51787,11 +52230,7 @@ set udg_Hero[ip+1]=n
 if GetHeroLevel(u)>1 then
 call SetHeroLevel(n,GetHeroLevel(u),false)
 endif
-set soundplay=SndByPath("Voice\\"+InitVoice(GetUnitTypeId(n)))
-if GetLocalPlayer()==p then
-call StartSound(soundplay)
-//call KillSoundWhenDone(soundplay) // звук из массива soundStr — не удалять
-endif
+call PickVoice("Voice\\"+InitVoice(GetUnitTypeId(n)),false,p)
 //call KillSoundWhenDone(soundplay) // звук из массива soundStr — не удалять
 loop
 exitwhen i>=10
@@ -51862,11 +52301,7 @@ set udg_Hero[ip+1]=n
 if GetHeroLevel(u)>1 then
 call SetHeroLevel(n,GetHeroLevel(u),false)
 endif
-set soundplay=SndByPath("Voice\\"+InitVoice(GetUnitTypeId(n)))
-if GetLocalPlayer()==p then
-call StartSound(soundplay)
-//call KillSoundWhenDone(soundplay) // звук из массива soundStr — не удалять
-endif
+call PickVoice("Voice\\"+InitVoice(GetUnitTypeId(n)),false,p)
 //call KillSoundWhenDone(soundplay) // звук из массива soundStr — не удалять
 loop
 exitwhen i>=10
@@ -51937,11 +52372,7 @@ set udg_Hero[ip+1]=n
 if GetHeroLevel(u)>1 then
 call SetHeroLevel(n,GetHeroLevel(u),false)
 endif
-set soundplay=SndByPath("Voice\\"+InitVoice(GetUnitTypeId(n)))
-if GetLocalPlayer()==p then
-call StartSound(soundplay)
-//call KillSoundWhenDone(soundplay) // звук из массива soundStr — не удалять
-endif
+call PickVoice("Voice\\"+InitVoice(GetUnitTypeId(n)),false,p)
 //call KillSoundWhenDone(soundplay) // звук из массива soundStr — не удалять
 loop
 exitwhen i>=10
@@ -52031,11 +52462,7 @@ set udg_Hero[ip+1]=n
 if GetHeroLevel(u)>1 then
 call SetHeroLevel(n,GetHeroLevel(u),false)
 endif
-set soundplay=SndByPath("Voice\\"+InitVoice(GetUnitTypeId(n)))
-if GetLocalPlayer()==p then
-call StartSound(soundplay)
-//call KillSoundWhenDone(soundplay) // звук из массива soundStr — не удалять
-endif
+call PickVoice("Voice\\"+InitVoice(GetUnitTypeId(n)),false,p)
 //call KillSoundWhenDone(soundplay) // звук из массива soundStr — не удалять
 loop
 exitwhen i>=10
@@ -52106,11 +52533,7 @@ set udg_Hero[ip+1]=n
 if GetHeroLevel(u)>1 then
 call SetHeroLevel(n,GetHeroLevel(u),false)
 endif
-set soundplay=SndByPath("Voice\\"+InitVoice(GetUnitTypeId(n)))
-if GetLocalPlayer()==p then
-call StartSound(soundplay)
-//call KillSoundWhenDone(soundplay) // звук из массива soundStr — не удалять
-endif
+call PickVoice("Voice\\"+InitVoice(GetUnitTypeId(n)),false,p)
 //call KillSoundWhenDone(soundplay) // звук из массива soundStr — не удалять
 loop
 exitwhen i>=10
@@ -52181,11 +52604,7 @@ set udg_Hero[ip+1]=n
 if GetHeroLevel(u)>1 then
 call SetHeroLevel(n,GetHeroLevel(u),false)
 endif
-set soundplay=SndByPath("Voice\\"+InitVoice(GetUnitTypeId(n)))
-if GetLocalPlayer()==p then
-call StartSound(soundplay)
-//call KillSoundWhenDone(soundplay) // звук из массива soundStr — не удалять
-endif
+call PickVoice("Voice\\"+InitVoice(GetUnitTypeId(n)),false,p)
 //call KillSoundWhenDone(soundplay) // звук из массива soundStr — не удалять
 loop
 exitwhen i>=10
@@ -52256,11 +52675,7 @@ set udg_Hero[ip+1]=n
 if GetHeroLevel(u)>1 then
 call SetHeroLevel(n,GetHeroLevel(u),false)
 endif
-set soundplay=SndByPath("Voice\\"+InitVoice(GetUnitTypeId(n)))
-if GetLocalPlayer()==p then
-call StartSound(soundplay)
-//call KillSoundWhenDone(soundplay) // звук из массива soundStr — не удалять
-endif
+call PickVoice("Voice\\"+InitVoice(GetUnitTypeId(n)),false,p)
 //call KillSoundWhenDone(soundplay) // звук из массива soundStr — не удалять
 loop
 exitwhen i>=10
@@ -52331,11 +52746,7 @@ set udg_Hero[ip+1]=n
 if GetHeroLevel(u)>1 then
 call SetHeroLevel(n,GetHeroLevel(u),false)
 endif
-set soundplay=SndByPath("Voice\\"+InitVoice(GetUnitTypeId(n)))
-if GetLocalPlayer()==p then
-call StartSound(soundplay)
-//call KillSoundWhenDone(soundplay) // звук из массива soundStr — не удалять
-endif
+call PickVoice("Voice\\"+InitVoice(GetUnitTypeId(n)),false,p)
 //call KillSoundWhenDone(soundplay) // звук из массива soundStr — не удалять
 loop
 exitwhen i>=10
@@ -52406,11 +52817,7 @@ set udg_Hero[ip+1]=n
 if GetHeroLevel(u)>1 then
 call SetHeroLevel(n,GetHeroLevel(u),false)
 endif
-set soundplay=SndByPath("Voice\\"+InitVoice(GetUnitTypeId(n)))
-if GetLocalPlayer()==p then
-call StartSound(soundplay)
-//call KillSoundWhenDone(soundplay) // звук из массива soundStr — не удалять
-endif
+call PickVoice("Voice\\"+InitVoice(GetUnitTypeId(n)),false,p)
 //call KillSoundWhenDone(soundplay) // звук из массива soundStr — не удалять
 loop
 exitwhen i>=10
@@ -52481,11 +52888,7 @@ set udg_Hero[ip+1]=n
 if GetHeroLevel(u)>1 then
 call SetHeroLevel(n,GetHeroLevel(u),false)
 endif
-set soundplay=SndByPath("Voice\\"+InitVoice(GetUnitTypeId(n)))
-if GetLocalPlayer()==p then
-call StartSound(soundplay)
-//call KillSoundWhenDone(soundplay) // звук из массива soundStr — не удалять
-endif
+call PickVoice("Voice\\"+InitVoice(GetUnitTypeId(n)),false,p)
 //call KillSoundWhenDone(soundplay) // звук из массива soundStr — не удалять
 loop
 exitwhen i>=10
@@ -52556,11 +52959,7 @@ set udg_Hero[ip+1]=n
 if GetHeroLevel(u)>1 then
 call SetHeroLevel(n,GetHeroLevel(u),false)
 endif
-set soundplay=SndByPath("Voice\\"+InitVoice(GetUnitTypeId(n)))
-if GetLocalPlayer()==p then
-call StartSound(soundplay)
-//call KillSoundWhenDone(soundplay) // звук из массива soundStr — не удалять
-endif
+call PickVoice("Voice\\"+InitVoice(GetUnitTypeId(n)),false,p)
 //call KillSoundWhenDone(soundplay) // звук из массива soundStr — не удалять
 loop
 exitwhen i>=10
@@ -52631,11 +53030,7 @@ set udg_Hero[ip+1]=n
 if GetHeroLevel(u)>1 then
 call SetHeroLevel(n,GetHeroLevel(u),false)
 endif
-set soundplay=SndByPath("Voice\\"+InitVoice(GetUnitTypeId(n)))
-if GetLocalPlayer()==p then
-call StartSound(soundplay)
-//call KillSoundWhenDone(soundplay) // звук из массива soundStr — не удалять
-endif
+call PickVoice("Voice\\"+InitVoice(GetUnitTypeId(n)),false,p)
 //call KillSoundWhenDone(soundplay) // звук из массива soundStr — не удалять
 loop
 exitwhen i>=10
@@ -52710,11 +53105,7 @@ set udg_Hero[ip+1]=n
 if GetHeroLevel(u)>1 then
 call SetHeroLevel(n,GetHeroLevel(u),false)
 endif
-set soundplay=SndByPath("Voice\\"+InitVoice(GetUnitTypeId(n)))
-if GetLocalPlayer()==p then
-call StartSound(soundplay)
-//call KillSoundWhenDone(soundplay) // звук из массива soundStr — не удалять
-endif
+call PickVoice("Voice\\"+InitVoice(GetUnitTypeId(n)),false,p)
 //call KillSoundWhenDone(soundplay) // звук из массива soundStr — не удалять
 loop
 exitwhen i>=10
@@ -52786,11 +53177,7 @@ set udg_Hero[ip+1]=n
 if GetHeroLevel(u)>1 then
 call SetHeroLevel(n,GetHeroLevel(u),false)
 endif
-set soundplay=SndByPath("Voice\\"+InitVoice(GetUnitTypeId(n)))
-if GetLocalPlayer()==p then
-call StartSound(soundplay)
-//call KillSoundWhenDone(soundplay) // звук из массива soundStr — не удалять
-endif
+call PickVoice("Voice\\"+InitVoice(GetUnitTypeId(n)),false,p)
 //call KillSoundWhenDone(soundplay) // звук из массива soundStr — не удалять
 loop
 exitwhen i>=10
@@ -52861,11 +53248,7 @@ set udg_Hero[ip+1]=n
 if GetHeroLevel(u)>1 then
 call SetHeroLevel(n,GetHeroLevel(u),false)
 endif
-set soundplay=SndByPath("Voice\\"+InitVoice(GetUnitTypeId(n)))
-if GetLocalPlayer()==p then
-call StartSound(soundplay)
-//call KillSoundWhenDone(soundplay) // звук из массива soundStr — не удалять
-endif
+call PickVoice("Voice\\"+InitVoice(GetUnitTypeId(n)),false,p)
 //call KillSoundWhenDone(soundplay) // звук из массива soundStr — не удалять
 loop
 exitwhen i>=10
@@ -52936,11 +53319,7 @@ set udg_Hero[ip+1]=n
 if GetHeroLevel(u)>1 then
 call SetHeroLevel(n,GetHeroLevel(u),false)
 endif
-set soundplay=SndByPath("Voice\\"+InitVoice(GetUnitTypeId(n)))
-if GetLocalPlayer()==p then
-call StartSound(soundplay)
-//call KillSoundWhenDone(soundplay) // звук из массива soundStr — не удалять
-endif
+call PickVoice("Voice\\"+InitVoice(GetUnitTypeId(n)),false,p)
 //call KillSoundWhenDone(soundplay) // звук из массива soundStr — не удалять
 loop
 exitwhen i>=10
@@ -53011,11 +53390,7 @@ set udg_Hero[ip+1]=n
 if GetHeroLevel(u)>1 then
 call SetHeroLevel(n,GetHeroLevel(u),false)
 endif
-set soundplay=SndByPath("Voice\\"+InitVoice(GetUnitTypeId(n)))
-if GetLocalPlayer()==p then
-call StartSound(soundplay)
-//call KillSoundWhenDone(soundplay) // звук из массива soundStr — не удалять
-endif
+call PickVoice("Voice\\"+InitVoice(GetUnitTypeId(n)),false,p)
 //call KillSoundWhenDone(soundplay) // звук из массива soundStr — не удалять
 loop
 exitwhen i>=10
@@ -53086,11 +53461,7 @@ set udg_Hero[ip+1]=n
 if GetHeroLevel(u)>1 then
 call SetHeroLevel(n,GetHeroLevel(u),false)
 endif
-set soundplay=SndByPath("Voice\\"+InitVoice(GetUnitTypeId(n)))
-if GetLocalPlayer()==p then
-call StartSound(soundplay)
-//call KillSoundWhenDone(soundplay) // звук из массива soundStr — не удалять
-endif
+call PickVoice("Voice\\"+InitVoice(GetUnitTypeId(n)),false,p)
 //call KillSoundWhenDone(soundplay) // звук из массива soundStr — не удалять
 loop
 exitwhen i>=10
@@ -53161,11 +53532,7 @@ set udg_Hero[ip+1]=n
 if GetHeroLevel(u)>1 then
 call SetHeroLevel(n,GetHeroLevel(u),false)
 endif
-set soundplay=SndByPath("Voice\\"+InitVoice(GetUnitTypeId(n)))
-if GetLocalPlayer()==p then
-call StartSound(soundplay)
-//call KillSoundWhenDone(soundplay) // звук из массива soundStr — не удалять
-endif
+call PickVoice("Voice\\"+InitVoice(GetUnitTypeId(n)),false,p)
 //call KillSoundWhenDone(soundplay) // звук из массива soundStr — не удалять
 loop
 exitwhen i>=10
@@ -56817,7 +57184,7 @@ endfunction
 //DraftStart
 // ===== Ban Draft Mode (Choice Battle 3.2 / 3.8.x; перенос с 5.403 25 окт 2026; требования — docs\ban-draft-mode в папке
 // лаунчера): бан и пик — ветка Ban Mode, драфт — в начале 1-го раунда (Trig_Start): капитаны (первый занятый слот каждой
-// команды лобби) забирают игроков в порядке 1-2-2-1-1-2-1-2 (26 окт, было 1-2-1-2), 20 c на ход, потом случайный; первый ход — случайно.
+// команды лобби) забирают игроков в порядке 1-2-2-2-1 (29 окт; 26 окт было 1-2-2-1-1-2-1-2, до того 1-2-1-2), 20 c на ход, потом случайный; первый ход — случайно.
 // Окно — в стиле магазина (подложка и синяя рамка карты, кнопки ScriptDialogButton): слева 1-я команда, справа 2-я,
 // в центре — ещё не взятые, внизу — строка сообщений. Клик локальный (кликнуть может только капитан, чей ход) и уходит
 // через SendSyncData "DRF", выбор выполняется в общем обработчике одинаково у всех — как покупка в магазине.
@@ -57414,11 +57781,11 @@ function Draft_Pick takes integer k returns nothing
     call KillSoundWhenDone(pickSnd)
     set pickSnd=null
     //set DraftTurn=1-DraftTurn
-    // 26 окт: порядок выбора — первая команда 1, вторая 2, первая 2, вторая 1, первая 1, вторая 1 (дальше по очереди)
+    // 29 окт: порядок выбора 1-2-2-2-1 — первая команда 1, вторая 2, первая 2, вторая 2, первая 1 (было 1-2-2-1-1-2-1-2; дальше по очереди)
     set DraftPickNo=DraftPickNo+1
     if DraftPickNo<8 then
         set DraftTurn=DraftFirst
-        if SubString("01100101",DraftPickNo,DraftPickNo+1)=="1" then
+        if SubString("01100110",DraftPickNo,DraftPickNo+1)=="1" then
             set DraftTurn=1-DraftFirst
         endif
     else
@@ -61175,7 +61542,8 @@ function KingOfHillActivation takes nothing returns nothing
     if DU2==true then
         call DisplayTextToPlayer(GetLocalPlayer(),0,0,Lng("Активирован режим \"Царь горы\".","\"King of the Hill\" mode activated."))
         set KingOfHill=AddSpecialEffect("RingPulse.mdx",GetRectCenterX(gg_rct_KingOfHillRect),GetRectCenterY(gg_rct_KingOfHillRect))
-        call SetSpecialEffectScale(KingOfHill,KOH_R/98.8)
+        call SetSpecialEffectScale(KingOfHill,KOH_R/88.5)
+        call SetSpecialEffectHeight(KingOfHill,40.) // 29 окт: над камнями площадки
         call ShowFrame( KingOfHillIcon, true)
         call EnableTrigger(gg_trg_KingOfHill_Enter)
     endif
@@ -61395,8 +61763,7 @@ call SetCameraPosition(GetRectCenterX(gg_rct_ArenaNormal),GetRectCenterY(gg_rct_
 call PauseUnit(fi[1],true)
 call PauseUnit(fi[2],true)
 call DisplayTextToPlayer(GetLocalPlayer(),256,128,"3!")
-set soundplay=SndByPath("Voice\\"+InitVoice2(GetUnitTypeId(fi[1]),GetUnitTypeId(fi[2])))
-call StartSound(soundplay)
+call PickVoice("Voice\\"+InitVoice2(GetUnitTypeId(fi[1]),GetUnitTypeId(fi[2])),true,null)
 //call KillSoundWhenDone(soundplay) // звук из массива soundStr — не удалять
 call PolledWait(1)
 call SetUnitPosition(fi[1],GetRectCenterX(gg_rct_F1),GetRectCenterY(gg_rct_F1))
@@ -62431,7 +62798,8 @@ call TSE_TimerStart(TD,630,false,function EndOfRound)
 //call TSE_TimerStart(TD2,360,false,function ResistReductionFunction)
 call TSE_TimerStart(TD2,300,false,function ResistReductionFunction)
 if BonusTimer==true then
-call TSE_TimerStart(TD3,20,false,function BonusActivation)
+// 29 окт (3.8.2): башни и фонтана на арене больше нет (land change) — зоны бонусов не включаются
+//call TSE_TimerStart(TD3,20,false,function BonusActivation)
 endif
 call TSE_TimerStart(TD4,120,false,function KingOfHillActivation)
 //call TSE_TimerStart(CreateTimer(),360,false,function Arena_Narrowing)
@@ -62514,8 +62882,7 @@ call Trig_ArenaCamera2_Actions()
 call DisplayTextToPlayer(GetLocalPlayer(),0,0,"3!")
 call PauseUnit(fi[1],true)
 call PauseUnit(fi[2],true)
-set soundplay=SndByPath("Voice\\"+InitVoice2(GetUnitTypeId(fi[1]),GetUnitTypeId(fi[2])))
-call StartSound(soundplay)
+call PickVoice("Voice\\"+InitVoice2(GetUnitTypeId(fi[1]),GetUnitTypeId(fi[2])),true,null)
 //call KillSoundWhenDone(soundplay) // звук из массива soundStr — не удалять
 call PolledWait(1)
 call PauseUnit(fi[1],true)
@@ -71709,8 +72076,14 @@ if nb>0 then
         call UnitRemoveBuffs(u,true,false)
     endif
     call SetEventDamage(nb)
+    // 29 окт: остановка времени — урон по замороженному копится и придёт при возобновлении (TSE_ReleaseDmg)
+    if TSE_On and IsUnitInGroup(u,TSE_G) then
+        call TSE_HoldDmg(u,c,nb)
+        call SetEventDamage(0)
+        set nb=0
+    endif
     // 3.8.2: Ключ Баб-Илу — добивание вражеского героя ниже 3% HP (урон любого юнита владельца ключа)
-    if u==Hero[idu] and l-nb>0 and l-nb<ll*0.03 and IsUnitEnemy(u,sourcePlayer) and idc>=0 and idc<12 and UnitHasItemOfTypeBJ(Hero[idc],'IBBi') then
+    if nb>0 and u==Hero[idu] and l-nb>0 and l-nb<ll*0.03 and IsUnitEnemy(u,sourcePlayer) and idc>=0 and idc<12 and UnitHasItemOfTypeBJ(Hero[idc],'IBBi') then
         call BabiluExec(Hero[idc],u)
     endif
     if GetUnitAbilityLevel(u,'A4DF')>0 then
@@ -116676,7 +117049,7 @@ call SetUnitScale(n,5,5,5)
 call SetUnitVertexColor(n, 255, 255, 255, 150)
 call SetUnitAnimation(n,"Death")
 call UnitApplyTimedLife(n,'BTLF',3.9)
-call PolledWait(1.4)
+call TSE_PolledWait(1.4)
 set n=CreateUnit(p,'e0KL',x,y,GetRandomReal(0,359))
 call SetUnitFlyHeight(n,1000,0)
 call SetUnitVertexColor(n, 255, 255, 255, 150)
@@ -116816,11 +117189,11 @@ call SetUnitTimeScale(l__n,3)
 set soundplay=SndN(1618) // Sound\Music\mp3Music\KuchiyoseNoJutsuKuybi.mp3
 call StartSound(soundplay)
 //call KillSoundWhenDone(soundplay) // звук из массива soundStr — не удалять
-call PolledWait(1)
+call TSE_PolledWait(1)
 call SetUnitAnimation(l__n,"Spell Two")
-call PolledWait(0.4)
+call TSE_PolledWait(0.4)
 call SetUnitAnimation(l__n,"Spell Three")
-call PolledWait(0.2)
+call TSE_PolledWait(0.2)
 call UnitRemoveAbility(u,'A0MX')
 call ShakeCamera(0.5,20)
 call SaveReal(h,id,8,x1)
@@ -120003,7 +120376,7 @@ set soundplay=SndN(1690) // Sound\Music\mp3Music\BigBangkamehameha.mp3
 call StartSound(soundplay)
 //call KillSoundWhenDone(soundplay) // звук из массива soundStr — не удалять
 call UnitAddAbility(u,'A0NP')
-call PolledWait(3.7)
+call TSE_PolledWait(3.7)
 call UnitRemoveAbility(u,'A0NP')
 call PauseUnit(u,false)
 call SetUnitInvulnerable(u,false)
@@ -137583,6 +137956,22 @@ call SaveInteger(HH,SH_ShnChanT,'CelF',2)
 call SaveStr(HH,SH_ShnChanO,'CelG',"charm")
 call SaveInteger(HH,SH_ShnChanT,'CelG',2)
 call SaveStr(HH,SH_ShnChanO,'CelT',"tornado")
+call SaveStr(HH,SH_ShnChanO,'DMD1',"curse")
+call SaveInteger(HH,SH_ShnChanT,'DMD1',3)
+call SaveStr(HH,SH_ShnChanO,'DME1',"blizzard")
+call SaveStr(HH,SH_ShnChanO,'DMF1',"ancestralspirit")
+call SaveInteger(HH,SH_ShnChanT,'DMF1',1)
+call SaveStr(HH,SH_ShnChanO,'DMG1',"acidbomb")
+call SaveInteger(HH,SH_ShnChanT,'DMG1',1)
+call SaveStr(HH,SH_ShnChanO,'DMQ1',"cloudoffog")
+call SaveInteger(HH,SH_ShnChanT,'DMQ1',2)
+call SaveStr(HH,SH_ShnChanO,'DMQ2',"charm")
+call SaveInteger(HH,SH_ShnChanT,'DMQ2',2)
+call SaveStr(HH,SH_ShnChanO,'DMR1',"harvest")
+call SaveInteger(HH,SH_ShnChanT,'DMR1',2)
+call SaveStr(HH,SH_ShnChanO,'DMT1',"tornado")
+call SaveStr(HH,SH_ShnChanO,'DMW1',"channel")
+call SaveInteger(HH,SH_ShnChanT,'DMW1',2)
 call SaveStr(HH,SH_ShnChanO,'DSE1',"silence")
 call SaveInteger(HH,SH_ShnChanT,'DSE1',2)
 call SaveStr(HH,SH_ShnChanO,'DSG1',"acidbomb")
@@ -139811,6 +140200,15 @@ call SaveStr(HH,SH_AbOrd,'Con4',"thunderbolt")
 call SaveStr(HH,SH_AbOrd,'Con5',"bash")
 call SaveStr(HH,SH_AbOrd,'Con6',"doom")
 call SaveStr(HH,SH_AbOrd,'Con7',"entanglingroots")
+call SaveStr(HH,SH_AbOrd,'DMD1',"curse")
+call SaveStr(HH,SH_AbOrd,'DME1',"blizzard")
+call SaveStr(HH,SH_AbOrd,'DMF1',"ancestralspirit")
+call SaveStr(HH,SH_AbOrd,'DMG1',"acidbomb")
+call SaveStr(HH,SH_AbOrd,'DMQ1',"cloudoffog")
+call SaveStr(HH,SH_AbOrd,'DMQ2',"charm")
+call SaveStr(HH,SH_AbOrd,'DMR1',"harvest")
+call SaveStr(HH,SH_AbOrd,'DMT1',"tornado")
+call SaveStr(HH,SH_AbOrd,'DMW1',"channel")
 call SaveStr(HH,SH_AbOrd,'DSE1',"silence")
 call SaveStr(HH,SH_AbOrd,'DSG1',"acidbomb")
 call SaveStr(HH,SH_AbOrd,'DSQ1',"charm")
@@ -265871,7 +266269,7 @@ call TSE_DestroyTimer(GetExpiredTimer())
 else
 
 if time==0.02 then
-set n0=CreateUnit(OwnerOf(caster),'e000',x1,y1,facing)
+set n0=CreateUnit(OwnerOf(caster),'e600',x1,y1,facing)
 call SetUnitModel(n0,EffectID[592])
 call UnitSize(n0,3,1,1)
 call UnitColor(n0,100,100,100,00)
@@ -265881,7 +266279,7 @@ call SetUnitFlyHeight(n0,0,0)
 call SetUnitAnimationByIndex(n0,0)
 call SaveUnitHandle(HH,id,20,n0)
 set n0=null
-set n0=CreateUnit(OwnerOf(caster),'e000',x1,y1,facing)
+set n0=CreateUnit(OwnerOf(caster),'e600',x1,y1,facing)
 call UnitSize(n0,3.9,1,1)
 call UnitSpeed(n0,0)
 call UnitColor(n0,100,100,100,80)
@@ -265983,7 +266381,7 @@ else
 if time==0.02 then
 call UnitAddAbility(caster,'DME2')
 call UnitMakeAbilityPermanent(caster,true,'DME2')
-set n0=CreateUnit(OwnerOf(caster),'e000',GetUnitX(caster),GetUnitY(caster),facing)
+set n0=CreateUnit(OwnerOf(caster),'e600',GetUnitX(caster),GetUnitY(caster),facing)
 call SetUnitModel(n0,EffectID[2502])
 call UnitSize(n0,1,1,1)
 call UnitColor(n0,100,100,100,0)
@@ -266129,7 +266527,7 @@ call SaveReal(HH,id,3,facing0)
 
 
 
-set n00=CreateUnit(OwnerOf(caster0),'e000',x1,y1,facing0)
+set n00=CreateUnit(OwnerOf(caster0),'e600',x1,y1,facing0)
 call SetUnitModel(n00,EffectID[1570])
 call UnitSize(n00,0.5,1,1)
 call SetUnitFlyHeight(n00,150,0)
@@ -266139,7 +266537,7 @@ call SaveUnitHandle(HH,id,20,n00)
 set n00=null
 
 
-set n00=CreateUnit(OwnerOf(caster0),'e000',x1,y1,facing0)
+set n00=CreateUnit(OwnerOf(caster0),'e600',x1,y1,facing0)
 call SetUnitModel(n00,EffectID[2236])
 call SetUnitFlyHeight(n00,150,0)
 call UnitSize(n00,2,1,1)
@@ -266215,7 +266613,7 @@ if time==0.02 then
 call sound_play("Sound\\DeadMaster\\DeadMaster_D.mp3",200)
 call SetUnitAnimationByIndex(caster,11)
 call UnitSpeed(caster,1)
-set n0=CreateUnit(OwnerOf(caster),'e000',x0,y0,facing)
+set n0=CreateUnit(OwnerOf(caster),'e600',x0,y0,facing)
 call SetUnitModel(n0,EffectID[2254])
 call MoveUnit(n0,n0,100,facing)
 call SetUnitFlyHeight(n0,100,0)
@@ -266236,19 +266634,19 @@ call SaveReal(HH,id,8,dist-60)
 call MoveUnit(Dummy,Dummy,60,facing)
 if dist<=0 then
 call SaveReal(HH,id,5,10)
-set n0=CreateUnit(OwnerOf(caster),'e000',x1,y1,facing)
+set n0=CreateUnit(OwnerOf(caster),'e600',x1,y1,facing)
 call SetUnitModel(n0,EffectID[2255])
 call MoveUnit(n0,n0,100,facing)
 call SetUnitFlyHeight(n0,0,0)
 call UnitSize(n0,1.1,1,1)
 call SaveUnitHandle(HH,id,21,n0)
-set n0=CreateUnit(OwnerOf(caster),'e000',x1,y1,facing)
+set n0=CreateUnit(OwnerOf(caster),'e600',x1,y1,facing)
 call SetUnitModel(n0,EffectID[2250])
 call MoveUnit(n0,n0,100,facing)
 call SetUnitFlyHeight(n0,0,0)
 call UnitSize(n0,1.5,1,1)
 call SaveUnitHandle(HH,id,22,n0)
-set n0=CreateUnit(OwnerOf(caster),'e000',x1,y1,facing)
+set n0=CreateUnit(OwnerOf(caster),'e600',x1,y1,facing)
 call SetUnitFlyHeight(n0,0,0)
 call UnitSpeed(n0,0)
 call UnitSize(n0,5.8,1,1)
@@ -266359,7 +266757,7 @@ if time==0.02 then
 call SaveLightningHandle(HH,id,16,AddLightningEx("DRAL",true,x0,y0,GetUnitFlyHeight(caster)+100,x0,y0,GetUnitFlyHeight(caster)+100))
 call PauseUnit(caster,false)
 call SetUnitPathing(caster,true)
-set n0=CreateUnit(OwnerOf(caster),'e000',x0,y0,facing)
+set n0=CreateUnit(OwnerOf(caster),'e600',x0,y0,facing)
 call SetUnitFlyHeight(n0,0,0)
 call UnitSize(n0,1.5,1,1)
 call SaveUnitHandle(HH,id,20,n0)
@@ -266374,21 +266772,21 @@ call MoveUnit(Dummy,Dummy,60,facing)
 endif
 if dist<=85 then
 call SaveReal(HH,id,5,5)
-set n0=CreateUnit(OwnerOf(caster),'e000',x1,y1,facing)
+set n0=CreateUnit(OwnerOf(caster),'e600',x1,y1,facing)
 call SetUnitModel(n0,EffectID[162])
 call SetUnitFlyHeight(n0,100,0)
 call UnitSize(n0,1.25,1,1)
 call UnitColor(n0,20,20,20,40)
 call SaveUnitHandle(HH,id,21,n0)
 set n0=null
-set n0=CreateUnit(OwnerOf(caster),'e000',x1,y1,facing+90)
+set n0=CreateUnit(OwnerOf(caster),'e600',x1,y1,facing+90)
 call SetUnitModel(n0,EffectID[162])
 call SetUnitFlyHeight(n0,100,0)
 call UnitSize(n0,1.45,1,1)
 call UnitColor(n0,20,20,20,40)
 call SaveUnitHandle(HH,id,22,n0)
 set n0=null
-set n0=CreateUnit(OwnerOf(caster),'e000',x1,y1,facing-90)
+set n0=CreateUnit(OwnerOf(caster),'e600',x1,y1,facing-90)
 call SetUnitModel(n0,EffectID[162])
 call SetUnitFlyHeight(n0,100,0)
 call UnitSize(n0,1.65,1,1)
@@ -266484,7 +266882,7 @@ call CreateModeIndicatorWithPauseFormAbility(caster, "ReplaceableTextures\\Comma
 
 
 
-set n0=CreateUnit(OwnerOf(caster),'e000',GetUnitX(caster),GetUnitY(caster),facing)
+set n0=CreateUnit(OwnerOf(caster),'e600',GetUnitX(caster),GetUnitY(caster),facing)
 call SetUnitModel(n0,EffectID[2224])
 call UnitSize(n0,1,1,1)
 call UnitColor(n0,100,100,100,40)
@@ -266493,7 +266891,7 @@ call UnitRemoveAbility(n0,'Amrf')
 call SetUnitFlyHeight(n0,0,0)
 call SaveUnitHandle(HH,id,20,n0)
 set n0=null
-set n0=CreateUnit(OwnerOf(caster),'e000',GetUnitX(caster),GetUnitY(caster),facing)
+set n0=CreateUnit(OwnerOf(caster),'e600',GetUnitX(caster),GetUnitY(caster),facing)
 call SetUnitModel(n0,EffectID[2263])
 call UnitSize(n0,2,1,1)
 call UnitColor(n0,100,100,100,40)
@@ -266575,7 +266973,7 @@ local real facing=LoadReal(HH,id,3)
 local integer fire_count=0
 set time=time+0.02
 call SaveReal(HH,id,5,time)
-if time>=21 or (time>1 and  udg_B==false) then
+if time>=11 or (time>1 and  udg_B==false) then // 29 окт (3.8.2): зона 10 сек (было 20; time>=21)
 
 
 
@@ -266621,7 +267019,7 @@ call SetUnitModel(n0,EffectID[2210])
 call UnitSpeed(n0,0.5)
 call UnitSize(n0,1.4,1,1)
 call UnitColor(n0,100,100,100,80)
-call MyRemoveUnit(n0,21)
+call MyRemoveUnit(n0,11)
 call MoveUnit(n0,n0,50,fire_count*15)
 call PushTimed(n0,fire_count*15,50,30)
 set fire_count=fire_count+1
@@ -266633,7 +267031,7 @@ endloop
 
 call EffectCreateAndMove(true,EffectID[2208],facing,1.5,2.5,0.5,100,100,100,0,100,caster,0,facing)
 call EffectCreateAndMove(true,EffectID[2251],facing,1.5,4,0.3,100,100,100,40,0,caster,0,facing)
-set n0=CreateUnit(OwnerOf(caster),'e000',GetUnitX(caster),GetUnitY(caster),facing)
+set n0=CreateUnit(OwnerOf(caster),'e600',GetUnitX(caster),GetUnitY(caster),facing)
 call SetUnitModel(n0,EffectID[2250])
 call UnitSize(n0,5,1,1)
 call SetUnitFlyHeight(n0,0,0)
@@ -266644,7 +267042,7 @@ call SaveUnitHandle(HH,id,20,n0)
 //call MyRemoveUnit(n0,21)
 call GroupAddUnit(gr2,n0)
 
-set n0=CreateUnit(OwnerOf(caster),'e000',GetUnitX(caster),GetUnitY(caster),facing)
+set n0=CreateUnit(OwnerOf(caster),'e600',GetUnitX(caster),GetUnitY(caster),facing)
 call UnitSize(n0,14.8,1,1)
 call SetUnitFlyHeight(n0,0,0)
 call UnitColor(n0,60,100,60,40)
@@ -266653,7 +267051,7 @@ call SaveUnitHandle(HH,id,21,n0)
 //call MyRemoveUnit(n0,21)
 call GroupAddUnit(gr2,n0)
 
-set n0=CreateUnit(OwnerOf(caster),'e000',GetUnitX(caster),GetUnitY(caster),facing)
+set n0=CreateUnit(OwnerOf(caster),'e600',GetUnitX(caster),GetUnitY(caster),facing)
 call SetUnitModel(n0,EffectID[2269])
 call UnitSize(n0,6,1,1)
 call SetUnitFlyHeight(n0,0,0)
@@ -266663,7 +267061,7 @@ call SaveUnitHandle(HH,id,22,n0)
 //call MyRemoveUnit(n0,21)
 call GroupAddUnit(gr2,n0)
 
-set n0=CreateUnit(OwnerOf(caster),'e000',GetUnitX(caster),GetUnitY(caster),facing)
+set n0=CreateUnit(OwnerOf(caster),'e600',GetUnitX(caster),GetUnitY(caster),facing)
 
 call SetUnitModel(n0,"DeadMaster\\Effect_T.mdl")
 
@@ -266681,7 +267079,7 @@ endif
 
 if time==1 then
 
-call CreateModeIndicatorForm(caster, "ReplaceableTextures\\CommandButtons\\BTNDeadMasterT.blp", 20)
+call CreateModeIndicatorForm(caster, "ReplaceableTextures\\CommandButtons\\BTNDeadMasterT.blp", 10)
 endif
 
 
@@ -266867,11 +267265,11 @@ endif
 if time>0.2 and time<10 then
 call MoveUnit(Dummy,Dummy,60,facing)
 if dist<=50 or IsTerrainPathable(PolX(x0,50,facing),PolY(y0,50,facing),PATHING_TYPE_FLYABILITY)==true then
-set n0=CreateUnit(OwnerOf(caster),'e000',x0,y0,facing)
+set n0=CreateUnit(OwnerOf(caster),'e600',x0,y0,facing)
 call SetUnitModel(n0,EffectID[2224])
 call UnitSize(n0,1,1,1)
 call SaveUnitHandle(HH,id,21,n0)
-set n0=CreateUnit(OwnerOf(caster),'e000',x0,y0,facing)
+set n0=CreateUnit(OwnerOf(caster),'e600',x0,y0,facing)
 call SaveUnitHandle(HH,id,22,n0)
 if IsUnitAlly(target,OwnerOf(caster))==false then
 call SetUnitModel(n0,EffectID[2236])
@@ -266944,7 +267342,7 @@ set facing=Angle2(x0,y0,x1,y1)
 call SaveUnitHandle(HH,id,1,caster)
 call SaveUnitHandle(HH,id,2,target)
 call SaveReal(HH,id,15,damage)
-set n0=CreateUnit(OwnerOf(caster),'e000',x0,y0,facing)
+set n0=CreateUnit(OwnerOf(caster),'e600',x0,y0,facing)
 call SetUnitModel(n0,EffectID[1446])
 call UnitSize(n0,0.5,1,1)
 set facing=Angle2(x0,y0,x1,y1)
@@ -267111,7 +267509,7 @@ local real damage=GetUnitState(target,UNIT_STATE_LIFE)*0.01
 call SaveUnitHandle(HH,id,1,caster)
 call SaveUnitHandle(HH,id,2,target)
 set facing=Angle2(x0,y0,x1,y1)
-set n0=CreateUnit(OwnerOf(caster),'e000',GetUnitX(target),GetUnitY(target),facing)
+set n0=CreateUnit(OwnerOf(caster),'e600',GetUnitX(target),GetUnitY(target),facing)
 call UnitSize(n0,1.5,1,1)
 call UnitSpeed(n0,1)
 call UnitColor(n0,100,100,100,0)
@@ -267217,7 +267615,7 @@ endif
 set facing=Angle2(x0,y0,x1,y1)
 call SaveUnitHandle(HH,id,1,caster)
 call SaveReal(HH,id,15,damage)
-set n0=CreateUnit(OwnerOf(caster),'e000',x1,y1,facing+180)
+set n0=CreateUnit(OwnerOf(caster),'e600',x1,y1,facing+180)
 call SetUnitModel(n0,EffectID[2235])
 call UnitSize(n0,4,1,1)
 call UnitSpeed(n0,2)
@@ -267301,7 +267699,7 @@ call DestroyEffect(AddSpecialEffectTarget(EffectID[1883],caster,"hand left"))
 call DestroyEffect(AddSpecialEffectTarget(EffectID[1883],caster,"weapon"))
 call EffectCreateAndMove90(true,EffectID[2217],facing,1.5,1.25,0.75,100,100,100,0,100,caster,0,facing)
 call sound_play("Sound\\DeadMaster\\DeadMaster_W.mp3",200)
-set n0=CreateUnit(OwnerOf(caster),'e000',GetUnitX(caster),GetUnitY(caster),facing)
+set n0=CreateUnit(OwnerOf(caster),'e600',GetUnitX(caster),GetUnitY(caster),facing)
 call SetUnitModel(n0,EffectID[2210])
 call UnitSize(n0,0.65,1,1)
 call UnitColor(n0,100,100,100,100)
@@ -267517,7 +267915,7 @@ endif
 set facing=Angle2(x0,y0,x1,y1)
 call SaveUnitHandle(HH,id,1,caster)
 call SaveReal(HH,id,15,damage)
-set n0=CreateUnit(OwnerOf(caster),'e000',x0,y0,facing)
+set n0=CreateUnit(OwnerOf(caster),'e600',x0,y0,facing)
 call SetUnitModel(n0,EffectID[1446])
 call UnitSize(n0,0.5,1,1)
 set facing=Angle2(x0,y0,x1,y1)
@@ -267546,7 +267944,7 @@ local integer en
 if GetUnitTypeId(u)=='HDMa' then
     if IsUnitSelected(u,GetLocalPlayer()) and IsPlayerAlly(GetLocalPlayer(),OwnerOf(u)) then
         set en=LoadInteger(HH,PH(OwnerOf(u)),StringHash("KimiEnergy"))
-        call SetFrameText(GetFrameByName("CustomLeaderboardText",0),"|cffff8affSoul|r: "+I2S(en/7000)+"  |cffff8affEnergy|r: "+I2S(en))
+        call SetFrameText(GetFrameByName("CustomLeaderboardText",0),"|cff40ff40Soul|r: "+I2S(en/7000)+"  |cff40ff40Energy|r: "+I2S(en))
         call ShowFrame(GetFrameByName("CustomLeaderboard",0), true)
         call SetFrameSize( GetFrameByName("CustomLeaderboard",0), .1775, GetFrameHeight( GetFrameByName("CustomLeaderboardText",0))+0.016)
         call SetFrameTextAlignment( GetFrameByName("CustomLeaderboardText",0), TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_LEFT )
@@ -267714,17 +268112,17 @@ local unit target=GetTriggerUnit()
 local real facing=GetUnitFacing(target)
 call SaveReal(HH,id,3,facing)
 call SaveUnitHandle(HH,id,1,caster)
-set n0=CreateUnit(OwnerOf(caster),'e000',GetUnitX(target),GetUnitY(target),facing)
+set n0=CreateUnit(OwnerOf(caster),'e600',GetUnitX(target),GetUnitY(target),facing)
 call SetUnitModel(n0,EffectID[2242])
 call UnitAddAbility(n0,'Amrf')
 call UnitRemoveAbility(n0,'Amrf')
 call UnitSize(n0,1.5,1,1)
 call SaveUnitHandle(HH,id,20,n0)
-set n0=CreateUnit(OwnerOf(caster),'e000',GetUnitX(target),GetUnitY(target),facing)
+set n0=CreateUnit(OwnerOf(caster),'e600',GetUnitX(target),GetUnitY(target),facing)
 call SetUnitModel(n0,EffectID[2314])
 call UnitSize(n0,1.25,1,1)
 call SaveUnitHandle(HH,id,21,n0)
-set n0=CreateUnit(OwnerOf(caster),'e000',GetUnitX(target),GetUnitY(target),facing)
+set n0=CreateUnit(OwnerOf(caster),'e600',GetUnitX(target),GetUnitY(target),facing)
 call SetUnitModel(n0,EffectID[2263])
 call UnitSize(n0,1.5,1,1)
 call SetUnitFlyHeight(n0,150,0)
@@ -285090,7 +285488,7 @@ call UIS_RegisterItem('I00W',0,0,0,0,0,0,0,0,0,'IGDr','IGDi')                   
 call UIS_RegisterItem('I01L','I01M',0,0,0,0,0,0,0,0,'IPar','I031')                                // Patriot сборка
 call UIS_RegisterItem('I03D','I05W','I02T',0,0,0,0,0,0,0,0,'IMDi')                                // Medusa-Dr.Stone Сборка
 call UIS_RegisterItem('IOS3','I05E',0,0,0,0,0,0,0,0,'IHYr','IHYi')                                // Yukirin Hourglass Сборка
-call UIS_RegisterItem('I033','IOS1',0,0,0,0,0,0,0,0,'IBBr','IBBi') // Ключ Баб-Илу (3.8.2)
+call UIS_RegisterItem('I032','IOS1',0,0,0,0,0,0,0,0,'IBBr','IBBi') // Ключ Баб-Илу (3.8.2): Очки Мадао + Мусс для Волос
 call UIS_RegisterItem('I03Y','IOS1','I02S',0,0,0,0,0,0,0,'ISTr','ISTi')                   // Stigmata Tesseract Сборка
 call UIS_RegisterItem('I01H','IOS3','I12R',0,0,0,0,0,0,0,0,'ISHk')                            // Sode no Shirayuki
 call UIS_RegisterItem('I02Y','ISHk',0,0,0,0,0,0,0,0,0,'IHnK')                                 // Hakka No Togame
@@ -297654,13 +298052,13 @@ call LANG_A('EsW1',0,1,"Super Slash, [|cffffcc00Level 2|r] (|cffffcc00W|r)")
 call LANG_A('EsW1',0,2,"Super Slash, [|cffffcc00Level 3|r] (|cffffcc00W|r)")
 call LANG_A('EsW1',0,3,"Super Slash, [|cffffcc00Level 4|r] (|cffffcc00W|r)")
 call LANG_A('EsW1',0,4,"Super Slash, [|cffffcc00Level 5|r] (|cffffcc00W|r)")
-call LANG_A('EsW1',1,0,"• Escanor leaps and slams his axe into the ground, releasing the magic stored in Rhitta.|n|cFF00A5FF|nDamage: 2*|c00FF5555STR|r|nAoE: 600|nStun: 3 sec.|nRange: 1000|nCooldown: 20 sec.|r")
-call LANG_A('EsW1',1,1,"• Escanor leaps and slams his axe into the ground, releasing the magic stored in Rhitta.|n|cFF00A5FF|nDamage: 2.5*|c00FF5555STR|r|nAoE: 600|nStun: 3 sec.|nRange: 1000|nCooldown: 20 sec.|r")
-call LANG_A('EsW1',1,2,"• Escanor leaps and slams his axe into the ground, releasing the magic stored in Rhitta.|n|cFF00A5FF|nDamage: 3*|c00FF5555STR|r|nAoE: 600|nStun: 3 sec.|nRange: 1000|nCooldown: 20 sec.|r")
-call LANG_A('EsW1',1,3,"• Escanor leaps and slams his axe into the ground, releasing the magic stored in Rhitta.|n|cFF00A5FF|nDamage: 3.5*|c00FF5555STR|r|nAoE: 600|nStun: 3 sec.|nRange: 1000|nCooldown: 20 sec.|r")
-call LANG_A('EsW1',1,4,"• Escanor leaps and slams his axe into the ground, releasing the magic stored in Rhitta.|n|cFF00A5FF|nDamage: 4*|c00FF5555STR|r|nAoE: 600|nStun: 3 sec.|nRange: 1000|nCooldown: 20 sec.|r")
+call LANG_A('EsW1',1,0,"• Escanor leaps and slams his axe into the ground, releasing the magic stored in Rhitta.|n|cFF00A5FF|nDamage: 2*|c00FF5555STR|r|nAoE: 300|nStun: 3 sec.|nRange: 1000|nCooldown: 20 sec.|r")
+call LANG_A('EsW1',1,1,"• Escanor leaps and slams his axe into the ground, releasing the magic stored in Rhitta.|n|cFF00A5FF|nDamage: 2.5*|c00FF5555STR|r|nAoE: 300|nStun: 3 sec.|nRange: 1000|nCooldown: 20 sec.|r")
+call LANG_A('EsW1',1,2,"• Escanor leaps and slams his axe into the ground, releasing the magic stored in Rhitta.|n|cFF00A5FF|nDamage: 3*|c00FF5555STR|r|nAoE: 300|nStun: 3 sec.|nRange: 1000|nCooldown: 20 sec.|r")
+call LANG_A('EsW1',1,3,"• Escanor leaps and slams his axe into the ground, releasing the magic stored in Rhitta.|n|cFF00A5FF|nDamage: 3.5*|c00FF5555STR|r|nAoE: 300|nStun: 3 sec.|nRange: 1000|nCooldown: 20 sec.|r")
+call LANG_A('EsW1',1,4,"• Escanor leaps and slams his axe into the ground, releasing the magic stored in Rhitta.|n|cFF00A5FF|nDamage: 4*|c00FF5555STR|r|nAoE: 300|nStun: 3 sec.|nRange: 1000|nCooldown: 20 sec.|r")
 call LANG_A('EsW1',2,0,"Super Slash, [|cffffcc00Level %d|r] (|cffffcc00W|r)")
-call LANG_A('EsW1',3,0,"• Escanor leaps and slams his axe into the ground, releasing the magic stored in Rhitta.|n|cFF00A5FF|nDamage: 2\\2.5\\3\\3.5\\4*|c00FF5555STR|r|nAoE: 600|nStun: 3 sec.|nRange: 1000|nCooldown: 20 sec.|r")
+call LANG_A('EsW1',3,0,"• Escanor leaps and slams his axe into the ground, releasing the magic stored in Rhitta.|n|cFF00A5FF|nDamage: 2\\2.5\\3\\3.5\\4*|c00FF5555STR|r|nAoE: 300|nStun: 3 sec.|nRange: 1000|nCooldown: 20 sec.|r")
 call LANG_A('EsE1',0,0,"Cruel Sun, [|cffffcc00Level 1|r] (|cffffcc00E|r)")
 call LANG_A('EsE1',0,1,"Cruel Sun, [|cffffcc00Level 2|r] (|cffffcc00E|r)")
 call LANG_A('EsE1',0,2,"Cruel Sun, [|cffffcc00Level 3|r] (|cffffcc00E|r)")
@@ -297687,10 +298085,10 @@ call LANG_A('EsR1',2,0,"Pride Flare, [|cffffcc00Level %d|r] (|cffffcc00R|r)")
 call LANG_A('EsR1',3,0,"• Escanor dashes forward and grabs the first enemy in his path.|n• The enemy burns for 2 sec. and takes 5*|c00FF5555STR|r in total while explosions go off around them, ending in a fiery finale.|n|cFF00A5FF|nDamage: 5*|r|c00FF5555STR|r|cFF00A5FF over 2 sec.|nCooldown: 38 sec.|r")
 call LANG_A('EsD1',1,0,"• Escanor gathers immense magic and strikes the enemy with the edge of his palm.|n|cFF00A5FF|nDamage: 0.99*|c00FF5555STR|r per flame contact (about 9 per pass)|nCooldown: 11 sec.|r")
 call LANG_A('EsD1',3,0,"• Escanor gathers immense magic and strikes the enemy with the edge of his palm.|n|cFF00A5FF|nDamage: 0.99*|c00FF5555STR|r per flame contact (about 9 per pass)|nCooldown: 11 sec.|r")
-call LANG_A('EsF1',1,0,"• A pillar of flame silences the area for 5 sec. and burns everyone inside, then Escanor hurls a blazing sun into it.|n|cFF00A5FF|nDamage: 3*|c00FF5555STR|r (of base strength) from the explosion + 1.5*|c00FF5555STR|r per sec. in the pillar|nAoE: 800|nStun: 3 sec.|nRange: 1600|nCooldown: 18 sec.|r")
-call LANG_A('EsF1',3,0,"• A pillar of flame silences the area for 5 sec. and burns everyone inside, then Escanor hurls a blazing sun into it.|n|cFF00A5FF|nDamage: 3*|c00FF5555STR|r (of base strength) from the explosion + 1.5*|c00FF5555STR|r per sec. in the pillar|nAoE: 800|nStun: 3 sec.|nRange: 1600|nCooldown: 18 sec.|r")
-call LANG_A('EsG1',1,0,"• Only around noon — from 9 to 15 on his clock. Escanor burns his own life and becomes The One: a strike on everyone within 1200, then for 15 sec. he burns everyone nearby, and for the first 5 sec. he also drops explosions around the area. For the duration: +117% strength and +57% health. His li"+"fe burns out over 15 sec. — at the end Escanor dies.|n|cFF00A5FF|nStrike: 5*|c00FF5555STR|r|nNearby (600): 0.15*|c00FF5555STR|r every 0.25 sec.|nExplosion (900): 2.5*|c00FF5555STR|r|nCooldown: 55 sec.|r")
-call LANG_A('EsG1',3,0,"• Only around noon — from 9 to 15 on his clock. Escanor burns his own life and becomes The One: a strike on everyone within 1200, then for 15 sec. he burns everyone nearby, and for the first 5 sec. he also drops explosions around the area. For the duration: +117% strength and +57% health. His li"+"fe burns out over 15 sec. — at the end Escanor dies.|n|cFF00A5FF|nStrike: 5*|c00FF5555STR|r|nNearby (600): 0.15*|c00FF5555STR|r every 0.25 sec.|nExplosion (900): 2.5*|c00FF5555STR|r|nCooldown: 55 sec.|r")
+call LANG_A('EsF1',1,0,"• A pillar of flame silences the area for 5 sec. and burns everyone inside, then Escanor hurls a blazing sun into it.|n|cFF00A5FF|nDamage: 3*|c00FF5555STR|r (of base strength) from the explosion + 1.5*|c00FF5555STR|r per sec. in the pillar|nAoE: 600|nStun: 3 sec.|nRange: 1600|nCooldown: 18 sec.|r")
+call LANG_A('EsF1',3,0,"• A pillar of flame silences the area for 5 sec. and burns everyone inside, then Escanor hurls a blazing sun into it.|n|cFF00A5FF|nDamage: 3*|c00FF5555STR|r (of base strength) from the explosion + 1.5*|c00FF5555STR|r per sec. in the pillar|nAoE: 600|nStun: 3 sec.|nRange: 1600|nCooldown: 18 sec.|r")
+call LANG_A('EsG1',1,0,"• Only around noon — from 9 to 15 on his clock. Escanor burns his own life and becomes The One: a strike on everyone within 900, then for 15 sec. he burns everyone nearby, and for the first 5 sec. he also drops explosions around the area. For the duration: +117% strength and +57% health. His lif"+"e burns out over 15 sec. — at the end Escanor dies.|n|cFF00A5FF|nStrike: 5*|c00FF5555STR|r|nNearby (450): 0.15*|c00FF5555STR|r every 0.25 sec.|nExplosion (650): 2.5*|c00FF5555STR|r|nCooldown: 55 sec.|r")
+call LANG_A('EsG1',3,0,"• Only around noon — from 9 to 15 on his clock. Escanor burns his own life and becomes The One: a strike on everyone within 900, then for 15 sec. he burns everyone nearby, and for the first 5 sec. he also drops explosions around the area. For the duration: +117% strength and +57% health. His lif"+"e burns out over 15 sec. — at the end Escanor dies.|n|cFF00A5FF|nStrike: 5*|c00FF5555STR|r|nNearby (450): 0.15*|c00FF5555STR|r every 0.25 sec.|nExplosion (650): 2.5*|c00FF5555STR|r|nCooldown: 55 sec.|r")
 call LANG_A('EsT1',1,0,"• Escanor has his own day — 4 minutes long, starting at dawn. His time is shown in the window at the top right, and at 6, 9, 12, 15 and 18 o'clock it also pops up above him.|n|n|c00FFFC01Passive — Child of the Sun:|r|n• From 6 a.m. Escanor absorbs the power of the sun: the closer to noon, th"+"e greater his strength; toward evening he weakens.|n• Each attack deals 0.5*|c00FF5555STR|r bonus damage.|n|n|c00FFFC01Active — The Sun in My Heart:|r|n• Only at night — from 18 to 6 on his clock. Noon comes for 20 sec.: Escanor gains +80% strength and +40% health.|n|cFF00A5FF|nCooldown: 70 "+"sec.|r")
 call LANG_A('EsT1',3,0,"• Escanor has his own day — 4 minutes long, starting at dawn. His time is shown in the window at the top right, and at 6, 9, 12, 15 and 18 o'clock it also pops up above him.|n|n|c00FFFC01Passive — Child of the Sun:|r|n• From 6 a.m. Escanor absorbs the power of the sun: the closer to noon, th"+"e greater his strength; toward evening he weakens.|n• Each attack deals 0.5*|c00FF5555STR|r bonus damage.|n|n|c00FFFC01Active — The Sun in My Heart:|r|n• Only at night — from 18 to 6 on his clock. Noon comes for 20 sec.: Escanor gains +80% strength and +40% health.|n|cFF00A5FF|nCooldown: 70 "+"sec.|r")
 call LANG_A('FlF2',1,0,"The cursor's final strike: \"You're not going anywhere now.\"")
@@ -298055,91 +298453,91 @@ call LANG_A('SnF1',3,0,"An instant step to a point. From the W mist it recharges
 call LANG_A('SnG1',1,0,"Hirako vanishes leaving his afterimage before the target, the target freezes. Strike 1: Hirako behind and the afterimage in front. Strike 2: Hirako rushes in from the opposite side, a small Sakanade mist around the target (inversion as from W). Damage grows with missing HP. Sakanade is in his hand d"+"uring the move.|n|n|cFF00A5FF|nDamage: 2 strikes of 1.5*|r|c003CFF3CAGI|r|cFF00A5FF + 7.5% of missing HP|nSmall mist: AoE 300, 2.5 sec.|nRange: 600|nCooldown: 45 sec.|r")
 call LANG_A('SnG1',3,0,"Hirako vanishes leaving his afterimage before the target, the target freezes. Strike 1: Hirako behind and the afterimage in front. Strike 2: Hirako rushes in from the opposite side, a small Sakanade mist around the target (inversion as from W). Damage grows with missing HP. Sakanade is in his hand d"+"uring the move.|n|n|cFF00A5FF|nDamage: 2 strikes of 1.5*|r|c003CFF3CAGI|r|cFF00A5FF + 7.5% of missing HP|nSmall mist: AoE 300, 2.5 sec.|nRange: 600|nCooldown: 45 sec.|r")
 call LANG_A('DMD1',0,0,"Doku/Tamashi, [|cffffcc00Level 1|r] (|cffffcc00D|r)")
-call LANG_A('DMD1',1,0,"Passive (from level 20):|nAbilities leave poison in their area for 5 sec., dealing 0.1x|r|c0077FFFFINT|r every 0.2 sec. and spending the stored energy when they deal damage.|n|nEnemy heroes leave a soul on death that Dead Master can pick up.|nOne soul equals 7000 energy.|nPicking up a soul / gatheri"+"ng 7000 energy instantly restores 5% HP/MP to Dead Master.|n|nActive:|nDead Master throws a projectile into an area that damages enemies and restores HP/MP to allies.|n|cFF00A5FF|nDamage: 0.5|r|c0077FFFFINT|r|cFF00A5FF every 0.5 sec.|nRestoration: 3% every 0.5 sec.|nAoE: 600|nRange: 2000|nDuration: "+"10 sec.|nCast time: 0.1|nCooldown: 20 sec.|r ")
+call LANG_A('DMD1',1,0,"Throws into the area for 10 sec.: burns enemies, restores HP/MP to allies.|nFrom level 20 her abilities leave poison in their area for 5 sec.; it spends energy.|nA slain enemy hero leaves a soul (7000 energy); picking up a soul and every 7000 energy — +5% HP/MP.|n|n|cFF00A5FF|nDamage: 0.5*|r|c0077"+"FFFFINT|r|cFF00A5FF every 0.5 sec.|nRestoration: 3% HP/MP every 0.5 sec.|nPoison: 0.1*|r|c0077FFFFINT|r|cFF00A5FF every 0.2 sec.|nAoE: 600|nRange: 2000|nCooldown: 20 sec.|r")
 call LANG_A('DME1',0,0,"Chenhandoru, [|cffffcc00Level 1|r] (|cffffcc00E|r)")
 call LANG_A('DME1',0,1,"Chenhandoru, [|cffffcc00Level 2|r] (|cffffcc00E|r)")
 call LANG_A('DME1',0,2,"Chenhandoru, [|cffffcc00Level 3|r] (|cffffcc00E|r)")
 call LANG_A('DME1',0,3,"Chenhandoru, [|cffffcc00Level 4|r] (|cffffcc00E|r)")
 call LANG_A('DME1',0,4,"Chenhandoru, [|cffffcc00Level 5|r] (|cffffcc00E|r)")
-call LANG_A('DME1',1,0,"Dead Master empowers herself and her abilities for 20 sec. (can be dispelled).|nEach attack deals 0.5*|r|c0077FFFFINT|r and ensnares for 1 sec.|nIncreases the energy gathering range by 500.|n|nQ: roots enemies for 3 sec. when the skull hits.|nW: pulls all enemies within 1250 with chains and pushes t"+"hem forward in a 250 area up to the ability area.|nF: pulls all enemies within 1250 to the chosen target with chains.|nR: additionally deals 2*|r|c0077FFFFINT|r and roots enemies for 2 sec. a second after the strike.|nG: holds the enemy while the drain lasts (1.5 sec.)|n|nThe root breaks on teleport"+"ing farther than 600.|n|cFF00A5FF|nCooldown: 40 sec. (after the end)|r|n")
-call LANG_A('DME1',1,1,"Dead Master empowers herself and her abilities for 20 sec. (can be dispelled).|nEach attack deals 0.5*|r|c0077FFFFINT|r and ensnares for 1 sec.|nIncreases the energy gathering range by 500.|n|nQ: roots enemies for 3 sec. when the skull hits.|nW: pulls all enemies within 1250 with chains and pushes t"+"hem forward in a 250 area up to the ability area.|nF: pulls all enemies within 1250 to the chosen target with chains.|nR: additionally deals 2*|r|c0077FFFFINT|r and roots enemies for 2 sec. a second after the strike.|nG: holds the enemy while the drain lasts (1.5 sec.)|n|nThe root breaks on teleport"+"ing farther than 600.|n|cFF00A5FF|nCooldown: 35 sec. (after the end)|r|n")
-call LANG_A('DME1',1,2,"Dead Master empowers herself and her abilities for 20 sec. (can be dispelled).|nEach attack deals 0.5*|r|c0077FFFFINT|r and ensnares for 1 sec.|nIncreases the energy gathering range by 500.|n|nQ: roots enemies for 3 sec. when the skull hits.|nW: pulls all enemies within 1250 with chains and pushes t"+"hem forward in a 250 area up to the ability area.|nF: pulls all enemies within 1250 to the chosen target with chains.|nR: additionally deals 2*|r|c0077FFFFINT|r and roots enemies for 2 sec. a second after the strike.|nG: holds the enemy while the drain lasts (1.5 sec.)|n|nThe root breaks on teleport"+"ing farther than 600.|n|cFF00A5FF|nCooldown: 30 sec. (after the end)|r|n")
-call LANG_A('DME1',1,3,"Dead Master empowers herself and her abilities for 20 sec. (can be dispelled).|nEach attack deals 0.5*|r|c0077FFFFINT|r and ensnares for 1 sec.|nIncreases the energy gathering range by 500.|n|nQ: roots enemies for 3 sec. when the skull hits.|nW: pulls all enemies within 1250 with chains and pushes t"+"hem forward in a 250 area up to the ability area.|nF: pulls all enemies within 1250 to the chosen target with chains.|nR: additionally deals 2*|r|c0077FFFFINT|r and roots enemies for 2 sec. a second after the strike.|nG: holds the enemy while the drain lasts (1.5 sec.)|n|nThe root breaks on teleport"+"ing farther than 600.|n|cFF00A5FF|nCooldown: 25 sec. (after the end)|r|n")
-call LANG_A('DME1',1,4,"Dead Master empowers herself and her abilities for 20 sec. (can be dispelled).|nEach attack deals 0.5*|r|c0077FFFFINT|r and ensnares for 1 sec.|nIncreases the energy gathering range by 500.|n|nQ: roots enemies for 3 sec. when the skull hits.|nW: pulls all enemies within 1250 with chains and pushes t"+"hem forward in a 250 area up to the ability area.|nF: pulls all enemies within 1250 to the chosen target with chains.|nR: additionally deals 2*|r|c0077FFFFINT|r and roots enemies for 2 sec. a second after the strike.|nG: holds the enemy while the drain lasts (1.5 sec.)|n|nThe root breaks on teleport"+"ing farther than 600.|n|cFF00A5FF|nCooldown: 20 sec. (after the end)|r|n")
+call LANG_A('DME1',1,0,"Empowers her for 20 sec. (can be dispelled): attacks deal 0.5*|c0077FFFFINT|r and ensnare for 1 sec., energy gathering +500.|nQ: the skull roots for 3 sec.|nW: chains pull enemies within 1250 and drag them into the area.|nF: chains pull enemies within 1250 to the target.|nR: after 1 sec. another 2*|"+"c0077FFFFINT|r and a 2 sec. root.|nG: the enemy is held while the drain lasts.|nRoots break on teleporting farther than 600.|n|n|cFF00A5FF|nCooldown: 40 sec. (after it ends)|r")
+call LANG_A('DME1',1,1,"Empowers her for 20 sec. (can be dispelled): attacks deal 0.5*|c0077FFFFINT|r and ensnare for 1 sec., energy gathering +500.|nQ: the skull roots for 3 sec.|nW: chains pull enemies within 1250 and drag them into the area.|nF: chains pull enemies within 1250 to the target.|nR: after 1 sec. another 2*|"+"c0077FFFFINT|r and a 2 sec. root.|nG: the enemy is held while the drain lasts.|nRoots break on teleporting farther than 600.|n|n|cFF00A5FF|nCooldown: 35 sec. (after it ends)|r")
+call LANG_A('DME1',1,2,"Empowers her for 20 sec. (can be dispelled): attacks deal 0.5*|c0077FFFFINT|r and ensnare for 1 sec., energy gathering +500.|nQ: the skull roots for 3 sec.|nW: chains pull enemies within 1250 and drag them into the area.|nF: chains pull enemies within 1250 to the target.|nR: after 1 sec. another 2*|"+"c0077FFFFINT|r and a 2 sec. root.|nG: the enemy is held while the drain lasts.|nRoots break on teleporting farther than 600.|n|n|cFF00A5FF|nCooldown: 30 sec. (after it ends)|r")
+call LANG_A('DME1',1,3,"Empowers her for 20 sec. (can be dispelled): attacks deal 0.5*|c0077FFFFINT|r and ensnare for 1 sec., energy gathering +500.|nQ: the skull roots for 3 sec.|nW: chains pull enemies within 1250 and drag them into the area.|nF: chains pull enemies within 1250 to the target.|nR: after 1 sec. another 2*|"+"c0077FFFFINT|r and a 2 sec. root.|nG: the enemy is held while the drain lasts.|nRoots break on teleporting farther than 600.|n|n|cFF00A5FF|nCooldown: 25 sec. (after it ends)|r")
+call LANG_A('DME1',1,4,"Empowers her for 20 sec. (can be dispelled): attacks deal 0.5*|c0077FFFFINT|r and ensnare for 1 sec., energy gathering +500.|nQ: the skull roots for 3 sec.|nW: chains pull enemies within 1250 and drag them into the area.|nF: chains pull enemies within 1250 to the target.|nR: after 1 sec. another 2*|"+"c0077FFFFINT|r and a 2 sec. root.|nG: the enemy is held while the drain lasts.|nRoots break on teleporting farther than 600.|n|n|cFF00A5FF|nCooldown: 20 sec. (after it ends)|r")
 call LANG_A('DME1',2,0,"Chenhandoru, [|cffffcc00Level %d|r] (|cffffcc00E|r)")
-call LANG_A('DME1',3,0,"Dead Master empowers herself and her abilities for 20 sec. (can be dispelled).|nEach attack deals 0.5*|r|c0077FFFFINT|r and ensnares for 1 sec.|nIncreases the energy gathering range by 500.|n|nQ: roots enemies for 3 sec. when the skull hits.|nW: pulls all enemies within 1250 with chains and pushes t"+"hem forward in a 250 area up to the ability area.|nF: pulls all enemies within 1250 to the chosen target with chains.|nR: additionally deals 2*|r|c0077FFFFINT|r and roots enemies for 2 sec. a second after the strike.|nG: holds the enemy while the drain lasts (1.5 sec.)|n|nThe root breaks on teleport"+"ing farther than 600.|n|cFF00A5FF|nCooldown: 40\\35\\30\\25\\20 sec. (after the end)|r|n")
+call LANG_A('DME1',3,0,"Empowers her for 20 sec. (can be dispelled): attacks deal 0.5*|c0077FFFFINT|r and ensnare for 1 sec., energy gathering +500.|nQ: the skull roots for 3 sec.|nW: chains pull enemies within 1250 and drag them into the area.|nF: chains pull enemies within 1250 to the target.|nR: after 1 sec. another 2*|"+"c0077FFFFINT|r and a 2 sec. root.|nG: the enemy is held while the drain lasts.|nRoots break on teleporting farther than 600.|n|n|cFF00A5FF|nCooldown: 40\\35\\30\\25\\20 sec. (after it ends)|r")
 call LANG_A('DMF1',0,0,"Zugaikotsu/Kyushu, [|cffffcc00Level 1|r] (|cffffcc00F|r)")
 call LANG_A('DMF1',0,1,"Zugaikotsu/Kyushu, [|cffffcc00Level 2|r] (|cffffcc00F|r)")
 call LANG_A('DMF1',0,2,"Zugaikotsu/Kyushu, [|cffffcc00Level 3|r] (|cffffcc00F|r)")
 call LANG_A('DMF1',0,3,"Zugaikotsu/Kyushu, [|cffffcc00Level 4|r] (|cffffcc00F|r)")
 call LANG_A('DMF1',0,4,"Zugaikotsu/Kyushu, [|cffffcc00Level 5|r] (|cffffcc00F|r)")
-call LANG_A('DMF1',1,0,"Passive (from level 1):|nEvery ability of Dead Master drains energy (1.5% MP/HP) from enemies within 1000; the energy is spent on the D poison and on the healing of D, F and G.|n|nActive:|nDead Master throws a skull at the target (if one is available).|nAn ally restores 1.5% HP/MP every second for 5"+" sec. and gains 10% resistance.|nAn enemy is drained of 1.5% HP/MP every second for 5 sec.|cFF00A5FF|nRange: 2000|nCast time: 0.15|nCooldown: 6 sec. |r|n")
-call LANG_A('DMF1',1,1,"Passive (from level 1):|nEvery ability of Dead Master drains energy (1.5% MP/HP) from enemies within 1000; the energy is spent on the D poison and on the healing of D, F and G.|n|nActive:|nDead Master throws a skull at the target (if one is available).|nAn ally restores 1.5% HP/MP every second for 5"+" sec. and gains 10% resistance.|nAn enemy is drained of 1.5% HP/MP every second for 5 sec.|cFF00A5FF|nRange: 2000|nCast time: 0.15|nCooldown: 5 sec. |r|n")
-call LANG_A('DMF1',1,2,"Passive (from level 1):|nEvery ability of Dead Master drains energy (1.5% MP/HP) from enemies within 1000; the energy is spent on the D poison and on the healing of D, F and G.|n|nActive:|nDead Master throws a skull at the target (if one is available).|nAn ally restores 1.5% HP/MP every second for 5"+" sec. and gains 10% resistance.|nAn enemy is drained of 1.5% HP/MP every second for 5 sec.|cFF00A5FF|nRange: 2000|nCast time: 0.15|nCooldown: 4 sec. |r|n")
-call LANG_A('DMF1',1,3,"Passive (from level 1):|nEvery ability of Dead Master drains energy (1.5% MP/HP) from enemies within 1000; the energy is spent on the D poison and on the healing of D, F and G.|n|nActive:|nDead Master throws a skull at the target (if one is available).|nAn ally restores 1.5% HP/MP every second for 5"+" sec. and gains 10% resistance.|nAn enemy is drained of 1.5% HP/MP every second for 5 sec.|cFF00A5FF|nRange: 2000|nCast time: 0.15|nCooldown: 3 sec. |r|n")
-call LANG_A('DMF1',1,4,"Passive (from level 1):|nEvery ability of Dead Master drains energy (1.5% MP/HP) from enemies within 1000; the energy is spent on the D poison and on the healing of D, F and G.|n|nActive:|nDead Master throws a skull at the target (if one is available).|nAn ally restores 1.5% HP/MP every second for 5"+" sec. and gains 10% resistance.|nAn enemy is drained of 1.5% HP/MP every second for 5 sec.|cFF00A5FF|nRange: 2000|nCast time: 0.15|nCooldown: 2 sec. |r|n")
+call LANG_A('DMF1',1,0,"A skull at the target (needs a free one): an ally gets 1.5% HP/MP per sec. and +10% resistance, an enemy is drained of 1.5% HP/MP per sec.; 5 sec.|nPassive: every ability drains 1.5% HP/MP from enemies within 1000 — energy for D, F and G.|n|n|cFF00A5FF|nRange: 1200|nCooldown: 6 sec.|r")
+call LANG_A('DMF1',1,1,"A skull at the target (needs a free one): an ally gets 1.5% HP/MP per sec. and +10% resistance, an enemy is drained of 1.5% HP/MP per sec.; 5 sec.|nPassive: every ability drains 1.5% HP/MP from enemies within 1000 — energy for D, F and G.|n|n|cFF00A5FF|nRange: 1400|nCooldown: 5 sec.|r")
+call LANG_A('DMF1',1,2,"A skull at the target (needs a free one): an ally gets 1.5% HP/MP per sec. and +10% resistance, an enemy is drained of 1.5% HP/MP per sec.; 5 sec.|nPassive: every ability drains 1.5% HP/MP from enemies within 1000 — energy for D, F and G.|n|n|cFF00A5FF|nRange: 1600|nCooldown: 4 sec.|r")
+call LANG_A('DMF1',1,3,"A skull at the target (needs a free one): an ally gets 1.5% HP/MP per sec. and +10% resistance, an enemy is drained of 1.5% HP/MP per sec.; 5 sec.|nPassive: every ability drains 1.5% HP/MP from enemies within 1000 — energy for D, F and G.|n|n|cFF00A5FF|nRange: 1800|nCooldown: 3 sec.|r")
+call LANG_A('DMF1',1,4,"A skull at the target (needs a free one): an ally gets 1.5% HP/MP per sec. and +10% resistance, an enemy is drained of 1.5% HP/MP per sec.; 5 sec.|nPassive: every ability drains 1.5% HP/MP from enemies within 1000 — energy for D, F and G.|n|n|cFF00A5FF|nRange: 2000|nCooldown: 2 sec.|r")
 call LANG_A('DMG1',0,0,"Hikiwatasu/Torinozoku, [|cffffcc00Level 1|r] (|cffffcc00G|r)")
 call LANG_A('DMG1',0,1,"Hikiwatasu/Torinozoku, [|cffffcc00Level 2|r] (|cffffcc00G|r)")
 call LANG_A('DMG1',0,2,"Hikiwatasu/Torinozoku, [|cffffcc00Level 3|r] (|cffffcc00G|r)")
 call LANG_A('DMG1',0,3,"Hikiwatasu/Torinozoku, [|cffffcc00Level 4|r] (|cffffcc00G|r)")
 call LANG_A('DMG1',0,4,"Hikiwatasu/Torinozoku, [|cffffcc00Level 5|r] (|cffffcc00G|r)")
-call LANG_A('DMG1',1,0,"Dead Master lifts and holds the target: an ally restores HP/MP at the cost of energy, an enemy is drained of 15% over 1.5 sec.|nCan be cast on herself.|n|cFF00A5FF|nRange: 300|nCast time: 0.25|nCooldown: 50 sec. |r|n")
-call LANG_A('DMG1',1,1,"Dead Master lifts and holds the target: an ally restores HP/MP at the cost of energy, an enemy is drained of 15% over 1.5 sec.|nCan be cast on herself.|n|cFF00A5FF|nRange: 300|nCast time: 0.25|nCooldown: 45 sec. |r|n")
-call LANG_A('DMG1',1,2,"Dead Master lifts and holds the target: an ally restores HP/MP at the cost of energy, an enemy is drained of 15% over 1.5 sec.|nCan be cast on herself.|n|cFF00A5FF|nRange: 300|nCast time: 0.25|nCooldown: 40 sec. |r|n")
-call LANG_A('DMG1',1,3,"Dead Master lifts and holds the target: an ally restores HP/MP at the cost of energy, an enemy is drained of 15% over 1.5 sec.|nCan be cast on herself.|n|cFF00A5FF|nRange: 300|nCast time: 0.25|nCooldown: 35 sec. |r|n")
-call LANG_A('DMG1',1,4,"Dead Master lifts and holds the target: an ally restores HP/MP at the cost of energy, an enemy is drained of 15% over 1.5 sec.|nCan be cast on herself.|n|cFF00A5FF|nRange: 300|nCast time: 0.25|nCooldown: 30 sec. |r|n")
+call LANG_A('DMG1',1,0,"Lifts and holds the target for 1.5 sec.: drains 15% HP/MP from an enemy, heals an ally (or herself) at the cost of energy.|n|n|cFF00A5FF|nRange: 300|nCooldown: 50 sec.|r")
+call LANG_A('DMG1',1,1,"Lifts and holds the target for 1.5 sec.: drains 15% HP/MP from an enemy, heals an ally (or herself) at the cost of energy.|n|n|cFF00A5FF|nRange: 300|nCooldown: 45 sec.|r")
+call LANG_A('DMG1',1,2,"Lifts and holds the target for 1.5 sec.: drains 15% HP/MP from an enemy, heals an ally (or herself) at the cost of energy.|n|n|cFF00A5FF|nRange: 300|nCooldown: 40 sec.|r")
+call LANG_A('DMG1',1,3,"Lifts and holds the target for 1.5 sec.: drains 15% HP/MP from an enemy, heals an ally (or herself) at the cost of energy.|n|n|cFF00A5FF|nRange: 300|nCooldown: 35 sec.|r")
+call LANG_A('DMG1',1,4,"Lifts and holds the target for 1.5 sec.: drains 15% HP/MP from an enemy, heals an ally (or herself) at the cost of energy.|n|n|cFF00A5FF|nRange: 300|nCooldown: 30 sec.|r")
 call LANG_A('DMQ1',0,0,"Soratobu zugaikotsu 1, [|cffffcc00Level 1|r] (|cffffcc00Q|r)")
 call LANG_A('DMQ1',0,1,"Soratobu zugaikotsu 1, [|cffffcc00Level 2|r] (|cffffcc00Q|r)")
 call LANG_A('DMQ1',0,2,"Soratobu zugaikotsu 1, [|cffffcc00Level 3|r] (|cffffcc00Q|r)")
 call LANG_A('DMQ1',0,3,"Soratobu zugaikotsu 1, [|cffffcc00Level 4|r] (|cffffcc00Q|r)")
 call LANG_A('DMQ1',0,4,"Soratobu zugaikotsu 1, [|cffffcc00Level 5|r] (|cffffcc00Q|r)")
-call LANG_A('DMQ1',1,0,"Passive:|nDead Master has 2 skulls (the first from level 1, the second from level 4 of Q) that are spent by Q and F and refill in 9 sec. each.|nEach active skull reduces incoming damage by 10%.|n|nActive:|nDead Master throws a skull that drags enemies along and pulls them into the area.|cFF00A5FF|nD"+"amage: 2*|r|c0077FFFFINT|r|cFF00A5FF instantly|nDamage: 0.1*|r|c0077FFFFINT|r|cFF00A5FF every 0.2 sec., 10 times|nAoE: 400|nRange: 1200|nDuration: 2 sec.|nCast time: 0.1|nCooldown: 19|r|n")
-call LANG_A('DMQ1',1,1,"Passive:|nDead Master has 2 skulls (the first from level 1, the second from level 4 of Q) that are spent by Q and F and refill in 8 sec. each.|nEach active skull reduces incoming damage by 10%.|n|nActive:|nDead Master throws a skull that drags enemies along and pulls them into the area.|cFF00A5FF|nD"+"amage: 2*|r|c0077FFFFINT|r|cFF00A5FF instantly|nDamage: 0.1*|r|c0077FFFFINT|r|cFF00A5FF every 0.2 sec., 10 times|nAoE: 400|nRange: 1400|nDuration: 2 sec.|nCast time: 0.1|nCooldown: 18|r|n")
-call LANG_A('DMQ1',1,2,"Passive:|nDead Master has 2 skulls (the first from level 1, the second from level 4 of Q) that are spent by Q and F and refill in 7 sec. each.|nEach active skull reduces incoming damage by 10%.|n|nActive:|nDead Master throws a skull that drags enemies along and pulls them into the area.|cFF00A5FF|nD"+"amage: 2*|r|c0077FFFFINT|r|cFF00A5FF instantly|nDamage: 0.1*|r|c0077FFFFINT|r|cFF00A5FF every 0.2 sec., 10 times|nAoE: 400|nRange: 1600|nDuration: 2 sec.|nCast time: 0.1|nCooldown: 17|r|n")
-call LANG_A('DMQ1',1,3,"Passive:|nDead Master has 2 skulls (the first from level 1, the second from level 4 of Q) that are spent by Q and F and refill in 6 sec. each.|nEach active skull reduces incoming damage by 10%.|n|nActive:|nDead Master throws a skull that drags enemies along and pulls them into the area.|cFF00A5FF|nD"+"amage: 2*|r|c0077FFFFINT|r|cFF00A5FF instantly|nDamage: 0.1*|r|c0077FFFFINT|r|cFF00A5FF every 0.2 sec., 10 times|nAoE: 400|nRange: 1800|nDuration: 2 sec.|nCast time: 0.1|nCooldown: 16|r|n")
-call LANG_A('DMQ1',1,4,"Passive:|nDead Master has 2 skulls (the first from level 1, the second from level 4 of Q) that are spent by Q and F and refill in 5 sec. each.|nEach active skull reduces incoming damage by 10%.|n|nActive:|nDead Master throws a skull that drags enemies along and pulls them into the area.|cFF00A5FF|nD"+"amage: 2*|r|c0077FFFFINT|r|cFF00A5FF instantly|nDamage: 0.1*|r|c0077FFFFINT|r|cFF00A5FF every 0.2 sec., 10 times|nAoE: 400|nRange: 2000|nDuration: 2 sec.|nCast time: 0.1|nCooldown: 15|r|n")
+call LANG_A('DMQ1',1,0,"Throws a skull that drags enemies along and pulls them into the area. She has two skulls (the second from level 4), spent by Q and F; each skull she holds reduces incoming damage by 10%.|n|n|cFF00A5FF|nDamage: 2*|r|c0077FFFFINT|r|cFF00A5FF instantly + 0.1*|r|c0077FFFFINT|r|cFF00A5FF every 0.2 sec. ("+"2 sec.)|nAoE: 400|nRange: 1200|nSkull restores in: 9 sec.|nCooldown: 19 sec.|r")
+call LANG_A('DMQ1',1,1,"Throws a skull that drags enemies along and pulls them into the area. She has two skulls (the second from level 4), spent by Q and F; each skull she holds reduces incoming damage by 10%.|n|n|cFF00A5FF|nDamage: 2*|r|c0077FFFFINT|r|cFF00A5FF instantly + 0.1*|r|c0077FFFFINT|r|cFF00A5FF every 0.2 sec. ("+"2 sec.)|nAoE: 400|nRange: 1400|nSkull restores in: 8 sec.|nCooldown: 18 sec.|r")
+call LANG_A('DMQ1',1,2,"Throws a skull that drags enemies along and pulls them into the area. She has two skulls (the second from level 4), spent by Q and F; each skull she holds reduces incoming damage by 10%.|n|n|cFF00A5FF|nDamage: 2*|r|c0077FFFFINT|r|cFF00A5FF instantly + 0.1*|r|c0077FFFFINT|r|cFF00A5FF every 0.2 sec. ("+"2 sec.)|nAoE: 400|nRange: 1600|nSkull restores in: 7 sec.|nCooldown: 17 sec.|r")
+call LANG_A('DMQ1',1,3,"Throws a skull that drags enemies along and pulls them into the area. She has two skulls (the second from level 4), spent by Q and F; each skull she holds reduces incoming damage by 10%.|n|n|cFF00A5FF|nDamage: 2*|r|c0077FFFFINT|r|cFF00A5FF instantly + 0.1*|r|c0077FFFFINT|r|cFF00A5FF every 0.2 sec. ("+"2 sec.)|nAoE: 400|nRange: 1800|nSkull restores in: 6 sec.|nCooldown: 16 sec.|r")
+call LANG_A('DMQ1',1,4,"Throws a skull that drags enemies along and pulls them into the area. She has two skulls (the second from level 4), spent by Q and F; each skull she holds reduces incoming damage by 10%.|n|n|cFF00A5FF|nDamage: 2*|r|c0077FFFFINT|r|cFF00A5FF instantly + 0.1*|r|c0077FFFFINT|r|cFF00A5FF every 0.2 sec. ("+"2 sec.)|nAoE: 400|nRange: 2000|nSkull restores in: 5 sec.|nCooldown: 15 sec.|r")
 call LANG_A('DMQ1',2,0,"Soratobu zugaikotsu 1, [|cffffcc00Level %d|r] (|cffffcc00Q|r)")
-call LANG_A('DMQ1',3,0,"Passive:|nDead Master has 2 skulls (the first from level 1, the second from level 4 of Q) that are spent by Q and F and refill in 9/8/7/6/5 sec. each.|nEach active skull reduces incoming damage by 10%.|n|nActive:|nDead Master throws a skull that drags enemies along and pulls them into the area.|cFF0"+"0A5FF|nDamage: 2*|r|c0077FFFFINT|r|cFF00A5FF instantly|nDamage: 0.1*|r|c0077FFFFINT|r|cFF00A5FF every 0.2 sec., 10 times|nAoE: 400|nRange: 1200/1400/1600/1800/2000|nDuration: 2 sec.|nCast time: 0.1|nCooldown: 19/18/17/16/15|r|n")
+call LANG_A('DMQ1',3,0,"Throws a skull that drags enemies along and pulls them into the area. She has two skulls (the second from level 4), spent by Q and F; each skull she holds reduces incoming damage by 10%.|n|n|cFF00A5FF|nDamage: 2*|r|c0077FFFFINT|r|cFF00A5FF instantly + 0.1*|r|c0077FFFFINT|r|cFF00A5FF every 0.2 sec. ("+"2 sec.)|nAoE: 400|nRange: 1200\\1400\\1600\\1800\\2000|nSkull restores in: 9\\8\\7\\6\\5 sec.|nCooldown: 19\\18\\17\\16\\15 sec.|r")
 call LANG_A('DMQ2',0,0,"Soratobu zugaikotsu 2, [|cffffcc00Level 1|r] (|cffffcc00Q|r)")
 call LANG_A('DMQ2',0,1,"Soratobu zugaikotsu 2, [|cffffcc00Level 2|r] (|cffffcc00Q|r)")
 call LANG_A('DMQ2',0,2,"Soratobu zugaikotsu 2, [|cffffcc00Level 3|r] (|cffffcc00Q|r)")
 call LANG_A('DMQ2',0,3,"Soratobu zugaikotsu 2, [|cffffcc00Level 4|r] (|cffffcc00Q|r)")
 call LANG_A('DMQ2',0,4,"Soratobu zugaikotsu 2, [|cffffcc00Level 5|r] (|cffffcc00Q|r)")
-call LANG_A('DMQ2',1,0,"Passive:|nDead Master has 2 skulls (the first from level 1, the second from level 4 of Q) that are spent by Q and F and refill in 9 sec. each.|nEach active skull reduces incoming damage by 10%.|n|nActive:|nDead Master throws a skull that drags enemies along and pulls them into the area.|cFF00A5FF|nD"+"amage: 2*|r|c0077FFFFINT|r|cFF00A5FF instantly|nDamage: 0.1*|r|c0077FFFFINT|r|cFF00A5FF every 0.2 sec., 10 times|nAoE: 400|nRange: 1200|nDuration: 2 sec.|nCast time: 0.1|nCooldown: 19|r|n")
-call LANG_A('DMQ2',1,1,"Passive:|nDead Master has 2 skulls (the first from level 1, the second from level 4 of Q) that are spent by Q and F and refill in 8 sec. each.|nEach active skull reduces incoming damage by 10%.|n|nActive:|nDead Master throws a skull that drags enemies along and pulls them into the area.|cFF00A5FF|nD"+"amage: 2*|r|c0077FFFFINT|r|cFF00A5FF instantly|nDamage: 0.1*|r|c0077FFFFINT|r|cFF00A5FF every 0.2 sec., 10 times|nAoE: 400|nRange: 1400|nDuration: 2 sec.|nCast time: 0.1|nCooldown: 18|r|n")
-call LANG_A('DMQ2',1,2,"Passive:|nDead Master has 2 skulls (the first from level 1, the second from level 4 of Q) that are spent by Q and F and refill in 7 sec. each.|nEach active skull reduces incoming damage by 10%.|n|nActive:|nDead Master throws a skull that drags enemies along and pulls them into the area.|cFF00A5FF|nD"+"amage: 2*|r|c0077FFFFINT|r|cFF00A5FF instantly|nDamage: 0.1*|r|c0077FFFFINT|r|cFF00A5FF every 0.2 sec., 10 times|nAoE: 400|nRange: 1600|nDuration: 2 sec.|nCast time: 0.1|nCooldown: 17|r|n")
-call LANG_A('DMQ2',1,3,"Passive:|nDead Master has 2 skulls (the first from level 1, the second from level 4 of Q) that are spent by Q and F and refill in 6 sec. each.|nEach active skull reduces incoming damage by 10%.|n|nActive:|nDead Master throws a skull that drags enemies along and pulls them into the area.|cFF00A5FF|nD"+"amage: 2*|r|c0077FFFFINT|r|cFF00A5FF instantly|nDamage: 0.1*|r|c0077FFFFINT|r|cFF00A5FF every 0.2 sec., 10 times|nAoE: 400|nRange: 1800|nDuration: 2 sec.|nCast time: 0.1|nCooldown: 16|r|n")
-call LANG_A('DMQ2',1,4,"Passive:|nDead Master has 2 skulls (the first from level 1, the second from level 4 of Q) that are spent by Q and F and refill in 5 sec. each.|nEach active skull reduces incoming damage by 10%.|n|nActive:|nDead Master throws a skull that drags enemies along and pulls them into the area.|cFF00A5FF|nD"+"amage: 2*|r|c0077FFFFINT|r|cFF00A5FF instantly|nDamage: 0.1*|r|c0077FFFFINT|r|cFF00A5FF every 0.2 sec., 10 times|nAoE: 400|nRange: 2000|nDuration: 2 sec.|nCast time: 0.1|nCooldown: 15|r|n")
+call LANG_A('DMQ2',1,0,"Second skull: the same throw as Q. She has two skulls (the second from level 4), spent by Q and F; each skull she holds reduces incoming damage by 10%.|n|n|cFF00A5FF|nDamage: 2*|r|c0077FFFFINT|r|cFF00A5FF instantly + 0.1*|r|c0077FFFFINT|r|cFF00A5FF every 0.2 sec. (2 sec.)|nAoE: 400|nRange: 1200|nSku"+"ll restores in: 9 sec.|nCooldown: 19 sec.|r")
+call LANG_A('DMQ2',1,1,"Second skull: the same throw as Q. She has two skulls (the second from level 4), spent by Q and F; each skull she holds reduces incoming damage by 10%.|n|n|cFF00A5FF|nDamage: 2*|r|c0077FFFFINT|r|cFF00A5FF instantly + 0.1*|r|c0077FFFFINT|r|cFF00A5FF every 0.2 sec. (2 sec.)|nAoE: 400|nRange: 1400|nSku"+"ll restores in: 8 sec.|nCooldown: 18 sec.|r")
+call LANG_A('DMQ2',1,2,"Second skull: the same throw as Q. She has two skulls (the second from level 4), spent by Q and F; each skull she holds reduces incoming damage by 10%.|n|n|cFF00A5FF|nDamage: 2*|r|c0077FFFFINT|r|cFF00A5FF instantly + 0.1*|r|c0077FFFFINT|r|cFF00A5FF every 0.2 sec. (2 sec.)|nAoE: 400|nRange: 1600|nSku"+"ll restores in: 7 sec.|nCooldown: 17 sec.|r")
+call LANG_A('DMQ2',1,3,"Second skull: the same throw as Q. She has two skulls (the second from level 4), spent by Q and F; each skull she holds reduces incoming damage by 10%.|n|n|cFF00A5FF|nDamage: 2*|r|c0077FFFFINT|r|cFF00A5FF instantly + 0.1*|r|c0077FFFFINT|r|cFF00A5FF every 0.2 sec. (2 sec.)|nAoE: 400|nRange: 1800|nSku"+"ll restores in: 6 sec.|nCooldown: 16 sec.|r")
+call LANG_A('DMQ2',1,4,"Second skull: the same throw as Q. She has two skulls (the second from level 4), spent by Q and F; each skull she holds reduces incoming damage by 10%.|n|n|cFF00A5FF|nDamage: 2*|r|c0077FFFFINT|r|cFF00A5FF instantly + 0.1*|r|c0077FFFFINT|r|cFF00A5FF every 0.2 sec. (2 sec.)|nAoE: 400|nRange: 2000|nSku"+"ll restores in: 5 sec.|nCooldown: 15 sec.|r")
 call LANG_A('DMQ2',2,0,"Soratobu zugaikotsu 2, [|cffffcc00Level %d|r] (|cffffcc00Q|r)")
-call LANG_A('DMQ2',3,0,"Passive:|nDead Master has 2 skulls (the first from level 1, the second from level 4 of Q) that are spent by Q and F and refill in 9/8/7/6/5 sec. each.|nEach active skull reduces incoming damage by 10%.|n|nActive:|nDead Master throws a skull that drags enemies along and pulls them into the area.|cFF0"+"0A5FF|nDamage: 2*|r|c0077FFFFINT|r|cFF00A5FF instantly|nDamage: 0.1*|r|c0077FFFFINT|r|cFF00A5FF every 0.2 sec., 10 times|nAoE: 400|nRange: 1200/1400/1600/1800/2000|nDuration: 2 sec.|nCast time: 0.1|nCooldown: 19/18/17/16/15|r|n")
+call LANG_A('DMQ2',3,0,"Second skull: the same throw as Q. She has two skulls (the second from level 4), spent by Q and F; each skull she holds reduces incoming damage by 10%.|n|n|cFF00A5FF|nDamage: 2*|r|c0077FFFFINT|r|cFF00A5FF instantly + 0.1*|r|c0077FFFFINT|r|cFF00A5FF every 0.2 sec. (2 sec.)|nAoE: 400|nRange: 1200\\140"+"0\\1600\\1800\\2000|nSkull restores in: 9\\8\\7\\6\\5 sec.|nCooldown: 19\\18\\17\\16\\15 sec.|r")
 call LANG_A('DMR1',0,0,"Kyojin no senshi, [|cffffcc00Level 1|r] (|cffffcc00R|r)")
 call LANG_A('DMR1',0,1,"Kyojin no senshi, [|cffffcc00Level 2|r] (|cffffcc00R|r)")
 call LANG_A('DMR1',0,2,"Kyojin no senshi, [|cffffcc00Level 3|r] (|cffffcc00R|r)")
 call LANG_A('DMR1',0,3,"Kyojin no senshi, [|cffffcc00Level 4|r] (|cffffcc00R|r)")
 call LANG_A('DMR1',0,4,"Kyojin no senshi, [|cffffcc00Level 5|r] (|cffffcc00R|r)")
-call LANG_A('DMR1',1,0,"Passive:|nIf a Q skull was in the area before the strike, deals an additional 2*|r|c0077FFFFINT|r damage.|n|nActive:|nDead Master summons a monster that strikes the area and stuns those hit.|n|cFF00A5FF|nDamage: 3*|r|c0077FFFFINT|r|cFF00A5FF|nStun: 2 sec.|nAoE: 600|nRange: 1500|nCast time: 0.15|nCoo"+"ldown: 30 sec.|r|n")
-call LANG_A('DMR1',1,1,"Passive:|nIf a Q skull was in the area before the strike, deals an additional 2*|r|c0077FFFFINT|r damage.|n|nActive:|nDead Master summons a monster that strikes the area and stuns those hit.|n|cFF00A5FF|nDamage: 4*|r|c0077FFFFINT|r|cFF00A5FF|nStun: 2 sec.|nAoE: 600|nRange: 1500|nCast time: 0.15|nCoo"+"ldown: 30 sec.|r|n")
-call LANG_A('DMR1',1,2,"Passive:|nIf a Q skull was in the area before the strike, deals an additional 2*|r|c0077FFFFINT|r damage.|n|nActive:|nDead Master summons a monster that strikes the area and stuns those hit.|n|cFF00A5FF|nDamage: 5*|r|c0077FFFFINT|r|cFF00A5FF|nStun: 2 sec.|nAoE: 600|nRange: 1500|nCast time: 0.15|nCoo"+"ldown: 30 sec.|r|n")
-call LANG_A('DMR1',1,3,"Passive:|nIf a Q skull was in the area before the strike, deals an additional 2*|r|c0077FFFFINT|r damage.|n|nActive:|nDead Master summons a monster that strikes the area and stuns those hit.|n|cFF00A5FF|nDamage: 6*|r|c0077FFFFINT|r|cFF00A5FF|nStun: 2 sec.|nAoE: 600|nRange: 1500|nCast time: 0.15|nCoo"+"ldown: 30 sec.|r|n")
-call LANG_A('DMR1',1,4,"Passive:|nIf a Q skull was in the area before the strike, deals an additional 2*|r|c0077FFFFINT|r damage.|n|nActive:|nDead Master summons a monster that strikes the area and stuns those hit.|n|cFF00A5FF|nDamage: 7*|r|c0077FFFFINT|r|cFF00A5FF|nStun: 2 sec.|nAoE: 600|nRange: 1500|nCast time: 0.15|nCoo"+"ldown: 30 sec.|r|n")
+call LANG_A('DMR1',1,0,"A summoned monster strikes the area and stuns. If a Q skull was in the area — another 2*|c0077FFFFINT|r.|n|n|cFF00A5FF|nDamage: 3*|r|c0077FFFFINT|r|cFF00A5FF (+2*|r|c0077FFFFINT|r|cFF00A5FF with a skull)|nStun: 2 sec.|nAoE: 600|nRange: 1500|nCooldown: 30 sec.|r")
+call LANG_A('DMR1',1,1,"A summoned monster strikes the area and stuns. If a Q skull was in the area — another 2*|c0077FFFFINT|r.|n|n|cFF00A5FF|nDamage: 4*|r|c0077FFFFINT|r|cFF00A5FF (+2*|r|c0077FFFFINT|r|cFF00A5FF with a skull)|nStun: 2 sec.|nAoE: 600|nRange: 1500|nCooldown: 30 sec.|r")
+call LANG_A('DMR1',1,2,"A summoned monster strikes the area and stuns. If a Q skull was in the area — another 2*|c0077FFFFINT|r.|n|n|cFF00A5FF|nDamage: 5*|r|c0077FFFFINT|r|cFF00A5FF (+2*|r|c0077FFFFINT|r|cFF00A5FF with a skull)|nStun: 2 sec.|nAoE: 600|nRange: 1500|nCooldown: 30 sec.|r")
+call LANG_A('DMR1',1,3,"A summoned monster strikes the area and stuns. If a Q skull was in the area — another 2*|c0077FFFFINT|r.|n|n|cFF00A5FF|nDamage: 6*|r|c0077FFFFINT|r|cFF00A5FF (+2*|r|c0077FFFFINT|r|cFF00A5FF with a skull)|nStun: 2 sec.|nAoE: 600|nRange: 1500|nCooldown: 30 sec.|r")
+call LANG_A('DMR1',1,4,"A summoned monster strikes the area and stuns. If a Q skull was in the area — another 2*|c0077FFFFINT|r.|n|n|cFF00A5FF|nDamage: 7*|r|c0077FFFFINT|r|cFF00A5FF (+2*|r|c0077FFFFINT|r|cFF00A5FF with a skull)|nStun: 2 sec.|nAoE: 600|nRange: 1500|nCooldown: 30 sec.|r")
 call LANG_A('DMR1',2,0,"Kyojin no senshi, [|cffffcc00Level %d|r] (|cffffcc00R|r)")
-call LANG_A('DMR1',3,0,"Passive:|nIf a Q skull was in the area before the strike, deals an additional 2*|r|c0077FFFFINT|r damage.|n|nActive:|nDead Master summons a monster that strikes the area and stuns those hit.|n|cFF00A5FF|nDamage: 3\\4\\5\\6\\7*|r|c0077FFFFINT|r|cFF00A5FF|nStun: 2 sec.|nAoE: 600|nRange: 1500|nCast tim"+"e: 0.15|nCooldown: 30 sec.|r|n")
+call LANG_A('DMR1',3,0,"A summoned monster strikes the area and stuns. If a Q skull was in the area — another 2*|c0077FFFFINT|r.|n|n|cFF00A5FF|nDamage: 3\\4\\5\\6\\7*|r|c0077FFFFINT|r|cFF00A5FF (+2*|r|c0077FFFFINT|r|cFF00A5FF with a skull)|nStun: 2 sec.|nAoE: 600|nRange: 1500|nCooldown: 30 sec.|r")
 call LANG_A('DMT1',0,0,"Kojin tekina sekai, [|cffffcc00Level 1|r] (|cffffcc00T|r)")
-call LANG_A('DMT1',1,0,"After 1 sec. Dead Master creates a zone in which she empowers herself and weakens enemies;|neveryone except her can only leave or enter it at a slow movement speed.|n|cFF00A5FF|nEmpowerment (inside the zone):|nHP/MP regen: +30% efficiency|nMagical Damage: +30%|nAS: +100%|nMS: +1000%|n|nWeakening: -3"+"0% HP/MP regen efficiency|n|nAoE: 1500|nCast time: 0.25|nDuration: 20 sec.|nCooldown: 60 sec. |r|n")
+call LANG_A('DMT1',1,0,"After 1 sec. — her own world: inside the zone Dead Master is stronger and enemies weaker; everyone except her enters and leaves the zone slowly.|n|n|cFF00A5FF|nHer in the zone: +100% AS, +1000% MS, +30% magic damage, +30% HP/MP restoration|nEnemies: −30% HP/MP restoration|nAoE: 1500|nDuration: 1"+"0 sec.|nCooldown: 60 sec.|r")
 call LANG_A('DMT1',2,0,"Kojin tekina sekai, [|cffffcc00Level 1|r] (|cffffcc00T|r)")
-call LANG_A('DMT1',3,0,"After 1 sec. Dead Master creates a zone in which she empowers herself and weakens enemies;|neveryone except her can only leave or enter it at a slow movement speed.|n|cFF00A5FF|nEmpowerment (inside the zone):|nHP/MP regen: +30% efficiency|nMagical Damage: +30%|nAS: +100%|nMS: +1000%|n|nWeakening: -3"+"0% HP/MP regen efficiency|n|nAoE: 1500|nCast time: 0.25|nDuration: 20 sec.|nCooldown: 60 sec. |r|n")
+call LANG_A('DMT1',3,0,"After 1 sec. — her own world: inside the zone Dead Master is stronger and enemies weaker; everyone except her enters and leaves the zone slowly.|n|n|cFF00A5FF|nHer in the zone: +100% AS, +1000% MS, +30% magic damage, +30% HP/MP restoration|nEnemies: −30% HP/MP restoration|nAoE: 1500|nDuration: 1"+"0 sec.|nCooldown: 60 sec.|r")
 call LANG_A('DMW1',0,0,"Desusaizu, [|cffffcc00Level 1|r] (|cffffcc00W|r)")
 call LANG_A('DMW1',0,1,"Desusaizu, [|cffffcc00Level 2|r] (|cffffcc00W|r)")
 call LANG_A('DMW1',0,2,"Desusaizu, [|cffffcc00Level 3|r] (|cffffcc00W|r)")
 call LANG_A('DMW1',0,3,"Desusaizu, [|cffffcc00Level 4|r] (|cffffcc00W|r)")
 call LANG_A('DMW1',0,4,"Desusaizu, [|cffffcc00Level 5|r] (|cffffcc00W|r)")
-call LANG_A('DMW1',1,0,"Dead Master dashes into the area, dealing damage and stunning enemies.|cFF00A5FF|nDamage: 2*|r|c0077FFFFINT|r|cFF00A5FF|nStun: 2 sec.|nAoE: 400|nRange: 1100|nCast time: 0.2|nCooldown: 20 sec.|r|n")
-call LANG_A('DMW1',1,1,"Dead Master dashes into the area, dealing damage and stunning enemies.|cFF00A5FF|nDamage: 3*|r|c0077FFFFINT|r|cFF00A5FF|nStun: 2 sec.|nAoE: 400|nRange: 1200|nCast time: 0.2|nCooldown: 20 sec.|r|n")
-call LANG_A('DMW1',1,2,"Dead Master dashes into the area, dealing damage and stunning enemies.|cFF00A5FF|nDamage: 4*|r|c0077FFFFINT|r|cFF00A5FF|nStun: 2 sec.|nAoE: 400|nRange: 1300|nCast time: 0.2|nCooldown: 20 sec.|r|n")
-call LANG_A('DMW1',1,3,"Dead Master dashes into the area, dealing damage and stunning enemies.|cFF00A5FF|nDamage: 5*|r|c0077FFFFINT|r|cFF00A5FF|nStun: 2 sec.|nAoE: 400|nRange: 1400|nCast time: 0.2|nCooldown: 20 sec.|r|n")
-call LANG_A('DMW1',1,4,"Dead Master dashes into the area, dealing damage and stunning enemies.|cFF00A5FF|nDamage: 6*|r|c0077FFFFINT|r|cFF00A5FF|nStun: 2 sec.|nAoE: 400|nRange: 1500|nCast time: 0.2|nCooldown: 20 sec.|r|n")
+call LANG_A('DMW1',1,0,"Dashes to the point: damages and stuns all enemies in the area.|n|n|cFF00A5FF|nDamage: 2*|r|c0077FFFFINT|r|cFF00A5FF|nStun: 2 sec.|nAoE: 400|nRange: 1100|nCooldown: 20 sec.|r")
+call LANG_A('DMW1',1,1,"Dashes to the point: damages and stuns all enemies in the area.|n|n|cFF00A5FF|nDamage: 3*|r|c0077FFFFINT|r|cFF00A5FF|nStun: 2 sec.|nAoE: 400|nRange: 1200|nCooldown: 20 sec.|r")
+call LANG_A('DMW1',1,2,"Dashes to the point: damages and stuns all enemies in the area.|n|n|cFF00A5FF|nDamage: 4*|r|c0077FFFFINT|r|cFF00A5FF|nStun: 2 sec.|nAoE: 400|nRange: 1300|nCooldown: 20 sec.|r")
+call LANG_A('DMW1',1,3,"Dashes to the point: damages and stuns all enemies in the area.|n|n|cFF00A5FF|nDamage: 5*|r|c0077FFFFINT|r|cFF00A5FF|nStun: 2 sec.|nAoE: 400|nRange: 1400|nCooldown: 20 sec.|r")
+call LANG_A('DMW1',1,4,"Dashes to the point: damages and stuns all enemies in the area.|n|n|cFF00A5FF|nDamage: 6*|r|c0077FFFFINT|r|cFF00A5FF|nStun: 2 sec.|nAoE: 400|nRange: 1500|nCooldown: 20 sec.|r")
 call LANG_A('DMW1',2,0,"Desusaizu, [|cffffcc00Level %d|r] (|cffffcc00W|r)")
-call LANG_A('DMW1',3,0,"Dead Master dashes into the area, dealing damage and stunning enemies.|cFF00A5FF|nDamage: 2/3/4/5/6*|r|c0077FFFFINT|r|cFF00A5FF|nStun: 2 sec.|nAoE: 400|nRange: 1100/1200/1300/1400/1500|nCast time: 0.2|nCooldown: 20 sec.|r|n")
+call LANG_A('DMW1',3,0,"Dashes to the point: damages and stuns all enemies in the area.|n|n|cFF00A5FF|nDamage: 2\\3\\4\\5\\6*|r|c0077FFFFINT|r|cFF00A5FF|nStun: 2 sec.|nAoE: 400|nRange: 1100\\1200\\1300\\1400\\1500|nCooldown: 20 sec.|r")
 call LANG_It('I000',0,"Gauntlets of Power")
 call LANG_It('I000',1,"Gauntlets of Power")
 call LANG_It('I001',1,"Crown of Nobility")
@@ -299327,12 +299725,12 @@ call LANG_It('IAZI',2,"Increases |c0077FFFFINT|r by 35 + 5%, HP by 500, and DEF 
 call LANG_It('IAZI',3,"Increases |c0077FFFFINT|r by 35 + 5%, HP by 500, and DEF by 3. Cannot be stolen. Can be sold for full value.|nPassive (disabled): Changes all outgoing magical damage to physical, but increases magical damage taken by 5%.|nActive: Double press - changes the |c0077FFFFINT|r bonus to |c00FF5555STR|r, r"+"eplacing the bonus HP with 50% MP regeneration.|nSingle press - enables Passive.")
 call LANG_It('IBBi',0,"Key of Bab-ilu")
 call LANG_It('IBBi',1,"Key of Bab-ilu")
-call LANG_It('IBBi',2,"Increase HP regeneration by 10 and mana regeneration by 75%, DEF + 4, attack by 40, AS by 50%.|n|n• [|c008000FFPaphos Dosage|r] - each infliction of damage over 30 deals an additional 30 (Chaos Damage/Blockable). Does not work with the Onizuka Set. Cooldown: 1 second.|n• [|cFFFFCC00Treasury|r] -"+" gold for kills +20%, gold for the end of the round +10%.|n• [|cFFFF4040Execution|r] - the owner's damage finishes off an enemy hero left with less than 3% HP. Does not work on targets with a shield.")
-call LANG_It('IBBi',3,"Increase HP regeneration by 10 and mana regeneration by 75%, DEF + 4, attack by 40, AS by 50%.|n|n• [|c008000FFPaphos Dosage|r] - each infliction of damage over 30 deals an additional 30 (Chaos Damage/Blockable). Does not work with the Onizuka Set. Cooldown: 1 second.|n• [|cFFFFCC00Treasury|r] -"+" gold for kills +20%, gold for the end of the round +10%.|n• [|cFFFF4040Execution|r] - the owner's damage finishes off an enemy hero left with less than 3% HP. Does not work on targets with a shield.")
+call LANG_It('IBBi',2,"Increase HP by 450, DEF by 5, Attack by 40, AS by 50%.|n|nPassive Ability: \"Paphos Dosage\" - damage over 30 deals an additional 30 (chaos, blockable). Does not work with the Onizuka Set. CDR: 1 sec.|n|nPassive Ability: \"Treasury\" - gold for kills +20%, for the end of the round +10%.|n|nPassive A"+"bility: \"Execution\" - the owner's damage finishes off an enemy hero left with less than 3% HP. Does not work on targets with a shield.")
+call LANG_It('IBBi',3,"Increase HP by 450, DEF by 5, Attack by 40, AS by 50%.|n|nPassive Ability: \"Paphos Dosage\" - damage over 30 deals an additional 30 (chaos, blockable). Does not work with the Onizuka Set. CDR: 1 sec.|n|nPassive Ability: \"Treasury\" - gold for kills +20%, for the end of the round +10%.|n|nPassive A"+"bility: \"Execution\" - the owner's damage finishes off an enemy hero left with less than 3% HP. Does not work on targets with a shield.")
 call LANG_It('IBBr',0,"Key of Bab-ilu (Recipe)")
 call LANG_It('IBBr',1,"Key of Bab-ilu (Recipe)")
-call LANG_It('IBBr',2,"Increase HP regeneration by 10 and mana regeneration by 75%, DEF + 4, attack by 40, AS by 50%.|n|n• [|c008000FFPaphos Dosage|r] - each infliction of damage over 30 deals an additional 30 (Chaos Damage/Blockable). Does not work with the Onizuka Set. Cooldown: 1 second.|n• [|cFFFFCC00Treasury|r] -"+" gold for kills +20%, gold for the end of the round +10%.|n• [|cFFFF4040Execution|r] - the owner's damage finishes off an enemy hero left with less than 3% HP. Does not work on targets with a shield.|n |nBuild: Madao's Hat(1100) + Hair Mousse(1400) + Rec(100)")
-call LANG_It('IBBr',3,"Increase HP regeneration by 10 and mana regeneration by 75%, DEF + 4, attack by 40, AS by 50%.|n|n• [|c008000FFPaphos Dosage|r] - each infliction of damage over 30 deals an additional 30 (Chaos Damage/Blockable). Does not work with the Onizuka Set. Cooldown: 1 second.|n• [|cFFFFCC00Treasury|r] -"+" gold for kills +20%, gold for the end of the round +10%.|n• [|cFFFF4040Execution|r] - the owner's damage finishes off an enemy hero left with less than 3% HP. Does not work on targets with a shield.|n |nBuild: Madao's Hat(1100) + Hair Mousse(1400) + Rec(100)")
+call LANG_It('IBBr',2,"Increase HP by 450, DEF by 5, Attack by 40, AS by 50%.|n|nPassive Ability: \"Paphos Dosage\", \"Treasury\", \"Execution\"|n|nRequires: Madao's Glasses, Hair Mousse, Recipe.")
+call LANG_It('IBBr',3,"Increase HP by 450, DEF by 5, Attack by 40, AS by 50%.|n|nPassive Ability: \"Paphos Dosage\", \"Treasury\", \"Execution\"|n|nRequires: Madao's Glasses, Hair Mousse, Recipe.")
 call LANG_U('hfoo',0,"Chunin")
 call LANG_U('hsor',0,"Anbu healer")
 call LANG_U('hwtw',0,"Anbu")
@@ -300010,6 +300408,8 @@ call InitTrig_SignumChoice()
 call InitTrig_Quests()
 call ExecuteFunc("SND_ArrInit") // звуки массивом soundStr — до любых способностей
 call InitTrig_VoicePreload()
+call PickVoiceTestInit()
+call TavSwapInit()
 call InitTrig_Init()
 call InitTrig_Init2()
 call InitTrig_Table()
@@ -300463,7 +300863,7 @@ call InitGlobals()
 call InitCustomTriggers()
 call RoundsInit()
 call NoduelInit()
-call BonusZoneInit()
+//call BonusZoneInit() // 29 окт (3.8.2): команда -bonus убрана — башни и фонтана на арене нет
 call PauseResInit()
 call SetDuelInit()
 call RFHInit()
