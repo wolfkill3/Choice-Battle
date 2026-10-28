@@ -20,8 +20,9 @@ for (const l of L) {
 const lines = [];
 for (const id of Object.keys(ab).sort()) {
   const o = ab[id];
-  if (!o._parent || o._parent[0] !== 'ANcl' || !o.DataF || !o.DataF[0]) continue;
-  const ord = o.DataF[0];
+  if (!o._parent || o._parent[0] !== 'ANcl') continue;
+  // no DataF in the table = the ANcl default "channel" (Death the Kid T A0CB was missing from quick cast)
+  const ord = (o.DataF && o.DataF[0]) || 'channel';
   if (!/^[a-z0-9]+$/i.test(ord)) continue;
   const tt = parseInt((o.DataB && o.DataB[0]) || '0', 10) || 0;
   lines.push(`call SaveStr(HH,SH_ShnChanO,'${id}',"${ord}")`);

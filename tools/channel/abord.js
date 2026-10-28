@@ -32,7 +32,7 @@ const out = {};
 for (const id of Object.keys(base)) out[id] = base[id];
 for (const id of Object.keys(ab)) {
   const o = ab[id], p = o._parent && o._parent[0];
-  if (p === 'ANcl') { const d = o.DataF && o.DataF[0]; if (d && /^[a-z0-9]+$/i.test(d)) out[id] = d; else delete out[id]; continue; }
+  if (p === 'ANcl') { const d = (o.DataF && o.DataF[0]) || 'channel'; if (d && /^[a-z0-9]+$/i.test(d)) out[id] = d; else delete out[id]; continue; }
   if (p && base[p]) out[id] = base[p];
 }
 const lines = Object.keys(out).sort().map(id => `call SaveStr(HH,SH_AbOrd,'${id}',"${out[id]}")`);
