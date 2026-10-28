@@ -7651,15 +7651,19 @@ endfunction
 function TSE_StartArea takes unit src,real dur,real x,real y,real r returns nothing
 call TSE_StartEx(src,dur,true,x,y,r)
 endfunction
-// проверка: красный пишет -ts 5 (секунды) — остановка от его героя; -ts без числа — снять
-// проверка: красный пишет -ts 5 (секунды) — остановка от его героя; -ts без числа — снять;
-// -tsa 5 800 — остановка по области 800 вокруг его героя (без радиуса — 600); если время уже стоит — любой -ts / -tsa его возвращает
+// проверка (только в режиме -test): красный пишет -ts 5 (секунды) — остановка от его героя; -ts без числа — стоит до следующего -ts;
+// -tsa 5 800 — остановка по области 800 вокруг его героя (без радиуса — 600; без секунд — до следующей команды);
+// если время уже стоит — любой -ts / -tsa его возвращает
 function TSE_Chat takes nothing returns nothing
 local string msg=GetEventPlayerChatString()
 local unit tsh=Hero[PId(TrigP())]
 local real sec
 local real rad=600.
 local integer sp
+if not udg_test then // 29 окт: только в режиме -test
+set tsh=null
+return
+endif
 set TSE_Dbg=true
 if TSE_On then
 call TSE_Stop()
@@ -7677,18 +7681,18 @@ set sec=S2R(SubString(msg,0,sp))
 if sp<StringLength(msg) and S2R(SubString(msg,sp+1,StringLength(msg)))>0 then
 set rad=S2R(SubString(msg,sp+1,StringLength(msg)))
 endif
-if sec>0 and tsh!=null then
-call TSE_StartArea(tsh,sec,GetUnitX(tsh),GetUnitY(tsh),rad)
-else
-call TSE_Stop()
+if tsh!=null then
+// 29 окт: без секунд (0) — без конца, до следующей команды
+call TSE_StartArea(tsh,RMaxBJ(sec,0.),GetUnitX(tsh),GetUnitY(tsh),rad)
+endif
+elseif msg=="-tsa" then
+if tsh!=null then
+call TSE_StartArea(tsh,0.,GetUnitX(tsh),GetUnitY(tsh),rad)
 endif
 else
 set sec=S2R(SubString(msg,4,StringLength(msg)))
-if sec>0 then
-call TSE_Start(tsh,sec)
-else
-call TSE_Stop()
-endif
+// 29 окт: -ts без числа — без конца, до следующего -ts
+call TSE_Start(tsh,RMaxBJ(sec,0.))
 endif
 set tsh=null
 endfunction
