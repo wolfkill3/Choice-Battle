@@ -335,6 +335,7 @@ constant integer SH_kangaruu = StringHash("kangaruu")
 constant integer SH_jg = StringHash("jg")
 constant integer SH_Goku = StringHash("Goku")
 constant integer SH_Vegeta = StringHash("Vegeta")
+constant integer SH_Jiunoka = StringHash("Jiunoka") // 29 окт: идёт R Ямамото — Omnislash (Бастер Меч) не прыгает
 constant integer SH_TeleportBoolean = StringHash("TeleportBoolean")
 constant integer SH_EffectUnit1 = StringHash("EffectUnit1")
 constant integer SH_GinT_Boolean = StringHash("GinT_Boolean")
@@ -75231,7 +75232,7 @@ local real x1=GetUnitX(c)
 local real y1=GetUnitY(c)
 local integer i=LoadInteger(h,id,2)
 local real f=GetUnitFacing(u)*bj_DEGTORAD
-if i<7 and UnitIsAlive(c)and UnitIsAlive(u)and IsUnitPaused(u)==false then
+if i<7 and UnitIsAlive(c)and UnitIsAlive(u)and IsUnitPaused(u)==false and not LoadBoolean(h,GetHandleId(u),SH_Jiunoka) then
 call SetUnitX(u,x1+100*Cos(f))
 call SetUnitY(u,y1+100*Sin(f))
 call UnitAttackRestart(u) 
@@ -82736,6 +82737,7 @@ call DestroyGroup(g)
 call GroupClear(g2)
 call DestroyGroup(g2)
 call TSE_DestroyTimer(t)
+call RemoveSavedBoolean(h,GetHandleId(u),SH_Jiunoka)
 call SetUnitInvulnerable(u,false)
 call FlushChildHashtable(h,id)
 endif
@@ -82775,6 +82777,7 @@ call UnitAddAbility(u,'A3GN')
 call SetUnitTimeScale(u,4)
 call SetUnitTurnSpeed(u,3)
 call SetUnitInvulnerable(u,true)
+call SaveBoolean(h,GetHandleId(u),SH_Jiunoka,true)
 call SaveUnitHandle(h,id,0,u)
 call SaveGroupHandle(h,id,1,g)
 set soundplay=SndN(954) // Sound\Music\mp3Music\Jiunoka.mp3
