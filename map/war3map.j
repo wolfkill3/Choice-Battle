@@ -7562,6 +7562,12 @@ if TSE_FiltOn and not IsCineFilterDisplayed() then
 call TSE_FilterD(0.)
 endif
 endfunction
+function TSE_B2S takes boolean b returns string
+if b then
+return "да"
+endif
+return "нет"
+endfunction
 function TSE_UnfreezeUnit takes nothing returns nothing
 local unit u=GetEnumUnit()
 local integer id=GetHandleId(u)
@@ -7574,6 +7580,13 @@ endif
 call SetUnitAnimationFrozen(u,false)
 //call SetUnitTimeScale(u,LoadReal(TSE_HT,id,0))
 call SetUnitTimeScale(u,RMaxBJ(LoadReal(TSE_HT,id,0),0.01)) // 29 окт: не 0 / 0.001
+// 29 окт: анимация у всех так и стояла после выхода — живым не-даммикам заново "stand" (дальше её сменят приказы)
+if not IsUnitType(u,UNIT_TYPE_DEAD) and GetUnitAbilityLevel(u,'Aloc')==0 then
+call SetUnitAnimation(u,"stand")
+endif
+if TSE_Dbg and u==Hero[PId(OwnerOf(u))] then
+call DisplayTextToPlayer(PlayerV(0),0,0,"|cff808080TSE: "+GetUnitName(u)+" скорость "+R2S(GetUnitTimeScale(u))+" (сохр. "+R2S(LoadReal(TSE_HT,id,0))+"), пауза "+TSE_B2S(IsUnitPaused(u))+", замороз. "+TSE_B2S(IsUnitAnimationFrozen(u))+"|r")
+endif
 // умер, пока был заморожен (анимация смерти стояла) — проиграть её
 if IsUnitType(u,UNIT_TYPE_DEAD) then
 call SetUnitAnimation(u,"death")
