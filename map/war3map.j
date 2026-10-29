@@ -45952,7 +45952,9 @@ function Trig_StatusBar_Actions takes nothing returns nothing
 
     set ResistBarFrame=CreateFrameByType("SIMPLEFRAME", "ResistBar", null, "", 0)
     call ClearFrameAllPoints( ResistBarFrame )
-    call SetFrameRelativePoint( ResistBarFrame, FRAMEPOINT_CENTER, GetOriginFrame(ORIGIN_FRAME_PORTRAIT,0), FRAMEPOINT_CENTER,  -.001, -.014  )
+    //call SetFrameRelativePoint( ResistBarFrame, FRAMEPOINT_CENTER, GetOriginFrame(ORIGIN_FRAME_PORTRAIT,0), FRAMEPOINT_CENTER,  -.001, -.014  )
+    // 29 окт: окно на 2 строки выше — центр поднят на .01, нижний край там же, где был, растёт вверх
+    call SetFrameRelativePoint( ResistBarFrame, FRAMEPOINT_CENTER, GetOriginFrame(ORIGIN_FRAME_PORTRAIT,0), FRAMEPOINT_CENTER,  -.001, -.004  )
     //call SetFrameSize( ResistBarFrame, .094, .125)    
     call SetFrameSize( ResistBarFrame, .094, .145) // 29 окт: +2 строки AS
     call ShowFrame( ResistBarFrame, false )
