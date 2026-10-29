@@ -7895,7 +7895,7 @@ set r=null
 set u=null
 set pl=null
 endfunction
-// 29 окт: скорость атаки выше +300% (3/4 потолка движка GetAttackSpeedMaxBonus) даёт ещё и урон — каждые 4% AS выше порога дают
+// 29 окт: скорость атаки выше +250% (5/8 потолка движка GetAttackSpeedMaxBonus) даёт ещё и урон — каждые 4% AS выше порога дают
 // +1% урона атаки героя (только сам герой, не иллюзии и клоны). Бонус AS героя — поле оружия us1+ (без обрезки потолком);
 // пересчёт раз в 0.5 с. В тест-режиме -as показывает значения для своего героя
 function ASO_Tick takes nothing returns nothing
@@ -7909,10 +7909,13 @@ if Hero[i]!=null and cap>0. and IsUnitType(Hero[i],UNIT_TYPE_DEAD)==false then
 set b=GetUnitWeaponRealField(Hero[i],UNIT_WEAPON_RF_ATTACK_SPEED_BONUS,0)
 //if b>cap then
 //set ASO_K[i]=(b-cap)*0.5
-// 29 окт: перевод начинается с +300% (3/4 потолка +400%), сам потолок прежний
-if b>cap*0.75 then
+// 29 окт: перевод начинается с +250% (было +300%), сам потолок прежний
+//if b>cap*0.75 then
 //set ASO_K[i]=(b-cap*0.75)*0.5
-set ASO_K[i]=(b-cap*0.75)*0.25 // 29 окт: 4% AS -> 1% урона (было 2 к 1)
+//set ASO_K[i]=(b-cap*0.75)*0.25 // 29 окт: 4% AS -> 1% урона (было 2 к 1)
+// 29 окт: порог +250% (5/8 потолка +400%), 4% AS -> 1% урона
+if b>cap*0.625 then
+set ASO_K[i]=(b-cap*0.625)*0.25
 endif
 endif
 set i=i+1
