@@ -267108,7 +267108,8 @@ local real facing=LoadReal(HH,id,3)
 local integer fire_count=0
 set time=time+0.02
 call SaveReal(HH,id,5,time)
-if time>=11 or (time>1 and  udg_B==false) then // 29 окт (3.8.2): зона 10 сек (было 20; time>=21)
+//if time>=11 or (time>1 and  udg_B==false) then // 29 окт (3.8.2): зона 10 сек (было 20; time>=21)
+if time>=16 or (time>1 and  udg_B==false) then // 29 окт: зона 15 сек (было 10)
 
 
 
@@ -267154,7 +267155,8 @@ call SetUnitModel(n0,EffectID[2210])
 call UnitSpeed(n0,0.5)
 call UnitSize(n0,1.4,1,1)
 call UnitColor(n0,100,100,100,80)
-call MyRemoveUnit(n0,11)
+//call MyRemoveUnit(n0,11)
+call MyRemoveUnit(n0,16) // 29 окт: зона 15 сек
 call MoveUnit(n0,n0,50,fire_count*15)
 call PushTimed(n0,fire_count*15,50,30)
 set fire_count=fire_count+1
@@ -267214,7 +267216,8 @@ endif
 
 if time==1 then
 
-call CreateModeIndicatorForm(caster, "ReplaceableTextures\\CommandButtons\\BTNDeadMasterT.blp", 10)
+//call CreateModeIndicatorForm(caster, "ReplaceableTextures\\CommandButtons\\BTNDeadMasterT.blp", 10)
+call CreateModeIndicatorForm(caster, "ReplaceableTextures\\CommandButtons\\BTNDeadMasterT.blp", 15)
 endif
 
 
@@ -298660,9 +298663,9 @@ call LANG_A('DMR1',1,4,"A summoned monster strikes the area and stuns. If a Q sk
 call LANG_A('DMR1',2,0,"Kyojin no senshi, [|cffffcc00Level %d|r] (|cffffcc00R|r)")
 call LANG_A('DMR1',3,0,"A summoned monster strikes the area and stuns. If a Q skull was in the area — another 2*|c0077FFFFINT|r.|n|n|cFF00A5FF|nDamage: 3\\4\\5\\6\\7*|r|c0077FFFFINT|r|cFF00A5FF (+2*|r|c0077FFFFINT|r|cFF00A5FF with a skull)|nStun: 2 sec.|nAoE: 600|nRange: 1500|nCooldown: 30 sec.|r")
 call LANG_A('DMT1',0,0,"Kojin tekina sekai, [|cffffcc00Level 1|r] (|cffffcc00T|r)")
-call LANG_A('DMT1',1,0,"After 1 sec. — her own world: inside the zone Dead Master is stronger and enemies weaker; everyone except her enters and leaves the zone slowly.|n|n|cFF00A5FF|nHer in the zone: +100% AS, +1000% MS, +30% magic damage, +30% HP/MP restoration|nEnemies: −30% HP/MP restoration|nAoE: 1500|nDuration: 1"+"0 sec.|nCooldown: 60 sec.|r")
+call LANG_A('DMT1',1,0,"After 1 sec. — her own world: inside the zone Dead Master is stronger and enemies weaker; everyone except her enters and leaves the zone slowly.|n|n|cFF00A5FF|nHer in the zone: +100% AS, +1000% MS, +30% magic damage, +30% HP/MP restoration|nEnemies: −30% HP/MP restoration|nAoE: 1500|nDuration: 1"+"5 sec.|nCooldown: 75 sec.|r")
 call LANG_A('DMT1',2,0,"Kojin tekina sekai, [|cffffcc00Level 1|r] (|cffffcc00T|r)")
-call LANG_A('DMT1',3,0,"After 1 sec. — her own world: inside the zone Dead Master is stronger and enemies weaker; everyone except her enters and leaves the zone slowly.|n|n|cFF00A5FF|nHer in the zone: +100% AS, +1000% MS, +30% magic damage, +30% HP/MP restoration|nEnemies: −30% HP/MP restoration|nAoE: 1500|nDuration: 1"+"0 sec.|nCooldown: 60 sec.|r")
+call LANG_A('DMT1',3,0,"After 1 sec. — her own world: inside the zone Dead Master is stronger and enemies weaker; everyone except her enters and leaves the zone slowly.|n|n|cFF00A5FF|nHer in the zone: +100% AS, +1000% MS, +30% magic damage, +30% HP/MP restoration|nEnemies: −30% HP/MP restoration|nAoE: 1500|nDuration: 1"+"5 sec.|nCooldown: 75 sec.|r")
 call LANG_A('DMW1',0,0,"Desusaizu, [|cffffcc00Level 1|r] (|cffffcc00W|r)")
 call LANG_A('DMW1',0,1,"Desusaizu, [|cffffcc00Level 2|r] (|cffffcc00W|r)")
 call LANG_A('DMW1',0,2,"Desusaizu, [|cffffcc00Level 3|r] (|cffffcc00W|r)")
