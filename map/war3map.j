@@ -46303,7 +46303,7 @@ function Trig_StatusBar_Actions takes nothing returns nothing
     call SetFrameTextAlignment( ResistBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
     call SetFrameTextColour( ResistBarFrameText, 0xFFFF6060 )
     call SetFrameParent( ResistBarFrameText, ResistBarFrame )
-    call SetFrameText( ResistBarFrameText, "AS DMG Bonus")
+    call SetFrameText( ResistBarFrameText, "Phys DMG Bonus")
     call ShowFrame( ResistBarFrameText, true )
     call SetFrameRelativePoint( ResistBarFrameText, FRAMEPOINT_TOPLEFT, ResistTxt[22], FRAMEPOINT_TOPLEFT,  0, -.01   )
 
@@ -48024,16 +48024,33 @@ if IsFrameVisible(ResistBarFrame) then
     call SetFrameText(ResistTxt[21], I2S(R2I(MathRealCeil(myCustomMana3(GetUnitSelected(GetLocalPlayer()),1)*100)))+"%")
     call SetFrameText(ResistTxt[23], "+"+I2S(R2I(GetUnitWeaponRealField(GetUnitSelected(GetLocalPlayer()),UNIT_WEAPON_RF_ATTACK_SPEED_BONUS,0)*100.+0.5))+"%")
     set i=PId(OwnerOf(GetUnitSelected(GetLocalPlayer())))
+    //if i>=0 and i<12 and GetUnitSelected(GetLocalPlayer())==Hero[i] then
+    //    call SetFrameText(ResistTxt[25], "+"+I2S(R2I(ASO_K[i]*100.+0.5))+"%")
+    //else
+    //    call SetFrameText(ResistTxt[25], "+0%")
+    //endif
+    // 29 окт: Phys DMG Bonus — AS сверх +250% (автоатаки героя) и аура Посоха Тьмы на атакующем (B01K, физ. урон x0.8)
+    set rr=1.
     if i>=0 and i<12 and GetUnitSelected(GetLocalPlayer())==Hero[i] then
-        call SetFrameText(ResistTxt[25], "+"+I2S(R2I(ASO_K[i]*100.+0.5))+"%")
+        set rr=1.+ASO_K[i]
+    endif
+    if GetUnitAbilityLevel(GetUnitSelected(GetLocalPlayer()),'B01K')>0 then
+        set rr=rr*0.8
+    endif
+    if rr>=1. then
+        call SetFrameText(ResistTxt[25], "+"+I2S(R2I((rr-1.)*100.+0.5))+"%")
     else
-        call SetFrameText(ResistTxt[25], "+0%")
+        call SetFrameText(ResistTxt[25], "-"+I2S(R2I((1.-rr)*100.+0.5))+"%")
     endif
     set rr=GetUnitArmour(GetUnitSelected(GetLocalPlayer()))
     if rr>=0. then
         set rr=0.04*rr/(1.+0.04*rr)
     else
         set rr=-(1.-Pow(0.96,-rr))
+    endif
+    // 29 окт: Phys Resist — броня и пассивка Кимимаро (AKF1 с 12 уровня, физ. урон x0.6)
+    if GetUnitAbilityLevel(GetUnitSelected(GetLocalPlayer()),'AKF1')>0 and GetHeroLevel(GetUnitSelected(GetLocalPlayer()))>=12 then
+        set rr=1.-(1.-rr)*0.6
     endif
     call SetFrameText(ResistTxt[27], I2S(R2I(rr*100.))+"%")
 endif
@@ -48057,7 +48074,7 @@ if ModuloInteger(seconds,10)<1 and GetFrameHeight( GetFrameChild(GetOriginFrame(
         call SetFrameText( ResistTxt[18], "MP Heal Eff.")
         call SetFrameText( ResistTxt[20], "MP Loss Reduce")
         call SetFrameText( ResistTxt[22], "AS Bonus")
-        call SetFrameText( ResistTxt[24], "AS DMG Bonus")
+        call SetFrameText( ResistTxt[24], "Phys DMG Bonus")
         call SetFrameText( ResistTxt[26], "Phys Resist")
         call SetFrameRelativePoint(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 0), FRAMEPOINT_TOPLEFT, GetFrameRelativePointParent(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 0),FRAMEPOINT_TOPLEFT),FRAMEPOINT_TOPRIGHT,.0175*(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505), -.0292)
         call SetFrameRelativePoint(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 0), FRAMEPOINT_TOP, GetFrameRelativePointParent(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 0),FRAMEPOINT_TOP),FRAMEPOINT_TOPLEFT,.00, -.0292)
@@ -48134,7 +48151,7 @@ if ModuloInteger(seconds,10)<1 and GetFrameHeight( GetFrameChild(GetOriginFrame(
         call SetFrameText( ResistTxt[18], "MP Eff")
         call SetFrameText( ResistTxt[20], "MP Loss -")
         call SetFrameText( ResistTxt[22], "AS +")
-        call SetFrameText( ResistTxt[24], "AS DMG +")
+        call SetFrameText( ResistTxt[24], "P DMG +")
         call SetFrameText( ResistTxt[26], "PR")
         call SetFrameRelativePoint(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 0), FRAMEPOINT_TOPLEFT, GetFrameRelativePointParent(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 0),FRAMEPOINT_TOPLEFT),FRAMEPOINT_TOPRIGHT,.0175*(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505), -.0292)
         call SetFrameRelativePoint(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 0), FRAMEPOINT_CENTER, GetOriginFrame(ORIGIN_FRAME_CONSOLE_UI, 0),FRAMEPOINT_CENTER,.1255*(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505), -.2268)
