@@ -7310,7 +7310,8 @@ call SetProjectileTimeScale(pr,0)
 call SetProjectileAnimationFrozen(pr,true)
 //call SetProjectileSpeed(pr,0)
 //call SetProjectileSpeed(pr,1.) // 29 окт: скорость 1, не 0 (снаряд не теряет полёт)
-call SetProjectileSpeed(pr,0.1) // 29 окт: скорость 0.1 (было 1), не 0 — снаряд не теряет полёт
+//call SetProjectileSpeed(pr,0.1) // 29 окт: скорость 0.1 (было 1), не 0 — снаряд не теряет полёт
+call SetProjectileSpeed(pr,1.) // 29 окт: обратно 1
 call HandleListAddHandle(TSE_Prj,pr)
 endif
 endif
