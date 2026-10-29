@@ -2973,6 +2973,166 @@ return GetTriggerPlayer()
 endif
 return V(GetTriggerPlayer())
 endfunction
+// ===== Остановка времени: учёт таймеров способностей (29 окт: поднят сюда из модуля TSE, чтобы общие помощники ниже —
+// MyRemoveUnit, myCustomDamageTimed, RemoveSaveHashTimed и др. — тоже стояли во время остановки) =====
+function TSE_AddExemptType takes integer typeId returns nothing
+call SaveBoolean(TSE_HT,-1,typeId,true)
+endfunction
+function TSE_PlayerExempt takes player p returns boolean
+if TSE_Src!=null and p==OwnerOf(TSE_Src) then
+return true
+endif
+return LoadBoolean(TSE_HT,-1,GetUnitTypeId(Hero[PId(p)]))
+endfunction
+// для игрока стоит время (его таймеры, ожидания, звуки): не исключён; при остановке по области — его герой заморожен
+function TSE_PlayerStopped takes player p returns boolean
+if p==null or TSE_PlayerExempt(p) then
+return false
+endif
+return not TSE_Area or IsUnitInGroup(Hero[PId(p)],TSE_G)
+endfunction
+// ---- таймеры способностей. Ниже модуля все TimerStart / DestroyTimer заменены на TSE_TimerStart / TSE_DestroyTimer. ----
+// Владелец таймера: внутри кода другого таймера — владелец того таймера; иначе атакующий в событии урона, иначе юнит события.
+// Неизвестный владелец (инициализация, UI, чат, системные таймеры) — таймер не учитывается и никогда не останавливается.
+// Учёт: TSE_TL/TSE_TP (индекс+1 в TSE_HT[таймер][10]); истёкшие разовые таймеры подчищаются понемногу при каждом запуске.
+// GetExpiredTimer — только в колбэке таймера (нет триггера) или в триггере с событием таймера: в остальных событиях
+// (кнопка диалога «Standard Mode» и т.п.) натив 1.26 читает данные события как таймер — краш Game.dll+0x430C91 (23 окт).
+// До конца инициализации карты владелец не определяется (TSE_Ready).
+function TSE_Owner takes nothing returns player
+local timer et=null
+local unit u=null
+local player p=null
+local integer k
+set TSE_ET=null
+if not TSE_Ready then
+return null
+endif
+if GetTriggeringTrigger()==null or GetTriggerEventId()==EVENT_GAME_TIMER_EXPIRED then
+set et=GetExpiredTimer()
+set TSE_ET=et
+endif
+if et!=null then
+set k=LoadInteger(TSE_HT,GetHandleId(et),10)
+if k>0 then
+set p=TSE_TP[k-1]
+endif
+else
+// 23 окт: GetEventDamageSource — только в событии урона; вне него (кнопка диалога «Standard Mode» и т.п.) UjAPI читал мусор — краш ACCESS_VIOLATION
+if GetTriggerEventId()==EVENT_PLAYER_UNIT_DAMAGED or GetTriggerEventId()==EVENT_PLAYER_UNIT_DAMAGING then
+set u=GetEventDamageSource()
+endif
+if u==null then
+set u=GetTriggerUnit()
+endif
+if u!=null then
+set p=OwnerOf(u)
+endif
+endif
+set et=null
+set u=null
+return p
+endfunction
+// пауза таймера с запоминанием периода и остатка: TSE_HT[таймер][11] период, [12] периодический, [13] остаток
+function TSE_TPause takes timer tm returns nothing
+local integer id=GetHandleId(tm)
+call SaveReal(TSE_HT,id,11,TimerGetTimeout(tm))
+call SaveBoolean(TSE_HT,id,12,TimerIsPeriodic(tm))
+call SaveReal(TSE_HT,id,13,TimerGetRemaining(tm))
+call PauseTimer(tm)
+set TSE_DbgTm=TSE_DbgTm+1
+endfunction
+// ResumeTimer у периодического таймера срабатывает один раз на остаток и перестаёт повторяться (снаряды/рывки вставали навсегда)
+function TSE_TResume takes timer tm returns nothing
+local integer id=GetHandleId(tm)
+call ResumeTimer(tm)
+if LoadBoolean(TSE_HT,id,12) then
+call TimerSetPeriodic(tm,true)
+call TimerSetTimeout(tm,LoadReal(TSE_HT,id,11))
+call TimerSetRemaining(tm,LoadReal(TSE_HT,id,13))
+endif
+call RemoveSavedReal(TSE_HT,id,11)
+call RemoveSavedBoolean(TSE_HT,id,12)
+call RemoveSavedReal(TSE_HT,id,13)
+endfunction
+function TSE_TDel takes integer k returns nothing
+local integer last=TSE_TN-1
+call RemoveSavedInteger(TSE_HT,GetHandleId(TSE_TL[k]),10)
+if k<last then
+set TSE_TL[k]=TSE_TL[last]
+set TSE_TP[k]=TSE_TP[last]
+call SaveInteger(TSE_HT,GetHandleId(TSE_TL[k]),10,k+1)
+endif
+set TSE_TL[last]=null
+set TSE_TP[last]=null
+set TSE_TN=last
+endfunction
+// выкинуть истёкшие разовые и уничтожённые мимо обёртки; таймер, чей код сейчас выполняется, не трогается (его могут перезапустить)
+function TSE_TPrune takes integer cnt returns nothing
+local timer tm
+local timer et=TSE_ET // получен в TSE_Owner (безопасно)
+loop
+exitwhen cnt<=0 or TSE_TN==0
+if TSE_TCur>=TSE_TN then
+set TSE_TCur=0
+endif
+set tm=TSE_TL[TSE_TCur]
+if tm!=et and (tm==null or (not TimerIsPeriodic(tm) and TimerGetRemaining(tm)<=0)) then
+call TSE_TDel(TSE_TCur)
+else
+set TSE_TCur=TSE_TCur+1
+endif
+set cnt=cnt-1
+endloop
+set tm=null
+set et=null
+endfunction
+function TSE_TimerStart takes timer tm,real dur,boolean per,code f returns nothing
+local player p=TSE_Owner()
+local integer k
+call TimerStart(tm,dur,per,f)
+if p==null then
+return
+endif
+set k=LoadInteger(TSE_HT,GetHandleId(tm),10)
+if k==0 then
+call TSE_TPrune(2)
+if TSE_TN>=8000 then
+call TSE_TPrune(300)
+endif
+if TSE_TN>=8100 then
+return
+endif
+set TSE_TL[TSE_TN]=tm
+set TSE_TN=TSE_TN+1
+set k=TSE_TN
+call SaveInteger(TSE_HT,GetHandleId(tm),10,k)
+endif
+set TSE_TP[k-1]=p
+// запущен во время остановки не исключённым игроком — сразу на паузу до конца остановки
+if TSE_On and TSE_PlayerStopped(p) and TSE_PN<8190 then
+call TSE_TPause(tm)
+set TSE_PT[TSE_PN]=tm
+set TSE_PN=TSE_PN+1
+endif
+endfunction
+function TSE_DestroyTimer takes timer tm returns nothing
+local integer k=LoadInteger(TSE_HT,GetHandleId(tm),10)
+local integer i=0
+if k>0 then
+call TSE_TDel(k-1)
+endif
+loop
+exitwhen i>=TSE_PN
+if TSE_PT[i]==tm then
+set TSE_PN=TSE_PN-1
+set TSE_PT[i]=TSE_PT[TSE_PN]
+set TSE_PT[TSE_PN]=null
+else
+set i=i+1
+endif
+endloop
+call DestroyTimer(tm)
+endfunction
 function ItemP takes item it returns player
 if not JT_Any then
 return GetItemPlayer(it)
@@ -4486,7 +4646,8 @@ local damagetype damageType=LoadDamageTypeHandle(HH,id,6)
 local weapontype weaponType=LoadWeaponTypeHandle(HH,id,7)
 call myCustomDamage(whichUnit,target,amount,attack,ranged,attackType,damageType,weaponType)
 call PauseTimer(t)
-call DestroyTimer(t)
+//call DestroyTimer(t)
+call TSE_DestroyTimer(t)
 call FlushChildHashtable(HH,id)
 set t=null
 set whichUnit=null
@@ -4506,7 +4667,8 @@ call SaveBoolean(HH,id,4,ranged)
 call SaveAttackTypeHandle(HH,id,5,attackType)
 call SaveDamageTypeHandle(HH,id,6,damageType)
 call SaveWeaponTypeHandle(HH,id,7,weaponType)
-call TimerStart(t,time0,false,function myCustomDamageTimed2)
+//call TimerStart(t,time0,false,function myCustomDamageTimed2)
+call TSE_TimerStart(t,time0,false,function myCustomDamageTimed2) // 29 окт: стоит при остановке времени
 set t=null
 endfunction
 function myCustomDamage2 takes unit target, real amount returns real
@@ -5749,7 +5911,8 @@ function MyRemoveUnitAct takes nothing returns nothing
         call RemoveUnit(localRemoveUnit)
     endif
     call FlushChildHashtable(h,id)
-    call DestroyTimer(GetExpiredTimer())
+//call DestroyTimer(GetExpiredTimer())
+    call TSE_DestroyTimer(GetExpiredTimer())
     set t=null
     set localRemoveUnit=null
 endfunction
@@ -5759,7 +5922,8 @@ function MyRemoveUnit takes unit newRemoveUnit,real newDur returns nothing
     set RemoveUnitTimer=CreateTimer()
     set id=GetHandleId(RemoveUnitTimer)
     call SaveUnitHandle(h,id,0,newRemoveUnit)
-    call TimerStart(RemoveUnitTimer, newDur, false, function MyRemoveUnitAct)
+//call TimerStart(RemoveUnitTimer, newDur, false, function MyRemoveUnitAct)
+    call TSE_TimerStart(RemoveUnitTimer, newDur, false, function MyRemoveUnitAct) // 29 окт: стоит при остановке времени
     set RemoveUnitTimer=null
 endfunction
 
@@ -6861,7 +7025,8 @@ if LoadInteger(h,id,2)=='RQG+' then
 endif
 call RemoveSavedHandle(h,LoadInteger(h,id,1),LoadInteger(h,id,2))
 call FlushChildHashtable(h,id)
-call DestroyTimer(t)
+//call DestroyTimer(t)
+call TSE_DestroyTimer(t)
 set t=null
 endfunction
 function RemoveSaveHashTimed takes real time,integer id,integer ip returns nothing
@@ -6869,7 +7034,8 @@ local timer t=CreateTimer()
 local integer idt=GetHandleId(t)
 call SaveInteger(h,idt,1,id)
 call SaveInteger(h,idt,2,ip)
-call TimerStart(t,time,false,function RemoveSaveHashTimed2)
+//call TimerStart(t,time,false,function RemoveSaveHashTimed2)
+call TSE_TimerStart(t,time,false,function RemoveSaveHashTimed2) // 29 окт
 set t=null
 endfunction
 function RemoveSaveBoolTimed2 takes nothing returns nothing
@@ -6878,7 +7044,8 @@ local integer id=GetHandleId(t)
 call SaveBoolean(HH,LoadInteger(HH,id,1),LoadInteger(HH,id,2),false)
 call RemoveSavedHandle(HH,LoadInteger(h,id,1),LoadInteger(h,id,2))
 call FlushChildHashtable(HH,id)
-call DestroyTimer(t)
+//call DestroyTimer(t)
+call TSE_DestroyTimer(t)
 set t=null
 endfunction
 function RemoveSaveBoolTimed takes integer time,integer id,integer ip returns nothing
@@ -6886,7 +7053,8 @@ local timer t=CreateTimer()
 local integer idt=GetHandleId(t)
 call SaveInteger(HH,idt,1,id)
 call SaveInteger(HH,idt,2,ip)
-call TimerStart(t,time,false,function RemoveSaveBoolTimed2)
+//call TimerStart(t,time,false,function RemoveSaveBoolTimed2)
+call TSE_TimerStart(t,time,false,function RemoveSaveBoolTimed2) // 29 окт
 set t=null
 endfunction
 function MissleMove2 takes nothing returns nothing
@@ -6908,7 +7076,8 @@ else
 call DestroyEffect(AddSpecialEffect(LoadStr(h,id,6),x1,y1))
 call myCustomDamage(u,c,LoadReal(h,id,5),false,false,null,null,null)
 call FlushChildHashtable(h,id)
-call DestroyTimer(t)
+//call DestroyTimer(t)
+call TSE_DestroyTimer(t)
 call KillUnit(l__d)
 endif
 set l__d=null
@@ -6927,7 +7096,8 @@ call SaveReal(h,id,3,angle)
 call SaveReal(h,id,4,speed)
 call SaveReal(h,id,5,dmg)
 call SaveStr(h,id,6,l__s)
-call TimerStart(t,0.03,true,function MissleMove2)
+//call TimerStart(t,0.03,true,function MissleMove2)
+call TSE_TimerStart(t,0.03,true,function MissleMove2) // 29 окт
 set t=null
 endfunction
 function GetWidgetMana takes unit u returns real
@@ -6985,164 +7155,7 @@ endfunction
 // глушатся до конца; ожидания способностей — TSE_PolledWait. Молнии стоят сами: их двигают и удаляют таймеры способностей.
 // TSE_HT: [-1][тип героя] — исключение; [handle][0] — скорость анимации/снаряда, [1] — откат или скорость снаряда, [2] — откат атаки,
 // [3]/[4] — HP/MP юнита на момент остановки (регенерация не идёт).
-function TSE_AddExemptType takes integer typeId returns nothing
-call SaveBoolean(TSE_HT,-1,typeId,true)
-endfunction
-function TSE_PlayerExempt takes player p returns boolean
-if TSE_Src!=null and p==OwnerOf(TSE_Src) then
-return true
-endif
-return LoadBoolean(TSE_HT,-1,GetUnitTypeId(Hero[PId(p)]))
-endfunction
-// для игрока стоит время (его таймеры, ожидания, звуки): не исключён; при остановке по области — его герой заморожен
-function TSE_PlayerStopped takes player p returns boolean
-if p==null or TSE_PlayerExempt(p) then
-return false
-endif
-return not TSE_Area or IsUnitInGroup(Hero[PId(p)],TSE_G)
-endfunction
-// ---- таймеры способностей. Ниже модуля все TimerStart / DestroyTimer заменены на TSE_TimerStart / TSE_DestroyTimer. ----
-// Владелец таймера: внутри кода другого таймера — владелец того таймера; иначе атакующий в событии урона, иначе юнит события.
-// Неизвестный владелец (инициализация, UI, чат, системные таймеры) — таймер не учитывается и никогда не останавливается.
-// Учёт: TSE_TL/TSE_TP (индекс+1 в TSE_HT[таймер][10]); истёкшие разовые таймеры подчищаются понемногу при каждом запуске.
-// GetExpiredTimer — только в колбэке таймера (нет триггера) или в триггере с событием таймера: в остальных событиях
-// (кнопка диалога «Standard Mode» и т.п.) натив 1.26 читает данные события как таймер — краш Game.dll+0x430C91 (23 окт).
-// До конца инициализации карты владелец не определяется (TSE_Ready).
-function TSE_Owner takes nothing returns player
-local timer et=null
-local unit u=null
-local player p=null
-local integer k
-set TSE_ET=null
-if not TSE_Ready then
-return null
-endif
-if GetTriggeringTrigger()==null or GetTriggerEventId()==EVENT_GAME_TIMER_EXPIRED then
-set et=GetExpiredTimer()
-set TSE_ET=et
-endif
-if et!=null then
-set k=LoadInteger(TSE_HT,GetHandleId(et),10)
-if k>0 then
-set p=TSE_TP[k-1]
-endif
-else
-// 23 окт: GetEventDamageSource — только в событии урона; вне него (кнопка диалога «Standard Mode» и т.п.) UjAPI читал мусор — краш ACCESS_VIOLATION
-if GetTriggerEventId()==EVENT_PLAYER_UNIT_DAMAGED or GetTriggerEventId()==EVENT_PLAYER_UNIT_DAMAGING then
-set u=GetEventDamageSource()
-endif
-if u==null then
-set u=GetTriggerUnit()
-endif
-if u!=null then
-set p=OwnerOf(u)
-endif
-endif
-set et=null
-set u=null
-return p
-endfunction
-// пауза таймера с запоминанием периода и остатка: TSE_HT[таймер][11] период, [12] периодический, [13] остаток
-function TSE_TPause takes timer tm returns nothing
-local integer id=GetHandleId(tm)
-call SaveReal(TSE_HT,id,11,TimerGetTimeout(tm))
-call SaveBoolean(TSE_HT,id,12,TimerIsPeriodic(tm))
-call SaveReal(TSE_HT,id,13,TimerGetRemaining(tm))
-call PauseTimer(tm)
-set TSE_DbgTm=TSE_DbgTm+1
-endfunction
-// ResumeTimer у периодического таймера срабатывает один раз на остаток и перестаёт повторяться (снаряды/рывки вставали навсегда)
-function TSE_TResume takes timer tm returns nothing
-local integer id=GetHandleId(tm)
-call ResumeTimer(tm)
-if LoadBoolean(TSE_HT,id,12) then
-call TimerSetPeriodic(tm,true)
-call TimerSetTimeout(tm,LoadReal(TSE_HT,id,11))
-call TimerSetRemaining(tm,LoadReal(TSE_HT,id,13))
-endif
-call RemoveSavedReal(TSE_HT,id,11)
-call RemoveSavedBoolean(TSE_HT,id,12)
-call RemoveSavedReal(TSE_HT,id,13)
-endfunction
-function TSE_TDel takes integer k returns nothing
-local integer last=TSE_TN-1
-call RemoveSavedInteger(TSE_HT,GetHandleId(TSE_TL[k]),10)
-if k<last then
-set TSE_TL[k]=TSE_TL[last]
-set TSE_TP[k]=TSE_TP[last]
-call SaveInteger(TSE_HT,GetHandleId(TSE_TL[k]),10,k+1)
-endif
-set TSE_TL[last]=null
-set TSE_TP[last]=null
-set TSE_TN=last
-endfunction
-// выкинуть истёкшие разовые и уничтожённые мимо обёртки; таймер, чей код сейчас выполняется, не трогается (его могут перезапустить)
-function TSE_TPrune takes integer cnt returns nothing
-local timer tm
-local timer et=TSE_ET // получен в TSE_Owner (безопасно)
-loop
-exitwhen cnt<=0 or TSE_TN==0
-if TSE_TCur>=TSE_TN then
-set TSE_TCur=0
-endif
-set tm=TSE_TL[TSE_TCur]
-if tm!=et and (tm==null or (not TimerIsPeriodic(tm) and TimerGetRemaining(tm)<=0)) then
-call TSE_TDel(TSE_TCur)
-else
-set TSE_TCur=TSE_TCur+1
-endif
-set cnt=cnt-1
-endloop
-set tm=null
-set et=null
-endfunction
-function TSE_TimerStart takes timer tm,real dur,boolean per,code f returns nothing
-local player p=TSE_Owner()
-local integer k
-call TimerStart(tm,dur,per,f)
-if p==null then
-return
-endif
-set k=LoadInteger(TSE_HT,GetHandleId(tm),10)
-if k==0 then
-call TSE_TPrune(2)
-if TSE_TN>=8000 then
-call TSE_TPrune(300)
-endif
-if TSE_TN>=8100 then
-return
-endif
-set TSE_TL[TSE_TN]=tm
-set TSE_TN=TSE_TN+1
-set k=TSE_TN
-call SaveInteger(TSE_HT,GetHandleId(tm),10,k)
-endif
-set TSE_TP[k-1]=p
-// запущен во время остановки не исключённым игроком — сразу на паузу до конца остановки
-if TSE_On and TSE_PlayerStopped(p) and TSE_PN<8190 then
-call TSE_TPause(tm)
-set TSE_PT[TSE_PN]=tm
-set TSE_PN=TSE_PN+1
-endif
-endfunction
-function TSE_DestroyTimer takes timer tm returns nothing
-local integer k=LoadInteger(TSE_HT,GetHandleId(tm),10)
-local integer i=0
-if k>0 then
-call TSE_TDel(k-1)
-endif
-loop
-exitwhen i>=TSE_PN
-if TSE_PT[i]==tm then
-set TSE_PN=TSE_PN-1
-set TSE_PT[i]=TSE_PT[TSE_PN]
-set TSE_PT[TSE_PN]=null
-else
-set i=i+1
-endif
-endloop
-call DestroyTimer(tm)
-endfunction
+// 29 окт: учёт таймеров (TSE_AddExemptType .. TSE_DestroyTimer) поднят выше — сразу после TrigP
 // таймеры тех, для кого стоит время; p!=null — только этого игрока (его герой зашёл в область позже)
 function TSE_PauseTimers takes player p returns nothing
 local integer i=0
@@ -7204,7 +7217,12 @@ local buff b
 local ability a
 local item it
 call GroupAddUnit(TSE_G,u)
+//call SaveReal(TSE_HT,id,0,GetUnitTimeScale(u))
+// 29 окт: нетронутая скорость может читаться как 0 — тогда 1 (иначе после выхода анимация так и стояла)
 call SaveReal(TSE_HT,id,0,GetUnitTimeScale(u))
+if LoadReal(TSE_HT,id,0)<=0.0011 then
+call SaveReal(TSE_HT,id,0,1.)
+endif
 call SaveReal(TSE_HT,id,2,GetUnitAttackRemainingCooldown(u))
 call SaveReal(TSE_HT,id,3,GetWidgetLife(u))
 call SaveReal(TSE_HT,id,4,GetUnitState(u,UNIT_STATE_MANA))
@@ -7376,6 +7394,9 @@ if HaveSavedReal(TSE_HT,GetHandleId(e),0) then
 return
 endif
 call SaveReal(TSE_HT,GetHandleId(e),0,GetSpecialEffectTimeScale(e))
+if LoadReal(TSE_HT,GetHandleId(e),0)<=0.0011 then
+call SaveReal(TSE_HT,GetHandleId(e),0,1.)
+endif
 call SetSpecialEffectTimeScale(e,0.001)
 call HandleListAddHandle(TSE_Eff,e)
 endfunction
@@ -7547,7 +7568,8 @@ if LoadReal(TSE_HT,id,8)>0. and not IsUnitType(u,UNIT_TYPE_DEAD) then
 call UnitApplyTimedLife(u,'BTLF',LoadReal(TSE_HT,id,8))
 endif
 call SetUnitAnimationFrozen(u,false)
-call SetUnitTimeScale(u,LoadReal(TSE_HT,id,0))
+//call SetUnitTimeScale(u,LoadReal(TSE_HT,id,0))
+call SetUnitTimeScale(u,RMaxBJ(LoadReal(TSE_HT,id,0),0.01)) // 29 окт: не 0 / 0.001
 // умер, пока был заморожен (анимация смерти стояла) — проиграть её
 if IsUnitType(u,UNIT_TYPE_DEAD) then
 call SetUnitAnimation(u,"death")
@@ -7636,7 +7658,7 @@ exitwhen i>=cnt
 set e=HandleListGetEffectByIndex(TSE_Eff,i)
 if e!=null then
 //call SetSpecialEffectAnimationFrozen(e,false)
-call SetSpecialEffectTimeScale(e,LoadReal(TSE_HT,GetHandleId(e),0))
+call SetSpecialEffectTimeScale(e,RMaxBJ(LoadReal(TSE_HT,GetHandleId(e),0),0.01))
 call FlushChildHashtable(TSE_HT,GetHandleId(e))
 endif
 set i=i+1
@@ -46439,7 +46461,8 @@ function Trig_StatusBar_Actions takes nothing returns nothing
     call SetFrameTexture( OpenResistButton, "Emotes\\ResistButton.blp", 0, true )
     call SetFrameTexture( OpenResistButton, "Emotes\\ResistButton.blp", 1, true )
     call SetFrameTexture( OpenResistButton, "Emotes\\ResistButton.blp", 2, true )
-    call SetFrameSize( OpenResistButton, .017, .017 )
+    //call SetFrameSize( OpenResistButton, .017, .017 )
+    call SetFrameSize( OpenResistButton, .015, .015 ) // 29 окт: как кнопка V
     call ShowFrame( OpenResistButton, true )
     call SetFramePriority( OpenResistButton, 9 )
     call SetFrameRelativePoint( OpenResistButton, FRAMEPOINT_CENTER, ResistBarFrame, FRAMEPOINT_TOPRIGHT, -.003, -.003 )
@@ -60392,6 +60415,10 @@ endfunction
 // Channel «только точка» с юнитовым кодом приказа (W Нанаи: acidbomb) игра принимает приказом на юнита — точки нет (общий код)
 function CBS_QcUnitOk takes unit cbU,integer cbId returns boolean
 local integer cbTt=1
+// 29 окт: T Гоку в рывковом режиме — тип цели «юнит» ставится на экземпляре (в таблице — «точка»), квик не отдавал приказ
+if cbId=='GKT1' and LoadReal(HH,PH(OwnerOf(cbU)),VariationTHash)==1 then
+return true
+endif
 // Channel — тип цели из таблицы способности (1 — юнит, 3 — юнит или точка), остальные — можно по юниту
 if CBS_QcNcl(cbU,cbId)!="" then
 set cbTt=GetAbilityBaseIntegerLevelFieldById(cbId,ABILITY_ILF_TARGET_TYPE,CBS_QcLv(cbU,cbId))
