@@ -60432,13 +60432,20 @@ endfunction
 // Channel «только точка» с юнитовым кодом приказа (W Нанаи: acidbomb) игра принимает приказом на юнита — точки нет (общий код)
 function CBS_QcUnitOk takes unit cbU,integer cbId returns boolean
 local integer cbTt=1
+local ability cbA
 // 29 окт: T Гоку в рывковом режиме — тип цели «юнит» ставится на экземпляре (в таблице — «точка»), квик не отдавал приказ
-if cbId=='GKT1' and LoadReal(HH,PH(OwnerOf(cbU)),VariationTHash)==1 then
-return true
-endif
+//if cbId=='GKT1' and LoadReal(HH,PH(OwnerOf(cbU)),VariationTHash)==1 then
+//return true
+//endif
 // Channel — тип цели из таблицы способности (1 — юнит, 3 — юнит или точка), остальные — можно по юниту
 if CBS_QcNcl(cbU,cbId)!="" then
 set cbTt=GetAbilityBaseIntegerLevelFieldById(cbId,ABILITY_ILF_TARGET_TYPE,CBS_QcLv(cbU,cbId))
+// 29 окт: тип цели — с экземпляра способности на герое (его меняет код: T Гоку рывок / по цели), если она изучена и видна
+set cbA=GetUnitAbility(cbU,cbId)
+if cbA!=null and GetUnitAbilityLevel(cbU,cbId)>0 and IsUnitAbilityVisible(cbU,cbId) then
+set cbTt=GetAbilityIntegerLevelField(cbA,ABILITY_ILF_TARGET_TYPE,CBS_QcLv(cbU,cbId))
+endif
+set cbA=null
 endif
 return cbTt==1 or cbTt==3
 endfunction
