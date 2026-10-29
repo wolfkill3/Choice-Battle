@@ -44795,7 +44795,8 @@ local real y
 call SetFrameSize( ResistBarFrame, 2.*w, .082)
 call ClearFrameAllPoints( ResistBarFrame )
 //call SetFrameRelativePoint( ResistBarFrame, FRAMEPOINT_CENTER, GetOriginFrame(ORIGIN_FRAME_PORTRAIT,0), FRAMEPOINT_CENTER, .171*k, -.026 )
-call SetFrameRelativePoint( ResistBarFrame, FRAMEPOINT_CENTER, GetOriginFrame(ORIGIN_FRAME_PORTRAIT,0), FRAMEPOINT_CENTER, .159*k, -.026 ) // левее
+//call SetFrameRelativePoint( ResistBarFrame, FRAMEPOINT_CENTER, GetOriginFrame(ORIGIN_FRAME_PORTRAIT,0), FRAMEPOINT_CENTER, .159*k, -.026 ) // левее
+call SetFrameRelativePoint( ResistBarFrame, FRAMEPOINT_CENTER, GetOriginFrame(ORIGIN_FRAME_PORTRAIT,0), FRAMEPOINT_CENTER, .147*k, -.026 ) // ещё левее
 loop
 exitwhen rlN>=14
 //if rlN==0 then
@@ -44828,7 +44829,8 @@ endloop
 call ClearFrameAllPoints( OpenResistButton )
 //call SetFrameRelativePoint( OpenResistButton, FRAMEPOINT_CENTER, GetOriginFrame(ORIGIN_FRAME_PORTRAIT,0), FRAMEPOINT_CENTER, -.004+.047*k, .0455 )
 // кнопка % — справа, под кнопкой V над панелью
-call SetFrameRelativePoint( OpenResistButton, FRAMEPOINT_CENTER, GetOriginFrame(ORIGIN_FRAME_PORTRAIT,0), FRAMEPOINT_CENTER, -.004+.276*k, .0147 )
+//call SetFrameRelativePoint( OpenResistButton, FRAMEPOINT_CENTER, GetOriginFrame(ORIGIN_FRAME_PORTRAIT,0), FRAMEPOINT_CENTER, -.004+.276*k, .0147 )
+call SetFrameRelativePoint( OpenResistButton, FRAMEPOINT_CENTER, GetOriginFrame(ORIGIN_FRAME_PORTRAIT,0), FRAMEPOINT_CENTER, -.004+.264*k, .0147 ) // левее
 endfunction
 function Trig_StatusBar_Actions takes nothing returns nothing
     local framehandle gameUI=GetOriginFrame( ORIGIN_FRAME_GAME_UI, 0 )
