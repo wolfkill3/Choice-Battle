@@ -44790,17 +44790,36 @@ function ResistBar_Layout takes real k returns nothing
 local integer rlN=0 // 29 окт: не n — глобальный unit n (карта не запускалась)
 local integer idx
 //local real w=.105*k
-local real w=.11*k // крупнее
+//local real w=.11*k // крупнее
+// 29 окт: ширина и центр по X — как у статус-бара (он сам сужается с консолью при WFE), высота — от портрета
+local real w=GetFrameWidth(StatusBarFrame)*.5
+local real fs=.0098
+local real cy
 local real x
 local real y
 //call SetFrameSize( ResistBarFrame, 2.*w, .082)
+set cy=GetFrameAbsolutePointY(GetOriginFrame(ORIGIN_FRAME_PORTRAIT,0),FRAMEPOINT_CENTER)-GetFrameAbsolutePointY(StatusBarFrame,FRAMEPOINT_CENTER)
+if w<=0. then
+set w=.11*k
+endif
 call SetFrameSize( ResistBarFrame, 2.*w, .092) // вниз длиннее
 call ClearFrameAllPoints( ResistBarFrame )
 //call SetFrameRelativePoint( ResistBarFrame, FRAMEPOINT_CENTER, GetOriginFrame(ORIGIN_FRAME_PORTRAIT,0), FRAMEPOINT_CENTER, .171*k, -.026 )
 //call SetFrameRelativePoint( ResistBarFrame, FRAMEPOINT_CENTER, GetOriginFrame(ORIGIN_FRAME_PORTRAIT,0), FRAMEPOINT_CENTER, .159*k, -.026 ) // левее
 //call SetFrameRelativePoint( ResistBarFrame, FRAMEPOINT_CENTER, GetOriginFrame(ORIGIN_FRAME_PORTRAIT,0), FRAMEPOINT_CENTER, .147*k, -.026 ) // ещё левее
 // левый и верхний края на месте: ширина +.01 (центр +.005), высота +.01 (центр -.005)
-call SetFrameRelativePoint( ResistBarFrame, FRAMEPOINT_CENTER, GetOriginFrame(ORIGIN_FRAME_PORTRAIT,0), FRAMEPOINT_CENTER, .152*k, -.031 )
+//call SetFrameRelativePoint( ResistBarFrame, FRAMEPOINT_CENTER, GetOriginFrame(ORIGIN_FRAME_PORTRAIT,0), FRAMEPOINT_CENTER, .152*k, -.031 )
+if cy==0. then
+// кадры ещё не разложены — от портрета, как раньше (чуть ниже)
+call SetFrameRelativePoint( ResistBarFrame, FRAMEPOINT_CENTER, GetOriginFrame(ORIGIN_FRAME_PORTRAIT,0), FRAMEPOINT_CENTER, .152*k, -.037 )
+else
+// по X — центр статус-бара; по высоте — на .006 ниже прежнего (-.031 от центра портрета)
+call SetFrameRelativePoint( ResistBarFrame, FRAMEPOINT_CENTER, StatusBarFrame, FRAMEPOINT_CENTER, 0., cy-.037 )
+endif
+// колонка уже .105 (узкая консоль) — текст мельче
+if w<.105 then
+set fs=.0098*w/.105
+endif
 loop
 exitwhen rlN>=14
 //if rlN==0 then
@@ -44825,8 +44844,8 @@ set idx=ResistBar_Idx(rlN)
 set x=.005+w*I2R(rlN/7)
 //set y=-.006-.01*I2R(ModuloInteger(rlN,7))
 set y=-.007-.0115*I2R(ModuloInteger(rlN,7))
-call SetFrameFont( ResistTxt[idx], "Fonts\\FRIZQT__.TTF", .0098, 0 ) // крупнее (было .009)
-call SetFrameFont( ResistTxt[idx+1], "Fonts\\FRIZQT__.TTF", .0098, 0 )
+call SetFrameFont( ResistTxt[idx], "Fonts\\FRIZQT__.TTF", fs, 0 ) // крупнее (было .009), мельче при узкой консоли
+call SetFrameFont( ResistTxt[idx+1], "Fonts\\FRIZQT__.TTF", fs, 0 )
 call ClearFrameAllPoints( ResistTxt[idx] )
 call SetFrameRelativePoint( ResistTxt[idx], FRAMEPOINT_TOPLEFT, ResistBarFrame, FRAMEPOINT_TOPLEFT, x, y )
 call ClearFrameAllPoints( ResistTxt[idx+1] )
