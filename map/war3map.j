@@ -56572,6 +56572,8 @@ local item array it
 local integer i=0
 local integer str=SH_tamafrost
 local player p=OwnerOf(u)
+local real rfhClk=0. // 29 окт: часы Эсканора и запас маски Хирако / Тоусена переносятся на нового героя
+local real rfhMask=0.
 if rfhr[ip]!=0 then
 set rfhr[ip]=0
 set rfhpick=false
@@ -56639,8 +56641,18 @@ if GetUnitTypeId(u)=='HRem' and LoadInteger(HH,GetHandleId(u),SH_RemKillLife)>0 
 call SaveInteger(HH,GetHandleId(Hero[ip]),SH_RemKillLife,LoadInteger(HH,GetHandleId(u),SH_RemKillLife))
 call Bof_xa(Hero[ip],0,2,LoadInteger(HH,GetHandleId(Hero[ip]),SH_RemKillLife))
 endif
+set rfhClk=LoadReal(bof_HT,GetHandleId(u),SH_EscClock)
+set rfhMask=LoadReal(HH,GetHandleId(u),SH_ShnMaskRes)
 call FlushChildHashtable(HH,GetHandleId(u))
 call RemoveUnit(u)
+// 29 окт: солнце и часы Эсканора запускались только при пике — после -rfh у нового героя их не было (ночь навсегда)
+if GetUnitTypeId(Hero[ip])=='HEsc' then
+call Esc_OnSpawn(Hero[ip])
+call Esc_SetClock(Hero[ip],rfhClk,false)
+endif
+if GetUnitTypeId(Hero[ip])=='HShn' or GetUnitTypeId(Hero[ip])=='H02K' then
+call SaveReal(HH,GetHandleId(Hero[ip]),SH_ShnMaskRes,rfhMask)
+endif
 if GetLocalPlayer()==p then
 call ClearSelection()
 call SelectUnit(n,true)
