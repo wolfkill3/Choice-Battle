@@ -284339,6 +284339,21 @@ set bj_lastCreatedEffect=AddSpecialEffectTarget(m,u,at)
 call SetSpecialEffectScale(bj_lastCreatedEffect,sc)
 call RemoveEffect(bj_lastCreatedEffect,dur,false,CreateTimer())
 endfunction
+// прямой синий слеш, как у Кирито (SlashBlueKojiro вытянут по оси X): поперёк направления удара ang, крен roll (обычно 0);
+// под слешем — эффект удара: вспышка и ударная волна
+function HitSlash takes real x,real y,real ang,real roll,real sc returns nothing
+set bj_lastCreatedEffect=AddSpecialEffect("war3mapImported\\SlashBlueKojiro.mdl",x,y)
+call SetSpecialEffectHeight(bj_lastCreatedEffect,60)
+call SetSpecialEffectScale(bj_lastCreatedEffect,sc)
+call SetSpecialEffectOrientation(bj_lastCreatedEffect,ang+90,roll,0)
+call DestroyEffect(bj_lastCreatedEffect)
+call HitFx("Aizen\\HitToumaAfb.mdx",x,y,60.,sc+0.3,1.)
+call HitFx("White--zhendi.mdx",x,y,0.,sc*0.8,1.)
+endfunction
+// прямой слеш по цели e от c
+function HitSlashU takes unit c,unit e,real sc returns nothing
+call HitSlash(GetUnitX(e),GetUnitY(e),Atan2(GetUnitY(e)-GetUnitY(c),GetUnitX(e)-GetUnitX(c))*bj_RADTODEG,0.,sc)
+endfunction
 function HitEnemy takes unit u,unit e returns boolean
 return e!=null and UnitIsAlive(e) and IsUnitEnemy(e,OwnerOf(u)) and not IsUnitType(e,UNIT_TYPE_STRUCTURE) and GetUnitAbilityLevel(e,'Aloc')==0 and not IsUnitInvulnerable(e)
 endfunction
@@ -284492,6 +284507,7 @@ call HitAnimHit(u,2.,0.35)
 call HitFreeze(u,e,0.2+HitStopAdd(u))
 call HitFxU("Aizen\\[A]hit-white-guangxiao.mdx",e,"chest",0.9,1.)
 call HitFxU("az_hitheavy.mdx",e,"chest",0.7,1.)
+call HitSlashU(u,e,0.7)
 call HitSnd("HitQ")
 call HitVo("HitQ1")
 call myCustomDamage(u,e,dmg,false,false,null,null,null)
@@ -284748,6 +284764,7 @@ call SaveReal(HH,GetHandleId(u),HitK("EStep"),0.)
 call HitAnimHit(u,2.,0.4)
 call HitFxU("Aizen\\[A]hit-white-guangxiao.mdx",c,"chest",1.,1.)
 call HitFxU("az_hitheavy.mdx",c,"chest",0.8,1.)
+call HitSlashU(u,c,0.8)
 call myCustomDamage(u,c,75.*l+l*HitAgi(u),false,false,null,null,null)
 call HitSnd("HitE1-sfx-2")
 call HitVo("HitE1")
@@ -285018,6 +285035,7 @@ if hit!=null then
 call HitFx("JirenShock2.mdx",GetUnitX(hit),GetUnitY(hit),0.,0.6,1.5)
 call HitFx("Others\\[A]shockwave big.mdx",GetUnitX(hit),GetUnitY(hit),60.,0.5,1.)
 call HitFxU("BlackGoku\\[DoFT]PurpleAz-hit.mdx",hit,"chest",1.5,1.)
+call HitSlash(GetUnitX(hit),GetUnitY(hit),a*bj_RADTODEG,0.,1.)
 call myCustomDamage(u,hit,3.*HitAgi(u),false,false,null,null,null)
 else
 call HitFx("JirenShock2.mdx",x+1800.*Cos(a),y+1800.*Sin(a),0.,0.6,1.5)
@@ -285047,6 +285065,7 @@ return
 endif
 call HitFxU("az_hitheavy.mdx",e,"chest",0.7,1.)
 if k<3 then
+call HitSlashU(u,e,0.6)
 call myCustomDamage(u,e,HitAgi(u),false,false,null,null,null)
 call SetUnitFlyHeight(e,GetUnitDefaultFlyHeight(e)+120.*k,800.)
 call HitSnd("HitQ")
@@ -285059,6 +285078,8 @@ call SetControlToUnit(u,e,0.5,"stun")
 call Push(e,25.,Atan2(GetUnitY(e)-GetUnitY(u),GetUnitX(e)-GetUnitX(u))*bj_RADTODEG,300.)
 endif
 call HitFx("BlackGoku\\groundshock1.mdx",GetUnitX(e),GetUnitY(e),0.,0.6,1.)
+// вбивание: один слеш под наклоном
+call HitSlash(GetUnitX(e),GetUnitY(e),Atan2(GetUnitY(e)-GetUnitY(u),GetUnitX(e)-GetUnitX(u))*bj_RADTODEG,45.,0.8)
 call HitSnd("HitF3-sfx-2")
 call FlushChildHashtable(h,id)
 call TSE_DestroyTimer(t)
@@ -285132,6 +285153,7 @@ if hit!=null then
 call SetUnitPosition(u,GetUnitX(hit)+100.*Cos(a),GetUnitY(hit)+100.*Sin(a))
 call SetUnitFacingInstant(u,a*bj_RADTODEG+180.)
 call HitFxU("BlackGoku\\[AB]PurpleAz-hit.mdx",hit,"chest",1.3,1.)
+call HitSlash(GetUnitX(hit),GetUnitY(hit),a*bj_RADTODEG,0.,0.9)
 call myCustomDamage(u,hit,2.5*HitAgi(u),false,false,null,null,null)
 if UnitIsAlive(hit) then
 call SetControlToUnit(u,hit,1.,"stun")
@@ -285249,6 +285271,7 @@ call SetUnitFacingInstant(u,a*bj_RADTODEG+180.)
 call HitAnimHit(u,2.5,0.35)
 call HitFxU("Aizen\\[A]hit-white-guangxiao.mdx",e,"chest",1.,1.)
 call HitFxU("az_hitheavy.mdx",e,"chest",0.8,1.)
+call HitSlashU(u,e,0.7)
 call myCustomDamage(u,e,2.*HitAgi(u),false,false,null,null,null)
 set u=null
 set e=null
