@@ -44798,7 +44798,9 @@ local real cy
 local real x
 local real y
 //call SetFrameSize( ResistBarFrame, 2.*w, .082)
-set cy=GetFrameAbsolutePointY(GetOriginFrame(ORIGIN_FRAME_PORTRAIT,0),FRAMEPOINT_CENTER)-GetFrameAbsolutePointY(StatusBarFrame,FRAMEPOINT_CENTER)
+//set cy=GetFrameAbsolutePointY(GetOriginFrame(ORIGIN_FRAME_PORTRAIT,0),FRAMEPOINT_CENTER)-GetFrameAbsolutePointY(StatusBarFrame,FRAMEPOINT_CENTER)
+// у портрета точка CENTER не задана — её Y неверный, окно уходило вниз. Верх окна — от верха статус-бара (под кнопкой V)
+set cy=-.040
 if w<=0. then
 set w=.11*k
 endif
@@ -44809,12 +44811,14 @@ call ClearFrameAllPoints( ResistBarFrame )
 //call SetFrameRelativePoint( ResistBarFrame, FRAMEPOINT_CENTER, GetOriginFrame(ORIGIN_FRAME_PORTRAIT,0), FRAMEPOINT_CENTER, .147*k, -.026 ) // ещё левее
 // левый и верхний края на месте: ширина +.01 (центр +.005), высота +.01 (центр -.005)
 //call SetFrameRelativePoint( ResistBarFrame, FRAMEPOINT_CENTER, GetOriginFrame(ORIGIN_FRAME_PORTRAIT,0), FRAMEPOINT_CENTER, .152*k, -.031 )
-if cy==0. then
+//if cy==0. then
+if false then
 // кадры ещё не разложены — от портрета, как раньше (чуть ниже)
 call SetFrameRelativePoint( ResistBarFrame, FRAMEPOINT_CENTER, GetOriginFrame(ORIGIN_FRAME_PORTRAIT,0), FRAMEPOINT_CENTER, .152*k, -.037 )
 else
 // по X — центр статус-бара; по высоте — на .006 ниже прежнего (-.031 от центра портрета)
-call SetFrameRelativePoint( ResistBarFrame, FRAMEPOINT_CENTER, StatusBarFrame, FRAMEPOINT_CENTER, 0., cy-.037 )
+//call SetFrameRelativePoint( ResistBarFrame, FRAMEPOINT_CENTER, StatusBarFrame, FRAMEPOINT_CENTER, 0., cy-.037 )
+call SetFrameRelativePoint( ResistBarFrame, FRAMEPOINT_TOP, StatusBarFrame, FRAMEPOINT_TOP, 0., cy )
 endif
 // колонка уже .105 (узкая консоль) — текст мельче
 if w<.105 then
@@ -44856,7 +44860,9 @@ call ClearFrameAllPoints( OpenResistButton )
 //call SetFrameRelativePoint( OpenResistButton, FRAMEPOINT_CENTER, GetOriginFrame(ORIGIN_FRAME_PORTRAIT,0), FRAMEPOINT_CENTER, -.004+.047*k, .0455 )
 // кнопка % — справа, под кнопкой V над панелью
 //call SetFrameRelativePoint( OpenResistButton, FRAMEPOINT_CENTER, GetOriginFrame(ORIGIN_FRAME_PORTRAIT,0), FRAMEPOINT_CENTER, -.004+.276*k, .0147 )
-call SetFrameRelativePoint( OpenResistButton, FRAMEPOINT_CENTER, GetOriginFrame(ORIGIN_FRAME_PORTRAIT,0), FRAMEPOINT_CENTER, -.004+.264*k, .0147 ) // левее
+//call SetFrameRelativePoint( OpenResistButton, FRAMEPOINT_CENTER, GetOriginFrame(ORIGIN_FRAME_PORTRAIT,0), FRAMEPOINT_CENTER, -.004+.264*k, .0147 ) // левее
+// кнопка % — прямо под кнопкой V (открыть / закрыть статус-бары)
+call SetFrameRelativePoint( OpenResistButton, FRAMEPOINT_CENTER, CloseStatusButton, FRAMEPOINT_CENTER, 0., -.018 )
 endfunction
 function Trig_StatusBar_Actions takes nothing returns nothing
     local framehandle gameUI=GetOriginFrame( ORIGIN_FRAME_GAME_UI, 0 )
