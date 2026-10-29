@@ -18764,7 +18764,8 @@ set t=null
 set u=null
 endfunction
 // копия героини (uB1B), прозрачность 150, тает на step каждые 0.02 c; anim<0 — без анимации
-function Sui_Ghost takes unit c,real x,real y,real ang,integer anim,integer step returns unit
+// 29 окт: Sui_GhostP — то же с периодом угасания per (у Sui_Ghost — 0.02 с)
+function Sui_GhostP takes unit c,real x,real y,real ang,integer anim,integer step,real per returns unit
 local timer t=CreateTimer()
 set bj_lastCreatedUnit=CreateUnit(OwnerOf(c),'uB1B',x,y,ang)
 call SetUnitBlendTime(bj_lastCreatedUnit,0.)
@@ -18775,9 +18776,13 @@ endif
 call SaveUnitHandle(HH,GetHandleId(t),0,bj_lastCreatedUnit)
 call SaveInteger(HH,GetHandleId(t),1,150)
 call SaveInteger(HH,GetHandleId(t),2,step)
-call TSE_TimerStart(t,.02,true,function Sui_GhostAct)
+//call TSE_TimerStart(t,.02,true,function Sui_GhostAct)
+call TSE_TimerStart(t,per,true,function Sui_GhostAct)
 set t=null
 return bj_lastCreatedUnit
+endfunction
+function Sui_Ghost takes unit c,real x,real y,real ang,integer anim,integer step returns unit
+return Sui_GhostP(c,x,y,ang,anim,step,.02)
 endfunction
 function Sui_AnimAct takes nothing returns nothing
 local timer t=GetExpiredTimer()
@@ -19031,8 +19036,9 @@ call Sui_Q_Do(caster,caster,Atan2BJ(ty-GetUnitY(caster),tx-GetUnitX(caster)))
 // зеркало (G) повторяет удар: полупрозрачная копия в зеркале, лицом туда, куда смотрит зеркало
 if m!=null then
 //call Sui_Q_Do(Sui_Ghost(caster,GetUnitX(m),GetUnitY(m),GetUnitFacing(m),-1,1),caster,GetUnitFacing(m))
-// 29 окт: призрак в зеркале живёт 1.5 с (было 3), Q длится ~1.1 с
-call Sui_Q_Do(Sui_Ghost(caster,GetUnitX(m),GetUnitY(m),GetUnitFacing(m),-1,2),caster,GetUnitFacing(m))
+//call Sui_Q_Do(Sui_Ghost(caster,GetUnitX(m),GetUnitY(m),GetUnitFacing(m),-1,2),caster,GetUnitFacing(m))
+// 29 окт: призрак в зеркале живёт 2 с (было 3): 75 шагов по 2/75 с, Q длится ~1.1 с
+call Sui_Q_Do(Sui_GhostP(caster,GetUnitX(m),GetUnitY(m),GetUnitFacing(m),-1,2,2./75.),caster,GetUnitFacing(m))
 endif
 set m=null
 endfunction
@@ -19320,8 +19326,9 @@ endif
 call Sui_E_Do(caster,caster,Atan2BJ(ty-GetUnitY(caster),tx-GetUnitX(caster)))
 if m!=null then
 //call Sui_E_Do(Sui_Ghost(caster,GetUnitX(m),GetUnitY(m),GetUnitFacing(m),-1,1),caster,GetUnitFacing(m))
-// 29 окт: призрак в зеркале живёт 1.5 с (было 3), E длится ~1.1 с
-call Sui_E_Do(Sui_Ghost(caster,GetUnitX(m),GetUnitY(m),GetUnitFacing(m),-1,2),caster,GetUnitFacing(m))
+//call Sui_E_Do(Sui_Ghost(caster,GetUnitX(m),GetUnitY(m),GetUnitFacing(m),-1,2),caster,GetUnitFacing(m))
+// 29 окт: призрак в зеркале живёт 2 с (было 3): 75 шагов по 2/75 с, E длится ~1.1 с
+call Sui_E_Do(Sui_GhostP(caster,GetUnitX(m),GetUnitY(m),GetUnitFacing(m),-1,2,2./75.),caster,GetUnitFacing(m))
 endif
 set m=null
 endfunction
