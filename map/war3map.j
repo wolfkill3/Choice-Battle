@@ -7222,7 +7222,9 @@ if GetLocalPlayer()==OwnerOf(u) then
 call TSE_Filter()
 endif
 endif
-call SetUnitAnimationFrozen(u,true)
+//call SetUnitAnimationFrozen(u,true)
+// 29 окт: не заморозка анимации (после выхода часть анимаций так и стояла) — скорость 0.001, старая в слоте 0
+call SetUnitTimeScale(u,0.001)
 // PauseUnitEx (счётчик, код способностей его не снимет). Ченнел сбивается — как и при обычной PauseUnit (проверено 29 окт)
 call PauseUnitEx(u,true)
 //call UnitPauseTimedLife(u,true)
@@ -7340,7 +7342,8 @@ endif
 if fr then
 call SaveReal(TSE_HT,GetHandleId(pr),0,GetProjectileTimeScale(pr))
 call SaveReal(TSE_HT,GetHandleId(pr),1,GetProjectileSpeed(pr))
-call SetProjectileTimeScale(pr,0)
+//call SetProjectileTimeScale(pr,0)
+call SetProjectileTimeScale(pr,0.001) // 29 окт: не 0
 call SetProjectileAnimationFrozen(pr,true)
 //call SetProjectileSpeed(pr,0)
 //call SetProjectileSpeed(pr,1.) // 29 окт: скорость 1, не 0 (снаряд не теряет полёт)
@@ -7367,7 +7370,13 @@ endif
 elseif TSE_Src!=null and (ex-GetUnitX(TSE_Src))*(ex-GetUnitX(TSE_Src))+(ey-GetUnitY(TSE_Src))*(ey-GetUnitY(TSE_Src))<22500. then
 return
 endif
-call SetSpecialEffectAnimationFrozen(e,true)
+//call SetSpecialEffectAnimationFrozen(e,true)
+// 29 окт: скорость 0.001 вместо заморозки, старая скорость в слоте 0; уже найденный эффект второй раз не трогается
+if HaveSavedReal(TSE_HT,GetHandleId(e),0) then
+return
+endif
+call SaveReal(TSE_HT,GetHandleId(e),0,GetSpecialEffectTimeScale(e))
+call SetSpecialEffectTimeScale(e,0.001)
 call HandleListAddHandle(TSE_Eff,e)
 endfunction
 // эффекты в области (EnumSpecialEffectsInRange). 29 окт: перебор всех эффектов по типу хэндла (HandleListEnumById 'efct')
@@ -7402,13 +7411,18 @@ endloop
 endif
 set wr=null
 endfunction
-// анимация стоит через SetUnitAnimationFrozen, не скоростью 0: частицы, рождённые при скорости 0, не умирали (29 окт, стрела Аталанты);
+// анимация стоит скоростью 0.001 (не 0: частицы, рождённые при скорости 0, не умирали — стрела Аталанты; не заморозкой: после выхода стояла);
 // регенерация стоит: HP/MP выше запомненного срезаются, ниже (вытягивание маны и т.п. от того, кто остановил) — запоминаются
 function TSE_ZeroScale takes nothing returns nothing
 local unit u=GetEnumUnit()
 local integer id=GetHandleId(u)
-if not IsUnitAnimationFrozen(u) then
-call SetUnitAnimationFrozen(u,true)
+//if not IsUnitAnimationFrozen(u) then
+//call SetUnitAnimationFrozen(u,true)
+//endif
+// скорость сменил код того, для кого время идёт, — запомнить её для возобновления и снова 0.001
+if GetUnitTimeScale(u)>0.0011 then
+call SaveReal(TSE_HT,id,0,GetUnitTimeScale(u))
+call SetUnitTimeScale(u,0.001)
 endif
 if LoadBoolean(TSE_HT,id,7) then
 call SetUnitX(u,LoadReal(TSE_HT,id,5))
@@ -7621,7 +7635,9 @@ loop
 exitwhen i>=cnt
 set e=HandleListGetEffectByIndex(TSE_Eff,i)
 if e!=null then
-call SetSpecialEffectAnimationFrozen(e,false)
+//call SetSpecialEffectAnimationFrozen(e,false)
+call SetSpecialEffectTimeScale(e,LoadReal(TSE_HT,GetHandleId(e),0))
+call FlushChildHashtable(TSE_HT,GetHandleId(e))
 endif
 set i=i+1
 endloop
