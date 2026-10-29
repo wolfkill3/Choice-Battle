@@ -7672,6 +7672,16 @@ call TSE_Stop()
 set tsh=null
 return
 endif
+// 29 окт: -tsall [сек] — стоят все, в том числе сам набравший и его герой (для проверок); без секунд — до следующей команды
+if SubString(msg,0,6)=="-tsall" then
+set sec=0.
+if StringLength(msg)>7 then
+set sec=S2R(SubString(msg,7,StringLength(msg)))
+endif
+call TSE_StartEx(null,RMaxBJ(sec,0.),false,0.,0.,0.)
+set tsh=null
+return
+endif
 if SubString(msg,0,5)=="-tsa " then
 set msg=SubString(msg,5,StringLength(msg))
 set sp=0
