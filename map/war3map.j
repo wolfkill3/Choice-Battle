@@ -879,6 +879,7 @@ group udg_HG=null
 timer RemoveUnitTimer
 group udg_Bike=null
 real array Koef
+real array ASO_K // 29 окт: доля доп. урона атаки героя игрока от скорости атаки сверх потолка (0.1 = +10%)
 real array udg_Shiro
 boolean udg_Shir=false
 boolean songbool=false //checks if switch mode is active
@@ -7893,6 +7894,50 @@ set lc=null
 set r=null
 set u=null
 set pl=null
+endfunction
+// 29 окт: скорость атаки сверх потолка движка (GetAttackSpeedMaxBonus) не пропадает — каждые 2% AS выше потолка дают
+// +1% урона атаки героя (только сам герой, не иллюзии и клоны). Бонус AS героя — поле оружия us1+ (без обрезки потолком);
+// пересчёт раз в 0.5 с. В тест-режиме -as показывает значения для своего героя
+function ASO_Tick takes nothing returns nothing
+local integer i=0
+local real b
+local real cap=GetAttackSpeedMaxBonus()
+loop
+exitwhen i>=12
+set ASO_K[i]=0.
+if Hero[i]!=null and cap>0. and IsUnitType(Hero[i],UNIT_TYPE_DEAD)==false then
+set b=GetUnitWeaponRealField(Hero[i],UNIT_WEAPON_RF_ATTACK_SPEED_BONUS,0)
+if b>cap then
+set ASO_K[i]=(b-cap)*0.5
+endif
+endif
+set i=i+1
+endloop
+endfunction
+function ASO_Chat takes nothing returns nothing
+local integer i=PId(TrigP())
+local unit u
+if not udg_test or i<0 or i>=12 then
+return
+endif
+set u=Hero[i]
+if u==null then
+return
+endif
+call DisplayTextToPlayer(TrigP(),0,0,"AS: x"+R2S(GetUnitAttackSpeed(u))+", "+Lng("бонус","bonus")+" us1+ "+R2S(GetUnitWeaponRealField(u,UNIT_WEAPON_RF_ATTACK_SPEED_BONUS,0))+", "+Lng("потолок","cap")+" "+R2S(GetAttackSpeedMaxBonus())+", "+Lng("доп. урон атаки","extra attack damage")+" +"+I2S(R2I(ASO_K[i]*100.+0.5))+"%")
+set u=null
+endfunction
+function ASO_Init takes nothing returns nothing
+local trigger tr=CreateTrigger()
+local integer i=0
+loop
+exitwhen i>=12
+call TRPCE(tr,PlayerV(i),"-as",true)
+set i=i+1
+endloop
+call TriggerAddAction(tr,function ASO_Chat)
+call TimerStart(CreateTimer(),0.5,true,function ASO_Tick)
+set tr=null
 endfunction
 function PERF_Init takes nothing returns nothing
 local trigger tr=CreateTrigger()
@@ -72136,6 +72181,10 @@ if nb>0 then
     endif
     if duid=='H34X' or duid=='H14F' then
         set nb=nb*17.5
+    endif
+    // 29 окт: скорость атаки сверх потолка — доп. урон атаки героя (ASO_Tick)
+    if CurrentEventAttack and idc>=0 and idc<12 and c==Hero[idc] and ASO_K[idc]>0. then
+        set nb=nb*(1.+ASO_K[idc])
     endif
     if nb>GetUnitState(u,UNIT_STATE_LIFE) and duid=='H02H' then
         call PauseUnit(u, false)
@@ -301416,6 +301465,7 @@ call InitTrig_KiritoInt()
 call InitTrig_Text_Damage()
 call TSE_Init()
 call PERF_Init()
+call ASO_Init() // 29 окт: AS сверх потолка -> урон атаки
 // call InitTrig_Text_PreDamage()
 //call InitTrig_BelfegorShield()
  //call ExecuteFunc("InitCC")
