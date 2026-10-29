@@ -44753,6 +44753,37 @@ function NickFileQueue takes integer nfi, string nff, integer nfz returns nothin
     set NK_S[NK_N]=nfz
     set NK_N=NK_N+1
 endfunction
+// номер строки окна (0..13: первые 7 — левая колонка) -> индекс подписи в ResistTxt (значение — следующий)
+function ResistBar_Idx takes integer r returns integer
+if r==0 then
+return 0
+elseif r==1 then
+return 2
+elseif r==2 then
+return 22
+elseif r==3 then
+return 24
+elseif r==4 then
+return 4
+elseif r==5 then
+return 6
+elseif r==6 then
+return 14
+elseif r==7 then
+return 26
+elseif r==8 then
+return 8
+elseif r==9 then
+return 10
+elseif r==10 then
+return 12
+elseif r==11 then
+return 16
+elseif r==12 then
+return 18
+endif
+return 20
+endfunction
 // 29 окт (3.8.2): окно характеристик — над панелью урона / брони / атрибутов, две колонки по 7 строк.
 // k — множитель ширины консоли (как у остальных размеров). Кнопка открытия — на старом месте у портрета
 function ResistBar_Layout takes real k returns nothing
@@ -44767,24 +44798,25 @@ call ClearFrameAllPoints( ResistBarFrame )
 call SetFrameRelativePoint( ResistBarFrame, FRAMEPOINT_CENTER, GetOriginFrame(ORIGIN_FRAME_PORTRAIT,0), FRAMEPOINT_CENTER, .159*k, -.026 ) // левее
 loop
 exitwhen rlN>=14
-// левая колонка: скорость, AS, урон, физ. резист; правая: резисты, лечение, мана
-if rlN==0 then
-set idx=0
-elseif rlN==1 then
-set idx=2
-elseif rlN==2 then
-set idx=22
-elseif rlN==3 then
-set idx=24
-elseif rlN==4 then
-set idx=4
-elseif rlN==5 then
-set idx=6
-elseif rlN==6 then
-set idx=26
-else
-set idx=8+(rlN-7)*2
-endif
+//if rlN==0 then
+//set idx=0
+//elseif rlN==1 then
+//set idx=2
+//elseif rlN==2 then
+//set idx=22
+//elseif rlN==3 then
+//set idx=24
+//elseif rlN==4 then
+//set idx=4
+//elseif rlN==5 then
+//set idx=6
+//elseif rlN==6 then
+//set idx=26
+//else
+//set idx=8+(rlN-7)*2
+//endif
+// 29 окт: слева — скорость, AS, урон, Control Resist; справа — Phys Resist, Magic / Full Resist, MR + FR, лечение, мана
+set idx=ResistBar_Idx(rlN)
 set x=.005+w*I2R(rlN/7)
 set y=-.006-.01*I2R(ModuloInteger(rlN,7))
 call ClearFrameAllPoints( ResistTxt[idx] )
@@ -46161,7 +46193,7 @@ function Trig_StatusBar_Actions takes nothing returns nothing
     call SetFrameTextAlignment( ResistBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
     call SetFrameTextColour( ResistBarFrameText, 0xFFDDDDDD )
     call SetFrameParent( ResistBarFrameText, ResistBarFrame )
-    call SetFrameText( ResistBarFrameText, "Resist Sum")
+    call SetFrameText( ResistBarFrameText, "MR + FR")
     call ShowFrame( ResistBarFrameText, true )
     call SetFrameRelativePoint( ResistBarFrameText, FRAMEPOINT_TOPLEFT, ResistTxt[10], FRAMEPOINT_TOPLEFT,  0, -.01  )
 
@@ -48040,11 +48072,12 @@ if IsFrameVisible(ResistBarFrame) then
     if GetUnitAbilityLevel(GetUnitSelected(GetLocalPlayer()),'B01K')>0 then
         set rr=rr*0.8
     endif
-    if rr>=1. then
-        call SetFrameText(ResistTxt[25], "+"+I2S(R2I((rr-1.)*100.+0.5))+"%")
-    else
-        call SetFrameText(ResistTxt[25], "-"+I2S(R2I((1.-rr)*100.+0.5))+"%")
-    endif
+//if rr>=1. then
+//call SetFrameText(ResistTxt[25], "+"+I2S(R2I((rr-1.)*100.+0.5))+"%")
+//else
+//call SetFrameText(ResistTxt[25], "-"+I2S(R2I((1.-rr)*100.+0.5))+"%")
+//endif
+    call SetFrameText(ResistTxt[25], I2S(R2I(rr*100.+0.5))+"%") // база 100%, как у Magic / Full DMG Bonus
     set rr=GetUnitArmour(GetUnitSelected(GetLocalPlayer()))
     if rr>=0. then
         set rr=0.04*rr/(1.+0.04*rr)
@@ -48071,7 +48104,7 @@ if ModuloInteger(seconds,10)<1 and GetFrameHeight( GetFrameChild(GetOriginFrame(
         call SetFrameText( ResistTxt[6], "Full DMG Bonus")
         call SetFrameText( ResistTxt[8], "Magic Resist")
         call SetFrameText( ResistTxt[10], "Full Resist")
-        call SetFrameText( ResistTxt[12], "Resist Sum")
+        call SetFrameText( ResistTxt[12], "MR + FR")
         call SetFrameText( ResistTxt[14], "Control Resist")
         call SetFrameText( ResistTxt[16], "HP Heal Eff.")
         call SetFrameText( ResistTxt[18], "MP Heal Eff.")
@@ -48148,7 +48181,7 @@ if ModuloInteger(seconds,10)<1 and GetFrameHeight( GetFrameChild(GetOriginFrame(
         call SetFrameText( ResistTxt[6], "F DMG +")
         call SetFrameText( ResistTxt[8], "MR")
         call SetFrameText( ResistTxt[10], "FR")
-        call SetFrameText( ResistTxt[12], "R Sum")
+        call SetFrameText( ResistTxt[12], "MR+FR")
         call SetFrameText( ResistTxt[14], "CR")
         call SetFrameText( ResistTxt[16], "HP Eff")
         call SetFrameText( ResistTxt[18], "MP Eff")
