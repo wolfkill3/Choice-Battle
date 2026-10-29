@@ -44756,7 +44756,7 @@ endfunction
 // 29 окт (3.8.2): окно характеристик — над панелью урона / брони / атрибутов, две колонки по 7 строк.
 // k — множитель ширины консоли (как у остальных размеров). Кнопка открытия — на старом месте у портрета
 function ResistBar_Layout takes real k returns nothing
-local integer n=0
+local integer rlN=0 // 29 окт: не n — глобальный unit n (карта не запускалась)
 local integer idx
 local real w=.105*k
 local real x
@@ -44765,32 +44765,32 @@ call SetFrameSize( ResistBarFrame, 2.*w, .082)
 call ClearFrameAllPoints( ResistBarFrame )
 call SetFrameRelativePoint( ResistBarFrame, FRAMEPOINT_CENTER, GetOriginFrame(ORIGIN_FRAME_PORTRAIT,0), FRAMEPOINT_CENTER, .171*k, -.026 )
 loop
-exitwhen n>=14
+exitwhen rlN>=14
 // левая колонка: скорость, AS, урон, физ. резист; правая: резисты, лечение, мана
-if n==0 then
+if rlN==0 then
 set idx=0
-elseif n==1 then
+elseif rlN==1 then
 set idx=2
-elseif n==2 then
+elseif rlN==2 then
 set idx=22
-elseif n==3 then
+elseif rlN==3 then
 set idx=24
-elseif n==4 then
+elseif rlN==4 then
 set idx=4
-elseif n==5 then
+elseif rlN==5 then
 set idx=6
-elseif n==6 then
+elseif rlN==6 then
 set idx=26
 else
-set idx=8+(n-7)*2
+set idx=8+(rlN-7)*2
 endif
-set x=.005+w*I2R(n/7)
-set y=-.006-.01*I2R(ModuloInteger(n,7))
+set x=.005+w*I2R(rlN/7)
+set y=-.006-.01*I2R(ModuloInteger(rlN,7))
 call ClearFrameAllPoints( ResistTxt[idx] )
 call SetFrameRelativePoint( ResistTxt[idx], FRAMEPOINT_TOPLEFT, ResistBarFrame, FRAMEPOINT_TOPLEFT, x, y )
 call ClearFrameAllPoints( ResistTxt[idx+1] )
 call SetFrameRelativePoint( ResistTxt[idx+1], FRAMEPOINT_TOPRIGHT, ResistBarFrame, FRAMEPOINT_TOPLEFT, x+w-.012, y )
-set n=n+1
+set rlN=rlN+1
 endloop
 call ClearFrameAllPoints( OpenResistButton )
 call SetFrameRelativePoint( OpenResistButton, FRAMEPOINT_CENTER, GetOriginFrame(ORIGIN_FRAME_PORTRAIT,0), FRAMEPOINT_CENTER, -.004+.047*k, .0455 )
