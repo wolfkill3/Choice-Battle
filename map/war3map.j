@@ -45953,7 +45953,8 @@ function Trig_StatusBar_Actions takes nothing returns nothing
     set ResistBarFrame=CreateFrameByType("SIMPLEFRAME", "ResistBar", null, "", 0)
     call ClearFrameAllPoints( ResistBarFrame )
     call SetFrameRelativePoint( ResistBarFrame, FRAMEPOINT_CENTER, GetOriginFrame(ORIGIN_FRAME_PORTRAIT,0), FRAMEPOINT_CENTER,  -.001, -.014  )
-    call SetFrameSize( ResistBarFrame, .094, .125)    
+    //call SetFrameSize( ResistBarFrame, .094, .125)    
+    call SetFrameSize( ResistBarFrame, .094, .145) // 29 окт: +2 строки AS
     call ShowFrame( ResistBarFrame, false )
     call SetFrameTextureEx(ResistBarFrame, 0, "TooltipLessVisible.blp", false, "Choice-tooltip-border.blp", 0)
     // SIMPLE с приоритетом выше 5 (выше WFEUIBlackBar у WFE); кнопка «%» — ещё выше
@@ -46222,6 +46223,55 @@ function Trig_StatusBar_Actions takes nothing returns nothing
     call SetFrameText( ResistBarFrameText, "0%")
     call ShowFrame( ResistBarFrameText, true )
     call SetFrameRelativePoint( ResistBarFrameText, FRAMEPOINT_TOPRIGHT, ResistBarFrame, FRAMEPOINT_TOPRIGHT,  -.01, -.108  )
+    // 29 окт (3.8.3): бонус скорости атаки в % и доп. урон автоатак от AS сверх +250% (ASO_K)
+
+    set ResistBarFrameText=CreateFrameByType( "SIMPLETEXT", "ASBonusRoot", ResistBarFrame, "", 0 )
+    set ResistTxt[22]=ResistBarFrameText
+    call ClearFrameAllPoints( ResistBarFrameText )
+    call SetFrameBlendMode( ResistBarFrameText, 0, BLEND_MODE_BLEND )
+    call SetFrameFont( ResistBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+    call SetFrameTextAlignment( ResistBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
+    call SetFrameTextColour( ResistBarFrameText, 0xFFFF6060 )
+    call SetFrameParent( ResistBarFrameText, ResistBarFrame )
+    call SetFrameText( ResistBarFrameText, "AS Bonus")
+    call ShowFrame( ResistBarFrameText, true )
+    call SetFrameRelativePoint( ResistBarFrameText, FRAMEPOINT_TOPLEFT, ResistTxt[20], FRAMEPOINT_TOPLEFT,  0, -.01   )
+
+    set ResistBarFrameText=CreateFrameByType( "SIMPLETEXT", "ASBonusNumber", ResistBarFrame, "", 0 )
+    set ResistTxt[23]=ResistBarFrameText
+    call ClearFrameAllPoints( ResistBarFrameText )
+    call SetFrameBlendMode( ResistBarFrameText, 0, BLEND_MODE_BLEND )
+    call SetFrameFont( ResistBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+    call SetFrameTextAlignment( ResistBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
+    call SetFrameTextColour( ResistBarFrameText, 0xFFFF6060 )
+    call SetFrameParent( ResistBarFrameText, ResistBarFrame )
+    call SetFrameText( ResistBarFrameText, "0%")
+    call ShowFrame( ResistBarFrameText, true )
+    call SetFrameRelativePoint( ResistBarFrameText, FRAMEPOINT_TOPRIGHT, ResistBarFrame, FRAMEPOINT_TOPRIGHT,  -.01, -.118   )
+
+    set ResistBarFrameText=CreateFrameByType( "SIMPLETEXT", "ASDmgBonusRoot", ResistBarFrame, "", 0 )
+    set ResistTxt[24]=ResistBarFrameText
+    call ClearFrameAllPoints( ResistBarFrameText )
+    call SetFrameBlendMode( ResistBarFrameText, 0, BLEND_MODE_BLEND )
+    call SetFrameFont( ResistBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+    call SetFrameTextAlignment( ResistBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
+    call SetFrameTextColour( ResistBarFrameText, 0xFFFF6060 )
+    call SetFrameParent( ResistBarFrameText, ResistBarFrame )
+    call SetFrameText( ResistBarFrameText, "AS DMG Bonus")
+    call ShowFrame( ResistBarFrameText, true )
+    call SetFrameRelativePoint( ResistBarFrameText, FRAMEPOINT_TOPLEFT, ResistTxt[22], FRAMEPOINT_TOPLEFT,  0, -.01   )
+
+    set ResistBarFrameText=CreateFrameByType( "SIMPLETEXT", "ASDmgBonusNumber", ResistBarFrame, "", 0 )
+    set ResistTxt[25]=ResistBarFrameText
+    call ClearFrameAllPoints( ResistBarFrameText )
+    call SetFrameBlendMode( ResistBarFrameText, 0, BLEND_MODE_BLEND )
+    call SetFrameFont( ResistBarFrameText, "Fonts\\FRIZQT__.TTF", .009, 0 )
+    call SetFrameTextAlignment( ResistBarFrameText, TEXT_JUSTIFY_CENTER, TEXT_JUSTIFY_MIDDLE )
+    call SetFrameTextColour( ResistBarFrameText, 0xFFFF6060 )
+    call SetFrameParent( ResistBarFrameText, ResistBarFrame )
+    call SetFrameText( ResistBarFrameText, "0%")
+    call ShowFrame( ResistBarFrameText, true )
+    call SetFrameRelativePoint( ResistBarFrameText, FRAMEPOINT_TOPRIGHT, ResistBarFrame, FRAMEPOINT_TOPRIGHT,  -.01, -.128   )
     // скрыть панель уже после настройки текстуры и текстов (раньше скрытие сбрасывалось и окно было открыто со старта)
     call ShowFrame( ResistBarFrame, false )
 
@@ -47899,12 +47949,20 @@ if IsFrameVisible(ResistBarFrame) then
     call SetFrameText(ResistTxt[17], I2S(R2I(MathRealCeil(myCustomHeal2(GetUnitSelected(GetLocalPlayer()),1)*100)))+"%")
     call SetFrameText(ResistTxt[19], I2S(R2I(MathRealCeil(myCustomMana2(GetUnitSelected(GetLocalPlayer()),1)*100)))+"%")
     call SetFrameText(ResistTxt[21], I2S(R2I(MathRealCeil(myCustomMana3(GetUnitSelected(GetLocalPlayer()),1)*100)))+"%")
+    call SetFrameText(ResistTxt[23], "+"+I2S(R2I(GetUnitWeaponRealField(GetUnitSelected(GetLocalPlayer()),UNIT_WEAPON_RF_ATTACK_SPEED_BONUS,0)*100.+0.5))+"%")
+    set i=PId(OwnerOf(GetUnitSelected(GetLocalPlayer())))
+    if i>=0 and i<12 and GetUnitSelected(GetLocalPlayer())==Hero[i] then
+        call SetFrameText(ResistTxt[25], "+"+I2S(R2I(ASO_K[i]*100.+0.5))+"%")
+    else
+        call SetFrameText(ResistTxt[25], "+0%")
+    endif
 endif
 if ModuloInteger(seconds,10)<1 and GetFrameHeight( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 ))==0.132 then
     //call SetFrameGridSize( GetOriginFrame( ORIGIN_FRAME_INVENTORY_BAR, 0 ), 3, 4 )
     if GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 ))==0.505 then
         call SetFrameSize( StatusBarFrame, .21*(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505), .04)
-        call SetFrameSize( ResistBarFrame, .094*(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505), .125)
+        //call SetFrameSize( ResistBarFrame, .094*(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505), .125)
+        call SetFrameSize( ResistBarFrame, .094*(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505), .145)
         call SetFrameText( ResistTxt[0], "Move Speed")
         call SetFrameText( ResistTxt[2], "Attack Speed")
         call SetFrameText( ResistTxt[4], "Magic DMG Bonus")
@@ -47916,6 +47974,8 @@ if ModuloInteger(seconds,10)<1 and GetFrameHeight( GetFrameChild(GetOriginFrame(
         call SetFrameText( ResistTxt[16], "HP Heal Eff.")
         call SetFrameText( ResistTxt[18], "MP Heal Eff.")
         call SetFrameText( ResistTxt[20], "MP Loss Reduce")
+        call SetFrameText( ResistTxt[22], "AS Bonus")
+        call SetFrameText( ResistTxt[24], "AS DMG Bonus")
         call SetFrameRelativePoint(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 0), FRAMEPOINT_TOPLEFT, GetFrameRelativePointParent(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 0),FRAMEPOINT_TOPLEFT),FRAMEPOINT_TOPRIGHT,.0175*(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505), -.0292)
         call SetFrameRelativePoint(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 0), FRAMEPOINT_TOP, GetFrameRelativePointParent(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 0),FRAMEPOINT_TOP),FRAMEPOINT_TOPLEFT,.00, -.0292)
         call SetFrameRelativePoint(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 0), FRAMEPOINT_TOPRIGHT, GetFrameRelativePointParent(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 0),FRAMEPOINT_TOPRIGHT),FRAMEPOINT_TOPLEFT,.00, -.0292)
@@ -47975,7 +48035,8 @@ if ModuloInteger(seconds,10)<1 and GetFrameHeight( GetFrameChild(GetOriginFrame(
         call SetFrameSpriteScale( GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON_AUTOCAST_FRAME, 9), 0.65)
     else
         call SetFrameSize( StatusBarFrame, .21*(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505), .04)
-        call SetFrameSize( ResistBarFrame, .094*(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505), .125)
+        //call SetFrameSize( ResistBarFrame, .094*(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505), .125)
+        call SetFrameSize( ResistBarFrame, .094*(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505), .145)
         call SetFrameText( ResistTxt[0], "MS")
         call SetFrameText( ResistTxt[2], "AS")
         call SetFrameText( ResistTxt[4], "M DMG +")
@@ -47987,6 +48048,8 @@ if ModuloInteger(seconds,10)<1 and GetFrameHeight( GetFrameChild(GetOriginFrame(
         call SetFrameText( ResistTxt[16], "HP Eff")
         call SetFrameText( ResistTxt[18], "MP Eff")
         call SetFrameText( ResistTxt[20], "MP Loss -")
+        call SetFrameText( ResistTxt[22], "AS +")
+        call SetFrameText( ResistTxt[24], "AS DMG +")
         call SetFrameRelativePoint(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 0), FRAMEPOINT_TOPLEFT, GetFrameRelativePointParent(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 0),FRAMEPOINT_TOPLEFT),FRAMEPOINT_TOPRIGHT,.0175*(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505), -.0292)
         call SetFrameRelativePoint(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 0), FRAMEPOINT_CENTER, GetOriginFrame(ORIGIN_FRAME_CONSOLE_UI, 0),FRAMEPOINT_CENTER,.1255*(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505), -.2268)
         call ClearFrameAllPoints(GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON, 2))
