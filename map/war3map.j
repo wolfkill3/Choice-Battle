@@ -7326,12 +7326,14 @@ set pr=HandleListGetProjectileByIndex(l,i)
 if pr!=null and not HandleListContainsHandle(TSE_Prj,pr) then
 set pu=GetProjectileSource(pr)
 set fr=pu==null or not TSE_PlayerExempt(OwnerOf(pu))
-// снаряд неуязвимого: замечен — запоминается тик, через 2 тика (0.2–0.3 с полёта) зависает
+// снаряд неуязвимого: замечен — запоминается тик, через 1 тик (0.1–0.2 с полёта) зависает
 if not fr then
 if not HaveSavedInteger(TSE_HT,GetHandleId(pr),2) then
 call SaveInteger(TSE_HT,GetHandleId(pr),2,TSE_TickN)
 call HandleListAddHandle(TSE_PrjX,pr)
-elseif TSE_TickN-LoadInteger(TSE_HT,GetHandleId(pr),2)>=2 then
+//elseif TSE_TickN-LoadInteger(TSE_HT,GetHandleId(pr),2)>=2 then
+// 29 окт: зависает через 1 тик (0.1–0.2 с полёта), было 2 (0.2–0.3 с)
+elseif TSE_TickN-LoadInteger(TSE_HT,GetHandleId(pr),2)>=1 then
 set fr=true
 endif
 endif
