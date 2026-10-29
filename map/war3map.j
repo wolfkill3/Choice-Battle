@@ -44800,7 +44800,8 @@ local real y
 //call SetFrameSize( ResistBarFrame, 2.*w, .082)
 //set cy=GetFrameAbsolutePointY(GetOriginFrame(ORIGIN_FRAME_PORTRAIT,0),FRAMEPOINT_CENTER)-GetFrameAbsolutePointY(StatusBarFrame,FRAMEPOINT_CENTER)
 // у портрета точка CENTER не задана — её Y неверный, окно уходило вниз. Верх окна — от верха статус-бара (под кнопкой V)
-set cy=-.040
+//set cy=-.040
+set cy=-.034 // чуть выше
 if w<=0. then
 set w=.11*k
 endif
@@ -44862,7 +44863,9 @@ call ClearFrameAllPoints( OpenResistButton )
 //call SetFrameRelativePoint( OpenResistButton, FRAMEPOINT_CENTER, GetOriginFrame(ORIGIN_FRAME_PORTRAIT,0), FRAMEPOINT_CENTER, -.004+.276*k, .0147 )
 //call SetFrameRelativePoint( OpenResistButton, FRAMEPOINT_CENTER, GetOriginFrame(ORIGIN_FRAME_PORTRAIT,0), FRAMEPOINT_CENTER, -.004+.264*k, .0147 ) // левее
 // кнопка % — прямо под кнопкой V (открыть / закрыть статус-бары)
-call SetFrameRelativePoint( OpenResistButton, FRAMEPOINT_CENTER, CloseStatusButton, FRAMEPOINT_CENTER, 0., -.018 )
+//call SetFrameRelativePoint( OpenResistButton, FRAMEPOINT_CENTER, CloseStatusButton, FRAMEPOINT_CENTER, 0., -.018 )
+// центр кнопки — на нижней границе статус-бара, по X как у V
+call SetFrameRelativePoint( OpenResistButton, FRAMEPOINT_CENTER, StatusBarFrame, FRAMEPOINT_BOTTOMRIGHT, -.003, 0. )
 endfunction
 function Trig_StatusBar_Actions takes nothing returns nothing
     local framehandle gameUI=GetOriginFrame( ORIGIN_FRAME_GAME_UI, 0 )
