@@ -7223,7 +7223,12 @@ endif
 call SetUnitAnimationFrozen(u,true)
 // PauseUnitEx (счётчик, код способностей его не снимет). Ченнел сбивается — как и при обычной PauseUnit (проверено 29 окт)
 call PauseUnitEx(u,true)
-call UnitPauseTimedLife(u,true)
+//call UnitPauseTimedLife(u,true)
+// 29 окт: время жизни не на паузу (вместе с паузой баффа BTLF часть даммиков потом не умирала), а отмена — остаток
+// сохранён выше (слот 8) и ставится заново в TSE_UnfreezeUnit
+if LoadReal(TSE_HT,id,8)>0. then
+call UnitCancelTimedLife(u)
+endif
 set cnt=CountUnitBuffs(u)
 loop
 exitwhen i>=cnt
@@ -7495,8 +7500,8 @@ function TSE_UnfreezeUnit takes nothing returns nothing
 local unit u=GetEnumUnit()
 local integer id=GetHandleId(u)
 call PauseUnitEx(u,false)
-call UnitPauseTimedLife(u,false)
-// 29 окт: время жизни даммика заново тем же остатком — после паузы оно у части даммиков не шло дальше (висели эффекты T Кида)
+//call UnitPauseTimedLife(u,false)
+// 29 окт: время жизни даммика заново тем же остатком (при заморозке оно отменено)
 if LoadReal(TSE_HT,id,8)>0. and not IsUnitType(u,UNIT_TYPE_DEAD) then
 call UnitApplyTimedLife(u,'BTLF',LoadReal(TSE_HT,id,8))
 endif
