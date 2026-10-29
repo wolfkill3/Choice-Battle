@@ -61659,7 +61659,8 @@ function KingOfHillActivation takes nothing returns nothing
         call DisplayTextToPlayer(GetLocalPlayer(),0,0,Lng("Активирован режим \"Царь горы\".","\"King of the Hill\" mode activated."))
         set KingOfHill=AddSpecialEffect("RingPulse.mdx",GetRectCenterX(gg_rct_KingOfHillRect),GetRectCenterY(gg_rct_KingOfHillRect))
         call SetSpecialEffectScale(KingOfHill,KOH_R/88.5)
-        call SetSpecialEffectHeight(KingOfHill,40.) // 29 окт: над камнями площадки
+        //call SetSpecialEffectHeight(KingOfHill,40.) // 29 окт: над камнями площадки
+        call SetSpecialEffectHeight(KingOfHill,100.) // 29 окт: выше (было 40)
         call ShowFrame( KingOfHillIcon, true)
         call EnableTrigger(gg_trg_KingOfHill_Enter)
     endif
