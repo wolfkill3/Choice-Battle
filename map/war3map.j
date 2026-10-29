@@ -19030,7 +19030,9 @@ endif
 call Sui_Q_Do(caster,caster,Atan2BJ(ty-GetUnitY(caster),tx-GetUnitX(caster)))
 // зеркало (G) повторяет удар: полупрозрачная копия в зеркале, лицом туда, куда смотрит зеркало
 if m!=null then
-call Sui_Q_Do(Sui_Ghost(caster,GetUnitX(m),GetUnitY(m),GetUnitFacing(m),-1,1),caster,GetUnitFacing(m))
+//call Sui_Q_Do(Sui_Ghost(caster,GetUnitX(m),GetUnitY(m),GetUnitFacing(m),-1,1),caster,GetUnitFacing(m))
+// 29 окт: призрак в зеркале живёт 1.5 с (было 3), Q длится ~1.1 с
+call Sui_Q_Do(Sui_Ghost(caster,GetUnitX(m),GetUnitY(m),GetUnitFacing(m),-1,2),caster,GetUnitFacing(m))
 endif
 set m=null
 endfunction
@@ -19317,7 +19319,9 @@ call Rem_Sound("bof\\war3mapImported\\Mercury Lamp-F-YY2.mp3",100)
 endif
 call Sui_E_Do(caster,caster,Atan2BJ(ty-GetUnitY(caster),tx-GetUnitX(caster)))
 if m!=null then
-call Sui_E_Do(Sui_Ghost(caster,GetUnitX(m),GetUnitY(m),GetUnitFacing(m),-1,1),caster,GetUnitFacing(m))
+//call Sui_E_Do(Sui_Ghost(caster,GetUnitX(m),GetUnitY(m),GetUnitFacing(m),-1,1),caster,GetUnitFacing(m))
+// 29 окт: призрак в зеркале живёт 1.5 с (было 3), E длится ~1.1 с
+call Sui_E_Do(Sui_Ghost(caster,GetUnitX(m),GetUnitY(m),GetUnitFacing(m),-1,2),caster,GetUnitFacing(m))
 endif
 set m=null
 endfunction
