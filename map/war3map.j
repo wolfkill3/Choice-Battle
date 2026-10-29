@@ -7256,6 +7256,8 @@ endif
 // 29 окт: не заморозка анимации (после выхода часть анимаций так и стояла) — скорость 0.001, старая в слоте 0
 call SetUnitTimeScale(u,0.001)
 // PauseUnitEx (счётчик, код способностей его не снимет). Ченнел сбивается — как и при обычной PauseUnit (проверено 29 окт)
+// 29 окт: был ли на паузе до остановки (слот 9) — после выхода юнит оставался на паузе и без анимации
+call SaveBoolean(TSE_HT,id,9,IsUnitPaused(u))
 call PauseUnitEx(u,true)
 //call UnitPauseTimedLife(u,true)
 // 29 окт: время жизни не на паузу (вместе с паузой баффа BTLF часть даммиков потом не умирала), а отмена — остаток
@@ -7579,7 +7581,19 @@ endfunction
 function TSE_UnfreezeUnit takes nothing returns nothing
 local unit u=GetEnumUnit()
 local integer id=GetHandleId(u)
+local integer k=0
 call PauseUnitEx(u,false)
+// 29 окт: PauseUnitEx(false) паузу не снимал (пауза da после выхода) — если до остановки паузы не было, снять до конца
+if not LoadBoolean(TSE_HT,id,9) then
+loop
+exitwhen k>=8 or not IsUnitPaused(u)
+call PauseUnitEx(u,false)
+set k=k+1
+endloop
+if IsUnitPaused(u) then
+call PauseUnit(u,false)
+endif
+endif
 //call UnitPauseTimedLife(u,false)
 // 29 окт: время жизни даммика заново тем же остатком (при заморозке оно отменено)
 if LoadReal(TSE_HT,id,8)>0. and not IsUnitType(u,UNIT_TYPE_DEAD) then
