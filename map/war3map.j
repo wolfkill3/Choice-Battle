@@ -2434,6 +2434,7 @@ boolean TSE_FiltOn=false
 // отладка: -ts красного пишет ему, сколько заморожено
 boolean TSE_Dbg=false
 integer TSE_DbgTm=0
+integer TSE_DbgAloc=0 // 29 окт: сколько даммиков с Aloc заморожено (отладка)
 //DraftGlobals (Ban Draft Mode)
 boolean DraftOn=false
 boolean DraftDone=false
@@ -7210,6 +7211,7 @@ call SaveReal(TSE_HT,id,4,GetUnitState(u,UNIT_STATE_MANA))
 call SaveReal(TSE_HT,id,8,GetUnitRemainingTimedLife(u)) // 29 окт: остаток времени жизни — вернуть при возобновлении
 // даммики (Aloc) держатся на месте: их может двигать код игрока, для которого время идёт (снаряд влетел в область)
 if GetUnitAbilityLevel(u,'Aloc')>0 then
+set TSE_DbgAloc=TSE_DbgAloc+1
 call SaveBoolean(TSE_HT,id,7,true)
 call SaveReal(TSE_HT,id,5,GetUnitX(u))
 call SaveReal(TSE_HT,id,6,GetUnitY(u))
@@ -7263,10 +7265,13 @@ set b=null
 set a=null
 set it=null
 endfunction
-// все юниты всех слотов (перебор по игрокам находит и даммиков с Aloc); исключение — по OwnerOf (учитывает -take)
+// все юниты всех слотов: перебор по игрокам (даммиков с Aloc он не отдаёт — 29 окт) + список хэндлов; исключение — по OwnerOf (учитывает -take)
 function TSE_ScanUnits takes nothing returns nothing
 local integer i=0
 local unit u
+local handlelist l
+local integer k
+local integer cnt
 loop
 exitwhen i>=16
 call GroupEnumUnitsOfPlayer(TSE_Tmp,Player(i),null)
@@ -7281,6 +7286,26 @@ endif
 endloop
 set i=i+1
 endloop
+// 29 окт: GroupEnumUnitsOfPlayer не отдаёт юнитов с Aloc (даммики эффектов) — второй проход через список хэндлов
+set l=HandleListCreate()
+if TSE_Area then
+call HandleListEnumUnitsInRange(l,TSE_AX,TSE_AY,TSE_AR,null)
+else
+call HandleListEnumUnitsInRect(l,WorldBoundsR(),null)
+endif
+set cnt=HandleListGetUnitCount(l)
+set k=0
+loop
+exitwhen k>=cnt
+set u=HandleListGetUnitByIndex(l,k)
+if u!=null and not IsUnitInGroup(u,TSE_G) and not TSE_PlayerExempt(OwnerOf(u)) and not IsUnitType(u,UNIT_TYPE_DEAD) and (not TSE_Area or IsUnitInRangeXY(u,TSE_AX,TSE_AY,TSE_AR)) then
+call TSE_FreezeUnit(u)
+endif
+set k=k+1
+endloop
+call HandleListDestroy(l)
+set l=null
+set u=null
 endfunction
 function TSE_ScanProjectiles takes nothing returns nothing
 local handlelist l=HandleListCreate()
@@ -7530,9 +7555,10 @@ endif
 set TSE_On=false
 set TSE_FiltOn=false
 if TSE_Dbg then
-call DisplayTextToPlayer(PlayerV(0),0,0,"|cff808080TSE: юнитов "+I2S(CountUnitsInGroup(TSE_G))+", эффектов "+I2S(HandleListGetEffectCount(TSE_Eff))+", снарядов "+I2S(HandleListGetProjectileCount(TSE_Prj))+", таймеров на паузе "+I2S(TSE_DbgTm)+"|r")
+call DisplayTextToPlayer(PlayerV(0),0,0,"|cff808080TSE: юнитов "+I2S(CountUnitsInGroup(TSE_G))+", эффектов "+I2S(HandleListGetEffectCount(TSE_Eff))+", снарядов "+I2S(HandleListGetProjectileCount(TSE_Prj))+", таймеров на паузе "+I2S(TSE_DbgTm)+", даммиков Aloc "+I2S(TSE_DbgAloc)+"|r")
 endif
 set TSE_DbgTm=0
+set TSE_DbgAloc=0
 call DisplayCineFilter(false)
 call PauseTimer(TSE_Tick)
 call PauseTimer(TSE_End)
