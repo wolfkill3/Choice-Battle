@@ -2973,6 +2973,14 @@ return GetTriggerPlayer()
 endif
 return V(GetTriggerPlayer())
 endfunction
+// 29 окт: смена типа цели способности на герое — через эту функцию: значение запоминается по хэндлу способности,
+// квик-каст берёт его оттуда (поля способности на герое не читаются — это роняло игру у стадийных Channel)
+function CBS_SetTT takes ability a,integer lv,integer tt returns nothing
+call SetAbilityIntegerLevelField(a,ABILITY_ILF_TARGET_TYPE,lv,tt)
+if a!=null then
+call SaveInteger(HH,StringHash("QcTT"),GetHandleId(a),tt)
+endif
+endfunction
 // ===== Остановка времени: учёт таймеров способностей (29 окт: поднят сюда из модуля TSE, чтобы общие помощники ниже —
 // MyRemoveUnit, myCustomDamageTimed, RemoveSaveHashTimed и др. — тоже стояли во время остановки) =====
 function TSE_AddExemptType takes integer typeId returns nothing
@@ -16126,7 +16134,7 @@ return
 endif
 loop
 exitwhen i>4
-call SetAbilityIntegerLevelField(GetUnitAbility(u,'RmR1'),ABILITY_ILF_TARGET_TYPE,i,tt)
+call CBS_SetTT(GetUnitAbility(u,'RmR1'),i,tt)
 set i=i+1
 endloop
 endfunction
@@ -30584,7 +30592,7 @@ function OnButtonChangeAbilityMode takes nothing returns nothing
         set pHid=PH(OwnerOf(Goku))
         if LoadReal(HH,pHid,VariationTHash)==0 then
             call SaveReal(HH,pHid,VariationTHash,1)
-            call SetAbilityIntegerLevelField(GetUnitAbility(Goku,'GKT1'), ABILITY_ILF_TARGET_TYPE,0,1)
+            call CBS_SetTT(GetUnitAbility(Goku,'GKT1'),0,1)
             call SetAbilityRealLevelField(GetUnitAbility(Goku,'GKT1'), ABILITY_RLF_CAST_RANGE,0,900)
             if GetLocalPlayer()==p then
                 call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 7 ), "ReplaceableTextures\\CommandButtons\\BTNDragonFist2.blp", 0, true )
@@ -30597,7 +30605,7 @@ function OnButtonChangeAbilityMode takes nothing returns nothing
             endif
         else
             call SaveReal(HH,pHid,VariationTHash,0)
-            call SetAbilityIntegerLevelField(GetUnitAbility(Goku,'GKT1'), ABILITY_ILF_TARGET_TYPE,0,2)
+            call CBS_SetTT(GetUnitAbility(Goku,'GKT1'),0,2)
             call SetAbilityRealLevelField(GetUnitAbility(Goku,'GKT1'), ABILITY_RLF_CAST_RANGE,0,99999)
             if GetLocalPlayer()==p then
                 call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 7 ), "ReplaceableTextures\\CommandButtons\\BTNDragonFist1.blp", 0, true )
@@ -44097,29 +44105,29 @@ if ItemP(it)==PlayerV(15) or ItemP(it)==p or udg_test==true then
     call ItemSetNameSafe(it,GetBaseItemStringFieldById(GetItemTypeId(it),ITEM_SF_NAME)+" ("+Color[PId(p)]+GetPlayerName(p)+"|r)")
     if itemsc[PId(p)]==true then
         if GetItemTypeId(it) ==  'I04R' then
-            call SetAbilityIntegerLevelField(GetUnitAbility(u,'A10Q'), ABILITY_ILF_TARGET_TYPE,0,1)
+            call CBS_SetTT(GetUnitAbility(u,'A10Q'),0,1)
         endif
         if GetItemTypeId(it) ==  'I00D' then
-            call SetAbilityIntegerLevelField(GetUnitAbility(u,'A048'), ABILITY_ILF_TARGET_TYPE,0,1)
+            call CBS_SetTT(GetUnitAbility(u,'A048'),0,1)
         endif
         if GetItemTypeId(it) ==  'I02S' then
-            call SetAbilityIntegerLevelField(GetUnitAbility(u,'A0HL'), ABILITY_ILF_TARGET_TYPE,0,1)
+            call CBS_SetTT(GetUnitAbility(u,'A0HL'),0,1)
         endif
         if GetItemTypeId(it) ==  'I054' then
-            call SetAbilityIntegerLevelField(GetUnitAbility(u,'A15E'), ABILITY_ILF_TARGET_TYPE,0,1)
+            call CBS_SetTT(GetUnitAbility(u,'A15E'),0,1)
         endif
     else
         if GetItemTypeId(it) ==  'I04R' then
-            call SetAbilityIntegerLevelField(GetUnitAbility(u,'A10Q'), ABILITY_ILF_TARGET_TYPE,0,0)
+            call CBS_SetTT(GetUnitAbility(u,'A10Q'),0,0)
         endif
         if GetItemTypeId(it) ==  'I00D' then
-            call SetAbilityIntegerLevelField(GetUnitAbility(u,'A048'), ABILITY_ILF_TARGET_TYPE,0,0)
+            call CBS_SetTT(GetUnitAbility(u,'A048'),0,0)
         endif
         if GetItemTypeId(it) ==  'I02S' then
-            call SetAbilityIntegerLevelField(GetUnitAbility(u,'A0HL'), ABILITY_ILF_TARGET_TYPE,0,0)
+            call CBS_SetTT(GetUnitAbility(u,'A0HL'),0,0)
         endif
         if GetItemTypeId(it) ==  'I054' then
-            call SetAbilityIntegerLevelField(GetUnitAbility(u,'A15E'), ABILITY_ILF_TARGET_TYPE,0,0)
+            call CBS_SetTT(GetUnitAbility(u,'A15E'),0,0)
         endif
     endif
     if GetItemTypeId(it) ==  'ISPB' or GetItemTypeId(it) ==  'IPRB' then
@@ -44211,29 +44219,29 @@ if ItemP(it)==PlayerV(15) or ItemP(it)==p or udg_test==true then
             call UnitAddItem(u,f)
             if itemsc[PId(ItemP(it))]==true then
                 if GetItemTypeId(f) ==  'I04R' then
-                    call SetAbilityIntegerLevelField(GetUnitAbility(Hero[PId(ItemP(it))],'A10Q'), ABILITY_ILF_TARGET_TYPE,0,1)
+                    call CBS_SetTT(GetUnitAbility(Hero[PId(ItemP(it))],'A10Q'),0,1)
                 endif
                 if GetItemTypeId(f) ==  'I00D' then
-                    call SetAbilityIntegerLevelField(GetUnitAbility(Hero[PId(ItemP(it))],'A048'), ABILITY_ILF_TARGET_TYPE,0,1)
+                    call CBS_SetTT(GetUnitAbility(Hero[PId(ItemP(it))],'A048'),0,1)
                 endif
                 if GetItemTypeId(f) ==  'I02S' then
-                    call SetAbilityIntegerLevelField(GetUnitAbility(Hero[PId(ItemP(it))],'A0HL'), ABILITY_ILF_TARGET_TYPE,0,1)
+                    call CBS_SetTT(GetUnitAbility(Hero[PId(ItemP(it))],'A0HL'),0,1)
                 endif
                 if GetItemTypeId(f) ==  'I054' then
-                    call SetAbilityIntegerLevelField(GetUnitAbility(Hero[PId(ItemP(it))],'A15E'), ABILITY_ILF_TARGET_TYPE,0,1)
+                    call CBS_SetTT(GetUnitAbility(Hero[PId(ItemP(it))],'A15E'),0,1)
                 endif
             else
                 if GetItemTypeId(f) ==  'I04R' then
-                    call SetAbilityIntegerLevelField(GetUnitAbility(Hero[PId(ItemP(it))],'A10Q'), ABILITY_ILF_TARGET_TYPE,0,0)
+                    call CBS_SetTT(GetUnitAbility(Hero[PId(ItemP(it))],'A10Q'),0,0)
                 endif
                 if GetItemTypeId(f) ==  'I00D' then
-                    call SetAbilityIntegerLevelField(GetUnitAbility(Hero[PId(ItemP(it))],'A048'), ABILITY_ILF_TARGET_TYPE,0,0)
+                    call CBS_SetTT(GetUnitAbility(Hero[PId(ItemP(it))],'A048'),0,0)
                 endif
                 if GetItemTypeId(f) ==  'I02S' then
-                    call SetAbilityIntegerLevelField(GetUnitAbility(Hero[PId(ItemP(it))],'A0HL'), ABILITY_ILF_TARGET_TYPE,0,0)
+                    call CBS_SetTT(GetUnitAbility(Hero[PId(ItemP(it))],'A0HL'),0,0)
                 endif
                 if GetItemTypeId(f) ==  'I054' then
-                    call SetAbilityIntegerLevelField(GetUnitAbility(Hero[PId(ItemP(it))],'A15E'), ABILITY_ILF_TARGET_TYPE,0,0)
+                    call CBS_SetTT(GetUnitAbility(Hero[PId(ItemP(it))],'A15E'),0,0)
                 endif
             endif
         endif
@@ -44250,29 +44258,29 @@ else
     call UnitAddItem(Hero[PId(ItemP(it))],f)
     if itemsc[PId(ItemP(it))]==true then
         if GetItemTypeId(f) ==  'I04R' then
-            call SetAbilityIntegerLevelField(GetUnitAbility(Hero[PId(ItemP(it))],'A10Q'), ABILITY_ILF_TARGET_TYPE,0,1)
+            call CBS_SetTT(GetUnitAbility(Hero[PId(ItemP(it))],'A10Q'),0,1)
         endif
         if GetItemTypeId(f) ==  'I00D' then
-            call SetAbilityIntegerLevelField(GetUnitAbility(Hero[PId(ItemP(it))],'A048'), ABILITY_ILF_TARGET_TYPE,0,1)
+            call CBS_SetTT(GetUnitAbility(Hero[PId(ItemP(it))],'A048'),0,1)
         endif
         if GetItemTypeId(f) ==  'I02S' then
-            call SetAbilityIntegerLevelField(GetUnitAbility(Hero[PId(ItemP(it))],'A0HL'), ABILITY_ILF_TARGET_TYPE,0,1)
+            call CBS_SetTT(GetUnitAbility(Hero[PId(ItemP(it))],'A0HL'),0,1)
         endif
         if GetItemTypeId(f) ==  'I054' then
-            call SetAbilityIntegerLevelField(GetUnitAbility(Hero[PId(ItemP(it))],'A15E'), ABILITY_ILF_TARGET_TYPE,0,1)
+            call CBS_SetTT(GetUnitAbility(Hero[PId(ItemP(it))],'A15E'),0,1)
         endif
     else
         if GetItemTypeId(f) ==  'I04R' then
-            call SetAbilityIntegerLevelField(GetUnitAbility(Hero[PId(ItemP(it))],'A10Q'), ABILITY_ILF_TARGET_TYPE,0,0)
+            call CBS_SetTT(GetUnitAbility(Hero[PId(ItemP(it))],'A10Q'),0,0)
         endif
         if GetItemTypeId(f) ==  'I00D' then
-            call SetAbilityIntegerLevelField(GetUnitAbility(Hero[PId(ItemP(it))],'A048'), ABILITY_ILF_TARGET_TYPE,0,0)
+            call CBS_SetTT(GetUnitAbility(Hero[PId(ItemP(it))],'A048'),0,0)
         endif
         if GetItemTypeId(f) ==  'I02S' then
-            call SetAbilityIntegerLevelField(GetUnitAbility(Hero[PId(ItemP(it))],'A0HL'), ABILITY_ILF_TARGET_TYPE,0,0)
+            call CBS_SetTT(GetUnitAbility(Hero[PId(ItemP(it))],'A0HL'),0,0)
         endif
         if GetItemTypeId(f) ==  'I054' then
-            call SetAbilityIntegerLevelField(GetUnitAbility(Hero[PId(ItemP(it))],'A15E'), ABILITY_ILF_TARGET_TYPE,0,0)
+            call CBS_SetTT(GetUnitAbility(Hero[PId(ItemP(it))],'A15E'),0,0)
         endif
     endif
     set f=null
@@ -55897,16 +55905,16 @@ function Trig_itemsc_Actions takes nothing returns nothing
         endif
         loop
             if GetItemTypeId(UnitItemInSlot(Hero[id], i)) ==  'I04R' then
-                call SetAbilityIntegerLevelField(GetUnitAbility(Hero[id],'A10Q'), ABILITY_ILF_TARGET_TYPE,0,1)
+                call CBS_SetTT(GetUnitAbility(Hero[id],'A10Q'),0,1)
             endif
             if GetItemTypeId(UnitItemInSlot(Hero[id], i)) ==  'I00D' then
-                call SetAbilityIntegerLevelField(GetUnitAbility(Hero[id],'A048'), ABILITY_ILF_TARGET_TYPE,0,1)
+                call CBS_SetTT(GetUnitAbility(Hero[id],'A048'),0,1)
             endif
             if GetItemTypeId(UnitItemInSlot(Hero[id], i)) ==  'I02S' then
-                call SetAbilityIntegerLevelField(GetUnitAbility(Hero[id],'A0HL'), ABILITY_ILF_TARGET_TYPE,0,1)
+                call CBS_SetTT(GetUnitAbility(Hero[id],'A0HL'),0,1)
             endif
             if GetItemTypeId(UnitItemInSlot(Hero[id], i)) ==  'I054' then
-                call SetAbilityIntegerLevelField(GetUnitAbility(Hero[id],'A15E'), ABILITY_ILF_TARGET_TYPE,0,1)
+                call CBS_SetTT(GetUnitAbility(Hero[id],'A15E'),0,1)
             endif
         exitwhen i == 0
         set i=i - 1
@@ -55918,16 +55926,16 @@ function Trig_itemsc_Actions takes nothing returns nothing
         endif
         loop
             if GetItemTypeId(UnitItemInSlot(Hero[id], i)) ==  'I04R' then
-                call SetAbilityIntegerLevelField(GetUnitAbility(Hero[id],'A10Q'), ABILITY_ILF_TARGET_TYPE,0,0)
+                call CBS_SetTT(GetUnitAbility(Hero[id],'A10Q'),0,0)
             endif
             if GetItemTypeId(UnitItemInSlot(Hero[id], i)) ==  'I00D' then
-                call SetAbilityIntegerLevelField(GetUnitAbility(Hero[id],'A048'), ABILITY_ILF_TARGET_TYPE,0,0)
+                call CBS_SetTT(GetUnitAbility(Hero[id],'A048'),0,0)
             endif
             if GetItemTypeId(UnitItemInSlot(Hero[id], i)) ==  'I02S' then
-                call SetAbilityIntegerLevelField(GetUnitAbility(Hero[id],'A0HL'), ABILITY_ILF_TARGET_TYPE,0,0)
+                call CBS_SetTT(GetUnitAbility(Hero[id],'A0HL'),0,0)
             endif
             if GetItemTypeId(UnitItemInSlot(Hero[id], i)) ==  'I054' then
-                call SetAbilityIntegerLevelField(GetUnitAbility(Hero[id],'A15E'), ABILITY_ILF_TARGET_TYPE,0,0)
+                call CBS_SetTT(GetUnitAbility(Hero[id],'A15E'),0,0)
             endif
         exitwhen i == 0
         set i=i - 1
@@ -60442,8 +60450,15 @@ if CBS_QcNcl(cbU,cbId)!="" then
 set cbTt=GetAbilityBaseIntegerLevelFieldById(cbId,ABILITY_ILF_TARGET_TYPE,CBS_QcLv(cbU,cbId))
 // 29 окт: тип цели — с экземпляра способности на герое (его меняет код: T Гоку рывок / по цели), если она изучена и видна
 set cbA=GetUnitAbility(cbU,cbId)
-if cbA!=null and GetUnitAbilityLevel(cbU,cbId)>0 and IsUnitAbilityVisible(cbU,cbId) then
-set cbTt=GetAbilityIntegerLevelField(cbA,ABILITY_ILF_TARGET_TYPE,CBS_QcLv(cbU,cbId))
+//if cbA!=null and GetUnitAbilityLevel(cbU,cbId)>0 and IsUnitAbilityVisible(cbU,cbId) then
+//set cbTt=GetAbilityIntegerLevelField(cbA,ABILITY_ILF_TARGET_TYPE,CBS_QcLv(cbU,cbId))
+//endif
+// тип, поставленный кодом (CBS_SetTT), — без чтения полей способности на герое
+if cbA!=null and HaveSavedInteger(HH,StringHash("QcTT"),GetHandleId(cbA)) then
+set cbTt=LoadInteger(HH,StringHash("QcTT"),GetHandleId(cbA))
+endif
+if HPB_Debug then
+call DisplayTimedTextToPlayer(GetLocalPlayer(),0,0,5,"QC target type "+I2S(cbTt))
 endif
 set cbA=null
 endif
@@ -102852,7 +102867,7 @@ else
     call SetAbilityStringField(GetUnitAbility(u,'GKR1'),ABILITY_SF_ICON_NORMAL,"ReplaceableTextures\\CommandButtons\\BTNInstant_transmission.blp")
     call SetAbilityStringLevelField(GetUnitAbility(u,'GKR1'),ABILITY_SLF_TOOLTIP_NORMAL,GetUnitAbilityLevel(u,'GKR1')-1,GetAbilityBaseStringLevelFieldById('GKR1',ABILITY_SLF_TOOLTIP_NORMAL,GetUnitAbilityLevel(u,'GKR1')-1))
     call SetAbilityStringLevelField(GetUnitAbility(u,'GKR1'),ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED,GetUnitAbilityLevel(u,'GKR1')-1,GetAbilityBaseStringLevelFieldById('GKR1',ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED,GetUnitAbilityLevel(u,'GKR1')-1))
-    call SetAbilityIntegerLevelField(GetUnitAbility(u,'GKR1'), ABILITY_ILF_TARGET_TYPE,GetUnitAbilityLevel(u,'GKR1')-1,1)
+    call CBS_SetTT(GetUnitAbility(u,'GKR1'),GetUnitAbilityLevel(u,'GKR1')-1,1)
     call SetUnitAnimation(u,"stand")
     call SetUnitTimeScale(u,1)
     call FlushChildHashtable(h,id)
@@ -102885,7 +102900,7 @@ if GetAbilityIntegerLevelField(GetUnitAbility(u,'GKR1'), ABILITY_ILF_TARGET_TYPE
         call SaveBoolean(HH,GetHandleId(u),ITRangeHash,false)
     endif
     if GetUnitAbilityLevel(u,'Pet1')==0 then
-        call SetAbilityIntegerLevelField(GetUnitAbility(u,'GKR1'), ABILITY_ILF_TARGET_TYPE,GetUnitAbilityLevel(u,'GKR1')-1,0)
+        call CBS_SetTT(GetUnitAbility(u,'GKR1'),GetUnitAbilityLevel(u,'GKR1')-1,0)
         call SaveUnitHandle(h,id,0,u)
         call SaveUnitHandle(h,id,11,c)
         call SaveReal(h,id,4,a)
@@ -102929,7 +102944,7 @@ else
     call EnableUnitAbility2(u,'GKG7',false,true)
     call SetAbilityStringLevelField(GetUnitAbility(u,'GKR1'),ABILITY_SLF_TOOLTIP_NORMAL,GetUnitAbilityLevel(u,'GKR1')-1,GetAbilityBaseStringLevelFieldById('GKR1',ABILITY_SLF_TOOLTIP_NORMAL,GetUnitAbilityLevel(u,'GKR1')-1))
     call SetAbilityStringLevelField(GetUnitAbility(u,'GKR1'),ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED,GetUnitAbilityLevel(u,'GKR1')-1,GetAbilityBaseStringLevelFieldById('GKR1',ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED,GetUnitAbilityLevel(u,'GKR1')-1))
-    call SetAbilityIntegerLevelField(GetUnitAbility(u,'GKR1'), ABILITY_ILF_TARGET_TYPE,GetUnitAbilityLevel(u,'GKR1')-1,1)
+    call CBS_SetTT(GetUnitAbility(u,'GKR1'),GetUnitAbilityLevel(u,'GKR1')-1,1)
 endif
 set u=null
 set c=null
@@ -129399,7 +129414,7 @@ else
     call SetAbilityStringField(GetUnitAbility(u,'A0RI'),ABILITY_SF_ICON_NORMAL,"ReplaceableTextures\\CommandButtons\\BTNVegitoG.blp")
     call SetAbilityStringLevelField(GetUnitAbility(u,'A0RI'),ABILITY_SLF_TOOLTIP_NORMAL,GetUnitAbilityLevel(u,'A0RI')-1,GetAbilityBaseStringLevelFieldById('A0RI',ABILITY_SLF_TOOLTIP_NORMAL,GetUnitAbilityLevel(u,'A0RI')-1))
     call SetAbilityStringLevelField(GetUnitAbility(u,'A0RI'),ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED,GetUnitAbilityLevel(u,'A0RI')-1,GetAbilityBaseStringLevelFieldById('A0RI',ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED,GetUnitAbilityLevel(u,'A0RI')-1))
-    call SetAbilityIntegerLevelField(GetUnitAbility(u,'A0RI'), ABILITY_ILF_TARGET_TYPE,GetUnitAbilityLevel(u,'A0RI')-1,1)
+    call CBS_SetTT(GetUnitAbility(u,'A0RI'),GetUnitAbilityLevel(u,'A0RI')-1,1)
     call SetUnitAnimation(u,"stand")
     call SetUnitTimeScale(u,1)
     call FlushChildHashtable(h,id)
@@ -129432,7 +129447,7 @@ if GetAbilityIntegerLevelField(GetUnitAbility(u,'A0RI'), ABILITY_ILF_TARGET_TYPE
         call SaveBoolean(HH,GetHandleId(u),ITRangeHash,false)
     endif
     if GetUnitAbilityLevel(u,'Pet1')==0 then
-        call SetAbilityIntegerLevelField(GetUnitAbility(u,'A0RI'), ABILITY_ILF_TARGET_TYPE,GetUnitAbilityLevel(u,'A0RI')-1,0)
+        call CBS_SetTT(GetUnitAbility(u,'A0RI'),GetUnitAbilityLevel(u,'A0RI')-1,0)
         call SaveUnitHandle(h,id,0,u)
         call SaveUnitHandle(h,id,11,c)
         call SaveReal(h,id,4,a)
@@ -129465,7 +129480,7 @@ else
     call EnableUnitAbility2(u,'A177',false,true)
     call SetAbilityStringLevelField(GetUnitAbility(u,'A0RI'),ABILITY_SLF_TOOLTIP_NORMAL,GetUnitAbilityLevel(u,'A0RI')-1,GetAbilityBaseStringLevelFieldById('A0RI',ABILITY_SLF_TOOLTIP_NORMAL,GetUnitAbilityLevel(u,'A0RI')-1))
     call SetAbilityStringLevelField(GetUnitAbility(u,'A0RI'),ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED,GetUnitAbilityLevel(u,'A0RI')-1,GetAbilityBaseStringLevelFieldById('A0RI',ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED,GetUnitAbilityLevel(u,'A0RI')-1))
-    call SetAbilityIntegerLevelField(GetUnitAbility(u,'A0RI'), ABILITY_ILF_TARGET_TYPE,GetUnitAbilityLevel(u,'A0RI')-1,1)
+    call CBS_SetTT(GetUnitAbility(u,'A0RI'),GetUnitAbilityLevel(u,'A0RI')-1,1)
 endif
 set u=null
 set c=null
@@ -171567,7 +171582,7 @@ call SaveInteger(HH,idu,ComboCounterHash,0)
 call SetPlayerAbilityAvailable(OwnerOf(u),'A1BV',false)
 call SetPlayerAbilityAvailable(OwnerOf(u),'A23W',false)
 call SetPlayerAbilityAvailable(OwnerOf(u),'A1BU',true)
-call SetAbilityIntegerLevelField(GetUnitAbility(u,'A1BZ'), ABILITY_ILF_TARGET_TYPE,0,2)
+call CBS_SetTT(GetUnitAbility(u,'A1BZ'),0,2)
 call SetAbilityRealLevelField(GetUnitAbility(u,'A1BZ'), ABILITY_RLF_CAST_RANGE,0,99999)
 endif
 else
@@ -171754,7 +171769,7 @@ if dist<750 then
                     call SetPlayerAbilityAvailable(p,'A1BV',true)
                 endif
                 if LoadInteger(HH,idu,ComboCounterHash)>2 then
-                    call SetAbilityIntegerLevelField(GetUnitAbility(u,'A1BZ'), ABILITY_ILF_TARGET_TYPE,0,1)
+                    call CBS_SetTT(GetUnitAbility(u,'A1BZ'),0,1)
                     call SetAbilityRealLevelField(GetUnitAbility(u,'A1BZ'), ABILITY_RLF_CAST_RANGE,0,1400)
                 endif
                 if LoadInteger(HH,idu,ComboCounterHash)>5 and LoadInteger(HH,idu,ComboCounterHash)<8 then
@@ -172124,7 +172139,7 @@ if c!=null then
         call SetPlayerAbilityAvailable(OwnerOf(u),'A1BV',true)
     endif
     if LoadInteger(HH,idu,ComboCounterHash)>2 then
-        call SetAbilityIntegerLevelField(GetUnitAbility(u,'A1BZ'), ABILITY_ILF_TARGET_TYPE,0,1)
+        call CBS_SetTT(GetUnitAbility(u,'A1BZ'),0,1)
         call SetAbilityRealLevelField(GetUnitAbility(u,'A1BZ'), ABILITY_RLF_CAST_RANGE,0,1400)
     endif
 else
@@ -172341,7 +172356,7 @@ function QShikiTwoAlterCast takes nothing returns nothing
             call SetPlayerAbilityAvailable(OwnerOf(u),'A1BV',true)
         endif
         if LoadInteger(HH,idu,ComboCounterHash)>2 then
-            call SetAbilityIntegerLevelField(GetUnitAbility(u,'A1BZ'), ABILITY_ILF_TARGET_TYPE,0,1)
+            call CBS_SetTT(GetUnitAbility(u,'A1BZ'),0,1)
             call SetAbilityRealLevelField(GetUnitAbility(u,'A1BZ'), ABILITY_RLF_CAST_RANGE,0,1400)
         endif
     else
@@ -172754,7 +172769,7 @@ if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
         call SetPlayerAbilityAvailable(OwnerOf(u),'A1BV',true)
     endif
     if LoadInteger(HH,idu,ComboCounterHash)>2 then
-        call SetAbilityIntegerLevelField(GetUnitAbility(u,'A1BZ'), ABILITY_ILF_TARGET_TYPE,0,1)
+        call CBS_SetTT(GetUnitAbility(u,'A1BZ'),0,1)
         call SetAbilityRealLevelField(GetUnitAbility(u,'A1BZ'), ABILITY_RLF_CAST_RANGE,0,1400)
     endif
     call TSE_TimerStart(t,0.02,true,function QShikiThreeCast2)
@@ -173013,7 +173028,7 @@ function SlashNanayaCast2 takes nothing returns nothing
                             call SetPlayerAbilityAvailable(OwnerOf(u),'A1BV',true)
                         endif
                         if LoadInteger(HH,idu,ComboCounterHash)>2 then
-                            call SetAbilityIntegerLevelField(GetUnitAbility(u,'A1BZ'), ABILITY_ILF_TARGET_TYPE,0,1)
+                            call CBS_SetTT(GetUnitAbility(u,'A1BZ'),0,1)
                             call SetAbilityRealLevelField(GetUnitAbility(u,'A1BZ'), ABILITY_RLF_CAST_RANGE,0,1400)
                         endif
                         if LoadInteger(HH,idu,ComboCounterHash)>5 and LoadInteger(HH,idu,ComboCounterHash)<8 then
@@ -173313,7 +173328,7 @@ if LoadInteger(HH,idu,ComboCounterHash)>5 and GetUnitAbilityLevel(u,'A1BN')==0 t
     call SetPlayerAbilityAvailable(p,'A1BV',true)
 endif
 if LoadInteger(HH,idu,ComboCounterHash)>2 then
-    call SetAbilityIntegerLevelField(GetUnitAbility(u,'A1BZ'), ABILITY_ILF_TARGET_TYPE,0,1)
+    call CBS_SetTT(GetUnitAbility(u,'A1BZ'),0,1)
     call SetAbilityRealLevelField(GetUnitAbility(u,'A1BZ'), ABILITY_RLF_CAST_RANGE,0,1400)
 endif
 endif
@@ -173977,7 +173992,7 @@ function EShikiNewTwoCast takes nothing returns nothing
         call SetPlayerAbilityAvailable(OwnerOf(u),'A1BV',true)
     endif
     if LoadInteger(HH,idu,ComboCounterHash)>2 then
-        call SetAbilityIntegerLevelField(GetUnitAbility(u,'A1BZ'), ABILITY_ILF_TARGET_TYPE,0,1)
+        call CBS_SetTT(GetUnitAbility(u,'A1BZ'),0,1)
         call SetAbilityRealLevelField(GetUnitAbility(u,'A1BZ'), ABILITY_RLF_CAST_RANGE,0,1400)
     endif
     call SaveReal(HH,id,20,0)
@@ -174419,7 +174434,7 @@ function RShikiWCast3 takes nothing returns nothing
         call SetPlayerAbilityAvailable(p,'A1BV',true)
     endif
     if LoadInteger(HH,idu,ComboCounterHash)>2 then
-        call SetAbilityIntegerLevelField(GetUnitAbility(u,'A1BZ'), ABILITY_ILF_TARGET_TYPE,0,1)
+        call CBS_SetTT(GetUnitAbility(u,'A1BZ'),0,1)
         call SetAbilityRealLevelField(GetUnitAbility(u,'A1BZ'), ABILITY_RLF_CAST_RANGE,0,1400)
     endif
     call UnitRemoveAbility(u,'A1BI')
@@ -174770,7 +174785,7 @@ else
                 call SetPlayerAbilityAvailable(p,'A1BV',true)
             endif
             if LoadInteger(HH,idu,ComboCounterHash)>2 then
-                call SetAbilityIntegerLevelField(GetUnitAbility(u,'A1BZ'), ABILITY_ILF_TARGET_TYPE,0,1)
+                call CBS_SetTT(GetUnitAbility(u,'A1BZ'),0,1)
                 call SetAbilityRealLevelField(GetUnitAbility(u,'A1BZ'), ABILITY_RLF_CAST_RANGE,0,1400)
             endif
         endif
@@ -174831,7 +174846,7 @@ else
                 call SetPlayerAbilityAvailable(p,'A1BV',true)
             endif
             if LoadInteger(HH,idu,ComboCounterHash)>2 then
-                call SetAbilityIntegerLevelField(GetUnitAbility(u,'A1BZ'), ABILITY_ILF_TARGET_TYPE,0,1)
+                call CBS_SetTT(GetUnitAbility(u,'A1BZ'),0,1)
                 call SetAbilityRealLevelField(GetUnitAbility(u,'A1BZ'), ABILITY_RLF_CAST_RANGE,0,1400)
             endif
         endif
@@ -175086,7 +175101,7 @@ if LoadInteger(HH,idu,ComboCounterHash)>5 and GetUnitAbilityLevel(u,'A1BN')==0 t
     call SetPlayerAbilityAvailable(p,'A1BV',true)
 endif
 if LoadInteger(HH,idu,ComboCounterHash)>2 then
-    call SetAbilityIntegerLevelField(GetUnitAbility(u,'A1BZ'), ABILITY_ILF_TARGET_TYPE,0,1)
+    call CBS_SetTT(GetUnitAbility(u,'A1BZ'),0,1)
     call SetAbilityRealLevelField(GetUnitAbility(u,'A1BZ'), ABILITY_RLF_CAST_RANGE,0,1400)
 endif
 else
