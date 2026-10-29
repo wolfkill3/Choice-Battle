@@ -44753,6 +44753,48 @@ function NickFileQueue takes integer nfi, string nff, integer nfz returns nothin
     set NK_S[NK_N]=nfz
     set NK_N=NK_N+1
 endfunction
+// 29 окт (3.8.2): окно характеристик — над панелью урона / брони / атрибутов, две колонки по 7 строк.
+// k — множитель ширины консоли (как у остальных размеров). Кнопка открытия — на старом месте у портрета
+function ResistBar_Layout takes real k returns nothing
+local integer n=0
+local integer idx
+local real w=.105*k
+local real x
+local real y
+call SetFrameSize( ResistBarFrame, 2.*w, .082)
+call ClearFrameAllPoints( ResistBarFrame )
+call SetFrameRelativePoint( ResistBarFrame, FRAMEPOINT_CENTER, GetOriginFrame(ORIGIN_FRAME_PORTRAIT,0), FRAMEPOINT_CENTER, .171*k, -.026 )
+loop
+exitwhen n>=14
+// левая колонка: скорость, AS, урон, физ. резист; правая: резисты, лечение, мана
+if n==0 then
+set idx=0
+elseif n==1 then
+set idx=2
+elseif n==2 then
+set idx=22
+elseif n==3 then
+set idx=24
+elseif n==4 then
+set idx=4
+elseif n==5 then
+set idx=6
+elseif n==6 then
+set idx=26
+else
+set idx=8+(n-7)*2
+endif
+set x=.005+w*I2R(n/7)
+set y=-.006-.01*I2R(ModuloInteger(n,7))
+call ClearFrameAllPoints( ResistTxt[idx] )
+call SetFrameRelativePoint( ResistTxt[idx], FRAMEPOINT_TOPLEFT, ResistBarFrame, FRAMEPOINT_TOPLEFT, x, y )
+call ClearFrameAllPoints( ResistTxt[idx+1] )
+call SetFrameRelativePoint( ResistTxt[idx+1], FRAMEPOINT_TOPRIGHT, ResistBarFrame, FRAMEPOINT_TOPLEFT, x+w-.012, y )
+set n=n+1
+endloop
+call ClearFrameAllPoints( OpenResistButton )
+call SetFrameRelativePoint( OpenResistButton, FRAMEPOINT_CENTER, GetOriginFrame(ORIGIN_FRAME_PORTRAIT,0), FRAMEPOINT_CENTER, -.004+.047*k, .0455 )
+endfunction
 function Trig_StatusBar_Actions takes nothing returns nothing
     local framehandle gameUI=GetOriginFrame( ORIGIN_FRAME_GAME_UI, 0 )
     local framehandle consoleUI=GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 )
@@ -46313,6 +46355,7 @@ function Trig_StatusBar_Actions takes nothing returns nothing
     call ShowFrame( OpenResistButton, true )
     call SetFramePriority( OpenResistButton, 9 )
     call SetFrameRelativePoint( OpenResistButton, FRAMEPOINT_CENTER, ResistBarFrame, FRAMEPOINT_TOPRIGHT, -.003, -.003 )
+    call ResistBar_Layout(1.) // 29 окт: две колонки над панелью атрибутов
 
     set tOnPress = CreateTrigger( )
     // set tOnUnPress = CreateTrigger( ) 
@@ -48000,7 +48043,8 @@ if ModuloInteger(seconds,10)<1 and GetFrameHeight( GetFrameChild(GetOriginFrame(
         call SetFrameSize( StatusBarFrame, .21*(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505), .04)
         //call SetFrameSize( ResistBarFrame, .094*(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505), .125)
         //call SetFrameSize( ResistBarFrame, .094*(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505), .145)
-        call SetFrameSize( ResistBarFrame, .094*(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505), .155)
+        //call SetFrameSize( ResistBarFrame, .094*(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505), .155)
+        call ResistBar_Layout(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505)
         call SetFrameText( ResistTxt[0], "Move Speed")
         call SetFrameText( ResistTxt[2], "Attack Speed")
         call SetFrameText( ResistTxt[4], "Magic DMG Bonus")
@@ -48076,7 +48120,8 @@ if ModuloInteger(seconds,10)<1 and GetFrameHeight( GetFrameChild(GetOriginFrame(
         call SetFrameSize( StatusBarFrame, .21*(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505), .04)
         //call SetFrameSize( ResistBarFrame, .094*(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505), .125)
         //call SetFrameSize( ResistBarFrame, .094*(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505), .145)
-        call SetFrameSize( ResistBarFrame, .094*(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505), .155)
+        //call SetFrameSize( ResistBarFrame, .094*(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505), .155)
+        call ResistBar_Layout(GetFrameWidth( GetFrameChild(GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ),1 )) / 0.505)
         call SetFrameText( ResistTxt[0], "MS")
         call SetFrameText( ResistTxt[2], "AS")
         call SetFrameText( ResistTxt[4], "M DMG +")
