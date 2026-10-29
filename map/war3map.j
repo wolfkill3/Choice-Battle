@@ -68448,7 +68448,8 @@ if CurrentEventAttack then
     endif
     //Suigintou1start
     if suid=='HSui' and nb>0 and isTargetEnemy then
-        call Sui_Attack_Act(c,u)
+        // 29 окт: бонус автоатаки Суйгинто убран (урон, эффекты, звук)
+        //call Sui_Attack_Act(c,u)
     endif
     //Suigintou1end
     //Remilia1start
@@ -68466,7 +68467,8 @@ if CurrentEventAttack then
     //Flandre1end
     //Escanor1start
     if suid=='HEsc' and nb>0 and isTargetEnemy then
-        call Esc_Attack_Act()
+        // 29 окт: бонус автоатаки Эсканора убран (урон, эффекты, звук)
+        //call Esc_Attack_Act()
     endif
     //Escanor1end
     if (LoadReal(HH,GetHandleId(c),SH_yamato)==1 or GetRandomInt(0,100)<15) and (LoadBoolean(DMG_IHT,cid,'I02V') or GetUnitAbilityLevel(c,'KIG4')>0) and IsUnitType(c, UNIT_TYPE_HERO) and IsUnitIllusion(c)==false and GetUnitAbilityLevel(c,'A3WR')==0 then
