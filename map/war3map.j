@@ -46223,7 +46223,7 @@ function Trig_StatusBar_Actions takes nothing returns nothing
     call SetFrameText( ResistBarFrameText, "0%")
     call ShowFrame( ResistBarFrameText, true )
     call SetFrameRelativePoint( ResistBarFrameText, FRAMEPOINT_TOPRIGHT, ResistBarFrame, FRAMEPOINT_TOPRIGHT,  -.01, -.108  )
-    // 29 окт (3.8.3): бонус скорости атаки в % и доп. урон автоатак от AS сверх +250% (ASO_K)
+    // 29 окт (3.8.2): бонус скорости атаки в % и доп. урон автоатак от AS сверх +250% (ASO_K)
 
     set ResistBarFrameText=CreateFrameByType( "SIMPLETEXT", "ASBonusRoot", ResistBarFrame, "", 0 )
     set ResistTxt[22]=ResistBarFrameText
