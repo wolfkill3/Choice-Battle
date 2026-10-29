@@ -7207,6 +7207,7 @@ call SaveReal(TSE_HT,id,0,GetUnitTimeScale(u))
 call SaveReal(TSE_HT,id,2,GetUnitAttackRemainingCooldown(u))
 call SaveReal(TSE_HT,id,3,GetWidgetLife(u))
 call SaveReal(TSE_HT,id,4,GetUnitState(u,UNIT_STATE_MANA))
+call SaveReal(TSE_HT,id,8,GetUnitRemainingTimedLife(u)) // 29 окт: остаток времени жизни — вернуть при возобновлении
 // даммики (Aloc) держатся на месте: их может двигать код игрока, для которого время идёт (снаряд влетел в область)
 if GetUnitAbilityLevel(u,'Aloc')>0 then
 call SaveBoolean(TSE_HT,id,7,true)
@@ -7268,7 +7269,8 @@ loop
 set u=FirstOfGroup(TSE_Tmp)
 exitwhen u==null
 call GroupRemoveUnit(TSE_Tmp,u)
-if not IsUnitInGroup(u,TSE_G) and not TSE_PlayerExempt(OwnerOf(u)) and (not TSE_Area or IsUnitInRangeXY(u,TSE_AX,TSE_AY,TSE_AR)) then
+// 29 окт: умирающие и мёртвые (анимация смерти, даммики с истёкшим временем жизни) не замораживаются — их смерть зависала
+if not IsUnitInGroup(u,TSE_G) and not TSE_PlayerExempt(OwnerOf(u)) and not IsUnitType(u,UNIT_TYPE_DEAD) and (not TSE_Area or IsUnitInRangeXY(u,TSE_AX,TSE_AY,TSE_AR)) then
 call TSE_FreezeUnit(u)
 endif
 endloop
@@ -7347,10 +7349,24 @@ set e=null
 endfunction
 function TSE_ScanEffects takes nothing returns nothing
 local rect wr=WorldBoundsR()
+local real ex
+local real ey
 if TSE_Area then
 call EnumSpecialEffectsInRange(TSE_AX,TSE_AY,TSE_AR,null,function TSE_EffEnum)
 else
-call EnumSpecialEffectsInRange(GetRectCenterX(wr),GetRectCenterY(wr),40000,null,function TSE_EffEnum)
+//call EnumSpecialEffectsInRange(GetRectCenterX(wr),GetRectCenterY(wr),40000,null,function TSE_EffEnum)
+// 29 окт: один круг радиуса 40000 не находил ничего (эффектов 0) — сетка кругов 1300 с шагом 1800 по всей карте
+set ex=GetRectMinX(wr)+900.
+loop
+exitwhen ex>GetRectMaxX(wr)+900.
+set ey=GetRectMinY(wr)+900.
+loop
+exitwhen ey>GetRectMaxY(wr)+900.
+call EnumSpecialEffectsInRange(ex,ey,1300.,null,function TSE_EffEnum)
+set ey=ey+1800.
+endloop
+set ex=ex+1800.
+endloop
 endif
 set wr=null
 endfunction
@@ -7480,6 +7496,10 @@ local unit u=GetEnumUnit()
 local integer id=GetHandleId(u)
 call PauseUnitEx(u,false)
 call UnitPauseTimedLife(u,false)
+// 29 окт: время жизни даммика заново тем же остатком — после паузы оно у части даммиков не шло дальше (висели эффекты T Кида)
+if LoadReal(TSE_HT,id,8)>0. and not IsUnitType(u,UNIT_TYPE_DEAD) then
+call UnitApplyTimedLife(u,'BTLF',LoadReal(TSE_HT,id,8))
+endif
 call SetUnitAnimationFrozen(u,false)
 call SetUnitTimeScale(u,LoadReal(TSE_HT,id,0))
 // умер, пока был заморожен (анимация смерти стояла) — проиграть её
@@ -10429,7 +10449,7 @@ function CreateModeIndicatorWithPauseFormMadara takes unit newCaster, string new
     call SaveInteger(HH,GetHandleId(NewFrame),SB_POS,0)
     call RemoveSavedString(HH,GetHandleId(NewFrame),SB_TXT)
     call SaveStr                (HH, idp, c_NAME, newString)
-    call TimerStart             (newTimer, 0.05, true, function CreateModeIndicatorWithPauseFormMadara_Periodic)
+    call TSE_TimerStart(newTimer, 0.05, true, function CreateModeIndicatorWithPauseFormMadara_Periodic) // 29 окт: через остановку времени (отсчёт в строке статуса шёл во время таймстопа)
     set newTimer=null
     set p=null
     set NewFrame=null
@@ -10537,7 +10557,7 @@ function CreateModeIndicatorFormLaxus takes unit newCaster, string newString, re
         call SaveInteger(HH,GetHandleId(NewFrame),SB_POS,0)
         call RemoveSavedString(HH,GetHandleId(NewFrame),SB_TXT)
         call SaveStr                (HH, id, c_NAME, newString)
-        call TimerStart             (newTimer, 0.05, true, function CreateModeIndicatorFormLaxus_Periodic)
+        call TSE_TimerStart(newTimer, 0.05, true, function CreateModeIndicatorFormLaxus_Periodic) // 29 окт: через остановку времени (отсчёт в строке статуса шёл во время таймстопа)
     else
         call SaveReal           (HH, GetHandleId(NewFrame), c_DURATION, newDur)
         call SaveReal               (HH, GetHandleId(NewFrameText), c_DURATION, newDur)
@@ -10649,7 +10669,7 @@ function CreateModeIndicatorKarnaQ takes unit newCaster, string newString, real 
         call SaveInteger(HH,GetHandleId(NewFrame),SB_POS,0)
         call RemoveSavedString(HH,GetHandleId(NewFrame),SB_TXT)
         call SaveStr                (HH, id, c_NAME, newString)
-        call TimerStart             (newTimer, 0.05, true, function CreateModeIndicatorKarnaQ_Periodic)
+        call TSE_TimerStart(newTimer, 0.05, true, function CreateModeIndicatorKarnaQ_Periodic) // 29 окт: через остановку времени (отсчёт в строке статуса шёл во время таймстопа)
     else
         call SaveReal           (HH, GetHandleId(NewFrame), c_DURATION, newDur)
         call SaveReal           (HH, GetHandleId(NewFrameText), c_DURATION, newDur)
@@ -10761,7 +10781,7 @@ function CreateModeIndicatorKarnaW takes unit newCaster, string newString, real 
         call SaveInteger(HH,GetHandleId(NewFrame),SB_POS,0)
         call RemoveSavedString(HH,GetHandleId(NewFrame),SB_TXT)
         call SaveStr                (HH, id, c_NAME, newString)
-        call TimerStart             (newTimer, 0.05, true, function CreateModeIndicatorKarnaW_Periodic)
+        call TSE_TimerStart(newTimer, 0.05, true, function CreateModeIndicatorKarnaW_Periodic) // 29 окт: через остановку времени (отсчёт в строке статуса шёл во время таймстопа)
     else
         call SaveReal           (HH, GetHandleId(NewFrame), c_DURATION, newDur)
         call SaveReal           (HH, GetHandleId(NewFrameText), c_DURATION, newDur)
@@ -13146,7 +13166,7 @@ function CreateModeIndicatorFormYujiD takes unit newCaster, string newString, re
         call SaveInteger(HH,GetHandleId(NewFrame),SB_POS,0)
         call RemoveSavedString(HH,GetHandleId(NewFrame),SB_TXT)
         call SaveStr                (HH, id, c_NAME, newString)
-        call TimerStart             (newTimer, 0.05, true, function CreateModeIndicatorFormYujiD_Periodic)
+        call TSE_TimerStart(newTimer, 0.05, true, function CreateModeIndicatorFormYujiD_Periodic) // 29 окт: через остановку времени (отсчёт в строке статуса шёл во время таймстопа)
     else
         call SaveReal           (HH, GetHandleId(NewFrame), c_DURATION, newDur)
         call SaveReal           (HH, GetHandleId(NewFrameText), c_DURATION, newDur)
@@ -13259,7 +13279,7 @@ function CreateModeIndicatorFormGoku takes unit newCaster, string newString, rea
         call SaveInteger(HH,GetHandleId(NewFrame),SB_POS,0)
         call RemoveSavedString(HH,GetHandleId(NewFrame),SB_TXT)
         call SaveStr                (HH, id, c_NAME, newString)
-        call TimerStart             (newTimer, 0.05, true, function CreateModeIndicatorFormGoku_Periodic)
+        call TSE_TimerStart(newTimer, 0.05, true, function CreateModeIndicatorFormGoku_Periodic) // 29 окт: через остановку времени (отсчёт в строке статуса шёл во время таймстопа)
     else
         call SaveReal           (HH, GetHandleId(NewFrame), c_DURATION, newDur)
         call SaveReal           (HH, GetHandleId(NewFrameText), c_DURATION, newDur)
@@ -13372,7 +13392,7 @@ function CreateModeIndicatorForm takes unit newCaster, string newString, real ne
         call SaveInteger(HH,GetHandleId(NewFrame),SB_POS,0)
         call RemoveSavedString(HH,GetHandleId(NewFrame),SB_TXT)
         call SaveStr                (HH, id, c_NAME, newString)
-        call TimerStart             (newTimer, 0.05, true, function CreateModeIndicatorForm_Periodic)
+        call TSE_TimerStart(newTimer, 0.05, true, function CreateModeIndicatorForm_Periodic) // 29 окт: через остановку времени (отсчёт в строке статуса шёл во время таймстопа)
     else
         call SaveReal           (HH, GetHandleId(NewFrame), c_DURATION, newDur)
         call SaveReal           (HH, GetHandleId(NewFrameText), c_DURATION, newDur)
@@ -13488,7 +13508,7 @@ function CreateModeIndicatorWithPauseForm takes unit newCaster, string newString
         call SaveInteger(HH,GetHandleId(NewFrame),SB_POS,0)
         call RemoveSavedString(HH,GetHandleId(NewFrame),SB_TXT)
         call SaveStr                (HH, id, c_NAME, newString)
-        call TimerStart             (newTimer, 0.05, true, function CreateModeIndicatorWithPauseForm_Periodic)
+        call TSE_TimerStart(newTimer, 0.05, true, function CreateModeIndicatorWithPauseForm_Periodic) // 29 окт: через остановку времени (отсчёт в строке статуса шёл во время таймстопа)
     else
         call SaveReal           (HH, GetHandleId(NewFrame), c_DURATION, newDur)
         call SaveReal           (HH, GetHandleId(NewFrameText), c_DURATION, newDur)
@@ -13604,7 +13624,7 @@ function CreateModeIndicatorFormDispellable takes unit newCaster, string newStri
         call SaveInteger(HH,GetHandleId(NewFrame),SB_POS,0)
         call RemoveSavedString(HH,GetHandleId(NewFrame),SB_TXT)
         call SaveStr                (HH, id, c_NAME, newString)
-        call TimerStart             (newTimer, 0.05, true, function CreateModeIndicatorFormDispellable_Periodic)
+        call TSE_TimerStart(newTimer, 0.05, true, function CreateModeIndicatorFormDispellable_Periodic) // 29 окт: через остановку времени (отсчёт в строке статуса шёл во время таймстопа)
     else
         call SaveReal           (HH, GetHandleId(NewFrame), c_DURATION, newDur)
         call SaveReal           (HH, GetHandleId(NewFrameText), c_DURATION, newDur)
@@ -13721,7 +13741,7 @@ function CreateModeIndicatorWithPauseFormDispellable takes unit newCaster, strin
         call RemoveSavedString(HH,GetHandleId(NewFrame),SB_TXT)
         call SaveStr                (HH, id, c_NAME, newString)
         call SaveInteger            (HH, id, c_BUFF, buffId)
-        call TimerStart             (newTimer, 0.05, true, function CreateModeIndicatorWithPauseFormDispellable_Periodic)
+        call TSE_TimerStart(newTimer, 0.05, true, function CreateModeIndicatorWithPauseFormDispellable_Periodic) // 29 окт: через остановку времени (отсчёт в строке статуса шёл во время таймстопа)
     else
         call SaveReal           (HH, GetHandleId(NewFrame), c_DURATION, newDur)
         call SaveReal           (HH, GetHandleId(NewFrameText), c_DURATION, newDur)
@@ -13839,7 +13859,7 @@ function CreateModeIndicatorWithPauseFormDispellableHash takes unit newCaster, s
         call RemoveSavedString(HH,GetHandleId(NewFrame),SB_TXT)
         call SaveStr                (HH, id, c_NAME, newString)
         call SaveInteger            (HH, id, c_BUFF, HashString)
-        call TimerStart             (newTimer, 0.05, true, function CreateModeIndicatorWithPauseFormDispellableHash_Periodic)
+        call TSE_TimerStart(newTimer, 0.05, true, function CreateModeIndicatorWithPauseFormDispellableHash_Periodic) // 29 окт: через остановку времени (отсчёт в строке статуса шёл во время таймстопа)
     else
         call SaveReal           (HH, GetHandleId(NewFrame), c_DURATION, newDur)
         call SaveReal           (HH, GetHandleId(NewFrameText), c_DURATION, newDur)
@@ -41516,7 +41536,7 @@ function ShadowCoverIndicator takes unit newCaster, string newString, real newDu
         call SaveInteger(HH,GetHandleId(NewFrame),SB_POS,0)
         call RemoveSavedString(HH,GetHandleId(NewFrame),SB_TXT)
         call SaveStr                (HH, id, c_NAME, newString)
-        call TimerStart             (newTimer, 0.05, true, function ShadowCoverIndicator_Periodic)
+        call TSE_TimerStart(newTimer, 0.05, true, function ShadowCoverIndicator_Periodic) // 29 окт: через остановку времени (отсчёт в строке статуса шёл во время таймстопа)
     else
         call SaveReal           (HH, GetHandleId(NewFrame), c_DURATION, newDur)
         call SaveReal           (HH, GetHandleId(NewFrameText), c_DURATION, newDur)
@@ -131235,7 +131255,7 @@ function IchigoVaster_OvertimeForm takes unit newCaster, string newString, real 
         call SaveInteger(HH,GetHandleId(NewFrame),SB_POS,0)
         call RemoveSavedString(HH,GetHandleId(NewFrame),SB_TXT)
         call SaveStr                (HH, id, c_NAME, newString)
-        call TimerStart             (newTimer, 0.05, true, function IchigoVaster_OvertimeForm_Periodic)
+        call TSE_TimerStart(newTimer, 0.05, true, function IchigoVaster_OvertimeForm_Periodic) // 29 окт: через остановку времени (отсчёт в строке статуса шёл во время таймстопа)
     else
         call SaveReal           (HH, GetHandleId(NewFrame), c_DURATION, newDur)
         call SaveReal           (HH, GetHandleId(NewFrameText), c_DURATION, newDur)
@@ -187792,7 +187812,7 @@ function GilgameshQ1_Cast takes unit newCaster, unit newTarget, real point_x, re
         call SaveReal           (h, id, 2, GetUnitX(newCaster))
         call SaveReal           (h, id, 3, GetUnitY(newCaster))
         call SaveReal           (h, id, 4, damage)
-        call TimerStart         (newTimer, 0.025, true, function GilgameshQ1_Periodic)
+        call TSE_TimerStart(newTimer, 0.025, true, function GilgameshQ1_Periodic) // 29 окт: через остановку времени (отсчёт в строке статуса шёл во время таймстопа)
         set newTimer=null
 endfunction
 
@@ -187817,7 +187837,7 @@ function GilgameshW1_Cast takes unit newCaster returns nothing  // Право К
         call UnitMakeAbilityPermanent(newCaster, true, 'Gi01')
         call SaveUnitHandle     (h, id, 0, newCaster)
         call SaveReal           (h, id, 1, 10)  // Duration
-        call TimerStart         (newT, 0.1, true, function GilgameshW1_Periodic)
+        call TSE_TimerStart(newT, 0.1, true, function GilgameshW1_Periodic) // 29 окт: через остановку времени (отсчёт в строке статуса шёл во время таймстопа)
         set newT=null
 endfunction
 
@@ -187863,7 +187883,7 @@ function GilgameshW3_Cast takes unit newCaster returns nothing  // Право К
         call SaveReal           (h, id, 2, GetWidgetLife(newCaster)*0.2)
         call SaveReal           (h, id, 3, GetWidgetMana(newCaster)*0.2)
         call SaveUnitHandle     (h, id, 4, newCaster)
-        call TimerStart         (newT, 0.5, true, function GilgameshW3_Periodic)
+        call TSE_TimerStart(newT, 0.5, true, function GilgameshW3_Periodic) // 29 окт: через остановку времени (отсчёт в строке статуса шёл во время таймстопа)
         set newT=null
 endfunction
 
@@ -237545,7 +237565,7 @@ function CreateModeIndicatorWithPauseSabrac takes unit newCasterOwner,unit newCa
         call SaveInteger(HH,GetHandleId(NewFrame),SB_POS,0)
         call RemoveSavedString(HH,GetHandleId(NewFrame),SB_TXT)
         call SaveStr                (HH, id, c_NAME, newString)
-        call TimerStart             (newTimer, 0.05, true, function CreateModeIndicatorWithPauseSabrac_Periodic)
+        call TSE_TimerStart(newTimer, 0.05, true, function CreateModeIndicatorWithPauseSabrac_Periodic) // 29 окт: через остановку времени (отсчёт в строке статуса шёл во время таймстопа)
     else
         call SaveReal           (HH, GetHandleId(NewFrame), c_DURATION, newDur)
         call SaveReal           (HH, GetHandleId(NewFrameText), c_DURATION, newDur)
@@ -242529,7 +242549,7 @@ function CreateModeIndicatorWithPauseAizen takes unit newCasterOwner,unit newCas
         call SaveInteger(HH,GetHandleId(NewFrame),SB_POS,0)
         call RemoveSavedString(HH,GetHandleId(NewFrame),SB_TXT)
         call SaveStr                (HH, id, c_NAME, newString)
-        call TimerStart             (newTimer, 0.05, true, function CreateModeIndicatorWithPauseAizen_Periodic)
+        call TSE_TimerStart(newTimer, 0.05, true, function CreateModeIndicatorWithPauseAizen_Periodic) // 29 окт: через остановку времени (отсчёт в строке статуса шёл во время таймстопа)
     else
         call SaveReal           (HH, GetHandleId(NewFrame), c_DURATION, newDur)
         call SaveReal           (HH, GetHandleId(NewFrameText), c_DURATION, newDur)
@@ -262970,7 +262990,7 @@ function CreateModeIndicatorGojoT takes unit newCaster, string newString, real n
         call SaveStr                (HH, id, c_NAME, newString)
         call SaveInteger            (HH, id, 10, abil_code)
 
-        call TimerStart             (newTimer, 0.05, true, function CreateModeIndicatorGojoT_Periodic)
+        call TSE_TimerStart(newTimer, 0.05, true, function CreateModeIndicatorGojoT_Periodic) // 29 окт: через остановку времени (отсчёт в строке статуса шёл во время таймстопа)
     else
         call SaveReal           (HH, GetHandleId(NewFrame), c_DURATION, newDur)
     endif
@@ -266244,7 +266264,7 @@ function CreateModeIndicatorWithPauseFormAbility takes unit newCaster, string ne
         call SaveInteger            (HH, id, c_POSITION, j)
         call SaveStr                (HH, id, c_NAME, newString)
         call SaveInteger            (HH, id, 10, abil_Code)
-        call TimerStart             (newTimer, 0.05, true, function CreateModeIndicatorWithPauseForm_PeriodicAbility)
+        call TSE_TimerStart(newTimer, 0.05, true, function CreateModeIndicatorWithPauseForm_PeriodicAbility) // 29 окт: через остановку времени (отсчёт в строке статуса шёл во время таймстопа)
     else
         call SaveReal           (HH, GetHandleId(NewFrame), c_DURATION, newDur)
     endif
