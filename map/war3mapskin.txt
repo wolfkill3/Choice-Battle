@@ -49,7 +49,7 @@ ToolTipBorder=war3mapImported\BlackCinematicBorder.blp
 TownAttackSound=.mp3
 UnderAttackSound=.mp2
 [FrameDef]
-BONUS_ATTACK_SPEED= - 1 ед. повышает скорость боя на 1%|n - 1 ед. повышает скорость бега на 0.7|n - Скорость боя выше +250%: каждые 4% — +1% урона автоатак
+BONUS_ATTACK_SPEED= - 1 ед. повышает скорость боя|n - 1 ед. повышает скорость бега на 0.7
 BONUS_MANAREGEN= - 1 ед. повышает скорость восстановления маны|n - 1 ед. повышает магическое сопротивление на 0.05%
 COLON_LUMBER=Очки победы.
 DAMAGETIP_CHAOS=Герои наносят меньший урон укрепленным объектам.
