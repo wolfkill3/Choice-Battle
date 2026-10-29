@@ -41173,6 +41173,25 @@ endif
 set u=null
 set t=null
 endfunction
+// 29 окт: табло Хирако / Тоусена (оно же копит запас маски) запускалось только при появлении героя; если таймер
+// остановился (герой на миг сменился), запас и табличка пропадали до конца игры — запуск заново при касте E и в начале раунда
+function ShnBoard_Ensure takes unit u returns nothing
+local integer ip=PId(OwnerOf(u))
+local timer t
+if ip<0 or ip>=12 or u!=Hero[ip] then
+return
+endif
+if GetUnitTypeId(u)!='HShn' and GetUnitTypeId(u)!='H02K' and GetUnitTypeId(u)!='H0TF' then
+return
+endif
+if LoadInteger(HH,ip,SH_ShnDBoard)!=1 then
+set t=CreateTimer()
+call SaveInteger(HH,GetHandleId(t),0,ip)
+call SaveInteger(HH,ip,SH_ShnDBoard,1)
+call TSE_TimerStart(t,0.2,true,function ShnDBoard2)
+set t=null
+endif
+endfunction
 
 // Табло Фландре: заряды клонов T и время до следующего (+1 раз в 20 c)
 function FlaDBoard2 takes nothing returns nothing
@@ -62549,6 +62568,15 @@ local real x=GetRectMaxX(gg_rct_Weiw)
 local real x1=GetRectMinX(gg_rct_Weiw)
 local real y=GetRectMaxY(gg_rct_Weiw)
 local real y1=GetRectMinY(gg_rct_Weiw)
+// 29 окт: табло и запас маски Хирако / Тоусена — запустить заново, если остановились
+loop
+exitwhen i>=12
+if Hero[i]!=null then
+call ShnBoard_Ensure(Hero[i])
+endif
+set i=i+1
+endloop
+set i=0
 // call ClearStrings()
 // Ban Draft Mode: пока идёт драфт и 10 c после него, раунд не стартует (-start в тест-режиме); Draft_Go обнуляет
 // DrwTick и DraftGoT перед своим TriggerExecute
@@ -132882,6 +132910,7 @@ local unit u=GetTriggerUnit()
 local integer lv=GetUnitAbilityLevel(u,'SnE1')
 local timer t=CreateTimer()
 local integer id=GetHandleId(t)
+call ShnBoard_Ensure(u) // 29 окт
 if LoadReal(HH,GetHandleId(u),SH_ShnMaskRes)<3. or LoadBoolean(HH,GetHandleId(u),SH_ShnMask) then
 call SaveUnitHandle(h,id,0,u)
 call TSE_TimerStart(t,0,false,function ShinjiERefund)
@@ -133471,6 +133500,7 @@ local unit u=GetTriggerUnit()
 local integer lv=GetUnitAbilityLevel(u,'A0JA')
 local timer t=CreateTimer()
 local integer id=GetHandleId(t)
+call ShnBoard_Ensure(u) // 29 окт
 call SaveUnitHandle(h,id,0,u)
 if LoadReal(HH,GetHandleId(u),SH_ShnMaskRes)<3. or LoadBoolean(HH,GetHandleId(u),SH_ShnMask) then
 call TSE_TimerStart(t,0,false,function TousenERefund)
