@@ -6299,6 +6299,10 @@ function MUIHandle takes nothing returns integer
         local integer Data = GetUnitData( GetUnit( "Target" ), GetStr( "Type" ) )
         local integer hid = GetHandleID()
         local integer tick = GetInt("tick2")
+        // 29 окт: цель заморожена остановкой времени — контроль не тикает (оглушение и комбо стоят до возобновления)
+        if Data > 0 and udg_B and DU2 and IsUnitInGroup(GetUnit( "Target" ),TSE_G) then
+            return
+        endif
         if Data > 0 and udg_B and DU2 then
             if (IsUnitPaused(GetUnit( "Target" )) == false and GetUnitAbilityLevel(GetUnit( "Target" ),GetInt( "Buff" ))>0) or ((GetStr( "Type" ) == "combo4" or GetStr( "Type" ) == "combo2" )and GetUnitAbilityLevel(GetUnit( "Target" ),GetInt( "Buff" ))>0) then
                 call SetUnitData( GetUnit( "Target" ), GetStr( "Type" ), Data - 1 )
