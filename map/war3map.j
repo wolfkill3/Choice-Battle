@@ -27967,7 +27967,8 @@ set Cambug=false
 set sh4="heroposhp"
 set sh5="heroposmp"
 call EnumDoodadsInRect(gg_rct_UBW2,null,function UBWDood)
-call EnumDoodadsInRange(0,0,99999999,null,function DoorsDood)
+// 29 окт: перекраска стен и дверей выше / ниже Y=0 в цвета команд отключена
+//call EnumDoodadsInRange(0,0,99999999,null,function DoorsDood)
 call GroupEnumUnitsInRect(G,gg_rct_Base,null)
 loop
 set E=FirstOfGroup(G)
