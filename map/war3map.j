@@ -8999,28 +8999,31 @@ function HPB_Update takes nothing returns nothing
                             set HPB_Lv[hps]=hpk
                             call SetFrameText(HPB_LvlTxt[hps],I2S(hpk))
                         endif
-                        // щит: доля от максимума HP; щит без запаса — полоска во всю ширину
-                        set hpr=ShieldHPTotal(hsrc)
-                        set hpw=0.
-                        if hpr>0 then
-                            set hpw=hbw*hpr/hpm
-                            if hpw>hbw then
+                        // 29 окт: щит — 10 раз в секунду (было каждый тик, 60), сразу — после сброса полоски
+                        if ModuloInteger(HPB_T+hps,6)==0 or HPB_ShW[hps]<0. then
+                            // щит: доля от максимума HP; щит без запаса — полоска во всю ширину
+                            set hpr=ShieldHPTotal(hsrc)
+                            set hpw=0.
+                            if hpr>0 then
+                                set hpw=hbw*hpr/hpm
+                                if hpw>hbw then
+                                    set hpw=hbw
+                                endif
+                            elseif HeroHasShield(hsrc) then
                                 set hpw=hbw
                             endif
-                        elseif HeroHasShield(hsrc) then
-                            set hpw=hbw
-                        endif
-                        set hpw=I2R(R2I(hpw*4000.))/4000.
-                        if hpw!=HPB_ShW[hps] then
-                            set HPB_ShW[hps]=hpw
-                            call HPB_Fill(HPB_Sh[hps],hpw,HPB_SH)
-                            set hpk=2
-                            if hpw>0 then
-                                set hpk=1
-                            endif
-                            if hpk!=HPB_ShOn[hps] then
-                                set HPB_ShOn[hps]=hpk
-                                call HPB_Layout(hps)
+                            set hpw=I2R(R2I(hpw*4000.))/4000.
+                            if hpw!=HPB_ShW[hps] then
+                                set HPB_ShW[hps]=hpw
+                                call HPB_Fill(HPB_Sh[hps],hpw,HPB_SH)
+                                set hpk=2
+                                if hpw>0 then
+                                    set hpk=1
+                                endif
+                                if hpk!=HPB_ShOn[hps] then
+                                    set HPB_ShOn[hps]=hpk
+                                    call HPB_Layout(hps)
+                                endif
                             endif
                         endif
                     endif
@@ -267091,7 +267094,9 @@ call SaveGroupHandle(HH,id,4,gr)
 
 endif
 
-if time>=21 then
+//if time>=21 then
+// 29 окт: зона кончается на 16 с или с концом раунда — DMT3 снимается тогда (раньше оставался навсегда)
+if time>=16 or udg_B==false then
 call UnitRemoveAbility(GetEnumUnit(),'DMT3')
 endif
 
@@ -267225,7 +267230,9 @@ endif
 
 
 
-if time>1 then
+//if time>1 then
+// 29 окт: перебор юнитов зоны раз в 0.04 с (было каждые 0.02)
+if time>1 and ModuloInteger(R2I(time*50.+0.5),2)==0 then
 call GroupEnumUnitsInRange(G,x1,y1,2000,null)
 loop
 set n0=FirstOfGroup(G)
