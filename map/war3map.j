@@ -44789,14 +44789,18 @@ endfunction
 function ResistBar_Layout takes real k returns nothing
 local integer rlN=0 // 29 окт: не n — глобальный unit n (карта не запускалась)
 local integer idx
-local real w=.105*k
+//local real w=.105*k
+local real w=.11*k // крупнее
 local real x
 local real y
-call SetFrameSize( ResistBarFrame, 2.*w, .082)
+//call SetFrameSize( ResistBarFrame, 2.*w, .082)
+call SetFrameSize( ResistBarFrame, 2.*w, .092) // вниз длиннее
 call ClearFrameAllPoints( ResistBarFrame )
 //call SetFrameRelativePoint( ResistBarFrame, FRAMEPOINT_CENTER, GetOriginFrame(ORIGIN_FRAME_PORTRAIT,0), FRAMEPOINT_CENTER, .171*k, -.026 )
 //call SetFrameRelativePoint( ResistBarFrame, FRAMEPOINT_CENTER, GetOriginFrame(ORIGIN_FRAME_PORTRAIT,0), FRAMEPOINT_CENTER, .159*k, -.026 ) // левее
-call SetFrameRelativePoint( ResistBarFrame, FRAMEPOINT_CENTER, GetOriginFrame(ORIGIN_FRAME_PORTRAIT,0), FRAMEPOINT_CENTER, .147*k, -.026 ) // ещё левее
+//call SetFrameRelativePoint( ResistBarFrame, FRAMEPOINT_CENTER, GetOriginFrame(ORIGIN_FRAME_PORTRAIT,0), FRAMEPOINT_CENTER, .147*k, -.026 ) // ещё левее
+// левый и верхний края на месте: ширина +.01 (центр +.005), высота +.01 (центр -.005)
+call SetFrameRelativePoint( ResistBarFrame, FRAMEPOINT_CENTER, GetOriginFrame(ORIGIN_FRAME_PORTRAIT,0), FRAMEPOINT_CENTER, .152*k, -.031 )
 loop
 exitwhen rlN>=14
 //if rlN==0 then
@@ -44819,7 +44823,10 @@ exitwhen rlN>=14
 // 29 окт: слева — скорость, AS, урон, Control Resist; справа — Phys Resist, Magic / Full Resist, MR + FR, лечение, мана
 set idx=ResistBar_Idx(rlN)
 set x=.005+w*I2R(rlN/7)
-set y=-.006-.01*I2R(ModuloInteger(rlN,7))
+//set y=-.006-.01*I2R(ModuloInteger(rlN,7))
+set y=-.007-.0115*I2R(ModuloInteger(rlN,7))
+call SetFrameFont( ResistTxt[idx], "Fonts\\FRIZQT__.TTF", .0098, 0 ) // крупнее (было .009)
+call SetFrameFont( ResistTxt[idx+1], "Fonts\\FRIZQT__.TTF", .0098, 0 )
 call ClearFrameAllPoints( ResistTxt[idx] )
 call SetFrameRelativePoint( ResistTxt[idx], FRAMEPOINT_TOPLEFT, ResistBarFrame, FRAMEPOINT_TOPLEFT, x, y )
 call ClearFrameAllPoints( ResistTxt[idx+1] )
