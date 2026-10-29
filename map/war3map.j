@@ -268181,7 +268181,7 @@ endif
 if GetUnitAbilityLevel(caster,'DMQ1')==0 then
 call RemoveUnit(Dummy1)
 call RemoveUnit(Dummy2)
-call DisplayTextToPlayer(OwnerOf(caster),0,0,Lng("Черепки исчезли","The skulls are gone"))
+//call DisplayTextToPlayer(OwnerOf(caster),0,0,Lng("Черепки исчезли","The skulls are gone")) // 29 окт: сообщение отключено
 call PauseTimer(GetExpiredTimer())
 call FlushChildHashtable(HH,id)
 call TSE_DestroyTimer(GetExpiredTimer())
@@ -268194,7 +268194,7 @@ function Death_Master_Skull_Summon takes unit caster0 returns nothing
 local timer t=CreateTimer()
 local integer id=GetHandleId(t)
 call SaveUnitHandle(HH,id,1,caster0)
-call DisplayTextToPlayer(OwnerOf(caster0),0,0,Lng("Черепки появились","The skulls are back"))
+//call DisplayTextToPlayer(OwnerOf(caster0),0,0,Lng("Черепки появились","The skulls are back")) // 29 окт: сообщение отключено
 set n0=CreateUnit(OwnerOf(caster0),'gb01',GetUnitX(caster0),GetUnitY(caster0),GetUnitFacing(caster0))
 call SetUnitModel(n0,EffectID[1446])
 call UnitSize(n0,0.5,1,1)
