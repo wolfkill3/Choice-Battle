@@ -8380,6 +8380,9 @@ endfunction
 function HeroHasShield takes unit hsu returns boolean
     local integer hsi=GetHandleId(hsu)
     if h==null then
+        return false
+    endif
+    // 29 окт: список ниже стоял внутри проверки h==null и не срабатывал (рамка и полоска щита не показывались)
     // урон обнуляется целиком (тот же список, что обнуляет nb в обработчике урона): E/T Шилдер, Гроза Вонголы,
     // E/F Энкиду и баффы-неуязвимости — полоска щита во всю ширину и рамка, как у полного щита
     if GetUnitAbilityLevel(hsu,'A1DG')>0 or GetUnitAbilityLevel(hsu,'A1DO')>0 or GetUnitAbilityLevel(hsu,'A0VJ')>0 or GetUnitAbilityLevel(hsu,'B00Y')>0 or GetUnitAbilityLevel(hsu,'A1HV')>0 or GetUnitAbilityLevel(hsu,'A1I2')>0 then
@@ -8388,8 +8391,8 @@ function HeroHasShield takes unit hsu returns boolean
     if GetUnitAbilityLevel(hsu,'B06V')>0 or GetUnitAbilityLevel(hsu,'B06P')>0 or GetUnitAbilityLevel(hsu,'B06I')>0 or GetUnitAbilityLevel(hsu,'B02E')>0 or GetUnitAbilityLevel(hsu,'B05J')>0 then
         return true
     endif
-        return false
-    endif
+    //    return false
+    //endif
     if ShieldHPTotal(hsu)>0 then
         return true
     endif
