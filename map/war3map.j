@@ -21311,7 +21311,7 @@ call FlushChildHashtable(bof_OI,GetHandleId(GetExpiredTimer()))
 call TSE_DestroyTimer(GetExpiredTimer())
 endfunction
 function Bof_CWW takes nothing returns boolean
-return true and (true and (GetUnitAbilityLevel(GetFilterUnit(),$4176756C)==0 and (Condition_Base(OwnerOf(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),GetFilterUnit()) and IsUnitAliveBJ(GetFilterUnit())==true)))
+return true and (true and (GetUnitAbilityLevel(GetFilterUnit(),'Avul')==0 and (Condition_Base(OwnerOf(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),GetFilterUnit()) and IsUnitAliveBJ(GetFilterUnit())==true)))
 endfunction
 function Bof_CWX takes nothing returns nothing
 call CameraClearNoiseForPlayer(LoadPlayerHandle(bof_OI,GetHandleId(GetExpiredTimer()),$48656946))
@@ -21560,7 +21560,7 @@ loop
 set bl_TG=FirstOfGroup(TF)
 exitwhen bl_TG==null
 call GroupRemoveUnit(TF,bl_TG)
-if Condition_Base(OwnerOf(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),bl_TG) and true and true and GetUnitAbilityLevel(bl_TG,$4176756C)==0 then
+if Condition_Base(OwnerOf(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),bl_TG) and true and true and GetUnitAbilityLevel(bl_TG,'Avul')==0 then
 call SaveUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867,bl_TG)
 call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$F1DDA59B,GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867)))
 call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$38D20A1F,GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867)))
@@ -21930,7 +21930,7 @@ local integer Ub
 call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$2B0A6845,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2B0A6845)+.01)
 call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$38AB9941,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$38AB9941)+325.)
 call Bof_BBn("bof\\war3mapImported\\Escanor-Q-YX2.mp3",110)
-if LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2B0A6845)<=.03 then
+if LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2B0A6845)<=.04 then
 call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$2392447A,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$A99320FA)+LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$38AB9941)*CosBJ(LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2D345649)))
 call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$B0897302,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$FDF65382)+LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$38AB9941)*SinBJ(LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2D345649)))
 set TF=CreateGroup()
@@ -21939,12 +21939,12 @@ loop
 set bl_TG=FirstOfGroup(TF)
 exitwhen bl_TG==null
 call GroupRemoveUnit(TF,bl_TG)
-if Condition_Base(OwnerOf(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),bl_TG) and true and true and GetUnitAbilityLevel(bl_TG,$4176756C)==0 then
+if Condition_Base(OwnerOf(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),bl_TG) and true and true and GetUnitAbilityLevel(bl_TG,'Avul')==0 then
 call SaveUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867,bl_TG)
 call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$F1DDA59B,GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867)))
 call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$38D20A1F,GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867)))
 call Bof_Dmg(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867),(I2R(Esc_Str_Q(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),true))*40.*1.)*0.001)
-call Bof_Ctrl(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867),2.,"stun")
+call Bof_Ctrl(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867),1.,"stun")
 else
 endif
 endloop
@@ -22089,7 +22089,7 @@ loop
 set bl_TG=FirstOfGroup(TF)
 exitwhen bl_TG==null
 call GroupRemoveUnit(TF,bl_TG)
-if Condition_Base(OwnerOf(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),bl_TG) and true and true and GetUnitAbilityLevel(bl_TG,$4176756C)==0 then
+if Condition_Base(OwnerOf(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),bl_TG) and true and true and GetUnitAbilityLevel(bl_TG,'Avul')==0 then
 call SaveUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867,bl_TG)
 call Bof_Dmg(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867),(I2R(Esc_Str_E(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),true))*2.*1.)*0.001)
 if IsUnitPausedBJ(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867))==false and IsUnitInGroup(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867),bof_RK)!=true then
@@ -22130,7 +22130,7 @@ loop
 set bl_TG=FirstOfGroup(TF)
 exitwhen bl_TG==null
 call GroupRemoveUnit(TF,bl_TG)
-if Condition_Base(OwnerOf(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),bl_TG) and true and true and GetUnitAbilityLevel(bl_TG,$4176756C)==0 then
+if Condition_Base(OwnerOf(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),bl_TG) and true and true and GetUnitAbilityLevel(bl_TG,'Avul')==0 then
 call SaveUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867,bl_TG)
 call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$F1DDA59B,GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867)))
 call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$38D20A1F,GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867)))
@@ -22247,7 +22247,7 @@ loop
 set bl_TG=FirstOfGroup(TF)
 exitwhen bl_TG==null
 call GroupRemoveUnit(TF,bl_TG)
-if Condition_Base(OwnerOf(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),bl_TG) and true and true and GetUnitAbilityLevel(bl_TG,$4176756C)==0 then
+if Condition_Base(OwnerOf(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),bl_TG) and true and true and GetUnitAbilityLevel(bl_TG,'Avul')==0 then
 call SaveUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867,bl_TG)
 call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$F1DDA59B,GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867)))
 call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$38D20A1F,GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867)))
@@ -22315,7 +22315,7 @@ loop
 set bl_TG=FirstOfGroup(TF)
 exitwhen bl_TG==null
 call GroupRemoveUnit(TF,bl_TG)
-if Condition_Base(OwnerOf(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),bl_TG) and true and true and GetUnitAbilityLevel(bl_TG,$4176756C)==0 then
+if Condition_Base(OwnerOf(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),bl_TG) and true and true and GetUnitAbilityLevel(bl_TG,'Avul')==0 then
 call SaveUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867,bl_TG)
 call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$F1DDA59B,GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867)))
 call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$38D20A1F,GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867)))
@@ -22623,7 +22623,7 @@ loop
 set bl_TG=FirstOfGroup(TF)
 exitwhen bl_TG==null
 call GroupRemoveUnit(TF,bl_TG)
-if Condition_Base(OwnerOf(escC),bl_TG) and GetUnitAbilityLevel(bl_TG,$4176756C)==0 then
+if Condition_Base(OwnerOf(escC),bl_TG) and GetUnitAbilityLevel(bl_TG,'Avul')==0 then
 call SaveUnitHandle(bof_OI,escT,$9B1A6867,bl_TG)
 call Bof_Dmg(escC,bl_TG,(I2R(Esc_Str_W(escC,true))*100.*1.)*0.001)
 call Bof_Ctrl(escC,bl_TG,3.,"stun")
@@ -22779,7 +22779,7 @@ call TSE_DestroyTimer(GetExpiredTimer())
 endif
 endfunction
 function Bof_CXZ takes nothing returns boolean
-return GetUnitAbilityLevel(GetFilterUnit(),$4176756C)==0 and (true and true and Condition_Base(OwnerOf(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),GetFilterUnit()))
+return GetUnitAbilityLevel(GetFilterUnit(),'Avul')==0 and (true and true and Condition_Base(OwnerOf(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),GetFilterUnit()))
 endfunction
 function Bof_CXa takes nothing returns nothing
 call SaveUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867,GetEnumUnit())
@@ -22856,7 +22856,7 @@ loop
 set bl_TG=FirstOfGroup(TF)
 exitwhen bl_TG==null
 call GroupRemoveUnit(TF,bl_TG)
-if Condition_Base(OwnerOf(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)),bl_TG) and true and true and GetUnitAbilityLevel(bl_TG,$4176756C)==0 then
+if Condition_Base(OwnerOf(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)),bl_TG) and true and true and GetUnitAbilityLevel(bl_TG,'Avul')==0 then
 call SaveUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$9B1A6867,bl_TG)
 call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$F1DDA59B,GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$9B1A6867)))
 call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$38D20A1F,GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$9B1A6867)))
@@ -23008,7 +23008,7 @@ loop
 set bl_TG=FirstOfGroup(TF)
 exitwhen bl_TG==null
 call GroupRemoveUnit(TF,bl_TG)
-if Condition_Base(OwnerOf(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),bl_TG) and true and true and GetUnitAbilityLevel(bl_TG,$4176756C)==0 then
+if Condition_Base(OwnerOf(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),bl_TG) and true and true and GetUnitAbilityLevel(bl_TG,'Avul')==0 then
 call SaveUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867,bl_TG)
 call Bof_Dmg(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867),(I2R(Esc_Str_D(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),true))*30.*1.)*0.001)
 else
@@ -138704,14 +138704,18 @@ call SaveInteger(HH,SH_ShnChanT,'DSW1',1)
 call SaveStr(HH,SH_ShnChanO,'DSW2',"cripple")
 call SaveStr(HH,SH_ShnChanO,'EsD1',"darkconversion")
 call SaveInteger(HH,SH_ShnChanT,'EsD1',2)
-call SaveStr(HH,SH_ShnChanO,'EsE1',"channel")
+call SaveStr(HH,SH_ShnChanO,'EsE1',"flamingarrowstarg")
+call SaveInteger(HH,SH_ShnChanT,'EsE1',2)
 call SaveStr(HH,SH_ShnChanO,'EsF1',"selfdestructon")
 call SaveInteger(HH,SH_ShnChanT,'EsF1',2)
 call SaveStr(HH,SH_ShnChanO,'EsG1',"forceofnature")
-call SaveStr(HH,SH_ShnChanO,'EsQ1',"channel")
-call SaveStr(HH,SH_ShnChanO,'EsR1',"channel")
+call SaveStr(HH,SH_ShnChanO,'EsQ1',"bearform")
+call SaveInteger(HH,SH_ShnChanT,'EsQ1',2)
+call SaveStr(HH,SH_ShnChanO,'EsR1',"flamingattack")
+call SaveInteger(HH,SH_ShnChanT,'EsR1',2)
 call SaveStr(HH,SH_ShnChanO,'EsT1',"wateryminion")
-call SaveStr(HH,SH_ShnChanO,'EsW1',"channel")
+call SaveStr(HH,SH_ShnChanO,'EsW1',"flamingarrows")
+call SaveInteger(HH,SH_ShnChanT,'EsW1',2)
 call SaveStr(HH,SH_ShnChanO,'FSF1',"acolyteharvest")
 call SaveInteger(HH,SH_ShnChanT,'FSF1',2)
 call SaveStr(HH,SH_ShnChanO,'FSG1',"blackarrow")
@@ -140989,13 +140993,13 @@ call SaveStr(HH,SH_AbOrd,'DSW1',"channel")
 call SaveStr(HH,SH_AbOrd,'DSW2',"cripple")
 call SaveStr(HH,SH_AbOrd,'DanI',"invisibility")
 call SaveStr(HH,SH_AbOrd,'EsD1',"darkconversion")
-call SaveStr(HH,SH_AbOrd,'EsE1',"channel")
+call SaveStr(HH,SH_AbOrd,'EsE1',"flamingarrowstarg")
 call SaveStr(HH,SH_AbOrd,'EsF1',"selfdestructon")
 call SaveStr(HH,SH_AbOrd,'EsG1',"forceofnature")
-call SaveStr(HH,SH_AbOrd,'EsQ1',"channel")
-call SaveStr(HH,SH_AbOrd,'EsR1',"channel")
+call SaveStr(HH,SH_AbOrd,'EsQ1',"bearform")
+call SaveStr(HH,SH_AbOrd,'EsR1',"flamingattack")
 call SaveStr(HH,SH_AbOrd,'EsT1',"wateryminion")
-call SaveStr(HH,SH_AbOrd,'EsW1',"channel")
+call SaveStr(HH,SH_AbOrd,'EsW1',"flamingarrows")
 call SaveStr(HH,SH_AbOrd,'FSF1',"acolyteharvest")
 call SaveStr(HH,SH_AbOrd,'FSG1',"blackarrow")
 call SaveStr(HH,SH_AbOrd,'FlD1',"flamingattacktarg")
