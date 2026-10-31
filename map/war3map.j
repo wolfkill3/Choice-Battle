@@ -20859,6 +20859,7 @@ function Esc_PanelUpdate takes unit u,real hour returns nothing
 local integer escHH=R2I(hour)
 local integer escMM=R2I((hour-I2R(escHH))*60.)
 local string escTxt
+local string escTxt2
 if not IsUnitSelected(u,GetLocalPlayer()) or not IsPlayerAlly(GetLocalPlayer(),OwnerOf(u)) then
     return
 endif
@@ -20871,7 +20872,8 @@ set escTxt=escTxt+I2S(escHH)+":"
 if escMM<10 then
 set escTxt=escTxt+"0"
 endif
-call SetFrameText(GetFrameByName("CustomLeaderboardText",0),escTxt+I2S(escMM))
+set escTxt2=Lng("|r |c00FF0000Бонус STR|r: ","|r |c00FF0000Bonus STR|r: ")
+call SetFrameText(GetFrameByName("CustomLeaderboardText",0),escTxt+I2S(escMM)+escTxt2+I2S(LoadInteger(bof_HT,GetHandleId(u),SH_bofBonus+6)))
 call ShowFrame(GetFrameByName("CustomLeaderboard",0),true)
 call SetFrameSize(GetFrameByName("CustomLeaderboard",0),.1775,GetFrameHeight(GetFrameByName("CustomLeaderboardText",0))+0.016)
 call SetFrameTextAlignment(GetFrameByName("CustomLeaderboardText",0),TEXT_JUSTIFY_LEFT,TEXT_JUSTIFY_LEFT)
@@ -20939,8 +20941,10 @@ set escLife=GetUnitState(escU,UNIT_STATE_LIFE)-GetUnitState(escU,UNIT_STATE_LIFE
 if escLife<1. then
 set escLife=1.
 endif
+if IsUnitPaused(escU)==false and GetUnitAbilityLevel(escU,'Pet1')==0 then
 call SetUnitState(escU,UNIT_STATE_LIFE,escLife)
 call SaveInteger(bof_HT,escId,1,escLeft-1)
+endif
 set escTm=null
 set escU=null
 set escG=null
@@ -20955,7 +20959,7 @@ if not LoadBoolean(bof_M9,GetHandleId(u),$DF127C78) then
 call SaveBoolean(bof_M9,GetHandleId(u),$DF127C78,true)
 call SaveBoolean(bof_HT,GetHandleId(escTm),2,true)
 endif
-call Esc_BuffOn(u,"EscOne",600./511.,200000./352200.)
+call Esc_BuffOn(u,"EscOne",1,0.6)
 call TSE_TimerStart(escTm,.25,true,function Esc_TheOneTick)
 set escTm=null
 endfunction
@@ -300133,10 +300137,10 @@ call LANG_A('EsR1',2,0,"Pride Flare, [|cffffcc00Level %d|r] (|cffffcc00R|r)")
 call LANG_A('EsR1',3,0,"Dashes forward: the first enemy in the way is grabbed and burns for 2 sec. among explosions, then a fiery finale.|n|n|cFF00A5FF|nDamage: 5*|r|c00FF5555STR|r|cFF00A5FF over 2 sec.|nRange: 1600|nCooldown: 30 sec.|n|r")
 call LANG_A('EsD1',1,0,"From level 25. Enormous magic in the edge of his hand: a cleaving strike of flame.|n|n|cFF00A5FF|nDamage: 10*|r|c00FF5555STR|r|cFF00A5FF|nCooldown: 35 sec.|n|r")
 call LANG_A('EsD1',3,0,"From level 25. Enormous magic in the edge of his hand: a cleaving strike of flame.|n|n|cFF00A5FF|nDamage: 10*|r|c00FF5555STR|r|cFF00A5FF|nCooldown: 35 sec.|n|r")
-call LANG_A('EsF1',1,0,"A pillar of flame silences the area for 5 sec. and burns everyone in it, then a blazing sun falls into it.|n|n|cFF00A5FF|nDamage: 3*|r|c00FF5555STR|r|cFF00A5FF (from base strength) by the explosion + 1.5*|r|c00FF5555STR|r|cFF00A5FF per sec. in the pillar|nStun: 3 sec.|nAoE: 600|nRange: 1600|nCooldow"+"n: 18 sec.|n|r")
-call LANG_A('EsF1',3,0,"A pillar of flame silences the area for 5 sec. and burns everyone in it, then a blazing sun falls into it.|n|n|cFF00A5FF|nDamage: 3*|r|c00FF5555STR|r|cFF00A5FF (from base strength) by the explosion + 1.5*|r|c00FF5555STR|r|cFF00A5FF per sec. in the pillar|nStun: 3 sec.|nAoE: 600|nRange: 1600|nCooldow"+"n: 18 sec.|n|r")
-call LANG_A('EsG1',1,0,"Only from 9 to 15 by his clock. Escanor burns his own life and becomes The One: a strike on everyone around, then 15 sec. of burning everyone nearby, dropping explosions for the first 5 sec. At the end Escanor dies.|n|n|cFF00A5FF|nStrike (AoE 900): 5*|r|c00FF5555STR|r|cFF00A5FF|nNearby (AoE 450): 0."+"15*|r|c00FF5555STR|r|cFF00A5FF every 0.25 sec.|nExplosions (AoE 650): 2.5*|r|c00FF5555STR|r|cFF00A5FF|nBonus: +117% strength, +57% health|nDuration: 15 sec.|nCooldown: 55 sec.|n|r")
-call LANG_A('EsG1',3,0,"Only from 9 to 15 by his clock. Escanor burns his own life and becomes The One: a strike on everyone around, then 15 sec. of burning everyone nearby, dropping explosions for the first 5 sec. At the end Escanor dies.|n|n|cFF00A5FF|nStrike (AoE 900): 5*|r|c00FF5555STR|r|cFF00A5FF|nNearby (AoE 450): 0."+"15*|r|c00FF5555STR|r|cFF00A5FF every 0.25 sec.|nExplosions (AoE 650): 2.5*|r|c00FF5555STR|r|cFF00A5FF|nBonus: +117% strength, +57% health|nDuration: 15 sec.|nCooldown: 55 sec.|n|r")
+call LANG_A('EsF1',1,0,"A pillar of flame silences the area for 5 sec. and burns everyone in it, then a blazing sun falls into it.|n|n|cFF00A5FF|nDamage: 3*|r|c00FF5555STR|r|cFF00A5FF by the explosion + 1.5*|r|c00FF5555STR|r|cFF00A5FF per sec. in the pillar|nStun: 3 sec.|nAoE: 600|nRange: 1600|nCooldow"+"n: 18 sec.|n|r")
+call LANG_A('EsF1',3,0,"A pillar of flame silences the area for 5 sec. and burns everyone in it, then a blazing sun falls into it.|n|n|cFF00A5FF|nDamage: 3*|r|c00FF5555STR|r|cFF00A5FF by the explosion + 1.5*|r|c00FF5555STR|r|cFF00A5FF per sec. in the pillar|nStun: 3 sec.|nAoE: 600|nRange: 1600|nCooldow"+"n: 18 sec.|n|r")
+call LANG_A('EsG1',1,0,"Only from 9 to 15 by his clock. Escanor burns his own life and becomes The One: a strike on everyone around, then 15 sec. of burning everyone nearby, dropping explosions for the first 5 sec. At the end Escanor dies.|n|n|cFF00A5FF|nStrike (AoE 900): 5*|r|c00FF5555STR|r|cFF00A5FF|nNearby (AoE 450): 0."+"15*|r|c00FF5555STR|r|cFF00A5FF every 0.25 sec.|nExplosions (AoE 650): 2.5*|r|c00FF5555STR|r|cFF00A5FF|nBonus: +100% |r|c00FF5555STR|r|cFF00A5FF (of base value), +60% Max HP|nCooldown: 55 sec.|n|r")
+call LANG_A('EsG1',3,0,"Only from 9 to 15 by his clock. Escanor burns his own life and becomes The One: a strike on everyone around, then 15 sec. of burning everyone nearby, dropping explosions for the first 5 sec. At the end Escanor dies.|n|n|cFF00A5FF|nStrike (AoE 900): 5*|r|c00FF5555STR|r|cFF00A5FF|nNearby (AoE 450): 0."+"15*|r|c00FF5555STR|r|cFF00A5FF every 0.25 sec.|nExplosions (AoE 650): 2.5*|r|c00FF5555STR|r|cFF00A5FF|nBonus: +100% |r|c00FF5555STR|r|cFF00A5FF (of base value), +60% Max HP|nDuration: 15 sec.|nCooldown: 55 sec.|n|r")
 call LANG_A('EsT1',1,0,"Escanor has his own day — 4 minutes of fighting, starting at dawn (the clock stops between rounds); the clock is in the window at the top right.|nPassive: by day his strength grows towards noon, at night it drops towards midnight.|nActive (night only, 18 to 6): noon comes for 20 sec.: the night pe"+"nalty is lifted, strength as at noon, health grows.|n|n|cFF00A5FF|nDay: up to +50% white strength (at noon)|nNight: up to −30% white strength (at midnight)|nActive: +50% white strength, +20% health for 20 sec.|nCooldown: 70 sec.|n|r")
 call LANG_A('EsT1',3,0,"Escanor has his own day — 4 minutes of fighting, starting at dawn (the clock stops between rounds); the clock is in the window at the top right.|nPassive: by day his strength grows towards noon, at night it drops towards midnight.|nActive (night only, 18 to 6): noon comes for 20 sec.: the night pe"+"nalty is lifted, strength as at noon, health grows.|n|n|cFF00A5FF|nDay: up to +50% white strength (at noon)|nNight: up to −30% white strength (at midnight)|nActive: +50% white strength, +20% health for 20 sec.|nCooldown: 70 sec.|n|r")
 call LANG_A('FlF2',1,0,"The cursor's final strike: \"You're not going anywhere now.\"")
