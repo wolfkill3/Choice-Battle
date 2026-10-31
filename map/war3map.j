@@ -27857,7 +27857,7 @@ set udg_RH[146]='HDMa'//Dead Master (3.8.2, из Choice Random 5.3)
 //DeadMaster1end
 //Hit1start
 // Хит (Dragon Ball Super, 29 окт): выключен — способностей ещё нет. Для включения раскомментировать и поднять exitwhen i>=147 до 148
-set udg_RH[147]='HHit'//Hit — на тест (30 окт)
+//set udg_RH[147]='HHit'//Hit — на тест (30 окт)
 //Hit1end
 loop
 exitwhen i>=210
@@ -31100,14 +31100,14 @@ endif
 if SDMode then
     set sn=0
     loop
-        set k=GetRandomInt(0,147) // 30 окт: и новые — Хирако 145, Дезмастер 146, Хит 147 (тест)
+        set k=GetRandomInt(0,146) // 30 окт: и новые — Хирако 145, Дезмастер 146, Хит 147 (тест)
         exitwhen udg_RH[k]!=0 and not SD_Reserved(i,k)
         set sn=sn+1
         exitwhen sn>500
     endloop
     return k
 endif
-return GetRandomInt(0,147) // 30 окт: новые (Хирако 145, Дезмастер 146, Хит 147) тоже в случайном выборе — на тест
+return GetRandomInt(0,146) // 30 окт: новые (Хирако 145, Дезмастер 146, Хит 147) тоже в случайном выборе — на тест
 endfunction
 function OnButtonPickHeroId takes nothing returns nothing
     local player p = TrigP()
@@ -39594,7 +39594,7 @@ set rand[i]=true
 set udg_Repick[i+1]=0
 if GetPlayerSlotState(PlayerV(i))==PLAYER_SLOT_STATE_PLAYING and u[i+1]==null then
 loop
-set id=GetRandomInt(0,147) // 30 окт: новые (Хирако 145, Дезмастер 146, Хит 147) тоже в случайном выборе — на тест
+set id=GetRandomInt(0,146) // 30 окт: новые (Хирако 145, Дезмастер 146, Хит 147) тоже в случайном выборе — на тест
 if udg_RH[id]!=0 then
 set u[i+1]=CreateUnit(PlayerV(i),udg_RH[id],x1,y1,0)
 call UnitInventorySetSize(u[i+1],10)
@@ -49140,7 +49140,7 @@ if cmb!=true then
                 set udg_RH[i]=0
             endif
             set i=i+1
-            exitwhen i>=148 //139; 145 — Хирако (3.7.10), 146 — Дезмастер (3.8.2), 147 — Хит (3.8.2, тест)
+            exitwhen i>=147 //139; 145 — Хирако (3.7.10), 146 — Дезмастер (3.8.2), 147 — Хит (3.8.2, тест)
             endloop
             call RemoveUnit(u)
             call SetPlayerStateBJ(OwnerOf(u),PLAYER_STATE_FOOD_CAP_CEILING,0)
@@ -49391,7 +49391,7 @@ if cmb!=true then
                     set udg_RH[i]=0
                 endif
                 set i=i+1
-                exitwhen i>=148 //139; 145 — Хирако (3.7.10), 146 — Дезмастер (3.8.2), 147 — Хит (3.8.2, тест)
+                exitwhen i>=147 //139; 145 — Хирако (3.7.10), 146 — Дезмастер (3.8.2), 147 — Хит (3.8.2, тест)
             endloop
         endif
         call SaveInteger(h,GetHandleId(u),'A1GS',0)
@@ -49404,7 +49404,7 @@ if IsUnitType(u,UNIT_TYPE_HERO) and CPTModeON and cmb==true then
         call RemoveUnit(u)
         set i=0
         loop
-        exitwhen i>=148 //139; 145 — Хирако (3.7.10), 146 — Дезмастер (3.8.2), 147 — Хит (3.8.2, тест)
+        exitwhen i>=147 //139; 145 — Хирако (3.7.10), 146 — Дезмастер (3.8.2), 147 — Хит (3.8.2, тест)
             if GetUnitTypeId(u)==udg_RH[i] then
                 set udg_RH[i]=0
             endif
@@ -63009,7 +63009,7 @@ else
     set i=pick1
 endif
 loop
-set id=GetRandomInt(0,147) // 30 окт: новые (Хирако 145, Дезмастер 146, Хит 147) тоже в случайном выборе — на тест
+set id=GetRandomInt(0,146) // 30 окт: новые (Хирако 145, Дезмастер 146, Хит 147) тоже в случайном выборе — на тест
 if udg_RH[id]!=0 then
 set u=CreateUnit(PlayerV(i),udg_RH[id],GetRectCenterX(gg_rct_Rect1),GetRectCenterY(gg_rct_Rect1),0)
 call UnitInventorySetSize(u,10)
