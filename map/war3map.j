@@ -7465,6 +7465,9 @@ endfunction
 function TSE_EffFreeze takes effect e returns nothing
 local real ex=GetSpecialEffectX(e)
 local real ey=GetSpecialEffectY(e)
+if LoadBoolean(HH,GetHandleId(e),StringHash("HitOwnFx")) then
+return
+endif
 if TSE_Area then
 if (ex-TSE_AX)*(ex-TSE_AX)+(ey-TSE_AY)*(ey-TSE_AY)>TSE_AR*TSE_AR then
 return
@@ -7548,6 +7551,10 @@ endif
 set u=null
 endfunction
 // урон по замороженному (вызывается из обработчика урона с итоговым уроном; там он обнуляется)
+function TSE_TargetFrozen takes unit tsru returns boolean
+return (TSE_On and IsUnitInGroup(tsru,TSE_G)) or LoadInteger(HH,GetHandleId(tsru),StringHash("HitFz"))>0 or LoadUnitHandle(HH,GetHandleId(tsru),StringHash("HitCage"))!=null
+endfunction
+
 function TSE_HoldDmg takes unit u,unit c,real tsd returns nothing
 local integer id=GetHandleId(u)
 // 30 окт (правило таймскипа): накопленный урон -50%, кроме урона от таймскипщиков (класс TSE_AddExemptType по герою владельца)
@@ -73224,6 +73231,10 @@ if nb>0 then
         call UnitRemoveBuffs(u,true,false)
     endif
     call SetEventDamage(nb)
+    if nb>0 and (CurrentEventAttack or atkType==ATTACK_TYPE_HERO) and GetEventDamageType()!=DAMAGE_TYPE_UNIVERSAL and TSE_TargetFrozen(u) then
+        set nb=nb*0.6
+        call SetEventDamage(nb)
+    endif
     // 30 окт: Хит — тюрьма R и время боя для D
     if nb>0 then
         set nb=HitDmgHook(u,c,nb)
@@ -284843,6 +284854,109 @@ call RemoveEffect(bj_lastCreatedEffect,dur,false,CreateTimer())
 endfunction
 // прямой синий слеш, как у Кирито (SlashBlueKojiro вытянут по оси X): поперёк направления удара ang, крен roll (обычно 0);
 // под слешем — эффект удара: вспышка и ударная волна
+function HitShardEnd takes nothing returns nothing
+local timer hist=GetExpiredTimer()
+local integer hisi=GetHandleId(hist)
+local effect hisf=LoadEffectHandle(h,hisi,0)
+if hisf!=null then
+call RemoveSavedBoolean(HH,GetHandleId(hisf),StringHash("HitOwnFx"))
+call SetSpecialEffectVisible(hisf,false)
+call DestroyEffect(hisf)
+endif
+call FlushChildHashtable(h,hisi)
+call TSE_DestroyTimer(hist)
+set hisf=null
+set hist=null
+endfunction
+function HitIcePop takes effect hio returns boolean
+local real hips=LoadReal(HH,GetHandleId(hio),StringHash("HitIceScale"))
+local string hipm="Hit\\TimeIceShatter.mdx"
+local effect hipf
+local timer hipt
+if hips<=0. then
+return false
+endif
+if LoadBoolean(HH,GetHandleId(hio),StringHash("HitIceField")) then
+set hipm="Hit\\TimeIceFieldShatter.mdx"
+endif
+call RemoveSavedReal(HH,GetHandleId(hio),StringHash("HitIceScale"))
+call RemoveSavedBoolean(HH,GetHandleId(hio),StringHash("HitIceField"))
+set hipf=AddSpecialEffect(hipm,GetSpecialEffectX(hio),GetSpecialEffectY(hio))
+call SetSpecialEffectZ(hipf,GetSpecialEffectZ(hio))
+call SetSpecialEffectYaw(hipf,GetSpecialEffectYaw(hio))
+call SetSpecialEffectScale(hipf,hips)
+call SetSpecialEffectAnimationByIndex(hipf,0)
+call SaveBoolean(HH,GetHandleId(hipf),StringHash("HitOwnFx"),true)
+set hipt=CreateTimer()
+call SaveEffectHandle(h,GetHandleId(hipt),0,hipf)
+call TSE_TimerStart(hipt,0.72,false,function HitShardEnd)
+set hipf=null
+set hipt=null
+return true
+endfunction
+
+function HitOwnFxEnd takes nothing returns nothing
+local timer hft=GetExpiredTimer()
+local integer hfi=GetHandleId(hft)
+local effect hff=LoadEffectHandle(h,hfi,0)
+if hff!=null and LoadBoolean(HH,GetHandleId(hff),StringHash("HitOwnFx")) then
+if HitIcePop(hff) then
+call SetSpecialEffectVisible(hff,false)
+endif
+call RemoveSavedBoolean(HH,GetHandleId(hff),StringHash("HitOwnFx"))
+if not LoadBoolean(h,hfi,1) then
+call SetSpecialEffectVisible(hff,false)
+endif
+call DestroyEffect(hff)
+endif
+call FlushChildHashtable(h,hfi)
+call TSE_DestroyTimer(hft)
+set hff=null
+set hft=null
+endfunction
+function HitOwnFxKeep takes effect hff,real hfd,boolean hfs returns nothing
+local timer hft=CreateTimer()
+call SaveBoolean(HH,GetHandleId(hff),StringHash("HitOwnFx"),true)
+call SaveEffectHandle(h,GetHandleId(hft),0,hff)
+call SaveBoolean(h,GetHandleId(hft),1,hfs)
+call TSE_TimerStart(hft,hfd,false,function HitOwnFxEnd)
+set hft=null
+endfunction
+function HitIceAt takes real hix,real hiy,real hia,real his,real hid,boolean hif returns effect
+local effect hifx
+local location hil=Location(hix,hiy)
+local string him="Hit\\TimeIce.mdx"
+if hif then
+set him="Hit\\TimeIceField.mdx"
+endif
+set hifx=AddSpecialEffect(him,hix,hiy)
+call SetSpecialEffectZ(hifx,GetLocationZ(hil)+4.)
+call SetSpecialEffectScale(hifx,his)
+call SetSpecialEffectYaw(hifx,hia)
+call SetSpecialEffectAnimationByIndex(hifx,0)
+call QueueSpecialEffectAnimationByIndex(hifx,1)
+call SaveReal(HH,GetHandleId(hifx),StringHash("HitIceScale"),his)
+call SaveBoolean(HH,GetHandleId(hifx),StringHash("HitIceField"),hif)
+call HitOwnFxKeep(hifx,hid,true)
+call RemoveLocation(hil)
+set hil=null
+return hifx
+endfunction
+function HitPunchRay takes unit hpc,unit hpe,real hps returns nothing
+local effect hpf=AddSpecialEffect("Hit\\PunchBeam.mdx",GetUnitX(hpe),GetUnitY(hpe))
+local location hpl=Location(GetUnitX(hpe),GetUnitY(hpe))
+call SetSpecialEffectZ(hpf,GetLocationZ(hpl)+GetUnitFlyHeight(hpe)+65.)
+call SetSpecialEffectYaw(hpf,Atan2(GetUnitY(hpe)-GetUnitY(hpc),GetUnitX(hpe)-GetUnitX(hpc)))
+call SetSpecialEffectScale(hpf,hps)
+call SetSpecialEffectTimeScale(hpf,1.)
+call SetSpecialEffectAnimationByIndex(hpf,0)
+call HitOwnFxKeep(hpf,0.46,false)
+call RemoveLocation(hpl)
+set hpl=null
+set hpf=null
+endfunction
+
+
 function HitSlash takes real x,real y,real ang,real roll,real sc returns nothing
 set bj_lastCreatedEffect=AddSpecialEffect("war3mapImported\\SlashBlueKojiro.mdl",x,y)
 call SetSpecialEffectHeight(bj_lastCreatedEffect,60)
@@ -284998,30 +285112,115 @@ endfunction
 function HitQCond takes nothing returns boolean
 return GetSpellAbilityId()=='HtQ1' and udg_B==true
 endfunction
-function HitQCast takes nothing returns nothing
-local unit u=GetTriggerUnit()
-local unit e=GetSpellTargetUnit()
-local integer l=GetUnitAbilityLevel(u,'HtQ1')
-local real dmg=40.*l+(1.+0.5*l)*HitAgi(u)
-local integer mk=HitMarks(e)
-call SetUnitFacingInstant(u,Atan2(GetUnitY(e)-GetUnitY(u),GetUnitX(e)-GetUnitX(u))*bj_RADTODEG)
-call HitAnimHit(u,2.,0.35)
-call HitFreeze(u,e,0.2+HitStopAdd(u))
-call HitFxU("Aizen\\[A]hit-white-guangxiao.mdx",e,"chest",0.9,1.)
-call HitFxU("az_hitheavy.mdx",e,"chest",0.7,1.)
-call HitSlashU(u,e,0.7)
-call HitSnd("HitQ")
-call HitVo("HitQ1")
-call myCustomDamage(u,e,dmg,false,false,null,null,null)
-if UnitIsAlive(e) then
-if mk>=3 then
-call HitBurst(u,e)
+function HitQEnd takes nothing returns nothing
+local timer hqt=GetExpiredTimer()
+local integer hqi=GetHandleId(hqt)
+local unit hqu=LoadUnitHandle(h,hqi,0)
+if hqu!=null then
+call PauseUnit(hqu,false)
+if not LoadBoolean(h,hqi,7) then
+call SetUnitInvulnerable(hqu,false)
+endif
+call SaveBoolean(HH,GetHandleId(hqu),HitK("QAct"),false)
+if not LoadBoolean(h,hqi,6) then
+call SetUnitTimeScale(hqu,1.)
+if UnitIsAlive(hqu) then
+call SetUnitAnimationByIndex(hqu,9)
+endif
+endif
+endif
+call FlushChildHashtable(h,hqi)
+call TSE_DestroyTimer(hqt)
+set hqu=null
+set hqt=null
+endfunction
+function HitQMove takes nothing returns nothing
+local timer hqt=GetExpiredTimer()
+local integer hqi=GetHandleId(hqt)
+local unit hqu=LoadUnitHandle(h,hqi,0)
+local unit hqe=LoadUnitHandle(h,hqi,1)
+local integer hqk=LoadInteger(h,hqi,2)+1
+local real hqa=LoadReal(h,hqi,3)
+local real hqd
+local integer hqm
+local boolean hqpush
+call SaveInteger(h,hqi,2,hqk)
+if hqu==null or hqe==null or not UnitIsAlive(hqu) or not UnitIsAlive(hqe) or not udg_B or hqk>80 then
+call HitQEnd()
+set hqu=null
+set hqe=null
+set hqt=null
+return
+endif
+if hqk<=8 then
+call SetUnitXY_1(hqu,GetUnitX(hqu)-18.*Cos(hqa),GetUnitY(hqu)-18.*Sin(hqa),true)
 else
-call HitMarkAdd(e)
+set hqa=Atan2(GetUnitY(hqe)-GetUnitY(hqu),GetUnitX(hqe)-GetUnitX(hqu))
+set hqd=SR(GetUnitX(hqu),GetUnitY(hqu),GetUnitX(hqe),GetUnitY(hqe))
+call SetUnitFacingInstant(hqu,hqa*bj_RADTODEG)
+if hqk==9 then
+call HitAnim(hqu,21,2.,1.6)
+endif
+if hqd>215. then
+set hqd=RMinBJ(75.,hqd-210.)
+call SetUnitXY_1(hqu,GetUnitX(hqu)+hqd*Cos(hqa),GetUnitY(hqu)+hqd*Sin(hqa),false)
+else
+call SaveBoolean(h,hqi,6,true)
+if not IsUnitInvulnerable(hqe) then
+set hqpush=not IsUnitInGroup(hqe,TSE_G) and LoadUnitHandle(HH,GetHandleId(hqe),StringHash("HitCage"))==null and LoadInteger(HH,GetHandleId(hqe),HitK("Fz"))<=0
+set hqm=HitMarks(hqe)
+call HitAnim(hqu,12,2.,0.4)
+call HitFreeze(hqu,hqe,0.2+HitStopAdd(hqu))
+call HitFx("Aizen\\[A]hit-white-guangxiao.mdx",GetUnitX(hqe),GetUnitY(hqe),GetUnitFlyHeight(hqe)+65.,1.4,0.7)
+call HitFx("az_hitheavy.mdx",GetUnitX(hqe),GetUnitY(hqe),GetUnitFlyHeight(hqe)+65.,1.15,0.7)
+call HitPunchRay(hqu,hqe,0.9)
+call HitSnd("HitQ")
+call myCustomDamage(hqu,hqe,LoadReal(h,hqi,4),false,false,null,null,null)
+if UnitIsAlive(hqe) then
+if hqm>=3 then
+call HitBurst(hqu,hqe)
+else
+call HitMarkAdd(hqe)
+endif
+if hqpush then
+call Push(hqe,20.,hqa,160.)
 endif
 endif
-set u=null
-set e=null
+else
+call SaveBoolean(h,hqi,6,false)
+endif
+call HitQEnd()
+endif
+endif
+set hqu=null
+set hqe=null
+set hqt=null
+endfunction
+function HitQCast takes nothing returns nothing
+local unit hqu=GetTriggerUnit()
+local unit hqe=GetSpellTargetUnit()
+local integer hql=GetUnitAbilityLevel(hqu,'HtQ1')
+local timer hqt
+local real hqa=Atan2(GetUnitY(hqe)-GetUnitY(hqu),GetUnitX(hqe)-GetUnitX(hqu))
+if not LoadBoolean(HH,GetHandleId(hqu),HitK("QAct")) then
+set hqt=CreateTimer()
+call SaveBoolean(HH,GetHandleId(hqu),HitK("QAct"),true)
+call SaveUnitHandle(h,GetHandleId(hqt),0,hqu)
+call SaveUnitHandle(h,GetHandleId(hqt),1,hqe)
+call SaveInteger(h,GetHandleId(hqt),2,0)
+call SaveReal(h,GetHandleId(hqt),3,hqa)
+call SaveReal(h,GetHandleId(hqt),4,40.*hql+(1.+0.5*hql)*HitAgi(hqu))
+call SetUnitFacingInstant(hqu,hqa*bj_RADTODEG)
+call SaveBoolean(h,GetHandleId(hqt),7,IsUnitInvulnerable(hqu))
+call SetUnitInvulnerable(hqu,true)
+call PauseUnit(hqu,true)
+call HitAnim(hqu,22,2.,0.19)
+call HitVo("HitQ1")
+call TSE_TimerStart(hqt,0.02,true,function HitQMove)
+endif
+set hqt=null
+set hqu=null
+set hqe=null
 endfunction
 // ===== W — Icy Glare: волна льда по линии, каждого один раз =====
 // общая группа задетых у волн одного каста: счётчик волн в h по группе, последняя волна удаляет группу
@@ -285049,8 +285248,7 @@ local group tg=CreateGroup()
 local unit e
 call SaveReal(h,id,3,d)
 if ModuloInteger(R2I(d/45.),2)==0 then
-call HitFx("war3mapimported\\freezingsplinter.mdx",x,y,0.,0.9,1.5)
-call HitFx("Izayoi\\[A]t_icesparks.mdx",x,y,20.,0.7,1.)
+call HitIceAt(x,y,a+0.24*Sin(d*0.07),0.70,0.95,false)
 endif
 call GroupEnumUnitsInRange(tg,x,y,150.,null)
 loop
@@ -285062,7 +285260,7 @@ call GroupAddUnit(g,e)
 call myCustomDamage(u,e,75.*l+l*HitAgi(u),false,false,null,null,null)
 if HitFreeze(u,e,0.5+0.1*l+HitStopAdd(u)) then
 call SaveReal(HH,GetHandleId(e),HitK("WFz"),HitNow()+0.5+0.1*l+HitStopAdd(u))
-call HitFxU("war3mapImported\\ColdFeetFreezed.mdx",e,"origin",1.,0.5+0.1*l)
+call HitIceAt(GetUnitX(e),GetUnitY(e),a,0.82,0.5+0.1*l,false)
 call HitSnd("HitW1-sfx-3")
 endif
 call SlowUnit(u,e,0.3,0.,0.5+0.1*l+2.,2.,false)
@@ -285147,14 +285345,14 @@ else
 call HitWStart(u,g,x,y,a,len,l)
 endif
 if v!=0 then
-call HitFx("war3mapimported\\freezingsplinter.mdx",x+len*Cos(a),y+len*Sin(a),0.,1.2,1.5)
+call HitIceAt(x+len*Cos(a),y+len*Sin(a),a,1.,0.95,false)
 endif
 if v==2 then
 set t=CreateTimer()
 call SaveUnitHandle(h,GetHandleId(t),0,u)
 call TSE_TimerStart(t,0.01,false,function HitWCd)
 endif
-call HitAnim(u,24,1.5,0.45)
+call HitAnim(u,12,1.5,0.45)
 call HitSnd("HitW1-sfx-1")
 call HitSnd("HitW1-sfx-2")
 call HitVo("HitW1")
@@ -285219,6 +285417,32 @@ set im=null
 set u=null
 set t=null
 endfunction
+function HitFacingIce takes real hcx,real hcy,real hcs,real hcd,boolean hcf returns effect
+local string hcm="Hit\\TimeIceFacing.mdx"
+local effect hce
+local location hcl=Location(hcx,hcy)
+if hcf then
+set hcm="Hit\\TimeIceFieldFacing.mdx"
+endif
+set hce=AddSpecialEffect(hcm,hcx,hcy)
+call SetSpecialEffectZ(hce,GetLocationZ(hcl)+65.)
+call SetSpecialEffectScale(hce,hcs)
+call SetSpecialEffectAnimationByIndex(hce,0)
+call QueueSpecialEffectAnimationByIndex(hce,1)
+call HitOwnFxKeep(hce,hcd,true)
+call RemoveLocation(hcl)
+set hcl=null
+return hce
+endfunction
+function HitECloneDeath takes nothing returns nothing
+local integer hct=GetHandleId(LoadTimerHandle(h,GetHandleId(GetTriggeringTrigger()),0))
+local unit hcu=GetTriggerUnit()
+if GetTriggerEventId()==EVENT_UNIT_DEATH and not LoadBoolean(h,hct,6) then
+call SaveBoolean(h,hct,6,true)
+call HitFacingIce(GetUnitX(hcu),GetUnitY(hcu),1.8,0.65,true)
+endif
+set hcu=null
+endfunction
 function HitEParry takes nothing returns nothing
 local trigger tr=GetTriggeringTrigger()
 local integer tid=GetHandleId(tr)
@@ -285229,7 +285453,7 @@ local unit im=LoadUnitHandle(h,id,1)
 local unit c=GetEventDamageSource()
 local integer l
 local real a
-if u==null or LoadBoolean(h,id,3) or c==null or not IsUnitEnemy(c,OwnerOf(u)) then
+if GetTriggerEventId()!=EVENT_UNIT_DAMAGED or u==null or LoadBoolean(h,id,3) or c==null or not IsUnitEnemy(c,OwnerOf(u)) then
 set tr=null
 set t=null
 set u=null
@@ -285239,6 +285463,10 @@ return
 endif
 call SaveBoolean(h,id,3,true)
 call DisableTrigger(tr)
+if not LoadBoolean(h,id,6) then
+call SaveBoolean(h,id,6,true)
+call HitFacingIce(GetUnitX(im),GetUnitY(im),1.8,0.65,true)
+endif
 call ShowUnit(im,false)
 call HitFx("BlackGoku\\BlackBlink1.mdx",GetUnitX(im),GetUnitY(im),0.,1.,1.)
 if LoadInteger(HH,PH(OwnerOf(u)),HitK("VE"))==1 then
@@ -285257,16 +285485,17 @@ endif
 set l=IMaxBJ(1,GetUnitAbilityLevel(u,'HtE1'))
 // контрудар: атакующий застывает, Хит у него за спиной и бьёт, невидимость снимается
 call HitFreeze(u,c,0.8+HitStopAdd(u))
+call HitIceAt(GetUnitX(c),GetUnitY(c),GetUnitFacing(c)*bj_DEGTORAD,1.15,0.8+HitStopAdd(u),false)
 set a=GetUnitFacing(c)*bj_DEGTORAD
 call HitFx("BlackGoku\\BlackBlink1.mdx",GetUnitX(u),GetUnitY(u),0.,0.8,1.)
 call SetUnitPosition(u,GetUnitX(c)-110.*Cos(a),GetUnitY(c)-110.*Sin(a))
 call SetUnitFacingInstant(u,a*bj_RADTODEG)
 call HitInvisOff(u)
 call SaveReal(HH,GetHandleId(u),HitK("EStep"),0.)
-call HitAnimHit(u,2.,0.4)
+call HitAnim(u,55,1.6,0.4)
 call HitFxU("Aizen\\[A]hit-white-guangxiao.mdx",c,"chest",1.,1.)
 call HitFxU("az_hitheavy.mdx",c,"chest",0.8,1.)
-call HitSlashU(u,c,0.8)
+call HitPunchRay(u,c,0.65)
 call myCustomDamage(u,c,75.*l+l*HitAgi(u),false,false,null,null,null)
 call HitSnd("HitE1-sfx-2")
 call HitVo("HitE1")
@@ -285292,6 +285521,8 @@ call SetUnitAnimationByIndex(im,23)
 call SaveReal(h,id,4,HitNow())
 call TriggerRegisterUnitEvent(tr,im,EVENT_UNIT_DAMAGED)
 call TriggerAddAction(tr,function HitEParry)
+call TriggerRegisterUnitEvent(tr,im,EVENT_UNIT_DEATH)
+call TriggerAddAction(tr,function HitECloneDeath)
 call SaveTimerHandle(h,GetHandleId(tr),0,t)
 call SaveUnitHandle(h,id,0,u)
 call SaveUnitHandle(h,id,1,im)
@@ -285371,9 +285602,9 @@ call SaveUnitHandle(h,id,0,u)
 call SaveUnitHandle(h,id,1,e)
 call SaveReal(h,id,2,0.05+0.05*l)
 // 30 окт: Astral Imprisonment / PurpleShield на цели вешали игру (память) — эффекты прежние
-call SaveEffectHandle(h,id,3,AddSpecialEffectTarget("Others\\clockwisetimer.mdx",e,"overhead"))
-call HitFxU("war3mapimported\\VioletPulse.mdx",e,"origin",1.6,dur)
-call HitAnim(u,24,1.,0.6)
+call HitFacingIce(GetUnitX(e),GetUnitY(e),0.9,dur,false)
+call HitFxU("BlackGoku\\Singularity II Purple.mdx",e,"origin",1.15,dur)
+call HitAnim(u,56,1.,0.6)
 call HitSnd("HitR1")
 call HitVo("HitR1")
 call TSE_TimerStart(t,dur,false,function HitREnd)
@@ -285434,13 +285665,36 @@ set u=null
 endfunction
 // ===== F — Vital Point Attack: стойка 2 с, Q/W/E -> HtF2/HtF3/HtF4, R/D/G/T закрыты =====
 function HitFSet takes unit u,boolean on returns nothing
-local player p=OwnerOf(u)
-call SetPlayerAbilityAvailable(p,'HtQ1',not on)
-call SetPlayerAbilityAvailable(p,'HtW1',not on)
-call SetPlayerAbilityAvailable(p,'HtE1',not on)
-call SetPlayerAbilityAvailable(p,'HtF2',on)
-call SetPlayerAbilityAvailable(p,'HtF3',on)
-call SetPlayerAbilityAvailable(p,'HtF4',on)
+if on then
+call DisableUnitAbility(u,'HtQ1',true,true)
+else
+call EnableUnitAbility(u,'HtQ1',true,true)
+endif
+if on then
+call DisableUnitAbility(u,'HtW1',true,true)
+else
+call EnableUnitAbility(u,'HtW1',true,true)
+endif
+if on then
+call DisableUnitAbility(u,'HtE1',true,true)
+else
+call EnableUnitAbility(u,'HtE1',true,true)
+endif
+if on then
+call EnableUnitAbility(u,'HtF2',true,true)
+else
+call DisableUnitAbility(u,'HtF2',true,true)
+endif
+if on then
+call EnableUnitAbility(u,'HtF3',true,true)
+else
+call DisableUnitAbility(u,'HtF3',true,true)
+endif
+if on then
+call EnableUnitAbility(u,'HtF4',true,true)
+else
+call DisableUnitAbility(u,'HtF4',true,true)
+endif
 if on then
 call DisableUnitAbility(u,'HtR1',false,true)
 call DisableUnitAbility(u,'HtD1',false,true)
@@ -285452,7 +285706,6 @@ call EnableUnitAbility(u,'HtD1',false,true)
 call EnableUnitAbility(u,'HtG1',false,true)
 call EnableUnitAbility(u,'HtT1',false,true)
 endif
-set p=null
 endfunction
 // конец стойки: used — было продолжение (общая перезарядка 14 с), иначе перезарядка вдвое меньше
 function HitFStop takes unit u,boolean used returns nothing
@@ -285516,7 +285769,7 @@ local unit e
 local unit hit=null
 call HitFStop(u,true)
 call SetUnitFacingInstant(u,a*bj_RADTODEG)
-call HitAnim(u,24,1.5,0.45)
+call HitAnim(u,55,1.5,0.45)
 loop
 exitwhen d>1800. or hit!=null
 call GroupEnumUnitsInRange(g,x+d*Cos(a),y+d*Sin(a),110.,null)
@@ -285537,7 +285790,7 @@ if hit!=null then
 call HitFx("JirenShock2.mdx",GetUnitX(hit),GetUnitY(hit),0.,0.6,1.5)
 call HitFx("Others\\[A]shockwave big.mdx",GetUnitX(hit),GetUnitY(hit),60.,0.5,1.)
 call HitFxU("BlackGoku\\[DoFT]PurpleAz-hit.mdx",hit,"chest",1.5,1.)
-call HitSlash(GetUnitX(hit),GetUnitY(hit),a*bj_RADTODEG,0.,1.)
+call HitPunchRay(u,hit,0.8)
 call myCustomDamage(u,hit,3.*HitAgi(u),false,false,null,null,null)
 else
 call HitFx("JirenShock2.mdx",x+1800.*Cos(a),y+1800.*Sin(a),0.,0.6,1.5)
@@ -285564,6 +285817,12 @@ set u=null
 set e=null
 set t=null
 return
+endif
+call SetUnitFacingInstant(u,Atan2(GetUnitY(e)-GetUnitY(u),GetUnitX(e)-GetUnitX(u))*bj_RADTODEG)
+if k<3 then
+call HitAnim(u,27+k,2.,0.18)
+else
+call HitAnim(u,13,2.,0.3)
 endif
 call HitFxU("az_hitheavy.mdx",e,"chest",0.7,1.)
 if k<3 then
@@ -285656,6 +285915,7 @@ call SetUnitPosition(u,GetUnitX(hit)+100.*Cos(a),GetUnitY(hit)+100.*Sin(a))
 call SetUnitFacingInstant(u,a*bj_RADTODEG+180.)
 call HitFxU("BlackGoku\\[AB]PurpleAz-hit.mdx",hit,"chest",1.3,1.)
 call HitSlash(GetUnitX(hit),GetUnitY(hit),a*bj_RADTODEG,0.,0.9)
+call HitPunchRay(u,hit,0.9)
 call myCustomDamage(u,hit,2.5*HitAgi(u),false,false,null,null,null)
 if UnitIsAlive(hit) then
 call SetControlToUnit(u,hit,1.,"stun")
@@ -285671,7 +285931,7 @@ call HitSnd("HitF4-sfx-2")
 endif
 call SetUnitInvulnerable(u,false)
 call SetUnitPathing(u,true)
-call HitAnimHit(u,2.,0.4)
+call HitAnim(u,13,1.8,0.4)
 call FlushChildHashtable(h,id)
 call TSE_DestroyTimer(t)
 endif
@@ -285692,7 +285952,7 @@ call HitFStop(u,true)
 call SetUnitFacingInstant(u,a*bj_RADTODEG)
 call SetUnitInvulnerable(u,true)
 call SetUnitPathing(u,false)
-call HitAnim(u,5,1.,0.4)
+call HitAnim(u,11,1.5,0.4)
 call HitFx("BlackGoku\\[A]AZ_chongci-Purple.MDX",GetUnitX(u),GetUnitY(u),0.,1.,1.)
 call HitSnd("HitF4-sfx-1")
 call HitVo("HitF4")
@@ -285709,8 +285969,6 @@ return GetSpellAbilityId()=='HtG1' and udg_B==true
 endfunction
 function HitGCast takes nothing returns nothing
 local unit u=GetTriggerUnit()
-call HitFx("Others\\[A]wavejojo.mdx",GetUnitX(u),GetUnitY(u),30.,2.,1.5)
-call HitFx("Others\\clockwisetimer.mdx",GetUnitX(u),GetUnitY(u),30.,1.5,1.5)
 call HitSnd("HitT")
 call HitVo("HitG1")
 call TSE_StartEx(u,RMinBJ(1.,0.5+HitStopAdd(u)),true,GetUnitX(u),GetUnitY(u),1200.)
@@ -285728,9 +285986,18 @@ local integer hti=GetHandleId(htt)
 local unit htu=LoadUnitHandle(h,hti,0)
 local unit hte=LoadUnitHandle(h,hti,1)
 local boolean htf=LoadBoolean(h,hti,5)
+local effect htice=LoadEffectHandle(h,hti,8)
 if TSE_On and TSE_Src==htu then
 call TSE_Stop()
 endif
+if htice!=null and LoadBoolean(HH,GetHandleId(htice),StringHash("HitOwnFx")) then
+if HitIcePop(htice) then
+call SetSpecialEffectVisible(htice,false)
+endif
+call RemoveSavedBoolean(HH,GetHandleId(htice),StringHash("HitOwnFx"))
+call DestroyEffect(htice)
+endif
+set htice=null
 if htu!=null then
 call PauseUnit(htu,false)
 call SetUnitInvulnerable(htu,false)
@@ -285761,12 +286028,17 @@ local timer htt=GetExpiredTimer()
 local integer hti=GetHandleId(htt)
 local unit htu=LoadUnitHandle(h,hti,0)
 local unit hte=LoadUnitHandle(h,hti,1)
-local integer htk=LoadInteger(h,hti,2)+1
-local integer htp=ModuloInteger(htk-1,9)
-local integer htj=(htk-1)/9
+local integer htp=LoadInteger(h,hti,2)
+local integer htj=LoadInteger(h,hti,12)
+local integer htn=12
+local integer htm=7
 local real hta=LoadReal(h,hti,3)+I2R(htj)*137.5*bj_DEGTORAD
 local real htr
-call SaveInteger(h,hti,2,htk)
+local real htv
+if htj==12 then
+set htn=36
+set htm=25
+endif
 if htu==null or hte==null or not UnitIsAlive(htu) or not UnitIsAlive(hte) or not udg_B or not TSE_On or TSE_Src!=htu then
 call HitTEnd()
 set htu=null
@@ -285781,31 +286053,56 @@ call SetUnitXY_1(htu,GetUnitX(hte)+htr*Cos(hta),GetUnitY(hte)+htr*Sin(hta),false
 call SetUnitFacingInstant(htu,hta*bj_RADTODEG+180.)
 call HitFx("BlackGoku\\BlackBlink1.mdx",GetUnitX(htu),GetUnitY(htu),0.,0.65,0.4)
 call SetUnitAnimationByIndex(htu,11)
-call SetUnitTimeScale(htu,2.)
+if htj==12 then
+call SetUnitTimeScale(htu,1.)
+else
+call SetUnitTimeScale(htu,1.5+I2R(htj)*0.12)
+endif
 if htj==0 then
 call HitSnd("HitT1-sfx-2")
 endif
-elseif htp<=5 then
-set htr=115.+(300.+60.*I2R(ModuloInteger(htj,3))-115.)*(1.-I2R(htp)/5.)
+elseif htp<=htm then
+set htv=I2R(htp)/I2R(htm)
+set htv=htv*htv*(3.-2.*htv)
+set htr=115.+(300.+60.*I2R(ModuloInteger(htj,3))-115.)*(1.-htv)
 call SetUnitXY_1(htu,GetUnitX(hte)+htr*Cos(hta),GetUnitY(hte)+htr*Sin(hta),false)
 call SetUnitFacingInstant(htu,hta*bj_RADTODEG+180.)
-elseif htp==6 then
-if htj==9 then
-call HitAnim(htu,13,2.,0.5)
+elseif htp==htm+1 then
+if htj==12 then
+call SetUnitAnimationByIndex(htu,13)
+call SetUnitTimeScale(htu,1.4)
 else
-call HitAnim(htu,12,2.5,0.3)
+call SetUnitAnimationByIndex(htu,26+ModuloInteger(htj,2))
+call SetUnitTimeScale(htu,2.5+I2R(htj)*0.15)
 endif
-elseif htp==8 and ModuloInteger(htj,2)==1 then
-call HitFxU("Aizen\\[A]hit-white-guangxiao.mdx",hte,"chest",1.,0.6)
-call HitFxU("az_hitheavy.mdx",hte,"chest",0.8,0.6)
-call HitSlashU(htu,hte,0.7)
-call myCustomDamage(htu,hte,2.*HitAgi(htu),false,false,null,null,null)
-if htj==9 then
+elseif htp==htn-1 then
+call HitFx("Aizen\\[A]hit-white-guangxiao.mdx",GetUnitX(hte),GetUnitY(hte),GetUnitFlyHeight(hte)+65.,1.,0.4)
+call HitPunchRay(htu,hte,0.65)
+if htj==12 then
+call myCustomDamage(htu,hte,2.5*HitAgi(htu),false,false,null,null,null)
 call SaveBoolean(h,hti,5,true)
 call HitTEnd()
 elseif not UnitIsAlive(hte) then
 call HitTEnd()
+else
+call myCustomDamage(htu,hte,0.625*HitAgi(htu),false,false,null,null,null)
+if not UnitIsAlive(hte) then
+call HitTEnd()
+else
+set htj=htj+1
+call SaveInteger(h,hti,12,htj)
+call SaveInteger(h,hti,2,0)
+if htj==12 then
+set htr=0.936/36.
+else
+set htr=(0.26-0.016*I2R(htj))/12.
 endif
+call TSE_TimerStart(htt,htr*LoadReal(h,hti,11),true,function HitTHit)
+endif
+endif
+endif
+if htp<htn-1 then
+call SaveInteger(h,hti,2,htp+1)
 endif
 set htu=null
 set hte=null
@@ -285819,12 +286116,14 @@ local unit htu=GetTriggerUnit()
 local unit hte=GetSpellTargetUnit()
 local real htd=3.+HitStopAdd(htu)
 local timer htt=CreateTimer()
+local effect htice
 call HitSnd("HitT")
 call HitSnd("HitT1-sfx-1")
 call HitVo("HitT1")
-call HitFx("Others\\[A]wavejojo.mdx",GetUnitX(htu),GetUnitY(htu),30.,2.5,2.)
-call HitFx("Others\\clockwisetimer.mdx",GetUnitX(htu),GetUnitY(htu),30.,2.,2.)
+set htice=HitIceAt(GetUnitX(htu),GetUnitY(htu),GetUnitFacing(htu)*bj_DEGTORAD,6.3,htd+0.05,true)
+call SaveEffectHandle(h,GetHandleId(htt),8,htice)
 call TSE_StartEx(htu,htd+0.15,true,GetUnitX(htu),GetUnitY(htu),1200.)
+call HitAnim(htu,15,3.,0.35)
 call PauseUnit(htu,true)
 call SetUnitInvulnerable(htu,true)
 call SaveBoolean(HH,GetHandleId(htu),HitK("TAct"),true)
@@ -285832,7 +286131,10 @@ call SaveUnitHandle(h,GetHandleId(htt),0,htu)
 call SaveUnitHandle(h,GetHandleId(htt),1,hte)
 call SaveInteger(h,GetHandleId(htt),2,0)
 call SaveReal(h,GetHandleId(htt),3,Atan2(GetUnitY(htu)-GetUnitY(hte),GetUnitX(htu)-GetUnitX(hte)))
-call TSE_TimerStart(htt,htd/90.,true,function HitTHit)
+call SaveReal(h,GetHandleId(htt),11,htd/3.)
+call SaveInteger(h,GetHandleId(htt),12,0)
+call TSE_TimerStart(htt,0.26*(htd/3.)/12.,true,function HitTHit)
+set htice=null
 set htt=null
 set hte=null
 set htu=null
@@ -285913,11 +286215,14 @@ set uid=GetHandleId(u)
 set p=OwnerOf(u)
 if not LoadBoolean(HH,uid,HitK("Ini")) then
 call SaveBoolean(HH,uid,HitK("Ini"),true)
-call SetPlayerAbilityAvailable(p,'HtF2',false)
-call SetPlayerAbilityAvailable(p,'HtF3',false)
-call SetPlayerAbilityAvailable(p,'HtF4',false)
+call DisableUnitAbility(u,'HtF2',true,true)
+call DisableUnitAbility(u,'HtF3',true,true)
+call DisableUnitAbility(u,'HtF4',true,true)
 call TSE_AddExemptType('HHit')
 call HitWarm()
+endif
+if not UnitIsAlive(u) and LoadInteger(HH,uid,HitK("Fst"))>0 then
+call HitFStop(u,false)
 endif
 call HitWMana(u)
 if UnitIsAlive(u) and not IsUnitInGroup(u,TSE_G) then
@@ -301107,13 +301412,13 @@ call LANG_A('HtQ1',0,1,"Flash Fist Crush, [|cffffcc00Level 2|r] (|cffffcc00Q|r)"
 call LANG_A('HtQ1',0,2,"Flash Fist Crush, [|cffffcc00Level 3|r] (|cffffcc00Q|r)")
 call LANG_A('HtQ1',0,3,"Flash Fist Crush, [|cffffcc00Level 4|r] (|cffffcc00Q|r)")
 call LANG_A('HtQ1',0,4,"Flash Fist Crush, [|cffffcc00Level 5|r] (|cffffcc00Q|r)")
-call LANG_A('HtQ1',1,0,"The target freezes for an instant: Hit strikes it unseen and stays where he is. Every hit leaves a vital point mark (up to 3, 15 sec.). A hit on a target with 3 marks bursts the point: damage, silence and no regeneration.|n|n|cFF00A5FF|nDamage: 40 + 1.5*|r|c003CFF3CAGI|r|cFF00A5FF|nBurst: 100 + 2*|r"+"|c003CFF3CAGI|r|cFF00A5FF|nSilence: 1.5 sec., no regeneration: 4 sec.|nFreeze: 0.2 sec.|nRange: 500|nCooldown: 6 sec.|r")
-call LANG_A('HtQ1',1,1,"The target freezes for an instant: Hit strikes it unseen and stays where he is. Every hit leaves a vital point mark (up to 3, 15 sec.). A hit on a target with 3 marks bursts the point: damage, silence and no regeneration.|n|n|cFF00A5FF|nDamage: 80 + 2*|r|c003CFF3CAGI|r|cFF00A5FF|nBurst: 200 + 3*|r|c"+"003CFF3CAGI|r|cFF00A5FF|nSilence: 1.5 sec., no regeneration: 4 sec.|nFreeze: 0.2 sec.|nRange: 500|nCooldown: 6 sec.|r")
-call LANG_A('HtQ1',1,2,"The target freezes for an instant: Hit strikes it unseen and stays where he is. Every hit leaves a vital point mark (up to 3, 15 sec.). A hit on a target with 3 marks bursts the point: damage, silence and no regeneration.|n|n|cFF00A5FF|nDamage: 120 + 2.5*|r|c003CFF3CAGI|r|cFF00A5FF|nBurst: 300 + 4*|"+"r|c003CFF3CAGI|r|cFF00A5FF|nSilence: 1.5 sec., no regeneration: 4 sec.|nFreeze: 0.2 sec.|nRange: 500|nCooldown: 6 sec.|r")
-call LANG_A('HtQ1',1,3,"The target freezes for an instant: Hit strikes it unseen and stays where he is. Every hit leaves a vital point mark (up to 3, 15 sec.). A hit on a target with 3 marks bursts the point: damage, silence and no regeneration.|n|n|cFF00A5FF|nDamage: 160 + 3*|r|c003CFF3CAGI|r|cFF00A5FF|nBurst: 400 + 5*|r|"+"c003CFF3CAGI|r|cFF00A5FF|nSilence: 1.5 sec., no regeneration: 4 sec.|nFreeze: 0.2 sec.|nRange: 500|nCooldown: 6 sec.|r")
-call LANG_A('HtQ1',1,4,"The target freezes for an instant: Hit strikes it unseen and stays where he is. Every hit leaves a vital point mark (up to 3, 15 sec.). A hit on a target with 3 marks bursts the point: damage, silence and no regeneration.|n|n|cFF00A5FF|nDamage: 200 + 3.5*|r|c003CFF3CAGI|r|cFF00A5FF|nBurst: 500 + 6*|"+"r|c003CFF3CAGI|r|cFF00A5FF|nSilence: 1.5 sec., no regeneration: 4 sec.|nFreeze: 0.2 sec.|nRange: 500|nCooldown: 6 sec.|r")
+call LANG_A('HtQ1',1,0,"Hit steps back, lunges at the target and punches it forward. He is paused and invulnerable throughout the movement. Targets already frozen in time are not pushed. Every hit leaves a vital point mark (up to 3, 15 sec.). A hit on a target with 3 marks bursts the point: damage, silence and no regenerat"+"ion.|n|n|cFF00A5FF|nDamage: 40 + 1.5*|r|c003CFF3CAGI|r|cFF00A5FF|nBurst: 100 + 2*|r|c003CFF3CAGI|r|cFF00A5FF|nSilence: 1.5 sec., no regeneration: 4 sec.|nFreeze: 0.2 sec.|nKnockback: 160|nRange: 600|nCooldown: 6 sec.|r")
+call LANG_A('HtQ1',1,1,"Hit steps back, lunges at the target and punches it forward. He is paused and invulnerable throughout the movement. Targets already frozen in time are not pushed. Every hit leaves a vital point mark (up to 3, 15 sec.). A hit on a target with 3 marks bursts the point: damage, silence and no regenerat"+"ion.|n|n|cFF00A5FF|nDamage: 80 + 2*|r|c003CFF3CAGI|r|cFF00A5FF|nBurst: 200 + 3*|r|c003CFF3CAGI|r|cFF00A5FF|nSilence: 1.5 sec., no regeneration: 4 sec.|nFreeze: 0.2 sec.|nKnockback: 160|nRange: 600|nCooldown: 6 sec.|r")
+call LANG_A('HtQ1',1,2,"Hit steps back, lunges at the target and punches it forward. He is paused and invulnerable throughout the movement. Targets already frozen in time are not pushed. Every hit leaves a vital point mark (up to 3, 15 sec.). A hit on a target with 3 marks bursts the point: damage, silence and no regenerat"+"ion.|n|n|cFF00A5FF|nDamage: 120 + 2.5*|r|c003CFF3CAGI|r|cFF00A5FF|nBurst: 300 + 4*|r|c003CFF3CAGI|r|cFF00A5FF|nSilence: 1.5 sec., no regeneration: 4 sec.|nFreeze: 0.2 sec.|nKnockback: 160|nRange: 600|nCooldown: 6 sec.|r")
+call LANG_A('HtQ1',1,3,"Hit steps back, lunges at the target and punches it forward. He is paused and invulnerable throughout the movement. Targets already frozen in time are not pushed. Every hit leaves a vital point mark (up to 3, 15 sec.). A hit on a target with 3 marks bursts the point: damage, silence and no regenerat"+"ion.|n|n|cFF00A5FF|nDamage: 160 + 3*|r|c003CFF3CAGI|r|cFF00A5FF|nBurst: 400 + 5*|r|c003CFF3CAGI|r|cFF00A5FF|nSilence: 1.5 sec., no regeneration: 4 sec.|nFreeze: 0.2 sec.|nKnockback: 160|nRange: 600|nCooldown: 6 sec.|r")
+call LANG_A('HtQ1',1,4,"Hit steps back, lunges at the target and punches it forward. He is paused and invulnerable throughout the movement. Targets already frozen in time are not pushed. Every hit leaves a vital point mark (up to 3, 15 sec.). A hit on a target with 3 marks bursts the point: damage, silence and no regenerat"+"ion.|n|n|cFF00A5FF|nDamage: 200 + 3.5*|r|c003CFF3CAGI|r|cFF00A5FF|nBurst: 500 + 6*|r|c003CFF3CAGI|r|cFF00A5FF|nSilence: 1.5 sec., no regeneration: 4 sec.|nFreeze: 0.2 sec.|nKnockback: 160|nRange: 600|nCooldown: 6 sec.|r")
 call LANG_A('HtQ1',2,0,"Flash Fist Crush, [|cffffcc00Level %d|r] (|cffffcc00Q|r)")
-call LANG_A('HtQ1',3,0,"The target freezes for an instant: Hit strikes it unseen and stays where he is. Every hit leaves a vital point mark (up to 3, 15 sec.). A hit on a target with 3 marks bursts the point: damage, silence and no regeneration.|n|n|cFF00A5FF|nDamage: 40\\80\\120\\160\\200 + 1.5\\2\\2.5\\3\\3.5*|r|c003CFF3"+"CAGI|r|cFF00A5FF|nBurst: 100\\200\\300\\400\\500 + 2\\3\\4\\5\\6*|r|c003CFF3CAGI|r|cFF00A5FF|nSilence: 1.5 sec., no regeneration: 4 sec.|nRange: 500|nCooldown: 6 sec.|r")
+call LANG_A('HtQ1',3,0,"Hit steps back, lunges at the target and punches it forward. He is paused and invulnerable throughout the movement. Targets already frozen in time are not pushed. Every hit leaves a vital point mark (up to 3, 15 sec.). A hit on a target with 3 marks bursts the point: damage, silence and no regenerat"+"ion.|n|n|cFF00A5FF|nDamage: 40\\80\\120\\160\\200 + 1.5\\2\\2.5\\3\\3.5*|r|c003CFF3CAGI|r|cFF00A5FF|nBurst: 100\\200\\300\\400\\500 + 2\\3\\4\\5\\6*|r|c003CFF3CAGI|r|cFF00A5FF|nSilence: 1.5 sec., no regeneration: 4 sec.|nRange: 600|nCooldown: 6 sec.|r")
 call LANG_A('HtW1',0,0,"Icy Glare, [|cffffcc00Level 1|r] (|cffffcc00W|r)")
 call LANG_A('HtW1',0,1,"Icy Glare, [|cffffcc00Level 2|r] (|cffffcc00W|r)")
 call LANG_A('HtW1',0,2,"Icy Glare, [|cffffcc00Level 3|r] (|cffffcc00W|r)")
@@ -301150,8 +301455,8 @@ call LANG_A('HtR1',1,3,"The enemy is locked in a separate dimension: frozen, onl
 call LANG_A('HtR1',1,4,"The enemy is locked in a separate dimension: frozen, only Hit can hit him. Hit's damage piles up and lands on release with a bonus. After a W freeze the cage lasts longer. Works on time manipulators too, 25% shorter.|n|n|cFF00A5FF|nDuration: 2.50 sec. (+1 sec. after W)|nStored damage on release: +30"+"%|nRange: 600|nCooldown: 22 sec.|r")
 call LANG_A('HtR1',2,0,"Time Cage, [|cffffcc00Level %d|r] (|cffffcc00R|r)")
 call LANG_A('HtR1',3,0,"The enemy is locked in a separate dimension: frozen, only Hit can hit him. Hit's damage piles up and lands on release with a bonus. After a W freeze the cage lasts longer. Works on time manipulators too, 25% shorter.|n|n|cFF00A5FF|nDuration: 1.5\\1.75\\2\\2.25\\2.5 sec. (+1 sec. after W)|nStored dam"+"age on release: +10\\15\\20\\25\\30%|nRange: 600|nCooldown: 30\\28\\26\\24\\22 sec.|r")
-call LANG_A('HtT1',1,0,"Hit is invulnerable while casting and stops time in a 1200 radius. He strikes the target from every side; all the damage lands at once at the end, then a stun, and the Q marks burst. Afterwards Pure Progress gets 5 charges for 15 sec.|n|n|cFF00A5FF|nDamage: 5 hits of 2*|r|c003CFF3CAGI|r|cFF00A5FF|nT"+"ime stop: 3 sec., radius 1200|nStun: 1.5 sec.|nCast: 0.5 sec.|nRange: 700|nCooldown: 80 sec.|r")
-call LANG_A('HtT1',3,0,"Hit is invulnerable while casting and stops time in a 1200 radius. He strikes the target from every side; all the damage lands at once at the end, then a stun, and the Q marks burst. Afterwards Pure Progress gets 5 charges for 15 sec.|n|n|cFF00A5FF|nDamage: 5 hits of 2*|r|c003CFF3CAGI|r|cFF00A5FF|nT"+"ime stop: 3 sec., radius 1200|nStun: 1.5 sec.|nCast: 0.5 sec.|nRange: 700|nCooldown: 80 sec.|r")
+call LANG_A('HtT1',1,0,"Hit is invulnerable while casting and stops time in a 1200 radius. He strikes the target from every side; all the damage lands at once at the end, then a stun, and the Q marks burst. Afterwards Pure Progress gets 5 charges for 15 sec.|n|n|cFF00A5FF|nDamage: 12 hits of 0.625*|r|c003CFF3CAGI|r|cFF00A5"+"FF|nFinal blow: 2.5*|r|c003CFF3CAGI|r|cFF00A5FF|nTime stop: 3 sec., radius 1200|nStun: 1.5 sec.|nCast: 0.5 sec.|nRange: 700|nCooldown: 80 sec.|r")
+call LANG_A('HtT1',3,0,"Hit is invulnerable while casting and stops time in a 1200 radius. He strikes the target from every side; all the damage lands at once at the end, then a stun, and the Q marks burst. Afterwards Pure Progress gets 5 charges for 15 sec.|n|n|cFF00A5FF|nDamage: 12 hits of 0.625*|r|c003CFF3CAGI|r|cFF00A5"+"FF|nFinal blow: 2.5*|r|c003CFF3CAGI|r|cFF00A5FF|nTime stop: 3 sec., radius 1200|nStun: 1.5 sec.|nCast: 0.5 sec.|nRange: 700|nCooldown: 80 sec.|r")
 call LANG_A('HtD1',1,0,"Passive: fighting heroes gives Hit charges; charges lengthen all his time stops and burn out outside combat. Active: spends every charge and instantly recharges Q, W, E and F.|n|n|cFF00A5FF|nCharge: every 5 sec. of fighting a hero, up to 5|nPer charge: +6 |r|c003CFF3CAGI|r|cFF00A5FF, +0.1 sec. to ev"+"ery time stop|nCharges reset after 10 sec. out of combat|nCooldown: 30 sec.|r")
 call LANG_A('HtD1',3,0,"Passive: fighting heroes gives Hit charges; charges lengthen all his time stops and burn out outside combat. Active: spends every charge and instantly recharges Q, W, E and F.|n|n|cFF00A5FF|nCharge: every 5 sec. of fighting a hero, up to 5|nPer charge: +6 |r|c003CFF3CAGI|r|cFF00A5FF, +0.1 sec. to ev"+"ery time stop|nCharges reset after 10 sec. out of combat|nCooldown: 30 sec.|r")
 call LANG_A('HtF1',1,0,"A hands-in-pockets stance for 2 sec.: Q, W, E turn into three follow-ups (Death Blow, Time Release, Realized Power), R, D, G, T are locked. One cooldown for all; halved if no follow-up is used.|n|n|cFF00A5FF|nStance: 2 sec.|nCooldown: 14 sec. (7 sec. without a follow-up)|r")
